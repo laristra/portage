@@ -1,0 +1,17 @@
+#!/bin/bash
+
+rm -f CMakeCache.txt
+
+SOURCE=$HOME/ngc/portage
+
+export ARCHOS="`uname -m`_`uname -s`"
+
+
+# modify the paths that point to the location of the
+# installation directories below
+
+cmake \
+  -D CMAKE_BUILD_TYPE=Debug \
+  -D Jali_DIR:FILEPATH=${HOME}/ngc/jali/install/lib \
+  ${SOURCE} 
+
