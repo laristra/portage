@@ -6,7 +6,6 @@ SOURCE=$HOME/ngc/portage
 
 export ARCHOS="`uname -m`_`uname -s`"
 
-# nothing
 # modify the paths that point to the location of the
 # installation directories below
 
