@@ -1,6 +1,5 @@
 #!/bin/bash
 
-:
 rm -f CMakeCache.txt
 
 SOURCE=$HOME/ngc/portage
