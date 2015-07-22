@@ -12,18 +12,23 @@
 #include "remap.h"
 
 #include "Mesh.hh"
+#include "MeshFactory.hh"
+
 
 void Driver::run()
 {
     std::printf("in Driver::run()...\n");
 
+    // Search for possible intersections.
     Search s;
-    s.search(0.5, 0.866);
+    s.search(inputMesh_, targetMesh_);
 
-    Intersect isect;
+    // Calculate the overlap of actual intersections.
+    Intersect isect(&s);
     isect.intersect();
 
-    Remap r;
+    // Remap from inputMesh_ to targetMesh_
+    Remap r(&isect);
     r.remap();
 
 } // Driver::run

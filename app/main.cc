@@ -6,6 +6,9 @@
 
 #include "driver.h"
 
+#include "Mesh.hh"
+#include "MeshFactory.hh"
+
 int main(int argc, char** argv)
 {
   MPI_Init(&argc, &argv);
@@ -18,7 +21,18 @@ int main(int argc, char** argv)
 
   std::printf("starting portageapp...\n");
 
-  Driver d;
+  // Create a 2d quad input mesh from (0,0) to (1,1) with 2x2 zones
+  Jali::Mesh* inputMesh = Jali::MeshFactory::create(0.0, 0.0,
+						    1.0, 1.0,
+						    2, 2);
+  // Create a 2d quad output mesh from (0,0) to (1,1) with 2x2 zones
+  Jali::Mesh* targetMesh = Jali::MeshFactory::create(0.0, 0.0,
+						     1.0, 1.0,
+						     2, 2);
+
+  // TODO: populate inputMesh with data using Rao's StateManager
+
+  Driver d(inputMesh, targetMesh);
   d.run();
 
   std::printf("finishing portageapp...\n");

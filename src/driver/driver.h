@@ -6,16 +6,23 @@
 #ifndef DRIVER_H
 #define DRIVER_H
 
+#include "Mesh.hh"
+
 /*!
     \class Driver driver.h
-    \brief Driver provides...
+    \brief Driver provides the API to mapping from one mesh to another.
  */
 class Driver
 {
 public:
 
-    //! Default constructor
+    //! Default constructor creates meshes for testing remap
     Driver() {}
+
+    //! Constructor uses established meshes for remap
+    Driver(const Jali::Mesh& inputMesh, Jali::Mesh& targetMesh) 
+      : inputMesh_(&inputMesh),
+        targetMesh_(&targetMesh) {}
 
     //! Copy constructor (disabled)
     Driver(const Driver &) = delete;
@@ -27,14 +34,18 @@ public:
      ~Driver() {}
 
     /*!
-        \brief This method is ...
+        \brief This method calls the search, intersect, and remap routines
+	needed to map one mesh to another.
      */
     void run();
+
+    Jali::Mesh* targetMesh() { return targetMesh_; }
 
 private:
 
     // Aggregate data members
-//    double val_;
+    const Jali::Mesh* inputMesh_;
+    Jali::Mesh* targetMesh_;
 
 }; // class Driver
 
