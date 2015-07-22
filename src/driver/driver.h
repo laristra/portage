@@ -10,7 +10,7 @@
 
 /*!
     \class Driver driver.h
-    \brief Driver provides...
+    \brief Driver provides the API to mapping from one mesh to another.
  */
 class Driver
 {
@@ -34,9 +34,12 @@ public:
      ~Driver() {}
 
     /*!
-        \brief This method is ...
+        \brief This method calls the search, intersect, and remap routines
+	needed to map one mesh to another.
      */
     void run();
+
+    Jali::Mesh* targetMesh() { return targetMesh_; }
 
 private:
 

@@ -14,6 +14,7 @@
 #include "Mesh.hh"
 #include "MeshFactory.hh"
 
+
 Driver::Driver()
 {
   // Create some default meshes to test with
@@ -31,13 +32,16 @@ void Driver::run()
 {
     std::printf("in Driver::run()...\n");
 
+    // Search for possible intersections.
     Search s;
     s.search(inputMesh_, targetMesh_);
 
-    Intersect isect(s.candidates);
+    // Calculate the overlap of actual intersections.
+    Intersect isect(&s);
     isect.intersect();
 
-    Remap r(isect.moments);
+    // Remap from inputMesh_ to targetMesh_
+    Remap r(&isect);
     r.remap();
 
 } // Driver::run
