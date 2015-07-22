@@ -26,9 +26,11 @@ int main(int argc, char** argv)
 						    1.0, 1.0,
 						    2, 2);
   // Create a 2d quad output mesh from (0,0) to (1,1) with 2x2 zones
-  Jali::Mesh* targetMesh = jali::MeshFactory::create(0.0, 0.0,
+  Jali::Mesh* targetMesh = Jali::MeshFactory::create(0.0, 0.0,
 						     1.0, 1.0,
 						     2, 2);
+
+  // TODO: populate inputMesh with data using Rao's StateManager
 
   Driver d(inputMesh, targetMesh);
   d.run();
