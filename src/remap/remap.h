@@ -6,6 +6,8 @@
 #ifndef REMAP_H
 #define REMAP_H
 
+#include "intersect.h"
+
 /*!
     \class Remap remap.h
     \brief Remap provides...
@@ -15,7 +17,7 @@ class Remap
 public:
 
     //! Default constructor
-    Remap() {}
+    Remap(Intersect* isect) {}
 
     //! Copy constructor (disabled)
     Remap(const Remap &) = delete;

@@ -6,6 +6,8 @@
 #ifndef INTERSECT_H
 #define INTERSECT_H
 
+#include "search.h"
+
 /*!
     \class Intersect intersect.h
     \brief Intersect provides...
@@ -15,7 +17,7 @@ class Intersect
 public:
 
     //! Default constructor
-    Intersect() {}
+    Intersect(Search* s) {}
 
     //! Copy constructor (disabled)
     Intersect(const Intersect &) = delete;

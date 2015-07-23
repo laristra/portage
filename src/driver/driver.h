@@ -20,9 +20,9 @@ public:
     Driver() {}
 
     //! Constructor uses established meshes for remap
-    Driver(const Jali::Mesh& inputMesh, Jali::Mesh& targetMesh) 
-      : inputMesh_(&inputMesh),
-        targetMesh_(&targetMesh) {}
+    Driver(const Jali::Mesh* inputMesh, Jali::Mesh* targetMesh) 
+      : inputMesh_(inputMesh),
+        targetMesh_(targetMesh) {}
 
     //! Copy constructor (disabled)
     Driver(const Driver &) = delete;
