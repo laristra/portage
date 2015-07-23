@@ -7,10 +7,16 @@
 
 #include <cstdio>
 
+namespace NGC {
+namespace Remap {
+
 void Search::search(double arg0, double arg1)
 {
     std::printf("in Search::search(%g, %g)...\n", arg0, arg1);
 } // Search::search
+
+} // namespace Remap
+} // namespace NGC
 
 /*-------------------------------------------------------------------------~--*
  * Formatting options for Emacs and vim.

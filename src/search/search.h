@@ -10,6 +10,10 @@
     \class Search search.h
     \brief Search provides...
  */
+
+namespace NGC {
+namespace Remap {
+
 class Search
 {
 public:
@@ -42,6 +46,9 @@ private:
 //    double val_;
 
 }; // class Search
+
+} // namespace Remap
+} // namespace NGC
 
 #endif // SEARCH_H
 
