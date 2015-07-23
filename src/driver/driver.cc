@@ -23,13 +23,13 @@ void Driver::run()
     Search s;
     s.search(inputMesh_, targetMesh_);
 
-    // Calculate the overlap of actual intersections.
+    // // Calculate the overlap of actual intersections.
     Intersect isect(&s);
     isect.intersect();
 
-    // Remap from inputMesh_ to targetMesh_
-    Remap r(&isect);
-    r.remap();
+    // // Remap from inputMesh_ to targetMesh_
+     Remap r(&isect);
+     r.remap();
 
 } // Driver::run
 

@@ -6,6 +6,8 @@
 #ifndef SEARCH_H
 #define SEARCH_H
 
+#include "Mesh.hh"
+
 /*!
     \class Search search.h
     \brief Search provides...
@@ -29,12 +31,12 @@ public:
     /*!
         \brief This method does...
 
-        \param arg0 a value that I pass in...
-        \param arg1 a value that I pass in...
+        \param inputMesh a pointer to a Jali Mesh that I pass in...
+        \param targetMesh a pointer to a Jali Mesh that I pass in...
 
         This method does something useful...
      */
-    void search(double arg0, double arg1);
+     void search(const Jali::Mesh* inputMesh, const Jali::Mesh* targetMesh);
 
 private:
 
