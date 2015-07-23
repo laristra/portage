@@ -12,6 +12,10 @@
     \class Driver driver.h
     \brief Driver provides the API to mapping from one mesh to another.
  */
+
+namespace NGC {
+namespace Remap {
+
 class Driver
 {
 public:
@@ -48,6 +52,9 @@ private:
     Jali::Mesh* targetMesh_;
 
 }; // class Driver
+
+} // namespace Remap
+} // namespace NGC
 
 #endif // DRIVER_H
 

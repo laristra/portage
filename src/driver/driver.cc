@@ -15,6 +15,9 @@
 #include "MeshFactory.hh"
 
 
+namespace NGC {
+namespace Remap {
+
 void Driver::run()
 {
     std::printf("in Driver::run()...\n");
@@ -32,6 +35,9 @@ void Driver::run()
     r.remap();
 
 } // Driver::run
+
+} // namespace Remap
+} // namespace NGC
 
 /*-------------------------------------------------------------------------~--*
  * Formatting options for Emacs and vim.
