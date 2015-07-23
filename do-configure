@@ -10,7 +10,10 @@ export ARCHOS="`uname -m`_`uname -s`"
 # installation directories below
 
 cmake \
+  -D CMAKE_C_COMPILER=`which mpicc` \
+  -D CMAKE_CXX_COMPILER=`which mpiCC` \
   -D CMAKE_BUILD_TYPE=Debug \
+  -D ENABLE_UNIT_TESTS=True \
   -D Jali_DIR:FILEPATH=${HOME}/ngc/jali/install/lib \
   ${SOURCE} 
 
