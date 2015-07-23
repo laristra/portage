@@ -10,6 +10,10 @@
     \class Intersect intersect.h
     \brief Intersect provides...
  */
+
+namespace NGC {
+namespace Remap {
+
 class Intersect
 {
 public:
@@ -37,6 +41,9 @@ private:
 //    double val_;
 
 }; // class Intersect
+
+} // namespace Remap
+} // namespace NGC
 
 #endif // INTERSECT_H
 
