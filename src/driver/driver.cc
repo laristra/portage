@@ -15,8 +15,7 @@
 #include "MeshFactory.hh"
 
 
-namespace NGC {
-namespace Remap {
+namespace Portage {
 
 void Driver::run()
 {
@@ -27,17 +26,16 @@ void Driver::run()
     s.search(0.0, 0.0);
 
     // Calculate the overlap of actual intersections.
-    Intersect isect;
+    Intersect isect(sourceMesh_, targetMesh_);
     isect.intersect();
 
-    // Remap from inputMesh_ to targetMesh_
-    Remap r;
-    r.remap();
+    // Remap from sourceMesh_ to targetMesh_
+    Remap r(sourceMesh_, sourceState_, targetMesh_, targetState_);
+    r.remap(remap_var_names_);
 
 } // Driver::run
 
-} // namespace Remap
-} // namespace NGC
+} // namespace Portage
 
 /*-------------------------------------------------------------------------~--*
  * Formatting options for Emacs and vim.
