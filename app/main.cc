@@ -5,6 +5,8 @@
 #include "mpi.h"
 
 #include "driver.h"
+#include "state_vector.h"
+#include "state.h"
 
 #include "Mesh.hh"
 #include "MeshFactory.hh"
@@ -29,9 +31,30 @@ int main(int argc, char** argv)
   Jali::Mesh* targetMesh = mf(0.0, 0.0, 1.0, 1.0, 2, 2);
 
   // TODO: populate inputMesh with data using Rao's StateManager
+  
+  Portage::State inputState(inputMesh);
+  std::vector<double> inputData = {0.0,1.0,2.0,3.0};
+  inputState.add("celldata",Jali::CELL,&(inputData[0]));
 
-  Driver d(*inputMesh, *targetMesh);
+  Portage::State targetState(targetMesh);
+  std::vector<double> targetData = {0.0,0.0,0.0,0.0};
+  targetState.add("celldata",Jali::CELL,&(targetData[1]));
+
+  Portage::Driver d(*inputMesh, inputState, *targetMesh, targetState);
   d.run();
+
+  // When done, the "celldata" vector on the target mesh cells should
+  // be identical to the "celldata" vector on the destination mesh
+
+  Portage::State::const_iterator it = targetState.find("celldata",Jali::CELL);
+  if (it == targetState.end()) {
+    std::cerr << "Could not find vector with name celldata in targetState" << std::endl;
+    std::exit(-1);
+  }
+  Portage::StateVector outvec = *it;
+  
+  std::cerr << "celldata vector on target mesh after remapping is:" << std::endl;
+  std::cerr << "   " << outvec[0] << ", " << outvec[1] << ", " << outvec[2] << ", " << outvec[3] << std::endl;
 
   std::printf("finishing portageapp...\n");
 
