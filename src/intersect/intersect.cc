@@ -9,16 +9,14 @@
 
 #include "clipper.hpp"
 
-namespace NGC {
-namespace Remap {
+namespace Portage {
 
 void Intersect::intersect()
 {
     std::printf("in Intersect::intersect()...\n");
 } // Intersect::intersect
 
-} // namespace Remap
-} // namespace NGC
+} // namespace Portage
 
 /*-------------------------------------------------------------------------~--*
  * Formatting options for Emacs and vim.
