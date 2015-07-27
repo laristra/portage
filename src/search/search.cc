@@ -7,16 +7,14 @@
 
 #include <cstdio>
 
-namespace NGC {
-namespace Remap {
+namespace Portage {
 
 void Search::search(double arg0, double arg1)
 {
     std::printf("in Search::search(%g, %g)...\n", arg0, arg1);
 } // Search::search
 
-} // namespace Remap
-} // namespace NGC
+} // namespace Portage
 
 /*-------------------------------------------------------------------------~--*
  * Formatting options for Emacs and vim.

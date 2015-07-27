@@ -11,8 +11,7 @@
     \brief Search provides...
  */
 
-namespace NGC {
-namespace Remap {
+namespace Portage {
 
 class Search
 {
@@ -47,8 +46,7 @@ private:
 
 }; // class Search
 
-} // namespace Remap
-} // namespace NGC
+} // namespace Portage
 
 #endif // SEARCH_H
 
