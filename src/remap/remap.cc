@@ -7,10 +7,14 @@
 
 #include <cstdio>
 
-void Remap::remap()
+namespace Portage {
+
+void Remap::remap(std::vector<std::string> const & remap_var_names)
 {
     std::printf("in Remap::remap()...\n");
 } // Remap::remap
+
+} // namespace Portage
 
 /*-------------------------------------------------------------------------~--*
  * Formatting options for Emacs and vim.
