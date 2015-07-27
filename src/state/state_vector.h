@@ -15,8 +15,7 @@
 
 #include "Mesh.hh"
 
-namespace NGC {
-namespace Remap {
+namespace Portage {
 
 // Provides some limited functionality of a std::vector while adding
 // some additional meta-data like the mesh associated with this data.
@@ -35,7 +34,7 @@ class StateVector {
       myname_(name), on_what_(on_what), mymesh_(mesh) {
     
     int num = mymesh_->num_entities(on_what,Jali::ALL);
-    mydata_.resize(num,0.0);  // resize with new values set to 0.0
+    mydata_.resize(num);
     std::copy(data, data+num, mydata_.begin());
     
   }
@@ -97,8 +96,7 @@ class StateVector {
   
 };
 
-} // namespace Remap
-} // namespace NGC
+} // namespace Portage
   
 
 
