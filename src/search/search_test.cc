@@ -9,7 +9,7 @@
 
 TEST(search, ctor)
 {
-    NGC::Remap::Search* s = new NGC::Remap::Search;
+    Portage::Search* s = new Portage::Search;
     ASSERT_NE(s, nullptr);
 } // TEST(search, ctor)
 
