@@ -5,13 +5,17 @@
 
 #include "search.h"
 
+#include "Mesh.hh"
+
 #include <cstdio>
 
 namespace Portage {
 
-void Search::search(double arg0, double arg1)
+void Search::search(const Jali::Mesh* inputMesh, const Jali::Mesh* targetMesh)
 {
-    std::printf("in Search::search(%g, %g)...\n", arg0, arg1);
+    std::printf("in Search::search(inputMesh, targetMesh)...\n");
+    std::printf("  inputMesh::mesh_type(): %d", inputMesh->mesh_type());
+    std::printf("  targetMesh::mesh_type(): %d", targetMesh->mesh_type());
 } // Search::search
 
 } // namespace Portage

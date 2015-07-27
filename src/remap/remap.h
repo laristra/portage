@@ -6,6 +6,8 @@
 #ifndef REMAP_H
 #define REMAP_H
 
+#include "intersect.h"
+
 /*!
     \class Remap remap.h
     \brief Remap provides...
@@ -21,6 +23,7 @@ class Remap
 public:
 
     //! Default constructor
+
   Remap(Jali::Mesh const & sourceMesh, State const & sourceState, 
         Jali::Mesh const & targetMesh, State & targetState) :
       sourceMesh_(sourceMesh), sourceState_(sourceState), 
