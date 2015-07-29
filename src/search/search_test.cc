@@ -9,7 +9,7 @@
 
 TEST(search, ctor)
 {
-    Search* s = new Search;
+    Portage::Search* s = new Portage::Search;
     ASSERT_NE(s, nullptr);
 } // TEST(search, ctor)
 

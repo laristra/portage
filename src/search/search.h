@@ -12,6 +12,9 @@
     \class Search search.h
     \brief Search provides...
  */
+
+namespace Portage {
+
 class Search
 {
 public:
@@ -44,6 +47,8 @@ private:
 //    double val_;
 
 }; // class Search
+
+} // namespace Portage
 
 #endif // SEARCH_H
 

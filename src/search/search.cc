@@ -9,12 +9,16 @@
 
 #include <cstdio>
 
+namespace Portage {
+
 void Search::search(const Jali::Mesh* inputMesh, const Jali::Mesh* targetMesh)
 {
     std::printf("in Search::search(inputMesh, targetMesh)...\n");
     std::printf("  inputMesh::mesh_type(): %d", inputMesh->mesh_type());
     std::printf("  targetMesh::mesh_type(): %d", targetMesh->mesh_type());
 } // Search::search
+
+} // namespace Portage
 
 /*-------------------------------------------------------------------------~--*
  * Formatting options for Emacs and vim.

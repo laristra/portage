@@ -4,18 +4,21 @@
 #-----------------------------------------------------------------------------~#
 
 # Add header files
-set(intersect_HEADERS
-    clipper.hpp
-    intersect.h
+set(state_HEADERS
+    state_vector.h
+    state.h
     PARENT_SCOPE
 )
 
 # Add source files
-set(intersect_SOURCES
-    clipper.cpp
-    intersect.cc
+set(state_SOURCES
+    state.cc
     PARENT_SCOPE
 )
+
+
+add_subdirectory(test)
+
 
 #----------------------------------------------------------------------------~-#
 # Formatting options for emacs and vim.

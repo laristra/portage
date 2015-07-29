@@ -12,33 +12,40 @@
     \class Intersect intersect.h
     \brief Intersect provides...
  */
+#include "Mesh.hh"
+
+namespace Portage {
+
 class Intersect
 {
-public:
+ public:
 
-    //! Default constructor
-    Intersect(Search* s) {}
+  //! Default constructor
+  Intersect(Jali::Mesh const & sourceMesh, Jali::Mesh const & targetMesh) :
+      sourceMesh_(sourceMesh), targetMesh_(targetMesh) {}
 
-    //! Copy constructor (disabled)
-    Intersect(const Intersect &) = delete;
+  //! Copy constructor (disabled)
+  Intersect(const Intersect &) = delete;
+  
+  //! Assignment operator (disabled)
+  Intersect & operator = (const Intersect &) = delete;
+  
+  //! Destructor
+  ~Intersect() {}
+  
+  /*!
+    \brief This method is...
+  */
+  void intersect();
+  
+ private:
 
-    //! Assignment operator (disabled)
-    Intersect & operator = (const Intersect &) = delete;
-
-    //! Destructor
-     ~Intersect() {}
-
-    /*!
-        \brief This method is...
-     */
-    void intersect();
-
-private:
-
-    // Aggregate data members
-//    double val_;
+  Jali::Mesh const & sourceMesh_;
+  Jali::Mesh const & targetMesh_;
 
 }; // class Intersect
+
+} // namespace Portage
 
 #endif // INTERSECT_H
 

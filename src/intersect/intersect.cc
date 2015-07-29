@@ -9,10 +9,14 @@
 
 #include "clipper.hpp"
 
+namespace Portage {
+
 void Intersect::intersect()
 {
     std::printf("in Intersect::intersect()...\n");
 } // Intersect::intersect
+
+} // namespace Portage
 
 /*-------------------------------------------------------------------------~--*
  * Formatting options for Emacs and vim.

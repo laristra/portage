@@ -12,12 +12,22 @@
     \class Remap remap.h
     \brief Remap provides...
  */
+
+#include "Mesh.hh"
+#include "state.h"
+
+namespace Portage {
+
 class Remap
 {
 public:
 
     //! Default constructor
-    Remap(Intersect* isect) {}
+
+  Remap(Jali::Mesh const & sourceMesh, State const & sourceState, 
+        Jali::Mesh const & targetMesh, State & targetState) :
+      sourceMesh_(sourceMesh), sourceState_(sourceState), 
+      targetMesh_(targetMesh), targetState_(targetState) {}
 
     //! Copy constructor (disabled)
     Remap(const Remap &) = delete;
@@ -31,14 +41,18 @@ public:
     /*!
         \brief This method is...
      */
-    void remap();
+  void remap(std::vector<std::string> const & remap_var_names);
 
 private:
 
-    // Aggregate data members
-//    double val_;
+  Jali::Mesh const & sourceMesh_;
+  Jali::Mesh const & targetMesh_;
+  State const & sourceState_;
+  State & targetState_;
 
 }; // class Remap
+
+} // namespace Portage
 
 #endif // REMAP_H
 
