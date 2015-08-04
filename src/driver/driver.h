@@ -7,7 +7,7 @@
 #define DRIVER_H
 
 #include "Mesh.hh"
-#include "state.h"
+#include "portage/state/state.h"
 
 /*!
     \class Driver driver.h

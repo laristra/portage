@@ -24,6 +24,12 @@ if (ENABLE_UNIT_TESTS)
 #  cinch_add_library_target(portage_state src/state)
 endif()
 
+#------------------------------------------------------------------------------#
+# 
+#------------------------------------------------------------------------------#
+
+set(CINCH_HEADER_SUFFIXES "\\.h")
+
 #~---------------------------------------------------------------------------~-#
 # Formatting options for emacs and vim.
 # vim: set tabstop=4 shiftwidth=4 expandtab :

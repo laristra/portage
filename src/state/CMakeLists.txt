@@ -16,8 +16,13 @@ set(state_SOURCES
     PARENT_SCOPE
 )
 
-
-add_subdirectory(test)
+if(ENABLE_UNIT_TESTS)
+    cinch_add_unit(test_state_vector
+        SOURCES test/test_state_vector.cc
+        LIBRARIES ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
+        POLICY MPI
+        THREADS 2)
+endif(ENABLE_UNIT_TESTS)
 
 
 #----------------------------------------------------------------------------~-#

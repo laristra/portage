@@ -37,6 +37,9 @@ link_directories(${MPI_CXX_LIBRARY_DIRS})
 
 set(ARCHOS ${CMAKE_SYSTEM_PROCESSOR}_${CMAKE_SYSTEM_NAME})
 
+set(Jali_DIR "$ENV{HOME}/devel/Jali" CACHE STRING
+    "Set the locaiton of Jali")
+
 if (NOT Jali_DIR)
   message(FATAL_ERROR "Error: Jali top level installation dir must be defined")
 endif()
