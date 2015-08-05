@@ -17,7 +17,10 @@ set(search_SOURCES
 
 # Add unit test
 if(ENABLE_UNIT_TESTS)
-  cinch_add_unit(search search_test.cc)
+  cinch_add_unit(search
+    SOURCES search_test.cc
+    POLICY MPI
+    THREADS 2)
 endif(ENABLE_UNIT_TESTS)
 
 #----------------------------------------------------------------------------~-#

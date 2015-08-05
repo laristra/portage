@@ -13,8 +13,6 @@
 
 TEST(StateVector, DefineVectorOnCells) {
 
-  MPI_Init(NULL, NULL);
-
   Jali::MeshFactory mf(MPI_COMM_WORLD);
   Jali::Mesh *mesh = mf(0.0,0.0,1.0,1.0,2,2);
 
@@ -48,7 +46,6 @@ TEST(StateVector, DefineVectorOnNodes) {
   for (int i = 0; i < nnodes; ++i)
     ASSERT_EQ(data1[i],myvec1[i]);
   
-  MPI_Finalize();
 }
 
 

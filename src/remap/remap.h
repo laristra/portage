@@ -6,7 +6,7 @@
 #ifndef REMAP_H
 #define REMAP_H
 
-#include "intersect.h"
+#include "portage/intersect/intersect.h"
 
 /*!
     \class Remap remap.h
@@ -14,7 +14,7 @@
  */
 
 #include "Mesh.hh"
-#include "state.h"
+#include "portage/state/state.h"
 
 namespace Portage {
 

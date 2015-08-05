@@ -7,9 +7,9 @@
 
 #include <cstdio>
 
-#include "search.h"
-#include "intersect.h"
-#include "remap.h"
+#include "portage/search/search.h"
+#include "portage/intersect/intersect.h"
+#include "portage/remap/remap.h"
 
 #include "Mesh.hh"
 #include "MeshFactory.hh"
@@ -22,8 +22,8 @@ void Driver::run()
     std::printf("in Driver::run()...\n");
 
     // Search for possible intersections.
-    Search s;
-    s.search(0.0, 0.0);
+//    Search s;
+//    s.search(0.0, 0.0);
 
     // Calculate the overlap of actual intersections.
     Intersect isect(sourceMesh_, targetMesh_);

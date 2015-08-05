@@ -3,7 +3,7 @@
  * All rights reserved.
  *---------------------------------------------------------------------------~*/
 
-#include "../state.h"
+#include "portage/state/state.h"
 #include "../state_vector.h"
 
 #include "gtest/gtest.h"

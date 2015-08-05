@@ -4,9 +4,9 @@
 
 #include "mpi.h"
 
-#include "driver.h"
-#include "state_vector.h"
-#include "state.h"
+#include "portage/driver/driver.h"
+#include "portage/state/state_vector.h"
+#include "portage/state/state.h"
 
 #include "Mesh.hh"
 #include "MeshFactory.hh"
