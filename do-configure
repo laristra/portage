@@ -14,6 +14,8 @@ cmake \
   -D CMAKE_CXX_COMPILER=`which mpiCC` \
   -D CMAKE_BUILD_TYPE=Debug \
   -D ENABLE_UNIT_TESTS=True \
+  -D ENABLE_MPI=True \
+  -D ENABLE_MPI_CXX_BINDINGS=True \
   -D Jali_DIR:FILEPATH=${HOME}/ngc/jali/install/lib \
   ${SOURCE} 
 
