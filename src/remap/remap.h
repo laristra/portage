@@ -41,7 +41,7 @@ public:
     /*!
         \brief This method is...
      */
-  void remap(std::vector<std::string> const & remap_var_names);
+    double remap(std::string const & remap_var_name, Jali::Entity_ID cellId, Jali::Entity_ID_List candidates, std::vector<float> moments);
 
 private:
 

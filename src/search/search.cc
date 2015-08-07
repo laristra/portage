@@ -11,11 +11,14 @@
 
 namespace Portage {
 
-void Search::search(const Jali::Mesh* inputMesh, const Jali::Mesh* targetMesh)
+void Search::search(const Jali::Mesh* inputMesh, const Jali::Mesh* targetMesh,
+                    Jali::Entity_ID cellId, Jali::Entity_ID_List* candidates)
 {
     std::printf("in Search::search(inputMesh, targetMesh)...\n");
     std::printf("  inputMesh::mesh_type(): %d", inputMesh->mesh_type());
     std::printf("  targetMesh::mesh_type(): %d", targetMesh->mesh_type());
+    std::printf("\n");
+    candidates->push_back(cellId);
 } // Search::search
 
 } // namespace Portage

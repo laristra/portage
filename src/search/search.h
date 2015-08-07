@@ -39,7 +39,7 @@ public:
 
         This method does something useful...
      */
-     void search(const Jali::Mesh* inputMesh, const Jali::Mesh* targetMesh);
+     void search(const Jali::Mesh* inputMesh, const Jali::Mesh* targetMesh, Jali::Entity_ID cellId, Jali::Entity_ID_List* candidates);
 
 private:
 
