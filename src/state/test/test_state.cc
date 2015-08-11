@@ -4,7 +4,9 @@
  *---------------------------------------------------------------------------~*/
 
 #include "portage/state/state.h"
-#include "../state_vector.h"
+#include "portage/state/state_vector.h"
+
+#include <iostream>
 
 #include "gtest/gtest.h"
 #include "mpi.h"
@@ -13,8 +15,6 @@
 #include "MeshFactory.hh"
 
 TEST(State, DefineState) {
-
-  MPI_Init(NULL, NULL);
 
   Jali::MeshFactory mf(MPI_COMM_WORLD);
   Jali::Mesh *mesh1 = mf(0.0,0.0,1.0,1.0,2,2);
@@ -111,13 +111,15 @@ TEST(State, DefineState) {
   myvec2_copy = mystate[1];
   ASSERT_TRUE(myvec2_copy.name() == "nodevars" && myvec2_copy.on_what() == Jali::NODE);
 
+  // Print out state
+
+  std::cout << mystate;
+
   
   // Finally make sure that we cannot find the vector that was on other mesh
 
   itc = mystate.find("cellvars2",Jali::CELL);
   ASSERT_EQ(mystate.end(),it);
-
-  MPI_Finalize();
 
 }
 
