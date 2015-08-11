@@ -11,6 +11,7 @@
   \brief StateVector provides a mechanism to store state data for mesh entities
 */
 
+#include <iostream>
 #include <vector>
 
 #include "Mesh.hh"
@@ -95,6 +96,19 @@ class StateVector {
   std::vector<double> mydata_;
   
 };
+
+
+inline
+std::ostream & operator<<(std::ostream & os, StateVector const & sv) {
+  int size = sv.size();
+  os << std::endl;
+  os << "Vector \"" << sv.name() << "\" on entity kind " << sv.on_what() << " : " << std::endl;
+  os << size << " elements " << std::endl;
+  for (int i = 0; i < size; i++)
+    os << sv[i] << std::endl;
+  os << std::endl;
+}
+
 
 } // namespace Portage
   
