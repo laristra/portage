@@ -36,7 +36,7 @@ class Intersect
   /*!
     \brief This method is...
   */
-  void intersect();
+  void intersect(Jali::Entity_ID cellId, Jali::Entity_ID_List* candidates, std::vector<float>* moments);
   
  private:
 

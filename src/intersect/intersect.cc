@@ -11,9 +11,13 @@
 
 namespace Portage {
 
-void Intersect::intersect()
+void Intersect::intersect(Jali::Entity_ID cellId, Jali::Entity_ID_List* candidates, std::vector<float>* moments)
 {
     std::printf("in Intersect::intersect()...\n");
+    for (unsigned int i=0; i<candidates->size(); i++)
+    {
+        moments->push_back(1.0f);
+    }
 } // Intersect::intersect
 
 } // namespace Portage
