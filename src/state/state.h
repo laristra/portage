@@ -11,7 +11,7 @@
   \brief State is a class that stores all of the state data associated 
   with a mesh
 */
-
+#include <iostream>
 #include "Mesh.hh"
 
 #include "state_vector.h"
@@ -72,6 +72,8 @@ class State {
   
   const_iterator find(std::string const name, Jali::Entity_kind const on_what) const;
   
+
+  //  friend std::ostream& operator<<(std::ostream os, State& s) const;
   
  private:
   
@@ -84,6 +86,16 @@ class State {
 
 
 ///// ONCE CINCH IS ABLE TO BUILD TESTS WITH LIBRARY FILES AND MULTIPLE SOURCE FILES, WE CAN PUT THESE ROUTINES INTO state.cc
+
+inline
+std::ostream & operator<<(std::ostream & os, State const & s) {
+  State::const_iterator it = s.cbegin();
+  while (it != s.cend()) {
+    StateVector const & vec = *it;
+    os << vec << std::endl;
+    ++it;
+  }
+}
 
 // add a vector to the state object
 
