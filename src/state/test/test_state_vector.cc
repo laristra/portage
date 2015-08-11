@@ -3,7 +3,9 @@
  * All rights reserved.
  *---------------------------------------------------------------------------~*/
 
-#include "../state_vector.h"
+#include "portage/state/state_vector.h"
+
+#include <iostream>
 
 #include "gtest/gtest.h"
 #include "mpi.h"
@@ -28,6 +30,7 @@ TEST(StateVector, DefineVectorOnCells) {
   ASSERT_EQ(data1[2],myvec1[2]);
   ASSERT_EQ(data1[3],myvec1[3]);
 
+  std::cout << myvec1 << std::endl;
 }
 
 
