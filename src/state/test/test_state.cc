@@ -42,22 +42,22 @@ TEST(State, DefineState) {
   Portage::State mystate(mesh1);
 
   int add_status;
-  Portage::StateVector addvec = mystate.add(myvec1);
-  ASSERT_EQ(addvec.size(),myvec1.size());
-  for (int i = 0; i < addvec.size(); ++i)
-    ASSERT_EQ(addvec[i],myvec1[i]);
+  Portage::StateVector &addvec1 = mystate.add(myvec1);
+  ASSERT_EQ(addvec1.size(),myvec1.size());
+  for (int i = 0; i < addvec1.size(); ++i)
+    ASSERT_EQ(addvec1[i],myvec1[i]);
 
-  addvec = mystate.add("nodevars",Jali::NODE,&(data2[0]));
-  ASSERT_EQ(addvec.size(),myvec2.size());
-  for (int i = 0; i < addvec.size(); ++i)
-    ASSERT_EQ(addvec[i],myvec2[i]);
+  Portage::StateVector &addvec2 = mystate.add("nodevars",Jali::NODE,&(data2[0]));
+  ASSERT_EQ(addvec2.size(),myvec2.size());
+  for (int i = 0; i < addvec2.size(); ++i)
+    ASSERT_EQ(addvec2[i],myvec2[i]);
 
 
   // Try to add the third vector (defined on a different mesh) to it - it 
   // should copy the data but be assigned to mesh1 instead of mesh2
 
-  addvec = mystate.add(myvec3);
-  ASSERT_NE(addvec.mesh(),myvec3.mesh());
+  Portage::StateVector &addvec3 = mystate.add(myvec3);
+  ASSERT_NE(addvec3.mesh(),myvec3.mesh());
 
 
   // Now retrieve the state vectors from the state object in different ways
