@@ -55,11 +55,9 @@ void Driver::run()
         newField[i] = r.remap(remap_var_names_[0], i, candidates, moments);
     }
 
-    targetState_.add("remapped_data", Jali::CELL, newField);
+    StateVector field = targetState_.add("remapped_data", Jali::CELL, newField);
 
 #ifdef DEBUG_OUTPUT
-    std::vector<StateVector>::const_iterator field = targetState_.find("remapped_data", Jali::CELL);
-    Portage::StateVector stateVector =  *field;
     for (unsigned int i=0; i<numTargetCells; i++)
     {
         double x = *(stateVector.begin() + i);
@@ -74,9 +72,11 @@ void Driver::run()
 /*-------------------------------------------------------------------------~--*
  * Formatting options for Emacs and vim.
  *
+ * Local Variables:
  * mode:c++
  * indent-tabs-mode:t
  * c-basic-offset:4
  * tab-width:4
+ * End:
  * vim: set tabstop=4 shiftwidth=4 expandtab :
  *-------------------------------------------------------------------------~--*/
