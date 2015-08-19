@@ -26,9 +26,11 @@ void Search::search(const Jali::Mesh* inputMesh, const Jali::Mesh* targetMesh,
 /*-------------------------------------------------------------------------~--*
  * Formatting options for Emacs and vim.
  *
+ * Local Variables:
  * mode:c++
  * indent-tabs-mode:t
  * c-basic-offset:4
  * tab-width:4
+ * End:
  * vim: set tabstop=4 shiftwidth=4 expandtab :
  *-------------------------------------------------------------------------~--*/
