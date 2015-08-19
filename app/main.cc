@@ -31,15 +31,15 @@ int main(int argc, char** argv)
   // Create a 2d quad output mesh from (0,0) to (1,1) with 2x2 zones
   Jali::Mesh* targetMesh = mf(0.0, 0.0, 1.0, 1.0, 2, 2);
 
-  // TODO: populate inputMesh with data using Rao's StateManager
-  
   Portage::State inputState(inputMesh);
   std::vector<double> inputData = {0.0,1.0,2.0,3.0};
-  inputState.add("celldata",Jali::CELL,&(inputData[0]));
+  Portage::StateVector cellvecin = 
+      inputState.add("celldata",Jali::CELL,&(inputData[0]));
 
   Portage::State targetState(targetMesh);
   std::vector<double> targetData = {0.0,0.0,0.0,0.0};
-  targetState.add("celldata",Jali::CELL,&(targetData[1]));
+  Portage::StateVector cellvecout = 
+      targetState.add("celldata",Jali::CELL,&(targetData[1]));
 
   Portage::Driver d(*inputMesh, inputState, *targetMesh, targetState);
   std::vector<std::string> remap_fields;
@@ -50,15 +50,8 @@ int main(int argc, char** argv)
   // When done, the "remapped_data" vector on the target mesh cells should
   // be identical to the "celldata" vector on the destination mesh
 
-  Portage::State::const_iterator it = targetState.find("remapped_data",Jali::CELL);
-  if (it == targetState.end()) {
-    std::cerr << "Could not find vector with name remapped_data in targetState" << std::endl;
-    std::exit(-1);
-  }
-  Portage::StateVector outvec = *it;
-  
-  std::cerr << "remapped_data vector on target mesh after remapping is:" << std::endl;
-  std::cerr << "   " << outvec[0] << ", " << outvec[1] << ", " << outvec[2] << ", " << outvec[3] << std::endl;
+  std::cerr << "celldata vector on target mesh after remapping is:" << std::endl;
+  std::cerr << "   " << cellvecout[0] << ", " << cellvecout[1] << ", " << cellvecout[2] << ", " << cellvecout[3] << std::endl;
 
   std::printf("finishing portageapp...\n");
 

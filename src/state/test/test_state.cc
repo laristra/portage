@@ -42,16 +42,22 @@ TEST(State, DefineState) {
   Portage::State mystate(mesh1);
 
   int add_status;
-  add_status = mystate.add(myvec1);
-  ASSERT_EQ(1,add_status);
+  Portage::StateVector &addvec1 = mystate.add(myvec1);
+  ASSERT_EQ(addvec1.size(),myvec1.size());
+  for (int i = 0; i < addvec1.size(); ++i)
+    ASSERT_EQ(addvec1[i],myvec1[i]);
 
-  add_status = mystate.add("nodevars",Jali::NODE,&(data2[0]));
-  ASSERT_EQ(1,add_status);
+  Portage::StateVector &addvec2 = mystate.add("nodevars",Jali::NODE,&(data2[0]));
+  ASSERT_EQ(addvec2.size(),myvec2.size());
+  for (int i = 0; i < addvec2.size(); ++i)
+    ASSERT_EQ(addvec2[i],myvec2[i]);
 
-  // Try to add the third vector (defined on a different mesh) to it - should fail
 
-  add_status = mystate.add(myvec3);
-  ASSERT_EQ(0,add_status);
+  // Try to add the third vector (defined on a different mesh) to it - it 
+  // should copy the data but be assigned to mesh1 instead of mesh2
+
+  Portage::StateVector &addvec3 = mystate.add(myvec3);
+  ASSERT_NE(addvec3.mesh(),myvec3.mesh());
 
 
   // Now retrieve the state vectors from the state object in different ways
@@ -98,6 +104,8 @@ TEST(State, DefineState) {
     Portage::StateVector myvec4 = *it;
 
     ASSERT_TRUE((myvec4.name() == "cellvars" && myvec4.on_what() == Jali::CELL)
+                ||
+                (myvec4.name() == "cellvars2" && myvec4.on_what() == Jali::CELL)
                 ||
                 (myvec4.name() == "nodevars" && myvec4.on_what() == Jali::NODE));
 
