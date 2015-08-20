@@ -7,6 +7,7 @@
 set(intersect_HEADERS
     clipper.hpp
     intersect.h
+    intersectClipper.h
     PARENT_SCOPE
 )
 
@@ -16,6 +17,13 @@ set(intersect_SOURCES
     intersect.cc
     PARENT_SCOPE
 )
+
+# Add unit test
+if(ENABLE_UNIT_TESTS)
+  cinch_add_unit(intersectClipper
+    SOURCES intersectClipperTest.cc clipper.cpp
+    )
+endif(ENABLE_UNIT_TESTS)
 
 #----------------------------------------------------------------------------~-#
 # Formatting options for emacs and vim.
