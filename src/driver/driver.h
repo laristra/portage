@@ -8,6 +8,7 @@
 
 #include<algorithm>
 #include<vector>
+#include<iterator>
 
 #include "Mesh.hh"
 #include "portage/state/state.h"
@@ -57,47 +58,6 @@ public:
 	*/
 	void run();
 
-	template <typename SearchType, typename IsectType, typename RemapType>
-	struct composerFunctor
-	{
-		const SearchType* s_;
-		const IsectType* i_;
-		const RemapType* r_;
-		composerFunctor(const SearchType* s, const IsectType* i, const RemapType* r)
-			: s_(s), i_(i), r_(r) { }
-
-		
-		{
-			
-		}
-
-		double operator()(Jali::Entity_ID const targetCellIndex)
-		{
-			// Search for candidates and return their cell indices
-			Jali::Entity_ID_List* candidates;
-			s_->search(targetCellIndex, candidates);
-
-			// Intersect wants a vector of pairs of (x,y) coordinates for
-			// each candidate.
-			std::vector<std::vector<std::pair<double,double> > > 
-				candidatesNodesCoords(candidates->size());
-		    std::transform(candidates->begin(), candidates->end(),
-			    		   candidatesNodesCoords.begin(),
-						   [&](const Jali::Entity_ID cellID) -> std::vector<std::pair<double,double> >
-						   {
-							   std::vector<JaliGeometry::Point> cellNodes;
-							   targetMesh_->cell_get_coordinates(cellID, &cellNodes);
-							   std::vector<std::pair<double,double> > cellNodeCoords(cellNodes.size());
-							   std::transform(cellNodes.begin(), cellNodes.end(),
-											  cellNodeCoords.begin(),
-											  [](const JaliGeometry::Point node)
-											  {
-												  return std::make_pair(node.x(), node.y());
-											  });
-							   return cellNodeCoords;});
-	}
-
-
 
 private:
   
@@ -108,6 +68,106 @@ private:
 	std::vector<std::string> remap_var_names_;
 
 }; // class Driver
+
+	template <typename SearchType, typename IsectType, typename RemapType>
+	struct composerFunctor
+	{
+		const SearchType* s_;
+		const IsectType* i_;
+		const RemapType* r_;
+		// CMM: This seems redundant...
+		const Jali::Mesh* sourceMesh_;
+		const Jali::Mesh* targetMesh_;
+		const std::string remap_var_name_;
+		//----------------------------------------
+		composerFunctor(const SearchType* s, const IsectType* i, const RemapType* r,
+						const Jali::Mesh* sourceMesh, const Jali::Mesh* targetMesh,
+						const std::string remap_var_name)
+			: s_(s), i_(i), r_(r), sourceMesh_(sourceMesh), targetMesh_(targetMesh),
+		      remap_var_name_(remap_var_name) { }
+
+		// CMM: this should probably be somewhere else - perhaps part of Jali?
+		struct pointToXY
+		{
+			pointToXY() { }
+			std::pair<double,double> operator()(const JaliGeometry::Point point)
+			{
+				return std::make_pair(point.x(), point.y());
+			}
+		};
+
+		double operator()(Jali::Entity_ID const targetCellIndex)
+		{
+			std::cout << "target cell index " << targetCellIndex << std::endl;
+			// Search for candidates and return their cell indices
+			Jali::Entity_ID_List candidates;
+			s_->search(targetCellIndex, &candidates);
+
+			// Get the target cell's (x,y) coordinates from the Jali Point datastructure
+			// CMM: do I really need this? without explicit size of targetCellPoints vector
+			//      the compiler either complains or the executable err's
+			Jali::Entity_ID_List nodes;
+			int numnodes;
+			targetMesh_->cell_get_nodes(targetCellIndex, &nodes);
+			numnodes = nodes.size();
+			std::vector<JaliGeometry::Point> targetCellPoints(numnodes);
+			targetMesh_->cell_get_coordinates(targetCellIndex, &targetCellPoints);
+			std::vector<std::pair<double, double> > targetCellCoords(numnodes);
+			std::transform(targetCellPoints.begin(), targetCellPoints.end(),
+						   targetCellCoords.begin(),pointToXY());
+
+			// Intersect routine wants candidates' node coordinates
+			// First, get the Jali Points for each candidate cells
+			std::vector<std::vector<JaliGeometry::Point> > candidateCellsPoints(candidates.size());
+			std::transform(candidates.begin(), candidates.end(),
+						   candidateCellsPoints.begin(),
+						   // given a candidate cell in the sourceMesh, get its Points
+						   [&](Jali::Entity_ID candidateCellIndex) -> std::vector<JaliGeometry::Point>
+						   {
+							   Jali::Entity_ID_List nodes;
+							   sourceMesh_->cell_get_nodes(candidateCellIndex, &nodes);
+							   std::vector<JaliGeometry::Point> ret(nodes.size());
+							   sourceMesh_->cell_get_coordinates(candidateCellIndex, &ret);
+							   return ret;
+						   }
+						   );
+			// Now get the (x,y) coordinates from each Point for each candidate cell
+			std::vector<std::vector<std::pair<double, double> > > 
+				candidateCellsCoords(candidates.size());
+			std::transform(candidateCellsPoints.begin(), candidateCellsPoints.end(),
+						   candidateCellsCoords.begin(),
+						   [&](std::vector<JaliGeometry::Point> points) ->
+						   std::vector<std::pair<double, double> >
+						   {
+							   std::vector<std::pair<double, double> > ret(points.size());
+							   std::transform(points.begin(), points.end(),
+											  ret.begin(),
+											  pointToXY());
+							   return ret;
+						   });
+
+			// Calculate the intersection of each candidate with the target Cell
+			// For each polygon/polygon intersection, IntersectClipper returns a 
+			// std::vector<std::vector<double>>
+			std::vector<std::vector<std::vector<double> > > moments(candidates.size());
+			// CMM: To do a std::transform here instead, we need to use std::tuple's (I think)
+			//      both here and in IntersectClipper::operator()
+			for (int i = 0; i < candidateCellsCoords.size(); i++)
+				{
+					// awkward syntax...
+					moments[i] = (*i_)(candidateCellsCoords[i], targetCellCoords);
+				}
+
+			// Remap
+			double remappedValue = r_->remap(remap_var_name_, targetCellIndex, candidates, moments);
+						   
+			
+			return 0.0;
+																				   
+		}
+	};
+
+
 
 
 } // namespace Portage
