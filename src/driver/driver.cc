@@ -6,9 +6,12 @@
 #include "driver.h"
 
 #include <cstdio>
+#include <vector>
+#include <numeric>
+#include <algorithm>
 
 #include "portage/search/search.h"
-#include "portage/intersect/intersect.h"
+#include "portage/intersect/intersectClipper.h"
 #include "portage/remap/remap.h"
 
 #include "Mesh.hh"
@@ -21,43 +24,33 @@ void Driver::run()
 {
     std::printf("in Driver::run()...\n");
 
+	const Search s(&sourceMesh_, &targetMesh_);
+	// Use Angela's new Clipper-based intersector
+	const IntersectClipper i;
+	const Remap r(sourceMesh_, sourceState_, targetMesh_, targetState_);
+
     int numTargetCells = targetMesh_.num_entities(Jali::CELL, Jali::ALL);
 
-    double* newField = new double[numTargetCells];
-    for (unsigned int i=0; i<numTargetCells; i++)
-    {
-        // Search for possible intersections.
-        Search s;
-        Jali::Entity_ID_List candidates;
-        s.search(&sourceMesh_, &targetMesh_, i, &candidates);
- 
-#ifdef DEBUG_OUTPUT
-        std::cout << std::endl << "Candidates for cell " << i << std::endl;
-        for (unsigned int j=0; j<candidates.size(); j++)
-            std::cout << candidates[j] << " ";
-        std::cout << std::endl;
-#endif
+	std::cout << "Number of target cells in target mesh " << numTargetCells << std::endl;
 
-        // Calculate the overlap of actual intersections.
-        std::vector<float> moments;
-        Intersect isect(sourceMesh_, targetMesh_);
-        isect.intersect(i, &candidates, &moments);
+	std::vector<int> cellIndices(numTargetCells);
+	// populates cellIndices with a sequence of ints starting at 0...
+	std::iota(cellIndices.begin(), cellIndices.end(), 0);
+
+	std::vector<double> newField(numTargetCells);
+	// this will populate newField with the doubles returned from the final remap
+	std::transform(cellIndices.begin(), cellIndices.end(),
+				   newField.begin(),
+				   composerFunctor<Search, IntersectClipper, Remap>(&s, &i, &r, 
+																	&sourceMesh_, &targetMesh_,
+																	remap_var_names_[0]));
+	// Add it to the new state
+	// CMM: is there a less hacky way of getting vector to array?
+	targetState_.add("remapped_data", Jali::CELL, &newField[0]);
 
 #ifdef DEBUG_OUTPUT
-        std::cout << std::endl << "Moments for cell " << i << std::endl;
-        for (unsigned int j=0; j<moments.size(); j++)
-            std::cout << moments[j] << " ";
-        std::cout << std::endl;
-#endif
-
-        // Remap from sourceMesh_ to targetMesh_
-        Remap r(sourceMesh_, sourceState_, targetMesh_, targetState_);
-        newField[i] = r.remap(remap_var_names_[0], i, candidates, moments);
-    }
-
-    StateVector field = targetState_.add("remapped_data", Jali::CELL, newField);
-
-#ifdef DEBUG_OUTPUT
+    std::vector<StateVector>::const_iterator field = targetState_.find("remapped_data", Jali::CELL);
+    Portage::StateVector stateVector =  *field;
     for (unsigned int i=0; i<numTargetCells; i++)
     {
         double x = *(stateVector.begin() + i);

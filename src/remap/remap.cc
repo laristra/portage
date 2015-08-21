@@ -10,7 +10,8 @@
 namespace Portage {
 
 double Remap::remap(std::string const & remap_var_name,
-                    Jali::Entity_ID cellId, Jali::Entity_ID_List candidates, std::vector<float> moments)
+                    Jali::Entity_ID cellId, Jali::Entity_ID_List candidates, 
+					std::vector<std::vector<std::vector<double> > > moments) const
 {
     std::printf("in Remap::remap()...\n");
 
@@ -20,7 +21,9 @@ double Remap::remap(std::string const & remap_var_name,
     for (unsigned int j=0; j<candidates.size(); j++)
     {
        double x = *(stateVector.begin() + candidates[j]);
-       value += x * (moments[j]); 
+	   // CMM: I don't actually know what should be here as the vector of vector of vector
+	   //      of double confuses my head...
+       value += x * (moments[j][0][0]); 
     }
 
     return value;

@@ -15,38 +15,52 @@
 
 namespace Portage {
 
-class Search
-{
-public:
+	class Search
+	{
+	public:
 
-    //! Default constructor
-    Search() {}
+		//! Default constructor
+		Search() { };
 
-    //! Copy constructor (disabled)
-    Search(const Search &) = delete;
+		//! Constructor with Meshes
+		/*!
+		  \brief Builds the search structure
+		  
+		  \param sourceMesh pointer to the mesh we would like to remap
+		  \param targetMesh pointer to the mesh to which we would like to remap
+		  
+		  This method does something useful...
+		*/
+		Search(const Jali::Mesh* sourceMesh, const Jali::Mesh* targetMesh)
+			: sourceMesh_(sourceMesh), targetMesh_(targetMesh) {}
 
-    //! Assignment operator (disabled)
-    Search & operator = (const Search &) = delete;
+		//! Copy constructor (disabled)
+		Search(const Search &) = delete;
 
-    //! Destructor
-     ~Search() {}
+		//! Assignment operator (disabled)
+		Search & operator = (const Search &) = delete;
 
-    /*!
-        \brief This method does...
+		//! Destructor
+		~Search() {}
 
-        \param inputMesh a pointer to a Jali Mesh that I pass in...
-        \param targetMesh a pointer to a Jali Mesh that I pass in...
+		/*!
+		  \brief This method does...
 
-        This method does something useful...
-     */
-     void search(const Jali::Mesh* inputMesh, const Jali::Mesh* targetMesh, Jali::Entity_ID cellId, Jali::Entity_ID_List* candidates);
+		  \param cellId the index of the target cell that I pass in...
+		  \param candidates pointer to vector of potential candidate cells in sourceMesh
 
-private:
+		  This method does something useful...
+		*/
+		void search(const Jali::Entity_ID cellId, Jali::Entity_ID_List* candidates) const;
 
-    // Aggregate data members
-//    double val_;
+	private:
 
-}; // class Search
+		// Aggregate data members
+		const Jali::Mesh* sourceMesh_;
+		const Jali::Mesh* targetMesh_;
+		//    double val_;
+
+	}; // class Search
 
 } // namespace Portage
 
