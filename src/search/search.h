@@ -23,6 +23,14 @@ namespace Portage {
 		Search() { };
 
 		//! Constructor with Meshes
+		/*!
+		  \brief Builds the search structure
+		  
+		  \param sourceMesh pointer to the mesh we would like to remap
+		  \param targetMesh pointer to the mesh to which we would like to remap
+		  
+		  This method does something useful...
+		*/
 		Search(const Jali::Mesh* sourceMesh, const Jali::Mesh* targetMesh)
 			: sourceMesh_(sourceMesh), targetMesh_(targetMesh) {}
 
@@ -38,8 +46,8 @@ namespace Portage {
 		/*!
 		  \brief This method does...
 
-		  \param inputMesh a pointer to a Jali Mesh that I pass in...
-		  \param targetMesh a pointer to a Jali Mesh that I pass in...
+		  \param cellId the index of the target cell that I pass in...
+		  \param candidates pointer to vector of potential candidate cells in sourceMesh
 
 		  This method does something useful...
 		*/

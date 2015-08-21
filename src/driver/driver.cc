@@ -37,9 +37,7 @@ void Driver::run()
 	// populates cellIndices with a sequence of ints starting at 0...
 	std::iota(cellIndices.begin(), cellIndices.end(), 0);
 
-	//    double* newField = new double[numTargetCells];
 	std::vector<double> newField(numTargetCells);
-
 	// this will populate newField with the doubles returned from the final remap
 	std::transform(cellIndices.begin(), cellIndices.end(),
 				   newField.begin(),

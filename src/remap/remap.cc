@@ -21,7 +21,8 @@ double Remap::remap(std::string const & remap_var_name,
     for (unsigned int j=0; j<candidates.size(); j++)
     {
        double x = *(stateVector.begin() + candidates[j]);
-	   // CMM: I don't actually know what should be here...
+	   // CMM: I don't actually know what should be here as the vector of vector of vector
+	   //      of double confuses my head...
        value += x * (moments[j][0][0]); 
     }
 

@@ -69,13 +69,14 @@ private:
 
 }; // class Driver
 
+	// This functor is used inside a std::transform inside Driver::run
 	template <typename SearchType, typename IsectType, typename RemapType>
 	struct composerFunctor
 	{
 		const SearchType* s_;
 		const IsectType* i_;
 		const RemapType* r_;
-		// CMM: This seems redundant...
+		// CMM: These seem redundant with Driver...
 		const Jali::Mesh* sourceMesh_;
 		const Jali::Mesh* targetMesh_;
 		const std::string remap_var_name_;
@@ -98,20 +99,23 @@ private:
 
 		double operator()(Jali::Entity_ID const targetCellIndex)
 		{
-			std::cout << "target cell index " << targetCellIndex << std::endl;
 			// Search for candidates and return their cell indices
 			Jali::Entity_ID_List candidates;
 			s_->search(targetCellIndex, &candidates);
 
 			// Get the target cell's (x,y) coordinates from the Jali Point datastructure
-			// CMM: do I really need this? without explicit size of targetCellPoints vector
-			//      the compiler either complains or the executable err's
+			//----------------------------------------------------------------------
+			// CMM: do I really need to get the size ahead of time? 
+			//      without explicit size of targetCellPoints vector, etc.
+			//      the compiler either complains or there is a runtime error
 			Jali::Entity_ID_List nodes;
 			int numnodes;
 			targetMesh_->cell_get_nodes(targetCellIndex, &nodes);
 			numnodes = nodes.size();
+			//----------------------------------------------------------------------
 			std::vector<JaliGeometry::Point> targetCellPoints(numnodes);
 			targetMesh_->cell_get_coordinates(targetCellIndex, &targetCellPoints);
+			// Convert the Jali Points to (x,y) coordinates
 			std::vector<std::pair<double, double> > targetCellCoords(numnodes);
 			std::transform(targetCellPoints.begin(), targetCellPoints.end(),
 						   targetCellCoords.begin(),pointToXY());
@@ -124,8 +128,10 @@ private:
 						   // given a candidate cell in the sourceMesh, get its Points
 						   [&](Jali::Entity_ID candidateCellIndex) -> std::vector<JaliGeometry::Point>
 						   {
+							   // CMM: again, do I really need to do this just to get size?
 							   Jali::Entity_ID_List nodes;
 							   sourceMesh_->cell_get_nodes(candidateCellIndex, &nodes);
+							   //------------------------------------------------------------
 							   std::vector<JaliGeometry::Point> ret(nodes.size());
 							   sourceMesh_->cell_get_coordinates(candidateCellIndex, &ret);
 							   return ret;
@@ -147,7 +153,7 @@ private:
 						   });
 
 			// Calculate the intersection of each candidate with the target Cell
-			// For each polygon/polygon intersection, IntersectClipper returns a 
+			// For each polygon-polygon intersection, IntersectClipper returns a 
 			// std::vector<std::vector<double>>
 			std::vector<std::vector<std::vector<double> > > moments(candidates.size());
 			// CMM: To do a std::transform here instead, we need to use std::tuple's (I think)
@@ -161,9 +167,7 @@ private:
 			// Remap
 			double remappedValue = r_->remap(remap_var_name_, targetCellIndex, candidates, moments);
 						   
-			
-			return 0.0;
-																				   
+			return remappedValue;
 		}
 	};
 

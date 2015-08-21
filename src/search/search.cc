@@ -11,8 +11,6 @@
 
 namespace Portage {
 
-// void Search::search(const Jali::Mesh* inputMesh, const Jali::Mesh* targetMesh,
-//                     Jali::Entity_ID cellId, Jali::Entity_ID_List* candidates)
 void Search::search(const Jali::Entity_ID cellId, Jali::Entity_ID_List* candidates)
 const
 {
