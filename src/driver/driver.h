@@ -90,6 +90,7 @@ private:
 			  targetMesh_(targetMesh), remap_var_name_(remap_var_name) { }
 
 		// CMM: this should probably be somewhere else - perhaps part of Jali?
+		// RVG: The issue here is that this assumes a 2D point 
 		struct pointToXY
 		{
 			pointToXY() { }

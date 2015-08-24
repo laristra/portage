@@ -32,7 +32,7 @@ void Driver::run()
 	const Remap_1stOrder remap(sourceMesh_, sourceState_, 
 							   remap_var_names_[0], Jali::CELL);
 
-	int numTargetCells;
+	int numTargetCells = targetMesh_.num_entities(Jali::CELL,Jali::OWNED);
 	std::cout << "Number of target cells in target mesh "
 			  << numTargetCells << std::endl;
 
@@ -55,7 +55,7 @@ void Driver::run()
 				 &sourceMesh_, &targetMesh_,
 				 remap_var_names_[0]);
 
-	// this populates newField with the doubles returned from the final remap
+	// this populates targetField with the doubles returned from the final remap
 	std::transform(cellIndices.begin(), cellIndices.end(),
 				   targetField.begin(),
 				   composer);
