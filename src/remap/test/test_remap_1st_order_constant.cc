@@ -44,6 +44,7 @@ TEST(Remap_1st_Order,Constant_Field_Test1) {
   // Define state vector, "density", on source mesh, with the same value
   // on all the cells.
 
+  std::string varname("cellvars");
   std::vector<double> data1 = {1.25,1.25,1.25,1.25,1.25,1.25,1.25,1.25,
                                1.25,1.25,1.25,1.25,1.25,1.25,1.25,1.25}; 
   Portage::StateVector myvec1("cellvars",Jali::CELL,mesh1,&(data1[0]));
@@ -51,7 +52,7 @@ TEST(Remap_1st_Order,Constant_Field_Test1) {
 
   // Create a Remap object
 
-  Portage::Remap_1stOrder remapper(*mesh1,mystate);
+  Portage::Remap_1stOrder remapper(*mesh1,mystate,"cellvars",Jali::CELL);
 
   // Remap from source to target mesh
 
@@ -64,7 +65,7 @@ TEST(Remap_1st_Order,Constant_Field_Test1) {
 
   for (int i = 0; i < 4; ++i) {
 
-    // Since we are know the structure of the two meshes, we can
+    // Since we know the structure of the two meshes, we can
     // enumerate which source cells intersect a given target cell and
     // what their intersection areas (weights) are
 
@@ -75,7 +76,8 @@ TEST(Remap_1st_Order,Constant_Field_Test1) {
       weights[j] = all_weights[i][j];
     }
 
-    outvals[i] = remapper(i,"cellvars",source_cells,weights);
+    std::pair< std::vector<int>, std::vector<double> > cells_and_weights(source_cells,weights);
+    outvals[i] = remapper(cells_and_weights);
   }
 
   // Make sure we retrieved a constant value for each cell on the target

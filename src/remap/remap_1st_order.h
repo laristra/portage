@@ -19,9 +19,22 @@ namespace Portage {
 class Remap_1stOrder {
  public:
   
-  Remap_1stOrder(Jali::Mesh const & sourceMesh, State const & sourceState) :
-  sourceMesh_(sourceMesh), sourceState_(sourceState)
-  {}
+  Remap_1stOrder(Jali::Mesh const & sourceMesh, State const & sourceState,
+                 std::string remap_var_name, Jali::Entity_kind on_what) :
+      sourceMesh_(sourceMesh), sourceState_(sourceState), 
+      remap_var_name_(remap_var_name), on_what_(on_what),
+      source_var_ptr_(NULL)
+  {
+    State::const_iterator it;
+    it = sourceState_.find(remap_var_name_, on_what_);
+    if (it == sourceState_.cend()) {
+      std::cerr << "ERROR: Remap_1stOrder::Remap_1stOrder(...) - Remap variable not found in source mesh" << std::endl;
+      exit(-1);
+    }
+
+    StateVector const & source_var_ref = *it;
+    source_var_ptr_ = &(source_var_ref);
+  }
 
 
   //! Copy constructor (disabled)
@@ -34,17 +47,19 @@ class Remap_1stOrder {
   ~Remap_1stOrder() {}
 
   
-  // Remap functor
+  // Remap functor - Need to make a pair from the vector of source
+  // cells that contribute to the the target cell value and the
+  // contribution weights associated with each source cell
 
-  double operator() (Jali::Entity_ID const target_cell, 
-                     std::string const & remap_var_name,
-                     Jali::Entity_ID_List const & source_cells,
-                     std::vector<double> const & weights) const;
+  double operator() (std::pair< std::vector<int> const &, std::vector<double> const &>) const;
 
  private:
 
   Jali::Mesh const & sourceMesh_;
   State const & sourceState_;
+  std::string const remap_var_name_;
+  Jali::Entity_kind const on_what_;
+  StateVector const * source_var_ptr_;
 
 };
 

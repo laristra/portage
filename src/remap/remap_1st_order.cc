@@ -41,34 +41,19 @@
 
 namespace Portage {
 
-double Remap_1stOrder::operator() (Jali::Entity_ID const target_cell, 
-                                  std::string const & remap_var_name,
-                                  Jali::Entity_ID_List const & source_cells,
-                                  std::vector<double> const & weights) const {
+// Input is a pair containing the vector of contributing source
+// entities and vector of contribution weights
 
-  // Make sure we can find the variable to remap
+double Remap_1stOrder::operator() (std::pair< std::vector<int> const & , std::vector<double> const & > cells_and_weights) const {
 
-  State::const_iterator its = sourceState_.find(remap_var_name,Jali::CELL);
-  
-  if (its == sourceState_.cend()) {
-    std::cerr << "ERROR: Could not find state vector " << remap_var_name << 
-        " on source mesh" << std::endl;
-    return 0.0;
-  }
-  StateVector const &srcvec = *its;
-
-
-  // Also do we have enough moments? For 1st order remap from source
-  // cells to target cell, we need only one weight per source cell
-  // (the 0th order moment)
-
+  std::vector<int> const & source_cells = cells_and_weights.first; 
   int nsrccells = source_cells.size();
-
   if (!nsrccells) {
     std::cerr << "ERROR: No source cells contribute to target cell?" << std::endl;
     return 0.0;
   }
 
+  std::vector<double> const & weights = cells_and_weights.second;
   if (weights.size() != nsrccells) {
     std::cerr << "ERROR: Not enough weights provided for remapping " << std::endl;
     return 0.0;
@@ -80,7 +65,8 @@ double Remap_1stOrder::operator() (Jali::Entity_ID const target_cell,
   double val = 0.0;
   double sumofweights = 0.0;
   for (int j = 0; j < nsrccells; ++j) {
-    double srcval = srcvec[j];
+    int srccell = source_cells[j];
+    double srcval = (*source_var_ptr_)[srccell];
 
     val += srcval*weights[j];
     sumofweights += weights[j];
