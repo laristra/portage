@@ -73,27 +73,29 @@ private:
 	template <typename SearchType, typename IsectType, typename RemapType>
 	struct composerFunctor
 	{
-		const SearchType* s_;
-		const IsectType* i_;
-		const RemapType* r_;
+		const SearchType* search_;
+		const IsectType* intersect_;
+		const RemapType* remap_;
 		// CMM: These seem redundant with Driver...
 		const Jali::Mesh* sourceMesh_;
 		const Jali::Mesh* targetMesh_;
 		const std::string remap_var_name_;
 		//----------------------------------------
-		composerFunctor(const SearchType* s, const IsectType* i, const RemapType* r,
-						const Jali::Mesh* sourceMesh, const Jali::Mesh* targetMesh,
+		composerFunctor(const SearchType* s, const IsectType* i, 
+						const RemapType* r,
+						const Jali::Mesh* sourceMesh, 
+						const Jali::Mesh* targetMesh,
 						const std::string remap_var_name)
-			: s_(s), i_(i), r_(r), sourceMesh_(sourceMesh), targetMesh_(targetMesh),
-		      remap_var_name_(remap_var_name) { }
+			: search_(s), intersect_(i), remap_(r), sourceMesh_(sourceMesh), 
+			  targetMesh_(targetMesh), remap_var_name_(remap_var_name) { }
 
 		// CMM: this should probably be somewhere else - perhaps part of Jali?
 		struct pointToXY
 		{
 			pointToXY() { }
-			std::pair<double,double> operator()(const JaliGeometry::Point point)
+			std::pair<double,double> operator()(const JaliGeometry::Point pt)
 			{
-				return std::make_pair(point.x(), point.y());
+				return std::make_pair(pt.x(), pt.y());
 			}
 		};
 
@@ -101,10 +103,11 @@ private:
 		{
 			// Search for candidates and return their cell indices
 			Jali::Entity_ID_List candidates;
-			s_->search(targetCellIndex, &candidates);
+			search_->search(targetCellIndex, &candidates);
 
-			// Get the target cell's (x,y) coordinates from the Jali Point datastructure
-			//----------------------------------------------------------------------
+			// Get the target cell's (x,y) coordinates from the Jali Point 
+			// datastructure.
+			//------------------------------------------------------------------
 			// CMM: do I really need to get the size ahead of time? 
 			//      without explicit size of targetCellPoints vector, etc.
 			//      the compiler either complains or there is a runtime error
@@ -112,9 +115,10 @@ private:
 			int numnodes;
 			targetMesh_->cell_get_nodes(targetCellIndex, &nodes);
 			numnodes = nodes.size();
-			//----------------------------------------------------------------------
+			//------------------------------------------------------------------
 			std::vector<JaliGeometry::Point> targetCellPoints(numnodes);
-			targetMesh_->cell_get_coordinates(targetCellIndex, &targetCellPoints);
+			targetMesh_->cell_get_coordinates(targetCellIndex, 
+											  &targetCellPoints);
 			// Convert the Jali Points to (x,y) coordinates
 			std::vector<std::pair<double, double> > targetCellCoords(numnodes);
 			std::transform(targetCellPoints.begin(), targetCellPoints.end(),
@@ -122,30 +126,39 @@ private:
 
 			// Intersect routine wants candidates' node coordinates
 			// First, get the Jali Points for each candidate cells
-			std::vector<std::vector<JaliGeometry::Point> > candidateCellsPoints(candidates.size());
+			std::vector<std::vector<JaliGeometry::Point> > 
+				candidateCellsPoints(candidates.size());
 			std::transform(candidates.begin(), candidates.end(),
 						   candidateCellsPoints.begin(),
-						   // given a candidate cell in the sourceMesh, get its Points
-						   [&](Jali::Entity_ID candidateCellIndex) -> std::vector<JaliGeometry::Point>
+						   // given a candidate cell, get its Points
+						   [&](Jali::Entity_ID candidateCellIndex) 
+						   -> std::vector<JaliGeometry::Point>
 						   {
-							   // CMM: again, do I really need to do this just to get size?
+							   // CMM: again, do I really need to do this just 
+							   // to get size?
 							   Jali::Entity_ID_List nodes;
-							   sourceMesh_->cell_get_nodes(candidateCellIndex, &nodes);
-							   //------------------------------------------------------------
-							   std::vector<JaliGeometry::Point> ret(nodes.size());
-							   sourceMesh_->cell_get_coordinates(candidateCellIndex, &ret);
+							   sourceMesh_->cell_get_nodes(candidateCellIndex, 
+														   &nodes);
+							   //-----------------------------------------------
+							   std::vector<JaliGeometry::Point> 
+								   ret(nodes.size());
+							   sourceMesh_->cell_get_coordinates(candidateCellIndex, 
+																 &ret);
 							   return ret;
 						   }
 						   );
-			// Now get the (x,y) coordinates from each Point for each candidate cell
+			// Now get the (x,y) coordinates from each Point for each candidate 
+			// cell
 			std::vector<std::vector<std::pair<double, double> > > 
 				candidateCellsCoords(candidates.size());
-			std::transform(candidateCellsPoints.begin(), candidateCellsPoints.end(),
+			std::transform(candidateCellsPoints.begin(), 
+						   candidateCellsPoints.end(),
 						   candidateCellsCoords.begin(),
 						   [&](std::vector<JaliGeometry::Point> points) ->
 						   std::vector<std::pair<double, double> >
 						   {
-							   std::vector<std::pair<double, double> > ret(points.size());
+							   std::vector<std::pair<double, double> > 
+								   ret(points.size());
 							   std::transform(points.begin(), points.end(),
 											  ret.begin(),
 											  pointToXY());
@@ -156,16 +169,19 @@ private:
 			// For each polygon-polygon intersection, IntersectClipper returns a 
 			// std::vector<std::vector<double>>
 			std::vector<std::vector<std::vector<double> > > moments(candidates.size());
-			// CMM: To do a std::transform here instead, we need to use std::tuple's (I think)
-			//      both here and in IntersectClipper::operator()
+			// CMM: To do a std::transform here instead, we need to use 
+			//      std::tuple's (I think) both here and in 
+			//      IntersectClipper::operator()
 			for (int i = 0; i < candidateCellsCoords.size(); i++)
 				{
 					// awkward syntax...
-					moments[i] = (*i_)(candidateCellsCoords[i], targetCellCoords);
+					moments[i] = (*intersect_)(candidateCellsCoords[i], 
+											   targetCellCoords);
 				}
 
 			// Remap
-			double remappedValue = r_->remap(remap_var_name_, targetCellIndex, candidates, moments);
+			double remappedValue = remap_->remap(remap_var_name_, targetCellIndex, 
+												 candidates, moments);
 						   
 			return remappedValue;
 		}
