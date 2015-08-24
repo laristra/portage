@@ -108,14 +108,14 @@ private:
 
 			// Get the target cell's (x,y) coordinates from the Jali Point 
 			// datastructure.
-
 			std::vector<JaliGeometry::Point> targetCellPoints;
 			targetMesh_->cell_get_coordinates(targetCellIndex, 
 											  &targetCellPoints);
 			// Convert the Jali Points to (x,y) coordinates
-			std::vector<std::pair<double, double> > targetCellCoords;
+			std::vector<std::pair<double, double> > 
+				targetCellCoords(targetCellPoints.size());
 			std::transform(targetCellPoints.begin(), targetCellPoints.end(),
-						   targetCellCoords.begin(),pointToXY());
+						   targetCellCoords.begin(), pointToXY());
 
 			// Intersect routine wants candidates' node coordinates
 			// First, get the Jali Points for each candidate cells

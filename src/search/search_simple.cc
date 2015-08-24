@@ -73,11 +73,6 @@ SearchSimple::~SearchSimple()
 void SearchSimple::search(const Jali::Entity_ID cellId, Jali::Entity_ID_List* candidates)
 const
 {
-    std::printf("in SearchSimple::search()...\n");
-    std::printf("  sourceMesh::mesh_type(): %d", sourceMesh_->mesh_type());
-    std::printf("  targetMesh::mesh_type(): %d", targetMesh_->mesh_type());
-    std::printf("\n");
-
     // find bounding box for target cell
     Jali::Entity_ID_List nodes;
     targetMesh_->cell_get_nodes(cellId, &nodes);
