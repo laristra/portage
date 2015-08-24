@@ -11,7 +11,7 @@
 
 #include "portage/search/search_simple.h"
 #include "portage/intersect/intersectClipper.h"
-#include "portage/remap/remap.h"
+#include "portage/remap/remap_1st_order.h"
 
 #include "Mesh.hh"
 #include "MeshFactory.hh"
@@ -25,39 +25,46 @@ void Driver::run()
 
 	const SearchSimple search(&sourceMesh_, &targetMesh_);
 	const IntersectClipper intersect;
-	const Remap remap(sourceMesh_, sourceState_, targetMesh_, targetState_);
 
-    int numTargetCells = targetMesh_.num_entities(Jali::CELL, Jali::ALL);
+	// Eventually put this in a loop over remap variable names as well
+	// Assume for now that we are only doing cell-based remap
 
+	const Remap_1stOrder remap(sourceMesh_, sourceState_, 
+							   remap_var_names_[0], Jali::CELL);
+
+	int numTargetCells;
 	std::cout << "Number of target cells in target mesh "
 			  << numTargetCells << std::endl;
 
+
+	// Ask for a StateVector with the name remap_var_names_[0] to be added to the targetState_. If it is already present, the existing StateVector reference is returned. If its not present, it is added. This logic needs to be reversed. The find function should add it if it is not found (if so requested).
+
+	std::vector<double> dummyvals(numTargetCells,0);
+	Portage::StateVector & targetField = 
+			targetState_.add(remap_var_names_[0],Jali::CELL,&(dummyvals[0]));
+
+	// Create a cellIndices vector and populates with a sequence of
+	// ints starting at 0. Will go away when Jali has iterators for
+	// mesh entities
+
 	std::vector<int> cellIndices(numTargetCells);
-	// populates cellIndices with a sequence of ints starting at 0...
 	std::iota(cellIndices.begin(), cellIndices.end(), 0);
 
-	std::vector<double> newField(numTargetCells);
-	composerFunctor<SearchSimple, IntersectClipper, Remap> 
+	composerFunctor<SearchSimple, IntersectClipper, Remap_1stOrder> 
 		composer(&search, &intersect, &remap,
 				 &sourceMesh_, &targetMesh_,
 				 remap_var_names_[0]);
+
 	// this populates newField with the doubles returned from the final remap
 	std::transform(cellIndices.begin(), cellIndices.end(),
-				   newField.begin(),
+				   targetField.begin(),
 				   composer);
-	// Add it to the new state
-	targetState_.add("remapped_data", Jali::CELL, &newField[0]);
 
 #ifdef DEBUG_OUTPUT
-    std::vector<StateVector>::const_iterator 
-		field = targetState_.find("remapped_data", Jali::CELL);
-    Portage::StateVector stateVector =  *field;
-    for (unsigned int i=0; i<numTargetCells; i++)
-    {
-        double x = *(stateVector.begin() + i);
-        std::cout << "Remapped field for cell " << i 
-				  << ": " << x << std::endl; 
-    }
+	Portage::State::const_iterator 
+			itc = targetState_.find(remap_var_names_[0], Jali::CELL);
+    Portage::StateVector & stateVector =  *itc;
+	std::cout << stateVector << std::endl; 
 #endif
 
 } // Driver::run

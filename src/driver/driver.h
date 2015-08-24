@@ -107,20 +107,12 @@ private:
 
 			// Get the target cell's (x,y) coordinates from the Jali Point 
 			// datastructure.
-			//------------------------------------------------------------------
-			// CMM: do I really need to get the size ahead of time? 
-			//      without explicit size of targetCellPoints vector, etc.
-			//      the compiler either complains or there is a runtime error
-			Jali::Entity_ID_List nodes;
-			int numnodes;
-			targetMesh_->cell_get_nodes(targetCellIndex, &nodes);
-			numnodes = nodes.size();
-			//------------------------------------------------------------------
-			std::vector<JaliGeometry::Point> targetCellPoints(numnodes);
+
+			std::vector<JaliGeometry::Point> targetCellPoints;
 			targetMesh_->cell_get_coordinates(targetCellIndex, 
 											  &targetCellPoints);
 			// Convert the Jali Points to (x,y) coordinates
-			std::vector<std::pair<double, double> > targetCellCoords(numnodes);
+			std::vector<std::pair<double, double> > targetCellCoords;
 			std::transform(targetCellPoints.begin(), targetCellPoints.end(),
 						   targetCellCoords.begin(),pointToXY());
 
@@ -134,14 +126,7 @@ private:
 						   [&](Jali::Entity_ID candidateCellIndex) 
 						   -> std::vector<JaliGeometry::Point>
 						   {
-							   // CMM: again, do I really need to do this just 
-							   // to get size?
-							   Jali::Entity_ID_List nodes;
-							   sourceMesh_->cell_get_nodes(candidateCellIndex, 
-														   &nodes);
-							   //-----------------------------------------------
-							   std::vector<JaliGeometry::Point> 
-								   ret(nodes.size());
+							   std::vector<JaliGeometry::Point> ret;
 							   sourceMesh_->cell_get_coordinates(candidateCellIndex, 
 																 &ret);
 							   return ret;
@@ -180,8 +165,15 @@ private:
 				}
 
 			// Remap
-			double remappedValue = remap_->remap(remap_var_name_, targetCellIndex, 
-												 candidates, moments);
+			
+			// Need to reconcile how moments are returned and how
+			// remap expects them - for now create a dummy vector
+			// that conforms to what remap functor expects
+
+			std::vector<double> remap_moments(candidates.size(),0.0);			
+			std::pair< std::vector<int> const &, std::vector<double> const & >
+					source_cells_and_weights(candidates,remap_moments);
+			double remappedValue = (*remap_)(source_cells_and_weights);
 						   
 			return remappedValue;
 		}
