@@ -167,13 +167,26 @@ private:
 
 			// Remap
 			
-			// Need to reconcile how moments are returned and how
-			// remap expects them - for now create a dummy vector
-			// that conforms to what remap functor expects
+			// RVG - Need to reconcile how moments are returned and
+			// how remap expects them - for now create a dummy vector
+			// that conforms to what remap functor expects assuming
+			// that the intersection of each pair of cells results in
+			// only domain of intersection and that we only care about
+			// the 0th order moments (area)
 
-			std::vector<double> remap_moments(candidates.size(),0.0);			
+			std::vector<double> remap_moments(candidates.size(),0.0);
+			
+			for (int i = 0; i < candidates.size(); ++i) {
+				std::vector< std::vector<double> > & candidate_moments = moments[i];
+				std::vector<double> & piece_moments = candidate_moments[0];
+				remap_moments[i] = piece_moments[0];
+			}
+			
 			std::pair< std::vector<int> const &, std::vector<double> const & >
 					source_cells_and_weights(candidates,remap_moments);
+
+			// Compute the remap value from all the candidate cells and weights
+
 			double remappedValue = (*remap_)(source_cells_and_weights);
 						   
 			return remappedValue;
