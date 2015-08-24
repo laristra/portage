@@ -2,7 +2,6 @@
  * Copyright (c) 2014 Los Alamos National Security, LLC
  * All rights reserved.
  *--------------------------------------------------------------------------~~*/
-
 #include "driver.h"
 
 #include <cstdio>
@@ -10,7 +9,7 @@
 #include <numeric>
 #include <algorithm>
 
-#include "portage/search/search.h"
+#include "portage/search/search_simple.h"
 #include "portage/intersect/intersectClipper.h"
 #include "portage/remap/remap.h"
 
@@ -24,10 +23,10 @@ void Driver::run()
 {
     std::printf("in Driver::run()...\n");
 
-	const Search s(&sourceMesh_, &targetMesh_);
+	const SearchSimple search(&sourceMesh_, &targetMesh_);
 	// Use Angela's new Clipper-based intersector
-	const IntersectClipper i;
-	const Remap r(sourceMesh_, sourceState_, targetMesh_, targetState_);
+	const IntersectClipper intersect;
+	const Remap remap(sourceMesh_, sourceState_, targetMesh_, targetState_);
 
     int numTargetCells = targetMesh_.num_entities(Jali::CELL, Jali::ALL);
 
@@ -41,7 +40,9 @@ void Driver::run()
 	// this will populate newField with the doubles returned from the final remap
 	std::transform(cellIndices.begin(), cellIndices.end(),
 				   newField.begin(),
-				   composerFunctor<Search, IntersectClipper, Remap>(&s, &i, &r, 
+				   composerFunctor<SearchSimple, IntersectClipper, Remap>(&search, 
+																		  &intersect, 
+																		  &remap, 
 																	&sourceMesh_, &targetMesh_,
 																	remap_var_names_[0]));
 	// Add it to the new state
