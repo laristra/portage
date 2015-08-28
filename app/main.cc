@@ -32,7 +32,7 @@ int main(int argc, char** argv)
   Jali::Mesh* targetMesh = mf(0.0, 0.0, 1.0, 1.0, 4, 4);
 
   Portage::State inputState(inputMesh);
-  std::vector<double> inputData = {0.0,1.0,2.0,0.0,2.0,3.0,2.0,3.0,4.0};
+  std::vector<double> inputData = {0.0,1.0,2.0,1.0,2.0,3.0,2.0,3.0,4.0};
   Portage::StateVector & cellvecin = 
       inputState.add("celldata",Jali::CELL,&(inputData[0]));
 
