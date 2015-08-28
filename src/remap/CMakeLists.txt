@@ -5,14 +5,12 @@
 
 # Add header files
 set(remap_HEADERS
-    remap.h
     remap_1st_order.h
     PARENT_SCOPE
 )
 
 # Add source files
 set(remap_SOURCES
-    remap.cc
     remap_1st_order.cc
     PARENT_SCOPE
 )
