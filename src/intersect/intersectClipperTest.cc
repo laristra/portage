@@ -1,4 +1,3 @@
-#include "intersect.h"
 #include "intersectClipper.h"
 #include "gtest/gtest.h"
 TEST(intersectClipper, simple){

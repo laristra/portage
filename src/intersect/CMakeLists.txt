@@ -6,7 +6,6 @@
 # Add header files
 set(intersect_HEADERS
     clipper.hpp
-    intersect.h
     intersectClipper.h
     PARENT_SCOPE
 )
@@ -14,7 +13,6 @@ set(intersect_HEADERS
 # Add source files
 set(intersect_SOURCES
     clipper.cpp
-    intersect.cc
     PARENT_SCOPE
 )
 
