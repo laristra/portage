@@ -23,48 +23,48 @@ void Driver::run()
 {
     std::printf("in Driver::run()...\n");
 
-	const SearchSimple search(&sourceMesh_, &targetMesh_);
-	const IntersectClipper intersect;
+    const SearchSimple search(&sourceMesh_, &targetMesh_);
+    const IntersectClipper intersect;
 
-	// Eventually put this in a loop over remap variable names as well
-	// Assume for now that we are only doing cell-based remap
+    // Eventually put this in a loop over remap variable names as well
+    // Assume for now that we are only doing cell-based remap
 
-	const Remap_1stOrder remap(sourceMesh_, sourceState_, 
-							   remap_var_names_[0], Jali::CELL);
+    const Remap_1stOrder remap(sourceMesh_, sourceState_, 
+                               remap_var_names_[0], Jali::CELL);
 
-	int numTargetCells = targetMesh_.num_entities(Jali::CELL,Jali::OWNED);
-	std::cout << "Number of target cells in target mesh "
-			  << numTargetCells << std::endl;
+    int numTargetCells = targetMesh_.num_entities(Jali::CELL,Jali::OWNED);
+    std::cout << "Number of target cells in target mesh "
+              << numTargetCells << std::endl;
 
 
-	// Ask for a StateVector with the name remap_var_names_[0] to be added to the targetState_. If it is already present, the existing StateVector reference is returned. If its not present, it is added. This logic needs to be reversed. The find function should add it if it is not found (if so requested).
+    // Ask for a StateVector with the name remap_var_names_[0] to be added to the targetState_. If it is already present, the existing StateVector reference is returned. If its not present, it is added. This logic needs to be reversed. The find function should add it if it is not found (if so requested).
 
-	std::vector<double> dummyvals(numTargetCells,0);
-	Portage::StateVector & targetField = 
-			targetState_.add(remap_var_names_[0],Jali::CELL,&(dummyvals[0]));
+    std::vector<double> dummyvals(numTargetCells,0);
+    Portage::StateVector & targetField = 
+            targetState_.add(remap_var_names_[0],Jali::CELL,&(dummyvals[0]));
 
-	// Create a cellIndices vector and populates with a sequence of
-	// ints starting at 0. Will go away when Jali has iterators for
-	// mesh entities
+    // Create a cellIndices vector and populates with a sequence of
+    // ints starting at 0. Will go away when Jali has iterators for
+    // mesh entities
 
-	std::vector<int> cellIndices(numTargetCells);
-	std::iota(cellIndices.begin(), cellIndices.end(), 0);
+    std::vector<int> cellIndices(numTargetCells);
+    std::iota(cellIndices.begin(), cellIndices.end(), 0);
 
-	composerFunctor<SearchSimple, IntersectClipper, Remap_1stOrder> 
-		composer(&search, &intersect, &remap,
-				 &sourceMesh_, &targetMesh_,
-				 remap_var_names_[0]);
+    composerFunctor<SearchSimple, IntersectClipper, Remap_1stOrder> 
+        composer(&search, &intersect, &remap,
+                 &sourceMesh_, &targetMesh_,
+                 remap_var_names_[0]);
 
-	// this populates targetField with the doubles returned from the final remap
-	std::transform(cellIndices.begin(), cellIndices.end(),
-				   targetField.begin(),
-				   composer);
+    // this populates targetField with the doubles returned from the final remap
+    std::transform(cellIndices.begin(), cellIndices.end(),
+                   targetField.begin(),
+                   composer);
 
 #ifdef DEBUG_OUTPUT
-	Portage::State::const_iterator 
-			itc = targetState_.find(remap_var_names_[0], Jali::CELL);
+    Portage::State::const_iterator 
+            itc = targetState_.find(remap_var_names_[0], Jali::CELL);
     Portage::StateVector & stateVector =  *itc;
-	std::cout << stateVector << std::endl; 
+    std::cout << stateVector << std::endl; 
 #endif
 
 } // Driver::run
