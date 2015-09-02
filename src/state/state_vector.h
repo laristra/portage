@@ -29,9 +29,9 @@ class StateVector {
   // Constructors
   
   StateVector(std::string const name, 
-	      Jali::Entity_kind const on_what, 
-	      Jali::Mesh const * const mesh,
-	      double const * const data) : 
+          Jali::Entity_kind const on_what, 
+          Jali::Mesh const * const mesh,
+          double const * const data) : 
       myname_(name), on_what_(on_what), mymesh_(mesh) {
     
     int num = mymesh_->num_entities(on_what,Jali::ALL);

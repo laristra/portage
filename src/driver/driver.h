@@ -37,48 +37,48 @@ class Driver
 {
 public:
   
-	//! Constructor uses established meshes for remap
-	Driver(Jali::Mesh const & sourceMesh,State const & sourceState,
-		   Jali::Mesh const & targetMesh, State & targetState) 
-		: sourceMesh_(sourceMesh), sourceState_(sourceState),
-		  targetMesh_(targetMesh), targetState_(targetState) {}
+    //! Constructor uses established meshes for remap
+    Driver(Jali::Mesh const & sourceMesh,State const & sourceState,
+           Jali::Mesh const & targetMesh, State & targetState) 
+        : sourceMesh_(sourceMesh), sourceState_(sourceState),
+          targetMesh_(targetMesh), targetState_(targetState) {}
   
-	//! Copy constructor (disabled)
-	Driver(const Driver &) = delete;
+    //! Copy constructor (disabled)
+    Driver(const Driver &) = delete;
   
-	//! Assignment operator (disabled)
-	Driver & operator = (const Driver &) = delete;
+    //! Assignment operator (disabled)
+    Driver & operator = (const Driver &) = delete;
   
-	//! Destructor
-	~Driver() {}
+    //! Destructor
+    ~Driver() {}
   
   
-	// Specify the names of the variables to be remapped
+    // Specify the names of the variables to be remapped
 
-	void set_remap_var_names(std::vector<std::string> &remap_var_names_in) {
-		remap_var_names_ = remap_var_names_in;
-	}
+    void set_remap_var_names(std::vector<std::string> &remap_var_names_in) {
+        remap_var_names_ = remap_var_names_in;
+    }
 
-	// Get the names of the variables to be remapped
+    // Get the names of the variables to be remapped
 
-	std::vector<std::string> remap_var_names() {
-		return remap_var_names_;
-	}
+    std::vector<std::string> remap_var_names() {
+        return remap_var_names_;
+    }
 
-	/*!
-	  \brief This method calls the search, intersect, and remap routines
-	  needed to map one mesh to another.
-	*/
-	void run();
+    /*!
+      \brief This method calls the search, intersect, and remap routines
+      needed to map one mesh to another.
+    */
+    void run();
 
 
 private:
   
-	Jali::Mesh const & sourceMesh_;
-	Jali::Mesh const & targetMesh_;
-	State const & sourceState_;
-	State & targetState_;
-	std::vector<std::string> remap_var_names_;
+    Jali::Mesh const & sourceMesh_;
+    Jali::Mesh const & targetMesh_;
+    State const & sourceState_;
+    State & targetState_;
+    std::vector<std::string> remap_var_names_;
 
 }; // class Driver
 
@@ -181,7 +181,7 @@ private:
  *
  * Local Variables:
  * mode:c++
- * indent-tabs-mode:t
+ * indent-tabs-mode:nil
  * c-basic-offset:4
  * tab-width:4
  * End:
