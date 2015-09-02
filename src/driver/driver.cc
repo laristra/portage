@@ -24,18 +24,18 @@ void Driver::run()
     std::printf("in Driver::run()...\n");
 
 	const SearchSimple search(&sourceMesh_, &targetMesh_);
-	const IntersectClipper intersect;
+
+	//Get an instance of the desired intersect algorithm type
+	IntersectClipper<std::vector<JaliGeometry::Point> > intersect = IntersectClipper<std::vector<JaliGeometry::Point> >(pointToXY());
 
 	// Eventually put this in a loop over remap variable names as well
 	// Assume for now that we are only doing cell-based remap
-
 	const Remap_1stOrder remap(sourceMesh_, sourceState_, 
 							   remap_var_names_[0], Jali::CELL);
 
 	int numTargetCells = targetMesh_.num_entities(Jali::CELL,Jali::OWNED);
 	std::cout << "Number of target cells in target mesh "
 			  << numTargetCells << std::endl;
-
 
 	// Ask for a StateVector with the name remap_var_names_[0] to be added to the targetState_. If it is already present, the existing StateVector reference is returned. If its not present, it is added. This logic needs to be reversed. The find function should add it if it is not found (if so requested).
 
@@ -50,7 +50,7 @@ void Driver::run()
 	std::vector<int> cellIndices(numTargetCells);
 	std::iota(cellIndices.begin(), cellIndices.end(), 0);
 
-	composerFunctor<SearchSimple, IntersectClipper, Remap_1stOrder> 
+	composerFunctor<SearchSimple, IntersectClipper<std::vector<JaliGeometry::Point> >, Remap_1stOrder> 
 		composer(&search, &intersect, &remap,
 				 &sourceMesh_, &targetMesh_,
 				 remap_var_names_[0]);

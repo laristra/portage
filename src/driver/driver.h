@@ -20,6 +20,19 @@
 
 namespace Portage {
 
+//This needs to be moved; maybe into Jali?? amh
+//Convert a vector of JaliGeometry::Points to a vector of std::pair
+struct pointToXY
+{
+	pointToXY() { }
+	std::vector<std::pair<double,double> > operator()(const std::vector<JaliGeometry::Point> ptList){    
+		
+		std::vector<std::pair<double, double> > xyList;
+		std::for_each(ptList.begin(), ptList.end(), [&xyList](JaliGeometry::Point pt){xyList.emplace_back(pt.x(), pt.y());});								     
+		return xyList;								    
+	}
+};
+
 class Driver
 {
 public:
@@ -91,14 +104,6 @@ private:
 
 		// CMM: this should probably be somewhere else - perhaps part of Jali?
 		// RVG: The issue here is that this assumes a 2D point 
-		struct pointToXY
-		{
-			pointToXY() { }
-			std::pair<double,double> operator()(const JaliGeometry::Point pt)
-			{
-				return std::make_pair(pt.x(), pt.y());
-			}
-		};
 
 		double operator()(Jali::Entity_ID const targetCellIndex)
 		{
@@ -110,15 +115,9 @@ private:
 			// datastructure.
 			std::vector<JaliGeometry::Point> targetCellPoints;
 			targetMesh_->cell_get_coordinates(targetCellIndex, 
-											  &targetCellPoints);
-			// Convert the Jali Points to (x,y) coordinates
-			std::vector<std::pair<double, double> > 
-				targetCellCoords(targetCellPoints.size());
-			std::transform(targetCellPoints.begin(), targetCellPoints.end(),
-						   targetCellCoords.begin(), pointToXY());
+			 								  &targetCellPoints);
 
-			// Intersect routine wants candidates' node coordinates
-			// First, get the Jali Points for each candidate cells
+			// Get the Jali Points for each candidate cells
 			std::vector<std::vector<JaliGeometry::Point> > 
 				candidateCellsPoints(candidates.size());
 			std::transform(candidates.begin(), candidates.end(),
@@ -133,36 +132,16 @@ private:
 							   return ret;
 						   }
 						   );
-			// Now get the (x,y) coordinates from each Point for each candidate 
-			// cell
-			std::vector<std::vector<std::pair<double, double> > > 
-				candidateCellsCoords(candidates.size());
-			std::transform(candidateCellsPoints.begin(), 
-						   candidateCellsPoints.end(),
-						   candidateCellsCoords.begin(),
-						   [&](std::vector<JaliGeometry::Point> points) ->
-						   std::vector<std::pair<double, double> >
-						   {
-							   std::vector<std::pair<double, double> > 
-								   ret(points.size());
-							   std::transform(points.begin(), points.end(),
-											  ret.begin(),
-											  pointToXY());
-							   return ret;
-						   });
 
-			// Calculate the intersection of each candidate with the target Cell
-			// For each polygon-polygon intersection, IntersectClipper returns a 
-			// std::vector<std::vector<double>>
 			std::vector<std::vector<std::vector<double> > > moments(candidates.size());
 			// CMM: To do a std::transform here instead, we need to use 
 			//      std::tuple's (I think) both here and in 
 			//      IntersectClipper::operator()
-			for (int i = 0; i < candidateCellsCoords.size(); i++)
+			for (int i = 0; i < candidateCellsPoints.size(); i++)
 				{
 					// awkward syntax...
-					moments[i] = (*intersect_)(candidateCellsCoords[i], 
-											   targetCellCoords);
+					moments[i] = (*intersect_)(candidateCellsPoints[i], 
+											   targetCellPoints);
 				}
 
 			// Remap
@@ -192,9 +171,6 @@ private:
 			return remappedValue;
 		}
 	};
-
-
-
 
 } // namespace Portage
 

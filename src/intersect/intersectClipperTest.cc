@@ -1,18 +1,23 @@
 #include "intersect.h"
 #include "intersectClipper.h"
 #include "gtest/gtest.h"
-TEST(intersectClipper, simple){
-  std::vector<std::pair<double, double> > polyA, polyB;
-  polyA.emplace_back(.6,4);
-  polyA.emplace_back(3,4);
-  polyA.emplace_back(3,2);
+#include "Mesh.hh"
+#include "../driver/driver.h"
 
-  polyB.emplace_back(2,5);
-  polyB.emplace_back(4.4,3);
-  polyB.emplace_back(2, 3);
-  
-  IntersectClipper isect;
-  std::vector<std::vector<double> > moments = isect(polyA, polyB); 
+TEST(intersectClipper, simple){
+
+  std::vector<JaliGeometry::Point> cellA;
+  cellA.emplace_back(.6,4);
+  cellA.emplace_back(3,4);
+  cellA.emplace_back(3,2);
+
+  std::vector<JaliGeometry::Point> cellB;
+  cellB.emplace_back(2,5);
+  cellB.emplace_back(4.4,3);
+  cellB.emplace_back(2,3);
+
+  IntersectClipper<std::vector<JaliGeometry::Point> > isect = IntersectClipper<std::vector<JaliGeometry::Point> >(Portage::pointToXY());
+  std::vector<std::vector<double> > moments = isect(cellA, cellB); 
   for(int i=0;i<moments.size();i++){
     for(int j=0;j<moments[i].size();j++){
       std::cout << "i, j, m " << i << ", " << j << ", " << moments[i][j] << std::endl;
@@ -24,20 +29,20 @@ TEST(intersectClipper, simple){
 }
 
 TEST(intersectClipper, convex){
-  std::vector<std::pair<double, double> > polyA, polyB;
-  polyA.emplace_back(2,5);
-  polyA.emplace_back(10.5,5);
-  polyA.emplace_back(10.5, 3.5);
-  polyA.emplace_back(2,3.5);
+  std::vector<JaliGeometry::Point> cellA, cellB;
+  cellA.emplace_back(2,5);
+  cellA.emplace_back(10.5,5);
+  cellA.emplace_back(10.5, 3.5);
+  cellA.emplace_back(2,3.5);
 
-  polyB.emplace_back(2.5,0);
-  polyB.emplace_back(8.5,0);
-  polyB.emplace_back(8.5,5);
-  polyB.emplace_back(5.5,2.5);
-  polyB.emplace_back(2.5,4);
+  cellB.emplace_back(2.5,0);
+  cellB.emplace_back(8.5,0);
+  cellB.emplace_back(8.5,5);
+  cellB.emplace_back(5.5,2.5);
+  cellB.emplace_back(2.5,4);
   
-  IntersectClipper isect;
-  std::vector<std::vector<double> > moments = isect(polyA, polyB); 
+  IntersectClipper<std::vector<JaliGeometry::Point> > isect = IntersectClipper<std::vector<JaliGeometry::Point> >(Portage::pointToXY());
+  std::vector<std::vector<double> > moments = isect(cellA, cellB); 
   for(int i=0;i<moments.size();i++){
     for(int j=0;j<moments[i].size();j++){
       std::cout << "i, j, m " << i << ", " << j << ", " << moments[i][j] << std::endl;

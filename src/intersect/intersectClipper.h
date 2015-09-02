@@ -16,46 +16,54 @@
  * poly [input] 
  * \returns std::vector<double>--area, mx, my
  **/
-std::vector<double> areaAndMomentPolygon(const std::vector<std::pair<double,double>> poly){
-		double area = 0;
-		double cx = 0;
-		double cy = 0;
-		std::vector <double> ret;
-		for (int i=0;i<poly.size()-1;i++){
-			double a = (poly[i].first*poly[i+1].second-poly[i+1].first*poly[i].second);	
-			area+=a;
-			cx+= (poly[i].first+poly[i+1].first)*a;
-			cy+= (poly[i].second+poly[i+1].second)*a;
-		}
-		int lastIndex = poly.size()-1;
-		//close the polygon
-		double a = poly[lastIndex].first*poly[0].second - poly[0].first*poly[lastIndex].second;
-		area+= a;
-		cx+= (poly[lastIndex].first+poly[0].first)*a;
-		cy+= (poly[lastIndex].second+poly[0].second)*a;
-		ret.emplace_back(.5*area);
-		ret.emplace_back(cx/6.);
-		ret.emplace_back(cy/6.);
-		return ret;
+std::vector<double> areaAndMomentPolygon(const std::vector<std::pair<double,double> > poly){
+	double area = 0;
+	double cx = 0;
+	double cy = 0;
+	std::vector <double> ret;
+	for (int i=0;i<poly.size()-1;i++){
+		double a = (poly[i].first*poly[i+1].second-poly[i+1].first*poly[i].second);	
+		area+=a;
+		cx+= (poly[i].first+poly[i+1].first)*a;
+		cy+= (poly[i].second+poly[i+1].second)*a;
 	}
+	int lastIndex = poly.size()-1;
+	//close the polygon
+	double a = poly[lastIndex].first*poly[0].second - poly[0].first*poly[lastIndex].second;
+	area+= a;
+	cx+= (poly[lastIndex].first+poly[0].first)*a;
+	cy+= (poly[lastIndex].second+poly[0].second)*a;
+	ret.emplace_back(.5*area);
+	ret.emplace_back(cx/6.);
+	ret.emplace_back(cy/6.);
+	return ret;
+}
 
 /*!
-  \class Intersect intersect.h
-  \brief Intersect provides...
+ * \class IntersectClipper <typename C> 2-D intersection algorithm for arbitrary convex and non-convex polyhedra
+ * \brief The intersect class is templated on a cell type.  You must provide a method to convert the template cells to an IntersectClipper::Poly.  
 */
 
-class IntersectClipper
+template <typename C> class IntersectClipper
 {
 
 public:
-	//amh: TODO look up typedef behavior
-	typedef std::pair<double, double> Point; //amh: Change to more efficient data structure! 
+	typedef std::pair<double, double> Point; 
 	typedef std::vector<Point> Poly; 
 	//Provide volume and centroid
 	typedef std::pair<double, Point> Moment;
 
-	//amh: what's wrong with having this const?
-	std::vector<std::vector<double> > operator() (const Poly &polyA, const Poly &polyB) const {      
+	template <typename F> IntersectClipper(F getXYcoords): getXYcoords(getXYcoords) {}
+
+	/*! \brief Intersect two cells and return the first two moments.
+	 * \param[in] cellA first cell to intersect
+	 * \param[in] cellB second cell to intersect
+	 * \return list of moments; ret[0] == 0th moment; ret[1] == first moment
+	 */
+
+	std::vector<std::vector<double> > operator() (const C &cellA, const C &cellB) const {      
+		Poly polyA = getXYcoords(cellA);
+		Poly polyB = getXYcoords(cellB);
 		double max_size_poly = 0;
 		max_size_poly = IntersectClipper::updateMaxSize(polyA, max_size_poly);
 		max_size_poly = IntersectClipper::updateMaxSize(polyB, max_size_poly);
@@ -154,6 +162,8 @@ private:
 		return intpoly;
 	}
 	
+private:
+	std::function<Poly(const C&)> getXYcoords;
 
 }; // class IntersectClipper
 
