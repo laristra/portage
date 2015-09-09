@@ -20,6 +20,31 @@
 
 namespace Portage {
 
+//This needs to be moved; maybe into Jali?? amh
+//Convert a vector of JaliGeometry::Points to a vector of std::pair
+struct pointsToXY
+{
+	pointsToXY() { }
+	std::vector<std::pair<double,double> > operator()(const std::vector<JaliGeometry::Point> ptList){    
+		std::vector<std::pair<double, double> > xyList;
+		std::for_each(ptList.begin(), ptList.end(), [&xyList](JaliGeometry::Point pt){xyList.emplace_back(pt.x(), pt.y());});								     
+		return xyList;
+	}
+};
+
+struct cellToXY
+{
+    Jali::Mesh const *mesh;
+    cellToXY(const Jali::Mesh* mesh):mesh(mesh){}
+    std::vector<std::pair<double, double> > operator()(const Jali::Entity_ID cellID){
+        // Get the Jali Points for each candidate cells
+        std::vector<JaliGeometry::Point> cellPoints;
+        mesh->cell_get_coordinates(cellID, &cellPoints);
+        //Change to XY coords for clipper
+        return pointsToXY()(cellPoints);
+    }
+};
+
 class Driver
 {
 public:
@@ -69,132 +94,65 @@ private:
 
 }; // class Driver
 
-    // This functor is used inside a std::transform inside Driver::run
-    template <typename SearchType, typename IsectType, typename RemapType>
-    struct composerFunctor
-    {
-        const SearchType* search_;
-        const IsectType* intersect_;
-        const RemapType* remap_;
-        // CMM: These seem redundant with Driver...
-        const Jali::Mesh* sourceMesh_;
-        const Jali::Mesh* targetMesh_;
-        const std::string remap_var_name_;
-        //----------------------------------------
-        composerFunctor(const SearchType* s, const IsectType* i, 
-                        const RemapType* r,
-                        const Jali::Mesh* sourceMesh, 
-                        const Jali::Mesh* targetMesh,
-                        const std::string remap_var_name)
-            : search_(s), intersect_(i), remap_(r), sourceMesh_(sourceMesh), 
-              targetMesh_(targetMesh), remap_var_name_(remap_var_name) { }
+	// This functor is used inside a std::transform inside Driver::run
+	template <typename SearchType, typename IsectType, typename RemapType>
+	struct composerFunctor
+	{
+		const SearchType* search_;
+		const IsectType* intersect_;
+		const RemapType* remap_;
+		// CMM: These seem redundant with Driver...
+		const Jali::Mesh* sourceMesh_;
+		const Jali::Mesh* targetMesh_;
+		const std::string remap_var_name_;
+		//----------------------------------------
+		composerFunctor(const SearchType* s, const IsectType* i, 
+						const RemapType* r,
+						const Jali::Mesh* sourceMesh, 
+						const Jali::Mesh* targetMesh,
+						const std::string remap_var_name)
+			: search_(s), intersect_(i), remap_(r), sourceMesh_(sourceMesh), 
+			  targetMesh_(targetMesh), remap_var_name_(remap_var_name) { }
 
-        // CMM: this should probably be somewhere else - perhaps part of Jali?
-        // RVG: The issue here is that this assumes a 2D point 
-        struct pointToXY
-        {
-            pointToXY() { }
-            std::pair<double,double> operator()(const JaliGeometry::Point pt)
-            {
-                return std::make_pair(pt.x(), pt.y());
+
+		double operator()(Jali::Entity_ID const targetCellIndex)
+		{
+			// Search for candidates and return their cells indices
+			Jali::Entity_ID_List candidates;
+			search_->search(targetCellIndex, &candidates);
+
+			std::vector<std::vector<std::vector<double> > > moments(candidates.size());
+            for (int i=0;i<candidates.size();i++){
+                moments[i] = (*intersect_)(candidates[i], targetCellIndex);             
             }
-        };
 
-        double operator()(Jali::Entity_ID const targetCellIndex)
-        {
-            // Search for candidates and return their cell indices
-            Jali::Entity_ID_List candidates;
-            search_->search(targetCellIndex, &candidates);
+			// Remap
+			
+			// RVG - Need to reconcile how moments are returned and
+			// how remap expects them - for now create a dummy vector
+			// that conforms to what remap functor expects assuming
+			// that the intersection of each pair of cells results in
+			// only domain of intersection and that we only care about
+			// the 0th order moments (area)
 
-            // Get the target cell's (x,y) coordinates from the Jali Point 
-            // datastructure.
-            std::vector<JaliGeometry::Point> targetCellPoints;
-            targetMesh_->cell_get_coordinates(targetCellIndex, 
-                                              &targetCellPoints);
-            // Convert the Jali Points to (x,y) coordinates
-            std::vector<std::pair<double, double> > 
-                targetCellCoords(targetCellPoints.size());
-            std::transform(targetCellPoints.begin(), targetCellPoints.end(),
-                           targetCellCoords.begin(), pointToXY());
+			std::vector<double> remap_moments(candidates.size(),0.0);
+			for (int i = 0; i < candidates.size(); ++i) {
+				std::vector< std::vector<double> > & candidate_moments = moments[i];
+                // BUG: candidate_moments might be empty; sum over it? amh
+				std::vector<double> & piece_moments = candidate_moments[0];
+				remap_moments[i] = piece_moments[0];
+			}
 
-            // Intersect routine wants candidates' node coordinates
-            // First, get the Jali Points for each candidate cells
-            std::vector<std::vector<JaliGeometry::Point> > 
-                candidateCellsPoints(candidates.size());
-            std::transform(candidates.begin(), candidates.end(),
-                           candidateCellsPoints.begin(),
-                           // given a candidate cell, get its Points
-                           [&](Jali::Entity_ID candidateCellIndex) 
-                           -> std::vector<JaliGeometry::Point>
-                           {
-                               std::vector<JaliGeometry::Point> ret;
-                               sourceMesh_->cell_get_coordinates(candidateCellIndex, 
-                                                                 &ret);
-                               return ret;
-                           }
-                           );
-            // Now get the (x,y) coordinates from each Point for each candidate 
-            // cell
-            std::vector<std::vector<std::pair<double, double> > > 
-                candidateCellsCoords(candidates.size());
-            std::transform(candidateCellsPoints.begin(), 
-                           candidateCellsPoints.end(),
-                           candidateCellsCoords.begin(),
-                           [&](std::vector<JaliGeometry::Point> points) ->
-                           std::vector<std::pair<double, double> >
-                           {
-                               std::vector<std::pair<double, double> > 
-                                   ret(points.size());
-                               std::transform(points.begin(), points.end(),
-                                              ret.begin(),
-                                              pointToXY());
-                               return ret;
-                           });
+			std::pair< std::vector<int> const &, std::vector<double> const & >
+					source_cells_and_weights(candidates,remap_moments);
 
-            // Calculate the intersection of each candidate with the target Cell
-            // For each polygon-polygon intersection, IntersectClipper returns a 
-            // std::vector<std::vector<double>>
-            std::vector<std::vector<std::vector<double> > > moments(candidates.size());
-            // CMM: To do a std::transform here instead, we need to use 
-            //      std::tuple's (I think) both here and in 
-            //      IntersectClipper::operator()
-            for (int i = 0; i < candidateCellsCoords.size(); i++)
-                {
-                    // awkward syntax...
-                    moments[i] = (*intersect_)(candidateCellsCoords[i], 
-                                               targetCellCoords);
-                }
+			// Compute the remap value from all the candidate cells and weights
 
-            // Remap
-            
-            // RVG - Need to reconcile how moments are returned and
-            // how remap expects them - for now create a dummy vector
-            // that conforms to what remap functor expects assuming
-            // that the intersection of each pair of cells results in
-            // only domain of intersection and that we only care about
-            // the 0th order moments (area)
+			double remappedValue = (*remap_)(source_cells_and_weights);
 
-            std::vector<double> remap_moments(candidates.size(),0.0);
-            
-            for (int i = 0; i < candidates.size(); ++i) {
-                std::vector< std::vector<double> > & candidate_moments = moments[i];
-                std::vector<double> & piece_moments = candidate_moments[0];
-                remap_moments[i] = piece_moments[0];
-            }
-            
-            std::pair< std::vector<int> const &, std::vector<double> const & >
-                    source_cells_and_weights(candidates,remap_moments);
-
-            // Compute the remap value from all the candidate cells and weights
-
-            double remappedValue = (*remap_)(source_cells_and_weights);
-                           
-            return remappedValue;
-        }
-    };
-
-
-
+			return remappedValue;
+		}
+	};
 
 } // namespace Portage
 
