@@ -114,8 +114,6 @@ private:
 			: search_(s), intersect_(i), remap_(r), sourceMesh_(sourceMesh), 
 			  targetMesh_(targetMesh), remap_var_name_(remap_var_name) { }
 
-		// CMM: this should probably be somewhere else - perhaps part of Jali?
-		// RVG: The issue here is that this assumes a 2D point 
 
 		double operator()(Jali::Entity_ID const targetCellIndex)
 		{
