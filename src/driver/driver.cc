@@ -26,7 +26,7 @@ void Driver::run()
 	const SearchSimple search(&sourceMesh_, &targetMesh_);
 
 	//Get an instance of the desired intersect algorithm type
-	IntersectClipper<std::vector<JaliGeometry::Point> > intersect = IntersectClipper<std::vector<JaliGeometry::Point> >(pointToXY());
+	IntersectClipper<Jali::Entity_ID> intersect{cellToXY(&sourceMesh_), cellToXY(&targetMesh_)};
 
 	// Eventually put this in a loop over remap variable names as well
 	// Assume for now that we are only doing cell-based remap
@@ -50,7 +50,7 @@ void Driver::run()
     std::vector<int> cellIndices(numTargetCells);
     std::iota(cellIndices.begin(), cellIndices.end(), 0);
 
-	composerFunctor<SearchSimple, IntersectClipper<std::vector<JaliGeometry::Point> >, Remap_1stOrder> 
+	composerFunctor<SearchSimple, IntersectClipper<Jali::Entity_ID >, Remap_1stOrder> 
 		composer(&search, &intersect, &remap,
 				 &sourceMesh_, &targetMesh_,
 				 remap_var_names_[0]);

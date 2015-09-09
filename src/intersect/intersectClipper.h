@@ -44,7 +44,7 @@ std::vector<double> areaAndMomentPolygon(const std::vector<std::pair<double,doub
  * \brief The intersect class is templated on a cell type.  You must provide a method to convert the template cells to an IntersectClipper::Poly.  
  */
 
-template <typename C> class IntersectClipper
+template <typename SCell, typename TCell=SCell> class IntersectClipper
 {
 
 public:
@@ -53,7 +53,7 @@ public:
     //Provide volume and centroid
     typedef std::pair<double, Point> Moment;
 
-    template <typename F> IntersectClipper(F getXYcoords): getXYcoords(getXYcoords) {}
+    template <typename SFunction, typename TFunction> IntersectClipper(SFunction getSXYcoords, TFunction getTXYcoords): getSXYcoords(getSXYcoords), getTXYcoords(getTXYcoords) {}
 
     /*! \brief Intersect two cells and return the first two moments.
      * \param[in] cellA first cell to intersect
@@ -61,9 +61,9 @@ public:
      * \return list of moments; ret[0] == 0th moment; ret[1] == first moment
      */
 
-    std::vector<std::vector<double> > operator() (const C &cellA, const C &cellB) const {      
-        Poly polyA = getXYcoords(cellA);
-        Poly polyB = getXYcoords(cellB);
+    std::vector<std::vector<double> > operator() (const SCell &cellA, const TCell &cellB) const {      
+        Poly polyA = getSXYcoords(cellA);
+        Poly polyB = getTXYcoords(cellB);
         double max_size_poly = 0;
         max_size_poly = IntersectClipper::updateMaxSize(polyA, max_size_poly);
         max_size_poly = IntersectClipper::updateMaxSize(polyB, max_size_poly);
@@ -161,7 +161,8 @@ private:
     }
   
 private:
-    std::function<Poly(const C&)> getXYcoords;
+    std::function<Poly(const SCell&)> getSXYcoords;
+    std::function<Poly(const TCell&)> getTXYcoords;
 
 }; // class IntersectClipper
 

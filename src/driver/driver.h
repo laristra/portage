@@ -22,15 +22,27 @@ namespace Portage {
 
 //This needs to be moved; maybe into Jali?? amh
 //Convert a vector of JaliGeometry::Points to a vector of std::pair
-struct pointToXY
+struct pointsToXY
 {
-	pointToXY() { }
+	pointsToXY() { }
 	std::vector<std::pair<double,double> > operator()(const std::vector<JaliGeometry::Point> ptList){    
-		
 		std::vector<std::pair<double, double> > xyList;
 		std::for_each(ptList.begin(), ptList.end(), [&xyList](JaliGeometry::Point pt){xyList.emplace_back(pt.x(), pt.y());});								     
-		return xyList;								    
+		return xyList;
 	}
+};
+
+struct cellToXY
+{
+    Jali::Mesh const *mesh;
+    cellToXY(const Jali::Mesh* mesh):mesh(mesh){}
+    std::vector<std::pair<double, double> > operator()(const Jali::Entity_ID cellID){
+        // Get the Jali Points for each candidate cells
+        std::vector<JaliGeometry::Point> cellPoints;
+        mesh->cell_get_coordinates(cellID, &cellPoints);
+        //Change to XY coords for clipper
+        return pointsToXY()(cellPoints);
+    }
 };
 
 class Driver
@@ -107,42 +119,14 @@ private:
 
 		double operator()(Jali::Entity_ID const targetCellIndex)
 		{
-			// Search for candidates and return their cell indices
+			// Search for candidates and return their cells indices
 			Jali::Entity_ID_List candidates;
 			search_->search(targetCellIndex, &candidates);
 
-			// Get the target cell's (x,y) coordinates from the Jali Point 
-			// datastructure.
-			std::vector<JaliGeometry::Point> targetCellPoints;
-			targetMesh_->cell_get_coordinates(targetCellIndex, 
-			 								  &targetCellPoints);
-
-			// Get the Jali Points for each candidate cells
-			std::vector<std::vector<JaliGeometry::Point> > 
-				candidateCellsPoints(candidates.size());
-			std::transform(candidates.begin(), candidates.end(),
-						   candidateCellsPoints.begin(),
-						   // given a candidate cell, get its Points
-						   [&](Jali::Entity_ID candidateCellIndex) 
-						   -> std::vector<JaliGeometry::Point>
-						   {
-							   std::vector<JaliGeometry::Point> ret;
-							   sourceMesh_->cell_get_coordinates(candidateCellIndex, 
-																 &ret);
-							   return ret;
-						   }
-						   );
-
 			std::vector<std::vector<std::vector<double> > > moments(candidates.size());
-			// CMM: To do a std::transform here instead, we need to use 
-			//      std::tuple's (I think) both here and in 
-			//      IntersectClipper::operator()
-			for (int i = 0; i < candidateCellsPoints.size(); i++)
-				{
-					// awkward syntax...
-					moments[i] = (*intersect_)(candidateCellsPoints[i], 
-											   targetCellPoints);
-				}
+            for (int i=0;i<candidates.size();i++){
+                moments[i] = (*intersect_)(candidates[i], targetCellIndex);             
+            }
 
 			// Remap
 			
@@ -154,20 +138,20 @@ private:
 			// the 0th order moments (area)
 
 			std::vector<double> remap_moments(candidates.size(),0.0);
-			
 			for (int i = 0; i < candidates.size(); ++i) {
 				std::vector< std::vector<double> > & candidate_moments = moments[i];
+                // BUG: candidate_moments might be empty; sum over it? amh
 				std::vector<double> & piece_moments = candidate_moments[0];
 				remap_moments[i] = piece_moments[0];
 			}
-			
+
 			std::pair< std::vector<int> const &, std::vector<double> const & >
 					source_cells_and_weights(candidates,remap_moments);
 
 			// Compute the remap value from all the candidate cells and weights
 
 			double remappedValue = (*remap_)(source_cells_and_weights);
-						   
+
 			return remappedValue;
 		}
 	};
