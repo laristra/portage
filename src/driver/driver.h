@@ -10,8 +10,9 @@
 #include<vector>
 #include<iterator>
 
-#include "Mesh.hh"
+#include "Mesh.hh"   // Jali mesh header
 #include "portage/state/state.h"
+#include "portage/wrappers/mesh/jali/jali_mesh_wrapper.h"
 
 /*!
     \class Driver driver.h
@@ -20,40 +21,20 @@
 
 namespace Portage {
 
-//This needs to be moved; maybe into Jali?? amh
-//Convert a vector of JaliGeometry::Points to a vector of std::pair
-struct pointsToXY
-{
-	pointsToXY() { }
-	std::vector<std::pair<double,double> > operator()(const std::vector<JaliGeometry::Point> ptList){    
-		std::vector<std::pair<double, double> > xyList;
-		std::for_each(ptList.begin(), ptList.end(), [&xyList](JaliGeometry::Point pt){xyList.emplace_back(pt.x(), pt.y());});								     
-		return xyList;
-	}
-};
-
-struct cellToXY
-{
-    Jali::Mesh const *mesh;
-    cellToXY(const Jali::Mesh* mesh):mesh(mesh){}
-    std::vector<std::pair<double, double> > operator()(const Jali::Entity_ID cellID){
-        // Get the Jali Points for each candidate cells
-        std::vector<JaliGeometry::Point> cellPoints;
-        mesh->cell_get_coordinates(cellID, &cellPoints);
-        //Change to XY coords for clipper
-        return pointsToXY()(cellPoints);
-    }
-};
-
 class Driver
 {
-public:
+  public:
   
     //! Constructor uses established meshes for remap
-    Driver(Jali::Mesh const & sourceMesh,State const & sourceState,
+    Driver(Jali::Mesh const & sourceMesh, State const & sourceState,
            Jali::Mesh const & targetMesh, State & targetState) 
-        : sourceMesh_(sourceMesh), sourceState_(sourceState),
-          targetMesh_(targetMesh), targetState_(targetState) {}
+            : source_mesh_wrapper_(Jali_Mesh_Wrapper(sourceMesh)), 
+              sourceMesh_(sourceMesh),
+              sourceState_(sourceState),
+              target_mesh_wrapper_(Jali_Mesh_Wrapper(targetMesh)), 
+              targetMesh_(targetMesh),
+              targetState_(targetState) 
+    {}
   
     //! Copy constructor (disabled)
     Driver(const Driver &) = delete;
@@ -86,6 +67,8 @@ public:
 
 private:
   
+    Jali_Mesh_Wrapper  const & source_mesh_wrapper_;
+    Jali_Mesh_Wrapper const & target_mesh_wrapper_;
     Jali::Mesh const & sourceMesh_;
     Jali::Mesh const & targetMesh_;
     State const & sourceState_;
@@ -94,31 +77,31 @@ private:
 
 }; // class Driver
 
-	// This functor is used inside a std::transform inside Driver::run
-	template <typename SearchType, typename IsectType, typename RemapType>
-	struct composerFunctor
-	{
-		const SearchType* search_;
+// This functor is used inside a std::transform inside Driver::run
+template <typename SearchType, typename IsectType, typename RemapType,
+          typename SourceMeshWrapper, typename TargetMeshWrapper>
+struct composerFunctor
+{
+        const SearchType* search_;
 		const IsectType* intersect_;
 		const RemapType* remap_;
-		// CMM: These seem redundant with Driver...
-		const Jali::Mesh* sourceMesh_;
-		const Jali::Mesh* targetMesh_;
+		const SourceMeshWrapper & sourceMesh_;
+		const TargetMeshWrapper & targetMesh_;
 		const std::string remap_var_name_;
 		//----------------------------------------
 		composerFunctor(const SearchType* s, const IsectType* i, 
 						const RemapType* r,
-						const Jali::Mesh* sourceMesh, 
-						const Jali::Mesh* targetMesh,
+						const SourceMeshWrapper & sourceMesh, 
+						const TargetMeshWrapper & targetMesh,
 						const std::string remap_var_name)
 			: search_(s), intersect_(i), remap_(r), sourceMesh_(sourceMesh), 
 			  targetMesh_(targetMesh), remap_var_name_(remap_var_name) { }
 
 
-		double operator()(Jali::Entity_ID const targetCellIndex)
+		double operator()(int const targetCellIndex)
 		{
 			// Search for candidates and return their cells indices
-			Jali::Entity_ID_List candidates;
+            std::vector<int> candidates;
 			search_->search(targetCellIndex, &candidates);
 
 			std::vector<std::vector<std::vector<double> > > moments(candidates.size());

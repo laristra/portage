@@ -12,10 +12,9 @@
 #include "portage/search/search_simple.h"
 #include "portage/intersect/intersectClipper.h"
 #include "portage/remap/remap_1st_order.h"
+#include "portage/wrappers/mesh/jali/jali_mesh_wrapper.h"
 
 #include "Mesh.hh"
-#include "MeshFactory.hh"
-
 
 namespace Portage {
 
@@ -23,7 +22,8 @@ void Driver::run()
 {
     std::printf("in Driver::run()...\n");
 
-	const SearchSimple search(&sourceMesh_, &targetMesh_);
+	const SearchSimple<Jali_Mesh_Wrapper,Jali_Mesh_Wrapper> 
+            search(&source_mesh_wrapper_, &target_mesh_wrapper_);
 
 	//Get an instance of the desired intersect algorithm type
 	IntersectClipper<Jali::Entity_ID> intersect{cellToXY(&sourceMesh_), cellToXY(&targetMesh_)};
@@ -50,9 +50,11 @@ void Driver::run()
     std::vector<int> cellIndices(numTargetCells);
     std::iota(cellIndices.begin(), cellIndices.end(), 0);
 
-	composerFunctor<SearchSimple, IntersectClipper<Jali::Entity_ID >, Remap_1stOrder> 
+	composerFunctor<SearchSimple<Jali_Mesh_Wrapper,Jali_Mesh_Wrapper>, 
+                    IntersectClipper<Jali::Entity_ID >, Remap_1stOrder, 
+                    Jali_Mesh_Wrapper, Jali_Mesh_Wrapper> 
 		composer(&search, &intersect, &remap,
-				 &sourceMesh_, &targetMesh_,
+				 source_mesh_wrapper_, target_mesh_wrapper_,
 				 remap_var_names_[0]);
 
     // this populates targetField with the doubles returned from the final remap
