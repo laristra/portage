@@ -25,13 +25,15 @@ class Jali_Mesh_Wrapper {
 
   //! Constructor
   Jali_Mesh_Wrapper(Jali::Mesh const & mesh) : 
-      mesh_(mesh) 
+      jali_mesh_(mesh) 
   {}
 
-  //! Copy constructor (disabled)
-  Jali_Mesh_Wrapper(Jali_Mesh_Wrapper const &) = delete;
+  //! Copy constructor
+  Jali_Mesh_Wrapper(Jali_Mesh_Wrapper const & inmesh) : 
+      jali_mesh_(inmesh.jali_mesh_) 
+  {}
 
-  //! Assignment operator (disabled)
+  //! Assignment operator (disabled) - don't know how to implement (RVG)
   Jali_Mesh_Wrapper & operator=(Jali_Mesh_Wrapper const &) = delete;
   
   //! Empty destructor 
@@ -39,23 +41,23 @@ class Jali_Mesh_Wrapper {
   
   //! Number of owned cells in the mesh
   int num_owned_cells() const {
-    return mesh_.num_entities(Jali::CELL, Jali::OWNED);
+    return jali_mesh_.num_entities(Jali::CELL, Jali::OWNED);
   }
 
   //! Number of ghost cells in the mesh
   int num_ghost_cells() const {
-    return mesh_.num_entities(Jali::CELL, Jali::GHOST);
+    return jali_mesh_.num_entities(Jali::CELL, Jali::GHOST);
   }
 
   //! Get list of nodes for a cell
   void cell_get_nodes(int cellid, std::vector<int> *nodes) const {
-    mesh_.cell_get_nodes(cellid, nodes);
+    jali_mesh_.cell_get_nodes(cellid, nodes);
   }
 
   //! 1D version of coords of a node
   void node_get_coordinates(int const nodeid, double *x) const {
     JaliGeometry::Point p;
-    mesh_.node_get_coordinates(nodeid, &p);
+    jali_mesh_.node_get_coordinates(nodeid, &p);
     assert(p.dim() == 1);
     *x = p[0];
   }
@@ -64,7 +66,7 @@ class Jali_Mesh_Wrapper {
   void node_get_coordinates(int const nodeid, 
                             std::pair<double,double> *xy) const {
     JaliGeometry::Point p;
-    mesh_.node_get_coordinates(nodeid, &p);
+    jali_mesh_.node_get_coordinates(nodeid, &p);
     assert(p.dim() == 2);
     xy->first = p[0];
     xy->second = p[1];
@@ -74,7 +76,7 @@ class Jali_Mesh_Wrapper {
   void node_get_coordinates(int const nodeid, 
                             std::tuple<double,double,double> *xyz) const {
     JaliGeometry::Point p;
-    mesh_.node_get_coordinates(nodeid, &p);
+    jali_mesh_.node_get_coordinates(nodeid, &p);
     assert(p.dim() == 3);
     std::get<0>(*xyz) = p[0];
     std::get<1>(*xyz) = p[1];
@@ -84,10 +86,10 @@ class Jali_Mesh_Wrapper {
   //! 1D version of coords of nodes of a cell
 
   void cell_get_coordinates(int const cellid, std::vector<double> *xlist) const {
-    assert(mesh_.space_dimension() == 1);
+    assert(jali_mesh_.space_dimension() == 1);
 
     std::vector<JaliGeometry::Point> plist;
-    mesh_.cell_get_coordinates(cellid, &plist);
+    jali_mesh_.cell_get_coordinates(cellid, &plist);
 
     // should convert to a std::for_each or std::transform
     xlist->resize(plist.size());
@@ -105,10 +107,10 @@ class Jali_Mesh_Wrapper {
 
   void cell_get_coordinates(int const cellid, 
                             std::vector<std::pair<double,double> > *xylist) const {
-    assert(mesh_.space_dimension() == 2);
+    assert(jali_mesh_.space_dimension() == 2);
 
     std::vector<JaliGeometry::Point> plist;
-    mesh_.cell_get_coordinates(cellid, &plist);
+    jali_mesh_.cell_get_coordinates(cellid, &plist);
 
     // should convert to a std::for_each or std::transform
     xylist->resize(plist.size());
@@ -126,10 +128,10 @@ class Jali_Mesh_Wrapper {
 
   void cell_get_coordinates(int const cellid, 
                             std::vector<std::tuple<double,double,double> > *xyzlist) const {
-    assert(mesh_.space_dimension() == 3);
+    assert(jali_mesh_.space_dimension() == 3);
 
     std::vector<JaliGeometry::Point> plist;
-    mesh_.cell_get_coordinates(cellid, &plist);
+    jali_mesh_.cell_get_coordinates(cellid, &plist);
 
     // should convert to a std::for_each or std::transform
 
@@ -146,32 +148,32 @@ class Jali_Mesh_Wrapper {
   }
 
  private:
-  Jali::Mesh const & mesh_;
+  Jali::Mesh const & jali_mesh_;
 
 }; // class Jali_Mesh_Wrapper
 
 
 struct pointsToXY
 {
-	pointsToXY() { }
-	std::vector<std::pair<double,double> > operator()(const std::vector<JaliGeometry::Point> ptList){    
-		std::vector<std::pair<double, double> > xyList;
-		std::for_each(ptList.begin(), ptList.end(), [&xyList](JaliGeometry::Point pt){xyList.emplace_back(pt.x(), pt.y());});								     
-		return xyList;
-	}
+  pointsToXY() { }
+  std::vector<std::pair<double,double> > operator()(const std::vector<JaliGeometry::Point> ptList){    
+    std::vector<std::pair<double, double> > xyList;
+    std::for_each(ptList.begin(), ptList.end(), [&xyList](JaliGeometry::Point pt){xyList.emplace_back(pt.x(), pt.y());});								     
+    return xyList;
+  }
 };
 
 struct cellToXY
 {
-    Jali::Mesh const *mesh;
-    cellToXY(const Jali::Mesh* mesh):mesh(mesh){}
-    std::vector<std::pair<double, double> > operator()(const Jali::Entity_ID cellID){
-        // Get the Jali Points for each candidate cells
-        std::vector<JaliGeometry::Point> cellPoints;
-        mesh->cell_get_coordinates(cellID, &cellPoints);
-        //Change to XY coords for clipper
-        return pointsToXY()(cellPoints);
-    }
+  Jali::Mesh const *mesh;
+  cellToXY(const Jali::Mesh* mesh):mesh(mesh){}
+  std::vector<std::pair<double, double> > operator()(const Jali::Entity_ID cellID){
+    // Get the Jali Points for each candidate cells
+    std::vector<JaliGeometry::Point> cellPoints;
+    mesh->cell_get_coordinates(cellID, &cellPoints);
+    //Change to XY coords for clipper
+    return pointsToXY()(cellPoints);
+  }
 };
 
 #endif // JALI_MESH_WRAPPER_H_
