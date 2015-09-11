@@ -19,7 +19,7 @@ namespace { // unnamed
 
 template<typename MeshWrapper>
 void getBoundingBox(
-    const MeshWrapper *mesh,
+    const MeshWrapper & mesh,
     const std::vector<int>& nodes,
     double* xlow, double* xhigh,
     double* ylow, double* yhigh)
@@ -30,7 +30,7 @@ void getBoundingBox(
 
     for (int n = 0; n < nodes.size(); ++n) {
         std::pair<double,double> p;
-        mesh->node_get_coordinates(nodes[n],&p);
+        mesh.node_get_coordinates(nodes[n],&p);
         double x = p.first;
         double y = p.second;
         xl = std::min(xl, x);  xh = std::max(xh, x);
@@ -66,8 +66,8 @@ class SearchSimple {
 
     */
 
-    SearchSimple(const SourceMeshWrapper* source_mesh, 
-                 const TargetMeshWrapper* target_mesh);
+    SearchSimple(const SourceMeshWrapper & source_mesh, 
+                 const TargetMeshWrapper & target_mesh);
 
     //! Copy constructor (disabled)
     SearchSimple(const SearchSimple &) = delete;
@@ -89,8 +89,8 @@ class SearchSimple {
   private:
 
     // Aggregate data members
-    const SourceMeshWrapper *sourceMesh_;
-    const TargetMeshWrapper *targetMesh_;
+    const SourceMeshWrapper & sourceMesh_;
+    const TargetMeshWrapper & targetMesh_;
     double* xlow_;
     double* xhigh_;
     double* ylow_;
@@ -103,11 +103,11 @@ class SearchSimple {
 
 template<typename SourceMeshWrapper, typename TargetMeshWrapper>
 SearchSimple<SourceMeshWrapper,TargetMeshWrapper>::
-SearchSimple(const SourceMeshWrapper* source_mesh,
-             const TargetMeshWrapper* target_mesh)
+SearchSimple(const SourceMeshWrapper & source_mesh,
+             const TargetMeshWrapper & target_mesh)
         : sourceMesh_(source_mesh), targetMesh_(target_mesh)  {
 
-    int numCells = sourceMesh_->num_owned_cells() + sourceMesh_->num_ghost_cells();
+    int numCells = sourceMesh_.num_owned_cells() + sourceMesh_.num_ghost_cells();
     xlow_  = new double[numCells];
     xhigh_ = new double[numCells];
     ylow_  = new double[numCells];
@@ -116,7 +116,7 @@ SearchSimple(const SourceMeshWrapper* source_mesh,
     // find bounding boxes for all cells
     for (int c = 0; c < numCells; ++c) {
         std::vector<int> nodes;
-        sourceMesh_->cell_get_nodes(c,&nodes);
+        sourceMesh_.cell_get_nodes(c,&nodes);
         getBoundingBox<SourceMeshWrapper>(sourceMesh_, nodes,
                 &xlow_[c], &xhigh_[c], &ylow_[c], &yhigh_[c]);
     }
@@ -139,14 +139,14 @@ search(const int cellId, std::vector<int> *candidates)
 const {
     // find bounding box for target cell
     std::vector<int> nodes;
-    targetMesh_->cell_get_nodes(cellId,&nodes);
+    targetMesh_.cell_get_nodes(cellId,&nodes);
     double txlow, txhigh, tylow, tyhigh;
     getBoundingBox<TargetMeshWrapper>(targetMesh_, nodes, &txlow, &txhigh, &tylow, &tyhigh);
     
     // now see which sourceMesh cells have bounding boxes overlapping
     // with target cell
     // do a naive linear search
-    int numCells = sourceMesh_->num_owned_cells() + sourceMesh_->num_ghost_cells();
+    int numCells = sourceMesh_.num_owned_cells() + sourceMesh_.num_ghost_cells();
     for (int c = 0; c < numCells; ++c) {
         if (std::max(txlow, xlow_[c]) < std::min(txhigh, xhigh_[c]) &&
                 std::max(tylow, ylow_[c]) < std::min(tyhigh, yhigh_[c])) {
