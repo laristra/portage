@@ -23,7 +23,7 @@ void Driver::run()
     std::printf("in Driver::run()...\n");
 
 	const SearchSimple<Jali_Mesh_Wrapper,Jali_Mesh_Wrapper> 
-            search(&source_mesh_wrapper_, &target_mesh_wrapper_);
+            search(source_mesh_wrapper_, target_mesh_wrapper_);
 
 	//Get an instance of the desired intersect algorithm type
 	IntersectClipper<Jali::Entity_ID> intersect{cellToXY(&sourceMesh_), cellToXY(&targetMesh_)};
