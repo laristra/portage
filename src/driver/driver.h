@@ -25,13 +25,18 @@ class Driver
 {
   public:
   
-    //! Constructor uses established meshes for remap
-    Driver(Jali::Mesh const & sourceMesh, State const & sourceState,
+    //! Constructor uses established meshes for remap (right now we have
+    //! to send in both the Jali::Mesh and Jali_Mesh_Wrapper because
+    //! all parts of the code are not converted to using the wrapper as yet)
+
+    Driver(Jali_Mesh_Wrapper const & sourceMeshWrapper,
+           Jali::Mesh const & sourceMesh, State const & sourceState,           
+           Jali_Mesh_Wrapper const & targetMeshWrapper,
            Jali::Mesh const & targetMesh, State & targetState) 
-            : source_mesh_wrapper_(Jali_Mesh_Wrapper(sourceMesh)), 
+            : source_mesh_wrapper_(sourceMeshWrapper), 
               sourceMesh_(sourceMesh),
               sourceState_(sourceState),
-              target_mesh_wrapper_(Jali_Mesh_Wrapper(targetMesh)), 
+              target_mesh_wrapper_(targetMeshWrapper), 
               targetMesh_(targetMesh),
               targetState_(targetState) 
     {}
