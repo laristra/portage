@@ -8,13 +8,17 @@
 #include "portage/driver/driver.h"
 #include "portage/state/state_vector.h"
 #include "portage/state/state.h"
+#include "portage/wrappers/mesh/jali/jali_mesh_wrapper.h"
 
 #include "Mesh.hh"
 #include "MeshFactory.hh"
 
 int main(int argc, char** argv)
 {
-  MPI_Init(&argc, &argv);
+  int mpi_init_flag;
+  MPI_Initialized(&mpi_init_flag);
+  if (!mpi_init_flag) 
+    MPI_Init(&argc, &argv);
   int numpe;
   MPI_Comm_size(MPI_COMM_WORLD, &numpe);
   if (numpe > 1) {
@@ -28,8 +32,11 @@ int main(int argc, char** argv)
 
   // Create a 2d quad input mesh from (0,0) to (1,1) with 3x3 zones
   Jali::Mesh* inputMesh = mf(0.0, 0.0, 1.0, 1.0, 3, 3);
+  Jali_Mesh_Wrapper inputMeshWrapper(*inputMesh);
+
   // Create a 2d quad output mesh from (0,0) to (1,1) with 4x4 zones
   Jali::Mesh* targetMesh = mf(0.0, 0.0, 1.0, 1.0, 4, 4);
+  Jali_Mesh_Wrapper targetMeshWrapper(*targetMesh);
 
   Portage::State inputState(inputMesh);
   std::vector<double> inputData = {0.0,1.0,2.0,1.0,2.0,3.0,2.0,3.0,4.0};
@@ -41,7 +48,8 @@ int main(int argc, char** argv)
   Portage::StateVector & cellvecout = 
       targetState.add("celldata",Jali::CELL,&(targetData[0]));
 
-  Portage::Driver d(*inputMesh, inputState, *targetMesh, targetState);
+  Portage::Driver d(inputMeshWrapper, *inputMesh, inputState,
+                    targetMeshWrapper, *targetMesh, targetState);
   std::vector<std::string> remap_fields;
   remap_fields.push_back("celldata");
   d.set_remap_var_names(remap_fields);
