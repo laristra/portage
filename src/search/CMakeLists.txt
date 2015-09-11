@@ -10,10 +10,10 @@ set(search_HEADERS
 )
 
 # Add source files
-set(search_SOURCES
-    search_simple.cc
-    PARENT_SCOPE
-)
+#set(search_SOURCES
+#    search_simple.cc
+#    PARENT_SCOPE
+#)
 
 # Add unit test
 if(ENABLE_UNIT_TESTS)
