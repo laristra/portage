@@ -17,9 +17,9 @@
 
 namespace { // unnamed
 
-template<typename MeshWrapper>
+template<typename MeshType>
 void getBoundingBox(
-    const MeshWrapper & mesh,
+    const MeshType & mesh,
     const std::vector<int>& nodes,
     double* xlow, double* xhigh,
     double* ylow, double* yhigh)
@@ -47,7 +47,7 @@ void getBoundingBox(
 
 namespace Portage {
 
-template <typename SourceMeshWrapper, typename TargetMeshWrapper>
+template <typename SourceMeshType, typename TargetMeshType>
 class SearchSimple {
   public:
 
@@ -66,8 +66,26 @@ class SearchSimple {
 
     */
 
-    SearchSimple(const SourceMeshWrapper & source_mesh, 
-                 const TargetMeshWrapper & target_mesh);
+    SearchSimple(const SourceMeshType & source_mesh, 
+                 const TargetMeshType & target_mesh)
+            : sourceMesh_(source_mesh), targetMesh_(target_mesh)  {
+
+        int numCells = sourceMesh_.num_owned_cells() + 
+                sourceMesh_.num_ghost_cells();
+        xlow_  = new double[numCells];
+        xhigh_ = new double[numCells];
+        ylow_  = new double[numCells];
+        yhigh_ = new double[numCells];
+        
+        // find bounding boxes for all cells
+        for (int c = 0; c < numCells; ++c) {
+            std::vector<int> nodes;
+            sourceMesh_.cell_get_nodes(c,&nodes);
+            getBoundingBox<SourceMeshType>(sourceMesh_, nodes,
+                                              &xlow_[c], &xhigh_[c], 
+                                              &ylow_[c], &yhigh_[c]);
+        }
+    } // SearchSimple::SearchSimple
 
     //! Copy constructor (disabled)
     SearchSimple(const SearchSimple &) = delete;
@@ -76,7 +94,12 @@ class SearchSimple {
     SearchSimple & operator = (const SearchSimple &) = delete;
 
     //! Destructor
-    ~SearchSimple();
+    ~SearchSimple() {
+        delete [] xlow_;
+        delete [] xhigh_;
+        delete [] ylow_;
+        delete [] yhigh_;
+    }
 
     /*!
       \brief returns source mesh cells potentially overlapping given target cell
@@ -89,8 +112,8 @@ class SearchSimple {
   private:
 
     // Aggregate data members
-    const SourceMeshWrapper & sourceMesh_;
-    const TargetMeshWrapper & targetMesh_;
+    const SourceMeshType & sourceMesh_;
+    const TargetMeshType & targetMesh_;
     double* xlow_;
     double* xhigh_;
     double* ylow_;
@@ -100,48 +123,16 @@ class SearchSimple {
 
 
 
-
-template<typename SourceMeshWrapper, typename TargetMeshWrapper>
-SearchSimple<SourceMeshWrapper,TargetMeshWrapper>::
-SearchSimple(const SourceMeshWrapper & source_mesh,
-             const TargetMeshWrapper & target_mesh)
-        : sourceMesh_(source_mesh), targetMesh_(target_mesh)  {
-
-    int numCells = sourceMesh_.num_owned_cells() + sourceMesh_.num_ghost_cells();
-    xlow_  = new double[numCells];
-    xhigh_ = new double[numCells];
-    ylow_  = new double[numCells];
-    yhigh_ = new double[numCells];
-
-    // find bounding boxes for all cells
-    for (int c = 0; c < numCells; ++c) {
-        std::vector<int> nodes;
-        sourceMesh_.cell_get_nodes(c,&nodes);
-        getBoundingBox<SourceMeshWrapper>(sourceMesh_, nodes,
-                &xlow_[c], &xhigh_[c], &ylow_[c], &yhigh_[c]);
-    }
-} // SearchSimple::SearchSimple
-
-
-template<typename SourceMeshWrapper, typename TargetMeshWrapper>
-SearchSimple<SourceMeshWrapper,TargetMeshWrapper>::~SearchSimple()
-{
-    delete [] xlow_;
-    delete [] xhigh_;
-    delete [] ylow_;
-    delete [] yhigh_;
-} // SearchSimple::~SearchSimple
-
-
-template<typename SourceMeshWrapper, typename TargetMeshWrapper>
-void SearchSimple<SourceMeshWrapper,TargetMeshWrapper>::
+template<typename SourceMeshType, typename TargetMeshType>
+void SearchSimple<SourceMeshType,TargetMeshType>::
 search(const int cellId, std::vector<int> *candidates)
 const {
     // find bounding box for target cell
     std::vector<int> nodes;
     targetMesh_.cell_get_nodes(cellId,&nodes);
     double txlow, txhigh, tylow, tyhigh;
-    getBoundingBox<TargetMeshWrapper>(targetMesh_, nodes, &txlow, &txhigh, &tylow, &tyhigh);
+    getBoundingBox<TargetMeshType>(targetMesh_, nodes, 
+                                   &txlow, &txhigh, &tylow, &tyhigh);
     
     // now see which sourceMesh cells have bounding boxes overlapping
     // with target cell
