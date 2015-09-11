@@ -27,7 +27,7 @@
   preserving (target cell values will be positive if the field is
   positive on the source mesh).
 
-  Margolin, L.G. and Shashkov, M.J. "Second-order sign-preserving
+  [1] Margolin, L.G. and Shashkov, M.J. "Second-order sign-preserving
   conservative interpolation (remapping) on general grids." Journal of
   Computational Physics, v 184, n 1, pp. 266-298, 2003.
 
