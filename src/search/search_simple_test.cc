@@ -16,8 +16,8 @@ TEST(search_simple, case1)
     Jali::MeshFactory mf(MPI_COMM_WORLD);
     Jali::Mesh *smesh = mf(0.0,0.0,1.0,1.0,3,3);
     Jali::Mesh *tmesh = mf(0.0,0.0,1.0,1.0,2,2);
-    Jali_Mesh_Wrapper *source_mesh_wrapper = new Jali_Mesh_Wrapper(*smesh);
-    Jali_Mesh_Wrapper *target_mesh_wrapper = new Jali_Mesh_Wrapper(*tmesh);
+    Jali_Mesh_Wrapper source_mesh_wrapper(*smesh);
+    Jali_Mesh_Wrapper target_mesh_wrapper(*tmesh);
 
     Portage::SearchSimple<Jali_Mesh_Wrapper,Jali_Mesh_Wrapper>* search = 
             new Portage::SearchSimple<Jali_Mesh_Wrapper,Jali_Mesh_Wrapper> (source_mesh_wrapper, target_mesh_wrapper);
@@ -34,9 +34,6 @@ TEST(search_simple, case1)
         ASSERT_EQ(candidates[2], scbase + 3);
         ASSERT_EQ(candidates[3], scbase + 4);
     }
-
-    delete source_mesh_wrapper;
-    delete target_mesh_wrapper;
 
 } // TEST(search_simple, ctor)
 
