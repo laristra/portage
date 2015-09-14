@@ -9,31 +9,54 @@
 /*!
   \class Remap_1stOrder remap_1st_order.h
   \brief Remap_1stOrder does a 1st order remap of scalars
+
+  Viewed simply, the value at target cell is the weighted average of
+  values on from source entities and therefore, this can work for
+  cell-cell, particle-cell, cell-particle and particle-particle remap.
+
+  In the context of remapping from one cell-based mesh to another (as
+  opposed to particles to cells), it is assumed that scalars are
+  provided at cell centers. A piecewise constant "reconstruction" of
+  the quantity is assumed over cells which means that the integral
+  value over the cell or any piece of the cell is just the average
+  multiplied by the volume of the cell or its piece. Then the integral
+  value over a target cell is the sum of the integral values of some
+  source cells (or their pieces) and the weights to be specified in
+  the call are the areas/volumes of the donor cells (pieces). If an
+  exact intersection is performed between the target cell and the
+  source mesh, these weights are the area/volumes of the intersection
+  pieces. So, in this sense, this is the Cell-Intersection-Based
+  Donor-Cell (CIB/DC) remap referred to in the Shashkov, Margolin
+  paper [1]. This remap is 1st order accurate and positivity
+  preserving (target cell values will be positive if the field is
+  positive on the source mesh).
+
+  [1] Margolin, L.G. and Shashkov, M.J. "Second-order sign-preserving
+  conservative interpolation (remapping) on general grids." Journal of
+  Computational Physics, v 184, n 1, pp. 266-298, 2003.
+
 */
 
-#include "Mesh.hh"
-#include "portage/state/state.h"
+#include <cassert>
+
+
+#include "portage/wrappers/mesh/jali/jali_mesh_wrapper.h"
 
 namespace Portage {
 
+template<typename MeshType, typename StateType, typename OnWhatType>
 class Remap_1stOrder {
  public:
   
-  Remap_1stOrder(Jali::Mesh const & sourceMesh, State const & sourceState,
-                 std::string remap_var_name, Jali::Entity_kind on_what) :
-      sourceMesh_(sourceMesh), sourceState_(sourceState), 
-      remap_var_name_(remap_var_name), on_what_(on_what),
-      source_var_ptr_(NULL)
+  Remap_1stOrder(MeshType const & source_mesh, StateType const & source_state,
+                 OnWhatType const on_what, std::string const remap_var_name) :
+      source_mesh_(source_mesh), 
+      source_state_(source_state),
+      on_what_(on_what),
+      remap_var_name_(remap_var_name),
+      source_vals_(NULL)
   {
-    State::const_iterator it;
-    it = sourceState_.find(remap_var_name_, on_what_);
-    if (it == sourceState_.cend()) {
-      std::cerr << "ERROR: Remap_1stOrder::Remap_1stOrder(...) - Remap variable not found in source mesh" << std::endl;
-      exit(-1);
-    }
-
-    StateVector const & source_var_ref = *it;
-    source_var_ptr_ = &(source_var_ref);
+    source_state.get_data(on_what,remap_var_name,&source_vals_);
   }
 
 
@@ -51,17 +74,61 @@ class Remap_1stOrder {
   // cells that contribute to the the target cell value and the
   // contribution weights associated with each source cell
 
-  double operator() (std::pair< std::vector<int> const &, std::vector<double> const &>) const;
+  double 
+  operator() (std::pair<std::vector<int> const &, std::vector<double> const &>)
+      const;
 
  private:
 
-  Jali::Mesh const & sourceMesh_;
-  State const & sourceState_;
-  std::string const remap_var_name_;
-  Jali::Entity_kind const on_what_;
-  StateVector const * source_var_ptr_;
+  MeshType const & source_mesh_;
+  StateType const & source_state_;
+  OnWhatType const on_what_;
+  std::string const & remap_var_name_;
+  double * source_vals_;
 
 };
+
+
+// Input is a pair containing the vector of contributing source
+// entities and vector of contribution weights
+
+template<typename MeshType, typename StateType, typename OnWhatType>
+double Remap_1stOrder<MeshType,StateType,OnWhatType> :: operator() 
+    (std::pair<std::vector<int> const &, std::vector<double> const &> 
+     cells_and_weights) const {
+
+  std::vector<int> const & source_cells = cells_and_weights.first; 
+  int nsrccells = source_cells.size();
+  if (!nsrccells) {
+    std::cerr << "ERROR: No source cells contribute to target cell?" << std::endl;
+    return 0.0;
+  }
+
+  std::vector<double> const & weights = cells_and_weights.second;
+  if (weights.size() != nsrccells) {
+    std::cerr << "ERROR: Not enough weights provided for remapping " << std::endl;
+    return 0.0;
+  }
+
+  // contribution of the source cell is its field value weighted by
+  // its "weight" (in this case, its 0th moment/area/volume)
+
+  double val = 0.0;
+  double sumofweights = 0.0;
+  for (int j = 0; j < nsrccells; ++j) {
+    int srccell = source_cells[j];
+
+    val += source_vals_[srccell] * weights[j];
+    sumofweights += weights[j];
+  }
+
+  // Normalize the value by sum of all the weights
+
+  val /= sumofweights;
+
+  return val;
+}
+
 
 } // namespace portage
                      
