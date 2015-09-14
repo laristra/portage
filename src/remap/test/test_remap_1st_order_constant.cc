@@ -4,8 +4,10 @@
  *---------------------------------------------------------------------------~*/
 
 #include "portage/remap/remap_1st_order.h"
-#include "portage/state/state.h"
-#include "portage/state/state_vector.h"
+#include "portage/wrappers/mesh/jali/jali_mesh_wrapper.h"
+#include "portage/wrappers/state/jali/jali_state.h"
+#include "portage/wrappers/state/jali/jali_state_vector.h"
+#include "portage/wrappers/state/jali/jali_state_wrapper.h"
 
 #include <iostream>
 
@@ -39,7 +41,7 @@ TEST(Remap_1st_Order,Constant_Field_Test1) {
 
   // Create a state object and add the first two vectors to it
 
-  Portage::State mystate(mesh1);
+  Jali::State mystate(mesh1);
 
   // Define state vector, "density", on source mesh, with the same value
   // on all the cells.
@@ -47,12 +49,13 @@ TEST(Remap_1st_Order,Constant_Field_Test1) {
   std::string varname("cellvars");
   std::vector<double> data1 = {1.25,1.25,1.25,1.25,1.25,1.25,1.25,1.25,
                                1.25,1.25,1.25,1.25,1.25,1.25,1.25,1.25}; 
-  Portage::StateVector myvec1("cellvars",Jali::CELL,mesh1,&(data1[0]));
-  Portage::StateVector &addvec1 = mystate.add(myvec1);
+  Jali::StateVector myvec1("cellvars",Jali::CELL,mesh1,&(data1[0]));
+  Jali::StateVector &addvec1 = mystate.add(myvec1);
 
   // Create a Remap object
 
-  Portage::Remap_1stOrder remapper(*mesh1,mystate,"cellvars",Jali::CELL);
+  Portage::Remap_1stOrder<Jali_Mesh_Wrapper,Jali_State_Wrapper,Jali::Entity_kind> 
+      remapper(*mesh1,mystate,Jali::CELL,"cellvars");
 
   // Remap from source to target mesh
 
