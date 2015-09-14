@@ -7,6 +7,7 @@
 #define JALI_MESH_WRAPPER_H_
 
 #include <cassert>
+#include <algorithm>
 
 #include "Mesh.hh"                      // Jali mesh header
 
@@ -165,14 +166,12 @@ struct pointsToXY
 
 struct cellToXY
 {
-  Jali::Mesh const *mesh;
-  cellToXY(const Jali::Mesh* mesh):mesh(mesh){}
+  Jali_Mesh_Wrapper const & mesh;
+  cellToXY(const Jali_Mesh_Wrapper & mesh): mesh(mesh){}
   std::vector<std::pair<double, double> > operator()(const Jali::Entity_ID cellID){
-    // Get the Jali Points for each candidate cells
-    std::vector<JaliGeometry::Point> cellPoints;
-    mesh->cell_get_coordinates(cellID, &cellPoints);
-    //Change to XY coords for clipper
-    return pointsToXY()(cellPoints);
+    std::vector<std::pair<double, double> > cellPoints;
+    mesh.cell_get_coordinates(cellID, &cellPoints);
+    return cellPoints;
   }
 };
 
