@@ -11,7 +11,7 @@
 #include<iterator>
 
 #include "Mesh.hh"   // Jali mesh header
-#include "portage/state/state.h"
+#include "portage/wrappers/state/jali/jali_state_wrapper.h"
 #include "portage/wrappers/mesh/jali/jali_mesh_wrapper.h"
 
 /*!
@@ -19,26 +19,25 @@
     \brief Driver provides the API to mapping from one mesh to another.
  */
 
+// When we get Portage::Entity_kind, Portage::Entity_ID definitions
+// into a header file in the appropriate place, we can make everything
+// in the method free of Jali references except the Jali_Mesh_Wrapper
+// and Jali_State_Wrapper references
+
 namespace Portage {
 
 class Driver
 {
   public:
   
-    //! Constructor uses established meshes for remap (right now we have
-    //! to send in both the Jali::Mesh and Jali_Mesh_Wrapper because
-    //! all parts of the code are not converted to using the wrapper as yet)
+    //! Constructor - takes in wrapper classes for source/target mesh and state
 
-    Driver(Jali_Mesh_Wrapper const & sourceMeshWrapper,
-           Jali::Mesh const & sourceMesh, State const & sourceState,           
-           Jali_Mesh_Wrapper const & targetMeshWrapper,
-           Jali::Mesh const & targetMesh, State & targetState) 
-            : source_mesh_wrapper_(sourceMeshWrapper), 
-              sourceMesh_(sourceMesh),
-              sourceState_(sourceState),
-              target_mesh_wrapper_(targetMeshWrapper), 
-              targetMesh_(targetMesh),
-              targetState_(targetState) 
+    Driver(Jali_Mesh_Wrapper const & sourceMesh, 
+           Jali_State_Wrapper const & sourceState,           
+           Jali_Mesh_Wrapper const & targetMesh,
+           Jali_State_Wrapper & targetState) 
+            : source_mesh_(sourceMesh), source_state_(sourceState),
+              target_mesh_(targetMesh), target_state_(targetState) 
     {}
   
     //! Copy constructor (disabled)
@@ -72,75 +71,74 @@ class Driver
 
 private:
   
-    Jali_Mesh_Wrapper  const & source_mesh_wrapper_;
-    Jali_Mesh_Wrapper const & target_mesh_wrapper_;
-    Jali::Mesh const & sourceMesh_;
-    Jali::Mesh const & targetMesh_;
-    State const & sourceState_;
-    State & targetState_;
+    Jali_Mesh_Wrapper  const & source_mesh_;
+    Jali_Mesh_Wrapper const & target_mesh_;
+    Jali_State_Wrapper const & source_state_;
+    Jali_State_Wrapper & target_state_;
     std::vector<std::string> remap_var_names_;
 
 }; // class Driver
 
 // This functor is used inside a std::transform inside Driver::run
-template <typename SearchType, typename IsectType, typename RemapType,
-          typename SourceMeshWrapper, typename TargetMeshWrapper>
+
+// Should we move composerFunctor into the .cc file? - RVG
+
+template <typename SearchType, typename IsectType, typename RemapType>
 struct composerFunctor
 {
-        const SearchType* search_;
-		const IsectType* intersect_;
-		const RemapType* remap_;
-		const SourceMeshWrapper & sourceMesh_;
-		const TargetMeshWrapper & targetMesh_;
-		const std::string remap_var_name_;
-		//----------------------------------------
-		composerFunctor(const SearchType* s, const IsectType* i, 
-						const RemapType* r,
-						const SourceMeshWrapper & sourceMesh, 
-						const TargetMeshWrapper & targetMesh,
-						const std::string remap_var_name)
-			: search_(s), intersect_(i), remap_(r), sourceMesh_(sourceMesh), 
-			  targetMesh_(targetMesh), remap_var_name_(remap_var_name) { }
+    const SearchType* search_;
+    const IsectType* intersect_;
+    const RemapType* remap_;
+    const std::string remap_var_name_;
+    //----------------------------------------
+
+    composerFunctor(const SearchType* searcher, const IsectType* intersecter, 
+                    const RemapType* remapper, const std::string remap_var_name)
+			: search_(searcher), intersect_(intersecter), remap_(remapper), 
+              remap_var_name_(remap_var_name) { }
 
 
-		double operator()(int const targetCellIndex)
-		{
-			// Search for candidates and return their cells indices
-            std::vector<int> candidates;
-			search_->search(targetCellIndex, &candidates);
+    double operator()(int const targetCellIndex)
+    {
+        // Search for candidates and return their cells indices
+        std::vector<int> candidates;
+        search_->search(targetCellIndex, &candidates);
 
-			std::vector<std::vector<std::vector<double> > > moments(candidates.size());
-            for (int i=0;i<candidates.size();i++){
-                moments[i] = (*intersect_)(candidates[i], targetCellIndex);             
-            }
+        // Intersect target cell with cells of source mesh and return the
+        // moments of intersection
 
-			// Remap
-			
-			// RVG - Need to reconcile how moments are returned and
-			// how remap expects them - for now create a dummy vector
-			// that conforms to what remap functor expects assuming
-			// that the intersection of each pair of cells results in
-			// only domain of intersection and that we only care about
-			// the 0th order moments (area)
+        std::vector<std::vector<std::vector<double> > > 
+                moments(candidates.size());
 
-			std::vector<double> remap_moments(candidates.size(),0.0);
-			for (int i = 0; i < candidates.size(); ++i) {
-				std::vector< std::vector<double> > & candidate_moments = moments[i];
-                // BUG: candidate_moments might be empty; sum over it? amh
-				std::vector<double> & piece_moments = candidate_moments[0];
-				remap_moments[i] = piece_moments[0];
-			}
+        for (int i=0;i<candidates.size();i++)
+            moments[i] = (*intersect_)(candidates[i], targetCellIndex);
 
-			std::pair< std::vector<int> const &, std::vector<double> const & >
-					source_cells_and_weights(candidates,remap_moments);
-
-			// Compute the remap value from all the candidate cells and weights
-
-			double remappedValue = (*remap_)(source_cells_and_weights);
-
-			return remappedValue;
-		}
-	};
+        // Compute new value on target cell based on source mesh
+        // values and intersection moments
+		
+        // RVG - Need to reconcile how moments are returned and
+        // how remap expects them - for now create a dummy vector
+        // that conforms to what remap functor expects assuming
+        // that the intersection of each pair of cells results in
+        // only domain of intersection and that we only care about
+        // the 0th order moments (area)
+        
+        std::vector<double> remap_moments(candidates.size(),0.0);
+        for (int i = 0; i < candidates.size(); ++i) {
+            std::vector< std::vector<double> > & candidate_moments = moments[i];
+            // BUG: candidate_moments might be empty; sum over it? amh
+            std::vector<double> & piece_moments = candidate_moments[0];
+            remap_moments[i] = piece_moments[0];
+        }
+        
+        std::pair< std::vector<int> const &, std::vector<double> const & >
+                source_cells_and_weights(candidates,remap_moments);
+        
+        double remappedValue = (*remap_)(source_cells_and_weights);
+        
+        return remappedValue;
+    }
+};  // struct composerFunctor
 
 } // namespace Portage
 
