@@ -3,7 +3,7 @@
  * All rights reserved.
  *---------------------------------------------------------------------------~*/
 
-#include "portage/state/state_vector.h"
+#include "portage/wrappers/state/jali/jali_state_vector.h"
 
 #include <iostream>
 
@@ -13,7 +13,7 @@
 #include "Mesh.hh"
 #include "MeshFactory.hh"
 
-TEST(StateVector, DefineVectorOnCells) {
+TEST(JaliStateVector, DefineVectorOnCells) {
 
   Jali::MeshFactory mf(MPI_COMM_WORLD);
   Jali::Mesh *mesh = mf(0.0,0.0,1.0,1.0,2,2);
@@ -21,7 +21,7 @@ TEST(StateVector, DefineVectorOnCells) {
   ASSERT_TRUE(mesh != NULL);
 
   std::vector<double> data1 = {1.0,3.0,2.5,4.5}; 
-  Portage::StateVector myvec1("var1",Jali::CELL,mesh,&(data1[0]));
+  Jali::StateVector myvec1("var1",Jali::CELL,mesh,&(data1[0]));
 
   int ncells = mesh->num_entities(Jali::CELL,Jali::ALL);
   ASSERT_EQ(ncells,myvec1.size());
@@ -34,7 +34,7 @@ TEST(StateVector, DefineVectorOnCells) {
 }
 
 
-TEST(StateVector, DefineVectorOnNodes) {
+TEST(JaliStateVector, DefineVectorOnNodes) {
 
   Jali::MeshFactory mf(MPI_COMM_WORLD);
   Jali::Mesh *mesh = mf(0.0,0.0,1.0,1.0,2,2);
@@ -42,7 +42,7 @@ TEST(StateVector, DefineVectorOnNodes) {
   ASSERT_TRUE(mesh != NULL);
 
   std::vector<double> data1 = {1.0,2.0,3.0,4.0,5.0,6.0,7.0,8.0,9.0}; 
-  Portage::StateVector myvec1("var1",Jali::NODE,mesh,&(data1[0]));
+  Jali::StateVector myvec1("var1",Jali::NODE,mesh,&(data1[0]));
 
   int nnodes = mesh->num_entities(Jali::NODE,Jali::ALL);
   ASSERT_EQ(nnodes,myvec1.size());

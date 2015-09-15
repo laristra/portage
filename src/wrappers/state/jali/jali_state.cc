@@ -3,9 +3,9 @@
  * All rights reserved.
  *---------------------------------------------------------------------------~*/
 
-#include "state.h"
+#include "jali_state.h"
 
-namespace Portage {
+namespace Jali {
 
 std::ostream & operator<<(std::ostream & os, State const & s) {
   State::const_iterator it = s.cbegin();
@@ -19,7 +19,7 @@ std::ostream & operator<<(std::ostream & os, State const & s) {
 // add a vector to the state object
 
 State::reference State::add(std::string const name, 
-                            Jali::Entity_kind const on_what,
+                            Entity_kind const on_what,
                             double const * const data) {
 
   iterator it = find(name,on_what);
@@ -93,7 +93,7 @@ State::reference State::add(StateVector const & vector) {
 // find a state vector by name and what type of entity it is on
 
 State::iterator State::find(std::string const name, 
-                            Jali::Entity_kind const on_what) {
+                            Entity_kind const on_what) {
   
   iterator it = state_vectors_.begin();
   while (it != state_vectors_.end()) {

@@ -2,6 +2,7 @@
 #include "gtest/gtest.h"
 #include "Mesh.hh"
 #include "../driver/driver.h"
+#include "portage/wrappers/mesh/jali/jali_mesh_wrapper.h"
 
 TEST(intersectClipper, simple){
 
@@ -15,7 +16,7 @@ TEST(intersectClipper, simple){
   cellB.emplace_back(4.4,3);
   cellB.emplace_back(2,3);
 
-  IntersectClipper<std::vector<JaliGeometry::Point> > isect{Portage::pointsToXY(), Portage::pointsToXY()};
+  IntersectClipper<std::vector<JaliGeometry::Point> > isect{pointsToXY(), pointsToXY()};
   std::vector<std::vector<double> > moments = isect(cellA, cellB); 
   for(int i=0;i<moments.size();i++){
     for(int j=0;j<moments[i].size();j++){
@@ -40,7 +41,7 @@ TEST(intersectClipper, convex){
   cellB.emplace_back(5.5,2.5);
   cellB.emplace_back(2.5,4);
   
-  IntersectClipper<std::vector<JaliGeometry::Point> > isect{Portage::pointsToXY(), Portage::pointsToXY()};
+  IntersectClipper<std::vector<JaliGeometry::Point> > isect{pointsToXY(), pointsToXY()};
   std::vector<std::vector<double> > moments = isect(cellA, cellB); 
   for(int i=0;i<moments.size();i++){
     for(int j=0;j<moments[i].size();j++){

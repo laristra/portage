@@ -3,21 +3,21 @@
  * All rights reserved.
  *---------------------------------------------------------------------------~*/
 
-#ifndef NGC_REMAP_STATE_H
-#define NGC_REMAP_STATE_H
+#ifndef JALI_STATE_H_
+#define JALI_STATE_H_
 
 /*!
-  \class State state.h
+  \class State jali_state.h
   \brief State is a class that stores all of the state data associated 
   with a mesh
 */
 #include <iostream>
-#include "Mesh.hh"
+#include "Mesh.hh"    // Jali mesh header
 
-#include "state_vector.h"
+#include "jali_state_vector.h"  // Jali-based state vector
 
 
-namespace Portage {
+namespace Jali {
     
 class State {
  public:
@@ -89,6 +89,6 @@ class State {
 std::ostream & operator<<(std::ostream & os, State const & s);
 
 
-} // namespace Portage
+} // namespace Jali
   
-#endif
+#endif  // JALI_STATE_H_

@@ -3,20 +3,20 @@
  * All rights reserved.
  *---------------------------------------------------------------------------~*/
 
-#ifndef NGC_STATE_VECTOR_H
-#define NGC_STATE_VECTOR_H
+#ifndef JALI_STATE_VECTOR_H_
+#define JALI_STATE_VECTOR_H_
 
 /*!
-  \class StateVector state_vector.h
+  \class StateVector jali_state_vector.h
   \brief StateVector provides a mechanism to store state data for mesh entities
 */
 
 #include <iostream>
 #include <vector>
 
-#include "Mesh.hh"
+#include "Mesh.hh"    // jali mesh header
 
-namespace Portage {
+namespace Jali {
 
 // Provides some limited functionality of a std::vector while adding
 // some additional meta-data like the mesh associated with this data.
@@ -29,12 +29,12 @@ class StateVector {
   // Constructors
   
   StateVector(std::string const name, 
-          Jali::Entity_kind const on_what, 
-          Jali::Mesh const * const mesh,
-          double const * const data) : 
+              Entity_kind const on_what, 
+              Mesh const * const mesh,
+              double const * const data) : 
       myname_(name), on_what_(on_what), mymesh_(mesh) {
     
-    int num = mymesh_->num_entities(on_what,Jali::ALL);
+    int num = mymesh_->num_entities(on_what,ALL);
     mydata_.resize(num);
     std::copy(data, data+num, mydata_.begin());
     
@@ -91,8 +91,8 @@ class StateVector {
  private:
   
   std::string myname_;
-  Jali::Entity_kind on_what_;
-  Jali::Mesh const * mymesh_;
+  Entity_kind on_what_;
+  Mesh const * mymesh_;
   std::vector<double> mydata_;
   
 };
@@ -110,8 +110,7 @@ std::ostream & operator<<(std::ostream & os, StateVector const & sv) {
 }
 
 
-} // namespace Portage
+} // namespace Jali
   
 
-
-#endif
+#endif  // JALI_STATE_VECTOR_H_

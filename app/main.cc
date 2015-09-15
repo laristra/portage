@@ -6,15 +6,19 @@
 #include "mpi.h"
 
 #include "portage/driver/driver.h"
-#include "portage/state/state_vector.h"
-#include "portage/state/state.h"
+#include "portage/wrappers/state/jali/jali_state_vector.h"
+#include "portage/wrappers/state/jali/jali_state.h"
+#include "portage/wrappers/mesh/jali/jali_mesh_wrapper.h"
 
 #include "Mesh.hh"
 #include "MeshFactory.hh"
 
 int main(int argc, char** argv)
 {
-  MPI_Init(&argc, &argv);
+  int mpi_init_flag;
+  MPI_Initialized(&mpi_init_flag);
+  if (!mpi_init_flag) 
+    MPI_Init(&argc, &argv);
   int numpe;
   MPI_Comm_size(MPI_COMM_WORLD, &numpe);
   if (numpe > 1) {
@@ -28,20 +32,26 @@ int main(int argc, char** argv)
 
   // Create a 2d quad input mesh from (0,0) to (1,1) with 3x3 zones
   Jali::Mesh* inputMesh = mf(0.0, 0.0, 1.0, 1.0, 3, 3);
+  Jali_Mesh_Wrapper inputMeshWrapper(*inputMesh);
+
   // Create a 2d quad output mesh from (0,0) to (1,1) with 4x4 zones
   Jali::Mesh* targetMesh = mf(0.0, 0.0, 1.0, 1.0, 4, 4);
+  Jali_Mesh_Wrapper targetMeshWrapper(*targetMesh);
 
-  Portage::State inputState(inputMesh);
-  std::vector<double> inputData = {0.0,1.0,2.0,1.0,2.0,3.0,2.0,3.0,4.0};
-  Portage::StateVector & cellvecin = 
-      inputState.add("celldata",Jali::CELL,&(inputData[0]));
+  Jali::State sourceState(inputMesh);
+  std::vector<double> sourceData = {0.0,1.0,2.0,1.0,2.0,3.0,2.0,3.0,4.0};
+  Jali::StateVector & cellvecin = 
+      sourceState.add("celldata",Jali::CELL,&(sourceData[0]));
+  Jali_State_Wrapper sourceStateWrapper(sourceState);
 
-  Portage::State targetState(targetMesh);
+  Jali::State targetState(targetMesh);
   std::vector<double> targetData(16,0.0);
-  Portage::StateVector & cellvecout = 
+  Jali::StateVector & cellvecout = 
       targetState.add("celldata",Jali::CELL,&(targetData[0]));
+  Jali_State_Wrapper targetStateWrapper(targetState);
 
-  Portage::Driver d(*inputMesh, inputState, *targetMesh, targetState);
+  Portage::Driver d(inputMeshWrapper, sourceStateWrapper,
+                    targetMeshWrapper, targetStateWrapper);
   std::vector<std::string> remap_fields;
   remap_fields.push_back("celldata");
   d.set_remap_var_names(remap_fields);

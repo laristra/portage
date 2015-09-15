@@ -8,6 +8,7 @@
 #include "Mesh.hh"
 #include "MeshFactory.hh"
 
+#include "portage/wrappers/mesh/jali/jali_mesh_wrapper.h"
 #include "search_simple.h"
 
 TEST(search_simple, case1)
@@ -15,11 +16,14 @@ TEST(search_simple, case1)
     Jali::MeshFactory mf(MPI_COMM_WORLD);
     Jali::Mesh *smesh = mf(0.0,0.0,1.0,1.0,3,3);
     Jali::Mesh *tmesh = mf(0.0,0.0,1.0,1.0,2,2);
+    Jali_Mesh_Wrapper source_mesh_wrapper(*smesh);
+    Jali_Mesh_Wrapper target_mesh_wrapper(*tmesh);
 
-    Portage::SearchSimple* search = new Portage::SearchSimple(smesh, tmesh);
+    Portage::SearchSimple<Jali_Mesh_Wrapper,Jali_Mesh_Wrapper>* search = 
+            new Portage::SearchSimple<Jali_Mesh_Wrapper,Jali_Mesh_Wrapper> (source_mesh_wrapper, target_mesh_wrapper);
 
     for (int tc = 0; tc < 4; ++tc) {
-        Jali::Entity_ID_List candidates;
+        std::vector<int> candidates;
         search->search(tc, &candidates);
 
         ASSERT_EQ(candidates.size(), 4);
