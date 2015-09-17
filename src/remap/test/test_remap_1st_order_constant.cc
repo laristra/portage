@@ -73,13 +73,18 @@ TEST(Remap_1st_Order,Constant_Field_Test1) {
     // what their intersection areas (weights) are
 
     Jali::Entity_ID_List source_cells(4);
-    std::vector<double> weights(4);
+    std::vector< std::vector<double> > weight_vectors(4);
     for (int j = 0; j < 4; ++j) {
+      std::vector<double> wtvec;
+      wtvec.emplace_back(all_weights[i][j]);
+      weight_vectors[j] = wtvec;
       source_cells[j] = all_source_cells[i][j];
-      weights[j] = all_weights[i][j];
     }
 
-    std::pair< std::vector<int>, std::vector<double> > cells_and_weights(source_cells,weights);
+    std::pair< std::vector<int> const &, 
+               std::vector< std::vector<double> > const & > 
+        cells_and_weights(source_cells,weight_vectors);
+
     outvals[i] = remapper(cells_and_weights);
   }
 
