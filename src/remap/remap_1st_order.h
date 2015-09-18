@@ -72,11 +72,13 @@ class Remap_1stOrder {
   
   // Remap functor - Need to make a pair from the vector of source
   // cells that contribute to the the target cell value and the
-  // contribution weights associated with each source cell
+  // contribution weights associated with each source cell. Source
+  // cells may be repeated in the list if the intersection of a target
+  // cell and a source cell consists of two or more disjoint pieces
 
   double 
-  operator() (std::pair<std::vector<int> const &, std::vector<double> const &>)
-      const;
+  operator() (std::pair<std::vector<int> const &, 
+              std::vector< std::vector<double> > const &> cells_and_weights) const;
 
  private:
 
@@ -94,19 +96,21 @@ class Remap_1stOrder {
 
 template<typename MeshType, typename StateType, typename OnWhatType>
 double Remap_1stOrder<MeshType,StateType,OnWhatType> :: operator() 
-    (std::pair<std::vector<int> const &, std::vector<double> const &> 
-     cells_and_weights) const {
+    (std::pair<std::vector<int> const &, 
+     std::vector< std::vector<double> > const &> cells_and_weights) const {
 
   std::vector<int> const & source_cells = cells_and_weights.first; 
   int nsrccells = source_cells.size();
   if (!nsrccells) {
-    std::cerr << "ERROR: No source cells contribute to target cell?" << std::endl;
+    std::cerr << "ERROR: No source cells contribute to target cell?" << 
+        std::endl;
     return 0.0;
   }
 
-  std::vector<double> const & weights = cells_and_weights.second;
-  if (weights.size() != nsrccells) {
-    std::cerr << "ERROR: Not enough weights provided for remapping " << std::endl;
+  std::vector< std::vector<double> > const & weights = cells_and_weights.second;
+  if (weights.size() < nsrccells) {
+    std::cerr << "ERROR: Not enough weights provided for remapping " << 
+        std::endl;
     return 0.0;
   }
 
@@ -117,9 +121,10 @@ double Remap_1stOrder<MeshType,StateType,OnWhatType> :: operator()
   double sumofweights = 0.0;
   for (int j = 0; j < nsrccells; ++j) {
     int srccell = source_cells[j];
+    std::vector<double> pair_weights = weights[j];
 
-    val += source_vals_[srccell] * weights[j];
-    sumofweights += weights[j];
+    val += source_vals_[srccell] * pair_weights[0];  // 1st order 
+    sumofweights += pair_weights[0];
   }
 
   // Normalize the value by sum of all the weights
