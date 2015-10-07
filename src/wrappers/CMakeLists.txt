@@ -26,6 +26,13 @@ if (ENABLE_UNIT_TESTS)
                  LIBRARIES portage ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
                  POLICY MPI
                  THREADS 1)
+
+  cinch_add_unit(test_jali_state_wrapper
+                 SOURCES state/jali/test/test_jali_state_wrapper.cc
+                 LIBRARIES portage ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
+                 POLICY MPI
+                 THREADS 1)
+
 endif(ENABLE_UNIT_TESTS)
 
 #----------------------------------------------------------------------------~-#
