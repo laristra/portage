@@ -5,7 +5,7 @@ adapt them for other machines.
 
 ## Darwin
 
-Execute the following from the jali-test root directory:
+Execute the following from the portage root directory:
 
     module load mpi/openmpi-1.8.4-intel_15.0.3 cmake
     JALI_INSTALL_PREFIX=/path/to/inst-jali
