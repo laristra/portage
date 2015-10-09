@@ -6,8 +6,15 @@
 #ifndef JALI_MESH_WRAPPER_H_
 #define JALI_MESH_WRAPPER_H_
 
+namespace std
+{
+    typedef decltype(nullptr) nullptr_t;
+}
+
+
 #include <cassert>
 #include <algorithm>
+#include <boost/iterator/counting_iterator.hpp>
 
 #include "Mesh.hh"                      // Jali mesh header
 
@@ -19,7 +26,6 @@
   Jali_Mesh_Wrapper implements methods required for Portage mesh
   queries for the Jali mesh infrastructure
 */
-
 
 class Jali_Mesh_Wrapper {
  public:
@@ -53,6 +59,16 @@ class Jali_Mesh_Wrapper {
   //! Number of items of given entity
   int num_entities(int const entity) const {
     return jali_mesh_.num_entities((Jali::Entity_kind)entity, Jali::ALL);
+  }
+
+  //! Iterators on mesh entity - begin
+  boost::counting_iterator<int> begin(int const entity) const {
+    return boost::make_counting_iterator<int>(0);
+  }
+
+  //! Iterator on mesh entity - end
+  boost::counting_iterator<int> end(int const entity) const {
+    return (boost::make_counting_iterator<int>(0) + num_entities(entity));
   }
 
   //! Get list of nodes for a cell
