@@ -35,9 +35,34 @@ class Jali_State_Wrapper {
   void get_data(int const on_what, std::string var_name, T** data) const {
   
     std::shared_ptr<Jali::BaseStateVector> vector = *(jali_state_.find(var_name, (Jali::Entity_kind) on_what));
-    if (vector != 0) (*data) = ((T*)(vector->getData()));
+    if (vector != 0) (*data) = ((T*)(vector->get_data()));
   
   }
+
+  int get_entity(const std::string var_name) const {
+
+    std::shared_ptr<Jali::BaseStateVector> vector = *(jali_state_.find(var_name, (Jali::Entity_kind) 0, false));
+    if (vector != 0) return vector->on_what();
+    return -1;
+
+  }
+
+  const std::type_info& get_type(const std::string var_name) const {
+    
+    std::shared_ptr<Jali::BaseStateVector> vector = *(jali_state_.find(var_name, (Jali::Entity_kind) 0, false));
+    if (vector != 0) return vector->get_type();
+    return typeid(0);
+
+  }
+
+  //! Iterator on vector names
+  std::vector<std::string>::iterator names_begin() { return jali_state_.names_begin(); }
+  std::vector<std::string>::iterator names_end()   { return jali_state_.names_end();   }
+
+  //! Iterator on vector names of specific entity type
+  typedef Jali::State::string_permutation string_permutation;
+  string_permutation names_entity_begin(int const on_what) { return jali_state_.names_entity_begin((Jali::Entity_kind)on_what); }
+  string_permutation names_entity_end(int const on_what)   { return jali_state_.names_entity_end((Jali::Entity_kind)on_what); }
 
  private:
 

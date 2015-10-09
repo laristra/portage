@@ -50,6 +50,11 @@ class Jali_Mesh_Wrapper {
     return jali_mesh_.num_entities(Jali::CELL, Jali::GHOST);
   }
 
+  //! Number of items of given entity
+  int num_entities(int const entity) const {
+    return jali_mesh_.num_entities((Jali::Entity_kind)entity, Jali::ALL);
+  }
+
   //! Get list of nodes for a cell
   void cell_get_nodes(int cellid, std::vector<int> *nodes) const {
     jali_mesh_.cell_get_nodes(cellid, nodes);

@@ -13,6 +13,7 @@
 
 #include <iostream>
 #include <vector>
+#include <typeinfo>
 
 #include "Mesh.hh"    // jali mesh header
 
@@ -37,8 +38,9 @@ class BaseStateVector
   // Virtual methods
 
   virtual void print(std::ostream & os) const = 0;
-  virtual void* getData() = 0;
+  virtual void* get_data() = 0;
   virtual int size() const = 0;
+  virtual const std::type_info& get_type() = 0;
 
   // Query Metadata
   
@@ -98,7 +100,8 @@ class StateVector : public BaseStateVector
 
   // Get the raw data
 
-  void* getData() { return (void*)(&mydata_[0]); }
+  void* get_data() { return (void*)(&mydata_[0]); }
+  const std::type_info& get_type() { const std::type_info& ti = typeid(T);  return ti; }
 
   // Subset of std::vector functionality. We can add others as needed
 

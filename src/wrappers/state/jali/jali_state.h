@@ -54,16 +54,28 @@ public:
   typedef std::vector<std::shared_ptr<BaseStateVector>>::iterator iterator;
   typedef std::vector<std::shared_ptr<BaseStateVector>>::const_iterator const_iterator;
   typedef boost::permutation_iterator<std::vector<std::shared_ptr<BaseStateVector>>::iterator, std::vector<int>::iterator> permutation_type;
+  typedef std::vector<std::string>::iterator string_iterator;
+  typedef boost::permutation_iterator<std::vector<std::string>::iterator, std::vector<int>::iterator> string_permutation;
 
   iterator begin() { return state_vectors_.begin(); };
   iterator end() { return state_vectors_.end(); };
   const_iterator cbegin() const { return state_vectors_.begin(); }
   const_iterator cend() const { return state_vectors_.end(); }
 
+  // Iterators for vector names
+
+  string_iterator names_begin() { return names_.begin(); };
+  string_iterator names_end()   { return names_.end();   };
+
   // Iterators for specific entity types
 
-  permutation_type entity_begin(Jali::Entity_kind entityAssociation) { return boost::make_permutation_iterator(state_vectors_.begin(), entity_indexes[entityAssociation].begin()); }
-  permutation_type entity_end(Jali::Entity_kind entityAssociation) { return boost::make_permutation_iterator(state_vectors_.begin(), entity_indexes[entityAssociation].end()); }
+  permutation_type entity_begin(Jali::Entity_kind entityAssociation) { return boost::make_permutation_iterator(state_vectors_.begin(), entity_indexes_[entityAssociation].begin()); }
+  permutation_type entity_end(Jali::Entity_kind entityAssociation) { return boost::make_permutation_iterator(state_vectors_.begin(), entity_indexes_[entityAssociation].end()); }
+
+  // Iterators for vector names of specific entity types
+  
+  string_permutation names_entity_begin(Jali::Entity_kind entityAssociation) { return boost::make_permutation_iterator(names_.begin(), entity_indexes_[entityAssociation].begin()); }
+  string_permutation names_entity_end(Jali::Entity_kind entityAssociation) { return boost::make_permutation_iterator(names_.begin(), entity_indexes_[entityAssociation].end()); }
 
   // References to state vectors and the [] operator
   
@@ -77,12 +89,12 @@ public:
 
   // Find state vector by name and what type of entity it is on.
 
-  iterator find(std::string const name, Jali::Entity_kind const on_what) {
+  iterator find(std::string const name, Jali::Entity_kind const on_what, bool const check_entity=true) {
 
     iterator it = state_vectors_.begin();
     while (it != state_vectors_.end()) {
       BaseStateVector const & vector = *(*it);
-      if (vector.name() == name && vector.on_what() == on_what)
+      if ((vector.name() == name) && ((vector.on_what() == on_what) || !(check_entity)))
         break;
       else
         ++it;
@@ -93,12 +105,12 @@ public:
 
   // Find state vector by name and what type of entity it is on - const version
 
-  const_iterator find(std::string const name, Jali::Entity_kind const on_what) const {
+  const_iterator find(std::string const name, Jali::Entity_kind const on_what, bool const check_entity=true) const {
 
     const_iterator it = state_vectors_.cbegin();
     while (it != state_vectors_.cend()) {
       BaseStateVector const & vector = *(*it);
-      if (vector.name() == name && vector.on_what() == on_what)
+      if ((vector.name() == name) && ((vector.on_what() == on_what) || (!check_entity)))
         break;
       else
         ++it;
@@ -113,7 +125,7 @@ public:
   template <class T>
   StateVector<T> & add(std::string const name, Jali::Entity_kind const on_what, T* data) {
   
-    iterator it = find(name,on_what);
+    iterator it = find(name,on_what,false);
     if (it == end()) {
       // a search of the state vectors by name and kind of entity turned up
       // empty, so add the vector to the list; if not, warn about duplicate
@@ -126,7 +138,8 @@ public:
       std::shared_ptr<StateVector<T>> vector(new StateVector<T>(name, on_what, mymesh_, data));
       state_vectors_.push_back(vector);
     
-      entity_indexes[on_what].push_back(state_vectors_.size()-1);
+      entity_indexes_[on_what].push_back(state_vectors_.size()-1);
+      names_.push_back(name);
 
       // push back may cause reallocation of the vector so the iterator
       // may not be valid. Use [] operator to get reference to vector
@@ -134,7 +147,7 @@ public:
       return (*vector);
     }
     else {      
-      // found a state vector by same name living on the same kind of entity
+      // found a state vector by same name
     
       std::cerr << "Attempted to add duplicate state vector. Ignoring\n" << std::endl;
       return (*(std::static_pointer_cast<StateVector<T>>(*it)));
@@ -147,7 +160,7 @@ public:
   template <class T>
   StateVector<T> & add(StateVector<T> & vector) {
 
-    iterator it = find(vector.name(),vector.on_what());
+    iterator it = find(vector.name(),vector.on_what(),false);
     if (it == end()) {
       
       // a search of the state vectors by name and kind of entity turned up
@@ -164,7 +177,8 @@ public:
         state_vectors_.push_back(vector_copy);
       }
 
-      entity_indexes[vector.on_what()].push_back(state_vectors_.size()-1);
+      entity_indexes_[vector.on_what()].push_back(state_vectors_.size()-1);
+      names_.push_back(vector.name());
 
       // push back may cause reallocation of the vector so the iterator
       // may not be valid. Use [] operator to get reference to vector
@@ -173,7 +187,7 @@ public:
       return (*(std::static_pointer_cast<StateVector<T>>(state_vectors_[nvec-1])));
     }
     else {      
-      // found a state vector by same name living on the same kind of entity
+      // found a state vector by same name
     
       std::cerr << "Attempted to add duplicate state vector. Ignoring\n" << std::endl;
       return vector;
@@ -185,7 +199,8 @@ public:
   
   Jali::Mesh const * const mymesh_;
   std::vector<std::shared_ptr<BaseStateVector>> state_vectors_;
-  std::vector<int> entity_indexes[NUM_ENTITY_TYPES];
+  std::vector<int> entity_indexes_[NUM_ENTITY_TYPES];
+  std::vector<std::string> names_;
 
 };
 
