@@ -72,10 +72,10 @@ class SearchSimple {
 
         int numCells = sourceMesh_.num_owned_cells() + 
                 sourceMesh_.num_ghost_cells();
-        xlow_  = new double[numCells];
-        xhigh_ = new double[numCells];
-        ylow_  = new double[numCells];
-        yhigh_ = new double[numCells];
+        xlow_.reserve(numCells);
+        xhigh_.reserve(numCells);
+        ylow_.reserve(numCells);
+        yhigh_.reserve(numCells);
         
         // find bounding boxes for all cells
         for (int c = 0; c < numCells; ++c) {
@@ -94,12 +94,7 @@ class SearchSimple {
     SearchSimple & operator = (const SearchSimple &) = delete;
 
     //! Destructor
-    ~SearchSimple() {
-        delete [] xlow_;
-        delete [] xhigh_;
-        delete [] ylow_;
-        delete [] yhigh_;
-    }
+    ~SearchSimple() = default;
 
     /*!
       \brief returns source mesh cells potentially overlapping given target cell
@@ -114,10 +109,10 @@ class SearchSimple {
     // Aggregate data members
     const SourceMeshType & sourceMesh_;
     const TargetMeshType & targetMesh_;
-    double* xlow_;
-    double* xhigh_;
-    double* ylow_;
-    double* yhigh_;
+    std::vector<double> xlow_;
+    std::vector<double> xhigh_;
+    std::vector<double> ylow_;
+    std::vector<double> yhigh_;
 
 }; // class SearchSimple
 
