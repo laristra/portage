@@ -169,6 +169,25 @@ class Jali_Mesh_Wrapper {
 
   }
 
+  //! 2D version of coords of nodes of a dual cell
+  // Input is the node ID 'nodeid', and it returns the vertex coordinates of
+  // the dual cell around this node in `xylist`.
+
+  void dual_cell_get_coordinates(int const nodeid,
+                    std::vector<std::pair<double,double> > *xylist) const {
+    assert(jali_mesh_.space_dimension() == 2);
+
+    Jali::Entity_ID_List cornerids;
+    jali_mesh_.node_get_corners(nodeid, Jali::ALL, &cornerids);
+    // cornerids *must* be ordered in a ccw manner
+    for (const auto cornerid : cornerids) {
+        std::vector<JaliGeometry::Point> cncoords;
+        jali_mesh_.corner_get_coordinates(cornerid, &cncoords);
+        xylist->push_back({cncoords[1].x(), cncoords[1].y()}); // Edge midpoint
+        xylist->push_back({cncoords[2].x(), cncoords[2].y()}); // Centroid
+    }
+  }
+
  private:
   Jali::Mesh const & jali_mesh_;
 
