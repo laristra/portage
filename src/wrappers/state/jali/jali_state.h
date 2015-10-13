@@ -13,10 +13,10 @@
 */
 #include <iostream>
 
-/*namespace std
+namespace std
 {
     typedef decltype(nullptr) nullptr_t;
-}*/
+}
 
 #include <boost/iterator/permutation_iterator.hpp>
 
