@@ -207,10 +207,14 @@ public:
   };
 
  private:
-  
+ 
+  // Pointer to the mesh associated with this state 
   Jali::Mesh const * const mymesh_;
+  // All the state vectors
   std::vector<std::shared_ptr<BaseStateVector>> state_vectors_;
+  // Stores which indices of state_vectors_ correspond to data stored on each entity kind
   std::vector<int> entity_indexes_[NUM_ENTITY_TYPES];
+  // Names of the state vectors
   std::vector<std::string> names_;
 
 };
