@@ -13,10 +13,10 @@
 */
 #include <iostream>
 
-namespace std
+/*namespace std
 {
     typedef decltype(nullptr) nullptr_t;
-}
+}*/
 
 #include <boost/iterator/permutation_iterator.hpp>
 
@@ -49,12 +49,15 @@ public:
                        
   ~State() {}
                            
-  // Iterators for going through all the state vectors  
+  // Typedefs for iterators for going through all the state vectors  
 
   typedef std::vector<std::shared_ptr<BaseStateVector>>::iterator iterator;
   typedef std::vector<std::shared_ptr<BaseStateVector>>::const_iterator const_iterator;
-  typedef boost::permutation_iterator<std::vector<std::shared_ptr<BaseStateVector>>::iterator, std::vector<int>::iterator> permutation_type;
   typedef std::vector<std::string>::iterator string_iterator;
+
+  // Typedefs for permutation iterators to allow iteration through only the state vectors on a specified entity
+
+  typedef boost::permutation_iterator<std::vector<std::shared_ptr<BaseStateVector>>::iterator, std::vector<int>::iterator> permutation_type;
   typedef boost::permutation_iterator<std::vector<std::string>::iterator, std::vector<int>::iterator> string_permutation;
 
   iterator begin() { return state_vectors_.begin(); };
@@ -67,7 +70,7 @@ public:
   string_iterator names_begin() { return names_.begin(); };
   string_iterator names_end()   { return names_.end();   };
 
-  // Iterators for specific entity types
+  // Permutation iterators for iterating over state vectors on a specific entity type 
 
   permutation_type entity_begin(Jali::Entity_kind entityAssociation) { return boost::make_permutation_iterator(state_vectors_.begin(), entity_indexes_[entityAssociation].begin()); }
   permutation_type entity_end(Jali::Entity_kind entityAssociation) { return boost::make_permutation_iterator(state_vectors_.begin(), entity_indexes_[entityAssociation].end()); }
@@ -138,6 +141,10 @@ public:
       std::shared_ptr<StateVector<T>> vector(new StateVector<T>(name, on_what, mymesh_, data));
       state_vectors_.push_back(vector);
     
+      // add the index of this vector in state_vectors_ to the vector of
+      // indexes for this entity type, to allow iteration over state
+      // vectors on this entity type with a permutation iterator
+
       entity_indexes_[on_what].push_back(state_vectors_.size()-1);
       names_.push_back(name);
 
@@ -176,6 +183,10 @@ public:
         std::shared_ptr<StateVector<T>> vector_copy(new StateVector<T>(vector));
         state_vectors_.push_back(vector_copy);
       }
+
+      // add the index of this vector in state_vectors_ to the vector of
+      // indexes for this entity type, to allow iteration over state
+      // vectors on this entity type with a permutation iterator
 
       entity_indexes_[vector.on_what()].push_back(state_vectors_.size()-1);
       names_.push_back(vector.name());
