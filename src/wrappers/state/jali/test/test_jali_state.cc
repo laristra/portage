@@ -14,6 +14,24 @@
 #include "Mesh.hh"
 #include "MeshFactory.hh"
 
+// Vector type for 2d doubles
+struct Vec2d
+{
+  double x;
+  double y;
+
+  void set(double xvalue, double yvalue)
+  {
+    x = xvalue;  y = yvalue;
+  }
+
+  friend std::ostream &operator<<(std::ostream &output, const Vec2d &v)
+  {
+    output << "(" << v.x << ", " << v.y << ")";
+    return output;
+  }
+};
+
 
 TEST(Jali_State, DefineState) {
 
@@ -129,6 +147,55 @@ TEST(Jali_State, DefineState) {
 
   itc = mystate.find("cellvars2",Jali::CELL);
   ASSERT_EQ(mystate.end(),it);
+
+
+  // Add state vectors of different data types
+
+  int n_cells = 4;
+  int n_nodes = 9;
+  float ftest[] = {1.1, 2.2, 3.3, 4.4};
+  int itest[] = {1, 2, 3, 4, 5, 6, 7, 8, 9};
+  Vec2d vtest[n_cells];
+  for (unsigned int i=0; i<n_cells; i++) vtest[i].set(1.0*i, 2.0*i);
+
+  Jali::MeshFactory factory(MPI_COMM_WORLD);
+
+  Jali::Mesh* dataMesh = factory(0.0, 0.0, 1.0, 1.0, 2, 2);
+  Jali::State dstate(dataMesh);
+
+  dstate.add("f1", Jali::CELL, ftest);
+  dstate.add("i1", Jali::NODE, itest);
+  dstate.add("v1", Jali::CELL, vtest);
+
+  // Iterate through all state vectors and count them
+
+  int cnt = 0;
+  for (Jali::State::iterator it = dstate.begin(); it != dstate.end(); it++) cnt++;
+  ASSERT_EQ(cnt, 3);
+
+  // Iterate through all cell state vectors and count them
+
+  cnt = 0;
+  for (Jali::State::permutation_type it = dstate.entity_begin(Jali::CELL); it != dstate.entity_end(Jali::CELL); it++) cnt++;
+  ASSERT_EQ(cnt, 2);
+
+  // Iterate through all node state vectors and count them
+
+  cnt = 0;
+  for (Jali::State::permutation_type it = dstate.entity_begin(Jali::NODE); it != dstate.entity_end(Jali::NODE); it++) cnt++;
+  ASSERT_EQ(cnt, 1);
+
+  // Iterate through all state vectors and get their type
+
+  int testCnt = 0;
+  for (Jali::State::iterator it = dstate.begin(); it != dstate.end(); it++)
+  {
+    if (typeid(float) == (*it)->get_type())      ASSERT_EQ(testCnt, 0);
+    else if (typeid(int) == (*it)->get_type())   ASSERT_EQ(testCnt, 1);
+    else if (typeid(Vec2d) == (*it)->get_type()) ASSERT_EQ(testCnt, 2);
+    else                                         ASSERT_EQ(0, 1);        // This else should never be reached in this test
+    testCnt++;
+  }
 
 }
 
