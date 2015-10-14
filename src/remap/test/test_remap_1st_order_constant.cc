@@ -49,8 +49,8 @@ TEST(Remap_1st_Order,Constant_Field_Test1) {
   std::string varname("cellvars");
   std::vector<double> data1 = {1.25,1.25,1.25,1.25,1.25,1.25,1.25,1.25,
                                1.25,1.25,1.25,1.25,1.25,1.25,1.25,1.25}; 
-  Jali::StateVector myvec1("cellvars",Jali::CELL,mesh1,&(data1[0]));
-  Jali::StateVector &addvec1 = mystate.add(myvec1);
+  Jali::StateVector<double> myvec1("cellvars",Jali::CELL,mesh1,&(data1[0]));
+  Jali::StateVector<double> &addvec1 = mystate.add(myvec1);
 
   // Create a Remap object
 
