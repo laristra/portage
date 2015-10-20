@@ -54,11 +54,7 @@ void Driver::run()
     target_state_.get_data(Jali::CELL,remap_var_names_[0],&target_field);
 
     // Create a cellIndices vector and populates with a sequence of
-    // ints starting at 0. Will go away when Jali has iterators for
-    // mesh entities
-
-    std::vector<int> cellIndices(numTargetCells);
-    std::iota(cellIndices.begin(), cellIndices.end(), 0);
+    // ints starting at 0. 
 
 	composerFunctor<SearchSimple<Jali_Mesh_Wrapper,Jali_Mesh_Wrapper>, 
                     IntersectClipper<Jali::Entity_ID>, 
@@ -66,7 +62,7 @@ void Driver::run()
             composer(&search, &intersect, &remap, remap_var_names_[0]);
 
     // this populates targetField with the doubles returned from the final remap
-    std::transform(cellIndices.begin(), cellIndices.end(),target_field,
+    std::transform(target_mesh_.begin(Jali::CELL), target_mesh_.end(Jali::CELL),target_field,
                    composer);
 
 } // Driver::run

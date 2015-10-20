@@ -13,6 +13,7 @@
 #include "Mesh.hh"
 #include "MeshFactory.hh"
 
+
 int main(int argc, char** argv)
 {
   int mpi_init_flag;
@@ -40,14 +41,12 @@ int main(int argc, char** argv)
 
   Jali::State sourceState(inputMesh);
   std::vector<double> sourceData = {0.0,1.0,2.0,1.0,2.0,3.0,2.0,3.0,4.0};
-  Jali::StateVector & cellvecin = 
-      sourceState.add("celldata",Jali::CELL,&(sourceData[0]));
+  Jali::StateVector<double> & cellvecin = sourceState.add("celldata", Jali::CELL, &(sourceData[0]));
   Jali_State_Wrapper sourceStateWrapper(sourceState);
 
   Jali::State targetState(targetMesh);
   std::vector<double> targetData(16,0.0);
-  Jali::StateVector & cellvecout = 
-      targetState.add("celldata",Jali::CELL,&(targetData[0]));
+  Jali::StateVector<double> & cellvecout = targetState.add("celldata", Jali::CELL, &(targetData[0]));
   Jali_State_Wrapper targetStateWrapper(targetState);
 
   Portage::Driver d(inputMeshWrapper, sourceStateWrapper,
