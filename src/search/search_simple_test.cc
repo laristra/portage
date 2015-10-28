@@ -19,12 +19,11 @@ TEST(search_simple, case1)
     Jali_Mesh_Wrapper source_mesh_wrapper(*smesh);
     Jali_Mesh_Wrapper target_mesh_wrapper(*tmesh);
 
-    Portage::SearchSimple<Jali_Mesh_Wrapper,Jali_Mesh_Wrapper>* search = 
-            new Portage::SearchSimple<Jali_Mesh_Wrapper,Jali_Mesh_Wrapper> (source_mesh_wrapper, target_mesh_wrapper);
+    auto search = Portage::SearchSimple<Jali_Mesh_Wrapper,Jali_Mesh_Wrapper>(source_mesh_wrapper, target_mesh_wrapper);
 
     for (int tc = 0; tc < 4; ++tc) {
         std::vector<int> candidates;
-        search->search(tc, &candidates);
+        search.search(tc, &candidates);
 
         ASSERT_EQ(candidates.size(), 4);
         int tx = tc % 2; int ty = tc / 2;
