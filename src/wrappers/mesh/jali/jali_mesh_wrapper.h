@@ -190,15 +190,15 @@ class Jali_Mesh_Wrapper {
     order_points(xylist, center_node);
   }
 
-  // Three 2D points (p1, p2, p3) are a counter-clockwise turn if ccw > 0,
-  // clockwise if ccw < 0, and collinear if ccw = 0
-  double ccw(const std::pair<double, double> p1,
+  // Returns true if the three 2D points (p1, p2, p3) are a counter-clockwise
+  // turn, otherwise returns false (corresponding to clockwise or collinear)
+  bool ccw(const std::pair<double, double> p1,
           const std::pair<double, double> p2,
           const std::pair<double, double> p3) const {
       return (std::get<0>(p2) - std::get<0>(p1)) *
           (std::get<1>(p3) - std::get<1>(p1)) -
           (std::get<1>(p2) - std::get<1>(p1)) *
-          (std::get<0>(p3) - std::get<0>(p1));
+          (std::get<0>(p3) - std::get<0>(p1)) > 0;
   }
 
   // Orders points in xylist in a CCW manner wrt. center_node
@@ -206,7 +206,7 @@ class Jali_Mesh_Wrapper {
           const std::pair<double, double> &center_node) const {
       std::sort(xylist->begin(), xylist->end(), [&](std::pair<double, double> a,
                   std::pair<double, double> b) {
-              return ccw(a, center_node, b) > 0;
+              return ccw(a, center_node, b);
               });
   }
 
