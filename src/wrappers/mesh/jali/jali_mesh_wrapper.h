@@ -171,7 +171,12 @@ class Jali_Mesh_Wrapper {
 
   //! 2D version of coords of nodes of a dual cell
   // Input is the node ID 'nodeid', and it returns the vertex coordinates of
-  // the dual cell around this node in `xylist`.
+  // the dual cell around this node in `xylist`. The vertices are ordered CCW.
+  // For boundary node 'nodeid', the first vertex is the node itself, this
+  // uniquely determines the 'xylist' vector. For node 'nodeid' not on a
+  // boundary, the vector 'xylist' starts with a random vertex, but it is still
+  // ordered CCW. Use the 'dual_cell_coordinates_canonical_rotation' to rotate
+  // the 'xylist' into a canonical (unique) form.
 
   void dual_cell_get_coordinates(int const nodeid,
                     std::vector<std::pair<double,double> > *xylist) const {
@@ -260,6 +265,33 @@ class Jali_Mesh_Wrapper {
           (std::get<1>(p3) - std::get<1>(p1)) -
           (std::get<1>(p2) - std::get<1>(p1)) *
           (std::get<0>(p3) - std::get<0>(p1)) > 0;
+  }
+
+  // Rotate the 'xylist' vector into a canonical (unique) form. The first point
+  // will be the one with the lowest angle between it, the nodeid and the
+  // x-axis.
+  static void coordinates_canonical_rotation(
+          const std::pair<double, double> center_node,
+          std::vector<std::pair<double, double>> *xylist) {
+    int i = 0;
+    auto angle = [&]() {
+        return std::atan2(std::get<1>((*xylist)[i])-std::get<1>(center_node),
+                std::get<0>((*xylist)[i])-std::get<0>(center_node));
+    };
+    double a = angle();
+    while (a >= 0) { i++; i = i % xylist->size(); a = angle(); }
+    while (a < 0) { i++; i = i % xylist->size(); a = angle(); }
+    std::rotate(xylist->begin(), xylist->begin()+i, xylist->end());
+  }
+
+  // Rotate the 'xylist' vector into a canonical (unique) form. The first point
+  // will be the one with the lowest angle between it, the nodeid and the
+  // x-axis.
+  void dual_cell_coordinates_canonical_rotation(int const nodeid,
+                    std::vector<std::pair<double,double> > *xylist) const {
+    std::pair<double, double> center_node;
+    node_get_coordinates(nodeid, &center_node);
+    coordinates_canonical_rotation(center_node, xylist);
   }
 
  private:
