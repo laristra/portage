@@ -169,6 +169,131 @@ class Jali_Mesh_Wrapper {
 
   }
 
+  //! 2D version of coords of nodes of a dual cell
+  // Input is the node ID 'nodeid', and it returns the vertex coordinates of
+  // the dual cell around this node in `xylist`. The vertices are ordered CCW.
+  // For boundary node 'nodeid', the first vertex is the node itself, this
+  // uniquely determines the 'xylist' vector. For node 'nodeid' not on a
+  // boundary, the vector 'xylist' starts with a random vertex, but it is still
+  // ordered CCW. Use the 'dual_cell_coordinates_canonical_rotation' to rotate
+  // the 'xylist' into a canonical (unique) form.
+
+  void dual_cell_get_coordinates(int const nodeid,
+                    std::vector<std::pair<double,double> > *xylist) const {
+    assert(jali_mesh_.space_dimension() == 2);
+
+    Jali::Entity_ID cornerid, wedgeid, wedgeid0;
+    Jali::Entity_ID_List cornerids, wedgeids;
+    std::vector<JaliGeometry::Point> wcoords; // (node, edge midpoint, centroid)
+
+    // Start with an arbitrary corner
+    jali_mesh_.node_get_corners(nodeid, Jali::ALL, &cornerids);
+    cornerid = cornerids[0];
+
+    // Process this corner
+    jali_mesh_.corner_get_wedges(cornerid, &wedgeids);
+    order_wedges_ccw(&wedgeids);
+    jali_mesh_.wedge_get_coordinates(wedgeids[0], &wcoords);
+    xylist->push_back({wcoords[2].x(), wcoords[2].y()}); // centroid
+    jali_mesh_.wedge_get_coordinates(wedgeids[1], &wcoords);
+    xylist->push_back({wcoords[1].x(), wcoords[1].y()}); // edge midpoint
+
+    wedgeid0 = wedgeids[0];
+
+    // Process the rest of the corners in the CCW manner
+    wedgeid = jali_mesh_.wedge_get_opposite_wedge(wedgeids[1]);
+    // wedgeid == -1 means we are on the boundary, and wedgeid == wedgeid0
+    // means we are not on the boundary and we finished the loop
+    while (wedgeid != -1 and wedgeid != wedgeid0) {
+        cornerid = jali_mesh_.wedge_get_corner(wedgeid);
+        jali_mesh_.corner_get_wedges(cornerid, &wedgeids);
+        order_wedges_ccw(&wedgeids);
+        assert(wedgeids[0] == wedgeid);
+        jali_mesh_.wedge_get_coordinates(wedgeids[0], &wcoords);
+        xylist->push_back({wcoords[2].x(), wcoords[2].y()}); // centroid
+        jali_mesh_.wedge_get_coordinates(wedgeids[1], &wcoords);
+        xylist->push_back({wcoords[1].x(), wcoords[1].y()}); // edge midpoint
+        wedgeid = jali_mesh_.wedge_get_opposite_wedge(wedgeids[1]);
+    }
+
+    if (wedgeid == -1) {
+        // This is a boundary node, go the other way in a CW manner to get all
+        // the coordinates and include the node (nodid) itself
+        jali_mesh_.wedge_get_coordinates(wedgeid0, &wcoords);
+        xylist->insert(xylist->begin(), {wcoords[1].x(), wcoords[1].y()}); // edge midpoint
+
+        wedgeid = jali_mesh_.wedge_get_opposite_wedge(wedgeid0);
+        // We must encounter the other boundary, so we only test for wedgeid ==
+        // -1
+        while (wedgeid != -1) {
+            cornerid = jali_mesh_.wedge_get_corner(wedgeid);
+            jali_mesh_.corner_get_wedges(cornerid, &wedgeids);
+            order_wedges_ccw(&wedgeids);
+            assert(wedgeids[1] == wedgeid);
+            jali_mesh_.wedge_get_coordinates(wedgeids[1], &wcoords);
+            xylist->insert(xylist->begin(), {wcoords[2].x(), wcoords[2].y()}); // centroid
+            jali_mesh_.wedge_get_coordinates(wedgeids[0], &wcoords);
+            xylist->insert(xylist->begin(), {wcoords[1].x(), wcoords[1].y()}); // edge midpoint
+            wedgeid = jali_mesh_.wedge_get_opposite_wedge(wedgeids[0]);
+        }
+
+        // Include the node itself
+        xylist->insert(xylist->begin(), {wcoords[0].x(), wcoords[0].y()}); // node
+    }
+  }
+
+  void order_wedges_ccw(Jali::Entity_ID_List *wedgeids) const {
+    assert(wedgeids->size() == 2);
+    std::vector<JaliGeometry::Point> wcoords;
+    jali_mesh_.wedge_get_coordinates((*wedgeids)[0], &wcoords);
+
+    // Ensure (*wedgeids)[0] is the first wedge in a CCW direction
+    if (not ccw(
+            {wcoords[0].x(), wcoords[0].y()},
+            {wcoords[1].x(), wcoords[1].y()},
+            {wcoords[2].x(), wcoords[2].y()})) {
+        std::swap((*wedgeids)[0], (*wedgeids)[1]);
+    }
+  }
+
+  // Returns true if the three 2D points (p1, p2, p3) are a counter-clockwise
+  // turn, otherwise returns false (corresponding to clockwise or collinear)
+  bool ccw(const std::pair<double, double> p1,
+          const std::pair<double, double> p2,
+          const std::pair<double, double> p3) const {
+      return (std::get<0>(p2) - std::get<0>(p1)) *
+          (std::get<1>(p3) - std::get<1>(p1)) -
+          (std::get<1>(p2) - std::get<1>(p1)) *
+          (std::get<0>(p3) - std::get<0>(p1)) > 0;
+  }
+
+  // Rotate the 'xylist' vector into a canonical (unique) form. The first point
+  // will be the one with the lowest angle between it, the nodeid and the
+  // x-axis.
+  static void coordinates_canonical_rotation(
+          const std::pair<double, double> center_node,
+          std::vector<std::pair<double, double>> *xylist) {
+    int i = 0;
+    auto angle = [&]() {
+        return std::atan2(std::get<1>((*xylist)[i])-std::get<1>(center_node),
+                std::get<0>((*xylist)[i])-std::get<0>(center_node));
+    };
+    double a = angle();
+    while (a >= 0) { i++; i = i % xylist->size(); a = angle(); }
+    while (a < 0) { i++; i = i % xylist->size(); a = angle(); }
+    std::rotate(xylist->begin(), xylist->begin()+i, xylist->end());
+  }
+
+  // Rotate the 'xylist' vector into a canonical (unique) form. The first point
+  // will be the one with the lowest angle between it, the nodeid and the
+  // x-axis.
+  void dual_cell_coordinates_canonical_rotation(int const nodeid,
+                    std::vector<std::pair<double,double> > *xylist) const {
+    std::pair<double, double> center_node;
+    node_get_coordinates(nodeid, &center_node);
+    coordinates_canonical_rotation(center_node, xylist);
+  }
+
  private:
   Jali::Mesh const & jali_mesh_;
 
