@@ -15,6 +15,34 @@
 
 using std::abs;
 
+// Returns true if a == b within the accuracy 'eps'
+bool vdd_eq(const std::vector<std::pair<double,double>> &a,
+    const std::vector<std::pair<double,double>> &b, double eps=1e-12)
+{
+    // Can't be equal if # of entries differ:
+    if (a.size() != b.size()) return false;
+    // Loop over elements in "a" and "b":
+    for (size_t i = 0; i < a.size(); i++) {
+        // values not equal
+        if (abs(std::get<0>(a[i]) - std::get<0>(b[i])) > eps or
+            abs(std::get<1>(a[i]) - std::get<1>(b[i])) > eps) return false;
+    }
+    return true;
+}
+
+TEST(Jali_Mesh, vdd_eq) {
+    std::vector<std::pair<double,double>> a, b, c;
+    a = {{0.25, 0}, {0.25, 0.25}};
+    b = {{0.25, 0}, {0.25, 0.25}};
+    c = {{0.25, 0.25}, {0.25, 0}};
+    ASSERT_TRUE(vdd_eq(a, b));
+    ASSERT_TRUE(vdd_eq(a, {{0.25, 0}, {0.25, 0.25}}));
+    ASSERT_TRUE(not vdd_eq(a, {{0.25, 0}}));
+    ASSERT_TRUE(not vdd_eq(a, c));
+    ASSERT_TRUE(not vdd_eq(a, {{0.25, 0.25}, {0.25, 0}}));
+    ASSERT_TRUE(vdd_eq(a, c, 0.5));
+}
+
 TEST(Jali_Mesh, ccw) {
     Jali::MeshFactory mf(MPI_COMM_WORLD);
     Jali::Mesh *mesh = mf(0.0,0.0,1.0,1.0,2,2);
