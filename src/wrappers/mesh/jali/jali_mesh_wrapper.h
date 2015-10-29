@@ -177,17 +177,78 @@ class Jali_Mesh_Wrapper {
                     std::vector<std::pair<double,double> > *xylist) const {
     assert(jali_mesh_.space_dimension() == 2);
 
-    Jali::Entity_ID_List cornerids;
+    Jali::Entity_ID cornerid, wedgeid, wedgeid0;
+    Jali::Entity_ID_List cornerids, wedgeids;
+    std::vector<JaliGeometry::Point> wcoords; // (node, edge midpoint, centroid)
+
+    // Start with an arbitrary corner
     jali_mesh_.node_get_corners(nodeid, Jali::ALL, &cornerids);
-    for (const auto cornerid : cornerids) {
-        std::vector<JaliGeometry::Point> cncoords;
-        jali_mesh_.corner_get_coordinates(cornerid, &cncoords);
-        xylist->push_back({cncoords[1].x(), cncoords[1].y()}); // Edge midpoint
-        xylist->push_back({cncoords[2].x(), cncoords[2].y()}); // Centroid
+    cornerid = cornerids[0];
+
+    // Process this corner
+    jali_mesh_.corner_get_wedges(cornerid, &wedgeids);
+    order_wedges_ccw(&wedgeids);
+    jali_mesh_.wedge_get_coordinates(wedgeids[0], &wcoords);
+    xylist->push_back({wcoords[2].x(), wcoords[2].y()}); // centroid
+    jali_mesh_.wedge_get_coordinates(wedgeids[1], &wcoords);
+    xylist->push_back({wcoords[1].x(), wcoords[1].y()}); // edge midpoint
+
+    wedgeid0 = wedgeids[0];
+
+    // Process the rest of the corners in the CCW manner
+    wedgeid = jali_mesh_.wedge_get_opposite_wedge(wedgeids[1]);
+    // wedgeid == -1 means we are on the boundary, and wedgeid == wedgeid0
+    // means we are not on the boundary and we finished the loop
+    while (wedgeid != -1 and wedgeid != wedgeid0) {
+        cornerid = jali_mesh_.wedge_get_corner(wedgeid);
+        jali_mesh_.corner_get_wedges(cornerid, &wedgeids);
+        order_wedges_ccw(&wedgeids);
+        assert(wedgeids[0] == wedgeid);
+        jali_mesh_.wedge_get_coordinates(wedgeids[0], &wcoords);
+        xylist->push_back({wcoords[2].x(), wcoords[2].y()}); // centroid
+        jali_mesh_.wedge_get_coordinates(wedgeids[1], &wcoords);
+        xylist->push_back({wcoords[1].x(), wcoords[1].y()}); // edge midpoint
+        wedgeid = jali_mesh_.wedge_get_opposite_wedge(wedgeids[1]);
     }
-    std::pair<double, double> center_node;
-    node_get_coordinates(nodeid, &center_node);
-    order_points(xylist, center_node);
+
+    if (wedgeid == -1) {
+        // This is a boundary node, go the other way in a CW manner to get all
+        // the coordinates and include the node (nodid) itself
+        jali_mesh_.wedge_get_coordinates(wedgeid0, &wcoords);
+        xylist->insert(xylist->begin(), {wcoords[1].x(), wcoords[1].y()}); // edge midpoint
+
+        wedgeid = jali_mesh_.wedge_get_opposite_wedge(wedgeid0);
+        // We must encounter the other boundary, so we only test for wedgeid ==
+        // -1
+        while (wedgeid != -1) {
+            cornerid = jali_mesh_.wedge_get_corner(wedgeid);
+            jali_mesh_.corner_get_wedges(cornerid, &wedgeids);
+            order_wedges_ccw(&wedgeids);
+            assert(wedgeids[1] == wedgeid);
+            jali_mesh_.wedge_get_coordinates(wedgeids[1], &wcoords);
+            xylist->insert(xylist->begin(), {wcoords[2].x(), wcoords[2].y()}); // centroid
+            jali_mesh_.wedge_get_coordinates(wedgeids[0], &wcoords);
+            xylist->insert(xylist->begin(), {wcoords[1].x(), wcoords[1].y()}); // edge midpoint
+            wedgeid = jali_mesh_.wedge_get_opposite_wedge(wedgeids[0]);
+        }
+
+        // Include the node itself
+        xylist->insert(xylist->begin(), {wcoords[0].x(), wcoords[0].y()}); // node
+    }
+  }
+
+  void order_wedges_ccw(Jali::Entity_ID_List *wedgeids) const {
+    assert(wedgeids->size() == 2);
+    std::vector<JaliGeometry::Point> wcoords;
+    jali_mesh_.wedge_get_coordinates((*wedgeids)[0], &wcoords);
+
+    // Ensure (*wedgeids)[0] is the first wedge in a CCW direction
+    if (not ccw(
+            {wcoords[0].x(), wcoords[0].y()},
+            {wcoords[1].x(), wcoords[1].y()},
+            {wcoords[2].x(), wcoords[2].y()})) {
+        std::swap((*wedgeids)[0], (*wedgeids)[1]);
+    }
   }
 
   // Returns true if the three 2D points (p1, p2, p3) are a counter-clockwise
@@ -200,16 +261,6 @@ class Jali_Mesh_Wrapper {
           (std::get<1>(p2) - std::get<1>(p1)) *
           (std::get<0>(p3) - std::get<0>(p1)) > 0;
   }
-
-  // Orders points in xylist in a CCW manner wrt. center_node
-  void order_points(std::vector<std::pair<double, double> > *xylist,
-          const std::pair<double, double> &center_node) const {
-      std::sort(xylist->begin(), xylist->end(), [&](std::pair<double, double> a,
-                  std::pair<double, double> b) {
-              return ccw(b, center_node, a);
-              });
-  }
-
 
  private:
   Jali::Mesh const & jali_mesh_;

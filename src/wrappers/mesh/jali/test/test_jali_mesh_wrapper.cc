@@ -66,21 +66,97 @@ TEST(Jali_Mesh, dual_cell_get_coordinates) {
 
     std::vector<std::pair<double,double>> xylist;
     mesh_wrapper.dual_cell_get_coordinates(0, &xylist);
-    ASSERT_TRUE(vdd_eq(xylist, {{0.25, 0}, {0.25, 0.25}})); // wrong
+    ASSERT_TRUE(vdd_eq(xylist, {
+                {0, 0},
+                {0.25, 0},
+                {0.25, 0.25},
+                {0, 0.25},
+                }));
     xylist.clear();
 
     mesh_wrapper.dual_cell_get_coordinates(1, &xylist);
-    ASSERT_TRUE(vdd_eq(xylist, {{0.75, 0}, {0.75, 0.25}, {0.25, 0.25},
-                {0.25, 0}})); // correct
+    ASSERT_TRUE(vdd_eq(xylist, {
+                {0.5, 0},
+                {0.75, 0},
+                {0.75, 0.25},
+                {0.5, 0.25},
+                {0.25, 0.25},
+                {0.25, 0},
+                }));
     xylist.clear();
 
     mesh_wrapper.dual_cell_get_coordinates(2, &xylist);
-    ASSERT_TRUE(vdd_eq(xylist, {{0.75, 0.25}, {0.75, 0}})); // wrong
+    ASSERT_TRUE(vdd_eq(xylist, {
+                {1, 0},
+                {1, 0.25},
+                {0.75, 0.25},
+                {0.75, 0},
+                }));
     xylist.clear();
 
     mesh_wrapper.dual_cell_get_coordinates(3, &xylist);
-    ASSERT_TRUE(vdd_eq(xylist, {{0.25, 0.25}, {0.25, 0.5}, {0.25, 0.5},
-                {0.25, 0.75}})); // wrong
+    ASSERT_TRUE(vdd_eq(xylist, {
+                {0, 0.5},
+                {0, 0.25},
+                {0.25, 0.25},
+                {0.25, 0.5},
+                {0.25, 0.75},
+                {0, 0.75},
+                }));
+    xylist.clear();
+
+    mesh_wrapper.dual_cell_get_coordinates(4, &xylist);
+    // Note: xylist is given up to a rotation
+    ASSERT_TRUE(vdd_eq(xylist, {
+                {0.25, 0.25},
+                {0.5, 0.25},
+                {0.75, 0.25},
+                {0.75, 0.5},
+                {0.75, 0.75},
+                {0.5, 0.75},
+                {0.25, 0.75},
+                {0.25, 0.5},
+                }));
+    xylist.clear();
+
+    mesh_wrapper.dual_cell_get_coordinates(5, &xylist);
+    ASSERT_TRUE(vdd_eq(xylist, {
+                {1, 0.5},
+                {1, 0.75},
+                {0.75, 0.75},
+                {0.75, 0.5},
+                {0.75, 0.25},
+                {1, 0.25},
+                }));
+    xylist.clear();
+
+    mesh_wrapper.dual_cell_get_coordinates(6, &xylist);
+    ASSERT_TRUE(vdd_eq(xylist, {
+                {0, 1},
+                {0, 0.75},
+                {0.25, 0.75},
+                {0.25, 1},
+                }));
+    xylist.clear();
+
+    mesh_wrapper.dual_cell_get_coordinates(7, &xylist);
+    ASSERT_TRUE(vdd_eq(xylist, {
+                {0.5, 1},
+                {0.25, 1},
+                {0.25, 0.75},
+                {0.5, 0.75},
+                {0.75, 0.75},
+                {0.75, 1},
+                }));
+    xylist.clear();
+
+    mesh_wrapper.dual_cell_get_coordinates(8, &xylist);
+    ASSERT_TRUE(vdd_eq(xylist, {
+                {1, 1},
+                {0.75, 1},
+                {0.75, 0.75},
+                {1, 0.75},
+                }));
     xylist.clear();
 
     /*
