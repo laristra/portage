@@ -13,6 +13,8 @@
 #include "Mesh.hh"
 #include "MeshFactory.hh"
 
+using std::abs;
+
 TEST(Jali_Mesh, ccw) {
     Jali::MeshFactory mf(MPI_COMM_WORLD);
     Jali::Mesh *mesh = mf(0.0,0.0,1.0,1.0,2,2);
