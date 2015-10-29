@@ -24,6 +24,9 @@ TEST(Jali_Mesh, ccw) {
     ASSERT_TRUE(mesh_wrapper.ccw({-1, 0}, {0, 0}, {0, 1}));
     ASSERT_TRUE(not mesh_wrapper.ccw({1, 0}, {0, 0}, {0, 1}));
     ASSERT_TRUE(not mesh_wrapper.ccw({-1, 0}, {0, 0}, {1, 0}));
+    ASSERT_TRUE(mesh_wrapper.ccw({0.25, 0}, {0.5, 0}, {0.25, 0.25}));
+    ASSERT_TRUE(not mesh_wrapper.ccw({0.25, 0}, {0, 0}, {0.25, 0.25}));
+    ASSERT_TRUE(mesh_wrapper.ccw({0.25, 0.25}, {0, 0}, {0.25, 0}));
 }
 
 TEST(Jali_Mesh, dual_cell_get_coordinates) {
@@ -37,29 +40,29 @@ TEST(Jali_Mesh, dual_cell_get_coordinates) {
     mesh_wrapper.dual_cell_get_coordinates(0, &xylist);
     ASSERT_TRUE(xylist.size() == 2);
     ASSERT_TRUE(abs(std::get<0>(xylist[0]) - 0.25) < eps);
-    ASSERT_TRUE(abs(std::get<1>(xylist[0]) - 0.25) < eps);
+    ASSERT_TRUE(abs(std::get<1>(xylist[0]) - 0   ) < eps);
     ASSERT_TRUE(abs(std::get<0>(xylist[1]) - 0.25) < eps);
-    ASSERT_TRUE(abs(std::get<1>(xylist[1]) - 0   ) < eps);
+    ASSERT_TRUE(abs(std::get<1>(xylist[1]) - 0.25) < eps);
     xylist.clear();
 
     mesh_wrapper.dual_cell_get_coordinates(1, &xylist);
     ASSERT_TRUE(xylist.size() == 4);
-    ASSERT_TRUE(abs(std::get<0>(xylist[0]) - 0.25) < eps);
+    ASSERT_TRUE(abs(std::get<0>(xylist[0]) - 0.75) < eps);
     ASSERT_TRUE(abs(std::get<1>(xylist[0]) - 0   ) < eps);
-    ASSERT_TRUE(abs(std::get<0>(xylist[1]) - 0.25) < eps);
+    ASSERT_TRUE(abs(std::get<0>(xylist[1]) - 0.75) < eps);
     ASSERT_TRUE(abs(std::get<1>(xylist[1]) - 0.25) < eps);
-    ASSERT_TRUE(abs(std::get<0>(xylist[2]) - 0.75) < eps);
+    ASSERT_TRUE(abs(std::get<0>(xylist[2]) - 0.25) < eps);
     ASSERT_TRUE(abs(std::get<1>(xylist[2]) - 0.25) < eps);
-    ASSERT_TRUE(abs(std::get<0>(xylist[3]) - 0.75) < eps);
+    ASSERT_TRUE(abs(std::get<0>(xylist[3]) - 0.25) < eps);
     ASSERT_TRUE(abs(std::get<1>(xylist[3]) - 0   ) < eps);
     xylist.clear();
 
     mesh_wrapper.dual_cell_get_coordinates(2, &xylist);
     ASSERT_TRUE(xylist.size() == 2);
     ASSERT_TRUE(abs(std::get<0>(xylist[0]) - 0.75) < eps);
-    ASSERT_TRUE(abs(std::get<1>(xylist[0]) - 0   ) < eps);
+    ASSERT_TRUE(abs(std::get<1>(xylist[0]) - 0.25) < eps);
     ASSERT_TRUE(abs(std::get<0>(xylist[1]) - 0.75) < eps);
-    ASSERT_TRUE(abs(std::get<1>(xylist[1]) - 0.25) < eps);
+    ASSERT_TRUE(abs(std::get<1>(xylist[1]) - 0   ) < eps);
     xylist.clear();
 
     /*

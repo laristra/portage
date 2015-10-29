@@ -206,7 +206,7 @@ class Jali_Mesh_Wrapper {
           const std::pair<double, double> &center_node) const {
       std::sort(xylist->begin(), xylist->end(), [&](std::pair<double, double> a,
                   std::pair<double, double> b) {
-              return ccw(a, center_node, b);
+              return ccw(b, center_node, a);
               });
   }
 
