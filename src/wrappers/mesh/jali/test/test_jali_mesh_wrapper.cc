@@ -164,7 +164,7 @@ TEST(Jali_Mesh, dual_cell_get_coordinates) {
     std::cout << "xylist:" << std::endl;
     std::cout << xylist.size() << std::endl;
     for (auto &v: xylist) {
-        std::cout << v.first << " " << v.second << std::endl;
+        std::cout << "{" << v.first << ", " << v.second << "}," << std::endl;
     }
     */
 }
