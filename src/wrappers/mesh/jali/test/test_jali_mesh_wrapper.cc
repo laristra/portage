@@ -66,16 +66,21 @@ TEST(Jali_Mesh, dual_cell_get_coordinates) {
 
     std::vector<std::pair<double,double>> xylist;
     mesh_wrapper.dual_cell_get_coordinates(0, &xylist);
-    ASSERT_TRUE(vdd_eq(xylist, {{0.25, 0}, {0.25, 0.25}}));
+    ASSERT_TRUE(vdd_eq(xylist, {{0.25, 0}, {0.25, 0.25}})); // wrong
     xylist.clear();
 
     mesh_wrapper.dual_cell_get_coordinates(1, &xylist);
     ASSERT_TRUE(vdd_eq(xylist, {{0.75, 0}, {0.75, 0.25}, {0.25, 0.25},
-                {0.25, 0}}));
+                {0.25, 0}})); // correct
     xylist.clear();
 
     mesh_wrapper.dual_cell_get_coordinates(2, &xylist);
-    ASSERT_TRUE(vdd_eq(xylist, {{0.75, 0.25}, {0.75, 0}}));
+    ASSERT_TRUE(vdd_eq(xylist, {{0.75, 0.25}, {0.75, 0}})); // wrong
+    xylist.clear();
+
+    mesh_wrapper.dual_cell_get_coordinates(3, &xylist);
+    ASSERT_TRUE(vdd_eq(xylist, {{0.25, 0.25}, {0.25, 0.5}, {0.25, 0.5},
+                {0.25, 0.75}})); // wrong
     xylist.clear();
 
     /*
