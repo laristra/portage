@@ -66,31 +66,16 @@ TEST(Jali_Mesh, dual_cell_get_coordinates) {
 
     std::vector<std::pair<double,double>> xylist;
     mesh_wrapper.dual_cell_get_coordinates(0, &xylist);
-    ASSERT_TRUE(xylist.size() == 2);
-    ASSERT_TRUE(abs(std::get<0>(xylist[0]) - 0.25) < eps);
-    ASSERT_TRUE(abs(std::get<1>(xylist[0]) - 0   ) < eps);
-    ASSERT_TRUE(abs(std::get<0>(xylist[1]) - 0.25) < eps);
-    ASSERT_TRUE(abs(std::get<1>(xylist[1]) - 0.25) < eps);
+    ASSERT_TRUE(vdd_eq(xylist, {{0.25, 0}, {0.25, 0.25}}));
     xylist.clear();
 
     mesh_wrapper.dual_cell_get_coordinates(1, &xylist);
-    ASSERT_TRUE(xylist.size() == 4);
-    ASSERT_TRUE(abs(std::get<0>(xylist[0]) - 0.75) < eps);
-    ASSERT_TRUE(abs(std::get<1>(xylist[0]) - 0   ) < eps);
-    ASSERT_TRUE(abs(std::get<0>(xylist[1]) - 0.75) < eps);
-    ASSERT_TRUE(abs(std::get<1>(xylist[1]) - 0.25) < eps);
-    ASSERT_TRUE(abs(std::get<0>(xylist[2]) - 0.25) < eps);
-    ASSERT_TRUE(abs(std::get<1>(xylist[2]) - 0.25) < eps);
-    ASSERT_TRUE(abs(std::get<0>(xylist[3]) - 0.25) < eps);
-    ASSERT_TRUE(abs(std::get<1>(xylist[3]) - 0   ) < eps);
+    ASSERT_TRUE(vdd_eq(xylist, {{0.75, 0}, {0.75, 0.25}, {0.25, 0.25},
+                {0.25, 0}}));
     xylist.clear();
 
     mesh_wrapper.dual_cell_get_coordinates(2, &xylist);
-    ASSERT_TRUE(xylist.size() == 2);
-    ASSERT_TRUE(abs(std::get<0>(xylist[0]) - 0.75) < eps);
-    ASSERT_TRUE(abs(std::get<1>(xylist[0]) - 0.25) < eps);
-    ASSERT_TRUE(abs(std::get<0>(xylist[1]) - 0.75) < eps);
-    ASSERT_TRUE(abs(std::get<1>(xylist[1]) - 0   ) < eps);
+    ASSERT_TRUE(vdd_eq(xylist, {{0.75, 0.25}, {0.75, 0}}));
     xylist.clear();
 
     /*
