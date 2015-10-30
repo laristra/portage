@@ -30,6 +30,36 @@ bool vdd_eq(const std::vector<std::pair<double,double>> &a,
     return true;
 }
 
+// Rotate the 'xylist' vector into a canonical (unique) form. The first point
+// will be the one with the lowest angle between it, the nodeid and the
+// x-axis.
+void coordinates_canonical_rotation(
+      const std::pair<double, double> center_node,
+      std::vector<std::pair<double, double>> *xylist)
+{
+    int i = 0;
+    auto angle = [&]() {
+        return std::atan2(std::get<1>((*xylist)[i])-std::get<1>(center_node),
+                std::get<0>((*xylist)[i])-std::get<0>(center_node));
+    };
+    double a = angle();
+    while (a >= 0) { i++; i = i % xylist->size(); a = angle(); }
+    while (a < 0) { i++; i = i % xylist->size(); a = angle(); }
+    std::rotate(xylist->begin(), xylist->begin()+i, xylist->end());
+}
+
+// Rotate the 'xylist' vector into a canonical (unique) form. The first point
+// will be the one with the lowest angle between it, the nodeid and the
+// x-axis.
+void dual_cell_coordinates_canonical_rotation(
+        const Jali_Mesh_Wrapper &mesh_wrapper,
+        int const nodeid,
+        std::vector<std::pair<double,double> > *xylist) {
+    std::pair<double, double> center_node;
+    mesh_wrapper.node_get_coordinates(nodeid, &center_node);
+    coordinates_canonical_rotation(center_node, xylist);
+}
+
 TEST(Jali_Mesh, vdd_eq) {
     std::vector<std::pair<double,double>> a, b, c;
     a = {{0.25, 0}, {0.25, 0.25}};
@@ -57,35 +87,35 @@ TEST(Jali_Mesh, coordinates_canonical_rotation) {
                 };
 
     xylist = { {0.75, 0.5}, {0.75, 0.75}, {0.5, 0.75}, {0.25, 0.75}, {0.25, 0.5}, {0.25, 0.25}, {0.5, 0.25}, {0.75, 0.25}, };
-    Jali_Mesh_Wrapper::coordinates_canonical_rotation({0.5, 0.5}, &xylist);
+    coordinates_canonical_rotation({0.5, 0.5}, &xylist);
     ASSERT_TRUE(vdd_eq(xylist, xylist_canonical));
 
     xylist = { {0.75, 0.75}, {0.5, 0.75}, {0.25, 0.75}, {0.25, 0.5}, {0.25, 0.25}, {0.5, 0.25}, {0.75, 0.25}, {0.75, 0.5}, };
-    Jali_Mesh_Wrapper::coordinates_canonical_rotation({0.5, 0.5}, &xylist);
+    coordinates_canonical_rotation({0.5, 0.5}, &xylist);
     ASSERT_TRUE(vdd_eq(xylist, xylist_canonical));
 
     xylist = { {0.5, 0.75}, {0.25, 0.75}, {0.25, 0.5}, {0.25, 0.25}, {0.5, 0.25}, {0.75, 0.25}, {0.75, 0.5}, {0.75, 0.75}, };
-    Jali_Mesh_Wrapper::coordinates_canonical_rotation({0.5, 0.5}, &xylist);
+    coordinates_canonical_rotation({0.5, 0.5}, &xylist);
     ASSERT_TRUE(vdd_eq(xylist, xylist_canonical));
 
     xylist = { {0.25, 0.75}, {0.25, 0.5}, {0.25, 0.25}, {0.5, 0.25}, {0.75, 0.25}, {0.75, 0.5}, {0.75, 0.75}, {0.5, 0.75}, };
-    Jali_Mesh_Wrapper::coordinates_canonical_rotation({0.5, 0.5}, &xylist);
+    coordinates_canonical_rotation({0.5, 0.5}, &xylist);
     ASSERT_TRUE(vdd_eq(xylist, xylist_canonical));
 
     xylist = { {0.25, 0.5}, {0.25, 0.25}, {0.5, 0.25}, {0.75, 0.25}, {0.75, 0.5}, {0.75, 0.75}, {0.5, 0.75}, {0.25, 0.75}, };
-    Jali_Mesh_Wrapper::coordinates_canonical_rotation({0.5, 0.5}, &xylist);
+    coordinates_canonical_rotation({0.5, 0.5}, &xylist);
     ASSERT_TRUE(vdd_eq(xylist, xylist_canonical));
 
     xylist = { {0.25, 0.25}, {0.5, 0.25}, {0.75, 0.25}, {0.75, 0.5}, {0.75, 0.75}, {0.5, 0.75}, {0.25, 0.75}, {0.25, 0.5}, };
-    Jali_Mesh_Wrapper::coordinates_canonical_rotation({0.5, 0.5}, &xylist);
+    coordinates_canonical_rotation({0.5, 0.5}, &xylist);
     ASSERT_TRUE(vdd_eq(xylist, xylist_canonical));
 
     xylist = { {0.5, 0.25}, {0.75, 0.25}, {0.75, 0.5}, {0.75, 0.75}, {0.5, 0.75}, {0.25, 0.75}, {0.25, 0.5}, {0.25, 0.25}, };
-    Jali_Mesh_Wrapper::coordinates_canonical_rotation({0.5, 0.5}, &xylist);
+    coordinates_canonical_rotation({0.5, 0.5}, &xylist);
     ASSERT_TRUE(vdd_eq(xylist, xylist_canonical));
 
     xylist = { {0.75, 0.25}, {0.75, 0.5}, {0.75, 0.75}, {0.5, 0.75}, {0.25, 0.75}, {0.25, 0.5}, {0.25, 0.25}, {0.5, 0.25}, };
-    Jali_Mesh_Wrapper::coordinates_canonical_rotation({0.5, 0.5}, &xylist);
+    coordinates_canonical_rotation({0.5, 0.5}, &xylist);
     ASSERT_TRUE(vdd_eq(xylist, xylist_canonical));
 }
 
@@ -152,7 +182,7 @@ TEST(Jali_Mesh, dual_cell_get_coordinates) {
     xylist.clear();
 
     mesh_wrapper.dual_cell_get_coordinates(4, &xylist);
-    mesh_wrapper.dual_cell_coordinates_canonical_rotation(4, &xylist);
+    dual_cell_coordinates_canonical_rotation(mesh_wrapper, 4, &xylist);
     ASSERT_TRUE(vdd_eq(xylist, {
                 {0.75, 0.5},
                 {0.75, 0.75},
