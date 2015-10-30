@@ -49,6 +49,19 @@ private:
     Jali_Mesh_Wrapper &w_;
 };
 
+class MeshWrapperDual {
+public:
+    MeshWrapperDual(Jali_Mesh_Wrapper &w) : w_(w) {}
+    int num_owned_cells() const { return w_.num_owned_nodes(); }
+    int num_ghost_cells() const { return w_.num_ghost_nodes(); }
+    void cell_get_coordinates(int const cellid,
+            std::vector<std::pair<double,double> > *xylist) const {
+        w_.dual_cell_get_coordinates(cellid, xylist);
+    }
+private:
+    Jali_Mesh_Wrapper &w_;
+};
+
 TEST(search_simple, wrapper2)
 {
     Jali::MeshFactory mf(MPI_COMM_WORLD);
