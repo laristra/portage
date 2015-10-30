@@ -36,6 +36,50 @@ TEST(search_simple, case1)
 
 } // TEST(search_simple, ctor)
 
+class MeshWrapper2 {
+public:
+    MeshWrapper2(Jali_Mesh_Wrapper &w) : w_(w) {}
+    int num_owned_cells() const { return w_.num_owned_cells(); }
+    int num_ghost_cells() const { return w_.num_ghost_cells(); }
+    void cell_get_nodes(int cellid, std::vector<int> *nodes) const {
+        w_.cell_get_nodes(cellid, nodes);
+    }
+    void node_get_coordinates(int const nodeid,
+            std::pair<double,double> *xy) const {
+        w_.node_get_coordinates(nodeid, xy);
+    }
+private:
+    Jali_Mesh_Wrapper &w_;
+};
+
+TEST(search_simple, wrapper2)
+{
+    Jali::MeshFactory mf(MPI_COMM_WORLD);
+    Jali::Mesh *smesh = mf(0.0,0.0,1.0,1.0,3,3);
+    Jali::Mesh *tmesh = mf(0.0,0.0,1.0,1.0,2,2);
+    Jali_Mesh_Wrapper source_mesh_wrapper(*smesh);
+    Jali_Mesh_Wrapper target_mesh_wrapper(*tmesh);
+
+    MeshWrapper2 s2(source_mesh_wrapper);
+    MeshWrapper2 t2(target_mesh_wrapper);
+
+    auto search = Portage::SearchSimple<MeshWrapper2, MeshWrapper2>(s2, t2);
+
+    for (int tc = 0; tc < 4; ++tc) {
+        std::vector<int> candidates;
+        search.search(tc, &candidates);
+
+        ASSERT_EQ(candidates.size(), 4);
+        int tx = tc % 2; int ty = tc / 2;
+        int scbase = tx + ty * 3;
+        ASSERT_EQ(candidates[0], scbase);
+        ASSERT_EQ(candidates[1], scbase + 1);
+        ASSERT_EQ(candidates[2], scbase + 3);
+        ASSERT_EQ(candidates[3], scbase + 4);
+    }
+
+}
+
 /*-------------------------------------------------------------------------~--*
  * Formatting options for Emacs and vim.
  *
