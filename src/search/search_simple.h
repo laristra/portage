@@ -17,10 +17,8 @@
 
 namespace { // unnamed
 
-template<typename MeshType>
 void getBoundingBox(
-    const MeshType & mesh,
-    const std::vector<int>& nodes,
+    const std::vector<std::pair<double,double>> &cell_coord,
     double* xlow, double* xhigh,
     double* ylow, double* yhigh)
 {
@@ -28,9 +26,9 @@ void getBoundingBox(
     double xl = big;  double xh = -big;
     double yl = big;  double yh = -big;
 
-    for (int n = 0; n < nodes.size(); ++n) {
+    for (int n = 0; n < cell_coord.size(); ++n) {
         std::pair<double,double> p;
-        mesh.node_get_coordinates(nodes[n],&p);
+        p = cell_coord[n];
         double x = p.first;
         double y = p.second;
         xl = std::min(xl, x);  xh = std::max(xh, x);
@@ -79,10 +77,10 @@ class SearchSimple {
         
         // find bounding boxes for all cells
         for (int c = 0; c < numCells; ++c) {
-            std::vector<int> nodes;
-            sourceMesh_.cell_get_nodes(c,&nodes);
-            getBoundingBox<SourceMeshType>(sourceMesh_, nodes,
-                                              &xlow_[c], &xhigh_[c], 
+            std::vector<std::pair<double,double>> cell_coord;
+            sourceMesh_.cell_get_coordinates(c, &cell_coord);
+            getBoundingBox(cell_coord,
+                                              &xlow_[c], &xhigh_[c],
                                               &ylow_[c], &yhigh_[c]);
         }
     } // SearchSimple::SearchSimple
@@ -123,10 +121,10 @@ void SearchSimple<SourceMeshType,TargetMeshType>::
 search(const int cellId, std::vector<int> *candidates)
 const {
     // find bounding box for target cell
-    std::vector<int> nodes;
-    targetMesh_.cell_get_nodes(cellId,&nodes);
+    std::vector<std::pair<double,double>> cell_coord;
+    targetMesh_.cell_get_coordinates(cellId, &cell_coord);
     double txlow, txhigh, tylow, tyhigh;
-    getBoundingBox<TargetMeshType>(targetMesh_, nodes, 
+    getBoundingBox(cell_coord,
                                    &txlow, &txhigh, &tylow, &tyhigh);
     
     // now see which sourceMesh cells have bounding boxes overlapping
