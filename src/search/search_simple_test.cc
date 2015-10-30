@@ -41,12 +41,9 @@ public:
     MeshWrapper2(Jali_Mesh_Wrapper &w) : w_(w) {}
     int num_owned_cells() const { return w_.num_owned_cells(); }
     int num_ghost_cells() const { return w_.num_ghost_cells(); }
-    void cell_get_nodes(int cellid, std::vector<int> *nodes) const {
-        w_.cell_get_nodes(cellid, nodes);
-    }
-    void node_get_coordinates(int const nodeid,
-            std::pair<double,double> *xy) const {
-        w_.node_get_coordinates(nodeid, xy);
+    void cell_get_coordinates(int const cellid,
+            std::vector<std::pair<double,double> > *xylist) const {
+        w_.cell_get_coordinates(cellid, xylist);
     }
 private:
     Jali_Mesh_Wrapper &w_;
