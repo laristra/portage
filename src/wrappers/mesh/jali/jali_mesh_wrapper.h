@@ -51,9 +51,19 @@ class Jali_Mesh_Wrapper {
     return jali_mesh_.num_entities(Jali::CELL, Jali::OWNED);
   }
 
+  //! Number of owned nodes in the mesh
+  int num_owned_nodes() const {
+    return jali_mesh_.num_entities(Jali::NODE, Jali::OWNED);
+  }
+
   //! Number of ghost cells in the mesh
   int num_ghost_cells() const {
     return jali_mesh_.num_entities(Jali::CELL, Jali::GHOST);
+  }
+
+  //! Number of ghost nodes in the mesh
+  int num_ghost_nodes() const {
+    return jali_mesh_.num_entities(Jali::NODE, Jali::GHOST);
   }
 
   //! Number of items of given entity
