@@ -90,6 +90,34 @@ TEST(search_simple, wrapper2)
 
 }
 
+TEST(search_simple, dual)
+{
+    Jali::MeshFactory mf(MPI_COMM_WORLD);
+    Jali::Mesh *smesh = mf(0.0,0.0,1.0,1.0,3,3, NULL, true, true, true, true);
+    Jali::Mesh *tmesh = mf(0.0,0.0,1.0,1.0,2,2, NULL, true, true, true, true);
+    Jali_Mesh_Wrapper source_mesh_wrapper(*smesh);
+    Jali_Mesh_Wrapper target_mesh_wrapper(*tmesh);
+
+    MeshWrapperDual s2(source_mesh_wrapper);
+    MeshWrapperDual t2(target_mesh_wrapper);
+
+    auto search = Portage::SearchSimple<MeshWrapperDual, MeshWrapperDual>(s2, t2);
+
+    for (int tc = 0; tc < 9; ++tc) {
+        std::vector<int> candidates;
+        search.search(tc, &candidates);
+
+        ASSERT_EQ(candidates.size(), 4);
+        int tx = tc % 3; int ty = tc / 3;
+        int scbase = tx + ty * 4;
+        ASSERT_EQ(candidates[0], scbase);
+        ASSERT_EQ(candidates[1], scbase + 1);
+        ASSERT_EQ(candidates[2], scbase + 4);
+        ASSERT_EQ(candidates[3], scbase + 5);
+    }
+
+}
+
 /*-------------------------------------------------------------------------~--*
  * Formatting options for Emacs and vim.
  *
