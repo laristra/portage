@@ -61,30 +61,23 @@ TEST(Remap_1st_Order,Constant_Field_Test1) {
 
   double outvals[4] = {0.0,0.0,0.0,0.0};  // field values on target mesh
 
-  int all_source_cells[4][4] = {{0,1,4,5},{2,3,6,7},
-                                {8,9,12,13},{10,11,14,15}};
-  double all_weights[4][4] = {{0.25,0.25,0.25,0.25},{0.25,0.25,0.25,0.25},
-                              {0.25,0.25,0.25,0.25},{0.25,0.25,0.25,0.25}};
-
-  for (int i = 0; i < 4; ++i) {
-
     // Since we know the structure of the two meshes, we can
     // enumerate which source cells intersect a given target cell and
     // what their intersection areas (weights) are
 
-    Jali::Entity_ID_List source_cells(4);
-    std::vector< std::vector<double> > weight_vectors(4);
-    for (int j = 0; j < 4; ++j) {
-      std::vector<double> wtvec;
-      wtvec.emplace_back(all_weights[i][j]);
-      weight_vectors[j] = wtvec;
-      source_cells[j] = all_source_cells[i][j];
-    }
+  std::vector<std::vector<int>> all_source_cells =
+      {{0,1,4,5},   {2,3,6,7},
+       {8,9,12,13}, {10,11,14,15}};
+  std::vector<std::vector<std::vector<double>>> all_weights =
+      {{{0.25}, {0.25}, {0.25}, {0.25}},
+       {{0.25}, {0.25}, {0.25}, {0.25}},
+       {{0.25}, {0.25}, {0.25}, {0.25}},
+       {{0.25}, {0.25}, {0.25}, {0.25}}};
 
+  for (int i = 0; i < 4; ++i) {
     std::pair< std::vector<int> const &, 
                std::vector< std::vector<double> > const & > 
-        cells_and_weights(source_cells,weight_vectors);
-
+        cells_and_weights(all_source_cells[i],all_weights[i]);
     outvals[i] = remapper(cells_and_weights);
   }
 
