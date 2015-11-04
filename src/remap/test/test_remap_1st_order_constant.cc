@@ -61,30 +61,23 @@ TEST(Remap_1st_Order,Constant_Field_Test1) {
 
   double outvals[4] = {0.0,0.0,0.0,0.0};  // field values on target mesh
 
-  int all_source_cells[4][4] = {{0,1,4,5},{2,3,6,7},
-                                {8,9,12,13},{10,11,14,15}};
-  double all_weights[4][4] = {{0.25,0.25,0.25,0.25},{0.25,0.25,0.25,0.25},
-                              {0.25,0.25,0.25,0.25},{0.25,0.25,0.25,0.25}};
-
-  for (int i = 0; i < 4; ++i) {
-
     // Since we know the structure of the two meshes, we can
     // enumerate which source cells intersect a given target cell and
     // what their intersection areas (weights) are
 
-    Jali::Entity_ID_List source_cells(4);
-    std::vector< std::vector<double> > weight_vectors(4);
-    for (int j = 0; j < 4; ++j) {
-      std::vector<double> wtvec;
-      wtvec.emplace_back(all_weights[i][j]);
-      weight_vectors[j] = wtvec;
-      source_cells[j] = all_source_cells[i][j];
-    }
+  std::vector<std::vector<int>> all_source_cells =
+      {{0,1,4,5},   {2,3,6,7},
+       {8,9,12,13}, {10,11,14,15}};
+  std::vector<std::vector<std::vector<double>>> all_weights =
+      {{{0.25}, {0.25}, {0.25}, {0.25}},
+       {{0.25}, {0.25}, {0.25}, {0.25}},
+       {{0.25}, {0.25}, {0.25}, {0.25}},
+       {{0.25}, {0.25}, {0.25}, {0.25}}};
 
+  for (int i = 0; i < 4; ++i) {
     std::pair< std::vector<int> const &, 
                std::vector< std::vector<double> > const & > 
-        cells_and_weights(source_cells,weight_vectors);
-
+        cells_and_weights(all_source_cells[i],all_weights[i]);
     outvals[i] = remapper(cells_and_weights);
   }
 
@@ -96,7 +89,74 @@ TEST(Remap_1st_Order,Constant_Field_Test1) {
 
 }
 
-  
+
+TEST(Remap_1st_Order,Constant_Field_Node_Ctr) {
+
+  // Make a 3x3 source mesh and a 1x1 target mesh - so each node of
+  // the target mesh corresponds to four nodes of the source mesh
+
+  Jali::MeshFactory mf(MPI_COMM_WORLD);
+
+  Jali::FrameworkPreference pref;
+  pref.push_back(Jali::MSTK);
+  if (Jali::framework_available(Jali::MSTK))
+    mf.preference(pref);
+
+  Jali::Mesh *mesh1 = mf(0.0,0.0,1.0,1.0,3,3);
+  ASSERT_TRUE(mesh1 != NULL);
+
+  Jali::Mesh *mesh2 = mf(0.0,0.0,1.0,1.0,1,1);
+  ASSERT_TRUE(mesh2 != NULL);
+
+  // Create a state object and add the first two vectors to it
+
+  Jali::State mystate(mesh1);
+
+  // Define state vector, "density", on source mesh, with the same value
+  // on all the cells.
+
+  std::string varname("nodevars");
+  std::vector<double> data1 = {1.5,1.5,1.5,1.5, 1.5,1.5,1.5,1.5,
+                               1.5,1.5,1.5,1.5, 1.5,1.5,1.5,1.5}; 
+  Jali::StateVector<double> myvec1("nodevars",Jali::NODE,mesh1,&(data1[0]));
+  Jali::StateVector<double> &addvec1 = mystate.add(myvec1);
+
+  // Create a Remap object
+
+  Portage::Remap_1stOrder<Jali_Mesh_Wrapper,Jali_State_Wrapper,Jali::Entity_kind> 
+      remapper(*mesh1,mystate,Jali::NODE,"nodevars");
+
+  // Remap from source to target mesh
+
+  double outvals[4] = {0.0,0.0,0.0,0.0};  // field values on target mesh
+
+  // Since we know the structure of the two meshes, we can
+  // enumerate which source nodes contribute to a given target node
+  // and what their intersection areas (weights) are
+
+  std::vector<std::vector<int>> all_source_nodes =
+      {{0,1,4,5},   {2,3,6,7},
+       {8,9,12,13}, {10,11,14,15}};
+  std::vector<std::vector<std::vector<double>>> all_weights =
+      {{{1./36.}, {2./36.}, {2./36.}, {4./36.}},
+       {{2./36.}, {1./36.}, {4./36.}, {2./36.}},
+       {{2./36.}, {4./36.}, {1./36.}, {2./36.}},
+       {{4./36.}, {2./36.}, {2./36.}, {1./36.}}};
+
+  for (int i = 0; i < 4; ++i) {
+    std::pair< std::vector<int> const &, 
+               std::vector< std::vector<double> > const & > 
+        nodes_and_weights(all_source_nodes[i],all_weights[i]);
+    outvals[i] = remapper(nodes_and_weights);
+  }
+
+  // Make sure we retrieved a constant value for each node on the target
+
+  for (int i = 0; i < 4; ++i) {
+    ASSERT_DOUBLE_EQ(data1[0],outvals[i]);
+  }
+
+}
 
   
 
