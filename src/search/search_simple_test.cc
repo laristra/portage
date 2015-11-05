@@ -19,7 +19,8 @@ TEST(search_simple, case1)
     Jali_Mesh_Wrapper source_mesh_wrapper(*smesh);
     Jali_Mesh_Wrapper target_mesh_wrapper(*tmesh);
 
-    auto search = Portage::SearchSimple<Jali_Mesh_Wrapper,Jali_Mesh_Wrapper>(source_mesh_wrapper, target_mesh_wrapper);
+    //    auto search = Portage::SearchSimple<Jali_Mesh_Wrapper,Jali_Mesh_Wrapper>(source_mesh_wrapper, target_mesh_wrapper);
+    Portage::SearchSimple<Jali_Mesh_Wrapper,Jali_Mesh_Wrapper> search(source_mesh_wrapper, target_mesh_wrapper);
 
     for (int tc = 0; tc < 4; ++tc) {
         std::vector<int> candidates;
@@ -73,7 +74,7 @@ TEST(search_simple, wrapper2)
     MeshWrapper2 s2(source_mesh_wrapper);
     MeshWrapper2 t2(target_mesh_wrapper);
 
-    auto search = Portage::SearchSimple<MeshWrapper2, MeshWrapper2>(s2, t2);
+    Portage::SearchSimple<MeshWrapper2, MeshWrapper2> search(s2, t2);
 
     for (int tc = 0; tc < 4; ++tc) {
         std::vector<int> candidates;
@@ -101,7 +102,7 @@ TEST(search_simple, dual)
     MeshWrapperDual s2(source_mesh_wrapper);
     MeshWrapperDual t2(target_mesh_wrapper);
 
-    auto search = Portage::SearchSimple<MeshWrapperDual, MeshWrapperDual>(s2, t2);
+    Portage::SearchSimple<MeshWrapperDual, MeshWrapperDual> search(s2, t2);
 
     for (int tc = 0; tc < 9; ++tc) {
         std::vector<int> candidates;
