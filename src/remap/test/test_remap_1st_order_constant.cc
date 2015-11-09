@@ -5,8 +5,6 @@
 
 #include "portage/remap/remap_1st_order.h"
 #include "portage/wrappers/mesh/jali/jali_mesh_wrapper.h"
-#include "portage/wrappers/state/jali/jali_state.h"
-#include "portage/wrappers/state/jali/jali_state_vector.h"
 #include "portage/wrappers/state/jali/jali_state_wrapper.h"
 
 #include <iostream>
@@ -18,6 +16,8 @@
 #include "MeshFactory.hh"
 #include "FrameworkTraits.hh"
 #include "MeshFramework.hh"
+#include "JaliState.h"
+#include "JaliStateVector.h"
 
 
 TEST(Remap_1st_Order,Constant_Field_Test1) {

@@ -6,12 +6,13 @@
 #include "mpi.h"
 
 #include "portage/driver/driver.h"
-#include "portage/wrappers/state/jali/jali_state_vector.h"
-#include "portage/wrappers/state/jali/jali_state.h"
 #include "portage/wrappers/mesh/jali/jali_mesh_wrapper.h"
+#include "portage/wrappers/state/jali/jali_state_wrapper.h"
 
 #include "Mesh.hh"
 #include "MeshFactory.hh"
+#include "JaliStateVector.h"
+#include "JaliState.h"
 
 
 int main(int argc, char** argv)
