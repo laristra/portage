@@ -6,29 +6,11 @@
 set(wrappers_HEADERS
     mesh/jali/jali_mesh_wrapper.h
     state/jali/jali_state_wrapper.h
-    state/jali/jali_state.h
-    state/jali/jali_state_vector.h
-    PARENT_SCOPE)
-
-set(wrappers_SOURCES
-    state/jali/jali_state.cc
     PARENT_SCOPE)
 
 if (ENABLE_UNIT_TESTS)
   cinch_add_unit(test_jali_mesh_wrapper
                  SOURCES mesh/jali/test/test_jali_mesh_wrapper.cc
-                 LIBRARIES portage ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
-                 POLICY MPI
-                 THREADS 1)
-
-  cinch_add_unit(test_jali_state_vector
-                 SOURCES state/jali/test/test_jali_state_vector.cc
-                 LIBRARIES ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
-                 POLICY MPI
-                 THREADS 1)
-
-  cinch_add_unit(test_jali_state
-                 SOURCES state/jali/test/test_jali_state.cc
                  LIBRARIES portage ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
                  POLICY MPI
                  THREADS 1)

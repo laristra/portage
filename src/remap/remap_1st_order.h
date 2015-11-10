@@ -39,10 +39,12 @@
 
 #include <cassert>
 
-
 #include "portage/wrappers/mesh/jali/jali_mesh_wrapper.h"
+#include "portage/wrappers/state/jali/jali_state_wrapper.h"
 
 namespace Portage {
+
+// Template on variable type ??
 
 template<typename MeshType, typename StateType, typename OnWhatType>
 class Remap_1stOrder {

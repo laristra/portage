@@ -7,7 +7,7 @@
 #define JALI_STATE_WRAPPER_H_
 
 #include "Mesh.hh"       // Jali mesh declarations
-#include "jali_state.h"  // Jali-based state manager declarations
+#include "JaliState.h"  // Jali-based state manager declarations
 
 /*!
   \class Jali_State_Wrapper  jali_state_wrapper.h
