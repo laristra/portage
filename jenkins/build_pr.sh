@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # This script is executed on Jenkins using
 #
-#     bash $WORKSPACE/.jenkins_build.sh
+#     bash $WORKSPACE/jenkins/build_pr.sh
 #
 # The exit code determines if the test succeeded or failed.
 
