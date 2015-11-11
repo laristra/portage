@@ -31,8 +31,8 @@ void Driver::run()
             search(source_mesh_, target_mesh_);
 
 	//Get an instance of the desired intersect algorithm type
-	const IntersectClipper<Jali::Entity_ID> 
-            intersect{cellToXY(source_mesh_), cellToXY(target_mesh_)};
+	const IntersectClipper<Jali_Mesh_Wrapper, Jali_Mesh_Wrapper> 
+            intersect{source_mesh_, target_mesh_};
 
 	// Eventually put this in a loop over remap variable names as well
 	// Assume for now that we are only doing cell-based remap
@@ -57,8 +57,8 @@ void Driver::run()
     // ints starting at 0. 
 
 	composerFunctor<SearchSimple<Jali_Mesh_Wrapper,Jali_Mesh_Wrapper>, 
-                    IntersectClipper<Jali::Entity_ID>, 
-                    Remap_1stOrder<Jali_Mesh_Wrapper,Jali_State_Wrapper,Jali::Entity_kind> >
+        IntersectClipper<Jali_Mesh_Wrapper, Jali_Mesh_Wrapper>, 
+        Remap_1stOrder<Jali_Mesh_Wrapper,Jali_State_Wrapper,Jali::Entity_kind> >
             composer(&search, &intersect, &remap, remap_var_names_[0]);
 
     // this populates targetField with the doubles returned from the final remap

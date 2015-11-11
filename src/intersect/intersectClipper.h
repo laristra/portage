@@ -41,10 +41,10 @@ std::vector<double> areaAndMomentPolygon(const std::vector<std::pair<double,doub
 
 /*!
  * \class IntersectClipper <typename C> 2-D intersection algorithm for arbitrary convex and non-convex polyhedra
- * \brief The intersect class is templated on a cell type.  You must provide a method to convert the template cells to an IntersectClipper::Poly.  
+ * \brief The intersect class is templated on MeshWrapper type.  You must provide a method to convert the template cells to an IntersectClipper::Poly.  
  */
 
-template <typename SCell, typename TCell=SCell> class IntersectClipper
+template <typename SourceMeshType, typename TargetMeshType=SourceMeshType> class IntersectClipper
 {
 
 public:
@@ -53,17 +53,17 @@ public:
     //Provide volume and centroid
     typedef std::pair<double, Point> Moment;
 
-    template <typename SFunction, typename TFunction> IntersectClipper(SFunction getSXYcoords, TFunction getTXYcoords): getSXYcoords(getSXYcoords), getTXYcoords(getTXYcoords) {}
+    IntersectClipper(const SourceMeshType &s, const TargetMeshType &t):sourceMeshWrapper(s), targetMeshWrapper(t){}
 
     /*! \brief Intersect two cells and return the first two moments.
-     * \param[in] cellA first cell to intersect
-     * \param[in] cellB second cell to intersect
+     * \param[in] cellA first cell index to intersect
+     * \param[in] cellB second cell index to intersect
      * \return list of moments; ret[0] == 0th moment; ret[1] == first moment
      */
 
-    std::vector<std::vector<double> > operator() (const SCell &cellA, const TCell &cellB) const {      
-        Poly polyA = getSXYcoords(cellA);
-        Poly polyB = getTXYcoords(cellB);
+    std::vector<std::vector<double> > operator() (const int cellA, const int cellB) const {      
+        Poly polyA = sourceMeshWrapper.cellToXY(cellA);
+        Poly polyB = targetMeshWrapper.cellToXY(cellB);
         double max_size_poly = 0;
         max_size_poly = IntersectClipper::updateMaxSize(polyA, max_size_poly);
         max_size_poly = IntersectClipper::updateMaxSize(polyB, max_size_poly);
@@ -161,8 +161,8 @@ private:
     }
   
 private:
-    std::function<Poly(const SCell&)> getSXYcoords;
-    std::function<Poly(const TCell&)> getTXYcoords;
+    const SourceMeshType &sourceMeshWrapper;
+    const TargetMeshType &targetMeshWrapper;
 
 }; // class IntersectClipper
 
