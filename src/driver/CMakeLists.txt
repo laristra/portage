@@ -6,12 +6,14 @@
 # Add header files
 set(driver_HEADERS
     driver.h
+    node2d-driver.h
     PARENT_SCOPE
 )
 
 # Add source files
 set(driver_SOURCES
     driver.cc
+    node2d-driver.cc
     PARENT_SCOPE
 )
 
