@@ -277,6 +277,14 @@ class Jali_Mesh_Wrapper {
           (std::get<0>(p3) - std::get<0>(p1)) > 0;
   }
 
+  std::vector<std::pair<double, double> > cellToXY(Jali::Entity_ID cellID) const{
+    std::vector<std::pair<double, double> > cellPoints;
+    cell_get_coordinates(cellID, &cellPoints);
+    return cellPoints;
+  }
+
+
+
  private:
   Jali::Mesh const & jali_mesh_;
 
@@ -293,15 +301,5 @@ struct pointsToXY
   }
 };
 
-struct cellToXY
-{
-  Jali_Mesh_Wrapper const & mesh;
-  cellToXY(const Jali_Mesh_Wrapper & mesh): mesh(mesh){}
-  std::vector<std::pair<double, double> > operator()(const Jali::Entity_ID cellID){
-    std::vector<std::pair<double, double> > cellPoints;
-    mesh.cell_get_coordinates(cellID, &cellPoints);
-    return cellPoints;
-  }
-};
 
 #endif // JALI_MESH_WRAPPER_H_

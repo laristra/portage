@@ -20,6 +20,8 @@ set(intersect_SOURCES
 if(ENABLE_UNIT_TESTS)
   cinch_add_unit(intersectClipper
     SOURCES intersectClipperTest.cc clipper.cpp
+    LIBRARIES ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
+    POLICY MPI
     )
 endif(ENABLE_UNIT_TESTS)
 
