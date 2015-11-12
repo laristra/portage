@@ -19,7 +19,6 @@ TEST(search_simple, case1)
     Jali_Mesh_Wrapper source_mesh_wrapper(*smesh);
     Jali_Mesh_Wrapper target_mesh_wrapper(*tmesh);
 
-    //    auto search = Portage::SearchSimple<Jali_Mesh_Wrapper,Jali_Mesh_Wrapper>(source_mesh_wrapper, target_mesh_wrapper);
     Portage::SearchSimple<Jali_Mesh_Wrapper,Jali_Mesh_Wrapper> search(source_mesh_wrapper, target_mesh_wrapper);
 
     for (int tc = 0; tc < 4; ++tc) {
