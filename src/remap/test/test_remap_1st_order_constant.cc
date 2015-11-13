@@ -59,7 +59,7 @@ TEST(Remap_1st_Order,Constant_Field_Test1) {
 
   // Remap from source to target mesh
 
-  double outvals[4] = {0.0,0.0,0.0,0.0};  // field values on target mesh
+  double outvals[4];  // field values on target mesh
 
     // Since we know the structure of the two meshes, we can
     // enumerate which source cells intersect a given target cell and
@@ -128,7 +128,7 @@ TEST(Remap_1st_Order,Constant_Field_Node_Ctr) {
 
   // Remap from source to target mesh
 
-  double outvals[4] = {0.0,0.0,0.0,0.0};  // field values on target mesh
+  double outvals[4];  // field values on target mesh
 
   // Since we know the structure of the two meshes, we can
   // enumerate which source nodes contribute to a given target node
