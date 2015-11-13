@@ -19,8 +19,8 @@ set(remap_HEADERS
 
 if (ENABLE_UNIT_TESTS) 
 
-  cinch_add_unit(test_remap_1st_order_constant
-    SOURCES  test/test_remap_1st_order_constant.cc
+  cinch_add_unit(test_remap_1st_order
+    SOURCES  test/test_remap_1st_order.cc
     LIBRARIES portage ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
     POLICY MPI
     THREADS 1)

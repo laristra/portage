@@ -20,7 +20,7 @@
 #include "JaliStateVector.h"
 
 
-TEST(Remap_1st_Order,Constant_Field_Test1) {
+TEST(Remap_1st_Order, Fields_Cell_Ctr) {
 
   // Make a 4x4 source mesh and a 2x2 target mesh - so each cell of
   // the target mesh contains four cells of the source mesh
@@ -43,23 +43,30 @@ TEST(Remap_1st_Order,Constant_Field_Test1) {
 
   Jali::State mystate(mesh1);
 
-  // Define state vector, "density", on source mesh, with the same value
-  // on all the cells.
+  // Define two state vectors, one with constant value, the other
+  // with a linear function
 
-  std::string varname("cellvars");
   std::vector<double> data1 = {1.25,1.25,1.25,1.25,1.25,1.25,1.25,1.25,
                                1.25,1.25,1.25,1.25,1.25,1.25,1.25,1.25}; 
-  Jali::StateVector<double> myvec1("cellvars",Jali::CELL,mesh1,&(data1[0]));
+  Jali::StateVector<double> myvec1("cellvars1",Jali::CELL,mesh1,&(data1[0]));
   Jali::StateVector<double> &addvec1 = mystate.add(myvec1);
 
-  // Create a Remap object
+  std::vector<double> data2 = {0.,1.,2.,3., 1.,2.,3.,4.,
+                               2.,3.,4.,5., 3.,4.,5.,6.,}; 
+  Jali::StateVector<double> myvec2("cellvars2",Jali::CELL,mesh1,&(data2[0]));
+  Jali::StateVector<double> &addvec2 = mystate.add(myvec2);
+
+  // Create Remap objects
 
   Portage::Remap_1stOrder<Jali_Mesh_Wrapper,Jali_State_Wrapper,Jali::Entity_kind> 
-      remapper(*mesh1,mystate,Jali::CELL,"cellvars");
+      remapper1(*mesh1,mystate,Jali::CELL,"cellvars1");
+  Portage::Remap_1stOrder<Jali_Mesh_Wrapper,Jali_State_Wrapper,Jali::Entity_kind> 
+      remapper2(*mesh1,mystate,Jali::CELL,"cellvars2");
 
   // Remap from source to target mesh
 
-  double outvals[4] = {0.0,0.0,0.0,0.0};  // field values on target mesh
+  double outvals1[4];  // field values on target mesh
+  double outvals2[4];
 
     // Since we know the structure of the two meshes, we can
     // enumerate which source cells intersect a given target cell and
@@ -78,19 +85,25 @@ TEST(Remap_1st_Order,Constant_Field_Test1) {
     std::pair< std::vector<int> const &, 
                std::vector< std::vector<double> > const & > 
         cells_and_weights(all_source_cells[i],all_weights[i]);
-    outvals[i] = remapper(cells_and_weights);
+    outvals1[i] = remapper1(cells_and_weights);
+    outvals2[i] = remapper2(cells_and_weights);
   }
 
-  // Make sure we retrieved a constant value for each cell on the target
+  // Make sure we retrieved the correct value for each cell on the target
+  // For field 1, it is a constant
+  // For field 2, it is a linear function
 
+  double stdval1 = data1[0];
+  double stdvals2[4] = {1., 3., 3., 5.};
   for (int i = 0; i < 4; ++i) {
-    ASSERT_EQ(data1[0],outvals[i]);
+    ASSERT_EQ(stdval1, outvals1[i]);
+    ASSERT_EQ(stdvals2[i], outvals2[i]);
   }
 
 }
 
 
-TEST(Remap_1st_Order,Constant_Field_Node_Ctr) {
+TEST(Remap_1st_Order, Fields_Node_Ctr) {
 
   // Make a 3x3 source mesh and a 1x1 target mesh - so each node of
   // the target mesh corresponds to four nodes of the source mesh
@@ -112,23 +125,30 @@ TEST(Remap_1st_Order,Constant_Field_Node_Ctr) {
 
   Jali::State mystate(mesh1);
 
-  // Define state vector, "density", on source mesh, with the same value
-  // on all the cells.
+  // Define two state vectors, one with constant value, the other
+  // with a linear function
 
-  std::string varname("nodevars");
   std::vector<double> data1 = {1.5,1.5,1.5,1.5, 1.5,1.5,1.5,1.5,
                                1.5,1.5,1.5,1.5, 1.5,1.5,1.5,1.5}; 
-  Jali::StateVector<double> myvec1("nodevars",Jali::NODE,mesh1,&(data1[0]));
+  Jali::StateVector<double> myvec1("nodevars1",Jali::NODE,mesh1,&(data1[0]));
   Jali::StateVector<double> &addvec1 = mystate.add(myvec1);
 
-  // Create a Remap object
+  std::vector<double> data2 = {0.,1.,2.,3., 1.,2.,3.,4.,
+                               2.,3.,4.,5., 3.,4.,5.,6.,}; 
+  Jali::StateVector<double> myvec2("nodevars2",Jali::NODE,mesh1,&(data2[0]));
+  Jali::StateVector<double> &addvec2 = mystate.add(myvec2);
+
+  // Create Remap objects
 
   Portage::Remap_1stOrder<Jali_Mesh_Wrapper,Jali_State_Wrapper,Jali::Entity_kind> 
-      remapper(*mesh1,mystate,Jali::NODE,"nodevars");
+      remapper1(*mesh1,mystate,Jali::NODE,"nodevars1");
+  Portage::Remap_1stOrder<Jali_Mesh_Wrapper,Jali_State_Wrapper,Jali::Entity_kind> 
+      remapper2(*mesh1,mystate,Jali::NODE,"nodevars2");
 
   // Remap from source to target mesh
 
-  double outvals[4] = {0.0,0.0,0.0,0.0};  // field values on target mesh
+  double outvals1[4];  // field values on target mesh
+  double outvals2[4];
 
   // Since we know the structure of the two meshes, we can
   // enumerate which source nodes contribute to a given target node
@@ -147,16 +167,21 @@ TEST(Remap_1st_Order,Constant_Field_Node_Ctr) {
     std::pair< std::vector<int> const &, 
                std::vector< std::vector<double> > const & > 
         nodes_and_weights(all_source_nodes[i],all_weights[i]);
-    outvals[i] = remapper(nodes_and_weights);
+    outvals1[i] = remapper1(nodes_and_weights);
+    outvals2[i] = remapper2(nodes_and_weights);
   }
 
-  // Make sure we retrieved a constant value for each node on the target
+  // Make sure we retrieved the correct value for each cell on the target
+  // For field 1, it is a constant
+  // For field 2, it is a linear function
 
+  double stdval1 = data1[0];
+  double stdvals2[4] = {(4./3.), 3., 3., (14./3.)};
   for (int i = 0; i < 4; ++i) {
-    ASSERT_DOUBLE_EQ(data1[0],outvals[i]);
+    ASSERT_DOUBLE_EQ(stdval1, outvals1[i]);
+    ASSERT_DOUBLE_EQ(stdvals2[i], outvals2[i]);
   }
 
 }
 
   
-
