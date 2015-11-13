@@ -11,7 +11,6 @@ set(driver_HEADERS
 
 # Add source files
 set(driver_SOURCES
-    driver.cc
     PARENT_SCOPE
 )
 
