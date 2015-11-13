@@ -17,6 +17,18 @@
 
 int main(int argc, char** argv)
 {
+  // Get the example to run from command-line parameter
+  int example = 0;
+  if (argc <= 1)
+  {
+    std::printf("Usage: portageapp example-number\n");
+    std::printf("example 0: 2d cell-centered remap\n");
+    std::printf("example 1: 2d node-centered remap\n");
+    return 0;
+  }
+  if (argc > 1) example = atoi(argv[1]);
+
+  // Initialize MPI
   int mpi_init_flag;
   MPI_Initialized(&mpi_init_flag);
   if (!mpi_init_flag) 
@@ -29,11 +41,9 @@ int main(int argc, char** argv)
   }
 
   std::printf("starting portageapp...\n");
-
-  int example = 0;
-  if (argc > 1) example = atoi(argv[1]);
   std::printf("running example %d\n", example);
 
+  // Example 0 is a 2d cell-centered remap
   if (example == 0)
   {
     Jali::MeshFactory mf(MPI_COMM_WORLD);
@@ -70,15 +80,18 @@ int main(int argc, char** argv)
     std::cerr << cellvecout << std::endl;
   }
 
+  // Example 1 is a 2d node-centered remap
   else if (example == 1)
   {
     Jali::MeshFactory mf(MPI_COMM_WORLD);
 
-    // Create a 2d quad input mesh from (0,0) to (1,1) with 3x3 zones
+    // Create a 2d quad input mesh from (0,0) to (1,1) with 3x3 zones; 
+    // The "true" arguments request that a dual mesh be constructed with wedges, corners, etc.
     Jali::Mesh* inputMesh = mf(0.0, 0.0, 1.0, 1.0, 3, 3, NULL, true, true, true, true);
     Jali_Mesh_Wrapper inputMeshWrapper(*inputMesh);
 
-    // Create a 2d quad output mesh from (0,0) to (1,1) with 1x1 zones
+    // Create a 2d quad output mesh from (0,0) to (1,1) with 1x1 zones;
+    // The "true" arguments request that a dual mesh be constructed with wedges, corners, etc.
     Jali::Mesh* targetMesh = mf(0.0, 0.0, 1.0, 1.0, 1, 1, NULL, true, true, true, true);
     Jali_Mesh_Wrapper targetMeshWrapper(*targetMesh);
 
