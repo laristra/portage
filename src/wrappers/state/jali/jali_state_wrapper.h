@@ -41,7 +41,7 @@ class Jali_State_Wrapper {
 
   int get_entity(const std::string var_name) const {
 
-    std::shared_ptr<Jali::BaseStateVector> vector = *(jali_state_.find(var_name, (Jali::Entity_kind) 0, false));
+    std::shared_ptr<Jali::BaseStateVector> vector = *(jali_state_.find(var_name, Jali::ANY_KIND));
     if (vector != 0) return vector->on_what();
     return -1;
 
@@ -49,7 +49,7 @@ class Jali_State_Wrapper {
 
   const std::type_info& get_type(const std::string var_name) const {
     
-    std::shared_ptr<Jali::BaseStateVector> vector = *(jali_state_.find(var_name, (Jali::Entity_kind) 0, false));
+    std::shared_ptr<Jali::BaseStateVector> vector = *(jali_state_.find(var_name,Jali::ANY_KIND));
     if (vector != 0) return vector->get_type();
     return typeid(0);
 
