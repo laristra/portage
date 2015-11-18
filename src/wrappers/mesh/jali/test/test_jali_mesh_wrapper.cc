@@ -12,6 +12,7 @@
 
 #include "Mesh.hh"
 #include "MeshFactory.hh"
+#include "FrameworkTraits.hh"
 
 using std::abs;
 
@@ -243,4 +244,19 @@ TEST(Jali_Mesh, dual_cell_get_coordinates) {
         std::cout << "{" << v.first << ", " << v.second << "}," << std::endl;
     }
     */
+}
+
+TEST(Jali_Mesh, mesh_shotshell) {
+  int nproc, myrank;
+  MPI_Comm_size(MPI_COMM_WORLD,&nproc);
+  MPI_Comm_rank(MPI_COMM_WORLD,&myrank);
+
+  ASSERT(Jali::framework_available(Jali::MSTK));
+
+  Jali::MeshFactory mesh_factory(MPI_COMM_WORLD);
+  //mesh_factory.preferences(Jali::MSTK);
+
+  // Make sure we request faces, edges, wedges and corners
+  Jali::Mesh *mesh = mesh_factory("../test_data/shotshell.exo",NULL,true,true,true,true);
+  ASSERT_TRUE(mesh != NULL);
 }
