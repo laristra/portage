@@ -66,7 +66,7 @@ cmake \
   -D ENABLE_MPI=True \
   -D ENABLE_MPI_CXX_BINDINGS=True \
   -D ENABLE_JENKINS_OUTPUT=True \
-  -D Jali_DIR:FILEPATH=/usr/local/codes/ngc/private/jali-0.6.1-gcc/lib \
+  -D Jali_DIR:FILEPATH=$JALI_INSTALL_PREFIX//lib \
   .. && \
 
 make -j16
