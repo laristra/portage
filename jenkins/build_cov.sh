@@ -10,7 +10,7 @@ set -x
 JALI_VERSION=v0.6.1
 
 # Where to find Jali's TPLs:
-TPL_INSTALL_PREFIX=/usr/local/codes/ngc/private/jali-0.6.0-tpl-intel
+TPL_INSTALL_PREFIX=/usr/local/codes/ngc/private/jali-0.6.0-tpl-gcc
 
 git config user.email ""
 git config user.name "Jenkins"
