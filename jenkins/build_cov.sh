@@ -72,5 +72,5 @@ cmake \
 make -j16
 make test || true
 pwd 
-gcovr -r .. -x -e cinch/* -e build/* -e 'clipper.cpp' -e 'clipper.hpp' -e '.*test.*' -e '.*Test.*' > coverage.xml
-ls -R
+gcovr -r .. -x -e cinch/* -e build/*  -e '.*test.*' -e '.*Test.*' > coverage.xml
+
