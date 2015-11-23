@@ -13,8 +13,3 @@ set(driver_HEADERS
 set(driver_SOURCES
     PARENT_SCOPE
 )
-
-#----------------------------------------------------------------------------~-#
-# Formatting options for emacs and vim.
-# vim: set tabstop=4 shiftwidth=4 expandtab :
-#----------------------------------------------------------------------------~-#
