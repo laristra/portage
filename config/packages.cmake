@@ -69,7 +69,3 @@ message(STATUS "Jali_TPL_LIBRARIES=${Jali_TPL_LIBRARIES}")
 
 include_directories(${Jali_INCLUDE_DIRS} ${Jali_TPL_INCLUDE_DIRS})
 
-#~---------------------------------------------------------------------------~-#
-# Formatting options for emacs and vim.
-# vim: set tabstop=4 shiftwidth=4 expandtab :
-#~---------------------------------------------------------------------------~-#

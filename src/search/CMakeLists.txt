@@ -24,7 +24,3 @@ if(ENABLE_UNIT_TESTS)
     THREADS 1)
 endif(ENABLE_UNIT_TESTS)
 
-#----------------------------------------------------------------------------~-#
-# Formatting options for emacs and vim.
-# vim: set tabstop=4 shiftwidth=4 expandtab :
-#----------------------------------------------------------------------------~-#
