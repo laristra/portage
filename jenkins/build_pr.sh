@@ -17,7 +17,7 @@ JALI_VERSION=v0.6.1
 TPL_INSTALL_PREFIX=/usr/local/codes/ngc/private/jali-0.6.0-tpl-intel
 
 # General NGC include directory
-NGC_INCLUDE_DIR=/usr/local/codes/ngc/private/ngc/include
+NGC_INCLUDE_DIR=/usr/local/codes/ngc/private/include
 
 git config user.email ""
 git config user.name "Jenkins"
