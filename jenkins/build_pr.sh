@@ -16,6 +16,11 @@ JALI_VERSION=v0.6.1
 # Where to find Jali's TPLs:
 TPL_INSTALL_PREFIX=/usr/local/codes/ngc/private/jali-0.6.0-tpl-intel
 
+# General NGC include directory
+NGC_INCLUDE=/usr/local/codes/ngc/private/ngc/include
+
+# Thrust include location
+THRUST_INCLUDE=${NGC_INCLUDE}/thrust
 
 git config user.email ""
 git config user.name "Jenkins"
@@ -72,6 +77,7 @@ cmake \
   -D ENABLE_MPI_CXX_BINDINGS=True \
   -D ENABLE_JENKINS_OUTPUT=True \
   -D Jali_DIR:FILEPATH=$JALI_INSTALL_PREFIX/lib \
+  -D THRUST_DIR:FILEPATH=$THRUST_INCLUDE \
   ..
 make -j16
 ctest --output-on-failure

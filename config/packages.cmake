@@ -69,3 +69,13 @@ message(STATUS "Jali_TPL_LIBRARIES=${Jali_TPL_LIBRARIES}")
 
 include_directories(${Jali_INCLUDE_DIRS} ${Jali_TPL_INCLUDE_DIRS})
 
+#-----------------------------------------------------------------------------
+# Thrust information
+#-----------------------------------------------------------------------------
+if(THRUST_DIR)
+  message(STATUS "THRUST_DIR=${THRUST_DIR}")
+  include_directories(${THRUST_DIR})
+  add_definitions(-DTHRUST)
+else(THRUST_DIR)
+  message(STATUS "No THRUST_DIR specified; building without Thrust")
+endif(THRUST_DIR)
