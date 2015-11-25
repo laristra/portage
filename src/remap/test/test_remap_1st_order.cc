@@ -19,6 +19,10 @@
 #include "JaliState.h"
 #include "JaliStateVector.h"
 
+#ifdef THRUST
+#include "thrust/device_vector.h"
+#endif
+
 
 TEST(Remap_1st_Order, Fields_Cell_Ctr) {
 
