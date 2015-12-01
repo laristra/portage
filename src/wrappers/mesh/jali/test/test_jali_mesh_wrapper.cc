@@ -244,3 +244,69 @@ TEST(Jali_Mesh, dual_cell_get_coordinates) {
     }
     */
 }
+
+TEST(Jali_Mesh, Get_Neighbor_Cells) {
+  Jali::MeshFactory mf(MPI_COMM_WORLD);
+  Jali::Mesh *mesh = mf(0.0,0.0,0.0,1.0,1.0,1.0,2,2,2);
+  ASSERT_TRUE(mesh != NULL);
+  Jali_Mesh_Wrapper mesh_wrapper(*mesh);
+
+  // This is a regular mesh with 2 cells (3 nodes) in each direction 
+
+  // If we ask for the node adjacent neighbors of any cell, we should
+  // get back all the other cells in the mesh
+
+  int anycell = 3;
+
+  // 1 (2nd argument) means retrieve only owned cells
+
+  std::vector<int> adjcellids;
+  mesh_wrapper.cell_get_node_adj_cells(anycell, 1, &adjcellids);
+
+  int ncells = mesh_wrapper.num_owned_cells();
+  EXPECT_EQ(ncells-1,adjcellids.size()) <<
+      "Not the right number of adjacent cells" << std::endl;
+
+  for (int i = 0; i < ncells; i++) {
+    if (i == anycell) continue;
+
+    ASSERT_TRUE(std::find(adjcellids.begin(),adjcellids.end(),i) != 
+                adjcellids.end()) << "Cell " << i << 
+        " not found in adjacent cell list" << std::endl;
+  }
+
+  // The center node of this 3 node x 3 node x 3 node mesh corresponds
+  // to a dual cell that is surrounded completely by the other dual
+  // cells of the mesh. If we ask for the dual cell neighbors of the central
+  // node, we should get back all the other dual cells in the mesh
+  
+  int center_node = 13;
+  std::tuple<double,double,double> cxyz;
+  mesh_wrapper.node_get_coordinates(center_node,&cxyz);
+
+  ASSERT_EQ(0.5,std::get<0>(cxyz));
+  ASSERT_EQ(0.5,std::get<1>(cxyz));
+  ASSERT_EQ(0.5,std::get<2>(cxyz));
+
+  std::vector<int> adjdualcellids; 
+
+  // 1 (2nd argument) means owned dual cells
+  mesh_wrapper.dual_cell_get_node_adj_cells(center_node, 1, &adjdualcellids); 
+
+  // List of adjacent dual cell ids should contain all node ids except
+  // the center one
+
+  int nnodes = mesh_wrapper.num_owned_nodes();
+
+  EXPECT_EQ(nnodes-1,adjdualcellids.size()) << 
+      "Not the right number of adjacent dual cells" << std::endl;
+
+  for (int i = 0; i < nnodes; i++) {
+    if (i == center_node) continue;
+
+    ASSERT_TRUE(std::find(adjdualcellids.begin(),adjdualcellids.end(),i) != 
+                adjdualcellids.end()) << "Dual cell " << i << 
+        " not found in adjacent dual cell list" << std::endl;
+  }
+
+}
