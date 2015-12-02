@@ -86,6 +86,44 @@ class Jali_Mesh_Wrapper {
     jali_mesh_.cell_get_nodes(cellid, nodes);
   }
 
+
+  //! Get node connected neighbors of cell
+  void cell_get_node_adj_cells(int const cellid, int const ptype,
+                               std::vector<int> *adjcells) const {
+    jali_mesh_.cell_get_node_adj_cells(cellid, (Jali::Parallel_type) ptype,
+                                       adjcells);
+  }
+
+  //! \brief Get "adjacent" nodes of given node
+  //!
+  //! Get "adjacent" nodes of given node - nodes that share a common
+  //! cell with given node
+  void node_get_cell_adj_nodes(int const nodeid, int const ptype,
+                               std::vector<int> *adjnodes) const {
+    adjnodes->clear();
+
+    Jali::Entity_ID_List nodecells;
+    jali_mesh_.node_get_cells(nodeid, (Jali::Parallel_type) ptype, &nodecells);
+
+    for (auto const& c : nodecells) {
+      Jali::Entity_ID_List cellnodes;
+      jali_mesh_.cell_get_nodes(c, &cellnodes);
+
+      for (auto const& n : cellnodes) {
+        if (n == nodeid) continue;
+        if (std::find(adjnodes->begin(), adjnodes->end(), n) == adjnodes->end()) 
+          adjnodes->emplace_back(n);
+      }
+    }
+  }
+
+  //! \brief Get adjacent "dual cells" of a given "dual cell"
+  void dual_cell_get_node_adj_cells(int const nodeid, int const ptype,
+                                    std::vector<int> *adjnodes) const {
+    node_get_cell_adj_nodes(nodeid,ptype,adjnodes);
+  }
+    
+
   //! 1D version of coords of a node
   void node_get_coordinates(int const nodeid, double *x) const {
     JaliGeometry::Point p;
