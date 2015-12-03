@@ -7,10 +7,10 @@ set -x
 
 
 # Tag or git commit hash of Jali version to build and use for this PR:
-JALI_VERSION=v0.6.1
+JALI_VERSION=v0.6.3
 
 # Where to find Jali's TPLs:
-TPL_INSTALL_PREFIX=/usr/local/codes/ngc/private/jali-0.6.0-tpl-gcc
+TPL_INSTALL_PREFIX=/usr/local/codes/ngc/private/jali-1.0.2-tpl-gcc
 
 # General NGC include directory
 NGC_INCLUDE_DIR=/usr/local/codes/ngc/private/include

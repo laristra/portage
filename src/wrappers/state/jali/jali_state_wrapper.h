@@ -29,6 +29,15 @@ class Jali_State_Wrapper {
   //! Empty destructor
   ~Jali_State_Wrapper() {};
   
+
+  //! Initialize fields from mesh file
+
+  void init_from_mesh() { jali_state_.init_from_mesh(); }
+
+  //! Export fields to mesh file
+
+  void export_to_mesh() {jali_state_.export_to_mesh(); }
+
   //! Get pointer to scalar data
 
   template <class T>
