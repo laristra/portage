@@ -11,6 +11,7 @@
 #include<iterator>
 
 #include "Mesh.hh"   // Jali mesh header
+#include "portage/support/portage.h"
 #include "portage/wrappers/state/jali/jali_state_wrapper.h"
 #include "portage/wrappers/mesh/jali/jali_mesh_wrapper.h"
 #include "portage/search/search_simple.h"
@@ -33,11 +34,13 @@ public:
             std::vector<std::pair<double,double> > *xylist) const {
         w_.dual_cell_get_coordinates(cellid, xylist);
     }
-    boost::counting_iterator<int> begin(int const entity) const {
+    //    boost::counting_iterator<int> begin(int const entity) const {
+    counting_iterator begin(int const entity) const {
         if (entity == Jali::NODE) return w_.begin(Jali::CELL);
         return w_.begin(Jali::NODE);
     }
-    boost::counting_iterator<int> end(int const entity) const {
+    /* boost::counting_iterator<int> end(int const entity) const { */
+    counting_iterator end(int const entity) const {
         if (entity == Jali::NODE) return w_.end(Jali::CELL);
         return w_.end(Jali::NODE);
     }
@@ -150,8 +153,12 @@ class Driver
                 composer(&search, &intersect, &remap, remap_var_names_[0]);
 
         // This populates targetField with the doubles returned from the final remap
-        std::transform(target_mesh_.begin(Jali::CELL), target_mesh_.end(Jali::CELL),target_field,
-                       composer);
+	transform(target_mesh_.begin(Jali::CELL),
+		  target_mesh_.end(Jali::CELL),target_field,
+		  composer);
+
+        /* std::transform(target_mesh_.begin(Jali::CELL), target_mesh_.end(Jali::CELL),target_field, */
+        /*                composer); */
     }
 
 
