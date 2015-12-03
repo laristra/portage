@@ -44,19 +44,6 @@ namespace Portage {
     return thrust::transform(first1, last1, first2, result, op);
   }
 
-  /* template<typename InputIterator, typename OutputIterator, typename UnaryOp> */
-  /*   OutputIterator transform(InputIterator first1, InputIterator last1, */
-  /* 			     OutputIterator result, UnaryOp op) { */
-  /*   return thrust::transform(first1, last1, result, op); */
-  /* } */
-  /* template<typename InputIterator1, typename InputIterator2, */
-  /*   typename OutputIterator, typename BinaryOp> */
-  /*   OutputIterator transform(InputIterator1 first1, InputIterator1 last1, */
-  /* 			     InputIterator2 first2, */
-  /* 			     OutputIterator result, BinaryOp op) { */
-  /*   return thrust::transform(first1, last1, first2, result, op); */
-  /* } */
-  
 #else // no thrust
   
   template<typename T>
@@ -78,18 +65,6 @@ namespace Portage {
 				counting_iterator result, BinaryOp op) {
     return std::transform(first1, last1, first2, result, op);
   }
-  /* template<typename InputIterator, typename OutputIterator, typename UnaryOp> */
-  /*   OutputIterator transform(InputIterator first1, InputIterator last1, */
-  /* 			     OutputIterator result, UnaryOp op) { */
-  /*   return std::transform(first1, last1, result, op); */
-  /* } */
-  /* template<typename InputIterator1, typename InputIterator2, */
-  /*   typename OutputIterator, typename BinaryOp> */
-  /*   OutputIterator transform(InputIterator1 first1, InputIterator1 last1, */
-  /* 			     InputIterator2 first2, */
-  /* 			     OutputIterator result, BinaryOp op) { */
-  /*   return std::transform(first1, last1, first2, result, op); */
-  /* } */
 
 #endif
   

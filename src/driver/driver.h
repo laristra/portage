@@ -34,12 +34,12 @@ public:
             std::vector<std::pair<double,double> > *xylist) const {
         w_.dual_cell_get_coordinates(cellid, xylist);
     }
-    //    boost::counting_iterator<int> begin(int const entity) const {
+
     counting_iterator begin(int const entity) const {
         if (entity == Jali::NODE) return w_.begin(Jali::CELL);
         return w_.begin(Jali::NODE);
     }
-    /* boost::counting_iterator<int> end(int const entity) const { */
+
     counting_iterator end(int const entity) const {
         if (entity == Jali::NODE) return w_.end(Jali::CELL);
         return w_.end(Jali::NODE);
@@ -157,8 +157,6 @@ class Driver
 		  target_mesh_.end(Jali::CELL),target_field,
 		  composer);
 
-        /* std::transform(target_mesh_.begin(Jali::CELL), target_mesh_.end(Jali::CELL),target_field, */
-        /*                composer); */
     }
 
 

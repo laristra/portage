@@ -14,7 +14,6 @@ namespace std
 
 #include <cassert>
 #include <algorithm>
-#include <boost/iterator/counting_iterator.hpp>
 
 #include "Mesh.hh"                      // Jali mesh header
 
@@ -76,17 +75,11 @@ class Jali_Mesh_Wrapper {
   Portage::counting_iterator begin(int const entity) const {
     return Portage::make_counting_iterator(0);
   }
-  /* boost::counting_iterator<int> begin(int const entity) const { */
-  /*   return boost::make_counting_iterator<int>(0); */
-  /* } */
 
   //! Iterator on mesh entity - end
   Portage::counting_iterator end(int const entity) const {
     return (Portage::make_counting_iterator(0) + num_entities(entity));
   }
-  /* boost::counting_iterator<int> end(int const entity) const { */
-  /*   return (boost::make_counting_iterator<int>(0) + num_entities(entity)); */
-  /* } */
 
   //! Get list of nodes for a cell
   void cell_get_nodes(int cellid, std::vector<int> *nodes) const {
