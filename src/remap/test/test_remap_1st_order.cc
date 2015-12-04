@@ -3,6 +3,7 @@
  * All rights reserved.
  *---------------------------------------------------------------------------~*/
 
+#include "portage/support/portage.h"
 #include "portage/remap/remap_1st_order.h"
 #include "portage/wrappers/mesh/jali/jali_mesh_wrapper.h"
 #include "portage/wrappers/state/jali/jali_state_wrapper.h"

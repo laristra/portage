@@ -14,10 +14,10 @@ namespace std
 
 #include <cassert>
 #include <algorithm>
-#include <boost/iterator/counting_iterator.hpp>
 
 #include "Mesh.hh"                      // Jali mesh header
 
+#include "portage/support/portage.h"
 
 /*!
   \class Jali_Mesh_Wrapper jali_mesh_wrapper.h
@@ -72,13 +72,13 @@ class Jali_Mesh_Wrapper {
   }
 
   //! Iterators on mesh entity - begin
-  boost::counting_iterator<int> begin(int const entity) const {
-    return boost::make_counting_iterator<int>(0);
+  Portage::counting_iterator begin(int const entity) const {
+    return Portage::make_counting_iterator(0);
   }
 
   //! Iterator on mesh entity - end
-  boost::counting_iterator<int> end(int const entity) const {
-    return (boost::make_counting_iterator<int>(0) + num_entities(entity));
+  Portage::counting_iterator end(int const entity) const {
+    return (Portage::make_counting_iterator(0) + num_entities(entity));
   }
 
   //! Get list of nodes for a cell
