@@ -52,8 +52,8 @@ cmake \
   -D ENABLE_STK_Mesh:BOOL=FALSE \
   -D ENABLE_MOAB_Mesh:BOOL=FALSE \
   ..
-make -j16
-ctest -j16 --output-on-failure
+make -j2
+ctest -j2 --output-on-failure
 make install
 
 
@@ -73,5 +73,5 @@ cmake \
   -D ENABLE_JENKINS_OUTPUT=True \
   -D Jali_DIR:FILEPATH=$JALI_INSTALL_PREFIX/lib \
   ..
-make -j16
+make -j2
 ctest --output-on-failure
