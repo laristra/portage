@@ -98,8 +98,13 @@ if(ENABLE_THRUST)
     endif(NGC_INCLUDE_DIR)
   endif(NOT THRUST_DIR)
   message(STATUS "Using THRUST_DIR=${THRUST_DIR}")
+  # Allow for swapping backends - should this be in CACHE?
+  if(NOT THRUST_BACKEND)
+    set(THRUST_BACKEND THRUST_DEVICE_SYSTEM_OMP)
+  endif(NOT THRUST_BACKEND)
+  message(STATUS "Using ${THRUST_BACKEND} as Thrust backend.")
   include_directories(${THRUST_DIR})
-  add_definitions(-DTHRUST)
-  # NOTE: this will likely need changed to an option
-  add_definitions(-DTHRUST_DEVICE_SYSTEM=THRUST_DEVICE_SYSTEM_OMP)
+#  add_definitions(-DTHRUST)
+  add_definitions(-DTHRUST 
+                  -DTHRUST_DEVICE_SYSTEM=${THRUST_BACKEND})
 endif(ENABLE_THRUST)
