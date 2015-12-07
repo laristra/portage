@@ -16,6 +16,8 @@ JALI_VERSION=v0.6.3
 # Where to find Jali's TPLs:
 TPL_INSTALL_PREFIX=/usr/local/codes/ngc/private/jali-1.0.2-tpl-intel
 
+# General NGC include directory
+NGC_INCLUDE_DIR=/usr/local/codes/ngc/private/include
 
 git config user.email ""
 git config user.name "Jenkins"
@@ -72,6 +74,8 @@ cmake \
   -D ENABLE_MPI_CXX_BINDINGS=True \
   -D ENABLE_JENKINS_OUTPUT=True \
   -D Jali_DIR:FILEPATH=$JALI_INSTALL_PREFIX/lib \
+  -D NGC_INCLUDE_DIR:FILEPATH=$NGC_INCLUDE_DIR \
+  -D ENABLE_THRUST=True \
   ..
 make -j2
 ctest --output-on-failure
