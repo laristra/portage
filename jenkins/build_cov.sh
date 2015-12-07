@@ -48,8 +48,8 @@ cmake \
   -D ENABLE_STK_Mesh:BOOL=FALSE \
   -D ENABLE_MOAB_Mesh:BOOL=FALSE \
   ..
-make -j16
-ctest -j16 --output-on-failure
+make -j2
+ctest -j2 --output-on-failure
 make install
 
 # Build Portage
@@ -74,8 +74,10 @@ cmake \
   -D ENABLE_THRUST=True \
   ..
 
-make -j16
-make test 
+make -j2
+make test
+
 pwd 
-gcovr -r .. -x -e cinch/* -e build/* -e 'clipper.cpp' -e 'clipper.hpp' > coverage.xml
-ls -R
+#gcovr -r .. -x -e cinch/* -e build/*  -e '.*test.*' -e '.*Test.*'  -e '.*clipper.*' > coverage.xml
+gcovr -r .. -x  > coverage.xml
+

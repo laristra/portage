@@ -54,8 +54,8 @@ cmake \
   -D ENABLE_STK_Mesh:BOOL=FALSE \
   -D ENABLE_MOAB_Mesh:BOOL=FALSE \
   ..
-make -j16
-ctest -j16 --output-on-failure
+make -j2
+ctest -j2 --output-on-failure
 make install
 
 
@@ -77,5 +77,5 @@ cmake \
   -D NGC_INCLUDE_DIR:FILEPATH=$NGC_INCLUDE_DIR \
   -D ENABLE_THRUST=True \
   ..
-make -j16
+make -j2
 ctest --output-on-failure
