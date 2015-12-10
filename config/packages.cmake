@@ -91,7 +91,7 @@ if(ENABLE_THRUST)
   #       so the path here should point to the directory that has thrust as
   #       a subdirectory.
   # Use THRUST_DIR directly if specified, otherwise try to build from NGC
-  set(THRUST_DIR "$ENV{NGC_INCLUDE_DIR}" CACHE PATH "Thrust directory")
+  set(THRUST_DIR "${NGC_INCLUDE_DIR}" CACHE PATH "Thrust directory")
   message(STATUS "Using THRUST_DIR=${THRUST_DIR}")
   # Allow for swapping backends - should this be in CACHE?
   set(THRUST_BACKEND "THRUST_DEVICE_SYSTEM_OMP" CACHE STRING "Thrust backend")
