@@ -153,9 +153,9 @@ class Driver
                 composer(&search, &intersect, &remap, remap_var_names_[0]);
 
         // This populates targetField with the doubles returned from the final remap
-	transform(target_mesh_.begin(Jali::CELL),
-		  target_mesh_.end(Jali::CELL),target_field,
-		  composer);
+	Portage::transform(target_mesh_.begin(Jali::CELL),
+		    target_mesh_.end(Jali::CELL),target_field,
+		    composer);
 
     }
 
