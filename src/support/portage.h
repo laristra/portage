@@ -32,20 +32,19 @@ namespace Portage {
     return thrust::make_counting_iterator(i);
   }
 
-  template<typename UnaryOp>
-    counting_iterator transform(counting_iterator first1, counting_iterator last1,
-				counting_iterator result, UnaryOp op) {
-    return thrust::transform(first1, last1, result, op);
+  template<typename InputIterator, typename OutputIterator, typename UnaryFunction>
+    OutputIterator transform(InputIterator first, InputIterator last,
+                             OutputIterator result, UnaryFunction op) {
+    return thrust::transform(first, last, result, op);
   }
-  template<typename BinaryOp>
-    counting_iterator transform(counting_iterator first1, counting_iterator last1,
-				counting_iterator first2,
-				counting_iterator result, BinaryOp op) {
+  template<typename InputIterator1, typename InputIterator2, typename OutputIterator, typename BinaryFunction>
+    OutputIterator transform(InputIterator1 first1, InputIterator1 last1,
+                             InputIterator2 first2, OutputIterator result, BinaryFunction op) {
     return thrust::transform(first1, last1, first2, result, op);
   }
 
+
 #else // no thrust
-  
   template<typename T>
     using vector = std::vector<T>;
   
@@ -54,15 +53,14 @@ namespace Portage {
     return boost::make_counting_iterator<int>(i);
   }
 
-  template<typename UnaryOp>
-    counting_iterator transform(counting_iterator first1, counting_iterator last1,
-				counting_iterator result, UnaryOp op) {
-    return std::transform(first1, last1, result, op);
+  template<typename InputIterator, typename OutputIterator, typename UnaryFunction>
+    OutputIterator transform(InputIterator first, InputIterator last,
+		             OutputIterator result, UnaryFunction op) {
+    return std::transform(first, last, result, op);
   }
-  template<typename BinaryOp>
-    counting_iterator transform(counting_iterator first1, counting_iterator last1,
-				counting_iterator first2,
-				counting_iterator result, BinaryOp op) {
+  template<typename InputIterator1, typename InputIterator2, typename OutputIterator, typename BinaryFunction>
+    OutputIterator transform(InputIterator1 first1, InputIterator1 last1,
+			     InputIterator2 first2, OutputIterator result, BinaryFunction op) {
     return std::transform(first1, last1, first2, result, op);
   }
 
