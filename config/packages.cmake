@@ -72,6 +72,7 @@ include_directories(${Jali_INCLUDE_DIRS} ${Jali_TPL_INCLUDE_DIRS})
 #-----------------------------------------------------------------------------
 # General NGC include directory information
 #-----------------------------------------------------------------------------
+set(NGC_INCLUDE_DIR "$ENV{NGC_INCLUDE_DIR}" CACHE PATH "NGC include directory")
 if(NGC_INCLUDE_DIR)
   message(STATUS "Using NGC_INLCUDE_DIR=${NGC_INCLUDE_DIR}")
 endif(NGC_INCLUDE_DIR)
@@ -79,6 +80,7 @@ endif(NGC_INCLUDE_DIR)
 #-----------------------------------------------------------------------------
 # Thrust information
 #-----------------------------------------------------------------------------
+set(ENABLE_THRUST FALSE CACHE BOOL "Use Thrust")
 if(ENABLE_THRUST)
   message(STATUS "Enabling compilation with Thrust")
   # allow the user to specify a THRUST_DIR, otherwise use ${NGC_INCLUDE_DIR}
@@ -89,19 +91,10 @@ if(ENABLE_THRUST)
   #       so the path here should point to the directory that has thrust as
   #       a subdirectory.
   # Use THRUST_DIR directly if specified, otherwise try to build from NGC
-  if(NOT THRUST_DIR)
-    if(NGC_INCLUDE_DIR)
-      set(THRUST_DIR ${NGC_INCLUDE_DIR})
-    else(NGC_INCLUDE_DIR)
-      message(FATAL_ERROR "Compilation with Thrust requested, but no "
-	"THRUST_DIR or NGC_INCLUDE_DIR specified")
-    endif(NGC_INCLUDE_DIR)
-  endif(NOT THRUST_DIR)
+  set(THRUST_DIR "$ENV{NGC_INCLUDE_DIR}" CACHE PATH "Thrust directory")
   message(STATUS "Using THRUST_DIR=${THRUST_DIR}")
   # Allow for swapping backends - should this be in CACHE?
-  if(NOT THRUST_BACKEND)
-    set(THRUST_BACKEND THRUST_DEVICE_SYSTEM_OMP)
-  endif(NOT THRUST_BACKEND)
+  set(THRUST_BACKEND "THRUST_DEVICE_SYSTEM_OMP" CACHE STRING "Thrust backend")
   message(STATUS "Using ${THRUST_BACKEND} as Thrust backend.")
   include_directories(${THRUST_DIR})
 #  add_definitions(-DTHRUST)
