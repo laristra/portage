@@ -93,11 +93,21 @@ if(ENABLE_THRUST)
   # Use THRUST_DIR directly if specified, otherwise try to build from NGC
   set(THRUST_DIR "${NGC_INCLUDE_DIR}" CACHE PATH "Thrust directory")
   message(STATUS "Using THRUST_DIR=${THRUST_DIR}")
+  
   # Allow for swapping backends - should this be in CACHE?
   set(THRUST_BACKEND "THRUST_DEVICE_SYSTEM_OMP" CACHE STRING "Thrust backend")
   message(STATUS "Using ${THRUST_BACKEND} as Thrust backend.")
   include_directories(${THRUST_DIR})
-#  add_definitions(-DTHRUST)
-  add_definitions(-DTHRUST 
-                  -DTHRUST_DEVICE_SYSTEM=${THRUST_BACKEND})
+  add_definitions(-DTHRUST)
+  add_definitions(-DTHRUST_DEVICE_SYSTEM=${THRUST_BACKEND})
+
+  if("${THRUST_BACKEND}" STREQUAL "THRUST_DEVICE_SYSTEM_OMP")
+    FIND_PACKAGE( OpenMP REQUIRED)
+    if(OPENMP_FOUND)
+      set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
+      set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+      set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
+    endif()
+  endif ()
+
 endif(ENABLE_THRUST)
