@@ -52,12 +52,12 @@ void coordinates_canonical_rotation(
 // will be the one with the lowest angle between it, the nodeid and the
 // x-axis.
 void dual_cell_coordinates_canonical_rotation(
-        const Jali_Mesh_Wrapper &mesh_wrapper,
-        int const nodeid,
-        std::vector<std::pair<double,double> > *xylist) {
-    std::pair<double, double> center_node;
-    mesh_wrapper.node_get_coordinates(nodeid, &center_node);
-    coordinates_canonical_rotation(center_node, xylist);
+    const Portage::Jali_Mesh_Wrapper &mesh_wrapper,
+    int const nodeid,
+    std::vector<std::pair<double,double> > *xylist) {
+  std::pair<double, double> center_node;
+  mesh_wrapper.node_get_coordinates(nodeid, &center_node);
+  coordinates_canonical_rotation(center_node, xylist);
 }
 
 TEST(Jali_Mesh, vdd_eq) {
@@ -123,7 +123,7 @@ TEST(Jali_Mesh, ccw) {
     Jali::MeshFactory mf(MPI_COMM_WORLD);
     Jali::Mesh *mesh = mf(0.0,0.0,1.0,1.0,2,2);
     ASSERT_TRUE(mesh != NULL);
-    Jali_Mesh_Wrapper mesh_wrapper(*mesh);
+    Portage::Jali_Mesh_Wrapper mesh_wrapper(*mesh);
 
     ASSERT_TRUE(mesh_wrapper.ccw({-1, 0}, {0, 0}, {0, 1}));
     ASSERT_TRUE(not mesh_wrapper.ccw({1, 0}, {0, 0}, {0, 1}));
@@ -137,7 +137,7 @@ TEST(Jali_Mesh, dual_cell_get_coordinates) {
     Jali::MeshFactory mf(MPI_COMM_WORLD);
     Jali::Mesh *mesh = mf(0.0,0.0,1.0,1.0,2,2, NULL, true, true, true, true);
     ASSERT_TRUE(mesh != NULL);
-    Jali_Mesh_Wrapper mesh_wrapper(*mesh);
+    Portage::Jali_Mesh_Wrapper mesh_wrapper(*mesh);
     double eps = 1e-12;
 
     std::vector<std::pair<double,double>> xylist;
@@ -249,7 +249,7 @@ TEST(Jali_Mesh, Get_Neighbor_Cells) {
   Jali::MeshFactory mf(MPI_COMM_WORLD);
   Jali::Mesh *mesh = mf(0.0,0.0,0.0,1.0,1.0,1.0,2,2,2);
   ASSERT_TRUE(mesh != NULL);
-  Jali_Mesh_Wrapper mesh_wrapper(*mesh);
+  Portage::Jali_Mesh_Wrapper mesh_wrapper(*mesh);
 
   // This is a regular mesh with 2 cells (3 nodes) in each direction 
 
@@ -261,7 +261,7 @@ TEST(Jali_Mesh, Get_Neighbor_Cells) {
   // 1 (2nd argument) means retrieve only owned cells
 
   std::vector<int> adjcellids;
-  mesh_wrapper.cell_get_node_adj_cells(anycell, 1, &adjcellids);
+  mesh_wrapper.cell_get_node_adj_cells(anycell, Portage::ALL, &adjcellids);
 
   int ncells = mesh_wrapper.num_owned_cells();
   EXPECT_EQ(ncells-1,adjcellids.size()) <<
@@ -291,7 +291,7 @@ TEST(Jali_Mesh, Get_Neighbor_Cells) {
   std::vector<int> adjdualcellids; 
 
   // 1 (2nd argument) means owned dual cells
-  mesh_wrapper.dual_cell_get_node_adj_cells(center_node, 1, &adjdualcellids); 
+  mesh_wrapper.dual_cell_get_node_adj_cells(center_node, Portage::ALL, &adjdualcellids); 
 
   // List of adjacent dual cell ids should contain all node ids except
   // the center one
