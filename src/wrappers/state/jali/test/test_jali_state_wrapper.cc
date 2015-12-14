@@ -46,9 +46,9 @@ TEST(Jali_State_Wrapper, DataTypes) {
   Jali::MeshFactory mf(MPI_COMM_WORLD);
 
   Jali::Mesh* inputMesh = mf(0.0, 0.0, 1.0, 1.0, 2, 2);
-  Jali_Mesh_Wrapper inputMeshWrapper(*inputMesh);
+  Portage::Jali_Mesh_Wrapper inputMeshWrapper(*inputMesh);
   Jali::State state(inputMesh);
-  Jali_State_Wrapper wrapper(state);
+  Portage::Jali_State_Wrapper wrapper(state);
 
   state.add("f1", Jali::CELL, ftest);
   state.add("i1", Jali::NODE, itest);
@@ -56,17 +56,17 @@ TEST(Jali_State_Wrapper, DataTypes) {
 
   // Get raw float data using wrapper
   float* fdata;
-  wrapper.get_data(Jali::CELL, "f1", &fdata);
+  wrapper.get_data(Portage::CELL, "f1", &fdata);
   for (unsigned int i=0; i<n_cells; i++) ASSERT_EQ(fdata[i], ftest[i]);
 
   // Get raw int data using wrapper
   int* idata;
-  wrapper.get_data(Jali::NODE, "i1", &idata);
+  wrapper.get_data(Portage::NODE, "i1", &idata);
   for (unsigned int i=0; i<n_nodes; i++) ASSERT_EQ(idata[i], itest[i]);
 
   // Get raw Vec2d data using wrapper
   Vec2d* vdata;
-  wrapper.get_data(Jali::CELL, "v1", &vdata);
+  wrapper.get_data(Portage::CELL, "v1", &vdata);
   for (unsigned int i=0; i<n_cells; i++) 
   {
     ASSERT_EQ(vdata[i].x, vtest[i].x);
@@ -78,7 +78,7 @@ TEST(Jali_State_Wrapper, DataTypes) {
   fields.push_back("v1");  fields.push_back("f1");  fields.push_back("i1");
   for (auto it = fields.begin(); it != fields.end(); it++)
   {
-    int on_what = wrapper.get_entity(*it);
+    Portage::Entity_kind on_what = wrapper.get_entity(*it);
     if (typeid(float) == wrapper.get_type(*it))
     {
       float* fdata;
@@ -110,7 +110,7 @@ TEST(Jali_State_Wrapper, DataTypes) {
   // Iterate through all fields using the wrapper
   for (auto it = wrapper.names_begin(); it != wrapper.names_end(); it++)
   {
-    int on_what = wrapper.get_entity(*it);
+    Portage::Entity_kind on_what = wrapper.get_entity(*it);
     if (typeid(float) == wrapper.get_type(*it))
     {
       float* fdata;
@@ -140,9 +140,9 @@ TEST(Jali_State_Wrapper, DataTypes) {
   }
 
   // Iterate through fields on cells only using the wrapper
-  for (auto it = wrapper.names_entity_begin(Jali::CELL); it != wrapper.names_entity_end(Jali::CELL); it++)
+  for (auto it = wrapper.names_entity_begin(Portage::CELL); it != wrapper.names_entity_end(Portage::CELL); it++)
   {
-    int on_what = wrapper.get_entity(*it);
+    Portage::Entity_kind on_what = wrapper.get_entity(*it);
     if (typeid(float) == wrapper.get_type(*it))
     {
       float* fdata;
