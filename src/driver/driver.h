@@ -10,7 +10,6 @@
 #include<vector>
 #include<iterator>
 
-#include "Mesh.hh"   // Jali mesh header
 #include "portage/support/portage.h"
 #include "portage/wrappers/state/jali/jali_state_wrapper.h"
 #include "portage/wrappers/mesh/jali/jali_mesh_wrapper.h"
@@ -35,16 +34,16 @@ public:
         w_.dual_cell_get_coordinates(cellid, xylist);
     }
 
-    counting_iterator begin(int const entity) const {
-        if (entity == Jali::NODE) return w_.begin(Jali::CELL);
-        return w_.begin(Jali::NODE);
+    counting_iterator begin(Entity_kind const entity) const {
+        if (entity == NODE) return w_.begin(CELL);
+        return w_.begin(NODE);
     }
 
-    counting_iterator end(int const entity) const {
-        if (entity == Jali::NODE) return w_.end(Jali::CELL);
-        return w_.end(Jali::NODE);
+    counting_iterator end(Entity_kind const entity) const {
+        if (entity == NODE) return w_.end(CELL);
+        return w_.end(NODE);
     }
-    std::vector<std::pair<double, double> > cellToXY(Jali::Entity_ID cellID) const{
+    std::vector<std::pair<double, double> > cellToXY(int cellID) const{
         std::vector<std::pair<double, double> > cellPoints;
         cell_get_coordinates(cellID, &cellPoints);
         return cellPoints;
@@ -77,7 +76,7 @@ class Driver
   
     //! Constructor - takes in wrapper classes for source/target mesh and state
 
-    Driver(Jali::Entity_kind remapEntity, 
+    Driver(Entity_kind remapEntity, 
            Mesh_Wrapper const & sourceMesh, 
            Jali_State_Wrapper const & sourceState,           
            Mesh_Wrapper const & targetMesh,
@@ -127,7 +126,7 @@ class Driver
         
         // Eventually put this in a loop over remap variable names as well
         // Assume for now that we are only doing cell-based remap
-        const Remap_1stOrder<Mesh_Wrapper,Jali_State_Wrapper,Jali::Entity_kind>
+        const Remap_1stOrder<Mesh_Wrapper,Jali_State_Wrapper,Entity_kind>
                 remap(source_mesh_, source_state_, remap_entity_, remap_var_names_[0]);
         
         int numTargetCells = target_mesh_.num_owned_cells();
@@ -142,20 +141,20 @@ class Driver
 
         std::vector<double> dummyvals(numTargetCells,0);
         double *target_field = NULL;
-        target_state_.get_data(remap_entity_,remap_var_names_[0],&target_field);
+        target_state_.get_data((Entity_kind)remap_entity_,
+                               remap_var_names_[0],&target_field);
 
         // Create a cellIndices vector and populates with a sequence of
         // ints starting at 0.  
 
         composerFunctor<SearchSimple<Mesh_Wrapper,Mesh_Wrapper>,
             IntersectClipper<Mesh_Wrapper, Mesh_Wrapper>,
-            Remap_1stOrder<Mesh_Wrapper,Jali_State_Wrapper,Jali::Entity_kind> >
+            Remap_1stOrder<Mesh_Wrapper,Jali_State_Wrapper,Entity_kind> >
                 composer(&search, &intersect, &remap, remap_var_names_[0]);
 
         // This populates targetField with the doubles returned from the final remap
-	Portage::transform(target_mesh_.begin(Jali::CELL),
-		    target_mesh_.end(Jali::CELL),target_field,
-		    composer);
+	transform(target_mesh_.begin(CELL),target_mesh_.end(CELL),
+                  target_field,composer);
 
     }
 
@@ -167,7 +166,7 @@ private:
     Jali_State_Wrapper const & source_state_;
     Jali_State_Wrapper & target_state_;
     std::vector<std::string> remap_var_names_;
-    Jali::Entity_kind remap_entity_;
+    Entity_kind remap_entity_;
 
 }; // class Driver
 
