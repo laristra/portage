@@ -34,12 +34,12 @@ public:
         w_.dual_cell_get_coordinates(cellid, xylist);
     }
 
-    counting_iterator begin(Entity_kind const entity) const {
+  counting_iterator begin(Entity_kind const entity) const {
         if (entity == NODE) return w_.begin(CELL);
         return w_.begin(NODE);
     }
 
-    counting_iterator end(Entity_kind const entity) const {
+  counting_iterator end(Entity_kind const entity) const {
         if (entity == NODE) return w_.end(CELL);
         return w_.end(NODE);
     }
@@ -152,8 +152,15 @@ class Driver
             Remap_1stOrder<Mesh_Wrapper,Jali_State_Wrapper,Entity_kind> >
                 composer(&search, &intersect, &remap, remap_var_names_[0]);
 
-        // This populates targetField with the doubles returned from the final remap
-	transform(target_mesh_.begin(CELL),target_mesh_.end(CELL),
+        // This populates targetField with the doubles returned from
+        // the final remap For some reason (perhaps some code outside
+        // portage is pulling in a "using thrust" command), the
+        // compiler is not able to disambiguate Portage::transform and
+        // thrust::transform here. So, be explicit that we want
+        // Portage::transform
+
+        Portage::transform((counting_iterator)target_mesh_.begin(CELL),
+                  (counting_iterator)target_mesh_.end(CELL),
                   target_field,composer);
 
     }
