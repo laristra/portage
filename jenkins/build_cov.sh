@@ -1,20 +1,16 @@
 #!/usr/bin/env bash
-# This script is executed on Jenkins using
-#
-#     bash $WORKSPACE/jenkins/build_pr.sh
-#
-# The exit code determines if the test succeeded or failed.
 
-# Exit on error
+#Exit on error
 set -e
-# Echo each command
+#Echo each command
 set -x
+
 
 # Tag or git commit hash of Jali version to build and use for this PR:
 JALI_VERSION=v0.6.3
 
 # Where to find Jali's TPLs:
-TPL_INSTALL_PREFIX=/usr/local/codes/ngc/private/jali-1.0.2-tpl-intel
+TPL_INSTALL_PREFIX=/usr/local/codes/ngc/private/jali-1.0.2-tpl-gcc
 
 # General NGC include directory
 NGC_INCLUDE_DIR=/usr/local/codes/ngc/private/include
@@ -23,11 +19,9 @@ git config user.email ""
 git config user.name "Jenkins"
 git merge origin/master
 
-export SHELL=/bin/sh
-
 export MODULEPATH=""
 . /opt/local/packages/Modules/default/init/sh
-module load intel/15.0.3
+module load gcc/4.9.2
 module load openmpi/1.6.5
 
 echo $WORKSPACE
@@ -58,46 +52,32 @@ make -j2
 ctest -j2 --output-on-failure
 make install
 
-
-# Build Portage with Thrust
+# Build Portage
 
 cd $WORKSPACE
 mkdir build
 cd build
 
+
 cmake \
   -D CMAKE_C_COMPILER=`which mpicc` \
+  -D CMAKE_C_FLAGS="-coverage" \
+  -D CMAKE_CXX_FLAGS="-coverage" \
   -D CMAKE_CXX_COMPILER=`which mpiCC` \
   -D CMAKE_BUILD_TYPE=Debug \
   -D ENABLE_UNIT_TESTS=True \
   -D ENABLE_MPI=True \
   -D ENABLE_MPI_CXX_BINDINGS=True \
   -D ENABLE_JENKINS_OUTPUT=True \
-  -D Jali_DIR:FILEPATH=$JALI_INSTALL_PREFIX/lib \
+  -D Jali_DIR:FILEPATH=$JALI_INSTALL_PREFIX//lib \
   -D NGC_INCLUDE_DIR:FILEPATH=$NGC_INCLUDE_DIR \
   -D ENABLE_THRUST=True \
   ..
+
 make -j2
-ctest --output-on-failure
+make test
 
+pwd 
+#gcovr -r .. -x -e cinch/* -e build/*  -e '.*test.*' -e '.*Test.*'  -e '.*clipper.*' > coverage.xml
+gcovr -r .. -x  > coverage.xml
 
-# Build Portage without Thrust
-
-cd $WORKSPACE
-mkdir build-nothrust
-cd build-nothrust
-
-cmake \
-  -D CMAKE_C_COMPILER=`which mpicc` \
-  -D CMAKE_CXX_COMPILER=`which mpiCC` \
-  -D CMAKE_BUILD_TYPE=Debug \
-  -D ENABLE_UNIT_TESTS=True \
-  -D ENABLE_MPI=True \
-  -D ENABLE_MPI_CXX_BINDINGS=True \
-  -D ENABLE_JENKINS_OUTPUT=True \
-  -D Jali_DIR:FILEPATH=$JALI_INSTALL_PREFIX/lib \
-  -D NGC_INCLUDE_DIR:FILEPATH=$NGC_INCLUDE_DIR \
-  -D ENABLE_THRUST=False \
-  ..
-make -j2
-ctest --output-on-failure

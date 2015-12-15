@@ -4,24 +4,24 @@
 #-----------------------------------------------------------------------------~#
 
 # Add header files
-set(intersect_HEADERS
-    clipper.hpp
-    intersectClipper.h
+set(support_HEADERS
+    portage.h
+    matrix.h
     PARENT_SCOPE
 )
 
 # Add source files
-set(intersect_SOURCES
-    clipper.cpp
+set(support_SOURCES
     PARENT_SCOPE
 )
 
-# Add unit test
-if(ENABLE_UNIT_TESTS)
-  cinch_add_unit(intersectClipper
-    SOURCES intersectClipperTest.cc clipper.cpp
-    LIBRARIES ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
-    POLICY MPI
-    )
-endif(ENABLE_UNIT_TESTS)
+# Unit tests
 
+if (ENABLE_UNIT_TESTS) 
+
+  cinch_add_unit(test_matfuncs
+    SOURCES test/test_matfuncs.cc
+    POLICY MPI
+    THREADS 1)
+
+endif(ENABLE_UNIT_TESTS)

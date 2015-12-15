@@ -6,6 +6,11 @@
 # Add header files
 set(search_HEADERS
     search_simple.h
+    search_kdtree.h
+    kdtree.h
+    BoundBox.h
+    Point.h
+    Vector.h
     PARENT_SCOPE
 )
 
@@ -22,9 +27,10 @@ if(ENABLE_UNIT_TESTS)
     LIBRARIES portage ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
     POLICY MPI
     THREADS 1)
+  cinch_add_unit(search_kdtree_test
+    SOURCES search_kdtree_test.cc
+    LIBRARIES portage ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
+    POLICY MPI
+    THREADS 1)
 endif(ENABLE_UNIT_TESTS)
 
-#----------------------------------------------------------------------------~-#
-# Formatting options for emacs and vim.
-# vim: set tabstop=4 shiftwidth=4 expandtab :
-#----------------------------------------------------------------------------~-#

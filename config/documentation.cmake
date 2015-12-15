@@ -33,7 +33,3 @@ cinch_add_doc(user-guide portage_ug.py src
     portage-user-guide-${${PROJECT_NAME}_VERSION}.pdf
     PANDOC_OPTIONS ${ug_pandoc_options} IMAGE_GLOB "*.pdf")
 
-#~---------------------------------------------------------------------------~-#
-# Formatting options for emacs and vim.
-# vim: set tabstop=4 shiftwidth=4 expandtab :
-#~---------------------------------------------------------------------------~-#

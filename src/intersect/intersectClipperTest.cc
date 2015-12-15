@@ -10,10 +10,10 @@ TEST(intersectClipper, simple){
   //Create mesh from 0, 0 to 2.4, 2 1x1
   Jali::Mesh* sm = mf(0, 0, 2, 2, 1,1);
   Jali::Mesh* tm = mf(1,1,2, 2, 1, 1);
-  Jali_Mesh_Wrapper s(*sm);
-  Jali_Mesh_Wrapper t(*tm);
+  Portage::Jali_Mesh_Wrapper s(*sm);
+  Portage::Jali_Mesh_Wrapper t(*tm);
 
-  IntersectClipper<Jali_Mesh_Wrapper> isect{s , t};
+  IntersectClipper<Portage::Jali_Mesh_Wrapper> isect{s , t};
   std::vector<std::vector<double> > moments = isect(0, 0); 
   for(int i=0;i<moments.size();i++){
     for(int j=0;j<moments[i].size();j++){

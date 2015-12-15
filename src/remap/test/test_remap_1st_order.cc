@@ -3,6 +3,7 @@
  * All rights reserved.
  *---------------------------------------------------------------------------~*/
 
+#include "portage/support/portage.h"
 #include "portage/remap/remap_1st_order.h"
 #include "portage/wrappers/mesh/jali/jali_mesh_wrapper.h"
 #include "portage/wrappers/state/jali/jali_state_wrapper.h"
@@ -58,10 +59,10 @@ TEST(Remap_1st_Order, Fields_Cell_Ctr) {
 
   // Create Remap objects
 
-  Portage::Remap_1stOrder<Jali_Mesh_Wrapper,Jali_State_Wrapper,Jali::Entity_kind> 
-      remapper1(*mesh1,mystate,Jali::CELL,"cellvars1");
-  Portage::Remap_1stOrder<Jali_Mesh_Wrapper,Jali_State_Wrapper,Jali::Entity_kind> 
-      remapper2(*mesh1,mystate,Jali::CELL,"cellvars2");
+  Portage::Remap_1stOrder<Portage::Jali_Mesh_Wrapper,Portage::Jali_State_Wrapper,Portage::Entity_kind> 
+      remapper1(*mesh1,mystate,Portage::CELL,"cellvars1");
+  Portage::Remap_1stOrder<Portage::Jali_Mesh_Wrapper,Portage::Jali_State_Wrapper,Portage::Entity_kind> 
+      remapper2(*mesh1,mystate,Portage::CELL,"cellvars2");
 
   // Remap from source to target mesh
 
@@ -92,6 +93,10 @@ TEST(Remap_1st_Order, Fields_Cell_Ctr) {
   // Make sure we retrieved the correct value for each cell on the target
   // For field 1, it is a constant
   // For field 2, it is a linear function
+  // NOTE: Even though 1st order remapping algorithm does not in
+  // general preserve a linear field, the special structure of the
+  // source and target mesh ensures that the linear field is remapped
+  // correctly in this test
 
   double stdval1 = data1[0];
   double stdvals2[4] = {1., 3., 3., 5.};
@@ -140,10 +145,10 @@ TEST(Remap_1st_Order, Fields_Node_Ctr) {
 
   // Create Remap objects
 
-  Portage::Remap_1stOrder<Jali_Mesh_Wrapper,Jali_State_Wrapper,Jali::Entity_kind> 
-      remapper1(*mesh1,mystate,Jali::NODE,"nodevars1");
-  Portage::Remap_1stOrder<Jali_Mesh_Wrapper,Jali_State_Wrapper,Jali::Entity_kind> 
-      remapper2(*mesh1,mystate,Jali::NODE,"nodevars2");
+  Portage::Remap_1stOrder<Portage::Jali_Mesh_Wrapper,Portage::Jali_State_Wrapper,Portage::Entity_kind> 
+      remapper1(*mesh1,mystate,Portage::NODE,"nodevars1");
+  Portage::Remap_1stOrder<Portage::Jali_Mesh_Wrapper,Portage::Jali_State_Wrapper,Portage::Entity_kind> 
+      remapper2(*mesh1,mystate,Portage::NODE,"nodevars2");
 
   // Remap from source to target mesh
 
@@ -174,6 +179,10 @@ TEST(Remap_1st_Order, Fields_Node_Ctr) {
   // Make sure we retrieved the correct value for each cell on the target
   // For field 1, it is a constant
   // For field 2, it is a linear function
+  // NOTE: Even though 1st order remapping algorithm does not in
+  // general preserve a linear field, the special structure of the
+  // source and target mesh ensures that the linear field is remapped
+  // correctly in this test
 
   double stdval1 = data1[0];
   double stdvals2[4] = {(4./3.), 3., 3., (14./3.)};

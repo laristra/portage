@@ -10,10 +10,10 @@
 #include<vector>
 #include<iterator>
 
-#include "Mesh.hh"   // Jali mesh header
+#include "portage/support/portage.h"
 #include "portage/wrappers/state/jali/jali_state_wrapper.h"
 #include "portage/wrappers/mesh/jali/jali_mesh_wrapper.h"
-#include "portage/search/search_simple.h"
+#include "portage/search/search_kdtree.h"
 #include "portage/intersect/intersectClipper.h"
 #include "portage/remap/remap_1st_order.h"
 
@@ -33,15 +33,17 @@ public:
             std::vector<std::pair<double,double> > *xylist) const {
         w_.dual_cell_get_coordinates(cellid, xylist);
     }
-    boost::counting_iterator<int> begin(int const entity) const {
-        if (entity == Jali::NODE) return w_.begin(Jali::CELL);
-        return w_.begin(Jali::NODE);
+
+  counting_iterator begin(Entity_kind const entity) const {
+        if (entity == NODE) return w_.begin(CELL);
+        return w_.begin(NODE);
     }
-    boost::counting_iterator<int> end(int const entity) const {
-        if (entity == Jali::NODE) return w_.end(Jali::CELL);
-        return w_.end(Jali::NODE);
+
+  counting_iterator end(Entity_kind const entity) const {
+        if (entity == NODE) return w_.end(CELL);
+        return w_.end(NODE);
     }
-    std::vector<std::pair<double, double> > cellToXY(Jali::Entity_ID cellID) const{
+    std::vector<std::pair<double, double> > cellToXY(int cellID) const{
         std::vector<std::pair<double, double> > cellPoints;
         cell_get_coordinates(cellID, &cellPoints);
         return cellPoints;
@@ -62,11 +64,6 @@ struct composerFunctor;
     \brief Driver provides the API to mapping from one mesh to another.
  */
 
-// When we get Portage::Entity_kind, Portage::Entity_ID definitions
-// into a header file in the appropriate place, we can make everything
-// in the method free of Jali references except the Jali_Mesh_Wrapper
-// and Jali_State_Wrapper references
-
 template <class Mesh_Wrapper>
 class Driver
 {
@@ -74,7 +71,7 @@ class Driver
   
     //! Constructor - takes in wrapper classes for source/target mesh and state
 
-    Driver(Jali::Entity_kind remapEntity, 
+    Driver(Entity_kind remapEntity, 
            Mesh_Wrapper const & sourceMesh, 
            Jali_State_Wrapper const & sourceState,           
            Mesh_Wrapper const & targetMesh,
@@ -113,9 +110,9 @@ class Driver
     void run()
     {
         std::printf("in Driver::run()...\n");
-        
+       
         // Get an instance of the desired search algorithm type
-        const SearchSimple<Mesh_Wrapper,Mesh_Wrapper>
+        const SearchKDTree<Mesh_Wrapper,Mesh_Wrapper>
                 search(source_mesh_, target_mesh_);
         
         // Get an instance of the desired intersect algorithm type
@@ -124,7 +121,7 @@ class Driver
         
         // Eventually put this in a loop over remap variable names as well
         // Assume for now that we are only doing cell-based remap
-        const Remap_1stOrder<Mesh_Wrapper,Jali_State_Wrapper,Jali::Entity_kind>
+        const Remap_1stOrder<Mesh_Wrapper,Jali_State_Wrapper,Entity_kind>
                 remap(source_mesh_, source_state_, remap_entity_, remap_var_names_[0]);
         
         int numTargetCells = target_mesh_.num_owned_cells();
@@ -137,21 +134,28 @@ class Driver
         // it is added. This logic needs to be reversed. The find function
         // should add it if it is not found (if so requested).
 
-        std::vector<double> dummyvals(numTargetCells,0);
-        double *target_field = NULL;
-        target_state_.get_data(remap_entity_,remap_var_names_[0],&target_field);
+        double *target_field_raw = NULL;
+        target_state_.get_data(remap_entity_,remap_var_names_[0],&target_field_raw);
+        Portage::pointer<double> target_field(target_field_raw);
 
         // Create a cellIndices vector and populates with a sequence of
         // ints starting at 0.  
-
-        composerFunctor<SearchSimple<Mesh_Wrapper,Mesh_Wrapper>,
+        composerFunctor<SearchKDTree<Mesh_Wrapper,Mesh_Wrapper>,
             IntersectClipper<Mesh_Wrapper, Mesh_Wrapper>,
-            Remap_1stOrder<Mesh_Wrapper,Jali_State_Wrapper,Jali::Entity_kind> >
+            Remap_1stOrder<Mesh_Wrapper,Jali_State_Wrapper,Entity_kind> >
                 composer(&search, &intersect, &remap, remap_var_names_[0]);
 
-        // This populates targetField with the doubles returned from the final remap
-        std::transform(target_mesh_.begin(Jali::CELL), target_mesh_.end(Jali::CELL),target_field,
-                       composer);
+        // This populates targetField with the doubles returned from
+        // the final remap For some reason (perhaps some code outside
+        // portage is pulling in a "using thrust" command), the
+        // compiler is not able to disambiguate Portage::transform and
+        // thrust::transform here. So, be explicit that we want
+        // Portage::transform
+
+        Portage::transform((counting_iterator)target_mesh_.begin(CELL),
+                  (counting_iterator)target_mesh_.end(CELL),
+                  target_field,composer);
+
     }
 
 
@@ -162,7 +166,7 @@ private:
     Jali_State_Wrapper const & source_state_;
     Jali_State_Wrapper & target_state_;
     std::vector<std::string> remap_var_names_;
-    Jali::Entity_kind remap_entity_;
+    Entity_kind remap_entity_;
 
 }; // class Driver
 
@@ -178,15 +182,15 @@ struct composerFunctor
     const RemapType* remap_;
     const std::string remap_var_name_;
     //----------------------------------------
-
+   
     composerFunctor(const SearchType* searcher, const IsectType* intersecter, 
                     const RemapType* remapper, const std::string remap_var_name)
 			: search_(searcher), intersect_(intersecter), remap_(remapper), 
               remap_var_name_(remap_var_name) { }
 
-
     double operator()(int const targetCellIndex)
     {
+
         // Search for candidates and return their cells indices
         std::vector<int> candidates;
         search_->search(targetCellIndex, &candidates);
@@ -195,14 +199,8 @@ struct composerFunctor
         // moments of intersection
         std::vector<std::vector<std::vector<double> > > 
                 moments(candidates.size());
-        std::cout << "Candidates size: " << candidates.size() << std::endl;
         for (int i=0;i<candidates.size();i++)
-        {
             moments[i] = (*intersect_)(candidates[i], targetCellIndex);
-            std::cout << targetCellIndex << " " << i << " " << candidates[i] << " ";
-            if (moments[i].size() > 0) std::cout << moments[i][0][0] << std::endl;
-            else std::cout << "None" << std::endl;
-        }
 
         // Compute new value on target cell based on source mesh
         // values and intersection moments
@@ -240,6 +238,7 @@ struct composerFunctor
         double remappedValue = (*remap_)(source_cells_and_weights);
         
         return remappedValue;
+
     }
 };  // struct composerFunctor
 
@@ -247,14 +246,3 @@ struct composerFunctor
 
 #endif // DRIVER_H
 
-/*--------------------------------------------------------------------------~-*
- * Formatting options for Emacs and vim.
- *
- * Local Variables:
- * mode:c++
- * indent-tabs-mode:nil
- * c-basic-offset:4
- * tab-width:4
- * End:
- * vim: set tabstop=4 shiftwidth=4 expandtab :
- *--------------------------------------------------------------------------~-*/
