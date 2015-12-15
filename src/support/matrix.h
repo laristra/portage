@@ -15,8 +15,8 @@
   \brief matrix helper functions for portage 
 */
 
-// Note: We could convert these to a functional form but that entails a copy
-// out of a potentially bulky data structure
+/*! \todo Note: We could convert these to a functional form but that
+  entails a copy out of a potentially bulky data structure */
 
 namespace Portage {
 

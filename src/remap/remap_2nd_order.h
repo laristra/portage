@@ -32,7 +32,7 @@
 
 namespace Portage {
 
-// Template on variable type ??
+//! \todo Template on variable type ??
 
 template<typename MeshType, typename StateType, typename OnWhatType>
 class Remap_2ndOrder {
@@ -73,7 +73,12 @@ class Remap_2ndOrder {
     //              gradients_.begin(),limgrad);
     //*****************************
 
-    std::transform(source_mesh_.begin(on_what),source_mesh_.end(on_what),
+    // Even though we defined Portage::transform (to be
+    // thrust::transform or boost::transform) in portage.h, the
+    // compiler is not able to disambiguate this call and is getting
+    // confused. So we will explicitly state that this is Portage::transform
+
+    Portage::transform(source_mesh_.begin(on_what),source_mesh_.end(on_what),
                    gradients_.begin(),limgrad);
   }
 
@@ -104,11 +109,7 @@ class Remap_2ndOrder {
   StateType const & source_state_;
   OnWhatType const on_what_;
   std::string const & remap_var_name_;
-  double * source_vals_;  // must remove assumption that field is scalar
-
-  // Make each gradient vector of fixed length 3 even though we may
-  // store only 1, 2 or 3 values in it depending on the spatial
-  // dimension of the problem
+  double * source_vals_;  //! \todo must remove assumption that field is scalar
 
   std::vector<std::vector<double>> gradients_; 
 

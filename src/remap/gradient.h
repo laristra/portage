@@ -6,16 +6,6 @@
 #ifndef PORTAGE_GRADIENT_H
 #define PORTAGE_GRADIENT_H
 
-/*!
-  \brief Compute least squares gradient from set of values
-
-  Compute a least squares gradient from a set of values. The first
-  point is assumed to be the point where the gradient must be computed
-  and the first value is assumed to the value at this reference point
-
-  This operator does not know anything about a mesh.
-
-*/
 
 #include "portage/support/matrix.h"
 
@@ -28,8 +18,16 @@ typedef enum {NOLIMITER, VAN_LEER, BARTH_JESPERSEN, MINMOD, SUPERBEE}
   
 
 
-/// Least squares gradient operator
-// Assumption is that gradient is to be computed at the first point
+/*!
+  \brief Compute least squares gradient from set of values
+
+  Compute a least squares gradient from a set of values. The first
+  point is assumed to be the point where the gradient must be computed
+  and the first value is assumed to the value at this reference point
+
+  This operator does not know anything about a mesh.
+
+*/
 
 std::vector<double> 
 ls_gradient(std::vector<std::vector<double>> const & coords,
@@ -115,7 +113,7 @@ class Limited_Gradient {
     
   }
 
-  // Seems to be needed when using this in a Thrust transform call?
+  //! \todo Seems to be needed when using this in a Thrust transform call?
   //
   //  //! Copy constructor (deleted)
   //
@@ -130,6 +128,7 @@ class Limited_Gradient {
   ~Limited_Gradient() {}
 
   //! Functor
+
   std::vector<double> operator()(int cellid);
 
  private:
@@ -139,7 +138,7 @@ class Limited_Gradient {
   StateType const & state_;
   OnWhatType const on_what_;
   std::string const & remap_var_name_;
-  double * vals_;  // must remove assumption that field is scalar
+  double * vals_;  //! \todo must remove assumption that field is scalar
 };
       
 
@@ -188,7 +187,7 @@ Limited_Gradient<MeshType,StateType,OnWhatType> :: operator() (int const cellid)
   std::vector<double> grad = ls_gradient(cellcenters, cellvalues);
 
   
-  // limiters not implemented yet
+  //! \todo limiters not implemented yet
   
   double phi = 1.0;
 

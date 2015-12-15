@@ -174,7 +174,7 @@ class Jali_Mesh_Wrapper {
     std::vector<JaliGeometry::Point> plist;
     jali_mesh_.cell_get_coordinates(cellid, &plist);
 
-    // should convert to a std::for_each or std::transform
+    //! \todo should we convert to a std::for_each or std::transform?
     xlist->resize(plist.size());
     std::vector<JaliGeometry::Point>::iterator itp = plist.begin();
     std::vector<double>::iterator itx = xlist->begin();
@@ -195,7 +195,7 @@ class Jali_Mesh_Wrapper {
     std::vector<JaliGeometry::Point> plist;
     jali_mesh_.cell_get_coordinates(cellid, &plist);
 
-    // should convert to a std::for_each or std::transform
+    //! \todo should we convert to a std::for_each or std::transform?
     xylist->resize(plist.size());
     std::vector<JaliGeometry::Point>::iterator itp = plist.begin();
     std::vector<std::pair<double,double> >::iterator itx = xylist->begin();
@@ -216,7 +216,7 @@ class Jali_Mesh_Wrapper {
     std::vector<JaliGeometry::Point> plist;
     jali_mesh_.cell_get_coordinates(cellid, &plist);
 
-    // should convert to a std::for_each or std::transform
+    //! \todo should we convert to a std::for_each or std::transform?
 
     xyzlist->resize(plist.size());
     std::vector<JaliGeometry::Point>::iterator itp = plist.begin();
@@ -355,10 +355,11 @@ class Jali_Mesh_Wrapper {
 
   /// \brief Centroid of a dual cell
   //
-  // Centroid of a dual cell. NOTE: THIS IS ASSUMED TO BE THE NODE
-  // COORDINATE BECAUSE THE NODAL VARIABLES LIVE THERE, BUT FOR
-  // DISTORTED GRIDS, THE NODE COORDINATED MAY NOT BE THE CENTROID OF
-  // THE DUAL CELL
+  // Centroid of a dual cell. 
+
+  //! \todo NOTE: THIS IS ASSUMED TO BE THE NODE COORDINATE BECAUSE
+  //! THE NODAL VARIABLES LIVE THERE, BUT FOR DISTORTED GRIDS, THE
+  //! NODE COORDINATED MAY NOT BE THE CENTROID OF THE DUAL CELL
 
   void dual_cell_centroid(Jali::Entity_ID nodeid,
                           std::vector<double> *centroid) const {

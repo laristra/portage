@@ -64,11 +64,6 @@ struct composerFunctor;
     \brief Driver provides the API to mapping from one mesh to another.
  */
 
-// When we get Portage::Entity_kind, Portage::Entity_ID definitions
-// into a header file in the appropriate place, we can make everything
-// in the method free of Jali references except the Jali_Mesh_Wrapper
-// and Jali_State_Wrapper references
-
 template <class Mesh_Wrapper>
 class Driver
 {
