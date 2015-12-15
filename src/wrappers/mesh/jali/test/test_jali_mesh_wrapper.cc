@@ -318,6 +318,6 @@ TEST(Jali_Mesh, mesh_shotshell) {
   Jali::MeshFactory mesh_factory(MPI_COMM_WORLD);
 
   // Make sure we request faces, edges, wedges and corners
-  Jali::Mesh *mesh = mesh_factory("../test_data/shotshell.exo",NULL,true,true,true,true);
+  Jali::Mesh *mesh = mesh_factory("test_data/shotshell.exo",NULL,true,true,true,true);
   ASSERT_TRUE(mesh != NULL);
 }
