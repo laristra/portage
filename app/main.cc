@@ -25,8 +25,9 @@ int main(int argc, char** argv)
   if (argc <= 2)
   {
     std::printf("Usage: portageapp example-number ncells\n");
-    std::printf("example 0: 2d cell-centered remap\n");
-    std::printf("example 1: 2d node-centered remap\n");
+    std::printf("example 0: 2d 1st order cell-centered remap\n");
+    std::printf("example 1: 2d 1st order node-centered remap\n");
+    std::printf("example 2: 2d 2nd order cell-centered remap\n");
     return 0;
   }
   if (argc > 1) example = atoi(argv[1]);
@@ -48,7 +49,7 @@ int main(int argc, char** argv)
   std::printf("running example %d\n", example);
 
   // Example 0 is a 2d cell-centered remap
-  if (example == 0)
+  if (example == 0 || example == 2)
   {
     Jali::MeshFactory mf(MPI_COMM_WORLD);
 
@@ -79,6 +80,11 @@ int main(int argc, char** argv)
     std::vector<std::string> remap_fields;
     remap_fields.push_back("celldata");
     d.set_remap_var_names(remap_fields);
+
+    // Example 2 is a 2nd order accurate remap
+
+    if (example == 2)
+      d.set_remap_order(2);
 
     struct timeval begin, end, diff;
     gettimeofday(&begin, 0);
