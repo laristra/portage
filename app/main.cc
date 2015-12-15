@@ -25,8 +25,11 @@ int main(int argc, char** argv)
   if (argc <= 2)
   {
     std::printf("Usage: portageapp example-number ncells\n");
-    std::printf("example 0: 2d cell-centered remap\n");
-    std::printf("example 1: 2d node-centered remap\n");
+    std::printf("example 0: 2d 1st order cell-centered remap of linear func\n");
+    std::printf("example 1: 2d 1st order node-centered remap of linear func\n");
+    std::printf("example 2: 2d 2nd order cell-centered remap of linear func\n");
+    std::printf("example 3: 2d 1st order cell-centered remap of quadratic func\n");
+    std::printf("example 4: 2d 2nd order cell-centered remap of quadratic func\n");
     return 0;
   }
   if (argc > 1) example = atoi(argv[1]);
@@ -47,8 +50,8 @@ int main(int argc, char** argv)
   std::printf("starting portageapp...\n");
   std::printf("running example %d\n", example);
 
-  // Example 0 is a 2d cell-centered remap
-  if (example == 0)
+  // Example 0,2,3,4 are 2d cell-centered remaps
+  if (example != 1) 
   {
     Jali::MeshFactory mf(MPI_COMM_WORLD);
 
@@ -60,11 +63,25 @@ int main(int argc, char** argv)
     Jali::Mesh* targetMesh = mf(0.0, 0.0, 1.0, 1.0, n+1, n+1);
     Portage::Jali_Mesh_Wrapper targetMeshWrapper(*targetMesh);
 
+    int nsrccells = inputMeshWrapper.num_owned_cells();
+
     Jali::State sourceState(inputMesh);
-    std::vector<double> sourceData(n*n);
-    for (unsigned int i=0; i<n; i++) 
-      for (unsigned int j=0; j<n; j++)
-        sourceData[i*n+j] = 1.0f*i+j;  //{0.0,1.0,2.0,1.0,2.0,3.0,2.0,3.0,4.0};
+    std::vector<double> sourceData(nsrccells);
+
+    if (example == 3 || example == 4) { // quadratic function      
+      for (unsigned int c = 0; c < nsrccells; c++) {
+        std::vector<double> cen;
+        inputMeshWrapper.cell_centroid(c,&cen);
+        sourceData[c] = cen[0]*cen[0]+cen[1]*cen[1];
+      }
+    }
+    else { // linear function
+      for (unsigned int c = 0; c < nsrccells; c++) {
+        std::vector<double> cen;
+        inputMeshWrapper.cell_centroid(c,&cen);
+        sourceData[c] = cen[0]+cen[1];
+      }
+    }
     Jali::StateVector<double> & cellvecin = sourceState.add("celldata", Jali::CELL, &(sourceData[0]));
     Portage::Jali_State_Wrapper sourceStateWrapper(sourceState);
 
@@ -80,6 +97,11 @@ int main(int argc, char** argv)
     remap_fields.push_back("celldata");
     d.set_remap_var_names(remap_fields);
 
+    // Example 2 is a 2nd order accurate remap
+
+    if (example == 2 || example == 4)
+      d.set_remap_order(2);
+
     struct timeval begin, end, diff;
     gettimeofday(&begin, 0);
 
@@ -93,8 +115,28 @@ int main(int argc, char** argv)
     // Output results for small test cases
     if (n < 10)
     {
+      double toterr = 0.0;
+
       std::cerr << "celldata vector on target mesh after remapping is:" << std::endl;
-      std::cerr << cellvecout;
+      int ntargetcells = targetMeshWrapper.num_owned_cells();
+      for (int c = 0; c < ntargetcells; c++) {
+        std::vector<double> ccen;
+        targetMeshWrapper.cell_centroid(c,&ccen);
+
+        double error;
+        if (example == 0 || example == 2)
+          error = ccen[0]+ccen[1] - cellvecout[c];
+        else if (example == 3 || example == 4)
+          error = ccen[0]*ccen[0]+ccen[1]*ccen[1] - cellvecout[c];
+
+        std::printf("Cell=% 4d Centroid = (% 5.3lf,% 5.3lf)",c,
+                    ccen[0],ccen[1]);
+        std::printf("  Value = % 10.6lf  Err = % lf\n",
+                    cellvecout[c],error);        
+
+        toterr += error*error;
+      }
+      std::printf("\n\nL2 NORM OF ERROR = %lf\n\n",sqrt(toterr));
     }
   }
 
