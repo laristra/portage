@@ -14,7 +14,7 @@
 #include "portage/support/portage.h"
 #include "portage/wrappers/state/jali/jali_state_wrapper.h"
 #include "portage/wrappers/mesh/jali/jali_mesh_wrapper.h"
-#include "portage/search/search_simple.h"
+#include "portage/search/search_kdtree.h"
 #include "portage/intersect/intersectClipper.h"
 #include "portage/remap/remap_1st_order.h"
 
@@ -118,7 +118,7 @@ class Driver
         std::printf("in Driver::run()...\n");
        
         // Get an instance of the desired search algorithm type
-        const SearchSimple<Mesh_Wrapper,Mesh_Wrapper>
+        const SearchKDTree<Mesh_Wrapper,Mesh_Wrapper>
                 search(source_mesh_, target_mesh_);
         
         // Get an instance of the desired intersect algorithm type
@@ -146,7 +146,7 @@ class Driver
 
         // Create a cellIndices vector and populates with a sequence of
         // ints starting at 0.  
-        composerFunctor<SearchSimple<Mesh_Wrapper,Mesh_Wrapper>,
+        composerFunctor<SearchKDTree<Mesh_Wrapper,Mesh_Wrapper>,
             IntersectClipper<Mesh_Wrapper, Mesh_Wrapper>,
             Remap_1stOrder<Mesh_Wrapper,Jali_State_Wrapper,Jali::Entity_kind> >
                 composer(&search, &intersect, &remap, remap_var_names_[0]);
