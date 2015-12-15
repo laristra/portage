@@ -31,3 +31,7 @@ endif()
 set(CINCH_HEADER_SUFFIXES "\\.h")
 
 
+file(COPY
+    test_data/shotshell.exo
+    test_data/shotshell-v.exo
+  DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/test_data)
