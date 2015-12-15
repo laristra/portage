@@ -81,12 +81,14 @@ class Jali_Mesh_Wrapper {
 
   //! Iterators on mesh entity - begin
   counting_iterator begin(Entity_kind const entity) const {
-    return make_counting_iterator(0);
+    int start_index = 0;
+    return make_counting_iterator(start_index);
   }
 
   //! Iterator on mesh entity - end
   counting_iterator end(Entity_kind const entity) const {
-    return (make_counting_iterator(0) + num_entities(entity));
+    int start_index = 0;
+    return (make_counting_iterator(start_index) + num_entities(entity));
   }
 
   //! Get list of nodes for a cell

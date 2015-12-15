@@ -115,7 +115,7 @@ class Driver
     void run()
     {
         std::printf("in Driver::run()...\n");
-        
+       
         // Get an instance of the desired search algorithm type
         const SearchKDTree<Mesh_Wrapper,Mesh_Wrapper>
                 search(source_mesh_, target_mesh_);
@@ -139,14 +139,12 @@ class Driver
         // it is added. This logic needs to be reversed. The find function
         // should add it if it is not found (if so requested).
 
-        std::vector<double> dummyvals(numTargetCells,0);
-        double *target_field = NULL;
-        target_state_.get_data((Entity_kind)remap_entity_,
-                               remap_var_names_[0],&target_field);
+        double *target_field_raw = NULL;
+        target_state_.get_data(remap_entity_,remap_var_names_[0],&target_field_raw);
+        Portage::pointer<double> target_field(target_field_raw);
 
         // Create a cellIndices vector and populates with a sequence of
         // ints starting at 0.  
-
         composerFunctor<SearchKDTree<Mesh_Wrapper,Mesh_Wrapper>,
             IntersectClipper<Mesh_Wrapper, Mesh_Wrapper>,
             Remap_1stOrder<Mesh_Wrapper,Jali_State_Wrapper,Entity_kind> >
@@ -189,15 +187,15 @@ struct composerFunctor
     const RemapType* remap_;
     const std::string remap_var_name_;
     //----------------------------------------
-
+   
     composerFunctor(const SearchType* searcher, const IsectType* intersecter, 
                     const RemapType* remapper, const std::string remap_var_name)
 			: search_(searcher), intersect_(intersecter), remap_(remapper), 
               remap_var_name_(remap_var_name) { }
 
-
     double operator()(int const targetCellIndex)
     {
+
         // Search for candidates and return their cells indices
         std::vector<int> candidates;
         search_->search(targetCellIndex, &candidates);
@@ -206,14 +204,8 @@ struct composerFunctor
         // moments of intersection
         std::vector<std::vector<std::vector<double> > > 
                 moments(candidates.size());
-        std::cout << "Candidates size: " << candidates.size() << std::endl;
         for (int i=0;i<candidates.size();i++)
-        {
             moments[i] = (*intersect_)(candidates[i], targetCellIndex);
-            std::cout << targetCellIndex << " " << i << " " << candidates[i] << " ";
-            if (moments[i].size() > 0) std::cout << moments[i][0][0] << std::endl;
-            else std::cout << "None" << std::endl;
-        }
 
         // Compute new value on target cell based on source mesh
         // values and intersection moments
@@ -251,6 +243,7 @@ struct composerFunctor
         double remappedValue = (*remap_)(source_cells_and_weights);
         
         return remappedValue;
+
     }
 };  // struct composerFunctor
 
