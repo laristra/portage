@@ -311,10 +311,6 @@ TEST(Jali_Mesh, Get_Neighbor_Cells) {
 }
 
 TEST(Jali_Mesh, mesh_shotshell) {
-  int nproc, myrank;
-  MPI_Comm_size(MPI_COMM_WORLD,&nproc);
-  MPI_Comm_rank(MPI_COMM_WORLD,&myrank);
-
   Jali::MeshFactory mesh_factory(MPI_COMM_WORLD);
 
   // Make sure we request faces, edges, wedges and corners
