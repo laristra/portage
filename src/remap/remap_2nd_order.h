@@ -64,15 +64,6 @@ class Remap_2ndOrder {
     // the cells and compute a "limited" gradient of the field on the
     // cells (for transform definition, see portage.h)
 
-    // ****************************
-    // NOTE *** NOTE **** NOTE **** COMPILER IS NOT ABLE TO FIGURE OUT
-    // WHETHER IT SHOULD USE THRUST::TRANSFORM OR STD::TRANSFORM AND
-    // IS COMPLAINING. SO, FOR NOW I WILL JUST USE STD::TRANSFORM
-
-    //    transform(source_mesh_.begin(on_what),source_mesh_.end(on_what),
-    //              gradients_.begin(),limgrad);
-    //*****************************
-
     // Even though we defined Portage::transform (to be
     // thrust::transform or boost::transform) in portage.h, the
     // compiler is not able to disambiguate this call and is getting
