@@ -64,8 +64,11 @@ int main(int argc, char** argv)
     Jali::State sourceState(inputMesh);
     std::vector<double> sourceData(n*n);
     for (unsigned int i=0; i<n; i++) 
-      for (unsigned int j=0; j<n; j++)
-        sourceData[i*n+j] = 1.0f*i+j;  //{0.0,1.0,2.0,1.0,2.0,3.0,2.0,3.0,4.0};
+      for (unsigned int j=0; j<n; j++) {
+        std::vector<double> cen;
+        inputMeshWrapper.cell_centroid(i*n+j,&cen);
+        sourceData[i*n+j] = cen[0]+cen[1];
+      }
     Jali::StateVector<double> & cellvecin = sourceState.add("celldata", Jali::CELL, &(sourceData[0]));
     Portage::Jali_State_Wrapper sourceStateWrapper(sourceState);
 
@@ -99,8 +102,21 @@ int main(int argc, char** argv)
     // Output results for small test cases
     if (n < 10)
     {
+      double toterr = 0.0;
+
       std::cerr << "celldata vector on target mesh after remapping is:" << std::endl;
-      std::cerr << cellvecout;
+      int ntargetcells = targetMeshWrapper.num_owned_cells();
+      for (int c = 0; c < ntargetcells; c++) {
+        std::vector<double> ccen;
+        targetMeshWrapper.cell_centroid(c,&ccen);
+        double error = ccen[0]+ccen[1] - cellvecout[c];
+        std::printf("Cell=% 4d Centroid = (% 5.3lf,% 5.3lf)",c,
+                    ccen[0],ccen[1]);
+        std::printf("  Value = % 10.6lf  Err = % lf\n",
+                    cellvecout[c],error);        
+        toterr += error*error;
+      }
+      std::printf("L2 NORM OF ERROR = %lf\n",sqrt(toterr));
     }
   }
 
