@@ -59,7 +59,7 @@ ctest -j2 --output-on-failure
 make install
 
 
-# Build Portage
+# Build Portage with Thrust
 
 cd $WORKSPACE
 mkdir build
@@ -76,6 +76,28 @@ cmake \
   -D Jali_DIR:FILEPATH=$JALI_INSTALL_PREFIX/lib \
   -D NGC_INCLUDE_DIR:FILEPATH=$NGC_INCLUDE_DIR \
   -D ENABLE_THRUST=True \
+  ..
+make -j2
+ctest --output-on-failure
+
+
+# Build Portage without Thrust
+
+cd $WORKSPACE
+mkdir build-nothrust
+cd build-nothrust
+
+cmake \
+  -D CMAKE_C_COMPILER=`which mpicc` \
+  -D CMAKE_CXX_COMPILER=`which mpiCC` \
+  -D CMAKE_BUILD_TYPE=Debug \
+  -D ENABLE_UNIT_TESTS=True \
+  -D ENABLE_MPI=True \
+  -D ENABLE_MPI_CXX_BINDINGS=True \
+  -D ENABLE_JENKINS_OUTPUT=True \
+  -D Jali_DIR:FILEPATH=$JALI_INSTALL_PREFIX/lib \
+  -D NGC_INCLUDE_DIR:FILEPATH=$NGC_INCLUDE_DIR \
+  -D ENABLE_THRUST=False \
   ..
 make -j2
 ctest --output-on-failure

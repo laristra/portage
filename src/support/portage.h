@@ -27,6 +27,9 @@ namespace Portage {
   template<typename T>
     using vector = thrust::device_vector<T>;
   
+  template<typename T>
+    using pointer = thrust::device_ptr<T>;
+
   typedef thrust::counting_iterator<int> counting_iterator;
   counting_iterator make_counting_iterator(int const i) {
     return thrust::make_counting_iterator(i);
@@ -43,11 +46,13 @@ namespace Portage {
     return thrust::transform(first1, last1, first2, result, op);
   }
 
-
 #else // no thrust
   template<typename T>
     using vector = std::vector<T>;
   
+  template<typename T>
+    using pointer = T*;
+
   typedef boost::counting_iterator<int> counting_iterator;
   counting_iterator make_counting_iterator(int const i) {
     return boost::make_counting_iterator<int>(i);
