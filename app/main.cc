@@ -54,11 +54,11 @@ int main(int argc, char** argv)
 
     // Create a 2d quad input mesh from (0,0) to (1,1) with nxn zones
     Jali::Mesh* inputMesh = mf(0.0, 0.0, 1.0, 1.0, n, n);
-    Jali_Mesh_Wrapper inputMeshWrapper(*inputMesh);
+    Portage::Jali_Mesh_Wrapper inputMeshWrapper(*inputMesh);
 
     // Create a 2d quad output mesh from (0,0) to (1,1) with (n+1)x(n+1) zones
     Jali::Mesh* targetMesh = mf(0.0, 0.0, 1.0, 1.0, n+1, n+1);
-    Jali_Mesh_Wrapper targetMeshWrapper(*targetMesh);
+    Portage::Jali_Mesh_Wrapper targetMeshWrapper(*targetMesh);
 
     Jali::State sourceState(inputMesh);
     std::vector<double> sourceData(n*n);
@@ -66,7 +66,7 @@ int main(int argc, char** argv)
       for (unsigned int j=0; j<n; j++)
         sourceData[i*n+j] = 1.0f*i+j;  //{0.0,1.0,2.0,1.0,2.0,3.0,2.0,3.0,4.0};
     Jali::StateVector<double> & cellvecin = sourceState.add("celldata", Jali::CELL, &(sourceData[0]));
-    Jali_State_Wrapper sourceStateWrapper(sourceState);
+    Portage::Jali_State_Wrapper sourceStateWrapper(sourceState);
 
     Jali::State targetState(targetMesh);
     std::vector<double> targetData((n+1)*(n+1), 0.0);
@@ -106,17 +106,17 @@ int main(int argc, char** argv)
     // Create a 2d quad input mesh from (0,0) to (1,1) with 3x3 zones; 
     // The "true" arguments request that a dual mesh be constructed with wedges, corners, etc.
     Jali::Mesh* inputMesh = mf(0.0, 0.0, 1.0, 1.0, n, n, NULL, true, true, true, true);
-    Jali_Mesh_Wrapper inputMeshWrapper(*inputMesh);
+    Portage::Jali_Mesh_Wrapper inputMeshWrapper(*inputMesh);
 
     // Create a 2d quad output mesh from (0,0) to (1,1) with 1x1 zones;
     // The "true" arguments request that a dual mesh be constructed with wedges, corners, etc.
     Jali::Mesh* targetMesh = mf(0.0, 0.0, 1.0, 1.0, n-2, n-2, NULL, true, true, true, true);
-    Jali_Mesh_Wrapper targetMeshWrapper(*targetMesh);
+    Portage::Jali_Mesh_Wrapper targetMeshWrapper(*targetMesh);
 
     Jali::State sourceState(inputMesh);
     std::vector<double> sourceData((n+1)*(n+1), 1.5); 
     Jali::StateVector<double> & nodevecin = sourceState.add("nodedata", Jali::NODE, &(sourceData[0]));
-    Jali_State_Wrapper sourceStateWrapper(sourceState);
+    Portage::Jali_State_Wrapper sourceStateWrapper(sourceState);
 
     Jali::State targetState(targetMesh);
     std::vector<double> targetData((n+1)*(n+1), 0.0);
