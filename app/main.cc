@@ -113,7 +113,7 @@ int main(int argc, char** argv)
     std::cout << "Time: " << seconds << std::endl; 
 
     // Output results for small test cases
-    if (n < 1000)
+    if (n < 10)
     {
       double toterr = 0.0;
 
@@ -122,11 +122,18 @@ int main(int argc, char** argv)
       for (int c = 0; c < ntargetcells; c++) {
         std::vector<double> ccen;
         targetMeshWrapper.cell_centroid(c,&ccen);
-        double error = ccen[0]+ccen[1] - cellvecout[c];
+
+        double error;
+        if (example == 0 || example == 2)
+          error = ccen[0]+ccen[1] - cellvecout[c];
+        else if (example == 3 || example == 4)
+          error = ccen[0]*ccen[0]+ccen[1]*ccen[1] - cellvecout[c];
+
         std::printf("Cell=% 4d Centroid = (% 5.3lf,% 5.3lf)",c,
                     ccen[0],ccen[1]);
         std::printf("  Value = % 10.6lf  Err = % lf\n",
                     cellvecout[c],error);        
+
         toterr += error*error;
       }
       std::printf("\n\nL2 NORM OF ERROR = %lf\n\n",sqrt(toterr));
