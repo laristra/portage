@@ -35,6 +35,11 @@
   conservative interpolation (remapping) on general grids." Journal of
   Computational Physics, v 184, n 1, pp. 266-298, 2003.
 
+  [2] Dukowicz, J.K. and Kodis, J.W. "Accurate Conservative Remapping
+  (Rezoning) for Arbitrary Lagrangian-Eulerian Computations," SIAM
+  Journal on Scientific and Statistical Computing, Vol. 8, No. 3,
+  pp. 305-321, 1987.
+
 */
 
 #include <cassert>

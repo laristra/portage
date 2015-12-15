@@ -16,10 +16,10 @@ TEST(search_simple, case1)
     Jali::MeshFactory mf(MPI_COMM_WORLD);
     Jali::Mesh *smesh = mf(0.0,0.0,1.0,1.0,3,3);
     Jali::Mesh *tmesh = mf(0.0,0.0,1.0,1.0,2,2);
-    Jali_Mesh_Wrapper source_mesh_wrapper(*smesh);
-    Jali_Mesh_Wrapper target_mesh_wrapper(*tmesh);
+    Portage::Jali_Mesh_Wrapper source_mesh_wrapper(*smesh);
+    Portage::Jali_Mesh_Wrapper target_mesh_wrapper(*tmesh);
 
-    Portage::SearchSimple<Jali_Mesh_Wrapper,Jali_Mesh_Wrapper> search(source_mesh_wrapper, target_mesh_wrapper);
+    Portage::SearchSimple<Portage::Jali_Mesh_Wrapper,Portage::Jali_Mesh_Wrapper> search(source_mesh_wrapper, target_mesh_wrapper);
 
     for (int tc = 0; tc < 4; ++tc) {
         std::vector<int> candidates;
@@ -38,7 +38,7 @@ TEST(search_simple, case1)
 
 class MeshWrapper2 {
 public:
-    MeshWrapper2(Jali_Mesh_Wrapper &w) : w_(w) {}
+  MeshWrapper2(Portage::Jali_Mesh_Wrapper &w) : w_(w) {}
     int num_owned_cells() const { return w_.num_owned_cells(); }
     int num_ghost_cells() const { return w_.num_ghost_cells(); }
     void cell_get_coordinates(int const cellid,
@@ -46,12 +46,12 @@ public:
         w_.cell_get_coordinates(cellid, xylist);
     }
 private:
-    Jali_Mesh_Wrapper &w_;
+  Portage::Jali_Mesh_Wrapper &w_;
 };
 
 class MeshWrapperDual {
 public:
-    MeshWrapperDual(Jali_Mesh_Wrapper &w) : w_(w) {}
+  MeshWrapperDual(Portage::Jali_Mesh_Wrapper &w) : w_(w) {}
     int num_owned_cells() const { return w_.num_owned_nodes(); }
     int num_ghost_cells() const { return w_.num_ghost_nodes(); }
     void cell_get_coordinates(int const cellid,
@@ -59,7 +59,7 @@ public:
         w_.dual_cell_get_coordinates(cellid, xylist);
     }
 private:
-    Jali_Mesh_Wrapper &w_;
+  Portage::Jali_Mesh_Wrapper &w_;
 };
 
 TEST(search_simple, wrapper2)
@@ -67,8 +67,8 @@ TEST(search_simple, wrapper2)
     Jali::MeshFactory mf(MPI_COMM_WORLD);
     Jali::Mesh *smesh = mf(0.0,0.0,1.0,1.0,3,3);
     Jali::Mesh *tmesh = mf(0.0,0.0,1.0,1.0,2,2);
-    Jali_Mesh_Wrapper source_mesh_wrapper(*smesh);
-    Jali_Mesh_Wrapper target_mesh_wrapper(*tmesh);
+    Portage::Jali_Mesh_Wrapper source_mesh_wrapper(*smesh);
+    Portage::Jali_Mesh_Wrapper target_mesh_wrapper(*tmesh);
 
     MeshWrapper2 s2(source_mesh_wrapper);
     MeshWrapper2 t2(target_mesh_wrapper);
@@ -95,8 +95,8 @@ TEST(search_simple, dual)
     Jali::MeshFactory mf(MPI_COMM_WORLD);
     Jali::Mesh *smesh = mf(0.0,0.0,1.0,1.0,3,3, NULL, true, true, true, true);
     Jali::Mesh *tmesh = mf(0.0,0.0,1.0,1.0,2,2, NULL, true, true, true, true);
-    Jali_Mesh_Wrapper source_mesh_wrapper(*smesh);
-    Jali_Mesh_Wrapper target_mesh_wrapper(*tmesh);
+    Portage::Jali_Mesh_Wrapper source_mesh_wrapper(*smesh);
+    Portage::Jali_Mesh_Wrapper target_mesh_wrapper(*tmesh);
 
     MeshWrapperDual s2(source_mesh_wrapper);
     MeshWrapperDual t2(target_mesh_wrapper);

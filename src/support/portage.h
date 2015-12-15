@@ -22,6 +22,62 @@
 
 namespace Portage {
 
+// Cells (aka zones/elements) are the highest dimension entities in a mesh 
+// Nodes (aka vertices) are lowest dimension entities in a mesh 
+// Faces in a 3D mesh are 2D entities, in a 2D mesh are 1D entities
+// BOUNDARY_FACE is a special type of entity that is need so that process 
+// kernels can define composite vectors (see src/data_structures) on 
+// exterior boundary faces of the mesh only
+//
+// Wedges are special subcell entities that are a simplicial
+// decomposition of cell. In 3D, a wedge is tetrahedron formed by one
+// point of the edge, the midpoint of the edge, the "center" of the
+// face and the "center" of the cell volume. In 2D, a wedge is a
+// triangle formed by an end-point of the edge, the mid-point of the
+// edge and the center of the cell. In 1D, (IS THIS CORRECT?), wedges
+// are lines, that are formed by the endpoint of the cell and the
+// midpoint of the cell. There are two wedges associated with an edge
+// of cell face in 3D.
+//
+// Corners are also subcell entities that are associated uniquely with 
+// a node of a cell. Each corner is the union of all the wedges incident
+// upon that node in the cell
+//
+// Facets are the boundary entity between two wedges in adjacent
+// cells. In 3D, a facet is a triangular subface of the cell face
+// shared by two wedges in adjacent cells. In 2D, a facet is half of
+// an edge that is shared by two wedges in adjacent cells
+//
+
+enum Entity_kind 
+{
+  ALL_KIND = -3,
+  ANY_KIND = -2,
+  UNKNOWN_KIND = -1,
+  NODE = 0,
+  EDGE,
+  FACE,
+  CELL,
+  WEDGE,
+  CORNER,
+  FACET,
+  BOUNDARY_FACE
+};
+
+const int NUM_ENTITY_KINDS = 8;
+
+// Parallel status of entity 
+    
+enum Parallel_type 
+{
+  PTYPE_UNKNOWN = 0, // Initializer
+  OWNED = 1,         // Owned by this processor
+  GHOST = 2,         // Owned by another processor
+  ALL  = 3           // OWNED + GHOST
+};
+
+
+
 #ifdef THRUST
   
   template<typename T>
@@ -47,6 +103,7 @@ namespace Portage {
   }
 
 #else // no thrust
+  
   template<typename T>
     using vector = std::vector<T>;
   

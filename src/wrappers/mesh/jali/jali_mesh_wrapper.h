@@ -19,6 +19,8 @@ namespace std
 
 #include "portage/support/portage.h"
 
+namespace Portage {
+
 /*!
   \class Jali_Mesh_Wrapper jali_mesh_wrapper.h
   \brief Jali_Mesh_Wrapper implements mesh methods for Jali
@@ -45,6 +47,12 @@ class Jali_Mesh_Wrapper {
   
   //! Empty destructor 
   ~Jali_Mesh_Wrapper() {};
+
+
+  //! Dimension of space or mesh points
+  int space_dimension() const {
+    return jali_mesh_.space_dimension();
+  }
   
   //! Number of owned cells in the mesh
   int num_owned_cells() const {
@@ -67,18 +75,20 @@ class Jali_Mesh_Wrapper {
   }
 
   //! Number of items of given entity
-  int num_entities(int const entity) const {
+  int num_entities(Entity_kind const entity) const {
     return jali_mesh_.num_entities((Jali::Entity_kind)entity, Jali::ALL);
   }
 
   //! Iterators on mesh entity - begin
-  Portage::counting_iterator begin(int const entity) const {
-    return Portage::make_counting_iterator(0);
+  counting_iterator begin(Entity_kind const entity) const {
+    int start_index = 0;
+    return make_counting_iterator(start_index);
   }
 
   //! Iterator on mesh entity - end
-  Portage::counting_iterator end(int const entity) const {
-    return (Portage::make_counting_iterator(0) + num_entities(entity));
+  counting_iterator end(Entity_kind const entity) const {
+    int start_index = 0;
+    return (make_counting_iterator(start_index) + num_entities(entity));
   }
 
   //! Get list of nodes for a cell
@@ -88,7 +98,8 @@ class Jali_Mesh_Wrapper {
 
 
   //! Get node connected neighbors of cell
-  void cell_get_node_adj_cells(int const cellid, int const ptype,
+  void cell_get_node_adj_cells(int const cellid, 
+                               Parallel_type const ptype,
                                std::vector<int> *adjcells) const {
     jali_mesh_.cell_get_node_adj_cells(cellid, (Jali::Parallel_type) ptype,
                                        adjcells);
@@ -98,7 +109,8 @@ class Jali_Mesh_Wrapper {
   //!
   //! Get "adjacent" nodes of given node - nodes that share a common
   //! cell with given node
-  void node_get_cell_adj_nodes(int const nodeid, int const ptype,
+  void node_get_cell_adj_nodes(int const nodeid, 
+                               Parallel_type const ptype,
                                std::vector<int> *adjnodes) const {
     adjnodes->clear();
 
@@ -118,7 +130,8 @@ class Jali_Mesh_Wrapper {
   }
 
   //! \brief Get adjacent "dual cells" of a given "dual cell"
-  void dual_cell_get_node_adj_cells(int const nodeid, int const ptype,
+  void dual_cell_get_node_adj_cells(int const nodeid, 
+                                    Parallel_type const ptype,
                                     std::vector<int> *adjnodes) const {
     node_get_cell_adj_nodes(nodeid,ptype,adjnodes);
   }
@@ -161,7 +174,7 @@ class Jali_Mesh_Wrapper {
     std::vector<JaliGeometry::Point> plist;
     jali_mesh_.cell_get_coordinates(cellid, &plist);
 
-    // should convert to a std::for_each or std::transform
+    //! \todo should we convert to a std::for_each or std::transform?
     xlist->resize(plist.size());
     std::vector<JaliGeometry::Point>::iterator itp = plist.begin();
     std::vector<double>::iterator itx = xlist->begin();
@@ -182,7 +195,7 @@ class Jali_Mesh_Wrapper {
     std::vector<JaliGeometry::Point> plist;
     jali_mesh_.cell_get_coordinates(cellid, &plist);
 
-    // should convert to a std::for_each or std::transform
+    //! \todo should we convert to a std::for_each or std::transform?
     xylist->resize(plist.size());
     std::vector<JaliGeometry::Point>::iterator itp = plist.begin();
     std::vector<std::pair<double,double> >::iterator itx = xylist->begin();
@@ -203,7 +216,7 @@ class Jali_Mesh_Wrapper {
     std::vector<JaliGeometry::Point> plist;
     jali_mesh_.cell_get_coordinates(cellid, &plist);
 
-    // should convert to a std::for_each or std::transform
+    //! \todo should we convert to a std::for_each or std::transform?
 
     xyzlist->resize(plist.size());
     std::vector<JaliGeometry::Point>::iterator itp = plist.begin();
@@ -315,13 +328,49 @@ class Jali_Mesh_Wrapper {
           (std::get<0>(p3) - std::get<0>(p1)) > 0;
   }
 
-  std::vector<std::pair<double, double> > cellToXY(Jali::Entity_ID cellID) const{
+  std::vector<std::pair<double, double>> 
+      cellToXY(Jali::Entity_ID cellID) const {
     std::vector<std::pair<double, double> > cellPoints;
     cell_get_coordinates(cellID, &cellPoints);
     return cellPoints;
   }
 
 
+  /// \brief Centroid of a cell
+  //
+  // Return the centroid of a cell - THIS ROUTINE IS VIOLATING THE
+  // CONVENTION THAT NODE_GET_COORDINATES AND CELL_GET_COORDINATES
+  // USES FOR THE VARIABLE TYPE OF THE RETURN COORDINATES BECAUSE
+  // BUILDING A GRADIENT OPERATOR WITH DIFFERENT TYPES FOR 2D
+  // COORDINATES AND 3D COORDINATES IS VERY CONVOLUTED
+
+  void cell_centroid(Jali::Entity_ID cellid, 
+                     std::vector<double> *centroid) const {
+    JaliGeometry::Point ccen = jali_mesh_.cell_centroid(cellid);
+    int dim = ccen.dim();
+    centroid->resize(dim);
+    for (int i = 0; i < dim; ++i)
+      (*centroid)[i] = ccen[i];
+  }
+
+  /// \brief Centroid of a dual cell
+  //
+  // Centroid of a dual cell. 
+
+  //! \todo NOTE: THIS IS ASSUMED TO BE THE NODE COORDINATE BECAUSE
+  //! THE NODAL VARIABLES LIVE THERE, BUT FOR DISTORTED GRIDS, THE
+  //! NODE COORDINATED MAY NOT BE THE CENTROID OF THE DUAL CELL
+
+  void dual_cell_centroid(Jali::Entity_ID nodeid,
+                          std::vector<double> *centroid) const {
+    
+    JaliGeometry::Point nodepnt;
+    jali_mesh_.node_get_coordinates(nodeid, &nodepnt);
+    int dim = nodepnt.dim();
+    centroid->resize(dim);
+    for (int i = 0; i < dim; ++i)
+      (*centroid)[i] = nodepnt[i];
+  }
 
  private:
   Jali::Mesh const & jali_mesh_;
@@ -339,5 +388,6 @@ struct pointsToXY
   }
 };
 
+} // end namespace Portage
 
 #endif // JALI_MESH_WRAPPER_H_
