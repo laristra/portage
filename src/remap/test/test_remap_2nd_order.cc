@@ -22,6 +22,7 @@
 #include "JaliStateVector.h"
 #include "Point.hh"
 
+//! \todo LOOK AT TEST MORE CLOSELY, IT WAS PASSING EVEN WITH ERRONEOUS FORMULAS
 
 TEST(Remap_2nd_Order, Fields_Cell_Ctr) {
 

@@ -154,7 +154,7 @@ double Remap_2ndOrder<MeshType,StateType,OnWhatType> :: operator()
       
       val += source_vals_[srccell] * xsect_volume;
       for (int i = 0; i < spdim; ++i)
-        val += gradients_[srccell][i] * (srccell_centroid[i] - xsect_centroid[i]);
+        val += gradients_[srccell][i] * (xsect_centroid[i] - srccell_centroid[i]) * xsect_volume;
       
       sumofweights += xsect_volume;
     }
@@ -177,7 +177,7 @@ double Remap_2ndOrder<MeshType,StateType,OnWhatType> :: operator()
       
       val += source_vals_[srccell] * xsect_volume;
       for (int i = 0; i < spdim; ++i)
-        val += gradients_[srccell][i] * (srccell_centroid[i] - xsect_centroid[i]);
+        val += gradients_[srccell][i] * ( xsect_centroid[i] - srccell_centroid[i]) * xsect_volume;
       
       sumofweights += xsect_volume;
     }
