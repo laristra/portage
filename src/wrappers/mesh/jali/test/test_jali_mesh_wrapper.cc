@@ -308,5 +308,16 @@ TEST(Jali_Mesh, Get_Neighbor_Cells) {
                 adjdualcellids.end()) << "Dual cell " << i << 
         " not found in adjacent dual cell list" << std::endl;
   }
+}
 
+TEST(Jali_Mesh, mesh_shotshell) {
+  Jali::MeshFactory mesh_factory(MPI_COMM_WORLD);
+
+  // Make sure we request faces, edges, wedges and corners
+  Jali::Mesh *mesh = mesh_factory("test_data/shotshell.exo",NULL,true,true,true,true);
+  ASSERT_TRUE(mesh != NULL);
+
+  // Make sure we request faces, edges, wedges and corners
+  mesh = mesh_factory("test_data/shotshell-v.exo",NULL,true,true,true,true);
+  ASSERT_TRUE(mesh != NULL);
 }
