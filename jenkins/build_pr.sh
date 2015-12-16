@@ -21,7 +21,6 @@ NGC_INCLUDE_DIR=/usr/local/codes/ngc/private/include
 
 git config user.email ""
 git config user.name "Jenkins"
-git merge origin/master
 
 export SHELL=/bin/sh
 
