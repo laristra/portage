@@ -53,11 +53,11 @@ int main(int argc, char** argv)
   {
     Jali::MeshFactory mf(MPI_COMM_WORLD);
 
-    Jali::Mesh *inputMesh = mf("../test_data/shotshell.exo",
+    Jali::Mesh *inputMesh = mf("test_data/shotshell.exo",
         NULL, true, true, true, true);
     Jali_Mesh_Wrapper inputMeshWrapper(*inputMesh);
 
-    Jali::Mesh* targetMesh = mf("../test_data/shotshell-v.exo",
+    Jali::Mesh* targetMesh = mf("test_data/shotshell-v.exo",
         NULL, true, true, true, true);
     Jali_Mesh_Wrapper targetMeshWrapper(*targetMesh);
 
