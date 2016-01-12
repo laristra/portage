@@ -23,5 +23,11 @@ if(ENABLE_UNIT_TESTS)
     LIBRARIES ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
     POLICY MPI
     )
+
+  cinch_add_unit(intersect_r3d
+    SOURCES intersect_r3d_test.cc clipper.cpp
+    LIBRARIES ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
+    POLICY MPI
+    )
 endif(ENABLE_UNIT_TESTS)
 
