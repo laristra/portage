@@ -6,7 +6,7 @@
 # Add header files
 set(search_HEADERS
     search_simple.h
-    search_kdtree.h
+    search_kdtree2.h
     search_kdtree3.h
     kdtree.h
     BoundBox.h
@@ -28,8 +28,8 @@ if(ENABLE_UNIT_TESTS)
     LIBRARIES portage ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
     POLICY MPI
     THREADS 1)
-  cinch_add_unit(search_kdtree_test
-    SOURCES search_kdtree_test.cc
+  cinch_add_unit(search_kdtree2_test
+    SOURCES search_kdtree2_test.cc
     LIBRARIES portage ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
     POLICY MPI
     THREADS 1)

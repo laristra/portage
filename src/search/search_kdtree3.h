@@ -7,7 +7,7 @@
 #define SEARCH_KDTREE3_H
 
 /*!
-    \class SearchKDTree3 search_kdtree.h
+    \class SearchKDTree3 search_kdtree3.h
     \brief SearchKDTree3 provides...
  */
 

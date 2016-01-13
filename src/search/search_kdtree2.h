@@ -3,12 +3,12 @@
  * All rights reserved.
  *---------------------------------------------------------------------------~*/
 
-#ifndef SEARCH_KDTREE_H
-#define SEARCH_KDTREE_H
+#ifndef SEARCH_KDTREE2_H
+#define SEARCH_KDTREE2_H
 
 /*!
-    \class SearchKDTree search_kdtree.h
-    \brief SearchKDTree provides...
+    \class SearchKDTree2 search_kdtree2.h
+    \brief SearchKDTree2 provides...
  */
 
 #include <vector>
@@ -22,11 +22,11 @@
 namespace Portage {
 
 template <typename SourceMeshType, typename TargetMeshType>
-class SearchKDTree {
+class SearchKDTree2 {
   public:
 
     //! Default constructor (disabled)
-    SearchKDTree() = delete;
+    SearchKDTree2() = delete;
     
     //! Constructor with Meshes
     /*!
@@ -40,7 +40,7 @@ class SearchKDTree {
 
     */
 
-    SearchKDTree(const SourceMeshType & source_mesh, 
+    SearchKDTree2(const SourceMeshType & source_mesh, 
                  const TargetMeshType & target_mesh)
             : sourceMesh_(source_mesh), targetMesh_(target_mesh)  {
 
@@ -64,16 +64,16 @@ class SearchKDTree {
         // create the kd-tree
         tree_ = gk::KDTreeCreate(bboxes);
 
-    } // SearchKDTree::SearchKDTree
+    } // SearchKDTree2::SearchKDTree2
 
     //! Copy constructor (disabled)
-    SearchKDTree(const SearchKDTree &) = delete;
+    SearchKDTree2(const SearchKDTree2 &) = delete;
 
     //! Assignment operator (disabled)
-    SearchKDTree & operator = (const SearchKDTree &) = delete;
+    SearchKDTree2 & operator = (const SearchKDTree2 &) = delete;
 
     //! Destructor
-    ~SearchKDTree() { if (tree_) delete tree_; }
+    ~SearchKDTree2() { if (tree_) delete tree_; }
 
     /*!
       \brief returns source mesh cells potentially overlapping given target cell
@@ -90,12 +90,12 @@ class SearchKDTree {
     const TargetMeshType & targetMesh_;
     gk::KDTree<2>* tree_;
 
-}; // class SearchKDTree
+}; // class SearchKDTree2
 
 
 
 template<typename SourceMeshType, typename TargetMeshType>
-void SearchKDTree<SourceMeshType,TargetMeshType>::
+void SearchKDTree2<SourceMeshType,TargetMeshType>::
 search(const int cellId, std::vector<int> *candidates)
 const {
     // find bounding box for target cell
@@ -113,12 +113,12 @@ const {
     gk::Intersect(bb, tree_, lcandidates);
     candidates->assign(lcandidates.begin(), lcandidates.end());
 
-} // SearchKDTree::search
+} // SearchKDTree2::search
 
 
 
 
 } // namespace Portage
 
-#endif // SEARCH_KDTREE_H
+#endif // SEARCH_KDTREE2_H
 

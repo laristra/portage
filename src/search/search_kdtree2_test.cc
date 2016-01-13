@@ -3,7 +3,7 @@
  * All rights reserved.
  *--------------------------------------------------------------------------~~*/
 
-#include "search_kdtree.h"
+#include "search_kdtree2.h"
 
 #include <algorithm>
 
@@ -14,7 +14,7 @@
 
 #include "portage/wrappers/mesh/jali/jali_mesh_wrapper.h"
 
-TEST(search_kdtree, case1)
+TEST(search_kdtree2, case1)
 {
     Jali::MeshFactory mf(MPI_COMM_WORLD);
     Jali::Mesh *smesh = mf(0.0,0.0,1.0,1.0,3,3);
@@ -22,7 +22,7 @@ TEST(search_kdtree, case1)
     Portage::Jali_Mesh_Wrapper source_mesh_wrapper(*smesh);
     Portage::Jali_Mesh_Wrapper target_mesh_wrapper(*tmesh);
 
-    Portage::SearchKDTree<Portage::Jali_Mesh_Wrapper,Portage::Jali_Mesh_Wrapper> search(source_mesh_wrapper, target_mesh_wrapper);
+    Portage::SearchKDTree2<Portage::Jali_Mesh_Wrapper,Portage::Jali_Mesh_Wrapper> search(source_mesh_wrapper, target_mesh_wrapper);
 
     for (int tc = 0; tc < 4; ++tc) {
         std::vector<int> candidates;
@@ -39,7 +39,7 @@ TEST(search_kdtree, case1)
         ASSERT_EQ(scbase + 4, candidates[3]);
     }
 
-} // TEST(search_kdtree, ctor)
+} // TEST(search_kdtree2, ctor)
 
 class MeshWrapperDual {
 public:
@@ -55,7 +55,7 @@ private:
 };
 
 
-TEST(search_kdtree, dual)
+TEST(search_kdtree2, dual)
 {
     Jali::MeshFactory mf(MPI_COMM_WORLD);
     Jali::Mesh *smesh = mf(0.0,0.0,1.0,1.0,3,3, NULL, true, true, true, true);
@@ -66,7 +66,7 @@ TEST(search_kdtree, dual)
     MeshWrapperDual s2(source_mesh_wrapper);
     MeshWrapperDual t2(target_mesh_wrapper);
 
-    Portage::SearchKDTree<MeshWrapperDual, MeshWrapperDual> search(s2, t2);
+    Portage::SearchKDTree2<MeshWrapperDual, MeshWrapperDual> search(s2, t2);
 
     for (int tc = 0; tc < 9; ++tc) {
         std::vector<int> candidates;
