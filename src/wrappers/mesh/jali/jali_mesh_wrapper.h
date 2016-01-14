@@ -335,6 +335,13 @@ class Jali_Mesh_Wrapper {
     return cellPoints;
   }
 
+  std::vector<std::tuple<double, double, double>>
+      cellToXYZ(Jali::Entity_ID cellID) const {
+    std::vector<std::tuple<double, double, double>> cellPoints;
+    cell_get_coordinates(cellID, &cellPoints);
+    return cellPoints;
+  }
+
 
   /// \brief Centroid of a cell
   //
