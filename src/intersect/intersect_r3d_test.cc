@@ -21,7 +21,9 @@ TEST(intersectR3D, simple) {
     }
   }
 
-  ASSERT_EQ(moments[0][0], 1);
-  ASSERT_EQ(moments[0][1], 1.5);
-  ASSERT_EQ(moments[0][2], 1.5);
+  double eps = 1e-12;
+  ASSERT_TRUE(std::abs(moments[0][0] - 2.5) < eps);
+  ASSERT_TRUE(std::abs(moments[0][1] - 0  ) < eps);
+  ASSERT_TRUE(std::abs(moments[0][2] - 0  ) < eps);
+  ASSERT_TRUE(std::abs(moments[0][3] - 0  ) < eps);
 }

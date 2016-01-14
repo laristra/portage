@@ -72,9 +72,11 @@ public:
       std::cout << "centroid [i] is " << om[i]/om[0] << std::endl;
     }
 
-    // TODO: convert results from `om` into `moments`:
     std::vector<std::vector<double>> moments;
-    moments = {{1, 1.5, 1.5}};
+    for(int i=0; i<R3D_NUM_MOMENTS(POLY_ORDER); i++) {
+      om[i] = std::abs(om[i]);
+    }
+    moments = {{om[0], om[1]/om[0], om[2]/om[0], om[3]/om[0]}};
     return moments;
   }
 
