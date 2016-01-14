@@ -13,6 +13,10 @@
 #include <cfloat>
 #include <algorithm>
 
+extern "C" {
+#include "r3d.h"
+}
+
 namespace Portage {
 
 /*!
