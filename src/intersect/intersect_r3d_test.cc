@@ -6,7 +6,7 @@
 #include "portage/wrappers/mesh/jali/jali_mesh_wrapper.h"
 #include "MeshFactory.hh"
 
-TEST(intersectClipper, simple){
+TEST(intersectR3D, simple) {
   Jali::MeshFactory mf(MPI_COMM_WORLD);
   Jali::Mesh* sm = mf(0,0,0, 2,2,2, 1,1,1);
   Jali::Mesh* tm = mf(1,1,1, 2,2,2, 1,1,1);
