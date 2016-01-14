@@ -13,7 +13,7 @@
 #include "portage/support/portage.h"
 #include "portage/wrappers/state/jali/jali_state_wrapper.h"
 #include "portage/wrappers/mesh/jali/jali_mesh_wrapper.h"
-#include "portage/search/search_kdtree.h"
+#include "portage/search/search_kdtree2.h"
 #include "portage/intersect/intersectClipper.h"
 #include "portage/remap/remap_1st_order.h"
 #include "portage/remap/remap_2nd_order.h"
@@ -143,7 +143,7 @@ class Driver
     std::printf("in Driver::run()...\n");
     
     // Get an instance of the desired search algorithm type
-    const SearchKDTree<Mesh_Wrapper,Mesh_Wrapper>
+    const SearchKDTree2<Mesh_Wrapper,Mesh_Wrapper>
         search(source_mesh_, target_mesh_);
     
     // Get an instance of the desired intersect algorithm type
@@ -179,7 +179,7 @@ class Driver
           
       // Create a cellIndices vector and populates with a sequence of
       // ints starting at 0.  
-      composerFunctor<SearchKDTree<Mesh_Wrapper,Mesh_Wrapper>,
+      composerFunctor<SearchKDTree2<Mesh_Wrapper,Mesh_Wrapper>,
                       IntersectClipper<Mesh_Wrapper, Mesh_Wrapper>,
                       Remap_1stOrder<Mesh_Wrapper,Jali_State_Wrapper,Entity_kind> >
           composer(&search, &intersect, &remap, remap_var_names_[0]);
@@ -216,7 +216,7 @@ class Driver
           
       // Create a cellIndices vector and populates with a sequence of
       // ints starting at 0.  
-      composerFunctor<SearchKDTree<Mesh_Wrapper,Mesh_Wrapper>,
+      composerFunctor<SearchKDTree2<Mesh_Wrapper,Mesh_Wrapper>,
                       IntersectClipper<Mesh_Wrapper, Mesh_Wrapper>,
                       Remap_2ndOrder<Mesh_Wrapper,Jali_State_Wrapper,Entity_kind> >
           composer(&search, &intersect, &remap, remap_var_names_[0]);
