@@ -45,9 +45,34 @@ public:
     Poly elA = sourceMeshWrapper.cellToXYZ(cellA);
     Poly elB = targetMeshWrapper.cellToXYZ(cellB);
 
-    // TODO: Convert elA and elB to tets
-    //
-    // TODO: call r3D here for those tets
+    // TODO: Convert elA and elB to tets iterate and fill them into verts1 and
+    // verts2 below:
+
+    // variables: the polyhedra and their moments
+#define POLY_ORDER 1
+    r3d_poly poly;
+    r3d_plane faces[4];
+    r3d_real om[R3D_NUM_MOMENTS(POLY_ORDER)];
+    //Intersect unit tet with itself (should be vol 1/6, centroid .25, .25,.25)
+    r3d_rvec3 verts1[4] = // {{0,0,0}, {1,0,0}, {0,1,0}, {0,0,1}}
+      {{2,2,2},{2,-2,-2},{-2,2,-2},{-2,-2,2}};
+    r3d_rvec3 verts2[4] = // {{0,0,0}, {1,0,0}, {0,1,0}, {0,0,1}}
+      {{-1,-1,-1},{-1,1,1},{1,-1,1},{1,1,-1}};
+    for(int count=0; count< 10000; count++){
+      r3d_init_tet(&poly, verts1);
+      r3d_tet_faces_from_verts(faces, verts2);
+      // clip the first tet against the faces of the second
+      r3d_clip(&poly, faces, 4);
+      // find the moments (up to quadratic order) of the clipped poly
+      r3d_reduce(&poly, om, POLY_ORDER);
+    }
+
+    std::cout << "volume is " << om[0] << std::endl;
+    for(int i=1;i<sizeof(om)/sizeof(om[0]);i++){
+      std::cout << "centroid [i] is " << om[i]/om[0] << std::endl;
+    }
+
+    // TODO: convert results from `om` into `moments`:
     std::vector<std::vector<double>> moments;
     moments = {{1, 1.5, 1.5}};
     return moments;
