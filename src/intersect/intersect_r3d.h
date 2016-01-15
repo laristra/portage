@@ -46,6 +46,22 @@ public:
     std::vector<std::array<std::array<double, 3>, 4>> source_coords, target_coords;
     sourceMeshWrapper.wedges_get_coordinates(cellA, &source_coords);
     targetMeshWrapper.wedges_get_coordinates(cellB, &target_coords);
+    std::cout << "Number of source wedges: " << source_coords.size() << std::endl;
+    std::cout << "Number of target wedges: " << target_coords.size() << std::endl;
+    /*
+    for (int i=0; i<source_coords.size(); i++) {
+      std::cout << "wedge: " << i << std::endl
+        << " " << source_coords[i][0][0] << " " << source_coords[i][0][1] << " "
+          << source_coords[i][0][2] << std::endl
+        << " " << source_coords[i][1][0] << " " << source_coords[i][1][1] << " "
+          << source_coords[i][1][2] << std::endl
+        << " " << source_coords[i][2][0] << " " << source_coords[i][2][1] << " "
+          << source_coords[i][2][2] << std::endl
+        << " " << source_coords[i][3][0] << " " << source_coords[i][3][1] << " "
+          << source_coords[i][3][2] << std::endl
+        << std::endl;
+    }
+    */
 
     std::vector<std::vector<double>> moments;
 
