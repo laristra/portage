@@ -13,6 +13,7 @@ TEST(intersectR3D, simple) {
   Portage::Jali_Mesh_Wrapper s(*sm);
   Portage::Jali_Mesh_Wrapper t(*tm);
 
+  const double eps = 1e-12;
   Portage::IntersectR3D<Portage::Jali_Mesh_Wrapper> isect{s , t};
   std::vector<std::vector<double> > moments = isect(0, 0);
   for(int i=0;i<moments.size();i++){
@@ -21,11 +22,9 @@ TEST(intersectR3D, simple) {
     }
   }
 
-  double eps = 1e-12;
-  /*
-  ASSERT_TRUE(std::abs(moments[0][0] - 2.5) < eps);
-  ASSERT_TRUE(std::abs(moments[0][1] - 0  ) < eps);
-  ASSERT_TRUE(std::abs(moments[0][2] - 0  ) < eps);
-  ASSERT_TRUE(std::abs(moments[0][3] - 0  ) < eps);
-  */
+  for(int i=0;i<moments.size();i++){
+    for(int j=0;j<moments[i].size();j++){
+      ASSERT_TRUE(std::abs(moments[i][0] - 1/48.) < eps);
+    }
+  }
 }
