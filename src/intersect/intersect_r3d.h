@@ -92,6 +92,8 @@ public:
         for(int i=0; i<R3D_NUM_MOMENTS(POLY_ORDER); i++) {
           om[i] = std::abs(om[i]);
         }
+        const double eps=1e-15;
+        if (std::abs(om[0]) < eps) continue;
         moments.push_back({om[0], om[1]/om[0], om[2]/om[0], om[3]/om[0]});
       }
 
