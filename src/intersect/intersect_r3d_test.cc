@@ -25,8 +25,8 @@ TEST(intersectR3D, simple) {
   ASSERT_TRUE(moments.size() == 1);
   ASSERT_TRUE(moments[0].size() == 4);
 
-  ASSERT_TRUE(std::abs(moments[0][0] - 0.5) < eps);
-  ASSERT_TRUE(std::abs(moments[0][1] - 36)  < eps);
-  ASSERT_TRUE(std::abs(moments[0][2] - 36)  < eps);
-  ASSERT_TRUE(std::abs(moments[0][3] - 36)  < eps);
+  ASSERT_TRUE(std::abs(moments[0][0] - 0.5)  < eps);
+  ASSERT_TRUE(std::abs(moments[0][1] - 0.75) < eps);
+  ASSERT_TRUE(std::abs(moments[0][2] - 0.75) < eps);
+  ASSERT_TRUE(std::abs(moments[0][3] - 0.75) < eps);
 }

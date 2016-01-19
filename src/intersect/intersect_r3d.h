@@ -97,7 +97,7 @@ public:
         const double eps=1e-15;
         // Skip non-intersecting tets
         if (std::abs(om[0]) < eps) continue;
-        moments_all.push_back({om[0], om[1]/om[0], om[2]/om[0], om[3]/om[0]});
+        moments_all.push_back({om[0], om[1], om[2], om[3]});
       }
 
     // Sum moments over all intersections
