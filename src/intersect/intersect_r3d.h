@@ -46,8 +46,10 @@ public:
     std::vector<std::array<std::array<double, 3>, 4>> source_coords, target_coords;
     sourceMeshWrapper.wedges_get_coordinates(cellA, &source_coords);
     targetMeshWrapper.wedges_get_coordinates(cellB, &target_coords);
+    /*
     std::cout << "Number of source wedges: " << source_coords.size() << std::endl;
     std::cout << "Number of target wedges: " << target_coords.size() << std::endl;
+    */
     /*
     for (int i=0; i<source_coords.size(); i++) {
       std::cout << "wedge: " << i << std::endl
