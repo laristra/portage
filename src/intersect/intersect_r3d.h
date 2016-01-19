@@ -72,17 +72,8 @@ public:
       for (int i=0; i<4; i++)
         for (int j=0; j<3; j++)
           verts1[i].xyz[j] = source_wedge[i][j];
-      // TODO: Use Jali to get the vertices in correct order, so that we do not
-      // need to call `r3d_orient`.
-      if (r3d_orient(verts1) < 0) {
-        for (int j=0; j<3; j++) {
-          verts1[1].xyz[j] = source_wedge[1][j];
-          verts1[3].xyz[j] = source_wedge[2][j];
-          verts1[2].xyz[j] = source_wedge[3][j];
-          verts1[4].xyz[j] = source_wedge[4][j];
-        }
-      }
-      // TODO: Only do this check in Debug mode:
+      // TODO: Only do this check in Debug mode. This test is important,
+      // otherwise R3D returns invalid results.
       if (r3d_orient(verts1) < 0)
         throw std::runtime_error("source_wedge has negative volume");
 
@@ -98,17 +89,8 @@ public:
         for (int i=0; i<4; i++)
           for (int j=0; j<3; j++)
             verts2[i].xyz[j] = target_wedge[i][j];
-        // TODO: Use Jali to get the vertices in correct order, so that we do
-        // not need to call `r3d_orient`.
-        if (r3d_orient(verts2) < 0) {
-          for (int j=0; j<3; j++) {
-            verts2[1].xyz[j] = target_wedge[1][j];
-            verts2[3].xyz[j] = target_wedge[2][j];
-            verts2[2].xyz[j] = target_wedge[3][j];
-            verts2[4].xyz[j] = target_wedge[4][j];
-          }
-        }
-        // TODO: Only do this check in Debug mode:
+        // TODO: Only do this check in Debug mode. This test is important,
+        // otherwise R3D returns invalid results.
         if (r3d_orient(verts2) < 0)
           throw std::runtime_error("target_wedge has negative volume");
 

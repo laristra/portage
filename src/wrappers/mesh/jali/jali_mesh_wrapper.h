@@ -350,7 +350,7 @@ class Jali_Mesh_Wrapper {
     jali_mesh_.cell_get_wedges(cellID, &wedges);
     for (const auto &wedge : wedges) {
       std::vector<JaliGeometry::Point> coords;
-      jali_mesh_.wedge_get_coordinates(wedge, &coords);
+      jali_mesh_.wedge_get_coordinates(wedge, &coords, true);
       std::array<std::array<double, 3>, 4> tmp;
       for (int i=0; i<4; i++)
         for (int j=0; j<3; j++)
