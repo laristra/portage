@@ -75,13 +75,44 @@ public:
         for (int i=0; i<4; i++)
           for (int j=0; j<3; j++)
             verts1[i].xyz[j] = source_wedge[i][j];
+        if (r3d_orient(verts1) < 0) {
+          for (int j=0; j<3; j++) {
+            verts1[1].xyz[j] = source_wedge[1][j];
+            verts1[3].xyz[j] = source_wedge[2][j];
+            verts1[2].xyz[j] = source_wedge[3][j];
+            verts1[4].xyz[j] = source_wedge[4][j];
+          }
+        }
+        if (r3d_orient(verts1) < 0)
+          throw std::runtime_error("negative volume 1");
+
         r3d_init_tet(&poly, verts1);
+        if (r3d_is_good(&poly) == 0)
+          throw std::runtime_error("invalid");
+
 
         r3d_plane faces[4];
         r3d_rvec3 verts2[4];
         for (int i=0; i<4; i++)
           for (int j=0; j<3; j++)
             verts2[i].xyz[j] = target_wedge[i][j];
+
+        if (r3d_orient(verts2) < 0) {
+          for (int j=0; j<3; j++) {
+            verts2[1].xyz[j] = target_wedge[1][j];
+            verts2[3].xyz[j] = target_wedge[2][j];
+            verts2[2].xyz[j] = target_wedge[3][j];
+            verts2[4].xyz[j] = target_wedge[4][j];
+          }
+        }
+        if (r3d_orient(verts2) < 0)
+          throw std::runtime_error("negative volume 2");
+
+        r3d_poly poly2;
+        r3d_init_tet(&poly2, verts2);
+        if (r3d_is_good(&poly2) == 0)
+          throw std::runtime_error("invalid 2");
+
         r3d_tet_faces_from_verts(faces, verts2);
 
         // clip the first tet against the faces of the second
