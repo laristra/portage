@@ -89,11 +89,12 @@ public:
         r3d_real om[R3D_NUM_MOMENTS(POLY_ORDER)];
         r3d_reduce(&poly, om, POLY_ORDER);
 
-        // TODO: R3D sometimes returns a negative volume, even though both
-        // r3d_orient() above are positive. We should figure out the ordering
-        // so that R3D always returns a positive volume. For now we just take
-        // an absolute value:
-        om[0] = std::abs(om[0]);
+        // Check that the returned volume is positive (if the volume is zero,
+        // i.e. abs(om[0]) < eps, then it can sometimes be slightly negative,
+        // like om[0] == -1.24811e-16. For this reason we use the condition
+        // om[0] < -eps.
+        const double eps=1e-14;
+        if (om[0] < -eps) throw std::runtime_error("Negative volume");
 
         // Accumulate moments:
         for (int i=0; i<4; i++) {
