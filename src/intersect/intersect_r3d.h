@@ -70,25 +70,26 @@ public:
     for (const auto &source_wedge : source_coords)
       for (const auto &target_wedge : target_coords) {
         // variables: the polyhedra and their moments
-#define POLY_ORDER 1
         r3d_poly poly;
-        r3d_plane faces[4];
-        r3d_real om[R3D_NUM_MOMENTS(POLY_ORDER)];
         r3d_rvec3 verts1[4];
         for (int i=0; i<4; i++)
           for (int j=0; j<3; j++)
             verts1[i].xyz[j] = source_wedge[i][j];
+        r3d_init_tet(&poly, verts1);
+
+        r3d_plane faces[4];
         r3d_rvec3 verts2[4];
         for (int i=0; i<4; i++)
           for (int j=0; j<3; j++)
             verts2[i].xyz[j] = target_wedge[i][j];
-
-
-        r3d_init_tet(&poly, verts1);
         r3d_tet_faces_from_verts(faces, verts2);
+
         // clip the first tet against the faces of the second
         r3d_clip(&poly, faces, 4);
+
         // find the moments (up to quadratic order) of the clipped poly
+        const int POLY_ORDER=1;
+        r3d_real om[R3D_NUM_MOMENTS(POLY_ORDER)];
         r3d_reduce(&poly, om, POLY_ORDER);
 
         for(int i=0; i<R3D_NUM_MOMENTS(POLY_ORDER); i++) {
