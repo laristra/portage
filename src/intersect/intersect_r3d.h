@@ -6,13 +6,10 @@
 #ifndef INTERSECT_R3D_H
 #define INTERSECT_R3D_H
 
-#include "search.h"
-#include "clipper.hpp"
-#include <iostream>
-#include <cmath>
-#include <cfloat>
-#include <algorithm>
 #include <array>
+#include <stdexcept>
+#include <tuple>
+#include <vector>
 
 extern "C" {
 #include "r3d.h"
