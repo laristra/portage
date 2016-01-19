@@ -65,7 +65,7 @@ public:
     }
     */
 
-    std::vector<std::vector<double>> moments_all;
+    std::vector<double> moments(4, 0);
 
     for (const auto &source_wedge : source_coords) {
       r3d_rvec3 verts1[4];
@@ -119,6 +119,9 @@ public:
 
         // find the moments (up to quadratic order) of the clipped poly
         const int POLY_ORDER=1;
+        // TODO: Only do this check in Debug mode:
+        if (R3D_NUM_MOMENTS(POLY_ORDER) != 4)
+          throw std::runtime_error("Invalid number of moments");
         r3d_real om[R3D_NUM_MOMENTS(POLY_ORDER)];
         r3d_reduce(&poly, om, POLY_ORDER);
 
@@ -128,24 +131,16 @@ public:
         // an absolute value:
         om[0] = std::abs(om[0]);
 
-        const double eps=1e-15;
-        // Skip non-intersecting tets
-        if (std::abs(om[0]) < eps) continue;
-        moments_all.push_back({om[0], om[1], om[2], om[3]});
+        // Accumulate moments:
+        for (int i=0; i<4; i++) {
+          moments[i] += om[i];
+        }
       }
     }
 
-    // Sum moments over all intersections
-    std::vector<double> moments_sum(4, 0);
-    for (const auto &m : moments_all) {
-      for (int i=0; i<4; i++) {
-        moments_sum[i] += m[i];
-      }
-    }
-
-    std::vector<std::vector<double>> moments;
-    moments.push_back(moments_sum);
-    return moments;
+    std::vector<std::vector<double>> moments_all;
+    moments_all.push_back(moments);
+    return moments_all;
   }
 
   IntersectR3D() {}
