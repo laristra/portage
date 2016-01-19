@@ -122,9 +122,12 @@ public:
         r3d_real om[R3D_NUM_MOMENTS(POLY_ORDER)];
         r3d_reduce(&poly, om, POLY_ORDER);
 
-        for(int i=0; i<R3D_NUM_MOMENTS(POLY_ORDER); i++) {
-          om[i] = std::abs(om[i]);
-        }
+        // TODO: R3D sometimes returns a negative volume, even though both
+        // r3d_orient() above are positive. We should figure out the ordering
+        // so that R3D always returns a positive volume. For now we just take
+        // an absolute value:
+        om[0] = std::abs(om[0]);
+
         const double eps=1e-15;
         // Skip non-intersecting tets
         if (std::abs(om[0]) < eps) continue;
