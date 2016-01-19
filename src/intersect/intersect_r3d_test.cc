@@ -1,9 +1,6 @@
-#include "intersectClipper.h" // TODO: remove this include
 #include "intersect_r3d.h"
 #include "gtest/gtest.h"
-#include "Mesh.hh"
 #include "../driver/driver.h"
-#include "portage/wrappers/mesh/jali/jali_mesh_wrapper.h"
 #include "MeshFactory.hh"
 
 TEST(intersectR3D, simple1) {
