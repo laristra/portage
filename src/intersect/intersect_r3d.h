@@ -67,36 +67,39 @@ public:
 
     std::vector<std::vector<double>> moments_all;
 
-    for (const auto &source_wedge : source_coords)
-      for (const auto &target_wedge : target_coords) {
-        // variables: the polyhedra and their moments
-        r3d_poly poly;
-        r3d_rvec3 verts1[4];
-        for (int i=0; i<4; i++)
-          for (int j=0; j<3; j++)
-            verts1[i].xyz[j] = source_wedge[i][j];
-        if (r3d_orient(verts1) < 0) {
-          for (int j=0; j<3; j++) {
-            verts1[1].xyz[j] = source_wedge[1][j];
-            verts1[3].xyz[j] = source_wedge[2][j];
-            verts1[2].xyz[j] = source_wedge[3][j];
-            verts1[4].xyz[j] = source_wedge[4][j];
-          }
+    for (const auto &source_wedge : source_coords) {
+      r3d_rvec3 verts1[4];
+      for (int i=0; i<4; i++)
+        for (int j=0; j<3; j++)
+          verts1[i].xyz[j] = source_wedge[i][j];
+      // TODO: Use Jali to get the vertices in correct order, so that we do not
+      // need to call `r3d_orient`.
+      if (r3d_orient(verts1) < 0) {
+        for (int j=0; j<3; j++) {
+          verts1[1].xyz[j] = source_wedge[1][j];
+          verts1[3].xyz[j] = source_wedge[2][j];
+          verts1[2].xyz[j] = source_wedge[3][j];
+          verts1[4].xyz[j] = source_wedge[4][j];
         }
-        if (r3d_orient(verts1) < 0)
-          throw std::runtime_error("negative volume 1");
+      }
+      // TODO: Only do this check in Debug mode:
+      if (r3d_orient(verts1) < 0)
+        throw std::runtime_error("source_wedge has negative volume");
 
+      for (const auto &target_wedge : target_coords) {
+        r3d_poly poly;
         r3d_init_tet(&poly, verts1);
+        // TODO: Only do this check in Debug mode:
         if (r3d_is_good(&poly) == 0)
-          throw std::runtime_error("invalid");
-
+          throw std::runtime_error("source_wedge: invalid poly");
 
         r3d_plane faces[4];
         r3d_rvec3 verts2[4];
         for (int i=0; i<4; i++)
           for (int j=0; j<3; j++)
             verts2[i].xyz[j] = target_wedge[i][j];
-
+        // TODO: Use Jali to get the vertices in correct order, so that we do
+        // not need to call `r3d_orient`.
         if (r3d_orient(verts2) < 0) {
           for (int j=0; j<3; j++) {
             verts2[1].xyz[j] = target_wedge[1][j];
@@ -105,13 +108,9 @@ public:
             verts2[4].xyz[j] = target_wedge[4][j];
           }
         }
+        // TODO: Only do this check in Debug mode:
         if (r3d_orient(verts2) < 0)
-          throw std::runtime_error("negative volume 2");
-
-        r3d_poly poly2;
-        r3d_init_tet(&poly2, verts2);
-        if (r3d_is_good(&poly2) == 0)
-          throw std::runtime_error("invalid 2");
+          throw std::runtime_error("target_wedge has negative volume");
 
         r3d_tet_faces_from_verts(faces, verts2);
 
@@ -131,6 +130,7 @@ public:
         if (std::abs(om[0]) < eps) continue;
         moments_all.push_back({om[0], om[1], om[2], om[3]});
       }
+    }
 
     // Sum moments over all intersections
     std::vector<double> moments_sum(4, 0);
