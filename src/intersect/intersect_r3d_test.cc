@@ -208,3 +208,28 @@ TEST(intersectR3D, simple7) {
   ASSERT_TRUE(std::abs(moments[0][2]/moments[0][0] - (-0.5)) < eps);
   ASSERT_TRUE(std::abs(moments[0][3]/moments[0][0] - (-0.5)) < eps);
 }
+
+TEST(intersectR3D, simple8) {
+  Jali::MeshFactory mf(MPI_COMM_WORLD);
+  Jali::Mesh* sm = mf(-4,-4,-4, 0,0,0, 1,1,1, NULL, true, true, true, true);
+  Jali::Mesh* tm = mf(-3,-3,-3, 0,0,0, 1,1,1, NULL, true, true, true, true);
+  Portage::Jali_Mesh_Wrapper s(*sm);
+  Portage::Jali_Mesh_Wrapper t(*tm);
+
+  const double eps = 1e-12;
+  Portage::IntersectR3D<Portage::Jali_Mesh_Wrapper> isect{s , t};
+  std::vector<std::vector<double> > moments = isect(0, 0);
+  for(int i=0;i<moments.size();i++){
+    for(int j=0;j<moments[i].size();j++){
+      std::cout << "i, j, m " << i << ", " << j << ", " << moments[i][j] << std::endl;
+    }
+  }
+
+  ASSERT_TRUE(moments.size() == 1);
+  ASSERT_TRUE(moments[0].size() == 4);
+
+  ASSERT_TRUE(std::abs(moments[0][0] - 27)   < eps);
+  ASSERT_TRUE(std::abs(moments[0][1]/moments[0][0] - (-1.5)) < eps);
+  ASSERT_TRUE(std::abs(moments[0][2]/moments[0][0] - (-1.5)) < eps);
+  ASSERT_TRUE(std::abs(moments[0][3]/moments[0][0] - (-1.5)) < eps);
+}
