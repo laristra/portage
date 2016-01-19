@@ -22,9 +22,11 @@ TEST(intersectR3D, simple) {
     }
   }
 
-  for(int i=0;i<moments.size();i++){
-    for(int j=0;j<moments[i].size();j++){
-      ASSERT_TRUE(std::abs(moments[i][0] - 1/48.) < eps);
-    }
-  }
+  ASSERT_TRUE(moments.size() == 1);
+  ASSERT_TRUE(moments[0].size() == 4);
+
+  ASSERT_TRUE(std::abs(moments[0][0] - 0.5) < eps);
+  ASSERT_TRUE(std::abs(moments[0][1] - 36)  < eps);
+  ASSERT_TRUE(std::abs(moments[0][2] - 36)  < eps);
+  ASSERT_TRUE(std::abs(moments[0][3] - 36)  < eps);
 }

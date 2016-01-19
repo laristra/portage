@@ -65,7 +65,7 @@ public:
     }
     */
 
-    std::vector<std::vector<double>> moments;
+    std::vector<std::vector<double>> moments_all;
 
     for (const auto &source_wedge : source_coords)
       for (const auto &target_wedge : target_coords) {
@@ -95,10 +95,21 @@ public:
           om[i] = std::abs(om[i]);
         }
         const double eps=1e-15;
+        // Skip non-intersecting tets
         if (std::abs(om[0]) < eps) continue;
-        moments.push_back({om[0], om[1]/om[0], om[2]/om[0], om[3]/om[0]});
+        moments_all.push_back({om[0], om[1]/om[0], om[2]/om[0], om[3]/om[0]});
       }
 
+    // Sum moments over all intersections
+    std::vector<double> moments_sum(4, 0);
+    for (const auto &m : moments_all) {
+      for (int i=0; i<4; i++) {
+        moments_sum[i] += m[i];
+      }
+    }
+
+    std::vector<std::vector<double>> moments;
+    moments.push_back(moments_sum);
     return moments;
   }
 
