@@ -7,12 +7,14 @@
 set(intersect_HEADERS
     clipper.hpp
     intersectClipper.h
+    r3d.h
     PARENT_SCOPE
 )
 
 # Add source files
 set(intersect_SOURCES
     clipper.cpp
+    r3d.c
     PARENT_SCOPE
 )
 
@@ -20,6 +22,12 @@ set(intersect_SOURCES
 if(ENABLE_UNIT_TESTS)
   cinch_add_unit(intersectClipper
     SOURCES intersectClipperTest.cc clipper.cpp
+    LIBRARIES ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
+    POLICY MPI
+    )
+
+  cinch_add_unit(intersect_r3d
+    SOURCES intersect_r3d_test.cc clipper.cpp r3d.c
     LIBRARIES ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
     POLICY MPI
     )
