@@ -266,6 +266,7 @@ class Jali_Mesh_Wrapper {
     wedgeid = jali_mesh_.wedge_get_opposite_wedge(wedgeids[1]);
     // wedgeid == -1 means we are on the boundary, and wedgeid == wedgeid0
     // means we are not on the boundary and we finished the loop
+int loopcnt = 0;
     while (wedgeid != -1 and wedgeid != wedgeid0) {
         cornerid = jali_mesh_.wedge_get_corner(wedgeid);
         jali_mesh_.corner_get_wedges(cornerid, &wedgeids);
@@ -356,6 +357,61 @@ class Jali_Mesh_Wrapper {
         for (int j=0; j<3; j++)
           tmp[i][j] = coords[i][j];
       wcoords->push_back(tmp);
+    }
+  }
+
+
+  //! 3D version of coords of nodes of a dual cell
+  // Input is the node ID 'nodeid', and it returns the vertex coordinates of
+  // the dual cell around this node in `xylist`. The vertices are NOT ordered
+  // in any particular way
+
+  void dual_cell_get_coordinates(int const nodeid,
+                                 std::vector<std::tuple<double,double,double> > *xyzlist) const {
+    assert(jali_mesh_.space_dimension() == 2);
+
+    Jali::Entity_ID wedgeid;
+    Jali::Entity_ID_List wedgeids;
+
+    // wedge_get_coordinates - (node, edge center, face centroid, cell centroid)
+    std::vector<JaliGeometry::Point> wcoords; 
+
+    jali_mesh_.node_get_wedges(nodeid, Jali::ALL, &wedgeids);
+
+    std::vector<int> edge_list, face_list, cell_list;
+
+    for (auto wedgeid : wedgeids) {
+      jali_mesh_.wedge_get_coordinates(wedgeid,&wcoords);
+
+      int edgeid = jali_mesh_.wedge_get_edge(wedgeid);
+      if (std::find(edge_list.begin(),edge_list.end(),edgeid) == 
+          edge_list.end()) {
+        // This edge not encountered yet - put it in the edge list and add
+        // the corresponding wedge point to the coordinate list
+
+        edge_list.push_back(edgeid);
+        xyzlist->emplace_back(std::make_tuple(wcoords[1][0],wcoords[1][1],wcoords[1][2]));
+      }
+
+      int faceid = jali_mesh_.wedge_get_face(wedgeid);
+      if (std::find(face_list.begin(),face_list.end(),faceid) == 
+          face_list.end()) {
+        // This face not encountered yet - put it in the face list and add
+        // the corresponding wedge point to the coordinate list
+
+        face_list.push_back(faceid);
+        xyzlist->emplace_back(std::make_tuple(wcoords[2][0],wcoords[2][1],wcoords[2][2]));
+      }
+
+      int cellid = jali_mesh_.wedge_get_cell(wedgeid);
+      if (std::find(cell_list.begin(),cell_list.end(),cellid) == 
+          cell_list.end()) {
+        // This cell not encountered yet - put it in the cell list and add
+        // the corresponding wedge point to the coordinate list
+
+        cell_list.push_back(cellid);
+        xyzlist->emplace_back(std::make_tuple(wcoords[3][0],wcoords[3][1],wcoords[3][2]));
+      }
     }
   }
 
