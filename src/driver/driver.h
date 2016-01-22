@@ -35,6 +35,10 @@ class MeshWrapperDual { // cellid is the dual cell (i.e. node) id
                             std::vector<std::pair<double,double> > *xylist) const {
     w_.dual_cell_get_coordinates(dualcellid, xylist);
   }
+  void cell_get_coordinates(int const dualcellid,
+                            std::vector<std::tuple<double,double,double> > *xyzlist) const {
+    w_.dual_cell_get_coordinates(dualcellid, xyzlist);
+  }
   
   counting_iterator begin(Entity_kind const entity) const {
     if (entity == NODE) return w_.begin(CELL);
