@@ -200,8 +200,6 @@ class Driver
           remap(source_mesh_, source_state_, remap_entity_, remap_var_names_[0]);
       
           
-	// Create a cellIndices vector and populates with a sequence of
-	// ints starting at 0.  
 	composerFunctor<SearchKDTree2<Mesh_Wrapper,Mesh_Wrapper>,
 	  IntersectClipper<Mesh_Wrapper, Mesh_Wrapper>,
 	  Remap_1stOrder<Mesh_Wrapper,Jali_State_Wrapper,Entity_kind> >
@@ -237,8 +235,6 @@ class Driver
                 NOLIMITER);
       
           
-	// Create a cellIndices vector and populates with a sequence of
-	// ints starting at 0.  
 	composerFunctor<SearchKDTree2<Mesh_Wrapper,Mesh_Wrapper>,
 	  IntersectClipper<Mesh_Wrapper, Mesh_Wrapper>,
 	  Remap_2ndOrder<Mesh_Wrapper,Jali_State_Wrapper,Entity_kind> >
@@ -296,8 +292,6 @@ class Driver
           remap(source_mesh_, source_state_, remap_entity_, remap_var_names_[0]);
       
           
-	// Create a cellIndices vector and populates with a sequence of
-	// ints starting at 0.  
 	composerFunctor<SearchKDTree3<Mesh_Wrapper,Mesh_Wrapper>,
 	                IntersectR3D<Mesh_Wrapper, Mesh_Wrapper>,
 	                Remap_1stOrder<Mesh_Wrapper,Jali_State_Wrapper,Entity_kind> >
@@ -333,8 +327,6 @@ class Driver
                 NOLIMITER);
       
           
-      	// Create a cellIndices vector and populates with a sequence of
-      	// ints starting at 0.
       	composerFunctor<SearchKDTree3<Mesh_Wrapper,Mesh_Wrapper>,
       	                IntersectR3D<Mesh_Wrapper, Mesh_Wrapper>,
       	                Remap_2ndOrder<Mesh_Wrapper,Jali_State_Wrapper,Entity_kind> >
