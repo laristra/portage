@@ -14,6 +14,7 @@ namespace std
 
 #include <cassert>
 #include <algorithm>
+#include <array>
 
 #include "Mesh.hh"                      // Jali mesh header
 
@@ -333,6 +334,29 @@ class Jali_Mesh_Wrapper {
     std::vector<std::pair<double, double> > cellPoints;
     cell_get_coordinates(cellID, &cellPoints);
     return cellPoints;
+  }
+
+  std::vector<std::tuple<double, double, double>>
+      cellToXYZ(Jali::Entity_ID cellID) const {
+    std::vector<std::tuple<double, double, double>> cellPoints;
+    cell_get_coordinates(cellID, &cellPoints);
+    return cellPoints;
+  }
+
+
+  void wedges_get_coordinates(Jali::Entity_ID cellID,
+      std::vector<std::array<std::array<double, 3>, 4>> *wcoords) const {
+    std::vector<Jali::Entity_ID> wedges;
+    jali_mesh_.cell_get_wedges(cellID, &wedges);
+    for (const auto &wedge : wedges) {
+      std::vector<JaliGeometry::Point> coords;
+      jali_mesh_.wedge_get_coordinates(wedge, &coords, true);
+      std::array<std::array<double, 3>, 4> tmp;
+      for (int i=0; i<4; i++)
+        for (int j=0; j<3; j++)
+          tmp[i][j] = coords[i][j];
+      wcoords->push_back(tmp);
+    }
   }
 
 
