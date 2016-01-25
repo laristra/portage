@@ -9,6 +9,7 @@
 #include<algorithm>
 #include<vector>
 #include<iterator>
+#include <sys/time.h>
 
 #include "portage/support/portage.h"
 #include "portage/wrappers/state/jali/jali_state_wrapper.h"
@@ -190,11 +191,26 @@ class Driver
       // compiler is not able to disambiguate Portage::transform and
       // thrust::transform here. So, be explicit that we want
       // Portage::transform
-      
-      Portage::transform((counting_iterator)target_mesh_.begin(CELL),
+
+      #ifdef ENABLE_PROFILE
+        __itt_resume();
+      #endif
+
+      struct timeval begin, end, diff;
+      gettimeofday(&begin, 0);
+
+      Portage::transform((counting_iterator)(target_mesh_.begin(CELL)),
                          (counting_iterator)target_mesh_.end(CELL),
                          target_field,composer);
       
+      #ifdef ENABLE_PROFILE
+        __itt_pause();
+      #endif
+
+      gettimeofday(&end, 0);
+      timersub(&end, &begin, &diff);
+      float seconds = diff.tv_sec + 1.0E-6*diff.tv_usec;
+      std::cout << "Transform Time: " << seconds << std::endl;
     }
     else {
       
@@ -228,10 +244,25 @@ class Driver
       // thrust::transform here. So, be explicit that we want
       // Portage::transform
       
-      Portage::transform((counting_iterator)target_mesh_.begin(CELL),
+      #ifdef ENABLE_PROFILE
+        __itt_resume();
+      #endif
+
+      struct timeval begin, end, diff;
+      gettimeofday(&begin, 0);
+
+      Portage::transform((counting_iterator)(target_mesh_.begin(CELL)),
                          (counting_iterator)target_mesh_.end(CELL),
                          target_field,composer);
-      
+
+      #ifdef ENABLE_PROFILE
+        __itt_pause();
+      #endif
+
+      gettimeofday(&end, 0);
+      timersub(&end, &begin, &diff);
+      float seconds = diff.tv_sec + 1.0E-6*diff.tv_usec;
+      std::cout << "Transform Time: " << seconds << std::endl;
     }
 
   }

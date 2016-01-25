@@ -6,6 +6,10 @@
 
 #include "mpi.h"
 
+#ifdef ENABLE_PROFILE
+#include "ittnotify.h"
+#endif
+
 #include "portage/support/portage.h"
 #include "portage/driver/driver.h"
 #include "portage/wrappers/mesh/jali/jali_mesh_wrapper.h"
@@ -19,6 +23,11 @@
 
 int main(int argc, char** argv)
 {
+  // Pause profiling until main loop
+  #ifdef ENABLE_PROFILE
+    __itt_pause();
+  #endif
+
   // Get the example to run from command-line parameter
   int example = 0;
   int n = 3;
@@ -30,6 +39,7 @@ int main(int argc, char** argv)
     std::printf("example 2: 2d 2nd order cell-centered remap of linear func\n");
     std::printf("example 3: 2d 1st order cell-centered remap of quadratic func\n");
     std::printf("example 4: 2d 2nd order cell-centered remap of quadratic func\n");
+    std::printf("example 5: 2d 2nd order node-centered remap of linear func\n");
     return 0;
   }
   if (argc > 1) example = atoi(argv[1]);
@@ -51,7 +61,7 @@ int main(int argc, char** argv)
   std::printf("running example %d\n", example);
 
   // Example 0,2,3,4 are 2d cell-centered remaps
-  if (example != 1) 
+  if ((example != 1) && (example != 5)) 
   {
     Jali::MeshFactory mf(MPI_COMM_WORLD);
 
@@ -141,7 +151,7 @@ int main(int argc, char** argv)
   }
 
   // Example 1 is a 2d node-centered remap
-  else if (example == 1)
+  else
   {
     Jali::MeshFactory mf(MPI_COMM_WORLD);
 
@@ -175,6 +185,9 @@ int main(int argc, char** argv)
     std::vector<std::string> remap_fields;
     remap_fields.push_back("nodedata");
     d.set_remap_var_names(remap_fields);
+
+    if (example == 5)
+      d.set_remap_order(2);
 
     struct timeval begin, end, diff;
     gettimeofday(&begin, 0);
