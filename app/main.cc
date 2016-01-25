@@ -56,8 +56,6 @@ int main(int argc, char** argv)
   {
     Jali::MeshFactory mf(MPI_COMM_WORLD);
 
-    //    Jali::Mesh* inputMesh, targetMesh;
-
     Jali::Mesh* inputMesh = nullptr;
     Jali::Mesh* targetMesh = nullptr;
 
