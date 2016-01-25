@@ -242,7 +242,7 @@ class Jali_Mesh_Wrapper {
 
   void dual_cell_get_coordinates(int const nodeid,
                     std::vector<std::pair<double,double> > *xylist) const {
-    assert(jali_mesh_.space_dimension() == 2);
+    assert(jali_mesh_.space_dimension() == 3);
 
     Jali::Entity_ID cornerid, wedgeid, wedgeid0;
     Jali::Entity_ID_List cornerids, wedgeids;
