@@ -266,7 +266,6 @@ class Jali_Mesh_Wrapper {
     wedgeid = jali_mesh_.wedge_get_opposite_wedge(wedgeids[1]);
     // wedgeid == -1 means we are on the boundary, and wedgeid == wedgeid0
     // means we are not on the boundary and we finished the loop
-int loopcnt = 0;
     while (wedgeid != -1 and wedgeid != wedgeid0) {
         cornerid = jali_mesh_.wedge_get_corner(wedgeid);
         jali_mesh_.corner_get_wedges(cornerid, &wedgeids);
