@@ -30,7 +30,7 @@ int main(int argc, char** argv)
     std::printf("example 2: 2d 2nd order cell-centered remap of linear func\n");
     std::printf("example 3: 2d 1st order cell-centered remap of quadratic func\n");
     std::printf("example 4: 2d 2nd order cell-centered remap of quadratic func\n");
-    std::printf("example 5: 3d 1nd order cell-centered remap of linear func\n");
+    std::printf("example 5: 3d 1st order cell-centered remap of linear func\n");
     return 0;
   }
   if (argc > 1) example = atoi(argv[1]);
@@ -69,9 +69,11 @@ int main(int argc, char** argv)
     }
     else {
       // 3d hex input mesh from (0,0,0) to (1,1,1) with nxn zones
-      inputMesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, n, n, n);
+      inputMesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, n, n, n,
+		     NULL, true, true, true, false);
       // 3d hex output mesh from (0,0,0) to (1,1,1) with (n+1)x(n+1)x(n+1) zones
-      targetMesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, n+1, n+1, n+1);
+      targetMesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, n+1, n+1, n+1,
+		      NULL, true, true, true, false);
     }
 
     Portage::Jali_Mesh_Wrapper inputMeshWrapper(*inputMesh);
@@ -144,9 +146,17 @@ int main(int argc, char** argv)
           error = ccen[0]+ccen[1] - cellvecout[c];
         else if (example == 3 || example == 4)
           error = ccen[0]*ccen[0]+ccen[1]*ccen[1] - cellvecout[c];
+	else if (example == 5)
+	  error = ccen[0]+ccen[1]+ccen[2] - cellvecout[c];
 
-        std::printf("Cell=% 4d Centroid = (% 5.3lf,% 5.3lf)",c,
-                    ccen[0],ccen[1]);
+	if (example < 5) {
+	  std::printf("Cell=% 4d Centroid = (% 5.3lf,% 5.3lf)",c,
+		      ccen[0],ccen[1]);
+	}
+	else {
+	  std::printf("Cell=% 4d Centroid = (% 5.3lf,% 5.3lf,% 5.3lf)",c,
+		      ccen[0],ccen[1],ccen[2]);
+	}
         std::printf("  Value = % 10.6lf  Err = % lf\n",
                     cellvecout[c],error);        
 
