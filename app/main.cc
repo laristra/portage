@@ -30,6 +30,7 @@ int main(int argc, char** argv)
     std::printf("example 2: 2d 2nd order cell-centered remap of linear func\n");
     std::printf("example 3: 2d 1st order cell-centered remap of quadratic func\n");
     std::printf("example 4: 2d 2nd order cell-centered remap of quadratic func\n");
+    std::printf("example 5: 3d 1nd order cell-centered remap of linear func\n");
     return 0;
   }
   if (argc > 1) example = atoi(argv[1]);
@@ -55,15 +56,29 @@ int main(int argc, char** argv)
   {
     Jali::MeshFactory mf(MPI_COMM_WORLD);
 
-    // Create a 2d quad input mesh from (0,0) to (1,1) with nxn zones
-    Jali::Mesh* inputMesh = mf(0.0, 0.0, 1.0, 1.0, n, n);
-    Portage::Jali_Mesh_Wrapper inputMeshWrapper(*inputMesh);
+    //    Jali::Mesh* inputMesh, targetMesh;
 
-    // Create a 2d quad output mesh from (0,0) to (1,1) with (n+1)x(n+1) zones
-    Jali::Mesh* targetMesh = mf(0.0, 0.0, 1.0, 1.0, n+1, n+1);
+    Jali::Mesh* inputMesh = nullptr;
+    Jali::Mesh* targetMesh = nullptr;
+
+    if (example < 5) {
+      // 2d quad input mesh from (0,0) to (1,1) with nxn zones
+      inputMesh = mf(0.0, 0.0, 1.0, 1.0, n, n);
+      // 2d quad output mesh from (0,0) to (1,1) with (n+1)x(n+1) zones
+      targetMesh = mf(0.0, 0.0, 1.0, 1.0, n+1, n+1);
+    }
+    else {
+      // 3d hex input mesh from (0,0,0) to (1,1,1) with nxn zones
+      inputMesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, n, n, n);
+      // 3d hex output mesh from (0,0,0) to (1,1,1) with (n+1)x(n+1)x(n+1) zones
+      targetMesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, n+1, n+1, n+1);
+    }
+
+    Portage::Jali_Mesh_Wrapper inputMeshWrapper(*inputMesh);
     Portage::Jali_Mesh_Wrapper targetMeshWrapper(*targetMesh);
 
     int nsrccells = inputMeshWrapper.num_owned_cells();
+    int ntarcells = targetMeshWrapper.num_owned_cells();
 
     Jali::State sourceState(inputMesh);
     std::vector<double> sourceData(nsrccells);
@@ -80,13 +95,14 @@ int main(int argc, char** argv)
         std::vector<double> cen;
         inputMeshWrapper.cell_centroid(c,&cen);
         sourceData[c] = cen[0]+cen[1];
+	if (example > 4) sourceData[c] += cen[2];
       }
     }
     Jali::StateVector<double> & cellvecin = sourceState.add("celldata", Jali::CELL, &(sourceData[0]));
     Portage::Jali_State_Wrapper sourceStateWrapper(sourceState);
 
     Jali::State targetState(targetMesh);
-    std::vector<double> targetData((n+1)*(n+1), 0.0);
+    std::vector<double> targetData(ntarcells, 0.0);
     Jali::StateVector<double> & cellvecout = targetState.add("celldata", Jali::CELL, &(targetData[0]));
     Portage::Jali_State_Wrapper targetStateWrapper(targetState);
 
