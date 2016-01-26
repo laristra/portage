@@ -12,10 +12,12 @@
 #include <cmath>
 #include <cfloat>
 #include <algorithm>
-/**\brief Return the area and moment of the polygon.
- * poly [input] 
- * \returns std::vector<double>--area, mx, my
- **/
+
+/*!
+  @brief Return the area and moment of the polygon.
+  @param[in] poly A vector of a pair of (x,y) coordinates of the nodes making up the polygon.
+  @returns std::vector<double>--area, mx, my
+*/
 std::vector<double> areaAndMomentPolygon(const std::vector<std::pair<double,double> > poly){
     double area = 0;
     double cx = 0;
@@ -40,27 +42,38 @@ std::vector<double> areaAndMomentPolygon(const std::vector<std::pair<double,doub
 }
 
 /*!
- * \class IntersectClipper <typename C> 2-D intersection algorithm for arbitrary convex and non-convex polyhedra
- * \brief The intersect class is templated on MeshWrapper type.  You must provide a method to convert the template cells to an IntersectClipper::Poly.  
- */
+  @class IntersectClipper "intersectClipper.h"
+  @brief 2-D intersection algorithm for arbitrary convex and non-convex polyhedra
+  @tparam SourceMeshType The mesh type of the input mesh.
+  @tparam TargetMeshType The mesh type of the output mesh.
+  
+  The intersect class is templated on MeshWrapper type.  You must provide a method to convert
+  the template cells to an IntersectClipper::Poly.  
+*/
 
 template <typename SourceMeshType, typename TargetMeshType=SourceMeshType> class IntersectClipper
 {
 
 public:
-    typedef std::pair<double, double> Point; 
+    // @todo Consolidate the concept of 'Points' amongst the various code bits, e.g. this Point,
+    // JaliGeometry::Point, gk::Point, etc.
+
+    /// Alias for a pair of (x,y) coordinates
+    typedef std::pair<double, double> Point;
+    /// Alias for a collection of Points.
     typedef std::vector<Point> Poly; 
-    //Provide volume and centroid
+    /// Alias to provide volume and centroid
     typedef std::pair<double, Point> Moment;
 
+     /// Constructor taking a source mesh @c s and a target mesh @c t.
     IntersectClipper(const SourceMeshType &s, const TargetMeshType &t):sourceMeshWrapper(s), targetMeshWrapper(t){}
 
-    /*! \brief Intersect two cells and return the first two moments.
-     * \param[in] cellA first cell index to intersect
-     * \param[in] cellB second cell index to intersect
-     * \return list of moments; ret[0] == 0th moment; ret[1] == first moment
+     /*!
+       @brief Intersect two cells and return the first two moments.
+       @param[in] cellA first cell index to intersect
+       @param[in] cellB second cell index to intersect
+       @return list of moments; ret[0] == 0th moment; ret[1] == first moment
      */
-
     std::vector<std::vector<double> > operator() (const int cellA, const int cellB) const {      
         Poly polyA = sourceMeshWrapper.cellToXY(cellA);
         Poly polyB = targetMeshWrapper.cellToXY(cellB);
@@ -81,7 +94,8 @@ public:
         //For more information on the winding rules see:
         //http://www.angusj.com/delphi/clipper/documentation/Docs/Units/ClipperLib/Types/PolyFillType.htm
         ClipperLib::Paths solution;
-        clpr.Execute(ClipperLib::ctIntersection, solution, ClipperLib::pftEvenOdd, ClipperLib::pftEvenOdd);
+        clpr.Execute(ClipperLib::ctIntersection, solution,
+		     ClipperLib::pftEvenOdd, ClipperLib::pftEvenOdd);
 
         std::vector< std::vector<std::pair<double, double>> > intersectionList;
         for(int i=0;i<solution.size();i++){
@@ -99,12 +113,13 @@ public:
         return moments;
     }
 
+    /// Default constructor.
     IntersectClipper() {}
 
-    //! Copy constructor (disabled)
+    /// Copy constructor (disabled)
     IntersectClipper(const IntersectClipper &) = delete;
 
-    //! Assignment operator (disabled)
+    /// Assignment operator (disabled)
     IntersectClipper & operator = (const IntersectClipper &) = delete;
 
 
@@ -119,14 +134,16 @@ private:
         return max_size_poly;
     }
 
-    /**
-       \poly Convert a double to an integer 
-       \note Could do this by multiplying by a power of 10 large enough to preserve the 
-       number of digits in the original double; however it is more precise to 
-       multiply by a power of 2 
-       \param a [in] - number to be converted
-       \param max_size [in] 
-    **/
+    /*!
+       @brief Convert a double to an integer.
+       
+       @note Could do this by multiplying by a power of 10 large enough to preserve the 
+       number of digits in the original double; however it is more precise to
+       multiply by a power of 2.
+       
+       @param[in] a number to be converted
+       @param[in] max_size
+    */
     static long real2integer(double a, const double max_size){
         int exp;
 
@@ -141,11 +158,11 @@ private:
         return lrint(ldexp(a, DBL_MANT_DIG-exp));
     }
 
-    /** 
-        \brief Convert integer back to double given the max_size of the numbers within the problem
-        \param a [in] - number to convert
-        \param max_size -
-    **/
+    /*! 
+      @brief Convert integer back to double given the max_size of the numbers within the problem
+      @param[in] a number to convert
+      @param[in] max_size 
+    */
     static double integer2real(long a, const double max_size){
         int exp;
         frexp(max_size, &exp);  
