@@ -6,6 +6,10 @@
 
 #include "mpi.h"
 
+#ifdef ENABLE_PROFILE
+#include "ittnotify.h"
+#endif
+
 #include "portage/support/portage.h"
 #include "portage/driver/driver.h"
 #include "portage/wrappers/mesh/jali/jali_mesh_wrapper.h"
@@ -19,6 +23,11 @@
 
 int main(int argc, char** argv)
 {
+  // Pause profiling until main loop
+  #ifdef ENABLE_PROFILE
+    __itt_pause();
+  #endif
+
   // Get the example to run from command-line parameter
   int example = 0;
   int n = 3;
@@ -30,7 +39,8 @@ int main(int argc, char** argv)
     std::printf("example 2: 2d 2nd order cell-centered remap of linear func\n");
     std::printf("example 3: 2d 1st order cell-centered remap of quadratic func\n");
     std::printf("example 4: 2d 2nd order cell-centered remap of quadratic func\n");
-    std::printf("example 5: 3d 1st order cell-centered remap of linear func\n");
+    std::printf("example 5: 2d 2nd order node-centered remap of linear func\n");
+    std::printf("example 6: 3d 1st order cell-centered remap of linear func\n");
     return 0;
   }
   if (argc > 1) example = atoi(argv[1]);
@@ -51,15 +61,15 @@ int main(int argc, char** argv)
   std::printf("starting portageapp...\n");
   std::printf("running example %d\n", example);
 
-  // Example 0,2,3,4 are 2d cell-centered remaps
-  if (example != 1) 
+  // Example 0,2,3,4,6 are cell-centered remaps
+  if ((example != 1) && (example != 5)) 
   {
     Jali::MeshFactory mf(MPI_COMM_WORLD);
 
     Jali::Mesh* inputMesh = nullptr;
     Jali::Mesh* targetMesh = nullptr;
 
-    if (example < 5) {
+    if (example < 6) {
       // 2d quad input mesh from (0,0) to (1,1) with nxn zones
       inputMesh = mf(0.0, 0.0, 1.0, 1.0, n, n);
       // 2d quad output mesh from (0,0) to (1,1) with (n+1)x(n+1) zones
@@ -95,7 +105,7 @@ int main(int argc, char** argv)
         std::vector<double> cen;
         inputMeshWrapper.cell_centroid(c,&cen);
         sourceData[c] = cen[0]+cen[1];
-	if (example > 4) sourceData[c] += cen[2];
+	if (example > 5) sourceData[c] += cen[2];
       }
     }
     Jali::StateVector<double> & cellvecin = sourceState.add("celldata", Jali::CELL, &(sourceData[0]));
@@ -113,7 +123,7 @@ int main(int argc, char** argv)
     remap_fields.push_back("celldata");
     d.set_remap_var_names(remap_fields);
 
-    // Example 2 is a 2nd order accurate remap
+    // Examples 2 and 4 are 2nd order accurate remaps
 
     if (example == 2 || example == 4)
       d.set_remap_order(2);
@@ -144,10 +154,10 @@ int main(int argc, char** argv)
           error = ccen[0]+ccen[1] - cellvecout[c];
         else if (example == 3 || example == 4)
           error = ccen[0]*ccen[0]+ccen[1]*ccen[1] - cellvecout[c];
-	else if (example == 5)
+	else if (example == 6)
 	  error = ccen[0]+ccen[1]+ccen[2] - cellvecout[c];
 
-	if (example < 5) {
+	if (example < 6) {
 	  std::printf("Cell=% 4d Centroid = (% 5.3lf,% 5.3lf)",c,
 		      ccen[0],ccen[1]);
 	}
@@ -163,9 +173,8 @@ int main(int argc, char** argv)
       std::printf("\n\nL2 NORM OF ERROR = %lf\n\n",sqrt(toterr));
     }
   }
-
-  // Example 1 is a 2d node-centered remap
-  else if (example == 1)
+  // Examples 1 and 5 are 2d node-centered remaps
+  else
   {
     Jali::MeshFactory mf(MPI_COMM_WORLD);
 
@@ -199,6 +208,9 @@ int main(int argc, char** argv)
     std::vector<std::string> remap_fields;
     remap_fields.push_back("nodedata");
     d.set_remap_var_names(remap_fields);
+
+    if (example == 5)
+      d.set_remap_order(2);
 
     struct timeval begin, end, diff;
     gettimeofday(&begin, 0);

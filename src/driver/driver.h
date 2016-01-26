@@ -9,6 +9,7 @@
 #include<algorithm>
 #include<vector>
 #include<iterator>
+#include <sys/time.h>
 
 #include "portage/support/portage.h"
 #include "portage/wrappers/state/jali/jali_state_wrapper.h"
@@ -191,18 +192,17 @@ class Driver
 
       if (remap_order() == 1) {
 
-	std::cout << "Remapping variable " << remap_var_names_[0] << 
-          " using a 1st order accurate algorithm" << std::endl;
+	std::cout << "Remapping variable " << remap_var_names_[0]
+		  << " using a 1st order accurate algorithm" << std::endl;
 
 	// Eventually put this in a loop over remap variable names as well
 	// Assume for now that we are only doing cell-based remap
 	const Remap_1stOrder<Mesh_Wrapper,Jali_State_Wrapper,Entity_kind> 
           remap(source_mesh_, source_state_, remap_entity_, remap_var_names_[0]);
       
-          
 	composerFunctor<SearchKDTree2<Mesh_Wrapper,Mesh_Wrapper>,
-	  IntersectClipper<Mesh_Wrapper, Mesh_Wrapper>,
-	  Remap_1stOrder<Mesh_Wrapper,Jali_State_Wrapper,Entity_kind> >
+	                IntersectClipper<Mesh_Wrapper, Mesh_Wrapper>,
+	                Remap_1stOrder<Mesh_Wrapper,Jali_State_Wrapper,Entity_kind> >
           composer(&search, &intersect, &remap, remap_var_names_[0]);
 
 	// This populates targetField with the doubles returned from
@@ -211,12 +211,28 @@ class Driver
 	// compiler is not able to disambiguate Portage::transform and
 	// thrust::transform here. So, be explicit that we want
 	// Portage::transform
-      
-	Portage::transform((counting_iterator)target_mesh_.begin(CELL),
-			   (counting_iterator)target_mesh_.end(CELL),
+
+#ifdef ENABLE_PROFILE
+        __itt_resume();
+#endif
+
+	struct timeval begin, end, diff;
+	gettimeofday(&begin, 0);
+
+	Portage::transform((counting_iterator)(target_mesh_.begin(CELL)),
+			   (counting_iterator)(target_mesh_.end(CELL)),
 			   target_field,composer);
       
-      }
+#ifdef ENABLE_PROFILE
+        __itt_pause();
+#endif
+
+	gettimeofday(&end, 0);
+	timersub(&end, &begin, &diff);
+	float seconds = diff.tv_sec + 1.0E-6*diff.tv_usec;
+	std::cout << "Transform Time: " << seconds << std::endl;
+	
+      } // done first order remap
       else {
       
 	if (remap_order() != 2)
@@ -225,15 +241,14 @@ class Driver
             std::endl;
 
 
-	std::cout << "Remapping variable " << remap_var_names_[0] << 
-          " using a 2nd order accurate algorithm" << std::endl;
+	std::cout << "Remapping variable " << remap_var_names_[0]
+		  << " using a 2nd order accurate algorithm" << std::endl;
       
 	// Eventually put this in a loop over remap variable names as well
 	// Assume for now that we are only doing cell-based remap
 	const Remap_2ndOrder<Mesh_Wrapper,Jali_State_Wrapper,Entity_kind> 
           remap(source_mesh_, source_state_, remap_entity_, remap_var_names_[0],
                 NOLIMITER);
-      
           
 	composerFunctor<SearchKDTree2<Mesh_Wrapper,Mesh_Wrapper>,
 	  IntersectClipper<Mesh_Wrapper, Mesh_Wrapper>,
@@ -247,12 +262,27 @@ class Driver
 	// thrust::transform here. So, be explicit that we want
 	// Portage::transform
       
-	Portage::transform((counting_iterator)target_mesh_.begin(CELL),
-			   (counting_iterator)target_mesh_.end(CELL),
+#ifdef ENABLE_PROFILE
+        __itt_resume();
+#endif
+
+	struct timeval begin, end, diff;
+	gettimeofday(&begin, 0);
+
+	Portage::transform((counting_iterator)(target_mesh_.begin(CELL)),
+			   (counting_iterator)(target_mesh_.end(CELL)),
 			   target_field,composer);
-      
+
+#ifdef ENABLE_PROFILE
+        __itt_pause();
+#endif
+
+	gettimeofday(&end, 0);
+	timersub(&end, &begin, &diff);
+	float seconds = diff.tv_sec + 1.0E-6*diff.tv_usec;
+	std::cout << "Transform Time: " << seconds << std::endl;
       }
-      
+
     }   // done 2d test
     else {
       // 3d
@@ -283,8 +313,8 @@ class Driver
 
       if (remap_order() == 1) {
 
-	std::cout << "Remapping variable " << remap_var_names_[0] << 
-          " using a 1st order accurate algorithm" << std::endl;
+	std::cout << "Remapping variable " << remap_var_names_[0]
+		  << " using a 1st order accurate algorithm" << std::endl;
 
 	// Eventually put this in a loop over remap variable names as well
 	// Assume for now that we are only doing cell-based remap
@@ -303,12 +333,27 @@ class Driver
 	// compiler is not able to disambiguate Portage::transform and
 	// thrust::transform here. So, be explicit that we want
 	// Portage::transform
-      
-	Portage::transform((counting_iterator)target_mesh_.begin(CELL),
-			   (counting_iterator)target_mesh_.end(CELL),
+
+#ifdef ENABLE_PROFILE
+	__itt_resume();
+#endif
+
+	struct timeval begin, end, diff;
+	gettimeofday(&begin, 0);
+
+	Portage::transform((counting_iterator)(target_mesh_.begin(CELL)),
+			   (counting_iterator)(target_mesh_.end(CELL)),
 			   target_field,composer);
-      
-      }
+
+#ifdef ENABLE_PROFILE
+	__itt_pause();
+#endif
+
+	gettimeofday(&end, 0);
+	timersub(&end, &begin, &diff);
+	float seconds = diff.tv_sec + 1.0E-6*diff.tv_usec;
+	std::cout << "Transform Time: " << seconds << std::endl;
+      } // done first order remap
       else {
       
       	if (remap_order() != 2)
@@ -316,9 +361,8 @@ class Driver
             "Remap order can be 1 or 2 only. Doing 2nd order remap" <<
             std::endl;
 
-
-      	std::cout << "Remapping variable " << remap_var_names_[0] <<
-          " using a 2nd order accurate algorithm" << std::endl;
+      	std::cout << "Remapping variable " << remap_var_names_[0]
+		  << " using a 2nd order accurate algorithm" << std::endl;
       
       	// Eventually put this in a loop over remap variable names as well
       	// Assume for now that we are only doing cell-based remap
@@ -338,10 +382,26 @@ class Driver
       	// compiler is not able to disambiguate Portage::transform and
       	// thrust::transform here. So, be explicit that we want
       	// Portage::transform
-      
-      	Portage::transform((counting_iterator)target_mesh_.begin(CELL),
-      			   (counting_iterator)target_mesh_.end(CELL),
-      			   target_field,composer);
+
+#ifdef ENABLE_PROFILE
+	__itt_resume();
+#endif
+
+	struct timeval begin, end, diff;
+	gettimeofday(&begin, 0);
+
+	Portage::transform((counting_iterator)(target_mesh_.begin(CELL)),
+			   (counting_iterator)(target_mesh_.end(CELL)),
+			   target_field,composer);
+
+#ifdef ENABLE_PROFILE
+	__itt_pause();
+#endif
+
+        gettimeofday(&end, 0);
+	timersub(&end, &begin, &diff);
+	float seconds = diff.tv_sec + 1.0E-6*diff.tv_usec;
+	std::cout << "Transform Time: " << seconds << std::endl;
       }
     } // done 3d test
   }

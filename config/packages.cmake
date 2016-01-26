@@ -110,4 +110,13 @@ if(ENABLE_THRUST)
     endif()
   endif ()
 
+  if("${THRUST_BACKEND}" STREQUAL "THRUST_DEVICE_SYSTEM_TBB")
+    FIND_PACKAGE(TBB REQUIRED)
+    if(TBB_FOUND)
+      include_directories(${TBB_INCLUDE_DIRS})
+      link_directories(${TBB_LIBRARY_DIRS})
+      set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -ltbb")
+    endif()
+  endif()
+
 endif(ENABLE_THRUST)
