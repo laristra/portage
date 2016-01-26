@@ -41,6 +41,7 @@ int main(int argc, char** argv)
     std::printf("example 4: 2d 2nd order cell-centered remap of quadratic func\n");
     std::printf("example 5: 2d 2nd order node-centered remap of linear func\n");
     std::printf("example 6: 3d 1st order cell-centered remap of linear func\n");
+    std::printf("example 7: 3d 2nd order cell-centered remap of linear func\n");
     return 0;
   }
   if (argc > 1) example = atoi(argv[1]);
@@ -123,9 +124,9 @@ int main(int argc, char** argv)
     remap_fields.push_back("celldata");
     d.set_remap_var_names(remap_fields);
 
-    // Examples 2 and 4 are 2nd order accurate remaps
+    // Examples 2, 4 and 7 are 2nd order accurate remaps
 
-    if (example == 2 || example == 4)
+    if (example == 2 || example == 4 || example == 7)
       d.set_remap_order(2);
 
     struct timeval begin, end, diff;
@@ -154,7 +155,7 @@ int main(int argc, char** argv)
           error = ccen[0]+ccen[1] - cellvecout[c];
         else if (example == 3 || example == 4)
           error = ccen[0]*ccen[0]+ccen[1]*ccen[1] - cellvecout[c];
-	else if (example == 6)
+	else if (example == 6 || example == 7)
 	  error = ccen[0]+ccen[1]+ccen[2] - cellvecout[c];
 
 	if (example < 6) {
