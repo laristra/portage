@@ -41,11 +41,16 @@ template <long D> class Point
 
   public:
 
+    /// Default constructor - Point at origin in D-space.
     inline Point() {
       for (long i=0;i<D;i++)
         m_loc[i] = 0.0;
     }
 
+    /*!
+      @brief Specialized constructor from a std::vector of arbitary size.
+      @param[in] v std::vector of coordinates.
+     */
     inline Point(const std::vector<double> &v)
       {
           assert (v.size() == D);
@@ -53,6 +58,10 @@ template <long D> class Point
             m_loc[i] = v[i];
       }
 
+    /*!
+      @brief Specialized constructor for Points in 3d.
+      @param[in] x,y,z The (x,y,z) coordinates of this Point.
+     */
     inline Point(const double& x, const double& y, const double& z)
       {
         assert (D==3);
@@ -61,6 +70,10 @@ template <long D> class Point
         m_loc[2] = z;
       }
 
+    /*!
+      @brief Specialized constructor for Points in 2d.
+      @param[in] x,y The (x,y) coordinates of this Point.
+     */
     inline Point(const double& x, const double& y)
       {
         assert (D==2);
@@ -68,33 +81,39 @@ template <long D> class Point
         m_loc[1] = y;
       }
 
+    /// Convert a Vector to a Point.
     explicit Point(const Vector<D>& v) {
       for(long i = 0; i < D; i++) 
         m_loc[i] = v[i];
     }
 
+    /// Copy constructor.
     inline Point(const Point<D>& rhs)
       {
           for (long i=0;i<D;i++)
             m_loc[i] = rhs[i];
       }
 
+    /// Return component @c i of the Point.
     inline const double& operator[](const long& i) const
       {
         return m_loc[i]; 
       }
 
+    /// Return component @c i of the Point.
     inline double& operator[](const long& i)
       {
         return m_loc[i]; 
       }
 
+    /// Translate this Point along the Vector @c v.
     inline Point<D>& operator+=(const Vector<D>& v) 
       {
         for(long i = 0; i < D; i++) m_loc[i] += v[i];
         return *this;
       }
 
+    /// Read in the coordinates a Point from an input stream.
     std::istream& readFromStream(std::istream& is)
       {
         for (long i=0;i<D;i++)
@@ -102,6 +121,7 @@ template <long D> class Point
         return is;
       }
 
+    /// Pretty printing of the coordinates of a Point to an output stream.
     std::ostream& writeToStream(std::ostream& os) const
       {
         for (long i=0;i<D;i++)
@@ -112,6 +132,7 @@ template <long D> class Point
         return os;
       }
 
+    /// Convert a Point to a Vector from the origin to the coordinates of the Point.
     inline Vector<D> asV()
       {
         Vector<D> v;
@@ -119,7 +140,8 @@ template <long D> class Point
           v[i] = m_loc[i];
         return v;
       }
-
+    
+    /// Convert a Point to a Vector from the origin to the coordinates of the Point.
     inline Vector<D> asV() const
       {
         Vector<D> v;
@@ -129,7 +151,9 @@ template <long D> class Point
       }
 };
 
+/// Alias for creating a Point in 3d.
 typedef Point<3> Point3;
+/// Alias for creating a Point in 2d.
 typedef Point<2> Point2;
 
 template <long D> inline std::ostream&
