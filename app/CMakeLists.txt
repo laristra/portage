@@ -8,11 +8,6 @@
 #------------------------------------------------------------------------------#
 
 add_executable(portageapp main.cc)
-
-#------------------------------------------------------------------------------#
-# Add include and link dependencies
-#------------------------------------------------------------------------------#
-
 target_link_libraries(portageapp portage ${EXTRA_LIBS})
 
 # MPI additions - need to push this down into cinch
@@ -24,8 +19,6 @@ set_target_properties(portageapp PROPERTIES
 include_directories(${Jali_INCLUDE_DIRS} ${Jali_TPL_INCLUDE_DIRS})
 target_link_libraries(portageapp ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES})
 
-
-
 # Shotshell example
 add_executable(shotshellapp shotshell.cc)
 target_link_libraries(shotshellapp portage ${EXTRA_LIBS})
@@ -33,3 +26,22 @@ target_link_libraries(shotshellapp ${MPI_CXX_LIBRARIES})
 set_target_properties(shotshellapp PROPERTIES
                       LINK_FLAGS "${MPI_CXX_LINK_FLAGS}")
 target_link_libraries(shotshellapp ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES})
+
+#TCMalloc option
+set(ENABLE_TCMALLOC TRUE CACHE BOOL "Use TCMalloc")
+if(ENABLE_TCMALLOC)
+  set(TCMALLOC_LIB "${HOME}" CACHE STRING "Set the TCMalloc library")
+  target_link_libraries(portageapp ${TCMALLOC_LIB})
+  target_link_libraries(shotshellapp ${TCMALLOC_LIB})
+endif()
+
+# Profiling option (to allow pausing and resuming profiling during execution)
+set(ENABLE_PROFILE FALSE CACHE BOOL "Enable VTune Profiling")
+if(ENABLE_PROFILE)
+  set(VTUNE_INCLUDE_DIR "${HOME}" CACHE PATH "Set the locaiton of VTune include")
+  set(VTUNE_LIB "${HOME}" CACHE STRING "Set the VTune library")
+
+  include_directories(${VTUNE_INCLUDE_DIR})
+  target_link_libraries(portageapp ${VTUNE_LIB})
+  target_link_libraries(shotshellapp ${VTUNE_LIB})
+endif()
