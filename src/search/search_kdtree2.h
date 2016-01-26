@@ -17,7 +17,7 @@ namespace Portage {
 
   /*!
     @class SearchKDTree2 "search_kdtree2.h"
-    @brief A search algorithm utilizing a kd-tree in 2d.
+    @brief A search algorithm utilizing a k-d tree in 2d.
     @tparam SourceMeshType The mesh type of the input mesh.
     @tparam TargetMeshType The mesh type of the output mesh.
 
@@ -31,13 +31,13 @@ class SearchKDTree2 {
     SearchKDTree2() = delete;
     
     /*!
-      @brief Builds the kd-tree for searching for intersection candidates.
+      @brief Builds the k-d tree for searching for intersection candidates.
       @param[in] source_mesh Pointer to a mesh wrapper for getting the source
       mesh info.
       @param[in] target_mesh Pointer to a mesh wrapper for getting the target
       mesh info.
       
-      Constructor for kd-tree for finding cells from a source
+      Constructor for k-d tree for finding cells from a source
       mesh that overlap the target mesh.
     */
     SearchKDTree2(const SourceMeshType & source_mesh, 
@@ -61,7 +61,7 @@ class SearchKDTree2 {
             bboxes.emplace_back(bb);
         }
 
-        // create the kd-tree
+        // create the k-d tree
         tree_ = gk::KDTreeCreate(bboxes);
 
     } // SearchKDTree2::SearchKDTree2

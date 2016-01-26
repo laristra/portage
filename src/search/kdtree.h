@@ -29,13 +29,20 @@ const long ZDIM = 2;
 const double KDEPS = 1.0e-8;
 const double KD_SAFETY_EPS = 1.0e-4;
 
+/*!
+  @class KDTree "kdtree.h"
+  @brief An N-dimensional k-d tree for manipulating polygon data.
+  @tparam D Dimension of the k-d tree.
+ */
 template<long D> class KDTree {
   public:
+    /// Default constructor.
     KDTree() {
       num_entities = 0;
       linkp = NULL;
       sbox = NULL;
     }
+    /// Default destructor.
     ~KDTree() {
       if(linkp) {
         delete [] linkp;
@@ -78,8 +85,8 @@ void Intersect(const IsotheticBBox<D>& box,
 /*                                                                          */
 /* Creation Date  :April 20, 1996                                           */
 /*                                                                          */
-/* Purpose        :MedianSelect takes an long `k', a double array 'arr',   */
-/*                 and an long array `prm' of length `n'                 */
+/* Purpose        :MedianSelect takes an long `k', a double array 'arr',    */
+/*                 and an long array `prm' of length `n'                    */
 /*                 and reorders `prm' so that `arr[prm[k]]' is the k'th     */
 /*                 largest element in the set `{arr[prm[i]], i=1,..,n}',    */
 /*                 and we have in addition the partitioning properties:     */

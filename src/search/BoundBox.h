@@ -26,17 +26,24 @@ namespace gk {
   const double REAL_MAX = std::numeric_limits<double>::max();
   const double REAL_MIN = std::numeric_limits<double>::min();
 
-  // An isothetic (axis-aligned) bounding box
-
+  /*!
+    @class IsotheticBBox "BoundBox.h"
+    @brief An isothetic (axis-aligned) N-dimensional bounding box.
+    @tparam D Dimension in which the bounding box lives.  Usually one of [1,2,3].
+   */
   template<long D> class IsotheticBBox 
   {
     public:
+       /// Default constructor.
       IsotheticBBox() { clearBox(); }
       // Size functions
+      /// Sets bounding box limits to the largest and smallest doubles.
       void clear() { clearBox(); }
+      /// Tests if the bounding box contains space.
       bool empty() const { return min[0] == REAL_MAX; }
 
       // Functions to add new elements to the box
+      /// Update the bounding box by adding an additional Point.
       void add(const Point<D>& p) {
         if(empty()) {
           min = p; max = p;
@@ -49,12 +56,13 @@ namespace gk {
         }
       }
 
+      /// Update the bounding box by adding the extents of another IsotheticBBox
       void add(const IsotheticBBox<D>& box) {
         add(box.getMin());
         add(box.getMax());
       }
 
-      // Expand the box by an additive constant
+      /// Expand the box by an additive constant
       void bulge(double epsilon) {
         for(long i = 0; i < D; i++) {
           max[i] += epsilon;
@@ -63,20 +71,28 @@ namespace gk {
       }
 
       // Calculate box feature points
+      /// Calculate the Point of the center of the bounding box.
       Point<D> center() const { return Point<D>((min.asV() + max.asV())/2); }
+      /// Calculate the center along the @c axis axis.
       double center(long axis) const { return (min[axis] + max[axis])/2; }
 
+      /// Calculate distance from the origin to the center of the bounding box.
       double radius(bool doSqrt = true) const { 
         const Vector<D> r((max-min)/2);
         return r.norm(doSqrt); 
       }
 
+      /// Return the minimum of the bounding box.
       const Point<D>& getMin() const { return min; }
+      /// Return the minimum of the bonding box along axis @c i.
       double getMin(long i) const { assert(i < D); return min[i]; }
 
+      /// Return the maximum of the bounding box.
       const Point<D>& getMax() const { return max; }
+      /// Return the maximum of the bounding box along axis @c i.
       double getMax(long i) const { assert(i < D); return max[i]; }
 
+      /// Find which axis is the longest of the bounding box.
       long longAxis() const {
         // Find a longest axis
         const Vector<D> diff = max-min;
@@ -90,6 +106,7 @@ namespace gk {
         return maxIdx;
       }
 
+      /// Calculate the volume of the bounding box.
       double volume() const { 
         double result = 1.0;
         for(long i = 0; i < D; i++)  result *= max[i] - min[i];
@@ -97,17 +114,19 @@ namespace gk {
       }
 
       // Intersection predicates
+      /// Determine if the Point @c p is within the bounding box.
       bool intersect(const Point<D>& p) const {
         for(long i = 0; i < D; i++) 
           if(p[i] > max[i] || p[i] < min[i]) return false;
         return true;
       }
 
-        bool intersect(const IsotheticBBox<D>& b) const {
-          for(long i = 0; i < D; i++) 
-            if(b.max[i] < min[i] || b.min[i] > max[i]) return false;
-          return true;
-        }
+      /// Determine if the IsotheticBBox @c b is within the bounding box.
+      bool intersect(const IsotheticBBox<D>& b) const {
+	for(long i = 0; i < D; i++) 
+	  if(b.max[i] < min[i] || b.min[i] > max[i]) return false;
+	return true;
+      }
 
         private:
         Point<D> min,max;
