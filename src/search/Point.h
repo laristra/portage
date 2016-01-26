@@ -28,6 +28,12 @@ const long X = 0;
 const long Y = 1;
 const long Z = 2;
 
+/*!
+  @class Point "Point.h"
+  @brief Represents a point in an N-dimensional space.
+  @tparam D Indicates the dimensionality of the Point (this will generally be one
+  of [1,2,3]).
+ */
 template <long D> class Point
 {
   private: 

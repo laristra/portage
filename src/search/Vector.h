@@ -21,11 +21,12 @@
 namespace gk
 {
 
-/** Represent a vector in N-dimensional space.
-*   
-*   The template argument <D> indicates the dimensionality of the Vector
-*   (this will generally be (1, 2, or 3).  
-*/
+/*!
+  @class Vector "Vector.h"
+  @brief Represents a vector in N-dimensional space
+  @tparam D Indicates the dimensionality of the Vector (this will generally be one
+  of [1, 2, 3]).
+ */
 template <long D> class Vector
 {
   private: 
@@ -33,11 +34,16 @@ template <long D> class Vector
 
   public:
 
+    /// Default constructor - zero Vector in D-space.
     inline Vector() {
       for (long i=0;i<D;i++)
         m_comp[i] = 0.0;
     }
 
+    /*!
+      @brief Specialized constructor for 2d Vectors.
+      @param[in] xm_comp,ym_comp The (x,y) coordinate pair.
+     */
     inline Vector(const double& xm_comp, 
                   const double& ym_comp)
       {
@@ -46,6 +52,10 @@ template <long D> class Vector
         m_comp[1] = ym_comp;
       }
 
+    /*!
+      @brief Specialized constructor for 3d Vectors.
+      @param[in] xm_comp,ym_comp,zm_comp The (x,y,z) coordinate triple.
+     */
     inline Vector(const double& xm_comp, 
                   const double& ym_comp, 
                   const double& zm_comp)
@@ -56,42 +66,51 @@ template <long D> class Vector
         m_comp[2] = zm_comp;
       }
 
+    /// Return component @c i of the Vector.
     inline const double& operator[](const long& i) const
       {
         return m_comp[i]; 
       }
 
+    /// Return component @c i of the Vector.
     inline double& operator[](const long& i)
       {
         return m_comp[i]; 
       }
 
-    ///
+    /// Add the Vector @c rhs to this Vector.
     Vector& operator+=(const Vector<D>& rhs) 
       {
         for(long i = 0; i < D; i++) m_comp[i] += rhs.m_comp[i];
         return *this;
       }
 
-    ///
+    /// Subtract the Vector @c rhs from this vector.
     Vector& operator-=(const Vector<D>& rhs) 
       {
         for(long i = 0; i < D; i++) m_comp[i] -= rhs.m_comp[i];
         return *this;
       }
 
+    /// Scalar multiplication of this Vector by @c s.
     Vector& operator*=(const double& s) 
       {
         for(long i = 0; i < D; i++) m_comp[i] *= s;
         return *this;
       }
 
+    /// Scalar division of this Vector by @c s.
     Vector& operator/=(const double& s) 
       {
         for(long i = 0; i < D; i++) m_comp[i] /= s;
         return *this;
       }
 
+    /*!
+      @brief Calculate the norm of a Vector.
+      @param[in] doSqrt OPTIONAL: Return the square root of the norm, i.e. the
+      magnitude of the Vector.
+     */
     double norm(bool doSqrt = true) const 
       {
         double result = 0.0;
@@ -100,26 +119,31 @@ template <long D> class Vector
         return result;
       }
 
-    ///
+    /// Convert this Vector into a unit Vector.
     void normalize() 
       {
         double s = norm();
         *this /= s;
       }
 
-    ///
+    /// Convert this Vector into a zero Vector.
     void zero() 
       {
         for(long i = 0; i < D; i++) m_comp[i] = 0;
       }
 
+    /*!
+      @brief Convenience method for constructing a unit Vector along a particular
+      axis
+      @param[in] nonZero The coordinate axis along which the Vector should point.
+     */
     void axis(long nonZero) 
       {
         zero();
         m_comp[nonZero] = 1;
       }
 
-    ///
+    /// Read in a Vector from an input stream.
     std::istream& readFromStream(std::istream& is)
       {
         for (long i=0;i<D;i++)
@@ -127,7 +151,7 @@ template <long D> class Vector
         return is;
       }
 
-    ///
+    /// Pretty printing of a Vector to an output stream.
     std::ostream& writeToStream(std::ostream& os)
       {
         for (long i=0;i<D;i++)
