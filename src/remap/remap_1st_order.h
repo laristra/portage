@@ -6,9 +6,22 @@
 #ifndef REMAP_1STORDER_H
 #define REMAP_1STORDER_H
 
+
+#include <cassert>
+
+#include "portage/wrappers/mesh/jali/jali_mesh_wrapper.h"
+#include "portage/wrappers/state/jali/jali_state_wrapper.h"
+
+namespace Portage {
+
+// Template on variable type ??
+
 /*!
-  \class Remap_1stOrder remap_1st_order.h
-  \brief Remap_1stOrder does a 1st order remap of scalars
+  @class Remap_1stOrder remap_1st_order.h
+  @brief Remap_1stOrder does a 1st order remap of scalars
+  @tparam StateType The type of the state manager used to access data.
+  @tparam OnWhatType The type of entity-based data we wish to remap; e.g. does
+  it live on nodes, cells, edges, etc.
 
   Viewed simply, the value at target cell is the weighted average of
   values on from source entities and therefore, this can work for
@@ -41,20 +54,17 @@
   pp. 305-321, 1987.
 
 */
-
-#include <cassert>
-
-#include "portage/wrappers/mesh/jali/jali_mesh_wrapper.h"
-#include "portage/wrappers/state/jali/jali_state_wrapper.h"
-
-namespace Portage {
-
-// Template on variable type ??
-
 template<typename MeshType, typename StateType, typename OnWhatType>
 class Remap_1stOrder {
  public:
-  
+
+  /*!
+    @brief Constructor.
+    @param[in] source_mesh The input mesh.
+    @param[in] source_state The state manager for data on the input mesh.
+    @param[in] on_what The location where the data lives; e.g. on cells, nodes, edges, etc.
+    @param[in] remap_var_name The string name of the variable to remap.
+   */
   Remap_1stOrder(MeshType const & source_mesh, StateType const & source_state,
                  OnWhatType const on_what, std::string const remap_var_name) :
       source_mesh_(source_mesh), 
@@ -67,22 +77,26 @@ class Remap_1stOrder {
   }
 
 
-  //! Copy constructor (disabled)
+  /// Copy constructor (disabled)
   Remap_1stOrder(const Remap_1stOrder &) = delete;
   
-  //! Assignment operator (disabled)
+  /// Assignment operator (disabled)
   Remap_1stOrder & operator = (const Remap_1stOrder &) = delete;
 
-  //! Destructor
+  /// Destructor
   ~Remap_1stOrder() {}
 
   
-  // Remap functor - Need to make a pair from the vector of source
-  // cells that contribute to the the target cell value and the
-  // contribution weights associated with each source cell. Source
-  // cells may be repeated in the list if the intersection of a target
-  // cell and a source cell consists of two or more disjoint pieces
-
+  /*!
+    @brief Functor to do the actual remap calculation.
+    @param[in] cells_and_weights The pair of 
+    
+    Remap functor - Need to make a pair from the vector of source
+    cells that contribute to the the target cell value and the
+    contribution weights associated with each source cell. Source
+    cells may be repeated in the list if the intersection of a target
+    cell and a source cell consists of two or more disjoint pieces
+   */
   double 
   operator() (std::pair<std::vector<int> const &, 
               std::vector< std::vector<double> > const &> cells_and_weights) const;
