@@ -24,11 +24,6 @@ namespace Portage {
 template <typename SourceMeshType, typename TargetMeshType=SourceMeshType>
 class IntersectR3D {
 public:
-  typedef std::tuple<double, double, double> Point;
-  typedef std::vector<Point> Poly;
-  //Provide volume and centroid
-  typedef std::pair<double, Point> Moment;
-
   IntersectR3D(const SourceMeshType &s, const TargetMeshType &t)
     : sourceMeshWrapper(s), targetMeshWrapper(t) {}
 
