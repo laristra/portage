@@ -78,7 +78,9 @@ cmake \
   ..
 make -j2
 ctest --output-on-failure
-valgrind --gen-suppressions=all --suppressions=../jenkins/portage_valgrind.supp --error-exitcode=1 --leak-check=full test/intersectClipper
+for test_name in intersectClipper test_matfuncs; do
+  valgrind --gen-suppressions=all --suppressions=../jenkins/portage_valgrind.supp --error-exitcode=1 --leak-check=full test/$test_name
+done
 
 
 # Build Portage without Thrust
