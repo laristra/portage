@@ -105,7 +105,7 @@ public:
     return moments_all;
   }
 
-  IntersectR3D() {}
+  IntersectR3D() = delete;
 
   //! Copy constructor (disabled)
   IntersectR3D(const IntersectR3D &) = delete;
