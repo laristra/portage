@@ -60,13 +60,13 @@ int main(int argc, char** argv)
 
   Jali::MeshFactory mf(MPI_COMM_WORLD);
 
-  std::unique_ptr<Jali::Mesh> inputMesh = std::unique_ptr<Jali::Mesh>(mf(argv[2],
+  const std::unique_ptr<Jali::Mesh> inputMesh = std::unique_ptr<Jali::Mesh>(mf(argv[2],
       NULL, true, true, true, true));
-  Jali_Mesh_Wrapper inputMeshWrapper(*inputMesh);
+  const Jali_Mesh_Wrapper inputMeshWrapper(*inputMesh);
 
-  std::unique_ptr<Jali::Mesh> targetMesh = std::unique_ptr<Jali::Mesh>(mf(argv[3],
+  const std::unique_ptr<Jali::Mesh> targetMesh = std::unique_ptr<Jali::Mesh>(mf(argv[3],
       NULL, true, true, true, true));
-  Jali_Mesh_Wrapper targetMeshWrapper(*targetMesh);
+  const Jali_Mesh_Wrapper targetMeshWrapper(*targetMesh);
 
   std::cout << "Target mesh stats: " << targetMeshWrapper.num_owned_cells() << " " << targetMeshWrapper.num_owned_nodes() << std::endl;
 
@@ -102,11 +102,11 @@ int main(int argc, char** argv)
   #endif
 
   sourceState.add("celldata", (example == 0) || (example == 2) ? Jali::CELL : Jali::NODE, &(sourceData[0]));
-  Jali_State_Wrapper sourceStateWrapper(sourceState);
+  const Jali_State_Wrapper sourceStateWrapper(sourceState);
 
   Jali::State targetState(targetMesh.get());
   std::vector<double> targetData(targetMeshWrapper.num_owned_cells(), 0);
-  Jali::StateVector<double> & cellvecout = targetState.add("celldata", (example == 0) || (example == 2) ? Jali::CELL : Jali::NODE, &(targetData[0]));
+  const Jali::StateVector<double> & cellvecout = targetState.add("celldata", (example == 0) || (example == 2) ? Jali::CELL : Jali::NODE, &(targetData[0]));
   Jali_State_Wrapper targetStateWrapper(targetState);
 
   std::vector<std::string> remap_fields;
@@ -127,8 +127,8 @@ int main(int argc, char** argv)
   // Create a dual mesh for node-centered examples
   else if ((example == 1) || (example == 3))
   {
-    Portage::MeshWrapperDual sourceDualMeshWrapper(inputMeshWrapper);
-    Portage::MeshWrapperDual targetDualMeshWrapper(targetMeshWrapper);
+    const Portage::MeshWrapperDual sourceDualMeshWrapper(inputMeshWrapper);
+    const Portage::MeshWrapperDual targetDualMeshWrapper(targetMeshWrapper);
 
     Portage::Driver<Portage::MeshWrapperDual> d(Portage::NODE, sourceDualMeshWrapper, sourceStateWrapper,
                                                                targetDualMeshWrapper, targetStateWrapper);
