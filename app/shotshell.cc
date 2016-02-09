@@ -60,17 +60,17 @@ int main(int argc, char** argv)
 
   Jali::MeshFactory mf(MPI_COMM_WORLD);
 
-  Jali::Mesh *inputMesh = mf(argv[2],
-      NULL, true, true, true, true);
+  std::unique_ptr<Jali::Mesh> inputMesh = std::unique_ptr<Jali::Mesh>(mf(argv[2],
+      NULL, true, true, true, true));
   Jali_Mesh_Wrapper inputMeshWrapper(*inputMesh);
 
-  Jali::Mesh* targetMesh = mf(argv[3],
-      NULL, true, true, true, true);
+  std::unique_ptr<Jali::Mesh> targetMesh = std::unique_ptr<Jali::Mesh>(mf(argv[3],
+      NULL, true, true, true, true));
   Jali_Mesh_Wrapper targetMeshWrapper(*targetMesh);
 
   std::cout << "Target mesh stats: " << targetMeshWrapper.num_owned_cells() << " " << targetMeshWrapper.num_owned_nodes() << std::endl;
 
-  Jali::State sourceState(inputMesh);
+  Jali::State sourceState(inputMesh.get());
   std::vector<double> sourceData(inputMeshWrapper.num_owned_cells(), 0);
 
   #ifdef FIXED_SIZE_EXAMPLE
@@ -104,7 +104,7 @@ int main(int argc, char** argv)
   Jali::StateVector<double> & cellvecin = sourceState.add("celldata", (example == 0) || (example == 2) ? Jali::CELL : Jali::NODE, &(sourceData[0]));
   Jali_State_Wrapper sourceStateWrapper(sourceState);
 
-  Jali::State targetState(targetMesh);
+  Jali::State targetState(targetMesh.get());
   std::vector<double> targetData(targetMeshWrapper.num_owned_cells(), 0);
   Jali::StateVector<double> & cellvecout = targetState.add("celldata", (example == 0) || (example == 2) ? Jali::CELL : Jali::NODE, &(targetData[0]));
   Jali_State_Wrapper targetStateWrapper(targetState);
@@ -147,11 +147,11 @@ int main(int argc, char** argv)
   #ifdef OUTPUT_RESULTS
     std::cerr << "Saving the source mesh" << std::endl;
     sourceState.export_to_mesh();
-    dynamic_cast<Jali::Mesh_MSTK*>(inputMesh)->write_to_exodus_file("input.exo");
+    dynamic_cast<Jali::Mesh_MSTK*>(inputMesh.get())->write_to_exodus_file("input.exo");
 
     std::cerr << "Saving the target mesh" << std::endl;
     targetState.export_to_mesh();
-    dynamic_cast<Jali::Mesh_MSTK*>(targetMesh)->write_to_exodus_file("output.exo");
+    dynamic_cast<Jali::Mesh_MSTK*>(targetMesh.get())->write_to_exodus_file("output.exo");
   #endif
 
   std::printf("finishing shotshellapp...\n");
