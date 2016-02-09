@@ -101,7 +101,7 @@ int main(int argc, char** argv)
     }
   #endif
 
-  Jali::StateVector<double> & cellvecin = sourceState.add("celldata", (example == 0) || (example == 2) ? Jali::CELL : Jali::NODE, &(sourceData[0]));
+  sourceState.add("celldata", (example == 0) || (example == 2) ? Jali::CELL : Jali::NODE, &(sourceData[0]));
   Jali_State_Wrapper sourceStateWrapper(sourceState);
 
   Jali::State targetState(targetMesh.get());
