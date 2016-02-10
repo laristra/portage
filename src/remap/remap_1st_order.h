@@ -89,13 +89,22 @@ class Remap_1stOrder {
   
   /*!
     @brief Functor to do the actual remap calculation.
-    @param[in] cells_and_weights The pair of 
+    @param[in] cells_and_weights A pair of two vectors.
+    @c cells_and_weights.first() is the vector of cell indices in the source
+    mesh that will contribute to the current target mesh cell.
+    @c cells_and_weights.second() is the vector of vector weights for each
+    of the source mesh cells in @c cells_and_weights.first().  Each element
+    of the weights vector is a moment of the source data over the target
+    cell; for first order remap, only the first element (or zero'th moment)
+    of the weights vector (i.e. the volume of intersection) is used.
     
     Remap functor - Need to make a pair from the vector of source
     cells that contribute to the the target cell value and the
     contribution weights associated with each source cell. Source
     cells may be repeated in the list if the intersection of a target
     cell and a source cell consists of two or more disjoint pieces
+
+    @todo Cleanup the datatype for cells_and_weights - it is somewhat confusing.
    */
   double 
   operator() (std::pair<std::vector<int> const &, 
