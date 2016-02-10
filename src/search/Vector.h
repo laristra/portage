@@ -136,7 +136,7 @@ template <long D> class Vector
       @brief Convenience method for constructing a unit Vector along a particular
       axis
       @param[in] nonZero The coordinate axis along which the Vector should point.
-     */
+    */
     void axis(long nonZero) 
       {
         zero();
