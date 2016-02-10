@@ -47,16 +47,23 @@ class MeshWrapperDual { // cellid is the dual cell (i.e. node) id
   */
   MeshWrapperDual(const Jali_Mesh_Wrapper &w) : w_(w) {}
 
-  /// Get the spatial dimensions of the mesh.
+  /*!
+    @brief Get the spatial dimensions of the mesh.
+    @return The spatial dimension of the mesh.
+  */
   int space_dimension() const { return w_.space_dimension(); }
 
 
-  /// Get the number of cells on this processor.
+  /*!
+    @brief Get the number of cells on this processor.
+    @return The number of cells owned on this processor.
+  */
   int num_owned_cells() const { return w_.num_owned_nodes(); }
 
   /*!
     @brief Get the number of ghost (at domain boundaries @e and processor boundaries)
     cells for this processor.
+    @return The number of ghost cells on this processor.
   */
   int num_ghost_cells() const { return w_.num_ghost_nodes(); }
 
@@ -88,6 +95,8 @@ class MeshWrapperDual { // cellid is the dual cell (i.e. node) id
     in the dual mesh.
     @param[in] entity Which type of data do you want to iterate over (e.g.
     @c CELL, @c NODE, etc.)
+    @return An iterator pointing to the beginning of the list of @c entity data
+    for this mesh.
    */
   counting_iterator begin(Entity_kind const entity) const {
     if (entity == NODE) return w_.begin(CELL);
@@ -99,6 +108,8 @@ class MeshWrapperDual { // cellid is the dual cell (i.e. node) id
     the dual mesh.
     @param[in] entity Which type of data do you want to iterate over (e.g.
     @c CELL, @c NODE, etc.)
+    @return An iterator pointing to the end of the list of @c entity data for
+    this mesh.
    */
   counting_iterator end(Entity_kind const entity) const {
     if (entity == NODE) return w_.end(CELL);
@@ -251,7 +262,10 @@ class Driver
   }
   
 
-  /// Get the names of the variables to be remapped
+  /*!
+    @brief Get the names of the variables to be remapped.
+    @return A vector of variable names to be remapped.
+  */
   std::vector<std::string> remap_var_names() {
     return remap_var_names_;
   }
@@ -261,11 +275,18 @@ class Driver
     remap_order_ = order;
   }
   
-  /// Get the order of accuracy of remap
+  /*!
+    @brief Get the order of accuracy of remap
+    @return The order of accuracy for the remap.
+  */
   unsigned int remap_order() {
     return remap_order_;
   }
 
+  /*!
+    @brief Get the dimensionality of the meshes.
+    @return The dimensionality of the meshes.
+   */
   unsigned int dim() {
     return dim_;
   }
