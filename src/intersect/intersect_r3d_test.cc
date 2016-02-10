@@ -7,12 +7,12 @@ TEST(intersectR3D, simple1) {
   Jali::MeshFactory mf(MPI_COMM_WORLD);
   Jali::Mesh* sm = mf(0,0,0, 2,2,2, 1,1,1, NULL, true, true, true, true);
   Jali::Mesh* tm = mf(1,1,1, 2,2,2, 1,1,1, NULL, true, true, true, true);
-  Portage::Jali_Mesh_Wrapper s(*sm);
-  Portage::Jali_Mesh_Wrapper t(*tm);
+  const Portage::Jali_Mesh_Wrapper s(*sm);
+  const Portage::Jali_Mesh_Wrapper t(*tm);
 
   const double eps = 1e-12;
-  Portage::IntersectR3D<Portage::Jali_Mesh_Wrapper> isect{s , t};
-  std::vector<std::vector<double> > moments = isect(0, 0);
+  const Portage::IntersectR3D<Portage::Jali_Mesh_Wrapper> isect{s , t};
+  const std::vector<std::vector<double> > moments = isect(0, 0);
   for(int i=0;i<moments.size();i++){
     for(int j=0;j<moments[i].size();j++){
       std::cout << "i, j, m " << i << ", " << j << ", " << moments[i][j] << std::endl;
@@ -32,12 +32,12 @@ TEST(intersectR3D, simple2) {
   Jali::MeshFactory mf(MPI_COMM_WORLD);
   Jali::Mesh* sm = mf(0,0,0, 2,2,2, 1,1,1, NULL, true, true, true, true);
   Jali::Mesh* tm = mf(0,0,0, 2,2,2, 1,1,1, NULL, true, true, true, true);
-  Portage::Jali_Mesh_Wrapper s(*sm);
-  Portage::Jali_Mesh_Wrapper t(*tm);
+  const Portage::Jali_Mesh_Wrapper s(*sm);
+  const Portage::Jali_Mesh_Wrapper t(*tm);
 
   const double eps = 1e-12;
-  Portage::IntersectR3D<Portage::Jali_Mesh_Wrapper> isect{s , t};
-  std::vector<std::vector<double> > moments = isect(0, 0);
+  const Portage::IntersectR3D<Portage::Jali_Mesh_Wrapper> isect{s , t};
+  const std::vector<std::vector<double> > moments = isect(0, 0);
   for(int i=0;i<moments.size();i++){
     for(int j=0;j<moments[i].size();j++){
       std::cout << "i, j, m " << i << ", " << j << ", " << moments[i][j] << std::endl;
@@ -57,12 +57,12 @@ TEST(intersectR3D, simple3) {
   Jali::MeshFactory mf(MPI_COMM_WORLD);
   Jali::Mesh* sm = mf(0,0,0, 3,3,3, 1,1,1, NULL, true, true, true, true);
   Jali::Mesh* tm = mf(1,1,1, 2,2,2, 1,1,1, NULL, true, true, true, true);
-  Portage::Jali_Mesh_Wrapper s(*sm);
-  Portage::Jali_Mesh_Wrapper t(*tm);
+  const Portage::Jali_Mesh_Wrapper s(*sm);
+  const Portage::Jali_Mesh_Wrapper t(*tm);
 
   const double eps = 1e-12;
-  Portage::IntersectR3D<Portage::Jali_Mesh_Wrapper> isect{s , t};
-  std::vector<std::vector<double> > moments = isect(0, 0);
+  const Portage::IntersectR3D<Portage::Jali_Mesh_Wrapper> isect{s , t};
+  const std::vector<std::vector<double> > moments = isect(0, 0);
   for(int i=0;i<moments.size();i++){
     for(int j=0;j<moments[i].size();j++){
       std::cout << "i, j, m " << i << ", " << j << ", " << moments[i][j] << std::endl;
@@ -82,12 +82,12 @@ TEST(intersectR3D, simple4) {
   Jali::MeshFactory mf(MPI_COMM_WORLD);
   Jali::Mesh* sm = mf(0,0,0, 2,2,2, 1,1,1, NULL, true, true, true, true);
   Jali::Mesh* tm = mf(1,1,1, 3,3,3, 1,1,1, NULL, true, true, true, true);
-  Portage::Jali_Mesh_Wrapper s(*sm);
-  Portage::Jali_Mesh_Wrapper t(*tm);
+  const Portage::Jali_Mesh_Wrapper s(*sm);
+  const Portage::Jali_Mesh_Wrapper t(*tm);
 
   const double eps = 1e-12;
-  Portage::IntersectR3D<Portage::Jali_Mesh_Wrapper> isect{s , t};
-  std::vector<std::vector<double> > moments = isect(0, 0);
+  const Portage::IntersectR3D<Portage::Jali_Mesh_Wrapper> isect{s , t};
+  const std::vector<std::vector<double> > moments = isect(0, 0);
   for(int i=0;i<moments.size();i++){
     for(int j=0;j<moments[i].size();j++){
       std::cout << "i, j, m " << i << ", " << j << ", " << moments[i][j] << std::endl;
@@ -107,12 +107,12 @@ TEST(intersectR3D, simple5) {
   Jali::MeshFactory mf(MPI_COMM_WORLD);
   Jali::Mesh* sm = mf(0,0,0, 10,10,10, 1,1,1, NULL, true, true, true, true);
   Jali::Mesh* tm = mf(-5,-5,-5, 5,5,5, 1,1,1, NULL, true, true, true, true);
-  Portage::Jali_Mesh_Wrapper s(*sm);
-  Portage::Jali_Mesh_Wrapper t(*tm);
+  const Portage::Jali_Mesh_Wrapper s(*sm);
+  const Portage::Jali_Mesh_Wrapper t(*tm);
 
   const double eps = 1e-12;
-  Portage::IntersectR3D<Portage::Jali_Mesh_Wrapper> isect{s , t};
-  std::vector<std::vector<double> > moments = isect(0, 0);
+  const Portage::IntersectR3D<Portage::Jali_Mesh_Wrapper> isect{s , t};
+  const std::vector<std::vector<double> > moments = isect(0, 0);
   for(int i=0;i<moments.size();i++){
     for(int j=0;j<moments[i].size();j++){
       std::cout << "i, j, m " << i << ", " << j << ", " << moments[i][j] << std::endl;
@@ -132,11 +132,11 @@ TEST(intersectR3D, simple6) {
   Jali::MeshFactory mf(MPI_COMM_WORLD);
   Jali::Mesh* sm = mf(0,0,0, 10,10,10, 5,5,5, NULL, true, true, true, true);
   Jali::Mesh* tm = mf(0,0,0, 10,10,10, 2,2,2, NULL, true, true, true, true);
-  Portage::Jali_Mesh_Wrapper s(*sm);
-  Portage::Jali_Mesh_Wrapper t(*tm);
+  const Portage::Jali_Mesh_Wrapper s(*sm);
+  const Portage::Jali_Mesh_Wrapper t(*tm);
 
   const double eps = 1e-12;
-  Portage::IntersectR3D<Portage::Jali_Mesh_Wrapper> isect{s , t};
+  const Portage::IntersectR3D<Portage::Jali_Mesh_Wrapper> isect{s , t};
   std::vector<std::vector<double> > moments = isect(0, 0);
   for(int i=0;i<moments.size();i++){
     for(int j=0;j<moments[i].size();j++){
@@ -188,12 +188,12 @@ TEST(intersectR3D, simple7) {
   Jali::MeshFactory mf(MPI_COMM_WORLD);
   Jali::Mesh* sm = mf(-2,-2,-2, 0,0,0, 1,1,1, NULL, true, true, true, true);
   Jali::Mesh* tm = mf(-1,-1,-1, 0,0,0, 1,1,1, NULL, true, true, true, true);
-  Portage::Jali_Mesh_Wrapper s(*sm);
-  Portage::Jali_Mesh_Wrapper t(*tm);
+  const Portage::Jali_Mesh_Wrapper s(*sm);
+  const Portage::Jali_Mesh_Wrapper t(*tm);
 
   const double eps = 1e-12;
-  Portage::IntersectR3D<Portage::Jali_Mesh_Wrapper> isect{s , t};
-  std::vector<std::vector<double> > moments = isect(0, 0);
+  const Portage::IntersectR3D<Portage::Jali_Mesh_Wrapper> isect{s , t};
+  const std::vector<std::vector<double> > moments = isect(0, 0);
   for(int i=0;i<moments.size();i++){
     for(int j=0;j<moments[i].size();j++){
       std::cout << "i, j, m " << i << ", " << j << ", " << moments[i][j] << std::endl;
@@ -213,12 +213,12 @@ TEST(intersectR3D, simple8) {
   Jali::MeshFactory mf(MPI_COMM_WORLD);
   Jali::Mesh* sm = mf(-4,-4,-4, 0,0,0, 1,1,1, NULL, true, true, true, true);
   Jali::Mesh* tm = mf(-3,-3,-3, 0,0,0, 1,1,1, NULL, true, true, true, true);
-  Portage::Jali_Mesh_Wrapper s(*sm);
-  Portage::Jali_Mesh_Wrapper t(*tm);
+  const Portage::Jali_Mesh_Wrapper s(*sm);
+  const Portage::Jali_Mesh_Wrapper t(*tm);
 
   const double eps = 1e-12;
-  Portage::IntersectR3D<Portage::Jali_Mesh_Wrapper> isect{s , t};
-  std::vector<std::vector<double> > moments = isect(0, 0);
+  const Portage::IntersectR3D<Portage::Jali_Mesh_Wrapper> isect{s , t};
+  const std::vector<std::vector<double> > moments = isect(0, 0);
   for(int i=0;i<moments.size();i++){
     for(int j=0;j<moments[i].size();j++){
       std::cout << "i, j, m " << i << ", " << j << ", " << moments[i][j] << std::endl;
@@ -238,12 +238,12 @@ TEST(intersectR3D, simple9) {
   Jali::MeshFactory mf(MPI_COMM_WORLD);
   Jali::Mesh* sm = mf(-4,-3,-2, 0,1,2, 1,1,1, NULL, true, true, true, true);
   Jali::Mesh* tm = mf(-3,-2,-1, 0,1,2, 1,1,1, NULL, true, true, true, true);
-  Portage::Jali_Mesh_Wrapper s(*sm);
-  Portage::Jali_Mesh_Wrapper t(*tm);
+  const Portage::Jali_Mesh_Wrapper s(*sm);
+  const Portage::Jali_Mesh_Wrapper t(*tm);
 
   const double eps = 1e-12;
-  Portage::IntersectR3D<Portage::Jali_Mesh_Wrapper> isect{s , t};
-  std::vector<std::vector<double> > moments = isect(0, 0);
+  const Portage::IntersectR3D<Portage::Jali_Mesh_Wrapper> isect{s , t};
+  const std::vector<std::vector<double> > moments = isect(0, 0);
   for(int i=0;i<moments.size();i++){
     for(int j=0;j<moments[i].size();j++){
       std::cout << "i, j, m " << i << ", " << j << ", " << moments[i][j] << std::endl;
