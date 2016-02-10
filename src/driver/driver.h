@@ -9,7 +9,8 @@
 #include<algorithm>
 #include<vector>
 #include<iterator>
-#include <sys/time.h>
+#include<sys/time.h>
+#include<cstdlib>
 
 #include "portage/support/portage.h"
 #include "portage/wrappers/state/jali/jali_state_wrapper.h"
@@ -38,7 +39,6 @@ namespace Portage {
     Utilizes a Jali_Mesh_Wrapper to the original mesh, but treats
     the nodes of the original mesh as the centroids of the dual mesh.
  */
-
 class MeshWrapperDual { // cellid is the dual cell (i.e. node) id
  public:
 
@@ -233,13 +233,13 @@ class Driver
     assert(sourceMesh.space_dimension() == targetMesh.space_dimension());
   }
   
-  //! Copy constructor (disabled)
+  /// Copy constructor (disabled)
   Driver(const Driver &) = delete;
   
-  //! Assignment operator (disabled)
+  /// Assignment operator (disabled)
   Driver & operator = (const Driver &) = delete;
   
-  //! Destructor
+  /// Destructor
   ~Driver() {}
   
   /*!
@@ -252,17 +252,17 @@ class Driver
   }
   
 
-  //! Get the names of the variables to be remapped
+  /// Get the names of the variables to be remapped
   std::vector<std::string> remap_var_names() {
     return remap_var_names_;
   }
   
-  //! Set the order of accuracy of remap
+  /// Set the order of accuracy of remap
   void set_remap_order(unsigned int const order) {
     remap_order_ = order;
   }
   
-  //! Get the order of accuracy of remap
+  /// Get the order of accuracy of remap
   unsigned int remap_order() {
     return remap_order_;
   }
@@ -356,21 +356,20 @@ class Driver
       } // done first order remap
       else {
       
-	if (remap_order() != 2)
+	if (remap_order() != 2) {
 	  std::cerr << 
             "Remap order can be 1 or 2 only. Doing 2nd order remap" << 
             std::endl;
-	std::exit(1);
-      }
-
-
+	  std::exit(1);
+	}
+	
 	std::cout << "Remapping variable " << remap_var_names_[0]
 		  << " using a 2nd order accurate algorithm" << std::endl;
       
-      /// @todo Eventually put this in a loop over remap variable names as well
-      // Assume for now that we are only doing cell-based remap
-      const Remap_2ndOrder<Mesh_Wrapper,Jali_State_Wrapper,Entity_kind> 
-	remap(source_mesh_, source_state_, remap_entity_, remap_var_names_[0],
+	/// @todo Eventually put this in a loop over remap variable names as well
+	// Assume for now that we are only doing cell-based remap
+	const Remap_2ndOrder<Mesh_Wrapper,Jali_State_Wrapper,Entity_kind> 
+	  remap(source_mesh_, source_state_, remap_entity_, remap_var_names_[0],
                 NOLIMITER);
           
 	composerFunctor<SearchKDTree2<Mesh_Wrapper,Mesh_Wrapper>,
