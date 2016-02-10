@@ -9,13 +9,15 @@
 #include<algorithm>
 #include<vector>
 #include<iterator>
-#include<cstdlib>
+#include <sys/time.h>
 
 #include "portage/support/portage.h"
 #include "portage/wrappers/state/jali/jali_state_wrapper.h"
 #include "portage/wrappers/mesh/jali/jali_mesh_wrapper.h"
 #include "portage/search/search_kdtree2.h"
+#include "portage/search/search_kdtree3.h"
 #include "portage/intersect/intersectClipper.h"
+#include "portage/intersect/intersect_r3d.h"
 #include "portage/remap/remap_1st_order.h"
 #include "portage/remap/remap_2nd_order.h"
 
@@ -60,6 +62,12 @@ class MeshWrapperDual { // cellid is the dual cell (i.e. node) id
   void cell_get_coordinates(int const dualcellid,
                             std::vector<std::pair<double,double> > *xylist) const {
     w_.dual_cell_get_coordinates(dualcellid, xylist);
+  }
+
+  // 3d version
+  void cell_get_coordinates(int const dualcellid,
+			    std::vector<std::tuple<double,double,double> > *xyzlist) const {
+    w_.dual_cell_get_coordinates(dualcellid, xyzlist);
   }
 
   /*!
@@ -149,6 +157,10 @@ class MeshWrapperDual { // cellid is the dual cell (i.e. node) id
   void dual_cell_centroid(int const dualnodeID, std::vector<double> *centroid) const {
     w_.cell_centroid(dualnodeID, centroid);
   }
+  void wedges_get_coordinates(int const dualcellid,
+			      std::vector<std::array<std::array<double, 3>, 4> > *wcoords) const {
+    w_.dual_wedges_get_coordinates(dualcellid, wcoords);
+  }
 
 private:
     const Jali_Mesh_Wrapper &w_;
@@ -187,8 +199,10 @@ class Driver
       : remap_entity_(remapEntity), 
         source_mesh_(sourceMesh), source_state_(sourceState),
         target_mesh_(targetMesh), target_state_(targetState),
-        remap_order_(1)
-  {}
+        remap_order_(1), dim_(sourceMesh.space_dimension())
+  {
+    assert(sourceMesh.space_dimension() == targetMesh.space_dimension());
+  }
   
   //! Copy constructor (disabled)
   Driver(const Driver &) = delete;
@@ -223,6 +237,10 @@ class Driver
   unsigned int remap_order() {
     return remap_order_;
   }
+
+  unsigned int dim() {
+    return dim_;
+  }
   
   /*!
     @brief This method calls the search, intersect, and remap routines
@@ -235,101 +253,251 @@ class Driver
   void run()
   {
     std::printf("in Driver::run()...\n");
+
+    // FIXME: most of this is duplicated for 3d...
+    if (dim() == 2) {
+      // 2d
     
-    // Get an instance of the desired search algorithm type
-    const SearchKDTree2<Mesh_Wrapper,Mesh_Wrapper>
+      // Get an instance of the desired search algorithm type
+      const SearchKDTree2<Mesh_Wrapper,Mesh_Wrapper>
         search(source_mesh_, target_mesh_);
     
-    // Get an instance of the desired intersect algorithm type
-    const IntersectClipper<Mesh_Wrapper, Mesh_Wrapper>
+      // Get an instance of the desired intersect algorithm type
+      const IntersectClipper<Mesh_Wrapper, Mesh_Wrapper>
         intersect{source_mesh_, target_mesh_};
     
-    int numTargetCells = target_mesh_.num_owned_cells();
-    std::cout << "Number of target cells in target mesh "
-              << numTargetCells << std::endl;
+      int numTargetCells = target_mesh_.num_owned_cells();
+      std::cout << "Number of target cells in target mesh "
+		<< numTargetCells << std::endl;
     
-    // Ask for a StateVector with the name remap_var_names_[0] to be
-    // added to the targetState_. If it is already present, the
-    // existing StateVector reference is returned. If its not present,
-    // it is added. This logic needs to be reversed. The find function
-    // should add it if it is not found (if so requested).
+      // Ask for a StateVector with the name remap_var_names_[0] to be
+      // added to the targetState_. If it is already present, the
+      // existing StateVector reference is returned. If its not present,
+      // it is added. This logic needs to be reversed. The find function
+      // should add it if it is not found (if so requested).
     
-    double *target_field_raw = NULL;
-    target_state_.get_data(remap_entity_,remap_var_names_[0],&target_field_raw);
-    Portage::pointer<double> target_field(target_field_raw);
+      double *target_field_raw = NULL;
+      target_state_.get_data(remap_entity_,remap_var_names_[0],&target_field_raw);
+      Portage::pointer<double> target_field(target_field_raw);
 
-    // Check order of accuracy of remap and do the appropriate thing
+      // Check order of accuracy of remap and do the appropriate thing
 
-    if (remap_order() == 1) {
+      if (remap_order() == 1) {
 
-      std::cout << "Remapping variable " << remap_var_names_[0] << 
-          " using a 1st order accurate algorithm" << std::endl;
+	std::cout << "Remapping variable " << remap_var_names_[0]
+		  << " using a 1st order accurate algorithm" << std::endl;
 
-      // Eventually put this in a loop over remap variable names as well
-      // Assume for now that we are only doing cell-based remap
-      const Remap_1stOrder<Mesh_Wrapper,Jali_State_Wrapper,Entity_kind> 
+	// Eventually put this in a loop over remap variable names as well
+	// Assume for now that we are only doing cell-based remap
+	const Remap_1stOrder<Mesh_Wrapper,Jali_State_Wrapper,Entity_kind> 
           remap(source_mesh_, source_state_, remap_entity_, remap_var_names_[0]);
       
-          
-      // Create a cellIndices vector and populates with a sequence of
-      // ints starting at 0.  
-      composerFunctor<SearchKDTree2<Mesh_Wrapper,Mesh_Wrapper>,
-                      IntersectClipper<Mesh_Wrapper, Mesh_Wrapper>,
-                      Remap_1stOrder<Mesh_Wrapper,Jali_State_Wrapper,Entity_kind> >
+	composerFunctor<SearchKDTree2<Mesh_Wrapper,Mesh_Wrapper>,
+	                IntersectClipper<Mesh_Wrapper, Mesh_Wrapper>,
+	                Remap_1stOrder<Mesh_Wrapper,Jali_State_Wrapper,Entity_kind> >
           composer(&search, &intersect, &remap, remap_var_names_[0]);
 
-      // This populates targetField with the doubles returned from
-      // the final remap For some reason (perhaps some code outside
-      // portage is pulling in a "using thrust" command), the
-      // compiler is not able to disambiguate Portage::transform and
-      // thrust::transform here. So, be explicit that we want
-      // Portage::transform
+	// This populates targetField with the doubles returned from
+	// the final remap For some reason (perhaps some code outside
+	// portage is pulling in a "using thrust" command), the
+	// compiler is not able to disambiguate Portage::transform and
+	// thrust::transform here. So, be explicit that we want
+	// Portage::transform
+
+#ifdef ENABLE_PROFILE
+        __itt_resume();
+#endif
+
+	struct timeval begin, end, diff;
+	gettimeofday(&begin, 0);
+
+	Portage::transform((counting_iterator)(target_mesh_.begin(CELL)),
+			   (counting_iterator)(target_mesh_.end(CELL)),
+			   target_field,composer);
       
-      Portage::transform((counting_iterator)target_mesh_.begin(CELL),
-                         (counting_iterator)target_mesh_.end(CELL),
-                         target_field,composer);
+#ifdef ENABLE_PROFILE
+        __itt_pause();
+#endif
+
+	gettimeofday(&end, 0);
+	timersub(&end, &begin, &diff);
+	float seconds = diff.tv_sec + 1.0E-6*diff.tv_usec;
+	std::cout << "Transform Time: " << seconds << std::endl;
+	
+      } // done first order remap
+      else {
       
-    }
-    else {
-      
-      if (remap_order() != 2) {
-        std::cerr << 
+	if (remap_order() != 2)
+	  std::cerr << 
             "Remap order can be 1 or 2 only. Doing 2nd order remap" << 
             std::endl;
 	std::exit(1);
       }
 
 
-      std::cout << "Remapping variable " << remap_var_names_[0] << 
-          " using a 2nd order accurate algorithm" << std::endl;
+	std::cout << "Remapping variable " << remap_var_names_[0]
+		  << " using a 2nd order accurate algorithm" << std::endl;
       
       /// @todo Eventually put this in a loop over remap variable names as well
       // Assume for now that we are only doing cell-based remap
       const Remap_2ndOrder<Mesh_Wrapper,Jali_State_Wrapper,Entity_kind> 
+	remap(source_mesh_, source_state_, remap_entity_, remap_var_names_[0],
+                NOLIMITER);
+          
+	composerFunctor<SearchKDTree2<Mesh_Wrapper,Mesh_Wrapper>,
+	  IntersectClipper<Mesh_Wrapper, Mesh_Wrapper>,
+	  Remap_2ndOrder<Mesh_Wrapper,Jali_State_Wrapper,Entity_kind> >
+          composer(&search, &intersect, &remap, remap_var_names_[0]);
+      
+	// This populates targetField with the doubles returned from
+	// the final remap For some reason (perhaps some code outside
+	// portage is pulling in a "using thrust" command), the
+	// compiler is not able to disambiguate Portage::transform and
+	// thrust::transform here. So, be explicit that we want
+	// Portage::transform
+      
+#ifdef ENABLE_PROFILE
+        __itt_resume();
+#endif
+
+	struct timeval begin, end, diff;
+	gettimeofday(&begin, 0);
+
+	Portage::transform((counting_iterator)(target_mesh_.begin(CELL)),
+			   (counting_iterator)(target_mesh_.end(CELL)),
+			   target_field,composer);
+
+#ifdef ENABLE_PROFILE
+        __itt_pause();
+#endif
+
+	gettimeofday(&end, 0);
+	timersub(&end, &begin, &diff);
+	float seconds = diff.tv_sec + 1.0E-6*diff.tv_usec;
+	std::cout << "Transform Time: " << seconds << std::endl;
+      }
+
+    }   // done 2d test
+    else {
+      // 3d
+      
+      // Get an instance of the desired search algorithm type
+      const SearchKDTree3<Mesh_Wrapper,Mesh_Wrapper>
+        search(source_mesh_, target_mesh_);
+    
+      // Get an instance of the desired intersect algorithm type
+      const IntersectR3D<Mesh_Wrapper, Mesh_Wrapper>
+        intersect{source_mesh_, target_mesh_};
+    
+      int numTargetCells = target_mesh_.num_owned_cells();
+      std::cout << "Number of target cells in target mesh "
+		<< numTargetCells << std::endl;
+    
+      // Ask for a StateVector with the name remap_var_names_[0] to be
+      // added to the targetState_. If it is already present, the
+      // existing StateVector reference is returned. If its not present,
+      // it is added. This logic needs to be reversed. The find function
+      // should add it if it is not found (if so requested).
+    
+      double *target_field_raw = NULL;
+      target_state_.get_data(remap_entity_,remap_var_names_[0],&target_field_raw);
+      Portage::pointer<double> target_field(target_field_raw);
+
+      // Check order of accuracy of remap and do the appropriate thing
+
+      if (remap_order() == 1) {
+
+	std::cout << "Remapping variable " << remap_var_names_[0]
+		  << " using a 1st order accurate algorithm" << std::endl;
+
+	// Eventually put this in a loop over remap variable names as well
+	// Assume for now that we are only doing cell-based remap
+	const Remap_1stOrder<Mesh_Wrapper,Jali_State_Wrapper,Entity_kind> 
+          remap(source_mesh_, source_state_, remap_entity_, remap_var_names_[0]);
+      
+          
+	composerFunctor<SearchKDTree3<Mesh_Wrapper,Mesh_Wrapper>,
+	                IntersectR3D<Mesh_Wrapper, Mesh_Wrapper>,
+	                Remap_1stOrder<Mesh_Wrapper,Jali_State_Wrapper,Entity_kind> >
+          composer(&search, &intersect, &remap, remap_var_names_[0]);
+
+	// This populates targetField with the doubles returned from
+	// the final remap For some reason (perhaps some code outside
+	// portage is pulling in a "using thrust" command), the
+	// compiler is not able to disambiguate Portage::transform and
+	// thrust::transform here. So, be explicit that we want
+	// Portage::transform
+
+#ifdef ENABLE_PROFILE
+	__itt_resume();
+#endif
+
+	struct timeval begin, end, diff;
+	gettimeofday(&begin, 0);
+
+	Portage::transform((counting_iterator)(target_mesh_.begin(CELL)),
+			   (counting_iterator)(target_mesh_.end(CELL)),
+			   target_field,composer);
+
+#ifdef ENABLE_PROFILE
+	__itt_pause();
+#endif
+
+	gettimeofday(&end, 0);
+	timersub(&end, &begin, &diff);
+	float seconds = diff.tv_sec + 1.0E-6*diff.tv_usec;
+	std::cout << "Transform Time: " << seconds << std::endl;
+      } // done first order remap
+      else {
+      
+      	if (remap_order() != 2)
+      	  std::cerr <<
+            "Remap order can be 1 or 2 only. Doing 2nd order remap" <<
+            std::endl;
+
+      	std::cout << "Remapping variable " << remap_var_names_[0]
+		  << " using a 2nd order accurate algorithm" << std::endl;
+      
+      	// Eventually put this in a loop over remap variable names as well
+      	// Assume for now that we are only doing cell-based remap
+      	const Remap_2ndOrder<Mesh_Wrapper,Jali_State_Wrapper,Entity_kind>
           remap(source_mesh_, source_state_, remap_entity_, remap_var_names_[0],
                 NOLIMITER);
       
           
-      // Create a cellIndices vector and populates with a sequence of
-      // ints starting at 0.  
-      composerFunctor<SearchKDTree2<Mesh_Wrapper,Mesh_Wrapper>,
-                      IntersectClipper<Mesh_Wrapper, Mesh_Wrapper>,
-                      Remap_2ndOrder<Mesh_Wrapper,Jali_State_Wrapper,Entity_kind> >
+      	composerFunctor<SearchKDTree3<Mesh_Wrapper,Mesh_Wrapper>,
+      	                IntersectR3D<Mesh_Wrapper, Mesh_Wrapper>,
+      	                Remap_2ndOrder<Mesh_Wrapper,Jali_State_Wrapper,Entity_kind> >
           composer(&search, &intersect, &remap, remap_var_names_[0]);
       
-      // This populates targetField with the doubles returned from
-      // the final remap For some reason (perhaps some code outside
-      // portage is pulling in a "using thrust" command), the
-      // compiler is not able to disambiguate Portage::transform and
-      // thrust::transform here. So, be explicit that we want
-      // Portage::transform
-      
-      Portage::transform((counting_iterator)target_mesh_.begin(CELL),
-                         (counting_iterator)target_mesh_.end(CELL),
-                         target_field,composer);
-      
-    }
+      	// This populates targetField with the doubles returned from
+      	// the final remap For some reason (perhaps some code outside
+      	// portage is pulling in a "using thrust" command), the
+      	// compiler is not able to disambiguate Portage::transform and
+      	// thrust::transform here. So, be explicit that we want
+      	// Portage::transform
 
+#ifdef ENABLE_PROFILE
+	__itt_resume();
+#endif
+
+	struct timeval begin, end, diff;
+	gettimeofday(&begin, 0);
+
+	Portage::transform((counting_iterator)(target_mesh_.begin(CELL)),
+			   (counting_iterator)(target_mesh_.end(CELL)),
+			   target_field,composer);
+
+#ifdef ENABLE_PROFILE
+	__itt_pause();
+#endif
+
+        gettimeofday(&end, 0);
+	timersub(&end, &begin, &diff);
+	float seconds = diff.tv_sec + 1.0E-6*diff.tv_usec;
+	std::cout << "Transform Time: " << seconds << std::endl;
+      }
+    } // done 3d test
   }
 
 private:
@@ -341,6 +509,7 @@ private:
     std::vector<std::string> remap_var_names_;
     Entity_kind remap_entity_;
     unsigned int remap_order_;
+    unsigned int dim_;
 
 }; // class Driver
 

@@ -6,8 +6,10 @@
 #ifndef PORTAGE_GRADIENT_H
 #define PORTAGE_GRADIENT_H
 
-
 #include "portage/support/matrix.h"
+
+#include <algorithm>
+#include <tuple>
 
 namespace Portage {
 
@@ -144,6 +146,8 @@ class Limited_Gradient {
 
 
 // Limited gradient functor of the Remap_2ndOrder class for each cell
+//! To-do: May want to specialize on OnWhatType to avoid having to use
+//! the "if on_what_ == " check
 
 template<typename MeshType, typename StateType, typename OnWhatType>
 std::vector<double>                          
@@ -152,44 +156,118 @@ Limited_Gradient<MeshType,StateType,OnWhatType> :: operator() (int const cellid)
   std::vector<int> nbrids;
   std::vector<std::vector<double>> cellcenters;
   std::vector<double> cellvalues;
+  std::vector<double> cen, nbrcen;
 
-  if ((Entity_kind) on_what_ == CELL) {
+  //  if ((Entity_kind) on_what_ == CELL) {
     mesh_.cell_get_node_adj_cells(cellid,ALL,&nbrids);
     
-    std::vector<double> cen;
     mesh_.cell_centroid(cellid,&cen);
     cellcenters.emplace_back(cen);
     cellvalues.emplace_back(vals_[cellid]);
     
     for (auto nbrcell : nbrids) {
-      mesh_.cell_centroid(nbrcell,&cen);
-      cellcenters.emplace_back(cen);
+      mesh_.cell_centroid(nbrcell,&nbrcen);
+      cellcenters.emplace_back(nbrcen);
       cellvalues.emplace_back(vals_[nbrcell]);
     }
-  }
-  else if ((Entity_kind) on_what_ == NODE) {
-    // cellid is the ID of the dual cell which is the same as the node
+    //  }
+  // else if ((Entity_kind) on_what_ == NODE) {
+  //   // cellid is the ID of the dual cell which is the same as the node
 
-    mesh_.dual_cell_get_node_adj_cells(cellid,ALL,&nbrids);
+  //   mesh_.dual_cell_get_node_adj_cells(cellid,ALL,&nbrids);
 
-    std::vector<double> cen;
-    mesh_.dual_cell_centroid(cellid,&cen);
-    cellcenters.emplace_back(cen);
-    cellvalues.emplace_back(vals_[cellid]);
+  //   mesh_.dual_cell_centroid(cellid,&cen);
+  //   cellcenters.emplace_back(cen);
+  //   cellvalues.emplace_back(vals_[cellid]);
     
-    for (auto nbrcell : nbrids) {
-      mesh_.dual_cell_centroid(nbrcell,&cen);
-      cellcenters.emplace_back(cen);
-      cellvalues.emplace_back(vals_[nbrcell]);
-    }
-  }
+  //   for (auto nbrcell : nbrids) {
+  //     mesh_.dual_cell_centroid(nbrcell,&cen);
+  //     cellcenters.emplace_back(cen);
+  //     cellvalues.emplace_back(vals_[nbrcell]);
+  //   }
+  // }
   
   std::vector<double> grad = ls_gradient(cellcenters, cellvalues);
 
   
-  //! \todo limiters not implemented yet
-  
-  double phi = 1.0;
+  // Limit the gradient to enforce monotonicity preservation
+
+  double phi;
+  if (limtype_ == NOLIMITER)
+    phi = 1.0;
+  else if (limtype_ == BARTH_JESPERSEN) {
+
+    phi = 1.0;
+
+    // Min and max vals of function (cell centered vals) among neighbors
+    //! To-do: must remove assumption the field is scalar
+
+    double minval = vals_[cellid];
+    double maxval = vals_[cellid];
+
+    int nnbr = nbrids.size();
+    for (int i = 0; i < nnbr; ++i) {
+      minval = std::min(cellvalues[i],minval);
+      maxval = std::max(cellvalues[i],maxval);
+    }
+
+    // Find the min and max of the reconstructed function in the cell
+    // Since the reconstruction is linear, this will occur at one of
+    // the nodes of the cell. So find the values of the reconstructed
+    // function at the nodes of the cell
+
+    int dim = mesh_.space_dimension();
+
+    //! To-do: The following code is exactly why we need Point class
+    double cellcenval = vals_[cellid];
+    if (dim == 1) {
+    }
+    else if (dim == 2) { 
+
+      std::vector<std::pair<double,double>> cellcoords;
+      //      if ((Entity_kind) on_what_ == CELL)
+        mesh_.cell_get_coordinates(cellid,&cellcoords);
+        //      else if ((Entity_kind) on_what_ == NODE)
+        //        mesh_.dual_cell_get_coordinates(cellid,&cellcoords);
+
+      for (auto coord : cellcoords) {
+        // nodeval = cellcenval + grad*(nodecoord-cellcencoord)
+        // diff = nodeval-cellcenval = grad DOT (nodecoord-cellcencoord);
+
+        double diff = grad[0]*(std::get<0>(coord)-cen[0]) + 
+            grad[1]*(std::get<1>(coord)-cen[1]);
+        double extremeval = (diff > 0.0) ? maxval : minval;
+        double phi_new = (diff == 0.0) ? 1 : (extremeval-cellcenval)/diff; 
+        phi = std::min(phi_new,phi);
+      }      
+    }
+    else if (dim == 3) {
+
+      std::vector<std::tuple<double,double,double>> cellcoords;
+      //      if ((Entity_kind) on_what_ == CELL)
+        mesh_.cell_get_coordinates(cellid,&cellcoords);
+        //      else if ((Entity_kind) on_what_ == NODE)
+        //        mesh_.dual_cell_get_coordinates(cellid,&cellcoords);
+
+      for (auto coord : cellcoords) {
+        // nodeval = cellcenval + grad*(nodecoord-cellcencoord)
+        // diff = nodeval-cellcenval = grad DOT (nodecoord-cellcencoord);
+
+        double diff = grad[0]*(std::get<0>(coord)-cen[0]) +
+            grad[1]*(std::get<1>(coord)-cen[1]) +
+            grad[2]*(std::get<2>(coord)-cen[2]);
+        double extremeval = (diff > 0.0) ? maxval : minval;
+        double phi_new = (diff == 0.0) ? 1 : (extremeval-cellcenval)/diff; 
+        phi = std::min(phi_new,phi);
+      }      
+    }
+
+  }
+  else { // This will fail
+    assert(limtype_ == NOLIMITER || limtype_ == BARTH_JESPERSEN);
+  }
+
+
 
   // Limited gradient is phi*grad
 

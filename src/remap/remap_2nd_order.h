@@ -70,7 +70,8 @@ class Remap_2ndOrder {
     // confused. So we will explicitly state that this is Portage::transform
 
     Portage::transform(source_mesh_.begin(on_what),source_mesh_.end(on_what),
-                   gradients_.begin(),limgrad);
+                       gradients_.begin(),limgrad);
+
   }
 
 

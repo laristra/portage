@@ -360,6 +360,78 @@ class Jali_Mesh_Wrapper {
   }
 
 
+  //! 3D version of coords of nodes of a dual cell
+  // Input is the node ID 'nodeid', and it returns the vertex coordinates of
+  // the dual cell around this node in `xyzlist`.  The vertices are NOT ordered
+  // in any particular way
+  
+  void dual_cell_get_coordinates(int const nodeid,
+				 std::vector<std::tuple<double,double,double> > *xyzlist) const {
+    assert(jali_mesh_.space_dimension() == 3);
+
+    Jali::Entity_ID wedgeid;
+    Jali::Entity_ID_List wedgeids;
+
+    // wedge_get_coordinates - (node, edge center, face centroid, cell centroid)
+    std::vector<JaliGeometry::Point> wcoords;
+
+    jali_mesh_.node_get_wedges(nodeid, Jali::ALL, &wedgeids);
+
+    std::vector<int> edge_list, face_list, cell_list;
+
+    for (auto wedgeid : wedgeids) {
+      jali_mesh_.wedge_get_coordinates(wedgeid,&wcoords);
+
+      int edgeid = jali_mesh_.wedge_get_edge(wedgeid);
+      if (std::find(edge_list.begin(),edge_list.end(),edgeid) ==
+	  edge_list.end()) {
+	// This edge not encountered yet - put it in the edge list and add
+	// the corresponding wedge point to the coordinate list
+
+	edge_list.push_back(edgeid);
+	xyzlist->emplace_back(std::make_tuple(wcoords[1][0],wcoords[1][1],wcoords[1][2]));
+      }
+
+      int faceid = jali_mesh_.wedge_get_face(wedgeid);
+      if (std::find(face_list.begin(),face_list.end(),faceid) ==
+	  face_list.end()) {
+	// This face not encountered yet - put it in the face list and add
+	// the corresponding wedge point to the coordinate list
+
+	face_list.push_back(faceid);
+	xyzlist->emplace_back(std::make_tuple(wcoords[2][0],wcoords[2][1],wcoords[2][2]));
+      }
+
+      int cellid = jali_mesh_.wedge_get_cell(wedgeid);
+      if (std::find(cell_list.begin(),cell_list.end(),cellid) ==
+	  cell_list.end()) {
+	// This cell not encountered yet - put it in the cell list and add
+	// the cooresponding wedge point to the coordinate list
+
+	cell_list.push_back(cellid);
+	xyzlist->emplace_back(std::make_tuple(wcoords[3][0],wcoords[3][1],wcoords[3][2]));
+      }
+    }
+  }
+
+  // Get the coordinates of the wedges of the dual mesh
+  void dual_wedges_get_coordinates(Jali::Entity_ID nodeID,
+      std::vector<std::array<std::array<double, 3>, 4>> *wcoords) const {
+    std::vector<Jali::Entity_ID> wedges;
+    jali_mesh_.node_get_wedges(nodeID, Jali::ALL, &wedges);
+    for (const auto &wedge : wedges) {
+      std::vector<JaliGeometry::Point> coords;
+      jali_mesh_.wedge_get_coordinates(wedge, &coords, true);
+      std::array<std::array<double, 3>, 4> tmp;
+      for (int i=0; i<4; i++)
+        for (int j=0; j<3; j++)
+          tmp[i][j] = coords[i][j];
+      wcoords->push_back(tmp);
+    }
+  }
+
+  
+
   /// \brief Centroid of a cell
   //
   // Return the centroid of a cell - THIS ROUTINE IS VIOLATING THE
