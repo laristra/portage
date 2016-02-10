@@ -10,7 +10,6 @@
 #include<vector>
 #include<iterator>
 #include<sys/time.h>
-#include<cstdlib>
 
 #include "portage/support/portage.h"
 #include "portage/wrappers/state/jali/jali_state_wrapper.h"
@@ -357,10 +356,8 @@ class Driver
       else {
       
 	if (remap_order() != 2) {
-	  std::cerr << 
-            "Remap order can be 1 or 2 only. Doing 2nd order remap" << 
-            std::endl;
-	  std::exit(1);
+	  std::cerr << "Remap order can be 1 or 2 only. "
+		    << "Doing 2nd order remap" << std::endl;
 	}
 	
 	std::cout << "Remapping variable " << remap_var_names_[0]
@@ -403,7 +400,7 @@ class Driver
 	timersub(&end, &begin, &diff);
 	float seconds = diff.tv_sec + 1.0E-6*diff.tv_usec;
 	std::cout << "Transform Time: " << seconds << std::endl;
-      }
+      } // done remap order test 
 
     }   // done 2d test
     else {
@@ -479,9 +476,8 @@ class Driver
       else {
       
       	if (remap_order() != 2)
-      	  std::cerr <<
-            "Remap order can be 1 or 2 only. Doing 2nd order remap" <<
-            std::endl;
+      	  std::cerr << "Remap order can be 1 or 2 only. "
+		    << "Doing 2nd order remap" <<  std::endl;
 
       	std::cout << "Remapping variable " << remap_var_names_[0]
 		  << " using a 2nd order accurate algorithm" << std::endl;
@@ -524,9 +520,9 @@ class Driver
 	timersub(&end, &begin, &diff);
 	float seconds = diff.tv_sec + 1.0E-6*diff.tv_usec;
 	std::cout << "Transform Time: " << seconds << std::endl;
-      }
+      } // done remap test
     } // done 3d test
-  }
+  } // run()
 
 private:
   
