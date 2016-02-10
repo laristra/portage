@@ -60,17 +60,19 @@ TEST(Gradient, Fields_Cell_Ctr) {
   Jali::StateVector<double> myvec2("cellvars2",Jali::CELL,mesh1,&(data2[0]));
   Jali::StateVector<double> &addvec2 = mystate.add(myvec2);
 
+  Portage::Jali_Mesh_Wrapper meshwrapper(*mesh1);
+  Portage::Jali_State_Wrapper statewrapper(mystate);
 
   // Create Remap objects
 
   Portage::Limited_Gradient<Portage::Jali_Mesh_Wrapper,Portage::Jali_State_Wrapper,Portage::Entity_kind> 
-      gradcalc1(*mesh1,mystate,Portage::CELL,"cellvars1",Portage::NOLIMITER);
+      gradcalc1(meshwrapper,statewrapper,Portage::CELL,"cellvars1",Portage::NOLIMITER);
   Portage::Limited_Gradient<Portage::Jali_Mesh_Wrapper,Portage::Jali_State_Wrapper,Portage::Entity_kind> 
-      gradcalc2(*mesh1,mystate,Portage::CELL,"cellvars2",Portage::NOLIMITER);
+      gradcalc2(meshwrapper,statewrapper,Portage::CELL,"cellvars2",Portage::NOLIMITER);
   Portage::Limited_Gradient<Portage::Jali_Mesh_Wrapper,Portage::Jali_State_Wrapper,Portage::Entity_kind> 
-      gradcalc3(*mesh1,mystate,Portage::CELL,"cellvars1",Portage::BARTH_JESPERSEN);
+      gradcalc3(meshwrapper,statewrapper,Portage::CELL,"cellvars1",Portage::BARTH_JESPERSEN);
   Portage::Limited_Gradient<Portage::Jali_Mesh_Wrapper,Portage::Jali_State_Wrapper,Portage::Entity_kind> 
-      gradcalc4(*mesh1,mystate,Portage::CELL,"cellvars2",Portage::BARTH_JESPERSEN);
+      gradcalc4(meshwrapper,statewrapper,Portage::CELL,"cellvars2",Portage::BARTH_JESPERSEN);
   
   
   // Compute the gradient for each of these fields
@@ -172,16 +174,18 @@ TEST(Gradient, Fields_Node_Ctr) {
 
   // Create Gradient calculater objects
 
-  Portage::MeshWrapperDual dualmesh(*mesh1);
+  Portage::Jali_Mesh_Wrapper meshwrapper(*mesh1);
+  Portage::MeshWrapperDual dualmesh(meshwrapper);
+  Portage::Jali_State_Wrapper statewrapper(mystate);
 
   Portage::Limited_Gradient<Portage::MeshWrapperDual,Portage::Jali_State_Wrapper,Portage::Entity_kind> 
-      gradcalc1(dualmesh,mystate,Portage::NODE,"nodevars1",Portage::NOLIMITER);
+      gradcalc1(dualmesh,statewrapper,Portage::NODE,"nodevars1",Portage::NOLIMITER);
   Portage::Limited_Gradient<Portage::MeshWrapperDual,Portage::Jali_State_Wrapper,Portage::Entity_kind> 
-      gradcalc2(dualmesh,mystate,Portage::NODE,"nodevars2",Portage::NOLIMITER);
+      gradcalc2(dualmesh,statewrapper,Portage::NODE,"nodevars2",Portage::NOLIMITER);
   Portage::Limited_Gradient<Portage::MeshWrapperDual,Portage::Jali_State_Wrapper,Portage::Entity_kind> 
-      gradcalc3(dualmesh,mystate,Portage::NODE,"nodevars1",Portage::BARTH_JESPERSEN);
+      gradcalc3(dualmesh,statewrapper,Portage::NODE,"nodevars1",Portage::BARTH_JESPERSEN);
   Portage::Limited_Gradient<Portage::MeshWrapperDual,Portage::Jali_State_Wrapper,Portage::Entity_kind> 
-      gradcalc4(dualmesh,mystate,Portage::NODE,"nodevars2",Portage::BARTH_JESPERSEN);
+      gradcalc4(dualmesh,statewrapper,Portage::NODE,"nodevars2",Portage::BARTH_JESPERSEN);
 
 
   // Make sure we retrieved the correct gradient value for each node
