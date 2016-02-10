@@ -296,7 +296,7 @@ class Driver
     needed to map one mesh to another.
 
     Most of the heavy lifting in this routine is via a Portage::transform() over
-    the cells in the target mesh, applying a custom composerFunctor() that specifyies
+    the cells in the target mesh, applying a custom composerFunctor() that specifies
     how the search, intersect, and remap calculations should be performed.
   */
   void run()
