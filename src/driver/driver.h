@@ -21,6 +21,14 @@
 #include "portage/remap/remap_1st_order.h"
 #include "portage/remap/remap_2nd_order.h"
 
+/*!
+  @file driver.h
+  @brief Example driver for mapping between two Jali meshes.
+
+  This should serve as a good example for how to write your own driver routine
+  and datastructures.
+ */
+
 namespace Portage {
 
 /*! 
@@ -40,11 +48,11 @@ class MeshWrapperDual { // cellid is the dual cell (i.e. node) id
   */
   MeshWrapperDual(const Jali_Mesh_Wrapper &w) : w_(w) {}
 
-  //! Get the spatial dimensions of the mesh.
+  /// Get the spatial dimensions of the mesh.
   int space_dimension() const { return w_.space_dimension(); }
 
 
-  //! Get the number of cells on this processor.
+  /// Get the number of cells on this processor.
   int num_owned_cells() const { return w_.num_owned_nodes(); }
 
   /*!
@@ -57,24 +65,30 @@ class MeshWrapperDual { // cellid is the dual cell (i.e. node) id
     @brief Gets the coordinates of the cell centroid in the dual mesh.
     @param[in] dualcellid The dual cell id (i.e. the node id in the original mesh).
     @param[in,out] xylist The list of (x,y) coordinate pairs for each node of the
-    dual cell given by @e dualcellid
+    dual cell given by @c dualcellid
    */
   void cell_get_coordinates(int const dualcellid,
                             std::vector<std::pair<double,double> > *xylist) const {
     w_.dual_cell_get_coordinates(dualcellid, xylist);
   }
 
-  // 3d version
+  /*!
+    @brief Gets the coordinates of the cell centroid in the dual mesh.
+    @param[in] dualcellid The dual cell id (i.e. the node id in the original
+    mesh).
+    @param[in,out] xyzlist The list of (x,y,z) coordinate tuples for each node
+    of the dual cell given by @c dualcellid.
+   */
   void cell_get_coordinates(int const dualcellid,
 			    std::vector<std::tuple<double,double,double> > *xyzlist) const {
     w_.dual_cell_get_coordinates(dualcellid, xyzlist);
   }
 
   /*!
-    @brief Get an iterator to the start of the vector of @e entity-type objects in the
-    dual mesh.
-    @param[in] entity Which type of data do you want to iterate over (e.g. CELL,
-    NODE, etc.)
+    @brief Get an iterator to the start of the vector of @e entity-type objects
+    in the dual mesh.
+    @param[in] entity Which type of data do you want to iterate over (e.g.
+    @c CELL, @c NODE, etc.)
    */
   counting_iterator begin(Entity_kind const entity) const {
     if (entity == NODE) return w_.begin(CELL);
@@ -82,10 +96,10 @@ class MeshWrapperDual { // cellid is the dual cell (i.e. node) id
   }
   
   /*!
-    @brief Get an iterator to the end of the vector of @e entity-type objects in the
-    dual mesh.
-    @param[in] entity Which type of data do you want to iterate over (e.g. CELL,
-    NODE, etc.)
+    @brief Get an iterator to the end of the vector of @e entity-type objects in
+    the dual mesh.
+    @param[in] entity Which type of data do you want to iterate over (e.g.
+    @c CELL, @c NODE, etc.)
    */
   counting_iterator end(Entity_kind const entity) const {
     if (entity == NODE) return w_.end(CELL);
@@ -94,9 +108,10 @@ class MeshWrapperDual { // cellid is the dual cell (i.e. node) id
 
   /*!
     @brief Gets the coordinates of the cell centroid in the dual mesh.
-    @param[in] dualcellid The dual cell id (i.e. the node id in the original mesh).
+    @param[in] dualcellid The dual cell id (i.e. the node id in the original
+    mesh).
     @return The list of (x,y) coordinate pairs for each node of the
-    dual cell given by @e dualcellid
+    dual cell given by @c dualcellid
     @todo Remove this in favor of @c cell_get_coordinates() ?
    */
   std::vector<std::pair<double, double> > cellToXY(int dualcellID) const{
@@ -109,10 +124,12 @@ class MeshWrapperDual { // cellid is the dual cell (i.e. node) id
     @brief Get the IDs of all cells that share a node with the specified cell
     <em> of the original mesh </em>.
 
-    Sharing of cells is determined from the Parallel_type (e.g. OWNED, GHOST, ALL).
+    Sharing of cells is determined from the Parallel_type (e.g. @c OWNED,
+    @c GHOST, @c ALL ).
     
-    @param[in] dualcellID The cell ID for which you would like to find the neighbors.
-    @param[in] ptype The type of data you want (@e OWNED, @e GHOST, @e ALL)
+    @param[in] dualcellID The cell ID for which you would like to find the
+    neighbors.
+    @param[in] ptype The type of data you want (@c OWNED, @c GHOST, @c ALL)
     @param[in,out] adjcells List of IDs of adjacent cells.
    */
   void cell_get_node_adj_cells(int const dualcellID,
@@ -122,13 +139,15 @@ class MeshWrapperDual { // cellid is the dual cell (i.e. node) id
   }
   
   /*!
-    @brief Get the IDs of all cells that share a node with the specified cell of the
-    <em> dual mesh </em>.
+    @brief Get the IDs of all cells that share a node with the specified cell of
+    the <em> dual mesh </em>.
 
-    Sharing of cells is determined from the Parallel_type (e.g. OWNED, GHOST, ALL).
+    Sharing of cells is determined from the Parallel_type (e.g. @c OWNED,
+    @c GHOST, @c ALL).
     
-    @param[in] dualnodeID The cell ID for which you would like to find the neighbors.
-    @param[in] ptype The type of data you want (@e OWNED, @e GHOST, @e ALL)
+    @param[in] dualnodeID The cell ID for which you would like to find the
+    neighbors.
+    @param[in] ptype The type of data you want (@c OWNED, @c GHOST, @c ALL)
     @param[in,out] adjnodes List of IDs of adjacent cells.
 
     @todo Clarify this wrt to @c MeshWrapperDual::cell_get_node_adj_cells()
@@ -157,6 +176,16 @@ class MeshWrapperDual { // cellid is the dual cell (i.e. node) id
   void dual_cell_centroid(int const dualnodeID, std::vector<double> *centroid) const {
     w_.cell_centroid(dualnodeID, centroid);
   }
+  /*!
+    @brief Get the coordinates of the points that make up the wedge.
+
+    A wedge corresponds to a cell center, a face center, and two points that
+    share an edge.
+
+    @param[in] dualcellid ID of the cell in the dual mesh.
+    @param[in,out] wcoords (x,y,z) coordinates of each of the four points that
+    comprise the tetrahedron that is the wedge.
+   */
   void wedges_get_coordinates(int const dualcellid,
 			      std::vector<std::array<std::array<double, 3>, 4> > *wcoords) const {
     w_.dual_wedges_get_coordinates(dualcellid, wcoords);
@@ -552,8 +581,8 @@ struct composerFunctor
        @param[in] targetCellindex The cell ID in the target mesh that this functor
        is currently operating on.
 
-       @return Value of the field @e remap_var_name in the target mesh cell with ID
-       @e targetCellIndex.
+       @return Value of the field @c remap_var_name in the target mesh cell with ID
+       @c targetCellIndex.
       */
     double operator()(int const targetCellIndex)
     {
