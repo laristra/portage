@@ -100,20 +100,21 @@ void print_usage() {
 int main(int argc, char** argv)
 {
   // Pause profiling until main loop
-  #ifdef ENABLE_PROFILE
-    __itt_pause();
-  #endif
+#ifdef ENABLE_PROFILE
+  __itt_pause();
+#endif
 
   // Get the example to run from command-line parameter
-  int example_num = 0;
-  int n = 3;
+  int example_num;
+  int n;
+  // Must specify both the example number and size
   if (argc <= 2)
   {
     print_usage();
     return 0;
   }
-  if (argc > 1) example_num = atoi(argv[1]);
-  if (argc > 2) n = atoi(argv[2]);
+  example_num = atoi(argv[1]);
+  n = atoi(argv[2]);
 
   // Initialize MPI
   int mpi_init_flag;
@@ -130,15 +131,18 @@ int main(int argc, char** argv)
   std::printf("starting portageapp...\n");
   std::printf("running example %d\n", example_num);
 
+  // Get the properties for the requested example problem
   example_properties example = setup_examples()[example_num];
 
-  // cell centered remaps
+  // The mesh factory and mesh pointers.
+  Jali::MeshFactory mf(MPI_COMM_WORLD);
+  Jali::Mesh* inputMesh = nullptr;
+  Jali::Mesh* targetMesh = nullptr;
+
+  // Cell-centered remaps
   if (example.cell_centered)
   {
-    Jali::MeshFactory mf(MPI_COMM_WORLD);
-
-    Jali::Mesh* inputMesh = nullptr;
-    Jali::Mesh* targetMesh = nullptr;
+    // Construct the meshes
 
     if (example.dim == 2) {
       // 2d quad input mesh from (0,0) to (1,1) with nxn zones
@@ -147,7 +151,7 @@ int main(int argc, char** argv)
       targetMesh = mf(0.0, 0.0, 1.0, 1.0, n+1, n+1);
     }
     else { // 3d
-      // 3d hex input mesh from (0,0,0) to (1,1,1) with nxn zones
+      // 3d hex input mesh from (0,0,0) to (1,1,1) with nxnxn zones
       inputMesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, n, n, n,
                      NULL, true, true, true, false);
       // 3d hex output mesh from (0,0,0) to (1,1,1) with (n+1)x(n+1)x(n+1) zones
@@ -155,37 +159,41 @@ int main(int argc, char** argv)
                       NULL, true, true, true, false);
     }
 
+    // Wrappers for interfacing with the underlying mesh datastructures
     Portage::Jali_Mesh_Wrapper inputMeshWrapper(*inputMesh);
     Portage::Jali_Mesh_Wrapper targetMeshWrapper(*targetMesh);
 
-    int nsrccells = inputMeshWrapper.num_owned_cells();
-    int ntarcells = targetMeshWrapper.num_owned_cells();
+    const int nsrccells = inputMeshWrapper.num_owned_cells();
+    const int ntarcells = targetMeshWrapper.num_owned_cells();
 
+    // Fill the source state data with the specified profile
     Jali::State sourceState(inputMesh);
     std::vector<double> sourceData(nsrccells);
 
+    std::vector<double> cen;
     if (example.linear) {
       for (unsigned int c = 0; c < nsrccells; c++) {
-        std::vector<double> cen;
+        //        std::vector<double> cen;
         inputMeshWrapper.cell_centroid(c,&cen);
         sourceData[c] = cen[0]+cen[1];
-        if (example.dim == 3) sourceData[c] += cen[2];
+        if (example.dim == 3)
+          sourceData[c] += cen[2];
       }
     }
     else { // quadratic function
       for (unsigned int c = 0; c < nsrccells; c++) {
-        std::vector<double> cen;
+        //        std::vector<double> cen;
         inputMeshWrapper.cell_centroid(c,&cen);
         sourceData[c] = cen[0]*cen[0]+cen[1]*cen[1];
-        if (example.dim == 3) sourceData[c] += cen[2]*cen[2];
+        if (example.dim == 3)
+          sourceData[c] += cen[2]*cen[2];
       }
     }
 
-    Jali::StateVector<double> & cellvecin = sourceState.add("celldata",
-                                                            Jali::CELL,
-                                                            &(sourceData[0]));
+    sourceState.add("celldata", Jali::CELL, &(sourceData[0]));
     Portage::Jali_State_Wrapper sourceStateWrapper(sourceState);
 
+    // Build the target state storage
     Jali::State targetState(targetMesh);
     std::vector<double> targetData(ntarcells, 0.0);
     Jali::StateVector<double> & cellvecout = targetState.add("celldata",
@@ -193,9 +201,13 @@ int main(int argc, char** argv)
                                                              &(targetData[0]));
     Portage::Jali_State_Wrapper targetStateWrapper(targetState);
 
+    // Build the main driver data for this mesh type
     Portage::Driver<Portage::Jali_Mesh_Wrapper> d(Portage::CELL, 
-                                         inputMeshWrapper, sourceStateWrapper,
-                                         targetMeshWrapper, targetStateWrapper);
+                                                  inputMeshWrapper,
+                                                  sourceStateWrapper,
+                                                  targetMeshWrapper,
+                                                  targetStateWrapper);
+    // Register the variable name and remap order with the driver
     std::vector<std::string> remap_fields;
     remap_fields.push_back("celldata");
     d.set_remap_var_names(remap_fields);
@@ -211,7 +223,7 @@ int main(int argc, char** argv)
     // Dump some timing information
     gettimeofday(&end, 0);
     timersub(&end, &begin, &diff);
-    float seconds = diff.tv_sec + 1.0E-6*diff.tv_usec;
+    const float seconds = diff.tv_sec + 1.0E-6*diff.tv_usec;
     std::cout << "Time: " << seconds << std::endl; 
 
     // Output results for small test cases
@@ -219,9 +231,9 @@ int main(int argc, char** argv)
     {
       double toterr = 0.0;
 
-      std::cerr << "celldata vector on target mesh after remapping is:" << std::endl;
-      int ntargetcells = targetMeshWrapper.num_owned_cells();
-      for (int c = 0; c < ntargetcells; c++) {
+      std::cout << "celldata vector on target mesh after remapping is:" << std::endl;
+
+      for (int c = 0; c < ntarcells; c++) {
         std::vector<double> ccen;
         targetMeshWrapper.cell_centroid(c,&ccen);
 
@@ -237,6 +249,7 @@ int main(int argc, char** argv)
             error += ccen[2]*ccen[2];
         }
 
+        // dump diagnostics for each cell
         if (example.dim == 2) {
           std::printf("Cell=% 4d Centroid = (% 5.3lf,% 5.3lf)",c,
                       ccen[0],ccen[1]);
@@ -250,62 +263,74 @@ int main(int argc, char** argv)
 
         toterr += error*error;
       }
+      // total L2 norm
       std::printf("\n\nL2 NORM OF ERROR = %lf\n\n",sqrt(toterr));
     }
   }
   else  // node-centered remaps
   {
-    Jali::MeshFactory mf(MPI_COMM_WORLD);
+    //    Jali::MeshFactory mf(MPI_COMM_WORLD);
 
-    // Create a 2d quad input mesh from (0,0) to (1,1) with 3x3 zones; 
+    // Create a 2d quad input mesh from (0,0) to (1,1) with nxn zones; 
     // The "true" arguments request that a dual mesh be constructed with wedges, corners, etc.
-    Jali::Mesh* inputMesh = mf(0.0, 0.0, 1.0, 1.0, n, n, NULL, true, true, true, true);
+    //    Jali::Mesh* inputMesh = mf(0.0, 0.0, 1.0, 1.0, n, n, NULL, true, true, true, true);
+    inputMesh = mf(0.0, 0.0, 1.0, 1.0, n, n, NULL, true, true, true, true);
     Portage::Jali_Mesh_Wrapper inputMeshWrapper(*inputMesh);
 
-    // Create a 2d quad output mesh from (0,0) to (1,1) with 1x1 zones;
+    // Create a 2d quad output mesh from (0,0) to (1,1) with (n-2)x(n-2) zones;
     // The "true" arguments request that a dual mesh be constructed with wedges, corners, etc.
-    Jali::Mesh* targetMesh = mf(0.0, 0.0, 1.0, 1.0, n-2, n-2, NULL, true, true, true, true);
+    //    Jali::Mesh* targetMesh = mf(0.0, 0.0, 1.0, 1.0, n-2, n-2, NULL, true, true, true, true);
+    targetMesh = mf(0.0, 0.0, 1.0, 1.0, n-2, n-2, NULL, true, true, true, true);
     Portage::Jali_Mesh_Wrapper targetMeshWrapper(*targetMesh);
 
     Jali::State sourceState(inputMesh);
     std::vector<double> sourceData((n+1)*(n+1), 1.5); 
-    Jali::StateVector<double> & nodevecin = sourceState.add("nodedata", Jali::NODE, &(sourceData[0]));
+    Jali::StateVector<double> & nodevecin = sourceState.add("nodedata",
+                                                            Jali::NODE,
+                                                            &(sourceData[0]));
     Portage::Jali_State_Wrapper sourceStateWrapper(sourceState);
 
     Jali::State targetState(targetMesh);
     std::vector<double> targetData((n+1)*(n+1), 0.0);
-    Jali::StateVector<double> & nodevecout = targetState.add("nodedata", Jali::NODE, &(targetData[0]));
+    Jali::StateVector<double> & nodevecout = targetState.add("nodedata",
+                                                             Jali::NODE,
+                                                             &(targetData[0]));
     Portage::Jali_State_Wrapper targetStateWrapper(targetState);
 
     // Since we are doing a node-centered remap, create the dual meshes
     Portage::MeshWrapperDual sourceDualMeshWrapper(inputMeshWrapper);
     Portage::MeshWrapperDual targetDualMeshWrapper(targetMeshWrapper);
 
+    // Build the main driver data for this mesh type
     Portage::Driver<Portage::MeshWrapperDual> d(Portage::NODE, 
-                                     sourceDualMeshWrapper, sourceStateWrapper,
-                                     targetDualMeshWrapper, targetStateWrapper);
+                                                sourceDualMeshWrapper,
+                                                sourceStateWrapper,
+                                                targetDualMeshWrapper,
+                                                targetStateWrapper);
+
+    // Register the variable name and remap order with the driver
     std::vector<std::string> remap_fields;
     remap_fields.push_back("nodedata");
     d.set_remap_var_names(remap_fields);
-
     d.set_remap_order(example.order);
 
     struct timeval begin, end, diff;
     gettimeofday(&begin, 0);
 
-    // do the remap
+    // Do the remap
     d.run();
 
+    // Dump some timing information
     gettimeofday(&end, 0);
     timersub(&end, &begin, &diff);
-    float seconds = diff.tv_sec + 1.0E-6*diff.tv_usec;
+    const float seconds = diff.tv_sec + 1.0E-6*diff.tv_usec;
     std::cout << "Time: " << seconds << std::endl;
 
     // Output results for small test cases
     if (n < 10)
     {
-      std::cerr << "nodedata vector on target mesh after remapping is:" << std::endl;
-      std::cerr << nodevecout;
+      std::cout << "nodedata vector on target mesh after remapping is:" << std::endl;
+      std::cout << nodevecout;
     }
   }
 
