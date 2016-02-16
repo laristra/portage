@@ -3,6 +3,7 @@
 #include <vector>
 #include <string>
 #include <sys/time.h>
+#include <memory>
 
 #include "mpi.h"
 
@@ -136,8 +137,8 @@ int main(int argc, char** argv)
 
   // The mesh factory and mesh pointers.
   Jali::MeshFactory mf(MPI_COMM_WORLD);
-  Jali::Mesh* inputMesh = nullptr;
-  Jali::Mesh* targetMesh = nullptr;
+  std::unique_ptr<Jali::Mesh> inputMesh(nullptr);
+  std::unique_ptr<Jali::Mesh> targetMesh(nullptr);
 
   // Cell-centered remaps
   if (example.cell_centered)
@@ -146,17 +147,23 @@ int main(int argc, char** argv)
 
     if (example.dim == 2) {
       // 2d quad input mesh from (0,0) to (1,1) with nxn zones
-      inputMesh = mf(0.0, 0.0, 1.0, 1.0, n, n);
+      inputMesh = std::unique_ptr<Jali::Mesh>(mf(0.0, 0.0, 1.0, 1.0,
+                                                 n, n));
       // 2d quad output mesh from (0,0) to (1,1) with (n+1)x(n+1) zones
-      targetMesh = mf(0.0, 0.0, 1.0, 1.0, n+1, n+1);
+      targetMesh = std::unique_ptr<Jali::Mesh>(mf(0.0, 0.0, 1.0, 1.0,
+                                                  n+1, n+1));
     }
     else { // 3d
       // 3d hex input mesh from (0,0,0) to (1,1,1) with nxnxn zones
-      inputMesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, n, n, n,
-                     NULL, true, true, true, false);
+      inputMesh = std::unique_ptr<Jali::Mesh>(mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0,
+                                                 n, n, n,
+                                                 NULL,
+                                                 true, true, true, false));
       // 3d hex output mesh from (0,0,0) to (1,1,1) with (n+1)x(n+1)x(n+1) zones
-      targetMesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, n+1, n+1, n+1,
-                      NULL, true, true, true, false);
+      targetMesh = std::unique_ptr<Jali::Mesh>(mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0,
+                                                  n+1, n+1, n+1,
+                                                  NULL,
+                                                  true, true, true, false));
     }
 
     // Wrappers for interfacing with the underlying mesh datastructures
@@ -167,7 +174,7 @@ int main(int argc, char** argv)
     const int ntarcells = targetMeshWrapper.num_owned_cells();
 
     // Fill the source state data with the specified profile
-    Jali::State sourceState(inputMesh);
+    Jali::State sourceState(inputMesh.get());
     std::vector<double> sourceData(nsrccells);
 
     std::vector<double> cen;
@@ -194,7 +201,7 @@ int main(int argc, char** argv)
     Portage::Jali_State_Wrapper sourceStateWrapper(sourceState);
 
     // Build the target state storage
-    Jali::State targetState(targetMesh);
+    Jali::State targetState(targetMesh.get());
     std::vector<double> targetData(ntarcells, 0.0);
     Jali::StateVector<double> & cellvecout = targetState.add("celldata",
                                                              Jali::CELL,
@@ -269,28 +276,33 @@ int main(int argc, char** argv)
   }
   else  // node-centered remaps
   {
-    //    Jali::MeshFactory mf(MPI_COMM_WORLD);
 
     // Create a 2d quad input mesh from (0,0) to (1,1) with nxn zones; 
     // The "true" arguments request that a dual mesh be constructed with wedges, corners, etc.
     //    Jali::Mesh* inputMesh = mf(0.0, 0.0, 1.0, 1.0, n, n, NULL, true, true, true, true);
-    inputMesh = mf(0.0, 0.0, 1.0, 1.0, n, n, NULL, true, true, true, true);
+    inputMesh = std::unique_ptr<Jali::Mesh>(mf(0.0, 0.0, 1.0, 1.0,
+                                               n, n,
+                                               NULL,
+                                               true, true, true, true));
     Portage::Jali_Mesh_Wrapper inputMeshWrapper(*inputMesh);
 
     // Create a 2d quad output mesh from (0,0) to (1,1) with (n-2)x(n-2) zones;
     // The "true" arguments request that a dual mesh be constructed with wedges, corners, etc.
     //    Jali::Mesh* targetMesh = mf(0.0, 0.0, 1.0, 1.0, n-2, n-2, NULL, true, true, true, true);
-    targetMesh = mf(0.0, 0.0, 1.0, 1.0, n-2, n-2, NULL, true, true, true, true);
+    targetMesh = std::unique_ptr<Jali::Mesh>(mf(0.0, 0.0, 1.0, 1.0,
+                                                n-2, n-2,
+                                                NULL,
+                                                true, true, true, true));
     Portage::Jali_Mesh_Wrapper targetMeshWrapper(*targetMesh);
 
-    Jali::State sourceState(inputMesh);
+    Jali::State sourceState(inputMesh.get());
     std::vector<double> sourceData((n+1)*(n+1), 1.5); 
     Jali::StateVector<double> & nodevecin = sourceState.add("nodedata",
                                                             Jali::NODE,
                                                             &(sourceData[0]));
     Portage::Jali_State_Wrapper sourceStateWrapper(sourceState);
 
-    Jali::State targetState(targetMesh);
+    Jali::State targetState(targetMesh.get());
     std::vector<double> targetData((n+1)*(n+1), 0.0);
     Jali::StateVector<double> & nodevecout = targetState.add("nodedata",
                                                              Jali::NODE,
@@ -333,6 +345,8 @@ int main(int argc, char** argv)
       std::cout << nodevecout;
     }
   }
+
+  
 
   std::printf("finishing portageapp...\n");
 
