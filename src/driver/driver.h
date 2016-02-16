@@ -303,6 +303,21 @@ class Driver
   {
     std::printf("in Driver::run()...\n");
 
+    int numTargetCells = target_mesh_.num_owned_cells();
+    std::cout << "Number of target cells in target mesh "
+              << numTargetCells << std::endl;
+    
+    // Ask for a StateVector with the name remap_var_names_[0] to be
+    // added to the targetState_. If it is already present, the
+    // existing StateVector reference is returned. If its not present,
+    // it is added. This logic needs to be reversed. The find function
+    // should add it if it is not found (if so requested).
+    
+    double *target_field_raw = NULL;
+    target_state_.get_data(remap_entity_,remap_var_names_[0],&target_field_raw);
+    Portage::pointer<double> target_field(target_field_raw);
+    
+    
     // FIXME: most of this is duplicated for 3d...
     if (dim() == 2) {
       // 2d
@@ -315,20 +330,6 @@ class Driver
       const IntersectClipper<Mesh_Wrapper, Mesh_Wrapper>
         intersect{source_mesh_, target_mesh_};
     
-      int numTargetCells = target_mesh_.num_owned_cells();
-      std::cout << "Number of target cells in target mesh "
-		<< numTargetCells << std::endl;
-    
-      // Ask for a StateVector with the name remap_var_names_[0] to be
-      // added to the targetState_. If it is already present, the
-      // existing StateVector reference is returned. If its not present,
-      // it is added. This logic needs to be reversed. The find function
-      // should add it if it is not found (if so requested).
-    
-      double *target_field_raw = NULL;
-      target_state_.get_data(remap_entity_,remap_var_names_[0],&target_field_raw);
-      Portage::pointer<double> target_field(target_field_raw);
-
       // Check order of accuracy of remap and do the appropriate thing
 
       if (remap_order() == 1) {
@@ -435,20 +436,6 @@ class Driver
       const IntersectR3D<Mesh_Wrapper, Mesh_Wrapper>
         intersect{source_mesh_, target_mesh_};
     
-      int numTargetCells = target_mesh_.num_owned_cells();
-      std::cout << "Number of target cells in target mesh "
-		<< numTargetCells << std::endl;
-    
-      // Ask for a StateVector with the name remap_var_names_[0] to be
-      // added to the targetState_. If it is already present, the
-      // existing StateVector reference is returned. If its not present,
-      // it is added. This logic needs to be reversed. The find function
-      // should add it if it is not found (if so requested).
-    
-      double *target_field_raw = NULL;
-      target_state_.get_data(remap_entity_,remap_var_names_[0],&target_field_raw);
-      Portage::pointer<double> target_field(target_field_raw);
-
       // Check order of accuracy of remap and do the appropriate thing
 
       if (remap_order() == 1) {
@@ -543,6 +530,7 @@ class Driver
 	std::cout << "Transform Time: " << seconds << std::endl;
       } // done remap test
     } // done 3d test
+
   } // run()
 
 private:
