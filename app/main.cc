@@ -20,6 +20,82 @@
 #include "JaliStateVector.h"
 #include "JaliState.h"
 
+/*!
+  @file main.cc
+  @brief A simple application that drives our remap routines.
+
+  This program is used to showcase our capabilities with various types of
+  remap operations (e.g. remap order) on various types of meshes (2d or 3d;
+  node-centered or zone-centered) of some simple linear or quadratic data.
+  For the cases of remapping linear data with a second-order remap function,
+  the L2 norm output at the end should be identically zero.
+ */
+
+//////////////////////////////////////////////////////////////////////
+// Helper routines and data structures
+
+struct example_properties {
+  example_properties(const int dim, const int order, const bool cell_centered,
+                     const bool linear) : dim(dim), order(order),
+                                          cell_centered(cell_centered),
+                                          linear(linear) { }
+
+  int dim;             // dimensionality of meshes in example
+  int order;           // remap order in example
+  bool cell_centered;  // is this example a cell-centered remap?
+  bool linear;         // is this example a remap of linear data?
+};
+
+// Use this to add new problems.  If needed, we can extend the
+// example_properties struct to contain more information.
+std::vector<example_properties> setup_examples() {
+  std::vector<example_properties> examples;
+  
+  // 0: 2d 1st order cell-centered remap of linear func
+  examples.emplace_back(2, 1, true, true);
+  
+  // 1: 2d 1st order node-centered remap of linear func
+  examples.emplace_back(2, 1, false, true);
+
+  // 2: 2d 2nd order cell-centered remap of linear func
+  examples.emplace_back(2, 2, true, true);
+
+  // 3: 2d 1st order cell-centered remap of quadratic func
+  examples.emplace_back(2, 1, true, false);
+
+  // 4: 2d 2nd order cell-centered remap of quadratic func
+  examples.emplace_back(2, 2, true, false);
+
+  // 5: 2d 2nd order node-centered remap of linear func
+  examples.emplace_back(2, 2, false, true);
+
+  // 6: 3d 1st order cell-centered remap of linear func
+  examples.emplace_back(3, 1, true, true);
+
+  // 7: 3d 2nd order cell-centered remap of linear func
+  examples.emplace_back(3, 2, true, true);
+
+  return examples;
+}
+
+// Dump the usage with example information based on the registered
+// examples from setup_examples()
+void print_usage() {
+  auto examples = setup_examples();
+  std::printf("Usage: portageapp example-number ncells\n");
+  std::printf("List of example numbers:\n");
+  int i = 0;
+  for (const auto &example : examples) {
+    std::printf("  %d: %dd %s order %s-centered remap of %s func\n",
+                i, example.dim,
+                (example.order == 1) ? "1st" : "2nd",
+                example.cell_centered ? "cell" : "node",
+                example.linear ? "linear" : "quadratic");
+    i++;
+  }
+}
+//////////////////////////////////////////////////////////////////////
+
 
 int main(int argc, char** argv)
 {
@@ -29,22 +105,14 @@ int main(int argc, char** argv)
   #endif
 
   // Get the example to run from command-line parameter
-  int example = 0;
+  int example_num = 0;
   int n = 3;
   if (argc <= 2)
   {
-    std::printf("Usage: portageapp example-number ncells\n");
-    std::printf("example 0: 2d 1st order cell-centered remap of linear func\n");
-    std::printf("example 1: 2d 1st order node-centered remap of linear func\n");
-    std::printf("example 2: 2d 2nd order cell-centered remap of linear func\n");
-    std::printf("example 3: 2d 1st order cell-centered remap of quadratic func\n");
-    std::printf("example 4: 2d 2nd order cell-centered remap of quadratic func\n");
-    std::printf("example 5: 2d 2nd order node-centered remap of linear func\n");
-    std::printf("example 6: 3d 1st order cell-centered remap of linear func\n");
-    std::printf("example 7: 3d 2nd order cell-centered remap of linear func\n");
+    print_usage();
     return 0;
   }
-  if (argc > 1) example = atoi(argv[1]);
+  if (argc > 1) example_num = atoi(argv[1]);
   if (argc > 2) n = atoi(argv[2]);
 
   // Initialize MPI
@@ -60,29 +128,31 @@ int main(int argc, char** argv)
   }
 
   std::printf("starting portageapp...\n");
-  std::printf("running example %d\n", example);
+  std::printf("running example %d\n", example_num);
 
-  // Example 0,2,3,4,6 are cell-centered remaps
-  if ((example != 1) && (example != 5)) 
+  example_properties example = setup_examples()[example_num];
+
+  // cell centered remaps
+  if (example.cell_centered)
   {
     Jali::MeshFactory mf(MPI_COMM_WORLD);
 
     Jali::Mesh* inputMesh = nullptr;
     Jali::Mesh* targetMesh = nullptr;
 
-    if (example < 6) {
+    if (example.dim == 2) {
       // 2d quad input mesh from (0,0) to (1,1) with nxn zones
       inputMesh = mf(0.0, 0.0, 1.0, 1.0, n, n);
       // 2d quad output mesh from (0,0) to (1,1) with (n+1)x(n+1) zones
       targetMesh = mf(0.0, 0.0, 1.0, 1.0, n+1, n+1);
     }
-    else {
+    else { // 3d
       // 3d hex input mesh from (0,0,0) to (1,1,1) with nxn zones
       inputMesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, n, n, n,
-		     NULL, true, true, true, false);
+                     NULL, true, true, true, false);
       // 3d hex output mesh from (0,0,0) to (1,1,1) with (n+1)x(n+1)x(n+1) zones
       targetMesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, n+1, n+1, n+1,
-		      NULL, true, true, true, false);
+                      NULL, true, true, true, false);
     }
 
     Portage::Jali_Mesh_Wrapper inputMeshWrapper(*inputMesh);
@@ -94,27 +164,33 @@ int main(int argc, char** argv)
     Jali::State sourceState(inputMesh);
     std::vector<double> sourceData(nsrccells);
 
-    if (example == 3 || example == 4) { // quadratic function      
-      for (unsigned int c = 0; c < nsrccells; c++) {
-        std::vector<double> cen;
-        inputMeshWrapper.cell_centroid(c,&cen);
-        sourceData[c] = cen[0]*cen[0]+cen[1]*cen[1];
-      }
-    }
-    else { // linear function
+    if (example.linear) {
       for (unsigned int c = 0; c < nsrccells; c++) {
         std::vector<double> cen;
         inputMeshWrapper.cell_centroid(c,&cen);
         sourceData[c] = cen[0]+cen[1];
-	if (example > 5) sourceData[c] += cen[2];
+        if (example.dim == 3) sourceData[c] += cen[2];
       }
     }
-    Jali::StateVector<double> & cellvecin = sourceState.add("celldata", Jali::CELL, &(sourceData[0]));
+    else { // quadratic function
+      for (unsigned int c = 0; c < nsrccells; c++) {
+        std::vector<double> cen;
+        inputMeshWrapper.cell_centroid(c,&cen);
+        sourceData[c] = cen[0]*cen[0]+cen[1]*cen[1];
+        if (example.dim == 3) sourceData[c] += cen[2]*cen[2];
+      }
+    }
+
+    Jali::StateVector<double> & cellvecin = sourceState.add("celldata",
+                                                            Jali::CELL,
+                                                            &(sourceData[0]));
     Portage::Jali_State_Wrapper sourceStateWrapper(sourceState);
 
     Jali::State targetState(targetMesh);
     std::vector<double> targetData(ntarcells, 0.0);
-    Jali::StateVector<double> & cellvecout = targetState.add("celldata", Jali::CELL, &(targetData[0]));
+    Jali::StateVector<double> & cellvecout = targetState.add("celldata",
+                                                             Jali::CELL,
+                                                             &(targetData[0]));
     Portage::Jali_State_Wrapper targetStateWrapper(targetState);
 
     Portage::Driver<Portage::Jali_Mesh_Wrapper> d(Portage::CELL, 
@@ -124,16 +200,15 @@ int main(int argc, char** argv)
     remap_fields.push_back("celldata");
     d.set_remap_var_names(remap_fields);
 
-    // Examples 2, 4 and 7 are 2nd order accurate remaps
-
-    if (example == 2 || example == 4 || example == 7)
-      d.set_remap_order(2);
+    d.set_remap_order(example.order);
 
     struct timeval begin, end, diff;
     gettimeofday(&begin, 0);
 
+    // do the remap
     d.run();
 
+    // Dump some timing information
     gettimeofday(&end, 0);
     timersub(&end, &begin, &diff);
     float seconds = diff.tv_sec + 1.0E-6*diff.tv_usec;
@@ -151,21 +226,25 @@ int main(int argc, char** argv)
         targetMeshWrapper.cell_centroid(c,&ccen);
 
         double error;
-        if (example == 0 || example == 2)
+        if (example.linear) {
           error = ccen[0]+ccen[1] - cellvecout[c];
-        else if (example == 3 || example == 4)
+          if (example.dim == 3)
+            error += ccen[2];
+        }
+        else { // quadratic
           error = ccen[0]*ccen[0]+ccen[1]*ccen[1] - cellvecout[c];
-	else if (example == 6 || example == 7)
-	  error = ccen[0]+ccen[1]+ccen[2] - cellvecout[c];
+          if (example.dim == 3)
+            error += ccen[2]*ccen[2];
+        }
 
-	if (example < 6) {
-	  std::printf("Cell=% 4d Centroid = (% 5.3lf,% 5.3lf)",c,
-		      ccen[0],ccen[1]);
-	}
-	else {
-	  std::printf("Cell=% 4d Centroid = (% 5.3lf,% 5.3lf,% 5.3lf)",c,
-		      ccen[0],ccen[1],ccen[2]);
-	}
+        if (example.dim == 2) {
+          std::printf("Cell=% 4d Centroid = (% 5.3lf,% 5.3lf)",c,
+                      ccen[0],ccen[1]);
+        }
+        else {
+          std::printf("Cell=% 4d Centroid = (% 5.3lf,% 5.3lf,% 5.3lf)",c,
+                      ccen[0],ccen[1],ccen[2]);
+        }
         std::printf("  Value = % 10.6lf  Err = % lf\n",
                     cellvecout[c],error);        
 
@@ -174,8 +253,7 @@ int main(int argc, char** argv)
       std::printf("\n\nL2 NORM OF ERROR = %lf\n\n",sqrt(toterr));
     }
   }
-  // Examples 1 and 5 are 2d node-centered remaps
-  else
+  else  // node-centered remaps
   {
     Jali::MeshFactory mf(MPI_COMM_WORLD);
 
@@ -210,12 +288,12 @@ int main(int argc, char** argv)
     remap_fields.push_back("nodedata");
     d.set_remap_var_names(remap_fields);
 
-    if (example == 5)
-      d.set_remap_order(2);
+    d.set_remap_order(example.order);
 
     struct timeval begin, end, diff;
     gettimeofday(&begin, 0);
 
+    // do the remap
     d.run();
 
     gettimeofday(&end, 0);
