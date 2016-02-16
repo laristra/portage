@@ -106,8 +106,7 @@ int main(int argc, char** argv)
 #endif
 
   // Get the example to run from command-line parameter
-  int example_num;
-  int n;
+  int example_num, n;
   // Must specify both the example number and size
   if (argc <= 2)
   {
@@ -144,7 +143,6 @@ int main(int argc, char** argv)
   if (example.cell_centered)
   {
     // Construct the meshes
-
     if (example.dim == 2) {
       // 2d quad input mesh from (0,0) to (1,1) with nxn zones
       inputMesh = std::unique_ptr<Jali::Mesh>(mf(0.0, 0.0, 1.0, 1.0,
@@ -166,7 +164,7 @@ int main(int argc, char** argv)
                                                   true, true, true, false));
     }
 
-    // Wrappers for interfacing with the underlying mesh datastructures
+    // Wrappers for interfacing with the underlying mesh data structures
     Portage::Jali_Mesh_Wrapper inputMeshWrapper(*inputMesh);
     Portage::Jali_Mesh_Wrapper targetMeshWrapper(*targetMesh);
 
@@ -180,7 +178,6 @@ int main(int argc, char** argv)
     std::vector<double> cen;
     if (example.linear) {
       for (unsigned int c = 0; c < nsrccells; c++) {
-        //        std::vector<double> cen;
         inputMeshWrapper.cell_centroid(c,&cen);
         sourceData[c] = cen[0]+cen[1];
         if (example.dim == 3)
@@ -189,7 +186,6 @@ int main(int argc, char** argv)
     }
     else { // quadratic function
       for (unsigned int c = 0; c < nsrccells; c++) {
-        //        std::vector<double> cen;
         inputMeshWrapper.cell_centroid(c,&cen);
         sourceData[c] = cen[0]*cen[0]+cen[1]*cen[1];
         if (example.dim == 3)
@@ -203,9 +199,9 @@ int main(int argc, char** argv)
     // Build the target state storage
     Jali::State targetState(targetMesh.get());
     std::vector<double> targetData(ntarcells, 0.0);
-    Jali::StateVector<double> & cellvecout = targetState.add("celldata",
-                                                             Jali::CELL,
-                                                             &(targetData[0]));
+    auto& cellvecout = targetState.add("celldata",
+                                       Jali::CELL,
+                                       &(targetData[0]));
     Portage::Jali_State_Wrapper targetStateWrapper(targetState);
 
     // Build the main driver data for this mesh type
@@ -224,7 +220,7 @@ int main(int argc, char** argv)
     struct timeval begin, end, diff;
     gettimeofday(&begin, 0);
 
-    // do the remap
+    // Do the remap
     d.run();
 
     // Dump some timing information
@@ -278,8 +274,8 @@ int main(int argc, char** argv)
   {
 
     // Create a 2d quad input mesh from (0,0) to (1,1) with nxn zones; 
-    // The "true" arguments request that a dual mesh be constructed with wedges, corners, etc.
-    //    Jali::Mesh* inputMesh = mf(0.0, 0.0, 1.0, 1.0, n, n, NULL, true, true, true, true);
+    // The "true" arguments request that a dual mesh be constructed with
+    // wedges, corners, etc.
     inputMesh = std::unique_ptr<Jali::Mesh>(mf(0.0, 0.0, 1.0, 1.0,
                                                n, n,
                                                NULL,
@@ -287,21 +283,22 @@ int main(int argc, char** argv)
     Portage::Jali_Mesh_Wrapper inputMeshWrapper(*inputMesh);
 
     // Create a 2d quad output mesh from (0,0) to (1,1) with (n-2)x(n-2) zones;
-    // The "true" arguments request that a dual mesh be constructed with wedges, corners, etc.
-    //    Jali::Mesh* targetMesh = mf(0.0, 0.0, 1.0, 1.0, n-2, n-2, NULL, true, true, true, true);
+    // The "true" arguments request that a dual mesh be constructed with
+    // wedges, corners, etc.
     targetMesh = std::unique_ptr<Jali::Mesh>(mf(0.0, 0.0, 1.0, 1.0,
                                                 n-2, n-2,
                                                 NULL,
                                                 true, true, true, true));
     Portage::Jali_Mesh_Wrapper targetMeshWrapper(*targetMesh);
 
+    // Fill the source state datat with the specified profile
     Jali::State sourceState(inputMesh.get());
-    std::vector<double> sourceData((n+1)*(n+1), 1.5); 
-    Jali::StateVector<double> & nodevecin = sourceState.add("nodedata",
-                                                            Jali::NODE,
-                                                            &(sourceData[0]));
+    std::vector<double> sourceData((n+1)*(n+1), 1.5);
+    
+    sourceState.add("nodedata", Jali::NODE, &(sourceData[0]));
     Portage::Jali_State_Wrapper sourceStateWrapper(sourceState);
 
+    // Build the target state storage
     Jali::State targetState(targetMesh.get());
     std::vector<double> targetData((n+1)*(n+1), 0.0);
     Jali::StateVector<double> & nodevecout = targetState.add("nodedata",
@@ -341,12 +338,11 @@ int main(int argc, char** argv)
     // Output results for small test cases
     if (n < 10)
     {
-      std::cout << "nodedata vector on target mesh after remapping is:" << std::endl;
+      std::cout << "nodedata vector on target mesh after remapping is:"
+                << std::endl;
       std::cout << nodevecout;
     }
   }
-
-  
 
   std::printf("finishing portageapp...\n");
 
