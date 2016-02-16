@@ -25,7 +25,7 @@
 #include "simple_intersect_for_tests.h"
 
 
-// Remap of constant, cell-centered field - 2D
+/// First order remap of constant cell-centered field in 2D
 
 TEST(Remap_1st_Order, Cell_Ctr_Const_2D) {
 
@@ -58,8 +58,8 @@ TEST(Remap_1st_Order, Cell_Ctr_Const_2D) {
 
   Portage::Remap_1stOrder<Portage::Jali_Mesh_Wrapper,
                           Portage::Jali_State_Wrapper,
-                          Portage::Entity_kind> 
-      remapper(sourceMeshWrapper,sourceStateWrapper,Portage::CELL,"cellvars");
+                          Portage::CELL> 
+      remapper(sourceMeshWrapper,sourceStateWrapper,"cellvars");
 
 
   // Gather the cell coordinates for source and target meshes for intersection
@@ -98,10 +98,7 @@ TEST(Remap_1st_Order, Cell_Ctr_Const_2D) {
 }
 
 
-
-
-
-// Remap of Linear, Cell-centered field - 2D
+/// First order remap of linear cell-centered field in 2D
 
 TEST(Remap_1st_Order, Cell_Ctr_Lin_2D) {
 
@@ -139,8 +136,8 @@ TEST(Remap_1st_Order, Cell_Ctr_Lin_2D) {
 
   Portage::Remap_1stOrder<Portage::Jali_Mesh_Wrapper,
                           Portage::Jali_State_Wrapper,
-                          Portage::Entity_kind> 
-      remapper(sourceMeshWrapper,sourceStateWrapper,Portage::CELL,"cellvars");
+                          Portage::CELL> 
+      remapper(sourceMeshWrapper,sourceStateWrapper,"cellvars");
 
   // Gather the cell coordinates for source and target meshes for intersection
 
@@ -190,8 +187,7 @@ TEST(Remap_1st_Order, Cell_Ctr_Lin_2D) {
 
 
 
-
-// Remap of constant, node-centered field - 2D
+/// First order remap of constant node-centered field in 2D
 
 TEST(Remap_1st_Order, Node_Ctr_Const_2D) {
 
@@ -226,8 +222,8 @@ TEST(Remap_1st_Order, Node_Ctr_Const_2D) {
 
   Portage::Remap_1stOrder<Portage::Jali_Mesh_Wrapper,
                           Portage::Jali_State_Wrapper,
-                          Portage::Entity_kind> 
-      remapper(sourceMeshWrapper,sourceStateWrapper,Portage::NODE,"nodevars");
+                          Portage::NODE> 
+      remapper(sourceMeshWrapper,sourceStateWrapper,"nodevars");
 
   // Remap from source to target mesh
 
@@ -296,10 +292,7 @@ TEST(Remap_1st_Order, Node_Ctr_Const_2D) {
 }
 
 
-
-
-
-// Remap of constant, cell centered field - 3D  
+/// First order remap of constant cell-centered field in 3D
 
 TEST(Remap_1st_Order, Cell_Ctr_Const_3D) {
 
@@ -332,8 +325,8 @@ TEST(Remap_1st_Order, Cell_Ctr_Const_3D) {
 
   Portage::Remap_1stOrder<Portage::Jali_Mesh_Wrapper,
                           Portage::Jali_State_Wrapper,
-                          Portage::Entity_kind> 
-      remapper(sourceMeshWrapper,sourceStateWrapper,Portage::CELL,"cellvars");
+                          Portage::CELL> 
+      remapper(sourceMeshWrapper,sourceStateWrapper,"cellvars");
 
 
   // Gather the cell coordinates for source and target meshes for intersection
@@ -372,10 +365,7 @@ TEST(Remap_1st_Order, Cell_Ctr_Const_3D) {
 }
 
 
-
-
-
-// Remap of linear, cell-centered field - 3D
+/// First order remap of linear cell-centered field in 3D
 
 TEST(Remap_1st_Order, Cell_Ctr_Lin_3D) {
 
@@ -413,8 +403,8 @@ TEST(Remap_1st_Order, Cell_Ctr_Lin_3D) {
 
   Portage::Remap_1stOrder<Portage::Jali_Mesh_Wrapper,
                           Portage::Jali_State_Wrapper,
-                          Portage::Entity_kind> 
-      remapper(sourceMeshWrapper,sourceStateWrapper,Portage::CELL,"cellvars");
+                          Portage::CELL> 
+      remapper(sourceMeshWrapper,sourceStateWrapper,"cellvars");
 
   // Gather the cell coordinates for source and target meshes for intersection
 
@@ -463,11 +453,7 @@ TEST(Remap_1st_Order, Cell_Ctr_Lin_3D) {
 }
 
 
-
-
-
-
-// Remap of constant, node-centered field - 3D
+/// First order remap of constant node-centered field in 3D
 
 TEST(Remap_1st_Order, Node_Ctr_Const_3D) {
 
@@ -502,8 +488,8 @@ TEST(Remap_1st_Order, Node_Ctr_Const_3D) {
 
   Portage::Remap_1stOrder<Portage::Jali_Mesh_Wrapper,
                           Portage::Jali_State_Wrapper,
-                          Portage::Entity_kind> 
-      remapper(sourceMeshWrapper,sourceStateWrapper,Portage::NODE,"nodevars");
+                          Portage::NODE> 
+      remapper(sourceMeshWrapper,sourceStateWrapper,"nodevars");
 
   // Remap from source to target mesh
 

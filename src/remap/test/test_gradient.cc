@@ -7,7 +7,6 @@
 #include "portage/remap/gradient.h"
 #include "portage/wrappers/mesh/jali/jali_mesh_wrapper.h"
 #include "portage/wrappers/state/jali/jali_state_wrapper.h"
-#include "portage/driver/driver.h" // to get MeshWrapperDual
 
 #include <iostream>
 
@@ -21,6 +20,7 @@
 #include "JaliState.h"
 #include "JaliStateVector.h"
 
+/// Test gradient computation for cell centered fields
 
 TEST(Gradient, Fields_Cell_Ctr) {
   
@@ -44,9 +44,7 @@ TEST(Gradient, Fields_Cell_Ctr) {
   // with a linear function that is x+2y
 
   int nc1 = mesh1->num_entities(Jali::CELL,Jali::OWNED);
-  std::vector<double> data1(nc1);
-  for (int c = 0; c < nc1; ++c)
-    data1[c] = 1.25;
+  std::vector<double> data1(nc1,1.25);
   Jali::StateVector<double> myvec1("cellvars1",Jali::CELL,mesh1,&(data1[0]));
   Jali::StateVector<double> &addvec1 = mystate.add(myvec1);
 
@@ -65,14 +63,14 @@ TEST(Gradient, Fields_Cell_Ctr) {
 
   // Create Remap objects
 
-  Portage::Limited_Gradient<Portage::Jali_Mesh_Wrapper,Portage::Jali_State_Wrapper,Portage::Entity_kind> 
-      gradcalc1(meshwrapper,statewrapper,Portage::CELL,"cellvars1",Portage::NOLIMITER);
-  Portage::Limited_Gradient<Portage::Jali_Mesh_Wrapper,Portage::Jali_State_Wrapper,Portage::Entity_kind> 
-      gradcalc2(meshwrapper,statewrapper,Portage::CELL,"cellvars2",Portage::NOLIMITER);
-  Portage::Limited_Gradient<Portage::Jali_Mesh_Wrapper,Portage::Jali_State_Wrapper,Portage::Entity_kind> 
-      gradcalc3(meshwrapper,statewrapper,Portage::CELL,"cellvars1",Portage::BARTH_JESPERSEN);
-  Portage::Limited_Gradient<Portage::Jali_Mesh_Wrapper,Portage::Jali_State_Wrapper,Portage::Entity_kind> 
-      gradcalc4(meshwrapper,statewrapper,Portage::CELL,"cellvars2",Portage::BARTH_JESPERSEN);
+  Portage::Limited_Gradient<Portage::Jali_Mesh_Wrapper,Portage::Jali_State_Wrapper,Portage::CELL> 
+      gradcalc1(meshwrapper,statewrapper,"cellvars1",Portage::NOLIMITER);
+  Portage::Limited_Gradient<Portage::Jali_Mesh_Wrapper,Portage::Jali_State_Wrapper,Portage::CELL> 
+      gradcalc2(meshwrapper,statewrapper,"cellvars2",Portage::NOLIMITER);
+  Portage::Limited_Gradient<Portage::Jali_Mesh_Wrapper,Portage::Jali_State_Wrapper,Portage::CELL> 
+      gradcalc3(meshwrapper,statewrapper,"cellvars1",Portage::BARTH_JESPERSEN);
+  Portage::Limited_Gradient<Portage::Jali_Mesh_Wrapper,Portage::Jali_State_Wrapper,Portage::CELL> 
+      gradcalc4(meshwrapper,statewrapper,"cellvars2",Portage::BARTH_JESPERSEN);
   
   
   // Compute the gradient for each of these fields
@@ -133,6 +131,7 @@ TEST(Gradient, Fields_Cell_Ctr) {
 
 }
 
+/// Test gradient computation with node centered fields
 
 TEST(Gradient, Fields_Node_Ctr) {
 
@@ -157,8 +156,7 @@ TEST(Gradient, Fields_Node_Ctr) {
 
   int nn1 = mesh1->num_entities(Jali::NODE,Jali::OWNED);
 
-  std::vector<double> data1(nn1);
-  for (int n = 0; n < nn1; ++n) data1[n] = 1.5;
+  std::vector<double> data1(nn1,1.5);
 
   Jali::StateVector<double> myvec1("nodevars1",Jali::NODE,mesh1,&(data1[0]));
   Jali::StateVector<double> &addvec1 = mystate.add(myvec1);
@@ -175,17 +173,16 @@ TEST(Gradient, Fields_Node_Ctr) {
   // Create Gradient calculater objects
 
   Portage::Jali_Mesh_Wrapper meshwrapper(*mesh1);
-  Portage::MeshWrapperDual dualmesh(meshwrapper);
   Portage::Jali_State_Wrapper statewrapper(mystate);
 
-  Portage::Limited_Gradient<Portage::MeshWrapperDual,Portage::Jali_State_Wrapper,Portage::Entity_kind> 
-      gradcalc1(dualmesh,statewrapper,Portage::NODE,"nodevars1",Portage::NOLIMITER);
-  Portage::Limited_Gradient<Portage::MeshWrapperDual,Portage::Jali_State_Wrapper,Portage::Entity_kind> 
-      gradcalc2(dualmesh,statewrapper,Portage::NODE,"nodevars2",Portage::NOLIMITER);
-  Portage::Limited_Gradient<Portage::MeshWrapperDual,Portage::Jali_State_Wrapper,Portage::Entity_kind> 
-      gradcalc3(dualmesh,statewrapper,Portage::NODE,"nodevars1",Portage::BARTH_JESPERSEN);
-  Portage::Limited_Gradient<Portage::MeshWrapperDual,Portage::Jali_State_Wrapper,Portage::Entity_kind> 
-      gradcalc4(dualmesh,statewrapper,Portage::NODE,"nodevars2",Portage::BARTH_JESPERSEN);
+  Portage::Limited_Gradient<Portage::Jali_Mesh_Wrapper,Portage::Jali_State_Wrapper,Portage::NODE> 
+      gradcalc1(meshwrapper,statewrapper,"nodevars1",Portage::NOLIMITER);
+  Portage::Limited_Gradient<Portage::Jali_Mesh_Wrapper,Portage::Jali_State_Wrapper,Portage::NODE> 
+      gradcalc2(meshwrapper,statewrapper,"nodevars2",Portage::NOLIMITER);
+  Portage::Limited_Gradient<Portage::Jali_Mesh_Wrapper,Portage::Jali_State_Wrapper,Portage::NODE> 
+      gradcalc3(meshwrapper,statewrapper,"nodevars1",Portage::BARTH_JESPERSEN);
+  Portage::Limited_Gradient<Portage::Jali_Mesh_Wrapper,Portage::Jali_State_Wrapper,Portage::NODE> 
+      gradcalc4(meshwrapper,statewrapper,"nodevars2",Portage::BARTH_JESPERSEN);
 
 
   // Make sure we retrieved the correct gradient value for each node
@@ -223,7 +220,8 @@ TEST(Gradient, Fields_Node_Ctr) {
 
     grad = gradcalc4(n);    
     
-    // use the primary mesh to check if the node (dual cell) is a boundary node
+    // use the primary mesh to check if the node (dual cell) is a
+    // boundary node and don't check answer if its a boundary node
 
     bool boundary_node = false;
     std::vector<int> nodecells;
