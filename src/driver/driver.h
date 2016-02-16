@@ -230,7 +230,7 @@ class Driver
     @param[in,out] targetState A state manager for the data that will be mapped to
     the target mesh.
    */
-  Driver(Entity_kind remapEntity, 
+  Driver(Entity_kind const remapEntity, 
          Mesh_Wrapper const & sourceMesh, 
          Jali_State_Wrapper const & sourceState,           
          Mesh_Wrapper const & targetMesh,
@@ -338,12 +338,12 @@ class Driver
 
 	// Eventually put this in a loop over remap variable names as well
 	// Assume for now that we are only doing cell-based remap
-	const Remap_1stOrder<Mesh_Wrapper,Jali_State_Wrapper,Entity_kind> 
-          remap(source_mesh_, source_state_, remap_entity_, remap_var_names_[0]);
+	const Remap_1stOrder<Mesh_Wrapper,Jali_State_Wrapper,CELL> 
+          remap(source_mesh_, source_state_, remap_var_names_[0]);
       
 	composerFunctor<SearchKDTree2<Mesh_Wrapper,Mesh_Wrapper>,
 	                IntersectClipper<Mesh_Wrapper, Mesh_Wrapper>,
-	                Remap_1stOrder<Mesh_Wrapper,Jali_State_Wrapper,Entity_kind> >
+	                Remap_1stOrder<Mesh_Wrapper,Jali_State_Wrapper,CELL> >
           composer(&search, &intersect, &remap, remap_var_names_[0]);
 
 	// This populates targetField with the doubles returned from
@@ -386,13 +386,13 @@ class Driver
       
 	/// @todo Eventually put this in a loop over remap variable names as well
 	// Assume for now that we are only doing cell-based remap
-	const Remap_2ndOrder<Mesh_Wrapper,Jali_State_Wrapper,Entity_kind> 
-	  remap(source_mesh_, source_state_, remap_entity_, remap_var_names_[0],
+	const Remap_2ndOrder<Mesh_Wrapper,Jali_State_Wrapper,CELL> 
+	  remap(source_mesh_, source_state_, remap_var_names_[0],
                 NOLIMITER);
           
 	composerFunctor<SearchKDTree2<Mesh_Wrapper,Mesh_Wrapper>,
 	  IntersectClipper<Mesh_Wrapper, Mesh_Wrapper>,
-	  Remap_2ndOrder<Mesh_Wrapper,Jali_State_Wrapper,Entity_kind> >
+	  Remap_2ndOrder<Mesh_Wrapper,Jali_State_Wrapper,CELL> >
           composer(&search, &intersect, &remap, remap_var_names_[0]);
       
 	// This populates targetField with the doubles returned from
@@ -458,13 +458,13 @@ class Driver
 
 	// Eventually put this in a loop over remap variable names as well
 	// Assume for now that we are only doing cell-based remap
-	const Remap_1stOrder<Mesh_Wrapper,Jali_State_Wrapper,Entity_kind> 
-          remap(source_mesh_, source_state_, remap_entity_, remap_var_names_[0]);
+	const Remap_1stOrder<Mesh_Wrapper,Jali_State_Wrapper,CELL> 
+          remap(source_mesh_, source_state_, remap_var_names_[0]);
       
           
 	composerFunctor<SearchKDTree3<Mesh_Wrapper,Mesh_Wrapper>,
 	                IntersectR3D<Mesh_Wrapper, Mesh_Wrapper>,
-	                Remap_1stOrder<Mesh_Wrapper,Jali_State_Wrapper,Entity_kind> >
+	                Remap_1stOrder<Mesh_Wrapper,Jali_State_Wrapper,CELL> >
           composer(&search, &intersect, &remap, remap_var_names_[0]);
 
 	// This populates targetField with the doubles returned from
@@ -505,14 +505,14 @@ class Driver
       
       	// Eventually put this in a loop over remap variable names as well
       	// Assume for now that we are only doing cell-based remap
-      	const Remap_2ndOrder<Mesh_Wrapper,Jali_State_Wrapper,Entity_kind>
-          remap(source_mesh_, source_state_, remap_entity_, remap_var_names_[0],
+      	const Remap_2ndOrder<Mesh_Wrapper,Jali_State_Wrapper,CELL>
+          remap(source_mesh_, source_state_, remap_var_names_[0],
                 NOLIMITER);
       
           
       	composerFunctor<SearchKDTree3<Mesh_Wrapper,Mesh_Wrapper>,
       	                IntersectR3D<Mesh_Wrapper, Mesh_Wrapper>,
-      	                Remap_2ndOrder<Mesh_Wrapper,Jali_State_Wrapper,Entity_kind> >
+      	                Remap_2ndOrder<Mesh_Wrapper,Jali_State_Wrapper,CELL> >
           composer(&search, &intersect, &remap, remap_var_names_[0]);
       
       	// This populates targetField with the doubles returned from
@@ -552,7 +552,7 @@ private:
     Jali_State_Wrapper const & source_state_;
     Jali_State_Wrapper & target_state_;
     std::vector<std::string> remap_var_names_;
-    Entity_kind remap_entity_;
+    Entity_kind const remap_entity_;
     unsigned int remap_order_;
     unsigned int dim_;
 
