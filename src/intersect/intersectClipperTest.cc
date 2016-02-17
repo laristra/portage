@@ -26,32 +26,32 @@ TEST(intersectClipper, simple){
   ASSERT_EQ(moments[0][2], 1.5);
 }
 
-// TEST(intersectClipper, convex){
-//   std::vector<JaliGeometry::Point> cellA, cellB;
-//   cellA.emplace_back(2,5);
-//   cellA.emplace_back(10.5,5);
-//   cellA.emplace_back(10.5, 3.5);
-//   cellA.emplace_back(2,3.5);
+TEST(intersectClipper, convex){
+  std::vector<JaliGeometry::Point> cellA, cellB;
+  cellA.emplace_back(2,5);
+  cellA.emplace_back(10.5,5);
+  cellA.emplace_back(10.5, 3.5);
+  cellA.emplace_back(2,3.5);
 
-//   cellB.emplace_back(2.5,0);
-//   cellB.emplace_back(8.5,0);
-//   cellB.emplace_back(8.5,5);
-//   cellB.emplace_back(5.5,2.5);
-//   cellB.emplace_back(2.5,4);
+  cellB.emplace_back(2.5,0);
+  cellB.emplace_back(8.5,0);
+  cellB.emplace_back(8.5,5);
+  cellB.emplace_back(5.5,2.5);
+  cellB.emplace_back(2.5,4);
   
-//   IntersectClipper<Jali_Mesh_Wrapper> isect{Jali_Mesh_Wrapper, Jali_Mesh_Wrapper};
-//   std::vector<std::vector<double> > moments = isect(cellA, cellB); 
-//   for(int i=0;i<moments.size();i++){
-//     for(int j=0;j<moments[i].size();j++){
-//       std::cout << "i, j, m " << i << ", " << j << ", " << moments[i][j] << std::endl;
-//     }   
-//   }
-//   double eps = 1e-6;
-//   EXPECT_NEAR(moments[0][0], 1.35, eps);
-//   EXPECT_NEAR(moments[0][1], 10.665, eps);
-//   EXPECT_NEAR(moments[0][2], 5.4, eps);
-//   EXPECT_NEAR(moments[1][0], .25, eps);
-//   EXPECT_NEAR(moments[1][1], .708333, eps);
-//   EXPECT_NEAR(moments[1][2], .916667, eps);
-// }
+  IntersectClipper<Portage::Jali_Mesh_Wrapper> isect{Jali_Mesh_Wrapper, Jali_Mesh_Wrapper};
+  std::vector<std::vector<double> > moments = isect(cellA, cellB); 
+  for(int i=0;i<moments.size();i++){
+    for(int j=0;j<moments[i].size();j++){
+      std::cout << "i, j, m " << i << ", " << j << ", " << moments[i][j] << std::endl;
+    }   
+  }
+  double eps = 1e-6;
+  EXPECT_NEAR(moments[0][0], 1.35, eps);
+  EXPECT_NEAR(moments[0][1], 10.665, eps);
+  EXPECT_NEAR(moments[0][2], 5.4, eps);
+  EXPECT_NEAR(moments[1][0], .25, eps);
+  EXPECT_NEAR(moments[1][1], .708333, eps);
+  EXPECT_NEAR(moments[1][2], .916667, eps);
+}
 

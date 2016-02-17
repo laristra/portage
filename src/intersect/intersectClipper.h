@@ -62,14 +62,14 @@ public:
      */
 
     std::vector<std::vector<double> > operator() (const int cellA, const int cellB) const {      
-        Poly polyA = sourceMeshWrapper.cellToXY(cellA);
-        Poly polyB = targetMeshWrapper.cellToXY(cellB);
+        const Poly polyA = sourceMeshWrapper.cellToXY(cellA);
+        const Poly polyB = targetMeshWrapper.cellToXY(cellB);
         double max_size_poly = 0;
         max_size_poly = IntersectClipper::updateMaxSize(polyA, max_size_poly);
         max_size_poly = IntersectClipper::updateMaxSize(polyB, max_size_poly);
 
-        ClipperLib::Path intPolyA = IntersectClipper::convertPoly2int(polyA, max_size_poly);
-        ClipperLib::Path intPolyB = IntersectClipper::convertPoly2int(polyB, max_size_poly);
+        const ClipperLib::Path intPolyA = IntersectClipper::convertPoly2int(polyA, max_size_poly);
+        const ClipperLib::Path intPolyB = IntersectClipper::convertPoly2int(polyB, max_size_poly);
 
         //Make clipper aware of polyA and polyB
         ClipperLib::Clipper clpr;
