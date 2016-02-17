@@ -102,7 +102,7 @@ ls_gradient(std::vector<std::vector<double>> const & coords,
     @brief Compute limited gradient of a field or components of a field
     @tparam MeshType A mesh class that one can query for mesh info
     @tparam StateType A state manager class that one can query for field info
-    @tparam OnWhatType An enum type which indicates different entity types
+    @tparam on_what An enum type which indicates different entity types
 
 
 */
@@ -150,7 +150,7 @@ class Limited_Gradient {
   /// Functor - not implemented for all types - see specialization for cells, nodes
 
   std::vector<double> operator()(int entity_id) {
-    throw std::runtime_error("Limited gradient not implementd for this entity kind");
+    std::cerr << "Limited gradient not implementd for this entity kind\n";
   }
 
  private:
@@ -167,7 +167,11 @@ class Limited_Gradient {
 
 ///////////////////////////////////////////////////////////////////////////////
 
-/// @brief Limited gradient class specialization for CELLS
+/*! @class Limited_Gradient<MeshType,StateType,CELL> gradient.h
+    @brief Specialization of limited gradient class for @c cell-centered field
+    @tparam MeshType A mesh class that one can query for mesh info
+    @tparam StateType A state manager class that one can query for field info
+*/
 
 template<typename MeshType, typename StateType>
 class Limited_Gradient<MeshType,StateType,CELL> {
@@ -176,7 +180,6 @@ class Limited_Gradient<MeshType,StateType,CELL> {
   /*! @brief Constructor
       @param[in] mesh  Mesh class than one can query for mesh info
       @param[in] state A state manager class that one can query for field info
-      @param[in] on_what An enum that indicates what type of entity the field is on
       @param[in] remap_var_name Name of field for which the gradient is to be computed
       @param[in] limiter_type An enum indicating if the limiter type (none, Barth-Jespersen, Superbee etc)
 
@@ -226,105 +229,104 @@ template<typename MeshType, typename StateType>
 std::vector<double>                          
 Limited_Gradient<MeshType,StateType,CELL> :: operator() (int const cellid) {
 
-  std::vector<int> nbrids;
-  std::vector<std::vector<double>> cellcenters;
-  std::vector<double> cellvalues;
-  std::vector<double> cen, nbrcen;
+  int dim = mesh_.space_dimension();
+  double phi = 1.0;
+  std::vector<double> grad(dim,0);
 
-  mesh_.cell_get_node_adj_cells(cellid,ALL,&nbrids);
-  
-  mesh_.cell_centroid(cellid,&cen);
-  cellcenters.emplace_back(cen);
-  cellvalues.emplace_back(vals_[cellid]);
-  
-  for (auto nbrcell : nbrids) {
-    mesh_.cell_centroid(nbrcell,&nbrcen);
-    cellcenters.emplace_back(nbrcen);
-    cellvalues.emplace_back(vals_[nbrcell]);
-  }
-  
-  std::vector<double> grad = ls_gradient(cellcenters, cellvalues);
-
-  
-  // Limit the gradient to enforce monotonicity preservation
-
-  double phi;
-  if (limtype_ == NOLIMITER)
-    phi = 1.0;
-  else if (limtype_ == BARTH_JESPERSEN) {
-
-    phi = 1.0;
-
-    // Min and max vals of function (cell centered vals) among neighbors
-    //! To-do: must remove assumption the field is scalar
-
-    double minval = vals_[cellid];
-    double maxval = vals_[cellid];
-
-    int nnbr = nbrids.size();
-    for (int i = 0; i < nnbr; ++i) {
-      minval = std::min(cellvalues[i],minval);
-      maxval = std::max(cellvalues[i],maxval);
+  if (dim == 2 || dim == 3) {
+    std::vector<int> nbrids;
+    std::vector<std::vector<double>> cellcenters;
+    std::vector<double> cellvalues;
+    std::vector<double> cen, nbrcen;
+    
+    mesh_.cell_get_node_adj_cells(cellid,ALL,&nbrids);
+    
+    mesh_.cell_centroid(cellid,&cen);
+    cellcenters.emplace_back(cen);
+    cellvalues.emplace_back(vals_[cellid]);
+    
+    for (auto nbrcell : nbrids) {
+      mesh_.cell_centroid(nbrcell,&nbrcen);
+      cellcenters.emplace_back(nbrcen);
+      cellvalues.emplace_back(vals_[nbrcell]);
     }
+    
+    grad = ls_gradient(cellcenters, cellvalues);
+    
+    
+    // Limit the gradient to enforce monotonicity preservation
+    
+    if (limtype_ == BARTH_JESPERSEN) {
+      
+      phi = 1.0;
+      
+      // Min and max vals of function (cell centered vals) among neighbors
+      /// @todo: must remove assumption the field is scalar
+      
+      double minval = vals_[cellid];
+      double maxval = vals_[cellid];
+      
+      int nnbr = nbrids.size();
+      for (int i = 0; i < nnbr; ++i) {
+        minval = std::min(cellvalues[i],minval);
+        maxval = std::max(cellvalues[i],maxval);
+      }
+      
+      // Find the min and max of the reconstructed function in the cell
+      // Since the reconstruction is linear, this will occur at one of
+      // the nodes of the cell. So find the values of the reconstructed
+      // function at the nodes of the cell
+      
+      int dim = mesh_.space_dimension();
+      
+      /// @todo: The following code is exactly why we need Point class
+      double cellcenval = vals_[cellid];
+      if (dim == 2) { 
 
-    // Find the min and max of the reconstructed function in the cell
-    // Since the reconstruction is linear, this will occur at one of
-    // the nodes of the cell. So find the values of the reconstructed
-    // function at the nodes of the cell
-
-    int dim = mesh_.space_dimension();
-
-    //! To-do: The following code is exactly why we need Point class
-    double cellcenval = vals_[cellid];
-    if (dim == 1) {
-    }
-    else if (dim == 2) { 
-
-      std::vector<std::pair<double,double>> cellcoords;
-      mesh_.cell_get_coordinates(cellid,&cellcoords);
-
-      for (auto coord : cellcoords) {
-
-        // At any coord:
-        // val = cellcenval + grad*(coord-cellcencoord)
-        // diff = val-cellcenval = grad DOT (coord-cellcencoord);
-
-        double diff = grad[0]*(std::get<0>(coord)-cen[0]) + 
-            grad[1]*(std::get<1>(coord)-cen[1]);
-        double extremeval = (diff > 0.0) ? maxval : minval;
-        double phi_new = (diff == 0.0) ? 1 : (extremeval-cellcenval)/diff; 
-        phi = std::min(phi_new,phi);
-      }      
-    }
-    else if (dim == 3) {
-
-      std::vector<std::tuple<double,double,double>> cellcoords;
+        std::vector<std::pair<double,double>> cellcoords;
         mesh_.cell_get_coordinates(cellid,&cellcoords);
-
-      for (auto coord : cellcoords) {
-
-        // At any coord:
-        // val = cellcenval + grad*(coord-cellcencoord)
-        // diff = val-cellcenval = grad DOT (coord-cellcencoord);
-
-        double diff = grad[0]*(std::get<0>(coord)-cen[0]) +
-            grad[1]*(std::get<1>(coord)-cen[1]) +
+        
+        for (auto coord : cellcoords) {
+          
+          // At any coord:
+          // val = cellcenval + grad*(coord-cellcencoord)
+          // diff = val-cellcenval = grad DOT (coord-cellcencoord);
+          
+          double diff = grad[0]*(std::get<0>(coord)-cen[0]) + 
+              grad[1]*(std::get<1>(coord)-cen[1]);
+          double extremeval = (diff > 0.0) ? maxval : minval;
+          double phi_new = (diff == 0.0) ? 1 : (extremeval-cellcenval)/diff; 
+          phi = std::min(phi_new,phi);
+        }      
+      }
+      else if (dim == 3) {
+        
+        std::vector<std::tuple<double,double,double>> cellcoords;
+        mesh_.cell_get_coordinates(cellid,&cellcoords);
+        
+        for (auto coord : cellcoords) {
+          
+          // At any coord:
+          // val = cellcenval + grad*(coord-cellcencoord)
+          // diff = val-cellcenval = grad DOT (coord-cellcencoord);
+          
+          double diff = grad[0]*(std::get<0>(coord)-cen[0]) +
+              grad[1]*(std::get<1>(coord)-cen[1]) +
             grad[2]*(std::get<2>(coord)-cen[2]);
-        double extremeval = (diff > 0.0) ? maxval : minval;
-        double phi_new = (diff == 0.0) ? 1 : (extremeval-cellcenval)/diff; 
-        phi = std::min(phi_new,phi);
-      }      
+          double extremeval = (diff > 0.0) ? maxval : minval;
+          double phi_new = (diff == 0.0) ? 1 : (extremeval-cellcenval)/diff; 
+          phi = std::min(phi_new,phi);
+        }      
+      }
+      
     }
-
   }
-  else { // This will fail
-    assert(limtype_ == NOLIMITER || limtype_ == BARTH_JESPERSEN);
+  else {
+    std::cerr << "Remap implemented only for 2D or 3D\n";
   }
-
 
   // Limited gradient is phi*grad
 
-  int dim = grad.size();
   for (int i = 0; i < dim; ++i)
     grad[i] *= phi;
     
@@ -336,7 +338,12 @@ Limited_Gradient<MeshType,StateType,CELL> :: operator() (int const cellid) {
 
 ///////////////////////////////////////////////////////////////////////////////
 
-/// @brief Limited gradient class specialization for NODEs
+/*! @class Limited_Gradient<MeshType,StateType,NODE> gradient.h
+    @brief Specialization of limited gradient class for @c node-centered field
+    @tparam MeshType A mesh class that one can query for mesh info
+    @tparam StateType A state manager class that one can query for field info
+*/
+
 
 template<typename MeshType, typename StateType>
 class Limited_Gradient<MeshType,StateType,NODE> {
@@ -345,7 +352,6 @@ class Limited_Gradient<MeshType,StateType,NODE> {
   /*! @brief Constructor
       @param[in] mesh  Mesh class than one can query for mesh info
       @param[in] state A state manager class that one can query for field info
-      @param[in] on_what An enum that indicates what type of entity the field is on
       @param[in] remap_var_name Name of field for which the gradient is to be computed
       @param[in] limiter_type An enum indicating if the limiter type (none, Barth-Jespersen, Superbee etc)
 
@@ -520,8 +526,8 @@ Limited_Gradient<MeshType,StateType,NODE> :: operator() (int const nodeid) {
       
     }
   }
-  else { // This will fail
-    throw std::runtime_error("Limiter type is not an implemented type");
+  else {
+    std::cerr << "Remap only implemented for 2D and 3D\n";
   }
 
   // Limited gradient is phi*grad
