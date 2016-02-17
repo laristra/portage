@@ -35,13 +35,17 @@ int main(int argc, char** argv)
   {
     std::printf("Usage: portageapp example-number ncells\n");
     std::printf("example 0: 2d 1st order cell-centered remap of linear func\n");
-    std::printf("example 1: 2d 1st order node-centered remap of linear func\n");
-    std::printf("example 2: 2d 2nd order cell-centered remap of linear func\n");
-    std::printf("example 3: 2d 1st order cell-centered remap of quadratic func\n");
-    std::printf("example 4: 2d 2nd order cell-centered remap of quadratic func\n");
-    std::printf("example 5: 2d 2nd order node-centered remap of linear func\n");
-    std::printf("example 6: 3d 1st order cell-centered remap of linear func\n");
-    std::printf("example 7: 3d 2nd order cell-centered remap of linear func\n");
+    std::printf("example 1: 2d 2nd order cell-centered remap of linear func\n");
+    std::printf("example 2: 2d 1st order cell-centered remap of quadratic func\n");
+    std::printf("example 3: 2d 2nd order cell-centered remap of quadratic func\n");
+    std::printf("example 4: 3d 1st order cell-centered remap of quadratic func\n");
+    std::printf("example 5: 3d 2nd order cell-centered remap of quadratic func\n");
+
+    std::printf("\n\n");
+    std::printf("example 6: 2d 1st order node-centered remap of quadratic func\n");
+    std::printf("example 7: 2d 2nd order node-centered remap of quadratic func\n");
+    std::printf("example 8: 3d 1st order node-centered remap of quadratic func\n");
+    std::printf("example 9: 3d 2nd order node-centered remap of quadratic func\n");
     return 0;
   }
   if (argc > 1) example = atoi(argv[1]);
@@ -62,15 +66,15 @@ int main(int argc, char** argv)
   std::printf("starting portageapp...\n");
   std::printf("running example %d\n", example);
 
-  // Example 0,2,3,4,6 are cell-centered remaps
-  if ((example != 1) && (example != 5)) 
+  // Example 0-5 are cell-centered remaps
+  if (example <= 5) 
   {
     Jali::MeshFactory mf(MPI_COMM_WORLD);
 
     Jali::Mesh* inputMesh = nullptr;
     Jali::Mesh* targetMesh = nullptr;
 
-    if (example < 6) {
+    if (example <= 3) {
       // 2d quad input mesh from (0,0) to (1,1) with nxn zones
       inputMesh = mf(0.0, 0.0, 1.0, 1.0, n, n);
       // 2d quad output mesh from (0,0) to (1,1) with (n+1)x(n+1) zones
@@ -94,39 +98,43 @@ int main(int argc, char** argv)
     Jali::State sourceState(inputMesh);
     std::vector<double> sourceData(nsrccells);
 
-    if (example == 3 || example == 4) { // quadratic function      
-      for (unsigned int c = 0; c < nsrccells; c++) {
-        std::vector<double> cen;
-        inputMeshWrapper.cell_centroid(c,&cen);
-        sourceData[c] = cen[0]*cen[0]+cen[1]*cen[1];
-      }
-    }
-    else { // linear function
+    if (example < 2) { // linear function in 2D
       for (unsigned int c = 0; c < nsrccells; c++) {
         std::vector<double> cen;
         inputMeshWrapper.cell_centroid(c,&cen);
         sourceData[c] = cen[0]+cen[1];
-	if (example > 5) sourceData[c] += cen[2];
       }
     }
-    Jali::StateVector<double> & cellvecin = sourceState.add("celldata", Jali::CELL, &(sourceData[0]));
+    else { // quadratic function in 2d and 3d
+      for (unsigned int c = 0; c < nsrccells; c++) {
+        std::vector<double> cen;
+        inputMeshWrapper.cell_centroid(c,&cen);
+        sourceData[c] = cen[0]*cen[0]+cen[1]*cen[1];
+        if (example > 3)
+          sourceData[c] = cen[2]*cen[2];
+      }
+    }
+    Jali::StateVector<double> & cellvecin = 
+        sourceState.add("celldata", Jali::CELL, &(sourceData[0]));
     Portage::Jali_State_Wrapper sourceStateWrapper(sourceState);
 
     Jali::State targetState(targetMesh);
     std::vector<double> targetData(ntarcells, 0.0);
-    Jali::StateVector<double> & cellvecout = targetState.add("celldata", Jali::CELL, &(targetData[0]));
+    Jali::StateVector<double> & cellvecout = 
+        targetState.add("celldata", Jali::CELL, &(targetData[0]));
     Portage::Jali_State_Wrapper targetStateWrapper(targetState);
 
     Portage::Driver<Portage::Jali_Mesh_Wrapper> d(Portage::CELL, 
-                                         inputMeshWrapper, sourceStateWrapper,
-                                         targetMeshWrapper, targetStateWrapper);
+                                                  inputMeshWrapper, 
+                                                  sourceStateWrapper,
+                                                  targetMeshWrapper, 
+                                                  targetStateWrapper);
     std::vector<std::string> remap_fields;
     remap_fields.push_back("celldata");
     d.set_remap_var_names(remap_fields);
 
-    // Examples 2, 4 and 7 are 2nd order accurate remaps
-
-    if (example == 2 || example == 4 || example == 7)
+    // Examples 1, 2 and 5 are 2nd order accurate remaps
+    if (example%2)
       d.set_remap_order(2);
 
     struct timeval begin, end, diff;
@@ -144,21 +152,22 @@ int main(int argc, char** argv)
     {
       double toterr = 0.0;
 
-      std::cerr << "celldata vector on target mesh after remapping is:" << std::endl;
+      std::cerr << "celldata vector on target mesh after remapping is:" << 
+          std::endl;
       int ntargetcells = targetMeshWrapper.num_owned_cells();
       for (int c = 0; c < ntargetcells; c++) {
         std::vector<double> ccen;
         targetMeshWrapper.cell_centroid(c,&ccen);
 
         double error;
-        if (example == 0 || example == 2)
+        if (example == 0 || example == 1)
           error = ccen[0]+ccen[1] - cellvecout[c];
-        else if (example == 3 || example == 4)
+        else if (example == 2 || example == 3)
           error = ccen[0]*ccen[0]+ccen[1]*ccen[1] - cellvecout[c];
-	else if (example == 6 || example == 7)
-	  error = ccen[0]+ccen[1]+ccen[2] - cellvecout[c];
+	else 
+	  error = ccen[0]*ccen[0]+ccen[1]*ccen[1]+ccen[2]*ccen[2] - cellvecout[c];
 
-	if (example < 6) {
+	if (example <= 3) {
 	  std::printf("Cell=% 4d Centroid = (% 5.3lf,% 5.3lf)",c,
 		      ccen[0],ccen[1]);
 	}
@@ -174,43 +183,85 @@ int main(int argc, char** argv)
       std::printf("\n\nL2 NORM OF ERROR = %lf\n\n",sqrt(toterr));
     }
   }
-  // Examples 1 and 5 are 2d node-centered remaps
+  // Examples 6-9 are node-centered remaps in 2d and 3d
   else
   {
     Jali::MeshFactory mf(MPI_COMM_WORLD);
 
-    // Create a 2d quad input mesh from (0,0) to (1,1) with 3x3 zones; 
-    // The "true" arguments request that a dual mesh be constructed with wedges, corners, etc.
-    Jali::Mesh* inputMesh = mf(0.0, 0.0, 1.0, 1.0, n, n, NULL, true, true, true, true);
-    Portage::Jali_Mesh_Wrapper inputMeshWrapper(*inputMesh);
+    Jali::Mesh* inputMesh;
+    Jali::Mesh* targetMesh;
 
-    // Create a 2d quad output mesh from (0,0) to (1,1) with 1x1 zones;
-    // The "true" arguments request that a dual mesh be constructed with wedges, corners, etc.
-    Jali::Mesh* targetMesh = mf(0.0, 0.0, 1.0, 1.0, n-2, n-2, NULL, true, true, true, true);
+    // Create a 2d quad input mesh from (0,0) to (1,1) with nxn zones or
+    // a 3d hex input mesh from (0,0,0) to (1,1,1) with nxnxn zones.
+    // The "true" arguments request that a dual mesh be constructed with 
+    // edges, faces, wedges, corners
+    
+    if (example == 6 || example == 7)
+      inputMesh = mf(0.0,0.0,1.0,1.0,n,n,NULL,true,true,true,true);
+    else
+      inputMesh = mf(0.0,0.0,0.0,1.0,1.0,1.0,n,n,n,NULL,true,true,true);
+
+    // Create a 2d quad output mesh from (0,0) to (1,1) with
+    // (n-2)x(n-2) zones or a 3d hex input mesh from (0,0,0) to
+    // (1,1,1) with (n-2)x(n-2)x(n-2) zones. The "true" arguments
+    // request that a dual mesh be constructed with edges, faces,
+    // wedges and corners
+
+    if (example == 6 || example == 7)
+      targetMesh = mf(0.0,0.0,1.0,1.0,n-2,n-2,NULL,true,true,true,true);
+    else
+      targetMesh = mf(0.0,0.0,0.0,1.0,1.0,1.0,n-2,n-2,n-2,NULL,true,true,true,true);
+
+    Portage::Jali_Mesh_Wrapper inputMeshWrapper(*inputMesh);
     Portage::Jali_Mesh_Wrapper targetMeshWrapper(*targetMesh);
 
-    Jali::State sourceState(inputMesh);
-    std::vector<double> sourceData((n+1)*(n+1), 1.5); 
-    Jali::StateVector<double> & nodevecin = sourceState.add("nodedata", Jali::NODE, &(sourceData[0]));
+    int nn = inputMeshWrapper.num_owned_nodes();
+    int dim = inputMeshWrapper.space_dimension();
+
+    Jali::State sourceState(inputMesh); 
+    std::vector<double> sourceData(nn);
+
+    // populate input field with quadratic function
+
+    if (dim == 2) {
+      for (int i = 0; i < nn; i++) {        
+        std::pair<double,double> nodexy;
+        inputMeshWrapper.node_get_coordinates(i,&nodexy);
+        sourceData[i] = nodexy.first*nodexy.first + nodexy.second*nodexy.second;
+      }
+    }
+    else if (dim == 3) {
+      for (int i = 0; i < nn; i++) {        
+        std::tuple<double,double,double> nodexyz;
+        inputMeshWrapper.node_get_coordinates(i,&nodexyz);
+        sourceData[i] = std::get<0>(nodexyz)*std::get<0>(nodexyz) + 
+            std::get<1>(nodexyz)*std::get<1>(nodexyz) + 
+            std::get<2>(nodexyz)*std::get<2>(nodexyz);
+      }
+    }
+
+ 
+    Jali::StateVector<double> & nodevecin = 
+        sourceState.add("nodedata", Jali::NODE, &(sourceData[0]));
     Portage::Jali_State_Wrapper sourceStateWrapper(sourceState);
 
     Jali::State targetState(targetMesh);
-    std::vector<double> targetData((n+1)*(n+1), 0.0);
-    Jali::StateVector<double> & nodevecout = targetState.add("nodedata", Jali::NODE, &(targetData[0]));
+    nn = targetMeshWrapper.num_owned_nodes();
+    std::vector<double> targetData(nn, 0.0);
+    Jali::StateVector<double> & nodevecout = 
+        targetState.add("nodedata", Jali::NODE, &(targetData[0]));
     Portage::Jali_State_Wrapper targetStateWrapper(targetState);
 
-    // Since we are doing a node-centered remap, create the dual meshes
-    Portage::MeshWrapperDual sourceDualMeshWrapper(inputMeshWrapper);
-    Portage::MeshWrapperDual targetDualMeshWrapper(targetMeshWrapper);
-
-    Portage::Driver<Portage::MeshWrapperDual> d(Portage::NODE, 
-                                     sourceDualMeshWrapper, sourceStateWrapper,
-                                     targetDualMeshWrapper, targetStateWrapper);
+    Portage::Driver<Portage::Jali_Mesh_Wrapper> d(Portage::NODE, 
+                                                  inputMeshWrapper, 
+                                                  sourceStateWrapper,
+                                                  targetMeshWrapper, 
+                                                  targetStateWrapper);
     std::vector<std::string> remap_fields;
     remap_fields.push_back("nodedata");
     d.set_remap_var_names(remap_fields);
 
-    if (example == 5)
+    if (example%2)
       d.set_remap_order(2);
 
     struct timeval begin, end, diff;
@@ -224,10 +275,38 @@ int main(int argc, char** argv)
     std::cout << "Time: " << seconds << std::endl;
 
     // Output results for small test cases
-    if (n < 10)
-    {
-      std::cerr << "nodedata vector on target mesh after remapping is:" << std::endl;
-      std::cerr << nodevecout;
+    if (n < 10) {
+      nn = targetMeshWrapper.num_owned_nodes();
+      double toterr = 0.0;
+      if (example == 6 || example == 7) {
+        std::pair<double,double> nodexy;
+        for (int i = 0; i < nn; i++) {
+          targetMeshWrapper.node_get_coordinates(i,&nodexy);
+          double stdval = nodexy.first*nodexy.first + nodexy.second*nodexy.second;
+          double err = fabs(stdval-nodevecout[i]); 
+          std::printf("Node=% 4d Coords = (% 5.3lf,% 5.3lf) ",i,
+                      nodexy.first,nodexy.second);
+          std::printf("Value = %10.6lf Err = % lf\n",nodevecout[i],err);
+          toterr += err;
+        }
+      }
+      else {
+        std::tuple<double,double,double> nodexyz;
+        for (int i = 0; i < nn; i++) {
+          targetMeshWrapper.node_get_coordinates(i,&nodexyz);
+          double stdval = std::get<0>(nodexyz)*std::get<0>(nodexyz) +
+              std::get<1>(nodexyz)*std::get<1>(nodexyz) +
+              std::get<2>(nodexyz)*std::get<2>(nodexyz);
+          
+          double err = fabs(stdval-nodevecout[i]);
+          std::printf("Node=% 4d Coords = (% 5.3lf,% 5.3lf,% 5.3lf) ",i,
+                      std::get<0>(nodexyz),std::get<1>(nodexyz),
+                      std::get<2>(nodexyz));
+          std::printf("Value = %10.6lf Err = % lf\n",nodevecout[i],err);
+          toterr += err;
+        }
+      }
+      std::printf("\n\nL2 NORM OF ERROR = %lf\n\n",sqrt(toterr));
     }
   }
 

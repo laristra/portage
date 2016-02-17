@@ -60,15 +60,17 @@ int main(int argc, char** argv)
 
   Jali::MeshFactory mf(MPI_COMM_WORLD);
 
-  const std::unique_ptr<Jali::Mesh> inputMesh = std::unique_ptr<Jali::Mesh>(mf(argv[2],
-      NULL, true, true, true, true));
+  const std::unique_ptr<Jali::Mesh> inputMesh = 
+      std::unique_ptr<Jali::Mesh>(mf(argv[2],NULL, true, true, true, true));
   const Jali_Mesh_Wrapper inputMeshWrapper(*inputMesh);
 
-  const std::unique_ptr<Jali::Mesh> targetMesh = std::unique_ptr<Jali::Mesh>(mf(argv[3],
-      NULL, true, true, true, true));
+  const std::unique_ptr<Jali::Mesh> targetMesh = 
+      std::unique_ptr<Jali::Mesh>(mf(argv[3],NULL, true, true, true, true));
   const Jali_Mesh_Wrapper targetMeshWrapper(*targetMesh);
 
-  std::cout << "Target mesh stats: " << targetMeshWrapper.num_owned_cells() << " " << targetMeshWrapper.num_owned_nodes() << std::endl;
+  std::cout << "Target mesh stats: " << 
+      targetMeshWrapper.num_owned_cells() << " " << 
+      targetMeshWrapper.num_owned_nodes() << std::endl;
 
   Jali::State sourceState(inputMesh.get());
   std::vector<double> sourceData(inputMeshWrapper.num_owned_cells(), 0);
@@ -113,25 +115,28 @@ int main(int argc, char** argv)
   remap_fields.push_back("celldata");
 
   // Directly run cell-centered examples
-  if ((example == 0) || (example == 2))
+  if ((example == 0) || (example == 2)) 
   {
-    Portage::Driver<Jali_Mesh_Wrapper> d(Portage::CELL, inputMeshWrapper, sourceStateWrapper,
-                                                        targetMeshWrapper, targetStateWrapper);
+    Portage::Driver<Jali_Mesh_Wrapper> d(Portage::CELL, 
+                                         inputMeshWrapper, 
+                                         sourceStateWrapper,
+                                         targetMeshWrapper, 
+                                         targetStateWrapper);
     d.set_remap_var_names(remap_fields);
-
+    
     if (example == 2) d.set_remap_order(2);
-
+    
     d.run();
   }
-
+  
   // Create a dual mesh for node-centered examples
   else if ((example == 1) || (example == 3))
   {
-    const Portage::MeshWrapperDual sourceDualMeshWrapper(inputMeshWrapper);
-    const Portage::MeshWrapperDual targetDualMeshWrapper(targetMeshWrapper);
-
-    Portage::Driver<Portage::MeshWrapperDual> d(Portage::NODE, sourceDualMeshWrapper, sourceStateWrapper,
-                                                               targetDualMeshWrapper, targetStateWrapper);
+    Portage::Driver<Portage::Jali_Mesh_Wrapper> d(Portage::NODE, 
+                                                  inputMeshWrapper, 
+                                                  sourceStateWrapper,
+                                                  targetMeshWrapper, 
+                                                  targetStateWrapper);
     d.set_remap_var_names(remap_fields);
 
     if (example == 3) d.set_remap_order(2);
@@ -139,9 +144,8 @@ int main(int argc, char** argv)
     d.run();
   }
 
-  // When done, the "remapped_data" vector on the target mesh cells should
-  // be identical to the "celldata" vector on the destination mesh
-  std::cerr << "Sizes: " << sourceData.size() << " " << targetData.size() << std::endl;
+  std::cerr << "Sizes: " << sourceData.size() << " " << targetData.size() << 
+      std::endl;
   std::cerr << "Last result: " << cellvecout[cellvecout.size()-1] << std::endl;
 
   #ifdef OUTPUT_RESULTS
