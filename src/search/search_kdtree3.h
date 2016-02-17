@@ -6,11 +6,6 @@
 #ifndef SEARCH_KDTREE3_H
 #define SEARCH_KDTREE3_H
 
-/*!
-    \class SearchKDTree3 search_kdtree3.h
-    \brief SearchKDTree3 provides...
- */
-
 #include <vector>
 #include <tuple>
 
@@ -19,9 +14,16 @@
 #include "kdtree.h"
 
 
-
 namespace Portage {
 
+  /*!
+    @class SearchKDTree3 "seach_kdtree3.h"
+    @brief A search algorithm utilizing a k-d tree in 3d.
+    @tparam SourceMeshType The mesh type of the input mesh.
+    @tparam TargetMeshType The mesh type of the output mesh.
+
+    This search is only valid for 3d meshes.
+   */
 template <typename SourceMeshType, typename TargetMeshType>
 class SearchKDTree3 {
   public:
@@ -29,18 +31,16 @@ class SearchKDTree3 {
     //! Default constructor (disabled)
     SearchKDTree3() = delete;
     
-    //! Constructor with Meshes
     /*!
-      \brief Builds the kd-tree for finding intersection
+      @brief Builds the k-d tree for searching for intersection candidates.
+      @param[in] source_mesh Pointer to a mesh wrapper for getting the source
+      mesh info
+      @param[in] target_mesh Pointer to a mesh wrapper for getting the target mesh
+      info 
       
-      \param source_mesh   pointer to wrapper for getting the source mesh info
-      \param target_mesh   pointer to wrapper for getting the target mesh info 
-      
-      Constructor for kd-tree for finding cells from a source
-      mesh that overlap the target mesh
-
+      Constructor for k-d tree for finding cells from a source
+      mesh that overlap the target mesh.
     */
-
     SearchKDTree3(const SourceMeshType & source_mesh, 
                  const TargetMeshType & target_mesh)
             : sourceMesh_(source_mesh), targetMesh_(target_mesh)  {
@@ -63,7 +63,7 @@ class SearchKDTree3 {
             bboxes.emplace_back(bb);
         }
 
-        // create the kd-tree
+        // create the k-d tree
         tree_ = gk::KDTreeCreate(bboxes);
 
     } // SearchKDTree3::SearchKDTree3
@@ -78,10 +78,11 @@ class SearchKDTree3 {
     ~SearchKDTree3() { if (tree_) delete tree_; }
 
     /*!
-      \brief returns source mesh cells potentially overlapping given target cell
-
-      \param cellId the index of the target cell that I pass in...
-      \param candidates pointer to vector of potential candidate cells in sourceMesh
+      @brief Find the source mesh cells potentially overlapping a given target cell.
+      @param[in] cellId The index of the cell in the target mesh for which we wish
+      to find the candidate overlapping cells in the source mesh.
+      @param[in] candidates Pointer to a vector of potential candidate cells in
+      the source mesh.
     */
     void search(const int cellId, std::vector<int> *candidates) const;
 
