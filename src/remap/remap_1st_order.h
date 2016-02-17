@@ -17,6 +17,7 @@ namespace Portage {
 /*!
   @class Remap_1stOrder remap_1st_order.h
   @brief Remap_1stOrder does a 1st order remap of scalars
+  @tparam MeshType The type of the mesh wrapper used to access mesh info
   @tparam StateType The type of the state manager used to access data.
   @tparam OnWhatType The type of entity-based data we wish to remap; e.g. does
   it live on nodes, cells, edges, etc.
