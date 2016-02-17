@@ -208,7 +208,7 @@ TEST(Remap_2nd_Order, Cell_Ctr_Lin_BJ_Limiter_2D) {
 
   int ncells_source = source_mesh->num_entities(Jali::CELL, Jali::OWNED);
   std::vector<double> data(ncells_source);
-  const double minval = 1e+10, maxval = -1e+10;
+  double minval = 1e+10, maxval = -1e+10;
   for (int c = 0; c < ncells_source; ++c) {
     JaliGeometry::Point ccen = source_mesh->cell_centroid(c);
     if (ccen[0] < 0.5)
@@ -220,7 +220,7 @@ TEST(Remap_2nd_Order, Cell_Ctr_Lin_BJ_Limiter_2D) {
   }
 
   Jali::StateVector<double> myvec("cellvars", Jali::CELL,
-                                  source_mes.get()h, &(data[0]));
+                                  source_mesh.get(), &(data[0]));
   source_state.add(myvec);
 
   // Create Remap objects - one with no limiter and one with limiter
@@ -740,7 +740,7 @@ TEST(Remap_2nd_Order, Cell_Ctr_Lin_BJ_Limiter_3D) {
 
   const int ncells_source = source_mesh->num_entities(Jali::CELL, Jali::OWNED);
   std::vector<double> data(ncells_source);
-  const double minval = 1e+10, maxval = -1e+10;
+  double minval = 1e+10, maxval = -1e+10;
   for (int c = 0; c < ncells_source; ++c) {
     JaliGeometry::Point ccen = source_mesh->cell_centroid(c);
     if (ccen[0] < 0.5)
