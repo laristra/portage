@@ -97,7 +97,7 @@ void print_usage() {
                 (example.order == 1) ? "1st" : "2nd",
                 example.cell_centered ? "cell" : "node",
                 example.linear ? "linear" : "quadratic");
-    i++;
+    ++i;
   }
 }
 //////////////////////////////////////////////////////////////////////
@@ -178,14 +178,14 @@ int main(int argc, char** argv) {
 
     std::vector<double> cen;
     if (example.linear) {
-      for (unsigned int c = 0; c < nsrccells; c++) {
+      for (unsigned int c = 0; c < nsrccells; ++c) {
         inputMeshWrapper.cell_centroid(c, &cen);
         sourceData[c] = cen[0]+cen[1];
         if (example.dim == 3)
           sourceData[c] += cen[2];
       }
     } else {  // quadratic function
-      for (unsigned int c = 0; c < nsrccells; c++) {
+      for (unsigned int c = 0; c < nsrccells; ++c) {
         inputMeshWrapper.cell_centroid(c, &cen);
         sourceData[c] = cen[0]*cen[0]+cen[1]*cen[1];
         if (example.dim == 3)
@@ -236,7 +236,7 @@ int main(int argc, char** argv) {
       std::cout << "celldata vector on target mesh after remapping is:"
                 << std::endl;
 
-      for (int c = 0; c < ntarcells; c++) {
+      for (int c = 0; c < ntarcells; ++c) {
         std::vector<double> ccen;
         targetMeshWrapper.cell_centroid(c, &ccen);
 
