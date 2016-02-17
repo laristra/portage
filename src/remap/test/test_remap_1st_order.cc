@@ -9,6 +9,7 @@
 #include "portage/wrappers/state/jali/jali_state_wrapper.h"
 
 #include <iostream>
+#include <memory>
 
 #include "gtest/gtest.h"
 #include "mpi.h"
@@ -35,21 +36,22 @@ TEST(Remap_1st_Order, Cell_Ctr_Const_2D) {
   if (Jali::framework_available(Jali::MSTK))
     mf.preference(pref);
 
-  Jali::Mesh *source_mesh = mf(0.0,0.0,1.0,1.0,4,4);
-  Jali::Mesh *target_mesh = mf(0.0,0.0,1.0,1.0,5,5);
+  auto source_mesh = std::unique_ptr<Jali::Mesh>(mf(0.0,0.0,1.0,1.0,4,4));
+  auto target_mesh = std::unique_ptr<Jali::Mesh>(mf(0.0,0.0,1.0,1.0,5,5));
 
-  int ncells_source = source_mesh->num_entities(Jali::CELL,Jali::OWNED);
-  int ncells_target = target_mesh->num_entities(Jali::CELL,Jali::OWNED);
+  const int ncells_source = source_mesh->num_entities(Jali::CELL,Jali::OWNED);
+  const int ncells_target = target_mesh->num_entities(Jali::CELL,Jali::OWNED);
 
   // Create a state object 
 
-  Jali::State source_state(source_mesh);
+  Jali::State source_state(source_mesh.get());
 
   // Define a state vectors with constant value
 
   std::vector<double> data(ncells_source,1.25);
-  Jali::StateVector<double> myvec("cellvars",Jali::CELL,source_mesh,&(data[0]));
-  Jali::StateVector<double> &addvec = source_state.add(myvec);
+  Jali::StateVector<double> myvec("cellvars",Jali::CELL,
+                                  source_mesh.get(),&(data[0]));
+  source_state.add(myvec);
 
   // Create Remap object
 
@@ -57,8 +59,8 @@ TEST(Remap_1st_Order, Cell_Ctr_Const_2D) {
   Portage::Jali_State_Wrapper sourceStateWrapper(source_state);
 
   Portage::Remap_1stOrder<Portage::Jali_Mesh_Wrapper,
-                          Portage::Jali_State_Wrapper,
-                          Portage::Entity_kind> 
+      Portage::Jali_State_Wrapper,
+      Portage::Entity_kind> 
       remapper(sourceMeshWrapper,sourceStateWrapper,Portage::CELL,"cellvars");
 
 
@@ -81,10 +83,11 @@ TEST(Remap_1st_Order, Cell_Ctr_Const_2D) {
     std::vector<int> xcells;
     std::vector<std::vector<double>> xwts;
 
-    intersection_moments(target_cell_coords[c],source_cell_coords,&xcells,&xwts);
+    intersection_moments(target_cell_coords[c],source_cell_coords,
+                         &xcells,&xwts);
 
     std::pair< std::vector<int> const &, 
-               std::vector< std::vector<double> > const & > 
+        std::vector< std::vector<double> > const & > 
         cells_and_weights(xcells,xwts);
 
     outvals[c] = remapper(cells_and_weights);
@@ -94,7 +97,6 @@ TEST(Remap_1st_Order, Cell_Ctr_Const_2D) {
   double stdval = data[0];
   for (int c = 0; c < ncells_target; c++)
     ASSERT_DOUBLE_EQ(stdval, outvals[c]);
-
 }
 
 
@@ -138,8 +140,8 @@ TEST(Remap_1st_Order, Cell_Ctr_Lin_2D) {
   Portage::Jali_State_Wrapper sourceStateWrapper(source_state);
 
   Portage::Remap_1stOrder<Portage::Jali_Mesh_Wrapper,
-                          Portage::Jali_State_Wrapper,
-                          Portage::Entity_kind> 
+      Portage::Jali_State_Wrapper,
+      Portage::Entity_kind> 
       remapper(sourceMeshWrapper,sourceStateWrapper,Portage::CELL,"cellvars");
 
   // Gather the cell coordinates for source and target meshes for intersection
@@ -164,11 +166,11 @@ TEST(Remap_1st_Order, Cell_Ctr_Lin_2D) {
     intersection_moments(target_cell_coords[c],source_cell_coords,&xcells,&xwts);
 
     std::pair< std::vector<int> const &, 
-               std::vector< std::vector<double> > const & > 
+        std::vector< std::vector<double> > const & > 
         cells_and_weights(xcells,xwts);
 
     outvals[c] = remapper(cells_and_weights);
-  }
+}
 
   // Make sure we retrieved the correct value for each cell on the target
   // NOTE: EVEN THOUGH 1ST ORDER REMAPPING ALGORITHM DOES NOT IN 
@@ -177,14 +179,14 @@ TEST(Remap_1st_Order, Cell_Ctr_Lin_2D) {
   // IN THIS TEST
 
   std::vector<double> stdvals(ncells_target);
-  for (int c = 0; c < ncells_target; c++) {
-    JaliGeometry::Point cen;
-    target_mesh->cell_centroid(c,&cen);
-    stdvals[c] = cen[0]+cen[1];
-  }
+for (int c = 0; c < ncells_target; c++) {
+  JaliGeometry::Point cen;
+  target_mesh->cell_centroid(c,&cen);
+  stdvals[c] = cen[0]+cen[1];
+}
     
-  for (int c = 0; c < ncells_target; c++)
-    ASSERT_DOUBLE_EQ(stdvals[c], outvals[c]);
+for (int c = 0; c < ncells_target; c++)
+  ASSERT_DOUBLE_EQ(stdvals[c], outvals[c]);
 
 }
 
@@ -225,8 +227,8 @@ TEST(Remap_1st_Order, Node_Ctr_Const_2D) {
   Portage::Jali_State_Wrapper sourceStateWrapper(source_state);
 
   Portage::Remap_1stOrder<Portage::Jali_Mesh_Wrapper,
-                          Portage::Jali_State_Wrapper,
-                          Portage::Entity_kind> 
+      Portage::Jali_State_Wrapper,
+      Portage::Entity_kind> 
       remapper(sourceMeshWrapper,sourceStateWrapper,Portage::NODE,"nodevars");
 
   // Remap from source to target mesh
@@ -281,7 +283,7 @@ TEST(Remap_1st_Order, Node_Ctr_Const_2D) {
                          &xcells, &xwts);
 
     std::pair< std::vector<int> const &, 
-               std::vector< std::vector<double> > const & > 
+        std::vector< std::vector<double> > const & > 
         nodes_and_weights(xcells,xwts);
 
     outvals[n] = remapper(nodes_and_weights);
@@ -331,8 +333,8 @@ TEST(Remap_1st_Order, Cell_Ctr_Const_3D) {
   Portage::Jali_State_Wrapper sourceStateWrapper(source_state);
 
   Portage::Remap_1stOrder<Portage::Jali_Mesh_Wrapper,
-                          Portage::Jali_State_Wrapper,
-                          Portage::Entity_kind> 
+      Portage::Jali_State_Wrapper,
+      Portage::Entity_kind> 
       remapper(sourceMeshWrapper,sourceStateWrapper,Portage::CELL,"cellvars");
 
 
@@ -358,16 +360,16 @@ TEST(Remap_1st_Order, Cell_Ctr_Const_3D) {
     intersection_moments(target_cell_coords[c],source_cell_coords,&xcells,&xwts);
 
     std::pair< std::vector<int> const &, 
-               std::vector< std::vector<double> > const & > 
+        std::vector< std::vector<double> > const & > 
         cells_and_weights(xcells,xwts);
 
     outvals[c] = remapper(cells_and_weights);
-  }
+}
 
   // Make sure we retrieved the correct value for each cell on the target
   double stdval = data[0];
-  for (int c = 0; c < ncells_target; c++)
-    ASSERT_DOUBLE_EQ(stdval, outvals[c]);
+for (int c = 0; c < ncells_target; c++)
+  ASSERT_DOUBLE_EQ(stdval, outvals[c]);
 
 }
 
@@ -412,8 +414,8 @@ TEST(Remap_1st_Order, Cell_Ctr_Lin_3D) {
   Portage::Jali_State_Wrapper sourceStateWrapper(source_state);
 
   Portage::Remap_1stOrder<Portage::Jali_Mesh_Wrapper,
-                          Portage::Jali_State_Wrapper,
-                          Portage::Entity_kind> 
+      Portage::Jali_State_Wrapper,
+      Portage::Entity_kind> 
       remapper(sourceMeshWrapper,sourceStateWrapper,Portage::CELL,"cellvars");
 
   // Gather the cell coordinates for source and target meshes for intersection
@@ -438,11 +440,11 @@ TEST(Remap_1st_Order, Cell_Ctr_Lin_3D) {
     intersection_moments(target_cell_coords[c],source_cell_coords,&xcells,&xwts);
 
     std::pair< std::vector<int> const &, 
-               std::vector< std::vector<double> > const & > 
+        std::vector< std::vector<double> > const & > 
         cells_and_weights(xcells,xwts);
 
     outvals[c] = remapper(cells_and_weights);
-  }
+}
 
   // Make sure we retrieved the correct value for each cell on the target
   // NOTE: EVEN THOUGH 1ST ORDER REMAPPING ALGORITHM DOES NOT IN 
@@ -451,14 +453,14 @@ TEST(Remap_1st_Order, Cell_Ctr_Lin_3D) {
   // IN THIS TEST
 
   std::vector<double> stdvals(ncells_target);
-  for (int c = 0; c < ncells_target; c++) {
-    JaliGeometry::Point cen;
-    target_mesh->cell_centroid(c,&cen);
-    stdvals[c] = cen[0]+cen[1];
-  }
+for (int c = 0; c < ncells_target; c++) {
+  JaliGeometry::Point cen;
+  target_mesh->cell_centroid(c,&cen);
+  stdvals[c] = cen[0]+cen[1];
+}
     
-  for (int c = 0; c < ncells_target; c++)
-    ASSERT_DOUBLE_EQ(stdvals[c], outvals[c]);
+for (int c = 0; c < ncells_target; c++)
+  ASSERT_DOUBLE_EQ(stdvals[c], outvals[c]);
 
 }
 
@@ -501,8 +503,8 @@ TEST(Remap_1st_Order, Node_Ctr_Const_3D) {
   Portage::Jali_State_Wrapper sourceStateWrapper(source_state);
 
   Portage::Remap_1stOrder<Portage::Jali_Mesh_Wrapper,
-                          Portage::Jali_State_Wrapper,
-                          Portage::Entity_kind> 
+      Portage::Jali_State_Wrapper,
+      Portage::Entity_kind> 
       remapper(sourceMeshWrapper,sourceStateWrapper,Portage::NODE,"nodevars");
 
   // Remap from source to target mesh
@@ -557,7 +559,7 @@ TEST(Remap_1st_Order, Node_Ctr_Const_3D) {
                          &xcells, &xwts);
 
     std::pair< std::vector<int> const &, 
-               std::vector< std::vector<double> > const & > 
+        std::vector< std::vector<double> > const & > 
         nodes_and_weights(xcells,xwts);
 
     outvals[n] = remapper(nodes_and_weights);
