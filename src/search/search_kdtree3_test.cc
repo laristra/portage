@@ -17,8 +17,8 @@
 TEST(search_kdtree3, case1)
 {
     Jali::MeshFactory mf(MPI_COMM_WORLD);
-    Jali::Mesh *smesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 3, 3, 3);
-    Jali::Mesh *tmesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2, 2, 2);
+    std::unique_ptr<Jali::Mesh> smesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 3, 3, 3);
+    std::unique_ptr<Jali::Mesh> tmesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2, 2, 2);
     Portage::Jali_Mesh_Wrapper source_mesh_wrapper(*smesh);
     Portage::Jali_Mesh_Wrapper target_mesh_wrapper(*tmesh);
 
