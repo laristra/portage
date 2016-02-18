@@ -96,7 +96,6 @@ TEST(Matrix, MatTranspose) {
  */
 TEST(Matrix, MatInverse) {
 
-  // Use rectangular matrix to catch problems with dimensions and indices
   std::vector<std::vector<double>> A = {{1, 2.5, -1, 3.0},
                                         {2, -3, -2, 1.0},
                                         {0, 1.1, 2.3, -3.0},

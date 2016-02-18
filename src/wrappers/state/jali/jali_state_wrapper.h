@@ -19,8 +19,8 @@
 namespace Portage {
 
 /*!
-  \class Jali_State_Wrapper "jali_state_wrapper.h"
-  \brief Provides access to data stored in Jali_State
+  @class Jali_State_Wrapper "jali_state_wrapper.h"
+  @brief Provides access to data stored in Jali_State
 */
 class Jali_State_Wrapper {
  public:

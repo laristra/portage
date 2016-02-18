@@ -25,7 +25,7 @@ using std::abs;
   @param[in] a First input vector of pairs of doubles
   @param[in] b Second input vector of pairs of doubles
   @param[in] eps Tolerance
-  @return Whether a == b within the accuracy 'eps'
+  @return Whether a == b within the accuracy @c eps
  */
 bool vdd_eq(const std::vector<std::pair<double,double>> &a,
     const std::vector<std::pair<double,double>> &b, const double eps=1e-12)
@@ -42,7 +42,7 @@ bool vdd_eq(const std::vector<std::pair<double,double>> &a,
 }
 
 /*!
-  @brief Rotate the 'xylist' vector into a canonical (unique) form. The first point
+  @brief Rotate the @c xylist vector into a canonical (unique) form. The first point
   will be the one with the lowest angle between it, the nodeid and the x-axis.
   @param[in] center_node The center node to test
   @param[in,out] xylist      The xylist vector
@@ -63,7 +63,7 @@ void coordinates_canonical_rotation(
 }
 
 /*!
-  @brief Rotate the 'xylist' vector into a canonical (unique) form. The first point
+  @brief Rotate the @c xylist vector into a canonical (unique) form. The first point
   will be the one with the lowest angle between it, the nodeid and the x-axis.
   @param[in] mesh_wrapper The mesh wrapper
   @param[in] nodeid The node id

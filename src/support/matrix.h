@@ -15,7 +15,7 @@
   @brief Matrix helper functions for Portage 
 */
 
-/*! \todo Note: We could convert these to a functional form but that
+/*! @todo Note: We could convert these to a functional form but that
   entails a copy out of a potentially bulky data structure */
 
 namespace Portage {
