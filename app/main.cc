@@ -74,8 +74,8 @@ int main(int argc, char** argv) {
   if (example <= 5) {
     Jali::MeshFactory mf(MPI_COMM_WORLD);
 
-    Jali::Mesh* inputMesh = nullptr;
-    Jali::Mesh* targetMesh = nullptr;
+    std::unique_ptr<Jali::Mesh> inputMesh;
+    std::unique_ptr<Jali::Mesh> targetMesh;
 
     if (example <= 3) {
       // 2d quad input mesh from (0,0) to (1,1) with nxn zones
@@ -98,7 +98,7 @@ int main(int argc, char** argv) {
     int nsrccells = inputMeshWrapper.num_owned_cells();
     int ntarcells = targetMeshWrapper.num_owned_cells();
 
-    Jali::State sourceState(inputMesh);
+    Jali::State sourceState(inputMesh.get());
     std::vector<double> sourceData(nsrccells);
 
     if (example < 2) {  // linear function in 2D
@@ -121,7 +121,7 @@ int main(int argc, char** argv) {
         sourceState.add("celldata", Jali::CELL, &(sourceData[0]));
     Portage::Jali_State_Wrapper sourceStateWrapper(sourceState);
 
-    Jali::State targetState(targetMesh);
+    Jali::State targetState(targetMesh.get());
     std::vector<double> targetData(ntarcells, 0.0);
     Jali::StateVector<double> & cellvecout =
         targetState.add("celldata", Jali::CELL, &(targetData[0]));
@@ -191,8 +191,8 @@ int main(int argc, char** argv) {
   {
     Jali::MeshFactory mf(MPI_COMM_WORLD);
 
-    Jali::Mesh* inputMesh;
-    Jali::Mesh* targetMesh;
+    std::unique_ptr<Jali::Mesh> inputMesh;
+    std::unique_ptr<Jali::Mesh> targetMesh;
 
     // Create a 2d quad input mesh from (0,0) to (1,1) with nxn zones or
     // a 3d hex input mesh from (0,0,0) to (1,1,1) with nxnxn zones.
@@ -225,7 +225,7 @@ int main(int argc, char** argv) {
     int nn = inputMeshWrapper.num_owned_nodes();
     int dim = inputMeshWrapper.space_dimension();
 
-    Jali::State sourceState(inputMesh);
+    Jali::State sourceState(inputMesh.get());
     std::vector<double> sourceData(nn);
 
     // populate input field with quadratic function
@@ -252,7 +252,7 @@ int main(int argc, char** argv) {
         sourceState.add("nodedata", Jali::NODE, &(sourceData[0]));
     Portage::Jali_State_Wrapper sourceStateWrapper(sourceState);
 
-    Jali::State targetState(targetMesh);
+    Jali::State targetState(targetMesh.get());
     nn = targetMeshWrapper.num_owned_nodes();
     std::vector<double> targetData(nn, 0.0);
     Jali::StateVector<double> & nodevecout =

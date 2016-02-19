@@ -10,6 +10,14 @@
 #include "gtest/gtest.h"
 #include "mpi.h"
 
+/*!
+  @file test_matfuncs.cc
+  @brief Tests for matrix operations in matrix.h
+ */
+
+/*!
+  @brief Test the matrix-vector multiply functionality
+ */
 TEST(Matrix, MatVecMult) {
 
   // Use rectangular matrix to catch problems with dimensions and indices
@@ -33,10 +41,12 @@ TEST(Matrix, MatVecMult) {
 
 }
 
+/*!
+  @brief Test the matrix-matrix multiply functionality
+ */
 TEST(Matrix, MatMatMult) {
 
   // Use rectangular matrices to catch problems with dimensions and indices
-
   std::vector<std::vector<double>> A = {{1, 2.5, -1, 3.0},
                                         {2, -3, -2, 1.0},
                                         {0, 1.1, 2.3, -3.0}};
@@ -60,10 +70,12 @@ TEST(Matrix, MatMatMult) {
 
 }
 
+/*!
+  @brief Test the matrix transpose functionality
+ */
 TEST(Matrix, MatTranspose) {
 
   // Use rectangular matrix to catch problems with dimensions and indices
-
   std::vector<std::vector<double>> A = {{1, 2.5, -1, 3.0},
                                         {2, -3, -2, 1.0},
                                         {0, 1.1, 2.3, -3.0}};
@@ -79,8 +91,10 @@ TEST(Matrix, MatTranspose) {
 
 }
 
+/*! 
+  @brief Test the matrix inverse functionality
+ */
 TEST(Matrix, MatInverse) {
-
 
   std::vector<std::vector<double>> A = {{1, 2.5, -1, 3.0},
                                         {2, -3, -2, 1.0},

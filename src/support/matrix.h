@@ -10,20 +10,24 @@
 #include <vector>
 #include <iostream>
 
-
 /*!
-  \brief matrix helper functions for portage 
+  @file matrix.h
+  @brief Matrix helper functions for Portage 
 */
 
-/*! \todo Note: We could convert these to a functional form but that
+/*! @todo Note: We could convert these to a functional form but that
   entails a copy out of a potentially bulky data structure */
 
 namespace Portage {
 
-/// Matrix-Vector multiply
-
-void matvec_multiply(std::vector<std::vector<double>> A, std::vector<double> X,
-                     std::vector<double> *AX) { 
+/*!
+  @brief  Matrix-Vector multiply
+  @param[in] A The input matrix, as a vector of vectors
+  @param[in] X The input vector
+  @param[in,out] AX Pointer to the resulting vector
+ */
+void matvec_multiply(const std::vector<std::vector<double>> & A, const std::vector<double> & X,
+                     std::vector<double> * const AX) { 
   int m = A.size();
   int n = A[0].size(); // assume that all other rows are of same size
   assert(n == X.size());
@@ -35,11 +39,15 @@ void matvec_multiply(std::vector<std::vector<double>> A, std::vector<double> X,
   }
 }
 
-/// Matrix-Matrix multiply
-
-void matmat_multiply(std::vector<std::vector<double>> A, 
-                     std::vector<std::vector<double>> B,
-                     std::vector<std::vector<double>> *AB) {
+/*!
+  @brief  Matrix-Matrix multiply
+  @param[in] A First input matrix, as a vector of vectors
+  @param[in] B Second input matrix, as a vector of vectors
+  @param[in,out] AB Pointer to the resulting matrix
+ */
+void matmat_multiply(const std::vector<std::vector<double>> & A, 
+                     const std::vector<std::vector<double>> & B,
+                     std::vector<std::vector<double>> * const AB) {
   int ma = A.size();
   int na = A[0].size(); // assume all other rows are of same size
   int mb = B.size();
@@ -57,11 +65,13 @@ void matmat_multiply(std::vector<std::vector<double>> A,
         (*AB)[i][j] += A[i][k]*B[k][j];
 }
 
-
-/// Transpose of a matrix
-
-void mat_transpose(std::vector<std::vector<double>> A,
-                   std::vector<std::vector<double>> *AT) {
+/*!
+  @brief Transpose of a matrix
+  @param[in] A Input matrix
+  @param[in,out] AT Pointer to the resulting matrix
+ */
+void mat_transpose(const std::vector<std::vector<double>> & A,
+                   std::vector<std::vector<double>> * const AT) {
   int m = A.size();
   int n = A[0].size(); // assume all other rows are of the same size
 
@@ -74,13 +84,16 @@ void mat_transpose(std::vector<std::vector<double>> A,
       (*AT)[j][i] = A[i][j];
 }
 
-/// Inverse of a matrix 
+/*!
+  @brief Inverse of a matrix 
+  @param[in] A Input matrix
+  @param[in,out] Ainv Pointer to the resulting matrix
 
-// Code from DSP Design Performance Page by Dr. Jeffrey Tafts
-// http://www.nauticom.net/www/jdtaft/FortranMatrix.htm 
-
-void mat_invert(std::vector<std::vector<double>> A,
-                std::vector<std::vector<double>> *Ainv) {
+  Code from DSP Design Performance Page by Dr. Jeffrey Tafts
+  http://www.nauticom.net/www/jdtaft/FortranMatrix.htm 
+ */
+void mat_invert(const std::vector<std::vector<double>> & A,
+                std::vector<std::vector<double>> * const Ainv) {
 
   int m = A.size();
   assert(m == A[0].size());
@@ -89,13 +102,12 @@ void mat_invert(std::vector<std::vector<double>> A,
   for (int i = 0; i < m; ++i)
     (*Ainv)[i].resize(m);
 
-  // Temporary matrix
-
+  // Create a temporary matrix
   std::vector<std::vector<double>> D(m);
   for (int i = 0; i < m; ++i)
     D[i].resize(2*m);
 
-  // initialize the reduction matrix 
+  // Initialize the reduction matrix 
   int m2 = 2*m;
   for (int i = 0; i < m; i++) {
     for (int j = 0; j < m; j++) {
@@ -105,7 +117,7 @@ void mat_invert(std::vector<std::vector<double>> A,
     D[i][m+i] = 1.0;
   }
 
-  //  do the reduction
+  // Do the reduction
   for (int i = 0; i < m; i++) {
     double alpha = D[i][i];
     if (alpha == 0.0) {
@@ -118,16 +130,15 @@ void mat_invert(std::vector<std::vector<double>> A,
 
     for (int k = 0; k < m; k++) {
       if ((k-i)== 0) 
-	continue;
+        continue;
 
       double beta = D[k][i];
       for (int j = 0; j < m2; j++)
-	D[k][j] = D[k][j] - beta*D[i][j];
+        D[k][j] = D[k][j] - beta*D[i][j];
     }
   }
 
-  // copy result into output matrix
-
+  // Copy result into output matrix
   for (int i = 0; i < m; i++)
     for (int j = 0; j < m; j++)
       (*Ainv)[i][j] = D[i][j+m];

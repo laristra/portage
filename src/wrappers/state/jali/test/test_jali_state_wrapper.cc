@@ -45,9 +45,9 @@ TEST(Jali_State_Wrapper, DataTypes) {
 
   Jali::MeshFactory mf(MPI_COMM_WORLD);
 
-  Jali::Mesh* inputMesh = mf(0.0, 0.0, 1.0, 1.0, 2, 2);
+  std::unique_ptr<Jali::Mesh> inputMesh = mf(0.0, 0.0, 1.0, 1.0, 2, 2);
   Portage::Jali_Mesh_Wrapper inputMeshWrapper(*inputMesh);
-  Jali::State state(inputMesh);
+  Jali::State state(inputMesh.get());
   Portage::Jali_State_Wrapper wrapper(state);
 
   state.add("f1", Jali::CELL, ftest);

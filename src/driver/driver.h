@@ -876,7 +876,7 @@ struct composerFunctor {
 
     // Search for candidates and return their cells indices
     std::vector<int> candidates;
-    search_->search(targetCellIndex, &candidates);
+    (*search_)(targetCellIndex, &candidates);
 
     // Intersect target cell with cells of source mesh and return the
     // moments of intersection

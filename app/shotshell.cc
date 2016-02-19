@@ -64,12 +64,12 @@ int main(int argc, char** argv) {
 
   Jali::MeshFactory mf(MPI_COMM_WORLD);
 
-  const std::unique_ptr<Jali::Mesh> inputMesh =
-      std::unique_ptr<Jali::Mesh>(mf(argv[2], NULL, true, true, true, true));
+  const std::unique_ptr<Jali::Mesh> inputMesh = mf(argv[2], NULL, true,
+                                                   true, true, true);
   const Jali_Mesh_Wrapper inputMeshWrapper(*inputMesh);
 
-  const std::unique_ptr<Jali::Mesh> targetMesh =
-      std::unique_ptr<Jali::Mesh>(mf(argv[3], NULL, true, true, true, true));
+  const std::unique_ptr<Jali::Mesh> targetMesh = mf(argv[3], NULL, true,
+                                                    true, true, true);
   const Jali_Mesh_Wrapper targetMeshWrapper(*targetMesh);
 
   std::cout << "Target mesh stats: " <<

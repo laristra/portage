@@ -39,17 +39,17 @@ TEST(Remap_2nd_Order, Cell_Ctr_Const_No_Limiter_2D) {
   if (Jali::framework_available(Jali::MSTK))
     mf.preference(pref);
 
-  Jali::Mesh *source_mesh = mf(0.0, 0.0, 1.0, 1.0, 4, 4);
-  Jali::Mesh *target_mesh = mf(0.0, 0.0, 1.0, 1.0, 5, 5);
-  Jali::State source_state(source_mesh);
-  Jali::State target_state(target_mesh);
+  std::unique_ptr<Jali::Mesh> source_mesh = mf(0.0, 0.0, 1.0, 1.0, 4, 4);
+  std::unique_ptr<Jali::Mesh> target_mesh = mf(0.0, 0.0, 1.0, 1.0, 5, 5);
+  Jali::State source_state(source_mesh.get());
+  Jali::State target_state(target_mesh.get());
 
   // Define two state vectors, one with constant value and the other
   // with a linear function that is x+y
 
   int ncells_source = source_mesh->num_entities(Jali::CELL, Jali::OWNED);
   std::vector<double> data(ncells_source, 1.25);
-  Jali::StateVector<double> myvec("cellvars", Jali::CELL, source_mesh,
+  Jali::StateVector<double> myvec("cellvars", Jali::CELL, source_mesh.get(),
                                   &(data[0]));
   Jali::StateVector<double> &addvec = source_state.add(myvec);
 
@@ -115,12 +115,12 @@ TEST(Remap_2nd_Order, Cell_Ctr_Lin_No_Limiter_2D) {
   pref.push_back(Jali::MSTK);
   if (Jali::framework_available(Jali::MSTK))
     mf.preference(pref);
-
-  Jali::Mesh *source_mesh = mf(0.0, 0.0, 1.0, 1.0, 4, 4);
-  Jali::Mesh *target_mesh = mf(0.0, 0.0, 1.0, 1.0, 5, 5);
-  Jali::State source_state(source_mesh);
-  Jali::State target_state(target_mesh);
-
+  
+  std::unique_ptr<Jali::Mesh> source_mesh = mf(0.0, 0.0, 1.0, 1.0, 4, 4);
+  std::unique_ptr<Jali::Mesh> target_mesh = mf(0.0, 0.0, 1.0, 1.0, 5, 5);
+  Jali::State source_state(source_mesh.get());
+  Jali::State target_state(target_mesh.get());
+  
   // Define a state vectors, with a linear function that is x+y
 
   int ncells_source = source_mesh->num_entities(Jali::CELL, Jali::OWNED);
@@ -131,7 +131,7 @@ TEST(Remap_2nd_Order, Cell_Ctr_Lin_No_Limiter_2D) {
   }
 
 
-  Jali::StateVector<double> myvec("cellvars", Jali::CELL, source_mesh,
+  Jali::StateVector<double> myvec("cellvars", Jali::CELL, source_mesh.get(),
                                   &(data[0]));
   Jali::StateVector<double> &addvec = source_state.add(myvec);
 
@@ -201,10 +201,10 @@ TEST(Remap_2nd_Order, Cell_Ctr_Lin_BJ_Limiter_2D) {
   if (Jali::framework_available(Jali::MSTK))
     mf.preference(pref);
 
-  Jali::Mesh *source_mesh = mf(0.0, 0.0, 1.0, 1.0, 4, 4);
-  Jali::Mesh *target_mesh = mf(0.0, 0.0, 1.0, 1.0, 5, 5);
-  Jali::State source_state(source_mesh);
-  Jali::State target_state(target_mesh);
+  std::unique_ptr<Jali::Mesh> source_mesh = mf(0.0, 0.0, 1.0, 1.0, 4, 4);
+  std::unique_ptr<Jali::Mesh> target_mesh = mf(0.0, 0.0, 1.0, 1.0, 5, 5);
+  Jali::State source_state(source_mesh.get());
+  Jali::State target_state(target_mesh.get());
 
   // Define a state vectors, with a linear function that is x+y
 
@@ -221,8 +221,7 @@ TEST(Remap_2nd_Order, Cell_Ctr_Lin_BJ_Limiter_2D) {
     if (data[c] > maxval) maxval = data[c];
   }
 
-
-  Jali::StateVector<double> myvec("cellvars", Jali::CELL, source_mesh,
+  Jali::StateVector<double> myvec("cellvars", Jali::CELL, source_mesh.get(),
                                   &(data[0]));
   Jali::StateVector<double> &addvec = source_state.add(myvec);
 
@@ -305,16 +304,15 @@ TEST(Remap_2nd_Order, Cell_Ctr_Lin_BJ_Limiter_2D) {
 /// Second order remap of constant node-centered field with no limiting in 2D
 
 TEST(Remap_2nd_Order, Node_Ctr_Const_No_Limiter) {
-
   Jali::MeshFactory mf(MPI_COMM_WORLD);
   Jali::FrameworkPreference pref;
   pref.push_back(Jali::MSTK);
   if (Jali::framework_available(Jali::MSTK))
     mf.preference(pref);
 
-  Jali::Mesh *source_mesh = mf(0.0, 0.0, 1.0, 1.0, 4, 4, NULL,
+  std::unique_ptr<Jali::Mesh> source_mesh = mf(0.0, 0.0, 1.0, 1.0, 4, 4, NULL,
                                true, true, true, true);
-  Jali::Mesh *target_mesh = mf(0.0, 0.0, 1.0, 1.0, 5, 5, NULL,
+  std::unique_ptr<Jali::Mesh> target_mesh = mf(0.0, 0.0, 1.0, 1.0, 5, 5, NULL,
                                true, true, true, true);
 
   int nnodes_source = source_mesh->num_entities(Jali::NODE, Jali::OWNED);
@@ -322,14 +320,14 @@ TEST(Remap_2nd_Order, Node_Ctr_Const_No_Limiter) {
 
   // Create a state object and add the first two vectors to it
 
-  Jali::State source_state(source_mesh);
+  Jali::State source_state(source_mesh.get());
 
 
   // Define two state vectors, one with constant value, the other
   // with a linear function
 
   std::vector<double> data(nnodes_source, 1.5);
-  Jali::StateVector<double> myvec("nodevars", Jali::NODE, source_mesh,
+  Jali::StateVector<double> myvec("nodevars", Jali::NODE, source_mesh.get(),
                                   &(data[0]));
   Jali::StateVector<double> &addvec = source_state.add(myvec);
 
@@ -423,18 +421,17 @@ TEST(Remap_2nd_Order, Node_Ctr_Lin_No_Limiter) {
   if (Jali::framework_available(Jali::MSTK))
     mf.preference(pref);
 
-  Jali::Mesh *source_mesh = mf(0.0, 0.0, 1.0, 1.0, 4, 4, NULL,
-                               true, true, true, true);
-  Jali::Mesh *target_mesh = mf(0.0, 0.0, 1.0, 1.0, 5, 5, NULL,
-                               true, true, true, true);
+  std::unique_ptr<Jali::Mesh> source_mesh = mf(0.0, 0.0, 1.0, 1.0, 4, 4, NULL,
+                                               true, true, true, true);
+  std::unique_ptr<Jali::Mesh> target_mesh = mf(0.0, 0.0, 1.0, 1.0, 5, 5, NULL,
+                                               true, true, true, true);
 
   int nnodes_source = source_mesh->num_entities(Jali::NODE, Jali::OWNED);
   int nnodes_target = target_mesh->num_entities(Jali::NODE, Jali::OWNED);
 
   // Create a state object and add the first two vectors to it
 
-  Jali::State source_state(source_mesh);
-
+  Jali::State source_state(source_mesh.get());
 
   // Define a state vectors representing a linear function
 
@@ -444,7 +441,7 @@ TEST(Remap_2nd_Order, Node_Ctr_Lin_No_Limiter) {
     source_mesh->node_get_coordinates(n, &coord);
     data[n] = coord[0]+coord[1];
   }
-  Jali::StateVector<double> myvec("nodevars", Jali::NODE, source_mesh,
+  Jali::StateVector<double> myvec("nodevars", Jali::NODE, source_mesh.get(),
                                   &(data[0]));
   Jali::StateVector<double> &addvec = source_state.add(myvec);
 
@@ -556,17 +553,19 @@ TEST(Remap_2nd_Order, Cell_Ctr_Const_No_Limiter_3D) {
   if (Jali::framework_available(Jali::MSTK))
     mf.preference(pref);
 
-  Jali::Mesh *source_mesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 4, 4, 4);
-  Jali::Mesh *target_mesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 5, 5, 5);
-  Jali::State source_state(source_mesh);
-  Jali::State target_state(target_mesh);
+  std::unique_ptr<Jali::Mesh> source_mesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0,
+                                               4, 4, 4);
+  std::unique_ptr<Jali::Mesh> target_mesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0,
+                                               5, 5, 5);
+  Jali::State source_state(source_mesh.get());
+  Jali::State target_state(target_mesh.get());
 
   // Define two state vectors, one with constant value and the other
   // with a linear function that is x+y
 
   int ncells_source = source_mesh->num_entities(Jali::CELL, Jali::OWNED);
   std::vector<double> data(ncells_source, 1.25);
-  Jali::StateVector<double> myvec("cellvars", Jali::CELL, source_mesh,
+  Jali::StateVector<double> myvec("cellvars", Jali::CELL, source_mesh.get(),
                                   &(data[0]));
   Jali::StateVector<double> &addvec = source_state.add(myvec);
 
@@ -633,10 +632,12 @@ TEST(Remap_2nd_Order, Cell_Ctr_Lin_No_Limiter_3D) {
   if (Jali::framework_available(Jali::MSTK))
     mf.preference(pref);
 
-  Jali::Mesh *source_mesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 4, 4, 4);
-  Jali::Mesh *target_mesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 5, 5, 5);
-  Jali::State source_state(source_mesh);
-  Jali::State target_state(target_mesh);
+  std::unique_ptr<Jali::Mesh> source_mesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0,
+                                               4, 4, 4);
+  std::unique_ptr<Jali::Mesh> target_mesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0,
+                                               5, 5, 5);
+  Jali::State source_state(source_mesh.get());
+  Jali::State target_state(target_mesh.get());
 
   // Define a state vectors, with a linear function that is x+y
 
@@ -648,7 +649,7 @@ TEST(Remap_2nd_Order, Cell_Ctr_Lin_No_Limiter_3D) {
   }
 
 
-  Jali::StateVector<double> myvec("cellvars", Jali::CELL, source_mesh,
+  Jali::StateVector<double> myvec("cellvars", Jali::CELL, source_mesh.get(),
                                   &(data[0]));
   Jali::StateVector<double> &addvec = source_state.add(myvec);
 
@@ -718,10 +719,12 @@ TEST(Remap_2nd_Order, Cell_Ctr_BJ_Limiter_3D) {
   if (Jali::framework_available(Jali::MSTK))
     mf.preference(pref);
 
-  Jali::Mesh *source_mesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 4, 4, 4);
-  Jali::Mesh *target_mesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 5, 5, 5);
-  Jali::State source_state(source_mesh);
-  Jali::State target_state(target_mesh);
+  std::unique_ptr<Jali::Mesh> source_mesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0,
+                                               4, 4, 4);
+  std::unique_ptr<Jali::Mesh> target_mesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0,
+                                               5, 5, 5);
+  Jali::State source_state(source_mesh.get());
+  Jali::State target_state(target_mesh.get());
 
   // Define a state vectors, with a linear function that is x+y
 
@@ -738,8 +741,7 @@ TEST(Remap_2nd_Order, Cell_Ctr_BJ_Limiter_3D) {
     if (data[c] > maxval) maxval = data[c];
   }
 
-
-  Jali::StateVector<double> myvec("cellvars", Jali::CELL, source_mesh,
+  Jali::StateVector<double> myvec("cellvars", Jali::CELL, source_mesh.get(),
                                   &(data[0]));
   Jali::StateVector<double> &addvec = source_state.add(myvec);
 
@@ -834,24 +836,26 @@ TEST(Remap_2nd_Order, Node_Ctr_Const_No_Limiter_3D) {
   if (Jali::framework_available(Jali::MSTK))
     mf.preference(pref);
 
-  Jali::Mesh *source_mesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 4, 4, 4, NULL,
-                               true, true, true, true);
-  Jali::Mesh *target_mesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 5, 5, 5, NULL,
-                               true, true, true, true);
+  std::unique_ptr<Jali::Mesh> source_mesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0,
+                                               4, 4, 4, NULL,
+                                               true, true, true, true);
+  std::unique_ptr<Jali::Mesh> target_mesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0,
+                                               5, 5, 5, NULL,
+                                               true, true, true, true);
 
   int nnodes_source = source_mesh->num_entities(Jali::NODE, Jali::OWNED);
   int nnodes_target = target_mesh->num_entities(Jali::NODE, Jali::OWNED);
 
   // Create a state object and add the first two vectors to it
 
-  Jali::State source_state(source_mesh);
+  Jali::State source_state(source_mesh.get());
 
 
   // Define a state vectors representing a linear function
 
   double nodeval = 3.0;
   std::vector<double> data(nnodes_source, nodeval);
-  Jali::StateVector<double> myvec("nodevars", Jali::NODE, source_mesh,
+  Jali::StateVector<double> myvec("nodevars", Jali::NODE, source_mesh.get(),
                                   &(data[0]));
   Jali::StateVector<double> &addvec = source_state.add(myvec);
 
@@ -959,17 +963,19 @@ TEST(Remap_2nd_Order, Node_Ctr_Lin_No_Limiter_3D) {
   if (Jali::framework_available(Jali::MSTK))
     mf.preference(pref);
 
-  Jali::Mesh *source_mesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 4, 4, 4, NULL,
-                               true, true, true, true);
-  Jali::Mesh *target_mesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 5, 5, 5, NULL,
-                               true, true, true, true);
+  std::unique_ptr<Jali::Mesh> source_mesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0,
+                                               4, 4, 4, NULL,
+                                               true, true, true, true);
+  std::unique_ptr<Jali::Mesh> target_mesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0,
+                                               5, 5, 5, NULL,
+                                               true, true, true, true);
 
   int nnodes_source = source_mesh->num_entities(Jali::NODE, Jali::OWNED);
   int nnodes_target = target_mesh->num_entities(Jali::NODE, Jali::OWNED);
 
   // Create a state object and add the first two vectors to it
 
-  Jali::State source_state(source_mesh);
+  Jali::State source_state(source_mesh.get());
 
 
   // Define a state vectors representing a linear function
@@ -980,7 +986,7 @@ TEST(Remap_2nd_Order, Node_Ctr_Lin_No_Limiter_3D) {
     source_mesh->node_get_coordinates(n, &coord);
     data[n] = coord[0]+coord[1]+coord[2];
   }
-  Jali::StateVector<double> myvec("nodevars", Jali::NODE, source_mesh,
+  Jali::StateVector<double> myvec("nodevars", Jali::NODE, source_mesh.get(),
                                   &(data[0]));
   Jali::StateVector<double> &addvec = source_state.add(myvec);
 
@@ -1093,9 +1099,9 @@ TEST(Remap_2nd_Order, Node_Ctr_BJ_Limiter_3D) {
   if (Jali::framework_available(Jali::MSTK))
     mf.preference(pref);
 
-  Jali::Mesh *source_mesh = mf(0.0, 0.0, 1.0, 1.0, 4, 4, NULL,
+  std::unique_ptr<Jali::Mesh> source_mesh = mf(0.0, 0.0, 1.0, 1.0, 4, 4, NULL,
                                true, true, true, true);
-  Jali::Mesh *target_mesh = mf(0.0, 0.0, 1.0, 1.0, 5, 5, NULL,
+  std::unique_ptr<Jali::Mesh> target_mesh = mf(0.0, 0.0, 1.0, 1.0, 5, 5, NULL,
                                true, true, true, true);
 
   int nnodes_source = source_mesh->num_entities(Jali::NODE, Jali::OWNED);
@@ -1103,7 +1109,7 @@ TEST(Remap_2nd_Order, Node_Ctr_BJ_Limiter_3D) {
 
   // Create a state object and add the first two vectors to it
 
-  Jali::State source_state(source_mesh);
+  Jali::State source_state(source_mesh.get());
 
 
   // Define a state vector representing two piecewise linear functions,
@@ -1122,7 +1128,7 @@ TEST(Remap_2nd_Order, Node_Ctr_BJ_Limiter_3D) {
     if (data[n] < minval) minval = data[n];
     if (data[n] > maxval) maxval = data[n];
   }
-  Jali::StateVector<double> myvec("nodevars", Jali::NODE, source_mesh,
+  Jali::StateVector<double> myvec("nodevars", Jali::NODE, source_mesh.get(),
                                   &(data[0]));
   Jali::StateVector<double> &addvec = source_state.add(myvec);
 
