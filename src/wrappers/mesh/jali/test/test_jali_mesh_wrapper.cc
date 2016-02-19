@@ -148,8 +148,8 @@ TEST(Jali_Mesh, coordinates_canonical_rotation) {
  */
 TEST(Jali_Mesh, ccw) {
     Jali::MeshFactory mf(MPI_COMM_WORLD);
-    Jali::Mesh *mesh = mf(0.0,0.0,1.0,1.0,2,2);
-    ASSERT_TRUE(mesh != NULL);
+    std::unique_ptr<Jali::Mesh> mesh = mf(0.0,0.0,1.0,1.0,2,2);
+    ASSERT_TRUE(mesh != nullptr);
     Portage::Jali_Mesh_Wrapper mesh_wrapper(*mesh);
 
     ASSERT_TRUE(mesh_wrapper.ccw({-1, 0}, {0, 0}, {0, 1}));
@@ -165,8 +165,8 @@ TEST(Jali_Mesh, ccw) {
  */
 TEST(Jali_Mesh, dual_cell_get_coordinates) {
     Jali::MeshFactory mf(MPI_COMM_WORLD);
-    Jali::Mesh *mesh = mf(0.0,0.0,1.0,1.0,2,2, NULL, true, true, true, true);
-    ASSERT_TRUE(mesh != NULL);
+    std::unique_ptr<Jali::Mesh> mesh = mf(0.0,0.0,1.0,1.0,2,2, NULL, true, true, true, true);
+    ASSERT_TRUE(mesh != nullptr);
     Portage::Jali_Mesh_Wrapper mesh_wrapper(*mesh);
     double eps = 1e-12;
 
@@ -280,7 +280,7 @@ TEST(Jali_Mesh, dual_cell_get_coordinates) {
  */
 TEST(Jali_Mesh, Get_Neighbor_Cells) {
   Jali::MeshFactory mf(MPI_COMM_WORLD);
-  Jali::Mesh *mesh = mf(0.0,0.0,0.0,1.0,1.0,1.0,2,2,2);
+  std::unique_ptr<Jali::Mesh> mesh = mf(0.0,0.0,0.0,1.0,1.0,1.0,2,2,2);
   ASSERT_TRUE(mesh != NULL);
   Portage::Jali_Mesh_Wrapper mesh_wrapper(*mesh);
 
@@ -350,7 +350,7 @@ TEST(Jali_Mesh, mesh_shotshell) {
   Jali::MeshFactory mesh_factory(MPI_COMM_WORLD);
 
   // Make sure we request faces, edges, wedges and corners
-  Jali::Mesh *mesh = mesh_factory("test_data/shotshell.exo",NULL,true,true,true,true);
+  std::unique_ptr<Jali::Mesh> mesh = mesh_factory("test_data/shotshell.exo",NULL,true,true,true,true);
   ASSERT_TRUE(mesh != NULL);
 
   // Make sure we request faces, edges, wedges and corners

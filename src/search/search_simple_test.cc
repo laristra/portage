@@ -17,8 +17,8 @@ TEST(search_simple, case1)
     Jali::MeshFactory mf(MPI_COMM_WORLD);
     // overlay a 2x2 target mesh on a 3x3 source mesh
     // each target mesh cell gives four candidate source cells
-    const Jali::Mesh *smesh = mf(0.0, 0.0, 1.0, 1.0, 3, 3);
-    const Jali::Mesh *tmesh = mf(0.0, 0.0, 1.0, 1.0, 2, 2);
+    const std::unique_ptr<Jali::Mesh> smesh = mf(0.0, 0.0, 1.0, 1.0, 3, 3);
+    const std::unique_ptr<Jali::Mesh> tmesh = mf(0.0, 0.0, 1.0, 1.0, 2, 2);
     const Portage::Jali_Mesh_Wrapper source_mesh_wrapper(*smesh);
     const Portage::Jali_Mesh_Wrapper target_mesh_wrapper(*tmesh);
 
@@ -58,15 +58,14 @@ class MeshWrapperDual {
     const Portage::Jali_Mesh_Wrapper &w_;
 };
 
-
 TEST(search_simple, dual)
 {
     Jali::MeshFactory mf(MPI_COMM_WORLD);
     // overlay a 2x2 target mesh on a 3x3 source mesh
     // each target mesh node gives four candidate source nodes
-    const Jali::Mesh *smesh = mf(0.0, 0.0, 1.0, 1.0, 3, 3, NULL, 
+    const std::unique_ptr<Jali::Mesh> smesh = mf(0.0, 0.0, 1.0, 1.0, 3, 3, NULL, 
                                  true, true, true, true);
-    const Jali::Mesh *tmesh = mf(0.0, 0.0, 1.0, 1.0, 2, 2, NULL, 
+    const std::unique_ptr<Jali::Mesh> tmesh = mf(0.0, 0.0, 1.0, 1.0, 2, 2, NULL, 
                                  true, true, true, true);
     const Portage::Jali_Mesh_Wrapper source_mesh_wrapper(*smesh);
     const Portage::Jali_Mesh_Wrapper target_mesh_wrapper(*tmesh);

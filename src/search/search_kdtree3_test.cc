@@ -19,8 +19,8 @@ TEST(search_kdtree3, case1)
     Jali::MeshFactory mf(MPI_COMM_WORLD);
     // overlay a 2x2x2 target mesh on a 3x3x3 source mesh
     // each target mesh cell gives eight candidate source cells
-    const Jali::Mesh *smesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 3, 3, 3);
-    const Jali::Mesh *tmesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2, 2, 2);
+    const std::unique_ptr<Jali::Mesh> smesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 3, 3, 3);
+    const std::unique_ptr<Jali::Mesh> tmesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2, 2, 2);
     const Portage::Jali_Mesh_Wrapper source_mesh_wrapper(*smesh);
     const Portage::Jali_Mesh_Wrapper target_mesh_wrapper(*tmesh);
 

@@ -33,12 +33,12 @@ TEST(Gradient, Fields_Cell_Ctr) {
   if (Jali::framework_available(Jali::MSTK))
     mf.preference(pref);
   
-  Jali::Mesh *mesh1 = mf(0.0,0.0,1.0,1.0,4,4,NULL,true,true,true,true);
-  ASSERT_TRUE(mesh1 != NULL);
+  std::unique_ptr<Jali::Mesh> mesh1 = mf(0.0,0.0,1.0,1.0,4,4,NULL,true,true,true,true);
+  ASSERT_TRUE(mesh1 != nullptr);
   
   // Create a state object and add the first two vectors to it
   
-  Jali::State mystate(mesh1);
+  Jali::State mystate(mesh1.get());
 
   // Define three state vectors, one with constant value and the other
   // with a linear function that is x+2y
@@ -47,7 +47,7 @@ TEST(Gradient, Fields_Cell_Ctr) {
   std::vector<double> data1(nc1);
   for (int c = 0; c < nc1; ++c)
     data1[c] = 1.25;
-  Jali::StateVector<double> myvec1("cellvars1",Jali::CELL,mesh1,&(data1[0]));
+  Jali::StateVector<double> myvec1("cellvars1",Jali::CELL,mesh1.get(),&(data1[0]));
   Jali::StateVector<double> &addvec1 = mystate.add(myvec1);
 
   
@@ -57,7 +57,7 @@ TEST(Gradient, Fields_Cell_Ctr) {
     data2[c] = ccen[0]+2*ccen[1];
   }
 
-  Jali::StateVector<double> myvec2("cellvars2",Jali::CELL,mesh1,&(data2[0]));
+  Jali::StateVector<double> myvec2("cellvars2",Jali::CELL,mesh1.get(),&(data2[0]));
   Jali::StateVector<double> &addvec2 = mystate.add(myvec2);
 
   Portage::Jali_Mesh_Wrapper meshwrapper(*mesh1);
@@ -145,12 +145,12 @@ TEST(Gradient, Fields_Node_Ctr) {
   if (Jali::framework_available(Jali::MSTK))
     mf.preference(pref);
 
-  Jali::Mesh *mesh1 = mf(0.0,0.0,1.0,1.0,3,3,NULL,true,true,true,true);
-  ASSERT_TRUE(mesh1 != NULL);
+  std::unique_ptr<Jali::Mesh> mesh1 = mf(0.0,0.0,1.0,1.0,3,3,NULL,true,true,true,true);
+  ASSERT_TRUE(mesh1 != nullptr);
 
   // Create a state object and add the first two vectors to it
 
-  Jali::State mystate(mesh1);
+  Jali::State mystate(mesh1.get());
 
   // Define three state vectors, one with constant value, the other
   // with a linear function
@@ -160,7 +160,7 @@ TEST(Gradient, Fields_Node_Ctr) {
   std::vector<double> data1(nn1);
   for (int n = 0; n < nn1; ++n) data1[n] = 1.5;
 
-  Jali::StateVector<double> myvec1("nodevars1",Jali::NODE,mesh1,&(data1[0]));
+  Jali::StateVector<double> myvec1("nodevars1",Jali::NODE,mesh1.get(),&(data1[0]));
   Jali::StateVector<double> &addvec1 = mystate.add(myvec1);
 
   std::vector<double> data2(nn1);
@@ -169,7 +169,7 @@ TEST(Gradient, Fields_Node_Ctr) {
     mesh1->node_get_coordinates(n,&nodexy);
     data2[n] = 3*nodexy[0]+nodexy[1];
   }
-  Jali::StateVector<double> myvec2("nodevars2",Jali::NODE,mesh1,&(data2[0]));
+  Jali::StateVector<double> myvec2("nodevars2",Jali::NODE,mesh1.get(),&(data2[0]));
   Jali::StateVector<double> &addvec2 = mystate.add(myvec2);
 
   // Create Gradient calculater objects
