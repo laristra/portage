@@ -15,9 +15,20 @@
 
 using std::abs;
 
-// Returns true if a == b within the accuracy 'eps'
+/*!
+  @file test_jali_mesh_wrapper.cc
+  @brief Unit tests for the Jali mesh wrapper class
+ */
+
+/*!
+  @brief Returns true if a == b within the accuracy 'eps'
+  @param[in] a First input vector of pairs of doubles
+  @param[in] b Second input vector of pairs of doubles
+  @param[in] eps Tolerance
+  @return Whether a == b within the accuracy @c eps
+ */
 bool vdd_eq(const std::vector<std::pair<double,double>> &a,
-    const std::vector<std::pair<double,double>> &b, double eps=1e-12)
+    const std::vector<std::pair<double,double>> &b, const double eps=1e-12)
 {
     // Can't be equal if # of entries differ:
     if (a.size() != b.size()) return false;
@@ -30,12 +41,15 @@ bool vdd_eq(const std::vector<std::pair<double,double>> &a,
     return true;
 }
 
-// Rotate the 'xylist' vector into a canonical (unique) form. The first point
-// will be the one with the lowest angle between it, the nodeid and the
-// x-axis.
+/*!
+  @brief Rotate the @c xylist vector into a canonical (unique) form. The first point
+  will be the one with the lowest angle between it, the nodeid and the x-axis.
+  @param[in] center_node The center node to test
+  @param[in,out] xylist      The xylist vector
+ */
 void coordinates_canonical_rotation(
       const std::pair<double, double> center_node,
-      std::vector<std::pair<double, double>> *xylist)
+      std::vector<std::pair<double, double>> * const xylist)
 {
     int i = 0;
     auto angle = [&]() {
@@ -48,18 +62,25 @@ void coordinates_canonical_rotation(
     std::rotate(xylist->begin(), xylist->begin()+i, xylist->end());
 }
 
-// Rotate the 'xylist' vector into a canonical (unique) form. The first point
-// will be the one with the lowest angle between it, the nodeid and the
-// x-axis.
+/*!
+  @brief Rotate the @c xylist vector into a canonical (unique) form. The first point
+  will be the one with the lowest angle between it, the nodeid and the x-axis.
+  @param[in] mesh_wrapper The mesh wrapper
+  @param[in] nodeid The node id
+  @param[in,out] xylist The xylist
+ */
 void dual_cell_coordinates_canonical_rotation(
     const Portage::Jali_Mesh_Wrapper &mesh_wrapper,
     int const nodeid,
-    std::vector<std::pair<double,double> > *xylist) {
+    std::vector<std::pair<double,double> > * const xylist) {
   std::pair<double, double> center_node;
   mesh_wrapper.node_get_coordinates(nodeid, &center_node);
   coordinates_canonical_rotation(center_node, xylist);
 }
 
+/*!
+  @brief Unit test for equality comparisons
+ */
 TEST(Jali_Mesh, vdd_eq) {
     std::vector<std::pair<double,double>> a, b, c;
     a = {{0.25, 0}, {0.25, 0.25}};
@@ -73,6 +94,9 @@ TEST(Jali_Mesh, vdd_eq) {
     ASSERT_TRUE(vdd_eq(a, c, 0.5));
 }
 
+/*!
+  @brief Unit test for canonical rotations of coordinates
+ */
 TEST(Jali_Mesh, coordinates_canonical_rotation) {
     std::vector<std::pair<double,double>> xylist, xylist_canonical;
     xylist_canonical = {
@@ -119,6 +143,9 @@ TEST(Jali_Mesh, coordinates_canonical_rotation) {
     ASSERT_TRUE(vdd_eq(xylist, xylist_canonical));
 }
 
+/*!
+  @brief Unit test for counter-clockwise winding of coordinates
+ */
 TEST(Jali_Mesh, ccw) {
     Jali::MeshFactory mf(MPI_COMM_WORLD);
     Jali::Mesh *mesh = mf(0.0,0.0,1.0,1.0,2,2);
@@ -133,6 +160,9 @@ TEST(Jali_Mesh, ccw) {
     ASSERT_TRUE(mesh_wrapper.ccw({0.25, 0.25}, {0, 0}, {0.25, 0}));
 }
 
+/*!
+  @brief Unit test for getting dual cell coordinates
+ */
 TEST(Jali_Mesh, dual_cell_get_coordinates) {
     Jali::MeshFactory mf(MPI_COMM_WORLD);
     Jali::Mesh *mesh = mf(0.0,0.0,1.0,1.0,2,2, NULL, true, true, true, true);
@@ -245,6 +275,9 @@ TEST(Jali_Mesh, dual_cell_get_coordinates) {
     */
 }
 
+/*!
+  @brief Unit test for getting neighbor cells
+ */
 TEST(Jali_Mesh, Get_Neighbor_Cells) {
   Jali::MeshFactory mf(MPI_COMM_WORLD);
   Jali::Mesh *mesh = mf(0.0,0.0,0.0,1.0,1.0,1.0,2,2,2);
@@ -310,6 +343,9 @@ TEST(Jali_Mesh, Get_Neighbor_Cells) {
   }
 }
 
+/*!
+  @brief Unit test for creating a mesh from the shotshell exo file
+ */
 TEST(Jali_Mesh, mesh_shotshell) {
   Jali::MeshFactory mesh_factory(MPI_COMM_WORLD);
 
