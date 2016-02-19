@@ -1,3 +1,8 @@
+/*---------------------------------------------------------------------------~*
+ * Copyright (c) 2015 Los Alamos National Security, LLC
+ * All rights reserved.
+ *---------------------------------------------------------------------------~*/
+
 #include <cstdio>
 #include <cstdlib>
 #include <vector>
@@ -24,8 +29,8 @@
 using Portage::Jali_Mesh_Wrapper;
 using Portage::Jali_State_Wrapper;
 
-int main(int argc, char** argv)
-{
+int main(int argc, char** argv) {
+
   // Pause profiling until main loop
   #ifdef ENABLE_PROFILE
     __itt_pause();
@@ -33,8 +38,7 @@ int main(int argc, char** argv)
 
   // Get the example to run from command-line parameter
   int example = 0;
-  if (argc <= 3)
-  {
+  if (argc <= 3) {
     std::printf("Usage: shotshellapp example-number input-mesh output-mesh\n");
     std::printf("example 0: 2d 1st order cell-centered remap\n");
     std::printf("example 1: 2d 1st order node-centered remap\n");
@@ -60,16 +64,16 @@ int main(int argc, char** argv)
 
   Jali::MeshFactory mf(MPI_COMM_WORLD);
 
-  const std::unique_ptr<Jali::Mesh> inputMesh = 
-      std::unique_ptr<Jali::Mesh>(mf(argv[2],NULL, true, true, true, true));
+  const std::unique_ptr<Jali::Mesh> inputMesh =
+      std::unique_ptr<Jali::Mesh>(mf(argv[2], NULL, true, true, true, true));
   const Jali_Mesh_Wrapper inputMeshWrapper(*inputMesh);
 
-  const std::unique_ptr<Jali::Mesh> targetMesh = 
-      std::unique_ptr<Jali::Mesh>(mf(argv[3],NULL, true, true, true, true));
+  const std::unique_ptr<Jali::Mesh> targetMesh =
+      std::unique_ptr<Jali::Mesh>(mf(argv[3], NULL, true, true, true, true));
   const Jali_Mesh_Wrapper targetMeshWrapper(*targetMesh);
 
-  std::cout << "Target mesh stats: " << 
-      targetMeshWrapper.num_owned_cells() << " " << 
+  std::cout << "Target mesh stats: " <<
+      targetMeshWrapper.num_owned_cells() << " " <<
       targetMeshWrapper.num_owned_nodes() << std::endl;
 
   Jali::State sourceState(inputMesh.get());
@@ -103,39 +107,42 @@ int main(int argc, char** argv)
     }
   #endif
 
-  sourceState.add("celldata", (example == 0) || (example == 2) ? Jali::CELL : Jali::NODE, &(sourceData[0]));
+  sourceState.add("celldata",
+                  (example == 0) || (example == 2) ?
+                  Jali::CELL : Jali::NODE, &(sourceData[0]));
   const Jali_State_Wrapper sourceStateWrapper(sourceState);
 
   Jali::State targetState(targetMesh.get());
   std::vector<double> targetData(targetMeshWrapper.num_owned_cells(), 0);
-  const Jali::StateVector<double> & cellvecout = targetState.add("celldata", (example == 0) || (example == 2) ? Jali::CELL : Jali::NODE, &(targetData[0]));
+  const Jali::StateVector<double> & cellvecout =
+      targetState.add("celldata",
+                      (example == 0) || (example == 2) ?
+                      Jali::CELL : Jali::NODE, &(targetData[0]));
   Jali_State_Wrapper targetStateWrapper(targetState);
 
   std::vector<std::string> remap_fields;
   remap_fields.push_back("celldata");
 
   // Directly run cell-centered examples
-  if ((example == 0) || (example == 2)) 
-  {
-    Portage::Driver<Jali_Mesh_Wrapper> d(Portage::CELL, 
-                                         inputMeshWrapper, 
+  if ((example == 0) || (example == 2)) {
+    Portage::Driver<Jali_Mesh_Wrapper> d(Portage::CELL,
+                                         inputMeshWrapper,
                                          sourceStateWrapper,
-                                         targetMeshWrapper, 
+                                         targetMeshWrapper,
                                          targetStateWrapper);
     d.set_remap_var_names(remap_fields);
-    
+
     if (example == 2) d.set_remap_order(2);
-    
+
     d.run();
   }
-  
+
   // Create a dual mesh for node-centered examples
-  else if ((example == 1) || (example == 3))
-  {
-    Portage::Driver<Portage::Jali_Mesh_Wrapper> d(Portage::NODE, 
-                                                  inputMeshWrapper, 
+  else if ((example == 1) || (example == 3)) {
+    Portage::Driver<Portage::Jali_Mesh_Wrapper> d(Portage::NODE,
+                                                  inputMeshWrapper,
                                                   sourceStateWrapper,
-                                                  targetMeshWrapper, 
+                                                  targetMeshWrapper,
                                                   targetStateWrapper);
     d.set_remap_var_names(remap_fields);
 
@@ -144,7 +151,7 @@ int main(int argc, char** argv)
     d.run();
   }
 
-  std::cerr << "Sizes: " << sourceData.size() << " " << targetData.size() << 
+  std::cerr << "Sizes: " << sourceData.size() << " " << targetData.size() <<
       std::endl;
   std::cerr << "Last result: " << cellvecout[cellvecout.size()-1] << std::endl;
 
@@ -162,5 +169,3 @@ int main(int argc, char** argv)
 
   MPI_Finalize();
 }
-
-

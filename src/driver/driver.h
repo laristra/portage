@@ -1,15 +1,18 @@
 /*---------------------------------------------------------------------------~*
- * Copyright (c) 2014 Los Alamos National Security, LLC
+ * Copyright (c) 2015 Los Alamos National Security, LLC
  * All rights reserved.
  *---------------------------------------------------------------------------~*/
 
-#ifndef DRIVER_H
-#define DRIVER_H
+#ifndef SRC_DRIVER_DRIVER_H_
+#define SRC_DRIVER_DRIVER_H_
 
-#include<algorithm>
-#include<vector>
-#include<iterator>
-#include<sys/time.h>
+#include <sys/time.h>
+#include <algorithm>
+#include <vector>
+#include <iterator>
+#include <string>
+#include <tuple>
+#include <utility>
 
 #include "portage/support/portage.h"
 #include "portage/wrappers/state/jali/jali_state_wrapper.h"
@@ -31,22 +34,21 @@
 
 namespace Portage {
 
-/*! 
+/*!
   @class MeshWrapperDual "driver.h"
   @brief Wrapper for dual mesh.
-  
+
   Utilizes a Jali_Mesh_Wrapper to the original mesh, but treats
   the nodes of the original mesh as the centroids of the dual mesh.
 */
-class MeshWrapperDual { // cellid is the dual cell (i.e. node) id
+class MeshWrapperDual {  // cellid is the dual cell (i.e. node) id
  public:
-  
   /*!
     @brief Constructor of a wrapper to a 2d mesh.
     @param[in] w Jali_Mesh_Wrapper to original mesh.
   */
-  MeshWrapperDual(const Jali_Mesh_Wrapper &w) : w_(w) {}
-  
+  explicit MeshWrapperDual(const Jali_Mesh_Wrapper &w) : w_(w) {}
+
   /*!
     @brief Get the spatial dimensions of the mesh.
     @return The spatial dimension of the mesh.
@@ -74,7 +76,8 @@ class MeshWrapperDual { // cellid is the dual cell (i.e. node) id
     dual cell given by @c dualcellid
   */
   void cell_get_coordinates(int const dualcellid,
-                            std::vector<std::pair<double,double> > *xylist) const {
+                            std::vector<std::pair<double,double>> *
+                            xylist) const {
     w_.dual_cell_get_coordinates(dualcellid, xylist);
   }
 
@@ -86,7 +89,8 @@ class MeshWrapperDual { // cellid is the dual cell (i.e. node) id
     of the dual cell given by @c dualcellid.
   */
   void cell_get_coordinates(int const dualcellid,
-			    std::vector<std::tuple<double,double,double> > *xyzlist) const {
+                            std::vector<std::tuple<double,double,double>> *
+                            xyzlist) const {
     w_.dual_cell_get_coordinates(dualcellid, xyzlist);
   }
 
@@ -102,7 +106,7 @@ class MeshWrapperDual { // cellid is the dual cell (i.e. node) id
     if (entity == NODE) return w_.begin(CELL);
     return w_.begin(NODE);
   }
-  
+
   /*!
     @brief Get an iterator to the end of the vector of @e entity-type objects in
     the dual mesh.
@@ -124,7 +128,7 @@ class MeshWrapperDual { // cellid is the dual cell (i.e. node) id
     dual cell given by @c dualcellid
     @todo Remove this in favor of @c cell_get_coordinates() ?
   */
-  std::vector<std::pair<double, double> > cellToXY(int dualcellID) const{
+  std::vector<std::pair<double, double> > cellToXY(int dualcellID) const {
     std::vector<std::pair<double, double> > cellPoints;
     cell_get_coordinates(dualcellID, &cellPoints);
     return cellPoints;
@@ -136,7 +140,7 @@ class MeshWrapperDual { // cellid is the dual cell (i.e. node) id
 
     Sharing of cells is determined from the Parallel_type (e.g. @c OWNED,
     @c GHOST, @c ALL ).
-    
+
     @param[in] dualcellID The cell ID for which you would like to find the
     neighbors.
     @param[in] ptype The type of data you want (@c OWNED, @c GHOST, @c ALL)
@@ -145,16 +149,16 @@ class MeshWrapperDual { // cellid is the dual cell (i.e. node) id
   void cell_get_node_adj_cells(int const dualcellID,
                                Parallel_type const ptype,
                                std::vector<int> *adjcells) const {
-    w_.node_get_cell_adj_nodes(dualcellID,ptype,adjcells);
+    w_.node_get_cell_adj_nodes(dualcellID, ptype, adjcells);
   }
-  
+
   /*!
     @brief Get the IDs of all cells that share a node with the specified cell of
     the <em> dual mesh </em>.
 
     Sharing of cells is determined from the Parallel_type (e.g. @c OWNED,
     @c GHOST, @c ALL).
-    
+
     @param[in] dualnodeID The cell ID for which you would like to find the
     neighbors.
     @param[in] ptype The type of data you want (@c OWNED, @c GHOST, @c ALL)
@@ -165,7 +169,7 @@ class MeshWrapperDual { // cellid is the dual cell (i.e. node) id
   void dual_cell_get_node_adj_cells(int const dualnodeID,
                                     Parallel_type const ptype,
                                     std::vector<int> *adjnodes) const {
-    w_.cell_get_node_adj_cells(dualnodeID,ptype,adjnodes);
+    w_.cell_get_node_adj_cells(dualnodeID, ptype, adjnodes);
   }
 
   /*!
@@ -173,8 +177,9 @@ class MeshWrapperDual { // cellid is the dual cell (i.e. node) id
     @param[in] dualcellID ID of the cell in the dual mesh.
     @param[in,out] centroid (x,y,z) coordinates of the cell center (for 3d).
   */
-  void cell_centroid(int const dualcellID, std::vector<double> *centroid) const {
-    w_.dual_cell_centroid(dualcellID, centroid); 
+  void cell_centroid(int const dualcellID, std::vector<double> *centroid)
+      const {
+    w_.dual_cell_centroid(dualcellID, centroid);
   }
 
   /*!
@@ -183,7 +188,8 @@ class MeshWrapperDual { // cellid is the dual cell (i.e. node) id
     @param[in,out] centroid (x,y,z) coordinates of the cell center (for 3d).
     @todo Clarify this wrt to @c MeshWrapperDual::cell_centroid().
   */
-  void dual_cell_centroid(int const dualnodeID, std::vector<double> *centroid) const {
+  void dual_cell_centroid(int const dualnodeID, std::vector<double> *centroid)
+      const {
     w_.cell_centroid(dualnodeID, centroid);
   }
   /*!
@@ -197,7 +203,8 @@ class MeshWrapperDual { // cellid is the dual cell (i.e. node) id
     comprise the tetrahedron that is the wedge.
   */
   void wedges_get_coordinates(int const dualcellid,
-			      std::vector<std::array<std::array<double, 3>, 4> > *wcoords) const {
+                              std::vector<std::array<std::array<double,3>,4>> *
+                              wcoords) const {
     w_.dual_wedges_get_coordinates(dualcellid, wcoords);
   }
 
@@ -220,7 +227,6 @@ struct composerFunctor;
 template <class Mesh_Wrapper>
 class Driver {
  public:
-  
   /*!
     @brief Constructor for running the remap driver.
     @param[in] sourceMesh A @c Mesh_Wrapper to the source mesh.
@@ -229,37 +235,37 @@ class Driver {
     @param[in,out] targetState A state manager for the data that will be mapped to
     the target mesh.
   */
-  Driver(Entity_kind const remapEntity, 
-         Mesh_Wrapper const & sourceMesh, 
-         Jali_State_Wrapper const & sourceState,           
+  Driver(Entity_kind const remapEntity,
+         Mesh_Wrapper const & sourceMesh,
+         Jali_State_Wrapper const & sourceState,
          Mesh_Wrapper const & targetMesh,
-         Jali_State_Wrapper & targetState) 
-      : remap_entity_(remapEntity), 
+         Jali_State_Wrapper & targetState)
+      : remap_entity_(remapEntity),
         source_mesh_(sourceMesh), source_state_(sourceState),
         target_mesh_(targetMesh), target_state_(targetState),
-        remap_order_(1), dim_(sourceMesh.space_dimension())
-  {
+        remap_order_(1), dim_(sourceMesh.space_dimension()) {
+
     assert(sourceMesh.space_dimension() == targetMesh.space_dimension());
   }
-  
+
   /// Copy constructor (disabled)
   Driver(const Driver &) = delete;
-  
+
   /// Assignment operator (disabled)
   Driver & operator = (const Driver &) = delete;
-  
+
   /// Destructor
   ~Driver() {}
-  
+
   /*!
     @brief Specify the names of the variables to be remapped
     @param[in] remap_var_names_in A list of variable names of the variables to remap
     from the source mesh to the target mesh.
   */
-  void set_remap_var_names(std::vector<std::string> &remap_var_names_in) {
+  void set_remap_var_names(std::vector<std::string> const &remap_var_names_in) {
     remap_var_names_ = remap_var_names_in;
   }
-  
+
 
   /*!
     @brief Get the names of the variables to be remapped.
@@ -268,12 +274,12 @@ class Driver {
   std::vector<std::string> remap_var_names() {
     return remap_var_names_;
   }
-  
+
   /// Set the order of accuracy of remap
   void set_remap_order(unsigned int const order) {
     remap_order_ = order;
   }
-  
+
   /*!
     @brief Get the order of accuracy of remap
     @return The order of accuracy for the remap.
@@ -289,8 +295,8 @@ class Driver {
   unsigned int dim() {
     return dim_;
   }
-  
-  /*!  
+
+  /*!
 
     @brief This method calls specialized functions to do the remapping
     based on the dimensionality of the mesh, the type of data and the
@@ -311,12 +317,13 @@ class Driver {
     int numTargetCells = target_mesh_.num_owned_cells();
     std::cout << "Number of target cells in target mesh "
               << numTargetCells << std::endl;
-    
-    // Get raw pointer to the data from the state manager  
+
+    // Get raw pointer to the data from the state manager
     double *target_field_raw = NULL;
-    target_state_.get_data(remap_entity_,remap_var_names_[0],&target_field_raw);
+    target_state_.get_data(remap_entity_, remap_var_names_[0],
+                           &target_field_raw);
     Portage::pointer<double> target_field(target_field_raw);
-    
+
     // @todo We might be able to make this less verbose using boost::mpl
 
     switch (dim_) {
@@ -326,13 +333,13 @@ class Driver {
       case 2: {
         switch (remap_entity_) {
           case CELL: {
-            (remap_order_ == 1) ? 
-                run_2D_CELL_order1(target_field) : 
+            (remap_order_ == 1) ?
+                run_2D_CELL_order1(target_field) :
                 run_2D_CELL_order2(target_field);
             break;
-          }                    
+          }
           case NODE: {
-            (remap_order_ == 1) ? 
+            (remap_order_ == 1) ?
                 run_2D_NODE_order1(target_field) :
                 run_2D_NODE_order2(target_field);
             break;
@@ -345,40 +352,41 @@ class Driver {
       case 3: {
         switch (remap_entity_) {
           case CELL: {
-            (remap_order_ == 1) ? 
-                run_3D_CELL_order1(target_field) : 
+            (remap_order_ == 1) ?
+                run_3D_CELL_order1(target_field) :
                 run_3D_CELL_order2(target_field);
             break;
-          }                    
+          }
           case NODE: {
-            (remap_order_ == 1) ? 
+            (remap_order_ == 1) ?
                 run_3D_NODE_order1(target_field) :
                 run_3D_NODE_order2(target_field);
             break;
           }
-          default:
-            throw std::runtime_error("Remap only implemented for CELLS and NODES");
+          default: {
+            std::cerr << "Remap only implemented for CELLS and NODES\n";
+            exit(-1);
+          }
         }
         break;
       }
       default:
         throw std::runtime_error("Invalid dimension");
     }
-        
   }
 
 
-  /// @brief 1st order remap of cell centered data on 2D meshes 
+  /// @brief 1st order remap of cell centered data on 2D meshes
   void run_2D_CELL_order1(Portage::pointer<double> target_field);
-  /// @brief 2nd order remap of cell centered data on 2D meshes 
+  /// @brief 2nd order remap of cell centered data on 2D meshes
   void run_2D_CELL_order2(Portage::pointer<double> target_field);
   /// @brief 1st order remap of cell centered data on 3D meshes
   void run_3D_CELL_order1(Portage::pointer<double> target_field);
   /// @brief 2nd order remap of cell centered data on 3D meshes
   void run_3D_CELL_order2(Portage::pointer<double> target_field);
-  /// @brief 1st order remap of node centered data on 2D meshes 
+  /// @brief 1st order remap of node centered data on 2D meshes
   void run_2D_NODE_order1(Portage::pointer<double> target_field);
-  /// @brief 2nd order remap of node centered data on 2D meshes 
+  /// @brief 2nd order remap of node centered data on 2D meshes
   void run_2D_NODE_order2(Portage::pointer<double> target_field);
   /// @brief 1st order remap of node centered data on 3D meshes
   void run_3D_NODE_order1(Portage::pointer<double> target_field);
@@ -386,9 +394,7 @@ class Driver {
   void run_3D_NODE_order2(Portage::pointer<double> target_field);
 
 
-
  private:
-  
   Mesh_Wrapper  const & source_mesh_;
   Mesh_Wrapper const & target_mesh_;
   Jali_State_Wrapper const & source_state_;
@@ -397,104 +403,102 @@ class Driver {
   Entity_kind const remap_entity_;
   unsigned int remap_order_;
   unsigned int dim_;
-  
-}; // class Driver
+
+};  // class Driver
 
 
-/// @brief 1st order remap of cell centered data on 2D meshes 
+/// @brief 1st order remap of cell centered data on 2D meshes
 
 template<class Mesh_Wrapper>
-void 
-Driver<Mesh_Wrapper>::run_2D_CELL_order1(Portage::pointer<double> target_field) {
-  
+void
+Driver<Mesh_Wrapper>::run_2D_CELL_order1(Portage::pointer<double>
+                                         target_field) {
   // Get an instance of the desired search algorithm type
-  const SearchKDTree2<Mesh_Wrapper,Mesh_Wrapper>
+  const SearchKDTree2<Mesh_Wrapper, Mesh_Wrapper>
       search(source_mesh_, target_mesh_);
-  
+
   // Get an instance of the desired intersect algorithm type
   const IntersectClipper<Mesh_Wrapper, Mesh_Wrapper>
       intersect{source_mesh_, target_mesh_};
-  
+
   std::cout << "Remapping variable " << remap_var_names_[0]
             << " using a 1st order accurate algorithm" << std::endl;
-  
+
   // Eventually put this in a loop over remap variable names as well
   // Assume for now that we are only doing cell-based remap
-  const Remap_1stOrder<Mesh_Wrapper,Jali_State_Wrapper,CELL> 
+  const Remap_1stOrder<Mesh_Wrapper, Jali_State_Wrapper, CELL>
       remap(source_mesh_, source_state_, remap_var_names_[0]);
-  
-  composerFunctor<SearchKDTree2<Mesh_Wrapper,Mesh_Wrapper>,
+
+  composerFunctor<SearchKDTree2<Mesh_Wrapper, Mesh_Wrapper>,
                   IntersectClipper<Mesh_Wrapper, Mesh_Wrapper>,
-                  Remap_1stOrder<Mesh_Wrapper,Jali_State_Wrapper,CELL> >
+                  Remap_1stOrder<Mesh_Wrapper, Jali_State_Wrapper, CELL> >
       composer(&search, &intersect, &remap, remap_var_names_[0]);
-  
+
   // This populates targetField with the doubles returned from
   // the final remap
-  
+
 #ifdef ENABLE_PROFILE
   __itt_resume();
 #endif
-  
+
   struct timeval begin, end, diff;
   gettimeofday(&begin, 0);
-  
+
   Portage::transform((counting_iterator)(target_mesh_.begin(CELL)),
                      (counting_iterator)(target_mesh_.end(CELL)),
-                     target_field,composer);
-  
+                     target_field, composer);
+
 #ifdef ENABLE_PROFILE
   __itt_pause();
 #endif
-  
+
   gettimeofday(&end, 0);
   timersub(&end, &begin, &diff);
   float seconds = diff.tv_sec + 1.0E-6*diff.tv_usec;
   std::cout << "Transform Time: " << seconds << std::endl;
-  
 }
 
-/// @brief 2nd order remap of cell centered data on 2D meshes 
+/// @brief 2nd order remap of cell centered data on 2D meshes
 
 template<class Mesh_Wrapper>
-void 
+void
 Driver<Mesh_Wrapper>::run_2D_CELL_order2(Portage::pointer<double> target_field) {
-
   // Get an instance of the desired search algorithm type
-  const SearchKDTree2<Mesh_Wrapper,Mesh_Wrapper>
+  const SearchKDTree2<Mesh_Wrapper, Mesh_Wrapper>
       search(source_mesh_, target_mesh_);
-  
+
   // Get an instance of the desired intersect algorithm type
   const IntersectClipper<Mesh_Wrapper, Mesh_Wrapper>
       intersect{source_mesh_, target_mesh_};
-  
+
   std::cout << "Remapping variable " << remap_var_names_[0]
             << " using a 2nd order accurate algorithm" << std::endl;
 
   // Get an instance of the 2nd order remap algorithm
-  const Remap_2ndOrder<Mesh_Wrapper,Jali_State_Wrapper,CELL> 
+  const Remap_2ndOrder<Mesh_Wrapper, Jali_State_Wrapper, CELL>
       remap(source_mesh_, source_state_, remap_var_names_[0],
             NOLIMITER);
 
   // Make the composer instance
-  composerFunctor<SearchKDTree2<Mesh_Wrapper,Mesh_Wrapper>,
+  composerFunctor<SearchKDTree2<Mesh_Wrapper, Mesh_Wrapper>,
                   IntersectClipper<Mesh_Wrapper, Mesh_Wrapper>,
-                  Remap_2ndOrder<Mesh_Wrapper,Jali_State_Wrapper,CELL> >
+                  Remap_2ndOrder<Mesh_Wrapper, Jali_State_Wrapper, CELL> >
       composer(&search, &intersect, &remap, remap_var_names_[0]);
-  
+
   // This populates targetField with the doubles returned from
-  // the final remap 
-      
+  // the final remap
+
 #ifdef ENABLE_PROFILE
   __itt_resume();
 #endif
-  
+
   struct timeval begin, end, diff;
   gettimeofday(&begin, 0);
-  
+
   Portage::transform((counting_iterator)(target_mesh_.begin(CELL)),
                      (counting_iterator)(target_mesh_.end(CELL)),
-                     target_field,composer);
-  
+                     target_field, composer);
+
 #ifdef ENABLE_PROFILE
   __itt_pause();
 #endif
@@ -505,34 +509,33 @@ Driver<Mesh_Wrapper>::run_2D_CELL_order2(Portage::pointer<double> target_field) 
   std::cout << "Transform Time: " << seconds << std::endl;
 }
 
- 
+
 /// 1st order remap of cell centered data on 3D meshes
 
 template<class Mesh_Wrapper>
-void 
+void
 Driver<Mesh_Wrapper>::run_3D_CELL_order1(Portage::pointer<double> target_field) {
-
   // Get an instance of the desired search algorithm type
-  const SearchKDTree3<Mesh_Wrapper,Mesh_Wrapper>
+  const SearchKDTree3<Mesh_Wrapper, Mesh_Wrapper>
       search(source_mesh_, target_mesh_);
-  
+
   // Get an instance of the desired intersect algorithm type
   const IntersectR3D<Mesh_Wrapper, Mesh_Wrapper>
       intersect{source_mesh_, target_mesh_};
-  
+
   std::cout << "Remapping variable " << remap_var_names_[0]
             << " using a 1st order accurate algorithm" << std::endl;
-  
+
   // Get an instance of the 1st order algorithm
-  const Remap_1stOrder<Mesh_Wrapper,Jali_State_Wrapper,CELL> 
+  const Remap_1stOrder<Mesh_Wrapper, Jali_State_Wrapper, CELL>
       remap(source_mesh_, source_state_, remap_var_names_[0]);
-  
+
   // Make the composer instance
-  composerFunctor<SearchKDTree3<Mesh_Wrapper,Mesh_Wrapper>,
+  composerFunctor<SearchKDTree3<Mesh_Wrapper, Mesh_Wrapper>,
                   IntersectR3D<Mesh_Wrapper, Mesh_Wrapper>,
-                  Remap_1stOrder<Mesh_Wrapper,Jali_State_Wrapper,CELL> >
+                  Remap_1stOrder<Mesh_Wrapper, Jali_State_Wrapper, CELL> >
       composer(&search, &intersect, &remap, remap_var_names_[0]);
-  
+
   // This populates targetField with the doubles returned from
   // the final remap
 
@@ -542,11 +545,11 @@ Driver<Mesh_Wrapper>::run_3D_CELL_order1(Portage::pointer<double> target_field) 
 
   struct timeval begin, end, diff;
   gettimeofday(&begin, 0);
-  
+
   Portage::transform((counting_iterator)(target_mesh_.begin(CELL)),
                      (counting_iterator)(target_mesh_.end(CELL)),
-                     target_field,composer);
-  
+                     target_field, composer);
+
 #ifdef ENABLE_PROFILE
   __itt_pause();
 #endif
@@ -555,36 +558,35 @@ Driver<Mesh_Wrapper>::run_3D_CELL_order1(Portage::pointer<double> target_field) 
   timersub(&end, &begin, &diff);
   float seconds = diff.tv_sec + 1.0E-6*diff.tv_usec;
   std::cout << "Transform Time: " << seconds << std::endl;
-} 
+}
 
 /// 2nd order remap of cell centered data on 3D meshes
 
 template<class Mesh_Wrapper>
-void 
+void
 Driver<Mesh_Wrapper>::run_3D_CELL_order2(Portage::pointer<double> target_field) {
-
   // Get an instance of the desired search algorithm type
-  const SearchKDTree3<Mesh_Wrapper,Mesh_Wrapper>
+  const SearchKDTree3<Mesh_Wrapper, Mesh_Wrapper>
       search(source_mesh_, target_mesh_);
-  
+
   // Get an instance of the desired intersect algorithm type
   const IntersectR3D<Mesh_Wrapper, Mesh_Wrapper>
       intersect{source_mesh_, target_mesh_};
-        
+
   std::cout << "Remapping variable " << remap_var_names_[0]
             << " using a 2nd order accurate algorithm" << std::endl;
-  
+
   // Get an instance of the 2nd order algorithm
-  const Remap_2ndOrder<Mesh_Wrapper,Jali_State_Wrapper,CELL>
+  const Remap_2ndOrder<Mesh_Wrapper, Jali_State_Wrapper, CELL>
       remap(source_mesh_, source_state_, remap_var_names_[0],
             NOLIMITER);
-  
-  
-  composerFunctor<SearchKDTree3<Mesh_Wrapper,Mesh_Wrapper>,
+
+
+  composerFunctor<SearchKDTree3<Mesh_Wrapper, Mesh_Wrapper>,
                   IntersectR3D<Mesh_Wrapper, Mesh_Wrapper>,
-                  Remap_2ndOrder<Mesh_Wrapper,Jali_State_Wrapper,CELL> >
+                  Remap_2ndOrder<Mesh_Wrapper, Jali_State_Wrapper, CELL> >
       composer(&search, &intersect, &remap, remap_var_names_[0]);
-  
+
   // This populates targetField with the doubles returned from
   // the final remap
 
@@ -594,11 +596,11 @@ Driver<Mesh_Wrapper>::run_3D_CELL_order2(Portage::pointer<double> target_field) 
 
   struct timeval begin, end, diff;
   gettimeofday(&begin, 0);
-  
+
   Portage::transform((counting_iterator)(target_mesh_.begin(CELL)),
                      (counting_iterator)(target_mesh_.end(CELL)),
-                     target_field,composer);
-  
+                     target_field, composer);
+
 #ifdef ENABLE_PROFILE
   __itt_pause();
 #endif
@@ -610,106 +612,103 @@ Driver<Mesh_Wrapper>::run_3D_CELL_order2(Portage::pointer<double> target_field) 
 }
 
 
-/// @brief 1st order remap of node centered data on 2D meshes 
+/// @brief 1st order remap of node centered data on 2D meshes
 
 template<class Mesh_Wrapper>
-void 
+void
 Driver<Mesh_Wrapper>::run_2D_NODE_order1(Portage::pointer<double> target_field) {
-
   MeshWrapperDual source_mesh_dual(source_mesh_);
   MeshWrapperDual target_mesh_dual(target_mesh_);
-  
+
   // Get an instance of the desired search algorithm type
-  const SearchKDTree2<MeshWrapperDual,MeshWrapperDual>
+  const SearchKDTree2<MeshWrapperDual, MeshWrapperDual>
       search(source_mesh_dual, target_mesh_dual);
-  
+
   // Get an instance of the desired intersect algorithm type
   const IntersectClipper<MeshWrapperDual, MeshWrapperDual>
       intersect{source_mesh_dual, target_mesh_dual};
-  
+
   std::cout << "Remapping variable " << remap_var_names_[0]
             << " using a 1st order accurate algorithm" << std::endl;
-  
+
   // Eventually put this in a loop over remap variable names as well
   // Assume for now that we are only doing cell-based remap
-  const Remap_1stOrder<Mesh_Wrapper,Jali_State_Wrapper,NODE> 
+  const Remap_1stOrder<Mesh_Wrapper, Jali_State_Wrapper, NODE>
       remap(source_mesh_, source_state_, remap_var_names_[0]);
-  
-  composerFunctor<SearchKDTree2<MeshWrapperDual,MeshWrapperDual>,
+
+  composerFunctor<SearchKDTree2<MeshWrapperDual, MeshWrapperDual>,
                   IntersectClipper<MeshWrapperDual, MeshWrapperDual>,
-                  Remap_1stOrder<Mesh_Wrapper,Jali_State_Wrapper,NODE> >
+                  Remap_1stOrder<Mesh_Wrapper, Jali_State_Wrapper, NODE> >
       composer(&search, &intersect, &remap, remap_var_names_[0]);
-  
+
   // This populates targetField with the doubles returned from
   // the final remap
-  
+
 #ifdef ENABLE_PROFILE
   __itt_resume();
 #endif
-  
+
   struct timeval begin, end, diff;
   gettimeofday(&begin, 0);
-  
+
   Portage::transform((counting_iterator)(target_mesh_.begin(NODE)),
                      (counting_iterator)(target_mesh_.end(NODE)),
-                     target_field,composer);
-  
+                     target_field, composer);
+
 #ifdef ENABLE_PROFILE
   __itt_pause();
 #endif
-  
+
   gettimeofday(&end, 0);
   timersub(&end, &begin, &diff);
   float seconds = diff.tv_sec + 1.0E-6*diff.tv_usec;
   std::cout << "Transform Time: " << seconds << std::endl;
-  
 }
 
-/// @brief 2nd order remap of cell centered data on 2D meshes 
+/// @brief 2nd order remap of cell centered data on 2D meshes
 
 template<class Mesh_Wrapper>
-void 
+void
 Driver<Mesh_Wrapper>::run_2D_NODE_order2(Portage::pointer<double> target_field) {
-
   MeshWrapperDual source_mesh_dual(source_mesh_);
   MeshWrapperDual target_mesh_dual(target_mesh_);
-  
+
   // Get an instance of the desired search algorithm type
-  const SearchKDTree2<MeshWrapperDual,MeshWrapperDual>
+  const SearchKDTree2<MeshWrapperDual, MeshWrapperDual>
       search(source_mesh_dual, target_mesh_dual);
-  
+
   // Get an instance of the desired intersect algorithm type
   const IntersectClipper<MeshWrapperDual, MeshWrapperDual>
       intersect{source_mesh_dual, target_mesh_dual};
-  
+
   std::cout << "Remapping variable " << remap_var_names_[0]
             << " using a 2nd order accurate algorithm" << std::endl;
 
   // Get an instance of the 2nd order remap algorithm
-  const Remap_2ndOrder<Mesh_Wrapper,Jali_State_Wrapper,NODE> 
+  const Remap_2ndOrder<Mesh_Wrapper, Jali_State_Wrapper, NODE>
       remap(source_mesh_, source_state_, remap_var_names_[0],
             NOLIMITER);
 
   // Make the composer instance
-  composerFunctor<SearchKDTree2<MeshWrapperDual,MeshWrapperDual>,
+  composerFunctor<SearchKDTree2<MeshWrapperDual, MeshWrapperDual>,
                   IntersectClipper<MeshWrapperDual, MeshWrapperDual>,
-                  Remap_2ndOrder<Mesh_Wrapper,Jali_State_Wrapper,NODE> >
+                  Remap_2ndOrder<Mesh_Wrapper, Jali_State_Wrapper, NODE> >
       composer(&search, &intersect, &remap, remap_var_names_[0]);
-  
+
   // This populates targetField with the doubles returned from
-  // the final remap 
-      
+  // the final remap
+
 #ifdef ENABLE_PROFILE
   __itt_resume();
 #endif
-  
+
   struct timeval begin, end, diff;
   gettimeofday(&begin, 0);
-  
+
   Portage::transform((counting_iterator)(target_mesh_.begin(NODE)),
                      (counting_iterator)(target_mesh_.end(NODE)),
-                     target_field,composer);
-  
+                     target_field, composer);
+
 #ifdef ENABLE_PROFILE
   __itt_pause();
 #endif
@@ -720,37 +719,36 @@ Driver<Mesh_Wrapper>::run_2D_NODE_order2(Portage::pointer<double> target_field) 
   std::cout << "Transform Time: " << seconds << std::endl;
 }
 
- 
+
 /// 1st order remap of cell centered data on 3D meshes
 
 template<class Mesh_Wrapper>
-void 
+void
 Driver<Mesh_Wrapper>::run_3D_NODE_order1(Portage::pointer<double> target_field) {
-
   MeshWrapperDual source_mesh_dual(source_mesh_);
   MeshWrapperDual target_mesh_dual(target_mesh_);
-  
+
   // Get an instance of the desired search algorithm type
-  const SearchKDTree3<MeshWrapperDual,MeshWrapperDual>
+  const SearchKDTree3<MeshWrapperDual, MeshWrapperDual>
       search(source_mesh_dual, target_mesh_dual);
-  
+
   // Get an instance of the desired intersect algorithm type
   const IntersectR3D<MeshWrapperDual, MeshWrapperDual>
       intersect{source_mesh_dual, target_mesh_dual};
-  
+
   std::cout << "Remapping variable " << remap_var_names_[0]
             << " using a 1st order accurate algorithm" << std::endl;
-  
+
   // Get an instance of the 1st order algorithm
-  const Remap_1stOrder<Mesh_Wrapper,Jali_State_Wrapper,NODE> 
+  const Remap_1stOrder<Mesh_Wrapper, Jali_State_Wrapper, NODE>
       remap(source_mesh_, source_state_, remap_var_names_[0]);
-  
+
   // Make the composer instance
-  composerFunctor<SearchKDTree3<MeshWrapperDual,MeshWrapperDual>,
+  composerFunctor<SearchKDTree3<MeshWrapperDual, MeshWrapperDual>,
                   IntersectR3D<MeshWrapperDual, MeshWrapperDual>,
-                  Remap_1stOrder<Mesh_Wrapper,Jali_State_Wrapper,NODE> >
+                  Remap_1stOrder<Mesh_Wrapper, Jali_State_Wrapper, NODE>>
       composer(&search, &intersect, &remap, remap_var_names_[0]);
-  
+
   // This populates targetField with the doubles returned from
   // the final remap
 
@@ -760,11 +758,11 @@ Driver<Mesh_Wrapper>::run_3D_NODE_order1(Portage::pointer<double> target_field) 
 
   struct timeval begin, end, diff;
   gettimeofday(&begin, 0);
-  
+
   Portage::transform((counting_iterator)(target_mesh_.begin(NODE)),
                      (counting_iterator)(target_mesh_.end(NODE)),
-                     target_field,composer);
-  
+                     target_field, composer);
+
 #ifdef ENABLE_PROFILE
   __itt_pause();
 #endif
@@ -773,39 +771,38 @@ Driver<Mesh_Wrapper>::run_3D_NODE_order1(Portage::pointer<double> target_field) 
   timersub(&end, &begin, &diff);
   float seconds = diff.tv_sec + 1.0E-6*diff.tv_usec;
   std::cout << "Transform Time: " << seconds << std::endl;
-} 
+}
 
 /// 2nd order remap of cell centered data on 3D meshes
 
 template<class Mesh_Wrapper>
-void 
+void
 Driver<Mesh_Wrapper>::run_3D_NODE_order2(Portage::pointer<double> target_field) {
-
   MeshWrapperDual source_mesh_dual(source_mesh_);
   MeshWrapperDual target_mesh_dual(target_mesh_);
-  
+
   // Get an instance of the desired search algorithm type
-  const SearchKDTree3<MeshWrapperDual,MeshWrapperDual>
+  const SearchKDTree3<MeshWrapperDual, MeshWrapperDual>
       search(source_mesh_dual, target_mesh_dual);
-  
+
   // Get an instance of the desired intersect algorithm type
   const IntersectR3D<MeshWrapperDual, MeshWrapperDual>
       intersect{source_mesh_dual, target_mesh_dual};
-        
+
   std::cout << "Remapping variable " << remap_var_names_[0]
             << " using a 2nd order accurate algorithm" << std::endl;
-  
+
   // Get an instance of the 2nd order algorithm
-  const Remap_2ndOrder<Mesh_Wrapper,Jali_State_Wrapper,NODE>
+  const Remap_2ndOrder<Mesh_Wrapper, Jali_State_Wrapper, NODE>
       remap(source_mesh_, source_state_, remap_var_names_[0],
             NOLIMITER);
-  
-  
-  composerFunctor<SearchKDTree3<MeshWrapperDual,MeshWrapperDual>,
+
+
+  composerFunctor<SearchKDTree3<MeshWrapperDual, MeshWrapperDual>,
                   IntersectR3D<MeshWrapperDual, MeshWrapperDual>,
-                  Remap_2ndOrder<Mesh_Wrapper,Jali_State_Wrapper,NODE> >
+                  Remap_2ndOrder<Mesh_Wrapper, Jali_State_Wrapper, NODE> >
       composer(&search, &intersect, &remap, remap_var_names_[0]);
-  
+
   // This populates targetField with the doubles returned from
   // the final remap
 
@@ -815,11 +812,11 @@ Driver<Mesh_Wrapper>::run_3D_NODE_order2(Portage::pointer<double> target_field) 
 
   struct timeval begin, end, diff;
   gettimeofday(&begin, 0);
-  
+
   Portage::transform((counting_iterator)(target_mesh_.begin(NODE)),
                      (counting_iterator)(target_mesh_.end(NODE)),
-                     target_field,composer);
-  
+                     target_field, composer);
+
 #ifdef ENABLE_PROFILE
   __itt_pause();
 #endif
@@ -844,12 +841,11 @@ Driver<Mesh_Wrapper>::run_3D_NODE_order2(Portage::pointer<double> target_field) 
   @tparam RemapType The type of remap method (e.g. Remap_1stOrder or Remap_2ndOrder).
 */
 template <typename SearchType, typename IsectType, typename RemapType>
-struct composerFunctor
-{
-  const SearchType* search_;         ///< search method (e.g. SearchSimple)
-  const IsectType* intersect_;       ///< intersect method (e.g. IntersectClipper)
-  const RemapType* remap_;           ///< remap method (e.g. Remap_2ndOrder)
-  const std::string remap_var_name_; ///< variable name to remap
+struct composerFunctor {
+  const SearchType* search_;       ///< search method (e.g. SearchSimple)
+  const IsectType* intersect_;     ///< intersect method (e.g. IntersectClipper)
+  const RemapType* remap_;         ///< remap method (e.g. Remap_2ndOrder)
+  const std::string remap_var_name_;  ///< variable name to remap
   //----------------------------------------
 
   /*!
@@ -859,16 +855,16 @@ struct composerFunctor
     @param[in] remapper The remap method to use (e.g. Remap_2ndOrder)
     @param[in] remap_var_name The name of the variable to remap
   */
-  composerFunctor(const SearchType* searcher, const IsectType* intersecter, 
+  composerFunctor(const SearchType* searcher, const IsectType* intersecter,
                   const RemapType* remapper, const std::string remap_var_name)
-      : search_(searcher), intersect_(intersecter), remap_(remapper), 
+      : search_(searcher), intersect_(intersecter), remap_(remapper),
         remap_var_name_(remap_var_name) { }
 
   /*!
     @brief Operator for making this struct a functor
 
     This is called from within a Portage::transform() operation that iterates
-    over the cells in a target mesh.  
+    over the cells in a target mesh.
 
     @param[in] targetCellindex The cell ID in the target mesh that this functor
     is currently operating on.
@@ -876,8 +872,7 @@ struct composerFunctor
     @return Value of the field @c remap_var_name in the target mesh cell with ID
     @c targetCellIndex.
   */
-  double operator()(int const targetCellIndex)
-  {
+  double operator()(int const targetCellIndex) {
 
     // Search for candidates and return their cells indices
     std::vector<int> candidates;
@@ -885,54 +880,50 @@ struct composerFunctor
 
     // Intersect target cell with cells of source mesh and return the
     // moments of intersection
-    std::vector<std::vector<std::vector<double> > > 
-        moments(candidates.size());
-    for (int i=0;i<candidates.size();i++)
+    std::vector<std::vector<std::vector<double>>> moments(candidates.size());
+    for (int i = 0; i < candidates.size(); i++)
       moments[i] = (*intersect_)(candidates[i], targetCellIndex);
 
     // Compute new value on target cell based on source mesh
     // values and intersection moments
-		
+
     // Each cell-cell intersection can result in multiple
     // disjointed pieces if one of the cells in non-convex.
     // therefore, there may be more than one set of moments per
     // cell pair. Transform the 3 nested std::vector form to 2
     // nested std::vector form with duplicate candidate entries if
-    // need be 
+    // need be
     int nalloc = 0;
     for (int i = 0; i < candidates.size(); ++i) {
-      nalloc += moments[i].size(); // number of moment sets generated by
-      //                           // intersection of target cell with
-      //                           // candidate cell i
+      nalloc += moments[i].size();  // number of moment sets generated by
+      //                            // intersection of target cell with
+      //                            // candidate cell i
     }
     std::vector<int> candidates_dup(nalloc);
     std::vector< std::vector<double> > remap_moments(nalloc);
-  
+
     int ninserted = 0;
     for (int i = 0; i < candidates.size(); ++i) {
       std::vector< std::vector<double> > & candidate_moments = moments[i];
       int num_moment_sets = candidate_moments.size();
       for (int j = 0; j < num_moment_sets; j++) {
-        candidates_dup[ninserted] = candidates[i]; // repeated as needed 
+        candidates_dup[ninserted] = candidates[i];  // repeated as needed
         remap_moments[ninserted] = candidate_moments[j];
         ++ninserted;
       }
     }
-        
-    std::pair< std::vector<int> const &, 
-               std::vector< std::vector<double> > const & >
-        source_cells_and_weights(candidates_dup,remap_moments);
-        
-    double remappedValue = (*remap_)(source_cells_and_weights);
-        
-    return remappedValue;
 
+    std::pair< std::vector<int> const &,
+               std::vector< std::vector<double>> const &>
+        source_cells_and_weights(candidates_dup, remap_moments);
+
+    double remappedValue = (*remap_)(source_cells_and_weights);
+
+    return remappedValue;
   }
 };  // struct composerFunctor
 
+}  // namespace Portage
 
-
-} // namespace Portage
-
-#endif // DRIVER_H
+#endif  // SRC_DRIVER_DRIVER_H_
 

@@ -19,7 +19,7 @@ set(remap_HEADERS
 
 # Unit tests
 
-if (ENABLE_UNIT_TESTS) 
+if (ENABLE_UNIT_TESTS)
 
   cinch_add_unit(test_gradient
     SOURCES  test/test_gradient.cc

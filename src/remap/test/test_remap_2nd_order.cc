@@ -3,13 +3,14 @@
  * All rights reserved.
  *---------------------------------------------------------------------------~*/
 
+#include <iostream>
+
 #include "portage/support/portage.h"
 #include "portage/remap/remap_2nd_order.h"
 #include "portage/wrappers/mesh/jali/jali_mesh_wrapper.h"
 #include "portage/wrappers/state/jali/jali_state_wrapper.h"
 #include "portage/driver/driver.h"
 
-#include <iostream>
 
 #include "gtest/gtest.h"
 #include "mpi.h"
@@ -32,48 +33,51 @@
 TEST(Remap_2nd_Order, Cell_Ctr_Const_No_Limiter_2D) {
 
   Jali::MeshFactory mf(MPI_COMM_WORLD);
-  
+
   Jali::FrameworkPreference pref;
   pref.push_back(Jali::MSTK);
   if (Jali::framework_available(Jali::MSTK))
     mf.preference(pref);
-  
-  Jali::Mesh *source_mesh = mf(0.0,0.0,1.0,1.0,4,4);
-  Jali::Mesh *target_mesh = mf(0.0,0.0,1.0,1.0,5,5);
+
+  Jali::Mesh *source_mesh = mf(0.0, 0.0, 1.0, 1.0, 4, 4);
+  Jali::Mesh *target_mesh = mf(0.0, 0.0, 1.0, 1.0, 5, 5);
   Jali::State source_state(source_mesh);
   Jali::State target_state(target_mesh);
-  
-  // Define two state vectors, one with constant value and the other
-  // with a linear function that is x+y 
 
-  int ncells_source = source_mesh->num_entities(Jali::CELL,Jali::OWNED);
-  std::vector<double> data(ncells_source,1.25);
-  Jali::StateVector<double> myvec("cellvars",Jali::CELL,source_mesh,&(data[0]));
+  // Define two state vectors, one with constant value and the other
+  // with a linear function that is x+y
+
+  int ncells_source = source_mesh->num_entities(Jali::CELL, Jali::OWNED);
+  std::vector<double> data(ncells_source, 1.25);
+  Jali::StateVector<double> myvec("cellvars", Jali::CELL, source_mesh,
+                                  &(data[0]));
   Jali::StateVector<double> &addvec = source_state.add(myvec);
 
-  int ncells_target = target_mesh->num_entities(Jali::CELL,Jali::OWNED);
+  int ncells_target = target_mesh->num_entities(Jali::CELL, Jali::OWNED);
 
-  
+
   // Create Remap objects
   Portage::Jali_Mesh_Wrapper sourceMeshWrapper(*source_mesh);
   Portage::Jali_State_Wrapper sourceStateWrapper(source_state);
 
   Portage::Remap_2ndOrder<Portage::Jali_Mesh_Wrapper,
                           Portage::Jali_State_Wrapper,
-                          Portage::CELL> 
+                          Portage::CELL>
       remapper(sourceMeshWrapper, sourceStateWrapper, "cellvars",
                Portage::NOLIMITER);
 
-  
+
   // Gather the cell coordinates for source and target meshes for intersection
 
-  std::vector<std::vector<JaliGeometry::Point>> source_cell_coords(ncells_source);
-  std::vector<std::vector<JaliGeometry::Point>> target_cell_coords(ncells_target);
+  std::vector<std::vector<JaliGeometry::Point>>
+      source_cell_coords(ncells_source);
+  std::vector<std::vector<JaliGeometry::Point>>
+      target_cell_coords(ncells_target);
 
   for (int c = 0; c < ncells_source; c++)
-    source_mesh->cell_get_coordinates(c,&(source_cell_coords[c]));
+    source_mesh->cell_get_coordinates(c, &(source_cell_coords[c]));
   for (int c = 0; c < ncells_target; c++)
-    target_mesh->cell_get_coordinates(c,&(target_cell_coords[c]));
+    target_mesh->cell_get_coordinates(c, &(target_cell_coords[c]));
 
   // Remap from source to target mesh
 
@@ -82,12 +86,13 @@ TEST(Remap_2nd_Order, Cell_Ctr_Const_No_Limiter_2D) {
     std::vector<int> xcells;
     std::vector<std::vector<double>> xweights;
 
-    intersection_moments(target_cell_coords[c],source_cell_coords,&xcells,
-                          &xweights);
+    BOX_INTERSECT::intersection_moments(target_cell_coords[c],
+                                        source_cell_coords,
+                                        &xcells, &xweights);
 
-    std::pair< std::vector<int> const &, 
-               std::vector< std::vector<double> > const & > 
-        cells_and_weights(xcells,xweights);
+    std::pair< std::vector<int> const &,
+               std::vector<std::vector<double>> const &>
+        cells_and_weights(xcells, xweights);
 
     outvals[c] = remapper(cells_and_weights);
   }
@@ -105,20 +110,20 @@ TEST(Remap_2nd_Order, Cell_Ctr_Const_No_Limiter_2D) {
 TEST(Remap_2nd_Order, Cell_Ctr_Lin_No_Limiter_2D) {
 
   Jali::MeshFactory mf(MPI_COMM_WORLD);
-  
+
   Jali::FrameworkPreference pref;
   pref.push_back(Jali::MSTK);
   if (Jali::framework_available(Jali::MSTK))
     mf.preference(pref);
-  
-  Jali::Mesh *source_mesh = mf(0.0,0.0,1.0,1.0,4,4);
-  Jali::Mesh *target_mesh = mf(0.0,0.0,1.0,1.0,5,5);
+
+  Jali::Mesh *source_mesh = mf(0.0, 0.0, 1.0, 1.0, 4, 4);
+  Jali::Mesh *target_mesh = mf(0.0, 0.0, 1.0, 1.0, 5, 5);
   Jali::State source_state(source_mesh);
   Jali::State target_state(target_mesh);
-  
-  // Define a state vectors, with a linear function that is x+y 
 
-  int ncells_source = source_mesh->num_entities(Jali::CELL,Jali::OWNED);
+  // Define a state vectors, with a linear function that is x+y
+
+  int ncells_source = source_mesh->num_entities(Jali::CELL, Jali::OWNED);
   std::vector<double> data(ncells_source);
   for (int c = 0; c < ncells_source; c++) {
     JaliGeometry::Point ccen = source_mesh->cell_centroid(c);
@@ -126,7 +131,8 @@ TEST(Remap_2nd_Order, Cell_Ctr_Lin_No_Limiter_2D) {
   }
 
 
-  Jali::StateVector<double> myvec("cellvars",Jali::CELL,source_mesh,&(data[0]));
+  Jali::StateVector<double> myvec("cellvars", Jali::CELL, source_mesh,
+                                  &(data[0]));
   Jali::StateVector<double> &addvec = source_state.add(myvec);
 
   // Create Remap objects
@@ -136,20 +142,22 @@ TEST(Remap_2nd_Order, Cell_Ctr_Lin_No_Limiter_2D) {
 
   Portage::Remap_2ndOrder<Portage::Jali_Mesh_Wrapper,
                           Portage::Jali_State_Wrapper,
-                          Portage::CELL> 
-      remapper(sourceMeshWrapper,sourceStateWrapper,"cellvars",
+                          Portage::CELL>
+      remapper(sourceMeshWrapper, sourceStateWrapper, "cellvars",
                Portage::NOLIMITER);
 
   // Gather the cell coordinates for source and target meshes for intersection
 
-  int ncells_target = target_mesh->num_entities(Jali::CELL,Jali::OWNED);
-  std::vector<std::vector<JaliGeometry::Point>> source_cell_coords(ncells_source);
-  std::vector<std::vector<JaliGeometry::Point>> target_cell_coords(ncells_target);
+  int ncells_target = target_mesh->num_entities(Jali::CELL, Jali::OWNED);
+  std::vector<std::vector<JaliGeometry::Point>>
+      source_cell_coords(ncells_source);
+  std::vector<std::vector<JaliGeometry::Point>>
+      target_cell_coords(ncells_target);
 
   for (int c = 0; c < ncells_source; c++)
-    source_mesh->cell_get_coordinates(c,&(source_cell_coords[c]));
+    source_mesh->cell_get_coordinates(c, &(source_cell_coords[c]));
   for (int c = 0; c < ncells_target; c++)
-    target_mesh->cell_get_coordinates(c,&(target_cell_coords[c]));
+    target_mesh->cell_get_coordinates(c, &(target_cell_coords[c]));
 
 
   // Remap from source to target mesh
@@ -159,11 +167,13 @@ TEST(Remap_2nd_Order, Cell_Ctr_Lin_No_Limiter_2D) {
     std::vector<int> xcells;
     std::vector<std::vector<double>> xweights;
 
-    intersection_moments(target_cell_coords[c],source_cell_coords,&xcells,&xweights);
+    BOX_INTERSECT::intersection_moments(target_cell_coords[c],
+                                        source_cell_coords,
+                                        &xcells, &xweights);
 
-    std::pair< std::vector<int> const &, 
-               std::vector< std::vector<double> > const & > 
-        cells_and_weights(xcells,xweights);
+    std::pair< std::vector<int> const &,
+               std::vector<std::vector<double>> const &>
+        cells_and_weights(xcells, xweights);
 
     outvals[c] = remapper(cells_and_weights);
   }
@@ -177,30 +187,30 @@ TEST(Remap_2nd_Order, Cell_Ctr_Lin_No_Limiter_2D) {
   }
   for (int c = 0; c < ncells_target; ++c)
     ASSERT_NEAR(stdvals[c], outvals[c], 1.0e-10);
-
 }
 
 
-/// Second order remap of linear cell-centered field with Barth-Jespersen limiting in 2D
+/*!  @brief Second order remap of linear cell-centered field with
+  Barth-Jespersen limiting in 2D */
 
 TEST(Remap_2nd_Order, Cell_Ctr_Lin_BJ_Limiter_2D) {
   Jali::MeshFactory mf(MPI_COMM_WORLD);
-  
+
   Jali::FrameworkPreference pref;
   pref.push_back(Jali::MSTK);
   if (Jali::framework_available(Jali::MSTK))
     mf.preference(pref);
-  
-  Jali::Mesh *source_mesh = mf(0.0,0.0,1.0,1.0,4,4);
-  Jali::Mesh *target_mesh = mf(0.0,0.0,1.0,1.0,5,5);
+
+  Jali::Mesh *source_mesh = mf(0.0, 0.0, 1.0, 1.0, 4, 4);
+  Jali::Mesh *target_mesh = mf(0.0, 0.0, 1.0, 1.0, 5, 5);
   Jali::State source_state(source_mesh);
   Jali::State target_state(target_mesh);
-  
-  // Define a state vectors, with a linear function that is x+y 
 
-  int ncells_source = source_mesh->num_entities(Jali::CELL,Jali::OWNED);
+  // Define a state vectors, with a linear function that is x+y
+
+  int ncells_source = source_mesh->num_entities(Jali::CELL, Jali::OWNED);
   std::vector<double> data(ncells_source);
-  double minval=1e+10, maxval=-1e+10;
+  double minval = 1e+10, maxval = -1e+10;
   for (int c = 0; c < ncells_source; c++) {
     JaliGeometry::Point ccen = source_mesh->cell_centroid(c);
     if (ccen[0] < 0.5)
@@ -210,9 +220,10 @@ TEST(Remap_2nd_Order, Cell_Ctr_Lin_BJ_Limiter_2D) {
     if (data[c] < minval) minval = data[c];
     if (data[c] > maxval) maxval = data[c];
   }
-  
 
-  Jali::StateVector<double> myvec("cellvars",Jali::CELL,source_mesh,&(data[0]));
+
+  Jali::StateVector<double> myvec("cellvars", Jali::CELL, source_mesh,
+                                  &(data[0]));
   Jali::StateVector<double> &addvec = source_state.add(myvec);
 
   // Create Remap objects - one with no limiter and one with limiter
@@ -222,26 +233,29 @@ TEST(Remap_2nd_Order, Cell_Ctr_Lin_BJ_Limiter_2D) {
 
   Portage::Remap_2ndOrder<Portage::Jali_Mesh_Wrapper,
                           Portage::Jali_State_Wrapper,
-                          Portage::CELL> 
-      remapper1(sourceMeshWrapper,sourceStateWrapper,"cellvars",
+                          Portage::CELL>
+      remapper1(sourceMeshWrapper, sourceStateWrapper, "cellvars",
                Portage::NOLIMITER);
   Portage::Remap_2ndOrder<Portage::Jali_Mesh_Wrapper,
                           Portage::Jali_State_Wrapper,
-                          Portage::CELL> 
-      remapper2(sourceMeshWrapper,sourceStateWrapper,"cellvars",
+                          Portage::CELL>
+      remapper2(sourceMeshWrapper, sourceStateWrapper, "cellvars",
                Portage::BARTH_JESPERSEN);
 
 
-  // Gather the cell coordinates for the source and target meshes for intersection
-  
-  int ncells_target = target_mesh->num_entities(Jali::CELL,Jali::OWNED);
-  std::vector<std::vector<JaliGeometry::Point>> source_cell_coords(ncells_source);
-  std::vector<std::vector<JaliGeometry::Point>> target_cell_coords(ncells_target);
+  // Gather the cell coordinates for the source and target meshes for
+  // intersection
+
+  int ncells_target = target_mesh->num_entities(Jali::CELL, Jali::OWNED);
+  std::vector<std::vector<JaliGeometry::Point>>
+      source_cell_coords(ncells_source);
+  std::vector<std::vector<JaliGeometry::Point>>
+      target_cell_coords(ncells_target);
 
   for (int c = 0; c < ncells_source; c++)
-    source_mesh->cell_get_coordinates(c,&(source_cell_coords[c]));
+    source_mesh->cell_get_coordinates(c, &(source_cell_coords[c]));
   for (int c = 0; c < ncells_target; c++)
-    target_mesh->cell_get_coordinates(c,&(target_cell_coords[c]));
+    target_mesh->cell_get_coordinates(c, &(target_cell_coords[c]));
 
 
   std::vector<double> outvals1(ncells_target);
@@ -252,11 +266,13 @@ TEST(Remap_2nd_Order, Cell_Ctr_Lin_BJ_Limiter_2D) {
     std::vector<int> xcells;
     std::vector<std::vector<double>> xweights;
 
-    intersection_moments(target_cell_coords[c],source_cell_coords,&xcells,&xweights);
+    BOX_INTERSECT::intersection_moments(target_cell_coords[c],
+                                        source_cell_coords,
+                                        &xcells, &xweights);
 
-    std::pair< std::vector<int> const &, 
-               std::vector< std::vector<double> > const & > 
-        cells_and_weights(xcells,xweights);
+    std::pair< std::vector<int> const &,
+               std::vector<std::vector<double>> const &>
+        cells_and_weights(xcells, xweights);
 
     outvals1[c] = remapper1(cells_and_weights);
     outvals2[c] = remapper2(cells_and_weights);
@@ -296,11 +312,13 @@ TEST(Remap_2nd_Order, Node_Ctr_Const_No_Limiter) {
   if (Jali::framework_available(Jali::MSTK))
     mf.preference(pref);
 
-  Jali::Mesh *source_mesh = mf(0.0,0.0,1.0,1.0,4,4,NULL,true,true,true,true);
-  Jali::Mesh *target_mesh = mf(0.0,0.0,1.0,1.0,5,5,NULL,true,true,true,true);
+  Jali::Mesh *source_mesh = mf(0.0, 0.0, 1.0, 1.0, 4, 4, NULL,
+                               true, true, true, true);
+  Jali::Mesh *target_mesh = mf(0.0, 0.0, 1.0, 1.0, 5, 5, NULL,
+                               true, true, true, true);
 
-  int nnodes_source = source_mesh->num_entities(Jali::NODE,Jali::OWNED);
-  int nnodes_target = target_mesh->num_entities(Jali::NODE,Jali::OWNED);
+  int nnodes_source = source_mesh->num_entities(Jali::NODE, Jali::OWNED);
+  int nnodes_target = target_mesh->num_entities(Jali::NODE, Jali::OWNED);
 
   // Create a state object and add the first two vectors to it
 
@@ -310,8 +328,9 @@ TEST(Remap_2nd_Order, Node_Ctr_Const_No_Limiter) {
   // Define two state vectors, one with constant value, the other
   // with a linear function
 
-  std::vector<double> data(nnodes_source,1.5);
-  Jali::StateVector<double> myvec("nodevars",Jali::NODE,source_mesh,&(data[0]));
+  std::vector<double> data(nnodes_source, 1.5);
+  Jali::StateVector<double> myvec("nodevars", Jali::NODE, source_mesh,
+                                  &(data[0]));
   Jali::StateVector<double> &addvec = source_state.add(myvec);
 
   // Create Remap objects
@@ -320,19 +339,22 @@ TEST(Remap_2nd_Order, Node_Ctr_Const_No_Limiter) {
 
   Portage::Remap_2ndOrder<Portage::Jali_Mesh_Wrapper,
                           Portage::Jali_State_Wrapper,
-                          Portage::NODE> 
-      remapper(sourceMeshWrapper,sourceStateWrapper,"nodevars",
+                          Portage::NODE>
+      remapper(sourceMeshWrapper, sourceStateWrapper, "nodevars",
                Portage::NOLIMITER);
 
   // Remap from source to target mesh
 
-  std::vector<double> outvals(nnodes_target); 
+  std::vector<double> outvals(nnodes_target);
 
 
-  // Gather the dual cell coordinates for source and target meshes for intersection
+  // Gather the dual cell coordinates for source and target meshes for
+  // intersection
 
-  std::vector<std::vector<JaliGeometry::Point>> source_dualcell_coords(nnodes_source);
-  std::vector<std::vector<JaliGeometry::Point>> target_dualcell_coords(nnodes_target);
+  std::vector<std::vector<JaliGeometry::Point>>
+      source_dualcell_coords(nnodes_source);
+  std::vector<std::vector<JaliGeometry::Point>>
+      target_dualcell_coords(nnodes_target);
 
   // Because the meshes are rectangular we can get away with examining
   // the coordinates of the corners instead of the wedges
@@ -344,11 +366,11 @@ TEST(Remap_2nd_Order, Node_Ctr_Const_No_Limiter) {
   for (int n = 0; n < nnodes_source; n++) {
     std::vector<JaliGeometry::Point> dualcoords;
     std::vector<int> corners;
-    source_mesh->node_get_corners(n,Jali::ALL,&corners);
+    source_mesh->node_get_corners(n, Jali::ALL, &corners);
 
     for (auto cn : corners) {
       std::vector<JaliGeometry::Point> cncoords;
-      source_mesh->corner_get_coordinates(cn,&cncoords);
+      source_mesh->corner_get_coordinates(cn, &cncoords);
       for (auto coord : cncoords)
         source_dualcell_coords[n].push_back(coord);
     }
@@ -357,27 +379,28 @@ TEST(Remap_2nd_Order, Node_Ctr_Const_No_Limiter) {
   for (int n = 0; n < nnodes_target; n++) {
     std::vector<JaliGeometry::Point> dualcoords;
     std::vector<int> corners;
-    target_mesh->node_get_corners(n,Jali::ALL,&corners);
+    target_mesh->node_get_corners(n, Jali::ALL, &corners);
 
     for (auto cn : corners) {
       std::vector<JaliGeometry::Point> cncoords;
-      target_mesh->corner_get_coordinates(cn,&cncoords);
+      target_mesh->corner_get_coordinates(cn, &cncoords);
       for (auto coord : cncoords)
         target_dualcell_coords[n].push_back(coord);
     }
   }
 
-  
+
   for (int n = 0; n < nnodes_target; ++n) {
     std::vector<int> xcells;
     std::vector<std::vector<double>> xwts;
 
-    intersection_moments(target_dualcell_coords[n],source_dualcell_coords,
-                         &xcells, &xwts);
-
-    std::pair< std::vector<int> const &, 
-               std::vector< std::vector<double> > const & > 
-        nodes_and_weights(xcells,xwts);
+    BOX_INTERSECT::intersection_moments(target_dualcell_coords[n],
+                                        source_dualcell_coords,
+                                        &xcells, &xwts);
+    
+    std::pair< std::vector<int> const &,
+               std::vector<std::vector<double>> const &>
+        nodes_and_weights(xcells, xwts);
 
     outvals[n] = remapper(nodes_and_weights);
   }
@@ -387,7 +410,6 @@ TEST(Remap_2nd_Order, Node_Ctr_Const_No_Limiter) {
   double stdval = data[0];
   for (int n = 0; n < nnodes_target; ++n)
     ASSERT_DOUBLE_EQ(stdval, outvals[n]);
-
 }
 
 
@@ -401,11 +423,13 @@ TEST(Remap_2nd_Order, Node_Ctr_Lin_No_Limiter) {
   if (Jali::framework_available(Jali::MSTK))
     mf.preference(pref);
 
-  Jali::Mesh *source_mesh = mf(0.0,0.0,1.0,1.0,4,4,NULL,true,true,true,true);
-  Jali::Mesh *target_mesh = mf(0.0,0.0,1.0,1.0,5,5,NULL,true,true,true,true);
+  Jali::Mesh *source_mesh = mf(0.0, 0.0, 1.0, 1.0, 4, 4, NULL,
+                               true, true, true, true);
+  Jali::Mesh *target_mesh = mf(0.0, 0.0, 1.0, 1.0, 5, 5, NULL,
+                               true, true, true, true);
 
-  int nnodes_source = source_mesh->num_entities(Jali::NODE,Jali::OWNED);
-  int nnodes_target = target_mesh->num_entities(Jali::NODE,Jali::OWNED);
+  int nnodes_source = source_mesh->num_entities(Jali::NODE, Jali::OWNED);
+  int nnodes_target = target_mesh->num_entities(Jali::NODE, Jali::OWNED);
 
   // Create a state object and add the first two vectors to it
 
@@ -417,10 +441,11 @@ TEST(Remap_2nd_Order, Node_Ctr_Lin_No_Limiter) {
   std::vector<double> data(nnodes_source);
   for (int n = 0; n < nnodes_source; n++) {
     JaliGeometry::Point coord;
-    source_mesh->node_get_coordinates(n,&coord);
+    source_mesh->node_get_coordinates(n, &coord);
     data[n] = coord[0]+coord[1];
   }
-  Jali::StateVector<double> myvec("nodevars",Jali::NODE,source_mesh,&(data[0]));
+  Jali::StateVector<double> myvec("nodevars", Jali::NODE, source_mesh,
+                                  &(data[0]));
   Jali::StateVector<double> &addvec = source_state.add(myvec);
 
 
@@ -433,15 +458,18 @@ TEST(Remap_2nd_Order, Node_Ctr_Lin_No_Limiter) {
 
   Portage::Remap_2ndOrder<Portage::Jali_Mesh_Wrapper,
                           Portage::Jali_State_Wrapper,
-                          Portage::NODE> 
-      remapper(sourceMeshWrapper,source_state,"nodevars",
+                          Portage::NODE>
+      remapper(sourceMeshWrapper, source_state, "nodevars",
                Portage::NOLIMITER);
 
 
-  // Gather the dual cell coordinates for source and target meshes for intersection
+  // Gather the dual cell coordinates for source and target meshes for
+  // intersection
 
-  std::vector<std::vector<JaliGeometry::Point>> source_dualcell_coords(nnodes_source);
-  std::vector<std::vector<JaliGeometry::Point>> target_dualcell_coords(nnodes_target);
+  std::vector<std::vector<JaliGeometry::Point>>
+      source_dualcell_coords(nnodes_source);
+  std::vector<std::vector<JaliGeometry::Point>>
+      target_dualcell_coords(nnodes_target);
 
   // Because the meshes are rectangular we can get away with examining
   // the coordinates of the corners instead of the wedges
@@ -453,11 +481,11 @@ TEST(Remap_2nd_Order, Node_Ctr_Lin_No_Limiter) {
   for (int n = 0; n < nnodes_source; n++) {
     std::vector<JaliGeometry::Point> dualcoords;
     std::vector<int> corners;
-    source_mesh->node_get_corners(n,Jali::ALL,&corners);
+    source_mesh->node_get_corners(n, Jali::ALL, &corners);
 
     for (auto cn : corners) {
       std::vector<JaliGeometry::Point> cncoords;
-      source_mesh->corner_get_coordinates(cn,&cncoords);
+      source_mesh->corner_get_coordinates(cn, &cncoords);
       for (auto coord : cncoords)
         source_dualcell_coords[n].push_back(coord);
     }
@@ -466,17 +494,17 @@ TEST(Remap_2nd_Order, Node_Ctr_Lin_No_Limiter) {
   for (int n = 0; n < nnodes_target; n++) {
     std::vector<JaliGeometry::Point> dualcoords;
     std::vector<int> corners;
-    target_mesh->node_get_corners(n,Jali::ALL,&corners);
+    target_mesh->node_get_corners(n, Jali::ALL, &corners);
 
     for (auto cn : corners) {
       std::vector<JaliGeometry::Point> cncoords;
-      target_mesh->corner_get_coordinates(cn,&cncoords);
+      target_mesh->corner_get_coordinates(cn, &cncoords);
       for (auto coord : cncoords)
         target_dualcell_coords[n].push_back(coord);
     }
   }
 
-  
+
   // Remap from source to target mesh
 
   std::vector<double> outvals(nnodes_target);
@@ -485,12 +513,13 @@ TEST(Remap_2nd_Order, Node_Ctr_Lin_No_Limiter) {
     std::vector<int> xcells;
     std::vector<std::vector<double>> xwts;
 
-    intersection_moments(target_dualcell_coords[n],source_dualcell_coords,
-                         &xcells, &xwts);
+    BOX_INTERSECT::intersection_moments(target_dualcell_coords[n],
+                                        source_dualcell_coords,
+                                        &xcells, &xwts);
 
-    std::pair< std::vector<int> const &, 
-               std::vector< std::vector<double> > const & > 
-        nodes_and_weights(xcells,xwts);
+    std::pair< std::vector<int> const &,
+               std::vector<std::vector<double>> const &>
+        nodes_and_weights(xcells, xwts);
 
     outvals[n] = remapper(nodes_and_weights);
   }
@@ -506,14 +535,13 @@ TEST(Remap_2nd_Order, Node_Ctr_Lin_No_Limiter) {
   std::vector<double> stdvals(nnodes_target);
   for (int n = 0; n < nnodes_target; ++n) {
     JaliGeometry::Point coord;
-    target_mesh->node_get_coordinates(n,&coord);
+    target_mesh->node_get_coordinates(n, &coord);
     if (fabs(coord[0]) < 1e-16 || fabs(1-coord[0]) < 1e-16 ||
         fabs(coord[1]) < 1e-16 || fabs(1-coord[1]) < 1.e-16)
       continue;
     stdvals[n] = coord[0]+coord[1];
-    EXPECT_DOUBLE_EQ(stdvals[n],outvals[n]);
+    EXPECT_DOUBLE_EQ(stdvals[n], outvals[n]);
   }
-
 }
 
 
@@ -522,48 +550,51 @@ TEST(Remap_2nd_Order, Node_Ctr_Lin_No_Limiter) {
 TEST(Remap_2nd_Order, Cell_Ctr_Const_No_Limiter_3D) {
 
   Jali::MeshFactory mf(MPI_COMM_WORLD);
-  
+
   Jali::FrameworkPreference pref;
   pref.push_back(Jali::MSTK);
   if (Jali::framework_available(Jali::MSTK))
     mf.preference(pref);
-  
-  Jali::Mesh *source_mesh = mf(0.0,0.0,0.0,1.0,1.0,1.0,4,4,4);
-  Jali::Mesh *target_mesh = mf(0.0,0.0,0.0,1.0,1.0,1.0,5,5,5);
+
+  Jali::Mesh *source_mesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 4, 4, 4);
+  Jali::Mesh *target_mesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 5, 5, 5);
   Jali::State source_state(source_mesh);
   Jali::State target_state(target_mesh);
-  
-  // Define two state vectors, one with constant value and the other
-  // with a linear function that is x+y 
 
-  int ncells_source = source_mesh->num_entities(Jali::CELL,Jali::OWNED);
-  std::vector<double> data(ncells_source,1.25);
-  Jali::StateVector<double> myvec("cellvars",Jali::CELL,source_mesh,&(data[0]));
+  // Define two state vectors, one with constant value and the other
+  // with a linear function that is x+y
+
+  int ncells_source = source_mesh->num_entities(Jali::CELL, Jali::OWNED);
+  std::vector<double> data(ncells_source, 1.25);
+  Jali::StateVector<double> myvec("cellvars", Jali::CELL, source_mesh,
+                                  &(data[0]));
   Jali::StateVector<double> &addvec = source_state.add(myvec);
 
-  int ncells_target = target_mesh->num_entities(Jali::CELL,Jali::OWNED);
+  int ncells_target = target_mesh->num_entities(Jali::CELL, Jali::OWNED);
 
-  
+
   // Create Remap objects
   Portage::Jali_Mesh_Wrapper sourceMeshWrapper(*source_mesh);
   Portage::Jali_State_Wrapper sourceStateWrapper(source_state);
 
   Portage::Remap_2ndOrder<Portage::Jali_Mesh_Wrapper,
                           Portage::Jali_State_Wrapper,
-                          Portage::CELL> 
+                          Portage::CELL>
       remapper(sourceMeshWrapper, sourceStateWrapper, "cellvars",
                Portage::NOLIMITER);
 
-  
+
   // Gather the cell coordinates for source and target meshes for intersection
 
-  std::vector<std::vector<JaliGeometry::Point>> source_cell_coords(ncells_source);
-  std::vector<std::vector<JaliGeometry::Point>> target_cell_coords(ncells_target);
+  std::vector<std::vector<JaliGeometry::Point>>
+      source_cell_coords(ncells_source);
+  std::vector<std::vector<JaliGeometry::Point>>
+      target_cell_coords(ncells_target);
 
   for (int c = 0; c < ncells_source; c++)
-    source_mesh->cell_get_coordinates(c,&(source_cell_coords[c]));
+    source_mesh->cell_get_coordinates(c, &(source_cell_coords[c]));
   for (int c = 0; c < ncells_target; c++)
-    target_mesh->cell_get_coordinates(c,&(target_cell_coords[c]));
+    target_mesh->cell_get_coordinates(c, &(target_cell_coords[c]));
 
   // Remap from source to target mesh
 
@@ -572,12 +603,13 @@ TEST(Remap_2nd_Order, Cell_Ctr_Const_No_Limiter_3D) {
     std::vector<int> xcells;
     std::vector<std::vector<double>> xweights;
 
-    intersection_moments(target_cell_coords[c],source_cell_coords,&xcells,
-                          &xweights);
+    BOX_INTERSECT::intersection_moments(target_cell_coords[c],
+                                        source_cell_coords,
+                                        &xcells, &xweights);
 
-    std::pair< std::vector<int> const &, 
-               std::vector< std::vector<double> > const & > 
-        cells_and_weights(xcells,xweights);
+    std::pair< std::vector<int> const &,
+               std::vector<std::vector<double>> const &>
+        cells_and_weights(xcells, xweights);
 
     outvals[c] = remapper(cells_and_weights);
   }
@@ -595,20 +627,20 @@ TEST(Remap_2nd_Order, Cell_Ctr_Const_No_Limiter_3D) {
 TEST(Remap_2nd_Order, Cell_Ctr_Lin_No_Limiter_3D) {
 
   Jali::MeshFactory mf(MPI_COMM_WORLD);
-  
+
   Jali::FrameworkPreference pref;
   pref.push_back(Jali::MSTK);
   if (Jali::framework_available(Jali::MSTK))
     mf.preference(pref);
-  
-  Jali::Mesh *source_mesh = mf(0.0,0.0,0.0,1.0,1.0,1.0,4,4,4);
-  Jali::Mesh *target_mesh = mf(0.0,0.0,0.0,1.0,1.0,1.0,5,5,5);
+
+  Jali::Mesh *source_mesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 4, 4, 4);
+  Jali::Mesh *target_mesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 5, 5, 5);
   Jali::State source_state(source_mesh);
   Jali::State target_state(target_mesh);
-  
-  // Define a state vectors, with a linear function that is x+y 
 
-  int ncells_source = source_mesh->num_entities(Jali::CELL,Jali::OWNED);
+  // Define a state vectors, with a linear function that is x+y
+
+  int ncells_source = source_mesh->num_entities(Jali::CELL, Jali::OWNED);
   std::vector<double> data(ncells_source);
   for (int c = 0; c < ncells_source; c++) {
     JaliGeometry::Point ccen = source_mesh->cell_centroid(c);
@@ -616,7 +648,8 @@ TEST(Remap_2nd_Order, Cell_Ctr_Lin_No_Limiter_3D) {
   }
 
 
-  Jali::StateVector<double> myvec("cellvars",Jali::CELL,source_mesh,&(data[0]));
+  Jali::StateVector<double> myvec("cellvars", Jali::CELL, source_mesh,
+                                  &(data[0]));
   Jali::StateVector<double> &addvec = source_state.add(myvec);
 
   // Create Remap objects
@@ -626,20 +659,22 @@ TEST(Remap_2nd_Order, Cell_Ctr_Lin_No_Limiter_3D) {
 
   Portage::Remap_2ndOrder<Portage::Jali_Mesh_Wrapper,
                           Portage::Jali_State_Wrapper,
-                          Portage::CELL> 
-      remapper(sourceMeshWrapper,sourceStateWrapper,"cellvars",
+                          Portage::CELL>
+      remapper(sourceMeshWrapper, sourceStateWrapper, "cellvars",
                Portage::NOLIMITER);
 
   // Gather the cell coordinates for source and target meshes for intersection
 
-  int ncells_target = target_mesh->num_entities(Jali::CELL,Jali::OWNED);
-  std::vector<std::vector<JaliGeometry::Point>> source_cell_coords(ncells_source);
-  std::vector<std::vector<JaliGeometry::Point>> target_cell_coords(ncells_target);
+  int ncells_target = target_mesh->num_entities(Jali::CELL, Jali::OWNED);
+  std::vector<std::vector<JaliGeometry::Point>>
+      source_cell_coords(ncells_source);
+  std::vector<std::vector<JaliGeometry::Point>>
+      target_cell_coords(ncells_target);
 
   for (int c = 0; c < ncells_source; c++)
-    source_mesh->cell_get_coordinates(c,&(source_cell_coords[c]));
+    source_mesh->cell_get_coordinates(c, &(source_cell_coords[c]));
   for (int c = 0; c < ncells_target; c++)
-    target_mesh->cell_get_coordinates(c,&(target_cell_coords[c]));
+    target_mesh->cell_get_coordinates(c, &(target_cell_coords[c]));
 
 
   // Remap from source to target mesh
@@ -649,11 +684,13 @@ TEST(Remap_2nd_Order, Cell_Ctr_Lin_No_Limiter_3D) {
     std::vector<int> xcells;
     std::vector<std::vector<double>> xweights;
 
-    intersection_moments(target_cell_coords[c],source_cell_coords,&xcells,&xweights);
+    BOX_INTERSECT::intersection_moments(target_cell_coords[c],
+                                        source_cell_coords,
+                                        &xcells, &xweights);
 
-    std::pair< std::vector<int> const &, 
-               std::vector< std::vector<double> > const & > 
-        cells_and_weights(xcells,xweights);
+    std::pair<std::vector<int> const &,
+              std::vector<std::vector<double>> const &>
+        cells_and_weights(xcells, xweights);
 
     outvals[c] = remapper(cells_and_weights);
   }
@@ -667,30 +704,30 @@ TEST(Remap_2nd_Order, Cell_Ctr_Lin_No_Limiter_3D) {
   }
   for (int c = 0; c < ncells_target; ++c)
     ASSERT_NEAR(stdvals[c], outvals[c], 1.0e-10);
-
 }
 
 
-/// Second order remap of discontinuous cell-centered field with Barth-Jespersen limiting in 3D
+/// Second order remap of discontinuous cell-centered field with
+/// Barth-Jespersen limiting in 3D
 
 TEST(Remap_2nd_Order, Cell_Ctr_BJ_Limiter_3D) {
   Jali::MeshFactory mf(MPI_COMM_WORLD);
-  
+
   Jali::FrameworkPreference pref;
   pref.push_back(Jali::MSTK);
   if (Jali::framework_available(Jali::MSTK))
     mf.preference(pref);
-  
-  Jali::Mesh *source_mesh = mf(0.0,0.0,0.0,1.0,1.0,1.0,4,4,4);
-  Jali::Mesh *target_mesh = mf(0.0,0.0,0.0,1.0,1.0,1.0,5,5,5);
+
+  Jali::Mesh *source_mesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 4, 4, 4);
+  Jali::Mesh *target_mesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 5, 5, 5);
   Jali::State source_state(source_mesh);
   Jali::State target_state(target_mesh);
-  
-  // Define a state vectors, with a linear function that is x+y 
 
-  int ncells_source = source_mesh->num_entities(Jali::CELL,Jali::OWNED);
+  // Define a state vectors, with a linear function that is x+y
+
+  int ncells_source = source_mesh->num_entities(Jali::CELL, Jali::OWNED);
   std::vector<double> data(ncells_source);
-  double minval=1e+10, maxval=-1e+10;
+  double minval = 1e+10, maxval = -1e+10;
   for (int c = 0; c < ncells_source; c++) {
     JaliGeometry::Point ccen = source_mesh->cell_centroid(c);
     if (ccen[0] < 0.5)
@@ -700,9 +737,10 @@ TEST(Remap_2nd_Order, Cell_Ctr_BJ_Limiter_3D) {
     if (data[c] < minval) minval = data[c];
     if (data[c] > maxval) maxval = data[c];
   }
-  
 
-  Jali::StateVector<double> myvec("cellvars",Jali::CELL,source_mesh,&(data[0]));
+
+  Jali::StateVector<double> myvec("cellvars", Jali::CELL, source_mesh,
+                                  &(data[0]));
   Jali::StateVector<double> &addvec = source_state.add(myvec);
 
   // Create Remap objects - one with no limiter and one with limiter
@@ -712,26 +750,29 @@ TEST(Remap_2nd_Order, Cell_Ctr_BJ_Limiter_3D) {
 
   Portage::Remap_2ndOrder<Portage::Jali_Mesh_Wrapper,
                           Portage::Jali_State_Wrapper,
-                          Portage::CELL> 
-      remapper1(sourceMeshWrapper,sourceStateWrapper,"cellvars",
+                          Portage::CELL>
+      remapper1(sourceMeshWrapper, sourceStateWrapper, "cellvars",
                Portage::NOLIMITER);
   Portage::Remap_2ndOrder<Portage::Jali_Mesh_Wrapper,
                           Portage::Jali_State_Wrapper,
-                          Portage::CELL> 
-      remapper2(sourceMeshWrapper,sourceStateWrapper,"cellvars",
+                          Portage::CELL>
+      remapper2(sourceMeshWrapper, sourceStateWrapper, "cellvars",
                Portage::BARTH_JESPERSEN);
 
 
-  // Gather the cell coordinates for the source and target meshes for intersection
-  
-  int ncells_target = target_mesh->num_entities(Jali::CELL,Jali::OWNED);
-  std::vector<std::vector<JaliGeometry::Point>> source_cell_coords(ncells_source);
-  std::vector<std::vector<JaliGeometry::Point>> target_cell_coords(ncells_target);
+  // Gather the cell coordinates for the source and target meshes for
+  // intersection
+
+  int ncells_target = target_mesh->num_entities(Jali::CELL, Jali::OWNED);
+  std::vector<std::vector<JaliGeometry::Point>>
+      source_cell_coords(ncells_source);
+  std::vector<std::vector<JaliGeometry::Point>>
+      target_cell_coords(ncells_target);
 
   for (int c = 0; c < ncells_source; c++)
-    source_mesh->cell_get_coordinates(c,&(source_cell_coords[c]));
+    source_mesh->cell_get_coordinates(c, &(source_cell_coords[c]));
   for (int c = 0; c < ncells_target; c++)
-    target_mesh->cell_get_coordinates(c,&(target_cell_coords[c]));
+    target_mesh->cell_get_coordinates(c, &(target_cell_coords[c]));
 
 
   std::vector<double> outvals1(ncells_target);
@@ -742,11 +783,13 @@ TEST(Remap_2nd_Order, Cell_Ctr_BJ_Limiter_3D) {
     std::vector<int> xcells;
     std::vector<std::vector<double>> xweights;
 
-    intersection_moments(target_cell_coords[c],source_cell_coords,&xcells,&xweights);
+    BOX_INTERSECT::intersection_moments(target_cell_coords[c],
+                                        source_cell_coords,
+                                        &xcells, &xweights);
 
-    std::pair< std::vector<int> const &, 
-               std::vector< std::vector<double> > const & > 
-        cells_and_weights(xcells,xweights);
+    std::pair< std::vector<int> const &,
+               std::vector<std::vector<double>> const &>
+        cells_and_weights(xcells, xweights);
 
     outvals1[c] = remapper1(cells_and_weights);
     outvals2[c] = remapper2(cells_and_weights);
@@ -766,7 +809,7 @@ TEST(Remap_2nd_Order, Cell_Ctr_BJ_Limiter_3D) {
 
   bool inbounds_limited = true;
   for (int c = 0; c < ncells_target; ++c) {
-    if (outvals2[c] < minval && minval-outvals2[c] > 1.0e-10) { 
+    if (outvals2[c] < minval && minval-outvals2[c] > 1.0e-10) {
       inbounds_limited = false;
       break;
     }
@@ -791,11 +834,13 @@ TEST(Remap_2nd_Order, Node_Ctr_Const_No_Limiter_3D) {
   if (Jali::framework_available(Jali::MSTK))
     mf.preference(pref);
 
-  Jali::Mesh *source_mesh = mf(0.0,0.0,0.0,1.0,1.0,1.0,4,4,4,NULL,true,true,true,true);
-  Jali::Mesh *target_mesh = mf(0.0,0.0,0.0,1.0,1.0,1.0,5,5,5,NULL,true,true,true,true);
+  Jali::Mesh *source_mesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 4, 4, 4, NULL,
+                               true, true, true, true);
+  Jali::Mesh *target_mesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 5, 5, 5, NULL,
+                               true, true, true, true);
 
-  int nnodes_source = source_mesh->num_entities(Jali::NODE,Jali::OWNED);
-  int nnodes_target = target_mesh->num_entities(Jali::NODE,Jali::OWNED);
+  int nnodes_source = source_mesh->num_entities(Jali::NODE, Jali::OWNED);
+  int nnodes_target = target_mesh->num_entities(Jali::NODE, Jali::OWNED);
 
   // Create a state object and add the first two vectors to it
 
@@ -805,8 +850,9 @@ TEST(Remap_2nd_Order, Node_Ctr_Const_No_Limiter_3D) {
   // Define a state vectors representing a linear function
 
   double nodeval = 3.0;
-  std::vector<double> data(nnodes_source,nodeval);
-  Jali::StateVector<double> myvec("nodevars",Jali::NODE,source_mesh,&(data[0]));
+  std::vector<double> data(nnodes_source, nodeval);
+  Jali::StateVector<double> myvec("nodevars", Jali::NODE, source_mesh,
+                                  &(data[0]));
   Jali::StateVector<double> &addvec = source_state.add(myvec);
 
 
@@ -819,14 +865,17 @@ TEST(Remap_2nd_Order, Node_Ctr_Const_No_Limiter_3D) {
 
   Portage::Remap_2ndOrder<Portage::Jali_Mesh_Wrapper,
                           Portage::Jali_State_Wrapper,
-                          Portage::NODE> 
-      remapper(sourceMeshWrapper,source_state,"nodevars",Portage::NOLIMITER);
+                          Portage::NODE>
+      remapper(sourceMeshWrapper, source_state, "nodevars", Portage::NOLIMITER);
 
 
-  // Gather the dual cell coordinates for source and target meshes for intersection
+  // Gather the dual cell coordinates for source and target meshes for
+  // intersection
 
-  std::vector<std::vector<JaliGeometry::Point>> source_dualcell_coords(nnodes_source);
-  std::vector<std::vector<JaliGeometry::Point>> target_dualcell_coords(nnodes_target);
+  std::vector<std::vector<JaliGeometry::Point>>
+      source_dualcell_coords(nnodes_source);
+  std::vector<std::vector<JaliGeometry::Point>>
+      target_dualcell_coords(nnodes_target);
 
   // Because the meshes are rectangular we can get away with examining
   // the coordinates of the corners instead of the wedges
@@ -838,11 +887,11 @@ TEST(Remap_2nd_Order, Node_Ctr_Const_No_Limiter_3D) {
   for (int n = 0; n < nnodes_source; n++) {
     std::vector<JaliGeometry::Point> dualcoords;
     std::vector<int> corners;
-    source_mesh->node_get_corners(n,Jali::ALL,&corners);
+    source_mesh->node_get_corners(n, Jali::ALL, &corners);
 
     for (auto cn : corners) {
       std::vector<JaliGeometry::Point> cncoords;
-      source_mesh->corner_get_coordinates(cn,&cncoords);
+      source_mesh->corner_get_coordinates(cn, &cncoords);
       for (auto coord : cncoords)
         source_dualcell_coords[n].push_back(coord);
     }
@@ -851,17 +900,17 @@ TEST(Remap_2nd_Order, Node_Ctr_Const_No_Limiter_3D) {
   for (int n = 0; n < nnodes_target; n++) {
     std::vector<JaliGeometry::Point> dualcoords;
     std::vector<int> corners;
-    target_mesh->node_get_corners(n,Jali::ALL,&corners);
+    target_mesh->node_get_corners(n, Jali::ALL, &corners);
 
     for (auto cn : corners) {
       std::vector<JaliGeometry::Point> cncoords;
-      target_mesh->corner_get_coordinates(cn,&cncoords);
+      target_mesh->corner_get_coordinates(cn, &cncoords);
       for (auto coord : cncoords)
         target_dualcell_coords[n].push_back(coord);
     }
   }
 
-  
+
   // Remap from source to target mesh
 
   std::vector<double> outvals(nnodes_target);
@@ -870,12 +919,13 @@ TEST(Remap_2nd_Order, Node_Ctr_Const_No_Limiter_3D) {
     std::vector<int> xcells;
     std::vector<std::vector<double>> xwts;
 
-    intersection_moments(target_dualcell_coords[n],source_dualcell_coords,
-                         &xcells, &xwts);
+    BOX_INTERSECT::intersection_moments(target_dualcell_coords[n],
+                                        source_dualcell_coords,
+                                        &xcells, &xwts);
 
-    std::pair< std::vector<int> const &, 
-               std::vector< std::vector<double> > const & > 
-        nodes_and_weights(xcells,xwts);
+    std::pair< std::vector<int> const &,
+               std::vector<std::vector<double>> const &>
+        nodes_and_weights(xcells, xwts);
 
     outvals[n] = remapper(nodes_and_weights);
   }
@@ -890,14 +940,13 @@ TEST(Remap_2nd_Order, Node_Ctr_Const_No_Limiter_3D) {
 
   for (int n = 0; n < nnodes_target; ++n) {
     JaliGeometry::Point coord;
-    target_mesh->node_get_coordinates(n,&coord);
+    target_mesh->node_get_coordinates(n, &coord);
     //    if (fabs(coord[0]) < 1e-16 || fabs(1-coord[0]) < 1e-16 ||
     //        fabs(coord[1]) < 1e-16 || fabs(1-coord[1]) < 1.e-16 ||
     //        fabs(coord[2]) < 1e-16 || fabs(1-coord[2]) < 1.e-16)
     //      continue;
-    EXPECT_DOUBLE_EQ(nodeval,outvals[n]);
+    EXPECT_DOUBLE_EQ(nodeval, outvals[n]);
   }
-
 }
 
 
@@ -910,11 +959,13 @@ TEST(Remap_2nd_Order, Node_Ctr_Lin_No_Limiter_3D) {
   if (Jali::framework_available(Jali::MSTK))
     mf.preference(pref);
 
-  Jali::Mesh *source_mesh = mf(0.0,0.0,0.0,1.0,1.0,1.0,4,4,4,NULL,true,true,true,true);
-  Jali::Mesh *target_mesh = mf(0.0,0.0,0.0,1.0,1.0,1.0,5,5,5,NULL,true,true,true,true);
+  Jali::Mesh *source_mesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 4, 4, 4, NULL,
+                               true, true, true, true);
+  Jali::Mesh *target_mesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 5, 5, 5, NULL,
+                               true, true, true, true);
 
-  int nnodes_source = source_mesh->num_entities(Jali::NODE,Jali::OWNED);
-  int nnodes_target = target_mesh->num_entities(Jali::NODE,Jali::OWNED);
+  int nnodes_source = source_mesh->num_entities(Jali::NODE, Jali::OWNED);
+  int nnodes_target = target_mesh->num_entities(Jali::NODE, Jali::OWNED);
 
   // Create a state object and add the first two vectors to it
 
@@ -926,10 +977,11 @@ TEST(Remap_2nd_Order, Node_Ctr_Lin_No_Limiter_3D) {
   std::vector<double> data(nnodes_source);
   for (int n = 0; n < nnodes_source; n++) {
     JaliGeometry::Point coord;
-    source_mesh->node_get_coordinates(n,&coord);
+    source_mesh->node_get_coordinates(n, &coord);
     data[n] = coord[0]+coord[1]+coord[2];
   }
-  Jali::StateVector<double> myvec("nodevars",Jali::NODE,source_mesh,&(data[0]));
+  Jali::StateVector<double> myvec("nodevars", Jali::NODE, source_mesh,
+                                  &(data[0]));
   Jali::StateVector<double> &addvec = source_state.add(myvec);
 
 
@@ -942,15 +994,18 @@ TEST(Remap_2nd_Order, Node_Ctr_Lin_No_Limiter_3D) {
 
   Portage::Remap_2ndOrder<Portage::Jali_Mesh_Wrapper,
                           Portage::Jali_State_Wrapper,
-                          Portage::NODE> 
-      remapper(sourceMeshWrapper,source_state,"nodevars",
+                          Portage::NODE>
+      remapper(sourceMeshWrapper, source_state, "nodevars",
                Portage::NOLIMITER);
 
 
-  // Gather the dual cell coordinates for source and target meshes for intersection
+  // Gather the dual cell coordinates for source and target meshes for
+  // intersection
 
-  std::vector<std::vector<JaliGeometry::Point>> source_dualcell_coords(nnodes_source);
-  std::vector<std::vector<JaliGeometry::Point>> target_dualcell_coords(nnodes_target);
+  std::vector<std::vector<JaliGeometry::Point>>
+      source_dualcell_coords(nnodes_source);
+  std::vector<std::vector<JaliGeometry::Point>>
+      target_dualcell_coords(nnodes_target);
 
   // Because the meshes are rectangular we can get away with examining
   // the coordinates of the corners instead of the wedges
@@ -962,11 +1017,11 @@ TEST(Remap_2nd_Order, Node_Ctr_Lin_No_Limiter_3D) {
   for (int n = 0; n < nnodes_source; n++) {
     std::vector<JaliGeometry::Point> dualcoords;
     std::vector<int> corners;
-    source_mesh->node_get_corners(n,Jali::ALL,&corners);
+    source_mesh->node_get_corners(n, Jali::ALL, &corners);
 
     for (auto cn : corners) {
       std::vector<JaliGeometry::Point> cncoords;
-      source_mesh->corner_get_coordinates(cn,&cncoords);
+      source_mesh->corner_get_coordinates(cn, &cncoords);
       for (auto coord : cncoords)
         source_dualcell_coords[n].push_back(coord);
     }
@@ -975,17 +1030,17 @@ TEST(Remap_2nd_Order, Node_Ctr_Lin_No_Limiter_3D) {
   for (int n = 0; n < nnodes_target; n++) {
     std::vector<JaliGeometry::Point> dualcoords;
     std::vector<int> corners;
-    target_mesh->node_get_corners(n,Jali::ALL,&corners);
+    target_mesh->node_get_corners(n, Jali::ALL, &corners);
 
     for (auto cn : corners) {
       std::vector<JaliGeometry::Point> cncoords;
-      target_mesh->corner_get_coordinates(cn,&cncoords);
+      target_mesh->corner_get_coordinates(cn, &cncoords);
       for (auto coord : cncoords)
         target_dualcell_coords[n].push_back(coord);
     }
   }
 
-  
+
   // Remap from source to target mesh
 
   std::vector<double> outvals(nnodes_target);
@@ -994,12 +1049,13 @@ TEST(Remap_2nd_Order, Node_Ctr_Lin_No_Limiter_3D) {
     std::vector<int> xcells;
     std::vector<std::vector<double>> xwts;
 
-    intersection_moments(target_dualcell_coords[n],source_dualcell_coords,
-                         &xcells, &xwts);
+    BOX_INTERSECT::intersection_moments(target_dualcell_coords[n],
+                                        source_dualcell_coords,
+                                        &xcells, &xwts);
 
-    std::pair< std::vector<int> const &, 
-               std::vector< std::vector<double> > const & > 
-        nodes_and_weights(xcells,xwts);
+    std::pair< std::vector<int> const &,
+               std::vector<std::vector<double>> const &>
+        nodes_and_weights(xcells, xwts);
 
     outvals[n] = remapper(nodes_and_weights);
   }
@@ -1015,19 +1071,19 @@ TEST(Remap_2nd_Order, Node_Ctr_Lin_No_Limiter_3D) {
   std::vector<double> stdvals(nnodes_target);
   for (int n = 0; n < nnodes_target; ++n) {
     JaliGeometry::Point coord;
-    target_mesh->node_get_coordinates(n,&coord);
+    target_mesh->node_get_coordinates(n, &coord);
     if (fabs(coord[0]) < 1e-16 || fabs(1-coord[0]) < 1e-16 ||
         fabs(coord[1]) < 1e-16 || fabs(1-coord[1]) < 1.e-16 ||
         fabs(coord[2]) < 1e-16 || fabs(1-coord[2]) < 1.e-16)
       continue;
     stdvals[n] = coord[0]+coord[1]+coord[2];
-    EXPECT_DOUBLE_EQ(stdvals[n],outvals[n]);
+    EXPECT_DOUBLE_EQ(stdvals[n], outvals[n]);
   }
-
 }
 
 
-/// Second order remap of discontinuous node-centered field with Barth-Jespersen limiting in 3D
+/// Second order remap of discontinuous node-centered field with
+/// Barth-Jespersen limiting in 3D
 
 TEST(Remap_2nd_Order, Node_Ctr_BJ_Limiter_3D) {
 
@@ -1037,11 +1093,13 @@ TEST(Remap_2nd_Order, Node_Ctr_BJ_Limiter_3D) {
   if (Jali::framework_available(Jali::MSTK))
     mf.preference(pref);
 
-  Jali::Mesh *source_mesh = mf(0.0,0.0,1.0,1.0,4,4,NULL,true,true,true,true);
-  Jali::Mesh *target_mesh = mf(0.0,0.0,1.0,1.0,5,5,NULL,true,true,true,true);
+  Jali::Mesh *source_mesh = mf(0.0, 0.0, 1.0, 1.0, 4, 4, NULL,
+                               true, true, true, true);
+  Jali::Mesh *target_mesh = mf(0.0, 0.0, 1.0, 1.0, 5, 5, NULL,
+                               true, true, true, true);
 
-  int nnodes_source = source_mesh->num_entities(Jali::NODE,Jali::OWNED);
-  int nnodes_target = target_mesh->num_entities(Jali::NODE,Jali::OWNED);
+  int nnodes_source = source_mesh->num_entities(Jali::NODE, Jali::OWNED);
+  int nnodes_target = target_mesh->num_entities(Jali::NODE, Jali::OWNED);
 
   // Create a state object and add the first two vectors to it
 
@@ -1053,18 +1111,19 @@ TEST(Remap_2nd_Order, Node_Ctr_BJ_Limiter_3D) {
   // have in the left linear function
 
   std::vector<double> data(nnodes_source);
-  double minval=1e+10, maxval=-1e+10;
+  double minval = 1e+10, maxval = -1e+10;
   for (int n = 0; n < nnodes_source; n++) {
     JaliGeometry::Point coord;
-    source_mesh->node_get_coordinates(n,&coord);
+    source_mesh->node_get_coordinates(n, &coord);
     if (coord[0] >= 0.5)
-      data[n] = 100*(coord[0]+coord[1]+coord[2]); 
+      data[n] = 100*(coord[0]+coord[1]+coord[2]);
     else
       data[n] = coord[0]+coord[1]+coord[2];
     if (data[n] < minval) minval = data[n];
     if (data[n] > maxval) maxval = data[n];
   }
-  Jali::StateVector<double> myvec("nodevars",Jali::NODE,source_mesh,&(data[0]));
+  Jali::StateVector<double> myvec("nodevars", Jali::NODE, source_mesh,
+                                  &(data[0]));
   Jali::StateVector<double> &addvec = source_state.add(myvec);
 
 
@@ -1077,19 +1136,23 @@ TEST(Remap_2nd_Order, Node_Ctr_BJ_Limiter_3D) {
 
   Portage::Remap_2ndOrder<Portage::Jali_Mesh_Wrapper,
                           Portage::Jali_State_Wrapper,
-                          Portage::NODE> 
-      remapper1(sourceMeshWrapper,source_state,"nodevars",Portage::NOLIMITER);
+                          Portage::NODE>
+      remapper1(sourceMeshWrapper, source_state, "nodevars",
+                Portage::NOLIMITER);
   Portage::Remap_2ndOrder<Portage::Jali_Mesh_Wrapper,
                           Portage::Jali_State_Wrapper,
-                          Portage::NODE> 
-      remapper2(sourceMeshWrapper,source_state,"nodevars",
+                          Portage::NODE>
+      remapper2(sourceMeshWrapper, source_state, "nodevars",
                 Portage::BARTH_JESPERSEN);
 
 
-  // Gather the dual cell coordinates for source and target meshes for intersection
+  // Gather the dual cell coordinates for source and target meshes for
+  // intersection
 
-  std::vector<std::vector<JaliGeometry::Point>> source_dualcell_coords(nnodes_source);
-  std::vector<std::vector<JaliGeometry::Point>> target_dualcell_coords(nnodes_target);
+  std::vector<std::vector<JaliGeometry::Point>>
+                         source_dualcell_coords(nnodes_source);
+  std::vector<std::vector<JaliGeometry::Point>>
+                         target_dualcell_coords(nnodes_target);
 
   // Because the meshes are rectangular we can get away with examining
   // the coordinates of the corners instead of the wedges
@@ -1101,11 +1164,11 @@ TEST(Remap_2nd_Order, Node_Ctr_BJ_Limiter_3D) {
   for (int n = 0; n < nnodes_source; n++) {
     std::vector<JaliGeometry::Point> dualcoords;
     std::vector<int> corners;
-    source_mesh->node_get_corners(n,Jali::ALL,&corners);
+    source_mesh->node_get_corners(n, Jali::ALL, &corners);
 
     for (auto cn : corners) {
       std::vector<JaliGeometry::Point> cncoords;
-      source_mesh->corner_get_coordinates(cn,&cncoords);
+      source_mesh->corner_get_coordinates(cn, &cncoords);
       for (auto coord : cncoords)
         source_dualcell_coords[n].push_back(coord);
     }
@@ -1114,17 +1177,17 @@ TEST(Remap_2nd_Order, Node_Ctr_BJ_Limiter_3D) {
   for (int n = 0; n < nnodes_target; n++) {
     std::vector<JaliGeometry::Point> dualcoords;
     std::vector<int> corners;
-    target_mesh->node_get_corners(n,Jali::ALL,&corners);
+    target_mesh->node_get_corners(n, Jali::ALL, &corners);
 
     for (auto cn : corners) {
       std::vector<JaliGeometry::Point> cncoords;
-      target_mesh->corner_get_coordinates(cn,&cncoords);
+      target_mesh->corner_get_coordinates(cn, &cncoords);
       for (auto coord : cncoords)
         target_dualcell_coords[n].push_back(coord);
     }
   }
 
-  
+
   // Remap from source to target mesh
 
   std::vector<double> outvals1(nnodes_target);
@@ -1134,12 +1197,13 @@ TEST(Remap_2nd_Order, Node_Ctr_BJ_Limiter_3D) {
     std::vector<int> xcells;
     std::vector<std::vector<double>> xwts;
 
-    intersection_moments(target_dualcell_coords[n],source_dualcell_coords,
-                         &xcells, &xwts);
+    BOX_INTERSECT::intersection_moments(target_dualcell_coords[n],
+                                        source_dualcell_coords,
+                                        &xcells, &xwts);
 
-    std::pair< std::vector<int> const &, 
-               std::vector< std::vector<double> > const & > 
-        nodes_and_weights(xcells,xwts);
+    std::pair< std::vector<int> const &,
+               std::vector<std::vector<double>> const &>
+        nodes_and_weights(xcells, xwts);
 
     outvals1[n] = remapper1(nodes_and_weights);
     outvals2[n] = remapper2(nodes_and_weights);
@@ -1167,5 +1231,4 @@ TEST(Remap_2nd_Order, Node_Ctr_BJ_Limiter_3D) {
 
   EXPECT_TRUE(outofbounds_unlimited);
   EXPECT_TRUE(inbounds_limited);
-
 }

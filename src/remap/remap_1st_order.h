@@ -3,11 +3,14 @@
  * All rights reserved.
  *---------------------------------------------------------------------------~*/
 
-#ifndef REMAP_1STORDER_H
-#define REMAP_1STORDER_H
+#ifndef REMAP_1STORDER_H_
+#define REMAP_1STORDER_H_
 
 
 #include <cassert>
+#include <string>
+#include <utility>
+#include <vector>
 
 #include "portage/wrappers/mesh/jali/jali_mesh_wrapper.h"
 #include "portage/wrappers/state/jali/jali_state_wrapper.h"
@@ -59,7 +62,6 @@ namespace Portage {
 template<typename MeshType, typename StateType, Entity_kind on_what>
 class Remap_1stOrder {
  public:
-
   /*!
     @brief Constructor.
     @param[in] source_mesh The input mesh.
@@ -69,79 +71,78 @@ class Remap_1stOrder {
    */
   Remap_1stOrder(MeshType const & source_mesh, StateType const & source_state,
                  std::string const remap_var_name) :
-      source_mesh_(source_mesh), 
+      source_mesh_(source_mesh),
       source_state_(source_state),
       remap_var_name_(remap_var_name),
       source_vals_(NULL)
   {
-    source_state.get_data(on_what,remap_var_name,&source_vals_);
+    source_state.get_data(on_what, remap_var_name, &source_vals_);
   }
 
 
   /// Copy constructor (disabled)
   Remap_1stOrder(const Remap_1stOrder &) = delete;
-  
+
   /// Assignment operator (disabled)
   Remap_1stOrder & operator = (const Remap_1stOrder &) = delete;
 
   /// Destructor
   ~Remap_1stOrder() {}
 
-  
+
   /*!
     @brief Functor to do the actual remap calculation.
     @param[in] sources_and_weights A pair of two vectors.
-    @c sources_and_weights.first() is the vector of source entity indices 
+    @c sources_and_weights.first() is the vector of source entity indices
     in the source mesh that will contribute to the current target mesh entity.
     @c sources_and_weights.second() is the vector of vector weights for each
     of the source mesh entities in @c sources_and_weights.first().  Each element
     of the weights vector is a moment of the source data over the target
     entity; for first order remap, only the first element (or zero'th moment)
-    of the weights vector (i.e. the volume of intersection) is used. Source 
+    of the weights vector (i.e. the volume of intersection) is used. Source
     entities may be repeated in the list if the intersection of a target entity
     and a source entity consists of two or more disjoint pieces
-    
+
     @todo Cleanup the datatype for sources_and_weights - it is somewhat confusing.
-    @todo SHOULD WE USE boost::tuple FOR SENDING IN SOURCES_AND_WEIGHTS SO 
-    THAT WE CAN USE boost::zip_iterator TO ITERATOR OVER IT? 
-    
+    @todo SHOULD WE USE boost::tuple FOR SENDING IN SOURCES_AND_WEIGHTS SO
+    THAT WE CAN USE boost::zip_iterator TO ITERATOR OVER IT?
+
    */
 
-  double 
-  operator() (std::pair<std::vector<int> const &, 
-              std::vector< std::vector<double> > const &> cells_and_weights) const;
+  double
+  operator() (std::pair<std::vector<int> const &,
+              std::vector<std::vector<double>> const &> cells_and_weights)
+      const;
 
  private:
-
   MeshType const & source_mesh_;
   StateType const & source_state_;
   std::string const & remap_var_name_;
   double * source_vals_;
-
 };
 
 
-/*! 
-  @brief 1st order remap operator on general entity types 
+/*!
+  @brief 1st order remap operator on general entity types
   @param[in] sources_and_weights Pair containing vector of contributing source entities and vector of contribution weights
 */
 
 template<typename MeshType, typename StateType, Entity_kind on_what>
-double Remap_1stOrder<MeshType,StateType,on_what> :: operator() 
-    (std::pair<std::vector<int> const &, 
+double Remap_1stOrder<MeshType, StateType, on_what> :: operator()
+    (std::pair<std::vector<int> const &,
      std::vector< std::vector<double> > const &> sources_and_weights) const {
 
-  std::vector<int> const & source_cells = sources_and_weights.first; 
+  std::vector<int> const & source_cells = sources_and_weights.first;
   int nsrccells = source_cells.size();
   if (!nsrccells) {
-    std::cerr << "ERROR: No source cells contribute to target cell?" << 
+    std::cerr << "ERROR: No source cells contribute to target cell?" <<
         std::endl;
     return 0.0;
   }
 
-  std::vector< std::vector<double> > const & weights = sources_and_weights.second;
+  std::vector<std::vector<double>> const & weights = sources_and_weights.second;
   if (weights.size() < nsrccells) {
-    std::cerr << "ERROR: Not enough weights provided for remapping " << 
+    std::cerr << "ERROR: Not enough weights provided for remapping " <<
         std::endl;
     return 0.0;
   }
@@ -149,7 +150,7 @@ double Remap_1stOrder<MeshType,StateType,on_what> :: operator()
   // contribution of the source cell is its field value weighted by
   // its "weight" (in this case, its 0th moment/area/volume)
 
-  /// @todo Should use zip_iterator here but I am not sure I know how to correctly
+  /// @todo Should use zip_iterator here but I am not sure I know how to
 
   double val = 0.0;
   double sumofweights = 0.0;
@@ -157,7 +158,7 @@ double Remap_1stOrder<MeshType,StateType,on_what> :: operator()
     int srccell = source_cells[j];
     std::vector<double> pair_weights = weights[j];
 
-    val += source_vals_[srccell] * pair_weights[0];  // 1st order 
+    val += source_vals_[srccell] * pair_weights[0];  // 1st order
     sumofweights += pair_weights[0];
   }
 
@@ -169,7 +170,6 @@ double Remap_1stOrder<MeshType,StateType,on_what> :: operator()
 }
 
 
-} // namespace portage
-                     
-                     
-#endif
+}  // namespace Portage
+
+#endif  // REMAP_1ST_ORDER_H_
