@@ -6,21 +6,24 @@
 #ifndef SEARCH_SIMPLE_H
 #define SEARCH_SIMPLE_H
 
+#include <utility>
 #include <vector>
 
 
 namespace { // unnamed
 
   /*!
-    @brief Given a list of 2d coordinates, find the coordinates of the bounding box.
-    @param[in] cell_coord List of coordinates as (x,y) pairs of points to bound.
+    @brief Given a list of 2d coordinates, find the coordinates of the
+    bounding box.
+    @param[in] cell_coord List of coordinates as (x,y) pairs of points
+    to bound.
     @param[in,out] xlow Minimum @a x of bounding box.
     @param[in,out] xhigh Maximum @a x of bounding box.
     @param[in,out] ylow Minimum @a y of bounding box.
     @param[in,out] yhigh Maximum @a y of bounding box.
    */
 void getBoundingBox(
-    const std::vector<std::pair<double,double>> &cell_coord,
+    const std::vector<std::pair<double, double>> &cell_coord,
     double* xlow, double* xhigh,
     double* ylow, double* yhigh)
 {
@@ -28,11 +31,9 @@ void getBoundingBox(
     double xl = big;  double xh = -big;
     double yl = big;  double yh = -big;
 
-    for (int n = 0; n < cell_coord.size(); ++n) {
-        std::pair<double,double> p;
-        p = cell_coord[n];
-        double x = p.first;
-        double y = p.second;
+    for (const auto& p : cell_coord) {
+        const double x = p.first;
+        const double y = p.second;
         xl = std::min(xl, x);  xh = std::max(xh, x);
         yl = std::min(yl, y);  yh = std::max(yh, y);
     }
@@ -49,7 +50,8 @@ namespace Portage {
 
   /*!
     @class SearchSimple "search_simple.h"
-    @brief A simple, crude search algorithm that utilizes bounding boxes in 2d.
+    @brief A simple, crude search algorithm that utilizes bounding boxes
+    in 2d.
     @tparam SourceMeshType The mesh type of the input mesh.
     @tparam TargetMeshType The mesh type of the output mesh.
 
@@ -65,10 +67,10 @@ class SearchSimple {
     // Constructor with Meshes
     /*!
       @brief Builds the search structure for finding intersection.
-      @param[in] source_mesh_wrapper Pointer to a mesh wrapper for getting the
-      source mesh info.
-      @param[in] target_mesh_wrapper Pointer to a mesh wrapper for getting the
-      target mesh info.
+      @param[in] source_mesh_wrapper Pointer to a mesh wrapper for
+      getting the source mesh info.
+      @param[in] target_mesh_wrapper Pointer to a mesh wrapper for
+      getting the target mesh info.
       
       Constructor for search structure for finding cells from a source
       mesh that overlap the target mesh.
@@ -77,7 +79,7 @@ class SearchSimple {
                  const TargetMeshType & target_mesh)
             : sourceMesh_(source_mesh), targetMesh_(target_mesh)  {
 
-        int numCells = sourceMesh_.num_owned_cells() + 
+        const int numCells = sourceMesh_.num_owned_cells() + 
                 sourceMesh_.num_ghost_cells();
         xlow_.reserve(numCells);
         xhigh_.reserve(numCells);
@@ -86,11 +88,11 @@ class SearchSimple {
         
         // find bounding boxes for all cells
         for (int c = 0; c < numCells; ++c) {
-            std::vector<std::pair<double,double>> cell_coord;
+            std::vector<std::pair<double, double>> cell_coord;
             sourceMesh_.cell_get_coordinates(c, &cell_coord);
             getBoundingBox(cell_coord,
-                                              &xlow_[c], &xhigh_[c],
-                                              &ylow_[c], &yhigh_[c]);
+                           &xlow_[c], &xhigh_[c],
+                           &ylow_[c], &yhigh_[c]);
         }
     } // SearchSimple::SearchSimple
 
@@ -104,13 +106,15 @@ class SearchSimple {
     ~SearchSimple() = default;
 
     /*!
-      @brief Find the source mesh cells potentially overlapping a given target cell.
-      @param[in] cellId The index of the cell in the target mesh for which we
-      wish to find the candidate overlapping cells in the source mesh.
-      @param[in,out] candidates Pointer to a vector of potential candidate cells
-      in the source mesh.
+      @brief Find the source mesh cells potentially overlapping a given
+      target cell.
+      @param[in] cellId The index of the cell in the target mesh for
+      which we wish to find the candidate overlapping cells in the
+      source mesh.
+      @param[in,out] candidates Pointer to a vector of potential candidate
+      cells in the source mesh.
     */
-    void search(const int cellId, std::vector<int> *candidates) const;
+    void operator() (const int cellId, std::vector<int> *candidates) const;
 
   private:
 
@@ -127,11 +131,11 @@ class SearchSimple {
 
 
 template<typename SourceMeshType, typename TargetMeshType>
-void SearchSimple<SourceMeshType,TargetMeshType>::
-search(const int cellId, std::vector<int> *candidates)
+void SearchSimple<SourceMeshType, TargetMeshType>::
+operator() (const int cellId, std::vector<int> *candidates)
 const {
     // find bounding box for target cell
-    std::vector<std::pair<double,double>> cell_coord;
+    std::vector<std::pair<double, double>> cell_coord;
     targetMesh_.cell_get_coordinates(cellId, &cell_coord);
     double txlow, txhigh, tylow, tyhigh;
     getBoundingBox(cell_coord, &txlow, &txhigh, &tylow, &tyhigh);
@@ -139,7 +143,8 @@ const {
     // now see which sourceMesh cells have bounding boxes overlapping
     // with target cell
     // do a naive linear search
-    int numCells = sourceMesh_.num_owned_cells() + sourceMesh_.num_ghost_cells();
+    const int numCells = sourceMesh_.num_owned_cells() +
+        sourceMesh_.num_ghost_cells();
     for (int c = 0; c < numCells; ++c) {
         if (std::max(txlow, xlow_[c]) < std::min(txhigh, xhigh_[c]) &&
                 std::max(tylow, ylow_[c]) < std::min(tyhigh, yhigh_[c])) {
@@ -147,7 +152,7 @@ const {
         }
     }
 
-} // SearchSimple::search
+} // SearchSimple::operator()
 
 
 

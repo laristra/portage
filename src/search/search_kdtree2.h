@@ -82,7 +82,7 @@ namespace Portage {
              @param[in,out] candidates Pointer to a vector of potential candidate cells in
              the source mesh.
              */
-           void search(const int cellId, std::vector<int> *candidates) const;
+           void operator() (const int cellId, std::vector<int> *candidates) const;
 
        private:
 
@@ -97,7 +97,7 @@ namespace Portage {
 
     template<typename SourceMeshType, typename TargetMeshType>
         void SearchKDTree2<SourceMeshType,TargetMeshType>::
-        search(const int cellId, std::vector<int> *candidates)
+        operator() (const int cellId, std::vector<int> *candidates)
         const {
             // find bounding box for target cell
             std::vector<std::pair<double,double>> cell_coord;
@@ -114,7 +114,7 @@ namespace Portage {
             gk::Intersect(bb, tree_, lcandidates);
             candidates->assign(lcandidates.begin(), lcandidates.end());
 
-        } // SearchKDTree2::search
+        } // SearchKDTree2::operator()
 
 
 
