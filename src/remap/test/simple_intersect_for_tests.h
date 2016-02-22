@@ -7,7 +7,7 @@
 #include "Point.hh"
 
 
-namespace {
+namespace BOX_INTERSECT {
 
 void bounding_box(std::vector<JaliGeometry::Point> coords,
                   JaliGeometry::Point *pmin, JaliGeometry::Point *pmax) {
@@ -45,8 +45,8 @@ bool intersect_boxes(JaliGeometry::Point min1, JaliGeometry::Point max1,
     // sort the min max vals in this dimension
     double val[4];
     val[0] = min1[d]; val[1] = max1[d]; val[2] = min2[d]; val[3] = max2[d];
-    for (int i = 0; i < 3; i++) 
-      for (int j = i+1; j < 4; j++) 
+    for (int i = 0; i < 3; i++)
+      for (int j = i+1; j < 4; j++)
         if (val[i] > val[j]) {
           double tmp = val[i];
           val[i] = val[j];
@@ -81,7 +81,7 @@ bool intersect_boxes(JaliGeometry::Point min1, JaliGeometry::Point max1,
   xsect_moments->push_back(vol);
   for (int d = 0; d < dim; d++)
     xsect_moments->push_back(centroid[d]*vol);
-  
+
   return true;
 }
 
@@ -90,28 +90,27 @@ void intersection_moments(std::vector<JaliGeometry::Point> cell_xyz,
                            std::vector<std::vector<JaliGeometry::Point>> candidate_cells_xyz,
                            std::vector<int> *xcells,
                            std::vector<std::vector<double>> *xwts) {
-  
+
   int dim = cell_xyz[0].dim();
   int num_candidates = candidate_cells_xyz.size();
-  
+
   xwts->clear();
-  
+
   JaliGeometry::Point cmin(dim), cmax(dim);
-  bounding_box(cell_xyz,&cmin,&cmax);
-  
+  bounding_box(cell_xyz, &cmin, &cmax);
+
   for (int c = 0; c < num_candidates; ++c) {
     JaliGeometry::Point cmin2(dim), cmax2(dim);
-    bounding_box(candidate_cells_xyz[c],&cmin2,&cmax2);
-    
+    bounding_box(candidate_cells_xyz[c], &cmin2, &cmax2);
+
     std::vector<double> xsect_moments;
-    if (intersect_boxes(cmin,cmax,cmin2,cmax2,&xsect_moments)) {
+    if (intersect_boxes(cmin, cmax, cmin2, cmax2, &xsect_moments)) {
       xwts->push_back(xsect_moments);
       xcells->push_back(c);
     }
   }
-  
 }
 
 
-} // namespace
-  
+}  // namespace BOX_INTERSECT
+

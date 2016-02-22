@@ -11,7 +11,7 @@ set -e
 set -x
 
 # Tag or git commit hash of Jali version to build and use for this PR:
-JALI_VERSION=v0.6.4
+JALI_VERSION=239d3f314e1ebc73fa0a16dbea7a0156a5e06544
 
 # Where to find Jali's TPLs:
 TPL_INSTALL_PREFIX=/usr/local/codes/ngc/private/jali-1.0.2-tpl-intel
