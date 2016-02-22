@@ -343,7 +343,7 @@ int main(int argc, char** argv) {
     } else {  // 3d
       std::tuple<double, double, double> nodexyz;
       for (int i = 0; i < nsrcnodes; ++i) {
-        inputMeshWrapper.node_get_coordinates(i, &nodexy);
+        inputMeshWrapper.node_get_coordinates(i, &nodexyz);
         sourceData[i] = std::get<0>(nodexyz)*std::get<0>(nodexyz) +
             std::get<1>(nodexyz)*std::get<1>(nodexyz) +
             std::get<2>(nodexyz)*std::get<2>(nodexyz);
@@ -362,7 +362,7 @@ int main(int argc, char** argv) {
     Portage::Jali_State_Wrapper targetStateWrapper(targetState);
 
     // Build the main driver data for this mesh type
-    Portage::Driver<Portage::MeshWrapperDual> d(Portage::NODE,
+    Portage::Driver<Portage::Jali_Mesh_Wrapper> d(Portage::NODE,
                                                 inputMeshWrapper,
                                                 sourceStateWrapper,
                                                 targetMeshWrapper,
