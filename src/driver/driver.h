@@ -396,7 +396,7 @@ class Driver {
   Mesh_Wrapper  const & source_mesh_;
   Mesh_Wrapper const & target_mesh_;
   Jali_State_Wrapper const & source_state_;
-  Jali_State_Wrapper & target_state_;
+  Jali_State_Wrapper const & target_state_;
   std::vector<std::string> remap_var_names_;
   Entity_kind const remap_entity_;
   unsigned int remap_order_;
