@@ -305,9 +305,9 @@ TEST(Remap_2nd_Order, Node_Ctr_Const_No_Limiter) {
     mf.preference(pref);
 
   std::unique_ptr<Jali::Mesh> source_mesh = mf(0.0, 0.0, 1.0, 1.0, 4, 4, NULL,
-                               true, true, true, true);
+                                               true, true, true, true);
   std::unique_ptr<Jali::Mesh> target_mesh = mf(0.0, 0.0, 1.0, 1.0, 5, 5, NULL,
-                               true, true, true, true);
+                                               true, true, true, true);
 
   const int nnodes_source = source_mesh->num_entities(Jali::NODE, Jali::OWNED);
   const int nnodes_target = target_mesh->num_entities(Jali::NODE, Jali::OWNED);
@@ -735,12 +735,12 @@ TEST(Remap_2nd_Order, Cell_Ctr_BJ_Limiter_3D) {
                           Portage::Jali_State_Wrapper,
                           Portage::CELL>
       remapper1(sourceMeshWrapper, sourceStateWrapper, "cellvars",
-               Portage::NOLIMITER);
+                Portage::NOLIMITER);
   Portage::Remap_2ndOrder<Portage::Jali_Mesh_Wrapper,
                           Portage::Jali_State_Wrapper,
                           Portage::CELL>
       remapper2(sourceMeshWrapper, sourceStateWrapper, "cellvars",
-               Portage::BARTH_JESPERSEN);
+                Portage::BARTH_JESPERSEN);
 
   // Gather the cell coordinates for the source and target meshes for
   // intersection
@@ -1066,9 +1066,9 @@ TEST(Remap_2nd_Order, Node_Ctr_BJ_Limiter_3D) {
     mf.preference(pref);
 
   std::unique_ptr<Jali::Mesh> source_mesh = mf(0.0, 0.0, 1.0, 1.0, 4, 4, NULL,
-                               true, true, true, true);
+                                               true, true, true, true);
   std::unique_ptr<Jali::Mesh> target_mesh = mf(0.0, 0.0, 1.0, 1.0, 5, 5, NULL,
-                               true, true, true, true);
+                                               true, true, true, true);
 
   const int nnodes_source = source_mesh->num_entities(Jali::NODE, Jali::OWNED);
   const int nnodes_target = target_mesh->num_entities(Jali::NODE, Jali::OWNED);
@@ -1107,13 +1107,13 @@ TEST(Remap_2nd_Order, Node_Ctr_BJ_Limiter_3D) {
   Portage::Remap_2ndOrder<Portage::Jali_Mesh_Wrapper,
                           Portage::Jali_State_Wrapper,
                           Portage::NODE>
-      remapper1(sourceMeshWrapper, source_state, "nodevars",
-                Portage::NOLIMITER);
+                         remapper1(sourceMeshWrapper, source_state, "nodevars",
+                                   Portage::NOLIMITER);
   Portage::Remap_2ndOrder<Portage::Jali_Mesh_Wrapper,
                           Portage::Jali_State_Wrapper,
                           Portage::NODE>
-      remapper2(sourceMeshWrapper, source_state, "nodevars",
-                Portage::BARTH_JESPERSEN);
+                         remapper2(sourceMeshWrapper, source_state, "nodevars",
+                                   Portage::BARTH_JESPERSEN);
 
   // Gather the dual cell coordinates for source and target meshes for
   // intersection
