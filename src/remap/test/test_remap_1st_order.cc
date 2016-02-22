@@ -319,7 +319,7 @@ TEST(Remap_1st_Order, Cell_Ctr_Const_3D) {
 
   std::vector<double> data(ncells_source, 1.25);
   Jali::StateVector<double> myvec("cellvars", Jali::CELL,
-                                  source_mesh, &(data[0]));
+                                  source_mesh.get(), &(data[0]));
   source_state.add(myvec);
 
   // Create Remap object
@@ -400,7 +400,7 @@ TEST(Remap_1st_Order, Cell_Ctr_Lin_3D) {
     data[c] = cen[0]+cen[1];
   }
   Jali::StateVector<double> myvec("cellvars", Jali::CELL,
-                                  source_mesh, &(data[0]));
+                                  source_mesh.get(), &(data[0]));
   source_state.add(myvec);
 
   // Create Remap objects
@@ -490,7 +490,7 @@ TEST(Remap_1st_Order, Node_Ctr_Const_3D) {
 
   std::vector<double> data(nnodes_source, 1.5);
   Jali::StateVector<double> myvec("nodevars", Jali::NODE,
-                                  source_mesh, &(data[0]));
+                                  source_mesh.get(), &(data[0]));
   source_state.add(myvec);
 
   // Create Remap objects
