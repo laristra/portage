@@ -306,7 +306,7 @@ int main(int argc, char** argv) {
       // The "true" arguments request that a dual mesh be constructed with
       // wedges, corners, etc.
       inputMesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0,
-                     n, n,, n,
+                     n, n, n,
                      NULL,
                      true, true, true, true);
       // Create a 3d hex output mesh from (0,0,0) to (1,1,1) with
