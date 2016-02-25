@@ -366,7 +366,7 @@ class Driver {
           }
           default: {
             std::cerr << "Remap only implemented for CELLS and NODES"
-                      << std:endl;
+                      << std::endl;
             exit(-1);
           }
         }
