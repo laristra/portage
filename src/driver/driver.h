@@ -7,12 +7,14 @@
 #define SRC_DRIVER_DRIVER_H_
 
 #include <sys/time.h>
+
 #include <algorithm>
 #include <vector>
 #include <iterator>
-#include <string>
 #include <tuple>
+#include <string>
 #include <utility>
+#include <iostream>
 
 #include "portage/support/portage.h"
 #include "portage/wrappers/state/jali/jali_state_wrapper.h"
@@ -30,7 +32,7 @@
 
   This should serve as a good example for how to write your own driver routine
   and datastructures.
- */
+*/
 
 namespace Portage {
 
@@ -55,7 +57,6 @@ class MeshWrapperDual {  // cellid is the dual cell (i.e. node) id
   */
   int space_dimension() const { return w_.space_dimension(); }
 
-
   /*!
     @brief Get the number of cells on this processor.
     @return The number of cells owned on this processor.
@@ -63,24 +64,26 @@ class MeshWrapperDual {  // cellid is the dual cell (i.e. node) id
   int num_owned_cells() const { return w_.num_owned_nodes(); }
 
   /*!
-    @brief Get the number of ghost (at domain boundaries @e and processor boundaries)
-    cells for this processor.
+    @brief Get the number of ghost (at domain boundaries @e and processor
+    boundaries) cells for this processor.
     @return The number of ghost cells on this processor.
   */
   int num_ghost_cells() const { return w_.num_ghost_nodes(); }
 
+  typedef std::pair<double, double> xypair;
   /*!
     @brief Gets the coordinates of the cell centroid in the dual mesh.
-    @param[in] dualcellid The dual cell id (i.e. the node id in the original mesh).
-    @param[in,out] xylist The list of (x,y) coordinate pairs for each node of the
-    dual cell given by @c dualcellid
+    @param[in] dualcellid The dual cell id (i.e. the node id in the original
+    mesh).
+    @param[in,out] xylist The list of (x,y) coordinate pairs for each node of
+    the dual cell given by @c dualcellid
   */
   void cell_get_coordinates(int const dualcellid,
-                            std::vector<std::pair<double,double>> *
-                            xylist) const {
+                            std::vector<xypair> *xylist) const {
     w_.dual_cell_get_coordinates(dualcellid, xylist);
   }
 
+  typedef std::tuple<double, double, double> xyztuple;
   /*!
     @brief Gets the coordinates of the cell centroid in the dual mesh.
     @param[in] dualcellid The dual cell id (i.e. the node id in the original
@@ -89,14 +92,13 @@ class MeshWrapperDual {  // cellid is the dual cell (i.e. node) id
     of the dual cell given by @c dualcellid.
   */
   void cell_get_coordinates(int const dualcellid,
-                            std::vector<std::tuple<double,double,double>> *
-                            xyzlist) const {
+                            std::vector<xyztuple> *xyzlist) const {
     w_.dual_cell_get_coordinates(dualcellid, xyzlist);
   }
 
   /*!
-    @brief Get an iterator to the start of the vector of @e entity-type objects
-    in the dual mesh.
+    @brief Get an iterator to the start of the vector of @e entity-type
+    objects in the dual mesh.
     @param[in] entity Which type of data do you want to iterate over (e.g.
     @c CELL, @c NODE, etc.)
     @return An iterator pointing to the beginning of the list of @c entity data
@@ -108,8 +110,8 @@ class MeshWrapperDual {  // cellid is the dual cell (i.e. node) id
   }
 
   /*!
-    @brief Get an iterator to the end of the vector of @e entity-type objects in
-    the dual mesh.
+    @brief Get an iterator to the end of the vector of @e entity-type objects
+    in the dual mesh.
     @param[in] entity Which type of data do you want to iterate over (e.g.
     @c CELL, @c NODE, etc.)
     @return An iterator pointing to the end of the list of @c entity data for
@@ -128,7 +130,7 @@ class MeshWrapperDual {  // cellid is the dual cell (i.e. node) id
     dual cell given by @c dualcellid
     @todo Remove this in favor of @c cell_get_coordinates() ?
   */
-  std::vector<std::pair<double, double> > cellToXY(int dualcellID) const {
+  std::vector<xypair> cellToXY(int const dualcellID) const {
     std::vector<std::pair<double, double> > cellPoints;
     cell_get_coordinates(dualcellID, &cellPoints);
     return cellPoints;
@@ -153,8 +155,8 @@ class MeshWrapperDual {  // cellid is the dual cell (i.e. node) id
   }
 
   /*!
-    @brief Get the IDs of all cells that share a node with the specified cell of
-    the <em> dual mesh </em>.
+    @brief Get the IDs of all cells that share a node with the specified cell
+    of the <em> dual mesh </em>.
 
     Sharing of cells is determined from the Parallel_type (e.g. @c OWNED,
     @c GHOST, @c ALL).
@@ -192,6 +194,8 @@ class MeshWrapperDual {  // cellid is the dual cell (i.e. node) id
       const {
     w_.cell_centroid(dualnodeID, centroid);
   }
+
+  typedef std::array<std::array<double, 3>, 4> wedgeCoords;
   /*!
     @brief Get the coordinates of the points that make up the wedge.
 
@@ -203,8 +207,7 @@ class MeshWrapperDual {  // cellid is the dual cell (i.e. node) id
     comprise the tetrahedron that is the wedge.
   */
   void wedges_get_coordinates(int const dualcellid,
-                              std::vector<std::array<std::array<double,3>,4>> *
-                              wcoords) const {
+                              std::vector<wedgeCoords> *wcoords) const {
     w_.dual_wedges_get_coordinates(dualcellid, wcoords);
   }
 
@@ -215,8 +218,7 @@ class MeshWrapperDual {  // cellid is the dual cell (i.e. node) id
 
 // Forward definition
 template <typename SearchType, typename IsectType, typename RemapType>
-struct composerFunctor;
-
+    struct composerFunctor;
 
 /*!
   @class Driver "driver.h"
@@ -230,21 +232,21 @@ class Driver {
   /*!
     @brief Constructor for running the remap driver.
     @param[in] sourceMesh A @c Mesh_Wrapper to the source mesh.
-    @param[in] sourceState A state manager for the data that lives on the source mesh.
+    @param[in] sourceState A state manager for the data that lives on the
+    source mesh.
     @param[in] targetMesh A @c Mesh_Wrapper to the target mesh.
-    @param[in,out] targetState A state manager for the data that will be mapped to
-    the target mesh.
+    @param[in,out] targetState A state manager for the data that will be
+    mapped to the target mesh.
   */
   Driver(Entity_kind const remapEntity,
          Mesh_Wrapper const & sourceMesh,
          Jali_State_Wrapper const & sourceState,
          Mesh_Wrapper const & targetMesh,
-         Jali_State_Wrapper & targetState)
+         Jali_State_Wrapper const & targetState)
       : remap_entity_(remapEntity),
-        source_mesh_(sourceMesh), source_state_(sourceState),
-        target_mesh_(targetMesh), target_state_(targetState),
-        remap_order_(1), dim_(sourceMesh.space_dimension()) {
-
+      source_mesh_(sourceMesh), source_state_(sourceState),
+      target_mesh_(targetMesh), target_state_(targetState),
+      remap_order_(1), dim_(sourceMesh.space_dimension()) {
     assert(sourceMesh.space_dimension() == targetMesh.space_dimension());
   }
 
@@ -259,19 +261,18 @@ class Driver {
 
   /*!
     @brief Specify the names of the variables to be remapped
-    @param[in] remap_var_names_in A list of variable names of the variables to remap
-    from the source mesh to the target mesh.
+    @param[in] remap_var_names_in A list of variable names of the variables to
+    remap from the source mesh to the target mesh.
   */
   void set_remap_var_names(std::vector<std::string> const &remap_var_names_in) {
     remap_var_names_ = remap_var_names_in;
   }
 
-
   /*!
     @brief Get the names of the variables to be remapped.
     @return A vector of variable names to be remapped.
   */
-  std::vector<std::string> remap_var_names() {
+  std::vector<std::string> remap_var_names() const {
     return remap_var_names_;
   }
 
@@ -284,7 +285,7 @@ class Driver {
     @brief Get the order of accuracy of remap
     @return The order of accuracy for the remap.
   */
-  unsigned int remap_order() {
+  unsigned int remap_order() const {
     return remap_order_;
   }
 
@@ -292,12 +293,11 @@ class Driver {
     @brief Get the dimensionality of the meshes.
     @return The dimensionality of the meshes.
   */
-  unsigned int dim() {
+  unsigned int dim() const {
     return dim_;
   }
 
   /*!
-
     @brief This method calls specialized functions to do the remapping
     based on the dimensionality of the mesh, the type of data and the
     order of remapping.
@@ -308,7 +308,6 @@ class Driver {
     over the cells in the target mesh, applying a custom @c
     composerFunctor() (defined below) that specifies how the search,
     intersect, and remap calculations should be performed.
-
   */
 
   void run() {
@@ -319,7 +318,7 @@ class Driver {
               << numTargetCells << std::endl;
 
     // Get raw pointer to the data from the state manager
-    double *target_field_raw = NULL;
+    double *target_field_raw = nullptr;
     target_state_.get_data(remap_entity_, remap_var_names_[0],
                            &target_field_raw);
     Portage::pointer<double> target_field(target_field_raw);
@@ -328,8 +327,8 @@ class Driver {
 
     switch (dim_) {
       case 1:
-        throw std::runtime_error("Remap not implemented for 1D");
-        break;
+        std::cerr << "Remap not implemented for 1D" << std::endl;
+        exit(-1);
       case 2: {
         switch (remap_entity_) {
           case CELL: {
@@ -345,7 +344,9 @@ class Driver {
             break;
           }
           default:
-            std::runtime_error("Remap only implemented for CELLS and NODES");
+            std::cerr << "Remap only implemented for CELLS and NODES"
+                      << std::endl;
+            exit(-1);
         }
         break;
       }
@@ -364,14 +365,16 @@ class Driver {
             break;
           }
           default: {
-            std::cerr << "Remap only implemented for CELLS and NODES\n";
+            std::cerr << "Remap only implemented for CELLS and NODES"
+                      << std::endl;
             exit(-1);
           }
         }
         break;
       }
       default:
-        throw std::runtime_error("Invalid dimension");
+        std::cerr << "Invalid dimension" << std::endl;
+        exit(-1);
     }
   }
 
@@ -398,17 +401,15 @@ class Driver {
   Mesh_Wrapper  const & source_mesh_;
   Mesh_Wrapper const & target_mesh_;
   Jali_State_Wrapper const & source_state_;
-  Jali_State_Wrapper & target_state_;
+  Jali_State_Wrapper const & target_state_;
   std::vector<std::string> remap_var_names_;
   Entity_kind const remap_entity_;
   unsigned int remap_order_;
   unsigned int dim_;
-
 };  // class Driver
 
 
-/// @brief 1st order remap of cell centered data on 2D meshes
-
+// 1st order remap of cell centered data on 2D meshes
 template<class Mesh_Wrapper>
 void
 Driver<Mesh_Wrapper>::run_2D_CELL_order1(Portage::pointer<double>
@@ -458,11 +459,11 @@ Driver<Mesh_Wrapper>::run_2D_CELL_order1(Portage::pointer<double>
   std::cout << "Transform Time: " << seconds << std::endl;
 }
 
-/// @brief 2nd order remap of cell centered data on 2D meshes
-
+// 2nd order remap of cell centered data on 2D meshes
 template<class Mesh_Wrapper>
 void
-Driver<Mesh_Wrapper>::run_2D_CELL_order2(Portage::pointer<double> target_field) {
+Driver<Mesh_Wrapper>::run_2D_CELL_order2(
+    Portage::pointer<double> target_field) {
   // Get an instance of the desired search algorithm type
   const SearchKDTree2<Mesh_Wrapper, Mesh_Wrapper>
       search(source_mesh_, target_mesh_);
@@ -509,12 +510,11 @@ Driver<Mesh_Wrapper>::run_2D_CELL_order2(Portage::pointer<double> target_field) 
   std::cout << "Transform Time: " << seconds << std::endl;
 }
 
-
-/// 1st order remap of cell centered data on 3D meshes
-
+// 1st order remap of cell centered data on 3D meshes
 template<class Mesh_Wrapper>
 void
-Driver<Mesh_Wrapper>::run_3D_CELL_order1(Portage::pointer<double> target_field) {
+Driver<Mesh_Wrapper>::run_3D_CELL_order1(
+    Portage::pointer<double> target_field) {
   // Get an instance of the desired search algorithm type
   const SearchKDTree3<Mesh_Wrapper, Mesh_Wrapper>
       search(source_mesh_, target_mesh_);
@@ -560,11 +560,11 @@ Driver<Mesh_Wrapper>::run_3D_CELL_order1(Portage::pointer<double> target_field) 
   std::cout << "Transform Time: " << seconds << std::endl;
 }
 
-/// 2nd order remap of cell centered data on 3D meshes
-
+// 2nd order remap of cell centered data on 3D meshes
 template<class Mesh_Wrapper>
 void
-Driver<Mesh_Wrapper>::run_3D_CELL_order2(Portage::pointer<double> target_field) {
+Driver<Mesh_Wrapper>::run_3D_CELL_order2(
+    Portage::pointer<double> target_field) {
   // Get an instance of the desired search algorithm type
   const SearchKDTree3<Mesh_Wrapper, Mesh_Wrapper>
       search(source_mesh_, target_mesh_);
@@ -611,12 +611,11 @@ Driver<Mesh_Wrapper>::run_3D_CELL_order2(Portage::pointer<double> target_field) 
   std::cout << "Transform Time: " << seconds << std::endl;
 }
 
-
-/// @brief 1st order remap of node centered data on 2D meshes
-
+// 1st order remap of node centered data on 2D meshes
 template<class Mesh_Wrapper>
 void
-Driver<Mesh_Wrapper>::run_2D_NODE_order1(Portage::pointer<double> target_field) {
+Driver<Mesh_Wrapper>::run_2D_NODE_order1(
+    Portage::pointer<double> target_field) {
   MeshWrapperDual source_mesh_dual(source_mesh_);
   MeshWrapperDual target_mesh_dual(target_mesh_);
 
@@ -665,11 +664,11 @@ Driver<Mesh_Wrapper>::run_2D_NODE_order1(Portage::pointer<double> target_field) 
   std::cout << "Transform Time: " << seconds << std::endl;
 }
 
-/// @brief 2nd order remap of cell centered data on 2D meshes
-
+// 2nd order remap of cell centered data on 2D meshes
 template<class Mesh_Wrapper>
 void
-Driver<Mesh_Wrapper>::run_2D_NODE_order2(Portage::pointer<double> target_field) {
+Driver<Mesh_Wrapper>::run_2D_NODE_order2(
+    Portage::pointer<double> target_field) {
   MeshWrapperDual source_mesh_dual(source_mesh_);
   MeshWrapperDual target_mesh_dual(target_mesh_);
 
@@ -720,11 +719,11 @@ Driver<Mesh_Wrapper>::run_2D_NODE_order2(Portage::pointer<double> target_field) 
 }
 
 
-/// 1st order remap of cell centered data on 3D meshes
-
+// 1st order remap of cell centered data on 3D meshes
 template<class Mesh_Wrapper>
 void
-Driver<Mesh_Wrapper>::run_3D_NODE_order1(Portage::pointer<double> target_field) {
+Driver<Mesh_Wrapper>::run_3D_NODE_order1(
+    Portage::pointer<double> target_field) {
   MeshWrapperDual source_mesh_dual(source_mesh_);
   MeshWrapperDual target_mesh_dual(target_mesh_);
 
@@ -773,11 +772,11 @@ Driver<Mesh_Wrapper>::run_3D_NODE_order1(Portage::pointer<double> target_field) 
   std::cout << "Transform Time: " << seconds << std::endl;
 }
 
-/// 2nd order remap of cell centered data on 3D meshes
-
+// 2nd order remap of cell centered data on 3D meshes
 template<class Mesh_Wrapper>
 void
-Driver<Mesh_Wrapper>::run_3D_NODE_order2(Portage::pointer<double> target_field) {
+Driver<Mesh_Wrapper>::run_3D_NODE_order2(
+    Portage::pointer<double> target_field) {
   MeshWrapperDual source_mesh_dual(source_mesh_);
   MeshWrapperDual target_mesh_dual(target_mesh_);
 
@@ -828,17 +827,15 @@ Driver<Mesh_Wrapper>::run_3D_NODE_order2(Portage::pointer<double> target_field) 
 }
 
 
-
-
-
-
 /*!
   @struct composerFunctor "driver.h"
-  @brief This functor is used inside a Portage::transform() inside Driver::run() to
-  actually do the search, intersect, and remap calculations.
-  @tparam SearchType The type of search method (e.g. SearchSimple or SearchKDTree3).
+  @brief This functor is used inside a Portage::transform() inside
+  Driver::run() to actually do the search, intersect, and remap calculations.
+  @tparam SearchType The type of search method (e.g. SearchSimple or
+  SearchKDTree3).
   @tparam IsectType The type of intersect method (e.g. IntersectClipper).
-  @tparam RemapType The type of remap method (e.g. Remap_1stOrder or Remap_2ndOrder).
+  @tparam RemapType The type of remap method (e.g. Remap_1stOrder or
+  Remap_2ndOrder).
 */
 template <typename SearchType, typename IsectType, typename RemapType>
 struct composerFunctor {
@@ -846,7 +843,6 @@ struct composerFunctor {
   const IsectType* intersect_;     ///< intersect method (e.g. IntersectClipper)
   const RemapType* remap_;         ///< remap method (e.g. Remap_2ndOrder)
   const std::string remap_var_name_;  ///< variable name to remap
-  //----------------------------------------
 
   /*!
     @brief Constructor.
@@ -857,8 +853,8 @@ struct composerFunctor {
   */
   composerFunctor(const SearchType* searcher, const IsectType* intersecter,
                   const RemapType* remapper, const std::string remap_var_name)
-      : search_(searcher), intersect_(intersecter), remap_(remapper),
-        remap_var_name_(remap_var_name) { }
+  : search_(searcher), intersect_(intersecter), remap_(remapper),
+    remap_var_name_(remap_var_name) { }
 
   /*!
     @brief Operator for making this struct a functor
@@ -873,7 +869,6 @@ struct composerFunctor {
     @c targetCellIndex.
   */
   double operator()(int const targetCellIndex) {
-
     // Search for candidates and return their cells indices
     std::vector<int> candidates;
     (*search_)(targetCellIndex, &candidates);
@@ -881,7 +876,7 @@ struct composerFunctor {
     // Intersect target cell with cells of source mesh and return the
     // moments of intersection
     std::vector<std::vector<std::vector<double>>> moments(candidates.size());
-    for (int i = 0; i < candidates.size(); i++)
+    for (int i = 0; i < candidates.size(); ++i)
       moments[i] = (*intersect_)(candidates[i], targetCellIndex);
 
     // Compute new value on target cell based on source mesh
@@ -894,11 +889,9 @@ struct composerFunctor {
     // nested std::vector form with duplicate candidate entries if
     // need be
     int nalloc = 0;
-    for (int i = 0; i < candidates.size(); ++i) {
-      nalloc += moments[i].size();  // number of moment sets generated by
-      //                            // intersection of target cell with
-      //                            // candidate cell i
-    }
+    for (const auto &moment : moments)
+      nalloc += moment.size();
+
     std::vector<int> candidates_dup(nalloc);
     std::vector< std::vector<double> > remap_moments(nalloc);
 
@@ -906,15 +899,15 @@ struct composerFunctor {
     for (int i = 0; i < candidates.size(); ++i) {
       std::vector< std::vector<double> > & candidate_moments = moments[i];
       int num_moment_sets = candidate_moments.size();
-      for (int j = 0; j < num_moment_sets; j++) {
+      for (const auto & candidate_moment : candidate_moments) {
         candidates_dup[ninserted] = candidates[i];  // repeated as needed
-        remap_moments[ninserted] = candidate_moments[j];
+        remap_moments[ninserted] = candidate_moment;
         ++ninserted;
       }
     }
 
     std::pair< std::vector<int> const &,
-               std::vector< std::vector<double>> const &>
+        std::vector< std::vector<double> > const & >
         source_cells_and_weights(candidates_dup, remap_moments);
 
     double remappedValue = (*remap_)(source_cells_and_weights);

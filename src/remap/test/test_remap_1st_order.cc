@@ -2,13 +2,8 @@
  * Copyright (c) 2015 Los Alamos National Security, LLC
  * All rights reserved.
  *---------------------------------------------------------------------------~*/
-
-#include "portage/support/portage.h"
-#include "portage/remap/remap_1st_order.h"
-#include "portage/wrappers/mesh/jali/jali_mesh_wrapper.h"
-#include "portage/wrappers/state/jali/jali_state_wrapper.h"
-
 #include <iostream>
+#include <memory>
 
 #include "gtest/gtest.h"
 #include "mpi.h"
@@ -20,15 +15,16 @@
 #include "JaliState.h"
 #include "JaliStateVector.h"
 
-
-// Local include
-#include "simple_intersect_for_tests.h"
+#include "portage/support/portage.h"
+#include "portage/remap/remap_1st_order.h"
+#include "portage/wrappers/mesh/jali/jali_mesh_wrapper.h"
+#include "portage/wrappers/state/jali/jali_state_wrapper.h"
+#include "portage/remap/test/simple_intersect_for_tests.h"
 
 
 /// First order remap of constant cell-centered field in 2D
 
 TEST(Remap_1st_Order, Cell_Ctr_Const_2D) {
-
   Jali::MeshFactory mf(MPI_COMM_WORLD);
   Jali::FrameworkPreference pref;
   pref.push_back(Jali::MSTK);
@@ -38,8 +34,8 @@ TEST(Remap_1st_Order, Cell_Ctr_Const_2D) {
   std::unique_ptr<Jali::Mesh> source_mesh = mf(0.0, 0.0, 1.0, 1.0, 4, 4);
   std::unique_ptr<Jali::Mesh> target_mesh = mf(0.0, 0.0, 1.0, 1.0, 5, 5);
 
-  int ncells_source = source_mesh->num_entities(Jali::CELL, Jali::OWNED);
-  int ncells_target = target_mesh->num_entities(Jali::CELL, Jali::OWNED);
+  const int ncells_source = source_mesh->num_entities(Jali::CELL, Jali::OWNED);
+  const int ncells_target = target_mesh->num_entities(Jali::CELL, Jali::OWNED);
 
   // Create a state object
 
@@ -48,9 +44,9 @@ TEST(Remap_1st_Order, Cell_Ctr_Const_2D) {
   // Define a state vectors with constant value
 
   std::vector<double> data(ncells_source, 1.25);
-  Jali::StateVector<double> myvec("cellvars", Jali::CELL, source_mesh.get(),
-                                  &(data[0]));
-  Jali::StateVector<double> &addvec = source_state.add(myvec);
+  Jali::StateVector<double> myvec("cellvars", Jali::CELL,
+                                  source_mesh.get(), &(data[0]));
+  source_state.add(myvec);
 
   // Create Remap object
 
@@ -62,7 +58,6 @@ TEST(Remap_1st_Order, Cell_Ctr_Const_2D) {
                           Portage::CELL>
       remapper(sourceMeshWrapper, sourceStateWrapper, "cellvars");
 
-
   // Gather the cell coordinates for source and target meshes for intersection
 
   std::vector<std::vector<JaliGeometry::Point>>
@@ -70,11 +65,10 @@ TEST(Remap_1st_Order, Cell_Ctr_Const_2D) {
   std::vector<std::vector<JaliGeometry::Point>>
       target_cell_coords(ncells_target);
 
-  for (int c = 0; c < ncells_source; c++)
+  for (int c = 0; c < ncells_source; ++c)
     source_mesh->cell_get_coordinates(c, &(source_cell_coords[c]));
-  for (int c = 0; c < ncells_target; c++)
+  for (int c = 0; c < ncells_target; ++c)
     target_mesh->cell_get_coordinates(c, &(target_cell_coords[c]));
-
 
   // Remap from source to target mesh
 
@@ -96,8 +90,8 @@ TEST(Remap_1st_Order, Cell_Ctr_Const_2D) {
   }
 
   // Make sure we retrieved the correct value for each cell on the target
-  double stdval = data[0];
-  for (int c = 0; c < ncells_target; c++)
+  const double stdval = data[0];
+  for (int c = 0; c < ncells_target; ++c)
     ASSERT_DOUBLE_EQ(stdval, outvals[c]);
 }
 
@@ -105,7 +99,6 @@ TEST(Remap_1st_Order, Cell_Ctr_Const_2D) {
 /// First order remap of linear cell-centered field in 2D
 
 TEST(Remap_1st_Order, Cell_Ctr_Lin_2D) {
-
   Jali::MeshFactory mf(MPI_COMM_WORLD);
   Jali::FrameworkPreference pref;
   pref.push_back(Jali::MSTK);
@@ -115,8 +108,8 @@ TEST(Remap_1st_Order, Cell_Ctr_Lin_2D) {
   std::unique_ptr<Jali::Mesh> source_mesh = mf(0.0, 0.0, 1.0, 1.0, 4, 4);
   std::unique_ptr<Jali::Mesh> target_mesh = mf(0.0, 0.0, 1.0, 1.0, 2, 2);
 
-  int ncells_source = source_mesh->num_entities(Jali::CELL, Jali::OWNED);
-  int ncells_target = target_mesh->num_entities(Jali::CELL, Jali::OWNED);
+  const int ncells_source = source_mesh->num_entities(Jali::CELL, Jali::OWNED);
+  const int ncells_target = target_mesh->num_entities(Jali::CELL, Jali::OWNED);
 
   // Create a state object
 
@@ -125,14 +118,14 @@ TEST(Remap_1st_Order, Cell_Ctr_Lin_2D) {
   // Define a state vector representing a linear function
 
   std::vector<double> data(ncells_source);
-  for (int c = 0; c < ncells_source; c++) {
+  for (int c = 0; c < ncells_source; ++c) {
     JaliGeometry::Point cen;
     source_mesh->cell_centroid(c, &cen);
     data[c] = cen[0]+cen[1];
   }
-  Jali::StateVector<double> myvec("cellvars", Jali::CELL, source_mesh.get(),
-                                  &(data[0]));
-  Jali::StateVector<double> &addvec = source_state.add(myvec);
+  Jali::StateVector<double> myvec("cellvars", Jali::CELL,
+                                  source_mesh.get(), &(data[0]));
+  source_state.add(myvec);
 
   // Create Remap objects
 
@@ -151,11 +144,10 @@ TEST(Remap_1st_Order, Cell_Ctr_Lin_2D) {
   std::vector<std::vector<JaliGeometry::Point>>
       target_cell_coords(ncells_target);
 
-  for (int c = 0; c < ncells_source; c++)
+  for (int c = 0; c < ncells_source; ++c)
     source_mesh->cell_get_coordinates(c, &(source_cell_coords[c]));
-  for (int c = 0; c < ncells_target; c++)
+  for (int c = 0; c < ncells_target; ++c)
     target_mesh->cell_get_coordinates(c, &(target_cell_coords[c]));
-
 
   // Remap from source to target mesh
 
@@ -183,22 +175,20 @@ TEST(Remap_1st_Order, Cell_Ctr_Lin_2D) {
   // IN THIS TEST
 
   std::vector<double> stdvals(ncells_target);
-  for (int c = 0; c < ncells_target; c++) {
+  for (int c = 0; c < ncells_target; ++c) {
     JaliGeometry::Point cen;
     target_mesh->cell_centroid(c, &cen);
     stdvals[c] = cen[0]+cen[1];
   }
 
-  for (int c = 0; c < ncells_target; c++)
+  for (int c = 0; c < ncells_target; ++c)
     ASSERT_DOUBLE_EQ(stdvals[c], outvals[c]);
 }
-
 
 
 /// First order remap of constant node-centered field in 2D
 
 TEST(Remap_1st_Order, Node_Ctr_Const_2D) {
-
   Jali::MeshFactory mf(MPI_COMM_WORLD);
   Jali::FrameworkPreference pref;
   pref.push_back(Jali::MSTK);
@@ -210,21 +200,21 @@ TEST(Remap_1st_Order, Node_Ctr_Const_2D) {
   std::unique_ptr<Jali::Mesh> target_mesh = mf(0.0, 0.0, 1.0, 1.0, 5, 5, NULL,
                                                true, true, true, true);
 
-  int nnodes_source = source_mesh->num_entities(Jali::NODE, Jali::OWNED);
-  int nnodes_target = target_mesh->num_entities(Jali::NODE, Jali::OWNED);
+  const int nnodes_source = source_mesh->num_entities(Jali::NODE, Jali::OWNED);
+  const int nnodes_target = target_mesh->num_entities(Jali::NODE, Jali::OWNED);
+
 
   // Create a state object and add the first two vectors to it
 
   Jali::State source_state(source_mesh.get());
 
-
   // Define two state vectors, one with constant value, the other
   // with a linear function
 
   std::vector<double> data(nnodes_source, 1.5);
-  Jali::StateVector<double> myvec("nodevars", Jali::NODE, source_mesh.get(),
-                                  &(data[0]));
-  Jali::StateVector<double> &addvec = source_state.add(myvec);
+  Jali::StateVector<double> myvec("nodevars", Jali::NODE,
+                                  source_mesh.get(), &(data[0]));
+  source_state.add(myvec);
 
   // Create Remap objects
 
@@ -239,7 +229,6 @@ TEST(Remap_1st_Order, Node_Ctr_Const_2D) {
   // Remap from source to target mesh
 
   std::vector<double> outvals(nnodes_target);
-
 
   // Gather the dual cell coordinates for source and target meshes for
   // intersection
@@ -256,7 +245,7 @@ TEST(Remap_1st_Order, Node_Ctr_Const_2D) {
   // do the search and intersection we can get away with adding all
   // the coordinates of the corners to list including duplicates
 
-  for (int n = 0; n < nnodes_source; n++) {
+  for (int n = 0; n < nnodes_source; ++n) {
     std::vector<JaliGeometry::Point> dualcoords;
     std::vector<int> corners;
     source_mesh->node_get_corners(n, Jali::ALL, &corners);
@@ -269,7 +258,7 @@ TEST(Remap_1st_Order, Node_Ctr_Const_2D) {
     }
   }
 
-  for (int n = 0; n < nnodes_target; n++) {
+  for (int n = 0; n < nnodes_target; ++n) {
     std::vector<JaliGeometry::Point> dualcoords;
     std::vector<int> corners;
     target_mesh->node_get_corners(n, Jali::ALL, &corners);
@@ -281,7 +270,6 @@ TEST(Remap_1st_Order, Node_Ctr_Const_2D) {
         target_dualcell_coords[n].push_back(coord);
     }
   }
-
 
   for (int n = 0; n < nnodes_target; ++n) {
     std::vector<int> xcells;
@@ -300,7 +288,7 @@ TEST(Remap_1st_Order, Node_Ctr_Const_2D) {
 
   // Make sure we retrieved the correct value for each cell on the target
 
-  double stdval = data[0];
+  const double stdval = data[0];
   for (int n = 0; n < nnodes_target; ++n)
     ASSERT_DOUBLE_EQ(stdval, outvals[n]);
 }
@@ -309,7 +297,6 @@ TEST(Remap_1st_Order, Node_Ctr_Const_2D) {
 /// First order remap of constant cell-centered field in 3D
 
 TEST(Remap_1st_Order, Cell_Ctr_Const_3D) {
-
   Jali::MeshFactory mf(MPI_COMM_WORLD);
   Jali::FrameworkPreference pref;
   pref.push_back(Jali::MSTK);
@@ -321,8 +308,8 @@ TEST(Remap_1st_Order, Cell_Ctr_Const_3D) {
   std::unique_ptr<Jali::Mesh> target_mesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0,
                                                5, 5, 5);
 
-  int ncells_source = source_mesh->num_entities(Jali::CELL, Jali::OWNED);
-  int ncells_target = target_mesh->num_entities(Jali::CELL, Jali::OWNED);
+  const int ncells_source = source_mesh->num_entities(Jali::CELL, Jali::OWNED);
+  const int ncells_target = target_mesh->num_entities(Jali::CELL, Jali::OWNED);
 
   // Create a state object
 
@@ -331,9 +318,9 @@ TEST(Remap_1st_Order, Cell_Ctr_Const_3D) {
   // Define a state vectors with constant value
 
   std::vector<double> data(ncells_source, 1.25);
-  Jali::StateVector<double> myvec("cellvars", Jali::CELL, source_mesh.get(),
-                                  &(data[0]));
-  Jali::StateVector<double> &addvec = source_state.add(myvec);
+  Jali::StateVector<double> myvec("cellvars", Jali::CELL,
+                                  source_mesh.get(), &(data[0]));
+  source_state.add(myvec);
 
   // Create Remap object
 
@@ -345,7 +332,6 @@ TEST(Remap_1st_Order, Cell_Ctr_Const_3D) {
                           Portage::CELL>
       remapper(sourceMeshWrapper, sourceStateWrapper, "cellvars");
 
-
   // Gather the cell coordinates for source and target meshes for intersection
 
   std::vector<std::vector<JaliGeometry::Point>>
@@ -353,11 +339,10 @@ TEST(Remap_1st_Order, Cell_Ctr_Const_3D) {
   std::vector<std::vector<JaliGeometry::Point>>
       target_cell_coords(ncells_target);
 
-  for (int c = 0; c < ncells_source; c++)
+  for (int c = 0; c < ncells_source; ++c)
     source_mesh->cell_get_coordinates(c, &(source_cell_coords[c]));
-  for (int c = 0; c < ncells_target; c++)
+  for (int c = 0; c < ncells_target; ++c)
     target_mesh->cell_get_coordinates(c, &(target_cell_coords[c]));
-
 
   // Remap from source to target mesh
 
@@ -376,20 +361,18 @@ TEST(Remap_1st_Order, Cell_Ctr_Const_3D) {
         cells_and_weights(xcells, xwts);
 
     outvals[c] = remapper(cells_and_weights);
-  }
+}
 
   // Make sure we retrieved the correct value for each cell on the target
-  double stdval = data[0];
-  for (int c = 0; c < ncells_target; c++)
+  const double stdval = data[0];
+  for (int c = 0; c < ncells_target; ++c)
     ASSERT_DOUBLE_EQ(stdval, outvals[c]);
-
 }
 
 
 /// First order remap of linear cell-centered field in 3D
 
 TEST(Remap_1st_Order, Cell_Ctr_Lin_3D) {
-
   Jali::MeshFactory mf(MPI_COMM_WORLD);
   Jali::FrameworkPreference pref;
   pref.push_back(Jali::MSTK);
@@ -401,8 +384,8 @@ TEST(Remap_1st_Order, Cell_Ctr_Lin_3D) {
   std::unique_ptr<Jali::Mesh> target_mesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0,
                                                2, 2, 2);
 
-  int ncells_source = source_mesh->num_entities(Jali::CELL, Jali::OWNED);
-  int ncells_target = target_mesh->num_entities(Jali::CELL, Jali::OWNED);
+  const int ncells_source = source_mesh->num_entities(Jali::CELL, Jali::OWNED);
+  const int ncells_target = target_mesh->num_entities(Jali::CELL, Jali::OWNED);
 
   // Create a state object
 
@@ -411,14 +394,14 @@ TEST(Remap_1st_Order, Cell_Ctr_Lin_3D) {
   // Define a state vector representing a linear function
 
   std::vector<double> data(ncells_source);
-  for (int c = 0; c < ncells_source; c++) {
+  for (int c = 0; c < ncells_source; ++c) {
     JaliGeometry::Point cen;
     source_mesh->cell_centroid(c, &cen);
     data[c] = cen[0]+cen[1];
   }
-  Jali::StateVector<double> myvec("cellvars", Jali::CELL, source_mesh.get(),
-                                  &(data[0]));
-  Jali::StateVector<double> &addvec = source_state.add(myvec);
+  Jali::StateVector<double> myvec("cellvars", Jali::CELL,
+                                  source_mesh.get(), &(data[0]));
+  source_state.add(myvec);
 
   // Create Remap objects
 
@@ -437,11 +420,10 @@ TEST(Remap_1st_Order, Cell_Ctr_Lin_3D) {
   std::vector<std::vector<JaliGeometry::Point>>
       target_cell_coords(ncells_target);
 
-  for (int c = 0; c < ncells_source; c++)
+  for (int c = 0; c < ncells_source; ++c)
     source_mesh->cell_get_coordinates(c, &(source_cell_coords[c]));
-  for (int c = 0; c < ncells_target; c++)
+  for (int c = 0; c < ncells_target; ++c)
     target_mesh->cell_get_coordinates(c, &(target_cell_coords[c]));
-
 
   // Remap from source to target mesh
 
@@ -469,13 +451,13 @@ TEST(Remap_1st_Order, Cell_Ctr_Lin_3D) {
   // IN THIS TEST
 
   std::vector<double> stdvals(ncells_target);
-  for (int c = 0; c < ncells_target; c++) {
+  for (int c = 0; c < ncells_target; ++c) {
     JaliGeometry::Point cen;
     target_mesh->cell_centroid(c, &cen);
     stdvals[c] = cen[0]+cen[1];
   }
 
-  for (int c = 0; c < ncells_target; c++)
+  for (int c = 0; c < ncells_target; ++c)
     ASSERT_DOUBLE_EQ(stdvals[c], outvals[c]);
 }
 
@@ -483,7 +465,6 @@ TEST(Remap_1st_Order, Cell_Ctr_Lin_3D) {
 /// First order remap of constant node-centered field in 3D
 
 TEST(Remap_1st_Order, Node_Ctr_Const_3D) {
-
   Jali::MeshFactory mf(MPI_COMM_WORLD);
   Jali::FrameworkPreference pref;
   pref.push_back(Jali::MSTK);
@@ -496,22 +477,21 @@ TEST(Remap_1st_Order, Node_Ctr_Const_3D) {
   std::unique_ptr<Jali::Mesh> target_mesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0,
                                                5, 5, 5, NULL,
                                                true, true, true, true);
-  
-  int nnodes_source = source_mesh->num_entities(Jali::NODE, Jali::OWNED);
-  int nnodes_target = target_mesh->num_entities(Jali::NODE, Jali::OWNED);
+
+  const int nnodes_source = source_mesh->num_entities(Jali::NODE, Jali::OWNED);
+  const int nnodes_target = target_mesh->num_entities(Jali::NODE, Jali::OWNED);
 
   // Create a state object and add the first two vectors to it
 
   Jali::State source_state(source_mesh.get());
 
-
   // Define two state vectors, one with constant value, the other
   // with a linear function
 
   std::vector<double> data(nnodes_source, 1.5);
-  Jali::StateVector<double> myvec("nodevars", Jali::NODE, source_mesh.get(),
-                                  &(data[0]));
-  Jali::StateVector<double> &addvec = source_state.add(myvec);
+  Jali::StateVector<double> myvec("nodevars", Jali::NODE,
+                                  source_mesh.get(), &(data[0]));
+  source_state.add(myvec);
 
   // Create Remap objects
 
@@ -526,7 +506,6 @@ TEST(Remap_1st_Order, Node_Ctr_Const_3D) {
   // Remap from source to target mesh
 
   std::vector<double> outvals(nnodes_target);
-
 
   // Gather the dual cell coordinates for source and target meshes for
   // intersection
@@ -543,7 +522,7 @@ TEST(Remap_1st_Order, Node_Ctr_Const_3D) {
   // do the search and intersection we can get away with adding all
   // the coordinates of the corners to list including duplicates
 
-  for (int n = 0; n < nnodes_source; n++) {
+  for (int n = 0; n < nnodes_source; ++n) {
     std::vector<JaliGeometry::Point> dualcoords;
     std::vector<int> corners;
     source_mesh->node_get_corners(n, Jali::ALL, &corners);
@@ -556,7 +535,7 @@ TEST(Remap_1st_Order, Node_Ctr_Const_3D) {
     }
   }
 
-  for (int n = 0; n < nnodes_target; n++) {
+  for (int n = 0; n < nnodes_target; ++n) {
     std::vector<JaliGeometry::Point> dualcoords;
     std::vector<int> corners;
     target_mesh->node_get_corners(n, Jali::ALL, &corners);
@@ -568,7 +547,6 @@ TEST(Remap_1st_Order, Node_Ctr_Const_3D) {
         target_dualcell_coords[n].push_back(coord);
     }
   }
-
 
   for (int n = 0; n < nnodes_target; ++n) {
     std::vector<int> xcells;
@@ -587,9 +565,8 @@ TEST(Remap_1st_Order, Node_Ctr_Const_3D) {
 
   // Make sure we retrieved the correct value for each cell on the target
 
-  double stdval = data[0];
+  const double stdval = data[0];
   for (int n = 0; n < nnodes_target; ++n)
     ASSERT_DOUBLE_EQ(stdval, outvals[n]);
 }
-
 

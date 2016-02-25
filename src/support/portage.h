@@ -3,8 +3,8 @@
  * All rights reserved.
  *---------------------------------------------------------------------------~*/
 
-#ifndef PORTAGE_H
-#define PORTAGE_H
+#ifndef SRC_SUPPORT_PORTAGE_H_
+#define SRC_SUPPORT_PORTAGE_H_
 
 #ifdef THRUST
 
@@ -12,21 +12,22 @@
 #include "thrust/iterator/counting_iterator.h"
 #include "thrust/transform.h"
 
-#else // no thrust
+#else  // no thrust
+
+#include <boost/iterator/counting_iterator.hpp>
 
 #include <vector>
 #include <algorithm>
-#include <boost/iterator/counting_iterator.hpp>
 
 #endif
 
 namespace Portage {
 
-// Cells (aka zones/elements) are the highest dimension entities in a mesh 
-// Nodes (aka vertices) are lowest dimension entities in a mesh 
+// Cells (aka zones/elements) are the highest dimension entities in a mesh
+// Nodes (aka vertices) are lowest dimension entities in a mesh
 // Faces in a 3D mesh are 2D entities, in a 2D mesh are 1D entities
-// BOUNDARY_FACE is a special type of entity that is need so that process 
-// kernels can define composite vectors (see src/data_structures) on 
+// BOUNDARY_FACE is a special type of entity that is need so that process
+// kernels can define composite vectors (see src/data_structures) on
 // exterior boundary faces of the mesh only
 //
 // Wedges are special subcell entities that are a simplicial
@@ -39,7 +40,7 @@ namespace Portage {
 // midpoint of the cell. There are two wedges associated with an edge
 // of cell face in 3D.
 //
-// Corners are also subcell entities that are associated uniquely with 
+// Corners are also subcell entities that are associated uniquely with
 // a node of a cell. Each corner is the union of all the wedges incident
 // upon that node in the cell
 //
@@ -49,8 +50,7 @@ namespace Portage {
 // an edge that is shared by two wedges in adjacent cells
 //
 
-enum Entity_kind 
-{
+enum Entity_kind {
   ALL_KIND = -3,
   ANY_KIND = -2,
   UNKNOWN_KIND = -1,
@@ -66,68 +66,71 @@ enum Entity_kind
 
 const int NUM_ENTITY_KINDS = 8;
 
-// Parallel status of entity 
-    
-enum Parallel_type 
-{
-  PTYPE_UNKNOWN = 0, // Initializer
-  OWNED = 1,         // Owned by this processor
-  GHOST = 2,         // Owned by another processor
-  ALL  = 3           // OWNED + GHOST
+// Parallel status of entity
+
+enum Parallel_type {
+  PTYPE_UNKNOWN = 0,  // Initializer
+  OWNED = 1,          // Owned by this processor
+  GHOST = 2,          // Owned by another processor
+  ALL  = 3            // OWNED + GHOST
 };
 
-
-
 #ifdef THRUST
-  
-  template<typename T>
+
+template<typename T>
     using vector = thrust::device_vector<T>;
-  
-  template<typename T>
+
+template<typename T>
     using pointer = thrust::device_ptr<T>;
 
-  typedef thrust::counting_iterator<int> counting_iterator;
-  counting_iterator make_counting_iterator(int const i) {
-    return thrust::make_counting_iterator(i);
-  }
-
-  template<typename InputIterator, typename OutputIterator, typename UnaryFunction>
-    OutputIterator transform(InputIterator first, InputIterator last,
-                             OutputIterator result, UnaryFunction op) {
-    return thrust::transform(first, last, result, op);
-  }
-  template<typename InputIterator1, typename InputIterator2, typename OutputIterator, typename BinaryFunction>
-    OutputIterator transform(InputIterator1 first1, InputIterator1 last1,
-                             InputIterator2 first2, OutputIterator result, BinaryFunction op) {
-    return thrust::transform(first1, last1, first2, result, op);
-  }
-
-#else // no thrust
-  
-  template<typename T>
-    using vector = std::vector<T>;
-  
-  template<typename T>
-    using pointer = T*;
-
-  typedef boost::counting_iterator<int> counting_iterator;
-  counting_iterator make_counting_iterator(int const i) {
-    return boost::make_counting_iterator<int>(i);
-  }
-
-  template<typename InputIterator, typename OutputIterator, typename UnaryFunction>
-    OutputIterator transform(InputIterator first, InputIterator last,
-		             OutputIterator result, UnaryFunction op) {
-    return std::transform(first, last, result, op);
-  }
-  template<typename InputIterator1, typename InputIterator2, typename OutputIterator, typename BinaryFunction>
-    OutputIterator transform(InputIterator1 first1, InputIterator1 last1,
-			     InputIterator2 first2, OutputIterator result, BinaryFunction op) {
-    return std::transform(first1, last1, first2, result, op);
-  }
-
-#endif
-  
+typedef thrust::counting_iterator<int> counting_iterator;
+counting_iterator make_counting_iterator(int const i) {
+  return thrust::make_counting_iterator(i);
 }
 
-#endif // PORTAGE_H
+template<typename InputIterator, typename OutputIterator,
+    typename UnaryFunction>
+    OutputIterator transform(InputIterator first, InputIterator last,
+                             OutputIterator result, UnaryFunction op) {
+      return thrust::transform(first, last, result, op);
+    }
+template<typename InputIterator1, typename InputIterator2,
+    typename OutputIterator, typename BinaryFunction>
+    OutputIterator transform(InputIterator1 first1, InputIterator1 last1,
+                             InputIterator2 first2, OutputIterator result,
+                             BinaryFunction op) {
+  return thrust::transform(first1, last1, first2, result, op);
+}
+
+#else  // no thrust
+
+template<typename T>
+    using vector = std::vector<T>;
+
+template<typename T>
+    using pointer = T*;
+
+typedef boost::counting_iterator<int> counting_iterator;
+counting_iterator make_counting_iterator(int const i) {
+  return boost::make_counting_iterator<int>(i);
+}
+
+template<typename InputIterator, typename OutputIterator,
+    typename UnaryFunction>
+    OutputIterator transform(InputIterator first, InputIterator last,
+                             OutputIterator result, UnaryFunction op) {
+  return std::transform(first, last, result, op);
+}
+template<typename InputIterator1, typename InputIterator2,
+    typename OutputIterator, typename BinaryFunction>
+    OutputIterator transform(InputIterator1 first1, InputIterator1 last1,
+                             InputIterator2 first2, OutputIterator result,
+                             BinaryFunction op) {
+  return std::transform(first1, last1, first2, result, op);
+}
+
+#endif
+
+}  // namespace Portage
+
+#endif  // SRC_SUPPORT_PORTAGE_H_
