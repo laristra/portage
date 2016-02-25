@@ -14,7 +14,7 @@
 #include <tuple>
 #include <string>
 #include <utility>
-#include <stdexcept>
+#include <iostream>
 
 #include "portage/support/portage.h"
 #include "portage/wrappers/state/jali/jali_state_wrapper.h"
@@ -327,8 +327,8 @@ class Driver {
 
     switch (dim_) {
       case 1:
-        throw std::runtime_error("Remap not implemented for 1D");
-        break;
+        std::cerr << "Remap not implemented for 1D" << std::endl;
+        exit(-1);
       case 2: {
         switch (remap_entity_) {
           case CELL: {
@@ -344,7 +344,9 @@ class Driver {
             break;
           }
           default:
-            std::runtime_error("Remap only implemented for CELLS and NODES");
+            std::cerr << "Remap only implemented for CELLS and NODES"
+                      << std::endl;
+            exit(-1);
         }
         break;
       }
@@ -363,13 +365,16 @@ class Driver {
             break;
           }
           default: {
-            std::runtime_error("Remap only implemented for CELLS and NODES");
+            std::cerr << "Remap only implemented for CELLS and NODES"
+                      << std:endl;
+            exit(-1);
           }
         }
         break;
       }
       default:
-        throw std::runtime_error("Invalid dimension");
+        std::cerr << "Invalid dimension" << std::endl;
+        exit(-1);
     }
   }
 
