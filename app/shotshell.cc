@@ -132,7 +132,7 @@ int main(int argc, char** argv) {
                                          targetStateWrapper);
     d.set_remap_var_names(remap_fields);
 
-    if (example == 2) d.set_remap_order(2);
+    if (example == 2) d.set_interpolation_order(2);
 
     d.run();
   }
@@ -146,7 +146,7 @@ int main(int argc, char** argv) {
                                                   targetStateWrapper);
     d.set_remap_var_names(remap_fields);
 
-    if (example == 3) d.set_remap_order(2);
+    if (example == 3) d.set_interpolation_order(2);
 
     d.run();
   }

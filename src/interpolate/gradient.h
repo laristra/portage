@@ -3,8 +3,8 @@
  * All rights reserved.
  *---------------------------------------------------------------------------~*/
 
-#ifndef PORTAGE_GRADIENT_H
-#define PORTAGE_GRADIENT_H
+#ifndef SRC_INTERPOLATE_GRADIENT_H_
+#define SRC_INTERPOLATE_GRADIENT_H_
 
 #include <algorithm>
 #include <tuple>
@@ -115,21 +115,21 @@ class Limited_Gradient {
       @param[in] mesh  Mesh class than one can query for mesh info
       @param[in] state A state manager class that one can query for field info
       @param[in] on_what An enum that indicates what type of entity the field is on
-      @param[in] remap_var_name Name of field for which the gradient is to be computed
+      @param[in] var_name Name of field for which the gradient is to be computed
       @param[in] limiter_type An enum indicating if the limiter type (none, Barth-Jespersen, Superbee etc)
 
       @todo must remove assumption that field is scalar
    */
 
   Limited_Gradient(MeshType const & mesh, StateType const & state,
-                   std::string const remap_var_name,
+                   std::string const var_name,
                    LimiterType limiter_type) :
       mesh_(mesh), state_(state),
-      remap_var_name_(remap_var_name), limtype_(limiter_type) {
+      var_name_(var_name), limtype_(limiter_type) {
 
     // Extract the field data from the statemanager
 
-    state.get_data(on_what, remap_var_name, &vals_);
+    state.get_data(on_what, var_name, &vals_);
   }
 
   /// @todo Seems to be needed when using this in a Thrust transform call?
@@ -157,7 +157,7 @@ class Limited_Gradient {
   LimiterType limtype_;
   MeshType const & mesh_;
   StateType const & state_;
-  std::string const & remap_var_name_;
+  std::string const & var_name_;
   double * vals_;
 };
 
@@ -178,20 +178,20 @@ class Limited_Gradient<MeshType, StateType, CELL> {
   /*! @brief Constructor
       @param[in] mesh  Mesh class than one can query for mesh info
       @param[in] state A state manager class that one can query for field info
-      @param[in] remap_var_name Name of field for which the gradient is to be computed
+      @param[in] var_name Name of field for which the gradient is to be computed
       @param[in] limiter_type An enum indicating if the limiter type (none, Barth-Jespersen, Superbee etc)
 
       @todo must remove assumption that field is scalar
    */
 
   Limited_Gradient(MeshType const & mesh, StateType const & state,
-                   std::string const remap_var_name,
+                   std::string const var_name,
                    LimiterType limiter_type) :
-      mesh_(mesh), state_(state), remap_var_name_(remap_var_name),
+      mesh_(mesh), state_(state), var_name_(var_name),
       limtype_(limiter_type) {
 
     // Extract the field data from the statemanager
-    state.get_data(CELL, remap_var_name, &vals_);
+    state.get_data(CELL, var_name, &vals_);
   }
 
   /// @todo Seems to be needed when using this in a Thrust transform call?
@@ -216,7 +216,7 @@ class Limited_Gradient<MeshType, StateType, CELL> {
   LimiterType limtype_;
   MeshType const & mesh_;
   StateType const & state_;
-  std::string const & remap_var_name_;
+  std::string const & var_name_;
   double * vals_;
 };
 
@@ -298,7 +298,7 @@ Limited_Gradient<MeshType, StateType, CELL> :: operator() (int const cellid) {
       }
       else if (dim == 3) {
 
-        std::vector<std::tuple<double,double,double>> cellcoords;
+        std::vector<std::tuple<double, double, double>> cellcoords;
         mesh_.cell_get_coordinates(cellid, &cellcoords);
 
         for (auto coord : cellcoords) {
@@ -318,7 +318,7 @@ Limited_Gradient<MeshType, StateType, CELL> :: operator() (int const cellid) {
     }
   }
   else {
-    std::cerr << "Remap implemented only for 2D or 3D\n";
+    std::cerr << "Gradient implemented only for 2D or 3D\n";
   }
 
   // Limited gradient is phi*grad
@@ -348,20 +348,20 @@ class Limited_Gradient<MeshType, StateType, NODE> {
   /*! @brief Constructor
       @param[in] mesh  Mesh class than one can query for mesh info
       @param[in] state A state manager class that one can query for field info
-      @param[in] remap_var_name Name of field for which the gradient is to be computed
+      @param[in] var_name Name of field for which the gradient is to be computed
       @param[in] limiter_type An enum indicating if the limiter type (none, Barth-Jespersen, Superbee etc)
 
       @todo must remove assumption that field is scalar
    */
 
   Limited_Gradient(MeshType const & mesh, StateType const & state,
-                   std::string const remap_var_name,
+                   std::string const var_name,
                    LimiterType limiter_type) :
-      mesh_(mesh), state_(state), remap_var_name_(remap_var_name),
+      mesh_(mesh), state_(state), var_name_(var_name),
       limtype_(limiter_type) {
 
     // Extract the field data from the statemanager
-    state.get_data(NODE, remap_var_name, &vals_);
+    state.get_data(NODE, var_name, &vals_);
   }
 
   /// \todo Seems to be needed when using this in a Thrust transform call?
@@ -387,7 +387,7 @@ class Limited_Gradient<MeshType, StateType, NODE> {
   LimiterType limtype_;
   MeshType const & mesh_;
   StateType const & state_;
-  std::string const & remap_var_name_;
+  std::string const & var_name_;
   double * vals_;
 };
 
@@ -409,7 +409,7 @@ Limited_Gradient<MeshType, StateType, NODE> :: operator() (int const nodeid) {
     std::vector<double> nodevalues;
     std::vector<double> ndcoord(3), coord(3);
 
-    std::pair<double,double> coord_pair;
+    std::pair<double, double> coord_pair;
 
     ndcoord.resize(2);
     coord.resize(2);
@@ -470,7 +470,7 @@ Limited_Gradient<MeshType, StateType, NODE> :: operator() (int const nodeid) {
     std::vector<double> nodevalues;
     std::vector<double> ndcoord(3), coord(3);
 
-    std::tuple<double,double,double> coord_tuple;
+    std::tuple<double, double, double> coord_tuple;
 
     mesh_.node_get_coordinates(nodeid, &coord_tuple);
     ndcoord[0] = std::get<0>(coord_tuple);
@@ -505,7 +505,7 @@ Limited_Gradient<MeshType, StateType, NODE> :: operator() (int const nodeid) {
 
       double nodeval = vals_[nodeid];
 
-      std::vector<std::tuple<double,double,double>> dualcellcoords;
+      std::vector<std::tuple<double, double, double>> dualcellcoords;
       mesh_.dual_cell_get_coordinates(nodeid, &dualcellcoords);
 
       for (auto const & coord : dualcellcoords) {
@@ -522,7 +522,7 @@ Limited_Gradient<MeshType, StateType, NODE> :: operator() (int const nodeid) {
     }
   }
   else {
-    std::cerr << "Remap only implemented for 2D and 3D\n";
+    std::cerr << "Gradient only implemented for 2D and 3D\n";
   }
 
   // Limited gradient is phi*grad
@@ -535,4 +535,4 @@ Limited_Gradient<MeshType, StateType, NODE> :: operator() (int const nodeid) {
 
 }  // namespace Portage
 
-#endif  // PORTAGE_GRADIENT_H_
+#endif  // SRC_INTERPOLATE_GRADIENT_H_

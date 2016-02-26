@@ -16,15 +16,15 @@
 #include "JaliStateVector.h"
 
 #include "portage/support/portage.h"
-#include "portage/remap/remap_1st_order.h"
+#include "portage/interpolate/interpolate_1st_order.h"
 #include "portage/wrappers/mesh/jali/jali_mesh_wrapper.h"
 #include "portage/wrappers/state/jali/jali_state_wrapper.h"
-#include "portage/remap/test/simple_intersect_for_tests.h"
+#include "portage/interpolate/test/simple_intersect_for_tests.h"
 
 
-/// First order remap of constant cell-centered field in 2D
+/// First order interpolation of constant cell-centered field in 2D
 
-TEST(Remap_1st_Order, Cell_Ctr_Const_2D) {
+TEST(Interpolate_1st_Order, Cell_Ctr_Const_2D) {
   Jali::MeshFactory mf(MPI_COMM_WORLD);
   Jali::FrameworkPreference pref;
   pref.push_back(Jali::MSTK);
@@ -48,15 +48,15 @@ TEST(Remap_1st_Order, Cell_Ctr_Const_2D) {
                                   source_mesh.get(), &(data[0]));
   source_state.add(myvec);
 
-  // Create Remap object
-
   Portage::Jali_Mesh_Wrapper sourceMeshWrapper(*source_mesh);
   Portage::Jali_State_Wrapper sourceStateWrapper(source_state);
 
-  Portage::Remap_1stOrder<Portage::Jali_Mesh_Wrapper,
-                          Portage::Jali_State_Wrapper,
-                          Portage::CELL>
-      remapper(sourceMeshWrapper, sourceStateWrapper, "cellvars");
+  // Create Interpolation object
+
+  Portage::Interpolate_1stOrder<Portage::Jali_Mesh_Wrapper,
+                                Portage::Jali_State_Wrapper,
+                                Portage::CELL>
+      interpolater(sourceMeshWrapper, sourceStateWrapper, "cellvars");
 
   // Gather the cell coordinates for source and target meshes for intersection
 
@@ -70,7 +70,7 @@ TEST(Remap_1st_Order, Cell_Ctr_Const_2D) {
   for (int c = 0; c < ncells_target; ++c)
     target_mesh->cell_get_coordinates(c, &(target_cell_coords[c]));
 
-  // Remap from source to target mesh
+  // Interpolate from source to target mesh
 
   std::vector<double> outvals(ncells_target);
 
@@ -86,7 +86,7 @@ TEST(Remap_1st_Order, Cell_Ctr_Const_2D) {
                std::vector< std::vector<double> > const & >
         cells_and_weights(xcells, xwts);
 
-    outvals[c] = remapper(cells_and_weights);
+    outvals[c] = interpolater(cells_and_weights);
   }
 
   // Make sure we retrieved the correct value for each cell on the target
@@ -96,9 +96,9 @@ TEST(Remap_1st_Order, Cell_Ctr_Const_2D) {
 }
 
 
-/// First order remap of linear cell-centered field in 2D
+/// First order interpolation of linear cell-centered field in 2D
 
-TEST(Remap_1st_Order, Cell_Ctr_Lin_2D) {
+TEST(Interpolate_1st_Order, Cell_Ctr_Lin_2D) {
   Jali::MeshFactory mf(MPI_COMM_WORLD);
   Jali::FrameworkPreference pref;
   pref.push_back(Jali::MSTK);
@@ -127,15 +127,15 @@ TEST(Remap_1st_Order, Cell_Ctr_Lin_2D) {
                                   source_mesh.get(), &(data[0]));
   source_state.add(myvec);
 
-  // Create Remap objects
+  // Create Interpolation objects
 
   Portage::Jali_Mesh_Wrapper sourceMeshWrapper(*source_mesh);
   Portage::Jali_State_Wrapper sourceStateWrapper(source_state);
 
-  Portage::Remap_1stOrder<Portage::Jali_Mesh_Wrapper,
+  Portage::Interpolate_1stOrder<Portage::Jali_Mesh_Wrapper,
                           Portage::Jali_State_Wrapper,
                           Portage::CELL>
-      remapper(sourceMeshWrapper, sourceStateWrapper, "cellvars");
+      interpolater(sourceMeshWrapper, sourceStateWrapper, "cellvars");
 
   // Gather the cell coordinates for source and target meshes for intersection
 
@@ -149,7 +149,7 @@ TEST(Remap_1st_Order, Cell_Ctr_Lin_2D) {
   for (int c = 0; c < ncells_target; ++c)
     target_mesh->cell_get_coordinates(c, &(target_cell_coords[c]));
 
-  // Remap from source to target mesh
+  // Interpolate from source to target mesh
 
   std::vector<double> outvals(ncells_target);
 
@@ -165,13 +165,13 @@ TEST(Remap_1st_Order, Cell_Ctr_Lin_2D) {
                std::vector< std::vector<double> > const & >
         cells_and_weights(xcells, xwts);
 
-    outvals[c] = remapper(cells_and_weights);
+    outvals[c] = interpolater(cells_and_weights);
   }
 
   // Make sure we retrieved the correct value for each cell on the target
-  // NOTE: EVEN THOUGH 1ST ORDER REMAPPING ALGORITHM DOES NOT IN
+  // NOTE: EVEN THOUGH 1ST ORDER INTERPOLATION ALGORITHM DOES NOT IN
   // GENERAL PRESERVE A LINEAR FIELD THE SPECIAL STRUCTURE OF THE SOURCE
-  // AND TARGET MESHES ENSURES THAT THE LINEAR FIELD IS REMAPPED CORRECTLY
+  // AND TARGET MESHES ENSURES THAT THE LINEAR FIELD IS INTERPOLATED CORRECTLY
   // IN THIS TEST
 
   std::vector<double> stdvals(ncells_target);
@@ -186,9 +186,9 @@ TEST(Remap_1st_Order, Cell_Ctr_Lin_2D) {
 }
 
 
-/// First order remap of constant node-centered field in 2D
+/// First order interpolation of constant node-centered field in 2D
 
-TEST(Remap_1st_Order, Node_Ctr_Const_2D) {
+TEST(Interpolate_1st_Order, Node_Ctr_Const_2D) {
   Jali::MeshFactory mf(MPI_COMM_WORLD);
   Jali::FrameworkPreference pref;
   pref.push_back(Jali::MSTK);
@@ -216,17 +216,17 @@ TEST(Remap_1st_Order, Node_Ctr_Const_2D) {
                                   source_mesh.get(), &(data[0]));
   source_state.add(myvec);
 
-  // Create Remap objects
+  // Create Interpolation objects
 
   Portage::Jali_Mesh_Wrapper sourceMeshWrapper(*source_mesh);
   Portage::Jali_State_Wrapper sourceStateWrapper(source_state);
 
-  Portage::Remap_1stOrder<Portage::Jali_Mesh_Wrapper,
+  Portage::Interpolate_1stOrder<Portage::Jali_Mesh_Wrapper,
                           Portage::Jali_State_Wrapper,
                           Portage::NODE>
-      remapper(sourceMeshWrapper, sourceStateWrapper, "nodevars");
+      interpolater(sourceMeshWrapper, sourceStateWrapper, "nodevars");
 
-  // Remap from source to target mesh
+  // Interpolate from source to target mesh
 
   std::vector<double> outvals(nnodes_target);
 
@@ -283,7 +283,7 @@ TEST(Remap_1st_Order, Node_Ctr_Const_2D) {
                std::vector< std::vector<double> > const & >
         nodes_and_weights(xcells, xwts);
 
-    outvals[n] = remapper(nodes_and_weights);
+    outvals[n] = interpolater(nodes_and_weights);
   }
 
   // Make sure we retrieved the correct value for each cell on the target
@@ -294,9 +294,9 @@ TEST(Remap_1st_Order, Node_Ctr_Const_2D) {
 }
 
 
-/// First order remap of constant cell-centered field in 3D
+/// First order interpolation of constant cell-centered field in 3D
 
-TEST(Remap_1st_Order, Cell_Ctr_Const_3D) {
+TEST(Interpolate_1st_Order, Cell_Ctr_Const_3D) {
   Jali::MeshFactory mf(MPI_COMM_WORLD);
   Jali::FrameworkPreference pref;
   pref.push_back(Jali::MSTK);
@@ -322,15 +322,15 @@ TEST(Remap_1st_Order, Cell_Ctr_Const_3D) {
                                   source_mesh.get(), &(data[0]));
   source_state.add(myvec);
 
-  // Create Remap object
-
   Portage::Jali_Mesh_Wrapper sourceMeshWrapper(*source_mesh);
   Portage::Jali_State_Wrapper sourceStateWrapper(source_state);
 
-  Portage::Remap_1stOrder<Portage::Jali_Mesh_Wrapper,
+  // Create Interpolation object
+
+  Portage::Interpolate_1stOrder<Portage::Jali_Mesh_Wrapper,
                           Portage::Jali_State_Wrapper,
                           Portage::CELL>
-      remapper(sourceMeshWrapper, sourceStateWrapper, "cellvars");
+      interpolater(sourceMeshWrapper, sourceStateWrapper, "cellvars");
 
   // Gather the cell coordinates for source and target meshes for intersection
 
@@ -344,7 +344,7 @@ TEST(Remap_1st_Order, Cell_Ctr_Const_3D) {
   for (int c = 0; c < ncells_target; ++c)
     target_mesh->cell_get_coordinates(c, &(target_cell_coords[c]));
 
-  // Remap from source to target mesh
+  // Interpolate from source to target mesh
 
   std::vector<double> outvals(ncells_target);
 
@@ -360,7 +360,7 @@ TEST(Remap_1st_Order, Cell_Ctr_Const_3D) {
                std::vector< std::vector<double> > const & >
         cells_and_weights(xcells, xwts);
 
-    outvals[c] = remapper(cells_and_weights);
+    outvals[c] = interpolater(cells_and_weights);
 }
 
   // Make sure we retrieved the correct value for each cell on the target
@@ -370,9 +370,9 @@ TEST(Remap_1st_Order, Cell_Ctr_Const_3D) {
 }
 
 
-/// First order remap of linear cell-centered field in 3D
+/// First order interpolation of linear cell-centered field in 3D
 
-TEST(Remap_1st_Order, Cell_Ctr_Lin_3D) {
+TEST(Interpolate_1st_Order, Cell_Ctr_Lin_3D) {
   Jali::MeshFactory mf(MPI_COMM_WORLD);
   Jali::FrameworkPreference pref;
   pref.push_back(Jali::MSTK);
@@ -403,15 +403,15 @@ TEST(Remap_1st_Order, Cell_Ctr_Lin_3D) {
                                   source_mesh.get(), &(data[0]));
   source_state.add(myvec);
 
-  // Create Remap objects
-
   Portage::Jali_Mesh_Wrapper sourceMeshWrapper(*source_mesh);
   Portage::Jali_State_Wrapper sourceStateWrapper(source_state);
 
-  Portage::Remap_1stOrder<Portage::Jali_Mesh_Wrapper,
+  // Create Interpolation objects
+
+  Portage::Interpolate_1stOrder<Portage::Jali_Mesh_Wrapper,
                           Portage::Jali_State_Wrapper,
                           Portage::CELL>
-      remapper(sourceMeshWrapper, sourceStateWrapper, "cellvars");
+      interpolater(sourceMeshWrapper, sourceStateWrapper, "cellvars");
 
   // Gather the cell coordinates for source and target meshes for intersection
 
@@ -425,7 +425,7 @@ TEST(Remap_1st_Order, Cell_Ctr_Lin_3D) {
   for (int c = 0; c < ncells_target; ++c)
     target_mesh->cell_get_coordinates(c, &(target_cell_coords[c]));
 
-  // Remap from source to target mesh
+  // Interpolate from source to target mesh
 
   std::vector<double> outvals(ncells_target);
 
@@ -441,13 +441,13 @@ TEST(Remap_1st_Order, Cell_Ctr_Lin_3D) {
                std::vector< std::vector<double> > const & >
         cells_and_weights(xcells, xwts);
 
-    outvals[c] = remapper(cells_and_weights);
+    outvals[c] = interpolater(cells_and_weights);
   }
 
   // Make sure we retrieved the correct value for each cell on the target
-  // NOTE: EVEN THOUGH 1ST ORDER REMAPPING ALGORITHM DOES NOT IN
+  // NOTE: EVEN THOUGH 1ST ORDER INTERPOLATION ALGORITHM DOES NOT IN
   // GENERAL PRESERVE A LINEAR FIELD THE SPECIAL STRUCTURE OF THE SOURCE
-  // AND TARGET MESHES ENSURES THAT THE LINEAR FIELD IS REMAPPED CORRECTLY
+  // AND TARGET MESHES ENSURES THAT THE LINEAR FIELD IS INTERPOLATING CORRECTLY
   // IN THIS TEST
 
   std::vector<double> stdvals(ncells_target);
@@ -462,9 +462,9 @@ TEST(Remap_1st_Order, Cell_Ctr_Lin_3D) {
 }
 
 
-/// First order remap of constant node-centered field in 3D
+/// First order interpolation of constant node-centered field in 3D
 
-TEST(Remap_1st_Order, Node_Ctr_Const_3D) {
+TEST(Interpolate_1st_Order, Node_Ctr_Const_3D) {
   Jali::MeshFactory mf(MPI_COMM_WORLD);
   Jali::FrameworkPreference pref;
   pref.push_back(Jali::MSTK);
@@ -493,17 +493,17 @@ TEST(Remap_1st_Order, Node_Ctr_Const_3D) {
                                   source_mesh.get(), &(data[0]));
   source_state.add(myvec);
 
-  // Create Remap objects
-
   Portage::Jali_Mesh_Wrapper sourceMeshWrapper(*source_mesh);
   Portage::Jali_State_Wrapper sourceStateWrapper(source_state);
 
-  Portage::Remap_1stOrder<Portage::Jali_Mesh_Wrapper,
+  // Create Interpolation object
+
+  Portage::Interpolate_1stOrder<Portage::Jali_Mesh_Wrapper,
                           Portage::Jali_State_Wrapper,
                           Portage::NODE>
-      remapper(sourceMeshWrapper, sourceStateWrapper, "nodevars");
+      interpolater(sourceMeshWrapper, sourceStateWrapper, "nodevars");
 
-  // Remap from source to target mesh
+  // Interpolate from source to target mesh
 
   std::vector<double> outvals(nnodes_target);
 
@@ -560,7 +560,7 @@ TEST(Remap_1st_Order, Node_Ctr_Const_3D) {
                std::vector< std::vector<double> > const & >
         nodes_and_weights(xcells, xwts);
 
-    outvals[n] = remapper(nodes_and_weights);
+    outvals[n] = interpolater(nodes_and_weights);
   }
 
   // Make sure we retrieved the correct value for each cell on the target

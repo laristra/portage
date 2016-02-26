@@ -33,11 +33,12 @@
   @file main.cc
   @brief A simple application that drives our remap routines.
 
-  This program is used to showcase our capabilities with various types of
-  remap operations (e.g. remap order) on various types of meshes (2d or 3d;
-  node-centered or zone-centered) of some simple linear or quadratic data.
-  For the cases of remapping linear data with a second-order remap function,
-  the L2 norm output at the end should be identically zero.
+  This program is used to showcase our capabilities with various types
+  of remap operations (e.g. interpolation order) on various types of
+  meshes (2d or 3d; node-centered or zone-centered) of some simple
+  linear or quadratic data.  For the cases of remapping linear data
+  with a second-order interpolator, the L2 norm output at the end
+  should be identically zero.
  */
 
 //////////////////////////////////////////////////////////////////////
@@ -50,7 +51,7 @@ struct example_properties {
                                           linear(linear) { }
 
   int dim;             // dimensionality of meshes in example
-  int order;           // remap order in example
+  int order;           // interpolation order in example
   bool cell_centered;  // is this example a cell-centered remap?
   bool linear;         // is this example a remap of linear data?
 };
@@ -227,12 +228,12 @@ int main(int argc, char** argv) {
                                                   sourceStateWrapper,
                                                   targetMeshWrapper,
                                                   targetStateWrapper);
-    // Register the variable name and remap order with the driver
+    // Register the variable name and interpolation order with the driver
     std::vector<std::string> remap_fields;
     remap_fields.push_back("celldata");
     d.set_remap_var_names(remap_fields);
 
-    d.set_remap_order(example.order);
+    d.set_interpolation_order(example.order);
 
     struct timeval begin, end, diff;
     gettimeofday(&begin, 0);
@@ -373,7 +374,7 @@ int main(int argc, char** argv) {
     remap_fields.push_back("nodedata");
     d.set_remap_var_names(remap_fields);
 
-    d.set_remap_order(example.order);
+    d.set_interpolation_order(example.order);
 
     struct timeval begin, end, diff;
     gettimeofday(&begin, 0);
