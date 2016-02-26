@@ -6,7 +6,7 @@
 #include <iostream>
 
 #include "portage/support/portage.h"
-#include "portage/remap/gradient.h"
+#include "portage/interpolate/gradient.h"
 #include "portage/wrappers/mesh/jali/jali_mesh_wrapper.h"
 #include "portage/wrappers/state/jali/jali_state_wrapper.h"
 
@@ -64,7 +64,7 @@ TEST(Gradient, Fields_Cell_Ctr) {
   Portage::Jali_Mesh_Wrapper meshwrapper(*mesh1);
   Portage::Jali_State_Wrapper statewrapper(mystate);
 
-  // Create Remap objects
+  // Create Gradient objects
 
   Portage::Limited_Gradient<Portage::Jali_Mesh_Wrapper,
                             Portage::Jali_State_Wrapper,

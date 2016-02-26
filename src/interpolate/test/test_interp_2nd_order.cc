@@ -4,17 +4,15 @@
  *---------------------------------------------------------------------------~*/
 #include <iostream>
 #include <memory>
-#include <iostream>
 #include <cmath>
 
 #include "portage/support/portage.h"
-#include "portage/remap/remap_2nd_order.h"
+#include "portage/interpolate/interpolate_2nd_order.h"
 #include "portage/wrappers/mesh/jali/jali_mesh_wrapper.h"
 #include "portage/wrappers/state/jali/jali_state_wrapper.h"
 #include "portage/driver/driver.h"
 
 #include "gtest/gtest.h"
-
 #include "mpi.h"
 
 // Jali includes
@@ -27,11 +25,12 @@
 #include "Point.hh"
 
 // Local include
-#include "portage/remap/test/simple_intersect_for_tests.h"
+#include "portage/interpolate/test/simple_intersect_for_tests.h"
 
-/// Second order remap of constant cell-centered field with no limiter in 2D
+/// Second order interpolation of constant cell-centered field with no
+/// limiter in 2D
 
-TEST(Remap_2nd_Order, Cell_Ctr_Const_No_Limiter_2D) {
+TEST(Interpolate_2nd_Order, Cell_Ctr_Const_No_Limiter_2D) {
   Jali::MeshFactory mf(MPI_COMM_WORLD);
 
   Jali::FrameworkPreference pref;
@@ -55,15 +54,16 @@ TEST(Remap_2nd_Order, Cell_Ctr_Const_No_Limiter_2D) {
 
   const int ncells_target = target_mesh->num_entities(Jali::CELL, Jali::OWNED);
 
-  // Create Remap objects
   Portage::Jali_Mesh_Wrapper sourceMeshWrapper(*source_mesh);
   Portage::Jali_State_Wrapper sourceStateWrapper(source_state);
 
-  Portage::Remap_2ndOrder<Portage::Jali_Mesh_Wrapper,
-                          Portage::Jali_State_Wrapper,
-                          Portage::CELL>
-      remapper(sourceMeshWrapper, sourceStateWrapper, "cellvars",
-               Portage::NOLIMITER);
+  // Create Interpolation object
+
+  Portage::Interpolate_2ndOrder<Portage::Jali_Mesh_Wrapper,
+                                Portage::Jali_State_Wrapper,
+                                Portage::CELL>
+      interpolater(sourceMeshWrapper, sourceStateWrapper, "cellvars",
+                   Portage::NOLIMITER);
 
   // Gather the cell coordinates for source and target meshes for intersection
 
@@ -77,7 +77,7 @@ TEST(Remap_2nd_Order, Cell_Ctr_Const_No_Limiter_2D) {
   for (int c = 0; c < ncells_target; ++c)
     target_mesh->cell_get_coordinates(c, &(target_cell_coords[c]));
 
-  // Remap from source to target mesh
+  // Interpolate from source to target mesh
 
   std::vector<double> outvals(ncells_target);  // field values on target mesh
   for (int c = 0; c < ncells_target; ++c) {
@@ -92,7 +92,7 @@ TEST(Remap_2nd_Order, Cell_Ctr_Const_No_Limiter_2D) {
                std::vector<std::vector<double>> const &>
         cells_and_weights(xcells, xweights);
 
-    outvals[c] = remapper(cells_and_weights);
+    outvals[c] = interpolater(cells_and_weights);
   }
 
   // Make sure we retrieved the correct value for each cell on the target
@@ -103,9 +103,10 @@ TEST(Remap_2nd_Order, Cell_Ctr_Const_No_Limiter_2D) {
 }
 
 
-/// Second order remap of linear cell-centered field with no limiting in 2D
+/// Second order interpolation of linear cell-centered field with no
+/// limiting in 2D
 
-TEST(Remap_2nd_Order, Cell_Ctr_Lin_No_Limiter_2D) {
+TEST(Interpolate_2nd_Order, Cell_Ctr_Lin_No_Limiter_2D) {
   Jali::MeshFactory mf(MPI_COMM_WORLD);
 
   Jali::FrameworkPreference pref;
@@ -131,15 +132,15 @@ TEST(Remap_2nd_Order, Cell_Ctr_Lin_No_Limiter_2D) {
                                   source_mesh.get(), &(data[0]));
   source_state.add(myvec);
 
-  // Create Remap objects
+  // Create Interpolation objects
 
   Portage::Jali_Mesh_Wrapper sourceMeshWrapper(*source_mesh);
   Portage::Jali_State_Wrapper sourceStateWrapper(source_state);
 
-  Portage::Remap_2ndOrder<Portage::Jali_Mesh_Wrapper,
+  Portage::Interpolate_2ndOrder<Portage::Jali_Mesh_Wrapper,
                           Portage::Jali_State_Wrapper,
                           Portage::CELL>
-      remapper(sourceMeshWrapper, sourceStateWrapper, "cellvars",
+      interpolater(sourceMeshWrapper, sourceStateWrapper, "cellvars",
                Portage::NOLIMITER);
 
   // Gather the cell coordinates for source and target meshes for intersection
@@ -155,7 +156,7 @@ TEST(Remap_2nd_Order, Cell_Ctr_Lin_No_Limiter_2D) {
   for (int c = 0; c < ncells_target; ++c)
     target_mesh->cell_get_coordinates(c, &(target_cell_coords[c]));
 
-  // Remap from source to target mesh
+  // Interpolate from source to target mesh
   std::vector<double> outvals(ncells_target);
 
   for (int c = 0; c < ncells_target; ++c) {
@@ -170,7 +171,7 @@ TEST(Remap_2nd_Order, Cell_Ctr_Lin_No_Limiter_2D) {
                std::vector<std::vector<double>> const &>
         cells_and_weights(xcells, xweights);
 
-    outvals[c] = remapper(cells_and_weights);
+    outvals[c] = interpolater(cells_and_weights);
   }
 
   // Make sure we retrieved the correct value for each cell on the target
@@ -186,11 +187,11 @@ TEST(Remap_2nd_Order, Cell_Ctr_Lin_No_Limiter_2D) {
 
 
 /*!
-  @brief Second order remap of linear cell-centered field with
+  @brief Second order interpolate of linear cell-centered field with
   Barth-Jespersen limiting in 2D
 */
 
-TEST(Remap_2nd_Order, Cell_Ctr_Lin_BJ_Limiter_2D) {
+TEST(Interpolate_2nd_Order, Cell_Ctr_Lin_BJ_Limiter_2D) {
   Jali::MeshFactory mf(MPI_COMM_WORLD);
 
   Jali::FrameworkPreference pref;
@@ -222,19 +223,19 @@ TEST(Remap_2nd_Order, Cell_Ctr_Lin_BJ_Limiter_2D) {
                                   source_mesh.get(), &(data[0]));
   source_state.add(myvec);
 
-  // Create Remap objects - one with no limiter and one with limiter
+  // Create Interpolate objects - one with no limiter and one with limiter
   Portage::Jali_Mesh_Wrapper sourceMeshWrapper(*source_mesh);
   Portage::Jali_State_Wrapper sourceStateWrapper(source_state);
 
-  Portage::Remap_2ndOrder<Portage::Jali_Mesh_Wrapper,
+  Portage::Interpolate_2ndOrder<Portage::Jali_Mesh_Wrapper,
                           Portage::Jali_State_Wrapper,
                           Portage::CELL>
-      remapper1(sourceMeshWrapper, sourceStateWrapper, "cellvars",
+      interpolater1(sourceMeshWrapper, sourceStateWrapper, "cellvars",
                 Portage::NOLIMITER);
-  Portage::Remap_2ndOrder<Portage::Jali_Mesh_Wrapper,
+  Portage::Interpolate_2ndOrder<Portage::Jali_Mesh_Wrapper,
                           Portage::Jali_State_Wrapper,
                           Portage::CELL>
-      remapper2(sourceMeshWrapper, sourceStateWrapper, "cellvars",
+      interpolater2(sourceMeshWrapper, sourceStateWrapper, "cellvars",
                 Portage::BARTH_JESPERSEN);
 
   // Gather the cell coordinates for the source and target meshes for
@@ -254,7 +255,7 @@ TEST(Remap_2nd_Order, Cell_Ctr_Lin_BJ_Limiter_2D) {
   std::vector<double> outvals1(ncells_target);
   std::vector<double> outvals2(ncells_target);
 
-  // Remap from source to target mesh
+  // Interpolate from source to target mesh
   for (int c = 0; c < ncells_target; ++c) {
     std::vector<int> xcells;
     std::vector<std::vector<double>> xweights;
@@ -267,13 +268,13 @@ TEST(Remap_2nd_Order, Cell_Ctr_Lin_BJ_Limiter_2D) {
                std::vector<std::vector<double>> const &>
         cells_and_weights(xcells, xweights);
 
-    outvals1[c] = remapper1(cells_and_weights);
-    outvals2[c] = remapper2(cells_and_weights);
+    outvals1[c] = interpolater1(cells_and_weights);
+    outvals2[c] = interpolater2(cells_and_weights);
   }
 
   // Check if we violated the bounds on at least one cell in the
-  // unlimited remap and if we respected the bounds in all cells in
-  // the limited case
+  // unlimited interpolation and if we respected the bounds in all
+  // cells in the limited case
 
   bool outofbounds_unlimited = false;
   for (int c = 0; c < ncells_target; ++c) {
@@ -295,9 +296,10 @@ TEST(Remap_2nd_Order, Cell_Ctr_Lin_BJ_Limiter_2D) {
 }
 
 
-/// Second order remap of constant node-centered field with no limiting in 2D
+/// Second order interpolation of constant node-centered field with no
+/// limiting in 2D
 
-TEST(Remap_2nd_Order, Node_Ctr_Const_No_Limiter) {
+TEST(Interpolate_2nd_Order, Node_Ctr_Const_No_Limiter) {
   Jali::MeshFactory mf(MPI_COMM_WORLD);
   Jali::FrameworkPreference pref;
   pref.push_back(Jali::MSTK);
@@ -325,17 +327,18 @@ TEST(Remap_2nd_Order, Node_Ctr_Const_No_Limiter) {
                                   &(data[0]));
   source_state.add(myvec);
 
-  // Create Remap objects
   Portage::Jali_Mesh_Wrapper sourceMeshWrapper(*source_mesh);
   Portage::Jali_State_Wrapper sourceStateWrapper(source_state);
 
-  Portage::Remap_2ndOrder<Portage::Jali_Mesh_Wrapper,
-                          Portage::Jali_State_Wrapper,
-                          Portage::NODE>
-      remapper(sourceMeshWrapper, sourceStateWrapper, "nodevars",
-               Portage::NOLIMITER);
+  // Create Interpolation objects
 
-  // Remap from source to target mesh
+  Portage::Interpolate_2ndOrder<Portage::Jali_Mesh_Wrapper,
+                                Portage::Jali_State_Wrapper,
+                                Portage::NODE>
+      interpolater(sourceMeshWrapper, sourceStateWrapper, "nodevars",
+                     Portage::NOLIMITER);
+
+  // Interpolate from source to target mesh
 
   std::vector<double> outvals(nnodes_target);
 
@@ -392,7 +395,7 @@ TEST(Remap_2nd_Order, Node_Ctr_Const_No_Limiter) {
               std::vector<std::vector<double>> const &>
         nodes_and_weights(xcells, xwts);
 
-    outvals[n] = remapper(nodes_and_weights);
+    outvals[n] = interpolater(nodes_and_weights);
   }
 
   // Make sure we retrieved the correct value for each cell on the target
@@ -403,9 +406,10 @@ TEST(Remap_2nd_Order, Node_Ctr_Const_No_Limiter) {
 }
 
 
-/// Second order remap of linear node-centered field with no limiting in 2D
+/// Second order interpolation of linear node-centered field with no
+/// limiting in 2D
 
-TEST(Remap_2nd_Order, Node_Ctr_Lin_No_Limiter) {
+TEST(Interpolate_2nd_Order, Node_Ctr_Lin_No_Limiter) {
   Jali::MeshFactory mf(MPI_COMM_WORLD);
   Jali::FrameworkPreference pref;
   pref.push_back(Jali::MSTK);
@@ -441,12 +445,12 @@ TEST(Remap_2nd_Order, Node_Ctr_Lin_No_Limiter) {
   Portage::Jali_Mesh_Wrapper sourceMeshWrapper(*source_mesh);
   Portage::Jali_Mesh_Wrapper targetMeshWrapper(*target_mesh);
 
-  // Create Remap objects
+  // Create Interpolation objects
 
-  Portage::Remap_2ndOrder<Portage::Jali_Mesh_Wrapper,
+  Portage::Interpolate_2ndOrder<Portage::Jali_Mesh_Wrapper,
                           Portage::Jali_State_Wrapper,
                           Portage::NODE>
-      remapper(sourceMeshWrapper, source_state, "nodevars",
+      interpolater(sourceMeshWrapper, source_state, "nodevars",
                Portage::NOLIMITER);
 
   // Gather the dual cell coordinates for source and target meshes for
@@ -490,7 +494,7 @@ TEST(Remap_2nd_Order, Node_Ctr_Lin_No_Limiter) {
     }
   }
 
-  // Remap from source to target mesh
+  // Interpolate from source to target mesh
 
   std::vector<double> outvals(nnodes_target);
 
@@ -506,12 +510,12 @@ TEST(Remap_2nd_Order, Node_Ctr_Lin_No_Limiter) {
                std::vector<std::vector<double>> const &>
         nodes_and_weights(xcells, xwts);
 
-    outvals[n] = remapper(nodes_and_weights);
+    outvals[n] = interpolater(nodes_and_weights);
   }
 
   // Make sure we retrieved the correct value for each node on the
-  // target Second order remapping should preserve a linear field
-  // exactly but node-centered remapping has some quirks - the field
+  // target. Second order interpolation should preserve a linear field
+  // exactly but node-centered interpolation has some quirks - the field
   // does not get preserved exactly at the boundary because the source
   // values for boundary dual cells are not specified inside the dual
   // cells but at one of their vertices or edges. So, check only
@@ -530,9 +534,10 @@ TEST(Remap_2nd_Order, Node_Ctr_Lin_No_Limiter) {
 }
 
 
-/// Second order remap of constant cell-centered field with no limiting in 3D
+/// Second order interpolation of constant cell-centered field with no
+/// limiting in 3D
 
-TEST(Remap_2nd_Order, Cell_Ctr_Const_No_Limiter_3D) {
+TEST(Interpolate_2nd_Order, Cell_Ctr_Const_No_Limiter_3D) {
   Jali::MeshFactory mf(MPI_COMM_WORLD);
 
   Jali::FrameworkPreference pref;
@@ -558,15 +563,16 @@ TEST(Remap_2nd_Order, Cell_Ctr_Const_No_Limiter_3D) {
 
   const int ncells_target = target_mesh->num_entities(Jali::CELL, Jali::OWNED);
 
-  // Create Remap objects
   Portage::Jali_Mesh_Wrapper sourceMeshWrapper(*source_mesh);
   Portage::Jali_State_Wrapper sourceStateWrapper(source_state);
 
-  Portage::Remap_2ndOrder<Portage::Jali_Mesh_Wrapper,
-                          Portage::Jali_State_Wrapper,
-                          Portage::CELL>
-      remapper(sourceMeshWrapper, sourceStateWrapper, "cellvars",
-               Portage::NOLIMITER);
+  // Create Interpolation objects
+
+  Portage::Interpolate_2ndOrder<Portage::Jali_Mesh_Wrapper,
+                                Portage::Jali_State_Wrapper,
+                                Portage::CELL>
+      interpolater(sourceMeshWrapper, sourceStateWrapper, "cellvars",
+                   Portage::NOLIMITER);
 
   // Gather the cell coordinates for source and target meshes for intersection
 
@@ -580,7 +586,7 @@ TEST(Remap_2nd_Order, Cell_Ctr_Const_No_Limiter_3D) {
   for (int c = 0; c < ncells_target; ++c)
     target_mesh->cell_get_coordinates(c, &(target_cell_coords[c]));
 
-  // Remap from source to target mesh
+  // Interpolate from source to target mesh
 
   std::vector<double> outvals(ncells_target);  // field values on target mesh
   for (int c = 0; c < ncells_target; ++c) {
@@ -595,7 +601,7 @@ TEST(Remap_2nd_Order, Cell_Ctr_Const_No_Limiter_3D) {
                std::vector<std::vector<double>> const &>
         cells_and_weights(xcells, xweights);
 
-    outvals[c] = remapper(cells_and_weights);
+    outvals[c] = interpolater(cells_and_weights);
   }
 
   // Make sure we retrieved the correct value for each cell on the target
@@ -606,9 +612,10 @@ TEST(Remap_2nd_Order, Cell_Ctr_Const_No_Limiter_3D) {
 }
 
 
-/// Second order remap of linear cell-centered field with no limiting in 3D
+/// Second order interpolation of linear cell-centered field with no
+/// limiting in 3D
 
-TEST(Remap_2nd_Order, Cell_Ctr_Lin_No_Limiter_3D) {
+TEST(Interpolate_2nd_Order, Cell_Ctr_Lin_No_Limiter_3D) {
   Jali::MeshFactory mf(MPI_COMM_WORLD);
 
   Jali::FrameworkPreference pref;
@@ -636,15 +643,15 @@ TEST(Remap_2nd_Order, Cell_Ctr_Lin_No_Limiter_3D) {
                                   source_mesh.get(), &(data[0]));
   source_state.add(myvec);
 
-  // Create Remap objects
-
   Portage::Jali_Mesh_Wrapper sourceMeshWrapper(*source_mesh);
   Portage::Jali_State_Wrapper sourceStateWrapper(source_state);
 
-  Portage::Remap_2ndOrder<Portage::Jali_Mesh_Wrapper,
+  // Create Interpolation objects
+
+  Portage::Interpolate_2ndOrder<Portage::Jali_Mesh_Wrapper,
                           Portage::Jali_State_Wrapper,
                           Portage::CELL>
-      remapper(sourceMeshWrapper, sourceStateWrapper, "cellvars",
+      interpolater(sourceMeshWrapper, sourceStateWrapper, "cellvars",
                Portage::NOLIMITER);
 
   // Gather the cell coordinates for source and target meshes for intersection
@@ -660,7 +667,8 @@ TEST(Remap_2nd_Order, Cell_Ctr_Lin_No_Limiter_3D) {
   for (int c = 0; c < ncells_target; ++c)
     target_mesh->cell_get_coordinates(c, &(target_cell_coords[c]));
 
-  // Remap from source to target mesh
+  // Interpolate from source to target mesh
+
   std::vector<double> outvals(ncells_target);
 
   for (int c = 0; c < ncells_target; ++c) {
@@ -675,7 +683,7 @@ TEST(Remap_2nd_Order, Cell_Ctr_Lin_No_Limiter_3D) {
               std::vector<std::vector<double>> const &>
         cells_and_weights(xcells, xweights);
 
-    outvals[c] = remapper(cells_and_weights);
+    outvals[c] = interpolater(cells_and_weights);
   }
 
   // Make sure we retrieved the correct value for each cell on the target
@@ -690,10 +698,10 @@ TEST(Remap_2nd_Order, Cell_Ctr_Lin_No_Limiter_3D) {
 }
 
 
-/// Second order remap of discontinuous cell-centered field with
+/// Second order interpolation of discontinuous cell-centered field with
 /// Barth-Jespersen limiting in 3D
 
-TEST(Remap_2nd_Order, Cell_Ctr_BJ_Limiter_3D) {
+TEST(Interpolate_2nd_Order, Cell_Ctr_BJ_Limiter_3D) {
   Jali::MeshFactory mf(MPI_COMM_WORLD);
 
   Jali::FrameworkPreference pref;
@@ -727,20 +735,21 @@ TEST(Remap_2nd_Order, Cell_Ctr_BJ_Limiter_3D) {
                                   source_mesh.get(), &(data[0]));
   source_state.add(myvec);
 
-  // Create Remap objects - one with no limiter and one with limiter
   Portage::Jali_Mesh_Wrapper sourceMeshWrapper(*source_mesh);
   Portage::Jali_State_Wrapper sourceStateWrapper(source_state);
 
-  Portage::Remap_2ndOrder<Portage::Jali_Mesh_Wrapper,
-                          Portage::Jali_State_Wrapper,
-                          Portage::CELL>
-      remapper1(sourceMeshWrapper, sourceStateWrapper, "cellvars",
-                Portage::NOLIMITER);
-  Portage::Remap_2ndOrder<Portage::Jali_Mesh_Wrapper,
-                          Portage::Jali_State_Wrapper,
-                          Portage::CELL>
-      remapper2(sourceMeshWrapper, sourceStateWrapper, "cellvars",
-                Portage::BARTH_JESPERSEN);
+  // Create Interpolation objects - one with no limiter and one with limiter
+
+  Portage::Interpolate_2ndOrder<Portage::Jali_Mesh_Wrapper,
+                                Portage::Jali_State_Wrapper,
+                                Portage::CELL>
+      interpolater1(sourceMeshWrapper, sourceStateWrapper, "cellvars",
+                    Portage::NOLIMITER);
+  Portage::Interpolate_2ndOrder<Portage::Jali_Mesh_Wrapper,
+                                Portage::Jali_State_Wrapper,
+                                Portage::CELL>
+      interpolater2(sourceMeshWrapper, sourceStateWrapper, "cellvars",
+                    Portage::BARTH_JESPERSEN);
 
   // Gather the cell coordinates for the source and target meshes for
   // intersection
@@ -759,7 +768,7 @@ TEST(Remap_2nd_Order, Cell_Ctr_BJ_Limiter_3D) {
   std::vector<double> outvals1(ncells_target);
   std::vector<double> outvals2(ncells_target);
 
-  // Remap from source to target mesh
+  // Interpolate from source to target mesh
   for (int c = 0; c < ncells_target; ++c) {
     std::vector<int> xcells;
     std::vector<std::vector<double>> xweights;
@@ -772,12 +781,12 @@ TEST(Remap_2nd_Order, Cell_Ctr_BJ_Limiter_3D) {
                std::vector<std::vector<double>> const &>
         cells_and_weights(xcells, xweights);
 
-    outvals1[c] = remapper1(cells_and_weights);
-    outvals2[c] = remapper2(cells_and_weights);
+    outvals1[c] = interpolater1(cells_and_weights);
+    outvals2[c] = interpolater2(cells_and_weights);
   }
 
   // Check if we violated the bounds on at least one cell in the
-  // unlimited remap and if we respected the bounds in all cells in
+  // unlimited interpolate and if we respected the bounds in all cells in
   // the limited case
 
   bool outofbounds_unlimited = false;
@@ -804,9 +813,10 @@ TEST(Remap_2nd_Order, Cell_Ctr_BJ_Limiter_3D) {
 }
 
 
-/// Second order remap of constant node-centered field with no limiting in 3D
+/// Second order interpolation of constant node-centered field with no
+/// limiting in 3D
 
-TEST(Remap_2nd_Order, Node_Ctr_Const_No_Limiter_3D) {
+TEST(Interpolate_2nd_Order, Node_Ctr_Const_No_Limiter_3D) {
   Jali::MeshFactory mf(MPI_COMM_WORLD);
   Jali::FrameworkPreference pref;
   pref.push_back(Jali::MSTK);
@@ -840,12 +850,13 @@ TEST(Remap_2nd_Order, Node_Ctr_Const_No_Limiter_3D) {
   Portage::Jali_Mesh_Wrapper sourceMeshWrapper(*source_mesh);
   Portage::Jali_Mesh_Wrapper targetMeshWrapper(*target_mesh);
 
-  // Create Remap objects
+  // Create Interpolate objects
 
-  Portage::Remap_2ndOrder<Portage::Jali_Mesh_Wrapper,
+  Portage::Interpolate_2ndOrder<Portage::Jali_Mesh_Wrapper,
                           Portage::Jali_State_Wrapper,
                           Portage::NODE>
-      remapper(sourceMeshWrapper, source_state, "nodevars", Portage::NOLIMITER);
+      interpolater(sourceMeshWrapper, source_state, "nodevars",
+                   Portage::NOLIMITER);
 
   // Gather the dual cell coordinates for source and target meshes for
   // intersection
@@ -888,7 +899,7 @@ TEST(Remap_2nd_Order, Node_Ctr_Const_No_Limiter_3D) {
     }
   }
 
-  // Remap from source to target mesh
+  // Interpolate from source to target mesh
 
   std::vector<double> outvals(nnodes_target);
 
@@ -904,12 +915,12 @@ TEST(Remap_2nd_Order, Node_Ctr_Const_No_Limiter_3D) {
                std::vector<std::vector<double>> const &>
         nodes_and_weights(xcells, xwts);
 
-    outvals[n] = remapper(nodes_and_weights);
+    outvals[n] = interpolater(nodes_and_weights);
   }
 
   // Make sure we retrieved the correct value for each node on the
-  // target Second order remapping should preserve a linear field
-  // exactly but node-centered remapping has some quirks - the field
+  // target Second order interpolation should preserve a linear field
+  // exactly but node-centered interpolation has some quirks - the field
   // does not get preserved exactly at the boundary because the source
   // values for boundary dual cells are not specified inside the dual
   // cells but at one of their vertices or edges. So, check only
@@ -927,7 +938,7 @@ TEST(Remap_2nd_Order, Node_Ctr_Const_No_Limiter_3D) {
 }
 
 
-TEST(Remap_2nd_Order, Node_Ctr_Lin_No_Limiter_3D) {
+TEST(Interpolate_2nd_Order, Node_Ctr_Lin_No_Limiter_3D) {
   Jali::MeshFactory mf(MPI_COMM_WORLD);
   Jali::FrameworkPreference pref;
   pref.push_back(Jali::MSTK);
@@ -965,13 +976,13 @@ TEST(Remap_2nd_Order, Node_Ctr_Lin_No_Limiter_3D) {
   Portage::Jali_Mesh_Wrapper sourceMeshWrapper(*source_mesh);
   Portage::Jali_Mesh_Wrapper targetMeshWrapper(*target_mesh);
 
-  // Create Remap objects
+  // Create Interpolation objects
 
-  Portage::Remap_2ndOrder<Portage::Jali_Mesh_Wrapper,
-                          Portage::Jali_State_Wrapper,
-                          Portage::NODE>
-      remapper(sourceMeshWrapper, source_state, "nodevars",
-               Portage::NOLIMITER);
+  Portage::Interpolate_2ndOrder<Portage::Jali_Mesh_Wrapper,
+                                Portage::Jali_State_Wrapper,
+                                Portage::NODE>
+      interpolater(sourceMeshWrapper, source_state, "nodevars",
+                   Portage::NOLIMITER);
 
   // Gather the dual cell coordinates for source and target meshes for
   // intersection
@@ -1014,7 +1025,7 @@ TEST(Remap_2nd_Order, Node_Ctr_Lin_No_Limiter_3D) {
     }
   }
 
-  // Remap from source to target mesh
+  // Interpolate from source to target mesh
 
   std::vector<double> outvals(nnodes_target);
 
@@ -1030,12 +1041,12 @@ TEST(Remap_2nd_Order, Node_Ctr_Lin_No_Limiter_3D) {
                std::vector<std::vector<double>> const &>
         nodes_and_weights(xcells, xwts);
 
-    outvals[n] = remapper(nodes_and_weights);
+    outvals[n] = interpolater(nodes_and_weights);
   }
 
   // Make sure we retrieved the correct value for each node on the
-  // target Second order remapping should preserve a linear field
-  // exactly but node-centered remapping has some quirks - the field
+  // target Second order interpolation should preserve a linear field
+  // exactly but node-centered interpolation has some quirks - the field
   // does not get preserved exactly at the boundary because the source
   // values for boundary dual cells are not specified inside the dual
   // cells but at one of their vertices or edges. So, check only
@@ -1055,10 +1066,10 @@ TEST(Remap_2nd_Order, Node_Ctr_Lin_No_Limiter_3D) {
 }
 
 
-/// Second order remap of discontinuous node-centered field with
+/// Second order interpolation of discontinuous node-centered field with
 /// Barth-Jespersen limiting in 3D
 
-TEST(Remap_2nd_Order, Node_Ctr_BJ_Limiter_3D) {
+TEST(Interpolate_2nd_Order, Node_Ctr_BJ_Limiter_3D) {
   Jali::MeshFactory mf(MPI_COMM_WORLD);
   Jali::FrameworkPreference pref;
   pref.push_back(Jali::MSTK);
@@ -1096,24 +1107,24 @@ TEST(Remap_2nd_Order, Node_Ctr_BJ_Limiter_3D) {
   Jali::StateVector<double> myvec("nodevars", Jali::NODE, source_mesh.get(),
                                   &(data[0]));
   source_state.add(myvec);
-
+  
   // Create a mesh wrapper
-
+  
   Portage::Jali_Mesh_Wrapper sourceMeshWrapper(*source_mesh);
   Portage::Jali_Mesh_Wrapper targetMeshWrapper(*target_mesh);
-
-  // Create Remap objects - one with no limiter and one with limiter
-
-  Portage::Remap_2ndOrder<Portage::Jali_Mesh_Wrapper,
-                          Portage::Jali_State_Wrapper,
-                          Portage::NODE>
-                         remapper1(sourceMeshWrapper, source_state, "nodevars",
-                                   Portage::NOLIMITER);
-  Portage::Remap_2ndOrder<Portage::Jali_Mesh_Wrapper,
-                          Portage::Jali_State_Wrapper,
-                          Portage::NODE>
-                         remapper2(sourceMeshWrapper, source_state, "nodevars",
-                                   Portage::BARTH_JESPERSEN);
+  
+  // Create Interpolation objects - one with no limiter and one with limiter
+  
+  Portage::Interpolate_2ndOrder<Portage::Jali_Mesh_Wrapper,
+                                Portage::Jali_State_Wrapper,
+                                Portage::NODE>
+                         interpolater1(sourceMeshWrapper, source_state,
+                                       "nodevars", Portage::NOLIMITER);
+  Portage::Interpolate_2ndOrder<Portage::Jali_Mesh_Wrapper,
+                                Portage::Jali_State_Wrapper,
+                                Portage::NODE>
+                         interpolater2(sourceMeshWrapper, source_state,
+                                         "nodevars", Portage::BARTH_JESPERSEN);
 
   // Gather the dual cell coordinates for source and target meshes for
   // intersection
@@ -1156,7 +1167,7 @@ TEST(Remap_2nd_Order, Node_Ctr_BJ_Limiter_3D) {
     }
   }
 
-  // Remap from source to target mesh
+  // Interpolate from source to target mesh
 
   std::vector<double> outvals1(nnodes_target);
   std::vector<double> outvals2(nnodes_target);
@@ -1173,12 +1184,12 @@ TEST(Remap_2nd_Order, Node_Ctr_BJ_Limiter_3D) {
                std::vector<std::vector<double>> const &>
         nodes_and_weights(xcells, xwts);
 
-    outvals1[n] = remapper1(nodes_and_weights);
-    outvals2[n] = remapper2(nodes_and_weights);
+    outvals1[n] = interpolater1(nodes_and_weights);
+    outvals2[n] = interpolater2(nodes_and_weights);
   }
 
   // Check if we violated the bounds on at least one node in the
-  // unlimited remap and if we respected the bounds on all nodes in
+  // unlimited interpolate and if we respected the bounds on all nodes in
   // the limited case
 
   bool outofbounds_unlimited = false;
