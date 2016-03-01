@@ -45,6 +45,7 @@ TEST(intersectClipper, simple){
 //   cellB.emplace_back(5.5,2.5);
 //   cellB.emplace_back(2.5,4);
 
+//   IntersectClipper<Jali_Mesh_Wrapper> isect{Jali_Mesh_Wrapper, Jali_Mesh_Wrapper};
 //   std::vector<std::vector<double> > moments = isect(cellA, cellB); 
 //   for(int i=0;i<moments.size();i++){
 //     for(int j=0;j<moments[i].size();j++){

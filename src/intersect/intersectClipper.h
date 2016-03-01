@@ -127,7 +127,7 @@ private:
 
 //We must use the same max size for all the polygons, so the number we are looking for is the maximum value in the set--all the X and Y values will be converted using this value
 static double updateMaxSize( const std::vector<std::pair<double, double> > poly, double max_size_poly){
-  for(auto &i: poly){
+  for(auto const &i: poly){
     double m = std::max(std::abs(i.first), std::abs(i.second));
     if (m > max_size_poly) max_size_poly = m;
   }
