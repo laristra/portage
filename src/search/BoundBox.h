@@ -19,9 +19,13 @@
 #include <iostream>
 #include <assert.h>
 #include <limits>
-#include "Point.h"
+#include "portage/support/Point.h"
+#include "portage/support/Vector.h"
 
 namespace gk {
+
+    using Portage::Point;
+    using Portage::Vector;
 
     const double REAL_MAX = std::numeric_limits<double>::max();
     const double REAL_MIN = std::numeric_limits<double>::min();

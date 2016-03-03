@@ -11,10 +11,13 @@
 #include <set>
 #include <cstdlib>
 #include "BoundBox.h"
-#include "Point.h"
-#include "Vector.h"
+#include "portage/support/Point.h"
+#include "portage/support/Vector.h"
 
 namespace gk {
+
+using Portage::Point;
+using Portage::Vector;
 
 #define SWAP(a, b, type) {  \
     type c_ = b; \

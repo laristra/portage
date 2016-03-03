@@ -7,6 +7,8 @@
 set(support_HEADERS
     portage.h
     matrix.h
+    Point.h
+    Vector.h
     PARENT_SCOPE
 )
 

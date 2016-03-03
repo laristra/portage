@@ -10,8 +10,6 @@ set(search_HEADERS
     search_kdtree3.h
     kdtree.h
     BoundBox.h
-    Point.h
-    Vector.h
     PARENT_SCOPE
 )
 

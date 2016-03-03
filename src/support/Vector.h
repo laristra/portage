@@ -1,5 +1,5 @@
-#ifndef __GK_VECTOR_H__ 
-#define __GK_VECTOR_H__
+#ifndef SRC_SUPPORT_VECTOR_H_
+#define SRC_SUPPORT_VECTOR_H_
 
 /**
 ///////////////////////////////////////////////////////////////////////////////
@@ -18,7 +18,7 @@
 #include <assert.h>
 #include <iostream>
 
-namespace gk
+namespace Portage
 {
 
     /*!
@@ -29,7 +29,7 @@ namespace gk
       */
     template <long D> class Vector
     {
-        private: 
+        private:
             double m_comp[D];
 
         public:
@@ -44,7 +44,7 @@ namespace gk
               @brief Specialized constructor for 2d Vectors.
               @param[in] xm_comp,ym_comp The (x,y) coordinate pair.
               */
-            inline Vector(const double& xm_comp, 
+            inline Vector(const double& xm_comp,
                           const double& ym_comp) {
                 assert (D==2);
                 m_comp[0] = xm_comp;
@@ -55,8 +55,8 @@ namespace gk
               @brief Specialized constructor for 3d Vectors.
               @param[in] xm_comp,ym_comp,zm_comp The (x,y,z) coordinate triple.
               */
-            inline Vector(const double& xm_comp, 
-                          const double& ym_comp, 
+            inline Vector(const double& xm_comp,
+                          const double& ym_comp,
                           const double& zm_comp) {
                 assert (D==3);
                 m_comp[0] = xm_comp;
@@ -66,12 +66,12 @@ namespace gk
 
             /// Return component @c i of the Vector.
             inline const double& operator[](const long& i) const {
-                return m_comp[i]; 
+                return m_comp[i];
             }
 
             /// Return component @c i of the Vector.
             inline double& operator[](const long& i) {
-                return m_comp[i]; 
+                return m_comp[i];
             }
 
             /// Add the Vector @c rhs to this Vector.
@@ -166,49 +166,49 @@ namespace gk
 
     /// Add two vectors.
     template<long D> inline const Vector<D>
-        operator+(const Vector<D>& a, const Vector<D>& b) 
+        operator+(const Vector<D>& a, const Vector<D>& b)
         {
             return Vector<D>(a) += b;
         }
 
     /// Subtract two vectors.
     template<long D> inline const Vector<D>
-        operator-(const Vector<D>& a, const Vector<D>& b) 
+        operator-(const Vector<D>& a, const Vector<D>& b)
         {
             return Vector<D>(a) -= b;
         }
 
     /// Multiply a vector by a scalar, @f$ s \vec{a}@f$.
     template<long D> inline const Vector<D>
-        operator*(const Vector<D>& a, const double& s) 
+        operator*(const Vector<D>& a, const double& s)
         {
             return Vector<D>(a) *= s;
         }
 
-    /// Multiply a vector by a scalar, @f$ s \vec{a}@f$. 
+    /// Multiply a vector by a scalar, @f$ s \vec{a}@f$.
     template<long D> inline const Vector<D>
-        operator*(const double& s, const Vector<D>& a) 
+        operator*(const double& s, const Vector<D>& a)
         {
             return Vector<D>(a) *= s;
         }
 
     /// Divide a vector by a scalar, @f$ \frac{1}{s} \vec{a}@f$.
     template<long D> inline const Vector<D>
-        operator/(const Vector<D>& a, const double& s) 
+        operator/(const Vector<D>& a, const double& s)
         {
             return Vector<D>(a) /= s;
         }
 
     /// Pretty printing of a Vector to an output stream.
     template<long D> inline std::ostream&
-        operator<<(std::ostream& os, const Vector<D>& v) 
+        operator<<(std::ostream& os, const Vector<D>& v)
         {
             return v.writeToStream(os);
         }
 
     /// Read in a Vector from an input stream.
     template<long D> inline std::istream&
-        operator>>(std::istream& is, Vector<D>& v) 
+        operator>>(std::istream& is, Vector<D>& v)
         {
             return v.readFromStream(is);
         }
@@ -240,6 +240,7 @@ namespace gk
             return max;
         }
 
-}
+}  // namespace Portage
 
-#endif
+
+#endif  // SRC_SUPPORT_VECTOR_H_
