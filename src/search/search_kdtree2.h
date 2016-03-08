@@ -8,7 +8,7 @@
 
 #include <vector>
 
-#include "Point.h"
+#include "portage/support/Point.h"
 #include "BoundBox.h"
 #include "kdtree.h"
 

@@ -13,15 +13,15 @@
 //                     baj@lanl.gov                                          //
 ///////////////////////////////////////////////////////////////////////////////
 
-#ifndef __GK_POINT_H__
-#define __GK_POINT_H__
+#ifndef SRC_SUPPORT_POINT_H_
+#define SRC_SUPPORT_POINT_H_
 
 #include <assert.h>
 #include <iostream>
 #include <vector>
-#include "Vector.h"
+#include "portage/support/Vector.h"
 
-namespace gk
+namespace Portage
 {
 
     const long X = 0;
@@ -36,7 +36,7 @@ namespace gk
       */
     template <long D> class Point
     {
-        private: 
+        private:
             double m_loc[D];
 
         public:
@@ -80,7 +80,7 @@ namespace gk
 
             /// Convert a Vector to a Point.
             explicit Point(const Vector<D>& v) {
-                for(long i = 0; i < D; i++) 
+                for(long i = 0; i < D; i++)
                     m_loc[i] = v[i];
             }
 
@@ -92,12 +92,12 @@ namespace gk
 
             /// Return component @c i of the Point.
             inline const double& operator[](const long& i) const {
-                return m_loc[i]; 
+                return m_loc[i];
             }
 
             /// Return component @c i of the Point.
             inline double& operator[](const long& i) {
-                return m_loc[i]; 
+                return m_loc[i];
             }
 
             /// Translate this Point along the Vector @c v.
@@ -176,7 +176,7 @@ namespace gk
         operator<(const Point<D>& p1, const Point<D>& p2) {
             if (approxEq (p1,p2))
                 return false;
-            else 
+            else
                 for (long i=0;i<D;++i) {
                     if (p1[i]<p2[i])
                         return true;
@@ -191,33 +191,33 @@ namespace gk
         Point2 result;
 
         result[0] = sqrt(p[0]*p[0]+p[1]*p[1]);
-        result[1] = p[2]; 
+        result[1] = p[2];
         return result;
     }
 
     inline const Point3
         createP3(double x, double y, double z) {
-            Point3 p; 
+            Point3 p;
 
             p[0] = x;
-            p[1] = y; 
-            p[2] = z; 
+            p[1] = y;
+            p[2] = z;
 
             return p;
         }
 
     inline const Point2
         createP2(double x, double y) {
-            Point2 p; 
+            Point2 p;
 
-            p[0] = x; 
-            p[1] = y; 
+            p[0] = x;
+            p[1] = y;
 
             return p;
         }
 
 #if 0
-    template <typename D> 
+    template <typename D>
         class AbsPoint : public Point
     {
 
@@ -230,5 +230,6 @@ namespace gk
     };
 #endif
 
-}
-#endif
+}  // namespace Portage
+
+#endif  // SRC_SUPPORT_POINT_H_
