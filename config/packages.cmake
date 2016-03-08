@@ -4,18 +4,32 @@
 #~----------------------------------------------------------------------------~#
 
 #------------------------------------------------------------------------------#
-# If a C++11 compiler is available, then set the appropriate flags
+# If a C++14 compiler is available, then set the appropriate flags
 #------------------------------------------------------------------------------#
 
-include(cxx11)
+include(cxx14)
 
-check_for_cxx11_compiler(CXX11_COMPILER)
+check_for_cxx14_compiler(CXX14_COMPILER)
 
-if(CXX11_COMPILER)
-    enable_cxx11()
+if(CXX14_COMPILER)
+    enable_cxx14()
 else()
-    message(FATAL_ERROR "C++11 compatible compiler not found")
+    message(FATAL_ERROR "C++14 compatible compiler not found")
 endif()
+
+# #------------------------------------------------------------------------------#
+# # If a C++11 compiler is available, then set the appropriate flags
+# #------------------------------------------------------------------------------#
+
+# include(cxx11)
+
+# check_for_cxx11_compiler(CXX11_COMPILER)
+
+# if(CXX11_COMPILER)
+#     enable_cxx11()
+# else()
+#     message(FATAL_ERROR "C++11 compatible compiler not found")
+# endif()
 
 #------------------------------------------------------------------------------#
 # Set up MPI builds
@@ -68,6 +82,15 @@ message(STATUS "Jali_TPL_LIBRARY_DIRS=${Jali_TPL_LIBRARY_DIRS}")
 message(STATUS "Jali_TPL_LIBRARIES=${Jali_TPL_LIBRARIES}")
 
 include_directories(${Jali_INCLUDE_DIRS} ${Jali_TPL_INCLUDE_DIRS})
+
+#-----------------------------------------------------------------------------
+# FleCSI location
+#-----------------------------------------------------------------------------
+set(FLECSI_INSTALL_DIR "$ENV{FLECSI_INCLUDE_DIR}" CACHE
+  PATH "Installed FleCSI location.")
+if(FLECSI_INSTALL_DIR)
+  message(STATUS "Using FLECSI_INSTALL_DIR=${FLECSI_INSTALL_DIR}")
+endif(FLECSI_INSTALL_DIR)
 
 #-----------------------------------------------------------------------------
 # General NGC include directory information
