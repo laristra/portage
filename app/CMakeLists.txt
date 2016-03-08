@@ -27,6 +27,14 @@ set_target_properties(shotshellapp PROPERTIES
                       LINK_FLAGS "${MPI_CXX_LINK_FLAGS}")
 target_link_libraries(shotshellapp ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES})
 
+# FleCSI example
+if(FLECSI_INSTALL_DIR)
+  add_executable(portage_flecsiapp main_flecsi.cc)
+  include_directories(${FLECSI_INSTALL_DIR}/include
+    ${FLECSI_INSTALL_DIR}/include/flecsi)
+  target_link_libraries(portage_flecsiapp ${FLECSI_INSTALL_DIR}/lib/libflecsi.a)
+endif(FLECSI_INSTALL_DIR)
+
 #TCMalloc option
 set(ENABLE_TCMALLOC TRUE CACHE BOOL "Use TCMalloc")
 if(ENABLE_TCMALLOC)
