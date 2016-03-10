@@ -37,6 +37,18 @@ if(FLECSI_INSTALL_DIR)
   target_link_libraries(portage_flecsiapp ${MPI_CXX_LIBRARIES})
   set_target_properties(portage_flecsiapp PROPERTIES
                         LINK_FLAGS "${MPI_CXX_LINK_FLAGS}")
+
+  add_executable(portage_jali2flecsiapp main_jali_to_flecsi.cc)
+  target_link_libraries(portage_jali2flecsiapp portage ${EXTRA_LIBS})
+  include_directories(${FLECSI_INCLUDE_DIRS})
+  target_link_libraries(portage_jali2flecsiapp ${FLECSI_LIBRARIES})
+# these appear needed because of something we are pulling in within src
+  target_link_libraries(portage_jali2flecsiapp ${MPI_CXX_LIBRARIES})
+  target_link_libraries(portage_jali2flecsiapp ${Jali_LIBRARIES}
+                        ${Jali_TPL_LIBRARIES})
+  set_target_properties(portage_jali2flecsiapp PROPERTIES
+                        LINK_FLAGS "${MPI_CXX_LINK_FLAGS}")
+
 endif(FLECSI_INSTALL_DIR)
 
 #TCMalloc option
