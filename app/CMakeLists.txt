@@ -30,9 +30,13 @@ target_link_libraries(shotshellapp ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES})
 # FleCSI example
 if(FLECSI_INSTALL_DIR)
   add_executable(portage_flecsiapp main_flecsi.cc)
-  include_directories(${FLECSI_INSTALL_DIR}/include
-    ${FLECSI_INSTALL_DIR}/include/flecsi)
-  target_link_libraries(portage_flecsiapp ${FLECSI_INSTALL_DIR}/lib/libflecsi.a)
+  target_link_libraries(portage_flecsiapp portage ${EXTRA_LIBS})
+  include_directories(${FLECSI_INCLUDE_DIRS})
+  target_link_libraries(portage_flecsiapp ${FLECSI_LIBRARIES})
+# these appear needed because of something we are pulling in within src
+  target_link_libraries(portage_flecsiapp ${MPI_CXX_LIBRARIES})
+  set_target_properties(portage_flecsiapp PROPERTIES
+                        LINK_FLAGS "${MPI_CXX_LINK_FLAGS}")
 endif(FLECSI_INSTALL_DIR)
 
 #TCMalloc option

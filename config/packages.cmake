@@ -90,6 +90,15 @@ set(FLECSI_INSTALL_DIR "$ENV{FLECSI_INCLUDE_DIR}" CACHE
   PATH "Installed FleCSI location.")
 if(FLECSI_INSTALL_DIR)
   message(STATUS "Using FLECSI_INSTALL_DIR=${FLECSI_INSTALL_DIR}")
+  set(FLECSI_INCLUDE_DIRS ${FLECSI_INSTALL_DIR}/include/flecsi
+                          ${FLECSI_INSTALL_DIR}/include)
+  set(FLECSI_LIBRARY_DIR ${FLECSI_INSTALL_DIR}/lib)
+  set(FLECSI_LIBRARIES ${FLECSI_LIBRARY_DIR}/libflecsi.a)
+
+  # include_directories(${FLECSI_INSTALL_DIR}/include
+  #                     ${FLECSI_INSTALL_DIR}/include/flecsi)
+  include_directories(${FLECSI_INCLUDE_DIRS})
+
 endif(FLECSI_INSTALL_DIR)
 
 #-----------------------------------------------------------------------------

@@ -223,11 +223,12 @@ int main(int argc, char** argv) {
     Portage::Jali_State_Wrapper targetStateWrapper(targetState);
 
     // Build the main driver data for this mesh type
-    Portage::Driver<Portage::Jali_Mesh_Wrapper> d(Portage::CELL,
-                                                  inputMeshWrapper,
-                                                  sourceStateWrapper,
-                                                  targetMeshWrapper,
-                                                  targetStateWrapper);
+    Portage::Driver<Portage::Jali_Mesh_Wrapper,
+                    Portage::Jali_State_Wrapper> d(Portage::CELL,
+                                                   inputMeshWrapper,
+                                                   sourceStateWrapper,
+                                                   targetMeshWrapper,
+                                                   targetStateWrapper);
     // Register the variable name and interpolation order with the driver
     std::vector<std::string> remap_fields;
     remap_fields.push_back("celldata");
@@ -363,11 +364,12 @@ int main(int argc, char** argv) {
     Portage::Jali_State_Wrapper targetStateWrapper(targetState);
 
     // Build the main driver data for this mesh type
-    Portage::Driver<Portage::Jali_Mesh_Wrapper> d(Portage::NODE,
-                                                inputMeshWrapper,
-                                                sourceStateWrapper,
-                                                targetMeshWrapper,
-                                                targetStateWrapper);
+    Portage::Driver<Portage::Jali_Mesh_Wrapper,
+                    Portage::Jali_State_Wrapper> d(Portage::NODE,
+                                                   inputMeshWrapper,
+                                                   sourceStateWrapper,
+                                                   targetMeshWrapper,
+                                                   targetStateWrapper);
 
     // Register the variable name and remap order with the driver
     std::vector<std::string> remap_fields;
