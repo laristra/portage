@@ -13,6 +13,8 @@
 #include "Mesh.hh"
 #include "MeshFactory.hh"
 
+#include "portage/support/Point.h"
+
 using std::abs;
 
 /*!
@@ -27,16 +29,16 @@ using std::abs;
   @param[in] eps Tolerance
   @return Whether a == b within the accuracy @c eps
  */
-bool vdd_eq(const std::vector<std::pair<double,double>> &a,
-    const std::vector<std::pair<double,double>> &b, const double eps=1e-12)
+bool vdd_eq(const std::vector<Portage::Point<2>> &a,
+    const std::vector<Portage::Point<2>> &b, const double eps=1e-12)
 {
     // Can't be equal if # of entries differ:
     if (a.size() != b.size()) return false;
     // Loop over elements in "a" and "b":
     for (size_t i = 0; i < a.size(); i++) {
         // values not equal
-        if (abs(std::get<0>(a[i]) - std::get<0>(b[i])) > eps or
-            abs(std::get<1>(a[i]) - std::get<1>(b[i])) > eps) return false;
+        if (abs(a[i][0] - b[i][0]) > eps or
+            abs(a[i][1] - b[i][1]) > eps) return false;
     }
     return true;
 }
@@ -48,13 +50,13 @@ bool vdd_eq(const std::vector<std::pair<double,double>> &a,
   @param[in,out] xylist      The xylist vector
  */
 void coordinates_canonical_rotation(
-      const std::pair<double, double> center_node,
-      std::vector<std::pair<double, double>> * const xylist)
+      const Portage::Point<2>& center_node,
+      std::vector<Portage::Point<2>> * const xylist)
 {
     int i = 0;
     auto angle = [&]() {
-        return std::atan2(std::get<1>((*xylist)[i])-std::get<1>(center_node),
-                std::get<0>((*xylist)[i])-std::get<0>(center_node));
+        return std::atan2((*xylist)[i][1] - center_node[1],
+                          (*xylist)[i][0] - center_node[0]);
     };
     double a = angle();
     while (a >= 0) { i++; i = i % xylist->size(); a = angle(); }
@@ -72,8 +74,8 @@ void coordinates_canonical_rotation(
 void dual_cell_coordinates_canonical_rotation(
     const Portage::Jali_Mesh_Wrapper &mesh_wrapper,
     int const nodeid,
-    std::vector<std::pair<double,double> > * const xylist) {
-  std::pair<double, double> center_node;
+    std::vector<Portage::Point<2>> * const xylist) {
+  Portage::Point<2> center_node;
   mesh_wrapper.node_get_coordinates(nodeid, &center_node);
   coordinates_canonical_rotation(center_node, xylist);
 }
@@ -82,7 +84,7 @@ void dual_cell_coordinates_canonical_rotation(
   @brief Unit test for equality comparisons
  */
 TEST(Jali_Mesh, vdd_eq) {
-    std::vector<std::pair<double,double>> a, b, c;
+    std::vector<Portage::Point<2>> a, b, c;
     a = {{0.25, 0}, {0.25, 0.25}};
     b = {{0.25, 0}, {0.25, 0.25}};
     c = {{0.25, 0.25}, {0.25, 0}};
@@ -98,7 +100,7 @@ TEST(Jali_Mesh, vdd_eq) {
   @brief Unit test for canonical rotations of coordinates
  */
 TEST(Jali_Mesh, coordinates_canonical_rotation) {
-    std::vector<std::pair<double,double>> xylist, xylist_canonical;
+    std::vector<Portage::Point<2>> xylist, xylist_canonical;
     xylist_canonical = {
                 {0.75, 0.5},
                 {0.75, 0.75},
@@ -170,7 +172,7 @@ TEST(Jali_Mesh, dual_cell_get_coordinates) {
     Portage::Jali_Mesh_Wrapper mesh_wrapper(*mesh);
     double eps = 1e-12;
 
-    std::vector<std::pair<double,double>> xylist;
+    std::vector<Portage::Point<2>> xylist;
     mesh_wrapper.dual_cell_get_coordinates(0, &xylist);
     ASSERT_TRUE(vdd_eq(xylist, {
                 {0, 0},
@@ -314,12 +316,12 @@ TEST(Jali_Mesh, Get_Neighbor_Cells) {
   // node, we should get back all the other dual cells in the mesh
   
   int center_node = 13;
-  std::tuple<double,double,double> cxyz;
+  Portage::Point<3> cxyz;
   mesh_wrapper.node_get_coordinates(center_node,&cxyz);
 
-  ASSERT_EQ(0.5,std::get<0>(cxyz));
-  ASSERT_EQ(0.5,std::get<1>(cxyz));
-  ASSERT_EQ(0.5,std::get<2>(cxyz));
+  ASSERT_EQ(0.5, cxyz[0]);
+  ASSERT_EQ(0.5, cxyz[1]);
+  ASSERT_EQ(0.5, cxyz[2]);
 
   std::vector<int> adjdualcellids; 
 

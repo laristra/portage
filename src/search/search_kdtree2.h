@@ -51,12 +51,11 @@ namespace Portage {
 
                    // find bounding boxes for all cells
                    for (int c = 0; c < numCells; ++c) {
-                       std::vector<std::pair<double,double>> cell_coord;
+                       std::vector<Point<2>> cell_coord;
                        sourceMesh_.cell_get_coordinates(c, &cell_coord);
                        gk::IsotheticBBox<2> bb;
                        for (int n = 0; n < cell_coord.size(); ++n) {
-                           bb.add(gk::Point<2>(cell_coord[n].first,
-                                  cell_coord[n].second));
+                           bb.add(cell_coord[n]);
                        }
                        bboxes.emplace_back(bb);
                    }
@@ -100,12 +99,11 @@ namespace Portage {
         operator() (const int cellId, std::vector<int> *candidates)
         const {
             // find bounding box for target cell
-            std::vector<std::pair<double,double>> cell_coord;
+            std::vector<Point<2>> cell_coord;
             targetMesh_.cell_get_coordinates(cellId, &cell_coord);
             gk::IsotheticBBox<2> bb;
             for (int n = 0; n < cell_coord.size(); ++n) {
-                bb.add(gk::Point<2>(cell_coord[n].first,
-                       cell_coord[n].second));
+                bb.add(cell_coord[n]);
             }
 
             // now see which sourceMesh cells have bounding boxes overlapping

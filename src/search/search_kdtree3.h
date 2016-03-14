@@ -7,7 +7,6 @@
 #define SEARCH_KDTREE3_H
 
 #include <vector>
-#include <tuple>
 
 #include "portage/support/Point.h"
 #include "BoundBox.h"
@@ -23,6 +22,8 @@ namespace Portage {
     @tparam TargetMeshType The mesh type of the output mesh.
 
     This search is only valid for 3d meshes.
+    @todo Can this class now be combined with the 2d version to make
+          a single class templated on dimension?
    */
 template <typename SourceMeshType, typename TargetMeshType>
 class SearchKDTree3 {
@@ -53,13 +54,11 @@ class SearchKDTree3 {
         
         // find bounding boxes for all cells
         for (int c = 0; c < numCells; ++c) {
-            std::vector<std::tuple<double, double, double>> cell_coord;
+            std::vector<Point<3>> cell_coord;
             sourceMesh_.cell_get_coordinates(c, &cell_coord);
             gk::IsotheticBBox<3> bb;
             for (const auto& cc : cell_coord) {
-                bb.add(gk::Point<3>(std::get<0>(cc),
-                                    std::get<1>(cc),
-                                    std::get<2>(cc)));
+                bb.add(cc);
             }
             bboxes.emplace_back(bb);
         }
@@ -105,13 +104,11 @@ void SearchKDTree3<SourceMeshType, TargetMeshType>::
 operator() (const int cellId, std::vector<int> *candidates)
 const {
     // find bounding box for target cell
-    std::vector<std::tuple<double, double, double>> cell_coord;
+    std::vector<Point<3>> cell_coord;
     targetMesh_.cell_get_coordinates(cellId, &cell_coord);
     gk::IsotheticBBox<3> bb;
     for (const auto& cc : cell_coord) {
-        bb.add(gk::Point<3>(std::get<0>(cc),
-                            std::get<1>(cc),
-                            std::get<2>(cc)));
+        bb.add(cc);
     }
 
     // now see which sourceMesh cells have bounding boxes overlapping

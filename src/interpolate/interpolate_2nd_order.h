@@ -12,7 +12,6 @@
 #include <string>
 #include <utility>
 #include <vector>
-#include <tuple>
 
 #include "portage/support/portage.h"
 #include "portage/interpolate/gradient.h"
@@ -438,17 +437,17 @@ double Interpolate_2ndOrder<MeshType, StateType, NODE> :: operator()
     // the dual cell
     std::vector<double> srccell_coord(spdim);
     if (spdim == 2) {
-      std::pair<double, double> coord_pair;
-      source_mesh_.node_get_coordinates(srccell, &coord_pair);
-      srccell_coord[0] = coord_pair.first;
-      srccell_coord[1] = coord_pair.second;
+      Point<2> point;
+      source_mesh_.node_get_coordinates(srccell, &point);
+      srccell_coord[0] = point[0];
+      srccell_coord[1] = point[1];
     }
     else if (spdim == 3) {
-      std::tuple<double, double, double> coord_tuple;
-      source_mesh_.node_get_coordinates(srccell, &coord_tuple);
-      srccell_coord[0] = std::get<0>(coord_tuple);
-      srccell_coord[1] = std::get<1>(coord_tuple);
-      srccell_coord[2] = std::get<2>(coord_tuple);
+      Point<3> point;
+      source_mesh_.node_get_coordinates(srccell, &point);
+      srccell_coord[0] = point[0];
+      srccell_coord[1] = point[1];
+      srccell_coord[2] = point[2];
     }
 
     std::vector<double> xsect_centroid(spdim);
