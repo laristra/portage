@@ -6,8 +6,10 @@
 #ifndef SEARCH_SIMPLE_H
 #define SEARCH_SIMPLE_H
 
-#include <utility>
 #include <vector>
+#include <algorithm>
+
+#include "portage/support/Point.h"
 
 
 namespace { // unnamed
@@ -23,7 +25,7 @@ namespace { // unnamed
     @param[in,out] yhigh Maximum @a y of bounding box.
    */
 void getBoundingBox(
-    const std::vector<std::pair<double, double>> &cell_coord,
+    const std::vector<Portage::Point<2>> &cell_coord,
     double* xlow, double* xhigh,
     double* ylow, double* yhigh)
 {
@@ -32,8 +34,8 @@ void getBoundingBox(
     double yl = big;  double yh = -big;
 
     for (const auto& p : cell_coord) {
-        const double x = p.first;
-        const double y = p.second;
+        const double x = p[0];
+        const double y = p[1];
         xl = std::min(xl, x);  xh = std::max(xh, x);
         yl = std::min(yl, y);  yh = std::max(yh, y);
     }
@@ -88,7 +90,7 @@ class SearchSimple {
         
         // find bounding boxes for all cells
         for (int c = 0; c < numCells; ++c) {
-            std::vector<std::pair<double, double>> cell_coord;
+            std::vector<Point<2>> cell_coord;
             sourceMesh_.cell_get_coordinates(c, &cell_coord);
             getBoundingBox(cell_coord,
                            &xlow_[c], &xhigh_[c],
@@ -135,7 +137,7 @@ void SearchSimple<SourceMeshType, TargetMeshType>::
 operator() (const int cellId, std::vector<int> *candidates)
 const {
     // find bounding box for target cell
-    std::vector<std::pair<double, double>> cell_coord;
+    std::vector<Point<2>> cell_coord;
     targetMesh_.cell_get_coordinates(cellId, &cell_coord);
     double txlow, txhigh, tylow, tyhigh;
     getBoundingBox(cell_coord, &txlow, &txhigh, &tylow, &tyhigh);

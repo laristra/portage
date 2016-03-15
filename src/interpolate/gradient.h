@@ -7,10 +7,10 @@
 #define SRC_INTERPOLATE_GRADIENT_H_
 
 #include <algorithm>
-#include <tuple>
 #include <stdexcept>
 #include <string>
 
+#include "portage/support/Point.h"
 #include "portage/support/matrix.h"
 
 namespace Portage {
@@ -280,7 +280,7 @@ Limited_Gradient<MeshType, StateType, CELL> :: operator() (int const cellid) {
       double cellcenval = vals_[cellid];
       if (dim == 2) {
 
-        std::vector<std::pair<double, double>> cellcoords;
+        std::vector<Point<2>> cellcoords;
         mesh_.cell_get_coordinates(cellid, &cellcoords);
 
         for (auto coord : cellcoords) {
@@ -289,8 +289,8 @@ Limited_Gradient<MeshType, StateType, CELL> :: operator() (int const cellid) {
           // val = cellcenval + grad*(coord-cellcencoord)
           // diff = val-cellcenval = grad DOT (coord-cellcencoord);
   
-          double diff = grad[0]*(std::get<0>(coord)-cen[0]) +
-              grad[1]*(std::get<1>(coord)-cen[1]);
+          double diff = grad[0]*(coord[0]-cen[0]) +
+              grad[1]*(coord[1]-cen[1]);
           double extremeval = (diff > 0.0) ? maxval : minval;
           double phi_new = (diff == 0.0) ? 1 : (extremeval-cellcenval)/diff;
           phi = std::min(phi_new, phi);
@@ -298,7 +298,7 @@ Limited_Gradient<MeshType, StateType, CELL> :: operator() (int const cellid) {
       }
       else if (dim == 3) {
 
-        std::vector<std::tuple<double, double, double>> cellcoords;
+        std::vector<Point<3>> cellcoords;
         mesh_.cell_get_coordinates(cellid, &cellcoords);
 
         for (auto coord : cellcoords) {
@@ -307,9 +307,9 @@ Limited_Gradient<MeshType, StateType, CELL> :: operator() (int const cellid) {
           // val = cellcenval + grad*(coord-cellcencoord)
           // diff = val-cellcenval = grad DOT (coord-cellcencoord);
   
-          double diff = grad[0]*(std::get<0>(coord)-cen[0]) +
-              grad[1]*(std::get<1>(coord)-cen[1]) +
-            grad[2]*(std::get<2>(coord)-cen[2]);
+          double diff = grad[0]*(coord[0]-cen[0]) +
+              grad[1]*(coord[1]-cen[1]) +
+              grad[2]*(coord[2]-cen[2]);
           double extremeval = (diff > 0.0) ? maxval : minval;
           double phi_new = (diff == 0.0) ? 1 : (extremeval-cellcenval)/diff;
           phi = std::min(phi_new, phi);
@@ -404,26 +404,23 @@ Limited_Gradient<MeshType, StateType, NODE> :: operator() (int const nodeid) {
   std::vector<int> nbrids;
   mesh_.dual_cell_get_node_adj_cells(nodeid, ALL, &nbrids);
 
-  if (dim ==2) {
+  if (dim == 2) {
     std::vector<std::vector<double>> nodecoords;
     std::vector<double> nodevalues;
-    std::vector<double> ndcoord(3), coord(3);
+    std::vector<double> ndcoord(2), coord(2);
 
-    std::pair<double, double> coord_pair;
+    Point<2> point;
 
-    ndcoord.resize(2);
-    coord.resize(2);
-
-    mesh_.node_get_coordinates(nodeid, &coord_pair);
-    ndcoord[0] = coord_pair.first;
-    ndcoord[1] = coord_pair.second;
+    mesh_.node_get_coordinates(nodeid, &point);
+    ndcoord[0] = point[0];
+    ndcoord[1] = point[1];
     nodecoords.emplace_back(ndcoord);
     nodevalues.emplace_back(vals_[nodeid]);
 
     for (auto const & nbrnode : nbrids) {
-      mesh_.node_get_coordinates(nbrnode, &coord_pair);
-      coord[0] = coord_pair.first;
-      coord[1] = coord_pair.second;
+      mesh_.node_get_coordinates(nbrnode, &point);
+      coord[0] = point[0];
+      coord[1] = point[1];
       nodecoords.emplace_back(coord);
       nodevalues.emplace_back(vals_[nbrnode]);
     }
@@ -449,15 +446,15 @@ Limited_Gradient<MeshType, StateType, NODE> :: operator() (int const nodeid) {
 
       double nodeval = vals_[nodeid];
 
-      std::vector<std::pair<double,double>> dualcellcoords;
+      std::vector<Point<2>> dualcellcoords;
       mesh_.dual_cell_get_coordinates(nodeid, &dualcellcoords);
 
       for (auto const & coord : dualcellcoords) {
         // val = nodeval + grad*(coord-nodecoord)
         // double diff = val-nodeval = grad DOT (coord-nodecoord);
 
-        double diff = grad[0]*(std::get<0>(coord)-ndcoord[0]) +
-            grad[1]*(std::get<1>(coord)-ndcoord[1]);
+        double diff = grad[0]*(coord[0]-ndcoord[0]) +
+            grad[1]*(coord[1]-ndcoord[1]);
         double extremeval = (diff > 0.0) ? maxval : minval;
         double phi_new = (diff == 0.0) ? 1 : (extremeval-nodeval)/diff;
         phi = std::min(phi_new, phi);
@@ -470,20 +467,20 @@ Limited_Gradient<MeshType, StateType, NODE> :: operator() (int const nodeid) {
     std::vector<double> nodevalues;
     std::vector<double> ndcoord(3), coord(3);
 
-    std::tuple<double, double, double> coord_tuple;
+    Point<3> point;
 
-    mesh_.node_get_coordinates(nodeid, &coord_tuple);
-    ndcoord[0] = std::get<0>(coord_tuple);
-    ndcoord[1] = std::get<1>(coord_tuple);
-    ndcoord[2] = std::get<2>(coord_tuple);
+    mesh_.node_get_coordinates(nodeid, &point);
+    ndcoord[0] = point[0];
+    ndcoord[1] = point[1];
+    ndcoord[2] = point[2];
     nodecoords.emplace_back(ndcoord);
     nodevalues.emplace_back(vals_[nodeid]);
 
     for (auto const & nbrnode : nbrids) {
-      mesh_.node_get_coordinates(nbrnode, &coord_tuple);
-      coord[0] = std::get<0>(coord_tuple);
-      coord[1] = std::get<1>(coord_tuple);
-      coord[2] = std::get<2>(coord_tuple);
+      mesh_.node_get_coordinates(nbrnode, &point);
+      coord[0] = point[0];
+      coord[1] = point[1];
+      coord[2] = point[2];
       nodecoords.emplace_back(coord);
       nodevalues.emplace_back(vals_[nbrnode]);
     }
@@ -505,16 +502,16 @@ Limited_Gradient<MeshType, StateType, NODE> :: operator() (int const nodeid) {
 
       double nodeval = vals_[nodeid];
 
-      std::vector<std::tuple<double, double, double>> dualcellcoords;
+      std::vector<Point<3>> dualcellcoords;
       mesh_.dual_cell_get_coordinates(nodeid, &dualcellcoords);
 
       for (auto const & coord : dualcellcoords) {
         // val = nodeval + grad*(coord-nodecoord)
         // diff = val-nodeval = grad DOT (coord-nodecoord);
 
-        double diff = grad[0]*(std::get<0>(coord)-ndcoord[0]) +
-            grad[1]*(std::get<1>(coord)-ndcoord[1]) +
-            grad[2]*(std::get<2>(coord)-ndcoord[2]);
+        double diff = grad[0]*(coord[0]-ndcoord[0]) +
+            grad[1]*(coord[1]-ndcoord[1]) +
+            grad[2]*(coord[2]-ndcoord[2]);
         double extremeval = (diff > 0.0) ? maxval : minval;
         double phi_new = (diff == 0.0) ? 1 : (extremeval-nodeval)/diff;
         phi = std::min(phi_new, phi);

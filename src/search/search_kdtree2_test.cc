@@ -54,8 +54,8 @@ class MeshWrapperDual {
     int num_owned_cells() const { return w_.num_owned_nodes(); }
     int num_ghost_cells() const { return w_.num_ghost_nodes(); }
     void cell_get_coordinates(int const cellid,
-            std::vector<std::pair<double, double>> *xylist) const {
-        w_.dual_cell_get_coordinates(cellid, xylist);
+            std::vector<Portage::Point<2>> *pplist) const {
+        w_.dual_cell_get_coordinates(cellid, pplist);
     }
   private:
     const Portage::Jali_Mesh_Wrapper &w_;
