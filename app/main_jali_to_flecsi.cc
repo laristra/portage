@@ -17,6 +17,7 @@
 // FleCSI includes
 #include "flecsi/specializations/burton/burton.h"
 #include "flecsi/specializations/burton/burton_io_exodus.h"
+// IO needs fixed
 //#include "flecsi/io/io.h"
 //#include "flecsi/io/io_exodus.h"
 // Jali includes
@@ -24,8 +25,9 @@
 #include "MeshFactory.hh"
 #include "JaliStateVector.h"
 #include "JaliState.h"
-#define MSTK_HAVE_MPI
-#include "Mesh_MSTK.hh"
+// Needed for IO
+// #define MSTK_HAVE_MPI
+// #include "Mesh_MSTK.hh"
 
 using mesh_t = flecsi::burton_mesh_t;
 
@@ -149,7 +151,7 @@ int main(int argc, char** argv) {
   std::printf("\n\nL2 NORM OF ERROR = %lf\n\n", sqrt(toterr));
 
 
-  // output
+  // output -- flecsi output not working at the moment
   // inputState.export_to_mesh();
   // dynamic_cast<Jali::Mesh_MSTK*>(inputMesh.get())->write_to_exodus_file("input.exo");
   // std::cout << "done inputState mesh" << std::endl;
