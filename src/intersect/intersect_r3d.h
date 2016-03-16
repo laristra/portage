@@ -8,12 +8,14 @@
 
 #include <array>
 #include <stdexcept>
-#include <tuple>
 #include <vector>
 
 extern "C" {
 #include "r3d.h"
 }
+
+#include "portage/support/Point.h"
+
 
 namespace Portage {
 
@@ -35,7 +37,7 @@ public:
 
   std::vector<std::vector<double>> operator() (const int cellA,
             const int cellB) const {
-    std::vector<std::array<std::array<double, 3>, 4>> source_coords, target_coords;
+    std::vector<std::array<Portage::Point<3>, 4>> source_coords, target_coords;
     sourceMeshWrapper.wedges_get_coordinates(cellA, &source_coords);
     targetMeshWrapper.wedges_get_coordinates(cellB, &target_coords);
 

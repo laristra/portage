@@ -11,12 +11,12 @@
 #include <algorithm>
 #include <vector>
 #include <iterator>
-#include <tuple>
 #include <string>
 #include <utility>
 #include <iostream>
 
 #include "portage/support/portage.h"
+#include "portage/support/Point.h"
 #include "portage/wrappers/state/jali/jali_state_wrapper.h"
 #include "portage/wrappers/mesh/jali/jali_mesh_wrapper.h"
 #include "portage/search/search_kdtree2.h"
@@ -71,30 +71,18 @@ class MeshWrapperDual {  // cellid is the dual cell (i.e. node) id
   */
   int num_ghost_cells() const { return w_.num_ghost_nodes(); }
 
-  typedef std::pair<double, double> xypair;
   /*!
     @brief Gets the coordinates of the cell centroid in the dual mesh.
     @param[in] dualcellid The dual cell id (i.e. the node id in the original
     mesh).
-    @param[in,out] xylist The list of (x,y) coordinate pairs for each node of
+    @param[in,out] pplist The list of coordinate points for each node of
     the dual cell given by @c dualcellid
   */
-  void cell_get_coordinates(int const dualcellid,
-                            std::vector<xypair> *xylist) const {
-    w_.dual_cell_get_coordinates(dualcellid, xylist);
-  }
 
-  typedef std::tuple<double, double, double> xyztuple;
-  /*!
-    @brief Gets the coordinates of the cell centroid in the dual mesh.
-    @param[in] dualcellid The dual cell id (i.e. the node id in the original
-    mesh).
-    @param[in,out] xyzlist The list of (x,y,z) coordinate tuples for each node
-    of the dual cell given by @c dualcellid.
-  */
+  template<long D>
   void cell_get_coordinates(int const dualcellid,
-                            std::vector<xyztuple> *xyzlist) const {
-    w_.dual_cell_get_coordinates(dualcellid, xyzlist);
+                            std::vector<Portage::Point<D>> *pplist) const {
+    w_.dual_cell_get_coordinates(dualcellid, pplist);
   }
 
   /*!
@@ -131,8 +119,8 @@ class MeshWrapperDual {  // cellid is the dual cell (i.e. node) id
     dual cell given by @c dualcellid
     @todo Remove this in favor of @c cell_get_coordinates() ?
   */
-  std::vector<xypair> cellToXY(int const dualcellID) const {
-    std::vector<std::pair<double, double> > cellPoints;
+  std::vector<Portage::Point<2>> cellToXY(int const dualcellID) const {
+    std::vector<Portage::Point<2>> cellPoints;
     cell_get_coordinates(dualcellID, &cellPoints);
     return cellPoints;
   }
@@ -196,7 +184,7 @@ class MeshWrapperDual {  // cellid is the dual cell (i.e. node) id
     w_.cell_centroid(dualnodeID, centroid);
   }
 
-  typedef std::array<std::array<double, 3>, 4> wedgeCoords;
+  typedef std::array<Portage::Point<3>, 4> wedgeCoords;
   /*!
     @brief Get the coordinates of the points that make up the wedge.
 

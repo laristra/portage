@@ -82,27 +82,27 @@ int main(int argc, char** argv) {
   #ifdef FIXED_SIZE_EXAMPLE
     for (int i=0; i < 3034; i++) {
       auto coord = inputMeshWrapper.cellToXY(i);
-      double x = coord[0].first;
-      double y = coord[0].second;
+      double x = coord[0][0];
+      double y = coord[0][1];
       sourceData[i] = std::sqrt(x*x+y*y);
     }
     for (int i=3034; i < 4646; i++) {
       auto coord = inputMeshWrapper.cellToXY(i);
-      double x = coord[0].first;
-      double y = coord[0].second;
+      double x = coord[0][0];
+      double y = coord[0][1];
       sourceData[i] = x*y;
     }
     for (int i=4646; i < 5238; i++) {
       auto coord = inputMeshWrapper.cellToXY(i);
-      double x = coord[0].first;
-      double y = coord[0].second;
+      double x = coord[0][0];
+      double y = coord[0][1];
       sourceData[i] = sin(x+y);
     }
   #else
     for (int i=0; i < sourceData.size(); i++) {
       auto coord = inputMeshWrapper.cellToXY(i);
-      double x = coord[0].first;
-      double y = coord[0].second;
+      double x = coord[0][0];
+      double y = coord[0][1];
       sourceData[i] = x*x;
     }
   #endif

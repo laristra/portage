@@ -7,7 +7,6 @@
 #include <cstdio>
 #include <cstdlib>
 #include <vector>
-#include <tuple>
 #include <string>
 #include <memory>
 #include <utility>
@@ -20,6 +19,7 @@
 #endif
 
 #include "portage/support/portage.h"
+#include "portage/support/Point.h"
 #include "portage/driver/driver.h"
 #include "portage/wrappers/mesh/jali/jali_mesh_wrapper.h"
 #include "portage/wrappers/state/jali/jali_state_wrapper.h"
@@ -337,18 +337,17 @@ int main(int argc, char** argv) {
     */
     // populate input field with quadratic function
     if (example.dim == 2) {
-      std::pair<double, double> nodexy;
+      Portage::Point<2> nodexy;
       for (int i = 0; i < nsrcnodes; ++i) {
         inputMeshWrapper.node_get_coordinates(i, &nodexy);
-        sourceData[i] = nodexy.first*nodexy.first + nodexy.second*nodexy.second;
+        sourceData[i] = nodexy[0]*nodexy[0] + nodexy[1]*nodexy[1];
       }
     } else {  // 3d
-      std::tuple<double, double, double> nodexyz;
+      Portage::Point<3> nodexyz;
       for (int i = 0; i < nsrcnodes; ++i) {
         inputMeshWrapper.node_get_coordinates(i, &nodexyz);
-        sourceData[i] = std::get<0>(nodexyz)*std::get<0>(nodexyz) +
-            std::get<1>(nodexyz)*std::get<1>(nodexyz) +
-            std::get<2>(nodexyz)*std::get<2>(nodexyz);
+        sourceData[i] = nodexyz[0]*nodexyz[0] + nodexyz[1]*nodexyz[1]
+            + nodexyz[2]*nodexyz[2];
       }
     }
 
@@ -395,29 +394,26 @@ int main(int argc, char** argv) {
       double toterr = 0.0;
       double stdval, err;
       if (example.dim == 2) {
-        std::pair<double, double> nodexy;
+        Portage::Point<2> nodexy;
         for (int i = 0; i < ntarnodes; ++i) {
           targetMeshWrapper.node_get_coordinates(i, &nodexy);
-          stdval = nodexy.first*nodexy.first +
-              nodexy.second*nodexy.second;
+          stdval = nodexy[0]*nodexy[0] + nodexy[1]*nodexy[1];
           err = fabs(stdval-nodevecout[i]);
           std::printf("Node=% 4d Coords = (% 5.3lf,% 5.3lf) ", i,
-                      nodexy.first, nodexy.second);
+                      nodexy[0], nodexy[1]);
           std::printf("Value = %10.6lf Err = % lf\n", nodevecout[i], err);
           toterr += err;
         }
       } else {  // 3d
-        std::tuple<double, double, double> nodexyz;
+        Portage::Point<3> nodexyz;
         for (int i = 0; i < ntarnodes; ++i) {
           targetMeshWrapper.node_get_coordinates(i, &nodexyz);
-          stdval = std::get<0>(nodexyz)*std::get<0>(nodexyz) +
-              std::get<1>(nodexyz)*std::get<1>(nodexyz) +
-              std::get<2>(nodexyz)*std::get<2>(nodexyz);
+          stdval = nodexyz[0]*nodexyz[0] + nodexyz[1]*nodexyz[1]
+              + nodexyz[2]*nodexyz[2];
 
           err = fabs(stdval-nodevecout[i]);
           std::printf("Node=% 4d Coords = (% 5.3lf,% 5.3lf,% 5.3lf) ", i,
-                      std::get<0>(nodexyz), std::get<1>(nodexyz),
-                      std::get<2>(nodexyz));
+                      nodexyz[0], nodexyz[1], nodexyz[2]);
           std::printf("Value = %10.6lf Err = % lf\n", nodevecout[i], err);
           toterr += err;
         }
