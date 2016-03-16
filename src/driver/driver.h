@@ -449,7 +449,8 @@ void
     Driver<InputMesh_Wrapper,
     InputState_Wrapper,
     TargetMesh_Wrapper,
-    TargetState_Wrapper>::run_2D_CELL_order1(Portage::pointer<double> target_field) {
+    TargetState_Wrapper>::run_2D_CELL_order1(Portage::pointer<double>
+                                             target_field) {
   // Get an instance of the desired search algorithm type
   const SearchKDTree2<InputMesh_Wrapper, TargetMesh_Wrapper>
       search(source_mesh_, target_mesh_);
@@ -922,12 +923,13 @@ Driver<InputMesh_Wrapper,
 /*!
   @struct RemapFunctor "driver.h"
   @brief This functor is used inside a Portage::transform() inside
-  Driver::run() to actually do the search, intersect, and interpolation calculations.
+  Driver::run() to actually do the search, intersect, and interpolation
+  calculations.
   @tparam SearchType The type of search method (e.g. SearchSimple or
   SearchKDTree3).
   @tparam IsectType The type of intersect method (e.g. IntersectClipper).
-  @tparam InterpType The type of interpolation method (e.g. Interpolate_1stOrder or
-  Interpolate_2ndOrder).
+  @tparam InterpType The type of interpolation method (e.g. Interpolate_1stOrder
+  or Interpolate_2ndOrder).
 */
 template <typename SearchType, typename IsectType, typename InterpType>
 struct RemapFunctor {
@@ -939,7 +941,8 @@ struct RemapFunctor {
     @brief Constructor.
     @param[in] searcher The search method to use (e.g. SearchSimple)
     @param[in] intersecter The intersect method to use (e.g. IntersectClipper)
-    @param[in] interpolater The interpolation method to use (e.g. Interpolate_2ndOrder)
+    @param[in] interpolater The interpolation method to use (e.g.
+    Interpolate_2ndOrder)
   */
   RemapFunctor(const SearchType* searcher,
                const IsectType* intersecter,
