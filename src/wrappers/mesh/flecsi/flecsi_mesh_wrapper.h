@@ -25,8 +25,21 @@ using mesh_t = flecsi::burton_mesh_t;
 
 using real_t = flecsi::mesh_t::real_t;
 using vertex_t = flecsi::mesh_t::vertex_t;
+using point_t = flecsi::mesh_t::point_t;
 
 namespace Portage {
+
+  namespace {  // unnamed
+    //! helper function to convert to Portage::Point
+    template <long D>
+        Portage::Point<D> toPortagePoint(const point_t &fp) {
+      assert(fp.size() == D);
+      Portage::Point<D> pp;
+      for (auto i = 0; i < D; ++i)
+        pp[i] = fp[i];
+      return pp;
+    }
+  }  // namespace unnamed
 
   /*!
     @brief Helper routine to make a cartesian 2d grid in FleCSI
@@ -74,7 +87,6 @@ namespace Portage {
 
   }
 
-
 /*!
   @class Flecsi_Mesh_Wrapper flecsi_mesh_wrapper.h
   @brief Flecsi_Mesh_Wrapper implements mesh methods for Flecsi
@@ -101,7 +113,6 @@ class Flecsi_Mesh_Wrapper {
 
   //! Empty destructor
   ~Flecsi_Mesh_Wrapper() {};
-
 
   //! Dimension of space or mesh points
   int space_dimension() const {
@@ -139,7 +150,7 @@ class Flecsi_Mesh_Wrapper {
       case EDGE :
         return flecsi_mesh_.num_edges();
         break;
-        // This case does not work in FleCSI because only 2d implemented and
+        // This case does not work in FleCSI because only 2d is implemented and
         // a 2d face is an edge
       /* case FACE : */
       /*   return flecsi_mesh_.num_faces(); */
@@ -231,103 +242,66 @@ class Flecsi_Mesh_Wrapper {
     }
   }
 
-  //! 1D version of coords of a node
-  // NOTE: I don't think FleCSI handles 1d!!!
-  void node_get_coordinates(int const nodeid, double *x) const {
+  /*!
+    @brief Templated version of coords of a node
+    @tparam D The dimension of the mesh.
+    @param[in] nodeid The ID of the node.
+    @param[in,out] pp The Portage::Point object containing the coordinate
+    information.
+
+    Note: FleCSI Burton specialization doesn't currently fully support 1 or 3D.
+  */
+  template <long D>
+  void node_get_coordinates(int const nodeid, Portage::Point<D>* pp) const {
     auto thisVert = flecsi_mesh_.vertices()[nodeid];
-    *x = thisVert->coordinates()[0];
+    *pp = toPortagePoint<D>(thisVert->coordinates());
   }
 
-  //! 2D version of coords of a node
-  void node_get_coordinates(int const nodeid,
-                            std::pair<double,double> *xy) const {
-    auto thisVert = flecsi_mesh_.vertices()[nodeid];
-    auto coords = thisVert->coordinates();
-    xy->first = coords[0];
-    xy->second = coords[1];
-  }
 
-  //! 3D version of coords of a node
-  // NOTE: FleCSI doesn't have 3d yet!!!
-  void node_get_coordinates(int const nodeid,
-                            std::tuple<double,double,double> *xyz) const {
-    auto thisVert = flecsi_mesh_.vertices()[nodeid];
-    auto coords = thisVert->coordinates();
-    std::get<0>(*xyz) = coords[0];
-    std::get<1>(*xyz) = coords[1];
-    std::get<2>(*xyz) = coords[2];
-  }
+  /*!
+    @brief Templated version of coodinates of the nodes of a cell.
+    @tparam D The dimension of the mesh.
+    @param[in] cellid The ID of the cell.
+    @param[in,out] pplist The vector of Portage::Point objects containing the
+    coordinates of a node.  The length of the vector is equal to the number of
+    nodes in the cell with ID @c cellid.
 
-  //! 1D version of coords of nodes of a cell
-  // NOTE: I don't think FleCSI handles 1d!!!
-  void cell_get_coordinates(int const cellid, std::vector<double> *xlist)
-      const {
-    assert(space_dimension() == 1);
-
-    // Get this cell object
-    auto thisCell = flecsi_mesh_.cells()[cellid];
-
-    // Loop over the vertices of this cell to get their coordinates
-    xlist->clear();
-    auto theseVerts = flecsi_mesh_.vertices(thisCell);
-    for (auto v : theseVerts) {
-      auto coords = v->coordinates();
-      xlist->emplace_back(coords[0]);
-    }
-  }
-
-  //! 2D version of coords of nodes of a cell
-
+    Note: FleCSI Burton specialization doesn't currently fully support 1 or 3D.
+  */
+  template <long D>
   void cell_get_coordinates(int const cellid,
-                            std::vector<std::pair<double,double> > *xylist)
-      const {
-    assert(space_dimension() == 2);
-
+                            std::vector<Portage::Point<D>> *pplist)  const {
     // Get this cell object
     auto thisCell = flecsi_mesh_.cells()[cellid];
 
-    // Loop over the vertices of this cell to get their coordinates
-    xylist->clear();
+    // Loop over vertices of this cell to get their coordinates
+    pplist->clear();
     auto theseVerts = flecsi_mesh_.vertices(thisCell);
-    for (auto v : theseVerts) {
-      auto coords = v->coordinates();
-      xylist->emplace_back(coords[0], coords[1]);
-    }
+    for (auto v : theseVerts)
+      pplist->emplace_back(toPortagePoint<D>(v->coordinates()));
   }
 
-  //! 3D version of coords of nodes of a cell
-  // NOTE: FleCSI doesn't have 3d yet!!!
-  void cell_get_coordinates(int const cellid,
-                            std::vector<std::tuple<double,double,double> >
-                            *xyzlist) const {
-    assert(space_dimension() == 3);
 
-    // Get this cell object
-    auto thisCell = flecsi_mesh_.cells()[cellid];
+  /*!
+    @brief 2D version of coords of nodes of a dual cell
+    @param[in] nodeid The ID of the node or dual cell in the dual mesh.
+    @param[in,out] pplist The vector of Portage::Point objects containing the
+    coordinates of a node in the dual mesh / cell in the regular mesh.  The
+    length of the vector is equal to the number of nodes in the dual mesh cell
+    with ID @c nodeid.
 
-    // Loop over the vertices of this cell to get their coordinates
-    xyzlist->clear();
-    auto theseVerts = flecsi_mesh_.vertices(thisCell);
-    for (auto v : theseVerts) {
-      auto coords = v->coordinates();
-      xyzlist->emplace_back(coords[0], coords[1], coords[2]);
-    }
-  }
+    The vertices are ordered CCW. For node @c nodeid not on a
+    boundary, the vector @c pplist starts with a random vertex, but it is still
+    ordered CCW. Use the dual_cell_coordinates_canonical_rotation() function to
+    rotate the @c pplist into a canonical (unique) form.
 
-  //! 2D version of coords of nodes of a dual cell
-  // Input is the node ID 'nodeid', and it returns the vertex coordinates of
-  // the dual cell around this node in `xylist`. The vertices are ordered CCW.
-  // For boundary node 'nodeid', the first vertex is the node itself, this
-  // uniquely determines the 'xylist' vector. For node 'nodeid' not on a
-  // boundary, the vector 'xylist' starts with a random vertex, but it is still
-  // ordered CCW. Use the 'dual_cell_coordinates_canonical_rotation' to rotate
-  // the 'xylist' into a canonical (unique) form.
-
+    @TODO worry about boundary cases
+  */
   void dual_cell_get_coordinates(int const nodeid,
-                    std::vector<std::pair<double,double> > *xylist) const {
+                                 std::vector<Portage::Point2 > *pplist) const {
     assert(space_dimension() == 2);
     auto thisNode = flecsi_mesh_.vertices()[nodeid];
-    xylist->clear();
+    pplist->clear();
     // Loop over the corners associated with this node
     for (auto corner : flecsi_mesh_.corners(thisNode)) {
       std::vector<int> wedgeIds;
@@ -340,20 +314,18 @@ class Flecsi_Mesh_Wrapper {
         auto w = flecsi_mesh_.wedges()[wId];
         // push back centroid and then edge midpoint
         auto cc = w->cell()->centroid();
-        xylist->emplace_back(cc[0], cc[1]);
+        pplist->emplace_back(toPortagePoint<2>(cc));//cc[0], cc[1]);
         auto nc = w->edge()->midpoint();
-        xylist->emplace_back(nc[0], nc[1]);
+        pplist->emplace_back(toPortagePoint<2>(nc));//nc[0], nc[1]);
       }
     }
-    // @TODO worry about boundary cases
-
   }
 
   void order_wedges_ccw(std::vector<int> *wedgeids) const {
     assert(wedgeids->size() == 2);
     auto firstWedge = flecsi_mesh_.wedges()[(*wedgeids)[0]];
     // NOTE: This mimics the order of Jali in 2d: node, face/edge, cell
-    std::vector<Point2> wcoords;
+    std::vector<Portage::Point2> wcoords;
     auto nc = firstWedge->vertex()->coordinates();
     wcoords.emplace_back(nc[0], nc[1]);
     auto ec = firstWedge->edge()->midpoint();
@@ -362,36 +334,20 @@ class Flecsi_Mesh_Wrapper {
     wcoords.emplace_back(cc[0], cc[1]);
 
     // Ensure (*wedgeids)[0] is the first wedge in a CCW direction
-    if (not ccw(
-            {wcoords[0][0], wcoords[0][1]},
-            {wcoords[1][0], wcoords[1][1]},
-            {wcoords[2][0], wcoords[2][1]})) {
-        std::swap((*wedgeids)[0], (*wedgeids)[1]);
-    }
+    if (not ccw(wcoords[0], wcoords[1], wcoords[2]))
+      std::swap((*wedgeids)[0], (*wedgeids)[1]);
   }
 
   // Returns true if the three 2D points (p1, p2, p3) are a counter-clockwise
   // turn, otherwise returns false (corresponding to clockwise or collinear)
-  bool ccw(const std::pair<double, double> p1,
-          const std::pair<double, double> p2,
-          const std::pair<double, double> p3) const {
-      return (std::get<0>(p2) - std::get<0>(p1)) *
-          (std::get<1>(p3) - std::get<1>(p1)) -
-          (std::get<1>(p2) - std::get<1>(p1)) *
-          (std::get<0>(p3) - std::get<0>(p1)) > 0;
+  bool ccw(const Portage::Point2 p1,
+           const Portage::Point2 p2,
+           const Portage::Point2 p3) const {
+    return (p2[0]-p1[0])*(p3[1]-p1[1]) - (p2[1]-p1[1])*(p3[0]-p1[0]) > 0;
   }
 
-  std::vector<std::pair<double, double>>
-      cellToXY(int const cellID) const {
-    std::vector<std::pair<double, double> > cellPoints;
-    cell_get_coordinates(cellID, &cellPoints);
-    return cellPoints;
-  }
-
-  // NOTE: FleCSI doesn't have 3D yet!!!
-  std::vector<std::tuple<double, double, double>>
-      cellToXYZ(int const cellID) const {
-    std::vector<std::tuple<double, double, double>> cellPoints;
+  std::vector<Portage::Point2> cellToXY(int const cellID) const {
+    std::vector<Portage::Point2> cellPoints;
     cell_get_coordinates(cellID, &cellPoints);
     return cellPoints;
   }
@@ -400,21 +356,20 @@ class Flecsi_Mesh_Wrapper {
   // and the "4" is for the four points that make up a wedge (tet) in 3d
   // NOTE: FleCSI doesn't have 3D yet!!!
   void wedges_get_coordinates(int const cellID,
-      std::vector<std::array<std::array<double, 3>, 4>> *wcoords) const {
+                              std::vector<std::array<Portage::Point3, 4>>
+                              *wcoords) const {
     assert(space_dimension() == 3);
 
     assert(false && "FleCSI 3D not implemented");
   }
 
-
   // NOTE: FleCSI doesn't have 3D yet!!!
   //! 3D version of coords of nodes of a dual cell
   // Input is the node ID 'nodeid', and it returns the vertex coordinates of
-  // the dual cell around this node in `xyzlist`.  The vertices are NOT ordered
+  // the dual cell around this node in `pplist`.  The vertices are NOT ordered
   // in any particular way
-
   void dual_cell_get_coordinates(int const nodeid,
-        			 std::vector<std::tuple<double,double,double> > *xyzlist) const {
+        			 std::vector<Portage::Point3> *pplist) const {
     assert(space_dimension() == 3);
 
     assert(false && "FleCSI 3D not implemented");
@@ -425,21 +380,28 @@ class Flecsi_Mesh_Wrapper {
   // NOTE: FleCSI doesn't have 3D yet!!!
   // Get the coordinates of the wedges of the dual mesh
   void dual_wedges_get_coordinates(int const nodeID,
-      std::vector<std::array<std::array<double, 3>, 4>> *wcoords) const {
+                                   std::vector<std::array<Portage::Point3, 4>>
+                                   *wcoords) const {
     assert(space_dimension() == 3);
 
     assert(false && "FleCSI 3D not implemented yet");
   }
 
 
-  /// @brief Centroid of a cell
-  //
-  // Return the centroid of a cell - THIS ROUTINE IS VIOLATING THE
-  // CONVENTION THAT NODE_GET_COORDINATES AND CELL_GET_COORDINATES
-  // USES FOR THE VARIABLE TYPE OF THE RETURN COORDINATES BECAUSE
-  // BUILDING A GRADIENT OPERATOR WITH DIFFERENT TYPES FOR 2D
-  // COORDINATES AND 3D COORDINATES IS VERY CONVOLUTED
+  /*!
+    @brief Centroid of a cell.
+    @param[in] cellid The ID of the cell.
+    @param[in,out] centroid The vector of coordinates of the cell @c cellid's
+    centroid.  The length of the vector is equal to the dimension of the mesh.
 
+    @TODO THIS ROUTINE IS VIOLATING THE
+    CONVENTION THAT NODE_GET_COORDINATES AND CELL_GET_COORDINATES
+    USES FOR THE VARIABLE TYPE OF THE RETURN COORDINATES BECAUSE
+    BUILDING A GRADIENT OPERATOR WITH DIFFERENT TYPES FOR 2D
+    COORDINATES AND 3D COORDINATES IS VERY CONVOLUTED
+
+    @TODO convert to using Point?
+  */
   void cell_centroid(int const cellid,
                      std::vector<double> *centroid) const {
     auto thisCell = flecsi_mesh_.cells()[cellid];
@@ -449,14 +411,18 @@ class Flecsi_Mesh_Wrapper {
       centroid->emplace_back(cntr[i]);
   }
 
-  /// @brief Centroid of a dual cell
-  //
-  // Centroid of a dual cell.
+  /*!
+    @brief Centroid of a dual cell.
+    @param[in] nodeid The ID of the node in the normal mesh / cell in the dual
+    mesh.
+    @param[in,out] centroid The vector of coordinates of the node in the normal
+    mesh / the cell in the dual mesh with ID @c nodeid.  The length of the
+    vector is equal to the dimension of the mesh.
 
-  //! \todo NOTE: THIS IS ASSUMED TO BE THE NODE COORDINATE BECAUSE
-  //! THE NODAL VARIABLES LIVE THERE, BUT FOR DISTORTED GRIDS, THE
-  //! NODE COORDINATED MAY NOT BE THE CENTROID OF THE DUAL CELL
-
+    @TODO NOTE: THIS IS ASSUMED TO BE THE NODE COORDINATE BECAUSE
+    THE NODAL VARIABLES LIVE THERE, BUT FOR DISTORTED GRIDS, THE
+    NODE COORDINATED MAY NOT BE THE CENTROID OF THE DUAL CELL
+   */
   void dual_cell_centroid(int const nodeid,
                           std::vector<double> *centroid) const {
     auto thisNode = flecsi_mesh_.vertices()[nodeid];
@@ -470,17 +436,6 @@ class Flecsi_Mesh_Wrapper {
   mesh_t & flecsi_mesh_;
 
 }; // class Flecsi_Mesh_Wrapper
-
-
-/* struct pointsToXY */
-/* { */
-/*   pointsToXY() { } */
-/*   std::vector<std::pair<double,double> > operator()(const std::vector<FlecsiGeometry::Point> ptList){     */
-/*     std::vector<std::pair<double, double> > xyList; */
-/*     std::for_each(ptList.begin(), ptList.end(), [&xyList](FlecsiGeometry::Point pt){xyList.emplace_back(pt.x(), pt.y());});								      */
-/*     return xyList; */
-/*   } */
-/* }; */
 
 } // end namespace Portage
 

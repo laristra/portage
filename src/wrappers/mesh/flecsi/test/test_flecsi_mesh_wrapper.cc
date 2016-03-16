@@ -4,6 +4,7 @@
  *---------------------------------------------------------------------------~*/
 
 #include "portage/wrappers/mesh/flecsi/flecsi_mesh_wrapper.h"
+#include "portage/support/Point.h"
 
 #include <iostream>
 
@@ -27,16 +28,16 @@ using vertex_t = mesh_t::vertex_t;
   @param[in] eps Tolerance
   @return Whether a == b within the accuracy @c eps
  */
-bool vdd_eq(const std::vector<std::pair<double,double>> &a,
-    const std::vector<std::pair<double,double>> &b, const double eps=1e-12)
+bool vdd_eq(const std::vector<Portage::Point2> &a,
+            const std::vector<Portage::Point2> &b, const double eps=1e-12)
 {
     // Can't be equal if # of entries differ:
     if (a.size() != b.size()) return false;
     // Loop over elements in "a" and "b":
     for (size_t i = 0; i < a.size(); i++) {
         // values not equal
-        if (abs(std::get<0>(a[i]) - std::get<0>(b[i])) > eps or
-            abs(std::get<1>(a[i]) - std::get<1>(b[i])) > eps) return false;
+        if (abs(a[i][0] - b[i][0]) > eps or
+            abs(a[i][1] - b[i][1]) > eps) return false;
     }
     return true;
 }
@@ -46,16 +47,15 @@ bool vdd_eq(const std::vector<std::pair<double,double>> &a,
   point will be the one with the lowest angle between it, the nodeid and the
   x-axis.
   @param[in] center_node The center node to test
-  @param[in,out] xylist      The xylist vector
+  @param[in,out] xylist The xylist vector
  */
-void coordinates_canonical_rotation(
-      const std::pair<double, double> center_node,
-      std::vector<std::pair<double, double>> * const xylist)
+void coordinates_canonical_rotation(const Portage::Point2 center_node,
+                                    std::vector<Portage::Point2> * const xylist)
 {
     int i = 0;
     auto angle = [&]() {
-        return std::atan2(std::get<1>((*xylist)[i])-std::get<1>(center_node),
-                std::get<0>((*xylist)[i])-std::get<0>(center_node));
+        return std::atan2((*xylist)[i][1] - center_node[1],
+                          (*xylist)[i][0] - center_node[0]);
     };
     double a = angle();
     while (a >= 0) { i++; i = i % xylist->size(); a = angle(); }
@@ -74,8 +74,8 @@ void coordinates_canonical_rotation(
 void dual_cell_coordinates_canonical_rotation(
     const Portage::Flecsi_Mesh_Wrapper &mesh_wrapper,
     int const nodeid,
-    std::vector<std::pair<double,double> > * const xylist) {
-  std::pair<double, double> center_node;
+    std::vector<Portage::Point2> * const xylist) {
+  Portage::Point2 center_node;
   mesh_wrapper.node_get_coordinates(nodeid, &center_node);
   coordinates_canonical_rotation(center_node, xylist);
 }
