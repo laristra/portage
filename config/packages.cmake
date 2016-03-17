@@ -4,32 +4,36 @@
 #~----------------------------------------------------------------------------~#
 
 #------------------------------------------------------------------------------#
+# If we are building with FleCSI, then we need a modern C++ compiler
+#------------------------------------------------------------------------------#
+if(FLECSI_INSTALL_DIR)
+  include(cxx14)
+
+  check_for_cxx14_compiler(CXX14_COMPILER)
+
+#------------------------------------------------------------------------------#
 # If a C++14 compiler is available, then set the appropriate flags
 #------------------------------------------------------------------------------#
-
-include(cxx14)
-
-check_for_cxx14_compiler(CXX14_COMPILER)
-
-if(CXX14_COMPILER)
+  if(CXX14_COMPILER)
     enable_cxx14()
-else()
+  else()
     message(FATAL_ERROR "C++14 compatible compiler not found")
-endif()
+  endif()
 
-# #------------------------------------------------------------------------------#
-# # If a C++11 compiler is available, then set the appropriate flags
-# #------------------------------------------------------------------------------#
+else()
+  include(cxx11)
 
-# include(cxx11)
+  check_for_cxx11_compiler(CXX11_COMPILER)
 
-# check_for_cxx11_compiler(CXX11_COMPILER)
-
-# if(CXX11_COMPILER)
-#     enable_cxx11()
-# else()
-#     message(FATAL_ERROR "C++11 compatible compiler not found")
-# endif()
+#------------------------------------------------------------------------------#
+# If a C++11 compiler is available, then set the appropriate flags
+#------------------------------------------------------------------------------#
+  if(CXX11_COMPILER)
+    enable_cxx11()
+  else()
+    message(FATAL_ERROR "C++11 compatible compiler not found")
+  endif()
+endif(FLECSI_INSTALL_DIR)
 
 #------------------------------------------------------------------------------#
 # Set up MPI builds
