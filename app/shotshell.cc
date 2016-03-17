@@ -125,11 +125,12 @@ int main(int argc, char** argv) {
 
   // Directly run cell-centered examples
   if ((example == 0) || (example == 2)) {
-    Portage::Driver<Jali_Mesh_Wrapper> d(Portage::CELL,
-                                         inputMeshWrapper,
-                                         sourceStateWrapper,
-                                         targetMeshWrapper,
-                                         targetStateWrapper);
+    Portage::Driver<Jali_Mesh_Wrapper,
+                    Jali_State_Wrapper> d(Portage::CELL,
+                                          inputMeshWrapper,
+                                          sourceStateWrapper,
+                                          targetMeshWrapper,
+                                          targetStateWrapper);
     d.set_remap_var_names(remap_fields);
 
     if (example == 2) d.set_interpolation_order(2);
@@ -139,11 +140,12 @@ int main(int argc, char** argv) {
 
   // Create a dual mesh for node-centered examples
   else if ((example == 1) || (example == 3)) {
-    Portage::Driver<Portage::Jali_Mesh_Wrapper> d(Portage::NODE,
-                                                  inputMeshWrapper,
-                                                  sourceStateWrapper,
-                                                  targetMeshWrapper,
-                                                  targetStateWrapper);
+    Portage::Driver<Portage::Jali_Mesh_Wrapper,
+                    Portage::Jali_State_Wrapper> d(Portage::NODE,
+                                                   inputMeshWrapper,
+                                                   sourceStateWrapper,
+                                                   targetMeshWrapper,
+                                                   targetStateWrapper);
     d.set_remap_var_names(remap_fields);
 
     if (example == 3) d.set_interpolation_order(2);

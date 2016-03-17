@@ -12,8 +12,6 @@
 #include <utility>
 #include <vector>
 
-#include "portage/wrappers/mesh/jali/jali_mesh_wrapper.h"
-#include "portage/wrappers/state/jali/jali_state_wrapper.h"
 
 namespace Portage {
 
@@ -22,7 +20,7 @@ namespace Portage {
   @brief Interpolate_1stOrder does a 1st order interpolation of scalars
   @tparam MeshType The type of the mesh wrapper used to access mesh info
   @tparam StateType The type of the state manager used to access data.
-  @tparam OnWhatType The type of entity-based data we wish to interpolate; 
+  @tparam OnWhatType The type of entity-based data we wish to interpolate;
   e.g. does it live on nodes, cells, edges, etc.
 
   Viewed simply, the value at target cell is the weighted average of
@@ -66,7 +64,8 @@ class Interpolate_1stOrder {
     @brief Constructor.
     @param[in] source_mesh The input mesh.
     @param[in] source_state The state manager for data on the input mesh.
-    @param[in] on_what The location where the data lives; e.g. on cells, nodes, edges, etc.
+    @param[in] on_what The location where the data lives; e.g. on cells, nodes,
+    edges, etc.
     @param[in] interp_var_name The string name of the variable to interpolate.
    */
   Interpolate_1stOrder(MeshType const & source_mesh,
@@ -99,12 +98,13 @@ class Interpolate_1stOrder {
     @c sources_and_weights.second() is the vector of vector weights for each
     of the source mesh entities in @c sources_and_weights.first().  Each element
     of the weights vector is a moment of the source data over the target
-    entity; for first order interpolation, only the first element (or zero'th 
-    moment) of the weights vector (i.e. the volume of intersection) is used. 
+    entity; for first order interpolation, only the first element (or zero'th
+    moment) of the weights vector (i.e. the volume of intersection) is used.
     Source entities may be repeated in the list if the intersection of a target
     entity and a source entity consists of two or more disjoint pieces
 
-    @todo Cleanup the datatype for sources_and_weights - it is somewhat confusing.
+    @todo Cleanup the datatype for sources_and_weights - it is somewhat
+    confusing.
     @todo SHOULD WE USE boost::tuple FOR SENDING IN SOURCES_AND_WEIGHTS SO
     THAT WE CAN USE boost::zip_iterator TO ITERATOR OVER IT?
 
@@ -125,7 +125,8 @@ class Interpolate_1stOrder {
 
 /*!
   @brief 1st order interpolation operator on general entity types
-  @param[in] sources_and_weights Pair containing vector of contributing source entities and vector of contribution weights
+  @param[in] sources_and_weights Pair containing vector of contributing source
+  entities and vector of contribution weights
 */
 
 template<typename MeshType, typename StateType, Entity_kind on_what>

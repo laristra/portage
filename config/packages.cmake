@@ -4,18 +4,36 @@
 #~----------------------------------------------------------------------------~#
 
 #------------------------------------------------------------------------------#
+# If we are building with FleCSI, then we need a modern C++ compiler
+#------------------------------------------------------------------------------#
+if(FLECSI_INSTALL_DIR)
+  include(cxx14)
+
+  check_for_cxx14_compiler(CXX14_COMPILER)
+
+#------------------------------------------------------------------------------#
+# If a C++14 compiler is available, then set the appropriate flags
+#------------------------------------------------------------------------------#
+  if(CXX14_COMPILER)
+    enable_cxx14()
+  else()
+    message(FATAL_ERROR "C++14 compatible compiler not found")
+  endif()
+
+else()
+  include(cxx11)
+
+  check_for_cxx11_compiler(CXX11_COMPILER)
+
+#------------------------------------------------------------------------------#
 # If a C++11 compiler is available, then set the appropriate flags
 #------------------------------------------------------------------------------#
-
-include(cxx11)
-
-check_for_cxx11_compiler(CXX11_COMPILER)
-
-if(CXX11_COMPILER)
+  if(CXX11_COMPILER)
     enable_cxx11()
-else()
+  else()
     message(FATAL_ERROR "C++11 compatible compiler not found")
-endif()
+  endif()
+endif(FLECSI_INSTALL_DIR)
 
 #------------------------------------------------------------------------------#
 # Set up MPI builds
@@ -68,6 +86,24 @@ message(STATUS "Jali_TPL_LIBRARY_DIRS=${Jali_TPL_LIBRARY_DIRS}")
 message(STATUS "Jali_TPL_LIBRARIES=${Jali_TPL_LIBRARIES}")
 
 include_directories(${Jali_INCLUDE_DIRS} ${Jali_TPL_INCLUDE_DIRS})
+
+#-----------------------------------------------------------------------------
+# FleCSI location
+#-----------------------------------------------------------------------------
+set(FLECSI_INSTALL_DIR "$ENV{FLECSI_INCLUDE_DIR}" CACHE
+  PATH "Installed FleCSI location.")
+if(FLECSI_INSTALL_DIR)
+  message(STATUS "Using FLECSI_INSTALL_DIR=${FLECSI_INSTALL_DIR}")
+  set(FLECSI_INCLUDE_DIRS ${FLECSI_INSTALL_DIR}/include/flecsi
+                          ${FLECSI_INSTALL_DIR}/include)
+  set(FLECSI_LIBRARY_DIR ${FLECSI_INSTALL_DIR}/lib)
+  set(FLECSI_LIBRARIES ${FLECSI_LIBRARY_DIR}/libflecsi.a)
+
+  # include_directories(${FLECSI_INSTALL_DIR}/include
+  #                     ${FLECSI_INSTALL_DIR}/include/flecsi)
+  include_directories(${FLECSI_INCLUDE_DIRS})
+
+endif(FLECSI_INSTALL_DIR)
 
 #-----------------------------------------------------------------------------
 # General NGC include directory information

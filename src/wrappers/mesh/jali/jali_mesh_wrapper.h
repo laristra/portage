@@ -49,19 +49,19 @@ class Jali_Mesh_Wrapper {
  public:
 
   //! Constructor
-  Jali_Mesh_Wrapper(Jali::Mesh const & mesh) : 
-      jali_mesh_(mesh) 
+  Jali_Mesh_Wrapper(Jali::Mesh const & mesh) :
+      jali_mesh_(mesh)
   {}
 
   //! Copy constructor
-  Jali_Mesh_Wrapper(Jali_Mesh_Wrapper const & inmesh) : 
-      jali_mesh_(inmesh.jali_mesh_) 
+  Jali_Mesh_Wrapper(Jali_Mesh_Wrapper const & inmesh) :
+      jali_mesh_(inmesh.jali_mesh_)
   {}
 
   //! Assignment operator (disabled) - don't know how to implement (RVG)
   Jali_Mesh_Wrapper & operator=(Jali_Mesh_Wrapper const &) = delete;
-  
-  //! Empty destructor 
+
+  //! Empty destructor
   ~Jali_Mesh_Wrapper() {};
 
 
@@ -69,7 +69,7 @@ class Jali_Mesh_Wrapper {
   int space_dimension() const {
     return jali_mesh_.space_dimension();
   }
-  
+
   //! Number of owned cells in the mesh
   int num_owned_cells() const {
     return jali_mesh_.num_entities(Jali::CELL, Jali::OWNED);
@@ -114,7 +114,7 @@ class Jali_Mesh_Wrapper {
 
 
   //! Get node connected neighbors of cell
-  void cell_get_node_adj_cells(int const cellid, 
+  void cell_get_node_adj_cells(int const cellid,
                                Parallel_type const ptype,
                                std::vector<int> *adjcells) const {
     jali_mesh_.cell_get_node_adj_cells(cellid, (Jali::Parallel_type) ptype,
@@ -125,7 +125,7 @@ class Jali_Mesh_Wrapper {
   //!
   //! Get "adjacent" nodes of given node - nodes that share a common
   //! cell with given node
-  void node_get_cell_adj_nodes(int const nodeid, 
+  void node_get_cell_adj_nodes(int const nodeid,
                                Parallel_type const ptype,
                                std::vector<int> *adjnodes) const {
     adjnodes->clear();
@@ -146,12 +146,11 @@ class Jali_Mesh_Wrapper {
   }
 
   //! \brief Get adjacent "dual cells" of a given "dual cell"
-  void dual_cell_get_node_adj_cells(int const nodeid, 
+  void dual_cell_get_node_adj_cells(int const nodeid,
                                     Parallel_type const ptype,
                                     std::vector<int> *adjnodes) const {
     node_get_cell_adj_nodes(nodeid,ptype,adjnodes);
   }
-    
 
   //! coords of a node
   template <long D>
@@ -162,19 +161,19 @@ class Jali_Mesh_Wrapper {
     *pp = toPortagePoint<D>(jp);
   }
 
-
   //! coords of nodes of a cell
-
   template<long D>
-  void cell_get_coordinates(int const cellid, std::vector<Portage::Point<D>> *pplist) const {
+  void cell_get_coordinates(int const cellid,
+                            std::vector<Portage::Point<D>> *pplist) const {
     assert(jali_mesh_.space_dimension() == D);
 
     std::vector<JaliGeometry::Point> jplist;
     jali_mesh_.cell_get_coordinates(cellid, &jplist);
 
     pplist->resize(jplist.size());
+    // This cast appears necessary for proper template deduction
     std::transform(jplist.begin(), jplist.end(), pplist->begin(),
-                   toPortagePoint<D>);
+                   (Point<D>(*)(const JaliGeometry::Point&))toPortagePoint<D>);
   }
 
   //! 2D version of coords of nodes of a dual cell
@@ -228,7 +227,8 @@ class Jali_Mesh_Wrapper {
         // This is a boundary node, go the other way in a CW manner to get all
         // the coordinates and include the node (nodid) itself
         jali_mesh_.wedge_get_coordinates(wedgeid0, &wcoords);
-        pplist->insert(pplist->begin(), {wcoords[1].x(), wcoords[1].y()}); // edge midpoint
+        // edge midpoint
+        pplist->insert(pplist->begin(), {wcoords[1].x(), wcoords[1].y()});
 
         wedgeid = jali_mesh_.wedge_get_opposite_wedge(wedgeid0);
         // We must encounter the other boundary, so we only test for wedgeid ==
@@ -239,14 +239,16 @@ class Jali_Mesh_Wrapper {
             order_wedges_ccw(&wedgeids);
             assert(wedgeids[1] == wedgeid);
             jali_mesh_.wedge_get_coordinates(wedgeids[1], &wcoords);
-            pplist->insert(pplist->begin(), {wcoords[2].x(), wcoords[2].y()}); // centroid
+            // centroid
+            pplist->insert(pplist->begin(), {wcoords[2].x(), wcoords[2].y()});
             jali_mesh_.wedge_get_coordinates(wedgeids[0], &wcoords);
-            pplist->insert(pplist->begin(), {wcoords[1].x(), wcoords[1].y()}); // edge midpoint
+            // edge midpoint
+            pplist->insert(pplist->begin(), {wcoords[1].x(), wcoords[1].y()});
             wedgeid = jali_mesh_.wedge_get_opposite_wedge(wedgeids[0]);
         }
 
         // Include the node itself
-        pplist->insert(pplist->begin(), {wcoords[0].x(), wcoords[0].y()}); // node
+        pplist->insert(pplist->begin(), {wcoords[0].x(), wcoords[0].y()});
     }
   }
 
@@ -292,12 +294,10 @@ class Jali_Mesh_Wrapper {
     }
   }
 
-
   //! 3D version of coords of nodes of a dual cell
   // Input is the node ID 'nodeid', and it returns the vertex coordinates of
   // the dual cell around this node in `xyzlist`.  The vertices are NOT ordered
   // in any particular way
-  
   void dual_cell_get_coordinates(int const nodeid,
          std::vector<Portage::Point<3>> *pplist) const {
     assert(jali_mesh_.space_dimension() == 3);
@@ -362,8 +362,6 @@ class Jali_Mesh_Wrapper {
     }
   }
 
-  
-
   /// \brief Centroid of a cell
   //
   // Return the centroid of a cell - THIS ROUTINE IS VIOLATING THE
@@ -372,7 +370,7 @@ class Jali_Mesh_Wrapper {
   // BUILDING A GRADIENT OPERATOR WITH DIFFERENT TYPES FOR 2D
   // COORDINATES AND 3D COORDINATES IS VERY CONVOLUTED
 
-  void cell_centroid(Jali::Entity_ID cellid, 
+  void cell_centroid(Jali::Entity_ID cellid,
                      std::vector<double> *centroid) const {
     JaliGeometry::Point ccen = jali_mesh_.cell_centroid(cellid);
     int dim = ccen.dim();
@@ -383,7 +381,7 @@ class Jali_Mesh_Wrapper {
 
   /// \brief Centroid of a dual cell
   //
-  // Centroid of a dual cell. 
+  // Centroid of a dual cell.
 
   //! \todo NOTE: THIS IS ASSUMED TO BE THE NODE COORDINATE BECAUSE
   //! THE NODAL VARIABLES LIVE THERE, BUT FOR DISTORTED GRIDS, THE
@@ -391,7 +389,6 @@ class Jali_Mesh_Wrapper {
 
   void dual_cell_centroid(Jali::Entity_ID nodeid,
                           std::vector<double> *centroid) const {
-    
     JaliGeometry::Point nodepnt;
     jali_mesh_.node_get_coordinates(nodeid, &nodepnt);
     int dim = nodepnt.dim();
