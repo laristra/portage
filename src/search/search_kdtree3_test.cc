@@ -3,7 +3,7 @@
  * All rights reserved.
  *--------------------------------------------------------------------------~~*/
 
-#include "search_kdtree3.h"
+#include "search_kdtree.h"
 
 #include <algorithm>
 
@@ -24,7 +24,7 @@ TEST(search_kdtree3, case1)
     const Portage::Jali_Mesh_Wrapper source_mesh_wrapper(*smesh);
     const Portage::Jali_Mesh_Wrapper target_mesh_wrapper(*tmesh);
 
-    Portage::SearchKDTree3<
+    Portage::SearchKDTree<3,
         Portage::Jali_Mesh_Wrapper, Portage::Jali_Mesh_Wrapper>
         search(source_mesh_wrapper, target_mesh_wrapper);
 

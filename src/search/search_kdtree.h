@@ -3,8 +3,8 @@
  * All rights reserved.
  *---------------------------------------------------------------------------~*/
 
-#ifndef SEARCH_KDTREE3_H
-#define SEARCH_KDTREE3_H
+#ifndef SEARCH_KDTREE_H
+#define SEARCH_KDTREE_H
 
 #include <vector>
 
@@ -15,22 +15,19 @@
 
 namespace Portage {
 
-  /*!
-    @class SearchKDTree3 "seach_kdtree3.h"
-    @brief A search algorithm utilizing a k-d tree in 3d.
-    @tparam SourceMeshType The mesh type of the input mesh.
-    @tparam TargetMeshType The mesh type of the output mesh.
-
-    This search is only valid for 3d meshes.
-    @todo Can this class now be combined with the 2d version to make
-          a single class templated on dimension?
-   */
-template <typename SourceMeshType, typename TargetMeshType>
-class SearchKDTree3 {
+/*!
+  @class SearchKDTree "search_kdtree.h"
+  @brief A search algorithm utilizing a k-d tree.
+  @tparam D The dimension of the problem space.
+  @tparam SourceMeshType The mesh type of the input mesh.
+  @tparam TargetMeshType The mesh type of the output mesh.
+ */
+template <int D, typename SourceMeshType, typename TargetMeshType>
+class SearchKDTree {
   public:
 
     //! Default constructor (disabled)
-    SearchKDTree3() = delete;
+    SearchKDTree() = delete;
     
     /*!
       @brief Builds the k-d tree for searching for intersection
@@ -43,20 +40,20 @@ class SearchKDTree3 {
       Constructor for k-d tree for finding cells from a source
       mesh that overlap the target mesh.
     */
-    SearchKDTree3(const SourceMeshType & source_mesh, 
-                  const TargetMeshType & target_mesh)
+    SearchKDTree(const SourceMeshType & source_mesh, 
+                 const TargetMeshType & target_mesh)
             : sourceMesh_(source_mesh), targetMesh_(target_mesh)  {
 
         const int numCells = sourceMesh_.num_owned_cells() + 
                 sourceMesh_.num_ghost_cells();
-        std::vector<gk::IsotheticBBox<3>> bboxes;
+        std::vector<gk::IsotheticBBox<D>> bboxes;
         bboxes.reserve(numCells);
         
         // find bounding boxes for all cells
         for (int c = 0; c < numCells; ++c) {
-            std::vector<Point<3>> cell_coord;
+            std::vector<Point<D>> cell_coord;
             sourceMesh_.cell_get_coordinates(c, &cell_coord);
-            gk::IsotheticBBox<3> bb;
+            gk::IsotheticBBox<D> bb;
             for (const auto& cc : cell_coord) {
                 bb.add(cc);
             }
@@ -66,16 +63,16 @@ class SearchKDTree3 {
         // create the k-d tree
         tree_ = gk::KDTreeCreate(bboxes);
 
-    } // SearchKDTree3::SearchKDTree3
+    } // SearchKDTree::SearchKDTree
 
     //! Copy constructor (disabled)
-    SearchKDTree3(const SearchKDTree3 &) = delete;
+    SearchKDTree(const SearchKDTree &) = delete;
 
     //! Assignment operator (disabled)
-    SearchKDTree3 & operator = (const SearchKDTree3 &) = delete;
+    SearchKDTree & operator = (const SearchKDTree &) = delete;
 
     //! Destructor
-    ~SearchKDTree3() { if (tree_) delete tree_; }
+    ~SearchKDTree() { if (tree_) delete tree_; }
 
     /*!
       @brief Find the source mesh cells potentially overlapping a given
@@ -93,20 +90,20 @@ class SearchKDTree3 {
     // Aggregate data members
     const SourceMeshType & sourceMesh_;
     const TargetMeshType & targetMesh_;
-    gk::KDTree<3>* tree_;
+    gk::KDTree<D>* tree_;
 
-}; // class SearchKDTree3
+}; // class SearchKDTree
 
 
 
-template<typename SourceMeshType, typename TargetMeshType>
-void SearchKDTree3<SourceMeshType, TargetMeshType>::
+template<int D, typename SourceMeshType, typename TargetMeshType>
+void SearchKDTree<D, SourceMeshType, TargetMeshType>::
 operator() (const int cellId, std::vector<int> *candidates)
 const {
     // find bounding box for target cell
-    std::vector<Point<3>> cell_coord;
+    std::vector<Point<D>> cell_coord;
     targetMesh_.cell_get_coordinates(cellId, &cell_coord);
-    gk::IsotheticBBox<3> bb;
+    gk::IsotheticBBox<D> bb;
     for (const auto& cc : cell_coord) {
         bb.add(cc);
     }
@@ -117,12 +114,10 @@ const {
     gk::Intersect(bb, tree_, lcandidates);
     candidates->assign(lcandidates.begin(), lcandidates.end());
 
-} // SearchKDTree3::operator()
-
-
+} // SearchKDTree::operator()
 
 
 } // namespace Portage
 
-#endif // SEARCH_KDTREE3_H
+#endif // SEARCH_KDTREE_H
 
