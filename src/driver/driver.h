@@ -19,8 +19,7 @@
 #include "portage/support/Point.h"
 #include "portage/wrappers/state/jali/jali_state_wrapper.h"
 #include "portage/wrappers/mesh/jali/jali_mesh_wrapper.h"
-#include "portage/search/search_kdtree2.h"
-#include "portage/search/search_kdtree3.h"
+#include "portage/search/search_kdtree.h"
 #include "portage/intersect/intersectClipper.h"
 #include "portage/intersect/intersect_r3d.h"
 #include "portage/interpolate/interpolate_1st_order.h"
@@ -452,7 +451,7 @@ void
     TargetState_Wrapper>::run_2D_CELL_order1(Portage::pointer<double>
                                              target_field) {
   // Get an instance of the desired search algorithm type
-  const SearchKDTree2<InputMesh_Wrapper, TargetMesh_Wrapper>
+  const SearchKDTree<2, InputMesh_Wrapper, TargetMesh_Wrapper>
       search(source_mesh_, target_mesh_);
 
   // Get an instance of the desired intersect algorithm type
@@ -468,7 +467,7 @@ void
   const Interpolate_1stOrder<InputMesh_Wrapper, InputState_Wrapper, CELL>
       interpolater(source_mesh_, source_state_, src_remap_var_names_[0]);
 
-  RemapFunctor<SearchKDTree2<InputMesh_Wrapper, TargetMesh_Wrapper>,
+  RemapFunctor<SearchKDTree<2, InputMesh_Wrapper, TargetMesh_Wrapper>,
                IntersectClipper<InputMesh_Wrapper, TargetMesh_Wrapper>,
                Interpolate_1stOrder<InputMesh_Wrapper,
                                     InputState_Wrapper, CELL> >
@@ -508,7 +507,7 @@ Driver<InputMesh_Wrapper,
     TargetState_Wrapper>::run_2D_CELL_order2(Portage::pointer<double>
                                              target_field) {
   // Get an instance of the desired search algorithm type
-  const SearchKDTree2<InputMesh_Wrapper, TargetMesh_Wrapper>
+  const SearchKDTree<2, InputMesh_Wrapper, TargetMesh_Wrapper>
       search(source_mesh_, target_mesh_);
 
   // Get an instance of the desired intersect algorithm type
@@ -525,7 +524,7 @@ Driver<InputMesh_Wrapper,
             NOLIMITER);
 
   // Make the remapper instance
-  RemapFunctor<SearchKDTree2<InputMesh_Wrapper, TargetMesh_Wrapper>,
+  RemapFunctor<SearchKDTree<2, InputMesh_Wrapper, TargetMesh_Wrapper>,
                IntersectClipper<InputMesh_Wrapper, TargetMesh_Wrapper>,
                Interpolate_2ndOrder<InputMesh_Wrapper,
                                     InputState_Wrapper, CELL> >
@@ -565,7 +564,7 @@ Driver<InputMesh_Wrapper,
     TargetState_Wrapper>::run_3D_CELL_order1(Portage::pointer<double>
                                              target_field) {
   // Get an instance of the desired search algorithm type
-  const SearchKDTree3<InputMesh_Wrapper, TargetMesh_Wrapper>
+  const SearchKDTree<3, InputMesh_Wrapper, TargetMesh_Wrapper>
       search(source_mesh_, target_mesh_);
 
   // Get an instance of the desired intersect algorithm type
@@ -581,7 +580,7 @@ Driver<InputMesh_Wrapper,
       interpolater(source_mesh_, source_state_, src_remap_var_names_[0]);
 
   // Make the remapper instance
-  RemapFunctor<SearchKDTree3<InputMesh_Wrapper, TargetMesh_Wrapper>,
+  RemapFunctor<SearchKDTree<3, InputMesh_Wrapper, TargetMesh_Wrapper>,
                IntersectR3D<InputMesh_Wrapper, TargetMesh_Wrapper>,
                Interpolate_1stOrder<InputMesh_Wrapper,
                                     InputState_Wrapper, CELL> >
@@ -621,7 +620,7 @@ Driver<InputMesh_Wrapper,
     TargetState_Wrapper>::run_3D_CELL_order2(Portage::pointer<double>
                                              target_field) {
   // Get an instance of the desired search algorithm type
-  const SearchKDTree3<InputMesh_Wrapper, TargetMesh_Wrapper>
+  const SearchKDTree<3, InputMesh_Wrapper, TargetMesh_Wrapper>
       search(source_mesh_, target_mesh_);
 
   // Get an instance of the desired intersect algorithm type
@@ -638,7 +637,7 @@ Driver<InputMesh_Wrapper,
             NOLIMITER);
 
 
-  RemapFunctor<SearchKDTree3<InputMesh_Wrapper, TargetMesh_Wrapper>,
+  RemapFunctor<SearchKDTree<3, InputMesh_Wrapper, TargetMesh_Wrapper>,
                IntersectR3D<InputMesh_Wrapper, TargetMesh_Wrapper>,
                Interpolate_2ndOrder<InputMesh_Wrapper,
                                     InputState_Wrapper, CELL> >
@@ -681,7 +680,7 @@ Driver<InputMesh_Wrapper,
   MeshWrapperDual<TargetMesh_Wrapper> target_mesh_dual(target_mesh_);
 
   // Get an instance of the desired search algorithm type
-  const SearchKDTree2<MeshWrapperDual<InputMesh_Wrapper>,
+  const SearchKDTree<2, MeshWrapperDual<InputMesh_Wrapper>,
       MeshWrapperDual<TargetMesh_Wrapper>>
       search(source_mesh_dual, target_mesh_dual);
 
@@ -699,8 +698,8 @@ Driver<InputMesh_Wrapper,
   const Interpolate_1stOrder<InputMesh_Wrapper, InputState_Wrapper, NODE>
       interpolater(source_mesh_, source_state_, src_remap_var_names_[0]);
 
-  RemapFunctor<SearchKDTree2<MeshWrapperDual<InputMesh_Wrapper>,
-                             MeshWrapperDual<TargetMesh_Wrapper>>,
+  RemapFunctor<SearchKDTree<2, MeshWrapperDual<InputMesh_Wrapper>,
+                            MeshWrapperDual<TargetMesh_Wrapper>>,
       IntersectClipper<MeshWrapperDual<InputMesh_Wrapper>,
                        MeshWrapperDual<TargetMesh_Wrapper>>,
       Interpolate_1stOrder<InputMesh_Wrapper, InputState_Wrapper, NODE> >
@@ -743,7 +742,7 @@ Driver<InputMesh_Wrapper,
   MeshWrapperDual<TargetMesh_Wrapper> target_mesh_dual(target_mesh_);
 
   // Get an instance of the desired search algorithm type
-  const SearchKDTree2<MeshWrapperDual<InputMesh_Wrapper>,
+  const SearchKDTree<2, MeshWrapperDual<InputMesh_Wrapper>,
       MeshWrapperDual<TargetMesh_Wrapper>>
       search(source_mesh_dual, target_mesh_dual);
 
@@ -762,8 +761,8 @@ Driver<InputMesh_Wrapper,
             NOLIMITER);
 
   // Make the remapper instance
-  RemapFunctor<SearchKDTree2<MeshWrapperDual<InputMesh_Wrapper>,
-                             MeshWrapperDual<TargetMesh_Wrapper>>,
+  RemapFunctor<SearchKDTree<2, MeshWrapperDual<InputMesh_Wrapper>,
+                            MeshWrapperDual<TargetMesh_Wrapper>>,
       IntersectClipper<MeshWrapperDual<InputMesh_Wrapper>,
                        MeshWrapperDual<TargetMesh_Wrapper>>,
       Interpolate_2ndOrder<InputMesh_Wrapper, InputState_Wrapper, NODE> >
@@ -807,7 +806,7 @@ Driver<InputMesh_Wrapper,
   MeshWrapperDual<TargetMesh_Wrapper> target_mesh_dual(target_mesh_);
 
   // Get an instance of the desired search algorithm type
-  const SearchKDTree3<MeshWrapperDual<InputMesh_Wrapper>,
+  const SearchKDTree<3, MeshWrapperDual<InputMesh_Wrapper>,
       MeshWrapperDual<TargetMesh_Wrapper>>
       search(source_mesh_dual, target_mesh_dual);
 
@@ -825,8 +824,8 @@ Driver<InputMesh_Wrapper,
       interpolater(source_mesh_, source_state_, src_remap_var_names_[0]);
 
   // Make the remapper instance
-  RemapFunctor<SearchKDTree3<MeshWrapperDual<InputMesh_Wrapper>,
-                             MeshWrapperDual<TargetMesh_Wrapper>>,
+  RemapFunctor<SearchKDTree<3, MeshWrapperDual<InputMesh_Wrapper>,
+                            MeshWrapperDual<TargetMesh_Wrapper>>,
       IntersectR3D<MeshWrapperDual<InputMesh_Wrapper>,
                    MeshWrapperDual<TargetMesh_Wrapper>>,
       Interpolate_1stOrder<InputMesh_Wrapper, InputState_Wrapper, NODE>>
@@ -869,7 +868,7 @@ Driver<InputMesh_Wrapper,
   MeshWrapperDual<TargetMesh_Wrapper> target_mesh_dual(target_mesh_);
 
   // Get an instance of the desired search algorithm type
-  const SearchKDTree3<MeshWrapperDual<InputMesh_Wrapper>,
+  const SearchKDTree<3, MeshWrapperDual<InputMesh_Wrapper>,
       MeshWrapperDual<TargetMesh_Wrapper>>
       search(source_mesh_dual, target_mesh_dual);
 
@@ -888,8 +887,8 @@ Driver<InputMesh_Wrapper,
             NOLIMITER);
 
 
-  RemapFunctor<SearchKDTree3<MeshWrapperDual<InputMesh_Wrapper>,
-                             MeshWrapperDual<TargetMesh_Wrapper>>,
+  RemapFunctor<SearchKDTree<3, MeshWrapperDual<InputMesh_Wrapper>,
+                            MeshWrapperDual<TargetMesh_Wrapper>>,
       IntersectR3D<MeshWrapperDual<InputMesh_Wrapper>,
                    MeshWrapperDual<TargetMesh_Wrapper>>,
       Interpolate_2ndOrder<InputMesh_Wrapper, InputState_Wrapper, NODE> >
@@ -926,7 +925,7 @@ Driver<InputMesh_Wrapper,
   Driver::run() to actually do the search, intersect, and interpolation
   calculations.
   @tparam SearchType The type of search method (e.g. SearchSimple or
-  SearchKDTree3).
+  SearchKDTree).
   @tparam IsectType The type of intersect method (e.g. IntersectClipper).
   @tparam InterpType The type of interpolation method (e.g. Interpolate_1stOrder
   or Interpolate_2ndOrder).

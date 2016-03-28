@@ -3,7 +3,7 @@
  * All rights reserved.
  *--------------------------------------------------------------------------~~*/
 
-#include "search_kdtree2.h"
+#include "search_kdtree.h"
 
 #include <algorithm>
 
@@ -24,7 +24,7 @@ TEST(search_kdtree2, case1)
     const Portage::Jali_Mesh_Wrapper source_mesh_wrapper(*smesh);
     const Portage::Jali_Mesh_Wrapper target_mesh_wrapper(*tmesh);
 
-    Portage::SearchKDTree2<
+    Portage::SearchKDTree<2,
         Portage::Jali_Mesh_Wrapper, Portage::Jali_Mesh_Wrapper>
         search(source_mesh_wrapper, target_mesh_wrapper);
 
@@ -77,7 +77,7 @@ TEST(search_kdtree2, dual)
     const MeshWrapperDual s2(source_mesh_wrapper);
     const MeshWrapperDual t2(target_mesh_wrapper);
 
-    Portage::SearchKDTree2<MeshWrapperDual, MeshWrapperDual>
+    Portage::SearchKDTree<2, MeshWrapperDual, MeshWrapperDual>
         search(s2, t2);
 
     for (int tc = 0; tc < 9; ++tc) {

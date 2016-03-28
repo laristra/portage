@@ -6,8 +6,7 @@
 # Add header files
 set(search_HEADERS
     search_simple.h
-    search_kdtree2.h
-    search_kdtree3.h
+    search_kdtree.h
     kdtree.h
     BoundBox.h
     PARENT_SCOPE
