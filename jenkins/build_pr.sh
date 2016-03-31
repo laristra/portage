@@ -10,6 +10,8 @@ set -e
 # Echo each command
 set -x
 
+python $WORKSPACE/jenkins/parseREADME.py $WORKSPACE/README.md $WORKSPACE
+
 # Tag or git commit hash of Jali version to build and use for this PR:
 JALI_VERSION=239d3f314e1ebc73fa0a16dbea7a0156a5e06544
 
