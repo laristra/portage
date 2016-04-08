@@ -13,10 +13,10 @@ set -x
 python $WORKSPACE/jenkins/parseREADME.py $WORKSPACE/README.md $WORKSPACE
 
 # Tag or git commit hash of Jali version to build and use for this PR:
-JALI_VERSION=239d3f314e1ebc73fa0a16dbea7a0156a5e06544
+JALI_VERSION=7c3f0a009aaddb73d6d48fd414e64b0a405ccd7c
 
 # Where to find Jali's TPLs:
-TPL_INSTALL_PREFIX=/usr/local/codes/ngc/private/jali-1.0.2-tpl-intel
+TPL_INSTALL_PREFIX=/usr/local/codes/ngc/private/jali-tpl-1.0.5-intel
 
 # General NGC include directory
 NGC_INCLUDE_DIR=/usr/local/codes/ngc/private/include
