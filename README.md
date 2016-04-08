@@ -34,7 +34,7 @@ Execute the following from the Jali root directory:
 export MODULEPATH=""
 . /opt/local/packages/Modules/default/init/sh
 module load intel/15.0.3 openmpi/1.6.5
-JALI_INSTALL_PREFIX=/usr/local/codes/ngc/private/jali-0.6.6-intel
+JALI_INSTALL_PREFIX=/usr/local/codes/ngc/private/jali-0.7.1-intel
 mkdir build
 cd build
 cmake \

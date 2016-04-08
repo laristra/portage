@@ -63,20 +63,22 @@ int main(int argc, char** argv) {
   std::printf("running example %d\n", example);
 
   Jali::MeshFactory mf(MPI_COMM_WORLD);
+  mf.included_entities({Jali::Entity_kind::FACE,
+                        Jali::Entity_kind::EDGE,
+                        Jali::Entity_kind::WEDGE,
+                        Jali::Entity_kind::CORNER});
 
-  const std::unique_ptr<Jali::Mesh> inputMesh = mf(argv[2], NULL, true,
-                                                   true, true, true);
+  const std::shared_ptr<Jali::Mesh> inputMesh = mf(argv[2]);
   const Jali_Mesh_Wrapper inputMeshWrapper(*inputMesh);
 
-  const std::unique_ptr<Jali::Mesh> targetMesh = mf(argv[3], NULL, true,
-                                                    true, true, true);
+  const std::shared_ptr<Jali::Mesh> targetMesh = mf(argv[3]);
   const Jali_Mesh_Wrapper targetMeshWrapper(*targetMesh);
 
   std::cout << "Target mesh stats: " <<
       targetMeshWrapper.num_owned_cells() << " " <<
       targetMeshWrapper.num_owned_nodes() << std::endl;
 
-  Jali::State sourceState(inputMesh.get());
+  Jali::State sourceState(inputMesh);
   std::vector<double> sourceData(inputMeshWrapper.num_owned_cells(), 0);
 
   #ifdef FIXED_SIZE_EXAMPLE
@@ -107,17 +109,18 @@ int main(int argc, char** argv) {
     }
   #endif
 
-  sourceState.add("celldata",
-                  (example == 0) || (example == 2) ?
-                  Jali::CELL : Jali::NODE, &(sourceData[0]));
+  Jali::Entity_kind entityKind =
+      (example == 0) || (example == 2) ?
+      Jali::Entity_kind::CELL : Jali::Entity_kind::NODE;
+  sourceState.add("celldata", inputMesh, entityKind,
+                  Jali::Parallel_type::ALL, &(sourceData[0]));
   const Jali_State_Wrapper sourceStateWrapper(sourceState);
 
-  Jali::State targetState(targetMesh.get());
+  Jali::State targetState(targetMesh);
   std::vector<double> targetData(targetMeshWrapper.num_owned_cells(), 0);
   const Jali::StateVector<double> & cellvecout =
-      targetState.add("celldata",
-                      (example == 0) || (example == 2) ?
-                      Jali::CELL : Jali::NODE, &(targetData[0]));
+      targetState.add("celldata", targetMesh, entityKind,
+                      Jali::Parallel_type::ALL, &(targetData[0]));
   Jali_State_Wrapper targetStateWrapper(targetState);
 
   std::vector<std::string> remap_fields;

@@ -50,6 +50,9 @@ namespace Portage {
 // an edge that is shared by two wedges in adjacent cells
 //
 
+
+// TODO:  Right now we're relying on the fact that this enum is
+//        identical to Jali::Entity_kind.  Need to fix this.
 enum Entity_kind {
   ALL_KIND = -3,
   ANY_KIND = -2,

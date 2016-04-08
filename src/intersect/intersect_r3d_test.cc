@@ -1,12 +1,16 @@
 #include "intersect_r3d.h"
 #include "gtest/gtest.h"
-#include "../driver/driver.h"
 #include "MeshFactory.hh"
+#include "portage/wrappers/mesh/jali/jali_mesh_wrapper.h"
 
 TEST(intersectR3D, simple1) {
   Jali::MeshFactory mf(MPI_COMM_WORLD);
-  std::unique_ptr<Jali::Mesh> sm = mf(0,0,0, 2,2,2, 1,1,1, NULL, true, true, true, true);
-  std::unique_ptr<Jali::Mesh> tm = mf(1,1,1, 2,2,2, 1,1,1, NULL, true, true, true, true);
+  mf.included_entities({Jali::Entity_kind::EDGE,
+                        Jali::Entity_kind::FACE,
+                        Jali::Entity_kind::WEDGE,
+                        Jali::Entity_kind::CORNER});
+  std::shared_ptr<Jali::Mesh> sm = mf(0,0,0, 2,2,2, 1,1,1);
+  std::shared_ptr<Jali::Mesh> tm = mf(1,1,1, 2,2,2, 1,1,1);
   const Portage::Jali_Mesh_Wrapper s(*sm);
   const Portage::Jali_Mesh_Wrapper t(*tm);
 
@@ -30,8 +34,12 @@ TEST(intersectR3D, simple1) {
 
 TEST(intersectR3D, simple2) {
   Jali::MeshFactory mf(MPI_COMM_WORLD);
-  std::unique_ptr<Jali::Mesh> sm = mf(0,0,0, 2,2,2, 1,1,1, NULL, true, true, true, true);
-  std::unique_ptr<Jali::Mesh> tm = mf(0,0,0, 2,2,2, 1,1,1, NULL, true, true, true, true);
+  mf.included_entities({Jali::Entity_kind::EDGE,
+                        Jali::Entity_kind::FACE,
+                        Jali::Entity_kind::WEDGE,
+                        Jali::Entity_kind::CORNER});
+  std::shared_ptr<Jali::Mesh> sm = mf(0,0,0, 2,2,2, 1,1,1);
+  std::shared_ptr<Jali::Mesh> tm = mf(0,0,0, 2,2,2, 1,1,1);
   const Portage::Jali_Mesh_Wrapper s(*sm);
   const Portage::Jali_Mesh_Wrapper t(*tm);
 
@@ -55,8 +63,12 @@ TEST(intersectR3D, simple2) {
 
 TEST(intersectR3D, simple3) {
   Jali::MeshFactory mf(MPI_COMM_WORLD);
-  std::unique_ptr<Jali::Mesh> sm = mf(0,0,0, 3,3,3, 1,1,1, NULL, true, true, true, true);
-  std::unique_ptr<Jali::Mesh> tm = mf(1,1,1, 2,2,2, 1,1,1, NULL, true, true, true, true);
+  mf.included_entities({Jali::Entity_kind::EDGE,
+                        Jali::Entity_kind::FACE,
+                        Jali::Entity_kind::WEDGE,
+                        Jali::Entity_kind::CORNER});
+  std::shared_ptr<Jali::Mesh> sm = mf(0,0,0, 3,3,3, 1,1,1);
+  std::shared_ptr<Jali::Mesh> tm = mf(1,1,1, 2,2,2, 1,1,1);
   const Portage::Jali_Mesh_Wrapper s(*sm);
   const Portage::Jali_Mesh_Wrapper t(*tm);
 
@@ -80,8 +92,12 @@ TEST(intersectR3D, simple3) {
 
 TEST(intersectR3D, simple4) {
   Jali::MeshFactory mf(MPI_COMM_WORLD);
-  std::unique_ptr<Jali::Mesh> sm = mf(0,0,0, 2,2,2, 1,1,1, NULL, true, true, true, true);
-  std::unique_ptr<Jali::Mesh> tm = mf(1,1,1, 3,3,3, 1,1,1, NULL, true, true, true, true);
+  mf.included_entities({Jali::Entity_kind::EDGE,
+                        Jali::Entity_kind::FACE,
+                        Jali::Entity_kind::WEDGE,
+                        Jali::Entity_kind::CORNER});
+  std::shared_ptr<Jali::Mesh> sm = mf(0,0,0, 2,2,2, 1,1,1);
+  std::shared_ptr<Jali::Mesh> tm = mf(1,1,1, 3,3,3, 1,1,1);
   const Portage::Jali_Mesh_Wrapper s(*sm);
   const Portage::Jali_Mesh_Wrapper t(*tm);
 
@@ -105,8 +121,12 @@ TEST(intersectR3D, simple4) {
 
 TEST(intersectR3D, simple5) {
   Jali::MeshFactory mf(MPI_COMM_WORLD);
-  std::unique_ptr<Jali::Mesh> sm = mf(0,0,0, 10,10,10, 1,1,1, NULL, true, true, true, true);
-  std::unique_ptr<Jali::Mesh> tm = mf(-5,-5,-5, 5,5,5, 1,1,1, NULL, true, true, true, true);
+  mf.included_entities({Jali::Entity_kind::EDGE,
+                        Jali::Entity_kind::FACE,
+                        Jali::Entity_kind::WEDGE,
+                        Jali::Entity_kind::CORNER});
+  std::shared_ptr<Jali::Mesh> sm = mf(0,0,0, 10,10,10, 1,1,1);
+  std::shared_ptr<Jali::Mesh> tm = mf(-5,-5,-5, 5,5,5, 1,1,1);
   const Portage::Jali_Mesh_Wrapper s(*sm);
   const Portage::Jali_Mesh_Wrapper t(*tm);
 
@@ -130,8 +150,12 @@ TEST(intersectR3D, simple5) {
 
 TEST(intersectR3D, simple6) {
   Jali::MeshFactory mf(MPI_COMM_WORLD);
-  std::unique_ptr<Jali::Mesh> sm = mf(0,0,0, 10,10,10, 5,5,5, NULL, true, true, true, true);
-  std::unique_ptr<Jali::Mesh> tm = mf(0,0,0, 10,10,10, 2,2,2, NULL, true, true, true, true);
+  mf.included_entities({Jali::Entity_kind::EDGE,
+                        Jali::Entity_kind::FACE,
+                        Jali::Entity_kind::WEDGE,
+                        Jali::Entity_kind::CORNER});
+  std::shared_ptr<Jali::Mesh> sm = mf(0,0,0, 10,10,10, 5,5,5);
+  std::shared_ptr<Jali::Mesh> tm = mf(0,0,0, 10,10,10, 2,2,2);
   const Portage::Jali_Mesh_Wrapper s(*sm);
   const Portage::Jali_Mesh_Wrapper t(*tm);
 
@@ -186,8 +210,12 @@ TEST(intersectR3D, simple6) {
 
 TEST(intersectR3D, simple7) {
   Jali::MeshFactory mf(MPI_COMM_WORLD);
-  std::unique_ptr<Jali::Mesh> sm = mf(-2,-2,-2, 0,0,0, 1,1,1, NULL, true, true, true, true);
-  std::unique_ptr<Jali::Mesh> tm = mf(-1,-1,-1, 0,0,0, 1,1,1, NULL, true, true, true, true);
+  mf.included_entities({Jali::Entity_kind::EDGE,
+                        Jali::Entity_kind::FACE,
+                        Jali::Entity_kind::WEDGE,
+                        Jali::Entity_kind::CORNER});
+  std::shared_ptr<Jali::Mesh> sm = mf(-2,-2,-2, 0,0,0, 1,1,1);
+  std::shared_ptr<Jali::Mesh> tm = mf(-1,-1,-1, 0,0,0, 1,1,1);
   const Portage::Jali_Mesh_Wrapper s(*sm);
   const Portage::Jali_Mesh_Wrapper t(*tm);
 
@@ -211,8 +239,12 @@ TEST(intersectR3D, simple7) {
 
 TEST(intersectR3D, simple8) {
   Jali::MeshFactory mf(MPI_COMM_WORLD);
-  std::unique_ptr<Jali::Mesh> sm = mf(-4,-4,-4, 0,0,0, 1,1,1, NULL, true, true, true, true);
-  std::unique_ptr<Jali::Mesh> tm = mf(-3,-3,-3, 0,0,0, 1,1,1, NULL, true, true, true, true);
+  mf.included_entities({Jali::Entity_kind::EDGE,
+                        Jali::Entity_kind::FACE,
+                        Jali::Entity_kind::WEDGE,
+                        Jali::Entity_kind::CORNER});
+  std::shared_ptr<Jali::Mesh> sm = mf(-4,-4,-4, 0,0,0, 1,1,1);
+  std::shared_ptr<Jali::Mesh> tm = mf(-3,-3,-3, 0,0,0, 1,1,1);
   const Portage::Jali_Mesh_Wrapper s(*sm);
   const Portage::Jali_Mesh_Wrapper t(*tm);
 
@@ -236,8 +268,12 @@ TEST(intersectR3D, simple8) {
 
 TEST(intersectR3D, simple9) {
   Jali::MeshFactory mf(MPI_COMM_WORLD);
-  std::unique_ptr<Jali::Mesh> sm = mf(-4,-3,-2, 0,1,2, 1,1,1, NULL, true, true, true, true);
-  std::unique_ptr<Jali::Mesh> tm = mf(-3,-2,-1, 0,1,2, 1,1,1, NULL, true, true, true, true);
+  mf.included_entities({Jali::Entity_kind::EDGE,
+                        Jali::Entity_kind::FACE,
+                        Jali::Entity_kind::WEDGE,
+                        Jali::Entity_kind::CORNER});
+  std::shared_ptr<Jali::Mesh> sm = mf(-4,-3,-2, 0,1,2, 1,1,1);
+  std::shared_ptr<Jali::Mesh> tm = mf(-3,-2,-1, 0,1,2, 1,1,1);
   const Portage::Jali_Mesh_Wrapper s(*sm);
   const Portage::Jali_Mesh_Wrapper t(*tm);
 

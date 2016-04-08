@@ -19,8 +19,8 @@ TEST(search_kdtree2, case1)
     Jali::MeshFactory mf(MPI_COMM_WORLD);
     // overlay a 2x2 target mesh on a 3x3 source mesh
     // each target mesh cell gives four candidate source cells
-    const std::unique_ptr<Jali::Mesh> smesh = mf(0.0, 0.0, 1.0, 1.0, 3, 3);
-    const std::unique_ptr<Jali::Mesh> tmesh = mf(0.0, 0.0, 1.0, 1.0, 2, 2);
+    const std::shared_ptr<Jali::Mesh> smesh = mf(0.0, 0.0, 1.0, 1.0, 3, 3);
+    const std::shared_ptr<Jali::Mesh> tmesh = mf(0.0, 0.0, 1.0, 1.0, 2, 2);
     const Portage::Jali_Mesh_Wrapper source_mesh_wrapper(*smesh);
     const Portage::Jali_Mesh_Wrapper target_mesh_wrapper(*tmesh);
 
@@ -65,12 +65,14 @@ class MeshWrapperDual {
 TEST(search_kdtree2, dual)
 {
     Jali::MeshFactory mf(MPI_COMM_WORLD);
+    mf.included_entities({Jali::Entity_kind::EDGE,
+                          Jali::Entity_kind::FACE,
+                          Jali::Entity_kind::WEDGE,
+                          Jali::Entity_kind::CORNER});
     // overlay a 2x2 target mesh on a 3x3 source mesh
     // each target mesh node gives four candidate source nodes
-    const std::unique_ptr<Jali::Mesh> smesh = mf(0.0, 0.0, 1.0, 1.0, 3, 3, NULL, 
-                                 true, true, true, true);
-    const std::unique_ptr<Jali::Mesh> tmesh = mf(0.0, 0.0, 1.0, 1.0, 2, 2, NULL, 
-                                 true, true, true, true);
+    const std::shared_ptr<Jali::Mesh> smesh = mf(0.0, 0.0, 1.0, 1.0, 3, 3);
+    const std::shared_ptr<Jali::Mesh> tmesh = mf(0.0, 0.0, 1.0, 1.0, 2, 2);
     const Portage::Jali_Mesh_Wrapper source_mesh_wrapper(*smesh);
     const Portage::Jali_Mesh_Wrapper target_mesh_wrapper(*tmesh);
 
