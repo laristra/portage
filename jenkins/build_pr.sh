@@ -13,12 +13,11 @@ set -x
 # Put a couple of settings in place to generate test output even if
 # the README doesn't ask for it.
 export CTEST_OUTPUT_ON_FAILURE=1
-cat >$WORKSPACE/build/CMakeCache.txt <<EOF
-ENABLE_JENKINS_OUTPUT:BOOL=True
-EOF
+CACHE_OPTIONS="-D ENABLE_JENKINS_OUTPUT=True"
+sed "s/^ *cmake/& $CACHE_OPTIONS/" $WORKSPACE/README.md >$WORKSPACE/README.md.1
 
-# Run test commands from README
-python $WORKSPACE/jenkins/parseREADME.py $WORKSPACE/README.md $WORKSPACE
+# Run build/test commands from README
+python $WORKSPACE/jenkins/parseREADME.py $WORKSPACE/README.md.1 $WORKSPACE
 
 # TEMPORARY FIX:
 # Exit at this point.  We've already tested the PR on varan against 
