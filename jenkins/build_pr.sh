@@ -13,7 +13,7 @@ set -x
 # Put a couple of settings in place to generate test output even if
 # the README doesn't ask for it.
 export CTEST_OUTPUT_ON_FAILURE=1
-cat >CMakeCache.txt <<EOF
+cat >$WORKSPACE/build/CMakeCache.txt <<EOF
 ENABLE_JENKINS_OUTPUT:BOOL=True
 EOF
 
