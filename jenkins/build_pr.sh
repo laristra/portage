@@ -10,6 +10,14 @@ set -e
 # Echo each command
 set -x
 
+# Put a couple of settings in place to generate test output even if
+# the README doesn't ask for it.
+export CTEST_OUTPUT_ON_FAILURE=1
+cat >CMakeCache.txt <<EOF
+ENABLE_JENKINS_OUTPUT:BOOL=True
+EOF
+
+# Run test commands from README
 python $WORKSPACE/jenkins/parseREADME.py $WORKSPACE/README.md $WORKSPACE
 
 # TEMPORARY FIX:
@@ -110,7 +118,6 @@ cmake \
   -D ENABLE_UNIT_TESTS=True \
   -D ENABLE_MPI=True \
   -D ENABLE_MPI_CXX_BINDINGS=True \
-  -D ENABLE_JENKINS_OUTPUT=True \
   -D Jali_DIR:FILEPATH=$JALI_INSTALL_PREFIX/lib \
   -D NGC_INCLUDE_DIR:FILEPATH=$NGC_INCLUDE_DIR \
   -D ENABLE_THRUST=False \
