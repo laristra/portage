@@ -10,13 +10,32 @@ set -e
 # Echo each command
 set -x
 
-python $WORKSPACE/jenkins/parseREADME.py $WORKSPACE/README.md $WORKSPACE
+# Put a couple of settings in place to generate test output even if
+# the README doesn't ask for it.
+export CTEST_OUTPUT_ON_FAILURE=1
+CACHE_OPTIONS="-D ENABLE_JENKINS_OUTPUT=True"
+sed "s/^ *cmake/& $CACHE_OPTIONS/" $WORKSPACE/README.md >$WORKSPACE/README.md.1
 
+# Run build/test commands from README
+python $WORKSPACE/jenkins/parseREADME.py $WORKSPACE/README.md.1 $WORKSPACE
+
+# TEMPORARY FIX:
+# Exit at this point.  We've already tested the PR on varan against 
+# a fixed Jali release, so we know the PR is good.
+exit
+
+# The remaining part of this script currently runs on vulpix, and
+# our Jali TPL 1.0.5 install does not work there since vulpix and
+# varan have different environments.
+# TODO:  Either modify the below to run on varan, or delete it if we
+#        decide we don't need it.  Need a team discussion to decide.
+
+#
 # Tag or git commit hash of Jali version to build and use for this PR:
-JALI_VERSION=239d3f314e1ebc73fa0a16dbea7a0156a5e06544
+JALI_VERSION=7c3f0a009aaddb73d6d48fd414e64b0a405ccd7c
 
 # Where to find Jali's TPLs:
-TPL_INSTALL_PREFIX=/usr/local/codes/ngc/private/jali-1.0.2-tpl-intel
+TPL_INSTALL_PREFIX=/usr/local/codes/ngc/private/jali-tpl-1.0.5-intel
 
 # General NGC include directory
 NGC_INCLUDE_DIR=/usr/local/codes/ngc/private/include
@@ -98,7 +117,6 @@ cmake \
   -D ENABLE_UNIT_TESTS=True \
   -D ENABLE_MPI=True \
   -D ENABLE_MPI_CXX_BINDINGS=True \
-  -D ENABLE_JENKINS_OUTPUT=True \
   -D Jali_DIR:FILEPATH=$JALI_INSTALL_PREFIX/lib \
   -D NGC_INCLUDE_DIR:FILEPATH=$NGC_INCLUDE_DIR \
   -D ENABLE_THRUST=False \

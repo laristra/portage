@@ -1,9 +1,8 @@
 #include "intersectClipper.h"
 #include "gtest/gtest.h"
 #include "Mesh.hh"
-#include "../driver/driver.h"
-#include "portage/wrappers/mesh/jali/jali_mesh_wrapper.h"
 #include "MeshFactory.hh"
+#include "portage/wrappers/mesh/jali/jali_mesh_wrapper.h"
 /*! 
  * @brief Intersect two cells on two single cell meshes to compute moments.
  * This exercises Clipper as well as the intersectClipper class.
@@ -14,8 +13,8 @@
 TEST(intersectClipper, simple){
   Jali::MeshFactory mf(MPI_COMM_WORLD);
   //Create mesh from 0, 0 to 2.4, 2 1x1
-  std::unique_ptr<Jali::Mesh> sm = mf(0, 0, 2, 2, 1,1);
-  std::unique_ptr<Jali::Mesh> tm = mf(1,1,2, 2, 1, 1);
+  std::shared_ptr<Jali::Mesh> sm = mf(0, 0, 2, 2, 1,1);
+  std::shared_ptr<Jali::Mesh> tm = mf(1,1,2, 2, 1, 1);
   Portage::Jali_Mesh_Wrapper s(*sm);
   Portage::Jali_Mesh_Wrapper t(*tm);
   IntersectClipper<Portage::Jali_Mesh_Wrapper> isect{s , t};

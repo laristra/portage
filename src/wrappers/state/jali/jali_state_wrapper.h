@@ -68,11 +68,13 @@ class Jali_State_Wrapper {
   void get_data(const Entity_kind on_what, const std::string var_name, T** const data) const {
   
     std::shared_ptr<Jali::BaseStateVector> vector = 
-        *(jali_state_.find(var_name, (Jali::Entity_kind) on_what));
-    if (vector != 0) (*data) = ((T*)(vector->get_data()));
+        *(jali_state_.find<T, Jali::Mesh>(var_name, jali_state_.mesh(),
+                           (Jali::Entity_kind) on_what));
+    if (vector != 0) (*data) = ((T*)(vector->get_raw_data()));
   
   }
 
+#if 0
   /*!
     @brief Get the entity type on which the given field is defined
     @param[in] var_name The string name of the data field
@@ -81,7 +83,7 @@ class Jali_State_Wrapper {
   Entity_kind get_entity(const std::string var_name) const {
 
     std::shared_ptr<Jali::BaseStateVector> vector = 
-        *(jali_state_.find(var_name, Jali::ANY_KIND));
+        *(jali_state_.find(var_name, jali_state_.mesh()));
     if (vector != 0) return (Portage::Entity_kind) vector->on_what();
 
     return Portage::UNKNOWN_KIND;
@@ -96,11 +98,12 @@ class Jali_State_Wrapper {
   const std::type_info& get_type(const std::string var_name) const {
     
     std::shared_ptr<Jali::BaseStateVector> vector = 
-        *(jali_state_.find(var_name,Jali::ANY_KIND));
+        *(jali_state_.find(var_name, jali_state_.mesh()));
     if (vector != 0) return vector->get_type();
     return typeid(0);
 
   }
+#endif
 
   /*!
     @brief Begin iterator on vector names

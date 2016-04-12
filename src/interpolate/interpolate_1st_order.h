@@ -9,8 +9,11 @@
 
 #include <cassert>
 #include <string>
+#include <iostream>
 #include <utility>
 #include <vector>
+
+#include "portage/support/portage.h"
 
 
 namespace Portage {

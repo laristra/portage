@@ -10,6 +10,7 @@
 #include <stdexcept>
 #include <string>
 
+#include "portage/support/portage.h"
 #include "portage/support/Point.h"
 #include "portage/support/matrix.h"
 
