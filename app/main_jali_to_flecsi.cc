@@ -84,7 +84,7 @@ int main(int argc, char** argv) {
 
   // Construct the input Jali mesh
   Jali::MeshFactory mf(MPI_COMM_WORLD);
-  std::unique_ptr<Jali::Mesh> inputMesh(nullptr);
+  std::shared_ptr<Jali::Mesh> inputMesh;
   inputMesh = mf(xmin, ymin, xmax, ymax, nx, ny);
 
   // Construct the output FleCSI mesh
@@ -97,14 +97,15 @@ int main(int argc, char** argv) {
 
   // Fill the input state with linear func
   const int nsrccells = inputMeshWrapper.num_owned_cells();
-  Jali::State inputState(inputMesh.get());
+  Jali::State inputState(inputMesh);
   std::vector<double> inputData(nsrccells);
   std::vector<double> cen;
   for (auto c = 0; c < nsrccells; ++c) {
     inputMeshWrapper.cell_centroid(c, &cen);
     inputData[c] = cen[0] + cen[1];
   }
-  inputState.add("celldata", Jali::CELL, &(inputData[0]));
+  inputState.add("celldata", inputMesh, Jali::Entity_kind::CELL,
+          Jali::Parallel_type::ALL, &(inputData[0]));
   Portage::Jali_State_Wrapper inputStateWrapper(inputState);
 
   // Declare the target storage
@@ -153,7 +154,7 @@ int main(int argc, char** argv) {
 
   // output -- flecsi output not working at the moment
   // inputState.export_to_mesh();
-  // dynamic_cast<Jali::Mesh_MSTK*>(inputMesh.get())->write_to_exodus_file("input.exo");
+  // dynamic_cast<Jali::Mesh_MSTK*>(inputMesh)->write_to_exodus_file("input.exo");
   // std::cout << "done inputState mesh" << std::endl;
   // std::cout << flecsi::burton_exodus_exo_registered << std::endl;
   // // FlecSI mesh
