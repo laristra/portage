@@ -29,6 +29,9 @@
 #include "JaliStateVector.h"
 #include "JaliState.h"
 
+#define MSTK_HAVE_MPI
+#include "Mesh_MSTK.hh"
+
 /*!
   @file main.cc
   @brief A simple application that drives our remap routines.
@@ -46,14 +49,15 @@
 
 struct example_properties {
   example_properties(const int dim, const int order, const bool cell_centered,
-                     const bool linear) : dim(dim), order(order),
-                                          cell_centered(cell_centered),
-                                          linear(linear) { }
+                     const bool linear, const bool conformal = true)
+      : dim(dim), order(order), cell_centered(cell_centered), linear(linear),
+        conformal(conformal) { }
 
   int dim;             // dimensionality of meshes in example
   int order;           // interpolation order in example
   bool cell_centered;  // is this example a cell-centered remap?
   bool linear;         // is this example a remap of linear data?
+  bool conformal;      // are the two meshes boundary-conformal?
 };
 
 // Use this to add new problems.  If needed, we can extend the
@@ -75,24 +79,28 @@ std::vector<example_properties> setup_examples() {
   // 3: 2d 2nd order cell-centered remap of quadratic func
   examples.emplace_back(2, 2, true, false);
 
-  // 4: 3d 1st order cell-centered remap of linear func
+  // 4: 2d 1st order cell-centered remap of linear function on non-conformal
+  // meshes
+  examples.emplace_back(2, 1, true, true, false);
+
+  // 5: 3d 1st order cell-centered remap of linear func
   examples.emplace_back(3, 1, true, false);
 
-  // 5: 3d 2nd order cell-centered remap of linear func
+  // 6: 3d 2nd order cell-centered remap of linear func
   examples.emplace_back(3, 2, true, false);
 
   // Node-centered remaps:
 
-  // 6: 2d 1st order node-centered remap of quadratic func
+  // 7: 2d 1st order node-centered remap of quadratic func
   examples.emplace_back(2, 1, false, false);
 
-  // 7: 2d 2nd order node-centered remap of quadratic func
+  // 8: 2d 2nd order node-centered remap of quadratic func
   examples.emplace_back(2, 2, false, false);
 
-  // 8: 3d 1st order node-centered remap of quadratic func
+  // 9: 3d 1st order node-centered remap of quadratic func
   examples.emplace_back(3, 1, false, false);
 
-  // 9: 3d 2nd order node-centered remap of quadratic func
+  // 10: 3d 2nd order node-centered remap of quadratic func
   examples.emplace_back(3, 2, false, false);
 
   return examples;
@@ -112,11 +120,12 @@ void print_usage() {
       std::printf("\n NODE-CENTERED EXAMPLES:\n");
       separated = true;
     }
-    std::printf("  %d: %dd %s order %s-centered remap of %s func\n",
+    std::printf("  %d: %dd %s order %s-centered remap of %s func %s\n",
                 i, example.dim,
                 (example.order == 1) ? "1st" : "2nd",
                 example.cell_centered ? "cell" : "node",
-                example.linear ? "linear" : "quadratic");
+                example.linear ? "linear" : "quadratic",
+                !example.conformal ? "on non-conformal mesh" : "");
     ++i;
   }
 }
@@ -168,8 +177,15 @@ int main(int argc, char** argv) {
     if (example.dim == 2) {
       // 2d quad input mesh from (0,0) to (1,1) with nxn zones
       inputMesh = mf(0.0, 0.0, 1.0, 1.0, n, n);
-      // 2d quad output mesh from (0,0) to (1,1) with (n+1)x(n+1) zones
-      targetMesh = mf(0.0, 0.0, 1.0, 1.0, n+1, n+1);
+      if (example.conformal) {
+        // 2d quad output mesh from (0,0) to (1,1) with (n+1)x(n+1) zones
+        targetMesh = mf(0.0, 0.0, 1.0, 1.0, n+1, n+1);
+      } else {
+        // 2d quad output mesh from (0,0) to (1+dx,1+dx) with (n+1)x(n+1) zones
+        // and dx equal to the inputMesh grid spacing
+        double dx = 1.0/static_cast<double>(n);
+        targetMesh = mf(0.0, 0.0, 1.0+dx, 1.0+dx, n+1, n+1);
+      }
     } else {  // 3d
       // 3d hex input mesh from (0,0,0) to (1,1,1) with nxnxn zones
       inputMesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0,
@@ -382,6 +398,12 @@ int main(int argc, char** argv) {
 
     // Do the remap
     d.run();
+
+
+    sourceState.export_to_mesh();
+    //    targetState.export_to_mesh();
+    dynamic_cast<Jali::Mesh_MSTK*>(inputMesh.get())->write_to_exodus_file("input.exo");
+    //    targetMesh->write_to_exodus_file("output.exo");
 
     // Dump some timing information
     gettimeofday(&end, 0);
