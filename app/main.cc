@@ -168,13 +168,14 @@ int main(int argc, char** argv) {
 
   // The mesh factory and mesh pointers.
   Jali::MeshFactory mf(MPI_COMM_WORLD);
-  std::unique_ptr<Jali::Mesh> inputMesh(nullptr);
-  std::unique_ptr<Jali::Mesh> targetMesh(nullptr);
+  std::shared_ptr<Jali::Mesh> inputMesh;
+  std::shared_ptr<Jali::Mesh> targetMesh;
 
   // Cell-centered remaps
   if (example.cell_centered) {
     // Construct the meshes
     if (example.dim == 2) {
+      mf.included_entities({Jali::Entity_kind::FACE});
       // 2d quad input mesh from (0,0) to (1,1) with nxn zones
       inputMesh = mf(0.0, 0.0, 1.0, 1.0, n, n);
       if (example.conformal) {
@@ -187,16 +188,13 @@ int main(int argc, char** argv) {
         targetMesh = mf(0.0, 0.0, 1.0+dx, 1.0+dx, n+1, n+1);
       }
     } else {  // 3d
+      mf.included_entities({Jali::Entity_kind::FACE,
+                            Jali::Entity_kind::EDGE,
+                            Jali::Entity_kind::WEDGE});
       // 3d hex input mesh from (0,0,0) to (1,1,1) with nxnxn zones
-      inputMesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0,
-                     n, n, n,
-                     NULL,
-                     true, true, true, false);
+      inputMesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, n, n, n);
       // 3d hex output mesh from (0,0,0) to (1,1,1) with (n+1)x(n+1)x(n+1) zones
-      targetMesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0,
-                      n+1, n+1, n+1,
-                      NULL,
-                      true, true, true, false);
+      targetMesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, n+1, n+1, n+1);
     }
 
     // Wrappers for interfacing with the underlying mesh data structures
@@ -207,7 +205,7 @@ int main(int argc, char** argv) {
     const int ntarcells = targetMeshWrapper.num_owned_cells();
 
     // Fill the source state data with the specified profile
-    Jali::State sourceState(inputMesh.get());
+    Jali::State sourceState(inputMesh);
     std::vector<double> sourceData(nsrccells);
 
     std::vector<double> cen;
@@ -227,14 +225,16 @@ int main(int argc, char** argv) {
       }
     }
 
-    sourceState.add("celldata", Jali::CELL, &(sourceData[0]));
+    sourceState.add("celldata", inputMesh, Jali::Entity_kind::CELL,
+                    Jali::Parallel_type::ALL, &(sourceData[0]));
     Portage::Jali_State_Wrapper sourceStateWrapper(sourceState);
 
     // Build the target state storage
-    Jali::State targetState(targetMesh.get());
+    Jali::State targetState(targetMesh);
     std::vector<double> targetData(ntarcells, 0.0);
-    auto& cellvecout = targetState.add("celldata",
-                                       Jali::CELL,
+    auto& cellvecout = targetState.add("celldata", targetMesh,
+                                       Jali::Entity_kind::CELL,
+                                       Jali::Parallel_type::ALL,
                                        &(targetData[0]));
     Portage::Jali_State_Wrapper targetStateWrapper(targetState);
 
@@ -303,37 +303,29 @@ int main(int argc, char** argv) {
       std::printf("\n\nL2 NORM OF ERROR = %lf\n\n", sqrt(toterr));
     }
   } else {  // node-centered remaps
+    mf.included_entities({Jali::Entity_kind::FACE,
+                          Jali::Entity_kind::EDGE,
+                          Jali::Entity_kind::WEDGE,
+                          Jali::Entity_kind::CORNER});
     // Create the meshes
     if (example.dim == 2) {
       // Create a 2d quad input mesh from (0,0) to (1,1) with nxn zones;
       // The "true" arguments request that a dual mesh be constructed with
       // wedges, corners, etc.
-      inputMesh = mf(0.0, 0.0, 1.0, 1.0,
-                     n, n,
-                     NULL,
-                     true, true, true, true);
+      inputMesh = mf(0.0, 0.0, 1.0, 1.0, n, n);
       // Create a 2d quad output mesh from (0,0) to (1,1) with (n-2)x(n-2)
       // zones.  The "true" arguments request that a dual mesh be constructed
       // with wedges, corners, etc.
-      targetMesh = mf(0.0, 0.0, 1.0, 1.0,
-                      n-2, n-2,
-                      NULL,
-                      true, true, true, true);
+      targetMesh = mf(0.0, 0.0, 1.0, 1.0, n-2, n-2);
     } else {  // 3d
       // Create a 3d hex input mesh from (0,0,0) to (1,1,1) with nxnxn zones;
       // The "true" arguments request that a dual mesh be constructed with
       // wedges, corners, etc.
-      inputMesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0,
-                     n, n, n,
-                     NULL,
-                     true, true, true, true);
+      inputMesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, n, n, n);
       // Create a 3d hex output mesh from (0,0,0) to (1,1,1) with
       // (n-2)x(n-2)x(n-2) zones.  The "true" arguments request that a dual mesh
       // be constructed with wedges, corners, etc.
-      targetMesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0,
-                      n-2, n-2, n-2,
-                      NULL,
-                      true, true, true, true);
+      targetMesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, n-2, n-2, n-2);
     }
 
     // Wrappers for interfacing with the underlying mesh data structures.
@@ -344,7 +336,7 @@ int main(int argc, char** argv) {
     const int ntarnodes = targetMeshWrapper.num_owned_nodes();
 
     // Fill the source state datat with the specified profile.
-    Jali::State sourceState(inputMesh.get());
+    Jali::State sourceState(inputMesh);
     std::vector<double> sourceData(nsrcnodes);
 
     /*!
@@ -367,15 +359,17 @@ int main(int argc, char** argv) {
       }
     }
 
-    sourceState.add("nodedata", Jali::NODE, &(sourceData[0]));
+    sourceState.add("nodedata", inputMesh, Jali::Entity_kind::NODE,
+                    Jali::Parallel_type::ALL, &(sourceData[0]));
     Portage::Jali_State_Wrapper sourceStateWrapper(sourceState);
 
     // Build the target state storage
-    Jali::State targetState(targetMesh.get());
+    Jali::State targetState(targetMesh);
     std::vector<double> targetData(ntarnodes, 0.0);
-    Jali::StateVector<double> & nodevecout = targetState.add("nodedata",
-                                                             Jali::NODE,
-                                                             &(targetData[0]));
+    auto& nodevecout = targetState.add("nodedata", targetMesh,
+                                       Jali::Entity_kind::NODE,
+                                       Jali::Parallel_type::ALL,
+                                       &(targetData[0]));
     Portage::Jali_State_Wrapper targetStateWrapper(targetState);
 
     // Build the main driver data for this mesh type

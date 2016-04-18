@@ -10,6 +10,7 @@
 #include <stdexcept>
 #include <algorithm>
 #include <string>
+#include <iostream>
 #include <utility>
 #include <vector>
 
