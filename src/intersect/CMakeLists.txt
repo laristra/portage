@@ -8,6 +8,7 @@ set(intersect_HEADERS
     clipper.hpp
     intersectClipper.h
     r3d.h
+    intersect_r3d.h
     PARENT_SCOPE
 )
 
