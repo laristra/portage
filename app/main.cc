@@ -29,8 +29,8 @@
 #include "JaliStateVector.h"
 #include "JaliState.h"
 
-#define MSTK_HAVE_MPI
-#include "Mesh_MSTK.hh"
+// #define MSTK_HAVE_MPI
+// #include "Mesh_MSTK.hh"
 
 /*!
   @file main.cc
@@ -185,7 +185,7 @@ int main(int argc, char** argv) {
         // 2d quad output mesh from (0,0) to (1+dx,1+dx) with (n+1)x(n+1) zones
         // and dx equal to the inputMesh grid spacing
         double dx = 1.0/static_cast<double>(n);
-        targetMesh = mf(0.0, 0.0, 1.0+dx, 1.0+dx, n+1, n+1);
+        targetMesh = mf(0.0, 0.0, 1.0+0.5*dx, 1.0+0.5*dx, n+1, n+1);
       }
     } else {  // 3d
       mf.included_entities({Jali::Entity_kind::FACE,
@@ -302,6 +302,12 @@ int main(int argc, char** argv) {
       // total L2 norm
       std::printf("\n\nL2 NORM OF ERROR = %lf\n\n", sqrt(toterr));
     }
+
+    sourceState.export_to_mesh();
+    targetState.export_to_mesh();
+    inputMesh->write_to_exodus_file("input.exo");
+    targetMesh->write_to_exodus_file("output.exo");
+
   } else {  // node-centered remaps
     mf.included_entities({Jali::Entity_kind::FACE,
                           Jali::Entity_kind::EDGE,
@@ -393,11 +399,6 @@ int main(int argc, char** argv) {
     // Do the remap
     d.run();
 
-
-    sourceState.export_to_mesh();
-    //    targetState.export_to_mesh();
-    dynamic_cast<Jali::Mesh_MSTK*>(inputMesh.get())->write_to_exodus_file("input.exo");
-    //    targetMesh->write_to_exodus_file("output.exo");
 
     // Dump some timing information
     gettimeofday(&end, 0);
