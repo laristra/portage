@@ -20,7 +20,7 @@ sed "s/^ *cmake/& $CACHE_OPTIONS/" $WORKSPACE/README.md >$WORKSPACE/README.md.1
 python $WORKSPACE/jenkins/parseREADME.py $WORKSPACE/README.md.1 $WORKSPACE
 
 # TEMPORARY FIX:
-# Exit at this point.  We've already tested the PR on varan against 
+# Exit at this point.  We've already tested the PR on varan against
 # a fixed Jali release, so we know the PR is good.
 exit
 
