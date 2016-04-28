@@ -24,7 +24,7 @@ for host in scripts:
         print "HOST " + host
         scripts[host] += 'cd ..;rm -Rf build;'
         print scripts[host]
-        sshHost = host.split('-')[0]
+        sshHost = host.split(':')[0]
         proc = subprocess.Popen(['ssh', '-T', "jenksrvngc@" + sshHost],
                                 stdin = subprocess.PIPE)
         print "opened process"
