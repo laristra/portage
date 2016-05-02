@@ -49,3 +49,32 @@ cmake \
 make -j2
 ctest -j2
 ```
+
+---
+
+If you want to build an app that uses
+[FleCSI](https://github.com/losalamos/flecsi), you can link against a built
+verison of FleCSI on Varan.  An example is below:
+
+```c++
+# varan::flecsi
+export MODULEPATH=""
+. /opt/local/packages/Modules/default/init/sh
+module load gcc/5.3.0 openmpi/1.6.5
+JALI_INSTALL_PREFIX=/usr/local/codes/ngc/private/jali-0.7.1-gcc53
+FLECSI_INSTALL_DIR=/usr/local/codes/ngc/private/flecsi-gcc
+mkdir build-flecsi
+cd build-flecsi
+cmake \
+    -D CMAKE_C_COMPILER=`which mpicc` \
+    -D CMAKE_CXX_COMPILER=`which mpiCC` \
+    -D CMAKE_BUILD_TYPE=Debug \
+    -D ENABLE_UNIT_TESTS=True \
+    -D ENABLE_MPI=True \
+    -D ENABLE_MPI_CXX_BINDINGS=True \
+    -D Jali_DIR:FILEPATH=$JALI_INSTALL_PREFIX/lib \
+    -D FLECSI_INSTALL_DIR:FILEPATH=$FLECSI_INSTALL_DIR \
+    ..
+make -j2
+ctest -j2
+```
