@@ -107,7 +107,7 @@ endif(FLECSI_INSTALL_DIR)
 #-----------------------------------------------------------------------------
 set(NGC_INCLUDE_DIR "$ENV{NGC_INCLUDE_DIR}" CACHE PATH "NGC include directory")
 if(NGC_INCLUDE_DIR)
-  message(STATUS "Using NGC_INLCUDE_DIR=${NGC_INCLUDE_DIR}")
+  message(STATUS "Using NGC_INCLUDE_DIR=${NGC_INCLUDE_DIR}")
 endif(NGC_INCLUDE_DIR)
 
 #-----------------------------------------------------------------------------
