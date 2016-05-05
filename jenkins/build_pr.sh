@@ -14,13 +14,13 @@ set -x
 # the README doesn't ask for it.
 export CTEST_OUTPUT_ON_FAILURE=1
 CACHE_OPTIONS="-D ENABLE_JENKINS_OUTPUT=True"
-sed "s/^ *cmake/& $CACHE_OPTIONS/" $WORKSPACE/README.md >$WORKSPACE/README.md.1
+sed "s/^ *cmake/& $CACHE_OPTIONS/g" $WORKSPACE/README.md >$WORKSPACE/README.md.1
 
 # Run build/test commands from README
 python $WORKSPACE/jenkins/parseREADME.py $WORKSPACE/README.md.1 $WORKSPACE
 
 # TEMPORARY FIX:
-# Exit at this point.  We've already tested the PR on varan against 
+# Exit at this point.  We've already tested the PR on varan against
 # a fixed Jali release, so we know the PR is good.
 exit
 

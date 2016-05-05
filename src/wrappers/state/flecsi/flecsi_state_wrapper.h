@@ -74,8 +74,8 @@ class Flecsi_State_Wrapper {
     auto dat = access_state(flecsi_mesh_,
                             std::forward<const const_string_t>(flecsiname),
                             real_t);
-    // NOTE: I added this method - should check with Ben and co. about it
-    *data = dat.data();
+    // note this might be fragile in the case of non-dense storage
+    *data = &dat[0];
   }
 
  private:

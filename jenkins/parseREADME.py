@@ -1,13 +1,13 @@
 import subprocess, sys
 #This script parses the README file which describes how to build portage
-#It looks for code blocks enclosed in ``` and requires that the first 
-#line of a block be a followed by a hostname.  The script will then 
+#It looks for code blocks enclosed in ``` and requires that the first
+#line of a block be a followed by a hostname.  The script will then
 #execute all commands specified after that point on the host machine
 #until the block is closed with a ```.
 #Args: Arg 1 is file to parse, Arg 2 is the workspace
 code = False
 scripts = {}
-for line in open(sys.argv[1]):    
+for line in open(sys.argv[1]):
     if line.startswith("```"):
         code = not code
         currentScript = None
@@ -20,11 +20,13 @@ for line in open(sys.argv[1]):
 
 retcode = 0
 for host in scripts:
-    if(host=='varan'):
+    if(host.startswith('varan')):
         print "HOST " + host
         scripts[host] += 'cd ..;rm -Rf build;'
         print scripts[host]
-        proc = subprocess.Popen(['ssh', '-T', "jenksrvngc@" + host], stdin = subprocess.PIPE)
+        sshHost = host.split(':')[0]
+        proc = subprocess.Popen(['ssh', '-T', "jenksrvngc@" + sshHost],
+                                stdin = subprocess.PIPE)
         print "opened process"
         proc.communicate("".join(scripts[host]))
         if proc.returncode:

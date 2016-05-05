@@ -6,12 +6,6 @@
 #ifndef JALI_MESH_WRAPPER_H_
 #define JALI_MESH_WRAPPER_H_
 
-namespace std
-{
-    typedef decltype(nullptr) nullptr_t;
-}
-
-
 #include <cassert>
 #include <algorithm>
 #include <array>
