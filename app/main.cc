@@ -67,40 +67,44 @@ std::vector<example_properties> setup_examples() {
 
   // Cell-centered remaps:
 
-  // 0: 2d 1st order cell-centered remap of linear func
+  // 2d 1st order cell-centered remap of linear func
   examples.emplace_back(2, 1, true, true);
 
-  // 1: 2d 2nd order cell-centered remap of linear func
+  // 2d 2nd order cell-centered remap of linear func
   examples.emplace_back(2, 2, true, true);
 
-  // 2: 2d 1st order cell-centered remap of quadratic func
+  // 2d 1st order cell-centered remap of quadratic func
   examples.emplace_back(2, 1, true, false);
 
-  // 3: 2d 2nd order cell-centered remap of quadratic func
+  // 2d 2nd order cell-centered remap of quadratic func
   examples.emplace_back(2, 2, true, false);
 
-  // 4: 2d 1st order cell-centered remap of linear function on non-conformal
+  // 2d 1st order cell-centered remap of linear function on non-conformal
   // meshes
   examples.emplace_back(2, 1, true, true, false);
 
-  // 5: 3d 1st order cell-centered remap of linear func
+  // 2d 2nd order cell-centered remap of linear function on non-conformal
+  // meshes
+  examples.emplace_back(2, 2, true, true, false);
+
+  // 3d 1st order cell-centered remap of linear func
   examples.emplace_back(3, 1, true, false);
 
-  // 6: 3d 2nd order cell-centered remap of linear func
+  // 3d 2nd order cell-centered remap of linear func
   examples.emplace_back(3, 2, true, false);
 
   // Node-centered remaps:
 
-  // 7: 2d 1st order node-centered remap of quadratic func
+  // 2d 1st order node-centered remap of quadratic func
   examples.emplace_back(2, 1, false, false);
 
-  // 8: 2d 2nd order node-centered remap of quadratic func
+  // 2d 2nd order node-centered remap of quadratic func
   examples.emplace_back(2, 2, false, false);
 
-  // 9: 3d 1st order node-centered remap of quadratic func
+  // 3d 1st order node-centered remap of quadratic func
   examples.emplace_back(3, 1, false, false);
 
-  // 10: 3d 2nd order node-centered remap of quadratic func
+  // 3d 2nd order node-centered remap of quadratic func
   examples.emplace_back(3, 2, false, false);
 
   return examples;
@@ -110,7 +114,8 @@ std::vector<example_properties> setup_examples() {
 // examples from setup_examples()
 void print_usage() {
   auto examples = setup_examples();
-  std::printf("Usage: portageapp example-number ncells\n");
+  std::printf("Usage: portageapp example-number ncells [y]\n");
+  std::printf("If 'y' specified, dump data to input.exo and output.exo\n");
   std::printf("List of example numbers:\n");
   int i = 0;
   bool separated = false;
@@ -140,6 +145,8 @@ int main(int argc, char** argv) {
 
   // Get the example to run from command-line parameter
   int example_num, n;
+  // Should we dump data?
+  bool dump_output;
   // Must specify both the example number and size
   if (argc <= 2) {
     print_usage();
@@ -147,6 +154,9 @@ int main(int argc, char** argv) {
   }
   example_num = atoi(argv[1]);
   n = atoi(argv[2]);
+  dump_output = (argc == 4) ?
+      ((std::string(argv[3]) == "y") ? true : false)
+      : false;
 
   // Initialize MPI
   int mpi_init_flag;
@@ -182,10 +192,10 @@ int main(int argc, char** argv) {
         // 2d quad output mesh from (0,0) to (1,1) with (n+1)x(n+1) zones
         targetMesh = mf(0.0, 0.0, 1.0, 1.0, n+1, n+1);
       } else {
-        // 2d quad output mesh from (0,0) to (1+dx,1+dx) with (n+1)x(n+1) zones
-        // and dx equal to the inputMesh grid spacing
+        // 2d quad output mesh from (0,0) to (1+1.5dx,1+dx) with (n+1)x(n+1)
+        // zones and dx equal to the inputMesh grid spacing
         double dx = 1.0/static_cast<double>(n);
-        targetMesh = mf(0.0, 0.0, 1.0+0.5*dx, 1.0+0.5*dx, n+1, n+1);
+        targetMesh = mf(0.0, 0.0, 1.0+1.5*dx, 1.0, n+1, n+1);
       }
     } else {  // 3d
       mf.included_entities({Jali::Entity_kind::FACE,
@@ -303,10 +313,15 @@ int main(int argc, char** argv) {
       std::printf("\n\nL2 NORM OF ERROR = %lf\n\n", sqrt(toterr));
     }
 
-    sourceState.export_to_mesh();
-    targetState.export_to_mesh();
-    inputMesh->write_to_exodus_file("input.exo");
-    targetMesh->write_to_exodus_file("output.exo");
+    // Dump output, if requested
+    if (dump_output) {
+      std::cout << "Dumping data to Exodus files..." << std::endl;
+      sourceState.export_to_mesh();
+      targetState.export_to_mesh();
+      inputMesh->write_to_exodus_file("input.exo");
+      targetMesh->write_to_exodus_file("output.exo");
+      std::cout << "...done." << std::endl;
+    }
 
   } else {  // node-centered remaps
     mf.included_entities({Jali::Entity_kind::FACE,
@@ -399,7 +414,6 @@ int main(int argc, char** argv) {
     // Do the remap
     d.run();
 
-
     // Dump some timing information
     gettimeofday(&end, 0);
     timersub(&end, &begin, &diff);
@@ -437,11 +451,20 @@ int main(int argc, char** argv) {
       }
       std::printf("\n\nL2 NORM OF ERROR = %lf\n\n", sqrt(toterr));
     }
+
+    // Dump output, if requested
+    if (dump_output) {
+      std::cout << "Dumping data to Exodus files..." << std::endl;
+      sourceState.export_to_mesh();
+      targetState.export_to_mesh();
+      inputMesh->write_to_exodus_file("input.exo");
+      targetMesh->write_to_exodus_file("output.exo");
+      std::cout << "...done." << std::endl;
+    }
+
   }
 
   std::printf("finishing portageapp...\n");
 
   MPI_Finalize();
 }
-
-
