@@ -29,9 +29,6 @@
 #include "JaliStateVector.h"
 #include "JaliState.h"
 
-// #define MSTK_HAVE_MPI
-// #include "Mesh_MSTK.hh"
-
 /*!
   @file main.cc
   @brief A simple application that drives our remap routines.
