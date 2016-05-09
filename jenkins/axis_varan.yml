@@ -1,0 +1,10 @@
+# axis_varan.yml
+FLECSI:
+  - yes
+  - no
+
+exclude:
+  - COMPILER: intel
+    FLECSI: yes
+  - COMPILER: gcc
+    FLECSI: yes
