@@ -70,25 +70,35 @@ std::vector<example_properties> setup_examples() {
   // 2d 2nd order cell-centered remap of linear func
   examples.emplace_back(2, 2, true, true);
 
+  // 2d 1st order cell-centered remap of linear func on non-conformal meshes
+  examples.emplace_back(2, 1, true, true, false);
+
+  // 2d 2nd order cell-centered remap of linear func on non-conformal meshes
+  examples.emplace_back(2, 2, true, true, false);
+
   // 2d 1st order cell-centered remap of quadratic func
   examples.emplace_back(2, 1, true, false);
 
   // 2d 2nd order cell-centered remap of quadratic func
   examples.emplace_back(2, 2, true, false);
 
-  // 2d 1st order cell-centered remap of linear function on non-conformal
-  // meshes
-  examples.emplace_back(2, 1, true, true, false);
+  // 2d 1st order cell-centered remap of quadratic func on non-conformal meshes
+  examples.emplace_back(2, 1, true, false, false);
 
-  // 2d 2nd order cell-centered remap of linear function on non-conformal
-  // meshes
-  examples.emplace_back(2, 2, true, true, false);
+  // 2d 2nd order cell-centered remap of quadratice func on non-conformal meshes
+  examples.emplace_back(2, 2, true, false, false);
 
   // 3d 1st order cell-centered remap of linear func
   examples.emplace_back(3, 1, true, false);
 
   // 3d 2nd order cell-centered remap of linear func
   examples.emplace_back(3, 2, true, false);
+
+  // 3d 1st order cell-centered remap of linear func on non-conformal meshes
+  examples.emplace_back(3, 1, true, false, false);
+
+  // 3d 2nd order cell-centered remap of linear func on non-conformal meshes
+  examples.emplace_back(3, 2, true, false, false);
 
   // Node-centered remaps:
 
@@ -98,11 +108,23 @@ std::vector<example_properties> setup_examples() {
   // 2d 2nd order node-centered remap of quadratic func
   examples.emplace_back(2, 2, false, false);
 
+  // 2d 1st order node-centered remap of quadratic func on non-conformal meshes
+  examples.emplace_back(2, 1, false, false, false);
+
+  // 2d 2nd order node-centered remap of quadratic func on non-conformal meshes
+  examples.emplace_back(2, 2, false, false, false);
+
   // 3d 1st order node-centered remap of quadratic func
   examples.emplace_back(3, 1, false, false);
 
   // 3d 2nd order node-centered remap of quadratic func
   examples.emplace_back(3, 2, false, false);
+
+  // 3d 1st order node-centered remap of quadratic func on non-conformal meshes
+  examples.emplace_back(3, 1, false, false, false);
+
+  // 3d 2nd order node-centered remap of quadratic func on non-conformal meshes
+  examples.emplace_back(3, 2, false, false, false);
 
   return examples;
 }
@@ -189,7 +211,7 @@ int main(int argc, char** argv) {
         // 2d quad output mesh from (0,0) to (1,1) with (n+1)x(n+1) zones
         targetMesh = mf(0.0, 0.0, 1.0, 1.0, n+1, n+1);
       } else {
-        // 2d quad output mesh from (0,0) to (1+1.5dx,1+dx) with (n+1)x(n+1)
+        // 2d quad output mesh from (0,0) to (1+1.5dx,1) with (n+1)x(n+1)
         // zones and dx equal to the inputMesh grid spacing
         double dx = 1.0/static_cast<double>(n);
         targetMesh = mf(0.0, 0.0, 1.0+1.5*dx, 1.0, n+1, n+1);
@@ -200,8 +222,17 @@ int main(int argc, char** argv) {
                             Jali::Entity_kind::WEDGE});
       // 3d hex input mesh from (0,0,0) to (1,1,1) with nxnxn zones
       inputMesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, n, n, n);
-      // 3d hex output mesh from (0,0,0) to (1,1,1) with (n+1)x(n+1)x(n+1) zones
-      targetMesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, n+1, n+1, n+1);
+      if (example.conformal) {
+        // 3d hex output mesh from (0,0,0) to (1,1,1) with
+        // (n+1)x(n+1)x(n+1) zones
+        targetMesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, n+1, n+1, n+1);
+      } else {
+        // 3d hex output mesh from (0,0,0) to (1+1.5dx,1+1.5dx,1+1.5dx) with
+        // (n+1)x(n+1)x(n+1) zones and dx equal to the inputMesh grid spacing
+        double dx = 1.0/static_cast<double>(n);
+        targetMesh = mf(0.0, 0.0, 0.0, 1.0+1.5*dx, 1.0+1.5*dx, 1.0+1.5*dx,
+                        n+1, n+1, n+1);
+      }
     }
 
     // Wrappers for interfacing with the underlying mesh data structures
@@ -331,19 +362,34 @@ int main(int argc, char** argv) {
       // The "true" arguments request that a dual mesh be constructed with
       // wedges, corners, etc.
       inputMesh = mf(0.0, 0.0, 1.0, 1.0, n, n);
-      // Create a 2d quad output mesh from (0,0) to (1,1) with (n-2)x(n-2)
-      // zones.  The "true" arguments request that a dual mesh be constructed
-      // with wedges, corners, etc.
-      targetMesh = mf(0.0, 0.0, 1.0, 1.0, n-2, n-2);
+      if (example.conformal) {
+        // Create a 2d quad output mesh from (0,0) to (1,1) with (n-2)x(n-2)
+        // zones.  The "true" arguments request that a dual mesh be constructed
+        // with wedges, corners, etc.
+        targetMesh = mf(0.0, 0.0, 1.0, 1.0, n-2, n-2);
+      } else {
+        // 2d quad output mesh from (0,0) to (1+1.5dx,1) with (n-2)x(n-2)
+        // zones and dx equal to the inputMesh grid spacing
+        double dx = 1.0/static_cast<double>(n);
+        targetMesh = mf(0.0, 0.0, 1.0+1.5*dx, 1.0, n-2, n-2);
+      }
     } else {  // 3d
       // Create a 3d hex input mesh from (0,0,0) to (1,1,1) with nxnxn zones;
       // The "true" arguments request that a dual mesh be constructed with
       // wedges, corners, etc.
       inputMesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, n, n, n);
-      // Create a 3d hex output mesh from (0,0,0) to (1,1,1) with
-      // (n-2)x(n-2)x(n-2) zones.  The "true" arguments request that a dual mesh
-      // be constructed with wedges, corners, etc.
-      targetMesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, n-2, n-2, n-2);
+      if (example.conformal) {
+        // Create a 3d hex output mesh from (0,0,0) to (1,1,1) with
+        // (n-2)x(n-2)x(n-2) zones.  The "true" arguments request that a dual
+        // mesh be constructed with wedges, corners, etc.
+        targetMesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, n-2, n-2, n-2);
+      } else {
+        // 3d hex output mesh from (0,0,0) to (1+1.5dx,1+1.5dx,1+1.5dx) with
+        // (n-2)x(n-2)x(n-2) zones and dx equal to the inputMesh grid spacing
+        double dx = 1.0/static_cast<double>(n);
+        targetMesh = mf(0.0, 0.0, 0.0, 1.0+1.5*dx, 1.0+1.5*dx, 1.0+1.5*dx,
+                        n-2, n-2, n-2);
+      }
     }
 
     // Wrappers for interfacing with the underlying mesh data structures.
