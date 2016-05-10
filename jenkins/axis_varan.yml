@@ -1,4 +1,9 @@
 # axis_varan.yml
+COMPILER:
+  - intel
+  - gcc
+  - gcc53
+
 FLECSI:
   - yes
   - no
