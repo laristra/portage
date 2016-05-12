@@ -4,12 +4,13 @@ COMPILER:
   - gcc
   - gcc53
 
-FLECSI:
-  - yes
-  - no
+BUILD_TYPE:
+  - base
+  - thrust
+  - flecsi
 
 exclude:
   - COMPILER: intel
-    FLECSI: yes
+    BUILD_TYPE: flecsi
   - COMPILER: gcc
-    FLECSI: yes
+    BUILD_TYPE: flecsi

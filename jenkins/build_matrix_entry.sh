@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # This script is executed on Jenkins using
 #
-#     $WORKSPACE/jenkins/build_matrix_entry.sh <compiler> <flecsi_flag>
+#     $WORKSPACE/jenkins/build_matrix_entry.sh <compiler> <build_type>
 #
 # The exit code determines if the test succeeded or failed.
 
@@ -11,11 +11,12 @@ set -e
 set -x
 
 compiler=$1
-flecsi_flag=$2
+build_type=$2
 
 # set modules and install paths
 
 export NGC=/usr/local/codes/ngc
+ngc_include_dir=$NGC/private/include
 
 # compiler-specific settings
 if [[ $compiler == "intel" ]]; then
@@ -30,14 +31,12 @@ elif [[ $compiler == "gcc53" ]]; then
   flecsi_install_dir=$NGC/private/flecsi-gcc
 fi
   
-if [[ $flecsi_flag == "yes" ]]; then
-  flecsi_opts="-D FLECSI_INSTALL_DIR:FILEPATH=$flecsi_install_dir"
-else
-  flecsi_opts=
+extra_flags=
+if [[ $build_type == "thrust" ]]; then
+  extra_flags="-D ENABLE_THRUST=True"
+elif [[ $build_type == "flecsi" ]]; then
+  extra_flags="-D FLECSI_INSTALL_DIR:FILEPATH=$flecsi_install_dir"
 fi
-
-# General NGC include directory
-ngc_include_dir=/usr/local/codes/ngc/private/include
 
 #git config user.email ""
 #git config user.name "Jenkins"
@@ -64,7 +63,8 @@ cmake \
   -D ENABLE_MPI=True \
   -D ENABLE_MPI_CXX_BINDINGS=True \
   -D Jali_DIR:FILEPATH=$jali_install_dir/lib \
-  $flecsi_opts \
+  -D NGC_INCLUDE_DIR:FILEPATH=$ngc_include_dir \
+  $extra_flags \
   ..
 make -j2
 ctest --output-on-failure
