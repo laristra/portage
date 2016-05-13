@@ -36,10 +36,10 @@ if [[ $build_type == "thrust" ]]; then
   extra_flags="-D ENABLE_THRUST=True"
 elif [[ $build_type == "flecsi" ]]; then
   extra_flags="-D FLECSI_INSTALL_DIR:FILEPATH=$flecsi_install_dir"
+elif [[ $build_type == "coverage" ]]; then
+  extra_flags="-D CMAKE_C_FLAGS='-coverage' \
+               -D CMAKE_CXX_FLAGS='-coverage'"
 fi
-
-#git config user.email ""
-#git config user.name "Jenkins"
 
 export SHELL=/bin/sh
 
@@ -68,3 +68,8 @@ cmake \
   ..
 make -j2
 ctest --output-on-failure
+
+if [[ $build_type == "coverage" ]]; then
+  gcovr -r .. -x  >coverage.xml
+fi
+

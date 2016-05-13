@@ -8,9 +8,15 @@ BUILD_TYPE:
   - base
   - thrust
   - flecsi
+  - coverage
 
 exclude:
   - COMPILER: intel
     BUILD_TYPE: flecsi
   - COMPILER: gcc
     BUILD_TYPE: flecsi
+  - COMPILER: intel
+    BUILD_TYPE: coverage
+  - COMPILER: gcc
+    BUILD_TYPE: coverage
+
