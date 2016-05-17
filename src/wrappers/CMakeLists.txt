@@ -14,6 +14,9 @@ if (ENABLE_UNIT_TESTS)
   cinch_add_unit(test_jali_mesh_wrapper
                  SOURCES mesh/jali/test/test_jali_mesh_wrapper.cc
                  LIBRARIES portage ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
+		 # this is relative to the wrapper directory
+		 INPUTS ../../test_data/shotshell.exo
+		 ../../test_data/shotshell-v.exo
                  POLICY MPI
                  THREADS 1)
 
