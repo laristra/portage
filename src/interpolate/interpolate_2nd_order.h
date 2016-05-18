@@ -27,7 +27,7 @@ namespace Portage {
   @brief Interpolate_2ndOrder does a 2nd order interpolation of scalars
   @tparam MeshType The type of the mesh wrapper used to access mesh info
   @tparam StateType The type of the state manager used to access data.
-  @tparam OnWhatType The type of entity-based data we wish to interpolate; 
+  @tparam OnWhatType The type of entity-based data we wish to interpolate;
   e.g. does it live on nodes, cells, edges, etc.
 
   [1] Margolin, L.G. and Shashkov, M.J. "Second-order sign-preserving
@@ -237,11 +237,10 @@ template<typename MeshType, typename StateType>
 double Interpolate_2ndOrder<MeshType, StateType, CELL> :: operator()
     (std::pair<std::vector<int> const &,
      std::vector< std::vector<double> > const &> cells_and_weights) const {
-
   std::vector<int> const & source_cells = cells_and_weights.first;
   int nsrccells = source_cells.size();
   if (!nsrccells) {
-    std::cerr << "ERROR: No source cells contribute to target cell?" <<
+    std::cerr << "WARNING: No source cells contribute to target cell." <<
         std::endl;
     return 0.0;
   }
@@ -401,7 +400,7 @@ double Interpolate_2ndOrder<MeshType, StateType, NODE> :: operator()
   std::vector<int> const & source_cells = dualcells_and_weights.first;
   int nsrccells = source_cells.size();
   if (!nsrccells) {
-    std::cerr << "ERROR: No source cells contribute to target cell?" <<
+    std::cerr << "WARNING: No source cells contribute to target cell." <<
         std::endl;
     return 0.0;
   }
