@@ -360,10 +360,10 @@ TEST(Jali_Mesh, mesh_shotshell) {
                                   Jali::Entity_kind::CORNER});
 
   // Make sure we request faces, edges, wedges and corners
-  std::shared_ptr<Jali::Mesh> mesh = mesh_factory("test_data/shotshell.exo");
+  std::shared_ptr<Jali::Mesh> mesh = mesh_factory("shotshell.exo");
   ASSERT_TRUE(mesh != NULL);
 
   // Make sure we request faces, edges, wedges and corners
-  mesh = mesh_factory("test_data/shotshell-v.exo");
+  mesh = mesh_factory("shotshell-v.exo");
   ASSERT_TRUE(mesh != NULL);
 }

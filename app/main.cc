@@ -46,14 +46,15 @@
 
 struct example_properties {
   example_properties(const int dim, const int order, const bool cell_centered,
-                     const bool linear) : dim(dim), order(order),
-                                          cell_centered(cell_centered),
-                                          linear(linear) { }
+                     const bool linear, const bool conformal = true)
+      : dim(dim), order(order), cell_centered(cell_centered), linear(linear),
+        conformal(conformal) { }
 
   int dim;             // dimensionality of meshes in example
   int order;           // interpolation order in example
   bool cell_centered;  // is this example a cell-centered remap?
   bool linear;         // is this example a remap of linear data?
+  bool conformal;      // are the two meshes boundary-conformal?
 };
 
 // Use this to add new problems.  If needed, we can extend the
@@ -63,37 +64,67 @@ std::vector<example_properties> setup_examples() {
 
   // Cell-centered remaps:
 
-  // 0: 2d 1st order cell-centered remap of linear func
+  // 2d 1st order cell-centered remap of linear func
   examples.emplace_back(2, 1, true, true);
 
-  // 1: 2d 2nd order cell-centered remap of linear func
+  // 2d 2nd order cell-centered remap of linear func
   examples.emplace_back(2, 2, true, true);
 
-  // 2: 2d 1st order cell-centered remap of quadratic func
+  // 2d 1st order cell-centered remap of linear func on non-conformal meshes
+  examples.emplace_back(2, 1, true, true, false);
+
+  // 2d 2nd order cell-centered remap of linear func on non-conformal meshes
+  examples.emplace_back(2, 2, true, true, false);
+
+  // 2d 1st order cell-centered remap of quadratic func
   examples.emplace_back(2, 1, true, false);
 
-  // 3: 2d 2nd order cell-centered remap of quadratic func
+  // 2d 2nd order cell-centered remap of quadratic func
   examples.emplace_back(2, 2, true, false);
 
-  // 4: 3d 1st order cell-centered remap of linear func
+  // 2d 1st order cell-centered remap of quadratic func on non-conformal meshes
+  examples.emplace_back(2, 1, true, false, false);
+
+  // 2d 2nd order cell-centered remap of quadratice func on non-conformal meshes
+  examples.emplace_back(2, 2, true, false, false);
+
+  // 3d 1st order cell-centered remap of linear func
   examples.emplace_back(3, 1, true, false);
 
-  // 5: 3d 2nd order cell-centered remap of linear func
+  // 3d 2nd order cell-centered remap of linear func
   examples.emplace_back(3, 2, true, false);
+
+  // 3d 1st order cell-centered remap of linear func on non-conformal meshes
+  examples.emplace_back(3, 1, true, false, false);
+
+  // 3d 2nd order cell-centered remap of linear func on non-conformal meshes
+  examples.emplace_back(3, 2, true, false, false);
 
   // Node-centered remaps:
 
-  // 6: 2d 1st order node-centered remap of quadratic func
+  // 2d 1st order node-centered remap of quadratic func
   examples.emplace_back(2, 1, false, false);
 
-  // 7: 2d 2nd order node-centered remap of quadratic func
+  // 2d 2nd order node-centered remap of quadratic func
   examples.emplace_back(2, 2, false, false);
 
-  // 8: 3d 1st order node-centered remap of quadratic func
+  // 2d 1st order node-centered remap of quadratic func on non-conformal meshes
+  examples.emplace_back(2, 1, false, false, false);
+
+  // 2d 2nd order node-centered remap of quadratic func on non-conformal meshes
+  examples.emplace_back(2, 2, false, false, false);
+
+  // 3d 1st order node-centered remap of quadratic func
   examples.emplace_back(3, 1, false, false);
 
-  // 9: 3d 2nd order node-centered remap of quadratic func
+  // 3d 2nd order node-centered remap of quadratic func
   examples.emplace_back(3, 2, false, false);
+
+  // 3d 1st order node-centered remap of quadratic func on non-conformal meshes
+  examples.emplace_back(3, 1, false, false, false);
+
+  // 3d 2nd order node-centered remap of quadratic func on non-conformal meshes
+  examples.emplace_back(3, 2, false, false, false);
 
   return examples;
 }
@@ -102,7 +133,8 @@ std::vector<example_properties> setup_examples() {
 // examples from setup_examples()
 void print_usage() {
   auto examples = setup_examples();
-  std::printf("Usage: portageapp example-number ncells\n");
+  std::printf("Usage: portageapp example-number ncells [y]\n");
+  std::printf("If 'y' specified, dump data to input.exo and output.exo\n");
   std::printf("List of example numbers:\n");
   int i = 0;
   bool separated = false;
@@ -112,11 +144,12 @@ void print_usage() {
       std::printf("\n NODE-CENTERED EXAMPLES:\n");
       separated = true;
     }
-    std::printf("  %d: %dd %s order %s-centered remap of %s func\n",
+    std::printf("  %d: %dd %s order %s-centered remap of %s func %s\n",
                 i, example.dim,
                 (example.order == 1) ? "1st" : "2nd",
                 example.cell_centered ? "cell" : "node",
-                example.linear ? "linear" : "quadratic");
+                example.linear ? "linear" : "quadratic",
+                !example.conformal ? "on non-conformal mesh" : "");
     ++i;
   }
 }
@@ -131,6 +164,8 @@ int main(int argc, char** argv) {
 
   // Get the example to run from command-line parameter
   int example_num, n;
+  // Should we dump data?
+  bool dump_output;
   // Must specify both the example number and size
   if (argc <= 2) {
     print_usage();
@@ -138,6 +173,9 @@ int main(int argc, char** argv) {
   }
   example_num = atoi(argv[1]);
   n = atoi(argv[2]);
+  dump_output = (argc == 4) ?
+      ((std::string(argv[3]) == "y") ? true : false)
+      : false;
 
   // Initialize MPI
   int mpi_init_flag;
@@ -169,16 +207,32 @@ int main(int argc, char** argv) {
       mf.included_entities({Jali::Entity_kind::FACE});
       // 2d quad input mesh from (0,0) to (1,1) with nxn zones
       inputMesh = mf(0.0, 0.0, 1.0, 1.0, n, n);
-      // 2d quad output mesh from (0,0) to (1,1) with (n+1)x(n+1) zones
-      targetMesh = mf(0.0, 0.0, 1.0, 1.0, n+1, n+1);
+      if (example.conformal) {
+        // 2d quad output mesh from (0,0) to (1,1) with (n+1)x(n+1) zones
+        targetMesh = mf(0.0, 0.0, 1.0, 1.0, n+1, n+1);
+      } else {
+        // 2d quad output mesh from (0,0) to (1+1.5dx,1) with (n+1)x(n+1)
+        // zones and dx equal to the inputMesh grid spacing
+        double dx = 1.0/static_cast<double>(n);
+        targetMesh = mf(0.0, 0.0, 1.0+1.5*dx, 1.0, n+1, n+1);
+      }
     } else {  // 3d
       mf.included_entities({Jali::Entity_kind::FACE,
                             Jali::Entity_kind::EDGE,
                             Jali::Entity_kind::WEDGE});
       // 3d hex input mesh from (0,0,0) to (1,1,1) with nxnxn zones
       inputMesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, n, n, n);
-      // 3d hex output mesh from (0,0,0) to (1,1,1) with (n+1)x(n+1)x(n+1) zones
-      targetMesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, n+1, n+1, n+1);
+      if (example.conformal) {
+        // 3d hex output mesh from (0,0,0) to (1,1,1) with
+        // (n+1)x(n+1)x(n+1) zones
+        targetMesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, n+1, n+1, n+1);
+      } else {
+        // 3d hex output mesh from (0,0,0) to (1+1.5dx,1+1.5dx,1+1.5dx) with
+        // (n+1)x(n+1)x(n+1) zones and dx equal to the inputMesh grid spacing
+        double dx = 1.0/static_cast<double>(n);
+        targetMesh = mf(0.0, 0.0, 0.0, 1.0+1.5*dx, 1.0+1.5*dx, 1.0+1.5*dx,
+                        n+1, n+1, n+1);
+      }
     }
 
     // Wrappers for interfacing with the underlying mesh data structures
@@ -286,6 +340,17 @@ int main(int argc, char** argv) {
       // total L2 norm
       std::printf("\n\nL2 NORM OF ERROR = %lf\n\n", sqrt(toterr));
     }
+
+    // Dump output, if requested
+    if (dump_output) {
+      std::cout << "Dumping data to Exodus files..." << std::endl;
+      sourceState.export_to_mesh();
+      targetState.export_to_mesh();
+      inputMesh->write_to_exodus_file("input.exo");
+      targetMesh->write_to_exodus_file("output.exo");
+      std::cout << "...done." << std::endl;
+    }
+
   } else {  // node-centered remaps
     mf.included_entities({Jali::Entity_kind::FACE,
                           Jali::Entity_kind::EDGE,
@@ -297,19 +362,34 @@ int main(int argc, char** argv) {
       // The "true" arguments request that a dual mesh be constructed with
       // wedges, corners, etc.
       inputMesh = mf(0.0, 0.0, 1.0, 1.0, n, n);
-      // Create a 2d quad output mesh from (0,0) to (1,1) with (n-2)x(n-2)
-      // zones.  The "true" arguments request that a dual mesh be constructed
-      // with wedges, corners, etc.
-      targetMesh = mf(0.0, 0.0, 1.0, 1.0, n-2, n-2);
+      if (example.conformal) {
+        // Create a 2d quad output mesh from (0,0) to (1,1) with (n-2)x(n-2)
+        // zones.  The "true" arguments request that a dual mesh be constructed
+        // with wedges, corners, etc.
+        targetMesh = mf(0.0, 0.0, 1.0, 1.0, n-2, n-2);
+      } else {
+        // 2d quad output mesh from (0,0) to (1+1.5dx,1) with (n-2)x(n-2)
+        // zones and dx equal to the inputMesh grid spacing
+        double dx = 1.0/static_cast<double>(n);
+        targetMesh = mf(0.0, 0.0, 1.0+1.5*dx, 1.0, n-2, n-2);
+      }
     } else {  // 3d
       // Create a 3d hex input mesh from (0,0,0) to (1,1,1) with nxnxn zones;
       // The "true" arguments request that a dual mesh be constructed with
       // wedges, corners, etc.
       inputMesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, n, n, n);
-      // Create a 3d hex output mesh from (0,0,0) to (1,1,1) with
-      // (n-2)x(n-2)x(n-2) zones.  The "true" arguments request that a dual mesh
-      // be constructed with wedges, corners, etc.
-      targetMesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, n-2, n-2, n-2);
+      if (example.conformal) {
+        // Create a 3d hex output mesh from (0,0,0) to (1,1,1) with
+        // (n-2)x(n-2)x(n-2) zones.  The "true" arguments request that a dual
+        // mesh be constructed with wedges, corners, etc.
+        targetMesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, n-2, n-2, n-2);
+      } else {
+        // 3d hex output mesh from (0,0,0) to (1+1.5dx,1+1.5dx,1+1.5dx) with
+        // (n-2)x(n-2)x(n-2) zones and dx equal to the inputMesh grid spacing
+        double dx = 1.0/static_cast<double>(n);
+        targetMesh = mf(0.0, 0.0, 0.0, 1.0+1.5*dx, 1.0+1.5*dx, 1.0+1.5*dx,
+                        n-2, n-2, n-2);
+      }
     }
 
     // Wrappers for interfacing with the underlying mesh data structures.
@@ -414,11 +494,20 @@ int main(int argc, char** argv) {
       }
       std::printf("\n\nL2 NORM OF ERROR = %lf\n\n", sqrt(toterr));
     }
+
+    // Dump output, if requested
+    if (dump_output) {
+      std::cout << "Dumping data to Exodus files..." << std::endl;
+      sourceState.export_to_mesh();
+      targetState.export_to_mesh();
+      inputMesh->write_to_exodus_file("input.exo");
+      targetMesh->write_to_exodus_file("output.exo");
+      std::cout << "...done." << std::endl;
+    }
+
   }
 
   std::printf("finishing portageapp...\n");
 
   MPI_Finalize();
 }
-
-

@@ -136,11 +136,10 @@ template<typename MeshType, typename StateType, Entity_kind on_what>
 double Interpolate_1stOrder<MeshType, StateType, on_what> :: operator()
     (std::pair<std::vector<int> const &,
      std::vector< std::vector<double> > const &> sources_and_weights) const {
-
   std::vector<int> const & source_cells = sources_and_weights.first;
   int nsrccells = source_cells.size();
   if (!nsrccells) {
-    std::cerr << "ERROR: No source cells contribute to target cell?" <<
+    std::cerr << "WARNING: No source cells contribute to target cell." <<
         std::endl;
     return 0.0;
   }
