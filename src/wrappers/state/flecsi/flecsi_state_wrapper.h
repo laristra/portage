@@ -8,6 +8,7 @@
 
 #include <utility>
 #include <cstring>
+#include <string>
 
 #include "flecsi/specializations/burton/burton.h"
 #include "flecsi/utils/const_string.h"
@@ -32,12 +33,12 @@ namespace Portage {
 */
 class Flecsi_State_Wrapper {
  public:
-
   /*!
     @brief Constructor of Flecsi_State_Wrapper
     @param[in] flecsi_mesh A reference to a flecsi::burton_mesh_t instance
    */
-  Flecsi_State_Wrapper(mesh_t & flecsi_mesh) : flecsi_mesh_(flecsi_mesh) {}
+  explicit Flecsi_State_Wrapper(mesh_t & flecsi_mesh)
+      : flecsi_mesh_(flecsi_mesh) {}
 
   /*!
     @brief Copy constructor of Flecsi_State_Wrapper - not a deep copy
@@ -54,7 +55,7 @@ class Flecsi_State_Wrapper {
   /*!
     @brief Empty destructor
    */
-  ~Flecsi_State_Wrapper() {};
+  ~Flecsi_State_Wrapper() {}
 
   /*!
     @brief Get pointer to scalar data
@@ -79,11 +80,9 @@ class Flecsi_State_Wrapper {
   }
 
  private:
-
   mesh_t & flecsi_mesh_;
+};  // Flecsi_State_Wrapper
 
-}; // Flecsi_State_Wrapper
-
-} // namespace Portage
+}  // namespace Portage
 
 #endif // FLECSI_STATE_WRAPPER_H_

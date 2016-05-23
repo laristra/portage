@@ -1,5 +1,4 @@
 #include <vector>
-// note that flecsi is missing this in some files - e.g. data.h
 #include <iostream>
 #include <cstdio>
 #include <memory>
@@ -16,24 +15,16 @@
 
 // FleCSI includes
 #include "flecsi/specializations/burton/burton.h"
-#include "flecsi/specializations/burton/burton_io_exodus.h"
-// IO needs fixed
-//#include "flecsi/io/io.h"
-//#include "flecsi/io/io_exodus.h"
+
 // Jali includes
 #include "Mesh.hh"
 #include "MeshFactory.hh"
 #include "JaliStateVector.h"
 #include "JaliState.h"
-// Needed for IO
-// #define MSTK_HAVE_MPI
-// #include "Mesh_MSTK.hh"
 
 using mesh_t = flecsi::burton_mesh_t;
 
-using vertex_t = flecsi::mesh_t::vertex_t;
 using real_t = flecsi::mesh_t::real_t;
-//using vector_t = flecsi::mesh_t::vector_t;
 
 /*!
   @file main_jali_to_flecsi.cc
@@ -46,14 +37,11 @@ using real_t = flecsi::mesh_t::real_t;
   output at the end should be identically zero.
  */
 
-/// @TODO add multiple examples
-
 void print_usage() {
-  std::printf("usage: portageapp_flecsi ncellsx ncellsy order=1\n");
+  std::printf("usage: portage_jali2flecsiapp ncellsx ncellsy order=1\n");
 }
 
 int main(int argc, char** argv) {
-
   if (argc <= 2) {
     print_usage();
     return 0;
@@ -150,18 +138,6 @@ int main(int argc, char** argv) {
     toterr += error*error;
   }
   std::printf("\n\nL2 NORM OF ERROR = %lf\n\n", sqrt(toterr));
-
-
-  // output -- flecsi output not working at the moment
-  // inputState.export_to_mesh();
-  // dynamic_cast<Jali::Mesh_MSTK*>(inputMesh)->write_to_exodus_file("input.exo");
-  // std::cout << "done inputState mesh" << std::endl;
-  // std::cout << flecsi::burton_exodus_exo_registered << std::endl;
-  // // FlecSI mesh
-  // auto writer = flecsi::io_exodus_t<mesh_t>();
-  // writer.write("output.exo", targetMesh);
-  //  execute(flecsi::write<mesh_t>, "output.exo", targetMesh);
-  // //  flecsi::io_exodus_t<mesh_t>::write("output.exo", targetMesh);
 
   MPI_Finalize();
 

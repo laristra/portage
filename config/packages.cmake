@@ -100,6 +100,37 @@ if(FLECSI_INSTALL_DIR)
 
   include_directories(${FLECSI_INCLUDE_DIRS})
 
+  ######################################################################
+  # This is a placeholder for how we would do IO with FleCSI
+  # There are still some issues with dumping the targetMesh data
+  #
+  # WARNING!!! THIS IS POTENTIALLY FRAGILE
+  # it appears to work, but could cause conflicts with EXODUS and
+  # other libraries used by Jali
+  #
+  # FOR NOW THIS IS DISABLED UNTIL WE CAN GET A PROPER WORKAROUND
+  ######################################################################
+  # STRING(REPLACE "flecsi" "flecsi-tpl" FLECSI_TPL_DIR ${FLECSI_INSTALL_DIR})
+  # message(STATUS "FLECSI_TPL_DIR=${FLECSI_TPL_DIR}")
+  # if(IS_DIRECTORY ${FLECSI_TPL_DIR})
+  #   find_library(EXODUS_LIBRARY
+  #     NAMES exodus
+  #     PATHS ${FLECSI_TPL_DIR}
+  #     PATH_SUFFIXES lib
+  #     NO_DEFAULT_PATH)
+  #   find_path(EXODUS_INCLUDE_DIR
+  #     NAMES exodusII.h
+  #     PATHS ${FLECSI_TPL_DIR}
+  #     PATH_SUFFIXES include
+  #     NO_DEFAULT_PATH)
+
+  #   if(EXODUS_LIBRARY AND EXODUS_INCLUDE_DIR)
+  #     set(FLECSI_LIBRARIES ${EXODUS_LIBRARY} ${FLECSI_LIBRARIES})
+  #     include_directories(${EXODUS_INCLUDE_DIR})
+  #     add_definitions(-DHAVE_EXODUS)
+  #   endif(EXODUS_LIBRARY AND EXODUS_INCLUDE_DIR)
+
+  # endif(IS_DIRECTORY ${FLECSI_TPL_DIR})
 endif(FLECSI_INSTALL_DIR)
 
 #-----------------------------------------------------------------------------
