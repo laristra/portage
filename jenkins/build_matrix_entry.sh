@@ -15,7 +15,7 @@ build_type=$2
 
 # set modules and install paths
 
-jali_version=jali-0.7.1
+jali_version=jali-0.8.0
 
 export NGC=/usr/local/codes/ngc
 ngc_include_dir=$NGC/private/include
@@ -26,7 +26,8 @@ if [[ $compiler == "intel" ]]; then
   jali_install_dir=$NGC/private/${jali_version}-intel
 elif [[ $compiler == "gcc" ]]; then
   cxxmodule=gcc/4.9.2
-  jali_install_dir=$NGC/private/${jali_version}-gcc
+  # jali 0.8.0 doesn't have a gcc 4.9 build
+  jali_install_dir=$NGC/private/jali-0.7.1-gcc
 elif [[ $compiler == "gcc53" ]]; then
   cxxmodule=gcc/5.3.0
   jali_install_dir=$NGC/private/${jali_version}-gcc53
