@@ -363,6 +363,16 @@ class Flecsi_Mesh_Wrapper {
     assert(false && "FleCSI 3D not implemented");
   }
 
+  // Get the simplest possible decomposition of a 3D cell into tets.
+  // NOTE: FleCSI doesn't have 3D yet!!!
+  void decompose_cell_into_tets(int const cellID,
+                                std::vector<std::array<Portage::Point3, 4>>
+                                *tcoords) const {
+    assert(space_dimension() == 3);
+
+    assert(false && "FleCSI 3D not implemented");
+  }
+
   // NOTE: FleCSI doesn't have 3D yet!!!
   //! 3D version of coords of nodes of a dual cell
   // Input is the node ID 'nodeid', and it returns the vertex coordinates of
