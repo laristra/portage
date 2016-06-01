@@ -282,6 +282,7 @@ class Jali_Mesh_Wrapper {
 
   void wedges_get_coordinates(Jali::Entity_ID cellID,
       std::vector<std::array<Portage::Point<3>, 4>> *wcoords) const {
+    assert(jali_mesh_.space_dimension() == 3);
     std::vector<Jali::Entity_ID> wedges;
     jali_mesh_.cell_get_wedges(cellID, &wedges);
     for (const auto &wedge : wedges) {
@@ -293,6 +294,29 @@ class Jali_Mesh_Wrapper {
       wcoords->push_back(tmp);
     }
   }
+
+  void sides_get_coordinates(Jali::Entity_ID cellID,
+      std::vector<std::array<Portage::Point<3>, 4>> *scoords) const {
+    assert(jali_mesh_.space_dimension() == 3);
+    std::vector<Jali::Entity_ID> sides;
+    jali_mesh_.cell_get_sides(cellID, &sides);
+    for (const auto &side : sides) {
+      std::vector<JaliGeometry::Point> coords;
+      jali_mesh_.side_get_coordinates(side, &coords, true);
+      std::array<Portage::Point<3>, 4> tmp;
+      for (int i=0; i<4; i++)
+        tmp[i] = toPortagePoint<3>(coords[i]);
+      scoords->push_back(tmp);
+    }
+  }
+
+  // Get the simplest possible decomposition of a 3D cell into tets.
+  // For this mesh type, that means returning a list of sides.
+  void decompose_cell_into_tets(Jali::Entity_ID cellID,
+      std::vector<std::array<Portage::Point<3>, 4>> *tcoords) const {
+    sides_get_coordinates(cellID, tcoords);
+  }
+
 
   //! 3D version of coords of nodes of a dual cell
   // Input is the node ID 'nodeid', and it returns the vertex coordinates of

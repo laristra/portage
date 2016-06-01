@@ -24,10 +24,6 @@ ngc_include_dir=$NGC/private/include
 if [[ $compiler == "intel" ]]; then
   cxxmodule=intel/15.0.3
   jali_install_dir=$NGC/private/${jali_version}-intel
-elif [[ $compiler == "gcc" ]]; then
-  cxxmodule=gcc/4.9.2
-  # jali 0.8.0 doesn't have a gcc 4.9 build
-  jali_install_dir=$NGC/private/jali-0.7.1-gcc
 elif [[ $compiler == "gcc53" ]]; then
   cxxmodule=gcc/5.3.0
   jali_install_dir=$NGC/private/${jali_version}-gcc53
