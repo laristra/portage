@@ -67,29 +67,47 @@ class Jali_State_Wrapper {
   template <class T>
   void get_data(const Entity_kind on_what, const std::string var_name, T** const data) const {
   
-    std::shared_ptr<Jali::BaseStateVector> vector = 
-        *(jali_state_.find<T, Jali::Mesh>(var_name, jali_state_.mesh(),
-                           (Jali::Entity_kind) on_what));
-    if (vector != 0) (*data) = ((T*)(vector->get_raw_data()));
-  
+    Jali::State::const_iterator it =
+        jali_state_.find<T, Jali::Mesh>(var_name, jali_state_.mesh(),
+                                        (Jali::Entity_kind) on_what);
+    if (it != jali_state_.cend()) {
+      std::shared_ptr<Jali::BaseStateVector> vector = *it;
+      if (vector) {
+        (*data) = ((T*)(vector->get_raw_data()));
+        return;
+      }
+    }
+
+    std::cerr << "Could not find state variable " << var_name << "\n";
+    (*data) = nullptr;
   }
 
-#if 0
   /*!
     @brief Get the entity type on which the given field is defined
     @param[in] var_name The string name of the data field
     @return The Entity_kind enum for the entity type on which the field is defined
+
+    @todo  THIS ASSUMES ONLY DOUBLE VECTORS - WE HAVE TO ACCOUNT FOR OTHER TYPES
+           OR WE HAVE TO GENERALIZE THE FIND FUNCTION!!!
    */
   Entity_kind get_entity(const std::string var_name) const {
 
-    std::shared_ptr<Jali::BaseStateVector> vector = 
-        *(jali_state_.find(var_name, jali_state_.mesh()));
-    if (vector != 0) return (Portage::Entity_kind) vector->on_what();
+    // ****** CHANGE WHEN JALISTATE find FUNCTION IS FIXED TO NOT NEED
+    // ****** THE DATA TYPE
 
+    Jali::State::const_iterator it =
+        jali_state_.find<double, Jali::Mesh>(var_name, jali_state_.mesh());
+    std::shared_ptr<Jali::BaseStateVector> vector = *it;
+    if (it != jali_state_.cend()) {
+      if (vector)
+        return (Portage::Entity_kind) vector->on_what();
+    }
+
+    std::cerr << "Could not find state variable " << var_name << "\n";
     return Portage::UNKNOWN_KIND;
-
   }
 
+#if 0
   /*!
     @brief Get the data type of the given field
     @param[in] var_name The string name of the data field
@@ -97,11 +115,16 @@ class Jali_State_Wrapper {
    */ 
   const std::type_info& get_type(const std::string var_name) const {
     
-    std::shared_ptr<Jali::BaseStateVector> vector = 
-        *(jali_state_.find(var_name, jali_state_.mesh()));
-    if (vector != 0) return vector->get_type();
-    return typeid(0);
+    Jali::State::const_iterator it =
+        jali_state_.find(var_name, jali_state_.mesh());
+    if (it != jali_state_.cend()) {
+      std::shared_ptr<Jali::BaseStateVector> vector = *it;
+      if (vector)
+        return vector->get_type();
+    }
 
+    std::cerr << "Could not find state variable " << var_name << "\n";
+    return typeid(0);
   }
 #endif
 
