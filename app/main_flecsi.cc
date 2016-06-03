@@ -82,8 +82,7 @@ int main(int argc, char** argv) {
 
   // Setup the main driver for this mesh type
   Portage::Driver<Portage::Flecsi_Mesh_Wrapper,
-                  Portage::Flecsi_State_Wrapper> d(Portage::CELL,
-                                                   inputMeshWrapper,
+                  Portage::Flecsi_State_Wrapper> d(inputMeshWrapper,
                                                    inputStateWrapper,
                                                    targetMeshWrapper,
                                                    targetStateWrapper);
