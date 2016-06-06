@@ -104,8 +104,7 @@ int main(int argc, char** argv) {
   Portage::Driver<Portage::Jali_Mesh_Wrapper,
                   Portage::Jali_State_Wrapper,
                   Portage::Flecsi_Mesh_Wrapper,
-                  Portage::Flecsi_State_Wrapper> d(Portage::CELL,
-                                                   inputMeshWrapper,
+                  Portage::Flecsi_State_Wrapper> d(inputMeshWrapper,
                                                    inputStateWrapper,
                                                    targetMeshWrapper,
                                                    targetStateWrapper);

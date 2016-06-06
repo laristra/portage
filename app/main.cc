@@ -278,8 +278,7 @@ int main(int argc, char** argv) {
 
     // Build the main driver data for this mesh type
     Portage::Driver<Portage::Jali_Mesh_Wrapper,
-                    Portage::Jali_State_Wrapper> d(Portage::CELL,
-                                                   inputMeshWrapper,
+                    Portage::Jali_State_Wrapper> d(inputMeshWrapper,
                                                    sourceStateWrapper,
                                                    targetMeshWrapper,
                                                    targetStateWrapper);
@@ -438,8 +437,7 @@ int main(int argc, char** argv) {
 
     // Build the main driver data for this mesh type
     Portage::Driver<Portage::Jali_Mesh_Wrapper,
-                    Portage::Jali_State_Wrapper> d(Portage::NODE,
-                                                   inputMeshWrapper,
+                    Portage::Jali_State_Wrapper> d(inputMeshWrapper,
                                                    sourceStateWrapper,
                                                    targetMeshWrapper,
                                                    targetStateWrapper);

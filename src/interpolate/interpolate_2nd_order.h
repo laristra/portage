@@ -277,7 +277,7 @@ double Interpolate_2ndOrder<MeshType, StateType, CELL> :: operator()
 
     std::vector<double> xsect_centroid(spdim);
     for (int i = 0; i < spdim; ++i)
-      xsect_centroid[i] = xsect_weights[1+i]/xsect_volume;  // (1st moment)/(vol)
+      xsect_centroid[i] = xsect_weights[1+i]/xsect_volume;  // (1st moment)/vol
 
     double val = source_vals_[srccell];
     for (int i = 0; i < spdim; ++i)

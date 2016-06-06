@@ -129,8 +129,7 @@ int main(int argc, char** argv) {
   // Directly run cell-centered examples
   if ((example == 0) || (example == 2)) {
     Portage::Driver<Jali_Mesh_Wrapper,
-                    Jali_State_Wrapper> d(Portage::CELL,
-                                          inputMeshWrapper,
+                    Jali_State_Wrapper> d(inputMeshWrapper,
                                           sourceStateWrapper,
                                           targetMeshWrapper,
                                           targetStateWrapper);
@@ -144,8 +143,7 @@ int main(int argc, char** argv) {
   // Create a dual mesh for node-centered examples
   else if ((example == 1) || (example == 3)) {
     Portage::Driver<Portage::Jali_Mesh_Wrapper,
-                    Portage::Jali_State_Wrapper> d(Portage::NODE,
-                                                   inputMeshWrapper,
+                    Portage::Jali_State_Wrapper> d(inputMeshWrapper,
                                                    sourceStateWrapper,
                                                    targetMeshWrapper,
                                                    targetStateWrapper);

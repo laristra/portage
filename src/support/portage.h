@@ -61,6 +61,7 @@ enum Entity_kind {
   EDGE,
   FACE,
   CELL,
+  SIDE,
   WEDGE,
   CORNER,
   FACET,

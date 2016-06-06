@@ -79,6 +79,29 @@ class Flecsi_State_Wrapper {
     *data = &dat[0];
   }
 
+  /*!
+    @brief Get the entity type on which the given field is defined
+    @param[in] var_name The string name of the data field
+    @return The Entity_kind enum for the entity type on which the field is defined
+
+    @todo  THIS ASSUMES ONLY DOUBLE VECTORS - WE HAVE TO ACCOUNT FOR OTHER TYPES
+           OR WE HAVE TO GENERALIZE THE FIND FUNCTION!!!
+    @todo  THIS ALSO DOES NOT CHECK FOR OTHER ENTITY TYPES LIKE EDGE, FACE,
+           SIDE, WEDGE AND CORNER
+   */
+  Entity_kind get_entity(const std::string var_name) const {
+    auto varlist = access_type_if(flecsi_mesh_, real_t, is_at(cells));
+    for (auto var : varlist)
+      if (var.label() == var_name) return CELL;
+
+    varlist = access_type_if(flecsi_mesh_, real_t, is_at(vertices));
+    for (auto var : varlist)
+      if (var.label() == var_name) return NODE;
+
+    return UNKNOWN_KIND;
+  }
+  
+
  private:
   mesh_t & flecsi_mesh_;
 };  // Flecsi_State_Wrapper
