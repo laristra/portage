@@ -38,8 +38,8 @@ public:
   std::vector<std::vector<double>> operator() (const int cellA,
             const int cellB) const {
     std::vector<std::array<Portage::Point<3>, 4>> source_coords, target_coords;
-    sourceMeshWrapper.wedges_get_coordinates(cellA, &source_coords);
-    targetMeshWrapper.wedges_get_coordinates(cellB, &target_coords);
+    sourceMeshWrapper.decompose_cell_into_tets(cellA, &source_coords);
+    targetMeshWrapper.decompose_cell_into_tets(cellB, &target_coords);
 
     std::vector<double> moments(4, 0);
 
