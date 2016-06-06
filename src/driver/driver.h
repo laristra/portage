@@ -38,7 +38,7 @@ namespace Portage {
 /*!
   @class MeshWrapperDual "driver.h"
   @brief Wrapper for dual mesh.
-  
+
   Utilizes a Jali_Mesh_Wrapper to the original mesh, but treats
   the nodes of the original mesh as the centroids of the dual mesh.
 */
@@ -80,7 +80,7 @@ class MeshWrapperDual {  // cellid is the dual cell (i.e. node) id
 
   template<long D>
   void cell_get_coordinates(int const dualcellid,
-                            std::vector<Portage::Point<D>> *pplist) const {
+			    std::vector<Portage::Point<D>> *pplist) const {
     w_.dual_cell_get_coordinates(dualcellid, pplist);
   }
 
@@ -137,8 +137,8 @@ class MeshWrapperDual {  // cellid is the dual cell (i.e. node) id
     @param[in,out] adjcells List of IDs of adjacent cells.
   */
   void cell_get_node_adj_cells(int const dualcellID,
-                               Parallel_type const ptype,
-                               std::vector<int> *adjcells) const {
+			       Parallel_type const ptype,
+			       std::vector<int> *adjcells) const {
     w_.node_get_cell_adj_nodes(dualcellID, ptype, adjcells);
   }
 
@@ -157,8 +157,8 @@ class MeshWrapperDual {  // cellid is the dual cell (i.e. node) id
     @todo Clarify this wrt to @c MeshWrapperDual::cell_get_node_adj_cells()
   */
   void dual_cell_get_node_adj_cells(int const dualnodeID,
-                                    Parallel_type const ptype,
-                                    std::vector<int> *adjnodes) const {
+				    Parallel_type const ptype,
+				    std::vector<int> *adjnodes) const {
     w_.cell_get_node_adj_cells(dualnodeID, ptype, adjnodes);
   }
 
@@ -195,7 +195,7 @@ class MeshWrapperDual {  // cellid is the dual cell (i.e. node) id
     comprise the tetrahedron that is the wedge.
   */
   void wedges_get_coordinates(int const dualcellid,
-                              std::vector<wedgeCoords> *wcoords) const {
+			      std::vector<wedgeCoords> *wcoords) const {
     w_.dual_wedges_get_coordinates(dualcellid, wcoords);
   }
 
@@ -226,8 +226,8 @@ struct RemapFunctor;
 
 */
 template <class SourceMesh_Wrapper, class SourceState_Wrapper,
-          class TargetMesh_Wrapper = SourceMesh_Wrapper,
-          class TargetState_Wrapper = SourceState_Wrapper>
+	  class TargetMesh_Wrapper = SourceMesh_Wrapper,
+	  class TargetState_Wrapper = SourceState_Wrapper>
 class Driver {
  public:
   /*!
@@ -240,12 +240,12 @@ class Driver {
     be mapped to the target mesh.
   */
   Driver(SourceMesh_Wrapper const & sourceMesh,
-         SourceState_Wrapper const & sourceState,
-         TargetMesh_Wrapper const & targetMesh,
-         TargetState_Wrapper const & targetState)
+	 SourceState_Wrapper const & sourceState,
+	 TargetMesh_Wrapper const & targetMesh,
+	 TargetState_Wrapper const & targetState)
       : source_mesh_(sourceMesh), source_state_(sourceState),
-        target_mesh_(targetMesh), target_state_(targetState),
-        interp_order_(1), dim_(sourceMesh.space_dimension()) {
+	target_mesh_(targetMesh), target_state_(targetState),
+	interp_order_(1), dim_(sourceMesh.space_dimension()) {
     assert(sourceMesh.space_dimension() == targetMesh.space_dimension());
   }
 
@@ -285,7 +285,7 @@ class Driver {
     int nvars = source_remap_var_names.size();
     for (int i = 0; i < nvars; ++i)
       assert(source_state_.get_entity(source_remap_var_names[i]) ==
-             target_state_.get_entity(target_remap_var_names[i]));
+	     target_state_.get_entity(target_remap_var_names[i]));
 
     source_remap_var_names_ = source_remap_var_names;
     target_remap_var_names_ = target_remap_var_names;
@@ -299,7 +299,7 @@ class Driver {
   std::vector<std::string> source_remap_var_names() const {
     return source_remap_var_names_;
   }
-  
+
   /*!
     @brief Get the names of the variables to be remapped to the
     target mesh.
@@ -308,13 +308,13 @@ class Driver {
   std::vector<std::string> target_remap_var_names() const {
     return target_remap_var_names_;
   }
-  
+
   /// Set the order of accuracy of interpolation
-  
+
   void set_interpolation_order(unsigned int const order) {
     interp_order_ = order;
   }
-  
+
   /*!
     @brief Get the order of accuracy of interpolation
     @return The order of accuracy for the interpolation.
@@ -322,7 +322,7 @@ class Driver {
   unsigned int interpolation_order() const {
     return interp_order_;
   }
-  
+
   /*!
     @brief Get the dimensionality of the meshes.
     @return The dimensionality of the meshes.
@@ -330,12 +330,12 @@ class Driver {
   unsigned int dim() const {
     return dim_;
   }
-  
+
   /*!
     @brief This method calls specialized functions to do the remapping
     based on the dimensionality of the mesh, the type of data and the
     order of interpolation.
-    
+
     The individual routines run specialized search, intersect, and
     interpolation routines needed to map one mesh to another. Most of the
     heavy lifting in these routines is via a @c Portage::transform()
@@ -343,13 +343,13 @@ class Driver {
     RemapFunctor() (defined below) that specifies how the search,
     intersect, and interpolation calculations should be performed.
   */
-  
+
   void run() {
     std::printf("in Driver::run()...\n");
 
     int numTargetCells = target_mesh_.num_owned_cells();
     std::cout << "Number of target cells in target mesh "
-              << numTargetCells << std::endl;
+	      << numTargetCells << std::endl;
 
     int nvars = source_remap_var_names_.size();
 
@@ -358,34 +358,34 @@ class Driver {
       std::vector<std::string> source_cellvar_names;
       std::vector<std::string> target_cellvar_names;
       for (int i = 0; i < nvars; ++i) {
-        Entity_kind onwhat =
-            source_state_.get_entity(source_remap_var_names_[i]);
+	Entity_kind onwhat =
+	    source_state_.get_entity(source_remap_var_names_[i]);
 
-        if (onwhat == CELL) {
-          source_cellvar_names.emplace_back(source_remap_var_names_[i]);
-          target_cellvar_names.emplace_back(target_remap_var_names_[i]);
-        }
+	if (onwhat == CELL) {
+	  source_cellvar_names.emplace_back(source_remap_var_names_[i]);
+	  target_cellvar_names.emplace_back(target_remap_var_names_[i]);
+	}
       }
-      
+
       switch (dim_) {
-        case 1:
-          std::cerr << "Remapping not implemented for 1D" << std::endl;
-          exit(-1);
-        case 2: {
-          (interp_order_ == 1) ?
-              run_2D_CELL_order1(source_cellvar_names, target_cellvar_names) :
-              run_2D_CELL_order2(source_cellvar_names, target_cellvar_names);
-          break;
-        }
-        case 3: {
-          (interp_order_ == 1) ?
-              run_3D_CELL_order1(source_cellvar_names, target_cellvar_names) :
-              run_3D_CELL_order2(source_cellvar_names, target_cellvar_names);
-          break;
-        }
-        default:
-          std::cerr << "Invalid dimension" << std::endl;
-          exit(-1);
+	case 1:
+	  std::cerr << "Remapping not implemented for 1D" << std::endl;
+	  exit(-1);
+	case 2: {
+	  (interp_order_ == 1) ?
+	      run_2D_CELL_order1(source_cellvar_names, target_cellvar_names) :
+	      run_2D_CELL_order2(source_cellvar_names, target_cellvar_names);
+	  break;
+	}
+	case 3: {
+	  (interp_order_ == 1) ?
+	      run_3D_CELL_order1(source_cellvar_names, target_cellvar_names) :
+	      run_3D_CELL_order2(source_cellvar_names, target_cellvar_names);
+	  break;
+	}
+	default:
+	  std::cerr << "Invalid dimension" << std::endl;
+	  exit(-1);
       }
     }
 
@@ -395,67 +395,67 @@ class Driver {
       std::vector<std::string> source_nodevar_names;
       std::vector<std::string> target_nodevar_names;
       for (int i = 0; i < nvars; ++i) {
-        Entity_kind onwhat =
-            source_state_.get_entity(source_remap_var_names_[i]);
+	Entity_kind onwhat =
+	    source_state_.get_entity(source_remap_var_names_[i]);
 
-        if (onwhat == NODE) {
-          source_nodevar_names.emplace_back(source_remap_var_names_[i]);
-          target_nodevar_names.emplace_back(target_remap_var_names_[i]);
-        }
+	if (onwhat == NODE) {
+	  source_nodevar_names.emplace_back(source_remap_var_names_[i]);
+	  target_nodevar_names.emplace_back(target_remap_var_names_[i]);
+	}
       }
-      
+
       switch (dim_) {
-        case 1:
-          std::cerr << "Remapping not implemented for 1D" << std::endl;
-          exit(-1);
-        case 2: {
-          (interp_order_ == 1) ?
-              run_2D_NODE_order1(source_nodevar_names, target_nodevar_names) :
-              run_2D_NODE_order2(source_nodevar_names, target_nodevar_names);
-          break;
-        }
-        case 3: {
-          (interp_order_ == 1) ?
-              run_3D_NODE_order1(source_nodevar_names, target_nodevar_names) :
-              run_3D_NODE_order2(source_nodevar_names, target_nodevar_names);
-          break;
-        }
-        default:
-          std::cerr << "Invalid dimension" << std::endl;
-          exit(-1);
+	case 1:
+	  std::cerr << "Remapping not implemented for 1D" << std::endl;
+	  exit(-1);
+	case 2: {
+	  (interp_order_ == 1) ?
+	      run_2D_NODE_order1(source_nodevar_names, target_nodevar_names) :
+	      run_2D_NODE_order2(source_nodevar_names, target_nodevar_names);
+	  break;
+	}
+	case 3: {
+	  (interp_order_ == 1) ?
+	      run_3D_NODE_order1(source_nodevar_names, target_nodevar_names) :
+	      run_3D_NODE_order2(source_nodevar_names, target_nodevar_names);
+	  break;
+	}
+	default:
+	  std::cerr << "Invalid dimension" << std::endl;
+	  exit(-1);
       }
     }
 
 
   }
 
-  
+
   /// @brief 1st order remapping of cell centered data on 2D meshes
   void run_2D_CELL_order1(std::vector<std::string> source_cellvar_names,
-                          std::vector<std::string> target_cellvar_names);
+			  std::vector<std::string> target_cellvar_names);
   /// @brief 2nd order remapping of cell centered data on 2D meshes
   void run_2D_CELL_order2(std::vector<std::string> source_cellvar_names,
-                          std::vector<std::string> target_cellvar_names);
+			  std::vector<std::string> target_cellvar_names);
   /// @brief 1st order remapping of cell centered data on 3D meshes
   void run_3D_CELL_order1(std::vector<std::string> source_cellvar_names,
-                          std::vector<std::string> target_cellvar_names);
+			  std::vector<std::string> target_cellvar_names);
   /// @brief 2nd order remapping of cell centered data on 3D meshes
   void run_3D_CELL_order2(std::vector<std::string> source_cellvar_names,
-                          std::vector<std::string> target_cellvar_names);
+			  std::vector<std::string> target_cellvar_names);
   /// @brief 1st order remapping of node centered data on 2D meshes
   void run_2D_NODE_order1(std::vector<std::string> source_nodevar_names,
-                          std::vector<std::string> target_nodevar_names);
+			  std::vector<std::string> target_nodevar_names);
   /// @brief 2nd order remapping of node centered data on 2D meshes
   void run_2D_NODE_order2(std::vector<std::string> source_nodevar_names,
-                          std::vector<std::string> target_nodevar_names);
+			  std::vector<std::string> target_nodevar_names);
   /// @brief 1st order remapping of node centered data on 3D meshes
   void run_3D_NODE_order1(std::vector<std::string> source_nodevar_names,
-                          std::vector<std::string> target_nodevar_names);
+			  std::vector<std::string> target_nodevar_names);
   /// @brief 2nd order remapping of node centered data on 3D meshes
   void run_3D_NODE_order2(std::vector<std::string> source_nodevar_names,
-                          std::vector<std::string> target_nodevar_names);
-  
-  
+			  std::vector<std::string> target_nodevar_names);
+
+
  private:
   SourceMesh_Wrapper  const & source_mesh_;
   TargetMesh_Wrapper const & target_mesh_;
@@ -470,15 +470,15 @@ class Driver {
 
 // 1st order remapping of cell centered data on 2D meshes
 template<class SourceMesh_Wrapper, class SourceState_Wrapper,
-         class TargetMesh_Wrapper, class TargetState_Wrapper>
+	 class TargetMesh_Wrapper, class TargetState_Wrapper>
 void
 Driver<SourceMesh_Wrapper,
        SourceState_Wrapper,
        TargetMesh_Wrapper,
        TargetState_Wrapper>::run_2D_CELL_order1(std::vector<std::string>
-                                                source_var_names,
-                                                std::vector<std::string>
-                                                target_var_names) {
+						source_var_names,
+						std::vector<std::string>
+						target_var_names) {
 
   // Get an instance of the desired search algorithm type
   const SearchKDTree<2, SourceMesh_Wrapper, TargetMesh_Wrapper>
@@ -499,37 +499,37 @@ Driver<SourceMesh_Wrapper,
   int nvars = source_var_names.size();
   for (int i = 0; i < nvars; ++i) {
     std::cout << "Remapping variable " << source_var_names[i]
-              << " to variable " << target_var_names[i]
-              << " using a 1st order accurate algorithm" << std::endl;
+	      << " to variable " << target_var_names[i]
+	      << " using a 1st order accurate algorithm" << std::endl;
 
     const Interpolate_1stOrder<SourceMesh_Wrapper, SourceState_Wrapper, CELL>
-        interpolater(source_mesh_, source_state_, source_var_names[i]);
+	interpolater(source_mesh_, source_state_, source_var_names[i]);
 
     // Make the remapper instance
     RemapFunctor<SearchKDTree<2, SourceMesh_Wrapper, TargetMesh_Wrapper>,
-                 IntersectClipper<SourceMesh_Wrapper, TargetMesh_Wrapper>,
-                 Interpolate_1stOrder<SourceMesh_Wrapper, SourceState_Wrapper,
-                                      CELL>>
-        remapper(&search, &intersect, &interpolater);
+		 IntersectClipper<SourceMesh_Wrapper, TargetMesh_Wrapper>,
+		 Interpolate_1stOrder<SourceMesh_Wrapper, SourceState_Wrapper,
+				      CELL>>
+	remapper(&search, &intersect, &interpolater);
 
     // This populates targetField with the values returned by the
     // remapper operator
 
     /*  UNCOMMENT WHEN WE RESTORE get_type in jali_state_wrapper
     if (typeid(source_state_.get_type(source_var_names[i])) ==
-        typeid(double)) {
+	typeid(double)) {
     */
       double *target_field_raw = nullptr;
       target_state_.get_data(CELL, target_var_names[i], &target_field_raw);
       Portage::pointer<double> target_field(target_field_raw);
 
       Portage::transform((counting_iterator)(target_mesh_.begin(CELL)),
-                         (counting_iterator)(target_mesh_.end(CELL)),
-                         target_field, remapper);
+			 (counting_iterator)(target_mesh_.end(CELL)),
+			 target_field, remapper);
     /*  UNCOMMENT WHEN WE RESTORE get_type in jali_state_wrapper
     } else {
       std::cerr << "Cannot remap " << source_var_names[i] <<
-          " because it is not a scalar double variable\n";
+	  " because it is not a scalar double variable\n";
       continue;
     }
     */
@@ -547,15 +547,15 @@ Driver<SourceMesh_Wrapper,
 
 // 2nd order remapping of cell centered data on 2D meshes
 template<class SourceMesh_Wrapper, class SourceState_Wrapper,
-         class TargetMesh_Wrapper, class TargetState_Wrapper>
+	 class TargetMesh_Wrapper, class TargetState_Wrapper>
 void
 Driver<SourceMesh_Wrapper,
        SourceState_Wrapper,
        TargetMesh_Wrapper,
        TargetState_Wrapper>::run_2D_CELL_order2(std::vector<std::string>
-                                                source_var_names,
-                                                std::vector<std::string>
-                                                target_var_names) {
+						source_var_names,
+						std::vector<std::string>
+						target_var_names) {
   // Get an instance of the desired search algorithm type
   const SearchKDTree<2, SourceMesh_Wrapper, TargetMesh_Wrapper>
       search(source_mesh_, target_mesh_);
@@ -574,39 +574,39 @@ Driver<SourceMesh_Wrapper,
   int nvars = source_var_names.size();
   for (int i = 0; i < nvars; ++i) {
     std::cout << "Remapping variable " << source_var_names[i]
-              << " to variable " << target_var_names[i]
-              << " using a 2nd order accurate algorithm" << std::endl;
+	      << " to variable " << target_var_names[i]
+	      << " using a 2nd order accurate algorithm" << std::endl;
 
     // Get an instance of the 2nd order remapping algorithm
     const Interpolate_2ndOrder<SourceMesh_Wrapper, SourceState_Wrapper, CELL>
-        interpolater(source_mesh_, source_state_, source_var_names[i],
-                     NOLIMITER);
+	interpolater(source_mesh_, source_state_, source_var_names[i],
+		     NOLIMITER);
 
     // Make the remapper instance
     RemapFunctor<SearchKDTree<2, SourceMesh_Wrapper, TargetMesh_Wrapper>,
-                 IntersectClipper<SourceMesh_Wrapper, TargetMesh_Wrapper>,
-                 Interpolate_2ndOrder<SourceMesh_Wrapper,
-                                      SourceState_Wrapper, CELL> >
-        remapper(&search, &intersect, &interpolater);
-    
+		 IntersectClipper<SourceMesh_Wrapper, TargetMesh_Wrapper>,
+		 Interpolate_2ndOrder<SourceMesh_Wrapper,
+				      SourceState_Wrapper, CELL> >
+	remapper(&search, &intersect, &interpolater);
+
     // This populates targetField with the values returned by the
     // remapper operator
 
     /*  UNCOMMENT WHEN WE RESTORE get_type in jali_state_wrapper
-        if (typeid(source_state_.get_type(source_var_names[i])) ==
-            typeid(double)) {
+	if (typeid(source_state_.get_type(source_var_names[i])) ==
+	    typeid(double)) {
     */
       double *target_field_raw = nullptr;
       target_state_.get_data(CELL, target_var_names[i], &target_field_raw);
       Portage::pointer<double> target_field(target_field_raw);
 
       Portage::transform((counting_iterator)(target_mesh_.begin(CELL)),
-                         (counting_iterator)(target_mesh_.end(CELL)),
-                         target_field, remapper);
+			 (counting_iterator)(target_mesh_.end(CELL)),
+			 target_field, remapper);
       /* UNCOMMENT WHEN WE RESTORE get_type
     } else {
       std::cerr << "Cannot remap " << source_var_names[i] <<
-          " because it is not a scalar double variable\n";
+	  " because it is not a scalar double variable\n";
       continue;
     }
       */
@@ -625,15 +625,15 @@ Driver<SourceMesh_Wrapper,
 
 // 1st order remapping of cell centered data on 3D meshes
 template<class SourceMesh_Wrapper, class SourceState_Wrapper,
-         class TargetMesh_Wrapper, class TargetState_Wrapper>
+	 class TargetMesh_Wrapper, class TargetState_Wrapper>
 void
 Driver<SourceMesh_Wrapper,
        SourceState_Wrapper,
        TargetMesh_Wrapper,
        TargetState_Wrapper>::run_3D_CELL_order1(std::vector<std::string>
-                                                source_var_names,
-                                                std::vector<std::string>
-                                                target_var_names) {
+						source_var_names,
+						std::vector<std::string>
+						target_var_names) {
   // Get an instance of the desired search algorithm type
   const SearchKDTree<3, SourceMesh_Wrapper, TargetMesh_Wrapper>
       search(source_mesh_, target_mesh_);
@@ -653,38 +653,38 @@ Driver<SourceMesh_Wrapper,
   int nvars = source_var_names.size();
   for (int i = 0; i < nvars; ++i) {
     std::cout << "Remapping variable " << source_var_names[i]
-              << " to variable " << target_var_names[i]
-              << " using a 1st order accurate algorithm" << std::endl;
-    
+	      << " to variable " << target_var_names[i]
+	      << " using a 1st order accurate algorithm" << std::endl;
+
     // Get an instance of the 1st order algorithm
     const Interpolate_1stOrder<SourceMesh_Wrapper, SourceState_Wrapper, CELL>
-        interpolater(source_mesh_, source_state_, source_var_names[i]);
+	interpolater(source_mesh_, source_state_, source_var_names[i]);
 
     // Make the remapper instance
     RemapFunctor<SearchKDTree<3, SourceMesh_Wrapper, TargetMesh_Wrapper>,
-                 IntersectR3D<SourceMesh_Wrapper, TargetMesh_Wrapper>,
-                 Interpolate_1stOrder<SourceMesh_Wrapper,
-                                      SourceState_Wrapper, CELL> >
-        remapper(&search, &intersect, &interpolater);
+		 IntersectR3D<SourceMesh_Wrapper, TargetMesh_Wrapper>,
+		 Interpolate_1stOrder<SourceMesh_Wrapper,
+				      SourceState_Wrapper, CELL> >
+	remapper(&search, &intersect, &interpolater);
 
     // This populates targetField with the values returned by the
     // remapper operator
 
     /*  UNCOMMENT WHEN WE RESTORE get_type in jali_state_wrapper
     if (typeid(source_state_.get_type(source_var_names[i])) ==
-        typeid(double)) {
+	typeid(double)) {
     */
       double *target_field_raw = nullptr;
       target_state_.get_data(CELL, target_var_names[i], &target_field_raw);
       Portage::pointer<double> target_field(target_field_raw);
-      
+
       Portage::transform((counting_iterator)(target_mesh_.begin(CELL)),
-                         (counting_iterator)(target_mesh_.end(CELL)),
-                         target_field, remapper);
+			 (counting_iterator)(target_mesh_.end(CELL)),
+			 target_field, remapper);
     /*  UNCOMMENT WHEN WE RESTORE get_type in jali_state_wrapper
     } else {
       std::cerr << "Cannot remap " << source_var_names[i] <<
-          " because it is not a scalar double variable\n";
+	  " because it is not a scalar double variable\n";
       continue;
     }
     */
@@ -702,15 +702,15 @@ Driver<SourceMesh_Wrapper,
 
 // 2nd order remapping of cell centered data on 3D meshes
 template<class SourceMesh_Wrapper, class SourceState_Wrapper,
-         class TargetMesh_Wrapper, class TargetState_Wrapper>
+	 class TargetMesh_Wrapper, class TargetState_Wrapper>
 void
 Driver<SourceMesh_Wrapper,
        SourceState_Wrapper,
        TargetMesh_Wrapper,
        TargetState_Wrapper>::run_3D_CELL_order2(std::vector<std::string>
-                                                source_var_names,
-                                                std::vector<std::string>
-                                                target_var_names) {
+						source_var_names,
+						std::vector<std::string>
+						target_var_names) {
   // Get an instance of the desired search algorithm type
   const SearchKDTree<3, SourceMesh_Wrapper, TargetMesh_Wrapper>
       search(source_mesh_, target_mesh_);
@@ -730,39 +730,39 @@ Driver<SourceMesh_Wrapper,
   int nvars = source_var_names.size();
   for (int i = 0; i < nvars; ++i) {
     std::cout << "Remapping variable " << source_var_names[i]
-              << " to variable " << target_var_names[i]
-              << " using a 2nd order accurate algorithm" << std::endl;
+	      << " to variable " << target_var_names[i]
+	      << " using a 2nd order accurate algorithm" << std::endl;
 
     // Get an instance of the 2nd order algorithm
     const Interpolate_2ndOrder<SourceMesh_Wrapper, SourceState_Wrapper, CELL>
-        interpolater(source_mesh_, source_state_, source_var_names[i],
-                     NOLIMITER);
+	interpolater(source_mesh_, source_state_, source_var_names[i],
+		     NOLIMITER);
 
 
     RemapFunctor<SearchKDTree<3, SourceMesh_Wrapper, TargetMesh_Wrapper>,
-                 IntersectR3D<SourceMesh_Wrapper, TargetMesh_Wrapper>,
-                 Interpolate_2ndOrder<SourceMesh_Wrapper,
-                                      SourceState_Wrapper, CELL> >
-        remapper(&search, &intersect, &interpolater);
+		 IntersectR3D<SourceMesh_Wrapper, TargetMesh_Wrapper>,
+		 Interpolate_2ndOrder<SourceMesh_Wrapper,
+				      SourceState_Wrapper, CELL> >
+	remapper(&search, &intersect, &interpolater);
 
     // This populates targetField with the values returned by the
     // remapper operator
 
     /*  UNCOMMENT WHEN WE RESTORE get_type in jali_state_wrapper
     if (typeid(source_state_.get_type(source_var_names[i])) ==
-        typeid(double)) {
+	typeid(double)) {
     */
       double *target_field_raw = nullptr;
       target_state_.get_data(CELL, target_var_names[i], &target_field_raw);
       Portage::pointer<double> target_field(target_field_raw);
 
       Portage::transform((counting_iterator)(target_mesh_.begin(CELL)),
-                         (counting_iterator)(target_mesh_.end(CELL)),
-                         target_field, remapper);
+			 (counting_iterator)(target_mesh_.end(CELL)),
+			 target_field, remapper);
     /*  UNCOMMENT WHEN WE RESTORE get_type in jali_state_wrapper
     } else {
       std::cerr << "Cannot remap " << source_var_names[i] <<
-          " because it is not a scalar double variable\n";
+	  " because it is not a scalar double variable\n";
       continue;
     }
     */
@@ -780,26 +780,26 @@ Driver<SourceMesh_Wrapper,
 
 // 1st order remapping of node centered data on 2D meshes
 template<class SourceMesh_Wrapper, class SourceState_Wrapper,
-         class TargetMesh_Wrapper, class TargetState_Wrapper>
+	 class TargetMesh_Wrapper, class TargetState_Wrapper>
 void
 Driver<SourceMesh_Wrapper,
        SourceState_Wrapper,
        TargetMesh_Wrapper,
        TargetState_Wrapper>::run_2D_NODE_order1(std::vector<std::string>
-                                                source_var_names,
-                                                std::vector<std::string>
-                                                target_var_names) {
+						source_var_names,
+						std::vector<std::string>
+						target_var_names) {
   MeshWrapperDual<SourceMesh_Wrapper> source_mesh_dual(source_mesh_);
   MeshWrapperDual<TargetMesh_Wrapper> target_mesh_dual(target_mesh_);
 
   // Get an instance of the desired search algorithm type
   const SearchKDTree<2, MeshWrapperDual<SourceMesh_Wrapper>,
-                     MeshWrapperDual<TargetMesh_Wrapper>>
+		     MeshWrapperDual<TargetMesh_Wrapper>>
       search(source_mesh_dual, target_mesh_dual);
 
   // Get an instance of the desired intersect algorithm type
   const IntersectClipper<MeshWrapperDual<SourceMesh_Wrapper>,
-                         MeshWrapperDual<TargetMesh_Wrapper>>
+			 MeshWrapperDual<TargetMesh_Wrapper>>
       intersect{source_mesh_dual, target_mesh_dual};
 
 
@@ -813,42 +813,42 @@ Driver<SourceMesh_Wrapper,
   int nvars = source_var_names.size();
   for (int i = 0; i < nvars; ++i) {
     std::cout << "Remapping variable " << source_var_names[i]
-              << " to variable " << target_var_names[i]
-              << " using a 1st order accurate algorithm" << std::endl;
-    
+	      << " to variable " << target_var_names[i]
+	      << " using a 1st order accurate algorithm" << std::endl;
+
     const Interpolate_1stOrder<SourceMesh_Wrapper, SourceState_Wrapper, NODE>
-        interpolater(source_mesh_, source_state_, source_var_names[i]);
-    
+	interpolater(source_mesh_, source_state_, source_var_names[i]);
+
     RemapFunctor<SearchKDTree<2, MeshWrapperDual<SourceMesh_Wrapper>,
-                              MeshWrapperDual<TargetMesh_Wrapper>>,
-                 IntersectClipper<MeshWrapperDual<SourceMesh_Wrapper>,
-                                  MeshWrapperDual<TargetMesh_Wrapper>>,
-                 Interpolate_1stOrder<SourceMesh_Wrapper, SourceState_Wrapper, NODE> >
-        remapper(&search, &intersect, &interpolater);
-    
+			      MeshWrapperDual<TargetMesh_Wrapper>>,
+		 IntersectClipper<MeshWrapperDual<SourceMesh_Wrapper>,
+				  MeshWrapperDual<TargetMesh_Wrapper>>,
+		 Interpolate_1stOrder<SourceMesh_Wrapper, SourceState_Wrapper, NODE> >
+	remapper(&search, &intersect, &interpolater);
+
     // This populates targetField with the values returned by the
     // remapper operator
-    
+
     /*  UNCOMMENT WHEN WE RESTORE get_type in jali_state_wrapper
     if (typeid(source_state_.get_type(source_var_names[i])) ==
-        typeid(double)) {
+	typeid(double)) {
     */
       double *target_field_raw = nullptr;
       target_state_.get_data(NODE, target_var_names[i], &target_field_raw);
       Portage::pointer<double> target_field(target_field_raw);
-      
+
       Portage::transform((counting_iterator)(target_mesh_.begin(NODE)),
-                         (counting_iterator)(target_mesh_.end(NODE)),
-                         target_field, remapper);
+			 (counting_iterator)(target_mesh_.end(NODE)),
+			 target_field, remapper);
     /*  UNCOMMENT WHEN WE RESTORE get_type in jali_state_wrapper
     } else {
       std::cerr << "Cannot remap " << source_var_names[i] <<
-          " because it is not a scalar double variable\n";
+	  " because it is not a scalar double variable\n";
       continue;
     }
     */
   }
-  
+
 #ifdef ENABLE_PROFILE
   __itt_pause();
 #endif
@@ -861,26 +861,26 @@ Driver<SourceMesh_Wrapper,
 
 // 2nd order remapping of cell centered data on 2D meshes
 template<class SourceMesh_Wrapper, class SourceState_Wrapper,
-         class TargetMesh_Wrapper, class TargetState_Wrapper>
+	 class TargetMesh_Wrapper, class TargetState_Wrapper>
 void
 Driver<SourceMesh_Wrapper,
        SourceState_Wrapper,
        TargetMesh_Wrapper,
        TargetState_Wrapper>::run_2D_NODE_order2(std::vector<std::string>
-                                                source_var_names,
-                                                std::vector<std::string>
-                                                target_var_names) {
+						source_var_names,
+						std::vector<std::string>
+						target_var_names) {
   MeshWrapperDual<SourceMesh_Wrapper> source_mesh_dual(source_mesh_);
   MeshWrapperDual<TargetMesh_Wrapper> target_mesh_dual(target_mesh_);
 
   // Get an instance of the desired search algorithm type
   const SearchKDTree<2, MeshWrapperDual<SourceMesh_Wrapper>,
-                     MeshWrapperDual<TargetMesh_Wrapper>>
+		     MeshWrapperDual<TargetMesh_Wrapper>>
       search(source_mesh_dual, target_mesh_dual);
 
   // Get an instance of the desired intersect algorithm type
   const IntersectClipper<MeshWrapperDual<SourceMesh_Wrapper>,
-                         MeshWrapperDual<TargetMesh_Wrapper>>
+			 MeshWrapperDual<TargetMesh_Wrapper>>
       intersect{source_mesh_dual, target_mesh_dual};
 
 
@@ -894,48 +894,48 @@ Driver<SourceMesh_Wrapper,
   int nvars = source_var_names.size();
   for (int i = 0; i < nvars; ++i) {
     std::cout << "Remapping variable " << source_var_names[i]
-              << " to variable " << target_var_names[i]
-              << " using a 2nd order accurate algorithm" << std::endl;
-    
+	      << " to variable " << target_var_names[i]
+	      << " using a 2nd order accurate algorithm" << std::endl;
+
     // Get an instance of the 2nd order interpolate algorithm
     const Interpolate_2ndOrder<SourceMesh_Wrapper, SourceState_Wrapper, NODE>
-        interpolater(source_mesh_, source_state_, source_var_names[i],
-                     NOLIMITER);
+	interpolater(source_mesh_, source_state_, source_var_names[i],
+		     NOLIMITER);
 
     // Make the remapper instance
     RemapFunctor<SearchKDTree<2, MeshWrapperDual<SourceMesh_Wrapper>,
-                              MeshWrapperDual<TargetMesh_Wrapper>>,
-                 IntersectClipper<MeshWrapperDual<SourceMesh_Wrapper>,
-                                  MeshWrapperDual<TargetMesh_Wrapper>>,
-                 Interpolate_2ndOrder<SourceMesh_Wrapper, SourceState_Wrapper, NODE>>
-        remapper(&search, &intersect, &interpolater);
+			      MeshWrapperDual<TargetMesh_Wrapper>>,
+		 IntersectClipper<MeshWrapperDual<SourceMesh_Wrapper>,
+				  MeshWrapperDual<TargetMesh_Wrapper>>,
+		 Interpolate_2ndOrder<SourceMesh_Wrapper, SourceState_Wrapper, NODE>>
+	remapper(&search, &intersect, &interpolater);
 
     // This populates targetField with the doubles returned from
     // the remapper operator
 
     // This populates targetField with the values returned by the
     // remapper operator
-    
+
     /*  UNCOMMENT WHEN WE RESTORE get_type in jali_state_wrapper
     if (typeid(source_state_.get_type(source_var_names[i])) ==
-        typeid(double)) {
+	typeid(double)) {
     */
       double *target_field_raw = nullptr;
       target_state_.get_data(NODE, target_var_names[i], &target_field_raw);
       Portage::pointer<double> target_field(target_field_raw);
-      
+
       Portage::transform((counting_iterator)(target_mesh_.begin(NODE)),
-                         (counting_iterator)(target_mesh_.end(NODE)),
-                         target_field, remapper);
+			 (counting_iterator)(target_mesh_.end(NODE)),
+			 target_field, remapper);
     /*  UNCOMMENT WHEN WE RESTORE get_type in jali_state_wrapper
     } else {
       std::cerr << "Cannot remap " << source_var_names[i] <<
-          " because it is not a scalar double variable\n";
+	  " because it is not a scalar double variable\n";
       continue;
     }
     */
   }
-  
+
 #ifdef ENABLE_PROFILE
   __itt_pause();
 #endif
@@ -949,26 +949,26 @@ Driver<SourceMesh_Wrapper,
 
 // 1st order remapping of cell centered data on 3D meshes
 template<class SourceMesh_Wrapper, class SourceState_Wrapper,
-         class TargetMesh_Wrapper, class TargetState_Wrapper>
+	 class TargetMesh_Wrapper, class TargetState_Wrapper>
 void
 Driver<SourceMesh_Wrapper,
        SourceState_Wrapper,
        TargetMesh_Wrapper,
        TargetState_Wrapper>::run_3D_NODE_order1(std::vector<std::string>
-                                                source_var_names,
-                                                std::vector<std::string>
-                                                target_var_names) {
+						source_var_names,
+						std::vector<std::string>
+						target_var_names) {
   MeshWrapperDual<SourceMesh_Wrapper> source_mesh_dual(source_mesh_);
   MeshWrapperDual<TargetMesh_Wrapper> target_mesh_dual(target_mesh_);
 
   // Get an instance of the desired search algorithm type
   const SearchKDTree<3, MeshWrapperDual<SourceMesh_Wrapper>,
-                     MeshWrapperDual<TargetMesh_Wrapper>>
+		     MeshWrapperDual<TargetMesh_Wrapper>>
       search(source_mesh_dual, target_mesh_dual);
 
   // Get an instance of the desired intersect algorithm type
   const IntersectR3D<MeshWrapperDual<SourceMesh_Wrapper>,
-                     MeshWrapperDual<TargetMesh_Wrapper>>
+		     MeshWrapperDual<TargetMesh_Wrapper>>
       intersect{source_mesh_dual, target_mesh_dual};
 
 
@@ -982,44 +982,44 @@ Driver<SourceMesh_Wrapper,
   int nvars = source_var_names.size();
   for (int i = 0; i < nvars; ++i) {
     std::cout << "Remapping variable " << source_var_names[i]
-              << " to variable " << target_var_names[i]
-              << " using a 1st order accurate algorithm" << std::endl;
-    
+	      << " to variable " << target_var_names[i]
+	      << " using a 1st order accurate algorithm" << std::endl;
+
     // Get an instance of the 1st order algorithm
     const Interpolate_1stOrder<SourceMesh_Wrapper, SourceState_Wrapper, NODE>
-        interpolater(source_mesh_, source_state_, source_var_names[i]);
-    
+	interpolater(source_mesh_, source_state_, source_var_names[i]);
+
     // Make the remapper instance
     RemapFunctor<SearchKDTree<3, MeshWrapperDual<SourceMesh_Wrapper>,
-                              MeshWrapperDual<TargetMesh_Wrapper>>,
-                 IntersectR3D<MeshWrapperDual<SourceMesh_Wrapper>,
-                              MeshWrapperDual<TargetMesh_Wrapper>>,
-                 Interpolate_1stOrder<SourceMesh_Wrapper, SourceState_Wrapper, NODE>>
-        remapper(&search, &intersect, &interpolater);
+			      MeshWrapperDual<TargetMesh_Wrapper>>,
+		 IntersectR3D<MeshWrapperDual<SourceMesh_Wrapper>,
+			      MeshWrapperDual<TargetMesh_Wrapper>>,
+		 Interpolate_1stOrder<SourceMesh_Wrapper, SourceState_Wrapper, NODE>>
+	remapper(&search, &intersect, &interpolater);
 
     // This populates targetField with the values returned by the
     // remapper operator
-    
+
     /*  UNCOMMENT WHEN WE RESTORE get_type in jali_state_wrapper
     if (typeid(source_state_.get_type(source_var_names[i])) ==
-        typeid(double)) {
+	typeid(double)) {
     */
       double *target_field_raw = nullptr;
       target_state_.get_data(NODE, target_var_names[i], &target_field_raw);
       Portage::pointer<double> target_field(target_field_raw);
-      
+
       Portage::transform((counting_iterator)(target_mesh_.begin(NODE)),
-                         (counting_iterator)(target_mesh_.end(NODE)),
-                         target_field, remapper);
+			 (counting_iterator)(target_mesh_.end(NODE)),
+			 target_field, remapper);
     /*  UNCOMMENT WHEN WE RESTORE get_type in jali_state_wrapper
     } else {
       std::cerr << "Cannot remap " << source_var_names[i] <<
-          " because it is not a scalar double variable\n";
+	  " because it is not a scalar double variable\n";
       continue;
     }
     */
   }
-  
+
 #ifdef ENABLE_PROFILE
   __itt_pause();
 #endif
@@ -1032,26 +1032,26 @@ Driver<SourceMesh_Wrapper,
 
 // 2nd order remapping of cell centered data on 3D meshes
 template<class SourceMesh_Wrapper, class SourceState_Wrapper,
-         class TargetMesh_Wrapper, class TargetState_Wrapper>
+	 class TargetMesh_Wrapper, class TargetState_Wrapper>
 void
 Driver<SourceMesh_Wrapper,
        SourceState_Wrapper,
        TargetMesh_Wrapper,
        TargetState_Wrapper>::run_3D_NODE_order2(std::vector<std::string>
-                                                source_var_names,
-                                                std::vector<std::string>
-                                                target_var_names) {
+						source_var_names,
+						std::vector<std::string>
+						target_var_names) {
   MeshWrapperDual<SourceMesh_Wrapper> source_mesh_dual(source_mesh_);
   MeshWrapperDual<TargetMesh_Wrapper> target_mesh_dual(target_mesh_);
 
   // Get an instance of the desired search algorithm type
   const SearchKDTree<3, MeshWrapperDual<SourceMesh_Wrapper>,
-                     MeshWrapperDual<TargetMesh_Wrapper>>
+		     MeshWrapperDual<TargetMesh_Wrapper>>
       search(source_mesh_dual, target_mesh_dual);
 
   // Get an instance of the desired intersect algorithm type
   const IntersectR3D<MeshWrapperDual<SourceMesh_Wrapper>,
-                     MeshWrapperDual<TargetMesh_Wrapper>>
+		     MeshWrapperDual<TargetMesh_Wrapper>>
       intersect{source_mesh_dual, target_mesh_dual};
 
 
@@ -1066,45 +1066,45 @@ Driver<SourceMesh_Wrapper,
   int nvars = source_var_names.size();
   for (int i = 0; i < nvars; ++i) {
     std::cout << "Remapping variable " << source_var_names[i]
-              << " to variable " << target_var_names[i]
-              << " using a 2nd order accurate algorithm" << std::endl;
-    
+	      << " to variable " << target_var_names[i]
+	      << " using a 2nd order accurate algorithm" << std::endl;
+
     // Get an instance of the 2nd order algorithm
     const Interpolate_2ndOrder<SourceMesh_Wrapper, SourceState_Wrapper, NODE>
-        interpolater(source_mesh_, source_state_, source_var_names[i],
-                     NOLIMITER);
-    
-    
+	interpolater(source_mesh_, source_state_, source_var_names[i],
+		     NOLIMITER);
+
+
     RemapFunctor<SearchKDTree<3, MeshWrapperDual<SourceMesh_Wrapper>,
-                              MeshWrapperDual<TargetMesh_Wrapper>>,
-                 IntersectR3D<MeshWrapperDual<SourceMesh_Wrapper>,
-                              MeshWrapperDual<TargetMesh_Wrapper>>,
-                 Interpolate_2ndOrder<SourceMesh_Wrapper, SourceState_Wrapper, NODE> >
-        remapper(&search, &intersect, &interpolater);
+			      MeshWrapperDual<TargetMesh_Wrapper>>,
+		 IntersectR3D<MeshWrapperDual<SourceMesh_Wrapper>,
+			      MeshWrapperDual<TargetMesh_Wrapper>>,
+		 Interpolate_2ndOrder<SourceMesh_Wrapper, SourceState_Wrapper, NODE> >
+	remapper(&search, &intersect, &interpolater);
 
     // This populates targetField with the values returned by the
     // remapper operator
-    
+
     /*  UNCOMMENT WHEN WE RESTORE get_type in jali_state_wrapper
     if (typeid(source_state_.get_type(source_var_names[i])) ==
-        typeid(double)) {
+	typeid(double)) {
     */
       double *target_field_raw = nullptr;
       target_state_.get_data(NODE, target_var_names[i], &target_field_raw);
       Portage::pointer<double> target_field(target_field_raw);
-      
+
       Portage::transform((counting_iterator)(target_mesh_.begin(NODE)),
-                         (counting_iterator)(target_mesh_.end(NODE)),
-                         target_field, remapper);
+			 (counting_iterator)(target_mesh_.end(NODE)),
+			 target_field, remapper);
     /*  UNCOMMENT WHEN WE RESTORE get_type in jali_state_wrapper
     } else {
       std::cerr << "Cannot remap " << source_var_names[i] <<
-          " because it is not a scalar double variable\n";
+	  " because it is not a scalar double variable\n";
       continue;
     }
     */
   }
-  
+
 
 #ifdef ENABLE_PROFILE
   __itt_pause();
@@ -1142,10 +1142,10 @@ struct RemapFunctor {
     Interpolate_2ndOrder)
   */
   RemapFunctor(const SearchType* searcher,
-               const IsectType* intersecter,
-               const InterpType* interpolater)
+	       const IsectType* intersecter,
+	       const InterpType* interpolater)
       : search_(searcher), intersect_(intersecter),
-        interpolater_(interpolater)
+	interpolater_(interpolater)
   {}
 
   /*!
@@ -1193,15 +1193,15 @@ struct RemapFunctor {
       std::vector< std::vector<double> > & candidate_moments = moments[i];
       int num_moment_sets = candidate_moments.size();
       for (const auto & candidate_moment : candidate_moments) {
-        candidates_dup[ninserted] = candidates[i];  // repeated as needed
-        interp_moments[ninserted] = candidate_moment;
-        ++ninserted;
+	candidates_dup[ninserted] = candidates[i];  // repeated as needed
+	interp_moments[ninserted] = candidate_moment;
+	++ninserted;
       }
     }
 
     std::pair<std::vector<int> const &,
-              std::vector<std::vector<double>> const &>
-        source_cells_and_weights(candidates_dup, interp_moments);
+	      std::vector<std::vector<double>> const &>
+	source_cells_and_weights(candidates_dup, interp_moments);
 
     double interpolatedValue = (*interpolater_)(source_cells_and_weights);
 
@@ -1212,4 +1212,3 @@ struct RemapFunctor {
 }  // namespace Portage
 
 #endif  // SRC_DRIVER_DRIVER_H_
-
