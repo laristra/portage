@@ -479,6 +479,7 @@ Driver<SourceMesh_Wrapper,
                                                 source_var_names,
                                                 std::vector<std::string>
                                                 target_var_names) {
+  float tot_seconds = 0.0;
 
   // Get an instance of the desired search algorithm type
   const SearchKDTree<2, SourceMesh_Wrapper, TargetMesh_Wrapper>
@@ -487,14 +488,6 @@ Driver<SourceMesh_Wrapper,
   // Get an instance of the desired intersect algorithm type
   const IntersectClipper<SourceMesh_Wrapper, TargetMesh_Wrapper>
       intersect{source_mesh_, target_mesh_};
-
-
-#ifdef ENABLE_PROFILE
-  __itt_resume();
-#endif
-
-  struct timeval begin, end, diff;
-  gettimeofday(&begin, 0);
 
   int nvars = source_var_names.size();
   for (int i = 0; i < nvars; ++i) {
@@ -511,6 +504,14 @@ Driver<SourceMesh_Wrapper,
                  Interpolate_1stOrder<SourceMesh_Wrapper, SourceState_Wrapper,
                                       CELL>>
         remapper(&search, &intersect, &interpolater);
+
+
+#ifdef ENABLE_PROFILE
+    __itt_resume();
+#endif
+
+    struct timeval begin, end, diff;
+    gettimeofday(&begin, 0);
 
     // This populates targetField with the values returned by the
     // remapper operator
@@ -533,16 +534,19 @@ Driver<SourceMesh_Wrapper,
       continue;
     }
     */
-  }
 
 #ifdef ENABLE_PROFILE
-  __itt_pause();
+      __itt_pause();
 #endif
 
-  gettimeofday(&end, 0);
-  timersub(&end, &begin, &diff);
-  float seconds = diff.tv_sec + 1.0E-6*diff.tv_usec;
-  std::cout << "Transform Time: " << seconds << std::endl;
+      gettimeofday(&end, 0);
+      timersub(&end, &begin, &diff);
+      float seconds = diff.tv_sec + 1.0E-6*diff.tv_usec;
+      tot_seconds += seconds;
+  }
+
+  
+  std::cout << "Transform Time: " << tot_seconds << std::endl;
 }
 
 // 2nd order remapping of cell centered data on 2D meshes
@@ -556,6 +560,8 @@ Driver<SourceMesh_Wrapper,
                                                 source_var_names,
                                                 std::vector<std::string>
                                                 target_var_names) {
+  float tot_seconds = 0.0;
+
   // Get an instance of the desired search algorithm type
   const SearchKDTree<2, SourceMesh_Wrapper, TargetMesh_Wrapper>
       search(source_mesh_, target_mesh_);
@@ -563,13 +569,6 @@ Driver<SourceMesh_Wrapper,
   // Get an instance of the desired intersect algorithm type
   const IntersectClipper<SourceMesh_Wrapper, TargetMesh_Wrapper>
       intersect{source_mesh_, target_mesh_};
-
-#ifdef ENABLE_PROFILE
-  __itt_resume();
-#endif
-
-  struct timeval begin, end, diff;
-  gettimeofday(&begin, 0);
 
   int nvars = source_var_names.size();
   for (int i = 0; i < nvars; ++i) {
@@ -588,6 +587,13 @@ Driver<SourceMesh_Wrapper,
                  Interpolate_2ndOrder<SourceMesh_Wrapper,
                                       SourceState_Wrapper, CELL> >
         remapper(&search, &intersect, &interpolater);
+
+#ifdef ENABLE_PROFILE
+    __itt_resume();
+#endif
+
+    struct timeval begin, end, diff;
+    gettimeofday(&begin, 0);
 
     // This populates targetField with the values returned by the
     // remapper operator
@@ -614,12 +620,14 @@ Driver<SourceMesh_Wrapper,
 #ifdef ENABLE_PROFILE
     __itt_pause();
 #endif
+
+    gettimeofday(&end, 0);
+    timersub(&end, &begin, &diff);
+    float seconds = diff.tv_sec + 1.0E-6*diff.tv_usec;
+    tot_seconds += seconds;
   }
 
-  gettimeofday(&end, 0);
-  timersub(&end, &begin, &diff);
-  float seconds = diff.tv_sec + 1.0E-6*diff.tv_usec;
-  std::cout << "Transform Time: " << seconds << std::endl;
+  std::cout << "Transform Time: " << tot_seconds << std::endl;
 }
 
 
@@ -634,6 +642,8 @@ Driver<SourceMesh_Wrapper,
                                                 source_var_names,
                                                 std::vector<std::string>
                                                 target_var_names) {
+  float tot_seconds = 0.0;
+
   // Get an instance of the desired search algorithm type
   const SearchKDTree<3, SourceMesh_Wrapper, TargetMesh_Wrapper>
       search(source_mesh_, target_mesh_);
@@ -641,14 +651,6 @@ Driver<SourceMesh_Wrapper,
   // Get an instance of the desired intersect algorithm type
   const IntersectR3D<SourceMesh_Wrapper, TargetMesh_Wrapper>
       intersect{source_mesh_, target_mesh_};
-
-
-#ifdef ENABLE_PROFILE
-  __itt_resume();
-#endif
-
-  struct timeval begin, end, diff;
-  gettimeofday(&begin, 0);
 
   int nvars = source_var_names.size();
   for (int i = 0; i < nvars; ++i) {
@@ -666,6 +668,14 @@ Driver<SourceMesh_Wrapper,
                  Interpolate_1stOrder<SourceMesh_Wrapper,
                                       SourceState_Wrapper, CELL> >
         remapper(&search, &intersect, &interpolater);
+
+
+#ifdef ENABLE_PROFILE
+    __itt_resume();
+#endif
+
+    struct timeval begin, end, diff;
+    gettimeofday(&begin, 0);
 
     // This populates targetField with the values returned by the
     // remapper operator
@@ -688,16 +698,18 @@ Driver<SourceMesh_Wrapper,
       continue;
     }
     */
-  }
 
 #ifdef ENABLE_PROFILE
-  __itt_pause();
+      __itt_pause();
 #endif
 
-  gettimeofday(&end, 0);
-  timersub(&end, &begin, &diff);
-  float seconds = diff.tv_sec + 1.0E-6*diff.tv_usec;
-  std::cout << "Transform Time: " << seconds << std::endl;
+      gettimeofday(&end, 0);
+      timersub(&end, &begin, &diff);
+      float seconds = diff.tv_sec + 1.0E-6*diff.tv_usec;
+      tot_seconds += seconds;
+  }
+
+  std::cout << "Transform Time: " << tot_seconds << std::endl;
 }
 
 // 2nd order remapping of cell centered data on 3D meshes
@@ -711,6 +723,8 @@ Driver<SourceMesh_Wrapper,
                                                 source_var_names,
                                                 std::vector<std::string>
                                                 target_var_names) {
+  float tot_seconds = 0.0;
+
   // Get an instance of the desired search algorithm type
   const SearchKDTree<3, SourceMesh_Wrapper, TargetMesh_Wrapper>
       search(source_mesh_, target_mesh_);
@@ -718,14 +732,6 @@ Driver<SourceMesh_Wrapper,
   // Get an instance of the desired intersect algorithm type
   const IntersectR3D<SourceMesh_Wrapper, TargetMesh_Wrapper>
       intersect{source_mesh_, target_mesh_};
-
-
-#ifdef ENABLE_PROFILE
-  __itt_resume();
-#endif
-
-  struct timeval begin, end, diff;
-  gettimeofday(&begin, 0);
 
   int nvars = source_var_names.size();
   for (int i = 0; i < nvars; ++i) {
@@ -745,6 +751,14 @@ Driver<SourceMesh_Wrapper,
                                       SourceState_Wrapper, CELL> >
         remapper(&search, &intersect, &interpolater);
 
+
+#ifdef ENABLE_PROFILE
+    __itt_resume();
+#endif
+
+    struct timeval begin, end, diff;
+    gettimeofday(&begin, 0);
+
     // This populates targetField with the values returned by the
     // remapper operator
 
@@ -766,16 +780,18 @@ Driver<SourceMesh_Wrapper,
       continue;
     }
     */
-  }
 
 #ifdef ENABLE_PROFILE
-  __itt_pause();
+      __itt_pause();
 #endif
 
-  gettimeofday(&end, 0);
-  timersub(&end, &begin, &diff);
-  float seconds = diff.tv_sec + 1.0E-6*diff.tv_usec;
-  std::cout << "Transform Time: " << seconds << std::endl;
+      gettimeofday(&end, 0);
+      timersub(&end, &begin, &diff);
+      float seconds = diff.tv_sec + 1.0E-6*diff.tv_usec;
+      tot_seconds += seconds;
+  }
+
+  std::cout << "Transform Time: " << tot_seconds << std::endl;
 }
 
 // 1st order remapping of node centered data on 2D meshes
@@ -789,6 +805,8 @@ Driver<SourceMesh_Wrapper,
                                                 source_var_names,
                                                 std::vector<std::string>
                                                 target_var_names) {
+  float tot_seconds = 0.0;
+
   MeshWrapperDual<SourceMesh_Wrapper> source_mesh_dual(source_mesh_);
   MeshWrapperDual<TargetMesh_Wrapper> target_mesh_dual(target_mesh_);
 
@@ -801,14 +819,6 @@ Driver<SourceMesh_Wrapper,
   const IntersectClipper<MeshWrapperDual<SourceMesh_Wrapper>,
                          MeshWrapperDual<TargetMesh_Wrapper>>
       intersect{source_mesh_dual, target_mesh_dual};
-
-
-#ifdef ENABLE_PROFILE
-  __itt_resume();
-#endif
-
-  struct timeval begin, end, diff;
-  gettimeofday(&begin, 0);
 
   int nvars = source_var_names.size();
   for (int i = 0; i < nvars; ++i) {
@@ -825,6 +835,14 @@ Driver<SourceMesh_Wrapper,
                                   MeshWrapperDual<TargetMesh_Wrapper>>,
                  Interpolate_1stOrder<SourceMesh_Wrapper, SourceState_Wrapper, NODE> >
         remapper(&search, &intersect, &interpolater);
+
+
+#ifdef ENABLE_PROFILE
+    __itt_resume();
+#endif
+
+    struct timeval begin, end, diff;
+    gettimeofday(&begin, 0);
 
     // This populates targetField with the values returned by the
     // remapper operator
@@ -847,16 +865,18 @@ Driver<SourceMesh_Wrapper,
       continue;
     }
     */
-  }
 
 #ifdef ENABLE_PROFILE
-  __itt_pause();
+      __itt_pause();
 #endif
 
-  gettimeofday(&end, 0);
-  timersub(&end, &begin, &diff);
-  float seconds = diff.tv_sec + 1.0E-6*diff.tv_usec;
-  std::cout << "Transform Time: " << seconds << std::endl;
+      gettimeofday(&end, 0);
+      timersub(&end, &begin, &diff);
+      float seconds = diff.tv_sec + 1.0E-6*diff.tv_usec;
+      tot_seconds += seconds;
+  }
+
+  std::cout << "Transform Time: " << tot_seconds << std::endl;
 }
 
 // 2nd order remapping of cell centered data on 2D meshes
@@ -870,6 +890,8 @@ Driver<SourceMesh_Wrapper,
                                                 source_var_names,
                                                 std::vector<std::string>
                                                 target_var_names) {
+  float tot_seconds = 0.0;
+
   MeshWrapperDual<SourceMesh_Wrapper> source_mesh_dual(source_mesh_);
   MeshWrapperDual<TargetMesh_Wrapper> target_mesh_dual(target_mesh_);
 
@@ -882,14 +904,6 @@ Driver<SourceMesh_Wrapper,
   const IntersectClipper<MeshWrapperDual<SourceMesh_Wrapper>,
                          MeshWrapperDual<TargetMesh_Wrapper>>
       intersect{source_mesh_dual, target_mesh_dual};
-
-
-#ifdef ENABLE_PROFILE
-  __itt_resume();
-#endif
-
-  struct timeval begin, end, diff;
-  gettimeofday(&begin, 0);
 
   int nvars = source_var_names.size();
   for (int i = 0; i < nvars; ++i) {
@@ -910,8 +924,12 @@ Driver<SourceMesh_Wrapper,
                  Interpolate_2ndOrder<SourceMesh_Wrapper, SourceState_Wrapper, NODE>>
         remapper(&search, &intersect, &interpolater);
 
-    // This populates targetField with the doubles returned from
-    // the remapper operator
+#ifdef ENABLE_PROFILE
+    __itt_resume();
+#endif
+
+    struct timeval begin, end, diff;
+    gettimeofday(&begin, 0);
 
     // This populates targetField with the values returned by the
     // remapper operator
@@ -934,16 +952,18 @@ Driver<SourceMesh_Wrapper,
       continue;
     }
     */
-  }
 
 #ifdef ENABLE_PROFILE
-  __itt_pause();
+      __itt_pause();
 #endif
 
-  gettimeofday(&end, 0);
-  timersub(&end, &begin, &diff);
-  float seconds = diff.tv_sec + 1.0E-6*diff.tv_usec;
-  std::cout << "Transform Time: " << seconds << std::endl;
+      gettimeofday(&end, 0);
+      timersub(&end, &begin, &diff);
+      float seconds = diff.tv_sec + 1.0E-6*diff.tv_usec;
+      tot_seconds += seconds;
+  }
+
+  std::cout << "Transform Time: " << tot_seconds << std::endl;
 }
 
 
@@ -958,6 +978,8 @@ Driver<SourceMesh_Wrapper,
                                                 source_var_names,
                                                 std::vector<std::string>
                                                 target_var_names) {
+  float tot_seconds = 0.0;
+
   MeshWrapperDual<SourceMesh_Wrapper> source_mesh_dual(source_mesh_);
   MeshWrapperDual<TargetMesh_Wrapper> target_mesh_dual(target_mesh_);
 
@@ -970,14 +992,6 @@ Driver<SourceMesh_Wrapper,
   const IntersectR3D<MeshWrapperDual<SourceMesh_Wrapper>,
                      MeshWrapperDual<TargetMesh_Wrapper>>
       intersect{source_mesh_dual, target_mesh_dual};
-
-
-#ifdef ENABLE_PROFILE
-  __itt_resume();
-#endif
-
-  struct timeval begin, end, diff;
-  gettimeofday(&begin, 0);
 
   int nvars = source_var_names.size();
   for (int i = 0; i < nvars; ++i) {
@@ -997,6 +1011,14 @@ Driver<SourceMesh_Wrapper,
                  Interpolate_1stOrder<SourceMesh_Wrapper, SourceState_Wrapper, NODE>>
         remapper(&search, &intersect, &interpolater);
 
+
+#ifdef ENABLE_PROFILE
+    __itt_resume();
+#endif
+
+    struct timeval begin, end, diff;
+    gettimeofday(&begin, 0);
+
     // This populates targetField with the values returned by the
     // remapper operator
 
@@ -1018,16 +1040,18 @@ Driver<SourceMesh_Wrapper,
       continue;
     }
     */
-  }
 
 #ifdef ENABLE_PROFILE
-  __itt_pause();
+      __itt_pause();
 #endif
 
-  gettimeofday(&end, 0);
-  timersub(&end, &begin, &diff);
-  float seconds = diff.tv_sec + 1.0E-6*diff.tv_usec;
-  std::cout << "Transform Time: " << seconds << std::endl;
+      gettimeofday(&end, 0);
+      timersub(&end, &begin, &diff);
+      float seconds = diff.tv_sec + 1.0E-6*diff.tv_usec;
+      tot_seconds += seconds;
+  }
+
+  std::cout << "Transform Time: " << tot_seconds << std::endl;
 }
 
 // 2nd order remapping of cell centered data on 3D meshes
@@ -1041,6 +1065,8 @@ Driver<SourceMesh_Wrapper,
                                                 source_var_names,
                                                 std::vector<std::string>
                                                 target_var_names) {
+  float tot_seconds = 0.0;
+
   MeshWrapperDual<SourceMesh_Wrapper> source_mesh_dual(source_mesh_);
   MeshWrapperDual<TargetMesh_Wrapper> target_mesh_dual(target_mesh_);
 
@@ -1054,14 +1080,6 @@ Driver<SourceMesh_Wrapper,
                      MeshWrapperDual<TargetMesh_Wrapper>>
       intersect{source_mesh_dual, target_mesh_dual};
 
-
-
-#ifdef ENABLE_PROFILE
-  __itt_resume();
-#endif
-
-  struct timeval begin, end, diff;
-  gettimeofday(&begin, 0);
 
   int nvars = source_var_names.size();
   for (int i = 0; i < nvars; ++i) {
@@ -1082,6 +1100,14 @@ Driver<SourceMesh_Wrapper,
                  Interpolate_2ndOrder<SourceMesh_Wrapper, SourceState_Wrapper, NODE> >
         remapper(&search, &intersect, &interpolater);
 
+
+#ifdef ENABLE_PROFILE
+    __itt_resume();
+#endif
+
+    struct timeval begin, end, diff;
+    gettimeofday(&begin, 0);
+
     // This populates targetField with the values returned by the
     // remapper operator
 
@@ -1103,17 +1129,18 @@ Driver<SourceMesh_Wrapper,
       continue;
     }
     */
-  }
-
 
 #ifdef ENABLE_PROFILE
-  __itt_pause();
+      __itt_pause();
 #endif
 
-  gettimeofday(&end, 0);
-  timersub(&end, &begin, &diff);
-  float seconds = diff.tv_sec + 1.0E-6*diff.tv_usec;
-  std::cout << "Transform Time: " << seconds << std::endl;
+      gettimeofday(&end, 0);
+      timersub(&end, &begin, &diff);
+      float seconds = diff.tv_sec + 1.0E-6*diff.tv_usec;
+      tot_seconds += seconds;
+  }
+
+  std::cout << "Transform Time: " << tot_seconds << std::endl;
 }
 
 
