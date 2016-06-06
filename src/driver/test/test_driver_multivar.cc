@@ -38,7 +38,7 @@ TEST(Test_MultiVar_Remap, Test1) {
       target_mesh->num_entities(Jali::Entity_kind::CELL,
                                 Jali::Parallel_type::OWNED);
   const int nnodes_target =
-      target_mesh->num_entities(Jali::Entity_kind::CELL,
+      target_mesh->num_entities(Jali::Entity_kind::NODE,
                                 Jali::Parallel_type::OWNED);
 
   // Create state objects for source and target mesh
