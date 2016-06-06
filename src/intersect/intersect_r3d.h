@@ -48,27 +48,33 @@ public:
       for (int i=0; i<4; i++)
         for (int j=0; j<3; j++)
           verts1[i].xyz[j] = source_wedge[i][j];
-      // TODO: Only do this check in Debug mode. This test is important,
+      // Only do this check in Debug mode. This test is important,
       // otherwise R3D returns invalid results.
+#ifdef DEBUG
       if (r3d_orient(verts1) < 0)
         throw std::runtime_error("source_wedge has negative volume");
+#endif
 
       for (const auto &target_wedge : target_coords) {
         r3d_poly poly;
         r3d_init_tet(&poly, verts1);
-        // TODO: Only do this check in Debug mode:
+        // Only do this check in Debug mode:
+#ifdef DEBUG
         if (r3d_is_good(&poly) == 0)
           throw std::runtime_error("source_wedge: invalid poly");
+#endif
 
         r3d_plane faces[4];
         r3d_rvec3 verts2[4];
         for (int i=0; i<4; i++)
           for (int j=0; j<3; j++)
             verts2[i].xyz[j] = target_wedge[i][j];
-        // TODO: Only do this check in Debug mode. This test is important,
+        // Only do this check in Debug mode. This test is important,
         // otherwise R3D returns invalid results.
+#ifdef DEBUG
         if (r3d_orient(verts2) < 0)
           throw std::runtime_error("target_wedge has negative volume");
+#endif
 
         r3d_tet_faces_from_verts(faces, verts2);
 
@@ -77,9 +83,11 @@ public:
 
         // find the moments (up to quadratic order) of the clipped poly
         const int POLY_ORDER=1;
-        // TODO: Only do this check in Debug mode:
+        // Only do this check in Debug mode:
+#ifdef DEBUG
         if (R3D_NUM_MOMENTS(POLY_ORDER) != 4)
           throw std::runtime_error("Invalid number of moments");
+#endif
         r3d_real om[R3D_NUM_MOMENTS(POLY_ORDER)];
         r3d_reduce(&poly, om, POLY_ORDER);
 
