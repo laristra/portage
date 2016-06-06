@@ -80,7 +80,7 @@ class MeshWrapperDual {  // cellid is the dual cell (i.e. node) id
 
   template<long D>
   void cell_get_coordinates(int const dualcellid,
-			    std::vector<Portage::Point<D>> *pplist) const {
+                            std::vector<Portage::Point<D>> *pplist) const {
     w_.dual_cell_get_coordinates(dualcellid, pplist);
   }
 
@@ -137,8 +137,8 @@ class MeshWrapperDual {  // cellid is the dual cell (i.e. node) id
     @param[in,out] adjcells List of IDs of adjacent cells.
   */
   void cell_get_node_adj_cells(int const dualcellID,
-			       Parallel_type const ptype,
-			       std::vector<int> *adjcells) const {
+                               Parallel_type const ptype,
+                               std::vector<int> *adjcells) const {
     w_.node_get_cell_adj_nodes(dualcellID, ptype, adjcells);
   }
 
@@ -157,8 +157,8 @@ class MeshWrapperDual {  // cellid is the dual cell (i.e. node) id
     @todo Clarify this wrt to @c MeshWrapperDual::cell_get_node_adj_cells()
   */
   void dual_cell_get_node_adj_cells(int const dualnodeID,
-				    Parallel_type const ptype,
-				    std::vector<int> *adjnodes) const {
+                                    Parallel_type const ptype,
+                                    std::vector<int> *adjnodes) const {
     w_.cell_get_node_adj_cells(dualnodeID, ptype, adjnodes);
   }
 
@@ -195,7 +195,7 @@ class MeshWrapperDual {  // cellid is the dual cell (i.e. node) id
     comprise the tetrahedron that is the wedge.
   */
   void wedges_get_coordinates(int const dualcellid,
-			      std::vector<wedgeCoords> *wcoords) const {
+                              std::vector<wedgeCoords> *wcoords) const {
     w_.dual_wedges_get_coordinates(dualcellid, wcoords);
   }
 
@@ -226,8 +226,8 @@ struct RemapFunctor;
 
 */
 template <class SourceMesh_Wrapper, class SourceState_Wrapper,
-	  class TargetMesh_Wrapper = SourceMesh_Wrapper,
-	  class TargetState_Wrapper = SourceState_Wrapper>
+          class TargetMesh_Wrapper = SourceMesh_Wrapper,
+          class TargetState_Wrapper = SourceState_Wrapper>
 class Driver {
  public:
   /*!
@@ -240,12 +240,12 @@ class Driver {
     be mapped to the target mesh.
   */
   Driver(SourceMesh_Wrapper const & sourceMesh,
-	 SourceState_Wrapper const & sourceState,
-	 TargetMesh_Wrapper const & targetMesh,
-	 TargetState_Wrapper const & targetState)
+         SourceState_Wrapper const & sourceState,
+         TargetMesh_Wrapper const & targetMesh,
+         TargetState_Wrapper const & targetState)
       : source_mesh_(sourceMesh), source_state_(sourceState),
-	target_mesh_(targetMesh), target_state_(targetState),
-	interp_order_(1), dim_(sourceMesh.space_dimension()) {
+        target_mesh_(targetMesh), target_state_(targetState),
+        interp_order_(1), dim_(sourceMesh.space_dimension()) {
     assert(sourceMesh.space_dimension() == targetMesh.space_dimension());
   }
 
@@ -285,7 +285,7 @@ class Driver {
     int nvars = source_remap_var_names.size();
     for (int i = 0; i < nvars; ++i)
       assert(source_state_.get_entity(source_remap_var_names[i]) ==
-	     target_state_.get_entity(target_remap_var_names[i]));
+             target_state_.get_entity(target_remap_var_names[i]));
 
     source_remap_var_names_ = source_remap_var_names;
     target_remap_var_names_ = target_remap_var_names;
@@ -349,7 +349,7 @@ class Driver {
 
     int numTargetCells = target_mesh_.num_owned_cells();
     std::cout << "Number of target cells in target mesh "
-	      << numTargetCells << std::endl;
+              << numTargetCells << std::endl;
 
     int nvars = source_remap_var_names_.size();
 
@@ -358,34 +358,34 @@ class Driver {
       std::vector<std::string> source_cellvar_names;
       std::vector<std::string> target_cellvar_names;
       for (int i = 0; i < nvars; ++i) {
-	Entity_kind onwhat =
-	    source_state_.get_entity(source_remap_var_names_[i]);
+        Entity_kind onwhat =
+            source_state_.get_entity(source_remap_var_names_[i]);
 
-	if (onwhat == CELL) {
-	  source_cellvar_names.emplace_back(source_remap_var_names_[i]);
-	  target_cellvar_names.emplace_back(target_remap_var_names_[i]);
-	}
+        if (onwhat == CELL) {
+          source_cellvar_names.emplace_back(source_remap_var_names_[i]);
+          target_cellvar_names.emplace_back(target_remap_var_names_[i]);
+        }
       }
 
       switch (dim_) {
-	case 1:
-	  std::cerr << "Remapping not implemented for 1D" << std::endl;
-	  exit(-1);
-	case 2: {
-	  (interp_order_ == 1) ?
-	      run_2D_CELL_order1(source_cellvar_names, target_cellvar_names) :
-	      run_2D_CELL_order2(source_cellvar_names, target_cellvar_names);
-	  break;
-	}
-	case 3: {
-	  (interp_order_ == 1) ?
-	      run_3D_CELL_order1(source_cellvar_names, target_cellvar_names) :
-	      run_3D_CELL_order2(source_cellvar_names, target_cellvar_names);
-	  break;
-	}
-	default:
-	  std::cerr << "Invalid dimension" << std::endl;
-	  exit(-1);
+        case 1:
+          std::cerr << "Remapping not implemented for 1D" << std::endl;
+          exit(-1);
+        case 2: {
+          (interp_order_ == 1) ?
+              run_2D_CELL_order1(source_cellvar_names, target_cellvar_names) :
+              run_2D_CELL_order2(source_cellvar_names, target_cellvar_names);
+          break;
+        }
+        case 3: {
+          (interp_order_ == 1) ?
+              run_3D_CELL_order1(source_cellvar_names, target_cellvar_names) :
+              run_3D_CELL_order2(source_cellvar_names, target_cellvar_names);
+          break;
+        }
+        default:
+          std::cerr << "Invalid dimension" << std::endl;
+          exit(-1);
       }
     }
 
@@ -395,18 +395,18 @@ class Driver {
       std::vector<std::string> source_nodevar_names;
       std::vector<std::string> target_nodevar_names;
       for (int i = 0; i < nvars; ++i) {
-	Entity_kind onwhat =
-	    source_state_.get_entity(source_remap_var_names_[i]);
+        Entity_kind onwhat =
+            source_state_.get_entity(source_remap_var_names_[i]);
 
-	if (onwhat == NODE) {
-	  source_nodevar_names.emplace_back(source_remap_var_names_[i]);
-	  target_nodevar_names.emplace_back(target_remap_var_names_[i]);
-	}
+        if (onwhat == NODE) {
+          source_nodevar_names.emplace_back(source_remap_var_names_[i]);
+          target_nodevar_names.emplace_back(target_remap_var_names_[i]);
+        }
       }
 
       switch (dim_) {
-	case 1:
-	  std::cerr << "Remapping not implemented for 1D" << std::endl;
+        case 1:
+          std::cerr << "Remapping not implemented for 1D" << std::endl;
 	  exit(-1);
 	case 2: {
 	  (interp_order_ == 1) ?
