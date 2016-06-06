@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <stdexcept>
 #include <string>
+#include <vector>
 
 #include "portage/support/portage.h"
 #include "portage/support/Point.h"
@@ -296,8 +297,7 @@ Limited_Gradient<MeshType, StateType, CELL> :: operator() (int const cellid) {
           double phi_new = (diff == 0.0) ? 1 : (extremeval-cellcenval)/diff;
           phi = std::min(phi_new, phi);
         }
-      }
-      else if (dim == 3) {
+      } else if (dim == 3) {
 
         std::vector<Point<3>> cellcoords;
         mesh_.cell_get_coordinates(cellid, &cellcoords);
@@ -317,8 +317,7 @@ Limited_Gradient<MeshType, StateType, CELL> :: operator() (int const cellid) {
         }
       }
     }
-  }
-  else {
+  } else {
     std::cerr << "Gradient implemented only for 2D or 3D\n";
   }
 
@@ -462,8 +461,7 @@ Limited_Gradient<MeshType, StateType, NODE> :: operator() (int const nodeid) {
       }
     }
 
-  }
-  else if (dim == 3) {
+  } else if (dim == 3) {
     std::vector<std::vector<double>> nodecoords;
     std::vector<double> nodevalues;
     std::vector<double> ndcoord(3), coord(3);
@@ -518,8 +516,7 @@ Limited_Gradient<MeshType, StateType, NODE> :: operator() (int const nodeid) {
         phi = std::min(phi_new, phi);
       }
     }
-  }
-  else {
+  } else {
     std::cerr << "Gradient only implemented for 2D and 3D\n";
   }
 
