@@ -375,25 +375,27 @@ class Driver {
         }
       }
 
-      switch (dim_) {
-        case 1:
-          std::cerr << "Remapping not implemented for 1D" << std::endl;
-          exit(-1);
-        case 2: {
-          (interp_order_ == 1) ?
-              run_2D_CELL_order1(source_cellvar_names, target_cellvar_names) :
-              run_2D_CELL_order2(source_cellvar_names, target_cellvar_names);
-          break;
+      if (source_cellvar_names.size() > 0) {
+        switch (dim_) {
+          case 1:
+            std::cerr << "Remapping not implemented for 1D" << std::endl;
+            exit(-1);
+          case 2: {
+            (interp_order_ == 1) ?
+                run_2D_CELL_order1(source_cellvar_names, target_cellvar_names) :
+                run_2D_CELL_order2(source_cellvar_names, target_cellvar_names);
+            break;
+          }
+          case 3: {
+            (interp_order_ == 1) ?
+                run_3D_CELL_order1(source_cellvar_names, target_cellvar_names) :
+                run_3D_CELL_order2(source_cellvar_names, target_cellvar_names);
+            break;
+          }
+          default:
+            std::cerr << "Invalid dimension" << std::endl;
+            exit(-1);
         }
-        case 3: {
-          (interp_order_ == 1) ?
-              run_3D_CELL_order1(source_cellvar_names, target_cellvar_names) :
-              run_3D_CELL_order2(source_cellvar_names, target_cellvar_names);
-          break;
-        }
-        default:
-          std::cerr << "Invalid dimension" << std::endl;
-          exit(-1);
       }
     }
 
@@ -412,29 +414,29 @@ class Driver {
         }
       }
 
-      switch (dim_) {
-        case 1:
+      if (source_nodevar_names.size() > 0) {
+        switch (dim_) {
+          case 1:
           std::cerr << "Remapping not implemented for 1D" << std::endl;
           exit(-1);
-        case 2: {
-          (interp_order_ == 1) ?
-              run_2D_NODE_order1(source_nodevar_names, target_nodevar_names) :
-              run_2D_NODE_order2(source_nodevar_names, target_nodevar_names);
-          break;
-        }
-        case 3: {
-          (interp_order_ == 1) ?
-              run_3D_NODE_order1(source_nodevar_names, target_nodevar_names) :
-              run_3D_NODE_order2(source_nodevar_names, target_nodevar_names);
-          break;
-        }
-        default:
+          case 2: {
+            (interp_order_ == 1) ?
+                run_2D_NODE_order1(source_nodevar_names, target_nodevar_names) :
+                run_2D_NODE_order2(source_nodevar_names, target_nodevar_names);
+            break;
+          }
+          case 3: {
+            (interp_order_ == 1) ?
+            run_3D_NODE_order1(source_nodevar_names, target_nodevar_names) :
+            run_3D_NODE_order2(source_nodevar_names, target_nodevar_names);
+            break;
+          }
+          default:
           std::cerr << "Invalid dimension" << std::endl;
           exit(-1);
+        }
       }
     }
-
-
   }
 
 
@@ -553,7 +555,7 @@ Driver<SourceMesh_Wrapper,
       tot_seconds += seconds;
   }
 
-  
+
   std::cout << "Transform Time: " << tot_seconds << std::endl;
 }
 
