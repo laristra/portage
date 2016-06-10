@@ -114,9 +114,28 @@ class Flecsi_Mesh_Wrapper {
   //! Empty destructor
   ~Flecsi_Mesh_Wrapper() {};
 
+
   //! Dimension of space or mesh points
   int space_dimension() const {
     return flecsi_mesh_.dimension();
+  }
+
+  //! Cell area/volume
+  double cell_volume(int const cellID) const {
+    if (space_dimension() > 2)
+      assert(false && "FleCSI 3D not implemented");
+    return flecsi_mesh_.cells()[cellID]->area();
+  }
+
+  //! Dual cell area/volume
+  double dual_cell_volume(int const nodeid) const {
+    if (space_dimension() > 2)
+      assert(false && "FleCSI 3D not implemented");
+    auto thisNode = flecsi_mesh_.vertices()[nodeid];
+    double vol = 0.0;
+    for (auto corner : flecsi_mesh_.corners(thisNode))
+      vol += corner->area();
+    return vol;
   }
 
   //! Number of owned cells in the mesh
