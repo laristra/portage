@@ -25,6 +25,9 @@
 #include "portage/interpolate/test/simple_intersect_for_tests.h"
 
 
+double TOL = 1e-12;
+
+
 /// First order interpolation of constant cell-centered field in 2D
 
 TEST(Interpolate_1st_Order, Cell_Ctr_Const_2D) {
@@ -328,7 +331,7 @@ TEST(Interpolate_1st_Order, Node_Ctr_Const_2D) {
 
   const double stdval = data[0];
   for (int n = 0; n < nnodes_target; ++n)
-    ASSERT_NEAR(stdval, outvals[n], 1e-12);
+    ASSERT_NEAR(stdval, outvals[n], TOL);
 }
 
 
@@ -641,6 +644,6 @@ TEST(Interpolate_1st_Order, Node_Ctr_Const_3D) {
 
   const double stdval = data[0];
   for (int n = 0; n < nnodes_target; ++n)
-    ASSERT_NEAR(stdval, outvals[n], 1e-12);
+    ASSERT_NEAR(stdval, outvals[n], TOL);
 }
 
