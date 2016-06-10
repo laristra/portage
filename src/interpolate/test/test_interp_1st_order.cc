@@ -3,6 +3,7 @@
  * All rights reserved.
  *---------------------------------------------------------------------------~*/
 
+#include "portage/driver/driver.h"
 #include "portage/interpolate/interpolate_1st_order.h"
 
 #include <iostream>
@@ -57,14 +58,17 @@ TEST(Interpolate_1st_Order, Cell_Ctr_Const_2D) {
   source_state.add(myvec);
 
   Portage::Jali_Mesh_Wrapper sourceMeshWrapper(*source_mesh);
+  Portage::Jali_Mesh_Wrapper targetMeshWrapper(*target_mesh);
   Portage::Jali_State_Wrapper sourceStateWrapper(source_state);
 
   // Create Interpolation object
 
   Portage::Interpolate_1stOrder<Portage::Jali_Mesh_Wrapper,
+                                Portage::Jali_Mesh_Wrapper,
                                 Portage::Jali_State_Wrapper,
                                 Portage::CELL>
-      interpolater(sourceMeshWrapper, sourceStateWrapper, "cellvars");
+      interpolater(sourceMeshWrapper, targetMeshWrapper,
+                   sourceStateWrapper, "cellvars");
 
   // Gather the cell coordinates for source and target meshes for intersection
 
@@ -94,7 +98,7 @@ TEST(Interpolate_1st_Order, Cell_Ctr_Const_2D) {
                std::vector< std::vector<double> > const & >
         cells_and_weights(xcells, xwts);
 
-    outvals[c] = interpolater(cells_and_weights);
+    outvals[c] = interpolater(cells_and_weights, c);
   }
 
   // Make sure we retrieved the correct value for each cell on the target
@@ -144,12 +148,15 @@ TEST(Interpolate_1st_Order, Cell_Ctr_Lin_2D) {
   // Create Interpolation objects
 
   Portage::Jali_Mesh_Wrapper sourceMeshWrapper(*source_mesh);
+  Portage::Jali_Mesh_Wrapper targetMeshWrapper(*target_mesh);
   Portage::Jali_State_Wrapper sourceStateWrapper(source_state);
 
   Portage::Interpolate_1stOrder<Portage::Jali_Mesh_Wrapper,
-                          Portage::Jali_State_Wrapper,
-                          Portage::CELL>
-      interpolater(sourceMeshWrapper, sourceStateWrapper, "cellvars");
+                                Portage::Jali_Mesh_Wrapper,
+                                Portage::Jali_State_Wrapper,
+                                Portage::CELL>
+      interpolater(sourceMeshWrapper, targetMeshWrapper,
+                   sourceStateWrapper, "cellvars");
 
   // Gather the cell coordinates for source and target meshes for intersection
 
@@ -179,7 +186,7 @@ TEST(Interpolate_1st_Order, Cell_Ctr_Lin_2D) {
                std::vector< std::vector<double> > const & >
         cells_and_weights(xcells, xwts);
 
-    outvals[c] = interpolater(cells_and_weights);
+    outvals[c] = interpolater(cells_and_weights, c);
   }
 
   // Make sure we retrieved the correct value for each cell on the target
@@ -241,12 +248,21 @@ TEST(Interpolate_1st_Order, Node_Ctr_Const_2D) {
   // Create Interpolation objects
 
   Portage::Jali_Mesh_Wrapper sourceMeshWrapper(*source_mesh);
+  Portage::Jali_Mesh_Wrapper targetMeshWrapper(*target_mesh);
   Portage::Jali_State_Wrapper sourceStateWrapper(source_state);
 
-  Portage::Interpolate_1stOrder<Portage::Jali_Mesh_Wrapper,
-                          Portage::Jali_State_Wrapper,
-                          Portage::NODE>
-      interpolater(sourceMeshWrapper, sourceStateWrapper, "nodevars");
+  Portage::MeshWrapperDual<Portage::Jali_Mesh_Wrapper>
+      sourceDualWrapper(sourceMeshWrapper);
+  Portage::MeshWrapperDual<Portage::Jali_Mesh_Wrapper>
+      targetDualWrapper(targetMeshWrapper);
+
+  Portage::Interpolate_1stOrder<
+    Portage::MeshWrapperDual<Portage::Jali_Mesh_Wrapper>,
+    Portage::MeshWrapperDual<Portage::Jali_Mesh_Wrapper>,
+    Portage::Jali_State_Wrapper,
+    Portage::NODE>
+      interpolater(sourceDualWrapper, targetDualWrapper,
+                   sourceStateWrapper, "nodevars");
 
   // Interpolate from source to target mesh
 
@@ -305,14 +321,14 @@ TEST(Interpolate_1st_Order, Node_Ctr_Const_2D) {
                std::vector< std::vector<double> > const & >
         nodes_and_weights(xcells, xwts);
 
-    outvals[n] = interpolater(nodes_and_weights);
+    outvals[n] = interpolater(nodes_and_weights, n);
   }
 
   // Make sure we retrieved the correct value for each cell on the target
 
   const double stdval = data[0];
   for (int n = 0; n < nnodes_target; ++n)
-    ASSERT_DOUBLE_EQ(stdval, outvals[n]);
+    ASSERT_NEAR(stdval, outvals[n], 1e-14);
 }
 
 
@@ -351,14 +367,17 @@ TEST(Interpolate_1st_Order, Cell_Ctr_Const_3D) {
   source_state.add(myvec);
 
   Portage::Jali_Mesh_Wrapper sourceMeshWrapper(*source_mesh);
+  Portage::Jali_Mesh_Wrapper targetMeshWrapper(*target_mesh);
   Portage::Jali_State_Wrapper sourceStateWrapper(source_state);
 
   // Create Interpolation object
 
   Portage::Interpolate_1stOrder<Portage::Jali_Mesh_Wrapper,
-                          Portage::Jali_State_Wrapper,
-                          Portage::CELL>
-      interpolater(sourceMeshWrapper, sourceStateWrapper, "cellvars");
+                                Portage::Jali_Mesh_Wrapper,
+                                Portage::Jali_State_Wrapper,
+                                Portage::CELL>
+      interpolater(sourceMeshWrapper, targetMeshWrapper,
+                   sourceStateWrapper, "cellvars");
 
   // Gather the cell coordinates for source and target meshes for intersection
 
@@ -388,7 +407,7 @@ TEST(Interpolate_1st_Order, Cell_Ctr_Const_3D) {
                std::vector< std::vector<double> > const & >
         cells_and_weights(xcells, xwts);
 
-    outvals[c] = interpolater(cells_and_weights);
+    outvals[c] = interpolater(cells_and_weights, c);
 }
 
   // Make sure we retrieved the correct value for each cell on the target
@@ -438,14 +457,17 @@ TEST(Interpolate_1st_Order, Cell_Ctr_Lin_3D) {
   source_state.add(myvec);
 
   Portage::Jali_Mesh_Wrapper sourceMeshWrapper(*source_mesh);
+  Portage::Jali_Mesh_Wrapper targetMeshWrapper(*target_mesh);
   Portage::Jali_State_Wrapper sourceStateWrapper(source_state);
 
   // Create Interpolation objects
 
   Portage::Interpolate_1stOrder<Portage::Jali_Mesh_Wrapper,
-                          Portage::Jali_State_Wrapper,
-                          Portage::CELL>
-      interpolater(sourceMeshWrapper, sourceStateWrapper, "cellvars");
+                                Portage::Jali_Mesh_Wrapper,
+                                Portage::Jali_State_Wrapper,
+                                Portage::CELL>
+      interpolater(sourceMeshWrapper, targetMeshWrapper,
+                   sourceStateWrapper, "cellvars");
 
   // Gather the cell coordinates for source and target meshes for intersection
 
@@ -475,7 +497,7 @@ TEST(Interpolate_1st_Order, Cell_Ctr_Lin_3D) {
                std::vector< std::vector<double> > const & >
         cells_and_weights(xcells, xwts);
 
-    outvals[c] = interpolater(cells_and_weights);
+    outvals[c] = interpolater(cells_and_weights, c);
   }
 
   // Make sure we retrieved the correct value for each cell on the target
@@ -536,14 +558,24 @@ TEST(Interpolate_1st_Order, Node_Ctr_Const_3D) {
   source_state.add(myvec);
 
   Portage::Jali_Mesh_Wrapper sourceMeshWrapper(*source_mesh);
+  Portage::Jali_Mesh_Wrapper targetMeshWrapper(*target_mesh);
   Portage::Jali_State_Wrapper sourceStateWrapper(source_state);
+
+
+  Portage::MeshWrapperDual<Portage::Jali_Mesh_Wrapper>
+      sourceDualWrapper(sourceMeshWrapper);
+  Portage::MeshWrapperDual<Portage::Jali_Mesh_Wrapper>
+      targetDualWrapper(targetMeshWrapper);
 
   // Create Interpolation object
 
-  Portage::Interpolate_1stOrder<Portage::Jali_Mesh_Wrapper,
-                          Portage::Jali_State_Wrapper,
-                          Portage::NODE>
-      interpolater(sourceMeshWrapper, sourceStateWrapper, "nodevars");
+  Portage::Interpolate_1stOrder<
+    Portage::MeshWrapperDual<Portage::Jali_Mesh_Wrapper>,
+    Portage::MeshWrapperDual<Portage::Jali_Mesh_Wrapper>,
+    Portage::Jali_State_Wrapper,
+    Portage::NODE>
+      interpolater(sourceDualWrapper, targetDualWrapper,
+                   sourceStateWrapper, "nodevars");
 
   // Interpolate from source to target mesh
 
@@ -602,13 +634,13 @@ TEST(Interpolate_1st_Order, Node_Ctr_Const_3D) {
                std::vector< std::vector<double> > const & >
         nodes_and_weights(xcells, xwts);
 
-    outvals[n] = interpolater(nodes_and_weights);
+    outvals[n] = interpolater(nodes_and_weights, n);
   }
 
   // Make sure we retrieved the correct value for each cell on the target
 
   const double stdval = data[0];
   for (int n = 0; n < nnodes_target; ++n)
-    ASSERT_DOUBLE_EQ(stdval, outvals[n]);
+    ASSERT_NEAR(stdval, outvals[n], 1e-14);
 }
 
