@@ -4,6 +4,7 @@
  *---------------------------------------------------------------------------~*/
 
 #include "portage/interpolate/interpolate_2nd_order.h"
+#include "portage/driver/driver.h"
 
 #include <iostream>
 #include <memory>
@@ -371,13 +372,19 @@ TEST(Interpolate_2nd_Order, Node_Ctr_Const_No_Limiter) {
   Portage::Jali_Mesh_Wrapper targetMeshWrapper(*target_mesh);
   Portage::Jali_State_Wrapper sourceStateWrapper(source_state);
 
+  Portage::MeshWrapperDual<Portage::Jali_Mesh_Wrapper>
+      sourceDualWrapper(sourceMeshWrapper);
+  Portage::MeshWrapperDual<Portage::Jali_Mesh_Wrapper>
+      targetDualWrapper(targetMeshWrapper);
+
   // Create Interpolation objects
 
-  Portage::Interpolate_2ndOrder<Portage::Jali_Mesh_Wrapper,
-                                Portage::Jali_Mesh_Wrapper,
-                                Portage::Jali_State_Wrapper,
-                                Portage::NODE>
-      interpolater(sourceMeshWrapper, targetMeshWrapper,
+  Portage::Interpolate_2ndOrder<
+    Portage::MeshWrapperDual<Portage::Jali_Mesh_Wrapper>,
+    Portage::MeshWrapperDual<Portage::Jali_Mesh_Wrapper>,
+    Portage::Jali_State_Wrapper,
+    Portage::NODE>
+      interpolater(sourceDualWrapper, targetDualWrapper,
                    sourceStateWrapper, "nodevars",
                    Portage::NOLIMITER);
 
@@ -425,7 +432,7 @@ TEST(Interpolate_2nd_Order, Node_Ctr_Const_No_Limiter) {
         target_dualcell_coords[n].push_back(coord);
     }
   }
-
+  std::cout << "nnodes_target: " << nnodes_target << std::endl;
   for (int n = 0; n < nnodes_target; ++n) {
     std::vector<int> xcells;
     std::vector<std::vector<double>> xwts;
@@ -940,13 +947,19 @@ TEST(Interpolate_2nd_Order, Node_Ctr_Const_No_Limiter_3D) {
   Portage::Jali_Mesh_Wrapper sourceMeshWrapper(*source_mesh);
   Portage::Jali_Mesh_Wrapper targetMeshWrapper(*target_mesh);
 
+  Portage::MeshWrapperDual<Portage::Jali_Mesh_Wrapper>
+      sourceDualWrapper(sourceMeshWrapper);
+  Portage::MeshWrapperDual<Portage::Jali_Mesh_Wrapper>
+      targetDualWrapper(targetMeshWrapper);
+
   // Create Interpolate objects
 
-  Portage::Interpolate_2ndOrder<Portage::Jali_Mesh_Wrapper,
-                                Portage::Jali_Mesh_Wrapper,
-                                Portage::Jali_State_Wrapper,
-                                Portage::NODE>
-      interpolater(sourceMeshWrapper, targetMeshWrapper,
+  Portage::Interpolate_2ndOrder<
+    Portage::MeshWrapperDual<Portage::Jali_Mesh_Wrapper>,
+    Portage::MeshWrapperDual<Portage::Jali_Mesh_Wrapper>,
+    Portage::Jali_State_Wrapper,
+    Portage::NODE>
+      interpolater(sourceDualWrapper, targetDualWrapper,
                    source_state, "nodevars",
                    Portage::NOLIMITER);
 

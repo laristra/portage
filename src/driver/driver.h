@@ -94,6 +94,37 @@ class MeshWrapperDual {  // cellid is the dual cell (i.e. node) id
   }
 
   /*!
+    @brief Gets the coordinates of the node in the dual mesh.
+    @param[in] dualnodeid The dual node id (i.e. the cell id in the original
+    mesh).
+    @param[in,out] pp The coordinate points for the dual node given by
+    @c dualnodeid
+   */
+  template<long D>
+  void node_get_coordinates(int const dualnodeid,
+                            Portage::Point<D>* pp) const {
+    std::vector<double> ccen;
+    w_.cell_centroid(dualnodeid, &ccen);
+    // loop over ccen.size() rather than D in case the cell is invalid
+    for (int d = 0; d < ccen.size(); ++d)
+      (*pp)[d] = ccen[d];
+  }
+
+  /*!
+    @brief Gets the coordinates of the nodes of the dual cell in the dual mesh.
+    @param[in] cellid The id of the dual cell of the dual mesh (i.e. a cell in
+    the original mesh).
+    @param[in,out] pplist The list of points of the nodes of the cell given by
+    @c cellid
+   */
+  template<long D>
+  void dual_cell_get_coordinates(int const cellid,
+                                 std::vector<Portage::Point<D>> *pplist) const {
+    assert(w_.space_dimension() == D);
+    w_.cell_get_coordinates(cellid, pplist);
+  }
+
+  /*!
     @brief Get an iterator to the start of the vector of @e entity-type
     objects in the dual mesh.
     @param[in] entity Which type of data do you want to iterate over (e.g.
