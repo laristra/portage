@@ -63,6 +63,8 @@ int main(int argc, char** argv) {
       ((std::string(argv[5]) == "y") ? true : false)
       : false;
 
+  const double TOL = 1e-4;
+
   // Initialize MPI
   int mpi_init_flag;
   MPI_Initialized(&mpi_init_flag);
@@ -196,10 +198,9 @@ int main(int argc, char** argv) {
       if (inputDim > 2) error += coord[2];
       toterr += error*error;
     }
-    const double small = 1e-14;
-    std::cout << "toterr: " << toterr << " " << sqrt(toterr) << std::endl;
-    std::printf("\n\nL2 NORM OF ERROR = %lf\n\n", sqrt(toterr));
-    assert(sqrt(toterr) < small);
+    double L2 = sqrt(toterr/targetMeshWrapper.num_owned_cells());
+    std::printf("\n\nL2 NORM OF ERROR = %lf\n\n", L2);
+    assert(L2 < TOL);
   }
 
   if (dumpMesh) {
