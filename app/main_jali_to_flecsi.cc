@@ -93,7 +93,7 @@ int main(int argc, char** argv) {
     inputData[c] = cen[0] + cen[1];
   }
   inputState.add("celldata", inputMesh, Jali::Entity_kind::CELL,
-          Jali::Parallel_type::ALL, &(inputData[0]));
+          Jali::Entity_type::ALL, &(inputData[0]));
   Portage::Jali_State_Wrapper inputStateWrapper(inputState);
 
   // Declare the target storage

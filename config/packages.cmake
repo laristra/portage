@@ -69,8 +69,6 @@ find_package(Jali REQUIRED)
 message(STATUS "Located Jali")
 message(STATUS "Jali_DIR=${Jali_DIR}")
 
-# TODO:  do these steps inside of the Jali build?
-list(REVERSE Jali_LIBRARIES)
 # add full path to jali libs
 unset(_LIBS)
 foreach (_lib ${Jali_LIBRARIES})

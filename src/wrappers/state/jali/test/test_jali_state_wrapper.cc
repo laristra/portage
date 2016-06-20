@@ -52,11 +52,11 @@ TEST(Jali_State_Wrapper, DataTypes) {
   Portage::Jali_State_Wrapper wrapper(state);
 
   state.add("f1", inputMesh, Jali::Entity_kind::CELL,
-            Jali::Parallel_type::ALL, ftest);
+            Jali::Entity_type::ALL, ftest);
   state.add("i1", inputMesh, Jali::Entity_kind::NODE,
-            Jali::Parallel_type::ALL, itest);
+            Jali::Entity_type::ALL, itest);
   state.add("v1", inputMesh, Jali::Entity_kind::CELL,
-            Jali::Parallel_type::ALL, vtest);
+            Jali::Entity_type::ALL, vtest);
 
   // Get raw float data using wrapper
   float* fdata;

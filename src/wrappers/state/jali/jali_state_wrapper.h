@@ -100,7 +100,7 @@ class Jali_State_Wrapper {
     std::shared_ptr<Jali::BaseStateVector> vector = *it;
     if (it != jali_state_.cend()) {
       if (vector)
-        return (Portage::Entity_kind) vector->on_what();
+        return (Portage::Entity_kind) vector->entity_kind();
     }
 
     std::cerr << "Could not find state variable " << var_name << "\n";

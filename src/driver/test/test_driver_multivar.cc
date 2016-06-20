@@ -36,10 +36,10 @@ TEST(Test_MultiVar_Remap, Test1) {
 
   const int ncells_target =
       target_mesh->num_entities(Jali::Entity_kind::CELL,
-                                Jali::Parallel_type::OWNED);
+                                Jali::Entity_type::PARALLEL_OWNED);
   const int nnodes_target =
       target_mesh->num_entities(Jali::Entity_kind::NODE,
-                                Jali::Parallel_type::OWNED);
+                                Jali::Entity_type::PARALLEL_OWNED);
 
   // Create state objects for source and target mesh
 
@@ -51,7 +51,7 @@ TEST(Test_MultiVar_Remap, Test1) {
   double Constant1 = 1.25;
   Jali::StateVector<double> myvec1("srccellvars1", source_mesh,
                                    Jali::Entity_kind::CELL,
-                                   Jali::Parallel_type::OWNED,
+                                   Jali::Entity_type::PARALLEL_OWNED,
                                    Constant1);
   source_state.add(myvec1);
 
@@ -60,7 +60,7 @@ TEST(Test_MultiVar_Remap, Test1) {
   double Constant2 = -91.5;
   Jali::StateVector<double> myvec2("srccellvars2", source_mesh,
                                    Jali::Entity_kind::CELL,
-                                   Jali::Parallel_type::OWNED,
+                                   Jali::Entity_type::PARALLEL_OWNED,
                                    Constant2);
   source_state.add(myvec2);
 
@@ -69,7 +69,7 @@ TEST(Test_MultiVar_Remap, Test1) {
   double Constant3 = 3.14;
   Jali::StateVector<double> myvec3("srcnodevars", source_mesh,
                                    Jali::Entity_kind::NODE,
-                                   Jali::Parallel_type::OWNED,
+                                   Jali::Entity_type::PARALLEL_OWNED,
                                    Constant3);
   source_state.add(myvec3);
 
@@ -79,33 +79,33 @@ TEST(Test_MultiVar_Remap, Test1) {
 
   Jali::StateVector<double> myvec4("trgcellvars1", target_mesh,
                                    Jali::Entity_kind::CELL,
-                                   Jali::Parallel_type::OWNED);
+                                   Jali::Entity_type::PARALLEL_OWNED);
 
   target_state.add(myvec4);
   Jali::StateVector<double> myvec5("srccellvars1", target_mesh,
                                    Jali::Entity_kind::CELL,
-                                   Jali::Parallel_type::OWNED);
+                                   Jali::Entity_type::PARALLEL_OWNED);
   target_state.add(myvec5);
 
   Jali::StateVector<double> myvec6("trgcellvars2", target_mesh,
                                    Jali::Entity_kind::CELL,
-                                   Jali::Parallel_type::OWNED);
+                                   Jali::Entity_type::PARALLEL_OWNED);
 
   target_state.add(myvec6);
   Jali::StateVector<double> myvec7("srccellvars2", target_mesh,
                                    Jali::Entity_kind::CELL,
-                                   Jali::Parallel_type::OWNED);
+                                   Jali::Entity_type::PARALLEL_OWNED);
   target_state.add(myvec7);
 
   std::vector<double> zerodata2(nnodes_target, 0.0);
   Jali::StateVector<double> myvec8("trgnodevars", target_mesh,
                                    Jali::Entity_kind::NODE,
-                                   Jali::Parallel_type::OWNED);
+                                   Jali::Entity_type::PARALLEL_OWNED);
 
   target_state.add(myvec8);
   Jali::StateVector<double> myvec9("srcnodevars", target_mesh,
                                    Jali::Entity_kind::NODE,
-                                   Jali::Parallel_type::OWNED);
+                                   Jali::Entity_type::PARALLEL_OWNED);
   target_state.add(myvec9);
 
   // Wrappers for interfacing with the underlying mesh data structures.
