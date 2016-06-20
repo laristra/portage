@@ -60,25 +60,28 @@ namespace Portage {
 
 */
 
-template<typename MeshType, typename StateType, Entity_kind on_what>
+template<typename SourceMeshType, typename TargetMeshType,
+    typename StateType, Entity_kind on_what>
 class Interpolate_1stOrder {
  public:
   /*!
     @brief Constructor.
     @param[in] source_mesh The input mesh.
+    @param[in] target_mesh The output mesh.
     @param[in] source_state The state manager for data on the input mesh.
     @param[in] on_what The location where the data lives; e.g. on cells, nodes,
     edges, etc.
     @param[in] interp_var_name The string name of the variable to interpolate.
    */
-  Interpolate_1stOrder(MeshType const & source_mesh,
+  Interpolate_1stOrder(SourceMeshType const & source_mesh,
+                       TargetMeshType const & target_mesh,
                        StateType const & source_state,
                        std::string const interp_var_name) :
       source_mesh_(source_mesh),
+      target_mesh_(target_mesh),
       source_state_(source_state),
       interp_var_name_(interp_var_name),
-      source_vals_(NULL)
-{
+      source_vals_(NULL) {
   source_state.get_data(on_what, interp_var_name, &source_vals_);
 }
 
@@ -105,6 +108,7 @@ class Interpolate_1stOrder {
     moment) of the weights vector (i.e. the volume of intersection) is used.
     Source entities may be repeated in the list if the intersection of a target
     entity and a source entity consists of two or more disjoint pieces
+    @param[in] targetCellId The index of the target cell.
 
     @todo Cleanup the datatype for sources_and_weights - it is somewhat
     confusing.
@@ -115,11 +119,13 @@ class Interpolate_1stOrder {
 
   double
   operator() (std::pair<std::vector<int> const &,
-              std::vector<std::vector<double>> const &> cells_and_weights)
+              std::vector<std::vector<double>> const &> cells_and_weights,
+              const int targetCellId)
       const;
 
  private:
-  MeshType const & source_mesh_;
+  SourceMeshType const & source_mesh_;
+  TargetMeshType const & target_mesh_;
   StateType const & source_state_;
   std::string const & interp_var_name_;
   double * source_vals_;
@@ -132,10 +138,13 @@ class Interpolate_1stOrder {
   entities and vector of contribution weights
 */
 
-template<typename MeshType, typename StateType, Entity_kind on_what>
-double Interpolate_1stOrder<MeshType, StateType, on_what> :: operator()
+template<typename SourceMeshType, typename TargetMeshType,
+    typename StateType, Entity_kind on_what>
+double Interpolate_1stOrder<SourceMeshType, TargetMeshType,
+    StateType, on_what> :: operator()
     (std::pair<std::vector<int> const &,
-     std::vector< std::vector<double> > const &> sources_and_weights) const {
+     std::vector< std::vector<double> > const &> sources_and_weights,
+     const int targetCellID) const {
   std::vector<int> const & source_cells = sources_and_weights.first;
   int nsrccells = source_cells.size();
   if (!nsrccells) {
@@ -157,18 +166,16 @@ double Interpolate_1stOrder<MeshType, StateType, on_what> :: operator()
   /// @todo Should use zip_iterator here but I am not sure I know how to
 
   double val = 0.0;
-  double sumofweights = 0.0;
   for (int j = 0; j < nsrccells; ++j) {
     int srccell = source_cells[j];
     std::vector<double> pair_weights = weights[j];
 
     val += source_vals_[srccell] * pair_weights[0];  // 1st order
-    sumofweights += pair_weights[0];
   }
 
   // Normalize the value by sum of all the weights
 
-  val /= sumofweights;
+  val /= target_mesh_.cell_volume(targetCellID);
 
   return val;
 }

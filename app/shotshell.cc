@@ -7,6 +7,7 @@
 #include <cstdlib>
 #include <vector>
 #include <string>
+#include <cmath>
 
 #include "mpi.h"
 
@@ -29,23 +30,40 @@
 using Portage::Jali_Mesh_Wrapper;
 using Portage::Jali_State_Wrapper;
 
+int usage() {
+    std::printf("Usage: shotshellapp example-number input-mesh output-mesh");
+    std::printf(" [output?] [unit?]\n");
+    std::printf("example 0: 1st order cell-centered remap\n");
+    std::printf("example 1: 1st order node-centered remap\n");
+    std::printf("example 2: 2nd order cell-centered remap\n");
+    std::printf("example 3: 2nd order cell-centered remap of linear func\n");
+    std::printf("   output?: to dump the meshes, set to 'y'\n");
+    std::printf("   unit?:   for unit testing of example 3, set to 'y'\n");
+    return 1;
+}
+
 int main(int argc, char** argv) {
 
   // Pause profiling until main loop
-  #ifdef ENABLE_PROFILE
-    __itt_pause();
-  #endif
+#ifdef ENABLE_PROFILE
+  __itt_pause();
+#endif
 
   // Get the example to run from command-line parameter
-  int example = 0;
-  if (argc <= 3) {
-    std::printf("Usage: shotshellapp example-number input-mesh output-mesh\n");
-    std::printf("example 0: 2d 1st order cell-centered remap\n");
-    std::printf("example 1: 2d 1st order node-centered remap\n");
-    std::printf("example 2: 2d 2nd order cell-centered remap\n");
-    return 0;
-  }
-  if (argc > 1) example = atoi(argv[1]);
+  if (argc < 4) return usage();
+
+  int example = atoi(argv[1]);
+  assert(example >= 0 && example < 4);
+
+  const bool dumpMesh = (argc >= 5) ?
+      ((std::string(argv[4]) == "y") ? true : false)
+      : false;
+  // unitTest will basically assert that the L2 norm for example 3 is roundoff
+  const bool unitTest = (argc == 6) ?
+      ((std::string(argv[5]) == "y") ? true : false)
+      : false;
+
+  const double TOL = 1e-4;
 
   // Initialize MPI
   int mpi_init_flag;
@@ -70,9 +88,13 @@ int main(int argc, char** argv) {
 
   const std::shared_ptr<Jali::Mesh> inputMesh = mf(argv[2]);
   const Jali_Mesh_Wrapper inputMeshWrapper(*inputMesh);
+  const int inputDim = inputMesh->space_dimension();
 
   const std::shared_ptr<Jali::Mesh> targetMesh = mf(argv[3]);
   const Jali_Mesh_Wrapper targetMeshWrapper(*targetMesh);
+  const int targetDim = targetMesh->space_dimension();
+
+  assert(inputDim == targetDim);
 
   std::cout << "Target mesh stats: " <<
       targetMeshWrapper.num_owned_cells() << " " <<
@@ -81,36 +103,46 @@ int main(int argc, char** argv) {
   Jali::State sourceState(inputMesh);
   std::vector<double> sourceData(inputMeshWrapper.num_owned_cells(), 0);
 
-  #ifdef FIXED_SIZE_EXAMPLE
-    for (int i=0; i < 3034; i++) {
-      auto coord = inputMeshWrapper.cellToXY(i);
-      double x = coord[0][0];
-      double y = coord[0][1];
-      sourceData[i] = std::sqrt(x*x+y*y);
-    }
-    for (int i=3034; i < 4646; i++) {
-      auto coord = inputMeshWrapper.cellToXY(i);
-      double x = coord[0][0];
-      double y = coord[0][1];
-      sourceData[i] = x*y;
-    }
-    for (int i=4646; i < 5238; i++) {
-      auto coord = inputMeshWrapper.cellToXY(i);
-      double x = coord[0][0];
-      double y = coord[0][1];
-      sourceData[i] = sin(x+y);
-    }
-  #else
-    for (int i=0; i < sourceData.size(); i++) {
-      auto coord = inputMeshWrapper.cellToXY(i);
-      double x = coord[0][0];
-      double y = coord[0][1];
+  std::vector<double> coord;
+
+#ifdef FIXED_SIZE_EXAMPLE
+  for (int i=0; i < 3034; i++) {
+    inputMeshWrapper.cell_centroid(i, &coord);
+    double x = coord[0];
+    double y = coord[1];
+    double z = (inputDim == 3) ? coord[2] : 0.0;
+    sourceData[i] = std::sqrt(x*x+y*y+z*z);
+  }
+  for (int i=3034; i < 4646; i++) {
+    inputMeshWrapper.cell_centroid(i, &coord);
+    double x = coord[0];
+    double y = coord[1];
+    double z = (inputDim == 3) ? coord[2] : 1.0;
+    sourceData[i] = x*y*z;
+  }
+  for (int i=4646; i < 5238; i++) {
+    inputMeshWrapper.cell_centroid(i, &coord);
+    double x = coord[0];
+    double y = coord[1];
+    double z = (inputDim == 3) ? coord[2] : 0.0;
+    sourceData[i] = sin(x+y+z);
+  }
+#else
+  for (int i=0; i < sourceData.size(); i++) {
+    inputMeshWrapper.cell_centroid(i, &coord);
+    double x = coord[0];
+    double y = coord[1];
+    double z = (inputDim > 2) ? coord[2] : 0.0;
+    if (example == 3) {
+      sourceData[i] = x+y+z;
+    } else {
       sourceData[i] = x*x;
     }
-  #endif
+  }
+#endif
 
   Jali::Entity_kind entityKind =
-      (example == 0) || (example == 2) ?
+      (example == 0) || (example == 2) || (example == 3) ?
       Jali::Entity_kind::CELL : Jali::Entity_kind::NODE;
   sourceState.add("celldata", inputMesh, entityKind,
                   Jali::Entity_type::ALL, &(sourceData[0]));
@@ -126,7 +158,7 @@ int main(int argc, char** argv) {
   remap_fields.push_back("celldata");
 
   // Directly run cell-centered examples
-  if ((example == 0) || (example == 2)) {
+  if ((example == 0) || (example == 2) || (example == 3)) {
     Portage::Driver<Jali_Mesh_Wrapper,
                     Jali_State_Wrapper> d(inputMeshWrapper,
                                           sourceStateWrapper,
@@ -134,13 +166,14 @@ int main(int argc, char** argv) {
                                           targetStateWrapper);
     d.set_remap_var_names(remap_fields);
 
-    if (example == 2) d.set_interpolation_order(2);
+    if ((example == 2) || (example == 3))
+      d.set_interpolation_order(2);
 
     d.run();
   }
 
   // Create a dual mesh for node-centered examples
-  else if ((example == 1) || (example == 3)) {
+  else if (example == 1) {
     Portage::Driver<Portage::Jali_Mesh_Wrapper,
                     Portage::Jali_State_Wrapper> d(inputMeshWrapper,
                                                    sourceStateWrapper,
@@ -148,14 +181,26 @@ int main(int argc, char** argv) {
                                                    targetStateWrapper);
     d.set_remap_var_names(remap_fields);
 
-    if (example == 3) d.set_interpolation_order(2);
-
     d.run();
   }
 
   std::cerr << "Last result: " << cellvecout[cellvecout.size()-1] << std::endl;
 
-  #ifdef OUTPUT_RESULTS
+  if ((example == 3) && unitTest) {
+    double toterr = 0.0;
+    double error;
+    for (auto c = 0; c < targetData.size(); c++) {
+      targetMeshWrapper.cell_centroid(c, &coord);
+      error = coord[0] + coord[1] - cellvecout[c];
+      if (inputDim > 2) error += coord[2];
+      toterr += error*error;
+    }
+    double L2 = sqrt(toterr/targetMeshWrapper.num_owned_cells());
+    std::printf("\n\nL2 NORM OF ERROR = %lf\n\n", L2);
+    assert(L2 < TOL);
+  }
+
+  if (dumpMesh) {
     std::cerr << "Saving the source mesh" << std::endl;
     sourceState.export_to_mesh();
     dynamic_cast<Jali::Mesh_MSTK*>(inputMesh.get())->write_to_exodus_file("input.exo");
@@ -163,9 +208,11 @@ int main(int argc, char** argv) {
     std::cerr << "Saving the target mesh" << std::endl;
     targetState.export_to_mesh();
     dynamic_cast<Jali::Mesh_MSTK*>(targetMesh.get())->write_to_exodus_file("output.exo");
-  #endif
+  }
 
   std::printf("finishing shotshellapp...\n");
 
   MPI_Finalize();
+
+  return 0;
 }
