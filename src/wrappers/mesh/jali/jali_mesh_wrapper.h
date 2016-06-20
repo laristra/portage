@@ -59,6 +59,11 @@ class Jali_Mesh_Wrapper {
   ~Jali_Mesh_Wrapper() {};
 
 
+  //! Cell area/volume
+  double cell_volume(int cellID) const {
+    return jali_mesh_.cell_volume(cellID);
+  }
+
   //! Dimension of space or mesh points
   int space_dimension() const {
     return jali_mesh_.space_dimension();
@@ -142,6 +147,16 @@ class Jali_Mesh_Wrapper {
           adjnodes->emplace_back(n);
       }
     }
+  }
+
+  //! Get the volume of dual cell by finding the corners that attach to the node
+  double dual_cell_volume(int const nodeid) const {
+    Jali::Entity_ID_List cornerids;
+    jali_mesh_.node_get_corners(nodeid, Jali::Parallel_type::ALL, &cornerids);
+    double vol = 0.0;
+    for (auto const cid : cornerids)
+      vol += jali_mesh_.corner_volume(cid);
+    return vol;
   }
 
   //! \brief Get adjacent "dual cells" of a given "dual cell"
