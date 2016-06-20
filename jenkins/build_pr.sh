@@ -65,7 +65,7 @@ cd build
 
 cmake \
   -C $TPL_INSTALL_PREFIX/share/cmake/Jali-tpl-config.cmake \
-  -D CMAKE_BUILD_TYPE=Debug \
+  -D CMAKE_BUILD_TYPE=Release \
   -D CMAKE_CXX_FLAGS='-std=c++11' \
   -D CMAKE_INSTALL_PREFIX:FILEPATH=$JALI_INSTALL_PREFIX \
   -D HDF5_NO_SYSTEM_PATHS:BOOL=TRUE \
@@ -88,7 +88,7 @@ cd build
 cmake \
   -D CMAKE_C_COMPILER=`which mpicc` \
   -D CMAKE_CXX_COMPILER=`which mpiCC` \
-  -D CMAKE_BUILD_TYPE=Debug \
+  -D CMAKE_BUILD_TYPE=Release \
   -D ENABLE_UNIT_TESTS=True \
   -D ENABLE_MPI=True \
   -D ENABLE_MPI_CXX_BINDINGS=True \
@@ -113,7 +113,7 @@ cd build-nothrust
 cmake \
   -D CMAKE_C_COMPILER=`which mpicc` \
   -D CMAKE_CXX_COMPILER=`which mpiCC` \
-  -D CMAKE_BUILD_TYPE=Debug \
+  -D CMAKE_BUILD_TYPE=Release \
   -D ENABLE_UNIT_TESTS=True \
   -D ENABLE_MPI=True \
   -D ENABLE_MPI_CXX_BINDINGS=True \

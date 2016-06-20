@@ -15,7 +15,7 @@ build_type=$2
 
 # set modules and install paths
 
-jali_version=jali-0.8.0
+jali_version=jali-0.9.0
 
 export NGC=/usr/local/codes/ngc
 ngc_include_dir=$NGC/private/include
@@ -23,13 +23,14 @@ ngc_include_dir=$NGC/private/include
 # compiler-specific settings
 if [[ $compiler == "intel" ]]; then
   cxxmodule=intel/15.0.3
-  jali_install_dir=$NGC/private/${jali_version}-intel
+  jali_install_dir=$NGC/private/${jali_version}-intel-15.0.3
 elif [[ $compiler == "gcc53" ]]; then
   cxxmodule=gcc/5.3.0
-  jali_install_dir=$NGC/private/${jali_version}-gcc53
+  jali_install_dir=$NGC/private/${jali_version}-gcc-5.3.0
   flecsi_install_dir=$NGC/private/flecsi-gcc
 fi
   
+cmake_build_type=Release
 extra_flags=
 if [[ $build_type == "thrust" ]]; then
   extra_flags="-D ENABLE_THRUST=True"
@@ -38,6 +39,7 @@ elif [[ $build_type == "flecsi" ]]; then
 elif [[ $build_type == "coverage" ]]; then
   extra_flags="-D CMAKE_C_FLAGS='-coverage' \
                -D CMAKE_CXX_FLAGS='-coverage'"
+  cmake_build_type=Debug
 fi
 
 export SHELL=/bin/sh
@@ -56,7 +58,7 @@ cd build
 cmake \
   -D CMAKE_C_COMPILER=`which mpicc` \
   -D CMAKE_CXX_COMPILER=`which mpiCC` \
-  -D CMAKE_BUILD_TYPE=Debug \
+  -D CMAKE_BUILD_TYPE=$cmake_build_type \
   -D ENABLE_UNIT_TESTS=True \
   -D ENABLE_JENKINS_OUTPUT=True \
   -D ENABLE_MPI=True \
