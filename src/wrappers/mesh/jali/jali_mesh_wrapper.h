@@ -152,7 +152,7 @@ class Jali_Mesh_Wrapper {
   //! Get the volume of dual cell by finding the corners that attach to the node
   double dual_cell_volume(int const nodeid) const {
     Jali::Entity_ID_List cornerids;
-    jali_mesh_.node_get_corners(nodeid, Jali::Parallel_type::ALL, &cornerids);
+    jali_mesh_.node_get_corners(nodeid, Jali::Entity_type::ALL, &cornerids);
     double vol = 0.0;
     for (auto const cid : cornerids)
       vol += jali_mesh_.corner_volume(cid);
