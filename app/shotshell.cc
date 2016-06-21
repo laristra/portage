@@ -189,7 +189,7 @@ int main(int argc, char** argv) {
   if ((example == 3) && unitTest) {
     double toterr = 0.0;
     double error;
-    for (auto c = 0; c < targetData.size(); c++) {
+    for (auto c = 0; c < cellvecout.size(); c++) {
       targetMeshWrapper.cell_centroid(c, &coord);
       error = coord[0] + coord[1] - cellvecout[c];
       if (inputDim > 2) error += coord[2];
