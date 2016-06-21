@@ -210,7 +210,7 @@ class Flecsi_Mesh_Wrapper {
 
   //! Get node connected neighbors of cell
   void cell_get_node_adj_cells(int const cellid,
-                               Parallel_type const ptype,
+                               Entity_type const ptype,
                                std::vector<int> *adjcells) const {
     // I think this is supposed to work, but doesn't:
     // flecsi_mesh_.cells(mycell);
@@ -231,7 +231,7 @@ class Flecsi_Mesh_Wrapper {
   //! Get "adjacent" nodes of given node - nodes that share a common
   //! cell with given node
   void node_get_cell_adj_nodes(int const nodeid,
-                               Parallel_type const ptype,
+                               Entity_type const ptype,
                                std::vector<int> *adjnodes) const {
     auto thisNode = flecsi_mesh_.vertices()[nodeid];
     adjnodes->clear();
@@ -247,7 +247,7 @@ class Flecsi_Mesh_Wrapper {
 
   //! @brief Get adjacent "dual cells" of a given "dual cell"
   void dual_cell_get_node_adj_cells(int const nodeid,
-                                    Parallel_type const ptype,
+                                    Entity_type const ptype,
                                     std::vector<int> *adjnodes) const {
     auto thisNode = flecsi_mesh_.vertices()[nodeid];
     adjnodes->clear();
