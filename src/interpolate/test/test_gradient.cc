@@ -49,11 +49,11 @@ TEST(Gradient, Fields_Cell_Ctr) {
   // with a linear function that is x+2y
 
   int nc1 = mesh1->num_entities(Jali::Entity_kind::CELL,
-                                Jali::Parallel_type::OWNED);
+                                Jali::Entity_type::PARALLEL_OWNED);
   std::vector<double> data1(nc1, 1.25);
   Jali::StateVector<double> myvec1("cellvars1", mesh1,
                                    Jali::Entity_kind::CELL,
-                                   Jali::Parallel_type::OWNED,
+                                   Jali::Entity_type::PARALLEL_OWNED,
                                    &(data1[0]));
   Jali::StateVector<double> &addvec1 = mystate.add(myvec1);
 
@@ -66,7 +66,7 @@ TEST(Gradient, Fields_Cell_Ctr) {
 
   Jali::StateVector<double> myvec2("cellvars2", mesh1,
                                    Jali::Entity_kind::CELL,
-                                   Jali::Parallel_type::OWNED,
+                                   Jali::Entity_type::PARALLEL_OWNED,
                                    &(data2[0]));
   Jali::StateVector<double> &addvec2 = mystate.add(myvec2);
 
@@ -137,7 +137,7 @@ TEST(Gradient, Fields_Cell_Ctr) {
     mesh1->cell_get_faces(c, &cfaces);
     for (auto f : cfaces) {
       std::vector<int> fcells;
-      mesh1->face_get_cells(f, Jali::Parallel_type::ALL, &fcells);
+      mesh1->face_get_cells(f, Jali::Entity_type::ALL, &fcells);
       if (fcells.size() == 1) {
         boundary_cell = true;
         break;
@@ -179,13 +179,13 @@ TEST(Gradient, Fields_Node_Ctr) {
   // with a linear function
 
   int nn1 = mesh1->num_entities(Jali::Entity_kind::NODE,
-                                Jali::Parallel_type::OWNED);
+                                Jali::Entity_type::PARALLEL_OWNED);
 
   std::vector<double> data1(nn1, 1.5);
 
   Jali::StateVector<double> myvec1("nodevars1", mesh1,
                                    Jali::Entity_kind::NODE,
-                                   Jali::Parallel_type::OWNED,
+                                   Jali::Entity_type::PARALLEL_OWNED,
                                    &(data1[0]));
   Jali::StateVector<double> &addvec1 = mystate.add(myvec1);
 
@@ -197,7 +197,7 @@ TEST(Gradient, Fields_Node_Ctr) {
   }
   Jali::StateVector<double> myvec2("nodevars2", mesh1,
                                    Jali::Entity_kind::NODE,
-                                   Jali::Parallel_type::OWNED,
+                                   Jali::Entity_type::PARALLEL_OWNED,
                                    &(data2[0]));
   Jali::StateVector<double> &addvec2 = mystate.add(myvec2);
 
@@ -265,13 +265,13 @@ TEST(Gradient, Fields_Node_Ctr) {
 
     bool boundary_node = false;
     std::vector<int> nodecells;
-    mesh1->node_get_cells(n, Jali::Parallel_type::ALL, &nodecells);
+    mesh1->node_get_cells(n, Jali::Entity_type::ALL, &nodecells);
     for (auto nc : nodecells) {
       std::vector<int> cfaces;
       mesh1->cell_get_faces(nc, &cfaces);
       for (auto f : cfaces) {
         std::vector<int> fcells;
-        mesh1->face_get_cells(f, Jali::Parallel_type::ALL, &fcells);
+        mesh1->face_get_cells(f, Jali::Entity_type::ALL, &fcells);
         if (fcells.size() == 1) {
           boundary_node = true;
           break;

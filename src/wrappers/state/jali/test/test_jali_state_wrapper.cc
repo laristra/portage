@@ -37,8 +37,8 @@ struct Vec2d
 TEST(Jali_State_Wrapper, DataTypes) {
 
   // Add multiple state vector types
-  int n_cells = 4;
-  int n_nodes = 9;
+  int const n_cells = 4;
+  int const n_nodes = 9;
   float ftest[] = {1.1, 2.2, 3.3, 4.4};
   int itest[] = {1, 2, 3, 4, 5, 6, 7, 8, 9};
   Vec2d vtest[n_cells];
@@ -52,11 +52,11 @@ TEST(Jali_State_Wrapper, DataTypes) {
   Portage::Jali_State_Wrapper wrapper(state);
 
   state.add("f1", inputMesh, Jali::Entity_kind::CELL,
-            Jali::Parallel_type::ALL, ftest);
+            Jali::Entity_type::ALL, ftest);
   state.add("i1", inputMesh, Jali::Entity_kind::NODE,
-            Jali::Parallel_type::ALL, itest);
+            Jali::Entity_type::ALL, itest);
   state.add("v1", inputMesh, Jali::Entity_kind::CELL,
-            Jali::Parallel_type::ALL, vtest);
+            Jali::Entity_type::ALL, vtest);
 
   // Get raw float data using wrapper
   float* fdata;

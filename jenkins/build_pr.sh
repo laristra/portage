@@ -32,10 +32,10 @@ exit
 
 #
 # Tag or git commit hash of Jali version to build and use for this PR:
-JALI_VERSION=1ff0db4c4de485382243a5fd06f69b4b8a5383cd
+JALI_VERSION=0.9.0
 
 # Where to find Jali's TPLs:
-TPL_INSTALL_PREFIX=/usr/local/codes/ngc/private/jali-tpl-1.0.5-intel
+TPL_INSTALL_PREFIX=/usr/local/codes/ngc/private/jali-tpl-1.0.6-intel-15.0.3
 
 # General NGC include directory
 NGC_INCLUDE_DIR=/usr/local/codes/ngc/private/include
@@ -65,7 +65,7 @@ cd build
 
 cmake \
   -C $TPL_INSTALL_PREFIX/share/cmake/Jali-tpl-config.cmake \
-  -D CMAKE_BUILD_TYPE=Debug \
+  -D CMAKE_BUILD_TYPE=Release \
   -D CMAKE_CXX_FLAGS='-std=c++11' \
   -D CMAKE_INSTALL_PREFIX:FILEPATH=$JALI_INSTALL_PREFIX \
   -D HDF5_NO_SYSTEM_PATHS:BOOL=TRUE \
@@ -88,7 +88,7 @@ cd build
 cmake \
   -D CMAKE_C_COMPILER=`which mpicc` \
   -D CMAKE_CXX_COMPILER=`which mpiCC` \
-  -D CMAKE_BUILD_TYPE=Debug \
+  -D CMAKE_BUILD_TYPE=Release \
   -D ENABLE_UNIT_TESTS=True \
   -D ENABLE_MPI=True \
   -D ENABLE_MPI_CXX_BINDINGS=True \
@@ -113,7 +113,7 @@ cd build-nothrust
 cmake \
   -D CMAKE_C_COMPILER=`which mpicc` \
   -D CMAKE_CXX_COMPILER=`which mpiCC` \
-  -D CMAKE_BUILD_TYPE=Debug \
+  -D CMAKE_BUILD_TYPE=Release \
   -D ENABLE_UNIT_TESTS=True \
   -D ENABLE_MPI=True \
   -D ENABLE_MPI_CXX_BINDINGS=True \

@@ -145,14 +145,13 @@ int main(int argc, char** argv) {
       (example == 0) || (example == 2) || (example == 3) ?
       Jali::Entity_kind::CELL : Jali::Entity_kind::NODE;
   sourceState.add("celldata", inputMesh, entityKind,
-                  Jali::Parallel_type::ALL, &(sourceData[0]));
+                  Jali::Entity_type::ALL, &(sourceData[0]));
   const Jali_State_Wrapper sourceStateWrapper(sourceState);
 
   Jali::State targetState(targetMesh);
-  std::vector<double> targetData(targetMeshWrapper.num_owned_cells(), 0);
   const Jali::StateVector<double> & cellvecout =
       targetState.add("celldata", targetMesh, entityKind,
-                      Jali::Parallel_type::ALL, &(targetData[0]));
+                      Jali::Entity_type::ALL, 0.0);
   Jali_State_Wrapper targetStateWrapper(targetState);
 
   std::vector<std::string> remap_fields;
@@ -185,14 +184,12 @@ int main(int argc, char** argv) {
     d.run();
   }
 
-  std::cerr << "Sizes: " << sourceData.size() << " " << targetData.size() <<
-      std::endl;
   std::cerr << "Last result: " << cellvecout[cellvecout.size()-1] << std::endl;
 
   if ((example == 3) && unitTest) {
     double toterr = 0.0;
     double error;
-    for (auto c = 0; c < targetData.size(); c++) {
+    for (auto c = 0; c < cellvecout.size(); c++) {
       targetMeshWrapper.cell_centroid(c, &coord);
       error = coord[0] + coord[1] - cellvecout[c];
       if (inputDim > 2) error += coord[2];

@@ -51,17 +51,17 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Const_No_Limiter_2D) {
 
   const int ncells_source =
       source_mesh->num_entities(Jali::Entity_kind::CELL,
-                                Jali::Parallel_type::OWNED);
+                                Jali::Entity_type::PARALLEL_OWNED);
   std::vector<double> data(ncells_source, 1.25);
   Jali::StateVector<double> myvec("cellvars", source_mesh,
                                   Jali::Entity_kind::CELL,
-                                  Jali::Parallel_type::OWNED,
+                                  Jali::Entity_type::PARALLEL_OWNED,
                                   &(data[0]));
   source_state.add(myvec);
 
   const int ncells_target =
       target_mesh->num_entities(Jali::Entity_kind::CELL,
-                                Jali::Parallel_type::OWNED);
+                                Jali::Entity_type::PARALLEL_OWNED);
 
   Portage::Jali_Mesh_Wrapper sourceMeshWrapper(*source_mesh);
   Portage::Jali_Mesh_Wrapper targetMeshWrapper(*target_mesh);
@@ -135,7 +135,7 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Lin_No_Limiter_2D) {
 
   const int ncells_source =
       source_mesh->num_entities(Jali::Entity_kind::CELL,
-                                Jali::Parallel_type::OWNED);
+                                Jali::Entity_type::PARALLEL_OWNED);
   std::vector<double> data(ncells_source);
   for (int c = 0; c < ncells_source; ++c) {
     JaliGeometry::Point ccen = source_mesh->cell_centroid(c);
@@ -144,7 +144,7 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Lin_No_Limiter_2D) {
 
   Jali::StateVector<double> myvec("cellvars", source_mesh,
                                   Jali::Entity_kind::CELL,
-                                  Jali::Parallel_type::OWNED,
+                                  Jali::Entity_type::PARALLEL_OWNED,
                                   &(data[0]));
   source_state.add(myvec);
 
@@ -166,7 +166,7 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Lin_No_Limiter_2D) {
 
   const int ncells_target =
       target_mesh->num_entities(Jali::Entity_kind::CELL,
-                                Jali::Parallel_type::OWNED);
+                                Jali::Entity_type::PARALLEL_OWNED);
   std::vector<std::vector<JaliGeometry::Point>>
       source_cell_coords(ncells_source);
   std::vector<std::vector<JaliGeometry::Point>>
@@ -229,7 +229,7 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Lin_BJ_Limiter_2D) {
 
   const int ncells_source =
       source_mesh->num_entities(Jali::Entity_kind::CELL,
-                                Jali::Parallel_type::OWNED);
+                                Jali::Entity_type::PARALLEL_OWNED);
   std::vector<double> data(ncells_source);
   double minval = 1e+10, maxval = -1e+10;
   for (int c = 0; c < ncells_source; ++c) {
@@ -244,7 +244,7 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Lin_BJ_Limiter_2D) {
 
   Jali::StateVector<double> myvec("cellvars", source_mesh,
                                   Jali::Entity_kind::CELL,
-                                  Jali::Parallel_type::OWNED,
+                                  Jali::Entity_type::PARALLEL_OWNED,
                                   &(data[0]));
   source_state.add(myvec);
 
@@ -273,7 +273,7 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Lin_BJ_Limiter_2D) {
 
   const int ncells_target =
       target_mesh->num_entities(Jali::Entity_kind::CELL,
-                                Jali::Parallel_type::OWNED);
+                                Jali::Entity_type::PARALLEL_OWNED);
   std::vector<std::vector<JaliGeometry::Point>>
       source_cell_coords(ncells_source);
   std::vector<std::vector<JaliGeometry::Point>>
@@ -350,10 +350,10 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Lin_BJ_Limiter_2D) {
 
 //   const int nnodes_source =
 //       source_mesh->num_entities(Jali::Entity_kind::NODE,
-//                                 Jali::Parallel_type::OWNED);
+//                                 Jali::Entity_type::OWNED);
 //   const int nnodes_target =
 //       target_mesh->num_entities(Jali::Entity_kind::NODE,
-//                                 Jali::Parallel_type::OWNED);
+//                                 Jali::Entity_type::OWNED);
 
 //   // Create a state object and add the first two vectors to it
 
@@ -366,7 +366,7 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Lin_BJ_Limiter_2D) {
 //   std::vector<double> data(nnodes_source, 1.5);
 //   Jali::StateVector<double> myvec("nodevars", source_mesh,
 //                                   Jali::Entity_kind::NODE,
-//                                   Jali::Parallel_type::OWNED,
+//                                   Jali::Entity_type::OWNED,
 //                                   &(data[0]));
 //   source_state.add(myvec);
 
@@ -406,7 +406,7 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Lin_BJ_Limiter_2D) {
 //   for (int n = 0; n < nnodes_source; ++n) {
 //     std::vector<JaliGeometry::Point> dualcoords;
 //     std::vector<int> corners;
-//     source_mesh->node_get_corners(n, Jali::Parallel_type::ALL, &corners);
+//     source_mesh->node_get_corners(n, Jali::Entity_type::ALL, &corners);
 
 //     for (auto cn : corners) {
 //       std::vector<JaliGeometry::Point> cncoords;
@@ -419,7 +419,7 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Lin_BJ_Limiter_2D) {
 //   for (int n = 0; n < nnodes_target; ++n) {
 //     std::vector<JaliGeometry::Point> dualcoords;
 //     std::vector<int> corners;
-//     target_mesh->node_get_corners(n, Jali::Parallel_type::ALL, &corners);
+//     target_mesh->node_get_corners(n, Jali::Entity_type::ALL, &corners);
 
 //     for (auto cn : corners) {
 //       std::vector<JaliGeometry::Point> cncoords;
@@ -483,10 +483,10 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Lin_BJ_Limiter_2D) {
 
 //   const int nnodes_source =
 //       source_mesh->num_entities(Jali::Entity_kind::NODE,
-//                                 Jali::Parallel_type::OWNED);
+//                                 Jali::Entity_type::OWNED);
 //   const int nnodes_target =
 //       target_mesh->num_entities(Jali::Entity_kind::NODE,
-//                                 Jali::Parallel_type::OWNED);
+//                                 Jali::Entity_type::OWNED);
 
 //   // Create a state object and add the first two vectors to it
 
@@ -502,7 +502,7 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Lin_BJ_Limiter_2D) {
 //   }
 //   Jali::StateVector<double> myvec("nodevars", source_mesh,
 //                                   Jali::Entity_kind::NODE,
-//                                   Jali::Parallel_type::OWNED,
+//                                   Jali::Entity_type::OWNED,
 //                                   &(data[0]));
 //   source_state.add(myvec);
 
@@ -539,7 +539,7 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Lin_BJ_Limiter_2D) {
 //   for (int n = 0; n < nnodes_source; ++n) {
 //     std::vector<JaliGeometry::Point> dualcoords;
 //     std::vector<int> corners;
-//     source_mesh->node_get_corners(n, Jali::Parallel_type::ALL, &corners);
+//     source_mesh->node_get_corners(n, Jali::Entity_type::ALL, &corners);
 
 //     for (auto cn : corners) {
 //       std::vector<JaliGeometry::Point> cncoords;
@@ -552,7 +552,7 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Lin_BJ_Limiter_2D) {
 //   for (int n = 0; n < nnodes_target; ++n) {
 //     std::vector<JaliGeometry::Point> dualcoords;
 //     std::vector<int> corners;
-//     target_mesh->node_get_corners(n, Jali::Parallel_type::ALL, &corners);
+//     target_mesh->node_get_corners(n, Jali::Entity_type::ALL, &corners);
 
 //     for (auto cn : corners) {
 //       std::vector<JaliGeometry::Point> cncoords;
@@ -625,17 +625,17 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Const_No_Limiter_3D) {
 
   const int ncells_source =
       source_mesh->num_entities(Jali::Entity_kind::CELL,
-                                Jali::Parallel_type::OWNED);
+                                Jali::Entity_type::PARALLEL_OWNED);
   std::vector<double> data(ncells_source, 1.25);
   Jali::StateVector<double> myvec("cellvars", source_mesh,
                                   Jali::Entity_kind::CELL,
-                                  Jali::Parallel_type::OWNED,
+                                  Jali::Entity_type::PARALLEL_OWNED,
                                   &(data[0]));
   source_state.add(myvec);
 
   const int ncells_target =
       target_mesh->num_entities(Jali::Entity_kind::CELL,
-                                Jali::Parallel_type::OWNED);
+                                Jali::Entity_type::PARALLEL_OWNED);
 
   Portage::Jali_Mesh_Wrapper sourceMeshWrapper(*source_mesh);
   Portage::Jali_Mesh_Wrapper targetMeshWrapper(*target_mesh);
@@ -711,7 +711,7 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Lin_No_Limiter_3D) {
 
   const int ncells_source =
       source_mesh->num_entities(Jali::Entity_kind::CELL,
-                                Jali::Parallel_type::OWNED);
+                                Jali::Entity_type::PARALLEL_OWNED);
   std::vector<double> data(ncells_source);
   for (int c = 0; c < ncells_source; ++c) {
     JaliGeometry::Point ccen = source_mesh->cell_centroid(c);
@@ -720,7 +720,7 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Lin_No_Limiter_3D) {
 
   Jali::StateVector<double> myvec("cellvars", source_mesh,
                                   Jali::Entity_kind::CELL,
-                                  Jali::Parallel_type::OWNED,
+                                  Jali::Entity_type::PARALLEL_OWNED,
                                   &(data[0]));
   source_state.add(myvec);
 
@@ -742,7 +742,7 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Lin_No_Limiter_3D) {
 
   const int ncells_target =
       target_mesh->num_entities(Jali::Entity_kind::CELL,
-                                Jali::Parallel_type::OWNED);
+                                Jali::Entity_type::PARALLEL_OWNED);
   std::vector<std::vector<JaliGeometry::Point>>
       source_cell_coords(ncells_source);
   std::vector<std::vector<JaliGeometry::Point>>
@@ -806,7 +806,7 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_BJ_Limiter_3D) {
 
   const int ncells_source =
       source_mesh->num_entities(Jali::Entity_kind::CELL,
-                                Jali::Parallel_type::OWNED);
+                                Jali::Entity_type::PARALLEL_OWNED);
   std::vector<double> data(ncells_source);
   double minval = 1e+10, maxval = -1e+10;
   for (int c = 0; c < ncells_source; ++c) {
@@ -821,7 +821,7 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_BJ_Limiter_3D) {
 
   Jali::StateVector<double> myvec("cellvars", source_mesh,
                                   Jali::Entity_kind::CELL,
-                                  Jali::Parallel_type::OWNED,
+                                  Jali::Entity_type::PARALLEL_OWNED,
                                   &(data[0]));
   source_state.add(myvec);
 
@@ -851,7 +851,7 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_BJ_Limiter_3D) {
 
   const int ncells_target =
       target_mesh->num_entities(Jali::Entity_kind::CELL,
-                                Jali::Parallel_type::OWNED);
+                                Jali::Entity_type::PARALLEL_OWNED);
   std::vector<std::vector<JaliGeometry::Point>>
       source_cell_coords(ncells_source);
   std::vector<std::vector<JaliGeometry::Point>>
@@ -931,10 +931,10 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_BJ_Limiter_3D) {
 
 //   const int nnodes_source =
 //       source_mesh->num_entities(Jali::Entity_kind::NODE,
-//                                 Jali::Parallel_type::OWNED);
+//                                 Jali::Entity_type::OWNED);
 //   const int nnodes_target =
 //       target_mesh->num_entities(Jali::Entity_kind::NODE,
-//                                 Jali::Parallel_type::OWNED);
+//                                 Jali::Entity_type::OWNED);
 
 //   // Create a state object and add the first two vectors to it
 
@@ -946,7 +946,7 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_BJ_Limiter_3D) {
 //   std::vector<double> data(nnodes_source, nodeval);
 //   Jali::StateVector<double> myvec("nodevars", source_mesh,
 //                                   Jali::Entity_kind::NODE,
-//                                   Jali::Parallel_type::OWNED,
+//                                   Jali::Entity_type::OWNED,
 //                                   &(data[0]));
 //   source_state.add(myvec);
 
@@ -983,7 +983,7 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_BJ_Limiter_3D) {
 //   for (int n = 0; n < nnodes_source; ++n) {
 //     std::vector<JaliGeometry::Point> dualcoords;
 //     std::vector<int> corners;
-//     source_mesh->node_get_corners(n, Jali::Parallel_type::ALL, &corners);
+//     source_mesh->node_get_corners(n, Jali::Entity_type::ALL, &corners);
 
 //     for (auto cn : corners) {
 //       std::vector<JaliGeometry::Point> cncoords;
@@ -996,7 +996,7 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_BJ_Limiter_3D) {
 //   for (int n = 0; n < nnodes_target; ++n) {
 //     std::vector<JaliGeometry::Point> dualcoords;
 //     std::vector<int> corners;
-//     target_mesh->node_get_corners(n, Jali::Parallel_type::ALL, &corners);
+//     target_mesh->node_get_corners(n, Jali::Entity_type::ALL, &corners);
 
 //     for (auto cn : corners) {
 //       std::vector<JaliGeometry::Point> cncoords;
@@ -1063,10 +1063,10 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_BJ_Limiter_3D) {
 
 //   const int nnodes_source =
 //       source_mesh->num_entities(Jali::Entity_kind::NODE,
-//                                 Jali::Parallel_type::OWNED);
+//                                 Jali::Entity_type::OWNED);
 //   const int nnodes_target =
 //       target_mesh->num_entities(Jali::Entity_kind::NODE,
-//                                 Jali::Parallel_type::OWNED);
+//                                 Jali::Entity_type::OWNED);
 
 //   // Create a state object and add the first two vectors to it
 
@@ -1082,7 +1082,7 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_BJ_Limiter_3D) {
 //   }
 //   Jali::StateVector<double> myvec("nodevars", source_mesh,
 //                                   Jali::Entity_kind::NODE,
-//                                   Jali::Parallel_type::OWNED,
+//                                   Jali::Entity_type::OWNED,
 //                                   &(data[0]));
 //   source_state.add(myvec);
 
@@ -1119,7 +1119,7 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_BJ_Limiter_3D) {
 //   for (int n = 0; n < nnodes_source; ++n) {
 //     std::vector<JaliGeometry::Point> dualcoords;
 //     std::vector<int> corners;
-//     source_mesh->node_get_corners(n, Jali::Parallel_type::ALL, &corners);
+//     source_mesh->node_get_corners(n, Jali::Entity_type::ALL, &corners);
 
 //     for (auto cn : corners) {
 //       std::vector<JaliGeometry::Point> cncoords;
@@ -1132,7 +1132,7 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_BJ_Limiter_3D) {
 //   for (int n = 0; n < nnodes_target; ++n) {
 //     std::vector<JaliGeometry::Point> dualcoords;
 //     std::vector<int> corners;
-//     target_mesh->node_get_corners(n, Jali::Parallel_type::ALL, &corners);
+//     target_mesh->node_get_corners(n, Jali::Entity_type::ALL, &corners);
 
 //     for (auto cn : corners) {
 //       std::vector<JaliGeometry::Point> cncoords;
@@ -1202,10 +1202,10 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_BJ_Limiter_3D) {
 
 //   const int nnodes_source =
 //       source_mesh->num_entities(Jali::Entity_kind::NODE,
-//                                 Jali::Parallel_type::OWNED);
+//                                 Jali::Entity_type::OWNED);
 //   const int nnodes_target =
 //       target_mesh->num_entities(Jali::Entity_kind::NODE,
-//                                 Jali::Parallel_type::OWNED);
+//                                 Jali::Entity_type::OWNED);
 
 //   // Create a state object and add the first two vectors to it
 
@@ -1229,7 +1229,7 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_BJ_Limiter_3D) {
 //   }
 //   Jali::StateVector<double> myvec("nodevars", source_mesh,
 //                                   Jali::Entity_kind::NODE,
-//                                   Jali::Parallel_type::OWNED,
+//                                   Jali::Entity_type::OWNED,
 //                                   &(data[0]));
 //   source_state.add(myvec);
 
@@ -1273,7 +1273,7 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_BJ_Limiter_3D) {
 //   for (int n = 0; n < nnodes_source; ++n) {
 //     std::vector<JaliGeometry::Point> dualcoords;
 //     std::vector<int> corners;
-//     source_mesh->node_get_corners(n, Jali::Parallel_type::ALL, &corners);
+//     source_mesh->node_get_corners(n, Jali::Entity_type::ALL, &corners);
 
 //     for (auto cn : corners) {
 //       std::vector<JaliGeometry::Point> cncoords;
@@ -1286,7 +1286,7 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_BJ_Limiter_3D) {
 //   for (int n = 0; n < nnodes_target; ++n) {
 //     std::vector<JaliGeometry::Point> dualcoords;
 //     std::vector<int> corners;
-//     target_mesh->node_get_corners(n, Jali::Parallel_type::ALL, &corners);
+//     target_mesh->node_get_corners(n, Jali::Entity_type::ALL, &corners);
 
 //     for (auto cn : corners) {
 //       std::vector<JaliGeometry::Point> cncoords;

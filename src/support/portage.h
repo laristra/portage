@@ -72,11 +72,13 @@ const int NUM_ENTITY_KINDS = 8;
 
 // Parallel status of entity
 
-enum Parallel_type {
-  PTYPE_UNKNOWN = 0,  // Initializer
-  OWNED = 1,          // Owned by this processor
-  GHOST = 2,          // Owned by another processor
-  ALL  = 3            // OWNED + GHOST
+enum Entity_type {
+  TYPE_UNKNOWN = -1,  // Initializer
+  DELETED = 0,
+  PARALLEL_OWNED = 1,          // Owned by this processor
+  PARALLEL_GHOST = 2,          // Owned by another processor
+  BOUNDARY_GHOST = 3,          // Ghost/Virtual entity on boundary
+  ALL  = 4     // PARALLEL_OWNED + PARALLEL_GHOST + BOUNDARY_GHOST
 };
 
 #ifdef THRUST

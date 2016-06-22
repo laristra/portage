@@ -264,7 +264,7 @@ int main(int argc, char** argv) {
     }
 
     sourceState.add("celldata", inputMesh, Jali::Entity_kind::CELL,
-                    Jali::Parallel_type::ALL, &(sourceData[0]));
+                    Jali::Entity_type::ALL, &(sourceData[0]));
     Portage::Jali_State_Wrapper sourceStateWrapper(sourceState);
 
     // Build the target state storage
@@ -272,7 +272,7 @@ int main(int argc, char** argv) {
     std::vector<double> targetData(ntarcells, 0.0);
     auto& cellvecout = targetState.add("celldata", targetMesh,
                                        Jali::Entity_kind::CELL,
-                                       Jali::Parallel_type::ALL,
+                                       Jali::Entity_type::ALL,
                                        &(targetData[0]));
     Portage::Jali_State_Wrapper targetStateWrapper(targetState);
 
@@ -423,16 +423,15 @@ int main(int argc, char** argv) {
     }
 
     sourceState.add("nodedata", inputMesh, Jali::Entity_kind::NODE,
-                    Jali::Parallel_type::ALL, &(sourceData[0]));
+                    Jali::Entity_type::ALL, &(sourceData[0]));
     Portage::Jali_State_Wrapper sourceStateWrapper(sourceState);
 
     // Build the target state storage
     Jali::State targetState(targetMesh);
-    std::vector<double> targetData(ntarnodes, 0.0);
     auto& nodevecout = targetState.add("nodedata", targetMesh,
                                        Jali::Entity_kind::NODE,
-                                       Jali::Parallel_type::ALL,
-                                       &(targetData[0]));
+                                       Jali::Entity_type::ALL,
+                                       0.0);
     Portage::Jali_State_Wrapper targetStateWrapper(targetState);
 
     // Build the main driver data for this mesh type

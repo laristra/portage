@@ -72,31 +72,31 @@ class Jali_Mesh_Wrapper {
   //! Number of owned cells in the mesh
   int num_owned_cells() const {
     return jali_mesh_.num_entities(Jali::Entity_kind::CELL,
-                                   Jali::Parallel_type::OWNED);
+                                   Jali::Entity_type::PARALLEL_OWNED);
   }
 
   //! Number of owned nodes in the mesh
   int num_owned_nodes() const {
     return jali_mesh_.num_entities(Jali::Entity_kind::NODE,
-                                   Jali::Parallel_type::OWNED);
+                                   Jali::Entity_type::PARALLEL_OWNED);
   }
 
   //! Number of ghost cells in the mesh
   int num_ghost_cells() const {
     return jali_mesh_.num_entities(Jali::Entity_kind::CELL,
-                                   Jali::Parallel_type::GHOST);
+                                   Jali::Entity_type::PARALLEL_GHOST);
   }
 
   //! Number of ghost nodes in the mesh
   int num_ghost_nodes() const {
     return jali_mesh_.num_entities(Jali::Entity_kind::NODE,
-                                   Jali::Parallel_type::GHOST);
+                                   Jali::Entity_type::PARALLEL_GHOST);
   }
 
   //! Number of items of given entity
   int num_entities(Entity_kind const entity) const {
     return jali_mesh_.num_entities((Jali::Entity_kind)entity,
-                                   Jali::Parallel_type::ALL);
+                                   Jali::Entity_type::ALL);
   }
 
   //! Iterators on mesh entity - begin
@@ -119,9 +119,9 @@ class Jali_Mesh_Wrapper {
 
   //! Get node connected neighbors of cell
   void cell_get_node_adj_cells(int const cellid,
-                               Parallel_type const ptype,
+                               Entity_type const ptype,
                                std::vector<int> *adjcells) const {
-    jali_mesh_.cell_get_node_adj_cells(cellid, (Jali::Parallel_type) ptype,
+    jali_mesh_.cell_get_node_adj_cells(cellid, (Jali::Entity_type) ptype,
                                        adjcells);
   }
 
@@ -130,12 +130,12 @@ class Jali_Mesh_Wrapper {
   //! Get "adjacent" nodes of given node - nodes that share a common
   //! cell with given node
   void node_get_cell_adj_nodes(int const nodeid,
-                               Parallel_type const ptype,
+                               Entity_type const ptype,
                                std::vector<int> *adjnodes) const {
     adjnodes->clear();
 
     Jali::Entity_ID_List nodecells;
-    jali_mesh_.node_get_cells(nodeid, (Jali::Parallel_type) ptype, &nodecells);
+    jali_mesh_.node_get_cells(nodeid, (Jali::Entity_type) ptype, &nodecells);
 
     for (auto const& c : nodecells) {
       Jali::Entity_ID_List cellnodes;
@@ -152,7 +152,7 @@ class Jali_Mesh_Wrapper {
   //! Get the volume of dual cell by finding the corners that attach to the node
   double dual_cell_volume(int const nodeid) const {
     Jali::Entity_ID_List cornerids;
-    jali_mesh_.node_get_corners(nodeid, Jali::Parallel_type::ALL, &cornerids);
+    jali_mesh_.node_get_corners(nodeid, Jali::Entity_type::ALL, &cornerids);
     double vol = 0.0;
     for (auto const cid : cornerids)
       vol += jali_mesh_.corner_volume(cid);
@@ -161,7 +161,7 @@ class Jali_Mesh_Wrapper {
 
   //! \brief Get adjacent "dual cells" of a given "dual cell"
   void dual_cell_get_node_adj_cells(int const nodeid,
-                                    Parallel_type const ptype,
+                                    Entity_type const ptype,
                                     std::vector<int> *adjnodes) const {
     node_get_cell_adj_nodes(nodeid,ptype,adjnodes);
   }
@@ -208,7 +208,7 @@ class Jali_Mesh_Wrapper {
     std::vector<JaliGeometry::Point> wcoords; // (node, edge midpoint, centroid)
 
     // Start with an arbitrary corner
-    jali_mesh_.node_get_corners(nodeid, Jali::Parallel_type::ALL,
+    jali_mesh_.node_get_corners(nodeid, Jali::Entity_type::ALL,
                                 &cornerids);
     cornerid = cornerids[0];
 
@@ -347,7 +347,7 @@ class Jali_Mesh_Wrapper {
     // wedge_get_coordinates - (node, edge center, face centroid, cell centroid)
     std::vector<JaliGeometry::Point> wcoords;
 
-    jali_mesh_.node_get_wedges(nodeid, Jali::Parallel_type::ALL,
+    jali_mesh_.node_get_wedges(nodeid, Jali::Entity_type::ALL,
                                &wedgeids);
 
     std::vector<int> edge_list, face_list, cell_list;
@@ -391,7 +391,7 @@ class Jali_Mesh_Wrapper {
   void dual_wedges_get_coordinates(Jali::Entity_ID nodeID,
       std::vector<std::array<Portage::Point<3>, 4>> *wcoords) const {
     std::vector<Jali::Entity_ID> wedges;
-    jali_mesh_.node_get_wedges(nodeID, Jali::Parallel_type::ALL,
+    jali_mesh_.node_get_wedges(nodeID, Jali::Entity_type::ALL,
                                &wedges);
     for (const auto &wedge : wedges) {
       std::vector<JaliGeometry::Point> coords;

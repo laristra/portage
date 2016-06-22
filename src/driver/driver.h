@@ -137,38 +137,38 @@ class MeshWrapperDual {  // cellid is the dual cell (i.e. node) id
     @brief Get the IDs of all cells that share a node with the specified cell
     <em> of the original mesh </em>.
 
-    Sharing of cells is determined from the Parallel_type (e.g. @c OWNED,
+    Sharing of cells is determined from the Entity_type (e.g. @c OWNED,
     @c GHOST, @c ALL ).
 
     @param[in] dualcellID The cell ID for which you would like to find the
     neighbors.
-    @param[in] ptype The type of data you want (@c OWNED, @c GHOST, @c ALL)
+    @param[in] type The type of data you want (@c OWNED, @c GHOST, @c ALL)
     @param[in,out] adjcells List of IDs of adjacent cells.
   */
   void cell_get_node_adj_cells(int const dualcellID,
-                               Parallel_type const ptype,
+                               Entity_type const type,
                                std::vector<int> *adjcells) const {
-    w_.node_get_cell_adj_nodes(dualcellID, ptype, adjcells);
+    w_.node_get_cell_adj_nodes(dualcellID, type, adjcells);
   }
 
   /*!
     @brief Get the IDs of all cells that share a node with the specified cell
     of the <em> dual mesh </em>.
 
-    Sharing of cells is determined from the Parallel_type (e.g. @c OWNED,
+    Sharing of cells is determined from the Entity_type (e.g. @c OWNED,
     @c GHOST, @c ALL).
 
     @param[in] dualnodeID The cell ID for which you would like to find the
     neighbors.
-    @param[in] ptype The type of data you want (@c OWNED, @c GHOST, @c ALL)
+    @param[in] type The type of data you want (@c OWNED, @c GHOST, @c ALL)
     @param[in,out] adjnodes List of IDs of adjacent cells.
 
     @todo Clarify this wrt to @c MeshWrapperDual::cell_get_node_adj_cells()
   */
   void dual_cell_get_node_adj_cells(int const dualnodeID,
-                                    Parallel_type const ptype,
+                                    Entity_type const type,
                                     std::vector<int> *adjnodes) const {
-    w_.cell_get_node_adj_cells(dualnodeID, ptype, adjnodes);
+    w_.cell_get_node_adj_cells(dualnodeID, type, adjnodes);
   }
 
   /*!
