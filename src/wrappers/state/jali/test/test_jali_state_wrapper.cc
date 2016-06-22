@@ -37,8 +37,8 @@ struct Vec2d
 TEST(Jali_State_Wrapper, DataTypes) {
 
   // Add multiple state vector types
-  int n_cells = 4;
-  int n_nodes = 9;
+  int const n_cells = 4;
+  int const n_nodes = 9;
   float ftest[] = {1.1, 2.2, 3.3, 4.4};
   int itest[] = {1, 2, 3, 4, 5, 6, 7, 8, 9};
   Vec2d vtest[n_cells];
