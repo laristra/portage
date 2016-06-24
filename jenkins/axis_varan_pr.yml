@@ -1,0 +1,9 @@
+# axis_varan_pr.yml
+COMPILER:
+  - intel
+  - gcc53
+
+BUILD_TYPE:
+  - base
+  - debug
+
