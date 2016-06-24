@@ -5,6 +5,7 @@ COMPILER:
 
 BUILD_TYPE:
   - base
+  - debug
   - thrust
   - flecsi
   - coverage

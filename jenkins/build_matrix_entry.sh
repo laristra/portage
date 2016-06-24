@@ -32,7 +32,9 @@ fi
   
 cmake_build_type=Release
 extra_flags=
-if [[ $build_type == "thrust" ]]; then
+if [[ $build_type == "debug" ]]; then
+  cmake_build_type=Debug
+elif [[ $build_type == "thrust" ]]; then
   extra_flags="-D ENABLE_THRUST=True"
 elif [[ $build_type == "flecsi" ]]; then
   extra_flags="-D FLECSI_INSTALL_DIR:FILEPATH=$flecsi_install_dir"
