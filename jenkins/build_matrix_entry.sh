@@ -21,7 +21,7 @@ export NGC=/usr/local/codes/ngc
 ngc_include_dir=$NGC/private/include
 
 # compiler-specific settings
-if [[ $compiler == "intel" ]]; then
+if [[ $compiler == "intel15" ]]; then
   cxxmodule=intel/15.0.3
   jali_install_dir=$NGC/private/${jali_version}-intel-15.0.3
 elif [[ $compiler == "gcc53" ]]; then
@@ -32,7 +32,9 @@ fi
   
 cmake_build_type=Release
 extra_flags=
-if [[ $build_type == "thrust" ]]; then
+if [[ $build_type == "debug" ]]; then
+  cmake_build_type=Debug
+elif [[ $build_type == "thrust" ]]; then
   extra_flags="-D ENABLE_THRUST=True"
 elif [[ $build_type == "flecsi" ]]; then
   extra_flags="-D FLECSI_INSTALL_DIR:FILEPATH=$flecsi_install_dir"
