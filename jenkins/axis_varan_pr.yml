@@ -1,6 +1,6 @@
 # axis_varan_pr.yml
 COMPILER:
-  - intel
+  - intel15
   - gcc53
 
 BUILD_TYPE:

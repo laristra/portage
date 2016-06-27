@@ -21,7 +21,7 @@ export NGC=/usr/local/codes/ngc
 ngc_include_dir=$NGC/private/include
 
 # compiler-specific settings
-if [[ $compiler == "intel" ]]; then
+if [[ $compiler == "intel15" ]]; then
   cxxmodule=intel/15.0.3
   jali_install_dir=$NGC/private/${jali_version}-intel-15.0.3
 elif [[ $compiler == "gcc53" ]]; then
