@@ -82,6 +82,7 @@ class Jali_State_Wrapper {
     (*data) = nullptr;
   }
 
+
   /*!
     @brief Get the entity type on which the given field is defined
     @param[in] var_name The string name of the data field
@@ -106,6 +107,35 @@ class Jali_State_Wrapper {
     std::cerr << "Could not find state variable " << var_name << "\n";
     return Portage::UNKNOWN_KIND;
   }
+
+
+  /*!
+  @brief Get the data size for the given field
+  @param[in] on_what  The entity type on which the data field is defined
+  @param[in] var_name The string name of the data field
+  @return The data size for the field with the given name on the given entity type
+ 
+  @todo  THIS ASSUMES ONLY DOUBLE VECTORS - WE HAVE TO ACCOUNT FOR OTHER TYPES
+         OR WE HAVE TO GENERALIZE THE FIND FUNCTION!!!
+   */
+  int get_data_size(const Entity_kind on_what, const std::string var_name) const {
+
+    // ****** CHANGE WHEN JALISTATE find FUNCTION IS FIXED TO NOT NEED
+    // ****** THE DATA TYPE
+
+    Jali::State::const_iterator it =
+        jali_state_.find<double, Jali::Mesh>(var_name, jali_state_.mesh(),
+                                        (Jali::Entity_kind) on_what);
+    std::shared_ptr<Jali::BaseStateVector> vector = *it;
+    if (it != jali_state_.cend()) {
+      if (vector)
+        return (vector->size());
+    }
+
+    std::cerr << "Could not find state variable " << var_name << "\n";
+    return 0;
+  }
+
 
 #if 0
   /*!
