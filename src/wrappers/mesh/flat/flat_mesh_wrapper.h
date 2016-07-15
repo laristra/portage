@@ -68,7 +68,7 @@ class Flat_Mesh_Wrapper {
 
     std::vector<T> extrema(2*dim_); 
     for (unsigned int i=0; i<2*dim_; i+=2) extrema[i] = std::numeric_limits<T>::max();
-    for (unsigned int i=1; i<2*dim_; i+=2) extrema[i] = std::numeric_limits<T>::lowest();
+    for (unsigned int i=1; i<2*dim_; i+=2) extrema[i] = -std::numeric_limits<T>::max();
     for (unsigned int i=0; i<nodesPerCell_; i++)
     {
       for (unsigned int j=0; j<dim_; j++)
@@ -124,7 +124,7 @@ class Flat_Mesh_Wrapper {
       std::vector<Portage::Point<3>> vertices(nodesPerCell_);
       std::array<T, 6> extrema;
       extrema[0] = extrema[2] = extrema[4] = std::numeric_limits<T>::max();
-      extrema[1] = extrema[3] = extrema[5] = std::numeric_limits<T>::lowest();
+      extrema[1] = extrema[3] = extrema[5] = -std::numeric_limits<T>::max();
 
       for (unsigned int i=0; i<nodesPerCell_; i++)
       {

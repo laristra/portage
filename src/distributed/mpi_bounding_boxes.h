@@ -63,7 +63,7 @@ class MPI_Bounding_Boxes {
     for (unsigned int i=0; i<2*targetDim; i+=2)
     {
       targetBoundingBoxes[2*targetDim*commRank+i+0] = std::numeric_limits<double>::max();
-      targetBoundingBoxes[2*targetDim*commRank+i+1] = std::numeric_limits<double>::lowest();
+      targetBoundingBoxes[2*targetDim*commRank+i+1] = -std::numeric_limits<double>::max();
     }
     for (unsigned int c=0; c<targetNumCells; c++)
     {
@@ -92,7 +92,7 @@ class MPI_Bounding_Boxes {
     for (unsigned int i=0; i<2*sourceDim; i+=2)
     {
       sourceBoundingBox[i+0] = std::numeric_limits<double>::max();
-      sourceBoundingBox[i+1] = std::numeric_limits<double>::lowest();
+      sourceBoundingBox[i+1] = -std::numeric_limits<double>::max();
     }
     for (unsigned int c=0; c<sourceNumCells; c++)
     {
