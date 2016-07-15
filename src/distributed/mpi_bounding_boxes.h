@@ -152,7 +152,8 @@ class MPI_Bounding_Boxes {
 
     // Compute the total number of source cells this rank will receive from all ranks, 
     // and allocate a vector to hold them
-    int totalRecvSize = std::accumulate(recvCounts.begin(), recvCounts.end(), 0);
+    int totalRecvSize = 0;
+    for (unsigned int i=0; i<commSize; i++) totalRecvSize += recvCounts[i]; 
     std::vector<double> newData(sourceCellStride*totalRecvSize);
 
 #ifdef DEBUG_MPI
@@ -161,7 +162,8 @@ class MPI_Bounding_Boxes {
 #endif
 
     // Copy source cells that will stay on this rank into the proper place in the new vector
-    int localOffset = std::accumulate(recvCounts.begin(), recvCounts.begin() + commRank, 0);
+    int localOffset = 0;
+    for (unsigned int i=0; i<commRank; i++) localOffset += recvCounts[i]; 
     if (recvCounts[commRank] > 0)
       std::copy(sourceCoords.begin(), sourceCoords.end(), newData.begin() + sourceCellStride*localOffset);
 
