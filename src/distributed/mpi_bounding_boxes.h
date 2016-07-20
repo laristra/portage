@@ -147,14 +147,13 @@ class MPI_Bounding_Boxes {
     }
 
     // Each rank will tell each other rank how many cells it is going to send it
-    for (unsigned int i=0; i<commSize; i++)
-        MPI_Scatter(&(sendCounts[0]), 1, MPI_INT, &(recvCounts[0])+i, 1, MPI_INT, i, MPI_COMM_WORLD);
+    MPI_Alltoall(&(sendCounts[0]), 1, MPI_INT, &(recvCounts[0]), 1, MPI_INT, MPI_COMM_WORLD);
 
     // Compute the total number of source cells this rank will receive from all ranks, 
     // and allocate a vector to hold them
     int totalRecvSize = 0;
     for (unsigned int i=0; i<commSize; i++) totalRecvSize += recvCounts[i]; 
-    std::vector<double> newData(sourceCellStride*totalRecvSize);
+    std::vector<double> newCoords(sourceCellStride*totalRecvSize);
 
 #ifdef DEBUG_MPI
     std::cout << "Received " << commRank << " " << recvCounts[0] << " " << recvCounts[1] << " " << totalRecvSize
@@ -165,73 +164,83 @@ class MPI_Bounding_Boxes {
     int localOffset = 0;
     for (unsigned int i=0; i<commRank; i++) localOffset += recvCounts[i]; 
     if (recvCounts[commRank] > 0)
-      std::copy(sourceCoords.begin(), sourceCoords.end(), newData.begin() + sourceCellStride*localOffset);
+      std::copy(sourceCoords.begin(), sourceCoords.end(), newCoords.begin() + sourceCellStride*localOffset);
 
     // Each rank will send and receive the appropriate source cells
     MPI_Status stat;
     int writeOffset = 0;
 
+    // Each rank will do a non-blocking receive from each rank from which it will receive source cell coordinates
+    std::vector<MPI_Request> requests;
     for (unsigned int i=0; i<commSize; i++)
     {
-      if (commRank == i)
+      if ((i != commRank) && (recvCounts[i] > 0))
       {
-        for (unsigned int j=0; j<commSize; j++)
-        {
-          if ((j != i) && (sendCounts[j] > 0))
-          {
-            //std::cout << commRank << " sending " << sourceCoords[10] << " " << sendCounts[j] << " to " << j << std::endl;
-            MPI_Send(&(sourceCoords[0]), sourceCellStride*sendCounts[j], MPI_DOUBLE, j, 0, MPI_COMM_WORLD);
-          }
-        }
-      }
-      else
-      {
-        if (recvCounts[i] > 0)
-        {
-          MPI_Recv(&(newData[0])+writeOffset, sourceCellStride*recvCounts[i], MPI_DOUBLE, i, 0, MPI_COMM_WORLD, &stat);
-          //std::cout << commRank << " receiving " << recvCounts[i] << " from " << i << " at " << writeOffset << std::endl;
-        }
+        MPI_Request request;
+        MPI_Irecv(&(newCoords[0])+writeOffset, sourceCellStride*recvCounts[i], MPI_DOUBLE, i, 
+                  MPI_ANY_TAG, MPI_COMM_WORLD, &request);
+        requests.push_back(request);
       }
       writeOffset += sourceCellStride*recvCounts[i];
-      MPI_Barrier(MPI_COMM_WORLD);
+    }
+
+    // Each rank will send its source cell coordinates to appropriate ranks
+    for (unsigned int i=0; i<commSize; i++)
+    {
+      if ((i != commRank) && (sendCounts[i] > 0))
+      {
+        MPI_Send(&(sourceCoords[0]), sourceCellStride*sendCounts[i], MPI_DOUBLE, i, 0, MPI_COMM_WORLD);
+      }
+    }
+    
+    // Wait for all receives to complete
+    if (requests.size() > 0)
+    {
+      std::vector<MPI_Status> statuses(requests.size());
+      MPI_Waitall(requests.size(), &(requests[0]), &(statuses[0]));	
     }
 
     // We will now use the received source data as our new source mesh on this partition
-    sourceCoords = newData;
+    sourceCoords = newCoords;
 
-    // Each rank will send and receive the appropriate source state
+    // Send and receive each field to be remapped (might be more efficient to consolidate sends)
     for (unsigned int s=0; s<source_state_flat.get_num_vectors(); s++)
     {
       Portage::vector<double>& sourceState = source_state_flat.get_vector(s);
-
       std::vector<double> newField(totalRecvSize);
       std::copy(sourceState.begin(), sourceState.end(), newField.begin() + localOffset);
       writeOffset = 0;
+
+      // Each rank will do a non-blocking receive from each rank from which it will receive source state
+      requests.clear();
       for (unsigned int i=0; i<commSize; i++)
       {
-        if (commRank == i)
+        if ((i != commRank) && (recvCounts[i] > 0))
         {
-          for (unsigned int j=0; j<commSize; j++)
-          {
-            if ((j != i) && (sendCounts[j] > 0))
-            {
-              //std::cout << commRank << " sending " << sourceState[0] << " " << sendCounts[j] << " to " << j << std::endl;
-              MPI_Send(&(sourceState[0]), sendCounts[j], MPI_DOUBLE, j, 0, MPI_COMM_WORLD);
-            }
-          }
-        }
-        else
-        {
-          if (recvCounts[i] > 0)
-          {
-            MPI_Recv(&(newField[0])+writeOffset, recvCounts[i], MPI_DOUBLE, i, 0, MPI_COMM_WORLD, &stat);
-            //std::cout << commRank << " receiving " << newField[writeOffset] << " " << recvCounts[i] << " from " << i << std::endl;
-          }
+          MPI_Request request;
+          MPI_Irecv(&(newField[0])+writeOffset, recvCounts[i], MPI_DOUBLE, i,
+                    MPI_ANY_TAG, MPI_COMM_WORLD, &request);
+          requests.push_back(request);
         }
         writeOffset += recvCounts[i];
-        MPI_Barrier(MPI_COMM_WORLD);
       }
 
+      // Each rank will send its source fields to appropriate ranks
+      for (unsigned int i=0; i<commSize; i++)
+      {
+        if ((i != commRank) && (sendCounts[i] > 0))
+        {
+          MPI_Send(&(sourceState[0]), sendCounts[i], MPI_DOUBLE, i, 0, MPI_COMM_WORLD);
+        }
+      }
+
+      // Wait for all receives to complete
+      if (requests.size() > 0)
+      {
+        std::vector<MPI_Status> statuses(requests.size());
+        MPI_Waitall(requests.size(), &(requests[0]), &(statuses[0]));
+      }
+    
       // We will now use the received source state as our new source state on this partition
       sourceState = newField;
 
@@ -241,7 +250,7 @@ class MPI_Bounding_Boxes {
         std::cout << "Sizes: " << commRank << " " << totalRecvSize << " " << localOffset << " " << targetNumCells
                   << " " << sourceNumCells << std::endl;
         for (unsigned int i=0; i<sourceCoords.size(); i++)
-          std::cout << sourceCoords[i] << " " << newData[i] << " ";
+          std::cout << sourceCoords[i] << " " << newCoords[i] << " ";
         std::cout << std::endl;
         for (unsigned int i=0; i<sourceState.size(); i++)
           std::cout << sourceState[i] << " ";
