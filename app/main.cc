@@ -343,33 +343,35 @@ int main(int argc, char** argv) {
     d.run();
 
     // Dump some timing information
+    if (numpe > 1) MPI_Barrier(MPI_COMM_WORLD);
     gettimeofday(&end, 0);
     timersub(&end, &begin, &diff);
     const float seconds = diff.tv_sec + 1.0E-6*diff.tv_usec;
-    std::cout << "Time: " << seconds << std::endl;
+    if (rank == 0) std::cout << "Time: " << seconds << std::endl;
 
     // Output results for small test cases
-    if (n_target < 10) {
-      double toterr = 0.0;
+    double toterr = 0.0;
 
+    if (n_target < 10)
       std::cout << "celldata vector on target mesh after remapping is:"
                 << std::endl;
 
-      for (int c = 0; c < ntarcells; ++c) {
-        std::vector<double> ccen;
-        targetMeshWrapper.cell_centroid(c, &ccen);
+    for (int c = 0; c < ntarcells; ++c) {
+      std::vector<double> ccen;
+      targetMeshWrapper.cell_centroid(c, &ccen);
 
-        double error;
-        if (example.linear) {
-          error = ccen[0]+ccen[1] - cellvecout[c];
-          if (example.dim == 3)
-            error += ccen[2];
-        } else {  // quadratic
-          error = ccen[0]*ccen[0]+ccen[1]*ccen[1] - cellvecout[c];
-          if (example.dim == 3)
-            error += ccen[2]*ccen[2];
-        }
+      double error;
+      if (example.linear) {
+        error = ccen[0]+ccen[1] - cellvecout[c];
+        if (example.dim == 3)
+          error += ccen[2];
+      } else {  // quadratic
+        error = ccen[0]*ccen[0]+ccen[1]*ccen[1] - cellvecout[c];
+        if (example.dim == 3)
+          error += ccen[2]*ccen[2];
+      }
 
+      if (n_target < 10) {
         // dump diagnostics for each cell
         if (example.dim == 2) {
           std::printf("Cell=% 4d Centroid = (% 5.3lf,% 5.3lf)", c,
@@ -380,21 +382,20 @@ int main(int argc, char** argv) {
         }
         std::printf("  Value = % 10.6lf  Err = % lf\n",
                     cellvecout[c], error);
-
-        toterr += error*error;
       }
+      toterr += error*error;
+    }
 
-      if (numpe == 1) {
-        // total L2 norm
-        std::printf("\n\nL2 NORM OF ERROR = %lf\n\n", sqrt(toterr));
-      } else {
-        std::cout << std::flush << std::endl;
-        MPI_Barrier(MPI_COMM_WORLD);
-        double globalerr;
-        MPI_Reduce(&toterr, &globalerr, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+    if (numpe == 1) {
+      // total L2 norm
+      std::printf("\n\nL2 NORM OF ERROR = %lf\n\n", sqrt(toterr));
+    } else {
+      std::cout << std::flush << std::endl;
+      MPI_Barrier(MPI_COMM_WORLD);
+      double globalerr;
+      MPI_Reduce(&toterr, &globalerr, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
 
-        if (rank == 0) std::printf("\n\nL2 NORM OF ERROR = %lf\n\n", sqrt(globalerr));
-      }
+      if (rank == 0) std::printf("\n\nL2 NORM OF ERROR = %lf\n\n", sqrt(globalerr));
     }
 
     // Dump output, if requested
@@ -515,7 +516,7 @@ int main(int argc, char** argv) {
     gettimeofday(&end, 0);
     timersub(&end, &begin, &diff);
     const float seconds = diff.tv_sec + 1.0E-6*diff.tv_usec;
-    std::cout << "Time: " << seconds << std::endl;
+    if (rank == 0) std::cout << "Time: " << seconds << std::endl;
 
     // Output results for small test cases
     if (n_target < 10) {

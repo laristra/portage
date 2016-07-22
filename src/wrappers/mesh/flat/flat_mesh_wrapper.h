@@ -161,7 +161,7 @@ class Flat_Mesh_Wrapper {
   }
 
   //! get coordinates
-  Portage::vector<T>& get_coords() { return coords_; }
+  std::vector<T>& get_coords() { return coords_; }
 
   //! get nodes per cell
   int get_nodes_per_cell() { return nodesPerCell_; }
@@ -170,7 +170,7 @@ class Flat_Mesh_Wrapper {
   int space_dimension() { return dim_; }
 
 private:
-  Portage::vector<T> coords_;
+  std::vector<T> coords_;
   const int nodesPerCell_;
   const int dim_;
 

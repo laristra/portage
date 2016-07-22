@@ -6,7 +6,7 @@
 #ifndef MPI_BOUNDING_BOXES_H_
 #define MPI_BOUNDING_BOXES_H_
 
-#define DEBUG_MPI
+//#define DEBUG_MPI
 
 #include "portage/support/portage.h"
 
@@ -85,7 +85,7 @@ class MPI_Bounding_Boxes {
     int sourceDim = source_mesh_flat.space_dimension();
     int sourceNodesPerCell = source_mesh_flat.get_nodes_per_cell();
     int sourceCellStride = sourceNodesPerCell*sourceDim;
-    Portage::vector<double>& sourceCoords = source_mesh_flat.get_coords();
+    std::vector<double>& sourceCoords = source_mesh_flat.get_coords();
 
     // Compute the bounding box for the source mesh on this rank
     double sourceBoundingBox[2*sourceDim];
@@ -155,10 +155,8 @@ class MPI_Bounding_Boxes {
     for (unsigned int i=0; i<commSize; i++) totalRecvSize += recvCounts[i]; 
     std::vector<double> newCoords(sourceCellStride*totalRecvSize);
 
-#ifdef DEBUG_MPI
     std::cout << "Received " << commRank << " " << recvCounts[0] << " " << recvCounts[1] << " " << totalRecvSize
               << " " << (totalRecvSize - recvCounts[commRank]) << std::endl;
-#endif
 
     // Copy source cells that will stay on this rank into the proper place in the new vector
     int localOffset = 0;
@@ -206,9 +204,10 @@ class MPI_Bounding_Boxes {
     // Send and receive each field to be remapped (might be more efficient to consolidate sends)
     for (unsigned int s=0; s<source_state_flat.get_num_vectors(); s++)
     {
-      Portage::vector<double>& sourceState = source_state_flat.get_vector(s);
+      std::vector<double>& sourceState = source_state_flat.get_vector(s);
       std::vector<double> newField(totalRecvSize);
-      std::copy(sourceState.begin(), sourceState.end(), newField.begin() + localOffset);
+      if (recvCounts[commRank] > 0)
+        std::copy(sourceState.begin(), sourceState.end(), newField.begin() + localOffset);
       writeOffset = 0;
 
       // Each rank will do a non-blocking receive from each rank from which it will receive source state

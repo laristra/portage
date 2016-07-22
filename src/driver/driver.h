@@ -844,6 +844,7 @@ unsigned int dim_;
       tot_seconds += seconds;
     }
 
+    MPI_Barrier(MPI_COMM_WORLD);
     if (comm_rank == 0) std::cout << "Transform Time: " << tot_seconds << std::endl;
   }
 
@@ -921,7 +922,6 @@ unsigned int dim_;
 #ifdef ENABLE_PROFILE
       __itt_pause();
 #endif
-
       gettimeofday(&end, 0);
       timersub(&end, &begin, &diff);
       float seconds = diff.tv_sec + 1.0E-6*diff.tv_usec;

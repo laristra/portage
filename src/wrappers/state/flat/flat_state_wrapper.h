@@ -37,7 +37,7 @@ class Flat_State_Wrapper {
       int dataSize = input.get_data_size(entity, var_names[i]);
       T* data;
       input.get_data(entity, var_names[i], &data);
-      Portage::vector<T> field;
+      std::vector<T> field;
       field.resize(dataSize);
       std::copy(data, data+dataSize, field.begin());
       state_.push_back(field);
@@ -73,7 +73,7 @@ class Flat_State_Wrapper {
   /*!
     @brief Get the data vector
   */
-  Portage::vector<T>& get_vector(int index) { return state_[index]; }
+  std::vector<T>& get_vector(int index) { return state_[index]; }
 
   /*! 
     @brief Get the number of data vectors
@@ -81,7 +81,7 @@ class Flat_State_Wrapper {
   int get_num_vectors() { return state_.size(); }
 
 private:
-  Portage::vector<Portage::vector<T>> state_;
+  std::vector<std::vector<T>> state_;
   std::map<std::string, int> name_map_;
 
 }; // Flat_State_Wrapper
