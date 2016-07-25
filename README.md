@@ -33,7 +33,7 @@ Execute the following from the Jali root directory:
 # varan
 export MODULEPATH=""
 . /opt/local/packages/Modules/default/init/sh
-module load intel/15.0.3 openmpi/1.6.5
+module load intel/15.0.3 openmpi/1.6.5 cmake
 JALI_INSTALL_PREFIX=/usr/local/codes/ngc/private/jali-0.9.0-intel-15.0.3
 mkdir build
 cd build
