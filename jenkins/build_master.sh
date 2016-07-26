@@ -27,6 +27,7 @@ export MODULEPATH=""
 . /opt/local/packages/Modules/default/init/sh
 module load intel/15.0.3
 module load openmpi/1.6.5
+module load cmake
 
 echo $WORKSPACE
 cd $WORKSPACE
