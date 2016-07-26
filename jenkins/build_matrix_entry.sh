@@ -50,6 +50,7 @@ export MODULEPATH=""
 . /opt/local/packages/Modules/default/init/sh
 module load $cxxmodule
 module load openmpi/1.6.5
+module load cmake # 3.0 or higher is required
 
 echo $WORKSPACE
 cd $WORKSPACE

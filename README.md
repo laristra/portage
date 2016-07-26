@@ -33,7 +33,7 @@ Execute the following from the Jali root directory:
 # varan
 export MODULEPATH=""
 . /opt/local/packages/Modules/default/init/sh
-module load intel/15.0.3 openmpi/1.6.5
+module load intel/15.0.3 openmpi/1.6.5 cmake
 JALI_INSTALL_PREFIX=/usr/local/codes/ngc/private/jali-0.9.0-intel-15.0.3
 mkdir build
 cd build
@@ -60,7 +60,7 @@ verison of FleCSI on Varan.  An example is below:
 # varan::flecsi
 export MODULEPATH=""
 . /opt/local/packages/Modules/default/init/sh
-module load gcc/5.3.0 openmpi/1.6.5
+module load gcc/5.3.0 openmpi/1.6.5 cmake
 JALI_INSTALL_PREFIX=/usr/local/codes/ngc/private/jali-0.9.0-gcc-5.3.0
 FLECSI_INSTALL_DIR=/usr/local/codes/ngc/private/flecsi-gcc
 mkdir build-flecsi
