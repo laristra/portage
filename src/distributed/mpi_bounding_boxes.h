@@ -155,8 +155,10 @@ class MPI_Bounding_Boxes {
     for (unsigned int i=0; i<commSize; i++) totalRecvSize += recvCounts[i]; 
     std::vector<double> newCoords(sourceCellStride*totalRecvSize);
 
+#ifdef DEBUG_MPI
     std::cout << "Received " << commRank << " " << recvCounts[0] << " " << recvCounts[1] << " " << totalRecvSize
               << " " << (totalRecvSize - recvCounts[commRank]) << std::endl;
+#endif
 
     // Copy source cells that will stay on this rank into the proper place in the new vector
     int localOffset = 0;

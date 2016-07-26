@@ -27,11 +27,6 @@ namespace Portage {
   decomposing into tets.
 */
 
-namespace {  // unnamned
-//! helper function:  convert Jali point to Portage point
-
-}  // namespace unnamed
-
 template <class T=double>
 class Flat_Mesh_Wrapper {
  public:

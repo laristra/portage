@@ -203,7 +203,8 @@ int main(int argc, char** argv) {
   std::shared_ptr<Jali::Mesh> inputMesh;
   std::shared_ptr<Jali::Mesh> targetMesh;
 
-  // Set up a local communicator
+  // Set up a local communicator so that we can define mesh partitions
+  // explicitly on each rank without Jali distributing it for us
   MPI_Group world_group, local_group;
   MPI_Comm_group(MPI_COMM_WORLD, &world_group);
   int ranks[1];  ranks[0] = rank;
