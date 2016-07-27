@@ -24,6 +24,9 @@
 #include "portage/intersect/intersect_r3d.h"
 #include "portage/interpolate/interpolate_1st_order.h"
 #include "portage/interpolate/interpolate_2nd_order.h"
+#include "portage/wrappers/mesh/flat/flat_mesh_wrapper.h"
+#include "portage/wrappers/state/flat/flat_state_wrapper.h"
+#include "portage/distributed/mpi_bounding_boxes.h"
 
 /*!
   @file driver.h
@@ -372,6 +375,9 @@ void run() {
 
   // Collect all cell based variables and remap them
   {
+    int comm_size;
+    MPI_Comm_size(MPI_COMM_WORLD, &comm_size);
+
     std::vector<std::string> source_cellvar_names;
     std::vector<std::string> target_cellvar_names;
     for (int i = 0; i < nvars; ++i) {
@@ -397,7 +403,9 @@ void run() {
         }
         case 3: {
           (interp_order_ == 1) ?
-              run_3D_CELL_order1(source_cellvar_names, target_cellvar_names) :
+              (comm_size > 1) ? 
+                 run_3D_CELL_order1_distributed(source_cellvar_names, target_cellvar_names) :
+                 run_3D_CELL_order1(source_cellvar_names, target_cellvar_names) :
               run_3D_CELL_order2(source_cellvar_names, target_cellvar_names);
           break;
         }
@@ -458,6 +466,9 @@ void run_2D_CELL_order2(std::vector<std::string> source_cellvar_names,
 /// @brief 1st order remapping of cell centered data on 3D meshes
 void run_3D_CELL_order1(std::vector<std::string> source_cellvar_names,
                         std::vector<std::string> target_cellvar_names);
+/// @brief Disributed 1st order remapping of cell centered data on 3D meshes
+void run_3D_CELL_order1_distributed(std::vector<std::string> source_cellvar_names,
+                                    std::vector<std::string> target_cellvar_names);
 /// @brief 2nd order remapping of cell centered data on 3D meshes
 void run_3D_CELL_order2(std::vector<std::string> source_cellvar_names,
                         std::vector<std::string> target_cellvar_names);
@@ -738,6 +749,105 @@ unsigned int dim_;
     std::cout << "Transform Time: " << tot_seconds << std::endl;
   }
 
+  // Distributed 1st order remapping of cell centered data on 3D meshes
+  template<class SourceMesh_Wrapper, class SourceState_Wrapper,
+      class TargetMesh_Wrapper, class TargetState_Wrapper>
+      void
+      Driver<SourceMesh_Wrapper,
+      SourceState_Wrapper,
+      TargetMesh_Wrapper,
+      TargetState_Wrapper>::run_3D_CELL_order1_distributed(std::vector<std::string>
+                                                           source_var_names,
+                                                           std::vector<std::string>
+                                                           target_var_names) {
+    float tot_seconds = 0.0;
+
+    // Get the rank for this process
+    int comm_rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &comm_rank);
+
+    // Convert the source mesh and state to a flat representation;
+    // Since we are not sending any target mesh data over MPI, we don't need
+    // to convert the target mesh or state to a flat representation
+    Flat_Mesh_Wrapper<> source_mesh_flat(8, source_mesh_);
+    Flat_State_Wrapper<> source_state_flat(source_state_, source_remap_var_names_);
+
+    // Use a bounding box distributor to send the source cells to the target
+    // paritions where they are needed
+    MPI_Bounding_Boxes distributor;
+    distributor.distribute(source_mesh_flat, source_state_flat, target_mesh_, target_state_);
+
+    // Get an instance of the desired search algorithm type
+    const SearchKDTree<3, Flat_Mesh_Wrapper<>, TargetMesh_Wrapper>
+        search(source_mesh_flat, target_mesh_);
+
+    // Get an instance of the desired intersect algorithm type
+    const IntersectR3D<Flat_Mesh_Wrapper<>, TargetMesh_Wrapper>
+        intersect{source_mesh_flat, target_mesh_};
+
+    int nvars = source_var_names.size();
+    for (int i = 0; i < nvars; ++i) {
+      if (comm_rank == 0)
+        std::cout << "Remapping variable " << source_var_names[i]
+                  << " to variable " << target_var_names[i]
+                  << " using a 1st order accurate algorithm" << std::endl;
+
+      // Get an instance of the 1st order algorithm
+      const Interpolate_1stOrder<Flat_Mesh_Wrapper<>, TargetMesh_Wrapper,
+          Flat_State_Wrapper<>, CELL>
+          interpolater(source_mesh_flat, target_mesh_,
+                       source_state_flat, source_var_names[i]);
+
+      // Make the remapper instance
+      RemapFunctor<SearchKDTree<3, Flat_Mesh_Wrapper<>, TargetMesh_Wrapper>,
+          IntersectR3D<Flat_Mesh_Wrapper<>, TargetMesh_Wrapper>,
+          Interpolate_1stOrder<Flat_Mesh_Wrapper<>, TargetMesh_Wrapper,
+          Flat_State_Wrapper<>, CELL> >
+          remapper(&search, &intersect, &interpolater);
+
+#ifdef ENABLE_PROFILE
+      __itt_resume();
+#endif
+
+      struct timeval begin, end, diff;
+      gettimeofday(&begin, 0);
+
+       // This populates targetField with the values returned by the
+       // remapper operator
+
+       /* UNCOMMENT WHEN WE RESTORE get_type in jali_state_wrapper
+          if (typeid(source_state_.get_type(source_var_names[i])) ==
+          typeid(double)) {*/
+      
+      double *target_field_raw = nullptr;
+      target_state_.get_data(CELL, target_var_names[i], &target_field_raw);
+      Portage::pointer<double> target_field(target_field_raw);
+
+      Portage::transform((counting_iterator)(target_mesh_.begin(CELL)),
+                         (counting_iterator)(target_mesh_.end(CELL)),
+                         target_field, remapper);
+      
+      /*  UNCOMMENT WHEN WE RESTORE get_type in jali_state_wrapper
+          } else {
+          std::cerr << "Cannot remap " << source_var_names[i] <<
+          " because it is not a scalar double variable\n";
+          continue;
+          }*/
+      
+#ifdef ENABLE_PROFILE
+      __itt_pause();
+#endif
+
+      gettimeofday(&end, 0);
+      timersub(&end, &begin, &diff);
+      float seconds = diff.tv_sec + 1.0E-6*diff.tv_usec;
+      tot_seconds += seconds;
+    }
+
+    MPI_Barrier(MPI_COMM_WORLD);
+    if (comm_rank == 0) std::cout << "Transform Time: " << tot_seconds << std::endl;
+  }
+
   // 2nd order remapping of cell centered data on 3D meshes
   template<class SourceMesh_Wrapper, class SourceState_Wrapper,
       class TargetMesh_Wrapper, class TargetState_Wrapper>
@@ -812,7 +922,6 @@ unsigned int dim_;
 #ifdef ENABLE_PROFILE
       __itt_pause();
 #endif
-
       gettimeofday(&end, 0);
       timersub(&end, &begin, &diff);
       float seconds = diff.tv_sec + 1.0E-6*diff.tv_usec;

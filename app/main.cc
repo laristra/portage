@@ -133,8 +133,9 @@ std::vector<example_properties> setup_examples() {
 // examples from setup_examples()
 void print_usage() {
   auto examples = setup_examples();
-  std::printf("Usage: portageapp example-number ncells [y]\n");
+  std::printf("Usage: portageapp example-number nsourcecells ntargetcells [y] [y]\n");
   std::printf("If 'y' specified, dump data to input.exo and output.exo\n");
+  std::printf("If second 'y' specified, reverse source ranks in distributed examples\n");
   std::printf("List of example numbers:\n");
   int i = 0;
   bool separated = false;
@@ -163,34 +164,36 @@ int main(int argc, char** argv) {
 #endif
 
   // Get the example to run from command-line parameter
-  int example_num, n;
+  int example_num, n_source, n_target;
   // Should we dump data?
-  bool dump_output;
+  bool dump_output, reverse_source_ranks;
   // Must specify both the example number and size
-  if (argc <= 2) {
+  if (argc <= 3) {
     print_usage();
     return 0;
   }
   example_num = atoi(argv[1]);
-  n = atoi(argv[2]);
-  dump_output = (argc == 4) ?
-      ((std::string(argv[3]) == "y") ? true : false)
+  n_source = atoi(argv[2]);
+  n_target = atoi(argv[3]);
+  dump_output = (argc == 5) ?
+      ((std::string(argv[4]) == "y") ? true : false)
       : false;
+  reverse_source_ranks = (argc >= 6) ? ((std::string(argv[5]) == "y") ? true : false) : false;
 
   // Initialize MPI
   int mpi_init_flag;
   MPI_Initialized(&mpi_init_flag);
   if (!mpi_init_flag)
     MPI_Init(&argc, &argv);
-  int numpe;
+  int numpe, rank;
   MPI_Comm_size(MPI_COMM_WORLD, &numpe);
-  if (numpe > 1) {
-    std::printf("error - only 1 mpi rank is allowed\n");
-    std::exit(1);
-  }
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-  std::printf("starting portageapp...\n");
-  std::printf("running example %d\n", example_num);
+  if (rank == 0)
+  {
+    std::printf("starting portageapp...\n");
+    std::printf("running example %d\n", example_num);
+  }
 
   // Get the properties for the requested example problem
   example_properties example = setup_examples()[example_num];
@@ -200,39 +203,84 @@ int main(int argc, char** argv) {
   std::shared_ptr<Jali::Mesh> inputMesh;
   std::shared_ptr<Jali::Mesh> targetMesh;
 
+  // Set up a local communicator so that we can define mesh partitions
+  // explicitly on each rank without Jali distributing it for us
+  MPI_Group world_group, local_group;
+  MPI_Comm_group(MPI_COMM_WORLD, &world_group);
+  int ranks[1];  ranks[0] = rank;
+  MPI_Group_incl(world_group, 1, ranks, &local_group);
+  MPI_Comm local_comm;
+  MPI_Comm_create(MPI_COMM_WORLD, local_group, &local_comm);
+  Jali::MeshFactory mf_local(local_comm);
+
   // Cell-centered remaps
   if (example.cell_centered) {
     // Construct the meshes
     if (example.dim == 2) {
       mf.included_entities({Jali::Entity_kind::FACE});
       // 2d quad input mesh from (0,0) to (1,1) with nxn zones
-      inputMesh = mf(0.0, 0.0, 1.0, 1.0, n, n);
+      inputMesh = mf(0.0, 0.0, 1.0, 1.0, n_source, n_source);
       if (example.conformal) {
         // 2d quad output mesh from (0,0) to (1,1) with (n+1)x(n+1) zones
-        targetMesh = mf(0.0, 0.0, 1.0, 1.0, n+1, n+1);
+        targetMesh = mf(0.0, 0.0, 1.0, 1.0, n_target, n_target);
       } else {
         // 2d quad output mesh from (0,0) to (1+1.5dx,1) with (n+1)x(n+1)
         // zones and dx equal to the inputMesh grid spacing
-        double dx = 1.0/static_cast<double>(n);
-        targetMesh = mf(0.0, 0.0, 1.0+1.5*dx, 1.0, n+1, n+1);
+        double dx = 1.0/static_cast<double>(n_target);
+        targetMesh = mf(0.0, 0.0, 1.0+1.5*dx, 1.0, n_target, n_target);
       }
     } else {  // 3d
       mf.included_entities({Jali::Entity_kind::FACE,
                             Jali::Entity_kind::EDGE,
                             Jali::Entity_kind::WEDGE});
-      // 3d hex input mesh from (0,0,0) to (1,1,1) with nxnxn zones
-      inputMesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, n, n, n);
-      if (example.conformal) {
-        // 3d hex output mesh from (0,0,0) to (1,1,1) with
-        // (n+1)x(n+1)x(n+1) zones
-        targetMesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, n+1, n+1, n+1);
+      // generate the input and target meshes for the non-distributed case
+      if (numpe == 1) {
+        // 3d hex input mesh from (0,0,0) to (1,1,1) with n_source x n_source x n_source zones
+        inputMesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, n_source, n_source, n_source);
+        if (example.conformal) {
+           // 3d hex output mesh from (0,0,0) to (1,1,1) with n_target x n_target x n_target zones
+          targetMesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, n_target, n_target, n_target);
+        } else {
+          // 3d hex output mesh from (0,0,0) to (1+1.5dx,1+1.5dx,1+1.5dx) with
+          // (n_target)x(n_target)x(n_target) zones and dx equal to the inputMesh grid spacing
+          double dx = 1.0/static_cast<double>(n_target);
+          targetMesh = mf(0.0, 0.0, 0.0, 1.0+1.5*dx, 1.0+1.5*dx, 1.0+1.5*dx,
+                          n_target, n_target, n_target);
+        }
+      // generate the input and target meshes for the distributed case
       } else {
-        // 3d hex output mesh from (0,0,0) to (1+1.5dx,1+1.5dx,1+1.5dx) with
-        // (n+1)x(n+1)x(n+1) zones and dx equal to the inputMesh grid spacing
-        double dx = 1.0/static_cast<double>(n);
-        targetMesh = mf(0.0, 0.0, 0.0, 1.0+1.5*dx, 1.0+1.5*dx, 1.0+1.5*dx,
-                        n+1, n+1, n+1);
-      }
+        mf_local.included_entities({Jali::Entity_kind::FACE,
+                                    Jali::Entity_kind::EDGE,
+                                    Jali::Entity_kind::WEDGE});
+        // compute the local partition of the source mesh based on the rank;
+        // n_source is the number of cells in each dimension in each partition;
+        // the number of ranks must be a perfect cube (1, 8, 27, etc.)
+        int source_dim = cbrt(1.0f*numpe) + 0.01f;
+        double source_step = 1.0f / source_dim;
+        int rrank = reverse_source_ranks ? numpe - rank - 1 : rank;
+        int source_x = rrank % source_dim;
+        int source_y = (rrank / source_dim) % source_dim;
+        int source_z = rrank / (source_dim*source_dim);
+        inputMesh = mf_local(source_step*source_x, source_step*source_y, source_step*source_z,
+                             source_step*(source_x+1), source_step*(source_y+1), source_step*(source_z+1),
+                             n_source, n_source, n_source);
+        // compute the local partition of the target mesh based on the rank;
+        // n_target is the number of cells in each dimension in each partition;
+        // the number of ranks must be a perfect cube (1, 8, 27, etc.)
+        int target_dim = cbrt(1.0f*numpe) + 0.01f;
+        double target_step = 1.0f / target_dim;
+        if (!example.conformal)
+        {
+          double dx = 1.0/static_cast<double>(n_target*target_dim);
+          target_step = (1.0f + 1.5*dx) / target_dim;
+        }
+        int target_x = rank % target_dim;
+        int target_y = (rank / target_dim) % target_dim;
+        int target_z = rank / (target_dim*target_dim);
+        targetMesh = mf_local(target_step*target_x, target_step*target_y, target_step*target_z,
+                              target_step*(target_x+1), target_step*(target_y+1), target_step*(target_z+1),
+                              n_target, n_target, n_target);
+      }    
     }
 
     // Wrappers for interfacing with the underlying mesh data structures
@@ -296,33 +344,35 @@ int main(int argc, char** argv) {
     d.run();
 
     // Dump some timing information
+    if (numpe > 1) MPI_Barrier(MPI_COMM_WORLD);
     gettimeofday(&end, 0);
     timersub(&end, &begin, &diff);
     const float seconds = diff.tv_sec + 1.0E-6*diff.tv_usec;
-    std::cout << "Time: " << seconds << std::endl;
+    if (rank == 0) std::cout << "Time: " << seconds << std::endl;
 
     // Output results for small test cases
-    if (n < 10) {
-      double toterr = 0.0;
+    double toterr = 0.0;
 
+    if (n_target < 10)
       std::cout << "celldata vector on target mesh after remapping is:"
                 << std::endl;
 
-      for (int c = 0; c < ntarcells; ++c) {
-        std::vector<double> ccen;
-        targetMeshWrapper.cell_centroid(c, &ccen);
+    for (int c = 0; c < ntarcells; ++c) {
+      std::vector<double> ccen;
+      targetMeshWrapper.cell_centroid(c, &ccen);
 
-        double error;
-        if (example.linear) {
-          error = ccen[0]+ccen[1] - cellvecout[c];
-          if (example.dim == 3)
-            error += ccen[2];
-        } else {  // quadratic
-          error = ccen[0]*ccen[0]+ccen[1]*ccen[1] - cellvecout[c];
-          if (example.dim == 3)
-            error += ccen[2]*ccen[2];
-        }
+      double error;
+      if (example.linear) {
+        error = ccen[0]+ccen[1] - cellvecout[c];
+        if (example.dim == 3)
+          error += ccen[2];
+      } else {  // quadratic
+        error = ccen[0]*ccen[0]+ccen[1]*ccen[1] - cellvecout[c];
+        if (example.dim == 3)
+          error += ccen[2]*ccen[2];
+      }
 
+      if (n_target < 10) {
         // dump diagnostics for each cell
         if (example.dim == 2) {
           std::printf("Cell=% 4d Centroid = (% 5.3lf,% 5.3lf)", c,
@@ -333,11 +383,20 @@ int main(int argc, char** argv) {
         }
         std::printf("  Value = % 10.6lf  Err = % lf\n",
                     cellvecout[c], error);
-
-        toterr += error*error;
       }
+      toterr += error*error;
+    }
+
+    if (numpe == 1) {
       // total L2 norm
       std::printf("\n\nL2 NORM OF ERROR = %lf\n\n", sqrt(toterr));
+    } else {
+      std::cout << std::flush << std::endl;
+      MPI_Barrier(MPI_COMM_WORLD);
+      double globalerr;
+      MPI_Reduce(&toterr, &globalerr, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+
+      if (rank == 0) std::printf("\n\nL2 NORM OF ERROR = %lf\n\n", sqrt(globalerr));
     }
 
     // Dump output, if requested
@@ -360,34 +419,34 @@ int main(int argc, char** argv) {
       // Create a 2d quad input mesh from (0,0) to (1,1) with nxn zones;
       // The "true" arguments request that a dual mesh be constructed with
       // wedges, corners, etc.
-      inputMesh = mf(0.0, 0.0, 1.0, 1.0, n, n);
+      inputMesh = mf(0.0, 0.0, 1.0, 1.0, n_source, n_source);
       if (example.conformal) {
         // Create a 2d quad output mesh from (0,0) to (1,1) with (n-2)x(n-2)
         // zones.  The "true" arguments request that a dual mesh be constructed
         // with wedges, corners, etc.
-        targetMesh = mf(0.0, 0.0, 1.0, 1.0, n-2, n-2);
+        targetMesh = mf(0.0, 0.0, 1.0, 1.0, n_target, n_target);
       } else {
         // 2d quad output mesh from (0,0) to (1+1.5dx,1) with (n-2)x(n-2)
         // zones and dx equal to the inputMesh grid spacing
-        double dx = 1.0/static_cast<double>(n);
-        targetMesh = mf(0.0, 0.0, 1.0+1.5*dx, 1.0, n-2, n-2);
+        double dx = 1.0/static_cast<double>(n_target);
+        targetMesh = mf(0.0, 0.0, 1.0+1.5*dx, 1.0, n_target, n_target);
       }
     } else {  // 3d
       // Create a 3d hex input mesh from (0,0,0) to (1,1,1) with nxnxn zones;
       // The "true" arguments request that a dual mesh be constructed with
       // wedges, corners, etc.
-      inputMesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, n, n, n);
+      inputMesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, n_source, n_source, n_source);
       if (example.conformal) {
         // Create a 3d hex output mesh from (0,0,0) to (1,1,1) with
         // (n-2)x(n-2)x(n-2) zones.  The "true" arguments request that a dual
         // mesh be constructed with wedges, corners, etc.
-        targetMesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, n-2, n-2, n-2);
+        targetMesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, n_target, n_target, n_target);
       } else {
         // 3d hex output mesh from (0,0,0) to (1+1.5dx,1+1.5dx,1+1.5dx) with
         // (n-2)x(n-2)x(n-2) zones and dx equal to the inputMesh grid spacing
-        double dx = 1.0/static_cast<double>(n);
+        double dx = 1.0/static_cast<double>(n_target);
         targetMesh = mf(0.0, 0.0, 0.0, 1.0+1.5*dx, 1.0+1.5*dx, 1.0+1.5*dx,
-                        n-2, n-2, n-2);
+                        n_target, n_target, n_target);
       }
     }
 
@@ -458,10 +517,10 @@ int main(int argc, char** argv) {
     gettimeofday(&end, 0);
     timersub(&end, &begin, &diff);
     const float seconds = diff.tv_sec + 1.0E-6*diff.tv_usec;
-    std::cout << "Time: " << seconds << std::endl;
+    if (rank == 0) std::cout << "Time: " << seconds << std::endl;
 
     // Output results for small test cases
-    if (n < 10) {
+    if (n_target < 10) {
       double toterr = 0.0;
       double stdval, err;
       if (example.dim == 2) {

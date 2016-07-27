@@ -100,6 +100,23 @@ class Flecsi_State_Wrapper {
 
     return UNKNOWN_KIND;
   }
+
+  /*!
+    @brief Get the data size for the given field
+    @param[in] on_what  The entity type on which the data field is defined
+    @param[in] var_name The string name of the data field
+    @return The data size for the field with the given name on the given entity type
+   */
+  int get_data_size(const Entity_kind on_what, const std::string var_name) const {
+
+   const const_string_t flecsiname(var_name.c_str());
+   auto dat = access_state(flecsi_mesh_,
+                           std::forward<const const_string_t>(flecsiname),
+                           real_t);
+   return (dat.size());
+
+  }
+
   
 
  private:
