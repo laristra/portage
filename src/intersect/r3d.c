@@ -27,16 +27,15 @@
 #define ONE_SIXTH 0.16666666666666666666666666666666666666666666666666666667
 #define dot(va, vb) (va.x*vb.x + va.y*vb.y + va.z*vb.z)
 #define wav(va, wa, vb, wb, vr) {			\
-  r3d_real onebysum = 1.0/(wa + wb); \
-	vr.x = (wa*va.x + wb*vb.x)*onebysum;	\
-	vr.y = (wa*va.y + wb*vb.y)*onebysum;	\
-	vr.z = (wa*va.z + wb*vb.z)*onebysum;	\
+	vr.x = (wa*va.x + wb*vb.x)/(wa + wb);	\
+	vr.y = (wa*va.y + wb*vb.y)/(wa + wb);	\
+	vr.z = (wa*va.z + wb*vb.z)/(wa + wb);	\
 }
 #define norm(v) {					\
-    r3d_real tmplen = 1.0/(sqrt(dot(v, v)) + 1.0e-299);	\
-	v.x *= tmplen;		\
-	v.y *= tmplen;		\
-	v.z *= tmplen;		\
+	r3d_real tmplen = sqrt(dot(v, v));	\
+	v.x /= (tmplen + 1.0e-299);		\
+	v.y /= (tmplen + 1.0e-299);		\
+	v.z /= (tmplen + 1.0e-299);		\
 }
 
 void r3d_clip(r3d_poly* poly, r3d_plane* planes, r3d_int nplanes) {
