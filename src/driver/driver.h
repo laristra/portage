@@ -20,7 +20,7 @@
 #include "portage/wrappers/state/jali/jali_state_wrapper.h"
 #include "portage/wrappers/mesh/jali/jali_mesh_wrapper.h"
 #include "portage/search/search_kdtree.h"
-#include "portage/intersect/intersectClipper.h"
+#include "portage/intersect/intersect_r2d.h"
 #include "portage/intersect/intersect_r3d.h"
 #include "portage/interpolate/interpolate_1st_order.h"
 #include "portage/interpolate/interpolate_2nd_order.h"
@@ -516,7 +516,7 @@ unsigned int dim_;
         search(source_mesh_, target_mesh_);
 
     // Get an instance of the desired intersect algorithm type
-    const IntersectClipper<SourceMesh_Wrapper, TargetMesh_Wrapper>
+    const IntersectR2D<SourceMesh_Wrapper, TargetMesh_Wrapper>
         intersect{source_mesh_, target_mesh_};
 
     int nvars = source_var_names.size();
@@ -532,7 +532,7 @@ unsigned int dim_;
 
       // Make the remapper instance
       RemapFunctor<SearchKDTree<2, SourceMesh_Wrapper, TargetMesh_Wrapper>,
-          IntersectClipper<SourceMesh_Wrapper, TargetMesh_Wrapper>,
+          IntersectR2D<SourceMesh_Wrapper, TargetMesh_Wrapper>,
           Interpolate_1stOrder<SourceMesh_Wrapper, TargetMesh_Wrapper,
           SourceState_Wrapper,
           CELL>>
@@ -600,7 +600,7 @@ unsigned int dim_;
         search(source_mesh_, target_mesh_);
 
     // Get an instance of the desired intersect algorithm type
-    const IntersectClipper<SourceMesh_Wrapper, TargetMesh_Wrapper>
+    const IntersectR2D<SourceMesh_Wrapper, TargetMesh_Wrapper>
         intersect{source_mesh_, target_mesh_};
 
     int nvars = source_var_names.size();
@@ -618,7 +618,7 @@ unsigned int dim_;
 
       // Make the remapper instance
       RemapFunctor<SearchKDTree<2, SourceMesh_Wrapper, TargetMesh_Wrapper>,
-          IntersectClipper<SourceMesh_Wrapper, TargetMesh_Wrapper>,
+          IntersectR2D<SourceMesh_Wrapper, TargetMesh_Wrapper>,
           Interpolate_2ndOrder<SourceMesh_Wrapper, TargetMesh_Wrapper,
           SourceState_Wrapper, CELL> >
           remapper(&search, &intersect, &interpolater);
@@ -953,7 +953,7 @@ unsigned int dim_;
         search(source_mesh_dual, target_mesh_dual);
 
     // Get an instance of the desired intersect algorithm type
-    const IntersectClipper<MeshWrapperDual<SourceMesh_Wrapper>,
+    const IntersectR2D<MeshWrapperDual<SourceMesh_Wrapper>,
         MeshWrapperDual<TargetMesh_Wrapper>>
         intersect{source_mesh_dual, target_mesh_dual};
 
@@ -970,7 +970,7 @@ unsigned int dim_;
 
       RemapFunctor<SearchKDTree<2, MeshWrapperDual<SourceMesh_Wrapper>,
           MeshWrapperDual<TargetMesh_Wrapper>>,
-          IntersectClipper<MeshWrapperDual<SourceMesh_Wrapper>,
+          IntersectR2D<MeshWrapperDual<SourceMesh_Wrapper>,
           MeshWrapperDual<TargetMesh_Wrapper>>,
           Interpolate_1stOrder<SourceMesh_Wrapper, TargetMesh_Wrapper,
           SourceState_Wrapper, NODE> >
@@ -1041,7 +1041,7 @@ unsigned int dim_;
         search(source_mesh_dual, target_mesh_dual);
 
     // Get an instance of the desired intersect algorithm type
-    const IntersectClipper<MeshWrapperDual<SourceMesh_Wrapper>,
+    const IntersectR2D<MeshWrapperDual<SourceMesh_Wrapper>,
         MeshWrapperDual<TargetMesh_Wrapper>>
         intersect{source_mesh_dual, target_mesh_dual};
 
@@ -1061,7 +1061,7 @@ unsigned int dim_;
       // Make the remapper instance
       RemapFunctor<SearchKDTree<2, MeshWrapperDual<SourceMesh_Wrapper>,
           MeshWrapperDual<TargetMesh_Wrapper>>,
-          IntersectClipper<MeshWrapperDual<SourceMesh_Wrapper>,
+          IntersectR2D<MeshWrapperDual<SourceMesh_Wrapper>,
           MeshWrapperDual<TargetMesh_Wrapper>>,
           Interpolate_2ndOrder<SourceMesh_Wrapper, TargetMesh_Wrapper,
           SourceState_Wrapper, NODE>>
@@ -1300,20 +1300,20 @@ unsigned int dim_;
     calculations.
     @tparam SearchType The type of search method (e.g. SearchSimple or
     SearchKDTree).
-    @tparam IsectType The type of intersect method (e.g. IntersectClipper).
+    @tparam IsectType The type of intersect method (e.g. IntersectR2D).
     @tparam InterpType The type of interpolation method (e.g. Interpolate_1stOrder
     or Interpolate_2ndOrder).
   */
   template <typename SearchType, typename IsectType, typename InterpType>
       struct RemapFunctor {
         const SearchType* search_;       ///< search method (e.g. SearchSimple)
-        const IsectType* intersect_;     ///< intersect method (e.g. IntersectClipper)
+        const IsectType* intersect_;     ///< intersect method (e.g. IntersectR2D)
         const InterpType* interpolater_;  ///< interpolation method (e.g. Interpolate_2ndOrder)
 
         /*!
           @brief Constructor.
           @param[in] searcher The search method to use (e.g. SearchSimple)
-          @param[in] intersecter The intersect method to use (e.g. IntersectClipper)
+          @param[in] intersecter The intersect method to use (e.g. IntersectR2D)
           @param[in] interpolater The interpolation method to use (e.g.
           Interpolate_2ndOrder)
         */
