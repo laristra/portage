@@ -41,31 +41,79 @@ public:
     sourceMeshWrapper.decompose_cell_into_tets(cellA, &source_coords);
     targetMeshWrapper.decompose_cell_into_tets(cellB, &target_coords);
 
+    // Bounding box of the target cell - will be used to compute
+    // epsilon for bounding box check. We could use the source cell
+    // coordinates to find the bounds as well but its probably an
+    // unnecessary computation (EVEN if the target cell is much
+    // smaller than the source cell)
+
+    std::array<double, 6> target_cell_bounds =  {1e99, -1e99, 1e99, -1e99,
+                                                 1e99, -1e99};
+
     std::vector<double> moments(4, 0);
 
-    std::vector<std::array<r3d_plane, 4>> target_faces_all;
-    target_faces_all.reserve(target_coords.size());
-    for (const auto &target_wedge : target_coords) {
+    std::vector<std::array<r3d_plane, 4>> target_tetfaces_all;
+    target_tetfaces_all.reserve(target_coords.size());
+    std::vector<std::array<double, 6>> target_tetbounds_all;
+    target_tetbounds_all.reserve(target_coords.size());
+
+    for (const auto &target_cell_tet : target_coords) {
       std::array<r3d_plane, 4> faces;
-      r3d_rvec3 verts2[4];
+      std::array<double, 6> bounds = {1e99, -1e99, 1e99, -1e99, 1e99, -1e99};
+      r3d_rvec3 verts2[4];      
       for (int i=0; i<4; i++)
-        for (int j=0; j<3; j++)
-          verts2[i].xyz[j] = target_wedge[i][j];
+        for (int j=0; j<3; j++) {
+          verts2[i].xyz[j] = target_cell_tet[i][j];
+          if (bounds[2*j] > verts2[i].xyz[j])
+            bounds[2*j] = verts2[i].xyz[j];
+          if (bounds[2*j+1] < verts2[i].xyz[j])
+            bounds[2*j+1] = verts2[i].xyz[j];
+        }
+      target_tetbounds_all.emplace_back(bounds);
+
+      for (int j = 0; j < 3; j++) {
+        if (target_cell_bounds[2*j] > bounds[2*j])
+          target_cell_bounds[2*j] = bounds[2*j];
+        if (target_cell_bounds[2*j+1] < bounds[2*j+1])
+          target_cell_bounds[2*j+1] = bounds[2*j+1];
+      }
+
       // Only do this check in Debug mode. This test is important,
       // otherwise R3D returns invalid results.
 #ifdef DEBUG
       if (r3d_orient(verts2) < 0)
         throw std::runtime_error("target_wedge has negative volume");
 #endif
+
       r3d_tet_faces_from_verts(&faces[0], verts2);
-      target_faces_all.emplace_back(faces);
+      target_tetfaces_all.emplace_back(faces);      
     }
 
-    for (const auto &source_wedge : source_coords) {
+    double MAXLEN = -1e99;
+    for (int j = 0; j < 3; j++) {
+      double len = target_cell_bounds[2*j+1]-target_cell_bounds[2*j];
+      if (MAXLEN < len) MAXLEN = len;
+    }
+
+    double eps = 1.0e-12*MAXLEN;  // used only for bounding box check
+    //                            // not for intersections
+
+
+    // Now intersect each tet from the source cell against each tet of
+    // the target cell (IF their bounding boxes overlap)
+
+    for (const auto &source_cell_tet : source_coords) {
       r3d_rvec3 verts1[4];
+      std::array<double, 6> source_tetbounds =  {1e99, -1e99, 1e99, -1e99, 1e99, -1e99};
       for (int i=0; i<4; i++)
-        for (int j=0; j<3; j++)
-          verts1[i].xyz[j] = source_wedge[i][j];
+        for (int j=0; j<3; j++)  {
+          verts1[i].xyz[j] = source_cell_tet[i][j];
+          if (source_tetbounds[2*j] > verts1[i].xyz[j])
+            source_tetbounds[2*j] = verts1[i].xyz[j];
+          if (source_tetbounds[2*j+1] < verts1[i].xyz[j])
+            source_tetbounds[2*j+1] = verts1[i].xyz[j];
+        }
+
       // Only do this check in Debug mode. This test is important,
       // otherwise R3D returns invalid results.
 #ifdef DEBUG
@@ -73,7 +121,24 @@ public:
         throw std::runtime_error("source_wedge has negative volume");
 #endif
 
-      for (auto &faces : target_faces_all) {
+      int t = 0;
+      for (auto &faces : target_tetfaces_all) {
+
+        const std::array<double, 6>& target_tetbounds = target_tetbounds_all[t++];
+        
+        // Check if the target and source bounding boxes overlap - eps
+        // is used to subject touching tets to the full intersection
+        // (just in case)
+
+        bool check_bb = true;
+        if (check_bb) {
+          bool disjoint = false;
+          for (int j = 0; j < 3 && !disjoint; ++j)
+            disjoint = (target_tetbounds[2*j] > source_tetbounds[2*j+1]+eps ||
+                        target_tetbounds[2*j+1] < source_tetbounds[2*j]-eps);
+          if (disjoint) continue;
+        }
+
         r3d_poly poly;
         r3d_init_tet(&poly, verts1);
         // Only do this check in Debug mode:
