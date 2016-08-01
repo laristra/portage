@@ -27,6 +27,10 @@ export MODULEPATH=""
 . /opt/local/packages/Modules/default/init/sh
 module load gcc/5.3.0 openmpi cmake
 
+# the system doxygen and LaTeX are too old; use these instead
+export PATH=/usr/local/codes/ngc/home/cmalone/texlive/2016/bin:$PATH
+DOXY_EXE=/home/cmalone/code/doxygen/build/bin/doxygen
+
 echo $WORKSPACE
 cd $WORKSPACE
 
@@ -38,6 +42,7 @@ cmake \
     -D CMAKE_C_COMPILER=`which mpicc` \
     -D Jali_DIR:FILEPATH=${JALI_INST}/lib \
     -D ENABLE_DOXYGEN=True \
+    -D DOXYGEN_EXECUTABLE=$DOXY_EXE \
     ..
 make doxygen
 
