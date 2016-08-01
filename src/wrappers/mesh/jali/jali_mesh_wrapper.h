@@ -329,7 +329,54 @@ class Jali_Mesh_Wrapper {
   // For this mesh type, that means returning a list of sides.
   void decompose_cell_into_tets(Jali::Entity_ID cellID,
       std::vector<std::array<Portage::Point<3>, 4>> *tcoords) const {
-    sides_get_coordinates(cellID, tcoords);
+    if (jali_mesh_.cell_get_type(cellID) == Jali::Cell_type::HEX) {
+      // Decompose a hex into a 5-tet decomposition.
+
+      // IMPORTANT: This only works well if the hex is planar. Otherwise we
+      // need to implement some more sophisticated solution.
+      std::vector<JaliGeometry::Point> coords;
+      jali_mesh_.cell_get_coordinates(cellID, &coords);
+      /*
+
+      The hex is returned using the following numbering::
+
+        7---6
+       /|  /|
+      4---5 |
+      | 3-|-2
+      |/  |/
+      0---1
+
+      Then `indexes` contains the 5-tet decomposition of this hex.
+
+      The tet's vertices are ordered in the following way:
+
+         3
+       / | \
+      /  |  \
+      2--|---1
+       \ | /
+         0
+      */
+      const int indexes[5][4] = {
+          {0,1,3,4},
+          {1,4,5,6},
+          {1,3,4,6},
+          {1,6,2,3},
+          {4,7,6,3}
+        };
+      for (unsigned int t=0; t<5; t++) {
+        std::array<Portage::Point<3>, 4> tmp;
+        for (int i=0; i<4; i++) {
+          for (int j=0; j<3; j++) {
+            tmp[i][j] = coords[indexes[t][i]][j];
+          }
+        }
+        tcoords->push_back(tmp);
+      }
+    } else {
+      sides_get_coordinates(cellID, tcoords);
+    }
   }
 
 
