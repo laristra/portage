@@ -28,7 +28,7 @@ export MODULEPATH=""
 module load gcc/5.3.0 openmpi cmake
 
 # the system doxygen and LaTeX are too old; use these instead
-export PATH=/usr/local/codes/ngc/home/cmalone/texlive/2016/bin:$PATH
+export PATH=/usr/local/codes/ngc/home/cmalone/texlive/2016/bin/x86_64-linux/:$PATH
 DOXY_EXE=/home/cmalone/code/doxygen/build/bin/doxygen
 
 echo $WORKSPACE
