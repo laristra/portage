@@ -39,7 +39,7 @@ namespace Portage {
   Journal on Scientific and Statistical Computing, Vol. 8, No. 3,
   pp. 305-321, 1987.
 
-  @todo Template on variable type ??
+  @todo Template on variable type (YES)
 */
 
 
@@ -52,33 +52,52 @@ class Interpolate_2ndOrder {
     @param[in] source_mesh The mesh wrapper used to query source mesh info
     @param[in] target_mesh The mesh wrapper used to query target mesh info
     @param[in] source_state The state-manager wrapper used to query field info
-    @param[in] interp_var_name Name of the field to be remapped
-    @param[in] limiter_type Gradient limiter type (see gradient.h)
+    @param[in] sources_and_weights Vector of source entities and their weights for each target entity
   */
 
   Interpolate_2ndOrder(SourceMeshType const & source_mesh,
                        TargetMeshType const & target_mesh,
                        StateType const & source_state,
-                       std::string const interp_var_name,
-                       LimiterType const limiter_type) :
+                       std::vector<std::vector<Weights_t>> const &
+                       sources_and_weights) :
       source_mesh_(source_mesh),
       target_mesh_(target_mesh),
       source_state_(source_state),
-      interp_var_name_(interp_var_name),
-      source_vals_(NULL) {
+      interp_var_name_("VariableNameNotSet"),
+      limiter_type_(NOLIMITER),
+      source_vals_(NULL),
+      sources_and_weights_(sources_and_weights) {}
+
+  /// Copy constructor (disabled)
+  //  Interpolate_2ndOrder(const Interpolate_2ndOrder &) = delete;
+
+  /// Assignment operator (disabled)
+  Interpolate_2ndOrder & operator = (const Interpolate_2ndOrder &) = delete;
+
+  /// Destructor
+  ~Interpolate_2ndOrder() {}
+
+
+  /// Set the name of the interpolation variable and the limiter type
+
+  void set_interpolation_variable(std::string const & interp_var_name,
+                                  LimiterType limiter_type = NOLIMITER) {
+    interp_var_name_ = interp_var_name;
+    limiter_type_ = limiter_type;
+
     // Extract the field data from the statemanager
-
-    source_state.get_data(on_what, interp_var_name, &source_vals_);
-
+    
+    source_state_.get_data(on_what, interp_var_name, &source_vals_);
+    
     // Compute the limited gradients for the field
-
+    
     Limited_Gradient<SourceMeshType, StateType, on_what>
-        limgrad(source_mesh, source_state, interp_var_name, limiter_type);
-
-
+        limgrad(source_mesh_, source_state_, interp_var_name, limiter_type_);
+    
+    
     int nentities = source_mesh_.end(on_what)-source_mesh_.begin(on_what);
     gradients_.resize(nentities);
-
+    
     // call transform functor to take the values of the variable on
     // the cells and compute a "limited" gradient of the field on the
     // cells (for transform definition, see portage.h)
@@ -93,16 +112,6 @@ class Interpolate_2ndOrder {
   }
 
 
-  /// Copy constructor (disabled)
-  Interpolate_2ndOrder(const Interpolate_2ndOrder &) = delete;
-
-  /// Assignment operator (disabled)
-  Interpolate_2ndOrder & operator = (const Interpolate_2ndOrder &) = delete;
-
-  /// Destructor
-  ~Interpolate_2ndOrder() {}
-
-
   /*!
     @brief Functor to do the actual interpolate calculation
     @param[in] cells_and_weights A pair of two vectors
@@ -115,17 +124,13 @@ class Interpolate_2ndOrder {
     of the weights vector (i.e. the volume of intersection) is used. Source
     entities may be repeated in the list if the intersection of a target entity
     and a source entity consists of two or more disjoint pieces
-    @param[in] targetCellId The index of the target cell.
+    @param[in] targetCellID The index of the target cell.
 
     @todo Cleanup the datatype for sources_and_weights - it is somewhat confusing.
     @todo must remove assumption that field is scalar
   */
 
-  double
-  operator() (std::pair<std::vector<int> const &,
-              std::vector<std::vector<double>> const &> sources_and_weights,
-              const int targetCellId)
-      const {
+  double operator() (const int targetCellID) const {
     // not implemented for all types - see specialization for cells and nodes
 
     std::cerr << "Interpolation operator not implemented for this entity type"
@@ -136,8 +141,10 @@ class Interpolate_2ndOrder {
   SourceMeshType const & source_mesh_;
   TargetMeshType const & target_mesh_;
   StateType const & source_state_;
-  std::string const & interp_var_name_;
+  std::string interp_var_name_;
+  LimiterType limiter_type_;
   double * source_vals_;
+  std::vector<std::vector<Weights_t>> const & sources_and_weights_;
 
   std::vector<std::vector<double>> gradients_;
 };
@@ -158,21 +165,33 @@ class Interpolate_2ndOrder<SourceMeshType, TargetMeshType, StateType, CELL> {
   Interpolate_2ndOrder(SourceMeshType const & source_mesh,
                        TargetMeshType const & target_mesh,
                        StateType const & source_state,
-                       std::string const interp_var_name,
-                       LimiterType const limiter_type) :
+                       std::vector<std::vector<Weights_t>> const &
+                       sources_and_weights) :
       source_mesh_(source_mesh),
       target_mesh_(target_mesh),
       source_state_(source_state),
-      interp_var_name_(interp_var_name),
-      source_vals_(NULL) {
+      interp_var_name_("VariableNameNotSet"),
+      limiter_type_(NOLIMITER),
+      source_vals_(NULL),
+    sources_and_weights_(sources_and_weights) {}
+
+  
+  /// Set the name of the interpolation variable and the limiter type
+
+  void set_interpolation_variable(std::string const & interp_var_name,
+                                  LimiterType limiter_type = NOLIMITER) {
+
+    interp_var_name_ = interp_var_name;
+    limiter_type_ = limiter_type;
+
     // Extract the field data from the statemanager
 
-    source_state.get_data(CELL, interp_var_name, &source_vals_);
+    source_state_.get_data(CELL, interp_var_name, &source_vals_);
 
     // Compute the limited gradients for the field
 
     Limited_Gradient<SourceMeshType, StateType, CELL>
-        limgrad(source_mesh, source_state, interp_var_name, limiter_type);
+        limgrad(source_mesh_, source_state_, interp_var_name_, limiter_type_);
 
     int nentities = source_mesh_.end(CELL)-source_mesh_.begin(CELL);
     gradients_.resize(nentities);
@@ -192,7 +211,7 @@ class Interpolate_2ndOrder<SourceMeshType, TargetMeshType, StateType, CELL> {
 
 
   /// Copy constructor (disabled)
-  Interpolate_2ndOrder(const Interpolate_2ndOrder &) = delete;
+  //  Interpolate_2ndOrder(const Interpolate_2ndOrder &) = delete;
 
   /// Assignment operator (disabled)
   Interpolate_2ndOrder & operator = (const Interpolate_2ndOrder &) = delete;
@@ -215,7 +234,7 @@ class Interpolate_2ndOrder<SourceMeshType, TargetMeshType, StateType, CELL> {
     entities may be repeated in the list if the intersection of a
     target entity and a source entity consists of two or more disjoint
     pieces
-    @param[in] targetCellId The index of the target cell.
+    @param[in] targetCellID The index of the target cell.
 
     @todo Cleanup the datatype for sources_and_weights - it is somewhat confusing.
 
@@ -225,18 +244,16 @@ class Interpolate_2ndOrder<SourceMeshType, TargetMeshType, StateType, CELL> {
     @todo must remove assumption that field is scalar
   */
 
-  double
-  operator() (std::pair<std::vector<int> const &,
-              std::vector<std::vector<double>> const &> sources_and_weights,
-              const int targetCellId)
-      const;
+  double operator() (const int targetCellID) const;
 
  private:
   SourceMeshType const & source_mesh_;
   TargetMeshType const & target_mesh_;
   StateType const & source_state_;
-  std::string const & interp_var_name_;
+  std::string interp_var_name_;
+  LimiterType limiter_type_;
   double * source_vals_;
+  std::vector<std::vector<Weights_t>> const & sources_and_weights_;
 
   std::vector<std::vector<double>> gradients_;
 };
@@ -247,21 +264,14 @@ class Interpolate_2ndOrder<SourceMeshType, TargetMeshType, StateType, CELL> {
 template<typename SourceMeshType, typename TargetMeshType, typename StateType>
 double Interpolate_2ndOrder<SourceMeshType, TargetMeshType,
     StateType, CELL>::operator()
-    (std::pair<std::vector<int> const &,
-     std::vector< std::vector<double> > const &> cells_and_weights,
-     const int targetCellId) const {
-  std::vector<int> const & source_cells = cells_and_weights.first;
-  int nsrccells = source_cells.size();
+    (const int targetCellID) const {
+
+  int nsrccells = sources_and_weights_[targetCellID].size();
   if (!nsrccells) {
+#ifdef DEBUG
     std::cerr << "WARNING: No source cells contribute to target cell." <<
         std::endl;
-    return 0.0;
-  }
-
-  std::vector< std::vector<double> > const & weights = cells_and_weights.second;
-  if (weights.size() < nsrccells) {
-    std::cerr << "ERROR: Not enough weights provided for interpolating " <<
-        std::endl;
+#endif
     return 0.0;
   }
 
@@ -277,8 +287,9 @@ double Interpolate_2ndOrder<SourceMeshType, TargetMeshType,
   /// @todo Should use zip_iterator here but I am not sure I know how to
 
   for (int j = 0; j < nsrccells; ++j) {
-    int srccell = source_cells[j];
-    std::vector<double> xsect_weights = weights[j];
+    int srccell = sources_and_weights_[targetCellID][j].entityID;
+    std::vector<double> xsect_weights =
+        sources_and_weights_[targetCellID][j].weights;
     double xsect_volume = xsect_weights[0];
 
     double eps = 1e-30;
@@ -302,7 +313,7 @@ double Interpolate_2ndOrder<SourceMeshType, TargetMeshType,
   // Normalize the value by sum of all the 0th weights (which is the
   // same as the total volume of the source cell)
 
-  totalval /= target_mesh_.cell_volume(targetCellId);
+  totalval /= target_mesh_.cell_volume(targetCellID);
 
   return totalval;
 }
@@ -324,29 +335,50 @@ class Interpolate_2ndOrder<SourceMeshType, TargetMeshType, StateType, NODE> {
   Interpolate_2ndOrder(SourceMeshType const & source_mesh,
                        TargetMeshType const & target_mesh,
                        StateType const & source_state,
-                       std::string const interp_var_name,
-                       LimiterType const limiter_type) :
+                       std::vector<std::vector<Weights_t>> const &
+                       sources_and_weights) :
       source_mesh_(source_mesh),
       target_mesh_(target_mesh),
       source_state_(source_state),
-      interp_var_name_(interp_var_name),
-      source_vals_(NULL) {
-  // Extract the field data from the statemanager
+      interp_var_name_("VariableNameNotSet"),
+      limiter_type_(NOLIMITER),
+      source_vals_(NULL),
+    sources_and_weights_(sources_and_weights) {}
 
-  source_state.get_data(NODE, interp_var_name, &source_vals_);
+  /// Copy constructor (disabled)
+  //  Interpolate_2ndOrder(const Interpolate_2ndOrder &) = delete;
 
-  // Compute the limited gradients for the field
+  /// Assignment operator (disabled)
+  Interpolate_2ndOrder & operator = (const Interpolate_2ndOrder &) = delete;
 
-  Limited_Gradient<SourceMeshType, StateType, NODE>
-      limgrad(source_mesh, source_state, interp_var_name, limiter_type);
+  /// Destructor
+  ~Interpolate_2ndOrder() {}
 
-  int nentities = source_mesh_.end(NODE)-source_mesh_.begin(NODE);
-  gradients_.resize(nentities);
 
+  /// Set the name of the interpolation variable and the limiter type
+
+  void set_interpolation_variable(std::string const & interp_var_name,
+                                  LimiterType limiter_type = NOLIMITER) {
+
+    interp_var_name_ = interp_var_name;
+    limiter_type_ = limiter_type;
+
+    // Extract the field data from the statemanager
+    
+    source_state_.get_data(NODE, interp_var_name, &source_vals_);
+    
+    // Compute the limited gradients for the field
+    
+    Limited_Gradient<SourceMeshType, StateType, NODE>
+        limgrad(source_mesh_, source_state_, interp_var_name, limiter_type);
+    
+    int nentities = source_mesh_.end(NODE)-source_mesh_.begin(NODE);
+    gradients_.resize(nentities);
+    
     // call transform functor to take the values of the variable on
     // the cells and compute a "limited" gradient of the field on the
     // cells (for transform definition, see portage.h)
-
+    
     // Even though we defined Portage::transform (to be
     // thrust::transform or boost::transform) in portage.h, the
     // compiler is not able to disambiguate this call and is getting
@@ -355,16 +387,6 @@ class Interpolate_2ndOrder<SourceMeshType, TargetMeshType, StateType, NODE> {
     Portage::transform(source_mesh_.begin(NODE), source_mesh_.end(NODE),
                        gradients_.begin(), limgrad);
   }
-
-
-  /// Copy constructor (disabled)
-  Interpolate_2ndOrder(const Interpolate_2ndOrder &) = delete;
-
-  /// Assignment operator (disabled)
-  Interpolate_2ndOrder & operator = (const Interpolate_2ndOrder &) = delete;
-
-  /// Destructor
-  ~Interpolate_2ndOrder() {}
 
 
   /*!
@@ -384,24 +406,22 @@ class Interpolate_2ndOrder<SourceMeshType, TargetMeshType, StateType, NODE> {
     intersection of a target entity and a source entity consists of
     two or more disjoint pieces
 
-    @param[in] targetCellId The index of the target cell.
+    @param[in] targetCellID The index of the target cell.
 
     @todo Cleanup the datatype for sources_and_weights - it is somewhat confusing.
     @todo must remove assumption that field is scalar
   */
 
-  double
-  operator() (std::pair<std::vector<int> const &,
-              std::vector< std::vector<double> > const &> sources_and_weights,
-              const int targetCellId)
-      const;
+  double operator() (const int targetCellID) const;
 
  private:
   SourceMeshType const & source_mesh_;
   TargetMeshType const & target_mesh_;
   StateType const & source_state_;
-  std::string const & interp_var_name_;
+  std::string interp_var_name_;
+  LimiterType limiter_type_;
   double * source_vals_;
+  std::vector<std::vector<Weights_t>> const & sources_and_weights_;
 
   std::vector<std::vector<double>> gradients_;
 };
@@ -411,22 +431,14 @@ class Interpolate_2ndOrder<SourceMeshType, TargetMeshType, StateType, NODE> {
 template<typename SourceMeshType, typename TargetMeshType, typename StateType>
 double Interpolate_2ndOrder<SourceMeshType, TargetMeshType,
     StateType, NODE> :: operator()
-    (std::pair<std::vector<int> const &,
-     std::vector< std::vector<double> > const &> dualcells_and_weights,
-     const int targetCellId) const {
-  std::vector<int> const & source_cells = dualcells_and_weights.first;
-  int nsrccells = source_cells.size();
+    (const int targetCellID) const {
+
+  int nsrccells = sources_and_weights_[targetCellID].size();
   if (!nsrccells) {
+#ifdef DEBUG
     std::cerr << "WARNING: No source cells contribute to target cell." <<
         std::endl;
-    return 0.0;
-  }
-
-  std::vector<std::vector<double>> const & weights =
-      dualcells_and_weights.second;
-  if (weights.size() < nsrccells) {
-    std::cerr << "ERROR: Not enough weights provided for interpolating " <<
-        std::endl;
+#endif
     return 0.0;
   }
 
@@ -442,8 +454,9 @@ double Interpolate_2ndOrder<SourceMeshType, TargetMeshType,
   /// @todo Should use zip_iterator here but I am not sure I know how to
 
   for (int j = 0; j < nsrccells; ++j) {
-    int srccell = source_cells[j];
-    std::vector<double> xsect_weights = weights[j];
+    int srccell = sources_and_weights_[targetCellID][j].entityID;
+    std::vector<double> xsect_weights =
+        sources_and_weights_[targetCellID][j].weights;
     double xsect_volume = xsect_weights[0];
 
     double eps = 1e-30;
@@ -480,7 +493,7 @@ double Interpolate_2ndOrder<SourceMeshType, TargetMeshType,
   // Normalize the value by sum of all the 0th weights (which is the
   // same as the total volume of the source cell)
 
-  totalval /= target_mesh_.cell_volume(targetCellId);
+  totalval /= target_mesh_.cell_volume(targetCellID);
 
   return totalval;
 }

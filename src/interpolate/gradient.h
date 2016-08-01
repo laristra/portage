@@ -17,12 +17,6 @@
 
 namespace Portage {
 
-/// Limiter type
-
-typedef enum {NOLIMITER, VAN_LEER, BARTH_JESPERSEN, MINMOD, SUPERBEE}
-  LimiterType;
-
-
 
 /*!
   @brief Compute least squares gradient from set of values
