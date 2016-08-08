@@ -57,16 +57,13 @@ class Interpolate_2ndOrder {
 
   Interpolate_2ndOrder(SourceMeshType const & source_mesh,
                        TargetMeshType const & target_mesh,
-                       StateType const & source_state,
-                       std::vector<std::vector<Weights_t>> const &
-                       sources_and_weights) :
+                       StateType const & source_state) :
       source_mesh_(source_mesh),
       target_mesh_(target_mesh),
       source_state_(source_state),
       interp_var_name_("VariableNameNotSet"),
       limiter_type_(NOLIMITER),
-      source_vals_(NULL),
-      sources_and_weights_(sources_and_weights) {}
+      source_vals_(NULL) {}
 
   /// Copy constructor (disabled)
   //  Interpolate_2ndOrder(const Interpolate_2ndOrder &) = delete;
@@ -130,7 +127,8 @@ class Interpolate_2ndOrder {
     @todo must remove assumption that field is scalar
   */
 
-  double operator() (const int targetCellID) const {
+  double operator() (int const targetCellID,
+                     std::vector<Weights_t> const & sources_and_weights) const {
     // not implemented for all types - see specialization for cells and nodes
 
     std::cerr << "Interpolation operator not implemented for this entity type"
@@ -144,9 +142,8 @@ class Interpolate_2ndOrder {
   std::string interp_var_name_;
   LimiterType limiter_type_;
   double * source_vals_;
-  std::vector<std::vector<Weights_t>> const & sources_and_weights_;
 
-  std::vector<std::vector<double>> gradients_;
+  Portage::vector<std::vector<double>> gradients_;
 };
 
 
@@ -164,16 +161,13 @@ class Interpolate_2ndOrder<SourceMeshType, TargetMeshType, StateType, CELL> {
  public:
   Interpolate_2ndOrder(SourceMeshType const & source_mesh,
                        TargetMeshType const & target_mesh,
-                       StateType const & source_state,
-                       std::vector<std::vector<Weights_t>> const &
-                       sources_and_weights) :
+                       StateType const & source_state) :
       source_mesh_(source_mesh),
       target_mesh_(target_mesh),
       source_state_(source_state),
       interp_var_name_("VariableNameNotSet"),
       limiter_type_(NOLIMITER),
-      source_vals_(NULL),
-    sources_and_weights_(sources_and_weights) {}
+      source_vals_(NULL) {}
 
   
   /// Set the name of the interpolation variable and the limiter type
@@ -222,29 +216,23 @@ class Interpolate_2ndOrder<SourceMeshType, TargetMeshType, StateType, CELL> {
 
   /*!
     @brief   Functor to do the 2nd order interpolation of cell values
-    @param[in] cells_and_weights           A pair of two vectors
-    @c sources_and_weights.first() is the vector of source entity
-    indices in the source mesh that will contribute to the current
-    target mesh entity.  @c sources_and_weights.second() is the vector
-    of vector weights for each of the source mesh entities in @c
-    sources_and_weights.first().  Each element of the weights vector
-    is a moment of the source data over the target entity; for first
-    order interpolation, only the first element (or zero'th moment) of the
-    weights vector (i.e. the volume of intersection) is used. Source
-    entities may be repeated in the list if the intersection of a
-    target entity and a source entity consists of two or more disjoint
-    pieces
+
     @param[in] targetCellID The index of the target cell.
 
-    @todo Cleanup the datatype for sources_and_weights - it is somewhat confusing.
-
-    @todo SHOULD WE USE boost::tuple FOR SENDING IN SOURCES_AND_WEIGHTS SO
-    THAT WE CAN USE boost::zip_iterator TO ITERATOR OVER IT?
+    @param[in] sources_and_weights Vector of source mesh entities and
+    corresponding weight vectors.  Each element of the weights vector
+    is a moment of the source data over the target entity; for first
+    order interpolation, only the first element (or zero'th moment) of
+    the weights vector (i.e. the volume of intersection) is
+    used. Source entities may be repeated in the list if the
+    intersection of a target entity and a source entity consists of
+    two or more disjoint pieces
 
     @todo must remove assumption that field is scalar
   */
 
-  double operator() (const int targetCellID) const;
+  double operator() (int const targetCellID,
+                     std::vector<Weights_t> const & sources_and_weights) const;
 
  private:
   SourceMeshType const & source_mesh_;
@@ -253,9 +241,8 @@ class Interpolate_2ndOrder<SourceMeshType, TargetMeshType, StateType, CELL> {
   std::string interp_var_name_;
   LimiterType limiter_type_;
   double * source_vals_;
-  std::vector<std::vector<Weights_t>> const & sources_and_weights_;
 
-  std::vector<std::vector<double>> gradients_;
+  Portage::vector<std::vector<double>> gradients_;
 };
 
 // Implementation of the () operator for 2nd order interpolation on cells
@@ -263,10 +250,11 @@ class Interpolate_2ndOrder<SourceMeshType, TargetMeshType, StateType, CELL> {
 
 template<typename SourceMeshType, typename TargetMeshType, typename StateType>
 double Interpolate_2ndOrder<SourceMeshType, TargetMeshType,
-    StateType, CELL>::operator()
-    (const int targetCellID) const {
-
-  int nsrccells = sources_and_weights_[targetCellID].size();
+                            StateType, CELL>::operator()
+    (int const targetCellID, std::vector<Weights_t> const & sources_and_weights)
+    const {
+  
+  int nsrccells = sources_and_weights.size();
   if (!nsrccells) {
 #ifdef DEBUG
     std::cerr << "WARNING: No source cells contribute to target cell." <<
@@ -287,9 +275,9 @@ double Interpolate_2ndOrder<SourceMeshType, TargetMeshType,
   /// @todo Should use zip_iterator here but I am not sure I know how to
 
   for (int j = 0; j < nsrccells; ++j) {
-    int srccell = sources_and_weights_[targetCellID][j].entityID;
+    int srccell = sources_and_weights[j].entityID;
     std::vector<double> xsect_weights =
-        sources_and_weights_[targetCellID][j].weights;
+        sources_and_weights[j].weights;
     double xsect_volume = xsect_weights[0];
 
     double eps = 1e-30;
@@ -304,8 +292,9 @@ double Interpolate_2ndOrder<SourceMeshType, TargetMeshType,
 
 
     double val = source_vals_[srccell];
+    std::vector<double> gradient = gradients_[srccell]; 
     for (int i = 0; i < spdim; ++i)
-      val += gradients_[srccell][i] * (xsect_centroid[i]-srccell_centroid[i]);
+      val += gradient[i] * (xsect_centroid[i]-srccell_centroid[i]);
     val *= xsect_volume;
     totalval += val;
   }
@@ -334,16 +323,13 @@ class Interpolate_2ndOrder<SourceMeshType, TargetMeshType, StateType, NODE> {
  public:
   Interpolate_2ndOrder(SourceMeshType const & source_mesh,
                        TargetMeshType const & target_mesh,
-                       StateType const & source_state,
-                       std::vector<std::vector<Weights_t>> const &
-                       sources_and_weights) :
+                       StateType const & source_state) :
       source_mesh_(source_mesh),
       target_mesh_(target_mesh),
       source_state_(source_state),
       interp_var_name_("VariableNameNotSet"),
       limiter_type_(NOLIMITER),
-      source_vals_(NULL),
-    sources_and_weights_(sources_and_weights) {}
+      source_vals_(NULL) {}
 
   /// Copy constructor (disabled)
   //  Interpolate_2ndOrder(const Interpolate_2ndOrder &) = delete;
@@ -396,9 +382,11 @@ class Interpolate_2ndOrder<SourceMeshType, TargetMeshType, StateType, NODE> {
     @c sources_and_weights.first() is the vector of source entity indices
     in the source mesh that will contribute to the current target mesh entity.
 
-    @c sources_and_weights.second() is the vector of vector weights
-    for each of the source mesh entities in @c
-    sources_and_weights.first().  Each element of the weights vector
+    @c sources_and_weights.second() is the
+    @param[in] targetCellID The index of the target cell.
+
+    @param[in] sources_and_weights Vector of source mesh entities and
+    corresponding weight vectors.  Each element of the weights vector
     is a moment of the source data over the target entity; for first
     order interpolation, only the first element (or zero'th moment) of
     the weights vector (i.e. the volume of intersection) is
@@ -406,13 +394,11 @@ class Interpolate_2ndOrder<SourceMeshType, TargetMeshType, StateType, NODE> {
     intersection of a target entity and a source entity consists of
     two or more disjoint pieces
 
-    @param[in] targetCellID The index of the target cell.
-
-    @todo Cleanup the datatype for sources_and_weights - it is somewhat confusing.
     @todo must remove assumption that field is scalar
   */
 
-  double operator() (const int targetCellID) const;
+  double operator() (const int targetCellID,
+                     std::vector<Weights_t> const & sources_and_weights) const;
 
  private:
   SourceMeshType const & source_mesh_;
@@ -421,19 +407,19 @@ class Interpolate_2ndOrder<SourceMeshType, TargetMeshType, StateType, NODE> {
   std::string interp_var_name_;
   LimiterType limiter_type_;
   double * source_vals_;
-  std::vector<std::vector<Weights_t>> const & sources_and_weights_;
 
-  std::vector<std::vector<double>> gradients_;
+  Portage::vector<std::vector<double>> gradients_;
 };
 
 /// implementation of the () operator for 2nd order interpolate on nodes
 
 template<typename SourceMeshType, typename TargetMeshType, typename StateType>
 double Interpolate_2ndOrder<SourceMeshType, TargetMeshType,
-    StateType, NODE> :: operator()
-    (const int targetCellID) const {
+                            StateType, NODE> :: operator()
+    (int const targetCellID, std::vector<Weights_t> const & sources_and_weights)
+    const {
 
-  int nsrccells = sources_and_weights_[targetCellID].size();
+  int nsrccells = sources_and_weights.size();
   if (!nsrccells) {
 #ifdef DEBUG
     std::cerr << "WARNING: No source cells contribute to target cell." <<
@@ -454,9 +440,8 @@ double Interpolate_2ndOrder<SourceMeshType, TargetMeshType,
   /// @todo Should use zip_iterator here but I am not sure I know how to
 
   for (int j = 0; j < nsrccells; ++j) {
-    int srccell = sources_and_weights_[targetCellID][j].entityID;
-    std::vector<double> xsect_weights =
-        sources_and_weights_[targetCellID][j].weights;
+    int srccell = sources_and_weights[j].entityID;
+    std::vector<double> xsect_weights = sources_and_weights[j].weights;
     double xsect_volume = xsect_weights[0];
 
     double eps = 1e-30;
@@ -484,8 +469,9 @@ double Interpolate_2ndOrder<SourceMeshType, TargetMeshType,
       xsect_centroid[i] = xsect_weights[1+i]/xsect_volume;
 
     double val = source_vals_[srccell];
+    std::vector<double> gradient = gradients_[srccell];
     for (int i = 0; i < spdim; ++i)
-      val += gradients_[srccell][i] * (xsect_centroid[i]-srccell_coord[i]);
+      val += gradient[i] * (xsect_centroid[i]-srccell_coord[i]);
     val *= xsect_volume;
     totalval += val;
   }
