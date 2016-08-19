@@ -77,7 +77,7 @@ class Interpolate_1stOrder {
   Interpolate_1stOrder(SourceMeshType const & source_mesh,
                        TargetMeshType const & target_mesh,
                        StateType const & source_state,
-                       std::vector<std::vector<Weights_t>> const &
+                       Portage::vector<std::vector<Weights_t>> const &
                        sources_and_weights) :
       source_mesh_(source_mesh),
       target_mesh_(target_mesh),
@@ -131,7 +131,7 @@ class Interpolate_1stOrder {
   StateType const & source_state_;
   std::string interp_var_name_;
   double * source_vals_;
-  std::vector<std::vector<Weights_t>> const & sources_and_weights_;
+  Portage::vector<std::vector<Weights_t>> const & sources_and_weights_;
 };
 
 
@@ -146,7 +146,8 @@ template<typename SourceMeshType, typename TargetMeshType,
 double Interpolate_1stOrder<SourceMeshType, TargetMeshType,
     StateType, on_what> :: operator() (const int targetCellID) const {
 
-  int nsrccells = sources_and_weights_[targetCellID].size();
+  std::vector<Weights_t> const& these_wts = sources_and_weights_[targetCellID];
+  int nsrccells = these_wts.size();
   if (!nsrccells) {
 #ifdef DEBUG
     std::cerr << "WARNING: No source cells contribute to target cell." <<
@@ -162,9 +163,12 @@ double Interpolate_1stOrder<SourceMeshType, TargetMeshType,
 
   double val = 0.0;
   for (int j = 0; j < nsrccells; ++j) {
-    int srccell = sources_and_weights_[targetCellID][j].entityID;
-    std::vector<double> pair_weights =
-        sources_and_weights_[targetCellID][j].weights;
+    //    int srccell = sources_and_weights_[targetCellID][j].entityID;
+    //    std::vector<double> pair_weights =
+    //        sources_and_weights_[targetCellID][j].weights;
+    Weights_t const& this_wt = these_wts[j];
+    int srccell = this_wt.entityID;
+    std::vector<double> pair_weights = this_wt.weights;
 
     val += source_vals_[srccell] * pair_weights[0];  // 1st order
   }
