@@ -110,12 +110,12 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Const_No_Limiter_2D) {
                                 Portage::Jali_Mesh_Wrapper,
                                 Portage::Jali_State_Wrapper,
                                 Portage::CELL>
-      interpolater(sourceMeshWrapper, targetMeshWrapper,
-                   sourceStateWrapper, sources_and_weights);
+      interpolater(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper);
 
   interpolater.set_interpolation_variable("cellvars", Portage::NOLIMITER);
 
   Portage::transform(targetcells.begin(), targetcells.end(),
+                     sources_and_weights.begin(),
                      outvals.begin(), interpolater);
 
 
@@ -209,13 +209,13 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Lin_No_Limiter_2D) {
                                 Portage::Jali_Mesh_Wrapper,
                                 Portage::Jali_State_Wrapper,
                                 Portage::CELL>
-      interpolater(sourceMeshWrapper, targetMeshWrapper,
-                   sourceStateWrapper, sources_and_weights);
+      interpolater(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper);
 
   interpolater.set_interpolation_variable("cellvars", Portage::NOLIMITER);
 
   Portage::transform(targetcells.begin(), targetcells.end(),
-      outvals.begin(), interpolater);
+                     sources_and_weights.begin(),
+                     outvals.begin(), interpolater);
 
   // Make sure we retrieved the correct value for each cell on the target
 
@@ -293,7 +293,8 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Lin_BJ_Limiter_2D) {
 
   std::vector<double> outvals1(ncells_target);
   std::vector<double> outvals2(ncells_target);
-  std::vector<std::vector<Portage::Weights_t>> sources_and_weights(ncells_target);
+  std::vector<std::vector<Portage::Weights_t>>
+      sources_and_weights(ncells_target);
 
   Jali::Entity_ID_List const& targetcells =
       target_mesh->cells<Jali::Entity_type::ALL>();
@@ -320,18 +321,19 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Lin_BJ_Limiter_2D) {
                                 Portage::Jali_Mesh_Wrapper,
                                 Portage::Jali_State_Wrapper,
                                 Portage::CELL>
-      interpolater(sourceMeshWrapper, targetMeshWrapper,
-                   sourceStateWrapper, sources_and_weights);
+      interpolater(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper);
 
   interpolater.set_interpolation_variable("cellvars", Portage::NOLIMITER);
 
   Portage::transform(targetcells.begin(), targetcells.end(),
+                     sources_and_weights.begin(),
                      outvals1.begin(), interpolater);
 
 
   interpolater.set_interpolation_variable("cellvars",
                                            Portage::BARTH_JESPERSEN);
   Portage::transform(targetcells.begin(), targetcells.end(),
+                     sources_and_weights.begin(),
                      outvals2.begin(), interpolater);
 
   // Check if we violated the bounds on at least one cell in the
@@ -714,11 +716,11 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Const_No_Limiter_3D) {
                                 Portage::Jali_Mesh_Wrapper,
                                 Portage::Jali_State_Wrapper,
                                 Portage::CELL>
-      interpolater(sourceMeshWrapper, targetMeshWrapper,
-                   sourceStateWrapper, sources_and_weights);
+      interpolater(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper);
 
   interpolater.set_interpolation_variable("cellvars", Portage::NOLIMITER);
   Portage::transform(targetcells.begin(), targetcells.end(),
+                     sources_and_weights.begin(),
                      outvals.begin(), interpolater);
 
   // Make sure we retrieved the correct value for each cell on the target
@@ -786,7 +788,8 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Lin_No_Limiter_3D) {
   // Interpolate from source to target mesh
 
   std::vector<double> outvals(ncells_target);
-  std::vector<std::vector<Portage::Weights_t>> sources_and_weights(ncells_target);
+  std::vector<std::vector<Portage::Weights_t>>
+      sources_and_weights(ncells_target);
 
   Jali::Entity_ID_List const& targetcells =
       target_mesh->cells<Jali::Entity_type::ALL>();
@@ -814,12 +817,12 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Lin_No_Limiter_3D) {
                                 Portage::Jali_Mesh_Wrapper,
                                 Portage::Jali_State_Wrapper,
                                 Portage::CELL>
-      interpolater(sourceMeshWrapper, targetMeshWrapper,
-                   sourceStateWrapper, sources_and_weights);
+      interpolater(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper);
 
   interpolater.set_interpolation_variable("cellvars", Portage::NOLIMITER);
 
   Portage::transform(targetcells.begin(), targetcells.end(),
+                     sources_and_weights.begin(),
                      outvals.begin(), interpolater);
 
   // Make sure we retrieved the correct value for each cell on the target
@@ -897,7 +900,8 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_BJ_Limiter_3D) {
 
   std::vector<double> outvals1(ncells_target);
   std::vector<double> outvals2(ncells_target);
-  std::vector<std::vector<Portage::Weights_t>> sources_and_weights(ncells_target);
+  std::vector<std::vector<Portage::Weights_t>>
+      sources_and_weights(ncells_target);
 
   Jali::Entity_ID_List const& targetcells =
       target_mesh->cells<Jali::Entity_type::ALL>();
@@ -927,16 +931,17 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_BJ_Limiter_3D) {
                                 Portage::Jali_Mesh_Wrapper,
                                 Portage::Jali_State_Wrapper,
                                 Portage::CELL>
-      interpolater(sourceMeshWrapper, targetMeshWrapper,
-                   sourceStateWrapper, sources_and_weights);
+      interpolater(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper);
 
   interpolater.set_interpolation_variable("cellvars", Portage::NOLIMITER);
   Portage::transform(targetcells.begin(), targetcells.end(),
+                     sources_and_weights.begin(),
                      outvals1.begin(), interpolater);
 
   interpolater.set_interpolation_variable("cellvars",
                                            Portage::BARTH_JESPERSEN);
   Portage::transform(targetcells.begin(), targetcells.end(),
+                     sources_and_weights.begin(),
                      outvals2.begin(), interpolater);
 
   // Check if we violated the bounds on at least one cell in the

@@ -224,7 +224,10 @@ class MeshWrapperDual {  // cellid is the dual cell (i.e. node) id
 };
 
 
-// Forward definition
+// Forward definitions
+template <typename SearchType> struct SearchFunctor;
+template <typename IntersectType> struct IntersectFunctor;
+
 template <typename SearchType, typename IsectType>
 struct SearchIntersectFunctor;
 
@@ -516,20 +519,42 @@ Driver<SourceMesh_Wrapper,
                                                 source_var_names,
                                                 std::vector<std::string>
                                                 target_var_names) {
-  float tot_seconds = 0.0, tot_seconds_srch_xsect = 0.0,
-      tot_seconds_interp = 0.0;
+
+  float tot_seconds = 0.0, tot_seconds_srch = 0.0,
+      tot_seconds_xsect = 0.0, tot_seconds_interp = 0.0;
   struct timeval begin_timeval, end_timeval, diff_timeval;
 
-  // SEARCH AND INTERSECT (could be broken up but some of the return
-  // types are cumbersome)
+#ifdef ENABLE_PROFILE
+  __itt_resume();
+#endif
+
+  gettimeofday(&begin_timeval, 0);
+
+  int ntargetcells = target_mesh_.num_entities(CELL);
+
+  // SEARCH
+
+  Portage::vector<std::vector<int>> candidates(ntargetcells);
 
   // Get an instance of the desired search algorithm type
   const SearchKDTree<2, SourceMesh_Wrapper, TargetMesh_Wrapper>
       search(source_mesh_, target_mesh_);
 
-  // Get an instance of the desired intersect algorithm type
-  const IntersectClipper<SourceMesh_Wrapper, TargetMesh_Wrapper>
-      intersect(source_mesh_, target_mesh_);
+  SearchFunctor<SearchKDTree<2, SourceMesh_Wrapper, TargetMesh_Wrapper>>
+      searchfunctor(&search);
+
+
+  Portage::transform((counting_iterator)(target_mesh_.begin(CELL)),
+                     (counting_iterator)(target_mesh_.end(CELL)),
+                     candidates.begin(), searchfunctor);
+
+#ifdef ENABLE_PROFILE
+  __itt_pause();
+#endif
+
+  gettimeofday(&end_timeval, 0);
+  timersub(&end_timeval, &begin_timeval, &diff_timeval);
+  tot_seconds_srch = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
 
 
 #ifdef ENABLE_PROFILE
@@ -538,13 +563,16 @@ Driver<SourceMesh_Wrapper,
 
   gettimeofday(&begin_timeval, 0);
 
-  // Make an instance of the functor doing the search and intersection
+  // INTERSECT
 
-  SearchIntersectFunctor<SearchKDTree<2, SourceMesh_Wrapper,
-                                      TargetMesh_Wrapper>,
-                         IntersectClipper<SourceMesh_Wrapper,
-                                          TargetMesh_Wrapper>>
-      search_intersect(&search, &intersect);
+  // Get an instance of the desired intersect algorithm type
+  const IntersectClipper<SourceMesh_Wrapper, TargetMesh_Wrapper>
+      intersect(source_mesh_, target_mesh_);
+
+  // Make an instance of the intersect functor
+
+  IntersectFunctor<IntersectClipper<SourceMesh_Wrapper, TargetMesh_Wrapper>>
+      intersectfunctor(&intersect);
 
 
   // For each cell in the target mesh get a list of candidate-weight
@@ -561,9 +589,10 @@ Driver<SourceMesh_Wrapper,
   Portage::vector<std::vector<Weights_t>> source_cells_and_weights(ntargetcells);
 
   Portage::transform((counting_iterator)(target_mesh_.begin(CELL)),
-                      (counting_iterator)(target_mesh_.end(CELL)),
-                      source_cells_and_weights.begin(),
-                      search_intersect);
+                     (counting_iterator)(target_mesh_.end(CELL)),
+                     candidates.begin(),
+                     source_cells_and_weights.begin(),
+                     intersectfunctor);
 
 #ifdef ENABLE_PROFILE
   __itt_pause();
@@ -571,7 +600,7 @@ Driver<SourceMesh_Wrapper,
 
   gettimeofday(&end_timeval, 0);
   timersub(&end_timeval, &begin_timeval, &diff_timeval);
-  tot_seconds_srch_xsect = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
+  tot_seconds_xsect = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
   
   // INTERPOLATE (one variable at a time)
   
@@ -583,8 +612,7 @@ Driver<SourceMesh_Wrapper,
   
   Interpolate_1stOrder<SourceMesh_Wrapper, TargetMesh_Wrapper,
                        SourceState_Wrapper, CELL>
-      interpolate(source_mesh_, target_mesh_, source_state_,
-                  source_cells_and_weights);
+      interpolate(source_mesh_, target_mesh_, source_state_);
   
   int nvars = source_var_names.size();
   for (int i = 0; i < nvars; ++i) {
@@ -607,6 +635,7 @@ Driver<SourceMesh_Wrapper,
     
     Portage::transform((counting_iterator)(target_mesh_.begin(CELL)),
                        (counting_iterator)(target_mesh_.end(CELL)),
+                       source_cells_and_weights.begin(),
                        target_field, interpolate);
     /*  UNCOMMENT WHEN WE RESTORE get_type in jali_state_wrapper
         } else {
@@ -626,11 +655,11 @@ Driver<SourceMesh_Wrapper,
   timersub(&end_timeval, &begin_timeval, &diff_timeval);
   tot_seconds_interp = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
 
-  tot_seconds = tot_seconds_srch_xsect + tot_seconds_interp;
+  tot_seconds = tot_seconds_srch + tot_seconds_xsect + tot_seconds_interp;
 
   std::cout << "Transform Time (s): " << tot_seconds << std::endl;
-  std::cout << "  Search and Intersect Time (s): " << tot_seconds_srch_xsect <<
-      std::endl;
+  std::cout << "  Search Time (s): " << tot_seconds_srch << std::endl;
+  std::cout << "  Intersect Time (s): " << tot_seconds_xsect << std::endl;
   std::cout << "  Interpolate Time (s): " << tot_seconds_interp << std::endl;
 }
 
@@ -648,20 +677,41 @@ Driver<SourceMesh_Wrapper,
                                                 source_var_names,
                                                 std::vector<std::string>
                                                 target_var_names) {
-  float tot_seconds = 0.0, tot_seconds_srch_xsect = 0.0,
-      tot_seconds_interp = 0.0;
+  float tot_seconds = 0.0, tot_seconds_srch = 0.0,
+      tot_seconds_xsect = 0.0, tot_seconds_interp = 0.0;
   struct timeval begin_timeval, end_timeval, diff_timeval;
 
-  // SEARCH AND INTERSECT (could be broken up but some of the return
-  // types are cumbersome)
+#ifdef ENABLE_PROFILE
+  __itt_resume();
+#endif
+
+  gettimeofday(&begin_timeval, 0);
+
+  int ntargetcells = target_mesh_.num_entities(CELL);
+
+  // SEARCH 
+
+  Portage::vector<std::vector<int>> candidates(ntargetcells);
 
   // Get an instance of the desired search algorithm type
   const SearchKDTree<2, SourceMesh_Wrapper, TargetMesh_Wrapper>
       search(source_mesh_, target_mesh_);
 
-  // Get an instance of the desired intersect algorithm type
-  const IntersectClipper<SourceMesh_Wrapper, TargetMesh_Wrapper>
-      intersect(source_mesh_, target_mesh_);
+  SearchFunctor<SearchKDTree<2, SourceMesh_Wrapper, TargetMesh_Wrapper>>
+      searchfunctor(&search);
+
+
+  Portage::transform((counting_iterator)(target_mesh_.begin(CELL)),
+                     (counting_iterator)(target_mesh_.end(CELL)),
+                     candidates.begin(), searchfunctor);
+
+#ifdef ENABLE_PROFILE
+  __itt_pause();
+#endif
+
+  gettimeofday(&end_timeval, 0);
+  timersub(&end_timeval, &begin_timeval, &diff_timeval);
+  tot_seconds_srch = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
 
 
 #ifdef ENABLE_PROFILE
@@ -670,13 +720,16 @@ Driver<SourceMesh_Wrapper,
 
   gettimeofday(&begin_timeval, 0);
 
+  // INTERSECT
+
+  // Get an instance of the desired intersect algorithm type
+  const IntersectClipper<SourceMesh_Wrapper, TargetMesh_Wrapper>
+      intersect(source_mesh_, target_mesh_);
+
   // Make an instance of the functor doing the search and intersection
 
-  SearchIntersectFunctor<SearchKDTree<2, SourceMesh_Wrapper,
-                                      TargetMesh_Wrapper>,
-                         IntersectClipper<SourceMesh_Wrapper,
-                                          TargetMesh_Wrapper>>
-      search_intersect(&search, &intersect);
+  IntersectFunctor<IntersectClipper<SourceMesh_Wrapper, TargetMesh_Wrapper>>
+      intersectfunctor(&intersect);
 
 
   // For each cell in the target mesh get a list of candidate-weight
@@ -694,8 +747,9 @@ Driver<SourceMesh_Wrapper,
 
   Portage::transform((counting_iterator)(target_mesh_.begin(CELL)),
                      (counting_iterator)(target_mesh_.end(CELL)),
+                     candidates.begin(),
                      source_cells_and_weights.begin(),
-                     search_intersect);
+                     intersectfunctor);
 
 #ifdef ENABLE_PROFILE
   __itt_pause();
@@ -703,7 +757,7 @@ Driver<SourceMesh_Wrapper,
 
   gettimeofday(&end_timeval, 0);
   timersub(&end_timeval, &begin_timeval, &diff_timeval);
-  tot_seconds_srch_xsect = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
+  tot_seconds_xsect = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
   
   // INTERPOLATE (one variable at a time)
   
@@ -715,8 +769,7 @@ Driver<SourceMesh_Wrapper,
   
   Interpolate_2ndOrder<SourceMesh_Wrapper, TargetMesh_Wrapper,
                        SourceState_Wrapper, CELL>
-      interpolate(source_mesh_, target_mesh_, source_state_,
-                  source_cells_and_weights);
+      interpolate(source_mesh_, target_mesh_, source_state_);
   
   int nvars = source_var_names.size();
   for (int i = 0; i < nvars; ++i) {
@@ -739,6 +792,7 @@ Driver<SourceMesh_Wrapper,
     
     Portage::transform((counting_iterator)(target_mesh_.begin(CELL)),
                        (counting_iterator)(target_mesh_.end(CELL)),
+                       source_cells_and_weights.begin(),
                        target_field, interpolate);
     /*  UNCOMMENT WHEN WE RESTORE get_type in jali_state_wrapper
         } else {
@@ -750,6 +804,7 @@ Driver<SourceMesh_Wrapper,
 
   }
 
+
 #ifdef ENABLE_PROFILE
   __itt_pause();
 #endif
@@ -758,11 +813,11 @@ Driver<SourceMesh_Wrapper,
   timersub(&end_timeval, &begin_timeval, &diff_timeval);
   tot_seconds_interp = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
 
-  tot_seconds = tot_seconds_srch_xsect + tot_seconds_interp;
+  tot_seconds = tot_seconds_srch + tot_seconds_xsect + tot_seconds_interp;
 
   std::cout << "Transform Time (s): " << tot_seconds << std::endl;
-  std::cout << "  Search and Intersect Time (s): " << tot_seconds_srch_xsect <<
-      std::endl;
+  std::cout << "  Search Time (s): " << tot_seconds_srch << std::endl;
+  std::cout << "  Intersect Time (s): " << tot_seconds_xsect << std::endl;
   std::cout << "  Interpolate Time (s): " << tot_seconds_interp << std::endl;
 }
 
@@ -779,20 +834,41 @@ Driver<SourceMesh_Wrapper,
                                                 source_var_names,
                                                 std::vector<std::string>
                                                 target_var_names) {
-  float tot_seconds = 0.0, tot_seconds_srch_xsect = 0.0,
-      tot_seconds_interp = 0.0;
+  float tot_seconds = 0.0, tot_seconds_srch = 0.0,
+      tot_seconds_xsect = 0.0, tot_seconds_interp = 0.0;
   struct timeval begin_timeval, end_timeval, diff_timeval;
 
-  // SEARCH AND INTERSECT (could be broken up but some of the return
-  // types are cumbersome)
+#ifdef ENABLE_PROFILE
+  __itt_resume();
+#endif
+
+  gettimeofday(&begin_timeval, 0);
+
+  int ntargetcells = target_mesh_.num_entities(CELL);
+
+  // SEARCH 
+
+  Portage::vector<std::vector<int>> candidates(ntargetcells);
 
   // Get an instance of the desired search algorithm type
   const SearchKDTree<3, SourceMesh_Wrapper, TargetMesh_Wrapper>
       search(source_mesh_, target_mesh_);
 
-  // Get an instance of the desired intersect algorithm type
-  const IntersectR3D<SourceMesh_Wrapper, TargetMesh_Wrapper>
-      intersect(source_mesh_, target_mesh_);
+  SearchFunctor<SearchKDTree<3, SourceMesh_Wrapper, TargetMesh_Wrapper>>
+      searchfunctor(&search);
+
+
+  Portage::transform((counting_iterator)(target_mesh_.begin(CELL)),
+                     (counting_iterator)(target_mesh_.end(CELL)),
+                     candidates.begin(), searchfunctor);
+
+#ifdef ENABLE_PROFILE
+  __itt_pause();
+#endif
+
+  gettimeofday(&end_timeval, 0);
+  timersub(&end_timeval, &begin_timeval, &diff_timeval);
+  tot_seconds_srch = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
 
 
 #ifdef ENABLE_PROFILE
@@ -801,13 +877,16 @@ Driver<SourceMesh_Wrapper,
 
   gettimeofday(&begin_timeval, 0);
 
+
+  // Get an instance of the desired intersect algorithm type
+  const IntersectR3D<SourceMesh_Wrapper, TargetMesh_Wrapper>
+      intersect(source_mesh_, target_mesh_);
+
+
   // Make an instance of the functor doing the search and intersection
 
-  SearchIntersectFunctor<SearchKDTree<3, SourceMesh_Wrapper,
-                                      TargetMesh_Wrapper>,
-                         IntersectR3D<SourceMesh_Wrapper,
-                                      TargetMesh_Wrapper>>
-      search_intersect(&search, &intersect);
+  IntersectFunctor<IntersectR3D<SourceMesh_Wrapper, TargetMesh_Wrapper>>
+      intersectfunctor(&intersect);
 
 
   // For each cell in the target mesh get a list of candidate-weight
@@ -825,8 +904,9 @@ Driver<SourceMesh_Wrapper,
 
   Portage::transform((counting_iterator)(target_mesh_.begin(CELL)),
                      (counting_iterator)(target_mesh_.end(CELL)),
+                     candidates.begin(),
                      source_cells_and_weights.begin(),
-                     search_intersect);
+                     intersectfunctor);
 
 #ifdef ENABLE_PROFILE
   __itt_pause();
@@ -834,7 +914,7 @@ Driver<SourceMesh_Wrapper,
 
   gettimeofday(&end_timeval, 0);
   timersub(&end_timeval, &begin_timeval, &diff_timeval);
-  tot_seconds_srch_xsect = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
+  tot_seconds_xsect = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
   
   // INTERPOLATE (one variable at a time)
   
@@ -846,8 +926,7 @@ Driver<SourceMesh_Wrapper,
   
   Interpolate_1stOrder<SourceMesh_Wrapper, TargetMesh_Wrapper,
                        SourceState_Wrapper, CELL>
-      interpolate(source_mesh_, target_mesh_, source_state_,
-                  source_cells_and_weights);
+      interpolate(source_mesh_, target_mesh_, source_state_);
   
   int nvars = source_var_names.size();
   for (int i = 0; i < nvars; ++i) {
@@ -870,6 +949,7 @@ Driver<SourceMesh_Wrapper,
     
     Portage::transform((counting_iterator)(target_mesh_.begin(CELL)),
                        (counting_iterator)(target_mesh_.end(CELL)),
+                       source_cells_and_weights.begin(),
                        target_field, interpolate);
     /*  UNCOMMENT WHEN WE RESTORE get_type in jali_state_wrapper
         } else {
@@ -881,6 +961,7 @@ Driver<SourceMesh_Wrapper,
 
   }
 
+
 #ifdef ENABLE_PROFILE
   __itt_pause();
 #endif
@@ -889,11 +970,11 @@ Driver<SourceMesh_Wrapper,
   timersub(&end_timeval, &begin_timeval, &diff_timeval);
   tot_seconds_interp = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
 
-  tot_seconds = tot_seconds_srch_xsect + tot_seconds_interp;
+  tot_seconds = tot_seconds_srch + tot_seconds_xsect + tot_seconds_interp;
 
   std::cout << "Transform Time (s): " << tot_seconds << std::endl;
-  std::cout << "  Search and Intersect Time (s): " << tot_seconds_srch_xsect <<
-      std::endl;
+  std::cout << "  Search Time (s): " << tot_seconds_srch << std::endl;
+  std::cout << "  Intersect Time (s): " << tot_seconds_xsect << std::endl;
   std::cout << "  Interpolate Time (s): " << tot_seconds_interp << std::endl;
 }
 
@@ -912,20 +993,40 @@ Driver<SourceMesh_Wrapper,
                                                 source_var_names,
                                                 std::vector<std::string>
                                                 target_var_names) {
-  float tot_seconds = 0.0, tot_seconds_srch_xsect = 0.0,
-      tot_seconds_interp = 0.0;
+  float tot_seconds = 0.0, tot_seconds_srch = 0.0,
+      tot_seconds_xsect = 0.0, tot_seconds_interp = 0.0;
   struct timeval begin_timeval, end_timeval, diff_timeval;
 
-  // SEARCH AND INTERSECT (could be broken up but some of the return
-  // types are cumbersome)
+#ifdef ENABLE_PROFILE
+  __itt_resume();
+#endif
 
-  // Get an instance of the desired search algorithm type
+  gettimeofday(&begin_timeval, 0);
+
+  int ntargetcells = target_mesh_.num_entities(CELL);
+
+  // SEARCH 
+
+  Portage::vector<std::vector<int>> candidates(ntargetcells);
+
   const SearchKDTree<3, SourceMesh_Wrapper, TargetMesh_Wrapper>
       search(source_mesh_, target_mesh_);
 
-  // Get an instance of the desired intersect algorithm type
-  const IntersectR3D<SourceMesh_Wrapper, TargetMesh_Wrapper>
-      intersect(source_mesh_, target_mesh_);
+  SearchFunctor<SearchKDTree<3, SourceMesh_Wrapper, TargetMesh_Wrapper>>
+      searchfunctor(&search);
+
+
+  Portage::transform((counting_iterator)(target_mesh_.begin(CELL)),
+                     (counting_iterator)(target_mesh_.end(CELL)),
+                     candidates.begin(), searchfunctor);
+
+#ifdef ENABLE_PROFILE
+  __itt_pause();
+#endif
+
+  gettimeofday(&end_timeval, 0);
+  timersub(&end_timeval, &begin_timeval, &diff_timeval);
+  tot_seconds_srch = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
 
 
 #ifdef ENABLE_PROFILE
@@ -934,13 +1035,16 @@ Driver<SourceMesh_Wrapper,
 
   gettimeofday(&begin_timeval, 0);
 
-  // Make an instance of the functor doing the search and intersection
+  // INTERSECT
 
-  SearchIntersectFunctor<SearchKDTree<3, SourceMesh_Wrapper,
-                                      TargetMesh_Wrapper>,
-                         IntersectR3D<SourceMesh_Wrapper,
-                                      TargetMesh_Wrapper>>
-      search_intersect(&search, &intersect);
+  // Get an instance of the desired intersect algorithm type
+  const IntersectR3D<SourceMesh_Wrapper, TargetMesh_Wrapper>
+      intersect(source_mesh_, target_mesh_);
+
+  // Make an instance of the functor doing the intersection
+
+  IntersectFunctor<IntersectR3D<SourceMesh_Wrapper, TargetMesh_Wrapper>>
+      intersectfunctor(&intersect);
 
 
   // For each cell in the target mesh get a list of candidate-weight
@@ -958,8 +1062,9 @@ Driver<SourceMesh_Wrapper,
 
   Portage::transform((counting_iterator)(target_mesh_.begin(CELL)),
                      (counting_iterator)(target_mesh_.end(CELL)),
+                     candidates.begin(),
                      source_cells_and_weights.begin(),
-                     search_intersect);
+                     intersectfunctor);
 
 #ifdef ENABLE_PROFILE
   __itt_pause();
@@ -967,7 +1072,7 @@ Driver<SourceMesh_Wrapper,
 
   gettimeofday(&end_timeval, 0);
   timersub(&end_timeval, &begin_timeval, &diff_timeval);
-  tot_seconds_srch_xsect = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
+  tot_seconds_xsect = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
   
   // INTERPOLATE (one variable at a time)
   
@@ -979,8 +1084,7 @@ Driver<SourceMesh_Wrapper,
   
   Interpolate_2ndOrder<SourceMesh_Wrapper, TargetMesh_Wrapper,
                        SourceState_Wrapper, CELL>
-      interpolate(source_mesh_, target_mesh_, source_state_,
-                  source_cells_and_weights);
+      interpolate(source_mesh_, target_mesh_, source_state_);
   
   int nvars = source_var_names.size();
   for (int i = 0; i < nvars; ++i) {
@@ -1003,6 +1107,7 @@ Driver<SourceMesh_Wrapper,
     
     Portage::transform((counting_iterator)(target_mesh_.begin(CELL)),
                        (counting_iterator)(target_mesh_.end(CELL)),
+                       source_cells_and_weights.begin(),
                        target_field, interpolate);
     /*  UNCOMMENT WHEN WE RESTORE get_type in jali_state_wrapper
         } else {
@@ -1014,6 +1119,7 @@ Driver<SourceMesh_Wrapper,
 
   }
 
+
 #ifdef ENABLE_PROFILE
   __itt_pause();
 #endif
@@ -1022,11 +1128,11 @@ Driver<SourceMesh_Wrapper,
   timersub(&end_timeval, &begin_timeval, &diff_timeval);
   tot_seconds_interp = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
 
-  tot_seconds = tot_seconds_srch_xsect + tot_seconds_interp;
+  tot_seconds = tot_seconds_srch + tot_seconds_xsect + tot_seconds_interp;
 
   std::cout << "Transform Time (s): " << tot_seconds << std::endl;
-  std::cout << "  Search and Intersect Time (s): " << tot_seconds_srch_xsect <<
-      std::endl;
+  std::cout << "  Search Time (s): " << tot_seconds_srch << std::endl;
+  std::cout << "  Intersect Time (s): " << tot_seconds_xsect << std::endl;
   std::cout << "  Interpolate Time (s): " << tot_seconds_interp << std::endl;
 }
 
@@ -1045,9 +1151,21 @@ Driver<SourceMesh_Wrapper,
                                                             std::vector<std::string>
                                                             target_var_names) {
 
-  float tot_seconds = 0.0, tot_seconds_srch_xsect = 0.0,
-      tot_seconds_interp = 0.0;
+  float tot_seconds = 0.0, tot_seconds_srch = 0.0,
+      tot_seconds_xsect = 0.0, tot_seconds_interp = 0.0;
   struct timeval begin_timeval, end_timeval, diff_timeval;
+
+#ifdef ENABLE_PROFILE
+  __itt_resume();
+#endif
+
+  gettimeofday(&begin_timeval, 0);
+
+  int ntargetcells = target_mesh_.num_entities(CELL);
+
+  // SEARCH 
+
+  Portage::vector<std::vector<int>> candidates(ntargetcells);
 
   // Get the rank for this process
   int comm_rank;
@@ -1070,10 +1188,23 @@ Driver<SourceMesh_Wrapper,
   const SearchKDTree<3, Flat_Mesh_Wrapper<>, TargetMesh_Wrapper>
       search(source_mesh_flat, target_mesh_);
 
-  // Get an instance of the desired intersect algorithm type
-  const IntersectR3D<Flat_Mesh_Wrapper<>, TargetMesh_Wrapper>
-      intersect{source_mesh_flat, target_mesh_};
+  // Build a slightly specialized functor from it
 
+  SearchFunctor<SearchKDTree<3, Flat_Mesh_Wrapper<>, TargetMesh_Wrapper>>
+      searchfunctor(&search);
+
+
+  Portage::transform((counting_iterator)(target_mesh_.begin(CELL)),
+                     (counting_iterator)(target_mesh_.end(CELL)),
+                     candidates.begin(), searchfunctor);
+
+#ifdef ENABLE_PROFILE
+  __itt_pause();
+#endif
+
+  gettimeofday(&end_timeval, 0);
+  timersub(&end_timeval, &begin_timeval, &diff_timeval);
+  tot_seconds_srch = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
 
 
 #ifdef ENABLE_PROFILE
@@ -1082,13 +1213,18 @@ Driver<SourceMesh_Wrapper,
 
   gettimeofday(&begin_timeval, 0);
 
+  // INTERSECT
+
+
+  // Get an instance of the desired intersect algorithm type
+  const IntersectR3D<Flat_Mesh_Wrapper<>, TargetMesh_Wrapper>
+      intersect{source_mesh_flat, target_mesh_};
+
+
   // Make an idnstance of the functor doing the search and intersection
 
-  SearchIntersectFunctor<SearchKDTree<3, Flat_Mesh_Wrapper<>,
-                                      TargetMesh_Wrapper>,
-                         IntersectR3D<Flat_Mesh_Wrapper<>,
-                                      TargetMesh_Wrapper>>
-      search_intersect(&search, &intersect);
+  IntersectFunctor<IntersectR3D<Flat_Mesh_Wrapper<>, TargetMesh_Wrapper>>
+      intersectfunctor(&intersect);
 
 
   // For each cell in the target mesh get a list of candidate-weight
@@ -1106,8 +1242,9 @@ Driver<SourceMesh_Wrapper,
 
   Portage::transform((counting_iterator)(target_mesh_.begin(CELL)),
                      (counting_iterator)(target_mesh_.end(CELL)),
+                     candidates.begin(),
                      source_cells_and_weights.begin(),
-                     search_intersect);
+                     intersectfunctor);
 
 #ifdef ENABLE_PROFILE
   __itt_pause();
@@ -1115,7 +1252,7 @@ Driver<SourceMesh_Wrapper,
 
   gettimeofday(&end_timeval, 0);
   timersub(&end_timeval, &begin_timeval, &diff_timeval);
-  tot_seconds_srch_xsect = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
+  tot_seconds_xsect = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
   
   // INTERPOLATE (one variable at a time)
   
@@ -1128,8 +1265,7 @@ Driver<SourceMesh_Wrapper,
   // Get an instance of the 1st order algorithm
   Interpolate_1stOrder<Flat_Mesh_Wrapper<>, TargetMesh_Wrapper,
                        Flat_State_Wrapper<>, CELL>
-      interpolate(source_mesh_flat, target_mesh_, source_state_flat,
-                  source_cells_and_weights);
+      interpolate(source_mesh_flat, target_mesh_, source_state_flat);
 
   int nvars = source_var_names.size();
   for (int i = 0; i < nvars; ++i) {
@@ -1153,6 +1289,7 @@ Driver<SourceMesh_Wrapper,
 
     Portage::transform((counting_iterator)(target_mesh_.begin(CELL)),
                        (counting_iterator)(target_mesh_.end(CELL)),
+                       source_cells_and_weights.begin(),
                        target_field, interpolate);
 
     /*  UNCOMMENT WHEN WE RESTORE get_type in jali_state_wrapper
@@ -1164,18 +1301,21 @@ Driver<SourceMesh_Wrapper,
 
   }
 
+
 #ifdef ENABLE_PROFILE
   __itt_pause();
 #endif
-
+  
   gettimeofday(&end_timeval, 0);
   timersub(&end_timeval, &begin_timeval, &diff_timeval);
   tot_seconds_interp = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
 
-  tot_seconds = tot_seconds_srch_xsect + tot_seconds_interp;
+  tot_seconds = tot_seconds_srch + tot_seconds_xsect + tot_seconds_interp;
 
-  MPI_Barrier(MPI_COMM_WORLD);
-  if (comm_rank == 0) std::cout << "Transform Time: " << tot_seconds << std::endl;
+  std::cout << "Transform Time (s): " << tot_seconds << std::endl;
+  std::cout << "  Search Time (s): " << tot_seconds_srch << std::endl;
+  std::cout << "  Intersect Time (s): " << tot_seconds_xsect << std::endl;
+  std::cout << "  Interpolate Time (s): " << tot_seconds_interp << std::endl;
 }
 
 
@@ -1192,15 +1332,24 @@ Driver<SourceMesh_Wrapper,
                                                 source_var_names,
                                                 std::vector<std::string>
                                                 target_var_names) {
-  float tot_seconds = 0.0, tot_seconds_srch_xsect = 0.0,
-      tot_seconds_interp = 0.0;
+  float tot_seconds = 0.0, tot_seconds_srch = 0.0,
+      tot_seconds_xsect = 0.0, tot_seconds_interp = 0.0;
   struct timeval begin_timeval, end_timeval, diff_timeval;
 
   MeshWrapperDual<SourceMesh_Wrapper> source_mesh_dual(source_mesh_);
   MeshWrapperDual<TargetMesh_Wrapper> target_mesh_dual(target_mesh_);
 
-  // SEARCH AND INTERSECT (could be broken up but some of the return
-  // types are cumbersome)
+#ifdef ENABLE_PROFILE
+  __itt_resume();
+#endif
+
+  gettimeofday(&begin_timeval, 0);
+
+  int ntargetcells = target_mesh_.num_entities(NODE);
+
+  // SEARCH 
+
+  Portage::vector<std::vector<int>> candidates(ntargetcells);
 
   // Get an instance of the desired search algorithm type
   const SearchKDTree<2, MeshWrapperDual<SourceMesh_Wrapper>,
@@ -1213,19 +1362,11 @@ Driver<SourceMesh_Wrapper,
       intersect(source_mesh_dual, target_mesh_dual);
 
 
-#ifdef ENABLE_PROFILE
-  __itt_resume();
-#endif
-
-  gettimeofday(&begin_timeval, 0);
-
   // Make an instance of the functor doing the search and intersection
 
-  SearchIntersectFunctor<SearchKDTree<2, MeshWrapperDual<SourceMesh_Wrapper>,
-                                      MeshWrapperDual<TargetMesh_Wrapper>>,
-                         IntersectClipper<MeshWrapperDual<SourceMesh_Wrapper>,
-                                          MeshWrapperDual<TargetMesh_Wrapper>>>
-                         search_intersect(&search, &intersect);
+  IntersectFunctor<IntersectClipper<MeshWrapperDual<SourceMesh_Wrapper>,
+      MeshWrapperDual<TargetMesh_Wrapper>>>
+      intersectfunctor(&intersect);
 
 
   // For each cell in the target mesh get a list of candidate-weight
@@ -1243,8 +1384,9 @@ Driver<SourceMesh_Wrapper,
 
   Portage::transform((counting_iterator) target_mesh_.begin(NODE),
                      (counting_iterator) target_mesh_.end(NODE),
+                     candidates.begin(),
                      source_cells_and_weights.begin(),
-                     search_intersect);
+                     intersectfunctor);
 
 #ifdef ENABLE_PROFILE
   __itt_pause();
@@ -1252,7 +1394,7 @@ Driver<SourceMesh_Wrapper,
 
   gettimeofday(&end_timeval, 0);
   timersub(&end_timeval, &begin_timeval, &diff_timeval);
-  tot_seconds_srch_xsect = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
+  tot_seconds_xsect = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
   
   // INTERPOLATE (one variable at a time)
   
@@ -1263,9 +1405,8 @@ Driver<SourceMesh_Wrapper,
   gettimeofday(&begin_timeval, 0);
   
   Interpolate_1stOrder<SourceMesh_Wrapper, TargetMesh_Wrapper,
-                       SourceState_Wrapper, NODE>
-                         interpolate(source_mesh_, target_mesh_, source_state_,
-                                     source_cells_and_weights);
+      SourceState_Wrapper, NODE>
+      interpolate(source_mesh_, target_mesh_, source_state_);
   
   int nvars = source_var_names.size();
   for (int i = 0; i < nvars; ++i) {
@@ -1288,6 +1429,7 @@ Driver<SourceMesh_Wrapper,
     
     Portage::transform((counting_iterator)(target_mesh_.begin(NODE)),
                        (counting_iterator)(target_mesh_.end(NODE)),
+                       source_cells_and_weights.begin(),
                        target_field, interpolate);
     /*  UNCOMMENT WHEN WE RESTORE get_type in jali_state_wrapper
         } else {
@@ -1299,6 +1441,7 @@ Driver<SourceMesh_Wrapper,
 
   }
 
+
 #ifdef ENABLE_PROFILE
   __itt_pause();
 #endif
@@ -1307,11 +1450,11 @@ Driver<SourceMesh_Wrapper,
   timersub(&end_timeval, &begin_timeval, &diff_timeval);
   tot_seconds_interp = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
 
-  tot_seconds = tot_seconds_srch_xsect + tot_seconds_interp;
+  tot_seconds = tot_seconds_srch + tot_seconds_xsect + tot_seconds_interp;
 
   std::cout << "Transform Time (s): " << tot_seconds << std::endl;
-  std::cout << "  Search and Intersect Time (s): " << tot_seconds_srch_xsect <<
-      std::endl;
+  std::cout << "  Search Time (s): " << tot_seconds_srch << std::endl;
+  std::cout << "  Intersect Time (s): " << tot_seconds_xsect << std::endl;
   std::cout << "  Interpolate Time (s): " << tot_seconds_interp << std::endl;
 }
 
@@ -1329,20 +1472,57 @@ Driver<SourceMesh_Wrapper,
                                                 source_var_names,
                                                 std::vector<std::string>
                                                 target_var_names) {
-  float tot_seconds = 0.0, tot_seconds_srch_xsect = 0.0,
-      tot_seconds_interp = 0.0;
+
+  float tot_seconds = 0.0, tot_seconds_srch = 0.0,
+      tot_seconds_xsect = 0.0, tot_seconds_interp = 0.0;
   struct timeval begin_timeval, end_timeval, diff_timeval;
+
+#ifdef ENABLE_PROFILE
+  __itt_resume();
+#endif
+
+  gettimeofday(&begin_timeval, 0);
 
   MeshWrapperDual<SourceMesh_Wrapper> source_mesh_dual(source_mesh_);
   MeshWrapperDual<TargetMesh_Wrapper> target_mesh_dual(target_mesh_);
 
-  // SEARCH AND INTERSECT (could be broken up but some of the return
-  // types are cumbersome)
+  int ntargetcells = target_mesh_.num_entities(CELL);
+
+  // SEARCH 
+
+  Portage::vector<std::vector<int>> candidates(ntargetcells);
 
   // Get an instance of the desired search algorithm type
   const SearchKDTree<2, MeshWrapperDual<SourceMesh_Wrapper>,
                      MeshWrapperDual<TargetMesh_Wrapper>>
       search(source_mesh_dual, target_mesh_dual);
+
+  SearchFunctor<SearchKDTree<2, MeshWrapperDual<SourceMesh_Wrapper>,
+      MeshWrapperDual<TargetMesh_Wrapper>>>
+      searchfunctor(&search);
+
+
+  Portage::transform((counting_iterator)(target_mesh_.begin(CELL)),
+                     (counting_iterator)(target_mesh_.end(CELL)),
+                     candidates.begin(), searchfunctor);
+
+#ifdef ENABLE_PROFILE
+  __itt_pause();
+#endif
+
+  gettimeofday(&end_timeval, 0);
+  timersub(&end_timeval, &begin_timeval, &diff_timeval);
+  tot_seconds_srch = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
+
+
+#ifdef ENABLE_PROFILE
+  __itt_resume();
+#endif
+
+  gettimeofday(&begin_timeval, 0);
+
+  // INTERSECT
+
 
   // Get an instance of the desired intersect algorithm type
   const IntersectClipper<MeshWrapperDual<SourceMesh_Wrapper>,
@@ -1358,11 +1538,9 @@ Driver<SourceMesh_Wrapper,
 
   // Make an instance of the functor doing the search and intersection
 
-  SearchIntersectFunctor<SearchKDTree<2, MeshWrapperDual<SourceMesh_Wrapper>,
-                                      MeshWrapperDual<TargetMesh_Wrapper>>,
-                         IntersectClipper<MeshWrapperDual<SourceMesh_Wrapper>,
-                                          MeshWrapperDual<TargetMesh_Wrapper>>>
-      search_intersect(&search, &intersect);
+  IntersectFunctor<IntersectClipper<MeshWrapperDual<SourceMesh_Wrapper>,
+      MeshWrapperDual<TargetMesh_Wrapper>>>
+      intersectfunctor(&intersect);
 
 
   // For each cell in the target mesh get a list of candidate-weight
@@ -1380,8 +1558,9 @@ Driver<SourceMesh_Wrapper,
 
   Portage::transform((counting_iterator) target_mesh_.begin(NODE),
                      (counting_iterator) target_mesh_.end(NODE),
+                     candidates.begin(),
                      source_cells_and_weights.begin(),
-                     search_intersect);
+                     intersectfunctor);
 
 #ifdef ENABLE_PROFILE
   __itt_pause();
@@ -1389,7 +1568,7 @@ Driver<SourceMesh_Wrapper,
 
   gettimeofday(&end_timeval, 0);
   timersub(&end_timeval, &begin_timeval, &diff_timeval);
-  tot_seconds_srch_xsect = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
+  tot_seconds_xsect = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
   
   // INTERPOLATE (one variable at a time)
   
@@ -1401,8 +1580,7 @@ Driver<SourceMesh_Wrapper,
   
   Interpolate_2ndOrder<SourceMesh_Wrapper, TargetMesh_Wrapper,
                        SourceState_Wrapper, NODE>
-      interpolate(source_mesh_, target_mesh_, source_state_,
-                  source_cells_and_weights);
+      interpolate(source_mesh_, target_mesh_, source_state_);
   
   int nvars = source_var_names.size();
   for (int i = 0; i < nvars; ++i) {
@@ -1425,6 +1603,7 @@ Driver<SourceMesh_Wrapper,
     
     Portage::transform((counting_iterator)(target_mesh_.begin(NODE)),
                        (counting_iterator)(target_mesh_.end(NODE)),
+                       source_cells_and_weights.begin(),
                        target_field, interpolate);
     /*  UNCOMMENT WHEN WE RESTORE get_type in jali_state_wrapper
         } else {
@@ -1436,6 +1615,7 @@ Driver<SourceMesh_Wrapper,
 
   }
 
+
 #ifdef ENABLE_PROFILE
   __itt_pause();
 #endif
@@ -1444,11 +1624,11 @@ Driver<SourceMesh_Wrapper,
   timersub(&end_timeval, &begin_timeval, &diff_timeval);
   tot_seconds_interp = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
 
-  tot_seconds = tot_seconds_srch_xsect + tot_seconds_interp;
+  tot_seconds = tot_seconds_srch + tot_seconds_xsect + tot_seconds_interp;
 
   std::cout << "Transform Time (s): " << tot_seconds << std::endl;
-  std::cout << "  Search and Intersect Time (s): " << tot_seconds_srch_xsect <<
-      std::endl;
+  std::cout << "  Search Time (s): " << tot_seconds_srch << std::endl;
+  std::cout << "  Intersect Time (s): " << tot_seconds_xsect << std::endl;
   std::cout << "  Interpolate Time (s): " << tot_seconds_interp << std::endl;
 }
 
@@ -1467,20 +1647,55 @@ Driver<SourceMesh_Wrapper,
                                                 source_var_names,
                                                 std::vector<std::string>
                                                 target_var_names) {
-  float tot_seconds = 0.0, tot_seconds_srch_xsect = 0.0,
-      tot_seconds_interp = 0.0;
+  float tot_seconds = 0.0, tot_seconds_srch = 0.0,
+      tot_seconds_xsect = 0.0, tot_seconds_interp = 0.0;
   struct timeval begin_timeval, end_timeval, diff_timeval;
 
   MeshWrapperDual<SourceMesh_Wrapper> source_mesh_dual(source_mesh_);
   MeshWrapperDual<TargetMesh_Wrapper> target_mesh_dual(target_mesh_);
 
-  // SEARCH AND INTERSECT (could be broken up but some of the return
-  // types are cumbersome)
+#ifdef ENABLE_PROFILE
+  __itt_resume();
+#endif
+
+  gettimeofday(&begin_timeval, 0);
+
+  int ntargetcells = target_mesh_.num_entities(CELL);
+
+  // SEARCH 
+
+  Portage::vector<std::vector<int>> candidates(ntargetcells);
 
   // Get an instance of the desired search algorithm type
   const SearchKDTree<3, MeshWrapperDual<SourceMesh_Wrapper>,
                      MeshWrapperDual<TargetMesh_Wrapper>>
       search(source_mesh_dual, target_mesh_dual);
+
+  SearchFunctor<SearchKDTree<3, MeshWrapperDual<SourceMesh_Wrapper>,
+      MeshWrapperDual<TargetMesh_Wrapper>>>
+      searchfunctor(&search);
+
+
+  Portage::transform((counting_iterator)(target_mesh_.begin(CELL)),
+                     (counting_iterator)(target_mesh_.end(CELL)),
+                     candidates.begin(), searchfunctor);
+
+#ifdef ENABLE_PROFILE
+  __itt_pause();
+#endif
+
+  gettimeofday(&end_timeval, 0);
+  timersub(&end_timeval, &begin_timeval, &diff_timeval);
+  tot_seconds_srch = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
+
+
+#ifdef ENABLE_PROFILE
+  __itt_resume();
+#endif
+
+  gettimeofday(&begin_timeval, 0);
+
+  // INTERSECT
 
   // Get an instance of the desired intersect algorithm type
   const IntersectR3D<MeshWrapperDual<SourceMesh_Wrapper>,
@@ -1496,11 +1711,9 @@ Driver<SourceMesh_Wrapper,
 
   // Make an instance of the functor doing the search and intersection
 
-  SearchIntersectFunctor<SearchKDTree<3, MeshWrapperDual<SourceMesh_Wrapper>,
-                                      MeshWrapperDual<TargetMesh_Wrapper>>,
-                         IntersectR3D<MeshWrapperDual<SourceMesh_Wrapper>,
-                                          MeshWrapperDual<TargetMesh_Wrapper>>>
-                         search_intersect(&search, &intersect);
+  IntersectFunctor<IntersectR3D<MeshWrapperDual<SourceMesh_Wrapper>,
+      MeshWrapperDual<TargetMesh_Wrapper>>>
+      intersectfunctor(&intersect);
 
 
   // For each cell in the target mesh get a list of candidate-weight
@@ -1518,8 +1731,9 @@ Driver<SourceMesh_Wrapper,
 
   Portage::transform((counting_iterator)(target_mesh_.begin(NODE)),
                      (counting_iterator)(target_mesh_.end(NODE)),
+                     candidates.begin(),
                      source_cells_and_weights.begin(),
-                     search_intersect);
+                     intersectfunctor);
 
 #ifdef ENABLE_PROFILE
   __itt_pause();
@@ -1527,7 +1741,7 @@ Driver<SourceMesh_Wrapper,
 
   gettimeofday(&end_timeval, 0);
   timersub(&end_timeval, &begin_timeval, &diff_timeval);
-  tot_seconds_srch_xsect = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
+  tot_seconds_xsect = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
   
   // INTERPOLATE (one variable at a time)
   
@@ -1538,9 +1752,8 @@ Driver<SourceMesh_Wrapper,
   gettimeofday(&begin_timeval, 0);
   
   Interpolate_1stOrder<SourceMesh_Wrapper, TargetMesh_Wrapper,
-                       SourceState_Wrapper, NODE>
-                         interpolate(source_mesh_, target_mesh_, source_state_,
-                                     source_cells_and_weights);
+      SourceState_Wrapper, NODE>
+      interpolate(source_mesh_, target_mesh_, source_state_);
   
   int nvars = source_var_names.size();
   for (int i = 0; i < nvars; ++i) {
@@ -1563,6 +1776,7 @@ Driver<SourceMesh_Wrapper,
     
     Portage::transform((counting_iterator)(target_mesh_.begin(NODE)),
                        (counting_iterator)(target_mesh_.end(NODE)),
+                       source_cells_and_weights.begin(),
                        target_field, interpolate);
     /*  UNCOMMENT WHEN WE RESTORE get_type in jali_state_wrapper
         } else {
@@ -1574,6 +1788,7 @@ Driver<SourceMesh_Wrapper,
 
   }
 
+
 #ifdef ENABLE_PROFILE
   __itt_pause();
 #endif
@@ -1582,11 +1797,11 @@ Driver<SourceMesh_Wrapper,
   timersub(&end_timeval, &begin_timeval, &diff_timeval);
   tot_seconds_interp = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
 
-  tot_seconds = tot_seconds_srch_xsect + tot_seconds_interp;
+  tot_seconds = tot_seconds_srch + tot_seconds_xsect + tot_seconds_interp;
 
   std::cout << "Transform Time (s): " << tot_seconds << std::endl;
-  std::cout << "  Search and Intersect Time (s): " << tot_seconds_srch_xsect <<
-      std::endl;
+  std::cout << "  Search Time (s): " << tot_seconds_srch << std::endl;
+  std::cout << "  Intersect Time (s): " << tot_seconds_xsect << std::endl;
   std::cout << "  Interpolate Time (s): " << tot_seconds_interp << std::endl;
 }
 
@@ -1604,20 +1819,55 @@ Driver<SourceMesh_Wrapper,
                                                 source_var_names,
                                                 std::vector<std::string>
                                                 target_var_names) {
-  float tot_seconds = 0.0, tot_seconds_srch_xsect = 0.0,
-      tot_seconds_interp = 0.0;
+  float tot_seconds = 0.0, tot_seconds_srch = 0.0,
+      tot_seconds_xsect = 0.0, tot_seconds_interp = 0.0;
   struct timeval begin_timeval, end_timeval, diff_timeval;
 
   MeshWrapperDual<SourceMesh_Wrapper> source_mesh_dual(source_mesh_);
   MeshWrapperDual<TargetMesh_Wrapper> target_mesh_dual(target_mesh_);
 
-  // SEARCH AND INTERSECT (could be broken up but some of the return
-  // types are cumbersome)
+#ifdef ENABLE_PROFILE
+  __itt_resume();
+#endif
+
+  gettimeofday(&begin_timeval, 0);
+
+  int ntargetcells = target_mesh_.num_entities(CELL);
+
+  // SEARCH 
+
+  Portage::vector<std::vector<int>> candidates(ntargetcells);
 
   // Get an instance of the desired search algorithm type
   const SearchKDTree<3, MeshWrapperDual<SourceMesh_Wrapper>,
                      MeshWrapperDual<TargetMesh_Wrapper>>
       search(source_mesh_dual, target_mesh_dual);
+
+  SearchFunctor<SearchKDTree<3, MeshWrapperDual<SourceMesh_Wrapper>,
+      MeshWrapperDual<TargetMesh_Wrapper>>>
+      searchfunctor(&search);
+  
+
+  Portage::transform((counting_iterator)(target_mesh_.begin(CELL)),
+                     (counting_iterator)(target_mesh_.end(CELL)),
+                     candidates.begin(), searchfunctor);
+
+#ifdef ENABLE_PROFILE
+  __itt_pause();
+#endif
+
+  gettimeofday(&end_timeval, 0);
+  timersub(&end_timeval, &begin_timeval, &diff_timeval);
+  tot_seconds_srch = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
+
+
+#ifdef ENABLE_PROFILE
+  __itt_resume();
+#endif
+
+  gettimeofday(&begin_timeval, 0);
+
+  // INTERSECT
 
   // Get an instance of the desired intersect algorithm type
   const IntersectR3D<MeshWrapperDual<SourceMesh_Wrapper>,
@@ -1633,11 +1883,9 @@ Driver<SourceMesh_Wrapper,
 
   // Make an instance of the functor doing the search and intersection
 
-  SearchIntersectFunctor<SearchKDTree<3, MeshWrapperDual<SourceMesh_Wrapper>,
-                                      MeshWrapperDual<TargetMesh_Wrapper>>,
-                         IntersectR3D<MeshWrapperDual<SourceMesh_Wrapper>,
-                                          MeshWrapperDual<TargetMesh_Wrapper>>>
-      search_intersect(&search, &intersect);
+  IntersectFunctor<IntersectR3D<MeshWrapperDual<SourceMesh_Wrapper>,
+      MeshWrapperDual<TargetMesh_Wrapper>>>
+      intersectfunctor(&intersect);
 
 
   // For each cell in the target mesh get a list of candidate-weight
@@ -1655,8 +1903,9 @@ Driver<SourceMesh_Wrapper,
 
   Portage::transform((counting_iterator)(target_mesh_.begin(NODE)),
                      (counting_iterator)(target_mesh_.end(NODE)),
+                     candidates.begin(),
                      source_cells_and_weights.begin(),
-                     search_intersect);
+                     intersectfunctor);
 
 #ifdef ENABLE_PROFILE
   __itt_pause();
@@ -1664,7 +1913,7 @@ Driver<SourceMesh_Wrapper,
 
   gettimeofday(&end_timeval, 0);
   timersub(&end_timeval, &begin_timeval, &diff_timeval);
-  tot_seconds_srch_xsect = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
+  tot_seconds_xsect = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
   
   // INTERPOLATE (one variable at a time)
   
@@ -1675,9 +1924,8 @@ Driver<SourceMesh_Wrapper,
   gettimeofday(&begin_timeval, 0);
   
   Interpolate_2ndOrder<SourceMesh_Wrapper, TargetMesh_Wrapper,
-                       SourceState_Wrapper, NODE>
-      interpolate(source_mesh_, target_mesh_, source_state_,
-                  source_cells_and_weights);
+      SourceState_Wrapper, NODE> 
+      interpolate(source_mesh_, target_mesh_, source_state_);
   
   int nvars = source_var_names.size();
   for (int i = 0; i < nvars; ++i) {
@@ -1700,6 +1948,7 @@ Driver<SourceMesh_Wrapper,
     
     Portage::transform((counting_iterator)(target_mesh_.begin(NODE)),
                        (counting_iterator)(target_mesh_.end(NODE)),
+                       source_cells_and_weights.begin(),
                        target_field, interpolate);
     /*  UNCOMMENT WHEN WE RESTORE get_type in jali_state_wrapper
         } else {
@@ -1711,6 +1960,7 @@ Driver<SourceMesh_Wrapper,
 
   }
 
+
 #ifdef ENABLE_PROFILE
   __itt_pause();
 #endif
@@ -1718,15 +1968,135 @@ Driver<SourceMesh_Wrapper,
   gettimeofday(&end_timeval, 0);
   timersub(&end_timeval, &begin_timeval, &diff_timeval);
   tot_seconds_interp = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
-  
-  tot_seconds = tot_seconds_srch_xsect + tot_seconds_interp;
-  
+
+  tot_seconds = tot_seconds_srch + tot_seconds_xsect + tot_seconds_interp;
+
   std::cout << "Transform Time (s): " << tot_seconds << std::endl;
-  std::cout << "  Search and Intersect Time (s): " << tot_seconds_srch_xsect <<
-      std::endl;
+  std::cout << "  Search Time (s): " << tot_seconds_srch << std::endl;
+  std::cout << "  Intersect Time (s): " << tot_seconds_xsect << std::endl;
   std::cout << "  Interpolate Time (s): " << tot_seconds_interp << std::endl;
 }
 
+
+
+/*!
+  @struct SearchFunctor "driver.h"
+  @brief This functor is used inside a Portage::transform() inside
+  Driver::run() to actually do the search
+  @tparam SearchType The type of search method (e.g. SearchSimple or
+  SearchKDTree).
+*/
+template <typename SearchType>
+struct SearchFunctor {
+  const SearchType* search_;      ///< search method (e.g. SearchSimple)
+
+  /*!
+    @brief Constructor.
+    @param[in] search The search method to use (e.g. SearchSimple)
+  */
+  SearchFunctor(const SearchType* search) : search_(search)
+  {}
+
+  /*!
+    @brief Operator for making this struct a functor
+
+    This is called from within a Portage::transform() operation that iterates
+    over the cells in a target mesh.
+
+    @param[in] targetCellindex The cell ID in the target mesh that this functor
+    is currently operating on.
+
+    @return list of candidate cells
+  */
+
+  std::vector<int> operator() (int const targetCellIndex) {
+    
+    std::vector<int> candidates;
+
+    // Search for candidates and return their cells indices
+    (*search_)(targetCellIndex, &candidates);
+
+    return candidates;
+  }
+};
+
+
+/*!
+  @struct IntersectFunctor "driver.h"
+  @brief This functor is used inside a Portage::transform() inside
+  Driver::run() to actually do the intersection of the target cell with candidate source cells
+  @tparam IsectType The type of intersect method (e.g. IntersectClipper).
+*/
+template <typename IsectType>
+struct IntersectFunctor {
+  const IsectType* intersect_;    ///< intersect method (e.g. IntersectClipper)
+
+  /*!
+    @brief Constructor.
+    @param[in] intersect The intersect method to use (e.g. IntersectClipper)
+  */
+  IntersectFunctor(const IsectType* intersect)
+      : intersect_(intersect)
+  {}
+
+  /*!
+    @brief Operator for making this struct a functor
+
+    This is called from within a Portage::transform() operation that iterates
+    over the cells in a target mesh.
+
+    @param[in] targetCellindex   The cell ID in the target mesh that this functor
+    is currently operating on.
+
+    @param[in] candidates   Candidates to intersect with
+
+    @return paired list of contributing cells and corresponding moment vectors
+  */
+
+  std::vector<Weights_t> operator() (int const targetCellIndex,
+                                         std::vector<int> const & candidates) {
+    
+    // Intersect target cell with cells of source mesh and return the
+    // moments of intersection
+    std::vector<std::vector<std::vector<double>>> moments(candidates.size());
+    for (int i = 0; i < candidates.size(); i++)
+      moments[i] = (*intersect_)(candidates[i], targetCellIndex);
+    
+    // Compute new value on target cell based on source mesh
+    // values and intersection moments
+    
+    // Each cell-cell intersection can result in multiple
+    // disjointed pieces if one of the cells in non-convex.
+    // therefore, there may be more than one set of moments per
+    // cell pair. Transform the 3 nested std::vector form to 2
+    // nested std::vector form with duplicate candidate entries if
+    // need be
+    
+    int nalloc = 0;
+    for (int i = 0; i < candidates.size(); ++i) {
+      nalloc += moments[i].size();  // number of moment sets generated by
+      //                            // intersection of target cell with
+      //                            // candidate cell i
+    }
+    std::vector<Weights_t> source_cells_and_weights(nalloc);
+    
+    int ninserted = 0;
+    for (int i = 0; i < candidates.size(); ++i) {
+      std::vector<std::vector<double>> & candidate_moments = moments[i];
+      int num_moment_sets = candidate_moments.size();
+      for (int j = 0; j < num_moment_sets; j++) {
+        //        (source_cells_and_weights[ninserted]).entityID = candidates[i];
+        //        (source_cells_and_weights[ninserted]).weights = candidate_moments[j];
+        Weights_t & this_wt = source_cells_and_weights[ninserted];
+        this_wt.entityID = candidates[i];
+        this_wt.weights = candidate_moments[j];
+        ++ninserted;
+      }
+    }
+
+    return source_cells_and_weights;
+  }
+};  // struct IntersectFunctor
 
 
 
