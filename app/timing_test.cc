@@ -11,10 +11,6 @@
 
 #include "mpi.h"
 
-#ifdef THRUST
-#include <omp.h>
-#endif
-
 #ifdef ENABLE_PROFILE
 #include "ittnotify.h"
 #endif
@@ -67,13 +63,6 @@ int main(int argc, char** argv) {
       std::printf("error - only 1 mpi rank is allowed\n");
       std::exit(1);
   }
-
-#ifdef THRUST
-  # pragma omp parallel
-  {
-    std::printf(" threads: %d\n", omp_get_num_threads());
-  }
-#endif
 
   std::printf("starting timingapp...\n");
 
