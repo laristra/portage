@@ -585,7 +585,6 @@ Driver<SourceMesh_Wrapper,
   // that for 2nd order and higher remaps, we get multiple moments
   // (0th, 1st, etc) for each target-source cell intersection
 
-  int ntargetcells = target_mesh_.num_entities(CELL);
   Portage::vector<std::vector<Weights_t>> source_cells_and_weights(ntargetcells);
 
   Portage::transform((counting_iterator)(target_mesh_.begin(CELL)),
@@ -742,7 +741,6 @@ Driver<SourceMesh_Wrapper,
   // that for 2nd order and higher remaps, we get multiple moments
   // (0th, 1st, etc) for each target-source cell intersection
 
-  int ntargetcells = target_mesh_.num_entities(CELL);
   Portage::vector<std::vector<Weights_t>> source_cells_and_weights(ntargetcells);
 
   Portage::transform((counting_iterator)(target_mesh_.begin(CELL)),
@@ -899,7 +897,6 @@ Driver<SourceMesh_Wrapper,
   // that for 2nd order and higher remaps, we get multiple moments
   // (0th, 1st, etc) for each target-source cell intersection
 
-  int ntargetcells = target_mesh_.num_entities(CELL);
   Portage::vector<std::vector<Weights_t>> source_cells_and_weights(ntargetcells);
 
   Portage::transform((counting_iterator)(target_mesh_.begin(CELL)),
@@ -1057,7 +1054,6 @@ Driver<SourceMesh_Wrapper,
   // that for 2nd order and higher remaps, we get multiple moments
   // (0th, 1st, etc) for each target-source cell intersection
 
-  int ntargetcells = target_mesh_.num_entities(CELL);
   Portage::vector<std::vector<Weights_t>> source_cells_and_weights(ntargetcells);
 
   Portage::transform((counting_iterator)(target_mesh_.begin(CELL)),
@@ -1237,7 +1233,6 @@ Driver<SourceMesh_Wrapper,
   // that for 2nd order and higher remaps, we get multiple moments
   // (0th, 1st, etc) for each target-source cell intersection
 
-  int ntargetcells = target_mesh_.num_entities(CELL);
   Portage::vector<std::vector<Weights_t>> source_cells_and_weights(ntargetcells);
 
   Portage::transform((counting_iterator)(target_mesh_.begin(CELL)),

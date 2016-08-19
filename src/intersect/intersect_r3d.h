@@ -89,7 +89,7 @@ public:
       target_tetfaces_all.emplace_back(faces);      
     }
 
-    double MAXLEN = -1e;
+    double MAXLEN = -1e99;
     for (int j = 0; j < 3; j++) {
       double len = target_cell_bounds[2*j+1]-target_cell_bounds[2*j];
       if (MAXLEN < len) MAXLEN = len;

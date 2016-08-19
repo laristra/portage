@@ -241,7 +241,6 @@ class Interpolate_2ndOrder<SourceMeshType, TargetMeshType, StateType, CELL> {
   std::string interp_var_name_;
   LimiterType limiter_type_;
   double * source_vals_;
-  Portage::vector<std::vector<Weights_t>> const & sources_and_weights_;
 
   Portage::vector<std::vector<double>> gradients_;
 };
