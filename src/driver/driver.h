@@ -558,7 +558,7 @@ Driver<SourceMesh_Wrapper,
   // (0th, 1st, etc) for each target-source cell intersection
 
   int ntargetcells = target_mesh_.num_entities(CELL);
-  std::vector<std::vector<Weights_t>> source_cells_and_weights(ntargetcells);
+  Portage::vector<std::vector<Weights_t>> source_cells_and_weights(ntargetcells);
 
   Portage::transform((counting_iterator)(target_mesh_.begin(CELL)),
                       (counting_iterator)(target_mesh_.end(CELL)),
@@ -690,7 +690,7 @@ Driver<SourceMesh_Wrapper,
   // (0th, 1st, etc) for each target-source cell intersection
 
   int ntargetcells = target_mesh_.num_entities(CELL);
-  std::vector<std::vector<Weights_t>> source_cells_and_weights(ntargetcells);
+  Portage::vector<std::vector<Weights_t>> source_cells_and_weights(ntargetcells);
 
   Portage::transform((counting_iterator)(target_mesh_.begin(CELL)),
                      (counting_iterator)(target_mesh_.end(CELL)),
@@ -821,7 +821,7 @@ Driver<SourceMesh_Wrapper,
   // (0th, 1st, etc) for each target-source cell intersection
 
   int ntargetcells = target_mesh_.num_entities(CELL);
-  std::vector<std::vector<Weights_t>> source_cells_and_weights(ntargetcells);
+  Portage::vector<std::vector<Weights_t>> source_cells_and_weights(ntargetcells);
 
   Portage::transform((counting_iterator)(target_mesh_.begin(CELL)),
                      (counting_iterator)(target_mesh_.end(CELL)),
@@ -954,7 +954,7 @@ Driver<SourceMesh_Wrapper,
   // (0th, 1st, etc) for each target-source cell intersection
 
   int ntargetcells = target_mesh_.num_entities(CELL);
-  std::vector<std::vector<Weights_t>> source_cells_and_weights(ntargetcells);
+  Portage::vector<std::vector<Weights_t>> source_cells_and_weights(ntargetcells);
 
   Portage::transform((counting_iterator)(target_mesh_.begin(CELL)),
                      (counting_iterator)(target_mesh_.end(CELL)),
@@ -1102,7 +1102,7 @@ Driver<SourceMesh_Wrapper,
   // (0th, 1st, etc) for each target-source cell intersection
 
   int ntargetcells = target_mesh_.num_entities(CELL);
-  std::vector<std::vector<Weights_t>> source_cells_and_weights(ntargetcells);
+  Portage::vector<std::vector<Weights_t>> source_cells_and_weights(ntargetcells);
 
   Portage::transform((counting_iterator)(target_mesh_.begin(CELL)),
                      (counting_iterator)(target_mesh_.end(CELL)),
@@ -1239,7 +1239,7 @@ Driver<SourceMesh_Wrapper,
   // (0th, 1st, etc) for each target-source cell intersection
 
   int ntargetnodes = target_mesh_.num_entities(NODE);
-  std::vector<std::vector<Weights_t>> source_cells_and_weights(ntargetnodes);
+  Portage::vector<std::vector<Weights_t>> source_cells_and_weights(ntargetnodes);
 
   Portage::transform((counting_iterator) target_mesh_.begin(NODE),
                      (counting_iterator) target_mesh_.end(NODE),
@@ -1376,7 +1376,7 @@ Driver<SourceMesh_Wrapper,
   // (0th, 1st, etc) for each target-source cell intersection
 
   int ntargetnodes = target_mesh_.num_entities(NODE);  
-  std::vector<std::vector<Weights_t>> source_cells_and_weights(ntargetnodes);
+  Portage::vector<std::vector<Weights_t>> source_cells_and_weights(ntargetnodes);
 
   Portage::transform((counting_iterator) target_mesh_.begin(NODE),
                      (counting_iterator) target_mesh_.end(NODE),
@@ -1514,7 +1514,7 @@ Driver<SourceMesh_Wrapper,
   // (0th, 1st, etc) for each target-source cell intersection
 
   int ntargetnodes = target_mesh_.num_entities(NODE);
-  std::vector<std::vector<Weights_t>> source_cells_and_weights(ntargetnodes);
+  Portage::vector<std::vector<Weights_t>> source_cells_and_weights(ntargetnodes);
 
   Portage::transform((counting_iterator)(target_mesh_.begin(NODE)),
                      (counting_iterator)(target_mesh_.end(NODE)),
@@ -1651,7 +1651,7 @@ Driver<SourceMesh_Wrapper,
   // (0th, 1st, etc) for each target-source cell intersection
 
   int ntargetnodes = target_mesh_.num_entities(NODE);
-  std::vector<std::vector<Weights_t>> source_cells_and_weights(ntargetnodes);
+  Portage::vector<std::vector<Weights_t>> source_cells_and_weights(ntargetnodes);
 
   Portage::transform((counting_iterator)(target_mesh_.begin(NODE)),
                      (counting_iterator)(target_mesh_.end(NODE)),
