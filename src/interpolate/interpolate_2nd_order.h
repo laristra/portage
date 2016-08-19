@@ -58,7 +58,7 @@ class Interpolate_2ndOrder {
   Interpolate_2ndOrder(SourceMeshType const & source_mesh,
                        TargetMeshType const & target_mesh,
                        StateType const & source_state,
-                       std::vector<std::vector<Weights_t>> const &
+                       Portage::vector<std::vector<Weights_t>> const &
                        sources_and_weights) :
       source_mesh_(source_mesh),
       target_mesh_(target_mesh),
@@ -144,7 +144,7 @@ class Interpolate_2ndOrder {
   std::string interp_var_name_;
   LimiterType limiter_type_;
   double * source_vals_;
-  std::vector<std::vector<Weights_t>> const & sources_and_weights_;
+  Portage::vector<std::vector<Weights_t>> const & sources_and_weights_;
 
   std::vector<std::vector<double>> gradients_;
 };
@@ -165,7 +165,7 @@ class Interpolate_2ndOrder<SourceMeshType, TargetMeshType, StateType, CELL> {
   Interpolate_2ndOrder(SourceMeshType const & source_mesh,
                        TargetMeshType const & target_mesh,
                        StateType const & source_state,
-                       std::vector<std::vector<Weights_t>> const &
+                       Portage::vector<std::vector<Weights_t>> const &
                        sources_and_weights) :
       source_mesh_(source_mesh),
       target_mesh_(target_mesh),
@@ -253,7 +253,7 @@ class Interpolate_2ndOrder<SourceMeshType, TargetMeshType, StateType, CELL> {
   std::string interp_var_name_;
   LimiterType limiter_type_;
   double * source_vals_;
-  std::vector<std::vector<Weights_t>> const & sources_and_weights_;
+  Portage::vector<std::vector<Weights_t>> const & sources_and_weights_;
 
   std::vector<std::vector<double>> gradients_;
 };
@@ -266,7 +266,9 @@ double Interpolate_2ndOrder<SourceMeshType, TargetMeshType,
     StateType, CELL>::operator()
     (const int targetCellID) const {
 
-  int nsrccells = sources_and_weights_[targetCellID].size();
+  std::vector<Weights_t> const& these_wts = sources_and_weights_[targetCellID];
+
+  int nsrccells = these_wts.size();
   if (!nsrccells) {
 #ifdef DEBUG
     std::cerr << "WARNING: No source cells contribute to target cell." <<
@@ -287,9 +289,12 @@ double Interpolate_2ndOrder<SourceMeshType, TargetMeshType,
   /// @todo Should use zip_iterator here but I am not sure I know how to
 
   for (int j = 0; j < nsrccells; ++j) {
-    int srccell = sources_and_weights_[targetCellID][j].entityID;
-    std::vector<double> xsect_weights =
-        sources_and_weights_[targetCellID][j].weights;
+    Weights_t const& this_wt = these_wts[j];
+    //    int srccell = sources_and_weights_[targetCellID][j].entityID;
+    //    std::vector<double> xsect_weights =
+    //        sources_and_weights_[targetCellID][j].weights;
+    int srccell = this_wt.entityID;
+    std::vector<double> xsect_weights = this_wt.weights;
     double xsect_volume = xsect_weights[0];
 
     double eps = 1e-30;
@@ -335,7 +340,7 @@ class Interpolate_2ndOrder<SourceMeshType, TargetMeshType, StateType, NODE> {
   Interpolate_2ndOrder(SourceMeshType const & source_mesh,
                        TargetMeshType const & target_mesh,
                        StateType const & source_state,
-                       std::vector<std::vector<Weights_t>> const &
+                       Portage::vector<std::vector<Weights_t>> const &
                        sources_and_weights) :
       source_mesh_(source_mesh),
       target_mesh_(target_mesh),
@@ -421,7 +426,7 @@ class Interpolate_2ndOrder<SourceMeshType, TargetMeshType, StateType, NODE> {
   std::string interp_var_name_;
   LimiterType limiter_type_;
   double * source_vals_;
-  std::vector<std::vector<Weights_t>> const & sources_and_weights_;
+  Portage::vector<std::vector<Weights_t>> const & sources_and_weights_;
 
   std::vector<std::vector<double>> gradients_;
 };
@@ -433,7 +438,8 @@ double Interpolate_2ndOrder<SourceMeshType, TargetMeshType,
     StateType, NODE> :: operator()
     (const int targetCellID) const {
 
-  int nsrccells = sources_and_weights_[targetCellID].size();
+  std::vector<Weights_t> const& these_wts = sources_and_weights_[targetCellID];
+  int nsrccells = these_wts.size();
   if (!nsrccells) {
 #ifdef DEBUG
     std::cerr << "WARNING: No source cells contribute to target cell." <<
@@ -454,9 +460,12 @@ double Interpolate_2ndOrder<SourceMeshType, TargetMeshType,
   /// @todo Should use zip_iterator here but I am not sure I know how to
 
   for (int j = 0; j < nsrccells; ++j) {
-    int srccell = sources_and_weights_[targetCellID][j].entityID;
-    std::vector<double> xsect_weights =
-        sources_and_weights_[targetCellID][j].weights;
+    Weights_t const& this_wt = these_wts[j];
+    //    int srccell = sources_and_weights_[targetCellID][j].entityID;
+    //    std::vector<double> xsect_weights =
+    //        sources_and_weights_[targetCellID][j].weights;
+    int srccell = this_wt.entityID;
+    std::vector<double> xsect_weights = this_wt.weights;
     double xsect_volume = xsect_weights[0];
 
     double eps = 1e-30;
