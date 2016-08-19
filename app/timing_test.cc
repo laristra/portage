@@ -11,7 +11,9 @@
 
 #include "mpi.h"
 
+#ifdef THRUST
 #include <omp.h>
+#endif
 
 #ifdef ENABLE_PROFILE
 #include "ittnotify.h"
@@ -66,10 +68,12 @@ int main(int argc, char** argv) {
       std::exit(1);
   }
 
+#ifdef THRUST
   # pragma omp parallel
   {
     std::printf(" threads: %d\n", omp_get_num_threads());
   }
+#endif
 
   std::printf("starting timingapp...\n");
 
