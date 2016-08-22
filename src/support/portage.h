@@ -143,7 +143,7 @@ template<typename InputIterator1, typename InputIterator2,
 
 #endif
 
-typedef struct Weights_t {
+struct Weights_t {
   int entityID;
   std::vector<double> weights;
 };
