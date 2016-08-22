@@ -144,21 +144,9 @@ template<typename InputIterator1, typename InputIterator2,
 #endif
 
 typedef struct Weights_t {
-  // Weights_t() : entityID(-1) {}
-  // Weights_t(int const entityID_in, std::vector<double> const& weights_in) :
-  //     entityID(entityID_in), weights(weights_in) {}
-  // Weights_t(Weights_t const& weights_t_in) :
-  //     entityID(weights_t_in.entityID), weights(weights_t_in.weights) {}  
-  // Weights_t & operator=(Weights_t const& weights_t_in) {
-  //   entityID = weights_t_in.entityID;
-  //   weights = weights_t_in.weights;
-  //   return *this;
-  // }
-  // ~Weights_t() {}
-
   int entityID;
   std::vector<double> weights;
-} Weights_t;
+};
 
 }  // namespace Portage
 
