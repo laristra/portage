@@ -75,16 +75,49 @@ class Flat_State_Wrapper {
   /*!
     @brief Get the data vector
   */
-  std::vector<T>& get_vector(int index) { return state_[index]; }
+  std::vector<T>& get_vector(int index) 
+  {
+    if (index < state_.size())
+      return state_[index]; 
+    else
+      return gradients_[index - state_.size()];
+  }
+
+  int get_field_dim(int index)
+  {
+    if (index < state_.size()) return 1;
+    return 3;
+  }
 
   /*! 
     @brief Get the number of data vectors
   */
   int get_num_vectors() { return state_.size(); }
 
+  /*!
+    @brief Add a gradient field
+  */
+  void add_gradient(std::vector<std::vector<T>>& new_grad)
+  {
+    if (new_grad.size() <= 0) return;
+    std::vector<T> new_vector(new_grad.size()*new_grad[0].size());
+    for (unsigned int i=0; i<new_grad.size(); i++)
+      std::copy(new_grad[i].begin(), new_grad[i].end(), new_vector.begin() + new_grad[i].size()*i);
+    gradients_.push_back(new_vector);
+  }
+
+  int get_num_gradients() { return gradients_.size(); }
+
+  //std::vector<T>& get_gradient(int index)
+  //{
+  //  return gradients_[index];
+  //}
+
 private:
   std::vector<std::vector<T>> state_;
   std::map<std::string, int> name_map_;
+  std::vector<std::vector<T>> gradients_;
+
 
 }; // Flat_State_Wrapper
 

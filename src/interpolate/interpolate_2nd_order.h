@@ -66,6 +66,7 @@ class Interpolate_2ndOrder {
       source_state_(source_state),
       interp_var_name_(interp_var_name),
       source_vals_(NULL) {
+    
     // Extract the field data from the statemanager
 
     source_state.get_data(on_what, interp_var_name, &source_vals_);
@@ -164,19 +165,22 @@ class Interpolate_2ndOrder<SourceMeshType, TargetMeshType, StateType, CELL> {
       target_mesh_(target_mesh),
       source_state_(source_state),
       interp_var_name_(interp_var_name),
+      limiter_type_(limiter_type),
       source_vals_(NULL) {
     // Extract the field data from the statemanager
 
-    source_state.get_data(CELL, interp_var_name, &source_vals_);
+    source_state_.get_data(CELL, interp_var_name_, &source_vals_);
+  }
 
+  void compute_gradient() {
     // Compute the limited gradients for the field
 
     Limited_Gradient<SourceMeshType, StateType, CELL>
-        limgrad(source_mesh, source_state, interp_var_name, limiter_type);
+        limgrad(source_mesh_, source_state_, interp_var_name_, limiter_type_);
 
-    int nentities = source_mesh_.end(CELL)-source_mesh_.begin(CELL);
+    int nentities = source_mesh_.end(CELL, Entity_type::PARALLEL_OWNED)-source_mesh_.begin(CELL);
     gradients_.resize(nentities);
-
+    
     // call transform functor to take the values of the variable on
     // the cells and compute a "limited" gradient of the field on the
     // cells (for transform definition, see portage.h)
@@ -186,7 +190,7 @@ class Interpolate_2ndOrder<SourceMeshType, TargetMeshType, StateType, CELL> {
     // compiler is not able to disambiguate this call and is getting
     // confused. So we will explicitly state that this is Portage::transform
 
-    Portage::transform(source_mesh_.begin(CELL), source_mesh_.end(CELL),
+    Portage::transform(source_mesh_.begin(CELL), source_mesh_.end(CELL, Entity_type::PARALLEL_OWNED),
                        gradients_.begin(), limgrad);
   }
 
@@ -231,13 +235,26 @@ class Interpolate_2ndOrder<SourceMeshType, TargetMeshType, StateType, CELL> {
               const int targetCellId)
       const;
 
+  void set_gradients(std::vector<double>& gradients, int dimension)
+  {
+    gradients_.clear();
+    unsigned int n = gradients.size() / dimension;
+    for (unsigned int i=0; i<n; i++)
+    {
+      std::vector<double> grad(dimension);
+      std::copy(gradients.begin() + i*dimension, gradients.begin() + (i+1)*dimension, grad.begin());
+      gradients_.push_back(grad);
+    }
+  }  
+
  private:
   SourceMeshType const & source_mesh_;
   TargetMeshType const & target_mesh_;
   StateType const & source_state_;
   std::string const & interp_var_name_;
+  LimiterType const & limiter_type_;
   double * source_vals_;
-
+ public:
   std::vector<std::vector<double>> gradients_;
 };
 

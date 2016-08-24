@@ -204,12 +204,15 @@ class MPI_Bounding_Boxes {
     sourceCoords = newCoords;
 
     // Send and receive each field to be remapped (might be more efficient to consolidate sends)
-    for (unsigned int s=0; s<source_state_flat.get_num_vectors(); s++)
+    for (int s=0; s<source_state_flat.get_num_vectors() + source_state_flat.get_num_gradients(); s++)
     {
       std::vector<double>& sourceState = source_state_flat.get_vector(s);
-      std::vector<double> newField(totalRecvSize);
+      sourceCellStride = source_state_flat.get_field_dim(s);
+      std::vector<double> newField(sourceCellStride*totalRecvSize);
+
       if (recvCounts[commRank] > 0)
-        std::copy(sourceState.begin(), sourceState.end(), newField.begin() + localOffset);
+        std::copy(sourceState.begin(), sourceState.begin()+sourceCellStride*sourceNumCells, 
+                  newField.begin() + sourceCellStride*localOffset);
       writeOffset = 0;
 
       // Each rank will do a non-blocking receive from each rank from which it will receive source state
@@ -219,11 +222,11 @@ class MPI_Bounding_Boxes {
         if ((i != commRank) && (recvCounts[i] > 0))
         {
           MPI_Request request;
-          MPI_Irecv(&(newField[0])+writeOffset, recvCounts[i], MPI_DOUBLE, i,
+          MPI_Irecv(&(newField[0])+writeOffset, sourceCellStride*recvCounts[i], MPI_DOUBLE, i,
                     MPI_ANY_TAG, MPI_COMM_WORLD, &request);
           requests.push_back(request);
         }
-        writeOffset += recvCounts[i];
+        writeOffset += sourceCellStride*recvCounts[i];
       }
 
       // Each rank will send its source fields to appropriate ranks
@@ -231,7 +234,7 @@ class MPI_Bounding_Boxes {
       {
         if ((i != commRank) && (sendCounts[i] > 0))
         {
-          MPI_Send(&(sourceState[0]), sendCounts[i], MPI_DOUBLE, i, 0, MPI_COMM_WORLD);
+          MPI_Send(&(sourceState[0]), sourceCellStride*sendCounts[i], MPI_DOUBLE, i, 0, MPI_COMM_WORLD);
         }
       }
 

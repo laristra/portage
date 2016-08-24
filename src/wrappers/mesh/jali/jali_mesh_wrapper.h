@@ -94,9 +94,9 @@ class Jali_Mesh_Wrapper {
   }
 
   //! Number of items of given entity
-  int num_entities(Entity_kind const entity) const {
+  int num_entities(Entity_kind const entity, Entity_type const etype=Entity_type::ALL) const {
     return jali_mesh_.num_entities((Jali::Entity_kind)entity,
-                                   Jali::Entity_type::ALL);
+                                   (Jali::Entity_type)etype);
   }
 
   //! Iterators on mesh entity - begin
@@ -106,9 +106,9 @@ class Jali_Mesh_Wrapper {
   }
 
   //! Iterator on mesh entity - end
-  counting_iterator end(Entity_kind const entity) const {
+  counting_iterator end(Entity_kind const entity, Entity_type const etype=Entity_type::ALL) const {
     int start_index = 0;
-    return (make_counting_iterator(start_index) + num_entities(entity));
+    return (make_counting_iterator(start_index) + num_entities(entity, etype));
   }
 
   //! Get list of nodes for a cell
