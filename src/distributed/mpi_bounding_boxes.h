@@ -206,12 +206,12 @@ class MPI_Bounding_Boxes {
     // Send and receive each field to be remapped (might be more efficient to consolidate sends)
     for (int s=0; s<source_state_flat.get_num_vectors() + source_state_flat.get_num_gradients(); s++)
     {
-      std::vector<double>& sourceState = source_state_flat.get_vector(s);
+      std::vector<double>* sourceState = source_state_flat.get_vector(s);
       sourceCellStride = source_state_flat.get_field_dim(s);
       std::vector<double> newField(sourceCellStride*totalRecvSize);
 
       if (recvCounts[commRank] > 0)
-        std::copy(sourceState.begin(), sourceState.begin()+sourceCellStride*sourceNumCells, 
+        std::copy(sourceState->begin(), sourceState->begin()+sourceCellStride*sourceNumCells, 
                   newField.begin() + sourceCellStride*localOffset);
       writeOffset = 0;
 
@@ -234,7 +234,7 @@ class MPI_Bounding_Boxes {
       {
         if ((i != commRank) && (sendCounts[i] > 0))
         {
-          MPI_Send(&(sourceState[0]), sourceCellStride*sendCounts[i], MPI_DOUBLE, i, 0, MPI_COMM_WORLD);
+          MPI_Send(&((*sourceState)[0]), sourceCellStride*sendCounts[i], MPI_DOUBLE, i, 0, MPI_COMM_WORLD);
         }
       }
 
@@ -246,7 +246,8 @@ class MPI_Bounding_Boxes {
       }
     
       // We will now use the received source state as our new source state on this partition
-      sourceState = newField;
+      sourceState->resize(newField.size());
+      std::copy(newField.begin(), newField.end(), sourceState->begin());
 
 #ifdef DEBUG_MPI
       if (commRank == 1)
@@ -256,8 +257,8 @@ class MPI_Bounding_Boxes {
         for (unsigned int i=0; i<sourceCoords.size(); i++)
           std::cout << sourceCoords[i] << " " << newCoords[i] << " ";
         std::cout << std::endl;
-        for (unsigned int i=0; i<sourceState.size(); i++)
-          std::cout << sourceState[i] << " ";
+        for (unsigned int i=0; i<sourceState->size(); i++)
+          std::cout << (*sourceState)[i] << " ";
         std::cout << std::endl;
       }
 #endif

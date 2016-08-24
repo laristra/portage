@@ -971,7 +971,7 @@ unsigned int dim_;
           interpolater = new Interpolate_2ndOrder<SourceMesh_Wrapper, TargetMesh_Wrapper, SourceState_Wrapper, CELL>(
              source_mesh_, target_mesh_, source_state_, source_var_names[i], NOLIMITER);
       interpolater->compute_gradient();
-      source_state_flat.add_gradient(interpolater->gradients_);
+      source_state_flat.add_gradient(interpolater->get_gradients());
     }
 
     // Use a bounding box distributor to send the source cells to the target

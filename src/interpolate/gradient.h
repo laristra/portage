@@ -187,9 +187,9 @@ class Limited_Gradient<MeshType, StateType, CELL> {
    */
 
   Limited_Gradient(MeshType const & mesh, StateType const & state,
-                   std::string const var_name,
+                   std::string const var_name, double * grads,
                    LimiterType limiter_type) :
-      mesh_(mesh), state_(state), var_name_(var_name),
+      mesh_(mesh), state_(state), var_name_(var_name), grads_(grads),
       limtype_(limiter_type) {
 
     // Extract the field data from the statemanager
@@ -212,20 +212,21 @@ class Limited_Gradient<MeshType, StateType, CELL> {
 
   /// Functor
 
-  std::vector<double> operator()(int cellid);
+  void operator()(int cellid);
 
  private:
   LimiterType limtype_;
   MeshType const & mesh_;
   StateType const & state_;
   std::string const & var_name_;
+  double * grads_;
   double * vals_;
 };
 
 // @brief Implementation of Limited_Gradient functor for CELLs
 
 template<typename MeshType, typename StateType>
-std::vector<double>
+void 
 Limited_Gradient<MeshType, StateType, CELL> :: operator() (int const cellid) {
 
   int dim = mesh_.space_dimension();
@@ -324,9 +325,7 @@ Limited_Gradient<MeshType, StateType, CELL> :: operator() (int const cellid) {
   // Limited gradient is phi*grad
 
   for (int i = 0; i < dim; ++i)
-    grad[i] *= phi;
-
-  return grad;
+    grads_[cellid*dim+i] = grad[i] * phi;
 }
 
 
