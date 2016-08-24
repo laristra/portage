@@ -176,7 +176,7 @@ class Interpolate_2ndOrder<SourceMeshType, TargetMeshType, StateType, CELL> {
     // Compute the limited gradients for the field
 
     int nentities = source_mesh_.end(CELL, Entity_type::PARALLEL_OWNED)-source_mesh_.begin(CELL);
-    gradients_ = new std::vector<double>;
+    gradients_ = std::make_shared<std::vector<double>>();
     gradients_->resize(3*nentities);
    
     Limited_Gradient<SourceMeshType, StateType, CELL>
@@ -235,12 +235,12 @@ class Interpolate_2ndOrder<SourceMeshType, TargetMeshType, StateType, CELL> {
               const int targetCellId)
       const;
 
-  void set_gradients(std::vector<double>* gradients, int dimension)
+  void set_gradients(std::shared_ptr<std::vector<double>> gradients)
   {
     gradients_ = gradients;
   }
 
-  std::vector<double>* get_gradients()
+  std::shared_ptr<std::vector<double>> get_gradients()
   {
     return gradients_;
   }  
@@ -252,7 +252,7 @@ class Interpolate_2ndOrder<SourceMeshType, TargetMeshType, StateType, CELL> {
   std::string const & interp_var_name_;
   LimiterType const & limiter_type_;
   double * source_vals_;
-  std::vector<double>* gradients_; 
+  std::shared_ptr<std::vector<double>> gradients_; 
 };
 
 // Implementation of the () operator for 2nd order interpolation on cells

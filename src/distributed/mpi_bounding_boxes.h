@@ -206,7 +206,7 @@ class MPI_Bounding_Boxes {
     // Send and receive each field to be remapped (might be more efficient to consolidate sends)
     for (int s=0; s<source_state_flat.get_num_vectors() + source_state_flat.get_num_gradients(); s++)
     {
-      std::vector<double>* sourceState = source_state_flat.get_vector(s);
+      std::shared_ptr<std::vector<double>> sourceState = source_state_flat.get_vector(s);
       sourceCellStride = source_state_flat.get_field_dim(s);
       std::vector<double> newField(sourceCellStride*totalRecvSize);
 

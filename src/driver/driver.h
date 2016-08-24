@@ -996,16 +996,16 @@ unsigned int dim_;
       // Get an instance of the 2nd order algorithm
       Interpolate_2ndOrder<Flat_Mesh_Wrapper<>, TargetMesh_Wrapper,
           Flat_State_Wrapper<>, CELL>
-          interpolater2(source_mesh_flat, target_mesh_,
+          interpolater(source_mesh_flat, target_mesh_,
                         source_state_flat, source_var_names[i], NOLIMITER);
-      interpolater2.set_gradients(source_state_flat.get_vector(nvars + i), 3);
+      interpolater.set_gradients(source_state_flat.get_vector(nvars + i));
 
       // Make the remapper instance
       RemapFunctor<SearchKDTree<3, Flat_Mesh_Wrapper<>, TargetMesh_Wrapper>,
           IntersectR3D<Flat_Mesh_Wrapper<>, TargetMesh_Wrapper>,
           Interpolate_2ndOrder<Flat_Mesh_Wrapper<>, TargetMesh_Wrapper,
           Flat_State_Wrapper<>, CELL> >
-          remapper(&search, &intersect, &interpolater2);
+          remapper(&search, &intersect, &interpolater);
 
 #ifdef ENABLE_PROFILE
       __itt_resume();

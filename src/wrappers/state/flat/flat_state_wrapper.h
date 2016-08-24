@@ -39,9 +39,9 @@ class Flat_State_Wrapper {
       int dataSize = input.get_data_size(entity, var_names[i]);
       T* data;
       input.get_data(entity, var_names[i], &data);
-      std::vector<T> field;
-      field.resize(dataSize);
-      std::copy(data, data+dataSize, field.begin());
+      std::shared_ptr<std::vector<T>> field = std::make_shared<std::vector<T>>();
+      field->resize(dataSize);
+      std::copy(data, data+dataSize, field->begin());
       state_.push_back(field);
       name_map_[var_names[i]] = state_.size() - 1;
     }
@@ -69,16 +69,16 @@ class Flat_State_Wrapper {
   
     std::map<std::string, int>::const_iterator iter = name_map_.find(var_name);
     if (iter != name_map_.end())
-      (*data) = (D*)(&(state_[iter->second][0]));
+      (*data) = (D*)(&((*(state_[iter->second]))[0]));
   }
 
   /*!
     @brief Get the data vector
   */
-  std::vector<T>* get_vector(int index) 
+  std::shared_ptr<std::vector<T>> get_vector(int index) 
   {
     if (index < state_.size())
-      return &(state_[index]); 
+      return (state_[index]); 
     else
       return (gradients_[index - state_.size()]);
   }
@@ -97,10 +97,10 @@ class Flat_State_Wrapper {
   /*!
     @brief Add a gradient field
   */
-  void add_gradient(std::vector<T>* new_grad)
+  void add_gradient(std::shared_ptr<std::vector<T>> new_grad)
   {
     if (new_grad->size() <= 0) return;
-    gradients_.push_back(new_grad); //vector);
+    gradients_.push_back(new_grad); 
   }
 
   /*!
@@ -109,9 +109,9 @@ class Flat_State_Wrapper {
   int get_num_gradients() { return gradients_.size(); }
 
 private:
-  std::vector<std::vector<T>> state_;
+  std::vector<std::shared_ptr<std::vector<T>>> state_;
   std::map<std::string, int> name_map_;
-  std::vector<std::vector<T>*> gradients_;
+  std::vector<std::shared_ptr<std::vector<T>>> gradients_;
 
 
 }; // Flat_State_Wrapper
