@@ -386,7 +386,7 @@ class Flecsi_Mesh_Wrapper {
   // NOTE: FleCSI doesn't have 3D yet!!!
   void decompose_cell_into_tets(int const cellID,
                                 std::vector<std::array<Portage::Point3, 4>>
-                                *tcoords) const {
+                                *tcoords, const bool planar_hex) const {
     assert(space_dimension() == 3);
 
     assert(false && "FleCSI 3D not implemented");

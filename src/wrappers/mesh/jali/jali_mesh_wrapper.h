@@ -328,8 +328,10 @@ class Jali_Mesh_Wrapper {
   // Get the simplest possible decomposition of a 3D cell into tets.
   // For this mesh type, that means returning a list of sides.
   void decompose_cell_into_tets(Jali::Entity_ID cellID,
-      std::vector<std::array<Portage::Point<3>, 4>> *tcoords) const {
-    if (jali_mesh_.cell_get_type(cellID) == Jali::Cell_type::HEX) {
+      std::vector<std::array<Portage::Point<3>, 4>> *tcoords,
+      const bool planar_hex) const {
+    if (planar_hex
+            && jali_mesh_.cell_get_type(cellID) == Jali::Cell_type::HEX) {
       // Decompose a hex into a 5-tet decomposition.
 
       // IMPORTANT: This only works well if the hex is planar. Otherwise we

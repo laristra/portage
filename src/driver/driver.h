@@ -214,7 +214,8 @@ class MeshWrapperDual {  // cellid is the dual cell (i.e. node) id
   // Get the simplest possible decomposition of a 3D cell into tets.
   // For a dual mesh, that means returning a list of wedges.
   void decompose_cell_into_tets(int const dualcellid,
-                                std::vector<wedgeCoords> *tcoords) const {
+                                std::vector<wedgeCoords> *tcoords,
+                                const bool planar_hex) const {
     wedges_get_coordinates(dualcellid, tcoords);
   }
 
