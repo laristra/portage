@@ -204,7 +204,7 @@ class MPI_Bounding_Boxes {
     sourceCoords = newCoords;
 
     // Send and receive each field to be remapped (might be more efficient to consolidate sends)
-    for (int s=0; s<source_state_flat.get_num_vectors() + source_state_flat.get_num_gradients(); s++)
+    for (int s=0; s<source_state_flat.get_num_vectors(); s++)
     {
       std::shared_ptr<std::vector<double>> sourceState = source_state_flat.get_vector(s);
       sourceCellStride = source_state_flat.get_field_dim(s);
@@ -263,8 +263,71 @@ class MPI_Bounding_Boxes {
       }
 #endif
     }
-  }
 
+    // Send gradient fields
+    for (int s=0; s<source_state_flat.get_num_gradients(); s++)
+    {
+      std::shared_ptr<std::vector<double3>> sourceGrads = source_state_flat.get_gradients(s);
+      int mpiCellStride = sizeof(double3)/sizeof(double);
+      std::vector<double3> newField(totalRecvSize);
+
+      if (recvCounts[commRank] > 0)
+        std::copy(sourceGrads->begin(), sourceGrads->begin()+sourceNumCells,
+                  newField.begin() + localOffset);
+      writeOffset = 0;
+
+      // Each rank will do a non-blocking receive from each rank from which it will receive source gradients
+      requests.clear();
+      double* recvData = (double*)(newField.data());
+      for (unsigned int i=0; i<commSize; i++)
+      {
+        if ((i != commRank) && (recvCounts[i] > 0))
+        {
+          MPI_Request request;
+          MPI_Irecv(recvData+writeOffset, mpiCellStride*recvCounts[i], MPI_DOUBLE, i,
+                    MPI_ANY_TAG, MPI_COMM_WORLD, &request);
+          requests.push_back(request);
+        }
+        writeOffset += mpiCellStride*recvCounts[i];
+      }
+
+      // Each rank will send its source gradients to appropriate ranks
+      double* sendData = (double*)(sourceGrads->data());
+      for (unsigned int i=0; i<commSize; i++)
+      {
+        if ((i != commRank) && (sendCounts[i] > 0))
+        {
+          MPI_Send(sendData, mpiCellStride*sendCounts[i], MPI_DOUBLE, i, 0, MPI_COMM_WORLD);
+        }
+      }
+
+      // Wait for all receives to complete
+      if (requests.size() > 0)
+      {
+        std::vector<MPI_Status> statuses(requests.size());
+        MPI_Waitall(requests.size(), &(requests[0]), &(statuses[0]));
+      }
+
+      // We will now use the received source gradients as our new source gradients on this partition
+      sourceGrads->resize(newField.size());
+      std::copy(newField.begin(), newField.end(), sourceGrads->begin());
+
+#ifdef DEBUG_MPI
+      if (commRank == 1)
+      {
+        std::cout << "Sizes: " << commRank << " " << totalRecvSize << " " << localOffset << " " << targetNumCells
+                  << " " << sourceNumCells << std::endl;
+        for (unsigned int i=0; i<sourceCoords.size(); i++)
+          std::cout << sourceCoords[i] << " " << newCoords[i] << " ";
+        std::cout << std::endl;
+        for (unsigned int i=0; i<sourceGrads->size(); i++)
+          std::cout << (*sourceGrads)[i].x << " " << (*sourceGrads)[i].y << " " << (*sourceGrads)[i].z;
+        std::cout << std::endl;
+      }
+#endif
+    }
+
+  }
   
 }; // MPI_Bounding_Boxes
 

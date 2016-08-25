@@ -886,7 +886,7 @@ unsigned int dim_;
           interpolater(source_mesh_, target_mesh_,
                        source_state_, source_var_names[i],
                        NOLIMITER);
-      interpolater.compute_gradient();
+      interpolater.compute_gradients();
 
 
       RemapFunctor<SearchKDTree<3, SourceMesh_Wrapper, TargetMesh_Wrapper>,
@@ -970,8 +970,8 @@ unsigned int dim_;
       Interpolate_2ndOrder<SourceMesh_Wrapper, TargetMesh_Wrapper, SourceState_Wrapper, CELL>*
           interpolater = new Interpolate_2ndOrder<SourceMesh_Wrapper, TargetMesh_Wrapper, SourceState_Wrapper, CELL>(
              source_mesh_, target_mesh_, source_state_, source_var_names[i], NOLIMITER);
-      interpolater->compute_gradient();
-      source_state_flat.add_gradient(interpolater->get_gradients());
+      interpolater->compute_gradients();
+      source_state_flat.add_gradients(interpolater->get_gradients());
     }
 
     // Use a bounding box distributor to send the source cells to the target
@@ -998,7 +998,7 @@ unsigned int dim_;
           Flat_State_Wrapper<>, CELL>
           interpolater(source_mesh_flat, target_mesh_,
                         source_state_flat, source_var_names[i], NOLIMITER);
-      interpolater.set_gradients(source_state_flat.get_vector(nvars + i));
+      interpolater.set_gradients(source_state_flat.get_gradients(i));
 
       // Make the remapper instance
       RemapFunctor<SearchKDTree<3, Flat_Mesh_Wrapper<>, TargetMesh_Wrapper>,

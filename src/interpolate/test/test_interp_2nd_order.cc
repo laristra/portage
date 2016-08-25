@@ -69,13 +69,15 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Const_No_Limiter_2D) {
 
   // Create Interpolation object
 
+  std::string remap_field_name = "cellvars";
   Portage::Interpolate_2ndOrder<Portage::Jali_Mesh_Wrapper,
                                 Portage::Jali_Mesh_Wrapper,
                                 Portage::Jali_State_Wrapper,
                                 Portage::CELL>
       interpolater(sourceMeshWrapper, targetMeshWrapper,
-                   sourceStateWrapper, "cellvars",
+                   sourceStateWrapper, remap_field_name,
                    Portage::NOLIMITER);
+  interpolater.compute_gradients();
 
   // Gather the cell coordinates for source and target meshes for intersection
 
@@ -119,6 +121,7 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Const_No_Limiter_2D) {
 /// limiting in 2D
 
 TEST(Interpolate_2nd_Order, Cell_Ctr_Lin_No_Limiter_2D) {
+
   Jali::MeshFactory mf(MPI_COMM_WORLD);
 
   Jali::FrameworkPreference pref;
@@ -154,13 +157,15 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Lin_No_Limiter_2D) {
   Portage::Jali_Mesh_Wrapper targetMeshWrapper(*target_mesh);
   Portage::Jali_State_Wrapper sourceStateWrapper(source_state);
 
+  std::string remap_field_name = "cellvars";
   Portage::Interpolate_2ndOrder<Portage::Jali_Mesh_Wrapper,
                                 Portage::Jali_Mesh_Wrapper,
                                 Portage::Jali_State_Wrapper,
                                 Portage::CELL>
       interpolater(sourceMeshWrapper, targetMeshWrapper,
-                   sourceStateWrapper, "cellvars",
+                   sourceStateWrapper, remap_field_name,
                    Portage::NOLIMITER);
+  interpolater.compute_gradients();
 
   // Gather the cell coordinates for source and target meshes for intersection
 
@@ -213,6 +218,7 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Lin_No_Limiter_2D) {
 */
 
 TEST(Interpolate_2nd_Order, Cell_Ctr_Lin_BJ_Limiter_2D) {
+
   Jali::MeshFactory mf(MPI_COMM_WORLD);
 
   Jali::FrameworkPreference pref;
@@ -249,6 +255,7 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Lin_BJ_Limiter_2D) {
   source_state.add(myvec);
 
   // Create Interpolate objects - one with no limiter and one with limiter
+  std::string remap_field_name = "cellvars";
   Portage::Jali_Mesh_Wrapper sourceMeshWrapper(*source_mesh);
     Portage::Jali_Mesh_Wrapper targetMeshWrapper(*target_mesh);
   Portage::Jali_State_Wrapper sourceStateWrapper(source_state);
@@ -258,15 +265,17 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Lin_BJ_Limiter_2D) {
                                 Portage::Jali_State_Wrapper,
                                 Portage::CELL>
       interpolater1(sourceMeshWrapper, targetMeshWrapper,
-                    sourceStateWrapper, "cellvars",
+                    sourceStateWrapper, remap_field_name,
                     Portage::NOLIMITER);
+  interpolater1.compute_gradients();
   Portage::Interpolate_2ndOrder<Portage::Jali_Mesh_Wrapper,
                                 Portage::Jali_Mesh_Wrapper,
                                 Portage::Jali_State_Wrapper,
                                 Portage::CELL>
       interpolater2(sourceMeshWrapper, targetMeshWrapper,
-                    sourceStateWrapper, "cellvars",
+                    sourceStateWrapper, remap_field_name,
                     Portage::BARTH_JESPERSEN);
+  interpolater2.compute_gradients();
 
   // Gather the cell coordinates for the source and target meshes for
   // intersection
@@ -643,13 +652,15 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Const_No_Limiter_3D) {
 
   // Create Interpolation objects
 
+  std::string remap_field_name = "cellvars";
   Portage::Interpolate_2ndOrder<Portage::Jali_Mesh_Wrapper,
                                 Portage::Jali_Mesh_Wrapper,
                                 Portage::Jali_State_Wrapper,
                                 Portage::CELL>
       interpolater(sourceMeshWrapper, targetMeshWrapper,
-                   sourceStateWrapper, "cellvars",
+                   sourceStateWrapper, remap_field_name,
                    Portage::NOLIMITER);
+  interpolater.compute_gradients();
 
   // Gather the cell coordinates for source and target meshes for intersection
 
@@ -730,13 +741,15 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Lin_No_Limiter_3D) {
 
   // Create Interpolation objects
 
+  std::string remap_field_name = "cellvars";
   Portage::Interpolate_2ndOrder<Portage::Jali_Mesh_Wrapper,
                                 Portage::Jali_Mesh_Wrapper,
                                 Portage::Jali_State_Wrapper,
                                 Portage::CELL>
       interpolater(sourceMeshWrapper, targetMeshWrapper,
-                   sourceStateWrapper, "cellvars",
+                   sourceStateWrapper, remap_field_name,
                    Portage::NOLIMITER);
+  interpolater.compute_gradients();
 
   // Gather the cell coordinates for source and target meshes for intersection
 
@@ -831,20 +844,23 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_BJ_Limiter_3D) {
 
   // Create Interpolation objects - one with no limiter and one with limiter
 
+  std::string remap_field_name = "cellvars";
   Portage::Interpolate_2ndOrder<Portage::Jali_Mesh_Wrapper,
                                 Portage::Jali_Mesh_Wrapper,
                                 Portage::Jali_State_Wrapper,
                                 Portage::CELL>
       interpolater1(sourceMeshWrapper, targetMeshWrapper,
-                    sourceStateWrapper, "cellvars",
+                    sourceStateWrapper, remap_field_name,
                     Portage::NOLIMITER);
+  interpolater1.compute_gradients();
   Portage::Interpolate_2ndOrder<Portage::Jali_Mesh_Wrapper,
                                 Portage::Jali_Mesh_Wrapper,
                                 Portage::Jali_State_Wrapper,
                                 Portage::CELL>
       interpolater2(sourceMeshWrapper, targetMeshWrapper,
-                    sourceStateWrapper, "cellvars",
+                    sourceStateWrapper, remap_field_name,
                     Portage::BARTH_JESPERSEN);
+  interpolater2.compute_gradients();
 
   // Gather the cell coordinates for the source and target meshes for
   // intersection

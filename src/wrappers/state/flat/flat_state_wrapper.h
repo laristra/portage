@@ -77,16 +77,15 @@ class Flat_State_Wrapper {
   */
   std::shared_ptr<std::vector<T>> get_vector(int index) 
   {
-    if (index < state_.size())
-      return (state_[index]); 
-    else
-      return (gradients_[index - state_.size()]);
+    return state_[index]; 
   }
 
-  int get_field_dim(int index)
+  /*!
+    @brief Get gradients
+  */
+  std::shared_ptr<std::vector<double3>> get_gradients(int index)
   {
-    if (index < state_.size()) return 1;
-    return 3;
+    return gradients_[index];
   }
 
   /*! 
@@ -97,10 +96,18 @@ class Flat_State_Wrapper {
   /*!
     @brief Add a gradient field
   */
-  void add_gradient(std::shared_ptr<std::vector<T>> new_grad)
+  void add_gradients(std::shared_ptr<std::vector<double3>> new_grad)
   {
     if (new_grad->size() <= 0) return;
     gradients_.push_back(new_grad); 
+  }
+
+  /*! 
+    @brief Get field dimension
+  */
+  int get_field_dim(int index)
+  {
+    return 1;
   }
 
   /*!
@@ -111,7 +118,7 @@ class Flat_State_Wrapper {
 private:
   std::vector<std::shared_ptr<std::vector<T>>> state_;
   std::map<std::string, int> name_map_;
-  std::vector<std::shared_ptr<std::vector<T>>> gradients_;
+  std::vector<std::shared_ptr<std::vector<double3>>> gradients_;
 
 
 }; // Flat_State_Wrapper

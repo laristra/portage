@@ -151,7 +151,7 @@ class Limited_Gradient {
   /// Functor - not implemented for all types - see specialization for
   /// cells, nodes
 
-  std::vector<double> operator()(int entity_id) {
+  double3 operator()(int entity_id) {
     std::cerr << "Limited gradient not implementd for this entity kind\n";
   }
 
@@ -187,9 +187,9 @@ class Limited_Gradient<MeshType, StateType, CELL> {
    */
 
   Limited_Gradient(MeshType const & mesh, StateType const & state,
-                   std::string const var_name, double * grads,
+                   std::string const var_name, 
                    LimiterType limiter_type) :
-      mesh_(mesh), state_(state), var_name_(var_name), grads_(grads),
+      mesh_(mesh), state_(state), var_name_(var_name), 
       limtype_(limiter_type) {
 
     // Extract the field data from the statemanager
@@ -212,21 +212,20 @@ class Limited_Gradient<MeshType, StateType, CELL> {
 
   /// Functor
 
-  void operator()(int cellid);
+  double3 operator()(int cellid);
 
  private:
   LimiterType limtype_;
   MeshType const & mesh_;
   StateType const & state_;
   std::string const & var_name_;
-  double * grads_;
   double * vals_;
 };
 
 // @brief Implementation of Limited_Gradient functor for CELLs
 
 template<typename MeshType, typename StateType>
-void 
+double3
 Limited_Gradient<MeshType, StateType, CELL> :: operator() (int const cellid) {
 
   int dim = mesh_.space_dimension();
@@ -323,9 +322,12 @@ Limited_Gradient<MeshType, StateType, CELL> :: operator() (int const cellid) {
   }
 
   // Limited gradient is phi*grad
+  double3 result;
+  result.x = grad[0] * phi;
+  result.y = grad[1] * phi;
+  if (dim > 2) result.z = grad[2] * phi;
 
-  for (int i = 0; i < dim; ++i)
-    grads_[cellid*dim+i] = grad[i] * phi;
+  return result;
 }
 
 

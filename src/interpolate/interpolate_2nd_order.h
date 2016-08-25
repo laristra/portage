@@ -172,15 +172,15 @@ class Interpolate_2ndOrder<SourceMeshType, TargetMeshType, StateType, CELL> {
     source_state_.get_data(CELL, interp_var_name_, &source_vals_);
   }
 
-  void compute_gradient() {
+  void compute_gradients() {
     // Compute the limited gradients for the field
 
     int nentities = source_mesh_.end(CELL, Entity_type::PARALLEL_OWNED)-source_mesh_.begin(CELL);
-    gradients_ = std::make_shared<std::vector<double>>();
-    gradients_->resize(3*nentities);
+    gradients_ = std::make_shared<std::vector<double3>>();
+    gradients_->resize(nentities);
    
     Limited_Gradient<SourceMeshType, StateType, CELL>
-        limgrad(source_mesh_, source_state_, interp_var_name_, &((*gradients_)[0]), limiter_type_);
+        limgrad(source_mesh_, source_state_, interp_var_name_, limiter_type_);
  
     // call transform functor to take the values of the variable on
     // the cells and compute a "limited" gradient of the field on the
@@ -190,8 +190,8 @@ class Interpolate_2ndOrder<SourceMeshType, TargetMeshType, StateType, CELL> {
     // thrust::transform or boost::transform) in portage.h, the
     // compiler is not able to disambiguate this call and is getting
     // confused. So we will explicitly state that this is Portage::transform
-    std::for_each(source_mesh_.begin(CELL), source_mesh_.end(CELL, Entity_type::PARALLEL_OWNED),
-                      limgrad);
+    Portage::transform(source_mesh_.begin(CELL), source_mesh_.end(CELL, Entity_type::PARALLEL_OWNED),
+                       gradients_->begin(), limgrad);
   }
 
 
@@ -235,12 +235,12 @@ class Interpolate_2ndOrder<SourceMeshType, TargetMeshType, StateType, CELL> {
               const int targetCellId)
       const;
 
-  void set_gradients(std::shared_ptr<std::vector<double>> gradients)
+  void set_gradients(std::shared_ptr<std::vector<double3>> gradients)
   {
     gradients_ = gradients;
   }
 
-  std::shared_ptr<std::vector<double>> get_gradients()
+  std::shared_ptr<std::vector<double3>> get_gradients()
   {
     return gradients_;
   }  
@@ -252,7 +252,7 @@ class Interpolate_2ndOrder<SourceMeshType, TargetMeshType, StateType, CELL> {
   std::string const & interp_var_name_;
   LimiterType const & limiter_type_;
   double * source_vals_;
-  std::shared_ptr<std::vector<double>> gradients_; 
+  std::shared_ptr<std::vector<double3>> gradients_; 
 };
 
 // Implementation of the () operator for 2nd order interpolation on cells
@@ -307,8 +307,10 @@ double Interpolate_2ndOrder<SourceMeshType, TargetMeshType,
 
 
     double val = source_vals_[srccell];
-    for (int i = 0; i < spdim; ++i)
-      val += (*gradients_)[srccell*3+i] * (xsect_centroid[i]-srccell_centroid[i]);
+    val += (*gradients_)[srccell].x * (xsect_centroid[0]-srccell_centroid[0]);
+    val += (*gradients_)[srccell].y * (xsect_centroid[1]-srccell_centroid[1]);
+    val += (*gradients_)[srccell].z * (xsect_centroid[2]-srccell_centroid[2]);
+
     val *= xsect_volume;
     totalval += val;
   }
@@ -487,6 +489,7 @@ double Interpolate_2ndOrder<SourceMeshType, TargetMeshType,
     double val = source_vals_[srccell];
     for (int i = 0; i < spdim; ++i)
       val += gradients_[srccell][i] * (xsect_centroid[i]-srccell_coord[i]);
+
     val *= xsect_volume;
     totalval += val;
   }
