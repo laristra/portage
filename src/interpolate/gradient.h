@@ -151,7 +151,7 @@ class Limited_Gradient {
   /// Functor - not implemented for all types - see specialization for
   /// cells, nodes
 
-  double3 operator()(int entity_id) {
+  Portage::Point3 operator()(int entity_id) {
     std::cerr << "Limited gradient not implementd for this entity kind\n";
   }
 
@@ -212,7 +212,7 @@ class Limited_Gradient<MeshType, StateType, CELL> {
 
   /// Functor
 
-  double3 operator()(int cellid);
+  Portage::Point3 operator()(int cellid);
 
  private:
   LimiterType limtype_;
@@ -225,7 +225,7 @@ class Limited_Gradient<MeshType, StateType, CELL> {
 // @brief Implementation of Limited_Gradient functor for CELLs
 
 template<typename MeshType, typename StateType>
-double3
+Portage::Point3
 Limited_Gradient<MeshType, StateType, CELL> :: operator() (int const cellid) {
 
   int dim = mesh_.space_dimension();
@@ -322,10 +322,9 @@ Limited_Gradient<MeshType, StateType, CELL> :: operator() (int const cellid) {
   }
 
   // Limited gradient is phi*grad
-  double3 result;
-  result.x = grad[0] * phi;
-  result.y = grad[1] * phi;
-  if (dim > 2) result.z = grad[2] * phi;
+  Portage::Point3 result;
+  for (int i = 0; i < dim; i++)
+    result[i] = grad[i] * phi;
 
   return result;
 }

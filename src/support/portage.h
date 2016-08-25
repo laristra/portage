@@ -21,24 +21,6 @@
 
 #endif
 
-#if (defined(THRUST) && (THRUST_DEVICE_SYSTEM == THRUST_DEVICE_SYSTEM_CUDA))
-
-#include "cuda_runtime.h"
-
-#else
-
-typedef struct double3
-{
-  double x,y,z;
-} double3;
-
-static __inline__ double3 make_double3(double x, double y, double z)
-{
-  double3 t; t.x = x; t.y = y; t.z = z; return t;
-}
-
-#endif
-
 namespace Portage {
 
 // Cells (aka zones/elements) are the highest dimension entities in a mesh

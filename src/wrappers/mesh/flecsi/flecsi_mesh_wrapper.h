@@ -161,7 +161,7 @@ class Flecsi_Mesh_Wrapper {
   }
 
   //! Number of items of given entity
-  int num_entities(Entity_kind const entity) const {
+  int num_entities(Entity_kind const entity, Entity_type const etype=Entity_type::ALL) const {
     switch(entity) {
       case NODE :
         return flecsi_mesh_.num_vertices();
@@ -195,9 +195,9 @@ class Flecsi_Mesh_Wrapper {
   }
 
   //! Iterator on mesh entity - end
-  counting_iterator end(Entity_kind const entity) const {
+  counting_iterator end(Entity_kind const entity, Entity_type const etype=Entity_type::ALL) const {
     int start_index = 0;
-    return (make_counting_iterator(start_index) + num_entities(entity));
+    return (make_counting_iterator(start_index) + num_entities(entity, etype));
   }
 
   //! Get list of nodes for a cell

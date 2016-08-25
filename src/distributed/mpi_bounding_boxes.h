@@ -267,9 +267,9 @@ class MPI_Bounding_Boxes {
     // Send gradient fields
     for (int s=0; s<source_state_flat.get_num_gradients(); s++)
     {
-      std::shared_ptr<std::vector<double3>> sourceGrads = source_state_flat.get_gradients(s);
-      int mpiCellStride = sizeof(double3)/sizeof(double);
-      std::vector<double3> newField(totalRecvSize);
+      std::shared_ptr<std::vector<Portage::Point3>> sourceGrads = source_state_flat.get_gradients(s);
+      int mpiCellStride = sizeof(Portage::Point3)/sizeof(double);
+      std::vector<Portage::Point3> newField(totalRecvSize);
 
       if (recvCounts[commRank] > 0)
         std::copy(sourceGrads->begin(), sourceGrads->begin()+sourceNumCells,

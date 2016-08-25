@@ -83,7 +83,7 @@ class Flat_State_Wrapper {
   /*!
     @brief Get gradients
   */
-  std::shared_ptr<std::vector<double3>> get_gradients(int index)
+  std::shared_ptr<std::vector<Portage::Point3>> get_gradients(int index)
   {
     return gradients_[index];
   }
@@ -96,7 +96,7 @@ class Flat_State_Wrapper {
   /*!
     @brief Add a gradient field
   */
-  void add_gradients(std::shared_ptr<std::vector<double3>> new_grad)
+  void add_gradients(std::shared_ptr<std::vector<Portage::Point3>> new_grad)
   {
     if (new_grad->size() <= 0) return;
     gradients_.push_back(new_grad); 
@@ -118,7 +118,7 @@ class Flat_State_Wrapper {
 private:
   std::vector<std::shared_ptr<std::vector<T>>> state_;
   std::map<std::string, int> name_map_;
-  std::vector<std::shared_ptr<std::vector<double3>>> gradients_;
+  std::vector<std::shared_ptr<std::vector<Portage::Point3>>> gradients_;
 
 
 }; // Flat_State_Wrapper

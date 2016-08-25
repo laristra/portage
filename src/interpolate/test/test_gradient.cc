@@ -97,7 +97,7 @@ TEST(Gradient, Fields_Cell_Ctr) {
 
   // Compute the gradient for each of these fields
 
-  double3 grad;
+  Portage::Point3 grad;
 
   // Verify the gradient values
   // For field 1 (constant), it is is 0,0
@@ -107,20 +107,20 @@ TEST(Gradient, Fields_Cell_Ctr) {
     // unlimited gradient of constant function
 
     grad = gradcalc1(c);
-    ASSERT_NEAR(0.0, grad.x, 1.0e-10);
-    ASSERT_NEAR(0.0, grad.y, 1.0e-10);
+    ASSERT_NEAR(0.0, grad[0], 1.0e-10);
+    ASSERT_NEAR(0.0, grad[1], 1.0e-10);
 
     // unlimited gradient of linear function
 
     grad = gradcalc2(c);
-    ASSERT_NEAR(1.0, grad.x, 1.0e-10);
-    ASSERT_NEAR(2.0, grad.y, 1.0e-10);
+    ASSERT_NEAR(1.0, grad[0], 1.0e-10);
+    ASSERT_NEAR(2.0, grad[1], 1.0e-10);
 
     // limited gradient of constant function
 
     grad = gradcalc3(c);
-    ASSERT_NEAR(0.0, grad.x, 1.0e-10);
-    ASSERT_NEAR(0.0, grad.y, 1.0e-10);
+    ASSERT_NEAR(0.0, grad[0], 1.0e-10);
+    ASSERT_NEAR(0.0, grad[1], 1.0e-10);
 
     // limited gradient of linear function
     //
@@ -145,8 +145,8 @@ TEST(Gradient, Fields_Cell_Ctr) {
     }
 
     if (!boundary_cell) {
-      ASSERT_NEAR(1.0, grad.x, 1.0e-10);
-      ASSERT_NEAR(2.0, grad.y, 1.0e-10);
+      ASSERT_NEAR(1.0, grad[0], 1.0e-10);
+      ASSERT_NEAR(2.0, grad[1], 1.0e-10);
     }
   }
 }
