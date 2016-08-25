@@ -27,6 +27,14 @@ set_target_properties(shotshellapp PROPERTIES
                       LINK_FLAGS "${MPI_CXX_LINK_FLAGS}")
 target_link_libraries(shotshellapp ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES})
 
+# timing example
+add_executable(timingapp timing_test.cc)
+target_link_libraries(timingapp portage ${EXTRA_LIBS})
+target_link_libraries(timingapp ${MPI_CXX_LIBRARIES})
+set_target_properties(timingapp PROPERTIES
+                      LINK_FLAGS "${MPI_CXX_LINK_FLAGS}")
+target_link_libraries(timingapp ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES})
+
 # FleCSI example
 if(FLECSI_INSTALL_DIR)
   add_executable(portage_flecsiapp main_flecsi.cc)
@@ -57,6 +65,7 @@ if(ENABLE_TCMALLOC)
   set(TCMALLOC_LIB "${HOME}" CACHE STRING "Set the TCMalloc library")
   target_link_libraries(portageapp ${TCMALLOC_LIB})
   target_link_libraries(shotshellapp ${TCMALLOC_LIB})
+  target_link_libraries(timingapp ${TCMALLOC_LIB})
 endif()
 
 # Profiling option (to allow pausing and resuming profiling during execution)
