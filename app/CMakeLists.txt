@@ -31,15 +31,17 @@ if (Jali_DIR)
                               LINK_FLAGS "${MPI_CXX_LINK_FLAGS}")
     endif (ENABLE_MPI)
     target_link_libraries(shotshellapp ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES})
-endif (Jali_DIR)
 
-# timing example
-add_executable(timingapp timing_test.cc)
-target_link_libraries(timingapp portage ${EXTRA_LIBS})
-target_link_libraries(timingapp ${MPI_CXX_LIBRARIES})
-set_target_properties(timingapp PROPERTIES
-                      LINK_FLAGS "${MPI_CXX_LINK_FLAGS}")
-target_link_libraries(timingapp ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES})
+    # timing example
+    add_executable(timingapp timing_test.cc)
+    target_link_libraries(timingapp portage ${EXTRA_LIBS})
+    if (ENABLE_MPI)
+        target_link_libraries(timingapp ${MPI_CXX_LIBRARIES})
+        set_target_properties(timingapp PROPERTIES
+                              LINK_FLAGS "${MPI_CXX_LINK_FLAGS}")
+    endif (ENABLE_MPI)
+    target_link_libraries(timingapp ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES})
+endif (Jali_DIR)
 
 # FleCSI example
 if (FLECSI_INSTALL_DIR)
