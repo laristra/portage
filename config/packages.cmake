@@ -39,51 +39,18 @@ endif(FLECSI_INSTALL_DIR)
 # Set up MPI builds
 # (eventually most of this should be pushed down into cinch)
 #------------------------------------------------------------------------------#
-
-find_package(MPI REQUIRED)
+if (ENABLE_MPI)
+  find_package(MPI REQUIRED)
 
 # TODO:  Modify the below to use wrapper compilers instead of flags
 #        (there isn't an obvious good way to do this)
-add_definitions(${MPI_CXX_COMPILE_FLAGS})
-include_directories(${MPI_CXX_INCLUDE_PATH})
-link_directories(${MPI_CXX_LIBRARY_DIRS})
+  add_definitions(${MPI_CXX_COMPILE_FLAGS})
+  include_directories(${MPI_CXX_INCLUDE_PATH})
+  link_directories(${MPI_CXX_LIBRARY_DIRS})
+endif ()
 
-#------------------------------------------------------------------------------#
-# Configure Jali
-# (this includes the TPLs that Jali will need)
-#------------------------------------------------------------------------------#
 
 set(ARCHOS ${CMAKE_SYSTEM_PROCESSOR}_${CMAKE_SYSTEM_NAME})
-
-set(Jali_DIR "$ENV{HOME}/devel/Jali" CACHE STRING
-    "Set the locaiton of Jali")
-
-if (NOT Jali_DIR)
-  message(FATAL_ERROR "Error: Jali top level installation dir must be defined")
-endif()
-
-# Look for the Jali package
-
-find_package(Jali REQUIRED)
-
-message(STATUS "Located Jali")
-message(STATUS "Jali_DIR=${Jali_DIR}")
-
-# add full path to jali libs
-unset(_LIBS)
-foreach (_lib ${Jali_LIBRARIES})
-    set(_LIBS ${_LIBS};${Jali_LIBRARY_DIRS}/lib${_lib}.a)
-endforeach()
-set(Jali_LIBRARIES ${_LIBS})
-
-message(STATUS "Jali_INCLUDE_DIRS=${Jali_INCLUDE_DIRS}")
-message(STATUS "Jali_LIBRARY_DIRS=${Jali_LIBRARY_DIRS}")
-message(STATUS "Jali_LIBRARIES=${Jali_LIBRARIES}")
-message(STATUS "Jali_TPL_INCLUDE_DIRS=${Jali_TPL_INCLUDE_DIRS}")
-message(STATUS "Jali_TPL_LIBRARY_DIRS=${Jali_TPL_LIBRARY_DIRS}")
-message(STATUS "Jali_TPL_LIBRARIES=${Jali_TPL_LIBRARIES}")
-
-include_directories(${Jali_INCLUDE_DIRS} ${Jali_TPL_INCLUDE_DIRS})
 
 #-----------------------------------------------------------------------------
 # FleCSI location
@@ -131,6 +98,40 @@ if(FLECSI_INSTALL_DIR)
   # endif(IS_DIRECTORY ${FLECSI_TPL_DIR})
 endif(FLECSI_INSTALL_DIR)
 
+
+
+#------------------------------------------------------------------------------#
+# Configure Jali
+# (this includes the TPLs that Jali will need)
+#------------------------------------------------------------------------------#
+
+if (Jali_DIR)
+
+   # Look for the Jali package
+
+   find_package(Jali REQUIRED)
+
+   message(STATUS "Located Jali")
+   message(STATUS "Jali_DIR=${Jali_DIR}")
+
+   # add full path to jali libs
+   unset(_LIBS)
+   foreach (_lib ${Jali_LIBRARIES})
+      set(_LIBS ${_LIBS};${Jali_LIBRARY_DIRS}/lib${_lib}.a)
+   endforeach()
+   set(Jali_LIBRARIES ${_LIBS})
+
+   message(STATUS "Jali_INCLUDE_DIRS=${Jali_INCLUDE_DIRS}")
+   message(STATUS "Jali_LIBRARY_DIRS=${Jali_LIBRARY_DIRS}")
+   message(STATUS "Jali_LIBRARIES=${Jali_LIBRARIES}")
+   message(STATUS "Jali_TPL_INCLUDE_DIRS=${Jali_TPL_INCLUDE_DIRS}")
+   message(STATUS "Jali_TPL_LIBRARY_DIRS=${Jali_TPL_LIBRARY_DIRS}")
+   message(STATUS "Jali_TPL_LIBRARIES=${Jali_TPL_LIBRARIES}")
+
+   include_directories(${Jali_INCLUDE_DIRS} ${Jali_TPL_INCLUDE_DIRS})
+
+endif (Jali_DIR)
+
 #-----------------------------------------------------------------------------
 # General NGC include directory information
 #-----------------------------------------------------------------------------
@@ -169,7 +170,7 @@ if(ENABLE_THRUST)
       set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
       set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
       set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
-    endif()
+    endif(OPENMP_FOUND)
   endif ()
 
   if("${THRUST_BACKEND}" STREQUAL "THRUST_DEVICE_SYSTEM_TBB")
@@ -178,7 +179,7 @@ if(ENABLE_THRUST)
       include_directories(${TBB_INCLUDE_DIRS})
       link_directories(${TBB_LIBRARY_DIRS})
       set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -ltbb")
-    endif()
+    endif(TBB_FOUND)
   endif()
 
 endif(ENABLE_THRUST)
