@@ -3,11 +3,23 @@
 # All rights reserved.
 #-----------------------------------------------------------------------------~#
 
-set(wrappers_HEADERS
-    mesh/jali/jali_mesh_wrapper.h
-    mesh/flecsi/flecsi_mesh_wrapper.h
-    state/jali/jali_state_wrapper.h
-    state/flecsi/flecsi_state_wrapper.h
+if (Jali_DIR)
+    set(jali_wrapper_headers
+        mesh/jali/jali_mesh_wrapper.h
+        state/jali/jali_state_wrapper.h
+        )
+endif (Jali_DIR)
+
+if (FLECSI_INSTALL_DIR)
+    set(flecsi_wrapper_headers
+        mesh/flecsi/flecsi_mesh_wrapper.h
+        state/flecsi/flecsi_state_wrapper.h
+        )
+endif (FLECSI_INSTALL_DIR)
+
+set(wrapper_HEADERS
+    ${jali_wrapper_headers}
+    ${flecsi_wrapper_headers}
     PARENT_SCOPE)
 
 if (ENABLE_UNIT_TESTS)
