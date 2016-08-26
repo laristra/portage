@@ -183,6 +183,13 @@ class Flat_Mesh_Wrapper {
     }
   }
 
+  //! Number of items of given entity
+  int num_entities(Entity_kind const entity, Entity_type const etype=Entity_type::ALL) const {
+    if (entity == Entity_kind::CELL) return (coords_.size() / nodesPerCell_);
+    else if (entity == Entity_kind::NODE) return coords_.size();
+    else return 0;
+  }
+
   //! get coordinates
   std::vector<T>& get_coords() { return coords_; }
 

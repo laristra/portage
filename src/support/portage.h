@@ -81,6 +81,12 @@ enum Entity_type {
   ALL  = 4     // PARALLEL_OWNED + PARALLEL_GHOST + BOUNDARY_GHOST
 };
 
+/// Limiter type
+
+typedef enum {NOLIMITER, VAN_LEER, BARTH_JESPERSEN, MINMOD, SUPERBEE}
+  LimiterType;
+
+
 #ifdef THRUST
 
 template<typename T>
@@ -136,6 +142,11 @@ template<typename InputIterator1, typename InputIterator2,
 }
 
 #endif
+
+struct Weights_t {
+  int entityID;
+  std::vector<double> weights;
+};
 
 }  // namespace Portage
 

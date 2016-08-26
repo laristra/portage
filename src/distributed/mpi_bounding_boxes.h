@@ -321,7 +321,7 @@ class MPI_Bounding_Boxes {
           std::cout << sourceCoords[i] << " " << newCoords[i] << " ";
         std::cout << std::endl;
         for (unsigned int i=0; i<sourceGrads->size(); i++)
-          std::cout << (*sourceGrads)[i].x << " " << (*sourceGrads)[i].y << " " << (*sourceGrads)[i].z;
+          std::cout << (*sourceGrads)[i][0] << " " << (*sourceGrads)[i][1] << " " << (*sourceGrads)[i][2];
         std::cout << std::endl;
       }
 #endif

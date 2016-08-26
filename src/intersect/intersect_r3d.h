@@ -95,7 +95,7 @@ public:
       if (MAXLEN < len) MAXLEN = len;
     }
 
-    double eps = 1.0e-12*MAXLEN;  // used only for bounding box check
+    double bbeps = 1.0e-12*MAXLEN;  // used only for bounding box check
     //                            // not for intersections
 
 
@@ -126,7 +126,7 @@ public:
 
         const std::array<double, 6>& target_tetbounds = target_tetbounds_all[t++];
         
-        // Check if the target and source bounding boxes overlap - eps
+        // Check if the target and source bounding boxes overlap - bbeps
         // is used to subject touching tets to the full intersection
         // (just in case)
 
@@ -134,8 +134,8 @@ public:
         if (check_bb) {
           bool disjoint = false;
           for (int j = 0; j < 3 && !disjoint; ++j)
-            disjoint = (target_tetbounds[2*j] > source_tetbounds[2*j+1]+eps ||
-                        target_tetbounds[2*j+1] < source_tetbounds[2*j]-eps);
+            disjoint = (target_tetbounds[2*j] > source_tetbounds[2*j+1]+bbeps ||
+                        target_tetbounds[2*j+1] < source_tetbounds[2*j]-bbeps);
           if (disjoint) continue;
         }
 
@@ -164,7 +164,7 @@ public:
         // i.e. abs(om[0]) < eps, then it can sometimes be slightly negative,
         // like om[0] == -1.24811e-16. For this reason we use the condition
         // om[0] < -eps.
-        const double eps=1e-14;
+        const double eps=1e-14;  // @todo Should multiply by domain or element size
         if (om[0] < -eps) throw std::runtime_error("Negative volume");
 
         // Accumulate moments:
