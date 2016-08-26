@@ -200,8 +200,10 @@ class Interpolate_2ndOrder<SourceMeshType, TargetMeshType, StateType, CELL> {
     // compiler is not able to disambiguate this call and is getting
     // confused. So we will explicitly state that this is Portage::transform
 
+    Portage::Point3* gradient_raw = (Portage::Point3*)(gradients_->data());
+    Portage::pointer<Portage::Point3> gradient_ptr(gradient_raw);
     Portage::transform(source_mesh_.begin(CELL), source_mesh_.end(CELL, Entity_type::PARALLEL_OWNED),
-                       gradients_->begin(), limgrad);
+                       gradient_ptr, limgrad); 
   }
 
 
@@ -235,6 +237,7 @@ class Interpolate_2ndOrder<SourceMeshType, TargetMeshType, StateType, CELL> {
   double operator() (int const targetCellID,
                      std::vector<Weights_t> const & sources_and_weights) const;
 
+  /// Set gradients (without computing here)
   void set_gradients(std::string const & interp_var_name, 
                      std::shared_ptr<std::vector<Portage::Point3>> gradients)
   {
@@ -242,6 +245,7 @@ class Interpolate_2ndOrder<SourceMeshType, TargetMeshType, StateType, CELL> {
     gradients_ = gradients;
   }
 
+  /// Get gradients that have been computed
   std::shared_ptr<std::vector<Portage::Point3>> get_gradients()
   {
     return gradients_;
@@ -301,8 +305,6 @@ double Interpolate_2ndOrder<SourceMeshType, TargetMeshType,
     std::vector<double> xsect_centroid(spdim);
     for (int i = 0; i < spdim; ++i)
       xsect_centroid[i] = xsect_weights[1+i]/xsect_volume;  // (1st moment)/vol
-//std::cout << "Test: " << targetCellID << " " << srccell << std::endl;
-
 
     double val = source_vals_[srccell];
     for (int i = 0; i < spdim; ++i)
