@@ -128,7 +128,7 @@ class Interpolate_1stOrder {
   TargetMeshType const & target_mesh_;
   StateType const & source_state_;
   std::string interp_var_name_;
-  double * source_vals_;
+  double const * source_vals_;
 };
 
 
