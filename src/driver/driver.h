@@ -1346,14 +1346,13 @@ template<class SourceMesh_Wrapper, class SourceState_Wrapper,
   Flat_State_Wrapper<> source_state_flat(source_state_, source_remap_var_names_);
 
   int nvars = source_var_names.size();
-  for (int i = 0; i < nvars; ++i) {
+  /*for (int i = 0; i < nvars; ++i) {
     Interpolate_2ndOrder<SourceMesh_Wrapper, TargetMesh_Wrapper, SourceState_Wrapper, CELL>*
         interpolater = new Interpolate_2ndOrder<SourceMesh_Wrapper, TargetMesh_Wrapper, SourceState_Wrapper, CELL>(
            source_mesh_, target_mesh_, source_state_);
-    //interpolater->compute_gradients();
     interpolater->set_interpolation_variable(source_var_names[i], NOLIMITER);
     source_state_flat.add_gradients(interpolater->get_gradients());
-  }
+  }*/
 
   // Use a bounding box distributor to send the source cells to the target
   // paritions where they are needed
@@ -1454,7 +1453,8 @@ template<class SourceMesh_Wrapper, class SourceState_Wrapper,
                 << " to variable " << target_var_names[i]
                 << " using a 2nd order accurate algorithm" << std::endl;
 
-    interpolate.set_gradients(source_var_names[i], source_state_flat.get_gradients(i));
+    //interpolate.set_gradients(source_var_names[i], source_state_flat.get_gradients(i));
+    interpolate.set_interpolation_variable(source_var_names[i], NOLIMITER);
 
     // This populates targetField with the values returned by the
     // interpolate operator

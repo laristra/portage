@@ -86,6 +86,8 @@ class MPI_Bounding_Boxes {
     int sourceNodesPerCell = source_mesh_flat.get_nodes_per_cell();
     int sourceCellStride = sourceNodesPerCell*sourceDim;
     std::vector<double>& sourceCoords = source_mesh_flat.get_coords();
+    std::vector<int>& sourceNeighborCounts = source_mesh_flat.get_neighbor_counts();
+    std::vector<int>& sourceNeighbors = source_mesh_flat.get_neighbors();
 
     // Compute the bounding box for the source mesh on this rank
     double sourceBoundingBox[2*sourceDim];
@@ -202,6 +204,129 @@ class MPI_Bounding_Boxes {
 
     // We will now use the received source data as our new source mesh on this partition
     sourceCoords = newCoords;
+
+
+
+
+
+
+ 
+    std::vector<int> newNeighborCounts(totalRecvSize);
+    int neighborSize = std::accumulate(sourceNeighborCounts.begin(), sourceNeighborCounts.end(), 0);
+
+    // Copy source cells that will stay on this rank into the proper place in the new vector
+    if (recvCounts[commRank] > 0)
+      std::copy(sourceNeighborCounts.begin(), sourceNeighborCounts.end(), newNeighborCounts.begin() + localOffset);
+
+    // Each rank will send and receive the appropriate source cells
+    writeOffset = 0;
+
+    // Each rank will do a non-blocking receive from each rank from which it will receive source cell coordinates
+    requests.clear();
+    for (unsigned int i=0; i<commSize; i++)
+    {
+      if ((i != commRank) && (recvCounts[i] > 0))
+      {
+        MPI_Request request;
+        MPI_Irecv(&(newNeighborCounts[0])+writeOffset, recvCounts[i], MPI_INT, i,
+                  MPI_ANY_TAG, MPI_COMM_WORLD, &request);
+        requests.push_back(request);
+      }
+      writeOffset += recvCounts[i];
+    }
+
+    // Each rank will send its source cell coordinates to appropriate ranks
+    for (unsigned int i=0; i<commSize; i++)
+    {
+      if ((i != commRank) && (sendCounts[i] > 0))
+      {
+        MPI_Send(&(sourceNeighborCounts[0]), sendCounts[i], MPI_INT, i, 0, MPI_COMM_WORLD);
+      }
+    }
+
+    // Wait for all receives to complete
+    if (requests.size() > 0)
+    {
+      std::vector<MPI_Status> statuses(requests.size());
+      MPI_Waitall(requests.size(), &(requests[0]), &(statuses[0]));
+    }
+
+    // We will now use the received source data as our new source mesh on this partition
+    sourceNeighborCounts = newNeighborCounts;
+
+
+
+
+
+    std::vector<int> sendNeighborsCounts(commSize, 0);
+    std::vector<int> recvNeighborsCounts(commSize);
+    for (unsigned int i=0; i<commSize; i++)
+      sendNeighborsCounts[i] = (sendCounts[i] > 0) ? neighborSize : 0;
+    MPI_Alltoall(&(sendNeighborsCounts[0]), 1, MPI_INT, &(recvNeighborsCounts[0]), 1, MPI_INT, MPI_COMM_WORLD);
+
+    int neighborsRecvSize = 0;
+    for (unsigned int i=0; i<commSize; i++) neighborsRecvSize += recvNeighborsCounts[i];
+    std::vector<int> newNeighbors(neighborsRecvSize);
+
+    // Copy source cells that will stay on this rank into the proper place in the new vector
+    int localNeighborsOffset = 0;
+    for (unsigned int i=0; i<commRank; i++) localNeighborsOffset += recvNeighborsCounts[i];
+    if (recvCounts[commRank] > 0)
+      std::copy(sourceNeighbors.begin(), sourceNeighbors.end(), newNeighbors.begin() + localNeighborsOffset);
+
+    // Each rank will send and receive the appropriate source cells
+    writeOffset = 0;
+
+    // Each rank will do a non-blocking receive from each rank from which it will receive source cell coordinates
+    requests.clear();
+    for (unsigned int i=0; i<commSize; i++)
+    {
+      if ((i != commRank) && (recvCounts[i] > 0))
+      {
+        MPI_Request request;
+        MPI_Irecv(&(newNeighbors[0])+writeOffset, recvNeighborsCounts[i], MPI_INT, i,
+                  MPI_ANY_TAG, MPI_COMM_WORLD, &request);
+        requests.push_back(request);
+      }
+      writeOffset += recvNeighborsCounts[i];
+    }
+
+    // Each rank will send its source cell coordinates to appropriate ranks
+    for (unsigned int i=0; i<commSize; i++)
+    {
+      if ((i != commRank) && (sendCounts[i] > 0))
+      {
+        MPI_Send(&(sourceNeighbors[0]), sendNeighborsCounts[i], MPI_INT, i, 0, MPI_COMM_WORLD);
+      }
+    }
+
+    // Wait for all receives to complete
+    if (requests.size() > 0)
+    {
+      std::vector<MPI_Status> statuses(requests.size());
+      MPI_Waitall(requests.size(), &(requests[0]), &(statuses[0]));
+    }
+
+    // We will now use the received source data as our new source mesh on this partition
+    sourceNeighbors = newNeighbors;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     // Send and receive each field to be remapped (might be more efficient to consolidate sends)
     for (int s=0; s<source_state_flat.get_num_vectors(); s++)

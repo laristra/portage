@@ -49,6 +49,12 @@ class Flat_Mesh_Wrapper {
         coords_[c*nodesPerCell_*dim_+j*dim_+1] = cellCoord[j][1];
         coords_[c*nodesPerCell_*dim_+j*dim_+2] = cellCoord[j][2];
       }
+
+      std::vector<int> cellNeighbors;
+      input.cell_get_node_adj_cells(c, ALL, &(cellNeighbors));
+      neighborCounts_.push_back(cellNeighbors.size());
+      for (unsigned int j=0; j<cellNeighbors.size(); j++)
+        neighbors_.push_back(cellNeighbors[j]);
     }
   }
 
@@ -190,8 +196,28 @@ class Flat_Mesh_Wrapper {
     else return 0;
   }
 
+  //! Get node connected neighbors of cell
+  void cell_get_node_adj_cells(int const cellid,
+                               Entity_type const ptype,
+                               std::vector<int> *adjcells) const {
+    // TODO: Compute the scan of the neighborCounts_ vector once so that we don't redo this
+    // loop everytime we access neighbor information
+    int index = 0;
+    for (unsigned int i=0; i<cellid; i++)
+      index += neighborCounts_[i];
+    adjcells->resize(neighborCounts_[cellid]);
+    for (unsigned int i=0; i<adjcells->size(); i++)
+      (*adjcells)[i] = neighbors_[index+i];
+  }
+
   //! get coordinates
   std::vector<T>& get_coords() { return coords_; }
+
+  //! get neighbor counts
+  std::vector<int>& get_neighbor_counts() { return neighborCounts_; }
+
+  //! get neighbors
+  std::vector<int>& get_neighbors() { return neighbors_; }
 
   //! get nodes per cell
   int get_nodes_per_cell() { return nodesPerCell_; }
@@ -199,8 +225,23 @@ class Flat_Mesh_Wrapper {
   //! get spatial dimension
   int space_dimension() const { return dim_; }
 
+  //! Iterators on mesh entity - begin
+  counting_iterator begin(Entity_kind const entity) const {
+    int start_index = 0;
+    return make_counting_iterator(start_index);
+  }
+
+  //! Iterator on mesh entity - end
+  counting_iterator end(Entity_kind const entity, Entity_type const etype=Entity_type::ALL) const {
+    int start_index = 0;
+    return (make_counting_iterator(start_index) + num_entities(entity, etype));
+  }
+
+
 private:
   std::vector<T> coords_;
+  std::vector<int> neighbors_;
+  std::vector<int> neighborCounts_;
   const int nodesPerCell_;
   const int dim_;
 
