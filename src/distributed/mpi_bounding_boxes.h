@@ -8,6 +8,8 @@
 
 //#define DEBUG_MPI
 
+#include <algorithm>
+
 #include "portage/support/portage.h"
 
 /*!
@@ -389,6 +391,8 @@ class MPI_Bounding_Boxes {
 #endif
     }
 
+
+#if 0
     // Send gradient fields
     for (int s=0; s<source_state_flat.get_num_gradients(); s++)
     {
@@ -451,6 +455,7 @@ class MPI_Bounding_Boxes {
       }
 #endif
     }
+#endif
 
   }
   
