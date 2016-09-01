@@ -61,7 +61,7 @@ namespace Portage {
 */
 
 template<typename SourceMeshType, typename TargetMeshType,
-    typename StateType, Entity_kind on_what>
+         typename StateType, Entity_kind on_what, long D>
 class Interpolate_1stOrder {
  public:
   /*!
@@ -139,9 +139,9 @@ class Interpolate_1stOrder {
 */
 
 template<typename SourceMeshType, typename TargetMeshType,
-         typename StateType, Entity_kind on_what>
+         typename StateType, Entity_kind on_what, long D>
 double Interpolate_1stOrder<SourceMeshType, TargetMeshType, StateType,
-                            on_what> :: operator() 
+                            on_what, D> :: operator()
     (int const targetCellID,
      std::vector<Weights_t> const & sources_and_weights) const {
 
