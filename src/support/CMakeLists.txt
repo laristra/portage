@@ -6,9 +6,9 @@
 # Add header files
 set(support_HEADERS
     portage.h
-    matrix.h
-    Point.h
     Vector.h
+    Point.h
+    Matrix.h
     PARENT_SCOPE
 )
 
