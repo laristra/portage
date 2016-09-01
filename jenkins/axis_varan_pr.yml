@@ -8,3 +8,7 @@ BUILD_TYPE:
   - debug
   - flecsi
 
+exclude:
+  - COMPILER: intel15
+    BUILD_TYPE: flecsi
+
