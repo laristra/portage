@@ -12,160 +12,216 @@
 #include <iostream>
 #include <type_traits>
 
-// #include <Vector.h>   // Portage::Vector
+#include "Vector.h"   // Portage::Vector
 
 /*!
-  @file matrix.h
+  @file Matrix.h
   @brief Matrix class for Portage 
-
-  @tparam Rows     number of rows
-  @tparam Columns  number of columns (defaults to number of rows if omitted)
 */
 
 namespace Portage {
 
-template<unsigned int Rows, unsigned int Columns=Rows>
+
 class Matrix {
  public:
-  Matrix() {}  // Default constructor - no initialization
-
+  Matrix() : Rows_(0), Columns_(0) {}
+  
+  Matrix(int const Rows, int const Columns) :
+      Rows_(Rows), Columns_(Columns) {
+    A_.resize(Rows_*Columns_);    // uninitialized
+  }
+  
   // Initialize to some constant value
-  explicit Matrix(double initval) {
-    for (unsigned int i = 0; i < Rows; ++i)
-      for (unsigned int j = 0; j < Columns; ++j)
-        A[i][j] = initval;
+  explicit Matrix(int const Rows, int const Columns,
+                  double initval) :
+      Rows_(Rows), Columns_(Columns) {
+    A_.resize(Rows_*Columns_);
+    for (int i = 0; i < Rows_; ++i)
+      for (int j = 0; j < Columns_; ++j)
+        A_[i*Columns_+j] = initval;
+  }
+  
+  // Initialize from vector of vectors - assume that each row vector
+  // is of the same size - if its not, then some values will be
+  // uninitialized
+  
+  explicit Matrix(std::vector<std::vector<double>> const& invals) {
+    Rows_ = invals.size();
+    Columns_ = invals[0].size();
+    A_.resize(Rows_*Columns_);
+    for (int i = 0; i < Rows_; ++i)
+      for (int j = 0; j < Columns_; ++j)
+        A_[i*Columns_+j] = invals[i][j];
   }
 
-  explicit Matrix(std::array<std::array<double, Columns>, Rows> const& inarray)
-      : A(inarray) {
-    for (unsigned int i = 0; i < Rows; ++i)
-      for (unsigned int j = 0; j < Columns; ++j)
-        A[i][j] = inarray[i][j];
+  Matrix(Matrix const& M) : Rows_(M.rows()), Columns_(M.columns()) {
+    A_.resize(Rows_*Columns_);
+    for (int i = 0; i < Rows_; ++i)
+      for (int j = 0; j < Columns_; ++j)
+        A_[i*Columns_+j] = M[i][j];
   }
 
-  // Rely on default copy and assignment constructors
+  Matrix& operator=(Matrix const& M) {
+    Rows_ = M.rows();
+    Columns_ = M.columns();
+    A_.resize(Rows_*Columns_);
+    for (int i = 0; i < Rows_; ++i)
+      for (int j = 0; j < Columns_; ++j)
+        A_[i*Columns_+j] = M[i][j];
+    return *this;
+  }
 
   // Destructor
   ~Matrix() {}
+
+  //! Number of rows
+  int rows() const {return Rows_;}
+
+  //! Number of columns
+  int columns() const {return Columns_;}
 
   //! Return a row of values
   //
   // The main utility of this operator is to facilitate the use
   // of the [][] notation to refer to elements of the matrix
-
-  std::array<double, Columns>& operator[](unsigned int i) {
-    return A[i];
+  
+  double * const operator[](int const RowIndex) {
+    return &(A_[RowIndex*Columns_]);
   }
-
+  
   //! Return a row of values that cannot be modified
   //
   // The main utility of this operator is to facilitate the use
   // of the [][] notation to refer to elements of a const matrix
-
-  std::array<double, Columns> const& operator[](unsigned int i) const {
-    return A[i];
+  
+  double const * const operator[](int const RowIndex) const {
+    return &(A_[RowIndex*Columns_]);
   }
-
+  
   //! Get a transpose
-  Matrix<Columns, Rows> transpose() const {
-    Matrix<Columns, Rows> AT;
-    for (unsigned int i = 0; i < Rows; ++i)
-      for (unsigned int j = 0; j < Columns; ++j)
-        AT[j][i] = A[i][j];
+  Matrix transpose() const {
+    Matrix AT(Columns_, Rows_);
+    for (int i = 0; i < Rows_; ++i)
+      for (int j = 0; j < Columns_; ++j)
+        AT[j][i] = A_[i*Columns_+j];
     return AT;
   }
 
   //! Get Inverse - only if its a square matrix
 
-  Matrix<Rows, Rows> inverse() const {
-    Matrix<Rows, Rows> Ainv(0.0);
-    if (Rows != Columns) {
+  Matrix inverse() const {
+    if (Rows_ != Columns_) {
       std::cerr << "Matrix is rectangular" << std::endl;
       throw std::exception();
     }
     
+    Matrix Ainv(Rows_, Rows_, 0.0);
+
     // Create a temporary matrix with twice as many columns
-    Matrix<Rows, 2*Rows> D;
+    Matrix D(Rows_, 2*Rows_);
     
     // Initialize the reduction matrix
-    unsigned int Rows2 = 2*Rows;
-    for (unsigned int i = 0; i < Rows; i++) {
-      for (unsigned int j = 0; j < Rows; j++) {
-        D[i][j] = A[i][j];
-        D[i][Rows+j] = 0.0;
+    int Rows2 = 2*Rows_;
+    for (int i = 0; i < Rows_; i++) {
+      for (int j = 0; j < Rows_; j++) {
+        D[i][j] = A_[i*Columns_+j];
+        D[i][Rows_+j] = 0.0;
       }
-      D[i][Rows+i] = 1.0;
+      D[i][Rows_+i] = 1.0;
     }
     
     // Do the reduction
-    for (unsigned int i = 0; i < Rows; i++) {
+    for (int i = 0; i < Rows_; i++) {
       double alpha = D[i][i];
       if (alpha == 0.0) {
         std::cerr << "invert: Singular Matrix" << std::endl;
         return Ainv;
       }
       
-      for (unsigned int j = 0; j < Rows2; j++)
+      for (int j = 0; j < Rows2; j++)
         D[i][j] = D[i][j]/alpha;
       
-      for (unsigned int k = 0; k < Rows; k++) {
-        if ((k-i) == 0) 
+      for (int k = 0; k < Rows_; k++) {
+        if ((k - i) == 0)
           continue;
         
         double beta = D[k][i];
-        for (unsigned int j = 0; j < Rows2; j++)
+        for (int j = 0; j < Rows2; j++)
           D[k][j] = D[k][j] - beta*D[i][j];
       }
     }
     
-    // Copy result unsigned into output matrix
-    for (unsigned int i = 0; i < Rows; i++)
-      for (unsigned int j = 0; j < Rows; j++)
-        Ainv[i][j] = D[i][j + Rows];
+    // Copy result into output matrix
+    for (int i = 0; i < Rows_; i++)
+      for (int j = 0; j < Rows_; j++)
+        Ainv[i][j] = D[i][j + Rows_];
 
     return Ainv;
   }
-
-/*!
-  @brief  Matrix-Vector multiply
-  @param[in] X The vector to post-multiply with
   
- */
+  /*!
+    @brief  Matrix-Vector multiply with std::vector
+    @param[in] X The vector to post-multiply with
+    
+  */
+  
+  std::vector<double> operator*(std::vector<double> const& X) {
+    assert(Columns_ == X.size());
 
-Vector<Rows> operator*(Vector<Columns> const& X) {
-  Vector<Rows> AX;
-  for (unsigned int i = 0; i < Rows; ++i) {
-    AX[i] = 0.0;
-    for (unsigned int j = 0; j < Columns; ++j)
-      AX[i] += A[i][j]*X[j];
+    std::vector<double> AX(Rows_);
+    for (int i = 0; i < Rows_; ++i) {
+      AX[i] = 0.0;
+      for (int j = 0; j < Columns_; ++j)
+        AX[i] += A_[i*Columns_+j]*X[j];
+    }
+    return AX;
   }
-  return AX;
-}
   
-/*!
-  @brief  Matrix-Matrix multiply
-  @param[in] B   matrix to post-multiply with
+  /*!
+    @brief  Matrix-Vector multiply with Portage::Vector
+    @param[in] X The vector to post-multiply with
+    
+  */
+  
+  template<long D>
+  Vector<D> operator*(Vector<D> const& X) {
+    assert(Rows_ == D && Columns_ == D);
 
-  Not able to make B const& since it complains about 
- */
-
-template<unsigned int Rows2 = Columns, unsigned int Columns2> 
-Matrix<Rows, Columns2> operator*(Matrix<Rows2, Columns2> const& B) {
-  assert(Rows2 == Columns);
-
-  Matrix<Rows, Columns2> AB(0.0);
-
-  for (unsigned int i = 0; i < Rows; ++i)
-    for (unsigned int j = 0; j < Columns2; ++j)
-      for (unsigned int k = 0; k < Columns; ++k)
-        AB[i][j] += A[i][k]*B[k][j];
-
-  return AB;
-}
+    Vector<D> AX;
+    for (int i = 0; i < Rows_; ++i) {
+      AX[i] = 0.0;
+      for (int j = 0; j < Columns_; ++j)
+        AX[i] += A_[i*Columns_+j]*X[j];
+    }
+    return AX;
+  }
+  
+  /*!
+    @brief  Matrix-Matrix multiply
+    @param[in] B   matrix to post-multiply with
+    
+    Not able to make B const& since it complains about 
+  */
+  
+  Matrix operator*(Matrix const& B) {
+    assert(Columns_ == B.rows());
+    
+    Matrix AB(Rows_, B.columns(), 0.0);
+    
+    for (int i = 0; i < Rows_; ++i)
+      for (int j = 0; j < B.columns(); ++j)
+        for (int k = 0; k < Columns_; ++k)
+          AB[i][j] += A_[i*Columns_+k]*B[k][j];
+    
+    return AB;
+  }
 
 
  private:
-  std::array<std::array<double, Columns>, Rows> A;
+  int Rows_, Columns_;
+  std::vector<double> A_;
+
+  friend class MatrixRow;
 };
 
 }  // namespace Portage
