@@ -107,21 +107,21 @@ int main(int argc, char** argv) {
 
 #ifdef FIXED_SIZE_EXAMPLE
   for (int i=0; i < 3034; i++) {
-    inputMeshWrapper.cell_centroid(i, &coord);
+    inputMesh->cell_centroid(i, &coord);
     double x = coord[0];
     double y = coord[1];
     double z = (inputDim == 3) ? coord[2] : 0.0;
     sourceData[i] = std::sqrt(x*x+y*y+z*z);
   }
   for (int i=3034; i < 4646; i++) {
-    inputMeshWrapper.cell_centroid(i, &coord);
+    inputMesh->cell_centroid(i, &coord);
     double x = coord[0];
     double y = coord[1];
     double z = (inputDim == 3) ? coord[2] : 1.0;
     sourceData[i] = x*y*z;
   }
   for (int i=4646; i < 5238; i++) {
-    inputMeshWrapper.cell_centroid(i, &coord);
+    inputMesh->cell_centroid(i, &coord);
     double x = coord[0];
     double y = coord[1];
     double z = (inputDim == 3) ? coord[2] : 0.0;
@@ -129,7 +129,7 @@ int main(int argc, char** argv) {
   }
 #else
   for (int i=0; i < sourceData.size(); i++) {
-    inputMeshWrapper.cell_centroid(i, &coord);
+    inputMesh->cell_centroid(i, &coord);
     double x = coord[0];
     double y = coord[1];
     double z = (inputDim > 2) ? coord[2] : 0.0;
@@ -190,7 +190,7 @@ int main(int argc, char** argv) {
     double toterr = 0.0;
     double error;
     for (auto c = 0; c < cellvecout.size(); c++) {
-      targetMeshWrapper.cell_centroid(c, &coord);
+      targetMesh->cell_centroid(c, &coord);
       error = coord[0] + coord[1] - cellvecout[c];
       if (inputDim > 2) error += coord[2];
       toterr += error*error;
