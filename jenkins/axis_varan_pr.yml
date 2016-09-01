@@ -6,4 +6,5 @@ COMPILER:
 BUILD_TYPE:
   - base
   - debug
+  - flecsi
 
