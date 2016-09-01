@@ -121,12 +121,12 @@ if (Jali_DIR)
    endforeach()
    set(Jali_LIBRARIES ${_LIBS})
 
-   # message(STATUS "Jali_INCLUDE_DIRS=${Jali_INCLUDE_DIRS}")
-   # message(STATUS "Jali_LIBRARY_DIRS=${Jali_LIBRARY_DIRS}")
-   # message(STATUS "Jali_LIBRARIES=${Jali_LIBRARIES}")
-   # message(STATUS "Jali_TPL_INCLUDE_DIRS=${Jali_TPL_INCLUDE_DIRS}")
-   # message(STATUS "Jali_TPL_LIBRARY_DIRS=${Jali_TPL_LIBRARY_DIRS}")
-   # message(STATUS "Jali_TPL_LIBRARIES=${Jali_TPL_LIBRARIES}")
+   message(STATUS "Jali_INCLUDE_DIRS=${Jali_INCLUDE_DIRS}")
+   message(STATUS "Jali_LIBRARY_DIRS=${Jali_LIBRARY_DIRS}")
+   message(STATUS "Jali_LIBRARIES=${Jali_LIBRARIES}")
+   message(STATUS "Jali_TPL_INCLUDE_DIRS=${Jali_TPL_INCLUDE_DIRS}")
+   message(STATUS "Jali_TPL_LIBRARY_DIRS=${Jali_TPL_LIBRARY_DIRS}")
+   message(STATUS "Jali_TPL_LIBRARIES=${Jali_TPL_LIBRARIES}")
 
    include_directories(${Jali_INCLUDE_DIRS} ${Jali_TPL_INCLUDE_DIRS})
 
