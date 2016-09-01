@@ -17,9 +17,6 @@
 #include "portage/support/portage.h"
 #include "portage/interpolate/gradient.h"
 
-#include "portage/wrappers/mesh/jali/jali_mesh_wrapper.h"
-#include "portage/wrappers/state/jali/jali_state_wrapper.h"
-
 namespace Portage {
 
 /*!
@@ -141,7 +138,7 @@ class Interpolate_2ndOrder {
   StateType const & source_state_;
   std::string interp_var_name_;
   LimiterType limiter_type_;
-  double * source_vals_;
+  double const * source_vals_;
 
   Portage::vector<std::vector<double>> gradients_;
 };
@@ -240,7 +237,7 @@ class Interpolate_2ndOrder<SourceMeshType, TargetMeshType, StateType, CELL> {
   StateType const & source_state_;
   std::string interp_var_name_;
   LimiterType limiter_type_;
-  double * source_vals_;
+  double const * source_vals_;
 
   Portage::vector<std::vector<double>> gradients_;
 };
@@ -406,7 +403,7 @@ class Interpolate_2ndOrder<SourceMeshType, TargetMeshType, StateType, NODE> {
   StateType const & source_state_;
   std::string interp_var_name_;
   LimiterType limiter_type_;
-  double * source_vals_;
+  double const * source_vals_;
 
   Portage::vector<std::vector<double>> gradients_;
 };

@@ -10,6 +10,8 @@
 
 #include "portage/support/portage.h"
 
+#include "mpi.h"
+
 /*!
   @file mpi_bounding_boxes.h
   @brief Distributes source data using MPI based on bounding boxes
