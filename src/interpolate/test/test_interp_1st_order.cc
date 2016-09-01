@@ -79,7 +79,8 @@ TEST(Interpolate_1st_Order, Cell_Ctr_Const_2D) {
   // Interpolate from source to target mesh
 
   std::vector<double> outvals(ncells_target);
-  std::vector<std::vector<Portage::Weights_t>> sources_and_weights(ncells_target);
+  std::vector<std::vector<Portage::Weights_t>>
+      sources_and_weights(ncells_target);
   for (int c = 0; c < ncells_target; ++c) {
     std::vector<int> xcells;
     std::vector<std::vector<double>> xwts;
@@ -101,7 +102,7 @@ TEST(Interpolate_1st_Order, Cell_Ctr_Const_2D) {
   Portage::Interpolate_1stOrder<Portage::Jali_Mesh_Wrapper,
                                 Portage::Jali_Mesh_Wrapper,
                                 Portage::Jali_State_Wrapper,
-                                Portage::CELL>
+                                Portage::CELL, 2>
       interpolater(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper);
 
   interpolater.set_interpolation_variable("cellvars");
@@ -199,7 +200,7 @@ TEST(Interpolate_1st_Order, Cell_Ctr_Lin_2D) {
   Portage::Interpolate_1stOrder<Portage::Jali_Mesh_Wrapper,
                                 Portage::Jali_Mesh_Wrapper,
                                 Portage::Jali_State_Wrapper,
-                                Portage::CELL>
+                                Portage::CELL, 2>
       interpolater(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper);
 
   interpolater.set_interpolation_variable("cellvars");
@@ -346,7 +347,7 @@ TEST(Interpolate_1st_Order, Node_Ctr_Const_2D) {
     Portage::MeshWrapperDual<Portage::Jali_Mesh_Wrapper>,
     Portage::MeshWrapperDual<Portage::Jali_Mesh_Wrapper>,
     Portage::Jali_State_Wrapper,
-    Portage::NODE>
+    Portage::NODE, 2>
       interpolater(sourceDualWrapper, targetDualWrapper, sourceStateWrapper);
 
   interpolater.set_interpolation_variable("nodevars");
@@ -447,7 +448,7 @@ TEST(Interpolate_1st_Order, Cell_Ctr_Const_3D) {
   Portage::Interpolate_1stOrder<Portage::Jali_Mesh_Wrapper,
                                 Portage::Jali_Mesh_Wrapper,
                                 Portage::Jali_State_Wrapper,
-                                Portage::CELL>
+                                Portage::CELL, 3>
       interpolater(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper);
 
   interpolater.set_interpolation_variable("cellvars");
@@ -548,7 +549,7 @@ TEST(Interpolate_1st_Order, Cell_Ctr_Lin_3D) {
   Portage::Interpolate_1stOrder<Portage::Jali_Mesh_Wrapper,
                                 Portage::Jali_Mesh_Wrapper,
                                 Portage::Jali_State_Wrapper,
-                                Portage::CELL>
+                                Portage::CELL, 3>
       interpolater(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper);
 
   interpolater.set_interpolation_variable("cellvars");
@@ -697,7 +698,7 @@ TEST(Interpolate_1st_Order, Node_Ctr_Const_3D) {
     Portage::MeshWrapperDual<Portage::Jali_Mesh_Wrapper>,
     Portage::MeshWrapperDual<Portage::Jali_Mesh_Wrapper>,
     Portage::Jali_State_Wrapper,
-    Portage::NODE>
+    Portage::NODE, 3>
       interpolater(sourceDualWrapper, targetDualWrapper, sourceStateWrapper);
 
   interpolater.set_interpolation_variable("nodevars");
