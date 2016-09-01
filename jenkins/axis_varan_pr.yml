@@ -6,4 +6,9 @@ COMPILER:
 BUILD_TYPE:
   - base
   - debug
+  - flecsi
+
+exclude:
+  - COMPILER: intel15
+    BUILD_TYPE: flecsi
 
