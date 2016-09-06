@@ -13,6 +13,7 @@
 #include <iostream>
 #include <utility>
 #include <vector>
+#include <memory>
 
 #include "portage/support/portage.h"
 #include "portage/interpolate/gradient.h"
