@@ -17,8 +17,6 @@
 
 #include "portage/support/portage.h"
 #include "portage/support/Point.h"
-#include "portage/wrappers/state/jali/jali_state_wrapper.h"
-#include "portage/wrappers/mesh/jali/jali_mesh_wrapper.h"
 #include "portage/search/search_kdtree.h"
 #include "portage/intersect/intersectClipper.h"
 #include "portage/intersect/intersect_r3d.h"
@@ -30,7 +28,7 @@
 
 /*!
   @file driver.h
-  @brief Example driver for mapping between two Jali meshes.
+  @brief Example driver for mapping between two meshes.
 
   This should serve as a good example for how to write your own driver routine
   and datastructures.
@@ -42,7 +40,7 @@ namespace Portage {
     @class MeshWrapperDual "driver.h"
     @brief Wrapper for dual mesh.
 
-    Utilizes a Jali_Mesh_Wrapper to the original mesh, but treats
+    Utilizes a Mesh_Wrapper to the original mesh, but treats
     the nodes of the original mesh as the centroids of the dual mesh.
   */
 template<class Mesh_Wrapper_Type>
@@ -50,7 +48,7 @@ class MeshWrapperDual {  // cellid is the dual cell (i.e. node) id
  public:
   /*!
     @brief Constructor of a wrapper to a 2d mesh.
-    @param[in] w Jali_Mesh_Wrapper to original mesh.
+    @param[in] w Mesh_Wrapper to original mesh.
   */
   explicit MeshWrapperDual(const Mesh_Wrapper_Type &w) : w_(w) {}
 
@@ -228,9 +226,6 @@ class MeshWrapperDual {  // cellid is the dual cell (i.e. node) id
 template <typename SearchType> struct SearchFunctor;
 template <typename IntersectType> struct IntersectFunctor;
 
-template <typename SearchType, typename IsectType>
-struct SearchIntersectFunctor;
-
 template <typename SearchType, typename IsectType, typename InterpType>
 struct RemapFunctor;
 
@@ -238,19 +233,15 @@ struct RemapFunctor;
   @class Driver "driver.h"
   @brief Driver provides the API to mapping from one mesh to another.
   @tparam SourceMesh_Wrapper A lightweight wrapper to a specific input mesh
-  implementation that provides certain functionality.  See Jali_Mesh_Wrapper
-  for an example.
+  implementation that provides certain functionality. 
   @tparam SourceState_Wrapper A lightweight wrapper to a specific input state
-  manager implementation that provides certain functionality.  See
-  Jali_State_Wrapper for an example.
+  manager implementation that provides certain functionality.
   @tparam TargetMesh_Wrapper A lightweight wrapper to a specific target mesh
-  implementation that provides certain functionality.  See Jali_Mesh_Wrapper
-  for an example.
+  implementation that provides certain functionality.
   @tparam TargetState_Wrapper A lightweight wrapper to a specific target state
-  manager implementation that provides certain functionality.  See
-  Jali_State_Wrapper for an example.
-
+  manager implementation that provides certain functionality.
 */
+
 template <class SourceMesh_Wrapper, class SourceState_Wrapper,
           class TargetMesh_Wrapper = SourceMesh_Wrapper,
           class TargetState_Wrapper = SourceState_Wrapper>
@@ -265,10 +256,10 @@ class Driver {
     @param[in,out] targetState A @c TargetState_Wrapper for the data that will
     be mapped to the target mesh.
   */
-  Driver(SourceMesh_Wrapper const & sourceMesh,
-         SourceState_Wrapper const & sourceState,
-         TargetMesh_Wrapper const & targetMesh,
-         TargetState_Wrapper const & targetState)
+  Driver(SourceMesh_Wrapper const& sourceMesh,
+         SourceState_Wrapper const& sourceState,
+         TargetMesh_Wrapper const& targetMesh,
+         TargetState_Wrapper& targetState)
       : source_mesh_(sourceMesh), source_state_(sourceState),
         target_mesh_(targetMesh), target_state_(targetState),
         interp_order_(1), dim_(sourceMesh.space_dimension()) {
@@ -442,9 +433,10 @@ class Driver {
 
       if (source_nodevar_names.size() > 0) {
         switch (dim_) {
-          case 1:
+          case 1: {
             std::cerr << "Remapping not implemented for 1D" << std::endl;
             exit(-1);
+          }
           case 2: {
             (interp_order_ == 1) ?
                 run_2D_NODE_order1(source_nodevar_names, target_nodevar_names) :
@@ -457,9 +449,10 @@ class Driver {
                 run_3D_NODE_order2(source_nodevar_names, target_nodevar_names);
             break;
           }
-          default:
+          default: {
             std::cerr << "Invalid dimension" << std::endl;
             exit(-1);
+          }
         }
       }
     }
@@ -501,10 +494,10 @@ class Driver {
 
 
  private:
-  SourceMesh_Wrapper  const & source_mesh_;
-  TargetMesh_Wrapper const & target_mesh_;
-  SourceState_Wrapper const & source_state_;
-  TargetState_Wrapper const & target_state_;
+  SourceMesh_Wrapper const& source_mesh_;
+  TargetMesh_Wrapper const& target_mesh_;
+  SourceState_Wrapper const& source_state_;
+  TargetState_Wrapper& target_state_;
   std::vector<std::string> source_remap_var_names_;
   std::vector<std::string> target_remap_var_names_;
   unsigned int interp_order_;
@@ -2275,88 +2268,6 @@ struct IntersectFunctor {
     return source_cells_and_weights;
   }
 };  // struct IntersectFunctor
-
-
-
-/*!
-  @struct SearchIntersectFunctor "driver.h"
-  @brief This functor is used inside a Portage::transform() inside
-  Driver::run() to actually do the search and  intersect
-  @tparam SearchType The type of search method (e.g. SearchSimple or
-  SearchKDTree).
-  @tparam IsectType The type of intersect method (e.g. IntersectClipper).
-*/
-template <typename SearchType, typename IsectType>
-struct SearchIntersectFunctor {
-  const SearchType* search_;      ///< search method (e.g. SearchSimple)
-  const IsectType* intersect_;    ///< intersect method (e.g. IntersectClipper)
-
-  /*!
-    @brief Constructor.
-    @param[in] search The search method to use (e.g. SearchSimple)
-    @param[in] intersect The intersect method to use (e.g. IntersectClipper)
-  */
-  SearchIntersectFunctor(const SearchType* search,
-                         const IsectType* intersect)
-      : search_(search), intersect_(intersect)
-  {}
-
-  /*!
-    @brief Operator for making this struct a functor
-
-    This is called from within a Portage::transform() operation that iterates
-    over the cells in a target mesh.
-
-    @param[in] targetCellindex The cell ID in the target mesh that this functor
-    is currently operating on.
-
-    @return paired list of contributing cells and corresponding moment vectors
-  */
-
-  std::vector<Weights_t> operator() (int const targetCellIndex) {
-    
-    // Search for candidates and return their cells indices
-    std::vector<int> candidates;
-    (*search_)(targetCellIndex, &candidates);
-    
-    // Intersect target cell with cells of source mesh and return the
-    // moments of intersection
-    std::vector<std::vector<std::vector<double>>> moments(candidates.size());
-    for (int i = 0; i < candidates.size(); i++)
-      moments[i] = (*intersect_)(candidates[i], targetCellIndex);
-    
-    // Compute new value on target cell based on source mesh
-    // values and intersection moments
-    
-    // Each cell-cell intersection can result in multiple
-    // disjointed pieces if one of the cells in non-convex.
-    // therefore, there may be more than one set of moments per
-    // cell pair. Transform the 3 nested std::vector form to 2
-    // nested std::vector form with duplicate candidate entries if
-    // need be
-    
-    int nalloc = 0;
-    for (int i = 0; i < candidates.size(); ++i) {
-      nalloc += moments[i].size();  // number of moment sets generated by
-      //                            // intersection of target cell with
-      //                            // candidate cell i
-    }
-    std::vector<Weights_t> source_cells_and_weights(nalloc);
-    
-    int ninserted = 0;
-    for (int i = 0; i < candidates.size(); ++i) {
-      std::vector<std::vector<double>> & candidate_moments = moments[i];
-      int num_moment_sets = candidate_moments.size();
-      for (int j = 0; j < num_moment_sets; j++) {
-        source_cells_and_weights[ninserted].entityID = candidates[i];
-        source_cells_and_weights[ninserted].weights = candidate_moments[j];
-        ++ninserted;
-      }
-    }
-
-    return source_cells_and_weights;
-  }
-};  // struct SearchIntersectFunctor
 
 }  // namespace Portage
 

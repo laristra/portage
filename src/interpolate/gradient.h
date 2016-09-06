@@ -153,8 +153,8 @@ class Limited_Gradient {
   LimiterType limtype_;
   MeshType const & mesh_;
   StateType const & state_;
-  std::string const & var_name_;
-  double * vals_;
+  std::string var_name_;
+  double const *vals_;
 };
 
 
@@ -222,8 +222,8 @@ class Limited_Gradient<MeshType, StateType, CELL> {
   LimiterType limtype_;
   MeshType const & mesh_;
   StateType const & state_;
-  std::string const & var_name_;
-  double * vals_;
+  std::string var_name_;
+  double const *vals_;
   std::vector<std::vector<int>> cell_neighbors_;
 };
 
@@ -403,7 +403,7 @@ class Limited_Gradient<MeshType, StateType, NODE> {
   MeshType const & mesh_;
   StateType const & state_;
   std::string const & var_name_;
-  double * vals_;
+  double const *vals_;
   std::vector<std::vector<int>> node_neighbors_;
 };
 

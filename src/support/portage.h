@@ -96,18 +96,20 @@ template<typename T>
     using pointer = thrust::device_ptr<T>;
 
 typedef thrust::counting_iterator<int> counting_iterator;
-counting_iterator make_counting_iterator(int const i) {
+inline counting_iterator make_counting_iterator(int const i) {
   return thrust::make_counting_iterator(i);
 }
 
 template<typename InputIterator, typename OutputIterator,
     typename UnaryFunction>
+inline
     OutputIterator transform(InputIterator first, InputIterator last,
                              OutputIterator result, UnaryFunction op) {
       return thrust::transform(first, last, result, op);
     }
 template<typename InputIterator1, typename InputIterator2,
     typename OutputIterator, typename BinaryFunction>
+inline
     OutputIterator transform(InputIterator1 first1, InputIterator1 last1,
                              InputIterator2 first2, OutputIterator result,
                              BinaryFunction op) {
@@ -123,18 +125,20 @@ template<typename T>
     using pointer = T*;
 
 typedef boost::counting_iterator<int> counting_iterator;
-counting_iterator make_counting_iterator(int const i) {
+inline counting_iterator make_counting_iterator(int const i) {
   return boost::make_counting_iterator<int>(i);
 }
 
 template<typename InputIterator, typename OutputIterator,
     typename UnaryFunction>
+inline
     OutputIterator transform(InputIterator first, InputIterator last,
                              OutputIterator result, UnaryFunction op) {
   return std::transform(first, last, result, op);
 }
 template<typename InputIterator1, typename InputIterator2,
     typename OutputIterator, typename BinaryFunction>
+inline
     OutputIterator transform(InputIterator1 first1, InputIterator1 last1,
                              InputIterator2 first2, OutputIterator result,
                              BinaryFunction op) {
