@@ -110,11 +110,13 @@ class Flat_Mesh_Wrapper {
   }
 
   //! Get the simplest possible decomposition of a 3D cell into tets.
-  //! This currently only handles the cases of hexahedra or tetrahedra cells
+  //! This currently only handles the cases of planar hexahedra or tetrahedra
+  //! cells
   void decompose_cell_into_tets(const int cellID,
-      std::vector<std::array<Portage::Point<3>, 4>> *tcoords) const {
+      std::vector<std::array<Portage::Point<3>, 4>> *tcoords,
+      const bool planar_hex) const {
     
-    if ((nodesPerCell_ == 8) && (dim_ == 3))
+    if (planar_hex && (nodesPerCell_ == 8) && (dim_ == 3))
     {
       std::vector<Portage::Point<3>> vertices(nodesPerCell_);
       std::array<T, 6> extrema;
