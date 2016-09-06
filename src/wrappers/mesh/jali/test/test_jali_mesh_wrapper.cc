@@ -367,3 +367,29 @@ TEST(Jali_Mesh, mesh_shotshell) {
   mesh = mesh_factory("shotshell-v.exo");
   ASSERT_TRUE(mesh != NULL);
 }
+
+/*!
+  @brief Unit test for 5-tet hex decomposition
+ */
+TEST(Jali_Mesh, Decompose_Cell_Into_Tets) {
+  Jali::MeshFactory mf(MPI_COMM_WORLD);
+  mf.included_entities({Jali::Entity_kind::EDGE,
+                                  Jali::Entity_kind::FACE,
+                                  Jali::Entity_kind::WEDGE,
+                                  Jali::Entity_kind::CORNER});
+  std::shared_ptr<Jali::Mesh> mesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2, 2, 2);
+  ASSERT_TRUE(mesh != NULL);
+  Portage::Jali_Mesh_Wrapper mesh_wrapper(*mesh);
+
+  std::vector<std::array<Portage::Point<3>, 4>> tcoords;
+
+  // The standard decomposition has 24 tets:
+  mesh_wrapper.decompose_cell_into_tets(0, &tcoords, false);
+  EXPECT_EQ(tcoords.size(), 24);
+
+  // The special decomposition has 5 tets:
+  tcoords.clear();
+  mesh_wrapper.decompose_cell_into_tets(0, &tcoords, true);
+  EXPECT_EQ(tcoords.size(), 5);
+
+}
