@@ -65,6 +65,15 @@ template <long D> class Vector {
     m_comp[2] = zm_comp;
   }
 
+  /*!
+    @brief Constructor from a std:vector
+  */
+  inline
+  Vector(std::vector<double> const& invec) {
+    assert(D == invec.size());
+    for (int i = 0; i < D; i++) m_comp[i] = invec[i];
+  }
+
   /// Return component @c i of the Vector.
   inline const double& operator[](const int& i) const {
     return m_comp[i];
@@ -154,15 +163,6 @@ typedef Vector<3> Vector3;
 
 /// Alias for creating a 3D vector
 typedef Vector<2> Vector2;
-
-template<long D>
-inline
-Vector<D> toPortageVector(std::vector<double> const& invec) {
-  assert(D == invec.size());
-  Vector<D> outvec;
-  for (int i = 0; i < D; i++) outvec[i] = invec[i];
-  return outvec;
-}
 
 /// Dot product of two vectors, @f$\vec{a} \cdot \vec{b}@f$.
 template<long D>
