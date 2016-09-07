@@ -61,7 +61,7 @@ namespace Portage {
 */
 
 template<typename SourceMeshType, typename TargetMeshType,
-    typename StateType, Entity_kind on_what>
+         typename StateType, Entity_kind on_what, long D>
 class Interpolate_1stOrder {
  public:
   /*!
@@ -139,9 +139,9 @@ class Interpolate_1stOrder {
 */
 
 template<typename SourceMeshType, typename TargetMeshType,
-         typename StateType, Entity_kind on_what>
+         typename StateType, Entity_kind on_what, long D>
 double Interpolate_1stOrder<SourceMeshType, TargetMeshType, StateType,
-                            on_what> :: operator() 
+                            on_what, D> :: operator()
     (int const targetCellID,
      std::vector<Weights_t> const & sources_and_weights) const {
 
@@ -157,14 +157,10 @@ double Interpolate_1stOrder<SourceMeshType, TargetMeshType, StateType,
   // contribution of the source cell is its field value weighted by
   // its "weight" (in this case, its 0th moment/area/volume)
 
-  /// @todo Should use zip_iterator here but I am not sure I know how to
-
   double val = 0.0;
-  for (int j = 0; j < nsrccells; ++j) {
-    int srccell = sources_and_weights[j].entityID;
-    std::vector<double> pair_weights =
-        sources_and_weights[j].weights;
-
+  for (auto const& wt : sources_and_weights) {
+    int srccell = wt.entityID;
+    std::vector<double> pair_weights = wt.weights;
     val += source_vals_[srccell] * pair_weights[0];  // 1st order
   }
 

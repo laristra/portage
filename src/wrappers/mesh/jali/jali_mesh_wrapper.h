@@ -8,6 +8,7 @@
 
 #include <cassert>
 #include <algorithm>
+#include <vector>
 #include <array>
 
 #include "Mesh.hh"                      // Jali mesh header
@@ -26,24 +27,22 @@ namespace Portage {
   queries for the Jali mesh infrastructure
 */
 
-namespace {  // unnamned
 //! helper function:  convert Jali point to Portage point
 template <long D>
-Portage::Point<D> toPortagePoint(const JaliGeometry::Point& jp) {
-  Portage::Point<D> pp;
+Point<D> toPortagePoint(const JaliGeometry::Point& jp) {
+  Point<D> pp;
   assert(jp.dim() == D);
   for (int d = 0; d < D; ++d)
     pp[d] = jp[d];
   return pp;
 }
 
-}  // namespace unnamed
 
 class Jali_Mesh_Wrapper {
  public:
 
   //! Constructor
-  Jali_Mesh_Wrapper(Jali::Mesh const & mesh) :
+  explicit Jali_Mesh_Wrapper(Jali::Mesh const & mesh) :
       jali_mesh_(mesh)
   {}
 
@@ -56,7 +55,7 @@ class Jali_Mesh_Wrapper {
   Jali_Mesh_Wrapper & operator=(Jali_Mesh_Wrapper const &) = delete;
 
   //! Empty destructor
-  ~Jali_Mesh_Wrapper() {};
+  ~Jali_Mesh_Wrapper() {}
 
 
   //! Cell area/volume
@@ -168,7 +167,7 @@ class Jali_Mesh_Wrapper {
 
   //! coords of a node
   template <long D>
-  void node_get_coordinates(int const nodeid, Portage::Point<D>* pp) const {
+  void node_get_coordinates(int const nodeid, Point<D>* pp) const {
     JaliGeometry::Point jp;
     jali_mesh_.node_get_coordinates(nodeid, &jp);
     assert(jp.dim() == D);
@@ -178,7 +177,7 @@ class Jali_Mesh_Wrapper {
   //! coords of nodes of a cell
   template<long D>
   void cell_get_coordinates(int const cellid,
-                            std::vector<Portage::Point<D>> *pplist) const {
+                            std::vector<Point<D>> *pplist) const {
     assert(jali_mesh_.space_dimension() == D);
 
     std::vector<JaliGeometry::Point> jplist;
@@ -200,7 +199,7 @@ class Jali_Mesh_Wrapper {
   // the 'pplist' into a canonical (unique) form.
 
   void dual_cell_get_coordinates(int const nodeid,
-                    std::vector<Portage::Point<2>> *pplist) const {
+                    std::vector<Point<2>> *pplist) const {
     assert(jali_mesh_.space_dimension() == 2);
 
     Jali::Entity_ID cornerid, wedgeid, wedgeid0;
@@ -287,23 +286,23 @@ class Jali_Mesh_Wrapper {
              (p2[1] - p1[1]) * (p3[0] - p1[0]) > 0;
   }
 
-  std::vector<Portage::Point<2>>
+  std::vector<Point<2>>
       cellToXY(Jali::Entity_ID cellID) const {
-    std::vector<Portage::Point<2>> cellPoints;
+    std::vector<Point<2>> cellPoints;
     cell_get_coordinates(cellID, &cellPoints);
     return cellPoints;
   }
 
 
   void wedges_get_coordinates(Jali::Entity_ID cellID,
-      std::vector<std::array<Portage::Point<3>, 4>> *wcoords) const {
+      std::vector<std::array<Point<3>, 4>> *wcoords) const {
     assert(jali_mesh_.space_dimension() == 3);
     std::vector<Jali::Entity_ID> wedges;
     jali_mesh_.cell_get_wedges(cellID, &wedges);
     for (const auto &wedge : wedges) {
       std::vector<JaliGeometry::Point> coords;
       jali_mesh_.wedge_get_coordinates(wedge, &coords, true);
-      std::array<Portage::Point<3>, 4> tmp;
+      std::array<Point<3>, 4> tmp;
       for (int i=0; i<4; i++)
         tmp[i] = toPortagePoint<3>(coords[i]);
       wcoords->push_back(tmp);
@@ -311,14 +310,14 @@ class Jali_Mesh_Wrapper {
   }
 
   void sides_get_coordinates(Jali::Entity_ID cellID,
-      std::vector<std::array<Portage::Point<3>, 4>> *scoords) const {
+      std::vector<std::array<Point<3>, 4>> *scoords) const {
     assert(jali_mesh_.space_dimension() == 3);
     std::vector<Jali::Entity_ID> sides;
     jali_mesh_.cell_get_sides(cellID, &sides);
     for (const auto &side : sides) {
       std::vector<JaliGeometry::Point> coords;
       jali_mesh_.side_get_coordinates(side, &coords, true);
-      std::array<Portage::Point<3>, 4> tmp;
+      std::array<Point<3>, 4> tmp;
       for (int i=0; i<4; i++)
         tmp[i] = toPortagePoint<3>(coords[i]);
       scoords->push_back(tmp);
@@ -328,8 +327,8 @@ class Jali_Mesh_Wrapper {
   // Get the simplest possible decomposition of a 3D cell into tets.
   // For this mesh type, that means returning a list of sides.
   void decompose_cell_into_tets(Jali::Entity_ID cellID,
-      std::vector<std::array<Portage::Point<3>, 4>> *tcoords,
-      const bool planar_hex) const {
+              std::vector<std::array<Portage::Point<3>, 4>> *tcoords,
+                                const bool planar_hex) const {
     if (planar_hex
             && jali_mesh_.cell_get_type(cellID) == Jali::Cell_type::HEX) {
       // Decompose a hex into a 5-tet decomposition.
@@ -387,7 +386,7 @@ class Jali_Mesh_Wrapper {
   // the dual cell around this node in `xyzlist`.  The vertices are NOT ordered
   // in any particular way
   void dual_cell_get_coordinates(int const nodeid,
-         std::vector<Portage::Point<3>> *pplist) const {
+         std::vector<Point<3>> *pplist) const {
     assert(jali_mesh_.space_dimension() == 3);
 
     Jali::Entity_ID wedgeid;
@@ -402,50 +401,50 @@ class Jali_Mesh_Wrapper {
     std::vector<int> edge_list, face_list, cell_list;
 
     for (auto wedgeid : wedgeids) {
-      jali_mesh_.wedge_get_coordinates(wedgeid,&wcoords);
+      jali_mesh_.wedge_get_coordinates(wedgeid, &wcoords);
 
       int edgeid = jali_mesh_.wedge_get_edge(wedgeid);
-      if (std::find(edge_list.begin(),edge_list.end(),edgeid) ==
+      if (std::find(edge_list.begin(), edge_list.end(), edgeid) ==
           edge_list.end()) {
         // This edge not encountered yet - put it in the edge list and add
         // the corresponding wedge point to the coordinate list
 
         edge_list.push_back(edgeid);
-        pplist->emplace_back(wcoords[1][0],wcoords[1][1],wcoords[1][2]);
+        pplist->emplace_back(wcoords[1][0], wcoords[1][1], wcoords[1][2]);
       }
 
       int faceid = jali_mesh_.wedge_get_face(wedgeid);
-      if (std::find(face_list.begin(),face_list.end(),faceid) ==
+      if (std::find(face_list.begin(), face_list.end(), faceid) ==
           face_list.end()) {
         // This face not encountered yet - put it in the face list and add
         // the corresponding wedge point to the coordinate list
 
         face_list.push_back(faceid);
-        pplist->emplace_back(wcoords[2][0],wcoords[2][1],wcoords[2][2]);
+        pplist->emplace_back(wcoords[2][0], wcoords[2][1], wcoords[2][2]);
       }
 
       int cellid = jali_mesh_.wedge_get_cell(wedgeid);
-      if (std::find(cell_list.begin(),cell_list.end(),cellid) ==
+      if (std::find(cell_list.begin(), cell_list.end(), cellid) ==
           cell_list.end()) {
         // This cell not encountered yet - put it in the cell list and add
         // the cooresponding wedge point to the coordinate list
 
         cell_list.push_back(cellid);
-        pplist->emplace_back(wcoords[3][0],wcoords[3][1],wcoords[3][2]);
+        pplist->emplace_back(wcoords[3][0], wcoords[3][1], wcoords[3][2]);
       }
     }
   }
 
   // Get the coordinates of the wedges of the dual mesh
   void dual_wedges_get_coordinates(Jali::Entity_ID nodeID,
-      std::vector<std::array<Portage::Point<3>, 4>> *wcoords) const {
+      std::vector<std::array<Point<3>, 4>> *wcoords) const {
     std::vector<Jali::Entity_ID> wedges;
     jali_mesh_.node_get_wedges(nodeID, Jali::Entity_type::ALL,
                                &wedges);
     for (const auto &wedge : wedges) {
       std::vector<JaliGeometry::Point> coords;
       jali_mesh_.wedge_get_coordinates(wedge, &coords, true);
-      std::array<Portage::Point<3>, 4> tmp;
+      std::array<Point<3>, 4> tmp;
       for (int i=0; i<4; i++)
         tmp[i] = toPortagePoint<3>(coords[i]);
       wcoords->push_back(tmp);
@@ -460,13 +459,10 @@ class Jali_Mesh_Wrapper {
   // BUILDING A GRADIENT OPERATOR WITH DIFFERENT TYPES FOR 2D
   // COORDINATES AND 3D COORDINATES IS VERY CONVOLUTED
 
+  template<long D>
   void cell_centroid(Jali::Entity_ID cellid,
-                     std::vector<double> *centroid) const {
-    JaliGeometry::Point ccen = jali_mesh_.cell_centroid(cellid);
-    int dim = ccen.dim();
-    centroid->resize(dim);
-    for (int i = 0; i < dim; ++i)
-      (*centroid)[i] = ccen[i];
+                     Point<D> *centroid) const {
+    *centroid = toPortagePoint<D>(jali_mesh_.cell_centroid(cellid));
   }
 
   /// \brief Centroid of a dual cell
@@ -477,22 +473,20 @@ class Jali_Mesh_Wrapper {
   //! THE NODAL VARIABLES LIVE THERE, BUT FOR DISTORTED GRIDS, THE
   //! NODE COORDINATED MAY NOT BE THE CENTROID OF THE DUAL CELL
 
+  template<long D>
   void dual_cell_centroid(Jali::Entity_ID nodeid,
-                          std::vector<double> *centroid) const {
+                          Point<D> *centroid) const {
     JaliGeometry::Point nodepnt;
     jali_mesh_.node_get_coordinates(nodeid, &nodepnt);
-    int dim = nodepnt.dim();
-    centroid->resize(dim);
-    for (int i = 0; i < dim; ++i)
-      (*centroid)[i] = nodepnt[i];
+    *centroid = toPortagePoint<D>(nodepnt);
   }
 
  private:
   Jali::Mesh const & jali_mesh_;
 
-}; // class Jali_Mesh_Wrapper
+};  // class Jali_Mesh_Wrapper
 
 
-} // end namespace Portage
+}  // end namespace Portage
 
 #endif // JALI_MESH_WRAPPER_H_

@@ -41,7 +41,7 @@ namespace Portage {
 
 
 template<typename SourceMeshType, typename TargetMeshType, typename StateType,
-    Entity_kind on_what>
+         Entity_kind on_what, long D>
 class Interpolate_2ndOrder {
  public:
   /*!
@@ -85,7 +85,7 @@ class Interpolate_2ndOrder {
     
     // Compute the limited gradients for the field
     
-    Limited_Gradient<SourceMeshType, StateType, on_what>
+    Limited_Gradient<SourceMeshType, StateType, on_what, D>
         limgrad(source_mesh_, source_state_, interp_var_name, limiter_type_);
     
     
@@ -140,7 +140,9 @@ class Interpolate_2ndOrder {
   LimiterType limiter_type_;
   double const * source_vals_;
 
-  Portage::vector<std::vector<double>> gradients_;
+  // Portage::vector is generalization of std::vector and
+  // Portage::Vector<D> is a geometric vector
+  Portage::vector<Vector<D>> gradients_;
 };
 
 
@@ -153,8 +155,9 @@ class Interpolate_2ndOrder {
   cells and vector of contribution weights
 */
 
-template<typename SourceMeshType, typename TargetMeshType, typename StateType>
-class Interpolate_2ndOrder<SourceMeshType, TargetMeshType, StateType, CELL> {
+template<typename SourceMeshType, typename TargetMeshType, typename StateType,
+         long D>
+class Interpolate_2ndOrder<SourceMeshType, TargetMeshType, StateType, CELL, D> {
  public:
   Interpolate_2ndOrder(SourceMeshType const & source_mesh,
                        TargetMeshType const & target_mesh,
@@ -181,7 +184,7 @@ class Interpolate_2ndOrder<SourceMeshType, TargetMeshType, StateType, CELL> {
 
     // Compute the limited gradients for the field
 
-    Limited_Gradient<SourceMeshType, StateType, CELL>
+    Limited_Gradient<SourceMeshType, StateType, CELL, D>
         limgrad(source_mesh_, source_state_, interp_var_name_, limiter_type_);
 
     int nentities = source_mesh_.end(CELL)-source_mesh_.begin(CELL);
@@ -239,15 +242,18 @@ class Interpolate_2ndOrder<SourceMeshType, TargetMeshType, StateType, CELL> {
   LimiterType limiter_type_;
   double const * source_vals_;
 
-  Portage::vector<std::vector<double>> gradients_;
+  // Portage::vector is generalization of std::vector and
+  // Portage::Vector<D> is a geometric vector
+  Portage::vector<Vector<D>> gradients_;
 };
 
 // Implementation of the () operator for 2nd order interpolation on cells
 
 
-template<typename SourceMeshType, typename TargetMeshType, typename StateType>
+template<typename SourceMeshType, typename TargetMeshType, typename StateType,
+         long D>
 double Interpolate_2ndOrder<SourceMeshType, TargetMeshType,
-                            StateType, CELL>::operator()
+                            StateType, CELL, D>::operator()
     (int const targetCellID, std::vector<Weights_t> const & sources_and_weights)
     const {
   
@@ -260,10 +266,6 @@ double Interpolate_2ndOrder<SourceMeshType, TargetMeshType,
     return 0.0;
   }
 
-  // dimension of mesh
-
-  int spdim = source_mesh_.space_dimension();
-
   double totalval = 0.0;
 
   // contribution of the source cell is its field value weighted by
@@ -273,25 +275,22 @@ double Interpolate_2ndOrder<SourceMeshType, TargetMeshType,
 
   for (int j = 0; j < nsrccells; ++j) {
     int srccell = sources_and_weights[j].entityID;
-    std::vector<double> xsect_weights =
-        sources_and_weights[j].weights;
+    std::vector<double> xsect_weights = sources_and_weights[j].weights;
     double xsect_volume = xsect_weights[0];
 
     double eps = 1e-30;
     if (xsect_volume <= eps) continue;  // no intersection
 
-    std::vector<double> srccell_centroid(spdim);
+    Point<D> srccell_centroid;
     source_mesh_.cell_centroid(srccell, &srccell_centroid);
 
-    std::vector<double> xsect_centroid(spdim);
-    for (int i = 0; i < spdim; ++i)
+    Point<D> xsect_centroid;
+    for (int i = 0; i < D; ++i)
       xsect_centroid[i] = xsect_weights[1+i]/xsect_volume;  // (1st moment)/vol
 
-
-    double val = source_vals_[srccell];
-    std::vector<double> gradient = gradients_[srccell]; 
-    for (int i = 0; i < spdim; ++i)
-      val += gradient[i] * (xsect_centroid[i]-srccell_centroid[i]);
+    Vector<D> gradient = gradients_[srccell];
+    Vector<D> vec = xsect_centroid - srccell_centroid;
+    double val = source_vals_[srccell] + dot(gradient, vec);
     val *= xsect_volume;
     totalval += val;
   }
@@ -315,8 +314,9 @@ double Interpolate_2ndOrder<SourceMeshType, TargetMeshType,
   source nodes (dual cells) and vector of contribution weights
 */
 
-template<typename SourceMeshType, typename TargetMeshType, typename StateType>
-class Interpolate_2ndOrder<SourceMeshType, TargetMeshType, StateType, NODE> {
+template<typename SourceMeshType, typename TargetMeshType, typename StateType,
+         long D>
+class Interpolate_2ndOrder<SourceMeshType, TargetMeshType, StateType, NODE, D> {
  public:
   Interpolate_2ndOrder(SourceMeshType const & source_mesh,
                        TargetMeshType const & target_mesh,
@@ -352,7 +352,7 @@ class Interpolate_2ndOrder<SourceMeshType, TargetMeshType, StateType, NODE> {
     
     // Compute the limited gradients for the field
     
-    Limited_Gradient<SourceMeshType, StateType, NODE>
+    Limited_Gradient<SourceMeshType, StateType, NODE, D>
         limgrad(source_mesh_, source_state_, interp_var_name, limiter_type);
     
     int nentities = source_mesh_.end(NODE)-source_mesh_.begin(NODE);
@@ -405,14 +405,17 @@ class Interpolate_2ndOrder<SourceMeshType, TargetMeshType, StateType, NODE> {
   LimiterType limiter_type_;
   double const * source_vals_;
 
-  Portage::vector<std::vector<double>> gradients_;
+  // Portage::vector is generalization of std::vector and
+  // Portage::Vector<D> is a geometric vector
+  Portage::vector<Vector<D>> gradients_;
 };
 
 /// implementation of the () operator for 2nd order interpolate on nodes
 
-template<typename SourceMeshType, typename TargetMeshType, typename StateType>
+template<typename SourceMeshType, typename TargetMeshType, typename StateType,
+         long D>
 double Interpolate_2ndOrder<SourceMeshType, TargetMeshType,
-                            StateType, NODE> :: operator()
+                            StateType, NODE, D> :: operator()
     (int const targetCellID, std::vector<Weights_t> const & sources_and_weights)
     const {
 
@@ -424,10 +427,6 @@ double Interpolate_2ndOrder<SourceMeshType, TargetMeshType,
 #endif
     return 0.0;
   }
-
-  // dimension of mesh
-
-  int spdim = source_mesh_.space_dimension();
 
   double totalval = 0.0;
 
@@ -446,29 +445,17 @@ double Interpolate_2ndOrder<SourceMeshType, TargetMeshType,
 
     // note: here we are getting the node coord, not the centroid of
     // the dual cell
-    std::vector<double> srccell_coord(spdim);
-    if (spdim == 2) {
-      Point<2> point;
-      source_mesh_.node_get_coordinates(srccell, &point);
-      srccell_coord[0] = point[0];
-      srccell_coord[1] = point[1];
-    } else if (spdim == 3) {
-      Point<3> point;
-      source_mesh_.node_get_coordinates(srccell, &point);
-      srccell_coord[0] = point[0];
-      srccell_coord[1] = point[1];
-      srccell_coord[2] = point[2];
-    }
+    Point<D> srccell_coord;
+    source_mesh_.node_get_coordinates(srccell, &srccell_coord);
 
-    std::vector<double> xsect_centroid(spdim);
-    for (int i = 0; i < spdim; ++i)
+    Point<D> xsect_centroid;
+    for (int i = 0; i < D; ++i)
       // (1st moment)/(vol)
       xsect_centroid[i] = xsect_weights[1+i]/xsect_volume;
 
-    double val = source_vals_[srccell];
-    std::vector<double> gradient = gradients_[srccell];
-    for (int i = 0; i < spdim; ++i)
-      val += gradient[i] * (xsect_centroid[i]-srccell_coord[i]);
+    Vector<D> gradient = gradients_[srccell];
+    Vector<D> vec = xsect_centroid - srccell_coord;
+    double val = source_vals_[srccell] + dot(gradient, vec);
     val *= xsect_volume;
     totalval += val;
   }

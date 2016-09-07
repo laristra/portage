@@ -13,7 +13,7 @@
 
 #include "portage/support/portage.h"
 #include "portage/support/Point.h"
-#include "portage/support/matrix.h"
+#include "portage/support/Matrix.h"
 
 namespace Portage {
 
@@ -31,12 +31,11 @@ namespace Portage {
 
 */
 
-std::vector<double>
-ls_gradient(std::vector<std::vector<double>> const & coords,
-            std::vector<double> const & vals) {
+template<long D>
+Vector<D> ls_gradient(std::vector<Point<D>> const & coords,
+                      std::vector<double> const & vals) {
 
-  std::vector<double> coord0 = coords[0];
-  int dim = coord0.size();
+  Point<D> coord0 = coords[0];
 
   double val0 = vals[0];
 
@@ -50,10 +49,9 @@ ls_gradient(std::vector<std::vector<double>> const & coords,
   // coord0 to the candidate point being used in the Least Squares
   // approximation (X_i-X_0).
 
-  std::vector<std::vector<double>> A(nvals-1);
+  Matrix A(nvals-1, D);
   for (int i = 0; i < nvals-1; ++i) {
-    A[i].resize(dim);
-    for (int j = 0; j < dim; ++j)
+    for (int j = 0; j < D; ++j)
       A[i][j] = coords[i+1][j]-coord0[j];
   }
 
@@ -61,11 +59,9 @@ ls_gradient(std::vector<std::vector<double>> const & coords,
   // A is a matrix of size nvals-1 by D (where D is the space
   // dimension). So transpose(A)*A is D by D
 
-  std::vector<std::vector<double>> AT;  // transpose(A)
-  mat_transpose(A, &AT);
+  Matrix AT = A.transpose();
 
-  std::vector<std::vector<double>> ATA;  // transpose(A)*A
-  matmat_multiply(AT, A, &ATA);
+  Matrix ATA = AT*A;
 
   // Each entry/row of F contains the difference between the
   // function value at the candidate point and the function value
@@ -78,20 +74,15 @@ ls_gradient(std::vector<std::vector<double>> const & coords,
   // F is a vector of nvals. So transpose(A)*F is vector of D
   // (where D is the space dimension)
 
-  std::vector<double> ATF;  // transpose(A)*F
-  matvec_multiply(AT, F, &ATF);
+  Vector<D> ATF = Vector<D>(AT*F);
 
   // Inverse of ATA
 
-  std::vector<std::vector<double>> ATAinv;
-  mat_invert(ATA, &ATAinv);
+  Matrix ATAinv = ATA.inverse();
 
   // Gradient of length D
 
-  std::vector<double> grad;
-  matvec_multiply(ATAinv, ATF, &grad);
-
-  return grad;
+  return ATAinv*ATF;
 }
 
 
@@ -104,7 +95,8 @@ ls_gradient(std::vector<std::vector<double>> const & coords,
 
 */
 
-template<typename MeshType, typename StateType, Entity_kind on_what>
+template<typename MeshType, typename StateType, Entity_kind on_what,
+         long D>
 class Limited_Gradient {
  public:
   /*! @brief Constructor
@@ -145,7 +137,7 @@ class Limited_Gradient {
   /// Functor - not implemented for all types - see specialization for
   /// cells, nodes
 
-  std::vector<double> operator()(int entity_id) {
+  Vector<D> operator()(int entity_id) {
     std::cerr << "Limited gradient not implementd for this entity kind\n";
   }
 
@@ -168,8 +160,8 @@ class Limited_Gradient {
     @tparam StateType A state manager class that one can query for field info
 */
 
-template<typename MeshType, typename StateType>
-class Limited_Gradient<MeshType, StateType, CELL> {
+template<typename MeshType, typename StateType, long D>
+class Limited_Gradient<MeshType, StateType, CELL, D> {
  public:
   /*! @brief Constructor
       @param[in] mesh  Mesh class than one can query for mesh info
@@ -197,7 +189,7 @@ class Limited_Gradient<MeshType, StateType, CELL> {
     cell_neighbors_.resize(ncells);
 
     for (int c = 0; c < ncells; ++c)
-      mesh_.cell_get_node_adj_cells(c, ALL, &(cell_neighbors_[c]));      
+      mesh_.cell_get_node_adj_cells(c, ALL, &(cell_neighbors_[c]));
   }
 
   /// @todo Seems to be needed when using this in a Thrust transform call?
@@ -216,7 +208,7 @@ class Limited_Gradient<MeshType, StateType, CELL> {
 
   /// Functor
 
-  std::vector<double> operator()(int cellid);
+  Vector<D> operator()(int cellid);
 
  private:
   LimiterType limtype_;
@@ -229,109 +221,74 @@ class Limited_Gradient<MeshType, StateType, CELL> {
 
 // @brief Implementation of Limited_Gradient functor for CELLs
 
-template<typename MeshType, typename StateType>
-std::vector<double>
-Limited_Gradient<MeshType, StateType, CELL> :: operator() (int const cellid) {
+template<typename MeshType, typename StateType, long D>
+Vector<D>
+Limited_Gradient<MeshType, StateType, CELL, D>::operator() (int const cellid) {
 
-  int dim = mesh_.space_dimension();
+  assert(D == mesh_.space_dimension());
+  assert(D == 2 || D == 3);
   double phi = 1.0;
-  std::vector<double> grad(dim, 0);
+  Vector<D> grad;
 
-  if (dim == 2 || dim == 3) {
-    std::vector<double> cen, nbrcen;
+  std::vector<int> const & nbrids = cell_neighbors_[cellid];
 
-    std::vector<int> const & nbrids = cell_neighbors_[cellid];
+  std::vector<Point<D>> cellcenters(nbrids.size()+1);
+  std::vector<double> cellvalues(nbrids.size()+1);
+  
+  mesh_.cell_centroid(cellid, &(cellcenters[0]));
+  cellvalues[0] = vals_[cellid];
+  
+  int i = 1;
+  for (auto nbrcell : nbrids) {
+    mesh_.cell_centroid(nbrcell, &(cellcenters[i]));
+    cellvalues[i] = vals_[nbrcell];
+    i++;
+  }
 
-    std::vector<std::vector<double>> cellcenters(nbrids.size()+1);
-    std::vector<double> cellvalues(nbrids.size()+1);
+  grad = ls_gradient(cellcenters, cellvalues);
 
-    mesh_.cell_centroid(cellid, &(cellcenters[0]));
-    cellvalues[0] = vals_[cellid];
 
-    int i = 1;
-    for (auto nbrcell : nbrids) {
-      mesh_.cell_centroid(nbrcell, &(cellcenters[i]));
-      cellvalues[i] = vals_[nbrcell];
-      i++;
+  // Limit the gradient to enforce monotonicity preservation
+  
+  if (limtype_ == BARTH_JESPERSEN) {
+    
+    phi = 1.0;
+    
+    // Min and max vals of function (cell centered vals) among neighbors
+    /// @todo: must remove assumption the field is scalar
+    
+    double minval = vals_[cellid];
+    double maxval = vals_[cellid];
+    
+    int nnbr = nbrids.size();
+    for (int i = 0; i < nnbr; ++i) {
+      minval = std::min(cellvalues[i], minval);
+      maxval = std::max(cellvalues[i], maxval);
     }
-
-    grad = ls_gradient(cellcenters, cellvalues);
-
-
-    // Limit the gradient to enforce monotonicity preservation
-
-    if (limtype_ == BARTH_JESPERSEN) {
-
-      phi = 1.0;
-
-      // Min and max vals of function (cell centered vals) among neighbors
-      /// @todo: must remove assumption the field is scalar
-
-      double minval = vals_[cellid];
-      double maxval = vals_[cellid];
-
-      int nnbr = nbrids.size();
-      for (int i = 0; i < nnbr; ++i) {
-        minval = std::min(cellvalues[i], minval);
-        maxval = std::max(cellvalues[i], maxval);
-      }
-
-      // Find the min and max of the reconstructed function in the cell
-      // Since the reconstruction is linear, this will occur at one of
-      // the nodes of the cell. So find the values of the reconstructed
-      // function at the nodes of the cell
-
-      int dim = mesh_.space_dimension();
-
-      /// @todo: The following code is exactly why we need Point class
-      double cellcenval = vals_[cellid];
-      if (dim == 2) {
-
-        std::vector<Point<2>> cellcoords;
-        mesh_.cell_get_coordinates(cellid, &cellcoords);
-
-        for (auto coord : cellcoords) {
-  
-          // At any coord:
-          // val = cellcenval + grad*(coord-cellcencoord)
-          // diff = val-cellcenval = grad DOT (coord-cellcencoord);
-  
-          double diff = grad[0]*(coord[0]-cellcenters[0][0]) +
-              grad[1]*(coord[1]-cellcenters[0][1]);
-          double extremeval = (diff > 0.0) ? maxval : minval;
-          double phi_new = (diff == 0.0) ? 1 : (extremeval-cellcenval)/diff;
-          phi = std::min(phi_new, phi);
-        }
-      } else if (dim == 3) {
-
-        std::vector<Point<3>> cellcoords;
-        mesh_.cell_get_coordinates(cellid, &cellcoords);
-
-        for (auto coord : cellcoords) {
-  
-          // At any coord:
-          // val = cellcenval + grad*(coord-cellcencoord)
-          // diff = val-cellcenval = grad DOT (coord-cellcencoord);
-  
-          double diff = grad[0]*(coord[0]-cellcenters[0][0]) +
-              grad[1]*(coord[1]-cellcenters[0][1]) +
-              grad[2]*(coord[2]-cellcenters[0][2]);
-          double extremeval = (diff > 0.0) ? maxval : minval;
-          double phi_new = (diff == 0.0) ? 1 : (extremeval-cellcenval)/diff;
-          phi = std::min(phi_new, phi);
-        }
-      }
+    
+    // Find the min and max of the reconstructed function in the cell
+    // Since the reconstruction is linear, this will occur at one of
+    // the nodes of the cell. So find the values of the reconstructed
+    // function at the nodes of the cell
+    
+    int dim = mesh_.space_dimension();
+    
+    double cellcenval = vals_[cellid];
+    std::vector<Point<D>> cellcoords;
+    mesh_.cell_get_coordinates(cellid, &cellcoords);
+    
+    for (auto coord : cellcoords) {
+      Vector<D> vec = coord-cellcenters[0];
+      double diff = dot(grad, vec);
+      double extremeval = (diff > 0.0) ? maxval : minval;
+      double phi_new = (diff == 0.0) ? 1 : (extremeval-cellcenval)/diff;
+      phi = std::min(phi_new, phi);
     }
-  } else {
-    std::cerr << "Gradient implemented only for 2D or 3D\n";
   }
 
   // Limited gradient is phi*grad
 
-  for (int i = 0; i < dim; ++i)
-    grad[i] *= phi;
-
-  return grad;
+  return phi*grad;
 }
 
 
@@ -346,8 +303,8 @@ Limited_Gradient<MeshType, StateType, CELL> :: operator() (int const cellid) {
 */
 
 
-template<typename MeshType, typename StateType>
-class Limited_Gradient<MeshType, StateType, NODE> {
+template<typename MeshType, typename StateType, long D>
+class Limited_Gradient<MeshType, StateType, NODE, D> {
  public:
 
   /*! @brief Constructor
@@ -395,7 +352,7 @@ class Limited_Gradient<MeshType, StateType, NODE> {
 
   /// Functor
 
-  std::vector<double> operator()(int cellid);
+  Vector<D> operator()(int cellid);
 
  private:
 
@@ -409,141 +366,68 @@ class Limited_Gradient<MeshType, StateType, NODE> {
 
 // @brief Limited gradient functor implementation for NODE
 
-template<typename MeshType, typename StateType>
-std::vector<double>
-Limited_Gradient<MeshType, StateType, NODE> :: operator() (int const nodeid) {
+template<typename MeshType, typename StateType, long D>
+Vector<D>
+Limited_Gradient<MeshType, StateType, NODE, D>::operator() (int const nodeid) {
 
-  int dim = mesh_.space_dimension();
+  assert(D == mesh_.space_dimension());
+  assert(D == 2 || D == 3);
   double phi = 1.0;
-  std::vector<double> grad(dim, 0);
+  Vector<D> grad;
 
   std::vector<int> const & nbrids = node_neighbors_[nodeid];
-
-  std::vector<std::vector<double>> nodecoords(nbrids.size()+1);
+  
+  std::vector<Point<D>> nodecoords(nbrids.size()+1);
   std::vector<double> nodevalues(nbrids.size()+1);
-
-  if (dim == 2) {
-    std::vector<double> coord(2);
-
-    Point<2> point;
-
-    mesh_.node_get_coordinates(nodeid, &point);
-    nodecoords[0].resize(2);
-    nodecoords[0][0] = point[0];
-    nodecoords[0][1] = point[1];
-    nodevalues[0] = vals_[nodeid];
-
-    int i = 1;
-    for (auto const & nbrnode : nbrids) {
-      mesh_.node_get_coordinates(nbrnode, &point);
-      nodecoords[i].resize(2);
-      nodecoords[i][0] = point[0];
-      nodecoords[i][1] = point[1];
-      nodevalues[i] = vals_[nbrnode];
-      i++;
+  
+  Point<D> point;
+  
+  mesh_.node_get_coordinates(nodeid, &(nodecoords[0]));
+  nodevalues[0] = vals_[nodeid];
+  
+  int i = 1;
+  for (auto const & nbrnode : nbrids) {
+    mesh_.node_get_coordinates(nbrnode, &nodecoords[i]);
+    nodevalues[i] = vals_[nbrnode];
+    i++;
+  }
+  
+  grad = ls_gradient(nodecoords, nodevalues);
+  
+  if (limtype_ == BARTH_JESPERSEN) {
+    
+    // Min and max vals of function (cell centered vals) among neighbors
+    
+    double minval = vals_[nodeid];
+    double maxval = vals_[nodeid];
+    
+    for (auto const & val : nodevalues) {
+      minval = std::min(val, minval);
+      maxval = std::max(val, maxval);
     }
-
-    grad = ls_gradient(nodecoords, nodevalues);
-
-    if (limtype_ == BARTH_JESPERSEN) {
-
-      // Min and max vals of function (cell centered vals) among neighbors
-
-      double minval = vals_[nodeid];
-      double maxval = vals_[nodeid];
-
-      for (auto const & val : nodevalues) {
-        minval = std::min(val, minval);
-        maxval = std::max(val, maxval);
-      }
-
-      // Find the min and max of the reconstructed function in the cell
-      // Since the reconstruction is linear, this will occur at one of
-      // the nodes of the cell. So find the values of the reconstructed
-      // function at the nodes of the cell
-
-      double nodeval = vals_[nodeid];
-
-      std::vector<Point<2>> dualcellcoords;
-      mesh_.dual_cell_get_coordinates(nodeid, &dualcellcoords);
-
-      for (auto const & coord : dualcellcoords) {
-        // val = nodeval + grad*(coord-nodecoord)
-        // double diff = val-nodeval = grad DOT (coord-nodecoord);
-
-        double diff = grad[0]*(coord[0]-nodecoords[0][0]) +
-            grad[1]*(coord[1]-nodecoords[0][1]);
-        double extremeval = (diff > 0.0) ? maxval : minval;
-        double phi_new = (diff == 0.0) ? 1 : (extremeval-nodeval)/diff;
-        phi = std::min(phi_new, phi);
-      }
+    
+    // Find the min and max of the reconstructed function in the cell
+    // Since the reconstruction is linear, this will occur at one of
+    // the nodes of the cell. So find the values of the reconstructed
+    // function at the nodes of the cell
+    
+    double nodeval = vals_[nodeid];
+    
+    std::vector<Point<D>> dualcellcoords;
+    mesh_.dual_cell_get_coordinates(nodeid, &dualcellcoords);
+    
+    for (auto const & coord : dualcellcoords) {
+      Vector<D> vec = coord-nodecoords[0];
+      double diff = dot(grad, vec);
+      double extremeval = (diff > 0.0) ? maxval : minval;
+      double phi_new = (diff == 0.0) ? 1 : (extremeval-nodeval)/diff;
+      phi = std::min(phi_new, phi);
     }
-
-  } else if (dim == 3) {
-    std::vector<double> coord(3);
-
-    Point<3> point;
-
-    mesh_.node_get_coordinates(nodeid, &point);
-    nodecoords[0].resize(3);
-    nodecoords[0][0] = point[0];
-    nodecoords[0][1] = point[1];
-    nodecoords[0][2] = point[2];
-    nodevalues[0] = vals_[nodeid];
-
-    int i = 1;
-    for (auto const & nbrnode : nbrids) {
-      mesh_.node_get_coordinates(nbrnode, &point);
-      nodecoords[i].resize(3);
-      nodecoords[i][0] = point[0];
-      nodecoords[i][1] = point[1];
-      nodecoords[i][2] = point[2];
-      nodevalues[i] = vals_[nbrnode];
-      i++;
-    }
-
-
-    grad = ls_gradient(nodecoords, nodevalues);
-
-    if (limtype_ == BARTH_JESPERSEN) {
-
-      // Min and max vals of function (cell centered vals) among neighbors
-
-      double minval = vals_[nodeid];
-      double maxval = vals_[nodeid];
-
-      for (auto const & val : nodevalues) {
-        minval = std::min(val, minval);
-        maxval = std::max(val, maxval);
-      }
-
-      double nodeval = vals_[nodeid];
-
-      std::vector<Point<3>> dualcellcoords;
-      mesh_.dual_cell_get_coordinates(nodeid, &dualcellcoords);
-
-      for (auto const & coord : dualcellcoords) {
-        // val = nodeval + grad*(coord-nodecoord)
-        // diff = val-nodeval = grad DOT (coord-nodecoord);
-
-        double diff = grad[0]*(coord[0]-nodecoords[0][0]) +
-            grad[1]*(coord[1]-nodecoords[0][1]) +
-            grad[2]*(coord[2]-nodecoords[0][2]);
-        double extremeval = (diff > 0.0) ? maxval : minval;
-        double phi_new = (diff == 0.0) ? 1 : (extremeval-nodeval)/diff;
-        phi = std::min(phi_new, phi);
-      }
-    }
-  } else {
-    std::cerr << "Gradient only implemented for 2D and 3D\n";
   }
 
   // Limited gradient is phi*grad
 
-  for (int i = 0; i < dim; ++i)
-    grad[i] *= phi;
-
-  return grad;
+  return phi*grad;
 }
 
 }  // namespace Portage

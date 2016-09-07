@@ -18,6 +18,7 @@
 #include "JaliStateVector.h"
 
 #include "portage/support/portage.h"
+#include "portage/support/Vector.h"
 #include "portage/wrappers/mesh/jali/jali_mesh_wrapper.h"
 #include "portage/wrappers/state/jali/jali_state_wrapper.h"
 
@@ -77,27 +78,27 @@ TEST(Gradient, Fields_Cell_Ctr) {
 
   Portage::Limited_Gradient<Portage::Jali_Mesh_Wrapper,
                             Portage::Jali_State_Wrapper,
-                            Portage::CELL>
+                            Portage::CELL, 2>
       gradcalc1(meshwrapper, statewrapper, "cellvars1", Portage::NOLIMITER);
   Portage::Limited_Gradient<Portage::Jali_Mesh_Wrapper,
                             Portage::Jali_State_Wrapper,
-                            Portage::CELL>
+                            Portage::CELL, 2>
       gradcalc2(meshwrapper, statewrapper, "cellvars2", Portage::NOLIMITER);
   Portage::Limited_Gradient<Portage::Jali_Mesh_Wrapper,
                             Portage::Jali_State_Wrapper,
-                            Portage::CELL>
+                            Portage::CELL, 2>
       gradcalc3(meshwrapper, statewrapper, "cellvars1",
                 Portage::BARTH_JESPERSEN);
   Portage::Limited_Gradient<Portage::Jali_Mesh_Wrapper,
                             Portage::Jali_State_Wrapper,
-                            Portage::CELL>
+                            Portage::CELL, 2>
       gradcalc4(meshwrapper, statewrapper, "cellvars2",
                 Portage::BARTH_JESPERSEN);
 
 
   // Compute the gradient for each of these fields
 
-  std::vector<double> grad(2);
+  Portage::Vector<2> grad;
 
   // Verify the gradient values
   // For field 1 (constant), it is is 0,0
@@ -208,19 +209,20 @@ TEST(Gradient, Fields_Node_Ctr) {
 
   Portage::Limited_Gradient<Portage::Jali_Mesh_Wrapper,
                             Portage::Jali_State_Wrapper,
-                            Portage::NODE>
+                            Portage::NODE, 2>
       gradcalc1(meshwrapper, statewrapper, "nodevars1", Portage::NOLIMITER);
   Portage::Limited_Gradient<Portage::Jali_Mesh_Wrapper,
-                            Portage::Jali_State_Wrapper, Portage::NODE>
+                            Portage::Jali_State_Wrapper,
+                            Portage::NODE, 2>
       gradcalc2(meshwrapper, statewrapper, "nodevars2", Portage::NOLIMITER);
   Portage::Limited_Gradient<Portage::Jali_Mesh_Wrapper,
                             Portage::Jali_State_Wrapper,
-                            Portage::NODE>
+                            Portage::NODE, 2>
       gradcalc3(meshwrapper, statewrapper, "nodevars1",
                 Portage::BARTH_JESPERSEN);
   Portage::Limited_Gradient<Portage::Jali_Mesh_Wrapper,
                             Portage::Jali_State_Wrapper,
-                            Portage::NODE>
+                            Portage::NODE, 2>
       gradcalc4(meshwrapper, statewrapper, "nodevars2",
                 Portage::BARTH_JESPERSEN);
 
@@ -229,7 +231,7 @@ TEST(Gradient, Fields_Node_Ctr) {
   // For field 1, it is a constant
   // For field 2, it is a linear function
 
-  std::vector<double> grad(2);
+  Portage::Vector<2> grad;
 
   for (int n = 0; n < nn1; ++n) {
     // unlimited gradient of constant function
