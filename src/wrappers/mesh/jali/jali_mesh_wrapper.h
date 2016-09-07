@@ -166,6 +166,14 @@ class Jali_Mesh_Wrapper {
     node_get_cell_adj_nodes(nodeid,ptype,adjnodes);
   }
 
+  //! Get global id
+  int get_global_id(int const id, Entity_kind const kind) const {
+    return jali_mesh_.GID(id, (Jali::Entity_kind)kind);
+  }
+
+  int virtual_to_local(int virtualId) const { return virtualId; }
+
+
   //! coords of a node
   template <long D>
   void node_get_coordinates(int const nodeid, Portage::Point<D>* pp) const {

@@ -233,13 +233,16 @@ template<typename MeshType, typename StateType>
 Portage::Point3
 Limited_Gradient<MeshType, StateType, CELL> :: operator() (int const cellid) {
 
+ int comm_rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &comm_rank);
+
+
   int dim = mesh_.space_dimension();
   double phi = 1.0;
   std::vector<double> grad(dim, 0);
 
   if (dim == 2 || dim == 3) {
     std::vector<double> cen, nbrcen;
-
     std::vector<int> const & nbrids = cell_neighbors_[cellid];
 
     std::vector<std::vector<double>> cellcenters(nbrids.size()+1);

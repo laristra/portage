@@ -165,7 +165,9 @@ double Interpolate_1stOrder<SourceMeshType, TargetMeshType, StateType,
     std::vector<double> pair_weights =
         sources_and_weights[j].weights;
 
-    val += source_vals_[srccell] * pair_weights[0];  // 1st order
+    int lindex = source_mesh_.virtual_to_local(srccell);
+
+    val += source_vals_[lindex] * pair_weights[0];  // 1st order
   }
 
   // Normalize the value by sum of all the weights

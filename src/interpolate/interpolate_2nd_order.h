@@ -102,7 +102,12 @@ class Interpolate_2ndOrder {
     // compiler is not able to disambiguate this call and is getting
     // confused. So we will explicitly state that this is Portage::transform
 
-    Portage::transform(source_mesh_.begin(on_what), source_mesh_.end(on_what),
+ int comm_rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &comm_rank);
+
+//if (comm_rank == 0)
+    Portage::transform(source_mesh_.begin(on_what, Entity_type::PARALLEL_OWNED), 
+                       source_mesh_.end(on_what, Entity_type::PARALLEL_OWNED),
                        gradients_.begin(), limgrad);
   }
 
@@ -236,7 +241,7 @@ class Interpolate_2ndOrder<SourceMeshType, TargetMeshType, StateType, CELL> {
                      std::vector<Weights_t> const & sources_and_weights) const;
 
   /// Set gradients (without computing here)
-  void set_gradients(std::string const & interp_var_name, 
+/*  void set_gradients(std::string const & interp_var_name, 
                      std::shared_ptr<std::vector<Portage::Point3>> gradients)
   {
     source_state_.get_data(CELL, interp_var_name, &source_vals_);
@@ -248,7 +253,7 @@ class Interpolate_2ndOrder<SourceMeshType, TargetMeshType, StateType, CELL> {
   {
     return gradients_;
   }
-
+*/
  private:
   SourceMeshType const & source_mesh_;
   TargetMeshType const & target_mesh_;
@@ -283,7 +288,7 @@ double Interpolate_2ndOrder<SourceMeshType, TargetMeshType,
   int spdim = source_mesh_.space_dimension();
 
   double totalval = 0.0;
-
+//#if 0
   // contribution of the source cell is its field value weighted by
   // its "weight" (in this case, its 0th moment/area/volume)
 
@@ -315,7 +320,7 @@ double Interpolate_2ndOrder<SourceMeshType, TargetMeshType,
   // same as the total volume of the source cell)
 
   totalval /= target_mesh_.cell_volume(targetCellID);
-
+//#endif
   return totalval;
 }
 //////////////////////////////////////////////////////////////////////////////

@@ -353,7 +353,7 @@ int main(int argc, char** argv) {
 
     // Do the remap
     d.run();
-
+//#if 0
     // Dump some timing information
     if (numpe > 1) MPI_Barrier(MPI_COMM_WORLD);
     gettimeofday(&end, 0);
@@ -419,7 +419,7 @@ int main(int argc, char** argv) {
       targetMesh->write_to_exodus_file("output.exo");
       std::cout << "...done." << std::endl;
     }
-
+//#endif
   } else {  // node-centered remaps
     mf.included_entities({Jali::Entity_kind::FACE,
                           Jali::Entity_kind::EDGE,
