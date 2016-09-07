@@ -74,7 +74,7 @@ Vector<D> ls_gradient(std::vector<Point<D>> const & coords,
   // F is a vector of nvals. So transpose(A)*F is vector of D
   // (where D is the space dimension)
 
-  Vector<D> ATF = toPortageVector<D>(AT*F);
+  Vector<D> ATF = Vector<D>(AT*F);
 
   // Inverse of ATA
 
@@ -278,11 +278,6 @@ Limited_Gradient<MeshType, StateType, CELL, D>::operator() (int const cellid) {
     mesh_.cell_get_coordinates(cellid, &cellcoords);
     
     for (auto coord : cellcoords) {
-      
-      // At any coord:
-      // val = cellcenval + grad*(coord-cellcencoord)
-      // diff = val-cellcenval = grad DOT (coord-cellcencoord);
-      
       Vector<D> vec = coord-cellcenters[0];
       double diff = dot(grad, vec);
       double extremeval = (diff > 0.0) ? maxval : minval;
@@ -422,9 +417,6 @@ Limited_Gradient<MeshType, StateType, NODE, D>::operator() (int const nodeid) {
     mesh_.dual_cell_get_coordinates(nodeid, &dualcellcoords);
     
     for (auto const & coord : dualcellcoords) {
-      // val = nodeval + grad*(coord-nodecoord)
-      // double diff = val-nodeval = grad DOT (coord-nodecoord);
-      
       Vector<D> vec = coord-nodecoords[0];
       double diff = dot(grad, vec);
       double extremeval = (diff > 0.0) ? maxval : minval;

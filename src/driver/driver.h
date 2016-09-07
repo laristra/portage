@@ -768,7 +768,7 @@ Driver<SourceMesh_Wrapper,
   for (int i = 0; i < nvars; ++i) {
     std::cout << "Remapping variable " << source_var_names[i]
               << " to variable " << target_var_names[i]
-              << " using a 1st order accurate algorithm" << std::endl;
+              << " using a 2nd order accurate algorithm" << std::endl;
 
     interpolate.set_interpolation_variable(source_var_names[i], NOLIMITER);
 
@@ -1081,7 +1081,7 @@ Driver<SourceMesh_Wrapper,
   for (int i = 0; i < nvars; ++i) {
     std::cout << "Remapping variable " << source_var_names[i]
               << " to variable " << target_var_names[i]
-              << " using a 1st order accurate algorithm" << std::endl;
+              << " using a 2nd order accurate algorithm" << std::endl;
 
     interpolate.set_interpolation_variable(source_var_names[i], NOLIMITER);
 
@@ -1577,7 +1577,7 @@ Driver<SourceMesh_Wrapper,
   for (int i = 0; i < nvars; ++i) {
     std::cout << "Remapping variable " << source_var_names[i]
               << " to variable " << target_var_names[i]
-              << " using a 1st order accurate algorithm" << std::endl;
+              << " using a 2nd order accurate algorithm" << std::endl;
 
     interpolate.set_interpolation_variable(source_var_names[i], NOLIMITER);
 
@@ -1922,7 +1922,7 @@ Driver<SourceMesh_Wrapper,
   for (int i = 0; i < nvars; ++i) {
     std::cout << "Remapping variable " << source_var_names[i]
               << " to variable " << target_var_names[i]
-              << " using a 1st order accurate algorithm" << std::endl;
+              << " using a 2nd order accurate algorithm" << std::endl;
 
     interpolate.set_interpolation_variable(source_var_names[i], NOLIMITER);
 
