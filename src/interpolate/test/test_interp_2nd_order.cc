@@ -109,7 +109,7 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Const_No_Limiter_2D) {
   Portage::Interpolate_2ndOrder<Portage::Jali_Mesh_Wrapper,
                                 Portage::Jali_Mesh_Wrapper,
                                 Portage::Jali_State_Wrapper,
-                                Portage::CELL>
+                                Portage::CELL, 2>
       interpolater(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper);
 
   interpolater.set_interpolation_variable("cellvars", Portage::NOLIMITER);
@@ -208,7 +208,7 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Lin_No_Limiter_2D) {
   Portage::Interpolate_2ndOrder<Portage::Jali_Mesh_Wrapper,
                                 Portage::Jali_Mesh_Wrapper,
                                 Portage::Jali_State_Wrapper,
-                                Portage::CELL>
+                                Portage::CELL, 2>
       interpolater(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper);
 
   interpolater.set_interpolation_variable("cellvars", Portage::NOLIMITER);
@@ -320,7 +320,7 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Lin_BJ_Limiter_2D) {
   Portage::Interpolate_2ndOrder<Portage::Jali_Mesh_Wrapper,
                                 Portage::Jali_Mesh_Wrapper,
                                 Portage::Jali_State_Wrapper,
-                                Portage::CELL>
+                                Portage::CELL, 2>
       interpolater(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper);
 
   interpolater.set_interpolation_variable("cellvars", Portage::NOLIMITER);
@@ -715,7 +715,7 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Const_No_Limiter_3D) {
   Portage::Interpolate_2ndOrder<Portage::Jali_Mesh_Wrapper,
                                 Portage::Jali_Mesh_Wrapper,
                                 Portage::Jali_State_Wrapper,
-                                Portage::CELL>
+                                Portage::CELL, 3>
       interpolater(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper);
 
   interpolater.set_interpolation_variable("cellvars", Portage::NOLIMITER);
@@ -816,7 +816,7 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Lin_No_Limiter_3D) {
   Portage::Interpolate_2ndOrder<Portage::Jali_Mesh_Wrapper,
                                 Portage::Jali_Mesh_Wrapper,
                                 Portage::Jali_State_Wrapper,
-                                Portage::CELL>
+                                Portage::CELL, 3>
       interpolater(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper);
 
   interpolater.set_interpolation_variable("cellvars", Portage::NOLIMITER);
@@ -930,7 +930,7 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_BJ_Limiter_3D) {
   Portage::Interpolate_2ndOrder<Portage::Jali_Mesh_Wrapper,
                                 Portage::Jali_Mesh_Wrapper,
                                 Portage::Jali_State_Wrapper,
-                                Portage::CELL>
+                                Portage::CELL, 3>
       interpolater(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper);
 
   interpolater.set_interpolation_variable("cellvars", Portage::NOLIMITER);
