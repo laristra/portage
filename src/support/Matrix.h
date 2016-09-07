@@ -199,8 +199,6 @@ class Matrix {
   /*!
     @brief  Matrix-Matrix multiply
     @param[in] B   matrix to post-multiply with
-    
-    Not able to make B const& since it complains about 
   */
   
   Matrix operator*(Matrix const& B) {
