@@ -38,6 +38,12 @@ if (ENABLE_UNIT_TESTS)
                      LIBRARIES portage ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
                      POLICY MPI
                      THREADS 1)
+
+      cinch_add_unit(test_flat_state_wrapper
+                     SOURCES state/flat/test/test_flat_state_wrapper.cc
+                     LIBRARIES portage ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
+                     POLICY MPI
+                     THREADS 1)
    endif (Jali_DIR)
 
    if (FLECSI_INSTALL_DIR)
