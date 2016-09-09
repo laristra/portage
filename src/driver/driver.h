@@ -216,6 +216,8 @@ class MeshWrapperDual {  // cellid is the dual cell (i.e. node) id
     wedges_get_coordinates(dualcellid, tcoords);
   }
 
+  // Virtual and local addresses are equivalent in non-distributed case
+  int virtual_to_local(int virtualId) const { return virtualId; }
 
  private:
   const Mesh_Wrapper_Type &w_;
@@ -1336,16 +1338,8 @@ template<class SourceMesh_Wrapper, class SourceState_Wrapper,
   // Since we are not sending any target mesh data over MPI, we don't need
   // to convert the target mesh or state to a flat representation
   Flat_Mesh_Wrapper<> source_mesh_flat(8, source_mesh_);
-  Flat_State_Wrapper<> source_state_flat(source_state_, source_remap_var_names_);
-
+  Flat_State_Wrapper<> source_state_flat(source_state_, source_remap_var_names_); 
   int nvars = source_var_names.size();
-  /*for (int i = 0; i < nvars; ++i) {
-    Interpolate_2ndOrder<SourceMesh_Wrapper, TargetMesh_Wrapper, SourceState_Wrapper, CELL>*
-        interpolater = new Interpolate_2ndOrder<SourceMesh_Wrapper, TargetMesh_Wrapper, SourceState_Wrapper, CELL>(
-           source_mesh_, target_mesh_, source_state_);
-    interpolater->set_interpolation_variable(source_var_names[i], NOLIMITER);
-    source_state_flat.add_gradients(interpolater->get_gradients());
-  }*/
 
   // Use a bounding box distributor to send the source cells to the target
   // paritions where they are needed
@@ -2232,7 +2226,7 @@ struct IntersectFunctor {
     std::vector<std::vector<std::vector<double>>> moments(candidates.size());
     for (int i = 0; i < candidates.size(); i++)
       moments[i] = (*intersect_)(candidates[i], targetCellIndex);
-    
+
     // Compute new value on target cell based on source mesh
     // values and intersection moments
     

@@ -6,7 +6,7 @@
 #ifndef MPI_BOUNDING_BOXES_H_
 #define MPI_BOUNDING_BOXES_H_
 
-#define DEBUG_MPI
+//#define DEBUG_MPI
 
 #include <algorithm>
 
@@ -166,6 +166,8 @@ class MPI_Bounding_Boxes {
       sendOwnedCounts[i] = (sendCounts[i] > 0) ? sourceNumOwnedCells : 0;
     MPI_Alltoall(&(sendOwnedCounts[0]), 1, MPI_INT, &(recvOwnedCounts[0]), 1, MPI_INT, MPI_COMM_WORLD);
 
+    // Create a list of the local indexes of all received cells that were owned by sending rank 
+    // (as opposed to ghosts)
     int ownedCellIndex = 0;
     sourceOwnedCellIndexes.clear();
     for (unsigned int i=0; i<commSize; i++)
@@ -175,6 +177,8 @@ class MPI_Bounding_Boxes {
       ownedCellIndex += recvCounts[i];
     }
 
+
+    // SEND CELL COORDINATES
 
     // Compute the total number of source cells this rank will receive from all ranks, 
     // and allocate a vector to hold them
@@ -193,11 +197,9 @@ class MPI_Bounding_Boxes {
     if (recvCounts[commRank] > 0)
       std::copy(sourceCoords.begin(), sourceCoords.end(), newCoords.begin() + sourceCellStride*localOffset);
 
-    // Each rank will send and receive the appropriate source cells
+    // Each rank will do a non-blocking receive from each rank from which it will receive source cell coordinates
     MPI_Status stat;
     int writeOffset = 0;
-
-    // Each rank will do a non-blocking receive from each rank from which it will receive source cell coordinates
     std::vector<MPI_Request> requests;
     for (unsigned int i=0; i<commSize; i++)
     {
@@ -227,21 +229,19 @@ class MPI_Bounding_Boxes {
       MPI_Waitall(requests.size(), &(requests[0]), &(statuses[0]));	
     }
 
-    // We will now use the received source data as our new source mesh on this partition
+    // We will now use the received source data for our new source mesh on this partition
     sourceCoords = newCoords;
-
-
 
    
     // SEND GLOBAL CELL IDS
-    
-    std::vector<int> newGlobalCellIds(totalRecvSize);
 
+    // Copy source cells that will stay on this rank into the proper place in the new vector
+    std::vector<int> newGlobalCellIds(totalRecvSize);
     if (recvCounts[commRank] > 0)
       std::copy(sourceGlobalCellIds.begin(), sourceGlobalCellIds.end(), newGlobalCellIds.begin() + localOffset);
 
+    // Each rank will do a non-blocking receive from each rank from which it will receive global cell ids
     writeOffset = 0;
-
     requests.clear();
     for (unsigned int i=0; i<commSize; i++)
     {
@@ -255,6 +255,7 @@ class MPI_Bounding_Boxes {
       writeOffset += recvCounts[i];
     }
 
+    // Each rank will send its global cell ids to appropriate ranks
     for (unsigned int i=0; i<commSize; i++)
     {
       if ((i != commRank) && (sendCounts[i] > 0))
@@ -263,17 +264,19 @@ class MPI_Bounding_Boxes {
       }
     }
 
+    // Wait for all receives to complete
     if (requests.size() > 0)
     {
       std::vector<MPI_Status> statuses(requests.size());
       MPI_Waitall(requests.size(), &(requests[0]), &(statuses[0]));
     }
 
+    // We will now use the received source data for the new source mesh on this partition
     sourceGlobalCellIds = newGlobalCellIds;
 
 
- 
-    // CREATE VIRTUAL IDS
+    // CREATE VIRTUAL IDS SUCH THAT RECEIVED OWNED CELLS ARE FIRST AND GHOST CELLS AFTERWARDS
+
     sourceVirtualCellIds.clear();
     sourceVirtualCellIds.resize(totalRecvSize);
     std::fill(sourceVirtualCellIds.begin(), sourceVirtualCellIds.end(), -1);
@@ -284,18 +287,16 @@ class MPI_Bounding_Boxes {
       if (sourceVirtualCellIds[i] < 0) sourceVirtualCellIds[i] = virtualCount++;
 
 
-
-    // SEND NEIGHBOR COUNTS
+    // SEND NUMBER OF NEIGHBORS FOR EACH CELL 
  
+    // Copy source cells that will stay on this rank into the proper place in the new vector
     std::vector<int> newNeighborCounts(totalRecvSize);
     int neighborSize = std::accumulate(sourceNeighborCounts.begin(), sourceNeighborCounts.end(), 0);
-std::cout << "Neighbor size: " << commRank << " " << neighborSize << " " << sourceNeighborCounts.size() <<  std::endl;
-
     if (recvCounts[commRank] > 0)
       std::copy(sourceNeighborCounts.begin(), sourceNeighborCounts.end(), newNeighborCounts.begin() + localOffset);
 
+    // Each rank will do a non-blocking receive from each rank from which it will receive neighbor counts
     writeOffset = 0;
-
     requests.clear();
     for (unsigned int i=0; i<commSize; i++)
     {
@@ -309,6 +310,7 @@ std::cout << "Neighbor size: " << commRank << " " << neighborSize << " " << sour
       writeOffset += recvCounts[i];
     }
 
+    // Each rank will send its neighbor counts to appropriate ranks
     for (unsigned int i=0; i<commSize; i++)
     {
       if ((i != commRank) && (sendCounts[i] > 0))
@@ -317,35 +319,37 @@ std::cout << "Neighbor size: " << commRank << " " << neighborSize << " " << sour
       }
     }
 
+    // Wait for all receives to complete
     if (requests.size() > 0)
     {
       std::vector<MPI_Status> statuses(requests.size());
       MPI_Waitall(requests.size(), &(requests[0]), &(statuses[0]));
     }
 
+    // We will now use the received source data for the new source mesh on this partition
     sourceNeighborCounts = newNeighborCounts;
 
 
+    // SEND LIST OF NEIGHBOR GLOBAL IDS FOR EACH CELL
 
-    // SEND NEIGHBOR LISTS
-
+    // Each rank tells each other rank how many total neighbor global ids it will send (across all cells)  
     std::vector<int> sendNeighborsCounts(commSize, 0);
     std::vector<int> recvNeighborsCounts(commSize);
     for (unsigned int i=0; i<commSize; i++)
       sendNeighborsCounts[i] = (sendCounts[i] > 0) ? neighborSize : 0;
     MPI_Alltoall(&(sendNeighborsCounts[0]), 1, MPI_INT, &(recvNeighborsCounts[0]), 1, MPI_INT, MPI_COMM_WORLD);
-
     int neighborsRecvSize = 0;
     for (unsigned int i=0; i<commSize; i++) neighborsRecvSize += recvNeighborsCounts[i];
     std::vector<int> newNeighbors(neighborsRecvSize);
 
+    // Copy neighbor ids that will stay on this rank into the proper place in the new vector
     int localNeighborsOffset = 0;
     for (unsigned int i=0; i<commRank; i++) localNeighborsOffset += recvNeighborsCounts[i];
     if (recvCounts[commRank] > 0)
       std::copy(sourceNeighbors.begin(), sourceNeighbors.end(), newNeighbors.begin() + localNeighborsOffset);
 
-    writeOffset = 0;
-    
+    // Each rank will do a non-blocking receive from each rank from which it will receive neighbor ids
+    writeOffset = 0;  
     requests.clear();
     for (unsigned int i=0; i<commSize; i++)
     {
@@ -359,6 +363,7 @@ std::cout << "Neighbor size: " << commRank << " " << neighborSize << " " << sour
       writeOffset += recvNeighborsCounts[i];
     }
 
+    // Each rank will send its neighbor global ids to appropriate ranks
     for (unsigned int i=0; i<commSize; i++)
     {
       if ((i != commRank) && (sendCounts[i] > 0))
@@ -367,35 +372,24 @@ std::cout << "Neighbor size: " << commRank << " " << neighborSize << " " << sour
       }
     }
 
+    // Wait for all receives to complete
     if (requests.size() > 0)
     {
       std::vector<MPI_Status> statuses(requests.size());
       MPI_Waitall(requests.size(), &(requests[0]), &(statuses[0]));
     }
 
-if (commRank == 0)
-{
-std::cout << "newneighbors: ";
-for (unsigned int i=0; i<newNeighbors.size(); i++) std::cout << newNeighbors[i] << " ";
-std::cout << std::endl;
-}
-
+#if DEBUG_MPI
+    if (commRank == 0)
+    {
+      std::cout << "newNeighbors: ";
+      for (unsigned int i=0; i<newNeighbors.size(); i++) std::cout << newNeighbors[i] << " ";
+      std::cout << std::endl;
+    }
+#endif
+  
+    // We will now use the received source data for the new source mesh on this partition
     sourceNeighbors = newNeighbors;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
     // SEND FIELD VALUES

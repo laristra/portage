@@ -233,10 +233,6 @@ template<typename MeshType, typename StateType>
 Portage::Point3
 Limited_Gradient<MeshType, StateType, CELL> :: operator() (int const cellid) {
 
- int comm_rank;
-  MPI_Comm_rank(MPI_COMM_WORLD, &comm_rank);
-
-
   int dim = mesh_.space_dimension();
   double phi = 1.0;
   std::vector<double> grad(dim, 0);
@@ -249,17 +245,20 @@ Limited_Gradient<MeshType, StateType, CELL> :: operator() (int const cellid) {
     std::vector<double> cellvalues(nbrids.size()+1);
 
     mesh_.cell_centroid(cellid, &(cellcenters[0]));
-    cellvalues[0] = vals_[cellid];
+
+    int lindex = mesh_.virtual_to_local(cellid);
+    cellvalues[0] = vals_[lindex];
 
     int i = 1;
     for (auto nbrcell : nbrids) {
       mesh_.cell_centroid(nbrcell, &(cellcenters[i]));
-      cellvalues[i] = vals_[nbrcell];
+
+      int lindex = mesh_.virtual_to_local(nbrcell);
+      cellvalues[i] = vals_[lindex]; 
       i++;
     }
 
     grad = ls_gradient(cellcenters, cellvalues);
-
 
     // Limit the gradient to enforce monotonicity preservation
 

@@ -288,7 +288,7 @@ double Interpolate_2ndOrder<SourceMeshType, TargetMeshType,
   int spdim = source_mesh_.space_dimension();
 
   double totalval = 0.0;
-//#if 0
+
   // contribution of the source cell is its field value weighted by
   // its "weight" (in this case, its 0th moment/area/volume)
 
@@ -309,7 +309,9 @@ double Interpolate_2ndOrder<SourceMeshType, TargetMeshType,
     for (int i = 0; i < spdim; ++i)
       xsect_centroid[i] = xsect_weights[1+i]/xsect_volume;  // (1st moment)/vol
 
-    double val = source_vals_[srccell];
+    int lindex = source_mesh_.virtual_to_local(srccell);
+
+    double val = source_vals_[lindex];
     for (int i = 0; i < spdim; ++i)
       val += (*gradients_)[srccell][i] * (xsect_centroid[i]-srccell_centroid[i]);
     val *= xsect_volume;
@@ -320,7 +322,7 @@ double Interpolate_2ndOrder<SourceMeshType, TargetMeshType,
   // same as the total volume of the source cell)
 
   totalval /= target_mesh_.cell_volume(targetCellID);
-//#endif
+
   return totalval;
 }
 //////////////////////////////////////////////////////////////////////////////
