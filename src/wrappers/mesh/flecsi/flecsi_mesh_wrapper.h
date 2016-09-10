@@ -432,6 +432,11 @@ class Flecsi_Mesh_Wrapper {
   //! Virtual and local addresses are equivalent in non-distributed case
   int virtual_to_local(int virtualId) const { return virtualId; }
 
+  //! Get global id
+  int get_global_id(int const id, Entity_kind const kind) const {
+    return id;
+  }
+
   /*!
     @brief Centroid of a dual cell.
     @param[in] nodeid The ID of the node in the normal mesh / cell in the dual
