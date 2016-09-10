@@ -291,7 +291,9 @@ class MPI_Bounding_Boxes {
  
     // Copy source cells that will stay on this rank into the proper place in the new vector
     std::vector<int> newNeighborCounts(totalRecvSize);
-    int neighborSize = std::accumulate(sourceNeighborCounts.begin(), sourceNeighborCounts.end(), 0);
+    int neighborSize = 0;
+    for (unsigned int i=0; i<sourceNeighborCounts.size(); i++) 
+      neighborSize += sourceNeighborCounts[i]; 
     if (recvCounts[commRank] > 0)
       std::copy(sourceNeighborCounts.begin(), sourceNeighborCounts.end(), newNeighborCounts.begin() + localOffset);
 
