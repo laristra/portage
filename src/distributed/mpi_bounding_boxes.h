@@ -379,7 +379,7 @@ class MPI_Bounding_Boxes {
       MPI_Waitall(requests.size(), &(requests[0]), &(statuses[0]));
     }
 
-#if DEBUG_MPI
+#ifdef DEBUG_MPI
     if (commRank == 0)
     {
       std::cout << "newNeighbors: ";

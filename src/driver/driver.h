@@ -177,8 +177,10 @@ class MeshWrapperDual {  // cellid is the dual cell (i.e. node) id
     @param[in] dualcellID ID of the cell in the dual mesh.
     @param[in,out] centroid (x,y,z) coordinates of the cell center (for 3d).
   */
-  void cell_centroid(int const dualcellID, std::vector<double> *centroid)
+  template <long D>
+  void cell_centroid(int const dualcellID, Point<D> *centroid)
       const {
+std::cout << "In dual centroid" << std::endl;
     w_.dual_cell_centroid(dualcellID, centroid);
   }
 
@@ -188,7 +190,8 @@ class MeshWrapperDual {  // cellid is the dual cell (i.e. node) id
     @param[in,out] centroid (x,y,z) coordinates of the cell center (for 3d).
     @todo Clarify this wrt to @c MeshWrapperDual::cell_centroid().
   */
-  void dual_cell_centroid(int const dualnodeID, std::vector<double> *centroid)
+  template<long D>
+  void dual_cell_centroid(int const dualnodeID, Point<D> *centroid)
       const {
     w_.cell_centroid(dualnodeID, centroid);
   }
@@ -212,7 +215,8 @@ class MeshWrapperDual {  // cellid is the dual cell (i.e. node) id
   // Get the simplest possible decomposition of a 3D cell into tets.
   // For a dual mesh, that means returning a list of wedges.
   void decompose_cell_into_tets(int const dualcellid,
-                                std::vector<wedgeCoords> *tcoords) const {
+                                std::vector<wedgeCoords> *tcoords,
+                                const bool planar_hex) const {
     wedges_get_coordinates(dualcellid, tcoords);
   }
 
@@ -235,7 +239,7 @@ struct RemapFunctor;
   @class Driver "driver.h"
   @brief Driver provides the API to mapping from one mesh to another.
   @tparam SourceMesh_Wrapper A lightweight wrapper to a specific input mesh
-  implementation that provides certain functionality. 
+  implementation that provides certain functionality.
   @tparam SourceState_Wrapper A lightweight wrapper to a specific input state
   manager implementation that provides certain functionality.
   @tparam TargetMesh_Wrapper A lightweight wrapper to a specific target mesh
@@ -601,19 +605,19 @@ Driver<SourceMesh_Wrapper,
   gettimeofday(&end_timeval, 0);
   timersub(&end_timeval, &begin_timeval, &diff_timeval);
   tot_seconds_xsect = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
-  
+
   // INTERPOLATE (one variable at a time)
-  
+
 #ifdef ENABLE_PROFILE
   __itt_resume();
 #endif
-  
+
   gettimeofday(&begin_timeval, 0);
-  
+
   Interpolate_1stOrder<SourceMesh_Wrapper, TargetMesh_Wrapper,
-                       SourceState_Wrapper, CELL>
+                       SourceState_Wrapper, CELL, 2>
       interpolate(source_mesh_, target_mesh_, source_state_);
-  
+
   int nvars = source_var_names.size();
   for (int i = 0; i < nvars; ++i) {
     std::cout << "Remapping variable " << source_var_names[i]
@@ -624,7 +628,7 @@ Driver<SourceMesh_Wrapper,
 
     // This populates targetField with the values returned by the
     // remapper operator
-    
+
     /*  UNCOMMENT WHEN WE RESTORE get_type in jali_state_wrapper
         if (typeid(source_state_.get_type(source_var_names[i])) ==
         typeid(double)) {
@@ -632,7 +636,7 @@ Driver<SourceMesh_Wrapper,
     double *target_field_raw = nullptr;
     target_state_.get_data(CELL, target_var_names[i], &target_field_raw);
     Portage::pointer<double> target_field(target_field_raw);
-    
+
     Portage::transform((counting_iterator)(target_mesh_.begin(CELL)),
                        (counting_iterator)(target_mesh_.end(CELL)),
                        source_cells_and_weights.begin(),
@@ -650,7 +654,7 @@ Driver<SourceMesh_Wrapper,
 #ifdef ENABLE_PROFILE
   __itt_pause();
 #endif
-  
+
   gettimeofday(&end_timeval, 0);
   timersub(&end_timeval, &begin_timeval, &diff_timeval);
   tot_seconds_interp = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
@@ -689,7 +693,7 @@ Driver<SourceMesh_Wrapper,
 
   int ntargetcells = target_mesh_.num_entities(CELL);
 
-  // SEARCH 
+  // SEARCH
 
   Portage::vector<std::vector<int>> candidates(ntargetcells);
 
@@ -757,30 +761,30 @@ Driver<SourceMesh_Wrapper,
   gettimeofday(&end_timeval, 0);
   timersub(&end_timeval, &begin_timeval, &diff_timeval);
   tot_seconds_xsect = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
-  
+
   // INTERPOLATE (one variable at a time)
-  
+
 #ifdef ENABLE_PROFILE
   __itt_resume();
 #endif
-  
+
   gettimeofday(&begin_timeval, 0);
-  
+
   Interpolate_2ndOrder<SourceMesh_Wrapper, TargetMesh_Wrapper,
-                       SourceState_Wrapper, CELL>
+                       SourceState_Wrapper, CELL, 2>
       interpolate(source_mesh_, target_mesh_, source_state_);
-  
+
   int nvars = source_var_names.size();
   for (int i = 0; i < nvars; ++i) {
     std::cout << "Remapping variable " << source_var_names[i]
               << " to variable " << target_var_names[i]
-              << " using a 1st order accurate algorithm" << std::endl;
+              << " using a 2nd order accurate algorithm" << std::endl;
 
     interpolate.set_interpolation_variable(source_var_names[i], NOLIMITER);
 
     // This populates targetField with the values returned by the
     // remapper operator
-    
+
     /*  UNCOMMENT WHEN WE RESTORE get_type in jali_state_wrapper
         if (typeid(source_state_.get_type(source_var_names[i])) ==
         typeid(double)) {
@@ -788,7 +792,7 @@ Driver<SourceMesh_Wrapper,
     double *target_field_raw = nullptr;
     target_state_.get_data(CELL, target_var_names[i], &target_field_raw);
     Portage::pointer<double> target_field(target_field_raw);
-    
+
     Portage::transform((counting_iterator)(target_mesh_.begin(CELL)),
                        (counting_iterator)(target_mesh_.end(CELL)),
                        source_cells_and_weights.begin(),
@@ -807,7 +811,7 @@ Driver<SourceMesh_Wrapper,
 #ifdef ENABLE_PROFILE
   __itt_pause();
 #endif
-  
+
   gettimeofday(&end_timeval, 0);
   timersub(&end_timeval, &begin_timeval, &diff_timeval);
   tot_seconds_interp = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
@@ -845,7 +849,7 @@ Driver<SourceMesh_Wrapper,
 
   int ntargetcells = target_mesh_.num_entities(CELL);
 
-  // SEARCH 
+  // SEARCH
 
   Portage::vector<std::vector<int>> candidates(ntargetcells);
 
@@ -913,19 +917,19 @@ Driver<SourceMesh_Wrapper,
   gettimeofday(&end_timeval, 0);
   timersub(&end_timeval, &begin_timeval, &diff_timeval);
   tot_seconds_xsect = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
-  
+
   // INTERPOLATE (one variable at a time)
-  
+
 #ifdef ENABLE_PROFILE
   __itt_resume();
 #endif
-  
+
   gettimeofday(&begin_timeval, 0);
-  
+
   Interpolate_1stOrder<SourceMesh_Wrapper, TargetMesh_Wrapper,
-                       SourceState_Wrapper, CELL>
+                       SourceState_Wrapper, CELL, 3>
       interpolate(source_mesh_, target_mesh_, source_state_);
-  
+
   int nvars = source_var_names.size();
   for (int i = 0; i < nvars; ++i) {
     std::cout << "Remapping variable " << source_var_names[i]
@@ -936,7 +940,7 @@ Driver<SourceMesh_Wrapper,
 
     // This populates targetField with the values returned by the
     // remapper operator
-    
+
     /*  UNCOMMENT WHEN WE RESTORE get_type in jali_state_wrapper
         if (typeid(source_state_.get_type(source_var_names[i])) ==
         typeid(double)) {
@@ -944,7 +948,7 @@ Driver<SourceMesh_Wrapper,
     double *target_field_raw = nullptr;
     target_state_.get_data(CELL, target_var_names[i], &target_field_raw);
     Portage::pointer<double> target_field(target_field_raw);
-    
+
     Portage::transform((counting_iterator)(target_mesh_.begin(CELL)),
                        (counting_iterator)(target_mesh_.end(CELL)),
                        source_cells_and_weights.begin(),
@@ -963,7 +967,7 @@ Driver<SourceMesh_Wrapper,
 #ifdef ENABLE_PROFILE
   __itt_pause();
 #endif
-  
+
   gettimeofday(&end_timeval, 0);
   timersub(&end_timeval, &begin_timeval, &diff_timeval);
   tot_seconds_interp = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
@@ -1003,7 +1007,7 @@ Driver<SourceMesh_Wrapper,
 
   int ntargetcells = target_mesh_.num_entities(CELL);
 
-  // SEARCH 
+  // SEARCH
 
   Portage::vector<std::vector<int>> candidates(ntargetcells);
 
@@ -1070,30 +1074,30 @@ Driver<SourceMesh_Wrapper,
   gettimeofday(&end_timeval, 0);
   timersub(&end_timeval, &begin_timeval, &diff_timeval);
   tot_seconds_xsect = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
-  
+
   // INTERPOLATE (one variable at a time)
-  
+
 #ifdef ENABLE_PROFILE
   __itt_resume();
 #endif
-  
+
   gettimeofday(&begin_timeval, 0);
-  
+
   Interpolate_2ndOrder<SourceMesh_Wrapper, TargetMesh_Wrapper,
-                       SourceState_Wrapper, CELL>
+                       SourceState_Wrapper, CELL, 3>
       interpolate(source_mesh_, target_mesh_, source_state_);
-  
+
   int nvars = source_var_names.size();
   for (int i = 0; i < nvars; ++i) {
     std::cout << "Remapping variable " << source_var_names[i]
               << " to variable " << target_var_names[i]
-              << " using a 1st order accurate algorithm" << std::endl;
+              << " using a 2nd order accurate algorithm" << std::endl;
 
     interpolate.set_interpolation_variable(source_var_names[i], NOLIMITER);
 
     // This populates targetField with the values returned by the
     // remapper operator
-    
+
     /*  UNCOMMENT WHEN WE RESTORE get_type in jali_state_wrapper
         if (typeid(source_state_.get_type(source_var_names[i])) ==
         typeid(double)) {
@@ -1101,7 +1105,7 @@ Driver<SourceMesh_Wrapper,
     double *target_field_raw = nullptr;
     target_state_.get_data(CELL, target_var_names[i], &target_field_raw);
     Portage::pointer<double> target_field(target_field_raw);
-    
+
     Portage::transform((counting_iterator)(target_mesh_.begin(CELL)),
                        (counting_iterator)(target_mesh_.end(CELL)),
                        source_cells_and_weights.begin(),
@@ -1120,7 +1124,7 @@ Driver<SourceMesh_Wrapper,
 #ifdef ENABLE_PROFILE
   __itt_pause();
 #endif
-  
+
   gettimeofday(&end_timeval, 0);
   timersub(&end_timeval, &begin_timeval, &diff_timeval);
   tot_seconds_interp = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
@@ -1160,7 +1164,7 @@ Driver<SourceMesh_Wrapper,
 
   int ntargetcells = target_mesh_.num_entities(CELL);
 
-  // SEARCH 
+  // SEARCH
 
   Portage::vector<std::vector<int>> candidates(ntargetcells);
 
@@ -1249,18 +1253,18 @@ Driver<SourceMesh_Wrapper,
   gettimeofday(&end_timeval, 0);
   timersub(&end_timeval, &begin_timeval, &diff_timeval);
   tot_seconds_xsect = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
-  
+
   // INTERPOLATE (one variable at a time)
-  
+
 #ifdef ENABLE_PROFILE
   __itt_resume();
 #endif
-  
+
   gettimeofday(&begin_timeval, 0);
-  
+
   // Get an instance of the 1st order algorithm
   Interpolate_1stOrder<Flat_Mesh_Wrapper<>, TargetMesh_Wrapper,
-                       Flat_State_Wrapper<>, CELL>
+                       Flat_State_Wrapper<>, CELL, 3>
       interpolate(source_mesh_flat, target_mesh_, source_state_flat);
 
   int nvars = source_var_names.size();
@@ -1301,7 +1305,7 @@ Driver<SourceMesh_Wrapper,
 #ifdef ENABLE_PROFILE
   __itt_pause();
 #endif
-  
+
   gettimeofday(&end_timeval, 0);
   timersub(&end_timeval, &begin_timeval, &diff_timeval);
   tot_seconds_interp = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
@@ -1431,7 +1435,7 @@ template<class SourceMesh_Wrapper, class SourceState_Wrapper,
 
   // Get an instance of the 2nd order algorithm
   Interpolate_2ndOrder<Flat_Mesh_Wrapper<>, TargetMesh_Wrapper,
-      Flat_State_Wrapper<>, CELL>
+      Flat_State_Wrapper<>, CELL, 3>
       interpolate(source_mesh_flat, target_mesh_, source_state_flat);
 
   for (int i = 0; i < nvars; ++i) {
@@ -1512,7 +1516,7 @@ Driver<SourceMesh_Wrapper,
 
   int ntargetcells = target_mesh_.num_entities(NODE);
 
-  // SEARCH 
+  // SEARCH
 
   Portage::vector<std::vector<int>> candidates(ntargetcells);
 
@@ -1560,19 +1564,19 @@ Driver<SourceMesh_Wrapper,
   gettimeofday(&end_timeval, 0);
   timersub(&end_timeval, &begin_timeval, &diff_timeval);
   tot_seconds_xsect = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
-  
+
   // INTERPOLATE (one variable at a time)
-  
+
 #ifdef ENABLE_PROFILE
   __itt_resume();
 #endif
-  
+
   gettimeofday(&begin_timeval, 0);
-  
+
   Interpolate_1stOrder<SourceMesh_Wrapper, TargetMesh_Wrapper,
-      SourceState_Wrapper, NODE>
+                       SourceState_Wrapper, NODE, 2>
       interpolate(source_mesh_, target_mesh_, source_state_);
-  
+
   int nvars = source_var_names.size();
   for (int i = 0; i < nvars; ++i) {
     std::cout << "Remapping variable " << source_var_names[i]
@@ -1583,7 +1587,7 @@ Driver<SourceMesh_Wrapper,
 
     // This populates targetField with the values returned by the
     // interpolate operator
-    
+
     /*  UNCOMMENT WHEN WE RESTORE get_type in jali_state_wrapper
         if (typeid(source_state_.get_type(source_var_names[i])) ==
         typeid(double)) {
@@ -1591,7 +1595,7 @@ Driver<SourceMesh_Wrapper,
     double *target_field_raw = nullptr;
     target_state_.get_data(NODE, target_var_names[i], &target_field_raw);
     Portage::pointer<double> target_field(target_field_raw);
-    
+
     Portage::transform((counting_iterator)(target_mesh_.begin(NODE)),
                        (counting_iterator)(target_mesh_.end(NODE)),
                        source_cells_and_weights.begin(),
@@ -1610,7 +1614,7 @@ Driver<SourceMesh_Wrapper,
 #ifdef ENABLE_PROFILE
   __itt_pause();
 #endif
-  
+
   gettimeofday(&end_timeval, 0);
   timersub(&end_timeval, &begin_timeval, &diff_timeval);
   tot_seconds_interp = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
@@ -1653,7 +1657,7 @@ Driver<SourceMesh_Wrapper,
 
   int ntargetcells = target_mesh_.num_entities(CELL);
 
-  // SEARCH 
+  // SEARCH
 
   Portage::vector<std::vector<int>> candidates(ntargetcells);
 
@@ -1718,8 +1722,9 @@ Driver<SourceMesh_Wrapper,
   // that for 2nd order and higher remaps, we get multiple moments
   // (0th, 1st, etc) for each target-source cell intersection
 
-  int ntargetnodes = target_mesh_.num_entities(NODE);  
-  Portage::vector<std::vector<Weights_t>> source_cells_and_weights(ntargetnodes);
+  int ntargetnodes = target_mesh_.num_entities(NODE);
+  Portage::vector<std::vector<Weights_t>>
+      source_cells_and_weights(ntargetnodes);
 
   Portage::transform((counting_iterator) target_mesh_.begin(NODE),
                      (counting_iterator) target_mesh_.end(NODE),
@@ -1734,30 +1739,30 @@ Driver<SourceMesh_Wrapper,
   gettimeofday(&end_timeval, 0);
   timersub(&end_timeval, &begin_timeval, &diff_timeval);
   tot_seconds_xsect = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
-  
+
   // INTERPOLATE (one variable at a time)
-  
+
 #ifdef ENABLE_PROFILE
   __itt_resume();
 #endif
-  
+
   gettimeofday(&begin_timeval, 0);
-  
+
   Interpolate_2ndOrder<SourceMesh_Wrapper, TargetMesh_Wrapper,
-                       SourceState_Wrapper, NODE>
+                       SourceState_Wrapper, NODE, 2>
       interpolate(source_mesh_, target_mesh_, source_state_);
-  
+
   int nvars = source_var_names.size();
   for (int i = 0; i < nvars; ++i) {
     std::cout << "Remapping variable " << source_var_names[i]
               << " to variable " << target_var_names[i]
-              << " using a 1st order accurate algorithm" << std::endl;
+              << " using a 2nd order accurate algorithm" << std::endl;
 
     interpolate.set_interpolation_variable(source_var_names[i], NOLIMITER);
 
     // This populates targetField with the values returned by the
     // interpolate operator
-    
+
     /*  UNCOMMENT WHEN WE RESTORE get_type in jali_state_wrapper
         if (typeid(source_state_.get_type(source_var_names[i])) ==
         typeid(double)) {
@@ -1765,7 +1770,7 @@ Driver<SourceMesh_Wrapper,
     double *target_field_raw = nullptr;
     target_state_.get_data(NODE, target_var_names[i], &target_field_raw);
     Portage::pointer<double> target_field(target_field_raw);
-    
+
     Portage::transform((counting_iterator)(target_mesh_.begin(NODE)),
                        (counting_iterator)(target_mesh_.end(NODE)),
                        source_cells_and_weights.begin(),
@@ -1784,7 +1789,7 @@ Driver<SourceMesh_Wrapper,
 #ifdef ENABLE_PROFILE
   __itt_pause();
 #endif
-  
+
   gettimeofday(&end_timeval, 0);
   timersub(&end_timeval, &begin_timeval, &diff_timeval);
   tot_seconds_interp = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
@@ -1827,7 +1832,7 @@ Driver<SourceMesh_Wrapper,
 
   int ntargetcells = target_mesh_.num_entities(CELL);
 
-  // SEARCH 
+  // SEARCH
 
   Portage::vector<std::vector<int>> candidates(ntargetcells);
 
@@ -1907,19 +1912,19 @@ Driver<SourceMesh_Wrapper,
   gettimeofday(&end_timeval, 0);
   timersub(&end_timeval, &begin_timeval, &diff_timeval);
   tot_seconds_xsect = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
-  
+
   // INTERPOLATE (one variable at a time)
-  
+
 #ifdef ENABLE_PROFILE
   __itt_resume();
 #endif
-  
+
   gettimeofday(&begin_timeval, 0);
-  
+
   Interpolate_1stOrder<SourceMesh_Wrapper, TargetMesh_Wrapper,
-      SourceState_Wrapper, NODE>
+                       SourceState_Wrapper, NODE, 3>
       interpolate(source_mesh_, target_mesh_, source_state_);
-  
+
   int nvars = source_var_names.size();
   for (int i = 0; i < nvars; ++i) {
     std::cout << "Remapping variable " << source_var_names[i]
@@ -1930,7 +1935,7 @@ Driver<SourceMesh_Wrapper,
 
     // This populates targetField with the values returned by the
     // interpolate operator
-    
+
     /*  UNCOMMENT WHEN WE RESTORE get_type in jali_state_wrapper
         if (typeid(source_state_.get_type(source_var_names[i])) ==
         typeid(double)) {
@@ -1938,7 +1943,7 @@ Driver<SourceMesh_Wrapper,
     double *target_field_raw = nullptr;
     target_state_.get_data(NODE, target_var_names[i], &target_field_raw);
     Portage::pointer<double> target_field(target_field_raw);
-    
+
     Portage::transform((counting_iterator)(target_mesh_.begin(NODE)),
                        (counting_iterator)(target_mesh_.end(NODE)),
                        source_cells_and_weights.begin(),
@@ -1957,7 +1962,7 @@ Driver<SourceMesh_Wrapper,
 #ifdef ENABLE_PROFILE
   __itt_pause();
 #endif
-  
+
   gettimeofday(&end_timeval, 0);
   timersub(&end_timeval, &begin_timeval, &diff_timeval);
   tot_seconds_interp = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
@@ -1999,7 +2004,7 @@ Driver<SourceMesh_Wrapper,
 
   int ntargetcells = target_mesh_.num_entities(CELL);
 
-  // SEARCH 
+  // SEARCH
 
   Portage::vector<std::vector<int>> candidates(ntargetcells);
 
@@ -2011,7 +2016,7 @@ Driver<SourceMesh_Wrapper,
   SearchFunctor<SearchKDTree<3, MeshWrapperDual<SourceMesh_Wrapper>,
       MeshWrapperDual<TargetMesh_Wrapper>>>
       searchfunctor(&search);
-  
+
 
   Portage::transform((counting_iterator)(target_mesh_.begin(CELL)),
                      (counting_iterator)(target_mesh_.end(CELL)),
@@ -2079,30 +2084,30 @@ Driver<SourceMesh_Wrapper,
   gettimeofday(&end_timeval, 0);
   timersub(&end_timeval, &begin_timeval, &diff_timeval);
   tot_seconds_xsect = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
-  
+
   // INTERPOLATE (one variable at a time)
-  
+
 #ifdef ENABLE_PROFILE
   __itt_resume();
 #endif
-  
+
   gettimeofday(&begin_timeval, 0);
-  
+
   Interpolate_2ndOrder<SourceMesh_Wrapper, TargetMesh_Wrapper,
-      SourceState_Wrapper, NODE> 
+                       SourceState_Wrapper, NODE, 3>
       interpolate(source_mesh_, target_mesh_, source_state_);
-  
+
   int nvars = source_var_names.size();
   for (int i = 0; i < nvars; ++i) {
     std::cout << "Remapping variable " << source_var_names[i]
               << " to variable " << target_var_names[i]
-              << " using a 1st order accurate algorithm" << std::endl;
+              << " using a 2nd order accurate algorithm" << std::endl;
 
     interpolate.set_interpolation_variable(source_var_names[i], NOLIMITER);
 
     // This populates targetField with the values returned by the
     // interpolate operator
-    
+
     /*  UNCOMMENT WHEN WE RESTORE get_type in jali_state_wrapper
         if (typeid(source_state_.get_type(source_var_names[i])) ==
         typeid(double)) {
@@ -2110,7 +2115,7 @@ Driver<SourceMesh_Wrapper,
     double *target_field_raw = nullptr;
     target_state_.get_data(NODE, target_var_names[i], &target_field_raw);
     Portage::pointer<double> target_field(target_field_raw);
-    
+
     Portage::transform((counting_iterator)(target_mesh_.begin(NODE)),
                        (counting_iterator)(target_mesh_.end(NODE)),
                        source_cells_and_weights.begin(),
@@ -2129,7 +2134,7 @@ Driver<SourceMesh_Wrapper,
 #ifdef ENABLE_PROFILE
   __itt_pause();
 #endif
-  
+
   gettimeofday(&end_timeval, 0);
   timersub(&end_timeval, &begin_timeval, &diff_timeval);
   tot_seconds_interp = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
@@ -2175,7 +2180,7 @@ struct SearchFunctor {
   */
 
   std::vector<int> operator() (int const targetCellIndex) {
-    
+
     std::vector<int> candidates;
 
     // Search for candidates and return their cells indices
@@ -2220,7 +2225,7 @@ struct IntersectFunctor {
 
   std::vector<Weights_t> operator() (int const targetCellIndex,
                                          std::vector<int> const & candidates) {
-    
+
     // Intersect target cell with cells of source mesh and return the
     // moments of intersection
     std::vector<std::vector<std::vector<double>>> moments(candidates.size());
@@ -2229,14 +2234,14 @@ struct IntersectFunctor {
 
     // Compute new value on target cell based on source mesh
     // values and intersection moments
-    
+
     // Each cell-cell intersection can result in multiple
     // disjointed pieces if one of the cells in non-convex.
     // therefore, there may be more than one set of moments per
     // cell pair. Transform the 3 nested std::vector form to 2
     // nested std::vector form with duplicate candidate entries if
     // need be
-    
+
     int nalloc = 0;
     for (int i = 0; i < candidates.size(); ++i) {
       nalloc += moments[i].size();  // number of moment sets generated by
@@ -2244,7 +2249,7 @@ struct IntersectFunctor {
       //                            // candidate cell i
     }
     std::vector<Weights_t> source_cells_and_weights(nalloc);
-    
+
     int ninserted = 0;
     for (int i = 0; i < candidates.size(); ++i) {
       std::vector<std::vector<double>> & candidate_moments = moments[i];

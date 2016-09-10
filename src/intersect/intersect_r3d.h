@@ -26,8 +26,9 @@ namespace Portage {
 template <typename SourceMeshType, typename TargetMeshType=SourceMeshType>
 class IntersectR3D {
 public:
-  IntersectR3D(const SourceMeshType &s, const TargetMeshType &t)
-    : sourceMeshWrapper(s), targetMeshWrapper(t) {}
+  IntersectR3D(const SourceMeshType &s, const TargetMeshType &t,
+          const bool planar_hex=false)
+    : sourceMeshWrapper(s), targetMeshWrapper(t), planar_hex_(planar_hex) {}
 
   /*! \brief Intersect two cells and return the first two moments.
    * \param[in] cellA first cell index to intersect
@@ -38,9 +39,11 @@ public:
   std::vector<std::vector<double>> operator() (const int cellA,
             const int cellB) const {
     std::vector<std::array<Portage::Point<3>, 4>> source_coords, target_coords;
-    sourceMeshWrapper.decompose_cell_into_tets(cellA, &source_coords);
-    targetMeshWrapper.decompose_cell_into_tets(cellB, &target_coords);
-
+    sourceMeshWrapper.decompose_cell_into_tets(cellA, &source_coords,
+            planar_hex_);
+    targetMeshWrapper.decompose_cell_into_tets(cellB, &target_coords,
+            planar_hex_);
+    
     // Bounding box of the target cell - will be used to compute
     // epsilon for bounding box check. We could use the source cell
     // coordinates to find the bounds as well but its probably an
@@ -173,7 +176,7 @@ public:
         }
       }
     }
-
+    
     std::vector<std::vector<double>> moments_all;
     moments_all.push_back(moments);
     return moments_all;
@@ -189,6 +192,7 @@ public:
 private:
   const SourceMeshType &sourceMeshWrapper;
   const TargetMeshType &targetMeshWrapper;
+  const bool planar_hex_;
 }; // class IntersectR3D
 
 

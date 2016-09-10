@@ -305,17 +305,16 @@ int main(int argc, char** argv) {
     Jali::State sourceState(inputMesh);
     std::vector<double> sourceData(nsrccells);
 
-    std::vector<double> cen;
     if (example.linear) {
       for (unsigned int c = 0; c < nsrccells; ++c) {
-        inputMeshWrapper.cell_centroid(c, &cen);
+        JaliGeometry::Point cen = inputMesh->cell_centroid(c);
         sourceData[c] = cen[0]+cen[1];
         if (example.dim == 3)
           sourceData[c] += cen[2];
       }
     } else {  // quadratic function
       for (unsigned int c = 0; c < nsrccells; ++c) {
-        inputMeshWrapper.cell_centroid(c, &cen);
+        JaliGeometry::Point cen = inputMesh->cell_centroid(c);
         sourceData[c] = cen[0]*cen[0]+cen[1]*cen[1];
         if (example.dim == 3)
           sourceData[c] += cen[2]*cen[2];
@@ -353,7 +352,7 @@ int main(int argc, char** argv) {
 
     // Do the remap
     d.run();
-//#if 0
+
     // Dump some timing information
     if (numpe > 1) MPI_Barrier(MPI_COMM_WORLD);
     gettimeofday(&end, 0);
@@ -369,9 +368,7 @@ int main(int argc, char** argv) {
                 << std::endl;
 
     for (int c = 0; c < ntarcells; ++c) {
-      std::vector<double> ccen;
-      targetMeshWrapper.cell_centroid(c, &ccen);
-
+      JaliGeometry::Point ccen = targetMesh->cell_centroid(c);
       double error;
       if (example.linear) {
         error = ccen[0]+ccen[1] - cellvecout[c];
@@ -419,7 +416,7 @@ int main(int argc, char** argv) {
       targetMesh->write_to_exodus_file("output.exo");
       std::cout << "...done." << std::endl;
     }
-//#endif
+
   } else {  // node-centered remaps
     mf.included_entities({Jali::Entity_kind::FACE,
                           Jali::Entity_kind::EDGE,

@@ -142,9 +142,9 @@ class Flat_Mesh_Wrapper {
   }
 
   //! Compute the centroid of the cell
+  template <long D>
   void cell_centroid(int const cellid,
-                     std::vector<double> *centroid) const {
-
+                     Point<D> *centroid) const {
     int dim = space_dimension();
     double boundingBoxes[2*dim];
     for (unsigned int i=0; i<2*dim; i+=2)
@@ -152,7 +152,7 @@ class Flat_Mesh_Wrapper {
       boundingBoxes[i+0] = std::numeric_limits<double>::max();
       boundingBoxes[i+1] = -std::numeric_limits<double>::max();
     }
-    std::vector<Portage::Point<3>> cellCoord;
+    std::vector<Portage::Point<D>> cellCoord;
     cell_get_coordinates(cellid, &cellCoord);
     for (unsigned int j=0; j<cellCoord.size(); j++)
     {
@@ -164,19 +164,20 @@ class Flat_Mesh_Wrapper {
           boundingBoxes[2*k+1] = cellCoord[j][k];
     }
 
-    centroid->resize(dim);
     for (int i = 0; i < dim; ++i)
       (*centroid)[i] = boundingBoxes[2*i] + (boundingBoxes[2*i+1] - boundingBoxes[2*i])/2.0f; 
   }
 
   //! Get the simplest possible decomposition of a 3D cell into tets.
-  //! This currently only handles the cases of hexahedra or tetrahedra cells
+  //! This currently only handles the cases of planar hexahedra or tetrahedra
+  //! cells
   void decompose_cell_into_tets(const int vcellID,
-      std::vector<std::array<Portage::Point<3>, 4>> *tcoords) const {
+      std::vector<std::array<Portage::Point<3>, 4>> *tcoords,
+      const bool planar_hex) const {
     
     int cellID = virtual_to_local(vcellID);
 
-    if ((nodesPerCell_ == 8) && (dim_ == 3))
+    if (/*planar_hex &&*/ (nodesPerCell_ == 8) && (dim_ == 3))
     {
       std::vector<Portage::Point<3>> vertices(nodesPerCell_);
       std::array<T, 6> extrema;

@@ -7,6 +7,7 @@
 #define FLAT_STATE_WRAPPER_H_
 
 #include <map>
+#include <memory>
 
 #include "portage/support/portage.h"
 

@@ -29,63 +29,61 @@ using point_t = flecsi::mesh_t::point_t;
 
 namespace Portage {
 
-  namespace {  // unnamed
-    //! helper function to convert to Portage::Point
-    template <long D>
-        Portage::Point<D> toPortagePoint(const point_t &fp) {
-      assert(fp.size() == D);
-      Portage::Point<D> pp;
-      for (auto i = 0; i < D; ++i)
-        pp[i] = fp[i];
-      return pp;
+//! helper function to convert to Portage::Point
+template <long D>
+Portage::Point<D> toPortagePoint(const point_t &fp) {
+  assert(fp.size() == D);
+  Portage::Point<D> pp;
+  for (auto i = 0; i < D; ++i)
+    pp[i] = fp[i];
+  return pp;
+}
+
+/*!
+  @brief Helper routine to make a cartesian 2d grid in FleCSI
+  @param[in] xmin,xmax,ymin,ymax The extents of the mesh
+  @param[in] ncellsx,ncellsy The number of cells in each direction
+  @param[in,out] mesh The flecsi::burton_mesh_t mesh object
+*/
+void make_mesh_cart2d(const real_t xmin, const real_t xmax,
+                      const real_t ymin, const real_t ymax,
+                      const int ncellsx, const int ncellsy,
+                      mesh_t & mesh) {
+  // grid spacing
+  auto dx = (xmax - xmin) / real_t(ncellsx);
+  auto dy = (ymax - ymin) / real_t(ncellsy);
+  
+  //  mesh_t mesh;
+  auto num_verts = (ncellsx+1)*(ncellsy+1);
+  // this initializes storage for the number of vertices
+  mesh.init_parameters(num_verts);
+  
+  // create the verts
+  std::vector<vertex_t*> verts;
+  for (auto j = 0; j < ncellsy+1; ++j) {
+    for (auto i = 0; i < ncellsx+1; ++i) {
+      auto vert = mesh.create_vertex(
+          {xmin + dx*real_t(i), ymin + dy*real_t(j)});
+      verts.push_back(vert);
     }
-  }  // namespace unnamed
-
-  /*!
-    @brief Helper routine to make a cartesian 2d grid in FleCSI
-    @param[in] xmin,xmax,ymin,ymax The extents of the mesh
-    @param[in] ncellsx,ncellsy The number of cells in each direction
-    @param[in,out] mesh The flecsi::burton_mesh_t mesh object
-  */
-  void make_mesh_cart2d(const real_t xmin, const real_t xmax,
-                        const real_t ymin, const real_t ymax,
-                        const int ncellsx, const int ncellsy,
-                        mesh_t & mesh) {
-    // grid spacing
-    auto dx = (xmax - xmin) / real_t(ncellsx);
-    auto dy = (ymax - ymin) / real_t(ncellsy);
-
-    //  mesh_t mesh;
-    auto num_verts = (ncellsx+1)*(ncellsy+1);
-    // this initializes storage for the number of vertices
-    mesh.init_parameters(num_verts);
-
-    // create the verts
-    std::vector<vertex_t*> verts;
-    for (auto j = 0; j < ncellsy+1; ++j) {
-      for (auto i = 0; i < ncellsx+1; ++i) {
-        auto vert = mesh.create_vertex(
-            {xmin + dx*real_t(i), ymin + dy*real_t(j)});
-        verts.push_back(vert);
-      }
-    }
-
-    // create the cells
-    auto ncellsx1 = ncellsx+1;
-    for (auto j = 0; j < ncellsy; ++j) {
-      for (auto i = 0; i < ncellsx; ++i) {
-        // go over verts in counter-clockwise fashion
-        auto c = mesh.create_cell({verts[i + j*ncellsx1],
-                verts[i + 1 + j*ncellsx1],
-                verts[i + 1 + (j + 1)*ncellsx1],
-                verts[i + (j + 1)*ncellsx1]});
-      }
-    }
-
-    // this setups up the faces, edges, wedges, etc and connectivity info
-    mesh.init();
-
   }
+  
+  // create the cells
+  auto ncellsx1 = ncellsx+1;
+  for (auto j = 0; j < ncellsy; ++j) {
+    for (auto i = 0; i < ncellsx; ++i) {
+      // go over verts in counter-clockwise fashion
+      auto c = mesh.create_cell({verts[i + j*ncellsx1],
+              verts[i + 1 + j*ncellsx1],
+              verts[i + 1 + (j + 1)*ncellsx1],
+              verts[i + (j + 1)*ncellsx1]});
+    }
+  }
+  
+  // this setups up the faces, edges, wedges, etc and connectivity info
+  mesh.init();
+  
+}
 
 /*!
   @class Flecsi_Mesh_Wrapper flecsi_mesh_wrapper.h
@@ -99,7 +97,7 @@ class Flecsi_Mesh_Wrapper {
  public:
 
   //! Constructor
-  Flecsi_Mesh_Wrapper(mesh_t & mesh) :
+  explicit Flecsi_Mesh_Wrapper(mesh_t & mesh) :
       flecsi_mesh_(mesh)
   {}
 
@@ -112,7 +110,7 @@ class Flecsi_Mesh_Wrapper {
   Flecsi_Mesh_Wrapper & operator=(Flecsi_Mesh_Wrapper const &) = delete;
 
   //! Empty destructor
-  ~Flecsi_Mesh_Wrapper() {};
+  ~Flecsi_Mesh_Wrapper() {}
 
 
   //! Dimension of space or mesh points
@@ -386,7 +384,7 @@ class Flecsi_Mesh_Wrapper {
   // NOTE: FleCSI doesn't have 3D yet!!!
   void decompose_cell_into_tets(int const cellID,
                                 std::vector<std::array<Portage::Point3, 4>>
-                                *tcoords) const {
+                                *tcoords, const bool planar_hex) const {
     assert(space_dimension() == 3);
 
     assert(false && "FleCSI 3D not implemented");
@@ -422,23 +420,17 @@ class Flecsi_Mesh_Wrapper {
     @param[in] cellid The ID of the cell.
     @param[in,out] centroid The vector of coordinates of the cell @c cellid's
     centroid.  The length of the vector is equal to the dimension of the mesh.
-
-    @TODO THIS ROUTINE IS VIOLATING THE
-    CONVENTION THAT NODE_GET_COORDINATES AND CELL_GET_COORDINATES
-    USES FOR THE VARIABLE TYPE OF THE RETURN COORDINATES BECAUSE
-    BUILDING A GRADIENT OPERATOR WITH DIFFERENT TYPES FOR 2D
-    COORDINATES AND 3D COORDINATES IS VERY CONVOLUTED
-
-    @TODO convert to using Point?
   */
+
+  template<long D>
   void cell_centroid(int const cellid,
-                     std::vector<double> *centroid) const {
+                     Point<D> *centroid) const {
     auto thisCell = flecsi_mesh_.cells()[cellid];
-    auto cntr = thisCell->centroid();
-    centroid->clear();
-    for (int i = 0; i < cntr.size(); ++i)
-      centroid->emplace_back(cntr[i]);
+    *centroid = toPortagePoint<D>(thisCell->centroid());
   }
+
+  //! Virtual and local addresses are equivalent in non-distributed case
+  int virtual_to_local(int virtualId) const { return virtualId; }
 
   /*!
     @brief Centroid of a dual cell.
@@ -452,20 +444,18 @@ class Flecsi_Mesh_Wrapper {
     THE NODAL VARIABLES LIVE THERE, BUT FOR DISTORTED GRIDS, THE
     NODE COORDINATED MAY NOT BE THE CENTROID OF THE DUAL CELL
    */
+  template<long D>
   void dual_cell_centroid(int const nodeid,
-                          std::vector<double> *centroid) const {
+                          Point<D> *centroid) const {
     auto thisNode = flecsi_mesh_.vertices()[nodeid];
-    auto cc = thisNode->coordinates();
-    centroid->clear();
-    for (auto j = 0; j < cc.size(); ++j)
-      centroid->emplace_back(cc[j]);
+    *centroid = toPortagePoint<D>(thisNode->coordinates());
   }
 
  private:
   mesh_t & flecsi_mesh_;
 
-}; // class Flecsi_Mesh_Wrapper
+};  // class Flecsi_Mesh_Wrapper
 
-} // end namespace Portage
+}  // end namespace Portage
 
-#endif // FLECSI_MESH_WRAPPER_H_
+#endif  // FLECSI_MESH_WRAPPER_H_
