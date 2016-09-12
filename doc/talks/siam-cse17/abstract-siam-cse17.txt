@@ -98,6 +98,16 @@ such as multi-material remapping come online.
 Portage is open source software under the BSD license.
 
 
+Acknowledgments:
+
+This work was performed under the auspices of the National Nuclear
+Security Administration of the US Department of Energy at Los Alamos
+National Laboratory under Contract No. DE-AC52-06NA25396 and supported
+by the DOE Advanced Simulation and Computing (ASC) program.
+
+
+References:
+
 [1] Powell, D. and Abel, T. "An exact general remeshing scheme applied
 to physically conservative voxelization," Journal of Computational
 Physics, v 297, pp. 340-356, 2015.
