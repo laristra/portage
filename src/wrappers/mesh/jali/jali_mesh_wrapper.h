@@ -93,9 +93,9 @@ class Jali_Mesh_Wrapper {
   }
 
   //! Number of items of given entity
-  int num_entities(Entity_kind const entity) const {
+  int num_entities(Entity_kind const entity, Entity_type const etype=Entity_type::ALL) const {
     return jali_mesh_.num_entities((Jali::Entity_kind)entity,
-                                   Jali::Entity_type::ALL);
+                                   (Jali::Entity_type)etype);
   }
 
   //! Iterators on mesh entity - begin
@@ -105,9 +105,9 @@ class Jali_Mesh_Wrapper {
   }
 
   //! Iterator on mesh entity - end
-  counting_iterator end(Entity_kind const entity) const {
+  counting_iterator end(Entity_kind const entity, Entity_type const etype=Entity_type::ALL) const {
     int start_index = 0;
-    return (make_counting_iterator(start_index) + num_entities(entity));
+    return (make_counting_iterator(start_index) + num_entities(entity, etype));
   }
 
   //! Get list of nodes for a cell
@@ -164,6 +164,14 @@ class Jali_Mesh_Wrapper {
                                     std::vector<int> *adjnodes) const {
     node_get_cell_adj_nodes(nodeid,ptype,adjnodes);
   }
+
+  //! Get global id
+  int get_global_id(int const id, Entity_kind const kind) const {
+    return jali_mesh_.GID(id, (Jali::Entity_kind)kind);
+  }
+
+  //! Virtual and local addresses are equivalent in non-distributed case
+  int virtual_to_local(int virtualId) const { return virtualId; }
 
   //! coords of a node
   template <long D>
@@ -462,6 +470,7 @@ class Jali_Mesh_Wrapper {
   template<long D>
   void cell_centroid(Jali::Entity_ID cellid,
                      Point<D> *centroid) const {
+ 
     *centroid = toPortagePoint<D>(jali_mesh_.cell_centroid(cellid));
   }
 

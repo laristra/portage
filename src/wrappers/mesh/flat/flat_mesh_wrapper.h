@@ -36,11 +36,14 @@ class Flat_Mesh_Wrapper {
   Flat_Mesh_Wrapper(int nodes_per_cell, Mesh_Wrapper& input) :
                     nodesPerCell_(nodes_per_cell), dim_(input.space_dimension())
   {
-    int numCells = input.num_owned_cells();
+    int numCells = input.num_owned_cells() + input.num_ghost_cells();
     coords_.resize(numCells*nodesPerCell_*dim_);
       
     for (unsigned int c=0; c<numCells; c++)
     {
+      if (c < input.num_owned_cells()) ownedCellIndexes_.push_back(c);
+      globalCellIds_.push_back(input.get_global_id(c, Entity_kind::CELL));
+      virtualCellIds_.push_back(c);
       std::vector<Portage::Point<3>> cellCoord;
       input.cell_get_coordinates(c, &cellCoord);
       for (unsigned int j=0; j<nodesPerCell_; j++)
@@ -49,6 +52,12 @@ class Flat_Mesh_Wrapper {
         coords_[c*nodesPerCell_*dim_+j*dim_+1] = cellCoord[j][1];
         coords_[c*nodesPerCell_*dim_+j*dim_+2] = cellCoord[j][2];
       }
+
+      std::vector<int> cellNeighbors;
+      input.cell_get_node_adj_cells(c, ALL, &(cellNeighbors));
+      neighborCounts_.push_back(cellNeighbors.size());
+      for (unsigned int j=0; j<cellNeighbors.size(); j++)
+        neighbors_.push_back(input.get_global_id(cellNeighbors[j], Entity_kind::CELL));
     }
   }
 
@@ -60,6 +69,8 @@ class Flat_Mesh_Wrapper {
 
   //! Cell area/volume
   double cell_volume(int cellID) const {
+
+    cellID = virtual_to_local(cellID);
 
     std::vector<T> extrema(2*dim_); 
     for (unsigned int i=0; i<2*dim_; i+=2) extrema[i] = std::numeric_limits<T>::max();
@@ -79,19 +90,37 @@ class Flat_Mesh_Wrapper {
     return volume;
   }
 
+  //! Virtual to local
+  int virtual_to_local(int virtualId) const {
+    for (unsigned int i=0; i<virtualCellIds_.size(); i++)
+      if (virtualCellIds_[i] == virtualId)
+        return i;
+    std::cout << "Virtual id " << virtualId << " not found" << std::endl;
+    return 0;
+  }
+
+  //! Global to virtual
+  int global_to_virtual(int globalId) const {
+    for (unsigned int i=0; i<globalCellIds_.size(); i++)
+      if (globalCellIds_[i] == globalId)
+        return virtualCellIds_[i];
+    std::cout << "Global id " << globalId << " not found" << std::endl;
+    return 0;
+  }
+
   //! Number of owned cells in the mesh
   int num_owned_cells() const {
-    return (coords_.size() / (nodesPerCell_*dim_));
+    return num_entities(Entity_kind::CELL, Entity_type::PARALLEL_OWNED);
   }
 
   //! Number of owned nodes in the mesh
   int num_owned_nodes() const {
-    return (coords_.size() / dim_);
+    return 0;
   }
 
   //! Number of ghost cells in the mesh
   int num_ghost_cells() const {
-    return 0;
+    return num_entities(Entity_kind::CELL, Entity_type::PARALLEL_GHOST);
   }
 
   //! Number of ghost nodes in the mesh
@@ -101,22 +130,54 @@ class Flat_Mesh_Wrapper {
 
   //! coords of nodes of a cell
   template<long D>
-  void cell_get_coordinates(int const cellid,
+  void cell_get_coordinates(int const vcellid,
                             std::vector<Portage::Point<D>> *pplist) const {
+
+    int cellid = virtual_to_local(vcellid);
+
     pplist->resize(nodesPerCell_);
     for (unsigned int i=0; i<nodesPerCell_; i++)
       for (unsigned int j=0; j<dim_; j++)
         (*pplist)[i][j] = coords_[cellid*nodesPerCell_*dim_+i*dim_+j];
   }
 
+  //! Compute the centroid of the cell
+  template <long D>
+  void cell_centroid(int const cellid,
+                     Point<D> *centroid) const {
+    int dim = space_dimension();
+    double boundingBoxes[2*dim];
+    for (unsigned int i=0; i<2*dim; i+=2)
+    {
+      boundingBoxes[i+0] = std::numeric_limits<double>::max();
+      boundingBoxes[i+1] = -std::numeric_limits<double>::max();
+    }
+    std::vector<Portage::Point<D>> cellCoord;
+    cell_get_coordinates(cellid, &cellCoord);
+    for (unsigned int j=0; j<cellCoord.size(); j++)
+    {
+      for (unsigned int k=0; k<dim; k++)
+        if (cellCoord[j][k] < boundingBoxes[2*k])
+          boundingBoxes[2*k] = cellCoord[j][k];
+      for (unsigned int k=0; k<dim; k++)
+        if (cellCoord[j][k] > boundingBoxes[2*k+1])
+          boundingBoxes[2*k+1] = cellCoord[j][k];
+    }
+
+    for (int i = 0; i < dim; ++i)
+      (*centroid)[i] = boundingBoxes[2*i] + (boundingBoxes[2*i+1] - boundingBoxes[2*i])/2.0f; 
+  }
+
   //! Get the simplest possible decomposition of a 3D cell into tets.
   //! This currently only handles the cases of planar hexahedra or tetrahedra
   //! cells
-  void decompose_cell_into_tets(const int cellID,
+  void decompose_cell_into_tets(const int vcellID,
       std::vector<std::array<Portage::Point<3>, 4>> *tcoords,
       const bool planar_hex) const {
     
-    if (planar_hex && (nodesPerCell_ == 8) && (dim_ == 3))
+    int cellID = virtual_to_local(vcellID);
+
+    if (/*planar_hex &&*/ (nodesPerCell_ == 8) && (dim_ == 3))
     {
       std::vector<Portage::Point<3>> vertices(nodesPerCell_);
       std::array<T, 6> extrema;
@@ -157,17 +218,82 @@ class Flat_Mesh_Wrapper {
     }
   }
 
+  //! Number of items of given entity
+  int num_entities(Entity_kind const entity, Entity_type const etype=Entity_type::ALL) const {
+    if (entity == Entity_kind::CELL)
+    {
+      if (etype == Entity_type::PARALLEL_OWNED)  return ownedCellIndexes_.size();
+      else if (etype == Entity_type::PARALLEL_GHOST) return (neighborCounts_.size() - ownedCellIndexes_.size());
+      else if (etype == Entity_type::ALL) return (neighborCounts_.size());
+    }
+    else if (entity == Entity_kind::NODE) 
+    {
+      return coords_.size();
+    }
+    else return 0;
+  }
+
+  //! Get node connected neighbors of cell
+  void cell_get_node_adj_cells(int const vcellid,
+                               Entity_type const ptype,
+                               std::vector<int> *adjcells) const {
+    // TODO: Compute the scan of the neighborCounts_ vector once so that we don't redo this
+    // loop everytime we access neighbor information
+    
+    int cellid = virtual_to_local(vcellid);
+
+    int index = 0;
+    for (unsigned int i=0; i<cellid; i++)
+      index += neighborCounts_[i];
+    adjcells->resize(neighborCounts_[cellid]);
+    for (unsigned int i=0; i<adjcells->size(); i++)
+      (*adjcells)[i] = global_to_virtual(neighbors_[index+i]);
+  }
+
   //! get coordinates
   std::vector<T>& get_coords() { return coords_; }
+
+  //! get global cell ids
+  std::vector<int>& get_global_cell_ids() { return globalCellIds_; }
+
+  //! get owned indexes
+  std::vector<int>& get_owned_cell_indexes() { return ownedCellIndexes_; }
+
+  //! get virtual cell ids
+  std::vector<int>& get_virtual_cell_ids() { return virtualCellIds_; }
+
+  //! get neighbor counts
+  std::vector<int>& get_neighbor_counts() { return neighborCounts_; }
+
+  //! get neighbors
+  std::vector<int>& get_neighbors() { return neighbors_; }
 
   //! get nodes per cell
   int get_nodes_per_cell() { return nodesPerCell_; }
 
   //! get spatial dimension
-  int space_dimension() { return dim_; }
+  int space_dimension() const { return dim_; }
+
+  //! Iterators on mesh entity - begin
+  counting_iterator begin(Entity_kind const entity) const {
+    int start_index = 0;
+    return make_counting_iterator(start_index);
+  }
+
+  //! Iterator on mesh entity - end
+  counting_iterator end(Entity_kind const entity, Entity_type const etype=Entity_type::ALL) const {
+    int start_index = 0;
+    return (make_counting_iterator(start_index) + num_entities(entity, etype));
+  }
+
 
 private:
   std::vector<T> coords_;
+  std::vector<int> neighbors_;
+  std::vector<int> neighborCounts_;
+  std::vector<int> globalCellIds_;
+  std::vector<int> virtualCellIds_;
+  std::vector<int> ownedCellIndexes_;
   const int nodesPerCell_;
   const int dim_;
 

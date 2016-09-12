@@ -290,7 +290,8 @@ double Interpolate_2ndOrder<SourceMeshType, TargetMeshType,
 
     Vector<D> gradient = gradients_[srccell];
     Vector<D> vec = xsect_centroid - srccell_centroid;
-    double val = source_vals_[srccell] + dot(gradient, vec);
+    int lindex = source_mesh_.virtual_to_local(srccell);
+    double val = source_vals_[lindex] + dot(gradient, vec);
     val *= xsect_volume;
     totalval += val;
   }
