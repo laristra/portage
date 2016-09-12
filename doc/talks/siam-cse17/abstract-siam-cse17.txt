@@ -14,10 +14,11 @@ total mass while remapping density) over the domain is a critical
 component of many simulations. The need for such a remapping may arise
 when switching between simulation codes using different meshes, when
 switching between two meshes for different physics within the same
-simulation and when the mesh in an arbitrary-Lagrangian-Eulerian
-simulation becomes very distorted and the user or an automatic
-algorithm wants to restart the next time step using a adapted mesh
-with better quality. The main steps in conservative remapping are:
+simulation. It is also necessary in arbitrary-Lagrangian-Eulerian
+simulations when the mesh becomes very distorted and the user or an
+automatic algorithm wants to restart the next time step using a
+adapted mesh with better quality. The main steps in conservative
+remapping are:
 
 1. Search: efficiently finding candidate elements from the source
 mesh that may intersect each element of the target mesh.
@@ -43,7 +44,7 @@ approximations and a first-order accurate interpolation with gradient
 limiting to enforce monotonicity. Applications can choose to use some
 of the in-built classes for the three steps or furnish their own
 customized classes (such as search and intersection classes for
-efficient processing of cartesian meshes).
+efficient processing of Cartesian meshes).
 
 The Portage driver is also templated on classes for the mesh and state
 (field) managers. This means that as long as the application can
@@ -68,30 +69,31 @@ written in a functional manner which implies that they furnish an
 operator that can operate on each element without any side
 effects. This allows Portage to use modern parallelization constructs
 from NVIDIA's Thrust interface (or the proposed parallel constructs in
-C++17) to enable on-node parallelism using OpenMP, Intel TBB or CUDA
-backends. Preliminary results show excellent on-node scaling up to 64
+C++17) to enable on-node parallelism using OpenMP or Intel TBB
+backends. Limited testing has also been done with a CUDA backend.
+Preliminary results show excellent on-node scaling up to 64
 threads. Tests with distributed memory parallelism are also being
 conducted to assess its performance.
 
 We have tested Portage in 2D and 3D for remapping between general
 polygonal and polyhedral meshes from two different mesh
 frameworks. The version of Portage used for in-house testing employs a
-k-d tree search. Intersection of meshes is based decomposing polygonal
+k-d tree search. Intersection of meshes is based on decomposing polygonal
 elements into triangles and polyhedral elements into tetrahedra before
 intersection using an algorithm developed by Powell
-et.al. [1]. Specializations for intersections of cartesian meshes have
+et.al. [1]. Specializations for intersections of Cartesian meshes have
 been added for efficiency. The code provides the option of remapping
 cell-centered or node-centered variables using 1st or 2nd order
 accurate remapping [2]. The 2nd order remapping algorithm uses
 Barth-Jesperson limiting of gradients to enforce monotonicity
 [3]. Work is underway to add interpolation schemes with higher orders
-of accuracy. Also, specializations for cartesian meshes have been
+of accuracy. Also, specializations for Cartesian meshes have been
 added to choices available for the code.
 
-Using this flexible, extensible and scalable model, Portage has been
-is being deployed across a number of projects for inline and
-code-to-code remapping with many more waiting to adopt it as
-additional features such as multi-material remapping come online.
+Using this flexible, extensible and scalable model, Portage is being
+deployed across a number of projects for inline and code-to-code
+remapping with many more waiting to adopt it as additional features
+such as multi-material remapping come online.
 
 Portage is open source software under the BSD license.
 
