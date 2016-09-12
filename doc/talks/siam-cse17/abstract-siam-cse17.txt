@@ -12,7 +12,7 @@ The transfer (remapping) of computational physics data from one mesh
 to another while conserving some integral quantity (such as conserving
 total mass while remapping density) over the domain is a critical
 component of many simulations. The need for such a remapping may arise
-when switching between simulation codes using different meshes, when
+when switching between simulation codes using different meshes or when
 switching between two meshes for different physics within the same
 simulation. It is also necessary in arbitrary-Lagrangian-Eulerian
 simulations when the mesh becomes very distorted and the user or an
