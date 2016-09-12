@@ -180,7 +180,6 @@ class MeshWrapperDual {  // cellid is the dual cell (i.e. node) id
   template <long D>
   void cell_centroid(int const dualcellID, Point<D> *centroid)
       const {
-std::cout << "In dual centroid" << std::endl;
     w_.dual_cell_centroid(dualcellID, centroid);
   }
 
