@@ -115,6 +115,8 @@ class Flat_Mesh_Wrapper {
 
   //! Create maps for index space conversions
   void make_index_maps() {
+ 
+    // Virtual to local map
     virtualCellMap_.clear();
     for (unsigned int i=0; i<virtualCellIds_.size(); i++)
     {
@@ -123,9 +125,17 @@ class Flat_Mesh_Wrapper {
     }
     std::sort(virtualCellMap_.begin(), virtualCellMap_.end(), virtualCellMapCompare);
 
+    // Global to virtual map
     globalCellMap_.clear();
     for (unsigned int i=0; i<globalCellIds_.size(); i++)
       globalCellMap_[globalCellIds_[i]] = virtualCellIds_[i];
+
+    // Neighbor offsets
+    neighborOffsets_.clear();
+    neighborOffsets_.resize(neighborCounts_.size());
+    neighborOffsets_[0] = 0;
+    for (unsigned int i=1; i<neighborCounts_.size(); i++)
+      neighborOffsets_[i] = neighborOffsets_[i-1] + neighborCounts_[i-1];
   }
 
   //! Number of owned cells in the mesh
@@ -257,14 +267,9 @@ class Flat_Mesh_Wrapper {
   void cell_get_node_adj_cells(int const vcellid,
                                Entity_type const ptype,
                                std::vector<int> *adjcells) const {
-    // TODO: Compute the scan of the neighborCounts_ vector once so that we don't redo this
-    // loop everytime we access neighbor information
     
     int cellid = virtual_to_local(vcellid);
-
-    int index = 0;
-    for (unsigned int i=0; i<cellid; i++)
-      index += neighborCounts_[i];
+    int index = neighborOffsets_[cellid];
     adjcells->resize(neighborCounts_[cellid]);
     for (unsigned int i=0; i<adjcells->size(); i++)
       (*adjcells)[i] = global_to_virtual(neighbors_[index+i]);
@@ -311,6 +316,7 @@ private:
   std::vector<T> coords_;
   std::vector<int> neighbors_;
   std::vector<int> neighborCounts_;
+  std::vector<int> neighborOffsets_;
   std::vector<int> globalCellIds_;
   std::vector<int> virtualCellIds_;
   std::vector<std::pair<int, int> > virtualCellMap_;
