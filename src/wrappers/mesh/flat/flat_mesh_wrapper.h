@@ -175,27 +175,16 @@ class Flat_Mesh_Wrapper {
   template <long D>
   void cell_centroid(int const cellid,
                      Point<D> *centroid) const {
-    int dim = space_dimension();
-    double boundingBoxes[2*dim];
-    for (unsigned int i=0; i<2*dim; i+=2)
-    {
-      boundingBoxes[i+0] = std::numeric_limits<double>::max();
-      boundingBoxes[i+1] = -std::numeric_limits<double>::max();
-    }
-    std::vector<Portage::Point<D>> cellCoord;
+ 
+    std::vector<Portage::Point<D> > cellCoord;
     cell_get_coordinates(cellid, &cellCoord);
-    for (unsigned int j=0; j<cellCoord.size(); j++)
-    {
-      for (unsigned int k=0; k<dim; k++)
-        if (cellCoord[j][k] < boundingBoxes[2*k])
-          boundingBoxes[2*k] = cellCoord[j][k];
-      for (unsigned int k=0; k<dim; k++)
-        if (cellCoord[j][k] > boundingBoxes[2*k+1])
-          boundingBoxes[2*k+1] = cellCoord[j][k];
-    }
+ 
+    for (unsigned int i=0; i<D; i++) (*centroid)[i] = 0.0;
+    for (unsigned int i=0; i<cellCoord.size(); i++)
+      for (unsigned int j=0; j<D; j++)
+        (*centroid)[j] = (*centroid)[j] + cellCoord[i][j];
+    for (unsigned int i=0; i<D; i++) (*centroid)[i] /= cellCoord.size();
 
-    for (int i = 0; i < dim; ++i)
-      (*centroid)[i] = boundingBoxes[2*i] + (boundingBoxes[2*i+1] - boundingBoxes[2*i])/2.0f; 
   }
 
   //! Get the simplest possible decomposition of a 3D cell into tets.
