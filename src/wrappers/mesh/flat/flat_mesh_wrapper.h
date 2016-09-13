@@ -10,11 +10,19 @@
 #include <algorithm>
 #include <array>
 #include <limits>
+#include <map>
 
 #include "portage/support/portage.h"
 #include "portage/support/Point.h"
 
 namespace Portage {
+
+//! Comparator for creating virtual to local index space map in Flat_Mesh_Wrapper
+bool virtualCellMapCompare(const std::pair<int, int>& firstElem, const std::pair<int, int>& secondElem)
+{
+  return (firstElem.first < secondElem.first);
+}
+
 
 /*!
   \class Flat_Mesh_Wrapper flat_hex_mesh_wrapper.h
@@ -59,6 +67,8 @@ class Flat_Mesh_Wrapper {
       for (unsigned int j=0; j<cellNeighbors.size(); j++)
         neighbors_.push_back(input.get_global_id(cellNeighbors[j], Entity_kind::CELL));
     }
+
+    make_index_maps();
   }
 
   //! Assignment operator (disabled) - don't know how to implement (RVG)
@@ -92,20 +102,30 @@ class Flat_Mesh_Wrapper {
 
   //! Virtual to local
   int virtual_to_local(int virtualId) const {
-    for (unsigned int i=0; i<virtualCellIds_.size(); i++)
-      if (virtualCellIds_[i] == virtualId)
-        return i;
-    std::cout << "Virtual id " << virtualId << " not found" << std::endl;
-    return 0;
+    return virtualCellMap_[virtualId].second;
   }
 
   //! Global to virtual
   int global_to_virtual(int globalId) const {
-    for (unsigned int i=0; i<globalCellIds_.size(); i++)
-      if (globalCellIds_[i] == globalId)
-        return virtualCellIds_[i];
+    std::map<int, int>::const_iterator it = globalCellMap_.find(globalId);
+    if (it != globalCellMap_.end()) return (it->second);
     std::cout << "Global id " << globalId << " not found" << std::endl;
     return 0;
+  }
+
+  //! Create maps for index space conversions
+  void make_index_maps() {
+    virtualCellMap_.clear();
+    for (unsigned int i=0; i<virtualCellIds_.size(); i++)
+    {
+      std::pair<int, int> mpair(virtualCellIds_[i], i);
+      virtualCellMap_.push_back(mpair);
+    }
+    std::sort(virtualCellMap_.begin(), virtualCellMap_.end(), virtualCellMapCompare);
+
+    globalCellMap_.clear();
+    for (unsigned int i=0; i<globalCellIds_.size(); i++)
+      globalCellMap_[globalCellIds_[i]] = virtualCellIds_[i];
   }
 
   //! Number of owned cells in the mesh
@@ -293,6 +313,8 @@ private:
   std::vector<int> neighborCounts_;
   std::vector<int> globalCellIds_;
   std::vector<int> virtualCellIds_;
+  std::vector<std::pair<int, int> > virtualCellMap_;
+  std::map<int, int> globalCellMap_;
   std::vector<int> ownedCellIndexes_;
   const int nodesPerCell_;
   const int dim_;

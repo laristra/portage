@@ -285,7 +285,7 @@ class MPI_Bounding_Boxes {
     int virtualCount = sourceOwnedCellIndexes.size();
     for (unsigned int i=0; i<sourceVirtualCellIds.size(); i++)
       if (sourceVirtualCellIds[i] < 0) sourceVirtualCellIds[i] = virtualCount++;
-
+    source_mesh_flat.make_index_maps();
 
     // SEND NUMBER OF NEIGHBORS FOR EACH CELL 
  
