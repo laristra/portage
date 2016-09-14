@@ -123,8 +123,8 @@ class Jali_State_Wrapper {
 
     Jali::State::const_iterator it =
         jali_state_.find<double, Jali::Mesh>(var_name, jali_state_.mesh());
-    std::shared_ptr<Jali::BaseStateVector> vector = *it;
     if (it != jali_state_.cend()) {
+      std::shared_ptr<Jali::BaseStateVector> vector = *it;
       if (vector)
         return (Portage::Entity_kind) vector->entity_kind();
     }
@@ -151,8 +151,8 @@ class Jali_State_Wrapper {
     Jali::State::const_iterator it =
         jali_state_.find<double, Jali::Mesh>(var_name, jali_state_.mesh(),
                                         (Jali::Entity_kind) on_what);
-    std::shared_ptr<Jali::BaseStateVector> vector = *it;
     if (it != jali_state_.cend()) {
+      std::shared_ptr<Jali::BaseStateVector> vector = *it;
       if (vector)
         return (vector->size());
     }

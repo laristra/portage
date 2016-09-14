@@ -10,6 +10,7 @@
 #include <memory>
 
 #include "portage/support/portage.h"
+#include "portage/support/Point.h"
 
 /*!
   @file flat_state_wrapper.h
