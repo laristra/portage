@@ -4,10 +4,10 @@
 
 message(STATUS "Adding portageapp test")
 
-file(COPY runme.csh DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+file(COPY runme.sh DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
 add_test(NAME portageapp_test
-         COMMAND ./runme.csh)
+         COMMAND ./runme.sh)
 set_property(TEST portageapp_test 
          PROPERTY ENVIRONMENT APPDIR=${CMAKE_BINARY_DIR}/bin)
 
