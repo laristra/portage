@@ -29,23 +29,24 @@ TEST(Flat_State_Wrapper, DataTypes2D) {
 
   std::shared_ptr<Jali::Mesh> inputMesh = mf(0.0, 0.0, 1.0, 1.0, 2, 2);
   Portage::Jali_Mesh_Wrapper inputMeshWrapper(*inputMesh);
-  Jali::State state(inputMesh);
-  Portage::Jali_State_Wrapper wrapper(state);
+  Jali::State jali_state(inputMesh);
+  Portage::Jali_State_Wrapper jali_state_wrapper(jali_state);
 
-  state.add("d1", inputMesh, Jali::Entity_kind::CELL,
+  jali_state.add("d1", inputMesh, Jali::Entity_kind::CELL,
             Jali::Entity_type::ALL, dtest1);
-  state.add("d2", inputMesh, Jali::Entity_kind::CELL,
+  jali_state.add("d2", inputMesh, Jali::Entity_kind::CELL,
             Jali::Entity_type::ALL, dtest2);
-  state.add("d3", inputMesh, Jali::Entity_kind::CELL,
+  jali_state.add("d3", inputMesh, Jali::Entity_kind::CELL,
             Jali::Entity_type::ALL, dtest3);
 
-  Portage::Flat_State_Wrapper<> flat_state(wrapper, {"d1", "d2", "d3"});
+  Portage::Flat_State_Wrapper<> flat_state(jali_state_wrapper,
+          {"d1", "d2", "d3"});
 
   // Check the data using Jali as well as by the Flat_State_Wrapper wrapper
 
   // Get raw float data using wrapper
   double* ddata = nullptr;
-  wrapper.get_data(Portage::CELL, "d1", &ddata);
+  jali_state_wrapper.get_data(Portage::CELL, "d1", &ddata);
   for (unsigned int i=0; i<n_cells; i++) ASSERT_EQ(ddata[i], dtest1[i]);
 
   // Get raw float data using the flat mesh wrapper (d1)
@@ -78,23 +79,24 @@ TEST(Flat_State_Wrapper, DataTypes3D) {
                                              1.0, 1.0, 1.0,
                                              2, 2, 2);
   Portage::Jali_Mesh_Wrapper inputMeshWrapper(*inputMesh);
-  Jali::State state(inputMesh);
-  Portage::Jali_State_Wrapper wrapper(state);
+  Jali::State jali_state(inputMesh);
+  Portage::Jali_State_Wrapper jali_state_wrapper(jali_state);
 
-  state.add("d1", inputMesh, Jali::Entity_kind::CELL,
+  jali_state.add("d1", inputMesh, Jali::Entity_kind::CELL,
             Jali::Entity_type::ALL, dtest1);
-  state.add("d2", inputMesh, Jali::Entity_kind::CELL,
+  jali_state.add("d2", inputMesh, Jali::Entity_kind::CELL,
             Jali::Entity_type::ALL, dtest2);
-  state.add("d3", inputMesh, Jali::Entity_kind::CELL,
+  jali_state.add("d3", inputMesh, Jali::Entity_kind::CELL,
             Jali::Entity_type::ALL, dtest3);
 
-  Portage::Flat_State_Wrapper<> flat_state(wrapper, {"d1", "d2", "d3"});
+  Portage::Flat_State_Wrapper<> flat_state(jali_state_wrapper,
+          {"d1", "d2", "d3"});
 
   // Check the data using Jali as well as by the Flat_State_Wrapper wrapper
 
   // Get raw float data using wrapper
   double* ddata = nullptr;
-  wrapper.get_data(Portage::CELL, "d1", &ddata);
+  jali_state_wrapper.get_data(Portage::CELL, "d1", &ddata);
   for (unsigned int i=0; i<n_cells; i++) ASSERT_EQ(ddata[i], dtest1[i]);
 
   // Get raw float data using the flat mesh wrapper (d1)
