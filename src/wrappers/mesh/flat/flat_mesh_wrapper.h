@@ -110,7 +110,7 @@ class Flat_Mesh_Wrapper {
     std::map<int, int>::const_iterator it = globalCellMap_.find(globalId);
     if (it != globalCellMap_.end()) return (it->second);
     std::cout << "Global id " << globalId << " not found" << std::endl;
-    return 0;
+    return -1;
   }
 
   //! Create maps for index space conversions
@@ -119,10 +119,7 @@ class Flat_Mesh_Wrapper {
     // Virtual to local map
     virtualCellMap_.clear();
     for (unsigned int i=0; i<virtualCellIds_.size(); i++)
-    {
-      std::pair<int, int> mpair(virtualCellIds_[i], i);
-      virtualCellMap_.push_back(mpair);
-    }
+      virtualCellMap_.emplace_back(virtualCellIds_[i], i); 
     std::sort(virtualCellMap_.begin(), virtualCellMap_.end(), virtualCellMapCompare);
 
     // Global to virtual map
