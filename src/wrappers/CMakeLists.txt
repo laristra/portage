@@ -38,6 +38,16 @@ if (ENABLE_UNIT_TESTS)
                      LIBRARIES portage ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
                      POLICY MPI
                      THREADS 1)
+
+     # Flat mesh wrapper
+     cinch_add_unit(test_flat_mesh_wrapper
+                    SOURCES mesh/flat/test/test_flat_mesh_wrapper.cc
+                    LIBRARIES portage ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
+                    # this is relative to the wrapper directory
+                    INPUTS ../../test_data/shotshell.exo
+                    ../../test_data/shotshell-v.exo
+                    POLICY MPI
+                    THREADS 1)
    endif (Jali_DIR)
 
    if (FLECSI_INSTALL_DIR)
