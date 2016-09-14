@@ -1,4 +1,9 @@
-#!/bin/tcsh -f
+#!/bin/bash
+
+# Exit on error
+set -e
+# Echo each command
+set -x
 
 # test a simple 2d remap
 mpirun -np 1 $APPDIR/portageapp 1 100 101
