@@ -9,6 +9,7 @@
 //#define DEBUG_MPI
 
 #include <algorithm>
+#include <memory>
 
 #include "portage/support/portage.h"
 
