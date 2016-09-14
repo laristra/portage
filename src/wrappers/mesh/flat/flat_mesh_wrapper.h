@@ -17,13 +17,6 @@
 
 namespace Portage {
 
-//! Comparator for creating virtual to local index space map in Flat_Mesh_Wrapper
-bool virtualCellMapCompare(const std::pair<int, int>& firstElem, const std::pair<int, int>& secondElem)
-{
-  return (firstElem.first < secondElem.first);
-}
-
-
 /*!
   \class Flat_Mesh_Wrapper flat_hex_mesh_wrapper.h
   \brief Flat_Mesh_Wrapper implements mesh methods
@@ -102,7 +95,7 @@ class Flat_Mesh_Wrapper {
 
   //! Virtual to local
   int virtual_to_local(int virtualId) const {
-    return virtualCellMap_[virtualId].second;
+    return virtualCellMap_[virtualId];
   }
 
   //! Global to virtual
@@ -118,9 +111,9 @@ class Flat_Mesh_Wrapper {
  
     // Virtual to local map
     virtualCellMap_.clear();
+    virtualCellMap_.resize(virtualCellIds_.size());
     for (unsigned int i=0; i<virtualCellIds_.size(); i++)
-      virtualCellMap_.emplace_back(virtualCellIds_[i], i); 
-    std::sort(virtualCellMap_.begin(), virtualCellMap_.end(), virtualCellMapCompare);
+      virtualCellMap_[virtualCellIds_[i]] = i;
 
     // Global to virtual map
     globalCellMap_.clear();
@@ -305,7 +298,7 @@ private:
   std::vector<int> neighborOffsets_;
   std::vector<int> globalCellIds_;
   std::vector<int> virtualCellIds_;
-  std::vector<std::pair<int, int> > virtualCellMap_;
+  std::vector<int> virtualCellMap_;
   std::map<int, int> globalCellMap_;
   std::vector<int> ownedCellIndexes_;
   const int nodesPerCell_;
