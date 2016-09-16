@@ -103,25 +103,25 @@ int main(int argc, char** argv) {
   Jali::State sourceState(inputMesh);
   std::vector<double> sourceData(inputMeshWrapper.num_owned_cells(), 0);
 
-  std::vector<double> coord;
+  JaliGeometry::Point coord;
 
 #ifdef FIXED_SIZE_EXAMPLE
   for (int i=0; i < 3034; i++) {
-    inputMesh->cell_centroid(i, &coord);
+    coord = inputMesh->cell_centroid(i);
     double x = coord[0];
     double y = coord[1];
     double z = (inputDim == 3) ? coord[2] : 0.0;
     sourceData[i] = std::sqrt(x*x+y*y+z*z);
   }
   for (int i=3034; i < 4646; i++) {
-    inputMesh->cell_centroid(i, &coord);
+    coord = inputMesh->cell_centroid(i);
     double x = coord[0];
     double y = coord[1];
     double z = (inputDim == 3) ? coord[2] : 1.0;
     sourceData[i] = x*y*z;
   }
   for (int i=4646; i < 5238; i++) {
-    inputMesh->cell_centroid(i, &coord);
+    coord = inputMesh->cell_centroid(i);
     double x = coord[0];
     double y = coord[1];
     double z = (inputDim == 3) ? coord[2] : 0.0;
@@ -129,7 +129,7 @@ int main(int argc, char** argv) {
   }
 #else
   for (int i=0; i < sourceData.size(); i++) {
-    inputMesh->cell_centroid(i, &coord);
+    coord = inputMesh->cell_centroid(i);
     double x = coord[0];
     double y = coord[1];
     double z = (inputDim > 2) ? coord[2] : 0.0;
@@ -190,7 +190,7 @@ int main(int argc, char** argv) {
     double toterr = 0.0;
     double error;
     for (auto c = 0; c < cellvecout.size(); c++) {
-      targetMesh->cell_centroid(c, &coord);
+      coord = targetMesh->cell_centroid(c);
       error = coord[0] + coord[1] - cellvecout[c];
       if (inputDim > 2) error += coord[2];
       toterr += error*error;

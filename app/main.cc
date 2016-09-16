@@ -297,14 +297,14 @@ int main(int argc, char** argv) {
     std::vector<double> cen;
     if (example.linear) {
       for (unsigned int c = 0; c < nsrccells; ++c) {
-        inputMesh->cell_centroid(c, &cen);
+        JaliGeometry::Point cen = inputMesh->cell_centroid(c);
         sourceData[c] = cen[0]+cen[1];
         if (example.dim == 3)
           sourceData[c] += cen[2];
       }
     } else {  // quadratic function
       for (unsigned int c = 0; c < nsrccells; ++c) {
-        inputMesh->cell_centroid(c, &cen);
+        JaliGeometry::Point cen = inputMesh->cell_centroid(c);
         sourceData[c] = cen[0]*cen[0]+cen[1]*cen[1];
         if (example.dim == 3)
           sourceData[c] += cen[2]*cen[2];
@@ -358,8 +358,7 @@ int main(int argc, char** argv) {
                 << std::endl;
 
     for (int c = 0; c < ntarcells; ++c) {
-      std::vector<double> ccen;
-      targetMesh->cell_centroid(c, &ccen);
+      JaliGeometry::Point ccen = targetMesh->cell_centroid(c);
 
       double error;
       if (example.linear) {

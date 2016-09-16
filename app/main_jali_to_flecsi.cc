@@ -87,9 +87,9 @@ int main(int argc, char** argv) {
   const int nsrccells = inputMeshWrapper.num_owned_cells();
   Jali::State inputState(inputMesh);
   std::vector<double> inputData(nsrccells);
-  std::vector<double> cen;
+  JaliGeometry::Point cen;
   for (auto c = 0; c < nsrccells; ++c) {
-    inputMeshWrapper.cell_centroid(c, &cen);
+    cen = inputMesh.cell_centroid(c);
     inputData[c] = cen[0] + cen[1];
   }
   inputState.add("celldata", inputMesh, Jali::Entity_kind::CELL,
@@ -127,7 +127,7 @@ int main(int argc, char** argv) {
 
   double toterr = 0.0;
   for (auto c = 0; c < ntarcells; ++c) {
-    std::vector<double> cen;
+    Portage::Point<2> cen;
     targetMeshWrapper.cell_centroid(c, &cen);
     double error = cen[0] + cen[1] - outData[c];
     std::printf("Cell=% 4d Centroid = (% 5.3lf,% 5.3lf)", c,
