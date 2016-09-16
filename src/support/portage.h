@@ -35,10 +35,10 @@ namespace Portage {
 // point of the edge, the midpoint of the edge, the "center" of the
 // face and the "center" of the cell volume. In 2D, a wedge is a
 // triangle formed by an end-point of the edge, the mid-point of the
-// edge and the center of the cell. In 1D, (IS THIS CORRECT?), wedges
-// are lines, that are formed by the endpoint of the cell and the
-// midpoint of the cell. There are two wedges associated with an edge
-// of cell face in 3D.
+// edge and the center of the cell. In 1D, wedges are lines, that are
+// formed by the endpoint of the cell and the midpoint of the
+// cell. There are two wedges associated with an edge of cell face in
+// 3D.
 //
 // Corners are also subcell entities that are associated uniquely with
 // a node of a cell. Each corner is the union of all the wedges incident
@@ -79,6 +79,20 @@ enum Entity_type {
   PARALLEL_GHOST = 2,          // Owned by another processor
   BOUNDARY_GHOST = 3,          // Ghost/Virtual entity on boundary
   ALL  = 4     // PARALLEL_OWNED + PARALLEL_GHOST + BOUNDARY_GHOST
+};
+
+// Element (cell topology) type
+
+enum Element_type {
+  UNKNOWN_TOPOLOGY = 0,
+  TRI,
+  QUAD,
+  POLYGON,
+  TET,
+  PRISM,
+  PYRAMID,
+  HEX,
+  POLYHEDRON
 };
 
 /// Limiter type
