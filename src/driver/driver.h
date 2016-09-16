@@ -1477,7 +1477,7 @@ Driver<SourceMesh_Wrapper,
   MeshWrapperDual<SourceMesh_Wrapper> source_mesh_dual(source_mesh_);
   MeshWrapperDual<TargetMesh_Wrapper> target_mesh_dual(target_mesh_);
 
-  int ntargetcells = target_mesh_.num_entities(CELL);
+  int ntargetcells = target_mesh_.num_entities(NODE);
 
   // SEARCH
 
@@ -1652,7 +1652,7 @@ Driver<SourceMesh_Wrapper,
 
   gettimeofday(&begin_timeval, 0);
 
-  int ntargetcells = target_mesh_.num_entities(CELL);
+  int ntargetcells = target_mesh_.num_entities(NODE);
 
   // SEARCH
 
@@ -1824,7 +1824,7 @@ Driver<SourceMesh_Wrapper,
 
   gettimeofday(&begin_timeval, 0);
 
-  int ntargetcells = target_mesh_.num_entities(CELL);
+  int ntargetcells = target_mesh_.num_entities(NODE);
 
   // SEARCH
 
