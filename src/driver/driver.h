@@ -219,6 +219,8 @@ class MeshWrapperDual {  // cellid is the dual cell (i.e. node) id
     wedges_get_coordinates(dualcellid, tcoords);
   }
 
+  // Virtual and local addresses are equivalent in non-distributed case
+  int virtual_to_local(int virtualId) const { return virtualId; }
 
  private:
   const Mesh_Wrapper_Type &w_;
@@ -406,7 +408,10 @@ class Driver {
                 run_3D_CELL_order1_distributed(source_cellvar_names,
                                                target_cellvar_names) :
                 run_3D_CELL_order1(source_cellvar_names, target_cellvar_names) :
-                run_3D_CELL_order2(source_cellvar_names, target_cellvar_names);
+            (comm_size > 1) ?
+                 run_3D_CELL_order2_distributed(source_cellvar_names, target_cellvar_names) :
+                 run_3D_CELL_order2(source_cellvar_names, target_cellvar_names);
+
             break;
           }
           default:
@@ -476,6 +481,9 @@ class Driver {
   /// @brief 2nd order remapping of cell centered data on 3D meshes
   void run_3D_CELL_order2(std::vector<std::string> source_cellvar_names,
                           std::vector<std::string> target_cellvar_names);
+  /// @brief Disributed 1st order remapping of cell centered data on 3D meshes
+  void run_3D_CELL_order2_distributed(std::vector<std::string> source_cellvar_names,
+                                      std::vector<std::string> target_cellvar_names);
   /// @brief 1st order remapping of node centered data on 2D meshes
   void run_2D_NODE_order1(std::vector<std::string> source_nodevar_names,
                           std::vector<std::string> target_nodevar_names);
@@ -1290,6 +1298,175 @@ Driver<SourceMesh_Wrapper,
         continue;
         }*/
 
+  }
+
+
+#ifdef ENABLE_PROFILE
+  __itt_pause();
+#endif
+
+  gettimeofday(&end_timeval, 0);
+  timersub(&end_timeval, &begin_timeval, &diff_timeval);
+  tot_seconds_interp = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
+
+  tot_seconds = tot_seconds_srch + tot_seconds_xsect + tot_seconds_interp;
+
+  std::cout << "Transform Time (s): " << tot_seconds << std::endl;
+  std::cout << "  Search Time (s): " << tot_seconds_srch << std::endl;
+  std::cout << "  Intersect Time (s): " << tot_seconds_xsect << std::endl;
+  std::cout << "  Interpolate Time (s): " << tot_seconds_interp << std::endl;
+}
+
+
+// Distributed 2nd order remapping of cell centered data on 3D meshes
+template<class SourceMesh_Wrapper, class SourceState_Wrapper,
+         class TargetMesh_Wrapper, class TargetState_Wrapper>
+         void
+         Driver<SourceMesh_Wrapper,
+         SourceState_Wrapper,
+         TargetMesh_Wrapper,
+         TargetState_Wrapper>::run_3D_CELL_order2_distributed(std::vector<std::string>
+                                                              source_var_names,
+                                                              std::vector<std::string>
+                                                              target_var_names) {
+  float tot_seconds = 0.0, tot_seconds_srch = 0.0,
+      tot_seconds_xsect = 0.0, tot_seconds_interp = 0.0;
+  struct timeval begin_timeval, end_timeval, diff_timeval;
+
+  // Get the rank for this process
+  int comm_rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &comm_rank);
+
+  // Convert the source mesh and state to a flat representation;
+  // Since we are not sending any target mesh data over MPI, we don't need
+  // to convert the target mesh or state to a flat representation
+  Flat_Mesh_Wrapper<> source_mesh_flat(8, source_mesh_);
+  Flat_State_Wrapper<> source_state_flat(source_state_, source_remap_var_names_); 
+  int nvars = source_var_names.size();
+
+  // Use a bounding box distributor to send the source cells to the target
+  // paritions where they are needed
+  MPI_Bounding_Boxes distributor;
+  distributor.distribute(source_mesh_flat, source_state_flat, target_mesh_, target_state_);
+
+  // SEARCH
+
+  gettimeofday(&begin_timeval, 0);
+
+  int ntargetcells = target_mesh_.num_entities(CELL);  
+  Portage::vector<std::vector<int>> candidates(ntargetcells);
+
+  // Get an instance of the desired search algorithm type
+  const SearchKDTree<3, Flat_Mesh_Wrapper<>, TargetMesh_Wrapper>
+      search(source_mesh_flat, target_mesh_);
+
+  // Build a slightly specialized functor from it
+
+  SearchFunctor<SearchKDTree<3, Flat_Mesh_Wrapper<>, TargetMesh_Wrapper>>
+      searchfunctor(&search);
+
+  Portage::transform((counting_iterator)(target_mesh_.begin(CELL)),
+                     (counting_iterator)(target_mesh_.end(CELL)),
+                     candidates.begin(), searchfunctor);
+
+#ifdef ENABLE_PROFILE
+  __itt_pause();
+#endif
+
+  gettimeofday(&end_timeval, 0);
+  timersub(&end_timeval, &begin_timeval, &diff_timeval);
+  tot_seconds_srch = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
+
+
+#ifdef ENABLE_PROFILE
+  __itt_resume();
+#endif
+
+  gettimeofday(&begin_timeval, 0);
+
+  // INTERSECT
+
+
+  // Get an instance of the desired intersect algorithm type
+  const IntersectR3D<Flat_Mesh_Wrapper<>, TargetMesh_Wrapper>
+      intersect{source_mesh_flat, target_mesh_};
+
+
+  // Make an idnstance of the functor doing the search and intersection
+
+  IntersectFunctor<IntersectR3D<Flat_Mesh_Wrapper<>, TargetMesh_Wrapper>>
+      intersectfunctor(&intersect);
+
+
+  // For each cell in the target mesh get a list of candidate-weight
+  // pairings (in a traditional mesh, not particle mesh, the weights
+  // are moments). Note that this candidate list is different from the
+  // search candidate list in that (1) it may not include some
+  // candidates and (2) some candidates may occur twice to account for
+  // the fact that the intersection of two cells is more than one
+  // disjoint piece (if one of the cells is non-convex). Also, note
+  // that for 2nd order and higher remaps, we get multiple moments
+  // (0th, 1st, etc) for each target-source cell intersection
+
+  Portage::vector<std::vector<Weights_t>> source_cells_and_weights(ntargetcells);
+
+  Portage::transform((counting_iterator)(target_mesh_.begin(CELL)),
+                     (counting_iterator)(target_mesh_.end(CELL)),
+                     candidates.begin(),
+                     source_cells_and_weights.begin(),
+                     intersectfunctor);
+
+#ifdef ENABLE_PROFILE
+  __itt_pause();
+#endif
+
+  gettimeofday(&end_timeval, 0);
+  timersub(&end_timeval, &begin_timeval, &diff_timeval);
+  tot_seconds_xsect = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
+
+  // INTERPOLATE (one variable at a time)
+
+#ifdef ENABLE_PROFILE
+  __itt_resume();
+#endif
+
+  gettimeofday(&begin_timeval, 0);
+
+  // Get an instance of the 2nd order algorithm
+  Interpolate_2ndOrder<Flat_Mesh_Wrapper<>, TargetMesh_Wrapper,
+      Flat_State_Wrapper<>, CELL, 3>
+      interpolate(source_mesh_flat, target_mesh_, source_state_flat);
+
+  for (int i = 0; i < nvars; ++i) {
+    if (comm_rank == 0)
+      std::cout << "Remapping variable " << source_var_names[i]
+                << " to variable " << target_var_names[i]
+                << " using a 2nd order accurate algorithm" << std::endl;
+
+    //interpolate.set_gradients(source_var_names[i], source_state_flat.get_gradients(i));
+    interpolate.set_interpolation_variable(source_var_names[i], NOLIMITER);
+
+    // This populates targetField with the values returned by the
+    // interpolate operator
+
+    /* UNCOMMENT WHEN WE RESTORE get_type in jali_state_wrapper
+       if (typeid(source_state_.get_type(source_var_names[i])) ==
+       typeid(double)) {*/
+
+    double *target_field_raw = nullptr;
+    target_state_.get_data(CELL, target_var_names[i], &target_field_raw);
+    Portage::pointer<double> target_field(target_field_raw);
+    Portage::transform((counting_iterator)(target_mesh_.begin(CELL)),
+                       (counting_iterator)(target_mesh_.end(CELL)),
+                       source_cells_and_weights.begin(),
+                       target_field, interpolate);
+
+    /*  UNCOMMENT WHEN WE RESTORE get_type in jali_state_wrapper
+        } else {
+        std::cerr << "Cannot remap " << source_var_names[i] <<
+        " because it is not a scalar double variable\n";
+        continue;
+        }*/
   }
 
 

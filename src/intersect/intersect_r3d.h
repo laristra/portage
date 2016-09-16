@@ -43,7 +43,7 @@ public:
             planar_hex_);
     targetMeshWrapper.decompose_cell_into_tets(cellB, &target_coords,
             planar_hex_);
-
+    
     // Bounding box of the target cell - will be used to compute
     // epsilon for bounding box check. We could use the source cell
     // coordinates to find the bounds as well but its probably an
@@ -176,7 +176,7 @@ public:
         }
       }
     }
-
+    
     std::vector<std::vector<double>> moments_all;
     moments_all.push_back(moments);
     return moments_all;

@@ -236,12 +236,16 @@ Limited_Gradient<MeshType, StateType, CELL, D>::operator() (int const cellid) {
   std::vector<double> cellvalues(nbrids.size()+1);
   
   mesh_.cell_centroid(cellid, &(cellcenters[0]));
-  cellvalues[0] = vals_[cellid];
-  
+
+  int lindex = mesh_.virtual_to_local(cellid);
+  cellvalues[0] = vals_[lindex];
+
   int i = 1;
   for (auto nbrcell : nbrids) {
     mesh_.cell_centroid(nbrcell, &(cellcenters[i]));
-    cellvalues[i] = vals_[nbrcell];
+
+    int lindex = mesh_.virtual_to_local(nbrcell);
+    cellvalues[i] = vals_[lindex];
     i++;
   }
 

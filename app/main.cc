@@ -249,21 +249,32 @@ int main(int argc, char** argv) {
         }
       // generate the input and target meshes for the distributed case
       } else {
+
+        int source_dim = cbrt(1.0f*numpe) + 0.01f;
         mf_local.included_entities({Jali::Entity_kind::FACE,
                                     Jali::Entity_kind::EDGE,
                                     Jali::Entity_kind::WEDGE});
+
+#ifdef MANUAL_SOURCE_DECOMPOSITION
         // compute the local partition of the source mesh based on the rank;
         // n_source is the number of cells in each dimension in each partition;
         // the number of ranks must be a perfect cube (1, 8, 27, etc.)
-        int source_dim = cbrt(1.0f*numpe) + 0.01f;
         double source_step = 1.0f / source_dim;
         int rrank = reverse_source_ranks ? numpe - rank - 1 : rank;
         int source_x = rrank % source_dim;
         int source_y = (rrank / source_dim) % source_dim;
         int source_z = rrank / (source_dim*source_dim);
+
         inputMesh = mf_local(source_step*source_x, source_step*source_y, source_step*source_z,
                              source_step*(source_x+1), source_step*(source_y+1), source_step*(source_z+1),
                              n_source, n_source, n_source);
+
+#else
+        mf.boundary_ghosts_requested(false);
+        mf.num_ghost_layers_distmesh(1);
+        inputMesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, n_source*source_dim, n_source*source_dim, n_source*source_dim);
+#endif
+                             
         // compute the local partition of the target mesh based on the rank;
         // n_target is the number of cells in each dimension in each partition;
         // the number of ranks must be a perfect cube (1, 8, 27, etc.)
@@ -287,14 +298,13 @@ int main(int argc, char** argv) {
     Portage::Jali_Mesh_Wrapper inputMeshWrapper(*inputMesh);
     Portage::Jali_Mesh_Wrapper targetMeshWrapper(*targetMesh);
 
-    const int nsrccells = inputMeshWrapper.num_owned_cells();
+    const int nsrccells = inputMeshWrapper.num_owned_cells() + inputMeshWrapper.num_ghost_cells();
     const int ntarcells = targetMeshWrapper.num_owned_cells();
-
+    
     // Fill the source state data with the specified profile
     Jali::State sourceState(inputMesh);
     std::vector<double> sourceData(nsrccells);
 
-    std::vector<double> cen;
     if (example.linear) {
       for (unsigned int c = 0; c < nsrccells; ++c) {
         JaliGeometry::Point cen = inputMesh->cell_centroid(c);
@@ -314,7 +324,7 @@ int main(int argc, char** argv) {
     sourceState.add("celldata", inputMesh, Jali::Entity_kind::CELL,
                     Jali::Entity_type::ALL, &(sourceData[0]));
     Portage::Jali_State_Wrapper sourceStateWrapper(sourceState);
-
+    
     // Build the target state storage
     Jali::State targetState(targetMesh);
     std::vector<double> targetData(ntarcells, 0.0);

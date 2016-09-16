@@ -24,6 +24,14 @@ if (ENABLE_UNIT_TESTS)
 #  cinch_add_library_target(portage_state src/state)
 endif()
 
+# Add application tests
+# May pull this logic into cinch at some future point
+option(ENABLE_APP_TESTS "Enable testing of full app" OFF)
+if(ENABLE_APP_TESTS)
+  enable_testing()
+  add_subdirectory(test)
+endif()
+
 #------------------------------------------------------------------------------#
 # 
 #------------------------------------------------------------------------------#

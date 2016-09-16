@@ -85,7 +85,7 @@ class Matrix {
   // The main utility of this operator is to facilitate the use
   // of the [][] notation to refer to elements of the matrix
   
-  double * const operator[](int const RowIndex) {
+  double * operator[](int const RowIndex) {
     return &(A_[RowIndex*Columns_]);
   }
   
@@ -94,7 +94,7 @@ class Matrix {
   // The main utility of this operator is to facilitate the use
   // of the [][] notation to refer to elements of a const matrix
   
-  double const * const operator[](int const RowIndex) const {
+  double const * operator[](int const RowIndex) const {
     return &(A_[RowIndex*Columns_]);
   }
   

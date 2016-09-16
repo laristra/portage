@@ -203,8 +203,17 @@ class Jali_Mesh_Wrapper : public AuxMeshTopology<Jali_Mesh_Wrapper> {
   void face_get_nodes(int const faceid, std::vector<int> *fnodes) const {
     jali_mesh_.face_get_nodes(faceid, fnodes);
   }
+
+  //! Get global id
+  int get_global_id(int const id, Entity_kind const kind) const {
+    return jali_mesh_.GID(id, (Jali::Entity_kind)kind);
+  }
+
+  //! Virtual and local addresses are equivalent in non-distributed case
+  int virtual_to_local(int virtualId) const { return virtualId; }
+
   //! coords of a node
-  template<long D>
+  template <long D>
   void node_get_coordinates(int const nodeid, Point<D>* pp) const {
     JaliGeometry::Point jp;
     jali_mesh_.node_get_coordinates(nodeid, &jp);
@@ -213,7 +222,7 @@ class Jali_Mesh_Wrapper : public AuxMeshTopology<Jali_Mesh_Wrapper> {
   }
 
   //! coords of nodes of a cell
-  template<long D>
+  template <long D>
   void cell_get_coordinates(int const cellid,
                             std::vector<Point<D>> *pplist) const {
     assert(jali_mesh_.space_dimension() == D);
@@ -231,7 +240,7 @@ class Jali_Mesh_Wrapper : public AuxMeshTopology<Jali_Mesh_Wrapper> {
   //
   // Return the centroid of a cell
 
-  template<long D>
+  template <long D>
   void cell_centroid(Jali::Entity_ID cellid, Point<D> *ccentroid) const {
     *ccentroid = toPortagePoint<D>(jali_mesh_.cell_centroid(cellid));
   }
@@ -240,7 +249,7 @@ class Jali_Mesh_Wrapper : public AuxMeshTopology<Jali_Mesh_Wrapper> {
   //
   // Return the centroid of a cell face
 
-  template<long D>
+  template <long D>
   void face_centroid(Jali::Entity_ID faceid, Point<D> *fcentroid) const {
     *fcentroid = toPortagePoint<D>(jali_mesh_.face_centroid(faceid));
   }

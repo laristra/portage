@@ -156,12 +156,12 @@ double Interpolate_1stOrder<SourceMeshType, TargetMeshType, StateType,
 
   // contribution of the source cell is its field value weighted by
   // its "weight" (in this case, its 0th moment/area/volume)
-
   double val = 0.0;
   for (auto const& wt : sources_and_weights) {
     int srccell = wt.entityID;
     std::vector<double> pair_weights = wt.weights;
-    val += source_vals_[srccell] * pair_weights[0];  // 1st order
+    int lindex = source_mesh_.virtual_to_local(srccell);
+    val += source_vals_[lindex] * pair_weights[0];  // 1st order
   }
 
   // Normalize the value by sum of all the weights

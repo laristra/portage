@@ -63,6 +63,7 @@ cmake \
   -D CMAKE_CXX_COMPILER=`which mpiCC` \
   -D CMAKE_BUILD_TYPE=$cmake_build_type \
   -D ENABLE_UNIT_TESTS=True \
+  -D ENABLE_APP_TESTS=True \
   -D ENABLE_JENKINS_OUTPUT=True \
   -D ENABLE_MPI=True \
   -D ENABLE_MPI_CXX_BINDINGS=True \

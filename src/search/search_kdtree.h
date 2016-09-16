@@ -44,8 +44,7 @@ class SearchKDTree {
                  const TargetMeshType & target_mesh)
             : sourceMesh_(source_mesh), targetMesh_(target_mesh)  {
 
-        const int numCells = sourceMesh_.num_owned_cells() + 
-                sourceMesh_.num_ghost_cells();
+        const int numCells = sourceMesh_.num_owned_cells();
         std::vector<gk::IsotheticBBox<D>> bboxes;
         bboxes.reserve(numCells);
         

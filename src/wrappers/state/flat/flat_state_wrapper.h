@@ -7,8 +7,10 @@
 #define FLAT_STATE_WRAPPER_H_
 
 #include <map>
+#include <memory>
 
 #include "portage/support/portage.h"
+#include "portage/support/Point.h"
 
 /*!
   @file flat_state_wrapper.h
@@ -39,9 +41,9 @@ class Flat_State_Wrapper {
       int dataSize = input.get_data_size(entity, var_names[i]);
       T* data;
       input.get_data(entity, var_names[i], &data);
-      std::vector<T> field;
-      field.resize(dataSize);
-      std::copy(data, data+dataSize, field.begin());
+      std::shared_ptr<std::vector<T>> field = std::make_shared<std::vector<T>>();
+      field->resize(dataSize);
+      std::copy(data, data+dataSize, field->begin());
       state_.push_back(field);
       name_map_[var_names[i]] = state_.size() - 1;
     }
@@ -69,22 +71,57 @@ class Flat_State_Wrapper {
   
     std::map<std::string, int>::const_iterator iter = name_map_.find(var_name);
     if (iter != name_map_.end())
-      (*data) = (D*)(&(state_[iter->second][0]));
+      (*data) = (D*)(&((*(state_[iter->second]))[0]));
   }
 
   /*!
     @brief Get the data vector
   */
-  std::vector<T>& get_vector(int index) { return state_[index]; }
+  std::shared_ptr<std::vector<T>> get_vector(int index) 
+  {
+    return state_[index]; 
+  }
+
+  /*!
+    @brief Get gradients
+  */
+  std::shared_ptr<std::vector<Portage::Point3>> get_gradients(int index)
+  {
+    return gradients_[index];
+  }
 
   /*! 
     @brief Get the number of data vectors
   */
   int get_num_vectors() { return state_.size(); }
 
+  /*!
+    @brief Add a gradient field
+  */
+  void add_gradients(std::shared_ptr<std::vector<Portage::Point3>> new_grad)
+  {
+    if (new_grad->size() <= 0) return;
+    gradients_.push_back(new_grad); 
+  }
+
+  /*! 
+    @brief Get field dimension
+  */
+  int get_field_dim(int index)
+  {
+    return 1;
+  }
+
+  /*!
+    @brief Get the number of gradient vectors
+  */
+  int get_num_gradients() { return gradients_.size(); }
+
 private:
-  std::vector<std::vector<T>> state_;
+  std::vector<std::shared_ptr<std::vector<T>>> state_;
   std::map<std::string, int> name_map_;
+  std::vector<std::shared_ptr<std::vector<Portage::Point3>>> gradients_;
+
 
 }; // Flat_State_Wrapper
 

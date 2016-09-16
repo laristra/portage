@@ -25,7 +25,7 @@ set(wrapper_HEADERS
 
 if (ENABLE_UNIT_TESTS)
    if (Jali_DIR)
-     cinch_add_unit(test_jali_mesh_wrapper
+      cinch_add_unit(test_jali_mesh_wrapper
                     SOURCES mesh/jali/test/test_jali_mesh_wrapper.cc
                     LIBRARIES portage ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
                     # this is relative to the wrapper directory
@@ -36,6 +36,23 @@ if (ENABLE_UNIT_TESTS)
 
       cinch_add_unit(test_jali_state_wrapper
                      SOURCES state/jali/test/test_jali_state_wrapper.cc
+                     LIBRARIES portage ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
+                     POLICY MPI
+                     THREADS 1)
+
+      # Flat mesh wrapper
+      cinch_add_unit(test_flat_mesh_wrapper
+                     SOURCES mesh/flat/test/test_flat_mesh_wrapper.cc
+                     LIBRARIES portage ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
+                     # this is relative to the wrapper directory
+                     INPUTS ../../test_data/shotshell.exo
+                     ../../test_data/shotshell-v.exo
+                     POLICY MPI
+                     THREADS 1)
+
+      # Flat state wrapper
+      cinch_add_unit(test_flat_state_wrapper
+                     SOURCES state/flat/test/test_flat_state_wrapper.cc
                      LIBRARIES portage ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
                      POLICY MPI
                      THREADS 1)
