@@ -170,9 +170,6 @@ class Jali_Mesh_Wrapper {
     return jali_mesh_.GID(id, (Jali::Entity_kind)kind);
   }
 
-  //! Virtual and local addresses are equivalent in non-distributed case
-  int virtual_to_local(int virtualId) const { return virtualId; }
-
   //! coords of a node
   template <long D>
   void node_get_coordinates(int const nodeid, Point<D>* pp) const {
