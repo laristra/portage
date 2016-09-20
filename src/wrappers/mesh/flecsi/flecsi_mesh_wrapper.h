@@ -429,9 +429,6 @@ class Flecsi_Mesh_Wrapper {
     *centroid = toPortagePoint<D>(thisCell->centroid());
   }
 
-  //! Virtual and local addresses are equivalent in non-distributed case
-  int virtual_to_local(int virtualId) const { return virtualId; }
-
   //! Get global id
   int get_global_id(int const id, Entity_kind const kind) const {
     return id;
