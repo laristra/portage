@@ -17,8 +17,9 @@ namespace Portage {
 //! \brief A class to build enhanced mesh topology (mainly subcell
 //! entities - sides, wedges and corners)
 //!
-//! @tparam BasicMesh Mesh class that provides methods for answering questions
-//! about cells, nodes (and depending on the dimensions faces and edges)
+//! @tparam BasicMesh Mesh wrapper class that provides methods for answering
+//! questions about cells, nodes (and depending on the mesh dimension,
+//! mesh faces and edges)
 //!
 //! A class to build enhanced mesh topological entities. For now this
 //! class builds the following subcell entities - sides, corners and
@@ -278,7 +279,10 @@ class AuxMeshTopology {
   //!
   //! Each side is tied to two mesh nodes in 2D and 3D and inode = 0
   //! or 1 indicates which one to return. In 1D, the same node is
-  //! returned whether inode = 0 or 1
+  //! returned whether inode = 0 or 1. In 2D and 3D, the node ordering
+  //! is such that node 0, node 1 and the cell centroid form a positive
+  //! area triangle and in 3D, node 0, node 1, the face centroid and cell
+  //! centroid form a positive volume tet.
 
   int side_get_node(int const sideid, int const inode) const {
     assert(inode == 0 || inode == 1);
@@ -893,7 +897,7 @@ class AuxMeshTopology {
 
   //! \todo NOTE: THIS IS ASSUMED TO BE THE NODE COORDINATE BECAUSE
   //! THE NODAL VARIABLES LIVE THERE, BUT FOR DISTORTED GRIDS, THE
-  //! NODE COORDINATED MAY NOT BE THE CENTROID OF THE DUAL CELL
+  //! NODE COORDINATE MAY NOT BE THE CENTROID OF THE DUAL CELL
 
   template<long D>
   void dual_cell_centroid(int nodeid, Point<D> *centroid) const {
