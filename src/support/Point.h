@@ -111,6 +111,24 @@ class Point {
     return *this;
   }
 
+  /// Add two Point vectors to get a third point vector
+  inline Point<D>& operator+=(const Point<D>& p) {
+    for (int i = 0; i < D; i++) m_loc[i] += p[i];
+    return *this;
+  }
+
+  /// Scale this Point (*)
+  inline Point<D>& operator*=(double s) {
+    for (int i = 0; i < D; i++) m_loc[i] *= s;
+    return *this;
+  }
+
+  /// Scale this Point (/)
+  inline Point<D>& operator/=(double s) {
+    for (int i = 0; i < D; i++) m_loc[i] /= s;
+    return *this;
+  }
+
   /// Read in the coordinates a Point from an input stream.
   std::istream& readFromStream(std::istream& is) {
     for (int i = 0; i < D; i++)
@@ -160,6 +178,11 @@ operator+(const Point<D>& p, const Vector<D>& v) {
   return Point<D>(p) += v;
 }
 
+template <long D> inline const Point<D>
+operator+(const Point<D>& p1, const Point<D>& p2) {
+  return Point<D>(p1) += p2;
+}
+
 template <long D> inline const Vector<D>
 operator-(const Point<D>& p1, const Point<D>& p2) {
   Vector<D> v;
@@ -167,6 +190,20 @@ operator-(const Point<D>& p1, const Point<D>& p2) {
   return v;
 }
 
+template <long D> inline const Point<D>
+operator*(const Point<D>& p, double s) {
+  return Point<D>(p) *= s;
+}
+
+template <long D> inline const Point<D>
+operator*(double s, const Point<D>& p) {
+  return Point<D>(p) *= s;
+}
+
+template <long D> inline const Point<D>
+operator/(const Point<D>& p, double s) {
+  return Point<D>(p) /= s;
+}
 
 template <long D> inline bool
 approxEq(const Point<D>& p1, const Point<D>& p2, double tol = 1.0e-8) {

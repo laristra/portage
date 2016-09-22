@@ -10,9 +10,11 @@
 #include <algorithm>
 #include <vector>
 #include <array>
+#include <utility>
 
 #include "Mesh.hh"                      // Jali mesh header
 
+#include "portage/wrappers/mesh/AuxMeshTopology.h"
 #include "portage/support/portage.h"
 #include "portage/support/Point.h"
 
@@ -24,7 +26,16 @@ namespace Portage {
   \brief Jali_Mesh_Wrapper implements mesh methods for Jali
 
   Jali_Mesh_Wrapper implements methods required for Portage mesh
-  queries for the Jali mesh infrastructure
+  queries for the Jali mesh infrastructure. It is derived from a
+  helper class, called AuxMeshTopology that provides the
+  side/wedge/corner functionality. The helper class should be
+  templated on this mesh wrapper itself because it relies on the mesh
+  wrapper to answer some queries about the basic topology through a
+  specific interface.  This uses a template pattern called Curiously
+  Recurring Template Pattern (CRTP) which allows this kind of mutual
+  invocation. If the mesh wrapper has the auxiliary topology already,
+  it can choose not to be derived from the helper class. See
+  https://en.m.wikipedia.org/wiki/Curiously_recurring_template_pattern
 */
 
 //! helper function:  convert Jali point to Portage point
@@ -38,30 +49,41 @@ Point<D> toPortagePoint(const JaliGeometry::Point& jp) {
 }
 
 
-class Jali_Mesh_Wrapper {
+class Jali_Mesh_Wrapper : public AuxMeshTopology<Jali_Mesh_Wrapper> {
  public:
 
   //! Constructor
-  explicit Jali_Mesh_Wrapper(Jali::Mesh const & mesh) :
-      jali_mesh_(mesh)
-  {}
+  //!
+  //! It is possible to construct this class with all, some or none of
+  //! the auxiliary entities requested (usually to save memory)
+
+  explicit Jali_Mesh_Wrapper(Jali::Mesh const & mesh,
+                             bool request_sides = true,
+                             bool request_wedges = true,
+                             bool request_corners = true) :
+      jali_mesh_(mesh),
+      AuxMeshTopology<Jali_Mesh_Wrapper>(request_sides, request_wedges,
+                                         request_corners)
+  {
+    build_aux_entities();  // base class (AuxMeshTopology) method that has
+    //                     // to be called here and not in the constructor
+    //                     // of the base class because it needs access to
+    //                     // methods in this class which in turn need access
+    //                     // to its member variables. But these member vars
+    //                     // don't get initialized until the base class is
+    //                     // constructed
+  }
 
   //! Copy constructor
   Jali_Mesh_Wrapper(Jali_Mesh_Wrapper const & inmesh) :
       jali_mesh_(inmesh.jali_mesh_)
   {}
 
-  //! Assignment operator (disabled) - don't know how to implement (RVG)
-  Jali_Mesh_Wrapper & operator=(Jali_Mesh_Wrapper const &) = delete;
+  //! Assignment operator (Deleted)
+  Jali_Mesh_Wrapper & operator=(Jali_Mesh_Wrapper const & inmesh) = delete;
 
   //! Empty destructor
   ~Jali_Mesh_Wrapper() {}
-
-
-  //! Cell area/volume
-  double cell_volume(int cellID) const {
-    return jali_mesh_.cell_volume(cellID);
-  }
 
   //! Dimension of space or mesh points
   int space_dimension() const {
@@ -71,6 +93,12 @@ class Jali_Mesh_Wrapper {
   //! Number of owned cells in the mesh
   int num_owned_cells() const {
     return jali_mesh_.num_entities(Jali::Entity_kind::CELL,
+                                   Jali::Entity_type::PARALLEL_OWNED);
+  }
+
+  //! Number of owned faces in the mesh
+  int num_owned_faces() const {
+    return jali_mesh_.num_entities(Jali::Entity_kind::FACE,
                                    Jali::Entity_type::PARALLEL_OWNED);
   }
 
@@ -86,28 +114,51 @@ class Jali_Mesh_Wrapper {
                                    Jali::Entity_type::PARALLEL_GHOST);
   }
 
+  //! Number of ghost faces in the mesh
+  int num_ghost_faces() const {
+    return jali_mesh_.num_entities(Jali::Entity_kind::FACE,
+                                   Jali::Entity_type::PARALLEL_GHOST);
+  }
+
   //! Number of ghost nodes in the mesh
   int num_ghost_nodes() const {
     return jali_mesh_.num_entities(Jali::Entity_kind::NODE,
                                    Jali::Entity_type::PARALLEL_GHOST);
   }
 
-  //! Number of items of given entity
-  int num_entities(Entity_kind const entity, Entity_type const etype=Entity_type::ALL) const {
-    return jali_mesh_.num_entities((Jali::Entity_kind)entity,
-                                   (Jali::Entity_type)etype);
+  //! Get the type of the cell - PARALLEL_OWNED or PARALLEL_GHOST
+  //! Assumes a 1-1 correspondence between integer values of the
+  //! enum types to avoid switch statements
+
+  Portage::Entity_type cell_get_type(int const cellid) const {
+    static Portage::Entity_type jali2portage_type[5] =
+        {DELETED, PARALLEL_OWNED, PARALLEL_GHOST, BOUNDARY_GHOST, ALL};
+    Jali::Entity_type etype =
+        jali_mesh_.entity_get_type(Jali::Entity_kind::CELL, cellid);
+    return jali2portage_type[static_cast<int>(etype)];
   }
 
-  //! Iterators on mesh entity - begin
-  counting_iterator begin(Entity_kind const entity) const {
-    int start_index = 0;
-    return make_counting_iterator(start_index);
+  //! Get the element type of a cell - TRI, QUAD, POLYGON, TET, HEX,
+  //! PRISM OR POLYHEDRON
+
+  Portage::Element_type cell_get_element_type(int const cellid) const {
+    static Portage::Element_type jali2portage_elemtype[9] =
+        {UNKNOWN_TOPOLOGY, TRI, QUAD, POLYGON, TET, PRISM, PYRAMID, HEX,
+         POLYHEDRON};
+    Jali::Cell_type ctype = jali_mesh_.cell_get_type(cellid);
+    return jali2portage_elemtype[static_cast<int>(ctype)];
   }
 
-  //! Iterator on mesh entity - end
-  counting_iterator end(Entity_kind const entity, Entity_type const etype=Entity_type::ALL) const {
-    int start_index = 0;
-    return (make_counting_iterator(start_index) + num_entities(entity, etype));
+  //! Get cell faces and the directions in which they are used
+  void cell_get_faces_and_dirs(int const cellid, std::vector<int> *cfaces,
+                               std::vector<int> *cfdirs) const {
+    std::vector<Jali::dir_t> fdirs;
+
+    jali_mesh_.cell_get_faces_and_dirs(cellid, cfaces, &fdirs);
+
+    cfdirs->resize(fdirs.size());
+    for (int i = 0; i < fdirs.size(); ++i)
+      (*cfdirs)[i] = static_cast<int>(fdirs[i]);
   }
 
   //! Get list of nodes for a cell
@@ -142,27 +193,15 @@ class Jali_Mesh_Wrapper {
 
       for (auto const& n : cellnodes) {
         if (n == nodeid) continue;
-        if (std::find(adjnodes->begin(), adjnodes->end(), n) == adjnodes->end()) 
+        if (std::find(adjnodes->begin(), adjnodes->end(), n) == adjnodes->end())
           adjnodes->emplace_back(n);
       }
     }
   }
 
-  //! Get the volume of dual cell by finding the corners that attach to the node
-  double dual_cell_volume(int const nodeid) const {
-    Jali::Entity_ID_List cornerids;
-    jali_mesh_.node_get_corners(nodeid, Jali::Entity_type::ALL, &cornerids);
-    double vol = 0.0;
-    for (auto const cid : cornerids)
-      vol += jali_mesh_.corner_volume(cid);
-    return vol;
-  }
-
-  //! \brief Get adjacent "dual cells" of a given "dual cell"
-  void dual_cell_get_node_adj_cells(int const nodeid,
-                                    Entity_type const ptype,
-                                    std::vector<int> *adjnodes) const {
-    node_get_cell_adj_nodes(nodeid,ptype,adjnodes);
+  //! Get nodes of a face
+  void face_get_nodes(int const faceid, std::vector<int> *fnodes) const {
+    jali_mesh_.face_get_nodes(faceid, fnodes);
   }
 
   //! Get global id
@@ -180,7 +219,7 @@ class Jali_Mesh_Wrapper {
   }
 
   //! coords of nodes of a cell
-  template<long D>
+  template <long D>
   void cell_get_coordinates(int const cellid,
                             std::vector<Point<D>> *pplist) const {
     assert(jali_mesh_.space_dimension() == D);
@@ -194,297 +233,27 @@ class Jali_Mesh_Wrapper {
                    (Point<D>(*)(const JaliGeometry::Point&))toPortagePoint<D>);
   }
 
-  //! 2D version of coords of nodes of a dual cell
-  // Input is the node ID 'nodeid', and it returns the vertex coordinates of
-  // the dual cell around this node in `pplist`. The vertices are ordered CCW.
-  // For boundary node 'nodeid', the first vertex is the node itself, this
-  // uniquely determines the 'pplist' vector. For node 'nodeid' not on a
-  // boundary, the vector 'pplist' starts with a random vertex, but it is still
-  // ordered CCW. Use the 'dual_cell_coordinates_canonical_rotation' to rotate
-  // the 'pplist' into a canonical (unique) form.
-
-  void dual_cell_get_coordinates(int const nodeid,
-                    std::vector<Point<2>> *pplist) const {
-    assert(jali_mesh_.space_dimension() == 2);
-
-    Jali::Entity_ID cornerid, wedgeid, wedgeid0;
-    Jali::Entity_ID_List cornerids, wedgeids;
-    std::vector<JaliGeometry::Point> wcoords; // (node, edge midpoint, centroid)
-
-    // Start with an arbitrary corner
-    jali_mesh_.node_get_corners(nodeid, Jali::Entity_type::ALL,
-                                &cornerids);
-    cornerid = cornerids[0];
-
-    // Process this corner
-    jali_mesh_.corner_get_wedges(cornerid, &wedgeids);
-    order_wedges_ccw(&wedgeids);
-    jali_mesh_.wedge_get_coordinates(wedgeids[0], &wcoords);
-    pplist->push_back({wcoords[2].x(), wcoords[2].y()}); // centroid
-    jali_mesh_.wedge_get_coordinates(wedgeids[1], &wcoords);
-    pplist->push_back({wcoords[1].x(), wcoords[1].y()}); // edge midpoint
-
-    wedgeid0 = wedgeids[0];
-
-    // Process the rest of the corners in the CCW manner
-    wedgeid = jali_mesh_.wedge_get_opposite_wedge(wedgeids[1]);
-    // wedgeid == -1 means we are on the boundary, and wedgeid == wedgeid0
-    // means we are not on the boundary and we finished the loop
-    while (wedgeid != -1 and wedgeid != wedgeid0) {
-        cornerid = jali_mesh_.wedge_get_corner(wedgeid);
-        jali_mesh_.corner_get_wedges(cornerid, &wedgeids);
-        order_wedges_ccw(&wedgeids);
-        assert(wedgeids[0] == wedgeid);
-        jali_mesh_.wedge_get_coordinates(wedgeids[0], &wcoords);
-        pplist->push_back({wcoords[2].x(), wcoords[2].y()}); // centroid
-        jali_mesh_.wedge_get_coordinates(wedgeids[1], &wcoords);
-        pplist->push_back({wcoords[1].x(), wcoords[1].y()}); // edge midpoint
-        wedgeid = jali_mesh_.wedge_get_opposite_wedge(wedgeids[1]);
-    }
-
-    if (wedgeid == -1) {
-        // This is a boundary node, go the other way in a CW manner to get all
-        // the coordinates and include the node (nodid) itself
-        jali_mesh_.wedge_get_coordinates(wedgeid0, &wcoords);
-        // edge midpoint
-        pplist->insert(pplist->begin(), {wcoords[1].x(), wcoords[1].y()});
-
-        wedgeid = jali_mesh_.wedge_get_opposite_wedge(wedgeid0);
-        // We must encounter the other boundary, so we only test for wedgeid ==
-        // -1
-        while (wedgeid != -1) {
-            cornerid = jali_mesh_.wedge_get_corner(wedgeid);
-            jali_mesh_.corner_get_wedges(cornerid, &wedgeids);
-            order_wedges_ccw(&wedgeids);
-            assert(wedgeids[1] == wedgeid);
-            jali_mesh_.wedge_get_coordinates(wedgeids[1], &wcoords);
-            // centroid
-            pplist->insert(pplist->begin(), {wcoords[2].x(), wcoords[2].y()});
-            jali_mesh_.wedge_get_coordinates(wedgeids[0], &wcoords);
-            // edge midpoint
-            pplist->insert(pplist->begin(), {wcoords[1].x(), wcoords[1].y()});
-            wedgeid = jali_mesh_.wedge_get_opposite_wedge(wedgeids[0]);
-        }
-
-        // Include the node itself
-        pplist->insert(pplist->begin(), {wcoords[0].x(), wcoords[0].y()});
-    }
-  }
-
-  void order_wedges_ccw(Jali::Entity_ID_List *wedgeids) const {
-    assert(wedgeids->size() == 2);
-    std::vector<JaliGeometry::Point> wcoords;
-    jali_mesh_.wedge_get_coordinates((*wedgeids)[0], &wcoords);
-
-    // Ensure (*wedgeids)[0] is the first wedge in a CCW direction
-    if (not ccw(wcoords[0], wcoords[1], wcoords[2])) {
-      std::swap((*wedgeids)[0], (*wedgeids)[1]);
-    }
-  }
-
-  // Returns true if the three 2D points (p1, p2, p3) are a counter-clockwise
-  // turn, otherwise returns false (corresponding to clockwise or collinear)
-  bool ccw(const JaliGeometry::Point& p1,
-           const JaliGeometry::Point& p2,
-           const JaliGeometry::Point& p3) const {
-      return (p2[0] - p1[0]) * (p3[1] - p1[1]) -
-             (p2[1] - p1[1]) * (p3[0] - p1[0]) > 0;
-  }
-
-  std::vector<Point<2>>
-      cellToXY(Jali::Entity_ID cellID) const {
-    std::vector<Point<2>> cellPoints;
-    cell_get_coordinates(cellID, &cellPoints);
-    return cellPoints;
-  }
-
-
-  void wedges_get_coordinates(Jali::Entity_ID cellID,
-      std::vector<std::array<Point<3>, 4>> *wcoords) const {
-    assert(jali_mesh_.space_dimension() == 3);
-    std::vector<Jali::Entity_ID> wedges;
-    jali_mesh_.cell_get_wedges(cellID, &wedges);
-    for (const auto &wedge : wedges) {
-      std::vector<JaliGeometry::Point> coords;
-      jali_mesh_.wedge_get_coordinates(wedge, &coords, true);
-      std::array<Point<3>, 4> tmp;
-      for (int i=0; i<4; i++)
-        tmp[i] = toPortagePoint<3>(coords[i]);
-      wcoords->push_back(tmp);
-    }
-  }
-
-  void sides_get_coordinates(Jali::Entity_ID cellID,
-      std::vector<std::array<Point<3>, 4>> *scoords) const {
-    assert(jali_mesh_.space_dimension() == 3);
-    std::vector<Jali::Entity_ID> sides;
-    jali_mesh_.cell_get_sides(cellID, &sides);
-    for (const auto &side : sides) {
-      std::vector<JaliGeometry::Point> coords;
-      jali_mesh_.side_get_coordinates(side, &coords, true);
-      std::array<Point<3>, 4> tmp;
-      for (int i=0; i<4; i++)
-        tmp[i] = toPortagePoint<3>(coords[i]);
-      scoords->push_back(tmp);
-    }
-  }
-
-  // Get the simplest possible decomposition of a 3D cell into tets.
-  // For this mesh type, that means returning a list of sides.
-  void decompose_cell_into_tets(Jali::Entity_ID cellID,
-              std::vector<std::array<Portage::Point<3>, 4>> *tcoords,
-                                const bool planar_hex) const {
-    if (planar_hex
-            && jali_mesh_.cell_get_type(cellID) == Jali::Cell_type::HEX) {
-      // Decompose a hex into a 5-tet decomposition.
-
-      // IMPORTANT: This only works well if the hex is planar. Otherwise we
-      // need to implement some more sophisticated solution.
-      std::vector<JaliGeometry::Point> coords;
-      jali_mesh_.cell_get_coordinates(cellID, &coords);
-      /*
-
-      The hex is returned using the following numbering::
-
-        7---6
-       /|  /|
-      4---5 |
-      | 3-|-2
-      |/  |/
-      0---1
-
-      Then `indexes` contains the 5-tet decomposition of this hex.
-
-      The tet's vertices are ordered in the following way:
-
-         3
-       / | \
-      /  |  \
-      2--|---1
-       \ | /
-         0
-      */
-      const int indexes[5][4] = {
-          {0,1,3,4},
-          {1,4,5,6},
-          {1,3,4,6},
-          {1,6,2,3},
-          {4,7,6,3}
-        };
-      for (unsigned int t=0; t<5; t++) {
-        std::array<Portage::Point<3>, 4> tmp;
-        for (int i=0; i<4; i++) {
-          for (int j=0; j<3; j++) {
-            tmp[i][j] = coords[indexes[t][i]][j];
-          }
-        }
-        tcoords->push_back(tmp);
-      }
-    } else {
-      sides_get_coordinates(cellID, tcoords);
-    }
-  }
-
-
-  //! 3D version of coords of nodes of a dual cell
-  // Input is the node ID 'nodeid', and it returns the vertex coordinates of
-  // the dual cell around this node in `xyzlist`.  The vertices are NOT ordered
-  // in any particular way
-  void dual_cell_get_coordinates(int const nodeid,
-         std::vector<Point<3>> *pplist) const {
-    assert(jali_mesh_.space_dimension() == 3);
-
-    Jali::Entity_ID wedgeid;
-    Jali::Entity_ID_List wedgeids;
-
-    // wedge_get_coordinates - (node, edge center, face centroid, cell centroid)
-    std::vector<JaliGeometry::Point> wcoords;
-
-    jali_mesh_.node_get_wedges(nodeid, Jali::Entity_type::ALL,
-                               &wedgeids);
-
-    std::vector<int> edge_list, face_list, cell_list;
-
-    for (auto wedgeid : wedgeids) {
-      jali_mesh_.wedge_get_coordinates(wedgeid, &wcoords);
-
-      int edgeid = jali_mesh_.wedge_get_edge(wedgeid);
-      if (std::find(edge_list.begin(), edge_list.end(), edgeid) ==
-          edge_list.end()) {
-        // This edge not encountered yet - put it in the edge list and add
-        // the corresponding wedge point to the coordinate list
-
-        edge_list.push_back(edgeid);
-        pplist->emplace_back(wcoords[1][0], wcoords[1][1], wcoords[1][2]);
-      }
-
-      int faceid = jali_mesh_.wedge_get_face(wedgeid);
-      if (std::find(face_list.begin(), face_list.end(), faceid) ==
-          face_list.end()) {
-        // This face not encountered yet - put it in the face list and add
-        // the corresponding wedge point to the coordinate list
-
-        face_list.push_back(faceid);
-        pplist->emplace_back(wcoords[2][0], wcoords[2][1], wcoords[2][2]);
-      }
-
-      int cellid = jali_mesh_.wedge_get_cell(wedgeid);
-      if (std::find(cell_list.begin(), cell_list.end(), cellid) ==
-          cell_list.end()) {
-        // This cell not encountered yet - put it in the cell list and add
-        // the cooresponding wedge point to the coordinate list
-
-        cell_list.push_back(cellid);
-        pplist->emplace_back(wcoords[3][0], wcoords[3][1], wcoords[3][2]);
-      }
-    }
-  }
-
-  // Get the coordinates of the wedges of the dual mesh
-  void dual_wedges_get_coordinates(Jali::Entity_ID nodeID,
-      std::vector<std::array<Point<3>, 4>> *wcoords) const {
-    std::vector<Jali::Entity_ID> wedges;
-    jali_mesh_.node_get_wedges(nodeID, Jali::Entity_type::ALL,
-                               &wedges);
-    for (const auto &wedge : wedges) {
-      std::vector<JaliGeometry::Point> coords;
-      jali_mesh_.wedge_get_coordinates(wedge, &coords, true);
-      std::array<Point<3>, 4> tmp;
-      for (int i=0; i<4; i++)
-        tmp[i] = toPortagePoint<3>(coords[i]);
-      wcoords->push_back(tmp);
-    }
-  }
-
   /// \brief Centroid of a cell
   //
-  // Return the centroid of a cell - THIS ROUTINE IS VIOLATING THE
-  // CONVENTION THAT NODE_GET_COORDINATES AND CELL_GET_COORDINATES
-  // USES FOR THE VARIABLE TYPE OF THE RETURN COORDINATES BECAUSE
-  // BUILDING A GRADIENT OPERATOR WITH DIFFERENT TYPES FOR 2D
-  // COORDINATES AND 3D COORDINATES IS VERY CONVOLUTED
+  // Return the centroid of a cell
 
-  template<long D>
-  void cell_centroid(Jali::Entity_ID cellid,
-                     Point<D> *centroid) const {
- 
-    *centroid = toPortagePoint<D>(jali_mesh_.cell_centroid(cellid));
+  template <long D>
+  void cell_centroid(Jali::Entity_ID cellid, Point<D> *ccentroid) const {
+    *ccentroid = toPortagePoint<D>(jali_mesh_.cell_centroid(cellid));
   }
 
-  /// \brief Centroid of a dual cell
+  /// \brief Centroid of a face
   //
-  // Centroid of a dual cell.
+  // Return the centroid of a cell face
 
-  //! \todo NOTE: THIS IS ASSUMED TO BE THE NODE COORDINATE BECAUSE
-  //! THE NODAL VARIABLES LIVE THERE, BUT FOR DISTORTED GRIDS, THE
-  //! NODE COORDINATED MAY NOT BE THE CENTROID OF THE DUAL CELL
+  template <long D>
+  void face_centroid(Jali::Entity_ID faceid, Point<D> *fcentroid) const {
+    *fcentroid = toPortagePoint<D>(jali_mesh_.face_centroid(faceid));
+  }
 
-  template<long D>
-  void dual_cell_centroid(Jali::Entity_ID nodeid,
-                          Point<D> *centroid) const {
-    JaliGeometry::Point nodepnt;
-    jali_mesh_.node_get_coordinates(nodeid, &nodepnt);
-    *centroid = toPortagePoint<D>(nodepnt);
+  //! Cell area/volume
+  double cell_volume(int cellID) const {
+    return jali_mesh_.cell_volume(cellID);
   }
 
  private:

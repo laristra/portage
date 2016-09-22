@@ -221,6 +221,12 @@ operator>>(std::istream& is, Vector<D>& v) {
   return v.readFromStream(is);
 }
 
+/// Cross product operator for two 2d vectors,  @f$\vec{a} \times \vec{b}@f$.
+
+inline double cross(const Vector<2>& a, const Vector<2>& b) {
+  return (a[0] * b[1] - a[1] * b[0]);
+}
+
 /// Cross product operator for two 3d vectors, @f$\vec{a} \times \vec{b}@f$.
 inline const Vector<3> cross(const Vector<3>& a, const Vector<3>& b) {
   Vector<3> r;

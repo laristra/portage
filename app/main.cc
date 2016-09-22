@@ -368,6 +368,7 @@ int main(int argc, char** argv) {
 
     for (int c = 0; c < ntarcells; ++c) {
       JaliGeometry::Point ccen = targetMesh->cell_centroid(c);
+
       double error;
       if (example.linear) {
         error = ccen[0]+ccen[1] - cellvecout[c];
