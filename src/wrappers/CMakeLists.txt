@@ -17,10 +17,10 @@ if (FLECSI_INSTALL_DIR)
         )
 endif (FLECSI_INSTALL_DIR)
 
-set(wrapper_HEADERS
+set(wrappers_HEADERS
     ${jali_wrapper_headers}
     ${flecsi_wrapper_headers}
-    AuxMeshTopology.h
+    mesh/AuxMeshTopology.h
     PARENT_SCOPE)
 
 if (ENABLE_UNIT_TESTS)
