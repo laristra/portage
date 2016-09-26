@@ -219,9 +219,6 @@ class MeshWrapperDual {  // cellid is the dual cell (i.e. node) id
     wedges_get_coordinates(dualcellid, tcoords);
   }
 
-  // Virtual and local addresses are equivalent in non-distributed case
-  int virtual_to_local(int virtualId) const { return virtualId; }
-
  private:
   const Mesh_Wrapper_Type &w_;
 };

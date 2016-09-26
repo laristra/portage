@@ -254,7 +254,6 @@ int main(int argc, char** argv) {
         mf_local.included_entities({Jali::Entity_kind::FACE,
                                     Jali::Entity_kind::EDGE,
                                     Jali::Entity_kind::WEDGE});
-
 #ifdef MANUAL_SOURCE_DECOMPOSITION
         // compute the local partition of the source mesh based on the rank;
         // n_source is the number of cells in each dimension in each partition;
@@ -387,7 +386,7 @@ int main(int argc, char** argv) {
           std::printf("Cell=% 4d Centroid = (% 5.3lf,% 5.3lf)", c,
                       ccen[0], ccen[1]);
         } else {
-          std::printf("Cell=% 4d Centroid = (% 5.3lf,% 5.3lf,% 5.3lf)", c,
+          std::printf("%d Cell=% 4d Centroid = (% 5.3lf,% 5.3lf,% 5.3lf)", rank, c,
                       ccen[0], ccen[1], ccen[2]);
         }
         std::printf("  Value = % 10.6lf  Err = % lf\n",

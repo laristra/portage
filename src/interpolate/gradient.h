@@ -237,20 +237,17 @@ Limited_Gradient<MeshType, StateType, CELL, D>::operator() (int const cellid) {
   
   mesh_.cell_centroid(cellid, &(cellcenters[0]));
 
-  int lindex = mesh_.virtual_to_local(cellid);
-  cellvalues[0] = vals_[lindex];
+  cellvalues[0] = vals_[cellid];
 
   int i = 1;
   for (auto nbrcell : nbrids) {
     mesh_.cell_centroid(nbrcell, &(cellcenters[i]));
 
-    int lindex = mesh_.virtual_to_local(nbrcell);
-    cellvalues[i] = vals_[lindex];
+    cellvalues[i] = vals_[nbrcell];
     i++;
   }
 
   grad = ls_gradient(cellcenters, cellvalues);
-
 
   // Limit the gradient to enforce monotonicity preservation
   

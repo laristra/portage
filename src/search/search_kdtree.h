@@ -47,7 +47,7 @@ class SearchKDTree {
         const int numCells = sourceMesh_.num_owned_cells();
         std::vector<gk::IsotheticBBox<D>> bboxes;
         bboxes.reserve(numCells);
-        
+
         // find bounding boxes for all cells
         for (int c = 0; c < numCells; ++c) {
             std::vector<Point<D>> cell_coord;
