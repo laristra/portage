@@ -120,12 +120,10 @@ void build_sides_3D(AuxMeshTopology<BasicMesh>& mesh);
 //! void node_get_cell_adj_nodes(int const nodeid, Portage::Entity_type etype,
 //!                              std::vector<int> *adjnodes) const;
 //!
-//! template<long D>
-//! void node_get_coordinates(int const nodeid, Portage::Point<D> *pp) const;
+//! int get_global_id(int const id, Entity_kind const kind) const;
 //!
 //! template<long D>
-//! void cell_get_coordinates(int const cellid,
-//!                           std::vector<Portage::Point<D>> *pplist) const;
+//! void node_get_coordinates(int const nodeid, Portage::Point<D> *pp) const;
 //!
 //! ******************************** NOTE ***********************************
 //! THIS IS AN INCOMPLETE CLASS DESIGNED TO BE USED IN A 'CRTP' (CURIOUSLY
