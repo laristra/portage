@@ -13,6 +13,37 @@
 
 namespace Portage {
 
+// Some helper functions
+//! Compute volume of 1D side
+double calc_side_volume(std::array<Point<1>, 2> const& sxyz) {
+  return (sxyz[1][0]-sxyz[0][0]);
+}
+
+//! Compute volume of 2D side
+double calc_side_volume(std::array<Point<2>, 3> const& sxyz) {
+  Vector<2> vec1 = sxyz[1]-sxyz[0];
+  Vector<2> vec2 = sxyz[2]-sxyz[0];
+  return 0.5*cross(vec1, vec2);
+}
+
+//! Compute volume of 3D side
+double calc_side_volume(std::array<Point<3>, 4> const& sxyz) {
+  Vector<3> vec1 = sxyz[1]-sxyz[0];
+  Vector<3> vec2 = sxyz[2]-sxyz[0];
+  Vector<3> vec3 = sxyz[3]-sxyz[0];
+  Vector<3> cpvec = cross(vec1, vec2);
+  return dot(cpvec, vec3)/6.0;
+}
+
+template<typename BasicMesh> class AuxMeshTopology;
+template<typename BasicMesh>
+void build_sides_1D(AuxMeshTopology<BasicMesh>& mesh);
+template<typename BasicMesh>
+void build_sides_2D(AuxMeshTopology<BasicMesh>& mesh);
+template<typename BasicMesh>
+void build_sides_3D(AuxMeshTopology<BasicMesh>& mesh);
+
+
 //! \class AuxMeshTopology.h
 //! \brief A class to build enhanced mesh topology (mainly subcell
 //! entities - sides, wedges and corners)
@@ -95,14 +126,6 @@ namespace Portage {
 //! template<long D>
 //! void cell_get_coordinates(int const cellid,
 //!                           std::vector<Portage::Point<D>> *pplist) const;
-//!
-//! template<int D>
-//! Portage::Point<D> face_centroid(int const faceid) const;
-//!
-//! template<int D>
-//! Portage::Point<D> cell_centroid(int const cellid) const;
-//!
-//! double cell_volume(int const cellid) const;
 //!
 //! ******************************** NOTE ***********************************
 //! THIS IS AN INCOMPLETE CLASS DESIGNED TO BE USED IN A 'CRTP' (CURIOUSLY
@@ -273,6 +296,36 @@ class AuxMeshTopology {
     return (make_counting_iterator(start_index) + num_entities(entity, etype));
   }
 
+  //! Coordinates of nodes of cell
+
+  template <long D>
+  void cell_get_coordinates(int const cellid,
+                            std::vector<Point<D>> *pplist) const;
+
+  //! Centroid of a cell
+
+  template <long D>
+  void cell_centroid(int const cellid, Point<D> *ccen) const {
+    for (int d = 0; d < D; ++d)
+      (*ccen)[d] = cell_centroids_[cellid][d];    
+  }
+
+
+  //! Volume of a cell
+  
+  double cell_volume(int const cellid) const {
+    assert(sides_requested_);
+    return cell_volumes_[cellid];
+  }
+
+  
+  //! Centroid of a face
+
+  template <long D>
+  void face_centroid(int const faceid, Point<D> *fcen) const {
+    for (int d = 0; d < D; ++d)
+      (*fcen)[d] = face_centroids_[faceid][d];
+  }
 
 
   //! Node of a side
@@ -285,6 +338,7 @@ class AuxMeshTopology {
   //! centroid form a positive volume tet.
 
   int side_get_node(int const sideid, int const inode) const {
+    assert(sides_requested_);
     assert(inode == 0 || inode == 1);
     return side_node_ids_[sideid][inode];
   }
@@ -293,6 +347,7 @@ class AuxMeshTopology {
   //! Cell of side
 
   int side_get_cell(int const sideid) const {
+    assert(sides_requested_);
     return side_cell_id_[sideid];
   }
 
@@ -300,6 +355,7 @@ class AuxMeshTopology {
   //! Face of side
 
   int side_get_face(int const sideid) const {
+    assert(sides_requested_);
     return side_face_id_[sideid];
   }
 
@@ -325,6 +381,7 @@ class AuxMeshTopology {
   //! returns -1
 
   int side_get_opposite_side(int const sideid) const {
+    assert(sides_requested_);
     return side_opp_side_id_[sideid];
   }
 
@@ -332,6 +389,7 @@ class AuxMeshTopology {
   //! Get all the sides of a cell
 
   void cell_get_sides(int const cellid, std::vector<int> *csides) const {
+    assert(sides_requested_);
     csides->resize(cell_side_ids_[cellid].size());
     std::copy(cell_side_ids_[cellid].begin(), cell_side_ids_[cellid].end(),
               csides->begin());
@@ -384,12 +442,14 @@ class AuxMeshTopology {
   //! Volume of a side
 
   double side_volume(int const sideid) const {
-    return side_volume_[sideid];
+    assert(sides_requested_);
+    return side_volumes_[sideid];
   }
 
   //! Side of wedge
 
   int wedge_get_side(int const wedgeid) const {
+    assert(wedges_requested_);
     return static_cast<int>(wedgeid/2);
   }
 
@@ -397,6 +457,7 @@ class AuxMeshTopology {
   //! Cell of wedge
 
   int wedge_get_cell(int const wedgeid) const {
+    assert(wedges_requested_);
     int sideid = static_cast<int>(wedgeid/2);
     return side_cell_id_[sideid];
   }
@@ -405,6 +466,7 @@ class AuxMeshTopology {
   //! Face of wedge
 
   int wedge_get_face(int const wedgeid) const {
+    assert(wedges_requested_);
     int sideid = static_cast<int>(wedgeid/2);
     return side_face_id_[sideid];
   }
@@ -421,6 +483,7 @@ class AuxMeshTopology {
   //! node of a wedge
 
   int wedge_get_node(int const wedgeid) const {
+    assert(wedges_requested_);
     int sideid = static_cast<int>(wedgeid/2);
     return wedgeid%2 ? side_node_ids_[sideid][1] : side_node_ids_[sideid][0];
   }
@@ -434,6 +497,7 @@ class AuxMeshTopology {
   //! routine returns -1
 
   int wedge_get_opposite_wedge(const int wedgeid) const {
+    assert(wedges_requested_);
     int sideid = static_cast<int>(wedgeid/2);
     int oppsideid = side_opp_side_id_[sideid];
     if (oppsideid >= 0)
@@ -463,7 +527,7 @@ class AuxMeshTopology {
 
   double wedge_volume(int const wedgeid) const {
     int sideid = static_cast<int>(wedgeid/2);
-    return 0.5*side_volume_[sideid];
+    return 0.5*side_volumes_[sideid];
   }
 
 
@@ -605,6 +669,7 @@ class AuxMeshTopology {
   //! Get a cell's corner at a particular node of the cell
 
   int cell_get_corner_at_node(int const cellid, int const nodeid) const {
+    assert(corners_requested_);
     for (auto const& cn : cell_corner_ids_[cellid])
       if (corner_get_node(cn) == nodeid)
         return cn;
@@ -613,6 +678,7 @@ class AuxMeshTopology {
   //! Volume of a corner
 
   double corner_volume(int const cornerid) const {
+    assert(corners_requested_);
     double cnvol = 0.0;
     for (auto const& w : corner_wedge_ids_[cornerid])
       cnvol += wedge_volume(w);
@@ -689,6 +755,7 @@ class AuxMeshTopology {
   void dual_cell_get_coordinates(int const nodeid,
                     std::vector<Point<2>> *pplist) const {
     assert(basicmesh_ptr_->space_dimension() == 2);
+    assert(wedges_requested_);
 
     int cornerid, wedgeid, wedgeid0;
     std::vector<int> cornerids, wedgeids;
@@ -757,6 +824,7 @@ class AuxMeshTopology {
   //! Order wedges around a node in ccw manner
 
   void order_wedges_ccw(std::vector<int> *wedgeids) const {
+    assert(wedges_requested_);
     assert(wedgeids->size() == 2);
     std::array<Point<2>, 3> wcoords;
     wedge_get_coordinates((*wedgeids)[0], &wcoords);
@@ -787,6 +855,8 @@ class AuxMeshTopology {
   void wedges_get_coordinates(int cellID,
       std::vector<std::array<Point<3>, 4>> *wcoords) const {
     assert(basicmesh_ptr_->space_dimension() == 3);
+    assert(wedges_requested_);
+
     std::vector<int> wedges;
     cell_get_wedges(cellID, &wedges);
     int nwedges = wedges.size();
@@ -801,6 +871,7 @@ class AuxMeshTopology {
   void sides_get_coordinates(int cellID,
       std::vector<std::array<Point<3>, 4>> *scoords) const {
     assert(basicmesh_ptr_->space_dimension() == 3);
+    assert(sides_requested_);
 
     std::vector<int> sides;
     cell_get_sides(cellID, &sides);
@@ -827,6 +898,7 @@ class AuxMeshTopology {
   void dual_cell_get_coordinates(int const nodeid,
          std::vector<Point<3>> *pplist) const {
     assert(basicmesh_ptr_->space_dimension() == 3);
+    assert(wedges_requested_);
 
     int wedgeid;
     std::vector<int> wedgeids;
@@ -882,6 +954,7 @@ class AuxMeshTopology {
 
   void dual_wedges_get_coordinates(int nodeID,
       std::vector<std::array<Point<3>, 4>> *wcoords) const {
+    assert(wedges_requested_);
     std::vector<int> wedges;
     node_get_wedges(nodeID, ALL, &wedges);
     int nwedges = wedges.size();
@@ -899,13 +972,14 @@ class AuxMeshTopology {
   //! THE NODAL VARIABLES LIVE THERE, BUT FOR DISTORTED GRIDS, THE
   //! NODE COORDINATE MAY NOT BE THE CENTROID OF THE DUAL CELL
 
-  template<long D>
+  template <long D>
   void dual_cell_centroid(int nodeid, Point<D> *centroid) const {
     basicmesh_ptr_->node_get_coordinates(nodeid, centroid);
   }
 
   //! Get the volume of dual cell by finding the corners that attach to the node
   double dual_cell_volume(int const nodeid) const {
+    assert(corners_requested_);
     std::vector<int> cornerids;
     node_get_corners(nodeid, ALL, &cornerids);
     double vol = 0.0;
@@ -917,28 +991,48 @@ class AuxMeshTopology {
 
  protected:
   void build_aux_entities() {
-    if (sides_requested_) build_sides();
+    compute_cell_centroids();
+    compute_face_centroids();
+
+    if (sides_requested_) {
+      if (basicmesh_ptr_->space_dimension() == 1)
+        build_sides_1D(*this);  // needs cell, face centroids
+      else if (basicmesh_ptr_->space_dimension() == 2)
+        build_sides_2D(*this);  // needs cell, face centroids
+      else if (basicmesh_ptr_->space_dimension() == 3)
+        build_sides_3D(*this);  // needs cell, face centroids
+    }
     if (wedges_requested_) build_wedges();
     if (corners_requested_) build_corners();
+
+    if (sides_requested_)
+      compute_cell_volumes();  // needs side volumes
   }
 
  private:
-  void build_sides_1D();
-  void build_sides_2D();
-  void build_sides_3D();
-  double calc_side_volume_1D(int const s) const;
-  double calc_side_volume_2D(int const s) const;
-  double calc_side_volume_3D(int const s) const;
+  void compute_cell_centroids();
+  void compute_face_centroids();
+  void compute_cell_volumes();
 
-  void build_sides() {  // called only during construction
-    switch (basicmesh_ptr_->space_dimension()) {
-      case 1: build_sides_1D(); break;
-      case 2: build_sides_2D(); break;
-      case 3: build_sides_3D(); break;
-      default: {}}
-  }
   void build_wedges();
   void build_corners();
+
+  // External helper functions to build dimension-dependent side info
+  // - forward declared at the top of the file so that only an
+  // instantiation with the 'BasicMesh' template parameter of this
+  // class not just any other 'BasicMesh'
+
+  // WHEN WE TEMPLATE THIS CLASS ON DIMENSION, ALL OF THESE FUNCTIONS
+  // WILL BE NAMED 'build_sides' BUT WILL BE DISTINGUISHED BY THE
+  // DIFFERENT INTEGERS (1, 2 or 3) USED AS THE SECOND ARGUMENT FOR
+  // AuxMeshTopology ARGUMENT
+
+  friend
+  void build_sides_1D<BasicMesh>(AuxMeshTopology<BasicMesh>& mesh);
+  friend
+  void build_sides_2D<BasicMesh>(AuxMeshTopology<BasicMesh>& mesh);
+  friend
+  void build_sides_3D<BasicMesh>(AuxMeshTopology<BasicMesh>& mesh);
 
   BasicMesh *basicmesh_ptr_;
   bool sides_requested_ = true;
@@ -953,12 +1047,23 @@ class AuxMeshTopology {
   int num_wedges_owned_ = 0, num_wedges_ghost_ = 0;
   int num_corners_owned_ = 0, num_corners_ghost_ = 0;
 
+  // Cells
+  std::vector<double> cell_volumes_;
+
+  // If this class were templated on dimension D, we could make these
+  // declarations std::vector<Portage::Point<D>>
+
+  std::vector<std::vector<double>> cell_centroids_;
+
+  // Faces
+  std::vector<std::vector<double>> face_centroids_;
+
   // Sides
   std::vector<int> side_cell_id_;
   std::vector<int> side_face_id_;
   std::vector<std::array<int, 2>> side_node_ids_;
   std::vector<int> side_opp_side_id_;
-  std::vector<double> side_volume_;
+  std::vector<double> side_volumes_;
 
   // Wedges - most wedge info is derived from sides
   std::vector<int> wedge_corner_id_;  // need only in 2D if we want to build
@@ -998,11 +1103,11 @@ void AuxMeshTopology<BasicMesh>::side_get_coordinates(int const s,
   // cell centroid and then the node coordinate
 
   if (posvol_order && s%2) {
-    basicmesh_ptr_->cell_centroid(c, &((*scoords)[0]));
+    cell_centroid(c, &((*scoords)[0]));
     (*scoords)[1] = nxyz;
   } else {
     (*scoords)[0] = nxyz;
-    basicmesh_ptr_->cell_centroid(c, &((*scoords)[1]));
+    cell_centroid(c, &((*scoords)[1]));
   }
 }
 
@@ -1022,7 +1127,7 @@ void AuxMeshTopology<BasicMesh>::side_get_coordinates(int const s,
 
   basicmesh_ptr_->node_get_coordinates(n[0], &((*scoords)[0]));
   basicmesh_ptr_->node_get_coordinates(n[1], &((*scoords)[1]));
-  basicmesh_ptr_->cell_centroid(c, &((*scoords)[2]));
+  cell_centroid(c, &((*scoords)[2]));
 }
 
 //! side coordinates in 3D
@@ -1042,8 +1147,8 @@ void AuxMeshTopology<BasicMesh>::side_get_coordinates(int const s,
 
   basicmesh_ptr_->node_get_coordinates(n[0], &((*scoords)[0]));
   basicmesh_ptr_->node_get_coordinates(n[1], &((*scoords)[1]));
-  basicmesh_ptr_->face_centroid(f, &((*scoords)[2]));
-  basicmesh_ptr_->cell_centroid(c, &((*scoords)[3]));
+  face_centroid(f, &((*scoords)[2]));
+  cell_centroid(c, &((*scoords)[3]));
 }
 
 
@@ -1060,11 +1165,11 @@ void AuxMeshTopology<BasicMesh>::wedge_get_coordinates(int const w,
   Point<1> nxyz;
   basicmesh_ptr_->node_get_coordinates(n, &nxyz);
   if (posvol_order && iw) {
-    basicmesh_ptr_->cell_centroid(c, &((*wcoords)[0]));
+    cell_centroid(c, &((*wcoords)[0]));
     (*wcoords)[1] = nxyz;
   } else {
     (*wcoords)[0] = nxyz;
-    basicmesh_ptr_->cell_centroid(c, &((*wcoords)[1]));
+    cell_centroid(c, &((*wcoords)[1]));
   }
 }
 
@@ -1086,12 +1191,12 @@ void AuxMeshTopology<BasicMesh>::wedge_get_coordinates(int const w,
   Point<2> exyz = (nxyz[0] + nxyz[1])/2;  // mid-point of edge
   if (posvol_order && iw) {  // wedge 1 of side
     (*wcoords)[0] = nxyz[iw];
-    basicmesh_ptr_->cell_centroid(c, &((*wcoords)[1]));
+    cell_centroid(c, &((*wcoords)[1]));
     (*wcoords)[2] = exyz;
   } else {
     (*wcoords)[0] = nxyz[iw];
     (*wcoords)[1] = exyz;
-    basicmesh_ptr_->cell_centroid(c, &((*wcoords)[2]));
+    cell_centroid(c, &((*wcoords)[2]));
   }
 }
 
@@ -1114,52 +1219,15 @@ void AuxMeshTopology<BasicMesh>::wedge_get_coordinates(int const w,
   Point<3> exyz = (nxyz[0] + nxyz[1])/2.0;  // mid-point of edge
   if (posvol_order && iw) {
     (*wcoords)[0] = nxyz[iw];
-    basicmesh_ptr_->face_centroid(f, &((*wcoords)[1]));
+    face_centroid(f, &((*wcoords)[1]));
     (*wcoords)[2] = exyz;
-    basicmesh_ptr_->cell_centroid(c, &((*wcoords)[3]));
+    cell_centroid(c, &((*wcoords)[3]));
   } else {
     (*wcoords)[0] = nxyz[iw];
     (*wcoords)[1] = exyz;
-    basicmesh_ptr_->face_centroid(f, &((*wcoords)[2]));
-    basicmesh_ptr_->cell_centroid(c, &((*wcoords)[3]));
+    face_centroid(f, &((*wcoords)[2]));
+    cell_centroid(c, &((*wcoords)[3]));
   }
-}
-
-//! Compute volume of 1D side
-
-template<typename BasicMesh>
-double AuxMeshTopology<BasicMesh>::calc_side_volume_1D(int const s) const {
-  std::array<Point<1>, 2> sxyz;
-  bool posvol_order = true;
-  side_get_coordinates(s, &sxyz, posvol_order);
-  return (sxyz[1][0]-sxyz[0][0]);
-}
-
-
-//! Compute volume of 2D side
-
-template<typename BasicMesh>
-double AuxMeshTopology<BasicMesh>::calc_side_volume_2D(int const s) const {
-  std::array<Point<2>, 3> sxyz;
-  bool posvol_order = true;
-  side_get_coordinates(s, &sxyz, posvol_order);
-  Vector<2> vec1 = sxyz[1]-sxyz[0];
-  Vector<2> vec2 = sxyz[2]-sxyz[0];
-  return 0.5*cross(vec1, vec2);
-}
-
-//! Compute volume of 3D side
-
-template<typename BasicMesh>
-double AuxMeshTopology<BasicMesh>::calc_side_volume_3D(int const s) const {
-  std::array<Point<3>, 4> sxyz;
-  bool posvol_order = true;
-  side_get_coordinates(s, &sxyz, posvol_order);
-  Vector<3> vec1 = sxyz[1]-sxyz[0];
-  Vector<3> vec2 = sxyz[2]-sxyz[0];
-  Vector<3> vec3 = sxyz[3]-sxyz[0];
-  Vector<3> cpvec = cross(vec1, vec2);
-  return dot(cpvec, vec3)/6.0;
 }
 
 
@@ -1167,74 +1235,79 @@ double AuxMeshTopology<BasicMesh>::calc_side_volume_3D(int const s) const {
 // 1D remapping)
 
 template<typename BasicMesh>
-void AuxMeshTopology<BasicMesh>::build_sides_1D() {
-  assert(basicmesh_ptr_->space_dimension() == 1);
-  int ncells_owned = basicmesh_ptr_->num_owned_cells();
-  int ncells_ghost = basicmesh_ptr_->num_ghost_cells();
+void build_sides_1D(AuxMeshTopology<BasicMesh>& mesh) {
+  int ncells_owned = mesh.basicmesh_ptr_->num_owned_cells();
+  int ncells_ghost = mesh.basicmesh_ptr_->num_ghost_cells();
   int ncells = ncells_owned + ncells_ghost;
-
-  cell_side_ids_.resize(ncells);
-
-  int nnodes_owned = basicmesh_ptr_->num_owned_nodes();
-  int nnodes_ghost = basicmesh_ptr_->num_ghost_nodes();
+  
+  mesh.cell_side_ids_.resize(ncells);
+  
+  int nnodes_owned = mesh.basicmesh_ptr_->num_owned_nodes();
+  int nnodes_ghost = mesh.basicmesh_ptr_->num_ghost_nodes();
   int nnodes = nnodes_owned + nnodes_ghost;
-
+  
   int num_sides_all = 2*ncells;
-  num_sides_owned_ = 2*ncells_owned;
-  num_sides_ghost_ = 2*ncells_ghost;
-
+  mesh.num_sides_owned_ = 2*ncells_owned;
+  mesh.num_sides_ghost_ = 2*ncells_ghost;
+  
   for (int c = 0; c < ncells; ++c)
-    cell_side_ids_[c].reserve(2);
+    mesh.cell_side_ids_[c].reserve(2);
 
-  sideids_owned_.resize(num_sides_owned_);
-  sideids_ghost_.resize(num_sides_ghost_);
-  sideids_all_.resize(num_sides_all);
-  side_cell_id_.resize(num_sides_all, -1);
-  side_face_id_.resize(num_sides_all, -1);
-  side_opp_side_id_.resize(num_sides_all, -1);
-  side_node_ids_.resize(num_sides_all, {{-1, -1}});
-  side_volume_.resize(num_sides_all);
+  mesh.sideids_owned_.resize(mesh.num_sides_owned_);
+  mesh.sideids_ghost_.resize(mesh.num_sides_ghost_);
+  mesh.sideids_all_.resize(num_sides_all);
+  mesh.side_cell_id_.resize(num_sides_all, -1);
+  mesh.side_face_id_.resize(num_sides_all, -1);
+  mesh.side_opp_side_id_.resize(num_sides_all, -1);
+  mesh.side_node_ids_.resize(num_sides_all, {{-1, -1}});
+  mesh.side_volumes_.resize(num_sides_all);
 
   int iall = 0, iown = 0, ighost = 0;
+  std::array<Point<1>, 2> sxyz;
+  bool posvol_order = true;
+  
   for (int c = 0; c < ncells; ++c) {
     int sideid = 2*c;    // always 2 sides per cell
-
+    
     std::vector<int> nodeids;
-    basicmesh_ptr_->cell_get_nodes(c, &nodeids);
-
-    cell_side_ids_[c].push_back(sideid);
-    cell_side_ids_[c].push_back(sideid+1);
-    sideids_all_[iall++] = sideid;
-    sideids_all_[iall++] = sideid+1;
-    if (basicmesh_ptr_->cell_get_type(c) == PARALLEL_OWNED) {
-      sideids_owned_[iown++] = sideid;
-      sideids_owned_[iown++] = sideid+1;
-    } else if (basicmesh_ptr_->cell_get_type(c) == PARALLEL_GHOST) {
-      sideids_ghost_[ighost++] = sideid;
-      sideids_ghost_[ighost++] = sideid+1;
+    mesh.basicmesh_ptr_->cell_get_nodes(c, &nodeids);
+    
+    mesh.cell_side_ids_[c].push_back(sideid);
+    mesh.cell_side_ids_[c].push_back(sideid+1);
+    mesh.sideids_all_[iall++] = sideid;
+    mesh.sideids_all_[iall++] = sideid+1;
+    if (mesh.basicmesh_ptr_->cell_get_type(c) == PARALLEL_OWNED) {
+      mesh.sideids_owned_[iown++] = sideid;
+      mesh.sideids_owned_[iown++] = sideid+1;
+    } else if (mesh.basicmesh_ptr_->cell_get_type(c) == PARALLEL_GHOST) {
+      mesh.sideids_ghost_[ighost++] = sideid;
+      mesh.sideids_ghost_[ighost++] = sideid+1;
     }
-
+    
     // Sides in 1D are degenerate - instead of two nodes of an edge
     // the sides point to the same node
-    side_node_ids_[sideid][0] =  nodeids[0];
-    side_node_ids_[sideid][1] =  nodeids[0];
-    side_node_ids_[sideid+1][0] = nodeids[1];
-    side_node_ids_[sideid+1][1] = nodeids[1];
-
-    side_cell_id_[sideid  ] = c;
-    side_cell_id_[sideid+1] = c;
-
+    mesh.side_node_ids_[sideid][0] =  nodeids[0];
+    mesh.side_node_ids_[sideid][1] =  nodeids[0];
+    mesh.side_node_ids_[sideid+1][0] = nodeids[1];
+    mesh.side_node_ids_[sideid+1][1] = nodeids[1];
+    
+    mesh.side_cell_id_[sideid  ] = c;
+    mesh.side_cell_id_[sideid+1] = c;
+    
     // face ids are same as node ids in 1D
-    side_face_id_[sideid  ] = nodeids[0];
-    side_face_id_[sideid+1] = nodeids[1];
-
+    mesh.side_face_id_[sideid  ] = nodeids[0];
+    mesh.side_face_id_[sideid+1] = nodeids[1];
+    
     // across face boundaries
-    side_opp_side_id_[sideid  ] = (sideid == 0) ? -1 : sideid-1;
-    side_opp_side_id_[sideid+1] = (sideid+1 == num_sides_all-1) ?
+    mesh.side_opp_side_id_[sideid  ] = (sideid == 0) ? -1 : sideid-1;
+    mesh.side_opp_side_id_[sideid+1] = (sideid+1 == num_sides_all-1) ?
         -1 : sideid+2;
-
-    side_volume_[sideid] = calc_side_volume_1D(sideid);
-    side_volume_[sideid+1] = calc_side_volume_1D(sideid+1);
+    
+    mesh.side_get_coordinates(sideid, &sxyz, posvol_order);
+    mesh.side_volumes_[sideid] = calc_side_volume(sxyz);
+    
+    mesh.side_get_coordinates(sideid+1, &sxyz, posvol_order);
+    mesh.side_volumes_[sideid+1] = calc_side_volume(sxyz);
   }  // for c = 0, ncells-1
 }  // build_sides in 1D
 
@@ -1242,98 +1315,101 @@ void AuxMeshTopology<BasicMesh>::build_sides_1D() {
 // Build sides for 2D meshes
 
 template<typename BasicMesh>
-void AuxMeshTopology<BasicMesh>::build_sides_2D() {
-  assert(basicmesh_ptr_->space_dimension() == 2);
-  int ncells_owned = basicmesh_ptr_->num_owned_cells();
-  int ncells_ghost = basicmesh_ptr_->num_ghost_cells();
+void build_sides_2D(AuxMeshTopology<BasicMesh>& mesh) {
+  int ncells_owned = mesh.basicmesh_ptr_->num_owned_cells();
+  int ncells_ghost = mesh.basicmesh_ptr_->num_ghost_cells();
   int ncells = ncells_owned + ncells_ghost;
 
-  cell_side_ids_.resize(ncells);
+  mesh.cell_side_ids_.resize(ncells);
 
-  int nnodes_owned = basicmesh_ptr_->num_owned_nodes();
-  int nnodes_ghost = basicmesh_ptr_->num_ghost_nodes();
+  int nnodes_owned = mesh.basicmesh_ptr_->num_owned_nodes();
+  int nnodes_ghost = mesh.basicmesh_ptr_->num_ghost_nodes();
   int nnodes = nnodes_owned + nnodes_ghost;
 
   int num_sides_all = 0;
-  num_sides_owned_ = 0;
-  num_sides_ghost_ = 0;
+  mesh.num_sides_owned_ = 0;
+  mesh.num_sides_ghost_ = 0;
 
   for (int c = 0; c < ncells; ++c) {
     std::vector<int> cfaces, cfdirs;
-    basicmesh_ptr_->cell_get_faces_and_dirs(c, &cfaces, &cfdirs);
+    mesh.basicmesh_ptr_->cell_get_faces_and_dirs(c, &cfaces, &cfdirs);
 
     int numsides_in_cell = cfaces.size();
     num_sides_all += numsides_in_cell;
-    if (basicmesh_ptr_->cell_get_type(c) == PARALLEL_OWNED)
-      num_sides_owned_ += numsides_in_cell;
-    else if (basicmesh_ptr_->cell_get_type(c) == PARALLEL_GHOST)
-      num_sides_ghost_ += numsides_in_cell;
+    if (mesh.basicmesh_ptr_->cell_get_type(c) == PARALLEL_OWNED)
+      mesh.num_sides_owned_ += numsides_in_cell;
+    else if (mesh.basicmesh_ptr_->cell_get_type(c) == PARALLEL_GHOST)
+      mesh.num_sides_ghost_ += numsides_in_cell;
 
-    cell_side_ids_[c].reserve(numsides_in_cell);
+    mesh.cell_side_ids_[c].reserve(numsides_in_cell);
   }
 
-  sideids_owned_.resize(num_sides_owned_);
-  sideids_ghost_.resize(num_sides_ghost_);
-  sideids_all_.resize(num_sides_all);
-  side_cell_id_.resize(num_sides_all, -1);
-  side_face_id_.resize(num_sides_all, -1);
-  side_opp_side_id_.resize(num_sides_all, -1);
-  side_node_ids_.resize(num_sides_all, {{-1, -1}});
-  side_volume_.resize(num_sides_all);
+  mesh.sideids_owned_.resize(mesh.num_sides_owned_);
+  mesh.sideids_ghost_.resize(mesh.num_sides_ghost_);
+  mesh.sideids_all_.resize(num_sides_all);
+  mesh.side_cell_id_.resize(num_sides_all, -1);
+  mesh.side_face_id_.resize(num_sides_all, -1);
+  mesh.side_opp_side_id_.resize(num_sides_all, -1);
+  mesh.side_node_ids_.resize(num_sides_all, {{-1, -1}});
+  mesh.side_volumes_.resize(num_sides_all);
 
   std::vector<std::vector<int>> sides_of_node(nnodes);  // Temp. var.
 
   int sideid = 0;
   int iall = 0, iown = 0, ighost = 0;
+  std::array<Point<2>, 3> sxyz;
+  bool posvol_order = true;
+
   for (int c = 0; c < ncells; ++c) {
     std::vector<int> cfaces, cfdirs;
-    basicmesh_ptr_->cell_get_faces_and_dirs(c, &cfaces, &cfdirs);
+    mesh.basicmesh_ptr_->cell_get_faces_and_dirs(c, &cfaces, &cfdirs);
 
     int ncfaces = cfaces.size();
     for (int i = 0; i < ncfaces; ++i) {
       int f = cfaces[i];
       int fdir = cfdirs[i];
       std::vector<int> fnodes;
-      basicmesh_ptr_->face_get_nodes(f, &fnodes);  // face=edge in 2D
+      mesh.basicmesh_ptr_->face_get_nodes(f, &fnodes);  // face=edge in 2D
       int n0 = (fdir == 1) ? fnodes[0] : fnodes[1];
       int n1 = (fdir == 1) ? fnodes[1] : fnodes[0];
-      side_node_ids_[sideid][0] = n0;
-      side_node_ids_[sideid][1] = n1;
+      mesh.side_node_ids_[sideid][0] = n0;
+      mesh.side_node_ids_[sideid][1] = n1;
 
-      side_cell_id_[sideid] = c;
-      cell_side_ids_[c].push_back(sideid);
+      mesh.side_cell_id_[sideid] = c;
+      mesh.cell_side_ids_[c].push_back(sideid);
 
-      side_face_id_[sideid] = f;
+      mesh.side_face_id_[sideid] = f;
 
-      sideids_all_[iall++] = sideid;
-      if (basicmesh_ptr_->cell_get_type(c) == PARALLEL_OWNED)
-        sideids_owned_[iown++] = sideid;
-      else if (basicmesh_ptr_->cell_get_type(c) == PARALLEL_GHOST)
-        sideids_ghost_[ighost++] = sideid;
+      mesh.sideids_all_[iall++] = sideid;
+      if (mesh.basicmesh_ptr_->cell_get_type(c) == PARALLEL_OWNED)
+        mesh.sideids_owned_[iown++] = sideid;
+      else if (mesh.basicmesh_ptr_->cell_get_type(c) == PARALLEL_GHOST)
+        mesh.sideids_ghost_[ighost++] = sideid;
 
       // See if any of the other sides attached to the node
       // shares the same edge (pair of nodes) but is in the
       // adjacent cell. This is called the opposite side
 
       for (auto const& s2 : sides_of_node[n0]) {
-        if (side_node_ids_[s2][0] == n1 && side_node_ids_[s2][1] == n0) {
-          side_opp_side_id_[sideid] = s2;
-          side_opp_side_id_[s2] = sideid;
+        if (mesh.side_node_ids_[s2][0] == n1 && mesh.side_node_ids_[s2][1] == n0) {
+          mesh.side_opp_side_id_[sideid] = s2;
+          mesh.side_opp_side_id_[s2] = sideid;
           break;
         }
       }
       sides_of_node[n0].push_back(sideid);
 
       for (auto const& s2 : sides_of_node[n1]) {
-        if (side_node_ids_[s2][0] == n1 && side_node_ids_[s2][1] == n0) {
-          side_opp_side_id_[sideid] = s2;
-          side_opp_side_id_[s2] = sideid;
+        if (mesh.side_node_ids_[s2][0] == n1 && mesh.side_node_ids_[s2][1] == n0) {
+          mesh.side_opp_side_id_[sideid] = s2;
+          mesh.side_opp_side_id_[s2] = sideid;
           break;
         }
       }
       sides_of_node[n1].push_back(sideid);
 
-      side_volume_[sideid] = calc_side_volume_2D(sideid);
+      mesh.side_get_coordinates(sideid, &sxyz, posvol_order);
+      mesh.side_volumes_[sideid] = calc_side_volume(sxyz);
 
       sideid++;
     }
@@ -1344,62 +1420,64 @@ void AuxMeshTopology<BasicMesh>::build_sides_2D() {
 // build sides for 3D meshes
 
 template<typename BasicMesh>
-void AuxMeshTopology<BasicMesh>::build_sides_3D()  {
-  assert(basicmesh_ptr_->space_dimension() == 3);
-  int ncells_owned = basicmesh_ptr_->num_owned_cells();
-  int ncells_ghost = basicmesh_ptr_->num_ghost_cells();
+void build_sides_3D(AuxMeshTopology<BasicMesh>& mesh) {
+  int ncells_owned = mesh.basicmesh_ptr_->num_owned_cells();
+  int ncells_ghost = mesh.basicmesh_ptr_->num_ghost_cells();
   int ncells = ncells_owned + ncells_ghost;
 
-  cell_side_ids_.resize(ncells);
+  mesh.cell_side_ids_.resize(ncells);
 
-  int nnodes_owned = basicmesh_ptr_->num_owned_nodes();
-  int nnodes_ghost = basicmesh_ptr_->num_ghost_nodes();
+  int nnodes_owned = mesh.basicmesh_ptr_->num_owned_nodes();
+  int nnodes_ghost = mesh.basicmesh_ptr_->num_ghost_nodes();
   int nnodes = nnodes_owned + nnodes_ghost;
 
   int num_sides_all = 0;
-  num_sides_owned_ = 0;
-  num_sides_ghost_ = 0;
+  mesh.num_sides_owned_ = 0;
+  mesh.num_sides_ghost_ = 0;
 
   for (int c = 0; c < ncells; ++c) {
     std::vector<int> cfaces, cfdirs;
-    basicmesh_ptr_->cell_get_faces_and_dirs(c, &cfaces, &cfdirs);
+    mesh.basicmesh_ptr_->cell_get_faces_and_dirs(c, &cfaces, &cfdirs);
 
     int numsides_in_cell = 0;
     for (auto const & f : cfaces) {
       std::vector<int> fnodes;
-      basicmesh_ptr_->face_get_nodes(f, &fnodes);
+      mesh.basicmesh_ptr_->face_get_nodes(f, &fnodes);
 
       int nfnodes = fnodes.size();
       num_sides_all += nfnodes;
       numsides_in_cell += nfnodes;
 
-      if (basicmesh_ptr_->cell_get_type(c) == PARALLEL_OWNED)
-        num_sides_owned_ += nfnodes;
-      else if (basicmesh_ptr_->cell_get_type(c) == PARALLEL_GHOST)
-        num_sides_ghost_ += nfnodes;
+      if (mesh.basicmesh_ptr_->cell_get_type(c) == PARALLEL_OWNED)
+        mesh.num_sides_owned_ += nfnodes;
+      else if (mesh.basicmesh_ptr_->cell_get_type(c) == PARALLEL_GHOST)
+        mesh.num_sides_ghost_ += nfnodes;
     }
 
-    cell_side_ids_[c].reserve(numsides_in_cell);
+    mesh.cell_side_ids_[c].reserve(numsides_in_cell);
   }
 
-  sideids_owned_.resize(num_sides_owned_);
-  sideids_ghost_.resize(num_sides_ghost_);
-  sideids_all_.resize(num_sides_all);
-  side_cell_id_.resize(num_sides_all, -1);
-  side_face_id_.resize(num_sides_all, -1);
-  side_opp_side_id_.resize(num_sides_all, -1);
-  side_node_ids_.resize(num_sides_all, {{-1, -1}});
-  side_volume_.resize(num_sides_all);
+  mesh.sideids_owned_.resize(mesh.num_sides_owned_);
+  mesh.sideids_ghost_.resize(mesh.num_sides_ghost_);
+  mesh.sideids_all_.resize(num_sides_all);
+  mesh.side_cell_id_.resize(num_sides_all, -1);
+  mesh.side_face_id_.resize(num_sides_all, -1);
+  mesh.side_opp_side_id_.resize(num_sides_all, -1);
+  mesh.side_node_ids_.resize(num_sides_all, {{-1, -1}});
+  mesh.side_volumes_.resize(num_sides_all);
 
   std::vector<std::vector<int>> sides_of_node(nnodes);  // Temporary variable
 
   int sideid = 0;
   int iall = 0, iown = 0, ighost = 0;
+  std::array<Point<3>, 4> sxyz;
+  bool posvol_order = true;
+
   for (int c = 0; c < ncells; ++c) {
     std::vector<int> cfaces;
     std::vector<int> cfdirs;
-    basicmesh_ptr_->cell_get_faces_and_dirs(c, &cfaces, &cfdirs);
-
+    mesh.basicmesh_ptr_->cell_get_faces_and_dirs(c, &cfaces, &cfdirs);
+    
     std::vector<int>::iterator itf = cfaces.begin();
     std::vector<int>::iterator itfd = cfdirs.begin();
     while (itf != cfaces.end()) {
@@ -1407,7 +1485,7 @@ void AuxMeshTopology<BasicMesh>::build_sides_3D()  {
       int fdir = *itfd;
 
       std::vector<int> fnodes;
-      basicmesh_ptr_->face_get_nodes(f, &fnodes);
+      mesh.basicmesh_ptr_->face_get_nodes(f, &fnodes);
 
       // We want the facet formed by side point 0, side point 1 and
       // the face center to point into the cell - this makes the side
@@ -1421,40 +1499,41 @@ void AuxMeshTopology<BasicMesh>::build_sides_3D()  {
       int nfnodes = fnodes.size();
 
       for (int i = 0; i < nfnodes; ++i) {
-        side_node_ids_[sideid][0] = fnodes[i];
-        side_node_ids_[sideid][1] = fnodes[(i+1)%nfnodes];
+        mesh.side_node_ids_[sideid][0] = fnodes[i];
+        mesh.side_node_ids_[sideid][1] = fnodes[(i+1)%nfnodes];
 
-        side_cell_id_[sideid] = c;
-        cell_side_ids_[c].push_back(sideid);
+        mesh.side_cell_id_[sideid] = c;
+        mesh.cell_side_ids_[c].push_back(sideid);
 
-        side_face_id_[sideid] = f;
+        mesh.side_face_id_[sideid] = f;
 
-        sideids_all_[iall++] = sideid;
-        if (basicmesh_ptr_->cell_get_type(c) == PARALLEL_OWNED)
-          sideids_owned_[iown++] = sideid;
-        else if (basicmesh_ptr_->cell_get_type(c) == PARALLEL_GHOST)
-          sideids_ghost_[ighost++] = sideid;
+        mesh.sideids_all_[iall++] = sideid;
+        if (mesh.basicmesh_ptr_->cell_get_type(c) == PARALLEL_OWNED)
+          mesh.sideids_owned_[iown++] = sideid;
+        else if (mesh.basicmesh_ptr_->cell_get_type(c) == PARALLEL_GHOST)
+          mesh.sideids_ghost_[ighost++] = sideid;
 
         // See if any of the other sides attached to the edge (pair
         // of nodes) shares the same edge and face but is in the
         // adjacent cell. This is called the opposite side
 
         for (auto const& s2 : sides_of_node[fnodes[i]]) {
-          if ((side_node_ids_[s2][0] == fnodes[(i+1)%nfnodes] &&
-               side_node_ids_[s2][1] == fnodes[i]) ||
-              (side_node_ids_[s2][0] == fnodes[i] &&
-               side_node_ids_[s2][1] == fnodes[(i+1)%nfnodes])) {
-            if (side_face_id_[sideid] == side_face_id_[s2] &&
-                side_cell_id_[sideid] != side_cell_id_[s2]) {
-              side_opp_side_id_[sideid] = s2;
-              side_opp_side_id_[s2] = sideid;
+          if ((mesh.side_node_ids_[s2][0] == fnodes[(i+1)%nfnodes] &&
+               mesh.side_node_ids_[s2][1] == fnodes[i]) ||
+              (mesh.side_node_ids_[s2][0] == fnodes[i] &&
+               mesh.side_node_ids_[s2][1] == fnodes[(i+1)%nfnodes])) {
+            if (mesh.side_face_id_[sideid] == mesh.side_face_id_[s2] &&
+                mesh.side_cell_id_[sideid] != mesh.side_cell_id_[s2]) {
+              mesh.side_opp_side_id_[sideid] = s2;
+              mesh.side_opp_side_id_[s2] = sideid;
               break;
             }
           }
         }
         sides_of_node[fnodes[i]].push_back(sideid);
 
-        side_volume_[sideid] = calc_side_volume_3D(sideid);
+        mesh.side_get_coordinates(sideid, &sxyz, posvol_order);
+        mesh.side_volumes_[sideid] = calc_side_volume(sxyz);
 
         sideid++;
       }  // for (int i = 0; i < nfnodes; ++i)
@@ -1584,6 +1663,101 @@ void AuxMeshTopology<BasicMesh>::build_corners() {
                         cornerids_ghost_.end());
 
 }  // build_corners
+
+template<typename BasicMesh>
+void AuxMeshTopology<BasicMesh>::compute_cell_centroids() {
+  int ncells = basicmesh_ptr_->num_owned_cells() +
+      basicmesh_ptr_->num_ghost_cells();
+
+  int dim = basicmesh_ptr_->space_dimension();
+  std::vector<double> pnt(dim, 0.0);
+  cell_centroids_.resize(ncells, pnt);
+
+  for (int c = 0; c < ncells; ++c) {
+    std::vector<int> cnodes;
+    basicmesh_ptr_->cell_get_nodes(c, &cnodes);
+    int ncnodes = cnodes.size();
+    
+    if (dim == 2) {
+      Point<2> ncoord;
+      for (int n = 0; n < ncnodes; ++n) {
+        basicmesh_ptr_->node_get_coordinates(cnodes[n], &ncoord);
+        for (int d = 0; d < dim; ++d)
+          cell_centroids_[c][d] += ncoord[d];      
+      }
+    } else if (dim == 3) {
+      Point<3> ncoord;
+      for (int n = 0; n < ncnodes; ++n) {
+        basicmesh_ptr_->node_get_coordinates(cnodes[n], &ncoord);
+        for (int d = 0; d < dim; ++d)
+          cell_centroids_[c][d] += ncoord[d];      
+      }
+    }
+    for (int d = 0; d < dim; ++d)
+      cell_centroids_[c][d] /= ncnodes;
+  }
+}
+
+template<typename BasicMesh>
+void AuxMeshTopology<BasicMesh>::compute_face_centroids() {
+  int nfaces = basicmesh_ptr_->num_owned_faces() +
+      basicmesh_ptr_->num_ghost_faces();
+
+  int dim = basicmesh_ptr_->space_dimension();
+  std::vector<double> pnt(dim, 0.0);
+  face_centroids_.resize(nfaces, pnt);
+
+  for (int f = 0; f < nfaces; ++f) {
+    std::vector<int> fnodes;
+    basicmesh_ptr_->face_get_nodes(f, &fnodes);
+    int nfnodes = fnodes.size();
+    
+    if (dim == 2) {
+      Portage::Point<2> ncoord;
+      for (int n = 0; n < nfnodes; ++n) {
+        basicmesh_ptr_->node_get_coordinates(fnodes[n], &ncoord);
+        for (int d = 0; d < dim; ++d)
+          face_centroids_[f][d] += ncoord[d];
+      }
+    } else if (dim == 3) {
+      Portage::Point<3> ncoord;
+      for (int n = 0; n < nfnodes; ++n) {
+        basicmesh_ptr_->node_get_coordinates(fnodes[n], &ncoord);
+        for (int d = 0; d < dim; ++d)
+          face_centroids_[f][d] += ncoord[d];
+      }
+    }
+    for (int d = 0; d < dim; ++d)
+      face_centroids_[f][d] /= nfnodes;
+  }
+}
+
+template<typename BasicMesh>
+void AuxMeshTopology<BasicMesh>::compute_cell_volumes() {
+  int ncells = basicmesh_ptr_->num_owned_cells() +
+      basicmesh_ptr_->num_ghost_cells();
+
+  cell_volumes_.resize(ncells, 0.0);
+
+  for (int c = 0; c < ncells; ++c)
+    for (auto s : cell_side_ids_[c])
+      cell_volumes_[c] += side_volumes_[s];
+}
+
+//! coords of nodes of a cell
+template <typename BasicMesh>
+template<long D>
+void AuxMeshTopology<BasicMesh>::cell_get_coordinates(int const cellid,
+                          std::vector<Point<D>> *pplist) const {
+  std::vector<int> cnodes;
+  basicmesh_ptr_->cell_get_nodes(cellid, &cnodes);
+
+  int ncnodes = cnodes.size();
+  pplist->resize(ncnodes);
+  for (int n = 0; n < ncnodes; ++n)
+    basicmesh_ptr_->node_get_coordinates(cnodes[n], &((*pplist)[n]));
+}
+
 
 
 }  // namespace Portage
