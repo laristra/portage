@@ -55,4 +55,12 @@ TEST(MPI_Bounding_Boxes, SimpleTest) {
   Portage::MPI_Bounding_Boxes distributor;
   distributor.distribute(source_mesh_flat, source_state_flat, target_mesh_,
                          target_state_);
+
+  int commRank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &commRank);
+  int exp_source_cells = (commRank == 0 ? 2 :
+                          commRank <= 2 ? 4 : 8);
+  int act_source_cells = source_mesh_flat.num_owned_cells();
+  ASSERT_EQ(exp_source_cells, act_source_cells);
+
 }
