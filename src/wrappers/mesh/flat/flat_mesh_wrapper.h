@@ -39,19 +39,27 @@ class Flat_Mesh_Wrapper {
   {
     int numCells = input.num_owned_cells() + input.num_ghost_cells();
     numOwnedCells_ = input.num_owned_cells();
-    coords_.resize(numCells*nodesPerCell_*dim_);
+    coords_.clear();
+    nodeCounts_.clear();
+    nodeOffsets_.clear();
+    // reserve (dim_+1) nodes per cell (lower bound)
+    coords_.reserve(numCells*(dim_+1)*dim_);
+    nodeCounts_.reserve(numCells);
+    nodeOffsets_.reserve(numCells);
+    int runningNodeCount = 0;
       
     for (unsigned int c=0; c<numCells; c++)
     {
       globalCellIds_.push_back(input.get_global_id(c, Entity_kind::CELL));
       std::vector<Portage::Point<3>> cellCoord;
       input.cell_get_coordinates(c, &cellCoord);
-      for (unsigned int j=0; j<nodesPerCell_; j++)
-      {
-        coords_[c*nodesPerCell_*dim_+j*dim_+0] = cellCoord[j][0];
-        coords_[c*nodesPerCell_*dim_+j*dim_+1] = cellCoord[j][1];
-        coords_[c*nodesPerCell_*dim_+j*dim_+2] = cellCoord[j][2];
-      }
+      int cellNumNodes = cellCoord.size();
+      for (unsigned int i=0; i<cellNumNodes; i++)
+        for (unsigned int j=0; j<dim_; j++)
+          coords_.push_back(cellCoord[i][j]);
+      nodeCounts_.push_back(cellNumNodes);
+      nodeOffsets_.push_back(runningNodeCount);
+      runningNodeCount += cellNumNodes;
 
       std::vector<int> cellNeighbors;
       input.cell_get_node_adj_cells(c, ALL, &(cellNeighbors));
@@ -75,11 +83,13 @@ class Flat_Mesh_Wrapper {
     std::vector<T> extrema(2*dim_); 
     for (unsigned int i=0; i<2*dim_; i+=2) extrema[i] = std::numeric_limits<T>::max();
     for (unsigned int i=1; i<2*dim_; i+=2) extrema[i] = -std::numeric_limits<T>::max();
-    for (unsigned int i=0; i<nodesPerCell_; i++)
+    int count = nodeCounts_[cellID];
+    int offset = nodeOffsets_[cellID];
+    for (unsigned int i=0; i<count; i++)
     {
       for (unsigned int j=0; j<dim_; j++)
       {
-        T v = coords_[cellID*nodesPerCell_*dim_+i*dim_+j];
+        T v = coords_[offset*dim_+i*dim_+j];
         if (v < extrema[2*j]) extrema[2*j] = v;
         if (v > extrema[2*j+1]) extrema[2*j+1] = v;
       }
@@ -122,7 +132,7 @@ class Flat_Mesh_Wrapper {
 
   //! Number of owned nodes in the mesh
   int num_owned_nodes() const {
-    return 0;
+    return num_entities(Entity_kind::NODE, Entity_type::PARALLEL_OWNED);
   }
 
   //! Number of ghost cells in the mesh
@@ -140,10 +150,12 @@ class Flat_Mesh_Wrapper {
   void cell_get_coordinates(int const cellid,
                             std::vector<Portage::Point<D>> *pplist) const {
 
-    pplist->resize(nodesPerCell_);
-    for (unsigned int i=0; i<nodesPerCell_; i++)
+    int count = nodeCounts_[cellid];
+    int offset = nodeOffsets_[cellid];
+    pplist->resize(count);
+    for (unsigned int i=0; i<count; i++)
       for (unsigned int j=0; j<dim_; j++)
-        (*pplist)[i][j] = coords_[cellid*nodesPerCell_*dim_+i*dim_+j];
+        (*pplist)[i][j] = coords_[offset*dim_+i*dim_+j];
   }
 
   //! Compute the centroid of the cell
@@ -168,20 +180,22 @@ class Flat_Mesh_Wrapper {
   void decompose_cell_into_tets(const int cellID,
       std::vector<std::array<Portage::Point<3>, 4>> *tcoords,
       const bool planar_hex) const {
-    
-    if (/*planar_hex &&*/ (nodesPerCell_ == 8) && (dim_ == 3))
+
+    int count = nodeCounts_[cellID];
+    int offset = nodeOffsets_[cellID];
+    if (/*planar_hex &&*/ (count == 8) && (dim_ == 3))
     {
-      std::vector<Portage::Point<3>> vertices(nodesPerCell_);
+      std::vector<Portage::Point<3>> vertices(count);
       std::array<T, 6> extrema;
       extrema[0] = extrema[2] = extrema[4] = std::numeric_limits<T>::max();
       extrema[1] = extrema[3] = extrema[5] = -std::numeric_limits<T>::max();
 
-      for (unsigned int i=0; i<nodesPerCell_; i++)
+      for (unsigned int i=0; i<count; i++)
       {
         for (unsigned int j=0; j<dim_; j++) 
         {
-          vertices[i][j] = coords_[cellID*nodesPerCell_*dim_+i*dim_+j];
-	  if (vertices[i][j] < extrema[2*j]) extrema[2*j] = vertices[i][j];
+          vertices[i][j] = coords_[offset*dim_+i*dim_+j];
+          if (vertices[i][j] < extrema[2*j]) extrema[2*j] = vertices[i][j];
           if (vertices[i][j] > extrema[2*j+1]) extrema[2*j+1] = vertices[i][j];
         }
       }
@@ -200,12 +214,12 @@ class Flat_Mesh_Wrapper {
       }
     }
 
-    if ((nodesPerCell_ == 4) && (dim_ == 3))
+    if ((count == 4) && (dim_ == 3))
     {
       std::array<Portage::Point<3>, 4> tmp;
       for (int i=0; i<4; i++)
         for (int j=0; j<3; j++)
-          tmp[i][j] = coords_[cellID*nodesPerCell_*dim_+i*dim_+j];
+          tmp[i][j] = coords_[offset*dim_+i*dim_+j];
       tcoords->push_back(tmp);
     }
   }
@@ -220,7 +234,9 @@ class Flat_Mesh_Wrapper {
     }
     else if (entity == Entity_kind::NODE) 
     {
-      return coords_.size();
+      // right now treat all nodes as owned - may need to fix
+      if (etype == Entity_type::PARALLEL_GHOST) return 0;
+      else return coords_.size();
     }
     else return 0;
   }
@@ -272,6 +288,8 @@ class Flat_Mesh_Wrapper {
 
 private:
   std::vector<T> coords_;
+  std::vector<int> nodeCounts_;
+  std::vector<int> nodeOffsets_;
   std::vector<int> neighbors_;
   std::vector<int> neighborCounts_;
   std::vector<int> neighborOffsets_;
