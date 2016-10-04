@@ -48,7 +48,6 @@ Point<D> toPortagePoint(const JaliGeometry::Point& jp) {
   return pp;
 }
 
-
 class Jali_Mesh_Wrapper : public AuxMeshTopology<Jali_Mesh_Wrapper> {
  public:
 
@@ -63,21 +62,19 @@ class Jali_Mesh_Wrapper : public AuxMeshTopology<Jali_Mesh_Wrapper> {
                              bool request_corners = true) :
       jali_mesh_(mesh),
       AuxMeshTopology<Jali_Mesh_Wrapper>(request_sides, request_wedges,
-                                         request_corners)
-  {
-    build_aux_entities();  // base class (AuxMeshTopology) method that has
-    //                     // to be called here and not in the constructor
-    //                     // of the base class because it needs access to
-    //                     // methods in this class which in turn need access
-    //                     // to its member variables. But these member vars
-    //                     // don't get initialized until the base class is
-    //                     // constructed
+                                               request_corners) {
+
+    // base class (AuxMeshTopology) method that has to be called here
+    // and not in the constructor of the base class because it needs
+    // access to methods in this class which in turn need access to
+    // its member variables. But these member vars don't get
+    // initialized until the base class is constructed
+
+    AuxMeshTopology<Jali_Mesh_Wrapper>::build_aux_entities(); 
   }
 
-  //! Copy constructor
-  Jali_Mesh_Wrapper(Jali_Mesh_Wrapper const & inmesh) :
-      jali_mesh_(inmesh.jali_mesh_)
-  {}
+  //! Copy constructor (Deleted)
+  Jali_Mesh_Wrapper(Jali_Mesh_Wrapper const & inmesh) = delete;
 
   //! Assignment operator (Deleted)
   Jali_Mesh_Wrapper & operator=(Jali_Mesh_Wrapper const & inmesh) = delete;
@@ -218,47 +215,9 @@ class Jali_Mesh_Wrapper : public AuxMeshTopology<Jali_Mesh_Wrapper> {
     *pp = toPortagePoint<D>(jp);
   }
 
-  //! coords of nodes of a cell
-  template <long D>
-  void cell_get_coordinates(int const cellid,
-                            std::vector<Point<D>> *pplist) const {
-    assert(jali_mesh_.space_dimension() == D);
-
-    std::vector<JaliGeometry::Point> jplist;
-    jali_mesh_.cell_get_coordinates(cellid, &jplist);
-
-    pplist->resize(jplist.size());
-    // This cast appears necessary for proper template deduction
-    std::transform(jplist.begin(), jplist.end(), pplist->begin(),
-                   (Point<D>(*)(const JaliGeometry::Point&))toPortagePoint<D>);
-  }
-
-  /// \brief Centroid of a cell
-  //
-  // Return the centroid of a cell
-
-  template <long D>
-  void cell_centroid(Jali::Entity_ID cellid, Point<D> *ccentroid) const {
-    *ccentroid = toPortagePoint<D>(jali_mesh_.cell_centroid(cellid));
-  }
-
-  /// \brief Centroid of a face
-  //
-  // Return the centroid of a cell face
-
-  template <long D>
-  void face_centroid(Jali::Entity_ID faceid, Point<D> *fcentroid) const {
-    *fcentroid = toPortagePoint<D>(jali_mesh_.face_centroid(faceid));
-  }
-
-  //! Cell area/volume
-  double cell_volume(int cellID) const {
-    return jali_mesh_.cell_volume(cellID);
-  }
-
  private:
   Jali::Mesh const & jali_mesh_;
-
+  
 };  // class Jali_Mesh_Wrapper
 
 
