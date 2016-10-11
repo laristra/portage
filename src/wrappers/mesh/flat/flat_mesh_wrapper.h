@@ -67,6 +67,8 @@ class Flat_Mesh_Wrapper {
       for (unsigned int j=0; j<cellNeighbors.size(); j++)
         neighbors_.push_back(input.get_global_id(cellNeighbors[j], Entity_kind::CELL));
     }
+    numOwnedNodes_ = ((numOwnedCells_ == numCells)
+        ? runningNodeCount : nodeOffsets_[numOwnedCells_]);
 
     make_index_maps();
   }
@@ -130,19 +132,19 @@ class Flat_Mesh_Wrapper {
     return num_entities(Entity_kind::CELL, Entity_type::PARALLEL_OWNED);
   }
 
-  //! Number of owned nodes in the mesh
-  int num_owned_nodes() const {
-    return num_entities(Entity_kind::NODE, Entity_type::PARALLEL_OWNED);
-  }
-
   //! Number of ghost cells in the mesh
   int num_ghost_cells() const {
     return num_entities(Entity_kind::CELL, Entity_type::PARALLEL_GHOST);
   }
 
+  //! Number of owned nodes in the mesh
+  int num_owned_nodes() const {
+    return num_entities(Entity_kind::NODE, Entity_type::PARALLEL_OWNED);
+  }
+
   //! Number of ghost nodes in the mesh
   int num_ghost_nodes() const {
-    return 0;
+    return num_entities(Entity_kind::NODE, Entity_type::PARALLEL_GHOST);
   }
 
   //! coords of nodes of a cell
@@ -234,9 +236,10 @@ class Flat_Mesh_Wrapper {
     }
     else if (entity == Entity_kind::NODE) 
     {
-      // right now treat all nodes as owned - may need to fix
-      if (etype == Entity_type::PARALLEL_GHOST) return 0;
-      else return coords_.size();
+      if (etype == Entity_type::PARALLEL_OWNED)  return numOwnedNodes_;
+      else if (etype == Entity_type::PARALLEL_GHOST)
+        return (coords_.size()/dim_ - numOwnedNodes_);
+      else if (etype == Entity_type::ALL) return coords_.size()/dim_;
     }
     else return 0;
   }
@@ -255,20 +258,23 @@ class Flat_Mesh_Wrapper {
   //! get coordinates
   std::vector<T>& get_coords() { return coords_; }
 
+  //! get node counts
+  std::vector<int>& get_node_counts() { return nodeCounts_; }
+
   //! get global cell ids
   std::vector<int>& get_global_cell_ids() { return globalCellIds_; }
 
-  //! get owned indexes
+  //! set owned cell count
   void set_num_owned_cells(int numOwnedCells) { numOwnedCells_ = numOwnedCells; }
+
+  //! set owned node count
+  void set_num_owned_nodes(int numOwnedNodes) { numOwnedNodes_ = numOwnedNodes; }
 
   //! get neighbor counts
   std::vector<int>& get_neighbor_counts() { return neighborCounts_; }
 
   //! get neighbors
   std::vector<int>& get_neighbors() { return neighbors_; }
-
-  //! get nodes per cell
-  int get_nodes_per_cell() { return nodesPerCell_; }
 
   //! get spatial dimension
   int space_dimension() const { return dim_; }
@@ -298,6 +304,7 @@ private:
   const int nodesPerCell_;
   const int dim_;
   int numOwnedCells_;
+  int numOwnedNodes_;
 
 }; // class Flat_Mesh_Wrapper
 
