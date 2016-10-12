@@ -22,9 +22,14 @@
 
 TEST(MPI_Bounding_Boxes, SimpleTest) {
 
+  int commRank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &commRank);
+
   // Add multiple state vector types
-  double dtest1[] = {1.1, 2.2, 3.3, 4.4, 5., 6., 7., 8.};
-  double dtest2[] = {1.2, 2.3, 3.4, 4.4, 5., 6., 9., 7.};
+  double dtest1[8] = {10. + commRank * 2., 11. + commRank * 2.,
+                      0., 0., 0., 0., 0., 0.};
+  double dtest2[8] = {100. + commRank * 2., 101. + commRank * 2.,
+                      0., 0., 0., 0., 0., 0.};
 
   Jali::MeshFactory mf(MPI_COMM_WORLD);
 
@@ -57,8 +62,6 @@ TEST(MPI_Bounding_Boxes, SimpleTest) {
                          target_state_);
 
   // Check number of cells and nodes received
-  int commRank;
-  MPI_Comm_rank(MPI_COMM_WORLD, &commRank);
   int exp_num_owned_cells = (commRank == 0 ? 2 :
                              commRank <= 2 ? 4 : 8);
   int num_owned_cells = source_mesh_flat.num_owned_cells();
@@ -140,11 +143,23 @@ TEST(MPI_Bounding_Boxes, SimpleTest) {
     std::vector<int> myNeighbors(&neighbors[7*c], &neighbors[7*(c+1)]);
     // Add my own ID
     myNeighbors.push_back(gids[c]);
-    // Now make sure all 8 cells are present
+    // Now make sure all 8 cells are present, in any order
     std::sort(myNeighbors.begin(), myNeighbors.end());
     for (int n=0; n<8; ++n)
       ASSERT_EQ(n, myNeighbors[n]);
   }
 
+  // Check field values
+  double* ddata1 = nullptr;
+  source_state_flat.get_data(Portage::CELL, "d1", &ddata1);
+  double* ddata2 = nullptr;
+  source_state_flat.get_data(Portage::CELL, "d2", &ddata2);
+  for (int c=0; c<num_owned_cells; ++c) {
+    int gid = expOwnedGids[c];
+    int expValue1 = 10. + gid;
+    ASSERT_EQ(expValue1, ddata1[c]);
+    int expValue2 = 100. + gid;
+    ASSERT_EQ(expValue2, ddata2[c]);
+  }
 
 }

@@ -608,12 +608,9 @@ class MPI_Bounding_Boxes {
       }
 
       // We will now use the received source state as our new source state on this partition
-      for (int s=0; s<source_state_flat.get_num_vectors(); s++)
-      {
-        std::shared_ptr<std::vector<double>> sourceState = source_state_flat.get_vector(s);
-        sourceState->resize(newField.size());
-        std::copy(newField.begin(), newField.end(), sourceState->begin());
-      }
+      std::shared_ptr<std::vector<double>> sourceState = source_state_flat.get_vector(s);
+      sourceState->resize(newField.size());
+      std::copy(newField.begin(), newField.end(), sourceState->begin());
     }
 
     // We will now use the received source mesh data as our new source mesh on this partition
