@@ -23,8 +23,8 @@ namespace Portage {
 
   Flat_Mesh_Wrapper stores mesh coordinates in a flat vector.
   It currently assumes all cells are of the same type (i.e.,
-  same number of nodes per cell). It also currently only
-  handles the cases of hexahedra and tetrahedra when
+  same number of nodes per cell).  In 3D, it also currently
+  only handles the cases of hexahedra and tetrahedra when
   decomposing into tets.
 */
 
@@ -51,12 +51,26 @@ class Flat_Mesh_Wrapper {
     for (unsigned int c=0; c<numCells; c++)
     {
       globalCellIds_.push_back(input.get_global_id(c, Entity_kind::CELL));
-      std::vector<Portage::Point<3>> cellCoord;
-      input.cell_get_coordinates(c, &cellCoord);
-      int cellNumNodes = cellCoord.size();
-      for (unsigned int i=0; i<cellNumNodes; i++)
-        for (unsigned int j=0; j<dim_; j++)
-          coords_.push_back(cellCoord[i][j]);
+      int cellNumNodes;
+      // ugly hack, since dim_ is not known at compile time
+      if (dim_ == 3)
+      {
+        std::vector<Portage::Point<3>> cellCoord;
+        input.cell_get_coordinates(c, &cellCoord);
+        cellNumNodes = cellCoord.size();
+        for (unsigned int i=0; i<cellNumNodes; i++)
+          for (unsigned int j=0; j<dim_; j++)
+            coords_.push_back(cellCoord[i][j]);
+      }
+      else if (dim_ == 2)
+      {
+        std::vector<Portage::Point<2>> cellCoord;
+        input.cell_get_coordinates(c, &cellCoord);
+        cellNumNodes = cellCoord.size();
+        for (unsigned int i=0; i<cellNumNodes; i++)
+          for (unsigned int j=0; j<dim_; j++)
+            coords_.push_back(cellCoord[i][j]);
+      }
       nodeCounts_.push_back(cellNumNodes);
       nodeOffsets_.push_back(runningNodeCount);
       runningNodeCount += cellNumNodes;

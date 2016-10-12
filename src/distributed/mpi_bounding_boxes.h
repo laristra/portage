@@ -75,16 +75,34 @@ class MPI_Bounding_Boxes {
     }
     for (unsigned int c=0; c<targetNumCells; c++)
     {
-      std::vector<Portage::Point<3>> cellCoord;
-      target_mesh.cell_get_coordinates(c, &cellCoord);
-      for (unsigned int j=0; j<cellCoord.size(); j++)
+      // ugly hack, since dim is not known at compile time
+      if (dim == 3)
       {
-        for (unsigned int k=0; k<dim; k++)
-          if (cellCoord[j][k] < targetBoundingBoxes[2*dim*commRank+2*k])
-            targetBoundingBoxes[2*dim*commRank+2*k] = cellCoord[j][k];
-        for (unsigned int k=0; k<dim; k++)
-          if (cellCoord[j][k] > targetBoundingBoxes[2*dim*commRank+2*k+1])
-            targetBoundingBoxes[2*dim*commRank+2*k+1] = cellCoord[j][k];
+        std::vector<Portage::Point<3>> cellCoord;
+        target_mesh.cell_get_coordinates(c, &cellCoord);
+        for (unsigned int j=0; j<cellCoord.size(); j++)
+        {
+          for (unsigned int k=0; k<dim; k++)
+            if (cellCoord[j][k] < targetBoundingBoxes[2*dim*commRank+2*k])
+              targetBoundingBoxes[2*dim*commRank+2*k] = cellCoord[j][k];
+          for (unsigned int k=0; k<dim; k++)
+            if (cellCoord[j][k] > targetBoundingBoxes[2*dim*commRank+2*k+1])
+              targetBoundingBoxes[2*dim*commRank+2*k+1] = cellCoord[j][k];
+        }
+      }
+      else if (dim == 2)
+      {
+        std::vector<Portage::Point<2>> cellCoord;
+        target_mesh.cell_get_coordinates(c, &cellCoord);
+        for (unsigned int j=0; j<cellCoord.size(); j++)
+        {
+          for (unsigned int k=0; k<dim; k++)
+            if (cellCoord[j][k] < targetBoundingBoxes[2*dim*commRank+2*k])
+              targetBoundingBoxes[2*dim*commRank+2*k] = cellCoord[j][k];
+          for (unsigned int k=0; k<dim; k++)
+            if (cellCoord[j][k] > targetBoundingBoxes[2*dim*commRank+2*k+1])
+              targetBoundingBoxes[2*dim*commRank+2*k+1] = cellCoord[j][k];
+        }
       }
     }
 
