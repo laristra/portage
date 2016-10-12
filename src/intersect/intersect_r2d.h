@@ -44,9 +44,9 @@ public:
    */
   std::vector<std::vector<double>> operator() (const int cellA,
             const int cellB) const {
-    // TODO:  check indents throughout!
-    const Poly source_poly = sourceMeshWrapper.cellToXY(cellA);
-    const Poly target_poly = targetMeshWrapper.cellToXY(cellB);
+    Poly source_poly, target_poly;
+    sourceMeshWrapper.cell_get_coordinates(cellA, &source_poly);
+    targetMeshWrapper.cell_get_coordinates(cellB, &target_poly);
 
     std::vector<double> moments(3, 0);
 
