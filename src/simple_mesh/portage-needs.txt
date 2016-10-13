@@ -1,0 +1,51 @@
+@@@@ means it is handled in the AuxMeshTopology class
+
+**********************************************************************
+* Driver
+**********************************************************************
+-- from mesh wrapper
+----------------------------------------
+     num_owned_cells()
+@@@@     num_entities()
+@@@@     begin() and end()
+
+-- from dual mesh wrapper
+----------------------------------------
+@@@@     dual_cell_volume()
+     space_dimension()
+     num_owned_nodes()
+     num_ghost_nodes()
+@@@@     dual_cell_get_coordinates()
+     node_get_cell_adj_nodes()
+     cell_get_node_adj_cells()
+@@@@     dual_cell_centroid()
+@@@@     cell_centroid()
+@@@@     dual_wedges_get_coordinates()
+
+**********************************************************************
+* Search
+**********************************************************************
+-- from mesh wrapper
+----------------------------------------
+@@@@     cell_get_coordinates()
+     num_ghost_cells()
+
+**********************************************************************
+* Intersect
+**********************************************************************
+-- from mesh wrapper
+----------------------------------------
+@@@@     cellToXY()
+@@@@     decompose_cell_into_tets()
+
+**********************************************************************
+* Interpolate
+**********************************************************************
+-- gradient.h from mesh wrapper
+----------------------------------------
+@@@@     dual_cell_get_node_adj_cells()
+     node_get_coordinates()
+
+-- from mesh wrapper
+----------------------------------------
+@@@@     cell_volume()
