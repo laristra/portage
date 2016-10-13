@@ -140,9 +140,12 @@ Simple_Mesh(double x0, double y0, double z0,
       cells->push_back(node_to_cell_[i+offset]);
   }
 
+  // General specification - specialization follows at bottom of file
+  // @TODO throw error/exception
+  template<long D>
   void node_get_coordinates(const ID nodeid,
-                            Point<3> *pp) const {
-    *pp = coordinates_[nodeid];
+                            Point<D> *pp) const {
+    assert(D == space_dimension());
   }
 
  private:
@@ -404,6 +407,15 @@ Simple_Mesh(double x0, double y0, double z0,
     return i + j*(nx_+1) + k*(nx_+1)*ny_ + xzface_index_(0, 0, nz_);
   }
 };  // class Simple_Mesh
+
+// Specializations
+template<>
+void Simple_Mesh::node_get_coordinates<3>(const ID nodeid,
+                                          Point<3> *pp) const {
+  *pp = coordinates_[nodeid];
+}
+
+
 
 }  // namespace Portage
 
