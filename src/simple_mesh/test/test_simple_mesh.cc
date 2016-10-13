@@ -63,3 +63,36 @@ TEST(Simple_Mesh, SingleCell) {
   ASSERT_EQ(0.0, pp[1]);
   ASSERT_EQ(1.0, pp[2]);
 }
+
+TEST(Simple_Mesh, SmallGrid) {
+  // Create a simple 2x2x2 mesh
+  Portage::Simple_Mesh mesh(0.0, 0.0, 0.0,
+                            1.0, 1.0, 1.0,
+                            2, 2, 2);
+  // Number of cells
+  ASSERT_EQ(mesh.num_entities(Portage::Entity_kind::CELL,
+                              Portage::Entity_type::PARALLEL_OWNED),
+            8);
+  // Number of faces - interior faces only counted once
+  ASSERT_EQ(mesh.num_entities(Portage::Entity_kind::FACE,
+                              Portage::Entity_type::PARALLEL_OWNED),
+            36);
+  // Number of nodes
+  ASSERT_EQ(mesh.num_entities(Portage::Entity_kind::NODE,
+                              Portage::Entity_type::PARALLEL_OWNED),
+            27);
+
+  // Check that the global ID of a node in the center - shared by cells -
+  // is the same.
+  // This is the global ID of the node in the center of the mesh
+  int gid_nodeWant = 13;
+  std::vector<int> cellnodes;
+  // This is the cell-local index which should correspond to the global index
+  std::vector<int> cell_local_index = {6, 7, 5, 4, 2, 3, 1, 0};
+  for (int i(0); i < 8; ++i) {
+    // Get the nodes associated with this cell
+    mesh.cell_get_nodes(i, &cellnodes);
+    // Make sure that we match the expected global id
+    ASSERT_EQ(gid_nodeWant, cellnodes[cell_local_index[i]]);
+  }
+}
