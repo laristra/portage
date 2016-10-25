@@ -22,8 +22,7 @@ namespace Portage {
   \brief Flat_Mesh_Wrapper implements mesh methods
 
   Flat_Mesh_Wrapper stores mesh coordinates in a flat vector.
-  It currently assumes all cells are of the same type (i.e.,
-  same number of nodes per cell).  In 3D, it also currently
+  In 2D, it supports arbitrary polygons.  In 3D, it currently
   only handles the cases of hexahedra and tetrahedra when
   decomposing into tets.
 */
@@ -96,6 +95,7 @@ class Flat_Mesh_Wrapper {
   //! Cell area/volume
   double cell_volume(int cellID) const {
 
+    // TODO:  Generalize from regular grid to arbitrary polyhedron
     std::vector<T> extrema(2*dim_); 
     for (unsigned int i=0; i<2*dim_; i+=2) extrema[i] = std::numeric_limits<T>::max();
     for (unsigned int i=1; i<2*dim_; i+=2) extrema[i] = -std::numeric_limits<T>::max();
