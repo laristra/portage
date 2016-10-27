@@ -8,6 +8,7 @@
 
 #include <cassert>
 #include <algorithm>
+#include <numeric>
 #include <array>
 #include <limits>
 #include <map>
@@ -40,12 +41,9 @@ class Flat_Mesh_Wrapper {
     numOwnedCells_ = input.num_owned_cells();
     coords_.clear();
     nodeCounts_.clear();
-    nodeOffsets_.clear();
     // reserve (dim_+1) nodes per cell (lower bound)
     coords_.reserve(numCells*(dim_+1)*dim_);
     nodeCounts_.reserve(numCells);
-    nodeOffsets_.reserve(numCells);
-    int runningNodeCount = 0;
       
     for (unsigned int c=0; c<numCells; c++)
     {
@@ -71,8 +69,6 @@ class Flat_Mesh_Wrapper {
             coords_.push_back(cellCoord[i][j]);
       }
       nodeCounts_.push_back(cellNumNodes);
-      nodeOffsets_.push_back(runningNodeCount);
-      runningNodeCount += cellNumNodes;
 
       std::vector<int> cellNeighbors;
       input.cell_get_node_adj_cells(c, ALL, &(cellNeighbors));
@@ -80,8 +76,8 @@ class Flat_Mesh_Wrapper {
       for (unsigned int j=0; j<cellNeighbors.size(); j++)
         neighbors_.push_back(input.get_global_id(cellNeighbors[j], Entity_kind::CELL));
     }
-    numOwnedNodes_ = ((numOwnedCells_ == numCells)
-        ? runningNodeCount : nodeOffsets_[numOwnedCells_]);
+    numOwnedNodes_ = std::accumulate(
+        &nodeCounts_[0], &nodeCounts_[numOwnedCells_], 0);
 
     make_index_maps();
   }
@@ -133,12 +129,19 @@ class Flat_Mesh_Wrapper {
       if (globalCellMap_.find(globalCellIds_[i]) == globalCellMap_.end())
         globalCellMap_[globalCellIds_[i]] = i; 
 
+    // Node offsets
+    nodeOffsets_.clear();
+    nodeOffsets_.resize(nodeCounts_.size());
+    nodeOffsets_[0] = 0;
+    std::partial_sum(nodeCounts_.begin(), nodeCounts_.end()-1,
+                     nodeOffsets_.begin()+1);
+
     // Neighbor offsets
     neighborOffsets_.clear();
     neighborOffsets_.resize(neighborCounts_.size());
     neighborOffsets_[0] = 0;
-    for (unsigned int i=1; i<neighborCounts_.size(); i++)
-      neighborOffsets_[i] = neighborOffsets_[i-1] + neighborCounts_[i-1];
+    std::partial_sum(neighborCounts_.begin(), neighborCounts_.end()-1,
+                     neighborOffsets_.begin()+1);
   }
 
   //! Number of owned cells in the mesh
