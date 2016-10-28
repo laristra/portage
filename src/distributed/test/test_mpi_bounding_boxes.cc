@@ -26,9 +26,9 @@ TEST(MPI_Bounding_Boxes, SimpleTest3D) {
   MPI_Comm_rank(MPI_COMM_WORLD, &commRank);
 
   // Add multiple state vector types
-  int base1 = 10. + commRank * 2.;
+  double base1 = 10. + commRank * 2.;
   double dtest1[8] = {base1, base1 + 1., 0., 0., 0., 0., 0., 0.};
-  int base2 = 100. + commRank * 2.;
+  double base2 = 100. + commRank * 2.;
   double dtest2[8] = {base2, base2 + 1., 0., 0., 0., 0., 0., 0.};
 
   Jali::MeshFactory mf(MPI_COMM_WORLD);
@@ -76,22 +76,13 @@ TEST(MPI_Bounding_Boxes, SimpleTest3D) {
   int num_nodes = num_owned_nodes + source_mesh_flat.num_ghost_nodes();
   ASSERT_EQ(exp_num_nodes, num_nodes);
 
-  // Check node counts
-  std::vector<int>& nodeCounts = source_mesh_flat.get_node_counts();
-  ASSERT_EQ(num_cells, nodeCounts.size());
-  for (int c=0; c<num_cells; ++c)
-    ASSERT_EQ(8, nodeCounts[c]);
-
   // Check coordinates
-  std::vector<double>& coords = source_mesh_flat.get_coords();
-  int exp_num_coords = exp_num_nodes * 3;
-  ASSERT_EQ(exp_num_coords, coords.size());
-
   // List coordinates of cell 0 - others are equal to this
   // with a shift
-  std::vector<double> cell0Coords =
-    { 0.0, 0.0, 0.0,  0.5, 0.0, 0.0,  0.5, 0.5, 0.0,  0.0, 0.5, 0.0,
-      0.0, 0.0, 0.5,  0.5, 0.0, 0.5,  0.5, 0.5, 0.5,  0.0, 0.5, 0.5};
+  std::vector<Portage::Point<3>> cell0Coords =
+    {{0.0, 0.0, 0.0},  {0.5, 0.0, 0.0},  {0.5, 0.5, 0.0},  {0.0, 0.5, 0.0},
+     {0.0, 0.0, 0.5},  {0.5, 0.0, 0.5},  {0.5, 0.5, 0.5},  {0.0, 0.5, 0.5}};
+                                                              
   // List owned cells that should have been sent to each rank
   std::vector<int> expOwnedGids;
   switch (commRank) {
@@ -109,17 +100,18 @@ TEST(MPI_Bounding_Boxes, SimpleTest3D) {
       break;
   }
 
-  int ctr = 0;
-  for (int i=0; i<expOwnedGids.size(); ++i) {
-    int gid = expOwnedGids[i];
+  for (int c=0; c<num_owned_cells; ++c) {
+    std::vector<Portage::Point<3>> myCoords;
+    source_mesh_flat.cell_get_coordinates(c, &myCoords);
+    ASSERT_EQ(8, myCoords.size());
+    int gid = expOwnedGids[c];
     double dx = (gid & 4 ? 0.5 : 0.0);
     double dy = (gid & 2 ? 0.5 : 0.0);
     double dz = (gid & 1 ? 0.5 : 0.0);
     for (int n=0; n<8; ++n) {
-      ASSERT_EQ(cell0Coords[3*n  ] + dx, coords[3*ctr  ]);
-      ASSERT_EQ(cell0Coords[3*n+1] + dy, coords[3*ctr+1]);
-      ASSERT_EQ(cell0Coords[3*n+2] + dz, coords[3*ctr+2]);
-      ctr += 1;
+      ASSERT_EQ(cell0Coords[n][0] + dx, myCoords[n][0]);
+      ASSERT_EQ(cell0Coords[n][1] + dy, myCoords[n][1]);
+      ASSERT_EQ(cell0Coords[n][2] + dz, myCoords[n][2]);
     }
   }
 
@@ -129,18 +121,15 @@ TEST(MPI_Bounding_Boxes, SimpleTest3D) {
   for (int c=0; c<num_owned_cells; ++c)
     ASSERT_EQ(expOwnedGids[c], gids[c]);
 
-  // Check neighbor counts
-  std::vector<int>& neighborCounts = source_mesh_flat.get_neighbor_counts();
-  for (int c=0; c<num_cells; ++c)
-    ASSERT_EQ(7, neighborCounts[c]);
-
   // Check neighbors
-  std::vector<int>& neighbors = source_mesh_flat.get_neighbors();
-  ASSERT_EQ(7 * num_cells, neighbors.size());
   // Each cell should have all of the 7 other cells as neighbors
   for (int c=0; c<num_cells; ++c) {
     // Get my 7 neighbors
-    std::vector<int> myNeighbors(&neighbors[7*c], &neighbors[7*(c+1)]);
+    std::vector<int> myNeighbors;
+    source_mesh_flat.cell_get_node_adj_cells(c, Portage::ALL, &myNeighbors);
+    ASSERT_EQ(7, myNeighbors.size());
+    // Convert to global IDs
+    for (int n=0; n<7; ++n) myNeighbors[n] = gids[myNeighbors[n]];
     // Add my own ID
     myNeighbors.push_back(gids[c]);
     // Now make sure all 8 neighbors are present, in any order
@@ -171,9 +160,9 @@ TEST(MPI_Bounding_Boxes, SimpleTest2D) {
   MPI_Comm_rank(MPI_COMM_WORLD, &commRank);
 
   // Add multiple state vector types
-  int base1 = 10. + commRank * 4.;
+  double base1 = 10. + commRank * 4.;
   double dtest1[9] = {base1, base1 + 1., base1 + 2., base1 + 3., 0., 0., 0., 0., 0.};
-  int base2 = 100. + commRank * 4.;
+  double base2 = 100. + commRank * 4.;
   double dtest2[9] = {base2, base2 + 1., base2 + 2., base2 + 3., 0., 0., 0., 0., 0.};
 
   Jali::MeshFactory mf(MPI_COMM_WORLD);
@@ -231,21 +220,11 @@ TEST(MPI_Bounding_Boxes, SimpleTest2D) {
   int num_nodes = num_owned_nodes + source_mesh_flat.num_ghost_nodes();
   ASSERT_EQ(exp_num_nodes, num_nodes);
 
-  // Check node counts
-  std::vector<int>& nodeCounts = source_mesh_flat.get_node_counts();
-  ASSERT_EQ(num_cells, nodeCounts.size());
-  for (int c=0; c<num_cells; ++c)
-    ASSERT_EQ(4, nodeCounts[c]);
-
   // Check coordinates
-  std::vector<double>& coords = source_mesh_flat.get_coords();
-  int exp_num_coords = exp_num_nodes * 2;
-  ASSERT_EQ(exp_num_coords, coords.size());
-
   // List coordinates of cell 0 - others are equal to this
   // with a shift
-  std::vector<double> cell0Coords =
-    { 0.0, 0.0,  0.25, 0.0,  0.25, 0.25,  0.0, 0.25 };
+  std::vector<Portage::Point<2>> cell0Coords =
+    {{0.0, 0.0},  {0.25, 0.0},  {0.25, 0.25},  {0.0, 0.25}};
   // List owned cells that should have been sent to each rank
   std::vector<int> expOwnedGids;
   switch (commRank) {
@@ -263,16 +242,17 @@ TEST(MPI_Bounding_Boxes, SimpleTest2D) {
       break;
   }
 
-  int ctr = 0;
-  for (int i=0; i<expOwnedGids.size(); ++i) {
-    int gid = expOwnedGids[i];
+  for (int c=0; c<num_owned_cells; ++c) {
+    std::vector<Portage::Point<2>> myCoords;
+    source_mesh_flat.cell_get_coordinates(c, &myCoords);
+    ASSERT_EQ(4, myCoords.size());
+    int gid = expOwnedGids[c];
     int cid = (gid & 9) | ((gid & 4) >> 1) | ((gid & 2) << 1);
     double dx = (cid / 4) * 0.25;
     double dy = (cid % 4) * 0.25;
     for (int n=0; n<4; ++n) {
-      ASSERT_EQ(cell0Coords[2*n  ] + dx, coords[2*ctr  ]);
-      ASSERT_EQ(cell0Coords[2*n+1] + dy, coords[2*ctr+1]);
-      ctr += 1;
+      ASSERT_EQ(cell0Coords[n][0] + dx, myCoords[n][0]);
+      ASSERT_EQ(cell0Coords[n][1] + dy, myCoords[n][1]);
     }
   }
 
@@ -282,30 +262,19 @@ TEST(MPI_Bounding_Boxes, SimpleTest2D) {
   for (int c=0; c<num_owned_cells; ++c)
     ASSERT_EQ(expOwnedGids[c], gids[c]);
 
-  // Check neighbor counts
-  std::vector<int>& neighborCounts = source_mesh_flat.get_neighbor_counts();
-  for (int c=0; c<num_owned_cells; ++c) {
-    int gid = gids[c];
-    int cid = (gid & 9) | ((gid & 4) >> 1) | ((gid & 2) << 1);
-    bool onXBound = ((cid / 4) == 0) || ((cid / 4) == 3);
-    bool onYBound = ((cid % 4) == 0) || ((cid % 4) == 3);
-    int expCount = (onXBound && onYBound ? 3 :
-                    onXBound || onYBound ? 5 : 8);
-    ASSERT_EQ(expCount, neighborCounts[c]);
-  }
-
   // Check neighbors
-  std::vector<int>& neighbors = source_mesh_flat.get_neighbors();
-  ctr = 0;
   for (int c=0; c<num_owned_cells; ++c) {
-    int count = neighborCounts[c];
     // Get my neighbors
-    std::vector<int> myNeighbors(&neighbors[ctr], &neighbors[ctr+count]);
-    ctr += count;
+    std::vector<int> myNeighbors;
+    source_mesh_flat.cell_get_node_adj_cells(c, Portage::ALL, &myNeighbors);
+    int count = myNeighbors.size();
+    // Convert to global IDs
+    for (int n=0; n<count; ++n) myNeighbors[n] = gids[myNeighbors[n]];
     // Add my own ID
     myNeighbors.push_back(gids[c]);
+    count += 1;
     // Convert to cartesian IDs
-    for (int n=0; n<count+1; ++n) {
+    for (int n=0; n<count; ++n) {
       int ngid = myNeighbors[n];
       myNeighbors[n] = (ngid & 9) | ((ngid & 4) >> 1) | ((ngid & 2) << 1);
     }
@@ -324,8 +293,9 @@ TEST(MPI_Bounding_Boxes, SimpleTest2D) {
       }
     }
     // Now make sure all expected neighbors are present, in any order
+    ASSERT_EQ(expNeighbors.size(), count);
     std::sort(myNeighbors.begin(), myNeighbors.end());
-    for (int n=0; n<count+1; ++n)
+    for (int n=0; n<count; ++n)
       ASSERT_EQ(expNeighbors[n], myNeighbors[n]);
   }
 
