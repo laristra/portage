@@ -18,7 +18,7 @@
 #include "portage/support/portage.h"
 #include "portage/support/Point.h"
 #include "portage/search/search_kdtree.h"
-#include "portage/intersect/intersectClipper.h"
+#include "portage/intersect/intersect_r2d.h"
 #include "portage/intersect/intersect_r3d.h"
 #include "portage/interpolate/interpolate_1st_order.h"
 #include "portage/interpolate/interpolate_2nd_order.h"
@@ -567,12 +567,12 @@ Driver<SourceMesh_Wrapper,
   // INTERSECT
 
   // Get an instance of the desired intersect algorithm type
-  const IntersectClipper<SourceMesh_Wrapper, TargetMesh_Wrapper>
+  const IntersectR2D<SourceMesh_Wrapper, TargetMesh_Wrapper>
       intersect(source_mesh_, target_mesh_);
 
   // Make an instance of the intersect functor
 
-  IntersectFunctor<IntersectClipper<SourceMesh_Wrapper, TargetMesh_Wrapper>>
+  IntersectFunctor<IntersectR2D<SourceMesh_Wrapper, TargetMesh_Wrapper>>
       intersectfunctor(&intersect);
 
 
@@ -723,12 +723,12 @@ Driver<SourceMesh_Wrapper,
   // INTERSECT
 
   // Get an instance of the desired intersect algorithm type
-  const IntersectClipper<SourceMesh_Wrapper, TargetMesh_Wrapper>
+  const IntersectR2D<SourceMesh_Wrapper, TargetMesh_Wrapper>
       intersect(source_mesh_, target_mesh_);
 
   // Make an instance of the functor doing the search and intersection
 
-  IntersectFunctor<IntersectClipper<SourceMesh_Wrapper, TargetMesh_Wrapper>>
+  IntersectFunctor<IntersectR2D<SourceMesh_Wrapper, TargetMesh_Wrapper>>
       intersectfunctor(&intersect);
 
 
@@ -1522,14 +1522,14 @@ Driver<SourceMesh_Wrapper,
       search(source_mesh_dual, target_mesh_dual);
 
   // Get an instance of the desired intersect algorithm type
-  const IntersectClipper<MeshWrapperDual<SourceMesh_Wrapper>,
+  const IntersectR2D<MeshWrapperDual<SourceMesh_Wrapper>,
                          MeshWrapperDual<TargetMesh_Wrapper>>
       intersect(source_mesh_dual, target_mesh_dual);
 
 
   // Make an instance of the functor doing the search and intersection
 
-  IntersectFunctor<IntersectClipper<MeshWrapperDual<SourceMesh_Wrapper>,
+  IntersectFunctor<IntersectR2D<MeshWrapperDual<SourceMesh_Wrapper>,
       MeshWrapperDual<TargetMesh_Wrapper>>>
       intersectfunctor(&intersect);
 
@@ -1690,7 +1690,7 @@ Driver<SourceMesh_Wrapper,
 
 
   // Get an instance of the desired intersect algorithm type
-  const IntersectClipper<MeshWrapperDual<SourceMesh_Wrapper>,
+  const IntersectR2D<MeshWrapperDual<SourceMesh_Wrapper>,
                          MeshWrapperDual<TargetMesh_Wrapper>>
       intersect(source_mesh_dual, target_mesh_dual);
 
@@ -1703,7 +1703,7 @@ Driver<SourceMesh_Wrapper,
 
   // Make an instance of the functor doing the search and intersection
 
-  IntersectFunctor<IntersectClipper<MeshWrapperDual<SourceMesh_Wrapper>,
+  IntersectFunctor<IntersectR2D<MeshWrapperDual<SourceMesh_Wrapper>,
       MeshWrapperDual<TargetMesh_Wrapper>>>
       intersectfunctor(&intersect);
 
@@ -2191,15 +2191,15 @@ struct SearchFunctor {
   @struct IntersectFunctor "driver.h"
   @brief This functor is used inside a Portage::transform() inside
   Driver::run() to actually do the intersection of the target cell with candidate source cells
-  @tparam IsectType The type of intersect method (e.g. IntersectClipper).
+  @tparam IsectType The type of intersect method (e.g. IntersectR2D).
 */
 template <typename IsectType>
 struct IntersectFunctor {
-  const IsectType* intersect_;    ///< intersect method (e.g. IntersectClipper)
+  const IsectType* intersect_;    ///< intersect method (e.g. IntersectR2D)
 
   /*!
     @brief Constructor.
-    @param[in] intersect The intersect method to use (e.g. IntersectClipper)
+    @param[in] intersect The intersect method to use (e.g. IntersectR2D)
   */
   IntersectFunctor(const IsectType* intersect)
       : intersect_(intersect)
