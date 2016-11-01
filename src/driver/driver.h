@@ -223,11 +223,9 @@ class MeshWrapperDual {  // cellid is the dual cell (i.e. node) id
   const Mesh_Wrapper_Type &w_;
 };
 
-
 // Forward definitions
 template <typename SearchType> struct SearchFunctor;
 template <typename IntersectType> struct IntersectFunctor;
-
 template <typename SearchType, typename IsectType, typename InterpType>
 struct RemapFunctor;
 
@@ -244,7 +242,7 @@ struct RemapFunctor;
   manager implementation that provides certain functionality.
 */
 
-template <class SourceMesh_Wrapper, class SourceState_Wrapper,
+template <class Search, class Intersect, class Interpolate, class SourceMesh_Wrapper, class SourceState_Wrapper,
           class TargetMesh_Wrapper = SourceMesh_Wrapper,
           class TargetState_Wrapper = SourceState_Wrapper>
 class Driver {
@@ -258,13 +256,16 @@ class Driver {
     @param[in,out] targetState A @c TargetState_Wrapper for the data that will
     be mapped to the target mesh.
   */
-  Driver(SourceMesh_Wrapper const& sourceMesh,
+  Driver(Search const &search, Intersect const &intersect,
+         const Interpolate &interpolate,
+         SourceMesh_Wrapper const& sourceMesh,
          SourceState_Wrapper const& sourceState,
          TargetMesh_Wrapper const& targetMesh,
          TargetState_Wrapper& targetState)
-      : source_mesh_(sourceMesh), source_state_(sourceState),
+      : search_(search), intersect_(intersect), interpolate_(interpolate),
+        source_mesh_(sourceMesh), source_state_(sourceState),
         target_mesh_(targetMesh), target_state_(targetState),
-        interp_order_(1), dim_(sourceMesh.space_dimension()) {
+        dim_(sourceMesh.space_dimension()) {
     assert(sourceMesh.space_dimension() == targetMesh.space_dimension());
   }
 
@@ -327,20 +328,6 @@ class Driver {
     return target_remap_var_names_;
   }
 
-  /// Set the order of accuracy of interpolation
-
-  void set_interpolation_order(unsigned int const order) {
-    interp_order_ = order;
-  }
-
-  /*!
-    @brief Get the order of accuracy of interpolation
-    @return The order of accuracy for the interpolation.
-  */
-  unsigned int interpolation_order() const {
-    return interp_order_;
-  }
-
   /*!
     @brief Get the dimensionality of the meshes.
     @return The dimensionality of the meshes.
@@ -361,8 +348,8 @@ class Driver {
     RemapFunctor() (defined below) that specifies how the search,
     intersect, and interpolation calculations should be performed.
   */
-
-  void run() {
+  //amh: FIXME!! comments
+  void run(){
     std::printf("in Driver::run()...\n");
 
     int numTargetCells = target_mesh_.num_owned_cells();
@@ -388,1761 +375,681 @@ class Driver {
         }
       }
 
-      if (source_cellvar_names.size() > 0) {
-        switch (dim_) {
-          case 1:
-            std::cerr << "Remapping not implemented for 1D" << std::endl;
-            exit(-1);
-          case 2: {
-            (interp_order_ == 1) ?
-                run_2D_CELL_order1(source_cellvar_names, target_cellvar_names) :
-                run_2D_CELL_order2(source_cellvar_names, target_cellvar_names);
-            break;
-          }
-          case 3: {
-            (interp_order_ == 1) ?
-                (comm_size > 1) ?
-                run_3D_CELL_order1_distributed(source_cellvar_names,
-                                               target_cellvar_names) :
-                run_3D_CELL_order1(source_cellvar_names, target_cellvar_names) :
-            (comm_size > 1) ?
-                 run_3D_CELL_order2_distributed(source_cellvar_names, target_cellvar_names) :
-                 run_3D_CELL_order2(source_cellvar_names, target_cellvar_names);
+      float tot_seconds = 0.0, tot_seconds_srch = 0.0,
+          tot_seconds_xsect = 0.0, tot_seconds_interp = 0.0;
+      struct timeval begin_timeval, end_timeval, diff_timeval;
 
-            break;
-          }
-          default:
-            std::cerr << "Invalid dimension" << std::endl;
-            exit(-1);
+#ifdef ENABLE_PROFILE
+      __itt_resume();
+#endif
+
+      gettimeofday(&begin_timeval, 0);
+
+      int ntargetcells = target_mesh_.num_entities(CELL);
+
+      // SEARCH
+
+      Portage::vector<std::vector<int>> candidates(ntargetcells);
+
+      // Get an instance of the desired search algorithm type
+      SearchFunctor<Search>
+          searchfunctor(&search_);
+
+      Portage::transform(static_cast<counting_iterator>(target_mesh_.begin(CELL)),
+                         static_cast<counting_iterator>(target_mesh_.end(CELL)),
+                         candidates.begin(), searchfunctor);
+
+#ifdef ENABLE_PROFILE
+      __itt_pause();
+#endif
+
+      gettimeofday(&end_timeval, 0);
+      timersub(&end_timeval, &begin_timeval, &diff_timeval);
+      tot_seconds_srch = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
+
+#ifdef ENABLE_PROFILE
+      __itt_resume();
+#endif
+
+      gettimeofday(&begin_timeval, 0);
+
+      // INTERSECT
+
+      // Get an instance of the desired intersect algorithm type
+      // Make an instance of the intersect functor
+      IntersectFunctor<Intersect>
+          intersectfunctor(&intersect_);
+
+      // For each cell in the target mesh get a list of candidate-weight
+      // pairings (in a traditional mesh, not particle mesh, the weights
+      // are moments). Note that this candidate list is different from the
+      // search candidate list in that (1) it may not include some
+      // candidates and (2) some candidates may occur twice to account for
+      // the fact that the intersection of two cells is more than one
+      // disjoint piece (if one of the cells is non-convex). Also, note
+      // that for 2nd order and higher remaps, we get multiple moments
+      // (0th, 1st, etc) for each target-source cell intersection
+
+      Portage::vector<std::vector<Weights_t>> source_cells_and_weights(ntargetcells);
+      //amh: removed cast here for the counting_iterator--this didn't seem to be doing anything
+      Portage::transform(target_mesh_.begin(CELL),
+                         target_mesh_.end(CELL),
+                         candidates.begin(),
+                         source_cells_and_weights.begin(),
+                         intersectfunctor);
+
+#ifdef ENABLE_PROFILE
+      __itt_pause();
+#endif
+      gettimeofday(&end_timeval, 0);
+      timersub(&end_timeval, &begin_timeval, &diff_timeval);
+      tot_seconds_xsect = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
+
+      // INTERPOLATE (one variable at a time)
+
+#ifdef ENABLE_PROFILE
+      __itt_resume();
+#endif
+      gettimeofday(&begin_timeval, 0);
+
+      int nvars = source_cellvar_names.size();
+      std::cout << "number of variables to remap is " << nvars << std::endl;
+
+      for (int i = 0; i < nvars; ++i) {
+        //amh: ?? add back accuracy output statement??
+        std::cout << "Remapping variable " << source_cellvar_names[i]
+                  << " to variable " << target_cellvar_names[i] << std::endl;
+
+        // This populates targetField with the values returned by the
+        // remapper operator
+
+        /*  UNCOMMENT WHEN WE RESTORE get_type in jali_state_wrapper
+        if (typeid(source_state_.get_type(source_var_names[i])) ==
+        typeid(double)) {
+    */
+    double *target_field_raw = nullptr;
+    target_state_.get_data(CELL, target_cellvar_names[i], &target_field_raw);
+    Portage::pointer<double> target_field(target_field_raw);
+
+    Portage::transform(target_mesh_.begin(CELL),
+                       target_mesh_.end(CELL),
+                       source_cells_and_weights.begin(),
+                       target_field, interpolate_);
+    /*  UNCOMMENT WHEN WE RESTORE get_type in jali_state_wrapper
+        } else {
+        std::cerr << "Cannot remap " << source_var_names[i] <<
+        " because it is not a scalar double variable\n";
+        continue;
         }
-      }
-    }
+    */
+  }
 
+#ifdef ENABLE_PROFILE
+  __itt_pause();
+#endif
+
+  gettimeofday(&end_timeval, 0);
+  timersub(&end_timeval, &begin_timeval, &diff_timeval);
+  tot_seconds_interp = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
+
+  tot_seconds = tot_seconds_srch + tot_seconds_xsect + tot_seconds_interp;
+
+  std::cout << "Transform Time (s): " << tot_seconds << std::endl;
+  std::cout << "  Search Time (s): " << tot_seconds_srch << std::endl;
+  std::cout << "  Intersect Time (s): " << tot_seconds_xsect << std::endl;
+  std::cout << "  Interpolate Time (s): " << tot_seconds_interp << std::endl;
 
     // Collect all node based variables and remap them
-    {
-      std::vector<std::string> source_nodevar_names;
-      std::vector<std::string> target_nodevar_names;
-      for (int i = 0; i < nvars; ++i) {
-        Entity_kind onwhat =
-            source_state_.get_entity(source_remap_var_names_[i]);
+    /* { */
+    /*   std::vector<std::string> source_nodevar_names; */
+    /*   std::vector<std::string> target_nodevar_names; */
+    /*   for (int i = 0; i < nvars; ++i) { */
+    /*     Entity_kind onwhat = */
+    /*         source_state_.get_entity(source_remap_var_names_[i]); */
 
-        if (onwhat == NODE) {
-          source_nodevar_names.emplace_back(source_remap_var_names_[i]);
-          target_nodevar_names.emplace_back(target_remap_var_names_[i]);
-        }
-      }
+    /*     if (onwhat == NODE) { */
+    /*       source_nodevar_names.emplace_back(source_remap_var_names_[i]); */
+    /*       target_nodevar_names.emplace_back(target_remap_var_names_[i]); */
+    /*     } */
+    /*   } */
 
-      if (source_nodevar_names.size() > 0) {
-        switch (dim_) {
-          case 1: {
-            std::cerr << "Remapping not implemented for 1D" << std::endl;
-            exit(-1);
-          }
-          case 2: {
-            (interp_order_ == 1) ?
-                run_2D_NODE_order1(source_nodevar_names, target_nodevar_names) :
-                run_2D_NODE_order2(source_nodevar_names, target_nodevar_names);
-            break;
-          }
-          case 3: {
-            (interp_order_ == 1) ?
-                run_3D_NODE_order1(source_nodevar_names, target_nodevar_names) :
-                run_3D_NODE_order2(source_nodevar_names, target_nodevar_names);
-            break;
-          }
-          default: {
-            std::cerr << "Invalid dimension" << std::endl;
-            exit(-1);
-          }
-        }
-      }
+    /*   if (source_nodevar_names.size() > 0) { */
+    /*     switch (dim_) { */
+    /*       case 1: { */
+    /*         std::cerr << "Remapping not implemented for 1D" << std::endl; */
+    /*         exit(-1); */
+    /*       } */
+    /*       case 2: { */
+    /*         (interp_order_ == 1) ? */
+    /*             run_2D_NODE_order1(source_nodevar_names, target_nodevar_names) : */
+    /*             run_2D_NODE_order2(source_nodevar_names, target_nodevar_names); */
+    /*         break; */
+    /*       } */
+    /*       case 3: { */
+    /*         (interp_order_ == 1) ? */
+    /*             run_3D_NODE_order1(source_nodevar_names, target_nodevar_names) : */
+    /*             run_3D_NODE_order2(source_nodevar_names, target_nodevar_names); */
+    /*         break; */
+    /*       } */
+    /*       default: { */
+    /*         std::cerr << "Invalid dimension" << std::endl; */
+    /*         exit(-1); */
+    /*       } */
+    /*     } */
+    /*   } */
+    /* } */
     }
   }
 
-
-  /// @brief 1st order remapping of cell centered data on 2D meshes
-  void run_2D_CELL_order1(std::vector<std::string> source_cellvar_names,
-                          std::vector<std::string> target_cellvar_names);
-  /// @brief 2nd order remapping of cell centered data on 2D meshes
-  void run_2D_CELL_order2(std::vector<std::string> source_cellvar_names,
-                          std::vector<std::string> target_cellvar_names);
-  /// @brief 1st order remapping of cell centered data on 3D meshes
-  void run_3D_CELL_order1(std::vector<std::string> source_cellvar_names,
-                          std::vector<std::string> target_cellvar_names);
-  /// @brief Disributed 1st order remapping of cell centered data on 3D meshes
-  void run_3D_CELL_order1_distributed(std::vector<std::string>
-                                      source_cellvar_names,
-                                      std::vector<std::string>
-                                      target_cellvar_names);
-  /// @brief 2nd order remapping of cell centered data on 3D meshes
-  void run_3D_CELL_order2(std::vector<std::string> source_cellvar_names,
-                          std::vector<std::string> target_cellvar_names);
-  /// @brief Disributed 1st order remapping of cell centered data on 3D meshes
-  void run_3D_CELL_order2_distributed(std::vector<std::string> source_cellvar_names,
-                                      std::vector<std::string> target_cellvar_names);
-  /// @brief 1st order remapping of node centered data on 2D meshes
-  void run_2D_NODE_order1(std::vector<std::string> source_nodevar_names,
-                          std::vector<std::string> target_nodevar_names);
-  /// @brief 2nd order remapping of node centered data on 2D meshes
-  void run_2D_NODE_order2(std::vector<std::string> source_nodevar_names,
-                          std::vector<std::string> target_nodevar_names);
-  /// @brief 1st order remapping of node centered data on 3D meshes
-  void run_3D_NODE_order1(std::vector<std::string> source_nodevar_names,
-                          std::vector<std::string> target_nodevar_names);
-  /// @brief 2nd order remapping of node centered data on 3D meshes
-  void run_3D_NODE_order2(std::vector<std::string> source_nodevar_names,
-                          std::vector<std::string> target_nodevar_names);
-
-
  private:
+  Search const &search_;  // amh: resolve lifetime issues (move construction?)
+  Intersect const &intersect_;
+  Interpolate const &interpolate_;
   SourceMesh_Wrapper const& source_mesh_;
   TargetMesh_Wrapper const& target_mesh_;
   SourceState_Wrapper const& source_state_;
   TargetState_Wrapper& target_state_;
   std::vector<std::string> source_remap_var_names_;
   std::vector<std::string> target_remap_var_names_;
-  unsigned int interp_order_;
   unsigned int dim_;
 };  // class Driver
 
 
-//-----------------------------------------------------------------------------
-// 1st order remapping of cell centered data on 2D meshes
-//-----------------------------------------------------------------------------
-template<class SourceMesh_Wrapper, class SourceState_Wrapper,
-         class TargetMesh_Wrapper, class TargetState_Wrapper>
-void
-Driver<SourceMesh_Wrapper,
-       SourceState_Wrapper,
-       TargetMesh_Wrapper,
-       TargetState_Wrapper>::run_2D_CELL_order1(std::vector<std::string>
-                                                source_var_names,
-                                                std::vector<std::string>
-                                                target_var_names) {
+// //-----------------------------------------------------------------------------
+// // Distributed 1st order remapping of cell centered data on 3D meshes
+// //-----------------------------------------------------------------------------
 
-  float tot_seconds = 0.0, tot_seconds_srch = 0.0,
-      tot_seconds_xsect = 0.0, tot_seconds_interp = 0.0;
-  struct timeval begin_timeval, end_timeval, diff_timeval;
+// template <class Search, class Intersect, class Interpolate, 
+//     class SourceMesh_Wrapper, class SourceState_Wrapper,
+//     class TargetMesh_Wrapper,
+//     class TargetState_Wrapper>
+// void
+// Driver<Search, Intersect, Interpolate, SourceMesh_Wrapper,
+//        SourceState_Wrapper, TargetMesh_Wrapper,
+//        TargetState_Wrapper>::run_3D_CELL_order1_distributed(std::vector<std::string>
+//                                                             source_var_names,
+//                                                             std::vector<std::string>
+//                                                             target_var_names) {
 
-#ifdef ENABLE_PROFILE
-  __itt_resume();
-#endif
+//   float tot_seconds = 0.0, tot_seconds_srch = 0.0,
+//       tot_seconds_xsect = 0.0, tot_seconds_interp = 0.0;
+//   struct timeval begin_timeval, end_timeval, diff_timeval;
 
-  gettimeofday(&begin_timeval, 0);
+// #ifdef ENABLE_PROFILE
+//   __itt_resume();
+// #endif
 
-  int ntargetcells = target_mesh_.num_entities(CELL);
+//   gettimeofday(&begin_timeval, 0);
 
-  // SEARCH
+//   int ntargetcells = target_mesh_.num_entities(CELL);
 
-  Portage::vector<std::vector<int>> candidates(ntargetcells);
+//   // SEARCH
 
-  // Get an instance of the desired search algorithm type
-  const SearchKDTree<2, SourceMesh_Wrapper, TargetMesh_Wrapper>
-      search(source_mesh_, target_mesh_);
+//   Portage::vector<std::vector<int>> candidates(ntargetcells);
 
-  SearchFunctor<SearchKDTree<2, SourceMesh_Wrapper, TargetMesh_Wrapper>>
-      searchfunctor(&search);
+//   // Get the rank for this process
+//   int comm_rank;
+//   MPI_Comm_rank(MPI_COMM_WORLD, &comm_rank);
 
-
-  Portage::transform((counting_iterator)(target_mesh_.begin(CELL)),
-                     (counting_iterator)(target_mesh_.end(CELL)),
-                     candidates.begin(), searchfunctor);
+//   // Convert the source mesh and state to a flat representation;
+//   // Since we are not sending any target mesh data over MPI, we don't need
+//   // to convert the target mesh or state to a flat representation
+//   Flat_Mesh_Wrapper<> source_mesh_flat(8, source_mesh_);
+//   Flat_State_Wrapper<> source_state_flat(source_state_,
+//                                          source_remap_var_names_);
 
-#ifdef ENABLE_PROFILE
-  __itt_pause();
-#endif
+//   // Use a bounding box distributor to send the source cells to the target
+//   // paritions where they are needed
+//   MPI_Bounding_Boxes distributor;
+//   distributor.distribute(source_mesh_flat, source_state_flat, target_mesh_,
+//                          target_state_);
 
-  gettimeofday(&end_timeval, 0);
-  timersub(&end_timeval, &begin_timeval, &diff_timeval);
-  tot_seconds_srch = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
+//   // Get an instance of the desired search algorithm type
+//   const SearchKDTree<3, Flat_Mesh_Wrapper<>, TargetMesh_Wrapper>
+//       search(source_mesh_flat, target_mesh_);
 
+//   // Build a slightly specialized functor from it
 
-#ifdef ENABLE_PROFILE
-  __itt_resume();
-#endif
+//   SearchFunctor<SearchKDTree<3, Flat_Mesh_Wrapper<>, TargetMesh_Wrapper>>
+//       searchfunctor(&search);
 
-  gettimeofday(&begin_timeval, 0);
 
-  // INTERSECT
+//   Portage::transform((counting_iterator)(target_mesh_.begin(CELL)),
+//                      (counting_iterator)(target_mesh_.end(CELL)),
+//                      candidates.begin(), searchfunctor);
 
-  // Get an instance of the desired intersect algorithm type
-  const IntersectClipper<SourceMesh_Wrapper, TargetMesh_Wrapper>
-      intersect(source_mesh_, target_mesh_);
+// #ifdef ENABLE_PROFILE
+//   __itt_pause();
+// #endif
 
-  // Make an instance of the intersect functor
+//   gettimeofday(&end_timeval, 0);
+//   timersub(&end_timeval, &begin_timeval, &diff_timeval);
+//   tot_seconds_srch = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
 
-  IntersectFunctor<IntersectClipper<SourceMesh_Wrapper, TargetMesh_Wrapper>>
-      intersectfunctor(&intersect);
-
-
-  // For each cell in the target mesh get a list of candidate-weight
-  // pairings (in a traditional mesh, not particle mesh, the weights
-  // are moments). Note that this candidate list is different from the
-  // search candidate list in that (1) it may not include some
-  // candidates and (2) some candidates may occur twice to account for
-  // the fact that the intersection of two cells is more than one
-  // disjoint piece (if one of the cells is non-convex). Also, note
-  // that for 2nd order and higher remaps, we get multiple moments
-  // (0th, 1st, etc) for each target-source cell intersection
-
-  Portage::vector<std::vector<Weights_t>> source_cells_and_weights(ntargetcells);
-
-  Portage::transform((counting_iterator)(target_mesh_.begin(CELL)),
-                     (counting_iterator)(target_mesh_.end(CELL)),
-                     candidates.begin(),
-                     source_cells_and_weights.begin(),
-                     intersectfunctor);
 
-#ifdef ENABLE_PROFILE
-  __itt_pause();
-#endif
+// #ifdef ENABLE_PROFILE
+//   __itt_resume();
+// #endif
 
-  gettimeofday(&end_timeval, 0);
-  timersub(&end_timeval, &begin_timeval, &diff_timeval);
-  tot_seconds_xsect = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
+//   gettimeofday(&begin_timeval, 0);
 
-  // INTERPOLATE (one variable at a time)
+//   // INTERSECT
 
-#ifdef ENABLE_PROFILE
-  __itt_resume();
-#endif
 
-  gettimeofday(&begin_timeval, 0);
-
-  Interpolate_1stOrder<SourceMesh_Wrapper, TargetMesh_Wrapper,
-                       SourceState_Wrapper, CELL, 2>
-      interpolate(source_mesh_, target_mesh_, source_state_);
-
-  int nvars = source_var_names.size();
-  for (int i = 0; i < nvars; ++i) {
-    std::cout << "Remapping variable " << source_var_names[i]
-              << " to variable " << target_var_names[i]
-              << " using a 1st order accurate algorithm" << std::endl;
+//   // Get an instance of the desired intersect algorithm type
+//   const IntersectR3D<Flat_Mesh_Wrapper<>, TargetMesh_Wrapper>
+//       intersect{source_mesh_flat, target_mesh_};
 
-    interpolate.set_interpolation_variable(source_var_names[i]);
 
-    // This populates targetField with the values returned by the
-    // remapper operator
+//   // Make an idnstance of the functor doing the search and intersection
 
-    /*  UNCOMMENT WHEN WE RESTORE get_type in jali_state_wrapper
-        if (typeid(source_state_.get_type(source_var_names[i])) ==
-        typeid(double)) {
-    */
-    double *target_field_raw = nullptr;
-    target_state_.get_data(CELL, target_var_names[i], &target_field_raw);
-    Portage::pointer<double> target_field(target_field_raw);
+//   IntersectFunctor<IntersectR3D<Flat_Mesh_Wrapper<>, TargetMesh_Wrapper>>
+//       intersectfunctor(&intersect);
 
-    Portage::transform((counting_iterator)(target_mesh_.begin(CELL)),
-                       (counting_iterator)(target_mesh_.end(CELL)),
-                       source_cells_and_weights.begin(),
-                       target_field, interpolate);
-    /*  UNCOMMENT WHEN WE RESTORE get_type in jali_state_wrapper
-        } else {
-        std::cerr << "Cannot remap " << source_var_names[i] <<
-        " because it is not a scalar double variable\n";
-        continue;
-        }
-    */
 
-  }
+//   // For each cell in the target mesh get a list of candidate-weight
+//   // pairings (in a traditional mesh, not particle mesh, the weights
+//   // are moments). Note that this candidate list is different from the
+//   // search candidate list in that (1) it may not include some
+//   // candidates and (2) some candidates may occur twice to account for
+//   // the fact that the intersection of two cells is more than one
+//   // disjoint piece (if one of the cells is non-convex). Also, note
+//   // that for 2nd order and higher remaps, we get multiple moments
+//   // (0th, 1st, etc) for each target-source cell intersection
+
+//   Portage::vector<std::vector<Weights_t>> source_cells_and_weights(ntargetcells);
+
+//   Portage::transform((counting_iterator)(target_mesh_.begin(CELL)),
+//                      (counting_iterator)(target_mesh_.end(CELL)),
+//                      candidates.begin(),
+//                      source_cells_and_weights.begin(),
+//                      intersectfunctor);
+
+// #ifdef ENABLE_PROFILE
+//   __itt_pause();
+// #endif
 
-#ifdef ENABLE_PROFILE
-  __itt_pause();
-#endif
+//   gettimeofday(&end_timeval, 0);
+//   timersub(&end_timeval, &begin_timeval, &diff_timeval);
+//   tot_seconds_xsect = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
 
-  gettimeofday(&end_timeval, 0);
-  timersub(&end_timeval, &begin_timeval, &diff_timeval);
-  tot_seconds_interp = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
+//   // INTERPOLATE (one variable at a time)
 
-  tot_seconds = tot_seconds_srch + tot_seconds_xsect + tot_seconds_interp;
+// #ifdef ENABLE_PROFILE
+//   __itt_resume();
+// #endif
 
-  std::cout << "Transform Time (s): " << tot_seconds << std::endl;
-  std::cout << "  Search Time (s): " << tot_seconds_srch << std::endl;
-  std::cout << "  Intersect Time (s): " << tot_seconds_xsect << std::endl;
-  std::cout << "  Interpolate Time (s): " << tot_seconds_interp << std::endl;
-}
+//   gettimeofday(&begin_timeval, 0);
 
+//   // Get an instance of the 1st order algorithm
+//   Interpolate_1stOrder<Flat_Mesh_Wrapper<>, TargetMesh_Wrapper,
+//                        Flat_State_Wrapper<>, CELL, 3>
+//       interpolate(source_mesh_flat, target_mesh_, source_state_flat);
 
-//-----------------------------------------------------------------------------
-// 2nd order remapping of cell centered data on 2D meshes
-//-----------------------------------------------------------------------------
-template<class SourceMesh_Wrapper, class SourceState_Wrapper,
-         class TargetMesh_Wrapper, class TargetState_Wrapper>
-void
-Driver<SourceMesh_Wrapper,
-       SourceState_Wrapper,
-       TargetMesh_Wrapper,
-       TargetState_Wrapper>::run_2D_CELL_order2(std::vector<std::string>
-                                                source_var_names,
-                                                std::vector<std::string>
-                                                target_var_names) {
-  float tot_seconds = 0.0, tot_seconds_srch = 0.0,
-      tot_seconds_xsect = 0.0, tot_seconds_interp = 0.0;
-  struct timeval begin_timeval, end_timeval, diff_timeval;
+//   int nvars = source_var_names.size();
+//   for (int i = 0; i < nvars; ++i) {
+//     if (comm_rank == 0)
+//       std::cout << "Remapping variable " << source_var_names[i]
+//                 << " to variable " << target_var_names[i]
+//                 << " using a 1st order accurate algorithm" << std::endl;
 
-#ifdef ENABLE_PROFILE
-  __itt_resume();
-#endif
+//     interpolate.set_interpolation_variable(source_var_names[i]);
 
-  gettimeofday(&begin_timeval, 0);
+//     // This populates targetField with the values returned by the
+//     // interpolate operator
 
-  int ntargetcells = target_mesh_.num_entities(CELL);
+//     /* UNCOMMENT WHEN WE RESTORE get_type in jali_state_wrapper
+//        if (typeid(source_state_.get_type(source_var_names[i])) ==
+//        typeid(double)) {*/
 
-  // SEARCH
+//     double *target_field_raw = nullptr;
+//     target_state_.get_data(CELL, target_var_names[i], &target_field_raw);
+//     Portage::pointer<double> target_field(target_field_raw);
 
-  Portage::vector<std::vector<int>> candidates(ntargetcells);
+//     Portage::transform((counting_iterator)(target_mesh_.begin(CELL)),
+//                        (counting_iterator)(target_mesh_.end(CELL)),
+//                        source_cells_and_weights.begin(),
+//                        target_field, interpolate);
 
-  // Get an instance of the desired search algorithm type
-  const SearchKDTree<2, SourceMesh_Wrapper, TargetMesh_Wrapper>
-      search(source_mesh_, target_mesh_);
-
-  SearchFunctor<SearchKDTree<2, SourceMesh_Wrapper, TargetMesh_Wrapper>>
-      searchfunctor(&search);
-
-
-  Portage::transform((counting_iterator)(target_mesh_.begin(CELL)),
-                     (counting_iterator)(target_mesh_.end(CELL)),
-                     candidates.begin(), searchfunctor);
+//     /*  UNCOMMENT WHEN WE RESTORE get_type in jali_state_wrapper
+//         } else {
+//         std::cerr << "Cannot remap " << source_var_names[i] <<
+//         " because it is not a scalar double variable\n";
+//         continue;
+//         }*/
 
-#ifdef ENABLE_PROFILE
-  __itt_pause();
-#endif
+//   }
 
-  gettimeofday(&end_timeval, 0);
-  timersub(&end_timeval, &begin_timeval, &diff_timeval);
-  tot_seconds_srch = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
 
+// #ifdef ENABLE_PROFILE
+//   __itt_pause();
+// #endif
 
-#ifdef ENABLE_PROFILE
-  __itt_resume();
-#endif
+//   gettimeofday(&end_timeval, 0);
+//   timersub(&end_timeval, &begin_timeval, &diff_timeval);
+//   tot_seconds_interp = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
 
-  gettimeofday(&begin_timeval, 0);
+//   tot_seconds = tot_seconds_srch + tot_seconds_xsect + tot_seconds_interp;
 
-  // INTERSECT
+//   std::cout << "Transform Time (s): " << tot_seconds << std::endl;
+//   std::cout << "  Search Time (s): " << tot_seconds_srch << std::endl;
+//   std::cout << "  Intersect Time (s): " << tot_seconds_xsect << std::endl;
+//   std::cout << "  Interpolate Time (s): " << tot_seconds_interp << std::endl;
+// }
 
-  // Get an instance of the desired intersect algorithm type
-  const IntersectClipper<SourceMesh_Wrapper, TargetMesh_Wrapper>
-      intersect(source_mesh_, target_mesh_);
-
-  // Make an instance of the functor doing the search and intersection
-
-  IntersectFunctor<IntersectClipper<SourceMesh_Wrapper, TargetMesh_Wrapper>>
-      intersectfunctor(&intersect);
-
-
-  // For each cell in the target mesh get a list of candidate-weight
-  // pairings (in a traditional mesh, not particle mesh, the weights
-  // are moments). Note that this candidate list is different from the
-  // search candidate list in that (1) it may not include some
-  // candidates and (2) some candidates may occur twice to account for
-  // the fact that the intersection of two cells is more than one
-  // disjoint piece (if one of the cells is non-convex). Also, note
-  // that for 2nd order and higher remaps, we get multiple moments
-  // (0th, 1st, etc) for each target-source cell intersection
-
-  Portage::vector<std::vector<Weights_t>> source_cells_and_weights(ntargetcells);
-
-  Portage::transform((counting_iterator)(target_mesh_.begin(CELL)),
-                     (counting_iterator)(target_mesh_.end(CELL)),
-                     candidates.begin(),
-                     source_cells_and_weights.begin(),
-                     intersectfunctor);
-
-#ifdef ENABLE_PROFILE
-  __itt_pause();
-#endif
-
-  gettimeofday(&end_timeval, 0);
-  timersub(&end_timeval, &begin_timeval, &diff_timeval);
-  tot_seconds_xsect = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
 
-  // INTERPOLATE (one variable at a time)
+// //-----------------------------------------------------------------------------
+// // 1st order remapping of node centered data on 2D meshes
+// //-----------------------------------------------------------------------------
 
-#ifdef ENABLE_PROFILE
-  __itt_resume();
-#endif
+// template <class Search, class Intersect, class Interpolate, 
+//     class SourceMesh_Wrapper, class SourceState_Wrapper,
+//     class TargetMesh_Wrapper,
+//     class TargetState_Wrapper>
+// void
+//     Driver<Search, Intersect, Interpolate, SourceMesh_Wrapper,
+//        SourceState_Wrapper,TargetMesh_Wrapper,
+//        TargetState_Wrapper>::run_2D_NODE_order1(std::vector<std::string>
+//                                                 source_var_names,
+//                                                 std::vector<std::string>
+//                                                 target_var_names) {
+//   float tot_seconds = 0.0, tot_seconds_srch = 0.0,
+//       tot_seconds_xsect = 0.0, tot_seconds_interp = 0.0;
+//   struct timeval begin_timeval, end_timeval, diff_timeval;
+
+//   MeshWrapperDual<SourceMesh_Wrapper> source_mesh_dual(source_mesh_);
+//   MeshWrapperDual<TargetMesh_Wrapper> target_mesh_dual(target_mesh_);
+
+// #ifdef ENABLE_PROFILE
+//   __itt_resume();
+// #endif
 
-  gettimeofday(&begin_timeval, 0);
+//   gettimeofday(&begin_timeval, 0);
 
-  Interpolate_2ndOrder<SourceMesh_Wrapper, TargetMesh_Wrapper,
-                       SourceState_Wrapper, CELL, 2>
-      interpolate(source_mesh_, target_mesh_, source_state_);
+//   int ntargetcells = target_mesh_.num_entities(NODE);
 
-  int nvars = source_var_names.size();
-  for (int i = 0; i < nvars; ++i) {
-    std::cout << "Remapping variable " << source_var_names[i]
-              << " to variable " << target_var_names[i]
-              << " using a 2nd order accurate algorithm" << std::endl;
+//   // SEARCH
 
-    interpolate.set_interpolation_variable(source_var_names[i], NOLIMITER);
+//   Portage::vector<std::vector<int>> candidates(ntargetcells);
 
-    // This populates targetField with the values returned by the
-    // remapper operator
+//   // Get an instance of the desired search algorithm type
+//   const SearchKDTree<2, MeshWrapperDual<SourceMesh_Wrapper>,
+//                      MeshWrapperDual<TargetMesh_Wrapper>>
+//       search(source_mesh_dual, target_mesh_dual);
 
-    /*  UNCOMMENT WHEN WE RESTORE get_type in jali_state_wrapper
-        if (typeid(source_state_.get_type(source_var_names[i])) ==
-        typeid(double)) {
-    */
-    double *target_field_raw = nullptr;
-    target_state_.get_data(CELL, target_var_names[i], &target_field_raw);
-    Portage::pointer<double> target_field(target_field_raw);
+//   // Get an instance of the desired intersect algorithm type
+//   const IntersectClipper<MeshWrapperDual<SourceMesh_Wrapper>,
+//                          MeshWrapperDual<TargetMesh_Wrapper>>
+//       intersect(source_mesh_dual, target_mesh_dual);
 
-    Portage::transform((counting_iterator)(target_mesh_.begin(CELL)),
-                       (counting_iterator)(target_mesh_.end(CELL)),
-                       source_cells_and_weights.begin(),
-                       target_field, interpolate);
-    /*  UNCOMMENT WHEN WE RESTORE get_type in jali_state_wrapper
-        } else {
-        std::cerr << "Cannot remap " << source_var_names[i] <<
-        " because it is not a scalar double variable\n";
-        continue;
-        }
-    */
 
-  }
+//   // Make an instance of the functor doing the search and intersection
+
+//   IntersectFunctor<IntersectClipper<MeshWrapperDual<SourceMesh_Wrapper>,
+//       MeshWrapperDual<TargetMesh_Wrapper>>>
+//       intersectfunctor(&intersect);
+
+
+//   // For each cell in the target mesh get a list of candidate-weight
+//   // pairings (in a traditional mesh, not particle mesh, the weights
+//   // are moments). Note that this candidate list is different from the
+//   // search candidate list in that (1) it may not include some
+//   // candidates and (2) some candidates may occur twice to account for
+//   // the fact that the intersection of two cells is more than one
+//   // disjoint piece (if one of the cells is non-convex). Also, note
+//   // that for 2nd order and higher remaps, we get multiple moments
+//   // (0th, 1st, etc) for each target-source cell intersection
+
+//   int ntargetnodes = target_mesh_.num_entities(NODE);
+//   Portage::vector<std::vector<Weights_t>> source_cells_and_weights(ntargetnodes);
+
+//   Portage::transform((counting_iterator) target_mesh_.begin(NODE),
+//                      (counting_iterator) target_mesh_.end(NODE),
+//                      candidates.begin(),
+//                      source_cells_and_weights.begin(),
+//                      intersectfunctor);
+
+// #ifdef ENABLE_PROFILE
+//   __itt_pause();
+// #endif
+
+//   gettimeofday(&end_timeval, 0);
+//   timersub(&end_timeval, &begin_timeval, &diff_timeval);
+//   tot_seconds_xsect = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
+
+//   // INTERPOLATE (one variable at a time)
+
+// #ifdef ENABLE_PROFILE
+//   __itt_resume();
+// #endif
 
+//   gettimeofday(&begin_timeval, 0);
+
+//   Interpolate_1stOrder<SourceMesh_Wrapper, TargetMesh_Wrapper,
+//                        SourceState_Wrapper, NODE, 2>
+//       interpolate(source_mesh_, target_mesh_, source_state_);
+
+//   int nvars = source_var_names.size();
+//   for (int i = 0; i < nvars; ++i) {
+//     std::cout << "Remapping variable " << source_var_names[i]
+//               << " to variable " << target_var_names[i]
+//               << " using a 1st order accurate algorithm" << std::endl;
 
-#ifdef ENABLE_PROFILE
-  __itt_pause();
-#endif
+//     interpolate.set_interpolation_variable(source_var_names[i]);
 
-  gettimeofday(&end_timeval, 0);
-  timersub(&end_timeval, &begin_timeval, &diff_timeval);
-  tot_seconds_interp = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
+//     // This populates targetField with the values returned by the
+//     // interpolate operator
 
-  tot_seconds = tot_seconds_srch + tot_seconds_xsect + tot_seconds_interp;
+//     /*  UNCOMMENT WHEN WE RESTORE get_type in jali_state_wrapper
+//         if (typeid(source_state_.get_type(source_var_names[i])) ==
+//         typeid(double)) {
+//     */
+//     double *target_field_raw = nullptr;
+//     target_state_.get_data(NODE, target_var_names[i], &target_field_raw);
+//     Portage::pointer<double> target_field(target_field_raw);
 
-  std::cout << "Transform Time (s): " << tot_seconds << std::endl;
-  std::cout << "  Search Time (s): " << tot_seconds_srch << std::endl;
-  std::cout << "  Intersect Time (s): " << tot_seconds_xsect << std::endl;
-  std::cout << "  Interpolate Time (s): " << tot_seconds_interp << std::endl;
-}
+//     Portage::transform((counting_iterator)(target_mesh_.begin(NODE)),
+//                        (counting_iterator)(target_mesh_.end(NODE)),
+//                        source_cells_and_weights.begin(),
+//                        target_field, interpolate);
+//     /*  UNCOMMENT WHEN WE RESTORE get_type in jali_state_wrapper
+//         } else {
+//         std::cerr << "Cannot remap " << source_var_names[i] <<
+//         " because it is not a scalar double variable\n";
+//         continue;
+//         }
+//     */
 
-//-----------------------------------------------------------------------------
-// 1st order remapping of cell centered data on 3D meshes
-//-----------------------------------------------------------------------------
-template<class SourceMesh_Wrapper, class SourceState_Wrapper,
-         class TargetMesh_Wrapper, class TargetState_Wrapper>
-void
-Driver<SourceMesh_Wrapper,
-       SourceState_Wrapper,
-       TargetMesh_Wrapper,
-       TargetState_Wrapper>::run_3D_CELL_order1(std::vector<std::string>
-                                                source_var_names,
-                                                std::vector<std::string>
-                                                target_var_names) {
-  float tot_seconds = 0.0, tot_seconds_srch = 0.0,
-      tot_seconds_xsect = 0.0, tot_seconds_interp = 0.0;
-  struct timeval begin_timeval, end_timeval, diff_timeval;
+//   }
 
-#ifdef ENABLE_PROFILE
-  __itt_resume();
-#endif
 
-  gettimeofday(&begin_timeval, 0);
+// #ifdef ENABLE_PROFILE
+//   __itt_pause();
+// #endif
 
-  int ntargetcells = target_mesh_.num_entities(CELL);
+//   gettimeofday(&end_timeval, 0);
+//   timersub(&end_timeval, &begin_timeval, &diff_timeval);
+//   tot_seconds_interp = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
 
-  // SEARCH
+//   tot_seconds = tot_seconds_srch + tot_seconds_xsect + tot_seconds_interp;
 
-  Portage::vector<std::vector<int>> candidates(ntargetcells);
+//   std::cout << "Transform Time (s): " << tot_seconds << std::endl;
+//   std::cout << "  Search Time (s): " << tot_seconds_srch << std::endl;
+//   std::cout << "  Intersect Time (s): " << tot_seconds_xsect << std::endl;
+//   std::cout << "  Interpolate Time (s): " << tot_seconds_interp << std::endl;
+// }
 
-  // Get an instance of the desired search algorithm type
-  const SearchKDTree<3, SourceMesh_Wrapper, TargetMesh_Wrapper>
-      search(source_mesh_, target_mesh_);
+// //-----------------------------------------------------------------------------
+// // 1st order remapping of node centered data on 3D meshes
+// //-----------------------------------------------------------------------------
+// template <class Search, class Intersect, class Interpolate, 
+//     class SourceMesh_Wrapper, class SourceState_Wrapper,
+//     class TargetMesh_Wrapper,
+//     class TargetState_Wrapper>
+// void
+//     Driver<Search, Intersect, Interpolate, SourceMesh_Wrapper,
+//        SourceState_Wrapper, TargetMesh_Wrapper,
+//        TargetState_Wrapper>::run_3D_NODE_order1(std::vector<std::string>
+//                                                 source_var_names,
+//                                                 std::vector<std::string>
+//                                                 target_var_names) {
+//   float tot_seconds = 0.0, tot_seconds_srch = 0.0,
+//       tot_seconds_xsect = 0.0, tot_seconds_interp = 0.0;
+//   struct timeval begin_timeval, end_timeval, diff_timeval;
 
-  SearchFunctor<SearchKDTree<3, SourceMesh_Wrapper, TargetMesh_Wrapper>>
-      searchfunctor(&search);
+//   MeshWrapperDual<SourceMesh_Wrapper> source_mesh_dual(source_mesh_);
+//   MeshWrapperDual<TargetMesh_Wrapper> target_mesh_dual(target_mesh_);
 
+// #ifdef ENABLE_PROFILE
+//   __itt_resume();
+// #endif
 
-  Portage::transform((counting_iterator)(target_mesh_.begin(CELL)),
-                     (counting_iterator)(target_mesh_.end(CELL)),
-                     candidates.begin(), searchfunctor);
+//   gettimeofday(&begin_timeval, 0);
 
-#ifdef ENABLE_PROFILE
-  __itt_pause();
-#endif
+//   int ntargetcells = target_mesh_.num_entities(NODE);
 
-  gettimeofday(&end_timeval, 0);
-  timersub(&end_timeval, &begin_timeval, &diff_timeval);
-  tot_seconds_srch = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
+//   // SEARCH
 
+//   Portage::vector<std::vector<int>> candidates(ntargetcells);
 
-#ifdef ENABLE_PROFILE
-  __itt_resume();
-#endif
+//   // Get an instance of the desired search algorithm type
+//   const SearchKDTree<3, MeshWrapperDual<SourceMesh_Wrapper>,
+//                      MeshWrapperDual<TargetMesh_Wrapper>>
+//       search(source_mesh_dual, target_mesh_dual);
 
-  gettimeofday(&begin_timeval, 0);
+//   SearchFunctor<SearchKDTree<3, MeshWrapperDual<SourceMesh_Wrapper>,
+//       MeshWrapperDual<TargetMesh_Wrapper>>>
+//       searchfunctor(&search);
 
 
-  // Get an instance of the desired intersect algorithm type
-  const IntersectR3D<SourceMesh_Wrapper, TargetMesh_Wrapper>
-      intersect(source_mesh_, target_mesh_);
+//   Portage::transform((counting_iterator)(target_mesh_.begin(CELL)),
+//                      (counting_iterator)(target_mesh_.end(CELL)),
+//                      candidates.begin(), searchfunctor);
 
+// #ifdef ENABLE_PROFILE
+//   __itt_pause();
+// #endif
 
-  // Make an instance of the functor doing the search and intersection
+//   gettimeofday(&end_timeval, 0);
+//   timersub(&end_timeval, &begin_timeval, &diff_timeval);
+//   tot_seconds_srch = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
 
-  IntersectFunctor<IntersectR3D<SourceMesh_Wrapper, TargetMesh_Wrapper>>
-      intersectfunctor(&intersect);
 
+// #ifdef ENABLE_PROFILE
+//   __itt_resume();
+// #endif
 
-  // For each cell in the target mesh get a list of candidate-weight
-  // pairings (in a traditional mesh, not particle mesh, the weights
-  // are moments). Note that this candidate list is different from the
-  // search candidate list in that (1) it may not include some
-  // candidates and (2) some candidates may occur twice to account for
-  // the fact that the intersection of two cells is more than one
-  // disjoint piece (if one of the cells is non-convex). Also, note
-  // that for 2nd order and higher remaps, we get multiple moments
-  // (0th, 1st, etc) for each target-source cell intersection
+//   gettimeofday(&begin_timeval, 0);
 
-  Portage::vector<std::vector<Weights_t>> source_cells_and_weights(ntargetcells);
+//   // INTERSECT
 
-  Portage::transform((counting_iterator)(target_mesh_.begin(CELL)),
-                     (counting_iterator)(target_mesh_.end(CELL)),
-                     candidates.begin(),
-                     source_cells_and_weights.begin(),
-                     intersectfunctor);
+//   // Get an instance of the desired intersect algorithm type
+//   const IntersectR3D<MeshWrapperDual<SourceMesh_Wrapper>,
+//                      MeshWrapperDual<TargetMesh_Wrapper>>
+//       intersect(source_mesh_dual, target_mesh_dual);
 
-#ifdef ENABLE_PROFILE
-  __itt_pause();
-#endif
 
-  gettimeofday(&end_timeval, 0);
-  timersub(&end_timeval, &begin_timeval, &diff_timeval);
-  tot_seconds_xsect = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
+// #ifdef ENABLE_PROFILE
+//   __itt_resume();
+// #endif
 
-  // INTERPOLATE (one variable at a time)
+//   gettimeofday(&begin_timeval, 0);
 
-#ifdef ENABLE_PROFILE
-  __itt_resume();
-#endif
+//   // Make an instance of the functor doing the search and intersection
 
-  gettimeofday(&begin_timeval, 0);
+//   IntersectFunctor<IntersectR3D<MeshWrapperDual<SourceMesh_Wrapper>,
+//       MeshWrapperDual<TargetMesh_Wrapper>>>
+//       intersectfunctor(&intersect);
 
-  Interpolate_1stOrder<SourceMesh_Wrapper, TargetMesh_Wrapper,
-                       SourceState_Wrapper, CELL, 3>
-      interpolate(source_mesh_, target_mesh_, source_state_);
 
-  int nvars = source_var_names.size();
-  for (int i = 0; i < nvars; ++i) {
-    std::cout << "Remapping variable " << source_var_names[i]
-              << " to variable " << target_var_names[i]
-              << " using a 1st order accurate algorithm" << std::endl;
+//   // For each cell in the target mesh get a list of candidate-weight
+//   // pairings (in a traditional mesh, not particle mesh, the weights
+//   // are moments). Note that this candidate list is different from the
+//   // search candidate list in that (1) it may not include some
+//   // candidates and (2) some candidates may occur twice to account for
+//   // the fact that the intersection of two cells is more than one
+//   // disjoint piece (if one of the cells is non-convex). Also, note
+//   // that for 2nd order and higher remaps, we get multiple moments
+//   // (0th, 1st, etc) for each target-source cell intersection
 
-    interpolate.set_interpolation_variable(source_var_names[i]);
+//   int ntargetnodes = target_mesh_.num_entities(NODE);
+//   Portage::vector<std::vector<Weights_t>> source_cells_and_weights(ntargetnodes);
 
-    // This populates targetField with the values returned by the
-    // remapper operator
+//   Portage::transform((counting_iterator)(target_mesh_.begin(NODE)),
+//                      (counting_iterator)(target_mesh_.end(NODE)),
+//                      candidates.begin(),
+//                      source_cells_and_weights.begin(),
+//                      intersectfunctor);
 
-    /*  UNCOMMENT WHEN WE RESTORE get_type in jali_state_wrapper
-        if (typeid(source_state_.get_type(source_var_names[i])) ==
-        typeid(double)) {
-    */
-    double *target_field_raw = nullptr;
-    target_state_.get_data(CELL, target_var_names[i], &target_field_raw);
-    Portage::pointer<double> target_field(target_field_raw);
+// #ifdef ENABLE_PROFILE
+//   __itt_pause();
+// #endif
 
-    Portage::transform((counting_iterator)(target_mesh_.begin(CELL)),
-                       (counting_iterator)(target_mesh_.end(CELL)),
-                       source_cells_and_weights.begin(),
-                       target_field, interpolate);
-    /*  UNCOMMENT WHEN WE RESTORE get_type in jali_state_wrapper
-        } else {
-        std::cerr << "Cannot remap " << source_var_names[i] <<
-        " because it is not a scalar double variable\n";
-        continue;
-        }
-    */
+//   gettimeofday(&end_timeval, 0);
+//   timersub(&end_timeval, &begin_timeval, &diff_timeval);
+//   tot_seconds_xsect = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
 
-  }
+//   // INTERPOLATE (one variable at a time)
 
+// #ifdef ENABLE_PROFILE
+//   __itt_resume();
+// #endif
 
-#ifdef ENABLE_PROFILE
-  __itt_pause();
-#endif
+//   gettimeofday(&begin_timeval, 0);
 
-  gettimeofday(&end_timeval, 0);
-  timersub(&end_timeval, &begin_timeval, &diff_timeval);
-  tot_seconds_interp = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
+//   Interpolate_1stOrder<SourceMesh_Wrapper, TargetMesh_Wrapper,
+//                        SourceState_Wrapper, NODE, 3>
+//       interpolate(source_mesh_, target_mesh_, source_state_);
 
-  tot_seconds = tot_seconds_srch + tot_seconds_xsect + tot_seconds_interp;
+//   int nvars = source_var_names.size();
+//   for (int i = 0; i < nvars; ++i) {
+//     std::cout << "Remapping variable " << source_var_names[i]
+//               << " to variable " << target_var_names[i]
+//               << " using a 1st order accurate algorithm" << std::endl;
 
-  std::cout << "Transform Time (s): " << tot_seconds << std::endl;
-  std::cout << "  Search Time (s): " << tot_seconds_srch << std::endl;
-  std::cout << "  Intersect Time (s): " << tot_seconds_xsect << std::endl;
-  std::cout << "  Interpolate Time (s): " << tot_seconds_interp << std::endl;
-}
+//     interpolate.set_interpolation_variable(source_var_names[i]);
 
+//     // This populates targetField with the values returned by the
+//     // interpolate operator
 
+//     /*  UNCOMMENT WHEN WE RESTORE get_type in jali_state_wrapper
+//         if (typeid(source_state_.get_type(source_var_names[i])) ==
+//         typeid(double)) {
+//     */
+//     double *target_field_raw = nullptr;
+//     target_state_.get_data(NODE, target_var_names[i], &target_field_raw);
+//     Portage::pointer<double> target_field(target_field_raw);
 
-//-----------------------------------------------------------------------------
-// 2nd order remapping of cell centered data on 3D meshes
-//-----------------------------------------------------------------------------
-template<class SourceMesh_Wrapper, class SourceState_Wrapper,
-         class TargetMesh_Wrapper, class TargetState_Wrapper>
-void
-Driver<SourceMesh_Wrapper,
-       SourceState_Wrapper,
-       TargetMesh_Wrapper,
-       TargetState_Wrapper>::run_3D_CELL_order2(std::vector<std::string>
-                                                source_var_names,
-                                                std::vector<std::string>
-                                                target_var_names) {
-  float tot_seconds = 0.0, tot_seconds_srch = 0.0,
-      tot_seconds_xsect = 0.0, tot_seconds_interp = 0.0;
-  struct timeval begin_timeval, end_timeval, diff_timeval;
+//     Portage::transform((counting_iterator)(target_mesh_.begin(NODE)),
+//                        (counting_iterator)(target_mesh_.end(NODE)),
+//                        source_cells_and_weights.begin(),
+//                        target_field, interpolate);
+//     /*  UNCOMMENT WHEN WE RESTORE get_type in jali_state_wrapper
+//         } else {
+//         std::cerr << "Cannot remap " << source_var_names[i] <<
+//         " because it is not a scalar double variable\n";
+//         continue;
+//         }
+//     */
 
-#ifdef ENABLE_PROFILE
-  __itt_resume();
-#endif
+//   }
 
-  gettimeofday(&begin_timeval, 0);
 
-  int ntargetcells = target_mesh_.num_entities(CELL);
+// #ifdef ENABLE_PROFILE
+//   __itt_pause();
+// #endif
 
-  // SEARCH
+//   gettimeofday(&end_timeval, 0);
+//   timersub(&end_timeval, &begin_timeval, &diff_timeval);
+//   tot_seconds_interp = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
 
-  Portage::vector<std::vector<int>> candidates(ntargetcells);
+//   tot_seconds = tot_seconds_srch + tot_seconds_xsect + tot_seconds_interp;
 
-  const SearchKDTree<3, SourceMesh_Wrapper, TargetMesh_Wrapper>
-      search(source_mesh_, target_mesh_);
-
-  SearchFunctor<SearchKDTree<3, SourceMesh_Wrapper, TargetMesh_Wrapper>>
-      searchfunctor(&search);
-
-
-  Portage::transform((counting_iterator)(target_mesh_.begin(CELL)),
-                     (counting_iterator)(target_mesh_.end(CELL)),
-                     candidates.begin(), searchfunctor);
-
-#ifdef ENABLE_PROFILE
-  __itt_pause();
-#endif
-
-  gettimeofday(&end_timeval, 0);
-  timersub(&end_timeval, &begin_timeval, &diff_timeval);
-  tot_seconds_srch = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
-
-
-#ifdef ENABLE_PROFILE
-  __itt_resume();
-#endif
-
-  gettimeofday(&begin_timeval, 0);
-
-  // INTERSECT
-
-  // Get an instance of the desired intersect algorithm type
-  const IntersectR3D<SourceMesh_Wrapper, TargetMesh_Wrapper>
-      intersect(source_mesh_, target_mesh_);
-
-  // Make an instance of the functor doing the intersection
-
-  IntersectFunctor<IntersectR3D<SourceMesh_Wrapper, TargetMesh_Wrapper>>
-      intersectfunctor(&intersect);
-
-
-  // For each cell in the target mesh get a list of candidate-weight
-  // pairings (in a traditional mesh, not particle mesh, the weights
-  // are moments). Note that this candidate list is different from the
-  // search candidate list in that (1) it may not include some
-  // candidates and (2) some candidates may occur twice to account for
-  // the fact that the intersection of two cells is more than one
-  // disjoint piece (if one of the cells is non-convex). Also, note
-  // that for 2nd order and higher remaps, we get multiple moments
-  // (0th, 1st, etc) for each target-source cell intersection
-
-  Portage::vector<std::vector<Weights_t>> source_cells_and_weights(ntargetcells);
-
-  Portage::transform((counting_iterator)(target_mesh_.begin(CELL)),
-                     (counting_iterator)(target_mesh_.end(CELL)),
-                     candidates.begin(),
-                     source_cells_and_weights.begin(),
-                     intersectfunctor);
-
-#ifdef ENABLE_PROFILE
-  __itt_pause();
-#endif
-
-  gettimeofday(&end_timeval, 0);
-  timersub(&end_timeval, &begin_timeval, &diff_timeval);
-  tot_seconds_xsect = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
-
-  // INTERPOLATE (one variable at a time)
-
-#ifdef ENABLE_PROFILE
-  __itt_resume();
-#endif
-
-  gettimeofday(&begin_timeval, 0);
-
-  Interpolate_2ndOrder<SourceMesh_Wrapper, TargetMesh_Wrapper,
-                       SourceState_Wrapper, CELL, 3>
-      interpolate(source_mesh_, target_mesh_, source_state_);
-
-  int nvars = source_var_names.size();
-  for (int i = 0; i < nvars; ++i) {
-    std::cout << "Remapping variable " << source_var_names[i]
-              << " to variable " << target_var_names[i]
-              << " using a 2nd order accurate algorithm" << std::endl;
-
-    interpolate.set_interpolation_variable(source_var_names[i], NOLIMITER);
-
-    // This populates targetField with the values returned by the
-    // remapper operator
-
-    /*  UNCOMMENT WHEN WE RESTORE get_type in jali_state_wrapper
-        if (typeid(source_state_.get_type(source_var_names[i])) ==
-        typeid(double)) {
-    */
-    double *target_field_raw = nullptr;
-    target_state_.get_data(CELL, target_var_names[i], &target_field_raw);
-    Portage::pointer<double> target_field(target_field_raw);
-
-    Portage::transform((counting_iterator)(target_mesh_.begin(CELL)),
-                       (counting_iterator)(target_mesh_.end(CELL)),
-                       source_cells_and_weights.begin(),
-                       target_field, interpolate);
-    /*  UNCOMMENT WHEN WE RESTORE get_type in jali_state_wrapper
-        } else {
-        std::cerr << "Cannot remap " << source_var_names[i] <<
-        " because it is not a scalar double variable\n";
-        continue;
-        }
-    */
-
-  }
-
-
-#ifdef ENABLE_PROFILE
-  __itt_pause();
-#endif
-
-  gettimeofday(&end_timeval, 0);
-  timersub(&end_timeval, &begin_timeval, &diff_timeval);
-  tot_seconds_interp = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
-
-  tot_seconds = tot_seconds_srch + tot_seconds_xsect + tot_seconds_interp;
-
-  std::cout << "Transform Time (s): " << tot_seconds << std::endl;
-  std::cout << "  Search Time (s): " << tot_seconds_srch << std::endl;
-  std::cout << "  Intersect Time (s): " << tot_seconds_xsect << std::endl;
-  std::cout << "  Interpolate Time (s): " << tot_seconds_interp << std::endl;
-}
-
-
-//-----------------------------------------------------------------------------
-// Distributed 1st order remapping of cell centered data on 3D meshes
-//-----------------------------------------------------------------------------
-template<class SourceMesh_Wrapper, class SourceState_Wrapper,
-         class TargetMesh_Wrapper, class TargetState_Wrapper>
-void
-Driver<SourceMesh_Wrapper,
-       SourceState_Wrapper,
-       TargetMesh_Wrapper,
-       TargetState_Wrapper>::run_3D_CELL_order1_distributed(std::vector<std::string>
-                                                            source_var_names,
-                                                            std::vector<std::string>
-                                                            target_var_names) {
-
-  float tot_seconds = 0.0, tot_seconds_srch = 0.0,
-      tot_seconds_xsect = 0.0, tot_seconds_interp = 0.0;
-  struct timeval begin_timeval, end_timeval, diff_timeval;
-
-#ifdef ENABLE_PROFILE
-  __itt_resume();
-#endif
-
-  gettimeofday(&begin_timeval, 0);
-
-  int ntargetcells = target_mesh_.num_entities(CELL);
-
-  // SEARCH
-
-  Portage::vector<std::vector<int>> candidates(ntargetcells);
-
-  // Get the rank for this process
-  int comm_rank;
-  MPI_Comm_rank(MPI_COMM_WORLD, &comm_rank);
-
-  // Convert the source mesh and state to a flat representation;
-  // Since we are not sending any target mesh data over MPI, we don't need
-  // to convert the target mesh or state to a flat representation
-  Flat_Mesh_Wrapper<> source_mesh_flat(8, source_mesh_);
-  Flat_State_Wrapper<> source_state_flat(source_state_,
-                                         source_remap_var_names_);
-
-  // Use a bounding box distributor to send the source cells to the target
-  // paritions where they are needed
-  MPI_Bounding_Boxes distributor;
-  distributor.distribute(source_mesh_flat, source_state_flat, target_mesh_,
-                         target_state_);
-
-  // Get an instance of the desired search algorithm type
-  const SearchKDTree<3, Flat_Mesh_Wrapper<>, TargetMesh_Wrapper>
-      search(source_mesh_flat, target_mesh_);
-
-  // Build a slightly specialized functor from it
-
-  SearchFunctor<SearchKDTree<3, Flat_Mesh_Wrapper<>, TargetMesh_Wrapper>>
-      searchfunctor(&search);
-
-
-  Portage::transform((counting_iterator)(target_mesh_.begin(CELL)),
-                     (counting_iterator)(target_mesh_.end(CELL)),
-                     candidates.begin(), searchfunctor);
-
-#ifdef ENABLE_PROFILE
-  __itt_pause();
-#endif
-
-  gettimeofday(&end_timeval, 0);
-  timersub(&end_timeval, &begin_timeval, &diff_timeval);
-  tot_seconds_srch = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
-
-
-#ifdef ENABLE_PROFILE
-  __itt_resume();
-#endif
-
-  gettimeofday(&begin_timeval, 0);
-
-  // INTERSECT
-
-
-  // Get an instance of the desired intersect algorithm type
-  const IntersectR3D<Flat_Mesh_Wrapper<>, TargetMesh_Wrapper>
-      intersect{source_mesh_flat, target_mesh_};
-
-
-  // Make an idnstance of the functor doing the search and intersection
-
-  IntersectFunctor<IntersectR3D<Flat_Mesh_Wrapper<>, TargetMesh_Wrapper>>
-      intersectfunctor(&intersect);
-
-
-  // For each cell in the target mesh get a list of candidate-weight
-  // pairings (in a traditional mesh, not particle mesh, the weights
-  // are moments). Note that this candidate list is different from the
-  // search candidate list in that (1) it may not include some
-  // candidates and (2) some candidates may occur twice to account for
-  // the fact that the intersection of two cells is more than one
-  // disjoint piece (if one of the cells is non-convex). Also, note
-  // that for 2nd order and higher remaps, we get multiple moments
-  // (0th, 1st, etc) for each target-source cell intersection
-
-  Portage::vector<std::vector<Weights_t>> source_cells_and_weights(ntargetcells);
-
-  Portage::transform((counting_iterator)(target_mesh_.begin(CELL)),
-                     (counting_iterator)(target_mesh_.end(CELL)),
-                     candidates.begin(),
-                     source_cells_and_weights.begin(),
-                     intersectfunctor);
-
-#ifdef ENABLE_PROFILE
-  __itt_pause();
-#endif
-
-  gettimeofday(&end_timeval, 0);
-  timersub(&end_timeval, &begin_timeval, &diff_timeval);
-  tot_seconds_xsect = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
-
-  // INTERPOLATE (one variable at a time)
-
-#ifdef ENABLE_PROFILE
-  __itt_resume();
-#endif
-
-  gettimeofday(&begin_timeval, 0);
-
-  // Get an instance of the 1st order algorithm
-  Interpolate_1stOrder<Flat_Mesh_Wrapper<>, TargetMesh_Wrapper,
-                       Flat_State_Wrapper<>, CELL, 3>
-      interpolate(source_mesh_flat, target_mesh_, source_state_flat);
-
-  int nvars = source_var_names.size();
-  for (int i = 0; i < nvars; ++i) {
-    if (comm_rank == 0)
-      std::cout << "Remapping variable " << source_var_names[i]
-                << " to variable " << target_var_names[i]
-                << " using a 1st order accurate algorithm" << std::endl;
-
-    interpolate.set_interpolation_variable(source_var_names[i]);
-
-    // This populates targetField with the values returned by the
-    // interpolate operator
-
-    /* UNCOMMENT WHEN WE RESTORE get_type in jali_state_wrapper
-       if (typeid(source_state_.get_type(source_var_names[i])) ==
-       typeid(double)) {*/
-
-    double *target_field_raw = nullptr;
-    target_state_.get_data(CELL, target_var_names[i], &target_field_raw);
-    Portage::pointer<double> target_field(target_field_raw);
-
-    Portage::transform((counting_iterator)(target_mesh_.begin(CELL)),
-                       (counting_iterator)(target_mesh_.end(CELL)),
-                       source_cells_and_weights.begin(),
-                       target_field, interpolate);
-
-    /*  UNCOMMENT WHEN WE RESTORE get_type in jali_state_wrapper
-        } else {
-        std::cerr << "Cannot remap " << source_var_names[i] <<
-        " because it is not a scalar double variable\n";
-        continue;
-        }*/
-
-  }
-
-
-#ifdef ENABLE_PROFILE
-  __itt_pause();
-#endif
-
-  gettimeofday(&end_timeval, 0);
-  timersub(&end_timeval, &begin_timeval, &diff_timeval);
-  tot_seconds_interp = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
-
-  tot_seconds = tot_seconds_srch + tot_seconds_xsect + tot_seconds_interp;
-
-  std::cout << "Transform Time (s): " << tot_seconds << std::endl;
-  std::cout << "  Search Time (s): " << tot_seconds_srch << std::endl;
-  std::cout << "  Intersect Time (s): " << tot_seconds_xsect << std::endl;
-  std::cout << "  Interpolate Time (s): " << tot_seconds_interp << std::endl;
-}
-
-
-// Distributed 2nd order remapping of cell centered data on 3D meshes
-template<class SourceMesh_Wrapper, class SourceState_Wrapper,
-         class TargetMesh_Wrapper, class TargetState_Wrapper>
-         void
-         Driver<SourceMesh_Wrapper,
-         SourceState_Wrapper,
-         TargetMesh_Wrapper,
-         TargetState_Wrapper>::run_3D_CELL_order2_distributed(std::vector<std::string>
-                                                              source_var_names,
-                                                              std::vector<std::string>
-                                                              target_var_names) {
-  float tot_seconds = 0.0, tot_seconds_srch = 0.0,
-      tot_seconds_xsect = 0.0, tot_seconds_interp = 0.0;
-  struct timeval begin_timeval, end_timeval, diff_timeval;
-
-  // Get the rank for this process
-  int comm_rank;
-  MPI_Comm_rank(MPI_COMM_WORLD, &comm_rank);
-
-  // Convert the source mesh and state to a flat representation;
-  // Since we are not sending any target mesh data over MPI, we don't need
-  // to convert the target mesh or state to a flat representation
-  Flat_Mesh_Wrapper<> source_mesh_flat(8, source_mesh_);
-  Flat_State_Wrapper<> source_state_flat(source_state_, source_remap_var_names_); 
-  int nvars = source_var_names.size();
-
-  // Use a bounding box distributor to send the source cells to the target
-  // paritions where they are needed
-  MPI_Bounding_Boxes distributor;
-  distributor.distribute(source_mesh_flat, source_state_flat, target_mesh_, target_state_);
-
-  // SEARCH
-
-  gettimeofday(&begin_timeval, 0);
-
-  int ntargetcells = target_mesh_.num_entities(CELL);  
-  Portage::vector<std::vector<int>> candidates(ntargetcells);
-
-  // Get an instance of the desired search algorithm type
-  const SearchKDTree<3, Flat_Mesh_Wrapper<>, TargetMesh_Wrapper>
-      search(source_mesh_flat, target_mesh_);
-
-  // Build a slightly specialized functor from it
-
-  SearchFunctor<SearchKDTree<3, Flat_Mesh_Wrapper<>, TargetMesh_Wrapper>>
-      searchfunctor(&search);
-
-  Portage::transform((counting_iterator)(target_mesh_.begin(CELL)),
-                     (counting_iterator)(target_mesh_.end(CELL)),
-                     candidates.begin(), searchfunctor);
-
-#ifdef ENABLE_PROFILE
-  __itt_pause();
-#endif
-
-  gettimeofday(&end_timeval, 0);
-  timersub(&end_timeval, &begin_timeval, &diff_timeval);
-  tot_seconds_srch = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
-
-
-#ifdef ENABLE_PROFILE
-  __itt_resume();
-#endif
-
-  gettimeofday(&begin_timeval, 0);
-
-  // INTERSECT
-
-
-  // Get an instance of the desired intersect algorithm type
-  const IntersectR3D<Flat_Mesh_Wrapper<>, TargetMesh_Wrapper>
-      intersect{source_mesh_flat, target_mesh_};
-
-
-  // Make an idnstance of the functor doing the search and intersection
-
-  IntersectFunctor<IntersectR3D<Flat_Mesh_Wrapper<>, TargetMesh_Wrapper>>
-      intersectfunctor(&intersect);
-
-
-  // For each cell in the target mesh get a list of candidate-weight
-  // pairings (in a traditional mesh, not particle mesh, the weights
-  // are moments). Note that this candidate list is different from the
-  // search candidate list in that (1) it may not include some
-  // candidates and (2) some candidates may occur twice to account for
-  // the fact that the intersection of two cells is more than one
-  // disjoint piece (if one of the cells is non-convex). Also, note
-  // that for 2nd order and higher remaps, we get multiple moments
-  // (0th, 1st, etc) for each target-source cell intersection
-
-  Portage::vector<std::vector<Weights_t>> source_cells_and_weights(ntargetcells);
-
-  Portage::transform((counting_iterator)(target_mesh_.begin(CELL)),
-                     (counting_iterator)(target_mesh_.end(CELL)),
-                     candidates.begin(),
-                     source_cells_and_weights.begin(),
-                     intersectfunctor);
-
-#ifdef ENABLE_PROFILE
-  __itt_pause();
-#endif
-
-  gettimeofday(&end_timeval, 0);
-  timersub(&end_timeval, &begin_timeval, &diff_timeval);
-  tot_seconds_xsect = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
-
-  // INTERPOLATE (one variable at a time)
-
-#ifdef ENABLE_PROFILE
-  __itt_resume();
-#endif
-
-  gettimeofday(&begin_timeval, 0);
-
-  // Get an instance of the 2nd order algorithm
-  Interpolate_2ndOrder<Flat_Mesh_Wrapper<>, TargetMesh_Wrapper,
-      Flat_State_Wrapper<>, CELL, 3>
-      interpolate(source_mesh_flat, target_mesh_, source_state_flat);
-
-  for (int i = 0; i < nvars; ++i) {
-    if (comm_rank == 0)
-      std::cout << "Remapping variable " << source_var_names[i]
-                << " to variable " << target_var_names[i]
-                << " using a 2nd order accurate algorithm" << std::endl;
-
-    //interpolate.set_gradients(source_var_names[i], source_state_flat.get_gradients(i));
-    interpolate.set_interpolation_variable(source_var_names[i], NOLIMITER);
-
-    // This populates targetField with the values returned by the
-    // interpolate operator
-
-    /* UNCOMMENT WHEN WE RESTORE get_type in jali_state_wrapper
-       if (typeid(source_state_.get_type(source_var_names[i])) ==
-       typeid(double)) {*/
-
-    double *target_field_raw = nullptr;
-    target_state_.get_data(CELL, target_var_names[i], &target_field_raw);
-    Portage::pointer<double> target_field(target_field_raw);
-    Portage::transform((counting_iterator)(target_mesh_.begin(CELL)),
-                       (counting_iterator)(target_mesh_.end(CELL)),
-                       source_cells_and_weights.begin(),
-                       target_field, interpolate);
-
-    /*  UNCOMMENT WHEN WE RESTORE get_type in jali_state_wrapper
-        } else {
-        std::cerr << "Cannot remap " << source_var_names[i] <<
-        " because it is not a scalar double variable\n";
-        continue;
-        }*/
-  }
-
-
-#ifdef ENABLE_PROFILE
-  __itt_pause();
-#endif
-
-  gettimeofday(&end_timeval, 0);
-  timersub(&end_timeval, &begin_timeval, &diff_timeval);
-  tot_seconds_interp = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
-
-  tot_seconds = tot_seconds_srch + tot_seconds_xsect + tot_seconds_interp;
-
-  std::cout << "Transform Time (s): " << tot_seconds << std::endl;
-  std::cout << "  Search Time (s): " << tot_seconds_srch << std::endl;
-  std::cout << "  Intersect Time (s): " << tot_seconds_xsect << std::endl;
-  std::cout << "  Interpolate Time (s): " << tot_seconds_interp << std::endl;
-}
-
-
-//-----------------------------------------------------------------------------
-// 1st order remapping of node centered data on 2D meshes
-//-----------------------------------------------------------------------------
-template<class SourceMesh_Wrapper, class SourceState_Wrapper,
-         class TargetMesh_Wrapper, class TargetState_Wrapper>
-void
-Driver<SourceMesh_Wrapper,
-       SourceState_Wrapper,
-       TargetMesh_Wrapper,
-       TargetState_Wrapper>::run_2D_NODE_order1(std::vector<std::string>
-                                                source_var_names,
-                                                std::vector<std::string>
-                                                target_var_names) {
-  float tot_seconds = 0.0, tot_seconds_srch = 0.0,
-      tot_seconds_xsect = 0.0, tot_seconds_interp = 0.0;
-  struct timeval begin_timeval, end_timeval, diff_timeval;
-
-  MeshWrapperDual<SourceMesh_Wrapper> source_mesh_dual(source_mesh_);
-  MeshWrapperDual<TargetMesh_Wrapper> target_mesh_dual(target_mesh_);
-
-#ifdef ENABLE_PROFILE
-  __itt_resume();
-#endif
-
-  gettimeofday(&begin_timeval, 0);
-
-  int ntargetcells = target_mesh_.num_entities(NODE);
-
-  // SEARCH
-
-  Portage::vector<std::vector<int>> candidates(ntargetcells);
-
-  // Get an instance of the desired search algorithm type
-  const SearchKDTree<2, MeshWrapperDual<SourceMesh_Wrapper>,
-                     MeshWrapperDual<TargetMesh_Wrapper>>
-      search(source_mesh_dual, target_mesh_dual);
-
-  // Get an instance of the desired intersect algorithm type
-  const IntersectClipper<MeshWrapperDual<SourceMesh_Wrapper>,
-                         MeshWrapperDual<TargetMesh_Wrapper>>
-      intersect(source_mesh_dual, target_mesh_dual);
-
-
-  // Make an instance of the functor doing the search and intersection
-
-  IntersectFunctor<IntersectClipper<MeshWrapperDual<SourceMesh_Wrapper>,
-      MeshWrapperDual<TargetMesh_Wrapper>>>
-      intersectfunctor(&intersect);
-
-
-  // For each cell in the target mesh get a list of candidate-weight
-  // pairings (in a traditional mesh, not particle mesh, the weights
-  // are moments). Note that this candidate list is different from the
-  // search candidate list in that (1) it may not include some
-  // candidates and (2) some candidates may occur twice to account for
-  // the fact that the intersection of two cells is more than one
-  // disjoint piece (if one of the cells is non-convex). Also, note
-  // that for 2nd order and higher remaps, we get multiple moments
-  // (0th, 1st, etc) for each target-source cell intersection
-
-  int ntargetnodes = target_mesh_.num_entities(NODE);
-  Portage::vector<std::vector<Weights_t>> source_cells_and_weights(ntargetnodes);
-
-  Portage::transform((counting_iterator) target_mesh_.begin(NODE),
-                     (counting_iterator) target_mesh_.end(NODE),
-                     candidates.begin(),
-                     source_cells_and_weights.begin(),
-                     intersectfunctor);
-
-#ifdef ENABLE_PROFILE
-  __itt_pause();
-#endif
-
-  gettimeofday(&end_timeval, 0);
-  timersub(&end_timeval, &begin_timeval, &diff_timeval);
-  tot_seconds_xsect = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
-
-  // INTERPOLATE (one variable at a time)
-
-#ifdef ENABLE_PROFILE
-  __itt_resume();
-#endif
-
-  gettimeofday(&begin_timeval, 0);
-
-  Interpolate_1stOrder<SourceMesh_Wrapper, TargetMesh_Wrapper,
-                       SourceState_Wrapper, NODE, 2>
-      interpolate(source_mesh_, target_mesh_, source_state_);
-
-  int nvars = source_var_names.size();
-  for (int i = 0; i < nvars; ++i) {
-    std::cout << "Remapping variable " << source_var_names[i]
-              << " to variable " << target_var_names[i]
-              << " using a 1st order accurate algorithm" << std::endl;
-
-    interpolate.set_interpolation_variable(source_var_names[i]);
-
-    // This populates targetField with the values returned by the
-    // interpolate operator
-
-    /*  UNCOMMENT WHEN WE RESTORE get_type in jali_state_wrapper
-        if (typeid(source_state_.get_type(source_var_names[i])) ==
-        typeid(double)) {
-    */
-    double *target_field_raw = nullptr;
-    target_state_.get_data(NODE, target_var_names[i], &target_field_raw);
-    Portage::pointer<double> target_field(target_field_raw);
-
-    Portage::transform((counting_iterator)(target_mesh_.begin(NODE)),
-                       (counting_iterator)(target_mesh_.end(NODE)),
-                       source_cells_and_weights.begin(),
-                       target_field, interpolate);
-    /*  UNCOMMENT WHEN WE RESTORE get_type in jali_state_wrapper
-        } else {
-        std::cerr << "Cannot remap " << source_var_names[i] <<
-        " because it is not a scalar double variable\n";
-        continue;
-        }
-    */
-
-  }
-
-
-#ifdef ENABLE_PROFILE
-  __itt_pause();
-#endif
-
-  gettimeofday(&end_timeval, 0);
-  timersub(&end_timeval, &begin_timeval, &diff_timeval);
-  tot_seconds_interp = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
-
-  tot_seconds = tot_seconds_srch + tot_seconds_xsect + tot_seconds_interp;
-
-  std::cout << "Transform Time (s): " << tot_seconds << std::endl;
-  std::cout << "  Search Time (s): " << tot_seconds_srch << std::endl;
-  std::cout << "  Intersect Time (s): " << tot_seconds_xsect << std::endl;
-  std::cout << "  Interpolate Time (s): " << tot_seconds_interp << std::endl;
-}
-
-
-//-----------------------------------------------------------------------------
-// 2nd order remapping of node centered data on 2D meshes
-//-----------------------------------------------------------------------------
-template<class SourceMesh_Wrapper, class SourceState_Wrapper,
-         class TargetMesh_Wrapper, class TargetState_Wrapper>
-void
-Driver<SourceMesh_Wrapper,
-       SourceState_Wrapper,
-       TargetMesh_Wrapper,
-       TargetState_Wrapper>::run_2D_NODE_order2(std::vector<std::string>
-                                                source_var_names,
-                                                std::vector<std::string>
-                                                target_var_names) {
-
-  float tot_seconds = 0.0, tot_seconds_srch = 0.0,
-      tot_seconds_xsect = 0.0, tot_seconds_interp = 0.0;
-  struct timeval begin_timeval, end_timeval, diff_timeval;
-
-#ifdef ENABLE_PROFILE
-  __itt_resume();
-#endif
-
-  gettimeofday(&begin_timeval, 0);
-
-  MeshWrapperDual<SourceMesh_Wrapper> source_mesh_dual(source_mesh_);
-  MeshWrapperDual<TargetMesh_Wrapper> target_mesh_dual(target_mesh_);
-
-  int ntargetcells = target_mesh_.num_entities(NODE);
-
-  // SEARCH
-
-  Portage::vector<std::vector<int>> candidates(ntargetcells);
-
-  // Get an instance of the desired search algorithm type
-  const SearchKDTree<2, MeshWrapperDual<SourceMesh_Wrapper>,
-                     MeshWrapperDual<TargetMesh_Wrapper>>
-      search(source_mesh_dual, target_mesh_dual);
-
-  SearchFunctor<SearchKDTree<2, MeshWrapperDual<SourceMesh_Wrapper>,
-      MeshWrapperDual<TargetMesh_Wrapper>>>
-      searchfunctor(&search);
-
-
-  Portage::transform((counting_iterator)(target_mesh_.begin(CELL)),
-                     (counting_iterator)(target_mesh_.end(CELL)),
-                     candidates.begin(), searchfunctor);
-
-#ifdef ENABLE_PROFILE
-  __itt_pause();
-#endif
-
-  gettimeofday(&end_timeval, 0);
-  timersub(&end_timeval, &begin_timeval, &diff_timeval);
-  tot_seconds_srch = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
-
-
-#ifdef ENABLE_PROFILE
-  __itt_resume();
-#endif
-
-  gettimeofday(&begin_timeval, 0);
-
-  // INTERSECT
-
-
-  // Get an instance of the desired intersect algorithm type
-  const IntersectClipper<MeshWrapperDual<SourceMesh_Wrapper>,
-                         MeshWrapperDual<TargetMesh_Wrapper>>
-      intersect(source_mesh_dual, target_mesh_dual);
-
-
-#ifdef ENABLE_PROFILE
-  __itt_resume();
-#endif
-
-  gettimeofday(&begin_timeval, 0);
-
-  // Make an instance of the functor doing the search and intersection
-
-  IntersectFunctor<IntersectClipper<MeshWrapperDual<SourceMesh_Wrapper>,
-      MeshWrapperDual<TargetMesh_Wrapper>>>
-      intersectfunctor(&intersect);
-
-
-  // For each cell in the target mesh get a list of candidate-weight
-  // pairings (in a traditional mesh, not particle mesh, the weights
-  // are moments). Note that this candidate list is different from the
-  // search candidate list in that (1) it may not include some
-  // candidates and (2) some candidates may occur twice to account for
-  // the fact that the intersection of two cells is more than one
-  // disjoint piece (if one of the cells is non-convex). Also, note
-  // that for 2nd order and higher remaps, we get multiple moments
-  // (0th, 1st, etc) for each target-source cell intersection
-
-  int ntargetnodes = target_mesh_.num_entities(NODE);
-  Portage::vector<std::vector<Weights_t>>
-      source_cells_and_weights(ntargetnodes);
-
-  Portage::transform((counting_iterator) target_mesh_.begin(NODE),
-                     (counting_iterator) target_mesh_.end(NODE),
-                     candidates.begin(),
-                     source_cells_and_weights.begin(),
-                     intersectfunctor);
-
-#ifdef ENABLE_PROFILE
-  __itt_pause();
-#endif
-
-  gettimeofday(&end_timeval, 0);
-  timersub(&end_timeval, &begin_timeval, &diff_timeval);
-  tot_seconds_xsect = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
-
-  // INTERPOLATE (one variable at a time)
-
-#ifdef ENABLE_PROFILE
-  __itt_resume();
-#endif
-
-  gettimeofday(&begin_timeval, 0);
-
-  Interpolate_2ndOrder<SourceMesh_Wrapper, TargetMesh_Wrapper,
-                       SourceState_Wrapper, NODE, 2>
-      interpolate(source_mesh_, target_mesh_, source_state_);
-
-  int nvars = source_var_names.size();
-  for (int i = 0; i < nvars; ++i) {
-    std::cout << "Remapping variable " << source_var_names[i]
-              << " to variable " << target_var_names[i]
-              << " using a 2nd order accurate algorithm" << std::endl;
-
-    interpolate.set_interpolation_variable(source_var_names[i], NOLIMITER);
-
-    // This populates targetField with the values returned by the
-    // interpolate operator
-
-    /*  UNCOMMENT WHEN WE RESTORE get_type in jali_state_wrapper
-        if (typeid(source_state_.get_type(source_var_names[i])) ==
-        typeid(double)) {
-    */
-    double *target_field_raw = nullptr;
-    target_state_.get_data(NODE, target_var_names[i], &target_field_raw);
-    Portage::pointer<double> target_field(target_field_raw);
-
-    Portage::transform((counting_iterator)(target_mesh_.begin(NODE)),
-                       (counting_iterator)(target_mesh_.end(NODE)),
-                       source_cells_and_weights.begin(),
-                       target_field, interpolate);
-    /*  UNCOMMENT WHEN WE RESTORE get_type in jali_state_wrapper
-        } else {
-        std::cerr << "Cannot remap " << source_var_names[i] <<
-        " because it is not a scalar double variable\n";
-        continue;
-        }
-    */
-
-  }
-
-
-#ifdef ENABLE_PROFILE
-  __itt_pause();
-#endif
-
-  gettimeofday(&end_timeval, 0);
-  timersub(&end_timeval, &begin_timeval, &diff_timeval);
-  tot_seconds_interp = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
-
-  tot_seconds = tot_seconds_srch + tot_seconds_xsect + tot_seconds_interp;
-
-  std::cout << "Transform Time (s): " << tot_seconds << std::endl;
-  std::cout << "  Search Time (s): " << tot_seconds_srch << std::endl;
-  std::cout << "  Intersect Time (s): " << tot_seconds_xsect << std::endl;
-  std::cout << "  Interpolate Time (s): " << tot_seconds_interp << std::endl;
-}
-
-
-
-//-----------------------------------------------------------------------------
-// 1st order remapping of node centered data on 3D meshes
-//-----------------------------------------------------------------------------
-template<class SourceMesh_Wrapper, class SourceState_Wrapper,
-         class TargetMesh_Wrapper, class TargetState_Wrapper>
-void
-Driver<SourceMesh_Wrapper,
-       SourceState_Wrapper,
-       TargetMesh_Wrapper,
-       TargetState_Wrapper>::run_3D_NODE_order1(std::vector<std::string>
-                                                source_var_names,
-                                                std::vector<std::string>
-                                                target_var_names) {
-  float tot_seconds = 0.0, tot_seconds_srch = 0.0,
-      tot_seconds_xsect = 0.0, tot_seconds_interp = 0.0;
-  struct timeval begin_timeval, end_timeval, diff_timeval;
-
-  MeshWrapperDual<SourceMesh_Wrapper> source_mesh_dual(source_mesh_);
-  MeshWrapperDual<TargetMesh_Wrapper> target_mesh_dual(target_mesh_);
-
-#ifdef ENABLE_PROFILE
-  __itt_resume();
-#endif
-
-  gettimeofday(&begin_timeval, 0);
-
-  int ntargetcells = target_mesh_.num_entities(NODE);
-
-  // SEARCH
-
-  Portage::vector<std::vector<int>> candidates(ntargetcells);
-
-  // Get an instance of the desired search algorithm type
-  const SearchKDTree<3, MeshWrapperDual<SourceMesh_Wrapper>,
-                     MeshWrapperDual<TargetMesh_Wrapper>>
-      search(source_mesh_dual, target_mesh_dual);
-
-  SearchFunctor<SearchKDTree<3, MeshWrapperDual<SourceMesh_Wrapper>,
-      MeshWrapperDual<TargetMesh_Wrapper>>>
-      searchfunctor(&search);
-
-
-  Portage::transform((counting_iterator)(target_mesh_.begin(CELL)),
-                     (counting_iterator)(target_mesh_.end(CELL)),
-                     candidates.begin(), searchfunctor);
-
-#ifdef ENABLE_PROFILE
-  __itt_pause();
-#endif
-
-  gettimeofday(&end_timeval, 0);
-  timersub(&end_timeval, &begin_timeval, &diff_timeval);
-  tot_seconds_srch = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
-
-
-#ifdef ENABLE_PROFILE
-  __itt_resume();
-#endif
-
-  gettimeofday(&begin_timeval, 0);
-
-  // INTERSECT
-
-  // Get an instance of the desired intersect algorithm type
-  const IntersectR3D<MeshWrapperDual<SourceMesh_Wrapper>,
-                     MeshWrapperDual<TargetMesh_Wrapper>>
-      intersect(source_mesh_dual, target_mesh_dual);
-
-
-#ifdef ENABLE_PROFILE
-  __itt_resume();
-#endif
-
-  gettimeofday(&begin_timeval, 0);
-
-  // Make an instance of the functor doing the search and intersection
-
-  IntersectFunctor<IntersectR3D<MeshWrapperDual<SourceMesh_Wrapper>,
-      MeshWrapperDual<TargetMesh_Wrapper>>>
-      intersectfunctor(&intersect);
-
-
-  // For each cell in the target mesh get a list of candidate-weight
-  // pairings (in a traditional mesh, not particle mesh, the weights
-  // are moments). Note that this candidate list is different from the
-  // search candidate list in that (1) it may not include some
-  // candidates and (2) some candidates may occur twice to account for
-  // the fact that the intersection of two cells is more than one
-  // disjoint piece (if one of the cells is non-convex). Also, note
-  // that for 2nd order and higher remaps, we get multiple moments
-  // (0th, 1st, etc) for each target-source cell intersection
-
-  int ntargetnodes = target_mesh_.num_entities(NODE);
-  Portage::vector<std::vector<Weights_t>> source_cells_and_weights(ntargetnodes);
-
-  Portage::transform((counting_iterator)(target_mesh_.begin(NODE)),
-                     (counting_iterator)(target_mesh_.end(NODE)),
-                     candidates.begin(),
-                     source_cells_and_weights.begin(),
-                     intersectfunctor);
-
-#ifdef ENABLE_PROFILE
-  __itt_pause();
-#endif
-
-  gettimeofday(&end_timeval, 0);
-  timersub(&end_timeval, &begin_timeval, &diff_timeval);
-  tot_seconds_xsect = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
-
-  // INTERPOLATE (one variable at a time)
-
-#ifdef ENABLE_PROFILE
-  __itt_resume();
-#endif
-
-  gettimeofday(&begin_timeval, 0);
-
-  Interpolate_1stOrder<SourceMesh_Wrapper, TargetMesh_Wrapper,
-                       SourceState_Wrapper, NODE, 3>
-      interpolate(source_mesh_, target_mesh_, source_state_);
-
-  int nvars = source_var_names.size();
-  for (int i = 0; i < nvars; ++i) {
-    std::cout << "Remapping variable " << source_var_names[i]
-              << " to variable " << target_var_names[i]
-              << " using a 1st order accurate algorithm" << std::endl;
-
-    interpolate.set_interpolation_variable(source_var_names[i]);
-
-    // This populates targetField with the values returned by the
-    // interpolate operator
-
-    /*  UNCOMMENT WHEN WE RESTORE get_type in jali_state_wrapper
-        if (typeid(source_state_.get_type(source_var_names[i])) ==
-        typeid(double)) {
-    */
-    double *target_field_raw = nullptr;
-    target_state_.get_data(NODE, target_var_names[i], &target_field_raw);
-    Portage::pointer<double> target_field(target_field_raw);
-
-    Portage::transform((counting_iterator)(target_mesh_.begin(NODE)),
-                       (counting_iterator)(target_mesh_.end(NODE)),
-                       source_cells_and_weights.begin(),
-                       target_field, interpolate);
-    /*  UNCOMMENT WHEN WE RESTORE get_type in jali_state_wrapper
-        } else {
-        std::cerr << "Cannot remap " << source_var_names[i] <<
-        " because it is not a scalar double variable\n";
-        continue;
-        }
-    */
-
-  }
-
-
-#ifdef ENABLE_PROFILE
-  __itt_pause();
-#endif
-
-  gettimeofday(&end_timeval, 0);
-  timersub(&end_timeval, &begin_timeval, &diff_timeval);
-  tot_seconds_interp = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
-
-  tot_seconds = tot_seconds_srch + tot_seconds_xsect + tot_seconds_interp;
-
-  std::cout << "Transform Time (s): " << tot_seconds << std::endl;
-  std::cout << "  Search Time (s): " << tot_seconds_srch << std::endl;
-  std::cout << "  Intersect Time (s): " << tot_seconds_xsect << std::endl;
-  std::cout << "  Interpolate Time (s): " << tot_seconds_interp << std::endl;
-}
-
-
-//-----------------------------------------------------------------------------
-// 2nd order remapping of node centered data on 3D meshes
-//-----------------------------------------------------------------------------
-template<class SourceMesh_Wrapper, class SourceState_Wrapper,
-         class TargetMesh_Wrapper, class TargetState_Wrapper>
-void
-Driver<SourceMesh_Wrapper,
-       SourceState_Wrapper,
-       TargetMesh_Wrapper,
-       TargetState_Wrapper>::run_3D_NODE_order2(std::vector<std::string>
-                                                source_var_names,
-                                                std::vector<std::string>
-                                                target_var_names) {
-  float tot_seconds = 0.0, tot_seconds_srch = 0.0,
-      tot_seconds_xsect = 0.0, tot_seconds_interp = 0.0;
-  struct timeval begin_timeval, end_timeval, diff_timeval;
-
-  MeshWrapperDual<SourceMesh_Wrapper> source_mesh_dual(source_mesh_);
-  MeshWrapperDual<TargetMesh_Wrapper> target_mesh_dual(target_mesh_);
-
-#ifdef ENABLE_PROFILE
-  __itt_resume();
-#endif
-
-  gettimeofday(&begin_timeval, 0);
-
-  int ntargetcells = target_mesh_.num_entities(NODE);
-
-  // SEARCH
-
-  Portage::vector<std::vector<int>> candidates(ntargetcells);
-
-  // Get an instance of the desired search algorithm type
-  const SearchKDTree<3, MeshWrapperDual<SourceMesh_Wrapper>,
-                     MeshWrapperDual<TargetMesh_Wrapper>>
-      search(source_mesh_dual, target_mesh_dual);
-
-  SearchFunctor<SearchKDTree<3, MeshWrapperDual<SourceMesh_Wrapper>,
-      MeshWrapperDual<TargetMesh_Wrapper>>>
-      searchfunctor(&search);
-
-
-  Portage::transform((counting_iterator)(target_mesh_.begin(CELL)),
-                     (counting_iterator)(target_mesh_.end(CELL)),
-                     candidates.begin(), searchfunctor);
-
-#ifdef ENABLE_PROFILE
-  __itt_pause();
-#endif
-
-  gettimeofday(&end_timeval, 0);
-  timersub(&end_timeval, &begin_timeval, &diff_timeval);
-  tot_seconds_srch = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
-
-
-#ifdef ENABLE_PROFILE
-  __itt_resume();
-#endif
-
-  gettimeofday(&begin_timeval, 0);
-
-  // INTERSECT
-
-  // Get an instance of the desired intersect algorithm type
-  const IntersectR3D<MeshWrapperDual<SourceMesh_Wrapper>,
-                     MeshWrapperDual<TargetMesh_Wrapper>>
-      intersect(source_mesh_dual, target_mesh_dual);
-
-
-#ifdef ENABLE_PROFILE
-  __itt_resume();
-#endif
-
-  gettimeofday(&begin_timeval, 0);
-
-  // Make an instance of the functor doing the search and intersection
-
-  IntersectFunctor<IntersectR3D<MeshWrapperDual<SourceMesh_Wrapper>,
-      MeshWrapperDual<TargetMesh_Wrapper>>>
-      intersectfunctor(&intersect);
-
-
-  // For each cell in the target mesh get a list of candidate-weight
-  // pairings (in a traditional mesh, not particle mesh, the weights
-  // are moments). Note that this candidate list is different from the
-  // search candidate list in that (1) it may not include some
-  // candidates and (2) some candidates may occur twice to account for
-  // the fact that the intersection of two cells is more than one
-  // disjoint piece (if one of the cells is non-convex). Also, note
-  // that for 2nd order and higher remaps, we get multiple moments
-  // (0th, 1st, etc) for each target-source cell intersection
-
-  int ntargetnodes = target_mesh_.num_entities(NODE);
-  Portage::vector<std::vector<Weights_t>> source_cells_and_weights(ntargetnodes);
-
-  Portage::transform((counting_iterator)(target_mesh_.begin(NODE)),
-                     (counting_iterator)(target_mesh_.end(NODE)),
-                     candidates.begin(),
-                     source_cells_and_weights.begin(),
-                     intersectfunctor);
-
-#ifdef ENABLE_PROFILE
-  __itt_pause();
-#endif
-
-  gettimeofday(&end_timeval, 0);
-  timersub(&end_timeval, &begin_timeval, &diff_timeval);
-  tot_seconds_xsect = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
-
-  // INTERPOLATE (one variable at a time)
-
-#ifdef ENABLE_PROFILE
-  __itt_resume();
-#endif
-
-  gettimeofday(&begin_timeval, 0);
-
-  Interpolate_2ndOrder<SourceMesh_Wrapper, TargetMesh_Wrapper,
-                       SourceState_Wrapper, NODE, 3>
-      interpolate(source_mesh_, target_mesh_, source_state_);
-
-  int nvars = source_var_names.size();
-  for (int i = 0; i < nvars; ++i) {
-    std::cout << "Remapping variable " << source_var_names[i]
-              << " to variable " << target_var_names[i]
-              << " using a 2nd order accurate algorithm" << std::endl;
-
-    interpolate.set_interpolation_variable(source_var_names[i], NOLIMITER);
-
-    // This populates targetField with the values returned by the
-    // interpolate operator
-
-    /*  UNCOMMENT WHEN WE RESTORE get_type in jali_state_wrapper
-        if (typeid(source_state_.get_type(source_var_names[i])) ==
-        typeid(double)) {
-    */
-    double *target_field_raw = nullptr;
-    target_state_.get_data(NODE, target_var_names[i], &target_field_raw);
-    Portage::pointer<double> target_field(target_field_raw);
-
-    Portage::transform((counting_iterator)(target_mesh_.begin(NODE)),
-                       (counting_iterator)(target_mesh_.end(NODE)),
-                       source_cells_and_weights.begin(),
-                       target_field, interpolate);
-    /*  UNCOMMENT WHEN WE RESTORE get_type in jali_state_wrapper
-        } else {
-        std::cerr << "Cannot remap " << source_var_names[i] <<
-        " because it is not a scalar double variable\n";
-        continue;
-        }
-    */
-
-  }
-
-
-#ifdef ENABLE_PROFILE
-  __itt_pause();
-#endif
-
-  gettimeofday(&end_timeval, 0);
-  timersub(&end_timeval, &begin_timeval, &diff_timeval);
-  tot_seconds_interp = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
-
-  tot_seconds = tot_seconds_srch + tot_seconds_xsect + tot_seconds_interp;
-
-  std::cout << "Transform Time (s): " << tot_seconds << std::endl;
-  std::cout << "  Search Time (s): " << tot_seconds_srch << std::endl;
-  std::cout << "  Intersect Time (s): " << tot_seconds_xsect << std::endl;
-  std::cout << "  Interpolate Time (s): " << tot_seconds_interp << std::endl;
-}
-
+//   std::cout << "Transform Time (s): " << tot_seconds << std::endl;
+//   std::cout << "  Search Time (s): " << tot_seconds_srch << std::endl;
+//   std::cout << "  Intersect Time (s): " << tot_seconds_xsect << std::endl;
+//   std::cout << "  Interpolate Time (s): " << tot_seconds_interp << std::endl;
+// }
 
 
 /*!
@@ -2151,6 +1058,7 @@ Driver<SourceMesh_Wrapper,
   Driver::run() to actually do the search
   @tparam SearchType The type of search method (e.g. SearchSimple or
   SearchKDTree).
+  //amh: FIXME! this is a search adapter which converts a parameter which is a reference into a return by value
 */
 template <typename SearchType>
 struct SearchFunctor {
@@ -2192,6 +1100,7 @@ struct SearchFunctor {
   @brief This functor is used inside a Portage::transform() inside
   Driver::run() to actually do the intersection of the target cell with candidate source cells
   @tparam IsectType The type of intersect method (e.g. IntersectClipper).
+//amh: FIXME!  this is an intersect adapter which takes an intersection for two cells and changes it to an intersect for multiple cells
 */
 template <typename IsectType>
 struct IntersectFunctor {

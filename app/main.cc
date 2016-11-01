@@ -163,6 +163,12 @@ int main(int argc, char** argv) {
   __itt_pause();
 #endif
 
+  // //*********amh***********placeholder
+  // Portage::SearchKDTree search;
+  // Portage::IntersectR3D intersect;
+  // Portage::Interpolate_2ndOrder interpolate;
+  // //*********amh***********placeholder
+
   // Get the example to run from command-line parameter
   int example_num, n_source, n_target;
   // Should we dump data?
@@ -334,11 +340,20 @@ int main(int argc, char** argv) {
     Portage::Jali_State_Wrapper targetStateWrapper(targetState);
 
     // Build the main driver data for this mesh type
-    Portage::Driver<Portage::Jali_Mesh_Wrapper,
-                    Portage::Jali_State_Wrapper> d(inputMeshWrapper,
-                                                   sourceStateWrapper,
-                                                   targetMeshWrapper,
-                                                   targetStateWrapper);
+
+
+    Portage::Driver<Portage::SearchKDTree<example.dim, Portage::Jali_Mesh_Wrapper, Portage::Jali_Mesh_Wrapper>, 
+                    Portage::IntersectR3D<Portage::Jali_Mesh_Wrapper, Portage::Jali_Mesh_Wrapper>, 
+                    Portage::Interpolate_2ndOrder<Portage::Jali_Mesh_Wrapper, Portage::Jali_Mesh_Wrapper, 
+                    Portage::Jali_State_Wrapper, Portage::CELL, example.dim>,
+                    Portage::Jali_Mesh_Wrapper,Portage::Jali_State_Wrapper> 
+                                         d(search, 
+                                         intersect, 
+                                         interpolate,                                                                 inputMeshWrapper,
+                                         sourceStateWrapper,
+                                         targetMeshWrapper,
+                                         targetStateWrapper) 
+
     // Register the variable name and interpolation order with the driver
     std::vector<std::string> remap_fields;
     remap_fields.push_back("celldata");

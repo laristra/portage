@@ -18,7 +18,7 @@
 #include "portage/driver/driver.h"
 #include "portage/wrappers/mesh/jali/jali_mesh_wrapper.h"
 #include "portage/wrappers/state/jali/jali_state_wrapper.h"
-
+#include "portage/intersect/intersectClipper.h"
 #include "Mesh.hh"
 #include "MeshFactory.hh"
 #include "JaliStateVector.h"
@@ -41,6 +41,8 @@ int usage() {
     std::printf("   unit?:   for unit testing of example 3, set to 'y'\n");
     return 1;
 }
+
+//This is a 2-D test!  Find the example data in test_data/shotshell.exo, shotshell-v.exo.
 
 int main(int argc, char** argv) {
 
@@ -86,9 +88,9 @@ int main(int argc, char** argv) {
                         Jali::Entity_kind::WEDGE,
                         Jali::Entity_kind::CORNER});
 
-  const std::shared_ptr<Jali::Mesh> inputMesh = mf(argv[2]);
-  const Jali_Mesh_Wrapper inputMeshWrapper(*inputMesh);
-  const int inputDim = inputMesh->space_dimension();
+  const std::shared_ptr<Jali::Mesh> sourceMesh = mf(argv[2]);
+  const Jali_Mesh_Wrapper sourceMeshWrapper(*sourceMesh);
+  const int inputDim = sourceMesh->space_dimension();
 
   const std::shared_ptr<Jali::Mesh> targetMesh = mf(argv[3]);
   const Jali_Mesh_Wrapper targetMeshWrapper(*targetMesh);
@@ -100,28 +102,28 @@ int main(int argc, char** argv) {
       targetMeshWrapper.num_owned_cells() << " " <<
       targetMeshWrapper.num_owned_nodes() << std::endl;
 
-  Jali::State sourceState(inputMesh);
-  std::vector<double> sourceData(inputMeshWrapper.num_owned_cells(), 0);
+  Jali::State sourceState(sourceMesh);
+  std::vector<double> sourceData(sourceMeshWrapper.num_owned_cells(), 0);
 
   JaliGeometry::Point coord;
 
 #ifdef FIXED_SIZE_EXAMPLE
   for (int i=0; i < 3034; i++) {
-    coord = inputMesh->cell_centroid(i);
+    coord = sourceMesh->cell_centroid(i);
     double x = coord[0];
     double y = coord[1];
     double z = (inputDim == 3) ? coord[2] : 0.0;
     sourceData[i] = std::sqrt(x*x+y*y+z*z);
   }
   for (int i=3034; i < 4646; i++) {
-    coord = inputMesh->cell_centroid(i);
+    coord = sourceMesh->cell_centroid(i);
     double x = coord[0];
     double y = coord[1];
     double z = (inputDim == 3) ? coord[2] : 1.0;
     sourceData[i] = x*y*z;
   }
   for (int i=4646; i < 5238; i++) {
-    coord = inputMesh->cell_centroid(i);
+    coord = sourceMesh->cell_centroid(i);
     double x = coord[0];
     double y = coord[1];
     double z = (inputDim == 3) ? coord[2] : 0.0;
@@ -129,7 +131,7 @@ int main(int argc, char** argv) {
   }
 #else
   for (int i=0; i < sourceData.size(); i++) {
-    coord = inputMesh->cell_centroid(i);
+    coord = sourceMesh->cell_centroid(i);
     double x = coord[0];
     double y = coord[1];
     double z = (inputDim > 2) ? coord[2] : 0.0;
@@ -144,7 +146,7 @@ int main(int argc, char** argv) {
   Jali::Entity_kind entityKind =
       (example == 0) || (example == 2) || (example == 3) ?
       Jali::Entity_kind::CELL : Jali::Entity_kind::NODE;
-  sourceState.add("celldata", inputMesh, entityKind,
+  sourceState.add("celldata", sourceMesh, entityKind,
                   Jali::Entity_type::ALL, &(sourceData[0]));
   const Jali_State_Wrapper sourceStateWrapper(sourceState);
 
@@ -157,31 +159,55 @@ int main(int argc, char** argv) {
   std::vector<std::string> remap_fields;
   remap_fields.push_back("celldata");
 
+  //Create the search, intersect functors
+  Portage::SearchKDTree<2, Portage::Jali_Mesh_Wrapper, Portage::Jali_Mesh_Wrapper> search(sourceMeshWrapper, targetMeshWrapper);
+  IntersectClipper<Portage::Jali_Mesh_Wrapper, Portage::Jali_Mesh_Wrapper> intersect(sourceMeshWrapper, targetMeshWrapper);
+
   // Directly run cell-centered examples
-  if ((example == 0) || (example == 2) || (example == 3)) {
-    Portage::Driver<Jali_Mesh_Wrapper,
-                    Jali_State_Wrapper> d(inputMeshWrapper,
-                                          sourceStateWrapper,
-                                          targetMeshWrapper,
-                                          targetStateWrapper);
-    d.set_remap_var_names(remap_fields);
+  if ((example == 0) || (example == 2) || (example == 3)){ 
+    //amh: FIXME!
+    //    if (example==1)
+    //      Portage::Interpolate_1stOrder<Portage::Jali_Mesh_Wrapper, Portage::Jali_Mesh_Wrapper, 
+    //        Portage::Jali_State_Wrapper, Portage::CELL, 2> interpolate(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper);
 
-    if ((example == 2) || (example == 3))
-      d.set_interpolation_order(2);
-
+    //    if ((example == 2) || (example == 3))
+    Portage::Interpolate_2ndOrder<Portage::Jali_Mesh_Wrapper, Portage::Jali_Mesh_Wrapper, 
+                                  Portage::Jali_State_Wrapper, Portage::CELL, 2> 
+                                  interpolate(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper);
+    
+    //amh: should probably be setting this on the interpolation functor ourselves--maybe we need another functor wrapper for interpolation
+    /*    for(auto const & remap_field : remap_fields){
+      std::cout << "remap field is " << remap_field << std::endl;
+      interpolate.set_interpolation_variable(remap_field);
+      }*/
+    Portage::Driver<Portage::SearchKDTree<2, Portage::Jali_Mesh_Wrapper, Portage::Jali_Mesh_Wrapper>, 
+                    IntersectClipper<Portage::Jali_Mesh_Wrapper, Portage::Jali_Mesh_Wrapper>, 
+                    Portage::Interpolate_2ndOrder<Portage::Jali_Mesh_Wrapper, Portage::Jali_Mesh_Wrapper, 
+                                                  Portage::Jali_State_Wrapper, Portage::CELL, 2>,
+                    Portage::Jali_Mesh_Wrapper, Portage::Jali_State_Wrapper,
+                    Portage::Jali_Mesh_Wrapper, Portage::Jali_State_Wrapper>  
+                    d(search, intersect, interpolate, sourceMeshWrapper, sourceStateWrapper,targetMeshWrapper,
+                      targetStateWrapper);
+    d.set_remap_var_names(remap_fields);    
     d.run();
   }
 
   // Create a dual mesh for node-centered examples
   else if (example == 1) {
-    Portage::Driver<Portage::Jali_Mesh_Wrapper,
-                    Portage::Jali_State_Wrapper> d(inputMeshWrapper,
-                                                   sourceStateWrapper,
-                                                   targetMeshWrapper,
-                                                   targetStateWrapper);
-    d.set_remap_var_names(remap_fields);
-
-    d.run();
+    //amh:  FIXME double check that this shoudl be cell centered interpolate
+    Portage::Interpolate_2ndOrder<Portage::Jali_Mesh_Wrapper, Portage::Jali_Mesh_Wrapper, 
+                                  Portage::Jali_State_Wrapper, Portage::CELL, 2> 
+                                  interpolate(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper);
+    //    interpolate.set_var_names(remap_fields);
+    Portage::Driver<Portage::SearchKDTree<2, Portage::Jali_Mesh_Wrapper, Portage::Jali_Mesh_Wrapper>, 
+                    IntersectClipper<Portage::Jali_Mesh_Wrapper, Portage::Jali_Mesh_Wrapper>, 
+                    Portage::Interpolate_2ndOrder<Portage::Jali_Mesh_Wrapper, Portage::Jali_Mesh_Wrapper, 
+                    Portage::Jali_State_Wrapper, Portage::CELL, 2>,
+                    Portage::Jali_Mesh_Wrapper,Portage::Jali_State_Wrapper,  
+                    Portage::Jali_Mesh_Wrapper,Portage::Jali_State_Wrapper> 
+                    d(search, intersect, interpolate, sourceMeshWrapper, sourceStateWrapper,targetMeshWrapper,
+                      targetStateWrapper);
+    d.run2();
   }
 
   std::cerr << "Last result: " << cellvecout[cellvecout.size()-1] << std::endl;
@@ -203,7 +229,7 @@ int main(int argc, char** argv) {
   if (dumpMesh) {
     std::cerr << "Saving the source mesh" << std::endl;
     sourceState.export_to_mesh();
-    dynamic_cast<Jali::Mesh_MSTK*>(inputMesh.get())->write_to_exodus_file("input.exo");
+    dynamic_cast<Jali::Mesh_MSTK*>(sourceMesh.get())->write_to_exodus_file("input.exo");
 
     std::cerr << "Saving the target mesh" << std::endl;
     targetState.export_to_mesh();
