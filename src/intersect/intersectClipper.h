@@ -15,6 +15,7 @@
 
 #include "portage/support/Point.h"
 
+namespace Portage {
 
 /*!
   @brief Return the area and moment of the polygon.
@@ -182,5 +183,7 @@ const SourceMeshType &sourceMeshWrapper;
 const TargetMeshType &targetMeshWrapper;
 
 }; // class IntersectClipper
+
+}
 
 #endif // INTERSECT_CLIPPER_H

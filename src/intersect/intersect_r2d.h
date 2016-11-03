@@ -59,9 +59,11 @@ public:
     // Only do this check in Debug mode. This test is important,
     // otherwise R2D returns invalid results.
 #ifdef DEBUG
+    double volume1 = 0.;
     for (int i=2; i<size1; ++i)
-      if (r2d_orient(verts1[0], verts1[i-1], verts1[i]) < 0)
-        throw std::runtime_error("source_poly has negative volume");
+      volume1 += r2d_orient(verts1[0], verts1[i-1], verts1[i]);
+    if (volume1 < 0.)
+      throw std::runtime_error("source_poly has negative volume");
 #endif
 
     const int size2 = target_poly.size();
@@ -71,47 +73,126 @@ public:
       verts2[i].xy[0] = target_poly[i][0];
       verts2[i].xy[1] = target_poly[i][1];
     }
-    // Only do this check in Debug mode. This test is important,
-    // otherwise R2D returns invalid results.
+
+    // check for convexity
+    bool convex = true;
+    const double eps=1e-14;
+    for (int i=0; i<size2; ++i) {
+      int iprev = (i == 0 ? size2-1 : i-1);
+      int inext = (i+1 == size2 ? 0 : i+1);
+      if (r2d_orient(verts2[iprev], verts2[i], verts2[inext]) < -eps) {
+        convex = false;
+        break;
+      }
+    }
+
+    // case 1:  target_poly is convex
+    // can simply use faces of target_poly as clip planes
+    if (convex) {
+      r2d_poly_faces_from_verts(&faces[0], &verts2[0], size2);
+
+      // Only do this check in Debug mode. This test is important,
+      // otherwise R2D returns invalid results.
 #ifdef DEBUG
-    for (int i=2; i<size2; ++i)
-      if (r2d_orient(verts2[0], verts2[i-1], verts2[i]) < 0)
+      double volume2 = 0.;
+      for (int i=2; i<size2; ++i)
+        volume2 += r2d_orient(verts2[0], verts2[i-1], verts2[i]);
+      if (volume2 < 0.)
         throw std::runtime_error("target_poly has negative volume");
 #endif
-    r2d_poly_faces_from_verts(&faces[0], &verts2[0], size2);
 
-    r2d_poly poly;
-    r2d_init_poly(&poly, &verts1[0], size1);
-    // Only do this check in Debug mode:
+      r2d_poly poly;
+      r2d_init_poly(&poly, &verts1[0], size1);
+      // Only do this check in Debug mode:
 #ifdef DEBUG
-    if (r2d_is_good(&poly) == 0)
-      throw std::runtime_error("source_poly: invalid poly");
+      if (r2d_is_good(&poly) == 0)
+        throw std::runtime_error("source_poly: invalid poly");
 #endif
 
-    // clip the first poly against the faces of the second
-    r2d_clip(&poly, &faces[0], size2);
+      // clip the first poly against the faces of the second
+      r2d_clip(&poly, &faces[0], size2);
 
-    // find the moments (up to quadratic order) of the clipped poly
-    const int POLY_ORDER=1;
-    // Only do this check in Debug mode:
+      // find the moments (up to quadratic order) of the clipped poly
+      const int POLY_ORDER=1;
+      // Only do this check in Debug mode:
 #ifdef DEBUG
-    if (R2D_NUM_MOMENTS(POLY_ORDER) != 3)
-      throw std::runtime_error("Invalid number of moments");
+      if (R2D_NUM_MOMENTS(POLY_ORDER) != 3)
+        throw std::runtime_error("Invalid number of moments");
 #endif
-    r2d_real om[R2D_NUM_MOMENTS(POLY_ORDER)];
-    r2d_reduce(&poly, om, POLY_ORDER);
+      r2d_real om[R2D_NUM_MOMENTS(POLY_ORDER)];
+      r2d_reduce(&poly, om, POLY_ORDER);
 
-    // Check that the returned volume is positive (if the volume is zero,
-    // i.e. abs(om[0]) < eps, then it can sometimes be slightly negative,
-    // like om[0] == -1.24811e-16. For this reason we use the condition
-    // om[0] < -eps.
-    const double eps=1e-14;
-    if (om[0] < -eps) throw std::runtime_error("Negative volume");
+      // Check that the returned volume is positive (if the volume is zero,
+      // i.e. abs(om[0]) < eps, then it can sometimes be slightly negative,
+      // like om[0] == -1.24811e-16. For this reason we use the condition
+      // om[0] < -eps.
+      if (om[0] < -eps) throw std::runtime_error("Negative volume");
 
-    // Copy moments:
-    for (int i=0; i<3; ++i) {
-      moments[i] = om[i];
-    }
+      // Copy moments:
+      for (int j=0; j<3; ++j) {
+        moments[j] = om[j];
+      }
+
+    }  // if convex
+
+    // case 2:  target_poly is non-convex
+    // must divide target_poly into triangles for clipping
+    if (!convex) {
+      Point<2> centroid;
+      targetMeshWrapper.cell_centroid(cellB, &centroid);
+      faces.resize(3);
+      verts2.resize(3);
+
+      for (int i=0; i<size2; ++i) {
+        verts2[0].xy[0] = centroid[0];
+        verts2[0].xy[1] = centroid[1];
+        verts2[1].xy[0] = target_poly[i][0];
+        verts2[1].xy[1] = target_poly[i][1];
+        int inext = (i+1 == size2 ? 0 : i+1);
+        verts2[2].xy[0] = target_poly[inext][0];
+        verts2[2].xy[1] = target_poly[inext][1];
+        r2d_poly_faces_from_verts(&faces[0], &verts2[0], 3);
+        // Only do this check in Debug mode. This test is important,
+        // otherwise R2D returns invalid results.
+#ifdef DEBUG
+        if (r2d_orient(verts2[0], verts2[1], verts2[2]) < 0.)
+          throw std::runtime_error("target_wedge has negative volume");
+#endif
+
+        r2d_poly poly;
+        r2d_init_poly(&poly, &verts1[0], size1);
+        // Only do this check in Debug mode:
+#ifdef DEBUG
+        if (r2d_is_good(&poly) == 0)
+          throw std::runtime_error("source_poly: invalid poly");
+#endif
+
+        // clip the first poly against the faces of the second
+        r2d_clip(&poly, &faces[0], 3);
+
+        // find the moments (up to quadratic order) of the clipped poly
+        const int POLY_ORDER=1;
+        // Only do this check in Debug mode:
+#ifdef DEBUG
+        if (R2D_NUM_MOMENTS(POLY_ORDER) != 3)
+          throw std::runtime_error("Invalid number of moments");
+#endif
+        r2d_real om[R2D_NUM_MOMENTS(POLY_ORDER)];
+        r2d_reduce(&poly, om, POLY_ORDER);
+
+        // Check that the returned volume is positive (if the volume is zero,
+        // i.e. abs(om[0]) < eps, then it can sometimes be slightly negative,
+        // like om[0] == -1.24811e-16. For this reason we use the condition
+        // om[0] < -eps.
+        if (om[0] < -eps) throw std::runtime_error("Negative volume");
+
+        // Accumulate moments:
+        for (int j=0; j<3; ++j) {
+          moments[j] += om[j];
+        }
+
+      } // for i
+    } // if !convex
 
     std::vector<std::vector<double>> moments_all;
     moments_all.push_back(moments);

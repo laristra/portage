@@ -11,8 +11,8 @@
 
 #include "portage/support/Point.h"
 
-
-namespace { // unnamed
+/// file-local namespace
+namespace search_simple {
 
   /*!
     @brief Given a list of 2d coordinates, find the coordinates of the
@@ -45,7 +45,7 @@ void getBoundingBox(
 
 } // getBoundingBox
 
-} // namespace
+} // search_simple
 
 
 namespace Portage {
@@ -92,7 +92,7 @@ class SearchSimple {
         for (int c = 0; c < numCells; ++c) {
             std::vector<Point<2>> cell_coord;
             sourceMesh_.cell_get_coordinates(c, &cell_coord);
-            getBoundingBox(cell_coord,
+            search_simple::getBoundingBox(cell_coord,
                            &xlow_[c], &xhigh_[c],
                            &ylow_[c], &yhigh_[c]);
         }
@@ -140,7 +140,7 @@ const {
     std::vector<Point<2>> cell_coord;
     targetMesh_.cell_get_coordinates(cellId, &cell_coord);
     double txlow, txhigh, tylow, tyhigh;
-    getBoundingBox(cell_coord, &txlow, &txhigh, &tylow, &tyhigh);
+    search_simple::getBoundingBox(cell_coord, &txlow, &txhigh, &tylow, &tyhigh);
     
     // now see which sourceMesh cells have bounding boxes overlapping
     // with target cell
