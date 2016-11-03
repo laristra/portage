@@ -1229,13 +1229,13 @@ Driver<SourceMesh_Wrapper,
 
 
   // Get an instance of the desired intersect algorithm type
-  const IntersectClipper<Flat_Mesh_Wrapper<>, TargetMesh_Wrapper>
+  const IntersectR2D<Flat_Mesh_Wrapper<>, TargetMesh_Wrapper>
       intersect{source_mesh_flat, target_mesh_};
 
 
   // Make an instance of the functor doing the search and intersection
 
-  IntersectFunctor<IntersectClipper<Flat_Mesh_Wrapper<>, TargetMesh_Wrapper>>
+  IntersectFunctor<IntersectR2D<Flat_Mesh_Wrapper<>, TargetMesh_Wrapper>>
       intersectfunctor(&intersect);
 
 
@@ -1402,13 +1402,13 @@ template<class SourceMesh_Wrapper, class SourceState_Wrapper,
 
 
   // Get an instance of the desired intersect algorithm type
-  const IntersectClipper<Flat_Mesh_Wrapper<>, TargetMesh_Wrapper>
+  const IntersectR2D<Flat_Mesh_Wrapper<>, TargetMesh_Wrapper>
       intersect{source_mesh_flat, target_mesh_};
 
 
   // Make an instance of the functor doing the search and intersection
 
-  IntersectFunctor<IntersectClipper<Flat_Mesh_Wrapper<>, TargetMesh_Wrapper>>
+  IntersectFunctor<IntersectR2D<Flat_Mesh_Wrapper<>, TargetMesh_Wrapper>>
       intersectfunctor(&intersect);
 
 
