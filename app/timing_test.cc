@@ -86,7 +86,7 @@ int main(int argc, char** argv) {
   remap_fields.push_back("zone_ener");
   remap_fields.push_back("zone_temp");
 
-  //*********amh***********placeholder
+  //*********amh***********placeholder  this should be adapted so that any dimension of mesh & order of interpolation can be used
   // overlay a 2x2x2 target mesh on a 3x3x3 source mesh
   // each target mesh cell gives eight candidate source cells
   const std::shared_ptr<Jali::Mesh> smesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 3, 3, 3);
@@ -120,10 +120,7 @@ int main(int argc, char** argv) {
       d(search, intersect, interpolate, 
         source_mesh_wrapper, sourceStateWrapper2,
         target_mesh_wrapper, targetStateWrapper2);
-  d.set_remap_var_names(remap_fields);
-  
-  d.set_interpolation_order(order);
-  
+  d.set_remap_var_names(remap_fields);  
   d.run();
   
   if (dumpMesh) {
