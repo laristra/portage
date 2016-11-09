@@ -123,11 +123,22 @@ TEST(Test_MultiVar_Remap, Test1) {
 
   // Build the main driver object
 
-  Portage::Driver<Portage::Jali_Mesh_Wrapper,
-                  Portage::Jali_State_Wrapper> remapper(sourceMeshWrapper,
-                                                        sourceStateWrapper,
-                                                        targetMeshWrapper,
-                                                        targetStateWrapper);
+  /////////
+  //Create the search, intersect functors
+  Portage::SearchKDTree<2, Portage::Jali_Mesh_Wrapper, Portage::Jali_Mesh_Wrapper> search(sourceMeshWrapper, targetMeshWrapper);
+  Portage::IntersectR2D<Portage::Jali_Mesh_Wrapper, Portage::Jali_Mesh_Wrapper> intersect(sourceMeshWrapper, targetMeshWrapper);
+  Portage::Interpolate_1stOrder<Portage::Jali_Mesh_Wrapper, Portage::Jali_Mesh_Wrapper, 
+      Portage::Jali_State_Wrapper, Portage::CELL, 2> interpolate(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper);
+
+  Portage::Driver<Portage::SearchKDTree<2, Portage::Jali_Mesh_Wrapper, Portage::Jali_Mesh_Wrapper>, 
+      Portage::IntersectR2D<Portage::Jali_Mesh_Wrapper, Portage::Jali_Mesh_Wrapper>, 
+          Portage::Interpolate_1stOrder<Portage::Jali_Mesh_Wrapper, Portage::Jali_Mesh_Wrapper, 
+          Portage::Jali_State_Wrapper, Portage::CELL, 2>,
+          Portage::Jali_Mesh_Wrapper, Portage::Jali_State_Wrapper,
+          Portage::Jali_Mesh_Wrapper, Portage::Jali_State_Wrapper>  
+          remapper(search, intersect, interpolate, sourceMeshWrapper, sourceStateWrapper,targetMeshWrapper,
+            targetStateWrapper);
+  /////////
 
   // Specify the fields to be remapped
 
@@ -142,10 +153,6 @@ TEST(Test_MultiVar_Remap, Test1) {
   target_var_names.push_back("trgnodevars");
 
   remapper.set_remap_var_names(source_var_names, target_var_names);
-
-  // 1st order interpolation
-
-  remapper.set_interpolation_order(1);
 
   // Execute remapper
 

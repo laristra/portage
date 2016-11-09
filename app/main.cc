@@ -29,6 +29,7 @@
 #include "JaliStateVector.h"
 #include "JaliState.h"
 
+using Portage::Jali_Mesh_Wrapper;
 /*!
   @file main.cc
   @brief A simple application that drives our remap routines.
@@ -334,23 +335,98 @@ int main(int argc, char** argv) {
     Portage::Jali_State_Wrapper targetStateWrapper(targetState);
 
     // Build the main driver data for this mesh type
-    Portage::Driver<Portage::Jali_Mesh_Wrapper,
-                    Portage::Jali_State_Wrapper> d(inputMeshWrapper,
-                                                   sourceStateWrapper,
-                                                   targetMeshWrapper,
-                                                   targetStateWrapper);
+
     // Register the variable name and interpolation order with the driver
     std::vector<std::string> remap_fields;
     remap_fields.push_back("celldata");
-    d.set_remap_var_names(remap_fields);
 
-    d.set_interpolation_order(example.order);
+    if(example.dim == 2 && example.order == 2){
+      Portage::SearchKDTree<2, Portage::Jali_Mesh_Wrapper, Portage::Jali_Mesh_Wrapper> 
+               search(inputMeshWrapper, targetMeshWrapper);
+      Portage::IntersectR2D<Portage::Jali_Mesh_Wrapper, Portage::Jali_Mesh_Wrapper> 
+               intersect(inputMeshWrapper, targetMeshWrapper);
+      Portage::Interpolate_2ndOrder<Portage::Jali_Mesh_Wrapper, Portage::Jali_Mesh_Wrapper, 
+          Portage::Jali_State_Wrapper, Portage::CELL, 2> 
+          interpolate(inputMeshWrapper, targetMeshWrapper, sourceStateWrapper);
+    
+      Portage::Driver<Portage::SearchKDTree<2, Portage::Jali_Mesh_Wrapper, Portage::Jali_Mesh_Wrapper>, 
+          Portage::IntersectR2D<Portage::Jali_Mesh_Wrapper, Portage::Jali_Mesh_Wrapper>, 
+          Portage::Interpolate_2ndOrder<Portage::Jali_Mesh_Wrapper, Portage::Jali_Mesh_Wrapper, 
+          Portage::Jali_State_Wrapper, Portage::CELL, 2>,
+          Portage::Jali_Mesh_Wrapper, Portage::Jali_State_Wrapper,
+          Portage::Jali_Mesh_Wrapper, Portage::Jali_State_Wrapper>  
+          d(search, intersect, interpolate, inputMeshWrapper, sourceStateWrapper,targetMeshWrapper,
+            targetStateWrapper);
+      d.set_remap_var_names(remap_fields);    
+      d.run();
+    }
+
+    if(example.dim == 2 && example.order == 1){
+      Portage::SearchKDTree<2, Portage::Jali_Mesh_Wrapper, Portage::Jali_Mesh_Wrapper> 
+               search(inputMeshWrapper, targetMeshWrapper);
+      Portage::IntersectR2D<Portage::Jali_Mesh_Wrapper, Portage::Jali_Mesh_Wrapper> 
+               intersect(inputMeshWrapper, targetMeshWrapper);
+      Portage::Interpolate_1stOrder<Portage::Jali_Mesh_Wrapper, Portage::Jali_Mesh_Wrapper, 
+          Portage::Jali_State_Wrapper, Portage::CELL, 2> 
+          interpolate(inputMeshWrapper, targetMeshWrapper, sourceStateWrapper);
+    
+      Portage::Driver<Portage::SearchKDTree<2, Portage::Jali_Mesh_Wrapper, Portage::Jali_Mesh_Wrapper>, 
+          Portage::IntersectR2D<Portage::Jali_Mesh_Wrapper, Portage::Jali_Mesh_Wrapper>, 
+          Portage::Interpolate_1stOrder<Portage::Jali_Mesh_Wrapper, Portage::Jali_Mesh_Wrapper, 
+          Portage::Jali_State_Wrapper, Portage::CELL, 2>,
+          Portage::Jali_Mesh_Wrapper, Portage::Jali_State_Wrapper,
+          Portage::Jali_Mesh_Wrapper, Portage::Jali_State_Wrapper>  
+          d(search, intersect, interpolate, inputMeshWrapper, sourceStateWrapper,targetMeshWrapper,
+            targetStateWrapper);
+      d.set_remap_var_names(remap_fields);    
+      d.run();
+    }
+
+
+    if(example.dim == 3 && example.order == 1){
+      Portage::SearchKDTree<3, Portage::Jali_Mesh_Wrapper, Portage::Jali_Mesh_Wrapper> 
+               search(inputMeshWrapper, targetMeshWrapper);
+      Portage::IntersectR3D<Portage::Jali_Mesh_Wrapper, Portage::Jali_Mesh_Wrapper> 
+               intersect(inputMeshWrapper, targetMeshWrapper);
+      Portage::Interpolate_1stOrder<Portage::Jali_Mesh_Wrapper, Portage::Jali_Mesh_Wrapper, 
+          Portage::Jali_State_Wrapper, Portage::CELL, 3> 
+          interpolate(inputMeshWrapper, targetMeshWrapper, sourceStateWrapper);
+    
+      Portage::Driver<Portage::SearchKDTree<3, Portage::Jali_Mesh_Wrapper, Portage::Jali_Mesh_Wrapper>, 
+          Portage::IntersectR3D<Portage::Jali_Mesh_Wrapper, Portage::Jali_Mesh_Wrapper>, 
+          Portage::Interpolate_1stOrder<Portage::Jali_Mesh_Wrapper, Portage::Jali_Mesh_Wrapper, 
+          Portage::Jali_State_Wrapper, Portage::CELL, 3>,
+          Portage::Jali_Mesh_Wrapper, Portage::Jali_State_Wrapper,
+          Portage::Jali_Mesh_Wrapper, Portage::Jali_State_Wrapper>  
+          d(search, intersect, interpolate, inputMeshWrapper, sourceStateWrapper,targetMeshWrapper,
+            targetStateWrapper);
+      d.set_remap_var_names(remap_fields);    
+      d.run();
+    }
+
+    if(example.dim == 3 && example.order == 2){
+      Portage::SearchKDTree<3, Portage::Jali_Mesh_Wrapper, Portage::Jali_Mesh_Wrapper> 
+               search(inputMeshWrapper, targetMeshWrapper);
+      Portage::IntersectR3D<Portage::Jali_Mesh_Wrapper, Portage::Jali_Mesh_Wrapper> 
+               intersect(inputMeshWrapper, targetMeshWrapper);
+      Portage::Interpolate_2ndOrder<Portage::Jali_Mesh_Wrapper, Portage::Jali_Mesh_Wrapper, 
+          Portage::Jali_State_Wrapper, Portage::CELL, 3> 
+          interpolate(inputMeshWrapper, targetMeshWrapper, sourceStateWrapper);
+    
+      Portage::Driver<Portage::SearchKDTree<3, Portage::Jali_Mesh_Wrapper, Portage::Jali_Mesh_Wrapper>, 
+          Portage::IntersectR3D<Portage::Jali_Mesh_Wrapper, Portage::Jali_Mesh_Wrapper>, 
+          Portage::Interpolate_2ndOrder<Portage::Jali_Mesh_Wrapper, Portage::Jali_Mesh_Wrapper, 
+          Portage::Jali_State_Wrapper, Portage::CELL, 3>,
+          Portage::Jali_Mesh_Wrapper, Portage::Jali_State_Wrapper,
+          Portage::Jali_Mesh_Wrapper, Portage::Jali_State_Wrapper>  
+          d(search, intersect, interpolate, inputMeshWrapper, sourceStateWrapper,targetMeshWrapper,
+            targetStateWrapper);
+      d.set_remap_var_names(remap_fields);    
+      d.run();
+    }
 
     struct timeval begin, end, diff;
     gettimeofday(&begin, 0);
-
-    // Do the remap
-    d.run();
 
     // Dump some timing information
     if (numpe > 1) MPI_Barrier(MPI_COMM_WORLD);
@@ -417,7 +493,9 @@ int main(int argc, char** argv) {
       std::cout << "...done." << std::endl;
     }
 
-  } else {  // node-centered remaps
+  } 
+
+else {  // node-centered remaps
     mf.included_entities({Jali::Entity_kind::FACE,
                           Jali::Entity_kind::EDGE,
                           Jali::Entity_kind::WEDGE,
@@ -501,25 +579,118 @@ int main(int argc, char** argv) {
                                        0.0);
     Portage::Jali_State_Wrapper targetStateWrapper(targetState);
 
-    // Build the main driver data for this mesh type
-    Portage::Driver<Portage::Jali_Mesh_Wrapper,
-                    Portage::Jali_State_Wrapper> d(inputMeshWrapper,
-                                                   sourceStateWrapper,
-                                                   targetMeshWrapper,
-                                                   targetStateWrapper);
 
     // Register the variable name and remap order with the driver
     std::vector<std::string> remap_fields;
     remap_fields.push_back("nodedata");
-    d.set_remap_var_names(remap_fields);
 
-    d.set_interpolation_order(example.order);
+    // Build the main driver data for this mesh type
 
+    if(example.dim == 2 && example.order == 1){
+
+      Portage::MeshWrapperDual<Portage::Jali_Mesh_Wrapper> sourceDualWrapper(inputMeshWrapper);
+      Portage::MeshWrapperDual<Portage::Jali_Mesh_Wrapper> targetDualWrapper(targetMeshWrapper);
+
+      //Create the search, intersect functors
+
+      Portage::SearchKDTree<2, Portage::MeshWrapperDual<Jali_Mesh_Wrapper>, Portage::MeshWrapperDual<Jali_Mesh_Wrapper>> search(sourceDualWrapper, targetDualWrapper);
+      Portage::IntersectR2D<Portage::MeshWrapperDual<Jali_Mesh_Wrapper>, Portage::MeshWrapperDual<Jali_Mesh_Wrapper>> intersect(sourceDualWrapper, targetDualWrapper);
+
+      Portage::Interpolate_1stOrder<Portage::Jali_Mesh_Wrapper, Portage::Jali_Mesh_Wrapper, 
+          Portage::Jali_State_Wrapper, Portage::NODE, 2> 
+          interpolate(inputMeshWrapper, targetMeshWrapper, sourceStateWrapper);
+
+      Portage::Driver<Portage::SearchKDTree<2, Portage::MeshWrapperDual<Jali_Mesh_Wrapper>, Portage::MeshWrapperDual<Jali_Mesh_Wrapper>>, 
+          Portage::IntersectR2D<Portage::MeshWrapperDual<Jali_Mesh_Wrapper>, Portage::MeshWrapperDual<Jali_Mesh_Wrapper>>, 
+          Portage::Interpolate_1stOrder<Portage::Jali_Mesh_Wrapper, Portage::Jali_Mesh_Wrapper, 
+          Portage::Jali_State_Wrapper, Portage::NODE, 2>,
+          Jali_Mesh_Wrapper,Portage::Jali_State_Wrapper,  
+          Jali_Mesh_Wrapper,Portage::Jali_State_Wrapper> 
+          d(search, intersect, interpolate, inputMeshWrapper, sourceStateWrapper,targetMeshWrapper,
+            targetStateWrapper);
+      d.set_remap_var_names(remap_fields);    
+      d.run();
+    }
+
+    if(example.dim == 2 && example.order == 2){
+      Portage::MeshWrapperDual<Portage::Jali_Mesh_Wrapper> sourceDualWrapper(inputMeshWrapper);
+      Portage::MeshWrapperDual<Portage::Jali_Mesh_Wrapper> targetDualWrapper(targetMeshWrapper);
+
+      //Create the search, intersect functors
+
+      Portage::SearchKDTree<2, Portage::MeshWrapperDual<Jali_Mesh_Wrapper>, Portage::MeshWrapperDual<Jali_Mesh_Wrapper>> search(sourceDualWrapper, targetDualWrapper);
+      Portage::IntersectR2D<Portage::MeshWrapperDual<Jali_Mesh_Wrapper>, Portage::MeshWrapperDual<Jali_Mesh_Wrapper>> intersect(sourceDualWrapper, targetDualWrapper);
+
+      Portage::Interpolate_2ndOrder<Portage::Jali_Mesh_Wrapper, Portage::Jali_Mesh_Wrapper, 
+          Portage::Jali_State_Wrapper, Portage::NODE, 2> 
+          interpolate(inputMeshWrapper, targetMeshWrapper, sourceStateWrapper);
+
+      Portage::Driver<Portage::SearchKDTree<2, Portage::MeshWrapperDual<Jali_Mesh_Wrapper>, Portage::MeshWrapperDual<Jali_Mesh_Wrapper>>, 
+          Portage::IntersectR2D<Portage::MeshWrapperDual<Jali_Mesh_Wrapper>, Portage::MeshWrapperDual<Jali_Mesh_Wrapper>>, 
+          Portage::Interpolate_2ndOrder<Portage::Jali_Mesh_Wrapper, Portage::Jali_Mesh_Wrapper, 
+          Portage::Jali_State_Wrapper, Portage::NODE, 2>,
+          Jali_Mesh_Wrapper,Portage::Jali_State_Wrapper,  
+          Jali_Mesh_Wrapper,Portage::Jali_State_Wrapper> 
+          d(search, intersect, interpolate, inputMeshWrapper, sourceStateWrapper,targetMeshWrapper,
+            targetStateWrapper);
+      d.set_remap_var_names(remap_fields);    
+      d.run();
+    }
+
+
+    if(example.dim == 3 && example.order == 1){
+      Portage::MeshWrapperDual<Portage::Jali_Mesh_Wrapper> sourceDualWrapper(inputMeshWrapper);
+      Portage::MeshWrapperDual<Portage::Jali_Mesh_Wrapper> targetDualWrapper(targetMeshWrapper);
+
+      //Create the search, intersect functors
+
+      Portage::SearchKDTree<3, Portage::MeshWrapperDual<Jali_Mesh_Wrapper>, Portage::MeshWrapperDual<Jali_Mesh_Wrapper>> search(sourceDualWrapper, targetDualWrapper);
+      Portage::IntersectR3D<Portage::MeshWrapperDual<Jali_Mesh_Wrapper>, Portage::MeshWrapperDual<Jali_Mesh_Wrapper>> intersect(sourceDualWrapper, targetDualWrapper);
+
+      Portage::Interpolate_1stOrder<Portage::Jali_Mesh_Wrapper, Portage::Jali_Mesh_Wrapper, 
+          Portage::Jali_State_Wrapper, Portage::NODE, 3> 
+          interpolate(inputMeshWrapper, targetMeshWrapper, sourceStateWrapper);
+
+      Portage::Driver<Portage::SearchKDTree<3, Portage::MeshWrapperDual<Jali_Mesh_Wrapper>, Portage::MeshWrapperDual<Jali_Mesh_Wrapper>>, 
+          Portage::IntersectR3D<Portage::MeshWrapperDual<Jali_Mesh_Wrapper>, Portage::MeshWrapperDual<Jali_Mesh_Wrapper>>, 
+          Portage::Interpolate_1stOrder<Portage::Jali_Mesh_Wrapper, Portage::Jali_Mesh_Wrapper, 
+          Portage::Jali_State_Wrapper, Portage::NODE, 3>,
+          Jali_Mesh_Wrapper,Portage::Jali_State_Wrapper,  
+          Jali_Mesh_Wrapper,Portage::Jali_State_Wrapper> 
+          d(search, intersect, interpolate, inputMeshWrapper, sourceStateWrapper,targetMeshWrapper,
+            targetStateWrapper);
+          d.set_remap_var_names(remap_fields);    
+          d.run();
+    }
+
+    if(example.dim == 3 && example.order == 2){
+      Portage::MeshWrapperDual<Portage::Jali_Mesh_Wrapper> sourceDualWrapper(inputMeshWrapper);
+      Portage::MeshWrapperDual<Portage::Jali_Mesh_Wrapper> targetDualWrapper(targetMeshWrapper);
+
+      //Create the search, intersect functors
+
+      Portage::SearchKDTree<3, Portage::MeshWrapperDual<Jali_Mesh_Wrapper>, Portage::MeshWrapperDual<Jali_Mesh_Wrapper>> search(sourceDualWrapper, targetDualWrapper);
+      Portage::IntersectR3D<Portage::MeshWrapperDual<Jali_Mesh_Wrapper>, Portage::MeshWrapperDual<Jali_Mesh_Wrapper>> intersect(sourceDualWrapper, targetDualWrapper);
+
+      Portage::Interpolate_2ndOrder<Portage::Jali_Mesh_Wrapper, Portage::Jali_Mesh_Wrapper, 
+          Portage::Jali_State_Wrapper, Portage::NODE, 3> 
+          interpolate(inputMeshWrapper, targetMeshWrapper, sourceStateWrapper);
+
+      Portage::Driver<Portage::SearchKDTree<3, Portage::MeshWrapperDual<Jali_Mesh_Wrapper>, Portage::MeshWrapperDual<Jali_Mesh_Wrapper>>, 
+          Portage::IntersectR3D<Portage::MeshWrapperDual<Jali_Mesh_Wrapper>, Portage::MeshWrapperDual<Jali_Mesh_Wrapper>>, 
+          Portage::Interpolate_2ndOrder<Portage::Jali_Mesh_Wrapper, Portage::Jali_Mesh_Wrapper, 
+          Portage::Jali_State_Wrapper, Portage::NODE, 3>,
+          Jali_Mesh_Wrapper,Portage::Jali_State_Wrapper,  
+          Jali_Mesh_Wrapper,Portage::Jali_State_Wrapper> 
+          d(search, intersect, interpolate, inputMeshWrapper, sourceStateWrapper,targetMeshWrapper,
+            targetStateWrapper);
+          d.set_remap_var_names(remap_fields);    
+          d.run();
+    }
+
+  //FIXME: amh: timing issues
     struct timeval begin, end, diff;
     gettimeofday(&begin, 0);
-
-    // Do the remap
-    d.run();
 
     // Dump some timing information
     gettimeofday(&end, 0);
@@ -570,6 +741,7 @@ int main(int argc, char** argv) {
     }
 
   }
+  
 
   std::printf("finishing portageapp...\n");
 
