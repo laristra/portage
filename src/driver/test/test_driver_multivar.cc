@@ -126,12 +126,12 @@ TEST(Test_MultiVar_Remap, Test1) {
   /////////
   //Create the search, intersect functors
   Portage::SearchKDTree<2, Portage::Jali_Mesh_Wrapper, Portage::Jali_Mesh_Wrapper> search(sourceMeshWrapper, targetMeshWrapper);
-  IntersectClipper<Portage::Jali_Mesh_Wrapper, Portage::Jali_Mesh_Wrapper> intersect(sourceMeshWrapper, targetMeshWrapper);
+  Portage::IntersectR2D<Portage::Jali_Mesh_Wrapper, Portage::Jali_Mesh_Wrapper> intersect(sourceMeshWrapper, targetMeshWrapper);
   Portage::Interpolate_1stOrder<Portage::Jali_Mesh_Wrapper, Portage::Jali_Mesh_Wrapper, 
       Portage::Jali_State_Wrapper, Portage::CELL, 2> interpolate(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper);
 
   Portage::Driver<Portage::SearchKDTree<2, Portage::Jali_Mesh_Wrapper, Portage::Jali_Mesh_Wrapper>, 
-          IntersectClipper<Portage::Jali_Mesh_Wrapper, Portage::Jali_Mesh_Wrapper>, 
+      Portage::IntersectR2D<Portage::Jali_Mesh_Wrapper, Portage::Jali_Mesh_Wrapper>, 
           Portage::Interpolate_1stOrder<Portage::Jali_Mesh_Wrapper, Portage::Jali_Mesh_Wrapper, 
           Portage::Jali_State_Wrapper, Portage::CELL, 2>,
           Portage::Jali_Mesh_Wrapper, Portage::Jali_State_Wrapper,

@@ -18,7 +18,7 @@
 #include "portage/driver/driver.h"
 #include "portage/wrappers/mesh/jali/jali_mesh_wrapper.h"
 #include "portage/wrappers/state/jali/jali_state_wrapper.h"
-#include "portage/intersect/intersectClipper.h"
+#include "portage/intersect/intersect_r2d.h"
 #include "Mesh.hh"
 #include "MeshFactory.hh"
 #include "JaliStateVector.h"
@@ -166,13 +166,13 @@ int main(int argc, char** argv) {
   if ((example == 0) || (example == 2) || (example == 3)){ 
   //Create the search, intersect functors
     Portage::SearchKDTree<2, Portage::Jali_Mesh_Wrapper, Portage::Jali_Mesh_Wrapper> search(sourceMeshWrapper, targetMeshWrapper);
-    IntersectClipper<Portage::Jali_Mesh_Wrapper, Portage::Jali_Mesh_Wrapper> intersect(sourceMeshWrapper, targetMeshWrapper);
+    Portage::IntersectR2D<Portage::Jali_Mesh_Wrapper, Portage::Jali_Mesh_Wrapper> intersect(sourceMeshWrapper, targetMeshWrapper);
 
     if (example==0){
       Portage::Interpolate_1stOrder<Portage::Jali_Mesh_Wrapper, Portage::Jali_Mesh_Wrapper, 
           Portage::Jali_State_Wrapper, Portage::CELL, 2> interpolate(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper);
       Portage::Driver<Portage::SearchKDTree<2, Portage::Jali_Mesh_Wrapper, Portage::Jali_Mesh_Wrapper>, 
-          IntersectClipper<Portage::Jali_Mesh_Wrapper, Portage::Jali_Mesh_Wrapper>, 
+          Portage::IntersectR2D<Portage::Jali_Mesh_Wrapper, Portage::Jali_Mesh_Wrapper>, 
           Portage::Interpolate_1stOrder<Portage::Jali_Mesh_Wrapper, Portage::Jali_Mesh_Wrapper, 
           Portage::Jali_State_Wrapper, Portage::CELL, 2>,
           Portage::Jali_Mesh_Wrapper, Portage::Jali_State_Wrapper,
@@ -189,7 +189,7 @@ int main(int argc, char** argv) {
     
       //amh: should probably be setting this on the interpolation functor ourselves--maybe we need another functor wrapper for interpolation
       Portage::Driver<Portage::SearchKDTree<2, Portage::Jali_Mesh_Wrapper, Portage::Jali_Mesh_Wrapper>, 
-          IntersectClipper<Portage::Jali_Mesh_Wrapper, Portage::Jali_Mesh_Wrapper>, 
+          Portage::IntersectR2D<Portage::Jali_Mesh_Wrapper, Portage::Jali_Mesh_Wrapper>, 
           Portage::Interpolate_2ndOrder<Portage::Jali_Mesh_Wrapper, Portage::Jali_Mesh_Wrapper, 
           Portage::Jali_State_Wrapper, Portage::CELL, 2>,
           Portage::Jali_Mesh_Wrapper, Portage::Jali_State_Wrapper,
@@ -210,14 +210,14 @@ int main(int argc, char** argv) {
     //Create the search, intersect functors
 
     Portage::SearchKDTree<2, Portage::MeshWrapperDual<Jali_Mesh_Wrapper>, Portage::MeshWrapperDual<Jali_Mesh_Wrapper>> search(sourceDualWrapper, targetDualWrapper);
-    IntersectClipper<Portage::MeshWrapperDual<Jali_Mesh_Wrapper>, Portage::MeshWrapperDual<Jali_Mesh_Wrapper>> intersect(sourceDualWrapper, targetDualWrapper);
+    Portage::IntersectR2D<Portage::MeshWrapperDual<Jali_Mesh_Wrapper>, Portage::MeshWrapperDual<Jali_Mesh_Wrapper>> intersect(sourceDualWrapper, targetDualWrapper);
 
     Portage::Interpolate_2ndOrder<Portage::Jali_Mesh_Wrapper, Portage::Jali_Mesh_Wrapper, 
                                   Portage::Jali_State_Wrapper, Portage::NODE, 2> 
         interpolate(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper);
 
     Portage::Driver<Portage::SearchKDTree<2, Portage::MeshWrapperDual<Jali_Mesh_Wrapper>, Portage::MeshWrapperDual<Jali_Mesh_Wrapper>>, 
-                    IntersectClipper<Portage::MeshWrapperDual<Jali_Mesh_Wrapper>, Portage::MeshWrapperDual<Jali_Mesh_Wrapper>>, 
+                    Portage::IntersectR2D<Portage::MeshWrapperDual<Jali_Mesh_Wrapper>, Portage::MeshWrapperDual<Jali_Mesh_Wrapper>>, 
                     Portage::Interpolate_2ndOrder<Portage::Jali_Mesh_Wrapper, Portage::Jali_Mesh_Wrapper, 
                     Portage::Jali_State_Wrapper, Portage::NODE, 2>,
                     Jali_Mesh_Wrapper,Portage::Jali_State_Wrapper,  

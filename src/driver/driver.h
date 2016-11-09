@@ -18,7 +18,7 @@
 #include "portage/support/portage.h"
 #include "portage/support/Point.h"
 #include "portage/search/search_kdtree.h"
-#include "portage/intersect/intersectClipper.h"
+#include "portage/intersect/intersect_r2d.h"
 #include "portage/intersect/intersect_r3d.h"
 #include "portage/interpolate/interpolate_1st_order.h"
 #include "portage/interpolate/interpolate_2nd_order.h"
@@ -414,7 +414,6 @@ class Driver {
       gettimeofday(&begin_timeval, 0);
 
       // INTERSECT
-
       // Get an instance of the desired intersect algorithm type
       // Make an instance of the intersect functor
       IntersectFunctor<Intersect>
@@ -498,6 +497,7 @@ class Driver {
   std::cout << "  Search Time (s): " << tot_seconds_srch << std::endl;
   std::cout << "  Intersect Time (s): " << tot_seconds_xsect << std::endl;
   std::cout << "  Interpolate Time (s): " << tot_seconds_interp << std::endl;
+
     }
   //Collect all node based variables and remap them
     {
@@ -625,6 +625,7 @@ class Driver {
     }
   }
 
+
  private:
   Search const &search_;  // amh: resolve lifetime issues (move construction?)
   Intersect const &intersect_;
@@ -688,14 +689,15 @@ struct SearchFunctor {
   Driver::run() to actually do the intersection of the target cell with candidate source cells
   @tparam IsectType The type of intersect method (e.g. IntersectClipper).
 //amh: FIXME!  this is an intersect adapter which takes an intersection for two cells and changes it to an intersect for multiple cells
+
 */
 template <typename IsectType>
 struct IntersectFunctor {
-  const IsectType* intersect_;    ///< intersect method (e.g. IntersectClipper)
+  const IsectType* intersect_;    ///< intersect method (e.g. IntersectR2D)
 
   /*!
     @brief Constructor.
-    @param[in] intersect The intersect method to use (e.g. IntersectClipper)
+    @param[in] intersect The intersect method to use (e.g. IntersectR2D)
   */
   IntersectFunctor(const IsectType* intersect)
       : intersect_(intersect)
