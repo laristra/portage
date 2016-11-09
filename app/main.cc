@@ -164,12 +164,6 @@ int main(int argc, char** argv) {
   __itt_pause();
 #endif
 
-  // //*********amh***********placeholder
-  // Portage::SearchKDTree search;
-  // Portage::IntersectR3D intersect;
-  // Portage::Interpolate_2ndOrder interpolate;
-  // //*********amh***********placeholder
-
   // Get the example to run from command-line parameter
   int example_num, n_source, n_target;
   // Should we dump data?
