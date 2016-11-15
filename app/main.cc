@@ -448,6 +448,7 @@ int main(int argc, char** argv) {
       double error;
       if (example.linear) {
         error = ccen[0]+ccen[1] - cellvecout[c];
+        std::cout << "error is " << error << std::endl;
         if (example.dim == 3)
           error += ccen[2];
       } else {  // quadratic
