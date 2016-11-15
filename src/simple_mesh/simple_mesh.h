@@ -23,8 +23,8 @@ Simple_Mesh(double x0, double y0, double z0,
             double x1, double y1, double z1,
             ID nx, ID ny, ID nz) :
   nx_(nx), ny_(ny), nz_(nz),
-      x0_(x0), y0_(y0), z0_(z0),
-      x1_(x1), y1_(y1), z1_(z1) {
+    x0_(x0), y0_(y0), z0_(z0),
+    x1_(x1), y1_(y1), z1_(z1) {
     num_cells_ = nx*ny*nz;
     num_nodes_ = (nx+1)*(ny+1)*(nz+1);
     num_faces_ = (nx_+1)*ny_*nz_ + nx_*(ny_+1)*nz_ + nx_*ny_*(nz_+1);
