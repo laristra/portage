@@ -134,10 +134,13 @@ Simple_Mesh(double x0, double y0, double z0,
   // @TODO: replace with std::copy?
   void node_get_cells(const ID nodeid,
                       std::vector<ID> *cells) const {
-    auto offset = cells_per_node_*nodeid;
+    auto offset = cells_per_node_aug_*nodeid;
     cells->clear();
-    for (ID i(0); i < cells_per_node_; ++i)
-      cells->push_back(node_to_cell_[i+offset]);
+    std::cout << "   " << offset << " " << node_to_cell_[offset] << std::endl;
+    for (ID i(0); i < node_to_cell_[offset]; ++i) {
+      std::cout << "  pushing " << node_to_cell_[offset+i+1] << std::endl;
+      cells->push_back(node_to_cell_[i+offset+1]);
+    }
   }
 
   // General specification - specialization follows at bottom of file
@@ -173,12 +176,10 @@ Simple_Mesh(double x0, double y0, double z0,
     cell_face_dirs_.resize(faces_per_cell_*num_cells_);
     face_to_node_.resize(nodes_per_face_*num_faces_);
     // upward adjacencies
-    node_to_face_.resize(faces_per_node_*num_nodes_);
-    node_to_cell_.resize(cells_per_node_*num_nodes_);
+    node_to_face_.resize(faces_per_node_aug_*num_nodes_);
+    node_to_cell_.resize(cells_per_node_aug_*num_nodes_);
     face_to_cell_.resize(2*num_faces_);
 
-    // this keeps track of how many cells we have so far per node
-    std::vector<ID> cells_at_node(num_nodes_);
     // likewise for faces we have per node
     std::vector<ID> faces_at_node(num_nodes_);
 
@@ -217,9 +218,9 @@ Simple_Mesh(double x0, double y0, double z0,
             for (ID iiy(iy); iiy <= iy+1; ++iiy)
               for (ID iix(ix); iix <= ix+1; ++iix) {
                 auto thisNode = node_index_(iix, iiy, iiz);
-                auto cnstart = cells_per_node_ * thisNode;
-                auto & c_at_n = cells_at_node[thisNode];
-                node_to_cell_[thisNode+c_at_n] = thisCell;
+                auto cnstart = cells_per_node_aug_ * thisNode;
+                auto & c_at_n = node_to_cell_[cnstart];
+                node_to_cell_[cnstart+c_at_n+1] = thisCell;
                 c_at_n++;
               }
 
@@ -285,8 +286,9 @@ Simple_Mesh(double x0, double y0, double z0,
           for (ID iiy(iy); iiy <= iy+1; ++iiy)
             for (ID iix(ix); iix <= ix+1; ++iix) {
               auto thisNode = node_index_(iix, iiy, iz);
-              auto & f_at_n = faces_at_node[thisNode];
-              node_to_face_[thisNode+f_at_n] = thisFace;
+              auto fnstart = faces_per_node_aug_ * thisNode;
+              auto & f_at_n = node_to_face_[fnstart];
+              node_to_face_[fnstart+f_at_n+1] = thisFace;
               f_at_n++;
               }
         }
@@ -312,8 +314,9 @@ Simple_Mesh(double x0, double y0, double z0,
           for (ID iiz(iz); iiz <= iz+1; ++iiz)
             for (ID iix(ix); iix <= ix+1; ++iix) {
               auto thisNode = node_index_(iix, iy, iiz);
-              auto & f_at_n = faces_at_node[thisNode];
-              node_to_face_[thisNode+f_at_n] = thisFace;
+              auto fnstart = faces_per_node_aug_ * thisNode;
+              auto & f_at_n = node_to_face_[fnstart];
+              node_to_face_[fnstart+f_at_n+1] = thisFace;
               f_at_n++;
               }
         }
@@ -342,8 +345,9 @@ Simple_Mesh(double x0, double y0, double z0,
           for (ID iiz(iz); iiz <= iz+1; ++iiz)
             for (ID iiy(iy); iiy <= iy+1; ++iiy) {
               auto thisNode = node_index_(ix, iiy, iiz);
-              auto & f_at_n = faces_at_node[thisNode];
-              node_to_face_[thisNode+f_at_n] = thisFace;
+              auto fnstart = faces_per_node_aug_ * thisNode;
+              auto & f_at_n = node_to_face_[fnstart];
+              node_to_face_[fnstart+f_at_n+1] = thisFace;
               f_at_n++;
               }
         }
@@ -368,8 +372,8 @@ Simple_Mesh(double x0, double y0, double z0,
   ID nodes_per_cell_ = 8;
   ID edges_per_face_ = 4;  // needed for sides
   ID faces_per_cell_ = 6;
-  ID cells_per_node_ = 8;
-  ID faces_per_node_ = 12;
+  ID cells_per_node_aug_ = 9;   // 1 entry for the num cells actually attached
+  ID faces_per_node_aug_ = 13;  // 1 entry for the num faces actually attached
 
   ID num_cells_;
   ID num_nodes_;
