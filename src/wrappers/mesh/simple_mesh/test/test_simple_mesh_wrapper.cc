@@ -387,7 +387,6 @@ TEST(Simple_Mesh, AdjCell) {
   };
   std::vector<int> adjCells;
   for (int i(0); i < ncells; ++i) {
-    std::cout << i << std::endl;
     int expectedNumAdjCells = expectedAdjCells[i].size();
     mesh_wrapper.cell_get_node_adj_cells(i,
                                          Portage::Entity_type::PARALLEL_OWNED,
