@@ -2,14 +2,14 @@
  * Copyright (c) 2016 Los Alamos National Security, LLC
  * All rights reserved.
  *---------------------------------------------------------------------------~*/
+#include <iostream>
+#include <vector>
+#include <iterator>
+
 #include "portage/wrappers/mesh/simple_mesh/simple_mesh_wrapper.h"
 #include "portage/simple_mesh/simple_mesh.h"
 #include "portage/support/portage.h"
 #include "portage/support/Point.h"
-
-#include <iostream>
-#include <vector>
-#include <iterator>
 
 #include "gtest/gtest.h"
 #include "mpi.h"
@@ -172,6 +172,7 @@ TEST(Simple_Mesh, MultiCell) {
     for (int f(0); f < 6; ++f) {
       ASSERT_EQ(expectedFaces[i][f], cellfaces[f]);
       ASSERT_EQ(expectedDirs[f], cellfacedirs[f]);
+    }
   }
   // // Nodes of the faces; the expected are global ids
   // std::vector<std::vector<int>> expectedFaceNodes = {{0, 1, 3, 2},
