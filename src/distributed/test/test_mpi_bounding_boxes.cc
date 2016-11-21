@@ -40,8 +40,10 @@ TEST(MPI_Bounding_Boxes, SimpleTest) {
   state.add("d2", source_mesh, Jali::Entity_kind::CELL,
             Jali::Entity_type::ALL, dtest2);
 
-  Portage::Flat_Mesh_Wrapper<> source_mesh_flat(8, inputMeshWrapper);
-  Portage::Flat_State_Wrapper<> source_state_flat(wrapper, {"d1", "d2"});
+  Portage::Flat_Mesh_Wrapper<> source_mesh_flat;
+  source_mesh_flat.initialize(8, inputMeshWrapper);
+  Portage::Flat_State_Wrapper<> source_state_flat;
+  source_state_flat.initialize(wrapper, {"d1", "d2"});
 
   // Target mesh
   std::shared_ptr<Jali::Mesh> target_mesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0,

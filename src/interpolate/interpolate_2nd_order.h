@@ -147,7 +147,6 @@ class Interpolate_2ndOrder {
 
 
 
-
 //////////////////////////////////////////////////////////////////////////////
 /*!
   @brief 2nd order interpolate class specialization for cells
@@ -169,7 +168,6 @@ class Interpolate_2ndOrder<SourceMeshType, TargetMeshType, StateType, CELL, D> {
       limiter_type_(NOLIMITER),
       source_vals_(NULL) {}
 
-  
   /// Set the name of the interpolation variable and the limiter type
 
   void set_interpolation_variable(std::string const & interp_var_name,
@@ -248,7 +246,6 @@ class Interpolate_2ndOrder<SourceMeshType, TargetMeshType, StateType, CELL, D> {
 };
 
 // Implementation of the () operator for 2nd order interpolation on cells
-
 
 template<typename SourceMeshType, typename TargetMeshType, typename StateType,
          long D>

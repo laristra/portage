@@ -93,35 +93,25 @@ int main(int argc, char** argv) {
   const std::shared_ptr<Jali::Mesh> tmesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2, 2, 2);
   const Portage::Jali_Mesh_Wrapper source_mesh_wrapper(*smesh);
   const Portage::Jali_Mesh_Wrapper target_mesh_wrapper(*tmesh);
-  Portage::SearchKDTree<3, Portage::Jali_Mesh_Wrapper, Portage::Jali_Mesh_Wrapper> search(source_mesh_wrapper, target_mesh_wrapper);
-  const Portage::IntersectR3D<Portage::Jali_Mesh_Wrapper> intersect{source_mesh_wrapper , target_mesh_wrapper};
   Jali::State source_state(smesh); //blank source state
   Jali::State target_state(tmesh);
   Portage::Jali_State_Wrapper sourceStateWrapper2(source_state);
   sourceStateWrapper2.init_from_mesh();
   Portage::Jali_State_Wrapper targetStateWrapper2(target_state);
   targetStateWrapper2.init_from_mesh();
-  Portage::Interpolate_2ndOrder<Portage::Jali_Mesh_Wrapper,
-                                Portage::Jali_Mesh_Wrapper,
-                                Portage::Jali_State_Wrapper,
-                                Portage::CELL, 3>
-      interpolate(source_mesh_wrapper, target_mesh_wrapper, sourceStateWrapper2);
   //*********amh***********placeholder
 
   Portage::Driver<
-    Portage::SearchKDTree<3, Portage::Jali_Mesh_Wrapper, 
-                          Portage::Jali_Mesh_Wrapper>, 
-    Portage::IntersectR3D<Portage::Jali_Mesh_Wrapper>, 
-    Portage::Interpolate_2ndOrder<Portage::Jali_Mesh_Wrapper,
-                                  Portage::Jali_Mesh_Wrapper,
-                                  Portage::Jali_State_Wrapper,
-                                  Portage::CELL, 3>, 
-    Portage::Jali_Mesh_Wrapper, Portage::Jali_State_Wrapper>
-      d(search, intersect, interpolate, 
-        source_mesh_wrapper, sourceStateWrapper2,
+    Portage::SearchKDTree, 
+    Portage::IntersectR3D, 
+    Portage::Interpolate_2ndOrder,
+    3, 
+    Portage::Jali_Mesh_Wrapper, 
+    Portage::Jali_State_Wrapper>
+      d(source_mesh_wrapper, sourceStateWrapper2,
         target_mesh_wrapper, targetStateWrapper2);
   d.set_remap_var_names(remap_fields);  
-  d.run();
+  d.run(false);
   
   if (dumpMesh) {
     std::cerr << "Saving the source mesh" << std::endl;
