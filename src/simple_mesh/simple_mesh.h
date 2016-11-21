@@ -136,9 +136,7 @@ Simple_Mesh(double x0, double y0, double z0,
                       std::vector<ID> *cells) const {
     auto offset = cells_per_node_aug_*nodeid;
     cells->clear();
-    std::cout << "   " << offset << " " << node_to_cell_[offset] << std::endl;
     for (ID i(0); i < node_to_cell_[offset]; ++i) {
-      std::cout << "  pushing " << node_to_cell_[offset+i+1] << std::endl;
       cells->push_back(node_to_cell_[i+offset+1]);
     }
   }
