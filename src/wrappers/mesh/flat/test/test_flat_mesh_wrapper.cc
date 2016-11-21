@@ -36,7 +36,8 @@ TEST(Flat_Mesh_Wrapper, basic_routines) {
   std::shared_ptr<Jali::Mesh> mesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2, 2, 2);
   ASSERT_TRUE(mesh != NULL);
   Portage::Jali_Mesh_Wrapper mesh_wrapper(*mesh);
-  Portage::Flat_Mesh_Wrapper<> mesh_flat(8, mesh_wrapper);
+  Portage::Flat_Mesh_Wrapper<> mesh_flat;
+  mesh_flat.initialize(8, mesh_wrapper);
   std::vector<std::array<Portage::Point<3>, 4>> tcoords;
 
   // Test decompose_cell_into_tets()

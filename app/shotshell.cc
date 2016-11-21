@@ -164,68 +164,45 @@ int main(int argc, char** argv) {
 
   // Directly run cell-centered examples
   if ((example == 0) || (example == 2) || (example == 3)){ 
-  //Create the search, intersect functors
-    Portage::SearchKDTree<2, Portage::Jali_Mesh_Wrapper, Portage::Jali_Mesh_Wrapper> search(sourceMeshWrapper, targetMeshWrapper);
-    Portage::IntersectR2D<Portage::Jali_Mesh_Wrapper, Portage::Jali_Mesh_Wrapper> intersect(sourceMeshWrapper, targetMeshWrapper);
 
     if (example==0){
-      Portage::Interpolate_1stOrder<Portage::Jali_Mesh_Wrapper, Portage::Jali_Mesh_Wrapper, 
-          Portage::Jali_State_Wrapper, Portage::CELL, 2> interpolate(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper);
-      Portage::Driver<Portage::SearchKDTree<2, Portage::Jali_Mesh_Wrapper, Portage::Jali_Mesh_Wrapper>, 
-          Portage::IntersectR2D<Portage::Jali_Mesh_Wrapper, Portage::Jali_Mesh_Wrapper>, 
-          Portage::Interpolate_1stOrder<Portage::Jali_Mesh_Wrapper, Portage::Jali_Mesh_Wrapper, 
-          Portage::Jali_State_Wrapper, Portage::CELL, 2>,
-          Portage::Jali_Mesh_Wrapper, Portage::Jali_State_Wrapper,
-          Portage::Jali_Mesh_Wrapper, Portage::Jali_State_Wrapper>  
-          d(search, intersect, interpolate, sourceMeshWrapper, sourceStateWrapper,targetMeshWrapper,
-            targetStateWrapper);
+      Portage::Driver<Portage::SearchKDTree, 
+          Portage::IntersectR2D, 
+          Portage::Interpolate_1stOrder,
+          2,
+          Portage::Jali_Mesh_Wrapper, 
+          Portage::Jali_State_Wrapper>  
+          d(sourceMeshWrapper, sourceStateWrapper, targetMeshWrapper, targetStateWrapper);
       d.set_remap_var_names(remap_fields);    
-      d.run();
+      d.run(false);
     }
     if ((example == 2) || (example == 3)){
-      Portage::Interpolate_2ndOrder<Portage::Jali_Mesh_Wrapper, Portage::Jali_Mesh_Wrapper, 
-          Portage::Jali_State_Wrapper, Portage::CELL, 2> 
-          interpolate(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper);
     
       //amh: should probably be setting this on the interpolation functor ourselves--maybe we need another functor wrapper for interpolation
-      Portage::Driver<Portage::SearchKDTree<2, Portage::Jali_Mesh_Wrapper, Portage::Jali_Mesh_Wrapper>, 
-          Portage::IntersectR2D<Portage::Jali_Mesh_Wrapper, Portage::Jali_Mesh_Wrapper>, 
-          Portage::Interpolate_2ndOrder<Portage::Jali_Mesh_Wrapper, Portage::Jali_Mesh_Wrapper, 
-          Portage::Jali_State_Wrapper, Portage::CELL, 2>,
-          Portage::Jali_Mesh_Wrapper, Portage::Jali_State_Wrapper,
-          Portage::Jali_Mesh_Wrapper, Portage::Jali_State_Wrapper>  
-          d(search, intersect, interpolate, sourceMeshWrapper, sourceStateWrapper,targetMeshWrapper,
-            targetStateWrapper);
+      Portage::Driver<Portage::SearchKDTree, 
+          Portage::IntersectR2D, 
+          Portage::Interpolate_2ndOrder,
+          2, 
+          Portage::Jali_Mesh_Wrapper, 
+          Portage::Jali_State_Wrapper>  
+          d(sourceMeshWrapper, sourceStateWrapper, targetMeshWrapper, targetStateWrapper);
       d.set_remap_var_names(remap_fields);    
-      d.run();
+      d.run(false);
     }
   }
  
   // Create a dual mesh for node-centered examples
   else if (example == 1) {
     
-    Portage::MeshWrapperDual<Portage::Jali_Mesh_Wrapper> sourceDualWrapper(sourceMeshWrapper);
-    Portage::MeshWrapperDual<Portage::Jali_Mesh_Wrapper> targetDualWrapper(targetMeshWrapper);
-
-    //Create the search, intersect functors
-
-    Portage::SearchKDTree<2, Portage::MeshWrapperDual<Jali_Mesh_Wrapper>, Portage::MeshWrapperDual<Jali_Mesh_Wrapper>> search(sourceDualWrapper, targetDualWrapper);
-    Portage::IntersectR2D<Portage::MeshWrapperDual<Jali_Mesh_Wrapper>, Portage::MeshWrapperDual<Jali_Mesh_Wrapper>> intersect(sourceDualWrapper, targetDualWrapper);
-
-    Portage::Interpolate_2ndOrder<Portage::Jali_Mesh_Wrapper, Portage::Jali_Mesh_Wrapper, 
-                                  Portage::Jali_State_Wrapper, Portage::NODE, 2> 
-        interpolate(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper);
-
-    Portage::Driver<Portage::SearchKDTree<2, Portage::MeshWrapperDual<Jali_Mesh_Wrapper>, Portage::MeshWrapperDual<Jali_Mesh_Wrapper>>, 
-                    Portage::IntersectR2D<Portage::MeshWrapperDual<Jali_Mesh_Wrapper>, Portage::MeshWrapperDual<Jali_Mesh_Wrapper>>, 
-                    Portage::Interpolate_2ndOrder<Portage::Jali_Mesh_Wrapper, Portage::Jali_Mesh_Wrapper, 
-                    Portage::Jali_State_Wrapper, Portage::NODE, 2>,
-                    Jali_Mesh_Wrapper,Portage::Jali_State_Wrapper,  
-                    Jali_Mesh_Wrapper,Portage::Jali_State_Wrapper> 
-                    d(search, intersect, interpolate, sourceMeshWrapper, sourceStateWrapper,targetMeshWrapper,
-                      targetStateWrapper);
+    Portage::Driver<Portage::SearchKDTree, 
+                    Portage::IntersectR2D, 
+                    Portage::Interpolate_2ndOrder,
+                    2,
+                    Portage::Jali_Mesh_Wrapper,
+                    Portage::Jali_State_Wrapper> 
+                    d(sourceMeshWrapper, sourceStateWrapper, targetMeshWrapper, targetStateWrapper);
       d.set_remap_var_names(remap_fields);    
-    d.run();
+    d.run(false);
   }
  
   std::cerr << "Last result: " << cellvecout[cellvecout.size()-1] << std::endl;

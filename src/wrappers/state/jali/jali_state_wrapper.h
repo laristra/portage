@@ -78,7 +78,7 @@ class Jali_State_Wrapper {
       }
     }
 
-    std::cerr << "Could not find state variable " << var_name << "\n";
+    std::cerr << "Could not find state variable1 " << var_name << "\n";
     (*data) = nullptr;
   }
 
@@ -103,7 +103,7 @@ class Jali_State_Wrapper {
       }
     }
 
-    std::cerr << "Could not find state variable " << var_name << "\n";
+    std::cerr << "Could not find state variable2 " << var_name << "\n";
     (*data) = nullptr;
   }
 
@@ -129,7 +129,7 @@ class Jali_State_Wrapper {
         return (Portage::Entity_kind) vector->entity_kind();
     }
 
-    std::cerr << "Could not find state variable " << var_name << "\n";
+    std::cerr << "Could not find state variable3 " << var_name << "\n";
     return Portage::UNKNOWN_KIND;
   }
 
@@ -157,7 +157,7 @@ class Jali_State_Wrapper {
         return (vector->size());
     }
 
-    std::cerr << "Could not find state variable " << var_name << "\n";
+    std::cerr << "Could not find state variable4 " << var_name << "\n";
     return 0;
   }
 
