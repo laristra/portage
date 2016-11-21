@@ -18,13 +18,13 @@
 namespace Portage {
 
 /*!
-  \class Flat_Mesh_Wrapper flat_hex_mesh_wrapper.h
+  \class Flat_Mesh_Wrapper flat_mesh_wrapper.h
   \brief Flat_Mesh_Wrapper implements mesh methods
 
   Flat_Mesh_Wrapper stores mesh coordinates in a flat vector.
   It currently assumes all cells are of the same type (i.e.,
   same number of nodes per cell). It also currently only
-  handles the cases of hexahedra and tetrahedra when
+  handles the cases of axis-aligned hexahedra and general tetrahedra when
   decomposing into tets.
 */
 
@@ -69,7 +69,7 @@ class Flat_Mesh_Wrapper {
   //! Empty destructor
   ~Flat_Mesh_Wrapper() {};
 
-  //! Cell area/volume
+  //! Cell area or volume
   double cell_volume(int cellID) const {
 
     std::vector<T> extrema(2*dim_); 
@@ -90,7 +90,7 @@ class Flat_Mesh_Wrapper {
     return volume;
   }
 
-  //! Global to local
+  //! Global to local index conversion
   int global_to_local(int globalId) const {
     std::map<int, int>::const_iterator it = globalCellMap_.find(globalId);
     if (it != globalCellMap_.end()) return (it->second);
@@ -242,7 +242,7 @@ class Flat_Mesh_Wrapper {
   //! get global cell ids
   std::vector<int>& get_global_cell_ids() { return globalCellIds_; }
 
-  //! get owned indexes
+  //! set the number of owned cells
   void set_num_owned_cells(int numOwnedCells) { numOwnedCells_ = numOwnedCells; }
 
   //! get neighbor counts
