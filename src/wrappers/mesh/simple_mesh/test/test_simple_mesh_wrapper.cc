@@ -330,38 +330,70 @@ TEST(Simple_Mesh, MultiCell) {
   };
   std::vector<int> adjNodes;
   for (int i(0); i < nnodes; ++i) {
-    std::cout << i << std::endl;
     int adjExpectedNumNodes = adjExpectedNodes[i].size();
 
     mesh_wrapper.node_get_cell_adj_nodes(i,
                                          Portage::Entity_type::PARALLEL_OWNED,
                                          &adjNodes);
-    std::copy(adjNodes.begin(), adjNodes.end(),
-              std::ostream_iterator<int>(std::cout, " "));
-    std::cout << std::endl;
     ASSERT_EQ(adjExpectedNumNodes, adjNodes.size());
 
     for (int j(0); j < adjExpectedNumNodes; ++j)
       ASSERT_EQ(adjExpectedNodes[i][j], adjNodes[j]);
   }
 
-  // // Check for nodes in cells adjacent to this
-  // // In a single cell setup, this should only contain the other nodes
-  // // of the cell.
-  // std::vector<int> adjnodes;
-  // for (int i(0); i < 8; ++i) {
-  //   mesh_wrapper.node_get_cell_adj_nodes(i,
-  //                                     Portage::Entity_type::PARALLEL_OWNED,
-  //                                     &adjnodes);
-  //   ASSERT_EQ(adjnodes.size(), 7);
-  // }
+  // Check for cells adjacent to this cell, determined by nodes
+  // For this 2x2x2 case, each cell is attached to all the others
+  int expectedNumAdjCells = ncells-1;
+  std::vector<int> adjCells;
+  for (int i(0); i < ncells; ++i) {
+    mesh_wrapper.cell_get_node_adj_cells(i,
+                                         Portage::Entity_type::PARALLEL_OWNED,
+                                         &adjCells);
+    ASSERT_EQ(expectedNumAdjCells, adjCells.size());
+  }
+}
 
-  // // Check for cells adjacent to this cell; adjacency determined from
-  // // nodes.
-  // // FOr a single cell setup, this should be empty
-  // std::vector<int> adjcells;
-  // mesh_wrapper.cell_get_node_adj_cells(0,
-  //                                   Portage::Entity_type::PARALLEL_OWNED,
-  //                                   &adjcells);
-  // ASSERT_EQ(adjcells.size(), 0);
+
+TEST(Simple_Mesh, AdjCell) {
+  // Create a 2x2x3 mesh
+  double xmin(0.0), ymin(0.0), zmin(0.0);
+  double xmax(1.0), ymax(1.0), zmax(1.0);
+  int nx(2), ny(2), nz(3);
+  Portage::Simple_Mesh mesh(xmin, ymin, zmin,
+                            xmax, ymax, zmax,
+                            nx, ny, nz);
+  Portage::Simple_Mesh_Wrapper mesh_wrapper(mesh);
+
+  int ncells = mesh_wrapper.num_owned_cells();
+  ASSERT_EQ(ncells, nx*ny*nz);
+
+  // Check for cells adjacent to each cell; adjacency determined from nodes
+  std::vector<std::vector<int>> expectedAdjCells = {
+    // bottom plane
+    {1, 2, 3, 4, 5, 6, 7},
+    {0, 3, 2, 4, 5, 7, 6},
+    {0, 1, 3, 4, 5, 6, 7},
+    {0, 1, 2, 4, 5, 6, 7},
+    // middle plane
+    {0, 1, 2, 3, 5, 6, 7, 8, 9, 10, 11},
+    {0, 1, 2, 3, 4, 6, 7, 8, 9, 10, 11},
+    {0, 1, 2, 3, 4, 5, 7, 8, 9, 10, 11},
+    {0, 1, 2, 3, 4, 5, 6, 8, 9, 10, 11},
+    // top plane
+    {4, 5, 6, 7, 9, 10, 11},
+    {4, 5, 6, 7, 8, 10, 11},
+    {4, 5, 6, 7, 8, 9, 11},
+    {4, 5, 6, 7, 8, 9, 10}
+  };
+  std::vector<int> adjCells;
+  for (int i(0); i < ncells; ++i) {
+    std::cout << i << std::endl;
+    int expectedNumAdjCells = expectedAdjCells[i].size();
+    mesh_wrapper.cell_get_node_adj_cells(i,
+                                         Portage::Entity_type::PARALLEL_OWNED,
+                                         &adjCells);
+    ASSERT_EQ(expectedNumAdjCells, adjCells.size());
+    for (int j(0); j < expectedNumAdjCells; ++j)
+      ASSERT_EQ(expectedAdjCells[i][j], adjCells[j]);
+  }
 }
