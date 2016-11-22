@@ -650,6 +650,30 @@ int main(int argc, char** argv) {
       inputMesh->write_to_exodus_file("input.exo");
       targetMesh->write_to_exodus_file("output.exo");
       std::cout << "...done." << std::endl;
+
+      std::vector<int> lgid(targetMeshWrapper.num_owned_nodes()), gid;
+      std::vector<double> lvalues(targetMeshWrapper.num_owned_nodes()), values;
+      for (int i=0; i < targetMeshWrapper.num_owned_nodes(); i++) {
+        lgid[i] = targetMesh->GID(i, Jali::Entity_kind::NODE);
+        lvalues[i] = nodevecout[i];
+      }
+      collate(MPI_COMM_WORLD, rank, numpe, lgid, gid);
+      collate(MPI_COMM_WORLD, rank, numpe, lvalues, values);
+      if (rank == 0) {
+        std::vector<int> idx;
+        argsort(gid, idx);
+        reorder(gid, idx);
+        reorder(values, idx);
+        // The `static_cast` is a workaround for an Intel compiler's header
+        // files, which are missing a `std::to_string` function for ints.
+        std::ofstream fout("field"
+            + std::to_string(static_cast<long long>(example_num)) + ".txt");
+        fout << std::scientific;
+        fout.precision(17);
+        for (int i=0; i < gid.size(); i++) {
+          fout << gid[i] << " " << values[i] << std::endl;
+        }
+      }
     }
 
   }
