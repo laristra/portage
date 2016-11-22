@@ -32,3 +32,13 @@ set_property(TEST portageapp_test1
          PROPERTY ENVIRONMENT APPDIR=${CMAKE_BINARY_DIR}/bin)
 set_property(TEST portageapp_test1
          PROPERTY PROCESSORS 4)
+
+
+file(COPY portageapp_test13.sh DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+file(COPY field_gold13.txt DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+add_test(NAME portageapp_test13
+         COMMAND ./portageapp_test13.sh)
+set_property(TEST portageapp_test13
+         PROPERTY ENVIRONMENT APPDIR=${CMAKE_BINARY_DIR}/bin)
+set_property(TEST portageapp_test13
+         PROPERTY PROCESSORS 1)
