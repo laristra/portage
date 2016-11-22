@@ -12,6 +12,7 @@
 #include <memory>
 #include <utility>
 #include <cmath>
+#include <numeric>
 
 #include <mpi.h>
 
