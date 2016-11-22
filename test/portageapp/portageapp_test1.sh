@@ -9,4 +9,4 @@ set -x
 mpirun -np 4 $APPDIR/portageapp 1 4 8 y
 
 # Compare the values for the field
-$APPDIR/apptest_cmp field_gold1.txt field.txt 1e-12
+$APPDIR/apptest_cmp field_gold1.txt field1.txt 1e-12

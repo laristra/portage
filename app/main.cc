@@ -488,7 +488,7 @@ int main(int argc, char** argv) {
         argsort(gid, idx);
         reorder(gid, idx);
         reorder(values, idx);
-        std::ofstream fout("field.txt");
+        std::ofstream fout("field" + std::to_string(example_num) + ".txt");
         fout << std::scientific;
         fout.precision(17);
         for (int i=0; i < gid.size(); i++) {
