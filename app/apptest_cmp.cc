@@ -13,6 +13,7 @@
 #include <utility>
 #include <cmath>
 #include <iostream>
+#include <stdexcept>
 
 void print_usage() {
   std::printf("Usage: apptest_cmp file_gold file eps\n");
