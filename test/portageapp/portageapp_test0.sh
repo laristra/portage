@@ -6,7 +6,7 @@ set -e
 set -x
 
 # test a simple 2d remap, save a field
-mpirun -np 4 $APPDIR/portageapp 1 4 8 y
+mpirun -np 4 $APPDIR/portageapp 0 4 8 y
 
 # Compare the values for the field
-$APPDIR/apptest_cmp field_gold.txt field.txt 1e-12
+$APPDIR/apptest_cmp field_gold0.txt field.txt 1e-12

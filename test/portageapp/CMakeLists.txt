@@ -8,7 +8,27 @@ file(COPY runme.sh DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
 add_test(NAME portageapp_test
          COMMAND ./runme.sh)
-set_property(TEST portageapp_test 
+set_property(TEST portageapp_test
          PROPERTY ENVIRONMENT APPDIR=${CMAKE_BINARY_DIR}/bin)
 set_property(TEST portageapp_test
          PROPERTY PROCESSORS 1)
+
+
+file(COPY portageapp_test0.sh DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+file(COPY field_gold0.txt DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+add_test(NAME portageapp_test0
+         COMMAND ./portageapp_test0.sh)
+set_property(TEST portageapp_test0
+         PROPERTY ENVIRONMENT APPDIR=${CMAKE_BINARY_DIR}/bin)
+set_property(TEST portageapp_test0
+         PROPERTY PROCESSORS 4)
+
+
+file(COPY portageapp_test1.sh DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+file(COPY field_gold1.txt DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+add_test(NAME portageapp_test1
+         COMMAND ./portageapp_test1.sh)
+set_property(TEST portageapp_test1
+         PROPERTY ENVIRONMENT APPDIR=${CMAKE_BINARY_DIR}/bin)
+set_property(TEST portageapp_test1
+         PROPERTY PROCESSORS 4)
