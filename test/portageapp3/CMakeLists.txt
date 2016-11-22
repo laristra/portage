@@ -5,5 +5,5 @@ add_test(NAME portageapp_test3
          COMMAND ./portageapp_test3.sh)
 set_property(TEST portageapp_test3
          PROPERTY ENVIRONMENT APPDIR=${CMAKE_BINARY_DIR}/bin)
-
-
+set_property(TEST portageapp_test3
+         PROPERTY PROCESSORS 4)
