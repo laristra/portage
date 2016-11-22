@@ -488,7 +488,10 @@ int main(int argc, char** argv) {
         argsort(gid, idx);
         reorder(gid, idx);
         reorder(values, idx);
-        std::ofstream fout("field" + std::to_string(example_num) + ".txt");
+        // The `static_cast` is a workaround for an Intel compiler's header
+        // files, which are missing a `std::to_string` function for ints.
+        std::ofstream fout("field"
+            + std::to_string(static_cast<long long>(example_num)) + ".txt");
         fout << std::scientific;
         fout.precision(17);
         for (int i=0; i < gid.size(); i++) {
