@@ -5,8 +5,8 @@ set -e
 # Echo each command
 set -x
 
-# test a simple 2d remap
-mpirun -np 4 $APPDIR/portageapp 0 4 16 y
+# test a simple 2d remap, save a field
+mpirun -np 4 $APPDIR/portageapp 0 4 8 y
 
-# in a future version, one or more comparators can go here
-
+# Compare the values for the field
+$APPDIR/apptest_cmp field_gold.txt field.txt 1e-12
