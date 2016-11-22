@@ -10,6 +10,6 @@ the comparator app `apptest_cmp`.
 
 ## How to Generate Gold Standard Files
 
-Add a new test, without the gold file at first. Run it, it will fail, because
-the gold file is not there. Copy the `fieldn.txt` from the build directory into
+Add a new test, with an empty gold file at first. Run it, it will fail, because
+the gold file is empty. Copy the `fieldn.txt` from the build directory into
 this test directory and rename it to `field_goldn.txt`.
