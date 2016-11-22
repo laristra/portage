@@ -164,7 +164,7 @@ void print_usage() {
 template <typename T>
 void collate_type(MPI_Comm comm, const int rank, const int numpe,
              const MPI_Datatype mpi_type,
-             const std::vector<T> &lvec, std::vector<T> &gvec) {
+             std::vector<T> &lvec, std::vector<T> &gvec) {
   std::vector<int> lvec_sizes(numpe);
   int lvec_size = lvec.size();
   MPI_Gather(&lvec_size, 1, MPI_INT, &lvec_sizes[0], 1, MPI_INT, 0, comm);
@@ -190,12 +190,12 @@ void collate_type(MPI_Comm comm, const int rank, const int numpe,
 }
 
 void collate(MPI_Comm comm, const int rank, const int numpe,
-             const std::vector<int> &lvec, std::vector<int> &gvec) {
+             std::vector<int> &lvec, std::vector<int> &gvec) {
   collate_type(comm, rank, numpe, MPI_INT, lvec, gvec);
 }
 
 void collate(MPI_Comm comm, const int rank, const int numpe,
-             const std::vector<double> &lvec, std::vector<double> &gvec) {
+             std::vector<double> &lvec, std::vector<double> &gvec) {
   collate_type(comm, rank, numpe, MPI_DOUBLE, lvec, gvec);
 }
 
