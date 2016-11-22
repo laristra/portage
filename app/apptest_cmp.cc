@@ -38,6 +38,9 @@ int main(int argc, char** argv) {
   double eps = std::stod(argv[3]);
 
   std::fstream f1(argv[1]), f2(argv[2]);
+  if (!f1) throw std::runtime_error("First file cannot be opened.");
+  if (!f2) throw std::runtime_error("Second file cannot be opened.");
+
   std::vector<int> gid1, gid2;
   std::vector<double> values1, values2;
   load_field(f1, gid1, values1);
