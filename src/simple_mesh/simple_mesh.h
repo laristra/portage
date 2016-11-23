@@ -20,7 +20,7 @@ class Simple_Mesh {
  public:
 Simple_Mesh(double x0, double y0, double z0,
             double x1, double y1, double z1,
-            ID nx, ID ny, ID nz) :
+            int nx, int ny, int nz) :
   nx_(nx), ny_(ny), nz_(nz),
     x0_(x0), y0_(y0), z0_(z0),
     x1_(x1), y1_(y1), z1_(z1) {
@@ -36,19 +36,19 @@ Simple_Mesh(double x0, double y0, double z0,
 
     // Build ownership information - no ghosts in Simple Mesh
     nodeids_owned_.resize(num_nodes_);
-    for (ID i(0); i < num_nodes_; ++i)
+    for (int i(0); i < num_nodes_; ++i)
       nodeids_owned_[i] = i;
     nodeids_ghost_.resize(0);
     nodeids_all_ = nodeids_owned_;
 
     cellids_owned_.resize(num_cells_);
-    for (ID i(0); i < num_cells_; ++i)
+    for (int i(0); i < num_cells_; ++i)
       cellids_owned_[i] = i;
     cellids_ghost_.resize(0);
     cellids_all_ = cellids_owned_;
 
     faceids_owned_.resize(num_faces_);
-    for (ID i(0); i < num_faces_; ++i)
+    for (int i(0); i < num_faces_; ++i)
       faceids_owned_[i] = i;
     faceids_ghost_.resize(0);
     faceids_all_ = faceids_owned_;
@@ -56,12 +56,12 @@ Simple_Mesh(double x0, double y0, double z0,
 
   ~Simple_Mesh() {}
 
-  //! Spatial dimension of poIDs in the mesh
-  inline ID space_dimension() const {
+  //! Spatial dimension of points in the mesh
+  inline int space_dimension() const {
     return spacedim;
   }
 
-  ID num_entities(const Entity_kind kind,
+  int num_entities(const Entity_kind kind,
                   const Entity_type type) const {
     switch (kind) {
       case Entity_kind::NODE:
@@ -109,7 +109,7 @@ Simple_Mesh(double x0, double y0, double z0,
     auto offset = faces_per_cell_*cellid;
     faces->clear();
     fdirs->clear();
-    for (ID i(0); i < faces_per_cell_; ++i) {
+    for (int i(0); i < faces_per_cell_; ++i) {
       faces->push_back(cell_to_face_[i+offset]);
       fdirs->push_back(cell_face_dirs_[i+offset]);
     }
@@ -119,7 +119,7 @@ Simple_Mesh(double x0, double y0, double z0,
                       std::vector<ID> *nodes) const {
     auto offset = nodes_per_cell_*cellid;
     nodes->clear();
-    for (ID i(0); i < nodes_per_cell_; ++i)
+    for (int i(0); i < nodes_per_cell_; ++i)
       nodes->push_back(cell_to_node_[i+offset]);
   }
   // @TODO: replace with std::copy?
@@ -127,7 +127,7 @@ Simple_Mesh(double x0, double y0, double z0,
                       std::vector<ID> *nodes) const {
     auto offset = nodes_per_face_*faceid;
     nodes->clear();
-    for (ID i(0); i < nodes_per_face_; ++i)
+    for (int i(0); i < nodes_per_face_; ++i)
       nodes->push_back(face_to_node_[i+offset]);
   }
   // @TODO: replace with std::copy?
@@ -135,7 +135,7 @@ Simple_Mesh(double x0, double y0, double z0,
                       std::vector<ID> *cells) const {
     auto offset = cells_per_node_aug_*nodeid;
     cells->clear();
-    for (ID i(0); i < node_to_cell_[offset]; ++i) {
+    for (int i(0); i < node_to_cell_[offset]; ++i) {
       cells->push_back(node_to_cell_[i+offset+1]);
     }
   }
@@ -156,9 +156,9 @@ Simple_Mesh(double x0, double y0, double z0,
     double hy = (y1_ - y0_)/ny_;
     double hz = (z1_ - z0_)/nz_;
 
-    for (ID iz(0); iz <= nz_; ++iz)
-      for (ID iy(0); iy <= ny_; ++iy)
-        for (ID ix(0); ix <= nx_; ++ix) {
+    for (int iz(0); iz <= nz_; ++iz)
+      for (int iy(0); iy <= ny_; ++iy)
+        for (int ix(0); ix <= nx_; ++ix) {
           coordinates_.emplace_back(x0_+ix*hx,
                                     y0_+iy*hy,
                                     z0_+iz*hz);
@@ -176,9 +176,9 @@ Simple_Mesh(double x0, double y0, double z0,
     face_to_cell_.resize(2*num_faces_);
 
     // cell adjacencies
-    for (ID iz(0); iz < nz_; ++iz)
-      for (ID iy(0); iy < ny_; ++iy)
-        for (ID ix(0); ix < nx_; ++ix) {
+    for (int iz(0); iz < nz_; ++iz)
+      for (int iy(0); iy < ny_; ++iy)
+        for (int ix(0); ix < nx_; ++ix) {
           auto thisCell = cell_index_(ix, iy, iz);
           auto cstart = nodes_per_cell_ * thisCell;
           auto fstart = faces_per_cell_ * thisCell;
@@ -206,9 +206,9 @@ Simple_Mesh(double x0, double y0, double z0,
           // loop over the 8 nodes attached to this cell, and assign
           // this cell to its cell connectivity
           // order shouldn't matter here
-          for (ID iiz(iz); iiz <= iz+1; ++iiz)
-            for (ID iiy(iy); iiy <= iy+1; ++iiy)
-              for (ID iix(ix); iix <= ix+1; ++iix) {
+          for (int iiz(iz); iiz <= iz+1; ++iiz)
+            for (int iiy(iy); iiy <= iy+1; ++iiy)
+              for (int iix(ix); iix <= ix+1; ++iix) {
                 auto thisNode = node_index_(iix, iiy, iiz);
                 auto cnstart = cells_per_node_aug_ * thisNode;
                 auto & c_at_n = node_to_cell_[cnstart];
@@ -268,9 +268,9 @@ Simple_Mesh(double x0, double y0, double z0,
        /       /
       0-------1
     */
-    for (ID iz(0); iz <= nz_; ++iz)
-      for (ID iy(0); iy < ny_; ++iy)
-        for (ID ix(0); ix < nx_; ++ix) {
+    for (int iz(0); iz <= nz_; ++iz)
+      for (int iy(0); iy < ny_; ++iy)
+        for (int ix(0); ix < nx_; ++ix) {
           auto thisFace = xyface_index_(ix, iy, iz);
           auto nstart = nodes_per_face_ * thisFace;
           face_to_node_[nstart  ] = node_index_(ix, iy, iz);
@@ -285,9 +285,9 @@ Simple_Mesh(double x0, double y0, double z0,
        |       |
        0-------1
      */
-    for (ID iz(0); iz < nz_; ++iz)
-      for (ID iy(0); iy <= ny_; ++iy)
-        for (ID ix(0); ix < nx_; ++ix) {
+    for (int iz(0); iz < nz_; ++iz)
+      for (int iy(0); iy <= ny_; ++iy)
+        for (int ix(0); ix < nx_; ++ix) {
           auto thisFace = xzface_index_(ix, iy, iz);
           auto nstart = nodes_per_face_ * thisFace;
           face_to_node_[nstart  ] = node_index_(ix, iy, iz);
@@ -305,9 +305,9 @@ Simple_Mesh(double x0, double y0, double z0,
        |/
        0
      */
-    for (ID iz(0); iz < nz_; ++iz)
-      for (ID iy(0); iy < ny_; ++iy)
-        for (ID ix(0); ix <= nx_; ++ix) {
+    for (int iz(0); iz < nz_; ++iz)
+      for (int iy(0); iy < ny_; ++iy)
+        for (int ix(0); ix <= nx_; ++ix) {
           auto thisFace = yzface_index_(ix, iy, iz);
           auto nstart = nodes_per_face_ * thisFace;
           face_to_node_[nstart  ] = node_index_(ix, iy, iz);
@@ -321,10 +321,10 @@ Simple_Mesh(double x0, double y0, double z0,
    * DATA - FIXME: removem 3d assumptions
    **********************************************************************/
 
-  ID spacedim = 3;
+  int spacedim = 3;
 
   // number of cells in the three coordinate directions
-  ID nx_, ny_, nz_;
+  int nx_, ny_, nz_;
   // coordinates of lower left front and upper right back of brick
   double x0_, x1_, y0_, y1_, z0_, z1_;
 
@@ -332,15 +332,14 @@ Simple_Mesh(double x0, double y0, double z0,
   std::vector<Point<3>> coordinates_;
 
   // hard coded to 3d hexes for now
-  ID nodes_per_face_ = 4;
-  ID nodes_per_cell_ = 8;
-  ID faces_per_cell_ = 6;
-  ID cells_per_node_aug_ = 9;   // 1 entry for the num cells actually attached
-  //  ID faces_per_node_aug_ = 13;  // 1 entry for the num faces actually attached
+  int nodes_per_face_ = 4;
+  int nodes_per_cell_ = 8;
+  int faces_per_cell_ = 6;
+  int cells_per_node_aug_ = 9;   // 1 entry for the num cells actually attached
 
-  ID num_cells_;
-  ID num_nodes_;
-  ID num_faces_;
+  int num_cells_;
+  int num_nodes_;
+  int num_faces_;
 
   std::vector<ID> cell_to_face_;
   std::vector<int> cell_face_dirs_;
@@ -356,19 +355,19 @@ Simple_Mesh(double x0, double y0, double z0,
   std::vector<ID> cellids_owned_, cellids_ghost_, cellids_all_;
 
   // helper functions for looking up indices
-  ID node_index_(ID i, ID j, ID k) const {
+  ID node_index_(int i, int j, int k) const {
     return i + j*(nx_+1) + k*(nx_+1)*(ny_+1);
   }
-  ID cell_index_(ID i, ID j, ID k) const {
+  ID cell_index_(int i, int j, int k) const {
     return i + j*nx_ + k*nx_*ny_;
   }
-  ID xyface_index_(ID i, ID j, ID k) const {
+  ID xyface_index_(int i, int j, int k) const {
     return i + j*nx_ + k*nx_*ny_;
   }
-  ID xzface_index_(ID i, ID j, ID k) const {
+  ID xzface_index_(int i, int j, int k) const {
     return i + j*nx_ + k*nx_*(ny_+1) + xyface_index_(0, 0, nz_+1);
   }
-  ID yzface_index_(ID i, ID j, ID k) const {
+  ID yzface_index_(int i, int j, int k) const {
     return i + j*(nx_+1) + k*(nx_+1)*ny_ + xzface_index_(0, 0, nz_);
   }
 };  // class Simple_Mesh
