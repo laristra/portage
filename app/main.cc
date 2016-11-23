@@ -6,11 +6,13 @@
 
 #include <cstdio>
 #include <cstdlib>
+#include <fstream>
 #include <vector>
 #include <string>
 #include <memory>
 #include <utility>
 #include <cmath>
+#include <numeric>
 
 #include <mpi.h>
 
@@ -157,6 +159,63 @@ void print_usage() {
 }
 //////////////////////////////////////////////////////////////////////
 
+// Collates local vectors lvec (of various lengths) into a global vector gvec
+// on rank 0. The `gvec` vector is only defined on rank 0, and it is resized
+// there to the proper size. On other ranks it is resized to size 1 and left
+// undefined.
+template <typename T>
+void collate_type(MPI_Comm comm, const int rank, const int numpe,
+             const MPI_Datatype mpi_type,
+             std::vector<T> &lvec, std::vector<T> &gvec) {
+  std::vector<int> lvec_sizes(numpe);
+  int lvec_size = lvec.size();
+  MPI_Gather(&lvec_size, 1, MPI_INT, &lvec_sizes[0], 1, MPI_INT, 0, comm);
+  std::vector<int> displs;
+  if (rank == 0) {
+    int gvec_size = std::accumulate(lvec_sizes.begin(), lvec_sizes.end(),
+                                    0);
+    gvec.resize(gvec_size);
+    displs.resize(lvec_sizes.size());
+    int idx = 0;
+    for (int i=0; i < lvec_sizes.size(); i++) {
+      displs[i] = idx;
+      idx += lvec_sizes[i];
+    }
+  } else {
+    // We resize to size 1, so that the expressions &gvec[0], &displs[0] below
+    // are well defined on all ranks.
+    gvec.resize(1);
+    displs.resize(1);
+  }
+  MPI_Gatherv(&lvec[0], lvec.size(), mpi_type, &gvec[0], &lvec_sizes[0],
+      &displs[0], mpi_type, 0, comm);
+}
+
+void collate(MPI_Comm comm, const int rank, const int numpe,
+             std::vector<int> &lvec, std::vector<int> &gvec) {
+  collate_type(comm, rank, numpe, MPI_INT, lvec, gvec);
+}
+
+void collate(MPI_Comm comm, const int rank, const int numpe,
+             std::vector<double> &lvec, std::vector<double> &gvec) {
+  collate_type(comm, rank, numpe, MPI_DOUBLE, lvec, gvec);
+}
+
+// Returns the indices that would sort an array.
+template <typename T>
+void argsort(const std::vector<T> &x, std::vector<int> &idx) {
+  idx.resize(x.size());
+  std::iota(idx.begin(), idx.end(), 0);
+  std::sort(idx.begin(), idx.end(), [&x](int a, int b){ return x[a] < x[b]; });
+}
+
+// Reorders a vector x using x = x[idx], where idx is a vector of indices
+template <typename T>
+void reorder(std::vector<T> &x, const std::vector<int> &idx) {
+  std::vector<T> y(x.size());
+  for (int i=0; i < x.size(); i++) y[i] = x[idx[i]];
+  x = y;
+}
 
 int main(int argc, char** argv) {
   // Pause profiling until main loop
@@ -459,6 +518,30 @@ int main(int argc, char** argv) {
       inputMesh->write_to_exodus_file("input.exo");
       targetMesh->write_to_exodus_file("output.exo");
       std::cout << "...done." << std::endl;
+
+      std::vector<int> lgid(targetMeshWrapper.num_owned_cells()), gid;
+      std::vector<double> lvalues(targetMeshWrapper.num_owned_cells()), values;
+      for (int i=0; i < targetMeshWrapper.num_owned_cells(); i++) {
+        lgid[i] = targetMesh->GID(i, Jali::Entity_kind::CELL);
+        lvalues[i] = cellvecout[i];
+      }
+      collate(MPI_COMM_WORLD, rank, numpe, lgid, gid);
+      collate(MPI_COMM_WORLD, rank, numpe, lvalues, values);
+      if (rank == 0) {
+        std::vector<int> idx;
+        argsort(gid, idx);
+        reorder(gid, idx);
+        reorder(values, idx);
+        // The `static_cast` is a workaround for an Intel compiler's header
+        // files, which are missing a `std::to_string` function for ints.
+        std::ofstream fout("field"
+            + std::to_string(static_cast<long long>(example_num)) + ".txt");
+        fout << std::scientific;
+        fout.precision(17);
+        for (int i=0; i < gid.size(); i++) {
+          fout << gid[i] << " " << values[i] << std::endl;
+        }
+      }
     }
 
   } 
@@ -651,6 +734,30 @@ else {  // node-centered remaps
       inputMesh->write_to_exodus_file("input.exo");
       targetMesh->write_to_exodus_file("output.exo");
       std::cout << "...done." << std::endl;
+
+      std::vector<int> lgid(targetMeshWrapper.num_owned_nodes()), gid;
+      std::vector<double> lvalues(targetMeshWrapper.num_owned_nodes()), values;
+      for (int i=0; i < targetMeshWrapper.num_owned_nodes(); i++) {
+        lgid[i] = targetMesh->GID(i, Jali::Entity_kind::NODE);
+        lvalues[i] = nodevecout[i];
+      }
+      collate(MPI_COMM_WORLD, rank, numpe, lgid, gid);
+      collate(MPI_COMM_WORLD, rank, numpe, lvalues, values);
+      if (rank == 0) {
+        std::vector<int> idx;
+        argsort(gid, idx);
+        reorder(gid, idx);
+        reorder(values, idx);
+        // The `static_cast` is a workaround for an Intel compiler's header
+        // files, which are missing a `std::to_string` function for ints.
+        std::ofstream fout("field"
+            + std::to_string(static_cast<long long>(example_num)) + ".txt");
+        fout << std::scientific;
+        fout.precision(17);
+        for (int i=0; i < gid.size(); i++) {
+          fout << gid[i] << " " << values[i] << std::endl;
+        }
+      }
     }
 
   }
