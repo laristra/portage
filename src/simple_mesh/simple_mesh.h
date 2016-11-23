@@ -229,13 +229,17 @@ Simple_Mesh(double x0, double y0, double z0,
             |3 +0---|--+         +-------> x
             | /  4  | /
             +-------+
+
+            The "dirs" indicate whether or not the nodes are listed in
+            a ccw (dir=+1) or cw (dir=-1) orientation when look DOWN
+            the cell's OUTWARD normal at that face.
            */
           cell_to_face_[fstart  ] = xzface_index_(ix, iy, iz);    // front
-          cell_face_dirs_[fstart  ] = -1;
+          cell_face_dirs_[fstart  ] = 1;
           cell_to_face_[fstart+1] = yzface_index_(ix+1, iy, iz);  // right
           cell_face_dirs_[fstart+1] = 1;
           cell_to_face_[fstart+2] = xzface_index_(ix, iy+1, iz);  // back
-          cell_face_dirs_[fstart+2] = 1;
+          cell_face_dirs_[fstart+2] = -1;
           cell_to_face_[fstart+3] = yzface_index_(ix, iy, iz);    // left
           cell_face_dirs_[fstart+3] = -1;
           cell_to_face_[fstart+4] = xyface_index_(ix, iy, iz);    // bottom

@@ -47,7 +47,7 @@ TEST(Simple_Mesh, OneCell) {
     ASSERT_EQ(expectedNodes[i], cellnodes[i]);
   // Faces and dirs; the expected are global ids
   std::vector<int> expectedFaces = {2, 5, 3, 4, 0, 1};
-  std::vector<int> expectedDirs = {-1, 1, 1, -1, -1, 1};
+  std::vector<int> expectedDirs = {1, 1, -1, -1, -1, 1};
   std::vector<int> cellfaces, cellfaceDirs;
   mesh_wrapper.cell_get_faces_and_dirs(0, &cellfaces, &cellfaceDirs);
   for (int i(0); i < 6; ++i) {
@@ -98,7 +98,7 @@ TEST(Simple_Mesh, OneCell) {
 
   // Check for cells adjacent to this cell; adjacency determined from
   // nodes.
-  // FOr a single cell setup, this should be empty
+  // For a single cell setup, this should be empty
   std::vector<int> adjcells;
   mesh_wrapper.cell_get_node_adj_cells(0,
                                        Portage::Entity_type::PARALLEL_OWNED,
@@ -172,7 +172,7 @@ TEST(Simple_Mesh, MultiCell) {
     {20, 34, 22, 33, 6, 10},
     {21, 35, 23, 34, 7, 11}
   };
-  std::vector<int> expectedDirs = {-1, 1, 1, -1, -1, 1};
+  std::vector<int> expectedDirs = {1, 1, -1, -1, -1, 1};
   std::vector<int> cellfaces, cellfacedirs;
   for (int i(0); i < ncells; ++i) {
     mesh_wrapper.cell_get_faces_and_dirs(i, &cellfaces, &cellfacedirs);
