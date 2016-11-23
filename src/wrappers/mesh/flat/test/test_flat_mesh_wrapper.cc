@@ -37,7 +37,8 @@ TEST(Flat_Mesh_Wrapper, basic_routines_3d) {
   std::shared_ptr<Jali::Mesh> mesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2, 2, 2);
   ASSERT_TRUE(mesh != NULL);
   Portage::Jali_Mesh_Wrapper mesh_wrapper(*mesh);
-  Portage::Flat_Mesh_Wrapper<> mesh_flat(8, mesh_wrapper);
+  Portage::Flat_Mesh_Wrapper<> mesh_flat;
+  mesh_flat.initialize(8, mesh_wrapper);
 
   ASSERT_EQ(3, mesh_flat.space_dimension());
 
@@ -113,8 +114,8 @@ TEST(Flat_Mesh_Wrapper, basic_routines_2d) {
   std::shared_ptr<Jali::Mesh> mesh = mf(0.0, 0.0, 1.0, 1.0, 4, 4);
   ASSERT_TRUE(mesh != NULL);
   Portage::Jali_Mesh_Wrapper mesh_wrapper(*mesh);
-  Portage::Flat_Mesh_Wrapper<> mesh_flat(4, mesh_wrapper);
-
+  Portage::Flat_Mesh_Wrapper<> mesh_flat;
+  mesh_flat.initialize(4, mesh_wrapper);
   ASSERT_EQ(2, mesh_flat.space_dimension());
 
   // Test cells and nodes of flat mesh

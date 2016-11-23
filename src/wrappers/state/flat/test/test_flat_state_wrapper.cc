@@ -39,8 +39,8 @@ TEST(Flat_State_Wrapper, DataTypes2D) {
   jali_state.add("d3", inputMesh, Jali::Entity_kind::CELL,
             Jali::Entity_type::ALL, dtest3);
 
-  Portage::Flat_State_Wrapper<> flat_state(jali_state_wrapper,
-          {"d1", "d2", "d3"});
+  Portage::Flat_State_Wrapper<> flat_state;
+  flat_state.initialize(jali_state_wrapper, {"d1", "d2", "d3"});
 
   // Check the data using Jali as well as by the Flat_State_Wrapper wrapper
 
@@ -89,8 +89,8 @@ TEST(Flat_State_Wrapper, DataTypes3D) {
   jali_state.add("d3", inputMesh, Jali::Entity_kind::CELL,
             Jali::Entity_type::ALL, dtest3);
 
-  Portage::Flat_State_Wrapper<> flat_state(jali_state_wrapper,
-          {"d1", "d2", "d3"});
+  Portage::Flat_State_Wrapper<> flat_state;
+  flat_state.initialize(jali_state_wrapper, {"d1", "d2", "d3"});
 
   // Check the data using Jali as well as by the Flat_State_Wrapper wrapper
 
