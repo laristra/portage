@@ -178,9 +178,6 @@ Simple_Mesh(double x0, double y0, double z0,
     node_to_cell_.resize(cells_per_node_aug_*num_nodes_);
     face_to_cell_.resize(2*num_faces_);
 
-    // likewise for faces we have per node
-    std::vector<ID> faces_at_node(num_nodes_);
-
     // cell adjacencies
     for (ID iz(0); iz < nz_; ++iz)
       for (ID iy(0); iy < ny_; ++iy)
