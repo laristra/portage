@@ -12,6 +12,6 @@ if (ENABLE_UNIT_TESTS)
                  SOURCES test/test_mpi_bounding_boxes.cc
                  LIBRARIES portage ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
                  POLICY MPI
-                 THREADS 1)
+                 THREADS 4)
 endif(ENABLE_UNIT_TESTS)
 
