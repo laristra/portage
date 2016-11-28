@@ -24,7 +24,7 @@ cmake \
     -D Jali_DIR:FILEPATH=$JALI_INSTALL_PREFIX/lib \
     ..
 make -j16
-ctest -j16
+ctest -j16 --output-on-failure
 ```
 ## Varan
 
@@ -49,7 +49,7 @@ cmake \
     -D Jali_DIR:FILEPATH=$JALI_INSTALL_PREFIX/lib \
     ..
 make -j2
-ctest -j2
+ctest -j2 --output-on-failure
 ```
 
 ---
@@ -79,5 +79,5 @@ cmake \
     -D FLECSI_INSTALL_DIR:FILEPATH=$FLECSI_INSTALL_DIR \
     ..
 make -j2
-ctest -j2
+ctest -j2 --output-on-failure
 ```
