@@ -5,7 +5,7 @@ set -e
 # Echo each command
 set -x
 
-# test a simple 2d remap, save a field
+# 2d 1st order cell-centered remap of linear func
 mpirun -np 4 $APPDIR/portageapp 0 4 8 y
 
 # Compare the values for the field

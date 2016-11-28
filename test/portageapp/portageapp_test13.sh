@@ -5,7 +5,7 @@ set -e
 # Echo each command
 set -x
 
-# test a simple 2d remap, save a field
+# 2d 2nd order node-centered remap of quadratic func
 mpirun -np 1 $APPDIR/portageapp 13 3 4 y
 
 # Compare the values for the field
