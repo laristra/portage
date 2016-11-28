@@ -59,9 +59,9 @@ TEST(Simple_State, MultiCell) {
     std::cout << " " << cellvar1[i];
   std::cout << std::endl;
 
-  
   cellvar1[4] = 10.0;
   std::cout << "getting it again" << std::endl;
-  auto cellvar2 = mystate.get_data("cellvar1", Portage::Entity_kind::CELL);
+  Portage::Simple_StateVector cellvar2;
+  mystate.get("cellvar1", Portage::Entity_kind::CELL, &cellvar2);
   ASSERT_EQ(10.0, cellvar2[4]);
 }
