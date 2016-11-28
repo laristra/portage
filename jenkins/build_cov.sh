@@ -14,7 +14,7 @@ export MODULEPATH=""
 module load gcc/5.3.0
 module load openmpi/1.6.5
 
-JALI_INSTALL_PREFIX=/usr/local/codes/ngc/private/jali-0.9.0-gcc-5.3.0
+JALI_INSTALL_PREFIX=/usr/local/codes/ngc/private/jali/0.9.2-gcc-5.3.0-openmpi-1.6.5-rh6
 
 echo $WORKSPACE
 cd $WORKSPACE

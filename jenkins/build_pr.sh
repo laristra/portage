@@ -35,7 +35,7 @@ exit
 JALI_VERSION=0.9.0
 
 # Where to find Jali's TPLs:
-TPL_INSTALL_PREFIX=/usr/local/codes/ngc/private/jali-tpl-1.0.6-intel-15.0.3
+TPL_INSTALL_PREFIX=/usr/local/codes/ngc/private/jali-tpl/1.0.7-intel-15.0.3-openmpi-1.6.5-rh6
 
 # General NGC include directory
 NGC_INCLUDE_DIR=/usr/local/codes/ngc/private/include
