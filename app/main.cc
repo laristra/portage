@@ -273,6 +273,9 @@ int main(int argc, char** argv) {
   MPI_Comm_create(MPI_COMM_WORLD, local_group, &local_comm);
   Jali::MeshFactory mf_local(local_comm);
 
+  struct timeval begin, end, diff;
+  gettimeofday(&begin, 0);
+    
   // Cell-centered remaps
   if (example.cell_centered) {
     // Construct the meshes
@@ -451,8 +454,6 @@ int main(int argc, char** argv) {
       d.run(numpe > 1);
     }
 
-    struct timeval begin, end, diff;
-    gettimeofday(&begin, 0);
 
     // Dump some timing information
     if (numpe > 1) MPI_Barrier(MPI_COMM_WORLD);
