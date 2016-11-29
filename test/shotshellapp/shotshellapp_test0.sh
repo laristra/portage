@@ -11,4 +11,4 @@ DATA_DIR=$APPDIR/../test/wrappers
 mpirun -np 1 ${APPDIR}/shotshellapp 0 ${DATA_DIR}/shotshell.exo ${DATA_DIR}/shotshell-v.exo y
 
 # Compare the values for the field
-$APPDIR/apptest_cmp field_gold0.txt field0.txt 1e-12
+$APPDIR/apptest_cmp field_gold0.txt field0.txt 1e-11
