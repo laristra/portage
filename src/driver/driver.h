@@ -350,7 +350,6 @@ class Driver {
     RemapFunctor() (defined below) that specifies how the search,
     intersect, and interpolation calculations should be performed.
   */
-  //amh: FIXME!! comments
   void run(bool distributed){
     std::printf("in Driver::run()...\n");
 

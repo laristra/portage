@@ -178,7 +178,6 @@ int main(int argc, char** argv) {
     }
     if ((example == 2) || (example == 3)){
     
-      //amh: should probably be setting this on the interpolation functor ourselves--maybe we need another functor wrapper for interpolation
       Portage::Driver<Portage::SearchKDTree, 
           Portage::IntersectR2D, 
           Portage::Interpolate_2ndOrder,
