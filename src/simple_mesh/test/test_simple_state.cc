@@ -7,6 +7,7 @@
 #include <vector>
 #include <memory>
 #include <iterator>
+#include <stdexcept>
 
 #include "portage/simple_mesh/simple_state.h"
 #include "portage/simple_mesh/simple_mesh.h"
@@ -27,13 +28,12 @@ TEST(Simple_State, MultiCell) {
                                       Portage::Entity_type::PARALLEL_OWNED);
   auto numnodes = mymesh.num_entities(Portage::Entity_kind::NODE,
                                       Portage::Entity_type::PARALLEL_OWNED);
-  std::cout << "numcells " << numcells << std::endl;
+
   // Add a cell-centered variable, which should initialize to zeros
   auto& cellvar1 = mystate.add("cellvar1", Portage::Entity_kind::CELL);
   ASSERT_EQ(numcells, cellvar1.size());
   for (auto const cv : cellvar1) {
     ASSERT_EQ(0.0, cv);
-    std::cout << " cv " << cv << std::endl;
   }
 
   // Add a node centered variable with an initialized array
@@ -51,17 +51,13 @@ TEST(Simple_State, MultiCell) {
 
   // Now try modifying the data and then getting a new copy to make sure
   // it was actually modified.
-  std::cout << "setting var" << std::endl;
-  std::copy(cellvar1.begin(), cellvar1.end(),
-            std::ostream_iterator<double>(std::cout , " "));
-  std::cout << std::endl;
-  for (int i(0); i < numcells; ++i)
-    std::cout << " " << cellvar1[i];
-  std::cout << std::endl;
-
   cellvar1[4] = 10.0;
-  std::cout << "getting it again" << std::endl;
-  Portage::Simple_StateVector cellvar2;
-  mystate.get("cellvar1", Portage::Entity_kind::CELL, &cellvar2);
+
+  auto & cellvar2 = mystate.get("cellvar1", Portage::Entity_kind::CELL);
   ASSERT_EQ(10.0, cellvar2[4]);
+
+  // Make sure this throws an exception
+  ASSERT_THROW(mystate.get("missing variable",
+                           Portage::Entity_kind::CELL),
+               std::runtime_error);
 }
