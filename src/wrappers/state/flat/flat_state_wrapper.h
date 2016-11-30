@@ -32,8 +32,10 @@ class Flat_State_Wrapper {
   /*!
     @brief Constructor of Flat_State_Wrapper
    */
+  Flat_State_Wrapper() { };
+
   template <class State_Wrapper>
-  Flat_State_Wrapper(State_Wrapper &input, std::vector<std::string> var_names) 
+  void initialize(State_Wrapper &input, std::vector<std::string> var_names) 
   {
     for (unsigned int i=0; i<var_names.size(); i++)
     {

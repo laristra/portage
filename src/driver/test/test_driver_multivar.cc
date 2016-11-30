@@ -123,11 +123,17 @@ TEST(Test_MultiVar_Remap, Test1) {
 
   // Build the main driver object
 
-  Portage::Driver<Portage::Jali_Mesh_Wrapper,
-                  Portage::Jali_State_Wrapper> remapper(sourceMeshWrapper,
-                                                        sourceStateWrapper,
-                                                        targetMeshWrapper,
-                                                        targetStateWrapper);
+  /////////
+
+  Portage::Driver<Portage::SearchKDTree, 
+      Portage::IntersectR2D, 
+          Portage::Interpolate_1stOrder,
+          2,
+          Portage::Jali_Mesh_Wrapper, 
+          Portage::Jali_State_Wrapper>  
+          remapper(sourceMeshWrapper, sourceStateWrapper, targetMeshWrapper,
+                   targetStateWrapper);
+  /////////
 
   // Specify the fields to be remapped
 
@@ -143,13 +149,9 @@ TEST(Test_MultiVar_Remap, Test1) {
 
   remapper.set_remap_var_names(source_var_names, target_var_names);
 
-  // 1st order interpolation
-
-  remapper.set_interpolation_order(1);
-
   // Execute remapper
 
-  remapper.run();
+  remapper.run(false);
 
   // Verify that we got the fields we wanted
 
@@ -172,14 +174,13 @@ TEST(Test_MultiVar_Remap, Test1) {
   //   ASSERT_NEAR(Constant3, outnodevec[i], TOL);
 
 
-
   // Remap between same name variables
 
   remapper.set_remap_var_names(source_var_names);
 
   // Execute remapper
 
-  remapper.run();
+  remapper.run(false);
 
   // Verify that we got the fields we wanted
 
