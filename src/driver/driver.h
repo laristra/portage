@@ -351,40 +351,44 @@ class Driver {
     intersect, and interpolation calculations should be performed.
   */
   void run(bool distributed){
-    std::printf("in Driver::run()...\n");
+
+    int comm_rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &comm_rank);
+    if (comm_rank == 0) std::printf("in Driver::run()...\n");
 
     int numTargetCells = target_mesh_.num_owned_cells();
-    std::cout << "Number of target cells in target mesh "
+    std::cout << "Number of target cells in target mesh on rank "
+              << comm_rank << ": " 
               << numTargetCells << std::endl;
 
     int nvars = source_remap_var_names_.size();
 
-
     // Collect all cell based variables and remap them
-    {
-      int comm_size;
-      MPI_Comm_size(MPI_COMM_WORLD, &comm_size);
 
-      std::vector<std::string> source_cellvar_names;
-      std::vector<std::string> target_cellvar_names;
-      for (int i = 0; i < nvars; ++i) {
-        Entity_kind onwhat =
-            source_state_.get_entity(source_remap_var_names_[i]);
+    std::vector<std::string> source_cellvar_names;
+    std::vector<std::string> target_cellvar_names;
+    for (int i = 0; i < nvars; ++i) {
+      Entity_kind onwhat =
+          source_state_.get_entity(source_remap_var_names_[i]);
 
-        if (onwhat == CELL) {
-          source_cellvar_names.emplace_back(source_remap_var_names_[i]);
-          target_cellvar_names.emplace_back(target_remap_var_names_[i]);
-        }
+      if (onwhat == CELL) {
+        source_cellvar_names.emplace_back(source_remap_var_names_[i]);
+        target_cellvar_names.emplace_back(target_remap_var_names_[i]);
       }
+    }
+
+    if (source_cellvar_names.size() > 0)
+    {
 
       float tot_seconds = 0.0, tot_seconds_srch = 0.0,
           tot_seconds_xsect = 0.0, tot_seconds_interp = 0.0;
       struct timeval begin_timeval, end_timeval, diff_timeval;
-      gettimeofday(&begin_timeval, 0);
-
+      
       int ntargetcells = target_mesh_.num_entities(CELL);
 
       // SEARCH
+      
+      gettimeofday(&begin_timeval, 0);
 
       Portage::vector<std::vector<int>> candidates(ntargetcells);
       Portage::vector<std::vector<Weights_t>> source_cells_and_weights(ntargetcells);
@@ -424,9 +428,10 @@ class Driver {
       gettimeofday(&end_timeval, 0);
       timersub(&end_timeval, &begin_timeval, &diff_timeval);
       tot_seconds_srch = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
-      gettimeofday(&begin_timeval, 0);
 
       // INTERSECT
+      
+      gettimeofday(&begin_timeval, 0);
 
       if (distributed) {
      
@@ -476,7 +481,7 @@ class Driver {
       gettimeofday(&begin_timeval, 0);
 
       int nvars = source_cellvar_names.size();
-      std::cout << "number of cell variables to remap is " << nvars << std::endl;
+      if (comm_rank == 0) std::cout << "number of cell variables to remap is " << nvars << std::endl;
 
       if (distributed) {
 
@@ -506,7 +511,7 @@ class Driver {
 
         for (int i = 0; i < nvars; ++i) {
           //amh: ?? add back accuracy output statement??
-          std::cout << "Remapping cell variable " << source_cellvar_names[i]
+          if (comm_rank == 0) std::cout << "Remapping cell variable " << source_cellvar_names[i]
                     << " to variable " << target_cellvar_names[i] << std::endl;
           interpolate.set_interpolation_variable(source_cellvar_names[i]);
           // This populates targetField with the values returned by the
@@ -540,39 +545,39 @@ class Driver {
 
       tot_seconds = tot_seconds_srch + tot_seconds_xsect + tot_seconds_interp;
 
-      std::cout << "Transform Time (s): " << tot_seconds << std::endl;
-      std::cout << "  Search Time (s): " << tot_seconds_srch << std::endl;
-      std::cout << "  Intersect Time (s): " << tot_seconds_xsect << std::endl;
-      std::cout << "  Interpolate Time (s): " << tot_seconds_interp << std::endl;
-
+      std::cout << "Transform Time Rank " << comm_rank << " (s): " << tot_seconds << std::endl;
+      std::cout << "  Search Time Rank " << comm_rank << " (s): " << tot_seconds_srch << std::endl;
+      std::cout << "  Intersect Time Rank " << comm_rank << " (s): " << tot_seconds_xsect << std::endl;
+      std::cout << "  Interpolate Time Rank " << comm_rank << " (s): " << tot_seconds_interp << std::endl;
     }    
 
     //Collect all node based variables and remap them
-    {
+    Portage::MeshWrapperDual<SourceMesh_Wrapper> sourceDualWrapper(source_mesh_);
+    Portage::MeshWrapperDual<SourceMesh_Wrapper> targetDualWrapper(target_mesh_);
 
-      Portage::MeshWrapperDual<SourceMesh_Wrapper> sourceDualWrapper(source_mesh_);
-      Portage::MeshWrapperDual<SourceMesh_Wrapper> targetDualWrapper(target_mesh_);
+    std::vector<std::string> source_nodevar_names;
+    std::vector<std::string> target_nodevar_names;
 
-      std::vector<std::string> source_nodevar_names;
-      std::vector<std::string> target_nodevar_names;
-
-      for (int i = 0; i < nvars; ++i) {
-        Entity_kind onwhat =
-            source_state_.get_entity(source_remap_var_names_[i]);
-        if (onwhat == NODE) {
-          source_nodevar_names.emplace_back(source_remap_var_names_[i]);
-          target_nodevar_names.emplace_back(target_remap_var_names_[i]);
-        }
+    for (int i = 0; i < nvars; ++i) {
+      Entity_kind onwhat =
+          source_state_.get_entity(source_remap_var_names_[i]);
+      if (onwhat == NODE) {
+        source_nodevar_names.emplace_back(source_remap_var_names_[i]);
+        target_nodevar_names.emplace_back(target_remap_var_names_[i]);
       }
+    }
+
+    if (source_nodevar_names.size() > 0) {
 
       float tot_seconds = 0.0, tot_seconds_srch = 0.0,
             tot_seconds_xsect = 0.0, tot_seconds_interp = 0.0;
       struct timeval begin_timeval, end_timeval, diff_timeval;
-      gettimeofday(&begin_timeval, 0);
 
       int ntargetcells = target_mesh_.num_entities(NODE);
 
       // SEARCH
+
+      gettimeofday(&begin_timeval, 0);
 
       Portage::vector<std::vector<int>> candidates(ntargetcells);
 
@@ -584,8 +589,13 @@ class Driver {
       Portage::transform((counting_iterator)(target_mesh_.begin(CELL)),
                          (counting_iterator)(target_mesh_.end(CELL)),
                          candidates.begin(), searchfunctor);   
+      gettimeofday(&end_timeval, 0);
+      timersub(&end_timeval, &begin_timeval, &diff_timeval);
+      tot_seconds_srch = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
 
       // Make an instance of the functor doing the search and intersection
+
+      gettimeofday(&begin_timeval, 0);
 
       const Intersect<Portage::MeshWrapperDual<SourceMesh_Wrapper>, Portage::MeshWrapperDual<TargetMesh_Wrapper>>
             intersect(sourceDualWrapper, targetDualWrapper);
@@ -610,21 +620,20 @@ class Driver {
                          candidates.begin(),
                          source_cells_and_weights.begin(),
                          intersectfunctor);
-       gettimeofday(&end_timeval, 0);
-       timersub(&end_timeval, &begin_timeval, &diff_timeval);
-       tot_seconds_xsect = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
+      gettimeofday(&end_timeval, 0);
+      timersub(&end_timeval, &begin_timeval, &diff_timeval);
+      tot_seconds_xsect = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
 
-       // INTERPOLATE (one variable at a time)
+      // INTERPOLATE (one variable at a time)
 
       gettimeofday(&begin_timeval, 0);
 
       int nvars = source_nodevar_names.size();
-      std::cout << "number of node variables to remap is " << nvars << std::endl;
+      if (comm_rank == 0) std::cout << "number of node variables to remap is " << nvars << std::endl;
 
       for (int i = 0; i < nvars; ++i) {
-        std::cout << "Remapping node variable " << source_nodevar_names[i]
-               << " to variable " << target_nodevar_names[i]
-               << " using a 1st order accurate algorithm" << std::endl;
+        if (comm_rank == 0) std::cout << "Remapping node variable " << source_nodevar_names[i]
+               << " to variable " << target_nodevar_names[i] << std::endl;
 
         Interpolate<SourceMesh_Wrapper, TargetMesh_Wrapper, 
                     SourceState_Wrapper, NODE, Dim>
@@ -661,10 +670,10 @@ class Driver {
 
       tot_seconds = tot_seconds_srch + tot_seconds_xsect + tot_seconds_interp;
 
-      std::cout << "Transform Time (s): " << tot_seconds << std::endl;
-      std::cout << "  Search Time (s): " << tot_seconds_srch << std::endl;
-      std::cout << "  Intersect Time (s): " << tot_seconds_xsect << std::endl;
-      std::cout << "  Interpolate Time (s): " << tot_seconds_interp << std::endl;
+      std::cout << "Transform Time Rank " << comm_rank << " (s): " << tot_seconds << std::endl;
+      std::cout << "  Search Time Rank " << comm_rank << " (s): " << tot_seconds_srch << std::endl;
+      std::cout << "  Intersect Time Rank " << comm_rank << " (s): " << tot_seconds_xsect << std::endl;
+      std::cout << "  Interpolate Time Rank " << comm_rank << " (s): " << tot_seconds_interp << std::endl; 
     }
 
   }
