@@ -31,6 +31,7 @@
 #include "JaliStateVector.h"
 #include "JaliState.h"
 
+using Portage::Jali_Mesh_Wrapper;
 using Portage::collate;
 using Portage::argsort;
 using Portage::reorder;
@@ -218,6 +219,9 @@ int main(int argc, char** argv) {
   MPI_Comm_create(MPI_COMM_WORLD, local_group, &local_comm);
   Jali::MeshFactory mf_local(local_comm);
 
+  struct timeval begin, end, diff;
+  gettimeofday(&begin, 0);
+    
   // Cell-centered remaps
   if (example.cell_centered) {
     // Construct the meshes
@@ -339,23 +343,63 @@ int main(int argc, char** argv) {
     Portage::Jali_State_Wrapper targetStateWrapper(targetState);
 
     // Build the main driver data for this mesh type
-    Portage::Driver<Portage::Jali_Mesh_Wrapper,
-                    Portage::Jali_State_Wrapper> d(inputMeshWrapper,
-                                                   sourceStateWrapper,
-                                                   targetMeshWrapper,
-                                                   targetStateWrapper);
+
     // Register the variable name and interpolation order with the driver
     std::vector<std::string> remap_fields;
     remap_fields.push_back("celldata");
-    d.set_remap_var_names(remap_fields);
 
-    d.set_interpolation_order(example.order);
+    if(example.dim == 2 && example.order == 2){
+      Portage::Driver<
+          Portage::SearchKDTree, 
+          Portage::IntersectR2D, 
+          Portage::Interpolate_2ndOrder,
+          2,
+          Portage::Jali_Mesh_Wrapper, 
+          Portage::Jali_State_Wrapper>  
+          d(inputMeshWrapper, sourceStateWrapper, targetMeshWrapper, targetStateWrapper);
+      d.set_remap_var_names(remap_fields);    
+      d.run(numpe > 1);
+    }
 
-    struct timeval begin, end, diff;
-    gettimeofday(&begin, 0);
+    if(example.dim == 2 && example.order == 1){
+      Portage::Driver<
+          Portage::SearchKDTree, 
+          Portage::IntersectR2D, 
+          Portage::Interpolate_1stOrder,
+          2, 
+          Portage::Jali_Mesh_Wrapper, 
+          Portage::Jali_State_Wrapper>  
+          d(inputMeshWrapper, sourceStateWrapper, targetMeshWrapper, targetStateWrapper);
+      d.set_remap_var_names(remap_fields);    
+      d.run(numpe > 1);
+    }
 
-    // Do the remap
-    d.run();
+    if(example.dim == 3 && example.order == 1){
+      Portage::Driver<
+          Portage::SearchKDTree, 
+          Portage::IntersectR3D, 
+          Portage::Interpolate_1stOrder,
+          3,
+          Portage::Jali_Mesh_Wrapper, 
+          Portage::Jali_State_Wrapper>  
+          d(inputMeshWrapper, sourceStateWrapper, targetMeshWrapper, targetStateWrapper);
+      d.set_remap_var_names(remap_fields);    
+      d.run(numpe > 1);
+    }
+
+    if(example.dim == 3 && example.order == 2){
+      Portage::Driver<
+          Portage::SearchKDTree, 
+          Portage::IntersectR3D,
+          Portage::Interpolate_2ndOrder,
+          3,
+          Portage::Jali_Mesh_Wrapper, 
+          Portage::Jali_State_Wrapper>  
+          d(inputMeshWrapper, sourceStateWrapper, targetMeshWrapper, targetStateWrapper);
+      d.set_remap_var_names(remap_fields);    
+      d.run(numpe > 1);
+    }
+
 
     // Dump some timing information
     if (numpe > 1) MPI_Barrier(MPI_COMM_WORLD);
@@ -377,6 +421,7 @@ int main(int argc, char** argv) {
       double error;
       if (example.linear) {
         error = ccen[0]+ccen[1] - cellvecout[c];
+        std::cout << "error is " << error << std::endl;
         if (example.dim == 3)
           error += ccen[2];
       } else {  // quadratic
@@ -446,7 +491,9 @@ int main(int argc, char** argv) {
       }
     }
 
-  } else {  // node-centered remaps
+  } 
+
+else {  // node-centered remaps
     mf.included_entities({Jali::Entity_kind::FACE,
                           Jali::Entity_kind::EDGE,
                           Jali::Entity_kind::WEDGE,
@@ -530,25 +577,63 @@ int main(int argc, char** argv) {
                                        0.0);
     Portage::Jali_State_Wrapper targetStateWrapper(targetState);
 
-    // Build the main driver data for this mesh type
-    Portage::Driver<Portage::Jali_Mesh_Wrapper,
-                    Portage::Jali_State_Wrapper> d(inputMeshWrapper,
-                                                   sourceStateWrapper,
-                                                   targetMeshWrapper,
-                                                   targetStateWrapper);
 
     // Register the variable name and remap order with the driver
     std::vector<std::string> remap_fields;
     remap_fields.push_back("nodedata");
-    d.set_remap_var_names(remap_fields);
 
-    d.set_interpolation_order(example.order);
+    // Build the main driver data for this mesh type
+    if(example.dim == 2 && example.order == 1){
+      Portage::Driver<Portage::SearchKDTree, 
+          Portage::IntersectR2D, 
+          Portage::Interpolate_1stOrder,
+          2,
+          Portage::Jali_Mesh_Wrapper,
+          Portage::Jali_State_Wrapper> 
+          d(inputMeshWrapper, sourceStateWrapper, targetMeshWrapper, targetStateWrapper);
+      d.set_remap_var_names(remap_fields);    
+      d.run(numpe > 1);
+    }
 
+    if(example.dim == 2 && example.order == 2){
+      Portage::Driver<Portage::SearchKDTree, 
+          Portage::IntersectR2D, 
+          Portage::Interpolate_2ndOrder,
+          2,
+          Portage::Jali_Mesh_Wrapper,
+          Portage::Jali_State_Wrapper> 
+          d(inputMeshWrapper, sourceStateWrapper, targetMeshWrapper, targetStateWrapper);
+      d.set_remap_var_names(remap_fields);    
+      d.run(numpe > 1);
+    }
+
+    if(example.dim == 3 && example.order == 1){
+      Portage::Driver<Portage::SearchKDTree, 
+          Portage::IntersectR3D, 
+          Portage::Interpolate_1stOrder,
+          3,
+          Portage::Jali_Mesh_Wrapper,
+          Portage::Jali_State_Wrapper> 
+          d(inputMeshWrapper, sourceStateWrapper, targetMeshWrapper, targetStateWrapper);
+          d.set_remap_var_names(remap_fields);    
+          d.run(numpe > 1);
+    }
+
+    if(example.dim == 3 && example.order == 2){
+      Portage::Driver<Portage::SearchKDTree, 
+          Portage::IntersectR3D, 
+          Portage::Interpolate_2ndOrder,
+          3,
+          Portage::Jali_Mesh_Wrapper,
+          Portage::Jali_State_Wrapper> 
+          d(inputMeshWrapper, sourceStateWrapper, targetMeshWrapper, targetStateWrapper);
+          d.set_remap_var_names(remap_fields);    
+          d.run(numpe > 1);
+    }
+
+  //FIXME: amh: timing issues
     struct timeval begin, end, diff;
     gettimeofday(&begin, 0);
-
-    // Do the remap
-    d.run();
 
     // Dump some timing information
     gettimeofday(&end, 0);
@@ -623,6 +708,7 @@ int main(int argc, char** argv) {
     }
 
   }
+
 
   std::printf("finishing portageapp...\n");
 
