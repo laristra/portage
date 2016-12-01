@@ -273,6 +273,11 @@ TEST(Interpolate_1st_Order, Node_Ctr_Const_2D) {
   Portage::Jali_Mesh_Wrapper targetMeshWrapper(*target_mesh);
   Portage::Jali_State_Wrapper sourceStateWrapper(source_state);
 
+  Portage::MeshWrapperDual<Portage::Jali_Mesh_Wrapper>
+      sourceDualWrapper(sourceMeshWrapper);
+  Portage::MeshWrapperDual<Portage::Jali_Mesh_Wrapper>
+      targetDualWrapper(targetMeshWrapper);
+
   // Gather the dual cell coordinates for source and target meshes for
   // intersection
 
@@ -339,11 +344,11 @@ TEST(Interpolate_1st_Order, Node_Ctr_Const_2D) {
   std::vector<double> outvals(nnodes_target);
 
   Portage::Interpolate_1stOrder<
-    Portage::Jali_Mesh_Wrapper,
-    Portage::Jali_Mesh_Wrapper,
+    Portage::MeshWrapperDual<Portage::Jali_Mesh_Wrapper>,
+    Portage::MeshWrapperDual<Portage::Jali_Mesh_Wrapper>,
     Portage::Jali_State_Wrapper,
     Portage::NODE, 2>
-      interpolater(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper);
+      interpolater(sourceDualWrapper, targetDualWrapper, sourceStateWrapper);
 
   interpolater.set_interpolation_variable("nodevars");
 
@@ -615,6 +620,11 @@ TEST(Interpolate_1st_Order, Node_Ctr_Const_3D) {
   Portage::Jali_State_Wrapper sourceStateWrapper(source_state);
 
 
+  Portage::MeshWrapperDual<Portage::Jali_Mesh_Wrapper>
+      sourceDualWrapper(sourceMeshWrapper);
+  Portage::MeshWrapperDual<Portage::Jali_Mesh_Wrapper>
+      targetDualWrapper(targetMeshWrapper);
+
   // Interpolate from source to target mesh
 
   Jali::Entity_ID_List const& targetnodes =
@@ -685,11 +695,11 @@ TEST(Interpolate_1st_Order, Node_Ctr_Const_3D) {
   // Create Interpolation object
 
   Portage::Interpolate_1stOrder<
-    Portage::Jali_Mesh_Wrapper,
-    Portage::Jali_Mesh_Wrapper,
+    Portage::MeshWrapperDual<Portage::Jali_Mesh_Wrapper>,
+    Portage::MeshWrapperDual<Portage::Jali_Mesh_Wrapper>,
     Portage::Jali_State_Wrapper,
     Portage::NODE, 3>
-      interpolater(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper);
+      interpolater(sourceDualWrapper, targetDualWrapper, sourceStateWrapper);
 
   interpolater.set_interpolation_variable("nodevars");
 
