@@ -8,6 +8,7 @@
 #include <vector>
 #include <string>
 #include <cmath>
+#include <fstream>
 
 #include "mpi.h"
 
@@ -15,6 +16,7 @@
 #include "ittnotify.h"
 #endif
 
+#include "portage/distributed/mpi_collate.h"
 #include "portage/driver/driver.h"
 #include "portage/wrappers/mesh/jali/jali_mesh_wrapper.h"
 #include "portage/wrappers/state/jali/jali_state_wrapper.h"
@@ -29,6 +31,9 @@
 
 using Portage::Jali_Mesh_Wrapper;
 using Portage::Jali_State_Wrapper;
+using Portage::collate;
+using Portage::argsort;
+using Portage::reorder;
 
 /***********************Node centered remap does not work--is it because the "nodedata field is not set??*****************amh FIXME*/
 
@@ -74,8 +79,9 @@ int main(int argc, char** argv) {
   MPI_Initialized(&mpi_init_flag);
   if (!mpi_init_flag)
     MPI_Init(&argc, &argv);
-  int numpe;
+  int numpe, rank;
   MPI_Comm_size(MPI_COMM_WORLD, &numpe);
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   if (numpe > 1) {
       std::printf("error - only 1 mpi rank is allowed\n");
       std::exit(1);
@@ -221,13 +227,47 @@ int main(int argc, char** argv) {
   }
 
   if (dumpMesh) {
+    // The `static_cast` is a workaround for an Intel compiler's header
+    // files, which are missing a `std::to_string` function for ints.
+    std::string example_num = std::to_string(static_cast<long long>(example));
     std::cerr << "Saving the source mesh" << std::endl;
     sourceState.export_to_mesh();
-    dynamic_cast<Jali::Mesh_MSTK*>(sourceMesh.get())->write_to_exodus_file("input.exo");
+    dynamic_cast<Jali::Mesh_MSTK*>(sourceMesh.get())->
+      write_to_exodus_file("input" + example_num + ".exo");
 
     std::cerr << "Saving the target mesh" << std::endl;
     targetState.export_to_mesh();
-    dynamic_cast<Jali::Mesh_MSTK*>(targetMesh.get())->write_to_exodus_file("output.exo");
+    dynamic_cast<Jali::Mesh_MSTK*>(targetMesh.get())->
+      write_to_exodus_file("output" + example_num + ".exo");
+    int field_len;
+    if (example == 1) {
+      field_len = targetMeshWrapper.num_owned_nodes();
+    } else {
+      field_len = targetMeshWrapper.num_owned_cells();
+    }
+
+    // We concatenate the global IDs and field values on the rank 0 processor,
+    // sort it by the global ID and save into a file.
+    std::vector<int> lgid(field_len), gid;
+    std::vector<double> lvalues(field_len), values;
+    for (int i=0; i < field_len; i++) {
+      lgid[i] = targetMesh->GID(i, entityKind);
+      lvalues[i] = cellvecout[i];
+    }
+    collate(MPI_COMM_WORLD, rank, numpe, lgid, gid);
+    collate(MPI_COMM_WORLD, rank, numpe, lvalues, values);
+    if (rank == 0) {
+      std::vector<int> idx;
+      argsort(gid, idx);
+      reorder(gid, idx);
+      reorder(values, idx);
+      std::ofstream fout("field" + example_num + ".txt");
+      fout << std::scientific;
+      fout.precision(17);
+      for (int i=0; i < gid.size(); i++) {
+        fout << gid[i] << " " << values[i] << std::endl;
+      }
+    }
   }
 
   std::printf("finishing shotshellapp...\n");
