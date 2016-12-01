@@ -246,6 +246,8 @@ int main(int argc, char** argv) {
       field_len = targetMeshWrapper.num_owned_cells();
     }
 
+    // We concatenate the global IDs and field values on the rank 0 processor,
+    // sort it by the global ID and save into a file.
     std::vector<int> lgid(field_len), gid;
     std::vector<double> lvalues(field_len), values;
     for (int i=0; i < field_len; i++) {
