@@ -13,6 +13,7 @@
 #include <limits>
 #include <map>
 
+#include "portage/wrappers/mesh/AuxMeshTopology.h"
 #include "portage/support/portage.h"
 #include "portage/support/Point.h"
 
@@ -29,14 +30,17 @@ namespace Portage {
 */
 
 template <class T=double>
-class Flat_Mesh_Wrapper {
+class Flat_Mesh_Wrapper : public AuxMeshTopology<Flat_Mesh_Wrapper<>> {
  public:
 
   //! Constructor
+  Flat_Mesh_Wrapper() {};
+
   template<class Mesh_Wrapper>
-  Flat_Mesh_Wrapper(int nodes_per_cell, Mesh_Wrapper& input) :
-                    nodesPerCell_(nodes_per_cell), dim_(input.space_dimension())
+  void initialize(int nodes_per_cell, Mesh_Wrapper& input)
   {
+    nodesPerCell_ = nodes_per_cell;
+    dim_ = input.space_dimension();
     int numCells = input.num_owned_cells() + input.num_ghost_cells();
     numOwnedCells_ = input.num_owned_cells();
     coords_.clear();
@@ -318,8 +322,8 @@ private:
   std::vector<int> neighborOffsets_;
   std::vector<int> globalCellIds_;
   std::map<int, int> globalCellMap_;
-  const int nodesPerCell_;
-  const int dim_;
+  int nodesPerCell_;
+  int dim_;
   int numOwnedCells_;
   int numOwnedNodes_;
 

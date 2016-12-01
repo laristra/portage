@@ -81,21 +81,45 @@ int main(int argc, char** argv) {
   Portage::Flecsi_State_Wrapper targetStateWrapper(targetMesh);
 
   // Setup the main driver for this mesh type
-  Portage::Driver<Portage::Flecsi_Mesh_Wrapper,
-                  Portage::Flecsi_State_Wrapper> d(inputMeshWrapper,
-                                                   inputStateWrapper,
-                                                   targetMeshWrapper,
-                                                   targetStateWrapper);
+  if(order==2){
 
+    Portage::Driver<
+      Portage::SearchKDTree,
+          Portage::IntersectR2D,
+      Portage::Interpolate_2ndOrder,
+      2,
+      Portage::Flecsi_Mesh_Wrapper,
+          Portage::Flecsi_State_Wrapper>
+      d(inputMeshWrapper, inputStateWrapper, targetMeshWrapper, targetStateWrapper);
+  
   // Declare which variables are remapped
   std::vector<std::string> varnames(1, "celldata");
   d.set_remap_var_names(varnames);
 
-  // Declare interpolation order
-  d.set_interpolation_order(order);
+  // Do the remap
+  d.run(false);
+  }
+
+  // Setup the main driver for this mesh type
+  if(order==1){
+
+    Portage::Driver<
+      Portage::SearchKDTree,
+          Portage::IntersectR2D,
+      Portage::Interpolate_1stOrder,
+      2,
+      Portage::Flecsi_Mesh_Wrapper,
+          Portage::Flecsi_State_Wrapper>
+      d(inputMeshWrapper, inputStateWrapper, targetMeshWrapper, targetStateWrapper);
+  
+  // Declare which variables are remapped
+  std::vector<std::string> varnames(1, "celldata");
+  d.set_remap_var_names(varnames);
 
   // Do the remap
-  d.run();
+  d.run(false);
+  }
+
 
   // Get the new data and calculate the error
   // use flecsi intrinsics - access_state is a macro in burton.h
