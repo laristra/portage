@@ -152,6 +152,9 @@ public:
         verts2[2].xy[0] = target_poly[inext][0];
         verts2[2].xy[1] = target_poly[inext][1];
         if (r2d_orient(verts2[0], verts2[1], verts2[2]) < 0.) {
+#ifdef DEBUG
+					std::cerr << "WARNING: non-convex polygon is incorrectly triangulated (see bug #430)." << std::endl;
+#endif
           std::swap(verts2[1].xy[0], verts2[2].xy[0]);
           std::swap(verts2[1].xy[1], verts2[2].xy[1]);
         }
