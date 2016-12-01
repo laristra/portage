@@ -160,6 +160,23 @@ class Limited_Gradient {
     @tparam StateType A state manager class that one can query for field info
 */
 
+template<typename MeshType>
+class Get_Neighbors {
+public:
+  Get_Neighbors(MeshType const & mesh, std::vector<std::vector<int>>& cell_neighbors) : mesh_(mesh), cell_neighbors_(cell_neighbors) { };
+
+  void operator()(int c)
+  {
+    mesh_.cell_get_node_adj_cells(c, ALL, &(cell_neighbors_[c]));
+    //for (unsigned int i=0; i<c%100; i++) cell_neighbors_[c].push_back(i);
+  }
+
+private:
+  MeshType const & mesh_;
+  std::vector<std::vector<int>> & cell_neighbors_;
+};
+
+
 template<typename MeshType, typename StateType, long D>
 class Limited_Gradient<MeshType, StateType, CELL, D> {
  public:
@@ -190,6 +207,10 @@ class Limited_Gradient<MeshType, StateType, CELL, D> {
 
     for (int c = 0; c < ncells; ++c)
       mesh_.cell_get_node_adj_cells(c, ALL, &(cell_neighbors_[c]));
+    //std::cout << "Before for each" << std::endl;
+    //    thrust::for_each(mesh_.begin(CELL), mesh_.end(CELL),
+    //                     Get_Neighbors<MeshType>(mesh_, cell_neighbors_));
+    //std::cout << "After for each" << std::endl;
   }
 
   /// @todo Seems to be needed when using this in a Thrust transform call?

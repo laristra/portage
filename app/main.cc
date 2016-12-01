@@ -619,23 +619,25 @@ else {  // node-centered remaps
     Jali::State sourceState(inputMesh);
     std::vector<double> sourceData(nsrcnodes);
 
-    /*!
-      @todo make node_get_coordinates be consistent in data type with
-      cell_centroid?
-    */
-    // populate input field with quadratic function
+    // populate source state data with the specificed profile
     if (example.dim == 2) {
       Portage::Point<2> nodexy;
       for (int i = 0; i < nsrcnodes; ++i) {
         inputMeshWrapper.node_get_coordinates(i, &nodexy);
-        sourceData[i] = nodexy[0]*nodexy[0] + nodexy[1]*nodexy[1];
+        if (example.linear)
+          sourceData[i] = nodexy[0] + nodexy[1];
+        else
+          sourceData[i] = nodexy[0]*nodexy[0] + nodexy[1]*nodexy[1];            
       }
     } else {  // 3d
       Portage::Point<3> nodexyz;
       for (int i = 0; i < nsrcnodes; ++i) {
         inputMeshWrapper.node_get_coordinates(i, &nodexyz);
-        sourceData[i] = nodexyz[0]*nodexyz[0] + nodexyz[1]*nodexyz[1]
-            + nodexyz[2]*nodexyz[2];
+        if (example.linear)
+          sourceData[i] = nodexyz[0] + nodexyz[1] + nodexyz[2];
+        else
+          sourceData[i] = nodexyz[0]*nodexyz[0] + nodexyz[1]*nodexyz[1]
+              + nodexyz[2]*nodexyz[2];
       }
     }
 
