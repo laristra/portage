@@ -115,19 +115,24 @@ inline counting_iterator make_counting_iterator(int const i) {
 }
 
 template<typename InputIterator, typename OutputIterator,
-    typename UnaryFunction>
-inline
-    OutputIterator transform(InputIterator first, InputIterator last,
-                             OutputIterator result, UnaryFunction op) {
-      return thrust::transform(first, last, result, op);
-    }
+         typename UnaryFunction>
+inline OutputIterator transform(InputIterator first, InputIterator last,
+                                OutputIterator result, UnaryFunction op) {
+  return thrust::transform(first, last, result, op);
+}
+
 template<typename InputIterator1, typename InputIterator2,
-    typename OutputIterator, typename BinaryFunction>
-inline
-    OutputIterator transform(InputIterator1 first1, InputIterator1 last1,
-                             InputIterator2 first2, OutputIterator result,
-                             BinaryFunction op) {
+         typename OutputIterator, typename BinaryFunction>
+inline OutputIterator transform(InputIterator1 first1, InputIterator1 last1,
+                                InputIterator2 first2, OutputIterator result,
+                                BinaryFunction op) {
   return thrust::transform(first1, last1, first2, result, op);
+}
+
+template<typename InputIterator, typename UnaryFunction>
+inline void for_each(InputIterator first, InputIterator last,
+                              UnaryFunction f) {
+  thrust::for_each(first, last, f);
 }
 
 #else  // no thrust
@@ -145,19 +150,25 @@ inline counting_iterator make_counting_iterator(int const i) {
 
 template<typename InputIterator, typename OutputIterator,
     typename UnaryFunction>
-inline
-    OutputIterator transform(InputIterator first, InputIterator last,
-                             OutputIterator result, UnaryFunction op) {
+inline OutputIterator transform(InputIterator first, InputIterator last,
+                                OutputIterator result, UnaryFunction op) {
   return std::transform(first, last, result, op);
 }
+
 template<typename InputIterator1, typename InputIterator2,
-    typename OutputIterator, typename BinaryFunction>
-inline
-    OutputIterator transform(InputIterator1 first1, InputIterator1 last1,
-                             InputIterator2 first2, OutputIterator result,
-                             BinaryFunction op) {
+         typename OutputIterator, typename BinaryFunction>
+inline OutputIterator transform(InputIterator1 first1, InputIterator1 last1,
+                                InputIterator2 first2, OutputIterator result,
+                                BinaryFunction op) {
   return std::transform(first1, last1, first2, result, op);
 }
+
+template<typename InputIterator, typename UnaryFunction>
+inline void for_each(InputIterator first, InputIterator last,
+                     UnaryFunction f) {
+  std::for_each(first, last, f);
+}
+
 
 #endif
 

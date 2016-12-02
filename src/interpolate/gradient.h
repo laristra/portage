@@ -150,6 +150,27 @@ class Limited_Gradient {
 };
 
 
+///////////////////////////////////////////////////////////////////////////////
+
+/*! @class Get_Cell_Neighbors<MeshType> gradient.h
+    @brief Functor to get adjacent cells that can be called in parallel
+    @tparam MeshType A mesh class that one can query for mesh info
+*/
+
+template<typename MeshType>
+class Get_Cell_Neighbors {
+public:
+  Get_Cell_Neighbors(MeshType const & mesh, std::vector<std::vector<int>>& cell_neighbors) : mesh_(mesh), cell_neighbors_(cell_neighbors) { };
+
+  void operator()(int c)
+  {
+    mesh_.cell_get_node_adj_cells(c, ALL, &(cell_neighbors_[c]));
+  }
+
+private:
+  MeshType const & mesh_;
+  std::vector<std::vector<int>> & cell_neighbors_;
+};
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -188,8 +209,8 @@ class Limited_Gradient<MeshType, StateType, CELL, D> {
     int ncells = mesh_.num_entities(CELL);
     cell_neighbors_.resize(ncells);
 
-    for (int c = 0; c < ncells; ++c)
-      mesh_.cell_get_node_adj_cells(c, ALL, &(cell_neighbors_[c]));
+    Portage::for_each(mesh_.begin(CELL), mesh_.end(CELL),
+                      Get_Cell_Neighbors<MeshType>(mesh_, cell_neighbors_));
   }
 
   /// @todo Seems to be needed when using this in a Thrust transform call?
@@ -293,6 +314,27 @@ Limited_Gradient<MeshType, StateType, CELL, D>::operator() (int const cellid) {
 }
 
 
+///////////////////////////////////////////////////////////////////////////////
+
+/*! @class Get_Node_Neighbors<MeshType> gradient.h
+    @brief Functor to get adjacent nodes that can be called in parallel
+    @tparam MeshType A mesh class that one can query for mesh info
+*/
+        
+template<typename MeshType>
+class Get_Node_Neighbors {
+public:
+  Get_Node_Neighbors(MeshType const & mesh, std::vector<std::vector<int>>& node_neighbors) : mesh_(mesh), node_neighbors_(node_neighbors) { };
+
+  void operator()(int n)
+  {
+    mesh_.dual_cell_get_node_adj_cells(n, ALL, &(node_neighbors_[n]));
+  }
+
+private:
+  MeshType const & mesh_;
+  std::vector<std::vector<int>> & node_neighbors_;
+};
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -333,8 +375,8 @@ class Limited_Gradient<MeshType, StateType, NODE, D> {
     int nnodes = mesh_.num_entities(NODE);
     node_neighbors_.resize(nnodes);
 
-    for (int n = 0; n < nnodes; ++n)
-      mesh_.dual_cell_get_node_adj_cells(n, ALL, &(node_neighbors_[n]));
+    Portage::for_each(mesh_.begin(NODE), mesh_.end(NODE),
+                      Get_Node_Neighbors<MeshType>(mesh_, node_neighbors_));
   }
 
   /// \todo Seems to be needed when using this in a Thrust transform call?
