@@ -5,6 +5,7 @@
 
 set(distributed_HEADERS
     mpi_bounding_boxes.h
+    mpi_collate.h
     PARENT_SCOPE)
 
 if (ENABLE_UNIT_TESTS)

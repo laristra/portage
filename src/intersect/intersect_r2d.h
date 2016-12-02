@@ -151,13 +151,21 @@ public:
         int inext = (i+1 == size2 ? 0 : i+1);
         verts2[2].xy[0] = target_poly[inext][0];
         verts2[2].xy[1] = target_poly[inext][1];
-        r2d_poly_faces_from_verts(&faces[0], &verts2[0], 3);
+        if (r2d_orient(verts2[0], verts2[1], verts2[2]) < 0.) {
+#ifdef DEBUG
+					std::cerr << "WARNING: non-convex polygon is incorrectly triangulated (see bug #430)." << std::endl;
+#endif
+          std::swap(verts2[1].xy[0], verts2[2].xy[0]);
+          std::swap(verts2[1].xy[1], verts2[2].xy[1]);
+        }
+
         // Only do this check in Debug mode. This test is important,
         // otherwise R2D returns invalid results.
 #ifdef DEBUG
         if (r2d_orient(verts2[0], verts2[1], verts2[2]) < 0.)
           throw std::runtime_error("target_wedge has negative volume");
 #endif
+        r2d_poly_faces_from_verts(&faces[0], &verts2[0], 3);
 
         r2d_poly poly;
         r2d_init_poly(&poly, &verts1[0], size1);
