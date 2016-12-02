@@ -112,6 +112,8 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Const_No_Limiter_2D) {
                                 Portage::CELL, 2>
       interpolater(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper);
 
+  // Compute the target mesh vals
+
   interpolater.set_interpolation_variable("cellvars", Portage::NOLIMITER);
 
   Portage::transform(targetcells.begin(), targetcells.end(),
@@ -205,11 +207,15 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Lin_No_Limiter_2D) {
     sources_and_weights[c] = wtsvec;
   }
 
+  // Create Interpolation object
+
   Portage::Interpolate_2ndOrder<Portage::Jali_Mesh_Wrapper,
                                 Portage::Jali_Mesh_Wrapper,
                                 Portage::Jali_State_Wrapper,
                                 Portage::CELL, 2>
       interpolater(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper);
+
+  // Compute the target mesh vals
 
   interpolater.set_interpolation_variable("cellvars", Portage::NOLIMITER);
 
@@ -317,11 +323,15 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Lin_BJ_Limiter_2D) {
     sources_and_weights[c] = wtsvec;
   }
 
+  // Create Interpolation object
+
   Portage::Interpolate_2ndOrder<Portage::Jali_Mesh_Wrapper,
                                 Portage::Jali_Mesh_Wrapper,
                                 Portage::Jali_State_Wrapper,
                                 Portage::CELL, 2>
       interpolater(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper);
+
+  // Compute the target mesh vals
 
   interpolater.set_interpolation_variable("cellvars", Portage::NOLIMITER);
 
@@ -332,6 +342,9 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Lin_BJ_Limiter_2D) {
 
   interpolater.set_interpolation_variable("cellvars",
                                            Portage::BARTH_JESPERSEN);
+
+  // Compute the target mesh vals
+
   Portage::transform(targetcells.begin(), targetcells.end(),
                      sources_and_weights.begin(),
                      outvals2.begin(), interpolater);
@@ -358,280 +371,304 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Lin_BJ_Limiter_2D) {
   EXPECT_TRUE(outofbounds_unlimited && inbounds_limited);
 }
 
-////////////////////////////////////////////////////////////////////////////////
-// FIXME: NODE-CENTERED REMAPS NEED TO USE MeshWrapperDual or its
-// replacement
-////////////////////////////////////////////////////////////////////////////////
+
 
 /// Second order interpolation of constant node-centered field with no
 /// limiting in 2D
 
-// TEST(Interpolate_2nd_Order, Node_Ctr_Const_No_Limiter) {
-//   Jali::MeshFactory mf(MPI_COMM_WORLD);
-//   Jali::FrameworkPreference pref;
-//   pref.push_back(Jali::MSTK);
-//   if (Jali::framework_available(Jali::MSTK))
-//     mf.preference(pref);
-//   mf.included_entities({Jali::Entity_kind::EDGE,
-//                         Jali::Entity_kind::FACE,
-//                         Jali::Entity_kind::WEDGE,
-//                         Jali::Entity_kind::CORNER});
+TEST(Interpolate_2nd_Order, Node_Ctr_Const_No_Limiter) {
+  Jali::MeshFactory mf(MPI_COMM_WORLD);
+  Jali::FrameworkPreference pref;
+  pref.push_back(Jali::MSTK);
+  if (Jali::framework_available(Jali::MSTK))
+    mf.preference(pref);
+  mf.included_entities({Jali::Entity_kind::EDGE,
+                        Jali::Entity_kind::FACE,
+                        Jali::Entity_kind::WEDGE,
+                        Jali::Entity_kind::CORNER});
 
-//   std::shared_ptr<Jali::Mesh> source_mesh = mf(0.0, 0.0, 1.0, 1.0, 4, 4);
-//   std::shared_ptr<Jali::Mesh> target_mesh = mf(0.0, 0.0, 1.0, 1.0, 5, 5);
+  std::shared_ptr<Jali::Mesh> source_mesh = mf(0.0, 0.0, 1.0, 1.0, 4, 4);
+  std::shared_ptr<Jali::Mesh> target_mesh = mf(0.0, 0.0, 1.0, 1.0, 5, 5);
 
-//   const int nnodes_source =
-//       source_mesh->num_entities(Jali::Entity_kind::NODE,
-//                                 Jali::Entity_type::OWNED);
-//   const int nnodes_target =
-//       target_mesh->num_entities(Jali::Entity_kind::NODE,
-//                                 Jali::Entity_type::OWNED);
+  const int nnodes_source =
+      source_mesh->num_entities(Jali::Entity_kind::NODE,
+                                Jali::Entity_type::PARALLEL_OWNED);
+  const int nnodes_target =
+      target_mesh->num_entities(Jali::Entity_kind::NODE,
+                                Jali::Entity_type::PARALLEL_OWNED);
 
-//   // Create a state object and add the first two vectors to it
+  Jali::Entity_ID_List const& targetnodes =
+      target_mesh->nodes<Jali::Entity_type::ALL>();
 
-//   Jali::State source_state(source_mesh);
+  // Create a state object and add the first two vectors to it
 
-
-//   // Define two state vectors, one with constant value, the other
-//   // with a linear function
-
-//   std::vector<double> data(nnodes_source, 1.5);
-//   Jali::StateVector<double> myvec("nodevars", source_mesh,
-//                                   Jali::Entity_kind::NODE,
-//                                   Jali::Entity_type::OWNED,
-//                                   &(data[0]));
-//   source_state.add(myvec);
-
-//   Portage::Jali_Mesh_Wrapper sourceMeshWrapper(*source_mesh);
-//   Portage::Jali_Mesh_Wrapper targetMeshWrapper(*target_mesh);
-//   Portage::Jali_State_Wrapper sourceStateWrapper(source_state);
-
-//   // Create Interpolation objects
-
-//   Portage::Interpolate_2ndOrder<Portage::Jali_Mesh_Wrapper,
-//                                 Portage::Jali_Mesh_Wrapper,
-//                                 Portage::Jali_State_Wrapper,
-//                                 Portage::NODE>
-//       interpolater(sourceMeshWrapper, targetMeshWrapper,
-//                    sourceStateWrapper);
-//   interpolater.set_interpolation_variable("nodevars", Portage::NOLIMITER);
-
-//   // Interpolate from source to target mesh
-
-//   std::vector<double> outvals(nnodes_target);
-
-//   // Gather the dual cell coordinates for source and target meshes for
-//   // intersection
-
-//   std::vector<std::vector<JaliGeometry::Point>>
-//       source_dualcell_coords(nnodes_source);
-//   std::vector<std::vector<JaliGeometry::Point>>
-//       target_dualcell_coords(nnodes_target);
-
-//   // Because the meshes are rectangular we can get away with examining
-//   // the coordinates of the corners instead of the wedges
-
-//   // Also, because we will use only the bounding box of each cell to
-//   // do the search and intersection we can get away with adding all
-//   // the coordinates of the corners to list including duplicates
-
-//   for (int n = 0; n < nnodes_source; ++n) {
-//     std::vector<JaliGeometry::Point> dualcoords;
-//     std::vector<int> corners;
-//     source_mesh->node_get_corners(n, Jali::Entity_type::ALL, &corners);
-
-//     for (auto cn : corners) {
-//       std::vector<JaliGeometry::Point> cncoords;
-//       source_mesh->corner_get_coordinates(cn, &cncoords);
-//       for (auto coord : cncoords)
-//         source_dualcell_coords[n].push_back(coord);
-//     }
-//   }
-
-//   for (int n = 0; n < nnodes_target; ++n) {
-//     std::vector<JaliGeometry::Point> dualcoords;
-//     std::vector<int> corners;
-//     target_mesh->node_get_corners(n, Jali::Entity_type::ALL, &corners);
-
-//     for (auto cn : corners) {
-//       std::vector<JaliGeometry::Point> cncoords;
-//       target_mesh->corner_get_coordinates(cn, &cncoords);
-//       for (auto coord : cncoords)
-//         target_dualcell_coords[n].push_back(coord);
-//     }
-//   }
-
-//   for (int n = 0; n < nnodes_target; ++n) {
-//     std::vector<int> xcells;
-//     std::vector<std::vector<double>> xwts;
-
-//     BOX_INTERSECT::intersection_moments(target_dualcell_coords[n],
-//                                         source_dualcell_coords,
-//                                         &xcells, &xwts);
-
-//     std::pair<std::vector<int> const &,
-//               std::vector<std::vector<double>> const &>
-//         nodes_and_weights(xcells, xwts);
-
-//     outvals[n] = interpolater(nodes_and_weights, n);
-//   }
-
-//   // Make sure we retrieved the correct value for each node on the
-//   // target. Second order interpolation should preserve a linear field
-//   // exactly but node-centered interpolation has some quirks - the field
-//   // does not get preserved exactly at the boundary because the source
-//   // values for boundary dual cells are not specified inside the dual
-//   // cells but at one of their vertices or edges. So, check only
-//   // interior nodes
-
-//   const double stdval = data[0];
-//   for (int n = 0; n < nnodes_target; ++n) {
-//     JaliGeometry::Point coord;
-//     target_mesh->node_get_coordinates(n, &coord);
-//     if (fabs(coord[0]) < 1e-16 || fabs(1-coord[0]) < 1e-16 ||
-//         fabs(coord[1]) < 1e-16 || fabs(1-coord[1]) < 1.e-16)
-//       continue;
-//     ASSERT_NEAR(stdval, outvals[n], TOL);
-//   }
-// }
+  Jali::State source_state(source_mesh);
 
 
-/// Second order interpolation of linear node-centered field with no
-/// limiting in 2D
+  // Define two state vectors, one with constant value, the other
+  // with a linear function
 
-// TEST(Interpolate_2nd_Order, Node_Ctr_Lin_No_Limiter) {
-//   Jali::MeshFactory mf(MPI_COMM_WORLD);
-//   Jali::FrameworkPreference pref;
-//   pref.push_back(Jali::MSTK);
-//   if (Jali::framework_available(Jali::MSTK))
-//     mf.preference(pref);
-//   mf.included_entities({Jali::Entity_kind::EDGE,
-//                         Jali::Entity_kind::FACE,
-//                         Jali::Entity_kind::WEDGE,
-//                         Jali::Entity_kind::CORNER});
+  std::vector<double> data(nnodes_source, 1.5);
+  Jali::StateVector<double> myvec("nodevars", source_mesh,
+                                  Jali::Entity_kind::NODE,
+                                  Jali::Entity_type::PARALLEL_OWNED,
+                                  &(data[0]));
+  source_state.add(myvec);
 
-//   std::shared_ptr<Jali::Mesh> source_mesh = mf(0.0, 0.0, 1.0, 1.0, 4, 4);
-//   std::shared_ptr<Jali::Mesh> target_mesh = mf(0.0, 0.0, 1.0, 1.0, 5, 5);
+  Portage::Jali_Mesh_Wrapper sourceMeshWrapper(*source_mesh);
+  Portage::Jali_Mesh_Wrapper targetMeshWrapper(*target_mesh);
+  Portage::Jali_State_Wrapper sourceStateWrapper(source_state);
 
-//   const int nnodes_source =
-//       source_mesh->num_entities(Jali::Entity_kind::NODE,
-//                                 Jali::Entity_type::OWNED);
-//   const int nnodes_target =
-//       target_mesh->num_entities(Jali::Entity_kind::NODE,
-//                                 Jali::Entity_type::OWNED);
+  // Interpolate from source to target mesh
 
-//   // Create a state object and add the first two vectors to it
+  std::vector<double> outvals(nnodes_target);
+  std::vector<std::vector<Portage::Weights_t>>
+      sources_and_weights(nnodes_target);
 
-//   Jali::State source_state(source_mesh);
+  // Gather the dual cell coordinates for source and target meshes for
+  // intersection
 
-//   // Define a state vectors representing a linear function
+  std::vector<std::vector<JaliGeometry::Point>>
+      source_dualcell_coords(nnodes_source);
+  std::vector<std::vector<JaliGeometry::Point>>
+      target_dualcell_coords(nnodes_target);
 
-//   std::vector<double> data(nnodes_source);
-//   for (int n = 0; n < nnodes_source; ++n) {
-//     JaliGeometry::Point coord;
-//     source_mesh->node_get_coordinates(n, &coord);
-//     data[n] = coord[0]+coord[1];
-//   }
-//   Jali::StateVector<double> myvec("nodevars", source_mesh,
-//                                   Jali::Entity_kind::NODE,
-//                                   Jali::Entity_type::OWNED,
-//                                   &(data[0]));
-//   source_state.add(myvec);
+  // Because the meshes are rectangular we can get away with examining
+  // the coordinates of the corners instead of the wedges
 
-//   // Create a mesh wrapper
+  // Also, because we will use only the bounding box of each cell to
+  // do the search and intersection we can get away with adding all
+  // the coordinates of the corners to list including duplicates
 
-//   Portage::Jali_Mesh_Wrapper sourceMeshWrapper(*source_mesh);
-//   Portage::Jali_Mesh_Wrapper targetMeshWrapper(*target_mesh);
+  for (int n = 0; n < nnodes_source; ++n) {
+    std::vector<JaliGeometry::Point> dualcoords;
+    std::vector<int> corners;
+    source_mesh->node_get_corners(n, Jali::Entity_type::ALL, &corners);
 
-//   // Create Interpolation objects
+    for (auto cn : corners) {
+      std::vector<JaliGeometry::Point> cncoords;
+      source_mesh->corner_get_coordinates(cn, &cncoords);
+      for (auto coord : cncoords)
+        source_dualcell_coords[n].push_back(coord);
+    }
+  }
 
-//   Portage::Interpolate_2ndOrder<Portage::Jali_Mesh_Wrapper,
-//                                 Portage::Jali_Mesh_Wrapper,
-//                                 Portage::Jali_State_Wrapper,
-//                                 Portage::NODE>
-//       interpolater(sourceMeshWrapper, targetMeshWrapper,
-//                    source_state);
-//   interpolater.set_interpolation_variable("nodevars", Portage::NOLIMITER);
+  for (int n = 0; n < nnodes_target; ++n) {
+    std::vector<JaliGeometry::Point> dualcoords;
+    std::vector<int> corners;
+    target_mesh->node_get_corners(n, Jali::Entity_type::ALL, &corners);
 
-//   // Gather the dual cell coordinates for source and target meshes for
-//   // intersection
+    for (auto cn : corners) {
+      std::vector<JaliGeometry::Point> cncoords;
+      target_mesh->corner_get_coordinates(cn, &cncoords);
+      for (auto coord : cncoords)
+        target_dualcell_coords[n].push_back(coord);
+    }
+  }
 
-//   std::vector<std::vector<JaliGeometry::Point>>
-//       source_dualcell_coords(nnodes_source);
-//   std::vector<std::vector<JaliGeometry::Point>>
-//       target_dualcell_coords(nnodes_target);
 
-//   // Because the meshes are rectangular we can get away with examining
-//   // the coordinates of the corners instead of the wedges
+  for (int n = 0; n < nnodes_target; ++n) {
+    std::vector<int> xnodes;
+    std::vector<std::vector<double>> xweights;
 
-//   // Also, because we will use only the bounding box of each cell to
-//   // do the search and intersection we can get away with adding all
-//   // the coordinates of the corners to list including duplicates
+    BOX_INTERSECT::intersection_moments(target_dualcell_coords[n],
+                                        source_dualcell_coords,
+                                        &xnodes, &xweights);
 
-//   for (int n = 0; n < nnodes_source; ++n) {
-//     std::vector<JaliGeometry::Point> dualcoords;
-//     std::vector<int> corners;
-//     source_mesh->node_get_corners(n, Jali::Entity_type::ALL, &corners);
+    std::vector<Portage::Weights_t> wtsvec(xnodes.size());
+    for (int i = 0; i < xnodes.size(); ++i) {
+      wtsvec[i].entityID = xnodes[i];
+      wtsvec[i].weights = xweights[i];
+    }
+    sources_and_weights[n] = wtsvec;
+  }
 
-//     for (auto cn : corners) {
-//       std::vector<JaliGeometry::Point> cncoords;
-//       source_mesh->corner_get_coordinates(cn, &cncoords);
-//       for (auto coord : cncoords)
-//         source_dualcell_coords[n].push_back(coord);
-//     }
-//   }
+  // Create Interpolation object
 
-//   for (int n = 0; n < nnodes_target; ++n) {
-//     std::vector<JaliGeometry::Point> dualcoords;
-//     std::vector<int> corners;
-//     target_mesh->node_get_corners(n, Jali::Entity_type::ALL, &corners);
+  Portage::Interpolate_2ndOrder<Portage::Jali_Mesh_Wrapper,
+                                Portage::Jali_Mesh_Wrapper,
+                                Portage::Jali_State_Wrapper,
+                                Portage::NODE, 2>
+      interpolater(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper);
 
-//     for (auto cn : corners) {
-//       std::vector<JaliGeometry::Point> cncoords;
-//       target_mesh->corner_get_coordinates(cn, &cncoords);
-//       for (auto coord : cncoords)
-//         target_dualcell_coords[n].push_back(coord);
-//     }
-//   }
+  // Compute the target mesh vals
 
-//   // Interpolate from source to target mesh
+  interpolater.set_interpolation_variable("nodevars", Portage::NOLIMITER);
 
-//   std::vector<double> outvals(nnodes_target);
+  Portage::transform(targetnodes.begin(), targetnodes.end(),
+                     sources_and_weights.begin(),
+                     outvals.begin(), interpolater);
 
-//   for (int n = 0; n < nnodes_target; ++n) {
-//     std::vector<int> xcells;
-//     std::vector<std::vector<double>> xwts;
+  // Make sure we retrieved the correct value for each node on the
+  // target. Second order interpolation should preserve a linear field
+  // exactly but node-centered interpolation has some quirks - the field
+  // does not get preserved exactly at the boundary because the source
+  // values for boundary dual cells are not specified inside the dual
+  // cells but at one of their vertices or edges. So, check only
+  // interior nodes
 
-//     BOX_INTERSECT::intersection_moments(target_dualcell_coords[n],
-//                                         source_dualcell_coords,
-//                                         &xcells, &xwts);
+  const double stdval = data[0];
+  for (int n = 0; n < nnodes_target; ++n) {
+    JaliGeometry::Point coord;
+    target_mesh->node_get_coordinates(n, &coord);
+    if (fabs(coord[0]) < 1e-16 || fabs(1-coord[0]) < 1e-16 ||
+        fabs(coord[1]) < 1e-16 || fabs(1-coord[1]) < 1.e-16)
+      continue;
+    ASSERT_NEAR(stdval, outvals[n], TOL);
+  }
+}
 
-//     std::pair< std::vector<int> const &,
-//                std::vector<std::vector<double>> const &>
-//         nodes_and_weights(xcells, xwts);
 
-//     outvals[n] = interpolater(nodes_and_weights, n);
-//   }
+// Second order interpolation of linear node-centered field with no
+// limiting in 2D
 
-//   // Make sure we retrieved the correct value for each node on the
-//   // target. Second order interpolation should preserve a linear field
-//   // exactly but node-centered interpolation has some quirks - the field
-//   // does not get preserved exactly at the boundary because the source
-//   // values for boundary dual cells are not specified inside the dual
-//   // cells but at one of their vertices or edges. So, check only
-//   // interior nodes
+TEST(Interpolate_2nd_Order, Node_Ctr_Lin_No_Limiter) {
+  Jali::MeshFactory mf(MPI_COMM_WORLD);
+  Jali::FrameworkPreference pref;
+  pref.push_back(Jali::MSTK);
+  if (Jali::framework_available(Jali::MSTK))
+    mf.preference(pref);
+  mf.included_entities({Jali::Entity_kind::EDGE,
+                        Jali::Entity_kind::FACE,
+                        Jali::Entity_kind::WEDGE,
+                        Jali::Entity_kind::CORNER});
 
-//   std::vector<double> stdvals(nnodes_target);
-//   for (int n = 0; n < nnodes_target; ++n) {
-//     JaliGeometry::Point coord;
-//     target_mesh->node_get_coordinates(n, &coord);
-//     if (fabs(coord[0]) < 1e-16 || fabs(1-coord[0]) < 1e-16 ||
-//         fabs(coord[1]) < 1e-16 || fabs(1-coord[1]) < 1.e-16)
-//       continue;
-//     stdvals[n] = coord[0]+coord[1];
-//     EXPECT_NEAR(stdvals[n], outvals[n], TOL);
-//   }
-// }
+  std::shared_ptr<Jali::Mesh> source_mesh = mf(0.0, 0.0, 1.0, 1.0, 4, 4);
+  std::shared_ptr<Jali::Mesh> target_mesh = mf(0.0, 0.0, 1.0, 1.0, 5, 5);
+
+  const int nnodes_source =
+      source_mesh->num_entities(Jali::Entity_kind::NODE,
+                                Jali::Entity_type::PARALLEL_OWNED);
+  const int nnodes_target =
+      target_mesh->num_entities(Jali::Entity_kind::NODE,
+                                Jali::Entity_type::PARALLEL_OWNED);
+
+  Jali::Entity_ID_List const& targetnodes =
+      target_mesh->nodes<Jali::Entity_type::ALL>();
+
+  // Create a state object and add the first two vectors to it
+
+  Jali::State source_state(source_mesh);
+
+  // Define a state vectors representing a linear function
+
+  std::vector<double> data(nnodes_source);
+  for (int n = 0; n < nnodes_source; ++n) {
+    JaliGeometry::Point coord;
+    source_mesh->node_get_coordinates(n, &coord);
+    data[n] = coord[0]+coord[1];
+  }
+  Jali::StateVector<double> myvec("nodevars", source_mesh,
+                                  Jali::Entity_kind::NODE,
+                                  Jali::Entity_type::PARALLEL_OWNED,
+                                  &(data[0]));
+  source_state.add(myvec);
+
+  // Create a mesh wrapper
+
+  Portage::Jali_Mesh_Wrapper sourceMeshWrapper(*source_mesh);
+  Portage::Jali_Mesh_Wrapper targetMeshWrapper(*target_mesh);
+
+  // Gather the dual cell coordinates for source and target meshes for
+  // intersection
+
+  std::vector<std::vector<JaliGeometry::Point>>
+      source_dualcell_coords(nnodes_source);
+  std::vector<std::vector<JaliGeometry::Point>>
+      target_dualcell_coords(nnodes_target);
+
+  // Because the meshes are rectangular we can get away with examining
+  // the coordinates of the corners instead of the wedges
+
+  // Also, because we will use only the bounding box of each cell to
+  // do the search and intersection we can get away with adding all
+  // the coordinates of the corners to list including duplicates
+
+  for (int n = 0; n < nnodes_source; ++n) {
+    std::vector<JaliGeometry::Point> dualcoords;
+    std::vector<int> corners;
+    source_mesh->node_get_corners(n, Jali::Entity_type::ALL, &corners);
+
+    for (auto cn : corners) {
+      std::vector<JaliGeometry::Point> cncoords;
+      source_mesh->corner_get_coordinates(cn, &cncoords);
+      for (auto coord : cncoords)
+        source_dualcell_coords[n].push_back(coord);
+    }
+  }
+
+  for (int n = 0; n < nnodes_target; ++n) {
+    std::vector<JaliGeometry::Point> dualcoords;
+    std::vector<int> corners;
+    target_mesh->node_get_corners(n, Jali::Entity_type::ALL, &corners);
+
+    for (auto cn : corners) {
+      std::vector<JaliGeometry::Point> cncoords;
+      target_mesh->corner_get_coordinates(cn, &cncoords);
+      for (auto coord : cncoords)
+        target_dualcell_coords[n].push_back(coord);
+    }
+  }
+
+  // Interpolate from source to target mesh
+
+  std::vector<double> outvals(nnodes_target);
+  std::vector<std::vector<Portage::Weights_t>>
+      sources_and_weights(nnodes_target);
+
+  for (int n = 0; n < nnodes_target; ++n) {
+    std::vector<int> xnodes;
+    std::vector<std::vector<double>> xweights;
+
+    BOX_INTERSECT::intersection_moments(target_dualcell_coords[n],
+                                        source_dualcell_coords,
+                                        &xnodes, &xweights);
+
+    std::vector<Portage::Weights_t> wtsvec(xnodes.size());
+    for (int i = 0; i < xnodes.size(); ++i) {
+      wtsvec[i].entityID = xnodes[i];
+      wtsvec[i].weights = xweights[i];
+    }
+    sources_and_weights[n] = wtsvec;
+  }
+
+
+  // Create Interpolation object
+
+  Portage::Interpolate_2ndOrder<Portage::Jali_Mesh_Wrapper,
+                                Portage::Jali_Mesh_Wrapper,
+                                Portage::Jali_State_Wrapper,
+                                Portage::NODE, 2>
+      interpolater(sourceMeshWrapper, targetMeshWrapper,
+                   source_state);
+
+  // Compute the target mesh vals
+
+  interpolater.set_interpolation_variable("nodevars", Portage::NOLIMITER);
+
+  Portage::transform(targetnodes.begin(), targetnodes.end(),
+                     sources_and_weights.begin(),
+                     outvals.begin(), interpolater);
+
+  // Make sure we retrieved the correct value for each node on the
+  // target. Second order interpolation should preserve a linear field
+  // exactly but node-centered interpolation has some quirks - the field
+  // does not get preserved exactly at the boundary because the source
+  // values for boundary dual cells are not specified inside the dual
+  // cells but at one of their vertices or edges. So, check only
+  // interior nodes
+
+  std::vector<double> stdvals(nnodes_target);
+  for (int n = 0; n < nnodes_target; ++n) {
+    JaliGeometry::Point coord;
+    target_mesh->node_get_coordinates(n, &coord);
+    if (fabs(coord[0]) < 1e-16 || fabs(1-coord[0]) < 1e-16 ||
+        fabs(coord[1]) < 1e-16 || fabs(1-coord[1]) < 1.e-16)
+      continue;
+    stdvals[n] = coord[0]+coord[1];
+    EXPECT_NEAR(stdvals[n], outvals[n], TOL);
+  }
+}
 
 
 /// Second order interpolation of constant cell-centered field with no
@@ -688,7 +725,8 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Const_No_Limiter_3D) {
   // Interpolate from source to target mesh
 
   std::vector<double> outvals(ncells_target);  // field values on target mesh
-  std::vector<std::vector<Portage::Weights_t>> sources_and_weights(ncells_target);
+  std::vector<std::vector<Portage::Weights_t>>
+      sources_and_weights(ncells_target);
 
   Jali::Entity_ID_List const& targetcells =
       target_mesh->cells<Jali::Entity_type::ALL>();
@@ -710,7 +748,7 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Const_No_Limiter_3D) {
     sources_and_weights[c] = wtsvec;
   }
 
-  // Create Interpolation objects
+  // Create Interpolation object
 
   Portage::Interpolate_2ndOrder<Portage::Jali_Mesh_Wrapper,
                                 Portage::Jali_Mesh_Wrapper,
@@ -718,7 +756,10 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Const_No_Limiter_3D) {
                                 Portage::CELL, 3>
       interpolater(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper);
 
+  // Compute the target mesh vals
+
   interpolater.set_interpolation_variable("cellvars", Portage::NOLIMITER);
+
   Portage::transform(targetcells.begin(), targetcells.end(),
                      sources_and_weights.begin(),
                      outvals.begin(), interpolater);
@@ -811,13 +852,15 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Lin_No_Limiter_3D) {
     sources_and_weights[c] = wtsvec;
   }
 
-  // Create Interpolation objects
+  // Create Interpolation object
 
   Portage::Interpolate_2ndOrder<Portage::Jali_Mesh_Wrapper,
                                 Portage::Jali_Mesh_Wrapper,
                                 Portage::Jali_State_Wrapper,
                                 Portage::CELL, 3>
       interpolater(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper);
+
+  // Compute the target mesh vals
 
   interpolater.set_interpolation_variable("cellvars", Portage::NOLIMITER);
 
@@ -933,13 +976,19 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_BJ_Limiter_3D) {
                                 Portage::CELL, 3>
       interpolater(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper);
 
+  // Compute the target mesh vals
+
   interpolater.set_interpolation_variable("cellvars", Portage::NOLIMITER);
+
   Portage::transform(targetcells.begin(), targetcells.end(),
                      sources_and_weights.begin(),
                      outvals1.begin(), interpolater);
 
   interpolater.set_interpolation_variable("cellvars",
                                            Portage::BARTH_JESPERSEN);
+
+  // Compute the target mesh vals
+
   Portage::transform(targetcells.begin(), targetcells.end(),
                      sources_and_weights.begin(),
                      outvals2.begin(), interpolater);
@@ -975,430 +1024,479 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_BJ_Limiter_3D) {
 /// Second order interpolation of constant node-centered field with no
 /// limiting in 3D
 
-// TEST(Interpolate_2nd_Order, Node_Ctr_Const_No_Limiter_3D) {
-//   Jali::MeshFactory mf(MPI_COMM_WORLD);
-//   Jali::FrameworkPreference pref;
-//   pref.push_back(Jali::MSTK);
-//   if (Jali::framework_available(Jali::MSTK))
-//     mf.preference(pref);
-//   mf.included_entities({Jali::Entity_kind::EDGE,
-//                         Jali::Entity_kind::FACE,
-//                         Jali::Entity_kind::WEDGE,
-//                         Jali::Entity_kind::CORNER});
-
-//   std::shared_ptr<Jali::Mesh> source_mesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0,
-//                                                4, 4, 4);
-//   std::shared_ptr<Jali::Mesh> target_mesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0,
-//                                                5, 5, 5);
-
-//   const int nnodes_source =
-//       source_mesh->num_entities(Jali::Entity_kind::NODE,
-//                                 Jali::Entity_type::OWNED);
-//   const int nnodes_target =
-//       target_mesh->num_entities(Jali::Entity_kind::NODE,
-//                                 Jali::Entity_type::OWNED);
-
-//   // Create a state object and add the first two vectors to it
-
-//   Jali::State source_state(source_mesh);
-
-//   // Define a state vectors representing a linear function
-
-//   const double nodeval = 3.0;
-//   std::vector<double> data(nnodes_source, nodeval);
-//   Jali::StateVector<double> myvec("nodevars", source_mesh,
-//                                   Jali::Entity_kind::NODE,
-//                                   Jali::Entity_type::OWNED,
-//                                   &(data[0]));
-//   source_state.add(myvec);
-
-//   // Create a mesh wrapper
-
-//   Portage::Jali_Mesh_Wrapper sourceMeshWrapper(*source_mesh);
-//   Portage::Jali_Mesh_Wrapper targetMeshWrapper(*target_mesh);
-
-//   // Create Interpolate objects
-
-//   Portage::Interpolate_2ndOrder<Portage::Jali_Mesh_Wrapper,
-//                                 Portage::Jali_Mesh_Wrapper,
-//                                 Portage::Jali_State_Wrapper,
-//                                 Portage::NODE>
-//       interpolater(sourceMeshWrapper, targetMeshWrapper,
-//                    source_state);
-//   interpolater.set_interpolation_variable("nodevars", Portage::NOLIMITER);
-
-//   // Gather the dual cell coordinates for source and target meshes for
-//   // intersection
-
-//   std::vector<std::vector<JaliGeometry::Point>>
-//       source_dualcell_coords(nnodes_source);
-//   std::vector<std::vector<JaliGeometry::Point>>
-//       target_dualcell_coords(nnodes_target);
-
-//   // Because the meshes are rectangular we can get away with examining
-//   // the coordinates of the corners instead of the wedges
-
-//   // Also, because we will use only the bounding box of each cell to
-//   // do the search and intersection we can get away with adding all
-//   // the coordinates of the corners to list including duplicates
-
-//   for (int n = 0; n < nnodes_source; ++n) {
-//     std::vector<JaliGeometry::Point> dualcoords;
-//     std::vector<int> corners;
-//     source_mesh->node_get_corners(n, Jali::Entity_type::ALL, &corners);
-
-//     for (auto cn : corners) {
-//       std::vector<JaliGeometry::Point> cncoords;
-//       source_mesh->corner_get_coordinates(cn, &cncoords);
-//       for (auto coord : cncoords)
-//         source_dualcell_coords[n].push_back(coord);
-//     }
-//   }
-
-//   for (int n = 0; n < nnodes_target; ++n) {
-//     std::vector<JaliGeometry::Point> dualcoords;
-//     std::vector<int> corners;
-//     target_mesh->node_get_corners(n, Jali::Entity_type::ALL, &corners);
-
-//     for (auto cn : corners) {
-//       std::vector<JaliGeometry::Point> cncoords;
-//       target_mesh->corner_get_coordinates(cn, &cncoords);
-//       for (auto coord : cncoords)
-//         target_dualcell_coords[n].push_back(coord);
-//     }
-//   }
-
-//   // Interpolate from source to target mesh
-
-//   std::vector<double> outvals(nnodes_target);
-
-//   for (int n = 0; n < nnodes_target; ++n) {
-//     std::vector<int> xcells;
-//     std::vector<std::vector<double>> xwts;
-
-//     BOX_INTERSECT::intersection_moments(target_dualcell_coords[n],
-//                                         source_dualcell_coords,
-//                                         &xcells, &xwts);
-
-//     std::pair< std::vector<int> const &,
-//                std::vector<std::vector<double>> const &>
-//         nodes_and_weights(xcells, xwts);
-
-//     outvals[n] = interpolater(nodes_and_weights, n);
-//   }
-
-//   // Make sure we retrieved the correct value for each node on the
-//   // target Second order interpolation should preserve a linear field
-//   // exactly but node-centered interpolation has some quirks - the field
-//   // does not get preserved exactly at the boundary because the source
-//   // values for boundary dual cells are not specified inside the dual
-//   // cells but at one of their vertices or edges. So, check only
-//   // interior nodes
-
-//   for (int n = 0; n < nnodes_target; ++n) {
-//     JaliGeometry::Point coord;
-//     target_mesh->node_get_coordinates(n, &coord);
-//     //    if (fabs(coord[0]) < 1e-16 || fabs(1-coord[0]) < 1e-16 ||
-//     //        fabs(coord[1]) < 1e-16 || fabs(1-coord[1]) < 1.e-16 ||
-//     //        fabs(coord[2]) < 1e-16 || fabs(1-coord[2]) < 1.e-16)
-//     //      continue;
-//     EXPECT_DOUBLE_EQ(nodeval, outvals[n]);
-//   }
-// }
-
-
-// TEST(Interpolate_2nd_Order, Node_Ctr_Lin_No_Limiter_3D) {
-//   Jali::MeshFactory mf(MPI_COMM_WORLD);
-//   Jali::FrameworkPreference pref;
-//   pref.push_back(Jali::MSTK);
-//   if (Jali::framework_available(Jali::MSTK))
-//     mf.preference(pref);
-//   mf.included_entities({Jali::Entity_kind::EDGE,
-//                         Jali::Entity_kind::FACE,
-//                         Jali::Entity_kind::WEDGE,
-//                         Jali::Entity_kind::CORNER});
-
-//   std::shared_ptr<Jali::Mesh> source_mesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0,
-//                                                4, 4, 4);
-//   std::shared_ptr<Jali::Mesh> target_mesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0,
-//                                                5, 5, 5);
-
-//   const int nnodes_source =
-//       source_mesh->num_entities(Jali::Entity_kind::NODE,
-//                                 Jali::Entity_type::OWNED);
-//   const int nnodes_target =
-//       target_mesh->num_entities(Jali::Entity_kind::NODE,
-//                                 Jali::Entity_type::OWNED);
-
-//   // Create a state object and add the first two vectors to it
-
-//   Jali::State source_state(source_mesh);
-
-//   // Define a state vectors representing a linear function
-
-//   std::vector<double> data(nnodes_source);
-//   for (int n = 0; n < nnodes_source; ++n) {
-//     JaliGeometry::Point coord;
-//     source_mesh->node_get_coordinates(n, &coord);
-//     data[n] = coord[0]+coord[1]+coord[2];
-//   }
-//   Jali::StateVector<double> myvec("nodevars", source_mesh,
-//                                   Jali::Entity_kind::NODE,
-//                                   Jali::Entity_type::OWNED,
-//                                   &(data[0]));
-//   source_state.add(myvec);
-
-//   // Create a mesh wrapper
-
-//   Portage::Jali_Mesh_Wrapper sourceMeshWrapper(*source_mesh);
-//   Portage::Jali_Mesh_Wrapper targetMeshWrapper(*target_mesh);
-
-//   // Create Interpolation objects
-
-//   Portage::Interpolate_2ndOrder<Portage::Jali_Mesh_Wrapper,
-//                                 Portage::Jali_Mesh_Wrapper,
-//                                 Portage::Jali_State_Wrapper,
-//                                 Portage::NODE>
-//       interpolater(sourceMeshWrapper, targetMeshWrapper,
-//                    source_state);
-//   interpolater.set_interpolation_variable("nodevars", Portage::NOLIMITER);
-
-//   // Gather the dual cell coordinates for source and target meshes for
-//   // intersection
-
-//   std::vector<std::vector<JaliGeometry::Point>>
-//       source_dualcell_coords(nnodes_source);
-//   std::vector<std::vector<JaliGeometry::Point>>
-//       target_dualcell_coords(nnodes_target);
-
-//   // Because the meshes are rectangular we can get away with examining
-//   // the coordinates of the corners instead of the wedges
-
-//   // Also, because we will use only the bounding box of each cell to
-//   // do the search and intersection we can get away with adding all
-//   // the coordinates of the corners to list including duplicates
-
-//   for (int n = 0; n < nnodes_source; ++n) {
-//     std::vector<JaliGeometry::Point> dualcoords;
-//     std::vector<int> corners;
-//     source_mesh->node_get_corners(n, Jali::Entity_type::ALL, &corners);
-
-//     for (auto cn : corners) {
-//       std::vector<JaliGeometry::Point> cncoords;
-//       source_mesh->corner_get_coordinates(cn, &cncoords);
-//       for (auto coord : cncoords)
-//         source_dualcell_coords[n].push_back(coord);
-//     }
-//   }
-
-//   for (int n = 0; n < nnodes_target; ++n) {
-//     std::vector<JaliGeometry::Point> dualcoords;
-//     std::vector<int> corners;
-//     target_mesh->node_get_corners(n, Jali::Entity_type::ALL, &corners);
-
-//     for (auto cn : corners) {
-//       std::vector<JaliGeometry::Point> cncoords;
-//       target_mesh->corner_get_coordinates(cn, &cncoords);
-//       for (auto coord : cncoords)
-//         target_dualcell_coords[n].push_back(coord);
-//     }
-//   }
-
-//   // Interpolate from source to target mesh
-
-//   std::vector<double> outvals(nnodes_target);
-
-//   for (int n = 0; n < nnodes_target; ++n) {
-//     std::vector<int> xcells;
-//     std::vector<std::vector<double>> xwts;
-
-//     BOX_INTERSECT::intersection_moments(target_dualcell_coords[n],
-//                                         source_dualcell_coords,
-//                                         &xcells, &xwts);
-
-//     std::pair< std::vector<int> const &,
-//                std::vector<std::vector<double>> const &>
-//         nodes_and_weights(xcells, xwts);
-
-//     outvals[n] = interpolater(nodes_and_weights, n);
-//   }
-
-//   // Make sure we retrieved the correct value for each node on the
-//   // target Second order interpolation should preserve a linear field
-//   // exactly but node-centered interpolation has some quirks - the field
-//   // does not get preserved exactly at the boundary because the source
-//   // values for boundary dual cells are not specified inside the dual
-//   // cells but at one of their vertices or edges. So, check only
-//   // interior nodes
-
-//   std::vector<double> stdvals(nnodes_target);
-//   for (int n = 0; n < nnodes_target; ++n) {
-//     JaliGeometry::Point coord;
-//     target_mesh->node_get_coordinates(n, &coord);
-//     if (fabs(coord[0]) < 1e-16 || fabs(1-coord[0]) < 1e-16 ||
-//         fabs(coord[1]) < 1e-16 || fabs(1-coord[1]) < 1.e-16 ||
-//         fabs(coord[2]) < 1e-16 || fabs(1-coord[2]) < 1.e-16)
-//       continue;
-//     stdvals[n] = coord[0]+coord[1]+coord[2];
-//     EXPECT_DOUBLE_EQ(stdvals[n], outvals[n]);
-//   }
-// }
-
-
-/// Second order interpolation of discontinuous node-centered field with
-/// Barth-Jespersen limiting in 3D
-
-// TEST(Interpolate_2nd_Order, Node_Ctr_BJ_Limiter_3D) {
-//   Jali::MeshFactory mf(MPI_COMM_WORLD);
-//   Jali::FrameworkPreference pref;
-//   pref.push_back(Jali::MSTK);
-//   if (Jali::framework_available(Jali::MSTK))
-//     mf.preference(pref);
-//   mf.included_entities({Jali::Entity_kind::EDGE,
-//                         Jali::Entity_kind::FACE,
-//                         Jali::Entity_kind::WEDGE,
-//                         Jali::Entity_kind::CORNER});
-
-//   std::shared_ptr<Jali::Mesh> source_mesh = mf(0.0, 0.0, 1.0, 1.0, 4, 4);
-//   std::shared_ptr<Jali::Mesh> target_mesh = mf(0.0, 0.0, 1.0, 1.0, 5, 5);
-
-//   const int nnodes_source =
-//       source_mesh->num_entities(Jali::Entity_kind::NODE,
-//                                 Jali::Entity_type::OWNED);
-//   const int nnodes_target =
-//       target_mesh->num_entities(Jali::Entity_kind::NODE,
-//                                 Jali::Entity_type::OWNED);
-
-//   // Create a state object and add the first two vectors to it
-
-//   Jali::State source_state(source_mesh);
-
-//   // Define a state vector representing two piecewise linear functions,
-//   // where the right half has 100 times the value it would
-//   // have in the left linear function
-
-//   std::vector<double> data(nnodes_source);
-//   double minval = 1e+10, maxval = -1e+10;
-//   for (int n = 0; n < nnodes_source; ++n) {
-//     JaliGeometry::Point coord;
-//     source_mesh->node_get_coordinates(n, &coord);
-//     if (coord[0] >= 0.5)
-//       data[n] = 100*(coord[0]+coord[1]+coord[2]);
-//     else
-//       data[n] = coord[0]+coord[1]+coord[2];
-//     if (data[n] < minval) minval = data[n];
-//     if (data[n] > maxval) maxval = data[n];
-//   }
-//   Jali::StateVector<double> myvec("nodevars", source_mesh,
-//                                   Jali::Entity_kind::NODE,
-//                                   Jali::Entity_type::OWNED,
-//                                   &(data[0]));
-//   source_state.add(myvec);
-
-//   // Create a mesh wrapper
-
-//   Portage::Jali_Mesh_Wrapper sourceMeshWrapper(*source_mesh);
-//   Portage::Jali_Mesh_Wrapper targetMeshWrapper(*target_mesh);
-
-//   // Create Interpolation objects - one with no limiter and one with limiter
-
-//   Portage::Interpolate_2ndOrder<Portage::Jali_Mesh_Wrapper,
-//                                 Portage::Jali_Mesh_Wrapper,
-//                                 Portage::Jali_State_Wrapper,
-//                                 Portage::NODE>
-//                          interpolater1(sourceMeshWrapper, targetMeshWrapper,
-//                                        source_state);
-//   interpolater.set_interpolation_variable("nodevars", Portage::NOLIMITER);
-//   Portage::Interpolate_2ndOrder<Portage::Jali_Mesh_Wrapper,
-//                                 Portage::Jali_Mesh_Wrapper,
-//                                 Portage::Jali_State_Wrapper,
-//                                 Portage::NODE>
-//                          interpolater2(sourceMeshWrapper, targetMeshWrapper,
-//                                        source_state);
-//   interpolater.set_interpolation_variable("nodevars", Portage::BARTH_JESPERSEN);
-
-//   // Gather the dual cell coordinates for source and target meshes for
-//   // intersection
-
-//   std::vector<std::vector<JaliGeometry::Point>>
-//                          source_dualcell_coords(nnodes_source);
-//   std::vector<std::vector<JaliGeometry::Point>>
-//                          target_dualcell_coords(nnodes_target);
-
-//   // Because the meshes are rectangular we can get away with examining
-//   // the coordinates of the corners instead of the wedges
-
-//   // Also, because we will use only the bounding box of each cell to
-//   // do the search and intersection we can get away with adding all
-//   // the coordinates of the corners to list including duplicates
-
-//   for (int n = 0; n < nnodes_source; ++n) {
-//     std::vector<JaliGeometry::Point> dualcoords;
-//     std::vector<int> corners;
-//     source_mesh->node_get_corners(n, Jali::Entity_type::ALL, &corners);
-
-//     for (auto cn : corners) {
-//       std::vector<JaliGeometry::Point> cncoords;
-//       source_mesh->corner_get_coordinates(cn, &cncoords);
-//       for (auto coord : cncoords)
-//         source_dualcell_coords[n].push_back(coord);
-//     }
-//   }
-
-//   for (int n = 0; n < nnodes_target; ++n) {
-//     std::vector<JaliGeometry::Point> dualcoords;
-//     std::vector<int> corners;
-//     target_mesh->node_get_corners(n, Jali::Entity_type::ALL, &corners);
-
-//     for (auto cn : corners) {
-//       std::vector<JaliGeometry::Point> cncoords;
-//       target_mesh->corner_get_coordinates(cn, &cncoords);
-//       for (auto coord : cncoords)
-//         target_dualcell_coords[n].push_back(coord);
-//     }
-//   }
-
-//   // Interpolate from source to target mesh
-
-//   std::vector<double> outvals1(nnodes_target);
-//   std::vector<double> outvals2(nnodes_target);
-
-//   for (int n = 0; n < nnodes_target; ++n) {
-//     std::vector<int> xcells;
-//     std::vector<std::vector<double>> xwts;
-
-//     BOX_INTERSECT::intersection_moments(target_dualcell_coords[n],
-//                                         source_dualcell_coords,
-//                                         &xcells, &xwts);
-
-//     std::pair< std::vector<int> const &,
-//                std::vector<std::vector<double>> const &>
-//         nodes_and_weights(xcells, xwts);
-
-//     outvals1[n] = interpolater1(nodes_and_weights, n);
-//     outvals2[n] = interpolater2(nodes_and_weights, n);
-//   }
-
-//   // Check if we violated the bounds on at least one node in the
-//   // unlimited interpolate and if we respected the bounds on all nodes in
-//   // the limited case
-
-//   bool outofbounds_unlimited = false;
-//   for (int n = 0; n < nnodes_target; ++n) {
-//     if (outvals1[n] < minval  || outvals1[n] > maxval) {
-//       outofbounds_unlimited = true;
-//       break;
-//     }
-//   }
-
-//   bool inbounds_limited = true;
-//   for (int n = 0; n < nnodes_target; ++n) {
-//     if (outvals2[n] < minval  || outvals2[n] > maxval) {
-//       inbounds_limited = false;
-//       break;
-//     }
-//   }
-
-//   EXPECT_TRUE(outofbounds_unlimited);
-//   EXPECT_TRUE(inbounds_limited);
-// }
+TEST(Interpolate_2nd_Order, Node_Ctr_Const_No_Limiter_3D) {
+  Jali::MeshFactory mf(MPI_COMM_WORLD);
+  Jali::FrameworkPreference pref;
+  pref.push_back(Jali::MSTK);
+  if (Jali::framework_available(Jali::MSTK))
+    mf.preference(pref);
+  mf.included_entities({Jali::Entity_kind::EDGE,
+                        Jali::Entity_kind::FACE,
+                        Jali::Entity_kind::WEDGE,
+                        Jali::Entity_kind::CORNER});
+
+  std::shared_ptr<Jali::Mesh> source_mesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0,
+                                               4, 4, 4);
+  std::shared_ptr<Jali::Mesh> target_mesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0,
+                                               5, 5, 5);
+
+  const int nnodes_source =
+      source_mesh->num_entities(Jali::Entity_kind::NODE,
+                                Jali::Entity_type::PARALLEL_OWNED);
+  const int nnodes_target =
+      target_mesh->num_entities(Jali::Entity_kind::NODE,
+                                Jali::Entity_type::PARALLEL_OWNED);
+
+  Jali::Entity_ID_List const& targetnodes =
+      target_mesh->nodes<Jali::Entity_type::ALL>();
+
+  // Create a state object and add the first two vectors to it
+
+  Jali::State source_state(source_mesh);
+
+  // Define a state vectors representing a linear function
+
+  const double nodeval = 3.0;
+  std::vector<double> data(nnodes_source, nodeval);
+  Jali::StateVector<double> myvec("nodevars", source_mesh,
+                                  Jali::Entity_kind::NODE,
+                                  Jali::Entity_type::PARALLEL_OWNED,
+                                  &(data[0]));
+  source_state.add(myvec);
+
+  // Create a mesh wrapper
+
+  Portage::Jali_Mesh_Wrapper sourceMeshWrapper(*source_mesh);
+  Portage::Jali_Mesh_Wrapper targetMeshWrapper(*target_mesh);
+
+  // Gather the dual cell coordinates for source and target meshes for
+  // intersection
+
+  std::vector<std::vector<JaliGeometry::Point>>
+      source_dualcell_coords(nnodes_source);
+  std::vector<std::vector<JaliGeometry::Point>>
+      target_dualcell_coords(nnodes_target);
+
+  // Because the meshes are rectangular we can get away with examining
+  // the coordinates of the corners instead of the wedges
+
+  // Also, because we will use only the bounding box of each cell to
+  // do the search and intersection we can get away with adding all
+  // the coordinates of the corners to list including duplicates
+
+  for (int n = 0; n < nnodes_source; ++n) {
+    std::vector<JaliGeometry::Point> dualcoords;
+    std::vector<int> corners;
+    source_mesh->node_get_corners(n, Jali::Entity_type::ALL, &corners);
+
+    for (auto cn : corners) {
+      std::vector<JaliGeometry::Point> cncoords;
+      source_mesh->corner_get_coordinates(cn, &cncoords);
+      for (auto coord : cncoords)
+        source_dualcell_coords[n].push_back(coord);
+    }
+  }
+
+  for (int n = 0; n < nnodes_target; ++n) {
+    std::vector<JaliGeometry::Point> dualcoords;
+    std::vector<int> corners;
+    target_mesh->node_get_corners(n, Jali::Entity_type::ALL, &corners);
+
+    for (auto cn : corners) {
+      std::vector<JaliGeometry::Point> cncoords;
+      target_mesh->corner_get_coordinates(cn, &cncoords);
+      for (auto coord : cncoords)
+        target_dualcell_coords[n].push_back(coord);
+    }
+  }
+
+  // Interpolate from source to target mesh
+
+  std::vector<double> outvals(nnodes_target);
+  std::vector<std::vector<Portage::Weights_t>>
+      sources_and_weights(nnodes_target);
+
+  for (int n = 0; n < nnodes_target; ++n) {
+    std::vector<int> xnodes;
+    std::vector<std::vector<double>> xweights;
+
+    BOX_INTERSECT::intersection_moments(target_dualcell_coords[n],
+                                        source_dualcell_coords,
+                                        &xnodes, &xweights);
+
+    std::vector<Portage::Weights_t> wtsvec(xnodes.size());
+    for (int i = 0; i < xnodes.size(); ++i) {
+      wtsvec[i].entityID = xnodes[i];
+      wtsvec[i].weights = xweights[i];
+    }
+    sources_and_weights[n] = wtsvec;
+  }
+
+  // Create Interpolation object
+
+  Portage::Interpolate_2ndOrder<Portage::Jali_Mesh_Wrapper,
+                                Portage::Jali_Mesh_Wrapper,
+                                Portage::Jali_State_Wrapper,
+                                Portage::NODE, 3>
+      interpolater(sourceMeshWrapper, targetMeshWrapper,
+                   source_state);
+
+  // Compute the target mesh vals
+
+  interpolater.set_interpolation_variable("nodevars", Portage::NOLIMITER);
+
+  Portage::transform(targetnodes.begin(), targetnodes.end(),
+                     sources_and_weights.begin(),
+                     outvals.begin(), interpolater);
+
+  // Make sure we retrieved the correct value for each node on the
+  // target Second order interpolation should preserve a linear field
+  // exactly but node-centered interpolation has some quirks - the field
+  // does not get preserved exactly at the boundary because the source
+  // values for boundary dual cells are not specified inside the dual
+  // cells but at one of their vertices or edges. So, check only
+  // interior nodes
+
+  for (int n = 0; n < nnodes_target; ++n) {
+    JaliGeometry::Point coord;
+    target_mesh->node_get_coordinates(n, &coord);
+    if (fabs(coord[0]) < 1e-16 || fabs(1-coord[0]) < 1e-16 ||
+        fabs(coord[1]) < 1e-16 || fabs(1-coord[1]) < 1.e-16 ||
+        fabs(coord[2]) < 1e-16 || fabs(1-coord[2]) < 1.e-16)
+      continue;
+    EXPECT_NEAR(nodeval, outvals[n], TOL);
+  }
+}
+
+
+TEST(Interpolate_2nd_Order, Node_Ctr_Lin_No_Limiter_3D) {
+  Jali::MeshFactory mf(MPI_COMM_WORLD);
+  Jali::FrameworkPreference pref;
+  pref.push_back(Jali::MSTK);
+  if (Jali::framework_available(Jali::MSTK))
+    mf.preference(pref);
+  mf.included_entities({Jali::Entity_kind::EDGE,
+                        Jali::Entity_kind::FACE,
+                        Jali::Entity_kind::WEDGE,
+                        Jali::Entity_kind::CORNER});
+
+  std::shared_ptr<Jali::Mesh> source_mesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0,
+                                               4, 4, 4);
+  std::shared_ptr<Jali::Mesh> target_mesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0,
+                                               5, 5, 5);
+
+  const int nnodes_source =
+      source_mesh->num_entities(Jali::Entity_kind::NODE,
+                                Jali::Entity_type::PARALLEL_OWNED);
+  const int nnodes_target =
+      target_mesh->num_entities(Jali::Entity_kind::NODE,
+                                Jali::Entity_type::PARALLEL_OWNED);
+
+  Jali::Entity_ID_List const& targetnodes =
+      target_mesh->nodes<Jali::Entity_type::ALL>();
+
+  // Create a state object and add the first two vectors to it
+
+  Jali::State source_state(source_mesh);
+
+  // Define a state vectors representing a linear function
+
+  std::vector<double> data(nnodes_source);
+  for (int n = 0; n < nnodes_source; ++n) {
+    JaliGeometry::Point coord;
+    source_mesh->node_get_coordinates(n, &coord);
+    data[n] = coord[0]+coord[1]+coord[2];
+  }
+  Jali::StateVector<double> myvec("nodevars", source_mesh,
+                                  Jali::Entity_kind::NODE,
+                                  Jali::Entity_type::PARALLEL_OWNED,
+                                  &(data[0]));
+  source_state.add(myvec);
+
+  // Create a mesh wrapper
+
+  Portage::Jali_Mesh_Wrapper sourceMeshWrapper(*source_mesh);
+  Portage::Jali_Mesh_Wrapper targetMeshWrapper(*target_mesh);
+
+  // Gather the dual cell coordinates for source and target meshes for
+  // intersection
+
+  std::vector<std::vector<JaliGeometry::Point>>
+      source_dualcell_coords(nnodes_source);
+  std::vector<std::vector<JaliGeometry::Point>>
+      target_dualcell_coords(nnodes_target);
+
+  // Because the meshes are rectangular we can get away with examining
+  // the coordinates of the corners instead of the wedges
+
+  // Also, because we will use only the bounding box of each cell to
+  // do the search and intersection we can get away with adding all
+  // the coordinates of the corners to list including duplicates
+
+  for (int n = 0; n < nnodes_source; ++n) {
+    std::vector<JaliGeometry::Point> dualcoords;
+    std::vector<int> corners;
+    source_mesh->node_get_corners(n, Jali::Entity_type::ALL, &corners);
+
+    for (auto cn : corners) {
+      std::vector<JaliGeometry::Point> cncoords;
+      source_mesh->corner_get_coordinates(cn, &cncoords);
+      for (auto coord : cncoords)
+        source_dualcell_coords[n].push_back(coord);
+    }
+  }
+
+  for (int n = 0; n < nnodes_target; ++n) {
+    std::vector<JaliGeometry::Point> dualcoords;
+    std::vector<int> corners;
+    target_mesh->node_get_corners(n, Jali::Entity_type::ALL, &corners);
+
+    for (auto cn : corners) {
+      std::vector<JaliGeometry::Point> cncoords;
+      target_mesh->corner_get_coordinates(cn, &cncoords);
+      for (auto coord : cncoords)
+        target_dualcell_coords[n].push_back(coord);
+    }
+  }
+
+  // Interpolate from source to target mesh
+
+  std::vector<double> outvals(nnodes_target);
+  std::vector<std::vector<Portage::Weights_t>>
+      sources_and_weights(nnodes_target);
+
+  for (int n = 0; n < nnodes_target; ++n) {
+    std::vector<int> xnodes;
+    std::vector<std::vector<double>> xweights;
+
+    BOX_INTERSECT::intersection_moments(target_dualcell_coords[n],
+                                        source_dualcell_coords,
+                                        &xnodes, &xweights);
+
+
+    std::vector<Portage::Weights_t> wtsvec(xnodes.size());
+    for (int i = 0; i < xnodes.size(); ++i) {
+      wtsvec[i].entityID = xnodes[i];
+      wtsvec[i].weights = xweights[i];
+    }
+    sources_and_weights[n] = wtsvec;
+  }
+
+
+  // Create Interpolation object
+
+  Portage::Interpolate_2ndOrder<Portage::Jali_Mesh_Wrapper,
+                                Portage::Jali_Mesh_Wrapper,
+                                Portage::Jali_State_Wrapper,
+                                Portage::NODE, 3>
+      interpolater(sourceMeshWrapper, targetMeshWrapper,
+                   source_state);
+
+  // Compute the target mesh vals
+
+  interpolater.set_interpolation_variable("nodevars", Portage::NOLIMITER);
+
+  Portage::transform(targetnodes.begin(), targetnodes.end(),
+                     sources_and_weights.begin(),
+                     outvals.begin(), interpolater);
+
+  // Make sure we retrieved the correct value for each node on the
+  // target Second order interpolation should preserve a linear field
+  // exactly but node-centered interpolation has some quirks - the field
+  // does not get preserved exactly at the boundary because the source
+  // values for boundary dual cells are not specified inside the dual
+  // cells but at one of their vertices or edges. So, check only
+  // interior nodes
+
+  std::vector<double> stdvals(nnodes_target);
+  for (int n = 0; n < nnodes_target; ++n) {
+    JaliGeometry::Point coord;
+    target_mesh->node_get_coordinates(n, &coord);
+    if (fabs(coord[0]) < 1e-16 || fabs(1-coord[0]) < 1e-16 ||
+        fabs(coord[1]) < 1e-16 || fabs(1-coord[1]) < 1.e-16 ||
+        fabs(coord[2]) < 1e-16 || fabs(1-coord[2]) < 1.e-16)
+      continue;
+    stdvals[n] = coord[0]+coord[1]+coord[2];
+    EXPECT_NEAR(stdvals[n], outvals[n], TOL);
+  }
+}
+
+
+// Second order interpolation of discontinuous node-centered field with
+// Barth-Jespersen limiting in 3D
+
+TEST(Interpolate_2nd_Order, Node_Ctr_BJ_Limiter_3D) {
+  Jali::MeshFactory mf(MPI_COMM_WORLD);
+  Jali::FrameworkPreference pref;
+  pref.push_back(Jali::MSTK);
+  if (Jali::framework_available(Jali::MSTK))
+    mf.preference(pref);
+  mf.included_entities({Jali::Entity_kind::EDGE,
+                        Jali::Entity_kind::FACE,
+                        Jali::Entity_kind::WEDGE,
+                        Jali::Entity_kind::CORNER});
+
+  std::shared_ptr<Jali::Mesh> source_mesh = mf(0.0, 0.0, 1.0, 1.0, 4, 4);
+  std::shared_ptr<Jali::Mesh> target_mesh = mf(0.0, 0.0, 1.0, 1.0, 5, 5);
+
+  const int nnodes_source =
+      source_mesh->num_entities(Jali::Entity_kind::NODE,
+                                Jali::Entity_type::PARALLEL_OWNED);
+  const int nnodes_target =
+      target_mesh->num_entities(Jali::Entity_kind::NODE,
+                                Jali::Entity_type::PARALLEL_OWNED);
+
+  Jali::Entity_ID_List const& targetnodes =
+      target_mesh->nodes<Jali::Entity_type::ALL>();
+
+  // Create a state object and add the first two vectors to it
+
+  Jali::State source_state(source_mesh);
+
+  // Define a state vector representing two piecewise linear functions,
+  // where the right half has 100 times the value it would
+  // have in the left linear function
+
+  std::vector<double> data(nnodes_source);
+  double minval = 1e+10, maxval = -1e+10;
+  for (int n = 0; n < nnodes_source; ++n) {
+    JaliGeometry::Point coord;
+    source_mesh->node_get_coordinates(n, &coord);
+    if (coord[0] >= 0.5)
+      data[n] = 100*(coord[0]+coord[1]+coord[2]);
+    else
+      data[n] = coord[0]+coord[1]+coord[2];
+    if (data[n] < minval) minval = data[n];
+    if (data[n] > maxval) maxval = data[n];
+  }
+  Jali::StateVector<double> myvec("nodevars", source_mesh,
+                                  Jali::Entity_kind::NODE,
+                                  Jali::Entity_type::PARALLEL_OWNED,
+                                  &(data[0]));
+  source_state.add(myvec);
+
+  // Create a mesh wrapper
+
+  Portage::Jali_Mesh_Wrapper sourceMeshWrapper(*source_mesh);
+  Portage::Jali_Mesh_Wrapper targetMeshWrapper(*target_mesh);
+
+  // Gather the dual cell coordinates for source and target meshes for
+  // intersection
+
+  std::vector<std::vector<JaliGeometry::Point>>
+                         source_dualcell_coords(nnodes_source);
+  std::vector<std::vector<JaliGeometry::Point>>
+                         target_dualcell_coords(nnodes_target);
+
+  // Because the meshes are rectangular we can get away with examining
+  // the coordinates of the corners instead of the wedges
+
+  // Also, because we will use only the bounding box of each cell to
+  // do the search and intersection we can get away with adding all
+  // the coordinates of the corners to list including duplicates
+
+  for (int n = 0; n < nnodes_source; ++n) {
+    std::vector<JaliGeometry::Point> dualcoords;
+    std::vector<int> corners;
+    source_mesh->node_get_corners(n, Jali::Entity_type::ALL, &corners);
+
+    for (auto cn : corners) {
+      std::vector<JaliGeometry::Point> cncoords;
+      source_mesh->corner_get_coordinates(cn, &cncoords);
+      for (auto coord : cncoords)
+        source_dualcell_coords[n].push_back(coord);
+    }
+  }
+
+  for (int n = 0; n < nnodes_target; ++n) {
+    std::vector<JaliGeometry::Point> dualcoords;
+    std::vector<int> corners;
+    target_mesh->node_get_corners(n, Jali::Entity_type::ALL, &corners);
+
+    for (auto cn : corners) {
+      std::vector<JaliGeometry::Point> cncoords;
+      target_mesh->corner_get_coordinates(cn, &cncoords);
+      for (auto coord : cncoords)
+        target_dualcell_coords[n].push_back(coord);
+    }
+  }
+
+  // Interpolate from source to target mesh
+
+  std::vector<double> outvals1(nnodes_target);
+  std::vector<double> outvals2(nnodes_target);
+  std::vector<std::vector<Portage::Weights_t>>
+      sources_and_weights(nnodes_target);
+
+  for (int n = 0; n < nnodes_target; ++n) {
+    std::vector<int> xnodes;
+    std::vector<std::vector<double>> xweights;
+
+    BOX_INTERSECT::intersection_moments(target_dualcell_coords[n],
+                                        source_dualcell_coords,
+                                        &xnodes, &xweights);
+
+
+    std::vector<Portage::Weights_t> wtsvec(xnodes.size());
+    for (int i = 0; i < xnodes.size(); ++i) {
+      wtsvec[i].entityID = xnodes[i];
+      wtsvec[i].weights = xweights[i];
+    }
+    sources_and_weights[n] = wtsvec;
+  }
+
+  // Create Interpolation objects - one with no limiter and one with limiter
+
+  Portage::Interpolate_2ndOrder<Portage::Jali_Mesh_Wrapper,
+                                Portage::Jali_Mesh_Wrapper,
+                                Portage::Jali_State_Wrapper,
+                                Portage::NODE, 2>
+                         interpolater1(sourceMeshWrapper, targetMeshWrapper,
+                                       source_state);
+
+  Portage::Interpolate_2ndOrder<Portage::Jali_Mesh_Wrapper,
+                                Portage::Jali_Mesh_Wrapper,
+                                Portage::Jali_State_Wrapper,
+                                Portage::NODE, 2>
+                         interpolater2(sourceMeshWrapper, targetMeshWrapper,
+                                       source_state);
+
+  // Compute the target mesh vals
+
+  interpolater1.set_interpolation_variable("nodevars", Portage::NOLIMITER);
+
+  Portage::transform(targetnodes.begin(), targetnodes.end(),
+                     sources_and_weights.begin(),
+                     outvals1.begin(), interpolater1);
+
+  // Compute the target mesh vals
+
+  interpolater2.set_interpolation_variable("nodevars", Portage::BARTH_JESPERSEN);
+
+  Portage::transform(targetnodes.begin(), targetnodes.end(),
+                     sources_and_weights.begin(),
+                     outvals2.begin(), interpolater2);
+
+  // Check if we violated the bounds on at least one node in the
+  // unlimited interpolate and if we respected the bounds on all nodes in
+  // the limited case
+
+  bool outofbounds_unlimited = false;
+  for (int n = 0; n < nnodes_target; ++n) {
+    if (outvals1[n] < minval  || outvals1[n] > maxval) {
+      outofbounds_unlimited = true;
+      break;
+    }
+  }
+
+  bool inbounds_limited = true;
+  for (int n = 0; n < nnodes_target; ++n) {
+    if (outvals2[n] < minval  || outvals2[n] > maxval) {
+      inbounds_limited = false;
+      break;
+    }
+  }
+
+  EXPECT_TRUE(outofbounds_unlimited);
+  EXPECT_TRUE(inbounds_limited);
+}
