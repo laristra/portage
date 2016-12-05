@@ -71,5 +71,11 @@ if (ENABLE_UNIT_TESTS)
      LIBRARIES portage
      POLICY MPI
      THREADS 1)
+   # Simple State wrapper
+   cinch_add_unit(test_simple_state_wrapper
+     SOURCES state/simple_state/test/test_simple_state_wrapper.cc
+     LIBRARIES portage
+     POLICY MPI
+     THREADS 1)
 endif(ENABLE_UNIT_TESTS)
 
