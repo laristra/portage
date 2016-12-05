@@ -80,7 +80,8 @@ class Interpolate_1stOrder {
       source_mesh_(source_mesh),
       target_mesh_(target_mesh),
       source_state_(source_state),
-      interp_var_name_("VariableNameNotSet") {}
+      interp_var_name_("VariableNameNotSet"),
+      source_vals_(nullptr) {}
 
 
   /// Copy constructor (disabled)
@@ -113,14 +114,9 @@ class Interpolate_1stOrder {
     entity and a source entity consists of two or more disjoint pieces
     @param[in] targetCellId The index of the target cell.
 
-    @todo Cleanup the datatype for sources_and_weights - it is somewhat
-    confusing.
-    @todo SHOULD WE USE boost::tuple FOR SENDING IN SOURCES_AND_WEIGHTS SO
-    THAT WE CAN USE boost::zip_iterator TO ITERATOR OVER IT?
-
    */
 
-  double operator() (int const targetCellId,
+  double operator() (int const targetEntityId,
                      std::vector<Weights_t> const & sources_and_weights) const;
 
  private:
@@ -142,6 +138,99 @@ template<typename SourceMeshType, typename TargetMeshType,
          typename StateType, Entity_kind on_what, long D>
 double Interpolate_1stOrder<SourceMeshType, TargetMeshType, StateType,
                             on_what, D> :: operator()
+    (int const targetEntityID,
+     std::vector<Weights_t> const & sources_and_weights) const {
+  
+  std::cerr << "Interpolation operator not implemented for this entity type"
+            << std::endl;
+  
+  return 0.0;
+}
+
+
+
+
+//////////////////////////////////////////////////////////////////////////////
+/*!
+  @brief Interpolate_1stOrder specialization for cells
+*/
+
+template<typename SourceMeshType, typename TargetMeshType, typename StateType,
+         long D>
+class Interpolate_1stOrder<SourceMeshType, TargetMeshType, StateType, CELL, D> {
+ public:
+  /*!
+    @brief Constructor.
+    @param[in] source_mesh The input mesh.
+    @param[in] target_mesh The output mesh.
+    @param[in] source_state The state manager for data on the input mesh.
+    @param[in] interp_var_name The string name of the variable to interpolate.
+    @param[in] sources_and_weights Vector of source entities and their weights for each target entity
+   */
+  Interpolate_1stOrder(SourceMeshType const & source_mesh,
+                       TargetMeshType const & target_mesh,
+                       StateType const & source_state) :
+      source_mesh_(source_mesh),
+      target_mesh_(target_mesh),
+      source_state_(source_state),
+      interp_var_name_("VariableNameNotSet"),
+      source_vals_(nullptr) {}
+
+
+  /// Copy constructor (disabled)
+  //  Interpolate_1stOrder(const Interpolate_1stOrder &) = delete;
+
+  /// Assignment operator (disabled)
+  //  Interpolate_1stOrder & operator = (const Interpolate_1stOrder &) = delete;
+
+  /// Destructor
+  ~Interpolate_1stOrder() {}
+
+  /// Set the variable name to be interpolated
+
+  void set_interpolation_variable(std::string const & interp_var_name) {
+    interp_var_name_ = interp_var_name;
+    source_state_.get_data(CELL, interp_var_name, &source_vals_);
+  }
+
+  /*!
+    @brief Functor to do the actual interpolation.
+    @param[in] sources_and_weights A pair of two vectors.
+    @c sources_and_weights.first() is the vector of source entity indices
+    in the source mesh that will contribute to the current target mesh entity.
+    @c sources_and_weights.second() is the vector of vector weights for each
+    of the source mesh entities in @c sources_and_weights.first().  Each element
+    of the weights vector is a moment of the source data over the target
+    entity; for first order interpolation, only the first element (or zero'th
+    moment) of the weights vector (i.e. the volume of intersection) is used.
+    Source entities may be repeated in the list if the intersection of a target
+    entity and a source entity consists of two or more disjoint pieces
+    @param[in] targetCellId The index of the target cell.
+
+   */
+
+  double operator() (int const targetCellId,
+                     std::vector<Weights_t> const & sources_and_weights) const;
+
+ private:
+  SourceMeshType const & source_mesh_;
+  TargetMeshType const & target_mesh_;
+  StateType const & source_state_;
+  std::string interp_var_name_;
+  double const * source_vals_;
+};
+
+
+/*!
+  @brief 1st order interpolation operator on cells
+  @param[in] sources_and_weights Pair containing vector of contributing source
+  cells and vector of contribution weights
+*/
+
+template<typename SourceMeshType, typename TargetMeshType, typename StateType,
+         long D>
+double Interpolate_1stOrder<SourceMeshType, TargetMeshType, StateType,
+                            CELL, D> :: operator()
     (int const targetCellID,
      std::vector<Weights_t> const & sources_and_weights) const {
 
@@ -169,6 +258,119 @@ double Interpolate_1stOrder<SourceMeshType, TargetMeshType, StateType,
 
   return val;
 }
+//////////////////////////////////////////////////////////////////////////////
+
+
+
+//////////////////////////////////////////////////////////////////////////////
+/*!
+  @brief Interpolate_1stOrder specialization for nodes
+*/
+
+template<typename SourceMeshType, typename TargetMeshType, typename StateType,
+         long D>
+class Interpolate_1stOrder<SourceMeshType, TargetMeshType, StateType, NODE, D> {
+ public:
+  /*!
+    @brief Constructor.
+    @param[in] source_mesh The input mesh.
+    @param[in] target_mesh The output mesh.
+    @param[in] source_state The state manager for data on the input mesh.
+    @param[in] interp_var_name The string name of the variable to interpolate.
+    @param[in] sources_and_weights Vector of source entities and their weights for each target entity
+   */
+  Interpolate_1stOrder(SourceMeshType const & source_mesh,
+                       TargetMeshType const & target_mesh,
+                       StateType const & source_state) :
+      source_mesh_(source_mesh),
+      target_mesh_(target_mesh),
+      source_state_(source_state),
+      interp_var_name_("VariableNameNotSet"),
+      source_vals_(nullptr) {}
+
+
+  /// Copy constructor (disabled)
+  //  Interpolate_1stOrder(const Interpolate_1stOrder &) = delete;
+
+  /// Assignment operator (disabled)
+  //  Interpolate_1stOrder & operator = (const Interpolate_1stOrder &) = delete;
+
+  /// Destructor
+  ~Interpolate_1stOrder() {}
+
+  /// Set the variable name to be interpolated
+
+  void set_interpolation_variable(std::string const & interp_var_name) {
+    interp_var_name_ = interp_var_name;
+    source_state_.get_data(NODE, interp_var_name, &source_vals_);
+  }
+
+  /*!
+    @brief Functor to do the actual interpolation.
+    @param[in] sources_and_weights A pair of two vectors.
+    @c sources_and_weights.first() is the vector of source entity indices
+    in the source mesh that will contribute to the current target mesh entity.
+    @c sources_and_weights.second() is the vector of vector weights for each
+    of the source mesh entities in @c sources_and_weights.first().  Each element
+    of the weights vector is a moment of the source data over the target
+    entity; for first order interpolation, only the first element (or zero'th
+    moment) of the weights vector (i.e. the volume of intersection) is used.
+    Source entities may be repeated in the list if the intersection of a target
+    entity and a source entity consists of two or more disjoint pieces
+    @param[in] targetCellId The index of the target cell.
+
+   */
+
+  double operator() (int const targetNodeId,
+                     std::vector<Weights_t> const & sources_and_weights) const;
+
+ private:
+  SourceMeshType const & source_mesh_;
+  TargetMeshType const & target_mesh_;
+  StateType const & source_state_;
+  std::string interp_var_name_;
+  double const * source_vals_;
+};
+
+
+/*!
+  @brief 1st order interpolation operator on nodes
+*/
+
+template<typename SourceMeshType, typename TargetMeshType, typename StateType,
+         long D>
+double Interpolate_1stOrder<SourceMeshType, TargetMeshType, StateType,
+                            NODE, D> :: operator()
+    (int const targetNodeID,
+     std::vector<Weights_t> const & sources_and_weights) const {
+
+  int nsrcdualcells = sources_and_weights.size();
+  if (!nsrcdualcells) {
+#ifdef DEBUG
+    std::cerr << "WARNING: No source nodes contribute to target node." <<
+        std::endl;
+#endif
+    return 0.0;
+  }
+
+  // contribution of the source node (dual cell) is its field value
+  // weighted by its "weight" (in this case, the 0th
+  // moment/area/volume of its intersection with the target dual cell)
+
+  double val = 0.0;
+  for (auto const& wt : sources_and_weights) {
+    int srcnode = wt.entityID;
+    std::vector<double> pair_weights = wt.weights;
+    val += source_vals_[srcnode] * pair_weights[0];  // 1st order
+  }
+
+  // Normalize the value by volume of the target dual cell
+
+  val /= target_mesh_.dual_cell_volume(targetNodeID);
+
+  return val;
+}
+//////////////////////////////////////////////////////////////////////////////
 
 
 }  // namespace Portage

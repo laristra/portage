@@ -586,8 +586,8 @@ class Driver {
             search(sourceDualWrapper, targetDualWrapper);
       SearchFunctor<Search<Dim, Portage::MeshWrapperDual<SourceMesh_Wrapper>, MeshWrapperDual<TargetMesh_Wrapper>>> 
             searchfunctor(&search);
-      Portage::transform((counting_iterator)(target_mesh_.begin(CELL)),
-                         (counting_iterator)(target_mesh_.end(CELL)),
+      Portage::transform((counting_iterator)(target_mesh_.begin(NODE)),
+                         (counting_iterator)(target_mesh_.end(NODE)),
                          candidates.begin(), searchfunctor);   
       gettimeofday(&end_timeval, 0);
       timersub(&end_timeval, &begin_timeval, &diff_timeval);

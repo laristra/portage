@@ -35,8 +35,6 @@ using Portage::collate;
 using Portage::argsort;
 using Portage::reorder;
 
-/***********************Node centered remap does not work--is it because the "nodedata field is not set??*****************amh FIXME*/
-
 int usage() {
     std::printf("Usage: shotshellapp example-number input-mesh output-mesh");
     std::printf(" [output?] [unit?]\n");
@@ -49,7 +47,8 @@ int usage() {
     return 1;
 }
 
-//This is a 2-D test!  Find the example data in test_data/shotshell.exo, shotshell-v.exo.
+// This is a 2-D test!  Find the example data in
+// test_data/shotshell.exo, shotshell-v.exo.
 
 int main(int argc, char** argv) {
 
@@ -72,7 +71,16 @@ int main(int argc, char** argv) {
       ((std::string(argv[5]) == "y") ? true : false)
       : false;
 
+  // CELL-centered or NODE-centered remapping?
+
+  Jali::Entity_kind entityKind =
+      (example == 0) || (example == 2) || (example == 3) ?
+      Jali::Entity_kind::CELL : Jali::Entity_kind::NODE;
+
+
+
   const double TOL = 1e-4;
+
 
   // Initialize MPI
   int mpi_init_flag;
@@ -82,10 +90,6 @@ int main(int argc, char** argv) {
   int numpe, rank;
   MPI_Comm_size(MPI_COMM_WORLD, &numpe);
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-  if (numpe > 1) {
-      std::printf("error - only 1 mpi rank is allowed\n");
-      std::exit(1);
-  }
 
   std::printf("starting shotshellapp...\n");
   std::printf("running example %d\n", example);
@@ -111,164 +115,244 @@ int main(int argc, char** argv) {
       targetMeshWrapper.num_owned_nodes() << std::endl;
 
   Jali::State sourceState(sourceMesh);
-  std::vector<double> sourceData(sourceMeshWrapper.num_owned_cells(), 0);
+  Jali::State targetState(targetMesh);
+
 
   JaliGeometry::Point coord;
 
+  if (entityKind == Jali::Entity_kind::CELL) {
+    
+    int ncall = sourceMeshWrapper.num_owned_cells() +
+        sourceMeshWrapper.num_ghost_cells();
+
+    std::vector<double> sourceData(ncall, 0);
+
 #ifdef FIXED_SIZE_EXAMPLE
-  for (int i=0; i < 3034; i++) {
-    coord = sourceMesh->cell_centroid(i);
-    double x = coord[0];
-    double y = coord[1];
-    double z = (inputDim == 3) ? coord[2] : 0.0;
-    sourceData[i] = std::sqrt(x*x+y*y+z*z);
-  }
-  for (int i=3034; i < 4646; i++) {
-    coord = sourceMesh->cell_centroid(i);
-    double x = coord[0];
-    double y = coord[1];
-    double z = (inputDim == 3) ? coord[2] : 1.0;
-    sourceData[i] = x*y*z;
-  }
-  for (int i=4646; i < 5238; i++) {
-    coord = sourceMesh->cell_centroid(i);
-    double x = coord[0];
-    double y = coord[1];
-    double z = (inputDim == 3) ? coord[2] : 0.0;
-    sourceData[i] = sin(x+y+z);
-  }
+    for (int i = 0; i < 3034; i++) {
+      coord = sourceMesh->cell_centroid(i);
+      double x = coord[0];
+      double y = coord[1];
+      double z = (inputDim == 3) ? coord[2] : 0.0;
+      sourceData[i] = std::sqrt(x*x+y*y+z*z);
+    }
+    for (int i = 3034; i < 4646; i++) {
+      coord = sourceMesh->cell_centroid(i);
+      double x = coord[0];
+      double y = coord[1];
+      double z = (inputDim == 3) ? coord[2] : 1.0;
+      sourceData[i] = x*y*z;
+    }
+    for (int i = 4646; i < 5238; i++) {
+      coord = sourceMesh->cell_centroid(i);
+      double x = coord[0];
+      double y = coord[1];
+      double z = (inputDim == 3) ? coord[2] : 0.0;
+      sourceData[i] = sin(x+y+z);
+    }
 #else
-  for (int i=0; i < sourceData.size(); i++) {
-    coord = sourceMesh->cell_centroid(i);
-    double x = coord[0];
-    double y = coord[1];
-    double z = (inputDim > 2) ? coord[2] : 0.0;
-    if (example == 3) {
-      sourceData[i] = x+y+z;
-    } else {
-      sourceData[i] = x*x;
-    }
-  }
-#endif
-
-  Jali::Entity_kind entityKind =
-      (example == 0) || (example == 2) || (example == 3) ?
-      Jali::Entity_kind::CELL : Jali::Entity_kind::NODE;
-  sourceState.add("celldata", sourceMesh, entityKind,
-                  Jali::Entity_type::ALL, &(sourceData[0]));
-  const Jali_State_Wrapper sourceStateWrapper(sourceState);
-
-  Jali::State targetState(targetMesh);
-  const Jali::StateVector<double> & cellvecout =
-      targetState.add("celldata", targetMesh, entityKind,
-                      Jali::Entity_type::ALL, 0.0);
-  Jali_State_Wrapper targetStateWrapper(targetState);
-
-  std::vector<std::string> remap_fields;
-  remap_fields.push_back("celldata");
-
-
-  // Directly run cell-centered examples
-  if ((example == 0) || (example == 2) || (example == 3)){ 
-
-    if (example==0){
-      Portage::Driver<Portage::SearchKDTree, 
-          Portage::IntersectR2D, 
-          Portage::Interpolate_1stOrder,
-          2,
-          Portage::Jali_Mesh_Wrapper, 
-          Portage::Jali_State_Wrapper>  
-          d(sourceMeshWrapper, sourceStateWrapper, targetMeshWrapper, targetStateWrapper);
-      d.set_remap_var_names(remap_fields);    
-      d.run(false);
-    }
-    if ((example == 2) || (example == 3)){
-    
-      Portage::Driver<Portage::SearchKDTree, 
-          Portage::IntersectR2D, 
-          Portage::Interpolate_2ndOrder,
-          2, 
-          Portage::Jali_Mesh_Wrapper, 
-          Portage::Jali_State_Wrapper>  
-          d(sourceMeshWrapper, sourceStateWrapper, targetMeshWrapper, targetStateWrapper);
-      d.set_remap_var_names(remap_fields);    
-      d.run(false);
-    }
-  }
- 
-  // Create a dual mesh for node-centered examples
-  else if (example == 1) {
-    
-    Portage::Driver<Portage::SearchKDTree, 
-                    Portage::IntersectR2D, 
-                    Portage::Interpolate_2ndOrder,
-                    2,
-                    Portage::Jali_Mesh_Wrapper,
-                    Portage::Jali_State_Wrapper> 
-                    d(sourceMeshWrapper, sourceStateWrapper, targetMeshWrapper, targetStateWrapper);
-      d.set_remap_var_names(remap_fields);    
-    d.run(false);
-  }
- 
-  std::cerr << "Last result: " << cellvecout[cellvecout.size()-1] << std::endl;
-
-  if ((example == 3) && unitTest) {
-    double toterr = 0.0;
-    double error;
-    for (auto c = 0; c < cellvecout.size(); c++) {
-      coord = targetMesh->cell_centroid(c);
-      error = coord[0] + coord[1] - cellvecout[c];
-      if (inputDim > 2) error += coord[2];
-      toterr += error*error;
-    }
-    double L2 = sqrt(toterr/targetMeshWrapper.num_owned_cells());
-    std::printf("\n\nL2 NORM OF ERROR = %lf\n\n", L2);
-    assert(L2 < TOL);
-  }
-
-  if (dumpMesh) {
-    // The `static_cast` is a workaround for an Intel compiler's header
-    // files, which are missing a `std::to_string` function for ints.
-    std::string example_num = std::to_string(static_cast<long long>(example));
-    std::cerr << "Saving the source mesh" << std::endl;
-    sourceState.export_to_mesh();
-    dynamic_cast<Jali::Mesh_MSTK*>(sourceMesh.get())->
-      write_to_exodus_file("input" + example_num + ".exo");
-
-    std::cerr << "Saving the target mesh" << std::endl;
-    targetState.export_to_mesh();
-    dynamic_cast<Jali::Mesh_MSTK*>(targetMesh.get())->
-      write_to_exodus_file("output" + example_num + ".exo");
-    int field_len;
-    if (example == 1) {
-      field_len = targetMeshWrapper.num_owned_nodes();
-    } else {
-      field_len = targetMeshWrapper.num_owned_cells();
-    }
-
-    // We concatenate the global IDs and field values on the rank 0 processor,
-    // sort it by the global ID and save into a file.
-    std::vector<int> lgid(field_len), gid;
-    std::vector<double> lvalues(field_len), values;
-    for (int i=0; i < field_len; i++) {
-      lgid[i] = targetMesh->GID(i, entityKind);
-      lvalues[i] = cellvecout[i];
-    }
-    collate(MPI_COMM_WORLD, rank, numpe, lgid, gid);
-    collate(MPI_COMM_WORLD, rank, numpe, lvalues, values);
-    if (rank == 0) {
-      std::vector<int> idx;
-      argsort(gid, idx);
-      reorder(gid, idx);
-      reorder(values, idx);
-      std::ofstream fout("field" + example_num + ".txt");
-      fout << std::scientific;
-      fout.precision(17);
-      for (int i=0; i < gid.size(); i++) {
-        fout << gid[i] << " " << values[i] << std::endl;
+    for (int i = 0; i < ncall; i++) {
+      coord = sourceMesh->cell_centroid(i);
+      double x = coord[0];
+      double y = coord[1];
+      double z = (inputDim > 2) ? coord[2] : 0.0;
+      if (example == 3) {
+        sourceData[i] = x+y+z;
+      } else {
+        sourceData[i] = x*x;
       }
     }
+#endif
+
+    sourceState.add("celldata", sourceMesh, entityKind,
+                    Jali::Entity_type::ALL, &(sourceData[0]));
+    const Jali_State_Wrapper sourceStateWrapper(sourceState);
+
+    const Jali::StateVector<double> & cellvecout =
+        targetState.add("celldata", targetMesh, entityKind,
+                        Jali::Entity_type::ALL, 0.0);
+    Jali_State_Wrapper targetStateWrapper(targetState);
+
+    std::vector<std::string> remap_fields;
+    remap_fields.push_back("celldata");
+
+
+    // Directly run cell-centered examples
+    if ((example == 0) || (example == 2) || (example == 3)) {
+
+      if (example == 0) {
+        Portage::Driver<Portage::SearchKDTree,
+                        Portage::IntersectR2D,
+                        Portage::Interpolate_1stOrder,
+                        2,
+                        Portage::Jali_Mesh_Wrapper,
+                        Portage::Jali_State_Wrapper>
+            d(sourceMeshWrapper, sourceStateWrapper, targetMeshWrapper,
+              targetStateWrapper);
+        d.set_remap_var_names(remap_fields);
+        d.run(false);
+      }
+      if ((example == 2) || (example == 3)) {
+
+        Portage::Driver<Portage::SearchKDTree,
+                        Portage::IntersectR2D,
+                        Portage::Interpolate_2ndOrder,
+                        2,
+                        Portage::Jali_Mesh_Wrapper,
+                        Portage::Jali_State_Wrapper>
+            d(sourceMeshWrapper, sourceStateWrapper, targetMeshWrapper,
+              targetStateWrapper);
+        d.set_remap_var_names(remap_fields);
+        d.run(false);
+      }
+    }
+
+    std::cerr << "Last result: " << cellvecout[cellvecout.size()-1] <<
+        std::endl;
+
+    if ((example == 3) && unitTest) {
+      double toterr = 0.0;
+      double error;
+      for (auto c = 0; c < cellvecout.size(); c++) {
+        coord = targetMesh->cell_centroid(c);
+        error = coord[0] + coord[1] - cellvecout[c];
+        if (inputDim > 2) error += coord[2];
+        toterr += error*error;
+      }
+      double L2 = sqrt(toterr/targetMeshWrapper.num_owned_cells());
+      std::printf("\n\nL2 NORM OF ERROR = %lf\n\n", L2);
+      assert(L2 < TOL);
+    }
+
+    if (dumpMesh) {
+      // The `static_cast` is a workaround for an Intel compiler's header
+      // files, which are missing a `std::to_string` function for ints.
+      std::string example_num = std::to_string(static_cast<long long>(example));
+      std::cerr << "Saving the source mesh" << std::endl;
+      sourceState.export_to_mesh();
+      dynamic_cast<Jali::Mesh_MSTK*>(sourceMesh.get())->
+          write_to_exodus_file("input" + example_num + ".exo");
+      
+      std::cerr << "Saving the target mesh" << std::endl;
+      targetState.export_to_mesh();
+      dynamic_cast<Jali::Mesh_MSTK*>(targetMesh.get())->
+          write_to_exodus_file("output" + example_num + ".exo");
+      
+      int field_len = targetMeshWrapper.num_owned_cells();
+
+      // We concatenate the global IDs and field values on the rank 0 processor,
+      // sort it by the global ID and save into a file.
+      std::vector<int> lgid(field_len), gid;
+      std::vector<double> lvalues(field_len), values;
+      for (int i = 0; i < field_len; i++) {
+        lgid[i] = targetMesh->GID(i, entityKind);
+        lvalues[i] = cellvecout[i];
+      }
+      collate(MPI_COMM_WORLD, rank, numpe, lgid, gid);
+      collate(MPI_COMM_WORLD, rank, numpe, lvalues, values);
+      if (rank == 0) {
+        std::vector<int> idx;
+        argsort(gid, idx);
+        reorder(gid, idx);
+        reorder(values, idx);
+        std::ofstream fout("field" + example_num + ".txt");
+        fout << std::scientific;
+        fout.precision(17);
+        for (int i=0; i < gid.size(); i++) {
+          fout << gid[i] << " " << values[i] << std::endl;
+        }
+      }
+    }
+    
+  } else {
+
+    int nnall = sourceMeshWrapper.num_owned_nodes() + 
+        sourceMeshWrapper.num_ghost_nodes();
+    std::vector<double> sourceData(nnall, 0);
+
+    for (int i = 0; i < nnall; i++) {
+      sourceMesh->node_get_coordinates(i, &coord);
+      double x = coord[0];
+      double y = coord[1];
+      double z = (inputDim > 2) ? coord[2] : 0.0;
+      if (example == 1)
+        sourceData[i] = x+y+z;
+      else
+        sourceData[i] = x*x;
+    }
+
+    sourceState.add("nodedata", sourceMesh, entityKind,
+                    Jali::Entity_type::ALL, &(sourceData[0]));
+    const Jali_State_Wrapper sourceStateWrapper(sourceState);
+
+    const Jali::StateVector<double> & nodevecout =
+        targetState.add("nodedata", targetMesh, entityKind,
+                        Jali::Entity_type::ALL, 0.0);
+    Jali_State_Wrapper targetStateWrapper(targetState);
+
+    std::vector<std::string> remap_fields;
+    remap_fields.push_back("nodedata");
+
+    // Create a dual mesh for node-centered examples
+    if (example == 1) {
+
+      Portage::Driver<Portage::SearchKDTree,
+                      Portage::IntersectR2D,
+                      Portage::Interpolate_2ndOrder,
+                      2,
+                      Portage::Jali_Mesh_Wrapper,
+                      Portage::Jali_State_Wrapper>
+          d(sourceMeshWrapper, sourceStateWrapper, targetMeshWrapper,
+            targetStateWrapper);
+      d.set_remap_var_names(remap_fields);
+      d.run(false);
+    }
+
+    std::cerr << "Last result: " << nodevecout[nodevecout.size()-1] <<
+        std::endl;
+
+    if (dumpMesh) {
+      // The `static_cast` is a workaround for an Intel compiler's header
+      // files, which are missing a `std::to_string` function for ints.
+      std::string example_num = std::to_string(static_cast<long long>(example));
+      std::cerr << "Saving the source mesh" << std::endl;
+      sourceState.export_to_mesh();
+      dynamic_cast<Jali::Mesh_MSTK*>(sourceMesh.get())->
+          write_to_exodus_file("input" + example_num + ".exo");
+      
+      std::cerr << "Saving the target mesh" << std::endl;
+      targetState.export_to_mesh();
+      dynamic_cast<Jali::Mesh_MSTK*>(targetMesh.get())->
+          write_to_exodus_file("output" + example_num + ".exo");
+      
+      int field_len = targetMeshWrapper.num_owned_nodes();
+      
+      // We concatenate the global IDs and field values on the rank 0 processor,
+      // sort it by the global ID and save into a file.
+      std::vector<int> lgid(field_len), gid;
+      std::vector<double> lvalues(field_len), values;
+      for (int i = 0; i < field_len; i++) {
+        lgid[i] = targetMesh->GID(i, entityKind);
+        lvalues[i] = nodevecout[i];
+      }
+      collate(MPI_COMM_WORLD, rank, numpe, lgid, gid);
+      collate(MPI_COMM_WORLD, rank, numpe, lvalues, values);
+      if (rank == 0) {
+        std::vector<int> idx;
+        argsort(gid, idx);
+        reorder(gid, idx);
+        reorder(values, idx);
+        std::ofstream fout("field" + example_num + ".txt");
+        fout << std::scientific;
+        fout.precision(17);
+        for (int i=0; i < gid.size(); i++) {
+          fout << gid[i] << " " << values[i] << std::endl;
+        }
+      }
+    }
+
   }
+
+
 
   std::printf("finishing shotshellapp...\n");
 
