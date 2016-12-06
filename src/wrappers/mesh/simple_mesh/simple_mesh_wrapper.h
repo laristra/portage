@@ -43,7 +43,7 @@ class Simple_Mesh_Wrapper : public AuxMeshTopology<Simple_Mesh_Wrapper> {
     datastructures?
     @param[in] request_wedges Should the AuxMeshTopology class build wedge
     datastructures?
-    @param[in] request_conrners Should the AuxMeshToplogy class build corner
+    @param[in] request_corners Should the AuxMeshToplogy class build corner
     datastructures?
    */
   explicit Simple_Mesh_Wrapper(Simple_Mesh const & mesh,
