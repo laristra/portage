@@ -69,20 +69,14 @@ Simple_Mesh(double x0, double y0, double z0,
     nodeids_owned_.resize(num_nodes_);
     for (int i(0); i < num_nodes_; ++i)
       nodeids_owned_[i] = i;
-    nodeids_ghost_.resize(0);
-    nodeids_all_ = nodeids_owned_;
 
     cellids_owned_.resize(num_cells_);
     for (int i(0); i < num_cells_; ++i)
       cellids_owned_[i] = i;
-    cellids_ghost_.resize(0);
-    cellids_all_ = cellids_owned_;
 
     faceids_owned_.resize(num_faces_);
     for (int i(0); i < num_faces_; ++i)
       faceids_owned_[i] = i;
-    faceids_ghost_.resize(0);
-    faceids_all_ = faceids_owned_;
   }
 
   /// Assignment operator (disabled).
@@ -110,9 +104,11 @@ Simple_Mesh(double x0, double y0, double z0,
           case Entity_type::PARALLEL_OWNED:
             return nodeids_owned_.size();
           case Entity_type::PARALLEL_GHOST:
-            return nodeids_ghost_.size();
+            // Simple_Mesh has no ghosts.
+            return 0;
           case Entity_type::ALL:
-            return nodeids_all_.size();
+            // Simple_Mesh has no ghosts.
+            return nodeids_owned_.size();
           default:
             return 0;
         }
@@ -121,9 +117,11 @@ Simple_Mesh(double x0, double y0, double z0,
           case Entity_type::PARALLEL_OWNED:
             return cellids_owned_.size();
           case Entity_type::PARALLEL_GHOST:
-            return cellids_ghost_.size();
+            // Simple_Mesh has no ghosts.
+            return 0;
           case Entity_type::ALL:
-            return cellids_all_.size();
+            // Simple_Mesh has no ghosts.
+            return cellids_owned_.size();
           default:
             return 0;
         }
@@ -132,9 +130,11 @@ Simple_Mesh(double x0, double y0, double z0,
           case Entity_type::PARALLEL_OWNED:
             return faceids_owned_.size();
           case Entity_type::PARALLEL_GHOST:
-            return faceids_ghost_.size();
+            // Simple_Mesh has no ghosts.
+            return 0;
           case Entity_type::ALL:
-            return faceids_all_.size();
+            // Simple_Mesh has no ghosts.
+            return faceids_owned_.size();
           default:
             return 0;
         }
@@ -424,9 +424,9 @@ Simple_Mesh(double x0, double y0, double z0,
   std::vector<ID> node_to_cell_;
 
   /// Cache of entity ID lists.
-  std::vector<ID> nodeids_owned_, nodeids_ghost_, nodeids_all_;
-  std::vector<ID> faceids_owned_, faceids_ghost_, faceids_all_;
-  std::vector<ID> cellids_owned_, cellids_ghost_, cellids_all_;
+  std::vector<ID> nodeids_owned_;
+  std::vector<ID> faceids_owned_;
+  std::vector<ID> cellids_owned_;
 
   /// Helper functions for looking up indices.
   ID node_index_(int i, int j, int k) const {
