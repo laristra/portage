@@ -29,7 +29,7 @@ namespace Portage {
     @class Simple_State "simple_mesh.h"
     @brief A very light-weight state manager for a Simple_Mesh.
 
-    This class stores @c double (and only @c double) data a top a Simple_Mesh.
+    This class stores @c double (and only @c double) data atop a Simple_Mesh.
     The data can be located at any mesh location (e.g. @c CELL or @c NODE) that
     Simple_Mesh understands.  The field variables are stored in a map and are
     identified by key composed of a string _name_ and an Entity_kind; for
