@@ -4,6 +4,8 @@
  *---------------------------------------------------------------------------~*/
 
 #include <memory>
+#include <vector>
+#include <string>
 
 #include "portage/wrappers/state/simple_state/simple_state_wrapper.h"
 
@@ -38,5 +40,29 @@ TEST(Simple_State_Wrapper, WrapperTest) {
                            &celldata);
   for (int i(0); i < numcells; ++i) {
     ASSERT_EQ(cellvar[i], celldata[i]);
+  }
+
+
+  std::vector<double> nodevar(numnodes);
+  for (int i(0); i < numnodes; ++i)
+    nodevar[i] = i;
+  mystate.add("nodevar1", Portage::Entity_kind::NODE, &(nodevar[0]));
+
+  double* nodedata;
+  mystate_wrapper.get_data(Portage::Entity_kind::NODE, "nodevar1",
+                           &nodedata);
+  for (int i(0); i < numnodes; ++i) {
+    ASSERT_EQ(nodevar[i], nodedata[i]);
+  }
+
+  // Check get_entity
+  std::vector<std::string> names = {"cellvar1", "nodevar1"};
+  std::vector<Portage::Entity_kind>
+      expected_kinds = {Portage::Entity_kind::CELL,
+                        Portage::Entity_kind::NODE};
+  Portage::Entity_kind kind;
+  for (int i(0); i < names.size(); ++i) {
+    kind = mystate_wrapper.get_entity(names[i]);
+    ASSERT_EQ(expected_kinds[i], kind);
   }
 }

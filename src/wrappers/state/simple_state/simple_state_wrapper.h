@@ -63,6 +63,57 @@ class Simple_State_Wrapper {
   }
 
   /*!
+    @brief Get a pointer to data from the state manager with a given
+    variable @c name and on @c on_what mesh entities.
+    @param[in] on_what The Entity_kind (e.g. CELL) on which the data
+    lives.
+    @param[in] name The name of the variable.
+    @param data A @c const pointer to the data array.  If the requested data is
+    not found in the state manager, a @c nullptr is returned.
+   */
+  void get_data(const Entity_kind on_what, const std::string name,
+                  double const **data) const {
+    auto it = state_.find(name, on_what);
+    if (it != state_.end()) {
+      (*data) = &(it->second[0]);
+      return;
+    }
+
+    std::cerr << "get_data: Could not find state variable " << name
+              << std::endl;
+    (*data) = nullptr;
+  }
+
+  /*!
+    @brief Given a variable name, get where it lives on the mesh.
+    @param[in] name The name of the variable to be found.
+    @returns The Entity_kind (e.g. CELL) indicating where the variable @name
+    lives.
+    @throws std::runtime_exception Variable not found.
+
+    @TODO This will only pick the first defined variable, if the user
+    adds multiple fields with the same variable name, but on different
+    Entity_kinds.  This should be fixed, or get_entity should be ammended.
+   */
+  Entity_kind get_entity(std::string const name) const {
+    // Find where the name is in the variable name part of the map's keys
+    auto it = state_.begin();
+    while (it != state_.end()) {
+      if (it->first.first == name)
+        break;
+      else
+        ++it;
+    }
+    // Now get the second part of the key, if it was found
+    if (it != state_.end()) {
+      return it->first.second;
+    } else {
+      // We don't know this variable, so bail.
+      std::runtime_error("Requested variable not found.");
+    }
+  }
+
+  /*!
     @brief Get the number of elements in a specific variable from the state
     manager.
     @param[in] on_what The Entity_kind (e.g. CELL) of the variable for which the
