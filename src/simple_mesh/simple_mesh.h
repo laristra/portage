@@ -12,12 +12,33 @@
 #include "portage/support/portage.h"
 #include "portage/support/Point.h"
 
+/*!
+  @file simple_mesh.h
+  @brief A very light-weight, simple mesh infrastructure.
+ */
+
+/// Convenience for denoting a mesh entity ID.
 typedef int ID;
 
 namespace Portage {
 
+/*!
+  @class Simple_Mesh "simple_mesh.h"
+  @brief A very light-weight, serial, 3D Cartesian mesh.
+ */
 class Simple_Mesh {
  public:
+  /*!
+    @brief Constructor for creating a serial, 3D Cartesian mesh.
+    @param[in] x0,y0,z0 The minimum coordinates of the domain.
+    @param[in] x1,y1,z1 The maximum coordinates of the domain.
+    @param[in] nx,ny,nz The number of _cells_ in each direction.
+
+    By specifying the spatial extents and number of cells in each
+    direction, we create a Cartesian mesh in three dimensions.
+    Connectivity information is automatically built from global IDs.
+    This mesh class has _zero_ ghost mesh entities.
+  */
 Simple_Mesh(double x0, double y0, double z0,
             double x1, double y1, double z1,
             int nx, int ny, int nz) :
@@ -54,15 +75,25 @@ Simple_Mesh(double x0, double y0, double z0,
     faceids_all_ = faceids_owned_;
   }
 
+  /// Assignment operator (disabled).
+  Simple_Mesh & operator=(const Simple_Mesh &) = delete;
+
+  /// Destructor
   ~Simple_Mesh() {}
 
-  //! Spatial dimension of points in the mesh
+  /// Spatial dimension of the mesh
   inline int space_dimension() const {
     return spacedim;
   }
 
+  /*!
+    @brief Determine the number of a specific mesh entity.
+    @param[in] kind The type of entity, e.g. @c CELL.
+    @param[in] type The type of the entity, e.g. @c PARALLEL_OWNED
+    @returns The number of the specified mesh entity.
+   */
   int num_entities(const Entity_kind kind,
-                  const Entity_type type) const {
+                   const Entity_type type) const {
     switch (kind) {
       case Entity_kind::NODE:
         switch (type) {
@@ -102,7 +133,14 @@ Simple_Mesh(double x0, double y0, double z0,
     }
   }
 
-  // @TODO: replace with std::copy?
+  /*!
+    @brief For a given cell, get the list of faces and the direction of their
+    normals.
+    @param[in] cellid The ID of the cell.
+    @param[out] faces The vector of face IDs corresponding to cell @c cellid.
+    @param[out] fdirs The vector of face directions corresponding to each face
+    in @c faces.
+   */
   void cell_get_faces_and_dirs(const ID cellid,
                                std::vector<ID> *faces,
                                std::vector<int> *fdirs) const {
@@ -115,6 +153,11 @@ Simple_Mesh(double x0, double y0, double z0,
     }
   }
   // @TODO: replace with std::copy?
+  /*!
+    @brief For a given cell, get the list of nodes.
+    @param[in] cellid The ID of the cell.
+    @param[out] nodes The vector of node IDs corresponding to cell @c cellid.
+   */
   void cell_get_nodes(const ID cellid,
                       std::vector<ID> *nodes) const {
     auto offset = nodes_per_cell_*cellid;
@@ -122,7 +165,11 @@ Simple_Mesh(double x0, double y0, double z0,
     for (int i(0); i < nodes_per_cell_; ++i)
       nodes->push_back(cell_to_node_[i+offset]);
   }
-  // @TODO: replace with std::copy?
+  /*!
+    @brief For a given face, get the list of nodes.
+    @param[in] faceid The ID of the face.
+    @param[out] nodes The vector of node IDs corresponding to face @c faceid.
+   */
   void face_get_nodes(const ID faceid,
                       std::vector<ID> *nodes) const {
     auto offset = nodes_per_face_*faceid;
@@ -130,7 +177,11 @@ Simple_Mesh(double x0, double y0, double z0,
     for (int i(0); i < nodes_per_face_; ++i)
       nodes->push_back(face_to_node_[i+offset]);
   }
-  // @TODO: replace with std::copy?
+  /*!
+    @brief For a given node, get all the cells attached to this node.
+    @param[in] nodeid The ID of the node.
+    @param[out] cells The vector of cell IDs attached to node @c nodeid.
+   */
   void node_get_cells(const ID nodeid,
                       std::vector<ID> *cells) const {
     auto offset = cells_per_node_aug_*nodeid;
@@ -141,7 +192,15 @@ Simple_Mesh(double x0, double y0, double z0,
   }
 
   // General specification - specialization follows at bottom of file
-  // @TODO throw error/exception
+  /*!
+    @brief Get the coordinates of a node.
+    @tparam D Dimension of the node.
+    @param[in] nodeid The ID of the node.
+    @param[out] pp The @c Point object of dimension @c D containing the
+    coordinates of node @nodeid.
+
+    This is the general specification.  @c Simple_Mesh is only 3D.
+   */
   template<long D>
   void node_get_coordinates(const ID nodeid,
                             Point<D> *pp) const {
@@ -149,6 +208,10 @@ Simple_Mesh(double x0, double y0, double z0,
   }
 
  private:
+  /*!
+    @brief Constructs and stores the node coordinates from the extents and
+    number of cells per direction passed to the constructor.
+   */
   void build_node_coords() {
     coordinates_.clear();
 
@@ -165,6 +228,9 @@ Simple_Mesh(double x0, double y0, double z0,
         }
   }
 
+  /*
+    @brief Builds the cell-face-node adjacency information.
+   */
   void build_cfn_adjacencies() {
     // downward adjacencies
     cell_to_node_.resize(nodes_per_cell_*num_cells_);
@@ -317,30 +383,29 @@ Simple_Mesh(double x0, double y0, double z0,
         }
   }
 
-  /***********************************************************************
-   * DATA - FIXME: removem 3d assumptions
-   **********************************************************************/
-
+  /// @c Simple_Mesh is only 3D.
   int spacedim = 3;
 
-  // number of cells in the three coordinate directions
+  /// Number of cells in the three coordinate directions.
   int nx_, ny_, nz_;
-  // coordinates of lower left front and upper right back of brick
+  /// Coordinates of lower left front and upper right back of domain.
   double x0_, x1_, y0_, y1_, z0_, z1_;
 
-  // node positions
+  /// Node positions.
   std::vector<Point<3>> coordinates_;
 
-  // hard coded to 3d hexes for now
+  /// Hard coded to 3D hexes for now.
   int nodes_per_face_ = 4;
   int nodes_per_cell_ = 8;
   int faces_per_cell_ = 6;
   int cells_per_node_aug_ = 9;   // 1 entry for the num cells actually attached
 
+  /// Cache of stored sizes.
   int num_cells_;
   int num_nodes_;
   int num_faces_;
 
+  /// Storage for connectivity information.
   std::vector<ID> cell_to_face_;
   std::vector<int> cell_face_dirs_;
   std::vector<ID> cell_to_node_;
@@ -348,13 +413,12 @@ Simple_Mesh(double x0, double y0, double z0,
   std::vector<ID> face_to_cell_;
   std::vector<ID> node_to_cell_;
 
-  // Entity lists
-
+  /// Cache of entity ID lists.
   std::vector<ID> nodeids_owned_, nodeids_ghost_, nodeids_all_;
   std::vector<ID> faceids_owned_, faceids_ghost_, faceids_all_;
   std::vector<ID> cellids_owned_, cellids_ghost_, cellids_all_;
 
-  // helper functions for looking up indices
+  /// Helper functions for looking up indices.
   ID node_index_(int i, int j, int k) const {
     return i + j*(nx_+1) + k*(nx_+1)*(ny_+1);
   }
@@ -373,6 +437,12 @@ Simple_Mesh(double x0, double y0, double z0,
 };  // class Simple_Mesh
 
 // Specializations
+/*!
+  @brief Get the 3D coordinates of a specific node as @c Portage::Point object.
+  @param[in] nodeid The ID of the node.
+  @param[out] pp The @c Portage::Point containing the coordinates for node
+  @c nodeid.
+ */
 template<>
 void Simple_Mesh::node_get_coordinates<3>(const ID nodeid,
                                           Point<3> *pp) const {
