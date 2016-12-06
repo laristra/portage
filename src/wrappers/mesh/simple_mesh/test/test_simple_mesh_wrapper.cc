@@ -396,3 +396,16 @@ TEST(Simple_Mesh, AdjCell) {
       ASSERT_EQ(expectedAdjCells[i][j], adjCells[j]);
   }
 }
+
+TEST(Simple_Mesh, GlobalID) {
+  Portage::Simple_Mesh mesh(0.0, 0.0, 0.0,
+                            1.0, 1.0, 1.0,
+                            10, 10, 10);
+  Portage::Simple_Mesh_Wrapper mesh_wrapper(mesh);
+
+  int ncells = mesh_wrapper.num_owned_cells();
+
+  for (int c(0); c < ncells; ++c) {
+    ASSERT_EQ(c, mesh_wrapper.get_global_id(c, Portage::Entity_kind::CELL));
+  }
+}

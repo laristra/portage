@@ -170,6 +170,11 @@ class Simple_Mesh_Wrapper : public AuxMeshTopology<Simple_Mesh_Wrapper> {
     mesh_.face_get_nodes(faceid, nodes);
   }
 
+  /// Get the global ID. @b NOTE: Simple_Mesh only has local IDs.
+  int get_global_id(int const id, Entity_kind const kind) const {
+    return id;
+  }
+
   /*!
     @brief Get the coordinates of a specific node as a Portage::Point.
     @tparam D Dimensionality -- this is a specialization, as Simple_Mesh
