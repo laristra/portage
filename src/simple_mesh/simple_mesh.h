@@ -17,16 +17,26 @@
   @brief A very light-weight, simple mesh infrastructure.
  */
 
-/// Convenience for denoting a mesh entity ID.
-typedef int ID;
-
 namespace Portage {
 
 /*!
   @class Simple_Mesh "simple_mesh.h"
   @brief A very light-weight, serial, 3D Cartesian mesh.
+
+  A Simple_Mesh is a non-distributed (i.e. serial), 3D, regular Cartesian mesh.
+  The user need only specify the domain extents and the number of cells per
+  direction, and the mesh class will create all of the connectivity information.
+
+  Simple_Mesh only knows about cells, faces, and nodes.  As the mesh is regular,
+  each cell is a rectangular prism with 8 nodes and 6 faces.  Likewise, each
+  non-domain-boundary node is connected to 8 cells and each non-domain-boundary
+  face is connected to two cells.  Nodes and faces on the domain boundary have
+  less connections as there are no ghost mesh entities in Simple_Mesh.
  */
 class Simple_Mesh {
+  /// Convenience for denoting a mesh entity ID.
+  typedef int ID;
+
  public:
   /*!
     @brief Constructor for creating a serial, 3D Cartesian mesh.
