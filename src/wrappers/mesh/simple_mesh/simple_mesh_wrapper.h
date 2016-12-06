@@ -182,6 +182,15 @@ class Simple_Mesh_Wrapper : public AuxMeshTopology<Simple_Mesh_Wrapper> {
     mesh_.node_get_coordinates(nodeid, pp);
   }
 
+  /*!
+    @brief Get the list of node IDs for all nodes attached to all cells
+    attached to a specific node.
+    @param[in] nodeid The ID of the node.
+    @param[in] ptype The Entity_type (e.g. PARALLEL_OWNED); @b NOTE: Simple_Mesh
+    only contains PARALLEL_OWNED data, no ghosts.
+    @param[out] adjnodes The list of node IDs for all cells attached to
+    @c nodeid, excluding @c nodeid.
+   */
   void node_get_cell_adj_nodes(int const nodeid,
                                Entity_type const ptype,
                                std::vector<int> *adjnodes) const {
@@ -207,6 +216,15 @@ class Simple_Mesh_Wrapper : public AuxMeshTopology<Simple_Mesh_Wrapper> {
 
   //////////////////////////////////////////////////////////////////////
   // The following methods are needed elsewhere in the source.
+  /*!
+    @brief Get the list of cell IDs for all cells attached to a specific
+    cell through its nodes.
+    @param[in] cellid The ID of the cell.
+    @param[in] ptype The Entity_type (e.g. PARALLEL_OWNED); @b NOTE: Simple_Mesh
+    only contains PARALLEL_OWNED data, no ghosts.
+    @param[out] adjcells The list of cell IDs for all cells attached to
+    cell @c cellid through its nodes, excluding @c cellid.
+   */
   void cell_get_node_adj_cells(int const cellid,
                                Entity_type const ptype,
                                std::vector<int> *adjcells) const {
@@ -231,6 +249,7 @@ class Simple_Mesh_Wrapper : public AuxMeshTopology<Simple_Mesh_Wrapper> {
   }  // cell_get_node_adj_cells
 
  private:
+  /// The mesh to wrap.
   Simple_Mesh const & mesh_;
 };  // class Simple_Mesh_Wrapper
 }  // namespace Portage
