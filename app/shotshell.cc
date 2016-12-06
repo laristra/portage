@@ -292,7 +292,6 @@ int main(int argc, char** argv) {
     std::vector<std::string> remap_fields;
     remap_fields.push_back("nodedata");
 
-    // Create a dual mesh for node-centered examples
     if (example == 1) {
 
       Portage::Driver<Portage::SearchKDTree,
