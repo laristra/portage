@@ -60,4 +60,9 @@ TEST(Simple_State, MultiCell) {
   ASSERT_THROW(mystate.get("missing variable",
                            Portage::Entity_kind::CELL),
                std::runtime_error);
+
+  // Add a variable using just a constant value initializer
+  auto& cellvar3 = mystate.add("cellvar3", Portage::Entity_kind::CELL, 7.0);
+  for (auto const cv : cellvar3)
+    ASSERT_EQ(7.0, cv);
 }
