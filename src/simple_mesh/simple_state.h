@@ -137,6 +137,38 @@ class Simple_State {
   }
 
   /*!
+    @brief Add a field to the state manager.
+    @param[in] name The variable name of the field to be added.
+    @param[in] on_what The Entity_kind (e.g. CELL) on which the data should
+    live.
+    @param[in] val A value with which to iniitalize the underlying std::vector
+    data.
+    @returns A reference to the underlying std::vector for further
+    modification/use.
+
+    If the requested variable (@c name, @c on_what) pair already exists,
+    this will output a message to std::cerr, but will simply return the
+    reference to the underlying std::vector.
+  */
+  vec& add(std::string const name, Entity_kind const on_what,
+           double const val) {
+    auto it = find(name, on_what);
+    if (it == end()) {
+      // This is a new variable, so store it.
+      auto num_ent = mesh_->num_entities(on_what, Entity_type::PARALLEL_OWNED);
+      key thisKey(name, on_what);
+      state_vectors_.insert(std::make_pair(thisKey, vec(num_ent, val)));
+      names_.emplace_back(name);
+      return state_vectors_[thisKey];
+    } else {
+      // This already exists!
+      std::cerr << "Attempted to add duplicate vectors.  Ignoring."
+                << std::endl;
+      return it->second;
+    }
+  }
+
+  /*!
     @brief Get a specific variable from the state manager.
     @param[in] name The variable name of the field to be retrieved.
     @param[in] on_what The Entity_kind (e.g. CELL) on whih the requested data
