@@ -9,12 +9,12 @@ set -e
 # Echo each command
 set -x
 
-JALI_VERSION=jali-0.9.0
+JALI_VERSION=0.9.2
 
 # location on XLAN
 NGC_DIR=/usr/local/codes/ngc
 
-JALI_INST=${NGC_DIR}/private/${JALI_VERSION}-gcc-5.3.0
+JALI_INST=${NGC_DIR}/private/jali/${JALI_VERSION}-gcc-5.3.0-openmpi-1.6.5-rh6
 
 git config user.email ""
 git config user.name "Jenkins"

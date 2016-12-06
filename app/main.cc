@@ -6,6 +6,7 @@
 
 #include <cstdio>
 #include <cstdlib>
+#include <fstream>
 #include <vector>
 #include <string>
 #include <memory>
@@ -20,6 +21,7 @@
 
 #include "portage/support/portage.h"
 #include "portage/support/Point.h"
+#include "portage/distributed/mpi_collate.h"
 #include "portage/driver/driver.h"
 #include "portage/wrappers/mesh/jali/jali_mesh_wrapper.h"
 #include "portage/wrappers/state/jali/jali_state_wrapper.h"
@@ -28,6 +30,11 @@
 #include "MeshFactory.hh"
 #include "JaliStateVector.h"
 #include "JaliState.h"
+
+using Portage::Jali_Mesh_Wrapper;
+using Portage::collate;
+using Portage::argsort;
+using Portage::reorder;
 
 /*!
   @file main.cc
@@ -156,7 +163,6 @@ void print_usage() {
 }
 //////////////////////////////////////////////////////////////////////
 
-
 int main(int argc, char** argv) {
   // Pause profiling until main loop
 #ifdef ENABLE_PROFILE
@@ -203,16 +209,10 @@ int main(int argc, char** argv) {
   std::shared_ptr<Jali::Mesh> inputMesh;
   std::shared_ptr<Jali::Mesh> targetMesh;
 
-  // Set up a local communicator so that we can define mesh partitions
-  // explicitly on each rank without Jali distributing it for us
-  MPI_Group world_group, local_group;
-  MPI_Comm_group(MPI_COMM_WORLD, &world_group);
-  int ranks[1];  ranks[0] = rank;
-  MPI_Group_incl(world_group, 1, ranks, &local_group);
-  MPI_Comm local_comm;
-  MPI_Comm_create(MPI_COMM_WORLD, local_group, &local_comm);
-  Jali::MeshFactory mf_local(local_comm);
 
+  struct timeval begin, end, diff;
+  gettimeofday(&begin, 0);
+    
   // Cell-centered remaps
   if (example.cell_centered) {
     // Construct the meshes
@@ -235,26 +235,49 @@ int main(int argc, char** argv) {
                             Jali::Entity_kind::WEDGE});
       // generate the input and target meshes for the non-distributed case
       if (numpe == 1) {
-        // 3d hex input mesh from (0,0,0) to (1,1,1) with n_source x n_source x n_source zones
-        inputMesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, n_source, n_source, n_source);
+        // 3d hex input mesh from (0,0,0) to (1,1,1) with n_source x
+        // n_source x n_source zones
+
+        inputMesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, n_source, n_source,
+                       n_source);
+
         if (example.conformal) {
-           // 3d hex output mesh from (0,0,0) to (1,1,1) with n_target x n_target x n_target zones
-          targetMesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, n_target, n_target, n_target);
+           // 3d hex output mesh from (0,0,0) to (1,1,1) with n_target
+           // x n_target x n_target zones
+
+          targetMesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, n_target, n_target,
+                          n_target);
         } else {
-          // 3d hex output mesh from (0,0,0) to (1+1.5dx,1+1.5dx,1+1.5dx) with
-          // (n_target)x(n_target)x(n_target) zones and dx equal to the inputMesh grid spacing
+          // 3d hex output mesh from (0,0,0) to
+          // (1+1.5dx,1+1.5dx,1+1.5dx) with
+          // (n_target)x(n_target)x(n_target) zones and dx equal to
+          // the inputMesh grid spacing
+
           double dx = 1.0/static_cast<double>(n_target);
           targetMesh = mf(0.0, 0.0, 0.0, 1.0+1.5*dx, 1.0+1.5*dx, 1.0+1.5*dx,
                           n_target, n_target, n_target);
         }
-      // generate the input and target meshes for the distributed case
-      } else {
+      } else {  // generate the input and target meshes for the distributed case
 
         int source_dim = cbrt(1.0f*numpe) + 0.01f;
+
+#ifdef MANUAL_SOURCE_DECOMPOSITION
+        // Set up a local communicator so that we can define mesh partitions
+        // explicitly on each rank without Jali distributing it for us
+        MPI_Group world_group, local_group;
+        MPI_Comm_group(MPI_COMM_WORLD, &world_group);
+        int ranks[1];  ranks[0] = rank;
+        MPI_Group_incl(world_group, 1, ranks, &local_group);
+        MPI_Comm local_comm;
+        MPI_Comm_create(MPI_COMM_WORLD, local_group, &local_comm);
+        Jali::MeshFactory mf_local(local_comm);
+
         mf_local.included_entities({Jali::Entity_kind::FACE,
                                     Jali::Entity_kind::EDGE,
                                     Jali::Entity_kind::WEDGE});
-#ifdef MANUAL_SOURCE_DECOMPOSITION
+        mf_local.boundary_ghosts_requested(false);
+        mf_local.num_ghost_layers_distmesh(1);
+
         // compute the local partition of the source mesh based on the rank;
         // n_source is the number of cells in each dimension in each partition;
         // the number of ranks must be a perfect cube (1, 8, 27, etc.)
@@ -264,40 +287,46 @@ int main(int argc, char** argv) {
         int source_y = (rrank / source_dim) % source_dim;
         int source_z = rrank / (source_dim*source_dim);
 
-        inputMesh = mf_local(source_step*source_x, source_step*source_y, source_step*source_z,
-                             source_step*(source_x+1), source_step*(source_y+1), source_step*(source_z+1),
+        inputMesh = mf_local(source_step*source_x, source_step*source_y,
+                             source_step*source_z, source_step*(source_x+1),
+                             source_step*(source_y+1), source_step*(source_z+1),
                              n_source, n_source, n_source);
 
 #else
+
+        mf.included_entities({Jali::Entity_kind::FACE, Jali::Entity_kind::EDGE,
+                Jali::Entity_kind::WEDGE});
         mf.boundary_ghosts_requested(false);
         mf.num_ghost_layers_distmesh(1);
-        inputMesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, n_source*source_dim, n_source*source_dim, n_source*source_dim);
+        mf.partitioner(Jali::Partitioner_type::BLOCK);
+        inputMesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, n_source*source_dim,
+                       n_source*source_dim, n_source*source_dim);
 #endif
+
                              
-        // compute the local partition of the target mesh based on the rank;
         // n_target is the number of cells in each dimension in each partition;
         // the number of ranks must be a perfect cube (1, 8, 27, etc.)
+        
         int target_dim = cbrt(1.0f*numpe) + 0.01f;
-        double target_step = 1.0f / target_dim;
-        if (!example.conformal)
-        {
+        if (example.conformal) {
+          targetMesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, n_target*target_dim,
+                          n_target*target_dim, n_target*target_dim);
+        } else {
           double dx = 1.0/static_cast<double>(n_target*target_dim);
-          target_step = (1.0f + 1.5*dx) / target_dim;
+          targetMesh = mf(0.0, 0.0, 0.0, 1.0+1.5*dx, 1.0+1.5*dx, 1.0+1.5*dx,
+                          n_target*target_dim, n_target*target_dim,
+                          n_target*target_dim);
         }
-        int target_x = rank % target_dim;
-        int target_y = (rank / target_dim) % target_dim;
-        int target_z = rank / (target_dim*target_dim);
-        targetMesh = mf_local(target_step*target_x, target_step*target_y, target_step*target_z,
-                              target_step*(target_x+1), target_step*(target_y+1), target_step*(target_z+1),
-                              n_target, n_target, n_target);
-      }    
+
+      }  // distributed case
     }
 
     // Wrappers for interfacing with the underlying mesh data structures
     Portage::Jali_Mesh_Wrapper inputMeshWrapper(*inputMesh);
     Portage::Jali_Mesh_Wrapper targetMeshWrapper(*targetMesh);
 
-    const int nsrccells = inputMeshWrapper.num_owned_cells() + inputMeshWrapper.num_ghost_cells();
+    const int nsrccells = inputMeshWrapper.num_owned_cells() +
+        inputMeshWrapper.num_ghost_cells();
     const int ntarcells = targetMeshWrapper.num_owned_cells();
     
     // Fill the source state data with the specified profile
@@ -334,23 +363,63 @@ int main(int argc, char** argv) {
     Portage::Jali_State_Wrapper targetStateWrapper(targetState);
 
     // Build the main driver data for this mesh type
-    Portage::Driver<Portage::Jali_Mesh_Wrapper,
-                    Portage::Jali_State_Wrapper> d(inputMeshWrapper,
-                                                   sourceStateWrapper,
-                                                   targetMeshWrapper,
-                                                   targetStateWrapper);
+
     // Register the variable name and interpolation order with the driver
     std::vector<std::string> remap_fields;
     remap_fields.push_back("celldata");
-    d.set_remap_var_names(remap_fields);
 
-    d.set_interpolation_order(example.order);
+    if(example.dim == 2 && example.order == 2){
+      Portage::Driver<
+          Portage::SearchKDTree, 
+          Portage::IntersectR2D, 
+          Portage::Interpolate_2ndOrder,
+          2,
+          Portage::Jali_Mesh_Wrapper, 
+          Portage::Jali_State_Wrapper>  
+          d(inputMeshWrapper, sourceStateWrapper, targetMeshWrapper, targetStateWrapper);
+      d.set_remap_var_names(remap_fields);    
+      d.run(numpe > 1);
+    }
 
-    struct timeval begin, end, diff;
-    gettimeofday(&begin, 0);
+    if(example.dim == 2 && example.order == 1){
+      Portage::Driver<
+          Portage::SearchKDTree, 
+          Portage::IntersectR2D, 
+          Portage::Interpolate_1stOrder,
+          2, 
+          Portage::Jali_Mesh_Wrapper, 
+          Portage::Jali_State_Wrapper>  
+          d(inputMeshWrapper, sourceStateWrapper, targetMeshWrapper, targetStateWrapper);
+      d.set_remap_var_names(remap_fields);    
+      d.run(numpe > 1);
+    }
 
-    // Do the remap
-    d.run();
+    if(example.dim == 3 && example.order == 1){
+      Portage::Driver<
+          Portage::SearchKDTree, 
+          Portage::IntersectR3D, 
+          Portage::Interpolate_1stOrder,
+          3,
+          Portage::Jali_Mesh_Wrapper, 
+          Portage::Jali_State_Wrapper>  
+          d(inputMeshWrapper, sourceStateWrapper, targetMeshWrapper, targetStateWrapper);
+      d.set_remap_var_names(remap_fields);    
+      d.run(numpe > 1);
+    }
+
+    if(example.dim == 3 && example.order == 2){
+      Portage::Driver<
+          Portage::SearchKDTree, 
+          Portage::IntersectR3D,
+          Portage::Interpolate_2ndOrder,
+          3,
+          Portage::Jali_Mesh_Wrapper, 
+          Portage::Jali_State_Wrapper>  
+          d(inputMeshWrapper, sourceStateWrapper, targetMeshWrapper, targetStateWrapper);
+      d.set_remap_var_names(remap_fields);    
+      d.run(numpe > 1);
+    }
+
 
     // Dump some timing information
     if (numpe > 1) MPI_Barrier(MPI_COMM_WORLD);
@@ -372,6 +441,7 @@ int main(int argc, char** argv) {
       double error;
       if (example.linear) {
         error = ccen[0]+ccen[1] - cellvecout[c];
+        std::cout << "error is " << error << std::endl;
         if (example.dim == 3)
           error += ccen[2];
       } else {  // quadratic
@@ -415,9 +485,35 @@ int main(int argc, char** argv) {
       inputMesh->write_to_exodus_file("input.exo");
       targetMesh->write_to_exodus_file("output.exo");
       std::cout << "...done." << std::endl;
+
+      std::vector<int> lgid(targetMeshWrapper.num_owned_cells()), gid;
+      std::vector<double> lvalues(targetMeshWrapper.num_owned_cells()), values;
+      for (int i=0; i < targetMeshWrapper.num_owned_cells(); i++) {
+        lgid[i] = targetMesh->GID(i, Jali::Entity_kind::CELL);
+        lvalues[i] = cellvecout[i];
+      }
+      collate(MPI_COMM_WORLD, rank, numpe, lgid, gid);
+      collate(MPI_COMM_WORLD, rank, numpe, lvalues, values);
+      if (rank == 0) {
+        std::vector<int> idx;
+        argsort(gid, idx);
+        reorder(gid, idx);
+        reorder(values, idx);
+        // The `static_cast` is a workaround for an Intel compiler's header
+        // files, which are missing a `std::to_string` function for ints.
+        std::ofstream fout("field"
+            + std::to_string(static_cast<long long>(example_num)) + ".txt");
+        fout << std::scientific;
+        fout.precision(17);
+        for (int i=0; i < gid.size(); i++) {
+          fout << gid[i] << " " << values[i] << std::endl;
+        }
+      }
     }
 
-  } else {  // node-centered remaps
+  } 
+
+else {  // node-centered remaps
     mf.included_entities({Jali::Entity_kind::FACE,
                           Jali::Entity_kind::EDGE,
                           Jali::Entity_kind::WEDGE,
@@ -501,25 +597,63 @@ int main(int argc, char** argv) {
                                        0.0);
     Portage::Jali_State_Wrapper targetStateWrapper(targetState);
 
-    // Build the main driver data for this mesh type
-    Portage::Driver<Portage::Jali_Mesh_Wrapper,
-                    Portage::Jali_State_Wrapper> d(inputMeshWrapper,
-                                                   sourceStateWrapper,
-                                                   targetMeshWrapper,
-                                                   targetStateWrapper);
 
     // Register the variable name and remap order with the driver
     std::vector<std::string> remap_fields;
     remap_fields.push_back("nodedata");
-    d.set_remap_var_names(remap_fields);
 
-    d.set_interpolation_order(example.order);
+    // Build the main driver data for this mesh type
+    if(example.dim == 2 && example.order == 1){
+      Portage::Driver<Portage::SearchKDTree, 
+          Portage::IntersectR2D, 
+          Portage::Interpolate_1stOrder,
+          2,
+          Portage::Jali_Mesh_Wrapper,
+          Portage::Jali_State_Wrapper> 
+          d(inputMeshWrapper, sourceStateWrapper, targetMeshWrapper, targetStateWrapper);
+      d.set_remap_var_names(remap_fields);    
+      d.run(numpe > 1);
+    }
 
+    if(example.dim == 2 && example.order == 2){
+      Portage::Driver<Portage::SearchKDTree, 
+          Portage::IntersectR2D, 
+          Portage::Interpolate_2ndOrder,
+          2,
+          Portage::Jali_Mesh_Wrapper,
+          Portage::Jali_State_Wrapper> 
+          d(inputMeshWrapper, sourceStateWrapper, targetMeshWrapper, targetStateWrapper);
+      d.set_remap_var_names(remap_fields);    
+      d.run(numpe > 1);
+    }
+
+    if(example.dim == 3 && example.order == 1){
+      Portage::Driver<Portage::SearchKDTree, 
+          Portage::IntersectR3D, 
+          Portage::Interpolate_1stOrder,
+          3,
+          Portage::Jali_Mesh_Wrapper,
+          Portage::Jali_State_Wrapper> 
+          d(inputMeshWrapper, sourceStateWrapper, targetMeshWrapper, targetStateWrapper);
+          d.set_remap_var_names(remap_fields);    
+          d.run(numpe > 1);
+    }
+
+    if(example.dim == 3 && example.order == 2){
+      Portage::Driver<Portage::SearchKDTree, 
+          Portage::IntersectR3D, 
+          Portage::Interpolate_2ndOrder,
+          3,
+          Portage::Jali_Mesh_Wrapper,
+          Portage::Jali_State_Wrapper> 
+          d(inputMeshWrapper, sourceStateWrapper, targetMeshWrapper, targetStateWrapper);
+          d.set_remap_var_names(remap_fields);    
+          d.run(numpe > 1);
+    }
+
+  //FIXME: amh: timing issues
     struct timeval begin, end, diff;
     gettimeofday(&begin, 0);
-
-    // Do the remap
-    d.run();
 
     // Dump some timing information
     gettimeofday(&end, 0);
@@ -567,9 +701,34 @@ int main(int argc, char** argv) {
       inputMesh->write_to_exodus_file("input.exo");
       targetMesh->write_to_exodus_file("output.exo");
       std::cout << "...done." << std::endl;
+
+      std::vector<int> lgid(targetMeshWrapper.num_owned_nodes()), gid;
+      std::vector<double> lvalues(targetMeshWrapper.num_owned_nodes()), values;
+      for (int i=0; i < targetMeshWrapper.num_owned_nodes(); i++) {
+        lgid[i] = targetMesh->GID(i, Jali::Entity_kind::NODE);
+        lvalues[i] = nodevecout[i];
+      }
+      collate(MPI_COMM_WORLD, rank, numpe, lgid, gid);
+      collate(MPI_COMM_WORLD, rank, numpe, lvalues, values);
+      if (rank == 0) {
+        std::vector<int> idx;
+        argsort(gid, idx);
+        reorder(gid, idx);
+        reorder(values, idx);
+        // The `static_cast` is a workaround for an Intel compiler's header
+        // files, which are missing a `std::to_string` function for ints.
+        std::ofstream fout("field"
+            + std::to_string(static_cast<long long>(example_num)) + ".txt");
+        fout << std::scientific;
+        fout.precision(17);
+        for (int i=0; i < gid.size(); i++) {
+          fout << gid[i] << " " << values[i] << std::endl;
+        }
+      }
     }
 
   }
+
 
   std::printf("finishing portageapp...\n");
 

@@ -11,10 +11,10 @@ set -e
 set -x
 
 # Tag or git commit hash of Jali version to build and use for this PR:
-JALI_VERSION=1ff0db4c4de485382243a5fd06f69b4b8a5383cd
+JALI_VERSION=v0.9.2
 
 # Where to find Jali's TPLs:
-TPL_INSTALL_PREFIX=/usr/local/codes/ngc/private/jali-tpl-1.0.6-intel-15.0.3
+TPL_INSTALL_PREFIX=/usr/local/codes/ngc/private/jali-tpl/1.0.7-intel-15.0.3-openmpi-1.6.5-rh6
 
 
 git config user.email ""

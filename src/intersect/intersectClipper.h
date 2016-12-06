@@ -15,6 +15,7 @@
 
 #include "portage/support/Point.h"
 
+namespace Portage {
 
 /*!
   @brief Return the area and moment of the polygon.
@@ -74,8 +75,9 @@ IntersectClipper(const SourceMeshType &s, const TargetMeshType &t):sourceMeshWra
   @return list of moments; ret[0] == 0th moment; ret[1] == first moment
 */
 std::vector<std::vector<double> > operator() (const int cellA, const int cellB) const {      
-  const Poly polyA = sourceMeshWrapper.cellToXY(cellA);
-  const Poly polyB = targetMeshWrapper.cellToXY(cellB);
+  Poly polyA, polyB;
+  sourceMeshWrapper.cell_get_coordinates(cellA, &polyA);
+  targetMeshWrapper.cell_get_coordinates(cellB, &polyB);
   double max_size_poly = 0;
   max_size_poly = IntersectClipper::updateMaxSize(polyA, max_size_poly);
   max_size_poly = IntersectClipper::updateMaxSize(polyB, max_size_poly);
@@ -181,5 +183,7 @@ const SourceMeshType &sourceMeshWrapper;
 const TargetMeshType &targetMeshWrapper;
 
 }; // class IntersectClipper
+
+}
 
 #endif // INTERSECT_CLIPPER_H

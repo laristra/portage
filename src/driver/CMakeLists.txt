@@ -20,10 +20,16 @@ if (ENABLE_UNIT_TESTS)
 
    if (Jali_DIR)
        cinch_add_unit(test_driver_multivar
-       SOURCES test/test_driver_multivar.cc
+       SOURCES test/test_driver_multivar 
        LIBRARIES portage ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
        POLICY MPI
        THREADS 1)
+       cinch_add_unit(test_driver
+       SOURCES test/test_driver 
+       LIBRARIES portage ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
+       POLICY MPI
+       THREADS 1)
+
    endif (Jali_DIR)
 
 endif (ENABLE_UNIT_TESTS)

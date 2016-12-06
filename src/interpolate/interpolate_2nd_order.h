@@ -60,7 +60,7 @@ class Interpolate_2ndOrder {
       source_state_(source_state),
       interp_var_name_("VariableNameNotSet"),
       limiter_type_(NOLIMITER),
-      source_vals_(NULL) {}
+      source_vals_(nullptr) {}
 
   /// Copy constructor (disabled)
   //  Interpolate_2ndOrder(const Interpolate_2ndOrder &) = delete;
@@ -167,7 +167,7 @@ class Interpolate_2ndOrder<SourceMeshType, TargetMeshType, StateType, CELL, D> {
       source_state_(source_state),
       interp_var_name_("VariableNameNotSet"),
       limiter_type_(NOLIMITER),
-      source_vals_(NULL) {}
+      source_vals_(nullptr) {}
 
   
   /// Set the name of the interpolation variable and the limiter type
@@ -310,8 +310,6 @@ double Interpolate_2ndOrder<SourceMeshType, TargetMeshType,
 //////////////////////////////////////////////////////////////////////////////
 /*!
   @brief 2nd order interpolate class specialization for nodes
-  @param[in] dualcells_and_weights Pair containing vector of contributing
-  source nodes (dual cells) and vector of contribution weights
 */
 
 template<typename SourceMeshType, typename TargetMeshType, typename StateType,
@@ -416,13 +414,13 @@ template<typename SourceMeshType, typename TargetMeshType, typename StateType,
          long D>
 double Interpolate_2ndOrder<SourceMeshType, TargetMeshType,
                             StateType, NODE, D> :: operator()
-    (int const targetCellID, std::vector<Weights_t> const & sources_and_weights)
+    (int const targetNodeID, std::vector<Weights_t> const & sources_and_weights)
     const {
 
-  int nsrccells = sources_and_weights.size();
-  if (!nsrccells) {
+  int nsrcnodes = sources_and_weights.size();
+  if (!nsrcnodes) {
 #ifdef DEBUG
-    std::cerr << "WARNING: No source cells contribute to target cell." <<
+    std::cerr << "WARNING: No source nodes contribute to target node." <<
         std::endl;
 #endif
     return 0.0;
@@ -435,8 +433,8 @@ double Interpolate_2ndOrder<SourceMeshType, TargetMeshType,
 
   /// @todo Should use zip_iterator here but I am not sure I know how to
 
-  for (int j = 0; j < nsrccells; ++j) {
-    int srccell = sources_and_weights[j].entityID;
+  for (int j = 0; j < nsrcnodes; ++j) {
+    int srcnode = sources_and_weights[j].entityID;
     std::vector<double> xsect_weights = sources_and_weights[j].weights;
     double xsect_volume = xsect_weights[0];
 
@@ -445,25 +443,24 @@ double Interpolate_2ndOrder<SourceMeshType, TargetMeshType,
 
     // note: here we are getting the node coord, not the centroid of
     // the dual cell
-    Point<D> srccell_coord;
-    source_mesh_.node_get_coordinates(srccell, &srccell_coord);
+    Point<D> srcnode_coord;
+    source_mesh_.node_get_coordinates(srcnode, &srcnode_coord);
 
     Point<D> xsect_centroid;
     for (int i = 0; i < D; ++i)
       // (1st moment)/(vol)
       xsect_centroid[i] = xsect_weights[1+i]/xsect_volume;
 
-    Vector<D> gradient = gradients_[srccell];
-    Vector<D> vec = xsect_centroid - srccell_coord;
-    double val = source_vals_[srccell] + dot(gradient, vec);
+    Vector<D> gradient = gradients_[srcnode];
+    Vector<D> vec = xsect_centroid - srcnode_coord;
+    double val = source_vals_[srcnode] + dot(gradient, vec);
     val *= xsect_volume;
     totalval += val;
   }
 
-  // Normalize the value by sum of all the 0th weights (which is the
-  // same as the total volume of the source cell)
+  // Normalize the value by volume of the target dual cell
 
-  totalval /= target_mesh_.cell_volume(targetCellID);
+  totalval /= target_mesh_.dual_cell_volume(targetNodeID);
 
   return totalval;
 }

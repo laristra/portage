@@ -17,7 +17,7 @@ TEST(intersectClipper, simple){
   std::shared_ptr<Jali::Mesh> tm = mf(1,1,2, 2, 1, 1);
   Portage::Jali_Mesh_Wrapper s(*sm);
   Portage::Jali_Mesh_Wrapper t(*tm);
-  IntersectClipper<Portage::Jali_Mesh_Wrapper> isect{s , t};
+  Portage::IntersectClipper<Portage::Jali_Mesh_Wrapper> isect{s , t};
   std::vector<std::vector<double> > moments = isect(0, 0); 
   for(int i=0;i<moments.size();i++){
     for(int j=0;j<moments[i].size();j++){

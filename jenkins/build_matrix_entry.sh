@@ -15,7 +15,7 @@ build_type=$2
 
 # set modules and install paths
 
-jali_version=jali-0.9.0
+jali_version=0.9.2
 
 export NGC=/usr/local/codes/ngc
 ngc_include_dir=$NGC/private/include
@@ -23,10 +23,10 @@ ngc_include_dir=$NGC/private/include
 # compiler-specific settings
 if [[ $compiler == "intel15" ]]; then
   cxxmodule=intel/15.0.3
-  jali_install_dir=$NGC/private/${jali_version}-intel-15.0.3
+  jali_install_dir=$NGC/private/jali/${jali_version}-intel-15.0.3-openmpi-1.6.5-rh6
 elif [[ $compiler == "gcc53" ]]; then
   cxxmodule=gcc/5.3.0
-  jali_install_dir=$NGC/private/${jali_version}-gcc-5.3.0
+  jali_install_dir=$NGC/private/jali/${jali_version}-gcc-5.3.0-openmpi-1.6.5-rh6
   flecsi_install_dir=$NGC/private/flecsi-gcc
 fi
   

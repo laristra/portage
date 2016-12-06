@@ -12,16 +12,36 @@
 #include "portage/support/portage.h"
 #include "portage/support/Point.h"
 
+/*!
+  @file simple_mesh.h
+  @brief A very light-weight, simple mesh infrastructure.
+ */
+
+/// Convenience for denoting a mesh entity ID.
 typedef int ID;
 
 namespace Portage {
 
+/*!
+  @class Simple_Mesh "simple_mesh.h"
+  @brief A very light-weight, serial, 3D Cartesian mesh.
+ */
 class Simple_Mesh {
  public:
-  // FIXME: account for non-3d meshes
+  /*!
+    @brief Constructor for creating a serial, 3D Cartesian mesh.
+    @param[in] x0,y0,z0 The minimum coordinates of the domain.
+    @param[in] x1,y1,z1 The maximum coordinates of the domain.
+    @param[in] nx,ny,nz The number of _cells_ in each direction.
+
+    By specifying the spatial extents and number of cells in each
+    direction, we create a Cartesian mesh in three dimensions.
+    Connectivity information is automatically built from global IDs.
+    This mesh class has _zero_ ghost mesh entities.
+  */
 Simple_Mesh(double x0, double y0, double z0,
             double x1, double y1, double z1,
-            ID nx, ID ny, ID nz) :
+            int nx, int ny, int nz) :
   nx_(nx), ny_(ny), nz_(nz),
     x0_(x0), y0_(y0), z0_(z0),
     x1_(x1), y1_(y1), z1_(z1) {
@@ -32,38 +52,48 @@ Simple_Mesh(double x0, double y0, double z0,
     // Construct the nodal coordinates from extents and number of nodes
     build_node_coords();
 
-    // Build cell <--> node, cell --> face, face <--> node adjacencies
+    // Build cell <--> node, cell <--> face, face --> node adjacencies
     build_cfn_adjacencies();
 
-    // Build ownership information - no ghosts in simple_mesh
+    // Build ownership information - no ghosts in Simple Mesh
     nodeids_owned_.resize(num_nodes_);
-    for (ID i(0); i < num_nodes_; ++i)
+    for (int i(0); i < num_nodes_; ++i)
       nodeids_owned_[i] = i;
     nodeids_ghost_.resize(0);
     nodeids_all_ = nodeids_owned_;
 
     cellids_owned_.resize(num_cells_);
-    for (ID i(0); i < num_cells_; ++i)
+    for (int i(0); i < num_cells_; ++i)
       cellids_owned_[i] = i;
     cellids_ghost_.resize(0);
     cellids_all_ = cellids_owned_;
 
     faceids_owned_.resize(num_faces_);
-    for (ID i(0); i < num_faces_; ++i)
+    for (int i(0); i < num_faces_; ++i)
       faceids_owned_[i] = i;
     faceids_ghost_.resize(0);
     faceids_all_ = faceids_owned_;
   }
 
+  /// Assignment operator (disabled).
+  Simple_Mesh & operator=(const Simple_Mesh &) = delete;
+
+  /// Destructor
   ~Simple_Mesh() {}
 
-  //! Spatial dimension of poIDs in the mesh
-  inline ID space_dimension() const {
+  /// Spatial dimension of the mesh
+  inline int space_dimension() const {
     return spacedim;
   }
 
-  ID num_entities(const Entity_kind kind,
-                      const Entity_type type) const {
+  /*!
+    @brief Determine the number of a specific mesh entity.
+    @param[in] kind The type of entity, e.g. @c CELL.
+    @param[in] type The type of the entity, e.g. @c PARALLEL_OWNED
+    @returns The number of the specified mesh entity.
+   */
+  int num_entities(const Entity_kind kind,
+                   const Entity_type type) const {
     switch (kind) {
       case Entity_kind::NODE:
         switch (type) {
@@ -103,45 +133,74 @@ Simple_Mesh(double x0, double y0, double z0,
     }
   }
 
-  // @TODO: replace with std::copy?
+  /*!
+    @brief For a given cell, get the list of faces and the direction of their
+    normals.
+    @param[in] cellid The ID of the cell.
+    @param[out] faces The vector of face IDs corresponding to cell @c cellid.
+    @param[out] fdirs The vector of face directions corresponding to each face
+    in @c faces.
+   */
   void cell_get_faces_and_dirs(const ID cellid,
                                std::vector<ID> *faces,
                                std::vector<int> *fdirs) const {
     auto offset = faces_per_cell_*cellid;
     faces->clear();
     fdirs->clear();
-    for (ID i(0); i < faces_per_cell_; ++i) {
+    for (int i(0); i < faces_per_cell_; ++i) {
       faces->push_back(cell_to_face_[i+offset]);
       fdirs->push_back(cell_face_dirs_[i+offset]);
     }
   }
   // @TODO: replace with std::copy?
+  /*!
+    @brief For a given cell, get the list of nodes.
+    @param[in] cellid The ID of the cell.
+    @param[out] nodes The vector of node IDs corresponding to cell @c cellid.
+   */
   void cell_get_nodes(const ID cellid,
                       std::vector<ID> *nodes) const {
     auto offset = nodes_per_cell_*cellid;
     nodes->clear();
-    for (ID i(0); i < nodes_per_cell_; ++i)
+    for (int i(0); i < nodes_per_cell_; ++i)
       nodes->push_back(cell_to_node_[i+offset]);
   }
-  // @TODO: replace with std::copy?
+  /*!
+    @brief For a given face, get the list of nodes.
+    @param[in] faceid The ID of the face.
+    @param[out] nodes The vector of node IDs corresponding to face @c faceid.
+   */
   void face_get_nodes(const ID faceid,
                       std::vector<ID> *nodes) const {
     auto offset = nodes_per_face_*faceid;
     nodes->clear();
-    for (ID i(0); i < nodes_per_face_; ++i)
+    for (int i(0); i < nodes_per_face_; ++i)
       nodes->push_back(face_to_node_[i+offset]);
   }
-  // @TODO: replace with std::copy?
+  /*!
+    @brief For a given node, get all the cells attached to this node.
+    @param[in] nodeid The ID of the node.
+    @param[out] cells The vector of cell IDs attached to node @c nodeid.
+   */
   void node_get_cells(const ID nodeid,
                       std::vector<ID> *cells) const {
-    auto offset = cells_per_node_*nodeid;
+    auto offset = cells_per_node_aug_*nodeid;
     cells->clear();
-    for (ID i(0); i < cells_per_node_; ++i)
-      cells->push_back(node_to_cell_[i+offset]);
+    for (int i(0); i < node_to_cell_[offset]; ++i) {
+      cells->push_back(node_to_cell_[i+offset+1]);
+    }
   }
 
   // General specification - specialization follows at bottom of file
-  // @TODO throw error/exception
+  /*!
+    @brief Get the coordinates of a node.
+    @tparam D Dimension of the node.
+    @param[in] nodeid The ID of the node.
+    @param[out] pp The @c Point object of dimension @c D containing the
+    coordinates of node @nodeid.
+
+    This is the general specification.  @c Simple_Mesh is only 3D.
+   */
   template<long D>
   void node_get_coordinates(const ID nodeid,
                             Point<D> *pp) const {
@@ -149,23 +208,29 @@ Simple_Mesh(double x0, double y0, double z0,
   }
 
  private:
+  /*!
+    @brief Constructs and stores the node coordinates from the extents and
+    number of cells per direction passed to the constructor.
+   */
   void build_node_coords() {
     coordinates_.clear();
-    //    nodeids_owned_.clear();
 
     double hx = (x1_ - x0_)/nx_;
     double hy = (y1_ - y0_)/ny_;
     double hz = (z1_ - z0_)/nz_;
 
-    for (ID iz(0); iz <= nz_; ++iz)
-      for (ID iy(0); iy <= ny_; ++iy)
-        for (ID ix(0); ix <= nx_; ++ix) {
+    for (int iz(0); iz <= nz_; ++iz)
+      for (int iy(0); iy <= ny_; ++iy)
+        for (int ix(0); ix <= nx_; ++ix) {
           coordinates_.emplace_back(x0_+ix*hx,
                                     y0_+iy*hy,
                                     z0_+iz*hz);
         }
   }
 
+  /*
+    @brief Builds the cell-face-node adjacency information.
+   */
   void build_cfn_adjacencies() {
     // downward adjacencies
     cell_to_node_.resize(nodes_per_cell_*num_cells_);
@@ -173,19 +238,13 @@ Simple_Mesh(double x0, double y0, double z0,
     cell_face_dirs_.resize(faces_per_cell_*num_cells_);
     face_to_node_.resize(nodes_per_face_*num_faces_);
     // upward adjacencies
-    node_to_face_.resize(faces_per_node_*num_nodes_);
-    node_to_cell_.resize(cells_per_node_*num_nodes_);
+    node_to_cell_.resize(cells_per_node_aug_*num_nodes_);
     face_to_cell_.resize(2*num_faces_);
 
-    // this keeps track of how many cells we have so far per node
-    std::vector<ID> cells_at_node(num_nodes_);
-    // likewise for faces we have per node
-    std::vector<ID> faces_at_node(num_nodes_);
-
     // cell adjacencies
-    for (ID iz(0); iz < nz_; ++iz)
-      for (ID iy(0); iy < ny_; ++iy)
-        for (ID ix(0); ix < nx_; ++ix) {
+    for (int iz(0); iz < nz_; ++iz)
+      for (int iy(0); iy < ny_; ++iy)
+        for (int ix(0); ix < nx_; ++ix) {
           auto thisCell = cell_index_(ix, iy, iz);
           auto cstart = nodes_per_cell_ * thisCell;
           auto fstart = faces_per_cell_ * thisCell;
@@ -213,13 +272,13 @@ Simple_Mesh(double x0, double y0, double z0,
           // loop over the 8 nodes attached to this cell, and assign
           // this cell to its cell connectivity
           // order shouldn't matter here
-          for (ID iiz(iz); iiz <= iz+1; ++iiz)
-            for (ID iiy(iy); iiy <= iy+1; ++iiy)
-              for (ID iix(ix); iix <= ix+1; ++iix) {
+          for (int iiz(iz); iiz <= iz+1; ++iiz)
+            for (int iiy(iy); iiy <= iy+1; ++iiy)
+              for (int iix(ix); iix <= ix+1; ++iix) {
                 auto thisNode = node_index_(iix, iiy, iiz);
-                auto cnstart = cells_per_node_ * thisNode;
-                auto & c_at_n = cells_at_node[thisNode];
-                node_to_cell_[thisNode+c_at_n] = thisCell;
+                auto cnstart = cells_per_node_aug_ * thisNode;
+                auto & c_at_n = node_to_cell_[cnstart];
+                node_to_cell_[cnstart+c_at_n+1] = thisCell;
                 c_at_n++;
               }
 
@@ -233,13 +292,18 @@ Simple_Mesh(double x0, double y0, double z0,
             |3 +0---|--+         +-------> x
             | /  4  | /
             +-------+
+
+            The "dirs" indicate whether or not the nodes are listed in
+            a ccw (dir=+1) or cw (dir=-1) orientation when look DOWN
+            the cell's OUTWARD normal at that face.  Images of each
+            face are below when we construct the face adjacencies.
            */
           cell_to_face_[fstart  ] = xzface_index_(ix, iy, iz);    // front
-          cell_face_dirs_[fstart  ] = -1;
+          cell_face_dirs_[fstart  ] = 1;
           cell_to_face_[fstart+1] = yzface_index_(ix+1, iy, iz);  // right
           cell_face_dirs_[fstart+1] = 1;
           cell_to_face_[fstart+2] = xzface_index_(ix, iy+1, iz);  // back
-          cell_face_dirs_[fstart+2] = 1;
+          cell_face_dirs_[fstart+2] = -1;
           cell_to_face_[fstart+3] = yzface_index_(ix, iy, iz);    // left
           cell_face_dirs_[fstart+3] = -1;
           cell_to_face_[fstart+4] = xyface_index_(ix, iy, iz);    // bottom
@@ -270,25 +334,15 @@ Simple_Mesh(double x0, double y0, double z0,
        /       /
       0-------1
     */
-    for (ID iz(0); iz <= nz_; ++iz)
-      for (ID iy(0); iy < ny_; ++iy)
-        for (ID ix(0); ix < nx_; ++ix) {
+    for (int iz(0); iz <= nz_; ++iz)
+      for (int iy(0); iy < ny_; ++iy)
+        for (int ix(0); ix < nx_; ++ix) {
           auto thisFace = xyface_index_(ix, iy, iz);
           auto nstart = nodes_per_face_ * thisFace;
           face_to_node_[nstart  ] = node_index_(ix, iy, iz);
           face_to_node_[nstart+1] = node_index_(ix+1, iy, iz);
           face_to_node_[nstart+2] = node_index_(ix+1, iy+1, iz);
           face_to_node_[nstart+3] = node_index_(ix, iy+1, iz);
-          // loop over the 4 nodes attached to this face
-          // and assign this face to their face connectivity
-          // order shouldn't matter here
-          for (ID iiy(iy); iiy <= iy+1; ++iiy)
-            for (ID iix(ix); iix <= ix+1; ++iix) {
-              auto thisNode = node_index_(iix, iiy, iz);
-              auto & f_at_n = faces_at_node[thisNode];
-              node_to_face_[thisNode+f_at_n] = thisFace;
-              f_at_n++;
-              }
         }
     /* xz faces
        3-------2
@@ -297,25 +351,15 @@ Simple_Mesh(double x0, double y0, double z0,
        |       |
        0-------1
      */
-    for (ID iz(0); iz < nz_; ++iz)
-      for (ID iy(0); iy <= ny_; ++iy)
-        for (ID ix(0); ix < nx_; ++ix) {
+    for (int iz(0); iz < nz_; ++iz)
+      for (int iy(0); iy <= ny_; ++iy)
+        for (int ix(0); ix < nx_; ++ix) {
           auto thisFace = xzface_index_(ix, iy, iz);
           auto nstart = nodes_per_face_ * thisFace;
           face_to_node_[nstart  ] = node_index_(ix, iy, iz);
           face_to_node_[nstart+1] = node_index_(ix+1, iy, iz);
           face_to_node_[nstart+2] = node_index_(ix+1, iy, iz+1);
           face_to_node_[nstart+3] = node_index_(ix, iy, iz+1);
-          // loop over the 4 nodes attached to this face
-          // and assign this face to their face connectivity
-          // order shouldn't matter here
-          for (ID iiz(iz); iiz <= iz+1; ++iiz)
-            for (ID iix(ix); iix <= ix+1; ++iix) {
-              auto thisNode = node_index_(iix, iy, iiz);
-              auto & f_at_n = faces_at_node[thisNode];
-              node_to_face_[thisNode+f_at_n] = thisFace;
-              f_at_n++;
-              }
         }
     /* yz faces
           2
@@ -327,88 +371,78 @@ Simple_Mesh(double x0, double y0, double z0,
        |/
        0
      */
-    for (ID iz(0); iz < nz_; ++iz)
-      for (ID iy(0); iy < ny_; ++iy)
-        for (ID ix(0); ix <= nx_; ++ix) {
+    for (int iz(0); iz < nz_; ++iz)
+      for (int iy(0); iy < ny_; ++iy)
+        for (int ix(0); ix <= nx_; ++ix) {
           auto thisFace = yzface_index_(ix, iy, iz);
           auto nstart = nodes_per_face_ * thisFace;
           face_to_node_[nstart  ] = node_index_(ix, iy, iz);
           face_to_node_[nstart+1] = node_index_(ix, iy+1, iz);
           face_to_node_[nstart+2] = node_index_(ix, iy+1, iz+1);
           face_to_node_[nstart+3] = node_index_(ix, iy, iz+1);
-          // loop over the 4 nodes attached to this face
-          // and assign this face to their face connectivity
-          // order shouldn't matter here
-          for (ID iiz(iz); iiz <= iz+1; ++iiz)
-            for (ID iiy(iy); iiy <= iy+1; ++iiy) {
-              auto thisNode = node_index_(ix, iiy, iiz);
-              auto & f_at_n = faces_at_node[thisNode];
-              node_to_face_[thisNode+f_at_n] = thisFace;
-              f_at_n++;
-              }
         }
   }
 
-  /***********************************************************************
-   * DATA - FIXME: removem 3d assumptions
-   **********************************************************************/
+  /// @c Simple_Mesh is only 3D.
+  int spacedim = 3;
 
-  ID spacedim = 3;
-
-  // number of cells in the three coordinate directions
-  ID nx_, ny_, nz_;
-  // coordinates of lower left front and upper right back of brick
+  /// Number of cells in the three coordinate directions.
+  int nx_, ny_, nz_;
+  /// Coordinates of lower left front and upper right back of domain.
   double x0_, x1_, y0_, y1_, z0_, z1_;
 
-  // node positions
+  /// Node positions.
   std::vector<Point<3>> coordinates_;
 
-  // hard coded to 3d hexes for now
-  ID nodes_per_face_ = 4;
-  ID nodes_per_cell_ = 8;
-  ID edges_per_face_ = 4;  // needed for sides
-  ID faces_per_cell_ = 6;
-  ID cells_per_node_ = 8;
-  ID faces_per_node_ = 12;
+  /// Hard coded to 3D hexes for now.
+  int nodes_per_face_ = 4;
+  int nodes_per_cell_ = 8;
+  int faces_per_cell_ = 6;
+  int cells_per_node_aug_ = 9;   // 1 entry for the num cells actually attached
 
-  ID num_cells_;
-  ID num_nodes_;
-  ID num_faces_;
+  /// Cache of stored sizes.
+  int num_cells_;
+  int num_nodes_;
+  int num_faces_;
 
+  /// Storage for connectivity information.
   std::vector<ID> cell_to_face_;
   std::vector<int> cell_face_dirs_;
   std::vector<ID> cell_to_node_;
   std::vector<ID> face_to_node_;
   std::vector<ID> face_to_cell_;
-  std::vector<ID> node_to_face_;
   std::vector<ID> node_to_cell_;
 
-  // Entity lists
-
+  /// Cache of entity ID lists.
   std::vector<ID> nodeids_owned_, nodeids_ghost_, nodeids_all_;
   std::vector<ID> faceids_owned_, faceids_ghost_, faceids_all_;
-  std::vector<ID> cellids_owned_, cellids_ghost_,
-    cellids_boundary_ghost_, cellids_all_;
+  std::vector<ID> cellids_owned_, cellids_ghost_, cellids_all_;
 
-  // helper functions for looking up indices
-  ID node_index_(ID i, ID j, ID k) const {
+  /// Helper functions for looking up indices.
+  ID node_index_(int i, int j, int k) const {
     return i + j*(nx_+1) + k*(nx_+1)*(ny_+1);
   }
-  ID cell_index_(ID i, ID j, ID k) const {
+  ID cell_index_(int i, int j, int k) const {
     return i + j*nx_ + k*nx_*ny_;
   }
-  ID xyface_index_(ID i, ID j, ID k) const {
+  ID xyface_index_(int i, int j, int k) const {
     return i + j*nx_ + k*nx_*ny_;
   }
-  ID xzface_index_(ID i, ID j, ID k) const {
+  ID xzface_index_(int i, int j, int k) const {
     return i + j*nx_ + k*nx_*(ny_+1) + xyface_index_(0, 0, nz_+1);
   }
-  ID yzface_index_(ID i, ID j, ID k) const {
+  ID yzface_index_(int i, int j, int k) const {
     return i + j*(nx_+1) + k*(nx_+1)*ny_ + xzface_index_(0, 0, nz_);
   }
 };  // class Simple_Mesh
 
 // Specializations
+/*!
+  @brief Get the 3D coordinates of a specific node as @c Portage::Point object.
+  @param[in] nodeid The ID of the node.
+  @param[out] pp The @c Portage::Point containing the coordinates for node
+  @c nodeid.
+ */
 template<>
 void Simple_Mesh::node_get_coordinates<3>(const ID nodeid,
                                           Point<3> *pp) const {
