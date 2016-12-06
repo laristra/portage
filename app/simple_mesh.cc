@@ -358,4 +358,6 @@ int main(int argc, char** argv) {
       fout << n << " " << nodevecout[n] << std::endl;
   }
   std::cout << "finishing simple_mesh app..." << std::endl;
+
+  MPI_Finalize();
 }
