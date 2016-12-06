@@ -347,7 +347,7 @@ int main(int argc, char** argv) {
     std::printf("\n\nL2 NORM OF ERROR = %lf\n\n", sqrt(toterr));
 
     // Create the output file for comparison.
-    // The `static_cast` is a workaround for Intel compiler, which are mising a
+    // The `static_cast` is a workaround for Intel compiler, which are missing a
     // `to_string` function for ints.
     std::ofstream fout("field"
                        + std::to_string(static_cast<long long>(example_num))
