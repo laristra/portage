@@ -109,7 +109,8 @@ if (Jali_DIR)
 
    # Look for the Jali package
 
-   find_package(Jali REQUIRED)
+   find_package(Jali REQUIRED
+                HINTS ${Jali_DIR}/lib)
 
    message(STATUS "Located Jali")
    message(STATUS "Jali_DIR=${Jali_DIR}")
