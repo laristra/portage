@@ -9,4 +9,4 @@ set -x
 mpirun -np 1 ${APPDIR}/simple_mesh 0 4 5
 
 # Compare the values for the field
-${APPDIR}/apptest_cmp field_gold0.txt field0.txt 1e-12
+${APPDIR}/apptest_cmp field_gold0.txt field0.txt 2e-12
