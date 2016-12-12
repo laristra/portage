@@ -48,6 +48,9 @@ std::vector<example_properties> setup_examples() {
 
   // Cell-centered remaps:
 
+  // 1st order cell-centered remap of a const func
+  examples.emplace_back(1, true, 0);
+
   // 1st order cell-centered remap of linear func
   examples.emplace_back(1, true, 1);
 
@@ -65,19 +68,22 @@ std::vector<example_properties> setup_examples() {
 
   // Node-centered remaps
 
-  // 1st order cell-centered remap of linear func
+  // 1st order node-centered remap of a const func
+  examples.emplace_back(1, false, 0);
+
+  // 1st order node-centered remap of linear func
   examples.emplace_back(1, false, 1);
 
-  // 1st order cell-centered remap of quad func
+  // 1st order node-centered remap of quad func
   examples.emplace_back(1, false, 2);
 
-  // 2nd order cell-centered remap of linear func
+  // 2nd order node-centered remap of linear func
   examples.emplace_back(2, false, 1);
 
-  // 2nd order cell-centered remap of quad func
+  // 2nd order node-centered remap of quad func
   examples.emplace_back(2, false, 2);
 
-  // 2nd order cell-centered remap of linear func on non-conformal mesh
+  // 2nd order node-centered remap of linear func on non-conformal mesh
   examples.emplace_back(2, false, 1, false);
   return examples;
 }
@@ -137,6 +143,9 @@ int main(int argc, char** argv) {
 
   std::shared_ptr<Simple_Mesh> inputMesh, targetMesh;
 
+  // Value for the constant function
+  const double fval = 42.0;
+
   if (example.cell_centered) {
     inputMesh = std::make_shared<Simple_Mesh>(0.0, 0.0, 0.0,
                                               1.0, 1.0, 1.0,
@@ -164,6 +173,11 @@ int main(int argc, char** argv) {
     Portage::Point<3> cen;
 
     switch (example.field_order) {
+      case 0:
+        for (int c(0); c < ninpcells; ++c) {
+          inputData[c] = fval;
+        }
+        break;
       case 1:
         for (int c(0); c < ninpcells; ++c) {
           inputMeshWrapper.cell_centroid(c, &cen);
@@ -226,6 +240,9 @@ int main(int argc, char** argv) {
 
       double error;
       switch (example.field_order) {
+        case 0:
+          error = fval - cellvecout[c];
+          break;
         case 1:
           error = ccen[0] + ccen[1] + ccen[2] - cellvecout[c];
           break;
@@ -284,6 +301,11 @@ int main(int argc, char** argv) {
 
     Portage::Point<3> nodexyz;
     switch (example.field_order) {
+      case 0:
+        for (int i(0); i < ninpnodes; ++i) {
+          inputData[i] = fval;
+        }
+        break;
       case 1:
         for (int i(0); i < ninpnodes; ++i) {
           inputMeshWrapper.node_get_coordinates(i, &nodexyz);
@@ -347,6 +369,9 @@ int main(int argc, char** argv) {
 
       double err;
       switch (example.field_order) {
+        case 0:
+          err = fval - nodevecout[i];
+          break;
         case 1:
           err = nnodexyz[0] + nnodexyz[1] + nnodexyz[2] - nodevecout[i];
           break;
