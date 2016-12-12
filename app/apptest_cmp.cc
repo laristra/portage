@@ -61,7 +61,9 @@ int main(int argc, char** argv) {
       throw std::runtime_error("The field global IDs do not match.");
     }
     if (std::abs(values1[i] - values2[i]) > eps) {
-      std::cout << i << " " << values1[i] << " " << values2[i] << std::endl;
+      std::cout << i << " " << values1[i] << " " << values2[i]
+                << "error: "
+                << std::abs(values1[i] - values2[i]) << std::endl;
       throw std::runtime_error("The field values do not match.");
     }
   }
