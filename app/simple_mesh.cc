@@ -9,6 +9,7 @@
 #include <fstream>
 #include <cstdio>
 #include <memory>
+#include <stdexcept>
 
 #include <mpi.h>
 
@@ -31,12 +32,12 @@ using Portage::Simple_State_Wrapper;
 
 struct example_properties {
   example_properties(const int order, const bool cell_centered,
-                     const bool linear, const bool conformal = true)
-      : order(order), cell_centered(cell_centered), linear(linear),
+                     const int field_order, const bool conformal = true)
+      : order(order), cell_centered(cell_centered), field_order(field_order),
         conformal(conformal) { }
   int order;           // interpolation order in example
   bool cell_centered;  // is this example a cell-centered remap?
-  bool linear;         // is this example a remap of linear data?
+  int field_order;     // order of the field to map
   bool conformal;      // are the two meshes boundary-conformal?
 };
 
@@ -48,36 +49,36 @@ std::vector<example_properties> setup_examples() {
   // Cell-centered remaps:
 
   // 1st order cell-centered remap of linear func
-  examples.emplace_back(1, true, true);
+  examples.emplace_back(1, true, 1);
 
   // 1st order cell-centered remap of quad func
-  examples.emplace_back(1, true, false);
+  examples.emplace_back(1, true, 2);
 
   // 2nd order cell-centered remap of linear func
-  examples.emplace_back(2, true, true);
+  examples.emplace_back(2, true, 1);
 
   // 2nd order cell-centered remap of quad func
-  examples.emplace_back(2, true, false);
+  examples.emplace_back(2, true, 2);
 
   // 2nd order cell-centered remap of linear func on non-conformal mesh
-  examples.emplace_back(2, true, true, false);
+  examples.emplace_back(2, true, 1, false);
 
   // Node-centered remaps
 
   // 1st order cell-centered remap of linear func
-  examples.emplace_back(1, false, true);
+  examples.emplace_back(1, false, 1);
 
   // 1st order cell-centered remap of quad func
-  examples.emplace_back(1, false, false);
+  examples.emplace_back(1, false, 2);
 
   // 2nd order cell-centered remap of linear func
-  examples.emplace_back(2, false, true);
+  examples.emplace_back(2, false, 1);
 
   // 2nd order cell-centered remap of quad func
-  examples.emplace_back(2, false, false);
+  examples.emplace_back(2, false, 2);
 
   // 2nd order cell-centered remap of linear func on non-conformal mesh
-  examples.emplace_back(2, false, true, false);
+  examples.emplace_back(2, false, 1, false);
   return examples;
 }
 
@@ -95,10 +96,10 @@ void usage() {
       std::cout << "NODE-CENTERED EXAMPLES:" << std::endl;
       separated = true;
     }
-    std::printf("  %d: %s order %s-centered remap of %s func %s\n",
+    std::printf("  %d: %s order %s-centered remap of order %d func %s\n",
                 i, (example.order == 1) ? "1st" : "2nd",
                 example.cell_centered ? "cell" : "node",
-                example.linear ? "linear" : "quadratic",
+                example.field_order,
                 !example.conformal ? "on non-conformal mesh" : "");
     ++i;
   }
@@ -161,16 +162,22 @@ int main(int argc, char** argv) {
     std::vector<double> inputData(ninpcells);
 
     Portage::Point<3> cen;
-    if (example.linear) {
-      for (int c(0); c < ninpcells; ++c) {
-        inputMeshWrapper.cell_centroid(c, &cen);
-        inputData[c] = cen[0] + cen[1] + cen[2];
-      }
-    } else {
-      for (int c(0); c < ninpcells; ++c) {
-        inputMeshWrapper.cell_centroid(c, &cen);
-        inputData[c] = cen[0]*cen[0] + cen[1]*cen[1] + cen[2]*cen[2];
-      }
+
+    switch (example.field_order) {
+      case 1:
+        for (int c(0); c < ninpcells; ++c) {
+          inputMeshWrapper.cell_centroid(c, &cen);
+          inputData[c] = cen[0] + cen[1] + cen[2];
+        }
+        break;
+      case 2:
+        for (int c(0); c < ninpcells; ++c) {
+          inputMeshWrapper.cell_centroid(c, &cen);
+          inputData[c] = cen[0]*cen[0] + cen[1]*cen[1] + cen[2]*cen[2];
+        }
+        break;
+      default:
+        throw std::runtime_error("Unknown field order!");
     }
 
     inputState.add("celldata", Portage::Entity_kind::CELL, &(inputData[0]));
@@ -218,13 +225,16 @@ int main(int argc, char** argv) {
       targetMeshWrapper.cell_centroid(c, &ccen);
 
       double error;
-      if (example.linear) {
-        error = ccen[0] + ccen[1] + ccen[2] - cellvecout[c];
-        std::cout << "error is " << error << std::endl;
-      } else {
-        error = ccen[0]*ccen[0] + ccen[1]*ccen[1] + ccen[2]*ccen[2]
-            - cellvecout[c];
-        std::cout << "error is " << error << std::endl;
+      switch (example.field_order) {
+        case 1:
+          error = ccen[0] + ccen[1] + ccen[2] - cellvecout[c];
+          break;
+        case 2:
+          error = ccen[0]*ccen[0] + ccen[1]*ccen[1] + ccen[2]*ccen[2]
+              - cellvecout[c];
+          break;
+        default:
+          throw std::runtime_error("Unknown field_order!");
       }
 
       std::printf("Cell=% 4d Centroid = (% 5.3lf,% 5.3lf,% 5.3lf)", c,
@@ -273,17 +283,22 @@ int main(int argc, char** argv) {
     std::vector<double> inputData(ninpnodes);
 
     Portage::Point<3> nodexyz;
-    if (example.linear) {
-      for (int i(0); i < ninpnodes; ++i) {
-        inputMeshWrapper.node_get_coordinates(i, &nodexyz);
-        inputData[i] = nodexyz[0] + nodexyz[1] + nodexyz[2];
-      }
-    } else {
-      for (int i(0); i < ninpnodes; ++i) {
-        inputMeshWrapper.node_get_coordinates(i, &nodexyz);
-        inputData[i] = nodexyz[0]*nodexyz[0] + nodexyz[1]*nodexyz[1]
-            + nodexyz[2]*nodexyz[2];
-      }
+    switch (example.field_order) {
+      case 1:
+        for (int i(0); i < ninpnodes; ++i) {
+          inputMeshWrapper.node_get_coordinates(i, &nodexyz);
+          inputData[i] = nodexyz[0] + nodexyz[1] + nodexyz[2];
+        }
+        break;
+      case 2:
+        for (int i(0); i < ninpnodes; ++i) {
+          inputMeshWrapper.node_get_coordinates(i, &nodexyz);
+          inputData[i] = nodexyz[0]*nodexyz[0] + nodexyz[1]*nodexyz[1]
+              + nodexyz[2]*nodexyz[2];
+        }
+        break;
+      default:
+        throw std::runtime_error("Unknown field_order!");
     }
 
     inputState.add("nodedata", Portage::Entity_kind::NODE, &(inputData[0]));
@@ -331,13 +346,17 @@ int main(int argc, char** argv) {
       targetMeshWrapper.node_get_coordinates(i, &nnodexyz);
 
       double err;
-      if (example.linear) {
-        err = nnodexyz[0] + nnodexyz[1] + nnodexyz[2] - nodevecout[i];
-      } else {
-        err = nnodexyz[0]*nnodexyz[0] + nnodexyz[1]*nnodexyz[1]
-          + nnodexyz[2]*nnodexyz[2] - nodevecout[i];
+      switch (example.field_order) {
+        case 1:
+          err = nnodexyz[0] + nnodexyz[1] + nnodexyz[2] - nodevecout[i];
+          break;
+        case 2:
+          err = nnodexyz[0]*nnodexyz[0] + nnodexyz[1]*nnodexyz[1]
+              + nnodexyz[2]*nnodexyz[2] - nodevecout[i];
+          break;
+        default:
+          throw std::runtime_error("Unknown field_order!");
       }
-      std::cout << "error is " << err << std::endl;
 
       std::printf("Node=% 4d Coords = (% 5.3lf, % 5.3lf, % 5.3lf) ", i,
                   nnodexyz[0], nnodexyz[1], nnodexyz[2]);
