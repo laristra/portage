@@ -73,7 +73,7 @@ class Interpolate_1stOrder {
     edges, etc.
     @param[in] interp_var_name The string name of the variable to interpolate.
     @param[in] sources_and_weights Vector of source entities and their weights for each target entity
-   */
+  */
   Interpolate_1stOrder(SourceMeshType const & source_mesh,
                        TargetMeshType const & target_mesh,
                        StateType const & source_state) :
@@ -114,7 +114,7 @@ class Interpolate_1stOrder {
     entity and a source entity consists of two or more disjoint pieces
     @param[in] targetCellId The index of the target cell.
 
-   */
+  */
 
   double operator() (int const targetEntityId,
                      std::vector<Weights_t> const & sources_and_weights) const;
@@ -166,7 +166,7 @@ class Interpolate_1stOrder<SourceMeshType, TargetMeshType, StateType, CELL, D> {
     @param[in] source_state The state manager for data on the input mesh.
     @param[in] interp_var_name The string name of the variable to interpolate.
     @param[in] sources_and_weights Vector of source entities and their weights for each target entity
-   */
+  */
   Interpolate_1stOrder(SourceMeshType const & source_mesh,
                        TargetMeshType const & target_mesh,
                        StateType const & source_state) :
@@ -207,7 +207,7 @@ class Interpolate_1stOrder<SourceMeshType, TargetMeshType, StateType, CELL, D> {
     entity and a source entity consists of two or more disjoint pieces
     @param[in] targetCellId The index of the target cell.
 
-   */
+  */
 
   double operator() (int const targetCellId,
                      std::vector<Weights_t> const & sources_and_weights) const;
@@ -246,15 +246,27 @@ double Interpolate_1stOrder<SourceMeshType, TargetMeshType, StateType,
   // contribution of the source cell is its field value weighted by
   // its "weight" (in this case, its 0th moment/area/volume)
   double val = 0.0;
+  double wtsum0 = 0.0;
   for (auto const& wt : sources_and_weights) {
     int srccell = wt.entityID;
     std::vector<double> pair_weights = wt.weights;
     val += source_vals_[srccell] * pair_weights[0];  // 1st order
+    wtsum0 += pair_weights[0];
   }
 
   // Normalize the value by sum of all the weights
 
-  val /= target_mesh_.cell_volume(targetCellID);
+  double vol = target_mesh_.cell_volume(targetCellID);
+  val /= vol;
+
+#ifdef DEBUG
+  static bool first = true;
+  if (first && fabs((vol-wtsum0)/vol) > 1.0e-10) {
+    std::cerr << "WARNING: Meshes may be mismatched in the neighborhood of cell " <<
+        targetCellID << " in the target mesh (and maybe other places too)\n";
+    first = false;
+  }
+#endif
 
   return val;
 }
@@ -278,7 +290,7 @@ class Interpolate_1stOrder<SourceMeshType, TargetMeshType, StateType, NODE, D> {
     @param[in] source_state The state manager for data on the input mesh.
     @param[in] interp_var_name The string name of the variable to interpolate.
     @param[in] sources_and_weights Vector of source entities and their weights for each target entity
-   */
+  */
   Interpolate_1stOrder(SourceMeshType const & source_mesh,
                        TargetMeshType const & target_mesh,
                        StateType const & source_state) :
@@ -319,7 +331,7 @@ class Interpolate_1stOrder<SourceMeshType, TargetMeshType, StateType, NODE, D> {
     entity and a source entity consists of two or more disjoint pieces
     @param[in] targetCellId The index of the target cell.
 
-   */
+  */
 
   double operator() (int const targetNodeId,
                      std::vector<Weights_t> const & sources_and_weights) const;
@@ -358,15 +370,27 @@ double Interpolate_1stOrder<SourceMeshType, TargetMeshType, StateType,
   // moment/area/volume of its intersection with the target dual cell)
 
   double val = 0.0;
+  double wtsum0 = 0.0;
   for (auto const& wt : sources_and_weights) {
     int srcnode = wt.entityID;
     std::vector<double> pair_weights = wt.weights;
     val += source_vals_[srcnode] * pair_weights[0];  // 1st order
+    wtsum0 += pair_weights[0];
   }
 
   // Normalize the value by volume of the target dual cell
 
-  val /= target_mesh_.dual_cell_volume(targetNodeID);
+  double vol = target_mesh_.dual_cell_volume(targetNodeID);
+  val /= vol;
+  
+#ifdef DEBUG
+  static bool first = true;
+  if (first && fabs((vol-wtsum0)/vol) > 1.0e-10) {
+    std::cerr << "WARNING: Meshes may be mismatched in the neighborhood of node " <<
+        targetNodeID << " in the target mesh (and maybe other places too)\n";
+    first = false;
+  }
+#endif
 
   return val;
 }
