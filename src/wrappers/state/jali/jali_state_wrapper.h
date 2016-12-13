@@ -78,7 +78,7 @@ class Jali_State_Wrapper {
       }
     }
 
-    std::cerr << "Could not find state variable1 " << var_name << "\n";
+    std::cerr << "Could not find state variable " << var_name << "\n";
     (*data) = nullptr;
   }
 
@@ -103,7 +103,7 @@ class Jali_State_Wrapper {
       }
     }
 
-    std::cerr << "Could not find state variable2 " << var_name << "\n";
+    std::cerr << "Could not find state variable " << var_name << "\n";
     (*data) = nullptr;
   }
 
