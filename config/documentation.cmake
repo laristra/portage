@@ -42,6 +42,7 @@ file(COPY
   ${CMAKE_CURRENT_SOURCE_DIR}/doc/header.html
   ${CMAKE_CURRENT_SOURCE_DIR}/doc/footer.html
   ${CMAKE_CURRENT_SOURCE_DIR}/doc/stylesheet.css
+  ${CMAKE_CURRENT_SOURCE_DIR}/doc/doxy-boost.js
   DESTINATION
   ${CMAKE_BINARY_DIR}/doc/doxygen/html
   )
