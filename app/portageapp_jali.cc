@@ -642,9 +642,10 @@ int main(int argc, char** argv) {
 
     // construct the field file name and open the file
 
-    std::string fieldfilename = "field_" + std::to_string(dim) + "d_" +
-        entstr + "_f" + std::to_string(poly_order) + "_r" +
-        std::to_string(interp_order);
+    std::string fieldfilename = "field_" +
+        std::to_string(static_cast<int>(dim)) + "d_" +
+        entstr + "_f" + std::to_string(static_cast<int>(poly_order)) + "_r" +
+        std::to_string(static_cast<int>(interp_order));
     if (!conformal) fieldfilename = fieldfilename + "_nc";
     if (reverse_source_ranks) fieldfilename = fieldfilename + "_rev";
     fieldfilename = fieldfilename + ".txt";
