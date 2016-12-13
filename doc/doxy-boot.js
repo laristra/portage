@@ -4,6 +4,7 @@ $( document ).ready(function() {
     $("div.title").addClass("h1");
 
     $('li > a[href="index.html"] > span').before("<i class='fa fa-cog'></i> ");
+    $('li > a[href="index.html"] > span').text("Portage");
     $('li > a[href="modules.html"] > span').before("<i class='fa fa-square'></i> ");
     $('li > a[href="namespaces.html"] > span').before("<i class='fa fa-bars'></i> ");
     $('li > a[href="annotated.html"] > span').before("<i class='fa fa-list-ul'></i> ");
@@ -26,7 +27,7 @@ $( document ).ready(function() {
     $("#nav-path > ul").addClass("breadcrumb");
 
     $("table.params").addClass("table");
-    $("div.ingroups").wrapInner("<span class='text-nowrap'></span>");
+    $("div.ingroups").wrapInner("<small></small>");
     $("div.levels").css("margin", "0.5em");
     $("div.levels > span").addClass("btn btn-default btn-xs");
     $("div.levels > span").css("margin-right", "0.25em");
@@ -53,17 +54,19 @@ $( document ).ready(function() {
     $("div.ttname a").css("color", 'white');
     $("div.ttdef,div.ttdoc,div.ttdeci").addClass("panel-body");
 
-    $('div.fragment.well div.line:first').css('margin-top', '2px');
-    $('div.fragment.well div.line:last').css('margin-bottom', '2px');
+    $('#MSearchBox').parent().remove();
 
-	$('table.doxtable').removeClass('doxtable').addClass('table table-striped table-bordered').each(function(){
-		$(this).prepend('<thead></thead>');
-		$(this).find('tbody > tr:first').prependTo($(this).find('thead'));
+    $('div.fragment.well div.line:first').css('margin-top', '15px');
+    $('div.fragment.well div.line:last').css('margin-bottom', '15px');
 
-		$(this).find('td > span.success').parent().addClass('success');
-		$(this).find('td > span.warning').parent().addClass('warning');
-		$(this).find('td > span.danger').parent().addClass('danger');
-	});
+    $('table.doxtable').removeClass('doxtable').addClass('table table-striped table-bordered').each(function(){
+	$(this).prepend('<thead></thead>');
+	$(this).find('tbody > tr:first').prependTo($(this).find('thead'));
+
+	$(this).find('td > span.success').parent().addClass('success');
+	$(this).find('td > span.warning').parent().addClass('warning');
+	$(this).find('td > span.danger').parent().addClass('danger');
+    });
 
 
 
@@ -77,22 +80,21 @@ $( document ).ready(function() {
         $(this).siblings('.memItemLeft').attr('align', 'left');
     });
 
-    $('table.memberdecls').find('.memTemplItemRight').each(function(){
+    /*$('table.memberdecls').find('.memTemplItemRight').each(function(){
         $(this).contents().appendTo($(this).siblings('.memTemplItemLeft'));
         $(this).siblings('.memTemplItemLeft').attr('align', 'left');
+    });*/
+
+    function getOriginalWidthOfImg(img_element) {
+	var t = new Image();
+	t.src = (img_element.getAttribute ? img_element.getAttribute("src") : false) || img_element.src;
+	return t.width;
+    }
+
+    $('div.dyncontent').find('img').each(function(){
+	if(getOriginalWidthOfImg($(this)[0]) > $('#content>div.container').width())
+	    $(this).css('width', '100%');
     });
-
-	function getOriginalWidthOfImg(img_element) {
-		var t = new Image();
-		t.src = (img_element.getAttribute ? img_element.getAttribute("src") : false) || img_element.src;
-		return t.width;
-	}
-
-	$('div.dyncontent').find('img').each(function(){
-		if(getOriginalWidthOfImg($(this)[0]) > $('#content>div.container').width())
-			$(this).css('width', '100%');
-	});
-
 
   /* responsive search box */
   $('#MSearchBox').parent().remove();
