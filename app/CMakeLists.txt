@@ -8,29 +8,29 @@
 #------------------------------------------------------------------------------#
 
 if (Jali_DIR) 
-    add_executable(portageapp main.cc)
-    target_link_libraries(portageapp portage ${EXTRA_LIBS})
+    add_executable(portageapp_jali portageapp_jali.cc)
+    target_link_libraries(portageapp_jali portage ${EXTRA_LIBS})
 
     # MPI additions - need to push this down into cinch
     if (ENABLE_MPI)
-        target_link_libraries(portageapp ${MPI_CXX_LIBRARIES})
-        set_target_properties(portageapp PROPERTIES
+        target_link_libraries(portageapp_jali ${MPI_CXX_LIBRARIES})
+        set_target_properties(portageapp_jali PROPERTIES
                               LINK_FLAGS "${MPI_CXX_LINK_FLAGS}")
     endif (ENABLE_MPI)
 
     # Jali additions
     include_directories(${Jali_INCLUDE_DIRS} ${Jali_TPL_INCLUDE_DIRS})
-    target_link_libraries(portageapp ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES})
+    target_link_libraries(portageapp_jali ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES})
 
     # Shotshell example
-    add_executable(shotshellapp shotshell.cc)
-    target_link_libraries(shotshellapp portage ${EXTRA_LIBS})
+    add_executable(shotshellapp_jali shotshell_jali.cc)
+    target_link_libraries(shotshellapp_jali portage ${EXTRA_LIBS})
     if (ENABLE_MPI)
-        target_link_libraries(shotshellapp ${MPI_CXX_LIBRARIES})
-        set_target_properties(shotshellapp PROPERTIES
+        target_link_libraries(shotshellapp_jali ${MPI_CXX_LIBRARIES})
+        set_target_properties(shotshellapp_jali PROPERTIES
                               LINK_FLAGS "${MPI_CXX_LINK_FLAGS}")
     endif (ENABLE_MPI)
-    target_link_libraries(shotshellapp ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES})
+    target_link_libraries(shotshellapp_jali ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES})
 
     # timing example
     add_executable(timingapp timing_test.cc)
@@ -45,30 +45,30 @@ endif (Jali_DIR)
 
 # FleCSI example
 if (FLECSI_INSTALL_DIR)
-  add_executable(portage_flecsiapp main_flecsi.cc)
-  target_link_libraries(portage_flecsiapp portage ${EXTRA_LIBS})
+  add_executable(portageapp_flecsi portageapp_flecsi.cc)
+  target_link_libraries(portageapp_flecsi portage ${EXTRA_LIBS})
   include_directories(${FLECSI_INCLUDE_DIRS})
-  target_link_libraries(portage_flecsiapp ${FLECSI_LIBRARIES})
+  target_link_libraries(portageapp_flecsi ${FLECSI_LIBRARIES})
 # these appear needed because of something we are pulling in within src
   if (ENABLE_MPI)
-      target_link_libraries(portage_flecsiapp ${MPI_CXX_LIBRARIES})
-      set_target_properties(portage_flecsiapp PROPERTIES
+      target_link_libraries(portageapp_flecsi ${MPI_CXX_LIBRARIES})
+      set_target_properties(portageapp_flecsi PROPERTIES
                             LINK_FLAGS "${MPI_CXX_LINK_FLAGS}")
   endif (ENABLE_MPI)
 endif (FLECSI_INSTALL_DIR)
 
 if (JALI_DIR AND FLECSI_INSTALL_DIR)
-  add_executable(portage_jali2flecsiapp main_jali_to_flecsi.cc)
-  target_link_libraries(portage_jali2flecsiapp portage ${EXTRA_LIBS})
+  add_executable(portageapp_jali2flecsi portageapp_jali2flecsi.cc)
+  target_link_libraries(portageapp_jali2flecsi portageapp_jali2flecsi ${EXTRA_LIBS})
   include_directories(${FLECSI_INCLUDE_DIRS})
-  target_link_libraries(portage_jali2flecsiapp ${FLECSI_LIBRARIES})
+  target_link_libraries(portageapp_jali2flecsi ${FLECSI_LIBRARIES})
 # these appear needed because of something we are pulling in within src
   if (ENABLE_MPI)
-      target_link_libraries(portage_jali2flecsiapp ${MPI_CXX_LIBRARIES})
-      set_target_properties(portage_jali2flecsiapp PROPERTIES
+      target_link_libraries(portageapp_jali2flecsi ${MPI_CXX_LIBRARIES})
+      set_target_properties(portageapp_jali2flecsi PROPERTIES
                             LINK_FLAGS "${MPI_CXX_LINK_FLAGS}")
   endif (ENABLE_MPI)
-  target_link_libraries(portage_jali2flecsiapp ${Jali_LIBRARIES}
+  target_link_libraries(portageapp_jali2flecsi ${Jali_LIBRARIES}
                         ${Jali_TPL_LIBRARIES})
 
 endif (JALI_DIR AND FLECSI_INSTALL_DIR)
@@ -84,15 +84,15 @@ if(ENABLE_TCMALLOC)
   set(TCMALLOC_LIB "${HOME}" CACHE STRING "Set the TCMalloc library")
 
   if (Jali_DIR)
-    target_link_libraries(portageapp ${TCMALLOC_LIB})
+    target_link_libraries(portageapp_jali ${TCMALLOC_LIB})
     target_link_libraries(timingapp ${TCMALLOC_LIB})
-    target_link_libraries(shotshellapp ${TCMALLOC_LIB})
+    target_link_libraries(shotshellapp_jali ${TCMALLOC_LIB})
   endif (Jali_DIR)
   if (FLECSI_INSTALL_DIR)
-    target_link_libraries(portage_flecsiapp ${TCMALLOC_LIB})
+    target_link_libraries(portageapp_flecsi ${TCMALLOC_LIB})
   endif (FLECSI_INSTALL_DIR)
   if (JALI_DIR AND FLECSI_INSTALL_DIR)
-    target_link_libraries(portage_jali2flecsiapp ${TCMALLOC_LIB})
+    target_link_libraries(portageapp_jali2flecsi ${TCMALLOC_LIB})
   endif (JALI_DIR AND FLECSI_INSTALL_DIR)
 endif(ENABLE_TCMALLOC)
 
@@ -105,14 +105,14 @@ if(ENABLE_PROFILE)
   include_directories(${VTUNE_INCLUDE_DIR})
 
   if (Jali_DIR)
-    target_link_libraries(portageapp ${VTUNE_LIB})
+    target_link_libraries(portageapp_jali ${VTUNE_LIB})
     target_link_libraries(timingapp ${VTUNE_LIB})
-    target_link_libraries(shotshellapp ${VTUNE_LIB})
+    target_link_libraries(shotshellapp_jali ${VTUNE_LIB})
   endif (Jali_DIR)
   if (FLECSI_INSTALL_DIR)
-    target_link_libraries(portage_flecsiapp ${VTUNE_LIB})
+    target_link_libraries(portageapp_flecsi ${VTUNE_LIB})
   endif (FLECSI_INSTALL_DIR)
   if (JALI_DIR AND FLECSI_INSTALL_DIR)
-    target_link_libraries(portage_jali2flecsiapp ${VTUNE_LIB})
+    target_link_libraries(portageapp_jali2flecsi ${VTUNE_LIB})
   endif (JALI_DIR AND FLECSI_INSTALL_DIR)
 endif(ENABLE_PROFILE)
