@@ -347,8 +347,8 @@ int main(int argc, char** argv) {
       
       std::string inbasename =
           infilename.substr(0, infilename.find(".exo")) + "_" + entstr +
-          "_f" + std::to_string(static_cast<int>(poly_order)) + "_r" +
-          std::to_string(static_cast<int>(interp_order));
+          "_f" + std::to_string(static_cast<long long>(poly_order)) + "_r" +
+          std::to_string(static_cast<long long>(interp_order));
       
       dynamic_cast<Jali::Mesh_MSTK*>(sourceMesh.get())->
           write_to_exodus_file(inbasename + ".exo");
@@ -358,8 +358,8 @@ int main(int argc, char** argv) {
       
       std::string outbasename =
           outfilename.substr(0, outfilename.find(".exo")) + "_" + entstr +
-          "_f" + std::to_string(static_cast<int>(poly_order)) + "_r" +
-          std::to_string(static_cast<int>(interp_order));
+          "_f" + std::to_string(static_cast<long long>(poly_order)) + "_r" +
+          std::to_string(static_cast<long long>(interp_order));
       
       dynamic_cast<Jali::Mesh_MSTK*>(targetMesh.get())->
           write_to_exodus_file(outbasename + ".exo");
@@ -393,10 +393,10 @@ int main(int argc, char** argv) {
     
     // Build filename and open the file
     std::string fieldfilename = "field_" + std::to_string(inputDim) + "d_" +
-        entstr + "_f" + std::to_string(static_cast<int>(poly_order)) + "_r" +
-        std::to_string(static_cast<int>(interp_order)) + ".txt";
+        entstr + "_f" + std::to_string(static_cast<long long>(poly_order)) + "_r" +
+        std::to_string(static_cast<long long>(interp_order)) + ".txt";
     if (numpe > 1) {
-      int maxwidth = static_cast<int>(std::ceil(std::log10(numpe)));
+      int maxwidth = static_cast<long long>(std::ceil(std::log10(numpe)));
       char rankstr[10];
       std::snprintf(rankstr, sizeof(rankstr), "%0*d", maxwidth, rank);
       fieldfilename = fieldfilename + "." + std::string(rankstr);

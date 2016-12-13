@@ -643,14 +643,14 @@ int main(int argc, char** argv) {
     // construct the field file name and open the file
 
     std::string fieldfilename = "field_" +
-        std::to_string(static_cast<int>(dim)) + "d_" +
-        entstr + "_f" + std::to_string(static_cast<int>(poly_order)) + "_r" +
-        std::to_string(static_cast<int>(interp_order));
+        std::to_string(static_cast<long long>(dim)) + "d_" +
+        entstr + "_f" + std::to_string(static_cast<long long>(poly_order)) + "_r" +
+        std::to_string(static_cast<long long>(interp_order));
     if (!conformal) fieldfilename = fieldfilename + "_nc";
     if (reverse_source_ranks) fieldfilename = fieldfilename + "_rev";
     fieldfilename = fieldfilename + ".txt";
     if (numpe > 1) {
-      int maxwidth = static_cast<int>(std::ceil(std::log10(numpe)));
+      int maxwidth = static_cast<long long>(std::ceil(std::log10(numpe)));
       char rankstr[10];
       std::snprintf(rankstr, sizeof(rankstr), "%0*d", maxwidth, rank);
       fieldfilename = fieldfilename + "." + std::string(rankstr);
