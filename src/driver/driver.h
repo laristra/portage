@@ -139,12 +139,12 @@ class MeshWrapperDual {  // cellid is the dual cell (i.e. node) id
     @brief Get the IDs of all cells that share a node with the specified cell
     <em> of the original mesh </em>.
 
-    Sharing of cells is determined from the Entity_type (e.g. @c OWNED,
+    Sharing of cells is determined from the Entity_type (e.g. @c PARALLEL_OWNED,
     @c GHOST, @c ALL ).
 
     @param[in] dualcellID The cell ID for which you would like to find the
     neighbors.
-    @param[in] type The type of data you want (@c OWNED, @c GHOST, @c ALL)
+    @param[in] type The type of data you want (@c PARALLEL_OWNED, @c GHOST, @c ALL)
     @param[in,out] adjcells List of IDs of adjacent cells.
   */
   void cell_get_node_adj_cells(int const dualcellID,
@@ -157,12 +157,12 @@ class MeshWrapperDual {  // cellid is the dual cell (i.e. node) id
     @brief Get the IDs of all cells that share a node with the specified cell
     of the <em> dual mesh </em>.
 
-    Sharing of cells is determined from the Entity_type (e.g. @c OWNED,
+    Sharing of cells is determined from the Entity_type (e.g. @c PARALLEL_OWNED,
     @c GHOST, @c ALL).
 
     @param[in] dualnodeID The cell ID for which you would like to find the
     neighbors.
-    @param[in] type The type of data you want (@c OWNED, @c GHOST, @c ALL)
+    @param[in] type The type of data you want (@c PARALLEL_OWNED, @c GHOST, @c ALL)
     @param[in,out] adjnodes List of IDs of adjacent cells.
 
     @todo Clarify this wrt to @c MeshWrapperDual::cell_get_node_adj_cells()
@@ -242,11 +242,11 @@ struct RemapFunctor;
   @tparam TargetState_Wrapper A lightweight wrapper to a specific target state
   manager implementation that provides certain functionality.
 */
-template <template <int, class, class> class Search, 
-          template <class, class> class Intersect, 
-          template<class, class, class, Entity_kind, long> class Interpolate, 
+template <template <int, class, class> class Search,
+          template <class, class> class Intersect,
+          template<class, class, class, Entity_kind, long> class Interpolate,
           int Dim,
-          class SourceMesh_Wrapper, 
+          class SourceMesh_Wrapper,
           class SourceState_Wrapper,
           class TargetMesh_Wrapper = SourceMesh_Wrapper,
           class TargetState_Wrapper = SourceState_Wrapper>
@@ -350,7 +350,7 @@ class Driver {
     RemapFunctor() (defined below) that specifies how the search,
     intersect, and interpolation calculations should be performed.
   */
-  void run(bool distributed){
+  void run(bool distributed) {
 
     int comm_rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &comm_rank);
@@ -358,7 +358,7 @@ class Driver {
 
     int numTargetCells = target_mesh_.num_owned_cells();
     std::cout << "Number of target cells in target mesh on rank "
-              << comm_rank << ": " 
+              << comm_rank << ": "
               << numTargetCells << std::endl;
 
     int nvars = source_remap_var_names_.size();
@@ -383,11 +383,11 @@ class Driver {
       float tot_seconds = 0.0, tot_seconds_srch = 0.0,
           tot_seconds_xsect = 0.0, tot_seconds_interp = 0.0;
       struct timeval begin_timeval, end_timeval, diff_timeval;
-      
+
       int ntargetcells = target_mesh_.num_entities(CELL);
 
       // SEARCH
-      
+
       gettimeofday(&begin_timeval, 0);
 
       Portage::vector<std::vector<int>> candidates(ntargetcells);
@@ -398,7 +398,7 @@ class Driver {
 
       if (distributed) {
 
-        // Create flat wrappers to distribute source cells 
+        // Create flat wrappers to distribute source cells
         source_mesh_flat.initialize(8, source_mesh_);
         source_state_flat.initialize(source_state_, source_remap_var_names_);
         MPI_Bounding_Boxes distributor;
@@ -409,8 +409,8 @@ class Driver {
         const Search<Dim, Flat_Mesh_Wrapper<>, TargetMesh_Wrapper> search(source_mesh_flat, target_mesh_);
         SearchFunctor<Search<Dim, Flat_Mesh_Wrapper<>, TargetMesh_Wrapper>> searchfunctor(&search);
 
-        Portage::transform((counting_iterator)(target_mesh_.begin(CELL)),
-                           (counting_iterator)(target_mesh_.end(CELL)),
+        Portage::transform(target_mesh_.begin(CELL, PARALLEL_OWNED),
+                           target_mesh_.end(CELL, PARALLEL_OWNED),
                            candidates.begin(), searchfunctor);
       }
       else {
@@ -420,8 +420,8 @@ class Driver {
         SearchFunctor<Search<Dim, SourceMesh_Wrapper, TargetMesh_Wrapper>>
             searchfunctor(&search);
 
-        Portage::transform(static_cast<counting_iterator>(target_mesh_.begin(CELL)),
-                           static_cast<counting_iterator>(target_mesh_.end(CELL)),
+        Portage::transform(target_mesh_.begin(CELL, PARALLEL_OWNED),
+                           target_mesh_.end(CELL, PARALLEL_OWNED),
                            candidates.begin(), searchfunctor);
       }
 
@@ -430,18 +430,18 @@ class Driver {
       tot_seconds_srch = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
 
       // INTERSECT
-      
+
       gettimeofday(&begin_timeval, 0);
 
       if (distributed) {
-     
+
         // Get an instance of the desired intersect algorithm type
         const Intersect<Flat_Mesh_Wrapper<>, TargetMesh_Wrapper>
             intersect(source_mesh_flat, target_mesh_);
         IntersectFunctor<Intersect<Flat_Mesh_Wrapper<>, TargetMesh_Wrapper>> intersectfunctor(&intersect);
 
-        Portage::transform((counting_iterator)(target_mesh_.begin(CELL)),
-                           (counting_iterator)(target_mesh_.end(CELL)),
+        Portage::transform(target_mesh_.begin(CELL, PARALLEL_OWNED),
+                           target_mesh_.end(CELL, PARALLEL_OWNED),
                            candidates.begin(),
                            source_cells_and_weights.begin(),
                            intersectfunctor);
@@ -449,7 +449,7 @@ class Driver {
       else {
 
         // Get an instance of the desired intersect algorithm type
-        const Intersect<SourceMesh_Wrapper, TargetMesh_Wrapper> 
+        const Intersect<SourceMesh_Wrapper, TargetMesh_Wrapper>
             intersect(source_mesh_, target_mesh_);
         IntersectFunctor<Intersect<SourceMesh_Wrapper, TargetMesh_Wrapper>>
             intersectfunctor(&intersect);
@@ -464,9 +464,8 @@ class Driver {
         // that for 2nd order and higher remaps, we get multiple moments
         // (0th, 1st, etc) for each target-source cell intersection
 
-        //amh: removed cast here for the counting_iterator--this didn't seem to be doing anything
-        Portage::transform(target_mesh_.begin(CELL),
-                           target_mesh_.end(CELL),
+        Portage::transform(target_mesh_.begin(CELL, PARALLEL_OWNED),
+                           target_mesh_.end(CELL, PARALLEL_OWNED),
                            candidates.begin(),
                            source_cells_and_weights.begin(),
                            intersectfunctor);
@@ -497,8 +496,8 @@ class Driver {
           target_state_.get_data(CELL, target_cellvar_names[i], &target_field_raw);
           Portage::pointer<double> target_field(target_field_raw);
 
-          Portage::transform((counting_iterator)(target_mesh_.begin(CELL)),
-                             (counting_iterator)(target_mesh_.end(CELL)),
+          Portage::transform(target_mesh_.begin(CELL, PARALLEL_OWNED),
+                             target_mesh_.end(CELL, PARALLEL_OWNED),
                              source_cells_and_weights.begin(),
                              target_field, interpolate);
         }
@@ -525,8 +524,8 @@ class Driver {
           target_state_.get_data(CELL, target_cellvar_names[i], &target_field_raw);
           Portage::pointer<double> target_field(target_field_raw);
 
-          Portage::transform(target_mesh_.begin(CELL),
-                             target_mesh_.end(CELL),
+          Portage::transform(target_mesh_.begin(CELL, PARALLEL_OWNED),
+                             target_mesh_.end(CELL, PARALLEL_OWNED),
                              source_cells_and_weights.begin(),
                              target_field, interpolate);
           /*  UNCOMMENT WHEN WE RESTORE get_type in jali_state_wrapper
@@ -545,15 +544,19 @@ class Driver {
 
       tot_seconds = tot_seconds_srch + tot_seconds_xsect + tot_seconds_interp;
 
-      std::cout << "Transform Time Rank " << comm_rank << " (s): " << tot_seconds << std::endl;
-      std::cout << "  Search Time Rank " << comm_rank << " (s): " << tot_seconds_srch << std::endl;
-      std::cout << "  Intersect Time Rank " << comm_rank << " (s): " << tot_seconds_xsect << std::endl;
-      std::cout << "  Interpolate Time Rank " << comm_rank << " (s): " << tot_seconds_interp << std::endl;
-    }    
+      std::cout << "Transform Time Rank " << comm_rank << " (s): " <<
+          tot_seconds << std::endl;
+      std::cout << "  Search Time Rank " << comm_rank << " (s): " <<
+          tot_seconds_srch << std::endl;
+      std::cout << "  Intersect Time Rank " << comm_rank << " (s): " <<
+          tot_seconds_xsect << std::endl;
+      std::cout << "  Interpolate Time Rank " << comm_rank << " (s): " <<
+          tot_seconds_interp << std::endl;
+    }
 
-    //Collect all node based variables and remap them
-    Portage::MeshWrapperDual<SourceMesh_Wrapper> sourceDualWrapper(source_mesh_);
-    Portage::MeshWrapperDual<SourceMesh_Wrapper> targetDualWrapper(target_mesh_);
+    // Collect all node based variables and remap them
+    MeshWrapperDual<SourceMesh_Wrapper> sourceDualWrapper(source_mesh_);
+    MeshWrapperDual<SourceMesh_Wrapper> targetDualWrapper(target_mesh_);
 
     std::vector<std::string> source_nodevar_names;
     std::vector<std::string> target_nodevar_names;
@@ -582,13 +585,15 @@ class Driver {
       Portage::vector<std::vector<int>> candidates(ntargetcells);
 
       // Get an instance of the desired search algorithm type
-      const Search<Dim, Portage::MeshWrapperDual<SourceMesh_Wrapper>, Portage::MeshWrapperDual<TargetMesh_Wrapper>>
+      const Search<Dim, MeshWrapperDual<SourceMesh_Wrapper>,
+                   MeshWrapperDual<TargetMesh_Wrapper>>
             search(sourceDualWrapper, targetDualWrapper);
-      SearchFunctor<Search<Dim, Portage::MeshWrapperDual<SourceMesh_Wrapper>, MeshWrapperDual<TargetMesh_Wrapper>>> 
-            searchfunctor(&search);
-      Portage::transform((counting_iterator)(target_mesh_.begin(NODE)),
-                         (counting_iterator)(target_mesh_.end(NODE)),
-                         candidates.begin(), searchfunctor);   
+      SearchFunctor<Search<Dim, MeshWrapperDual<SourceMesh_Wrapper>,
+                           MeshWrapperDual<TargetMesh_Wrapper>>>
+          searchfunctor(&search);
+      Portage::transform(target_mesh_.begin(NODE, PARALLEL_OWNED),
+                         target_mesh_.end(NODE, PARALLEL_OWNED),
+                         candidates.begin(), searchfunctor);
       gettimeofday(&end_timeval, 0);
       timersub(&end_timeval, &begin_timeval, &diff_timeval);
       tot_seconds_srch = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
@@ -597,9 +602,11 @@ class Driver {
 
       gettimeofday(&begin_timeval, 0);
 
-      const Intersect<Portage::MeshWrapperDual<SourceMesh_Wrapper>, Portage::MeshWrapperDual<TargetMesh_Wrapper>>
+      const Intersect<MeshWrapperDual<SourceMesh_Wrapper>,
+                      MeshWrapperDual<TargetMesh_Wrapper>>
             intersect(sourceDualWrapper, targetDualWrapper);
-      IntersectFunctor<Intersect<Portage::MeshWrapperDual<SourceMesh_Wrapper>, Portage::MeshWrapperDual<TargetMesh_Wrapper>>> 
+      IntersectFunctor<Intersect<MeshWrapperDual<SourceMesh_Wrapper>,
+                                 MeshWrapperDual<TargetMesh_Wrapper>>>
             intersectfunctor(&intersect);
 
       // For each cell in the target mesh get a list of candidate-weight
@@ -615,8 +622,8 @@ class Driver {
       int ntargetnodes = target_mesh_.num_entities(NODE);
       Portage::vector<std::vector<Weights_t>> source_cells_and_weights(ntargetnodes);
 
-      Portage::transform(target_mesh_.begin(NODE),
-                         target_mesh_.end(NODE),
+      Portage::transform(target_mesh_.begin(NODE, PARALLEL_OWNED),
+                         target_mesh_.end(NODE, PARALLEL_OWNED),
                          candidates.begin(),
                          source_cells_and_weights.begin(),
                          intersectfunctor);
@@ -635,7 +642,7 @@ class Driver {
         if (comm_rank == 0) std::cout << "Remapping node variable " << source_nodevar_names[i]
                << " to variable " << target_nodevar_names[i] << std::endl;
 
-        Interpolate<SourceMesh_Wrapper, TargetMesh_Wrapper, 
+        Interpolate<SourceMesh_Wrapper, TargetMesh_Wrapper,
                     SourceState_Wrapper, NODE, Dim>
               interpolate(source_mesh_, target_mesh_, source_state_);
         interpolate.set_interpolation_variable(source_nodevar_names[i]);
@@ -651,8 +658,8 @@ class Driver {
         target_state_.get_data(NODE, target_nodevar_names[i], &target_field_raw);
         Portage::pointer<double> target_field(target_field_raw);
 
-        Portage::transform(target_mesh_.begin(NODE),
-                           target_mesh_.end(NODE),
+        Portage::transform(target_mesh_.begin(NODE, PARALLEL_OWNED),
+                           target_mesh_.end(NODE, PARALLEL_OWNED),
                            source_cells_and_weights.begin(),
                            target_field, interpolate);
         /*  UNCOMMENT WHEN WE RESTORE get_type in jali_state_wrapper
@@ -670,10 +677,14 @@ class Driver {
 
       tot_seconds = tot_seconds_srch + tot_seconds_xsect + tot_seconds_interp;
 
-      std::cout << "Transform Time Rank " << comm_rank << " (s): " << tot_seconds << std::endl;
-      std::cout << "  Search Time Rank " << comm_rank << " (s): " << tot_seconds_srch << std::endl;
-      std::cout << "  Intersect Time Rank " << comm_rank << " (s): " << tot_seconds_xsect << std::endl;
-      std::cout << "  Interpolate Time Rank " << comm_rank << " (s): " << tot_seconds_interp << std::endl; 
+      std::cout << "Transform Time Rank " << comm_rank << " (s): " <<
+          tot_seconds << std::endl;
+      std::cout << "  Search Time Rank " << comm_rank << " (s): " <<
+          tot_seconds_srch << std::endl;
+      std::cout << "  Intersect Time Rank " << comm_rank << " (s): " <<
+          tot_seconds_xsect << std::endl;
+      std::cout << "  Interpolate Time Rank " << comm_rank << " (s): " <<
+          tot_seconds_interp << std::endl;
     }
 
   }
