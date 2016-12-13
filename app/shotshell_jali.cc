@@ -273,14 +273,14 @@ int main(int argc, char** argv) {
   double l2norm = 0.0;
   double const * cellvecout;
   double const * nodevecout;
+  int ncown_trg = targetMeshWrapper.num_owned_cells();
+  int nnown_trg = targetMeshWrapper.num_owned_nodes();
 
   if (entityKind == Jali::Entity_kind::CELL) {
-    targetStateWrapper.get_data<double>(Portage::CELL, "celldata", &cellvecout);
 
-    std::cerr << "Last result: " << cellvecout[ncown_trg] <<
-        std::endl;
+    targetStateWrapper.get_data<double>(Portage::CELL, "celldata", &cellvecout);
+    std::cerr << "Last result: " << cellvecout[ncown_trg] << std::endl;
     
-    int ncown_trg = targetMeshWrapper.num_owned_cells();
     for (int c = 0; c < ncown_trg; c++) {
       JaliGeometry::Point ccen;
       double x, y, z = 0.0;
@@ -305,10 +305,8 @@ int main(int argc, char** argv) {
 
     targetStateWrapper.get_data<double>(Portage::NODE, "nodedata", &nodevecout);
 
-    std::cerr << "Last result: " << nodevecout[nodevecout.size()-1] <<
+    std::cerr << "Last result: " << nodevecout[nnown_trg-1] <<
         std::endl;
-
-    int nnown_trg = targetMeshWrapper.num_owned_nodes();
 
     for (int n = 0; n < nnown_trg; n++) {
       JaliGeometry::Point nxyz;
@@ -394,7 +392,6 @@ int main(int argc, char** argv) {
     reorder(lvalues, idx);
     
     // Build filename and open the file
-    std::string entstr("cell");
     std::string fieldfilename = "field_" + std::to_string(inputDim) + "d_" +
         entstr + "_f" + std::to_string(poly_order) + "_r" +
         std::to_string(interp_order) + ".txt";
