@@ -187,13 +187,15 @@ class Flecsi_Mesh_Wrapper {
   }
 
   //! Iterators on mesh entity - begin
-  counting_iterator begin(Entity_kind const entity) const {
+  counting_iterator begin(Entity_kind const entity,
+                          Entity_type const etype = Entity_type::ALL) const {
     int start_index = 0;
     return make_counting_iterator(start_index);
   }
 
   //! Iterator on mesh entity - end
-  counting_iterator end(Entity_kind const entity, Entity_type const etype=Entity_type::ALL) const {
+  counting_iterator end(Entity_kind const entity,
+                        Entity_type const etype=Entity_type::ALL) const {
     int start_index = 0;
     return (make_counting_iterator(start_index) + num_entities(entity, etype));
   }
