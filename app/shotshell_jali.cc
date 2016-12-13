@@ -392,7 +392,8 @@ int main(int argc, char** argv) {
     reorder(lvalues, idx);
     
     // Build filename and open the file
-    std::string fieldfilename = "field_" + std::to_string(inputDim) + "d_" +
+    std::string fieldfilename = "field_" +
+        std::to_string(static_cast<long long>(inputDim)) + "d_" +
         entstr + "_f" + std::to_string(static_cast<long long>(poly_order)) + "_r" +
         std::to_string(static_cast<long long>(interp_order)) + ".txt";
     if (numpe > 1) {
