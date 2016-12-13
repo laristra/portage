@@ -596,14 +596,21 @@ int main(int argc, char** argv) {
   // Dump output, if requested
   if (dump_output) {
 
-    if (rank == 0)
-      std::cout << "Dumping data to Exodus files..." << std::endl;
-    sourceState.export_to_mesh();
-    targetState.export_to_mesh();
-    sourceMesh->write_to_exodus_file("input.exo");
-    targetMesh->write_to_exodus_file("output.exo");
-    if (rank == 0)
-      std::cout << "...done." << std::endl;
+    // The current version of MSTK (2.27rc2) has a bug in writing out 
+    // exodus files with node variables in parallel and so we will avoid
+    // the exodus export in this situation. The 'if' statement can be
+    // removed once we upgrade to the next version of MSTK
+
+    if (!(numpe > 1 && entityKind == Jali::Entity_kind::NODE)) {
+      if (rank == 0)
+        std::cout << "Dumping data to Exodus files..." << std::endl;
+      sourceState.export_to_mesh();
+      targetState.export_to_mesh();
+      sourceMesh->write_to_exodus_file("input.exo");
+      targetMesh->write_to_exodus_file("output.exo");
+      if (rank == 0)
+        std::cout << "...done." << std::endl;
+    }
 
     std::vector<int> lgid;
     std::vector<double> lvalues;
