@@ -46,6 +46,21 @@ class MPI_Bounding_Boxes {
 
 
   /*!
+    @brief Helper structure containg comms info for a given entity type
+   */
+  struct comm_info_t {
+    //!< Number of total/owned entities in source field
+    int sourceNum = 0, sourceNumOwned = 0;
+    //!< Number of total/owned entities in new field
+    int newNum = 0, newNumOwned = 0;
+    //! Array of total/owned send sizes from me to all PEs
+    std::vector<int> sendCounts, sendOwnedCounts;
+    //! Array of total/owned recv sizes to me from all PEs
+    std::vector<int> recvCounts, recvOwnedCounts;
+  };
+
+
+  /*!
     @brief Compute bounding boxes for all partitions, and send source mesh and state
            information to all target partitions with an overlapping bounding box using MPI
     @param[in] source_mesh_flat  Input mesh (must be flat representation)
@@ -163,8 +178,7 @@ class MPI_Bounding_Boxes {
 
     // For each target rank with a bounding box that overlaps the bounding box for this rank's partition
     // of the source mesh, we will send it all our source cells; otherwise, we will send it nothing
-    std::vector<int> sendCellCounts(commSize, 0);
-    std::vector<int> recvCellCounts(commSize); 
+    std::vector<bool> sendFlags(commSize);
     for (unsigned int i=0; i<commSize; i++)
     {
       double min1[dim], max1[dim];
@@ -178,264 +192,101 @@ class MPI_Bounding_Boxes {
              (min2[k] <= min1[k] && min1[k] <= max2[k]));
       }
 
-      sendCellCounts[i] = sendThis ? sourceNumCells : 0;
+      sendFlags[i] = sendThis;
     }
 
-    // Each rank will tell each other rank how many cells it is going to send it
-    MPI_Alltoall(&(sendCellCounts[0]), 1, MPI_INT, &(recvCellCounts[0]), 1, MPI_INT, MPI_COMM_WORLD);
+    comm_info_t cellInfo, nodeInfo, neighborInfo;
 
-    // Send how many cells are locally owned
-    std::vector<int> sendOwnedCellCounts(commSize, 0);
-    std::vector<int> recvOwnedCellCounts(commSize);
-    for (unsigned int i=0; i<commSize; i++)
-      sendOwnedCellCounts[i] = (sendCellCounts[i] > 0) ? sourceNumOwnedCells : 0;
-    MPI_Alltoall(&(sendOwnedCellCounts[0]), 1, MPI_INT, &(recvOwnedCellCounts[0]), 1, MPI_INT, MPI_COMM_WORLD);
-
-    // Compute the total number of source cells this rank will receive from all ranks
-    int totalRecvCells = 0;
-    for (unsigned int i=0; i<commSize; i++) totalRecvCells += recvCellCounts[i]; 
-    int totalRecvOwnedCells = 0;
-    for (unsigned int i=0; i<commSize; i++) totalRecvOwnedCells += recvOwnedCellCounts[i];
+    setInfo(&cellInfo, commSize, sendFlags,
+            sourceNumCells, sourceNumOwnedCells);
 
 #ifdef DEBUG_MPI
-    std::cout << "Received " << commRank << " " << recvCellCounts[0] << " " << recvCellCounts[1] << " " << totalRecvCells
-              << " " << (totalRecvCells - recvCellCounts[commRank]) << std::endl;
+    std::cout << "Received " << commRank << " " << cellInfo.recvCounts[0] << " " << cellInfo.recvCounts[1] << " " << cellInfo.newNum
+              << " " << (cellInfo.newNum - cellInfo.recvCounts[commRank]) << std::endl;
 #endif
 
-    // Tell each other rank how many nodes it is going to send it
-    std::vector<int> sendNodeCounts(commSize, 0);
-    std::vector<int> recvNodeCounts(commSize);
-    for (unsigned int i=0; i<commSize; i++)
-      sendNodeCounts[i] = (sendCellCounts[i] > 0) ? sourceNumNodes : 0;
-    MPI_Alltoall(&(sendNodeCounts[0]), 1, MPI_INT, &(recvNodeCounts[0]), 1, MPI_INT, MPI_COMM_WORLD);
-
-    // Send how many nodes are locally owned
-    std::vector<int> sendOwnedNodeCounts(commSize, 0);
-    std::vector<int> recvOwnedNodeCounts(commSize);
-    for (unsigned int i=0; i<commSize; i++)
-      sendOwnedNodeCounts[i] = (sendCellCounts[i] > 0) ? sourceNumOwnedNodes : 0;
-    MPI_Alltoall(&(sendOwnedNodeCounts[0]), 1, MPI_INT, &(recvOwnedNodeCounts[0]), 1, MPI_INT, MPI_COMM_WORLD);
-
-    // Compute the total number of source nodes this rank will receive from all ranks
-    int totalRecvNodes = 0;
-    for (unsigned int i=0; i<commSize; i++) totalRecvNodes += recvNodeCounts[i]; 
-    int totalRecvOwnedNodes = 0;
-    for (unsigned int i=0; i<commSize; i++) totalRecvOwnedNodes += recvOwnedNodeCounts[i];
+    setInfo(&nodeInfo, commSize, sendFlags,
+            sourceNumNodes, sourceNumOwnedNodes);
 
     // Compute the total number of neighbor indexes and owned neighbor indexes on this rank
     int sourceNumNeighbors = 0;
-    for (unsigned int i=0; i<sourceNeighborCounts.size(); i++)
+    for (unsigned int i=0; i<sourceNumCells; i++)
       sourceNumNeighbors += sourceNeighborCounts[i];
     int sourceNumOwnedNeighbors = 0;
     for (unsigned int i=0; i<sourceNumOwnedCells; i++)
       sourceNumOwnedNeighbors += sourceNeighborCounts[i];
 
-    // Each rank will tell each other rank how many neighbor indexes it is going to send it
-    std::vector<int> sendNeighborsCounts(commSize, 0);
-    std::vector<int> recvNeighborsCounts(commSize);
-    for (unsigned int i=0; i<commSize; i++)
-      sendNeighborsCounts[i] = (sendCellCounts[i] > 0) ? sourceNumNeighbors : 0;
-    MPI_Alltoall(&(sendNeighborsCounts[0]), 1, MPI_INT, &(recvNeighborsCounts[0]), 1, MPI_INT, MPI_COMM_WORLD);
-
-    // Each rank will tell each other rank how many owned neighbor indexes it is going to send it
-    std::vector<int> sendOwnedNeighborsCounts(commSize, 0);
-    std::vector<int> recvOwnedNeighborsCounts(commSize);
-    for (unsigned int i=0; i<commSize; i++)
-      sendOwnedNeighborsCounts[i] = (sendOwnedCellCounts[i] > 0) ? sourceNumOwnedNeighbors : 0;
-    MPI_Alltoall(&(sendOwnedNeighborsCounts[0]), 1, MPI_INT, &(recvOwnedNeighborsCounts[0]), 1, MPI_INT, MPI_COMM_WORLD);
-
-    // Compute the total number of neighbor indexes this rank will receive from all ranks
-    int totalRecvNeighbors = 0;
-    for (unsigned int i=0; i<commSize; i++) totalRecvNeighbors += recvNeighborsCounts[i];
-    int totalRecvOwnedNeighbors = 0;
-    for (unsigned int i=0; i<commSize; i++) totalRecvOwnedNeighbors += recvOwnedNeighborsCounts[i];
+    setInfo(&neighborInfo, commSize, sendFlags,
+            sourceNumNeighbors, sourceNumOwnedNeighbors);
 
     // Data structures to hold mesh data received from other ranks
-    std::vector<double> newCoords(dim*totalRecvNodes);
-    std::vector<int> newNodeCounts(totalRecvCells);
-    std::vector<int> newGlobalCellIds(totalRecvCells);
-    std::vector<int> newNeighborCounts(totalRecvCells);
-    std::vector<int> newNeighbors(totalRecvNeighbors);
+    std::vector<double> newCoords(dim*nodeInfo.newNum);
+    std::vector<int> newNodeCounts(cellInfo.newNum);
+    std::vector<int> newGlobalCellIds(cellInfo.newNum);
+    std::vector<int> newNeighborCounts(cellInfo.newNum);
+    std::vector<int> newNeighbors(neighborInfo.newNum);
 
-    // Perform two rounds of sends: the first for owned cells, and the second for ghost cells
-    for (unsigned int r=0; r<2; r++)
-    {
-      // Compute all the offsets depending on whether this is the owned round or the ghost round
-      std::vector<int> curCellRecvCounts(commSize);
-      std::vector<int> curCellSendCounts(commSize);
-      std::vector<int> curNodeRecvCounts(commSize);
-      std::vector<int> curNodeSendCounts(commSize);
-      std::vector<int> curNeighborRecvCounts(commSize);
-      std::vector<int> curNeighborSendCounts(commSize);
+    // SEND NUMBER OF NODES FOR EACH CELL
 
-      int sourceCellStart = 0;
-      int sourceCellEnd = sourceNumOwnedCells;
-      int localCellStart = 0;
-      int localCellEnd = totalRecvOwnedCells;
-      int sourceNodeStart = 0;
-      int sourceNodeEnd = sourceNumOwnedNodes;
-      int localNodeStart = 0;
-      int localNodeEnd = totalRecvOwnedNodes;
-      int sourceNeighborStart = 0;
-      int sourceNeighborEnd = sourceNumOwnedNeighbors;
-      int localNeighborStart = 0;
-      int localNeighborEnd = totalRecvOwnedNeighbors;
+    moveField(cellInfo, commRank, commSize, MPI_INT, 1,
+              sourceNodeCounts, &newNodeCounts);
 
-      if (r == 1)
-      {
-        sourceCellStart = sourceNumOwnedCells;
-        sourceCellEnd = sourceNumCells;
-        localCellStart = totalRecvOwnedCells;
-        localCellEnd = totalRecvCells;
-        sourceNodeStart = sourceNumOwnedNodes;
-        sourceNodeEnd = sourceNumNodes;
-        localNodeStart = totalRecvOwnedNodes;
-        localNodeEnd = totalRecvNodes;
-        sourceNeighborStart = sourceNumOwnedNeighbors;
-        sourceNeighborEnd = sourceNumNeighbors;
-        localNeighborStart = totalRecvOwnedNeighbors;
-        localNeighborEnd = totalRecvNeighbors;
-      }
+    // SEND NODE COORDINATES
 
-      for (unsigned int i=0; i<commSize; i++)
-      {
-        if (r == 0)
-        {
-          curCellRecvCounts[i] = recvOwnedCellCounts[i];
-          curCellSendCounts[i] = sendOwnedCellCounts[i];
-          curNodeRecvCounts[i] = recvOwnedNodeCounts[i];
-          curNodeSendCounts[i] = sendOwnedNodeCounts[i];
-          curNeighborRecvCounts[i] = recvOwnedNeighborsCounts[i];
-          curNeighborSendCounts[i] = sendOwnedNeighborsCounts[i];
-        }
-        else 
-        {
-          curCellRecvCounts[i] = recvCellCounts[i] - recvOwnedCellCounts[i];
-          curCellSendCounts[i] = sendCellCounts[i] - sendOwnedCellCounts[i];
-          curNodeRecvCounts[i] = recvNodeCounts[i] - recvOwnedNodeCounts[i];
-          curNodeSendCounts[i] = sendNodeCounts[i] - sendOwnedNodeCounts[i];
-          curNeighborRecvCounts[i] = recvNeighborsCounts[i] - recvOwnedNeighborsCounts[i];
-          curNeighborSendCounts[i] = sendNeighborsCounts[i] - sendOwnedNeighborsCounts[i];
-        }
-      }
+    moveField(nodeInfo, commRank, commSize, MPI_DOUBLE, dim,
+              sourceCoords, &newCoords);
 
-      // SEND NUMBER OF NODES FOR EACH CELL 
+    // SEND GLOBAL CELL IDS
 
-      moveData(commRank, commSize, MPI_INT, 1,
-               sourceCellStart, sourceCellEnd,
-               localCellStart,
-               curCellSendCounts, curCellRecvCounts,
-               sourceNodeCounts, newNodeCounts);
+    moveField(cellInfo, commRank, commSize, MPI_INT, 1,
+              sourceGlobalCellIds, &newGlobalCellIds);
 
-      // SEND NODE COORDINATES
-
-      moveData(commRank, commSize, MPI_DOUBLE, dim,
-               sourceNodeStart, sourceNodeEnd,
-               localNodeStart,
-               curNodeSendCounts, curNodeRecvCounts,
-               sourceCoords, newCoords);
-
-      // SEND GLOBAL CELL IDS
-
-      moveData(commRank, commSize, MPI_INT, 1,
-               sourceCellStart, sourceCellEnd,
-               localCellStart,
-               curCellSendCounts, curCellRecvCounts,
-               sourceGlobalCellIds, newGlobalCellIds);
-
-      // SEND NUMBER OF NEIGHBORS FOR EACH CELL 
+    // SEND NUMBER OF NEIGHBORS FOR EACH CELL 
  
-      moveData(commRank, commSize, MPI_INT, 1,
-               sourceCellStart, sourceCellEnd,
-               localCellStart,
-               curCellSendCounts, curCellRecvCounts,
-               sourceNeighborCounts, newNeighborCounts);
+    moveField(cellInfo, commRank, commSize, MPI_INT, 1,
+              sourceNeighborCounts, &newNeighborCounts);
 
-      // SEND LIST OF NEIGHBOR GLOBAL IDS FOR EACH CELL
+    // SEND LIST OF NEIGHBOR GLOBAL IDS FOR EACH CELL
 
-      moveData(commRank, commSize, MPI_INT, 1,
-               sourceNeighborStart, sourceNeighborEnd,
-               localNeighborStart,
-               curNeighborSendCounts, curNeighborRecvCounts,
-               sourceNeighbors, newNeighbors);
+    moveField(neighborInfo, commRank, commSize, MPI_INT, 1,
+              sourceNeighbors, &newNeighbors);
 
 #ifdef DEBUG_MPI
-      if (commRank == 1)
-      {
-        std::cout << "newNeighbors: ";
-        for (unsigned int i=0; i<newNeighbors.size(); i++) std::cout << newNeighbors[i] << " ";
-        std::cout << std::endl;
-      }
+    if (commRank == 1)
+    {
+      std::cout << "newNeighbors: ";
+      for (unsigned int i=0; i<newNeighbors.size(); i++) std::cout << newNeighbors[i] << " ";
+      std::cout << std::endl;
+    }
 #endif
-  
-    } // for r
-
     
     // SEND FIELD VALUES
 
-    // Send and receive each field to be remapped (might be more efficient to consolidate sends)
+    // Send and receive each field to be remapped
     for (int s=0; s<source_state_flat.get_num_vectors(); s++)
     {
-      std::vector<double> newField(totalRecvCells);
+      std::shared_ptr<std::vector<double>> sourceField = source_state_flat.get_vector(s);
+      int sourceFieldStride = source_state_flat.get_field_dim(s);
+      std::vector<double> newField(cellInfo.newNum);
 
-      // Perform two rounds of sends: the first for owned cells, and the second for ghost cells
-      for (unsigned int r=0; r<2; r++)
-      {
-        // Set up the offsets depending on whether this is the owned round or the ghost round
-        std::vector<int> curCellRecvCounts(commSize);
-        std::vector<int> curCellSendCounts(commSize);
+      moveField(cellInfo, commRank, commSize,
+                MPI_DOUBLE, sourceFieldStride,
+                *sourceField, &newField);
 
-        int sourceCellStart = 0;
-        int sourceCellEnd = sourceNumOwnedCells;
-        int localCellStart = 0;
-        int localCellEnd = totalRecvOwnedCells;
-
-        if (r == 1)
-        {
-          sourceCellStart = sourceNumOwnedCells;
-          sourceCellEnd = sourceNumCells;
-          localCellStart = totalRecvOwnedCells;
-          localCellEnd = totalRecvCells;
-        }
-
-        for (unsigned int i=0; i<commSize; i++)
-        {
-          if (r == 0)
-          {
-            curCellRecvCounts[i] = recvOwnedCellCounts[i];
-            curCellSendCounts[i] = sendOwnedCellCounts[i];
-          }
-          else
-          {
-            curCellRecvCounts[i] = recvCellCounts[i] - recvOwnedCellCounts[i];
-            curCellSendCounts[i] = sendCellCounts[i] - sendOwnedCellCounts[i];
-          }
-        }
-
-        std::shared_ptr<std::vector<double>> sourceField = source_state_flat.get_vector(s);
-        int sourceFieldStride = source_state_flat.get_field_dim(s);
-
-        moveData(commRank, commSize, MPI_DOUBLE, sourceFieldStride,
-                 sourceCellStart, sourceCellEnd,
-                 localCellStart,
-                 curCellSendCounts, curCellRecvCounts,
-                 *sourceField, newField);
-    
 #ifdef DEBUG_MPI
-        if ((r == 1) && (commRank == 1))
-        {
-          std::cout << "Test: field " << newField.size() << std::endl;
-          for (unsigned int f=0; f<newField.size(); f++)
-            std::cout << newField[f] << " ";
-          std::cout << std::endl << std::endl;
-        }
+      if ((r == 1) && (commRank == 1))
+      {
+        std::cout << "Test: field " << newField.size() << std::endl;
+        for (unsigned int f=0; f<newField.size(); f++)
+          std::cout << newField[f] << " ";
+        std::cout << std::endl << std::endl;
+      }
 #endif
-      } // for r
 
       // We will now use the received source state as our new source state on this partition
-      std::shared_ptr<std::vector<double>> sourceField = source_state_flat.get_vector(s);
       sourceField->resize(newField.size());
       std::copy(newField.begin(), newField.end(), sourceField->begin());
+
     } // for s
 
     // We will now use the received source mesh data as our new source mesh on this partition
@@ -444,8 +295,8 @@ class MPI_Bounding_Boxes {
     sourceGlobalCellIds = newGlobalCellIds;
     sourceNeighborCounts = newNeighborCounts;
     sourceNeighbors = newNeighbors;
-    source_mesh_flat.set_num_owned_cells(totalRecvOwnedCells);
-    source_mesh_flat.set_num_owned_nodes(totalRecvOwnedNodes);
+    source_mesh_flat.set_num_owned_cells(cellInfo.newNumOwned);
+    source_mesh_flat.set_num_owned_nodes(nodeInfo.newNumOwned);
 
     // Create all index maps
     source_mesh_flat.make_index_maps();
@@ -453,8 +304,8 @@ class MPI_Bounding_Boxes {
 #ifdef DEBUG_MPI
     if (commRank == 1)
     {
-      std::cout << "Sizes: " << commRank << " " << totalRecvCells << " " << targetNumCells
-                << " " << sourceNumCells << " " << sourceCoords.size() << std::endl;
+      std::cout << "Sizes: " << commRank << " " << cellInfo.newNum << " " << targetNumCells
+                << " " << cellInfo.sourceNum << " " << sourceCoords.size() << std::endl;
       
       for (unsigned int i=0; i<sourceGlobalCellIds.size(); i++)
         std::cout << sourceGlobalCellIds[i] << " ";
@@ -471,8 +322,102 @@ class MPI_Bounding_Boxes {
   } // distribute
 
  private:
+
+  /*!
+    @brief Compute fields needed to do comms for a given entity type
+    @param[in] info              Info data structure to be filled
+    @param[in] commSize          Total number of MPI ranks
+    @param[in] sendFlags         Array of flags:  do I send to PE n?
+    @param[in] sourceNum         Number of entities (total) on this rank
+    @param[in] sourceNumOwned    Number of owned entities on this rank
+   */
+  void setInfo(comm_info_t* info,
+               const int commSize,
+               const std::vector<bool>& sendFlags,
+               const int sourceNum,
+               const int sourceNumOwned)
+  {
+    // Set my counts of all entities and owned entities
+    info->sourceNum = sourceNum;
+    info->sourceNumOwned = sourceNumOwned;
+
+    // Each rank will tell each other rank how many indexes it is going to send it
+    info->sendCounts.resize(commSize);
+    info->recvCounts.resize(commSize);
+    for (unsigned int i=0; i<commSize; i++)
+      info->sendCounts[i] = sendFlags[i] ? info->sourceNum : 0;
+    MPI_Alltoall(&(info->sendCounts[0]), 1, MPI_INT,
+                 &(info->recvCounts[0]), 1, MPI_INT, MPI_COMM_WORLD);
+
+    // Each rank will tell each other rank how many owned indexes it is going to send it
+    info->sendOwnedCounts.resize(commSize);
+    info->recvOwnedCounts.resize(commSize);
+    for (unsigned int i=0; i<commSize; i++)
+      info->sendOwnedCounts[i] = sendFlags[i] ? info->sourceNumOwned : 0;
+    MPI_Alltoall(&(info->sendOwnedCounts[0]), 1, MPI_INT,
+                 &(info->recvOwnedCounts[0]), 1, MPI_INT, MPI_COMM_WORLD);
+
+    // Compute the total number of indexes this rank will receive from all ranks
+    for (unsigned int i=0; i<commSize; i++)
+      info->newNum += info->recvCounts[i];
+    for (unsigned int i=0; i<commSize; i++)
+      info->newNumOwned += info->recvOwnedCounts[i];
+  } // setInfo
+
+
   /*!
     @brief Move values for a single data field to all ranks as needed
+    @tparam[in] T                C++ type of data to be moved
+    @param[in] info              Info struct for entity type of field
+    @param[in] commRank          MPI rank of this PE
+    @param[in] commSize          Total number of MPI ranks
+    @param[in] mpiType           MPI type of data (MPI_???) to be moved
+    @param[in] stride            Stride of data field
+    @param[in] sourceData        Array of (old) source data
+    @param[in] newData           Array of new source data
+   */
+  template<typename T>
+  void moveField(const comm_info_t& info,
+                 const int commRank, const int commSize,
+                 const MPI_Datatype mpiType, const int stride,
+                 const std::vector<T>& sourceData,
+                 std::vector<T>* newData)
+  {
+    // Perform two rounds of sends: the first for owned cells, and the second for ghost cells
+    std::vector<int> recvGhostCounts(commSize);
+    std::vector<int> sendGhostCounts(commSize);
+
+    for (unsigned int i=0; i<commSize; i++)
+    {
+      recvGhostCounts[i] = info.recvCounts[i] - info.recvOwnedCounts[i];
+      sendGhostCounts[i] = info.sendCounts[i] - info.sendOwnedCounts[i];
+    }
+
+    moveData(commRank, commSize, mpiType, stride,
+             0, info.sourceNumOwned,
+             0,
+             info.sendOwnedCounts, info.recvOwnedCounts,
+             sourceData, newData);
+    moveData(commRank, commSize, mpiType, stride,
+             info.sourceNumOwned, info.sourceNum,
+             info.newNumOwned,
+             sendGhostCounts, recvGhostCounts,
+             sourceData, newData);
+
+#ifdef DEBUG_MPI
+    if (commRank == 1)
+    {
+      std::cout << "Test: field " << newData.size() << std::endl;
+      for (unsigned int f=0; f<newData.size(); f++)
+        std::cout << newData[f] << " ";
+      std::cout << std::endl << std::endl;
+    }
+#endif
+  } // moveField
+
+
+  /*!
+    @brief Move values for a single range of data to all ranks as needed
     @tparam[in] T                C++ type of data to be moved
     @param[in] commRank          MPI rank of this PE
     @param[in] commSize          Total number of MPI ranks
@@ -480,25 +425,25 @@ class MPI_Bounding_Boxes {
     @param[in] stride            Stride of data field
     @param[in] sourceStart       Start location in source (send) data
     @param[in] sourceEnd         End location in source (send) data
-    @param[in] localStart        Start location in local (recv) data
+    @param[in] newStart          Start location in new (recv) data
     @param[in] curSendCounts     Array of send sizes from me to all PEs
     @param[in] curRecvCounts     Array of recv sizes to me from all PEs
     @param[in] sourceData        Array of (old) source data
     @param[in] newData           Array of new source data
    */
   template<typename T>
-  void moveData(int commRank, int commSize,
-                MPI_Datatype mpiType, int stride,
-                int sourceStart, int sourceEnd,
-                int localStart,
+  void moveData(const int commRank, const int commSize,
+                const MPI_Datatype mpiType, const int stride,
+                const int sourceStart, const int sourceEnd,
+                const int newStart,
                 const std::vector<int>& curSendCounts,
                 const std::vector<int>& curRecvCounts,
                 const std::vector<T>& sourceData,
-                std::vector<T>& newData)
+                std::vector<T>* newData)
   {
     // Each rank will do a non-blocking receive from each rank from
     // which it will receive data values
-    int writeOffset = localStart;
+    int writeOffset = newStart;
     int myOffset;
     std::vector<MPI_Request> requests;
     for (unsigned int i=0; i<commSize; i++)
@@ -506,7 +451,7 @@ class MPI_Bounding_Boxes {
       if ((i != commRank) && (curRecvCounts[i] > 0))
       {
         MPI_Request request;
-        MPI_Irecv((void *)&(newData[stride*writeOffset]),
+        MPI_Irecv((void *)&((*newData)[stride*writeOffset]),
                   stride*curRecvCounts[i], mpiType, i,
                   MPI_ANY_TAG, MPI_COMM_WORLD, &request);
         requests.push_back(request);
@@ -523,7 +468,7 @@ class MPI_Bounding_Boxes {
     if (curRecvCounts[commRank] > 0)
       std::copy(sourceData.begin() + stride*sourceStart,
                 sourceData.begin() + stride*sourceEnd, 
-                newData.begin() + stride*myOffset);
+                newData->begin() + stride*myOffset);
 
     // Each rank will send its data values to appropriate ranks
     for (unsigned int i=0; i<commSize; i++)
