@@ -341,7 +341,7 @@ int main(int argc, char** argv) {
     // files with node based variables in parallel. Can remove the
     // following 'if' condition when Jali TPLs are upgraded
 
-    if (!(numpe > 1 && entityKind == Jali::Entity_kind::NODE)) {
+    if (numpe == 1) {
       std::cerr << "Saving the source mesh" << std::endl;
       sourceState.export_to_mesh();
       

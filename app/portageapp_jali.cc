@@ -601,7 +601,7 @@ int main(int argc, char** argv) {
     // the exodus export in this situation. The 'if' statement can be
     // removed once we upgrade to the next version of MSTK
 
-    if (!(numpe > 1 && entityKind == Jali::Entity_kind::NODE)) {
+    if (numpe == 1) {
       if (rank == 0)
         std::cout << "Dumping data to Exodus files..." << std::endl;
       sourceState.export_to_mesh();
