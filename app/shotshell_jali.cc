@@ -76,8 +76,15 @@ int main(int argc, char** argv) {
   __itt_pause();
 #endif
 
-  // Get the example to run from command-line parameter
-  if (argc < 3) return print_usage();
+  // Initialize MPI
+  int mpi_init_flag;
+  MPI_Initialized(&mpi_init_flag);
+  if (!mpi_init_flag)
+    MPI_Init(&argc, &argv);
+  int numpe, rank;
+  MPI_Comm_size(MPI_COMM_WORLD, &numpe);
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
 
   int interp_order = 1;
   int poly_order = 0;
@@ -85,6 +92,9 @@ int main(int argc, char** argv) {
   Jali::Entity_kind entityKind = Jali::Entity_kind::CELL;
   std::string infilename;
   std::string outfilename;
+
+  // Get the example to run from command-line parameter
+  if (argc < 3) return print_usage();
 
   for (int i = 1; i < argc; i++) {
     std::string arg(argv[i]);
@@ -118,15 +128,6 @@ int main(int argc, char** argv) {
       std::cerr << "Unrecognized option " << keyword << std::endl;
   }
       
-  // Initialize MPI
-  int mpi_init_flag;
-  MPI_Initialized(&mpi_init_flag);
-  if (!mpi_init_flag)
-    MPI_Init(&argc, &argv);
-  int numpe, rank;
-  MPI_Comm_size(MPI_COMM_WORLD, &numpe);
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-
   std::cout << "starting shotshellapp...\n";
   std::cout << "   Field is of polynomial order" << poly_order << "\n";
   std::cout << "   Field lives on entity kind " << entityKind << "\n";

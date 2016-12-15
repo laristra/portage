@@ -36,7 +36,7 @@ using Portage::argsort;
 using Portage::reorder;
 
 /*!
-  @file main.cc
+  @file portageapp_jali.cc
   @brief A simple application that drives our remap routines.
 
   This program is used to showcase our capabilities with various types
@@ -60,9 +60,9 @@ int print_usage() {
       "--remap_order=1|2 --output_results=y|n \n\n";
 
   std::cout << "--dim (default = 2): spatial dimension of mesh\n\n";
-  std::cout << "--nsourcecells (NO DEFAULT): Num cells in each " <<
+  std::cout << "--nsourcecells (NO DEFAULT): Num cells per MPI rank in each " <<
       "coord dir in source mesh\n\n";
-  std::cout << "--ntargetcells (NO DEFAULT): Num of cells in each " <<
+  std::cout << "--ntargetcells (NO DEFAULT): Num of cells per MPI rank in each " <<
       "coord dir in target mesh\n\n";
 
   std::cout << "--conformal (default = y): 'y' means mesh boundaries match\n\n";
@@ -121,7 +121,7 @@ int create_meshes(int const dim, int const n_source, int const n_target,
       // 2d quad output mesh from (0,0) to (1+1.5dx,1) with (n+1)x(n+1)
       // zones and dx equal to the sourceMesh grid spacing
       double dx = 1.0/static_cast<double>(n_target);
-      *targetMesh = mf(0.0, 0.0, 1.0+1.5*dx, 1.0, n_target, n_target);
+      *targetMesh = mf(0.0, 0.0, 1.0+1.5*dx, 1.0+1.5*dx, n_target, n_target);
     }
   } else if (dim == 3) {
     if (numpe == 1) {
@@ -219,7 +219,6 @@ int main(int argc, char** argv) {
   __itt_pause();
 #endif
 
-  if (argc < 3) return print_usage();
 
   // Initialize MPI
   int mpi_init_flag;
@@ -242,6 +241,7 @@ int main(int argc, char** argv) {
   bool reverse_source_ranks = false;
   Jali::Entity_kind entityKind = Jali::Entity_kind::CELL;
 
+  if (argc < 3) return print_usage();
   for (int i = 1; i < argc; i++) {
     std::string arg(argv[i]);
     std::size_t len = arg.length();
@@ -316,7 +316,7 @@ int main(int argc, char** argv) {
       sourceMeshWrapper.num_ghost_nodes();
   const int ntarnodes = targetMeshWrapper.num_owned_nodes();
 
-  // Native jali state manageres for source and target
+  // Native jali state managers for source and target
   Jali::State sourceState(sourceMesh);
   Jali::State targetState(targetMesh);
 
@@ -479,7 +479,7 @@ int main(int argc, char** argv) {
     targetStateWrapper.get_data<double>(Portage::CELL, "celldata",
                                         &cellvecout);
 
-    if (n_target < 10)
+    if (numpe == 1 && n_target < 10)
       std::cout << "celldata vector on target mesh after remapping is:"
                 << std::endl;
 
@@ -496,7 +496,7 @@ int main(int argc, char** argv) {
           error = ccen[0]*ccen[0] + ccen[1]*ccen[1] + ccen[2]*ccen[2] -
               cellvecout[c];
 
-        if (n_target < 10) {
+        if (numpe == 1 && n_target < 10) {
           std::printf("Cell=% 4d Centroid = (% 5.3lf,% 5.3lf)", c,
                       ccen[0], ccen[1]);
           std::printf("  Value = % 10.6lf  Err = % lf\n",
@@ -517,7 +517,7 @@ int main(int argc, char** argv) {
           error = ccen[0]*ccen[0] + ccen[1]*ccen[1] + ccen[2]*ccen[2] -
               cellvecout[c];
         
-        if (n_target < 10) {
+        if (numpe == 1 && n_target < 10) {
           std::printf("%d Cell=% 4d Centroid = (% 5.3lf,% 5.3lf,% 5.3lf)",
                       rank, c, ccen[0], ccen[1], ccen[2]);
           std::printf("  Value = % 10.6lf  Err = % lf\n",
@@ -532,7 +532,7 @@ int main(int argc, char** argv) {
     targetStateWrapper.get_data<double>(Portage::NODE, "nodedata",
                                         &nodevecout);
 
-    if (n_target < 10)
+    if (numpe == 1 && n_target < 10)
       std::cout << "nodedata vector on target mesh after remapping is:"
                 << std::endl;
 
@@ -569,7 +569,7 @@ int main(int argc, char** argv) {
           error = nodexyz[0]*nodexyz[0] + nodexyz[1]*nodexyz[1]
               + nodexyz[2]*nodexyz[2] - nodevecout[i];
 
-        if (n_target < 10) {
+        if (numpe == 1 && n_target < 10) {
           std::printf("Node=% 4d Coords = (% 5.3lf,% 5.3lf,% 5.3lf) ", i,
                       nodexyz[0], nodexyz[1], nodexyz[2]);
           std::printf("Value = %10.6lf Err = % lf\n", nodevecout[i], error);
