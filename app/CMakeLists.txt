@@ -77,6 +77,10 @@ endif (JALI_DIR AND FLECSI_INSTALL_DIR)
 # Comparator for testing infrastructure
 add_executable(apptest_cmp apptest_cmp.cc)
 
+# Simple_Mesh test
+add_executable(simple_mesh simple_mesh.cc)
+target_link_libraries(simple_mesh portage ${EXTRA_LIBS})
+
 
 #TCMalloc option
 set(ENABLE_TCMALLOC TRUE CACHE BOOL "Use TCMalloc")

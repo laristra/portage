@@ -30,7 +30,6 @@ void load_field(std::iostream &s, std::vector<int> &gid,
 }
 
 int main(int argc, char** argv) {
-
   if (argc < 4 || argc > 5) {
     print_usage();
     return 1;
@@ -74,8 +73,8 @@ int main(int argc, char** argv) {
       continue;
     // Fails -- abort
     std::cout << i << " " << values1[i] << " " << values2[i]
-	      << " Abs Err: " << delta
-	      << " Rel Err: " << delta/std::abs(maxval) << std::endl;
+              << " Abs Err: " << delta
+              << " Rel Err: " << delta/std::abs(maxval) << std::endl;
     throw std::runtime_error("The field values do not match.");
   }
 
