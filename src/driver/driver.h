@@ -399,7 +399,7 @@ class Driver {
       if (distributed) {
 
         // Create flat wrappers to distribute source cells 
-        source_mesh_flat.initialize(8, source_mesh_);
+        source_mesh_flat.initialize(source_mesh_);
         source_state_flat.initialize(source_state_, source_remap_var_names_);
         MPI_Bounding_Boxes distributor;
         distributor.distribute(source_mesh_flat, source_state_flat, target_mesh_,
