@@ -1,16 +1,24 @@
 $( document ).ready(function() {
 
+    /*
+      For some reason Doxygen isn't properly setting the active tab for
+      user-defined pages.  This fixes that.
+    */
+    var thisFile = document.location.pathname.split('/').slice(-1)[0];
+    $('li > a[href="' + thisFile + '"]').parent().addClass("current");
+
     $("div.headertitle").addClass("page-header");
     $("div.title").addClass("h1");
 
-    $('li > a[href="index.html"] > span').before("<i class='fa fa-cog'></i> ");
-    $('li > a[href="index.html"] > span').text("Portage");
-    $('li > a[href="modules.html"] > span').before("<i class='fa fa-square'></i> ");
+    $('li > a[href="index.html"] > span').before("<i class='fa fa-cog fa-lg'></i> ");
+    $('li > a[href="index.html"] > span').text("portage");
+    $('li > a[href="quickstart.html"] > span').before("<i class='fa fa-rocket fa-lg'></i> ");
+    $('li > a[href="simple_mesh.html"] >span').before("<i class='fa fa-desktop fa-lg'></i> ");
+
     $('li > a[href="namespaces.html"] > span').before("<i class='fa fa-bars'></i> ");
-    $('li > a[href="annotated.html"] > span').before("<i class='fa fa-list-ul'></i> ");
     $('li > a[href="classes.html"] > span').before("<i class='fa fa-book'></i> ");
-    $('li > a[href="inherits.html"] > span').before("<i class='fa fa-sitemap'></i> ");
-    $('li > a[href="functions.html"] > span').before("<i class='fa fa-list'></i> ");
+    $('li > a[href="annotated.html"] > span').before("<i class='fa fa-book'></i> ");
+
     $('li > a[href="functions_func.html"] > span').before("<i class='fa fa-list'></i> ");
     $('li > a[href="functions_vars.html"] > span').before("<i class='fa fa-list'></i> ");
     $('li > a[href="functions_enum.html"] > span').before("<i class='fa fa-list'></i> ");

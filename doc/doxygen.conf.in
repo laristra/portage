@@ -2335,3 +2335,10 @@ DOT_CLEANUP            = YES
 
 #----------------------------------------------------------------------------~-#
 #=---------------------------------------------------------------------------~-#
+# Additional files we want to use
+INPUT += @CMAKE_CURRENT_SOURCE_DIR@/doc/
+FILE_PATTERNS += *.md
+
+USE_MDFILE_AS_MAINPAGE = main_page.md
+
+LAYOUT_FILE = @CMAKE_CURRENT_SOURCE_DIR@/doc/DoxygenLayout.xml
