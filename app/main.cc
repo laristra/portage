@@ -432,8 +432,8 @@ int main(int argc, char** argv) {
     if (numpe > 1) MPI_Barrier(MPI_COMM_WORLD);
     gettimeofday(&end, 0);
     timersub(&end, &begin, &diff);
-    const float seconds_total = diff.tv_sec + 1.0E-6*diff.tv_usec;
-    if (rank == 0) std::cout << "Time: " << seconds_total << std::endl;
+    const float seconds = diff.tv_sec + 1.0E-6*diff.tv_usec;
+    if (rank == 0) std::cout << "Time: " << seconds << std::endl;
 
     // Output results for small test cases
     double toterr = 0.0;
