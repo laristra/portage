@@ -388,8 +388,6 @@ class Driver {
 
       // SEARCH
       
-      gettimeofday(&begin_timeval, 0);
-
       Portage::vector<std::vector<int>> candidates(ntargetcells);
       Portage::vector<std::vector<Weights_t>> source_cells_and_weights(ntargetcells);
 
@@ -399,13 +397,21 @@ class Driver {
       if (distributed) {
 
         // Create flat wrappers to distribute source cells 
+        gettimeofday(&begin_timeval, 0);
+
         source_mesh_flat.initialize(8, source_mesh_);
         source_state_flat.initialize(source_state_, source_remap_var_names_);
         MPI_Bounding_Boxes distributor;
         distributor.distribute(source_mesh_flat, source_state_flat, target_mesh_,
                                target_state_);
 
+        gettimeofday(&end_timeval, 0);
+        timersub(&end_timeval, &begin_timeval, &diff_timeval);
+        float tot_seconds_flat = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
+        std::cout << "Redistribution Time Rank " << comm_rank << " (s): " << tot_seconds_flat << std::endl;  
+
         // Get an instance of the desired search algorithm type
+        gettimeofday(&begin_timeval, 0);
         const Search<Dim, Flat_Mesh_Wrapper<>, TargetMesh_Wrapper> search(source_mesh_flat, target_mesh_);
         SearchFunctor<Search<Dim, Flat_Mesh_Wrapper<>, TargetMesh_Wrapper>> searchfunctor(&search);
 
@@ -416,6 +422,7 @@ class Driver {
       else {
 
         // Get an instance of the desired search algorithm type
+        gettimeofday(&begin_timeval, 0);
         const Search<Dim, SourceMesh_Wrapper, TargetMesh_Wrapper> search(source_mesh_, target_mesh_);
         SearchFunctor<Search<Dim, SourceMesh_Wrapper, TargetMesh_Wrapper>>
             searchfunctor(&search);
