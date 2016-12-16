@@ -368,6 +368,7 @@ int main(int argc, char** argv) {
     std::vector<std::string> remap_fields;
     remap_fields.push_back("celldata");
 
+    if (numpe > 1) MPI_Barrier(MPI_COMM_WORLD);
     gettimeofday(&end, 0);
     timersub(&end, &begin, &diff);
     const float seconds_init = diff.tv_sec + 1.0E-6*diff.tv_usec;
@@ -609,6 +610,7 @@ else {  // node-centered remaps
     std::vector<std::string> remap_fields;
     remap_fields.push_back("nodedata");
 
+    if (numpe > 1) MPI_Barrier(MPI_COMM_WORLD);
     gettimeofday(&end, 0);
     timersub(&end, &begin, &diff);
     const float seconds_init = diff.tv_sec + 1.0E-6*diff.tv_usec;
@@ -670,6 +672,7 @@ else {  // node-centered remaps
     gettimeofday(&begin, 0);
 
     // Dump some timing information
+    if (numpe > 1) MPI_Barrier(MPI_COMM_WORLD);    
     gettimeofday(&end, 0);
     timersub(&end, &begin, &diff);
     const float seconds = diff.tv_sec + 1.0E-6*diff.tv_usec;
