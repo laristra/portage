@@ -1777,24 +1777,25 @@ void AuxMeshTopology<BasicMesh>::compute_cell_centroids() {
     std::vector<int> cnodes;
     basicmesh_ptr_->cell_get_nodes(c, &cnodes);
     int ncnodes = cnodes.size();
-    
+    std::vector<double> ctr(dim, 0.0);
+
     if (dim == 2) {
       Point<2> ncoord;
       for (int n = 0; n < ncnodes; ++n) {
         basicmesh_ptr_->node_get_coordinates(cnodes[n], &ncoord);
         for (int d = 0; d < dim; ++d)
-          cell_centroids_[c][d] += ncoord[d];      
+          ctr[d] += ncoord[d];
       }
     } else if (dim == 3) {
       Point<3> ncoord;
       for (int n = 0; n < ncnodes; ++n) {
         basicmesh_ptr_->node_get_coordinates(cnodes[n], &ncoord);
         for (int d = 0; d < dim; ++d)
-          cell_centroids_[c][d] += ncoord[d];      
+          ctr[d] += ncoord[d];
       }
     }
     for (int d = 0; d < dim; ++d)
-      cell_centroids_[c][d] /= ncnodes;
+      cell_centroids_[c][d] = ctr[d] / ncnodes;
   }
 }
 
@@ -1811,24 +1812,25 @@ void AuxMeshTopology<BasicMesh>::compute_face_centroids() {
     std::vector<int> fnodes;
     basicmesh_ptr_->face_get_nodes(f, &fnodes);
     int nfnodes = fnodes.size();
-    
+    std::vector<double> ctr(dim, 0.0);
+
     if (dim == 2) {
       Portage::Point<2> ncoord;
       for (int n = 0; n < nfnodes; ++n) {
         basicmesh_ptr_->node_get_coordinates(fnodes[n], &ncoord);
         for (int d = 0; d < dim; ++d)
-          face_centroids_[f][d] += ncoord[d];
+          ctr[d] += ncoord[d];
       }
     } else if (dim == 3) {
       Portage::Point<3> ncoord;
       for (int n = 0; n < nfnodes; ++n) {
         basicmesh_ptr_->node_get_coordinates(fnodes[n], &ncoord);
         for (int d = 0; d < dim; ++d)
-          face_centroids_[f][d] += ncoord[d];
+          ctr[d] += ncoord[d];
       }
     }
     for (int d = 0; d < dim; ++d)
-      face_centroids_[f][d] /= nfnodes;
+      face_centroids_[f][d] = ctr[d] / nfnodes;
   }
 }
 
