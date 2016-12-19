@@ -107,6 +107,18 @@ class Jali_State_Wrapper {
     (*data) = nullptr;
   }
 
+  /*!
+   @brief Add a scalar data field with uniform values
+   @param[in] domain The domain (e.g. mesh) associated with the data
+   @param[in] on_what The entity type on which the data is defined
+   @param[in] var_name The name of the data field
+   @param[in] value initialize with this value
+   */
+  template <class T, class DomainType>
+  void add_data(std::shared_ptr<DomainType> domain, const Entity_kind on_what, const std::string var_name, const T value) {
+    jali_state_.add(var_name, domain, on_what, Jali::Entity_type::ALL, value);
+  }
+
 
   /*!
     @brief Get the entity type on which the given field is defined

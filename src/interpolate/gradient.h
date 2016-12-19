@@ -117,7 +117,9 @@ class Limited_Gradient {
 
     // Extract the field data from the statemanager
 
-    state.get_data(on_what, var_name, &vals_);
+    double *ptr;
+    state.get_data(on_what, var_name, &ptr);
+    vals_ = ptr;
   }
 
   /// @todo Seems to be needed when using this in a Thrust transform call?
@@ -200,7 +202,9 @@ class Limited_Gradient<MeshType, StateType, CELL, D> {
       limtype_(limiter_type) {
 
     // Extract the field data from the statemanager
-    state.get_data(CELL, var_name, &vals_);
+    double *ptr;
+    state.get_data(CELL, var_name, &ptr);
+    vals_ = ptr;
 
     // Collect and keep the list of neighbors for each NODE as it may
     // be expensive to go to the mesh layer and collect this data for

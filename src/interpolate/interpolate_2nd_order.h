@@ -180,7 +180,9 @@ class Interpolate_2ndOrder<SourceMeshType, TargetMeshType, StateType, CELL, D> {
 
     // Extract the field data from the statemanager
 
-    source_state_.get_data(CELL, interp_var_name, &source_vals_);
+    double *ptr;
+    source_state_.get_data(CELL, interp_var_name, &ptr);
+    source_vals_ = ptr;
 
     // Compute the limited gradients for the field
 

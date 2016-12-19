@@ -48,12 +48,33 @@ class Flat_State_Wrapper {
 
   using pair_t = std::pair<std::string, Entity_kind>;
 
+
+  /*!
+   * @brief Initialize the state wrapper with explicit lists of names, entities and data
+   * @param[in] names a list of state names to initialize
+   * @param[in] entities entities corresponding to the names
+   * @param[in] data the state vectors to be stored
+   *
+   * A name can be re-used with a different entity, but a name-entity combination
+   * must be unique.
+   *
+   * A name-entity combination must not introduce a new size for that entity if
+   * the entity has previously been encountered.
+   *
+   * All existing internal data is forgotten.
+   */
   void initialize(std::vector<std::string> names, std::vector<Entity_kind> entities,
 		  	      std::vector<std::shared_ptr<std::vector<T>>> data)
   {
     if (not (names.size() == entities.size() and names.size() == data.size() and data.size() == entities.size())) {
         throw std::runtime_error("argument sizes do not agree");
     }
+
+    state_.clear();
+    name_map_.clear();
+    entity_map_.clear();
+    entity_size_map_.clear();
+    gradients_.clear();
 
     size_t index;
     for (size_t i=0; i<names.size(); i++) {
@@ -73,10 +94,18 @@ class Flat_State_Wrapper {
    *
    * A name-entity combination must not introduce a new size for that entity if
    * it has previously been encountered.
+   *
+   * All existing internal data is forgotten.
    */
   template <class State_Wrapper>
   void initialize(State_Wrapper &input, std::vector<std::string> var_names) 
   {
+    state_.clear();
+    name_map_.clear();
+    entity_map_.clear();
+    entity_size_map_.clear();
+    gradients_.clear();
+
     for (size_t i=0; i<var_names.size(); i++)
     {
       // get entity
@@ -85,8 +114,8 @@ class Flat_State_Wrapper {
 
       // check for duplicate name-entity combination, error if already in
       auto isin = name_map_.find(newpair);
-      if (isin == name_map_.end()) {
-        throw std::runtime_error(std::string("variable ")+var_names[i]+" is already in this database for the requested entity");
+      if (isin != name_map_.end()) {
+        throw std::runtime_error(std::string("variable ")+var_names[i]+" is already in this database");
       }
 
       // store entity type, possibly ambiguous
@@ -113,8 +142,7 @@ class Flat_State_Wrapper {
       name_map_[newpair] = state_.size() - 1;
     }
   }
-  
-   
+
   /*!
     @brief Get pointer to scalar data
     @param[in] on_what The entity type on which the data is defined
@@ -178,11 +206,12 @@ class Flat_State_Wrapper {
   void add_data(const Entity_kind on_what, const std::string var_name, T value) {
     pair_t pair(var_name, on_what);
     auto iter = name_map_.find(pair);
+    auto sziter = entity_size_map_.find(on_what);
     if (iter == name_map_.end()) { // have not seen this entity-name combo before
-	auto sziter = entity_size_map_.find(on_what);
 	// haven't seen this entity before - no size info - bail
 	if (sziter == entity_size_map_.end()) {
-	  throw std::runtime_error(std::string("variable ")+var_name+" has no size information available on add");
+	  std::string msg="variable "+var_name+" has no size information available on add";
+	  throw std::runtime_error(msg.c_str());
 	}
 	auto newptr = std::make_shared<std::vector<T>>(sziter->second, value);
 	state_.push_back(newptr);
@@ -190,7 +219,8 @@ class Flat_State_Wrapper {
 	entity_map_[var_name] = on_what;
     } else { // have seen this entity-name combo before
 	for (size_t i=0; i<sziter->second; i++) {
-	(*state_[iter->second])[i] = value;
+	  (*state_[iter->second])[i] = value;
+	}
     }
   }
 
