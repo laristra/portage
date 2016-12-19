@@ -231,7 +231,7 @@ int main(int argc, char** argv) {
           d(sourceMeshWrapper, sourceStateWrapper, targetMeshWrapper,
             targetStateWrapper);
       d.set_remap_var_names(remap_fields);
-      d.run(false);
+      d.run(numpe > 1);
     } else if (interp_order == 2) {
       Portage::Driver<Portage::SearchKDTree,
                       Portage::IntersectR2D,
@@ -242,7 +242,7 @@ int main(int argc, char** argv) {
           d(sourceMeshWrapper, sourceStateWrapper, targetMeshWrapper,
             targetStateWrapper);
       d.set_remap_var_names(remap_fields);
-      d.run(false);
+      d.run(numpe > 1);
     }
   } else if (inputDim == 3) {
     if (interp_order == 1) {
@@ -255,7 +255,7 @@ int main(int argc, char** argv) {
           d(sourceMeshWrapper, sourceStateWrapper, targetMeshWrapper,
             targetStateWrapper);
       d.set_remap_var_names(remap_fields);
-      d.run(false);
+      d.run(numpe > 1);
     } else if (interp_order == 2) {
       Portage::Driver<Portage::SearchKDTree,
                       Portage::IntersectR3D,
@@ -266,7 +266,7 @@ int main(int argc, char** argv) {
           d(sourceMeshWrapper, sourceStateWrapper, targetMeshWrapper,
             targetStateWrapper);
       d.set_remap_var_names(remap_fields);
-      d.run(false);
+      d.run(numpe > 1);
     }
   }
 
@@ -301,7 +301,6 @@ int main(int argc, char** argv) {
       diff = expected_val - cellvecout[c];
       l2norm += diff*diff;
     }
-    l2norm = sqrt(l2norm);
   } else {
 
     targetStateWrapper.get_data<double>(Portage::NODE, "nodedata", &nodevecout);
@@ -330,8 +329,16 @@ int main(int argc, char** argv) {
     }
   }
 
-  l2norm = sqrt(l2norm);
-  std::cout << "L2 norm of error " << l2norm << "\n";
+  if (numpe == 1) {
+    l2norm = sqrt(l2norm);
+    std::cout << "L2 norm of error " << l2norm << "\n";
+  } else {
+    std::cout << std::flush << std::endl;
+    MPI_Barrier(MPI_COMM_WORLD);
+    double globalerr;
+    MPI_Reduce(&l2norm, &globalerr, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+    if (rank == 0) std::cerr << "L2 norm of error " << sqrt(globalerr) << "\n";
+  }
     
 
   if (dumpMesh) {
