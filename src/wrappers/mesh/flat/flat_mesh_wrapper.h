@@ -367,19 +367,6 @@ class Flat_Mesh_Wrapper : public AuxMeshTopology<Flat_Mesh_Wrapper<>> {
   //! get spatial dimension
   int space_dimension() const { return dim_; }
 
-  //! Iterators on mesh entity - begin
-  counting_iterator begin(Entity_kind const entity) const {
-    int start_index = 0;
-    return make_counting_iterator(start_index);
-  }
-
-  //! Iterator on mesh entity - end
-  counting_iterator end(Entity_kind const entity, Entity_type const etype=Entity_type::ALL) const {
-    int start_index = 0;
-    return (make_counting_iterator(start_index) + num_entities(entity, etype));
-  }
-
-
 private:
   friend class MPI_Bounding_Boxes;
   std::vector<T> nodeCoords_;
