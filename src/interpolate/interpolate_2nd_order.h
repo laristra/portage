@@ -269,6 +269,7 @@ double Interpolate_2ndOrder<SourceMeshType, TargetMeshType,
   }
 
   double totalval = 0.0;
+  double wtsum0 = 0.0;
 
   // contribution of the source cell is its field value weighted by
   // its "weight" (in this case, its 0th moment/area/volume)
@@ -295,12 +296,23 @@ double Interpolate_2ndOrder<SourceMeshType, TargetMeshType,
     double val = source_vals_[srccell] + dot(gradient, vec);
     val *= xsect_volume;
     totalval += val;
+    wtsum0 += xsect_volume;
   }
 
   // Normalize the value by sum of all the 0th weights (which is the
   // same as the total volume of the source cell)
 
-  totalval /= target_mesh_.cell_volume(targetCellID);
+  double vol = target_mesh_.cell_volume(targetCellID);
+  totalval /= vol;
+
+#ifdef DEBUG
+  static bool first = true;
+  if (first && fabs((vol-wtsum0)/vol) > 1.0e-10) {
+    std::cerr << "WARNING: Meshes may be mismatched in the neighborhood of cell " <<
+        targetCellID << " in the target mesh (and maybe other places too)\n";
+    first = false;
+  }
+#endif
 
   return totalval;
 }
@@ -429,6 +441,7 @@ double Interpolate_2ndOrder<SourceMeshType, TargetMeshType,
   }
 
   double totalval = 0.0;
+  double wtsum0 = 0.0;
 
   // contribution of the source cell is its field value weighted by
   // its "weight" (in this case, its 0th moment/area/volume)
@@ -458,11 +471,23 @@ double Interpolate_2ndOrder<SourceMeshType, TargetMeshType,
     double val = source_vals_[srcnode] + dot(gradient, vec);
     val *= xsect_volume;
     totalval += val;
+    wtsum0 += xsect_volume;
   }
 
   // Normalize the value by volume of the target dual cell
 
-  totalval /= target_mesh_.dual_cell_volume(targetNodeID);
+  double vol = target_mesh_.dual_cell_volume(targetNodeID);
+  totalval /= vol;
+
+#ifdef DEBUG
+  static bool first = true;
+  if (first && fabs((vol-wtsum0)/vol) > 1.0e-10) {
+    std::cerr << "WARNING: Meshes may be mismatched in the neighborhood of node " <<
+        targetNodeID << " in the target mesh (and maybe other places too) \n";
+    first = false;
+  }
+#endif
+
 
   return totalval;
 }

@@ -21,6 +21,7 @@ set(wrappers_HEADERS
     ${jali_wrapper_headers}
     ${flecsi_wrapper_headers}
     mesh/AuxMeshTopology.h
+    mesh/simple_mesh/simple_mesh_wrapper.h
     PARENT_SCOPE)
 
 if (ENABLE_UNIT_TESTS)
@@ -64,5 +65,17 @@ if (ENABLE_UNIT_TESTS)
                      LIBRARIES portage ${FLECSI_LIBRARIES})
    endif (FLECSI_INSTALL_DIR)
 
+   # Simple Mesh wrapper
+   cinch_add_unit(test_simple_mesh_wrapper
+     SOURCES mesh/simple_mesh/test/test_simple_mesh_wrapper.cc
+     LIBRARIES portage
+     POLICY MPI
+     THREADS 1)
+   # Simple State wrapper
+   cinch_add_unit(test_simple_state_wrapper
+     SOURCES state/simple_state/test/test_simple_state_wrapper.cc
+     LIBRARIES portage
+     POLICY MPI
+     THREADS 1)
 endif(ENABLE_UNIT_TESTS)
 

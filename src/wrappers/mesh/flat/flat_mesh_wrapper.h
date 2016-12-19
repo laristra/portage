@@ -168,6 +168,16 @@ class Flat_Mesh_Wrapper : public AuxMeshTopology<Flat_Mesh_Wrapper<>> {
     return num_entities(Entity_kind::NODE, Entity_type::PARALLEL_GHOST);
   }
 
+  //! Number of owned faces in the mesh
+  int num_owned_faces() const {
+    return num_entities(Entity_kind::FACE, Entity_type::PARALLEL_OWNED);
+  }
+
+  //! Number of ghost faces in the mesh
+  int num_ghost_faces() const {
+    return num_entities(Entity_kind::FACE, Entity_type::PARALLEL_GHOST);
+  }
+
   //! coords of nodes of a cell
   template<long D>
   void cell_get_coordinates(int const cellid,
@@ -299,19 +309,6 @@ class Flat_Mesh_Wrapper : public AuxMeshTopology<Flat_Mesh_Wrapper<>> {
 
   //! get spatial dimension
   int space_dimension() const { return dim_; }
-
-  //! Iterators on mesh entity - begin
-  counting_iterator begin(Entity_kind const entity) const {
-    int start_index = 0;
-    return make_counting_iterator(start_index);
-  }
-
-  //! Iterator on mesh entity - end
-  counting_iterator end(Entity_kind const entity, Entity_type const etype=Entity_type::ALL) const {
-    int start_index = 0;
-    return (make_counting_iterator(start_index) + num_entities(entity, etype));
-  }
-
 
 private:
   std::vector<T> coords_;
