@@ -63,7 +63,7 @@ TEST(MPI_Bounding_Boxes, SimpleTest3D) {
   distributor.distribute(source_mesh_flat, source_state_flat, target_mesh_,
                          target_state_);
 
-  // Check number of cells and nodes received
+  // Check number of cells, nodes and faces received
   int exp_num_parts = (commRank == 0 ? 1 :
                        commRank <= 2 ? 2 : 4);
   int exp_num_owned_cells = exp_num_parts * 2;
@@ -73,12 +73,19 @@ TEST(MPI_Bounding_Boxes, SimpleTest3D) {
                              commRank <= 2 ? 18 : 27);
   int num_owned_nodes = source_mesh_flat.num_owned_nodes();
   ASSERT_EQ(exp_num_owned_nodes, num_owned_nodes);
+  int exp_num_owned_faces = (commRank == 0 ? 11 :
+                             commRank <= 2 ? 20 : 36);
+  int num_owned_faces = source_mesh_flat.num_owned_faces();
+  ASSERT_EQ(exp_num_owned_faces, num_owned_faces);
   int exp_num_cells = exp_num_parts * 8;
   int num_cells = num_owned_cells + source_mesh_flat.num_ghost_cells();
   ASSERT_EQ(exp_num_cells, num_cells);
   int exp_num_nodes = exp_num_parts * 27;
   int num_nodes = num_owned_nodes + source_mesh_flat.num_ghost_nodes();
   ASSERT_EQ(exp_num_nodes, num_nodes);
+  int exp_num_faces = exp_num_parts * 36;
+  int num_faces = num_owned_faces + source_mesh_flat.num_ghost_faces();
+  ASSERT_EQ(exp_num_faces, num_faces);
 
   // Check coordinates
   // List coordinates of cell 0 - others are equal to this
@@ -225,6 +232,9 @@ TEST(MPI_Bounding_Boxes, SimpleTest2D) {
   ASSERT_EQ(exp_num_cells, num_cells);
   int exp_num_nodes = exp_num_parts * 16;
   int num_nodes = num_owned_nodes + source_mesh_flat.num_ghost_nodes();
+  ASSERT_EQ(exp_num_nodes, num_nodes);
+  int exp_num_faces = exp_num_parts * 16;
+  int num_faces = num_owned_nodes + source_mesh_flat.num_ghost_nodes();
   ASSERT_EQ(exp_num_nodes, num_nodes);
 
   // Check coordinates

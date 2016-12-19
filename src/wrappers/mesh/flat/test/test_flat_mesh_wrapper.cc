@@ -42,11 +42,13 @@ TEST(Flat_Mesh_Wrapper, basic_routines_3d) {
 
   ASSERT_EQ(3, mesh_flat.space_dimension());
 
-  // Test cells and nodes of flat mesh
+  // Test cells, nodes, and faces of flat mesh
   ASSERT_EQ(8, mesh_flat.num_owned_cells());
   ASSERT_EQ(8, mesh_flat.num_entities(Portage::Entity_kind::CELL));
   ASSERT_EQ(27, mesh_flat.num_owned_nodes());
   ASSERT_EQ(27, mesh_flat.num_entities(Portage::Entity_kind::NODE));
+  ASSERT_EQ(36, mesh_flat.num_owned_faces());
+  ASSERT_EQ(36, mesh_flat.num_entities(Portage::Entity_kind::FACE));
 
   // Check coordinates
   // List coordinates of cell 0 - others are equal to this
