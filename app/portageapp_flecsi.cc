@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <iterator>
 
+#define PORTAGE_SERIAL_ONLY
 #include "portage/support/Point.h"
 #include "portage/wrappers/mesh/flecsi/flecsi_mesh_wrapper.h"
 #include "portage/wrappers/state/flecsi/flecsi_state_wrapper.h"
