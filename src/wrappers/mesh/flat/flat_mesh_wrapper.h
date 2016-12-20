@@ -24,9 +24,8 @@ namespace Portage {
   \brief Flat_Mesh_Wrapper implements mesh methods
 
   Flat_Mesh_Wrapper stores mesh coordinates in a flat vector.
-  In 2D, it supports arbitrary polygons.  In 3D, it currently
-  only handles the cases of axis-aligned hexahedra and general
-  tetrahedra when decomposing into tets.
+  It supports arbitrary polygons in 2D and arbitrary polyhedra
+  in 3D.
 */
 
 template <class T=double>
@@ -382,10 +381,11 @@ private:
   std::vector<int> faceToNodeList_;
   std::vector<int> faceNodeCounts_;
   std::vector<int> faceNodeOffsets_;
-  std::vector<int> neighbors_;
+  std::vector<int> neighbors_; // node-connected neighbors of each cell
   std::vector<int> cellNeighborCounts_;
   std::vector<int> cellNeighborOffsets_;
   std::vector<int> cellGlobalIds_;
+  // map of global to local cell IDs
   std::map<int, int> globalCellMap_;
   int dim_;
   int numOwnedCells_;
@@ -397,4 +397,4 @@ private:
 
 } // end namespace Portage
 
-#endif // FLAT_HEX_MESH_WRAPPER_H_
+#endif // FLAT_MESH_WRAPPER_H_
