@@ -82,7 +82,7 @@ using the Portage::Simple_Mesh_Wrapper class as a reference.
 
 ## Simple Mesh
 
-The Simple_Mesh class provides a concrete example of a basic regular
+The Portage::Simple_Mesh class provides a concrete example of a basic regular
 Cartesian mesh framework in 3d.  Simple_Mesh is _not_ designed for
 production, and is currently only serial-capable -- it does not have
 any ghost information, so queries to ghost entities simply return 0.
@@ -92,12 +92,21 @@ is constructed by passing in the lower and upper extents of the
 rectangular prism that makes up the domain, and the number of cells in
 each direction.  All the cells, faces, and nodes are then created as
 simple indices, and connectivity is built from these indices with an
-assumed ordering.
+assumed ordering, as shown below.
 
-![Example node ordering for cells](doxygen/images/simple_mesh/allNodes.svg)
-![Example numbering of xy-plane faces](doxygen/images/simple_mesh/xy_plane.svg)
-![Example numbering of yz-plane faces](doxygen/images/simple_mesh/yz_plane.svg)
-![Example numbering of xz-plane faces](doxygen/images/simple_mesh/xz_plane.svg)
+![Blowup of local node ordering.](doxygen/images/simple_mesh/cell-blowup.png)
+![Local face ordering for a cell.](doxygen/images/simple_mesh/cell-faces.png)
+
+![Global node ordering.](doxygen/images/simple_mesh/allNodes.svg)
+![Global numbering of xy-plane faces](doxygen/images/simple_mesh/xy_plane.svg)
+![Global numbering of yz-plane faces](doxygen/images/simple_mesh/yz_plane.svg)
+![Global numbering of xz-plane faces](doxygen/images/simple_mesh/xz_plane.svg)
 
 
 ## Simple State
+
+The state manager associated with the Portage::Simple_Mesh framwork is
+Simple_State.  The field data is stored within a STL vectors inside a
+map that maps a <kbd>(var_name, Entity_kind)</kbd> pair key to the
+data.  The global indices stored within Simple_Mesh correspond to the
+specific index into the vector of field data stored in Simple_State.
