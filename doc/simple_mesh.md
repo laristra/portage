@@ -42,7 +42,7 @@ e.g. Portage::CELL or Portage::NODE) and a Portage::Entity_type
 (e.g. Portage::PARALLEL_OWNED or Portage::PARALLEL_GHOST) and returns
 the appropriate number of entities of that type and kind.  Under the
 hood, it calls the base mesh wrapper class' functions
-(e.g. Portage::Simple_Mesh::num_owned_faces()) where applicable, or
+(e.g. Portage::Simple_Mesh_Wrapper::num_owned_faces()) where applicable, or
 can call its own functions for information about more advanced
 entities (e.g. Portage::AuxMeshTopology::num_ghost_sides()).
 
@@ -55,31 +55,49 @@ the advanced mesh entities; it is simply a convenience tool.
 This is a list of methods needed by a mesh wrapper during a typical
 flow through portage.  This is the list of things needed with and in addition to
 using Portage::AuxMeshTopology class.  The examples here are concrete examples
-using the Portage::Simple_Mesh class as a reference.
+using the Portage::Simple_Mesh_Wrapper class as a reference.
 
 <dl>
 	<dt>General mesh info</dt>
-		<dd>Portage::Simple_Mesh::space_dimension()</dd>
-		<dd>Portage::Simple_Mesh::cell_get_type()</dd>
-		<dd>Portage::Simple_Mesh::cell_get_element_type()</dd>
-		<dd>Portage::Simple_Mesh::get_global_id()</dd>
+		<dd>Portage::Simple_Mesh_Wrapper::space_dimension()</dd>
+		<dd>Portage::Simple_Mesh_Wrapper::cell_get_type()</dd>
+		<dd>Portage::Simple_Mesh_Wrapper::cell_get_element_type()</dd>
+		<dd>Portage::Simple_Mesh_Wrapper::get_global_id()</dd>
 	<dt>`num_X_Y` for various entities</dt>
-		<dd>Portage::Simple_Mesh::num_owned_cells()</dd>
-		<dd>Portage::Simple_Mesh::num_owned_faces()</dd>
-		<dd>Portage::Simple_Mesh::num_owned_nodes()</dd>
-		<dd>Portage::Simple_Mesh::num_ghost_cells()</dd>
-		<dd>Portage::Simple_Mesh::num_ghost_faces()</dd>
-		<dd>Portage::Simple_Mesh::num_ghost_nodes()</dd>
+		<dd>Portage::Simple_Mesh_Wrapper::num_owned_cells()</dd>
+		<dd>Portage::Simple_Mesh_Wrapper::num_owned_faces()</dd>
+		<dd>Portage::Simple_Mesh_Wrapper::num_owned_nodes()</dd>
+		<dd>Portage::Simple_Mesh_Wrapper::num_ghost_cells()</dd>
+		<dd>Portage::Simple_Mesh_Wrapper::num_ghost_faces()</dd>
+		<dd>Portage::Simple_Mesh_Wrapper::num_ghost_nodes()</dd>
 	<dt>Connectivity information</dt>
-		<dd>Portage::Simple_Mesh::node_get_cell_adj_nodes()</dd>
-		<dd>Portage::Simple_Mesh::cell_get_node_adj_cells()</dd>
-		<dd>Portage::Simple_Mesh::cell_get_faces_and_dirs()</dd>
-		<dd>Portage::Simple_Mesh::cell_get_nodes()</dd>
-		<dd>Portage::Simple_Mesh::face_get_nodes()</dd>
+		<dd>Portage::Simple_Mesh_Wrapper::node_get_cell_adj_nodes()</dd>
+		<dd>Portage::Simple_Mesh_Wrapper::cell_get_node_adj_cells()</dd>
+		<dd>Portage::Simple_Mesh_Wrapper::cell_get_faces_and_dirs()</dd>
+		<dd>Portage::Simple_Mesh_Wrapper::cell_get_nodes()</dd>
+		<dd>Portage::Simple_Mesh_Wrapper::face_get_nodes()</dd>
 	<dt>Spatial information</dt>
-		<dd>Portage::Simple_Mesh::node_get_coordinates()</dd>
+		<dd>Portage::Simple_Mesh_Wrapper::node_get_coordinates()</dd>
 </dl>
 
 ## Simple Mesh
+
+The Simple_Mesh class provides a concrete example of a basic regular
+Cartesian mesh framework in 3d.  Simple_Mesh is _not_ designed for
+production, and is currently only serial-capable -- it does not have
+any ghost information, so queries to ghost entities simply return 0.
+
+Simple_Mesh only knows about cells, faces, and nodes.  A Simple_Mesh
+is constructed by passing in the lower and upper extents of the
+rectangular prism that makes up the domain, and the number of cells in
+each direction.  All the cells, faces, and nodes are then created as
+simple indices, and connectivity is built from these indices with an
+assumed ordering.
+
+![Example node ordering for cells](doxygen/images/simple_mesh/allNodes.svg)
+![Example numbering of xy-plane faces](doxygen/images/simple_mesh/xy_plane.svg)
+![Example numbering of yz-plane faces](doxygen/images/simple_mesh/yz_plane.svg)
+![Example numbering of xz-plane faces](doxygen/images/simple_mesh/xz_plane.svg)
+
 
 ## Simple State
