@@ -149,8 +149,8 @@ div.fragment {
 
 div.line {
     font-family: Consolas, "Liberation Mono", Menlo, Courier, monospace;
-    font-size: 12px;
-    min-height: 13px;
+    font-size: 14px;
+    min-height: 15px;
     line-height: 1.0;
     text-wrap: unrestricted;
     white-space: -moz-pre-wrap; /* Moz */
