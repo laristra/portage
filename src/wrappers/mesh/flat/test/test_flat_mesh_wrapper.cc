@@ -38,15 +38,17 @@ TEST(Flat_Mesh_Wrapper, basic_routines_3d) {
   ASSERT_TRUE(mesh != NULL);
   Portage::Jali_Mesh_Wrapper mesh_wrapper(*mesh);
   Portage::Flat_Mesh_Wrapper<> mesh_flat;
-  mesh_flat.initialize(8, mesh_wrapper);
+  mesh_flat.initialize(mesh_wrapper);
 
   ASSERT_EQ(3, mesh_flat.space_dimension());
 
-  // Test cells and nodes of flat mesh
+  // Test cells, nodes, and faces of flat mesh
   ASSERT_EQ(8, mesh_flat.num_owned_cells());
   ASSERT_EQ(8, mesh_flat.num_entities(Portage::Entity_kind::CELL));
-  ASSERT_EQ(64, mesh_flat.num_owned_nodes());
-  ASSERT_EQ(64, mesh_flat.num_entities(Portage::Entity_kind::NODE));
+  ASSERT_EQ(27, mesh_flat.num_owned_nodes());
+  ASSERT_EQ(27, mesh_flat.num_entities(Portage::Entity_kind::NODE));
+  ASSERT_EQ(36, mesh_flat.num_owned_faces());
+  ASSERT_EQ(36, mesh_flat.num_entities(Portage::Entity_kind::FACE));
 
   // Check coordinates
   // List coordinates of cell 0 - others are equal to this
@@ -76,7 +78,7 @@ TEST(Flat_Mesh_Wrapper, basic_routines_3d) {
   // Test decompose_cell_into_tets()
   std::vector<std::array<Portage::Point<3>, 4>> tcoords;
   mesh_flat.decompose_cell_into_tets(0, &tcoords, true);
-  ASSERT_EQ(tcoords.size(), 12);
+  ASSERT_EQ(tcoords.size(), 24);
 
   // Test centroids
   Portage::Point<3> centroid;
@@ -115,14 +117,14 @@ TEST(Flat_Mesh_Wrapper, basic_routines_2d) {
   ASSERT_TRUE(mesh != NULL);
   Portage::Jali_Mesh_Wrapper mesh_wrapper(*mesh);
   Portage::Flat_Mesh_Wrapper<> mesh_flat;
-  mesh_flat.initialize(4, mesh_wrapper);
+  mesh_flat.initialize(mesh_wrapper);
   ASSERT_EQ(2, mesh_flat.space_dimension());
 
   // Test cells and nodes of flat mesh
   ASSERT_EQ(16, mesh_flat.num_owned_cells());
   ASSERT_EQ(16, mesh_flat.num_entities(Portage::Entity_kind::CELL));
-  ASSERT_EQ(64, mesh_flat.num_owned_nodes());
-  ASSERT_EQ(64, mesh_flat.num_entities(Portage::Entity_kind::NODE));
+  ASSERT_EQ(25, mesh_flat.num_owned_nodes());
+  ASSERT_EQ(25, mesh_flat.num_entities(Portage::Entity_kind::NODE));
 
   // Check coordinates
   // List coordinates of cell 0 - others are equal to this

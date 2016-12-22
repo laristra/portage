@@ -1340,6 +1340,7 @@ void build_sides_1D(AuxMeshTopology<BasicMesh>& mesh) {
   int ncells_ghost = mesh.basicmesh_ptr_->num_ghost_cells();
   int ncells = ncells_owned + ncells_ghost;
   
+  mesh.cell_side_ids_.clear();
   mesh.cell_side_ids_.resize(ncells);
   
   int nnodes_owned = mesh.basicmesh_ptr_->num_owned_nodes();
@@ -1420,6 +1421,7 @@ void build_sides_2D(AuxMeshTopology<BasicMesh>& mesh) {
   int ncells_ghost = mesh.basicmesh_ptr_->num_ghost_cells();
   int ncells = ncells_owned + ncells_ghost;
 
+  mesh.cell_side_ids_.clear();
   mesh.cell_side_ids_.resize(ncells);
 
   int nnodes_owned = mesh.basicmesh_ptr_->num_owned_nodes();
@@ -1525,6 +1527,7 @@ void build_sides_3D(AuxMeshTopology<BasicMesh>& mesh) {
   int ncells_ghost = mesh.basicmesh_ptr_->num_ghost_cells();
   int ncells = ncells_owned + ncells_ghost;
 
+  mesh.cell_side_ids_.clear();
   mesh.cell_side_ids_.resize(ncells);
 
   int nnodes_owned = mesh.basicmesh_ptr_->num_owned_nodes();
@@ -1699,7 +1702,9 @@ void AuxMeshTopology<BasicMesh>::build_corners() {
   int nnodes_ghost = basicmesh_ptr_->num_ghost_nodes();
   int nnodes = nnodes_owned + nnodes_ghost;
 
+  cell_corner_ids_.clear();
   cell_corner_ids_.resize(ncells);
+  node_corner_ids_.clear();
   node_corner_ids_.resize(nnodes);
 
   int num_corners_all = 0;
@@ -1720,6 +1725,7 @@ void AuxMeshTopology<BasicMesh>::build_corners() {
 
   cornerids_owned_.resize(num_corners_owned_);
   cornerids_ghost_.resize(num_corners_ghost_);
+  corner_wedge_ids_.clear();
   corner_wedge_ids_.resize(num_corners_all);
   corner_cell_id_.resize(num_corners_all);
   corner_node_id_.resize(num_corners_all);
@@ -1777,24 +1783,25 @@ void AuxMeshTopology<BasicMesh>::compute_cell_centroids() {
     std::vector<int> cnodes;
     basicmesh_ptr_->cell_get_nodes(c, &cnodes);
     int ncnodes = cnodes.size();
-    
+    std::vector<double> ctr(dim, 0.0);
+
     if (dim == 2) {
       Point<2> ncoord;
       for (int n = 0; n < ncnodes; ++n) {
         basicmesh_ptr_->node_get_coordinates(cnodes[n], &ncoord);
         for (int d = 0; d < dim; ++d)
-          cell_centroids_[c][d] += ncoord[d];      
+          ctr[d] += ncoord[d];
       }
     } else if (dim == 3) {
       Point<3> ncoord;
       for (int n = 0; n < ncnodes; ++n) {
         basicmesh_ptr_->node_get_coordinates(cnodes[n], &ncoord);
         for (int d = 0; d < dim; ++d)
-          cell_centroids_[c][d] += ncoord[d];      
+          ctr[d] += ncoord[d];
       }
     }
     for (int d = 0; d < dim; ++d)
-      cell_centroids_[c][d] /= ncnodes;
+      cell_centroids_[c][d] = ctr[d] / ncnodes;
   }
 }
 
@@ -1811,24 +1818,25 @@ void AuxMeshTopology<BasicMesh>::compute_face_centroids() {
     std::vector<int> fnodes;
     basicmesh_ptr_->face_get_nodes(f, &fnodes);
     int nfnodes = fnodes.size();
-    
+    std::vector<double> ctr(dim, 0.0);
+
     if (dim == 2) {
       Portage::Point<2> ncoord;
       for (int n = 0; n < nfnodes; ++n) {
         basicmesh_ptr_->node_get_coordinates(fnodes[n], &ncoord);
         for (int d = 0; d < dim; ++d)
-          face_centroids_[f][d] += ncoord[d];
+          ctr[d] += ncoord[d];
       }
     } else if (dim == 3) {
       Portage::Point<3> ncoord;
       for (int n = 0; n < nfnodes; ++n) {
         basicmesh_ptr_->node_get_coordinates(fnodes[n], &ncoord);
         for (int d = 0; d < dim; ++d)
-          face_centroids_[f][d] += ncoord[d];
+          ctr[d] += ncoord[d];
       }
     }
     for (int d = 0; d < dim; ++d)
-      face_centroids_[f][d] /= nfnodes;
+      face_centroids_[f][d] = ctr[d] / nfnodes;
   }
 }
 
@@ -1837,6 +1845,7 @@ void AuxMeshTopology<BasicMesh>::compute_cell_volumes() {
   int ncells = basicmesh_ptr_->num_owned_cells() +
       basicmesh_ptr_->num_ghost_cells();
 
+  cell_volumes_.clear();
   cell_volumes_.resize(ncells, 0.0);
 
   for (int c = 0; c < ncells; ++c)

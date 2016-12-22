@@ -396,10 +396,14 @@ class Driver {
 
       if (distributed) {
 
+#ifndef PORTAGE_SERIAL_ONLY
+        // Our current flecsi build does not support distributed meshes,
+        // so in that case don't try to build or run this code.
+
         // Create flat wrappers to distribute source cells 
         gettimeofday(&begin_timeval, 0);
 
-        source_mesh_flat.initialize(8, source_mesh_);
+        source_mesh_flat.initialize(source_mesh_);
         source_state_flat.initialize(source_state_, source_remap_var_names_);
         MPI_Bounding_Boxes distributor;
         distributor.distribute(source_mesh_flat, source_state_flat, target_mesh_,
@@ -418,6 +422,7 @@ class Driver {
         Portage::transform(target_mesh_.begin(CELL, PARALLEL_OWNED),
                            target_mesh_.end(CELL, PARALLEL_OWNED),
                            candidates.begin(), searchfunctor);
+#endif
       }
       else {
 
@@ -442,6 +447,7 @@ class Driver {
 
       if (distributed) {
 
+#ifndef PORTAGE_SERIAL_ONLY
         // Get an instance of the desired intersect algorithm type
         const Intersect<Flat_Mesh_Wrapper<>, TargetMesh_Wrapper>
             intersect(source_mesh_flat, target_mesh_);
@@ -452,6 +458,7 @@ class Driver {
                            candidates.begin(),
                            source_cells_and_weights.begin(),
                            intersectfunctor);
+#endif
       }
       else {
 
@@ -491,6 +498,7 @@ class Driver {
 
       if (distributed) {
 
+#ifndef PORTAGE_SERIAL_ONLY
         // Get an instance of the desired interpolate algorithm type
         Interpolate<Flat_Mesh_Wrapper<>, TargetMesh_Wrapper, Flat_State_Wrapper<>, CELL, Dim>
             interpolate(source_mesh_flat, target_mesh_, source_state_flat);
@@ -508,6 +516,7 @@ class Driver {
                              source_cells_and_weights.begin(),
                              target_field, interpolate);
         }
+#endif
       }
       else {
 

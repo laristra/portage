@@ -7,6 +7,7 @@
 
 #include <mpi.h>
 
+#define PORTAGE_SERIAL_ONLY
 #include "portage/wrappers/mesh/jali/jali_mesh_wrapper.h"
 #include "portage/wrappers/state/jali/jali_state_wrapper.h"
 #include "portage/wrappers/mesh/flecsi/flecsi_mesh_wrapper.h"
