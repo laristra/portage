@@ -29,7 +29,6 @@ endif()
 option(ENABLE_APP_TESTS "Enable testing of full app" OFF)
 if(ENABLE_APP_TESTS)
   enable_testing()
-  add_subdirectory(test)
 endif()
 
 #------------------------------------------------------------------------------#
