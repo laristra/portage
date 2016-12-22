@@ -21,7 +21,7 @@ endif (Jali_DIR)
 
 # FleCSI example
 if (FLECSI_INSTALL_DIR)
-  add_executable(portageapp_flecsi portageapp/portageapp_flecsi.cc)
+  add_executable(portageapp_flecsi portageapp_flecsi.cc)
   target_link_libraries(portageapp_flecsi portage ${EXTRA_LIBS})
   include_directories(${FLECSI_INCLUDE_DIRS})
   target_link_libraries(portageapp_flecsi ${FLECSI_LIBRARIES})
@@ -34,7 +34,7 @@ if (FLECSI_INSTALL_DIR)
 endif (FLECSI_INSTALL_DIR)
 
 if (JALI_DIR AND FLECSI_INSTALL_DIR)
-  add_executable(portageapp_jali2flecsi portageapp/portageapp_jali2flecsi.cc)
+  add_executable(portageapp_jali2flecsi portageapp_jali2flecsi.cc)
   target_link_libraries(portageapp_jali2flecsi portageapp_jali2flecsi ${EXTRA_LIBS})
   include_directories(${FLECSI_INCLUDE_DIRS})
   target_link_libraries(portageapp_jali2flecsi ${FLECSI_LIBRARIES})
