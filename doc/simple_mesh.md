@@ -95,7 +95,9 @@ simple indices, and connectivity is built from these indices with an
 assumed ordering, as shown below.
 
 ![Blowup of local node ordering.](doxygen/images/simple_mesh/cell-blowup.png)
+@image latex doxygen/images/simple_mesh/cell-blowup.png "Blowup of local node ordering." width=\textwidth
 ![Local face ordering for a cell.](doxygen/images/simple_mesh/cell-faces.png)
+@image latex doxygen/images/simple_mesh/cell-faces.png "Local face ordering for a cell." width=\textwidth
 
 ![Global node ordering.](doxygen/images/simple_mesh/allNodes.svg)
 ![Global numbering of xy-plane faces](doxygen/images/simple_mesh/xy_plane.svg)
