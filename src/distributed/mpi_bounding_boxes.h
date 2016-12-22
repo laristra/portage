@@ -312,7 +312,7 @@ class MPI_Bounding_Boxes {
                 source_mesh_flat.cellFaceCounts_, &newCellFaceCounts);
 
       // SEND CELL-TO-FACE MAP
-      // For this array only, pack up dirs and send along with list
+      // For this array only, pack up face IDs + dirs and send together
       int size = source_mesh_flat.cellToFaceList_.size();
       for (unsigned int j=0; j<size; ++j)
       {
@@ -322,7 +322,7 @@ class MPI_Bounding_Boxes {
       }
       moveField(cellToFaceInfo, commRank, commSize, MPI_INT, 1,
                 source_mesh_flat.cellToFaceList_, &newCellToFaceList);
-      // Unpack dirs in new list
+      // Unpack face IDs and dirs
       for (unsigned int j=0; j<newCellToFaceList.size(); ++j)
       {
         int fd = newCellToFaceList[j];

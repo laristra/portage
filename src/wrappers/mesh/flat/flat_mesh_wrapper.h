@@ -87,7 +87,7 @@ class Flat_Mesh_Wrapper : public AuxMeshTopology<Flat_Mesh_Wrapper<>> {
       int cellNumNodes = cellNodes.size();
       cellNodeCounts_.push_back(cellNumNodes);
       cellToNodeList_.insert(cellToNodeList_.end(),
-                            cellNodes.begin(), cellNodes.end());
+                             cellNodes.begin(), cellNodes.end());
 
 
       std::vector<int> cellNeighbors;
@@ -107,7 +107,7 @@ class Flat_Mesh_Wrapper : public AuxMeshTopology<Flat_Mesh_Wrapper<>> {
         int cellNumFaces = cellFaces.size();
         cellFaceCounts_.push_back(cellNumFaces);
         cellToFaceList_.insert(cellToFaceList_.end(),
-                              cellFaces.begin(), cellFaces.end());
+                               cellFaces.begin(), cellFaces.end());
         for (unsigned int j=0; j<cellNumFaces; ++j)
           cellToFaceDirs_.push_back(cfDirs[j] >= 0);
       }
@@ -119,21 +119,21 @@ class Flat_Mesh_Wrapper : public AuxMeshTopology<Flat_Mesh_Wrapper<>> {
         int faceNumNodes = faceNodes.size();
         faceNodeCounts_.push_back(faceNumNodes);
         faceToNodeList_.insert(faceToNodeList_.end(),
-                              faceNodes.begin(), faceNodes.end());
+                               faceNodes.begin(), faceNodes.end());
       }
     } // if dim_ == 3
 
-    for (unsigned int n=0; n<numNodes; ++n) {
-      // ugly hack, since dim_ is not known at compile time
-      if (dim_ == 3)
-      {
+    // ugly hack, since dim_ is not known at compile time
+    if (dim_ == 3) {
+      for (unsigned int n=0; n<numNodes; ++n) {
         Portage::Point<3> nodeCoord;
         input.node_get_coordinates(n, &nodeCoord);
         for (unsigned int j=0; j<3; ++j)
           nodeCoords_.push_back(nodeCoord[j]);
       }
-      else if (dim_ == 2)
-      {
+    }
+    else if (dim_ == 2) {
+      for (unsigned int n=0; n<numNodes; ++n) {
         Portage::Point<2> nodeCoord;
         input.node_get_coordinates(n, &nodeCoord);
         for (unsigned int j=0; j<2; ++j)
@@ -313,22 +313,6 @@ class Flat_Mesh_Wrapper : public AuxMeshTopology<Flat_Mesh_Wrapper<>> {
     pplist->resize(cellNumNodes);
     for (unsigned int i=0; i<cellNumNodes; ++i)
       node_get_coordinates(nodes[i], &((*pplist)[i]));
-  }
-
-  //! Compute the centroid of the cell
-  template<long D>
-  void cell_centroid(int const cellid,
-                     Point<D> *centroid) const {
-    assert(D == dim_);
-    std::vector<Portage::Point<D>> cellCoord;
-    cell_get_coordinates(cellid, &cellCoord);
-
-    for (unsigned int i=0; i<D; i++) (*centroid)[i] = 0.0;
-    for (unsigned int i=0; i<cellCoord.size(); i++)
-      for (unsigned int j=0; j<D; j++)
-        (*centroid)[j] = (*centroid)[j] + cellCoord[i][j];
-    for (unsigned int i=0; i<D; i++) (*centroid)[i] /= cellCoord.size();
-
   }
 
   //! Get node connected neighbors of cell
