@@ -60,9 +60,9 @@ int print_usage() {
       "--remap_order=1|2 --output_results=y|n \n\n";
 
   std::cout << "--dim (default = 2): spatial dimension of mesh\n\n";
-  std::cout << "--nsourcecells (NO DEFAULT): Num cells per MPI rank in each " <<
+  std::cout << "--nsourcecells (NO DEFAULT): Num cells per in each " <<
       "coord dir in source mesh\n\n";
-  std::cout << "--ntargetcells (NO DEFAULT): Num of cells per MPI rank in each " <<
+  std::cout << "--ntargetcells (NO DEFAULT): Num of cells in each " <<
       "coord dir in target mesh\n\n";
 
   std::cout << "--conformal (default = y): 'y' means mesh boundaries match\n\n";
@@ -71,7 +71,7 @@ int print_usage() {
       "Applicable only for distributed runs.\n";
   std::cout << "  if 'y', then a greater mismatch is created " <<
       "between source and target meshes \n";
-  std::cout << "  by reversing the assignment order ofsource mesh partitions to MPI ranks\n\n";
+  std::cout << "  by reversing the assignment order of source mesh partitions to MPI ranks\n\n";
 
   std::cout << "--entity_kind (default = cell): entities on which remapping is to be done\n\n";
 
