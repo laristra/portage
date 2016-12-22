@@ -1,122 +1,13 @@
-#~----------------------------------------------------------------------------~#
-# Copyright (c) 2014 Los Alamos National Security, LLC
-# All rights reserved.
-#~----------------------------------------------------------------------------~#
+# Copyright 2016, Los Alamos National Security, LLC.
+# All rights reserved
 
-#------------------------------------------------------------------------------#
-# Add a rule to build the executable
-#------------------------------------------------------------------------------#
-
-if (Jali_DIR) 
-    add_executable(portageapp_jali portageapp_jali.cc)
-    target_link_libraries(portageapp_jali portage ${EXTRA_LIBS})
-
-    # MPI additions - need to push this down into cinch
-    if (ENABLE_MPI)
-        target_link_libraries(portageapp_jali ${MPI_CXX_LIBRARIES})
-        set_target_properties(portageapp_jali PROPERTIES
-                              LINK_FLAGS "${MPI_CXX_LINK_FLAGS}")
-    endif (ENABLE_MPI)
-
-    # Jali additions
-    include_directories(${Jali_INCLUDE_DIRS} ${Jali_TPL_INCLUDE_DIRS})
-    target_link_libraries(portageapp_jali ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES})
-
-    # Shotshell example
-    add_executable(shotshellapp_jali shotshell_jali.cc)
-    target_link_libraries(shotshellapp_jali portage ${EXTRA_LIBS})
-    if (ENABLE_MPI)
-        target_link_libraries(shotshellapp_jali ${MPI_CXX_LIBRARIES})
-        set_target_properties(shotshellapp_jali PROPERTIES
-                              LINK_FLAGS "${MPI_CXX_LINK_FLAGS}")
-    endif (ENABLE_MPI)
-    target_link_libraries(shotshellapp_jali ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES})
-
-    # timing example
-    add_executable(timingapp timing_test.cc)
-    target_link_libraries(timingapp portage ${EXTRA_LIBS})
-    if (ENABLE_MPI)
-        target_link_libraries(timingapp ${MPI_CXX_LIBRARIES})
-        set_target_properties(timingapp PROPERTIES
-                              LINK_FLAGS "${MPI_CXX_LINK_FLAGS}")
-    endif (ENABLE_MPI)
-    target_link_libraries(timingapp ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES})
+add_subdirectory(apptest_cmp)
+add_subdirectory(simple_mesh_app)
+if (Jali_DIR OR FLECSI_DIR)
+  add_subdirectory(portageapp)
+endif (Jali_DIR OR FLECSI_DIR)
+if (Jali_DIR)
+  add_subdirectory(shotshellapp)
+  add_subdirectory(timingapp)
 endif (Jali_DIR)
 
-# FleCSI example
-if (FLECSI_INSTALL_DIR)
-  add_executable(portageapp_flecsi portageapp_flecsi.cc)
-  target_link_libraries(portageapp_flecsi portage ${EXTRA_LIBS})
-  include_directories(${FLECSI_INCLUDE_DIRS})
-  target_link_libraries(portageapp_flecsi ${FLECSI_LIBRARIES})
-# these appear needed because of something we are pulling in within src
-  if (ENABLE_MPI)
-      target_link_libraries(portageapp_flecsi ${MPI_CXX_LIBRARIES})
-      set_target_properties(portageapp_flecsi PROPERTIES
-                            LINK_FLAGS "${MPI_CXX_LINK_FLAGS}")
-  endif (ENABLE_MPI)
-endif (FLECSI_INSTALL_DIR)
-
-if (JALI_DIR AND FLECSI_INSTALL_DIR)
-  add_executable(portageapp_jali2flecsi portageapp_jali2flecsi.cc)
-  target_link_libraries(portageapp_jali2flecsi portageapp_jali2flecsi ${EXTRA_LIBS})
-  include_directories(${FLECSI_INCLUDE_DIRS})
-  target_link_libraries(portageapp_jali2flecsi ${FLECSI_LIBRARIES})
-# these appear needed because of something we are pulling in within src
-  if (ENABLE_MPI)
-      target_link_libraries(portageapp_jali2flecsi ${MPI_CXX_LIBRARIES})
-      set_target_properties(portageapp_jali2flecsi PROPERTIES
-                            LINK_FLAGS "${MPI_CXX_LINK_FLAGS}")
-  endif (ENABLE_MPI)
-  target_link_libraries(portageapp_jali2flecsi ${Jali_LIBRARIES}
-                        ${Jali_TPL_LIBRARIES})
-
-endif (JALI_DIR AND FLECSI_INSTALL_DIR)
-
-
-# Comparator for testing infrastructure
-add_executable(apptest_cmp apptest_cmp.cc)
-
-# Simple_Mesh test
-add_executable(simple_mesh simple_mesh.cc)
-target_link_libraries(simple_mesh portage ${EXTRA_LIBS})
-
-
-#TCMalloc option
-set(ENABLE_TCMALLOC TRUE CACHE BOOL "Use TCMalloc")
-if(ENABLE_TCMALLOC)
-  set(TCMALLOC_LIB "${HOME}" CACHE STRING "Set the TCMalloc library")
-
-  if (Jali_DIR)
-    target_link_libraries(portageapp_jali ${TCMALLOC_LIB})
-    target_link_libraries(timingapp ${TCMALLOC_LIB})
-    target_link_libraries(shotshellapp_jali ${TCMALLOC_LIB})
-  endif (Jali_DIR)
-  if (FLECSI_INSTALL_DIR)
-    target_link_libraries(portageapp_flecsi ${TCMALLOC_LIB})
-  endif (FLECSI_INSTALL_DIR)
-  if (JALI_DIR AND FLECSI_INSTALL_DIR)
-    target_link_libraries(portageapp_jali2flecsi ${TCMALLOC_LIB})
-  endif (JALI_DIR AND FLECSI_INSTALL_DIR)
-endif(ENABLE_TCMALLOC)
-
-# Profiling option (to allow pausing and resuming profiling during execution)
-set(ENABLE_PROFILE FALSE CACHE BOOL "Enable VTune Profiling")
-if(ENABLE_PROFILE)
-  set(VTUNE_INCLUDE_DIR "${HOME}" CACHE PATH "Set the locaiton of VTune include")
-  set(VTUNE_LIB "${HOME}" CACHE STRING "Set the VTune library")
-
-  include_directories(${VTUNE_INCLUDE_DIR})
-
-  if (Jali_DIR)
-    target_link_libraries(portageapp_jali ${VTUNE_LIB})
-    target_link_libraries(timingapp ${VTUNE_LIB})
-    target_link_libraries(shotshellapp_jali ${VTUNE_LIB})
-  endif (Jali_DIR)
-  if (FLECSI_INSTALL_DIR)
-    target_link_libraries(portageapp_flecsi ${VTUNE_LIB})
-  endif (FLECSI_INSTALL_DIR)
-  if (JALI_DIR AND FLECSI_INSTALL_DIR)
-    target_link_libraries(portageapp_jali2flecsi ${VTUNE_LIB})
-  endif (JALI_DIR AND FLECSI_INSTALL_DIR)
-endif(ENABLE_PROFILE)
