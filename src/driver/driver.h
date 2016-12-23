@@ -520,47 +520,40 @@ class Driver {
       }
       else {
 
-        if (distributed) {
-          std::cerr << "NODE CENTERED REMAPPING WORKS ONLY IN SERIAL" << std::endl;
-        }
-        else {
-
-          // Get an instance of the desired interpolate algorithm type
-          Interpolate<SourceMesh_Wrapper, TargetMesh_Wrapper, SourceState_Wrapper, CELL, Dim>
-              interpolate(source_mesh_, target_mesh_, source_state_);
+        // Get an instance of the desired interpolate algorithm type
+        Interpolate<SourceMesh_Wrapper, TargetMesh_Wrapper, SourceState_Wrapper, CELL, Dim>
+            interpolate(source_mesh_, target_mesh_, source_state_);
+        
+        for (int i = 0; i < nvars; ++i) {
+          //amh: ?? add back accuracy output statement??
+          if (comm_rank == 0) std::cout << "Remapping cell variable " << source_cellvar_names[i]
+                                        << " to variable " << target_cellvar_names[i] << std::endl;
+          interpolate.set_interpolation_variable(source_cellvar_names[i]);
+          // This populates targetField with the values returned by the
+          // remapper operator
           
-          for (int i = 0; i < nvars; ++i) {
-            //amh: ?? add back accuracy output statement??
-            if (comm_rank == 0) std::cout << "Remapping cell variable " << source_cellvar_names[i]
-                                          << " to variable " << target_cellvar_names[i] << std::endl;
-            interpolate.set_interpolation_variable(source_cellvar_names[i]);
-            // This populates targetField with the values returned by the
-            // remapper operator
-            
-            /*  UNCOMMENT WHEN WE RESTORE get_type in jali_state_wrapper
-                if (typeid(source_state_.get_type(source_var_names[i])) ==
-                typeid(double)) {
-            */
-            double *target_field_raw = nullptr;
-            target_state_.get_data(CELL, target_cellvar_names[i], &target_field_raw);
-            Portage::pointer<double> target_field(target_field_raw);
-            
-            Portage::transform(target_mesh_.begin(CELL, PARALLEL_OWNED),
-                               target_mesh_.end(CELL, PARALLEL_OWNED),
-                               source_cells_and_weights.begin(),
-                               target_field, interpolate);
-            /*  UNCOMMENT WHEN WE RESTORE get_type in jali_state_wrapper
-                } else {
-                std::cerr << "Cannot remap " << source_var_names[i] <<
-                " because it is not a scalar double variable\n";
-                continue;
-                }
-            */
-          }
+          /*  UNCOMMENT WHEN WE RESTORE get_type in jali_state_wrapper
+              if (typeid(source_state_.get_type(source_var_names[i])) ==
+              typeid(double)) {
+          */
+          double *target_field_raw = nullptr;
+          target_state_.get_data(CELL, target_cellvar_names[i], &target_field_raw);
+          Portage::pointer<double> target_field(target_field_raw);
+          
+          Portage::transform(target_mesh_.begin(CELL, PARALLEL_OWNED),
+                             target_mesh_.end(CELL, PARALLEL_OWNED),
+                             source_cells_and_weights.begin(),
+                             target_field, interpolate);
+          /*  UNCOMMENT WHEN WE RESTORE get_type in jali_state_wrapper
+              } else {
+              std::cerr << "Cannot remap " << source_var_names[i] <<
+              " because it is not a scalar double variable\n";
+              continue;
+              }
+          */
         }
-
       }
-
+      
       gettimeofday(&end_timeval, 0);
       timersub(&end_timeval, &begin_timeval, &diff_timeval);
       tot_seconds_interp = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
@@ -595,6 +588,12 @@ class Driver {
 
     if (source_nodevar_names.size() > 0) {
 
+      if (distributed) {
+        std::cerr <<
+            "Portage ERROR: REMAPPING OF NODAL QUANTITIES NOT IMPLEMENTED FOR DISTRIBUTED MESHES\n" << std::endl;
+        return;
+      }
+        
       float tot_seconds = 0.0, tot_seconds_srch = 0.0,
             tot_seconds_xsect = 0.0, tot_seconds_interp = 0.0;
       struct timeval begin_timeval, end_timeval, diff_timeval;
