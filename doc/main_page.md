@@ -1,7 +1,7 @@
 # Welcome to portage!   {#mainpage}
 
 portage is a framework that computational physics applications can use
-to build a highly customize, hybrid parallel (MPI+X) conservative
+to build a highly customized, hybrid parallel (MPI+X) conservative
 remapping library for transfer of field data between meshes.
 
 We aim to provide:
