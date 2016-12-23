@@ -1,5 +1,4 @@
-#!/bin/bash
-: <<'END'
+#[[
 Copyright (c) 2016, Los Alamos National Security, LLC
 All rights reserved.
 
@@ -38,38 +37,13 @@ BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER
 IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGE.
-END
+]]
 
-# Exit on error
-set -e
-# Echo each command
-set -x
+message(STATUS "Adding test directory")
 
-# 2D, 2nd order accurate remap of linear cell-centered function
-
-# SERIAL RUN
-
-$APPDIR/portageapp_jali \
---dim=2 --nsourcecells=5 --ntargetcells=7 \
---conformal=y \
---entity_kind=cell --field_order=1 \
---remap_order=2 \
---output_results=y
-
-# Compare the values for the field
-$APPDIR/apptest_cmp GOLD-field_2d_cell_f1_r2.txt field_2d_cell_f1_r2.txt 1e-12
-
-# PARALLEL RUN
-
-mpirun -np 4 $APPDIR/portageapp_jali \
---dim=2 --nsourcecells=5 --ntargetcells=7 \
---conformal=n \
---entity_kind=cell --field_order=1 \
---remap_order=2 \
---output_results=y
-
-# Compare the values for the field
-$APPDIR/apptest_cmp GOLD-field_2d_cell_f1_r2_nc.txt.0 field_2d_cell_f1_r2_nc.txt.0 1e-12
-$APPDIR/apptest_cmp GOLD-field_2d_cell_f1_r2_nc.txt.1 field_2d_cell_f1_r2_nc.txt.1 1e-12
-$APPDIR/apptest_cmp GOLD-field_2d_cell_f1_r2_nc.txt.2 field_2d_cell_f1_r2_nc.txt.2 1e-12
-$APPDIR/apptest_cmp GOLD-field_2d_cell_f1_r2_nc.txt.3 field_2d_cell_f1_r2_nc.txt.3 1e-12
+add_subdirectory(apptest_cmp)
+add_subdirectory(simple_mesh_app)
+if (Jali_DIR)
+  add_subdirectory(portageapp)
+  add_subdirectory(shotshellapp)
+endif (Jali_DIR)
