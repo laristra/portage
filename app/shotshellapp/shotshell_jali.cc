@@ -127,6 +127,15 @@ int main(int argc, char** argv) {
     else
       std::cerr << "Unrecognized option " << keyword << std::endl;
   }
+
+  if (numpe > 1 && entityKind == Jali::Entity_kind::NODE) {
+    if (rank == 0)
+      std::cerr << std::endl <<
+          "shotshellapp_jali - ERROR - NODE-CENTERED REMAPPING NOT IMPLEMENTED FOR DISTRIBUTED MESHES" << std::endl;
+    MPI_Finalize();
+    return -1;
+  }
+    
       
   std::cout << "starting shotshellapp...\n";
   std::cout << "   Field is of polynomial order" << poly_order << "\n";
