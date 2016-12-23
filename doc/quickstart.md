@@ -79,9 +79,11 @@ The apps directory is a good place to look for _how_ one uses the methods
 within the portage library to actually perform a remap.  Out of the box,
 portage provides wrappers to three mesh and state manager frameworks:
 
-1. `Jali` is a stripped-down version of the mesh infrastructure of the
-[Amanzi](https://software.lanl.gov/ascem/amanzi/) code.  It is currently not
-open-source and is mainly used internally for testing.
+1. `Simple_Mesh` and `Simple_State` are examples of a very simple mesh and
+state manager framework that is included with portage.  It is not intended to
+be production quality, but to demonstrate how one might hook their own mesh and
+state manager framework into portage.  A detailed description of `Simple_Mesh`
+and `Simple_State` and how they are used is shown on the @ref simple_mesh page.
 
 2. [`FleCSI`](https://github.com/losalamos/flecsi) is a modern, flexible,
 computational framework designed for next-generation architectures.
@@ -94,8 +96,6 @@ that version of FleCSI and build it.  Then to enable within portage, set the
 Note that FleCSI requires a C++-14 compatible compiler.  We are in the process
 of updating portage's FleCSI support to be more up-to-date.
 
-3. `Simple_Mesh` and `Simple_State` are examples of a very simple mesh and
-state manager framework that is included with portage.  It is not intended to
-be production quality, but to demonstrate how one might hook their own mesh and
-state manager framework into portage.  A detailed description of `Simple_Mesh`
-and `Simple_State` and how they are used is shown on the @ref simple_mesh page.
+3. `Jali` is a stripped-down version of the mesh infrastructure of the
+[Amanzi](https://software.lanl.gov/ascem/amanzi/) code.  It is currently not
+open-source and is mainly used internally for testing.
