@@ -122,6 +122,7 @@ void build_sides_3D(AuxMeshTopology<BasicMesh>& mesh);
 //! particular, the basic mesh class is expected to support the
 //! following methods to successfully instantiate this class:
 //!
+//!~~~
 //! int space_dimension() const;  // dimensionality of mesh points (1, 2, 3)
 //!
 //! int num_owned_cells() const;
@@ -130,27 +131,31 @@ void build_sides_3D(AuxMeshTopology<BasicMesh>& mesh);
 //! int num_ghost_faces() const;
 //! int num_owned_nodes() const;
 //! int num_ghost_nodes() const;
-//!
 //! Portage::Entity_type cell_get_type(int const cellid) const;
-//! -----------
-//! NOTE: Entity_type is Portage::OWNED or Portage::GHOST
-//! -----------
+//!~~~
 //!
+//! NOTE: Entity_type is Portage::OWNED or Portage::GHOST
+//!
+//!~~~
 //! Portage::Element_type cell_get_element_type(int const cellid) const;
-//! -----------
+//!~~~
+//!
 //! Can be Portage::UNKNOWN_TOPOLOGY, Portage::TRI, Portage::QUAD,
 //! Portage::POLYGON, Portage::TET, Portage::PRISM, Portage::PYRAMID,
 //! Portage::HEX, Portage::POLYHEDRON
-//! -----------
 //!
+//!
+//!~~~
 //! void cell_get_faces_and_dirs(int const cellid, std::vector<int> *cfaces,
 //!                              std::vector<int> *cfdirs) const;
-//! ------------
+//!~~~
+//!
 //! NOTE: The 'cfdirs' conveys the directions in which the faces are used by
 //! the cell. If the natural normal of the face points out of the cell, its
 //! direction should be returned as 1, if not, it should be returned as -1
-//! ------------
 //!
+//!
+//!~~~
 //! void cell_get_nodes(int const cellid, std::vector<int> *cnodes) const;
 //!
 //! void cell_get_node_adj_cells(int const cellid, Portage::Entity_type etype,
@@ -166,21 +171,25 @@ void build_sides_3D(AuxMeshTopology<BasicMesh>& mesh);
 //! template<long D>
 //! void node_get_coordinates(int const nodeid, Portage::Point<D> *pp) const;
 //!
+//!~~~
 //! ******************************** NOTE ***********************************
+//!
 //! THIS IS AN INCOMPLETE CLASS DESIGNED TO BE USED IN A 'CRTP' (CURIOUSLY
 //! RECURRING TEMPLATE PATTERN) DESIGN ALONG WITH THE BASICMESH CLASS TO
 //! PROVIDE A COMPLETE MESH CLASS
 //! (See https://en.m.wikipedia.org/wiki/Curiously_recurring_template_pattern)
 //!
-//! So, If one is writing a mesh wrapper class called MY_MESH_WRAPPER, it is
+//! So, If one is writing a mesh wrapper class called @c MY_MESH_WRAPPER, it is
 //! declared like so
 //!
+//!~~~
 //! class MY_MESH_WRAPPER : public AuxMeshTopology<MY_MESH_WRAPPER>
 //! {......}
-//!
+//!~~~
 //! and it will automatically have the methods of the AuxMeshTopology class.
 //!
 //! NOTE THAT THIS CLASS IS NOT DESIGNED TO EVER BE INSTANTIATED DIRECTLY
+//!
 //!***************************************************************************
 
 
