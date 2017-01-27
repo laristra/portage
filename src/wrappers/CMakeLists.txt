@@ -63,6 +63,9 @@ set(wrappers_HEADERS
     ${flecsi_wrapper_headers}
     mesh/AuxMeshTopology.h
     mesh/simple_mesh/simple_mesh_wrapper.h
+    state/simple_state/simple_state_wrapper.h
+    mesh/flat/flat_mesh_wrapper.h
+    state/flat/flat_state_wrapper.h
     PARENT_SCOPE)
 
 if (ENABLE_UNIT_TESTS)
