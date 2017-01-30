@@ -92,26 +92,6 @@ class Flat_State_Wrapper {
     }
   }
   
-  template <class State_Wrapper>
-  void initialize(State_Wrapper & input,
-                  std::vector<std::string> var_names) 
-  {
-    for (unsigned int i=0; i<var_names.size(); i++)
-    {
-      std::string varname = var_names[i];  // get_data wants const string
-      Entity_kind entity = input.get_entity(varname);
-      int dataSize = input.get_data_size(entity, varname);
-      T *data;
-        
-      input.get_data(entity, varname, &data);
-      std::shared_ptr<std::vector<T>> field = std::make_shared<std::vector<T>>();
-      field->resize(dataSize);
-      std::copy(data, data+dataSize, field->begin());
-      state_.push_back(field);
-      name_map_[varname] = state_.size() - 1;
-    }
-  }
-  
   
   /*!
     @brief Assignment operator (disabled) - don't know how to implement (RVG)
