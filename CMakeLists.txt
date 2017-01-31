@@ -67,4 +67,10 @@ cmake_minimum_required(VERSION 3.0)
 # Include project-level CMake configuration file
 #------------------------------------------------------------------------------#
 
+if(NOT "$ENV{CINCH_SOURCE_DIR}" STREQUAL "")
+  set(CINCH_SOURCE_DIR $ENV{CINCH_SOURCE_DIR})
+elseif(EXISTS ${CMAKE_SOURCE_DIR}/cinch)
+  set(CINCH_SOURCE_DIR ${CMAKE_SOURCE_DIR}/cinch)
+endif()
+
 include(${CMAKE_SOURCE_DIR}/cinch/cmake/ProjectLists.txt)
