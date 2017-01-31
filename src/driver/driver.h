@@ -610,7 +610,7 @@ class Driver {
 
     // Collect all node based variables and remap them
     MeshWrapperDual<SourceMesh_Wrapper> sourceDualWrapper(source_mesh_);
-    MeshWrapperDual<SourceMesh_Wrapper> targetDualWrapper(target_mesh_);
+    MeshWrapperDual<TargetMesh_Wrapper> targetDualWrapper(target_mesh_);
 
     std::vector<std::string> source_nodevar_names;
     std::vector<std::string> target_nodevar_names;

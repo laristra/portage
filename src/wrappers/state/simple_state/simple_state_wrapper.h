@@ -88,7 +88,7 @@ class Simple_State_Wrapper {
     found in the state manager, a @c nullptr is returned.
    */
   void get_data(const Entity_kind on_what, const std::string name,
-                  double **data) const {
+                double **data) {
     auto it = state_.find(name, on_what);
     if (it != state_.end()) {
       (*data) = &(it->second[0]);
@@ -106,7 +106,7 @@ class Simple_State_Wrapper {
     @param[in] on_what The Entity_kind (e.g. CELL) on which the data
     lives.
     @param[in] name The name of the variable.
-    @param data A @c const pointer to the data array.  If the requested data is
+    @param data A @c pointer to the const data array.  If the requested data is
     not found in the state manager, a @c nullptr is returned.
    */
   void get_data(const Entity_kind on_what, const std::string name,

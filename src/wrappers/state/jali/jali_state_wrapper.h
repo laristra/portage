@@ -103,7 +103,7 @@ class Jali_State_Wrapper {
     @param[in,out] data A pointer to an array of data
    */
   template <class T>
-  void get_data(const Entity_kind on_what, const std::string var_name, T **data) const {
+  void get_data(const Entity_kind on_what, const std::string var_name, T **data) {
   
     Jali::State::const_iterator it =
         jali_state_.find<T, Jali::Mesh>(var_name, jali_state_.mesh(),
@@ -111,7 +111,7 @@ class Jali_State_Wrapper {
     if (it != jali_state_.cend()) {
       std::shared_ptr<Jali::BaseStateVector> vector = *it;
       if (vector) {
-        (*data) = ((T*)(vector->get_raw_data()));
+        (*data) = ((T *)(vector->get_raw_data()));
         return;
       }
     }
@@ -121,10 +121,10 @@ class Jali_State_Wrapper {
   }
 
   /*!
-    @brief Get pointer to scalar data
+    @brief Get pointer to const scalar data
     @param[in] on_what The entity type on which to get the data
     @param[in] var_name The string name of the data field
-    @param[in,out] data A pointer to an array of data
+    @param[in,out] data A pointer to an array of const data
    */
   template <class T>
   void get_data(const Entity_kind on_what, const std::string var_name,
@@ -136,7 +136,7 @@ class Jali_State_Wrapper {
     if (it != jali_state_.cend()) {
       std::shared_ptr<Jali::BaseStateVector> vector = *it;
       if (vector) {
-        (*data) = ((T*)(vector->get_raw_data()));
+        (*data) = ((T const *)(vector->get_raw_data()));
         return;
       }
     }
