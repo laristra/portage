@@ -46,10 +46,6 @@ project(portage)
 cinch_add_application_directory(app)
 cinch_add_library_target(portage src)
 
-if (ENABLE_MPI)
-  add_definitions(-DENABLE_MPI)
-endif (ENABLE_MPI)
-
 # Create some subcomponent libraries for the purposes of unit testing
 #
 # NOT ABLE TO DO EITHER OF THESE
