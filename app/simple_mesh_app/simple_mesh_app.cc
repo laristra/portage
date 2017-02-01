@@ -51,7 +51,9 @@ POSSIBILITY OF SUCH DAMAGE.
 #include <memory>
 #include <stdexcept>
 
+#ifdef ENABLE_MPI
 #include <mpi.h>
+#endif
 
 #include "portage/support/portage.h"
 #include "portage/driver/driver.h"
@@ -164,6 +166,8 @@ int main(int argc, char** argv) {
 
   // Even though Simple_Mesh is serial only, we still need to initialize MPI
   // for other Portage code.
+
+#ifdef ENABLE_MPI
   int mpi_init_flag;
   MPI_Initialized(&mpi_init_flag);
   if (!mpi_init_flag)
@@ -175,6 +179,7 @@ int main(int argc, char** argv) {
               << std::endl;
     return 1;
   }
+#endif
 
   std::cout << "starting simple_mesh app..." << std::endl;
   std::cout << "running example " << example_num << std::endl;
@@ -443,5 +448,7 @@ int main(int argc, char** argv) {
   }
   std::cout << "finishing simple_mesh app..." << std::endl;
 
+#ifdef ENABLE_MPI
   MPI_Finalize();
+#endif
 }
