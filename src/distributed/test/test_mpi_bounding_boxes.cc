@@ -1,7 +1,45 @@
-/*---------------------------------------------------------------------------~*
- * Copyright (c) 2015 Los Alamos National Security, LLC
- * All rights reserved.
- *---------------------------------------------------------------------------~*/
+/*
+Copyright (c) 2016, Los Alamos National Security, LLC
+All rights reserved.
+
+Copyright 2016. Los Alamos National Security, LLC. This software was produced
+under U.S. Government contract DE-AC52-06NA25396 for Los Alamos National
+Laboratory (LANL), which is operated by Los Alamos National Security, LLC for
+the U.S. Department of Energy. The U.S. Government has rights to use,
+reproduce, and distribute this software.  NEITHER THE GOVERNMENT NOR LOS ALAMOS
+NATIONAL SECURITY, LLC MAKES ANY WARRANTY, EXPRESS OR IMPLIED, OR ASSUMES ANY
+LIABILITY FOR THE USE OF THIS SOFTWARE.  If software is modified to produce
+derivative works, such modified software should be clearly marked, so as not to
+confuse it with the version available from LANL.
+
+Additionally, redistribution and use in source and binary forms, with or
+without modification, are permitted provided that the following conditions are
+met:
+
+1. Redistributions of source code must retain the above copyright notice,
+   this list of conditions and the following disclaimer.
+2. Redistributions in binary form must reproduce the above copyright
+   notice, this list of conditions and the following disclaimer in the
+   documentation and/or other materials provided with the distribution.
+3. Neither the name of Los Alamos National Security, LLC, Los Alamos
+   National Laboratory, LANL, the U.S. Government, nor the names of its
+   contributors may be used to endorse or promote products derived from this
+   software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY LOS ALAMOS NATIONAL SECURITY, LLC AND
+CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
+PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL LOS ALAMOS NATIONAL
+SECURITY, LLC OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
+BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER
+IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+POSSIBILITY OF SUCH DAMAGE.
+*/
+
+
 
 #include "portage/support/Point.h"
 #include "portage/distributed/mpi_bounding_boxes.h"
@@ -46,7 +84,7 @@ TEST(MPI_Bounding_Boxes, SimpleTest3D) {
             Jali::Entity_type::ALL, dtest2);
 
   Portage::Flat_Mesh_Wrapper<> source_mesh_flat;
-  source_mesh_flat.initialize(8, inputMeshWrapper);
+  source_mesh_flat.initialize(inputMeshWrapper);
   Portage::Flat_State_Wrapper<> source_state_flat;
   source_state_flat.initialize(wrapper, {"d1", "d2"});
 
@@ -63,20 +101,29 @@ TEST(MPI_Bounding_Boxes, SimpleTest3D) {
   distributor.distribute(source_mesh_flat, source_state_flat, target_mesh_,
                          target_state_);
 
-  // Check number of cells and nodes received
-  int exp_num_owned_cells = (commRank == 0 ? 2 :
-                             commRank <= 2 ? 4 : 8);
+  // Check number of cells, nodes and faces received
+  int exp_num_parts = (commRank == 0 ? 1 :
+                       commRank <= 2 ? 2 : 4);
+  int exp_num_owned_cells = exp_num_parts * 2;
   int num_owned_cells = source_mesh_flat.num_owned_cells();
   ASSERT_EQ(exp_num_owned_cells, num_owned_cells);
-  int exp_num_owned_nodes = exp_num_owned_cells * 8;
+  int exp_num_owned_nodes = (commRank == 0 ? 12 :
+                             commRank <= 2 ? 18 : 27);
   int num_owned_nodes = source_mesh_flat.num_owned_nodes();
   ASSERT_EQ(exp_num_owned_nodes, num_owned_nodes);
-  int exp_num_cells = exp_num_owned_cells * 4;
+  int exp_num_owned_faces = (commRank == 0 ? 11 :
+                             commRank <= 2 ? 20 : 36);
+  int num_owned_faces = source_mesh_flat.num_owned_faces();
+  ASSERT_EQ(exp_num_owned_faces, num_owned_faces);
+  int exp_num_cells = exp_num_parts * 8;
   int num_cells = num_owned_cells + source_mesh_flat.num_ghost_cells();
   ASSERT_EQ(exp_num_cells, num_cells);
-  int exp_num_nodes = exp_num_cells * 8;
+  int exp_num_nodes = exp_num_parts * 27;
   int num_nodes = num_owned_nodes + source_mesh_flat.num_ghost_nodes();
   ASSERT_EQ(exp_num_nodes, num_nodes);
+  int exp_num_faces = exp_num_parts * 36;
+  int num_faces = num_owned_faces + source_mesh_flat.num_ghost_faces();
+  ASSERT_EQ(exp_num_faces, num_faces);
 
   // Check coordinates
   // List coordinates of cell 0 - others are equal to this
@@ -193,7 +240,7 @@ TEST(MPI_Bounding_Boxes, SimpleTest2D) {
             Jali::Entity_type::ALL, dtest2);
 
   Portage::Flat_Mesh_Wrapper<> source_mesh_flat;
-  source_mesh_flat.initialize(4, inputMeshWrapper);
+  source_mesh_flat.initialize(inputMeshWrapper);
   Portage::Flat_State_Wrapper<> source_state_flat;
   source_state_flat.initialize(wrapper, {"d1", "d2"});
   // Target mesh
@@ -209,18 +256,23 @@ TEST(MPI_Bounding_Boxes, SimpleTest2D) {
                          target_state_);
 
   // Check number of cells and nodes received
-  int exp_num_owned_cells = (commRank == 0 ? 4 :
-                             commRank <= 2 ? 8 : 16);
+  int exp_num_parts = (commRank == 0 ? 1 :
+                       commRank <= 2 ? 2 : 4);
+  int exp_num_owned_cells = exp_num_parts * 4;
   int num_owned_cells = source_mesh_flat.num_owned_cells();
   ASSERT_EQ(exp_num_owned_cells, num_owned_cells);
-  int exp_num_owned_nodes = exp_num_owned_cells * 4;
+  int exp_num_owned_nodes = (commRank == 0 ? 9 :
+                             commRank <= 2 ? 15 : 25);
   int num_owned_nodes = source_mesh_flat.num_owned_nodes();
   ASSERT_EQ(exp_num_owned_nodes, num_owned_nodes);
-  int exp_num_cells = exp_num_owned_cells * 9 / 4;
+  int exp_num_cells = exp_num_parts * 9;
   int num_cells = num_owned_cells + source_mesh_flat.num_ghost_cells();
   ASSERT_EQ(exp_num_cells, num_cells);
-  int exp_num_nodes = exp_num_cells * 4;
+  int exp_num_nodes = exp_num_parts * 16;
   int num_nodes = num_owned_nodes + source_mesh_flat.num_ghost_nodes();
+  ASSERT_EQ(exp_num_nodes, num_nodes);
+  int exp_num_faces = exp_num_parts * 16;
+  int num_faces = num_owned_nodes + source_mesh_flat.num_ghost_nodes();
   ASSERT_EQ(exp_num_nodes, num_nodes);
 
   // Check coordinates

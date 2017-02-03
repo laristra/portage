@@ -1,7 +1,45 @@
-/*---------------------------------------------------------------------------~*
- * Copyright (c) 2015 Los Alamos National Security, LLC
- * All rights reserved.
- *---------------------------------------------------------------------------~*/
+/*
+Copyright (c) 2016, Los Alamos National Security, LLC
+All rights reserved.
+
+Copyright 2016. Los Alamos National Security, LLC. This software was produced
+under U.S. Government contract DE-AC52-06NA25396 for Los Alamos National
+Laboratory (LANL), which is operated by Los Alamos National Security, LLC for
+the U.S. Department of Energy. The U.S. Government has rights to use,
+reproduce, and distribute this software.  NEITHER THE GOVERNMENT NOR LOS ALAMOS
+NATIONAL SECURITY, LLC MAKES ANY WARRANTY, EXPRESS OR IMPLIED, OR ASSUMES ANY
+LIABILITY FOR THE USE OF THIS SOFTWARE.  If software is modified to produce
+derivative works, such modified software should be clearly marked, so as not to
+confuse it with the version available from LANL.
+
+Additionally, redistribution and use in source and binary forms, with or
+without modification, are permitted provided that the following conditions are
+met:
+
+1. Redistributions of source code must retain the above copyright notice,
+   this list of conditions and the following disclaimer.
+2. Redistributions in binary form must reproduce the above copyright
+   notice, this list of conditions and the following disclaimer in the
+   documentation and/or other materials provided with the distribution.
+3. Neither the name of Los Alamos National Security, LLC, Los Alamos
+   National Laboratory, LANL, the U.S. Government, nor the names of its
+   contributors may be used to endorse or promote products derived from this
+   software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY LOS ALAMOS NATIONAL SECURITY, LLC AND
+CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
+PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL LOS ALAMOS NATIONAL
+SECURITY, LLC OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
+BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER
+IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+POSSIBILITY OF SUCH DAMAGE.
+*/
+
+
 
 #ifndef SRC_INTERPOLATE_GRADIENT_H_
 #define SRC_INTERPOLATE_GRADIENT_H_
@@ -154,29 +192,6 @@ class Limited_Gradient {
 
 ///////////////////////////////////////////////////////////////////////////////
 
-/*! @class Get_Cell_Neighbors<MeshType> gradient.h
-    @brief Functor to get adjacent cells that can be called in parallel
-    @tparam MeshType A mesh class that one can query for mesh info
-*/
-
-template<typename MeshType>
-class Get_Cell_Neighbors {
-public:
-  Get_Cell_Neighbors(MeshType const & mesh, std::vector<std::vector<int>>& cell_neighbors) : mesh_(mesh), cell_neighbors_(cell_neighbors) { };
-
-  void operator()(int c)
-  {
-    mesh_.cell_get_node_adj_cells(c, ALL, &(cell_neighbors_[c]));
-  }
-
-private:
-  MeshType const & mesh_;
-  std::vector<std::vector<int>> & cell_neighbors_;
-};
-
-
-///////////////////////////////////////////////////////////////////////////////
-
 /*! @class Limited_Gradient<MeshType,StateType,CELL> gradient.h
     @brief Specialization of limited gradient class for @c cell-centered field
     @tparam MeshType A mesh class that one can query for mesh info
@@ -213,8 +228,9 @@ class Limited_Gradient<MeshType, StateType, CELL, D> {
     int ncells = mesh_.num_entities(CELL);
     cell_neighbors_.resize(ncells);
 
-    Portage::for_each(mesh_.begin(CELL), mesh_.end(CELL),
-                      Get_Cell_Neighbors<MeshType>(mesh_, cell_neighbors_));
+    Portage::for_each(mesh_.begin(CELL), mesh_.end(CELL), 
+                      [this](int c) { mesh_.cell_get_node_adj_cells(
+                             c, ALL, &(cell_neighbors_[c])); } );
   }
 
   /// @todo Seems to be needed when using this in a Thrust transform call?
@@ -320,29 +336,6 @@ Limited_Gradient<MeshType, StateType, CELL, D>::operator() (int const cellid) {
 
 ///////////////////////////////////////////////////////////////////////////////
 
-/*! @class Get_Node_Neighbors<MeshType> gradient.h
-    @brief Functor to get adjacent nodes that can be called in parallel
-    @tparam MeshType A mesh class that one can query for mesh info
-*/
-        
-template<typename MeshType>
-class Get_Node_Neighbors {
-public:
-  Get_Node_Neighbors(MeshType const & mesh, std::vector<std::vector<int>>& node_neighbors) : mesh_(mesh), node_neighbors_(node_neighbors) { };
-
-  void operator()(int n)
-  {
-    mesh_.dual_cell_get_node_adj_cells(n, ALL, &(node_neighbors_[n]));
-  }
-
-private:
-  MeshType const & mesh_;
-  std::vector<std::vector<int>> & node_neighbors_;
-};
-
-
-///////////////////////////////////////////////////////////////////////////////
-
 /*! @class Limited_Gradient<MeshType,StateType,NODE> gradient.h
     @brief Specialization of limited gradient class for @c node-centered field
     @tparam MeshType A mesh class that one can query for mesh info
@@ -379,8 +372,9 @@ class Limited_Gradient<MeshType, StateType, NODE, D> {
     int nnodes = mesh_.num_entities(NODE);
     node_neighbors_.resize(nnodes);
 
-    Portage::for_each(mesh_.begin(NODE), mesh_.end(NODE),
-                      Get_Node_Neighbors<MeshType>(mesh_, node_neighbors_));
+    Portage::for_each(mesh_.begin(NODE), mesh_.end(NODE), 
+                      [this](int n) { mesh_.dual_cell_get_node_adj_cells(
+                             n, ALL, &(node_neighbors_[n])); } );
   }
 
   /// \todo Seems to be needed when using this in a Thrust transform call?

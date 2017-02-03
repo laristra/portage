@@ -1,7 +1,44 @@
-/*---------------------------------------------------------------------------~*
- * Copyright (c) 2015 Los Alamos National Security, LLC
- * All rights reserved.
- *---------------------------------------------------------------------------~*/
+/*
+Copyright (c) 2016, Los Alamos National Security, LLC
+All rights reserved.
+
+Copyright 2016. Los Alamos National Security, LLC. This software was produced
+under U.S. Government contract DE-AC52-06NA25396 for Los Alamos National
+Laboratory (LANL), which is operated by Los Alamos National Security, LLC for
+the U.S. Department of Energy. The U.S. Government has rights to use,
+reproduce, and distribute this software.  NEITHER THE GOVERNMENT NOR LOS ALAMOS
+NATIONAL SECURITY, LLC MAKES ANY WARRANTY, EXPRESS OR IMPLIED, OR ASSUMES ANY
+LIABILITY FOR THE USE OF THIS SOFTWARE.  If software is modified to produce
+derivative works, such modified software should be clearly marked, so as not to
+confuse it with the version available from LANL.
+
+Additionally, redistribution and use in source and binary forms, with or
+without modification, are permitted provided that the following conditions are
+met:
+
+1. Redistributions of source code must retain the above copyright notice,
+   this list of conditions and the following disclaimer.
+2. Redistributions in binary form must reproduce the above copyright
+   notice, this list of conditions and the following disclaimer in the
+   documentation and/or other materials provided with the distribution.
+3. Neither the name of Los Alamos National Security, LLC, Los Alamos
+   National Laboratory, LANL, the U.S. Government, nor the names of its
+   contributors may be used to endorse or promote products derived from this
+   software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY LOS ALAMOS NATIONAL SECURITY, LLC AND
+CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
+PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL LOS ALAMOS NATIONAL
+SECURITY, LLC OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
+BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER
+IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+POSSIBILITY OF SUCH DAMAGE.
+*/
+
 
 #ifndef FLAT_STATE_WRAPPER_H_
 #define FLAT_STATE_WRAPPER_H_
@@ -26,15 +63,79 @@ namespace Portage {
 /*!
   @class Flat_State_Wrapper "flat_state_wrapper.h"
   @brief Stores state data in a flat representation
+         
+         Currently all fields must be of the same type
 */
 template <class T=double>
 class Flat_State_Wrapper {
  public:
 
+  //! pair of name and entity to be used as data key
+  using pair_t = std::pair<std::string, Entity_kind>;
+
   /*!
     @brief Constructor of Flat_State_Wrapper
    */
   Flat_State_Wrapper() { };
+
+  /*!
+   * @brief Initialize the state wrapper with another state wrapper and a list of names
+   * @param[in] input another state wrapper, which need not be for Flat_State.
+   * @param[in] var_names a list of state names to initialize
+   *
+   * Entities and sizes associated with the given name will be obtained from the input state wrapper.
+   *
+   * A name can be re-used with a different entity, but a name-entity combination
+   * must be unique.
+   *
+   * A name-entity combination must not introduce a new size for that entity if
+   * it has previously been encountered.
+   *
+   * All existing internal data is forgotten.
+   */
+  template <class State_Wrapper>
+  void initialize(State_Wrapper const & input,
+                  std::vector<std::string> var_names) 
+  {
+    for (unsigned int i=0; i<var_names.size(); i++)
+    {
+      std::string varname = var_names[i];  // get_data wants const string
+      // get entity
+      Entity_kind entity = input.get_entity(varname);
+      size_t dataSize = input.get_data_size(entity, varname);
+      T const* data;
+
+      // create name-entity pair
+      auto newpair = pair_t(varname, entity);
+
+      // check for duplicate name-entity combination, error if already in
+      auto isin = name_map_.find(newpair);
+      if (isin != name_map_.end()) {
+        throw std::runtime_error(std::string("variable ")+varname+" is already in this database");
+      }
+
+      // store entity type, possibly ambiguous
+      entity_map_[varname] = entity;
+
+      // store size of entity_type, error if changed from what we've seen before
+      if (entity_size_map_.find(entity) != entity_size_map_.end()) {  // we have seen it
+    	size_t oldSize = entity_size_map_[entity];
+    	if (oldSize != dataSize) {
+    	  throw std::runtime_error(std::string("variable ")+varname+" has an invalid entity size");
+    	}
+      } else { // we haven't seen it
+	entity_size_map_[entity] = dataSize;
+      }
+
+      // store data for state
+      input.get_data(entity, varname, &data);
+      std::shared_ptr<std::vector<T>> field = std::make_shared<std::vector<T>>();
+      field->resize(dataSize);
+      std::copy(data, data+dataSize, field->begin());
+      state_.push_back(field);
+      name_map_[newpair] = state_.size() - 1;
+    }
+  }
 
   /*!
     @brief Assignment operator (disabled) - don't know how to implement (RVG)
@@ -45,9 +146,6 @@ class Flat_State_Wrapper {
     @brief Empty destructor
    */
   ~Flat_State_Wrapper() {};
-
-  using pair_t = std::pair<std::string, Entity_kind>;
-
 
   /*!
    * @brief Initialize the state wrapper with explicit lists of names, entities and data
@@ -83,63 +181,21 @@ class Flat_State_Wrapper {
   }
 
   /*!
-   * @brief Initialize the state wrapper with another state wrapper and a list of names
-   * @param[in] input another state wrapper, which need not be for Flat_State.
-   * @param[in] var_names a list of state names to initialize
-   *
-   * Entities and sizes associated with the given name will be obtained from the input state wrapper.
-   *
-   * A name can be re-used with a different entity, but a name-entity combination
-   * must be unique.
-   *
-   * A name-entity combination must not introduce a new size for that entity if
-   * it has previously been encountered.
-   *
-   * All existing internal data is forgotten.
+    @brief Get pointer to scalar data
+    @param[in] on_what The entity type on which the data is defined
+    @param[in] var_name The string name of the data field
+    @param[in,out] data A pointer to an array of data. Null on output if data does not exist.
+    *
+    * Data is associated with the name-entity combination. Both values must be valid.
    */
-  template <class State_Wrapper>
-  void initialize(State_Wrapper &input, std::vector<std::string> var_names) 
-  {
-    state_.clear();
-    name_map_.clear();
-    entity_map_.clear();
-    entity_size_map_.clear();
-    gradients_.clear();
-
-    for (size_t i=0; i<var_names.size(); i++)
-    {
-      // get entity
-      Entity_kind entity = input.get_entity(var_names[i]);
-      auto newpair = pair_t(var_names[i], entity);
-
-      // check for duplicate name-entity combination, error if already in
-      auto isin = name_map_.find(newpair);
-      if (isin != name_map_.end()) {
-        throw std::runtime_error(std::string("variable ")+var_names[i]+" is already in this database");
-      }
-
-      // store entity type, possibly ambiguous
-      entity_map_[var_names[i]] = entity;
-
-      // store size of entity_type, error if changed from what we've seen before
-      size_t dataSize = input.get_data_size(entity, var_names[i]);
-      if (entity_size_map_.find(entity) != entity_size_map_.end()) {  // we have seen it
-    	size_t oldSize = entity_size_map_[entity];
-    	if (oldSize != dataSize) {
-    	  throw std::runtime_error(std::string("variable ")+var_names[i]+" has an invalid entity size");
-    	}
-      } else { // we haven't seen it
-	entity_size_map_[entity] = dataSize;
-      }
-
-      // store data for state
-      T* data;
-      input.get_data(entity, var_names[i], &data);
-      std::shared_ptr<std::vector<T>> field = std::make_shared<std::vector<T>>();
-      field->resize(dataSize);
-      std::copy(data, data+dataSize, field->begin());
-      state_.push_back(field);
-      name_map_[newpair] = state_.size() - 1;
+  template <class D=double>
+  void get_data(const Entity_kind on_what, const std::string var_name, D** data) {
+    pair_t pr(var_name, on_what);
+    auto iter = name_map_.find(pr);
+    if (iter != name_map_.end()) {
+      (*data) = (D*)(&((*(state_[iter->second]))[0]));
+    } else {
+      (*data) = nullptr;
     }
   }
 
@@ -151,11 +207,12 @@ class Flat_State_Wrapper {
     *
     * Data is associated with the name-entity combination. Both values must be valid.
    */
-  void get_data(const Entity_kind on_what, const std::string var_name, T** const data) const {
+  template <class D=double>
+  void get_data(const Entity_kind on_what, const std::string var_name, D const **data) const {
     pair_t pr(var_name, on_what);
     auto iter = name_map_.find(pr);
     if (iter != name_map_.end()) {
-      (*data) = (T*)(&((*(state_[iter->second]))[0]));
+      (*data) = (D const *)(&((*(state_[iter->second]))[0]));
     } else {
       (*data) = nullptr;
     }
@@ -255,11 +312,6 @@ class Flat_State_Wrapper {
   }
 
   /*!
-    @brief Get the number of data vectors
-  */
-  size_t get_num_vectors() { return state_.size(); }
-
-  /*!
     @brief Get the data vector
   */
   std::shared_ptr<std::vector<T>> get_vector(size_t index)
@@ -274,6 +326,11 @@ class Flat_State_Wrapper {
   {
     return gradients_[index];
   }
+
+  /*!
+    @brief Get the number of data vectors
+  */
+  size_t get_num_vectors() { return state_.size(); }
 
   /*!
     @brief Add a gradient field
@@ -303,8 +360,6 @@ private:
   std::map<std::string, Entity_kind> entity_map_;
   std::map<Entity_kind, size_t> entity_size_map_;
   std::vector<std::shared_ptr<std::vector<Portage::Point3>>> gradients_;
-
-
 }; // Flat_State_Wrapper
 
 } // namespace Portage

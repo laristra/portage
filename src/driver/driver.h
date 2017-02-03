@@ -1,7 +1,45 @@
-/*---------------------------------------------------------------------------~*
- * Copyright (c) 2015 Los Alamos National Security, LLC
- * All rights reserved.
- *---------------------------------------------------------------------------~*/
+/*
+Copyright (c) 2016, Los Alamos National Security, LLC
+All rights reserved.
+
+Copyright 2016. Los Alamos National Security, LLC. This software was produced
+under U.S. Government contract DE-AC52-06NA25396 for Los Alamos National
+Laboratory (LANL), which is operated by Los Alamos National Security, LLC for
+the U.S. Department of Energy. The U.S. Government has rights to use,
+reproduce, and distribute this software.  NEITHER THE GOVERNMENT NOR LOS ALAMOS
+NATIONAL SECURITY, LLC MAKES ANY WARRANTY, EXPRESS OR IMPLIED, OR ASSUMES ANY
+LIABILITY FOR THE USE OF THIS SOFTWARE.  If software is modified to produce
+derivative works, such modified software should be clearly marked, so as not to
+confuse it with the version available from LANL.
+
+Additionally, redistribution and use in source and binary forms, with or
+without modification, are permitted provided that the following conditions are
+met:
+
+1. Redistributions of source code must retain the above copyright notice,
+   this list of conditions and the following disclaimer.
+2. Redistributions in binary form must reproduce the above copyright
+   notice, this list of conditions and the following disclaimer in the
+   documentation and/or other materials provided with the distribution.
+3. Neither the name of Los Alamos National Security, LLC, Los Alamos
+   National Laboratory, LANL, the U.S. Government, nor the names of its
+   contributors may be used to endorse or promote products derived from this
+   software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY LOS ALAMOS NATIONAL SECURITY, LLC AND
+CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
+PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL LOS ALAMOS NATIONAL
+SECURITY, LLC OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
+BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER
+IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+POSSIBILITY OF SUCH DAMAGE.
+*/
+
+
 
 #ifndef SRC_DRIVER_DRIVER_H_
 #define SRC_DRIVER_DRIVER_H_
@@ -396,10 +434,14 @@ class Driver {
 
       if (distributed) {
 
+#ifndef PORTAGE_SERIAL_ONLY
+        // Our current flecsi build does not support distributed meshes,
+        // so in that case don't try to build or run this code.
+
         // Create flat wrappers to distribute source cells 
         gettimeofday(&begin_timeval, 0);
 
-        source_mesh_flat.initialize(8, source_mesh_);
+        source_mesh_flat.initialize(source_mesh_);
         source_state_flat.initialize(source_state_, source_remap_var_names_);
         MPI_Bounding_Boxes distributor;
         distributor.distribute(source_mesh_flat, source_state_flat, target_mesh_,
@@ -418,6 +460,7 @@ class Driver {
         Portage::transform(target_mesh_.begin(CELL, PARALLEL_OWNED),
                            target_mesh_.end(CELL, PARALLEL_OWNED),
                            candidates.begin(), searchfunctor);
+#endif
       }
       else {
 
@@ -442,6 +485,7 @@ class Driver {
 
       if (distributed) {
 
+#ifndef PORTAGE_SERIAL_ONLY
         // Get an instance of the desired intersect algorithm type
         const Intersect<Flat_Mesh_Wrapper<>, TargetMesh_Wrapper>
             intersect(source_mesh_flat, target_mesh_);
@@ -452,6 +496,7 @@ class Driver {
                            candidates.begin(),
                            source_cells_and_weights.begin(),
                            intersectfunctor);
+#endif
       }
       else {
 
@@ -491,6 +536,7 @@ class Driver {
 
       if (distributed) {
 
+#ifndef PORTAGE_SERIAL_ONLY
         // Get an instance of the desired interpolate algorithm type
         Interpolate<Flat_Mesh_Wrapper<>, TargetMesh_Wrapper, Flat_State_Wrapper<>, CELL, Dim>
             interpolate(source_mesh_flat, target_mesh_, source_state_flat);
@@ -508,43 +554,44 @@ class Driver {
                              source_cells_and_weights.begin(),
                              target_field, interpolate);
         }
+#endif
       }
       else {
 
         // Get an instance of the desired interpolate algorithm type
         Interpolate<SourceMesh_Wrapper, TargetMesh_Wrapper, SourceState_Wrapper, CELL, Dim>
             interpolate(source_mesh_, target_mesh_, source_state_);
-
+        
         for (int i = 0; i < nvars; ++i) {
           //amh: ?? add back accuracy output statement??
           if (comm_rank == 0) std::cout << "Remapping cell variable " << source_cellvar_names[i]
-                    << " to variable " << target_cellvar_names[i] << std::endl;
+                                        << " to variable " << target_cellvar_names[i] << std::endl;
           interpolate.set_interpolation_variable(source_cellvar_names[i]);
           // This populates targetField with the values returned by the
           // remapper operator
-
+          
           /*  UNCOMMENT WHEN WE RESTORE get_type in jali_state_wrapper
-          if (typeid(source_state_.get_type(source_var_names[i])) ==
-          typeid(double)) {
+              if (typeid(source_state_.get_type(source_var_names[i])) ==
+              typeid(double)) {
           */
           double *target_field_raw = nullptr;
           target_state_.get_data(CELL, target_cellvar_names[i], &target_field_raw);
           Portage::pointer<double> target_field(target_field_raw);
-
+          
           Portage::transform(target_mesh_.begin(CELL, PARALLEL_OWNED),
                              target_mesh_.end(CELL, PARALLEL_OWNED),
                              source_cells_and_weights.begin(),
                              target_field, interpolate);
           /*  UNCOMMENT WHEN WE RESTORE get_type in jali_state_wrapper
-          } else {
-          std::cerr << "Cannot remap " << source_var_names[i] <<
-          " because it is not a scalar double variable\n";
-          continue;
-          }
+              } else {
+              std::cerr << "Cannot remap " << source_var_names[i] <<
+              " because it is not a scalar double variable\n";
+              continue;
+              }
           */
         }
       }
-
+      
       gettimeofday(&end_timeval, 0);
       timersub(&end_timeval, &begin_timeval, &diff_timeval);
       tot_seconds_interp = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
@@ -563,7 +610,7 @@ class Driver {
 
     // Collect all node based variables and remap them
     MeshWrapperDual<SourceMesh_Wrapper> sourceDualWrapper(source_mesh_);
-    MeshWrapperDual<SourceMesh_Wrapper> targetDualWrapper(target_mesh_);
+    MeshWrapperDual<TargetMesh_Wrapper> targetDualWrapper(target_mesh_);
 
     std::vector<std::string> source_nodevar_names;
     std::vector<std::string> target_nodevar_names;
@@ -579,6 +626,12 @@ class Driver {
 
     if (source_nodevar_names.size() > 0) {
 
+      if (distributed) {
+        std::cerr <<
+            "Portage ERROR: REMAPPING OF NODAL QUANTITIES NOT IMPLEMENTED FOR DISTRIBUTED MESHES\n" << std::endl;
+        return;
+      }
+        
       float tot_seconds = 0.0, tot_seconds_srch = 0.0,
             tot_seconds_xsect = 0.0, tot_seconds_interp = 0.0;
       struct timeval begin_timeval, end_timeval, diff_timeval;

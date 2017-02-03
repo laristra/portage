@@ -1,3 +1,44 @@
+/*
+Copyright (c) 2016, Los Alamos National Security, LLC
+All rights reserved.
+
+Copyright 2016. Los Alamos National Security, LLC. This software was produced
+under U.S. Government contract DE-AC52-06NA25396 for Los Alamos National
+Laboratory (LANL), which is operated by Los Alamos National Security, LLC for
+the U.S. Department of Energy. The U.S. Government has rights to use,
+reproduce, and distribute this software.  NEITHER THE GOVERNMENT NOR LOS ALAMOS
+NATIONAL SECURITY, LLC MAKES ANY WARRANTY, EXPRESS OR IMPLIED, OR ASSUMES ANY
+LIABILITY FOR THE USE OF THIS SOFTWARE.  If software is modified to produce
+derivative works, such modified software should be clearly marked, so as not to
+confuse it with the version available from LANL.
+
+Additionally, redistribution and use in source and binary forms, with or
+without modification, are permitted provided that the following conditions are
+met:
+
+1. Redistributions of source code must retain the above copyright notice,
+   this list of conditions and the following disclaimer.
+2. Redistributions in binary form must reproduce the above copyright
+   notice, this list of conditions and the following disclaimer in the
+   documentation and/or other materials provided with the distribution.
+3. Neither the name of Los Alamos National Security, LLC, Los Alamos
+   National Laboratory, LANL, the U.S. Government, nor the names of its
+   contributors may be used to endorse or promote products derived from this
+   software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY LOS ALAMOS NATIONAL SECURITY, LLC AND
+CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
+PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL LOS ALAMOS NATIONAL
+SECURITY, LLC OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
+BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER
+IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+POSSIBILITY OF SUCH DAMAGE.
+*/
+
 // Copyright 2016, Los Alamos National Laboratory, NM, USA
 
 #ifndef AUX_MESH_TOPOLOGY_H_
@@ -81,6 +122,7 @@ void build_sides_3D(AuxMeshTopology<BasicMesh>& mesh);
 //! particular, the basic mesh class is expected to support the
 //! following methods to successfully instantiate this class:
 //!
+//!~~~
 //! int space_dimension() const;  // dimensionality of mesh points (1, 2, 3)
 //!
 //! int num_owned_cells() const;
@@ -89,27 +131,31 @@ void build_sides_3D(AuxMeshTopology<BasicMesh>& mesh);
 //! int num_ghost_faces() const;
 //! int num_owned_nodes() const;
 //! int num_ghost_nodes() const;
-//!
 //! Portage::Entity_type cell_get_type(int const cellid) const;
-//! -----------
-//! NOTE: Entity_type is Portage::OWNED or Portage::GHOST
-//! -----------
+//!~~~
 //!
+//! NOTE: Entity_type is Portage::OWNED or Portage::GHOST
+//!
+//!~~~
 //! Portage::Element_type cell_get_element_type(int const cellid) const;
-//! -----------
+//!~~~
+//!
 //! Can be Portage::UNKNOWN_TOPOLOGY, Portage::TRI, Portage::QUAD,
 //! Portage::POLYGON, Portage::TET, Portage::PRISM, Portage::PYRAMID,
 //! Portage::HEX, Portage::POLYHEDRON
-//! -----------
 //!
+//!
+//!~~~
 //! void cell_get_faces_and_dirs(int const cellid, std::vector<int> *cfaces,
 //!                              std::vector<int> *cfdirs) const;
-//! ------------
+//!~~~
+//!
 //! NOTE: The 'cfdirs' conveys the directions in which the faces are used by
 //! the cell. If the natural normal of the face points out of the cell, its
 //! direction should be returned as 1, if not, it should be returned as -1
-//! ------------
 //!
+//!
+//!~~~
 //! void cell_get_nodes(int const cellid, std::vector<int> *cnodes) const;
 //!
 //! void cell_get_node_adj_cells(int const cellid, Portage::Entity_type etype,
@@ -125,21 +171,25 @@ void build_sides_3D(AuxMeshTopology<BasicMesh>& mesh);
 //! template<long D>
 //! void node_get_coordinates(int const nodeid, Portage::Point<D> *pp) const;
 //!
+//!~~~
 //! ******************************** NOTE ***********************************
+//!
 //! THIS IS AN INCOMPLETE CLASS DESIGNED TO BE USED IN A 'CRTP' (CURIOUSLY
 //! RECURRING TEMPLATE PATTERN) DESIGN ALONG WITH THE BASICMESH CLASS TO
 //! PROVIDE A COMPLETE MESH CLASS
 //! (See https://en.m.wikipedia.org/wiki/Curiously_recurring_template_pattern)
 //!
-//! So, If one is writing a mesh wrapper class called MY_MESH_WRAPPER, it is
+//! So, If one is writing a mesh wrapper class called @c MY_MESH_WRAPPER, it is
 //! declared like so
 //!
+//!~~~
 //! class MY_MESH_WRAPPER : public AuxMeshTopology<MY_MESH_WRAPPER>
 //! {......}
-//!
+//!~~~
 //! and it will automatically have the methods of the AuxMeshTopology class.
 //!
 //! NOTE THAT THIS CLASS IS NOT DESIGNED TO EVER BE INSTANTIATED DIRECTLY
+//!
 //!***************************************************************************
 
 
@@ -1340,6 +1390,7 @@ void build_sides_1D(AuxMeshTopology<BasicMesh>& mesh) {
   int ncells_ghost = mesh.basicmesh_ptr_->num_ghost_cells();
   int ncells = ncells_owned + ncells_ghost;
   
+  mesh.cell_side_ids_.clear();
   mesh.cell_side_ids_.resize(ncells);
   
   int nnodes_owned = mesh.basicmesh_ptr_->num_owned_nodes();
@@ -1420,6 +1471,7 @@ void build_sides_2D(AuxMeshTopology<BasicMesh>& mesh) {
   int ncells_ghost = mesh.basicmesh_ptr_->num_ghost_cells();
   int ncells = ncells_owned + ncells_ghost;
 
+  mesh.cell_side_ids_.clear();
   mesh.cell_side_ids_.resize(ncells);
 
   int nnodes_owned = mesh.basicmesh_ptr_->num_owned_nodes();
@@ -1525,6 +1577,7 @@ void build_sides_3D(AuxMeshTopology<BasicMesh>& mesh) {
   int ncells_ghost = mesh.basicmesh_ptr_->num_ghost_cells();
   int ncells = ncells_owned + ncells_ghost;
 
+  mesh.cell_side_ids_.clear();
   mesh.cell_side_ids_.resize(ncells);
 
   int nnodes_owned = mesh.basicmesh_ptr_->num_owned_nodes();
@@ -1699,7 +1752,9 @@ void AuxMeshTopology<BasicMesh>::build_corners() {
   int nnodes_ghost = basicmesh_ptr_->num_ghost_nodes();
   int nnodes = nnodes_owned + nnodes_ghost;
 
+  cell_corner_ids_.clear();
   cell_corner_ids_.resize(ncells);
+  node_corner_ids_.clear();
   node_corner_ids_.resize(nnodes);
 
   int num_corners_all = 0;
@@ -1720,6 +1775,7 @@ void AuxMeshTopology<BasicMesh>::build_corners() {
 
   cornerids_owned_.resize(num_corners_owned_);
   cornerids_ghost_.resize(num_corners_ghost_);
+  corner_wedge_ids_.clear();
   corner_wedge_ids_.resize(num_corners_all);
   corner_cell_id_.resize(num_corners_all);
   corner_node_id_.resize(num_corners_all);
@@ -1777,24 +1833,25 @@ void AuxMeshTopology<BasicMesh>::compute_cell_centroids() {
     std::vector<int> cnodes;
     basicmesh_ptr_->cell_get_nodes(c, &cnodes);
     int ncnodes = cnodes.size();
-    
+    std::vector<double> ctr(dim, 0.0);
+
     if (dim == 2) {
       Point<2> ncoord;
       for (int n = 0; n < ncnodes; ++n) {
         basicmesh_ptr_->node_get_coordinates(cnodes[n], &ncoord);
         for (int d = 0; d < dim; ++d)
-          cell_centroids_[c][d] += ncoord[d];      
+          ctr[d] += ncoord[d];
       }
     } else if (dim == 3) {
       Point<3> ncoord;
       for (int n = 0; n < ncnodes; ++n) {
         basicmesh_ptr_->node_get_coordinates(cnodes[n], &ncoord);
         for (int d = 0; d < dim; ++d)
-          cell_centroids_[c][d] += ncoord[d];      
+          ctr[d] += ncoord[d];
       }
     }
     for (int d = 0; d < dim; ++d)
-      cell_centroids_[c][d] /= ncnodes;
+      cell_centroids_[c][d] = ctr[d] / ncnodes;
   }
 }
 
@@ -1811,24 +1868,25 @@ void AuxMeshTopology<BasicMesh>::compute_face_centroids() {
     std::vector<int> fnodes;
     basicmesh_ptr_->face_get_nodes(f, &fnodes);
     int nfnodes = fnodes.size();
-    
+    std::vector<double> ctr(dim, 0.0);
+
     if (dim == 2) {
       Portage::Point<2> ncoord;
       for (int n = 0; n < nfnodes; ++n) {
         basicmesh_ptr_->node_get_coordinates(fnodes[n], &ncoord);
         for (int d = 0; d < dim; ++d)
-          face_centroids_[f][d] += ncoord[d];
+          ctr[d] += ncoord[d];
       }
     } else if (dim == 3) {
       Portage::Point<3> ncoord;
       for (int n = 0; n < nfnodes; ++n) {
         basicmesh_ptr_->node_get_coordinates(fnodes[n], &ncoord);
         for (int d = 0; d < dim; ++d)
-          face_centroids_[f][d] += ncoord[d];
+          ctr[d] += ncoord[d];
       }
     }
     for (int d = 0; d < dim; ++d)
-      face_centroids_[f][d] /= nfnodes;
+      face_centroids_[f][d] = ctr[d] / nfnodes;
   }
 }
 
@@ -1837,6 +1895,7 @@ void AuxMeshTopology<BasicMesh>::compute_cell_volumes() {
   int ncells = basicmesh_ptr_->num_owned_cells() +
       basicmesh_ptr_->num_ghost_cells();
 
+  cell_volumes_.clear();
   cell_volumes_.resize(ncells, 0.0);
 
   for (int c = 0; c < ncells; ++c)
