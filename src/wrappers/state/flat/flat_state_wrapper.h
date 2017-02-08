@@ -97,44 +97,46 @@ class Flat_State_Wrapper {
   void initialize(State_Wrapper const & input,
                   std::vector<std::string> var_names) 
   {
-    for (unsigned int i=0; i<var_names.size(); i++)
-    {
-      std::string varname = var_names[i];  // get_data wants const string
-      // get entity
-      Entity_kind entity = input.get_entity(varname);
-      size_t dataSize = input.get_data_size(entity, varname);
-      T const* data;
+	  clear(); // forget everything
 
-      // create name-entity pair
-      auto newpair = pair_t(varname, entity);
+	  for (unsigned int i=0; i<var_names.size(); i++)
+	  {
+		  std::string varname = var_names[i];  // get_data wants const string
+		  // get entity
+		  Entity_kind entity = input.get_entity(varname);
+		  size_t dataSize = input.get_data_size(entity, varname);
+		  T const* data;
 
-      // check for duplicate name-entity combination, error if already in
-      auto isin = name_map_.find(newpair);
-      if (isin != name_map_.end()) {
-        throw std::runtime_error(std::string("variable ")+varname+" is already in this database");
-      }
+		  // create name-entity pair
+		  auto newpair = pair_t(varname, entity);
 
-      // store entity type, possibly ambiguous
-      entity_map_[varname] = entity;
+		  // check for duplicate name-entity combination, error if already in
+		  auto isin = name_map_.find(newpair);
+		  if (isin != name_map_.end()) {
+			  throw std::runtime_error(std::string("variable ")+varname+" is already in this database");
+		  }
 
-      // store size of entity_type, error if changed from what we've seen before
-      if (entity_size_map_.find(entity) != entity_size_map_.end()) {  // we have seen it
-    	size_t oldSize = entity_size_map_[entity];
-    	if (oldSize != dataSize) {
-    	  throw std::runtime_error(std::string("variable ")+varname+" has an invalid entity size");
-    	}
-      } else { // we haven't seen it
-	entity_size_map_[entity] = dataSize;
-      }
+		  // store entity type, possibly ambiguous
+		  entity_map_[varname] = entity;
 
-      // store data for state
-      input.get_data(entity, varname, &data);
-      std::shared_ptr<std::vector<T>> field = std::make_shared<std::vector<T>>();
-      field->resize(dataSize);
-      std::copy(data, data+dataSize, field->begin());
-      state_.push_back(field);
-      name_map_[newpair] = state_.size() - 1;
-    }
+		  // store size of entity_type, error if changed from what we've seen before
+		  if (entity_size_map_.find(entity) != entity_size_map_.end()) {  // we have seen it
+			  size_t oldSize = entity_size_map_[entity];
+			  if (oldSize != dataSize) {
+				  throw std::runtime_error(std::string("variable ")+varname+" has an invalid entity size");
+			  }
+		  } else { // we haven't seen it
+			  entity_size_map_[entity] = dataSize;
+		  }
+
+		  // store data for state
+		  input.get_data(entity, varname, &data);
+		  std::shared_ptr<std::vector<T>> field = std::make_shared<std::vector<T>>();
+		  field->resize(dataSize);
+		  std::copy(data, data+dataSize, field->begin());
+		  state_.push_back(field);
+		  name_map_[newpair] = state_.size() - 1;
+	  }
   }
 
   /*!
@@ -168,11 +170,7 @@ class Flat_State_Wrapper {
         throw std::runtime_error("argument sizes do not agree");
     }
 
-    state_.clear();
-    name_map_.clear();
-    entity_map_.clear();
-    entity_size_map_.clear();
-    gradients_.clear();
+    clear();
 
     size_t index;
     for (size_t i=0; i<names.size(); i++) {
@@ -360,6 +358,17 @@ private:
   std::map<std::string, Entity_kind> entity_map_;
   std::map<Entity_kind, size_t> entity_size_map_;
   std::vector<std::shared_ptr<std::vector<Portage::Point3>>> gradients_;
+
+  /*!
+   * @brief Forget all internal data so initialization can start over
+   */
+  void clear(){
+	  state_.clear();
+	  name_map_.clear();
+	  entity_map_.clear();
+	  entity_size_map_.clear();
+	  gradients_.clear();
+  }
 }; // Flat_State_Wrapper
 
 } // namespace Portage
