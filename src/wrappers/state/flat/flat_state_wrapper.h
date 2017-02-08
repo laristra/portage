@@ -73,21 +73,25 @@ class Flat_State_Wrapper {
   Flat_State_Wrapper() { };
 
   template <class State_Wrapper>
-  void initialize(State_Wrapper &input, std::vector<std::string> var_names) 
+  void initialize(State_Wrapper const & input,
+                  std::vector<std::string> var_names) 
   {
     for (unsigned int i=0; i<var_names.size(); i++)
     {
-      Entity_kind entity = input.get_entity(var_names[i]);
-      int dataSize = input.get_data_size(entity, var_names[i]);
-      T* data;
-      input.get_data(entity, var_names[i], &data);
+      std::string varname = var_names[i];  // get_data wants const string
+      Entity_kind entity = input.get_entity(varname);
+      int dataSize = input.get_data_size(entity, varname);
+      T const *data;
+        
+      input.get_data(entity, varname, &data);
       std::shared_ptr<std::vector<T>> field = std::make_shared<std::vector<T>>();
       field->resize(dataSize);
       std::copy(data, data+dataSize, field->begin());
       state_.push_back(field);
-      name_map_[var_names[i]] = state_.size() - 1;
+      name_map_[varname] = state_.size() - 1;
     }
   }
+  
   
   /*!
     @brief Assignment operator (disabled) - don't know how to implement (RVG)
@@ -107,11 +111,25 @@ class Flat_State_Wrapper {
     @param[in,out] data A pointer to an array of data
    */
   template <class D>
-  void get_data(const Entity_kind on_what, const std::string var_name, D** const data) const {
+  void get_data(const Entity_kind on_what, const std::string var_name, D** data) {
   
     std::map<std::string, int>::const_iterator iter = name_map_.find(var_name);
     if (iter != name_map_.end())
-      (*data) = (D*)(&((*(state_[iter->second]))[0]));
+      (*data) = (D *)(&((*(state_[iter->second]))[0]));
+  }
+
+  /*!
+    @brief Get pointer to const scalar data
+    @param[in] on_what The entity type on which to get the data
+    @param[in] var_name The string name of the data field
+    @param[in,out] data A pointer to an array of const data
+   */
+  template <class D>
+  void get_data(const Entity_kind on_what, const std::string var_name, D const **data) const {
+  
+    std::map<std::string, int>::const_iterator iter = name_map_.find(var_name);
+    if (iter != name_map_.end())
+      (*data) = (D const *)(&((*(state_[iter->second]))[0]));
   }
 
   /*!

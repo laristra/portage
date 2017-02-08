@@ -118,6 +118,28 @@ class Flecsi_State_Wrapper {
   }
 
   /*!
+    @brief Get pointer to scalar data
+    @param[in] on_what The entity type on which to get the data
+    @param[in] var_name The string name of the data field
+    @param[in,out] data A pointer to an array of data
+  */
+  template <class T>
+  void get_data(const Entity_kind on_what,
+                const std::string var_name, T** data) {
+    // Ignore on_what here - the state manager knows where it lives
+    // based on its name
+    // NOTE: access_state needs a const_string_t, which is a flecsi
+    // datatype that apparently can't convert from a std::string...
+    // I added to the case where it can create from a char*
+    const const_string_t flecsiname(var_name.c_str());
+    auto dat = access_state(flecsi_mesh_,
+                            std::forward<const const_string_t>(flecsiname),
+                            real_t);
+    // note this might be fragile in the case of non-dense storage
+    *data = &dat[0];
+  }
+
+  /*!
     @brief Get the entity type on which the given field is defined
     @param[in] var_name The string name of the data field
     @return The Entity_kind enum for the entity type on which the field is defined
