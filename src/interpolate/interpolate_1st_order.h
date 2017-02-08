@@ -228,9 +228,7 @@ class Interpolate_1stOrder<SourceMeshType, TargetMeshType, StateType, CELL, D> {
 
   void set_interpolation_variable(std::string const & interp_var_name) {
     interp_var_name_ = interp_var_name;
-    double * ptr;
-    source_state_.get_data(CELL, interp_var_name, &ptr);
-    source_vals_ = ptr;
+    source_state_.get_data(CELL, interp_var_name, &source_vals_);
   }
 
   /*!
