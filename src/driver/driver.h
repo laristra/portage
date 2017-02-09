@@ -393,7 +393,7 @@ class Driver {
   */
   void run(bool distributed) {
 
-#ifdef PORTAGE_SERIAL_ONLY
+#ifndef ENABLE_MPI
     if (distributed) {
       std::cout << "Request is for a parallel run but Portage is compiled for serial runs only\n";
       return;
