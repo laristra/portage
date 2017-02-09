@@ -103,4 +103,13 @@ TEST(Simple_State_Wrapper, WrapperTest) {
     kind = mystate_wrapper.get_entity(names[i]);
     ASSERT_EQ(expected_kinds[i], kind);
   }
+
+  // Check add_data
+  std::vector<double> nodevar2(numnodes);
+  for (int i(0); i < numnodes; ++i)
+    nodevar2[i] = i*i;
+  const double *testa = &(nodevar2[0]), *testg;
+  mystate_wrapper.add_data(Portage::Entity_kind::NODE, "nodevar2", &testa);
+  mystate_wrapper.get_data(Portage::Entity_kind::NODE, "nodevar2", &testg);
+  for (size_t i=0; i<numnodes; i++) ASSERT_EQ(testg[i], nodevar2[i]);
 }
