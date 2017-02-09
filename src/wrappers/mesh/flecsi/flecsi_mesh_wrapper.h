@@ -257,6 +257,17 @@ class Flecsi_Mesh_Wrapper {
       nodes->emplace_back(v.global_id());
   }
 
+  //! Get cell faces and the directions in which they are used
+  void cell_get_faces_and_dirs(int const cellid, std::vector<int> *cfaces,
+                               std::vector<int> *cfdirs) const {
+
+    // Do nothing - faces not represented in 2D flecsi
+    
+    cfaces->clear();
+    cfdirs->clear();
+
+  }
+
   //! Get node connected neighbors of cell
   void cell_get_node_adj_cells(int const cellid,
                                Entity_type const ptype,
