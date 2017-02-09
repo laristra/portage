@@ -184,9 +184,20 @@ class Flecsi_Mesh_Wrapper {
     return flecsi_mesh_.num_vertices();
   }
 
+  //! Number of owned faces in the mesh
+  int num_owned_faces() const {
+    return 0;  // Only 2d is implemented and no faces available in 2D FleCSI
+  }
+
   // NOTE: I don't know where to get the ghosts yet, so setting this to 0.
   //! Number of ghost cells in the mesh
   int num_ghost_cells() const {
+    return 0;
+  }
+
+  // NOTE: I don't know where to get the ghosts yet, so setting this to 0.
+  //! Number of ghost faces in the mesh
+  int num_ghost_faces() const {
     return 0;
   }
 
