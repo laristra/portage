@@ -268,6 +268,13 @@ class Flecsi_Mesh_Wrapper {
 
   }
 
+  //! Get nodes of a face
+  void face_get_nodes(int const faceid, std::vector<int> *fnodes) const {
+    // Do nothing - faces not represented in 2D flecsi
+
+    fnodes->clear();
+  }
+
   //! Get node connected neighbors of cell
   void cell_get_node_adj_cells(int const cellid,
                                Entity_type const ptype,
