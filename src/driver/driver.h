@@ -546,7 +546,7 @@ class Driver {
 
       gettimeofday(&begin_timeval, 0);
 
-      int nvars = source_cellvar_names.size();
+      nvars = source_cellvar_names.size();
       if (comm_rank == 0) std::cout << "number of cell variables to remap is " << nvars << std::endl;
 
       if (distributed) {
@@ -710,7 +710,7 @@ class Driver {
 
       gettimeofday(&begin_timeval, 0);
 
-      int nvars = source_nodevar_names.size();
+      nvars = source_nodevar_names.size();
       if (comm_rank == 0) std::cout << "number of node variables to remap is " << nvars << std::endl;
 
       for (int i = 0; i < nvars; ++i) {
