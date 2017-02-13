@@ -50,6 +50,8 @@ POSSIBILITY OF SUCH DAMAGE.
 #include <array>
 #include <limits>
 #include <map>
+#include <set>
+#include <vector>
 
 #include "portage/wrappers/mesh/AuxMeshTopology.h"
 #include "portage/support/portage.h"
@@ -217,6 +219,27 @@ class Flat_Mesh_Wrapper : public AuxMeshTopology<Flat_Mesh_Wrapper<>> {
       compute_offsets(cellFaceCounts_, &cellFaceOffsets_);
     }
     compute_offsets(cellNeighborCounts_, &cellNeighborOffsets_);
+
+    // Compute node neighbors
+    int numNodes = nodeCoords_.size() / dim_;
+    std::vector<std::set<int>> nodeToCellTmp(numNodes);
+    for (unsigned int c=0; c<cellNodeCounts_.size(); ++c) {
+      int offset = cellNodeOffsets_[c];
+      int count = cellNodeCounts_[c];
+      for (unsigned int i=0; i<count; ++i) {
+        int n = cellToNodeList_[offset+i];
+        nodeToCellTmp[n].insert(c);
+      }
+    }
+    nodeToCellList_.reserve(cellToNodeList_.size());
+    nodeCellCounts_.reserve(numNodes);
+    for (unsigned int n=0; n<numNodes; ++n) {
+      const std::set<int>& nodes = nodeToCellTmp[n];
+      nodeCellCounts_.emplace_back(nodes.size());
+      nodeToCellList_.insert(nodeToCellList_.end(), nodes.begin(), nodes.end());
+    }
+    compute_offsets(nodeCellCounts_, &nodeCellOffsets_);
+
   }
 
   //! Compute offsets from counts
@@ -339,6 +362,14 @@ class Flat_Mesh_Wrapper : public AuxMeshTopology<Flat_Mesh_Wrapper<>> {
     }
   }
 
+  //! Get list of cells for a node
+  void node_get_cells(int const nodeid, std::vector<int> *cells) const {
+    int offset = nodeCellOffsets_[nodeid];
+    int count = nodeCellCounts_[nodeid];
+    cells->assign(&nodeToCellList_[offset],
+                  &nodeToCellList_[offset+count]);
+  }
+
   //! Coords of nodes of a cell
   template<long D>
   void cell_get_coordinates(int const cellid,
@@ -362,6 +393,28 @@ class Flat_Mesh_Wrapper : public AuxMeshTopology<Flat_Mesh_Wrapper<>> {
     adjcells->resize(cellNeighborCounts_[cellid]);
     for (unsigned int i=0; i<adjcells->size(); i++)
       (*adjcells)[i] = global_to_local(neighbors_[index+i]);
+  }
+
+  //! Get "adjacent" nodes of given node - nodes that share a common
+  //! cell with given node
+  void node_get_cell_adj_nodes(int const nodeid,
+                               Entity_type const ptype,
+                               std::vector<int> *adjnodes) const {
+
+    // TODO:  remove assumption that ptype == ALL (if needed)?
+    std::vector<int> nodecells;
+    node_get_cells(nodeid, &nodecells);
+    std::set<int> nodenodes;
+
+    for (auto const& c : nodecells) {
+      std::vector<int> cellnodes;
+      cell_get_nodes(c, &cellnodes);
+
+      for (auto const& n : cellnodes) {
+        if (n != nodeid) nodenodes.insert(n);
+      }
+    }
+    adjnodes->assign(nodenodes.begin(), nodenodes.end());
   }
 
   //! get coordinates
@@ -403,6 +456,9 @@ private:
   std::vector<int> faceToNodeList_;
   std::vector<int> faceNodeCounts_;
   std::vector<int> faceNodeOffsets_;
+  std::vector<int> nodeToCellList_;
+  std::vector<int> nodeCellCounts_;
+  std::vector<int> nodeCellOffsets_;
   std::vector<int> neighbors_; // node-connected neighbors of each cell
   std::vector<int> cellNeighborCounts_;
   std::vector<int> cellNeighborOffsets_;

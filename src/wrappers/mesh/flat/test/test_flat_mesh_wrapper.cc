@@ -139,6 +139,35 @@ TEST(Flat_Mesh_Wrapper, basic_routines_3d) {
       ASSERT_EQ(n + (n >= c ? 1 : 0), adjcells[n]);
   }
 
+  // Test node neighbors
+  for (int n=0; n<27; ++n) {
+    std::vector<int> adjnodes;
+    mesh_flat.node_get_cell_adj_nodes(n, Portage::Entity_type::ALL,
+                                      &adjnodes);
+    std::vector<int> expnodes;
+    for (int dx=-1; dx<=+1; ++dx) {
+      if (dx == -1 && n / 9 == 0) continue;
+      if (dx == +1 && n / 9 == 2) continue;
+      for (int dy=-1; dy<=+1; ++dy) {
+        if (dy == -1 && n / 3 % 3 == 0) continue;
+        if (dy == +1 && n / 3 % 3 == 2) continue;
+        for (int dz=-1; dz<=+1; ++dz) {
+          if (dz == -1 && n % 3 == 0) continue;
+          if (dz == +1 && n % 3 == 2) continue;
+          expnodes.push_back(n + dx * 9 + dy * 3 + dz);
+        }
+      }
+    }
+
+    int expsize = expnodes.size();
+    ASSERT_EQ(expsize - 1, adjnodes.size());
+
+    adjnodes.push_back(n);
+    std::sort(adjnodes.begin(), adjnodes.end());
+    for (int i=0; i<expsize; ++i)
+      ASSERT_EQ(expnodes[i], adjnodes[i]);
+  }
+
 }
 
 
@@ -221,6 +250,31 @@ TEST(Flat_Mesh_Wrapper, basic_routines_2d) {
     std::sort(adjcells.begin(), adjcells.end());
     for (int n=0; n<count; ++n)
       ASSERT_EQ(expNeighbors[n], adjcells[n]);
+  }
+
+  // Test node neighbors
+  for (int n=0; n<25; ++n) {
+    std::vector<int> adjnodes;
+    mesh_flat.node_get_cell_adj_nodes(n, Portage::Entity_type::ALL,
+                                      &adjnodes);
+    std::vector<int> expnodes;
+    for (int dx=-1; dx<=+1; ++dx) {
+      if (dx == -1 && n / 5 == 0) continue;
+      if (dx == +1 && n / 5 == 4) continue;
+      for (int dy=-1; dy<=+1; ++dy) {
+        if (dy == -1 && n % 5 == 0) continue;
+        if (dy == +1 && n % 5 == 4) continue;
+        expnodes.push_back(n + dx * 5 + dy);
+      }
+    }
+
+    int expsize = expnodes.size();
+    ASSERT_EQ(expsize - 1, adjnodes.size());
+
+    adjnodes.push_back(n);
+    std::sort(adjnodes.begin(), adjnodes.end());
+    for (int i=0; i<expsize; ++i)
+      ASSERT_EQ(expnodes[i], adjnodes[i]);
   }
 
 }
