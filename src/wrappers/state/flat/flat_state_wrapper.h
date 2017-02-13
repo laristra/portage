@@ -85,6 +85,7 @@ class Flat_State_Wrapper {
       field->resize(dataSize);
       std::copy(data, data+dataSize, field->begin());
       state_.push_back(field);
+      entities_.push_back(entity);
       name_map_[var_names[i]] = state_.size() - 1;
     }
   }
@@ -112,6 +113,16 @@ class Flat_State_Wrapper {
     std::map<std::string, int>::const_iterator iter = name_map_.find(var_name);
     if (iter != name_map_.end())
       (*data) = (D*)(&((*(state_[iter->second]))[0]));
+  }
+
+  /*!
+    @brief Get the entity type
+    @param[in] index The index of the data field
+    @return The Entity_kind enum for the entity type on which the field is defined
+   */
+  Entity_kind get_entity(const int index) const
+  {
+    return entities_[index];
   }
 
   /*!
@@ -159,6 +170,7 @@ class Flat_State_Wrapper {
 
 private:
   std::vector<std::shared_ptr<std::vector<T>>> state_;
+  std::vector<Entity_kind> entities_;
   std::map<std::string, int> name_map_;
   std::vector<std::shared_ptr<std::vector<Portage::Point3>>> gradients_;
 

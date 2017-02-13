@@ -101,6 +101,15 @@ TEST(Flat_State_Wrapper, DataTypes2D) {
   ddata = nullptr;
   flat_state.get_data(Portage::CELL, "d3", &ddata);
   for (unsigned int i=0; i<n_cells; i++) ASSERT_EQ(ddata[i], dtest3[i]);
+
+  // Check entity types
+  Portage::Entity_kind entity;
+  entity = flat_state.get_entity(0);
+  ASSERT_EQ(Portage::CELL, entity);
+  entity = flat_state.get_entity(1);
+  ASSERT_EQ(Portage::CELL, entity);
+  entity = flat_state.get_entity(2);
+  ASSERT_EQ(Portage::CELL, entity);
 }
 
 TEST(Flat_State_Wrapper, DataTypes3D) {
@@ -151,4 +160,13 @@ TEST(Flat_State_Wrapper, DataTypes3D) {
   ddata = nullptr;
   flat_state.get_data(Portage::CELL, "d3", &ddata);
   for (unsigned int i=0; i<n_cells; i++) ASSERT_EQ(ddata[i], dtest3[i]);
+
+  // Check entity types
+  Portage::Entity_kind entity;
+  entity = flat_state.get_entity(0);
+  ASSERT_EQ(Portage::CELL, entity);
+  entity = flat_state.get_entity(1);
+  ASSERT_EQ(Portage::CELL, entity);
+  entity = flat_state.get_entity(2);
+  ASSERT_EQ(Portage::CELL, entity);
 }
