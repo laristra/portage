@@ -1041,12 +1041,10 @@ class AuxMeshTopology {
     assert(basicmesh_ptr_->space_dimension() == 3);
     assert(wedges_requested_);
 
-    int wedgeid;
-    std::vector<int> wedgeids;
-
     // wedge_get_coordinates - (node, edge center, face centroid, cell centroid)
     std::array<Point<3>, 4> wcoords;
 
+    std::vector<int> wedgeids;
     node_get_wedges(nodeid, ALL, &wedgeids);
 
     std::vector<int> face_list, cell_list;
@@ -1184,7 +1182,7 @@ class AuxMeshTopology {
   friend
   void build_sides_3D<BasicMesh>(AuxMeshTopology<BasicMesh>& mesh);
 
-  BasicMesh *basicmesh_ptr_;
+  BasicMesh *basicmesh_ptr_ = nullptr;
   bool sides_requested_ = true;
   bool wedges_requested_ = true;
   bool corners_requested_ = true;
