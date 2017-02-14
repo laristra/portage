@@ -35,7 +35,7 @@ git clean -dfx
 
 # Build Jali
 
-git clone ssh://git@xcp-stash.lanl.gov:7999/ngc/jali.git jali-repo
+git clone ssh://git@xcp-stash.lanl.gov:7999/laristra/jali.git jali-repo
 cd jali-repo
 git checkout $JALI_VERSION
 JALI_INSTALL_PREFIX=`pwd`/jali-inst
