@@ -45,6 +45,19 @@ project(portage)
 
 cinch_minimum_required(1.0)
 
+
+
+# If a C++14 compiler is available, then set the appropriate flags
+include(cxx14)
+check_for_cxx14_compiler(CXX14_COMPILER)
+if(CXX14_COMPILER)
+  enable_cxx14()
+else()
+  message(STATUS "C++14 compatible compiler not found")
+endif()
+
+
+
 cinch_add_application_directory(app)
 cinch_add_library_target(portage src)
 

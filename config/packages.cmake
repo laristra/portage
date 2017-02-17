@@ -40,38 +40,15 @@ POSSIBILITY OF SUCH DAMAGE.
 ]]
 
 
-
 #------------------------------------------------------------------------------#
 # If we are building with FleCSI, then we need a modern C++ compiler
 #------------------------------------------------------------------------------#
 if(FLECSI_INSTALL_DIR)
-  include(cxx14)
-
-  check_for_cxx14_compiler(CXX14_COMPILER)
-
-#------------------------------------------------------------------------------#
-# If a C++14 compiler is available, then set the appropriate flags
-#------------------------------------------------------------------------------#
-  if(CXX14_COMPILER)
-    enable_cxx14()
-  else()
-    message(FATAL_ERROR "C++14 compatible compiler not found")
+  # we already checked for CXX14 in project.cmake
+  if(NOT CXX14_COMPILER)
+    message(STATUS "C++14 compatible compiler not found")
   endif()
-
-else()
-  include(cxx11)
-
-  check_for_cxx11_compiler(CXX11_COMPILER)
-
-#------------------------------------------------------------------------------#
-# If a C++11 compiler is available, then set the appropriate flags
-#------------------------------------------------------------------------------#
-  if(CXX11_COMPILER)
-    enable_cxx11()
-  else()
-    message(FATAL_ERROR "C++11 compatible compiler not found")
-  endif()
-endif(FLECSI_INSTALL_DIR)
+endif()
 
 #------------------------------------------------------------------------------#
 # Set up MPI builds

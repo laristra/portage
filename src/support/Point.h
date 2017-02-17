@@ -65,14 +65,53 @@ POSSIBILITY OF SUCH DAMAGE.
 
 #include <assert.h>
 #include <iostream>
+#include <type_traits>
 #include <vector>
 #include "portage/support/Vector.h"
+
 
 namespace Portage {
 
 const int X = 0;
 const int Y = 1;
 const int Z = 2;
+
+
+// If we have variadic templates, take advantage of them
+#if __cplusplus > 201103L
+
+namespace detail { 
+
+/*!
+ \brief A helper to identify if all types Ts are arithmetic.
+ Arithmetic types are an integral type or a floating-point type.
+ \remark If they are not, this version is instantiated.
+*/
+template <typename... Ts>
+class are_arithmetic : public std::integral_constant<bool, true>
+{};
+
+/*!
+ \brief A helper to identify if all types Ts are arithmetic.
+ \remark If they are, this version is instantiated.
+*/
+template <typename T, typename... Ts>
+class are_arithmetic<T, Ts...>
+  : public std::integral_constant <
+      bool,
+      std::is_arithmetic<T>::value && are_arithmetic<Ts...>::value
+    >
+{};
+
+/*! 
+ Equal to true if Ts are all arithmeitc types.
+*/
+template< typename... Ts >
+constexpr bool are_arithmetic_v = are_arithmetic<Ts...>::value;
+
+} // namespace detail
+
+#endif // __cplusplus > 201103L
 
 /*!
   @class Point "Point.h"
@@ -92,6 +131,30 @@ class Point {
     for (int i = 0; i < D; i++)
       m_loc[i] = 0.0;
   }
+
+  // if Variadic templates exists, take advantage of aggregate 
+  // initialization
+
+#if __cplusplus > 201103L
+
+  /*!
+    @brief Specialized constructor for Points in N-dimensions.
+    This uses aggregate-based initialization to hopefully speed it up.
+    @param[in] x The (x,...) coordinates of this Point.
+  */
+  template< 
+    typename...Args,
+    typename = typename std::enable_if< 
+      (sizeof...(Args) == D) && (detail::are_arithmetic_v<std::decay_t<Args>...>) 
+    >::type
+  >
+  inline 
+  Point(Args&&...x) : m_loc{static_cast<double>(std::forward<Args>(x))...}
+  // The static cast is used to avoid narrowing conversions if something with a 
+  // smaller width is passed ( say an integer )
+  {}
+
+#else
 
   /*!
     @brief Specialized constructor for Points in 1d.
@@ -122,6 +185,8 @@ class Point {
     m_loc[0] = x;
     m_loc[1] = y;
   }
+
+#endif // __cplusplus > 201103L
 
   /*!
     @brief Specialized constructor from a std::vector of arbitary size.
