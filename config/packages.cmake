@@ -222,3 +222,14 @@ if(ENABLE_THRUST)
   endif()
 
 endif(ENABLE_THRUST)
+
+
+#-----------------------------------------------------------------------------
+# Find Boost
+#-----------------------------------------------------------------------------
+set(NGC_INCLUDE_DIR "$ENV{NGC_INCLUDE_DIR}" CACHE PATH "NGC include directory")
+find_package(Boost REQUIRED)
+if(Boost_FOUND)
+  message(STATUS "Boost location: ${Boost_INCLUDE_DIRS}")
+  include_directories( ${Boost_INCLUDE_DIRS} )
+endif()
