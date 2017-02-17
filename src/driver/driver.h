@@ -292,6 +292,14 @@ template <template <int, class, class> class Search,
           class TargetMesh_Wrapper = SourceMesh_Wrapper,
           class TargetState_Wrapper = SourceState_Wrapper>
 class Driver {
+
+  // Something like this would be very helpful to users
+  // static_assert(
+  //   Dim == Interpolate::Dim,
+  //   "The dimension of Driver and Interpolate do not match!"
+  // );
+
+
  public:
   /*!
     @brief Constructor for running the interpolation driver.
