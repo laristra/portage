@@ -94,13 +94,12 @@ class Point {
   }
 
   /*!
-    @brief Specialized constructor from a std::vector of arbitary size.
-    @param[in] v std::vector of coordinates.
+    @brief Specialized constructor for Points in 1d.
+    @param[in] x The (x) coordinates of this Point.
   */
-  explicit inline Point(const std::vector<double> &v) {
-    assert(v.size() == D);
-    for (int i = 0; i < D; i++)
-      m_loc[i] = v[i];
+  inline Point(const double& x) {
+    assert(D == 1);
+    m_loc[0] = x;
   }
 
   /*!
@@ -122,6 +121,16 @@ class Point {
     assert(D == 2);
     m_loc[0] = x;
     m_loc[1] = y;
+  }
+
+  /*!
+    @brief Specialized constructor from a std::vector of arbitary size.
+    @param[in] v std::vector of coordinates.
+  */
+  explicit inline Point(const std::vector<double> &v) {
+    assert(v.size() == D);
+    for (int i = 0; i < D; i++)
+      m_loc[i] = v[i];
   }
 
   /// Convert a Vector to a Point.
