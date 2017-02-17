@@ -56,11 +56,13 @@ namespace Portage {
 
 // Some helper functions
 //! Compute volume of 1D side
+inline
 double calc_side_volume(std::array<Point<1>, 2> const& sxyz) {
   return (sxyz[1][0]-sxyz[0][0]);
 }
 
 //! Compute volume of 2D side
+inline
 double calc_side_volume(std::array<Point<2>, 3> const& sxyz) {
   Vector<2> vec1 = sxyz[1]-sxyz[0];
   Vector<2> vec2 = sxyz[2]-sxyz[0];
@@ -68,6 +70,7 @@ double calc_side_volume(std::array<Point<2>, 3> const& sxyz) {
 }
 
 //! Compute volume of 3D side
+inline
 double calc_side_volume(std::array<Point<3>, 4> const& sxyz) {
   Vector<3> vec1 = sxyz[1]-sxyz[0];
   Vector<3> vec2 = sxyz[2]-sxyz[0];
