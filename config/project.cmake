@@ -56,7 +56,17 @@ else()
   message(STATUS "C++14 compatible compiler not found")
 endif()
 
-
+# If we couldn't find a C++14 compiler, try to see if a C++11 
+# compiler is available, then set the appropriate flags
+if (NOT CXX14_COMPILER)
+  include(cxx11)
+  check_for_cxx11_compiler(CXX11_COMPILER)
+  if(CXX11_COMPILER)
+    enable_cxx11()
+  else()
+    message(FATAL_ERROR "C++11 compatible compiler not found")
+  endif()
+endif()
 
 cinch_add_application_directory(app)
 cinch_add_library_target(portage src)
