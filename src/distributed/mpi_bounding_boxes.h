@@ -267,6 +267,8 @@ class MPI_Bounding_Boxes {
     setInfo(&nodeInfo, commSize, sendFlags,
             sourceNumNodes, sourceNumOwnedNodes);
 
+    // TODO:  in 3D, don't communicate this - compute it from
+    // cell-to-face and face-to-node
     int sizeCellToNodeList = source_mesh_flat.cellToNodeList_.size();
     int sizeOwnedCellToNodeList = (
         sourceNumCells == sourceNumOwnedCells ? sizeCellToNodeList :
@@ -297,6 +299,7 @@ class MPI_Bounding_Boxes {
     }
 
     // Compute the total number of neighbor indexes and owned neighbor indexes on this rank
+    // TODO:  don't communicate this, but compute it from cell-to-node
     int sourceNumNeighbors = 0;
     for (unsigned int i=0; i<sourceNumCells; i++)
       sourceNumNeighbors += sourceNeighborCounts[i];

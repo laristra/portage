@@ -186,6 +186,8 @@ class Flat_Mesh_Wrapper : public AuxMeshTopology<Flat_Mesh_Wrapper<>> {
       }
     }
 
+    // TODO:  Most of what's done in this call isn't needed
+    // before calling distribute - can we simplify it?
     finish_init();
   }
 
