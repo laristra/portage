@@ -63,7 +63,10 @@ POSSIBILITY OF SUCH DAMAGE.
 #include "portage/interpolate/interpolate_2nd_order.h"
 #include "portage/wrappers/mesh/flat/flat_mesh_wrapper.h"
 #include "portage/wrappers/state/flat/flat_state_wrapper.h"
+
+#ifdef ENABLE_MPI
 #include "portage/distributed/mpi_bounding_boxes.h"
+#endif
 
 /*!
   @file driver.h
@@ -390,8 +393,20 @@ class Driver {
   */
   void run(bool distributed) {
 
-    int comm_rank;
+#ifndef ENABLE_MPI
+    if (distributed) {
+      std::cout << "Request is for a parallel run but Portage is compiled for serial runs only\n";
+      return;
+    }
+#endif
+
+
+    int comm_rank = 0;
+
+#ifdef ENABLE_MPI
     MPI_Comm_rank(MPI_COMM_WORLD, &comm_rank);
+#endif
+
     if (comm_rank == 0) std::printf("in Driver::run()...\n");
 
     int numTargetCells = target_mesh_.num_owned_cells();
@@ -434,7 +449,7 @@ class Driver {
 
       if (distributed) {
 
-#ifndef PORTAGE_SERIAL_ONLY
+#ifdef ENABLE_MPI
         // Our current flecsi build does not support distributed meshes,
         // so in that case don't try to build or run this code.
 
@@ -485,7 +500,7 @@ class Driver {
 
       if (distributed) {
 
-#ifndef PORTAGE_SERIAL_ONLY
+#ifdef ENABLE_MPI
         // Get an instance of the desired intersect algorithm type
         const Intersect<Flat_Mesh_Wrapper<>, TargetMesh_Wrapper>
             intersect(source_mesh_flat, target_mesh_);
@@ -531,12 +546,12 @@ class Driver {
 
       gettimeofday(&begin_timeval, 0);
 
-      int nvars = source_cellvar_names.size();
+      nvars = source_cellvar_names.size();
       if (comm_rank == 0) std::cout << "number of cell variables to remap is " << nvars << std::endl;
 
       if (distributed) {
 
-#ifndef PORTAGE_SERIAL_ONLY
+#ifdef ENABLE_MPI
         // Get an instance of the desired interpolate algorithm type
         Interpolate<Flat_Mesh_Wrapper<>, TargetMesh_Wrapper, Flat_State_Wrapper<>, CELL, Dim>
             interpolate(source_mesh_flat, target_mesh_, source_state_flat);
@@ -610,7 +625,7 @@ class Driver {
 
     // Collect all node based variables and remap them
     MeshWrapperDual<SourceMesh_Wrapper> sourceDualWrapper(source_mesh_);
-    MeshWrapperDual<SourceMesh_Wrapper> targetDualWrapper(target_mesh_);
+    MeshWrapperDual<TargetMesh_Wrapper> targetDualWrapper(target_mesh_);
 
     std::vector<std::string> source_nodevar_names;
     std::vector<std::string> target_nodevar_names;
@@ -738,7 +753,7 @@ class Driver {
 
       gettimeofday(&begin_timeval, 0);
 
-      int nvars = source_nodevar_names.size();
+      nvars = source_nodevar_names.size();
       if (comm_rank == 0) std::cout << "number of node variables to remap is " << nvars << std::endl;
 
       if (distributed) {

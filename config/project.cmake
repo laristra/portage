@@ -43,8 +43,11 @@ POSSIBILITY OF SUCH DAMAGE.
 
 project(portage)
 
+cinch_minimum_required(1.0)
+
 cinch_add_application_directory(app)
 cinch_add_library_target(portage src)
+
 
 # Create some subcomponent libraries for the purposes of unit testing
 #
