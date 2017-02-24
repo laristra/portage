@@ -1,0 +1,12 @@
+language: cpp
+
+sudo: required
+
+services:
+- docker
+
+script:
+  - cp -vr docker ${HOME}/docker
+  - cd ../../
+  - mv -v ${TRAVIS_REPO_SLUG} $HOME/docker
+  - docker build -t ${TRAVIS_REPO_SLUG}:latest ${HOME}/docker/
