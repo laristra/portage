@@ -1,0 +1,14 @@
+# axis_varan_pr.yml
+COMPILER:
+  - intel15
+  - gcc53
+
+BUILD_TYPE:
+  - base
+  - debug
+  - flecsi
+
+exclude:
+  - COMPILER: intel15
+    BUILD_TYPE: flecsi
+
