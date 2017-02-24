@@ -101,41 +101,23 @@ class Flat_State_Wrapper {
 
 	  for (unsigned int i=0; i<var_names.size(); i++)
 	  {
-		  std::string varname = var_names[i];  // get_data wants const string
+		  // get name
+		  std::string varname = var_names[i];
+
 		  // get entity
 		  Entity_kind entity = input.get_entity(varname);
-		  size_t dataSize = input.get_data_size(entity, varname);
+
+		  // get pointer to data for state from input state wrapper
 		  T const* data;
-
-		  // create name-entity pair
-		  auto newpair = pair_t(varname, entity);
-
-		  // check for duplicate name-entity combination, error if already in
-		  auto isin = name_map_.find(newpair);
-		  if (isin != name_map_.end()) {
-			  throw std::runtime_error(std::string("variable ")+varname+" is already in this database");
-		  }
-
-		  // store entity type, possibly ambiguous
-		  entity_map_[varname] = entity;
-
-		  // store size of entity_type, error if changed from what we've seen before
-		  if (entity_size_map_.find(entity) != entity_size_map_.end()) {  // we have seen it
-			  size_t oldSize = entity_size_map_[entity];
-			  if (oldSize != dataSize) {
-				  throw std::runtime_error(std::string("variable ")+varname+" has an invalid entity size");
-			  }
-		  } else { // we haven't seen it
-			  entity_size_map_[entity] = dataSize;
-		  }
-
-		  // store data for state
 		  input.get_data(entity, varname, &data);
-		  std::shared_ptr<std::vector<T>> field = std::make_shared<std::vector<T>>();
-		  field->resize(dataSize);
-		  std::copy(data, data+dataSize, field->begin());
-		  state_.push_back(field);
-		  name_map_[newpair] = state_.size() - 1;
+
+		  // copy input state data into new vector storage
+		  size_t dataSize = input.get_data_size(entity, varname);
+		  auto vdata = std::make_shared<std::vector<T>>(dataSize);
+	      std::copy(data, data+dataSize, vdata->begin());
+
+	      // add to database
+		  add_data(entity, varname, vdata);
 	  }
   }
 
@@ -213,69 +195,6 @@ class Flat_State_Wrapper {
       (*data) = (D const *)(&((*(state_[iter->second]))[0]));
     } else {
       (*data) = nullptr;
-    }
-  }
-
-  /*!
-   @brief Add a scalar data field
-   @param[in] on_what The entity type on which the data is defined
-   @param[in] var_name The name of the data field
-   @param[in] value vector of data to add
-   *
-   * If data for name-entity combination already exists, then replace data.
-   * Size of data must match previous size recorded for requested entity.
-   * If entity has not been seen before, make that entity's size equal to that of data.
-   */
-  void add_data(const Entity_kind on_what, const std::string var_name, std::shared_ptr<std::vector<T>> data) {
-    // if we have seen this entity before - check size match, else store this size
-    auto sziter = entity_size_map_.find(on_what);
-    if (sziter != entity_size_map_.end()) {
-	if (sziter->second != data->size()) {
-	    throw std::runtime_error(std::string("variable ")+var_name+" has incompatible size on add");
-	}
-    } else {
-    	entity_size_map_[on_what] = data->size();
-    }
-
-    // store data and update internal book-keeping
-    pair_t pair(var_name, on_what);
-    auto iter = name_map_.find(pair);
-    if (iter == name_map_.end()) {  // have not seen this entity-name combo before, add data
-	state_.push_back(data);
-	name_map_[pair] = state_.size() - 1;
-	entity_map_[var_name] = on_what;
-	entity_size_map_[on_what] = data->size();
-    } else { // have seen the entity-name combo already, replace data. already checked size.
-    	std::copy(data->begin(), data->end(), state_[iter->second]->begin());
-    }
-  }
-
-  /*!
-   @brief Add a scalar data field with uniform values
-   @param[in] on_what The entity type on which the data is defined
-   @param[in] var_name The name of the data field
-   @param[in] value initialize with this value
-   *
-   * If data for name-entity combination already exists, then replace data with value.
-   */
-  void add_data(const Entity_kind on_what, const std::string var_name, T value) {
-    pair_t pair(var_name, on_what);
-    auto iter = name_map_.find(pair);
-    auto sziter = entity_size_map_.find(on_what);
-    if (iter == name_map_.end()) { // have not seen this entity-name combo before
-	// haven't seen this entity before - no size info - bail
-	if (sziter == entity_size_map_.end()) {
-	  std::string msg="variable "+var_name+" has no size information available on add";
-	  throw std::runtime_error(msg.c_str());
-	}
-	auto newptr = std::make_shared<std::vector<T>>(sziter->second, value);
-	state_.push_back(newptr);
-	name_map_[pair] = state_.size() - 1;
-	entity_map_[var_name] = on_what;
-    } else { // have seen this entity-name combo before
-	for (size_t i=0; i<sziter->second; i++) {
-	  (*state_[iter->second])[i] = value;
-	}
     }
   }
 
@@ -368,6 +287,40 @@ private:
 	  entity_map_.clear();
 	  entity_size_map_.clear();
 	  gradients_.clear();
+  }
+
+  /*!
+   @brief Add a scalar data field
+   @param[in] on_what The entity type on which the data is defined
+   @param[in] var_name The name of the data field
+   @param[in] value vector of data to add
+   *
+   * If data for name-entity combination already exists, then replace data.
+   * Size of data must match previous size recorded for requested entity.
+   * If entity has not been seen before, make that entity's size equal to that of data.
+   */
+  void add_data(const Entity_kind on_what, const std::string var_name, std::shared_ptr<std::vector<T>> data) {
+	  // if we have seen this entity before - check size match, else store this size
+	  auto sziter = entity_size_map_.find(on_what);
+	  if (sziter != entity_size_map_.end()) {
+		  if (sziter->second != data->size()) {
+			  throw std::runtime_error(std::string("variable ")+var_name+" has incompatible size on add");
+		  }
+	  } else {
+		  entity_size_map_[on_what] = data->size();
+	  }
+
+	  // store data and update internal book-keeping
+	  pair_t pair(var_name, on_what);
+	  auto iter = name_map_.find(pair);
+	  if (iter == name_map_.end()) {  // have not seen this entity-name combo before, add data
+		  state_.push_back(data);
+		  name_map_[pair] = state_.size() - 1;
+		  entity_map_[var_name] = on_what;
+		  entity_size_map_[on_what] = data->size();
+	  } else { // have seen the entity-name combo already, replace data. already checked size.
+		  std::copy(data->begin(), data->end(), state_[iter->second]->begin());
+	  }
   }
 }; // Flat_State_Wrapper
 
