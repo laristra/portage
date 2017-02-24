@@ -168,12 +168,11 @@ class Flat_State_Wrapper {
     *
     * Data is associated with the name-entity combination. Both values must be valid.
    */
-  template <class D=double>
-  void get_data(const Entity_kind on_what, const std::string var_name, D** data) {
+  void get_data(const Entity_kind on_what, const std::string var_name, T** data) {
     pair_t pr(var_name, on_what);
     auto iter = name_map_.find(pr);
     if (iter != name_map_.end()) {
-      (*data) = (D*)(&((*(state_[iter->second]))[0]));
+      (*data) = (T*)(&((*(state_[iter->second]))[0]));
     } else {
       (*data) = nullptr;
     }
@@ -187,12 +186,11 @@ class Flat_State_Wrapper {
     *
     * Data is associated with the name-entity combination. Both values must be valid.
    */
-  template <class D=double>
-  void get_data(const Entity_kind on_what, const std::string var_name, D const **data) const {
+  void get_data(const Entity_kind on_what, const std::string var_name, T const **data) const {
     pair_t pr(var_name, on_what);
     auto iter = name_map_.find(pr);
     if (iter != name_map_.end()) {
-      (*data) = (D const *)(&((*(state_[iter->second]))[0]));
+      (*data) = (T const *)(&((*(state_[iter->second]))[0]));
     } else {
       (*data) = nullptr;
     }
