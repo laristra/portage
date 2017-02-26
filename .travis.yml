@@ -8,7 +8,7 @@ services:
 env:
   matrix:
     - MPI=OFF
-    - MPI=ON
+    - MPI=ON DOCKERHUB=true
     - MPI=ON COVERAGE=ON
 
 script:
@@ -21,3 +21,9 @@ script:
                  --build-arg TRAVIS_TAG=${TRAVIS_TAG} --build-arg TRAVIS_REPO_SLUG=${TRAVIS_REPO_SLUG}
                  --build-arg TRAVIS_COMMIT=${TRAVIS_COMMIT} --build-arg COVERAGE=${COVERAGE}
                  -t ${TRAVIS_REPO_SLUG}:latest ${HOME}/docker/
+
+after_success:
+  - if [[ ${DOCKERHUB} = true && ${DOCKER_USERNAME} && ${DOCKER_PASSWORD} && ${TRAVIS_PULL_REQUEST} == false && ${TRAVIS_BRANCH} == master ]]; then
+      docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD";
+      docker push "${TRAVIS_REPO_SLUG}:latest";
+    fi
