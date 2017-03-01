@@ -123,6 +123,20 @@ class Simple_State_Wrapper {
   }
 
   /*!
+    @brief Get a pointer to data from the state manager with a given
+    variable @c name and on @c on_what mesh entities.
+    @param[in] on_what The Entity_kind (e.g. CELL) on which the data
+    lives.
+    @param[in] name The name of the variable.
+    @param data A @c pointer to the const data array.  If the requested data is
+    not found in the state manager, a @c nullptr is returned.
+   */
+  void add_data(const Entity_kind on_what, const std::string name,
+                  double const **data) const {
+    auto vec = state_.add(name, on_what, *data);
+  }
+
+  /*!
     @brief Given a variable name, get where it lives on the mesh.
     @param[in] name The name of the variable to be found.
     @returns The Entity_kind (e.g. CELL) indicating where the variable @name

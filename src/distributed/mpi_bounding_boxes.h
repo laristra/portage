@@ -419,7 +419,7 @@ class MPI_Bounding_Boxes {
     for (int s=0; s<source_state_flat.get_num_vectors(); s++)
     {
       std::shared_ptr<std::vector<double>> sourceField = source_state_flat.get_vector(s);
-      int sourceFieldStride = source_state_flat.get_field_dim(s);
+      int sourceFieldStride = source_state_flat.get_field_stride(s);
 
       // Currently only cell and node fields are supported
       comm_info_t& info = (source_state_flat.get_entity(s) == NODE ?

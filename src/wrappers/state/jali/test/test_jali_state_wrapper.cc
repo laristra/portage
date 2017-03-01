@@ -78,6 +78,7 @@ TEST(Jali_State_Wrapper, DataTypes) {
   int const n_cells = 4;
   int const n_nodes = 9;
   float ftest[] = {1.1, 2.2, 3.3, 4.4};
+  double dtest[] = {62., 78., 43., 22.};
   int itest[] = {1, 2, 3, 4, 5, 6, 7, 8, 9};
   Vec2d vtest[n_cells];
   for (unsigned int i=0; i<n_cells; i++) vtest[i].set(1.0*i, 2.0*i);
@@ -114,6 +115,16 @@ TEST(Jali_State_Wrapper, DataTypes) {
     ASSERT_EQ(vdata[i].x, vtest[i].x);
     ASSERT_EQ(vdata[i].y, vtest[i].y);
   }
+
+  // add data through wrapper
+  wrapper.add_data(inputMesh, Portage::CELL, "d1", dtest);
+  wrapper.add_data(inputMesh, Portage::CELL, "d2", 123.456);
+
+  double *ddata;
+  wrapper.get_data(Portage::CELL, "d1", &ddata);
+  for (unsigned int i=0; i<n_cells; i++) ASSERT_EQ(ddata[i], dtest[i]);
+  wrapper.get_data(Portage::CELL, "d2", &ddata);
+  for (unsigned int i=0; i<n_cells; i++) ASSERT_EQ(ddata[i], 123.456);
 
   // Iterate through a vector of names
   std::vector<std::string> fields;
