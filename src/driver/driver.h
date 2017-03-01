@@ -342,7 +342,28 @@ class Driver {
     variables to interpolate from the source mesh.
     @param[in] target_remap_var_names  A list of the variables names of the
     variables to interpolate to the target mesh.
+    @param[in] limiter_type The limiter to use for higher order remaps (NOLIMITER, BARTH_JESPERSEN)
   */
+  void set_remap_var_names(
+      std::vector<std::string> const & source_remap_var_names,
+      std::vector<std::string> const & target_remap_var_names,
+      LimiterType limiter_type = NOLIMITER) {
+    std::vector<LimiterType> limiters(source_remap_var_names.size(),
+                                      limiter_type);
+    
+    set_remap_var_names(source_remap_var_names, target_remap_var_names,
+                        limiters);
+  }
+
+  /*!
+    @brief Specify the names of the variables to be interpolated
+    @param[in] source_remap_var_names A list of the variables names of the
+    variables to interpolate from the source mesh.
+    @param[in] target_remap_var_names  A list of the variables names of the
+    variables to interpolate to the target mesh.
+    @param[in] limiter_types Limiters to use for each remapped variable (NOLIMITER, BARTH_JESPERSEN)
+  */
+
   void set_remap_var_names(
       std::vector<std::string> const & source_remap_var_names,
       std::vector<std::string> const & target_remap_var_names,
