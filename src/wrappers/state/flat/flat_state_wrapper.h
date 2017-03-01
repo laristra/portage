@@ -212,6 +212,16 @@ class Flat_State_Wrapper {
   }
 
   /*!
+    @brief Get the entity type on which the given field is defined
+    @param[in] index The index of the data field
+    @return The Entity_kind enum for the entity type on which the field is defined
+   */
+  Entity_kind get_entity(const int index) const
+  {
+    return entities_[index];
+  }
+
+  /*!
     @brief Get size for entity
   */
   size_t get_entity_size(Entity_kind ent) {
@@ -272,6 +282,7 @@ class Flat_State_Wrapper {
 private:
   std::vector<std::shared_ptr<std::vector<T>>> state_;
   std::map<pair_t, size_t> name_map_;
+  std::vector<Entity_kind> entities_;
   std::map<std::string, Entity_kind> entity_map_;
   std::map<Entity_kind, size_t> entity_size_map_;
   std::vector<std::shared_ptr<std::vector<Portage::Point3>>> gradients_;
@@ -314,6 +325,7 @@ private:
 	  if (iter == name_map_.end()) {  // have not seen this entity-name combo before, add data
 		  state_.push_back(data);
 		  name_map_[pair] = state_.size() - 1;
+		  entities_.push_back(on_what);
 		  entity_map_[var_name] = on_what;
 		  entity_size_map_[on_what] = data->size();
 	  } else { // have seen the entity-name combo already, replace data. already checked size.
