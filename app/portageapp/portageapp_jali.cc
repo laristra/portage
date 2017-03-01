@@ -324,14 +324,6 @@ int main(int argc, char** argv) {
       std::cerr << "Unrecognized option " << keyword << std::endl;
   }
 
-  if (numpe > 1 && entityKind == Jali::Entity_kind::NODE) {
-    if (rank == 0)
-      std::cerr << std::endl <<
-          "portageapp_jali - ERROR - NODE CENTERED REMAP NOT IMPLEMENTED FOR DISTRIBUTED MESHES\n" << std::endl;
-    MPI_Finalize();
-    return -1;
-  }
-
   if (rank == 0)
   {
     std::cout << "starting portageapp...\n";

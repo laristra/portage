@@ -416,6 +416,9 @@ class Driver {
 
     int nvars = source_remap_var_names_.size();
 
+    Flat_Mesh_Wrapper<> source_mesh_flat;
+    Flat_State_Wrapper<> source_state_flat;
+
     // Collect all cell based variables and remap them
 
     std::vector<std::string> source_cellvar_names;
@@ -443,9 +446,6 @@ class Driver {
       
       Portage::vector<std::vector<int>> candidates(ntargetcells);
       Portage::vector<std::vector<Weights_t>> source_cells_and_weights(ntargetcells);
-
-      Flat_Mesh_Wrapper<> source_mesh_flat;
-      Flat_State_Wrapper<> source_state_flat;
 
       if (distributed) {
 
@@ -641,67 +641,110 @@ class Driver {
 
     if (source_nodevar_names.size() > 0) {
 
-      if (distributed) {
-        std::cerr <<
-            "Portage ERROR: REMAPPING OF NODAL QUANTITIES NOT IMPLEMENTED FOR DISTRIBUTED MESHES\n" << std::endl;
-        return;
-      }
-        
       float tot_seconds = 0.0, tot_seconds_srch = 0.0,
             tot_seconds_xsect = 0.0, tot_seconds_interp = 0.0;
       struct timeval begin_timeval, end_timeval, diff_timeval;
 
-      int ntargetcells = target_mesh_.num_entities(NODE);
+      int ntargetnodes = target_mesh_.num_entities(NODE);
 
       // SEARCH
 
-      gettimeofday(&begin_timeval, 0);
+      Portage::vector<std::vector<int>> candidates(ntargetnodes);
+      Portage::vector<std::vector<Weights_t>> source_cells_and_weights(ntargetnodes);
 
-      Portage::vector<std::vector<int>> candidates(ntargetcells);
+      MeshWrapperDual<Flat_Mesh_Wrapper<>> sourceDualFlat(source_mesh_flat);
 
-      // Get an instance of the desired search algorithm type
-      const Search<Dim, MeshWrapperDual<SourceMesh_Wrapper>,
-                   MeshWrapperDual<TargetMesh_Wrapper>>
-            search(sourceDualWrapper, targetDualWrapper);
-      SearchFunctor<Search<Dim, MeshWrapperDual<SourceMesh_Wrapper>,
-                           MeshWrapperDual<TargetMesh_Wrapper>>>
-          searchfunctor(&search);
-      Portage::transform(target_mesh_.begin(NODE, PARALLEL_OWNED),
-                         target_mesh_.end(NODE, PARALLEL_OWNED),
-                         candidates.begin(), searchfunctor);
+      if (distributed) {
+#ifndef PORTAGE_SERIAL_ONLY
+        // Create flat wrappers to distribute source cells
+        gettimeofday(&begin_timeval, 0);
+
+        source_mesh_flat.initialize(source_mesh_);
+        source_state_flat.initialize(source_state_, source_remap_var_names_);
+        MPI_Bounding_Boxes distributor;
+        distributor.distribute(source_mesh_flat, source_state_flat, target_mesh_,
+                               target_state_);
+        gettimeofday(&end_timeval, 0);
+        timersub(&end_timeval, &begin_timeval, &diff_timeval);
+        float tot_seconds_flat = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
+        std::cout << "Redistribution Time Rank " << comm_rank << " (s): " << tot_seconds_flat << std::endl;
+
+        // Get an instance of the desired search algorithm type
+        gettimeofday(&begin_timeval, 0);
+        const Search<Dim, MeshWrapperDual<Flat_Mesh_Wrapper<>>, MeshWrapperDual<TargetMesh_Wrapper>> search(sourceDualFlat, targetDualWrapper);
+        SearchFunctor<Search<Dim, MeshWrapperDual<Flat_Mesh_Wrapper<>>, MeshWrapperDual<TargetMesh_Wrapper>>> searchfunctor(&search);
+
+        Portage::transform(target_mesh_.begin(NODE, PARALLEL_OWNED),
+                           target_mesh_.end(NODE, PARALLEL_OWNED),
+                           candidates.begin(), searchfunctor);
+#endif
+      }
+      else {
+
+        gettimeofday(&begin_timeval, 0);
+
+        // Get an instance of the desired search algorithm type
+        const Search<Dim, MeshWrapperDual<SourceMesh_Wrapper>,
+                     MeshWrapperDual<TargetMesh_Wrapper>>
+              search(sourceDualWrapper, targetDualWrapper);
+        SearchFunctor<Search<Dim, MeshWrapperDual<SourceMesh_Wrapper>,
+                             MeshWrapperDual<TargetMesh_Wrapper>>>
+            searchfunctor(&search);
+        Portage::transform(target_mesh_.begin(NODE, PARALLEL_OWNED),
+                           target_mesh_.end(NODE, PARALLEL_OWNED),
+                           candidates.begin(), searchfunctor);
+      }
+
       gettimeofday(&end_timeval, 0);
       timersub(&end_timeval, &begin_timeval, &diff_timeval);
       tot_seconds_srch = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
 
-      // Make an instance of the functor doing the search and intersection
+      // INTERSECT
 
       gettimeofday(&begin_timeval, 0);
 
-      const Intersect<MeshWrapperDual<SourceMesh_Wrapper>,
-                      MeshWrapperDual<TargetMesh_Wrapper>>
-            intersect(sourceDualWrapper, targetDualWrapper);
-      IntersectFunctor<Intersect<MeshWrapperDual<SourceMesh_Wrapper>,
-                                 MeshWrapperDual<TargetMesh_Wrapper>>>
-            intersectfunctor(&intersect);
+      if (distributed) {
 
-      // For each cell in the target mesh get a list of candidate-weight
-      // pairings (in a traditional mesh, not particle mesh, the weights
-      // are moments). Note that this candidate list is different from the
-      // search candidate list in that (1) it may not include some
-      // candidates and (2) some candidates may occur twice to account for
-      // the fact that the intersection of two cells is more than one
-      // disjoint piece (if one of the cells is non-convex). Also, note
-      // that for 2nd order and higher remaps, we get multiple moments
-      // (0th, 1st, etc) for each target-source cell intersection
+#ifndef PORTAGE_SERIAL_ONLY
+        // Get an instance of the desired intersect algorithm type
+        const Intersect<MeshWrapperDual<Flat_Mesh_Wrapper<>>, MeshWrapperDual<TargetMesh_Wrapper>>
+            intersect(sourceDualFlat, targetDualWrapper);
+        IntersectFunctor<Intersect<MeshWrapperDual<Flat_Mesh_Wrapper<>>, MeshWrapperDual<TargetMesh_Wrapper>>> intersectfunctor(&intersect);
 
-      int ntargetnodes = target_mesh_.num_entities(NODE);
-      Portage::vector<std::vector<Weights_t>> source_cells_and_weights(ntargetnodes);
+        Portage::transform(target_mesh_.begin(NODE, PARALLEL_OWNED),
+                           target_mesh_.end(NODE, PARALLEL_OWNED),
+                           candidates.begin(),
+                           source_cells_and_weights.begin(),
+                           intersectfunctor);
+#endif
+      }
+      else {
 
-      Portage::transform(target_mesh_.begin(NODE, PARALLEL_OWNED),
-                         target_mesh_.end(NODE, PARALLEL_OWNED),
-                         candidates.begin(),
-                         source_cells_and_weights.begin(),
-                         intersectfunctor);
+        // Get an instance of the desired intersect algorithm type
+        const Intersect<MeshWrapperDual<SourceMesh_Wrapper>,
+                        MeshWrapperDual<TargetMesh_Wrapper>>
+              intersect(sourceDualWrapper, targetDualWrapper);
+        IntersectFunctor<Intersect<MeshWrapperDual<SourceMesh_Wrapper>,
+                                   MeshWrapperDual<TargetMesh_Wrapper>>>
+              intersectfunctor(&intersect);
+
+        // For each cell in the target mesh get a list of candidate-weight
+        // pairings (in a traditional mesh, not particle mesh, the weights
+        // are moments). Note that this candidate list is different from the
+        // search candidate list in that (1) it may not include some
+        // candidates and (2) some candidates may occur twice to account for
+        // the fact that the intersection of two cells is more than one
+        // disjoint piece (if one of the cells is non-convex). Also, note
+        // that for 2nd order and higher remaps, we get multiple moments
+        // (0th, 1st, etc) for each target-source cell intersection
+
+        Portage::transform(target_mesh_.begin(NODE, PARALLEL_OWNED),
+                           target_mesh_.end(NODE, PARALLEL_OWNED),
+                           candidates.begin(),
+                           source_cells_and_weights.begin(),
+                           intersectfunctor);
+      }
+
       gettimeofday(&end_timeval, 0);
       timersub(&end_timeval, &begin_timeval, &diff_timeval);
       tot_seconds_xsect = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
@@ -713,37 +756,61 @@ class Driver {
       nvars = source_nodevar_names.size();
       if (comm_rank == 0) std::cout << "number of node variables to remap is " << nvars << std::endl;
 
-      for (int i = 0; i < nvars; ++i) {
-        if (comm_rank == 0) std::cout << "Remapping node variable " << source_nodevar_names[i]
-               << " to variable " << target_nodevar_names[i] << std::endl;
+      if (distributed) {
 
-        Interpolate<SourceMesh_Wrapper, TargetMesh_Wrapper,
-                    SourceState_Wrapper, NODE, Dim>
-              interpolate(source_mesh_, target_mesh_, source_state_);
-        interpolate.set_interpolation_variable(source_nodevar_names[i]);
+#ifndef PORTAGE_SERIAL_ONLY
+        Interpolate<Flat_Mesh_Wrapper<>, TargetMesh_Wrapper, Flat_State_Wrapper<>, NODE, Dim>
+            interpolate(source_mesh_flat, target_mesh_, source_state_flat);
 
-        // This populates targetField with the values returned by the
-        // interpolate operator
+        for (int i = 0; i < nvars; ++i) {
 
-        /*  UNCOMMENT WHEN WE RESTORE get_type in jali_state_wrapper
-            if (typeid(source_state_.get_type(source_var_names[i])) ==
-            typeid(double)) {
-        */
-        double *target_field_raw = nullptr;
-        target_state_.get_data(NODE, target_nodevar_names[i], &target_field_raw);
-        Portage::pointer<double> target_field(target_field_raw);
+          interpolate.set_interpolation_variable(source_nodevar_names[i]);
 
-        Portage::transform(target_mesh_.begin(NODE, PARALLEL_OWNED),
-                           target_mesh_.end(NODE, PARALLEL_OWNED),
-                           source_cells_and_weights.begin(),
-                           target_field, interpolate);
-        /*  UNCOMMENT WHEN WE RESTORE get_type in jali_state_wrapper
-            } else {
-            std::cerr << "Cannot remap " << source_var_names[i] <<
-            " because it is not a scalar double variable\n";
-            continue;
-            }
-        */
+          double *target_field_raw = nullptr;
+          target_state_.get_data(NODE, target_nodevar_names[i], &target_field_raw);
+          Portage::pointer<double> target_field(target_field_raw);
+
+          Portage::transform(target_mesh_.begin(NODE, PARALLEL_OWNED),
+                             target_mesh_.end(NODE, PARALLEL_OWNED),
+                             source_cells_and_weights.begin(),
+                             target_field, interpolate);
+        }
+#endif
+      }
+      else {
+
+        for (int i = 0; i < nvars; ++i) {
+          if (comm_rank == 0) std::cout << "Remapping node variable " << source_nodevar_names[i]
+                 << " to variable " << target_nodevar_names[i] << std::endl;
+
+          Interpolate<SourceMesh_Wrapper, TargetMesh_Wrapper,
+                      SourceState_Wrapper, NODE, Dim>
+                interpolate(source_mesh_, target_mesh_, source_state_);
+          interpolate.set_interpolation_variable(source_nodevar_names[i]);
+
+          // This populates targetField with the values returned by the
+          // interpolate operator
+
+          /*  UNCOMMENT WHEN WE RESTORE get_type in jali_state_wrapper
+              if (typeid(source_state_.get_type(source_var_names[i])) ==
+              typeid(double)) {
+          */
+          double *target_field_raw = nullptr;
+          target_state_.get_data(NODE, target_nodevar_names[i], &target_field_raw);
+          Portage::pointer<double> target_field(target_field_raw);
+
+          Portage::transform(target_mesh_.begin(NODE, PARALLEL_OWNED),
+                             target_mesh_.end(NODE, PARALLEL_OWNED),
+                             source_cells_and_weights.begin(),
+                             target_field, interpolate);
+          /*  UNCOMMENT WHEN WE RESTORE get_type in jali_state_wrapper
+              } else {
+              std::cerr << "Cannot remap " << source_var_names[i] <<
+              " because it is not a scalar double variable\n";
+              continue;
+              }
+          */
+        }
       }
 
       gettimeofday(&end_timeval, 0);
