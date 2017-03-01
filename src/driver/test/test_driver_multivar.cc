@@ -309,6 +309,7 @@ TEST(Test_MultiVar_Remap, Nested_Meshes) {
   std::vector<std::string> target_var_names;
   target_var_names.push_back("cellvars");
 
+
   remapper1.set_remap_var_names(source_var_names, target_var_names);
 
   // Execute remapper (distributed=false)
@@ -340,7 +341,8 @@ TEST(Test_MultiVar_Remap, Nested_Meshes) {
                                                          targetStateWrapper);
 
 
-  remapper2.set_remap_var_names(source_var_names, target_var_names);
+  remapper2.set_remap_var_names(source_var_names, target_var_names,
+                                Portage::NOLIMITER);
 
   // Execute remapper (distributed=false)
 
