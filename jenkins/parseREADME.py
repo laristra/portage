@@ -61,7 +61,7 @@ for line in open(sys.argv[1]):
 
 retcode = 0
 for host in scripts:
-    if(host.startswith('barugon')):
+    if(host.startswith('varan')):
         print "HOST " + host
         scripts[host] += 'cd ..;rm -Rf build;'
         print scripts[host]
