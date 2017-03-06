@@ -96,9 +96,9 @@ int print_usage() {
   std::cout << "--source_file=srcfilename: file name of source mesh (Exodus II format only)\n";
   std::cout << "--target_file=trgfilename: file name of target mesh (Exodus II format only)\n";
 
-  std::cout << "--remap_order (default = 1): order of accuracy of interpolation\n\n";
-  std::cout << "--limit (default = 1): limiting to preserve bounds (1) or no (0)";
-  std::cout << "--entity_kind (default = cell): kind of entity remap fields live on\n\n";
+  std::cout << "--remap_order=1|2 (default = 1): order of accuracy of interpolation\n\n";
+  std::cout << "--limit=0|1 (default = 1): limiting to preserve bounds (1) or no (0)";
+  std::cout << "--entity_kind=cell|node (default = cell): kind of entity remap fields live on\n\n";
 
   std::cout << "  Also, the target mesh is written out with the attached field values are output to a file 'output.exo'\n";
   return 0;
@@ -170,7 +170,9 @@ int main(int argc, char** argv) {
   if ((srcfile.length() == 0 && trgfile.length() != 0) ||
       (srcfile.length() != 0 && trgfile.length() == 0)) {
     if (rank == 0)
-      std::cerr << "portageapp_jali - ERROR - both source_file and target_file must be specified if one is specified\n" << std::endl;
+      std::cerr <<
+          "portageapp_jali_file - ERROR - both source_file and target_file must be specified\n" <<
+          std::endl;
   }
 
   if (rank == 0) {
@@ -225,18 +227,11 @@ int main(int argc, char** argv) {
   std::vector<std::string> remap_fields;
 
   Jali::State::iterator it = sourceState.begin();
-  // while (it != sourceState.end()) {
-  //   std::shared_ptr<Jali::BaseStateVector> bv = *it;
-  //   std::cout << "State field " << bv->name() << "on" << bv->entity_kind() << "\n";
-  //   ++it;
-  // }
-  // Cell-centered remaps
-  if (entityKind == Jali::Entity_kind::CELL) {
+  if (entityKind == Jali::Entity_kind::CELL) {  // Cell-centered remaps
     while (it != sourceState.end()) {
       std::shared_ptr<Jali::BaseStateVector> bv = *it;
       if (bv->entity_kind() == Jali::Entity_kind::CELL &&
           bv->get_type() == typeid(double)) {
-        std::cout << "Remap field " << bv->name() << "\n";
         remap_fields.push_back(bv->name());
 
         targetState.add(bv->name(), targetMesh, Jali::Entity_kind::CELL,
@@ -244,10 +239,10 @@ int main(int argc, char** argv) {
       }
       ++it;
     }
-  } else {
+  } else {  // Node-centered remaps
     while (it != sourceState.end()) {
       std::shared_ptr<Jali::BaseStateVector> bv = *it;
-      if (bv->entity_kind() == Jali::Entity_kind::CELL) {
+      if (bv->entity_kind() == Jali::Entity_kind::NODE) {
         remap_fields.push_back(bv->name());
 
         targetState.add(bv->name(), targetMesh, Jali::Entity_kind::NODE,
