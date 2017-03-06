@@ -131,9 +131,17 @@ class Interpolate_1stOrder {
   /// Destructor
   ~Interpolate_1stOrder() {}
 
-  /// Set the variable name to be interpolated
+  /// Set the variable name to be interpolated.
 
-  void set_interpolation_variable(std::string const & interp_var_name) {
+  // Even though 1st order accurate interpolation does not require
+  // limiters and only higher order ones do, we need to have the
+  // limiter_type as an argument. This is because the templated driver
+  // does not know whether its being called with 1st order or higher
+  // order interpolators and so all interpolators need to have a
+  // uniform interface
+
+  void set_interpolation_variable(std::string const & interp_var_name,
+                                  LimiterType limtype=NOLIMITER) {
     interp_var_name_ = interp_var_name;
     source_state_.get_data(on_what, interp_var_name, &source_vals_);
   }
@@ -226,7 +234,16 @@ class Interpolate_1stOrder<SourceMeshType, TargetMeshType, StateType, CELL, D> {
 
   /// Set the variable name to be interpolated
 
-  void set_interpolation_variable(std::string const & interp_var_name) {
+
+  // Even though 1st order accurate interpolation does not require
+  // limiters and only higher order ones do, we need to have the
+  // limiter_type as an argument. This is because the templated driver
+  // does not know whether its being called with 1st order or higher
+  // order interpolators and so all interpolators need to have a
+  // uniform interface
+
+  void set_interpolation_variable(std::string const & interp_var_name, 
+                                  LimiterType limtype = NOLIMITER) {
     interp_var_name_ = interp_var_name;
     source_state_.get_data(CELL, interp_var_name, &source_vals_);
   }
@@ -350,7 +367,15 @@ class Interpolate_1stOrder<SourceMeshType, TargetMeshType, StateType, NODE, D> {
 
   /// Set the variable name to be interpolated
 
-  void set_interpolation_variable(std::string const & interp_var_name) {
+  // Even though 1st order accurate interpolation does not require
+  // limiters and only higher order ones do, we need to have the
+  // limiter_type as an argument. This is because the templated driver
+  // does not know whether its being called with 1st order or higher
+  // order interpolators and so all interpolators need to have a
+  // uniform interface
+
+  void set_interpolation_variable(std::string const & interp_var_name,
+                                  LimiterType limtype = NOLIMITER) {
     interp_var_name_ = interp_var_name;
     source_state_.get_data(NODE, interp_var_name, &source_vals_);
   }

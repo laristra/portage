@@ -268,8 +268,6 @@ class MeshWrapperDual {  // cellid is the dual cell (i.e. node) id
 // Forward definitions
 template <typename SearchType> struct SearchFunctor;
 template <typename IntersectType> struct IntersectFunctor;
-template <typename SearchType, typename IsectType, typename InterpType>
-struct RemapFunctor;
 
 /*!
   @class Driver "driver.h"
@@ -322,14 +320,20 @@ class Driver {
   ~Driver() {}
 
   /*!
-    @brief Specify the names of the variables to be interpolated
+    @brief Specify the names of the variables to be interpolated along with the
+    limiter to use for all of them
     @param[in] remap_var_names A list of variable names of the variables to
     interpolate from the source mesh to the target mesh.  This variable must
     exist in both meshes' state manager
+    @param[in] limiter_type The type of limiter to use (NOLIMITER, BARTH_JESPERSEN)
   */
-  void set_remap_var_names(std::vector<std::string> const &remap_var_names) {
-    source_remap_var_names_ = remap_var_names;
-    target_remap_var_names_ = remap_var_names;
+  void set_remap_var_names(std::vector<std::string> const &remap_var_names,
+                           LimiterType limiter_type = NOLIMITER) {
+    // All variables use the same type of limiters
+    std::vector<LimiterType> limiters(remap_var_names.size(), limiter_type);
+
+    // remap variable names same in source and target mesh
+    set_remap_var_names(remap_var_names, remap_var_names, limiters);
   }
 
   /*!
@@ -338,10 +342,32 @@ class Driver {
     variables to interpolate from the source mesh.
     @param[in] target_remap_var_names  A list of the variables names of the
     variables to interpolate to the target mesh.
+    @param[in] limiter_type The limiter to use for higher order remaps (NOLIMITER, BARTH_JESPERSEN)
   */
   void set_remap_var_names(
-      std::vector<std::string> const &source_remap_var_names,
-      std::vector<std::string> const &target_remap_var_names) {
+      std::vector<std::string> const & source_remap_var_names,
+      std::vector<std::string> const & target_remap_var_names,
+      LimiterType limiter_type = NOLIMITER) {
+    std::vector<LimiterType> limiters(source_remap_var_names.size(),
+                                      limiter_type);
+    
+    set_remap_var_names(source_remap_var_names, target_remap_var_names,
+                        limiters);
+  }
+
+  /*!
+    @brief Specify the names of the variables to be interpolated
+    @param[in] source_remap_var_names A list of the variables names of the
+    variables to interpolate from the source mesh.
+    @param[in] target_remap_var_names  A list of the variables names of the
+    variables to interpolate to the target mesh.
+    @param[in] limiter_types Limiters to use for each remapped variable (NOLIMITER, BARTH_JESPERSEN)
+  */
+
+  void set_remap_var_names(
+      std::vector<std::string> const & source_remap_var_names,
+      std::vector<std::string> const & target_remap_var_names,
+      std::vector<LimiterType> const & limiter_types) {
     assert(source_remap_var_names.size() == target_remap_var_names.size());
 
     int nvars = source_remap_var_names.size();
@@ -351,6 +377,7 @@ class Driver {
 
     source_remap_var_names_ = source_remap_var_names;
     target_remap_var_names_ = target_remap_var_names;
+    limiters_ = limiter_types;
   }
 
   /*!
@@ -380,16 +407,7 @@ class Driver {
   }
 
   /*!
-    @brief This method calls specialized functions to do the remapping
-    based on the dimensionality of the mesh, the type of data and the
-    order of interpolation.
-
-    The individual routines run specialized search, intersect, and
-    interpolation routines needed to map one mesh to another. Most of the
-    heavy lifting in these routines is via a @c Portage::transform()
-    over the cells in the target mesh, applying a custom @c
-    RemapFunctor() (defined below) that specifies how the search,
-    intersect, and interpolation calculations should be performed.
+    @brief Execute the remapping process
   */
   void run(bool distributed) {
 
@@ -557,8 +575,8 @@ class Driver {
             interpolate(source_mesh_flat, target_mesh_, source_state_flat);
 
         for (int i = 0; i < nvars; ++i) {
-
-          interpolate.set_interpolation_variable(source_cellvar_names[i]);
+          interpolate.set_interpolation_variable(source_cellvar_names[i],
+                                                   limiters_[i]);
 
           double *target_field_raw = nullptr;
           target_state_.get_data(CELL, target_cellvar_names[i], &target_field_raw);
@@ -581,7 +599,9 @@ class Driver {
           //amh: ?? add back accuracy output statement??
           if (comm_rank == 0) std::cout << "Remapping cell variable " << source_cellvar_names[i]
                                         << " to variable " << target_cellvar_names[i] << std::endl;
-          interpolate.set_interpolation_variable(source_cellvar_names[i]);
+          interpolate.set_interpolation_variable(source_cellvar_names[i],
+                                                   limiters_[i]);
+
           // This populates targetField with the values returned by the
           // remapper operator
           
@@ -758,13 +778,13 @@ class Driver {
 
       if (distributed) {
 
-#ifndef PORTAGE_SERIAL_ONLY
+#ifdef ENABLE_MPI
         Interpolate<Flat_Mesh_Wrapper<>, TargetMesh_Wrapper, Flat_State_Wrapper<>, NODE, Dim>
             interpolate(source_mesh_flat, target_mesh_, source_state_flat);
 
         for (int i = 0; i < nvars; ++i) {
-
-          interpolate.set_interpolation_variable(source_nodevar_names[i]);
+          interpolate.set_interpolation_variable(source_nodevar_names[i],
+                                                 limiters_[i]);
 
           double *target_field_raw = nullptr;
           target_state_.get_data(NODE, target_nodevar_names[i], &target_field_raw);
@@ -779,6 +799,10 @@ class Driver {
       }
       else {
 
+        Interpolate<SourceMesh_Wrapper, TargetMesh_Wrapper,
+                    SourceState_Wrapper, NODE, Dim>
+              interpolate(source_mesh_, target_mesh_, source_state_);
+
         for (int i = 0; i < nvars; ++i) {
           if (comm_rank == 0) std::cout << "Remapping node variable " << source_nodevar_names[i]
                  << " to variable " << target_nodevar_names[i] << std::endl;
@@ -786,7 +810,9 @@ class Driver {
           Interpolate<SourceMesh_Wrapper, TargetMesh_Wrapper,
                       SourceState_Wrapper, NODE, Dim>
                 interpolate(source_mesh_, target_mesh_, source_state_);
-          interpolate.set_interpolation_variable(source_nodevar_names[i]);
+
+          interpolate.set_interpolation_variable(source_nodevar_names[i],
+                                                 limiters_[i]);
 
           // This populates targetField with the values returned by the
           // interpolate operator
@@ -839,6 +865,7 @@ class Driver {
   TargetState_Wrapper& target_state_;
   std::vector<std::string> source_remap_var_names_;
   std::vector<std::string> target_remap_var_names_;
+  std::vector<LimiterType> limiters_;
   unsigned int dim_;
 };  // class Driver
 
