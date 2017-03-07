@@ -1041,12 +1041,10 @@ class AuxMeshTopology {
     assert(basicmesh_ptr_->space_dimension() == 3);
     assert(wedges_requested_);
 
-    int wedgeid;
-    std::vector<int> wedgeids;
-
     // wedge_get_coordinates - (node, edge center, face centroid, cell centroid)
     std::array<Point<3>, 4> wcoords;
 
+    std::vector<int> wedgeids;
     node_get_wedges(nodeid, ALL, &wedgeids);
 
     std::vector<int> face_list, cell_list;
@@ -1184,7 +1182,7 @@ class AuxMeshTopology {
   friend
   void build_sides_3D<BasicMesh>(AuxMeshTopology<BasicMesh>& mesh);
 
-  BasicMesh *basicmesh_ptr_;
+  BasicMesh *basicmesh_ptr_ = nullptr;
   bool sides_requested_ = true;
   bool wedges_requested_ = true;
   bool corners_requested_ = true;
@@ -1501,6 +1499,7 @@ void build_sides_2D(AuxMeshTopology<BasicMesh>& mesh) {
   mesh.sideids_all_.resize(num_sides_all);
   mesh.side_cell_id_.resize(num_sides_all, -1);
   mesh.side_face_id_.resize(num_sides_all, -1);
+  mesh.side_opp_side_id_.clear();
   mesh.side_opp_side_id_.resize(num_sides_all, -1);
   mesh.side_node_ids_.resize(num_sides_all, {{-1, -1}});
   mesh.side_volumes_.resize(num_sides_all);
@@ -1615,6 +1614,7 @@ void build_sides_3D(AuxMeshTopology<BasicMesh>& mesh) {
   mesh.sideids_all_.resize(num_sides_all);
   mesh.side_cell_id_.resize(num_sides_all, -1);
   mesh.side_face_id_.resize(num_sides_all, -1);
+  mesh.side_opp_side_id_.clear();
   mesh.side_opp_side_id_.resize(num_sides_all, -1);
   mesh.side_node_ids_.resize(num_sides_all, {{-1, -1}});
   mesh.side_volumes_.resize(num_sides_all);

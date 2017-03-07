@@ -184,79 +184,6 @@ TEST(Flat_State_Wrapper, VectorInitFail2) {
   }
 }
 
-TEST(Flat_State_Wrapper, AddData) {
-  std::vector<double> vertx={0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3};
-  std::vector<double> verty={0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3};
-  std::vector<double>
-        &nfield1=*new std::vector<double>(16,0.),
-	&nfield2=*new std::vector<double>(16,0.),
-	&nfield3=*new std::vector<double>(16,0.),
-	&cfield1=*new std::vector<double>(9,0.),
-	&cfield2=*new std::vector<double>(9,0.);
-  for (size_t i=0; i<16; i++) {
-      nfield1[i] = vertx[i]*vertx[i] + verty[i]*verty[i];
-      nfield2[i] = vertx[i]+verty[i];
-      nfield3[i] = vertx[i]*verty[i];
-  }
-  for (size_t i=0; i<3; i++) for (size_t j=0; j<3; j++) {
-      double xc = .25*(vertx[i+j*4] + vertx[i+1+j*4] + vertx[i+j*4] + vertx[i+1+j*4]);
-      double yc = .5*(verty[i+(j+1)*4] + verty[i+j*4]);
-      cfield1[i+j*3] = xc*xc + yc*yc;
-      cfield2[i+j*3] = xc + yc;
-  }
-
-  std::shared_ptr<std::vector<double>> nf1(&nfield1),nf2(&nfield2),nf3(&nfield3),cf1(&cfield1),cf2(&cfield2);
-
-  using namespace Portage;
-
-  {
-    Flat_State_Wrapper<double> flatwrap;
-    flatwrap.add_data(NODE, "nf1", nf1);
-    flatwrap.add_data(CELL, "cf1", cf1);
-    flatwrap.add_data(CELL, "cf2", cf2);
-    flatwrap.add_data(NODE, "nf2", nf2);
-
-    size_t sn=flatwrap.get_entity_size(NODE), sc=flatwrap.get_entity_size(CELL);
-    ASSERT_EQ(16, sn);
-    ASSERT_EQ(9, sc);
-
-    size_t index=flatwrap.get_vector_index(NODE, "nf2");
-    ASSERT_EQ(index, 3);
-    index=flatwrap.get_vector_index(CELL, "cf2");
-    ASSERT_EQ(index, 2);
-
-    double* nf2check = nullptr;
-    flatwrap.get_data(NODE, "nf2", &nf2check);
-    for (size_t i=0; i<16; i++) {
-	ASSERT_EQ(nf2check[i], nfield2[i]);
-    }
-
-    flatwrap.add_data(NODE, "nf2", nf3);
-    flatwrap.get_data(NODE, "nf2", &nf2check);
-    for (size_t i=0; i<16; i++) {
-	ASSERT_EQ(nf2check[i], nfield3[i]);
-    }
-
-    double *nf4check=nullptr;
-    flatwrap.add_data(NODE, "nf4", 1.6);
-    flatwrap.get_data(NODE, "nf4", &nf4check);
-    for (size_t i=0; i<16; i++) {
-	ASSERT_EQ(nf4check[i], 1.6);
-    }
-
-    try {
-	flatwrap.add_data(EDGE, "ef1", 1.7);
-	throw std::runtime_error("shouldn't have gotten here");
-    } catch (std::exception err) {
-	std::string var_name = "ef1";
-	std::string msg = std::string("variable ")+var_name+" has no size information available on add";
-	std::string errmsg = err.what();
-	// ASSERT_STREQ(errmsg.c_str(), msg.c_str());
-	// for some reason errmsg is not what should be with intel 15.
-    }
-  }
-}
-
 TEST(Flat_State_Wrapper, DataTypes2D) {
 
   // Add multiple state vector types
@@ -306,6 +233,15 @@ TEST(Flat_State_Wrapper, DataTypes2D) {
   ddata = nullptr;
   flat_state.get_data(Portage::CELL, "d3", &ddata);
   for (unsigned int i=0; i<n_cells; i++) ASSERT_EQ(ddata[i], dtest3[i]);
+
+  // Check entity types
+  Portage::Entity_kind entity;
+  entity = flat_state.get_entity(0);
+  ASSERT_EQ(Portage::CELL, entity);
+  entity = flat_state.get_entity(1);
+  ASSERT_EQ(Portage::CELL, entity);
+  entity = flat_state.get_entity(2);
+  ASSERT_EQ(Portage::CELL, entity);
 }
 
 TEST(Flat_State_Wrapper, DataTypes3D) {
@@ -356,4 +292,13 @@ TEST(Flat_State_Wrapper, DataTypes3D) {
   ddata = nullptr;
   flat_state.get_data(Portage::CELL, "d3", &ddata);
   for (unsigned int i=0; i<n_cells; i++) ASSERT_EQ(ddata[i], dtest3[i]);
+
+  // Check entity types
+  Portage::Entity_kind entity;
+  entity = flat_state.get_entity(0);
+  ASSERT_EQ(Portage::CELL, entity);
+  entity = flat_state.get_entity(1);
+  ASSERT_EQ(Portage::CELL, entity);
+  entity = flat_state.get_entity(2);
+  ASSERT_EQ(Portage::CELL, entity);
 }

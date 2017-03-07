@@ -140,7 +140,7 @@ enum Element_type {
 };
 
 /// Limiter type
-typedef enum {NOLIMITER, VAN_LEER, BARTH_JESPERSEN, MINMOD, SUPERBEE}
+typedef enum {NOLIMITER, BARTH_JESPERSEN}
   LimiterType;
 
 

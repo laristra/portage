@@ -4,6 +4,8 @@
 #     $WORKSPACE/jenkins/build_matrix_entry.sh <compiler> <build_type>
 #
 # The exit code determines if the test succeeded or failed.
+# Note that the environment variable WORKSPACE must be set (Jenkins
+# will do this automatically).
 
 # Exit on error
 set -e
@@ -16,17 +18,18 @@ build_type=$2
 # set modules and install paths
 
 jali_version=0.9.2
+openmpi_version=1.10.3
 
 export NGC=/usr/local/codes/ngc
 ngc_include_dir=$NGC/private/include
 
 # compiler-specific settings
-if [[ $compiler == "intel15" ]]; then
-  cxxmodule=intel/15.0.3
-  jali_install_dir=$NGC/private/jali/${jali_version}-intel-15.0.3-openmpi-1.6.5-rh6
-elif [[ $compiler == "gcc53" ]]; then
+if [[ $compiler == "intel" ]]; then
+  cxxmodule=intel/16.0.3
+  jali_install_dir=$NGC/private/jali/${jali_version}-intel-16.0.3-openmpi-${openmpi_version}
+elif [[ $compiler == "gcc" ]]; then
   cxxmodule=gcc/5.3.0
-  jali_install_dir=$NGC/private/jali/${jali_version}-gcc-5.3.0-openmpi-1.6.5-rh6
+  jali_install_dir=$NGC/private/jali/${jali_version}-gcc-5.3.0-openmpi-${openmpi_version}
   flecsi_install_dir=$NGC/private/flecsi-gcc
 fi
   
@@ -49,7 +52,7 @@ export SHELL=/bin/sh
 export MODULEPATH=""
 . /opt/local/packages/Modules/default/init/sh
 module load $cxxmodule
-module load openmpi/1.6.5
+module load openmpi/${openmpi_version}
 module load cmake # 3.0 or higher is required
 
 echo $WORKSPACE

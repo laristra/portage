@@ -10,11 +10,12 @@ set -e
 set -x
 
 JALI_VERSION=0.9.2
+openmpi_version=1.10.3
 
 # location on XLAN
 NGC_DIR=/usr/local/codes/ngc
 
-JALI_INST=${NGC_DIR}/private/jali/${JALI_VERSION}-gcc-5.3.0-openmpi-1.6.5-rh6
+JALI_INST=${NGC_DIR}/private/jali/${JALI_VERSION}-gcc-5.3.0-openmpi-${openmpi_version}
 
 git config user.email ""
 git config user.name "Jenkins"
@@ -25,7 +26,7 @@ export MODULEPATH=""
 
 # Setup modules
 . /opt/local/packages/Modules/default/init/sh
-module load gcc/5.3.0 openmpi cmake
+module load gcc/5.3.0 openmpi/${openmpi_version} cmake
 
 # the system doxygen and LaTeX are too old; use these instead
 export PATH=/usr/local/codes/ngc/home/cmalone/texlive/2016/bin/x86_64-linux/:$PATH
