@@ -45,6 +45,7 @@ elif [[ $build_type == "coverage" ]]; then
   extra_flags="-D CMAKE_C_FLAGS='-coverage' \
                -D CMAKE_CXX_FLAGS='-coverage'"
   cmake_build_type=Debug
+  export PATH=$NGC/private/bin:${PATH}
 fi
 
 export SHELL=/bin/sh
