@@ -76,7 +76,7 @@ Execute the following from the Jali root directory:
 export MODULEPATH=""
 . /opt/local/packages/Modules/default/init/sh
 module load intel/16.0.3 openmpi/1.10.3 cmake
-JALI_INSTALL_PREFIX=/usr/local/codes/ngc/private/jali/0.9.2-intel-16.0.3-openmpi-1.10.3
+JALI_INSTALL_PREFIX=/usr/local/codes/ngc/private/jali/0.9.8-intel-16.0.3-openmpi-1.10.3
 mkdir build
 cd build
 cmake \
