@@ -80,7 +80,9 @@ namespace{
     template <template<class, class>class Intersect, 
               template<class, class, class, Portage::Entity_kind, long> class Interpolate, 
               int Dimension> 
-        void unitTest(double compute_initial_field(JaliGeometry::Point centroid), double expected_answer){
+        void unitTest(double compute_initial_field(JaliGeometry::Point centroid), double expected_answer,
+        		Portage::LimiterType limiter=Portage::NOLIMITER)
+    {
 
       // Fill the source state data with the specified profile
       const int nsrccells = sourceMeshWrapper.num_owned_cells() + sourceMeshWrapper.num_ghost_cells();
@@ -112,7 +114,7 @@ namespace{
           Portage::Jali_Mesh_Wrapper, Portage::Jali_State_Wrapper>  
           d(sourceMeshWrapper, sourceStateWrapper,targetMeshWrapper,
             targetStateWrapper);
-      d.set_remap_var_names(remap_fields);    
+      d.set_remap_var_names(remap_fields, limiter);
       //run on one processor
       d.run(false);
 
@@ -129,6 +131,7 @@ namespace{
                                                        &cellvecout);
       ASSERT_TRUE(found);
 
+      std::printf("DATA_BEGIN\n");
       for (int c = 0; c < ntarcells; ++c) {
         JaliGeometry::Point ccen = targetMesh->cell_centroid(c);    
         double error;
@@ -140,6 +143,7 @@ namespace{
                     cellvecout[c], error);
         toterr += error*error;
       }
+      std::printf("DATA_END\n");
 
       //amh: FIXME!!  Compare individual, per-node  values/ error norms here
       std::printf("\n\nL2 NORM OF ERROR = %lf\n\n", sqrt(toterr));
@@ -199,36 +203,40 @@ namespace{
 
   //Test cases:  these are constructed by calling TEST_F with the name of the test class you want to use.  The unit test method is then called inside each test with the appropriate template arguments.  Google test will pick up each test and run it as part of the larger test fixture.  If any one of these fails the whole test_driver fails.  
 
-  //Example 12
   TEST_F(DriverTest2D, 2D_1stOrderStepCellCntrConformal1proc){
     unitTest<Portage::IntersectR2D, Portage::Interpolate_1stOrder, 2> (compute_step_field_2d, 0.0);
   }
-  //Example 13
   TEST_F(DriverTest2D, 2D_2ndOrderStepCellCntrConformal1proc){
     unitTest<Portage::IntersectR2D, Portage::Interpolate_2ndOrder, 2> (compute_step_field_2d, 0.0);
   }
-  //Example 14
+  TEST_F(DriverTest2D, 2D_2ndOrderStepCellCntrConformal1procBJ){
+    unitTest<Portage::IntersectR2D, Portage::Interpolate_2ndOrder, 2> (compute_step_field_2d, 0.0, Portage::BARTH_JESPERSEN);
+  }
   TEST_F(DriverTest2DNonConformal, 2D_1stOrderStepCellCntrNonConformal1proc){
     unitTest<Portage::IntersectR2D, Portage::Interpolate_1stOrder, 2> (compute_step_field_2d, 5.022128);
   }
-  //Example 15
   TEST_F(DriverTest2DNonConformal, 2D_2ndOrderStepCellCntrNonConformal1proc){
     unitTest<Portage::IntersectR2D, Portage::Interpolate_2ndOrder, 2> (compute_step_field_2d, 4.779890 );
   }
-  //Example 16
+  TEST_F(DriverTest2DNonConformal, 2D_2ndOrderStepCellCntrNonConformal1procBJ){
+    unitTest<Portage::IntersectR2D, Portage::Interpolate_2ndOrder, 2> (compute_step_field_2d, 5.022128, Portage::BARTH_JESPERSEN);
+  }
   TEST_F(DriverTest3D, 3D_1stOrderStepCellCntrConformal1proc){
     unitTest<Portage::IntersectR3D, Portage::Interpolate_1stOrder, 3> (compute_step_field_3d, 0.0);
   }
-  //Example 17
   TEST_F(DriverTest3D, 3D_2ndOrderStepCellCntrConformal1proc){
     unitTest<Portage::IntersectR3D, Portage::Interpolate_2ndOrder, 3> (compute_step_field_3d, 0.0);
   }
-  //Example 18
+  TEST_F(DriverTest3D, 3D_2ndOrderStepCellCntrConformal1procBJ){
+    unitTest<Portage::IntersectR3D, Portage::Interpolate_2ndOrder, 3> (compute_step_field_3d, 0.0, Portage::BARTH_JESPERSEN);
+  }
   TEST_F(DriverTest3DNonConformal, 3D_1stOrderStepCellCntrNonConformal1proc){
     unitTest<Portage::IntersectR3D, Portage::Interpolate_1stOrder, 3> (compute_step_field_3d,  18.626843);
   }
-  //Example 19
   TEST_F(DriverTest3DNonConformal, 3D_2ndOrderStepCellCntrNonConformal1proc){
     unitTest<Portage::IntersectR3D, Portage::Interpolate_2ndOrder, 3> (compute_step_field_3d,  18.238559);
+  }
+  TEST_F(DriverTest3DNonConformal, 3D_2ndOrderStepCellCntrNonConformal1procBJ){
+    unitTest<Portage::IntersectR3D, Portage::Interpolate_2ndOrder, 3> (compute_step_field_3d,  18.626843, Portage::BARTH_JESPERSEN);
   }
 }
