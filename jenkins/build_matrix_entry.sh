@@ -17,7 +17,7 @@ build_type=$2
 
 # set modules and install paths
 
-jali_version=0.9.2
+jali_version=0.9.8
 openmpi_version=1.10.3
 
 export NGC=/usr/local/codes/ngc
