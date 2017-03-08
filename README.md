@@ -104,7 +104,7 @@ verison of FleCSI on Varan.  An example is below:
 export MODULEPATH=""
 . /opt/local/packages/Modules/default/init/sh
 module load gcc/5.3.0 openmpi/1.10.3 cmake
-JALI_INSTALL_PREFIX=/usr/local/codes/ngc/private/jali/0.9.2-gcc-5.3.0-openmpi-1.10.3
+JALI_INSTALL_PREFIX=/usr/local/codes/ngc/private/jali/0.9.8-gcc-5.3.0-openmpi-1.10.3
 FLECSI_INSTALL_DIR=/usr/local/codes/ngc/private/flecsi-gcc
 mkdir build-flecsi
 cd build-flecsi
