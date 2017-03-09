@@ -12,9 +12,9 @@ NGC_INCLUDE_DIR=/usr/local/codes/ngc/private/include
 export MODULEPATH=""
 . /opt/local/packages/Modules/default/init/sh
 module load gcc/5.3.0
-module load openmpi/1.6.5
+module load openmpi/1.10.3
 
-JALI_INSTALL_PREFIX=/usr/local/codes/ngc/private/jali/0.9.2-gcc-5.3.0-openmpi-1.6.5-rh6
+JALI_INSTALL_PREFIX=/usr/local/codes/ngc/private/jali/0.9.8-gcc-5.3.0-openmpi-1.10.3
 
 echo $WORKSPACE
 cd $WORKSPACE
