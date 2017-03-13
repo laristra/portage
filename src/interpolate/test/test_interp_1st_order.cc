@@ -52,8 +52,6 @@ POSSIBILITY OF SUCH DAMAGE.
 
 #include "Mesh.hh"
 #include "MeshFactory.hh"
-#include "FrameworkTraits.hh"
-#include "MeshFramework.hh"
 #include "JaliState.h"
 #include "JaliStateVector.h"
 
@@ -70,10 +68,8 @@ double TOL = 1e-12;
 
 TEST(Interpolate_1st_Order, Cell_Ctr_Const_2D) {
   Jali::MeshFactory mf(MPI_COMM_WORLD);
-  Jali::FrameworkPreference pref;
-  pref.push_back(Jali::MSTK);
   if (Jali::framework_available(Jali::MSTK))
-    mf.preference(pref);
+    mf.framework(Jali::MSTK);
 
   std::shared_ptr<Jali::Mesh> source_mesh = mf(0.0, 0.0, 1.0, 1.0, 4, 4);
   std::shared_ptr<Jali::Mesh> target_mesh = mf(0.0, 0.0, 1.0, 1.0, 5, 5);
@@ -162,10 +158,8 @@ TEST(Interpolate_1st_Order, Cell_Ctr_Const_2D) {
 
 TEST(Interpolate_1st_Order, Cell_Ctr_Lin_2D) {
   Jali::MeshFactory mf(MPI_COMM_WORLD);
-  Jali::FrameworkPreference pref;
-  pref.push_back(Jali::MSTK);
   if (Jali::framework_available(Jali::MSTK))
-    mf.preference(pref);
+    mf.framework(Jali::MSTK);
 
   std::shared_ptr<Jali::Mesh> source_mesh = mf(0.0, 0.0, 1.0, 1.0, 4, 4);
   std::shared_ptr<Jali::Mesh> target_mesh = mf(0.0, 0.0, 1.0, 1.0, 2, 2);
@@ -271,10 +265,8 @@ TEST(Interpolate_1st_Order, Cell_Ctr_Lin_2D) {
 
 TEST(Interpolate_1st_Order, Node_Ctr_Const_2D) {
   Jali::MeshFactory mf(MPI_COMM_WORLD);
-  Jali::FrameworkPreference pref;
-  pref.push_back(Jali::MSTK);
   if (Jali::framework_available(Jali::MSTK))
-    mf.preference(pref);
+    mf.framework(Jali::MSTK);
   mf.included_entities({Jali::Entity_kind::EDGE,
                         Jali::Entity_kind::FACE,
                         Jali::Entity_kind::WEDGE,
@@ -404,10 +396,8 @@ TEST(Interpolate_1st_Order, Node_Ctr_Const_2D) {
 
 TEST(Interpolate_1st_Order, Cell_Ctr_Const_3D) {
   Jali::MeshFactory mf(MPI_COMM_WORLD);
-  Jali::FrameworkPreference pref;
-  pref.push_back(Jali::MSTK);
   if (Jali::framework_available(Jali::MSTK))
-    mf.preference(pref);
+    mf.framework(Jali::MSTK);
 
   std::shared_ptr<Jali::Mesh> source_mesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0,
                                                4, 4, 4);
@@ -501,10 +491,8 @@ TEST(Interpolate_1st_Order, Cell_Ctr_Const_3D) {
 
 TEST(Interpolate_1st_Order, Cell_Ctr_Lin_3D) {
   Jali::MeshFactory mf(MPI_COMM_WORLD);
-  Jali::FrameworkPreference pref;
-  pref.push_back(Jali::MSTK);
   if (Jali::framework_available(Jali::MSTK))
-    mf.preference(pref);
+    mf.framework(Jali::MSTK);
 
   std::shared_ptr<Jali::Mesh> source_mesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0,
                                                4, 4, 4);
@@ -613,10 +601,8 @@ TEST(Interpolate_1st_Order, Cell_Ctr_Lin_3D) {
 
 TEST(Interpolate_1st_Order, Node_Ctr_Const_3D) {
   Jali::MeshFactory mf(MPI_COMM_WORLD);
-  Jali::FrameworkPreference pref;
-  pref.push_back(Jali::MSTK);
   if (Jali::framework_available(Jali::MSTK))
-    mf.preference(pref);
+    mf.framework(Jali::MSTK);
   mf.included_entities({Jali::Entity_kind::EDGE,
                         Jali::Entity_kind::FACE,
                         Jali::Entity_kind::WEDGE,

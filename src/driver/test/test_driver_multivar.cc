@@ -55,8 +55,6 @@ POSSIBILITY OF SUCH DAMAGE.
 
 #include "Mesh.hh"
 #include "MeshFactory.hh"
-#include "FrameworkTraits.hh"
-#include "MeshFramework.hh"
 #include "JaliState.h"
 #include "JaliStateVector.h"
 
@@ -65,10 +63,8 @@ double TOL = 1e-12;
 
 TEST(Test_MultiVar_Remap, Test1) {
   Jali::MeshFactory mf(MPI_COMM_WORLD);
-  Jali::FrameworkPreference pref;
-  pref.push_back(Jali::MSTK);
   if (Jali::framework_available(Jali::MSTK))
-    mf.preference(pref);
+    mf.framework(Jali::MSTK);
   mf.included_entities({Jali::Entity_kind::CORNER, Jali::Entity_kind::WEDGE});
 
   std::shared_ptr<Jali::Mesh> source_mesh = mf(0.0, 0.0, 1.0, 1.0, 4, 4);
@@ -239,11 +235,8 @@ TEST(Test_MultiVar_Remap, Test1) {
 
 TEST(Test_MultiVar_Remap, Nested_Meshes) {
   Jali::MeshFactory mf(MPI_COMM_WORLD);
-  Jali::FrameworkPreference pref;
-  pref.push_back(Jali::MSTK);
   if (Jali::framework_available(Jali::MSTK))
-    mf.preference(pref);
-
+    mf.framework(Jali::MSTK);
   std::shared_ptr<Jali::Mesh> source_mesh = mf(0.0, 0.0, 1.0, 1.0, 2, 2);
   std::shared_ptr<Jali::Mesh> target_mesh = mf(0.0, 0.0, 1.0, 1.0, 4, 4);
 
@@ -309,6 +302,7 @@ TEST(Test_MultiVar_Remap, Nested_Meshes) {
   std::vector<std::string> target_var_names;
   target_var_names.push_back("cellvars");
 
+
   remapper1.set_remap_var_names(source_var_names, target_var_names);
 
   // Execute remapper (distributed=false)
@@ -340,7 +334,8 @@ TEST(Test_MultiVar_Remap, Nested_Meshes) {
                                                          targetStateWrapper);
 
 
-  remapper2.set_remap_var_names(source_var_names, target_var_names);
+  remapper2.set_remap_var_names(source_var_names, target_var_names,
+                                Portage::NOLIMITER);
 
   // Execute remapper (distributed=false)
 

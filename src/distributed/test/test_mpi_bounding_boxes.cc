@@ -171,8 +171,8 @@ TEST(MPI_Bounding_Boxes, SimpleTest3D) {
     ASSERT_EQ(expOwnedGids[c], gids[c]);
 
   // Check neighbors
-  // Each cell should have all of the 7 other cells as neighbors
-  for (int c=0; c<num_cells; ++c) {
+  // Each owned cell should have all of the 7 other cells as neighbors
+  for (int c=0; c<num_owned_cells; ++c) {
     // Get my 7 neighbors
     std::vector<int> myNeighbors;
     source_mesh_flat.cell_get_node_adj_cells(c, Portage::ALL, &myNeighbors);

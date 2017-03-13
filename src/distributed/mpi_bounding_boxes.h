@@ -179,7 +179,8 @@ class MPI_Bounding_Boxes {
     }
     std::vector<double>& sourceCoords = source_mesh_flat.get_coords();
     std::vector<int>& sourceNodeCounts = source_mesh_flat.get_node_counts();
-    std::vector<int>& sourceGlobalCellIds = source_mesh_flat.get_global_cell_ids();
+    std::vector<int>& sourceCellGlobalIds = source_mesh_flat.cellGlobalIds_;
+    std::vector<int>& sourceNodeGlobalIds = source_mesh_flat.nodeGlobalIds_;
     std::vector<int>& sourceNeighborCounts = source_mesh_flat.get_neighbor_counts();
     std::vector<int>& sourceNeighbors = source_mesh_flat.get_neighbors();
 
@@ -266,6 +267,8 @@ class MPI_Bounding_Boxes {
     setInfo(&nodeInfo, commSize, sendFlags,
             sourceNumNodes, sourceNumOwnedNodes);
 
+    // TODO:  in 3D, don't communicate this - compute it from
+    // cell-to-face and face-to-node
     int sizeCellToNodeList = source_mesh_flat.cellToNodeList_.size();
     int sizeOwnedCellToNodeList = (
         sourceNumCells == sourceNumOwnedCells ? sizeCellToNodeList :
@@ -296,6 +299,7 @@ class MPI_Bounding_Boxes {
     }
 
     // Compute the total number of neighbor indexes and owned neighbor indexes on this rank
+    // TODO:  don't communicate this, but compute it from cell-to-node
     int sourceNumNeighbors = 0;
     for (unsigned int i=0; i<sourceNumCells; i++)
       sourceNumNeighbors += sourceNeighborCounts[i];
@@ -323,7 +327,8 @@ class MPI_Bounding_Boxes {
       newFaceNodeCounts.resize(faceInfo.newNum);
       newFaceToNodeList.resize(faceToNodeInfo.newNum);
     }
-    std::vector<int> newGlobalCellIds(cellInfo.newNum);
+    std::vector<int> newCellGlobalIds(cellInfo.newNum);
+    std::vector<int> newNodeGlobalIds(nodeInfo.newNum);
     std::vector<int> newNeighborCounts(cellInfo.newNum);
     std::vector<int> newNeighbors(neighborInfo.newNum);
 
@@ -382,7 +387,12 @@ class MPI_Bounding_Boxes {
     // SEND GLOBAL CELL IDS
 
     moveField(cellInfo, commRank, commSize, MPI_INT, 1,
-              sourceGlobalCellIds, &newGlobalCellIds);
+              sourceCellGlobalIds, &newCellGlobalIds);
+
+    // SEND GLOBAL NODE IDS
+
+    moveField(nodeInfo, commRank, commSize, MPI_INT, 1,
+              sourceNodeGlobalIds, &newNodeGlobalIds);
 
     // SEND NUMBER OF NEIGHBORS FOR EACH CELL
 
@@ -409,10 +419,14 @@ class MPI_Bounding_Boxes {
     for (int s=0; s<source_state_flat.get_num_vectors(); s++)
     {
       std::shared_ptr<std::vector<double>> sourceField = source_state_flat.get_vector(s);
-      int sourceFieldStride = source_state_flat.get_field_dim(s);
-      std::vector<double> newField(cellInfo.newNum);
+      int sourceFieldStride = source_state_flat.get_field_stride(s);
 
-      moveField(cellInfo, commRank, commSize,
+      // Currently only cell and node fields are supported
+      comm_info_t& info = (source_state_flat.get_entity(s) == NODE ?
+                           nodeInfo : cellInfo);
+      std::vector<double> newField(info.newNum);
+
+      moveField(info, commRank, commSize,
                 MPI_DOUBLE, sourceFieldStride,
                 *sourceField, &newField);
 
@@ -436,14 +450,17 @@ class MPI_Bounding_Boxes {
     // TODO:  replace with swap
     sourceCoords = newCoords;
     sourceNodeCounts = newCellNodeCounts;
-    sourceGlobalCellIds = newGlobalCellIds;
+    sourceCellGlobalIds = newCellGlobalIds;
+    std::swap(source_mesh_flat.nodeGlobalIds_, newNodeGlobalIds);
     sourceNeighborCounts = newNeighborCounts;
-    sourceNeighbors = newNeighbors;
     source_mesh_flat.set_num_owned_cells(cellInfo.newNumOwned);
     source_mesh_flat.set_num_owned_nodes(nodeInfo.newNumOwned);
 
     fixListIndices(cellToNodeInfo, nodeInfo, commSize, &newCellToNodeList);
     std::swap(source_mesh_flat.cellToNodeList_, newCellToNodeList);
+
+    fixListIndices(neighborInfo, cellInfo, commSize, &newNeighbors);
+    std::swap(source_mesh_flat.neighbors_, newNeighbors);
 
     if (dim == 3)
     {
@@ -469,8 +486,8 @@ class MPI_Bounding_Boxes {
       std::cout << "Sizes: " << commRank << " " << cellInfo.newNum << " " << targetNumOwnedCells
                 << " " << cellInfo.sourceNum << " " << sourceCoords.size() << std::endl;
 
-      for (unsigned int i=0; i<sourceGlobalCellIds.size(); i++)
-        std::cout << sourceGlobalCellIds[i] << " ";
+      for (unsigned int i=0; i<sourceCellGlobalIds.size(); i++)
+        std::cout << sourceCellGlobalIds[i] << " ";
       std::cout << std::endl;
       for (unsigned int i=0; i<sourceCoords.size(); i++)
       {

@@ -50,8 +50,6 @@ POSSIBILITY OF SUCH DAMAGE.
 
 #include "Mesh.hh"
 #include "MeshFactory.hh"
-#include "FrameworkTraits.hh"
-#include "MeshFramework.hh"
 #include "JaliState.h"
 #include "JaliStateVector.h"
 
@@ -68,10 +66,8 @@ TEST(Gradient, Fields_Cell_Ctr) {
 
   Jali::MeshFactory mf(MPI_COMM_WORLD);
 
-  Jali::FrameworkPreference pref;
-  pref.push_back(Jali::MSTK);
   if (Jali::framework_available(Jali::MSTK))
-    mf.preference(pref);
+    mf.framework(Jali::MSTK);
   mf.included_entities({Jali::Entity_kind::EDGE,
                         Jali::Entity_kind::FACE,
                         Jali::Entity_kind::WEDGE,
@@ -198,10 +194,8 @@ TEST(Gradient, Fields_Node_Ctr) {
 
   Jali::MeshFactory mf(MPI_COMM_WORLD);
 
-  Jali::FrameworkPreference pref;
-  pref.push_back(Jali::MSTK);
   if (Jali::framework_available(Jali::MSTK))
-    mf.preference(pref);
+    mf.framework(Jali::MSTK);
   mf.included_entities({Jali::Entity_kind::EDGE,
                         Jali::Entity_kind::FACE,
                         Jali::Entity_kind::WEDGE,

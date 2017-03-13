@@ -1502,6 +1502,7 @@ void build_sides_2D(AuxMeshTopology<BasicMesh>& mesh) {
   mesh.sideids_all_.resize(num_sides_all);
   mesh.side_cell_id_.resize(num_sides_all, -1);
   mesh.side_face_id_.resize(num_sides_all, -1);
+  mesh.side_opp_side_id_.clear();
   mesh.side_opp_side_id_.resize(num_sides_all, -1);
   mesh.side_node_ids_.resize(num_sides_all, {{-1, -1}});
   mesh.side_volumes_.resize(num_sides_all);
@@ -1616,6 +1617,7 @@ void build_sides_3D(AuxMeshTopology<BasicMesh>& mesh) {
   mesh.sideids_all_.resize(num_sides_all);
   mesh.side_cell_id_.resize(num_sides_all, -1);
   mesh.side_face_id_.resize(num_sides_all, -1);
+  mesh.side_opp_side_id_.clear();
   mesh.side_opp_side_id_.resize(num_sides_all, -1);
   mesh.side_node_ids_.resize(num_sides_all, {{-1, -1}});
   mesh.side_volumes_.resize(num_sides_all);

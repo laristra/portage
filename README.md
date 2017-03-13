@@ -72,11 +72,11 @@ ctest -j16 --output-on-failure
 Execute the following from the Jali root directory:
 
 ```c++
-# barugon
+# varan
 export MODULEPATH=""
 . /opt/local/packages/Modules/default/init/sh
-module load intel/15.0.3 openmpi/1.6.5 cmake
-JALI_INSTALL_PREFIX=/usr/local/codes/ngc/private/jali/0.9.2-intel-15.0.3-openmpi-1.6.5-rh6
+module load intel/16.0.3 openmpi/1.10.3 cmake
+JALI_INSTALL_PREFIX=/usr/local/codes/ngc/private/jali/0.9.8-intel-16.0.3-openmpi-1.10.3
 mkdir build
 cd build
 cmake \
@@ -100,11 +100,11 @@ If you want to build an app that uses
 verison of FleCSI on Varan.  An example is below:
 
 ```c++
-# barugon::flecsi
+# varan::flecsi
 export MODULEPATH=""
 . /opt/local/packages/Modules/default/init/sh
-module load gcc/5.3.0 openmpi/1.6.5 cmake
-JALI_INSTALL_PREFIX=/usr/local/codes/ngc/private/jali/0.9.2-gcc-5.3.0-openmpi-1.6.5-rh6
+module load gcc/5.3.0 openmpi/1.10.3 cmake
+JALI_INSTALL_PREFIX=/usr/local/codes/ngc/private/jali/0.9.8-gcc-5.3.0-openmpi-1.10.3
 FLECSI_INSTALL_DIR=/usr/local/codes/ngc/private/flecsi-gcc
 mkdir build-flecsi
 cd build-flecsi

@@ -1,7 +1,7 @@
 # axis_varan.yml
 COMPILER:
-  - intel15
-  - gcc53
+  - intel
+  - gcc
 
 BUILD_TYPE:
   - base
@@ -11,8 +11,8 @@ BUILD_TYPE:
   - coverage
 
 exclude:
-  - COMPILER: intel15
+  - COMPILER: intel
     BUILD_TYPE: flecsi
-  - COMPILER: intel15
+  - COMPILER: intel
     BUILD_TYPE: coverage
 
