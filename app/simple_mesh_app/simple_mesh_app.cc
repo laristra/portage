@@ -53,6 +53,8 @@ POSSIBILITY OF SUCH DAMAGE.
 
 #ifdef ENABLE_MPI
 #include <mpi.h>
+#else
+#define PORTAGE_SERIAL_ONLY
 #endif
 
 #include "portage/support/portage.h"
