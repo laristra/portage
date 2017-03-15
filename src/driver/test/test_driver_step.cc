@@ -64,7 +64,7 @@ double TOL = 1e-6;
 //This is a set of integration tests based off of main.cc.    There will be at
 //least one test corresponding to each case found in main.cc.  This is a test
 //fixture and  must be derived from the ::testing::Test class.  Specializations
-//of this class, such as 2D/3D conformal and non-conformal remaps should be
+//of this class, such as 2D/3D coincident and non-coincident remaps should be
 //derived from this.
 class DriverTest : public ::testing::Test {
  protected:
@@ -81,7 +81,7 @@ class DriverTest : public ::testing::Test {
   Portage::Jali_State_Wrapper targetStateWrapper;
 
   //This is the basic test method to be called for each unit test.  It will
-  //work for 2-D and 3-D, conformal and non-conformal cell-centered remaps.
+  //work for 2-D and 3-D, coincident and non-coincident cell-centered remaps.
   template <template<class, class>class Intersect,
   template<class, class, class, Portage::Entity_kind, long>
   class Interpolate, int Dimension>
@@ -166,30 +166,30 @@ class DriverTest : public ::testing::Test {
 
 };
 
-//Class which constructs a pair simple 2-D conformal meshes for remaps
+//Class which constructs a pair simple 2-D coincident meshes for remaps
 struct DriverTest2D : DriverTest {
   DriverTest2D() : DriverTest(Jali::MeshFactory(MPI_COMM_WORLD)
   (0.0, 0.0, 1.0, 1.0, 11, 11),Jali::MeshFactory(MPI_COMM_WORLD)
   (0.0, 0.0, 1.0, 1.0, 11, 11)) {}
 };
 
-//Class which constructs a pair of simple 2-D non-conformal meshes for remaps
-struct DriverTest2DNonConformal : DriverTest {
-  DriverTest2DNonConformal() : DriverTest(Jali::MeshFactory(MPI_COMM_WORLD)
+//Class which constructs a pair of simple 2-D non-coincident meshes for remaps
+struct DriverTest2DNoncoincident : DriverTest {
+  DriverTest2DNonCoincident() : DriverTest(Jali::MeshFactory(MPI_COMM_WORLD)
   (0.0, 0.0, 1.0, 1.0, 11, 11),Jali::MeshFactory(MPI_COMM_WORLD)
   (0.0, 0.0, 1.0, 1.0, 18, 18)) {}
 };
 
-//Class which constructs a pair simple 3-D conformal meshes for remaps
+//Class which constructs a pair simple 3-D coincident meshes for remaps
 struct DriverTest3D : DriverTest {
   DriverTest3D(): DriverTest(Jali::MeshFactory(MPI_COMM_WORLD)
   (0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 11, 11, 11), Jali::MeshFactory(MPI_COMM_WORLD)
   (0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 11, 11, 11)) {}
 };
 
-//Class which constructs a pair simple 3-D non-conformal meshes for remaps
-struct DriverTest3DNonConformal : DriverTest {
-  DriverTest3DNonConformal(): DriverTest(Jali::MeshFactory(MPI_COMM_WORLD)
+//Class which constructs a pair simple 3-D non-coincident meshes for remaps
+struct DriverTest3DNonCoincident : DriverTest {
+  DriverTest3DNonCoincident(): DriverTest(Jali::MeshFactory(MPI_COMM_WORLD)
   (0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 11, 11, 11), Jali::MeshFactory(MPI_COMM_WORLD)
   (0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 18, 18, 18)) {}
 };
@@ -223,51 +223,51 @@ double compute_step_field_3d(JaliGeometry::Point centroid) {
 //test and run it as part of the larger test fixture.  If any one of these
 //fails the whole test_driver fails.
 
-TEST_F(DriverTest2D, 2D_1stOrderStepCellCntrConformal1proc){
+TEST_F(DriverTest2D, 2D_1stOrderStepCellCntrCoincident1proc){
   unitTest<Portage::IntersectR2D, Portage::Interpolate_1stOrder, 2>
   (compute_step_field_2d, 0.0);
 }
-TEST_F(DriverTest2D, 2D_2ndOrderStepCellCntrConformal1proc){
+TEST_F(DriverTest2D, 2D_2ndOrderStepCellCntrCoincident1proc){
   unitTest<Portage::IntersectR2D, Portage::Interpolate_2ndOrder, 2>
   (compute_step_field_2d, 0.0);
 }
-TEST_F(DriverTest2D, 2D_2ndOrderStepCellCntrConformal1procBJ){
+TEST_F(DriverTest2D, 2D_2ndOrderStepCellCntrCoincident1procBJ){
   unitTest<Portage::IntersectR2D, Portage::Interpolate_2ndOrder, 2>
   (compute_step_field_2d, 0.0, Portage::BARTH_JESPERSEN);
 }
-TEST_F(DriverTest2DNonConformal, 2D_1stOrderStepCellCntrNonConformal1proc){
+TEST_F(DriverTest2DNonCoincident, 2D_1stOrderStepCellCntrNonCoincident1proc){
   unitTest<Portage::IntersectR2D, Portage::Interpolate_1stOrder, 2>
   (compute_step_field_2d, 5.022128);
 }
-TEST_F(DriverTest2DNonConformal, 2D_2ndOrderStepCellCntrNonConformal1proc){
+TEST_F(DriverTest2DNonCoincident, 2D_2ndOrderStepCellCntrNonCoincident1proc){
   unitTest<Portage::IntersectR2D, Portage::Interpolate_2ndOrder, 2>
   (compute_step_field_2d, 4.779890 );
 }
-TEST_F(DriverTest2DNonConformal, 2D_2ndOrderStepCellCntrNonConformal1procBJ){
+TEST_F(DriverTest2DNonCoincident, 2D_2ndOrderStepCellCntrNonCoincident1procBJ){
   unitTest<Portage::IntersectR2D, Portage::Interpolate_2ndOrder, 2>
   (compute_step_field_2d, 5.022128, Portage::BARTH_JESPERSEN);
 }
-TEST_F(DriverTest3D, 3D_1stOrderStepCellCntrConformal1proc){
+TEST_F(DriverTest3D, 3D_1stOrderStepCellCntrCoincident1proc){
   unitTest<Portage::IntersectR3D, Portage::Interpolate_1stOrder, 3>
   (compute_step_field_3d, 0.0);
 }
-TEST_F(DriverTest3D, 3D_2ndOrderStepCellCntrConformal1proc){
+TEST_F(DriverTest3D, 3D_2ndOrderStepCellCntrCoincident1proc){
   unitTest<Portage::IntersectR3D, Portage::Interpolate_2ndOrder, 3>
   (compute_step_field_3d, 0.0);
 }
-TEST_F(DriverTest3D, 3D_2ndOrderStepCellCntrConformal1procBJ){
+TEST_F(DriverTest3D, 3D_2ndOrderStepCellCntrCoincident1procBJ){
   unitTest<Portage::IntersectR3D, Portage::Interpolate_2ndOrder, 3>
   (compute_step_field_3d, 0.0, Portage::BARTH_JESPERSEN);
 }
-TEST_F(DriverTest3DNonConformal, 3D_1stOrderStepCellCntrNonConformal1proc){
+TEST_F(DriverTest3DNonCoincident, 3D_1stOrderStepCellCntrNonCoincident1proc){
   unitTest<Portage::IntersectR3D, Portage::Interpolate_1stOrder, 3>
   (compute_step_field_3d,  18.626843);
 }
-TEST_F(DriverTest3DNonConformal, 3D_2ndOrderStepCellCntrNonConformal1proc){
+TEST_F(DriverTest3DNonCoincident, 3D_2ndOrderStepCellCntrNonCoincident1proc){
   unitTest<Portage::IntersectR3D, Portage::Interpolate_2ndOrder, 3>
   (compute_step_field_3d,  18.238559);
 }
-TEST_F(DriverTest3DNonConformal, 3D_2ndOrderStepCellCntrNonConformal1procBJ){
+TEST_F(DriverTest3DNonCoincident, 3D_2ndOrderStepCellCntrNonCoincident1procBJ){
   unitTest<Portage::IntersectR3D, Portage::Interpolate_2ndOrder, 3>
   (compute_step_field_3d,  18.626843, Portage::BARTH_JESPERSEN);
 }

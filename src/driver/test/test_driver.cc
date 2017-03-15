@@ -64,7 +64,7 @@ double TOL = 1e-6;
 //This is a set of integration tests based off of main.cc.
 //There will be at least one test corresponding to each case found in main.cc.
 //This is a test fixture and  must be derived from the ::testing::Test class.
-//Specializations of this class, such as 2D/3D conformal and non-conformal remaps
+//Specializations of this class, such as 2D/3D coincident and non-coincident remaps
 //should be derived from this.
 class DriverTest : public ::testing::Test {
  protected:
@@ -81,7 +81,7 @@ class DriverTest : public ::testing::Test {
   Portage::Jali_State_Wrapper targetStateWrapper;
 
   //This is the basic test method to be called for each unit test.  It will work
-  // for 2-D and 3-D, conformal and non-conformal cell-centered remaps.
+  // for 2-D and 3-D, coincident and non-coincident cell-centered remaps.
   template <template<class, class>class Intersect,
   template<class, class, class, Portage::Entity_kind, long> class Interpolate,
   int Dimension>
@@ -161,30 +161,30 @@ class DriverTest : public ::testing::Test {
 
 };
 
-//Class which constructs a pair simple 2-D conformal meshes for remaps
+//Class which constructs a pair simple 2-D coincident meshes for remaps
 struct DriverTest2D : DriverTest {
   DriverTest2D() : DriverTest(Jali::MeshFactory(MPI_COMM_WORLD)
   (0.0, 0.0, 1.0, 1.0, 11, 11),
   Jali::MeshFactory(MPI_COMM_WORLD) (0.0, 0.0, 1.0, 1.0, 3, 3)) {}
 };
 
-//Class which constructs a pair of simple 2-D non-conformal meshes for remaps
-struct DriverTest2DNonConformal : DriverTest {
-  DriverTest2DNonConformal() : DriverTest(Jali::MeshFactory(MPI_COMM_WORLD)
+//Class which constructs a pair of simple 2-D non-coincident meshes for remaps
+struct DriverTest2DNonCoincident : DriverTest {
+  DriverTest2DNonCoincident() : DriverTest(Jali::MeshFactory(MPI_COMM_WORLD)
   (0.0, 0.0, 1.0, 1.0, 11, 11),
   Jali::MeshFactory(MPI_COMM_WORLD) (0.0, 0.0, 1.0+1.5*(1/3.), 1.0, 3, 3)) {}
 };
 
-//Class which constructs a pair simple 3-D conformal meshes for remaps
+//Class which constructs a pair simple 3-D coincident meshes for remaps
 struct DriverTest3D : DriverTest {
   DriverTest3D(): DriverTest(Jali::MeshFactory(MPI_COMM_WORLD)
   (0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 11, 11, 11),
   Jali::MeshFactory(MPI_COMM_WORLD)(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 3, 3, 3)) {}
 };
 
-//Class which constructs a pair simple 3-D non-conformal meshes for remaps
-struct DriverTest3DNonConformal : DriverTest {
-  DriverTest3DNonConformal(): DriverTest(Jali::MeshFactory(MPI_COMM_WORLD)
+//Class which constructs a pair simple 3-D non-coincident meshes for remaps
+struct DriverTest3DNonCoincident : DriverTest {
+  DriverTest3DNonCoincident(): DriverTest(Jali::MeshFactory(MPI_COMM_WORLD)
   (0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 11, 11, 11),
   Jali::MeshFactory(MPI_COMM_WORLD)(0.0, 0.0, 0.0, 1.0+1.5*1/3.,
       1.0+1.5*1/3., 1.0+1.5*1/3., 3, 3, 3)) {}
@@ -208,62 +208,62 @@ double compute_quadratic_field_3d(JaliGeometry::Point centroid){
 //whole test_driver fails.
 
 //Example 0
-TEST_F(DriverTest2D, 2D_1stOrderLinearCellCntrConformal1proc){
+TEST_F(DriverTest2D, 2D_1stOrderLinearCellCntrCoincident1proc){
   unitTest<Portage::IntersectR2D, Portage::Interpolate_1stOrder, 2>
   (compute_linear_field, 0.0095429796560267122);
 }
 //Example 1
-TEST_F(DriverTest2D, 2D_2ndOrderLinearCellCntrConformal1proc){
+TEST_F(DriverTest2D, 2D_2ndOrderLinearCellCntrCoincident1proc){
   unitTest<Portage::IntersectR2D, Portage::Interpolate_2ndOrder, 2>
   (compute_linear_field, 0.);
 }
 //Example 2
-TEST_F(DriverTest2DNonConformal, 2D_1stOrderLinearCellCntrNonConformal1proc){
+TEST_F(DriverTest2DNonCoincident, 2D_1stOrderLinearCellCntrNonCoincident1proc){
   unitTest<Portage::IntersectR2D, Portage::Interpolate_1stOrder, 2>
   (compute_linear_field, 3.067536);
 }
 //Example 3
-TEST_F(DriverTest2DNonConformal, 2D_2ndOrderLinearCellCntrNonConformal1proc){
+TEST_F(DriverTest2DNonCoincident, 2D_2ndOrderLinearCellCntrNonCoincident1proc){
   unitTest<Portage::IntersectR2D, Portage::Interpolate_2ndOrder, 2>
   (compute_linear_field, 3.067527);
 }
 //Example 4
-TEST_F(DriverTest2D, 2D_1stOrderQuadraticCellCntrConformal1proc){
+TEST_F(DriverTest2D, 2D_1stOrderQuadraticCellCntrCoincident1proc){
   unitTest<Portage::IntersectR2D, Portage::Interpolate_1stOrder, 2>
   (compute_quadratic_field, 0.052627);
 }
 //Example 5
-TEST_F(DriverTest2D, 2D_2ndOrderQuadraticCellCntrConformal1proc){
+TEST_F(DriverTest2D, 2D_2ndOrderQuadraticCellCntrCoincident1proc){
   unitTest<Portage::IntersectR2D, Portage::Interpolate_2ndOrder, 2>
   (compute_quadratic_field, 0.051424);
 }
 //Example 6
-TEST_F(DriverTest2DNonConformal, 2D_1stOrderQuadraticCellCntrNonConformal1proc){
+TEST_F(DriverTest2DNonCoincident, 2D_1stOrderQuadraticCellCntrNonCoincident1proc){
   unitTest<Portage::IntersectR2D, Portage::Interpolate_1stOrder, 2>
   (compute_quadratic_field, 3.303476);
 }
 //Example 7
-TEST_F(DriverTest2DNonConformal, 2D_2ndOrderQuadraticCellCntrNonConformal1proc){
+TEST_F(DriverTest2DNonCoincident, 2D_2ndOrderQuadraticCellCntrNonCoincident1proc){
   unitTest<Portage::IntersectR2D, Portage::Interpolate_2ndOrder, 2>
   (compute_quadratic_field, 3.303466);
 }
 //Example 8
-TEST_F(DriverTest3D, 3D_1stOrderQuadraticCellCntrConformal1proc){
+TEST_F(DriverTest3D, 3D_1stOrderQuadraticCellCntrCoincident1proc){
   unitTest<Portage::IntersectR3D, Portage::Interpolate_1stOrder, 3>
   (compute_quadratic_field_3d, .135694);
 }
 //Example 9
-TEST_F(DriverTest3D, 3D_2ndOrderQuadraticCellCntrConformal1proc){
+TEST_F(DriverTest3D, 3D_2ndOrderQuadraticCellCntrCoincident1proc){
   unitTest<Portage::IntersectR3D, Portage::Interpolate_2ndOrder, 3>
   (compute_quadratic_field_3d, .133602);
 }
 //Example 10
-TEST_F(DriverTest3DNonConformal, 3D_1stOrderQuadraticCellCntrNonConformal1proc){
+TEST_F(DriverTest3DNonCoincident, 3D_1stOrderQuadraticCellCntrNonCoincident1proc){
   unitTest<Portage::IntersectR3D, Portage::Interpolate_1stOrder, 3>
   (compute_quadratic_field_3d, 12.336827);
 }
 //Example 11
-TEST_F(DriverTest3DNonConformal, 3D_2ndOrderQuadraticCellCntrNonConformal1proc){
+TEST_F(DriverTest3DNonCoincident, 3D_2ndOrderQuadraticCellCntrNonCoincident1proc){
   unitTest<Portage::IntersectR3D, Portage::Interpolate_2ndOrder, 3>
   (compute_quadratic_field_3d, 12.336822);
 }
