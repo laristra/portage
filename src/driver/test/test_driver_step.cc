@@ -174,7 +174,7 @@ struct DriverTest2D : DriverTest {
 };
 
 //Class which constructs a pair of simple 2-D non-coincident meshes for remaps
-struct DriverTest2DNoncoincident : DriverTest {
+struct DriverTest2DNonCoincident : DriverTest {
   DriverTest2DNonCoincident() : DriverTest(Jali::MeshFactory(MPI_COMM_WORLD)
   (0.0, 0.0, 1.0, 1.0, 11, 11),Jali::MeshFactory(MPI_COMM_WORLD)
   (0.0, 0.0, 1.0, 1.0, 18, 18)) {}
