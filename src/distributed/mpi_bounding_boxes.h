@@ -181,8 +181,6 @@ class MPI_Bounding_Boxes {
     std::vector<int>& sourceNodeCounts = source_mesh_flat.get_node_counts();
     std::vector<int>& sourceCellGlobalIds = source_mesh_flat.cellGlobalIds_;
     std::vector<int>& sourceNodeGlobalIds = source_mesh_flat.nodeGlobalIds_;
-    std::vector<int>& sourceNeighborCounts = source_mesh_flat.get_neighbor_counts();
-    std::vector<int>& sourceNeighbors = source_mesh_flat.get_neighbors();
 
     // Compute the bounding box for the source mesh on this rank
     std::vector<double> sourceBoundingBox(2*dim);
@@ -252,7 +250,7 @@ class MPI_Bounding_Boxes {
       sendFlags[i] = sendThis;
     }
 
-    comm_info_t cellInfo, nodeInfo, cellToNodeInfo, neighborInfo;
+    comm_info_t cellInfo, nodeInfo, cellToNodeInfo;
     // only used in 3D:
     comm_info_t faceInfo, cellToFaceInfo, faceToNodeInfo;
 
@@ -298,18 +296,6 @@ class MPI_Bounding_Boxes {
               sizeFaceToNodeList, sizeOwnedFaceToNodeList);
     }
 
-    // Compute the total number of neighbor indexes and owned neighbor indexes on this rank
-    // TODO:  don't communicate this, but compute it from cell-to-node
-    int sourceNumNeighbors = 0;
-    for (unsigned int i=0; i<sourceNumCells; i++)
-      sourceNumNeighbors += sourceNeighborCounts[i];
-    int sourceNumOwnedNeighbors = 0;
-    for (unsigned int i=0; i<sourceNumOwnedCells; i++)
-      sourceNumOwnedNeighbors += sourceNeighborCounts[i];
-
-    setInfo(&neighborInfo, commSize, sendFlags,
-            sourceNumNeighbors, sourceNumOwnedNeighbors);
-
     // Data structures to hold mesh data received from other ranks
     std::vector<double> newCoords(dim*nodeInfo.newNum);
     std::vector<int> newCellNodeCounts(cellInfo.newNum);
@@ -329,8 +315,6 @@ class MPI_Bounding_Boxes {
     }
     std::vector<int> newCellGlobalIds(cellInfo.newNum);
     std::vector<int> newNodeGlobalIds(nodeInfo.newNum);
-    std::vector<int> newNeighborCounts(cellInfo.newNum);
-    std::vector<int> newNeighbors(neighborInfo.newNum);
 
     // SEND NUMBER OF NODES FOR EACH CELL
 
@@ -394,25 +378,6 @@ class MPI_Bounding_Boxes {
     moveField(nodeInfo, commRank, commSize, MPI_INT, 1,
               sourceNodeGlobalIds, &newNodeGlobalIds);
 
-    // SEND NUMBER OF NEIGHBORS FOR EACH CELL
-
-    moveField(cellInfo, commRank, commSize, MPI_INT, 1,
-              sourceNeighborCounts, &newNeighborCounts);
-
-    // SEND LIST OF NEIGHBOR GLOBAL IDS FOR EACH CELL
-
-    moveField(neighborInfo, commRank, commSize, MPI_INT, 1,
-              sourceNeighbors, &newNeighbors);
-
-#ifdef DEBUG_MPI
-    if (commRank == 1)
-    {
-      std::cout << "newNeighbors: ";
-      for (unsigned int i=0; i<newNeighbors.size(); i++) std::cout << newNeighbors[i] << " ";
-      std::cout << std::endl;
-    }
-#endif
-
     // SEND FIELD VALUES
 
     // Send and receive each field to be remapped
@@ -452,15 +417,11 @@ class MPI_Bounding_Boxes {
     sourceNodeCounts = newCellNodeCounts;
     sourceCellGlobalIds = newCellGlobalIds;
     std::swap(source_mesh_flat.nodeGlobalIds_, newNodeGlobalIds);
-    sourceNeighborCounts = newNeighborCounts;
     source_mesh_flat.set_num_owned_cells(cellInfo.newNumOwned);
     source_mesh_flat.set_num_owned_nodes(nodeInfo.newNumOwned);
 
     fixListIndices(cellToNodeInfo, nodeInfo, commSize, &newCellToNodeList);
     std::swap(source_mesh_flat.cellToNodeList_, newCellToNodeList);
-
-    fixListIndices(neighborInfo, cellInfo, commSize, &newNeighbors);
-    std::swap(source_mesh_flat.neighbors_, newNeighbors);
 
     if (dim == 3)
     {

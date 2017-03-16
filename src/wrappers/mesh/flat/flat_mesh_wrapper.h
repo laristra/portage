@@ -130,13 +130,6 @@ class Flat_Mesh_Wrapper : public AuxMeshTopology<Flat_Mesh_Wrapper<>> {
       cellNodeCounts_.push_back(cellNumNodes);
       cellToNodeList_.insert(cellToNodeList_.end(),
                              cellNodes.begin(), cellNodes.end());
-
-
-      std::vector<int> cellNeighbors;
-      input.cell_get_node_adj_cells(c, ALL, &(cellNeighbors));
-      cellNeighborCounts_.push_back(cellNeighbors.size());
-      for (unsigned int j=0; j<cellNeighbors.size(); j++)
-        neighbors_.push_back(cellNeighbors[j]);
     }
 
     if (dim_ == 3)
@@ -233,14 +226,13 @@ class Flat_Mesh_Wrapper : public AuxMeshTopology<Flat_Mesh_Wrapper<>> {
       }
     }
 
-    // Compute node, face and neighbor offsets
+    // Compute node and face offsets
     compute_offsets(cellNodeCounts_, &cellNodeOffsets_);
     if (dim_ == 3)
     {
       compute_offsets(faceNodeCounts_, &faceNodeOffsets_);
       compute_offsets(cellFaceCounts_, &cellFaceOffsets_);
     }
-    compute_offsets(cellNeighborCounts_, &cellNeighborOffsets_);
 
     // Remove duplicate nodes
     for (unsigned int i=0; i<cellToNodeList_.size(); ++i)
@@ -250,10 +242,6 @@ class Flat_Mesh_Wrapper : public AuxMeshTopology<Flat_Mesh_Wrapper<>> {
       for (unsigned int i=0; i<faceToNodeList_.size(); ++i)
         faceToNodeList_[i] = nodeUniqueRep[faceToNodeList_[i]];
     }
-
-    // Remove duplicate cells
-    for (unsigned int i=0; i<neighbors_.size(); ++i)
-       neighbors_[i] = cellUniqueRep[neighbors_[i]];
 
     // Compute node-to-cell adjacency lists
     int numNodes = nodeCoords_.size() / dim_;
@@ -329,7 +317,6 @@ class Flat_Mesh_Wrapper : public AuxMeshTopology<Flat_Mesh_Wrapper<>> {
     for (unsigned int c=numOwnedCells_; c<cellNodeCounts_.size(); ++c) {
       if (cellUniqueRep[c] != c) {
         cellNodeCounts_[c] = 0;
-        cellNeighborCounts_[c] = 0;
       }
     }
 
@@ -352,7 +339,7 @@ class Flat_Mesh_Wrapper : public AuxMeshTopology<Flat_Mesh_Wrapper<>> {
 
   //! Number of ghost cells in the mesh
   int num_ghost_cells() const {
-    return (cellNeighborCounts_.size() - numOwnedCells_);
+    return (cellNodeCounts_.size() - numOwnedCells_);
   }
 
   //! Number of owned nodes in the mesh
@@ -473,10 +460,20 @@ class Flat_Mesh_Wrapper : public AuxMeshTopology<Flat_Mesh_Wrapper<>> {
                                Entity_type const ptype,
                                std::vector<int> *adjcells) const {
 
-    int index = cellNeighborOffsets_[cellid];
-    adjcells->resize(cellNeighborCounts_[cellid]);
-    for (unsigned int i=0; i<adjcells->size(); i++)
-      (*adjcells)[i] = neighbors_[index+i];
+    // TODO:  remove assumption that ptype == ALL (if needed)?
+    std::vector<int> cellnodes;
+    cell_get_nodes(cellid, &cellnodes);
+    std::set<int> cellcells;
+
+    for (auto const& n : cellnodes) {
+      std::vector<int> nodecells;
+      node_get_cells(n, &nodecells);
+
+      for (auto const& c : nodecells) {
+        if (c != cellid) cellcells.insert(c);
+      }
+    }
+    adjcells->assign(cellcells.begin(), cellcells.end());
   }
 
   //! Get "adjacent" nodes of given node - nodes that share a common
@@ -516,12 +513,6 @@ class Flat_Mesh_Wrapper : public AuxMeshTopology<Flat_Mesh_Wrapper<>> {
   //! set the number of owned nodes
   void set_num_owned_nodes(int numOwnedNodes) { numOwnedNodes_ = numOwnedNodes; }
 
-  //! get neighbor counts
-  std::vector<int>& get_neighbor_counts() { return cellNeighborCounts_; }
-
-  //! get neighbors
-  std::vector<int>& get_neighbors() { return neighbors_; }
-
   //! get spatial dimension
   int space_dimension() const { return dim_; }
 
@@ -543,9 +534,6 @@ private:
   std::vector<int> nodeToCellList_;
   std::vector<int> nodeCellCounts_;
   std::vector<int> nodeCellOffsets_;
-  std::vector<int> neighbors_; // node-connected neighbors of each cell
-  std::vector<int> cellNeighborCounts_;
-  std::vector<int> cellNeighborOffsets_;
   std::vector<int> cellGlobalIds_;
   std::vector<int> nodeGlobalIds_;
   int dim_;
