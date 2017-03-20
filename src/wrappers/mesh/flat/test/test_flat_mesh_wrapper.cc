@@ -92,12 +92,13 @@ TEST(Flat_Mesh_Wrapper, basic_routines_3d) {
   // List coordinates of cell 0 - others are equal to this
   // with a shift
   std::vector<Portage::Point<3>> cell0Coords =
-    {{0.0, 0.0, 0.0},  {0.5, 0.0, 0.0},  {0.5, 0.5, 0.0},  {0.0, 0.5, 0.0},
-     {0.0, 0.0, 0.5},  {0.5, 0.0, 0.5},  {0.5, 0.5, 0.5},  {0.0, 0.5, 0.5}};
+    {{0.0, 0.0, 0.0},  {0.0, 0.0, 0.5},  {0.0, 0.5, 0.0},  {0.0, 0.5, 0.5},
+     {0.5, 0.0, 0.0},  {0.5, 0.0, 0.5},  {0.5, 0.5, 0.0},  {0.5, 0.5, 0.5}};
   for (int c=0; c<8; ++c) {
     std::vector<Portage::Point<3>> pplist;
     mesh_flat.cell_get_coordinates(c, &pplist);
     ASSERT_EQ(8, pplist.size());
+    std::sort(pplist.begin(), pplist.end());
     double dx = (c & 4 ? 0.5 : 0.0);
     double dy = (c & 2 ? 0.5 : 0.0);
     double dz = (c & 1 ? 0.5 : 0.0);

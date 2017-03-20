@@ -227,7 +227,10 @@ class Flat_Mesh_Wrapper : public AuxMeshTopology<Flat_Mesh_Wrapper<>> {
     }
 
     // Compute node and face offsets
-    compute_offsets(cellNodeCounts_, &cellNodeOffsets_);
+    if (dim_ == 2)
+    {
+      compute_offsets(cellNodeCounts_, &cellNodeOffsets_);
+    }
     if (dim_ == 3)
     {
       compute_offsets(faceNodeCounts_, &faceNodeOffsets_);
@@ -235,12 +238,40 @@ class Flat_Mesh_Wrapper : public AuxMeshTopology<Flat_Mesh_Wrapper<>> {
     }
 
     // Remove duplicate nodes
-    for (unsigned int i=0; i<cellToNodeList_.size(); ++i)
-      cellToNodeList_[i] = nodeUniqueRep[cellToNodeList_[i]];
+    if (dim_ == 2)
+    {
+      for (unsigned int i=0; i<cellToNodeList_.size(); ++i)
+        cellToNodeList_[i] = nodeUniqueRep[cellToNodeList_[i]];
+    }
     if (dim_ == 3)
     {
       for (unsigned int i=0; i<faceToNodeList_.size(); ++i)
         faceToNodeList_[i] = nodeUniqueRep[faceToNodeList_[i]];
+    }
+
+    // Compute cell-to-node adjacency lists (3D only)
+    if (dim_ == 3)
+    {
+      cellNodeCounts_.clear();
+      cellToNodeList_.clear();
+      cellNodeCounts_.reserve(cellFaceCounts_.size());
+      cellToNodeList_.reserve(cellFaceCounts_.size() * 4);
+      for (unsigned int c=0; c<cellFaceCounts_.size(); ++c) {
+        std::vector<int> cellfaces, dummy;
+        cell_get_faces_and_dirs(c, &cellfaces, &dummy);
+        std::set<int> cellnodes;
+
+        for (auto const& f : cellfaces) {
+          std::vector<int> facenodes;
+          face_get_nodes(f, &facenodes);
+          cellnodes.insert(facenodes.begin(), facenodes.end());
+        }
+
+        cellNodeCounts_.emplace_back(cellnodes.size());
+        cellToNodeList_.insert(cellToNodeList_.end(),
+                               cellnodes.begin(), cellnodes.end());
+      }
+      compute_offsets(cellNodeCounts_, &cellNodeOffsets_);
     }
 
     // Compute node-to-cell adjacency lists

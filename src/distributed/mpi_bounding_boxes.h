@@ -250,7 +250,9 @@ class MPI_Bounding_Boxes {
       sendFlags[i] = sendThis;
     }
 
-    comm_info_t cellInfo, nodeInfo, cellToNodeInfo;
+    comm_info_t cellInfo, nodeInfo;
+    // only used in 2D:
+    comm_info_t cellToNodeInfo;
     // only used in 3D:
     comm_info_t faceInfo, cellToFaceInfo, faceToNodeInfo;
 
@@ -265,14 +267,16 @@ class MPI_Bounding_Boxes {
     setInfo(&nodeInfo, commSize, sendFlags,
             sourceNumNodes, sourceNumOwnedNodes);
 
-    // TODO:  in 3D, don't communicate this - compute it from
-    // cell-to-face and face-to-node
-    int sizeCellToNodeList = source_mesh_flat.cellToNodeList_.size();
-    int sizeOwnedCellToNodeList = (
-        sourceNumCells == sourceNumOwnedCells ? sizeCellToNodeList :
-        source_mesh_flat.cellNodeOffsets_[sourceNumOwnedCells]);
-    setInfo(&cellToNodeInfo, commSize, sendFlags,
-            sizeCellToNodeList, sizeOwnedCellToNodeList);
+    if (dim == 2)
+    {
+      int sizeCellToNodeList = source_mesh_flat.cellToNodeList_.size();
+      int sizeOwnedCellToNodeList = (
+          sourceNumCells == sourceNumOwnedCells ? sizeCellToNodeList :
+          source_mesh_flat.cellNodeOffsets_[sourceNumOwnedCells]);
+
+      setInfo(&cellToNodeInfo, commSize, sendFlags,
+              sizeCellToNodeList, sizeOwnedCellToNodeList);
+    }
 
     if (dim == 3)
     {
@@ -298,13 +302,18 @@ class MPI_Bounding_Boxes {
 
     // Data structures to hold mesh data received from other ranks
     std::vector<double> newCoords(dim*nodeInfo.newNum);
-    std::vector<int> newCellNodeCounts(cellInfo.newNum);
-    std::vector<int> newCellToNodeList(cellToNodeInfo.newNum);
+    std::vector<int> newCellNodeCounts;
+    std::vector<int> newCellToNodeList;
     std::vector<int> newCellFaceCounts;
     std::vector<int> newCellToFaceList;
     std::vector<bool> newCellToFaceDirs;
     std::vector<int> newFaceNodeCounts;
     std::vector<int> newFaceToNodeList;
+    if (dim == 2)
+    {
+      newCellNodeCounts.resize(cellInfo.newNum);
+      newCellToNodeList.resize(cellToNodeInfo.newNum);
+    }
     if (dim == 3)
     {
       newCellFaceCounts.resize(cellInfo.newNum);
@@ -316,20 +325,23 @@ class MPI_Bounding_Boxes {
     std::vector<int> newCellGlobalIds(cellInfo.newNum);
     std::vector<int> newNodeGlobalIds(nodeInfo.newNum);
 
-    // SEND NUMBER OF NODES FOR EACH CELL
-
-    moveField(cellInfo, commRank, commSize, MPI_INT, 1,
-              sourceNodeCounts, &newCellNodeCounts);
-
-    // SEND CELL-TO-NODE MAP
-
-    moveField(cellToNodeInfo, commRank, commSize, MPI_INT, 1,
-              source_mesh_flat.cellToNodeList_, &newCellToNodeList);
-
     // SEND NODE COORDINATES
 
     moveField(nodeInfo, commRank, commSize, MPI_DOUBLE, dim,
               sourceCoords, &newCoords);
+
+    if (dim == 2)
+    {
+      // SEND NUMBER OF NODES FOR EACH CELL
+
+      moveField(cellInfo, commRank, commSize, MPI_INT, 1,
+                sourceNodeCounts, &newCellNodeCounts);
+
+      // SEND CELL-TO-NODE MAP
+
+      moveField(cellToNodeInfo, commRank, commSize, MPI_INT, 1,
+                source_mesh_flat.cellToNodeList_, &newCellToNodeList);
+    }
 
     if (dim == 3)
     {
@@ -414,14 +426,17 @@ class MPI_Bounding_Boxes {
     // We will now use the received source mesh data as our new source mesh on this partition
     // TODO:  replace with swap
     sourceCoords = newCoords;
-    sourceNodeCounts = newCellNodeCounts;
     sourceCellGlobalIds = newCellGlobalIds;
     std::swap(source_mesh_flat.nodeGlobalIds_, newNodeGlobalIds);
     source_mesh_flat.set_num_owned_cells(cellInfo.newNumOwned);
     source_mesh_flat.set_num_owned_nodes(nodeInfo.newNumOwned);
 
-    fixListIndices(cellToNodeInfo, nodeInfo, commSize, &newCellToNodeList);
-    std::swap(source_mesh_flat.cellToNodeList_, newCellToNodeList);
+    if (dim == 2)
+    {
+      std::swap(source_mesh_flat.cellNodeCounts_, newCellNodeCounts);
+      fixListIndices(cellToNodeInfo, nodeInfo, commSize, &newCellToNodeList);
+      std::swap(source_mesh_flat.cellToNodeList_, newCellToNodeList);
+    }
 
     if (dim == 3)
     {
