@@ -129,9 +129,8 @@ TEST(MPI_Bounding_Boxes, SimpleTest3D) {
   // List coordinates of cell 0 - others are equal to this
   // with a shift
   std::vector<Portage::Point<3>> cell0Coords =
-    {{0.0, 0.0, 0.0},  {0.5, 0.0, 0.0},  {0.5, 0.5, 0.0},  {0.0, 0.5, 0.0},
-     {0.0, 0.0, 0.5},  {0.5, 0.0, 0.5},  {0.5, 0.5, 0.5},  {0.0, 0.5, 0.5}};
-                                                              
+    {{0.0, 0.0, 0.0},  {0.0, 0.0, 0.5},  {0.0, 0.5, 0.0},  {0.0, 0.5, 0.5},
+     {0.5, 0.0, 0.0},  {0.5, 0.0, 0.5},  {0.5, 0.5, 0.0},  {0.5, 0.5, 0.5}};
   // List owned cells that should have been sent to each rank
   std::vector<int> expOwnedGids;
   switch (commRank) {
@@ -153,6 +152,7 @@ TEST(MPI_Bounding_Boxes, SimpleTest3D) {
     std::vector<Portage::Point<3>> myCoords;
     source_mesh_flat.cell_get_coordinates(c, &myCoords);
     ASSERT_EQ(8, myCoords.size());
+    std::sort(myCoords.begin(), myCoords.end());
     int gid = expOwnedGids[c];
     double dx = (gid & 4 ? 0.5 : 0.0);
     double dy = (gid & 2 ? 0.5 : 0.0);
