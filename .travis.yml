@@ -9,13 +9,16 @@ env:
   matrix:
     - MPI=OFF
     - MPI=ON DOCKERHUB=true
-    - MPI=ON COVERAGE=ON
+    - MPI=ON COVERAGE=ON SONARQUBE=ON
 
 script:
   - cp -vr docker ${HOME}/docker
   - cd ../../
   - mv -v ${TRAVIS_REPO_SLUG} $HOME/docker
   - docker build --build-arg MPI=${MPI}
+                 --build-arg SONARQUBE=${SONARQUBE} --build-arg SONARQUBE_TOKEN=${SONARQUBE_TOKEN}
+                 --build-arg SONARQUBE_GITHUB_TOKEN=${SONARQUBE_GITHUB_TOKEN}
+                 --build-arg CI=${CI} --build-arg TRAVIS=${TRAVIS} --build-arg TRAVIS_OS_NAME=${TRAVIS_OS_NAME}
                  --build-arg TRAVIS_BRANCH=${TRAVIS_BRANCH} --build-arg TRAVIS_JOB_NUMBER=${TRAVIS_JOB_NUMBER}
                  --build-arg TRAVIS_PULL_REQUEST=${TRAVIS_PULL_REQUEST} --build-arg TRAVIS_JOB_ID=${TRAVIS_JOB_ID}
                  --build-arg TRAVIS_TAG=${TRAVIS_TAG} --build-arg TRAVIS_REPO_SLUG=${TRAVIS_REPO_SLUG}
