@@ -26,14 +26,21 @@ USER portage
 WORKDIR /home/portage/portage
 RUN mkdir build
 WORKDIR build
+RUN cmake -D CMAKE_BUILD_TYPE=Debug -D ENABLE_UNIT_TESTS=True -D ENABLE_APP_TESTS=True -D ENABLE_MPI=${MPI} -D ENABLE_MPI_CXX_BINDINGS=True ${COVERAGE:+-DENABLE_COVERAGE_BUILD=ON} -DENABLE_DOXYGEN=ON ..
 RUN cmake -D CMAKE_BUILD_TYPE=Debug -D ENABLE_UNIT_TESTS=True -D ENABLE_APP_TESTS=True -D ENABLE_MPI=${MPI} -D ENABLE_MPI_CXX_BINDINGS=True ${COVERAGE:+-DENABLE_COVERAGE_BUILD=ON} ..
 RUN ${SONARQUBE:+build-wrapper-linux-x86-64 --out-dir bw-output} make VERBOSE=1 -j2
+RUN make doxygen
+RUN if [ ${COVERAGE} ]; then \
+      python -m coverxygen --xml-dir doc/doxygen/xml/ --src-dir .. --output doxygen.coverage.info; \
+      wget -O codecov.sh https://codecov.io/bash; \
+      bash codecov.sh -X gcov -f doxygen.coverage.info -F doxygen; \
+    fi
 RUN make test
 RUN cd .. && if [ ${COVERAGE} ]; then \
   if [ ${CC} = clang ]; then \
-    $HOME/.local/bin/codecov --gcov-exec "llvm-cov gcov"; \
+    $HOME/.local/bin/codecov -F "${CC}" --gcov-exec "llvm-cov gcov"; \
   else \
-    $HOME/.local/bin/codecov; \
+    $HOME/.local/bin/codecov -F "${CC}"; \
   fi; \
 fi && cd -
 RUN cd .. && if [ ${SONARQUBE} ]; then \
