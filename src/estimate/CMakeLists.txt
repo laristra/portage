@@ -42,8 +42,8 @@ POSSIBILITY OF SUCH DAMAGE.
 
 
 # Add header files
-set (estimator_HEADERS
-  estimator.h
+set (estimate_HEADERS
+  estimate.h
   weight.h
   basis.h
   PARENT_SCOPE
@@ -70,8 +70,8 @@ if (ENABLE_UNIT_TESTS)
     THREADS 1
     )
 
-  cinch_add_unit(test_estimator
-    SOURCES test/test_estimator.cc
+  cinch_add_unit(test_estimate
+    SOURCES test/test_estimate.cc
     POLICY MPI
     THREADS 1
     )

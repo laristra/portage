@@ -5,6 +5,8 @@
  *      Author: gad
  */
 
+#include "gtest/gtest.h"
+
 #include "basis.h"
 
 TEST(Basis, placeholder) {

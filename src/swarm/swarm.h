@@ -18,7 +18,6 @@ namespace Meshfree {
 using std::string;
 using std::vector;
 using std::shared_ptr;
-using std::map;
 
 /*!
  @class Swarm "swarm.h"
@@ -38,9 +37,9 @@ template<size_t dim> class Swarm {
    */
   Swarm(PointVecPtr points, PointVecPtr extents)
       : points_(points),
-        extents_(points) {
-    npoints_ = points_->size();
-    assert(extents_->size() == npoints);
+    extents_(points), npoints_(points_->size()) 
+  {
+    assert(extents_->size() == npoints_);
   }
 
   /*! @brief return the nubmer of particles in the swarm.

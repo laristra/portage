@@ -231,7 +231,7 @@ inline double ddcoulomb(double x){
   return y;
 }
 
-enum Kernel {B4, SQUARE, EPANECHNIKOV, POLYRAMP, INVSQRT, COULOMB}
+ enum Kernel {B4, SQUARE, EPANECHNIKOV, POLYRAMP, INVSQRT, COULOMB};
 
 /// general kernel function
 double kernel(const Kernel kern, double x) {
@@ -281,29 +281,36 @@ double eval(const Geometry geo,
             const Kernel kern,
             const Point<dim> x, const Point<dim> y,
             void* h_ptr)
-{
-  double result;
-  array<double,dim> &h = *static_cast<array<double,dim>*>(*h_ptr);
-  double norm = kernel(kern, 0.0);
-  switch (geo) {
+  {
+    double result;
+    double norm = kernel(kern, 0.0);
+    switch (geo) {
     ELLIPTIC: {
-      double &h = *static_cast<double*>(*h_ptr);
-      double arg = spherical(x,y,h);
-      result = kernel(kern, arg) / norm;
-      break;
-    }
+	array<double,dim> &h = *static_cast<array<double,dim>*>(*h_ptr);
+	double arg = spherical(x,y,h);
+	result = kernel(kern, arg) / norm;
+	break;
+      }
 
     TENSOR:{
-      result = 1.;
-      array<double,dim> arg = tensor(x,y,h);
-      for (size_t i=0; i<dim; i++) {
-        result *= kernel(kern, arg[i]) / norm;
+	array<double,dim> &h = *static_cast<array<double,dim>*>(*h_ptr);
+	result = 1.;
+	array<double,dim> arg = tensor(x,y,h);
+	for (size_t i=0; i<dim; i++) {
+	  result *= kernel(kern, arg[i]) / norm;
+	}
+	break;
       }
-      break;
+
+    FACETED: {
+	assert(false);
+	break;
+      }
+    default:
+      assert(false);
+      return result;
     }
   }
-  return result;
-}
 
 }
 }

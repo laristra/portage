@@ -3,28 +3,31 @@
  * All rights reserved.
  *---------------------------------------------------------------------------~*/
 
-#ifndef ESTIMATOR_H_INC_
-#define ESTIMATOR_H_INC_
+#ifndef ESTIMATE_H_INC_
+#define ESTIMATE_H_INC_
 
 #include <vector>
-#include <tr1/memory>
+#include <memory>
 #include <string>
 #include <cmath>
 #include <array>
+#include <cassert>
 
-#include "Point.h"
+#include "portage/support/Point.h"
 #include "weight.h"
-#include "swarm.h"
+#include "basis.h"
+#include "portage/swarm/swarm.h"
+#include "portage/swarm/swarm_state.h"
 
 namespace Portage {
 namespace Meshfree {
 
 using std::string;
 using std::vector;
-using std::tr1::shared_ptr;
+using std::shared_ptr;
 using std::map;
 
-enum EstimatorType {
+enum EstimateType {
   Min,
   Max,
   KernelDensity,
@@ -40,23 +43,29 @@ enum WeightCenter {
  * @brief
  */
 template<size_t dim>
-class Estimator {
+class Estimate {
  public:
-  Estimator(shared_ptr<Swarm<dim>> source, shared_ptr<Swarm<dim>> target,
-            EstimatorType estimator, WeightCenter center,
-            shared_ptr<vector<Weight::Type>> weights,
+  Estimate(shared_ptr<Swarm<dim>> source, shared_ptr<Swarm<dim>> target,
+	   shared_ptr<SwarmState<dim>> source_state, shared_ptr<SwarmState<dim>> target_state,
+            EstimateType estimate, WeightCenter center,
+            shared_ptr<vector<Weight::Kernel>> kernels,
+            shared_ptr<vector<Weight::Geometry>> geometries,
             shared_ptr<vector<vector<double>>> smoothing,
             Basis::Type basis)
       : source_(source),
         target_(target),
-        weights_(weights),
-        basis_(basis),
-        estimator_(estimator),
+	source_state_(source_state),
+	target_state_(target_state),
+        estimate_(estimate),
         center_(center)
+        kernels_(kernels),
+        geometries_(geometries),
+        smoothing_(smoothing),
+        basis_(basis)
   {}
 
   double operator()(int const target_index,
-                    std::vector<Weights_t> const & sources_and_weights) const
+                    vector<vector<vector<double>>> const & moment_matrix_bit) const
   {}
 
   void set_interpolation_variable(std::string const & interp_var_name) {}
@@ -64,13 +73,17 @@ class Estimator {
  private:
   shared_ptr<Swarm<dim>> source_;
   shared_ptr<Swarm<dim>> target_;
-  shared_ptr<vector<Weight::Type>> weights_;
-  Basis::Type basis_;
-  EstimatorType estimator_;
+  shared_ptr<SwarmState<dim>> source_state_;
+  shared_ptr<SwarmState<dim>> target_state_;
+  EstimateType estimate_;
   WeightCenter center_;
+  shared_ptr<vector<Weight::Kernel>> kernels_;
+  shared_ptr<vector<Weight::Geometry>> geometries_;
+  shared_ptr<vector<vector<double>>> smoothing_;
+  Basis::Type basis_;
 };
 
 }
 }
 
-#endif ESTIMATOR_H_INC
+#endif // ESTIMATE_H_INC

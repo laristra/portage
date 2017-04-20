@@ -5,6 +5,8 @@
  *      Author: gad
  */
 
+#include "gtest/gtest.h"
+
 #include "weight.h"
 
 TEST(Weight, placeholder) {

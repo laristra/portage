@@ -3,12 +3,12 @@
  * All rights reserved.
  *---------------------------------------------------------------------------~*/
 
-#ifndef SWARM_H_INC_
-#define SWARM_H_INC_
+#ifndef SWARM_STATE_H_INC_
+#define SWARM_STATE_H_INC_
 
 #include <vector>
 #include <map>
-#include <tr1/shared_ptr.h>
+#include <memory>
 #include <string>
 #include <cassert>
 
@@ -22,13 +22,11 @@ using std::vector;
 using std::shared_ptr;
 using std::map;
 
-using PointVecPtr = shared_ptr<vector<Point<dim>>>;
-using PointVec = vector<Point<dim>>;
-
 /*!
  @class SwarmState "swarm_state.h"
  @brief Holds state data for particle Swarms.
  */
+template<size_t dim>
 class SwarmState {
  public:
 
@@ -41,7 +39,7 @@ class SwarmState {
   /*! @brief Constructor provides a reference swarm.
    * @param swarm the swarm with which the field data are associated.
    */
-  SwarmState(shared_ptr<Swarm>)
+  SwarmState(shared_ptr<Swarm<dim>>);
 
   /*! @brief Set an integer field on the swarm.
    * @param name the name of the integer field
@@ -81,5 +79,5 @@ class SwarmState {
 }
 }
 
-#endif // SWARM_H_INC_
+#endif // SWARM_STATE_H_INC_
 

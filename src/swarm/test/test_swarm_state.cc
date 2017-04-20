@@ -5,6 +5,9 @@
  *      Author: gad
  */
 
+#include "gtest/gtest.h"
+
+#include "swarm.h"
 #include "swarm_state.h"
 
 TEST(SwarmState, placeholder) {

@@ -5,9 +5,11 @@
  *      Author: gad
  */
 
-#include "estimator.h"
+#include "gtest/gtest.h"
 
-TEST(Estimator, placeholder) {
+#include "estimate.h"
+
+TEST(Estimate, placeholder) {
 }
 
 
