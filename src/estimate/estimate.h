@@ -57,7 +57,7 @@ class Estimate {
 	source_state_(source_state),
 	target_state_(target_state),
         estimate_(estimate),
-        center_(center)
+        center_(center),
         kernels_(kernels),
         geometries_(geometries),
         smoothing_(smoothing),
