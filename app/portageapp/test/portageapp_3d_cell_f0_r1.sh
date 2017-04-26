@@ -49,7 +49,7 @@ set -x
 
 # SERIAL RUN
 
-$APPDIR/portageapp_jali \
+mpirun -np 1 $APPDIR/portageapp_jali \
 --dim=3 --nsourcecells=5 --ntargetcells=7 \
 --conformal=y \
 --entity_kind=cell --field_order=0 \
