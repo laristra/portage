@@ -21,6 +21,7 @@ using std::string;
 using std::vector;
 using std::shared_ptr;
 using std::map;
+using std::pair;
 
 /*!
  @class SwarmState "swarm_state.h"
@@ -29,7 +30,6 @@ using std::map;
 template<size_t dim>
 class SwarmState {
  public:
-
   /*! @brief Integer data type allowed on the swarm.  */
   using IntVecPtr=shared_ptr<vector<int>>;
 
@@ -39,35 +39,37 @@ class SwarmState {
   /*! @brief Constructor provides a reference swarm.
    * @param swarm the swarm with which the field data are associated.
    */
-  SwarmState(shared_ptr<Swarm<dim>>);
+  SwarmState(shared_ptr<Swarm<dim>> swarmin): swarm_(swarmin){}
 
   /*! @brief Set an integer field on the swarm.
    * @param name the name of the integer field
    * @param value the values in the field
    * If field does not exist, create it.
    */
-  void add_field(string name, IntVecPtr value);
+  void add_field(const string name, IntVecPtr value);
 
   /*! @brief Set a double field on the swarm centers.
    * @param name the name of the double field
    * @param value the values in the field
    * If field does not exist, create it.
    */
-  void add_field(string name, DblVecPtr value);
+  void add_field(const string name, DblVecPtr value);
 
   /*! @brief Get an integer field off the swarm.
    * @param name the name of the integer field
    * @param value the values in the field
    */
-  void get_field(string name, IntVecPtr value);
+  void get_field(const string name, IntVecPtr &value);
 
   /*! @brief Get a double field off the swarm centers.
    * @param name the name of the double field
    * @param value the values in the field
    */
-  void get_field(string name, DblVecPtr value);
+  void get_field(const string name, DblVecPtr &value);
 
  private:
+  /** reference swarm state */
+  shared_ptr<Swarm<dim>> swarm_;
 
   /** integer data fields */
   map<string, IntVecPtr> int_field_map_;
@@ -75,6 +77,50 @@ class SwarmState {
   /** double data fields */
   map<string, DblVecPtr> dbl_field_map_;
 };
+
+//=======================================================================
+
+template<size_t dim>
+void SwarmState<dim>::add_field(const string name, IntVecPtr value) {
+  // check size
+  assert(value->size() == swarm_->num_owned_cells());
+
+  // check duplicate
+  auto checkdup = int_field_map_.find(name);
+  if (checkdup == int_field_map_.end()) {
+    throw std::runtime_error(string("tried to add int field ")+name+
+                             "when it already existed");
+  }
+
+  // add it
+  int_field_map_.insert(pair<string, IntVecPtr>(name, value));
+}
+
+template<size_t dim>
+void SwarmState<dim>::add_field(const string name, DblVecPtr value) {
+  // check size
+  assert(value->size() == swarm_->num_owned_cells());
+
+  // check duplicate
+  auto checkdup = dbl_field_map_.find(name);
+  if (checkdup == dbl_field_map_.end()) {
+    throw std::runtime_error(string("tried to add double field ")+name+
+                             "when it already existed");
+  }
+
+  // add it
+  dbl_field_map_.insert(pair<string, DblVecPtr>(name, value));
+}
+
+template<size_t dim>
+void SwarmState<dim>::get_field(const string name, IntVecPtr &value) {
+  value = int_field_map_[name];
+}
+
+template<size_t dim>
+void SwarmState<dim>::get_field(const string name, DblVecPtr &value) {
+  value = dbl_field_map_[name];
+}
 
 }
 }
