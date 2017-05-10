@@ -9,7 +9,6 @@
 #include <vector>
 #include <memory>
 #include <cassert>
-#include <cmath>
 
 #include "portage/support/Point.h"
 
@@ -19,7 +18,6 @@ namespace Meshfree {
 using std::string;
 using std::vector;
 using std::shared_ptr;
-using std::isnan;
 
 /*!
  @class Swarm "swarm.h"

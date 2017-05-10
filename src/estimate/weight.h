@@ -231,7 +231,7 @@ inline double ddcoulomb(double x){
   return y;
 }
 
- enum Kernel {B4, SQUARE, EPANECHNIKOV, POLYRAMP, INVSQRT, COULOMB};
+enum Kernel {B4, SQUARE, EPANECHNIKOV, POLYRAMP, INVSQRT, COULOMB};
 
 /// general kernel function
 double kernel(const Kernel kern, double x) {
@@ -260,7 +260,7 @@ template<size_t dim>
 double elliptic(Point<dim> x, Point<dim> y, array<double,dim> &h) {
   double distance = 0.0, result;
   for (size_t i=0; i<dim; i++) {
-    distance += (x[i]-y[i])*(x[i]-y[i])/h[i]/h[i];
+    distance += (x[i]-y[i])*(x[i]-y[i])/(h[i]*h[i]);
   }
   distance = sqrt(distance);
   return distance;
@@ -276,41 +276,57 @@ array<double,dim> tensor(Point<dim> x, Point<dim> y, array<double,dim> &h) {
   return result;
 }
 
+/// evaluation function for elliptic or tensor product weights
 template<size_t dim>
 double eval(const Geometry geo,
             const Kernel kern,
             const Point<dim> x, const Point<dim> y,
-            void* h_ptr)
-  {
-    double result;
-    double norm = kernel(kern, 0.0);
-    switch (geo) {
+            array<double,dim> h)
+{
+  double result;
+  double norm = kernel(kern, 0.0);
+  switch (geo) {
     ELLIPTIC: {
-	array<double,dim> &h = *static_cast<array<double,dim>*>(*h_ptr);
-	double arg = spherical(x,y,h);
-	result = kernel(kern, arg) / norm;
-	break;
-      }
+      double arg = spherical(x,y,h);
+      result = kernel(kern, arg) / norm;
+      break;
+    }
 
     TENSOR:{
-	array<double,dim> &h = *static_cast<array<double,dim>*>(*h_ptr);
-	result = 1.;
-	array<double,dim> arg = tensor(x,y,h);
-	for (size_t i=0; i<dim; i++) {
-	  result *= kernel(kern, arg[i]) / norm;
-	}
-	break;
+      result = 1.;
+      array<double,dim> arg = tensor(x,y,h);
+      for (size_t i=0; i<dim; i++) {
+        result *= kernel(kern, arg[i]) / norm;
       }
-
-    FACETED: {
-	assert(false);
-	break;
-      }
-    default:
-      assert(false);
-      return result;
+      break;
     }
+    default:
+      throw std::runtime_error("invalid weight geometry");
+      return result;
   }
+}
+
+/// data for specifying a faceted weight
+template<size_t dim>
+struct FacetData {
+  double smoothing;
+  array<double,dim> normal;
+};
+
+/// faceted weight function
+template<size_t dim>
+double faceted(const Point<dim> x, const Point<dim> y,
+               FacetData<dim>* facets, size_t nsides)
+{
+  double result = 1.;
+  static double polyramp0 = polyramp[0];
+  for (size_t i=0; i<nsides; i++) {
+    double arg = 0.;
+    for (size_t j=0; j<dim; j++) arg += facets[i].normal[j]*(y[j]-x[j]);
+    arg /= facets[i].smoothing;
+    result *= polyramp[arg] / polyramp0;
+  }
+}
 
 }
 }
