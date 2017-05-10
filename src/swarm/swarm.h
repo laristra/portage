@@ -9,6 +9,7 @@
 #include <vector>
 #include <memory>
 #include <cassert>
+#include <cmath>
 
 #include "portage/support/Point.h"
 
@@ -18,6 +19,7 @@ namespace Meshfree {
 using std::string;
 using std::vector;
 using std::shared_ptr;
+using std::isnan;
 
 /*!
  @class Swarm "swarm.h"
@@ -54,6 +56,13 @@ template<size_t dim> class Swarm {
    * @param cell_coord the bounding box vertices
    */
   void cell_get_coordinates(int c, PointVec* cell_coord) {
+    size_t ncorners=1; for (size_t i=0; i<dim; i++) ncorners*=2;
+    for (size_t corner=0; corner<ncorners; corner++) {
+      size_t offset[dim], mask=1;
+      for (size_t j=0; j<dim; j++) {offset[j] = corner & mask; mask*=2;}
+      for (size_t j=0; j<dim; j++) cell_coord[corner][j] =
+          (*points_)[c][j]+offset[j]*extents_[c][j];
+    }
   }
 
  private:
