@@ -319,12 +319,12 @@ double faceted(const Point<dim> x, const Point<dim> y,
                FacetData<dim>* facets, size_t nsides)
 {
   double result = 1.;
-  static double polyramp0 = polyramp[0];
+  static double polyramp0 = polyramp(0);
   for (size_t i=0; i<nsides; i++) {
     double arg = 0.;
     for (size_t j=0; j<dim; j++) arg += facets[i].normal[j]*(y[j]-x[j]);
     arg /= facets[i].smoothing;
-    result *= polyramp[arg] / polyramp0;
+    result *= polyramp(arg) / polyramp0;
   }
 }
 
