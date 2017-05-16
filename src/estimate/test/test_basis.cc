@@ -62,51 +62,51 @@ using std::array;
 
 class BasisTest : public ::testing::Test {
  public:
-  template<unsigned long N1, unsigned long N2, unsigned long N3> 
+  template<size_t N1, size_t N2, size_t N3> 
   array<array<double, N1>, N3> matmatmult(array<array<double, N2>, N1> mat1,
                                           array<array<double, N3>, N2> mat2) {
     array<array<double, N3>, N1> matout{0.0};
-    for (int i = 0; i < N1; i++)
-      for (int k = 0; k < N3; k++)
-        for (int j = 0; j < N2; j++)
+    for (size_t i = 0; i < N1; i++)
+      for (size_t k = 0; k < N3; k++)
+        for (size_t j = 0; j < N2; j++)
           matout[i][k] += mat1[i][j]*mat2[j][k];
     return matout;
   }
 
-  template<unsigned long N1, unsigned long N2>
+  template<size_t N1, size_t N2>
   array<double, N1> matvecmult(array<array<double, N2>, N1> mat,
                                array<double, N2> vec) {
     array<double, N1> vecout{0.0};
-    for (int i = 0; i < N1; i++)
-      for (int j = 0; j < N2; j++)
+    for (size_t i = 0; i < N1; i++)
+      for (size_t j = 0; j < N2; j++)
         vecout[i] += mat[i][j]*vec[j];
     return vecout;
   }
 
-  template<unsigned long N1, unsigned long N2>
+  template<size_t N1, size_t N2>
   bool is_identity(array<array<double, N2>, N1> mat, double tol) {
-    for (int i = 0; i < N1; i++)
-      for (int j = 0; j < N2; j++)
+    for (size_t i = 0; i < N1; i++)
+      for (size_t j = 0; j < N2; j++)
         if ((i == j && fabs(mat[i][j]-1) > tol) ||
             (i != j && fabs(mat[i][j]) > tol))
           return false;
     return true;
   }
 
-  template<unsigned long N1, unsigned long N2>
+  template<size_t N1, size_t N2>
   bool is_equal(array<array<double, N2>, N1> mat1,
                 array<array<double, N2>, N1> mat2, double tol) {
-    for (int i = 0; i < N1; i++)
-      for (int j = 0; j < N2; j++)
+    for (size_t i = 0; i < N1; i++)
+      for (size_t j = 0; j < N2; j++)
         if (fabs(mat1[i][j]-mat2[i][j]) > tol)
           return false;
     return true;
   }
 
-  template<unsigned long N1>
+  template<size_t N1>
   bool is_equal(array<double, N1> vec1,
                 array<double, N1> vec2, double tol) {
-    for (int i = 0; i < N1; i++)
+    for (size_t i = 0; i < N1; i++)
       if (fabs(vec1[i]-vec2[i]) > tol)
         return false;
     return true;
@@ -116,9 +116,9 @@ class BasisTest : public ::testing::Test {
   void checkBasis() {
     srand(time(NULL));
     Point<Dim> x, y;
-    for (int d = 0; d < Dim; d++)
+    for (size_t d = 0; d < Dim; d++)
       x[d] = ((double)rand())/RAND_MAX;
-    for (int d = 0; d < Dim; d++)
+    for (size_t d = 0; d < Dim; d++)
       y[d] = ((double)rand())/RAND_MAX;
 
     auto bf_x = basis_function<type, Dim>(x);
