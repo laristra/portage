@@ -165,24 +165,24 @@ inline double ddsquare(double x) {
 /// scalar smooth ramp for faceted weight
 inline double polyramp(double x){
   double y;
-  y=((1.5 - x)*(1. + Sign(1. - x)))*.5 +
-      ((2. + (-2. + .5*x)*x)*(1. + Sign(2. - x))*(1. + Sign(-1. + x)))*.25;
+  y=((1.5 - Abs(x))*(1. + Sign(1. - Abs(x))))*.5 +
+      ((2. + (-2. + .5*Abs(x))*Abs(x))*(1. + Sign(2. - Abs(x)))*(1. + Sign(-1. + Abs(x))))*.25;
   return y;
 }
 
 /// scalar smooth ramp for faceted weight derivative
 inline double dpolyramp(double x){
   double y;
-  y=((-1.)*(1. + Sign(1. - x)))*.5 +
-      ((- 2. + x)*(1. + Sign(2. - x))*(1. + Sign(-1. + x)))/4.;
+  y=((-1.)*(1. + Sign(1. - Abs(x))))*.5 +
+      ((- 2. + Abs(x))*(1. + Sign(2. - Abs(x)))*(1. + Sign(-1. + Abs(x))))/4.;
   return y;
 }
 
 /// scalar smooth ramp for faceted weight derivative
 inline double ddpolyramp(double x){
   double y;
-  y=((0.)*(1. + Sign(1. - x)))*.5 +
-      ((1.)*(1. + Sign(2. - x))*(1. + Sign(-1. + x)))/4.;
+  y=((0.)*(1. + Sign(1. - Abs(x))))*.5 +
+      ((1.)*(1. + Sign(2. - Abs(x)))*(1. + Sign(-1. + Abs(x))))/4.;
   return y;
 }
 
@@ -237,12 +237,12 @@ enum Kernel {B4, SQUARE, EPANECHNIKOV, POLYRAMP, INVSQRT, COULOMB};
 double kernel(const Kernel kern, double x) {
   double result;
   switch (kern) {
-    B4:{result = b4(x); break;}
-    SQUARE:{result = square(x); break;}
-    EPANECHNIKOV:{result = epanechnikov(x); break;}
-    POLYRAMP:{result = polyramp(x); break;}
-    INVSQRT:{result = invsqrt(x); break;}
-    COULOMB:{result = coulomb(x); break;}
+    case B4:{result = b4(x); break;}
+    case SQUARE:{result = square(x); break;}
+    case EPANECHNIKOV:{result = epanechnikov(x); break;}
+    case POLYRAMP:{result = polyramp(x); break;}
+    case INVSQRT:{result = invsqrt(x); break;}
+    case COULOMB:{result = coulomb(x); break;}
     default:
       assert(false);
   }
@@ -267,7 +267,8 @@ double elliptic(Point<dim> x, Point<dim> y, array<double,dim> &h) {
 }
 
 /// generic tensor weight function arguments
-template<double f(double), size_t dim>
+// template<double f(double), size_t dim>
+template<size_t dim>
 array<double,dim> tensor(Point<dim> x, Point<dim> y, array<double,dim> &h) {
   array<double,dim> result;
   for (size_t i=0; i<dim; i++) {
@@ -286,15 +287,15 @@ double eval(const Geometry geo,
   double result;
   double norm = kernel(kern, 0.0);
   switch (geo) {
-    ELLIPTIC: {
-      double arg = spherical(x,y,h);
+    case ELLIPTIC: {
+      double arg = elliptic<dim>(x,y,h);
       result = kernel(kern, arg) / norm;
       break;
     }
 
-    TENSOR:{
+    case TENSOR:{
       result = 1.;
-      array<double,dim> arg = tensor(x,y,h);
+      array<double,dim> arg = tensor<dim>(x,y,h);
       for (size_t i=0; i<dim; i++) {
         result *= kernel(kern, arg[i]) / norm;
       }
