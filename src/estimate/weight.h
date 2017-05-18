@@ -165,24 +165,26 @@ inline double ddsquare(double x) {
 /// scalar smooth ramp for faceted weight
 inline double polyramp(double x){
   double y;
-  y=((1.5 - Abs(x))*(1. + Sign(1. - Abs(x))))*.5 +
-      ((2. + (-2. + .5*Abs(x))*Abs(x))*(1. + Sign(2. - Abs(x)))*(1. + Sign(-1. + Abs(x))))*.25;
+  if (x<0.) return 1.;
+  y=((1.5 - x)*(1. + Sign(1. - x)))*.5 +
+      ((2. + (-2. + .5*x)*x)*(1. + Sign(2. - x))*(1. + Sign(-1. + x)))*.25;
+  y /= 1.5;  // Normalize to 1 at x=0
   return y;
 }
 
 /// scalar smooth ramp for faceted weight derivative
 inline double dpolyramp(double x){
   double y;
-  y=((-1.)*(1. + Sign(1. - Abs(x))))*.5 +
-      ((- 2. + Abs(x))*(1. + Sign(2. - Abs(x)))*(1. + Sign(-1. + Abs(x))))/4.;
+  y=((-1.)*(1. + Sign(1. - x)))*.5 +
+      ((- 2. + x)*(1. + Sign(2. - x))*(1. + Sign(-1. + x)))/4.;
   return y;
 }
 
 /// scalar smooth ramp for faceted weight derivative
 inline double ddpolyramp(double x){
   double y;
-  y=((0.)*(1. + Sign(1. - Abs(x))))*.5 +
-      ((1.)*(1. + Sign(2. - Abs(x)))*(1. + Sign(-1. + Abs(x))))/4.;
+  y=((0.)*(1. + Sign(1. - x)))*.5 +
+      ((1.)*(1. + Sign(2. - x))*(1. + Sign(-1. + x)))/4.;
   return y;
 }
 
