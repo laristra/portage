@@ -67,17 +67,17 @@ template<size_t dim> class Swarm {
     // OK to fix above code and blow this one away
 
     Point<dim>& size = (*extents_)[c];
-    Point<dim> botcorner= Point<dim>((*points_)[c] - 0.5*size);
+    Point<dim> botcorner= Point<dim>((*points_)[c] - 2*size);
 
     Point<dim> corner = botcorner;
     for (size_t i = 0; i < 2; i++) {
-      corner[0] += i*size[0];
+      corner[0] += i*4*size[0];
       if (dim > 1) {
         for (size_t j = 0; j < 2; j++) {
-          corner[1] += j*size[1];
+          corner[1] += j*4*size[1];
           if (dim > 2) {
             for (size_t k = 0; k < 2; k++) {
-              corner[2] += k*size[2];
+              corner[2] += k*4*size[2];
               cell_coord->push_back(corner);
             }
             corner[2] = botcorner[2];  // reset z coordinate 

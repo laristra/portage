@@ -80,14 +80,6 @@ TEST(Swarm, Sanity_Check) {
   // surrounding each point
 
   for (int i = 0; i < 10; i++) {
-    Portage::Point<3> exp_bbox[2];
-    exp_bbox[0] = Portage::Point<3>(points[i][0]-0.5*h,
-                                    points[i][1]-0.5*h,
-                                    points[i][2]-0.5*h);
-    exp_bbox[1] = Portage::Point<3>(points[i][0]+0.5*h,
-                                    points[i][1]+0.5*h,
-                                    points[i][2]+0.5*h);
-
     std::vector<Portage::Point<3>> cpoints;
     swarm.cell_get_coordinates(i, &cpoints);
 
@@ -112,7 +104,7 @@ TEST(Swarm, Sanity_Check) {
 
     for (int d = 0; d < 3; d++) {
       ASSERT_NEAR(points[i][d], cen[d], 1.0e-8);
-      ASSERT_NEAR(h, bbox[1][d]-bbox[0][d], 1.0e-8);
+      ASSERT_NEAR(4*h, bbox[1][d]-bbox[0][d], 1.0e-8);
     }  
   }  // for each point used to construct the swarm
 
