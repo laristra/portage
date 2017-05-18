@@ -81,7 +81,7 @@ array<double, BasisTraits<type, dim>::function_size>
 basis_shift(Point<dim> x, Point<dim> y){
   auto ijet = basis_inverse_jet<type,dim>(x);
   auto by = basis_function<type,dim>(y);
-  array<double, BasisTraits<type, dim>::function_size> r;
+  array<double, BasisTraits<type, dim>::function_size> r{0.0};
 
   size_t n = BasisTraits<type, dim>::function_size;
   for (size_t i=0; i<n; i++) r[i] = 0.;
@@ -99,7 +99,7 @@ basis_shift(Point<dim> x, Point<dim> y){
 template<>
 array<double, BasisTraits<Unitary, 1>::function_size>
 basis_function<Unitary, 1>(Point<1> x) {
-  array<double, BasisTraits<Unitary, 1>::function_size> r;
+  array<double, BasisTraits<Unitary, 1>::function_size> r{0.0};
   r[0] = 1.;
   return r;
 }
@@ -107,7 +107,7 @@ basis_function<Unitary, 1>(Point<1> x) {
 template<>
 array<double, BasisTraits<Unitary, 2>::function_size>
 basis_function<Unitary, 2>(Point<2> x) {
-  array<double, BasisTraits<Unitary, 2>::function_size> r;
+  array<double, BasisTraits<Unitary, 2>::function_size> r{0.0};
   r[0] = 1.;
   return r;
 }
@@ -115,7 +115,7 @@ basis_function<Unitary, 2>(Point<2> x) {
 template<>
 array<double, BasisTraits<Unitary, 3>::function_size>
 basis_function<Unitary, 3>(Point<3> x) {
-  array<double, BasisTraits<Unitary, 3>::function_size> r;
+  array<double, BasisTraits<Unitary, 3>::function_size> r{0.0};
   r[0] = 1.;
   return r;
 }
@@ -131,7 +131,7 @@ basis_jet<Unitary,1>(Point<1> x){
   array<
   array<double, BasisTraits<Unitary, 1>::function_size>,
   BasisTraits<Unitary, 1>::function_size
-  > r;
+    > r{0.0};
   r[0][0] = 1.;
   return r;
 }
@@ -145,7 +145,7 @@ basis_jet<Unitary,2>(Point<2> x){
   array<
   array<double, BasisTraits<Unitary, 2>::function_size>,
   BasisTraits<Unitary, 2>::function_size
-  > r;
+    > r{0.0};
   r[0][0] = 1.;
   return r;
 }
@@ -159,7 +159,7 @@ basis_jet<Unitary,3>(Point<3> x){
   array<
   array<double, BasisTraits<Unitary, 3>::function_size>,
   BasisTraits<Unitary, 3>::function_size
-  > r;
+    > r{0.0};
   r[0][0] = 1.;
   return r;
 }
@@ -175,7 +175,7 @@ basis_inverse_jet<Unitary,1>(Point<1> x){
   array<
   array<double, BasisTraits<Unitary, 1>::function_size>,
   BasisTraits<Unitary, 1>::function_size
-  > r;
+    > r{0.0};
   r[0][0] = 1.;
   return r;
 }
@@ -189,7 +189,7 @@ basis_inverse_jet<Unitary,2>(Point<2> x){
   array<
   array<double, BasisTraits<Unitary, 2>::function_size>,
   BasisTraits<Unitary, 2>::function_size
-  > r;
+    > r{0.0};
   r[0][0] = 1.;
   return r;
 }
@@ -203,7 +203,7 @@ basis_inverse_jet<Unitary,3>(Point<3> x){
   array<
   array<double, BasisTraits<Unitary, 3>::function_size>,
   BasisTraits<Unitary, 3>::function_size
-  > r;
+    > r{0.0};
   r[0][0] = 1.;
   return r;
 }
@@ -213,7 +213,7 @@ basis_inverse_jet<Unitary,3>(Point<3> x){
 template<>
 array<double, BasisTraits<Unitary, 1>::function_size>
 basis_shift<Unitary, 1>(Point<1> x, Point<1> y) {
-  array<double, BasisTraits<Unitary, 1>::function_size> r;
+  array<double, BasisTraits<Unitary, 1>::function_size> r{0.0};
   r[0] = 1.;
   return r;
 }
@@ -221,7 +221,7 @@ basis_shift<Unitary, 1>(Point<1> x, Point<1> y) {
 template<>
 array<double, BasisTraits<Unitary, 2>::function_size>
 basis_shift<Unitary, 2>(Point<2> x, Point<2> y) {
-  array<double, BasisTraits<Unitary, 2>::function_size> r;
+  array<double, BasisTraits<Unitary, 2>::function_size> r{0.0};
   r[0] = 1.;
   return r;
 }
@@ -229,7 +229,7 @@ basis_shift<Unitary, 2>(Point<2> x, Point<2> y) {
 template<>
 array<double, BasisTraits<Unitary, 3>::function_size>
 basis_shift<Unitary, 3>(Point<3> x, Point<3> y) {
-  array<double, BasisTraits<Unitary, 3>::function_size> r;
+  array<double, BasisTraits<Unitary, 3>::function_size> r{0.0};
   r[0] = 1.;
   return r;
 }
@@ -241,7 +241,7 @@ basis_shift<Unitary, 3>(Point<3> x, Point<3> y) {
 template<>
 array<double, BasisTraits<Linear, 1>::function_size>
 basis_function<Linear, 1>(Point<1> x) {
-  array<double, BasisTraits<Linear, 1>::function_size> r;
+  array<double, BasisTraits<Linear, 1>::function_size> r{0.0};
   r[0] = 1.;
   r[1] = x[0];
   return r;
@@ -250,7 +250,7 @@ basis_function<Linear, 1>(Point<1> x) {
 template<>
 array<double, BasisTraits<Linear, 2>::function_size>
 basis_function<Linear, 2>(Point<2> x) {
-  array<double, BasisTraits<Linear, 2>::function_size> r;
+  array<double, BasisTraits<Linear, 2>::function_size> r{0.0};
   r[0] = 1.;
   r[1] = x[0];
   r[2] = x[1];
@@ -260,7 +260,7 @@ basis_function<Linear, 2>(Point<2> x) {
 template<>
 array<double, BasisTraits<Linear, 3>::function_size>
 basis_function<Linear, 3>(Point<3> x) {
-  array<double, BasisTraits<Linear, 3>::function_size> r;
+  array<double, BasisTraits<Linear, 3>::function_size> r{0.0};
   r[0] = 1.;
   r[1] = x[0];
   r[2] = x[1];
@@ -279,7 +279,7 @@ basis_jet<Linear,1>(Point<1> x){
   array<
   array<double, BasisTraits<Linear, 1>::function_size>,
   BasisTraits<Linear, 1>::function_size
-  > r;
+    > r{0.0};
   r[0][0] = 1.;
   r[1][0] = x[0];
   r[0][1] = 0.;
@@ -296,7 +296,7 @@ basis_jet<Linear,2>(Point<2> x){
   array<
   array<double, BasisTraits<Linear, 2>::function_size>,
   BasisTraits<Linear, 2>::function_size
-  > r;
+    > r{0.0};
   r[0][0] = 1.;
   r[1][0] = x[0];
   r[2][0] = x[1];
@@ -318,7 +318,7 @@ basis_jet<Linear,3>(Point<3> x){
   array<
   array<double, BasisTraits<Linear, 3>::function_size>,
   BasisTraits<Linear, 3>::function_size
-  > r;
+    > r{0.0};
   r[0][0] = 1.;
   r[1][0] = x[0];
   r[2][0] = x[1];
@@ -349,7 +349,7 @@ basis_inverse_jet<Linear,1>(Point<1> x){
   array<
   array<double, BasisTraits<Linear, 1>::function_size>,
   BasisTraits<Linear, 1>::function_size
-  > r;
+    > r{0.0};
   r[0][0] = 1.;
   r[1][0] = -x[0];
   r[0][1] = 0.;
@@ -366,7 +366,7 @@ basis_inverse_jet<Linear,2>(Point<2> x){
   array<
   array<double, BasisTraits<Linear, 2>::function_size>,
   BasisTraits<Linear, 2>::function_size
-  > r;
+    > r{0.0};
   r[0][0] = 1.;
   r[1][0] = -x[0];
   r[2][0] = -x[1];
@@ -388,7 +388,7 @@ basis_inverse_jet<Linear,3>(Point<3> x){
   array<
   array<double, BasisTraits<Linear, 3>::function_size>,
   BasisTraits<Linear, 3>::function_size
-  > r;
+    > r{0.0};
   r[0][0] = 1.;
   r[1][0] = -x[0];
   r[2][0] = -x[1];
@@ -413,7 +413,7 @@ basis_inverse_jet<Linear,3>(Point<3> x){
 template<>
 array<double, BasisTraits<Linear, 1>::function_size>
 basis_shift<Linear, 1>(Point<1> x, Point<1> y) {
-  array<double, BasisTraits<Linear, 1>::function_size> r;
+  array<double, BasisTraits<Linear, 1>::function_size> r{0.0};
   r[0] = 1.;
   r[1] = y[0]-x[0];
   return r;
@@ -422,7 +422,7 @@ basis_shift<Linear, 1>(Point<1> x, Point<1> y) {
 template<>
 array<double, BasisTraits<Linear, 2>::function_size>
 basis_shift<Linear, 2>(Point<2> x, Point<2> y) {
-  array<double, BasisTraits<Linear, 2>::function_size> r;
+  array<double, BasisTraits<Linear, 2>::function_size> r{0.0};
   r[0] = 1.;
   r[1] = y[0]-x[0];
   r[2] = y[1]-x[1];
@@ -432,7 +432,7 @@ basis_shift<Linear, 2>(Point<2> x, Point<2> y) {
 template<>
 array<double, BasisTraits<Linear, 3>::function_size>
 basis_shift<Linear, 3>(Point<3> x, Point<3> y) {
-  array<double, BasisTraits<Linear, 3>::function_size> r;
+  array<double, BasisTraits<Linear, 3>::function_size> r{0.0};
   r[0] = 1.;
   r[1] = y[0]-x[0];
   r[2] = y[1]-x[1];
@@ -447,7 +447,7 @@ basis_shift<Linear, 3>(Point<3> x, Point<3> y) {
 template<>
 array<double, BasisTraits<Quadratic, 1>::function_size>
 basis_function<Quadratic, 1>(Point<1> x) {
-  array<double, BasisTraits<Quadratic, 1>::function_size> r;
+  array<double, BasisTraits<Quadratic, 1>::function_size> r{0.0};
   r[0] = 1.;
   r[1] = x[0];
   r[2] = .5 * x[0] * x[0];
@@ -457,7 +457,7 @@ basis_function<Quadratic, 1>(Point<1> x) {
 template<>
 array<double, BasisTraits<Quadratic, 2>::function_size>
 basis_function<Quadratic, 2>(Point<2> x) {
-  array<double, BasisTraits<Quadratic, 2>::function_size> r;
+  array<double, BasisTraits<Quadratic, 2>::function_size> r{0.0};
   r[0] = 1.;
   r[1] = x[0];
   r[2] = x[1];
@@ -470,7 +470,7 @@ basis_function<Quadratic, 2>(Point<2> x) {
 template<>
 array<double, BasisTraits<Quadratic, 3>::function_size>
 basis_function<Quadratic, 3>(Point<3> x) {
-  array<double, BasisTraits<Quadratic, 3>::function_size> r;
+  array<double, BasisTraits<Quadratic, 3>::function_size> r{0.0};
   r[0] = 1.;
   r[1] = x[0];
   r[2] = x[1];
@@ -495,7 +495,7 @@ basis_jet<Quadratic,1>(Point<1> x){
   array<
   array<double, BasisTraits<Quadratic, 1>::function_size>,
   BasisTraits<Quadratic, 1>::function_size
-  > r;
+    > r{0.0};
   r[0][0] = 1.;
 
   r[1][0] = x[0];
@@ -516,7 +516,7 @@ basis_jet<Quadratic,2>(Point<2> x){
   array<
   array<double, BasisTraits<Quadratic, 2>::function_size>,
   BasisTraits<Quadratic, 2>::function_size
-  > r;
+    > r{0.0};
   r[0][0] = 1.;
   r[1][0] = x[0];
   r[2][0] = x[1];
@@ -546,7 +546,7 @@ basis_jet<Quadratic,3>(Point<3> x){
   array<
   array<double, BasisTraits<Quadratic, 3>::function_size>,
   BasisTraits<Quadratic, 3>::function_size
-  > r;
+    > r{0.0};
   r[0][0] = 1.;
   r[1][0] = x[0];
   r[2][0] = x[1];
