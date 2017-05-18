@@ -78,11 +78,12 @@ class WeightTest : public TestWithParam<tuple<Geometry, Kernel>> {
   template <size_t Dim>
       void checkWeight(const Geometry geo, const Kernel kernel) {
 
-    srand(time(NULL));
+    //    srand(time(NULL));
     Point<Dim> x;
     for (int d = 0; d < Dim; d++) x[d] = ((double)rand())/RAND_MAX;
     
-    array<double, Dim> h{1.0};
+    array<double, Dim> h;
+    for (int d = 0; d < Dim; d++) h[d] = 1.0;
 
     double weight_at_x = eval<Dim>(geo, kernel, x, x, h);
 
@@ -113,10 +114,11 @@ class WeightTest : public TestWithParam<tuple<Geometry, Kernel>> {
 
       bool outside = false;
       if (geo == ELLIPTIC) {
-        double s = v.norm(true);
-        Vector<Dim> vunit = v/s;
-        double hlen = fabs(dot(vunit, h2));  // distance in dir. of v at which support ends
-        outside = (s > 2*hlen) ? true : false;
+        double s = 0.0;
+        for (size_t d = 0; d < Dim; d++)
+          s += v[d]*v[d]/(2*h[d]*2*h[d]);
+        s = sqrt(s);
+        outside = (s > 1.0) ? true : false;
       } else if (geo == TENSOR) {
         for (size_t d = 0; d < Dim; d++)
           if (fabs(v[d]) > 2*h[d]) outside = true;
@@ -145,9 +147,23 @@ TEST_P(WeightTest, check_weights_1D) {
   checkWeight<1>(std::get<0>(GetParam()), std::get<1>(GetParam()));
 }
 
+// Parameterized test for 2D
+TEST_P(WeightTest, check_weights_2D) {
+  checkWeight<2>(std::get<0>(GetParam()), std::get<1>(GetParam()));
+}
+
+// Parameterized test for 3D
+TEST_P(WeightTest, check_weights_3D) {
+  checkWeight<3>(std::get<0>(GetParam()), std::get<1>(GetParam()));
+}
 
 INSTANTIATE_TEST_CASE_P(GeoKernelCombos,
                         WeightTest,
-                        Combine(Values(ELLIPTIC, TENSOR), // Add FACETED
-                                Values(B4, SQUARE, EPANECHNIKOV, POLYRAMP,
+                        Combine(Values(ELLIPTIC, TENSOR),
+                                Values(B4, SQUARE, EPANECHNIKOV,
                                        INVSQRT, COULOMB)));
+
+// INSTANTIATE_TEST_CASE_P(FacetedSupport,
+//                        WeightTest,
+//                        Combine(FACETED, POLYRAMP));
+                        
