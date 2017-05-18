@@ -177,6 +177,7 @@ inline double dpolyramp(double x){
   double y;
   y=((-1.)*(1. + Sign(1. - x)))*.5 +
       ((- 2. + x)*(1. + Sign(2. - x))*(1. + Sign(-1. + x)))/4.;
+  y /= 1.5;
   return y;
 }
 
@@ -185,6 +186,7 @@ inline double ddpolyramp(double x){
   double y;
   y=((0.)*(1. + Sign(1. - x)))*.5 +
       ((1.)*(1. + Sign(2. - x))*(1. + Sign(-1. + x)))/4.;
+  y /= 1.5;
   return y;
 }
 
