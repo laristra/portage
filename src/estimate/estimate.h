@@ -14,8 +14,8 @@
 #include <cassert>
 
 #include "portage/support/Point.h"
-#include "weight.h"
-#include "basis.h"
+#include "portage/support/weight.h"
+#include "portage/support/basis.h"
 #include "portage/swarm/swarm.h"
 #include "portage/swarm/swarm_state.h"
 

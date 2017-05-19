@@ -44,7 +44,7 @@ POSSIBILITY OF SUCH DAMAGE.
 
 #include "gtest/gtest.h"
 
-#include "portage/estimate/weight.h"
+#include "portage/support/weight.h"
 #include "portage/support/Point.h"
 #include "portage/support/Vector.h"
 

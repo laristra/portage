@@ -43,7 +43,7 @@ POSSIBILITY OF SUCH DAMAGE.
 
 #include "portage/support/Vector.h"
 #include "portage/support/Point.h"
-#include "portage/estimate/basis.h"
+#include "portage/support/basis.h"
 
 using Portage::Meshfree::Basis::Type;
 using Portage::Meshfree::Basis::Unitary;

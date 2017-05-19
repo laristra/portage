@@ -50,6 +50,8 @@ set(support_HEADERS
     Vector.h
     Point.h
     Matrix.h
+    weight.h
+    basis.h
     PARENT_SCOPE
 )
 
@@ -66,5 +68,17 @@ if (ENABLE_UNIT_TESTS)
     SOURCES test/test_matfuncs.cc
     POLICY MPI
     THREADS 1)
+
+  cinch_add_unit(test_weight
+    SOURCES test/test_weight.cc
+    POLICY MPI
+    THREADS 1
+    )
+
+  cinch_add_unit(test_basis
+    SOURCES test/test_basis.cc
+    POLICY MPI
+    THREADS 1
+    )
 
 endif(ENABLE_UNIT_TESTS)
