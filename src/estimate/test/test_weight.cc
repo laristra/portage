@@ -63,6 +63,9 @@ using Portage::Meshfree::Weight::COULOMB;
 
 using Portage::Meshfree::Weight::eval;
 
+using Portage::Meshfree::Weight::FacetData;
+using Portage::Meshfree::Weight::faceted;
+
 using Portage::Point;
 using Portage::Vector;
 using std::tuple;
@@ -82,12 +85,35 @@ class WeightTest : public TestWithParam<tuple<Geometry, Kernel>> {
     Point<Dim> x;
     for (int d = 0; d < Dim; d++) x[d] = ((double)rand())/RAND_MAX;
     
+    static double nominal_h = .2;
     array<double, Dim> h;
-    for (int d = 0; d < Dim; d++) h[d] = 1.0;
+    for (int d = 0; d < Dim; d++) h[d] = nominal_h;
 
-    double weight_at_x = eval<Dim>(geo, kernel, x, x, h);
+    size_t nsides = 2*Dim;
+    vector<FacetData<Dim>> facets(nsides);
+    if (geo == FACETED) { 
+      // set up an isothetic box like TENSOR
+      size_t side = 0;
+      for (size_t j=0; j<Dim; j++) {
+	for (size_t k=0; k<Dim; k++) facets[side].normal[k] = 0.;
+	facets[side].normal[j] = -1.;
+	facets[side].smoothing = nominal_h;
+	side++;
+	for (size_t k=0; k<Dim; k++) facets[side].normal[k] = 0.;
+	facets[side].normal[j] = 1.;
+	facets[side].smoothing = nominal_h;
+	side++;
+      }
+    }
 
-    np = 10;
+    double weight_at_x;
+    if (geo == FACETED) { 
+      weight_at_x = faceted<Dim>(x,x, &facets[0], nsides);
+    } else {
+      weight_at_x = eval<Dim>(geo, kernel, x, x, h);
+    }
+
+    np = powl(10,Dim);
     vector<double> weight(np);
 
     for (size_t i = 0; i < np; i++) {
@@ -99,7 +125,11 @@ class WeightTest : public TestWithParam<tuple<Geometry, Kernel>> {
       for (size_t d = 0; d < Dim; d++)
         y[d] += 6*h[d]*(((double)rand())/RAND_MAX - 0.5);
       
-      weight[i] = eval<Dim>(geo, kernel, x, y, h);
+      if (geo == FACETED) {
+	weight[i] = faceted<Dim>(x,y, &facets[0], nsides);
+      } else {
+	weight[i] = eval<Dim>(geo, kernel, x, y, h);
+      }
 
       // Check that the weight at no other point is greater than that at x
       ASSERT_GE(weight_at_x, weight[i]);
@@ -119,11 +149,9 @@ class WeightTest : public TestWithParam<tuple<Geometry, Kernel>> {
           s += v[d]*v[d]/(2*h[d]*2*h[d]);
         s = sqrt(s);
         outside = (s > 1.0) ? true : false;
-      } else if (geo == TENSOR) {
+      } else if (geo == TENSOR or geo == FACETED) {
         for (size_t d = 0; d < Dim; d++)
           if (fabs(v[d]) > 2*h[d]) outside = true;
-      } else if (geo == FACETED) {
-        ASSERT_TRUE(false);        // NOT READY TO TEST FACETED CASE YET
       }
 
       if (outside)
@@ -163,7 +191,7 @@ INSTANTIATE_TEST_CASE_P(GeoKernelCombos,
                                 Values(B4, SQUARE, EPANECHNIKOV,
                                        INVSQRT, COULOMB)));
 
-// INSTANTIATE_TEST_CASE_P(FacetedSupport,
-//                        WeightTest,
-//                        Combine(FACETED, POLYRAMP));
+INSTANTIATE_TEST_CASE_P(FacetedSupport,
+                        WeightTest,
+                        Combine(Values(FACETED), Values(POLYRAMP)));
                         
