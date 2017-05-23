@@ -10,6 +10,7 @@
 #include <array>
 #include <cassert>
 #include <limits>
+#include <vector>
 
 #include "portage/support/Point.h"
 
@@ -20,6 +21,7 @@ namespace Weight {
 using std::pow;
 using std::abs;
 using std::array;
+using std::vector;
 using std::numeric_limits;
 
 //\///////////////////////////////////////////////////////////////////////////
@@ -330,6 +332,41 @@ double faceted(const Point<dim> x, const Point<dim> y,
     arg /= facets[i].smoothing;
     result *= polyramp(arg);
   }
+}
+
+/// evaluation function for any weight
+template<size_t dim>
+double eval(const Geometry geo,
+            const Kernel kern,
+            const Point<dim> x, const Point<dim> y,
+            vector<vector<double>> vh)
+{
+  double result;
+  double norm = kernel(kern, 0.0);
+  switch (geo) {
+    case TENSOR:
+    case ELLIPTIC: {
+      array<double, dim> h;
+      for (size_t i=0; i<dim; i++) h[i] = vh[0][i];
+      result = eval<dim>(geo,kern,x,y,h);
+      break;
+    }
+
+    case FACETED:{
+      size_t nsides = vh.size();
+      FacetData<dim> facets[nsides];
+      for (size_t i=0; i<nsides; i++) {
+        for (size_t j=0; j<dim; j++) facets[i].normal[j] = vh[i][j];
+        facets[i].smoothing = vh[i][dim];
+      }
+      result = faceted<dim>(x,y,facets,nsides);
+      break;
+    }
+
+    default:
+      throw std::runtime_error("invalid weight geometry");
+  }
+  return result;
 }
 
 }
