@@ -49,11 +49,11 @@ using Portage::Meshfree::Basis::Type;
 using Portage::Meshfree::Basis::Unitary;
 using Portage::Meshfree::Basis::Linear;
 using Portage::Meshfree::Basis::Quadratic;
-using Portage::Meshfree::Basis::BasisTraits;
-using Portage::Meshfree::Basis::basis_function;
-using Portage::Meshfree::Basis::basis_shift;
-using Portage::Meshfree::Basis::basis_jet;
-using Portage::Meshfree::Basis::basis_inverse_jet;
+using Portage::Meshfree::Basis::Traits;
+using Portage::Meshfree::Basis::function;
+using Portage::Meshfree::Basis::shift;
+using Portage::Meshfree::Basis::jet;
+using Portage::Meshfree::Basis::inverse_jet;
 using Portage::Point;
 using std::array;
 
@@ -121,13 +121,13 @@ class BasisTest : public ::testing::Test {
     for (size_t d = 0; d < Dim; d++)
       y[d] = ((double)rand())/RAND_MAX;
 
-    auto bf_x = basis_function<type, Dim>(x);
-    auto bf_y = basis_function<type, Dim>(y);
-    auto bf_y_minus_x = basis_function<type, Dim>(Point<Dim>(y-x));
-    auto bf_shifted_xy = basis_shift<type, Dim>(x, y);
-    auto bj_x = basis_jet<type, Dim>(x);
-    auto bj_negx = basis_jet<type, Dim>(-1.0*x);
-    auto bjinv_x = basis_inverse_jet<type, Dim>(x);
+    auto bf_x = function<type, Dim>(x);
+    auto bf_y = function<type, Dim>(y);
+    auto bf_y_minus_x = function<type, Dim>(Point<Dim>(y-x));
+    auto bf_shifted_xy = shift<type, Dim>(x, y);
+    auto bj_x = jet<type, Dim>(x);
+    auto bj_negx = jet<type, Dim>(-1.0*x);
+    auto bjinv_x = inverse_jet<type, Dim>(x);
 
 
     // Check that J(x)*Jinverse(x) is identity
@@ -138,9 +138,9 @@ class BasisTest : public ::testing::Test {
     ASSERT_TRUE(is_equal(bj_negx, bjinv_x, 1.0e-08));
 
     // Check that b(x) = J(x).e0 or bf_x1 = bj_x1*e0
-    array<double, BasisTraits<type, Dim>::function_size>
+    array<double, Traits<type, Dim>::function_size>
         e0{1.0};
-    array<double, BasisTraits<type, Dim>::function_size>
+    array<double, Traits<type, Dim>::function_size>
         vec1 = matvecmult(bj_x, e0);
     ASSERT_TRUE(is_equal(bf_x, vec1, 1.0e-08));
                 
@@ -148,7 +148,7 @@ class BasisTest : public ::testing::Test {
     ASSERT_TRUE(is_equal(bf_shifted_xy, bf_y_minus_x, 1.0e-08));
     
     // Check that b_shifted(x,y) = Jinverse(x)*b(y)
-    array<double, BasisTraits<type, Dim>::function_size>
+    array<double, Traits<type, Dim>::function_size>
         vec2 = matvecmult(bjinv_x, bf_y);
     ASSERT_TRUE(is_equal(bf_shifted_xy, vec2, 1.0e-8));
   }
