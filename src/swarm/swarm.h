@@ -44,16 +44,27 @@ template<size_t dim> class Swarm {
 
   /*! @brief return the nubmer of particles in the swarm.
    * @return the number of particles in the swarm
+   *
+   * DEPRECATED - use num_owned_points instead.
    */
-  int num_owned_cells() {
+  int num_owned_cells() const {
+    return npoints_;
+  }
+
+  /*! @brief return the nubmer of particles in the swarm.
+   * @return the number of particles in the swarm
+   */
+  int num_owned_points() const {
     return npoints_;
   }
 
   /*! @brief Get the coordinates of the particle bounding boxes.
    * @param c index of particle of interest
    * @param cell_coord the bounding box vertices
+   *
+   * DEPRECATED - use node_get_coordinates instead.
    */
-  void cell_get_coordinates(int c, PointVec* cell_coord) {
+  void cell_get_coordinates(const int c, PointVec* cell_coord) const {
     size_t ncorners=powl(2,dim);
     cell_coord->resize(ncorners);
     for (size_t corner=0; corner<ncorners; corner++) {
@@ -63,6 +74,14 @@ template<size_t dim> class Swarm {
       for (size_t j=0; j<dim; j++) (*cell_coord)[corner][j] =
 				     (*points_)[c][j]+offset[j]*2.*(*extents_)[c][j];
     }
+  }
+
+  /*! @brief Get the coordinates of the particle,
+   * @param c index of particle of interest
+   * @param node_coord the particle coordinates
+   */
+  void node_get_coordinates(const int c, Point<dim>* node_coord) const {
+    *node_coord = (*points_)[c];
   }
 
  private:

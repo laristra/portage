@@ -77,6 +77,11 @@ if(ENABLE_UNIT_TESTS)
       LIBRARIES portage ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
       POLICY MPI
       THREADS 1)
+    cinch_add_unit(search_simple_points_test
+      SOURCES search_simple_points_test.cc
+      LIBRARIES portage ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
+      POLICY MPI
+      THREADS 1)
   endif (Jali_DIR)
 endif(ENABLE_UNIT_TESTS)
 
