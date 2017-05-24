@@ -9,6 +9,7 @@
 #include <cassert>
 #include <cmath>
 #include <array>
+#include <vector>
 
 #include "portage/support/Point.h"
 
@@ -17,6 +18,7 @@ namespace Meshfree {
 namespace Basis {
 
 using std::array;
+using std::vector;
 
 enum Type {Unitary, Linear, Quadratic, LastBasis};
 
@@ -54,6 +56,44 @@ class Traits<Quadratic, dim>
     jet_size={quadratic_sizes[dim], quadratic_sizes[dim]};
 };
 
+template<size_t dim>
+size_t function_size(Type btype){
+  size_t result;
+  switch (btype) {
+    case Unitary:
+      result = Traits<Unitary, dim>::function_size;
+      break;
+    case Linear:
+      result = Traits<Linear, dim>::function_size;
+      break;
+    case Quadratic:
+      result = Traits<Quadratic, dim>::function_size;
+      break;
+    default:
+      assert(false);
+  }
+  return result;
+}
+
+template<size_t dim>
+array<size_t,2> jet_size(Type btype) {
+  array<size_t,2> result;
+  switch(btype) {
+    case Unitary:
+      result = Traits<Unitary, dim>::jet_size;
+      break;
+    case Linear:
+      result = Traits<Linear, dim>::jet_size;
+      break;
+    case Quadratic:
+      result = Traits<Quadratic, dim>::jet_size;
+      break;
+    default:
+      assert(false);
+  }
+  return result;
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // Templates
 ////////////////////////////////////////////////////////////////////////////////
@@ -90,6 +130,32 @@ shift(Point<dim> x, Point<dim> y){
   }
 
   return r;
+}
+
+template<size_t dim>
+vector<double> shift(Type type, Point<dim> x, Point<dim> y){
+  size_t nbasis = function_size<dim>(type);
+  vector<double> result(nbasis);
+  switch (type) {
+    case Unitary: {
+      auto resulta = shift<Unitary, dim>(x,y);
+      for (size_t i=0; i<nbasis; i++) result[i] = resulta[i];
+      break;
+    }
+    case Linear: {
+      auto resulta = shift<Linear, dim>(x,y);
+      for (size_t i=0; i<nbasis; i++) result[i] = resulta[i];
+      break;
+    }
+    case Quadratic: {
+      auto resulta = shift<Quadratic, dim>(x,y);
+      for (size_t i=0; i<nbasis; i++) result[i] = resulta[i];
+      break;
+    }
+    default:
+      assert(false);
+  }
+  return result;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

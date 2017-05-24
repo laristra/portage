@@ -39,6 +39,8 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGE.
 */
 
+#include <vector>
+
 #include "gtest/gtest.h"
 
 #include "portage/support/Vector.h"
@@ -51,6 +53,8 @@ using Portage::Meshfree::Basis::Linear;
 using Portage::Meshfree::Basis::Quadratic;
 using Portage::Meshfree::Basis::Traits;
 using Portage::Meshfree::Basis::function;
+using Portage::Meshfree::Basis::function_size;
+using Portage::Meshfree::Basis::jet_size;
 using Portage::Meshfree::Basis::shift;
 using Portage::Meshfree::Basis::jet;
 using Portage::Meshfree::Basis::inverse_jet;
@@ -129,28 +133,42 @@ class BasisTest : public ::testing::Test {
     auto bj_negx = jet<type, Dim>(-1.0*x);
     auto bjinv_x = inverse_jet<type, Dim>(x);
 
-
     // Check that J(x)*Jinverse(x) is identity
     auto j_jinv = matmatmult(bj_x, bjinv_x);
-    ASSERT_TRUE(is_identity(j_jinv, 1.0e-08));
+    ASSERT_TRUE(is_identity(j_jinv, 1.0e-12));
     
     // Check that Jinverse(x) = J(-x)
-    ASSERT_TRUE(is_equal(bj_negx, bjinv_x, 1.0e-08));
+    ASSERT_TRUE(is_equal(bj_negx, bjinv_x, 1.0e-12));
 
     // Check that b(x) = J(x).e0 or bf_x1 = bj_x1*e0
     array<double, Traits<type, Dim>::function_size>
         e0{1.0};
     array<double, Traits<type, Dim>::function_size>
         vec1 = matvecmult(bj_x, e0);
-    ASSERT_TRUE(is_equal(bf_x, vec1, 1.0e-08));
+    ASSERT_TRUE(is_equal(bf_x, vec1, 1.0e-12));
                 
     // Check that b(y-x) = b_shifted(x,y)
-    ASSERT_TRUE(is_equal(bf_shifted_xy, bf_y_minus_x, 1.0e-08));
+    ASSERT_TRUE(is_equal(bf_shifted_xy, bf_y_minus_x, 1.0e-12));
     
     // Check that b_shifted(x,y) = Jinverse(x)*b(y)
     array<double, Traits<type, Dim>::function_size>
         vec2 = matvecmult(bjinv_x, bf_y);
     ASSERT_TRUE(is_equal(bf_shifted_xy, vec2, 1.0e-8));
+
+    // check external-facing size functions are correct
+    size_t fs0, gs0, js0, js1, ks0, ks1;
+    fs0=function_size<Dim>(type); gs0=Traits<type,Dim>::function_size;
+    ASSERT_EQ(fs0, gs0);
+    js0=jet_size<Dim>(type)[0]; ks0=Traits<type,Dim>::jet_size[0];
+    ASSERT_EQ(js0, ks0);
+    js1=jet_size<Dim>(type)[1]; ks1=Traits<type,Dim>::jet_size[1];
+    ASSERT_EQ(js1, ks1);
+
+    // Check that vector-valued function is correct
+    for (int i=0; i<Traits<type, Dim>::function_size; i++) {
+      std::vector<double> result(shift<Dim>(type, x,y));
+      ASSERT_EQ(bf_shifted_xy[i], result[i]);
+    }
   }
 
 };
