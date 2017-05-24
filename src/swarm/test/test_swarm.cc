@@ -83,11 +83,15 @@ TEST(Swarm, Sanity_Check) {
     std::vector<Portage::Point<3>> cpoints;
     swarm.cell_get_coordinates(i, &cpoints);
 
-    // Did we get all corners of the hex
+    // Are the point coordinates correct?
+    auto pt = swarm.get_particle_coordinates(i);
+    for (size_t j=0; j<3; j++) ASSERT_EQ(pt[j], points[i][j]);
+
+    // Did we get all corners of the hex?
     int np = cpoints.size();
     ASSERT_EQ(8, np);
 
-    // What is the bounding box and center of this hex
+    // What is the bounding box and center of this hex?
     Portage::Point<3> bbox[2], cen;
     bbox[0] = Portage::Point<3>( 1.e99,  1.e99,  1.e99);
     bbox[1] = Portage::Point<3>(-1.e99, -1.e99, -1.e99);

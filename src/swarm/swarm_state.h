@@ -67,6 +67,11 @@ class SwarmState {
    */
   void get_field(const string name, DblVecPtr &value);
 
+  /*! @brief Get number of points in swarm
+   * @return number of points
+   */
+  size_t get_size(){return swarm_->num_owned_cells();}
+
  private:
   /** reference swarm state */
   shared_ptr<Swarm<dim>> swarm_;
