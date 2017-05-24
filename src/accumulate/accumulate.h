@@ -43,8 +43,7 @@ POSSIBILITY OF SUCH DAMAGE.
 #define ACCUMULATE_H_INC_
 
 #include <vector>
-#include <tr1/shared_ptr.h>
-#include <string>
+#include <memory>
 #include <cmath>
 #include <array>
 #include <cassert>
@@ -59,11 +58,6 @@ POSSIBILITY OF SUCH DAMAGE.
 namespace Portage {
 namespace Meshfree {
 
-using std::string;
-using std::vector;
-using std::tr1::shared_ptr;
-using std::map;
-
 enum EstimateType {
   KernelDensity,
   LocalRegression
@@ -74,6 +68,9 @@ enum WeightCenter {
   Gather,  ///< target
   Scatter  ///< source
 };
+
+using std::vector;
+using std::shared_ptr;
 
 /*!
  * @brief Compute the local regression estimator corrected weights
@@ -112,76 +109,91 @@ class Accumulate {
 
     // resize the moment matrix storage to number of target particles
     if (estimate_ == LocalRegression) {
-      moment_.resize(target_->num_owned_cells);
-      size_t basis_size = Basis::Traits<basis,dim>::function;
+      moment_.resize(target_->num_owned_cells());
+      size_t basis_size = Basis::function_size<dim>(basis_);
       for (size_t i=0; i<target_->num_owned_cells(); i++) {
         moment_[i].resize(basis_size);
-        for (size_t j=0; basis_size; j++) {
-          moment_[i][j].resize(basis_size);
-          for (size_t k=0; k<basis_size; k++) moment_[i][j][k] = 0.0;
+        for (size_t j=0; j<basis_size; j++) {
+          moment_[i][j].resize(basis_size, 0.0);
         }
       }
     }
   }
 
-  /// @brief Evaluate meshfree weight function
+  /** @brief Evaluate meshfree weight function
+   * @param particleA source index
+   * @param particleB target index
+   */
   double weight(const size_t particleA, const size_t particleB)
   {
     double result;
     Point<dim> x = target_->get_particle_coordinates(particleB);
     Point<dim> y = source_->get_particle_coordinates(particleA);
     if (center_ == Gather) {
-      result = Weight::eval((*geometries_)[particleB],
-                            (*kernels_)[particleB],
-                            x,y,
-                            (*smoothing_)[particleB]);
+      result = Weight::eval<dim>((*geometries_)[particleB],
+                                 (*kernels_)[particleB],
+                                 x,y,
+                                 (*smoothing_)[particleB]);
     } else if (center_ == Scatter) {
-      result = Weight::eval((*geometries_)[particleA],
-                            (*kernels_)[particleA],
-                            x,y,
-                            (*smoothing_)[particleA]);
+      result = Weight::eval<dim>((*geometries_)[particleA],
+                                 (*kernels_)[particleA],
+                                 x,y,
+                                 (*smoothing_)[particleA]);
     }
     return result;
   }
 
+  /** @brief Accumulate meshfree moment matrix
+  * @param particleA source index
+  * @param particleB target index
+  */
   void accumulate(const size_t particleA, const size_t particleB) {
     switch (estimate_) {
-      case LocalRegression:
+      case KernelDensity: break;
+      case LocalRegression: {
         double weight_val = weight(particleA, particleB);
         Point<dim> x = target_->get_particle_coordinates(particleB);
         Point<dim> y = source_->get_particle_coordinates(particleA);
-        auto basis = Basis::shift<basis_,dim>(x,y);
-        for (size_t i=0; i<Basis::Traits<basis_,dim>; i++) {
-          for (size_t j=0; j<Basis::Traits<basis_,dim>; j++) {
+        auto basis = Basis::shift<dim>(basis_,x,y);
+        size_t nbasis = basis.size();
+        for (size_t i=0; i<nbasis; i++) {
+          for (size_t j=0; j<nbasis; j++) {
             moment_[particleA][i][j] += basis[i]*basis[j]*weight_val;
           }
         }
         break;
-      default:
+      }
+      default: assert(false);
     }
   }
 
+  /** @brief Evaluate meshfree shape function (estimator vector)
+  * @param particleA source index
+  * @param particleB target index
+  */
   std::vector<double> operator()
       (const size_t particleA, const size_t particleB)
   {
     double weight_val = weight(particleA, particleB);
     vector<double> result(1);
     switch (estimate_) {
-      case KernelDensity:
+      case KernelDensity: {
         result[0] = weight_val;
         break;
-      case LocalRegression:
-        size_t nbasis = Basis::Traits<basis_,dim>::function_size;
+      }
+      case LocalRegression: {
+        size_t nbasis = Basis::function_size<dim>(basis_);
         result.resize(nbasis);
         Point<dim> x = target_->get_particle_coordinates(particleB);
         Point<dim> y = source_->get_particle_coordinates(particleA);
-        auto basis = Basis::shift<basis_,dim>(x,y);
+        auto basis = Basis::shift<dim>(basis_,x,y);
         auto matrix = Matrix(moment_[particleA]);
         auto inverse = matrix.inverse();
         result = inverse*basis;
         for (size_t i=0; i<nbasis; i++) result[i] *= weight_val;
         break;
-      default:
+      }
+      default:  assert(false);
     }
     return result;
   }

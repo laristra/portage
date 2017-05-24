@@ -42,7 +42,6 @@ POSSIBILITY OF SUCH DAMAGE.
 
 #include <cmath>
 #include <memory>
-#include <tr1/shared_ptr.h>
 #include <vector>
 #include "gtest/gtest.h"
 
@@ -51,53 +50,111 @@ POSSIBILITY OF SUCH DAMAGE.
 #include "accumulate.h"
 
 using std::vector;
-using std::tr1::shared_ptr;
-using std::tr1::make_shared;
+using std::shared_ptr;
+using std::make_shared;
 using Portage::Point;
 
 template<size_t dim>
 void test_accumulate() {
+  using namespace Portage::Meshfree;
+
+  // create the source and target swarms input data
   const size_t nside = 8;
   const size_t npoints = powl(nside,dim);
-  double smoothing = 1./nside;
-  double jitter = 0.3*smoothing;
-  shared_ptr<vector<Point<dim>>> src_pts(npoints), tgt_pts(npoints),
-       extents(npoints);
-  auto src_pts = make_shared<Portage::Meshfree::Swarm<dim>::PointVec>(npoints);
-  auto tgt_pts = make_shared<Portage::Meshfree::Swarm<dim>::PointVec>(npoints);
-  auto extents = make_shared<Portage::Meshfree::Swarm<dim>::PointVec>(npoints);
+  const double smoothing = 1./nside;
+  const double jitter = 0.3*smoothing;
+  auto src_pts = make_shared<Swarm<dim>::PointVec>(npoints);
+  auto tgt_pts = make_shared<Swarm<dim>::PointVec>(npoints);
+  auto extents = make_shared<Swarm<dim>::PointVec>(npoints);
   for (size_t i=0; i<npoints; i++) {
     size_t offset = 0, index;
     for (size_t k=0; k<dim; k++) {
       index = (i - offset)/powl(nside, dim-k-1);
       offset += index*powl(nside, dim-k-1);
 
-      double delta = 2.*(((double)rand())/RAND_MAX -.5)*jitter;
+      double delta;
+
+      delta = 2.*(((double)rand())/RAND_MAX -.5)*jitter;
       (*src_pts)[i][k] = 1.25*index*smoothing + delta;
 
-      double delta = 2.*(((double)rand())/RAND_MAX -.5)*jitter;
+      delta = 2.*(((double)rand())/RAND_MAX -.5)*jitter;
       (*tgt_pts)[i][k] = index*smoothing + delta;
 
       (*extents)[i][k] = 1.5*smoothing;
     }
   }
 
+  // create source+target swarms, kernels, geometries, and smoothing lengths
   auto src_swarm = make_shared<Swarm<dim>>(src_pts, extents);
   auto tgt_swarm = make_shared<Swarm<dim>>(tgt_pts, extents);
-  auto kernels = make_shared<vector<Portage::Meshfree::Weight::Kernel>>(npoints);
-  auto geometries = make_shared<vector<Portage::Meshfree::Weight::Geometry>>(npoints);
-  auto smoothing = make_shared<vector<vector<vector<double>>>
+  auto kernels = make_shared<vector<Weight::Kernel>>(npoints, Weight::B4);
+  auto geometries = make_shared<vector<Weight::Geometry>>(npoints, Weight::TENSOR);
+  auto smoothingh = make_shared<vector<vector<vector<double>>>>
       (npoints, vector<vector<double>>(1, vector<double>(dim, smoothing)));
 
-  Portage::Meshfree::Accumulate accum(
+  // Density Estimation ----------------------------------------------------
+  {
+    // create the accumulator for kernel density estimator
+    Accumulate<dim> accum(
         src_swarm,
         tgt_swarm,
         Portage::Meshfree::KernelDensity,
         Portage::Meshfree::Gather,
         kernels,
         geometries,
-        smoothing,
+        smoothingh,
         Portage::Meshfree::Basis::Unitary);
+
+    // do the accumulation loop
+    for (size_t i=0; i<npoints; i++) {
+      for (size_t j=0; j<npoints; j++) {
+        accum.accumulate(i, j);
+      }
+    }
+
+    // do the generation loop
+    for (size_t i=0; i<npoints; i++) {
+      for (size_t j=0; j<npoints; j++) {
+        auto shape_vec = accum(i, j);
+        double weight = accum.weight(i,j);
+        ASSERT_EQ (shape_vec[0], weight);
+      }
+    }
+  }
+
+  // Local Unitary Regression (Shepard functions, NURBS) ----------------------
+  {
+    // create the accumulator for kernel density estimator
+    Accumulate<dim> accum(
+        src_swarm,
+        tgt_swarm,
+        Portage::Meshfree::LocalRegression,
+        Portage::Meshfree::Gather,
+        kernels,
+        geometries,
+        smoothingh,
+        Portage::Meshfree::Basis::Unitary);
+
+    // do the accumulation loop
+    for (size_t i=0; i<npoints; i++) {
+      for (size_t j=0; j<npoints; j++) {
+        accum.accumulate(i, j);
+      }
+    }
+
+    vector<vector<double>> sums(npoints, vector<double>(1,0.));
+
+    // do the correction loop
+    for (size_t i=0; i<npoints; i++) {
+      for (size_t j=0; j<npoints; j++) {
+        auto shape_vec = accum(i, j);
+        sums[i][0] += shape_vec[0];
+      }
+    }
+
+    // check all results are 1
+    for (size_t i=0; i<npoints; i++) ASSERT_NEAR(sums[i][0], 1.0, 1.e-12);
+  }
 }
 
 TEST(accumulate, 1d) {
@@ -108,9 +165,12 @@ TEST(accumulate, 2d) {
   test_accumulate<2>();
 }
 
+/*
 TEST(accumulate, 3d) {
   test_accumulate<3>();
 }
+*/
+
 
 
 
