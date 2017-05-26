@@ -158,7 +158,7 @@ class Accumulate {
         size_t nbasis = basis.size();
         for (size_t i=0; i<nbasis; i++) {
           for (size_t j=0; j<nbasis; j++) {
-            moment_[particleA][i][j] += basis[i]*basis[j]*weight_val;
+            moment_[particleB][i][j] += basis[i]*basis[j]*weight_val;
           }
         }
         break;
@@ -167,11 +167,24 @@ class Accumulate {
     }
   }
 
+  void invert() {
+    if (estimate_ == KernelDensity) return;
+    if (moment_.size() != target_->num_owned_cells()) return;
+    for (size_t i=0; i<target_->num_owned_cells(); i++) {
+      auto matrix = Matrix(moment_[i]);
+      auto inverse = matrix.inverse();
+      size_t nbasis = Basis::function_size<dim>(basis_);
+      for (size_t j=0; j<nbasis; j++) for (size_t k=0; k<nbasis; k++) {
+        moment_[i][j][k] = inverse[j][k];
+      }
+    }
+  }
+
   /** @brief Evaluate meshfree shape function (estimator vector)
   * @param particleA source index
   * @param particleB target index
   */
-  std::vector<double> operator()
+  std::vector<double> corrected_weight
       (const size_t particleA, const size_t particleB)
   {
     double weight_val = weight(particleA, particleB);
@@ -187,9 +200,8 @@ class Accumulate {
         Point<dim> x = target_->get_particle_coordinates(particleB);
         Point<dim> y = source_->get_particle_coordinates(particleA);
         auto basis = Basis::shift<dim>(basis_,x,y);
-        auto matrix = Matrix(moment_[particleA]);
-        auto inverse = matrix.inverse();
-        result = inverse*basis;
+        Matrix inv_mom_mat(moment_[particleB]);
+        result = inv_mom_mat*basis;
         for (size_t i=0; i<nbasis; i++) result[i] *= weight_val;
         break;
       }
