@@ -48,6 +48,7 @@ POSSIBILITY OF SUCH DAMAGE.
 set(search_HEADERS
     search_simple.h
     search_kdtree.h
+    search_simple_points.h
     kdtree.h
     BoundBox.h
     PARENT_SCOPE
