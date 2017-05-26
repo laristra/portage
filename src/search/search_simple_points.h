@@ -128,16 +128,14 @@ const {
   using std::abs;
 
   // find coordinates of target point
-  Point<D> tpcoord;
-  targetSwarm_.node_get_coordinates(pointId, &tpcoord);
+  Point<D> tpcoord = targetSwarm_.get_particle_coordinates(pointId);
 
   // now see which source points are within an appropriate distance
   // of the target point
   // do a naive linear search
   const int numPoints = sourceSwarm_.num_owned_points();
   for (int p = 0; p < numPoints; ++p) {
-    Point<D> spcoord;
-    sourceSwarm_.node_get_coordinates(p, &spcoord);
+    Point<D> spcoord = sourceSwarm_.get_particle_coordinates(p);
     bool overlap = true;
     for (int d = 0; d < D; ++d) {
       double maxdist = 2. *

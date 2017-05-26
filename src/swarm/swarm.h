@@ -76,7 +76,9 @@ template<size_t dim> class Swarm {
     }
   }
 
-  Point<dim> get_particle_coordinates(size_t index){return (*points_)[index];}
+  Point<dim> get_particle_coordinates(const size_t index) const {
+    return (*points_)[index];
+  }
 
  private:
   /** the centers of the particles */
