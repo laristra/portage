@@ -31,6 +31,12 @@ template<size_t dim>
 class SwarmState {
  public:
   /*! @brief Integer data type allowed on the swarm.  */
+  using IntVec=vector<int>;
+
+  /*! @brief Double data type allowed on the swarm.  */
+  using DblVec=vector<double>;
+
+  /*! @brief Integer data type allowed on the swarm.  */
   using IntVecPtr=shared_ptr<vector<int>>;
 
   /*! @brief Double data type allowed on the swarm.  */
@@ -67,6 +73,11 @@ class SwarmState {
    */
   void get_field(const string name, DblVecPtr &value);
 
+  /*! @brief Get number of points in swarm
+   * @return number of points
+   */
+  size_t get_size(){return swarm_->num_owned_cells();}
+
  private:
   /** reference swarm state */
   shared_ptr<Swarm<dim>> swarm_;
@@ -86,11 +97,15 @@ void SwarmState<dim>::add_field(const string name, IntVecPtr value) {
   assert(value->size() == swarm_->num_owned_cells());
 
   // check duplicate
+  /* couldn't get this to work
   auto checkdup = int_field_map_.find(name);
-  if (checkdup == int_field_map_.end()) {
+  if (checkdup != int_field_map_.end()) {
+    IntVecPtr fieldp = checkdup->second;
+    IntVec field(*fieldp);
     throw std::runtime_error(string("tried to add int field ")+name+
                              "when it already existed");
   }
+  */
 
   // add it
   int_field_map_.insert(pair<string, IntVecPtr>(name, value));
@@ -102,11 +117,15 @@ void SwarmState<dim>::add_field(const string name, DblVecPtr value) {
   assert(value->size() == swarm_->num_owned_cells());
 
   // check duplicate
+  /* couldn't get this to work
   auto checkdup = dbl_field_map_.find(name);
-  if (checkdup == dbl_field_map_.end()) {
+  if (checkdup != dbl_field_map_.end()) {
+    DblVecPtr fieldp = checkdup->second;
+    DblVec field(*fieldp);
     throw std::runtime_error(string("tried to add double field ")+name+
-                             "when it already existed");
+                             " when it already existed");
   }
+  */
 
   // add it
   dbl_field_map_.insert(pair<string, DblVecPtr>(name, value));

@@ -1,43 +1,43 @@
 /*
-Copyright (c) 2017, Los Alamos National Security, LLC
-All rights reserved.
+ Copyright (c) 2017, Los Alamos National Security, LLC
+ All rights reserved.
 
-Copyright 2017. Los Alamos National Security, LLC. This software was produced
-under U.S. Government contract DE-AC52-06NA25396 for Los Alamos National
-Laboratory (LANL), which is operated by Los Alamos National Security, LLC for
-the U.S. Department of Energy. The U.S. Government has rights to use,
-reproduce, and distribute this software.  NEITHER THE GOVERNMENT NOR LOS ALAMOS
-NATIONAL SECURITY, LLC MAKES ANY WARRANTY, EXPRESS OR IMPLIED, OR ASSUMES ANY
-LIABILITY FOR THE USE OF THIS SOFTWARE.  If software is modified to produce
-derivative works, such modified software should be clearly marked, so as not to
-confuse it with the version available from LANL.
+ Copyright 2017. Los Alamos National Security, LLC. This software was produced
+ under U.S. Government contract DE-AC52-06NA25396 for Los Alamos National
+ Laboratory (LANL), which is operated by Los Alamos National Security, LLC for
+ the U.S. Department of Energy. The U.S. Government has rights to use,
+ reproduce, and distribute this software.  NEITHER THE GOVERNMENT NOR LOS ALAMOS
+ NATIONAL SECURITY, LLC MAKES ANY WARRANTY, EXPRESS OR IMPLIED, OR ASSUMES ANY
+ LIABILITY FOR THE USE OF THIS SOFTWARE.  If software is modified to produce
+ derivative works, such modified software should be clearly marked, so as not to
+ confuse it with the version available from LANL.
 
-Additionally, redistribution and use in source and binary forms, with or
-without modification, are permitted provided that the following conditions are
-met:
+ Additionally, redistribution and use in source and binary forms, with or
+ without modification, are permitted provided that the following conditions are
+ met:
 
-1. Redistributions of source code must retain the above copyright notice,
-   this list of conditions and the following disclaimer.
-2. Redistributions in binary form must reproduce the above copyright
-   notice, this list of conditions and the following disclaimer in the
-   documentation and/or other materials provided with the distribution.
-3. Neither the name of Los Alamos National Security, LLC, Los Alamos
-   National Laboratory, LANL, the U.S. Government, nor the names of its
-   contributors may be used to endorse or promote products derived from this
-   software without specific prior written permission.
+ 1. Redistributions of source code must retain the above copyright notice,
+ this list of conditions and the following disclaimer.
+ 2. Redistributions in binary form must reproduce the above copyright
+ notice, this list of conditions and the following disclaimer in the
+ documentation and/or other materials provided with the distribution.
+ 3. Neither the name of Los Alamos National Security, LLC, Los Alamos
+ National Laboratory, LANL, the U.S. Government, nor the names of its
+ contributors may be used to endorse or promote products derived from this
+ software without specific prior written permission.
 
-THIS SOFTWARE IS PROVIDED BY LOS ALAMOS NATIONAL SECURITY, LLC AND
-CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
-PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL LOS ALAMOS NATIONAL
-SECURITY, LLC OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
-BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER
-IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-POSSIBILITY OF SUCH DAMAGE.
-*/
+ THIS SOFTWARE IS PROVIDED BY LOS ALAMOS NATIONAL SECURITY, LLC AND
+ CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
+ PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL LOS ALAMOS NATIONAL
+ SECURITY, LLC OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
+ BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER
+ IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ POSSIBILITY OF SUCH DAMAGE.
+ */
 
 #include <cmath>
 #include <ctime>
@@ -78,42 +78,46 @@ using ::testing::Values;
 
 class WeightTest : public TestWithParam<tuple<Geometry, Kernel>> {
  public:
-  template <size_t Dim>
-      void checkWeight(const Geometry geo, const Kernel kernel) {
+  template<size_t Dim>
+  void checkWeight(const Geometry geo, const Kernel kernel) {
 
     //    srand(time(NULL));
     Point<Dim> x;
-    for (int d = 0; d < Dim; d++) x[d] = ((double)rand())/RAND_MAX;
-    
+    for (int d = 0; d < Dim; d++)
+      x[d] = ((double) rand()) / RAND_MAX;
+
     static double nominal_h = .2;
     array<double, Dim> h;
-    for (int d = 0; d < Dim; d++) h[d] = nominal_h;
+    for (int d = 0; d < Dim; d++)
+      h[d] = nominal_h;
 
-    size_t nsides = 2*Dim;
+    size_t nsides = 2 * Dim;
     vector<FacetData<Dim>> facets(nsides);
-    if (geo == FACETED) { 
+    if (geo == FACETED) {
       // set up an isothetic box like TENSOR
       size_t side = 0;
-      for (size_t j=0; j<Dim; j++) {
-	for (size_t k=0; k<Dim; k++) facets[side].normal[k] = 0.;
-	facets[side].normal[j] = -1.;
-	facets[side].smoothing = nominal_h;
-	side++;
-	for (size_t k=0; k<Dim; k++) facets[side].normal[k] = 0.;
-	facets[side].normal[j] = 1.;
-	facets[side].smoothing = nominal_h;
-	side++;
+      for (size_t j = 0; j < Dim; j++) {
+        for (size_t k = 0; k < Dim; k++)
+          facets[side].normal[k] = 0.;
+        facets[side].normal[j] = -1.;
+        facets[side].smoothing = nominal_h;
+        side++;
+        for (size_t k = 0; k < Dim; k++)
+          facets[side].normal[k] = 0.;
+        facets[side].normal[j] = 1.;
+        facets[side].smoothing = nominal_h;
+        side++;
       }
     }
 
     double weight_at_x;
-    if (geo == FACETED) { 
-      weight_at_x = faceted<Dim>(x,x, &facets[0], nsides);
+    if (geo == FACETED) {
+      weight_at_x = faceted<Dim>(x, x, &facets[0], nsides);
     } else {
       weight_at_x = eval<Dim>(geo, kernel, x, x, h);
     }
 
-    np = powl(10,Dim);
+    np = powl(10, Dim);
     vector<double> weight(np);
 
     for (size_t i = 0; i < np; i++) {
@@ -123,12 +127,29 @@ class WeightTest : public TestWithParam<tuple<Geometry, Kernel>> {
 
       Point<Dim> y = x;
       for (size_t d = 0; d < Dim; d++)
-        y[d] += 6*h[d]*(((double)rand())/RAND_MAX - 0.5);
-      
+        y[d] += 6 * h[d] * (((double) rand()) / RAND_MAX - 0.5);
+
       if (geo == FACETED) {
-	weight[i] = faceted<Dim>(x,y, &facets[0], nsides);
+        // use explicit faceted weight function
+        weight[i] = faceted<Dim>(x, y, &facets[0], nsides);
+
+        // check equivalence to generic interface
+        vector<vector<double>> hvec(nsides,vector<double>(Dim+1));
+        for (size_t j=0; j<nsides; j++) {
+          for (size_t k=0; k<Dim; k++) hvec[j][k] = facets[j].normal[k];
+          hvec[j][Dim] = facets[j].smoothing;
+        }
+        double alt_wt = eval<Dim>(geo, kernel, x, y, hvec);
+        EXPECT_NEAR(alt_wt, weight[i], 1.0e-12);
       } else {
-	weight[i] = eval<Dim>(geo, kernel, x, y, h);
+        // use explicit weight function
+        weight[i] = eval<Dim>(geo, kernel, x, y, h);
+
+        // check equivalence to generic interface
+        vector<vector<double>> hvec(1,vector<double>(Dim));
+        for (size_t j=0; j<Dim; j++) hvec[0][j] = h[j];
+        double alt_wt = eval<Dim>(geo, kernel, x, y, hvec);
+        EXPECT_NEAR(alt_wt, weight[i], 1.0e-12);
       }
 
       // Check that the weight at no other point is greater than that at x
@@ -137,7 +158,7 @@ class WeightTest : public TestWithParam<tuple<Geometry, Kernel>> {
       // Check that the weight is positive inside the support and
       // near zero or zero outside it
 
-      Vector<Dim> v = y-x;
+      Vector<Dim> v = y - x;
       Vector<Dim> h2;
       for (size_t d = 0; d < Dim; d++)
         h2[d] = h[d];
@@ -146,12 +167,13 @@ class WeightTest : public TestWithParam<tuple<Geometry, Kernel>> {
       if (geo == ELLIPTIC) {
         double s = 0.0;
         for (size_t d = 0; d < Dim; d++)
-          s += v[d]*v[d]/(2*h[d]*2*h[d]);
+          s += v[d] * v[d] / (2 * h[d] * 2 * h[d]);
         s = sqrt(s);
         outside = (s > 1.0) ? true : false;
       } else if (geo == TENSOR or geo == FACETED) {
         for (size_t d = 0; d < Dim; d++)
-          if (fabs(v[d]) > 2*h[d]) outside = true;
+          if (fabs(v[d]) > 2 * h[d])
+            outside = true;
       }
 
       if (outside)
@@ -169,7 +191,6 @@ class WeightTest : public TestWithParam<tuple<Geometry, Kernel>> {
   vector<double> weights;
 };
 
-
 // Parameterized test for 1D
 TEST_P(WeightTest, check_weights_1D) {
   checkWeight<1>(std::get<0>(GetParam()), std::get<1>(GetParam()));
@@ -185,13 +206,12 @@ TEST_P(WeightTest, check_weights_3D) {
   checkWeight<3>(std::get<0>(GetParam()), std::get<1>(GetParam()));
 }
 
-INSTANTIATE_TEST_CASE_P(GeoKernelCombos,
-                        WeightTest,
-                        Combine(Values(ELLIPTIC, TENSOR),
-                                Values(B4, SQUARE, EPANECHNIKOV,
-                                       INVSQRT, COULOMB)));
+INSTANTIATE_TEST_CASE_P(
+    GeoKernelCombos,
+    WeightTest,
+    Combine(Values(ELLIPTIC, TENSOR),
+            Values(B4, SQUARE, EPANECHNIKOV, INVSQRT, COULOMB)));
 
-INSTANTIATE_TEST_CASE_P(FacetedSupport,
-                        WeightTest,
+INSTANTIATE_TEST_CASE_P(FacetedSupport, WeightTest,
                         Combine(Values(FACETED), Values(POLYRAMP)));
-                        
+

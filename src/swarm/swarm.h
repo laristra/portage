@@ -76,13 +76,7 @@ template<size_t dim> class Swarm {
     }
   }
 
-  /*! @brief Get the coordinates of the particle,
-   * @param c index of particle of interest
-   * @param node_coord the particle coordinates
-   */
-  void node_get_coordinates(const int c, Point<dim>* node_coord) const {
-    *node_coord = (*points_)[c];
-  }
+  Point<dim> get_particle_coordinates(size_t index){return (*points_)[index];}
 
  private:
   /** the centers of the particles */
