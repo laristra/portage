@@ -76,6 +76,10 @@ template<size_t dim> class Swarm {
     }
   }
 
+  /*! @brief Get the coordinates of the particle,
+   * @param index index of particle of interest
+   * @return the particle coordinates
+   */
   Point<dim> get_particle_coordinates(const size_t index) const {
     return (*points_)[index];
   }
