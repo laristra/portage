@@ -48,6 +48,7 @@ POSSIBILITY OF SUCH DAMAGE.
 set(search_HEADERS
     search_simple.h
     search_kdtree.h
+    search_simple_points.h
     kdtree.h
     BoundBox.h
     PARENT_SCOPE
@@ -74,6 +75,11 @@ if(ENABLE_UNIT_TESTS)
       THREADS 1)
     cinch_add_unit(search_kdtree3_test
       SOURCES search_kdtree3_test.cc
+      LIBRARIES portage ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
+      POLICY MPI
+      THREADS 1)
+    cinch_add_unit(search_simple_points_test
+      SOURCES search_simple_points_test.cc
       LIBRARIES portage ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
       POLICY MPI
       THREADS 1)
