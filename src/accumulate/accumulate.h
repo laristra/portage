@@ -109,14 +109,14 @@ class Accumulate {
 
     // resize the moment matrix storage to number of target particles
     if (estimate_ == LocalRegression) {
-      moment_.resize(target_->num_owned_cells());
       size_t basis_size = Basis::function_size<dim>(basis_);
-      for (size_t i=0; i<target_->num_owned_cells(); i++) {
-        moment_[i].resize(basis_size);
-        for (size_t j=0; j<basis_size; j++) {
-          moment_[i][j].resize(basis_size, 0.0);
-        }
-      }
+
+      // moment_.resize(basis_size);
+      // for (size_t j=0; j<basis_size; j++) {
+      //   moment_[j].resize(basis_size, 0.0);
+      // }
+
+      moment_ = Matrix(basis_size, basis_size, 0.0);
     }
   }
 
@@ -158,7 +158,7 @@ class Accumulate {
         size_t nbasis = basis.size();
         for (size_t i=0; i<nbasis; i++) {
           for (size_t j=0; j<nbasis; j++) {
-            moment_[particleA][i][j] += basis[i]*basis[j]*weight_val;
+            moment_[i][j] += basis[i]*basis[j]*weight_val;
           }
         }
         break;
@@ -167,11 +167,23 @@ class Accumulate {
     }
   }
 
+  void invert() {
+    if (estimate_ == KernelDensity) return;
+    for (size_t i=0; i<target_->num_owned_cells(); i++) {
+      auto matrix = Matrix(moment_);
+      auto inverse = matrix.inverse();
+      size_t nbasis = Basis::function_size<dim>(basis_);
+      for (size_t j=0; j<nbasis; j++) for (size_t k=0; k<nbasis; k++) {
+        moment_[j][k] = inverse[j][k];
+      }
+    }
+  }
+
   /** @brief Evaluate meshfree shape function (estimator vector)
   * @param particleA source index
   * @param particleB target index
   */
-  std::vector<double> operator()
+  std::vector<double> corrected_weight
       (const size_t particleA, const size_t particleB)
   {
     double weight_val = weight(particleA, particleB);
@@ -187,9 +199,8 @@ class Accumulate {
         Point<dim> x = target_->get_particle_coordinates(particleB);
         Point<dim> y = source_->get_particle_coordinates(particleA);
         auto basis = Basis::shift<dim>(basis_,x,y);
-        auto matrix = Matrix(moment_[particleA]);
-        auto inverse = matrix.inverse();
-        result = inverse*basis;
+        Matrix inv_mom_mat(moment_);
+        result = inv_mom_mat*basis;
         for (size_t i=0; i<nbasis; i++) result[i] *= weight_val;
         break;
       }
@@ -198,6 +209,59 @@ class Accumulate {
     return result;
   }
 
+  vector<vector<double>>
+  operator() (size_t const particleB, vector<size_t> const& source_particles) {
+    
+    vector<vector<double>> result;
+    result.reserve(source_particles.size());
+    
+    switch (estimate_) {
+      case KernelDensity:  {
+        for (auto const& particleA : source_particles) {
+          double weight_val = weight(particleA, particleB);
+          vector<double> pair_result(1, weight_val);
+          result.push_back(pair_result);
+        }
+        break;
+      }
+      case LocalRegression: {
+        size_t nbasis = Basis::function_size<dim>(basis_);
+        Point<dim> x = target_->get_particle_coordinates(particleB);
+        
+        // Calculate moment matrix (transpose(P)*W*P)
+        
+        for (auto const& particleA : source_particles) {
+          double weight_val = weight(particleA, particleB);
+          Point<dim> y = source_->get_particle_coordinates(particleA);
+          auto basis = Basis::shift<dim>(basis_,x,y);
+          for (size_t i=0; i<nbasis; i++) {
+            for (size_t j=0; j<nbasis; j++) {
+              moment_[i][j] += basis[i]*basis[j]*weight_val;
+            }
+          }
+        }
+
+        auto mom_mat = Matrix(moment_);
+        auto inv_mom_mat = mom_mat.inverse();
+        
+        // Calculate inverse(transpose(P)*W*P)*transpose(P)*W
+        
+        for (auto const& particleA : source_particles) {
+          double weight_val = weight(particleA, particleB);
+          vector<double> pair_result(nbasis);
+          Point<dim> y = source_->get_particle_coordinates(particleA);
+          auto basis = Basis::shift<dim>(basis_,x,y);
+          pair_result = inv_mom_mat*basis;
+          for (size_t i=0; i<nbasis; i++) pair_result[i] *= weight_val;
+          result.push_back(pair_result);
+        }
+        break;
+      }
+      default:  assert(false);
+    }
+    return result;
+  }
+  
  private:
   shared_ptr<Swarm<dim>> source_;
   shared_ptr<Swarm<dim>> target_;
@@ -207,7 +271,8 @@ class Accumulate {
   shared_ptr<vector<Weight::Geometry>> geometries_;
   shared_ptr<vector<vector<vector<double>>>> smoothing_;
   Basis::Type basis_;
-  vector<vector<vector<double>>> moment_;
+  //  vector<vector<double>> moment_;
+  Matrix moment_;
 };
 
 }}
