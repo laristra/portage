@@ -55,7 +55,9 @@ using std::make_shared;
 using Portage::Point;
 
 template<size_t dim>
-void test_accumulate() {
+void test_accumulate(Portage::Meshfree::EstimateType etype,
+                     Portage::Meshfree::Basis::Type btype,
+                     Portage::Meshfree::WeightCenter center) {
   using namespace Portage::Meshfree;
 
   // create the source and target swarms input data
@@ -63,9 +65,9 @@ void test_accumulate() {
   const size_t npoints = powl(nside,dim);
   const double smoothing = 1./nside;
   const double jitter = 0.3*smoothing;
-  auto src_pts = make_shared<Swarm<dim>::PointVec>(npoints);
-  auto tgt_pts = make_shared<Swarm<dim>::PointVec>(npoints);
-  auto extents = make_shared<Swarm<dim>::PointVec>(npoints);
+  auto src_pts = make_shared<typename Swarm<dim>::PointVec>(npoints);
+  auto tgt_pts = make_shared<typename Swarm<dim>::PointVec>(npoints);
+  auto extents = make_shared<typename Swarm<dim>::PointVec>(npoints);
   for (size_t i=0; i<npoints; i++) {
     size_t offset = 0, index;
     for (size_t k=0; k<dim; k++) {
@@ -92,84 +94,170 @@ void test_accumulate() {
   auto smoothingh = make_shared<vector<vector<vector<double>>>>
       (npoints, vector<vector<double>>(1, vector<double>(dim, smoothing)));
 
-  // Density Estimation ----------------------------------------------------
   {
-    // create the accumulator for kernel density estimator
+    // create the accumulator
     Accumulate<dim> accum(
         src_swarm,
         tgt_swarm,
-        Portage::Meshfree::KernelDensity,
-        Portage::Meshfree::Gather,
+        etype,
+        center,
         kernels,
         geometries,
         smoothingh,
-        Portage::Meshfree::Basis::Unitary);
+        btype);
 
-    // do the accumulation loop
-    for (size_t i=0; i<npoints; i++) {
-      for (size_t j=0; j<npoints; j++) {
-        accum.accumulate(i, j);
-      }
-    }
+    
+    size_t bsize = Basis::function_size<dim>(btype);
+    auto jsize = Basis::jet_size<dim>(btype);
+    ASSERT_EQ(jsize[0], bsize);
+    ASSERT_EQ(jsize[1], bsize);
+    vector<vector<vector<double>>> sums(npoints,
+      vector<vector<double>>(jsize[0], vector<double>(jsize[1],0.)));
 
-    // do the generation loop
+    // list of src swarm particles (indices)
+    vector<size_t> src_particles(npoints);
+    for (size_t i=0; i<npoints; i++) src_particles[i] = i;
+
+    // Loop through target particles
     for (size_t i=0; i<npoints; i++) {
-      for (size_t j=0; j<npoints; j++) {
-        auto shape_vec = accum(i, j);
-        double weight = accum.weight(i,j);
-        ASSERT_EQ (shape_vec[0], weight);
+
+      // do the accumulation loop for each target particle against all
+      // the source particles
+      auto shape_vec = accum(i, src_particles);
+
+      if (etype == KernelDensity) {
+        for (size_t j=0; j<npoints; j++) {
+          double weight = accum.weight(j,i);
+          ASSERT_EQ (shape_vec[j][0], weight);
+        }
+      } else {      
+        auto x = tgt_swarm->get_particle_coordinates(i);
+        auto jetx = Basis::jet<dim>(btype,x);
+
+        for (size_t j=0; j<npoints; j++) {
+          auto y = src_swarm->get_particle_coordinates(j);
+          auto basisy = Basis::function<dim>(btype,y);
+          for (size_t k=0; k<jsize[0]; k++) for (size_t m=0; m<jsize[1]; m++) {
+              sums[i][k][m] += basisy[k]*shape_vec[j][m];
+            }
+        }
+
+        for (size_t k=0; k<jsize[0]; k++) for (size_t m=0; m<jsize[1]; m++) {
+            // this isn't working yet - need to fix
+            ASSERT_NEAR(sums[i][k][m], jetx[k][m], 1.e-12);
+          }
       }
     }
   }
-
-  // Local Unitary Regression (Shepard functions, NURBS) ----------------------
-  {
-    // create the accumulator for kernel density estimator
-    Accumulate<dim> accum(
-        src_swarm,
-        tgt_swarm,
-        Portage::Meshfree::LocalRegression,
-        Portage::Meshfree::Gather,
-        kernels,
-        geometries,
-        smoothingh,
-        Portage::Meshfree::Basis::Unitary);
-
-    // do the accumulation loop
-    for (size_t i=0; i<npoints; i++) {
-      for (size_t j=0; j<npoints; j++) {
-        accum.accumulate(i, j);
-      }
-    }
-
-    vector<vector<double>> sums(npoints, vector<double>(1,0.));
-
-    // do the correction loop
-    for (size_t i=0; i<npoints; i++) {
-      for (size_t j=0; j<npoints; j++) {
-        auto shape_vec = accum(i, j);
-        sums[i][0] += shape_vec[0];
-      }
-    }
-
-    // check all results are 1
-    for (size_t i=0; i<npoints; i++) ASSERT_NEAR(sums[i][0], 1.0, 1.e-12);
-  }
 }
 
-TEST(accumulate, 1d) {
-  test_accumulate<1>();
+TEST(accumulate, 1d_KUG) {
+  test_accumulate<1>(Portage::Meshfree::EstimateType::KernelDensity,
+                     Portage::Meshfree::Basis::Type::Unitary,
+                     Portage::Meshfree::WeightCenter::Gather);
 }
 
-TEST(accumulate, 2d) {
-  test_accumulate<2>();
+TEST(accumulate, 2d_KUG) {
+  test_accumulate<2>(Portage::Meshfree::EstimateType::KernelDensity,
+                     Portage::Meshfree::Basis::Type::Unitary,
+                     Portage::Meshfree::WeightCenter::Gather);
 }
 
-/*
-TEST(accumulate, 3d) {
-  test_accumulate<3>();
+TEST(accumulate, 3d_KUG) {
+  test_accumulate<3>(Portage::Meshfree::EstimateType::KernelDensity,
+                     Portage::Meshfree::Basis::Type::Unitary,
+                     Portage::Meshfree::WeightCenter::Gather);
 }
-*/
+
+TEST(accumulate, 1d_KUS) {
+  test_accumulate<1>(Portage::Meshfree::EstimateType::KernelDensity,
+                     Portage::Meshfree::Basis::Type::Unitary,
+                     Portage::Meshfree::WeightCenter::Scatter);
+}
+
+TEST(accumulate, 2d_KUS) {
+  test_accumulate<2>(Portage::Meshfree::EstimateType::KernelDensity,
+                     Portage::Meshfree::Basis::Type::Unitary,
+                     Portage::Meshfree::WeightCenter::Scatter);
+}
+
+TEST(accumulate, 3d_KUS) {
+  test_accumulate<3>(Portage::Meshfree::EstimateType::KernelDensity,
+                     Portage::Meshfree::Basis::Type::Unitary,
+                     Portage::Meshfree::WeightCenter::Scatter);
+}
+
+TEST(accumulate, 1d_RUG) {
+  test_accumulate<1>(Portage::Meshfree::EstimateType::LocalRegression,
+                     Portage::Meshfree::Basis::Type::Unitary,
+                     Portage::Meshfree::WeightCenter::Gather);
+}
+
+TEST(accumulate, 2d_RUG) {
+  test_accumulate<2>(Portage::Meshfree::EstimateType::LocalRegression,
+                     Portage::Meshfree::Basis::Type::Unitary,
+                     Portage::Meshfree::WeightCenter::Gather);
+}
+
+TEST(accumulate, 3d_RUG) {
+  test_accumulate<3>(Portage::Meshfree::EstimateType::LocalRegression,
+                     Portage::Meshfree::Basis::Type::Unitary,
+                     Portage::Meshfree::WeightCenter::Gather);
+}
+
+TEST(accumulate, 1d_RUS) {
+  test_accumulate<1>(Portage::Meshfree::EstimateType::LocalRegression,
+                     Portage::Meshfree::Basis::Type::Unitary,
+                     Portage::Meshfree::WeightCenter::Scatter);
+}
+
+TEST(accumulate, 2d_RUS) {
+  test_accumulate<2>(Portage::Meshfree::EstimateType::LocalRegression,
+                     Portage::Meshfree::Basis::Type::Unitary,
+                     Portage::Meshfree::WeightCenter::Scatter);
+}
+
+TEST(accumulate, 3d_RUS) {
+  test_accumulate<3>(Portage::Meshfree::EstimateType::LocalRegression,
+                     Portage::Meshfree::Basis::Type::Unitary,
+                     Portage::Meshfree::WeightCenter::Scatter);
+}
+
+TEST(accumulate, 1d_RLG) {
+  test_accumulate<1>(Portage::Meshfree::EstimateType::LocalRegression,
+                     Portage::Meshfree::Basis::Type::Linear,
+                     Portage::Meshfree::WeightCenter::Gather);
+}
+
+TEST(accumulate, 2d_RLG) {
+  test_accumulate<2>(Portage::Meshfree::EstimateType::LocalRegression,
+                     Portage::Meshfree::Basis::Type::Linear,
+                     Portage::Meshfree::WeightCenter::Gather);
+}
+
+TEST(accumulate, 3d_RLG) {
+  test_accumulate<3>(Portage::Meshfree::EstimateType::LocalRegression,
+                     Portage::Meshfree::Basis::Type::Linear,
+                     Portage::Meshfree::WeightCenter::Gather);
+}
+
+TEST(accumulate, 1d_RLS) {
+  test_accumulate<1>(Portage::Meshfree::EstimateType::LocalRegression,
+                     Portage::Meshfree::Basis::Type::Linear,
+                     Portage::Meshfree::WeightCenter::Scatter);
+}
+
+TEST(accumulate, 2d_RLS) {
+  test_accumulate<2>(Portage::Meshfree::EstimateType::LocalRegression,
+                     Portage::Meshfree::Basis::Type::Linear,
+                     Portage::Meshfree::WeightCenter::Scatter);
+}
+
+TEST(accumulate, 3d_RLS) {
+  test_accumulate<3>(Portage::Meshfree::EstimateType::LocalRegression,
+                     Portage::Meshfree::Basis::Type::Linear,
+                     Portage::Meshfree::WeightCenter::Scatter);
+}
 
 
 
