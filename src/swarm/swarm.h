@@ -28,9 +28,15 @@ using std::shared_ptr;
 template<size_t dim> class Swarm {
  public:
 
-  using PointVecPtr = shared_ptr<vector<Point<dim>>>;
-  using PointVec = vector<Point<dim>>;
+  // When using PointVec and PointVecPtr in another file, they have to
+  // be prefixed by the keyword typename
+  
+  //  SEE --- https://stackoverflow.com/questions/610245/where-and-why-do-i-have-to-put-the-template-and-typename-keywords
 
+  using PointVecPtr =  shared_ptr<std::vector<Point<dim>>>;
+  using PointVec = vector<Point<dim>>;
+  
+  
   /*!
    * @brief A particle has a center point and smoothing lengths in each dimension.
    * @param points center points of the particles
