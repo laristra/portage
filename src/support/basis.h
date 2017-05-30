@@ -133,6 +133,32 @@ shift(Point<dim> x, Point<dim> y){
 }
 
 template<size_t dim>
+vector<double> function(Type type, Point<dim> x){
+  size_t nbasis = function_size<dim>(type);
+  vector<double> result(nbasis);
+  switch (type) {
+    case Unitary: {
+      auto resulta = function<Unitary, dim>(x);
+      for (size_t i=0; i<nbasis; i++) result[i] = resulta[i];
+      break;
+    }
+    case Linear: {
+      auto resulta = function<Linear, dim>(x);
+      for (size_t i=0; i<nbasis; i++) result[i] = resulta[i];
+      break;
+    }
+    case Quadratic: {
+      auto resulta = function<Quadratic, dim>(x);
+      for (size_t i=0; i<nbasis; i++) result[i] = resulta[i];
+      break;
+    }
+    default:
+      assert(false);
+  }
+  return result;
+}
+
+template<size_t dim>
 vector<double> shift(Type type, Point<dim> x, Point<dim> y){
   size_t nbasis = function_size<dim>(type);
   vector<double> result(nbasis);
@@ -150,6 +176,35 @@ vector<double> shift(Type type, Point<dim> x, Point<dim> y){
     case Quadratic: {
       auto resulta = shift<Quadratic, dim>(x,y);
       for (size_t i=0; i<nbasis; i++) result[i] = resulta[i];
+      break;
+    }
+    default:
+      assert(false);
+  }
+  return result;
+}
+
+template<size_t dim>
+vector<vector<double>> jet(Type type, Point<dim> x){
+  auto njet = jet_size<dim>(type);
+  vector<vector<double>> result(njet[0],vector<double>(njet[1],0.));
+  switch (type) {
+    case Unitary: {
+      auto resulta = jet<Unitary, dim>(x);
+      for (size_t i=0; i<njet[0]; i++) for (size_t j=0; j<njet[1]; j++)
+        result[i][j] = resulta[i][j];
+      break;
+    }
+    case Linear: {
+      auto resulta = jet<Linear, dim>(x);
+      for (size_t i=0; i<njet[0]; i++) for (size_t j=0; j<njet[1]; j++)
+        result[i][j] = resulta[i][j];
+      break;
+    }
+    case Quadratic: {
+      auto resulta = jet<Quadratic, dim>(x);
+      for (size_t i=0; i<njet[0]; i++) for (size_t j=0; j<njet[1]; j++)
+        result[i][j] = resulta[i][j];
       break;
     }
     default:

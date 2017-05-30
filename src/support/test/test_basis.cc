@@ -165,9 +165,30 @@ class BasisTest : public ::testing::Test {
     ASSERT_EQ(js1, ks1);
 
     // Check that vector-valued function is correct
-    for (int i=0; i<Traits<type, Dim>::function_size; i++) {
+    {
+      std::vector<double> result(function<Dim>(type, x));
+      for (int i=0; i<Traits<type, Dim>::function_size; i++) {
+        ASSERT_EQ(bf_x[i], result[i]);
+      }
+    }
+
+    // Check that vector-valued shift is correct
+    {
       std::vector<double> result(shift<Dim>(type, x,y));
-      ASSERT_EQ(bf_shifted_xy[i], result[i]);
+      for (int i=0; i<Traits<type, Dim>::function_size; i++) {
+        ASSERT_EQ(bf_shifted_xy[i], result[i]);
+      }
+    }
+
+    // Check that matrix-valued jet is correct
+    {
+      std::vector<std::vector<double>> result(jet<Dim>(type, x));
+      auto jsize = jet_size<Dim>(type);
+      for (int i=0; i<jsize[0]; i++) {
+        for (int j=0; j<jsize[1]; j++) {
+          ASSERT_EQ(bj_x[i][j], result[i][j]);
+        }
+      }
     }
   }
 
