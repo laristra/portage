@@ -65,9 +65,9 @@ void test_accumulate(Portage::Meshfree::EstimateType etype,
   const size_t npoints = powl(nside,dim);
   const double smoothing = 1./nside;
   const double jitter = 0.3*smoothing;
-  auto src_pts = make_shared<Swarm<dim>::PointVec>(npoints);
-  auto tgt_pts = make_shared<Swarm<dim>::PointVec>(npoints);
-  auto extents = make_shared<Swarm<dim>::PointVec>(npoints);
+  auto src_pts = make_shared<typename Swarm<dim>::PointVec>(npoints);
+  auto tgt_pts = make_shared<typename Swarm<dim>::PointVec>(npoints);
+  auto extents = make_shared<typename Swarm<dim>::PointVec>(npoints);
   for (size_t i=0; i<npoints; i++) {
     size_t offset = 0, index;
     for (size_t k=0; k<dim; k++) {
@@ -106,16 +106,7 @@ void test_accumulate(Portage::Meshfree::EstimateType etype,
         smoothingh,
         btype);
 
-    // do the accumulation loop
-    for (size_t i=0; i<npoints; i++) {
-      for (size_t j=0; j<npoints; j++) {
-        accum.accumulate(i, j);
-      }
-    }
-
-    // invert the moment matrices
-    accum.invert();
-
+    
     size_t bsize = Basis::function_size<dim>(btype);
     auto jsize = Basis::jet_size<dim>(btype);
     ASSERT_EQ(jsize[0], bsize);
@@ -123,31 +114,38 @@ void test_accumulate(Portage::Meshfree::EstimateType etype,
     vector<vector<vector<double>>> sums(npoints,
       vector<vector<double>>(jsize[0], vector<double>(jsize[1],0.)));
 
-    // do the correction loop
+    // list of src swarm particles (indices)
+    vector<size_t> src_particles(npoints);
+    for (size_t i=0; i<npoints; i++) src_particles[i] = i;
+
+    // Loop through target particles
     for (size_t i=0; i<npoints; i++) {
-      for (size_t j=0; j<npoints; j++) {
-        auto shape_vec = accum.corrected_weight(j,i);
-        auto y = src_swarm->get_particle_coordinates(j);
-        auto basisy = Basis::function<dim>(btype,y);
-        for (size_t k=0; k<jsize[0]; k++) for (size_t m=0; m<jsize[1]; m++) {
-          sums[i][k][m] += basisy[k]*shape_vec[m];
-        }
-        // special for density estimation
-        if (etype == KernelDensity) {
+
+      // do the accumulation loop for each target particle against all
+      // the source particles
+      auto shape_vec = accum(i, src_particles);
+
+      if (etype == KernelDensity) {
+        for (size_t j=0; j<npoints; j++) {
           double weight = accum.weight(j,i);
-          ASSERT_EQ (shape_vec[0], weight);
+          ASSERT_EQ (shape_vec[j][0], weight);
         }
-      }
-      // check all results are correct if local regression
-      if (etype == LocalRegression) {
-        auto x = src_swarm->get_particle_coordinates(i);
+      } else {      
+        auto x = tgt_swarm->get_particle_coordinates(i);
         auto jetx = Basis::jet<dim>(btype,x);
-        for (size_t i=0; i<npoints; i++){
+
+        for (size_t j=0; j<npoints; j++) {
+          auto y = src_swarm->get_particle_coordinates(j);
+          auto basisy = Basis::function<dim>(btype,y);
           for (size_t k=0; k<jsize[0]; k++) for (size_t m=0; m<jsize[1]; m++) {
+              sums[i][k][m] += basisy[k]*shape_vec[j][m];
+            }
+        }
+
+        for (size_t k=0; k<jsize[0]; k++) for (size_t m=0; m<jsize[1]; m++) {
             // this isn't working yet - need to fix
             ASSERT_NEAR(sums[i][k][m], jetx[k][m], 1.e-12);
           }
-        }
       }
     }
   }

@@ -157,12 +157,14 @@ class BasisTest : public ::testing::Test {
 
     // check external-facing size functions are correct
     size_t fs0, gs0, js0, js1, ks0, ks1;
-    fs0=function_size<Dim>(type); gs0=Traits<type,Dim>::function_size;
+    fs0=function_size<Dim>(type);
+    gs0=Traits<type,Dim>::function_size;
     ASSERT_EQ(fs0, gs0);
-    js0=jet_size<Dim>(type)[0]; ks0=Traits<type,Dim>::jet_size[0];
-    ASSERT_EQ(js0, ks0);
-    js1=jet_size<Dim>(type)[1]; ks1=Traits<type,Dim>::jet_size[1];
-    ASSERT_EQ(js1, ks1);
+    array<size_t,2> ks = Traits<type,Dim>::jet_size;
+    js0=jet_size<Dim>(type)[0];
+    ASSERT_EQ(js0, ks[0]);
+    js1=jet_size<Dim>(type)[1];
+    ASSERT_EQ(js1, ks[1]);
 
     // Check that vector-valued function is correct
     {

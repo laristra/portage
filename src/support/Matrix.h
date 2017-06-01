@@ -252,13 +252,17 @@ class Matrix {
     return AB;
   }
 
-
  private:
   int Rows_, Columns_;
   std::vector<double> A_;
-
-  friend class MatrixRow;
 };
+
+template<long D>
+Vector<D> matsolve(Matrix const& matrix, Vector<D> const& rhs) {
+  auto inverse = matrix.inverse();
+  Vector<D> result = inverse*rhs;
+  return result;
+}
 
 }  // namespace Portage
 
