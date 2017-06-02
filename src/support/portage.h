@@ -110,7 +110,8 @@ enum Entity_kind {
   WEDGE,
   CORNER,
   FACET,
-  BOUNDARY_FACE
+  BOUNDARY_FACE,
+  PARTICLE
 };
 
 const int NUM_ENTITY_KINDS = 8;
@@ -216,6 +217,12 @@ inline void for_each(InputIterator first, InputIterator last,
 #endif
 
 struct Weights_t {
+  Weights_t() : entityID(-1) {}
+  Weights_t(int const entityID_in, std::vector<double> const& weights_in) :
+      entityID(entityID_in), weights(weights_in) {}
+  Weights_t(Weights_t const& source) :
+      entityID(source.entityID), weights(source.weights) {}
+  
   int entityID;
   std::vector<double> weights;
 };
