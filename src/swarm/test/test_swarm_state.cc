@@ -57,11 +57,9 @@ TEST(SwarmState, basic) {
       points[i] = Portage::Point<3>(((double)rand()/RAND_MAX),
                                     ((double)rand()/RAND_MAX),
                                     ((double)rand()/RAND_MAX));
-      extents[i] = Portage::Point<3>(h, h, h);
     }
     auto p_ptr = std::make_shared<std::vector<Portage::Point<3>>>(points);
-    auto e_ptr = std::make_shared<std::vector<Portage::Point<3>>>(extents);
-    auto swarm = make_shared<Portage::Meshfree::Swarm<3>>(p_ptr, e_ptr);
+    auto swarm = Portage::Meshfree::Swarm<3>(p_ptr);
 
     // create state
     using namespace Portage::Meshfree;
