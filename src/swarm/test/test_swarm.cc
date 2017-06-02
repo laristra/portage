@@ -69,48 +69,20 @@ TEST(Swarm, Sanity_Check) {
   }
 
   auto p_ptr = std::make_shared<std::vector<Portage::Point<3>>>(points);
-  auto e_ptr = std::make_shared<std::vector<Portage::Point<3>>>(extents);
                                
-  Portage::Meshfree::Swarm<3> swarm(p_ptr, e_ptr);
+  Portage::Meshfree::Swarm<3> swarm(p_ptr);
 
   // Did we get back 10 points?
-  ASSERT_EQ(10, swarm.num_owned_cells());
+  ASSERT_EQ(10, swarm.num_owned_particles());
 
   // Check the bounding box and center of the hexahedral "cell"
   // surrounding each point
 
   for (int i = 0; i < 10; i++) {
-    std::vector<Portage::Point<3>> cpoints;
-    swarm.cell_get_coordinates(i, &cpoints);
-
     // Are the point coordinates correct?
     auto pt = swarm.get_particle_coordinates(i);
     for (size_t j=0; j<3; j++) ASSERT_EQ(pt[j], points[i][j]);
-
-    // Did we get all corners of the hex?
-    int np = cpoints.size();
-    ASSERT_EQ(8, np);
-
-    // What is the bounding box and center of this hex?
-    Portage::Point<3> bbox[2], cen;
-    bbox[0] = Portage::Point<3>( 1.e99,  1.e99,  1.e99);
-    bbox[1] = Portage::Point<3>(-1.e99, -1.e99, -1.e99);
-    cen = Portage::Point<3>(0.0, 0.0, 0.0);
-
-    for (int p = 0; p < np; p++) {
-      cen += cpoints[p];
-      for (int d = 0; d < 3; d++) {
-        bbox[0][d] = std::min(cpoints[p][d], bbox[0][d]);
-        bbox[1][d] = std::max(cpoints[p][d], bbox[1][d]);
-      }
-    }
-    cen /= np;  // average of all coordinates
-
-    for (int d = 0; d < 3; d++) {
-      ASSERT_NEAR(points[i][d], cen[d], 1.0e-8);
-      ASSERT_NEAR(4*h, bbox[1][d]-bbox[0][d], 1.0e-8);
-    }  
-  }  // for each point used to construct the swarm
+  }
 
 }  // TEST
 
