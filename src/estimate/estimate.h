@@ -13,6 +13,7 @@
 #include <array>
 #include <cassert>
 
+#include "portage/support/portage.h"
 #include "portage/support/Point.h"
 #include "portage/support/weight.h"
 #include "portage/support/basis.h"
@@ -27,60 +28,43 @@ using std::vector;
 using std::shared_ptr;
 using std::map;
 
-enum EstimateType {
-  Min,
-  Max,
-  KernelDensity,
-  LocalRegression
-};
-
-enum WeightCenter {
-  Gather,
-  Scatter
-};
 
 /*!
  * @brief
  */
-template<size_t dim>
+template<size_t dim,
+         template <size_t> class /* SourceSwarmState */>
 class Estimate {
  public:
-  Estimate(shared_ptr<Swarm<dim>> source, shared_ptr<Swarm<dim>> target,
-	   shared_ptr<SwarmState<dim>> source_state, shared_ptr<SwarmState<dim>> target_state,
-            EstimateType estimate, WeightCenter center,
-            shared_ptr<vector<Weight::Kernel>> kernels,
-            shared_ptr<vector<Weight::Geometry>> geometries,
-            shared_ptr<vector<vector<double>>> smoothing,
-            Basis::Type basis)
-      : source_(source),
-        target_(target),
-	source_state_(source_state),
-	target_state_(target_state),
-        estimate_(estimate),
-        center_(center),
-        kernels_(kernels),
-        geometries_(geometries),
-        smoothing_(smoothing),
-        basis_(basis)
+  Estimate(SwarmState<dim> const& source_state)
+      : source_state_(source_state)
   {}
+
+  void set_variable(std::string const & var_name) {
+    var_name_ = var_name;
+    source_state_.get_data(PARTICLE, var_name, &source_vals_);
+  }
 
   double operator()(int const target_index,
-                    vector<vector<vector<double>>> const & moment_matrix_bit) const
-  {}
+                    vector<Weights_t> const & sources_and_weights) const
+  {
 
-  void set_interpolation_variable(std::string const & interp_var_name) {}
+    // contribution of the source cell is its field value weighted by
+    // its "weight" 
+    double val = 0.0;
+    for (auto const& wt : sources_and_weights) {
+      int srccell = wt.entityID;
+      std::vector<double> pair_weights = wt.weights;
+      val += source_vals_[srccell] * pair_weights[0];
+    }
+    
+    return val;
+  }
 
  private:
-  shared_ptr<Swarm<dim>> source_;
-  shared_ptr<Swarm<dim>> target_;
-  shared_ptr<SwarmState<dim>> source_state_;
-  shared_ptr<SwarmState<dim>> target_state_;
-  EstimateType estimate_;
-  WeightCenter center_;
-  shared_ptr<vector<Weight::Kernel>> kernels_;
-  shared_ptr<vector<Weight::Geometry>> geometries_;
-  shared_ptr<vector<vector<double>>> smoothing_;
-  Basis::Type basis_;
+  SwarmState<dim> const& source_state_;
+  std::string var_name_;
+  double const * source_vals_;
 };
 
 }
