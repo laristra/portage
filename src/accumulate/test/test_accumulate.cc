@@ -58,6 +58,7 @@ template<size_t dim>
 void test_accumulate(Portage::Meshfree::EstimateType etype,
                      Portage::Meshfree::Basis::Type btype,
                      Portage::Meshfree::WeightCenter center) {
+
   using namespace Portage::Meshfree;
 
   // create the source and target swarms input data
@@ -67,7 +68,6 @@ void test_accumulate(Portage::Meshfree::EstimateType etype,
   const double jitter = 0.3*smoothing;
   auto src_pts = make_shared<typename Swarm<dim>::PointVec>(npoints);
   auto tgt_pts = make_shared<typename Swarm<dim>::PointVec>(npoints);
-  auto extents = make_shared<typename Swarm<dim>::PointVec>(npoints);
   for (size_t i=0; i<npoints; i++) {
     size_t offset = 0, index;
     for (size_t k=0; k<dim; k++) {
@@ -81,30 +81,29 @@ void test_accumulate(Portage::Meshfree::EstimateType etype,
 
       delta = 2.*(((double)rand())/RAND_MAX -.5)*jitter;
       (*tgt_pts)[i][k] = index*smoothing + delta;
-
-      (*extents)[i][k] = 1.5*smoothing;
     }
   }
 
   // create source+target swarms, kernels, geometries, and smoothing lengths
-  auto src_swarm = make_shared<Swarm<dim>>(src_pts, extents);
-  auto tgt_swarm = make_shared<Swarm<dim>>(tgt_pts, extents);
-  auto kernels = make_shared<vector<Weight::Kernel>>(npoints, Weight::B4);
-  auto geometries = make_shared<vector<Weight::Geometry>>(npoints, Weight::TENSOR);
-  auto smoothingh = make_shared<vector<vector<vector<double>>>>
-      (npoints, vector<vector<double>>(1, vector<double>(dim, smoothing)));
+  Swarm<dim> src_swarm(src_pts);
+  Swarm<dim> tgt_swarm(tgt_pts);
+  vector<Weight::Kernel> kernels(npoints, Weight::B4);
+  vector<Weight::Geometry> geometries(npoints, Weight::TENSOR);
+  vector<vector<vector<double>>> smoothingh(npoints,
+                                            vector<vector<double>>(1, vector<double>(dim, smoothing)));
 
   {
     // create the accumulator
-    Accumulate<dim> accum(
-        src_swarm,
-        tgt_swarm,
-        etype,
-        center,
-        kernels,
-        geometries,
-        smoothingh,
-        btype);
+    Accumulate<dim, Swarm<dim>, Swarm<dim>>
+        accum(
+            src_swarm,
+            tgt_swarm,
+            etype,
+            center,
+            kernels,
+            geometries,
+            smoothingh,
+            btype);
 
     // check sizes and allocate test array
     size_t bsize = Basis::function_size<dim>(btype);
@@ -123,22 +122,22 @@ void test_accumulate(Portage::Meshfree::EstimateType etype,
 
       // do the accumulation loop for each target particle against all
       // the source particles
-      auto shape_vec = accum(i, src_particles);
+      vector<Portage::Weights_t> shape_vecs = accum(i, src_particles);
 
       if (etype == KernelDensity) {
         for (size_t j=0; j<npoints; j++) {
           double weight = accum.weight(j,i);
-          ASSERT_EQ (shape_vec[j][0], weight);
+          ASSERT_EQ ((shape_vecs[j]).weights[0], weight);
         }
       } else {      
-        auto x = tgt_swarm->get_particle_coordinates(i);
+        auto x = tgt_swarm.get_particle_coordinates(i);
         auto jetx = Basis::jet<dim>(btype,x);
 
         for (size_t j=0; j<npoints; j++) {
-          auto y = src_swarm->get_particle_coordinates(j);
+          auto y = src_swarm.get_particle_coordinates(j);
           auto basisy = Basis::function<dim>(btype,y);
           for (size_t k=0; k<jsize[0]; k++) for (size_t m=0; m<jsize[1]; m++) {
-              sums[i][k][m] += basisy[k]*shape_vec[j][m];
+              sums[i][k][m] += basisy[k]*(shape_vecs[j]).weights[m];
           }
         }
 
