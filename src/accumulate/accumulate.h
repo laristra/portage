@@ -44,8 +44,6 @@ POSSIBILITY OF SUCH DAMAGE.
 
 #include <vector>
 #include <memory>
-#include <cmath>
-#include <array>
 #include <cassert>
 
 #include "portage/support/Point.h"
