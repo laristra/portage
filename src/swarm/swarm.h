@@ -42,44 +42,15 @@ template<size_t dim> class Swarm {
    * @param points center points of the particles
    * @param extents the widths of the particle bounding boxes in each dimension
    */
-  Swarm(PointVecPtr points, PointVecPtr extents)
-      : points_(points), extents_(extents), npoints_(points_->size()) 
-  {
-    assert(extents_->size() == npoints_);
-  }
-
-  /*! @brief return the nubmer of particles in the swarm.
-   * @return the number of particles in the swarm
-   *
-   * DEPRECATED - use num_owned_points instead.
-   */
-  int num_owned_cells() const {
-    return npoints_;
-  }
+  Swarm(PointVecPtr points)
+      : points_(points), npoints_(points_->size()) 
+  {}
 
   /*! @brief return the nubmer of particles in the swarm.
    * @return the number of particles in the swarm
    */
-  int num_owned_points() const {
+  int num_owned_particles() const {
     return npoints_;
-  }
-
-  /*! @brief Get the coordinates of the particle bounding boxes.
-   * @param c index of particle of interest
-   * @param cell_coord the bounding box vertices
-   *
-   * DEPRECATED - use node_get_coordinates instead.
-   */
-  void cell_get_coordinates(const int c, PointVec* cell_coord) const {
-    size_t ncorners=powl(2,dim);
-    cell_coord->resize(ncorners);
-    for (size_t corner=0; corner<ncorners; corner++) {
-      int offset[dim]; 
-      size_t mask=1;
-      for (size_t j=0; j<dim; j++) {offset[j] = 2*((corner & mask) >> j)-1; mask*=2;}
-      for (size_t j=0; j<dim; j++) (*cell_coord)[corner][j] =
-				     (*points_)[c][j]+offset[j]*2.*(*extents_)[c][j];
-    }
   }
 
   /*! @brief Get the coordinates of the particle,
@@ -90,12 +61,11 @@ template<size_t dim> class Swarm {
     return (*points_)[index];
   }
 
+  
+
  private:
   /** the centers of the particles */
   PointVecPtr points_;
-
-  /** the widths of the particle bounding box sides */
-  PointVecPtr extents_;
 
   /** the number of particles in the swarm */
   const size_t npoints_;
