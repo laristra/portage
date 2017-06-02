@@ -45,7 +45,7 @@ class SwarmState {
   /*! @brief Constructor provides a reference swarm.
    * @param swarm the swarm with which the field data are associated.
    */
-  SwarmState(shared_ptr<Swarm<dim>> swarmin): swarm_(swarmin){}
+  SwarmState(Swarm<dim> const& swarmin): swarm_(swarmin){}
 
   /*! @brief Set an integer field on the swarm.
    * @param name the name of the integer field
@@ -76,11 +76,11 @@ class SwarmState {
   /*! @brief Get number of points in swarm
    * @return number of points
    */
-  size_t get_size(){return swarm_->num_owned_cells();}
+  size_t get_size(){return swarm_.num_owned_particles();}
 
  private:
   /** reference swarm state */
-  shared_ptr<Swarm<dim>> swarm_;
+  Swarm<dim> const& swarm_;
 
   /** integer data fields */
   map<string, IntVecPtr> int_field_map_;
@@ -94,7 +94,7 @@ class SwarmState {
 template<size_t dim>
 void SwarmState<dim>::add_field(const string name, IntVecPtr value) {
   // check size
-  assert(value->size() == swarm_->num_owned_cells());
+  assert(value->size() == swarm_.num_owned_particles());
 
   // check duplicate
   /* couldn't get this to work
@@ -114,7 +114,7 @@ void SwarmState<dim>::add_field(const string name, IntVecPtr value) {
 template<size_t dim>
 void SwarmState<dim>::add_field(const string name, DblVecPtr value) {
   // check size
-  assert(value->size() == swarm_->num_owned_cells());
+  assert(value->size() == swarm_.num_owned_particles());
 
   // check duplicate
   /* couldn't get this to work
