@@ -165,7 +165,7 @@ class Accumulate {
 
         auto inverse_moment = moment.inverse();
         
-        // Calculate inverse(P*W*transpose(P))*P*W
+        // Calculate inverse(P*W*transpose(P)*P*W)
 	iA = 0;
         for (auto const& particleA : source_particles) {
           vector<double> pair_result(nbasis);
