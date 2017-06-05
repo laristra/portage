@@ -75,6 +75,7 @@ void test_estimate(Portage::Meshfree::EstimateType etype,
   auto tgt_pts = make_shared<typename Swarm<dim>::PointVec>(ntgt);
   auto sextents = make_shared<typename Swarm<dim>::PointVec>(nsrc);
   auto textents = make_shared<typename Swarm<dim>::PointVec>(ntgt);
+  auto extents = make_shared<typename Swarm<dim>::PointVec>(ntgt);
   for (size_t i=0; i<nsrc; i++) {
     size_t offset = 0, index;
     for (size_t k=0; k<dim; k++) {
@@ -84,8 +85,10 @@ void test_estimate(Portage::Meshfree::EstimateType etype,
       double delta = 2.*(((double)rand())/RAND_MAX -.5)*jitter*1.5;
       (*src_pts)[i][k] = -.25 + 1.5*index*smoothing + delta;
 
-      (*sextents)[i][k] = 2.0*1.5*smoothing;
+      (*sextents)[i][k] = 2.0*smoothing;
+      if (index==0 or index == nside) (*sextents)[i][k]*=2;
     }
+    extents = sextents;
   }
   for (size_t i=0; i<ntgt; i++) {
     size_t offset = 0, index;
@@ -96,8 +99,10 @@ void test_estimate(Portage::Meshfree::EstimateType etype,
       double delta = 2.*(((double)rand())/RAND_MAX -.5)*jitter;
       (*tgt_pts)[i][k] = index*tsmoothing + delta;
 
-      (*textents)[i][k] = 4.0*tsmoothing;
+      (*textents)[i][k] = 2.0*tsmoothing;
+      if (index==0 or index == nside+2) (*textents)[i][k]*=2;
     }
+    extents = textents;
   }
 
   // create source+target swarms, kernels, geometries, and smoothing lengths
@@ -110,7 +115,8 @@ void test_estimate(Portage::Meshfree::EstimateType etype,
   auto kernels = make_shared<vector<Weight::Kernel>>(nkern, Weight::B4);
   auto geometries = make_shared<vector<Weight::Geometry>>(nkern, Weight::TENSOR);
   auto smoothingh = make_shared<vector<vector<vector<double>>>>
-      (nkern, vector<vector<double>>(1, vector<double>(dim, smoothing)));
+      (nkern, vector<vector<double>>(1, vector<double>(dim)));
+  for (size_t i=0; i<nkern; i++) for (size_t j=0; j<dim; j++) (*smoothingh)[i][0][j] = (*extents)[i][j];
 
   // create the accumulator
   Accumulate<dim> accum(
@@ -167,8 +173,10 @@ void test_estimate(Portage::Meshfree::EstimateType etype,
 
     // count actual neighbors
     size_t nnbr=0;
-    for (size_t k=0; k<nsrc; k++) if (accum.weight(i,k)!=0.) nnbr++;
-    //if (nnbr < nbasis) std::cout << "number of neighbors "<< nnbr << " is too small at " << i << "\n";
+    for (size_t k=0; k<nsrc; k++) if (accum.weight(k,i)!=0.) nnbr++;
+    if (nnbr < nbasis) {
+      std::cout << "number of neighbors "<< nnbr << " is too small at " << i << "\n";
+    }
 
     // Loop through fields
     for (size_t j=0; j<nbasis; j++) {
@@ -266,7 +274,7 @@ TEST(estimate, 3d_RLS) {
                      Portage::Meshfree::Basis::Type::Linear,
                      Portage::Meshfree::WeightCenter::Scatter);
 }
-/* Aren't working yet 
+
 TEST(estimate, 1d_RQG) {
   test_estimate<1>(Portage::Meshfree::EstimateType::LocalRegression,
                      Portage::Meshfree::Basis::Type::Quadratic,
@@ -302,7 +310,7 @@ TEST(estimate, 3d_RQS) {
                      Portage::Meshfree::Basis::Type::Quadratic,
                      Portage::Meshfree::WeightCenter::Scatter);
 }
-*/
+
 
 
 
