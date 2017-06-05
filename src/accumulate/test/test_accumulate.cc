@@ -147,7 +147,6 @@ void test_accumulate(Portage::Meshfree::EstimateType etype,
         }
       }
     }
-    double x=1.;
   }
 }
 

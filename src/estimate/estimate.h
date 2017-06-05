@@ -7,17 +7,9 @@
 #define ESTIMATE_H_INC_
 
 #include <vector>
-#include <memory>
 #include <string>
-#include <cmath>
-#include <array>
 #include <cassert>
 
-#include "portage/support/portage.h"
-#include "portage/support/Point.h"
-#include "portage/support/weight.h"
-#include "portage/support/basis.h"
-#include "portage/swarm/swarm.h"
 #include "portage/swarm/swarm_state.h"
 
 namespace Portage {
@@ -25,19 +17,12 @@ namespace Meshfree {
 
 using std::string;
 using std::vector;
-using std::shared_ptr;
-using std::map;
 
-
-/*!
- * @brief
- */
-template<size_t dim,
-         template <size_t> class /* SourceSwarmState */>
+template<size_t dim>
 class Estimate {
  public:
-  Estimate(SwarmState<dim> const& source_state)
-      : source_state_(source_state)
+  Estimate(shared_ptr<SwarmState<dim>> source_state):
+	source_state_(source_state)
   {}
 
   void set_variable(std::string const & var_name) {
@@ -46,25 +31,32 @@ class Estimate {
   }
 
   double operator()(int const target_index,
-                    vector<Weights_t> const & sources_and_weights) const
+                    vector<vector<double>> const & shape_vec,
+		    vector<size_t> const& source_particles)
   {
+    assert(shape_vec.size() == source_particles.size());
+    assert(derivative_ < shape_vec[0].size());
 
-    // contribution of the source cell is its field value weighted by
-    // its "weight" 
-    double val = 0.0;
-    for (auto const& wt : sources_and_weights) {
-      int srccell = wt.entityID;
-      std::vector<double> pair_weights = wt.weights;
-      val += source_vals_[srccell] * pair_weights[0];
+    typename SwarmState<dim>::DblVecPtr source_field_ptr;
+    source_state_->get_field(var_name_, source_field_ptr);
+    vector<double> &source_field(*source_field_ptr);
+
+    double result=0.;
+    for (size_t i=0; i<source_particles.size(); i++) {
+      result += source_field[source_particles[i]] * shape_vec[i][derivative_];
     }
-    
-    return val;
+    return result;
+  }
+
+  void set_interpolation_variable(std::string const & interp_var_name, size_t derivin=0) {
+    var_name_ = interp_var_name;
+    derivative_ = derivin;
   }
 
  private:
-  SwarmState<dim> const& source_state_;
+  shared_ptr<SwarmState<dim>> source_state_;
   std::string var_name_;
-  double const * source_vals_;
+  size_t derivative_;
 };
 
 }
