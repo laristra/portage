@@ -56,17 +56,13 @@ POSSIBILITY OF SUCH DAMAGE.
 #include "gtest/gtest.h"
 
 TEST(Swarm, Sanity_Check) {
-  std::vector<Portage::Point<3>> points(10), extents(10);
-
-  double h = 0.01;
+  std::vector<Portage::Point<3>> points(10);
 
   srand(time(NULL));
-  for (int i = 0; i < 10; i++) {
+  for (int i = 0; i < 10; i++)
     points[i] = Portage::Point<3>(((double)rand()/RAND_MAX),
                                   ((double)rand()/RAND_MAX),
                                   ((double)rand()/RAND_MAX));
-    extents[i] = Portage::Point<3>(h, h, h);
-  }
 
   auto p_ptr = std::make_shared<std::vector<Portage::Point<3>>>(points);
                                
