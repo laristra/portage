@@ -75,6 +75,11 @@ if (ENABLE_UNIT_TESTS)
        LIBRARIES portage ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
        POLICY MPI
        THREADS 1)
+       cinch_add_unit(test_driver_swarm
+       SOURCES test/test_driver_swarm
+       LIBRARIES portage
+       POLICY MPI
+       THREADS 1)
 
    endif (Jali_DIR)
 
