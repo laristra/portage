@@ -51,7 +51,6 @@ POSSIBILITY OF SUCH DAMAGE.
 #include "portage/support/weight.h"
 #include "portage/support/basis.h"
 #include "portage/swarm/swarm.h"
-#include "portage/swarm/swarm_state.h"
 #include "portage/support/Matrix.h"
 
 namespace Portage {
@@ -133,7 +132,7 @@ class Accumulate {
   }
 
   vector<Weights_t>
-  operator() (size_t const particleB, vector<size_t> const& source_particles) {
+  operator() (size_t const particleB, vector<unsigned int> const& source_particles) {
     vector<Weights_t> result;
     result.reserve(source_particles.size());
     
