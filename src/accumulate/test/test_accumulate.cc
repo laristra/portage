@@ -47,7 +47,7 @@ POSSIBILITY OF SUCH DAMAGE.
 
 #include "portage/support/Point.h"
 #include "portage/swarm/swarm.h"
-#include "accumulate.h"
+#include "portage/accumulate/accumulate.h"
 
 using std::vector;
 using std::shared_ptr;
@@ -114,7 +114,7 @@ void test_accumulate(Portage::Meshfree::EstimateType etype,
       vector<vector<double>>(jsize[0], vector<double>(jsize[1],0.)));
 
     // list of src swarm particles (indices)
-    vector<size_t> src_particles(npoints);
+    vector<unsigned int> src_particles(npoints);
     for (size_t i=0; i<npoints; i++) src_particles[i] = i;
 
     // Loop through target particles
