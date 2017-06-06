@@ -61,13 +61,33 @@ class SwarmState {
    */
   void add_field(const string name, DblVecPtr value);
 
-  /*! @brief Get an integer field off the swarm.
+  /*! @brief Get an integer field off the swarm - throw exception if
+   *  it does not exist
+   *
+   * @param name the name of the integer field
+   * @param value the values in the field
+   */
+  void get_field(const string name, IntVecPtr &value) const;
+
+  /*! @brief Get a double field off the swarm centers - throw
+   *  exception if it does not exist
+   *
+   * @param name the name of the double field
+   * @param value the values in the field
+   */
+   void get_field(const string name, DblVecPtr &value) const;
+
+  /*! @brief Get an integer field off the swarm - add it if it does
+   *  not exist
+   *
    * @param name the name of the integer field
    * @param value the values in the field
    */
   void get_field(const string name, IntVecPtr &value);
 
-  /*! @brief Get a double field off the swarm centers.
+  /*! @brief Get a double field off the swarm centers - add it if it
+   *  does not exist
+   *
    * @param name the name of the double field
    * @param value the values in the field
    */
@@ -131,11 +151,29 @@ void SwarmState<dim>::add_field(const string name, DblVecPtr value) {
   dbl_field_map_.insert(pair<string, DblVecPtr>(name, value));
 }
 
+// Const version of get_field for integer field - throws exception if
+// field does not exist
+template<size_t dim>
+void SwarmState<dim>::get_field(const string name, IntVecPtr &value) const {
+  value = int_field_map_.at(name);
+}
+
+// Const version of get_field for real field - throws exception if
+// field does not exist
+template<size_t dim>
+void SwarmState<dim>::get_field(const string name, DblVecPtr &value) const {
+  value = dbl_field_map_.at(name);
+}
+
+// Non-const version of get_filed for integer field - inserts the field
+// if it does not exist
 template<size_t dim>
 void SwarmState<dim>::get_field(const string name, IntVecPtr &value) {
   value = int_field_map_[name];
 }
 
+// Non-const version of get_filed for real field - inserts the field
+// if it does not exist
 template<size_t dim>
 void SwarmState<dim>::get_field(const string name, DblVecPtr &value) {
   value = dbl_field_map_[name];
