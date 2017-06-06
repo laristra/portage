@@ -18,13 +18,42 @@ namespace Meshfree {
 using std::string;
 using std::vector;
 
+/**
+ * @class Estimate portage/estimate/estimate.h
+ * @brief This functional will take the result of @code Accumulate::operator()@endcode
+ *        and use it to estimate derivatives of the source state data.
+ */
 template<size_t dim>
 class Estimate {
  public:
+  
+  /** 
+   * @brief Constructor
+   * @param source_state the very same source state provided to @code Accumulate::Accumulate()@endcode
+   */
   Estimate(shared_ptr<SwarmState<dim>> source_state):
 	source_state_(source_state)
   {}
 
+  /** 
+   * @brief Set the interpolation variable and derivative
+   * @param interp_var_name the name of the variable to estimate
+   * @param derivative the derivative specification in the range 0...n-1 where n is the number of 
+   *        basis components used in @code Accumulate::operator()@endcode
+   */
+  void set_interpolation_variable(std::string const & interp_var_name, size_t derivative=0) {
+    var_name_ = interp_var_name;
+    derivative_ = derivative;
+  }
+
+  /**  
+   * @brief apply corrected weight function to compute derivatives
+   *
+   * @param target_index the index of the target swarm particle at which to estimate the derivative
+   * @param shape_vec the result of @code Accumulate::operator()@endcode
+   * @param source_particles the same source particles provided to @code Accumulate::operator()@endcode
+   * @return the derivative of the data in @code source_state_@endcode specified by @code derivative_@endcode
+   */
   double operator()(int const target_index,
                     vector<vector<double>> const & shape_vec,
 		    vector<size_t> const& source_particles)
@@ -41,11 +70,6 @@ class Estimate {
       result += source_field[source_particles[i]] * shape_vec[i][derivative_];
     }
     return result;
-  }
-
-  void set_interpolation_variable(std::string const & interp_var_name, size_t derivin=0) {
-    var_name_ = interp_var_name;
-    derivative_ = derivin;
   }
 
  private:

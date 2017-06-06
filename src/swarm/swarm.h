@@ -48,7 +48,7 @@ template<size_t dim> class Swarm {
     assert(extents_->size() == npoints_);
   }
 
-  /*! @brief return the nubmer of particles in the swarm.
+  /*! @brief return the number of particles in the swarm.
    * @return the number of particles in the swarm
    *
    * DEPRECATED - use num_owned_points instead.
@@ -57,7 +57,7 @@ template<size_t dim> class Swarm {
     return npoints_;
   }
 
-  /*! @brief return the nubmer of particles in the swarm.
+  /*! @brief return the number of particles in the swarm.
    * @return the number of particles in the swarm
    */
   int num_owned_points() const {
