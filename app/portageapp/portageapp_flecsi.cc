@@ -50,8 +50,8 @@ POSSIBILITY OF SUCH DAMAGE.
 
 #define PORTAGE_SERIAL_ONLY
 #include "portage/support/Point.h"
-#include "portage/wrappers/mesh/flecsi/flecsi_mesh_wrapper.h"
-#include "portage/wrappers/state/flecsi/flecsi_state_wrapper.h"
+#include "portage/wonton/mesh/flecsi/flecsi_mesh_wrapper.h"
+#include "portage/wonton/state/flecsi/flecsi_state_wrapper.h"
 #include "portage/driver/driver.h"
 
 #include "flecsi/specializations/burton/burton.h"

@@ -41,7 +41,7 @@ POSSIBILITY OF SUCH DAMAGE.
 
 
 
-#include "portage/wrappers/state/jali/jali_state_wrapper.h"
+#include "portage/wonton/state/jali/jali_state_wrapper.h"
 
 #include <iostream>
 
@@ -51,7 +51,7 @@ POSSIBILITY OF SUCH DAMAGE.
 #include "Mesh.hh"
 #include "MeshFactory.hh"
 
-#include "portage/wrappers/mesh/jali/jali_mesh_wrapper.h"
+#include "portage/wonton/mesh/jali/jali_mesh_wrapper.h"
 
 // Vector type for 2d doubles
 struct Vec2d

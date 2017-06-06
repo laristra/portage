@@ -49,7 +49,7 @@ POSSIBILITY OF SUCH DAMAGE.
 #include <vector>
 #include <algorithm>
 
-#include "portage/wrappers/mesh/AuxMeshTopology.h"
+#include "portage/wonton/mesh/AuxMeshTopology.h"
 #include "portage/support/portage.h"
 #include "portage/support/Point.h"
 

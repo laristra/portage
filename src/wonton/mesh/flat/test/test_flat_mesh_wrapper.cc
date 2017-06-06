@@ -41,7 +41,7 @@ POSSIBILITY OF SUCH DAMAGE.
 
 
 
-#include "portage/wrappers/mesh/jali/jali_mesh_wrapper.h"
+#include "portage/wonton/mesh/jali/jali_mesh_wrapper.h"
 
 #include <algorithm>
 #include <iostream>
@@ -53,7 +53,7 @@ POSSIBILITY OF SUCH DAMAGE.
 #include "MeshFactory.hh"
 
 #include "portage/support/Point.h"
-#include "portage/wrappers/mesh/flat/flat_mesh_wrapper.h"
+#include "portage/wonton/mesh/flat/flat_mesh_wrapper.h"
 
 using std::abs;
 

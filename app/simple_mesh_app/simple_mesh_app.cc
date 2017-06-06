@@ -61,8 +61,8 @@ POSSIBILITY OF SUCH DAMAGE.
 #include "portage/driver/driver.h"
 #include "portage/simple_mesh/simple_mesh.h"
 #include "portage/simple_mesh/simple_state.h"
-#include "portage/wrappers/mesh/simple_mesh/simple_mesh_wrapper.h"
-#include "portage/wrappers/state/simple_state/simple_state_wrapper.h"
+#include "portage/wonton/mesh/simple_mesh/simple_mesh_wrapper.h"
+#include "portage/wonton/state/simple_state/simple_state_wrapper.h"
 
 using Portage::Simple_Mesh;
 using Portage::Simple_State;

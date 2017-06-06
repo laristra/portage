@@ -56,8 +56,8 @@ POSSIBILITY OF SUCH DAMAGE.
 #endif
 
 #include "portage/driver/driver.h"
-#include "portage/wrappers/mesh/jali/jali_mesh_wrapper.h"
-#include "portage/wrappers/state/jali/jali_state_wrapper.h"
+#include "portage/wonton/mesh/jali/jali_mesh_wrapper.h"
+#include "portage/wonton/state/jali/jali_state_wrapper.h"
 
 #include "Mesh.hh"
 #include "MeshFactory.hh"

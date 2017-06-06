@@ -44,7 +44,7 @@ POSSIBILITY OF SUCH DAMAGE.
 #include <vector>
 #include <iterator>
 
-#include "portage/wrappers/mesh/simple_mesh/simple_mesh_wrapper.h"
+#include "portage/wonton/mesh/simple_mesh/simple_mesh_wrapper.h"
 #include "portage/simple_mesh/simple_mesh.h"
 #include "portage/support/portage.h"
 #include "portage/support/Point.h"

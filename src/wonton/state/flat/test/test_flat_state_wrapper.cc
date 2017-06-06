@@ -41,8 +41,8 @@ POSSIBILITY OF SUCH DAMAGE.
 
 
 
-#include "portage/wrappers/state/jali/jali_state_wrapper.h"
-#include "portage/wrappers/mesh/jali/jali_mesh_wrapper.h"
+#include "portage/wonton/state/jali/jali_state_wrapper.h"
+#include "portage/wonton/mesh/jali/jali_mesh_wrapper.h"
 
 #include "portage/support/portage.h"
 
@@ -56,7 +56,7 @@ POSSIBILITY OF SUCH DAMAGE.
 #include "Mesh.hh"
 #include "MeshFactory.hh"
 
-#include "portage/wrappers/state/flat/flat_state_wrapper.h"
+#include "portage/wonton/state/flat/flat_state_wrapper.h"
 
 TEST(Flat_State_Wrapper, VectorInit) {
   std::vector<double> vertx={0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3};

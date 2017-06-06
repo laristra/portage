@@ -42,7 +42,7 @@ POSSIBILITY OF SUCH DAMAGE.
 #include "intersect_r3d.h"
 #include "gtest/gtest.h"
 #include "MeshFactory.hh"
-#include "portage/wrappers/mesh/jali/jali_mesh_wrapper.h"
+#include "portage/wonton/mesh/jali/jali_mesh_wrapper.h"
 
 TEST(intersectR3D, simple1) {
   Jali::MeshFactory mf(MPI_COMM_WORLD);

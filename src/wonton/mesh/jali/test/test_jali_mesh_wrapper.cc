@@ -41,7 +41,7 @@ POSSIBILITY OF SUCH DAMAGE.
 
 
 
-#include "portage/wrappers/mesh/jali/jali_mesh_wrapper.h"
+#include "portage/wonton/mesh/jali/jali_mesh_wrapper.h"
 
 #include <iostream>
 
@@ -56,7 +56,7 @@ POSSIBILITY OF SUCH DAMAGE.
 using std::abs;
 
 /*!
-  @file test_jali_mesh_wrapper.cc
+  file test_jali_mesh_wrapper.cc
   @brief Unit tests for the Jali mesh wrapper class
  */
 

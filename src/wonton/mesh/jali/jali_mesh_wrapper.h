@@ -52,7 +52,7 @@ POSSIBILITY OF SUCH DAMAGE.
 
 #include "Mesh.hh"                      // Jali mesh header
 
-#include "portage/wrappers/mesh/AuxMeshTopology.h"
+#include "portage/wonton/mesh/AuxMeshTopology.h"
 #include "portage/support/portage.h"
 #include "portage/support/Point.h"
 

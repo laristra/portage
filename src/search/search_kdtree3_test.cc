@@ -50,7 +50,7 @@ POSSIBILITY OF SUCH DAMAGE.
 #include "Mesh.hh"
 #include "MeshFactory.hh"
 
-#include "portage/wrappers/mesh/jali/jali_mesh_wrapper.h"
+#include "portage/wonton/mesh/jali/jali_mesh_wrapper.h"
 
 TEST(search_kdtree3, case1)
 {

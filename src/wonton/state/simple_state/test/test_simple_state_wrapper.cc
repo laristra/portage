@@ -45,14 +45,14 @@ POSSIBILITY OF SUCH DAMAGE.
 #include <vector>
 #include <string>
 
-#include "portage/wrappers/state/simple_state/simple_state_wrapper.h"
+#include "portage/wonton/state/simple_state/simple_state_wrapper.h"
 
 #include "gtest/gtest.h"
 
 #include "portage/support/portage.h"
 #include "portage/simple_mesh/simple_mesh.h"
 #include "portage/simple_mesh/simple_state.h"
-#include "portage/wrappers/mesh/simple_mesh/simple_mesh_wrapper.h"
+#include "portage/wonton/mesh/simple_mesh/simple_mesh_wrapper.h"
 
 
 TEST(Simple_State_Wrapper, WrapperTest) {

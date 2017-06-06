@@ -41,7 +41,8 @@ POSSIBILITY OF SUCH DAMAGE.
 
 
 
-#include "portage/wrappers/mesh/flecsi/flecsi_mesh_wrapper.h"
+#include "portage/wonton/mesh/flecsi/flecsi_mesh_wrapper.h"
+
 #include "portage/support/Point.h"
 
 #include <iostream>
