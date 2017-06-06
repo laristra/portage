@@ -56,6 +56,8 @@ POSSIBILITY OF SUCH DAMAGE.
 
 #include "portage/support/portage.h"
 #include "portage/support/Point.h"
+#include "portage/support/basis.h"
+#include "portage/support/weight.h"
 #include "portage/search/search_simple_points.h"
 #include "portage/accumulate/accumulate.h"
 #include "portage/estimate/estimate.h"
@@ -69,6 +71,7 @@ POSSIBILITY OF SUCH DAMAGE.
 */
 
 namespace Portage {
+namespace Meshfree {
 
 /*!
   @class Driver "driver.h"
@@ -84,20 +87,20 @@ namespace Portage {
 */
 template <template <int, class, class> class Search,
           template <size_t, class, class> class Accumulate,
-          template<size_t, class, class, class> class Estimate,
+          template<size_t, class> class Estimate,
           int Dim,
           class SourceSwarm,
           class SourceState,
           class TargetSwarm = SourceSwarm,
           class TargetState = SourceState>
 class SwarmDriver {
-
+  
   // Something like this would be very helpful to users
   // static_assert(
   //   Dim == Interpolate::Dim,
   //   "The dimension of Driver and Interpolate do not match!"
   // );
-
+  
 
  public:
   /*!
@@ -125,14 +128,14 @@ class SwarmDriver {
               TargetSwarm const& targetSwarm,
               TargetState& targetState,
               std::vector<std::vector<std::vector<double>>> const& smoothing_lengths,
-              Weight::Kernel const& kernel_type=B4,
-              Weight::Geometry const& support_geom_type=ELLIPTIC)
+              Weight::Kernel const& kernel_type=Weight::B4,
+              Weight::Geometry const& support_geom_type=Weight::ELLIPTIC)
       : source_swarm_(sourceSwarm), source_state_(sourceState),
         target_swarm_(targetSwarm), target_state_(targetState),
-    dim_(sourceSwarm.space_dimension(),
     smoothing_lengths_(smoothing_lengths) {
-
-    assert(sourceSwarm.space_dimension() == targetSwarm.space_dimension());
+           
+    assert(Dim == sourceSwarm.space_dimension());
+    assert(Dim == targetSwarm.space_dimension());
     int num_target_particles = targetSwarm.num_owned_particles();
     kernel_types_ = std::vector<Weight::Kernel>(num_target_particles,
                                                 kernel_type);
@@ -167,32 +170,30 @@ class SwarmDriver {
               std::vector<Weight::Geometry> const& geom_types)
       : source_swarm_(sourceSwarm), source_state_(sourceState),
         target_swarm_(targetSwarm), target_state_(targetState),
-    dim_(sourceSwarm.space_dimension(),
     kernel_types_(kernel_types),
-    geom_types_(support_geom_types),
+    geom_types_(geom_types),
     smoothing_lengths_(smoothing_lengths) {
 
     assert(sourceSwarm.space_dimension() == targetSwarm.space_dimension());
     assert(targetSwarm.size() == smoothing_lengths.size());
     assert(targetSwarm.size() == kernel_types.size());
-    assert(targetSwarm.size() == support_geom_types.size());
+    assert(targetSwarm.size() == geom_types.size());
   }
 
   /// Copy constructor (disabled)
   SwarmDriver(const SwarmDriver &) = delete;
 
   /// Assignment operator (disabled)
-  SwarmDriver & operator = (const Driver &) = delete;
+  SwarmDriver & operator = (const SwarmDriver &) = delete;
 
   /// Destructor
   ~SwarmDriver() {}
 
   /*!
-    @brief Specify the names of the variables to be interpolated along with the
-    limiter to use for all of them
+    @brief Specify the names of the variables to be interpolated
     @param[in] remap_var_names A list of variable names of the variables to
     interpolate from the source swarm to the target swarm.  This variable must
-    exist in both swarmes' state manager
+    exist in both swarms' state manager
   */
   void set_remap_var_names(std::vector<std::string> const &remap_var_names) {
     // remap variable names same in source and target swarm
@@ -213,51 +214,18 @@ class SwarmDriver {
   void set_remap_var_names(
       std::vector<std::string> const & source_remap_var_names,
       std::vector<std::string> const & target_remap_var_names,
-      MeshFree::EstimateType const& estimator_type = MeshFree::LocalRegression,
-      MeshFree::Basis::Type const& basis = MeshFree::Basis::Unitary
-                           ) {
-    assert(source_remap_var_names.size() == target_remap_var_names.size());
-
-    int nvars = source_remap_var_names.size();
-    for (int i = 0; i < nvars; ++i)
-      assert(source_state_.get_entity(source_remap_var_names[i]) ==
-             target_state_.get_entity(target_remap_var_names[i]));
-
-    source_remap_var_names_ = source_remap_var_names;
-    target_remap_var_names_ = target_remap_var_names;
-    estimator_types_.resize(nvars, estimator_type);
-    bases_.resize(nvars, basis);
-  }
-
-  /*!
-    @brief Specify the names of the variables to be interpolated
-    @param[in] source_remap_var_names A list of the variables names of the
-    variables to interpolate from the source swarm.
-    @param[in] target_remap_var_names  A list of the variables names of the
-    variables to interpolate to the target swarm.
-    @param[in] estimator_types A list indicating what estimators should be 
-    used for each remapped variable (KernelDensity, LocalRegression)
-    @param[in] bases A list indicating what basis order to use for each variable
-    (UNITARY, LINEAR, QUADRATIC)
-  */
-  void set_remap_var_names(
-      std::vector<std::string> const & source_remap_var_names,
-      std::vector<std::string> const & target_remap_var_names,
-      std::vector<MeshFree::EstimateType> const& estimator_types,
-      std::vector<MeshFree::Basis> const& bases) {
+      EstimateType const& estimator_type = LocalRegression,
+      Basis::Type const& basis_type = Basis::Unitary) {
 
     assert(source_remap_var_names.size() == target_remap_var_names.size());
 
     int nvars = source_remap_var_names.size();
-    for (int i = 0; i < nvars; ++i)
-      assert(source_state_.get_entity(source_remap_var_names[i]) ==
-             target_state_.get_entity(target_remap_var_names[i]));
-
     source_remap_var_names_ = source_remap_var_names;
     target_remap_var_names_ = target_remap_var_names;
-    estimator_types_ = estimator_types;
-    bases_ = bases;
+    estimator_type_ = estimator_type;
+    basis_type_ = basis_type;
   }
+
 
   /*!
     @brief Get the names of the variables to be remapped from the
@@ -278,18 +246,11 @@ class SwarmDriver {
   }
 
   /*!
-    @brief Get the dimensionality of the swarmes.
-    @return The dimensionality of the swarmes.
-  */
-  unsigned int dim() const {
-    return dim_;
-  }
-
-  /*!
     @brief Execute the remapping process
   */
   void run(bool distributed) {
 
+    int comm_rank = 0;
 #ifndef ENABLE_MPI
     if (distributed) {
       std::cout << "Request is for a parallel run but Portage is compiled for serial runs only\n";
@@ -303,6 +264,7 @@ class SwarmDriver {
       return;
     }
 
+    int numSourcePts = target_swarm_.num_owned_particles();
     int numTargetPts = target_swarm_.num_owned_particles();
     std::cout << "Number of target cells in target swarm on rank "
               << comm_rank << ": "
@@ -315,13 +277,8 @@ class SwarmDriver {
     std::vector<std::string> source_var_names;
     std::vector<std::string> target_var_names;
     for (int i = 0; i < nvars; ++i) {
-      Entity_kind onwhat =
-          source_state_.get_entity(source_remap_var_names_[i]);
-
-      if (onwhat == PARTICLE) {
-        source_var_names.emplace_back(source_remap_var_names_[i]);
-        target_var_names.emplace_back(target_remap_var_names_[i]);
-      }
+      source_var_names.emplace_back(source_remap_var_names_[i]);
+      target_var_names.emplace_back(target_remap_var_names_[i]);
     }
 
     if (source_var_names.size() > 0)
@@ -332,14 +289,27 @@ class SwarmDriver {
       struct timeval begin_timeval, end_timeval, diff_timeval;
       
       // SEARCH
-      Portage::vector<std::vector<int>> candidates(numTargetPts);
+      Portage::vector<std::vector<unsigned int>> candidates(numTargetPts);
       
       // Get an instance of the desired search algorithm type which is expected
       // to be a functor with an operator() of the right form
 
       gettimeofday(&begin_timeval, 0);
+
+      // search boxes around source points are of zero dimension but
+      // those around target points are determined by particle
+      // smoothing lengths
+
+      auto sourceExtents =
+          std::make_shared<std::vector<Point<Dim>>>(numSourcePts);
+      auto targetExtents =
+          std::make_shared<std::vector<Point<Dim>>>(numTargetPts);
+      for (int i = 0; i < numTargetPts; i++)
+        (*targetExtents)[i] = Point<Dim>(smoothing_lengths_[i][0]);
+
       const Search<Dim, SourceSwarm, TargetSwarm>
-          searchfunctor(source_swarm_, target_swarm_);
+          searchfunctor(source_swarm_, target_swarm_,
+                        sourceExtents, targetExtents);
       
       Portage::transform(target_swarm_.begin(PARTICLE, PARALLEL_OWNED),
                          target_swarm_.end(PARTICLE, PARALLEL_OWNED),
@@ -361,11 +331,11 @@ class SwarmDriver {
 
       const Accumulate<Dim, SourceSwarm, TargetSwarm>
           accumulateFunctor(source_swarm_, target_swarm_,
-                            estimate_type_, weight_center_,
+                            estimator_type_, weight_center_,
                             kernel_types_, geom_types_, smoothing_lengths_,
                             basis_type_);
     
-      Portage::vector<std::vector<Weights_t>> source_pts_and_mults(nTargetPts);
+      Portage::vector<std::vector<Weights_t>> source_pts_and_mults(numTargetPts);
       
       // For each particle in the target swarm get the shape functions
       // (multipliers for source particle values)
@@ -400,15 +370,24 @@ class SwarmDriver {
                                 " to variable " << target_var_names[i] <<
                                 std::endl;
 
-        estimateFunctor.set_variable(source_var_names[i], limiters_[i]);
+        estimateFunctor.set_variable(source_var_names[i]);
         
         // This populates targetField with the values returned by the
         // remapper operator
         
-        double *target_field_raw = nullptr;
-        target_state_.get_data(PARTICLE, target_nodevar_names[i],
-                               &target_field_raw);
-        Portage::pointer<double> target_field(target_field_raw);
+        // ***************** NOTE NOTE NOTE NOTE ********************
+        // THE CURRENT SWARM_STATE DOES NOT HAVE AN OPERATOR TO RETURN
+        // A RAW POINTER TO THE DATA. INSTEAD IT RETURNS THIS REQUIRES
+        // A SPECIFIC TYPE OF THE SWARM_STATE CLASS. THIS IS A BAD
+        // IDEA BECAUSE IT FORCES ALL OTHER SWARM_STATE CLASSES TO
+        // HAVE THIS SAME DEFINITION. IT ALSO LEADS TO THE UGLY USAGE
+        // WE SEE BELOW BECAUSE WE NEED A PORTAGE POINTER TO BE ABLE
+        // TO USE THRUST
+
+        typename SwarmState<Dim>::DblVecPtr target_field_shared_ptr;
+        
+        target_state_.get_field(target_var_names[i], target_field_shared_ptr);
+        Portage::pointer<double> target_field(&((*target_field_shared_ptr)[0]));
         
         Portage::transform(target_swarm_.begin(PARTICLE, PARALLEL_OWNED),
                            target_swarm_.end(PARTICLE, PARALLEL_OWNED),
@@ -441,15 +420,16 @@ class SwarmDriver {
   TargetState& target_state_;
   std::vector<std::string> source_remap_var_names_;
   std::vector<std::string> target_remap_var_names_;
-  std::vector<MeshFree::EstimateType> estimator_types_;
-  std::vector<MeshFree::Weight::Kernel> kernel_types_;
-  std::vector<MeshFree::Weight::Geometry> support_geom_types_;
-  std::vector<MeshFree::Basis> bases_;
+  EstimateType estimator_type_;
+  WeightCenter weight_center_ = Gather;  // smoothing len. centered on trgt. pts
+  std::vector<Weight::Kernel> kernel_types_;
+  std::vector<Weight::Geometry> geom_types_;
+  Basis::Type basis_type_;
   std::vector<std::vector<std::vector<double>>> smoothing_lengths_;
-  unsigned int dim_;
 };  // class Driver_Swarm
 
 
+}  // namespace Meshfree
 }  // namespace Portage
 
 #endif  // SRC_DRIVER_DRIVER_H_
