@@ -264,7 +264,7 @@ class SwarmDriver {
       return;
     }
 
-    int numSourcePts = target_swarm_.num_owned_particles();
+    int numSourcePts = source_swarm_.num_owned_particles();
     int numTargetPts = target_swarm_.num_owned_particles();
     std::cout << "Number of target cells in target swarm on rank "
               << comm_rank << ": "
