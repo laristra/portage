@@ -288,10 +288,16 @@ int main(int argc, char** argv) {
                      + ".txt");
   finp << std::scientific;
   finp.precision(17);
+  std::ofstream finp_csv("infield"
+                     + std::to_string(static_cast<long long>(example_num))
+                     + ".csv");
+  finp_csv << std::scientific;
+  finp_csv.precision(17);
   for (int p(0); p < ninpts; ++p) {
     Portage::Point<2> coord = inputSwarm->get_particle_coordinates(p);
     
     finp << coord[0] << " " << coord[1] << " " << (*inputData)[p] << std::endl;
+    finp_csv << coord[0] << ", " << coord[1] << ", " << (*inputData)[p] << std::endl;
   }
 
   // Create the output file for comparison.
@@ -302,10 +308,16 @@ int main(int argc, char** argv) {
                      + ".txt");
   fout << std::scientific;
   fout.precision(17);
+  std::ofstream fout_csv("outfield"
+                     + std::to_string(static_cast<long long>(example_num))
+                     + ".csv");
+  fout_csv << std::scientific;
+  fout_csv.precision(17);
   for (int p(0); p < ntarpts; ++p) {
     Portage::Point<2> coord = targetSwarm->get_particle_coordinates(p);
     
     fout << coord[0] << " " << coord[1] << " " << (*targetData)[p] << std::endl;
+    fout_csv << coord[0] << ", " << coord[1] << ", " << (*targetData)[p] << std::endl;
   }
   std::cout << "finishing swarm app..." << std::endl;
 
