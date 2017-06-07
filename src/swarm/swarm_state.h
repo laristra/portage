@@ -36,10 +36,10 @@ class SwarmState {
   /*! @brief Double data type allowed on the swarm.  */
   using DblVec=vector<double>;
 
-  /*! @brief Integer data type allowed on the swarm.  */
+  /*! @brief Pointer to integer data type allowed on the swarm.  */
   using IntVecPtr=shared_ptr<vector<int>>;
 
-  /*! @brief Double data type allowed on the swarm.  */
+  /*! @brief Pointer to double data type allowed on the swarm.  */
   using DblVecPtr=shared_ptr<vector<double>>;
 
   /*! @brief Constructor provides a reference swarm.
