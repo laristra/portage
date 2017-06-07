@@ -88,7 +88,8 @@ double field_func(int field_order, Portage::Point<D> coord) {
       double rsqr = 0.0;
       for (int i = 0; i < D; i++) 
         rsqr += coord[i]*coord[i];
-      value = exp(4*rsqr);
+      //      value = exp(4*rsqr);
+      value = 1.0;
       for (int i = 0; i < D; i++)
         value *= sin(2*M_PI*coord[i]);
       break;
@@ -247,7 +248,18 @@ int main(int argc, char** argv) {
     SwarmState<2>>
       d(*inputSwarm, *inputState, *targetSwarm, *targetState,
         smoothing_lengths);
-  d.set_remap_var_names(remap_fields);
+  if (example.estimation_order == 0)
+    d.set_remap_var_names(remap_fields, remap_fields,
+                          Portage::Meshfree::LocalRegression,
+                          Portage::Meshfree::Basis::Unitary);
+  else if (example.estimation_order == 1)
+    d.set_remap_var_names(remap_fields, remap_fields,
+                          Portage::Meshfree::LocalRegression,
+                          Portage::Meshfree::Basis::Linear);
+  else if (example.estimation_order == 2)
+    d.set_remap_var_names(remap_fields, remap_fields,
+                          Portage::Meshfree::LocalRegression,
+                          Portage::Meshfree::Basis::Quadratic);
   d.run(false);
 
   std::vector<double> expected_value(ntarpts, 0.0);
