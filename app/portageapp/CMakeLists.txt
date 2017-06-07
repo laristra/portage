@@ -136,7 +136,6 @@ if(ENABLE_PROFILE)
   endif (JALI_DIR AND FLECSI_INSTALL_DIR)
 endif(ENABLE_PROFILE)
 
-
 if (ENABLE_APP_TESTS)
   add_subdirectory(test)
 endif (ENABLE_APP_TESTS)
