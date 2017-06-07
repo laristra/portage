@@ -293,6 +293,7 @@ int main(int argc, char** argv) {
                      + ".csv");
   finp_csv << std::scientific;
   finp_csv.precision(17);
+  finp_csv << " X, Y, Value\n";
   for (int p(0); p < ninpts; ++p) {
     Portage::Point<2> coord = inputSwarm->get_particle_coordinates(p);
     
@@ -313,6 +314,7 @@ int main(int argc, char** argv) {
                      + ".csv");
   fout_csv << std::scientific;
   fout_csv.precision(17);
+  fout_csv << " X, Y, Value\n";
   for (int p(0); p < ntarpts; ++p) {
     Portage::Point<2> coord = targetSwarm->get_particle_coordinates(p);
     
