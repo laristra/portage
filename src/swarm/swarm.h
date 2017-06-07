@@ -151,7 +151,7 @@ std::shared_ptr<Swarm<1>> SwarmFactory(double xmin, double xmax,
       double h = (xmax-xmin)/(nparticles-1);
       for (size_t i = 0; i < nparticles; i++)
         (*pts)[i][0] +=
-            0.25*((2*h*static_cast<double>(rand_r(&rand_state))/RAND_MAX)-1.0);
+            0.25*h*((2*static_cast<double>(rand_r(&rand_state))/RAND_MAX)-1.0);
     }
   }
   
@@ -198,9 +198,9 @@ std::shared_ptr<Swarm<2>> SwarmFactory(double xmin, double ymin,
       unsigned int rand_state;
       for (size_t i = 0; i < nparticles; i++) {
         (*pts)[i][0] +=
-            0.25*((2*hx*static_cast<double>(rand_r(&rand_state))/RAND_MAX)-1.0);
+            0.25*hx*((2*static_cast<double>(rand_r(&rand_state))/RAND_MAX)-1.0);
         (*pts)[i][1] +=
-            0.25*((2*hy*static_cast<double>(rand_r(&rand_state))/RAND_MAX)-1.0);
+            0.25*hy*((2*static_cast<double>(rand_r(&rand_state))/RAND_MAX)-1.0);
       }
     }
   }
@@ -240,8 +240,8 @@ std::shared_ptr<Swarm<3>> SwarmFactory(double xmin, double ymin, double zmin,
     for (size_t i = 0; i < npdim; i++) {
       for (size_t j = 0; j < npdim; j++) {
         for (size_t k = 0; k < npdim; k++) {
-          (*pts)[n][1] = ymin + j*hy;
           (*pts)[n][0] = xmin + i*hx;
+          (*pts)[n][1] = ymin + j*hy;
           (*pts)[n][2] = zmin + k*hz;
           n++;
         }
@@ -252,11 +252,11 @@ std::shared_ptr<Swarm<3>> SwarmFactory(double xmin, double ymin, double zmin,
       unsigned int rand_state;
       for (size_t i = 0; i < nparticles; i++) {
         (*pts)[i][0] +=
-            0.25*((2*hx*static_cast<double>(rand_r(&rand_state))/RAND_MAX)-1.0);
+            0.25*hx*((2*static_cast<double>(rand_r(&rand_state))/RAND_MAX)-1.0);
         (*pts)[i][1] +=
-            0.25*((2*hy*static_cast<double>(rand_r(&rand_state))/RAND_MAX)-1.0);
+            0.25*hy*((2*static_cast<double>(rand_r(&rand_state))/RAND_MAX)-1.0);
         (*pts)[i][2] +=
-            0.25*((2*hz*static_cast<double>(rand_r(&rand_state))/RAND_MAX)-1.0);
+            0.25*hz*((2*static_cast<double>(rand_r(&rand_state))/RAND_MAX)-1.0);
       }
     }
   }
