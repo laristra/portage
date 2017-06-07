@@ -18,7 +18,6 @@ namespace Meshfree {
 using std::string;
 using std::vector;
 
-<<<<<<< HEAD
 /**
  * @class Estimate portage/estimate/estimate.h
  * @brief This functional will take the result of 
