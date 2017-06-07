@@ -75,7 +75,7 @@ template<size_t dim> class Swarm {
   /*! @brief return the number of particles of given type
    * @return the number of owned + ghost particles in the swarm
    */
-  int num_particles(Entity_type etype) const {
+  int num_particles(Entity_type etype = ALL) const {
     switch (etype) {
       case PARALLEL_OWNED:
         return num_owned_particles();
@@ -144,6 +144,15 @@ std::shared_ptr<Swarm<1>> SwarmFactory(double xmin, double xmax,
     double h = (xmax-xmin)/(nparticles-1);
     for (size_t i = 0; i < nparticles; i++)
       (*pts)[i][0] = xmin + i*h;
+    
+    if (distribution == 2) {
+      srand(time(NULL));
+      unsigned int rand_state;
+      double h = (xmax-xmin)/(nparticles-1);
+      for (size_t i = 0; i < nparticles; i++)
+        (*pts)[i][0] +=
+            0.25*((2*h*static_cast<double>(rand_r(&rand_state))/RAND_MAX)-1.0);
+    }
   }
   
   std::shared_ptr<Swarm<1>> swarm = make_shared<Swarm<1>>(pts);
@@ -182,6 +191,16 @@ std::shared_ptr<Swarm<2>> SwarmFactory(double xmin, double ymin,
         (*pts)[n][0] = xmin + i*hx;
         (*pts)[n][1] = ymin + j*hy;
         n++;
+      }
+    }
+    if (distribution == 2) {
+      srand(time(NULL));
+      unsigned int rand_state;
+      for (size_t i = 0; i < nparticles; i++) {
+        (*pts)[i][0] +=
+            0.25*((2*hx*static_cast<double>(rand_r(&rand_state))/RAND_MAX)-1.0);
+        (*pts)[i][1] +=
+            0.25*((2*hy*static_cast<double>(rand_r(&rand_state))/RAND_MAX)-1.0);
       }
     }
   }
@@ -226,6 +245,18 @@ std::shared_ptr<Swarm<3>> SwarmFactory(double xmin, double ymin, double zmin,
           (*pts)[n][2] = zmin + k*hz;
           n++;
         }
+      }
+    }
+    if (distribution == 2) {
+      srand(time(NULL));
+      unsigned int rand_state;
+      for (size_t i = 0; i < nparticles; i++) {
+        (*pts)[i][0] +=
+            0.25*((2*hx*static_cast<double>(rand_r(&rand_state))/RAND_MAX)-1.0);
+        (*pts)[i][1] +=
+            0.25*((2*hy*static_cast<double>(rand_r(&rand_state))/RAND_MAX)-1.0);
+        (*pts)[i][2] +=
+            0.25*((2*hz*static_cast<double>(rand_r(&rand_state))/RAND_MAX)-1.0);
       }
     }
   }
