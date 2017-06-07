@@ -31,7 +31,7 @@ class Estimate {
    * @brief Constructor
    * @param source_state the very same source state provided to @code Accumulate::Accumulate()@endcode
    */
-  Estimate(shared_ptr<SwarmState<dim>> source_state):
+  Estimate(SwarmState<dim> const& source_state):
 	source_state_(source_state)
   {}
 
