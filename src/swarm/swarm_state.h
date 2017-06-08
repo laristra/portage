@@ -45,7 +45,7 @@ class SwarmState {
   /*! @brief Constructor provides a reference swarm.
    * @param swarm the swarm with which the field data are associated.
    */
-  SwarmState(shared_ptr<Swarm<dim>> swarmin): swarm_(swarmin){}
+  SwarmState(Swarm<dim> const& swarmin): swarm_(swarmin){}
 
   /*! @brief Set an integer field on the swarm.
    * @param name the name of the integer field
@@ -61,13 +61,33 @@ class SwarmState {
    */
   void add_field(const string name, DblVecPtr value);
 
-  /*! @brief Get an integer field off the swarm.
+  /*! @brief Get an integer field off the swarm - throw exception if
+   *  it does not exist
+   *
+   * @param name the name of the integer field
+   * @param value the values in the field
+   */
+  void get_field(const string name, IntVecPtr &value) const;
+
+  /*! @brief Get a double field off the swarm centers - throw
+   *  exception if it does not exist
+   *
+   * @param name the name of the double field
+   * @param value the values in the field
+   */
+   void get_field(const string name, DblVecPtr &value) const;
+
+  /*! @brief Get an integer field off the swarm - add it if it does
+   *  not exist
+   *
    * @param name the name of the integer field
    * @param value the values in the field
    */
   void get_field(const string name, IntVecPtr &value);
 
-  /*! @brief Get a double field off the swarm centers.
+  /*! @brief Get a double field off the swarm centers - add it if it
+   *  does not exist
+   *
    * @param name the name of the double field
    * @param value the values in the field
    */
@@ -76,11 +96,11 @@ class SwarmState {
   /*! @brief Get number of points in swarm
    * @return number of points
    */
-  size_t get_size(){return swarm_->num_owned_cells();}
+  size_t get_size(){return swarm_.num_owned_particles();}
 
  private:
   /** reference swarm state */
-  shared_ptr<Swarm<dim>> swarm_;
+  Swarm<dim> const& swarm_;
 
   /** integer data fields */
   map<string, IntVecPtr> int_field_map_;
@@ -94,7 +114,7 @@ class SwarmState {
 template<size_t dim>
 void SwarmState<dim>::add_field(const string name, IntVecPtr value) {
   // check size
-  assert(value->size() == swarm_->num_owned_cells());
+  assert(value->size() == swarm_.num_owned_particles());
 
   // check duplicate
   /* couldn't get this to work
@@ -114,7 +134,7 @@ void SwarmState<dim>::add_field(const string name, IntVecPtr value) {
 template<size_t dim>
 void SwarmState<dim>::add_field(const string name, DblVecPtr value) {
   // check size
-  assert(value->size() == swarm_->num_owned_cells());
+  assert(value->size() == swarm_.num_owned_particles());
 
   // check duplicate
   /* couldn't get this to work
@@ -131,11 +151,29 @@ void SwarmState<dim>::add_field(const string name, DblVecPtr value) {
   dbl_field_map_.insert(pair<string, DblVecPtr>(name, value));
 }
 
+// Const version of get_field for integer field - throws exception if
+// field does not exist
+template<size_t dim>
+void SwarmState<dim>::get_field(const string name, IntVecPtr &value) const {
+  value = int_field_map_.at(name);
+}
+
+// Const version of get_field for real field - throws exception if
+// field does not exist
+template<size_t dim>
+void SwarmState<dim>::get_field(const string name, DblVecPtr &value) const {
+  value = dbl_field_map_.at(name);
+}
+
+// Non-const version of get_filed for integer field - inserts the field
+// if it does not exist
 template<size_t dim>
 void SwarmState<dim>::get_field(const string name, IntVecPtr &value) {
   value = int_field_map_[name];
 }
 
+// Non-const version of get_filed for real field - inserts the field
+// if it does not exist
 template<size_t dim>
 void SwarmState<dim>::get_field(const string name, DblVecPtr &value) {
   value = dbl_field_map_[name];

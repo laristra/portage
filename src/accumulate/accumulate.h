@@ -46,11 +46,11 @@ POSSIBILITY OF SUCH DAMAGE.
 #include <memory>
 #include <cassert>
 
+#include "portage/support/portage.h"
 #include "portage/support/Point.h"
 #include "portage/support/weight.h"
 #include "portage/support/basis.h"
 #include "portage/swarm/swarm.h"
-#include "portage/swarm/swarm_state.h"
 #include "portage/support/Matrix.h"
 
 namespace Portage {
@@ -79,7 +79,9 @@ enum WeightCenter {
  * This class does the meat of local regression. It computes weight functions, 
  * and the local regression corrections to those weights. 
  */
-template<size_t dim>
+template<size_t dim,
+         class SourceSwarm,
+         class TargetSwarm>
 class Accumulate {
  public:
 
@@ -99,13 +101,13 @@ class Accumulate {
    * the length is the size of the source swarm.
    */
   Accumulate(
-      shared_ptr<Swarm<dim>> source,
-      shared_ptr<Swarm<dim>> target,
+      SourceSwarm const& source,
+      TargetSwarm const& target,
       EstimateType estimate,
       WeightCenter center,
-      shared_ptr<vector<Weight::Kernel>> kernels,
-      shared_ptr<vector<Weight::Geometry>> geometries,
-      shared_ptr<vector<vector<vector<double>>>> smoothing,
+      vector<Weight::Kernel> const& kernels,
+      vector<Weight::Geometry> const& geometries,
+      vector<vector<vector<double>>> const& smoothing,
       Basis::Type basis):
    source_(source),
    target_(target),
@@ -119,13 +121,13 @@ class Accumulate {
     // check sizes of inputs are consistent
     size_t n_particles;
     if (center == Gather) {
-      n_particles = target_->num_owned_cells();
+      n_particles = target_.num_owned_particles();
     } else if (center == Scatter) {
-      n_particles = source_->num_owned_cells();
+      n_particles = source_.num_owned_particles();
     }
-    assert(n_particles == kernels_->size());
-    assert(n_particles == geometries_->size());
-    assert(n_particles == smoothing_->size());
+    assert(n_particles == kernels_.size());
+    assert(n_particles == geometries_.size());
+    assert(n_particles == smoothing_.size());
   }
 
   /** 
@@ -139,18 +141,18 @@ class Accumulate {
   double weight(const size_t particleA, const size_t particleB)
   {
     double result;
-    Point<dim> x = target_->get_particle_coordinates(particleB);
-    Point<dim> y = source_->get_particle_coordinates(particleA);
+    Point<dim> x = target_.get_particle_coordinates(particleB);
+    Point<dim> y = source_.get_particle_coordinates(particleA);
     if (center_ == Gather) {
-      result = Weight::eval<dim>((*geometries_)[particleB],
-                                 (*kernels_)[particleB],
+      result = Weight::eval<dim>(geometries_[particleB],
+                                 kernels_[particleB],
                                  x,y,
-                                 (*smoothing_)[particleB]);
+                                 smoothing_[particleB]);
     } else if (center_ == Scatter) {
-      result = Weight::eval<dim>((*geometries_)[particleA],
-                                 (*kernels_)[particleA],
+      result = Weight::eval<dim>(geometries_[particleA],
+                                 kernels_[particleA],
                                  x,y,
-                                 (*smoothing_)[particleA]);
+                                 smoothing_[particleA]);
     }
     return result;
   }
@@ -164,9 +166,9 @@ class Accumulate {
    * The return matrix is of size n x m  where n is the length of source_particles, 
    * and m is the size of the basis. 
    */
-  vector<vector<double>>
-  operator() (size_t const particleB, vector<size_t> const& source_particles) {
-    vector<vector<double>> result;
+  vector<Weights_t>
+  operator() (size_t const particleB, vector<unsigned int> const& source_particles) {
+    vector<Weights_t> result;
     result.reserve(source_particles.size());
     
     switch (estimate_) {
@@ -174,13 +176,13 @@ class Accumulate {
         for (auto const& particleA : source_particles) {
           double weight_val = weight(particleA, particleB);
           vector<double> pair_result(1, weight_val);
-          result.push_back(pair_result);
+          result.emplace_back(particleA, pair_result);
         }
         break;
       }
       case LocalRegression: {
         size_t nbasis = Basis::function_size<dim>(basis_);
-        Point<dim> x = target_->get_particle_coordinates(particleB);
+        Point<dim> x = target_.get_particle_coordinates(particleB);
         
         // Calculate weights and moment matrix (P*W*transpose(P))
         vector<double> weight_val(source_particles.size());
@@ -188,7 +190,7 @@ class Accumulate {
 	size_t iA = 0;
         for (auto const& particleA : source_particles) {
           weight_val[iA] = weight(particleA, particleB); // save weights for later
-          Point<dim> y = source_->get_particle_coordinates(particleA);
+          Point<dim> y = source_.get_particle_coordinates(particleA);
           auto basis = Basis::shift<dim>(basis_,x,y);
           for (size_t i=0; i<nbasis; i++) {
             for (size_t j=0; j<nbasis; j++) {
@@ -204,11 +206,11 @@ class Accumulate {
 	iA = 0;
         for (auto const& particleA : source_particles) {
           vector<double> pair_result(nbasis);
-          Point<dim> y = source_->get_particle_coordinates(particleA);
+          Point<dim> y = source_.get_particle_coordinates(particleA);
           auto basis = Basis::shift<dim>(basis_,x,y);
           pair_result = inverse_moment*basis;
           for (size_t i=0; i<nbasis; i++) pair_result[i] *= weight_val[iA];
-          result.push_back(pair_result);
+          result.emplace_back(particleA, pair_result);
 	  iA++;
         }
         break;
@@ -219,13 +221,13 @@ class Accumulate {
   }
   
  private:
-  shared_ptr<Swarm<dim>> source_;
-  shared_ptr<Swarm<dim>> target_;
+  SourceSwarm const& source_;
+  TargetSwarm const& target_;
   EstimateType estimate_;
   WeightCenter center_;
-  shared_ptr<vector<Weight::Kernel>> kernels_;
-  shared_ptr<vector<Weight::Geometry>> geometries_;
-  shared_ptr<vector<vector<vector<double>>>> smoothing_;
+  vector<Weight::Kernel> const& kernels_;
+  vector<Weight::Geometry> const& geometries_;
+  vector<vector<vector<double>>> const& smoothing_;
   Basis::Type basis_;
 };
 

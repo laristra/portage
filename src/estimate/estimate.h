@@ -20,18 +20,18 @@ using std::vector;
 
 /**
  * @class Estimate portage/estimate/estimate.h
- * @brief This functional will take the result of @code Accumulate::operator()@endcode
- *        and use it to estimate derivatives of the source state data.
+ * @brief This functional will take the result of 
+ * @code Accumulate::operator()@endcode and use it to
+ *  estimate derivatives of the source state data.
  */
-template<size_t dim>
+template<size_t dim, class TargetSwarmState>
 class Estimate {
  public:
-  
   /** 
    * @brief Constructor
    * @param source_state the very same source state provided to @code Accumulate::Accumulate()@endcode
    */
-  Estimate(shared_ptr<SwarmState<dim>> source_state):
+  Estimate(SwarmState<dim> const& source_state):
 	source_state_(source_state)
   {}
 
@@ -55,27 +55,36 @@ class Estimate {
    * @return the derivative of the data in @code source_state_@endcode specified by @code derivative_@endcode
    */
   double operator()(int const target_index,
-                    vector<vector<double>> const & shape_vec,
-		    vector<size_t> const& source_particles)
-  {
-    assert(shape_vec.size() == source_particles.size());
-    assert(derivative_ < shape_vec[0].size());
+                    vector<Weights_t> const &sources_and_mults) const
+  {    
+    int nsrc = sources_and_mults.size();
+    assert(nsrc > 0);
 
-    typename SwarmState<dim>::DblVecPtr source_field_ptr;
-    source_state_->get_field(var_name_, source_field_ptr);
-    vector<double> &source_field(*source_field_ptr);
+    assert(derivative_ < sources_and_mults[0].weights.size());
 
     double result=0.;
-    for (size_t i=0; i<source_particles.size(); i++) {
-      result += source_field[source_particles[i]] * shape_vec[i][derivative_];
+    for (size_t i=0; i<nsrc; i++) {
+      Weights_t const& wt = sources_and_mults[i];
+      int p = wt.entityID;
+      vector<double> const& shape_vec = wt.weights;
+      result += source_vals_[p] * shape_vec[derivative_];
     }
     return result;
   }
 
+  void set_variable(std::string const & var_name, size_t derivin=0) {
+    var_name_ = var_name;
+    derivative_ = derivin;
+    typename SwarmState<dim>::DblVecPtr source_field_ptr;
+    source_state_.get_field(var_name_, source_field_ptr);
+    source_vals_ = &((*source_field_ptr)[0]);
+  }
+
  private:
-  shared_ptr<SwarmState<dim>> source_state_;
+  SwarmState<dim> const& source_state_;
   std::string var_name_;
   size_t derivative_;
+  double const *source_vals_;
 };
 
 }

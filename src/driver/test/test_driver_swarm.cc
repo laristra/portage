@@ -1,0 +1,345 @@
+/*
+Copyright (c) 2016, Los Alamos National Security, LLC
+All rights reserved.
+
+Copyright 2016. Los Alamos National Security, LLC. This software was produced
+under U.S. Government contract DE-AC52-06NA25396 for Los Alamos National
+Laboratory (LANL), which is operated by Los Alamos National Security, LLC for
+the U.S. Department of Energy. The U.S. Government has rights to use,
+reproduce, and distribute this software.  NEITHER THE GOVERNMENT NOR LOS ALAMOS
+NATIONAL SECURITY, LLC MAKES ANY WARRANTY, EXPRESS OR IMPLIED, OR ASSUMES ANY
+LIABILITY FOR THE USE OF THIS SOFTWARE.  If software is modified to produce
+derivative works, such modified software should be clearly marked, so as not to
+confuse it with the version available from LANL.
+
+Additionally, redistribution and use in source and binary forms, with or
+without modification, are permitted provided that the following conditions are
+met:
+
+1. Redistributions of source code must retain the above copyright notice,
+   this list of conditions and the following disclaimer.
+2. Redistributions in binary form must reproduce the above copyright
+   notice, this list of conditions and the following disclaimer in the
+   documentation and/or other materials provided with the distribution.
+3. Neither the name of Los Alamos National Security, LLC, Los Alamos
+   National Laboratory, LANL, the U.S. Government, nor the names of its
+   contributors may be used to endorse or promote products derived from this
+   software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY LOS ALAMOS NATIONAL SECURITY, LLC AND
+CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
+PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL LOS ALAMOS NATIONAL
+SECURITY, LLC OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
+BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER
+IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+POSSIBILITY OF SUCH DAMAGE.
+ */
+
+
+
+#include <iostream>
+#include <memory>
+
+#include "gtest/gtest.h"
+#include "mpi.h"
+
+#include "portage/driver/driver_swarm.h"
+#include "portage/swarm/swarm.h"
+#include "portage/swarm/swarm_state.h"
+#include "portage/accumulate/accumulate.h"
+#include "portage/estimate/estimate.h"
+
+namespace {
+
+using std::vector;
+using std::shared_ptr;
+using std::make_shared;
+using Portage::Meshfree::SwarmFactory;
+
+
+double TOL = 1e-6;
+
+// This is a set of integration tests for the swarm-swarm remap driver.
+// There will be at least one test corresponding to each case found in
+// main.cc. This is a test fixture and must be derived from the
+// ::testing::Test class. Specializations of this class, such as 2D/3D
+// coincident and non-coincident remaps should be derived from this.
+
+template<size_t dim>
+class DriverTest : public ::testing::Test {
+ protected:
+  // Source and target swarms
+  shared_ptr<Portage::Meshfree::Swarm<dim>> sourceSwarm;
+  shared_ptr<Portage::Meshfree::Swarm<dim>> targetSwarm;
+
+  // Source and target mesh state
+  shared_ptr<Portage::Meshfree::SwarmState<dim>> sourceState;
+  shared_ptr<Portage::Meshfree::SwarmState<dim>> targetState;
+
+  shared_ptr<vector<vector<vector<double>>>> smoothing_lengths_;
+
+  // Constructor for Driver test
+  DriverTest(shared_ptr<Portage::Meshfree::Swarm<dim>> s,
+             shared_ptr<Portage::Meshfree::Swarm<dim>> t) :
+      sourceSwarm(s), targetSwarm(t), smoothing_lengths_(nullptr) {
+    sourceState = make_shared<Portage::Meshfree::SwarmState<dim>>(*sourceSwarm);
+    targetState = make_shared<Portage::Meshfree::SwarmState<dim>>(*targetSwarm);
+  }
+
+  void set_smoothing_lengths(shared_ptr<vector<vector<vector<double>>>>
+                             smoothing_lengths) {
+    smoothing_lengths_ = smoothing_lengths;
+  }
+
+
+
+  // This is the basic test method to be called for each unit test.
+  // It will work for 1, 2-D and 3-D swarms
+  //
+  template <template<int, class, class> class Search,
+            Portage::Meshfree::Basis::Type basis>
+  void unitTest(double compute_initial_field(Portage::Point<dim> coord),
+                double expected_answer) {
+
+    // Fill the source state data with the specified profile
+    const int nsrcpts = sourceSwarm->num_owned_particles();
+    typename Portage::Meshfree::SwarmState<dim>::DblVecPtr sourceData = 
+        make_shared<typename Portage::Meshfree::SwarmState<dim>::DblVec>(nsrcpts);
+
+    // Create the source data for given function
+    for (unsigned int p = 0; p < nsrcpts; ++p) {
+      Portage::Point<dim> coord =
+          sourceSwarm->get_particle_coordinates(p);
+      (*sourceData)[p] = compute_initial_field(coord);
+    }
+    sourceState->add_field("particledata", sourceData);
+
+    // Build the target state storage
+    const int ntarpts = targetSwarm->num_owned_particles();
+    typename Portage::Meshfree::SwarmState<dim>::DblVecPtr targetData = 
+        make_shared<typename Portage::Meshfree::SwarmState<dim>::DblVec>(ntarpts, 0.0);
+    targetState->add_field("particledata", targetData);
+
+    // Build the main driver data for this mesh type
+    // Register the variable name and interpolation order with the driver
+    vector<std::string> remap_fields;
+    remap_fields.push_back("particledata");
+
+    Portage::Meshfree::SwarmDriver<Portage::SearchSimplePoints,
+                                   Portage::Meshfree::Accumulate,
+                                   Portage::Meshfree::Estimate,
+                                   dim,
+                                   Portage::Meshfree::Swarm<dim>,
+                                   Portage::Meshfree::SwarmState<dim>,
+                                   Portage::Meshfree::Swarm<dim>,
+                                   Portage::Meshfree::SwarmState<dim>>
+        d(*sourceSwarm, *sourceState, *targetSwarm, *targetState,
+          *smoothing_lengths_);
+    d.set_remap_var_names(remap_fields, remap_fields,
+                          Portage::Meshfree::LocalRegression,
+                          basis);
+    // run on one processor
+    d.run(false);
+
+    // Check the answer
+    Portage::Point<dim> nodexy;
+    double stdval, err;
+    double toterr=0.;
+
+    typename Portage::Meshfree::SwarmState<dim>::DblVecPtr vecout;
+    targetState->get_field("particledata", vecout);
+    ASSERT_NE(nullptr, vecout);
+
+    for (int p = 0; p < ntarpts; ++p) {
+      Portage::Point<dim> coord = targetSwarm->get_particle_coordinates(p);
+      double error;
+      error = compute_initial_field(coord) - (*vecout)[p];
+      // dump diagnostics for each particle
+      if (dim == 1)
+        std::printf("Particle=% 4d Coord = (% 5.3lf)", p, coord[0]);
+      else if (dim == 2)
+        std::printf("Particle=% 4d Coord = (% 5.3lf,% 5.3lf)", p, coord[0],
+                    coord[1]);
+      else if (dim == 3)
+        std::printf("Particle=% 4d Coord = (% 5.3lf,% 5.3lf,% 5.3lf)", p,
+                    coord[0], coord[1], coord[2]);
+      std::printf("  Value = % 10.6lf  Err = % lf\n", (*vecout)[p], error);
+      toterr += error*error;
+    }
+    
+    std::printf("\n\nL2 NORM OF ERROR = %lf\n\n", sqrt(toterr));
+    ASSERT_NEAR(expected_answer, sqrt(toterr), TOL);
+  }
+
+};
+
+
+
+// Class which constructs a pair of 1-D swarms (random distribution) for remaps
+struct DriverTest1D : DriverTest<1> {
+  DriverTest1D() : DriverTest(SwarmFactory(0.0, 1.0, 7, 0),
+                              SwarmFactory(0.0, 1.0, 5, 0))
+  {
+    auto smoothing_lengths = make_shared<vector<vector<vector<double>>>>(5,
+                   vector<vector<double>>(1, vector<double>(1, 2*1.0/7)));
+    DriverTest::set_smoothing_lengths(smoothing_lengths);
+  }
+};
+
+
+// Class which constructs a pair of 2-D swarms (random distribution) for remaps
+struct DriverTest2D : DriverTest<2> {
+  DriverTest2D() : DriverTest(SwarmFactory(0.0, 0.0, 1.0, 1.0, 7*7, 1),
+                              SwarmFactory(0.0, 0.0, 1.0, 1.0, 5*5, 1)) {
+    auto smoothing_lengths = make_shared<vector<vector<vector<double>>>>(5*5,
+                   vector<vector<double>>(1, vector<double>(2, 2*1.0/7)));
+    DriverTest::set_smoothing_lengths(smoothing_lengths);
+  }
+};
+
+
+// Class which constructs a pair of 3-D swarms (random distribution) for remaps
+struct DriverTest3D : DriverTest<3> {
+  DriverTest3D(): DriverTest(SwarmFactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0,
+                                          7*7*7, 1),
+                             SwarmFactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0,
+                                          5*5*5, 1)) {
+    auto smoothing_lengths = make_shared<vector<vector<vector<double>>>>(5*5*5,
+                   vector<vector<double>>(1, vector<double>(3, 2*1.0/7)));
+    DriverTest::set_smoothing_lengths(smoothing_lengths);
+  }
+};
+
+
+template<size_t Dimension>
+    double compute_constant_field(Portage::Point<Dimension> coord) {
+  return 25.0;
+}
+
+// Methods for computing initial field values
+template<size_t Dimension>
+    double compute_linear_field(Portage::Point<Dimension> coord) {
+  double val = 0.0;
+  for (size_t i = 0; i < Dimension; i++) val += coord[i];
+  return val;
+}
+
+template<size_t Dimension>
+    double compute_quadratic_field(Portage::Point<Dimension> coord) {
+  double val = 0.0;
+  for (size_t i = 0; i < Dimension; i++) val += coord[i]*coord[i];
+}
+
+template<size_t Dimension>
+    double compute_cubic_field(Portage::Point<Dimension> coord) {
+  double val = 0.0;
+  for (size_t i = 0; i < Dimension; i++) val += coord[i]*coord[i]*coord[i];
+}
+
+
+// Test cases: these are constructed by calling TEST_F with the name
+// of the test class you want to use.  The unit test method is then
+// called inside each test with the appropriate template arguments.
+// Google test will pick up each test and run it as part of the larger
+// test fixture.  If any one of these fails the whole test_driver
+// fails.
+
+TEST_F(DriverTest1D, 1D_ConstantFieldUnitaryBasis) {
+   unitTest<Portage::SearchSimplePoints, Portage::Meshfree::Basis::Unitary>
+       (compute_constant_field<1>, 0.0);
+}
+
+//TEST_F(DriverTest1D, 1D_LinearFieldUnitaryBasis) {
+//  unitTest<Portage::SearchSimplePoints, Portage::Meshfree::Basis::Unitary>
+//      (compute_linear_field<1>, 0.0095429796560267122);
+//}
+
+TEST_F(DriverTest1D, 1D_LinearFieldLinearBasis) {
+  unitTest<Portage::SearchSimplePoints, Portage::Meshfree::Basis::Linear>
+      (compute_linear_field<1>, 0.0);
+}
+
+//TEST_F(DriverTest1D, 1D_QuadraticFieldLinearBasis) {
+//  unitTest<Portage::SearchSimplePoints, Portage::Meshfree::Basis::Linear>
+//      (compute_quadratic_field<1>, 0.0095429796560267122);
+//}
+
+TEST_F(DriverTest1D, 1D_QuadraticFieldQuadraticBasis) {
+  unitTest<Portage::SearchSimplePoints, Portage::Meshfree::Basis::Quadratic>
+      (compute_quadratic_field<1>, 0.0);
+}
+
+//TEST_F(DriverTest1D, 1D_CubicFieldQuadraticBasis) {
+//  unitTest<Portage::SearchSimplePoints, Portage::Meshfree::Basis::Quadratic>
+//      (compute_quadratic_field<1>, 0.0);
+//}
+
+
+
+// TEST_F(DriverTest2D, 2D_ConstantFieldUnitaryBasis) {
+//    unitTest<Portage::SearchSimplePoints, Portage::Meshfree::Basis::Unitary>
+//        (compute_constant_field<2>, 0.0);
+// }
+
+//TEST_F(DriverTest2D, 2D_LinearFieldUnitaryBasis) {
+//  unitTest<Portage::SearchSimplePoints, Portage::Meshfree::Basis::Unitary>
+//      (compute_linear_field<2>, 0.0095429796560267122);
+//}
+
+TEST_F(DriverTest2D, 2D_LinearFieldLinearBasis) {
+  unitTest<Portage::SearchSimplePoints, Portage::Meshfree::Basis::Linear>
+      (compute_linear_field<2>, 0.0);
+}
+
+//TEST_F(DriverTest2D, 2D_QuadraticFieldLinearBasis) {
+//  unitTest<Portage::SearchSimplePoints, Portage::Meshfree::Basis::Linear>
+//      (compute_quadratic_field<2>, 0.0095429796560267122);
+//}
+
+TEST_F(DriverTest2D, 2D_QuadraticFieldQuadraticBasis) {
+  unitTest<Portage::SearchSimplePoints, Portage::Meshfree::Basis::Quadratic>
+      (compute_quadratic_field<2>, 0.0);
+}
+
+//TEST_F(DriverTest2D, 2D_CubicFieldQuadraticBasis) {
+//  unitTest<Portage::SearchSimplePoints, Portage::Meshfree::Basis::Quadratic>
+//      (compute_quadratic_field<2>, 0.0);
+//}
+
+
+
+TEST_F(DriverTest3D, 3D_ConstantFieldUnitaryBasis) {
+   unitTest<Portage::SearchSimplePoints, Portage::Meshfree::Basis::Unitary>
+       (compute_constant_field<3>, 0.0);
+}
+
+//TEST_F(DriverTest3D, 3D_LinearFieldUnitaryBasis) {
+//  unitTest<Portage::SearchSimplePoints, Portage::Meshfree::Basis::Unitary>
+//      (compute_linear_field<3>, 0.0095429796560267122);
+//}
+
+TEST_F(DriverTest3D, 3D_LinearFieldLinearBasis) {
+  unitTest<Portage::SearchSimplePoints, Portage::Meshfree::Basis::Linear>
+      (compute_linear_field<3>, 0.0);
+}
+
+//TEST_F(DriverTest3D, 3D_QuadraticFieldLinearBasis) {
+//  unitTest<Portage::SearchSimplePoints, Portage::Meshfree::Basis::Linear>
+//      (compute_quadratic_field<3>, 0.0095429796560267122);
+//}
+
+TEST_F(DriverTest3D, 3D_QuadraticFieldQuadraticBasis) {
+  unitTest<Portage::SearchSimplePoints, Portage::Meshfree::Basis::Quadratic>
+      (compute_quadratic_field<3>, 0.0);
+}
+
+//TEST_F(DriverTest1D, 3D_CubicFieldQuadraticBasis) {
+//  unitTest<Portage::SearchSimplePoints, Portage::Meshfree::Basis::Quadratic>
+//      (compute_quadratic_field<3>, 0.0);
+//}
+
+}  // end namespace

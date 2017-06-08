@@ -59,7 +59,7 @@ namespace Portage {
   @tparam SourceSwarmType The swarm type of the input swarm.
   @tparam TargetSwarmType The swarm type of the output swarm.
    */
-template <int D, typename SourceSwarmType, typename TargetSwarmType>
+template <int D, class SourceSwarmType, class TargetSwarmType>
 class SearchSimplePoints {
   public:
 
@@ -78,10 +78,10 @@ class SearchSimplePoints {
     swarm that are near points in the target swarm.
   */
   SearchSimplePoints(
-          const SourceSwarmType & source_swarm,
-          const TargetSwarmType & target_swarm,
-          std::shared_ptr<std::vector<Point<D>>> source_extents,
-          std::shared_ptr<std::vector<Point<D>>> target_extents)
+      const SourceSwarmType & source_swarm,
+      const TargetSwarmType & target_swarm,
+      std::shared_ptr<std::vector<Point<D>>> source_extents,
+      std::shared_ptr<std::vector<Point<D>>> target_extents)
       : sourceSwarm_(source_swarm), targetSwarm_(target_swarm),
         sourceExtents_(source_extents), targetExtents_(target_extents)  {
 
@@ -89,8 +89,8 @@ class SearchSimplePoints {
 
   } // SearchSimplePoints::SearchSimplePoints
 
-  //! Copy constructor (disabled)
-  SearchSimplePoints(const SearchSimplePoints &) = delete;
+  //! Copy constructor - use default - std::transfor needs this
+  //  SearchSimplePoints(const SearchSimplePoints &) = delete;
 
   //! Assignment operator (disabled)
   SearchSimplePoints & operator = (const SearchSimplePoints &) = delete;
@@ -107,7 +107,7 @@ class SearchSimplePoints {
     @param[in,out] candidates Pointer to a vector of potential candidate
     points in the source swarm.
   */
-  void operator() (const int pointId, std::vector<int> *candidates) const;
+  std::vector<unsigned int> operator() (const int pointId) const;
 
   private:
 
@@ -120,12 +120,13 @@ class SearchSimplePoints {
 }; // class SearchSimplePoints
 
 
-template<int D, typename SourceSwarmType, typename TargetSwarmType>
-void SearchSimplePoints<D, SourceSwarmType, TargetSwarmType>::
-operator() (const int pointId, std::vector<int> *candidates)
-const {
+template<int D, class SourceSwarmType, class TargetSwarmType>
+std::vector<unsigned int>
+SearchSimplePoints<D, SourceSwarmType, TargetSwarmType>::
+operator() (const int pointId) const {
 
   using std::abs;
+  std::vector<unsigned int> candidates;
 
   // find coordinates of target point
   Point<D> tpcoord = targetSwarm_.get_particle_coordinates(pointId);
@@ -133,7 +134,7 @@ const {
   // now see which source points are within an appropriate distance
   // of the target point
   // do a naive linear search
-  const int numPoints = sourceSwarm_.num_owned_points();
+  const int numPoints = sourceSwarm_.num_owned_particles();
   for (int p = 0; p < numPoints; ++p) {
     Point<D> spcoord = sourceSwarm_.get_particle_coordinates(p);
     bool overlap = true;
@@ -144,10 +145,11 @@ const {
       if (!overlap) break;
     }
     if (overlap) {
-      candidates->push_back(p);
+      candidates.push_back(p);
     }
   }
 
+  return candidates;
 } // SearchSimplePoints::operator()
 
 

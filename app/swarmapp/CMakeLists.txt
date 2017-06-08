@@ -1,4 +1,4 @@
-/*
+#[[
 Copyright (c) 2016, Los Alamos National Security, LLC
 All rights reserved.
 
@@ -37,49 +37,39 @@ BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER
 IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGE.
- */
-
-/*
- * test_swarm.cc
- *
- *  Created on: Apr 19, 2017
- *      Author: gad
- *      Updated: rao
- */
-
-#include <cstdlib>
-#include <ctime>
-#include <algorithm>
-
-#include "portage/swarm/swarm.h"
-
-#include "gtest/gtest.h"
-
-TEST(Swarm, Sanity_Check) {
-  std::vector<Portage::Point<3>> points(10);
-
-  srand(time(NULL));
-  for (int i = 0; i < 10; i++)
-    points[i] = Portage::Point<3>(((double)rand()/RAND_MAX),
-                                  ((double)rand()/RAND_MAX),
-                                  ((double)rand()/RAND_MAX));
-
-  auto p_ptr = std::make_shared<std::vector<Portage::Point<3>>>(points);
-                               
-  Portage::Meshfree::Swarm<3> swarm(p_ptr);
-
-  // Did we get back 10 points?
-  ASSERT_EQ(10, swarm.num_owned_particles());
-
-  // Check the bounding box and center of the hexahedral "cell"
-  // surrounding each point
-
-  for (int i = 0; i < 10; i++) {
-    // Are the point coordinates correct?
-    auto pt = swarm.get_particle_coordinates(i);
-    for (size_t j=0; j<3; j++) ASSERT_EQ(pt[j], points[i][j]);
-  }
-
-}  // TEST
+]]
 
 
+
+#------------------------------------------------------------------------------#
+# Add a rule to build the executable
+#------------------------------------------------------------------------------#
+
+# Swarm test
+add_executable(swarmapp swarmapp.cc)
+target_link_libraries(swarmapp portage ${EXTRA_LIBS})
+
+
+#TCMalloc option
+set(ENABLE_TCMALLOC TRUE CACHE BOOL "Use TCMalloc")
+if(ENABLE_TCMALLOC)
+  set(TCMALLOC_LIB "${HOME}" CACHE STRING "Set the TCMalloc library")
+
+  target_link_libraries(swarmapp ${TCMALLOC_LIB})
+endif(ENABLE_TCMALLOC)
+
+# Profiling option (to allow pausing and resuming profiling during execution)
+set(ENABLE_PROFILE FALSE CACHE BOOL "Enable VTune Profiling")
+if(ENABLE_PROFILE)
+  set(VTUNE_INCLUDE_DIR "${HOME}" CACHE PATH "Set the locaiton of VTune include")
+  set(VTUNE_LIB "${HOME}" CACHE STRING "Set the VTune library")
+
+  include_directories(${VTUNE_INCLUDE_DIR})
+
+  target_link_libraries(swarmapp ${VTUNE_LIB})
+endif(ENABLE_PROFILE)
+
+
+#if (ENABLE_APP_TESTS)
+#  add_subdirectory(test)
+#endif (ENABLE_APP_TESTS)

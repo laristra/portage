@@ -110,7 +110,8 @@ enum Entity_kind {
   WEDGE,
   CORNER,
   FACET,
-  BOUNDARY_FACE
+  BOUNDARY_FACE,
+  PARTICLE
 };
 
 const int NUM_ENTITY_KINDS = 8;
@@ -152,8 +153,8 @@ template<typename T>
 template<typename T>
     using pointer = thrust::device_ptr<T>;
 
-typedef thrust::counting_iterator<int> counting_iterator;
-inline counting_iterator make_counting_iterator(int const i) {
+typedef thrust::counting_iterator<unsigned int> counting_iterator;
+inline counting_iterator make_counting_iterator(unsigned int const i) {
   return thrust::make_counting_iterator(i);
 }
 
@@ -186,9 +187,9 @@ template<typename T>
 template<typename T>
     using pointer = T*;
 
-typedef boost::counting_iterator<int> counting_iterator;
-inline counting_iterator make_counting_iterator(int const i) {
-  return boost::make_counting_iterator<int>(i);
+typedef boost::counting_iterator<unsigned int> counting_iterator;
+inline counting_iterator make_counting_iterator(unsigned int const i) {
+  return boost::make_counting_iterator<unsigned int>(i);
 }
 
 template<typename InputIterator, typename OutputIterator,
@@ -216,6 +217,12 @@ inline void for_each(InputIterator first, InputIterator last,
 #endif
 
 struct Weights_t {
+  Weights_t() : entityID(-1) {}
+  Weights_t(int const entityID_in, std::vector<double> const& weights_in) :
+      entityID(entityID_in), weights(weights_in) {}
+  Weights_t(Weights_t const& source) :
+      entityID(source.entityID), weights(source.weights) {}
+  
   int entityID;
   std::vector<double> weights;
 };
