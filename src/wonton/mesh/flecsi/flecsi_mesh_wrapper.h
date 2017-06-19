@@ -9,8 +9,9 @@
 #pragma once
 
 // user includes
-#include "flecsale/geom/shapes/geometric_shapes.h"
-#include "flecsale/utils/errors.h"
+//#include "flecsale/geom/shapes/geometric_shapes.h"
+//#include "flecsale/utils/errors.h"
+
 
 // library includes
 #include <portage/support/portage.h>
@@ -79,7 +80,7 @@ Portage::Point<3> make_3d_point( T && a )
 /// This is used to hide some static initialization for this header-only
 /// implementation.
 ////////////////////////////////////////////////////////////////////////////////
-
+/*
 template< typename M >
 struct portage_mesh_base_t {
 
@@ -128,7 +129,7 @@ const typename portage_mesh_base_t<M>::shape_map_t
     element_type_t::POLYHEDRON 
   }
 };
-
+*/
 
 ////////////////////////////////////////////////////////////////////////////////
 ///  \brief Implements a mesh wrapper for Portage mesh queries.
@@ -235,8 +236,9 @@ public:
     //  vol += corner->area();
     //return vol;
 
-    raise_implemented_error( "dual_cell_volume not implemented yet!" );
-    return 0.0;
+ //   raise_implemented_error( "dual_cell_volume not implemented yet!" );
+     std::cerr("dual_cell_volume not implemented yet!\n");
+     return 0.0;
   }
 
   //! Number of owned cells in the mesh
@@ -305,7 +307,8 @@ public:
       case entity_kind_t::CORNER :
         return mesh_->num_corners();
       default :
-        raise_runtime_error("Unknown entity type");
+        //raise_runtime_error("Unknown entity type");
+        std::cerr("Unknown entity type\n");
         return 0;
     }
   }
@@ -537,7 +540,8 @@ public:
     std::vector<point_t> *point_list
   ) const
   {
-    raise_implemented_error("dual_cell_get_coordinates not implemented yet!");
+    //raise_implemented_error("dual_cell_get_coordinates not implemented yet!");
+    std::cerr("dual_cell_get_coordinates not implemented yet!\n");
   }
 
   //! \brief Centroid of a cell.
@@ -601,13 +605,20 @@ public:
   auto cell_get_element_type(size_t cell_id) const 
   {
     // search for the type in the map
-    auto tp = cells_[cell_id]->type();
+    /*auto tp = cells_[cell_id]->type();
     auto it = shapes_to_portage.find( tp );
     // if it was found, return the mapped type
     if ( it != shapes_to_portage.end() )
       return it->second;
     // otherwise we dont know what it is
-    return element_type_t::UNKNOWN_TOPOLOGY;
+    return element_type_t::UNKNOWN_TOPOLOGY;*/
+ 
+    auto this_cell = cells_[cell_id];
+    auto conn = mesh_->vertices(this_cell);
+    if (conn.size() == 8)
+       return element_type_t::HEX;
+    else
+      return element_type_t::UNKNOWN_TOPOLOGY;
   }
 
   //============================================================================
@@ -631,7 +642,7 @@ private:
 // Static Initialization
 ////////////////////////////////////////////////////////////////////////////////
 
-template< typename M >
+/*template< typename M >
 const typename portage_mesh_t<M>::shape_map_t 
   portage_mesh_t<M>::shapes_to_portage = 
 { 
@@ -659,7 +670,7 @@ const typename portage_mesh_t<M>::shape_map_t
     shape_t::polyhedron, 
     element_type_t::POLYHEDRON 
   }
-};
+};*/
 
 
 } // namespace
