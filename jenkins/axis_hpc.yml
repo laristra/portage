@@ -1,0 +1,10 @@
+# axis_hpc.yml
+COMPILER:
+  - intel
+  - gcc
+
+BUILD_TYPE:
+  - base
+  - debug
+  - thrust
+
