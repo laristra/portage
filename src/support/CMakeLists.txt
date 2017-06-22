@@ -66,6 +66,7 @@ if (ENABLE_UNIT_TESTS)
 
   cinch_add_unit(test_matfuncs
     SOURCES test/test_matfuncs.cc
+    LIBRARIES ${LAPACKE_LIBRARIES}
     POLICY MPI
     THREADS 1)
 
