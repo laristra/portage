@@ -69,7 +69,7 @@ TEST(search_simple_points, case2d)
       srcexts->push_back(Portage::Point<2>{ext, ext});
     }
   }
-  Portage::Meshfree::Swarm<2> srcswarm(srcpts, srcexts);
+  Portage::Meshfree::Swarm<2> srcswarm(srcpts);
 
   std::vector<Portage::Point<2>> tgtp, tgte;
   auto tgtpts = std::make_shared<std::vector<Portage::Point<2>>>(tgtp);
@@ -84,7 +84,7 @@ TEST(search_simple_points, case2d)
       tgtexts->push_back(Portage::Point<2>{ext, ext});
     }
   }
-  Portage::Meshfree::Swarm<2> tgtswarm(tgtpts, tgtexts);
+  Portage::Meshfree::Swarm<2> tgtswarm(tgtpts);
 
   Portage::SearchSimplePoints<
     2, Portage::Meshfree::Swarm<2>, Portage::Meshfree::Swarm<2>>
@@ -93,8 +93,7 @@ TEST(search_simple_points, case2d)
   for (int j = 0; j < 3; ++j) {
     for (int i = 0; i < 3; ++i) {
       const int tp = i + j * 3;
-      std::vector<int> candidates;
-      search(tp, &candidates);
+      std::vector<unsigned int> candidates = search(tp);
 
       // there should be four candidate source points, in a square
       ASSERT_EQ(4, candidates.size());
@@ -131,7 +130,7 @@ TEST(search_simple_points, case3d)
       }
     }
   }
-  Portage::Meshfree::Swarm<3> srcswarm(srcpts, srcexts);
+  Portage::Meshfree::Swarm<3> srcswarm(srcpts);
 
   std::vector<Portage::Point<3>> tgtp, tgte;
   auto tgtpts = std::make_shared<std::vector<Portage::Point<3>>>(tgtp);
@@ -149,7 +148,7 @@ TEST(search_simple_points, case3d)
       }
     }
   }
-  Portage::Meshfree::Swarm<3> tgtswarm(tgtpts, tgtexts);
+  Portage::Meshfree::Swarm<3> tgtswarm(tgtpts);
 
   Portage::SearchSimplePoints<
     3, Portage::Meshfree::Swarm<3>, Portage::Meshfree::Swarm<3>>
@@ -159,8 +158,7 @@ TEST(search_simple_points, case3d)
     for (int j = 0; j < 2; ++j) {
       for (int i = 0; i < 2; ++i) {
         const int tp = i + j * 2 + k * 4;
-        std::vector<int> candidates;
-        search(tp, &candidates);
+        std::vector<unsigned int> candidates = search(tp);
 
         // there should be eight candidate source points, in a cube
         ASSERT_EQ(8, candidates.size());
