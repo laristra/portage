@@ -54,7 +54,7 @@ namespace Portage {
 
   /*!
   @class SearchSimplePoints "search_simple_points.h"
-  @brief A simple, crude search algorithm that does a linear search
+  @brief A simple, crude search algorithm that does a quadratic-time search
   over a swarm of points.
   @tparam SourceSwarmType The swarm type of the input swarm.
   @tparam TargetSwarmType The swarm type of the output swarm.
