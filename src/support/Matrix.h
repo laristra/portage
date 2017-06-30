@@ -49,6 +49,9 @@ POSSIBILITY OF SUCH DAMAGE.
 #include <array>
 #include <iostream>
 #include <type_traits>
+
+#define HAVE_LAPACK_CONFIG_H
+#define LAPACK_COMPLEX_CPP
 #include "lapacke.h"
 
 #include "Vector.h"   // Portage::Vector
@@ -293,7 +296,7 @@ class Matrix {
     if (method == "inverse") {
       auto inverse = this->inverse();
       X = inverse*B;
-
+      
     // LAPACK positive-definite matrix
     } else if (method == "lapack-posv") {
       // check symmetric
@@ -498,7 +501,7 @@ class Matrix {
         std::cerr <<
             "solve(gesv): reciprocal condition number is less than machine precision"
             << std::endl;
-      }
+      } 
     }
 
     return X;
@@ -530,4 +533,4 @@ Vector<D> matsolve(Matrix const& matrix, Vector<D> const& rhs) {
 
 }  // namespace Portage
 
-#endif
+#endif // PORTAGE_MATRIX_H

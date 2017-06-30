@@ -39,13 +39,14 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGE.
 */
 
+#include "portage/support/Vector.h"
+#include "portage/support/Matrix.h"
+
 #include <iostream>
 
 #include "gtest/gtest.h"
 #include "mpi.h"
 
-#include "portage/support/Vector.h"
-#include "portage/support/Matrix.h"
 
 /*!
   @file test_matfuncs.cc
