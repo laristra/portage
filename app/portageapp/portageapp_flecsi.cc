@@ -54,11 +54,11 @@ POSSIBILITY OF SUCH DAMAGE.
 #include "portage/wonton/state/flecsi/flecsi_state_wrapper.h"
 #include "portage/driver/driver.h"
 
-#include "flecsi/specializations/burton/burton.h"
+#include "flecsi-sp/specializations/burton/burton.h"
 #include "flecsi/io/io.h"
-#include "flecsi/specializations/burton/burton_io_exodus.h"
+#include "flecsi-sp/specializations/burton/burton_io_exodus.h"
 
-using mesh_t = flecsi::burton_mesh_t;
+using mesh_t = flecsi::sp::burton_mesh_t;
 
 using real_t = flecsi::mesh_t::real_t;
 
@@ -104,8 +104,8 @@ int main(int argc, char** argv) {
   Portage::make_mesh_cart2d(xmin, xmax, ymin, ymax, nx+1, ny+1, targetMesh);
 
   // Setup the wrappers
-  Portage::Flecsi_Mesh_Wrapper inputMeshWrapper(inputMesh);
-  Portage::Flecsi_Mesh_Wrapper targetMeshWrapper(targetMesh);
+  wonton::flecsi_mesh_t inputMeshWrapper(inputMesh);
+  wonton::flecsi_mesh_t targetMeshWrapper(targetMesh);
 
   // Register the state with FleCSI
   // register_state is a macro from burton.h
@@ -121,8 +121,8 @@ int main(int argc, char** argv) {
   }
 
   // Build the state wrappers
-  Portage::Flecsi_State_Wrapper inputStateWrapper(inputMesh);
-  Portage::Flecsi_State_Wrapper targetStateWrapper(targetMesh);
+  wonton::flecsi_state_t inputStateWrapper(inputMesh);
+  wonton::flecsi_state_t targetStateWrapper(targetMesh);
 
   // Setup the main driver for this mesh type
   if(order==2){
@@ -132,8 +132,8 @@ int main(int argc, char** argv) {
           Portage::IntersectR2D,
       Portage::Interpolate_2ndOrder,
       2,
-      Portage::Flecsi_Mesh_Wrapper,
-          Portage::Flecsi_State_Wrapper>
+      wonton::flecsi_mesh_t,
+          wonton::flecsi_state_t>
       d(inputMeshWrapper, inputStateWrapper, targetMeshWrapper, targetStateWrapper);
   
   // Declare which variables are remapped
@@ -152,8 +152,8 @@ int main(int argc, char** argv) {
           Portage::IntersectR2D,
       Portage::Interpolate_1stOrder,
       2,
-      Portage::Flecsi_Mesh_Wrapper,
-          Portage::Flecsi_State_Wrapper>
+      wonton::flecsi_mesh_t,
+          wonton::flecsi_state_t>
       d(inputMeshWrapper, inputStateWrapper, targetMeshWrapper, targetStateWrapper);
   
   // Declare which variables are remapped
