@@ -18,14 +18,14 @@
 #include <cstring>
 #include <string>
 
-namespace flecsale {
-namespace mesh {
+//namespace flecsale {
+namespace wonton {
 
 ////////////////////////////////////////////////////////////////////////////////
 /// \brief Provides access to data stored in Flecsi_State
 ////////////////////////////////////////////////////////////////////////////////
 template< typename M >
-class portage_state_t {
+class flecsi_state_t {
 
   //============================================================================
   // Typedefs
@@ -53,17 +53,17 @@ public:
 
   //!  \brief Default constructor.
   //!  \param[in] mesh The minimum coordinates of the domain.
-  explicit portage_state_t(mesh_t & mesh) : mesh_(&mesh)
+  explicit flecsi_state_t(mesh_t & mesh) : mesh_(&mesh)
   {}
 
   //! Default constructor deleted
-  portage_state_t() = default;
+  flecsi_state_t() = default;
 
   //! Default copy constructor
-  portage_state_t(const portage_state_t &) = default;
+  flecsi_state_t(const flecsi_state_t &) = default;
 
   //! Default assignment operator
-  portage_state_t & operator=(const portage_state_t &) = default;
+  flecsi_state_t & operator=(const flecsi_state_t &) = default;
 
   //============================================================================
   // Public Members
@@ -186,5 +186,5 @@ private:
 
 };  // Flecsi_State_Wrapper
 
-} // namespace 
-} // namespace 
+} // namespace wonton 
+//} // namespace 

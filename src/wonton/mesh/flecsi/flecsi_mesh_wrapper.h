@@ -23,9 +23,7 @@
 #include <memory>
 #include <vector>
 
-namespace flecsale {
-namespace mesh {
-
+namespace wonton {
 namespace portage {
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -72,7 +70,7 @@ Portage::Point<3> make_3d_point( T && a )
 // @}
 
 
-} // namespace 
+} // namespace portage 
 
 ////////////////////////////////////////////////////////////////////////////////
 /// \brief The base class for the portage flecsi mesh wrapper.
@@ -135,7 +133,7 @@ const typename portage_mesh_base_t<M>::shape_map_t
 ///  \brief Implements a mesh wrapper for Portage mesh queries.
 ////////////////////////////////////////////////////////////////////////////////
 template< typename M >
-class portage_mesh_t : public Portage::AuxMeshTopology<portage_mesh_t<M>> 
+class flecsi_mesh_t : public Portage::AuxMeshTopology<flecsi_mesh_t<M>> 
 {
 
 public:
@@ -145,7 +143,7 @@ public:
   //============================================================================
 
   //! \brief the auxiliary class
-  using portage_mesh_aux_t = Portage::AuxMeshTopology<portage_mesh_t<M>>;
+  using portage_mesh_aux_t = Portage::AuxMeshTopology<flecsi_mesh_t<M>>;
 
   //! \brief The mesh type
   using mesh_t = M;
@@ -188,7 +186,7 @@ public:
 
   //!  \brief Constructor for creating a serial, 3D Cartesian mesh.
   //!  \param[in] mesh The minimum coordinates of the domain.
-  explicit portage_mesh_t(mesh_t & mesh) :
+  explicit flecsi_mesh_t(mesh_t & mesh) :
     cells_(mesh.cells()), faces_(mesh.faces()),
     vertices_(mesh.vertices()), mesh_(&mesh)
   {
@@ -202,13 +200,13 @@ public:
   }
 
   //! Default constructor deleted
-  portage_mesh_t() = default;
+  flecsi_mesh_t() = default;
 
   //! Default copy constructor
-  portage_mesh_t(const portage_mesh_t &) = default;
+  flecsi_mesh_t(const flecsi_mesh_t &) = default;
 
   //! Default assignment operator
-  portage_mesh_t & operator=(const portage_mesh_t &) = default;
+  flecsi_mesh_t & operator=(const flecsi_mesh_t &) = default;
 
   //============================================================================
   // Public Members Required By Portage
@@ -673,6 +671,6 @@ const typename portage_mesh_t<M>::shape_map_t
 };*/
 
 
-} // namespace
-} // namespace
+} // namespace wonton
+//} // namespace
 
