@@ -50,9 +50,11 @@ POSSIBILITY OF SUCH DAMAGE.
 #include <iostream>
 #include <type_traits>
 
+#ifdef HAVE_LAPACKE
 #define HAVE_LAPACK_CONFIG_H
 #define LAPACK_COMPLEX_CPP
 #include "lapacke.h"
+#endif  // LAPACKE
 
 #include "Vector.h"   // Portage::Vector
 
@@ -297,8 +299,10 @@ class Matrix {
       auto inverse = this->inverse();
       X = inverse*B;
       
-    // LAPACK positive-definite matrix
-    } else if (method == "lapack-posv") {
+    }
+#ifdef HAVE_LAPACKE    
+    else if (method == "lapack-posv") {  // LAPACK positive-definite matrix
+
       // check symmetric
       bool symm = true;
       for (size_t i=0; i<Rows_; i++) for (size_t j=i; j<Columns_; j++) {
@@ -366,8 +370,7 @@ class Matrix {
         << std::endl;
       }
 
-    // LAPACK symmetric matrix
-    } else if (method == "lapack-sysv") {
+    } else if (method == "lapack-sysv") {  // LAPACK symmetric matrix
       // check symmetric
       bool symm = true;
       for (size_t i=0; i<Rows_; i++) for (size_t j=i; j<Columns_; j++) {
@@ -434,8 +437,7 @@ class Matrix {
             << std::endl;
       }
 
-    // LAPACK general matrix
-    } else if (method == "lapack-gesv") {
+    } else if (method == "lapack-gesv") {  // LAPACK general matrix
 
       // setup
       AEquilibrated_ = std::vector<double>(A_);
@@ -503,6 +505,9 @@ class Matrix {
             << std::endl;
       } 
     }
+#else
+    throw std::runtime_error("Not built with LAPACK support");
+#endif  // HAVE_LAPACKE
 
     return X;
   }
