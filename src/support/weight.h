@@ -309,8 +309,8 @@ double eval(const Geometry geo,
     }
     default:
       throw std::runtime_error("invalid weight geometry");
-      return result;
   }
+  return result;
 }
 
 /// data for specifying a faceted weight
@@ -332,6 +332,7 @@ double faceted(const Point<dim> x, const Point<dim> y,
     arg /= facets[i].smoothing;
     result *= polyramp(arg);
   }
+  return result;
 }
 
 /// evaluation function for any weight
