@@ -228,10 +228,10 @@ std::shared_ptr<Swarm<3>> SwarmFactory(double xmin, double ymin, double zmin,
           (zmax-zmin)*(static_cast<double>(rand_r(&rand_state))/RAND_MAX);
     }
   } else {
-    int npdim = pow(nparticles, 1.0/3.0);
+    int npdim = static_cast<int>(pow(nparticles, 1.0/3.0) + 0.5);
     if (npdim*npdim*npdim != nparticles) {
       std::cerr << "Requested number of particles not a perfect cube\n";
-      std::cerr << "Generating only " << npdim << "particles in each dimension\n";
+      std::cerr << "Generating only " << npdim << " particles in each dimension\n";
     }
     double hx = (xmax-xmin)/npdim;
     double hy = (ymax-ymin)/npdim;

@@ -64,10 +64,9 @@ void test_estimate(Portage::Meshfree::EstimateType etype,
   using namespace Portage::Meshfree;
 
   // create the source and target swarms input data
-  const size_t nside = 8;
-  const size_t npoints = powl(nside+1,dim);
+  const size_t nside = 3;
   const double smoothing = 1./nside;
-  const double jitter = 0.;//0.25*smoothing;
+  const double jitter = 0.;  // 0.25*smoothing;
   const size_t nsrc = powl(nside+1,dim);
   const size_t ntgt = powl(nside+3,dim);
   const double tsmoothing = 1./(nside+2);
