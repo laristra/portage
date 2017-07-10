@@ -506,7 +506,9 @@ class Matrix {
       } 
     }
 #else
-    throw std::runtime_error("Not built with LAPACK support");
+    else {
+      throw std::runtime_error("Invalid solver type or LAPACK solve requested but code not built with LAPACK support");
+    }
 #endif  // HAVE_LAPACKE
 
     return X;
