@@ -48,6 +48,7 @@ POSSIBILITY OF SUCH DAMAGE.
 #include <cmath>
 
 #include "portage/support/Point.h"
+#include "portage/accumulate/accumulate.h"
 
 
 namespace Portage {
@@ -81,9 +82,12 @@ class SearchSimplePoints {
       const SourceSwarmType & source_swarm,
       const TargetSwarmType & target_swarm,
       std::shared_ptr<std::vector<Point<D>>> source_extents,
-      std::shared_ptr<std::vector<Point<D>>> target_extents)
+      std::shared_ptr<std::vector<Point<D>>> target_extents,
+      Meshfree::WeightCenter center=Meshfree::Scatter)
       : sourceSwarm_(source_swarm), targetSwarm_(target_swarm),
-        sourceExtents_(source_extents), targetExtents_(target_extents)  {
+        sourceExtents_(source_extents), targetExtents_(target_extents),
+        center_(center)
+  {
 
     // currently no structure, just save the swarms and extents
 
@@ -116,6 +120,7 @@ class SearchSimplePoints {
   const TargetSwarmType & targetSwarm_;
   std::shared_ptr<std::vector<Point<D>>> sourceExtents_;
   std::shared_ptr<std::vector<Point<D>>> targetExtents_;
+  Meshfree::WeightCenter center_;
 
 }; // class SearchSimplePoints
 
@@ -137,14 +142,18 @@ operator() (const int pointId) const {
   const int numPoints = sourceSwarm_.num_owned_particles();
   for (int p = 0; p < numPoints; ++p) {
     Point<D> spcoord = sourceSwarm_.get_particle_coordinates(p);
-    bool overlap = true;
+    bool contained = true;
     for (int d = 0; d < D; ++d) {
-      double maxdist = 2. *
-          ((*targetExtents_)[pointId][d] + (*sourceExtents_)[p][d]);
-      overlap = overlap && (abs(tpcoord[d] - spcoord[d]) < maxdist);
-      if (!overlap) break;
+      double maxdist;
+      if (center_ == Meshfree::Scatter) {
+        maxdist = 2.*(*sourceExtents_)[p][d];
+      } else if (center_ == Meshfree::Gather) {
+        maxdist = 2.*(*targetExtents_)[pointId][d];
+      }
+      contained = contained && (abs(tpcoord[d] - spcoord[d]) < maxdist);
+      if (!contained) break;
     }
-    if (overlap) {
+    if (contained) {
       candidates.push_back(p);
     }
   }
