@@ -49,6 +49,7 @@ set(search_HEADERS
     search_simple.h
     search_kdtree.h
     search_simple_points.h
+    search_points_by_cells.h
     kdtree.h
     BoundBox.h
     PARENT_SCOPE
@@ -78,11 +79,16 @@ if(ENABLE_UNIT_TESTS)
       LIBRARIES portage ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
       POLICY MPI
       THREADS 1)
-    cinch_add_unit(search_simple_points_test
-      SOURCES search_simple_points_test.cc
-      LIBRARIES portage ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
-      POLICY MPI
-      THREADS 1)
   endif (Jali_DIR)
+  cinch_add_unit(search_simple_points_test
+    SOURCES search_simple_points_test.cc
+    LIBRARIES portage 
+    POLICY MPI
+    THREADS 1)
+  cinch_add_unit(search_points_by_cells_test
+    SOURCES pairs.cc search_points_by_cells_test.cc 
+    LIBRARIES portage
+    POLICY MPI
+    THREADS 1)
 endif(ENABLE_UNIT_TESTS)
 
