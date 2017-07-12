@@ -1,8 +1,8 @@
 /*
-Copyright (c) 2016, Los Alamos National Security, LLC
+Copyright (c) 2017, Los Alamos National Security, LLC
 All rights reserved.
 
-Copyright 2016. Los Alamos National Security, LLC. This software was produced
+Copyright 2017. Los Alamos National Security, LLC. This software was produced
 under U.S. Government contract DE-AC52-06NA25396 for Los Alamos National
 Laboratory (LANL), which is operated by Los Alamos National Security, LLC for
 the U.S. Department of Energy. The U.S. Government has rights to use,
@@ -40,32 +40,36 @@ POSSIBILITY OF SUCH DAMAGE.
 */
 
 
-#ifndef SEARCH_SIMPLE_POINTS_H
-#define SEARCH_SIMPLE_POINTS_H
+#ifndef SEARCH_POINTS_BY_CELLS_H
+#define SEARCH_POINTS_BY_CELLS_H
 
 #include <memory>
 #include <vector>
 #include <cmath>
+#include <list>
 
 #include "portage/support/Point.h"
 #include "portage/accumulate/accumulate.h"
 
+#include "pile.hh"
+#include "lretypes.hh"
+#include "pairs.hh"
 
 namespace Portage {
 
   /*!
-  @class SearchSimplePoints "search_simple_points.h"
-  @brief A simple, crude search algorithm that does a quadratic-time search
+  @class SearchPointsByCells "search_points_by_cells.h"
+  @brief A simple, crude search algorithm that does a linear-time search
   over a swarm of points.
   @tparam SourceSwarmType The swarm type of the input swarm.
   @tparam TargetSwarmType The swarm type of the output swarm.
    */
 template <int D, class SourceSwarmType, class TargetSwarmType>
-class SearchSimplePoints {
+class SearchPointsByCells {
   public:
 
   //! Default constructor (disabled)
-  SearchSimplePoints() = delete;
+  SearchPointsByCells() = delete;
 
   // Constructor with swarms and extents
   /*!
@@ -78,7 +82,7 @@ class SearchSimplePoints {
     Constructor for search structure for finding points from a source
     swarm that are near points in the target swarm.
   */
-  SearchSimplePoints(
+  SearchPointsByCells(
       const SourceSwarmType & source_swarm,
       const TargetSwarmType & target_swarm,
       std::shared_ptr<std::vector<Point<D>>> source_extents,
@@ -86,21 +90,64 @@ class SearchSimplePoints {
       Meshfree::WeightCenter center=Meshfree::Scatter)
       : sourceSwarm_(source_swarm), targetSwarm_(target_swarm),
         sourceExtents_(source_extents), targetExtents_(target_extents),
-        center_(center)
+        lre_pairs_(NULL), center_(center)
   {
+    // check sizes
+    if (center == Meshfree::Scatter) {
+      assert(sourceSwarm_.num_particles() == sourceExtents_->size());
+    } else if (center == Meshfree::Gather) {
+      assert(targetSwarm_.num_particles() == targetExtents_->size());
+    }
 
-    // currently no structure, just save the swarms and extents
+    // transpose geometry data to lre namespace structures
+    lre::vpile source_vp(D, sourceSwarm_.num_particles());
+    lre::vpile target_vp(D, targetSwarm_.num_particles());
+    lre::vpile source_extents_vp(D, sourceSwarm_.num_particles());
+    lre::vpile target_extents_vp(D, targetSwarm_.num_particles());
+    for (size_t i=0; i<sourceSwarm_.num_particles(); i++ ) {
+      Point<D> pt = sourceSwarm_.get_particle_coordinates(i);
+      for (size_t m=0; m<D; m++) {
+        source_vp[m][i] = pt[m];
+        source_extents_vp[m][i] = (*source_extents)[i][m];
+      }
+    }
+    for (size_t i=0; i<targetSwarm_.num_particles(); i++ ) {
+      Point<D> pt = targetSwarm_.get_particle_coordinates(i);
+      for (size_t m=0; m<D; m++) {
+        target_vp[m][i] = pt[m];
+        target_extents_vp[m][i] = (*target_extents)[i][m];
+      }
+    }
 
-  } // SearchSimplePoints::SearchSimplePoints
+    // h on source
+    if (center_ == Meshfree::Scatter) {
+      lre_pairs_ = lre::PairsFind(target_vp, source_vp, source_extents_vp);
 
-  //! Copy constructor - use default - std::transfor needs this
-  //  SearchSimplePoints(const SearchSimplePoints &) = delete;
+    // h on target
+    } else if (center_ == Meshfree::Gather) {
+      std::shared_ptr<std::vector<std::list<ulong>>> pairs =
+          lre::PairsFind(source_vp, target_vp, target_extents_vp);
+      assert(pairs->size() == sourceSwarm_.num_particles());
+
+      // for this case we have to transpose the pair lists
+      lre_pairs_ = std::make_shared<std::vector<std::list<ulong>>>
+                     (targetSwarm_.num_particles());
+      for (size_t si=0; si<pairs->size(); si++) {
+        for (auto ti=(*pairs)[si].begin(); ti!=(*pairs)[si].end(); ti++) {
+          (*lre_pairs_)[*ti].push_back(si);
+        }
+      }
+    }
+  } // SearchPointsByCells::SearchPointsByCells
+
+  //! Copy constructor - use default - std::transform needs this
+  //  SearchPointsByCells(const SearchPointsByCells &) = delete;
 
   //! Assignment operator (disabled)
-  SearchSimplePoints & operator = (const SearchSimplePoints &) = delete;
+  SearchPointsByCells & operator = (const SearchPointsByCells &) = delete;
 
   //! Destructor
-  ~SearchSimplePoints() = default;
+  ~SearchPointsByCells() = default;
 
   /*!
     @brief Find the source swarm points within an appropriate distance
@@ -120,49 +167,28 @@ class SearchSimplePoints {
   const TargetSwarmType & targetSwarm_;
   std::shared_ptr<std::vector<Point<D>>> sourceExtents_;
   std::shared_ptr<std::vector<Point<D>>> targetExtents_;
+  std::shared_ptr<std::vector<std::list<lre::ulong>>> lre_pairs_;
   Meshfree::WeightCenter center_;
 
-}; // class SearchSimplePoints
+}; // class SearchPointsByCells
 
 
 template<int D, class SourceSwarmType, class TargetSwarmType>
 std::vector<unsigned int>
-SearchSimplePoints<D, SourceSwarmType, TargetSwarmType>::
+SearchPointsByCells<D, SourceSwarmType, TargetSwarmType>::
 operator() (const int pointId) const {
 
-  using std::abs;
   std::vector<unsigned int> candidates;
 
-  // find coordinates of target point
-  Point<D> tpcoord = targetSwarm_.get_particle_coordinates(pointId);
-
-  // now see which source points are within an appropriate distance
-  // of the target point
-  // do a naive linear search
-  const int numPoints = sourceSwarm_.num_owned_particles();
-  for (int p = 0; p < numPoints; ++p) {
-    Point<D> spcoord = sourceSwarm_.get_particle_coordinates(p);
-    bool contained = true;
-    for (int d = 0; d < D; ++d) {
-      double maxdist;
-      if (center_ == Meshfree::Scatter) {
-        maxdist = 2.*(*sourceExtents_)[p][d];
-      } else if (center_ == Meshfree::Gather) {
-        maxdist = 2.*(*targetExtents_)[pointId][d];
-      }
-      contained = contained && (abs(tpcoord[d] - spcoord[d]) < maxdist);
-      if (!contained) break;
-    }
-    if (contained) {
-      candidates.push_back(p);
-    }
+  for (auto it=(*lre_pairs_)[pointId].begin(); it!=(*lre_pairs_)[pointId].end(); it++) {
+    candidates.push_back(*it);
   }
 
   return candidates;
-} // SearchSimplePoints::operator()
+} // SearchPointsByCells::operator()
 
 
 } // namespace Portage
 
-#endif // SEARCH_SIMPLE_POINTS_H
+#endif // SEARCH_POINTS_BY_CELLS_H
 
