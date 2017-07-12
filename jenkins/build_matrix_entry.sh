@@ -18,7 +18,6 @@ build_type=$2
 # set modules and install paths
 
 jali_version=0.9.8
-openmpi_version=1.10.5
 
 export NGC=/usr/local/codes/ngc
 ngc_include_dir=$NGC/private/include
@@ -27,9 +26,11 @@ ngc_include_dir=$NGC/private/include
 if [[ $compiler == "intel" ]]; then
   cxxmodule=intel/17.0.1
   jali_install_dir=$NGC/private/jali/${jali_version}-intel-17.0.1-openmpi-${openmpi_version}
+  openmpi_version=1.10.5
 elif [[ $compiler == "gcc" ]]; then
   cxxmodule=gcc/5.3.0
   jali_install_dir=$NGC/private/jali/${jali_version}-gcc-5.3.0-openmpi-${openmpi_version}
+  openmpi_version=1.10.3
   flecsi_install_dir=$NGC/private/flecsi-gcc
 fi
   
