@@ -25,12 +25,12 @@ ngc_include_dir=$NGC/private/include
 # compiler-specific settings
 if [[ $compiler == "intel" ]]; then
   cxxmodule=intel/17.0.1
-  jali_install_dir=$NGC/private/jali/${jali_version}-intel-17.0.1-openmpi-${openmpi_version}
   openmpi_version=1.10.5
+  jali_install_dir=$NGC/private/jali/${jali_version}-intel-17.0.1-openmpi-${openmpi_version}
 elif [[ $compiler == "gcc" ]]; then
   cxxmodule=gcc/5.3.0
-  jali_install_dir=$NGC/private/jali/${jali_version}-gcc-5.3.0-openmpi-${openmpi_version}
   openmpi_version=1.10.3
+  jali_install_dir=$NGC/private/jali/${jali_version}-gcc-5.3.0-openmpi-${openmpi_version}
   flecsi_install_dir=$NGC/private/flecsi-gcc
 fi
   
