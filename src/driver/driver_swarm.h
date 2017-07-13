@@ -129,18 +129,30 @@ class SwarmDriver {
               TargetState& targetState,
               std::vector<std::vector<std::vector<double>>> const& smoothing_lengths,
               Weight::Kernel const& kernel_type=Weight::B4,
-              Weight::Geometry const& support_geom_type=Weight::ELLIPTIC)
+              Weight::Geometry const& support_geom_type=Weight::ELLIPTIC,
+	      WeightCenter center=Gather)
       : source_swarm_(sourceSwarm), source_state_(sourceState),
         target_swarm_(targetSwarm), target_state_(targetState),
     smoothing_lengths_(smoothing_lengths) {
            
     assert(Dim == sourceSwarm.space_dimension());
     assert(Dim == targetSwarm.space_dimension());
-    int num_target_particles = targetSwarm.num_owned_particles();
-    kernel_types_ = std::vector<Weight::Kernel>(num_target_particles,
-                                                kernel_type);
-    geom_types_ = std::vector<Weight::Geometry>(num_target_particles,
-                                                support_geom_type);
+
+    weight_center_ = center;
+
+    if (weight_center_ == Gather) {
+      assert(smoothing_lengths_.size() == target_swarm_.num_particles());
+      kernel_types_ = std::vector<Weight::Kernel>(target_swarm_.num_particles(),
+						  kernel_type);
+      geom_types_ = std::vector<Weight::Geometry>(target_swarm_.num_particles(),
+						  support_geom_type);
+    } else if (weight_center_ == Scatter) {
+      assert(smoothing_lengths_.size() == source_swarm_.num_particles());
+      kernel_types_ = std::vector<Weight::Kernel>(source_swarm_.num_particles(),
+						  kernel_type);
+      geom_types_ = std::vector<Weight::Geometry>(source_swarm_.num_particles(),
+						  support_geom_type);
+    }
   }
 
   /*!
@@ -167,7 +179,8 @@ class SwarmDriver {
               TargetState& targetState,
               std::vector<std::vector<std::vector<double>>> const& smoothing_lengths,
               std::vector<Weight::Kernel> const& kernel_types,
-              std::vector<Weight::Geometry> const& geom_types)
+              std::vector<Weight::Geometry> const& geom_types,
+	      WeightCenter center=Gather)
       : source_swarm_(sourceSwarm), source_state_(sourceState),
         target_swarm_(targetSwarm), target_state_(targetState),
     kernel_types_(kernel_types),
@@ -175,9 +188,18 @@ class SwarmDriver {
     smoothing_lengths_(smoothing_lengths) {
 
     assert(sourceSwarm.space_dimension() == targetSwarm.space_dimension());
-    assert(targetSwarm.size() == smoothing_lengths.size());
-    assert(targetSwarm.size() == kernel_types.size());
-    assert(targetSwarm.size() == geom_types.size());
+    
+    weight_center_ = center;
+
+    if (weight_center_ == Gather) {
+      assert(smoothing_lengths_.size() == target_swarm_.num_particles());
+      assert(kernel_types_.size() == target_swarm_.num_particles());
+      assert(geom_types_.size() == target_swarm_.num_particles());
+    } else if (weight_center_ == Scatter) {
+      assert(smoothing_lengths_.size() == source_swarm_.num_particles());
+      assert(kernel_types_.size() == source_swarm_.num_particles());
+      assert(geom_types_.size() == source_swarm_.num_particles());
+    }
   }
 
   /// Copy constructor (disabled)
@@ -309,7 +331,8 @@ class SwarmDriver {
 
       const Search<Dim, SourceSwarm, TargetSwarm>
           searchfunctor(source_swarm_, target_swarm_,
-                        sourceExtents, targetExtents);
+                        sourceExtents, targetExtents,
+			weight_center_);
       
       Portage::transform(target_swarm_.begin(PARTICLE, PARALLEL_OWNED),
                          target_swarm_.end(PARTICLE, PARALLEL_OWNED),
@@ -422,10 +445,10 @@ class SwarmDriver {
   std::vector<std::string> target_remap_var_names_;
   EstimateType estimator_type_;
   WeightCenter weight_center_ = Gather;  // smoothing len. centered on trgt. pts
+  std::vector<std::vector<std::vector<double>>> smoothing_lengths_;
   std::vector<Weight::Kernel> kernel_types_;
   std::vector<Weight::Geometry> geom_types_;
   Basis::Type basis_type_;
-  std::vector<std::vector<std::vector<double>>> smoothing_lengths_;
 };  // class Driver_Swarm
 
 

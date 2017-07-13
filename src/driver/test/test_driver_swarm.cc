@@ -82,17 +82,22 @@ class DriverTest : public ::testing::Test {
 
   shared_ptr<vector<vector<vector<double>>>> smoothing_lengths_;
 
+  Portage::Meshfree::WeightCenter center_;
+
   // Constructor for Driver test
   DriverTest(shared_ptr<Portage::Meshfree::Swarm<dim>> s,
              shared_ptr<Portage::Meshfree::Swarm<dim>> t) :
-      sourceSwarm(s), targetSwarm(t), smoothing_lengths_(nullptr) {
+    sourceSwarm(s), targetSwarm(t), smoothing_lengths_(nullptr),
+    center_(Portage::Meshfree::Gather) {
     sourceState = make_shared<Portage::Meshfree::SwarmState<dim>>(*sourceSwarm);
     targetState = make_shared<Portage::Meshfree::SwarmState<dim>>(*targetSwarm);
   }
 
   void set_smoothing_lengths(shared_ptr<vector<vector<vector<double>>>>
-                             smoothing_lengths) {
+                             smoothing_lengths,
+			     Portage::Meshfree::WeightCenter center=Portage::Meshfree::Gather) {
     smoothing_lengths_ = smoothing_lengths;
+    center_ = center;
   }
 
 
@@ -129,7 +134,7 @@ class DriverTest : public ::testing::Test {
     vector<std::string> remap_fields;
     remap_fields.push_back("particledata");
 
-    Portage::Meshfree::SwarmDriver<Portage::SearchSimplePoints,
+    Portage::Meshfree::SwarmDriver<Search,
                                    Portage::Meshfree::Accumulate,
                                    Portage::Meshfree::Estimate,
                                    dim,
@@ -137,8 +142,8 @@ class DriverTest : public ::testing::Test {
                                    Portage::Meshfree::SwarmState<dim>,
                                    Portage::Meshfree::Swarm<dim>,
                                    Portage::Meshfree::SwarmState<dim>>
-        d(*sourceSwarm, *sourceState, *targetSwarm, *targetState,
-          *smoothing_lengths_);
+        d(*sourceSwarm, *sourceState, *targetSwarm, *targetState, *smoothing_lengths_,
+	  Portage::Meshfree::Weight::B4, Portage::Meshfree::Weight::ELLIPTIC, center_);
     d.set_remap_var_names(remap_fields, remap_fields,
                           Portage::Meshfree::LocalRegression,
                           basis);
@@ -181,11 +186,11 @@ class DriverTest : public ::testing::Test {
 
 // Class which constructs a pair of 1-D swarms (random distribution) for remaps
 struct DriverTest1D : DriverTest<1> {
-  DriverTest1D() : DriverTest(SwarmFactory(0.0, 1.0, 7, 0),
-                              SwarmFactory(0.0, 1.0, 5, 0))
+  DriverTest1D() : DriverTest(SwarmFactory(0.0, 1.0, 7, 2),
+                              SwarmFactory(0.0, 1.0, 5, 2))
   {
     auto smoothing_lengths = make_shared<vector<vector<vector<double>>>>(5,
-                   vector<vector<double>>(1, vector<double>(1, 2*1.0/7)));
+                   vector<vector<double>>(1, vector<double>(1, 2.0/4)));
     DriverTest::set_smoothing_lengths(smoothing_lengths);
   }
 };
@@ -193,10 +198,10 @@ struct DriverTest1D : DriverTest<1> {
 
 // Class which constructs a pair of 2-D swarms (random distribution) for remaps
 struct DriverTest2D : DriverTest<2> {
-  DriverTest2D() : DriverTest(SwarmFactory(0.0, 0.0, 1.0, 1.0, 7*7, 1),
-                              SwarmFactory(0.0, 0.0, 1.0, 1.0, 5*5, 1)) {
+  DriverTest2D() : DriverTest(SwarmFactory(0.0, 0.0, 1.0, 1.0, 7*7, 2),
+                              SwarmFactory(0.0, 0.0, 1.0, 1.0, 5*5, 2)) {
     auto smoothing_lengths = make_shared<vector<vector<vector<double>>>>(5*5,
-                   vector<vector<double>>(1, vector<double>(2, 2*1.0/7)));
+                   vector<vector<double>>(1, vector<double>(2, 2.0/4)));
     DriverTest::set_smoothing_lengths(smoothing_lengths);
   }
 };
@@ -205,12 +210,49 @@ struct DriverTest2D : DriverTest<2> {
 // Class which constructs a pair of 3-D swarms (random distribution) for remaps
 struct DriverTest3D : DriverTest<3> {
   DriverTest3D(): DriverTest(SwarmFactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0,
-                                          7*7*7, 1),
+                                          7*7*7, 2),
                              SwarmFactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0,
-                                          5*5*5, 1)) {
+                                          5*5*5, 2)) {
     auto smoothing_lengths = make_shared<vector<vector<vector<double>>>>(5*5*5,
-                   vector<vector<double>>(1, vector<double>(3, 2*1.0/7)));
+                   vector<vector<double>>(1, vector<double>(3, 2.0/4)));
     DriverTest::set_smoothing_lengths(smoothing_lengths);
+  }
+};
+
+
+
+// Class which constructs a pair of 1-D swarms (random distribution) for remaps
+struct DriverTest1DScatter : DriverTest<1> {
+  DriverTest1DScatter() : DriverTest(SwarmFactory(0.0, 1.0, 7, 2),
+                              SwarmFactory(0.0, 1.0, 5, 2))
+  {
+    auto smoothing_lengths = make_shared<vector<vector<vector<double>>>>(7,
+                   vector<vector<double>>(1, vector<double>(1, 2.0/6)));
+    DriverTest::set_smoothing_lengths(smoothing_lengths, Portage::Meshfree::Scatter);
+  }
+};
+
+
+// Class which constructs a pair of 2-D swarms (random distribution) for remaps
+struct DriverTest2DScatter : DriverTest<2> {
+  DriverTest2DScatter() : DriverTest(SwarmFactory(0.0, 0.0, 1.0, 1.0, 7*7, 2),
+                              SwarmFactory(0.0, 0.0, 1.0, 1.0, 5*5, 2)) {
+    auto smoothing_lengths = make_shared<vector<vector<vector<double>>>>(7*7,
+                   vector<vector<double>>(1, vector<double>(2, 2.0/6)));
+    DriverTest::set_smoothing_lengths(smoothing_lengths, Portage::Meshfree::Scatter);
+  }
+};
+
+
+// Class which constructs a pair of 3-D swarms (random distribution) for remaps
+struct DriverTest3DScatter : DriverTest<3> {
+  DriverTest3DScatter(): DriverTest(SwarmFactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0,
+                                          7*7*7, 2),
+                             SwarmFactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0,
+                                          5*5*5, 2)) {
+    auto smoothing_lengths = make_shared<vector<vector<vector<double>>>>(7*7*7,
+                   vector<vector<double>>(1, vector<double>(3, 2.0/6)));
+    DriverTest::set_smoothing_lengths(smoothing_lengths, Portage::Meshfree::Scatter);
   }
 };
 
@@ -273,6 +315,13 @@ TEST_F(DriverTest1D, 1D_QuadraticFieldQuadraticBasis) {
       (compute_quadratic_field<1>, 0.0);
 }
 
+  /*
+TEST_F(DriverTest1DScatter, 1D_QuadraticFieldQuadraticBasisScatter) {
+  unitTest<Portage::SearchSimplePoints, Portage::Meshfree::Basis::Quadratic>
+      (compute_quadratic_field<1>, 0.0);
+}
+  */
+
 //TEST_F(DriverTest1D, 1D_CubicFieldQuadraticBasis) {
 //  unitTest<Portage::SearchSimplePoints, Portage::Meshfree::Basis::Quadratic>
 //      (compute_quadratic_field<1>, 0.0);
@@ -305,6 +354,13 @@ TEST_F(DriverTest2D, 2D_QuadraticFieldQuadraticBasis) {
       (compute_quadratic_field<2>, 0.0);
 }
 
+  /*
+TEST_F(DriverTest2DScatter, 2D_QuadraticFieldQuadraticBasisScatter) {
+  unitTest<Portage::SearchSimplePoints, Portage::Meshfree::Basis::Quadratic>
+      (compute_quadratic_field<2>, 0.0);
+}
+  */
+
 //TEST_F(DriverTest2D, 2D_CubicFieldQuadraticBasis) {
 //  unitTest<Portage::SearchSimplePoints, Portage::Meshfree::Basis::Quadratic>
 //      (compute_quadratic_field<2>, 0.0);
@@ -336,6 +392,13 @@ TEST_F(DriverTest3D, 3D_QuadraticFieldQuadraticBasis) {
   unitTest<Portage::SearchSimplePoints, Portage::Meshfree::Basis::Quadratic>
       (compute_quadratic_field<3>, 0.0);
 }
+
+  /*
+TEST_F(DriverTest3DScatter, 3D_QuadraticFieldQuadraticBasisScatter) {
+  unitTest<Portage::SearchSimplePoints, Portage::Meshfree::Basis::Quadratic>
+      (compute_quadratic_field<3>, 0.0);
+}
+  */
 
 //TEST_F(DriverTest1D, 3D_CubicFieldQuadraticBasis) {
 //  unitTest<Portage::SearchSimplePoints, Portage::Meshfree::Basis::Quadratic>
