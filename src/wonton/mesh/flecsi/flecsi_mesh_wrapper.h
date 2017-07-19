@@ -22,6 +22,7 @@
 #include <map>
 #include <memory>
 #include <vector>
+#include <iostream>
 
 namespace wonton {
 namespace portage {
@@ -235,7 +236,7 @@ public:
     //return vol;
 
  //   raise_implemented_error( "dual_cell_volume not implemented yet!" );
-     std::cerr("dual_cell_volume not implemented yet!\n");
+     std::cerr<<"dual_cell_volume not implemented yet!\n";
      return 0.0;
   }
 
@@ -306,7 +307,7 @@ public:
         return mesh_->num_corners();
       default :
         //raise_runtime_error("Unknown entity type");
-        std::cerr("Unknown entity type\n");
+        std::cerr<<"Unknown entity type\n";
         return 0;
     }
   }
@@ -539,7 +540,7 @@ public:
   ) const
   {
     //raise_implemented_error("dual_cell_get_coordinates not implemented yet!");
-    std::cerr("dual_cell_get_coordinates not implemented yet!\n");
+    std::cerr<<"dual_cell_get_coordinates not implemented yet!\n";
   }
 
   //! \brief Centroid of a cell.
@@ -617,6 +618,25 @@ public:
        return element_type_t::HEX;
     else
       return element_type_t::UNKNOWN_TOPOLOGY;
+  }
+
+  //! Get global id
+  int get_global_id(size_t id, entity_kind_t const kind) const
+  {
+     if (kind == entity_kind_t::NODE)
+     {
+       auto ent = vertices_[id];
+       auto gid = ent.global_id();
+       return gid.global();
+     }    
+     else if (kind == entity_kind_t::CELL)
+     { 
+       auto ent = cells_[id];
+       auto gid = ent.global_id();
+       return gid.global();
+     }
+     else
+       return 0; 
   }
 
   //============================================================================

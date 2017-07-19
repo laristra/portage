@@ -9,10 +9,10 @@
 #pragma once
 
 // user includes
-#include "flecsi-sp/specializations/burton/burton.h"
+#include "flecsi-sp/burton/burton.h"
 
 #include "portage/wonton/mesh/flecsi/flecsi_mesh_wrapper.h"
-#include "portage/wonton/mesh/flecsi/flecsi_state_wrapper.h"
+#include "portage/wonton/state/flecsi/flecsi_state_wrapper.h"
 #include "portage/driver/driver.h"
 
 // system includes

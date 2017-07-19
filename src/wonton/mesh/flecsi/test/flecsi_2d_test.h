@@ -15,7 +15,7 @@
 #include "flecsi_test_base.h"
 
 // user includes
-#include "flecsi-sp/specializations/burton/factory.h"
+#include "flecsi-sp/burton/factory.h"
 
 // some general using statements
 using std::vector;
@@ -77,7 +77,7 @@ public:
   //---------------------------------------------------------------------------
   
   //! \brief some test tolerance
-  static constexpr real_t test_tolerance = 10*flecsale::common::test_tolerance;
+  static constexpr real_t test_tolerance = 10*flecsi::sp::common::test_tolerance;
 
 
 
