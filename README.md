@@ -50,8 +50,34 @@ Execute the following from the portage root directory:
 
 ```c++
 # darwin-fe
-module load openmpi/1.10.0-intel_15.0.3 cmake
-JALI_INSTALL_PREFIX=/path/to/inst-jali
+module load openmpi/2.0.1-intel_17.0.0 cmake/3.7.1
+JALI_INSTALL_PREFIX=/projects/ngc/private/jali/0.9.8-intel-17.0.0-openmpi-2.0.1
+TPL_INSTALL_PREFIX=/projects/ngc/private/jali-tpl/1.0.9-intel-17.0.0-openmpi-2.0.1
+mkdir build
+cd build
+cmake \
+    -D CMAKE_C_COMPILER=`which mpicc` \
+    -D CMAKE_CXX_COMPILER=`which mpiCC` \
+    -D CMAKE_BUILD_TYPE=Debug \
+    -D ENABLE_UNIT_TESTS=True \
+    -D ENABLE_APP_TESTS=True \
+    -D ENABLE_MPI=True \
+    -D ENABLE_MPI_CXX_BINDINGS=True \
+    -D Jali_DIR:FILEPATH=$JALI_INSTALL_PREFIX/lib \
+    -D Boost_INCLUDE_DIR:PATH=$TPL_INSTALL_PREFIX/include \
+    ..
+make -j16
+ctest -j16 --output-on-failure
+```
+
+## Moonlight
+
+Execute the following from the portage root directory:
+
+```c++
+# ml-fey
+module load intel/17.0.1 openmpi/1.10.5 cmake
+JALI_INSTALL_PREFIX=/usr/projects/ngc/private/jali/0.9.8-intel-17.0.1-openmpi-1.10.5
 mkdir build
 cd build
 cmake \
@@ -67,9 +93,10 @@ cmake \
 make -j16
 ctest -j16 --output-on-failure
 ```
+
 ## Varan
 
-Execute the following from the Jali root directory:
+Execute the following from the portage root directory:
 
 ```c++
 # varan
