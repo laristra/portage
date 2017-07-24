@@ -166,6 +166,9 @@ void build_sides_3D(AuxMeshTopology<BasicMesh>& mesh);
 //!
 //! void face_get_nodes(int const faceid, std::vector<int> *fnodes) const;
 //!
+//! void face_get_cells(int const faceid, Portage::Entity_type etype,
+//!                     std::vector<int> *fcells) const;
+//!
 //! void node_get_cell_adj_nodes(int const nodeid, Portage::Entity_type etype,
 //!                              std::vector<int> *adjnodes) const;
 //!
@@ -346,6 +349,44 @@ class AuxMeshTopology {
     int start_index = 0;
     return (make_counting_iterator(start_index) + num_entities(entity, etype));
   }
+
+
+  //! Get cells of given Entity_type connected to face (in no particular order)
+  void face_get_cells(int const faceid, Entity_type const etype,
+                      std::vector<int> *cells) const {
+    cells->clear();
+    int c0 = face_cell_ids_[faceid][0];
+    if (c0 != -1) {
+      Entity_type ctype0 = basicmesh_ptr_->cell_get_type(c0);
+      if (etype == Entity_type::ALL || ctype0 == etype)
+        cells->push_back(c0);
+    }
+    int c1 = face_cell_ids_[faceid][1];
+    if (c1 != -1) {
+      Entity_type ctype1 = basicmesh_ptr_->cell_get_type(c1);
+      if (etype == Entity_type::ALL || ctype1 == etype)
+        cells->push_back(c1);
+    }
+  }
+
+  //! if entity is on exterior boundary
+  bool on_exterior_boundary(Entity_kind const entity, int const entity_id) {
+    switch (entity) {
+      case NODE:
+        return node_on_exterior_boundary_[entity_id];
+      case FACE:
+        return face_on_exterior_boundary_[entity_id];
+      case CELL:
+        return cell_on_exterior_boundary_[entity_id];
+      case SIDE:
+        return cell_on_exterior_boundary_[side_cell_id_[entity_id]];
+      case CORNER:
+        return cell_on_exterior_boundary_[corner_cell_id_[entity_id]];
+      default:
+        return false;
+    }
+  }
+        
 
   //! Coordinates of nodes of cell
 
@@ -1158,6 +1199,9 @@ class AuxMeshTopology {
 
     if (sides_requested_)
       compute_cell_volumes();  // needs side volumes
+
+    build_face_to_cell_adjacency();
+    flag_entities_on_exterior_boundary();
   }
 
  private:
@@ -1167,6 +1211,9 @@ class AuxMeshTopology {
 
   void build_wedges();
   void build_corners();
+
+  void build_face_to_cell_adjacency();
+  void flag_entities_on_exterior_boundary();
 
   // External helper functions to build dimension-dependent side info
   // - forward declared at the top of the file so that only an
@@ -1209,6 +1256,11 @@ class AuxMeshTopology {
   // Faces
   std::vector<std::vector<double>> face_centroids_;
 
+  // compute this adjacency and store it - while many mesh frameworks
+  // have it some may not and in particular, the flat mesh wrapper we
+  // use within Portage does not.
+  std::vector<std::array<int, 2>> face_cell_ids_;
+
   // Sides
   std::vector<int> side_cell_id_;
   std::vector<int> side_face_id_;
@@ -1232,9 +1284,78 @@ class AuxMeshTopology {
   std::vector<std::vector<int>> node_corner_ids_;
   std::vector<std::vector<int>> corner_wedge_ids_;
 
+  // Flag indicating if entities (cells, faces, nodes) are on exterior boundary 
+  std::vector<bool> cell_on_exterior_boundary_;
+  std::vector<bool> face_on_exterior_boundary_;
+  std::vector<bool> node_on_exterior_boundary_;
+
 };  // class AuxMeshTopology
 
 
+//! build face to cell adjacency
+template<typename BasicMesh>
+void AuxMeshTopology<BasicMesh>::build_face_to_cell_adjacency() {
+  int nfaces = basicmesh_ptr_->num_entities(Entity_kind::FACE,
+                                            Entity_type::ALL);
+  //  face_cell_ids_.resize(nfaces, {-1, -1});  // I think intel 15 barfs
+  //                                            // if I do this
+  std::array<int, 2> iniarr = {-1, -1};
+  face_cell_ids_.resize(nfaces, iniarr);
+  
+  int ncells = basicmesh_ptr_->num_entities(Entity_kind::CELL,
+                                            Entity_type::ALL);
+  for (int c = 0; c < ncells; c++) {
+    std::vector<int> cfaces;
+    std::vector<int> cfdirs;
+    basicmesh_ptr_->cell_get_faces_and_dirs(c, &cfaces, &cfdirs);
+    for (auto const& f : cfaces) {
+      if (face_cell_ids_[f][0] == -1)
+        face_cell_ids_[f][0] = c;
+      else
+        face_cell_ids_[f][1] = c;
+    }
+  }
+}
+
+
+// Flag entities on exterior boundaries
+template <typename BasicMesh>
+void AuxMeshTopology<BasicMesh>::flag_entities_on_exterior_boundary() {  
+
+  // Check and flag all entities, owned or ghost. However, ghost faces that
+  // are the outer faces of the ghost layer of cells will be incorrectly
+  // tagged as being exterior faces because they will have only one (ghost)
+  // cell attached. We expect that this won't be a problem since we won't
+  // have to query these faces anyway but if it is, then we will have to
+  // do an exchange of information across nodes
+
+  int ncells = basicmesh_ptr_->num_entities(Entity_kind::CELL,
+                                            Entity_type::ALL);
+  int nfaces = basicmesh_ptr_->num_entities(Entity_kind::FACE,
+                                            Entity_type::ALL);
+  int nnodes = basicmesh_ptr_->num_entities(Entity_kind::NODE,
+                                            Entity_type::ALL);
+  
+  cell_on_exterior_boundary_.resize(ncells, false);
+  face_on_exterior_boundary_.resize(nfaces, false);
+  node_on_exterior_boundary_.resize(nnodes, false);
+
+  for (int f = 0; f < nfaces; f++) {
+    std::vector<int> fcells;
+    basicmesh_ptr_->face_get_cells(f, Entity_type::ALL, &fcells);
+
+    if (fcells.size() == 1) {
+      face_on_exterior_boundary_[f] = true;
+      cell_on_exterior_boundary_[fcells[0]] = true;
+      
+      // if the face is on an exterior boundary, all its nodes are too
+      std::vector<int> fnodes;
+      basicmesh_ptr_->face_get_nodes(f, &fnodes);
+      for (auto const &n : fnodes)
+        node_on_exterior_boundary_[n] = true;
+    }
+  }
+}
 
 //! side coordinates in 1D
 template<typename BasicMesh>
@@ -1919,7 +2040,6 @@ void AuxMeshTopology<BasicMesh>::cell_get_coordinates(int const cellid,
   for (int n = 0; n < ncnodes; ++n)
     basicmesh_ptr_->node_get_coordinates(cnodes[n], &((*pplist)[n]));
 }
-
 
 
 }  // namespace Portage

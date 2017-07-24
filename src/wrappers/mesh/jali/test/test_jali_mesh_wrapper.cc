@@ -397,6 +397,66 @@ TEST(Jali_Mesh_Wrapper, Get_Neighbor_Cells) {
 }
 
 /*!
+  @brief Unit test for getting entities on the exterior boundary
+ */
+TEST(Jali_Mesh_Wrapper, Get_Exterior_Flag) {
+  Jali::MeshFactory mf(MPI_COMM_WORLD);
+  std::shared_ptr<Jali::Mesh> mesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2, 2, 2);
+  ASSERT_TRUE(mesh != NULL);
+  Portage::Jali_Mesh_Wrapper mesh_wrapper(*mesh);
+
+  int nfaces = mesh_wrapper.num_entities(Portage::Entity_kind::FACE,
+                                         Portage::Entity_type::ALL);
+  for (int f = 0; f < nfaces; f++) {
+    std::vector<int> fcells;
+    mesh_wrapper.face_get_cells(f, Portage::Entity_type::ALL, &fcells);
+    if (mesh_wrapper.on_exterior_boundary(Portage::Entity_kind::FACE, f))
+      ASSERT_EQ(1, fcells.size());
+    else
+      ASSERT_EQ(2, fcells.size());
+  }
+
+  int ncells = mesh_wrapper.num_entities(Portage::Entity_kind::CELL,
+                                         Portage::Entity_type::ALL);
+  for (int c = 0; c < ncells; c++) {
+    // if this is an exterior cell, it must have at least one exterior face    
+    std::vector<int> cfaces;
+    std::vector<int> cfdirs;
+    mesh_wrapper.cell_get_faces_and_dirs(c, &cfaces, &cfdirs);
+    bool exterior_face_found = false;
+    for (auto const &f : cfaces) {
+      if (mesh_wrapper.on_exterior_boundary(Portage::Entity_kind::FACE, f)) {
+        exterior_face_found = true;
+        break;
+      }
+    }
+    if (mesh_wrapper.on_exterior_boundary(Portage::Entity_kind::CELL, c))
+      ASSERT_TRUE(exterior_face_found);
+    else
+      ASSERT_TRUE(!exterior_face_found);
+  }
+
+  int nnodes = mesh_wrapper.num_entities(Portage::Entity_kind::NODE,
+                                         Portage::Entity_type::ALL);
+  for (int n = 0; n < nnodes; n++) {
+    // If this is an exterior node, it must have at least one exterior cell
+    // If its an interior node, it may still have an exterior cell
+    // coonnected to it - so we can't check for that. We would have to check
+    // for faces connected to the node but thats not done here
+    std::vector<int> nodecorners;
+    mesh_wrapper.node_get_corners(n, Portage::Entity_type::ALL, &nodecorners);
+    bool exterior_cell_found = false;
+    for (auto const &cn : nodecorners) {
+      int c = mesh_wrapper.corner_get_cell(cn);
+      if (mesh_wrapper.on_exterior_boundary(Portage::Entity_kind::CELL, c)) 
+        exterior_cell_found = true;
+    }
+    if (mesh_wrapper.on_exterior_boundary(Portage::Entity_kind::NODE, n))
+      ASSERT_TRUE(exterior_cell_found);
+  }                                            
+}
+
+/*!
   @brief Unit test for 5-tet hex decomposition
  */
 TEST(Jali_Mesh_Wrapper, Decompose_Cell_Into_Tets) {
