@@ -274,12 +274,14 @@ template<size_t Dimension>
     double compute_quadratic_field(Portage::Point<Dimension> coord) {
   double val = 0.0;
   for (size_t i = 0; i < Dimension; i++) val += coord[i]*coord[i];
+  return val;
 }
 
 template<size_t Dimension>
     double compute_cubic_field(Portage::Point<Dimension> coord) {
   double val = 0.0;
   for (size_t i = 0; i < Dimension; i++) val += coord[i]*coord[i]*coord[i];
+  return val;
 }
 
 
@@ -329,10 +331,10 @@ TEST_F(DriverTest1DScatter, 1D_QuadraticFieldQuadraticBasisScatter) {
 
 
 
-// TEST_F(DriverTest2D, 2D_ConstantFieldUnitaryBasis) {
-//    unitTest<Portage::SearchSimplePoints, Portage::Meshfree::Basis::Unitary>
-//        (compute_constant_field<2>, 0.0);
-// }
+TEST_F(DriverTest2D, 2D_ConstantFieldUnitaryBasis) {
+  unitTest<Portage::SearchSimplePoints, Portage::Meshfree::Basis::Unitary>
+      (compute_constant_field<2>, 0.0);
+}
 
 //TEST_F(DriverTest2D, 2D_LinearFieldUnitaryBasis) {
 //  unitTest<Portage::SearchSimplePoints, Portage::Meshfree::Basis::Unitary>
@@ -365,7 +367,6 @@ TEST_F(DriverTest2DScatter, 2D_QuadraticFieldQuadraticBasisScatter) {
 //  unitTest<Portage::SearchSimplePoints, Portage::Meshfree::Basis::Quadratic>
 //      (compute_quadratic_field<2>, 0.0);
 //}
-
 
 
 TEST_F(DriverTest3D, 3D_ConstantFieldUnitaryBasis) {
