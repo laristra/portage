@@ -1,12 +1,29 @@
-language: cpp
+# Blacklist
+branches:
+  except:
+    - gh-pages
 
-sudo: required
-
-services:
-- docker
+# Dependencies
+addons:
+  apt:
+    packages:
+      - doxygen
+      - doxygen-doc
+      - doxygen-latex
+      - doxygen-gui
+      - graphviz
 
 script:
-  - cp -vr docker ${HOME}/docker
-  - cd ../../
-  - mv -v ${TRAVIS_REPO_SLUG} $HOME/docker
-  - docker build -t ${TRAVIS_REPO_SLUG}:latest ${HOME}/docker/
+  - mkdir build
+  - cd build
+  - cmake -D ENABLE_DOXYGEN=True ..
+  - make doxygen
+
+after_success:
+  - cd $TRAVIS_BUILD_DIR
+  - mkdir code_docs
+  - cd code_docs
+  - git clone -b gh-pages https://git@github.com/laristra/portage.git  
+
+#  - chmod +x generateDocsAndDeploy.sh
+#  - ./generateDocsAndDeploy.sh
