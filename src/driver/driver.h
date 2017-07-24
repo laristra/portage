@@ -683,7 +683,7 @@ class Driver {
       MeshWrapperDual<Flat_Mesh_Wrapper<>> sourceDualFlat(source_mesh_flat);
 
       if (distributed) {
-#ifndef PORTAGE_SERIAL_ONLY
+#ifdef ENABLE_MPI 
         // Create flat wrappers to distribute source cells
         gettimeofday(&begin_timeval, 0);
 
@@ -733,7 +733,7 @@ class Driver {
 
       if (distributed) {
 
-#ifndef PORTAGE_SERIAL_ONLY
+#ifdef ENABLE_MPI 
         // Get an instance of the desired intersect algorithm type
         const Intersect<MeshWrapperDual<Flat_Mesh_Wrapper<>>, MeshWrapperDual<TargetMesh_Wrapper>>
             intersect(sourceDualFlat, targetDualWrapper);

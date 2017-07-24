@@ -621,7 +621,7 @@ public:
   }
 
   //! Get global id
-  int get_global_id(size_t id, entity_kind_t const kind) const
+  /*int get_global_id(size_t id, entity_kind_t const kind) const
   {
      if (kind == entity_kind_t::NODE)
      {
@@ -637,7 +637,7 @@ public:
      }
      else
        return 0; 
-  }
+  }*/
 
   //============================================================================
   // Private Members
