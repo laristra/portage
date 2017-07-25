@@ -55,6 +55,10 @@ set(search_HEADERS
     PARENT_SCOPE
 )
 
+if (nanoflann_FOUND)
+  list(APPEND search_HEADERS search_kdtree_nanoflann.h)
+endif (nanoflann_FOUND)
+
 # Add source files
 #set(search_SOURCES
 #    search_simple.cc
@@ -80,6 +84,7 @@ if(ENABLE_UNIT_TESTS)
       POLICY MPI
       THREADS 1)
   endif (Jali_DIR)
+
   cinch_add_unit(search_simple_points_test
     SOURCES search_simple_points_test.cc
     LIBRARIES portage 
@@ -90,5 +95,14 @@ if(ENABLE_UNIT_TESTS)
     LIBRARIES portage
     POLICY MPI
     THREADS 1)
+
+  if (nanoflann_FOUND)
+    cinch_add_unit(test_search_kdtree_nanoflann
+      SOURCES test_search_kdtree_nanoflann.cc
+      LIBRARIES portage
+      POLICY MPI
+      THREADS 1)
+  endif (nanoflann_FOUND)
+
 endif(ENABLE_UNIT_TESTS)
 
