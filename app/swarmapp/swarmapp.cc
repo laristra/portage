@@ -62,6 +62,7 @@ POSSIBILITY OF SUCH DAMAGE.
 #include "portage/swarm/swarm.h"
 #include "portage/swarm/swarm_state.h"
 #include "portage/search/search_simple_points.h"
+#include "portage/search/search_points_by_cells.h"
 #include "portage/accumulate/accumulate.h"
 #include "portage/estimate/estimate.h"
 #ifdef HAVE_NANOFLANN
@@ -81,6 +82,7 @@ using Portage::SearchSimplePoints;
 #ifdef HAVE_NANOFLANN
 using Portage::Search_KDTree_Nanoflann;
 #endif
+using Portage::SearchPointsByCells;
 
 
 //////////////////////////////////////////////////////////////////////
@@ -270,7 +272,7 @@ int main(int argc, char** argv) {
   d.run(false);
 #else
   SwarmDriver<
-    SearchSimplePoints,
+    SearchPointsByCells,
     Accumulate,
     Estimate,
     2,

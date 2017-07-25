@@ -60,10 +60,10 @@ if (nanoflann_FOUND)
 endif (nanoflann_FOUND)
 
 # Add source files
-#set(search_SOURCES
-#    search_simple.cc
-#    PARENT_SCOPE
-#)
+set(search_SOURCES
+    pairs.cc
+    PARENT_SCOPE
+)
 
 # Add unit test
 if(ENABLE_UNIT_TESTS)
