@@ -51,13 +51,11 @@ if (Jali_DIR)
         )
 endif (Jali_DIR)
 
-#if (FleCSI_DIR)
 if (ENABLE_FleCSI)
     set(flecsi_wrapper_headers
         mesh/flecsi/flecsi_mesh_wrapper.h
         state/flecsi/flecsi_state_wrapper.h
         )
-#endif (FleCSI_DIR)
 endif ()
 
 set(wrappers_HEADERS
@@ -105,15 +103,18 @@ if (ENABLE_UNIT_TESTS)
                      THREADS 1)
    endif (Jali_DIR)
 
-   #if (FleCSI_DIR)
     if (ENABLE_FleCSI)
       cinch_add_unit(flecsi_2d
                      SOURCES mesh/flecsi/test/flecsi_2d.cc
                      LIBRARIES portage ${FleCSI_LIBRARIES} ${FleCSISP_LIBRARIES})
+      
+      cinch_add_unit(flecsi_3d
+                     SOURCES mesh/flecsi/test/flecsi_3d.cc
+                     LIBRARIES portage ${FleCSI_LIBRARIES} ${FleCSISP_LIBRARIES})
+
       #cinch_add_unit(test_flecsi_mesh_wrapper
       #               SOURCES mesh/flecsi/test/test_flecsi_mesh_wrapper.cc
       #               LIBRARIES portage ${FLECSI_LIBRARIES})
-   #endif (FleCSI_DIR)
     endif ()
 
    # Simple Mesh wrapper
