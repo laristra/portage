@@ -62,6 +62,7 @@ POSSIBILITY OF SUCH DAMAGE.
 #include "portage/swarm/swarm.h"
 #include "portage/swarm/swarm_state.h"
 #include "portage/search/search_simple_points.h"
+#include "portage/search/search_points_by_cells.h"
 #include "portage/accumulate/accumulate.h"
 #include "portage/estimate/estimate.h"
 
@@ -75,6 +76,7 @@ using Portage::Meshfree::SwarmFactory;
 using Portage::Meshfree::Accumulate;
 using Portage::Meshfree::Estimate;
 using Portage::SearchSimplePoints;
+using Portage::SearchPointsByCells;
 
 
 //////////////////////////////////////////////////////////////////////
@@ -240,7 +242,7 @@ int main(int argc, char** argv) {
                                                                       
 
   SwarmDriver<
-    SearchSimplePoints,
+    SearchPointsByCells,
     Accumulate,
     Estimate,
     2,
