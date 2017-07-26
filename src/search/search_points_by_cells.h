@@ -100,10 +100,10 @@ class SearchPointsByCells {
     }
 
     // transpose geometry data to lre namespace structures
-    lre::vpile source_vp(D, sourceSwarm_.num_particles());
-    lre::vpile target_vp(D, targetSwarm_.num_particles());
-    lre::vpile source_extents_vp(D, sourceSwarm_.num_particles());
-    lre::vpile target_extents_vp(D, targetSwarm_.num_particles());
+    Meshfree::Pairs::vpile source_vp(D, sourceSwarm_.num_particles());
+    Meshfree::Pairs::vpile target_vp(D, targetSwarm_.num_particles());
+    Meshfree::Pairs::vpile source_extents_vp(D, sourceSwarm_.num_particles());
+    Meshfree::Pairs::vpile target_extents_vp(D, targetSwarm_.num_particles());
     for (size_t i=0; i<sourceSwarm_.num_particles(); i++ ) {
       Point<D> pt = sourceSwarm_.get_particle_coordinates(i);
       for (size_t m=0; m<D; m++) {
@@ -121,12 +121,12 @@ class SearchPointsByCells {
 
     // h on source
     if (center_ == Meshfree::Scatter) {
-      lre_pairs_ = lre::PairsFind(target_vp, source_vp, source_extents_vp);
+      lre_pairs_ = Meshfree::Pairs::PairsFind(target_vp, source_vp, source_extents_vp);
 
     // h on target
     } else if (center_ == Meshfree::Gather) {
       std::shared_ptr<std::vector<std::list<ulong>>> pairs =
-          lre::PairsFind(source_vp, target_vp, target_extents_vp);
+          Meshfree::Pairs::PairsFind(source_vp, target_vp, target_extents_vp);
       assert(pairs->size() == sourceSwarm_.num_particles());
 
       // for this case we have to transpose the pair lists
@@ -167,7 +167,7 @@ class SearchPointsByCells {
   const TargetSwarmType & targetSwarm_;
   std::shared_ptr<std::vector<Point<D>>> sourceExtents_;
   std::shared_ptr<std::vector<Point<D>>> targetExtents_;
-  std::shared_ptr<std::vector<std::list<lre::ulong>>> lre_pairs_;
+  std::shared_ptr<std::vector<std::list<Meshfree::Pairs::ulong>>> lre_pairs_;
   Meshfree::WeightCenter center_;
 
 }; // class SearchPointsByCells

@@ -150,8 +150,8 @@ class Accumulate {
         
         // Calculate weights and moment matrix (P*W*transpose(P))
         vector<double> weight_val(source_particles.size());
-	Matrix moment(nbasis,nbasis,0.);
-	size_t iA = 0;
+        Matrix moment(nbasis,nbasis,0.);
+        size_t iA = 0;
         for (auto const& particleA : source_particles) {
           weight_val[iA] = weight(particleA, particleB); // save weights for later
           Point<dim> y = source_.get_particle_coordinates(particleA);
@@ -161,13 +161,13 @@ class Accumulate {
               moment[i][j] += basis[i]*basis[j]*weight_val[iA];
             }
           }
-	  iA++;
+          iA++;
         }
 
         auto inverse_moment = moment.inverse();
         
         // Calculate inverse(P*W*transpose(P))*P*W
-	iA = 0;
+        iA = 0;
         for (auto const& particleA : source_particles) {
           vector<double> pair_result(nbasis);
           Point<dim> y = source_.get_particle_coordinates(particleA);
@@ -175,7 +175,7 @@ class Accumulate {
           pair_result = inverse_moment*basis;
           for (size_t i=0; i<nbasis; i++) pair_result[i] *= weight_val[iA];
           result.emplace_back(particleA, pair_result);
-	  iA++;
+          iA++;
         }
         break;
       }

@@ -13,7 +13,9 @@
 #include "pile.hh"
 #include "lretypes.hh"
 
-namespace lre {
+namespace Portage {
+namespace Meshfree {
+namespace Pairs {
 
   //\///////////////////////////////////////////////////////////////////////////
   // pair finding functions
@@ -27,6 +29,8 @@ namespace lre {
       const vpile &x, const vpile &y, const vpile &h,
 		  const contain_type type=CELLS, const bool half_pairs=false);
 
+}
+}
 }
 
 #endif

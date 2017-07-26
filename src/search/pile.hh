@@ -10,7 +10,9 @@
 #include <valarray>
 #include <cassert>
 
-namespace lre {
+namespace Portage {
+namespace Meshfree {
+namespace Pairs {
   using std::vector;
   using std::valarray;
 
@@ -458,6 +460,8 @@ namespace lre {
     dot(r, m1, m2);
     return r;
   }
+}
+}
 }
 
 #endif
