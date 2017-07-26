@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2016, Los Alamos National Security, LLC
+Copyright (c) 2017, Los Alamos National Security, LLC
 All rights reserved.
 
 Copyright 2016. Los Alamos National Security, LLC. This software was produced
@@ -90,7 +90,6 @@ double field_func(int field_order, Portage::Point<D> coord) {
       double rsqr = 0.0;
       for (int i = 0; i < D; i++) 
         rsqr += coord[i]*coord[i];
-      //      value = exp(4*rsqr);
       value = 1.0;
       for (int i = 0; i < D; i++)
         value *= sin(2*M_PI*coord[i]);
@@ -119,8 +118,8 @@ struct example_properties {
   example_properties(const int field_order, const int estimation_order)
       : field_order(field_order), estimation_order(estimation_order)
   { }
-  int estimation_order;           // estimation order in example
-  int field_order;     // order of the field to map
+  int estimation_order;   // estimation order in example
+  int field_order;        // order of the field to map
 };
 
 // Use this to add new problems.  If needed, we can extend the
@@ -186,9 +185,6 @@ int main(int argc, char** argv) {
   example_num = atoi(argv[1]);
   n_source = atoi(argv[2]);
   n_target = atoi(argv[3]);
-
-  // Even though Simple_Mesh is serial only, we still need to initialize MPI
-  // for other Portage code.
 
 #ifdef ENABLE_MPI
   int mpi_init_flag;

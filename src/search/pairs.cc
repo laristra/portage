@@ -1,4 +1,8 @@
-// $Header: /cvsroot/loreli1/loreli/src/estimator/pairs.cc,v 1.11 2008/07/17 23:30:38 gad Exp $
+/*---------------------------------------------------------------------------~*
+ * Copyright (c) 2017 Los Alamos National Security, LLC
+ * All rights reserved.
+ *---------------------------------------------------------------------------~*/
+
 
 #include <climits>
 
