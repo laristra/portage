@@ -18,6 +18,9 @@ ARG TRAVIS_REPO_SLUG
 ARG TRAVIS_COMMIT
 ARG TRAVIS_OS_NAME
 
+# for docs
+ARG DOCS
+
 COPY portage /home/portage/portage
 
 USER root
@@ -36,6 +39,9 @@ RUN cd .. && if [ ${COVERAGE} ]; then \
     $HOME/.local/bin/codecov; \
   fi; \
 fi && cd -
+RUN if [ ${DOCS} ]; then \
+  make doxygen;
+fi
 RUN cd .. && if [ ${SONARQUBE} ]; then \
   sonar-scanner \
     -Dsonar.projectKey=${TRAVIS_REPO_SLUG##*/} \
