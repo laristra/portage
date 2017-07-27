@@ -41,7 +41,7 @@ if [[ $build_type == "debug" ]]; then
 elif [[ $build_type == "thrust" ]]; then
   extra_flags="-D ENABLE_THRUST=True"
 elif [[ $build_type == "flecsi" ]]; then
-  extra_flags="-D CMAKE_PREFIX_PATH="$flecsi_install_prefix;$flecsisp_install_prefix" \
+  extra_flags="-D CMAKE_PREFIX_PATH='$flecsi_install_prefix;$flecsisp_install_prefix' \
                -D ENABLE_FleCSI=True \
                -D ENABLE_MPI=False"
 elif [[ $build_type == "coverage" ]]; then
