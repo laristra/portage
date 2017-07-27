@@ -136,7 +136,10 @@ public:
   }
 
 
-
+  int get_data_size(const entity_kind_t on_what, const std::string var_name) const 
+  {
+    raise_runtime_error( "get_data_size not implemented yet!" );
+  }
 #if 0
 
   /*!

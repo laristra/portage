@@ -621,6 +621,12 @@ public:
   }
 
   //! Get global id
+  int get_global_id(size_t id, entity_kind_t const kind) const
+  {
+    std::cerr<<"get_global_id not implemented yet!\n";  
+    return 0;
+  }  
+
   /*int get_global_id(size_t id, entity_kind_t const kind) const
   {
      if (kind == entity_kind_t::NODE)

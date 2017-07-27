@@ -7,7 +7,6 @@
 // \brief Tests general features of the portage mesh wrapper.
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifdef HAVE_PORTAGE
 
 // user includes
 #include "flecsi_3d_test.h"
@@ -178,5 +177,4 @@ TEST_F(flecsi_3d, unstruct)
 
 #endif // HAVE_EXODUS
 
-#endif // HAVE_PORTAGE
 
