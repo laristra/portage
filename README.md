@@ -136,11 +136,12 @@ FLECSISP_INSTALL_PREFIX=/usr/local/codes/ngc/private/flecsi-sp/gcc5.3_openmpi1.1
 mkdir build-flecsi
 cd build-flecsi
 cmake \
-    -D CMAKE_C_COMPILER=`which gcc` \
-    -D CMAKE_CXX_COMPILER=`which g++` \
+    -D CMAKE_C_COMPILER=`which mpicc` \
+    -D CMAKE_CXX_COMPILER=`which mpiCC` \
     -D CMAKE_BUILD_TYPE=Debug \
     -D ENABLE_UNIT_TESTS=True \
     -D ENABLE_APP_TESTS=True \
+    -D ENABLE_MPI=True \
     -D ENABLE_FleCSI=True \
     -D CMAKE_PREFIX_PATH="$FLECSI_INSTALL_PREFIX;$FLECSISP_INSTALL_PREFIX" \
     ..
