@@ -30,8 +30,8 @@ if [[ $compiler == "intel" ]]; then
 elif [[ $compiler == "gcc" ]]; then
   cxxmodule=gcc/5.3.0
   jali_install_dir=$NGC/private/jali/${jali_version}-gcc-5.3.0-openmpi-${openmpi_version}
-  flecsi_install_prefix=$NGC/private/flecsi/gcc5.3_openmpi10.3.0
-  flecsisp_install_prefix=$NGC/private/flecsi-sp/gcc5.3_openmpi10.3.0
+  flecsi_install_prefix=$NGC/private/flecsi/gcc5.3_openmpi1.10.3
+  flecsisp_install_prefix=$NGC/private/flecsi-sp/gcc5.3_openmpi1.10.3
 fi
   
 cmake_build_type=Release

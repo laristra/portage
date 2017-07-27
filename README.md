@@ -131,8 +131,8 @@ verison of FleCSI on Varan.  An example is below:
 export MODULEPATH=""
 . /opt/local/packages/Modules/default/init/sh
 module load gcc/5.3.0 openmpi/1.10.3 cmake
-FLECSI_INSTALL_PREFIX=/usr/local/codes/ngc/private/flecsi/gcc5.3_openmpi10.3.0
-FLECSISP_INSTALL_PREFIX=/usr/local/codes/ngc/private/flecsi-sp/gcc5.3_openmpi10.3.0
+FLECSI_INSTALL_PREFIX=/usr/local/codes/ngc/private/flecsi/gcc5.3_openmpi1.10.3
+FLECSISP_INSTALL_PREFIX=/usr/local/codes/ngc/private/flecsi-sp/gcc5.3_openmpi1.10.3
 mkdir build-flecsi
 cd build-flecsi
 cmake \
