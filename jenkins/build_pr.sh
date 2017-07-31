@@ -35,7 +35,7 @@ exit
 JALI_VERSION=0.9.8
 
 # Where to find Jali's TPLs:
-TPL_INSTALL_PREFIX=/usr/local/codes/ngc/private/jali-tpl/1.0.9-intel-16.0.3-openmpi-1.10.3
+TPL_INSTALL_PREFIX=/usr/local/codes/ngc/private/jali-tpl/1.0.9-intel-17.0.1-openmpi-1.10.5
 
 # General NGC include directory
 NGC_INCLUDE_DIR=/usr/local/codes/ngc/private/include
@@ -47,8 +47,8 @@ export SHELL=/bin/sh
 
 export MODULEPATH=""
 . /opt/local/packages/Modules/default/init/sh
-module load intel/16.0.3
-module load openmpi/1.10.3
+module load intel/17.0.1
+module load openmpi/1.10.5
 
 echo $WORKSPACE
 cd $WORKSPACE

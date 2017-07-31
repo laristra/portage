@@ -102,8 +102,10 @@ Execute the following from the portage root directory:
 # varan
 export MODULEPATH=""
 . /opt/local/packages/Modules/default/init/sh
-module load intel/16.0.3 openmpi/1.10.3 cmake
-JALI_INSTALL_PREFIX=/usr/local/codes/ngc/private/jali/0.9.8-intel-16.0.3-openmpi-1.10.3
+module load intel/17.0.1 openmpi/1.10.5 cmake
+JALI_INSTALL_PREFIX=/usr/local/codes/ngc/private/jali/0.9.8-intel-17.0.1-openmpi-1.10.5
+LAPACKE_INCLUDE_DIR=/usr/local/codes/ngc/private/lapack/lapack-3.7.1-intel-17.0.1/LAPACKE/include
+LAPACKE_LIBRARY_DIR=/usr/local/codes/ngc/private/lapack/lapack-3.7.1-intel-17.0.1
 mkdir build
 cd build
 cmake \
@@ -115,6 +117,8 @@ cmake \
     -D ENABLE_MPI=True \
     -D ENABLE_MPI_CXX_BINDINGS=True \
     -D Jali_DIR:FILEPATH=$JALI_INSTALL_PREFIX/lib \
+    -D PC_LAPACKE_NCLUDE_DIRS=$LAPACKE_INCLUDE_DIR \
+    -D PC_LAPACKE_LIBRARY_DIRS=$LAPACKE_LIBRARY_DIR \
     ..
 make -j2
 ctest -j2 --output-on-failure
@@ -133,6 +137,8 @@ export MODULEPATH=""
 module load gcc/5.3.0 openmpi/1.10.3 cmake
 JALI_INSTALL_PREFIX=/usr/local/codes/ngc/private/jali/0.9.8-gcc-5.3.0-openmpi-1.10.3
 FLECSI_INSTALL_DIR=/usr/local/codes/ngc/private/flecsi-gcc
+LAPACKE_INCLUDE_DIR=/usr/local/codes/ngc/private/lapack/lapack-3.7.1-gcc-5.3.0/LAPACKE/include
+LAPACKE_LIBRARY_DIR=/usr/local/codes/ngc/private/lapack/lapack-3.7.1-gcc-5.3.0
 mkdir build-flecsi
 cd build-flecsi
 cmake \
@@ -145,6 +151,8 @@ cmake \
     -D ENABLE_MPI_CXX_BINDINGS=True \
     -D Jali_DIR:FILEPATH=$JALI_INSTALL_PREFIX/lib \
     -D FLECSI_INSTALL_DIR:FILEPATH=$FLECSI_INSTALL_DIR \
+    -D PC_LAPACKE_NCLUDE_DIRS=$LAPACKE_INCLUDE_DIR \
+    -D PC_LAPACKE_LIBRARY_DIRS=$LAPACKE_LIBRARY_DIR \
     ..
 make -j2
 ctest -j2 --output-on-failure

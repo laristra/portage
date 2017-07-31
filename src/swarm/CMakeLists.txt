@@ -39,47 +39,34 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGE.
 ]]
 
-#-----------------------------------------------------------------------------~#
 
-
-#-----------------------------------------------------------------------------~#
 
 # Add header files
-set(support_HEADERS
-    portage.h
-    Vector.h
-    Point.h
-    Matrix.h
-    weight.h
-    basis.h
-    PARENT_SCOPE
-)
+set (swarm_HEADERS
+  swarm.h
+  swarm_state.h
+  PARENT_SCOPE
+  )
 
 # Add source files
-set(support_SOURCES
-    PARENT_SCOPE
-)
+set (simple_mesh_SOURCES
+  PARENT_SCOPE
+  )
 
 # Unit tests
 
-if (ENABLE_UNIT_TESTS) 
+if (ENABLE_UNIT_TESTS)
 
-  cinch_add_unit(test_matfuncs
-    SOURCES test/test_matfuncs.cc
-    LIBRARIES ${LAPACKE_LIBRARIES}
-    POLICY MPI
-    THREADS 1)
-
-  cinch_add_unit(test_weight
-    SOURCES test/test_weight.cc
+  cinch_add_unit(test_swarm
+    SOURCES test/test_swarm.cc
     POLICY MPI
     THREADS 1
     )
 
-  cinch_add_unit(test_basis
-    SOURCES test/test_basis.cc
+  cinch_add_unit(test_swarm_state
+    SOURCES test/test_swarm_state.cc
     POLICY MPI
     THREADS 1
     )
 
-endif(ENABLE_UNIT_TESTS)
+endif (ENABLE_UNIT_TESTS)

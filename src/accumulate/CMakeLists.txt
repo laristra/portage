@@ -39,47 +39,27 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGE.
 ]]
 
-#-----------------------------------------------------------------------------~#
 
-
-#-----------------------------------------------------------------------------~#
 
 # Add header files
-set(support_HEADERS
-    portage.h
-    Vector.h
-    Point.h
-    Matrix.h
-    weight.h
-    basis.h
-    PARENT_SCOPE
-)
+set (accumulate_HEADERS
+  accumulate.h
+  PARENT_SCOPE
+  )
 
 # Add source files
-set(support_SOURCES
-    PARENT_SCOPE
-)
+set (accumulate_SOURCES
+  PARENT_SCOPE
+  )
 
 # Unit tests
 
-if (ENABLE_UNIT_TESTS) 
+if (ENABLE_UNIT_TESTS)
 
-  cinch_add_unit(test_matfuncs
-    SOURCES test/test_matfuncs.cc
-    LIBRARIES ${LAPACKE_LIBRARIES}
-    POLICY MPI
-    THREADS 1)
-
-  cinch_add_unit(test_weight
-    SOURCES test/test_weight.cc
+  cinch_add_unit(test_accumulate
+    SOURCES test/test_accumulate.cc
     POLICY MPI
     THREADS 1
     )
 
-  cinch_add_unit(test_basis
-    SOURCES test/test_basis.cc
-    POLICY MPI
-    THREADS 1
-    )
-
-endif(ENABLE_UNIT_TESTS)
+endif (ENABLE_UNIT_TESTS)

@@ -148,6 +148,16 @@ if (Jali_DIR)
 
 endif (Jali_DIR)
 
+#------------------------------------------------------------------------------#
+# Configure LAPACKE
+#------------------------------------------------------------------------------#
+
+find_package(LAPACKE REQUIRED)
+if (LAPACKE_FOUND) 
+   include_directories(${LAPACKE_INCLUDE_DIRS})
+   add_definitions("-DHAVE_LAPACKE")
+endif (LAPACKE_FOUND)
+
 #-----------------------------------------------------------------------------
 # General NGC include directory information
 #-----------------------------------------------------------------------------

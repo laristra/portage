@@ -1,5 +1,5 @@
-#[[
-Copyright (c) 2016, Los Alamos National Security, LLC
+/*
+Copyright (c) 2017, Los Alamos National Security, LLC
 All rights reserved.
 
 Copyright 2016. Los Alamos National Security, LLC. This software was produced
@@ -37,49 +37,49 @@ BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER
 IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGE.
-]]
+ */
 
-#-----------------------------------------------------------------------------~#
+/*
+ * test_swarm.cc
+ *
+ *  Created on: Apr 19, 2017
+ *      Author: gad
+ *      Updated: rao
+ */
+
+#include <cstdlib>
+#include <ctime>
+#include <algorithm>
+
+#include "portage/swarm/swarm.h"
+
+#include "gtest/gtest.h"
+
+TEST(Swarm, Sanity_Check) {
+  std::vector<Portage::Point<3>> points(10);
+
+  srand(time(NULL));
+  for (int i = 0; i < 10; i++)
+    points[i] = Portage::Point<3>(((double)rand()/RAND_MAX),
+                                  ((double)rand()/RAND_MAX),
+                                  ((double)rand()/RAND_MAX));
+
+  auto p_ptr = std::make_shared<std::vector<Portage::Point<3>>>(points);
+                               
+  Portage::Meshfree::Swarm<3> swarm(p_ptr);
+
+  // Did we get back 10 points?
+  ASSERT_EQ(10, swarm.num_owned_particles());
+
+  // Check the bounding box and center of the hexahedral "cell"
+  // surrounding each point
+
+  for (int i = 0; i < 10; i++) {
+    // Are the point coordinates correct?
+    auto pt = swarm.get_particle_coordinates(i);
+    for (size_t j=0; j<3; j++) ASSERT_EQ(pt[j], points[i][j]);
+  }
+
+}  // TEST
 
 
-#-----------------------------------------------------------------------------~#
-
-# Add header files
-set(support_HEADERS
-    portage.h
-    Vector.h
-    Point.h
-    Matrix.h
-    weight.h
-    basis.h
-    PARENT_SCOPE
-)
-
-# Add source files
-set(support_SOURCES
-    PARENT_SCOPE
-)
-
-# Unit tests
-
-if (ENABLE_UNIT_TESTS) 
-
-  cinch_add_unit(test_matfuncs
-    SOURCES test/test_matfuncs.cc
-    LIBRARIES ${LAPACKE_LIBRARIES}
-    POLICY MPI
-    THREADS 1)
-
-  cinch_add_unit(test_weight
-    SOURCES test/test_weight.cc
-    POLICY MPI
-    THREADS 1
-    )
-
-  cinch_add_unit(test_basis
-    SOURCES test/test_basis.cc
-    POLICY MPI
-    THREADS 1
-    )
-
-endif(ENABLE_UNIT_TESTS)
