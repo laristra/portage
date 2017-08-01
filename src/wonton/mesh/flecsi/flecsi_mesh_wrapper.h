@@ -12,7 +12,6 @@
 //#include "flecsale/geom/shapes/geometric_shapes.h"
 //#include "flecsale/utils/errors.h"
 
-
 // library includes
 #include <portage/support/portage.h>
 #include <portage/support/Point.h>

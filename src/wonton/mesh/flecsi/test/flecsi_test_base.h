@@ -9,6 +9,7 @@
 #pragma once
 
 // user includes
+#include "flecsi-sp.h"
 #include "flecsi-sp/burton/burton.h"
 
 #include "portage/wonton/mesh/flecsi/flecsi_mesh_wrapper.h"
