@@ -78,7 +78,7 @@ template<size_t dim> class Swarm {
       points_ = make_shared<vector<Point<dim>>>(npoints_);
       Point<dim> centroid;
       for (size_t i=0; i<npoints_; i++) {
-        Portage::cell_centroid<dim>(wrapper, i, &centroid);
+        wrapper.cell_centroid<dim>(i, &centroid);
         (*points_)[i] = centroid;
       }
 

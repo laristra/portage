@@ -124,9 +124,6 @@ TEST(Flat_Mesh_Wrapper, basic_routines_3d) {
   mesh_flat.cell_centroid(0, &centroid);
   for (int d=0; d<3; ++d)
     ASSERT_EQ(0.25, centroid[d]);
-  Portage::cell_centroid<3>(mesh_flat, 0, &centroid);
-  for (int d=0; d<3; ++d)
-    ASSERT_EQ(0.25, centroid[d]);
 
   // Test cell and node radius
   double cradius, nradius;

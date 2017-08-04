@@ -574,28 +574,12 @@ private:
 
 }; // class Flat_Mesh_Wrapper
 
-
-//! Get centroid of a cell
-template<size_t D>
-void cell_centroid(Portage::Flat_Mesh_Wrapper<double> &wrapper,
-                   int const cellid, Point<D> *centroid) {
-  std::vector<int> nodes;
-  wrapper.cell_get_nodes(cellid, &nodes);
-  *centroid = Point<D>();
-  Point<D> node;
-  for (int i=0; i<nodes.size(); i++) {
-    wrapper.node_get_coordinates(nodes[i], &node);
-    for (int j=0; j<D; j++) (*centroid)[j] += node[j];
-  }
-  for (int j=0; j<D; j++) (*centroid)[j] /= nodes.size();
-}
-
 //! Get radius of minimum-enclosing-sphere of a cell centered at the centroid
 template<size_t D>
 void cell_radius(Portage::Flat_Mesh_Wrapper<double> &wrapper,
                  int const cellid, double *radius) {
   Point<D> centroid;
-  cell_centroid<D>(wrapper, cellid, &centroid);
+  wrapper.cell_centroid<D>(cellid, &centroid);
   std::vector<int> nodes;
   wrapper.cell_get_nodes(cellid, &nodes);
   Point<D> arm, node;
