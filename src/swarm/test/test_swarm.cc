@@ -115,7 +115,7 @@ TEST(Swarm, Build_Flat_Mesh_Wrapper_Cell) {
   for (size_t ijk=0; ijk<8; ijk++) {
     auto pt = swarmc.get_particle_coordinates(ijk);
     Portage::Point<3> cent;
-    Portage::cell_centroid<3>(mesh_flat, ijk, &cent);
+    mesh_flat.cell_centroid<3>(ijk, &cent);
     for (int i=0; i<3; i++) ASSERT_TRUE(pt[i] == cent[i]);
   }
 }
@@ -140,13 +140,13 @@ TEST(Swarm, Build_Flat_Mesh_Wrapper_Node) {
   Portage::Meshfree::Swarm<3> swarmn(mesh_flat, Portage::NODE);
 
   // test size
-  ASSERT_TRUE(swarmn.num_particles() == 12);
+  ASSERT_TRUE(swarmn.num_particles() == 27);
 
   // test points
-  for (size_t ijk=0; ijk<8; ijk++) {
+  for (size_t ijk=0; ijk<27; ijk++) {
     auto pt = swarmn.get_particle_coordinates(ijk);
     Portage::Point<3> node;
-    mesh_flat.get_coordinates( ijk, &node);
+    mesh_flat.node_get_coordinates( ijk, &node);
     for (int i=0; i<3; i++) ASSERT_TRUE(pt[i] == node[i]);
   }
 }
