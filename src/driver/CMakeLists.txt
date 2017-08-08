@@ -79,7 +79,7 @@ if (ENABLE_UNIT_TESTS)
 
    cinch_add_unit(test_driver_swarm
      SOURCES test/test_driver_swarm
-     LIBRARIES portage
+     LIBRARIES portage ${LAPACKE_LIBRARIES}
      POLICY MPI
      THREADS 1)
 

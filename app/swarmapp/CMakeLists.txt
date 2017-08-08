@@ -47,7 +47,7 @@ POSSIBILITY OF SUCH DAMAGE.
 
 # Swarm test
 add_executable(swarmapp swarmapp.cc)
-target_link_libraries(swarmapp portage ${EXTRA_LIBS})
+target_link_libraries(swarmapp portage ${EXTRA_LIBS} ${LAPACKE_LIBRARIES})
 
 
 #TCMalloc option
