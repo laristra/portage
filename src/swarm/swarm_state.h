@@ -143,7 +143,7 @@ class SwarmState {
 //=======================================================================
 
 template<size_t dim>
-SwarmState<dim>::SwarmState<dim>(Portage::Flat_Mesh_Wrapper<double> &mesh,
+SwarmState<dim>::SwarmState(Portage::Flat_Mesh_Wrapper<double> &mesh,
                                  Portage::Entity_kind entity,
 				 Portage::Flat_State_Wrapper<double> &state)
   : swarm_(Swarm<dim>(mesh, entity))
