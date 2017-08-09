@@ -107,8 +107,10 @@ class SwarmState {
   /*! @brief Get number of points in swarm
    * @return number of points
    */
-  size_t get_size(){return swarm_.num_owned_particles();}
+  int get_size(){return swarm_.num_owned_particles();}
 
+  /*! @brief Get the names of all integer fields
+   */
   std::vector<std::string> field_names_int() {
     std::vector<std::string> result;
     for (auto iter=int_field_map_.begin(); iter!=int_field_map_.end(); iter++) {
@@ -117,6 +119,8 @@ class SwarmState {
     return result;
   }
 
+  /*! @brief Get the names of all double fields
+   */
   std::vector<std::string> field_names_double() {
     std::vector<std::string> result;
     for (auto iter=dbl_field_map_.begin(); iter!=dbl_field_map_.end(); iter++) {
@@ -139,16 +143,24 @@ class SwarmState {
 //=======================================================================
 
 template<size_t dim>
-SwarmState<dim>::SwarmState(Portage::Flat_Mesh_Wrapper<double> &mesh,
-                            Portage::Entity_kind entity,
-                            Portage::Flat_State_Wrapper<double> &state)
-  : swarm_(mesh, entity)
+SwarmState<dim>::SwarmState<dim>(Portage::Flat_Mesh_Wrapper<double> &mesh,
+                                 Portage::Entity_kind entity,
+				 Portage::Flat_State_Wrapper<double> &state)
+  : swarm_(Swarm<dim>(mesh, entity))
 {
-  std::vector<std::string> dnames = state.field_names<double>();
+  if (dim != mesh.space_dimension()) {
+    throw std::runtime_error(string("dimension mismatch"));
+  }
+
+  std::vector<std::string> dnames;
+  state.get_names(entity, dnames);
 
   for (auto iter=dnames.begin(); iter!=dnames.end(); iter++) {
-    DblVecPtr data;
-    state.get_data(entity, *iter, data);
+    double *datap;
+    state.get_data(entity, *iter, &datap);
+    int npart = swarm_.num_owned_particles();
+    DblVecPtr data(new vector<double>(npart));
+    for (size_t i=0; i<npart; i++) (*data)[i] = datap[i];
     add_field(*iter, data);
   }
 }
