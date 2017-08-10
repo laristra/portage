@@ -858,6 +858,25 @@ class AuxMeshTopology {
     return cnvol;
   }
 
+  //! Get a decomposition of a 2D cell into simplices
+  void decompose_cell_into_simplices(int cellid,
+               std::vector<std::array<Portage::Point<2>, 3>> *tcoords) const {
+    decompose_cell_into_tris(cellid, tcoords);
+  }
+
+  //! Get a decomposition of a 3D cell into simplices
+  void decompose_cell_into_simplices(int cellid,
+               std::vector<std::array<Portage::Point<3>, 4>> *tcoords) const {
+    // needs us to say if it is a planar hex or not - in general, its not
+    decompose_cell_into_tets(cellid, tcoords, false);
+  }
+
+
+  //! Get a decomposition of a 2D cell into triangles
+  void decompose_cell_into_tris(int cellid,
+		std::vector<std::array<Portage::Point<2>, 3>> *tcoords) const {
+    sides_get_coordinates(cellid, tcoords);
+  }
 
   //! Get the simplest possible decomposition of a 3D cell into tets.
 
@@ -1045,7 +1064,23 @@ class AuxMeshTopology {
       wedge_get_coordinates(wedges[i], &((*wcoords)[i]), true);
   }
 
-  //! Get coordinates of side in 3D
+  //! Get coordinates of all sides in a 2D cell
+
+  void sides_get_coordinates(int cellID,
+      std::vector<std::array<Point<2>, 3>> *scoords) const {
+    assert(basicmesh_ptr_->space_dimension() == 2);
+    assert(sides_requested_);
+
+    std::vector<int> sides;
+    cell_get_sides(cellID, &sides);
+    int nsides = sides.size();
+
+    scoords->resize(nsides);
+    for (int i = 0; i < nsides; ++i)
+      side_get_coordinates(sides[i], &((*scoords)[i]), true);
+  }
+
+  //! Get coordinates of all sides in a 3D cell
 
   void sides_get_coordinates(int cellID,
       std::vector<std::array<Point<3>, 4>> *scoords) const {
@@ -1131,6 +1166,23 @@ class AuxMeshTopology {
         pplist->emplace_back(wcoords[3]);
       }
     }
+  }
+
+  // Get the coordinates of the wedges of the dual mesh in 2D
+
+  void dual_wedges_get_coordinates(int nodeid,
+      std::vector<std::array<Point<2>, 3>> *wcoords) const {
+#ifdef DEBUG
+    assert(nodeid < num_entities(NODE, ALL));
+#endif
+    assert(wedges_requested_);
+    std::vector<int> wedges;
+    node_get_wedges(nodeid, ALL, &wedges);
+    int nwedges = wedges.size();
+    wcoords->resize(nwedges);
+
+    for (int i = 0; i < nwedges; ++i)
+      wedge_get_coordinates(wedges[i], &((*wcoords)[i]), true);
   }
 
   // Get the coordinates of the wedges of the dual mesh in 3D
