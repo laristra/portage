@@ -237,7 +237,6 @@ class MeshWrapperDual {  // cellid is the dual cell (i.e. node) id
     w_.cell_centroid(dualnodeID, centroid);
   }
 
-  typedef std::array<Portage::Point<3>, 4> wedgeCoords;
   /*!
     @brief Get the coordinates of the points that make up the wedge.
 
@@ -248,17 +247,38 @@ class MeshWrapperDual {  // cellid is the dual cell (i.e. node) id
     @param[in,out] wcoords (x,y,z) coordinates of each of the four points that
     comprise the tetrahedron that is the wedge.
   */
+  template <int D>
   void wedges_get_coordinates(int const dualcellid,
-                              std::vector<wedgeCoords> *wcoords) const {
+              std::vector<std::array<Portage::Point<D>, D+1>> *wcoords) const {
     w_.dual_wedges_get_coordinates(dualcellid, wcoords);
+  }
+
+  //! Get a decomposition of a 2D dual cell into simplices
+  void decompose_cell_into_simplices(int dualcellid,
+               std::vector<std::array<Portage::Point<2>, 3>> *tcoords) const {
+    decompose_cell_into_tris(dualcellid, tcoords);
+  }
+
+  //! Get a decomposition of a 3D dual cell into simplices
+  void decompose_cell_into_simplices(int dualcellid,
+               std::vector<std::array<Portage::Point<3>, 4>> *tcoords) const {
+    // needs us to say if it is a planar hex or not - in general, its not
+    decompose_cell_into_tets(dualcellid, tcoords, false);
+  }
+
+  //! Get a decomposition of a 2D cell into tris
+  // For a dual mesh, that means returning a list of wedges
+  void decompose_cell_into_tris(int const dualcellid,
+               std::vector<std::array<Portage::Point<2>, 3>> *tcoords) const {
+    wedges_get_coordinates<2>(dualcellid, tcoords);
   }
 
   // Get the simplest possible decomposition of a 3D cell into tets.
   // For a dual mesh, that means returning a list of wedges.
   void decompose_cell_into_tets(int const dualcellid,
-                                std::vector<wedgeCoords> *tcoords,
+               std::vector<std::array<Portage::Point<3>, 4>> *tcoords,
                                 const bool planar_hex) const {
-    wedges_get_coordinates(dualcellid, tcoords);
+    wedges_get_coordinates<3>(dualcellid, tcoords);
   }
 
  private:
@@ -267,7 +287,9 @@ class MeshWrapperDual {  // cellid is the dual cell (i.e. node) id
 
 // Forward definitions
 template <typename SearchType> struct SearchFunctor;
-template <typename IntersectType> struct IntersectFunctor;
+template <int D, typename IntersectType,
+          typename SourceMeshWrapper,
+          typename TargetMeshWrapper> struct IntersectFunctor;
 
 /*!
   @class Driver "driver.h"
@@ -282,7 +304,7 @@ template <typename IntersectType> struct IntersectFunctor;
   manager implementation that provides certain functionality.
 */
 template <template <int, class, class> class Search,
-          template <class, class> class Intersect,
+          class Intersect,
           template<class, class, class, Entity_kind, long> class Interpolate,
           int Dim,
           class SourceMesh_Wrapper,
@@ -528,9 +550,11 @@ class Driver {
 
 #ifdef ENABLE_MPI
         // Get an instance of the desired intersect algorithm type
-        const Intersect<Flat_Mesh_Wrapper<>, TargetMesh_Wrapper>
-            intersect(source_mesh_flat, target_mesh_);
-        IntersectFunctor<Intersect<Flat_Mesh_Wrapper<>, TargetMesh_Wrapper>> intersectfunctor(&intersect);
+        const Intersect intersect;
+        IntersectFunctor<Dim, Intersect,
+                         Flat_Mesh_Wrapper<>,
+                         TargetMesh_Wrapper>
+            intersectfunctor(&intersect, source_mesh_flat, target_mesh_);
 
         Portage::transform(target_mesh_.begin(CELL, PARALLEL_OWNED),
                            target_mesh_.end(CELL, PARALLEL_OWNED),
@@ -542,10 +566,9 @@ class Driver {
       else {
 
         // Get an instance of the desired intersect algorithm type
-        const Intersect<SourceMesh_Wrapper, TargetMesh_Wrapper>
-            intersect(source_mesh_, target_mesh_);
-        IntersectFunctor<Intersect<SourceMesh_Wrapper, TargetMesh_Wrapper>>
-            intersectfunctor(&intersect);
+        const Intersect intersect;
+        IntersectFunctor<Dim, Intersect, SourceMesh_Wrapper, TargetMesh_Wrapper>
+            intersectfunctor(&intersect, source_mesh_, target_mesh_);
 
         // For each cell in the target mesh get a list of candidate-weight
         // pairings (in a traditional mesh, not particle mesh, the weights
@@ -735,9 +758,11 @@ class Driver {
 
 #ifndef PORTAGE_SERIAL_ONLY
         // Get an instance of the desired intersect algorithm type
-        const Intersect<MeshWrapperDual<Flat_Mesh_Wrapper<>>, MeshWrapperDual<TargetMesh_Wrapper>>
-            intersect(sourceDualFlat, targetDualWrapper);
-        IntersectFunctor<Intersect<MeshWrapperDual<Flat_Mesh_Wrapper<>>, MeshWrapperDual<TargetMesh_Wrapper>>> intersectfunctor(&intersect);
+        const Intersect intersect;
+        IntersectFunctor<Dim, Intersect,
+                         MeshWrapperDual<Flat_Mesh_Wrapper<>>,
+                         MeshWrapperDual<TargetMesh_Wrapper>>
+            intersectfunctor(&intersect, sourceDualFlat, targetDualWrapper);
 
         Portage::transform(target_mesh_.begin(NODE, PARALLEL_OWNED),
                            target_mesh_.end(NODE, PARALLEL_OWNED),
@@ -749,12 +774,11 @@ class Driver {
       else {
 
         // Get an instance of the desired intersect algorithm type
-        const Intersect<MeshWrapperDual<SourceMesh_Wrapper>,
-                        MeshWrapperDual<TargetMesh_Wrapper>>
-              intersect(sourceDualWrapper, targetDualWrapper);
-        IntersectFunctor<Intersect<MeshWrapperDual<SourceMesh_Wrapper>,
-                                   MeshWrapperDual<TargetMesh_Wrapper>>>
-              intersectfunctor(&intersect);
+        const Intersect intersect;
+        IntersectFunctor<Dim, Intersect,
+                         MeshWrapperDual<SourceMesh_Wrapper>,
+                         MeshWrapperDual<TargetMesh_Wrapper>>
+            intersectfunctor(&intersect, sourceDualWrapper, targetDualWrapper);
 
         // For each cell in the target mesh get a list of candidate-weight
         // pairings (in a traditional mesh, not particle mesh, the weights
@@ -925,20 +949,29 @@ struct SearchFunctor {
   @struct IntersectFunctor "driver.h"
   @brief This functor is used inside a Portage::transform() inside
   Driver::run() to actually do the intersection of the target cell with candidate source cells
+  @tparam D         Dimension of problem
   @tparam IsectType The type of intersect method (e.g. IntersectClipper).
-//amh: FIXME!  this is an intersect adapter which takes an intersection for two cells and changes it to an intersect for multiple cells
-
+  @tparam SourceMeshWrapper   Portage compatible wrapper class for source mesh
+  @tparam TargetMeshWrapper   Portage compatible wrapper class for target mesh
 */
-template <typename IsectType>
+template <int D,
+          typename IsectType,
+          typename SourceMeshWrapper,
+          typename TargetMeshWrapper = SourceMeshWrapper>
 struct IntersectFunctor {
   const IsectType* intersect_;    ///< intersect method (e.g. IntersectR2D)
+  const SourceMeshWrapper & source_mesh_;
+  const TargetMeshWrapper & target_mesh_;
 
   /*!
     @brief Constructor.
     @param[in] intersect The intersect method to use (e.g. IntersectR2D)
   */
-  IntersectFunctor(const IsectType* intersect)
-      : intersect_(intersect)
+  IntersectFunctor(const IsectType* intersect,
+                   const SourceMeshWrapper & source_mesh,
+                   const TargetMeshWrapper & target_mesh)
+      : intersect_(intersect),
+        source_mesh_(source_mesh), target_mesh_(target_mesh)
   {}
 
   /*!
@@ -947,53 +980,90 @@ struct IntersectFunctor {
     This is called from within a Portage::transform() operation that iterates
     over the cells in a target mesh.
 
-    @param[in] targetCellindex   The cell ID in the target mesh that this functor
-    is currently operating on.
-
+    @param[in] targetCellindex   The cell ID in the target mesh that this functor is currently operating on.
     @param[in] candidates   Candidates to intersect with
-
     @return paired list of contributing cells and corresponding moment vectors
   */
 
   std::vector<Weights_t> operator() (int const targetCellIndex,
-                                         std::vector<int> const & candidates) {
+				     std::vector<int> const & candidates) {
 
-    // Intersect target cell with cells of source mesh and return the
-    // moments of intersection
-    std::vector<std::vector<std::vector<double>>> moments(candidates.size());
+    // Declaration fine for serial and OpenMP, won't work with CUDA
+    Portage::vector<Portage::vector<double>> moments(candidates.size());
+
+    // first extract a simplicial (tri/tet) decomposition of the
+    // targetCell and the candidate cells
+    std::vector<std::array<Portage::Point<D>, D+1>> tcoords;
+
+    // vector of tri/tet coordinates for target cell arranged linearly
+    // in the form required by the intersect functor
+    std::vector<Portage::Point<D>> tcoords1;
+
+    target_mesh_.decompose_cell_into_simplices(targetCellIndex, &tcoords);
+    if (D == 2) {
+      int ntris = tcoords.size();
+      for (int i = 0; i < ntris; i++) {
+        for (int j = 0; j < 3; j++)
+          tcoords1.push_back(tcoords[i][j]);
+      }
+    } else if (D == 3) {
+      int ntets = tcoords.size();
+      for (int i = 0; i < ntets; i++) {
+        for (int j = 0; j < 4; j++)
+          tcoords1.push_back(tcoords[i][j]);
+      }
+    }
+
+    // vector of vector of tri/tet coordinates for candidate source
+    // cells arranged linearly in the form required by the intersect
+    // functor
+    std::vector<std::vector<Portage::Point<D>>> scoords1_vec(candidates.size());
+    for (int s = 0; s < candidates.size(); s++) {
+      int sourceCellIndex = candidates[s];
+      std::vector<std::array<Point<D>, D+1>> scoords;
+      source_mesh_.decompose_cell_into_simplices(sourceCellIndex, &scoords);
+      if (D == 2) {
+        int ntris = scoords.size();
+        scoords1_vec[s].resize(4*ntris);
+        for (int i = 0, k = 0; i < ntris; i++) {
+          for (int j = 0; j < 3; j++)
+            scoords1_vec[s][k++] = scoords[i][j];
+        }
+      } else if (D == 3) {
+        int ntets = scoords.size();
+        scoords1_vec[s].resize(4*ntets);
+        for (int i = 0, k = 0; i < ntets; i++) {
+          for (int j = 0; j < 4; j++)
+            scoords1_vec[s][k++] = scoords[i][j];
+        }
+      }
+    }
+
+    // ONCE WE UPGRADE TO BOOST 1.61 or higher (which contains
+    // constant_iterator) we can merge these two together (will need
+    // to edit support/portage.h)
+
+#ifdef THRUST
+    // thrust::constant_iterator repeatedly returns a pointer to the
+    // same object without having to make copies of the object
+
+    thrust::transform(scoords1_vec.begin(), scoords1_vec.end(),
+                      thrust::make_constant_iterator(tcoords1),
+                      moments, *intersect_);
+#else
     for (int i = 0; i < candidates.size(); i++)
-      moments[i] = (*intersect_)(candidates[i], targetCellIndex);
+      moments[i] = (*intersect_)(scoords1_vec[i], tcoords1);
+#endif
 
     // Compute new value on target cell based on source mesh
     // values and intersection moments
 
-    // Each cell-cell intersection can result in multiple
-    // disjointed pieces if one of the cells in non-convex.
-    // therefore, there may be more than one set of moments per
-    // cell pair. Transform the 3 nested std::vector form to 2
-    // nested std::vector form with duplicate candidate entries if
-    // need be
+    std::vector<Weights_t> source_cells_and_weights(candidates.size());
 
-    int nalloc = 0;
     for (int i = 0; i < candidates.size(); ++i) {
-      nalloc += moments[i].size();  // number of moment sets generated by
-      //                            // intersection of target cell with
-      //                            // candidate cell i
-    }
-    std::vector<Weights_t> source_cells_and_weights(nalloc);
-
-    int ninserted = 0;
-    for (int i = 0; i < candidates.size(); ++i) {
-      std::vector<std::vector<double>> & candidate_moments = moments[i];
-      int num_moment_sets = candidate_moments.size();
-      for (int j = 0; j < num_moment_sets; j++) {
-        //        (source_cells_and_weights[ninserted]).entityID = candidates[i];
-        //        (source_cells_and_weights[ninserted]).weights = candidate_moments[j];
-        Weights_t & this_wt = source_cells_and_weights[ninserted];
-        this_wt.entityID = candidates[i];
-        this_wt.weights = candidate_moments[j];
-        ++ninserted;
-      }
+      Weights_t & this_wt = source_cells_and_weights[i];
+      this_wt.entityID = candidates[i];
+      this_wt.weights = moments[i];
     }
 
     return source_cells_and_weights;
