@@ -39,47 +39,37 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGE.
 ]]
 
-#-----------------------------------------------------------------------------~#
 
 
-#-----------------------------------------------------------------------------~#
+#------------------------------------------------------------------------------#
+# Add a rule to build the executable
+#------------------------------------------------------------------------------#
 
-# Add header files
-set(support_HEADERS
-    portage.h
-    Vector.h
-    Point.h
-    Matrix.h
-    weight.h
-    basis.h
-    PARENT_SCOPE
-)
+# Swarm test
+add_executable(swarmapp swarmapp.cc)
+target_link_libraries(swarmapp portage ${EXTRA_LIBS})
 
-# Add source files
-set(support_SOURCES
-    PARENT_SCOPE
-)
 
-# Unit tests
+#TCMalloc option
+set(ENABLE_TCMALLOC TRUE CACHE BOOL "Use TCMalloc")
+if(ENABLE_TCMALLOC)
+  set(TCMALLOC_LIB "${HOME}" CACHE STRING "Set the TCMalloc library")
 
-if (ENABLE_UNIT_TESTS) 
+  target_link_libraries(swarmapp ${TCMALLOC_LIB})
+endif(ENABLE_TCMALLOC)
 
-  cinch_add_unit(test_matfuncs
-    SOURCES test/test_matfuncs.cc
-    LIBRARIES ${LAPACKE_LIBRARIES}
-    POLICY MPI
-    THREADS 1)
+# Profiling option (to allow pausing and resuming profiling during execution)
+set(ENABLE_PROFILE FALSE CACHE BOOL "Enable VTune Profiling")
+if(ENABLE_PROFILE)
+  set(VTUNE_INCLUDE_DIR "${HOME}" CACHE PATH "Set the locaiton of VTune include")
+  set(VTUNE_LIB "${HOME}" CACHE STRING "Set the VTune library")
 
-  cinch_add_unit(test_weight
-    SOURCES test/test_weight.cc
-    POLICY MPI
-    THREADS 1
-    )
+  include_directories(${VTUNE_INCLUDE_DIR})
 
-  cinch_add_unit(test_basis
-    SOURCES test/test_basis.cc
-    POLICY MPI
-    THREADS 1
-    )
+  target_link_libraries(swarmapp ${VTUNE_LIB})
+endif(ENABLE_PROFILE)
 
-endif(ENABLE_UNIT_TESTS)
+
+#if (ENABLE_APP_TESTS)
+#  add_subdirectory(test)
+#endif (ENABLE_APP_TESTS)
