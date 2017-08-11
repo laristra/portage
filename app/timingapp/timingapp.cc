@@ -54,6 +54,9 @@ POSSIBILITY OF SUCH DAMAGE.
 #include <cmath>
 
 #include <mpi.h>
+#ifdef _OPENMP
+#include <omp.h>
+#endif
 
 #ifdef ENABLE_PROFILE
 #include "ittnotify.h"
@@ -76,15 +79,12 @@ using Portage::argsort;
 using Portage::reorder;
 
 /*!
-  @file portageapp_jali.cc
-  @brief A simple application that drives our remap routines.
+  @file timingapp.cc
+  @brief An application to do scaling studies on portage.
 
-  This program is used to showcase our capabilities with various types
-  of remap operations (e.g. interpolation order) on various types of
-  meshes (2d or 3d; node-centered or zone-centered) of some simple
-  linear or quadratic data.  For the cases of remapping linear data
-  with a second-order interpolator, the L2 norm output at the end
-  should be identically zero.
+  This program is an expanded version of portageapp_jali used to
+  drive scaling studies on our remap operations.  By default, strong
+  scaling is done; weak scaling can be enabled by command-line option.
  */
 
 //////////////////////////////////////////////////////////////////////
@@ -94,10 +94,10 @@ double const const_val = 73.98;   // some random number
 
 int print_usage() {
   std::cout << std::endl;
-  std::cout << "Usage: portageapp " <<
+  std::cout << "Usage: timingapp " <<
       "--dim=2|3 --nsourcecells=N --ntargetcells=M --conformal=y|n \n" << 
-      "--entity_kind=cell|node --field_order=0|1|2 \n" <<
-      "--remap_order=1|2 --output_results=y|n \n\n";
+      "--reverse_ranks=y|n --weak_scale=y|n --entity_kind=cell|node \n" <<
+      "--field_order=0|1|2 --remap_order=1|2 --output_results=y|n \n\n";
 
   std::cout << "--dim (default = 2): spatial dimension of mesh\n\n";
   std::cout << "--nsourcecells (NO DEFAULT): Num cells in each " <<
@@ -106,6 +106,17 @@ int print_usage() {
       "coord dir in target mesh\n\n";
 
   std::cout << "--conformal (default = y): 'y' means mesh boundaries match\n\n";
+
+  std::cout << "--reverse_ranks (default = n): " <<
+      "Applicable only for distributed runs.\n";
+  std::cout << "  if 'y', then a greater mismatch is created " <<
+      "between source and target meshes \n";
+  std::cout << "  by reversing the assignment order of source mesh partitions to MPI ranks\n\n";
+
+  std::cout << "--weak_scale (default = n): " <<
+      "Applicable only for distributed runs.\n";
+  std::cout << "  if 'y', then nsourcecells and ntargetcells are used " <<
+      "as cell counts _per_MPI_rank_ \n";
 
   std::cout << "--entity_kind (default = cell): entities on which remapping is to be done\n\n";
 
@@ -132,6 +143,8 @@ int print_usage() {
 
 int create_meshes(int const dim, int const n_source, int const n_target,
                   bool const conformal_meshes,
+                  bool const reverse_source_ranks,
+                  bool const weak_scale,
                   std::shared_ptr<Jali::Mesh> *sourceMesh,
                   std::shared_ptr<Jali::Mesh> *targetMesh,
                   MPI_Comm mpicomm) {
@@ -146,6 +159,8 @@ int create_meshes(int const dim, int const n_source, int const n_target,
   mf.partitioner(Jali::Partitioner_type::BLOCK);
 
   if (dim == 2) {
+    // TODO:  Modify 2D mesh generation to have all the bells and
+    // whistles of 3D
     // 2d quad input mesh from (0,0) to (1,1) with n_source x n_source zones
     *sourceMesh = mf(0.0, 0.0, 1.0, 1.0, n_source, n_source);
 
@@ -159,27 +174,67 @@ int create_meshes(int const dim, int const n_source, int const n_target,
       *targetMesh = mf(0.0, 0.0, 1.0+1.5*dx, 1.0+1.5*dx, n_target, n_target);
     }
   } else if (dim == 3) {
-    // 3d hex input mesh from (0,0,0) to (1,1,1) with n_source x
-    // n_source x n_source zones
+    // For the source mesh, we manually decompose the source instead
+    // of relying on the Jali decomposition.  This gives us more
+    // control of sizes per rank, and also allows us to reverse the
+    // ranks of the source mesh if requested.
+    // The following decomposition assumes that the number of ranks
+    // is a power of two.
 
-    *sourceMesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, n_source, n_source,
-                     n_source);
+    int logn = log2(1.0f*numpe) + 0.01f;
+    int dimx = 1 << (logn / 3 + (logn % 3 >= 1));
+    int dimy = 1 << (logn / 3 + (logn % 3 >= 2));
+    int dimz = 1 << (logn / 3);
+
+    // Set up a local communicator so that we can define mesh partitions
+    // explicitly on each rank without Jali distributing it for us
+    MPI_Group world_group, local_group;
+    MPI_Comm_group(MPI_COMM_WORLD, &world_group);
+    int ranks[1];  ranks[0] = rank;
+    MPI_Group_incl(world_group, 1, ranks, &local_group);
+    MPI_Comm local_comm;
+    MPI_Comm_create(MPI_COMM_WORLD, local_group, &local_comm);
+    Jali::MeshFactory mf_local(local_comm);
+
+    mf_local.included_entities({Jali::Entity_kind::ALL_KIND});
+    mf_local.boundary_ghosts_requested(false);
+    mf_local.num_ghost_layers_distmesh(1);
+
+    // Compute the local partition of the source mesh based on the rank;
+    // n_source_local[xyz] is the number of cells in each dimension in
+    // each partition
+    double source_stepx = 1.0 / dimx;
+    double source_stepy = 1.0 / dimy;
+    double source_stepz = 1.0 / dimz;
+    int rrank = reverse_source_ranks ? numpe - rank - 1 : rank;
+    int source_x = rrank % dimx;
+    int source_y = (rrank / dimx) % dimy;
+    int source_z = rrank / (dimx * dimy);
+
+    int n_source_localx = n_source / (weak_scale ? 1 : dimx);;
+    int n_source_localy = n_source / (weak_scale ? 1 : dimy);;
+    int n_source_localz = n_source / (weak_scale ? 1 : dimz);;
+
+    *sourceMesh = mf_local(source_stepx*source_x, source_stepy*source_y,
+                           source_stepz*source_z, source_stepx*(source_x+1),
+                           source_stepy*(source_y+1), source_stepz*(source_z+1),
+                           n_source_localx, n_source_localy, n_source_localz);
+
+    // n_target[xyz] is the global number of cells in each dimension
+
+    int n_targetx = n_target * (weak_scale ? dimx : 1);
+    int n_targety = n_target * (weak_scale ? dimy : 1);
+    int n_targetz = n_target * (weak_scale ? dimz : 1);
 
     if (conformal_meshes) {
-      // 3d hex output mesh from (0,0,0) to (1,1,1) with n_target
-      // x n_target x n_target zones
-
-      *targetMesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, n_target, n_target,
-                       n_target);
+      *targetMesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0,
+                       n_targetx, n_targety, n_targetz);
     } else {
-      // 3d hex output mesh from (0,0,0) to
-      // (1+1.5dx,1+1.5dx,1+1.5dx) with
-      // (n_target)x(n_target)x(n_target) zones and dx equal to
-      // the sourceMesh grid spacing
-
-      double dx = 1.0/static_cast<double>(n_target);
-      *targetMesh = mf(0.0, 0.0, 0.0, 1.0+1.5*dx, 1.0+1.5*dx, 1.0+1.5*dx,
-                       n_target, n_target, n_target);
+      double dx = 1.0/static_cast<double>(n_targetx);
+      double dy = 1.0/static_cast<double>(n_targety);
+      double dz = 1.0/static_cast<double>(n_targetz);
+      *targetMesh = mf(0.0, 0.0, 0.0, 1.0+1.5*dx, 1.0+1.5*dy, 1.0+1.5*dz,
+                       n_targetx, n_targety, n_targetz);
     }
   }
 
@@ -212,6 +267,8 @@ int main(int argc, char** argv) {
   int interp_order = 1;
   int poly_order = 0;
   bool dump_output = true;
+  bool reverse_source_ranks = false;
+  bool weak_scale = false;
   Jali::Entity_kind entityKind = Jali::Entity_kind::CELL;
 
   if (argc < 3) return print_usage();
@@ -243,6 +300,10 @@ int main(int argc, char** argv) {
       n_target = stoi(valueword);
     else if (keyword == "conformal")
       conformal = (valueword == "y");
+    else if (keyword == "reverse_ranks")
+      reverse_source_ranks = (numpe > 1 && valueword == "y");
+    else if (keyword == "weak_scale")
+      weak_scale = (numpe > 1 && valueword == "y");
     else if (keyword == "remap_order") {
       interp_order = stoi(valueword);
       assert(interp_order > 0 && interp_order < 3);
@@ -257,7 +318,11 @@ int main(int argc, char** argv) {
 
   if (rank == 0)
   {
-    std::cout << "starting portageapp...\n";
+    std::cout << "starting timingapp...\n";
+    std::cout << "   Running on " << numpe << " MPI ranks\n";
+#ifdef _OPENMP
+    std::cout << "   Running on " << omp_get_max_threads() << " threads\n";
+#endif
     std::cout << "   Problem is in " << dim << " dimensions\n";
     std::cout << "   Source mesh has " << n_source << " cells in each dir\n";
     std::cout << "   Target mesh has " << n_target << " cells in each dir\n";
@@ -272,8 +337,9 @@ int main(int argc, char** argv) {
   std::shared_ptr<Jali::Mesh> sourceMesh;
   std::shared_ptr<Jali::Mesh> targetMesh;
 
-  create_meshes(dim, n_source, n_target, conformal, &sourceMesh, &targetMesh,
-                MPI_COMM_WORLD);
+  create_meshes(dim, n_source, n_target, conformal,
+                reverse_source_ranks, weak_scale,
+                &sourceMesh, &targetMesh, MPI_COMM_WORLD);
 
   // Wrappers for interfacing with the underlying mesh data structures.
   Portage::Jali_Mesh_Wrapper sourceMeshWrapper(*sourceMesh);
@@ -628,6 +694,7 @@ int main(int argc, char** argv) {
         entstr + "_f" + std::to_string(static_cast<long long>(poly_order)) + "_r" +
         std::to_string(static_cast<long long>(interp_order));
     if (!conformal) fieldfilename = fieldfilename + "_nc";
+    if (reverse_source_ranks) fieldfilename = fieldfilename + "_rev";
     fieldfilename = fieldfilename + ".txt";
     if (numpe > 1) {
       int maxwidth = static_cast<long long>(std::ceil(std::log10(numpe)));
@@ -645,7 +712,7 @@ int main(int argc, char** argv) {
       fout << lgid[i] << " " << lvalues[i] << std::endl;
   }  // if (dump_output)
 
-  std::printf("finishing portageapp...\n");
+  std::printf("finishing timingapp...\n");
 
   MPI_Finalize();
 }
