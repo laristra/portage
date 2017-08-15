@@ -65,10 +65,38 @@ To obtain a copy of portage and its submodules, clone recursively:
 git clone --recursive https://github.com/laristra/portage
 ```
 
-# Installation instructions
+### Prerequisites
 
-Below we list copy & paste instructions for several machines. You can easily
-adapt them for other machines.
+portage uses some standard C++14 features, so a fairly modern compiler
+is needed.  We regularly test with intel 17+ or gcc 5.3+, and openmpi
+1.10.3+, however, the code and most tests can be built without MPI
+support.  The build system _requires_ CMake version 3.0+.
+
+The following libraries are also _required_:
+
+- LAPACKE
+- Boost (currently just for counting iterators)
+
+portage provides wrappers for a few existing mesh types.  Building
+support for these is _optional_:
+
+- [Jali](http://github.com/lanl/jali): regularly tested with verison
+  0.9.8.  You will need to set the `Jali_Dir` CMake variable if you
+  wish to build support for Jali and its tests (see examples below).
+- [FleCSI Burton Specialization](http://github.com/laristra/flecsi-sp):
+  the Burton specialization in the `flecsi-sp` repository is built on
+  top of [FleCSI](http://github.com/laristra/flecsi).  You will need
+  both projects to build support for the Burton mesh specialization
+  and its tests.  You will need to set the `FLECSI_INSTALL_DIR` CMake
+  variable, see examples below.
+
+
+### Installation instructions
+
+Below we list copy & paste instructions for several local machines; we
+have a script that parses this README file to execute the examples
+below to ensure they build. You can easily adapt them for other
+machines.
 
 ## Darwin
 
