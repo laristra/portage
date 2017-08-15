@@ -43,6 +43,28 @@ POSSIBILITY OF SUCH DAMAGE.
 [![codecov.io](https://codecov.io/github/laristra/portage/coverage.svg?branch=master)](https://codecov.io/github/laristra/portage/portage?branch=master)
 [![Quality Gate](https://sonarqube.com/api/badges/gate?key=portage%3A%2Fmaster)](https://sonarqube.com/dashboard?id=portage%3A%2Fmaster)
 
+# portage
+
+The portage library provides a framework for general purpose data
+remapping -- between meshes, between particles, or between meshes and
+particles --- in computational physics applications.  Remapping is
+facilitated thorugh the use of user-supplied _wrappers_ around
+meshes/particle swarms with their data, and is broken into three
+phases that operate through the wrappers: _search_ for intersection
+candidates, perform the _intersection_ with candidates, then
+_interpolate_ the results onto the new mesh or particle swarm.
+Algorithms for each of the phases can be customized (e.g. order of
+accuracy of the interpolation) and, throught he wrappers, take
+advantage of hybrid parallelism (MPI+X).
+
+## Getting Started
+
+To obtain a copy of portage and its submodules, clone recursively:
+
+```sh
+git clone --recursive https://github.com/laristra/portage
+```
+
 # Installation instructions
 
 Below we list copy & paste instructions for several machines. You can easily
