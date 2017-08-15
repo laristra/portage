@@ -65,8 +65,8 @@ void test_accumulate(Portage::Meshfree::EstimateType etype,
   const size_t nside = 8;
   const size_t npoints = powl(nside,dim);
   const double deltax = 1./nside;
-  const double smoothing = 2.*deltax;
-  const double jitter = 0.0;
+  const double smoothing = 2.5*deltax;
+  const double jitter = 0.2;
   auto src_pts = make_shared<typename Swarm<dim>::PointVec>(npoints);
   auto tgt_pts = make_shared<typename Swarm<dim>::PointVec>(npoints);
   for (size_t i=0; i<npoints; i++) {

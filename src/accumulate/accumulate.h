@@ -171,18 +171,18 @@ class Accumulate {
           Point<dim> y = source_.get_particle_coordinates(particleA);
           vector<double> basis = Basis::shift<dim>(basis_,x,y);
 
-	  // recast as a Portage::Matrix
-	  Matrix basis_matrix(nbasis,1);
-	  for (size_t i=0; i<nbasis; i++) basis_matrix[i][0] = basis[i];
+          // recast as a Portage::Matrix
+          Matrix basis_matrix(nbasis,1);
+          for (size_t i=0; i<nbasis; i++) basis_matrix[i][0] = basis[i];
 
-	  // solve the linear system
+          // solve the linear system
 #ifdef HAVE_LAPACKE 
           Matrix pair_result_matrix = moment.solve(basis_matrix, "lapack-posv");
 #else
           Matrix pair_result_matrix = moment.solve(basis_matrix);
 #endif
 
-	  for (size_t i=0; i<nbasis; i++) pair_result[i] = pair_result_matrix[i][0]*weight_val[iA];
+          for (size_t i=0; i<nbasis; i++) pair_result[i] = pair_result_matrix[i][0]*weight_val[iA];
           result.emplace_back(particleA, pair_result);
           iA++;
         }
