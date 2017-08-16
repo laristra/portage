@@ -82,7 +82,7 @@ class DriverTest : public ::testing::Test {
 
   //This is the basic test method to be called for each unit test.  It will
   //work for 2-D and 3-D, coincident and non-coincident cell-centered remaps.
-  template <class Intersect,
+  template <template<class, class>class Intersect,
   template<class, class, class, Portage::Entity_kind, long>
   class Interpolate, int Dimension>
   void unitTest(double compute_initial_field(JaliGeometry::Point centroid),
