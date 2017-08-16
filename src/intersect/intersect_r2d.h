@@ -52,7 +52,6 @@ extern "C" {
 #include "r2d.h"
 }
 
-#include "portage/support/portage.h"
 #include "portage/support/Point.h"
 
 
@@ -62,220 +61,161 @@ namespace Portage {
  * \class IntersectR2D <typename C> 2-D intersection algorithm
  */
 
+template <typename SourceMeshType, typename TargetMeshType=SourceMeshType>
 class IntersectR2D {
 
- public:
+public:
 
-  /*! \brief Intersect two polygons and return the first two moments.
-   * \param[in] cellA vector of points of first polygon (or points of triangles of the first polygon)
-   * \param[in] cellB vector of points of second polygon (or points of triangles of the second polygon)
-   * \return vector of moments; area, 1st moment x component, 1st moment y component
-   
-   The polygons may be described by a counterclockwise list of points
-   (no repeated points) or by a list of points representing a
-   triangular decomposition of the polygon. Thus if we send in a list
-   of points p1, p2, p3, p4 we can assume it is quad but if we send in
-   p1, p2, p3, p1, p3, p4 we assume that it is a triangular
-   decomposition of the same quad. The straightforward description is
-   useful for convex polygons and the triangular decomposition when one
-   or both of the polygons are non-convex. NOTE: Both polygon
-   descriptions must use the same convention.
-  */
-  
-  Portage::vector<double>
-  operator()(const Portage::vector<Point<2>> & source_poly,
-             const Portage::vector<Point<2>> & target_poly) const {
+  /// Alias for a collection of Points.
+  typedef std::vector<Portage::Point<2>> Poly; 
+  /// Alias to provide volume and centroid
+  typedef std::pair<double, Portage::Point<2>> Moment;
 
-    /* Check if any point is repeated. If it is, then we assume that we
-       have been given a triangular decomposition of a polygon. We
-       check if any of the first three points are repeated in the rest
-       of the list */
+  /// Constructor taking a source mesh @c s and a target mesh @c t.
+  IntersectR2D(const SourceMeshType &s, const TargetMeshType &t)
+    : sourceMeshWrapper(s), targetMeshWrapper(t) {}
 
-    int npnts1 = source_poly.size();
-    Point<2> p1, p2;
-    bool found = false;
-    for (int i = 0; i < 3 && !found; i++)
-      for (int j = 4; j < npnts1 && !found; j++)
-        if (approxEq(source_poly[i], source_poly[j], 1.0e-20))
-          found = true;
-
-    if (found)
-      return intersect_polytris(source_poly, target_poly);
-    else
-      return intersect_polypnts(source_poly, target_poly);
-  }
-
-
-
-  /*! \brief Intersect two convex polygons described by counterclockwise list of points and return the first two moments.
-   * \param[in] cellA vector of points of first polygon (or points of triangles of the first polygon)
-   * \param[in] cellB vector of points of second polygon (or points of triangles of the second polygon)
-   * \return vector of moments; area, 1st moment x component, 1st moment y component
+  /*! \brief Intersect two cells and return the first two moments.
+   * \param[in] cellA first cell index to intersect
+   * \param[in] cellB second cell index to intersect
+   * \return list of moments; ret[0] == 0th moment; ret[1] == first moment
    */
-  Portage::vector<double>
-  intersect_polypnts(const Portage::vector<Point<2>> & source_poly,
-                     const Portage::vector<Point<2>> & target_poly) const {
-    Portage::vector<double> moments(3, 0.0);
-   
+  std::vector<std::vector<double>> operator() (const int cellA,
+            const int cellB) const {
+    Poly source_poly, target_poly;
+    sourceMeshWrapper.cell_get_coordinates(cellA, &source_poly);
+    targetMeshWrapper.cell_get_coordinates(cellB, &target_poly);
+
+    std::vector<double> moments(3, 0);
+
     const int size1 = source_poly.size();
-    Portage::vector<r2d_rvec2> verts1(size1);
+    std::vector<r2d_rvec2> verts1(size1);
     for (int i=0; i<size1; ++i) {
       verts1[i].xy[0] = source_poly[i][0];
       verts1[i].xy[1] = source_poly[i][1];
     }
-
     // Only do this check in Debug mode. This test is important,
     // otherwise R2D returns invalid results.
-   
-    // THIS COMMENT IS MISLEADING - IF IT'S AFFECTING THE RESULT, IT'S
-    // AN OPERATION NOT A CHECK. AND IF IT'S AN OPERATION THAT CAN GIVE
-    // AN INCORRECT RESULT, IF OMITTED, SHOULDN'T WE ALWAYS DO IT?
-   
 #ifdef DEBUG
     double volume1 = 0.;
-    for (int i=2; i<size1; ++i) {
+    for (int i=2; i<size1; ++i)
       volume1 += r2d_orient(verts1[0], verts1[i-1], verts1[i]);
-    }
-    if (volume1 < 0.0)
-      throw std::runtime_error("source polygon has negative volume");
+    if (volume1 < 0.)
+      throw std::runtime_error("source_poly has negative volume");
 #endif
-   
+
     const int size2 = target_poly.size();
-    Portage::vector<r2d_plane> faces(size2);
-    Portage::vector<r2d_rvec2> verts2(size2);
+    std::vector<r2d_plane> faces(size2);
+    std::vector<r2d_rvec2> verts2(size2);
     for (int i=0; i<size2; ++i) {
       verts2[i].xy[0] = target_poly[i][0];
       verts2[i].xy[1] = target_poly[i][1];
     }
 
-    r2d_poly_faces_from_verts(&faces[0], &verts2[0], size2);
-   
-    // Only do this check in Debug mode. This test is important,
-    // otherwise R2D returns invalid results.
-#ifdef DEBUG
-    double volume2 = 0.;
-    for (int i=2; i<size2; ++i)
-      volume2 += r2d_orient(verts2[0], verts2[i-1], verts2[i]);
-    if (volume2 < 0.)
-      throw std::runtime_error("target_poly has negative volume");
-#endif
-
-    r2d_poly poly;
-    r2d_init_poly(&poly, &verts1[0], size1);
-    // Only do this check in Debug mode:
-#ifdef DEBUG
-    if (r2d_is_good(&poly) == 0)
-      throw std::runtime_error("source_poly: invalid poly");
-#endif
-
-    // clip the first poly against the faces of the second
-    r2d_clip(&poly, &faces[0], size2);
-   
-    // find the moments (up to quadratic order) of the clipped poly
-    const int POLY_ORDER=1;
-    // Only do this check in Debug mode:
-#ifdef DEBUG
-    if (R2D_NUM_MOMENTS(POLY_ORDER) != 3)
-      throw std::runtime_error("Invalid number of moments");
-#endif
-    r2d_real om[R2D_NUM_MOMENTS(POLY_ORDER)];
-    r2d_reduce(&poly, om, POLY_ORDER);
-   
-    // Check that the returned volume is positive (if the volume is zero,
-    // i.e. abs(om[0]) < eps, then it can sometimes be slightly negative,
-    // like om[0] == -1.24811e-16. For this reason we use the condition
-    // om[0] < -eps.
-    if (om[0] < -eps) throw std::runtime_error("Negative volume");
-   
-    for (int j = 0; j < 3; ++j) {
-      moments[j] = om[j];
+    // check for convexity
+    bool convex = true;
+    const double eps=1e-14;
+    for (int i=0; i<size2; ++i) {
+      int iprev = (i == 0 ? size2-1 : i-1);
+      int inext = (i+1 == size2 ? 0 : i+1);
+      if (r2d_orient(verts2[iprev], verts2[i], verts2[inext]) < -eps) {
+        convex = false;
+        break;
+      }
     }
-    return moments;
-  }
 
+    // case 1:  target_poly is convex
+    // can simply use faces of target_poly as clip planes
+    if (convex) {
+      r2d_poly_faces_from_verts(&faces[0], &verts2[0], size2);
 
-  /*! \brief Intersect two possibly non-convex polygons described by a set of triangles and return the first two moments 
-   * \param[in] cellA points of triangles of first polygon (arranged linearly) 
-   * \param[in] cellB points of triangles of second polygon (arranged linearly)
-   * \return vector of moments; area, 1st moment x component, 1st moment y component
-   *
-   * In principle, the intersection of a non-convex polygon with
-   * another (convex or non-convex) polygon may return multiple
-   * disjoint pieces but for now we aggregate their moments and return
-   * it; otherwise, we would have to check with pieces are connected
-   * and which are not or we would have to return a multitude of pieces
-   * corresponding to each triangle-triangle intersection
-   */
-  Portage::vector<double>
-  intersect_polytris(const Portage::vector<Point<2>> & source_poly,
-                     const Portage::vector<Point<2>> & target_poly) const {
-    Portage::vector<double> moments(3, 0.0);
-
-    const int ntris1 = source_poly.size()/3;
-
-    // Only do this check in Debug mode. This test is important,
-    // otherwise R2D returns invalid results.
-   
-    // THIS COMMENT IS MISLEADING - IF IT'S AFFECTING THE RESULT, IT'S
-    // AN OPERATION NOT A CHECK. AND IF IT'S AN OPERATION THAT CAN GIVE
-    // AN INCORRECT RESULT, WHEN OMITTED, SHOULDN'T WE ALWAYS DO IT?
-   
-#ifdef DEBUG
-    double trivolume1 = 0.;
-    for (int i = 0; i < ntris1; ++i) {
-      r2d_rvec2 verts1[3];
-      verts1[0].xy[0] = source_poly[3*i][0];
-      verts1[0].xy[1] = source_poly[3*i][1];
-      verts1[1].xy[0] = source_poly[3*i+1][0];
-      verts1[1].xy[1] = source_poly[3*i+1][1];
-      verts1[2].xy[0] = source_poly[3*i+2][0];
-      verts1[2].xy[1] = source_poly[3*i+2][1];
-      trivolume1 = r2d_orient(verts1[0], verts1[1], verts1[2]);
-      if (trivolume1 < 0.0)
-        throw std::runtime_error("triangle of source polygon has negative volume");
-    }
-#endif
-
-    const int ntris2 = target_poly.size()/3;
-   
-    for (int i = 0; i < ntris2; ++i) {
-      r2d_rvec2 verts2[3];
-      verts2[0].xy[0] = target_poly[3*i][0];
-      verts2[0].xy[1] = target_poly[3*i][1];
-      verts2[1].xy[0] = target_poly[3*i+1][0];
-      verts2[1].xy[1] = target_poly[3*i+1][1];
-      verts2[2].xy[0] = target_poly[3*i+2][0];
-      verts2[2].xy[1] = target_poly[3*i+2][1];
-     
       // Only do this check in Debug mode. This test is important,
-      // otherwise R2D returns invalid results. SEE NOTE ABOVE
+      // otherwise R2D returns invalid results.
 #ifdef DEBUG
-      if (r2d_orient(verts2[0], verts2[1], verts2[2]) < 0.)
-        throw std::runtime_error("target_poly triangle has negative volume");
+      double volume2 = 0.;
+      for (int i=2; i<size2; ++i)
+        volume2 += r2d_orient(verts2[0], verts2[i-1], verts2[i]);
+      if (volume2 < 0.)
+        throw std::runtime_error("target_poly has negative volume");
 #endif
-      r2d_plane faces[3];
-      r2d_poly_faces_from_verts(&faces[0], verts2, 3);
 
-      for (int j = 0; j < ntris1; ++j) {
-        r2d_rvec2 verts1[3];
-        verts1[0].xy[0] = source_poly[3*j][0];
-        verts1[0].xy[1] = source_poly[3*j][1];
-        verts1[1].xy[0] = source_poly[3*j+1][0];
-        verts1[1].xy[1] = source_poly[3*j+1][1];
-        verts1[2].xy[0] = source_poly[3*j+2][0];
-        verts1[2].xy[1] = source_poly[3*j+2][1];
+      r2d_poly poly;
+      r2d_init_poly(&poly, &verts1[0], size1);
+      // Only do this check in Debug mode:
+#ifdef DEBUG
+      if (r2d_is_good(&poly) == 0)
+        throw std::runtime_error("source_poly: invalid poly");
+#endif
+
+      // clip the first poly against the faces of the second
+      r2d_clip(&poly, &faces[0], size2);
+
+      // find the moments (up to quadratic order) of the clipped poly
+      const int POLY_ORDER=1;
+      // Only do this check in Debug mode:
+#ifdef DEBUG
+      if (R2D_NUM_MOMENTS(POLY_ORDER) != 3)
+        throw std::runtime_error("Invalid number of moments");
+#endif
+      r2d_real om[R2D_NUM_MOMENTS(POLY_ORDER)];
+      r2d_reduce(&poly, om, POLY_ORDER);
+
+      // Check that the returned volume is positive (if the volume is zero,
+      // i.e. abs(om[0]) < eps, then it can sometimes be slightly negative,
+      // like om[0] == -1.24811e-16. For this reason we use the condition
+      // om[0] < -eps.
+      if (om[0] < -eps) throw std::runtime_error("Negative volume");
+
+      // Copy moments:
+      for (int j=0; j<3; ++j) {
+        moments[j] = om[j];
+      }
+
+    }  // if convex
+
+    // case 2:  target_poly is non-convex
+    // must divide target_poly into triangles for clipping
+    if (!convex) {
+      Point<2> centroid;
+      targetMeshWrapper.cell_centroid(cellB, &centroid);
+      faces.resize(3);
+      verts2.resize(3);
+
+      for (int i=0; i<size2; ++i) {
+        verts2[0].xy[0] = centroid[0];
+        verts2[0].xy[1] = centroid[1];
+        verts2[1].xy[0] = target_poly[i][0];
+        verts2[1].xy[1] = target_poly[i][1];
+        int inext = (i+1 == size2 ? 0 : i+1);
+        verts2[2].xy[0] = target_poly[inext][0];
+        verts2[2].xy[1] = target_poly[inext][1];
+        if (r2d_orient(verts2[0], verts2[1], verts2[2]) < 0.) {
+#ifdef DEBUG
+					std::cerr << "WARNING: non-convex polygon is incorrectly triangulated (see bug #430)." << std::endl;
+#endif
+          std::swap(verts2[1].xy[0], verts2[2].xy[0]);
+          std::swap(verts2[1].xy[1], verts2[2].xy[1]);
+        }
+
+        // Only do this check in Debug mode. This test is important,
+        // otherwise R2D returns invalid results.
+#ifdef DEBUG
+        if (r2d_orient(verts2[0], verts2[1], verts2[2]) < 0.)
+          throw std::runtime_error("target_wedge has negative volume");
+#endif
+        r2d_poly_faces_from_verts(&faces[0], &verts2[0], 3);
 
         r2d_poly poly;
-        r2d_init_poly(&poly, verts1, 3);
+        r2d_init_poly(&poly, &verts1[0], size1);
         // Only do this check in Debug mode:
 #ifdef DEBUG
         if (r2d_is_good(&poly) == 0)
-          throw std::runtime_error("source_poly: invalid triangle");
+          throw std::runtime_error("source_poly: invalid poly");
 #endif
-     
+
         // clip the first poly against the faces of the second
         r2d_clip(&poly, &faces[0], 3);
-     
+
         // find the moments (up to quadratic order) of the clipped poly
         const int POLY_ORDER=1;
         // Only do this check in Debug mode:
@@ -285,34 +225,37 @@ class IntersectR2D {
 #endif
         r2d_real om[R2D_NUM_MOMENTS(POLY_ORDER)];
         r2d_reduce(&poly, om, POLY_ORDER);
-     
+
         // Check that the returned volume is positive (if the volume is zero,
         // i.e. abs(om[0]) < eps, then it can sometimes be slightly negative,
         // like om[0] == -1.24811e-16. For this reason we use the condition
         // om[0] < -eps.
         if (om[0] < -eps) throw std::runtime_error("Negative volume");
-     
+
         // Accumulate moments:
-        for (int j = 0; j < 3; ++j) {
+        for (int j=0; j<3; ++j) {
           moments[j] += om[j];
         }
-      }  // for j
-    }  // for i
-   
-    return moments;
+
+      } // for i
+    } // if !convex
+
+    std::vector<std::vector<double>> moments_all;
+    moments_all.push_back(moments);
+    return moments_all;
   }
 
-  //! Use default constructor
-  IntersectR2D() = default;
+  IntersectR2D() = delete;
 
   //! Copy constructor (disabled)
   IntersectR2D(const IntersectR2D &) = delete;
- 
+
   //! Assignment operator (disabled)
   IntersectR2D & operator = (const IntersectR2D &) = delete;
 
- private:
-  const double eps = 1e-14;
+private:
+  const SourceMeshType &sourceMeshWrapper;
+  const TargetMeshType &targetMeshWrapper;
 
 }; // class IntersectR2D
 

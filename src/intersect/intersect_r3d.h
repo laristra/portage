@@ -53,7 +53,6 @@ extern "C" {
 }
 
 #include "portage/support/Point.h"
-#include "portage/support/portage.h"
 
 
 namespace Portage {
@@ -62,9 +61,12 @@ namespace Portage {
  * \class IntersectR3D <typename C> 3-D intersection algorithm
  */
 
+template <typename SourceMeshType, typename TargetMeshType=SourceMeshType>
 class IntersectR3D {
- public:
-  IntersectR3D() = default;
+public:
+  IntersectR3D(const SourceMeshType &s, const TargetMeshType &t,
+          const bool planar_hex=false)
+    : sourceMeshWrapper(s), targetMeshWrapper(t), planar_hex_(planar_hex) {}
 
   /*! \brief Intersect two cells and return the first two moments.
    * \param[in] cellA first cell index to intersect
@@ -72,42 +74,43 @@ class IntersectR3D {
    * \return list of moments; ret[0] == 0th moment; ret[1] == first moment
    */
 
-  Portage::vector<double>
-  operator() (const Portage::vector<Point<3>> & source_coords,
-              const Portage::vector<Point<3>> & target_coords) const {
-
+  std::vector<std::vector<double>> operator() (const int cellA,
+            const int cellB) const {
+    std::vector<std::array<Portage::Point<3>, 4>> source_coords, target_coords;
+    sourceMeshWrapper.decompose_cell_into_tets(cellA, &source_coords,
+            planar_hex_);
+    targetMeshWrapper.decompose_cell_into_tets(cellB, &target_coords,
+            planar_hex_);
+    
     // Bounding box of the target cell - will be used to compute
     // epsilon for bounding box check. We could use the source cell
     // coordinates to find the bounds as well but its probably an
     // unnecessary computation (EVEN if the target cell is much
     // smaller than the source cell)
 
-    double target_cell_bounds[6] = {1e99, -1e99, 1e99, -1e99, 1e99, -1e99};
+    std::array<double, 6> target_cell_bounds =  {1e99, -1e99, 1e99, -1e99,
+                                                 1e99, -1e99};
 
-    int nsrctets = source_coords.size()/4;
-    int ntrgtets = target_coords.size()/4;
+    std::vector<double> moments(4, 0);
 
-    Portage::vector<double> moments(4, 0);
+    std::vector<std::array<r3d_plane, 4>> target_tetfaces_all;
+    target_tetfaces_all.reserve(target_coords.size());
+    std::vector<std::array<double, 6>> target_tetbounds_all;
+    target_tetbounds_all.reserve(target_coords.size());
 
-    Portage::vector<r3d_plane> target_tetfaces_all;
-    target_tetfaces_all.reserve(4*ntrgtets);
-    Portage::vector<double> target_tetbounds_all;
-    target_tetbounds_all.reserve(6*ntrgtets);
-
-    for (int tidx = 0; tidx < ntrgtets; tidx++) {
-      r3d_plane faces[4];
-      double bounds[6] = {1e99, -1e99, 1e99, -1e99, 1e99, -1e99};
-      r3d_rvec3 verts2[4];
-      for (int i = 0; i < 4; i++)
-        for (int j = 0; j < 3; j++) {
-          verts2[i].xyz[j] = target_coords[4*tidx+i][j];
+    for (const auto &target_cell_tet : target_coords) {
+      std::array<r3d_plane, 4> faces;
+      std::array<double, 6> bounds = {1e99, -1e99, 1e99, -1e99, 1e99, -1e99};
+      r3d_rvec3 verts2[4];      
+      for (int i=0; i<4; i++)
+        for (int j=0; j<3; j++) {
+          verts2[i].xyz[j] = target_cell_tet[i][j];
           if (bounds[2*j] > verts2[i].xyz[j])
             bounds[2*j] = verts2[i].xyz[j];
           if (bounds[2*j+1] < verts2[i].xyz[j])
             bounds[2*j+1] = verts2[i].xyz[j];
         }
-      target_tetbounds_all.insert(target_tetbounds_all.end(),
-                                  bounds, bounds + 6);
+      target_tetbounds_all.emplace_back(bounds);
 
       for (int j = 0; j < 3; j++) {
         if (target_cell_bounds[2*j] > bounds[2*j])
@@ -124,8 +127,8 @@ class IntersectR3D {
 #endif
 
       r3d_tet_faces_from_verts(&faces[0], verts2);
-      target_tetfaces_all.insert(target_tetfaces_all.end(), faces, faces+4);
-    }  // for tidx
+      target_tetfaces_all.emplace_back(faces);      
+    }
 
     double MAXLEN = -1e99;
     for (int j = 0; j < 3; j++) {
@@ -140,12 +143,12 @@ class IntersectR3D {
     // Now intersect each tet from the source cell against each tet of
     // the target cell (IF their bounding boxes overlap)
 
-    for (int sidx = 0; sidx < nsrctets; sidx++) {
+    for (const auto &source_cell_tet : source_coords) {
       r3d_rvec3 verts1[4];
-      double source_tetbounds[6] =  {1e99, -1e99, 1e99, -1e99, 1e99, -1e99};
-      for (int i = 0; i < 4; i++)
-        for (int j = 0; j < 3; j++)  {
-          verts1[i].xyz[j] = source_coords[4*sidx+i][j];
+      std::array<double, 6> source_tetbounds =  {1e99, -1e99, 1e99, -1e99, 1e99, -1e99};
+      for (int i=0; i<4; i++)
+        for (int j=0; j<3; j++)  {
+          verts1[i].xyz[j] = source_cell_tet[i][j];
           if (source_tetbounds[2*j] > verts1[i].xyz[j])
             source_tetbounds[2*j] = verts1[i].xyz[j];
           if (source_tetbounds[2*j+1] < verts1[i].xyz[j])
@@ -159,11 +162,11 @@ class IntersectR3D {
         throw std::runtime_error("source_wedge has negative volume");
 #endif
 
-      for (int tidx = 0; tidx < ntrgtets; tidx++) {
-        r3d_plane *faces = &(target_tetfaces_all[4*tidx]);
+      int t = 0;
+      for (auto &faces : target_tetfaces_all) {
 
-        const double *target_tetbounds = &(target_tetbounds_all[6*tidx]);
-
+        const std::array<double, 6>& target_tetbounds = target_tetbounds_all[t++];
+        
         // Check if the target and source bounding boxes overlap - bbeps
         // is used to subject touching tets to the full intersection
         // (just in case)
@@ -186,10 +189,10 @@ class IntersectR3D {
 #endif
 
         // clip the first tet against the faces of the second
-        r3d_clip(&poly, faces, 4);
+        r3d_clip(&poly, &faces[0], 4);
 
         // find the moments (up to quadratic order) of the clipped poly
-        const int POLY_ORDER = 1;
+        const int POLY_ORDER=1;
         // Only do this check in Debug mode:
 #ifdef DEBUG
         if (R3D_NUM_MOMENTS(POLY_ORDER) != 4)
@@ -202,23 +205,32 @@ class IntersectR3D {
         // i.e. abs(om[0]) < eps, then it can sometimes be slightly negative,
         // like om[0] == -1.24811e-16. For this reason we use the condition
         // om[0] < -eps.
-        const double eps = 1e-14;  // @todo Should multiply by domain or element size
+        const double eps=1e-14;  // @todo Should multiply by domain or element size
         if (om[0] < -eps) throw std::runtime_error("Negative volume");
 
         // Accumulate moments:
-        for (int i = 0; i < 4; i++)
+        for (int i=0; i<4; i++) {
           moments[i] += om[i];
-      }  // for tidx
-    }  // for sidx
-
-    return moments;
+        }
+      }
+    }
+    
+    std::vector<std::vector<double>> moments_all;
+    moments_all.push_back(moments);
+    return moments_all;
   }
+
+  IntersectR3D() = delete;
 
   //! Copy constructor (disabled)
   IntersectR3D(const IntersectR3D &) = delete;
 
   //! Assignment operator (disabled)
   IntersectR3D & operator = (const IntersectR3D &) = delete;
+private:
+  const SourceMeshType &sourceMeshWrapper;
+  const TargetMeshType &targetMeshWrapper;
+  const bool planar_hex_;
 }; // class IntersectR3D
 
 
