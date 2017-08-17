@@ -572,8 +572,8 @@ class Driver {
 
       gettimeofday(&begin_timeval, 0);
 
-      nvars = source_cellvar_names.size();
-      if (comm_rank == 0) std::cout << "number of cell variables to remap is " << nvars << std::endl;
+      int ncvars = source_cellvar_names.size();
+      if (comm_rank == 0) std::cout << "number of cell variables to remap is " << ncvars << std::endl;
 
       if (distributed) {
 
@@ -582,7 +582,7 @@ class Driver {
         Interpolate<Flat_Mesh_Wrapper<>, TargetMesh_Wrapper, Flat_State_Wrapper<>, CELL, Dim>
             interpolate(source_mesh_flat, target_mesh_, source_state_flat);
 
-        for (int i = 0; i < nvars; ++i) {
+        for (int i = 0; i < ncvars; ++i) {
           interpolate.set_interpolation_variable(source_cellvar_names[i],
                                                    limiters_[i]);
 
@@ -603,7 +603,7 @@ class Driver {
         Interpolate<SourceMesh_Wrapper, TargetMesh_Wrapper, SourceState_Wrapper, CELL, Dim>
             interpolate(source_mesh_, target_mesh_, source_state_);
         
-        for (int i = 0; i < nvars; ++i) {
+        for (int i = 0; i < ncvars; ++i) {
           //amh: ?? add back accuracy output statement??
           if (comm_rank == 0) std::cout << "Remapping cell variable " << source_cellvar_names[i]
                                         << " to variable " << target_cellvar_names[i] << std::endl;
@@ -781,8 +781,8 @@ class Driver {
 
       gettimeofday(&begin_timeval, 0);
 
-      nvars = source_nodevar_names.size();
-      if (comm_rank == 0) std::cout << "number of node variables to remap is " << nvars << std::endl;
+      int nnvars = source_nodevar_names.size();
+      if (comm_rank == 0) std::cout << "number of node variables to remap is " << nnvars << std::endl;
 
       if (distributed) {
 
@@ -790,7 +790,7 @@ class Driver {
         Interpolate<Flat_Mesh_Wrapper<>, TargetMesh_Wrapper, Flat_State_Wrapper<>, NODE, Dim>
             interpolate(source_mesh_flat, target_mesh_, source_state_flat);
 
-        for (int i = 0; i < nvars; ++i) {
+        for (int i = 0; i < nnvars; ++i) {
           interpolate.set_interpolation_variable(source_nodevar_names[i],
                                                  limiters_[i]);
 
@@ -811,7 +811,7 @@ class Driver {
                     SourceState_Wrapper, NODE, Dim>
               interpolate(source_mesh_, target_mesh_, source_state_);
 
-        for (int i = 0; i < nvars; ++i) {
+        for (int i = 0; i < nnvars; ++i) {
           if (comm_rank == 0) std::cout << "Remapping node variable " << source_nodevar_names[i]
                  << " to variable " << target_nodevar_names[i] << std::endl;
 

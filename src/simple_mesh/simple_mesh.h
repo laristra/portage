@@ -225,6 +225,7 @@ Simple_Mesh(double x0, double y0, double z0,
     for (int i(0); i < nodes_per_face_; ++i)
       nodes->push_back(face_to_node_[i+offset]);
   }
+
   /*!
     @brief For a given node, get all the cells attached to this node.
     @param[in] nodeid The ID of the node.
@@ -287,7 +288,7 @@ Simple_Mesh(double x0, double y0, double z0,
     face_to_node_.resize(nodes_per_face_*num_faces_);
     // upward adjacencies
     node_to_cell_.resize(cells_per_node_aug_*num_nodes_);
-    face_to_cell_.resize(2*num_faces_);
+    face_to_cell_.resize(2*num_faces_, -1);
 
     // cell adjacencies
     for (int iz(0); iz < nz_; ++iz)
