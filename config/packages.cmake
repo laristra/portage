@@ -43,7 +43,6 @@ POSSIBILITY OF SUCH DAMAGE.
 #------------------------------------------------------------------------------#
 # If we are building with FleCSI, then we need a modern C++ compiler
 #------------------------------------------------------------------------------#
-#if(FleCSI_DIR)
 if(ENABLE_FleCSI)
   # we already checked for CXX14 in project.cmake
   if(NOT CXX14_COMPILER)
@@ -71,16 +70,7 @@ set(ARCHOS ${CMAKE_SYSTEM_PROCESSOR}_${CMAKE_SYSTEM_NAME})
 #-----------------------------------------------------------------------------
 # FleCSI and FleCSI-SP location
 #-----------------------------------------------------------------------------
-#set(FLECSI_DIR "$ENV{FLECSI_INCLUDE_DIR}" CACHE
-#  PATH "Installed FleCSI location.")
-#set(FLECSISP_DIR "$ENV{FLECSISP_INCLUDE_DIR}" CACHE
-#  PATH "Installed FleCSI-SP location.")
 
-#find_package(FleCSI REQUIRED)
-
-#option(ENABLE_FleCSI "Enable FleCSI Support" ${FleCSI_FOUND})
-
-#if(FleCSI_DIR)
 set(ENABLE_FleCSI FALSE CACHE BOOL "Use FleCSI")
 if (ENABLE_FleCSI)
  
@@ -93,37 +83,6 @@ if (ENABLE_FleCSI)
  message(STATUS "FleCSISP_LIBRARIES=${FleCSISP_LIBRARIES}" )
  include_directories(${FleCSISP_INCLUDE_DIR})
  message(STATUS "FleCSISP_INCLUDE_DIRS=${FleCSISP_INCLUDE_DIR}")
-
-
-
-  #set(FleCSI_INCLUDE_DIR "$ENV{FLECSI_DIR/include}" CACHE
-  #     PATH "Set FleCSI_INCLUDE_DIR for FindFleCSI.cmake.")
-
-  #find_package(FleCSI REQUIRED)
-
- # message(STATUS "FleCSI found")
- # message(STATUS "FleCSI location: ${FLECSI_DIR}")
-  #message(STATUS "FLECSI_INCLUDE_DIRS=${FleCSI_INCLUDE_DIRS}")
-  #message(STATUS "FLECSI_LIBRARIES=${FleCSI_LIBRARIES}")
-
-  #if(NOT FLECSISP_DIR)
-  #  message(STATUS "Missing FleCSI-SP")
-  #endif()
-  
-  #set(FLECSI_INCLUDE_DIRS ${FLECSI_DIR}/include)
-  #set(FLECSI_LIBRARY_DIR ${FLECSI_DIR}/lib)
-  #set(FLECSI_LIBRARIES ${FLECSI_LIBRARY_DIR}/libflecsi.so)
-  #include_directories(${FLECSI_INCLUDE_DIRS})
-  #message(STATUS "FLECSI_INCLUDE_DIRS=${FleCSI_INCLUDE_DIRS}")
-  #message(STATUS "FLECSI_LIBRARIES=${FleCSI_LIBRARIES}")
-
-  #message(STATUS "FleCSI-SP found")
-  #message(STATUS "FleCSI-SP location: ${FLECSISP_DIR}")
-  #set(FLECSISP_INCLUDE_DIRS ${FLECSISP_DIR}/include)
-  #set(FLECSISP_LIBRARY_DIR ${FLECSISP_DIR}/lib)
-  #set(FLECSISP_LIBRARIES ${FLECSISP_LIBRARY_DIR}/libflecsi-sp.so)
-  #include_directories(${FLECSISP_INCLUDE_DIRS})
-
 
   ######################################################################
   # This is a placeholder for how we would do IO with FleCSI
@@ -156,7 +115,6 @@ if (ENABLE_FleCSI)
   #   endif(EXODUS_LIBRARY AND EXODUS_INCLUDE_DIR)
 
   # endif(IS_DIRECTORY ${FLECSI_TPL_DIR})
-#endif(FleCSI_DIR)
 endif()
 
 
