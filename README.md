@@ -72,10 +72,11 @@ is needed.  We regularly test with intel 17+ or gcc 5.3+, and openmpi
 1.10.3+, however, the code and most tests can be built without MPI
 support.  The build system _requires_ CMake version 3.0+.
 
-The following libraries are also _required_:
+The following libraries are also _required_ (see examples below):
 
-- LAPACKE
-- Boost (currently just for counting iterators)
+- LAPACKE (3.7.1+): set `PC_LAPACKE_NCLUDE_DIRS` and
+  `PC_LAPACKE_LIBRARY_DIRS`
+- Boost (1.53.0+): set `Boost_INCLUDE_DIR` if CMake can't find it
 
 portage provides wrappers for a few existing mesh types.  Building
 support for these is _optional_:
