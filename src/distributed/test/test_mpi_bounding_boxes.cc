@@ -43,9 +43,9 @@ POSSIBILITY OF SUCH DAMAGE.
 
 #include "portage/support/Point.h"
 #include "portage/distributed/mpi_bounding_boxes.h"
-#include "portage/wrappers/state/jali/jali_state_wrapper.h"
-#include "portage/wrappers/state/flat/flat_state_wrapper.h"
-#include "portage/wrappers/mesh/flat/flat_mesh_wrapper.h"
+#include "portage/wonton/state/jali/jali_state_wrapper.h"
+#include "portage/wonton/state/flat/flat_state_wrapper.h"
+#include "portage/wonton/mesh/flat/flat_mesh_wrapper.h"
 
 #include <iostream>
 
@@ -55,7 +55,7 @@ POSSIBILITY OF SUCH DAMAGE.
 #include "Mesh.hh"
 #include "MeshFactory.hh"
 
-#include "portage/wrappers/mesh/jali/jali_mesh_wrapper.h"
+#include "portage/wonton/mesh/jali/jali_mesh_wrapper.h"
 
 
 TEST(MPI_Bounding_Boxes, SimpleTest3D) {

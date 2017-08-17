@@ -45,7 +45,7 @@ set -e
 # Echo each command
 set -x
 
-DATA_DIR=$APPDIR/../test/wrappers
+DATA_DIR=$APPDIR/../test/wonton
 
 # SERIAL
 mpirun -np 1 ${APPDIR}/shotshellapp_jali \

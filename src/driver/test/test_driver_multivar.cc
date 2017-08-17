@@ -49,8 +49,8 @@ POSSIBILITY OF SUCH DAMAGE.
 
 #include "portage/support/portage.h"
 #include "portage/support/Point.h"
-#include "portage/wrappers/mesh/jali/jali_mesh_wrapper.h"
-#include "portage/wrappers/state/jali/jali_state_wrapper.h"
+#include "portage/wonton/mesh/jali/jali_mesh_wrapper.h"
+#include "portage/wonton/state/jali/jali_state_wrapper.h"
 #include "portage/driver/driver.h"
 
 #include "Mesh.hh"

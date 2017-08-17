@@ -61,8 +61,8 @@ POSSIBILITY OF SUCH DAMAGE.
 #include "portage/intersect/intersect_r3d.h"
 #include "portage/interpolate/interpolate_1st_order.h"
 #include "portage/interpolate/interpolate_2nd_order.h"
-#include "portage/wrappers/mesh/flat/flat_mesh_wrapper.h"
-#include "portage/wrappers/state/flat/flat_state_wrapper.h"
+#include "portage/wonton/mesh/flat/flat_mesh_wrapper.h"
+#include "portage/wonton/state/flat/flat_state_wrapper.h"
 
 #ifdef ENABLE_MPI
 #include "portage/distributed/mpi_bounding_boxes.h"
@@ -683,7 +683,7 @@ class Driver {
       MeshWrapperDual<Flat_Mesh_Wrapper<>> sourceDualFlat(source_mesh_flat);
 
       if (distributed) {
-#ifndef PORTAGE_SERIAL_ONLY
+#ifdef ENABLE_MPI 
         // Create flat wrappers to distribute source cells
         gettimeofday(&begin_timeval, 0);
 
@@ -733,7 +733,7 @@ class Driver {
 
       if (distributed) {
 
-#ifndef PORTAGE_SERIAL_ONLY
+#ifdef ENABLE_MPI 
         // Get an instance of the desired intersect algorithm type
         const Intersect<MeshWrapperDual<Flat_Mesh_Wrapper<>>, MeshWrapperDual<TargetMesh_Wrapper>>
             intersect(sourceDualFlat, targetDualWrapper);
