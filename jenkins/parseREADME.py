@@ -3,9 +3,6 @@ This file is part of the Ristra portage project.
 Please see the license file at the root of this repository, or at:
     https://github.com/laristra/portage/blob/master/LICENSE
 '''
-
-
-
 import subprocess, sys
 #This script parses the README file which describes how to build portage
 #It looks for code blocks enclosed in ``` and requires that the first

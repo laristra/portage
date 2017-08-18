@@ -3,9 +3,6 @@ This file is part of the Ristra portage project.
 Please see the license file at the root of this repository, or at:
     https://github.com/laristra/portage/blob/master/LICENSE
 ]]
-
-
-
 message(STATUS "Adding shotshellapp test")
 
 macro(ADD_SHOTSHELLAPP_TEST DIM ENTITY FIELDORDER REMAPORDER)

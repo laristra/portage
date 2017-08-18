@@ -5,9 +5,6 @@ Please see the license file at the root of this repository, or at:
 */
 
 
-
-
-
 #include "portage/driver/driver.h"
 #include "portage/interpolate/interpolate_1st_order.h"
 

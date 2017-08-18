@@ -5,9 +5,6 @@ Please see the license file at the root of this repository, or at:
 ]]
 
 
-
-
-
 # Add header files
 set (estimate_HEADERS
   estimate.h

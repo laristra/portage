@@ -1,11 +1,3 @@
-/*
-This file is part of the Ristra portage project.
-Please see the license file at the root of this repository, or at:
-    https://github.com/laristra/portage/blob/master/LICENSE
-*/
-
-
-
 # Installation instructions
 
 Below we list copy & paste instructions for several machines. You can easily

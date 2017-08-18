@@ -4,9 +4,6 @@ Please see the license file at the root of this repository, or at:
     https://github.com/laristra/portage/blob/master/LICENSE
 */
 
-
-
-
 #include "search_simple_points.h"
 
 #include <memory>

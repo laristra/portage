@@ -5,9 +5,6 @@ Please see the license file at the root of this repository, or at:
 ]]
 
 
-
-
-
 # Comparator for testing infrastructure
 add_executable(apptest_cmp apptest_cmp.cc)
 

@@ -3,10 +3,6 @@ This file is part of the Ristra portage project.
 Please see the license file at the root of this repository, or at:
     https://github.com/laristra/portage/blob/master/LICENSE
 */
-
-
-
-///////////////////////////////////////////////////////////////////////////////
 // Copyright 2016 Los Alamos National Laboratory                             //
 //                                                                           //
 // Original Author: Paul Henning                                             //

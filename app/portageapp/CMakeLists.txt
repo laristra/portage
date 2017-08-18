@@ -5,9 +5,6 @@ Please see the license file at the root of this repository, or at:
 ]]
 
 
-
-
-
 if (Jali_DIR) 
     add_executable(portageapp_jali portageapp_jali.cc)
     target_link_libraries(portageapp_jali portage ${EXTRA_LIBS})

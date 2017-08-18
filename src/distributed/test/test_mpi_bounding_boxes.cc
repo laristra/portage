@@ -5,9 +5,6 @@ Please see the license file at the root of this repository, or at:
 */
 
 
-
-
-
 #include "portage/support/Point.h"
 #include "portage/distributed/mpi_bounding_boxes.h"
 #include "portage/wonton/state/jali/jali_state_wrapper.h"

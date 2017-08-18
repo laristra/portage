@@ -4,10 +4,6 @@ Please see the license file at the root of this repository, or at:
     https://github.com/laristra/portage/blob/master/LICENSE
 */
 
-
-
-
-
 #ifndef INTERSECT_CLIPPER_H
 #define INTERSECT_CLIPPER_H
 

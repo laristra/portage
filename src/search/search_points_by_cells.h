@@ -3,10 +3,6 @@ This file is part of the Ristra portage project.
 Please see the license file at the root of this repository, or at:
     https://github.com/laristra/portage/blob/master/LICENSE
 */
-
-
-
-
 #ifndef SEARCH_POINTS_BY_CELLS_H
 #define SEARCH_POINTS_BY_CELLS_H
 

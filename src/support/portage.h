@@ -4,10 +4,6 @@ Please see the license file at the root of this repository, or at:
     https://github.com/laristra/portage/blob/master/LICENSE
 */
 
-
-
-
-
 #ifndef SRC_SUPPORT_PORTAGE_H_
 #define SRC_SUPPORT_PORTAGE_H_
 

@@ -3,9 +3,6 @@ This file is part of the Ristra portage project.
 Please see the license file at the root of this repository, or at:
     https://github.com/laristra/portage/blob/master/LICENSE
 ]]
-
-
-
 # Config file for a test directory.
 # At some future point, much of what appears here will probably
 # be pulled into a macro.
