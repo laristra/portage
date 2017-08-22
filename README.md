@@ -121,7 +121,7 @@ ctest -j2 --output-on-failure
 
 # License
 This project is licensed under a modified 3-clause BSD license - see
-the (LICENSE)[https://github.com/laristra/portage/blob/master/LICENSE]
+the [LICENSE](https://github.com/laristra/portage/blob/master/LICENSE)
 file for details.
 
 # Release
