@@ -41,14 +41,14 @@ POSSIBILITY OF SUCH DAMAGE.
 
 #include "gtest/gtest.h"
 
-#include "portage/wrappers/state/jali/jali_state_wrapper.h"
-#include "portage/wrappers/mesh/jali/jali_mesh_wrapper.h"
+#include "portage/wonton/state/jali/jali_state_wrapper.h"
+#include "portage/wonton/mesh/jali/jali_mesh_wrapper.h"
 #include "Mesh.hh"
 #include "MeshFactory.hh"
 
 #include "portage/swarm/swarm.h"
 #include "portage/swarm/swarm_state.h"
-#include "portage/wrappers/state/flat/flat_state_wrapper.h"
+#include "portage/wonton/state/flat/flat_state_wrapper.h"
 
 TEST(SwarmState, basic) {
   using std::make_shared;

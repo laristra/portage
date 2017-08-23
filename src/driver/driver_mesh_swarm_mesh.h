@@ -56,8 +56,8 @@ POSSIBILITY OF SUCH DAMAGE.
 
 #include "portage/support/portage.h"
 #include "portage/support/Point.h"
-#include "portage/wrappers/mesh/flat/flat_mesh_wrapper.h"
-#include "portage/wrappers/state/flat/flat_state_wrapper.h"
+#include "portage/wonton/mesh/flat/flat_mesh_wrapper.h"
+#include "portage/wonton/state/flat/flat_state_wrapper.h"
 #include "portage/support/basis.h"
 #include "portage/support/weight.h"
 #include "portage/swarm/swarm.h"

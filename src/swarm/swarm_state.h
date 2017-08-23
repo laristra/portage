@@ -12,8 +12,8 @@
 #include <string>
 #include <cassert>
 
-#include "portage/wrappers/mesh/flat/flat_mesh_wrapper.h"
-#include "portage/wrappers/state/flat/flat_state_wrapper.h"
+#include "portage/wonton/mesh/flat/flat_mesh_wrapper.h"
+#include "portage/wonton/state/flat/flat_state_wrapper.h"
 #include "swarm.h"
 
 namespace Portage {

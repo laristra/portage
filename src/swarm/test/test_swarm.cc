@@ -52,11 +52,11 @@ POSSIBILITY OF SUCH DAMAGE.
 #include <algorithm>
 
 #include "mpi.h"
-#include "portage/wrappers/mesh/jali/jali_mesh_wrapper.h"
+#include "portage/wonton/mesh/jali/jali_mesh_wrapper.h"
 #include "MeshFactory.hh"
 
 #include "portage/swarm/swarm.h"
-#include "portage/wrappers/mesh/flat/flat_mesh_wrapper.h"
+#include "portage/wonton/mesh/flat/flat_mesh_wrapper.h"
 #include "portage/support/Point.h"
 #include "portage/support/portage.h"
 
