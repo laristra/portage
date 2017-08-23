@@ -60,10 +60,13 @@ POSSIBILITY OF SUCH DAMAGE.
 #include "portage/wrappers/state/flat/flat_state_wrapper.h"
 #include "portage/support/basis.h"
 #include "portage/support/weight.h"
-#include "portage/search/search_simple_points.h"
-#include "portage/search/search_points_by_cells.h"
+#include "portage/swarm/swarm.h"
+#include "portage/swarm/swarm_state.h"
+//#include "portage/search/search_simple_points.h"
+//#include "portage/search/search_points_by_cells.h"
 #include "portage/accumulate/accumulate.h"
 #include "portage/estimate/estimate.h"
+#include "portage/driver/driver_swarm.h"
 
 #ifdef ENABLE_MPI
 #include "portage/distributed/mpi_bounding_boxes.h"
@@ -93,7 +96,10 @@ namespace Portage {
   @tparam TargetState_Wrapper A lightweight wrapper to a specific target state
   manager implementation that provides certain functionality.
 */
-template <int Dim,
+template <template <int, class, class> class Search,
+          template <size_t, class, class> class Accumulate,
+          template<size_t, class> class Estimate,
+          int Dim,
           class SourceMesh_Wrapper,
           class SourceState_Wrapper,
           class TargetMesh_Wrapper = SourceMesh_Wrapper,
@@ -113,10 +119,21 @@ class MSM_Driver {
   MSM_Driver(SourceMesh_Wrapper const& sourceMesh,
          SourceState_Wrapper const& sourceState,
          TargetMesh_Wrapper const& targetMesh,
-         TargetState_Wrapper& targetState)
+	 TargetState_Wrapper& targetState, 
+	 double smoothing_factor             = 1.5,
+	 Meshfree::Basis::Type      basis    = Meshfree::Basis::Unitary,
+	 Meshfree::EstimateType     estimate = Meshfree::LocalRegression,
+	 Meshfree::Weight::Geometry geometry = Meshfree::Weight::ELLIPTIC,
+	 Meshfree::Weight::Kernel   kernel   = Meshfree::Weight::B4)
       : source_mesh_(sourceMesh), source_state_(sourceState),
         target_mesh_(targetMesh), target_state_(targetState),
-        dim_(sourceMesh.space_dimension()) {
+        smoothing_factor_(smoothing_factor),
+        kernel_(kernel),
+        geometry_(geometry),
+        estimate_(estimate),
+        basis_(basis), 
+        dim_(sourceMesh.space_dimension()) 
+  {
     assert(sourceMesh.space_dimension() == targetMesh.space_dimension());
     assert(sourceMesh.space_dimension() == Dim);
   }
@@ -201,7 +218,6 @@ class MSM_Driver {
     }
 #endif
 
-
     int comm_rank = 0;
 
 #ifdef ENABLE_MPI
@@ -232,9 +248,6 @@ class MSM_Driver {
 
     // convert incoming and outgoing mesh wrappers to flat variety
     Flat_Mesh_Wrapper<> source_mesh_flat;
-    Flat_State_Wrapper<> source_state_flat;
-
-    Flat_Mesh_Wrapper<double> source_mesh_flat;
     source_mesh_flat.initialize(source_mesh_);
 
     Flat_Mesh_Wrapper<double> target_mesh_flat;
@@ -243,6 +256,12 @@ class MSM_Driver {
     // convert flat wrappers to swarm variety
     Meshfree::Swarm<Dim> source_swarm(source_mesh_flat, CELL);
     Meshfree::Swarm<Dim> target_swarm(target_mesh_flat, CELL);
+
+    float tot_seconds = 0.0, tot_seconds_srch = 0.0,
+        tot_seconds_xsect = 0.0, tot_seconds_interp = 0.0;
+    struct timeval begin_timeval, end_timeval, diff_timeval;
+
+    gettimeofday(&begin_timeval, 0);
 
     // Collect all cell based variables and remap them
     if (source_cellvar_names.size() > 0)
@@ -268,37 +287,39 @@ class MSM_Driver {
       for (int i=0; i<target_mesh_flat.num_owned_cells(); i++) {
         double radius;
         cell_radius<Dim>(source_mesh_flat, i, &radius);
-        smoothing_lengths[i][0] = vector<double>(Dim, radius*1.5);
+        smoothing_lengths[i][0] = vector<double>(Dim, radius*smoothing_factor_);
       }
 
       // create swarm remap driver
       Meshfree::SwarmDriver<
-        SearchPointsByCells,
-        Meshfree::Accumulate,
-        Meshfree::Estimate,
+        Search,
+	Accumulate,
+	Estimate,
         Dim,
         Meshfree::Swarm<Dim>,
-        Meshfree::SwarmState<Dim>>
+        Meshfree::SwarmState<Dim>,
+        Meshfree::Swarm<Dim>,
+        Meshfree::SwarmState<Dim>
       > swarm_driver(source_swarm, source_swarm_state,
                      target_swarm, target_swarm_state,
                      smoothing_lengths,
-                     Meshfree::Weight::B4,
-                     Meshfree::Weight::ELLIPTIC,
+                     kernel_,
+                     geometry_,
                      Meshfree::Scatter);
 
       swarm_driver.set_remap_var_names(source_remap_var_names_,
                                        target_remap_var_names_,
-                                       Meshfree::LocalRegression,
-                                       Meshfree::Basis::Linear);
+                                       estimate_,
+                                       basis_);
 
       // do the remap
-      swarm_driver.run(false);
+      swarm_driver.run(false, false);
 
       // transfer data back to target mesh
       for (auto name=target_remap_var_names_.begin();
                 name!=target_remap_var_names_.end(); name++)
       {
-        typename Meshfree::SwarmState::DblVecPtr sfield;
+        typename Meshfree::SwarmState<Dim>::DblVecPtr sfield;
         target_swarm_state.get_field(*name, sfield);
         double *mfield;
         target_state_flat.get_data(CELL, *name, &mfield);
@@ -343,37 +364,39 @@ class MSM_Driver {
       for (int i=0; i<target_mesh_flat.num_owned_nodes(); i++) {
         double radius;
         node_radius<Dim>(source_mesh_flat, i, &radius);
-        smoothing_lengths[i][0] = vector<double>(Dim, radius*1.5);
+        smoothing_lengths[i][0] = vector<double>(Dim, radius*smoothing_factor_);
       }
 
       // create swarm remap driver
       Meshfree::SwarmDriver<
-        SearchPointsByCells,
-        Meshfree::Accumulate,
-        Meshfree::Estimate,
+        Search,
+        Accumulate,
+        Estimate,
         Dim,
         Meshfree::Swarm<Dim>,
-        Meshfree::SwarmState<Dim>>
+        Meshfree::SwarmState<Dim>,
+        Meshfree::Swarm<Dim>,
+        Meshfree::SwarmState<Dim>
       > swarm_driver(source_swarm, source_swarm_state,
                      target_swarm, target_swarm_state,
                      smoothing_lengths,
-                     Meshfree::Weight::B4,
-                     Meshfree::Weight::ELLIPTIC,
+                     kernel_,
+                     geometry_,
                      Meshfree::Scatter);
 
       swarm_driver.set_remap_var_names(source_remap_var_names_,
                                        target_remap_var_names_,
-                                       Meshfree::LocalRegression,
-                                       Meshfree::Basis::Linear);
+                                       estimate_,
+                                       basis_);
 
       // do the remap
-      swarm_driver.run(false);
+      swarm_driver.run(false, false);
 
       // transfer data back to target mesh
       for (auto name=target_remap_var_names_.begin();
                 name!=target_remap_var_names_.end(); name++)
       {
-        typename Meshfree::SwarmState::DblVecPtr sfield;
+        typename Meshfree::SwarmState<Dim>::DblVecPtr sfield;
         target_swarm_state.get_field(*name, sfield);
         double *mfield;
         target_state_flat.get_data(CELL, *name, &mfield);
@@ -383,6 +406,12 @@ class MSM_Driver {
       }
     }
 
+    gettimeofday(&end_timeval, 0);
+    timersub(&end_timeval, &begin_timeval, &diff_timeval);
+    tot_seconds_interp = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
+
+    std::cout << "Mesh-Swarm-Mesh Time for Rank " << comm_rank << " (s): " <<
+        tot_seconds << std::endl;
   }
 
 
@@ -393,6 +422,11 @@ class MSM_Driver {
   TargetState_Wrapper& target_state_;
   std::vector<std::string> source_remap_var_names_;
   std::vector<std::string> target_remap_var_names_;
+  double smoothing_factor_;
+  Meshfree::Weight::Kernel kernel_;
+  Meshfree::Weight::Geometry geometry_;
+  Meshfree::EstimateType estimate_;
+  Meshfree::Basis::Type basis_;
   unsigned int dim_;
 };  // class MSM_Driver
 

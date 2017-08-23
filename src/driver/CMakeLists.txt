@@ -46,7 +46,7 @@ POSSIBILITY OF SUCH DAMAGE.
 
 # Add header files
 set(driver_HEADERS
-    driver.h
+    driver.h driver_swarm.h driver_mesh_swarm_mesh.h
     PARENT_SCOPE
 )
 
@@ -73,6 +73,11 @@ if (ENABLE_UNIT_TESTS)
        cinch_add_unit(test_driver_step
        SOURCES test/test_driver_step 
        LIBRARIES portage ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
+       POLICY MPI
+       THREADS 1)
+       cinch_add_unit(test_driver_mesh_swarm_mesh
+       SOURCES test/test_driver_mesh_swarm_mesh 
+       LIBRARIES portage ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES} ${LAPACKE_LIBRARIES}
        POLICY MPI
        THREADS 1)
    endif (Jali_DIR)
