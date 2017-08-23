@@ -43,7 +43,7 @@ POSSIBILITY OF SUCH DAMAGE.
 #------------------------------------------------------------------------------#
 # If we are building with FleCSI, then we need a modern C++ compiler
 #------------------------------------------------------------------------------#
-if(FLECSI_INSTALL_DIR)
+if(ENABLE_FleCSI)
   # we already checked for CXX14 in project.cmake
   if(NOT CXX14_COMPILER)
     message(STATUS "C++14 compatible compiler not found")
@@ -68,17 +68,21 @@ endif ()
 set(ARCHOS ${CMAKE_SYSTEM_PROCESSOR}_${CMAKE_SYSTEM_NAME})
 
 #-----------------------------------------------------------------------------
-# FleCSI location
+# FleCSI and FleCSI-SP location
 #-----------------------------------------------------------------------------
-set(FLECSI_INSTALL_DIR "$ENV{FLECSI_INCLUDE_DIR}" CACHE
-  PATH "Installed FleCSI location.")
-if(FLECSI_INSTALL_DIR)
-  message(STATUS "Using FLECSI_INSTALL_DIR=${FLECSI_INSTALL_DIR}")
-  set(FLECSI_INCLUDE_DIRS ${FLECSI_INSTALL_DIR}/include)
-  set(FLECSI_LIBRARY_DIR ${FLECSI_INSTALL_DIR}/lib)
-  set(FLECSI_LIBRARIES ${FLECSI_LIBRARY_DIR}/libflecsi.a)
 
-  include_directories(${FLECSI_INCLUDE_DIRS})
+set(ENABLE_FleCSI FALSE CACHE BOOL "Use FleCSI")
+if (ENABLE_FleCSI)
+ 
+ find_package(FleCSI REQUIRED)
+ message(STATUS "FleCSI_LIBRARIES=${FleCSI_LIBRARIES}" )
+ include_directories(${FleCSI_INCLUDE_DIR})
+ message(STATUS "FleCSI_INCLUDE_DIRS=${FleCSI_INCLUDE_DIR}")
+
+ find_package(FleCSISP REQUIRED)
+ message(STATUS "FleCSISP_LIBRARIES=${FleCSISP_LIBRARIES}" )
+ include_directories(${FleCSISP_INCLUDE_DIR})
+ message(STATUS "FleCSISP_INCLUDE_DIRS=${FleCSISP_INCLUDE_DIR}")
 
   ######################################################################
   # This is a placeholder for how we would do IO with FleCSI
@@ -111,8 +115,7 @@ if(FLECSI_INSTALL_DIR)
   #   endif(EXODUS_LIBRARY AND EXODUS_INCLUDE_DIR)
 
   # endif(IS_DIRECTORY ${FLECSI_TPL_DIR})
-endif(FLECSI_INSTALL_DIR)
-
+endif()
 
 
 #------------------------------------------------------------------------------#

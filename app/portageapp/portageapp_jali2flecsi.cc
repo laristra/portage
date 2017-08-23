@@ -51,10 +51,10 @@ POSSIBILITY OF SUCH DAMAGE.
 #include <mpi.h>
 
 #define PORTAGE_SERIAL_ONLY
-#include "portage/wrappers/mesh/jali/jali_mesh_wrapper.h"
-#include "portage/wrappers/state/jali/jali_state_wrapper.h"
-#include "portage/wrappers/mesh/flecsi/flecsi_mesh_wrapper.h"
-#include "portage/wrappers/state/flecsi/flecsi_state_wrapper.h"
+#include "portage/wonton/mesh/jali/jali_mesh_wrapper.h"
+#include "portage/wonton/state/jali/jali_state_wrapper.h"
+#include "portage/wonton/mesh/flecsi/flecsi_mesh_wrapper.h"
+#include "portage/wonton/state/flecsi/flecsi_state_wrapper.h"
 #include "portage/driver/driver.h"
 
 // FleCSI includes

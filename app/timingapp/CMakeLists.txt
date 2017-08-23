@@ -48,7 +48,7 @@ if (Jali_DIR)
 # Add a rule to build the executable
 # timing example
 
-  add_executable(timingapp timing_test.cc)
+  add_executable(timingapp timingapp.cc)
   target_link_libraries(timingapp portage ${EXTRA_LIBS})
   if (ENABLE_MPI)
     target_link_libraries(timingapp ${MPI_CXX_LIBRARIES})

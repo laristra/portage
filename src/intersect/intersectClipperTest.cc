@@ -43,7 +43,7 @@ POSSIBILITY OF SUCH DAMAGE.
 #include "gtest/gtest.h"
 #include "Mesh.hh"
 #include "MeshFactory.hh"
-#include "portage/wrappers/mesh/jali/jali_mesh_wrapper.h"
+#include "portage/wonton/mesh/jali/jali_mesh_wrapper.h"
 /*! 
  * @brief Intersect two cells on two single cell meshes to compute moments.
  * This exercises Clipper as well as the intersectClipper class.
