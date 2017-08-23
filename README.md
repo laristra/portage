@@ -104,7 +104,7 @@ machines.
 Execute the following from the portage root directory:
 
 ```c++
-# darwin-fe
+# machine=darwin-fe
 module load openmpi/2.0.1-intel_17.0.0 cmake/3.7.1
 JALI_INSTALL_PREFIX=/projects/ngc/private/jali/0.9.8-intel-17.0.0-openmpi-2.0.1
 TPL_INSTALL_PREFIX=/projects/ngc/private/jali-tpl/1.0.9-intel-17.0.0-openmpi-2.0.1
@@ -129,7 +129,7 @@ ctest -j16 --output-on-failure
 Execute the following from the portage root directory:
 
 ```c++
-# ml-fey
+# machine=ml-fey
 module load intel/17.0.1 openmpi/1.10.5 cmake
 JALI_INSTALL_PREFIX=/usr/projects/ngc/private/jali/0.9.8-intel-17.0.1-openmpi-1.10.5
 mkdir build
@@ -152,7 +152,7 @@ ctest -j16 --output-on-failure
 Execute the following from the portage root directory:
 
 ```c++
-# varan
+# machine=varan
 export MODULEPATH=""
 . /opt/local/packages/Modules/default/init/sh
 module load intel/17.0.1 openmpi/1.10.5 cmake
@@ -183,7 +183,7 @@ If you want to build an app that uses
 verison of FleCSI on Varan.  An example is below:
 
 ```c++
-# varan::flecsi
+# machine=varan::flecsi
 export MODULEPATH=""
 . /opt/local/packages/Modules/default/init/sh
 module load gcc/5.3.0 openmpi/1.10.3 cmake
