@@ -125,6 +125,13 @@ TEST(Flat_Mesh_Wrapper, basic_routines_3d) {
   for (int d=0; d<3; ++d)
     ASSERT_EQ(0.25, centroid[d]);
 
+  // Test cell and node radius
+  double cradius, nradius;
+  Portage::cell_radius<3>(mesh_flat, 0, &cradius);
+  ASSERT_EQ(sqrt(3.0)/4., cradius);
+  Portage::node_radius<3>(mesh_flat, 0, &nradius);
+  ASSERT_EQ(sqrt(3.0)/2., nradius);
+
   // Test cell_volume()
   for (int c=0; c<8; ++c)
     ASSERT_TRUE(abs(mesh_flat.cell_volume(c)-0.125) < 1e-12);

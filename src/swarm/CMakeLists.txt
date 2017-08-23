@@ -40,7 +40,6 @@ POSSIBILITY OF SUCH DAMAGE.
 ]]
 
 
-
 # Add header files
 set (swarm_HEADERS
   swarm.h
@@ -57,14 +56,18 @@ set (simple_mesh_SOURCES
 
 if (ENABLE_UNIT_TESTS)
 
-  cinch_add_unit(test_swarm
-    SOURCES test/test_swarm.cc
-    POLICY MPI
-    THREADS 1
+   if (Jali_DIR)
+      cinch_add_unit(test_swarm
+      SOURCES test/test_swarm.cc
+      LIBRARIES portage ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
+      POLICY MPI
+      THREADS 1
     )
+   endif (Jali_DIR)
 
   cinch_add_unit(test_swarm_state
     SOURCES test/test_swarm_state.cc
+    LIBRARIES portage ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
     POLICY MPI
     THREADS 1
     )

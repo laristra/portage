@@ -41,8 +41,14 @@ POSSIBILITY OF SUCH DAMAGE.
 
 #include "gtest/gtest.h"
 
+#include "portage/wonton/state/jali/jali_state_wrapper.h"
+#include "portage/wonton/mesh/jali/jali_mesh_wrapper.h"
+#include "Mesh.hh"
+#include "MeshFactory.hh"
+
 #include "portage/swarm/swarm.h"
 #include "portage/swarm/swarm_state.h"
+#include "portage/wonton/state/flat/flat_state_wrapper.h"
 
 TEST(SwarmState, basic) {
   using std::make_shared;
@@ -108,28 +114,33 @@ TEST(SwarmState, basic) {
       ASSERT_EQ((*i2p)[i], (*int_field2)[i]);
     }
 
+    // check names lists are correct
+    std::vector<std::string>
+      dnames = state.field_names_double();
+    std::vector<std::string>
+      inames = state.field_names_int();
+    ASSERT_EQ(dnames.size(), 2);
+    ASSERT_EQ(dnames[0], "d1");
+    ASSERT_EQ(dnames[1], "d2");
+    ASSERT_EQ(inames.size(), 2);
+    ASSERT_EQ(inames[0], "i1");
+    ASSERT_EQ(inames[1], "i2");
+
     // check failure on adding field twice
-    /* deferred
-    std::string msg1 = "tried to add double field "+string("d1")+
-    " when it already existed";
     try {
       state.add_field("d1", dbl_field1);
       ASSERT_FALSE(true);
     } catch (std::exception err) {
-      ASSERT_EQ(err.what(), msg1);
+      ASSERT_TRUE(true);
     }
-    std::string msg2 = "tried to add int field "+string("i1")+
-    " when it already existed";
     try {
       state.add_field("i1", int_field1);
       ASSERT_FALSE(true);
     } catch (std::exception err) {
-      ASSERT_EQ(err.what(), msg2);
+      ASSERT_TRUE(true);
     }
-    */
 
     // check failure on adding bad fields
-    /* deferred
     try {
       state.add_field("bad", bad_dbl_field);
       ASSERT_FALSE(true);
@@ -142,5 +153,110 @@ TEST(SwarmState, basic) {
     } catch (...) {
       ASSERT_TRUE(true);
     }
-    */
+}
+
+
+/*!
+  @brief Unit test for constructor with Flat_Mesh_Wrapper in 3D using cells
+ */
+TEST(Swarm, Flat_Mesh_Wrapper_Cell) {
+  using namespace Portage;
+  Jali::MeshFactory mf(MPI_COMM_WORLD);
+  mf.included_entities({Jali::Entity_kind::EDGE,
+                        Jali::Entity_kind::FACE,
+                        Jali::Entity_kind::WEDGE,
+                        Jali::Entity_kind::CORNER});
+  std::shared_ptr<Jali::Mesh> mesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2, 2, 2);
+  ASSERT_TRUE(mesh != NULL);
+  Portage::Jali_Mesh_Wrapper mesh_wrapper(*mesh);
+  Portage::Flat_Mesh_Wrapper<double> mesh_flat;
+  mesh_flat.initialize(mesh_wrapper);
+
+  int ncells = mesh_flat.num_owned_cells();
+  int nnodes = mesh_flat.num_owned_nodes();
+  std::vector<double> &nfield1 = *new std::vector<double>(nnodes);
+  std::vector<double> &cfield1 = *new std::vector<double>(ncells);
+  for (int i=0; i<ncells; i++) {
+    cfield1[i] = 1.; 
+  }
+  for (int i=0; i<nnodes; i++) {
+    nfield1[i] = 2.; 
+  }
+  std::shared_ptr<std::vector<double>> nf1(&nfield1),cf1(&cfield1);
+  std::vector<std::shared_ptr<std::vector<double>>> data ={nf1,cf1};
+  std::vector<Entity_kind> entities = {NODE, CELL};
+  std::vector<std::string> names = {"nf1", "cf1"};
+  Flat_State_Wrapper<double> state_flat;
+  state_flat.initialize(names, entities, data);
+
+  // create swarm state from mesh and state wrappers for cells
+  Portage::Meshfree::SwarmState<3> state(mesh_flat, Portage::CELL, state_flat);
+
+  // test size
+  ASSERT_EQ(state.get_size(), ncells);
+
+  // check data fields
+  std::vector<std::string> intnames = state.field_names_int();
+  ASSERT_EQ(intnames.size(), 0);
+  std::vector<std::string> dblnames = state.field_names_double();
+  ASSERT_EQ(dblnames.size(), 1);
+  ASSERT_EQ(dblnames[0], "cf1");
+  Meshfree::SwarmState<3>::DblVecPtr field;
+  state.get_field("cf1", field);
+  for (int i=0; i<ncells; i++) {
+    ASSERT_EQ((*field)[i], 1.0);
+  }
+}
+
+
+/*!
+  @brief Unit test for constructor with Flat_Mesh_Wrapper in 3D using cells
+ */
+TEST(Swarm, Flat_Mesh_Wrapper_Node) {
+  using namespace Portage;
+  Jali::MeshFactory mf(MPI_COMM_WORLD);
+  mf.included_entities({Jali::Entity_kind::EDGE,
+                        Jali::Entity_kind::FACE,
+                        Jali::Entity_kind::WEDGE,
+                        Jali::Entity_kind::CORNER});
+  std::shared_ptr<Jali::Mesh> mesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2, 2, 2);
+  ASSERT_TRUE(mesh != NULL);
+  Portage::Jali_Mesh_Wrapper mesh_wrapper(*mesh);
+  Portage::Flat_Mesh_Wrapper<double> mesh_flat;
+  mesh_flat.initialize(mesh_wrapper);
+
+  int ncells = mesh_flat.num_owned_cells();
+  int nnodes = mesh_flat.num_owned_nodes();
+  std::vector<double> &nfield1 = *new std::vector<double>(nnodes);
+  std::vector<double> &cfield1 = *new std::vector<double>(ncells);
+  for (int i=0; i<ncells; i++) {
+    cfield1[i] = 1.; 
+  }
+  for (int i=0; i<nnodes; i++) {
+    nfield1[i] = 2.; 
+  }
+  std::shared_ptr<std::vector<double>> nf1(&nfield1),cf1(&cfield1);
+  std::vector<std::shared_ptr<std::vector<double>>> data ={nf1,cf1};
+  std::vector<Entity_kind> entities = {NODE, CELL};
+  std::vector<std::string> names = {"nf1", "cf1"};
+  Flat_State_Wrapper<double> state_flat;
+  state_flat.initialize(names, entities, data);
+
+  // create swarm state from mesh and state wrappers for nodes
+  Portage::Meshfree::SwarmState<3> state(mesh_flat, Portage::NODE, state_flat);
+
+  // test size
+  ASSERT_EQ(state.get_size(), nnodes);
+
+  // check data fields
+  std::vector<std::string> intnames = state.field_names_int();
+  ASSERT_EQ(intnames.size(), 0);
+  auto dblnames = state.field_names_double();
+  ASSERT_EQ(dblnames.size(), 1);
+  ASSERT_EQ(dblnames[0], "nf1");
+  Meshfree::SwarmState<3>::DblVecPtr field;
+  state.get_field("nf1", field);
+  for (int i=0; i<nnodes; i++) {
+    ASSERT_EQ((*field)[i], 2.0);
+  }
 }

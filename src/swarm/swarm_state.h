@@ -12,6 +12,8 @@
 #include <string>
 #include <cassert>
 
+#include "portage/wonton/mesh/flat/flat_mesh_wrapper.h"
+#include "portage/wonton/state/flat/flat_state_wrapper.h"
 #include "swarm.h"
 
 namespace Portage {
@@ -42,10 +44,19 @@ class SwarmState {
   /*! @brief Pointer to double data type allowed on the swarm.  */
   using DblVecPtr=shared_ptr<vector<double>>;
 
-  /*! @brief Constructor provides a reference swarm.
+  /*! @brief Constructor provided a reference swarm.
    * @param swarm the swarm with which the field data are associated.
    */
   SwarmState(Swarm<dim> const& swarmin): swarm_(swarmin){}
+
+  /*! @brief Constructor provided a flat mesh and flat mesh state.
+   * @param mesh the mesh with which the field data are associated.
+   * @param entity entity on which to get data (e.g. CELL, NODE, etc.)
+   * @param state the field data on the mesh
+   */
+  SwarmState(Portage::Flat_Mesh_Wrapper<double> &mesh,
+	     Portage::Entity_kind entity, 
+	     Portage::Flat_State_Wrapper<double> &state);
 
   /*! @brief Set an integer field on the swarm.
    * @param name the name of the integer field
@@ -96,7 +107,27 @@ class SwarmState {
   /*! @brief Get number of points in swarm
    * @return number of points
    */
-  size_t get_size(){return swarm_.num_owned_particles();}
+  int get_size(){return swarm_.num_owned_particles();}
+
+  /*! @brief Get the names of all integer fields
+   */
+  std::vector<std::string> field_names_int() {
+    std::vector<std::string> result;
+    for (auto iter=int_field_map_.begin(); iter!=int_field_map_.end(); iter++) {
+      result.push_back(iter->first);
+    }
+    return result;
+  }
+
+  /*! @brief Get the names of all double fields
+   */
+  std::vector<std::string> field_names_double() {
+    std::vector<std::string> result;
+    for (auto iter=dbl_field_map_.begin(); iter!=dbl_field_map_.end(); iter++) {
+      result.push_back(iter->first);
+    }
+    return result;
+  }
 
  private:
   /** reference swarm state */
@@ -112,20 +143,43 @@ class SwarmState {
 //=======================================================================
 
 template<size_t dim>
+SwarmState<dim>::SwarmState(Portage::Flat_Mesh_Wrapper<double> &mesh,
+                                 Portage::Entity_kind entity,
+				 Portage::Flat_State_Wrapper<double> &state)
+  : swarm_(Swarm<dim>(mesh, entity))
+{
+  if (dim != mesh.space_dimension()) {
+    throw std::runtime_error(string("dimension mismatch"));
+  }
+
+  std::vector<std::string> dnames;
+  state.get_names(entity, dnames);
+
+  for (auto iter=dnames.begin(); iter!=dnames.end(); iter++) {
+    double *datap;
+    state.get_data(entity, *iter, &datap);
+    int npart = swarm_.num_owned_particles();
+    DblVecPtr data(new vector<double>(npart));
+    for (size_t i=0; i<npart; i++) (*data)[i] = datap[i];
+    add_field(*iter, data);
+  }
+}
+
+template<size_t dim>
 void SwarmState<dim>::add_field(const string name, IntVecPtr value) {
   // check size
-  assert(value->size() == swarm_.num_owned_particles());
+  if (value->size() != swarm_.num_owned_particles()) {
+    throw std::runtime_error(
+      string("incorrect size when adding attempting to add int field ")+name);
+  }
 
   // check duplicate
-  /* couldn't get this to work
   auto checkdup = int_field_map_.find(name);
   if (checkdup != int_field_map_.end()) {
-    IntVecPtr fieldp = checkdup->second;
-    IntVec field(*fieldp);
+    assert(checkdup->first == name);
     throw std::runtime_error(string("tried to add int field ")+name+
                              "when it already existed");
   }
-  */
 
   // add it
   int_field_map_.insert(pair<string, IntVecPtr>(name, value));
@@ -134,18 +188,18 @@ void SwarmState<dim>::add_field(const string name, IntVecPtr value) {
 template<size_t dim>
 void SwarmState<dim>::add_field(const string name, DblVecPtr value) {
   // check size
-  assert(value->size() == swarm_.num_owned_particles());
+  if (value->size() != swarm_.num_owned_particles()) {
+    throw std::runtime_error(
+      string("incorrect size when adding attempting to add double field ")+name);
+  }
 
   // check duplicate
-  /* couldn't get this to work
   auto checkdup = dbl_field_map_.find(name);
   if (checkdup != dbl_field_map_.end()) {
-    DblVecPtr fieldp = checkdup->second;
-    DblVec field(*fieldp);
+    assert(checkdup->first == name);
     throw std::runtime_error(string("tried to add double field ")+name+
                              " when it already existed");
   }
-  */
 
   // add it
   dbl_field_map_.insert(pair<string, DblVecPtr>(name, value));

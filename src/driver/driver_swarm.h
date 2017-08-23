@@ -41,8 +41,8 @@ POSSIBILITY OF SUCH DAMAGE.
 
 
 
-#ifndef SRC_DRIVER_DRIVER_H_
-#define SRC_DRIVER_DRIVER_H_
+#ifndef SRC_DRIVER_SWARM_H_
+#define SRC_DRIVER_SWARM_H_
 
 #include <sys/time.h>
 
@@ -270,7 +270,7 @@ class SwarmDriver {
   /*!
     @brief Execute the remapping process
   */
-  void run(bool distributed) {
+ void run(bool distributed, bool report_time=true) {
 
     int comm_rank = 0;
 #ifndef ENABLE_MPI
@@ -424,14 +424,16 @@ class SwarmDriver {
       
       tot_seconds = tot_seconds_srch + tot_seconds_xsect + tot_seconds_interp;
       
-      std::cout << "Transform Time Rank " << comm_rank << " (s): " <<
+      if (report_time) {
+	std::cout << "Transform Time Rank " << comm_rank << " (s): " <<
           tot_seconds << std::endl;
-      std::cout << "  Search Time Rank " << comm_rank << " (s): " <<
+	std::cout << "  Search Time Rank " << comm_rank << " (s): " <<
           tot_seconds_srch << std::endl;
-      std::cout << "  Intersect Time Rank " << comm_rank << " (s): " <<
+	std::cout << "  Intersect Time Rank " << comm_rank << " (s): " <<
           tot_seconds_xsect << std::endl;
-      std::cout << "  Interpolate Time Rank " << comm_rank << " (s): " <<
+	std::cout << "  Interpolate Time Rank " << comm_rank << " (s): " <<
           tot_seconds_interp << std::endl;
+      }
     }
   }
 
@@ -455,4 +457,4 @@ class SwarmDriver {
 }  // namespace Meshfree
 }  // namespace Portage
 
-#endif  // SRC_DRIVER_DRIVER_H_
+#endif  // SRC_DRIVER_SWARM_H_

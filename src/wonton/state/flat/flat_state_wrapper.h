@@ -161,6 +161,20 @@ class Flat_State_Wrapper {
   }
 
   /*!
+   @brief Get names of data fields associated with a given entity
+   @param[in] entity The entity type
+   @param[out] names The names associated with the entity. Cleared on entry.
+  */
+  void get_names(const Entity_kind on_what, std::vector<std::string> &names) {
+    names.clear();
+    for (auto iter=entity_map_.begin(); iter!=entity_map_.end(); iter++) {
+      if (iter->second == on_what) {
+        names.push_back(iter->first);
+      }
+    }
+  }
+
+  /*!
     @brief Get pointer to scalar data
     @param[in] on_what The entity type on which the data is defined
     @param[in] var_name The string name of the data field
