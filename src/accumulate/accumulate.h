@@ -163,17 +163,26 @@ class Accumulate {
           }
           iA++;
         }
-
-        auto inverse_moment = moment.inverse();
         
         // Calculate inverse(P*W*transpose(P))*P*W
         iA = 0;
         for (auto const& particleA : source_particles) {
           vector<double> pair_result(nbasis);
           Point<dim> y = source_.get_particle_coordinates(particleA);
-          auto basis = Basis::shift<dim>(basis_,x,y);
-          pair_result = inverse_moment*basis;
-          for (size_t i=0; i<nbasis; i++) pair_result[i] *= weight_val[iA];
+          vector<double> basis = Basis::shift<dim>(basis_,x,y);
+
+          // recast as a Portage::Matrix
+          Matrix basis_matrix(nbasis,1);
+          for (size_t i=0; i<nbasis; i++) basis_matrix[i][0] = basis[i];
+
+          // solve the linear system
+#ifdef HAVE_LAPACKE 
+          Matrix pair_result_matrix = moment.solve(basis_matrix, "lapack-posv");
+#else
+          Matrix pair_result_matrix = moment.solve(basis_matrix);
+#endif
+
+          for (size_t i=0; i<nbasis; i++) pair_result[i] = pair_result_matrix[i][0]*weight_val[iA];
           result.emplace_back(particleA, pair_result);
           iA++;
         }

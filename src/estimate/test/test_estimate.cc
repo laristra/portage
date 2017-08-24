@@ -158,7 +158,7 @@ void test_estimate(Portage::Meshfree::EstimateType etype,
 	if (k==0) field[i] = result;
 
 	// check the estimate
-	ASSERT_NEAR(result, jetx[j][k], 1.e-12);
+	ASSERT_NEAR(result, jetx[j][k], 1.e-11);
       }
     }
   }

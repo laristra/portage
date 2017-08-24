@@ -11,7 +11,7 @@ Please see the license file at the root of this repository, or at:
 
 # Swarm test
 add_executable(swarmapp swarmapp.cc)
-target_link_libraries(swarmapp portage ${EXTRA_LIBS})
+target_link_libraries(swarmapp portage ${EXTRA_LIBS} ${LAPACKE_LIBRARIES})
 
 
 #TCMalloc option

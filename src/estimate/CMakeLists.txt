@@ -22,6 +22,7 @@ if (ENABLE_UNIT_TESTS)
 
   cinch_add_unit(test_estimate
     SOURCES test/test_estimate.cc
+    LIBRARIES ${LAPACKE_LIBRARIES}
     POLICY MPI
     THREADS 1
     )

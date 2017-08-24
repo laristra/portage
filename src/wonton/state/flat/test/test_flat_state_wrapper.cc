@@ -95,6 +95,17 @@ TEST(Flat_State_Wrapper, VectorInitFail1) {
       std::string msg=std::string("variable ")+var_name+" has incompatible size on add";
       ASSERT_STREQ(err.what(), msg.c_str());
   }
+
+  std::vector<std::string> enames;
+  flatwrap.get_names(NODE,enames);
+  ASSERT_EQ(enames.size(), 2);
+  ASSERT_EQ(enames[0], "nf1");
+  ASSERT_EQ(enames[1], "nf2");
+
+  flatwrap.get_names(CELL,enames);
+  ASSERT_EQ(enames.size(), 2);
+  ASSERT_EQ(enames[0], "cf1");
+  ASSERT_EQ(enames[1], "cf2");
 }
 
 TEST(Flat_State_Wrapper, VectorInitFail2) {

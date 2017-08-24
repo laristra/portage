@@ -27,8 +27,9 @@ void test_accumulate(Portage::Meshfree::EstimateType etype,
   // create the source and target swarms input data
   const size_t nside = 8;
   const size_t npoints = powl(nside,dim);
-  const double smoothing = 1./nside;
-  const double jitter = 0.3*smoothing;
+  const double deltax = 1./nside;
+  const double smoothing = 2.5*deltax;
+  const double jitter = 0.2;
   auto src_pts = make_shared<typename Swarm<dim>::PointVec>(npoints);
   auto tgt_pts = make_shared<typename Swarm<dim>::PointVec>(npoints);
   for (size_t i=0; i<npoints; i++) {
@@ -39,11 +40,11 @@ void test_accumulate(Portage::Meshfree::EstimateType etype,
 
       double delta;
 
-      delta = 2.*(((double)rand())/RAND_MAX -.5)*jitter;
-      (*src_pts)[i][k] = 1.25*index*smoothing + delta;
+      delta = 2.*(((double)rand())/RAND_MAX -.5)*jitter*deltax;
+      (*src_pts)[i][k] = index*deltax + delta;
 
-      delta = 2.*(((double)rand())/RAND_MAX -.5)*jitter;
-      (*tgt_pts)[i][k] = index*smoothing + delta;
+      delta = 2.*(((double)rand())/RAND_MAX -.5)*jitter*deltax;
+      (*tgt_pts)[i][k] = index*deltax + delta;
     }
   }
 
@@ -73,8 +74,6 @@ void test_accumulate(Portage::Meshfree::EstimateType etype,
     auto jsize = Basis::jet_size<dim>(btype);
     ASSERT_EQ(jsize[0], bsize);
     ASSERT_EQ(jsize[1], bsize);
-    vector<vector<vector<double>>> sums(npoints,
-      vector<vector<double>>(jsize[0], vector<double>(jsize[1],0.)));
 
     // list of src swarm particles (indices)
     vector<unsigned int> src_particles(npoints);
@@ -82,6 +81,7 @@ void test_accumulate(Portage::Meshfree::EstimateType etype,
 
     // Loop through target particles
     for (size_t i=0; i<npoints; i++) {
+      vector<vector<double>> sums(jsize[0], vector<double>(jsize[1],0.));
 
       // do the accumulation loop for each target particle against all
       // the source particles
@@ -100,13 +100,12 @@ void test_accumulate(Portage::Meshfree::EstimateType etype,
           auto y = src_swarm.get_particle_coordinates(j);
           auto basisy = Basis::function<dim>(btype,y);
           for (size_t k=0; k<jsize[0]; k++) for (size_t m=0; m<jsize[1]; m++) {
-              sums[i][k][m] += basisy[k]*(shape_vecs[j]).weights[m];
+              sums[k][m] += basisy[k]*(shape_vecs[j]).weights[m];
           }
         }
 
         for (size_t k=0; k<jsize[0]; k++) for (size_t m=0; m<jsize[1]; m++) {
-            // this isn't working yet - need to fix
-            //ASSERT_NEAR(sums[i][k][m], jetx[k][m], 1.e-12);
+            ASSERT_NEAR(sums[k][m], jetx[k][m], 1.e-11);
         }
       }
     }

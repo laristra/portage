@@ -178,6 +178,38 @@ TEST(Matrix, SolveWithInverse) {
 /*!
   @brief Test the matrix solve functionality
  */
+TEST(Matrix, SolveWithJunk) {
+
+  /* Mathematica code to generate this example:
+   *
+   * a = RotationMatrix[{{1, 2.5, -1., 3.0}, {2., -3, -2, 1.0}}];
+   * eval = DiagonalMatrix[{1., 2., 3., 4.}];
+   * aa = a.eval.Transpose[a];
+   *
+   * The matrix aa is symmetric positive-definite with eigenvalues 1,2,3,4.
+   */
+
+  Portage::Matrix A({{1.5909092362921544, 0.3023197488806776, -0.0008986359725132367,
+    0.5719175069965953}, {0.3023197488806776, 3.684725833270652, 0.22450059345997342,
+    -0.7267204571061852}, {-0.0008986359725132367, 0.22450059345997342,
+    2.410888035652873, 0.6054854449257954}, {0.5719175069965953, -0.7267204571061852,
+    0.6054854449257954, 2.3134768947843307}});
+
+  Portage::Matrix B({{1.2, 3.4}, {-5.6, 1.7}, {9.8, -7.6}, {3.1, 6.2}});
+
+  try {
+    Portage::Matrix AinvB = A.solve(B, "la-di-da");
+    ASSERT_TRUE(false);
+  }
+  catch (...) {
+    ASSERT_TRUE(true);
+  }
+
+}
+
+/*!
+  @brief Test the matrix solve functionality
+ */
 TEST(Matrix, SolveWithPOSV) {
 
   /* Mathematica code to generate this example:

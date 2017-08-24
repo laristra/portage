@@ -467,6 +467,8 @@ class Matrix {
             "solve(gesv): reciprocal condition number is less than machine precision"
             << std::endl;
       } 
+    } else {
+      throw std::runtime_error(std::string("LAPACK solve requested but solver ")+method+" unrecognized");
     }
 #else
     else {
