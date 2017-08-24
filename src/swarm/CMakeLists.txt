@@ -28,7 +28,7 @@ if (ENABLE_UNIT_TESTS)
       POLICY MPI
       THREADS 1
     )
-   endif (Jali_DIR)
+#   endif (Jali_DIR)
 
   cinch_add_unit(test_swarm_state
     SOURCES test/test_swarm_state.cc
@@ -36,5 +36,5 @@ if (ENABLE_UNIT_TESTS)
     POLICY MPI
     THREADS 1
     )
-
+   endif (Jali_DIR)
 endif (ENABLE_UNIT_TESTS)
