@@ -102,11 +102,15 @@ int main(int argc, char** argv) {
   // Fill data on input mesh with linear function
   for (auto c : inputMesh.cells()) {
     auto cen = c->centroid();
-    inputMeshAccessor[c] = cen[0] + cen[1];
+
+    if (order == 1)
+      inputMeshAccessor[c] = cen[0] + cen[1];
+    else 
+      inputMeshAccessor[c] = cen[0]*cen[0] + cen[1]*cen[1];
   }
   
   // Setup the main driver for this mesh type 2
-  /*if(order==2){
+  if(order==2){
     Portage::Driver<
       Portage::SearchKDTree,
       Portage::IntersectR2D,
@@ -122,7 +126,7 @@ int main(int argc, char** argv) {
 
     // Do the remap
     d.run(false);
-  } */
+  } 
 
   // Setup the main driver for this mesh type
   if(order==1){
@@ -148,7 +152,11 @@ int main(int argc, char** argv) {
   double toterr = 0.0;
   for (auto c : targetMesh.cells()) {
     auto cen = c->centroid();
-    double error = cen[0] + cen[1] - targetMeshAccessor[c];
+    double error;
+    if (order ==1)
+       error = cen[0] + cen[1] - targetMeshAccessor[c];
+    else
+       error = cen[0]*cen[0] + cen[1]*cen[1] - targetMeshAccessor[c];
     std::printf("Cell=% 4d Centroid = (% 5.3lf,% 5.3lf)", c.id(),cen[0], cen[1]);
     std::printf("  Value = % 10.6lf  Err = % lf\n",targetMeshAccessor[c], error);
     toterr += error*error;

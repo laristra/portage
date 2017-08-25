@@ -404,9 +404,11 @@ public:
     for (auto node : mesh_->vertices(this_cell)) {
       // Loop over all cells associated with this node
       for (auto cell : mesh_->cells(node)) {
-        if (cell != this_cell)
-          adj_cells->emplace_back(cell.global_id());
-      }
+        if (cell != this_cell) {
+          adj_cells->emplace_back(cell.id());
+          //adj_cells->emplace_back(cell.global_id());
+         }
+     }
     }
   }
 
@@ -458,7 +460,10 @@ public:
       // Loop over the nodes associated with this cell
       for (auto node : mesh_->vertices(cell)) {
         if (this_node != node)
-          adj_nodes->emplace_back(node.global_id());
+         {
+          adj_nodes->emplace_back(node.id());
+          //adj_nodes->emplace_back(node.global_id());
+         }
       }
     }
   }
