@@ -5,20 +5,21 @@
 # portage
 
 The portage library provides a framework for general purpose data
-remapping -- between meshes, between particles, or between meshes and
-particles --- in computational physics applications.  Remapping is
-facilitated thorugh the use of user-supplied _wrappers_ around
+remapping - between meshes, between particles, or between meshes and
+particles - in computational physics applications.  Remapping is
+facilitated through the use of user-supplied _wrappers_ around
 meshes/particle swarms with their data, and is broken into three
-phases that operate through the wrappers: _search_ for intersection
-candidates, perform the _intersection_ with candidates, then
+phases that operate on the wrappers: _search_ for intersection
+candidates, calculate the _intersection_ with candidates, then
 _interpolate_ the results onto the new mesh or particle swarm.
 Algorithms for each of the phases can be customized (e.g. order of
-accuracy of the interpolation) and, throught he wrappers, take
+accuracy of the interpolation) and, through the wrappers, take
 advantage of hybrid parallelism (MPI+X).
 
 ## Getting Started
 
-To obtain a copy of portage and its submodules, clone recursively:
+To obtain a copy of portage and its submodules from GitHub, clone
+recursively:
 
 ```sh
 git clone --recursive https://github.com/laristra/portage
@@ -34,8 +35,16 @@ support.  The build system _requires_ CMake version 3.0+.
 The following libraries are also _required_ (see examples below):
 
 - LAPACKE (3.7.1+): set `PC_LAPACKE_NCLUDE_DIRS` and
-  `PC_LAPACKE_LIBRARY_DIRS`
-- Boost (1.53.0+): set `Boost_INCLUDE_DIR` if CMake can't find it
+  `PC_LAPACKE_LIBRARY_DIRS` if the sytem can't find your LAPACK
+  install (_yes, that typo of `NCLUDE` is present in the version of
+  the build system we are using; this will be fixed in a coming
+  release_)
+- **EITHER** Boost (1.53.0+) or Thrust (1.6.0+): we wrap some features
+  of either one of these packages.  If you would like to run with
+  OpenMP or TBB threads, then you must use Thrust by setting
+  `ENABLE_THRUST=True`.  Set either `Boost_INCLUDE_DIR` if CMake can't
+  find your Boost install or `THRUST_DIR`.  The Thrust backend can be
+  swapped from the OpenMP default by setting `THRUST_BACKEND`.
 
 portage provides wrappers for a few existing mesh types.  Building
 support for these is _optional_:
