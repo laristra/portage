@@ -34,33 +34,67 @@ support.  The build system _requires_ CMake version 3.0+.
 
 The following libraries are also _required_ (see examples below):
 
-- LAPACKE (3.7.1+): set `PC_LAPACKE_NCLUDE_DIRS` and
-  `PC_LAPACKE_LIBRARY_DIRS` if the sytem can't find your LAPACK
-  install (_yes, that typo of `NCLUDE` is present in the version of
-  the build system we are using; this will be fixed in a coming
-  release_)
-- **EITHER** Boost (1.53.0+) or Thrust (1.6.0+): we wrap some features
-  of either one of these packages.  If you would like to run with
-  OpenMP or TBB threads, then you must use Thrust by setting
-  `ENABLE_THRUST=True`.  Set either `Boost_INCLUDE_DIR` if CMake can't
-  find your Boost install or `THRUST_DIR`.  The Thrust backend can be
-  swapped from the OpenMP default by setting `THRUST_BACKEND`.
+- LAPACKE (3.7.1+):
+
+  set `PC_LAPACKE_NCLUDE_DIRS` and `PC_LAPACKE_LIBRARY_DIRS` if the
+  sytem can't find your LAPACK install (_yes, that typo of `NCLUDE` is
+  present in the version of the build system we are using; this will
+  be fixed in a coming release_) - **__Either__** Boost (1.53.0+)
+  **__or__** Thrust (1.6.0+):
+
+  we wrap some features of either one of these packages.  If you would
+  like to run with OpenMP or TBB threads, then you must use Thrust by
+  setting `ENABLE_THRUST=True`.  Set either `Boost_INCLUDE_DIR` if
+  CMake can't find your Boost install or `THRUST_DIR`.  The Thrust
+  backend can be swapped from the OpenMP default by setting
+  `THRUST_BACKEND`.
 
 portage provides wrappers for a few existing mesh types.  Building
 support for these is _optional_:
 
-- [Jali](http://github.com/lanl/jali): regularly tested with verison
-  0.9.8.  You will need to set the `Jali_Dir` CMake variable if you
-  wish to build support for Jali and its tests (see examples below).
+- [Jali](http://github.com/lanl/jali):
+
+  regularly tested with verison 0.9.8.  You will need to set the
+  `Jali_Dir` CMake variable if you wish to build support for Jali and
+  its tests (see examples below).
+
 - [FleCSI Burton Specialization](http://github.com/laristra/flecsi-sp):
+
   the Burton specialization in the `flecsi-sp` repository is built on
   top of [FleCSI](http://github.com/laristra/flecsi).  You will need
   both projects to build support for the Burton mesh specialization
-  and its tests.  You will need to set the `FLECSI_INSTALL_DIR` CMake
-  variable, see examples below.
-
+  and its tests.  You will need to set `ENABLE_FleCSI=True` and add
+  the FleCSI and FleCSI-sp install paths to the `CMAKE_PREFIX_PATH`;
+  see examples below.
 
 ### Installation instructions
+
+In the simplest case where you have an appropriate versions mentioned
+above and Boost and LAPACKE are in the usual locations that CMake
+searches, then the build step is:
+
+```sh
+portage $ mkdir build
+portage $ cd build
+portage/build $ cmake -DENABLE_UNIT_TESTS=True -DENABLE_APP_TESTS=True ..
+portage/build $ make
+```
+
+This would compile the code and tests.  To run the tests, simply execute
+```sh
+portage/build $ make tests
+```
+
+If you wish to install the code into the `CMAKE_INSTALL_PREFIX` then
+simply execute
+```sh
+portage/build $ make install
+```
+
+See the examples below, or the
+[documentation](http://portage.lanl.gov) for more build instructions.
+
+----
 
 Below we list copy & paste instructions for several local machines; we
 have a script that parses this README file to execute the examples
