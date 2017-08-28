@@ -406,7 +406,6 @@ public:
       for (auto cell : mesh_->cells(node)) {
         if (cell != this_cell) {
           adj_cells->emplace_back(cell.id());
-          //adj_cells->emplace_back(cell.global_id());
          }
      }
     }
@@ -462,7 +461,6 @@ public:
         if (this_node != node)
          {
           adj_nodes->emplace_back(node.id());
-          //adj_nodes->emplace_back(node.global_id());
          }
       }
     }
