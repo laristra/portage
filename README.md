@@ -34,7 +34,7 @@ a working build environment.
 
 ### Prerequisites
 
-portage uses some standard C++14 features as well as MPI, so a fairly
+portage uses standard C++11 features as well as MPI, so a fairly
 modern compiler is needed.  We regularly test with intel 17+ or gcc
 5.3+, and openmpi 1.10.3+.  The build system _requires_ CMake version
 3.0+.
