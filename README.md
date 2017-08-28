@@ -27,6 +27,11 @@ recursively:
 git clone --recursive https://github.com/laristra/portage
 ```
 
+If you are familiar with Docker, take a look at
+our
+[Dockerfile](https://github.com/laristra/portage/blob/master/docker/Dockerfile) for
+a working build environment.
+
 ### Prerequisites
 
 portage uses some standard C++14 features as well as MPI, so a fairly
