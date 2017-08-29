@@ -16,6 +16,8 @@ set(support_HEADERS
     Matrix.h
     weight.h
     basis.h
+    lsfits.h
+    svd.h
     PARENT_SCOPE
 )
 

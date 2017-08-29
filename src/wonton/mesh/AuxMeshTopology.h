@@ -337,7 +337,7 @@ class AuxMeshTopology {
   }
 
   //! if entity is on exterior boundary
-  bool on_exterior_boundary(Entity_kind const entity, int const entity_id) {
+  bool on_exterior_boundary(Entity_kind const entity, int const entity_id) const {
     switch (entity) {
       case NODE:
         return node_on_exterior_boundary_[entity_id];

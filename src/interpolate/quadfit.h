@@ -4,13 +4,16 @@ Please see the license file at the root of this repository, or at:
     https://github.com/laristra/portage/blob/master/LICENSE
 */
 
-#ifndef SRC_INTERPOLATE_GRADIENT_H_
-#define SRC_INTERPOLATE_GRADIENT_H_
+#ifndef SRC_INTERPOLATE_QUADFIT_H_
+#define SRC_INTERPOLATE_QUADFIT_H_
 
 #include <algorithm>
 #include <stdexcept>
 #include <string>
 #include <vector>
+
+#include <stdio.h>
+#include <stdlib.h>
 #include <iostream>
 
 #include "portage/support/portage.h"
@@ -21,8 +24,11 @@ Please see the license file at the root of this repository, or at:
 namespace Portage {
 
 
-/*! @class Limited_Gradient gradient.h
-    @brief Compute limited gradient of a field or components of a field
+///////////////////////////////////////////////////////////////////////////////
+
+
+/*! @class Limited_Quadfit quadfit.h
+    @brief Compute limited quadfit of a field or components of a field
     @tparam MeshType A mesh class that one can query for mesh info
     @tparam StateType A state manager class that one can query for field info
     @tparam on_what An enum type which indicates different entity types
@@ -32,19 +38,19 @@ namespace Portage {
 
 template<typename MeshType, typename StateType, Entity_kind on_what,
          long D>
-class Limited_Gradient {
+class Limited_Quadfit {
  public:
   /*! @brief Constructor
       @param[in] mesh  Mesh class than one can query for mesh info
       @param[in] state A state manager class that one can query for field info
       @param[in] on_what An enum that indicates what type of entity the field is on
-      @param[in] var_name Name of field for which the gradient is to be computed
+      @param[in] var_name Name of field for which the quadfit is to be computed
       @param[in] limiter_type An enum indicating if the limiter type (none, Barth-Jespersen, Superbee etc)
 
       @todo must remove assumption that field is scalar
    */
 
-  Limited_Gradient(MeshType const & mesh, StateType const & state,
+  Limited_Quadfit(MeshType const & mesh, StateType const & state,
                    std::string const var_name,
                    LimiterType limiter_type) :
       mesh_(mesh), state_(state),
@@ -59,21 +65,21 @@ class Limited_Gradient {
   //
   //  //! Copy constructor (deleted)
   //
-  //  Limited_Gradient(const Limited_Gradient &) = delete;
+  //  Limited_Quadfit(const Limited_Quadfit &) = delete;
 
   /// Assignment operator (disabled)
 
-  Limited_Gradient & operator = (const Limited_Gradient &) = delete;
+  Limited_Quadfit & operator = (const Limited_Quadfit &) = delete;
 
   /// Destructor
 
-  ~Limited_Gradient() {}
+  ~Limited_Quadfit() {}
 
   /// Functor - not implemented for all types - see specialization for
   /// cells, nodes
 
-  Vector<D> operator()(int entity_id) {
-    std::cerr << "Limited gradient not implemented for this entity kind\n";
+  Vector<D*(D+3)/2> operator()(int entity_id) {
+    std::cerr << "Limited quadfit not implemented for this entity kind\n";
   }
 
  private:
@@ -87,25 +93,25 @@ class Limited_Gradient {
 
 ///////////////////////////////////////////////////////////////////////////////
 
-/*! @class Limited_Gradient<MeshType,StateType,CELL> gradient.h
-    @brief Specialization of limited gradient class for @c cell-centered field
+/*! @class Limited_Quadfit<MeshType,StateType,CELL> quadfit.h
+    @brief Specialization of limited quadfit class for @c cell-centered field
     @tparam MeshType A mesh class that one can query for mesh info
     @tparam StateType A state manager class that one can query for field info
 */
 
 template<typename MeshType, typename StateType, long D>
-class Limited_Gradient<MeshType, StateType, CELL, D> {
+class Limited_Quadfit<MeshType, StateType, CELL, D> {
  public:
   /*! @brief Constructor
       @param[in] mesh  Mesh class than one can query for mesh info
       @param[in] state A state manager class that one can query for field info
-      @param[in] var_name Name of field for which the gradient is to be computed
+      @param[in] var_name Name of field for which the quadfit is to be computed
       @param[in] limiter_type An enum indicating if the limiter type (none, Barth-Jespersen, Superbee etc)
 
       @todo must remove assumption that field is scalar
    */
 
-  Limited_Gradient(MeshType const & mesh, StateType const & state,
+  Limited_Quadfit(MeshType const & mesh, StateType const & state,
                    std::string const var_name,
                    LimiterType limiter_type) :
       mesh_(mesh), state_(state), var_name_(var_name),
@@ -116,7 +122,7 @@ class Limited_Gradient<MeshType, StateType, CELL, D> {
 
     // Collect and keep the list of neighbors for each NODE as it may
     // be expensive to go to the mesh layer and collect this data for
-    // each cell during the actual gradient calculation
+    // each cell during the actual quadfit calculation
 
     int ncells = mesh_.num_entities(CELL);
     cell_neighbors_.resize(ncells);
@@ -130,19 +136,19 @@ class Limited_Gradient<MeshType, StateType, CELL, D> {
   //
   //  //! Copy constructor (deleted)
   //
-  //  Limited_Gradient(const Limited_Gradient &) = delete;
+  //  Limited_Quadfit(const Limited_Quadfit &) = delete;
 
   /// Assignment operator (disabled)
 
-  Limited_Gradient & operator = (const Limited_Gradient &) = delete;
+  Limited_Quadfit & operator = (const Limited_Quadfit &) = delete;
 
   /// Destructor
 
-  ~Limited_Gradient() {}
+  ~Limited_Quadfit() {}
 
   /// Functor
 
-  Vector<D> operator()(int cellid);
+  Vector<D*(D+3)/2> operator()(int cellid);
 
  private:
   LimiterType limtype_;
@@ -153,22 +159,30 @@ class Limited_Gradient<MeshType, StateType, CELL, D> {
   std::vector<std::vector<int>> cell_neighbors_;
 };
 
-// @brief Implementation of Limited_Gradient functor for CELLs
+  /*! @brief Implementation of Limited_Quadfit functor for CELLs
+      Limited _Quadfit - Fit to a field to a quadratic
+      multinomial using a Least-Squared fit. Returns an  
+      array of parameters.  If the CELL is on a boundary
+      the stencil is too small, so it drops to linear order.
+      Uses an SVD decomposition for the LS regression.
 
+  */
 template<typename MeshType, typename StateType, long D>
-Vector<D>
-Limited_Gradient<MeshType, StateType, CELL, D>::operator() (int const cellid) {
+  Vector<D*(D+3)/2>
+Limited_Quadfit<MeshType, StateType, CELL, D>::operator() (int const cellid) {
 
   assert(D == mesh_.space_dimension());
   assert(D == 2 || D == 3);
   double phi = 1.0;
-  Vector<D> grad;
+  Vector<D*(D+3)/2> qfit; 
+  Vector<D*(D+3)/2> dvec; 
 
   std::vector<int> const & nbrids = cell_neighbors_[cellid];
 
   std::vector<Point<D>> cellcenters(nbrids.size()+1);
   std::vector<double> cellvalues(nbrids.size()+1);
   
+  // get centroid and value for cellid at center of point cloud
   mesh_.cell_centroid(cellid, &(cellcenters[0]));
 
   cellvalues[0] = vals_[cellid];
@@ -176,20 +190,16 @@ Limited_Gradient<MeshType, StateType, CELL, D>::operator() (int const cellid) {
   int i = 1;
   for (auto nbrcell : nbrids) {
     mesh_.cell_centroid(nbrcell, &(cellcenters[i]));
-
     cellvalues[i] = vals_[nbrcell];
     i++;
   }
 
-  grad = ls_gradient(cellcenters, cellvalues);
-
+  bool boundary_cell =  mesh_.on_exterior_boundary(CELL, cellid);
+  qfit = ls_quadfit(cellcenters, cellvalues, boundary_cell);
   // Limit the gradient to enforce monotonicity preservation
-  
-  if (limtype_ == BARTH_JESPERSEN &&
-      !mesh_.on_exterior_boundary(CELL, cellid)) {  // No limiting on boundary
-    
-    phi = 1.0;
-    
+   
+  if (limtype_ == BARTH_JESPERSEN && !boundary_cell) {  // No limiting on boundary
+     
     // Min and max vals of function (cell centered vals) among neighbors
     /// @todo: must remove assumption the field is scalar
     
@@ -215,42 +225,50 @@ Limited_Gradient<MeshType, StateType, CELL, D>::operator() (int const cellid) {
     
     for (auto coord : cellcoords) {
       Vector<D> vec = coord-cellcenters[0];
-      double diff = dot(grad, vec);
+      //Vector<D*(D+3)/2> dvec;
+      for (int j = 0; j < D; ++j) {	  
+	dvec[j] = vec[j];
+	// Add the quadratic terms
+	for (int k = 0; k < j; ++k) {
+	  dvec[j+k+D-1] = dvec[k]*dvec[j];
+	}
+      }
+      double diff = dot(qfit, dvec);
       double extremeval = (diff > 0.0) ? maxval : minval;
       double phi_new = (diff == 0.0) ? 1 : (extremeval-cellcenval)/diff;
       phi = std::min(phi_new, phi);
     }
+
   }
 
-  // Limited gradient is phi*grad
-
-  return phi*grad;
+  // Limited quadfit is phi*fit
+  return phi*qfit;
 }
 
 
 ///////////////////////////////////////////////////////////////////////////////
 
-/*! @class Limited_Gradient<MeshType,StateType,NODE> gradient.h
-    @brief Specialization of limited gradient class for @c node-centered field
+/*! @class Limited_Quadfit<MeshType,StateType,NODE> quadfit.h
+    @brief Specialization of limited quadfit class for @c node-centered field
     @tparam MeshType A mesh class that one can query for mesh info
     @tparam StateType A state manager class that one can query for field info
 */
 
 
 template<typename MeshType, typename StateType, long D>
-class Limited_Gradient<MeshType, StateType, NODE, D> {
+class Limited_Quadfit<MeshType, StateType, NODE, D> {
  public:
 
   /*! @brief Constructor
       @param[in] mesh  Mesh class than one can query for mesh info
       @param[in] state A state manager class that one can query for field info
-      @param[in] var_name Name of field for which the gradient is to be computed
+      @param[in] var_name Name of field for which the quadfit is to be computed
       @param[in] limiter_type An enum indicating if the limiter type (none, Barth-Jespersen, Superbee etc)
 
       @todo must remove assumption that field is scalar
    */
 
-  Limited_Gradient(MeshType const & mesh, StateType const & state,
+  Limited_Quadfit(MeshType const & mesh, StateType const & state,
                    std::string const var_name,
                    LimiterType limiter_type) :
       mesh_(mesh), state_(state), var_name_(var_name),
@@ -261,7 +279,7 @@ class Limited_Gradient<MeshType, StateType, NODE, D> {
 
     // Collect and keep the list of neighbors for each NODE as it may
     // be expensive to go to the mesh layer and collect this data for
-    // each cell during the actual gradient calculation
+    // each cell during the actual quadfit calculation
 
     int nnodes = mesh_.num_entities(NODE);
     node_neighbors_.resize(nnodes);
@@ -275,43 +293,52 @@ class Limited_Gradient<MeshType, StateType, NODE, D> {
   //
   //  //! Copy constructor (deleted)
   //
-  //  Limited_Gradient(const Limited_Gradient &) = delete;
+  //  Limited_Quadfit(const Limited_Quadfit &) = delete;
 
   /// Assignment operator (disabled)
 
-  Limited_Gradient & operator = (const Limited_Gradient &) = delete;
+  Limited_Quadfit & operator = (const Limited_Quadfit &) = delete;
 
   /// Destructor
 
-  ~Limited_Gradient() {}
+  ~Limited_Quadfit() {}
 
   /// Functor
 
-  Vector<D> operator()(int nodeid);
+  Vector<D*(D+3)/2> operator()(int nodeid);
 
  private:
 
   LimiterType limtype_;
   MeshType const & mesh_;
   StateType const & state_;
-  std::string const & var_name_;
+  std::string var_name_;
   double const *vals_;
   std::vector<std::vector<int>> node_neighbors_;
 };
 
-// @brief Limited gradient functor implementation for NODE
+  /*! @brief Implementation of Limited_Quadfit functor for NODEs
+   *  Limited _Quadfit - Fit to a field to a quadratic
+   *  multinomial using a Least-Squared fit. Returns an  
+   *  array of parameters.  If the MODE is on a boundary,
+   *  the stencil is too small, so it drops to linear order.
+   *  Uses an SVD decomposition for the LS regression.
+   */
+
 
 template<typename MeshType, typename StateType, long D>
-Vector<D>
-Limited_Gradient<MeshType, StateType, NODE, D>::operator() (int const nodeid) {
+  Vector<D*(D+3)/2>
+Limited_Quadfit<MeshType, StateType, NODE, D>::operator() (int const nodeid) {
 
   assert(D == mesh_.space_dimension());
   assert(D == 2 || D == 3);
   double phi = 1.0;
-  Vector<D> grad;
+  Vector<D*(D+3)/2> qfit; 
+  Vector<D*(D+3)/2> dvec; 
 
   std::vector<int> const & nbrids = node_neighbors_[nodeid];
-  
+  int j = 1;
+
   std::vector<Point<D>> nodecoords(nbrids.size()+1);
   std::vector<double> nodevalues(nbrids.size()+1);
   
@@ -326,11 +353,11 @@ Limited_Gradient<MeshType, StateType, NODE, D>::operator() (int const nodeid) {
     nodevalues[i] = vals_[nbrnode];
     i++;
   }
-  
-  grad = ls_gradient(nodecoords, nodevalues);
 
-  if (limtype_ == BARTH_JESPERSEN &&
-      !mesh_.on_exterior_boundary(NODE, nodeid)) {  // No limiting on boundary
+  bool boundary_node =  mesh_.on_exterior_boundary(NODE, nodeid);
+  qfit = ls_quadfit(nodecoords, nodevalues, boundary_node);
+  
+  if (limtype_ == BARTH_JESPERSEN && !boundary_node) {  // No limiting on boundary
     
     // Min and max vals of function (cell centered vals) among neighbors
     
@@ -354,18 +381,27 @@ Limited_Gradient<MeshType, StateType, NODE, D>::operator() (int const nodeid) {
     
     for (auto const & coord : dualcellcoords) {
       Vector<D> vec = coord-nodecoords[0];
-      double diff = dot(grad, vec);
+      // Vector<D*(D+3)/2> dvec;
+	for (int j = 0; j < D; ++j) {
+	  dvec[j] = vec[j];
+	  // Add the quadratic terms
+	  for (int k = 0; k < j; ++k) {
+	    dvec[j+k+D-1] = dvec[k]*dvec[j];
+	  }
+	}
+
+      double diff = dot(qfit, dvec);
       double extremeval = (diff > 0.0) ? maxval : minval;
       double phi_new = (diff == 0.0) ? 1 : (extremeval-nodeval)/diff;
       phi = std::min(phi_new, phi);
     }
   }
 
-  // Limited gradient is phi*grad
+  // Limited gradient is phi*qfit
 
-  return phi*grad;
+  return phi*qfit;
 }
 
 }  // namespace Portage
 
-#endif  // SRC_INTERPOLATE_GRADIENT_H_
+#endif  // SRC_INTERPOLATE_QUADFIT_H_
