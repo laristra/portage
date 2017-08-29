@@ -40,12 +40,11 @@ version 3.0+.
 
 The following libraries are also _required_ (see examples below):
 
-- LAPACKE (3.7.1+):
+- LAPACKE (3.7.1+)
 
 - **__Either__** Boost (1.53.0+) **__or__** Thrust (1.6.0+):
-
   We wrap some features of either one of these packages.  If you would
-  like to run with OpenMP or TBB threads, then you must use Thrust
+  like to run with OpenMP or TBB threads, then you _must_ use Thrust
 
 portage provides wrappers for a few third-party mesh types.  Building
 support for these is _optional_:
@@ -65,10 +64,12 @@ support for these is _optional_:
   the FleCSI and FleCSI-sp install paths to the `CMAKE_PREFIX_PATH`;
   see examples below.
 
+The [documentation](http://portage.lanl.gov) is built using doxygen (1.8+).
+
 For more details regarding CMake settings, see
 the [documentation](http://portage.lanl.gov) page.
 
-### Installation instructions
+### Installing
 
 In the simplest case where you have the appropriate versions mentioned
 above and Boost and LAPACKE are in the usual locations that CMake
@@ -93,6 +94,9 @@ simply execute
 ```sh
 portage/build $ make install
 ```
+
+To build the documentation, one would configure with the
+`-DENABLE_DOXYGEN=True` flag, and then `make doxygen`.
 
 See the examples below, or the
 [documentation](http://portage.lanl.gov) for more build instructions.
@@ -166,6 +170,10 @@ ctest -j16 --output-on-failure
 ```
 
 ## Varan
+
+__Note the typo in the version of the build system we are using: it is
+indeed `PC_LAPACKE_NCLUDE_DIRS`.  This will be fixed in the CMake
+files in a coming release.___
 
 Execute the following from the portage root directory:
 
