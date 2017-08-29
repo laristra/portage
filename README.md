@@ -16,8 +16,6 @@ Algorithms for each of the phases can be customized (e.g. order of
 accuracy of the interpolation) and, through the wrappers, take
 advantage of hybrid parallelism (MPI+X).
 
-See the [documentation](http://portage.lanl.gov) for more details.
-
 ## Getting Started
 
 To obtain a copy of portage and its submodules from GitHub, clone
@@ -34,30 +32,22 @@ a working build environment.
 
 ### Prerequisites
 
-portage uses standard C++11 features as well as MPI, so a fairly
-modern compiler is needed.  We regularly test with intel 17+ or gcc
-5.3+, and openmpi 1.10.3+.  The build system _requires_ CMake version
-3.0+.
+portage uses standard C++11 features, so a fairly modern compiler is
+needed.  We regularly test with Intel 17+ or GCC 5.3+.  Utilizing the
+full capabilities of portage will require an MPI implementation; we
+regularly test with OpenMPI 1.10.3+ The build system _requires_ CMake
+version 3.0+.
 
 The following libraries are also _required_ (see examples below):
 
 - LAPACKE (3.7.1+):
 
-  Set `PC_LAPACKE_NCLUDE_DIRS` and `PC_LAPACKE_LIBRARY_DIRS` if the
-  sytem can't find your LAPACK install (_yes, that typo of `NCLUDE` is
-  present in the version of the build system we are using; this will
-  be fixed in a coming release_)
-
 - **__Either__** Boost (1.53.0+) **__or__** Thrust (1.6.0+):
 
   We wrap some features of either one of these packages.  If you would
-  like to run with OpenMP or TBB threads, then you must use Thrust by
-  setting `ENABLE_THRUST=True`.  Set either `Boost_INCLUDE_DIR` if
-  CMake can't find your Boost install or `THRUST_DIR`.  The Thrust
-  backend can be swapped from the OpenMP default by setting
-  `THRUST_BACKEND`.
+  like to run with OpenMP or TBB threads, then you must use Thrust
 
-portage provides wrappers for a few existing mesh types.  Building
+portage provides wrappers for a few third-party mesh types.  Building
 support for these is _optional_:
 
 - [Jali](http://github.com/lanl/jali):
@@ -70,10 +60,13 @@ support for these is _optional_:
 
   The Burton specialization in the `flecsi-sp` repository is built on
   top of [FleCSI](http://github.com/laristra/flecsi).  You will need
-  both projects to build support for the Burton mesh specialization
+  _both_ projects to build support for the Burton mesh specialization
   and its tests.  You will need to set `ENABLE_FleCSI=True` and add
   the FleCSI and FleCSI-sp install paths to the `CMAKE_PREFIX_PATH`;
   see examples below.
+
+For more details regarding CMake settings, see
+the [documentation](http://portage.lanl.gov) page.
 
 ### Installation instructions
 
@@ -84,11 +77,13 @@ searches, then the build step is:
 ```sh
 portage $ mkdir build
 portage $ cd build
-portage/build $ cmake -DENABLE_UNIT_TESTS=True -DENABLE_APP_TESTS=True ..
+portage/build $ cmake -DENABLE_APP_TESTS=True ..
 portage/build $ make
 ```
 
-This would compile the code and tests.  To run the tests, simply execute
+This compiles the serial code and about a dozen application tests.  To
+run the tests, simply execute
+
 ```sh
 portage/build $ make tests
 ```
@@ -101,7 +96,6 @@ portage/build $ make install
 
 See the examples below, or the
 [documentation](http://portage.lanl.gov) for more build instructions.
-
 
 # License
 
@@ -121,8 +115,7 @@ assigned **LA-CC-16-084**.
 
 Below we list copy & paste instructions for several local machines; we
 have a script that parses this README file to execute the examples
-below to ensure they build. You can easily adapt them for other
-machines.
+below to ensure they build.
 
 ## Darwin
 
