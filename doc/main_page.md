@@ -66,20 +66,22 @@ git clone --recursive https://github.com/laristra/portage
 portage uses the CMake build system.  Below is an (incomplete) list of
 useful CMake flags for building portage.
 
-| CMake flag | Description | Default |
+| CMake flag:type | Description | Default |
 | ---------- |:------------|--------:|
-| `CMAKE_BUILD_TYPE:String`| `Debug` or optimized `Release` build | `Debug` |
+| `CMAKE_BUILD_TYPE:STRING`| `Debug` or optimized `Release` build | `Debug` |
 | `CMAKE_INSTALL_PREFIX:PATH` | Location for the portage library and headers to be installed | `/usr/local` |
+| `CMAKE_PREFIX_PATH:PATH` | Locations where CMake can look for packages; needs to be set to the FleCSI and FleCSI-SP locations if using FleCSI | "" |
 | `ENABLE_APP_TESTS:BOOL` | Turn on compilation and test harness of application tests | `False` |
-| `ENABLE_DOXYGEN` | Create a target to build this documentation | `False` |
-| `ENABLE_FleCSI` | Turn on support for the FleCSI Burton specialization; must set `CMAKE_PREFIX_PATH` to a location where _both_ FleCSI and FleCSI-SP can be found | `False` |
-| `ENABLE_MPI` | Build with support for MPI; note most of the code requires this | False |
-| `ENABLE_MPI_CXX_BINDINGS` | Tell CMake that the MPI language is C++, not C; this appears to be an OpenMPI thing only | False |
-| `ENABLE_THRUST` | Turn on Thrust support for on-node parallelism | False |
-| `ENABLE_UNIT_TESTS` | Turn on compilation and test harness of unit tests | False |
-| `ENABLE_FleCSI` | Turn on support for FleCSI; _requires C++14-compatible compiler_ | False |
-| `Jali_Dir` | Hint location for CMake to find Jali | "" |
-| `PC_LAPACKE_NCLUDE_DIRS` | Hint location for CMake to find LAPACKE include files if `pkg_config` fails | "" |
-| `PC_LAPACKE_LIBRARY_DIRS` | Hint location for CMake to find LAPACKE library files if `pkg_config` fails | "" |
-| `THRUST_DIR` | Directory of the Thrust install | "" |
-| `THRUST_BACKEND` | Backend to use for Thrust | `"THRUST_DEVICE_SYSTEM_OMP"` |
+| `ENABLE_DOXYGEN:BOOL` | Create a target to build this documentation | `False` |
+| `ENABLE_FleCSI:BOOL` | Turn on support for the FleCSI Burton specialization; must set `CMAKE_PREFIX_PATH` to a location where _both_ FleCSI and FleCSI-SP can be found | `False` |
+| `ENABLE_MPI:BOOL` | Build with support for MPI; | `False` |
+| `ENABLE_TCMALLOC:BOOL` | Build with support for TCMalloc | `False` |
+| `ENABLE_THRUST:BOOL` | Turn on Thrust support for on-node parallelism | `False` |
+| `ENABLE_UNIT_TESTS:BOOL` | Turn on compilation and test harness of unit tests | False |
+| `ENABLE_FleCSI:BOOL` | Turn on support for FleCSI; _requires C++14-compatible compiler_ | False |
+| `Jali_Dir:PATH` | Hint location for CMake to find Jali | "" |
+| `PC_LAPACKE_NCLUDE_DIRS:PATH` | Hint location for CMake to find LAPACKE include files if `pkg_config` fails | "" |
+| `PC_LAPACKE_LIBRARY_DIRS:PATH` | Hint location for CMake to find LAPACKE library files if `pkg_config` fails | "" |
+| `TCMALLOC_LIB:PATH` | The TCMalloc library to use | `${HOME}` |
+| `THRUST_DIR:PATH` | Directory of the Thrust install | "" |
+| `THRUST_BACKEND:STRING` | Backend to use for Thrust | `"THRUST_DEVICE_SYSTEM_OMP"` |
