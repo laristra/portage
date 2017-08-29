@@ -23,7 +23,7 @@ mpirun -np 1 $APPDIR/portageapp_jali \
 --output_results=y
 
 # Compare the values for the field
-$APPDIR/apptest_cmp GOLD-field_3d_node_f0_r1.txt field_3d_node_f0_r1.txt 1e-12
+$APPDIR/apptest_cmp GOLD_jali-field_3d_node_f0_r1.txt jali_field_3d_node_f0_r1.txt 1e-12
 
 # PARALLEL RUN
 
@@ -36,7 +36,7 @@ mpirun -np 4 $APPDIR/portageapp_jali \
 
 # Compare the values for the field
 # TODO:  tolerance used to be 1e-12 - why did I have to increase it?
-$APPDIR/apptest_cmp GOLD-field_3d_node_f0_r1_nc.txt.0 field_3d_node_f0_r1_nc.txt.0 1e-11
-$APPDIR/apptest_cmp GOLD-field_3d_node_f0_r1_nc.txt.1 field_3d_node_f0_r1_nc.txt.1 1e-11
-$APPDIR/apptest_cmp GOLD-field_3d_node_f0_r1_nc.txt.2 field_3d_node_f0_r1_nc.txt.2 1e-11
-$APPDIR/apptest_cmp GOLD-field_3d_node_f0_r1_nc.txt.3 field_3d_node_f0_r1_nc.txt.3 1e-11
+$APPDIR/apptest_cmp GOLD_jali-field_3d_node_f0_r1_nc.txt.0 jali_field_3d_node_f0_r1_nc.txt.0 1e-11
+$APPDIR/apptest_cmp GOLD_jali-field_3d_node_f0_r1_nc.txt.1 jali_field_3d_node_f0_r1_nc.txt.1 1e-11
+$APPDIR/apptest_cmp GOLD_jali-field_3d_node_f0_r1_nc.txt.2 jali_field_3d_node_f0_r1_nc.txt.2 1e-11
+$APPDIR/apptest_cmp GOLD_jali-field_3d_node_f0_r1_nc.txt.3 jali_field_3d_node_f0_r1_nc.txt.3 1e-11

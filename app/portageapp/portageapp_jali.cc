@@ -587,7 +587,7 @@ int main(int argc, char** argv) {
 
     // construct the field file name and open the file
 
-    std::string fieldfilename = "field_" +
+    std::string fieldfilename = "jali_field_" +
         std::to_string(static_cast<long long>(dim)) + "d_" +
         entstr + "_f" + std::to_string(static_cast<long long>(poly_order)) + "_r" +
         std::to_string(static_cast<long long>(interp_order));
