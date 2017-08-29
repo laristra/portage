@@ -34,23 +34,6 @@ endif()
 cinch_add_application_directory(app)
 cinch_add_library_target(portage src)
 
-
-# Create some subcomponent libraries for the purposes of unit testing
-#
-# NOT ABLE TO DO EITHER OF THESE
-
-if (ENABLE_UNIT_TESTS)
-#  cinch_add_library_target(search src/search)
-#  cinch_add_library_target(intersect src/intersect)
-#  cinch_add_library_target(remap src/remap)
-#  cinch_add_library_target(state src/state)
-
-#  cinch_add_library_target(portage_search src/search)
-#  cinch_add_library_target(portage_intersect src/intersect)
-#  cinch_add_library_target(portage_remap src/remap)
-#  cinch_add_library_target(portage_state src/state)
-endif()
-
 # Add application tests
 # May pull this logic into cinch at some future point
 option(ENABLE_APP_TESTS "Enable testing of full app" OFF)
@@ -58,9 +41,12 @@ if(ENABLE_APP_TESTS)
   enable_testing()
 endif()
 
-#------------------------------------------------------------------------------#
-# 
-#------------------------------------------------------------------------------#
+# We know we are a C++ project, so force the bindings if we are using MPI
+if (ENABLE_MPI)
+  set(ENABLE_MPI_CXX_BINDINGS TRUE CACHE BOOL "Enable MPI C++ Bindings" FORCE)
+  mark_as_advanced(ENABLE_MPI_CXX_BINDINGS)
+endif (ENABLE_MPI)
+
 
 set(CINCH_HEADER_SUFFIXES "\\.h")
 
