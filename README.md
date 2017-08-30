@@ -21,7 +21,6 @@ cmake \
     -D ENABLE_UNIT_TESTS=True \
     -D ENABLE_APP_TESTS=True \
     -D ENABLE_MPI=True \
-    -D ENABLE_MPI_CXX_BINDINGS=True \
     -D Jali_DIR:FILEPATH=$JALI_INSTALL_PREFIX/lib \
     -D Boost_INCLUDE_DIR:PATH=$TPL_INSTALL_PREFIX/include \
     ..
@@ -46,7 +45,6 @@ cmake \
     -D ENABLE_UNIT_TESTS=True \
     -D ENABLE_APP_TESTS=True \
     -D ENABLE_MPI=True \
-    -D ENABLE_MPI_CXX_BINDINGS=True \
     -D Jali_DIR:FILEPATH=$JALI_INSTALL_PREFIX/lib \
     ..
 make -j16
@@ -74,7 +72,6 @@ cmake \
     -D ENABLE_UNIT_TESTS=True \
     -D ENABLE_APP_TESTS=True \
     -D ENABLE_MPI=True \
-    -D ENABLE_MPI_CXX_BINDINGS=True \
     -D Jali_DIR:FILEPATH=$JALI_INSTALL_PREFIX/lib \
     -D PC_LAPACKE_NCLUDE_DIRS=$LAPACKE_INCLUDE_DIR \
     -D PC_LAPACKE_LIBRARY_DIRS=$LAPACKE_LIBRARY_DIR \
@@ -96,7 +93,6 @@ export MODULEPATH=""
 module load gcc/5.3.0 openmpi/1.10.3 cmake
 FLECSI_INSTALL_PREFIX=/usr/local/codes/ngc/private/flecsi/gcc5.3_openmpi1.10.3
 FLECSISP_INSTALL_PREFIX=/usr/local/codes/ngc/private/flecsi-sp/gcc5.3_openmpi1.10.3
-JALI_INSTALL_PREFIX=/usr/local/codes/ngc/private/jali/0.9.8-gcc-5.3.0-openmpi-1.10.3
 LAPACKE_INCLUDE_DIR=/usr/local/codes/ngc/private/lapack/lapack-3.7.1-gcc-5.3.0/include
 LAPACKE_LIBRARY_DIR=/usr/local/codes/ngc/private/lapack/lapack-3.7.1-gcc-5.3.0
 mkdir build-flecsi
@@ -110,8 +106,6 @@ cmake \
     -D ENABLE_MPI=True \
     -D ENABLE_FleCSI=True \
     -D CMAKE_PREFIX_PATH="$FLECSI_INSTALL_PREFIX;$FLECSISP_INSTALL_PREFIX" \
-    -D ENABLE_MPI_CXX_BINDINGS=True \
-    -D Jali_DIR:FILEPATH=$JALI_INSTALL_PREFIX/lib \
     -D PC_LAPACKE_NCLUDE_DIRS=$LAPACKE_INCLUDE_DIR \
     -D PC_LAPACKE_LIBRARY_DIRS=$LAPACKE_LIBRARY_DIR \
     ..

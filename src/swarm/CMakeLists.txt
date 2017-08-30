@@ -20,20 +20,17 @@ set (simple_mesh_SOURCES
 # Unit tests
 
 if (ENABLE_UNIT_TESTS)
-
-   if (Jali_DIR)
-      cinch_add_unit(test_swarm
-      SOURCES test/test_swarm.cc
-      LIBRARIES portage ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
-      POLICY MPI
-      THREADS 1
+  cinch_add_unit(test_swarm
+    SOURCES test/test_swarm.cc
+    LIBRARIES portage
+    POLICY MPI
+    THREADS 1
     )
 
   cinch_add_unit(test_swarm_state
     SOURCES test/test_swarm_state.cc
-    LIBRARIES portage ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
+    LIBRARIES portage
     POLICY MPI
     THREADS 1
     )
-   endif (Jali_DIR)
 endif (ENABLE_UNIT_TESTS)
