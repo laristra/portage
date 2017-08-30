@@ -122,6 +122,9 @@ class SwarmDriver {
     for any target particle
     @param[in] geom_type The geometry of the support (ELLIPTIC, TENSOR,
     FACETED) for any target particle
+
+    @c smoothing_lengths must have the size of @c SourceSwarm if center is @c Scatter and 
+    of @c TargetSwarm if center is @c Gather.
   */
   SwarmDriver(SourceSwarm const& sourceSwarm,
               SourceState const& sourceState,
@@ -207,7 +210,7 @@ class SwarmDriver {
 
   /// Assignment operator (disabled)
   SwarmDriver & operator = (const SwarmDriver &) = delete;
-
+ 
   /// Destructor
   ~SwarmDriver() {}
 
@@ -322,12 +325,27 @@ class SwarmDriver {
       // those around target points are determined by particle
       // smoothing lengths
 
-      auto sourceExtents =
-          std::make_shared<std::vector<Point<Dim>>>(numSourcePts);
-      auto targetExtents =
-          std::make_shared<std::vector<Point<Dim>>>(numTargetPts);
-      for (int i = 0; i < numTargetPts; i++)
-        (*targetExtents)[i] = Point<Dim>(smoothing_lengths_[i][0]);
+      // code below does not with with facted weightssourceExtents =
+      std::shared_ptr<std::vector<Point<Dim>>> sourceExtents;
+      std::shared_ptr<std::vector<Point<Dim>>> targetExtents;
+      if (weight_center_ == Portage::Meshfree::Gather) {
+	targetExtents = std::make_shared<std::vector<Point<Dim>>>(numTargetPts);
+	for (int i = 0; i < numTargetPts; i++) {
+          if (geom_types_[i] == Weight::FACETED) {
+	    throw std::runtime_error("FACETED geometry is not available here");
+	  }
+	  (*targetExtents)[i] = Point<Dim>(smoothing_lengths_[i][0]);
+	}
+      }
+      if (weight_center_ == Portage::Meshfree::Scatter) {
+	sourceExtents = std::make_shared<std::vector<Point<Dim>>>(numSourcePts);
+        for (int i = 0; i < numSourcePts; i++) {
+          if (geom_types_[i] == Weight::FACETED) {
+	    throw std::runtime_error("FACETED geometry is not available here");
+	  }
+	  (*sourceExtents)[i] = Point<Dim>(smoothing_lengths_[i][0]);
+	}
+      }
 
       const Search<Dim, SourceSwarm, TargetSwarm>
           searchfunctor(source_swarm_, target_swarm_,
@@ -445,11 +463,11 @@ class SwarmDriver {
   TargetState& target_state_;
   std::vector<std::string> source_remap_var_names_;
   std::vector<std::string> target_remap_var_names_;
-  EstimateType estimator_type_;
   WeightCenter weight_center_ = Gather;  // smoothing len. centered on trgt. pts
   std::vector<std::vector<std::vector<double>>> smoothing_lengths_;
   std::vector<Weight::Kernel> kernel_types_;
   std::vector<Weight::Geometry> geom_types_;
+  EstimateType estimator_type_;
   Basis::Type basis_type_;
 };  // class Driver_Swarm
 
