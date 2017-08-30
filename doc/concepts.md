@@ -1,4 +1,16 @@
-# Quickstart Guide      {#concepts}
+# portage Concepts      {#concepts}
+
+The remapping algorithm within portage is divided into three phases,
+which are roughly labelled as
+
+1. _search_ - find candidate cells/particles that will contribute to
+   remap of a given target cell/particle
+2. _intersect_ - calculate the weight of each candidate's contribution
+   to the remap of a given target cell/particle; this may include
+   higher-order moments if requested.
+3. _interpolate_ - using the weights and moments, along with
+   appropriate limiters, reconstruct the field data for a given target
+   cell/particle.
 
 ## Obtaining portage
 portage is maintained within a git [repository](https://github.com/laristra/portage)

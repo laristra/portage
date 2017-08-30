@@ -44,8 +44,8 @@ you'll likely need to tell CMake to use the MPI-wrapped compiler by
 setting something like
 
 ```sh
-CMAKE_C_COMPILER=\`which mpicc\`
-CMAKE_CXX_COMPILER=\`which mpiCC\`
+CMAKE_C_COMPILER=$(which mpicc)
+CMAKE_CXX_COMPILER=(which mpiCC)
 ```
 
 On-node parallelism is exposed through
@@ -75,14 +75,43 @@ want to build a serial version of the code, and CMake knows where to
 find your Boost and LAPACKE installations, one can do
 
 ```sh
-portage/ $ mkdir build; cd build
+portage/ $ mkdir build
+portage/ $ cd build
 portage/build/ $ cmake ..
 portage/build/ $ make
 ```
 
-This will build a serial version of the code into a library (without any tests) 
+This will build a serial version of the code into a library (without
+any tests).  A more complete build with MPI, Thrust (for on-node
+parallelism), unit and application test support, documentation
+support, and support for both [Jali](https://github.com/lanl/jali) and
+the Burton [specialization](https://github.com/laristra/flecsi-sp) of
+the [FleCSI](https://github.com/laristra/flecsi) library would look
+like:
 
-Below is an (incomplete) list of useful CMake flags for building
+```sh
+portage/ $ mkdir build
+portage/ $ cd build
+portage/build/ $ cmake -DCMAKE_C_COMPILER=$(which mpicc) \
+                       -DCMAKE_CXX_COMPILER=$(which mpiCC) \
+					   -DENABLE_APP_TESTS=True -DENABLE_UNIT_TESTS=True \
+					   -DENABLE_MPI=True \
+					   -DENABLE_THRUST=True -DTHRUST_DIR=/path/to/thrust/include/directory \
+					   -DJali_DIR=path/ to/Jali/lib \
+					   -DENABLE_FleCSI=True \
+					   -DCMAKE_PREFIX_PATH="/path/to/FleCSI/install;/path/to/FleCSI-sp/install" \
+					   -DENABLE_DOXYGEN=True \
+					   -DPC_LAPACKE_NCLUDE_DIRS=/path/to/LAPACKE/include \
+					   -DPC_LAPACKE_LIBRARY_DIRS=/path/to/LAPACKE/install \
+					   ..
+portage/build/ $ make           # builds the library and tests
+portage/build/ $ make test      # runs the tests
+portage/build/ $ make doxygen   # builds this HTML and a PDF form of the documentation
+portage/build/ $ make install   # installs the portage library and headers into CMAKE_INSTALL_PREFIX
+```
+
+## Useful CMake Flags
+Below is a non-exhaustive list of useful CMake flags for building
 portage.
 
 | CMake flag:type | Description | Default |
@@ -98,7 +127,7 @@ portage.
 | `ENABLE_THRUST:BOOL` | Turn on Thrust support for on-node parallelism | `False` |
 | `ENABLE_UNIT_TESTS:BOOL` | Turn on compilation and test harness of unit tests | `False` |
 | `ENABLE_FleCSI:BOOL` | Turn on support for FleCSI; _requires C++14-compatible compiler_ | `False` |
-| `Jali_Dir:PATH` | Hint location for CMake to find Jali | "" |
+| `Jali_DIR:PATH` | Hint location for CMake to find Jali | "" |
 | `PC_LAPACKE_NCLUDE_DIRS:PATH` | Hint location for CMake to find LAPACKE include files if `pkg_config` fails | "" |
 | `PC_LAPACKE_LIBRARY_DIRS:PATH` | Hint location for CMake to find LAPACKE library files if `pkg_config` fails | "" |
 | `TCMALLOC_LIB:PATH` | The TCMalloc library to use | `${HOME}` |
