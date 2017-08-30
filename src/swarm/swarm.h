@@ -81,7 +81,6 @@ template<size_t dim> class Swarm {
         wrapper.cell_centroid<dim>(i, &centroid);
         (*points_)[i] = centroid;
       }
-
     }
   }
 
