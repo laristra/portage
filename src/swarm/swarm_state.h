@@ -47,7 +47,8 @@ class SwarmState {
   /*! @brief Constructor provided a reference swarm.
    * @param swarm the swarm with which the field data are associated.
    */
-  SwarmState(Swarm<dim> const& swarmin): swarm_(swarmin){}
+ SwarmState(Swarm<dim> const& swarmin): num_particles_(swarmin.num_owned_particles())
+    {}
 
   /*! @brief Constructor provided a flat mesh and flat mesh state.
    * @param mesh the mesh with which the field data are associated.
@@ -107,7 +108,7 @@ class SwarmState {
   /*! @brief Get number of points in swarm
    * @return number of points
    */
-  int get_size(){return swarm_.num_owned_particles();}
+  int get_size(){return num_particles_;}
 
   /*! @brief Get the names of all integer fields
    */
@@ -130,8 +131,8 @@ class SwarmState {
   }
 
  private:
-  /** reference swarm state */
-  Swarm<dim> const& swarm_;
+  /** number of particles */
+  int num_particles_;
 
   /** integer data fields */
   map<string, IntVecPtr> int_field_map_;
@@ -146,11 +147,19 @@ template<size_t dim>
 SwarmState<dim>::SwarmState(Portage::Flat_Mesh_Wrapper<double> &mesh,
                                  Portage::Entity_kind entity,
 				 Portage::Flat_State_Wrapper<double> &state)
-  : swarm_(Swarm<dim>(mesh, entity))
+  : num_particles_(0)
 {
   if (dim != mesh.space_dimension()) {
     throw std::runtime_error(string("dimension mismatch"));
   }
+
+  if (entity==CELL) {
+    num_particles_ = mesh.num_owned_cells();
+  } else if (entity==NODE) {
+    num_particles_ = mesh.num_owned_nodes();
+  }
+
+  assert(state.get_entity_size(entity) == num_particles_);
 
   std::vector<std::string> dnames;
   state.get_names(entity, dnames);
@@ -158,9 +167,8 @@ SwarmState<dim>::SwarmState(Portage::Flat_Mesh_Wrapper<double> &mesh,
   for (auto iter=dnames.begin(); iter!=dnames.end(); iter++) {
     double *datap;
     state.get_data(entity, *iter, &datap);
-    int npart = swarm_.num_owned_particles();
-    DblVecPtr data(new vector<double>(npart));
-    for (size_t i=0; i<npart; i++) (*data)[i] = datap[i];
+    DblVecPtr data = make_shared<vector<double>>(num_particles_);
+    for (size_t i=0; i<num_particles_; i++) (*data)[i] = datap[i];
     add_field(*iter, data);
   }
 }
@@ -168,7 +176,7 @@ SwarmState<dim>::SwarmState(Portage::Flat_Mesh_Wrapper<double> &mesh,
 template<size_t dim>
 void SwarmState<dim>::add_field(const string name, IntVecPtr value) {
   // check size
-  if (value->size() != swarm_.num_owned_particles()) {
+  if (value->size() != num_particles_) {
     throw std::runtime_error(
       string("incorrect size when adding attempting to add int field ")+name);
   }
@@ -188,7 +196,7 @@ void SwarmState<dim>::add_field(const string name, IntVecPtr value) {
 template<size_t dim>
 void SwarmState<dim>::add_field(const string name, DblVecPtr value) {
   // check size
-  if (value->size() != swarm_.num_owned_particles()) {
+  if (value->size() != num_particles_) {
     throw std::runtime_error(
       string("incorrect size when adding attempting to add double field ")+name);
   }
