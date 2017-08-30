@@ -65,11 +65,13 @@ if (ENABLE_UNIT_TESTS)
     )
    endif (Jali_DIR)
 
+   if (Jali_DIR)
   cinch_add_unit(test_swarm_state
     SOURCES test/test_swarm_state.cc
     LIBRARIES portage ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
     POLICY MPI
     THREADS 1
     )
+   endif (Jali_DIR)
 
 endif (ENABLE_UNIT_TESTS)
