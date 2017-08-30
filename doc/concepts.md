@@ -12,6 +12,39 @@ which are roughly labelled as
    appropriate limiters, reconstruct the field data for a given target
    cell/particle.
 
+All of these operations work with your underlying mesh/particles and
+state manager through wrappers that provide an interface the queries
+needed to perform any particular step.  For an example of the
+requirements of the wrappers, see the [Example Use](@ref example)
+paeg.  In the below, when we refer to _mesh_ or _particles_ in terms
+of the operations, we really mean _mesh wrappers_ and _particle swarm
+wrappers_.
+
+All operations consist of a _source_ mesh/particle swarm and a
+_target_ mesh/particle swarm.  The _source_ entity is the one where we
+have existing field data, and the _target_ entity is object to which
+we would like to remap the data.
+
+## Search
+
+Given a source and target entity, this step simply _identifies_ which
+parts of the source contribute to which parts of the target.
+Concretely, for mesh-mesh remap this step would identify which source
+cells overlap each target cell. **ADD IMAGE**
+
+portage has several search algorithms with varying degrees of
+sophistication/speed.  **ADD LINKS TO API DOCS**
+
+- SearchSimple - 2d, bounding box search
+- SearchKDTree - 2d or 3d parallel k-d tree search
+- SearchSimplePoints - any-d quadratic time search over particle swarms
+- SearchPointsByCells - any-d linear time search over particle swarms
+
+
+## Intersect
+
+## Interpolate
+
 ## Obtaining portage
 portage is maintained within a git [repository](https://github.com/laristra/portage)
 on GitHub that contains a couple of git submodules.  To fully checkout the code
