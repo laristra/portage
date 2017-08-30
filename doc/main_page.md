@@ -43,10 +43,10 @@ used.  MPI is enabled in portage by setting the CMake variables
 you'll likely need to tell CMake to use the MPI-wrapped compiler by
 setting something like
 
-```sh
-CMAKE_C_COMPILER=$(which mpicc)
-CMAKE_CXX_COMPILER=(which mpiCC)
-```
+~~~
+CMAKE_C_COMPILER=`which mpicc`
+CMAKE_CXX_COMPILER=`which mpiCC`
+~~~
 
 On-node parallelism is exposed through
 the [Thrust](https://thrust.github.io) library.  Enabling Thrust
@@ -89,11 +89,11 @@ the Burton [specialization](https://github.com/laristra/flecsi-sp) of
 the [FleCSI](https://github.com/laristra/flecsi) library would look
 like:
 
-```sh
+~~~sh
 portage/ $ mkdir build
 portage/ $ cd build
-portage/build/ $ cmake -DCMAKE_C_COMPILER=$(which mpicc) \
-                       -DCMAKE_CXX_COMPILER=$(which mpiCC) \
+portage/build/ $ cmake -DCMAKE_C_COMPILER=`which mpicc` \
+                       -DCMAKE_CXX_COMPILER=`which mpiCC` \
 					   -DENABLE_APP_TESTS=True -DENABLE_UNIT_TESTS=True \
 					   -DENABLE_MPI=True \
 					   -DENABLE_THRUST=True -DTHRUST_DIR=/path/to/thrust/include/directory \
@@ -108,7 +108,7 @@ portage/build/ $ make           # builds the library and tests
 portage/build/ $ make test      # runs the tests
 portage/build/ $ make doxygen   # builds this HTML and a PDF form of the documentation
 portage/build/ $ make install   # installs the portage library and headers into CMAKE_INSTALL_PREFIX
-```
+~~~
 
 ## Useful CMake Flags
 Below is a non-exhaustive list of useful CMake flags for building
