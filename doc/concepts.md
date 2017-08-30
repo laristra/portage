@@ -39,6 +39,8 @@ sophistication/speed.  **ADD LINKS TO API DOCS**
 - SearchKDTree - 2d or 3d parallel k-d tree search
 - SearchSimplePoints - any-d quadratic time search over particle swarms
 - SearchPointsByCells - any-d linear time search over particle swarms
+  using a bounding box containing particles and their smoothing
+  lengths
 
 ## Intersect
 
@@ -62,12 +64,16 @@ cells.  The available intersectors for meshes are: **LINKS**
 - IntersectR3D - 3d, fast, exact polyhedral intersection method base
   don the [r3d](https://github.com/laristra/r3d) library.
 
-For particles, this step is refferred to as _accumulation_.  The
+For particles, this step is referred to as _accumulation_.  The
 distinction in terminology stems from the fact that for particles,
 local regression estimators (LRE) are used to do the remap.  In this
 stage, the LRE weights from particle contributions are accumulated by
 computing the weight functions and local regression corrections to
-those weights.
+those weights.  **MORE DESCRIPTION**  **LINKS**
+
+- Accumulate - any-d accumulator that works with particles of various
+  shapes, various kernel functions, utilizing various types of basis
+  functions and estimator models.
 
 ## Interpolate
 
