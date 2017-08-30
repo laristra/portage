@@ -1,4 +1,4 @@
-# Simple Mesh Example    {#simple_mesh}
+# Simple Mesh Example    {#example}
 
 portage provides very crude mesh and state manager frameworks, aptly called
 `Simple_Mesh` and `Simple_State`.  The goal of these frameworks is to show

@@ -173,7 +173,7 @@ ctest -j16 --output-on-failure
 
 __Note the typo in the version of the build system we are using: it is
 indeed `PC_LAPACKE_NCLUDE_DIRS`.  This will be fixed in the CMake
-files in a coming release.___
+files in a coming release.__
 
 Execute the following from the portage root directory:
 

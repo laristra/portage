@@ -1,4 +1,4 @@
-# Quickstart Guide      {#quickstart}
+# Quickstart Guide      {#concepts}
 
 ## Obtaining portage
 portage is maintained within a git [repository](https://github.com/laristra/portage)
@@ -83,7 +83,7 @@ portage provides wrappers to three mesh and state manager frameworks:
 state manager framework that is included with portage.  It is not intended to
 be production quality, but to demonstrate how one might hook their own mesh and
 state manager framework into portage.  A detailed description of `Simple_Mesh`
-and `Simple_State` and how they are used is shown on the @ref simple_mesh page.
+and `Simple_State` and how they are used is shown on the @ref example page.
 
 2. [`FleCSI`](https://github.com/losalamos/flecsi) is a modern, flexible,
 computational framework designed for next-generation architectures.

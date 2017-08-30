@@ -18,6 +18,12 @@ We aim to provide:
 - Use of client application's native mesh/particle and state
   (data/field) data structures
 
+See the [Concepts](@ref concepts) page for a high-level discussion of
+the methods used within portage.
+
+See the [Example Use](@ref example) page for a simple example of
+hooking portage up to a mesh and state manager.
+
 ---
 
 # Details and Requirements
@@ -27,7 +33,7 @@ At a minimum, portage requires:
   5.3+ and Intel 17+.
 - CMake 3.0+
 - LAPACKE (3.7.1+)
-- Boost (1.53.0+) **__or__** Thrust (1.6.0+)
+- Boost (1.53.0+) **or** Thrust (1.6.0+)
 
 Distributed parallelism of portage is currently supported through MPI;
 regular testing is performed with OpenMPI 1.10.3+ .  Most application
@@ -36,9 +42,10 @@ used.  MPI is enabled in portage by setting the CMake variables
 `ENABLE_MPI=True` and `ENABLE_MPI_CXX_BINDINGS=True`.  In addition,
 you'll likely need to tell CMake to use the MPI-wrapped compiler by
 setting something like
+
 ```sh
-CMAKE_C_COMPILER=`which mpicc`
-CMAKE_CXX_COMPILER=`whic mpiCC`
+CMAKE_C_COMPILER=\`which mpicc\`
+CMAKE_CXX_COMPILER=\`which mpiCC\`
 ```
 
 On-node parallelism is exposed through
@@ -63,11 +70,23 @@ git clone --recursive https://github.com/laristra/portage
 
 ## Building
 
-portage uses the CMake build system.  Below is an (incomplete) list of
-useful CMake flags for building portage.
+portage uses the CMake build system.  In the simplest case where you
+want to build a serial version of the code, and CMake knows where to
+find your Boost and LAPACKE installations, one can do
+
+```sh
+portage/ $ mkdir build; cd build
+portage/build/ $ cmake ..
+portage/build/ $ make
+```
+
+This will build a serial version of the code into a library (without any tests) 
+
+Below is an (incomplete) list of useful CMake flags for building
+portage.
 
 | CMake flag:type | Description | Default |
-| ---------- |:------------|--------:|
+|:----------|:------------|:--------|
 | `CMAKE_BUILD_TYPE:STRING`| `Debug` or optimized `Release` build | `Debug` |
 | `CMAKE_INSTALL_PREFIX:PATH` | Location for the portage library and headers to be installed | `/usr/local` |
 | `CMAKE_PREFIX_PATH:PATH` | Locations where CMake can look for packages; needs to be set to the FleCSI and FleCSI-SP locations if using FleCSI | "" |
@@ -77,8 +96,8 @@ useful CMake flags for building portage.
 | `ENABLE_MPI:BOOL` | Build with support for MPI; | `False` |
 | `ENABLE_TCMALLOC:BOOL` | Build with support for TCMalloc | `False` |
 | `ENABLE_THRUST:BOOL` | Turn on Thrust support for on-node parallelism | `False` |
-| `ENABLE_UNIT_TESTS:BOOL` | Turn on compilation and test harness of unit tests | False |
-| `ENABLE_FleCSI:BOOL` | Turn on support for FleCSI; _requires C++14-compatible compiler_ | False |
+| `ENABLE_UNIT_TESTS:BOOL` | Turn on compilation and test harness of unit tests | `False` |
+| `ENABLE_FleCSI:BOOL` | Turn on support for FleCSI; _requires C++14-compatible compiler_ | `False` |
 | `Jali_Dir:PATH` | Hint location for CMake to find Jali | "" |
 | `PC_LAPACKE_NCLUDE_DIRS:PATH` | Hint location for CMake to find LAPACKE include files if `pkg_config` fails | "" |
 | `PC_LAPACKE_LIBRARY_DIRS:PATH` | Hint location for CMake to find LAPACKE library files if `pkg_config` fails | "" |
