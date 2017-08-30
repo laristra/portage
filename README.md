@@ -103,13 +103,13 @@ See the examples below, or the
 
 # License
 
-This project is license under a modified 3-clause BSD license - see
+This project is licensed under a modified 3-clause BSD license - see
 the [LICENSE](https://github.com/laristra/portage/blob/master/LICENSE)
 file for details.
 
 # Release
 
-This software has been aproved for open source release and has been
+This software has been approved for open source release and has been
 assigned **LA-CC-16-084**.
 
 ----
