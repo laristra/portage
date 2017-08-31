@@ -9,12 +9,13 @@ remapping - between meshes, between particles, or between meshes and
 particles - in computational physics applications.  Remapping is
 facilitated through the use of user-supplied _wrappers_ around
 meshes/particle swarms with their data, and is broken into three
-phases that operate on the wrappers: _search_ for intersection
-candidates, calculate the _intersection_ with candidates, then
-_interpolate_ the results onto the new mesh or particle swarm.
-Algorithms for each of the phases can be customized (e.g. order of
-accuracy of the interpolation) and, through the wrappers, take
-advantage of hybrid parallelism (MPI+X).
+phases that operate on the wrappers corresponding to the original
+remapped mesh/particles: _search_ for intersection candidates,
+calculate the _intersection_ with candidates, then _interpolate_ the
+results onto the new mesh or particle swarm.  Algorithms for each of
+the phases can be customized (e.g. order of accuracy of the
+interpolation) and, through the wrappers, take advantage of hybrid
+parallelism (MPI+X).
 
 ## Getting Started
 
@@ -28,7 +29,13 @@ git clone --recursive https://github.com/laristra/portage
 If you are familiar with Docker, take a look at
 our
 [Dockerfile](https://github.com/laristra/portage/blob/master/docker/Dockerfile) for
-a working build environment.
+a working build environment.  In particular, the Dockerfile builds off
+of
+the [portage-buildenv](https://github.com/laristra/portage-buildenv)
+Dockerfile, and uses
+our
+[travis.yml](https://github.com/laristra/portage/blob/master/.travis.yml) file
+with Travis CI.
 
 ### Prerequisites
 
