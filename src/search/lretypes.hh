@@ -1,6 +1,7 @@
 /*
-Copyright (c) 2017, Los Alamos National Security, LLC
-All rights reserved.
+This file is part of the Ristra portage project.
+Please see the license file at the root of this repository, or at:
+    https://github.com/laristra/portage/blob/master/LICENSE
 */
 
 #ifndef types_INCLUDED

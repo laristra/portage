@@ -1,66 +1,36 @@
 /*
-Copyright (c) 2016, Los Alamos National Security, LLC
-All rights reserved.
-
-Copyright 2016. Los Alamos National Security, LLC. This software was produced
-under U.S. Government contract DE-AC52-06NA25396 for Los Alamos National
-Laboratory (LANL), which is operated by Los Alamos National Security, LLC for
-the U.S. Department of Energy. The U.S. Government has rights to use,
-reproduce, and distribute this software.  NEITHER THE GOVERNMENT NOR LOS ALAMOS
-NATIONAL SECURITY, LLC MAKES ANY WARRANTY, EXPRESS OR IMPLIED, OR ASSUMES ANY
-LIABILITY FOR THE USE OF THIS SOFTWARE.  If software is modified to produce
-derivative works, such modified software should be clearly marked, so as not to
-confuse it with the version available from LANL.
-
-Additionally, redistribution and use in source and binary forms, with or
-without modification, are permitted provided that the following conditions are
-met:
-
-1. Redistributions of source code must retain the above copyright notice,
-   this list of conditions and the following disclaimer.
-2. Redistributions in binary form must reproduce the above copyright
-   notice, this list of conditions and the following disclaimer in the
-   documentation and/or other materials provided with the distribution.
-3. Neither the name of Los Alamos National Security, LLC, Los Alamos
-   National Laboratory, LANL, the U.S. Government, nor the names of its
-   contributors may be used to endorse or promote products derived from this
-   software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY LOS ALAMOS NATIONAL SECURITY, LLC AND
-CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
-PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL LOS ALAMOS NATIONAL
-SECURITY, LLC OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
-BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER
-IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-POSSIBILITY OF SUCH DAMAGE.
+This file is part of the Ristra portage project.
+Please see the license file at the root of this repository, or at:
+    https://github.com/laristra/portage/blob/master/LICENSE
 */
 
 
-
 #include <vector>
+#include <fstream>
 #include <iostream>
 #include <cstdio>
 #include <memory>
 #include <algorithm>
 #include <iterator>
 
-#define PORTAGE_SERIAL_ONLY
+#include "flecsi-sp.h"
+#include "flecsi/io/io.h"
+#include "flecsi-sp/burton/burton.h"
+#include "flecsi-sp/burton/factory.h"
+#include "flecsi-sp/burton/burton_io_exodus.h"
+
 #include "portage/support/Point.h"
+#include "portage/driver/driver.h"
+#include "portage/support/mpi_collate.h"
 #include "portage/wonton/mesh/flecsi/flecsi_mesh_wrapper.h"
 #include "portage/wonton/state/flecsi/flecsi_state_wrapper.h"
-#include "portage/driver/driver.h"
 
-#include "flecsi-sp/specializations/burton/burton.h"
-#include "flecsi/io/io.h"
-#include "flecsi-sp/specializations/burton/burton_io_exodus.h"
 
-using mesh_t = flecsi::sp::burton_mesh_t;
+namespace math = flecsi::sp::math;
+namespace mesh = flecsi::sp::burton;
 
-using real_t = flecsi::mesh_t::real_t;
+using mesh_t = mesh::burton_mesh_2d_t;
+using real_t = typename mesh_t::real_t;
 
 /*!
   @file main_flecsi.cc
@@ -74,8 +44,7 @@ using real_t = flecsi::mesh_t::real_t;
 
 
 void print_usage() {
-  std::printf("usage: portage_flecsiapp ncellsx ncellsy [order=1]\n");  // [y];
-  //  std::printf("    if 'y' is specified, then dump the meshes to Exodus\n");
+  std::printf("usage: portage_flecsiapp ncellsx ncellsy [order=1] [dump_output=y]\n");
 }
 
 int main(int argc, char** argv) {
@@ -84,108 +53,152 @@ int main(int argc, char** argv) {
     return 0;
   }
 
+  // Initialize MPI
+  int mpi_init_flag;
+  MPI_Initialized(&mpi_init_flag);
+  if (!mpi_init_flag)
+     MPI_Init(&argc, &argv);
+  int numpe, rank;
+  MPI_Comm_size(MPI_COMM_WORLD, &numpe);
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
   // number of CELLS in x and y for input mesh
   auto nx = atoi(argv[1]);
   auto ny = atoi(argv[2]);
   auto order = (argc > 3) ? atoi(argv[3]) : 1;
-  // bool dump_output = (argc > 4) ?
-  //     (std::string(argv[4]) == "y") ? true : false
-  //     : false;
+  auto dump_output = (argc > 4) ? (argv[4] != "n" || argv[4] != "N") : true;
 
-  // dimensions of meshes
-  real_t xmin = 0.0, xmax = 1.0;
-  real_t ymin = 0.0, ymax = 1.0;
+  // length of meshes
+  constexpr size_t lenx = 1.;
+  constexpr size_t leny = 1.;
 
   std::printf("starting portage_flecsiapp...\n");
+  std::cout << "nx: " << nx << std::endl;
+  std::cout << "ny: " << ny << std::endl;
+  std::cout << "order: " << order << std::endl;
+  std::cout << "dump_output: " << dump_output << std::endl;
 
-  // Setup the meshes
+  // Setup::flecsi meshes
   mesh_t inputMesh, targetMesh;
-  Portage::make_mesh_cart2d(xmin, xmax, ymin, ymax, nx, ny, inputMesh);
-  Portage::make_mesh_cart2d(xmin, xmax, ymin, ymax, nx+1, ny+1, targetMesh);
+  inputMesh  = mesh::box<mesh_t>(nx, ny, 0, 0, lenx, leny);
+  targetMesh = mesh::box<mesh_t>(nx+1, ny+1, 0, 0, lenx, leny);
 
-  // Setup the wrappers
-  wonton::flecsi_mesh_t inputMeshWrapper(inputMesh);
-  wonton::flecsi_mesh_t targetMeshWrapper(targetMesh);
+  // Setup::portage-flecsi mesh wrappers
+  wonton::flecsi_mesh_t<mesh_t> inputMeshWrapper(inputMesh);
+  wonton::flecsi_mesh_t<mesh_t> targetMeshWrapper(targetMesh);
 
-  // Register the state with FleCSI
-  // register_state is a macro from burton.h
-  // we keep the inputState accessor for filling of data
-  auto inputState = register_state(inputMesh, "celldata", cells, real_t,
-                                   flecsi::persistent);
-  register_state(targetMesh, "celldata", cells, real_t, flecsi::persistent);
+  // Setup::portage-flecsi  state wrappers
+  wonton::flecsi_state_t<mesh_t> inputStateWrapper(inputMesh);
+  wonton::flecsi_state_t<mesh_t> targetStateWrapper(targetMesh);
 
-  // Fill with linear function
+  // Register data on input and target mesh
+  flecsi_register_data(inputMesh, hydro, cell_data, real_t, dense, 1, cells);
+  flecsi_register_data(targetMesh, hydro, cell_data, real_t, dense, 1, cells);
+
+  // Get accessors to data on input and target mesh
+  auto inputMeshAccessor = flecsi_get_accessor(inputMesh, hydro, cell_data,
+                                               real_t, dense, 0);
+  auto targetMeshAccessor = flecsi_get_accessor(targetMesh, hydro, cell_data,
+                                                real_t, dense, 0);
+
+  inputMeshAccessor.attributes().set(persistent);
+  targetMeshAccessor.attributes().set(persistent);
+
+  // Fill data on input mesh with linear function
   for (auto c : inputMesh.cells()) {
     auto cen = c->centroid();
-    inputState[c] = cen[0] + cen[1];
+
+    if (order == 1)
+      inputMeshAccessor[c] = cen[0] + cen[1];
+    else
+      inputMeshAccessor[c] = cen[0]*cen[0] + cen[1]*cen[1];
   }
 
-  // Build the state wrappers
-  wonton::flecsi_state_t inputStateWrapper(inputMesh);
-  wonton::flecsi_state_t targetStateWrapper(targetMesh);
-
-  // Setup the main driver for this mesh type
-  if(order==2){
-
+  // Setup the main driver for this mesh type 2
+  if (order == 2) {
     Portage::Driver<
       Portage::SearchKDTree,
-          Portage::IntersectR2D,
+      Portage::IntersectR2D,
       Portage::Interpolate_2ndOrder,
       2,
-      wonton::flecsi_mesh_t,
-          wonton::flecsi_state_t>
-      d(inputMeshWrapper, inputStateWrapper, targetMeshWrapper, targetStateWrapper);
-  
-  // Declare which variables are remapped
-  std::vector<std::string> varnames(1, "celldata");
-  d.set_remap_var_names(varnames);
+      wonton::flecsi_mesh_t<mesh_t>,
+      wonton::flecsi_state_t<mesh_t> >
+      d(inputMeshWrapper, inputStateWrapper,
+        targetMeshWrapper, targetStateWrapper);
 
-  // Do the remap
-  d.run(false);
+    // Declare which variables are remapped
+    std::vector<std::string> varnames(1, "cell_data");
+    d.set_remap_var_names(varnames);
+
+    // Do the remap
+    d.run(false);
   }
 
   // Setup the main driver for this mesh type
-  if(order==1){
-
-    Portage::Driver<
+  if (order == 1) {
+     Portage::Driver<
       Portage::SearchKDTree,
-          Portage::IntersectR2D,
+      Portage::IntersectR2D,
       Portage::Interpolate_1stOrder,
       2,
-      wonton::flecsi_mesh_t,
-          wonton::flecsi_state_t>
-      d(inputMeshWrapper, inputStateWrapper, targetMeshWrapper, targetStateWrapper);
-  
-  // Declare which variables are remapped
-  std::vector<std::string> varnames(1, "celldata");
-  d.set_remap_var_names(varnames);
+      wonton::flecsi_mesh_t<mesh_t>,
+      wonton::flecsi_state_t<mesh_t> >
+      d(inputMeshWrapper, inputStateWrapper,
+        targetMeshWrapper, targetStateWrapper);
 
-  // Do the remap
-  d.run(false);
+     // Declare which variables are remapped
+     std::vector<std::string> varnames(1, "cell_data");
+     d.set_remap_var_names(varnames);
+
+     // Do the remap
+     d.run(false);
   }
 
 
   // Get the new data and calculate the error
-  // use flecsi intrinsics - access_state is a macro in burton.h
-  auto outData = access_state(targetMesh, "celldata", real_t);
-
   double toterr = 0.0;
   for (auto c : targetMesh.cells()) {
     auto cen = c->centroid();
-    double error = cen[0] + cen[1] - outData[c];
-    std::printf("Cell=% 4d Centroid = (% 5.3lf,% 5.3lf)", c.id(),
-                cen[0], cen[1]);
+    double error;
+    if (order ==1)
+       error = cen[0] + cen[1] - targetMeshAccessor[c];
+    else
+       error = cen[0]*cen[0] + cen[1]*cen[1] - targetMeshAccessor[c];
+    std::printf("Cell=% 4d Centroid = (% 5.3lf,% 5.3lf)",
+                c.id(), cen[0], cen[1]);
     std::printf("  Value = % 10.6lf  Err = % lf\n",
-                outData[c], error);
+                targetMeshAccessor[c], error);
     toterr += error*error;
   }
   std::printf("\n\nL2 NORM OF ERROR = %lf\n\n", sqrt(toterr));
 
-  /// @TODO Dumping the targetMesh is still broken with FleCSI
-  // if (dump_output) {
-  //   flecsi::write_mesh("input.exo", inputMesh);
-  //   flecsi::write_mesh("output.exo", targetMesh);
-  // }
+  if (dump_output) {
+    // Dump the output for comparison
+    std::string entstr("cell");
+    // we only allow 2d
+    auto lorder = static_cast<long long>(order);
+    std::string fieldfilename = "flecsi_field_2d_" +
+        entstr + "_f" + std::to_string(lorder) + "_r" +
+        std::to_string(lorder) + ".txt";
 
-  return 0;
+    std::vector<int> idx, lgid;
+    std::vector<real_t> lvalues;
+    for (auto c : targetMesh.cells()) {
+      lgid.push_back(c.id());
+      lvalues.push_back(targetMeshAccessor[c]);
+    }
+    // Sort things, even though we should only be on a single proc
+    Portage::argsort(lgid, idx);
+    Portage::reorder(lgid, idx);
+    Portage::reorder(lvalues, idx);
+
+    std::ofstream fout(fieldfilename);
+    fout << std::scientific;
+    fout.precision(17);
+
+    for (int i = 0; i < lgid.size(); ++i)
+      fout << lgid[i] << " " << lvalues[i] << std::endl;
+  }  // if (dump_output)
+
+  MPI_Finalize();
 }

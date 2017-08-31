@@ -1,44 +1,3 @@
-/*
-Copyright (c) 2016, Los Alamos National Security, LLC
-All rights reserved.
-
-Copyright 2016. Los Alamos National Security, LLC. This software was produced
-under U.S. Government contract DE-AC52-06NA25396 for Los Alamos National
-Laboratory (LANL), which is operated by Los Alamos National Security, LLC for
-the U.S. Department of Energy. The U.S. Government has rights to use,
-reproduce, and distribute this software.  NEITHER THE GOVERNMENT NOR LOS ALAMOS
-NATIONAL SECURITY, LLC MAKES ANY WARRANTY, EXPRESS OR IMPLIED, OR ASSUMES ANY
-LIABILITY FOR THE USE OF THIS SOFTWARE.  If software is modified to produce
-derivative works, such modified software should be clearly marked, so as not to
-confuse it with the version available from LANL.
-
-Additionally, redistribution and use in source and binary forms, with or
-without modification, are permitted provided that the following conditions are
-met:
-
-1. Redistributions of source code must retain the above copyright notice,
-   this list of conditions and the following disclaimer.
-2. Redistributions in binary form must reproduce the above copyright
-   notice, this list of conditions and the following disclaimer in the
-   documentation and/or other materials provided with the distribution.
-3. Neither the name of Los Alamos National Security, LLC, Los Alamos
-   National Laboratory, LANL, the U.S. Government, nor the names of its
-   contributors may be used to endorse or promote products derived from this
-   software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY LOS ALAMOS NATIONAL SECURITY, LLC AND
-CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
-PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL LOS ALAMOS NATIONAL
-SECURITY, LLC OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
-BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER
-IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-POSSIBILITY OF SUCH DAMAGE.
-*/
-
 # Installation instructions
 
 Below we list copy & paste instructions for several machines. You can easily
@@ -62,7 +21,6 @@ cmake \
     -D ENABLE_UNIT_TESTS=True \
     -D ENABLE_APP_TESTS=True \
     -D ENABLE_MPI=True \
-    -D ENABLE_MPI_CXX_BINDINGS=True \
     -D Jali_DIR:FILEPATH=$JALI_INSTALL_PREFIX/lib \
     -D Boost_INCLUDE_DIR:PATH=$TPL_INSTALL_PREFIX/include \
     ..
@@ -87,7 +45,6 @@ cmake \
     -D ENABLE_UNIT_TESTS=True \
     -D ENABLE_APP_TESTS=True \
     -D ENABLE_MPI=True \
-    -D ENABLE_MPI_CXX_BINDINGS=True \
     -D Jali_DIR:FILEPATH=$JALI_INSTALL_PREFIX/lib \
     ..
 make -j16
@@ -115,7 +72,6 @@ cmake \
     -D ENABLE_UNIT_TESTS=True \
     -D ENABLE_APP_TESTS=True \
     -D ENABLE_MPI=True \
-    -D ENABLE_MPI_CXX_BINDINGS=True \
     -D Jali_DIR:FILEPATH=$JALI_INSTALL_PREFIX/lib \
     -D PC_LAPACKE_NCLUDE_DIRS=$LAPACKE_INCLUDE_DIR \
     -D PC_LAPACKE_LIBRARY_DIRS=$LAPACKE_LIBRARY_DIR \
@@ -137,7 +93,6 @@ export MODULEPATH=""
 module load gcc/5.3.0 openmpi/1.10.3 cmake
 FLECSI_INSTALL_PREFIX=/usr/local/codes/ngc/private/flecsi/gcc5.3_openmpi1.10.3
 FLECSISP_INSTALL_PREFIX=/usr/local/codes/ngc/private/flecsi-sp/gcc5.3_openmpi1.10.3
-JALI_INSTALL_PREFIX=/usr/local/codes/ngc/private/jali/0.9.8-gcc-5.3.0-openmpi-1.10.3
 LAPACKE_INCLUDE_DIR=/usr/local/codes/ngc/private/lapack/lapack-3.7.1-gcc-5.3.0/include
 LAPACKE_LIBRARY_DIR=/usr/local/codes/ngc/private/lapack/lapack-3.7.1-gcc-5.3.0
 mkdir build-flecsi
@@ -151,11 +106,18 @@ cmake \
     -D ENABLE_MPI=True \
     -D ENABLE_FleCSI=True \
     -D CMAKE_PREFIX_PATH="$FLECSI_INSTALL_PREFIX;$FLECSISP_INSTALL_PREFIX" \
-    -D ENABLE_MPI_CXX_BINDINGS=True \
-    -D Jali_DIR:FILEPATH=$JALI_INSTALL_PREFIX/lib \
     -D PC_LAPACKE_NCLUDE_DIRS=$LAPACKE_INCLUDE_DIR \
     -D PC_LAPACKE_LIBRARY_DIRS=$LAPACKE_LIBRARY_DIR \
     ..
 make -j2
 ctest -j2 --output-on-failure
 ```
+
+# License
+This project is licensed under a modified 3-clause BSD license - see
+the [LICENSE](https://github.com/laristra/portage/blob/master/LICENSE)
+file for details.
+
+# Release
+This software has been approved for open source release and has been
+assigned **LA-CC-16-084**.
