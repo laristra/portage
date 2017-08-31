@@ -149,9 +149,9 @@ class Accumulate {
         Point<dim> x = target_.get_particle_coordinates(particleB);
         
         // Calculate weights and moment matrix (P*W*transpose(P))
-	if (source_particles.size() < nbasis) {
-	  throw std::runtime_error("too few source particles for local regression");
-	}
+        if (source_particles.size() < nbasis) {
+          throw std::runtime_error("too few source particles for local regression");
+        }
         vector<double> weight_val(source_particles.size());
         Matrix moment(nbasis,nbasis,0.);
         size_t iA = 0;
