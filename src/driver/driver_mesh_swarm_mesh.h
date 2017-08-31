@@ -233,6 +233,21 @@ class MSM_Driver {
 
     int nvars = source_remap_var_names_.size();
 
+    // convert incoming and outgoing mesh wrappers to flat variety
+    Flat_Mesh_Wrapper<> source_mesh_flat;
+    source_mesh_flat.initialize(source_mesh_);
+
+    Flat_Mesh_Wrapper<double> target_mesh_flat;
+    target_mesh_flat.initialize(target_mesh_);
+
+    float tot_seconds = 0.0, tot_seconds_srch = 0.0,
+        tot_seconds_xsect = 0.0, tot_seconds_interp = 0.0;
+    struct timeval begin_timeval, end_timeval, diff_timeval;
+
+    gettimeofday(&begin_timeval, 0);
+
+    // CELL VARIABLE SECTION ---------------------------------------------------
+
     // get cell variable names
     std::vector<std::string> source_cellvar_names;
     std::vector<std::string> target_cellvar_names;
@@ -246,27 +261,14 @@ class MSM_Driver {
       }
     }
 
-    // convert incoming and outgoing mesh wrappers to flat variety
-    Flat_Mesh_Wrapper<> source_mesh_flat;
-    source_mesh_flat.initialize(source_mesh_);
-
-    Flat_Mesh_Wrapper<double> target_mesh_flat;
-    target_mesh_flat.initialize(target_mesh_);
-
-    // convert flat wrappers to swarm variety
-    Meshfree::Swarm<Dim> source_swarm(source_mesh_flat, CELL);
-    Meshfree::Swarm<Dim> target_swarm(target_mesh_flat, CELL);
-
-    float tot_seconds = 0.0, tot_seconds_srch = 0.0,
-        tot_seconds_xsect = 0.0, tot_seconds_interp = 0.0;
-    struct timeval begin_timeval, end_timeval, diff_timeval;
-
-    gettimeofday(&begin_timeval, 0);
-
     // Collect all cell based variables and remap them
     if (source_cellvar_names.size() > 0)
     {
-      // convert incoming and outgoing state wrappers to flat variety
+      // convert flat mesh wrappers to swarm variety
+      Meshfree::Swarm<Dim> source_swarm(source_mesh_flat, CELL);
+      Meshfree::Swarm<Dim> target_swarm(target_mesh_flat, CELL);
+    
+      // convert state wrappers to flat variety
       Flat_State_Wrapper<double> source_state_flat;
       source_state_flat.initialize(source_state_, source_cellvar_names);
 
@@ -279,12 +281,12 @@ class MSM_Driver {
       Meshfree::SwarmState<Dim> target_swarm_state(target_mesh_flat, CELL,
                                                    target_state_flat);
 
-      // create smoothing lengths
+      // create spherically symmetric smoothing lengths for now
       using std::vector;
+      int ncells = source_mesh_flat.num_owned_cells();
       vector<vector<vector<double>>> smoothing_lengths
-        (source_mesh_flat.num_owned_cells(),
-         vector<vector<double>>(1, vector<double>(Dim)));
-      for (int i=0; i<target_mesh_flat.num_owned_cells(); i++) {
+        (ncells, vector<vector<double>>(1, vector<double>(Dim)));
+      for (int i=0; i<ncells; i++) {
         double radius;
         cell_radius<Dim>(source_mesh_flat, i, &radius);
         smoothing_lengths[i][0] = vector<double>(Dim, radius*smoothing_factor_);
@@ -307,8 +309,8 @@ class MSM_Driver {
                      geometry_,
                      Meshfree::Scatter);
 
-      swarm_driver.set_remap_var_names(source_remap_var_names_,
-                                       target_remap_var_names_,
+      swarm_driver.set_remap_var_names(source_cellvar_names,
+                                       target_cellvar_names,
                                        estimate_,
                                        basis_);
 
@@ -316,18 +318,20 @@ class MSM_Driver {
       swarm_driver.run(false, false);
 
       // transfer data back to target mesh
-      for (auto name=target_remap_var_names_.begin();
-                name!=target_remap_var_names_.end(); name++)
+      for (auto name=target_cellvar_names.begin();
+                name!=target_cellvar_names.end(); name++)
       {
         typename Meshfree::SwarmState<Dim>::DblVecPtr sfield;
         target_swarm_state.get_field(*name, sfield);
         double *mfield;
-        target_state_flat.get_data(CELL, *name, &mfield);
+        target_state_.get_data(CELL, *name, &mfield);
         for (int i=0; i<target_swarm_state.get_size(); i++) {
           mfield[i] = (*sfield)[i];
         }
       }
     }
+
+    // NODE VARIABLE SECTION ---------------------------------------------------
 
     // get node variable names
     std::vector<std::string> source_nodevar_names;
@@ -343,14 +347,18 @@ class MSM_Driver {
     }
 
     if (source_nodevar_names.size() > 0) {
-      // convert incoming and outgoing state wrappers to flat variety
+      // convert flat mesh wrappers to swarm variety
+      Meshfree::Swarm<Dim> source_swarm(source_mesh_flat, NODE);
+      Meshfree::Swarm<Dim> target_swarm(target_mesh_flat, NODE);
+      
+      // convert state wrappers to flat variety
       Flat_State_Wrapper<double> source_state_flat;
       source_state_flat.initialize(source_state_, source_nodevar_names);
 
       Flat_State_Wrapper<double> target_state_flat;
       target_state_flat.initialize(target_state_, target_nodevar_names);
 
-      // convert flat wrappers to swarm variety
+      // convert flat state wrappers to swarm variety
       Meshfree::SwarmState<Dim> source_swarm_state(source_mesh_flat, NODE,
                                                    source_state_flat);
       Meshfree::SwarmState<Dim> target_swarm_state(target_mesh_flat, NODE,
@@ -358,10 +366,10 @@ class MSM_Driver {
 
       // create smoothing lengths
       using std::vector;
+      int nnodes = source_mesh_flat.num_owned_nodes();
       vector<vector<vector<double>>> smoothing_lengths
-        (source_mesh_flat.num_owned_nodes(),
-         vector<vector<double>>(1, vector<double>(Dim)));
-      for (int i=0; i<target_mesh_flat.num_owned_nodes(); i++) {
+        (nnodes, vector<vector<double>>(1, vector<double>(Dim)));
+      for (int i=0; i<nnodes; i++) {
         double radius;
         node_radius<Dim>(source_mesh_flat, i, &radius);
         smoothing_lengths[i][0] = vector<double>(Dim, radius*smoothing_factor_);
@@ -384,8 +392,8 @@ class MSM_Driver {
                      geometry_,
                      Meshfree::Scatter);
 
-      swarm_driver.set_remap_var_names(source_remap_var_names_,
-                                       target_remap_var_names_,
+      swarm_driver.set_remap_var_names(source_nodevar_names,
+                                       target_nodevar_names,
                                        estimate_,
                                        basis_);
 
@@ -393,13 +401,13 @@ class MSM_Driver {
       swarm_driver.run(false, false);
 
       // transfer data back to target mesh
-      for (auto name=target_remap_var_names_.begin();
-                name!=target_remap_var_names_.end(); name++)
+      for (auto name=target_nodevar_names.begin();
+                name!=target_nodevar_names.end(); name++)
       {
         typename Meshfree::SwarmState<Dim>::DblVecPtr sfield;
         target_swarm_state.get_field(*name, sfield);
         double *mfield;
-        target_state_flat.get_data(CELL, *name, &mfield);
+        target_state_.get_data(NODE, *name, &mfield);
         for (int i=0; i<target_swarm_state.get_size(); i++) {
           mfield[i] = (*sfield)[i];
         }

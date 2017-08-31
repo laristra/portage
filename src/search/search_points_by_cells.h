@@ -70,15 +70,26 @@ class SearchPointsByCells {
     for (size_t i=0; i<sourceSwarm_.num_particles(); i++ ) {
       Point<D> pt = sourceSwarm_.get_particle_coordinates(i);
       for (size_t m=0; m<D; m++) {
-        source_vp[m][i] = pt[m];
-        source_extents_vp[m][i] = (*source_extents)[i][m];
+	source_vp[m][i] = pt[m];
       }
     }
     for (size_t i=0; i<targetSwarm_.num_particles(); i++ ) {
       Point<D> pt = targetSwarm_.get_particle_coordinates(i);
       for (size_t m=0; m<D; m++) {
-        target_vp[m][i] = pt[m];
-        target_extents_vp[m][i] = (*target_extents)[i][m];
+	target_vp[m][i] = pt[m];
+      }
+    }
+    if (center == Meshfree::Scatter) {
+      for (size_t i=0; i<sourceSwarm_.num_particles(); i++ ) {
+	for (size_t m=0; m<D; m++) {
+	  source_extents_vp[m][i] = (*sourceExtents_)[i][m];
+	}
+      }
+    } else if (center_ == Meshfree::Gather) {
+      for (size_t i=0; i<targetSwarm_.num_particles(); i++ ) {
+	for (size_t m=0; m<D; m++) {
+	  target_extents_vp[m][i] = (*targetExtents_)[i][m];
+	}
       }
     }
 

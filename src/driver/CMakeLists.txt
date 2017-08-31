@@ -39,11 +39,6 @@ if (ENABLE_UNIT_TESTS)
        LIBRARIES portage ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
        POLICY MPI
        THREADS 1)
-       cinch_add_unit(test_driver_mesh_swarm_mesh
-       SOURCES test/test_driver_mesh_swarm_mesh 
-       LIBRARIES portage ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES} ${LAPACKE_LIBRARIES}
-       POLICY MPI
-       THREADS 1)
    endif (Jali_DIR)
 
    cinch_add_unit(test_driver_swarm
@@ -51,6 +46,11 @@ if (ENABLE_UNIT_TESTS)
      LIBRARIES portage ${LAPACKE_LIBRARIES}
      POLICY MPI
      THREADS 1)
-
+   
+   cinch_add_unit(test_driver_mesh_swarm_mesh
+     SOURCES test/test_driver_mesh_swarm_mesh 
+     LIBRARIES portage ${LAPACKE_LIBRARIES}
+     POLICY MPI
+     THREADS 1)
 
 endif (ENABLE_UNIT_TESTS)
