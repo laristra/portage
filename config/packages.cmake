@@ -148,8 +148,8 @@ if(ENABLE_THRUST)
   # Use THRUST_DIR directly if specified, otherwise try to build from NGC
   set(THRUST_DIR "${NGC_INCLUDE_DIR}" CACHE PATH "Thrust directory")
   message(STATUS "Using THRUST_DIR=${THRUST_DIR}")
-  
-  # Allow for swapping backends - should this be in CACHE?
+
+  # Allow for swapping backends
   set(THRUST_BACKEND "THRUST_DEVICE_SYSTEM_OMP" CACHE STRING "Thrust backend")
   message(STATUS "Using ${THRUST_BACKEND} as Thrust backend.")
   include_directories(${THRUST_DIR})
@@ -180,8 +180,10 @@ endif(ENABLE_THRUST)
 #-----------------------------------------------------------------------------
 # Find Boost
 #-----------------------------------------------------------------------------
-find_package(Boost REQUIRED)
-if(Boost_FOUND)
-  message(STATUS "Boost location: ${Boost_INCLUDE_DIRS}")
-  include_directories( ${Boost_INCLUDE_DIRS} )
-endif()
+if(NOT ENABLE_THRUST)
+  find_package(Boost REQUIRED)
+  if(Boost_FOUND)
+    message(STATUS "Boost location: ${Boost_INCLUDE_DIRS}")
+    include_directories( ${Boost_INCLUDE_DIRS} )
+  endif(Boost_FOUND)
+endif(NOT ENABLE_THRUST)
