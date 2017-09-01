@@ -121,13 +121,13 @@ portage.
 | `ENABLE_APP_TESTS:BOOL` | Turn on compilation and test harness of application tests | `False` |
 | `ENABLE_DOXYGEN:BOOL` | Create a target to build this documentation | `False` |
 | `ENABLE_FleCSI:BOOL` | Turn on support for the FleCSI Burton specialization; must set `CMAKE_PREFIX_PATH` to a location where _both_ FleCSI and FleCSI-SP can be found | `False` |
-| `ENABLE_MPI:BOOL` | Build with support for MPI; | `False` |
+| `ENABLE_MPI:BOOL` | Build with support for MPI | `False` |
 | `ENABLE_TCMALLOC:BOOL` | Build with support for TCMalloc | `False` |
 | `ENABLE_THRUST:BOOL` | Turn on Thrust support for on-node parallelism | `False` |
 | `ENABLE_UNIT_TESTS:BOOL` | Turn on compilation and test harness of unit tests | `False` |
 | `ENABLE_FleCSI:BOOL` | Turn on support for FleCSI; _requires C++14-compatible compiler_ | `False` |
 | `Jali_DIR:PATH` | Hint location for CMake to find Jali | "" |
-| `PC_LAPACKE_NCLUDE_DIRS:PATH` | Hint location for CMake to find LAPACKE include files if `pkg_config` fails | "" |
+| `PC_LAPACKE_NCLUDE_DIRS:PATH` | Hint location for CMake to find LAPACKE include files if `pkg_config` fails. **NOTE** the variable name _indeed_ includes the typo `_NCLUDE`; this will be fixed in a future release when we update the build system | "" |
 | `PC_LAPACKE_LIBRARY_DIRS:PATH` | Hint location for CMake to find LAPACKE library files if `pkg_config` fails | "" |
 | `TCMALLOC_LIB:PATH` | The TCMalloc library to use | `${HOME}` |
 | `THRUST_DIR:PATH` | Directory of the Thrust install | "" |
