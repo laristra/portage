@@ -137,7 +137,7 @@ AuxMeshTopology to answer some queries.
 
 There is no equivalent of AuxMeshTopology for state wrappers.  This is
 simply because the requirements of a state manager are much less
-intense than those of the mesh framework.  In paticular, the state
+intense than those of the mesh framework.  In particular, the state
 wrappers only need to know how to add data, get data, and query things
 like the size of the data and where the data lives (Portage::CELL or
 Portage::NODE).  Portage::Simple_State_Wrapper exposes this
