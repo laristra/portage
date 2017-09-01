@@ -16,7 +16,7 @@ All of these operations work with your underlying mesh/particles and
 state manager through wrappers that provide an interface to the
 queries needed to perform any particular step.  For an example of the
 requirements of the wrappers, see the [Example Use](@ref example)
-page.  In the below, when we refer to _mesh_ or _particles_ in terms
+page.  Below, when we refer to _mesh_ or _particles_ in terms
 of the operations, we really mean _mesh wrappers_ and _particle swarm
 wrappers_.  Particle methods are also referred to as _meshfree
 methods_.
@@ -25,7 +25,7 @@ methods_.
 
 All operations consist of a _source_ mesh/particle swarm and a
 _target_ mesh/particle swarm.  The _source_ entity is the one where we
-have existing field data, and the _target_ entity is object to which
+have existing field data, and the _target_ entity is the object to which
 we would like to remap the data.  For meshes, the field data can live
 on either cell centers or node centers; particle data naturally lives
 on particles, which can have various shapes and smoothing lengths.
@@ -116,11 +116,11 @@ background or boundary conditions.
 
 The current interpolation methods for meshes are the following:
 
-- Portage::Interpolate_1stOrder - no limiting gets applied here
+- Portage::Interpolate_1stOrder - no limiting gets applied here.
 - Portage::Interpolate_2ndOrder - capable of performing a
-  least-squares, limited gradient
+  limited linear fit (2nd order accurate).
 - Portage::Interpolate_3rdOrder - capable of performing a
-  least-squares, limited quadratic fit.
+  least-squares, limited quadratic fit (3rd order accurate).
 
 For particles, the terminology for the interpolate step changes to
 _estimate_.  All of the heavy-lifting of the remap for particles has
@@ -132,7 +132,7 @@ derivative information.
 The available meshfree method is:
 
 - Portage::Meshfree::Estimate - use the output of Portage::Accumulate
-  to estimate the target field data with varying degree of accuracy.
+  to estimate the target field data with varying degrees of accuracy.
 
 ----
 
