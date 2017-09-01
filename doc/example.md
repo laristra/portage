@@ -98,7 +98,7 @@ _If one does **not** use AuxMeshTopology to help extend their mesh
 wrapper's functionality, one should ensure that their mesh wrapper at
 least has the same public functions as AuxMeshTopology._ For this
 reason, it is advised to utilize AuxMeshTopology where possible, but
-to defer to one's on mesh framework wrapper when more efficient
+to defer to one's own mesh framework wrapper when more efficient
 methods are available.
 
 ## Portage::Simple_Mesh_Wrapper
