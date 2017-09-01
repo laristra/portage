@@ -21,6 +21,7 @@ of the operations, we really mean _mesh wrappers_ and _particle swarm
 wrappers_.  Particle methods are also referred to as _meshfree
 methods_.
 
+![An example mesh-mesh configuration.  Blue is target mesh, black is source mesh.](doxygen/images/meshmesh.svg)
 All operations consist of a _source_ mesh/particle swarm and a
 _target_ mesh/particle swarm.  The _source_ entity is the one where we
 have existing field data, and the _target_ entity is object to which
@@ -28,7 +29,6 @@ we would like to remap the data.  For meshes, the field data can live
 on either cell centers or node centers; particle data naturally lives
 on particles, which can have various shapes and smoothing lengths.
 
-![An example mesh-mesh configuration.  Blue is target mesh, black is source mesh.](doxygen/images/meshmesh.svg)
 
 ## Search
 
