@@ -209,7 +209,7 @@ TEST_F(DriverTest2DNonCoincident, 2D_2ndOrderStepCellCntrNonCoincident1proc){
 }
 TEST_F(DriverTest2DNonCoincident, 2D_2ndOrderStepCellCntrNonCoincident1procBJ){
   unitTest<Portage::IntersectR2D, Portage::Interpolate_2ndOrder, 2>
-  (compute_step_field_2d, 5.022128, Portage::BARTH_JESPERSEN);
+  (compute_step_field_2d, 5.013543, Portage::BARTH_JESPERSEN);
 }
 TEST_F(DriverTest3D, 3D_1stOrderStepCellCntrCoincident1proc){
   unitTest<Portage::IntersectR3D, Portage::Interpolate_1stOrder, 3>
@@ -233,6 +233,6 @@ TEST_F(DriverTest3DNonCoincident, 3D_2ndOrderStepCellCntrNonCoincident1proc){
 }
 TEST_F(DriverTest3DNonCoincident, 3D_2ndOrderStepCellCntrNonCoincident1procBJ){
   unitTest<Portage::IntersectR3D, Portage::Interpolate_2ndOrder, 3>
-  (compute_step_field_3d,  18.626843, Portage::BARTH_JESPERSEN);
+  (compute_step_field_3d,  18.759933, Portage::BARTH_JESPERSEN);
 }
 }

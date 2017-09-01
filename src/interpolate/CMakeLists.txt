@@ -12,7 +12,9 @@ Please see the license file at the root of this repository, or at:
 set(interpolate_HEADERS
     interpolate_1st_order.h
     interpolate_2nd_order.h
+    interpolate_3rd_order.h
     gradient.h
+    quadfit.h
     PARENT_SCOPE
 )
 
@@ -23,6 +25,12 @@ if (ENABLE_UNIT_TESTS)
   if (Jali_DIR)
     cinch_add_unit(test_gradient
       SOURCES  test/test_gradient.cc
+      LIBRARIES portage ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
+      POLICY MPI
+      THREADS 1)
+
+    cinch_add_unit(test_quadfit
+      SOURCES  test/test_quadfit.cc
       LIBRARIES portage ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
       POLICY MPI
       THREADS 1)
@@ -38,6 +46,13 @@ if (ENABLE_UNIT_TESTS)
       LIBRARIES portage ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
       POLICY MPI
       THREADS 1)
+
+    cinch_add_unit(test_interpolate_3rd_order
+      SOURCES test/test_interp_3rd_order.cc
+      LIBRARIES portage ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
+      POLICY MPI
+      THREADS 1)
+
   endif (Jali_DIR)
 
 endif(ENABLE_UNIT_TESTS)
