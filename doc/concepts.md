@@ -66,14 +66,14 @@ some candidates are determined to have zero intersection, or that some
 candidates have multiple intersections in the case of non-convex
 cells.
 
-The available intersectors for meshes are: **LINKS**
+The available intersectors for meshes are:
 
 - Portage::IntersectClipper - 2d, exact intersection method based on
   the [Clipper](www.angusj.com/delphi/clipper.php) library for polygon
-  intersection and clipping - Portage::IntersectR2D - 2d, fast, exact
-  polygonal intersection method based on the
-  [r3d](https://github.com/laristra/r3d) library.  -
-  Portage::IntersectR3D - 3d, fast, exact polyhedral intersection
+  intersection and clipping
+- Portage::IntersectR2D - 2d, fast, exact polygonal intersection
+  method based on the [r3d](https://github.com/laristra/r3d) library.
+- Portage::IntersectR3D - 3d, fast, exact polyhedral intersection
   method based on the [r3d](https://github.com/laristra/r3d) library.
 
 For particles, this step is referred to as _accumulation_.  The
