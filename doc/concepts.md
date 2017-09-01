@@ -22,6 +22,7 @@ wrappers_.  Particle methods are also referred to as _meshfree
 methods_.
 
 ![An example mesh-mesh configuration.  Blue is target mesh, black is source mesh.](doxygen/images/meshmesh.svg)
+
 All operations consist of a _source_ mesh/particle swarm and a
 _target_ mesh/particle swarm.  The _source_ entity is the one where we
 have existing field data, and the _target_ entity is object to which
