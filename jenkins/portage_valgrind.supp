@@ -1,0 +1,38 @@
+{
+   MPI_issue1
+   Memcheck:Leak
+   ...
+   fun:PMPI_Init
+   fun:main
+}
+
+{
+   MPI_issue2
+   Memcheck:Param
+   writev(vector[...])
+   fun:writev
+   ...
+   fun:PMPI_Init
+   fun:main
+}
+
+{
+   MPI_issue3
+   Memcheck:Leak
+   ...
+   fun:ompi_mpi_init
+}
+
+{
+   MPI_issue4
+   Memcheck:Leak
+   ...
+   fun:orte_init
+}
+
+{
+   MPI_issue5
+   Memcheck:Leak
+   ...
+   fun:opal_event_base_loop
+}

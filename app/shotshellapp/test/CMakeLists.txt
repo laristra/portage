@@ -1,0 +1,26 @@
+#[[
+This file is part of the Ristra portage project.
+Please see the license file at the root of this repository, or at:
+    https://github.com/laristra/portage/blob/master/LICENSE
+]]
+message(STATUS "Adding shotshellapp test")
+
+macro(ADD_SHOTSHELLAPP_TEST DIM ENTITY FIELDORDER REMAPORDER)
+  set(SUFFIX "${DIM}d_${ENTITY}_f${FIELDORDER}_r${REMAPORDER}")
+  file(COPY shotshellapp_test_${SUFFIX}.sh DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+  file(GLOB GOLDFILES gold/GOLD-field_${SUFFIX}.txt*)
+  file(COPY ${GOLDFILES} DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+  add_test(NAME shotshellapp_test_${SUFFIX}
+    COMMAND ./shotshellapp_test_${SUFFIX}.sh)
+  set_property(TEST shotshellapp_test_${SUFFIX}
+    PROPERTY ENVIRONMENT APPDIR=${CMAKE_BINARY_DIR}/bin)
+endmacro(ADD_SHOTSHELLAPP_TEST)
+
+ADD_SHOTSHELLAPP_TEST(2 cell 0 1)
+ADD_SHOTSHELLAPP_TEST(2 cell 1 1)
+ADD_SHOTSHELLAPP_TEST(2 cell 1 2)
+ADD_SHOTSHELLAPP_TEST(2 cell 2 2)
+ADD_SHOTSHELLAPP_TEST(2 node 0 1)
+ADD_SHOTSHELLAPP_TEST(2 node 1 1)
+ADD_SHOTSHELLAPP_TEST(2 node 1 2)
+ADD_SHOTSHELLAPP_TEST(2 node 2 2)

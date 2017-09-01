@@ -1,0 +1,18 @@
+# axis_varan.yml
+COMPILER:
+  - intel
+  - gcc
+
+BUILD_TYPE:
+  - base
+  - debug
+  - thrust
+  - flecsi
+  - coverage
+
+exclude:
+  - COMPILER: intel
+    BUILD_TYPE: flecsi
+  - COMPILER: intel
+    BUILD_TYPE: coverage
+
