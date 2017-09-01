@@ -28,12 +28,16 @@ we would like to remap the data.  For meshes, the field data can live
 on either cell centers or node centers; particle data naturally lives
 on particles, which can have various shapes and smoothing lengths.
 
+![An example mesh-mesh configuration.  Blue is target mesh, black is source mesh.](doyxgen/images/meshmesh.svg)
+
 ## Search
 
 Given source and target entities, this step simply _identifies_ which
 parts of the source contribute to which parts of the target.
 Concretely, for mesh-mesh remap this step would identify which source
-cells overlap each target cell. **ADD IMAGE**
+cells overlap each target cell.
+
+![Candidates are in yellow.](doxygen/images/search.svg)
 
 portage has several search algorithms with varying degrees of
 sophistication/speed.  These are the search methods for meshes:
@@ -57,6 +61,8 @@ methods for particles:
 Given the list of source candidates for intersection for a target
 entity, this step calculates the actual weights going into the
 intersection.
+
+![The exact intersection volumes are in green.](doxygen/images/intersect.svg)
 
 For meshes, this step uses exact intersection methods to calculate
 various _moments_ of the polygon/polyhedron of intersection; moments
@@ -104,6 +110,8 @@ boundary conditions, so we do not limit at domain boundaries.
 Furthermore, if the target mesh is not entirely contained within the
 source mesh, then we currently have no mechanism for including
 background or boundary conditions.
+
+![The weights, calculated during intersection, are combined to interpolate data in the target cell.](doxygen/images/interpolate.svg)
 
 The current interpolation methods for meshes are the following:
 
