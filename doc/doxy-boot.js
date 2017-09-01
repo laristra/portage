@@ -18,8 +18,8 @@ $( document ).ready(function() {
 
     $('li > a[href="index.html"] > span').before("<i class='fa fa-cog fa-lg'></i> ");
     $('li > a[href="index.html"] > span').text("portage");
-    $('li > a[href="quickstart.html"] > span').before("<i class='fa fa-rocket fa-lg'></i> ");
-    $('li > a[href="simple_mesh.html"] >span').before("<i class='fa fa-desktop fa-lg'></i> ");
+    $('li > a[href="concepts.html"] > span').before("<i class='fa fa-rocket fa-lg'></i> ");
+    $('li > a[href="example.html"] >span').before("<i class='fa fa-desktop fa-lg'></i> ");
 
     $('li > a[href="namespaces.html"] > span').before("<i class='fa fa-bars'></i> ");
     $('li > a[href="classes.html"] > span').before("<i class='fa fa-book'></i> ");
