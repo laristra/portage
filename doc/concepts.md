@@ -40,7 +40,7 @@ cells overlap each target cell.
 
 ![Candidates are in yellow.](doxygen/images/search.svg)
 
-portage has several search algorithms with varying degrees of
+Portage has several search algorithms with varying degrees of
 sophistication/speed.  These are the search methods for meshes:
 
 - Portage::SearchSimple - 2d, bounding box search
@@ -138,7 +138,7 @@ The available meshfree method is:
 
 ## Drivers
 
-portage comes with a few _drivers_ to help facilitate using the above
+Portage comes with a few _drivers_ to help facilitate using the above
 methods with your own mesh/particle data.  The drivers are all
 templated on source and target mesh/particle swarm and state data.
 Furthermore, they are templated on the Search, Intersect (or

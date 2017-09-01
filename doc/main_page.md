@@ -1,6 +1,6 @@
 # Welcome to portage!   {#mainpage}
 
-portage is a framework that computational physics applications can use
+Portage is a framework that computational physics applications can use
 to build a highly customized, hybrid parallel (MPI+X) conservative
 remapping library for transfer of field data between meshes, between
 particles, and between meshes and particles.
@@ -53,14 +53,14 @@ within portage requires setting at least two CMake variables:
 `ENABLE_THRUST=True` and `THRUST_DIR=<path_to_thrust_directory>`.
 Additionally, one can specify the Thrust backend to utilize, with the
 default being the OpenMP backend
-`THRUST_BACKEND=THRUST_DEVICE_SYSTEM_OMP`.  portage also supports the
+`THRUST_BACKEND=THRUST_DEVICE_SYSTEM_OMP`.  Portage also supports the
 `THRUST_DEVICE_SYSTEM_TBB` backend.  Regular testing happens with
 Thrust 1.8.
 
 ## Obtaining portage
 
 The latest release of [portage](https://github.com/laristra/portage)
-lives on GitHub.  portage makes use of git submodules, so it must be
+lives on GitHub.  Portage makes use of git submodules, so it must be
 cloned recursively:
 
 ```sh
@@ -69,7 +69,7 @@ git clone --recursive https://github.com/laristra/portage
 
 ## Building
 
-portage uses the CMake build system.  In the simplest case where you
+Portage uses the CMake build system.  In the simplest case where you
 want to build a serial version of the code, and CMake knows where to
 find your Boost and LAPACKE installations, one can do
 

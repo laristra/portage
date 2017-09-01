@@ -1,6 +1,6 @@
 # Simple Mesh Example    {#example}
 
-portage provides very crude mesh and state manager frameworks aptly
+Portage provides very crude mesh and state manager frameworks aptly
 called `Simple_Mesh` and `Simple_State`.  The goal of these frameworks
 is to show how one can wrap their favorite mesh and state manager for
 use with portage - _they should not be used in any production sense._

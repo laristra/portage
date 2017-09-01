@@ -39,7 +39,7 @@ with Travis CI.
 
 ### Prerequisites
 
-portage uses standard C++11 features, so a fairly modern compiler is
+Portage uses standard C++11 features, so a fairly modern compiler is
 needed.  We regularly test with Intel 17+ or GCC 5.3+.  Utilizing the
 full capabilities of portage will require an MPI implementation; we
 regularly test with OpenMPI 1.10.3+ The build system _requires_ CMake
@@ -53,7 +53,7 @@ The following libraries are also _required_ (see examples below):
   We wrap some features of either one of these packages.  If you would
   like to run with OpenMP or TBB threads, then you _must_ use Thrust.
 
-portage provides wrappers for a few third-party mesh types.  Building
+Portage provides wrappers for a few third-party mesh types.  Building
 support for these is _optional_:
 
 - [Jali](http://github.com/lanl/jali):
