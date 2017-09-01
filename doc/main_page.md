@@ -120,10 +120,7 @@ portage.
 | `CMAKE_PREFIX_PATH:PATH` | Locations where CMake can look for packages; needs to be set to the FleCSI and FleCSI-SP locations if using FleCSI | "" |
 | `ENABLE_APP_TESTS:BOOL` | Turn on compilation and test harness of application tests | `False` |
 | `ENABLE_DOXYGEN:BOOL` | Create a target to build this documentation | `False` |
-| `ENABLE_FleCSI:BOOL` | Turn on support for the FleCSI Burton specialization; must set `CMAKE_PREFIX_PATH` to a location where _both_ FleCSI and FleCSI-SP can be found. Both FleCSI packages are under constant
-  development.  This version of portage is known to work with hash
-  `374b56b` of the FleCSI _stable_ branch, and hash `e78c594` of the
-  FleCSI-SP _stable_ branch. | `False` |
+| `ENABLE_FleCSI:BOOL` | Turn on support for the FleCSI Burton specialization; must set `CMAKE_PREFIX_PATH` to a location where _both_ FleCSI and FleCSI-SP can be found. Both FleCSI packages are under constant development.  This version of portage is known to work with hash `374b56b` of the FleCSI _stable_ branch, and hash `e78c594` of the FleCSI-SP _stable_ branch. | `False` |
 | `ENABLE_MPI:BOOL` | Build with support for MPI | `False` |
 | `ENABLE_TCMALLOC:BOOL` | Build with support for TCMalloc | `False` |
 | `ENABLE_THRUST:BOOL` | Turn on Thrust support for on-node parallelism | `False` |
