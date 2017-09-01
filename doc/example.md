@@ -1,8 +1,98 @@
 # Simple Mesh Example    {#example}
 
-portage provides very crude mesh and state manager frameworks, aptly called
-`Simple_Mesh` and `Simple_State`.  The goal of these frameworks is to show
-how you can wrap your favorite mesh and state manager for use with portage.
+portage provides very crude mesh and state manager frameworks aptly
+called `Simple_Mesh` and `Simple_State`.  The goal of these frameworks
+is to show how one can wrap their favorite mesh and state manager for
+use with portage - _they should not be used in any production sense._
+
+----
+
+# The Mesh and State
+
+## Portage::Simple_Mesh
+
+This mesh framework is a non-distributed (i.e. has no ghost
+information), 3D, regular Cartesian mesh framework.  A Simple_Mesh is
+constructed by specifying the extents of the box and the number of
+cells in each direction.  The constructor then builds connectivity
+information between cell, node, and face indices.  The ordering of
+things like the nodes making up a cell, or the faces making up a cell
+are specified consistently, but the choice of ordering does not
+matter.  There are a few helper functions like
+Portage::Simple_Mesh::cell_get_nodes() that will retrieve the indices
+of some connected mesh entities given another mesh entity's index.
+
+## Portage::Simple_State
+
+The state manager for Simple_Mesh is essentially a collection of field
+data specified by some name (e.g. "density") and location on the
+Simple_Mesh where they live (e.g. Portage::CELL).  The constructor for
+a Simple_State takes a pointer to a Simple_Mesh so that it has access
+to things like the number of nodes in the mesh.  Data are added to and
+retrieved from the state manager via `add` and `get` methods.
+Iterators are provided for the map between `(name, location)` pairs
+and the data.
+
+# Wrappers
+
+As mentioned on the [Concepts](@ref concepts) page, the search,
+intersect, and interpolate actions in portage all operate on
+mesh/particle and state _wrappers_.  The reason for this is that these
+three steps may need to ask for some information that may not be
+readily available within the original mesh/particle and state
+frameworks, but could be constructed within a wrapper.
+
+We provide a helper class, Portage::AuxMeshTopology, that assists in
+extending a basic mesh's topological entities needed for some remap
+capabilities.  One does not _need_ to use the AuxMeshTopology class,
+especially if one's mesh already efficiently supports the advanced
+mesh topologies.
+
+In particular, the advanced mesh topologies and entities, which we
+term _sides_, _corners_, and _wedges_ are utilized in node-centered
+remapping, but are also _required_ if there are cells with non-planar
+faces in the remap.  In 2d, a side is triangle composed of the cell
+center and the two nodes of an edge; a wedge is a triangle composed of
+half of a side, by the cell center and the edge's midpoint and one of
+its nodes; a corner is a quadrilateral formed by the two wedges in a
+cell attached to a node.  In 3d, the idea is extended such that a side
+is a tetrahedron composed of the cell center, the two nodes of an
+edge, and the face center of a face attached to that edge; wedges are
+again half of a side, but this time a tetrahedron composed of the cell
+center, an edge's midpoint and one of its nodes, and the face center;
+a corner is the collection of all wedges in a cell attached to a node.
+
+## Portage::AuxMeshTopology
+
+This helper class will build the additional mesh entities and
+connectivities from a basic mesh framework wrapper.  The basic mesh
+framework wrapper must support cells, nodes, and faces as well as
+connectivity queries about these entities.
+
+This class is not a complete class design.  In particular, it is
+designed to be used within
+the
+[Curiously Recurring Template Pattern](https://en.m.mwikipedia.org/wiki/Curiously_recurring_template_pattern)(CRTP)
+design pattern to achieve static polymorphism.  Under the CRTP in this
+case, the basic mesh framework wrapper looks something like
+
+~~~{.cc}
+class Basic_Mesh_Wrapper : public AuxMeshToplogy<Basic_Mesh_Wrapper> {...};
+~~~
+
+In this way, the `Basic_Mesh_Wrapper` can use its own methods, or
+defer to AuxMeshToplogy to perform more advanced queries.
+
+In addition to the advanced mesh entities (sides, wedges, and
+corners), AuxMeshTopology also resolves some advanced connectivity
+information.  An example is
+AuxMeshTopology::node_get_cell_adj_nodes(), which given a node index
+in the mesh, returns a vector of all the nodes that are attached to
+all cells attached to the given node.
+
+## Portage::Simple_Mesh_Wrapper
+
+## Portage::Simple_State_Wrapper
 
 ## High-level portage Workflow
 
