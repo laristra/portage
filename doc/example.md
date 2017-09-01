@@ -67,7 +67,7 @@ a corner is the collection of all wedges in a cell attached to a node.
 This helper class will build the additional mesh entities and
 connectivities from a basic mesh framework wrapper.  The basic mesh
 framework wrapper must support cells, nodes, and faces as well as
-connectivity queries about these entities.
+connectivity and number queries about these entities.
 
 This class is not a complete class design.  In particular, it is
 designed to be used within
@@ -86,11 +86,27 @@ defer to AuxMeshToplogy to perform more advanced queries.
 In addition to the advanced mesh entities (sides, wedges, and
 corners), AuxMeshTopology also resolves some advanced connectivity
 information.  An example is
-AuxMeshTopology::node_get_cell_adj_nodes(), which given a node index
+AuxMeshTopology::node_get_cell_adj_nodes(), which, given a node index
 in the mesh, returns a vector of all the nodes that are attached to
-all cells attached to the given node.
+all cells attached to the given node.  AuxMeshTopology additionally
+creates iterators over all the various types of mesh entities,
+provides geometric information (e.g. volumes, centroids, etc.) of the
+mesh entities, and a method to determine if an entitiy is on the
+domain boundary (needed for limiting in higher-order remaps).
+
+_If one does **not** use AuxMeshTopology to help extend their mesh
+wrapper's functionality, one should ensure that their mesh wrapper at
+least has the same public functions as AuxMeshTopology._ For this
+reason, it is advised to utilize AuxMeshTopology where possible, but
+to defer to one's on mesh framework wrapper when more efficient
+methods are available.
 
 ## Portage::Simple_Mesh_Wrapper
+
+This wraps the Portage::Simple_Mesh framework.  Simple_Mesh, as its
+name suggests, is quite simple and does not know about advanced mesh
+entities nor connectivities.  It lets AuxMeshTopology do the vast
+majority of the heavy lifting.  
 
 ## Portage::Simple_State_Wrapper
 
