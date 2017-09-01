@@ -24,14 +24,14 @@ of some connected mesh entities given another mesh entity's index.
 
 ## Portage::Simple_State
 
-The state manager for Simple_Mesh is essentially a collection of field
-data specified by some name (e.g. "density") and location on the
-Simple_Mesh where they live (e.g. Portage::CELL).  The constructor for
-a Simple_State takes a pointer to a Simple_Mesh so that it has access
-to things like the number of nodes in the mesh.  Data are added to and
-retrieved from the state manager via `add` and `get` methods.
-Iterators are provided for the map between `(name, location)` pairs
-and the data.
+The state manager for Portage::Simple_Mesh is essentially a collection
+of field data specified by some name (e.g. "density") and location on
+the Portage::Simple_Mesh where they live (e.g. Portage::CELL).  The
+constructor for a Portage::Simple_State takes a pointer to a
+Portage::Simple_Mesh so that it has access to things like the number
+of nodes in the mesh.  Data are added to and retrieved from the state
+manager via `add` and `get` methods.  Iterators are provided for the
+map between `(name, location)` pairs and the data.
 
 # Wrappers
 
@@ -77,16 +77,16 @@ design pattern to achieve static polymorphism.  Under the CRTP in this
 case, the basic mesh framework wrapper looks something like
 
 ~~~{.cc}
-class Basic_Mesh_Wrapper : public AuxMeshToplogy<Basic_Mesh_Wrapper> {...};
+class Basic_Mesh_Wrapper : public AuxMeshTopology<Basic_Mesh_Wrapper> {...};
 ~~~
 
 In this way, the `Basic_Mesh_Wrapper` can use its own methods, or
-defer to AuxMeshToplogy to perform more advanced queries.
+defer to AuxMeshTopology to perform more advanced queries.
 
 In addition to the advanced mesh entities (sides, wedges, and
 corners), AuxMeshTopology also resolves some advanced connectivity
 information.  An example is
-AuxMeshTopology::node_get_cell_adj_nodes(), which, given a node index
+Portage::AuxMeshTopology::node_get_cell_adj_nodes(), which, given a node index
 in the mesh, returns a vector of all the nodes that are attached to
 all cells attached to the given node.  AuxMeshTopology additionally
 creates iterators over all the various types of mesh entities,
@@ -106,115 +106,58 @@ methods are available.
 This wraps the Portage::Simple_Mesh framework.  Simple_Mesh, as its
 name suggests, is quite simple and does not know about advanced mesh
 entities nor connectivities.  It lets AuxMeshTopology do the vast
-majority of the heavy lifting.  
+majority of the heavy lifting by automatically creating the advanced
+mesh features.
+
+Where possible, Simple_Mesh_Wrapper provides quick and efficient
+answers to queries that AuxMeshTopology would otherwise solve in a
+general sense.  Two trivial examples are:
+
+1. Portage::Simple_Mesh_Wrapper::cell_get_type(), which determines the
+   Portage::Entity_type (e.g. PARALLEL_OWNED, PARALLEL_GHOST, etc.).
+   We know Portage::Simple_Mesh does not know anything about ghost
+   information, so we simple return
+   Portage::Entity_type::PARALLEL_OWNED.
+2. Portage::Simple_Mesh_Wrapper::cell_get_element_type(), which
+   determines the geometric shape of a given cell from one of the
+   Portage::Element_type's.  Simple mesh is only a 3d, structured
+   Cartesian mesh, so we always return Portage::Element_type::HEX.
+
+There are a few other examples within Portage::Simple_Mesh_Wrapper
+where the AuxMeshTopology methods are overwritten to take advantage of
+information that is cached within the Portage::Simple_Mesh.  This is a
+prime example of how the CRTP and AuxMeshTopology are intended to be
+used.  In fact, even our wrapper (wonton::flecsi_mesh_t) to the
+sophisticated Burton
+mesh [specialization](https://github.com/laristra/flecsi-sp) of
+the [FleCSI](https://github.com/laristra/flecsi) mesh framework uses
+AuxMeshTopology to answer some queries.
 
 ## Portage::Simple_State_Wrapper
 
-## High-level portage Workflow
+There is no equivalent of AuxMeshTopology for state wrappers.  This is
+simply because the requirements of a state manager are much less
+intense than those of the mesh framework.  In paticular, the state
+wrappers only need to know how to add data, get data, and query things
+like the size of the data and where the data lives (Portage::CELL or
+Portage::NODE).  Portage::Simple_State_Wrapper exposes this
+functionality and provides some error checking for missing or
+duplicate data in the underlying Portage::Simple_State object.
 
-portage provides library functions for remapping data from one mesh (the
-_source_ mesh) to a a different mesh (the _target mesh_).  In order to do this,
-portage needs to _search_ through the source mesh for possible intersections
-with each mesh entity in the target mesh, actually calculate the amount of
-_intersection_ with the candidates, and then _interpolate_ the weighted results
-onto the target mesh.
+# Applications and Tests
 
-## Why Wrappers?
+Nearly all of the generic unit tests have been designed to work with
+the Portage::Simple_Mesh_Wrapper and Portage::Simple_State_Wrapper
+data structures when a full up mesh is required.  These should serve
+as examples of the types of things one may want to do with a mesh and
+state framework.
 
-In order to perform the _search_, _intersect_, and _interpolate_ steps of a
-remap, portage needs to ask the mesh and statemanager for information about
-data, connectivity/neighbors, etc.  In order to do this in a general way,
-we have adopted wrappers around mesh frameworks that should implement the
-queries required by portage.  It is then up to the user of the mesh and state
-manager of choice to make sure those queries are satisfied, in whatever
-(read: optimal) choice they choose.
-
-## `AuxMeshTopology`
-
-To facilitate wrapping, we provide a class called Portage::AuxMeshTopology,
-which implements
-the
-[Curiously Recurring Template Pattern](https://en.wikipedia.org/wiki/Curiously_recurring_template_pattern) to
-implement static polymorphism.  In short, this means that
-AuxMeshTopology is templated on a mesh wrapper class, which should be
-able to answer basic questions about cells and nodes (and faces and
-edges, depending on the dimension).  AuxMeshTopology then can build
-more advanced mesh connectivity information, such as sides, wedges,
-and corners (see the *Simple Mesh* section below).
-
-A concrete example is the Portage::AuxMeshTopology::num_entities()
-function.  This function takes a Portage::Entity_kind (
-e.g. Portage::CELL or Portage::NODE) and a Portage::Entity_type
-(e.g. Portage::PARALLEL_OWNED or Portage::PARALLEL_GHOST) and returns
-the appropriate number of entities of that type and kind.  Under the
-hood, it calls the base mesh wrapper class' functions
-(e.g. Portage::Simple_Mesh_Wrapper::num_owned_faces()) where applicable, or
-can call its own functions for information about more advanced
-entities (e.g. Portage::AuxMeshTopology::num_ghost_sides()).
-
-**NOTE:** When wrapping a new mesh framework, one does not _need_ to use
-AuxMeshTopology, especially if your mesh framework already supports
-the advanced mesh entities; it is simply a convenience tool.
-
-## Methods Wrapped
-
-This is a list of methods needed by a mesh wrapper during a typical
-flow through portage.  This is the list of things needed with and in addition to
-using Portage::AuxMeshTopology class.  The examples here are concrete examples
-using the Portage::Simple_Mesh_Wrapper class as a reference.
-
-<dl>
-	<dt>General mesh info</dt>
-		<dd>Portage::Simple_Mesh_Wrapper::space_dimension()</dd>
-		<dd>Portage::Simple_Mesh_Wrapper::cell_get_type()</dd>
-		<dd>Portage::Simple_Mesh_Wrapper::cell_get_element_type()</dd>
-		<dd>Portage::Simple_Mesh_Wrapper::get_global_id()</dd>
-	<dt>`num_X_Y` for various entities</dt>
-		<dd>Portage::Simple_Mesh_Wrapper::num_owned_cells()</dd>
-		<dd>Portage::Simple_Mesh_Wrapper::num_owned_faces()</dd>
-		<dd>Portage::Simple_Mesh_Wrapper::num_owned_nodes()</dd>
-		<dd>Portage::Simple_Mesh_Wrapper::num_ghost_cells()</dd>
-		<dd>Portage::Simple_Mesh_Wrapper::num_ghost_faces()</dd>
-		<dd>Portage::Simple_Mesh_Wrapper::num_ghost_nodes()</dd>
-	<dt>Connectivity information</dt>
-		<dd>Portage::Simple_Mesh_Wrapper::node_get_cell_adj_nodes()</dd>
-		<dd>Portage::Simple_Mesh_Wrapper::cell_get_node_adj_cells()</dd>
-		<dd>Portage::Simple_Mesh_Wrapper::cell_get_faces_and_dirs()</dd>
-		<dd>Portage::Simple_Mesh_Wrapper::cell_get_nodes()</dd>
-		<dd>Portage::Simple_Mesh_Wrapper::face_get_nodes()</dd>
-	<dt>Spatial information</dt>
-		<dd>Portage::Simple_Mesh_Wrapper::node_get_coordinates()</dd>
-</dl>
-
-## Simple Mesh
-
-The Portage::Simple_Mesh class provides a concrete example of a basic regular
-Cartesian mesh framework in 3d.  Simple_Mesh is _not_ designed for
-production, and is currently only serial-capable -- it does not have
-any ghost information, so queries to ghost entities simply return 0.
-
-Simple_Mesh only knows about cells, faces, and nodes.  A Simple_Mesh
-is constructed by passing in the lower and upper extents of the
-rectangular prism that makes up the domain, and the number of cells in
-each direction.  All the cells, faces, and nodes are then created as
-simple indices, and connectivity is built from these indices with an
-assumed ordering, as shown below.
-
-![Blowup of local node ordering.](doxygen/images/simple_mesh/cell-blowup.png)
-@image latex doxygen/images/simple_mesh/cell-blowup.png "Blowup of local node ordering." width=\textwidth
-![Local face ordering for a cell.](doxygen/images/simple_mesh/cell-faces.png)
-@image latex doxygen/images/simple_mesh/cell-faces.png "Local face ordering for a cell." width=\textwidth
-
-![Global node ordering.](doxygen/images/simple_mesh/allNodes.svg)
-![Global numbering of xy-plane faces](doxygen/images/simple_mesh/xy_plane.svg)
-![Global numbering of yz-plane faces](doxygen/images/simple_mesh/yz_plane.svg)
-![Global numbering of xz-plane faces](doxygen/images/simple_mesh/xz_plane.svg)
-
-
-## Simple State
-
-The state manager associated with the Portage::Simple_Mesh framwork is
-Simple_State.  The field data is stored within a STL vectors inside a
-map that maps a <kbd>(var_name, Entity_kind)</kbd> pair key to the
-data.  The global indices stored within Simple_Mesh correspond to the
-specific index into the vector of field data stored in Simple_State.
+Better examples of how to use these wrappers to actually do a remap of
+field data are in the application tests.  In particular, the
+`app/simple_mesh_app/simple_mesh_app.cc` program shows how to wrap
+mesh and state objects, adds some field data to the source state, and
+utilize Portage::Driver with various search, intersect, and
+interpolate algorithms to perform the remap.  The Portage::Driver is
+templated on mesh wrapper type and state wrapper type, and can be used
+with other frameworks.  It need not be used at all, but is a nice
+starting point for writing one's own remap application.
