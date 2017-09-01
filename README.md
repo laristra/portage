@@ -69,7 +69,10 @@ support for these is _optional_:
   _both_ projects to build support for the Burton mesh specialization
   and its tests.  You will need to set `ENABLE_FleCSI=True` and add
   the FleCSI and FleCSI-sp install paths to the `CMAKE_PREFIX_PATH`;
-  see examples below.
+  see examples below.  Both FleCSI packages are under constant
+  development.  This version of portage is known to work with hash
+  `374b56b` of the FleCSI _stable_ branch, and hash `e78c594` of the
+  FleCSI-SP _stable_ branch.
 
 The [documentation](http://portage.lanl.gov) is built using doxygen (1.8+).
 
@@ -242,13 +245,3 @@ make -j2
 ctest -j2 --output-on-failure
 ```
 
-# License
-
-This project is license under a modified 3-clause BSD license - see
-the [LICENSE](https://github.com/laristra/portage/blob/master/LICENSE)
-file for details.
-
-# Release
-
-This software has been aproved for open source release and has been
-assigned **LA-CC-16-084**.
