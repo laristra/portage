@@ -8,9 +8,9 @@ The portage library provides a framework for general purpose data
 remapping - between meshes, between particles, or between meshes and
 particles - in computational physics applications.  Remapping is
 facilitated through the use of user-supplied _wrappers_ around
-meshes/particle swarms with their data, and is broken into three
-phases that operate on the wrappers corresponding to the original
-remapped mesh/particles: _search_ for intersection candidates,
+meshes/particle swarms with their data.  The remap algorithm is
+organized in three phases operating on the wrappers corresponding to
+the original mesh/particles: _search_ for intersection candidates,
 calculate the _intersection_ with candidates, then _interpolate_ the
 results onto the new mesh or particle swarm.  Algorithms for each of
 the phases can be customized (e.g. order of accuracy of the
