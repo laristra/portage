@@ -13,8 +13,8 @@ which are roughly labelled as
    cell/particle.
 
 All of these operations work with your underlying mesh/particles and
-state manager through wrappers that provide an interface the queries
-needed to perform any particular step.  For an example of the
+state manager through wrappers that provide an interface to the
+queries needed to perform any particular step.  For an example of the
 requirements of the wrappers, see the [Example Use](@ref example)
 page.  In the below, when we refer to _mesh_ or _particles_ in terms
 of the operations, we really mean _mesh wrappers_ and _particle swarm
