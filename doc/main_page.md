@@ -38,10 +38,9 @@ At a minimum, portage requires:
 Distributed parallelism of portage is currently supported through MPI;
 regular testing is performed with OpenMPI 1.10.3+ .  Most application
 tests and all of the units tests are currently only built if MPI is
-used.  MPI is enabled in portage by setting the CMake variables
-`ENABLE_MPI=True` and `ENABLE_MPI_CXX_BINDINGS=True`.  In addition,
-you'll likely need to tell CMake to use the MPI-wrapped compiler by
-setting something like
+used.  MPI is enabled in portage by setting the CMake variable
+`ENABLE_MPI=True`.  In addition, you'll likely need to tell CMake to
+use the MPI-wrapped compiler by setting something like
 
 ~~~
 CMAKE_C_COMPILER=`which mpicc`
