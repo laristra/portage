@@ -18,7 +18,8 @@ needed to perform any particular step.  For an example of the
 requirements of the wrappers, see the [Example Use](@ref example)
 page.  In the below, when we refer to _mesh_ or _particles_ in terms
 of the operations, we really mean _mesh wrappers_ and _particle swarm
-wrappers_.
+wrappers_.  Particle methods are also referred to as _meshfree
+methods_.
 
 All operations consist of a _source_ mesh/particle swarm and a
 _target_ mesh/particle swarm.  The _source_ entity is the one where we
@@ -69,10 +70,10 @@ The available intersectors for meshes are: **LINKS**
 
 - Portage::IntersectClipper - 2d, exact intersection method based on
   the [Clipper](www.angusj.com/delphi/clipper.php) library for polygon
-  intersection and clipping
-- Portage::IntersectR2D - 2d, fast, exact polygonal intersection method based
-  on the [r3d](https://github.com/laristra/r3d) library.
-- Portage::IntersectR3D - 3d, fast, exact polyhedral intersection
+  intersection and clipping - Portage::IntersectR2D - 2d, fast, exact
+  polygonal intersection method based on the
+  [r3d](https://github.com/laristra/r3d) library.  -
+  Portage::IntersectR3D - 3d, fast, exact polyhedral intersection
   method based on the [r3d](https://github.com/laristra/r3d) library.
 
 For particles, this step is referred to as _accumulation_.  The
@@ -80,9 +81,11 @@ distinction in terminology stems from the fact that for particles,
 local regression estimators (LRE) are used to do the remap.  In this
 stage, the LRE weights from particle contributions are accumulated by
 computing the weight functions and local regression corrections to
-those weights.
+those weights.  If LRE is performed with enough points, one can obtain
+weights for arbitrary orders of derivatives of the field data, which
+can be used to perform higher-order estimation.
 
-The available meshfree methods are:
+The available meshfree method is:
 
 - Portage::Meshfree::Accumulate - any-d accumulator that works with
   particles of various shapes, various kernel functions, utilizing
@@ -109,3 +112,40 @@ The current interpolation methods for meshes are the following:
   least-squares, limited gradient
 - Portage::Interpolate_3rdOrder - capable of performing a
   least-squares, limited quadratic fit.
+
+For particles, the terminology for the interpolate step changes to
+_estimate_.  All of the heavy-lifting of the remap for particles has
+been done in the accumulate phase, such that this step results in a
+basic matrix vector multiply between the field data on source
+particles and the weights taking into account various orders of
+derivative information.
+
+The available meshfree method is:
+
+- Portage::Meshfree::Estimate - use the output of Portage::Accumulate
+  to estimate the target field data with varying degree of accuracy.
+
+----
+
+## Drivers
+
+portage comes with a few _drivers_ to help facilitate using the above
+methods with your own mesh/particle data.  The drivers are all
+templated on source and target mesh/particle swarm and state data.
+Furthermore, they are templated on the Search, Intersect (or
+Accumulate), and Interpolate (or Estimate) methods above.  In
+particular, the following drivers are provided:
+
+- Portage::Driver - for mesh-mesh remap
+- Portage::Meshfree::SwarmDriver - for particle-particle remap
+- Portage::MSM_Driver - for mesh to mesh remap with particles as an
+  intermediary
+
+The drivers are all used within our application tests within the
+`apps` directory.  The applications choose a particular mesh or
+particle swarm type, select specfic Search, Intersect, and Interpolate
+algorithms, along with associated settings for remap order of
+accuracy, data locality for meshes (cells or nodes), and any limiters
+needed for higher-order remap.  Users are encouraged to write their
+own specialized drivers, but the above should serve as a starting
+point.
