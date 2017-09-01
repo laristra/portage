@@ -51,7 +51,7 @@ The following libraries are also _required_ (see examples below):
 
 - **__Either__** Boost (1.53.0+) **__or__** Thrust (1.6.0+):
   We wrap some features of either one of these packages.  If you would
-  like to run with OpenMP or TBB threads, then you _must_ use Thrust
+  like to run with OpenMP or TBB threads, then you _must_ use Thrust.
 
 portage provides wrappers for a few third-party mesh types.  Building
 support for these is _optional_:
