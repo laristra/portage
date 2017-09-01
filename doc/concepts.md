@@ -28,7 +28,7 @@ we would like to remap the data.  For meshes, the field data can live
 on either cell centers or node centers; particle data naturally lives
 on particles, which can have various shapes and smoothing lengths.
 
-![An example mesh-mesh configuration.  Blue is target mesh, black is source mesh.](doxygen/images/meshmesh.svg){: .floatright}
+![An example mesh-mesh configuration.  Blue is target mesh, black is source mesh.](doxygen/images/meshmesh.svg)
 
 ## Search
 
