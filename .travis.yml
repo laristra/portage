@@ -39,7 +39,7 @@ after_success:
   - cd ${HOME}/docker/portage;
     CON=$(docker run -d ${TRAVIS_REPO_SLUG}:latest) && docker cp ${CON}:/home/portage/portage/build/doc . ;
     pip3 install doctr;
-    doctr deploy --no-require-master . --no--built-docs doc/portage/doxygen/html;
+    doctr deploy --no-require-master . --built-docs doc/portage/doxygen/html;
 #    fi
 
 env:
