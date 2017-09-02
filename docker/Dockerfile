@@ -39,7 +39,7 @@ RUN cd .. && if [ ${COVERAGE} ]; then \
     $HOME/.local/bin/codecov; \
   fi; \
 fi && cd -
-RUN if [ ${DOCS} ]; then \
+RUN cd /home/portage/portage/build && if [ ${DOCS} ]; then \
   make doxygen; \
 fi
 RUN cd .. && if [ ${SONARQUBE} ]; then \
