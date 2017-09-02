@@ -39,8 +39,7 @@ after_success:
   - cd ${HOME}/docker/portage; mkdir built-docs;
     CON=$(docker run -d ${TRAVIS_REPO_SLUG}:latest) && docker cp ${CON}:/home/portage/portage/build/doc ./built-docs ;
     pip3 install doctr;
-    # trick doctr into deploying
-    export ${TRAVIS_PULL_REQUEST}="false";
+    export TRAVIS_PULL_REQUEST="false";
     doctr deploy --no-require-master . --built-docs built-docs/doxygen/html;
 #    fi
 
