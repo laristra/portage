@@ -38,6 +38,7 @@ after_success:
 #  - if [[ ${DOCS} ]]; then
   - cd ${HOME}/docker/portage;
     CON=$(docker run -d ${TRAVIS_REPO_SLUG}:latest) && docker cp ${CON}:/home/portage/portage/build/doc . ;
+    pwd; ls -R;
     pip3 install doctr;
     doctr deploy --no-require-master . --built-docs doc/portage/doxygen/html;
 #    fi
