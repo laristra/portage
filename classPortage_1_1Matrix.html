@@ -1,38 +1,7 @@
 <!--
-Copyright (c) 2016, Los Alamos National Security, LLC
-All rights reserved.
-Copyright 2016. Los Alamos National Security, LLC. This software was produced
-under U.S. Government contract DE-AC52-06NA25396 for Los Alamos National
-Laboratory (LANL), which is operated by Los Alamos National Security, LLC for
-the U.S. Department of Energy. The U.S. Government has rights to use,
-reproduce, and distribute this software.  NEITHER THE GOVERNMENT NOR LOS ALAMOS
-NATIONAL SECURITY, LLC MAKES ANY WARRANTY, EXPRESS OR IMPLIED, OR ASSUMES ANY
-LIABILITY FOR THE USE OF THIS SOFTWARE.  If software is modified to produce
-derivative works, such modified software should be clearly marked, so as not to
-confuse it with the version available from LANL.
-Additionally, redistribution and use in source and binary forms, with or
-without modification, are permitted provided that the following conditions are
-met:
-1. Redistributions of source code must retain the above copyright notice,
-   this list of conditions and the following disclaimer.
-2. Redistributions in binary form must reproduce the above copyright
-   notice, this list of conditions and the following disclaimer in the
-   documentation and/or other materials provided with the distribution.
-3. Neither the name of Los Alamos National Security, LLC, Los Alamos
-   National Laboratory, LANL, the U.S. Government, nor the names of its
-   contributors may be used to endorse or promote products derived from this
-   software without specific prior written permission.
-THIS SOFTWARE IS PROVIDED BY LOS ALAMOS NATIONAL SECURITY, LLC AND
-CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
-PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL LOS ALAMOS NATIONAL
-SECURITY, LLC OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
-BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER
-IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-POSSIBILITY OF SUCH DAMAGE.
+This file is part of the Ristra portage project.
+Please see the license file at the root of this repository, or at:
+    https://github.com/laristra/portage/blob/master/LICENSE
 -->
 <!DOCTYPE html>
 <html>
@@ -66,7 +35,7 @@ POSSIBILITY OF SUCH DAMAGE.
     <nav class="navbar navbar-default" role="navigation">
       <div class="container">
         <div class="navbar-header">
-          <a class="navbar-brand">portage 1.0.alpha</a>
+          <a class="navbar-brand">portage 1.1.0</a>
         </div>
       </div>
     </nav>
@@ -84,8 +53,8 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
   <div id="navrow1" class="tabs">
     <ul class="tablist">
       <li><a href="index.html"><span>Main&#160;Page</span></a></li>
-      <li><a href="quickstart.html"><span>Quick&#160;Start</span></a></li>
-      <li><a href="simple_mesh.html"><span>Example&#160;Use</span></a></li>
+      <li><a href="concepts.html"><span>Concepts</span></a></li>
+      <li><a href="example.html"><span>Example&#160;Use</span></a></li>
       <li><a href="namespaces.html"><span>Namespaces</span></a></li>
       <li class="current"><a href="annotated.html"><span>Classes</span></a></li>
       <li>
@@ -136,7 +105,6 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="header">
   <div class="summary">
 <a href="#pub-methods">Public Member Functions</a> &#124;
-<a href="#friends">Friends</a> &#124;
 <a href="classPortage_1_1Matrix-members.html">List of all members</a>  </div>
   <div class="headertitle">
 <div class="title">Portage::Matrix Class Reference</div>  </div>
@@ -189,11 +157,12 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a6997b68b5e3510202dab1ae350f0d647"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classPortage_1_1Matrix.html">Matrix</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1Matrix.html#a6997b68b5e3510202dab1ae350f0d647">operator*</a> (<a class="el" href="classPortage_1_1Matrix.html">Matrix</a> const &amp;B)</td></tr>
 <tr class="memdesc:a6997b68b5e3510202dab1ae350f0d647"><td class="mdescLeft">&#160;</td><td class="mdescRight">Matrix-Matrix multiply.  <a href="#a6997b68b5e3510202dab1ae350f0d647">More...</a><br /></td></tr>
 <tr class="separator:a6997b68b5e3510202dab1ae350f0d647"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table><table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="friends"></a>
-Friends</h2></td></tr>
-<tr class="memitem:a780162617e2fa33c31c8328c571bbf9d"><td class="memItemLeft" align="right" valign="top">class&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1Matrix.html#a780162617e2fa33c31c8328c571bbf9d">MatrixRow</a></td></tr>
-<tr class="separator:a780162617e2fa33c31c8328c571bbf9d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3fbf07138efebc2aded8171caa68e24d"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classPortage_1_1Matrix.html">Matrix</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1Matrix.html#a3fbf07138efebc2aded8171caa68e24d">operator*</a> (double b)</td></tr>
+<tr class="memdesc:a3fbf07138efebc2aded8171caa68e24d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Matrix-scalar multiply.  <a href="#a3fbf07138efebc2aded8171caa68e24d">More...</a><br /></td></tr>
+<tr class="separator:a3fbf07138efebc2aded8171caa68e24d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab54ab39601d3adf65826ad948b82c275"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classPortage_1_1Matrix.html">Matrix</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1Matrix.html#ab54ab39601d3adf65826ad948b82c275">solve</a> (<a class="el" href="classPortage_1_1Matrix.html">Matrix</a> const &amp;B, std::string method=&quot;inverse&quot;)</td></tr>
+<tr class="memdesc:ab54ab39601d3adf65826ad948b82c275"><td class="mdescLeft">&#160;</td><td class="mdescRight">solve a linear system A X = B with this matrix (A)  <a href="#ab54ab39601d3adf65826ad948b82c275">More...</a><br /></td></tr>
+<tr class="separator:ab54ab39601d3adf65826ad948b82c275"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
 <a class="anchor" id="a344c6b2a2a682938cb2db70b4b8d736c"></a>
@@ -513,6 +482,38 @@ template&lt;long D&gt; </div>
 
 </div>
 </div>
+<a class="anchor" id="a3fbf07138efebc2aded8171caa68e24d"></a>
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classPortage_1_1Matrix.html">Matrix</a> Portage::Matrix::operator* </td>
+          <td>(</td>
+          <td class="paramtype">double&#160;</td>
+          <td class="paramname"><em>b</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Matrix-scalar multiply. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">b</td><td>scalar to post-multiply with </td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
 <a class="anchor" id="a28efc02d3be816287d92e592f97b534f"></a>
 <div class="memitem">
 <div class="memproto">
@@ -614,6 +615,51 @@ template&lt;long D&gt; </div>
 
 </div>
 </div>
+<a class="anchor" id="ab54ab39601d3adf65826ad948b82c275"></a>
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classPortage_1_1Matrix.html">Matrix</a> Portage::Matrix::solve </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classPortage_1_1Matrix.html">Matrix</a> const &amp;&#160;</td>
+          <td class="paramname"><em>B</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::string&#160;</td>
+          <td class="paramname"><em>method</em> = <code>&quot;inverse&quot;</code>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>solve a linear system A X = B with this matrix (A) </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">B</td><td>right-hand sides (multiple) </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">method</td><td>what method to use for solution </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>the solution X</dd></dl>
+<p>method=="inverse" ==&gt; use the inverse operator method=="dposv" ==&gt; use lapack dposvx for symmetric positive definite A. method=="dsysv" ==&gt; use lapack dsysvx for symmetric A. method=="dgesv" ==&gt; use lapack dgesvx for general A. </p>
+
+</div>
+</div>
 <a class="anchor" id="af5edf4a652d49ed97212925755759b76"></a>
 <div class="memitem">
 <div class="memproto">
@@ -639,66 +685,14 @@ template&lt;long D&gt; </div>
 
 </div>
 </div>
-<h2 class="groupheader">Friends And Related Function Documentation</h2>
-<a class="anchor" id="a780162617e2fa33c31c8328c571bbf9d"></a>
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">friend class MatrixRow</td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">friend</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-</div>
-</div>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li>/home/l280837/code/portage-gh/src/support/<a class="el" href="Matrix_8h_source.html">Matrix.h</a></li>
+<li>/Users/l280837/code/portage-gh/src/support/<a class="el" href="Matrix_8h_source.html">Matrix.h</a></li>
 </ul>
 </div><!-- contents -->
 <!--
-Copyright (c) 2016, Los Alamos National Security, LLC
-All rights reserved.
-Copyright 2016. Los Alamos National Security, LLC. This software was produced
-under U.S. Government contract DE-AC52-06NA25396 for Los Alamos National
-Laboratory (LANL), which is operated by Los Alamos National Security, LLC for
-the U.S. Department of Energy. The U.S. Government has rights to use,
-reproduce, and distribute this software.  NEITHER THE GOVERNMENT NOR LOS ALAMOS
-NATIONAL SECURITY, LLC MAKES ANY WARRANTY, EXPRESS OR IMPLIED, OR ASSUMES ANY
-LIABILITY FOR THE USE OF THIS SOFTWARE.  If software is modified to produce
-derivative works, such modified software should be clearly marked, so as not to
-confuse it with the version available from LANL.
-Additionally, redistribution and use in source and binary forms, with or
-without modification, are permitted provided that the following conditions are
-met:
-1. Redistributions of source code must retain the above copyright notice,
-   this list of conditions and the following disclaimer.
-2. Redistributions in binary form must reproduce the above copyright
-   notice, this list of conditions and the following disclaimer in the
-   documentation and/or other materials provided with the distribution.
-3. Neither the name of Los Alamos National Security, LLC, Los Alamos
-   National Laboratory, LANL, the U.S. Government, nor the names of its
-   contributors may be used to endorse or promote products derived from this
-   software without specific prior written permission.
-THIS SOFTWARE IS PROVIDED BY LOS ALAMOS NATIONAL SECURITY, LLC AND
-CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
-PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL LOS ALAMOS NATIONAL
-SECURITY, LLC OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
-BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER
-IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-POSSIBILITY OF SUCH DAMAGE.
+This file is part of the Ristra portage project.
+Please see the license file at the root of this repository, or at:
+    https://github.com/laristra/portage/blob/master/LICENSE
 -->
 <!-- HTML footer for doxygen 1.8.8-->
 <!-- start footer part -->

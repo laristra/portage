@@ -1,4 +1,7 @@
 var searchData=
 [
-  ['verts',['verts',['../structr2d__poly.html#a92a7a2ba8a83f658c07866816acb1123',1,'r2d_poly::verts()'],['../structr3d__poly.html#a3a696a7627e82ee03e826c5ef5b19fe2',1,'r3d_poly::verts()']]]
+  ['real_5fmax',['REAL_MAX',['../namespacegk.html#add231d5aa82efa1a53be36121531f2be',1,'gk']]],
+  ['real_5fmin',['REAL_MIN',['../namespacegk.html#a5b137a8c4da5a49fbac19e2da3f75c88',1,'gk']]],
+  ['recvcounts',['recvCounts',['../structPortage_1_1MPI__Bounding__Boxes_1_1comm__info__t.html#a2705f1800ddf219255bdecf6d1c17c08',1,'Portage::MPI_Bounding_Boxes::comm_info_t']]],
+  ['recvownedcounts',['recvOwnedCounts',['../structPortage_1_1MPI__Bounding__Boxes_1_1comm__info__t.html#a005508366fd5923e757cb2102233ce9c',1,'Portage::MPI_Bounding_Boxes::comm_info_t']]]
 ];

@@ -7,5 +7,6 @@ var searchData=
   ['kdtree',['KDTree',['../structgk_1_1KDTree.html',1,'gk']]],
   ['kdtree_2eh',['kdtree.h',['../kdtree_8h.html',1,'']]],
   ['kdtreecreate',['KDTreeCreate',['../namespacegk.html#a717f49e73487bc326af592d9f5ac74fe',1,'gk']]],
+  ['kernel',['kernel',['../classWeightTest.html#a0cae60133590ae4171c921c283d8f7e9',1,'WeightTest::kernel()'],['../namespacePortage_1_1Meshfree_1_1Weight.html#a49c91436c868f91f1bb82ca674b497bf',1,'Portage::Meshfree::Weight::Kernel()'],['../namespacePortage_1_1Meshfree_1_1Weight.html#a707e9118b8cad1072b3cf53b7cebc552',1,'Portage::Meshfree::Weight::kernel(const Kernel kern, double x)']]],
   ['key',['key',['../classPortage_1_1Simple__State.html#ab9ec5fbe92d0865488c11cfdc2157681',1,'Portage::Simple_State']]]
 ];

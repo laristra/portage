@@ -1,38 +1,7 @@
 <!--
-Copyright (c) 2016, Los Alamos National Security, LLC
-All rights reserved.
-Copyright 2016. Los Alamos National Security, LLC. This software was produced
-under U.S. Government contract DE-AC52-06NA25396 for Los Alamos National
-Laboratory (LANL), which is operated by Los Alamos National Security, LLC for
-the U.S. Department of Energy. The U.S. Government has rights to use,
-reproduce, and distribute this software.  NEITHER THE GOVERNMENT NOR LOS ALAMOS
-NATIONAL SECURITY, LLC MAKES ANY WARRANTY, EXPRESS OR IMPLIED, OR ASSUMES ANY
-LIABILITY FOR THE USE OF THIS SOFTWARE.  If software is modified to produce
-derivative works, such modified software should be clearly marked, so as not to
-confuse it with the version available from LANL.
-Additionally, redistribution and use in source and binary forms, with or
-without modification, are permitted provided that the following conditions are
-met:
-1. Redistributions of source code must retain the above copyright notice,
-   this list of conditions and the following disclaimer.
-2. Redistributions in binary form must reproduce the above copyright
-   notice, this list of conditions and the following disclaimer in the
-   documentation and/or other materials provided with the distribution.
-3. Neither the name of Los Alamos National Security, LLC, Los Alamos
-   National Laboratory, LANL, the U.S. Government, nor the names of its
-   contributors may be used to endorse or promote products derived from this
-   software without specific prior written permission.
-THIS SOFTWARE IS PROVIDED BY LOS ALAMOS NATIONAL SECURITY, LLC AND
-CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
-PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL LOS ALAMOS NATIONAL
-SECURITY, LLC OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
-BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER
-IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-POSSIBILITY OF SUCH DAMAGE.
+This file is part of the Ristra portage project.
+Please see the license file at the root of this repository, or at:
+    https://github.com/laristra/portage/blob/master/LICENSE
 -->
 <!DOCTYPE html>
 <html>
@@ -66,7 +35,7 @@ POSSIBILITY OF SUCH DAMAGE.
     <nav class="navbar navbar-default" role="navigation">
       <div class="container">
         <div class="navbar-header">
-          <a class="navbar-brand">portage 1.0.alpha</a>
+          <a class="navbar-brand">portage 1.1.0</a>
         </div>
       </div>
     </nav>
@@ -84,8 +53,8 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
   <div id="navrow1" class="tabs">
     <ul class="tablist">
       <li><a href="index.html"><span>Main&#160;Page</span></a></li>
-      <li><a href="quickstart.html"><span>Quick&#160;Start</span></a></li>
-      <li><a href="simple_mesh.html"><span>Example&#160;Use</span></a></li>
+      <li><a href="concepts.html"><span>Concepts</span></a></li>
+      <li><a href="example.html"><span>Example&#160;Use</span></a></li>
       <li><a href="namespaces.html"><span>Namespaces</span></a></li>
       <li class="current"><a href="annotated.html"><span>Classes</span></a></li>
       <li>
@@ -152,15 +121,18 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a7c4114dedc2416e40676c809f457a653"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1Point.html#a7c4114dedc2416e40676c809f457a653">Point</a> ()</td></tr>
 <tr class="memdesc:a7c4114dedc2416e40676c809f457a653"><td class="mdescLeft">&#160;</td><td class="mdescRight">Default constructor - <a class="el" href="classPortage_1_1Point.html" title="Represents a point in an N-dimensional space. ">Point</a> at origin in D-space.  <a href="#a7c4114dedc2416e40676c809f457a653">More...</a><br /></td></tr>
 <tr class="separator:a7c4114dedc2416e40676c809f457a653"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aab191ad964db321e593f0e88d485d7b5"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1Point.html#aab191ad964db321e593f0e88d485d7b5">Point</a> (const std::vector&lt; double &gt; &amp;v)</td></tr>
-<tr class="memdesc:aab191ad964db321e593f0e88d485d7b5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Specialized constructor from a std::vector of arbitary size.  <a href="#aab191ad964db321e593f0e88d485d7b5">More...</a><br /></td></tr>
-<tr class="separator:aab191ad964db321e593f0e88d485d7b5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac8eec9ef101519b18cc66f7c2e0a5fd2"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1Point.html#ac8eec9ef101519b18cc66f7c2e0a5fd2">Point</a> (const double &amp;x)</td></tr>
+<tr class="memdesc:ac8eec9ef101519b18cc66f7c2e0a5fd2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Specialized constructor for Points in 1d.  <a href="#ac8eec9ef101519b18cc66f7c2e0a5fd2">More...</a><br /></td></tr>
+<tr class="separator:ac8eec9ef101519b18cc66f7c2e0a5fd2"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a9fcd30ba3e1d89726a9fb86227235e3d"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1Point.html#a9fcd30ba3e1d89726a9fb86227235e3d">Point</a> (const double &amp;x, const double &amp;y, const double &amp;z)</td></tr>
 <tr class="memdesc:a9fcd30ba3e1d89726a9fb86227235e3d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Specialized constructor for Points in 3d.  <a href="#a9fcd30ba3e1d89726a9fb86227235e3d">More...</a><br /></td></tr>
 <tr class="separator:a9fcd30ba3e1d89726a9fb86227235e3d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a927523073da20011be88c9bc30d414b4"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1Point.html#a927523073da20011be88c9bc30d414b4">Point</a> (const double &amp;x, const double &amp;y)</td></tr>
 <tr class="memdesc:a927523073da20011be88c9bc30d414b4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Specialized constructor for Points in 2d.  <a href="#a927523073da20011be88c9bc30d414b4">More...</a><br /></td></tr>
 <tr class="separator:a927523073da20011be88c9bc30d414b4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aab191ad964db321e593f0e88d485d7b5"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1Point.html#aab191ad964db321e593f0e88d485d7b5">Point</a> (const std::vector&lt; double &gt; &amp;v)</td></tr>
+<tr class="memdesc:aab191ad964db321e593f0e88d485d7b5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Specialized constructor from a std::vector of arbitary size.  <a href="#aab191ad964db321e593f0e88d485d7b5">More...</a><br /></td></tr>
+<tr class="separator:aab191ad964db321e593f0e88d485d7b5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a3cfb7c437abf3ea353c96eaf83552879"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1Point.html#a3cfb7c437abf3ea353c96eaf83552879">Point</a> (const <a class="el" href="classPortage_1_1Vector.html">Vector</a>&lt; D &gt; &amp;v)</td></tr>
 <tr class="memdesc:a3cfb7c437abf3ea353c96eaf83552879"><td class="mdescLeft">&#160;</td><td class="mdescRight">Convert a <a class="el" href="classPortage_1_1Vector.html" title="Represents a vector in N-dimensional space. ">Vector</a> to a <a class="el" href="classPortage_1_1Point.html" title="Represents a point in an N-dimensional space. ">Point</a>.  <a href="#a3cfb7c437abf3ea353c96eaf83552879">More...</a><br /></td></tr>
 <tr class="separator:a3cfb7c437abf3ea353c96eaf83552879"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -237,7 +209,7 @@ template&lt;long D&gt; </div>
 
 </div>
 </div>
-<a class="anchor" id="aab191ad964db321e593f0e88d485d7b5"></a>
+<a class="anchor" id="ac8eec9ef101519b18cc66f7c2e0a5fd2"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
@@ -249,22 +221,22 @@ template&lt;long D&gt; </div>
         <tr>
           <td class="memname"><a class="el" href="classPortage_1_1Point.html">Portage::Point</a>&lt; D &gt;::<a class="el" href="classPortage_1_1Point.html">Point</a> </td>
           <td>(</td>
-          <td class="paramtype">const std::vector&lt; double &gt; &amp;&#160;</td>
-          <td class="paramname"><em>v</em></td><td>)</td>
+          <td class="paramtype">const double &amp;&#160;</td>
+          <td class="paramname"><em>x</em></td><td>)</td>
           <td></td>
         </tr>
       </table>
   </td>
   <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">explicit</span></span>  </td>
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">
 
-<p>Specialized constructor from a std::vector of arbitary size. </p>
+<p>Specialized constructor for Points in 1d. </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">v</td><td>std::vector of coordinates. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">x</td><td>The (x) coordinates of this <a class="el" href="classPortage_1_1Point.html" title="Represents a point in an N-dimensional space. ">Point</a>. </td></tr>
   </table>
   </dd>
 </dl>
@@ -359,6 +331,40 @@ template&lt;long D&gt; </div>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramdir">[in]</td><td class="paramname">x,y</td><td>The (x,y) coordinates of this <a class="el" href="classPortage_1_1Point.html" title="Represents a point in an N-dimensional space. ">Point</a>. </td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a class="anchor" id="aab191ad964db321e593f0e88d485d7b5"></a>
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;long D&gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classPortage_1_1Point.html">Portage::Point</a>&lt; D &gt;::<a class="el" href="classPortage_1_1Point.html">Point</a> </td>
+          <td>(</td>
+          <td class="paramtype">const std::vector&lt; double &gt; &amp;&#160;</td>
+          <td class="paramname"><em>v</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">explicit</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Specialized constructor from a std::vector of arbitary size. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">v</td><td>std::vector of coordinates. </td></tr>
   </table>
   </dd>
 </dl>
@@ -701,44 +707,13 @@ template&lt;long D&gt; </div>
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li>/home/l280837/code/portage-gh/src/support/<a class="el" href="Point_8h_source.html">Point.h</a></li>
+<li>/Users/l280837/code/portage-gh/src/support/<a class="el" href="Point_8h_source.html">Point.h</a></li>
 </ul>
 </div><!-- contents -->
 <!--
-Copyright (c) 2016, Los Alamos National Security, LLC
-All rights reserved.
-Copyright 2016. Los Alamos National Security, LLC. This software was produced
-under U.S. Government contract DE-AC52-06NA25396 for Los Alamos National
-Laboratory (LANL), which is operated by Los Alamos National Security, LLC for
-the U.S. Department of Energy. The U.S. Government has rights to use,
-reproduce, and distribute this software.  NEITHER THE GOVERNMENT NOR LOS ALAMOS
-NATIONAL SECURITY, LLC MAKES ANY WARRANTY, EXPRESS OR IMPLIED, OR ASSUMES ANY
-LIABILITY FOR THE USE OF THIS SOFTWARE.  If software is modified to produce
-derivative works, such modified software should be clearly marked, so as not to
-confuse it with the version available from LANL.
-Additionally, redistribution and use in source and binary forms, with or
-without modification, are permitted provided that the following conditions are
-met:
-1. Redistributions of source code must retain the above copyright notice,
-   this list of conditions and the following disclaimer.
-2. Redistributions in binary form must reproduce the above copyright
-   notice, this list of conditions and the following disclaimer in the
-   documentation and/or other materials provided with the distribution.
-3. Neither the name of Los Alamos National Security, LLC, Los Alamos
-   National Laboratory, LANL, the U.S. Government, nor the names of its
-   contributors may be used to endorse or promote products derived from this
-   software without specific prior written permission.
-THIS SOFTWARE IS PROVIDED BY LOS ALAMOS NATIONAL SECURITY, LLC AND
-CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
-PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL LOS ALAMOS NATIONAL
-SECURITY, LLC OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
-BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER
-IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-POSSIBILITY OF SUCH DAMAGE.
+This file is part of the Ristra portage project.
+Please see the license file at the root of this repository, or at:
+    https://github.com/laristra/portage/blob/master/LICENSE
 -->
 <!-- HTML footer for doxygen 1.8.8-->
 <!-- start footer part -->

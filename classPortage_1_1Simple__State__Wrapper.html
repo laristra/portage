@@ -1,38 +1,7 @@
 <!--
-Copyright (c) 2016, Los Alamos National Security, LLC
-All rights reserved.
-Copyright 2016. Los Alamos National Security, LLC. This software was produced
-under U.S. Government contract DE-AC52-06NA25396 for Los Alamos National
-Laboratory (LANL), which is operated by Los Alamos National Security, LLC for
-the U.S. Department of Energy. The U.S. Government has rights to use,
-reproduce, and distribute this software.  NEITHER THE GOVERNMENT NOR LOS ALAMOS
-NATIONAL SECURITY, LLC MAKES ANY WARRANTY, EXPRESS OR IMPLIED, OR ASSUMES ANY
-LIABILITY FOR THE USE OF THIS SOFTWARE.  If software is modified to produce
-derivative works, such modified software should be clearly marked, so as not to
-confuse it with the version available from LANL.
-Additionally, redistribution and use in source and binary forms, with or
-without modification, are permitted provided that the following conditions are
-met:
-1. Redistributions of source code must retain the above copyright notice,
-   this list of conditions and the following disclaimer.
-2. Redistributions in binary form must reproduce the above copyright
-   notice, this list of conditions and the following disclaimer in the
-   documentation and/or other materials provided with the distribution.
-3. Neither the name of Los Alamos National Security, LLC, Los Alamos
-   National Laboratory, LANL, the U.S. Government, nor the names of its
-   contributors may be used to endorse or promote products derived from this
-   software without specific prior written permission.
-THIS SOFTWARE IS PROVIDED BY LOS ALAMOS NATIONAL SECURITY, LLC AND
-CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
-PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL LOS ALAMOS NATIONAL
-SECURITY, LLC OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
-BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER
-IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-POSSIBILITY OF SUCH DAMAGE.
+This file is part of the Ristra portage project.
+Please see the license file at the root of this repository, or at:
+    https://github.com/laristra/portage/blob/master/LICENSE
 -->
 <!DOCTYPE html>
 <html>
@@ -66,7 +35,7 @@ POSSIBILITY OF SUCH DAMAGE.
     <nav class="navbar navbar-default" role="navigation">
       <div class="container">
         <div class="navbar-header">
-          <a class="navbar-brand">portage 1.0.alpha</a>
+          <a class="navbar-brand">portage 1.1.0</a>
         </div>
       </div>
     </nav>
@@ -84,8 +53,8 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
   <div id="navrow1" class="tabs">
     <ul class="tablist">
       <li><a href="index.html"><span>Main&#160;Page</span></a></li>
-      <li><a href="quickstart.html"><span>Quick&#160;Start</span></a></li>
-      <li><a href="simple_mesh.html"><span>Example&#160;Use</span></a></li>
+      <li><a href="concepts.html"><span>Concepts</span></a></li>
+      <li><a href="example.html"><span>Example&#160;Use</span></a></li>
       <li><a href="namespaces.html"><span>Namespaces</span></a></li>
       <li class="current"><a href="annotated.html"><span>Classes</span></a></li>
       <li>
@@ -164,6 +133,9 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a522fa078929ed8c55c583f83668155e4"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1Simple__State__Wrapper.html#a522fa078929ed8c55c583f83668155e4">get_data</a> (const <a class="el" href="namespacePortage.html#a762e851d5a6ada63ea496d767679cffb">Entity_kind</a> on_what, const std::string name, double const **data) const </td></tr>
 <tr class="memdesc:a522fa078929ed8c55c583f83668155e4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get a pointer to data from the state manager with a given variable <code>name</code> and on <code>on_what</code> mesh entities.  <a href="#a522fa078929ed8c55c583f83668155e4">More...</a><br /></td></tr>
 <tr class="separator:a522fa078929ed8c55c583f83668155e4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab9ea868cde373de5dd8eb66586144239"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1Simple__State__Wrapper.html#ab9ea868cde373de5dd8eb66586144239">add_data</a> (const <a class="el" href="namespacePortage.html#a762e851d5a6ada63ea496d767679cffb">Entity_kind</a> on_what, const std::string name, double const **data) const </td></tr>
+<tr class="memdesc:ab9ea868cde373de5dd8eb66586144239"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get a pointer to data from the state manager with a given variable <code>name</code> and on <code>on_what</code> mesh entities.  <a href="#ab9ea868cde373de5dd8eb66586144239">More...</a><br /></td></tr>
+<tr class="separator:ab9ea868cde373de5dd8eb66586144239"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr><td class="ititle" colspan="2"><p><a class="anchor" id="amgrp01747264fe7bf50731df0522c351974e"></a>Given a variable name, get where it lives on the mesh.</p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
@@ -247,6 +219,56 @@ Public Member Functions</h2></td></tr>
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
+<a class="anchor" id="ab9ea868cde373de5dd8eb66586144239"></a>
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Portage::Simple_State_Wrapper::add_data </td>
+          <td>(</td>
+          <td class="paramtype">const <a class="el" href="namespacePortage.html#a762e851d5a6ada63ea496d767679cffb">Entity_kind</a>&#160;</td>
+          <td class="paramname"><em>on_what</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const std::string&#160;</td>
+          <td class="paramname"><em>name</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">double const **&#160;</td>
+          <td class="paramname"><em>data</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td> const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Get a pointer to data from the state manager with a given variable <code>name</code> and on <code>on_what</code> mesh entities. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">on_what</td><td>The Entity_kind (e.g. CELL) on which the data lives. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">name</td><td>The name of the variable. </td></tr>
+    <tr><td class="paramdir"></td><td class="paramname">data</td><td>A <code>pointer</code> to the const data array. If the requested data is not found in the state manager, a <code>nullptr</code> is returned. </td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
 <a class="anchor" id="a6c768edddddb7d27a4903967b01305d3"></a>
 <div class="memitem">
 <div class="memproto">
@@ -492,44 +514,13 @@ Public Member Functions</h2></td></tr>
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li>/home/l280837/code/portage-gh/src/wrappers/state/simple_state/<a class="el" href="simple__state__wrapper_8h_source.html">simple_state_wrapper.h</a></li>
+<li>/Users/l280837/code/portage-gh/src/wonton/state/simple_state/<a class="el" href="simple__state__wrapper_8h_source.html">simple_state_wrapper.h</a></li>
 </ul>
 </div><!-- contents -->
 <!--
-Copyright (c) 2016, Los Alamos National Security, LLC
-All rights reserved.
-Copyright 2016. Los Alamos National Security, LLC. This software was produced
-under U.S. Government contract DE-AC52-06NA25396 for Los Alamos National
-Laboratory (LANL), which is operated by Los Alamos National Security, LLC for
-the U.S. Department of Energy. The U.S. Government has rights to use,
-reproduce, and distribute this software.  NEITHER THE GOVERNMENT NOR LOS ALAMOS
-NATIONAL SECURITY, LLC MAKES ANY WARRANTY, EXPRESS OR IMPLIED, OR ASSUMES ANY
-LIABILITY FOR THE USE OF THIS SOFTWARE.  If software is modified to produce
-derivative works, such modified software should be clearly marked, so as not to
-confuse it with the version available from LANL.
-Additionally, redistribution and use in source and binary forms, with or
-without modification, are permitted provided that the following conditions are
-met:
-1. Redistributions of source code must retain the above copyright notice,
-   this list of conditions and the following disclaimer.
-2. Redistributions in binary form must reproduce the above copyright
-   notice, this list of conditions and the following disclaimer in the
-   documentation and/or other materials provided with the distribution.
-3. Neither the name of Los Alamos National Security, LLC, Los Alamos
-   National Laboratory, LANL, the U.S. Government, nor the names of its
-   contributors may be used to endorse or promote products derived from this
-   software without specific prior written permission.
-THIS SOFTWARE IS PROVIDED BY LOS ALAMOS NATIONAL SECURITY, LLC AND
-CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
-PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL LOS ALAMOS NATIONAL
-SECURITY, LLC OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
-BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER
-IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-POSSIBILITY OF SUCH DAMAGE.
+This file is part of the Ristra portage project.
+Please see the license file at the root of this repository, or at:
+    https://github.com/laristra/portage/blob/master/LICENSE
 -->
 <!-- HTML footer for doxygen 1.8.8-->
 <!-- start footer part -->

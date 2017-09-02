@@ -1,38 +1,7 @@
 <!--
-Copyright (c) 2016, Los Alamos National Security, LLC
-All rights reserved.
-Copyright 2016. Los Alamos National Security, LLC. This software was produced
-under U.S. Government contract DE-AC52-06NA25396 for Los Alamos National
-Laboratory (LANL), which is operated by Los Alamos National Security, LLC for
-the U.S. Department of Energy. The U.S. Government has rights to use,
-reproduce, and distribute this software.  NEITHER THE GOVERNMENT NOR LOS ALAMOS
-NATIONAL SECURITY, LLC MAKES ANY WARRANTY, EXPRESS OR IMPLIED, OR ASSUMES ANY
-LIABILITY FOR THE USE OF THIS SOFTWARE.  If software is modified to produce
-derivative works, such modified software should be clearly marked, so as not to
-confuse it with the version available from LANL.
-Additionally, redistribution and use in source and binary forms, with or
-without modification, are permitted provided that the following conditions are
-met:
-1. Redistributions of source code must retain the above copyright notice,
-   this list of conditions and the following disclaimer.
-2. Redistributions in binary form must reproduce the above copyright
-   notice, this list of conditions and the following disclaimer in the
-   documentation and/or other materials provided with the distribution.
-3. Neither the name of Los Alamos National Security, LLC, Los Alamos
-   National Laboratory, LANL, the U.S. Government, nor the names of its
-   contributors may be used to endorse or promote products derived from this
-   software without specific prior written permission.
-THIS SOFTWARE IS PROVIDED BY LOS ALAMOS NATIONAL SECURITY, LLC AND
-CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
-PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL LOS ALAMOS NATIONAL
-SECURITY, LLC OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
-BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER
-IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-POSSIBILITY OF SUCH DAMAGE.
+This file is part of the Ristra portage project.
+Please see the license file at the root of this repository, or at:
+    https://github.com/laristra/portage/blob/master/LICENSE
 -->
 <!DOCTYPE html>
 <html>
@@ -66,7 +35,7 @@ POSSIBILITY OF SUCH DAMAGE.
     <nav class="navbar navbar-default" role="navigation">
       <div class="container">
         <div class="navbar-header">
-          <a class="navbar-brand">portage 1.0.alpha</a>
+          <a class="navbar-brand">portage 1.1.0</a>
         </div>
       </div>
     </nav>
@@ -84,8 +53,8 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
   <div id="navrow1" class="tabs">
     <ul class="tablist">
       <li><a href="index.html"><span>Main&#160;Page</span></a></li>
-      <li><a href="quickstart.html"><span>Quick&#160;Start</span></a></li>
-      <li><a href="simple_mesh.html"><span>Example&#160;Use</span></a></li>
+      <li><a href="concepts.html"><span>Concepts</span></a></li>
+      <li><a href="example.html"><span>Example&#160;Use</span></a></li>
       <li><a href="namespaces.html"><span>Namespaces</span></a></li>
       <li class="current"><a href="annotated.html"><span>Classes</span></a></li>
       <li>
@@ -179,12 +148,6 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <li>~Flat_State_Wrapper()
 : <a class="el" href="classPortage_1_1Flat__State__Wrapper.html#ac4a1e49d82cbb37ae1a4a2f6ae82eb32">Portage::Flat_State_Wrapper&lt; T &gt;</a>
 </li>
-<li>~Flecsi_Mesh_Wrapper()
-: <a class="el" href="classPortage_1_1Flecsi__Mesh__Wrapper.html#a6a5943c1d9f4d52ca505b40b28a304cb">Portage::Flecsi_Mesh_Wrapper</a>
-</li>
-<li>~Flecsi_State_Wrapper()
-: <a class="el" href="classPortage_1_1Flecsi__State__Wrapper.html#ab0fa0164ae9f4d6f5255030ab9cb125d">Portage::Flecsi_State_Wrapper</a>
-</li>
 <li>~Interpolate_1stOrder()
 : <a class="el" href="classPortage_1_1Interpolate__1stOrder.html#a7acbc2364954c60a87b51b16994b0628">Portage::Interpolate_1stOrder&lt; SourceMeshType, TargetMeshType, StateType, on_what, D &gt;</a>
 , <a class="el" href="classPortage_1_1Interpolate__1stOrder_3_01SourceMeshType_00_01TargetMeshType_00_01StateType_00_01CELL_00_01D_01_4.html#a8b1b24ae7db996da4477207867cd4e74">Portage::Interpolate_1stOrder&lt; SourceMeshType, TargetMeshType, StateType, CELL, D &gt;</a>
@@ -194,6 +157,11 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 : <a class="el" href="classPortage_1_1Interpolate__2ndOrder.html#ae33dda175c7598870d79bca9aa387480">Portage::Interpolate_2ndOrder&lt; SourceMeshType, TargetMeshType, StateType, on_what, D &gt;</a>
 , <a class="el" href="classPortage_1_1Interpolate__2ndOrder_3_01SourceMeshType_00_01TargetMeshType_00_01StateType_00_01CELL_00_01D_01_4.html#a4eb0e9751f08e4be13b721be2fd6323a">Portage::Interpolate_2ndOrder&lt; SourceMeshType, TargetMeshType, StateType, CELL, D &gt;</a>
 , <a class="el" href="classPortage_1_1Interpolate__2ndOrder_3_01SourceMeshType_00_01TargetMeshType_00_01StateType_00_01NODE_00_01D_01_4.html#a42107806b24be868e57c81bbae3828d4">Portage::Interpolate_2ndOrder&lt; SourceMeshType, TargetMeshType, StateType, NODE, D &gt;</a>
+</li>
+<li>~Interpolate_3rdOrder()
+: <a class="el" href="classPortage_1_1Interpolate__3rdOrder.html#a0f964b78b413d549b6e1c1a0a08cb01c">Portage::Interpolate_3rdOrder&lt; SourceMeshType, TargetMeshType, StateType, on_what, D &gt;</a>
+, <a class="el" href="classPortage_1_1Interpolate__3rdOrder_3_01SourceMeshType_00_01TargetMeshType_00_01StateType_00_01CELL_00_01D_01_4.html#ac5a4e4936ff3f746f8b3d67aceb9589a">Portage::Interpolate_3rdOrder&lt; SourceMeshType, TargetMeshType, StateType, CELL, D &gt;</a>
+, <a class="el" href="classPortage_1_1Interpolate__3rdOrder_3_01SourceMeshType_00_01TargetMeshType_00_01StateType_00_01NODE_00_01D_01_4.html#a1ce0cd7780b141a0bf90a0b9886e97f7">Portage::Interpolate_3rdOrder&lt; SourceMeshType, TargetMeshType, StateType, NODE, D &gt;</a>
 </li>
 <li>~Jali_Mesh_Wrapper()
 : <a class="el" href="classPortage_1_1Jali__Mesh__Wrapper.html#ace6b3fc490044f5a44cab5dd0acb0dae">Portage::Jali_Mesh_Wrapper</a>
@@ -209,17 +177,31 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 , <a class="el" href="classPortage_1_1Limited__Gradient_3_01MeshType_00_01StateType_00_01CELL_00_01D_01_4.html#a9c0ff55910d142826fb9e77821c9add6">Portage::Limited_Gradient&lt; MeshType, StateType, CELL, D &gt;</a>
 , <a class="el" href="classPortage_1_1Limited__Gradient_3_01MeshType_00_01StateType_00_01NODE_00_01D_01_4.html#a24979684766926f3e61e9bddc38a0c4f">Portage::Limited_Gradient&lt; MeshType, StateType, NODE, D &gt;</a>
 </li>
+<li>~Limited_Quadfit()
+: <a class="el" href="classPortage_1_1Limited__Quadfit.html#a88360d11198b18ceb8ed97fcb07d6959">Portage::Limited_Quadfit&lt; MeshType, StateType, on_what, D &gt;</a>
+, <a class="el" href="classPortage_1_1Limited__Quadfit_3_01MeshType_00_01StateType_00_01CELL_00_01D_01_4.html#a098ce33dd490b899ba76106edfa1bdc3">Portage::Limited_Quadfit&lt; MeshType, StateType, CELL, D &gt;</a>
+, <a class="el" href="classPortage_1_1Limited__Quadfit_3_01MeshType_00_01StateType_00_01NODE_00_01D_01_4.html#a36dbed1f3e11cb1027330e529ebc37d7">Portage::Limited_Quadfit&lt; MeshType, StateType, NODE, D &gt;</a>
+</li>
 <li>~Matrix()
 : <a class="el" href="classPortage_1_1Matrix.html#a88038739314fc11247c917f66dfec925">Portage::Matrix</a>
 </li>
 <li>~MPI_Bounding_Boxes()
 : <a class="el" href="classPortage_1_1MPI__Bounding__Boxes.html#ab3213c8e41175ce7811efdb331ef494a">Portage::MPI_Bounding_Boxes</a>
 </li>
+<li>~MSM_Driver()
+: <a class="el" href="classPortage_1_1MSM__Driver.html#aae1775e6a00414412d7113dc56b060cf">Portage::MSM_Driver&lt; Search, Accumulate, Estimate, Dim, SourceMesh_Wrapper, SourceState_Wrapper, TargetMesh_Wrapper, TargetState_Wrapper &gt;</a>
+</li>
 <li>~SearchKDTree()
 : <a class="el" href="classPortage_1_1SearchKDTree.html#aeaa98a119641ae8fc19947124d8177bb">Portage::SearchKDTree&lt; D, SourceMeshType, TargetMeshType &gt;</a>
 </li>
+<li>~SearchPointsByCells()
+: <a class="el" href="classPortage_1_1SearchPointsByCells.html#aaee8c4419182ed9451684ee8afd65e8e">Portage::SearchPointsByCells&lt; D, SourceSwarmType, TargetSwarmType &gt;</a>
+</li>
 <li>~SearchSimple()
 : <a class="el" href="classPortage_1_1SearchSimple.html#a01899a22ab679ac21f838213c7f6ddda">Portage::SearchSimple&lt; SourceMeshType, TargetMeshType &gt;</a>
+</li>
+<li>~SearchSimplePoints()
+: <a class="el" href="classPortage_1_1SearchSimplePoints.html#a04ff09fdb83999f9084be93142b10f1b">Portage::SearchSimplePoints&lt; D, SourceSwarmType, TargetSwarmType &gt;</a>
 </li>
 <li>~Simple_Mesh()
 : <a class="el" href="classPortage_1_1Simple__Mesh.html#a651df324d7fcf859d7d502373390d704">Portage::Simple_Mesh</a>
@@ -233,43 +215,15 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <li>~Simple_State_Wrapper()
 : <a class="el" href="classPortage_1_1Simple__State__Wrapper.html#afd119bfd4a76cdd74e3ec1d12970bb2c">Portage::Simple_State_Wrapper</a>
 </li>
+<li>~SwarmDriver()
+: <a class="el" href="classPortage_1_1Meshfree_1_1SwarmDriver.html#ad59c84cd386d6ce1d4bbea01fba50490">Portage::Meshfree::SwarmDriver&lt; Search, Accumulate, Estimate, Dim, SourceSwarm, SourceState, TargetSwarm, TargetState &gt;</a>
+</li>
 </ul>
 </div><!-- contents -->
 <!--
-Copyright (c) 2016, Los Alamos National Security, LLC
-All rights reserved.
-Copyright 2016. Los Alamos National Security, LLC. This software was produced
-under U.S. Government contract DE-AC52-06NA25396 for Los Alamos National
-Laboratory (LANL), which is operated by Los Alamos National Security, LLC for
-the U.S. Department of Energy. The U.S. Government has rights to use,
-reproduce, and distribute this software.  NEITHER THE GOVERNMENT NOR LOS ALAMOS
-NATIONAL SECURITY, LLC MAKES ANY WARRANTY, EXPRESS OR IMPLIED, OR ASSUMES ANY
-LIABILITY FOR THE USE OF THIS SOFTWARE.  If software is modified to produce
-derivative works, such modified software should be clearly marked, so as not to
-confuse it with the version available from LANL.
-Additionally, redistribution and use in source and binary forms, with or
-without modification, are permitted provided that the following conditions are
-met:
-1. Redistributions of source code must retain the above copyright notice,
-   this list of conditions and the following disclaimer.
-2. Redistributions in binary form must reproduce the above copyright
-   notice, this list of conditions and the following disclaimer in the
-   documentation and/or other materials provided with the distribution.
-3. Neither the name of Los Alamos National Security, LLC, Los Alamos
-   National Laboratory, LANL, the U.S. Government, nor the names of its
-   contributors may be used to endorse or promote products derived from this
-   software without specific prior written permission.
-THIS SOFTWARE IS PROVIDED BY LOS ALAMOS NATIONAL SECURITY, LLC AND
-CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
-PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL LOS ALAMOS NATIONAL
-SECURITY, LLC OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
-BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER
-IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-POSSIBILITY OF SUCH DAMAGE.
+This file is part of the Ristra portage project.
+Please see the license file at the root of this repository, or at:
+    https://github.com/laristra/portage/blob/master/LICENSE
 -->
 <!-- HTML footer for doxygen 1.8.8-->
 <!-- start footer part -->

@@ -1,38 +1,7 @@
 <!--
-Copyright (c) 2016, Los Alamos National Security, LLC
-All rights reserved.
-Copyright 2016. Los Alamos National Security, LLC. This software was produced
-under U.S. Government contract DE-AC52-06NA25396 for Los Alamos National
-Laboratory (LANL), which is operated by Los Alamos National Security, LLC for
-the U.S. Department of Energy. The U.S. Government has rights to use,
-reproduce, and distribute this software.  NEITHER THE GOVERNMENT NOR LOS ALAMOS
-NATIONAL SECURITY, LLC MAKES ANY WARRANTY, EXPRESS OR IMPLIED, OR ASSUMES ANY
-LIABILITY FOR THE USE OF THIS SOFTWARE.  If software is modified to produce
-derivative works, such modified software should be clearly marked, so as not to
-confuse it with the version available from LANL.
-Additionally, redistribution and use in source and binary forms, with or
-without modification, are permitted provided that the following conditions are
-met:
-1. Redistributions of source code must retain the above copyright notice,
-   this list of conditions and the following disclaimer.
-2. Redistributions in binary form must reproduce the above copyright
-   notice, this list of conditions and the following disclaimer in the
-   documentation and/or other materials provided with the distribution.
-3. Neither the name of Los Alamos National Security, LLC, Los Alamos
-   National Laboratory, LANL, the U.S. Government, nor the names of its
-   contributors may be used to endorse or promote products derived from this
-   software without specific prior written permission.
-THIS SOFTWARE IS PROVIDED BY LOS ALAMOS NATIONAL SECURITY, LLC AND
-CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
-PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL LOS ALAMOS NATIONAL
-SECURITY, LLC OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
-BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER
-IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-POSSIBILITY OF SUCH DAMAGE.
+This file is part of the Ristra portage project.
+Please see the license file at the root of this repository, or at:
+    https://github.com/laristra/portage/blob/master/LICENSE
 -->
 <!DOCTYPE html>
 <html>
@@ -66,7 +35,7 @@ POSSIBILITY OF SUCH DAMAGE.
     <nav class="navbar navbar-default" role="navigation">
       <div class="container">
         <div class="navbar-header">
-          <a class="navbar-brand">portage 1.0.alpha</a>
+          <a class="navbar-brand">portage 1.1.0</a>
         </div>
       </div>
     </nav>
@@ -84,8 +53,8 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
   <div id="navrow1" class="tabs">
     <ul class="tablist">
       <li><a href="index.html"><span>Main&#160;Page</span></a></li>
-      <li><a href="quickstart.html"><span>Quick&#160;Start</span></a></li>
-      <li><a href="simple_mesh.html"><span>Example&#160;Use</span></a></li>
+      <li><a href="concepts.html"><span>Concepts</span></a></li>
+      <li><a href="example.html"><span>Example&#160;Use</span></a></li>
       <li><a href="namespaces.html"><span>Namespaces</span></a></li>
       <li class="current"><a href="annotated.html"><span>Classes</span></a></li>
       <li>
@@ -143,52 +112,28 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <table class="directory">
   <tr class="even"><td class="entry"><a class="el" href="classPortage_1_1Flat__State__Wrapper.html#aeec53efeed89a1834de48240b77b6cb1">add_gradients</a>(std::shared_ptr&lt; std::vector&lt; Portage::Point3 &gt;&gt; new_grad)</td><td class="entry"><a class="el" href="classPortage_1_1Flat__State__Wrapper.html">Portage::Flat_State_Wrapper&lt; T &gt;</a></td><td class="entry"><span class="mlabel">inline</span></td></tr>
   <tr><td class="entry"><a class="el" href="classPortage_1_1Flat__State__Wrapper.html#a1fc956ccd6e7843909c5ffa06657992f">Flat_State_Wrapper</a>()</td><td class="entry"><a class="el" href="classPortage_1_1Flat__State__Wrapper.html">Portage::Flat_State_Wrapper&lt; T &gt;</a></td><td class="entry"><span class="mlabel">inline</span></td></tr>
-  <tr class="even"><td class="entry"><a class="el" href="classPortage_1_1Flat__State__Wrapper.html#a5a603c404de532b45c2735540e4f3c85">get_data</a>(const Entity_kind on_what, const std::string var_name, D **data)</td><td class="entry"><a class="el" href="classPortage_1_1Flat__State__Wrapper.html">Portage::Flat_State_Wrapper&lt; T &gt;</a></td><td class="entry"><span class="mlabel">inline</span></td></tr>
-  <tr><td class="entry"><a class="el" href="classPortage_1_1Flat__State__Wrapper.html#a874dd704e202cbb6100c8d6a2d14ee8c">get_data</a>(const Entity_kind on_what, const std::string var_name, D const **data) const </td><td class="entry"><a class="el" href="classPortage_1_1Flat__State__Wrapper.html">Portage::Flat_State_Wrapper&lt; T &gt;</a></td><td class="entry"><span class="mlabel">inline</span></td></tr>
-  <tr class="even"><td class="entry"><a class="el" href="classPortage_1_1Flat__State__Wrapper.html#ab984d799469e97301a82bdfdba8ba898">get_field_dim</a>(int index)</td><td class="entry"><a class="el" href="classPortage_1_1Flat__State__Wrapper.html">Portage::Flat_State_Wrapper&lt; T &gt;</a></td><td class="entry"><span class="mlabel">inline</span></td></tr>
-  <tr><td class="entry"><a class="el" href="classPortage_1_1Flat__State__Wrapper.html#aba33fd4c2fe6227f6981e0406ccd5c76">get_gradients</a>(int index)</td><td class="entry"><a class="el" href="classPortage_1_1Flat__State__Wrapper.html">Portage::Flat_State_Wrapper&lt; T &gt;</a></td><td class="entry"><span class="mlabel">inline</span></td></tr>
-  <tr class="even"><td class="entry"><a class="el" href="classPortage_1_1Flat__State__Wrapper.html#a970cc8890d4bd7f6b4bd0b3ad783ffd1">get_num_gradients</a>()</td><td class="entry"><a class="el" href="classPortage_1_1Flat__State__Wrapper.html">Portage::Flat_State_Wrapper&lt; T &gt;</a></td><td class="entry"><span class="mlabel">inline</span></td></tr>
-  <tr><td class="entry"><a class="el" href="classPortage_1_1Flat__State__Wrapper.html#a770f2670c7d1a81f419d8c3f4ce12b5b">get_num_vectors</a>()</td><td class="entry"><a class="el" href="classPortage_1_1Flat__State__Wrapper.html">Portage::Flat_State_Wrapper&lt; T &gt;</a></td><td class="entry"><span class="mlabel">inline</span></td></tr>
-  <tr class="even"><td class="entry"><a class="el" href="classPortage_1_1Flat__State__Wrapper.html#ab7748114189eb84a250f0c88148c034e">get_vector</a>(int index)</td><td class="entry"><a class="el" href="classPortage_1_1Flat__State__Wrapper.html">Portage::Flat_State_Wrapper&lt; T &gt;</a></td><td class="entry"><span class="mlabel">inline</span></td></tr>
-  <tr><td class="entry"><a class="el" href="classPortage_1_1Flat__State__Wrapper.html#a9c9a48df54bb8a5b860246ed3173d9a6">initialize</a>(State_Wrapper const &amp;input, std::vector&lt; std::string &gt; var_names)</td><td class="entry"><a class="el" href="classPortage_1_1Flat__State__Wrapper.html">Portage::Flat_State_Wrapper&lt; T &gt;</a></td><td class="entry"><span class="mlabel">inline</span></td></tr>
+  <tr class="even"><td class="entry"><a class="el" href="classPortage_1_1Flat__State__Wrapper.html#a3e0c46a9992681381abd1526f6f08457">get_data</a>(const Entity_kind on_what, const std::string var_name, T **data)</td><td class="entry"><a class="el" href="classPortage_1_1Flat__State__Wrapper.html">Portage::Flat_State_Wrapper&lt; T &gt;</a></td><td class="entry"><span class="mlabel">inline</span></td></tr>
+  <tr><td class="entry"><a class="el" href="classPortage_1_1Flat__State__Wrapper.html#a27c97b18a27b16c087e317fcd00bb84c">get_data</a>(const Entity_kind on_what, const std::string var_name, T const **data) const </td><td class="entry"><a class="el" href="classPortage_1_1Flat__State__Wrapper.html">Portage::Flat_State_Wrapper&lt; T &gt;</a></td><td class="entry"><span class="mlabel">inline</span></td></tr>
+  <tr class="even"><td class="entry"><a class="el" href="classPortage_1_1Flat__State__Wrapper.html#a6c8030ce6c36f478a90e8bd55b9ccbf5">get_entity</a>(std::string &amp;var_name)</td><td class="entry"><a class="el" href="classPortage_1_1Flat__State__Wrapper.html">Portage::Flat_State_Wrapper&lt; T &gt;</a></td><td class="entry"><span class="mlabel">inline</span></td></tr>
+  <tr><td class="entry"><a class="el" href="classPortage_1_1Flat__State__Wrapper.html#a4de352e07d33d8c4c4e2a673a70997d9">get_entity</a>(const int index) const </td><td class="entry"><a class="el" href="classPortage_1_1Flat__State__Wrapper.html">Portage::Flat_State_Wrapper&lt; T &gt;</a></td><td class="entry"><span class="mlabel">inline</span></td></tr>
+  <tr class="even"><td class="entry"><a class="el" href="classPortage_1_1Flat__State__Wrapper.html#a23bedb967e60ac712d625377a6efdb9d">get_entity_size</a>(Entity_kind ent)</td><td class="entry"><a class="el" href="classPortage_1_1Flat__State__Wrapper.html">Portage::Flat_State_Wrapper&lt; T &gt;</a></td><td class="entry"><span class="mlabel">inline</span></td></tr>
+  <tr><td class="entry"><a class="el" href="classPortage_1_1Flat__State__Wrapper.html#a30970aa8700b6a06370c97c1be98d5db">get_field_stride</a>(size_t index)</td><td class="entry"><a class="el" href="classPortage_1_1Flat__State__Wrapper.html">Portage::Flat_State_Wrapper&lt; T &gt;</a></td><td class="entry"><span class="mlabel">inline</span></td></tr>
+  <tr class="even"><td class="entry"><a class="el" href="classPortage_1_1Flat__State__Wrapper.html#ad12c1925ee4cf1c926098b9372311a79">get_gradients</a>(size_t index)</td><td class="entry"><a class="el" href="classPortage_1_1Flat__State__Wrapper.html">Portage::Flat_State_Wrapper&lt; T &gt;</a></td><td class="entry"><span class="mlabel">inline</span></td></tr>
+  <tr><td class="entry"><a class="el" href="classPortage_1_1Flat__State__Wrapper.html#a4348ae026c412ed244b81dc4cf460c04">get_names</a>(const Entity_kind on_what, std::vector&lt; std::string &gt; &amp;names)</td><td class="entry"><a class="el" href="classPortage_1_1Flat__State__Wrapper.html">Portage::Flat_State_Wrapper&lt; T &gt;</a></td><td class="entry"><span class="mlabel">inline</span></td></tr>
+  <tr class="even"><td class="entry"><a class="el" href="classPortage_1_1Flat__State__Wrapper.html#a52609079518ebba50826b10ef93d60af">get_num_gradients</a>()</td><td class="entry"><a class="el" href="classPortage_1_1Flat__State__Wrapper.html">Portage::Flat_State_Wrapper&lt; T &gt;</a></td><td class="entry"><span class="mlabel">inline</span></td></tr>
+  <tr><td class="entry"><a class="el" href="classPortage_1_1Flat__State__Wrapper.html#a9746ac70f2b5fc3c313566b197c1fd71">get_num_vectors</a>()</td><td class="entry"><a class="el" href="classPortage_1_1Flat__State__Wrapper.html">Portage::Flat_State_Wrapper&lt; T &gt;</a></td><td class="entry"><span class="mlabel">inline</span></td></tr>
+  <tr class="even"><td class="entry"><a class="el" href="classPortage_1_1Flat__State__Wrapper.html#a46923ffdd6608d4885af1869d5b786aa">get_vector</a>(size_t index)</td><td class="entry"><a class="el" href="classPortage_1_1Flat__State__Wrapper.html">Portage::Flat_State_Wrapper&lt; T &gt;</a></td><td class="entry"><span class="mlabel">inline</span></td></tr>
+  <tr><td class="entry"><a class="el" href="classPortage_1_1Flat__State__Wrapper.html#a4695f7ea3cb2f0ad20dc0be5b87f9302">get_vector_index</a>(Entity_kind ent, std::string name)</td><td class="entry"><a class="el" href="classPortage_1_1Flat__State__Wrapper.html">Portage::Flat_State_Wrapper&lt; T &gt;</a></td><td class="entry"><span class="mlabel">inline</span></td></tr>
+  <tr class="even"><td class="entry"><a class="el" href="classPortage_1_1Flat__State__Wrapper.html#a9c9a48df54bb8a5b860246ed3173d9a6">initialize</a>(State_Wrapper const &amp;input, std::vector&lt; std::string &gt; var_names)</td><td class="entry"><a class="el" href="classPortage_1_1Flat__State__Wrapper.html">Portage::Flat_State_Wrapper&lt; T &gt;</a></td><td class="entry"><span class="mlabel">inline</span></td></tr>
+  <tr><td class="entry"><a class="el" href="classPortage_1_1Flat__State__Wrapper.html#a82b33ed1d92c2627095046e500b9e332">initialize</a>(std::vector&lt; std::string &gt; names, std::vector&lt; Entity_kind &gt; entities, std::vector&lt; std::shared_ptr&lt; std::vector&lt; T &gt;&gt;&gt; data)</td><td class="entry"><a class="el" href="classPortage_1_1Flat__State__Wrapper.html">Portage::Flat_State_Wrapper&lt; T &gt;</a></td><td class="entry"><span class="mlabel">inline</span></td></tr>
   <tr class="even"><td class="entry"><a class="el" href="classPortage_1_1Flat__State__Wrapper.html#a9dc1c10c9c4b53db28fe74aac1e57568">operator=</a>(Flat_State_Wrapper const &amp;)=delete</td><td class="entry"><a class="el" href="classPortage_1_1Flat__State__Wrapper.html">Portage::Flat_State_Wrapper&lt; T &gt;</a></td><td class="entry"></td></tr>
-  <tr><td class="entry"><a class="el" href="classPortage_1_1Flat__State__Wrapper.html#ac4a1e49d82cbb37ae1a4a2f6ae82eb32">~Flat_State_Wrapper</a>()</td><td class="entry"><a class="el" href="classPortage_1_1Flat__State__Wrapper.html">Portage::Flat_State_Wrapper&lt; T &gt;</a></td><td class="entry"><span class="mlabel">inline</span></td></tr>
+  <tr><td class="entry"><a class="el" href="classPortage_1_1Flat__State__Wrapper.html#a0e32e869d22f71420f1f28744d24dee5">pair_t</a> typedef</td><td class="entry"><a class="el" href="classPortage_1_1Flat__State__Wrapper.html">Portage::Flat_State_Wrapper&lt; T &gt;</a></td><td class="entry"></td></tr>
+  <tr class="even"><td class="entry"><a class="el" href="classPortage_1_1Flat__State__Wrapper.html#ac4a1e49d82cbb37ae1a4a2f6ae82eb32">~Flat_State_Wrapper</a>()</td><td class="entry"><a class="el" href="classPortage_1_1Flat__State__Wrapper.html">Portage::Flat_State_Wrapper&lt; T &gt;</a></td><td class="entry"><span class="mlabel">inline</span></td></tr>
 </table></div><!-- contents -->
 <!--
-Copyright (c) 2016, Los Alamos National Security, LLC
-All rights reserved.
-Copyright 2016. Los Alamos National Security, LLC. This software was produced
-under U.S. Government contract DE-AC52-06NA25396 for Los Alamos National
-Laboratory (LANL), which is operated by Los Alamos National Security, LLC for
-the U.S. Department of Energy. The U.S. Government has rights to use,
-reproduce, and distribute this software.  NEITHER THE GOVERNMENT NOR LOS ALAMOS
-NATIONAL SECURITY, LLC MAKES ANY WARRANTY, EXPRESS OR IMPLIED, OR ASSUMES ANY
-LIABILITY FOR THE USE OF THIS SOFTWARE.  If software is modified to produce
-derivative works, such modified software should be clearly marked, so as not to
-confuse it with the version available from LANL.
-Additionally, redistribution and use in source and binary forms, with or
-without modification, are permitted provided that the following conditions are
-met:
-1. Redistributions of source code must retain the above copyright notice,
-   this list of conditions and the following disclaimer.
-2. Redistributions in binary form must reproduce the above copyright
-   notice, this list of conditions and the following disclaimer in the
-   documentation and/or other materials provided with the distribution.
-3. Neither the name of Los Alamos National Security, LLC, Los Alamos
-   National Laboratory, LANL, the U.S. Government, nor the names of its
-   contributors may be used to endorse or promote products derived from this
-   software without specific prior written permission.
-THIS SOFTWARE IS PROVIDED BY LOS ALAMOS NATIONAL SECURITY, LLC AND
-CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
-PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL LOS ALAMOS NATIONAL
-SECURITY, LLC OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
-BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER
-IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-POSSIBILITY OF SUCH DAMAGE.
+This file is part of the Ristra portage project.
+Please see the license file at the root of this repository, or at:
+    https://github.com/laristra/portage/blob/master/LICENSE
 -->
 <!-- HTML footer for doxygen 1.8.8-->
 <!-- start footer part -->

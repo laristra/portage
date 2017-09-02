@@ -1,5 +1,5 @@
 var searchData=
 [
-  ['node',['NODE',['../namespacePortage.html#a762e851d5a6ada63ea496d767679cffba5ec35a5fce36c4b374bd936159beded4',1,'Portage']]],
-  ['nolimiter',['NOLIMITER',['../namespacePortage.html#aec17c91b97058d6ee5b6b6a52aff59aaa129ce73da39e28f090a4963952638f0f',1,'Portage']]]
+  ['lastbasis',['LastBasis',['../namespacePortage_1_1Meshfree_1_1Basis.html#af35405ecd80b02f21475c64237ca8b9fa57730b63f82d68a68fe1631f4fa7ae39',1,'Portage::Meshfree::Basis']]],
+  ['linear',['Linear',['../namespacePortage_1_1Meshfree_1_1Basis.html#af35405ecd80b02f21475c64237ca8b9facaed31037f1c256cbf6dca5ae15f9043',1,'Portage::Meshfree::Basis']]]
 ];

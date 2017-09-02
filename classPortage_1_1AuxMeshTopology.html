@@ -1,38 +1,7 @@
 <!--
-Copyright (c) 2016, Los Alamos National Security, LLC
-All rights reserved.
-Copyright 2016. Los Alamos National Security, LLC. This software was produced
-under U.S. Government contract DE-AC52-06NA25396 for Los Alamos National
-Laboratory (LANL), which is operated by Los Alamos National Security, LLC for
-the U.S. Department of Energy. The U.S. Government has rights to use,
-reproduce, and distribute this software.  NEITHER THE GOVERNMENT NOR LOS ALAMOS
-NATIONAL SECURITY, LLC MAKES ANY WARRANTY, EXPRESS OR IMPLIED, OR ASSUMES ANY
-LIABILITY FOR THE USE OF THIS SOFTWARE.  If software is modified to produce
-derivative works, such modified software should be clearly marked, so as not to
-confuse it with the version available from LANL.
-Additionally, redistribution and use in source and binary forms, with or
-without modification, are permitted provided that the following conditions are
-met:
-1. Redistributions of source code must retain the above copyright notice,
-   this list of conditions and the following disclaimer.
-2. Redistributions in binary form must reproduce the above copyright
-   notice, this list of conditions and the following disclaimer in the
-   documentation and/or other materials provided with the distribution.
-3. Neither the name of Los Alamos National Security, LLC, Los Alamos
-   National Laboratory, LANL, the U.S. Government, nor the names of its
-   contributors may be used to endorse or promote products derived from this
-   software without specific prior written permission.
-THIS SOFTWARE IS PROVIDED BY LOS ALAMOS NATIONAL SECURITY, LLC AND
-CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
-PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL LOS ALAMOS NATIONAL
-SECURITY, LLC OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
-BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER
-IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-POSSIBILITY OF SUCH DAMAGE.
+This file is part of the Ristra portage project.
+Please see the license file at the root of this repository, or at:
+    https://github.com/laristra/portage/blob/master/LICENSE
 -->
 <!DOCTYPE html>
 <html>
@@ -66,7 +35,7 @@ POSSIBILITY OF SUCH DAMAGE.
     <nav class="navbar navbar-default" role="navigation">
       <div class="container">
         <div class="navbar-header">
-          <a class="navbar-brand">portage 1.0.alpha</a>
+          <a class="navbar-brand">portage 1.1.0</a>
         </div>
       </div>
     </nav>
@@ -84,8 +53,8 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
   <div id="navrow1" class="tabs">
     <ul class="tablist">
       <li><a href="index.html"><span>Main&#160;Page</span></a></li>
-      <li><a href="quickstart.html"><span>Quick&#160;Start</span></a></li>
-      <li><a href="simple_mesh.html"><span>Example&#160;Use</span></a></li>
+      <li><a href="concepts.html"><span>Concepts</span></a></li>
+      <li><a href="example.html"><span>Example&#160;Use</span></a></li>
       <li><a href="namespaces.html"><span>Namespaces</span></a></li>
       <li class="current"><a href="annotated.html"><span>Classes</span></a></li>
       <li>
@@ -172,12 +141,18 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a72a7e33a70f9b88f974a377858e63f32"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1AuxMeshTopology.html#a72a7e33a70f9b88f974a377858e63f32">num_entities</a> (<a class="el" href="namespacePortage.html#a762e851d5a6ada63ea496d767679cffb">Entity_kind</a> const entity, <a class="el" href="namespacePortage.html#a650a8718a706648846a2915b90612849">Entity_type</a> const etype=Entity_type::ALL) const </td></tr>
 <tr class="memdesc:a72a7e33a70f9b88f974a377858e63f32"><td class="mdescLeft">&#160;</td><td class="mdescRight">Number of items of given entity.  <a href="#a72a7e33a70f9b88f974a377858e63f32">More...</a><br /></td></tr>
 <tr class="separator:a72a7e33a70f9b88f974a377858e63f32"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af43e0c21654b9c35d04f136325dfd5b0"><td class="memItemLeft" align="right" valign="top"><a class="el" href="namespacePortage.html#a9ad5b714018a06f725ef8f93b70fabe7">counting_iterator</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1AuxMeshTopology.html#af43e0c21654b9c35d04f136325dfd5b0">begin</a> (<a class="el" href="namespacePortage.html#a762e851d5a6ada63ea496d767679cffb">Entity_kind</a> const entity, <a class="el" href="namespacePortage.html#a650a8718a706648846a2915b90612849">Entity_type</a> const etype=Entity_type::ALL) const </td></tr>
+<tr class="memitem:af43e0c21654b9c35d04f136325dfd5b0"><td class="memItemLeft" align="right" valign="top"><a class="el" href="namespacePortage.html#a5798f2be664fd95e54414f8aca5e3282">counting_iterator</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1AuxMeshTopology.html#af43e0c21654b9c35d04f136325dfd5b0">begin</a> (<a class="el" href="namespacePortage.html#a762e851d5a6ada63ea496d767679cffb">Entity_kind</a> const entity, <a class="el" href="namespacePortage.html#a650a8718a706648846a2915b90612849">Entity_type</a> const etype=Entity_type::ALL) const </td></tr>
 <tr class="memdesc:af43e0c21654b9c35d04f136325dfd5b0"><td class="mdescLeft">&#160;</td><td class="mdescRight">Iterators on mesh entity - begin.  <a href="#af43e0c21654b9c35d04f136325dfd5b0">More...</a><br /></td></tr>
 <tr class="separator:af43e0c21654b9c35d04f136325dfd5b0"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a82379618ad2cd57f3362a26762eabe60"><td class="memItemLeft" align="right" valign="top"><a class="el" href="namespacePortage.html#a9ad5b714018a06f725ef8f93b70fabe7">counting_iterator</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1AuxMeshTopology.html#a82379618ad2cd57f3362a26762eabe60">end</a> (<a class="el" href="namespacePortage.html#a762e851d5a6ada63ea496d767679cffb">Entity_kind</a> const entity, <a class="el" href="namespacePortage.html#a650a8718a706648846a2915b90612849">Entity_type</a> const etype=Entity_type::ALL) const </td></tr>
+<tr class="memitem:a82379618ad2cd57f3362a26762eabe60"><td class="memItemLeft" align="right" valign="top"><a class="el" href="namespacePortage.html#a5798f2be664fd95e54414f8aca5e3282">counting_iterator</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1AuxMeshTopology.html#a82379618ad2cd57f3362a26762eabe60">end</a> (<a class="el" href="namespacePortage.html#a762e851d5a6ada63ea496d767679cffb">Entity_kind</a> const entity, <a class="el" href="namespacePortage.html#a650a8718a706648846a2915b90612849">Entity_type</a> const etype=Entity_type::ALL) const </td></tr>
 <tr class="memdesc:a82379618ad2cd57f3362a26762eabe60"><td class="mdescLeft">&#160;</td><td class="mdescRight">Iterator on mesh entity - end.  <a href="#a82379618ad2cd57f3362a26762eabe60">More...</a><br /></td></tr>
 <tr class="separator:a82379618ad2cd57f3362a26762eabe60"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a230262249728d2e17f3856b6fb266820"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1AuxMeshTopology.html#a230262249728d2e17f3856b6fb266820">face_get_cells</a> (int const faceid, <a class="el" href="namespacePortage.html#a650a8718a706648846a2915b90612849">Entity_type</a> const etype, std::vector&lt; int &gt; *cells) const </td></tr>
+<tr class="memdesc:a230262249728d2e17f3856b6fb266820"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get cells of given Entity_type connected to face (in no particular order)  <a href="#a230262249728d2e17f3856b6fb266820">More...</a><br /></td></tr>
+<tr class="separator:a230262249728d2e17f3856b6fb266820"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a10c5bf35b4c490316468ca7251d2a2b4"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1AuxMeshTopology.html#a10c5bf35b4c490316468ca7251d2a2b4">on_exterior_boundary</a> (<a class="el" href="namespacePortage.html#a762e851d5a6ada63ea496d767679cffb">Entity_kind</a> const entity, int const entity_id) const </td></tr>
+<tr class="memdesc:a10c5bf35b4c490316468ca7251d2a2b4"><td class="mdescLeft">&#160;</td><td class="mdescRight">if entity is on exterior boundary  <a href="#a10c5bf35b4c490316468ca7251d2a2b4">More...</a><br /></td></tr>
+<tr class="separator:a10c5bf35b4c490316468ca7251d2a2b4"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab43cbdf56afaa72d8b346835495184c2"><td class="memTemplParams" colspan="2">template&lt;long D&gt; </td></tr>
 <tr class="memitem:ab43cbdf56afaa72d8b346835495184c2"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classPortage_1_1AuxMeshTopology.html#ab43cbdf56afaa72d8b346835495184c2">cell_get_coordinates</a> (int const cellid, std::vector&lt; <a class="el" href="classPortage_1_1Point.html">Point</a>&lt; D &gt;&gt; *pplist) const </td></tr>
 <tr class="memdesc:ab43cbdf56afaa72d8b346835495184c2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Coordinates of nodes of cell.  <a href="#ab43cbdf56afaa72d8b346835495184c2">More...</a><br /></td></tr>
@@ -337,7 +312,7 @@ class Portage::AuxMeshTopology&lt; BasicMesh &gt;</h3>
 <div class="fragment"><div class="line"><span class="keywordtype">int</span> space_dimension() <span class="keyword">const</span>;  <span class="comment">// dimensionality of mesh points (1, 2, 3)</span></div><div class="line"></div><div class="line"><span class="keywordtype">int</span> num_owned_cells() <span class="keyword">const</span>;</div><div class="line"><span class="keywordtype">int</span> num_ghost_cells() <span class="keyword">const</span>;</div><div class="line"><span class="keywordtype">int</span> num_owned_faces() <span class="keyword">const</span>;</div><div class="line"><span class="keywordtype">int</span> num_ghost_faces() <span class="keyword">const</span>;</div><div class="line"><span class="keywordtype">int</span> num_owned_nodes() <span class="keyword">const</span>;</div><div class="line"><span class="keywordtype">int</span> num_ghost_nodes() <span class="keyword">const</span>;</div><div class="line"><a class="code" href="namespacePortage.html#a650a8718a706648846a2915b90612849">Portage::Entity_type</a> cell_get_type(<span class="keywordtype">int</span> <span class="keyword">const</span> cellid) <span class="keyword">const</span>;</div></div><!-- fragment --><p>NOTE: Entity_type is Portage::OWNED or Portage::GHOST</p>
 <div class="fragment"><div class="line"><a class="code" href="namespacePortage.html#a5f4ff6a944b45b72c32db1338353486b">Portage::Element_type</a> cell_get_element_type(<span class="keywordtype">int</span> <span class="keyword">const</span> cellid) <span class="keyword">const</span>;</div></div><!-- fragment --><p>Can be <a class="el" href="namespacePortage.html#a5f4ff6a944b45b72c32db1338353486ba263fddaa4929caea37151f274c36c3b8">Portage::UNKNOWN_TOPOLOGY</a>, <a class="el" href="namespacePortage.html#a5f4ff6a944b45b72c32db1338353486bace6f2b0c92efc89f01efe119c48ed5dc">Portage::TRI</a>, <a class="el" href="namespacePortage.html#a5f4ff6a944b45b72c32db1338353486ba8d7a47c1d94fd06ff47ed28caea231c2">Portage::QUAD</a>, <a class="el" href="namespacePortage.html#a5f4ff6a944b45b72c32db1338353486ba4b0049d4c1a57117404e9b28506d8135">Portage::POLYGON</a>, <a class="el" href="namespacePortage.html#a5f4ff6a944b45b72c32db1338353486ba7f8ef541756727c401aaf89d0ac5b2bf">Portage::TET</a>, <a class="el" href="namespacePortage.html#a5f4ff6a944b45b72c32db1338353486ba56d07f6b7a3e807a7fcd635fbc86f4e2">Portage::PRISM</a>, <a class="el" href="namespacePortage.html#a5f4ff6a944b45b72c32db1338353486ba38c809db2a35ad71a324ff276b638b13">Portage::PYRAMID</a>, <a class="el" href="namespacePortage.html#a5f4ff6a944b45b72c32db1338353486baddabca318743aed3bb7778deec79fe24">Portage::HEX</a>, <a class="el" href="namespacePortage.html#a5f4ff6a944b45b72c32db1338353486ba4c2bbf4ab5152603f23e9d11f24c364e">Portage::POLYHEDRON</a></p>
 <div class="fragment"><div class="line"><span class="keywordtype">void</span> cell_get_faces_and_dirs(<span class="keywordtype">int</span> <span class="keyword">const</span> cellid, std::vector&lt;int&gt; *cfaces,</div><div class="line">                             std::vector&lt;int&gt; *cfdirs) <span class="keyword">const</span>;</div></div><!-- fragment --><p>NOTE: The 'cfdirs' conveys the directions in which the faces are used by the cell. If the natural normal of the face points out of the cell, its direction should be returned as 1, if not, it should be returned as -1</p>
-<div class="fragment"><div class="line"><span class="keywordtype">void</span> cell_get_nodes(<span class="keywordtype">int</span> <span class="keyword">const</span> cellid, std::vector&lt;int&gt; *cnodes) <span class="keyword">const</span>;</div><div class="line"></div><div class="line"><span class="keywordtype">void</span> cell_get_node_adj_cells(<span class="keywordtype">int</span> <span class="keyword">const</span> cellid, <a class="code" href="namespacePortage.html#a650a8718a706648846a2915b90612849">Portage::Entity_type</a> etype,</div><div class="line">                             std::vector&lt;int&gt; *adjcells) <span class="keyword">const</span>;</div><div class="line"></div><div class="line"><span class="keywordtype">void</span> face_get_nodes(<span class="keywordtype">int</span> <span class="keyword">const</span> faceid, std::vector&lt;int&gt; *fnodes) <span class="keyword">const</span>;</div><div class="line"></div><div class="line"><span class="keywordtype">void</span> node_get_cell_adj_nodes(<span class="keywordtype">int</span> <span class="keyword">const</span> nodeid, <a class="code" href="namespacePortage.html#a650a8718a706648846a2915b90612849">Portage::Entity_type</a> etype,</div><div class="line">                             std::vector&lt;int&gt; *adjnodes) <span class="keyword">const</span>;</div><div class="line"></div><div class="line"><span class="keywordtype">int</span> get_global_id(<span class="keywordtype">int</span> <span class="keyword">const</span> <span class="keywordtype">id</span>, <a class="code" href="namespacePortage.html#a762e851d5a6ada63ea496d767679cffb">Entity_kind</a> <span class="keyword">const</span> kind) <span class="keyword">const</span>;</div><div class="line"></div><div class="line"><span class="keyword">template</span>&lt;<span class="keywordtype">long</span> D&gt;</div><div class="line"><span class="keywordtype">void</span> node_get_coordinates(<span class="keywordtype">int</span> <span class="keyword">const</span> nodeid, <a class="code" href="classPortage_1_1Point.html">Portage::Point&lt;D&gt;</a> *pp) <span class="keyword">const</span>;</div></div><!-- fragment --><p> ******************************** NOTE ***********************************</p>
+<div class="fragment"><div class="line"><span class="keywordtype">void</span> cell_get_nodes(<span class="keywordtype">int</span> <span class="keyword">const</span> cellid, std::vector&lt;int&gt; *cnodes) <span class="keyword">const</span>;</div><div class="line"></div><div class="line"><span class="keywordtype">void</span> cell_get_node_adj_cells(<span class="keywordtype">int</span> <span class="keyword">const</span> cellid, <a class="code" href="namespacePortage.html#a650a8718a706648846a2915b90612849">Portage::Entity_type</a> etype,</div><div class="line">                             std::vector&lt;int&gt; *adjcells) <span class="keyword">const</span>;</div><div class="line"></div><div class="line"><span class="keywordtype">void</span> face_get_nodes(<span class="keywordtype">int</span> <span class="keyword">const</span> faceid, std::vector&lt;int&gt; *fnodes) <span class="keyword">const</span>;</div><div class="line"></div><div class="line"><span class="keywordtype">void</span> <a class="code" href="classPortage_1_1AuxMeshTopology.html#a230262249728d2e17f3856b6fb266820">face_get_cells</a>(<span class="keywordtype">int</span> <span class="keyword">const</span> faceid, <a class="code" href="namespacePortage.html#a650a8718a706648846a2915b90612849">Portage::Entity_type</a> etype,</div><div class="line">                    std::vector&lt;int&gt; *fcells) <span class="keyword">const</span>;</div><div class="line"></div><div class="line"><span class="keywordtype">void</span> node_get_cell_adj_nodes(<span class="keywordtype">int</span> <span class="keyword">const</span> nodeid, <a class="code" href="namespacePortage.html#a650a8718a706648846a2915b90612849">Portage::Entity_type</a> etype,</div><div class="line">                             std::vector&lt;int&gt; *adjnodes) <span class="keyword">const</span>;</div><div class="line"></div><div class="line"><span class="keywordtype">int</span> get_global_id(<span class="keywordtype">int</span> <span class="keyword">const</span> <span class="keywordtype">id</span>, <a class="code" href="namespacePortage.html#a762e851d5a6ada63ea496d767679cffb">Entity_kind</a> <span class="keyword">const</span> kind) <span class="keyword">const</span>;</div><div class="line"></div><div class="line"><span class="keyword">template</span>&lt;<span class="keywordtype">long</span> D&gt;</div><div class="line"><span class="keywordtype">void</span> node_get_coordinates(<span class="keywordtype">int</span> <span class="keyword">const</span> nodeid, <a class="code" href="classPortage_1_1Point.html">Portage::Point&lt;D&gt;</a> *pp) <span class="keyword">const</span>;</div></div><!-- fragment --><p> ******************************** NOTE ***********************************</p>
 <p>THIS IS AN INCOMPLETE CLASS DESIGNED TO BE USED IN A 'CRTP' (CURIOUSLY RECURRING TEMPLATE PATTERN) DESIGN ALONG WITH THE BASICMESH CLASS TO PROVIDE A COMPLETE MESH CLASS (See <a href="https://en.m.wikipedia.org/wiki/Curiously_recurring_template_pattern">https://en.m.wikipedia.org/wiki/Curiously_recurring_template_pattern</a>)</p>
 <p>So, If one is writing a mesh wrapper class called <code>MY_MESH_WRAPPER</code>, it is declared like so</p>
 <div class="fragment"><div class="line"><span class="keyword">class </span>MY_MESH_WRAPPER : <span class="keyword">public</span> <a class="code" href="namespaceAuxMeshTopology.html">AuxMeshTopology</a>&lt;MY_MESH_WRAPPER&gt;</div><div class="line">{......}</div></div><!-- fragment --><p> and it will automatically have the methods of the <a class="el" href="classPortage_1_1AuxMeshTopology.html">AuxMeshTopology</a> class.</p>
@@ -400,7 +375,7 @@ template&lt;typename BasicMesh&gt; </div>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="namespacePortage.html#a9ad5b714018a06f725ef8f93b70fabe7">counting_iterator</a> <a class="el" href="classPortage_1_1AuxMeshTopology.html">Portage::AuxMeshTopology</a>&lt; BasicMesh &gt;::begin </td>
+          <td class="memname"><a class="el" href="namespacePortage.html#a5798f2be664fd95e54414f8aca5e3282">counting_iterator</a> <a class="el" href="classPortage_1_1AuxMeshTopology.html">Portage::AuxMeshTopology</a>&lt; BasicMesh &gt;::begin </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="namespacePortage.html#a762e851d5a6ada63ea496d767679cffb">Entity_kind</a> const&#160;</td>
           <td class="paramname"><em>entity</em>, </td>
@@ -978,7 +953,7 @@ template&lt;long D&gt; </div>
 </div><div class="memdoc">
 
 <p>Centroid of a dual cell. </p>
-<dl class="todo"><dt><b><a class="el" href="todo.html#_todo000018">Todo:</a></b></dt><dd>NOTE: THIS IS ASSUMED TO BE THE NODE COORDINATE BECAUSE THE NODAL VARIABLES LIVE THERE, BUT FOR DISTORTED GRIDS, THE NODE COORDINATE MAY NOT BE THE CENTROID OF THE DUAL CELL </dd></dl>
+<dl class="todo"><dt><b><a class="el" href="todo.html#_todo000031">Todo:</a></b></dt><dd>NOTE: THIS IS ASSUMED TO BE THE NODE COORDINATE BECAUSE THE NODAL VARIABLES LIVE THERE, BUT FOR DISTORTED GRIDS, THE NODE COORDINATE MAY NOT BE THE CENTROID OF THE DUAL CELL </dd></dl>
 
 </div>
 </div>
@@ -1176,7 +1151,7 @@ template&lt;typename BasicMesh&gt; </div>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="namespacePortage.html#a9ad5b714018a06f725ef8f93b70fabe7">counting_iterator</a> <a class="el" href="classPortage_1_1AuxMeshTopology.html">Portage::AuxMeshTopology</a>&lt; BasicMesh &gt;::end </td>
+          <td class="memname"><a class="el" href="namespacePortage.html#a5798f2be664fd95e54414f8aca5e3282">counting_iterator</a> <a class="el" href="classPortage_1_1AuxMeshTopology.html">Portage::AuxMeshTopology</a>&lt; BasicMesh &gt;::end </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="namespacePortage.html#a762e851d5a6ada63ea496d767679cffb">Entity_kind</a> const&#160;</td>
           <td class="paramname"><em>entity</em>, </td>
@@ -1241,6 +1216,50 @@ template&lt;long D&gt; </div>
 </div><div class="memdoc">
 
 <p>Centroid of a face. </p>
+
+</div>
+</div>
+<a class="anchor" id="a230262249728d2e17f3856b6fb266820"></a>
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename BasicMesh&gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void <a class="el" href="classPortage_1_1AuxMeshTopology.html">Portage::AuxMeshTopology</a>&lt; BasicMesh &gt;::face_get_cells </td>
+          <td>(</td>
+          <td class="paramtype">int const&#160;</td>
+          <td class="paramname"><em>faceid</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="namespacePortage.html#a650a8718a706648846a2915b90612849">Entity_type</a> const&#160;</td>
+          <td class="paramname"><em>etype</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::vector&lt; int &gt; *&#160;</td>
+          <td class="paramname"><em>cells</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td> const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Get cells of given Entity_type connected to face (in no particular order) </p>
 
 </div>
 </div>
@@ -1529,6 +1548,44 @@ template&lt;typename BasicMesh&gt; </div>
 </div><div class="memdoc">
 
 <p>Number of owned wedges in the mesh. </p>
+
+</div>
+</div>
+<a class="anchor" id="a10c5bf35b4c490316468ca7251d2a2b4"></a>
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename BasicMesh&gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool <a class="el" href="classPortage_1_1AuxMeshTopology.html">Portage::AuxMeshTopology</a>&lt; BasicMesh &gt;::on_exterior_boundary </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="namespacePortage.html#a762e851d5a6ada63ea496d767679cffb">Entity_kind</a> const&#160;</td>
+          <td class="paramname"><em>entity</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int const&#160;</td>
+          <td class="paramname"><em>entity_id</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td> const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>if entity is on exterior boundary </p>
 
 </div>
 </div>
@@ -2356,44 +2413,13 @@ template&lt;typename BasicMesh&gt; </div>
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li>/home/l280837/code/portage-gh/src/wrappers/mesh/<a class="el" href="AuxMeshTopology_8h_source.html">AuxMeshTopology.h</a></li>
+<li>/Users/l280837/code/portage-gh/src/wonton/mesh/<a class="el" href="AuxMeshTopology_8h_source.html">AuxMeshTopology.h</a></li>
 </ul>
 </div><!-- contents -->
 <!--
-Copyright (c) 2016, Los Alamos National Security, LLC
-All rights reserved.
-Copyright 2016. Los Alamos National Security, LLC. This software was produced
-under U.S. Government contract DE-AC52-06NA25396 for Los Alamos National
-Laboratory (LANL), which is operated by Los Alamos National Security, LLC for
-the U.S. Department of Energy. The U.S. Government has rights to use,
-reproduce, and distribute this software.  NEITHER THE GOVERNMENT NOR LOS ALAMOS
-NATIONAL SECURITY, LLC MAKES ANY WARRANTY, EXPRESS OR IMPLIED, OR ASSUMES ANY
-LIABILITY FOR THE USE OF THIS SOFTWARE.  If software is modified to produce
-derivative works, such modified software should be clearly marked, so as not to
-confuse it with the version available from LANL.
-Additionally, redistribution and use in source and binary forms, with or
-without modification, are permitted provided that the following conditions are
-met:
-1. Redistributions of source code must retain the above copyright notice,
-   this list of conditions and the following disclaimer.
-2. Redistributions in binary form must reproduce the above copyright
-   notice, this list of conditions and the following disclaimer in the
-   documentation and/or other materials provided with the distribution.
-3. Neither the name of Los Alamos National Security, LLC, Los Alamos
-   National Laboratory, LANL, the U.S. Government, nor the names of its
-   contributors may be used to endorse or promote products derived from this
-   software without specific prior written permission.
-THIS SOFTWARE IS PROVIDED BY LOS ALAMOS NATIONAL SECURITY, LLC AND
-CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
-PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL LOS ALAMOS NATIONAL
-SECURITY, LLC OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
-BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER
-IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-POSSIBILITY OF SUCH DAMAGE.
+This file is part of the Ristra portage project.
+Please see the license file at the root of this repository, or at:
+    https://github.com/laristra/portage/blob/master/LICENSE
 -->
 <!-- HTML footer for doxygen 1.8.8-->
 <!-- start footer part -->

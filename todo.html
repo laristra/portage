@@ -1,38 +1,7 @@
 <!--
-Copyright (c) 2016, Los Alamos National Security, LLC
-All rights reserved.
-Copyright 2016. Los Alamos National Security, LLC. This software was produced
-under U.S. Government contract DE-AC52-06NA25396 for Los Alamos National
-Laboratory (LANL), which is operated by Los Alamos National Security, LLC for
-the U.S. Department of Energy. The U.S. Government has rights to use,
-reproduce, and distribute this software.  NEITHER THE GOVERNMENT NOR LOS ALAMOS
-NATIONAL SECURITY, LLC MAKES ANY WARRANTY, EXPRESS OR IMPLIED, OR ASSUMES ANY
-LIABILITY FOR THE USE OF THIS SOFTWARE.  If software is modified to produce
-derivative works, such modified software should be clearly marked, so as not to
-confuse it with the version available from LANL.
-Additionally, redistribution and use in source and binary forms, with or
-without modification, are permitted provided that the following conditions are
-met:
-1. Redistributions of source code must retain the above copyright notice,
-   this list of conditions and the following disclaimer.
-2. Redistributions in binary form must reproduce the above copyright
-   notice, this list of conditions and the following disclaimer in the
-   documentation and/or other materials provided with the distribution.
-3. Neither the name of Los Alamos National Security, LLC, Los Alamos
-   National Laboratory, LANL, the U.S. Government, nor the names of its
-   contributors may be used to endorse or promote products derived from this
-   software without specific prior written permission.
-THIS SOFTWARE IS PROVIDED BY LOS ALAMOS NATIONAL SECURITY, LLC AND
-CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
-PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL LOS ALAMOS NATIONAL
-SECURITY, LLC OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
-BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER
-IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-POSSIBILITY OF SUCH DAMAGE.
+This file is part of the Ristra portage project.
+Please see the license file at the root of this repository, or at:
+    https://github.com/laristra/portage/blob/master/LICENSE
 -->
 <!DOCTYPE html>
 <html>
@@ -66,7 +35,7 @@ POSSIBILITY OF SUCH DAMAGE.
     <nav class="navbar navbar-default" role="navigation">
       <div class="container">
         <div class="navbar-header">
-          <a class="navbar-brand">portage 1.0.alpha</a>
+          <a class="navbar-brand">portage 1.1.0</a>
         </div>
       </div>
     </nav>
@@ -84,8 +53,8 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
   <div id="navrow1" class="tabs">
     <ul class="tablist">
       <li><a href="index.html"><span>Main&#160;Page</span></a></li>
-      <li><a href="quickstart.html"><span>Quick&#160;Start</span></a></li>
-      <li><a href="simple_mesh.html"><span>Example&#160;Use</span></a></li>
+      <li><a href="concepts.html"><span>Concepts</span></a></li>
+      <li><a href="example.html"><span>Example&#160;Use</span></a></li>
       <li><a href="namespaces.html"><span>Namespaces</span></a></li>
       <li><a href="annotated.html"><span>Classes</span></a></li>
       <li>
@@ -127,12 +96,8 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div><!--header-->
 <div class="contents">
 <div class="textblock"><dl class="reflist">
-<dt><a class="anchor" id="_todo000018"></a>Member <a class="el" href="classPortage_1_1AuxMeshTopology.html#aa553ac201acbcc2856a1b97fcb2c5edc">Portage::AuxMeshTopology&lt; BasicMesh &gt;::dual_cell_centroid</a>  (int nodeid, Point&lt; D &gt; *centroid) const </dt>
+<dt><a class="anchor" id="_todo000031"></a>Member <a class="el" href="classPortage_1_1AuxMeshTopology.html#aa553ac201acbcc2856a1b97fcb2c5edc">Portage::AuxMeshTopology&lt; BasicMesh &gt;::dual_cell_centroid</a>  (int nodeid, Point&lt; D &gt; *centroid) const </dt>
 <dd>NOTE: THIS IS ASSUMED TO BE THE NODE COORDINATE BECAUSE THE NODAL VARIABLES LIVE THERE, BUT FOR DISTORTED GRIDS, THE NODE COORDINATE MAY NOT BE THE CENTROID OF THE DUAL CELL  </dd>
-<dt><a class="anchor" id="_todo000019"></a>Member <a class="el" href="classPortage_1_1Flecsi__State__Wrapper.html#a88e1b05ec812fda4fd7ff6e9178acb1f">Portage::Flecsi_State_Wrapper::get_entity</a>  (const std::string var_name) const </dt>
-<dd><p class="startdd">THIS ASSUMES ONLY DOUBLE VECTORS - WE HAVE TO ACCOUNT FOR OTHER TYPES OR WE HAVE TO GENERALIZE THE FIND FUNCTION!!! </p>
-<p class="enddd">THIS ALSO DOES NOT CHECK FOR OTHER ENTITY TYPES LIKE EDGE, FACE, SIDE, WEDGE AND CORNER  </p>
-</dd>
 <dt><a class="anchor" id="_todo000011"></a>Class <a class="el" href="classPortage_1_1Interpolate__1stOrder.html">Portage::Interpolate_1stOrder&lt; SourceMeshType, TargetMeshType, StateType, on_what, D &gt;</a>  </dt>
 <dd>Template on variable type?? </dd>
 <dt><a class="anchor" id="_todo000016"></a>Member <a class="el" href="classPortage_1_1Interpolate__2ndOrder_3_01SourceMeshType_00_01TargetMeshType_00_01StateType_00_01CELL_00_01D_01_4.html#ac9802e3ec18ef4377709e7e273359df8">Portage::Interpolate_2ndOrder&lt; SourceMeshType, TargetMeshType, StateType, CELL, D &gt;::operator()</a>  (int const targetCellID, std::vector&lt; Weights_t &gt; const &amp;sources_and_weights) const </dt>
@@ -149,9 +114,23 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <dd><p class="startdd">Cleanup the datatype for sources_and_weights - it is somewhat confusing. </p>
 <p class="enddd">must remove assumption that field is scalar  </p>
 </dd>
-<dt><a class="anchor" id="_todo000021"></a>Member <a class="el" href="classPortage_1_1Jali__State__Wrapper.html#a30c2cfaeabd215d95dceb18ec68e8804">Portage::Jali_State_Wrapper::get_data_size</a>  (const Entity_kind on_what, const std::string var_name) const </dt>
+<dt><a class="anchor" id="_todo000022"></a>Member <a class="el" href="classPortage_1_1Interpolate__3rdOrder_3_01SourceMeshType_00_01TargetMeshType_00_01StateType_00_01CELL_00_01D_01_4.html#a9d3f0161800892e64d8abdb3fa6d34e1">Portage::Interpolate_3rdOrder&lt; SourceMeshType, TargetMeshType, StateType, CELL, D &gt;::operator()</a>  (int const targetCellID, std::vector&lt; Weights_t &gt; const &amp;sources_and_weights) const </dt>
+<dd><p class="startdd">must remove assumption that field is scalar </p>
+<p class="enddd">Should use zip_iterator here but I am not sure I know how to  </p>
+</dd>
+<dt><a class="anchor" id="_todo000023"></a>Member <a class="el" href="classPortage_1_1Interpolate__3rdOrder_3_01SourceMeshType_00_01TargetMeshType_00_01StateType_00_01NODE_00_01D_01_4.html#a79c2ee4e0b718672bc5922c6b14ac25a">Portage::Interpolate_3rdOrder&lt; SourceMeshType, TargetMeshType, StateType, NODE, D &gt;::operator()</a>  (const int targetCellID, std::vector&lt; Weights_t &gt; const &amp;sources_and_weights) const </dt>
+<dd><p class="startdd">must remove assumption that field is scalar </p>
+<p class="enddd">Should use zip_iterator here but I am not sure I know how to  </p>
+</dd>
+<dt><a class="anchor" id="_todo000018"></a>Class <a class="el" href="classPortage_1_1Interpolate__3rdOrder.html">Portage::Interpolate_3rdOrder&lt; SourceMeshType, TargetMeshType, StateType, on_what, D &gt;</a>  </dt>
+<dd>Template on variable type (YES)  </dd>
+<dt><a class="anchor" id="_todo000021"></a>Member <a class="el" href="classPortage_1_1Interpolate__3rdOrder.html#a19763a6fb2fa25cecfa515cdc273f675">Portage::Interpolate_3rdOrder&lt; SourceMeshType, TargetMeshType, StateType, on_what, D &gt;::operator()</a>  (int const targetCellID, std::vector&lt; Weights_t &gt; const &amp;sources_and_weights) const </dt>
+<dd><p class="startdd">Cleanup the datatype for sources_and_weights - it is somewhat confusing. </p>
+<p class="enddd">must remove assumption that field is scalar  </p>
+</dd>
+<dt><a class="anchor" id="_todo000036"></a>Member <a class="el" href="classPortage_1_1Jali__State__Wrapper.html#a30c2cfaeabd215d95dceb18ec68e8804">Portage::Jali_State_Wrapper::get_data_size</a>  (const Entity_kind on_what, const std::string var_name) const </dt>
 <dd>THIS ASSUMES ONLY DOUBLE VECTORS - WE HAVE TO ACCOUNT FOR OTHER TYPES OR WE HAVE TO GENERALIZE THE FIND FUNCTION!!!  </dd>
-<dt><a class="anchor" id="_todo000020"></a>Member <a class="el" href="classPortage_1_1Jali__State__Wrapper.html#a7a1f6f7302c60dd88b05c015c48623ac">Portage::Jali_State_Wrapper::get_entity</a>  (const std::string var_name) const </dt>
+<dt><a class="anchor" id="_todo000035"></a>Member <a class="el" href="classPortage_1_1Jali__State__Wrapper.html#a7a1f6f7302c60dd88b05c015c48623ac">Portage::Jali_State_Wrapper::get_entity</a>  (const std::string var_name) const </dt>
 <dd>THIS ASSUMES ONLY DOUBLE VECTORS - WE HAVE TO ACCOUNT FOR OTHER TYPES OR WE HAVE TO GENERALIZE THE FIND FUNCTION!!!  </dd>
 <dt><a class="anchor" id="_todo000007"></a>Member <a class="el" href="classPortage_1_1Limited__Gradient_3_01MeshType_00_01StateType_00_01CELL_00_01D_01_4.html#a227553c4c19c125630f0f462f32e703b">Portage::Limited_Gradient&lt; MeshType, StateType, CELL, D &gt;::Limited_Gradient</a>  (MeshType const &amp;mesh, StateType const &amp;state, std::string const var_name, LimiterType limiter_type)</dt>
 <dd>must remove assumption that field is scalar  </dd>
@@ -167,49 +146,40 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <dd>must remove assumption that field is scalar  </dd>
 <dt><a class="anchor" id="_todo000006"></a>Member <a class="el" href="classPortage_1_1Limited__Gradient.html#acf0df90897c2e6c44a76d36e3a5da330">Portage::Limited_Gradient&lt; MeshType, StateType, on_what, D &gt;::operator=</a>  (const <a class="el" href="classPortage_1_1Limited__Gradient.html" title="Compute limited gradient of a field or components of a field. ">Limited_Gradient</a> &amp;)=delete</dt>
 <dd>Seems to be needed when using this in a Thrust transform call?  </dd>
+<dt><a class="anchor" id="_todo000027"></a>Member <a class="el" href="classPortage_1_1Limited__Quadfit_3_01MeshType_00_01StateType_00_01CELL_00_01D_01_4.html#a406af0207da496dbd59347c180320c7f">Portage::Limited_Quadfit&lt; MeshType, StateType, CELL, D &gt;::Limited_Quadfit</a>  (MeshType const &amp;mesh, StateType const &amp;state, std::string const var_name, LimiterType limiter_type)</dt>
+<dd>must remove assumption that field is scalar  </dd>
+<dt><a class="anchor" id="_todo000024"></a>Member <a class="el" href="classPortage_1_1Limited__Quadfit_3_01MeshType_00_01StateType_00_01CELL_00_01D_01_4.html#a94073d8ff4c15fe22c570fbc35d0c90b">Portage::Limited_Quadfit&lt; MeshType, StateType, CELL, D &gt;::operator()</a>  (int cellid)</dt>
+<dd>: must remove assumption the field is scalar  </dd>
+<dt><a class="anchor" id="_todo000028"></a>Member <a class="el" href="classPortage_1_1Limited__Quadfit_3_01MeshType_00_01StateType_00_01CELL_00_01D_01_4.html#add02e44caf7805017bc3c3fa96b9358b">Portage::Limited_Quadfit&lt; MeshType, StateType, CELL, D &gt;::operator=</a>  (const <a class="el" href="classPortage_1_1Limited__Quadfit.html" title="Compute limited quadfit of a field or components of a field. ">Limited_Quadfit</a> &amp;)=delete</dt>
+<dd>Seems to be needed when using this in a Thrust transform call?  </dd>
+<dt><a class="anchor" id="_todo000029"></a>Member <a class="el" href="classPortage_1_1Limited__Quadfit_3_01MeshType_00_01StateType_00_01NODE_00_01D_01_4.html#ae739a573ce1f4ce95f97bacae4686e6f">Portage::Limited_Quadfit&lt; MeshType, StateType, NODE, D &gt;::Limited_Quadfit</a>  (MeshType const &amp;mesh, StateType const &amp;state, std::string const var_name, LimiterType limiter_type)</dt>
+<dd>must remove assumption that field is scalar  </dd>
+<dt><a class="anchor" id="_todo000030"></a>Member <a class="el" href="classPortage_1_1Limited__Quadfit_3_01MeshType_00_01StateType_00_01NODE_00_01D_01_4.html#ac7415116d1e79f17f27f12c948c141df">Portage::Limited_Quadfit&lt; MeshType, StateType, NODE, D &gt;::operator=</a>  (const <a class="el" href="classPortage_1_1Limited__Quadfit.html" title="Compute limited quadfit of a field or components of a field. ">Limited_Quadfit</a> &amp;)=delete</dt>
+<dd>Seems to be needed when using this in a Thrust transform call?  </dd>
+<dt><a class="anchor" id="_todo000025"></a>Member <a class="el" href="classPortage_1_1Limited__Quadfit.html#acdd9770f302ef7bb1d13d672539ed2bc">Portage::Limited_Quadfit&lt; MeshType, StateType, on_what, D &gt;::Limited_Quadfit</a>  (MeshType const &amp;mesh, StateType const &amp;state, std::string const var_name, LimiterType limiter_type)</dt>
+<dd>must remove assumption that field is scalar  </dd>
+<dt><a class="anchor" id="_todo000026"></a>Member <a class="el" href="classPortage_1_1Limited__Quadfit.html#a3df03f681ec29a4453e54f3ee1fb886c">Portage::Limited_Quadfit&lt; MeshType, StateType, on_what, D &gt;::operator=</a>  (const <a class="el" href="classPortage_1_1Limited__Quadfit.html" title="Compute limited quadfit of a field or components of a field. ">Limited_Quadfit</a> &amp;)=delete</dt>
+<dd>Seems to be needed when using this in a Thrust transform call?  </dd>
 <dt><a class="anchor" id="_todo000001"></a>Member <a class="el" href="classPortage_1_1MeshWrapperDual.html#a29f8fa2975d30af9fd2afa36c5999434">Portage::MeshWrapperDual&lt; Mesh_Wrapper_Type &gt;::cellToXY</a>  (int const dualcellID) const </dt>
 <dd>Remove this in favor of <code><a class="el" href="classPortage_1_1MeshWrapperDual.html#a8e8f3cf5f414dcf4144e3fbe63c5aef9" title="Gets the coordinates of the cell centroid in the dual mesh. ">cell_get_coordinates()</a></code> ?  </dd>
 <dt><a class="anchor" id="_todo000003"></a>Member <a class="el" href="classPortage_1_1MeshWrapperDual.html#ad29b159d6923f9b554b817dee66af345">Portage::MeshWrapperDual&lt; Mesh_Wrapper_Type &gt;::dual_cell_centroid</a>  (int const dualnodeID, Point&lt; D &gt; *centroid) const </dt>
 <dd>Clarify this wrt to <code><a class="el" href="classPortage_1_1MeshWrapperDual.html#a99017386b15e2371f8c901b61cc62eec" title="Get the coordinates of the centroid of a given dual mesh cell ID. ">MeshWrapperDual::cell_centroid()</a></code>.  </dd>
 <dt><a class="anchor" id="_todo000002"></a>Member <a class="el" href="classPortage_1_1MeshWrapperDual.html#a67f0b9259a45a736d5a41ca492858198">Portage::MeshWrapperDual&lt; Mesh_Wrapper_Type &gt;::dual_cell_get_node_adj_cells</a>  (int const dualnodeID, Entity_type const type, std::vector&lt; int &gt; *adjnodes) const </dt>
-<dd>Clarify this wrt to <code><a class="el" href="classPortage_1_1MeshWrapperDual.html#a5e06a438b0a9823a3efd9945b39bcd5a" title="Get the IDs of all cells that share a node with the specified cell  of the original mesh ...">MeshWrapperDual::cell_get_node_adj_cells()</a></code> </dd>
+<dd>Clarify this wrt to <code><a class="el" href="classPortage_1_1MeshWrapperDual.html#a5e06a438b0a9823a3efd9945b39bcd5a" title="Get the IDs of all cells that share a node with the specified cell  of the original mesh ...">MeshWrapperDual::cell_get_node_adj_cells()</a></code>  </dd>
+<dt><a class="anchor" id="_todo000033"></a>Member <a class="el" href="classwonton_1_1flecsi__mesh__t.html#ade91cc7a1492029f31d85d7ee01ae581">wonton::flecsi_mesh_t&lt; M &gt;::dual_cell_centroid</a>  (size_t node_id, point_t *centroid) const </dt>
+<dd>NOTE: THIS IS ASSUMED TO BE THE NODE COORDINATE BECAUSE THE NODAL VARIABLES LIVE THERE, BUT FOR DISTORTED GRIDS, THE NODE COORDINATED MAY NOT BE THE CENTROID OF THE DUAL CELL  </dd>
+<dt><a class="anchor" id="_todo000032"></a>Member <a class="el" href="classwonton_1_1flecsi__mesh__t.html#afabefef28ae6a756030eb9fd4ff6cab4">wonton::flecsi_mesh_t&lt; M &gt;::dual_cell_get_coordinates</a>  (size_t node_id, std::vector&lt; point_t &gt; *point_list) const </dt>
+<dd>worry about boundary cases  </dd>
+<dt><a class="anchor" id="_todo000034"></a>Member <a class="el" href="classwonton_1_1flecsi__state__t.html#a1939ea20a5f42f2282fa44b879632871">wonton::flecsi_state_t&lt; M &gt;::get_entity</a>  (std::string var_name) const </dt>
+<dd><p class="startdd">THIS ASSUMES ONLY DOUBLE VECTORS - WE HAVE TO ACCOUNT FOR OTHER TYPES OR WE HAVE TO GENERALIZE THE FIND FUNCTION!!! </p>
+<p class="enddd">THIS ALSO DOES NOT CHECK FOR OTHER ENTITY TYPES LIKE EDGE, FACE, SIDE, WEDGE AND CORNER </p>
+</dd>
 </dl>
 </div></div><!-- contents -->
 <!--
-Copyright (c) 2016, Los Alamos National Security, LLC
-All rights reserved.
-Copyright 2016. Los Alamos National Security, LLC. This software was produced
-under U.S. Government contract DE-AC52-06NA25396 for Los Alamos National
-Laboratory (LANL), which is operated by Los Alamos National Security, LLC for
-the U.S. Department of Energy. The U.S. Government has rights to use,
-reproduce, and distribute this software.  NEITHER THE GOVERNMENT NOR LOS ALAMOS
-NATIONAL SECURITY, LLC MAKES ANY WARRANTY, EXPRESS OR IMPLIED, OR ASSUMES ANY
-LIABILITY FOR THE USE OF THIS SOFTWARE.  If software is modified to produce
-derivative works, such modified software should be clearly marked, so as not to
-confuse it with the version available from LANL.
-Additionally, redistribution and use in source and binary forms, with or
-without modification, are permitted provided that the following conditions are
-met:
-1. Redistributions of source code must retain the above copyright notice,
-   this list of conditions and the following disclaimer.
-2. Redistributions in binary form must reproduce the above copyright
-   notice, this list of conditions and the following disclaimer in the
-   documentation and/or other materials provided with the distribution.
-3. Neither the name of Los Alamos National Security, LLC, Los Alamos
-   National Laboratory, LANL, the U.S. Government, nor the names of its
-   contributors may be used to endorse or promote products derived from this
-   software without specific prior written permission.
-THIS SOFTWARE IS PROVIDED BY LOS ALAMOS NATIONAL SECURITY, LLC AND
-CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
-PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL LOS ALAMOS NATIONAL
-SECURITY, LLC OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
-BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER
-IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-POSSIBILITY OF SUCH DAMAGE.
+This file is part of the Ristra portage project.
+Please see the license file at the root of this repository, or at:
+    https://github.com/laristra/portage/blob/master/LICENSE
 -->
 <!-- HTML footer for doxygen 1.8.8-->
 <!-- start footer part -->

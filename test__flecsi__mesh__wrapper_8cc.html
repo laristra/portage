@@ -1,38 +1,7 @@
 <!--
-Copyright (c) 2016, Los Alamos National Security, LLC
-All rights reserved.
-Copyright 2016. Los Alamos National Security, LLC. This software was produced
-under U.S. Government contract DE-AC52-06NA25396 for Los Alamos National
-Laboratory (LANL), which is operated by Los Alamos National Security, LLC for
-the U.S. Department of Energy. The U.S. Government has rights to use,
-reproduce, and distribute this software.  NEITHER THE GOVERNMENT NOR LOS ALAMOS
-NATIONAL SECURITY, LLC MAKES ANY WARRANTY, EXPRESS OR IMPLIED, OR ASSUMES ANY
-LIABILITY FOR THE USE OF THIS SOFTWARE.  If software is modified to produce
-derivative works, such modified software should be clearly marked, so as not to
-confuse it with the version available from LANL.
-Additionally, redistribution and use in source and binary forms, with or
-without modification, are permitted provided that the following conditions are
-met:
-1. Redistributions of source code must retain the above copyright notice,
-   this list of conditions and the following disclaimer.
-2. Redistributions in binary form must reproduce the above copyright
-   notice, this list of conditions and the following disclaimer in the
-   documentation and/or other materials provided with the distribution.
-3. Neither the name of Los Alamos National Security, LLC, Los Alamos
-   National Laboratory, LANL, the U.S. Government, nor the names of its
-   contributors may be used to endorse or promote products derived from this
-   software without specific prior written permission.
-THIS SOFTWARE IS PROVIDED BY LOS ALAMOS NATIONAL SECURITY, LLC AND
-CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
-PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL LOS ALAMOS NATIONAL
-SECURITY, LLC OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
-BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER
-IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-POSSIBILITY OF SUCH DAMAGE.
+This file is part of the Ristra portage project.
+Please see the license file at the root of this repository, or at:
+    https://github.com/laristra/portage/blob/master/LICENSE
 -->
 <!DOCTYPE html>
 <html>
@@ -48,7 +17,7 @@ POSSIBILITY OF SUCH DAMAGE.
     <meta http-equiv="Content-Type" content="text/xhtml;charset=UTF-8"/>
     <meta name="generator" content="Doxygen 1.8.11"/>
     <script type="text/javascript" src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
-    <title>portage: /home/l280837/code/portage-gh/src/wrappers/mesh/flecsi/test/test_flecsi_mesh_wrapper.cc File Reference</title>
+    <title>portage: /Users/l280837/code/portage-gh/src/wonton/mesh/flecsi/test/test_flecsi_mesh_wrapper.cc File Reference</title>
     <script type="text/javascript" src="dynsections.js"></script>
     <link href="search/search.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="search/searchdata.js"></script>
@@ -66,7 +35,7 @@ POSSIBILITY OF SUCH DAMAGE.
     <nav class="navbar navbar-default" role="navigation">
       <div class="container">
         <div class="navbar-header">
-          <a class="navbar-brand">portage 1.0.alpha</a>
+          <a class="navbar-brand">portage 1.1.0</a>
         </div>
       </div>
     </nav>
@@ -84,8 +53,8 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
   <div id="navrow1" class="tabs">
     <ul class="tablist">
       <li><a href="index.html"><span>Main&#160;Page</span></a></li>
-      <li><a href="quickstart.html"><span>Quick&#160;Start</span></a></li>
-      <li><a href="simple_mesh.html"><span>Example&#160;Use</span></a></li>
+      <li><a href="concepts.html"><span>Concepts</span></a></li>
+      <li><a href="example.html"><span>Example&#160;Use</span></a></li>
       <li><a href="namespaces.html"><span>Namespaces</span></a></li>
       <li><a href="annotated.html"><span>Classes</span></a></li>
       <li>
@@ -128,7 +97,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 
 <div id="nav-path" class="navpath">
   <ul>
-<li class="navelem"><a class="el" href="dir_68267d1309a1af8e8297ef4c3efbcdba.html">src</a></li><li class="navelem"><a class="el" href="dir_358e4f7cc9c4e63b198ee0bb1145b0db.html">wrappers</a></li><li class="navelem"><a class="el" href="dir_bd720f240c588bbef7347b398a619dcb.html">mesh</a></li><li class="navelem"><a class="el" href="dir_e6e47f471cf902546cdc9cdde63ec139.html">flecsi</a></li><li class="navelem"><a class="el" href="dir_2674b68046d793eb3371b7298a8ec1d0.html">test</a></li>  </ul>
+<li class="navelem"><a class="el" href="dir_68267d1309a1af8e8297ef4c3efbcdba.html">src</a></li><li class="navelem"><a class="el" href="dir_f0793eaf588cfab2234204b9b3128bec.html">wonton</a></li><li class="navelem"><a class="el" href="dir_6311728519b61639f24877b3c4357801.html">mesh</a></li><li class="navelem"><a class="el" href="dir_13f869f6b18cbdc90004560ef46c724b.html">flecsi</a></li><li class="navelem"><a class="el" href="dir_5c746cfe19c50530ec9dac29256f01a1.html">test</a></li>  </ul>
 </div>
 </div><!-- top -->
 <div class="header">
@@ -142,7 +111,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 
 <p>Unit tests for the Flecsi mesh wrapper class.  
 <a href="#details">More...</a></p>
-<div class="textblock"><code>#include &quot;portage/wrappers/mesh/flecsi/flecsi_mesh_wrapper.h&quot;</code><br />
+<div class="textblock"><code>#include &quot;portage/wonton/mesh/flecsi/flecsi_mesh_wrapper.h&quot;</code><br />
 <code>#include &quot;portage/support/Point.h&quot;</code><br />
 <code>#include &lt;iostream&gt;</code><br />
 <code>#include &quot;gtest/gtest.h&quot;</code><br />
@@ -164,7 +133,7 @@ Functions</h2></td></tr>
 <tr class="memitem:a61b4c209fdb223253f38838f8b5ef8f1"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="test__flecsi__mesh__wrapper_8cc.html#a61b4c209fdb223253f38838f8b5ef8f1">coordinates_canonical_rotation</a> (const <a class="el" href="namespacePortage.html#a851c0332d789f5c3ca6c9ef50e375f25">Portage::Point2</a> center_node, std::vector&lt; <a class="el" href="namespacePortage.html#a851c0332d789f5c3ca6c9ef50e375f25">Portage::Point2</a> &gt; *const xylist)</td></tr>
 <tr class="memdesc:a61b4c209fdb223253f38838f8b5ef8f1"><td class="mdescLeft">&#160;</td><td class="mdescRight">Rotate the <code>xylist</code> vector into a canonical (unique) form. The first point will be the one with the lowest angle between it, the nodeid and the x-axis.  <a href="#a61b4c209fdb223253f38838f8b5ef8f1">More...</a><br /></td></tr>
 <tr class="separator:a61b4c209fdb223253f38838f8b5ef8f1"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a0538767ec31cbe4c8691d7f9eb52b846"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="test__flecsi__mesh__wrapper_8cc.html#a0538767ec31cbe4c8691d7f9eb52b846">dual_cell_coordinates_canonical_rotation</a> (const <a class="el" href="classPortage_1_1Flecsi__Mesh__Wrapper.html">Portage::Flecsi_Mesh_Wrapper</a> &amp;mesh_wrapper, int const nodeid, std::vector&lt; <a class="el" href="namespacePortage.html#a851c0332d789f5c3ca6c9ef50e375f25">Portage::Point2</a> &gt; *const xylist)</td></tr>
+<tr class="memitem:a0538767ec31cbe4c8691d7f9eb52b846"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="test__flecsi__mesh__wrapper_8cc.html#a0538767ec31cbe4c8691d7f9eb52b846">dual_cell_coordinates_canonical_rotation</a> (const Portage::Flecsi_Mesh_Wrapper &amp;mesh_wrapper, int const nodeid, std::vector&lt; <a class="el" href="namespacePortage.html#a851c0332d789f5c3ca6c9ef50e375f25">Portage::Point2</a> &gt; *const xylist)</td></tr>
 <tr class="memdesc:a0538767ec31cbe4c8691d7f9eb52b846"><td class="mdescLeft">&#160;</td><td class="mdescRight">Rotate the <code>xylist</code> vector into a canonical (unique) form. The first point will be the one with the lowest angle between it, the nodeid and the x-axis.  <a href="#a0538767ec31cbe4c8691d7f9eb52b846">More...</a><br /></td></tr>
 <tr class="separator:a0538767ec31cbe4c8691d7f9eb52b846"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a5dc78d53f1a2bfb781c7b54272170ac5"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="test__flecsi__mesh__wrapper_8cc.html#a5dc78d53f1a2bfb781c7b54272170ac5">TEST</a> (Flecsi_Mesh, ccw)</td></tr>
@@ -179,7 +148,7 @@ Functions</h2></td></tr>
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">using <a class="el" href="flecsi__mesh__wrapper_8h.html#ab742d3fd4b20e23606e9d39ca769f611">mesh_t</a> =  flecsi::burton_mesh_t</td>
+          <td class="memname">using <a class="el" href="test__flecsi__mesh__wrapper_8cc.html#ab742d3fd4b20e23606e9d39ca769f611">mesh_t</a> =  flecsi::burton_mesh_t</td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -191,7 +160,7 @@ Functions</h2></td></tr>
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">using <a class="el" href="flecsi__mesh__wrapper_8h.html#a910e3afe032144ca5d521b33dd772dbf">real_t</a> =  mesh_t::real_t</td>
+          <td class="memname">using <a class="el" href="test__flecsi__mesh__wrapper_8cc.html#ab5831bd05f941d724f47ec2c3fb30e86">real_t</a> =  mesh_t::real_t</td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -203,7 +172,7 @@ Functions</h2></td></tr>
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">using <a class="el" href="flecsi__mesh__wrapper_8h.html#a125ef7fa9ad0e56c87eb10f22eca518e">vertex_t</a> =  mesh_t::vertex_t</td>
+          <td class="memname">using <a class="el" href="test__flecsi__mesh__wrapper_8cc.html#a17c34c78a6396fa34d61d0ad338cd9f4">vertex_t</a> =  mesh_t::vertex_t</td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -253,7 +222,7 @@ Functions</h2></td></tr>
         <tr>
           <td class="memname">void dual_cell_coordinates_canonical_rotation </td>
           <td>(</td>
-          <td class="paramtype">const <a class="el" href="classPortage_1_1Flecsi__Mesh__Wrapper.html">Portage::Flecsi_Mesh_Wrapper</a> &amp;&#160;</td>
+          <td class="paramtype">const Portage::Flecsi_Mesh_Wrapper &amp;&#160;</td>
           <td class="paramname"><em>mesh_wrapper</em>, </td>
         </tr>
         <tr>
@@ -361,40 +330,9 @@ Functions</h2></td></tr>
 </div>
 </div><!-- contents -->
 <!--
-Copyright (c) 2016, Los Alamos National Security, LLC
-All rights reserved.
-Copyright 2016. Los Alamos National Security, LLC. This software was produced
-under U.S. Government contract DE-AC52-06NA25396 for Los Alamos National
-Laboratory (LANL), which is operated by Los Alamos National Security, LLC for
-the U.S. Department of Energy. The U.S. Government has rights to use,
-reproduce, and distribute this software.  NEITHER THE GOVERNMENT NOR LOS ALAMOS
-NATIONAL SECURITY, LLC MAKES ANY WARRANTY, EXPRESS OR IMPLIED, OR ASSUMES ANY
-LIABILITY FOR THE USE OF THIS SOFTWARE.  If software is modified to produce
-derivative works, such modified software should be clearly marked, so as not to
-confuse it with the version available from LANL.
-Additionally, redistribution and use in source and binary forms, with or
-without modification, are permitted provided that the following conditions are
-met:
-1. Redistributions of source code must retain the above copyright notice,
-   this list of conditions and the following disclaimer.
-2. Redistributions in binary form must reproduce the above copyright
-   notice, this list of conditions and the following disclaimer in the
-   documentation and/or other materials provided with the distribution.
-3. Neither the name of Los Alamos National Security, LLC, Los Alamos
-   National Laboratory, LANL, the U.S. Government, nor the names of its
-   contributors may be used to endorse or promote products derived from this
-   software without specific prior written permission.
-THIS SOFTWARE IS PROVIDED BY LOS ALAMOS NATIONAL SECURITY, LLC AND
-CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
-PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL LOS ALAMOS NATIONAL
-SECURITY, LLC OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
-BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER
-IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-POSSIBILITY OF SUCH DAMAGE.
+This file is part of the Ristra portage project.
+Please see the license file at the root of this repository, or at:
+    https://github.com/laristra/portage/blob/master/LICENSE
 -->
 <!-- HTML footer for doxygen 1.8.8-->
 <!-- start footer part -->

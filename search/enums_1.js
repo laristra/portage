@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['limitertype',['LimiterType',['../namespacePortage.html#aec17c91b97058d6ee5b6b6a52aff59aa',1,'Portage']]]
+  ['geometry',['Geometry',['../namespacePortage_1_1Meshfree_1_1Weight.html#ab1a6f49c8ccca52acf6ec2d1a3310698',1,'Portage::Meshfree::Weight']]]
 ];

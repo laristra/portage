@@ -1,38 +1,7 @@
 <!--
-Copyright (c) 2016, Los Alamos National Security, LLC
-All rights reserved.
-Copyright 2016. Los Alamos National Security, LLC. This software was produced
-under U.S. Government contract DE-AC52-06NA25396 for Los Alamos National
-Laboratory (LANL), which is operated by Los Alamos National Security, LLC for
-the U.S. Department of Energy. The U.S. Government has rights to use,
-reproduce, and distribute this software.  NEITHER THE GOVERNMENT NOR LOS ALAMOS
-NATIONAL SECURITY, LLC MAKES ANY WARRANTY, EXPRESS OR IMPLIED, OR ASSUMES ANY
-LIABILITY FOR THE USE OF THIS SOFTWARE.  If software is modified to produce
-derivative works, such modified software should be clearly marked, so as not to
-confuse it with the version available from LANL.
-Additionally, redistribution and use in source and binary forms, with or
-without modification, are permitted provided that the following conditions are
-met:
-1. Redistributions of source code must retain the above copyright notice,
-   this list of conditions and the following disclaimer.
-2. Redistributions in binary form must reproduce the above copyright
-   notice, this list of conditions and the following disclaimer in the
-   documentation and/or other materials provided with the distribution.
-3. Neither the name of Los Alamos National Security, LLC, Los Alamos
-   National Laboratory, LANL, the U.S. Government, nor the names of its
-   contributors may be used to endorse or promote products derived from this
-   software without specific prior written permission.
-THIS SOFTWARE IS PROVIDED BY LOS ALAMOS NATIONAL SECURITY, LLC AND
-CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
-PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL LOS ALAMOS NATIONAL
-SECURITY, LLC OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
-BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER
-IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-POSSIBILITY OF SUCH DAMAGE.
+This file is part of the Ristra portage project.
+Please see the license file at the root of this repository, or at:
+    https://github.com/laristra/portage/blob/master/LICENSE
 -->
 <!DOCTYPE html>
 <html>
@@ -48,7 +17,7 @@ POSSIBILITY OF SUCH DAMAGE.
     <meta http-equiv="Content-Type" content="text/xhtml;charset=UTF-8"/>
     <meta name="generator" content="Doxygen 1.8.11"/>
     <script type="text/javascript" src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
-    <title>portage: /home/l280837/code/portage-gh/src/wrappers/mesh/jali/test/test_jali_mesh_wrapper.cc File Reference</title>
+    <title>portage: /Users/l280837/code/portage-gh/src/wonton/mesh/jali/test/test_jali_mesh_wrapper.cc File Reference</title>
     <script type="text/javascript" src="dynsections.js"></script>
     <link href="search/search.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="search/searchdata.js"></script>
@@ -66,7 +35,7 @@ POSSIBILITY OF SUCH DAMAGE.
     <nav class="navbar navbar-default" role="navigation">
       <div class="container">
         <div class="navbar-header">
-          <a class="navbar-brand">portage 1.0.alpha</a>
+          <a class="navbar-brand">portage 1.1.0</a>
         </div>
       </div>
     </nav>
@@ -84,8 +53,8 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
   <div id="navrow1" class="tabs">
     <ul class="tablist">
       <li><a href="index.html"><span>Main&#160;Page</span></a></li>
-      <li><a href="quickstart.html"><span>Quick&#160;Start</span></a></li>
-      <li><a href="simple_mesh.html"><span>Example&#160;Use</span></a></li>
+      <li><a href="concepts.html"><span>Concepts</span></a></li>
+      <li><a href="example.html"><span>Example&#160;Use</span></a></li>
       <li><a href="namespaces.html"><span>Namespaces</span></a></li>
       <li><a href="annotated.html"><span>Classes</span></a></li>
       <li>
@@ -128,7 +97,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 
 <div id="nav-path" class="navpath">
   <ul>
-<li class="navelem"><a class="el" href="dir_68267d1309a1af8e8297ef4c3efbcdba.html">src</a></li><li class="navelem"><a class="el" href="dir_358e4f7cc9c4e63b198ee0bb1145b0db.html">wrappers</a></li><li class="navelem"><a class="el" href="dir_bd720f240c588bbef7347b398a619dcb.html">mesh</a></li><li class="navelem"><a class="el" href="dir_ea7b856d6bc2d32fb8f1f3c88ce088f5.html">jali</a></li><li class="navelem"><a class="el" href="dir_dbd65abe2acbd3847695ea7d0f37789c.html">test</a></li>  </ul>
+<li class="navelem"><a class="el" href="dir_68267d1309a1af8e8297ef4c3efbcdba.html">src</a></li><li class="navelem"><a class="el" href="dir_f0793eaf588cfab2234204b9b3128bec.html">wonton</a></li><li class="navelem"><a class="el" href="dir_6311728519b61639f24877b3c4357801.html">mesh</a></li><li class="navelem"><a class="el" href="dir_4c26d9eff19f492578b4ec7573399a63.html">jali</a></li><li class="navelem"><a class="el" href="dir_26ae3d2261362be2f5e2e461649fc956.html">test</a></li>  </ul>
 </div>
 </div><!-- top -->
 <div class="header">
@@ -138,10 +107,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="title">test_jali_mesh_wrapper.cc File Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
-
-<p>Unit tests for the Jali mesh wrapper class.  
-<a href="#details">More...</a></p>
-<div class="textblock"><code>#include &quot;portage/wrappers/mesh/jali/jali_mesh_wrapper.h&quot;</code><br />
+<div class="textblock"><code>#include &quot;portage/wonton/mesh/jali/jali_mesh_wrapper.h&quot;</code><br />
 <code>#include &lt;iostream&gt;</code><br />
 <code>#include &quot;gtest/gtest.h&quot;</code><br />
 <code>#include &quot;mpi.h&quot;</code><br />
@@ -152,7 +118,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
 Functions</h2></td></tr>
 <tr class="memitem:a2df18b7205c1e1d21e694d95384dbbbc"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="test__jali__mesh__wrapper_8cc.html#a2df18b7205c1e1d21e694d95384dbbbc">vdd_eq</a> (const std::vector&lt; <a class="el" href="classPortage_1_1Point.html">Portage::Point</a>&lt; 2 &gt;&gt; &amp;a, const std::vector&lt; <a class="el" href="classPortage_1_1Point.html">Portage::Point</a>&lt; 2 &gt;&gt; &amp;b, const double eps=1e-12)</td></tr>
-<tr class="memdesc:a2df18b7205c1e1d21e694d95384dbbbc"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns true if a == b within the accuracy 'eps'.  <a href="#a2df18b7205c1e1d21e694d95384dbbbc">More...</a><br /></td></tr>
+<tr class="memdesc:a2df18b7205c1e1d21e694d95384dbbbc"><td class="mdescLeft">&#160;</td><td class="mdescRight">Unit tests for the Jali mesh wrapper class.  <a href="#a2df18b7205c1e1d21e694d95384dbbbc">More...</a><br /></td></tr>
 <tr class="separator:a2df18b7205c1e1d21e694d95384dbbbc"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a9b79f6c0eb9f3e6bb84029eaf1574636"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="test__jali__mesh__wrapper_8cc.html#a9b79f6c0eb9f3e6bb84029eaf1574636">coordinates_canonical_rotation</a> (const <a class="el" href="classPortage_1_1Point.html">Portage::Point</a>&lt; 2 &gt; &amp;center_node, std::vector&lt; <a class="el" href="classPortage_1_1Point.html">Portage::Point</a>&lt; 2 &gt;&gt; *const xylist)</td></tr>
 <tr class="memdesc:a9b79f6c0eb9f3e6bb84029eaf1574636"><td class="mdescLeft">&#160;</td><td class="mdescRight">Rotate the <code>xylist</code> vector into a canonical (unique) form. The first point will be the one with the lowest angle between it, the nodeid and the x-axis.  <a href="#a9b79f6c0eb9f3e6bb84029eaf1574636">More...</a><br /></td></tr>
@@ -175,6 +141,9 @@ Functions</h2></td></tr>
 <tr class="memitem:a6235d46ee18605e2191c6d8eaec221c5"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="test__jali__mesh__wrapper_8cc.html#a6235d46ee18605e2191c6d8eaec221c5">TEST</a> (Jali_Mesh_Wrapper, Get_Neighbor_Cells)</td></tr>
 <tr class="memdesc:a6235d46ee18605e2191c6d8eaec221c5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Unit test for getting neighbor cells.  <a href="#a6235d46ee18605e2191c6d8eaec221c5">More...</a><br /></td></tr>
 <tr class="separator:a6235d46ee18605e2191c6d8eaec221c5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac5ff264beb02d5961ecbcdbb7eaf0808"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="test__jali__mesh__wrapper_8cc.html#ac5ff264beb02d5961ecbcdbb7eaf0808">TEST</a> (Jali_Mesh_Wrapper, Get_Exterior_Flag)</td></tr>
+<tr class="memdesc:ac5ff264beb02d5961ecbcdbb7eaf0808"><td class="mdescLeft">&#160;</td><td class="mdescRight">Unit test for getting entities on the exterior boundary.  <a href="#ac5ff264beb02d5961ecbcdbb7eaf0808">More...</a><br /></td></tr>
+<tr class="separator:ac5ff264beb02d5961ecbcdbb7eaf0808"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a7872b81f4e5216743f2ead32c670ea6f"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="test__jali__mesh__wrapper_8cc.html#a7872b81f4e5216743f2ead32c670ea6f">TEST</a> (Jali_Mesh_Wrapper, Decompose_Cell_Into_Tets)</td></tr>
 <tr class="memdesc:a7872b81f4e5216743f2ead32c670ea6f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Unit test for 5-tet hex decomposition.  <a href="#a7872b81f4e5216743f2ead32c670ea6f">More...</a><br /></td></tr>
 <tr class="separator:a7872b81f4e5216743f2ead32c670ea6f"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -200,9 +169,7 @@ Functions</h2></td></tr>
 <tr class="memdesc:a3f1ef44788e392833979f949751a4840"><td class="mdescLeft">&#160;</td><td class="mdescRight">Test instantiation of Jali mesh wrapper with non-default options.  <a href="#a3f1ef44788e392833979f949751a4840">More...</a><br /></td></tr>
 <tr class="separator:a3f1ef44788e392833979f949751a4840"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
-<a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
-<div class="textblock"><p>Unit tests for the Jali mesh wrapper class. </p>
-</div><h2 class="groupheader">Function Documentation</h2>
+<h2 class="groupheader">Function Documentation</h2>
 <a class="anchor" id="a9b79f6c0eb9f3e6bb84029eaf1574636"></a>
 <div class="memitem">
 <div class="memproto">
@@ -417,6 +384,34 @@ Functions</h2></td></tr>
 </div><div class="memdoc">
 
 <p>Unit test for getting neighbor cells. </p>
+
+</div>
+</div>
+<a class="anchor" id="ac5ff264beb02d5961ecbcdbb7eaf0808"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">TEST </td>
+          <td>(</td>
+          <td class="paramtype">Jali_Mesh_Wrapper&#160;</td>
+          <td class="paramname">, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">Get_Exterior_Flag&#160;</td>
+          <td class="paramname">&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Unit test for getting entities on the exterior boundary. </p>
 
 </div>
 </div>
@@ -681,8 +676,9 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Returns true if a == b within the accuracy 'eps'. </p>
-<dl class="params"><dt>Parameters</dt><dd>
+<p>Unit tests for the Jali mesh wrapper class. </p>
+<p>file <a class="el" href="test__jali__mesh__wrapper_8cc.html">test_jali_mesh_wrapper.cc</a></p>
+<p>Returns true if a == b within the accuracy 'eps' </p><dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramdir">[in]</td><td class="paramname">a</td><td>First input vector of pairs of doubles </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">b</td><td>Second input vector of pairs of doubles </td></tr>
@@ -696,40 +692,9 @@ Functions</h2></td></tr>
 </div>
 </div><!-- contents -->
 <!--
-Copyright (c) 2016, Los Alamos National Security, LLC
-All rights reserved.
-Copyright 2016. Los Alamos National Security, LLC. This software was produced
-under U.S. Government contract DE-AC52-06NA25396 for Los Alamos National
-Laboratory (LANL), which is operated by Los Alamos National Security, LLC for
-the U.S. Department of Energy. The U.S. Government has rights to use,
-reproduce, and distribute this software.  NEITHER THE GOVERNMENT NOR LOS ALAMOS
-NATIONAL SECURITY, LLC MAKES ANY WARRANTY, EXPRESS OR IMPLIED, OR ASSUMES ANY
-LIABILITY FOR THE USE OF THIS SOFTWARE.  If software is modified to produce
-derivative works, such modified software should be clearly marked, so as not to
-confuse it with the version available from LANL.
-Additionally, redistribution and use in source and binary forms, with or
-without modification, are permitted provided that the following conditions are
-met:
-1. Redistributions of source code must retain the above copyright notice,
-   this list of conditions and the following disclaimer.
-2. Redistributions in binary form must reproduce the above copyright
-   notice, this list of conditions and the following disclaimer in the
-   documentation and/or other materials provided with the distribution.
-3. Neither the name of Los Alamos National Security, LLC, Los Alamos
-   National Laboratory, LANL, the U.S. Government, nor the names of its
-   contributors may be used to endorse or promote products derived from this
-   software without specific prior written permission.
-THIS SOFTWARE IS PROVIDED BY LOS ALAMOS NATIONAL SECURITY, LLC AND
-CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
-PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL LOS ALAMOS NATIONAL
-SECURITY, LLC OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
-BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER
-IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-POSSIBILITY OF SUCH DAMAGE.
+This file is part of the Ristra portage project.
+Please see the license file at the root of this repository, or at:
+    https://github.com/laristra/portage/blob/master/LICENSE
 -->
 <!-- HTML footer for doxygen 1.8.8-->
 <!-- start footer part -->

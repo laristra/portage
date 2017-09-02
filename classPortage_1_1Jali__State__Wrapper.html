@@ -1,38 +1,7 @@
 <!--
-Copyright (c) 2016, Los Alamos National Security, LLC
-All rights reserved.
-Copyright 2016. Los Alamos National Security, LLC. This software was produced
-under U.S. Government contract DE-AC52-06NA25396 for Los Alamos National
-Laboratory (LANL), which is operated by Los Alamos National Security, LLC for
-the U.S. Department of Energy. The U.S. Government has rights to use,
-reproduce, and distribute this software.  NEITHER THE GOVERNMENT NOR LOS ALAMOS
-NATIONAL SECURITY, LLC MAKES ANY WARRANTY, EXPRESS OR IMPLIED, OR ASSUMES ANY
-LIABILITY FOR THE USE OF THIS SOFTWARE.  If software is modified to produce
-derivative works, such modified software should be clearly marked, so as not to
-confuse it with the version available from LANL.
-Additionally, redistribution and use in source and binary forms, with or
-without modification, are permitted provided that the following conditions are
-met:
-1. Redistributions of source code must retain the above copyright notice,
-   this list of conditions and the following disclaimer.
-2. Redistributions in binary form must reproduce the above copyright
-   notice, this list of conditions and the following disclaimer in the
-   documentation and/or other materials provided with the distribution.
-3. Neither the name of Los Alamos National Security, LLC, Los Alamos
-   National Laboratory, LANL, the U.S. Government, nor the names of its
-   contributors may be used to endorse or promote products derived from this
-   software without specific prior written permission.
-THIS SOFTWARE IS PROVIDED BY LOS ALAMOS NATIONAL SECURITY, LLC AND
-CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
-PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL LOS ALAMOS NATIONAL
-SECURITY, LLC OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
-BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER
-IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-POSSIBILITY OF SUCH DAMAGE.
+This file is part of the Ristra portage project.
+Please see the license file at the root of this repository, or at:
+    https://github.com/laristra/portage/blob/master/LICENSE
 -->
 <!DOCTYPE html>
 <html>
@@ -66,7 +35,7 @@ POSSIBILITY OF SUCH DAMAGE.
     <nav class="navbar navbar-default" role="navigation">
       <div class="container">
         <div class="navbar-header">
-          <a class="navbar-brand">portage 1.0.alpha</a>
+          <a class="navbar-brand">portage 1.1.0</a>
         </div>
       </div>
     </nav>
@@ -84,8 +53,8 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
   <div id="navrow1" class="tabs">
     <ul class="tablist">
       <li><a href="index.html"><span>Main&#160;Page</span></a></li>
-      <li><a href="quickstart.html"><span>Quick&#160;Start</span></a></li>
-      <li><a href="simple_mesh.html"><span>Example&#160;Use</span></a></li>
+      <li><a href="concepts.html"><span>Concepts</span></a></li>
+      <li><a href="example.html"><span>Example&#160;Use</span></a></li>
       <li><a href="namespaces.html"><span>Namespaces</span></a></li>
       <li class="current"><a href="annotated.html"><span>Classes</span></a></li>
       <li>
@@ -182,6 +151,14 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:ae1ec006e0499d02f55f45ea8d45e5ddf"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classPortage_1_1Jali__State__Wrapper.html#ae1ec006e0499d02f55f45ea8d45e5ddf">get_data</a> (const <a class="el" href="namespacePortage.html#a762e851d5a6ada63ea496d767679cffb">Entity_kind</a> on_what, const std::string var_name, T const **data) const </td></tr>
 <tr class="memdesc:ae1ec006e0499d02f55f45ea8d45e5ddf"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get pointer to const scalar data.  <a href="#ae1ec006e0499d02f55f45ea8d45e5ddf">More...</a><br /></td></tr>
 <tr class="separator:ae1ec006e0499d02f55f45ea8d45e5ddf"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6d0f9e708b580ed4d4650b7b6f53cbef"><td class="memTemplParams" colspan="2">template&lt;class T , class DomainType &gt; </td></tr>
+<tr class="memitem:a6d0f9e708b580ed4d4650b7b6f53cbef"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classPortage_1_1Jali__State__Wrapper.html#a6d0f9e708b580ed4d4650b7b6f53cbef">add_data</a> (std::shared_ptr&lt; DomainType &gt; domain, const <a class="el" href="namespacePortage.html#a762e851d5a6ada63ea496d767679cffb">Entity_kind</a> on_what, const std::string var_name, T const *const value)</td></tr>
+<tr class="memdesc:a6d0f9e708b580ed4d4650b7b6f53cbef"><td class="mdescLeft">&#160;</td><td class="mdescRight">Add a scalar data field.  <a href="#a6d0f9e708b580ed4d4650b7b6f53cbef">More...</a><br /></td></tr>
+<tr class="separator:a6d0f9e708b580ed4d4650b7b6f53cbef"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a884bb9a744668a9dfbd8c696b1bd80ff"><td class="memTemplParams" colspan="2">template&lt;class T , class DomainType &gt; </td></tr>
+<tr class="memitem:a884bb9a744668a9dfbd8c696b1bd80ff"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classPortage_1_1Jali__State__Wrapper.html#a884bb9a744668a9dfbd8c696b1bd80ff">add_data</a> (std::shared_ptr&lt; DomainType &gt; domain, const <a class="el" href="namespacePortage.html#a762e851d5a6ada63ea496d767679cffb">Entity_kind</a> on_what, const std::string var_name, const T value)</td></tr>
+<tr class="memdesc:a884bb9a744668a9dfbd8c696b1bd80ff"><td class="mdescLeft">&#160;</td><td class="mdescRight">Add a scalar data field with uniform values.  <a href="#a884bb9a744668a9dfbd8c696b1bd80ff">More...</a><br /></td></tr>
+<tr class="separator:a884bb9a744668a9dfbd8c696b1bd80ff"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a7a1f6f7302c60dd88b05c015c48623ac"><td class="memItemLeft" align="right" valign="top"><a class="el" href="namespacePortage.html#a762e851d5a6ada63ea496d767679cffb">Entity_kind</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1Jali__State__Wrapper.html#a7a1f6f7302c60dd88b05c015c48623ac">get_entity</a> (const std::string var_name) const </td></tr>
 <tr class="memdesc:a7a1f6f7302c60dd88b05c015c48623ac"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the entity type on which the given field is defined.  <a href="#a7a1f6f7302c60dd88b05c015c48623ac">More...</a><br /></td></tr>
 <tr class="separator:a7a1f6f7302c60dd88b05c015c48623ac"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -309,6 +286,124 @@ Public Member Functions</h2></td></tr>
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
+<a class="anchor" id="a6d0f9e708b580ed4d4650b7b6f53cbef"></a>
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;class T , class DomainType &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Portage::Jali_State_Wrapper::add_data </td>
+          <td>(</td>
+          <td class="paramtype">std::shared_ptr&lt; DomainType &gt;&#160;</td>
+          <td class="paramname"><em>domain</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="namespacePortage.html#a762e851d5a6ada63ea496d767679cffb">Entity_kind</a>&#160;</td>
+          <td class="paramname"><em>on_what</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const std::string&#160;</td>
+          <td class="paramname"><em>var_name</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">T const *const&#160;</td>
+          <td class="paramname"><em>value</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Add a scalar data field. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">domain</td><td>The domain (e.g. mesh) associated with the data </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">on_what</td><td>The entity type on which the data is defined </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">var_name</td><td>The name of the data field </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">value</td><td>initialize with this value </td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a class="anchor" id="a884bb9a744668a9dfbd8c696b1bd80ff"></a>
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;class T , class DomainType &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Portage::Jali_State_Wrapper::add_data </td>
+          <td>(</td>
+          <td class="paramtype">std::shared_ptr&lt; DomainType &gt;&#160;</td>
+          <td class="paramname"><em>domain</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="namespacePortage.html#a762e851d5a6ada63ea496d767679cffb">Entity_kind</a>&#160;</td>
+          <td class="paramname"><em>on_what</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const std::string&#160;</td>
+          <td class="paramname"><em>var_name</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const T&#160;</td>
+          <td class="paramname"><em>value</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Add a scalar data field with uniform values. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">domain</td><td>The domain (e.g. mesh) associated with the data </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">on_what</td><td>The entity type on which the data is defined </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">var_name</td><td>The name of the data field </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">value</td><td>initialize with this value </td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
 <a class="anchor" id="ab81c6c2f1f4c23fb5be91791bdab53e2"></a>
 <div class="memitem">
 <div class="memproto">
@@ -479,7 +574,7 @@ template&lt;class T &gt; </div>
   </dd>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>The data size for the field with the given name on the given entity type</dd></dl>
-<dl class="todo"><dt><b><a class="el" href="todo.html#_todo000021">Todo:</a></b></dt><dd>THIS ASSUMES ONLY DOUBLE VECTORS - WE HAVE TO ACCOUNT FOR OTHER TYPES OR WE HAVE TO GENERALIZE THE FIND FUNCTION!!! </dd></dl>
+<dl class="todo"><dt><b><a class="el" href="todo.html#_todo000036">Todo:</a></b></dt><dd>THIS ASSUMES ONLY DOUBLE VECTORS - WE HAVE TO ACCOUNT FOR OTHER TYPES OR WE HAVE TO GENERALIZE THE FIND FUNCTION!!! </dd></dl>
 
 </div>
 </div>
@@ -513,7 +608,7 @@ template&lt;class T &gt; </div>
   </dd>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>The Entity_kind enum for the entity type on which the field is defined</dd></dl>
-<dl class="todo"><dt><b><a class="el" href="todo.html#_todo000020">Todo:</a></b></dt><dd>THIS ASSUMES ONLY DOUBLE VECTORS - WE HAVE TO ACCOUNT FOR OTHER TYPES OR WE HAVE TO GENERALIZE THE FIND FUNCTION!!! </dd></dl>
+<dl class="todo"><dt><b><a class="el" href="todo.html#_todo000035">Todo:</a></b></dt><dd>THIS ASSUMES ONLY DOUBLE VECTORS - WE HAVE TO ACCOUNT FOR OTHER TYPES OR WE HAVE TO GENERALIZE THE FIND FUNCTION!!! </dd></dl>
 
 </div>
 </div>
@@ -686,44 +781,13 @@ template&lt;class T &gt; </div>
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li>/home/l280837/code/portage-gh/src/wrappers/state/jali/<a class="el" href="jali__state__wrapper_8h_source.html">jali_state_wrapper.h</a></li>
+<li>/Users/l280837/code/portage-gh/src/wonton/state/jali/<a class="el" href="jali__state__wrapper_8h_source.html">jali_state_wrapper.h</a></li>
 </ul>
 </div><!-- contents -->
 <!--
-Copyright (c) 2016, Los Alamos National Security, LLC
-All rights reserved.
-Copyright 2016. Los Alamos National Security, LLC. This software was produced
-under U.S. Government contract DE-AC52-06NA25396 for Los Alamos National
-Laboratory (LANL), which is operated by Los Alamos National Security, LLC for
-the U.S. Department of Energy. The U.S. Government has rights to use,
-reproduce, and distribute this software.  NEITHER THE GOVERNMENT NOR LOS ALAMOS
-NATIONAL SECURITY, LLC MAKES ANY WARRANTY, EXPRESS OR IMPLIED, OR ASSUMES ANY
-LIABILITY FOR THE USE OF THIS SOFTWARE.  If software is modified to produce
-derivative works, such modified software should be clearly marked, so as not to
-confuse it with the version available from LANL.
-Additionally, redistribution and use in source and binary forms, with or
-without modification, are permitted provided that the following conditions are
-met:
-1. Redistributions of source code must retain the above copyright notice,
-   this list of conditions and the following disclaimer.
-2. Redistributions in binary form must reproduce the above copyright
-   notice, this list of conditions and the following disclaimer in the
-   documentation and/or other materials provided with the distribution.
-3. Neither the name of Los Alamos National Security, LLC, Los Alamos
-   National Laboratory, LANL, the U.S. Government, nor the names of its
-   contributors may be used to endorse or promote products derived from this
-   software without specific prior written permission.
-THIS SOFTWARE IS PROVIDED BY LOS ALAMOS NATIONAL SECURITY, LLC AND
-CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
-PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL LOS ALAMOS NATIONAL
-SECURITY, LLC OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
-BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER
-IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-POSSIBILITY OF SUCH DAMAGE.
+This file is part of the Ristra portage project.
+Please see the license file at the root of this repository, or at:
+    https://github.com/laristra/portage/blob/master/LICENSE
 -->
 <!-- HTML footer for doxygen 1.8.8-->
 <!-- start footer part -->

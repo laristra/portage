@@ -1,38 +1,7 @@
 <!--
-Copyright (c) 2016, Los Alamos National Security, LLC
-All rights reserved.
-Copyright 2016. Los Alamos National Security, LLC. This software was produced
-under U.S. Government contract DE-AC52-06NA25396 for Los Alamos National
-Laboratory (LANL), which is operated by Los Alamos National Security, LLC for
-the U.S. Department of Energy. The U.S. Government has rights to use,
-reproduce, and distribute this software.  NEITHER THE GOVERNMENT NOR LOS ALAMOS
-NATIONAL SECURITY, LLC MAKES ANY WARRANTY, EXPRESS OR IMPLIED, OR ASSUMES ANY
-LIABILITY FOR THE USE OF THIS SOFTWARE.  If software is modified to produce
-derivative works, such modified software should be clearly marked, so as not to
-confuse it with the version available from LANL.
-Additionally, redistribution and use in source and binary forms, with or
-without modification, are permitted provided that the following conditions are
-met:
-1. Redistributions of source code must retain the above copyright notice,
-   this list of conditions and the following disclaimer.
-2. Redistributions in binary form must reproduce the above copyright
-   notice, this list of conditions and the following disclaimer in the
-   documentation and/or other materials provided with the distribution.
-3. Neither the name of Los Alamos National Security, LLC, Los Alamos
-   National Laboratory, LANL, the U.S. Government, nor the names of its
-   contributors may be used to endorse or promote products derived from this
-   software without specific prior written permission.
-THIS SOFTWARE IS PROVIDED BY LOS ALAMOS NATIONAL SECURITY, LLC AND
-CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
-PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL LOS ALAMOS NATIONAL
-SECURITY, LLC OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
-BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER
-IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-POSSIBILITY OF SUCH DAMAGE.
+This file is part of the Ristra portage project.
+Please see the license file at the root of this repository, or at:
+    https://github.com/laristra/portage/blob/master/LICENSE
 -->
 <!DOCTYPE html>
 <html>
@@ -66,7 +35,7 @@ POSSIBILITY OF SUCH DAMAGE.
     <nav class="navbar navbar-default" role="navigation">
       <div class="container">
         <div class="navbar-header">
-          <a class="navbar-brand">portage 1.0.alpha</a>
+          <a class="navbar-brand">portage 1.1.0</a>
         </div>
       </div>
     </nav>
@@ -84,8 +53,8 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
   <div id="navrow1" class="tabs">
     <ul class="tablist">
       <li><a href="index.html"><span>Main&#160;Page</span></a></li>
-      <li><a href="quickstart.html"><span>Quick&#160;Start</span></a></li>
-      <li><a href="simple_mesh.html"><span>Example&#160;Use</span></a></li>
+      <li><a href="concepts.html"><span>Concepts</span></a></li>
+      <li><a href="example.html"><span>Example&#160;Use</span></a></li>
       <li><a href="namespaces.html"><span>Namespaces</span></a></li>
       <li class="current"><a href="annotated.html"><span>Classes</span></a></li>
       <li>
@@ -174,9 +143,6 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:aba213f8abb494f4761216f00c892fb91"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1Flat__Mesh__Wrapper.html#aba213f8abb494f4761216f00c892fb91">finish_init</a> ()</td></tr>
 <tr class="memdesc:aba213f8abb494f4761216f00c892fb91"><td class="mdescLeft">&#160;</td><td class="mdescRight">Finish mesh initialization, after initialize or MPI distribute.  <a href="#aba213f8abb494f4761216f00c892fb91">More...</a><br /></td></tr>
 <tr class="separator:aba213f8abb494f4761216f00c892fb91"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa5ec09733473eed8e2f31bbfa8cf841e"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1Flat__Mesh__Wrapper.html#aa5ec09733473eed8e2f31bbfa8cf841e">global_to_local</a> (int globalId) const </td></tr>
-<tr class="memdesc:aa5ec09733473eed8e2f31bbfa8cf841e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Global to local index conversion.  <a href="#aa5ec09733473eed8e2f31bbfa8cf841e">More...</a><br /></td></tr>
-<tr class="separator:aa5ec09733473eed8e2f31bbfa8cf841e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a1af625c9ff5dafd67735228c98545eda"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1Flat__Mesh__Wrapper.html#a1af625c9ff5dafd67735228c98545eda">make_index_maps</a> ()</td></tr>
 <tr class="memdesc:a1af625c9ff5dafd67735228c98545eda"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create maps for index space conversions.  <a href="#a1af625c9ff5dafd67735228c98545eda">More...</a><br /></td></tr>
 <tr class="separator:a1af625c9ff5dafd67735228c98545eda"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -219,6 +185,9 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a4ba0f8666371d0b6bd2c87dd7489614b"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1Flat__Mesh__Wrapper.html#a4ba0f8666371d0b6bd2c87dd7489614b">face_get_nodes</a> (int const faceid, std::vector&lt; int &gt; *fnodes) const </td></tr>
 <tr class="memdesc:a4ba0f8666371d0b6bd2c87dd7489614b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get nodes of a face.  <a href="#a4ba0f8666371d0b6bd2c87dd7489614b">More...</a><br /></td></tr>
 <tr class="separator:a4ba0f8666371d0b6bd2c87dd7489614b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ace58638094090201376503b8c13db473"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1Flat__Mesh__Wrapper.html#ace58638094090201376503b8c13db473">node_get_cells</a> (int const nodeid, std::vector&lt; int &gt; *cells) const </td></tr>
+<tr class="memdesc:ace58638094090201376503b8c13db473"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get list of cells for a node.  <a href="#ace58638094090201376503b8c13db473">More...</a><br /></td></tr>
+<tr class="separator:ace58638094090201376503b8c13db473"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a65eae8c25a89bfbb5f9b35544d823a9e"><td class="memTemplParams" colspan="2">template&lt;long D&gt; </td></tr>
 <tr class="memitem:a65eae8c25a89bfbb5f9b35544d823a9e"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classPortage_1_1Flat__Mesh__Wrapper.html#a65eae8c25a89bfbb5f9b35544d823a9e">cell_get_coordinates</a> (int const cellid, std::vector&lt; <a class="el" href="classPortage_1_1Point.html">Portage::Point</a>&lt; D &gt;&gt; *pplist) const </td></tr>
 <tr class="memdesc:a65eae8c25a89bfbb5f9b35544d823a9e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Coords of nodes of a cell.  <a href="#a65eae8c25a89bfbb5f9b35544d823a9e">More...</a><br /></td></tr>
@@ -226,6 +195,8 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a252fc387904e944457a2469ed1239c4c"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1Flat__Mesh__Wrapper.html#a252fc387904e944457a2469ed1239c4c">cell_get_node_adj_cells</a> (int const cellid, <a class="el" href="namespacePortage.html#a650a8718a706648846a2915b90612849">Entity_type</a> const ptype, std::vector&lt; int &gt; *adjcells) const </td></tr>
 <tr class="memdesc:a252fc387904e944457a2469ed1239c4c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get node connected neighbors of cell.  <a href="#a252fc387904e944457a2469ed1239c4c">More...</a><br /></td></tr>
 <tr class="separator:a252fc387904e944457a2469ed1239c4c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a57f5e200bcabb04bb4c2a1c38a435ba5"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1Flat__Mesh__Wrapper.html#a57f5e200bcabb04bb4c2a1c38a435ba5">node_get_cell_adj_nodes</a> (int const nodeid, <a class="el" href="namespacePortage.html#a650a8718a706648846a2915b90612849">Entity_type</a> const ptype, std::vector&lt; int &gt; *adjnodes) const </td></tr>
+<tr class="separator:a57f5e200bcabb04bb4c2a1c38a435ba5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:adbff4eb48d11b59f7a4ab4737b4b18ea"><td class="memItemLeft" align="right" valign="top">std::vector&lt; T &gt; &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1Flat__Mesh__Wrapper.html#adbff4eb48d11b59f7a4ab4737b4b18ea">get_coords</a> ()</td></tr>
 <tr class="memdesc:adbff4eb48d11b59f7a4ab4737b4b18ea"><td class="mdescLeft">&#160;</td><td class="mdescRight">get coordinates  <a href="#adbff4eb48d11b59f7a4ab4737b4b18ea">More...</a><br /></td></tr>
 <tr class="separator:adbff4eb48d11b59f7a4ab4737b4b18ea"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -241,12 +212,6 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a1843959cd0326bc64a5d5ba0651e708e"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1Flat__Mesh__Wrapper.html#a1843959cd0326bc64a5d5ba0651e708e">set_num_owned_nodes</a> (int numOwnedNodes)</td></tr>
 <tr class="memdesc:a1843959cd0326bc64a5d5ba0651e708e"><td class="mdescLeft">&#160;</td><td class="mdescRight">set the number of owned nodes  <a href="#a1843959cd0326bc64a5d5ba0651e708e">More...</a><br /></td></tr>
 <tr class="separator:a1843959cd0326bc64a5d5ba0651e708e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af88f9ec954cede7b03abead6b5ef21c5"><td class="memItemLeft" align="right" valign="top">std::vector&lt; int &gt; &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1Flat__Mesh__Wrapper.html#af88f9ec954cede7b03abead6b5ef21c5">get_neighbor_counts</a> ()</td></tr>
-<tr class="memdesc:af88f9ec954cede7b03abead6b5ef21c5"><td class="mdescLeft">&#160;</td><td class="mdescRight">get neighbor counts  <a href="#af88f9ec954cede7b03abead6b5ef21c5">More...</a><br /></td></tr>
-<tr class="separator:af88f9ec954cede7b03abead6b5ef21c5"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a07da18b892d6e28efd1cc707c24af960"><td class="memItemLeft" align="right" valign="top">std::vector&lt; int &gt; &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1Flat__Mesh__Wrapper.html#a07da18b892d6e28efd1cc707c24af960">get_neighbors</a> ()</td></tr>
-<tr class="memdesc:a07da18b892d6e28efd1cc707c24af960"><td class="mdescLeft">&#160;</td><td class="mdescRight">get neighbors  <a href="#a07da18b892d6e28efd1cc707c24af960">More...</a><br /></td></tr>
-<tr class="separator:a07da18b892d6e28efd1cc707c24af960"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af34b734e11d0cc8a6e19d10d896dc254"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1Flat__Mesh__Wrapper.html#af34b734e11d0cc8a6e19d10d896dc254">space_dimension</a> () const </td></tr>
 <tr class="memdesc:af34b734e11d0cc8a6e19d10d896dc254"><td class="mdescLeft">&#160;</td><td class="mdescRight">get spatial dimension  <a href="#af34b734e11d0cc8a6e19d10d896dc254">More...</a><br /></td></tr>
 <tr class="separator:af34b734e11d0cc8a6e19d10d896dc254"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -275,12 +240,18 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a72a7e33a70f9b88f974a377858e63f32 inherit pub_methods_classPortage_1_1AuxMeshTopology"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1AuxMeshTopology.html#a72a7e33a70f9b88f974a377858e63f32">num_entities</a> (<a class="el" href="namespacePortage.html#a762e851d5a6ada63ea496d767679cffb">Entity_kind</a> const entity, <a class="el" href="namespacePortage.html#a650a8718a706648846a2915b90612849">Entity_type</a> const etype=Entity_type::ALL) const</td></tr>
 <tr class="memdesc:a72a7e33a70f9b88f974a377858e63f32 inherit pub_methods_classPortage_1_1AuxMeshTopology"><td class="mdescLeft">&#160;</td><td class="mdescRight">Number of items of given entity.  <a href="#a72a7e33a70f9b88f974a377858e63f32">More...</a><br /></td></tr>
 <tr class="separator:a72a7e33a70f9b88f974a377858e63f32 inherit pub_methods_classPortage_1_1AuxMeshTopology"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af43e0c21654b9c35d04f136325dfd5b0 inherit pub_methods_classPortage_1_1AuxMeshTopology"><td class="memItemLeft" align="right" valign="top"><a class="el" href="namespacePortage.html#a9ad5b714018a06f725ef8f93b70fabe7">counting_iterator</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1AuxMeshTopology.html#af43e0c21654b9c35d04f136325dfd5b0">begin</a> (<a class="el" href="namespacePortage.html#a762e851d5a6ada63ea496d767679cffb">Entity_kind</a> const entity, <a class="el" href="namespacePortage.html#a650a8718a706648846a2915b90612849">Entity_type</a> const etype=Entity_type::ALL) const</td></tr>
+<tr class="memitem:af43e0c21654b9c35d04f136325dfd5b0 inherit pub_methods_classPortage_1_1AuxMeshTopology"><td class="memItemLeft" align="right" valign="top"><a class="el" href="namespacePortage.html#a5798f2be664fd95e54414f8aca5e3282">counting_iterator</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1AuxMeshTopology.html#af43e0c21654b9c35d04f136325dfd5b0">begin</a> (<a class="el" href="namespacePortage.html#a762e851d5a6ada63ea496d767679cffb">Entity_kind</a> const entity, <a class="el" href="namespacePortage.html#a650a8718a706648846a2915b90612849">Entity_type</a> const etype=Entity_type::ALL) const</td></tr>
 <tr class="memdesc:af43e0c21654b9c35d04f136325dfd5b0 inherit pub_methods_classPortage_1_1AuxMeshTopology"><td class="mdescLeft">&#160;</td><td class="mdescRight">Iterators on mesh entity - begin.  <a href="#af43e0c21654b9c35d04f136325dfd5b0">More...</a><br /></td></tr>
 <tr class="separator:af43e0c21654b9c35d04f136325dfd5b0 inherit pub_methods_classPortage_1_1AuxMeshTopology"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a82379618ad2cd57f3362a26762eabe60 inherit pub_methods_classPortage_1_1AuxMeshTopology"><td class="memItemLeft" align="right" valign="top"><a class="el" href="namespacePortage.html#a9ad5b714018a06f725ef8f93b70fabe7">counting_iterator</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1AuxMeshTopology.html#a82379618ad2cd57f3362a26762eabe60">end</a> (<a class="el" href="namespacePortage.html#a762e851d5a6ada63ea496d767679cffb">Entity_kind</a> const entity, <a class="el" href="namespacePortage.html#a650a8718a706648846a2915b90612849">Entity_type</a> const etype=Entity_type::ALL) const</td></tr>
+<tr class="memitem:a82379618ad2cd57f3362a26762eabe60 inherit pub_methods_classPortage_1_1AuxMeshTopology"><td class="memItemLeft" align="right" valign="top"><a class="el" href="namespacePortage.html#a5798f2be664fd95e54414f8aca5e3282">counting_iterator</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1AuxMeshTopology.html#a82379618ad2cd57f3362a26762eabe60">end</a> (<a class="el" href="namespacePortage.html#a762e851d5a6ada63ea496d767679cffb">Entity_kind</a> const entity, <a class="el" href="namespacePortage.html#a650a8718a706648846a2915b90612849">Entity_type</a> const etype=Entity_type::ALL) const</td></tr>
 <tr class="memdesc:a82379618ad2cd57f3362a26762eabe60 inherit pub_methods_classPortage_1_1AuxMeshTopology"><td class="mdescLeft">&#160;</td><td class="mdescRight">Iterator on mesh entity - end.  <a href="#a82379618ad2cd57f3362a26762eabe60">More...</a><br /></td></tr>
 <tr class="separator:a82379618ad2cd57f3362a26762eabe60 inherit pub_methods_classPortage_1_1AuxMeshTopology"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a230262249728d2e17f3856b6fb266820 inherit pub_methods_classPortage_1_1AuxMeshTopology"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1AuxMeshTopology.html#a230262249728d2e17f3856b6fb266820">face_get_cells</a> (int const faceid, <a class="el" href="namespacePortage.html#a650a8718a706648846a2915b90612849">Entity_type</a> const etype, std::vector&lt; int &gt; *cells) const</td></tr>
+<tr class="memdesc:a230262249728d2e17f3856b6fb266820 inherit pub_methods_classPortage_1_1AuxMeshTopology"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get cells of given Entity_type connected to face (in no particular order)  <a href="#a230262249728d2e17f3856b6fb266820">More...</a><br /></td></tr>
+<tr class="separator:a230262249728d2e17f3856b6fb266820 inherit pub_methods_classPortage_1_1AuxMeshTopology"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a10c5bf35b4c490316468ca7251d2a2b4 inherit pub_methods_classPortage_1_1AuxMeshTopology"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1AuxMeshTopology.html#a10c5bf35b4c490316468ca7251d2a2b4">on_exterior_boundary</a> (<a class="el" href="namespacePortage.html#a762e851d5a6ada63ea496d767679cffb">Entity_kind</a> const entity, int const entity_id) const</td></tr>
+<tr class="memdesc:a10c5bf35b4c490316468ca7251d2a2b4 inherit pub_methods_classPortage_1_1AuxMeshTopology"><td class="mdescLeft">&#160;</td><td class="mdescRight">if entity is on exterior boundary  <a href="#a10c5bf35b4c490316468ca7251d2a2b4">More...</a><br /></td></tr>
+<tr class="separator:a10c5bf35b4c490316468ca7251d2a2b4 inherit pub_methods_classPortage_1_1AuxMeshTopology"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab43cbdf56afaa72d8b346835495184c2 inherit pub_methods_classPortage_1_1AuxMeshTopology"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1AuxMeshTopology.html#ab43cbdf56afaa72d8b346835495184c2">cell_get_coordinates</a> (int const cellid, std::vector&lt; <a class="el" href="classPortage_1_1Point.html">Point</a>&lt; D &gt;&gt; *pplist) const</td></tr>
 <tr class="memdesc:ab43cbdf56afaa72d8b346835495184c2 inherit pub_methods_classPortage_1_1AuxMeshTopology"><td class="mdescLeft">&#160;</td><td class="mdescRight">Coordinates of nodes of cell.  <a href="#ab43cbdf56afaa72d8b346835495184c2">More...</a><br /></td></tr>
 <tr class="separator:ab43cbdf56afaa72d8b346835495184c2 inherit pub_methods_classPortage_1_1AuxMeshTopology"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -863,60 +834,6 @@ template&lt;class T = double&gt; </div>
 
 </div>
 </div>
-<a class="anchor" id="af88f9ec954cede7b03abead6b5ef21c5"></a>
-<div class="memitem">
-<div class="memproto">
-<div class="memtemplate">
-template&lt;class T = double&gt; </div>
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">std::vector&lt;int&gt;&amp; <a class="el" href="classPortage_1_1Flat__Mesh__Wrapper.html">Portage::Flat_Mesh_Wrapper</a>&lt; T &gt;::get_neighbor_counts </td>
-          <td>(</td>
-          <td class="paramname"></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p>get neighbor counts </p>
-
-</div>
-</div>
-<a class="anchor" id="a07da18b892d6e28efd1cc707c24af960"></a>
-<div class="memitem">
-<div class="memproto">
-<div class="memtemplate">
-template&lt;class T = double&gt; </div>
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">std::vector&lt;int&gt;&amp; <a class="el" href="classPortage_1_1Flat__Mesh__Wrapper.html">Portage::Flat_Mesh_Wrapper</a>&lt; T &gt;::get_neighbors </td>
-          <td>(</td>
-          <td class="paramname"></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p>get neighbors </p>
-
-</div>
-</div>
 <a class="anchor" id="a940789b4ad9220aff7a13f81bb94e529"></a>
 <div class="memitem">
 <div class="memproto">
@@ -941,34 +858,6 @@ template&lt;class T = double&gt; </div>
 </div><div class="memdoc">
 
 <p>get node counts </p>
-
-</div>
-</div>
-<a class="anchor" id="aa5ec09733473eed8e2f31bbfa8cf841e"></a>
-<div class="memitem">
-<div class="memproto">
-<div class="memtemplate">
-template&lt;class T = double&gt; </div>
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">int <a class="el" href="classPortage_1_1Flat__Mesh__Wrapper.html">Portage::Flat_Mesh_Wrapper</a>&lt; T &gt;::global_to_local </td>
-          <td>(</td>
-          <td class="paramtype">int&#160;</td>
-          <td class="paramname"><em>globalId</em></td><td>)</td>
-          <td> const</td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p>Global to local index conversion. </p>
 
 </div>
 </div>
@@ -1024,6 +913,87 @@ template&lt;class T = double&gt; </div>
 </div><div class="memdoc">
 
 <p>Create maps for index space conversions. </p>
+
+</div>
+</div>
+<a class="anchor" id="a57f5e200bcabb04bb4c2a1c38a435ba5"></a>
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;class T = double&gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void <a class="el" href="classPortage_1_1Flat__Mesh__Wrapper.html">Portage::Flat_Mesh_Wrapper</a>&lt; T &gt;::node_get_cell_adj_nodes </td>
+          <td>(</td>
+          <td class="paramtype">int const&#160;</td>
+          <td class="paramname"><em>nodeid</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="namespacePortage.html#a650a8718a706648846a2915b90612849">Entity_type</a> const&#160;</td>
+          <td class="paramname"><em>ptype</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::vector&lt; int &gt; *&#160;</td>
+          <td class="paramname"><em>adjnodes</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td> const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<p>Get "adjacent" nodes of given node - nodes that share a common cell with given node </p>
+
+</div>
+</div>
+<a class="anchor" id="ace58638094090201376503b8c13db473"></a>
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;class T = double&gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void <a class="el" href="classPortage_1_1Flat__Mesh__Wrapper.html">Portage::Flat_Mesh_Wrapper</a>&lt; T &gt;::node_get_cells </td>
+          <td>(</td>
+          <td class="paramtype">int const&#160;</td>
+          <td class="paramname"><em>nodeid</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::vector&lt; int &gt; *&#160;</td>
+          <td class="paramname"><em>cells</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td> const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Get list of cells for a node. </p>
 
 </div>
 </div>
@@ -1364,44 +1334,13 @@ template&lt;class T = double&gt; </div>
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li>/home/l280837/code/portage-gh/src/wrappers/mesh/flat/<a class="el" href="flat__mesh__wrapper_8h_source.html">flat_mesh_wrapper.h</a></li>
+<li>/Users/l280837/code/portage-gh/src/wonton/mesh/flat/<a class="el" href="flat__mesh__wrapper_8h_source.html">flat_mesh_wrapper.h</a></li>
 </ul>
 </div><!-- contents -->
 <!--
-Copyright (c) 2016, Los Alamos National Security, LLC
-All rights reserved.
-Copyright 2016. Los Alamos National Security, LLC. This software was produced
-under U.S. Government contract DE-AC52-06NA25396 for Los Alamos National
-Laboratory (LANL), which is operated by Los Alamos National Security, LLC for
-the U.S. Department of Energy. The U.S. Government has rights to use,
-reproduce, and distribute this software.  NEITHER THE GOVERNMENT NOR LOS ALAMOS
-NATIONAL SECURITY, LLC MAKES ANY WARRANTY, EXPRESS OR IMPLIED, OR ASSUMES ANY
-LIABILITY FOR THE USE OF THIS SOFTWARE.  If software is modified to produce
-derivative works, such modified software should be clearly marked, so as not to
-confuse it with the version available from LANL.
-Additionally, redistribution and use in source and binary forms, with or
-without modification, are permitted provided that the following conditions are
-met:
-1. Redistributions of source code must retain the above copyright notice,
-   this list of conditions and the following disclaimer.
-2. Redistributions in binary form must reproduce the above copyright
-   notice, this list of conditions and the following disclaimer in the
-   documentation and/or other materials provided with the distribution.
-3. Neither the name of Los Alamos National Security, LLC, Los Alamos
-   National Laboratory, LANL, the U.S. Government, nor the names of its
-   contributors may be used to endorse or promote products derived from this
-   software without specific prior written permission.
-THIS SOFTWARE IS PROVIDED BY LOS ALAMOS NATIONAL SECURITY, LLC AND
-CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
-PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL LOS ALAMOS NATIONAL
-SECURITY, LLC OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
-BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER
-IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-POSSIBILITY OF SUCH DAMAGE.
+This file is part of the Ristra portage project.
+Please see the license file at the root of this repository, or at:
+    https://github.com/laristra/portage/blob/master/LICENSE
 -->
 <!-- HTML footer for doxygen 1.8.8-->
 <!-- start footer part -->

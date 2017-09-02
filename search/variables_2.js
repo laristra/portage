@@ -1,7 +1,4 @@
 var searchData=
 [
-  ['i',['i',['../unionr2d__dvec2.html#aadedbd08a9efa0a8b9c89101eb04a8c1',1,'r2d_dvec2::i()'],['../unionr3d__dvec3.html#a781899662493dbce37ab204094df090a',1,'r3d_dvec3::i()']]],
-  ['ij',['ij',['../unionr2d__dvec2.html#a3d96c2bbac50d38371a4001b0fa46383',1,'r2d_dvec2']]],
-  ['ijk',['ijk',['../unionr3d__dvec3.html#a89ff8f4ef09310aaee9e5d0a61353a76',1,'r3d_dvec3']]],
-  ['intersect_5f',['intersect_',['../structPortage_1_1IntersectFunctor.html#ad9abc29c9274596926af51d134759769',1,'Portage::IntersectFunctor']]]
+  ['function_5fsize',['function_size',['../classPortage_1_1Meshfree_1_1Basis_1_1Traits_3_01Unitary_00_01dim_01_4.html#aea0ceb089e3c5335124717558e12dca2',1,'Portage::Meshfree::Basis::Traits&lt; Unitary, dim &gt;::function_size()'],['../classPortage_1_1Meshfree_1_1Basis_1_1Traits_3_01Linear_00_01dim_01_4.html#a946b4747f00afadd59b316569b030010',1,'Portage::Meshfree::Basis::Traits&lt; Linear, dim &gt;::function_size()'],['../classPortage_1_1Meshfree_1_1Basis_1_1Traits_3_01Quadratic_00_01dim_01_4.html#a51a8b4775016b8b042c9f8c7e56f3fc1',1,'Portage::Meshfree::Basis::Traits&lt; Quadratic, dim &gt;::function_size()']]]
 ];

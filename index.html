@@ -1,38 +1,7 @@
 <!--
-Copyright (c) 2016, Los Alamos National Security, LLC
-All rights reserved.
-Copyright 2016. Los Alamos National Security, LLC. This software was produced
-under U.S. Government contract DE-AC52-06NA25396 for Los Alamos National
-Laboratory (LANL), which is operated by Los Alamos National Security, LLC for
-the U.S. Department of Energy. The U.S. Government has rights to use,
-reproduce, and distribute this software.  NEITHER THE GOVERNMENT NOR LOS ALAMOS
-NATIONAL SECURITY, LLC MAKES ANY WARRANTY, EXPRESS OR IMPLIED, OR ASSUMES ANY
-LIABILITY FOR THE USE OF THIS SOFTWARE.  If software is modified to produce
-derivative works, such modified software should be clearly marked, so as not to
-confuse it with the version available from LANL.
-Additionally, redistribution and use in source and binary forms, with or
-without modification, are permitted provided that the following conditions are
-met:
-1. Redistributions of source code must retain the above copyright notice,
-   this list of conditions and the following disclaimer.
-2. Redistributions in binary form must reproduce the above copyright
-   notice, this list of conditions and the following disclaimer in the
-   documentation and/or other materials provided with the distribution.
-3. Neither the name of Los Alamos National Security, LLC, Los Alamos
-   National Laboratory, LANL, the U.S. Government, nor the names of its
-   contributors may be used to endorse or promote products derived from this
-   software without specific prior written permission.
-THIS SOFTWARE IS PROVIDED BY LOS ALAMOS NATIONAL SECURITY, LLC AND
-CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
-PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL LOS ALAMOS NATIONAL
-SECURITY, LLC OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
-BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER
-IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-POSSIBILITY OF SUCH DAMAGE.
+This file is part of the Ristra portage project.
+Please see the license file at the root of this repository, or at:
+    https://github.com/laristra/portage/blob/master/LICENSE
 -->
 <!DOCTYPE html>
 <html>
@@ -66,7 +35,7 @@ POSSIBILITY OF SUCH DAMAGE.
     <nav class="navbar navbar-default" role="navigation">
       <div class="container">
         <div class="navbar-header">
-          <a class="navbar-brand">portage 1.0.alpha</a>
+          <a class="navbar-brand">portage 1.1.0</a>
         </div>
       </div>
     </nav>
@@ -84,8 +53,8 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
   <div id="navrow1" class="tabs">
     <ul class="tablist">
       <li class="current"><a href="index.html"><span>Main&#160;Page</span></a></li>
-      <li><a href="quickstart.html"><span>Quick&#160;Start</span></a></li>
-      <li><a href="simple_mesh.html"><span>Example&#160;Use</span></a></li>
+      <li><a href="concepts.html"><span>Concepts</span></a></li>
+      <li><a href="example.html"><span>Example&#160;Use</span></a></li>
       <li><a href="namespaces.html"><span>Namespaces</span></a></li>
       <li><a href="annotated.html"><span>Classes</span></a></li>
       <li>
@@ -126,60 +95,77 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="title">Welcome to portage! </div>  </div>
 </div><!--header-->
 <div class="contents">
-<div class="textblock"><p>portage is a framework that computational physics applications can use to build a highly customized, hybrid parallel (MPI+X) conservative remapping library for transfer of field data between meshes.</p>
+<div class="textblock"><p><a class="el" href="namespacePortage.html">Portage</a> is a framework that computational physics applications can use to build a highly customized, hybrid parallel (MPI+X) conservative remapping library for transfer of field data between meshes, between particles, and between meshes and particles.</p>
 <p>We aim to provide:</p><ul>
-<li>A modern, modular design - pick and choose your preferred search, intersect, and interpolate method.</li>
-<li>A conservative, intersection-based remap capability on general polytopal meshes.</li>
-<li>A pick-and-choose framework for search, intersect, and interpolate algorithms.</li>
-<li>High flexibility for application customization.</li>
-<li>Algorithms that take advantage of both distrubuted and on-node parallelism.</li>
+<li>A modern, modular design - pick and choose your preferred search, intersect, and interpolate method</li>
+<li>A conservative, intersection-based remap capability on general polytopal meshes and general particle shape functions</li>
+<li>A pick-and-choose framework for search, intersect, and interpolate algorithms</li>
+<li>High flexibility for application customization</li>
+<li>Algorithms that take advantage of both distrubuted and on-node parallelism</li>
 <li>An <em>Open Source Community</em> for these tools!</li>
-<li>Use of client application's native mesh and state (data/field) data structures. <hr/>
-</li>
+<li>Use of client application's native mesh/particle and state (data/field) data structures</li>
 </ul>
+<p>See the <a class="el" href="concepts.html">Concepts</a> page for a high-level discussion of the methods used within portage.</p>
+<p>See the <a class="el" href="example.html">Example Use</a> page for a simple example of hooking portage up to a mesh and state manager. </p><hr/>
 <h1>Details and Requirements</h1>
 <p>At a minimum, portage requires:</p><ul>
-<li>a C++-11 compatible compiler; regular testing is performed with gcc 5+ and Intel 15+.</li>
+<li>A C++-11 compatible compiler; regular testing is performed with GCC 5.3+ and Intel 17+.</li>
 <li>CMake 3.0+</li>
+<li>LAPACKE (3.7.1+)</li>
+<li>Boost (1.53.0+) <b>or</b> Thrust (1.6.0+)</li>
 </ul>
-<p>Distributed parallelism of portage is currently supported through MPI. Setting the <code>ENABLE_MPI</code> and <code>ENABLE_MPI_CXX_BINDINGS</code> CMake flags to <code>True</code> (see the <a class="el" href="quickstart.html">Quickstart Guide</a> for more details). Regular testing happens with OpenMPI 1.6.5+.</p>
-<p>On-node parallelism is exposed through the <a href="https://thrust.github.io">Thrust</a> library. Enabling Thrust within portage requires setting at least two CMake variables: <code>ENABLE_THRUST=True</code> and <code>THRUST_DIR=&lt;path_to_thrust_directory&gt;</code>. Additionally, one can specify the Thrust backend to utilize, with the default being the OpenMP backend <code>THRUST_BACKEND=THRUST_DEVICE_SYSTEM_OMP</code>. portage also supports the <code>THRUST_DEVICE_SYSTEM_TBB</code> backend, and currently has limited support for the CUDA backend. Regular testing happens with Thrust 1.8. </p>
+<p>Distributed parallelism of portage is currently supported through MPI; regular testing is performed with OpenMPI 1.10.3+ . Most application tests and all of the units tests are currently only built if MPI is used. MPI is enabled in portage by setting the CMake variable <code>ENABLE_MPI=True</code>. In addition, you'll likely need to tell CMake to use the MPI-wrapped compiler by setting something like</p>
+<div class="fragment"><div class="line"><a name="l00001"></a><span class="lineno">    1</span>&#160;CMAKE_C_COMPILER=`which mpicc`</div><div class="line"><a name="l00002"></a><span class="lineno">    2</span>&#160;CMAKE_CXX_COMPILER=`which mpiCC`</div></div><!-- fragment --><p>On-node parallelism is exposed through the <a href="https://thrust.github.io">Thrust</a> library. Enabling Thrust within portage requires setting at least two CMake variables: <code>ENABLE_THRUST=True</code> and <code>THRUST_DIR=&lt;path_to_thrust_directory&gt;</code>. Additionally, one can specify the Thrust backend to utilize, with the default being the OpenMP backend <code>THRUST_BACKEND=THRUST_DEVICE_SYSTEM_OMP</code>. <a class="el" href="namespacePortage.html">Portage</a> also supports the <code>THRUST_DEVICE_SYSTEM_TBB</code> backend. Regular testing happens with Thrust 1.8.</p>
+<h2>Obtaining portage</h2>
+<p>The latest release of <a href="https://github.com/laristra/portage">portage</a> lives on GitHub. <a class="el" href="namespacePortage.html">Portage</a> makes use of git submodules, so it must be cloned recursively:</p>
+<div class="fragment"><div class="line"><a name="l00001"></a><span class="lineno">    1</span>&#160;git clone --recursive https://github.com/laristra/portage</div></div><!-- fragment --><h2>Building</h2>
+<p><a class="el" href="namespacePortage.html">Portage</a> uses the CMake build system. In the simplest case where you want to build a serial version of the code, and CMake knows where to find your Boost and LAPACKE installations, one can do</p>
+<div class="fragment"><div class="line"><a name="l00001"></a><span class="lineno">    1</span>&#160;portage/ $ mkdir build</div><div class="line"><a name="l00002"></a><span class="lineno">    2</span>&#160;portage/ $ cd build</div><div class="line"><a name="l00003"></a><span class="lineno">    3</span>&#160;portage/build/ $ cmake ..</div><div class="line"><a name="l00004"></a><span class="lineno">    4</span>&#160;portage/build/ $ make</div></div><!-- fragment --><p>This will build a serial version of the code into a library (without any tests). A more complete build with MPI, Thrust (for on-node parallelism), unit and application test support, documentation support, and support for both <a href="https://github.com/lanl/jali">Jali</a> and the Burton <a href="https://github.com/laristra/flecsi-sp">specialization</a> of the <a href="https://github.com/laristra/flecsi">FleCSI</a> library would look like:</p>
+<div class="fragment"><div class="line"><a name="l00001"></a><span class="lineno">    1</span>&#160;portage/ $ mkdir build</div><div class="line"><a name="l00002"></a><span class="lineno">    2</span>&#160;portage/ $ cd build</div><div class="line"><a name="l00003"></a><span class="lineno">    3</span>&#160;portage/build/ $ cmake -DCMAKE_C_COMPILER=`which mpicc` \</div><div class="line"><a name="l00004"></a><span class="lineno">    4</span>&#160;                       -DCMAKE_CXX_COMPILER=`which mpiCC` \</div><div class="line"><a name="l00005"></a><span class="lineno">    5</span>&#160;                       -DENABLE_APP_TESTS=True -DENABLE_UNIT_TESTS=True \</div><div class="line"><a name="l00006"></a><span class="lineno">    6</span>&#160;                       -DENABLE_MPI=True \</div><div class="line"><a name="l00007"></a><span class="lineno">    7</span>&#160;                       -DENABLE_THRUST=True -DTHRUST_DIR=/path/to/thrust/include/directory \</div><div class="line"><a name="l00008"></a><span class="lineno">    8</span>&#160;                       -DJali_DIR=path/ to/Jali/lib \</div><div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160;                       -DENABLE_FleCSI=True \</div><div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;                       -DCMAKE_PREFIX_PATH=&quot;/path/to/FleCSI/install;/path/to/FleCSI-sp/install&quot; \</div><div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;                       -DENABLE_DOXYGEN=True \</div><div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160;                       -DPC_LAPACKE_NCLUDE_DIRS=/path/to/LAPACKE/include \</div><div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160;                       -DPC_LAPACKE_LIBRARY_DIRS=/path/to/LAPACKE/install \</div><div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160;                       ..</div><div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160;portage/build/ $ make           # builds the library and tests</div><div class="line"><a name="l00016"></a><span class="lineno">   16</span>&#160;portage/build/ $ make test      # runs the tests</div><div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160;portage/build/ $ make doxygen   # builds this HTML and a PDF form of the documentation</div><div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160;portage/build/ $ make install   # installs the portage library and headers into CMAKE_INSTALL_PREFIX</div></div><!-- fragment --><h2>Useful CMake Flags</h2>
+<p>Below is a non-exhaustive list of useful CMake flags for building portage.</p>
+<table class="doxtable">
+<tr>
+<th align="left">CMake flag:type </th><th align="left">Description </th><th align="left">Default  </th></tr>
+<tr>
+<td align="left"><code>CMAKE_BUILD_TYPE:STRING</code></td><td align="left"><code>Debug</code> or optimized <code>Release</code> build </td><td align="left"><code>Debug</code> </td></tr>
+<tr>
+<td align="left"><code>CMAKE_INSTALL_PREFIX:PATH</code> </td><td align="left">Location for the portage library and headers to be installed </td><td align="left"><code>/usr/local</code> </td></tr>
+<tr>
+<td align="left"><code>CMAKE_PREFIX_PATH:PATH</code> </td><td align="left">Locations where CMake can look for packages; needs to be set to the FleCSI and FleCSI-SP locations if using FleCSI </td><td align="left">"" </td></tr>
+<tr>
+<td align="left"><code>ENABLE_APP_TESTS:BOOL</code> </td><td align="left">Turn on compilation and test harness of application tests </td><td align="left"><code>False</code> </td></tr>
+<tr>
+<td align="left"><code>ENABLE_DOXYGEN:BOOL</code> </td><td align="left">Create a target to build this documentation </td><td align="left"><code>False</code> </td></tr>
+<tr>
+<td align="left"><code>ENABLE_FleCSI:BOOL</code> </td><td align="left">Turn on support for the FleCSI Burton specialization; must set <code>CMAKE_PREFIX_PATH</code> to a location where <em>both</em> FleCSI and FleCSI-SP can be found. Both FleCSI packages are under constant development. This version of portage is known to work with hash <code>374b56b</code> of the FleCSI <em>stable</em> branch, and hash <code>e78c594</code> of the FleCSI-SP <em>stable</em> branch. </td><td align="left"><code>False</code> </td></tr>
+<tr>
+<td align="left"><code>ENABLE_MPI:BOOL</code> </td><td align="left">Build with support for MPI </td><td align="left"><code>False</code> </td></tr>
+<tr>
+<td align="left"><code>ENABLE_TCMALLOC:BOOL</code> </td><td align="left">Build with support for TCMalloc </td><td align="left"><code>False</code> </td></tr>
+<tr>
+<td align="left"><code>ENABLE_THRUST:BOOL</code> </td><td align="left">Turn on Thrust support for on-node parallelism </td><td align="left"><code>False</code> </td></tr>
+<tr>
+<td align="left"><code>ENABLE_UNIT_TESTS:BOOL</code> </td><td align="left">Turn on compilation and test harness of unit tests </td><td align="left"><code>False</code> </td></tr>
+<tr>
+<td align="left"><code>ENABLE_FleCSI:BOOL</code> </td><td align="left">Turn on support for FleCSI; <em>requires C++14-compatible compiler</em> </td><td align="left"><code>False</code> </td></tr>
+<tr>
+<td align="left"><code>Jali_DIR:PATH</code> </td><td align="left">Hint location for CMake to find Jali. This version of portage works with version 0.9.8 of Jali </td><td align="left">"" </td></tr>
+<tr>
+<td align="left"><code>PC_LAPACKE_NCLUDE_DIRS:PATH</code> </td><td align="left">Hint location for CMake to find LAPACKE include files if <code>pkg_config</code> fails. <b>NOTE</b> the variable name <em>indeed</em> includes the typo <code>_NCLUDE</code>; this will be fixed in a future release when we update the build system </td><td align="left">"" </td></tr>
+<tr>
+<td align="left"><code>PC_LAPACKE_LIBRARY_DIRS:PATH</code> </td><td align="left">Hint location for CMake to find LAPACKE library files if <code>pkg_config</code> fails </td><td align="left">"" </td></tr>
+<tr>
+<td align="left"><code>TCMALLOC_LIB:PATH</code> </td><td align="left">The TCMalloc library to use </td><td align="left"><code>${HOME}</code> </td></tr>
+<tr>
+<td align="left"><code>THRUST_DIR:PATH</code> </td><td align="left">Directory of the Thrust install </td><td align="left">"" </td></tr>
+<tr>
+<td align="left"><code>THRUST_BACKEND:STRING</code> </td><td align="left">Backend to use for Thrust </td><td align="left"><code>"THRUST_DEVICE_SYSTEM_OMP"</code> </td></tr>
+</table>
 </div></div><!-- contents -->
 <!--
-Copyright (c) 2016, Los Alamos National Security, LLC
-All rights reserved.
-Copyright 2016. Los Alamos National Security, LLC. This software was produced
-under U.S. Government contract DE-AC52-06NA25396 for Los Alamos National
-Laboratory (LANL), which is operated by Los Alamos National Security, LLC for
-the U.S. Department of Energy. The U.S. Government has rights to use,
-reproduce, and distribute this software.  NEITHER THE GOVERNMENT NOR LOS ALAMOS
-NATIONAL SECURITY, LLC MAKES ANY WARRANTY, EXPRESS OR IMPLIED, OR ASSUMES ANY
-LIABILITY FOR THE USE OF THIS SOFTWARE.  If software is modified to produce
-derivative works, such modified software should be clearly marked, so as not to
-confuse it with the version available from LANL.
-Additionally, redistribution and use in source and binary forms, with or
-without modification, are permitted provided that the following conditions are
-met:
-1. Redistributions of source code must retain the above copyright notice,
-   this list of conditions and the following disclaimer.
-2. Redistributions in binary form must reproduce the above copyright
-   notice, this list of conditions and the following disclaimer in the
-   documentation and/or other materials provided with the distribution.
-3. Neither the name of Los Alamos National Security, LLC, Los Alamos
-   National Laboratory, LANL, the U.S. Government, nor the names of its
-   contributors may be used to endorse or promote products derived from this
-   software without specific prior written permission.
-THIS SOFTWARE IS PROVIDED BY LOS ALAMOS NATIONAL SECURITY, LLC AND
-CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
-PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL LOS ALAMOS NATIONAL
-SECURITY, LLC OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
-BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER
-IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-POSSIBILITY OF SUCH DAMAGE.
+This file is part of the Ristra portage project.
+Please see the license file at the root of this repository, or at:
+    https://github.com/laristra/portage/blob/master/LICENSE
 -->
 <!-- HTML footer for doxygen 1.8.8-->
 <!-- start footer part -->

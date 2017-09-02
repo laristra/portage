@@ -1,38 +1,7 @@
 <!--
-Copyright (c) 2016, Los Alamos National Security, LLC
-All rights reserved.
-Copyright 2016. Los Alamos National Security, LLC. This software was produced
-under U.S. Government contract DE-AC52-06NA25396 for Los Alamos National
-Laboratory (LANL), which is operated by Los Alamos National Security, LLC for
-the U.S. Department of Energy. The U.S. Government has rights to use,
-reproduce, and distribute this software.  NEITHER THE GOVERNMENT NOR LOS ALAMOS
-NATIONAL SECURITY, LLC MAKES ANY WARRANTY, EXPRESS OR IMPLIED, OR ASSUMES ANY
-LIABILITY FOR THE USE OF THIS SOFTWARE.  If software is modified to produce
-derivative works, such modified software should be clearly marked, so as not to
-confuse it with the version available from LANL.
-Additionally, redistribution and use in source and binary forms, with or
-without modification, are permitted provided that the following conditions are
-met:
-1. Redistributions of source code must retain the above copyright notice,
-   this list of conditions and the following disclaimer.
-2. Redistributions in binary form must reproduce the above copyright
-   notice, this list of conditions and the following disclaimer in the
-   documentation and/or other materials provided with the distribution.
-3. Neither the name of Los Alamos National Security, LLC, Los Alamos
-   National Laboratory, LANL, the U.S. Government, nor the names of its
-   contributors may be used to endorse or promote products derived from this
-   software without specific prior written permission.
-THIS SOFTWARE IS PROVIDED BY LOS ALAMOS NATIONAL SECURITY, LLC AND
-CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
-PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL LOS ALAMOS NATIONAL
-SECURITY, LLC OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
-BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER
-IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-POSSIBILITY OF SUCH DAMAGE.
+This file is part of the Ristra portage project.
+Please see the license file at the root of this repository, or at:
+    https://github.com/laristra/portage/blob/master/LICENSE
 -->
 <!DOCTYPE html>
 <html>
@@ -66,7 +35,7 @@ POSSIBILITY OF SUCH DAMAGE.
     <nav class="navbar navbar-default" role="navigation">
       <div class="container">
         <div class="navbar-header">
-          <a class="navbar-brand">portage 1.0.alpha</a>
+          <a class="navbar-brand">portage 1.1.0</a>
         </div>
       </div>
     </nav>
@@ -84,8 +53,8 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
   <div id="navrow1" class="tabs">
     <ul class="tablist">
       <li><a href="index.html"><span>Main&#160;Page</span></a></li>
-      <li><a href="quickstart.html"><span>Quick&#160;Start</span></a></li>
-      <li><a href="simple_mesh.html"><span>Example&#160;Use</span></a></li>
+      <li><a href="concepts.html"><span>Concepts</span></a></li>
+      <li><a href="example.html"><span>Example&#160;Use</span></a></li>
       <li><a href="namespaces.html"><span>Namespaces</span></a></li>
       <li class="current"><a href="annotated.html"><span>Classes</span></a></li>
       <li>
@@ -173,12 +142,21 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <li>face_centroid()
 : <a class="el" href="classPortage_1_1AuxMeshTopology.html#ab0d115f18705de06201687c129d6b6a2">Portage::AuxMeshTopology&lt; BasicMesh &gt;</a>
 </li>
+<li>face_get_cells()
+: <a class="el" href="classPortage_1_1AuxMeshTopology.html#a230262249728d2e17f3856b6fb266820">Portage::AuxMeshTopology&lt; BasicMesh &gt;</a>
+</li>
 <li>face_get_nodes()
 : <a class="el" href="classPortage_1_1Flat__Mesh__Wrapper.html#a4ba0f8666371d0b6bd2c87dd7489614b">Portage::Flat_Mesh_Wrapper&lt; T &gt;</a>
-, <a class="el" href="classPortage_1_1Flecsi__Mesh__Wrapper.html#a810e4400b333b9aa03c603fdf81d30a5">Portage::Flecsi_Mesh_Wrapper</a>
 , <a class="el" href="classPortage_1_1Jali__Mesh__Wrapper.html#aab8b08b0138595ad0868e9922239d0fa">Portage::Jali_Mesh_Wrapper</a>
 , <a class="el" href="classPortage_1_1Simple__Mesh.html#ae5ca6e47513ee213b9fa43029f919c49">Portage::Simple_Mesh</a>
 , <a class="el" href="classPortage_1_1Simple__Mesh__Wrapper.html#ae32ab991ff346de484297e42675a2726">Portage::Simple_Mesh_Wrapper</a>
+, <a class="el" href="classwonton_1_1flecsi__mesh__t.html#a6e7c99127ee27fad85f7505ba7377ed4">wonton::flecsi_mesh_t&lt; M &gt;</a>
+</li>
+<li>field_names_double()
+: <a class="el" href="classPortage_1_1Meshfree_1_1SwarmState.html#a1d03b859f3158b462acd9803668b8794">Portage::Meshfree::SwarmState&lt; dim &gt;</a>
+</li>
+<li>field_names_int()
+: <a class="el" href="classPortage_1_1Meshfree_1_1SwarmState.html#a37bed725a10afa483e0f078bf46eef8e">Portage::Meshfree::SwarmState&lt; dim &gt;</a>
 </li>
 <li>find()
 : <a class="el" href="classPortage_1_1Simple__State.html#a4b1879be8e14001f11de9ebf4dd56c9a">Portage::Simple_State</a>
@@ -192,49 +170,27 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <li>Flat_State_Wrapper()
 : <a class="el" href="classPortage_1_1Flat__State__Wrapper.html#a1fc956ccd6e7843909c5ffa06657992f">Portage::Flat_State_Wrapper&lt; T &gt;</a>
 </li>
-<li>Flecsi_Mesh_Wrapper()
-: <a class="el" href="classPortage_1_1Flecsi__Mesh__Wrapper.html#aa3fc6ab945194a477baf758a39ec5c82">Portage::Flecsi_Mesh_Wrapper</a>
+<li>flecsi_mesh_t
+: <a class="el" href="classflecsi__2d.html#a276eef0995f2fe2966a61e206479f8ea">flecsi_2d</a>
+, <a class="el" href="classflecsi__3d.html#a93596a180171c9697f8d4596e6178365">flecsi_3d</a>
+, <a class="el" href="classwonton_1_1flecsi__mesh__t.html#aaaff9b218dfbbf8a432380a6aebfcc15">wonton::flecsi_mesh_t&lt; M &gt;</a>
 </li>
-<li>Flecsi_State_Wrapper()
-: <a class="el" href="classPortage_1_1Flecsi__State__Wrapper.html#a6eb005ae423fc0a8cc91ac5463959bb9">Portage::Flecsi_State_Wrapper</a>
+<li>flecsi_state_t
+: <a class="el" href="classflecsi__2d.html#a8b7fa50e72b503fda0a08fa911364a41">flecsi_2d</a>
+, <a class="el" href="classflecsi__3d.html#a031a0897c4cf634fc326d2d877a68c4e">flecsi_3d</a>
+, <a class="el" href="classwonton_1_1flecsi__state__t.html#a3a60c8c4c724e17e61e261d3024d988d">wonton::flecsi_state_t&lt; M &gt;</a>
+</li>
+<li>function_size
+: <a class="el" href="classPortage_1_1Meshfree_1_1Basis_1_1Traits_3_01Linear_00_01dim_01_4.html#a946b4747f00afadd59b316569b030010">Portage::Meshfree::Basis::Traits&lt; Linear, dim &gt;</a>
+, <a class="el" href="classPortage_1_1Meshfree_1_1Basis_1_1Traits_3_01Quadratic_00_01dim_01_4.html#a51a8b4775016b8b042c9f8c7e56f3fc1">Portage::Meshfree::Basis::Traits&lt; Quadratic, dim &gt;</a>
+, <a class="el" href="classPortage_1_1Meshfree_1_1Basis_1_1Traits_3_01Unitary_00_01dim_01_4.html#aea0ceb089e3c5335124717558e12dca2">Portage::Meshfree::Basis::Traits&lt; Unitary, dim &gt;</a>
 </li>
 </ul>
 </div><!-- contents -->
 <!--
-Copyright (c) 2016, Los Alamos National Security, LLC
-All rights reserved.
-Copyright 2016. Los Alamos National Security, LLC. This software was produced
-under U.S. Government contract DE-AC52-06NA25396 for Los Alamos National
-Laboratory (LANL), which is operated by Los Alamos National Security, LLC for
-the U.S. Department of Energy. The U.S. Government has rights to use,
-reproduce, and distribute this software.  NEITHER THE GOVERNMENT NOR LOS ALAMOS
-NATIONAL SECURITY, LLC MAKES ANY WARRANTY, EXPRESS OR IMPLIED, OR ASSUMES ANY
-LIABILITY FOR THE USE OF THIS SOFTWARE.  If software is modified to produce
-derivative works, such modified software should be clearly marked, so as not to
-confuse it with the version available from LANL.
-Additionally, redistribution and use in source and binary forms, with or
-without modification, are permitted provided that the following conditions are
-met:
-1. Redistributions of source code must retain the above copyright notice,
-   this list of conditions and the following disclaimer.
-2. Redistributions in binary form must reproduce the above copyright
-   notice, this list of conditions and the following disclaimer in the
-   documentation and/or other materials provided with the distribution.
-3. Neither the name of Los Alamos National Security, LLC, Los Alamos
-   National Laboratory, LANL, the U.S. Government, nor the names of its
-   contributors may be used to endorse or promote products derived from this
-   software without specific prior written permission.
-THIS SOFTWARE IS PROVIDED BY LOS ALAMOS NATIONAL SECURITY, LLC AND
-CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
-PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL LOS ALAMOS NATIONAL
-SECURITY, LLC OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
-BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER
-IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-POSSIBILITY OF SUCH DAMAGE.
+This file is part of the Ristra portage project.
+Please see the license file at the root of this repository, or at:
+    https://github.com/laristra/portage/blob/master/LICENSE
 -->
 <!-- HTML footer for doxygen 1.8.8-->
 <!-- start footer part -->

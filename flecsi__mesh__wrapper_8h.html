@@ -1,38 +1,7 @@
 <!--
-Copyright (c) 2016, Los Alamos National Security, LLC
-All rights reserved.
-Copyright 2016. Los Alamos National Security, LLC. This software was produced
-under U.S. Government contract DE-AC52-06NA25396 for Los Alamos National
-Laboratory (LANL), which is operated by Los Alamos National Security, LLC for
-the U.S. Department of Energy. The U.S. Government has rights to use,
-reproduce, and distribute this software.  NEITHER THE GOVERNMENT NOR LOS ALAMOS
-NATIONAL SECURITY, LLC MAKES ANY WARRANTY, EXPRESS OR IMPLIED, OR ASSUMES ANY
-LIABILITY FOR THE USE OF THIS SOFTWARE.  If software is modified to produce
-derivative works, such modified software should be clearly marked, so as not to
-confuse it with the version available from LANL.
-Additionally, redistribution and use in source and binary forms, with or
-without modification, are permitted provided that the following conditions are
-met:
-1. Redistributions of source code must retain the above copyright notice,
-   this list of conditions and the following disclaimer.
-2. Redistributions in binary form must reproduce the above copyright
-   notice, this list of conditions and the following disclaimer in the
-   documentation and/or other materials provided with the distribution.
-3. Neither the name of Los Alamos National Security, LLC, Los Alamos
-   National Laboratory, LANL, the U.S. Government, nor the names of its
-   contributors may be used to endorse or promote products derived from this
-   software without specific prior written permission.
-THIS SOFTWARE IS PROVIDED BY LOS ALAMOS NATIONAL SECURITY, LLC AND
-CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
-PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL LOS ALAMOS NATIONAL
-SECURITY, LLC OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
-BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER
-IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-POSSIBILITY OF SUCH DAMAGE.
+This file is part of the Ristra portage project.
+Please see the license file at the root of this repository, or at:
+    https://github.com/laristra/portage/blob/master/LICENSE
 -->
 <!DOCTYPE html>
 <html>
@@ -48,7 +17,7 @@ POSSIBILITY OF SUCH DAMAGE.
     <meta http-equiv="Content-Type" content="text/xhtml;charset=UTF-8"/>
     <meta name="generator" content="Doxygen 1.8.11"/>
     <script type="text/javascript" src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
-    <title>portage: /home/l280837/code/portage-gh/src/wrappers/mesh/flecsi/flecsi_mesh_wrapper.h File Reference</title>
+    <title>portage: /Users/l280837/code/portage-gh/src/wonton/mesh/flecsi/flecsi_mesh_wrapper.h File Reference</title>
     <script type="text/javascript" src="dynsections.js"></script>
     <link href="search/search.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="search/searchdata.js"></script>
@@ -66,7 +35,7 @@ POSSIBILITY OF SUCH DAMAGE.
     <nav class="navbar navbar-default" role="navigation">
       <div class="container">
         <div class="navbar-header">
-          <a class="navbar-brand">portage 1.0.alpha</a>
+          <a class="navbar-brand">portage 1.1.0</a>
         </div>
       </div>
     </nav>
@@ -84,8 +53,8 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
   <div id="navrow1" class="tabs">
     <ul class="tablist">
       <li><a href="index.html"><span>Main&#160;Page</span></a></li>
-      <li><a href="quickstart.html"><span>Quick&#160;Start</span></a></li>
-      <li><a href="simple_mesh.html"><span>Example&#160;Use</span></a></li>
+      <li><a href="concepts.html"><span>Concepts</span></a></li>
+      <li><a href="example.html"><span>Example&#160;Use</span></a></li>
       <li><a href="namespaces.html"><span>Namespaces</span></a></li>
       <li><a href="annotated.html"><span>Classes</span></a></li>
       <li>
@@ -128,153 +97,65 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 
 <div id="nav-path" class="navpath">
   <ul>
-<li class="navelem"><a class="el" href="dir_68267d1309a1af8e8297ef4c3efbcdba.html">src</a></li><li class="navelem"><a class="el" href="dir_358e4f7cc9c4e63b198ee0bb1145b0db.html">wrappers</a></li><li class="navelem"><a class="el" href="dir_bd720f240c588bbef7347b398a619dcb.html">mesh</a></li><li class="navelem"><a class="el" href="dir_e6e47f471cf902546cdc9cdde63ec139.html">flecsi</a></li>  </ul>
+<li class="navelem"><a class="el" href="dir_68267d1309a1af8e8297ef4c3efbcdba.html">src</a></li><li class="navelem"><a class="el" href="dir_f0793eaf588cfab2234204b9b3128bec.html">wonton</a></li><li class="navelem"><a class="el" href="dir_6311728519b61639f24877b3c4357801.html">mesh</a></li><li class="navelem"><a class="el" href="dir_13f869f6b18cbdc90004560ef46c724b.html">flecsi</a></li>  </ul>
 </div>
 </div><!-- top -->
 <div class="header">
   <div class="summary">
 <a href="#nested-classes">Classes</a> &#124;
-<a href="#namespaces">Namespaces</a> &#124;
-<a href="#typedef-members">Typedefs</a> &#124;
-<a href="#func-members">Functions</a> &#124;
-<a href="#var-members">Variables</a>  </div>
+<a href="#namespaces">Namespaces</a>  </div>
   <div class="headertitle">
 <div class="title">flecsi_mesh_wrapper.h File Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
-<div class="textblock"><code>#include &lt;cassert&gt;</code><br />
-<code>#include &lt;algorithm&gt;</code><br />
-<code>#include &lt;array&gt;</code><br />
-<code>#include &quot;flecsi/specializations/burton/burton.h&quot;</code><br />
-<code>#include &quot;portage/support/portage.h&quot;</code><br />
-<code>#include &quot;portage/support/Point.h&quot;</code><br />
+<div class="textblock"><code>#include &lt;portage/support/portage.h&gt;</code><br />
+<code>#include &lt;portage/support/Point.h&gt;</code><br />
+<code>#include &lt;portage/wonton/mesh/AuxMeshTopology.h&gt;</code><br />
+<code>#include &lt;map&gt;</code><br />
+<code>#include &lt;memory&gt;</code><br />
+<code>#include &lt;vector&gt;</code><br />
+<code>#include &lt;iostream&gt;</code><br />
 </div>
 <p><a href="flecsi__mesh__wrapper_8h_source.html">Go to the source code of this file.</a></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
 Classes</h2></td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1Flecsi__Mesh__Wrapper.html">Portage::Flecsi_Mesh_Wrapper</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight"><a class="el" href="classPortage_1_1Flecsi__Mesh__Wrapper.html" title="Flecsi_Mesh_Wrapper implements mesh methods for Flecsi. ">Flecsi_Mesh_Wrapper</a> implements mesh methods for Flecsi.  <a href="classPortage_1_1Flecsi__Mesh__Wrapper.html#details">More...</a><br /></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classwonton_1_1flecsi__mesh__t.html">wonton::flecsi_mesh_t&lt; M &gt;</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">The base class for the portage flecsi mesh wrapper.  <a href="classwonton_1_1flecsi__mesh__t.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="namespaces"></a>
 Namespaces</h2></td></tr>
-<tr class="memitem:namespacestd"><td class="memItemLeft" align="right" valign="top"> &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacestd.html">std</a></td></tr>
+<tr class="memitem:namespacewonton"><td class="memItemLeft" align="right" valign="top"> &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacewonton.html">wonton</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:namespacePortage"><td class="memItemLeft" align="right" valign="top"> &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacePortage.html">Portage</a></td></tr>
+<tr class="memitem:namespacewonton_1_1portage"><td class="memItemLeft" align="right" valign="top"> &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacewonton_1_1portage.html">wonton::portage</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table><table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="typedef-members"></a>
-Typedefs</h2></td></tr>
-<tr class="memitem:ab742d3fd4b20e23606e9d39ca769f611"><td class="memItemLeft" align="right" valign="top">using&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="flecsi__mesh__wrapper_8h.html#ab742d3fd4b20e23606e9d39ca769f611">mesh_t</a> = flecsi::burton_mesh_t</td></tr>
-<tr class="separator:ab742d3fd4b20e23606e9d39ca769f611"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a910e3afe032144ca5d521b33dd772dbf"><td class="memItemLeft" align="right" valign="top">using&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="flecsi__mesh__wrapper_8h.html#a910e3afe032144ca5d521b33dd772dbf">real_t</a> = flecsi::mesh_t::real_t</td></tr>
-<tr class="separator:a910e3afe032144ca5d521b33dd772dbf"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a125ef7fa9ad0e56c87eb10f22eca518e"><td class="memItemLeft" align="right" valign="top">using&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="flecsi__mesh__wrapper_8h.html#a125ef7fa9ad0e56c87eb10f22eca518e">vertex_t</a> = flecsi::mesh_t::vertex_t</td></tr>
-<tr class="separator:a125ef7fa9ad0e56c87eb10f22eca518e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:acbec67b5b875bea95f4fd0ebd89a80f2"><td class="memItemLeft" align="right" valign="top">using&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="flecsi__mesh__wrapper_8h.html#acbec67b5b875bea95f4fd0ebd89a80f2">point_t</a> = flecsi::mesh_t::point_t</td></tr>
-<tr class="separator:acbec67b5b875bea95f4fd0ebd89a80f2"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
 Functions</h2></td></tr>
-<tr class="memitem:ad0cb4827f0fed06fcbc6a9851f1d9b80"><td class="memTemplParams" colspan="2">template&lt;long D&gt; </td></tr>
-<tr class="memitem:ad0cb4827f0fed06fcbc6a9851f1d9b80"><td class="memTemplItemLeft" align="right" valign="top"><a class="el" href="classPortage_1_1Point.html">Portage::Point</a>&lt; D &gt;&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespacePortage.html#ad0cb4827f0fed06fcbc6a9851f1d9b80">Portage::toPortagePoint</a> (const <a class="el" href="flecsi__mesh__wrapper_8h.html#acbec67b5b875bea95f4fd0ebd89a80f2">point_t</a> &amp;fp)</td></tr>
-<tr class="memdesc:ad0cb4827f0fed06fcbc6a9851f1d9b80"><td class="mdescLeft">&#160;</td><td class="mdescRight">helper function to convert to <a class="el" href="classPortage_1_1Point.html" title="Represents a point in an N-dimensional space. ">Portage::Point</a>  <a href="namespacePortage.html#ad0cb4827f0fed06fcbc6a9851f1d9b80">More...</a><br /></td></tr>
-<tr class="separator:ad0cb4827f0fed06fcbc6a9851f1d9b80"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a1ac05bf5c1e41aa3922ccb6f06c4e1ff"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacePortage.html#a1ac05bf5c1e41aa3922ccb6f06c4e1ff">Portage::make_mesh_cart2d</a> (const <a class="el" href="flecsi__mesh__wrapper_8h.html#a910e3afe032144ca5d521b33dd772dbf">real_t</a> xmin, const <a class="el" href="flecsi__mesh__wrapper_8h.html#a910e3afe032144ca5d521b33dd772dbf">real_t</a> xmax, const <a class="el" href="flecsi__mesh__wrapper_8h.html#a910e3afe032144ca5d521b33dd772dbf">real_t</a> ymin, const <a class="el" href="flecsi__mesh__wrapper_8h.html#a910e3afe032144ca5d521b33dd772dbf">real_t</a> ymax, const int ncellsx, const int ncellsy, <a class="el" href="flecsi__mesh__wrapper_8h.html#ab742d3fd4b20e23606e9d39ca769f611">mesh_t</a> &amp;mesh)</td></tr>
-<tr class="memdesc:a1ac05bf5c1e41aa3922ccb6f06c4e1ff"><td class="mdescLeft">&#160;</td><td class="mdescRight">Helper routine to make a cartesian 2d grid in FleCSI.  <a href="namespacePortage.html#a1ac05bf5c1e41aa3922ccb6f06c4e1ff">More...</a><br /></td></tr>
-<tr class="separator:a1ac05bf5c1e41aa3922ccb6f06c4e1ff"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table><table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="var-members"></a>
-Variables</h2></td></tr>
-<tr class="memitem:a434932eec359f259df5e75c242397884"><td class="memItemLeft" align="right" valign="top">decltype(nullptr) typedef&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacestd.html#a434932eec359f259df5e75c242397884">std::nullptr_t</a></td></tr>
-<tr class="separator:a434932eec359f259df5e75c242397884"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr><td colspan="2"><div class="groupHeader"></div></td></tr>
+<tr class="memitem:aa012076e84427637f72dda93dfb881d2"><td class="memTemplParams" colspan="2">template&lt;typename T , template&lt; typename, std::size_t &gt; class A&gt; </td></tr>
+<tr class="memitem:aa012076e84427637f72dda93dfb881d2"><td class="memTemplItemLeft" align="right" valign="top"><a class="el" href="classPortage_1_1Point.html">Portage::Point</a>&lt; 3 &gt;&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespacewonton_1_1portage.html#aa012076e84427637f72dda93dfb881d2">wonton::portage::make_point</a> (const A&lt; T, 3 &gt; &amp;a)</td></tr>
+<tr class="memdesc:aa012076e84427637f72dda93dfb881d2"><td class="mdescLeft">&#160;</td><td class="mdescRight">A utility function to convert a type to a portage point.  <a href="namespacewonton_1_1portage.html#aa012076e84427637f72dda93dfb881d2">More...</a><br /></td></tr>
+<tr class="separator:aa012076e84427637f72dda93dfb881d2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6ff5ecfa3327833c92db7069ef550578"><td class="memTemplParams" colspan="2">template&lt;typename T , template&lt; typename, std::size_t &gt; class A&gt; </td></tr>
+<tr class="memitem:a6ff5ecfa3327833c92db7069ef550578"><td class="memTemplItemLeft" align="right" valign="top"><a class="el" href="classPortage_1_1Point.html">Portage::Point</a>&lt; 2 &gt;&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespacewonton_1_1portage.html#a6ff5ecfa3327833c92db7069ef550578">wonton::portage::make_point</a> (const A&lt; T, 2 &gt; &amp;a)</td></tr>
+<tr class="separator:a6ff5ecfa3327833c92db7069ef550578"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6f21cf1eb5a0e0ef222448e5ea01dd6c"><td class="memTemplParams" colspan="2">template&lt;typename T &gt; </td></tr>
+<tr class="memitem:a6f21cf1eb5a0e0ef222448e5ea01dd6c"><td class="memTemplItemLeft" align="right" valign="top"><a class="el" href="classPortage_1_1Point.html">Portage::Point</a>&lt; 1 &gt;&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespacewonton_1_1portage.html#a6f21cf1eb5a0e0ef222448e5ea01dd6c">wonton::portage::make_1d_point</a> (T &amp;&amp;a)</td></tr>
+<tr class="separator:a6f21cf1eb5a0e0ef222448e5ea01dd6c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:acf551d8ab8c640dc99f86f494290fb8e"><td class="memTemplParams" colspan="2">template&lt;typename T &gt; </td></tr>
+<tr class="memitem:acf551d8ab8c640dc99f86f494290fb8e"><td class="memTemplItemLeft" align="right" valign="top"><a class="el" href="classPortage_1_1Point.html">Portage::Point</a>&lt; 2 &gt;&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespacewonton_1_1portage.html#acf551d8ab8c640dc99f86f494290fb8e">wonton::portage::make_2d_point</a> (T &amp;&amp;a)</td></tr>
+<tr class="separator:acf551d8ab8c640dc99f86f494290fb8e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5f290fae11e57fc6064a671ba05b40d8"><td class="memTemplParams" colspan="2">template&lt;typename T &gt; </td></tr>
+<tr class="memitem:a5f290fae11e57fc6064a671ba05b40d8"><td class="memTemplItemLeft" align="right" valign="top"><a class="el" href="classPortage_1_1Point.html">Portage::Point</a>&lt; 3 &gt;&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespacewonton_1_1portage.html#a5f290fae11e57fc6064a671ba05b40d8">wonton::portage::make_3d_point</a> (T &amp;&amp;a)</td></tr>
+<tr class="separator:a5f290fae11e57fc6064a671ba05b40d8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
-<h2 class="groupheader">Typedef Documentation</h2>
-<a class="anchor" id="ab742d3fd4b20e23606e9d39ca769f611"></a>
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">using <a class="el" href="flecsi__mesh__wrapper_8h.html#ab742d3fd4b20e23606e9d39ca769f611">mesh_t</a> =  flecsi::burton_mesh_t</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a class="anchor" id="acbec67b5b875bea95f4fd0ebd89a80f2"></a>
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">using <a class="el" href="flecsi__mesh__wrapper_8h.html#acbec67b5b875bea95f4fd0ebd89a80f2">point_t</a> =  flecsi::mesh_t::point_t</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a class="anchor" id="a910e3afe032144ca5d521b33dd772dbf"></a>
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">using <a class="el" href="flecsi__mesh__wrapper_8h.html#a910e3afe032144ca5d521b33dd772dbf">real_t</a> =  flecsi::mesh_t::real_t</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a class="anchor" id="a125ef7fa9ad0e56c87eb10f22eca518e"></a>
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">using <a class="el" href="flecsi__mesh__wrapper_8h.html#a125ef7fa9ad0e56c87eb10f22eca518e">vertex_t</a> =  flecsi::mesh_t::vertex_t</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
 </div><!-- contents -->
 <!--
-Copyright (c) 2016, Los Alamos National Security, LLC
-All rights reserved.
-Copyright 2016. Los Alamos National Security, LLC. This software was produced
-under U.S. Government contract DE-AC52-06NA25396 for Los Alamos National
-Laboratory (LANL), which is operated by Los Alamos National Security, LLC for
-the U.S. Department of Energy. The U.S. Government has rights to use,
-reproduce, and distribute this software.  NEITHER THE GOVERNMENT NOR LOS ALAMOS
-NATIONAL SECURITY, LLC MAKES ANY WARRANTY, EXPRESS OR IMPLIED, OR ASSUMES ANY
-LIABILITY FOR THE USE OF THIS SOFTWARE.  If software is modified to produce
-derivative works, such modified software should be clearly marked, so as not to
-confuse it with the version available from LANL.
-Additionally, redistribution and use in source and binary forms, with or
-without modification, are permitted provided that the following conditions are
-met:
-1. Redistributions of source code must retain the above copyright notice,
-   this list of conditions and the following disclaimer.
-2. Redistributions in binary form must reproduce the above copyright
-   notice, this list of conditions and the following disclaimer in the
-   documentation and/or other materials provided with the distribution.
-3. Neither the name of Los Alamos National Security, LLC, Los Alamos
-   National Laboratory, LANL, the U.S. Government, nor the names of its
-   contributors may be used to endorse or promote products derived from this
-   software without specific prior written permission.
-THIS SOFTWARE IS PROVIDED BY LOS ALAMOS NATIONAL SECURITY, LLC AND
-CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
-PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL LOS ALAMOS NATIONAL
-SECURITY, LLC OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
-BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER
-IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-POSSIBILITY OF SUCH DAMAGE.
+This file is part of the Ristra portage project.
+Please see the license file at the root of this repository, or at:
+    https://github.com/laristra/portage/blob/master/LICENSE
 -->
 <!-- HTML footer for doxygen 1.8.8-->
 <!-- start footer part -->

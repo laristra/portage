@@ -1,38 +1,7 @@
 <!--
-Copyright (c) 2016, Los Alamos National Security, LLC
-All rights reserved.
-Copyright 2016. Los Alamos National Security, LLC. This software was produced
-under U.S. Government contract DE-AC52-06NA25396 for Los Alamos National
-Laboratory (LANL), which is operated by Los Alamos National Security, LLC for
-the U.S. Department of Energy. The U.S. Government has rights to use,
-reproduce, and distribute this software.  NEITHER THE GOVERNMENT NOR LOS ALAMOS
-NATIONAL SECURITY, LLC MAKES ANY WARRANTY, EXPRESS OR IMPLIED, OR ASSUMES ANY
-LIABILITY FOR THE USE OF THIS SOFTWARE.  If software is modified to produce
-derivative works, such modified software should be clearly marked, so as not to
-confuse it with the version available from LANL.
-Additionally, redistribution and use in source and binary forms, with or
-without modification, are permitted provided that the following conditions are
-met:
-1. Redistributions of source code must retain the above copyright notice,
-   this list of conditions and the following disclaimer.
-2. Redistributions in binary form must reproduce the above copyright
-   notice, this list of conditions and the following disclaimer in the
-   documentation and/or other materials provided with the distribution.
-3. Neither the name of Los Alamos National Security, LLC, Los Alamos
-   National Laboratory, LANL, the U.S. Government, nor the names of its
-   contributors may be used to endorse or promote products derived from this
-   software without specific prior written permission.
-THIS SOFTWARE IS PROVIDED BY LOS ALAMOS NATIONAL SECURITY, LLC AND
-CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
-PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL LOS ALAMOS NATIONAL
-SECURITY, LLC OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
-BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER
-IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-POSSIBILITY OF SUCH DAMAGE.
+This file is part of the Ristra portage project.
+Please see the license file at the root of this repository, or at:
+    https://github.com/laristra/portage/blob/master/LICENSE
 -->
 <!DOCTYPE html>
 <html>
@@ -66,7 +35,7 @@ POSSIBILITY OF SUCH DAMAGE.
     <nav class="navbar navbar-default" role="navigation">
       <div class="container">
         <div class="navbar-header">
-          <a class="navbar-brand">portage 1.0.alpha</a>
+          <a class="navbar-brand">portage 1.1.0</a>
         </div>
       </div>
     </nav>
@@ -84,8 +53,8 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
   <div id="navrow1" class="tabs">
     <ul class="tablist">
       <li><a href="index.html"><span>Main&#160;Page</span></a></li>
-      <li><a href="quickstart.html"><span>Quick&#160;Start</span></a></li>
-      <li><a href="simple_mesh.html"><span>Example&#160;Use</span></a></li>
+      <li><a href="concepts.html"><span>Concepts</span></a></li>
+      <li><a href="example.html"><span>Example&#160;Use</span></a></li>
       <li><a href="namespaces.html"><span>Namespaces</span></a></li>
       <li class="current"><a href="annotated.html"><span>Classes</span></a></li>
       <li>
@@ -172,19 +141,18 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <h3><a class="anchor" id="index_c"></a>- c -</h3><ul>
 <li>ccw()
 : <a class="el" href="classPortage_1_1AuxMeshTopology.html#a827d5d76a49f65ad11b03e899fee0bef">Portage::AuxMeshTopology&lt; BasicMesh &gt;</a>
-, <a class="el" href="classPortage_1_1Flecsi__Mesh__Wrapper.html#a7939f4b04c71f83a5a7fcf95c8ba1dba">Portage::Flecsi_Mesh_Wrapper</a>
 </li>
 <li>cell_centroid()
 : <a class="el" href="classPortage_1_1AuxMeshTopology.html#a6be1d0af72ed2cb14eaff3d3f3725856">Portage::AuxMeshTopology&lt; BasicMesh &gt;</a>
-, <a class="el" href="classPortage_1_1Flecsi__Mesh__Wrapper.html#a28947e908619cf791f796bff12f647ea">Portage::Flecsi_Mesh_Wrapper</a>
 , <a class="el" href="classPortage_1_1MeshWrapperDual.html#a99017386b15e2371f8c901b61cc62eec">Portage::MeshWrapperDual&lt; Mesh_Wrapper_Type &gt;</a>
+, <a class="el" href="classwonton_1_1flecsi__mesh__t.html#a8c4d1e517f6b1a2723b0f1da3cba2773">wonton::flecsi_mesh_t&lt; M &gt;</a>
 </li>
 <li>cell_get_coordinates()
 : <a class="el" href="classMeshWrapperDual.html#ac2988f3a3808e73a33701e0bd96ba827">MeshWrapperDual</a>
 , <a class="el" href="classPortage_1_1AuxMeshTopology.html#ab43cbdf56afaa72d8b346835495184c2">Portage::AuxMeshTopology&lt; BasicMesh &gt;</a>
 , <a class="el" href="classPortage_1_1Flat__Mesh__Wrapper.html#a65eae8c25a89bfbb5f9b35544d823a9e">Portage::Flat_Mesh_Wrapper&lt; T &gt;</a>
-, <a class="el" href="classPortage_1_1Flecsi__Mesh__Wrapper.html#a4bcef35d48c6fcc9d9f4ab39adf0fa0e">Portage::Flecsi_Mesh_Wrapper</a>
 , <a class="el" href="classPortage_1_1MeshWrapperDual.html#a8e8f3cf5f414dcf4144e3fbe63c5aef9">Portage::MeshWrapperDual&lt; Mesh_Wrapper_Type &gt;</a>
+, <a class="el" href="classwonton_1_1flecsi__mesh__t.html#a94111e1fc8ee48103ecd117aac890729">wonton::flecsi_mesh_t&lt; M &gt;</a>
 </li>
 <li>cell_get_corner_at_node()
 : <a class="el" href="classPortage_1_1AuxMeshTopology.html#ace0177f9c1529cd05c2894fc53bd03ec">Portage::AuxMeshTopology&lt; BasicMesh &gt;</a>
@@ -196,27 +164,28 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 : <a class="el" href="classPortage_1_1Flat__Mesh__Wrapper.html#a5491ee7a39a05adde362fff948e0e9dd">Portage::Flat_Mesh_Wrapper&lt; T &gt;</a>
 , <a class="el" href="classPortage_1_1Jali__Mesh__Wrapper.html#aa06d9a0e8c5ac94f31d4327f5606c149">Portage::Jali_Mesh_Wrapper</a>
 , <a class="el" href="classPortage_1_1Simple__Mesh__Wrapper.html#adf77d0eb1adc6c53d4a1797873786a4e">Portage::Simple_Mesh_Wrapper</a>
+, <a class="el" href="classwonton_1_1flecsi__mesh__t.html#ac8defa061e2c570e5166cb69a8aa8f5d">wonton::flecsi_mesh_t&lt; M &gt;</a>
 </li>
 <li>cell_get_faces_and_dirs()
 : <a class="el" href="classPortage_1_1Flat__Mesh__Wrapper.html#ab02ab84bbf33b0c6edb2f8ab943d964b">Portage::Flat_Mesh_Wrapper&lt; T &gt;</a>
-, <a class="el" href="classPortage_1_1Flecsi__Mesh__Wrapper.html#ab95a5cfaee2d9bbc2ad1d4a10bb5f367">Portage::Flecsi_Mesh_Wrapper</a>
 , <a class="el" href="classPortage_1_1Jali__Mesh__Wrapper.html#ac7b57bbeecd71e227fe3f6a402277351">Portage::Jali_Mesh_Wrapper</a>
 , <a class="el" href="classPortage_1_1Simple__Mesh.html#ab71f845efa2ad2b11444d80eef9eab53">Portage::Simple_Mesh</a>
 , <a class="el" href="classPortage_1_1Simple__Mesh__Wrapper.html#a4e5ceef2b645462a216eef9bfa99b22f">Portage::Simple_Mesh_Wrapper</a>
+, <a class="el" href="classwonton_1_1flecsi__mesh__t.html#af7ccf9ee67aa40c64e017137830dfcc1">wonton::flecsi_mesh_t&lt; M &gt;</a>
 </li>
 <li>cell_get_node_adj_cells()
 : <a class="el" href="classPortage_1_1Flat__Mesh__Wrapper.html#a252fc387904e944457a2469ed1239c4c">Portage::Flat_Mesh_Wrapper&lt; T &gt;</a>
-, <a class="el" href="classPortage_1_1Flecsi__Mesh__Wrapper.html#ab9f8430636c53f74ba452222e1555196">Portage::Flecsi_Mesh_Wrapper</a>
 , <a class="el" href="classPortage_1_1Jali__Mesh__Wrapper.html#a736e30eb8216dcf6a8b3359fae92edcb">Portage::Jali_Mesh_Wrapper</a>
 , <a class="el" href="classPortage_1_1MeshWrapperDual.html#a5e06a438b0a9823a3efd9945b39bcd5a">Portage::MeshWrapperDual&lt; Mesh_Wrapper_Type &gt;</a>
 , <a class="el" href="classPortage_1_1Simple__Mesh__Wrapper.html#a62f26c8aff4ffb75b2b26ec2a125a158">Portage::Simple_Mesh_Wrapper</a>
+, <a class="el" href="classwonton_1_1flecsi__mesh__t.html#aff4d2d912a8710af6105ce82008b3502">wonton::flecsi_mesh_t&lt; M &gt;</a>
 </li>
 <li>cell_get_nodes()
 : <a class="el" href="classPortage_1_1Flat__Mesh__Wrapper.html#ae99e2d608a0f20526d64e9bb809aa848">Portage::Flat_Mesh_Wrapper&lt; T &gt;</a>
-, <a class="el" href="classPortage_1_1Flecsi__Mesh__Wrapper.html#a1e87b76dbd6397d966c733425f3f06e8">Portage::Flecsi_Mesh_Wrapper</a>
 , <a class="el" href="classPortage_1_1Jali__Mesh__Wrapper.html#a2185b2a379e60d29c573d8217b93939f">Portage::Jali_Mesh_Wrapper</a>
 , <a class="el" href="classPortage_1_1Simple__Mesh.html#ae5d20e0a6497d630dfc334d42b18e1b4">Portage::Simple_Mesh</a>
 , <a class="el" href="classPortage_1_1Simple__Mesh__Wrapper.html#ae2890c04e80e64a12367f84d07b310b5">Portage::Simple_Mesh_Wrapper</a>
+, <a class="el" href="classwonton_1_1flecsi__mesh__t.html#ab545a4db36cd596192ddb012de1798a5">wonton::flecsi_mesh_t&lt; M &gt;</a>
 </li>
 <li>cell_get_sides()
 : <a class="el" href="classPortage_1_1AuxMeshTopology.html#a67af8f0fa78afa7001b34f6722290a7b">Portage::AuxMeshTopology&lt; BasicMesh &gt;</a>
@@ -225,22 +194,32 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 : <a class="el" href="classPortage_1_1Flat__Mesh__Wrapper.html#a416e5a47a1c8696d86e7533f1f79b954">Portage::Flat_Mesh_Wrapper&lt; T &gt;</a>
 , <a class="el" href="classPortage_1_1Jali__Mesh__Wrapper.html#ae9a74f81a299799744dde7adb40f49a0">Portage::Jali_Mesh_Wrapper</a>
 , <a class="el" href="classPortage_1_1Simple__Mesh__Wrapper.html#acd72278e9ad70f1621f71f1a6f798cc0">Portage::Simple_Mesh_Wrapper</a>
+, <a class="el" href="classwonton_1_1flecsi__mesh__t.html#aa499dc2075e37586eb54940455eafb90">wonton::flecsi_mesh_t&lt; M &gt;</a>
 </li>
 <li>cell_get_wedges()
 : <a class="el" href="classPortage_1_1AuxMeshTopology.html#ad0455fd7775ee46a9a48fb834e4f73c4">Portage::AuxMeshTopology&lt; BasicMesh &gt;</a>
 </li>
+<li>cell_t
+: <a class="el" href="classflecsi__2d.html#aea72eef68e065c5dc3bf2b1e21b18f7a">flecsi_2d</a>
+, <a class="el" href="classflecsi__3d.html#a9f343ff45e2e6435787f226dbaf0b793">flecsi_3d</a>
+</li>
 <li>cell_volume()
 : <a class="el" href="classPortage_1_1AuxMeshTopology.html#a15ed249e53a5d560d3120fd7007ccf57">Portage::AuxMeshTopology&lt; BasicMesh &gt;</a>
-, <a class="el" href="classPortage_1_1Flecsi__Mesh__Wrapper.html#a420667c6fbf0a061236b6cfd93c042ed">Portage::Flecsi_Mesh_Wrapper</a>
 , <a class="el" href="classPortage_1_1MeshWrapperDual.html#aa0b66918abb66f26cd6f4a4f8bef2822">Portage::MeshWrapperDual&lt; Mesh_Wrapper_Type &gt;</a>
+, <a class="el" href="classwonton_1_1flecsi__mesh__t.html#a6e9ff423b5f604899abb2955c704831e">wonton::flecsi_mesh_t&lt; M &gt;</a>
 </li>
 <li>cellToXY()
 : <a class="el" href="classPortage_1_1AuxMeshTopology.html#a7eddb95eaed6deea04342beb709498bf">Portage::AuxMeshTopology&lt; BasicMesh &gt;</a>
-, <a class="el" href="classPortage_1_1Flecsi__Mesh__Wrapper.html#a38922699ba1245c3a358ad2112447973">Portage::Flecsi_Mesh_Wrapper</a>
 , <a class="el" href="classPortage_1_1MeshWrapperDual.html#a29f8fa2975d30af9fd2afa36c5999434">Portage::MeshWrapperDual&lt; Mesh_Wrapper_Type &gt;</a>
 </li>
 <li>center()
-: <a class="el" href="classgk_1_1IsotheticBBox.html#a7bca54a2109c83bacb9818d29f30f3ca">gk::IsotheticBBox&lt; D &gt;</a>
+: <a class="el" href="classgk_1_1IsotheticBBox.html#aedb1fd560a3a0a248acb5096df05aed3">gk::IsotheticBBox&lt; D &gt;</a>
+</li>
+<li>checkBasis()
+: <a class="el" href="classBasisTest.html#ab6422033a3c8f1c4f69f4331cc645676">BasisTest</a>
+</li>
+<li>checkWeight()
+: <a class="el" href="classWeightTest.html#a2c910f72090b7a842b51c84f9f3f549c">WeightTest</a>
 </li>
 <li>clear()
 : <a class="el" href="classgk_1_1IsotheticBBox.html#ab58ca71ec10345d7ee95cf2c7403310b">gk::IsotheticBBox&lt; D &gt;</a>
@@ -263,43 +242,16 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <li>corner_volume()
 : <a class="el" href="classPortage_1_1AuxMeshTopology.html#a6f12e9e2bcbee63d12a69c432db76391">Portage::AuxMeshTopology&lt; BasicMesh &gt;</a>
 </li>
+<li>counter_t
+: <a class="el" href="classflecsi__2d.html#a9988db1e9a79b64704616bbbab3cc8f5">flecsi_2d</a>
+, <a class="el" href="classflecsi__3d.html#a450c6302dcb305bec5535d570477eb6d">flecsi_3d</a>
+</li>
 </ul>
 </div><!-- contents -->
 <!--
-Copyright (c) 2016, Los Alamos National Security, LLC
-All rights reserved.
-Copyright 2016. Los Alamos National Security, LLC. This software was produced
-under U.S. Government contract DE-AC52-06NA25396 for Los Alamos National
-Laboratory (LANL), which is operated by Los Alamos National Security, LLC for
-the U.S. Department of Energy. The U.S. Government has rights to use,
-reproduce, and distribute this software.  NEITHER THE GOVERNMENT NOR LOS ALAMOS
-NATIONAL SECURITY, LLC MAKES ANY WARRANTY, EXPRESS OR IMPLIED, OR ASSUMES ANY
-LIABILITY FOR THE USE OF THIS SOFTWARE.  If software is modified to produce
-derivative works, such modified software should be clearly marked, so as not to
-confuse it with the version available from LANL.
-Additionally, redistribution and use in source and binary forms, with or
-without modification, are permitted provided that the following conditions are
-met:
-1. Redistributions of source code must retain the above copyright notice,
-   this list of conditions and the following disclaimer.
-2. Redistributions in binary form must reproduce the above copyright
-   notice, this list of conditions and the following disclaimer in the
-   documentation and/or other materials provided with the distribution.
-3. Neither the name of Los Alamos National Security, LLC, Los Alamos
-   National Laboratory, LANL, the U.S. Government, nor the names of its
-   contributors may be used to endorse or promote products derived from this
-   software without specific prior written permission.
-THIS SOFTWARE IS PROVIDED BY LOS ALAMOS NATIONAL SECURITY, LLC AND
-CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
-PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL LOS ALAMOS NATIONAL
-SECURITY, LLC OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
-BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER
-IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-POSSIBILITY OF SUCH DAMAGE.
+This file is part of the Ristra portage project.
+Please see the license file at the root of this repository, or at:
+    https://github.com/laristra/portage/blob/master/LICENSE
 -->
 <!-- HTML footer for doxygen 1.8.8-->
 <!-- start footer part -->

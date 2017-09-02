@@ -1,5 +1,4 @@
 var searchData=
 [
-  ['z',['z',['../unionr3d__rvec3.html#aef9efe3cea320b72e60c5386cfd93ae7',1,'r3d_rvec3::z()'],['../namespacePortage.html#a3eee47239d2edf36382c193a47bf5a02',1,'Portage::Z()']]],
-  ['zdim',['ZDIM',['../namespacegk.html#a778c3fe3522f2b5564771abc2d836c36',1,'gk']]]
+  ['weights',['weights',['../structPortage_1_1Weights__t.html#ae3dad4f7bf68389dc00ba8d21b1a7c29',1,'Portage::Weights_t::weights()'],['../classWeightTest.html#aea5ba00d6722a875a339b6662617535e',1,'WeightTest::weights()']]]
 ];

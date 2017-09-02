@@ -1,38 +1,7 @@
 <!--
-Copyright (c) 2016, Los Alamos National Security, LLC
-All rights reserved.
-Copyright 2016. Los Alamos National Security, LLC. This software was produced
-under U.S. Government contract DE-AC52-06NA25396 for Los Alamos National
-Laboratory (LANL), which is operated by Los Alamos National Security, LLC for
-the U.S. Department of Energy. The U.S. Government has rights to use,
-reproduce, and distribute this software.  NEITHER THE GOVERNMENT NOR LOS ALAMOS
-NATIONAL SECURITY, LLC MAKES ANY WARRANTY, EXPRESS OR IMPLIED, OR ASSUMES ANY
-LIABILITY FOR THE USE OF THIS SOFTWARE.  If software is modified to produce
-derivative works, such modified software should be clearly marked, so as not to
-confuse it with the version available from LANL.
-Additionally, redistribution and use in source and binary forms, with or
-without modification, are permitted provided that the following conditions are
-met:
-1. Redistributions of source code must retain the above copyright notice,
-   this list of conditions and the following disclaimer.
-2. Redistributions in binary form must reproduce the above copyright
-   notice, this list of conditions and the following disclaimer in the
-   documentation and/or other materials provided with the distribution.
-3. Neither the name of Los Alamos National Security, LLC, Los Alamos
-   National Laboratory, LANL, the U.S. Government, nor the names of its
-   contributors may be used to endorse or promote products derived from this
-   software without specific prior written permission.
-THIS SOFTWARE IS PROVIDED BY LOS ALAMOS NATIONAL SECURITY, LLC AND
-CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
-PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL LOS ALAMOS NATIONAL
-SECURITY, LLC OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
-BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER
-IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-POSSIBILITY OF SUCH DAMAGE.
+This file is part of the Ristra portage project.
+Please see the license file at the root of this repository, or at:
+    https://github.com/laristra/portage/blob/master/LICENSE
 -->
 <!DOCTYPE html>
 <html>
@@ -66,7 +35,7 @@ POSSIBILITY OF SUCH DAMAGE.
     <nav class="navbar navbar-default" role="navigation">
       <div class="container">
         <div class="navbar-header">
-          <a class="navbar-brand">portage 1.0.alpha</a>
+          <a class="navbar-brand">portage 1.1.0</a>
         </div>
       </div>
     </nav>
@@ -84,8 +53,8 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
   <div id="navrow1" class="tabs">
     <ul class="tablist">
       <li><a href="index.html"><span>Main&#160;Page</span></a></li>
-      <li><a href="quickstart.html"><span>Quick&#160;Start</span></a></li>
-      <li><a href="simple_mesh.html"><span>Example&#160;Use</span></a></li>
+      <li><a href="concepts.html"><span>Concepts</span></a></li>
+      <li><a href="example.html"><span>Example&#160;Use</span></a></li>
       <li><a href="namespaces.html"><span>Namespaces</span></a></li>
       <li class="current"><a href="annotated.html"><span>Classes</span></a></li>
       <li>
@@ -171,27 +140,29 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
   <tr><td class="entry"><a class="el" href="classPortage_1_1AuxMeshTopology.html#a8614b63a071dae828055ee89ea925d0c">dual_wedges_get_coordinates</a>(int nodeid, std::vector&lt; std::array&lt; Point&lt; 3 &gt;, 4 &gt;&gt; *wcoords) const</td><td class="entry"><a class="el" href="classPortage_1_1AuxMeshTopology.html">Portage::AuxMeshTopology&lt; Jali_Mesh_Wrapper &gt;</a></td><td class="entry"><span class="mlabel">inline</span></td></tr>
   <tr class="even"><td class="entry"><a class="el" href="classPortage_1_1AuxMeshTopology.html#a82379618ad2cd57f3362a26762eabe60">end</a>(Entity_kind const entity, Entity_type const etype=Entity_type::ALL) const</td><td class="entry"><a class="el" href="classPortage_1_1AuxMeshTopology.html">Portage::AuxMeshTopology&lt; Jali_Mesh_Wrapper &gt;</a></td><td class="entry"><span class="mlabel">inline</span></td></tr>
   <tr><td class="entry"><a class="el" href="classPortage_1_1AuxMeshTopology.html#ab0d115f18705de06201687c129d6b6a2">face_centroid</a>(int const faceid, Point&lt; D &gt; *fcen) const</td><td class="entry"><a class="el" href="classPortage_1_1AuxMeshTopology.html">Portage::AuxMeshTopology&lt; Jali_Mesh_Wrapper &gt;</a></td><td class="entry"><span class="mlabel">inline</span></td></tr>
-  <tr class="even"><td class="entry"><a class="el" href="classPortage_1_1Jali__Mesh__Wrapper.html#aab8b08b0138595ad0868e9922239d0fa">face_get_nodes</a>(int const faceid, std::vector&lt; int &gt; *fnodes) const </td><td class="entry"><a class="el" href="classPortage_1_1Jali__Mesh__Wrapper.html">Portage::Jali_Mesh_Wrapper</a></td><td class="entry"><span class="mlabel">inline</span></td></tr>
-  <tr><td class="entry"><a class="el" href="classPortage_1_1Jali__Mesh__Wrapper.html#a41cb9e0542697d90a7db5de48260febb">get_global_id</a>(int const id, Entity_kind const kind) const </td><td class="entry"><a class="el" href="classPortage_1_1Jali__Mesh__Wrapper.html">Portage::Jali_Mesh_Wrapper</a></td><td class="entry"><span class="mlabel">inline</span></td></tr>
-  <tr class="even"><td class="entry"><a class="el" href="classPortage_1_1Jali__Mesh__Wrapper.html#a2867ea74edba1303cef84c15de23b6c2">Jali_Mesh_Wrapper</a>(Jali::Mesh const &amp;mesh, bool request_sides=true, bool request_wedges=true, bool request_corners=true)</td><td class="entry"><a class="el" href="classPortage_1_1Jali__Mesh__Wrapper.html">Portage::Jali_Mesh_Wrapper</a></td><td class="entry"><span class="mlabel">inline</span><span class="mlabel">explicit</span></td></tr>
-  <tr><td class="entry"><a class="el" href="classPortage_1_1Jali__Mesh__Wrapper.html#a6365895151a17d17bbfae82ab2766916">Jali_Mesh_Wrapper</a>(Jali_Mesh_Wrapper const &amp;inmesh)=delete</td><td class="entry"><a class="el" href="classPortage_1_1Jali__Mesh__Wrapper.html">Portage::Jali_Mesh_Wrapper</a></td><td class="entry"></td></tr>
-  <tr class="even"><td class="entry"><a class="el" href="classPortage_1_1Jali__Mesh__Wrapper.html#ad944e59f8dab76f38c1b76890e5f8ca4">node_get_cell_adj_nodes</a>(int const nodeid, Entity_type const ptype, std::vector&lt; int &gt; *adjnodes) const </td><td class="entry"><a class="el" href="classPortage_1_1Jali__Mesh__Wrapper.html">Portage::Jali_Mesh_Wrapper</a></td><td class="entry"><span class="mlabel">inline</span></td></tr>
-  <tr><td class="entry"><a class="el" href="classPortage_1_1Jali__Mesh__Wrapper.html#a580bca55a17b110c9f566cb7fa1ad28a">node_get_coordinates</a>(int const nodeid, Point&lt; D &gt; *pp) const </td><td class="entry"><a class="el" href="classPortage_1_1Jali__Mesh__Wrapper.html">Portage::Jali_Mesh_Wrapper</a></td><td class="entry"><span class="mlabel">inline</span></td></tr>
-  <tr class="even"><td class="entry"><a class="el" href="classPortage_1_1AuxMeshTopology.html#a23fef51fa96d7264539a1887b8a6979a">node_get_corners</a>(int const nodeid, Entity_type const type, std::vector&lt; int &gt; *cornerids) const</td><td class="entry"><a class="el" href="classPortage_1_1AuxMeshTopology.html">Portage::AuxMeshTopology&lt; Jali_Mesh_Wrapper &gt;</a></td><td class="entry"><span class="mlabel">inline</span></td></tr>
-  <tr><td class="entry"><a class="el" href="classPortage_1_1AuxMeshTopology.html#ae8d18194e614c90d14f3db7fef560061">node_get_wedges</a>(int const nodeid, Entity_type const type, std::vector&lt; int &gt; *wedgeids) const</td><td class="entry"><a class="el" href="classPortage_1_1AuxMeshTopology.html">Portage::AuxMeshTopology&lt; Jali_Mesh_Wrapper &gt;</a></td><td class="entry"><span class="mlabel">inline</span></td></tr>
-  <tr class="even"><td class="entry"><a class="el" href="classPortage_1_1AuxMeshTopology.html#a72a7e33a70f9b88f974a377858e63f32">num_entities</a>(Entity_kind const entity, Entity_type const etype=Entity_type::ALL) const</td><td class="entry"><a class="el" href="classPortage_1_1AuxMeshTopology.html">Portage::AuxMeshTopology&lt; Jali_Mesh_Wrapper &gt;</a></td><td class="entry"><span class="mlabel">inline</span></td></tr>
-  <tr><td class="entry"><a class="el" href="classPortage_1_1Jali__Mesh__Wrapper.html#a5bfaca3c6cab2e6c155a906e176540b5">num_ghost_cells</a>() const </td><td class="entry"><a class="el" href="classPortage_1_1Jali__Mesh__Wrapper.html">Portage::Jali_Mesh_Wrapper</a></td><td class="entry"><span class="mlabel">inline</span></td></tr>
-  <tr class="even"><td class="entry"><a class="el" href="classPortage_1_1AuxMeshTopology.html#aa5c047de431dc1269c6defca71476147">num_ghost_corners</a>() const</td><td class="entry"><a class="el" href="classPortage_1_1AuxMeshTopology.html">Portage::AuxMeshTopology&lt; Jali_Mesh_Wrapper &gt;</a></td><td class="entry"><span class="mlabel">inline</span></td></tr>
-  <tr><td class="entry"><a class="el" href="classPortage_1_1Jali__Mesh__Wrapper.html#a7f1273038bb5a6f82deb1460673f524b">num_ghost_faces</a>() const </td><td class="entry"><a class="el" href="classPortage_1_1Jali__Mesh__Wrapper.html">Portage::Jali_Mesh_Wrapper</a></td><td class="entry"><span class="mlabel">inline</span></td></tr>
-  <tr class="even"><td class="entry"><a class="el" href="classPortage_1_1Jali__Mesh__Wrapper.html#ad71159d45d5fe66754e4d0cbe3435892">num_ghost_nodes</a>() const </td><td class="entry"><a class="el" href="classPortage_1_1Jali__Mesh__Wrapper.html">Portage::Jali_Mesh_Wrapper</a></td><td class="entry"><span class="mlabel">inline</span></td></tr>
-  <tr><td class="entry"><a class="el" href="classPortage_1_1AuxMeshTopology.html#ad9bb2bcd54b0d744d8a4082b65863534">num_ghost_sides</a>() const</td><td class="entry"><a class="el" href="classPortage_1_1AuxMeshTopology.html">Portage::AuxMeshTopology&lt; Jali_Mesh_Wrapper &gt;</a></td><td class="entry"><span class="mlabel">inline</span></td></tr>
-  <tr class="even"><td class="entry"><a class="el" href="classPortage_1_1AuxMeshTopology.html#a0c284523f9253c045d4c4652df0fdde0">num_ghost_wedges</a>() const</td><td class="entry"><a class="el" href="classPortage_1_1AuxMeshTopology.html">Portage::AuxMeshTopology&lt; Jali_Mesh_Wrapper &gt;</a></td><td class="entry"><span class="mlabel">inline</span></td></tr>
-  <tr><td class="entry"><a class="el" href="classPortage_1_1Jali__Mesh__Wrapper.html#af408e6da6cb786782de50f22e359a508">num_owned_cells</a>() const </td><td class="entry"><a class="el" href="classPortage_1_1Jali__Mesh__Wrapper.html">Portage::Jali_Mesh_Wrapper</a></td><td class="entry"><span class="mlabel">inline</span></td></tr>
-  <tr class="even"><td class="entry"><a class="el" href="classPortage_1_1AuxMeshTopology.html#a0d5c48ae3a2d5ce6704a0ee5b17bfe1b">num_owned_corners</a>() const</td><td class="entry"><a class="el" href="classPortage_1_1AuxMeshTopology.html">Portage::AuxMeshTopology&lt; Jali_Mesh_Wrapper &gt;</a></td><td class="entry"><span class="mlabel">inline</span></td></tr>
-  <tr><td class="entry"><a class="el" href="classPortage_1_1Jali__Mesh__Wrapper.html#af86bae6cfdb4745ff6520748a40f0cd8">num_owned_faces</a>() const </td><td class="entry"><a class="el" href="classPortage_1_1Jali__Mesh__Wrapper.html">Portage::Jali_Mesh_Wrapper</a></td><td class="entry"><span class="mlabel">inline</span></td></tr>
-  <tr class="even"><td class="entry"><a class="el" href="classPortage_1_1Jali__Mesh__Wrapper.html#a61f99d90fb7b8bc62447389799df7cc8">num_owned_nodes</a>() const </td><td class="entry"><a class="el" href="classPortage_1_1Jali__Mesh__Wrapper.html">Portage::Jali_Mesh_Wrapper</a></td><td class="entry"><span class="mlabel">inline</span></td></tr>
-  <tr><td class="entry"><a class="el" href="classPortage_1_1AuxMeshTopology.html#a30d2dfa1c20c71145fe898b1529b21d7">num_owned_sides</a>() const</td><td class="entry"><a class="el" href="classPortage_1_1AuxMeshTopology.html">Portage::AuxMeshTopology&lt; Jali_Mesh_Wrapper &gt;</a></td><td class="entry"><span class="mlabel">inline</span></td></tr>
-  <tr class="even"><td class="entry"><a class="el" href="classPortage_1_1AuxMeshTopology.html#ae022c6b946032ed1d50d0b7957b483a2">num_owned_wedges</a>() const</td><td class="entry"><a class="el" href="classPortage_1_1AuxMeshTopology.html">Portage::AuxMeshTopology&lt; Jali_Mesh_Wrapper &gt;</a></td><td class="entry"><span class="mlabel">inline</span></td></tr>
+  <tr class="even"><td class="entry"><a class="el" href="classPortage_1_1AuxMeshTopology.html#a230262249728d2e17f3856b6fb266820">face_get_cells</a>(int const faceid, Entity_type const etype, std::vector&lt; int &gt; *cells) const</td><td class="entry"><a class="el" href="classPortage_1_1AuxMeshTopology.html">Portage::AuxMeshTopology&lt; Jali_Mesh_Wrapper &gt;</a></td><td class="entry"><span class="mlabel">inline</span></td></tr>
+  <tr><td class="entry"><a class="el" href="classPortage_1_1Jali__Mesh__Wrapper.html#aab8b08b0138595ad0868e9922239d0fa">face_get_nodes</a>(int const faceid, std::vector&lt; int &gt; *fnodes) const </td><td class="entry"><a class="el" href="classPortage_1_1Jali__Mesh__Wrapper.html">Portage::Jali_Mesh_Wrapper</a></td><td class="entry"><span class="mlabel">inline</span></td></tr>
+  <tr class="even"><td class="entry"><a class="el" href="classPortage_1_1Jali__Mesh__Wrapper.html#a41cb9e0542697d90a7db5de48260febb">get_global_id</a>(int const id, Entity_kind const kind) const </td><td class="entry"><a class="el" href="classPortage_1_1Jali__Mesh__Wrapper.html">Portage::Jali_Mesh_Wrapper</a></td><td class="entry"><span class="mlabel">inline</span></td></tr>
+  <tr><td class="entry"><a class="el" href="classPortage_1_1Jali__Mesh__Wrapper.html#a2867ea74edba1303cef84c15de23b6c2">Jali_Mesh_Wrapper</a>(Jali::Mesh const &amp;mesh, bool request_sides=true, bool request_wedges=true, bool request_corners=true)</td><td class="entry"><a class="el" href="classPortage_1_1Jali__Mesh__Wrapper.html">Portage::Jali_Mesh_Wrapper</a></td><td class="entry"><span class="mlabel">inline</span><span class="mlabel">explicit</span></td></tr>
+  <tr class="even"><td class="entry"><a class="el" href="classPortage_1_1Jali__Mesh__Wrapper.html#a6365895151a17d17bbfae82ab2766916">Jali_Mesh_Wrapper</a>(Jali_Mesh_Wrapper const &amp;inmesh)=delete</td><td class="entry"><a class="el" href="classPortage_1_1Jali__Mesh__Wrapper.html">Portage::Jali_Mesh_Wrapper</a></td><td class="entry"></td></tr>
+  <tr><td class="entry"><a class="el" href="classPortage_1_1Jali__Mesh__Wrapper.html#ad944e59f8dab76f38c1b76890e5f8ca4">node_get_cell_adj_nodes</a>(int const nodeid, Entity_type const ptype, std::vector&lt; int &gt; *adjnodes) const </td><td class="entry"><a class="el" href="classPortage_1_1Jali__Mesh__Wrapper.html">Portage::Jali_Mesh_Wrapper</a></td><td class="entry"><span class="mlabel">inline</span></td></tr>
+  <tr class="even"><td class="entry"><a class="el" href="classPortage_1_1Jali__Mesh__Wrapper.html#a580bca55a17b110c9f566cb7fa1ad28a">node_get_coordinates</a>(int const nodeid, Point&lt; D &gt; *pp) const </td><td class="entry"><a class="el" href="classPortage_1_1Jali__Mesh__Wrapper.html">Portage::Jali_Mesh_Wrapper</a></td><td class="entry"><span class="mlabel">inline</span></td></tr>
+  <tr><td class="entry"><a class="el" href="classPortage_1_1AuxMeshTopology.html#a23fef51fa96d7264539a1887b8a6979a">node_get_corners</a>(int const nodeid, Entity_type const type, std::vector&lt; int &gt; *cornerids) const</td><td class="entry"><a class="el" href="classPortage_1_1AuxMeshTopology.html">Portage::AuxMeshTopology&lt; Jali_Mesh_Wrapper &gt;</a></td><td class="entry"><span class="mlabel">inline</span></td></tr>
+  <tr class="even"><td class="entry"><a class="el" href="classPortage_1_1AuxMeshTopology.html#ae8d18194e614c90d14f3db7fef560061">node_get_wedges</a>(int const nodeid, Entity_type const type, std::vector&lt; int &gt; *wedgeids) const</td><td class="entry"><a class="el" href="classPortage_1_1AuxMeshTopology.html">Portage::AuxMeshTopology&lt; Jali_Mesh_Wrapper &gt;</a></td><td class="entry"><span class="mlabel">inline</span></td></tr>
+  <tr><td class="entry"><a class="el" href="classPortage_1_1AuxMeshTopology.html#a72a7e33a70f9b88f974a377858e63f32">num_entities</a>(Entity_kind const entity, Entity_type const etype=Entity_type::ALL) const</td><td class="entry"><a class="el" href="classPortage_1_1AuxMeshTopology.html">Portage::AuxMeshTopology&lt; Jali_Mesh_Wrapper &gt;</a></td><td class="entry"><span class="mlabel">inline</span></td></tr>
+  <tr class="even"><td class="entry"><a class="el" href="classPortage_1_1Jali__Mesh__Wrapper.html#a5bfaca3c6cab2e6c155a906e176540b5">num_ghost_cells</a>() const </td><td class="entry"><a class="el" href="classPortage_1_1Jali__Mesh__Wrapper.html">Portage::Jali_Mesh_Wrapper</a></td><td class="entry"><span class="mlabel">inline</span></td></tr>
+  <tr><td class="entry"><a class="el" href="classPortage_1_1AuxMeshTopology.html#aa5c047de431dc1269c6defca71476147">num_ghost_corners</a>() const</td><td class="entry"><a class="el" href="classPortage_1_1AuxMeshTopology.html">Portage::AuxMeshTopology&lt; Jali_Mesh_Wrapper &gt;</a></td><td class="entry"><span class="mlabel">inline</span></td></tr>
+  <tr class="even"><td class="entry"><a class="el" href="classPortage_1_1Jali__Mesh__Wrapper.html#a7f1273038bb5a6f82deb1460673f524b">num_ghost_faces</a>() const </td><td class="entry"><a class="el" href="classPortage_1_1Jali__Mesh__Wrapper.html">Portage::Jali_Mesh_Wrapper</a></td><td class="entry"><span class="mlabel">inline</span></td></tr>
+  <tr><td class="entry"><a class="el" href="classPortage_1_1Jali__Mesh__Wrapper.html#ad71159d45d5fe66754e4d0cbe3435892">num_ghost_nodes</a>() const </td><td class="entry"><a class="el" href="classPortage_1_1Jali__Mesh__Wrapper.html">Portage::Jali_Mesh_Wrapper</a></td><td class="entry"><span class="mlabel">inline</span></td></tr>
+  <tr class="even"><td class="entry"><a class="el" href="classPortage_1_1AuxMeshTopology.html#ad9bb2bcd54b0d744d8a4082b65863534">num_ghost_sides</a>() const</td><td class="entry"><a class="el" href="classPortage_1_1AuxMeshTopology.html">Portage::AuxMeshTopology&lt; Jali_Mesh_Wrapper &gt;</a></td><td class="entry"><span class="mlabel">inline</span></td></tr>
+  <tr><td class="entry"><a class="el" href="classPortage_1_1AuxMeshTopology.html#a0c284523f9253c045d4c4652df0fdde0">num_ghost_wedges</a>() const</td><td class="entry"><a class="el" href="classPortage_1_1AuxMeshTopology.html">Portage::AuxMeshTopology&lt; Jali_Mesh_Wrapper &gt;</a></td><td class="entry"><span class="mlabel">inline</span></td></tr>
+  <tr class="even"><td class="entry"><a class="el" href="classPortage_1_1Jali__Mesh__Wrapper.html#af408e6da6cb786782de50f22e359a508">num_owned_cells</a>() const </td><td class="entry"><a class="el" href="classPortage_1_1Jali__Mesh__Wrapper.html">Portage::Jali_Mesh_Wrapper</a></td><td class="entry"><span class="mlabel">inline</span></td></tr>
+  <tr><td class="entry"><a class="el" href="classPortage_1_1AuxMeshTopology.html#a0d5c48ae3a2d5ce6704a0ee5b17bfe1b">num_owned_corners</a>() const</td><td class="entry"><a class="el" href="classPortage_1_1AuxMeshTopology.html">Portage::AuxMeshTopology&lt; Jali_Mesh_Wrapper &gt;</a></td><td class="entry"><span class="mlabel">inline</span></td></tr>
+  <tr class="even"><td class="entry"><a class="el" href="classPortage_1_1Jali__Mesh__Wrapper.html#af86bae6cfdb4745ff6520748a40f0cd8">num_owned_faces</a>() const </td><td class="entry"><a class="el" href="classPortage_1_1Jali__Mesh__Wrapper.html">Portage::Jali_Mesh_Wrapper</a></td><td class="entry"><span class="mlabel">inline</span></td></tr>
+  <tr><td class="entry"><a class="el" href="classPortage_1_1Jali__Mesh__Wrapper.html#a61f99d90fb7b8bc62447389799df7cc8">num_owned_nodes</a>() const </td><td class="entry"><a class="el" href="classPortage_1_1Jali__Mesh__Wrapper.html">Portage::Jali_Mesh_Wrapper</a></td><td class="entry"><span class="mlabel">inline</span></td></tr>
+  <tr class="even"><td class="entry"><a class="el" href="classPortage_1_1AuxMeshTopology.html#a30d2dfa1c20c71145fe898b1529b21d7">num_owned_sides</a>() const</td><td class="entry"><a class="el" href="classPortage_1_1AuxMeshTopology.html">Portage::AuxMeshTopology&lt; Jali_Mesh_Wrapper &gt;</a></td><td class="entry"><span class="mlabel">inline</span></td></tr>
+  <tr><td class="entry"><a class="el" href="classPortage_1_1AuxMeshTopology.html#ae022c6b946032ed1d50d0b7957b483a2">num_owned_wedges</a>() const</td><td class="entry"><a class="el" href="classPortage_1_1AuxMeshTopology.html">Portage::AuxMeshTopology&lt; Jali_Mesh_Wrapper &gt;</a></td><td class="entry"><span class="mlabel">inline</span></td></tr>
+  <tr class="even"><td class="entry"><a class="el" href="classPortage_1_1AuxMeshTopology.html#a10c5bf35b4c490316468ca7251d2a2b4">on_exterior_boundary</a>(Entity_kind const entity, int const entity_id) const</td><td class="entry"><a class="el" href="classPortage_1_1AuxMeshTopology.html">Portage::AuxMeshTopology&lt; Jali_Mesh_Wrapper &gt;</a></td><td class="entry"><span class="mlabel">inline</span></td></tr>
   <tr><td class="entry"><a class="el" href="classPortage_1_1Jali__Mesh__Wrapper.html#a2b3b137890713410690a353c85a09bf8">operator=</a>(Jali_Mesh_Wrapper const &amp;inmesh)=delete</td><td class="entry"><a class="el" href="classPortage_1_1Jali__Mesh__Wrapper.html">Portage::Jali_Mesh_Wrapper</a></td><td class="entry"></td></tr>
   <tr class="even"><td class="entry"><a class="el" href="classPortage_1_1AuxMeshTopology.html#a00c603b05fea6a12b1ba7f1f08598d77">order_wedges_ccw</a>(std::vector&lt; int &gt; *wedgeids) const</td><td class="entry"><a class="el" href="classPortage_1_1AuxMeshTopology.html">Portage::AuxMeshTopology&lt; Jali_Mesh_Wrapper &gt;</a></td><td class="entry"><span class="mlabel">inline</span></td></tr>
   <tr><td class="entry"><a class="el" href="classPortage_1_1AuxMeshTopology.html#af1f5bca2e914e77ed0855b31a2ead164">side_get_cell</a>(int const sideid) const</td><td class="entry"><a class="el" href="classPortage_1_1AuxMeshTopology.html">Portage::AuxMeshTopology&lt; Jali_Mesh_Wrapper &gt;</a></td><td class="entry"><span class="mlabel">inline</span></td></tr>
@@ -220,40 +191,9 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
   <tr class="even"><td class="entry"><a class="el" href="classPortage_1_1Jali__Mesh__Wrapper.html#ace6b3fc490044f5a44cab5dd0acb0dae">~Jali_Mesh_Wrapper</a>()</td><td class="entry"><a class="el" href="classPortage_1_1Jali__Mesh__Wrapper.html">Portage::Jali_Mesh_Wrapper</a></td><td class="entry"><span class="mlabel">inline</span></td></tr>
 </table></div><!-- contents -->
 <!--
-Copyright (c) 2016, Los Alamos National Security, LLC
-All rights reserved.
-Copyright 2016. Los Alamos National Security, LLC. This software was produced
-under U.S. Government contract DE-AC52-06NA25396 for Los Alamos National
-Laboratory (LANL), which is operated by Los Alamos National Security, LLC for
-the U.S. Department of Energy. The U.S. Government has rights to use,
-reproduce, and distribute this software.  NEITHER THE GOVERNMENT NOR LOS ALAMOS
-NATIONAL SECURITY, LLC MAKES ANY WARRANTY, EXPRESS OR IMPLIED, OR ASSUMES ANY
-LIABILITY FOR THE USE OF THIS SOFTWARE.  If software is modified to produce
-derivative works, such modified software should be clearly marked, so as not to
-confuse it with the version available from LANL.
-Additionally, redistribution and use in source and binary forms, with or
-without modification, are permitted provided that the following conditions are
-met:
-1. Redistributions of source code must retain the above copyright notice,
-   this list of conditions and the following disclaimer.
-2. Redistributions in binary form must reproduce the above copyright
-   notice, this list of conditions and the following disclaimer in the
-   documentation and/or other materials provided with the distribution.
-3. Neither the name of Los Alamos National Security, LLC, Los Alamos
-   National Laboratory, LANL, the U.S. Government, nor the names of its
-   contributors may be used to endorse or promote products derived from this
-   software without specific prior written permission.
-THIS SOFTWARE IS PROVIDED BY LOS ALAMOS NATIONAL SECURITY, LLC AND
-CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
-PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL LOS ALAMOS NATIONAL
-SECURITY, LLC OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
-BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER
-IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-POSSIBILITY OF SUCH DAMAGE.
+This file is part of the Ristra portage project.
+Please see the license file at the root of this repository, or at:
+    https://github.com/laristra/portage/blob/master/LICENSE
 -->
 <!-- HTML footer for doxygen 1.8.8-->
 <!-- start footer part -->
