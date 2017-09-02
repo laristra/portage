@@ -35,12 +35,12 @@ after_success:
       docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD";
       docker push "${TRAVIS_REPO_SLUG}:latest";
     fi
-  - if [[ ${DOCS} ]]; then
-      cd ${HOME}/docker/portage;
-      CON=$(docker run -d ${TRAVIS_REPO_SLUG}:latest) && docker cp ${CON}:/home/portage/portage/build/doc . ;
-      pip3 install doctr;
-      doctr deploy . --built-docs doc/portage/doxygen/html;
-    fi
+#  - if [[ ${DOCS} ]]; then
+  - cd ${HOME}/docker/portage;
+    CON=$(docker run -d ${TRAVIS_REPO_SLUG}:latest) && docker cp ${CON}:/home/portage/portage/build/doc . ;
+    pip3 install doctr;
+    doctr deploy . --built-docs doc/portage/doxygen/html;
+#    fi
 
 env:
   global:
