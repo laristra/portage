@@ -1,101 +1,247 @@
-# Quickstart Guide      {#quickstart}
+[![Build Status](https://travis-ci.org/laristra/portage.svg?branch=master)](https://travis-ci.org/laristra/portage)
+[![codecov.io](https://codecov.io/github/laristra/portage/coverage.svg?branch=master)](https://codecov.io/github/laristra/portage/portage?branch=master)
+[![Quality Gate](https://sonarqube.com/api/badges/gate?key=portage%3A%2Fmaster)](https://sonarqube.com/dashboard?id=portage%3A%2Fmaster)
 
-## Obtaining portage
-portage is maintained within a git [repository](https://github.com/laristra/portage)
-on GitHub that contains a couple of git submodules.  To fully checkout the code
-and its submodules into a new directory called `portage`, execute the following
-~~~
-$ git clone --recursive https://github.com/laristra/portage.git
-~~~
+# portage
 
-## Building the Code
-portage uses [CMake](https://cmake.org) to configure its Makefiles, and
-currently requires CMake version 3.0 or greater.  Additionally, portage does not
-allow for in-source builds, which implies the first step is to create a build
-directory
-~~~
-$ cd portage
-$ mkdir build
-$ cd build
-~~~
-The next step is to invoke CMake to build our Makefiles.  On the command line,
-one can enter (at a minimum)
-~~~
-$ cmake \
-      -D CMAKE_C_COMPILER=<path_to_your_C_compiler> \
-	  -D CMAKE_CXX_COMPILER=<path_to_your_C++_compiler> \
-	  -D ENABLE_UNIT_TESTS=True \
-	  -D ENABLE_APP_TESTS=True \
-	  ..
-~~~
-The flags `ENABLE_UNIT_TESTS` and `ENABLE_APP_TESTS` are not strictly
-_required_ but will provide for running sample tests below.  As a
-concrete example, our local systems use modulefiles to load
-environments, and we would typically do something like the following to
-build with MPI
-~~~
-$ module load intel/15.0.3 openmpi/1.6.5 cmake
-$ cmake \
-      -D CMAKE_C_COMPILER=`which mpicc` \
-	  -D CMAKE_CXX_COMPILER=`which mpiCC` \
-	  -D ENABLE_MPI=True \
-	  -D ENABLE_MPI_CXX_BINDINGS=True \
-	  -D ENABLE_UNIT_TESTS=True \
-	  -D ENABLE_APP_TESTS=True \
-	  ..
-~~~
-Alternatively, you could run the interactive `ccmake` command, which exposes
-many more variables that can be set within the CMake build step.
+The portage library provides a framework for general purpose data
+remapping - between meshes, between particles, or between meshes and
+particles - in computational physics applications.  Remapping is
+facilitated through the use of user-supplied _wrappers_ around
+meshes/particle swarms with their data.  The remap algorithm is
+organized in three phases operating on the wrappers corresponding to
+the original mesh/particles: _search_ for intersection candidates,
+calculate the _intersection_ with candidates, then _interpolate_ the
+results onto the new mesh or particle swarm.  Algorithms for each of
+the phases can be customized (e.g. order of accuracy of the
+interpolation) and, through the wrappers, take advantage of hybrid
+parallelism (MPI+X).
 
-After one of the above commands, CMake will generate several Makefiles.  Simply
-running
-~~~
-$ make
-~~~
-will compile the source code.
+## Getting Started
 
-## Running Sample Tests
-After the code is compiled, running
-~~~
-$ make test
-~~~
-will run several tests.  The number and type of tests actually run depends on
-the options turned on during the CMake configuration step.  For example,
-`ENABLE_APP_TESTS` will run the sample applications of remapping that are
-declared within the `portage/test` directory; the actual source for the app
-tests live in the `portage/app` directory.
+To obtain a copy of portage and its submodules from GitHub, clone
+recursively:
 
-Under the hood, we use Google Test to configure our testing framework.
-Additionally, we use CMake to conditionally turn on specific tests based on
-settings passed at configure time.  For example, if `ENABLE_MPI=True` at
-configure time, then we will include both unit and app tests that utilize
-MPI; otherwise they are ignored.  *NOTE* If you request MPI and run the tests,
-make sure that you actually have access to MPI --- on some clusters, the
-frontend or login nodes don't actually have the ability to call `MPI_INIT`,
-and you may get obscure errors if you try.
+```sh
+git clone --recursive https://github.com/laristra/portage
+```
 
-## What's next?
-The apps directory is a good place to look for _how_ one uses the methods
-within the portage library to actually perform a remap.  Out of the box,
-portage provides wrappers to three mesh and state manager frameworks:
+If you are familiar with Docker, take a look at
+our
+[Dockerfile](https://github.com/laristra/portage/blob/master/docker/Dockerfile) for
+a working build environment.  In particular, the Dockerfile builds off
+of
+the [portage-buildenv](https://github.com/laristra/portage-buildenv)
+Dockerfile, and uses
+our
+[travis.yml](https://github.com/laristra/portage/blob/master/.travis.yml) file
+with Travis CI.
 
-1. `Simple_Mesh` and `Simple_State` are examples of a very simple mesh and
-state manager framework that is included with portage.  It is not intended to
-be production quality, but to demonstrate how one might hook their own mesh and
-state manager framework into portage.  A detailed description of `Simple_Mesh`
-and `Simple_State` and how they are used is shown on the @ref simple_mesh page.
+### Prerequisites
 
-2. [`FleCSI`](https://github.com/losalamos/flecsi) is a modern, flexible,
-computational framework designed for next-generation architectures.
-In particular, portage currently uses the _Burton Mesh_ specialization.  FleCSI
-is undergoing change at fast pace, and portage's support of FleCSI features is
-a little behind. *portage is currently known to be consistent with hash*
-`170b54a` of FleCSI.  If you wish to run portage with FleCSI, please checkout
-that version of FleCSI and build it.  Then to enable within portage, set the
-`FLECSI_INSTALL_DIR:FILEPATH=<path_to_your_flecsi_installation>` CMake variable.
-Note that FleCSI requires a C++-14 compatible compiler.  We are in the process
-of updating portage's FleCSI support to be more up-to-date.
+Portage uses standard C++11 features, so a fairly modern compiler is
+needed.  We regularly test with Intel 17+ or GCC 5.3+.  Utilizing the
+full capabilities of portage will require an MPI implementation; we
+regularly test with OpenMPI 1.10.3+ The build system _requires_ CMake
+version 3.0+.
 
-3. `Jali` is a stripped-down version of the mesh infrastructure of the
-[Amanzi](https://software.lanl.gov/ascem/amanzi/) code.  It is currently not
-open-source and is mainly used internally for testing.
+The following libraries are also _required_ (see examples below):
+
+- LAPACKE (3.7.1+)
+
+- **__Either__** Boost (1.53.0+) **__or__** Thrust (1.6.0+):
+  We wrap some features of either one of these packages.  If you would
+  like to run with OpenMP or TBB threads, then you _must_ use Thrust.
+
+Portage provides wrappers for a few third-party mesh types.  Building
+support for these is _optional_:
+
+- [Jali](http://github.com/lanl/jali):
+
+  We regularly test with verison 0.9.8.  You will need to set the
+  `Jali_Dir` CMake variable if you wish to build support for Jali and
+  its tests (see examples below).
+
+- [FleCSI Burton Specialization](http://github.com/laristra/flecsi-sp):
+
+  The Burton specialization in the `flecsi-sp` repository is built on
+  top of [FleCSI](http://github.com/laristra/flecsi).  You will need
+  _both_ projects to build support for the Burton mesh specialization
+  and its tests.  You will need to set `ENABLE_FleCSI=True` and add
+  the FleCSI and FleCSI-sp install paths to the `CMAKE_PREFIX_PATH`;
+  see examples below.  Both FleCSI packages are under constant
+  development.  This version of portage is known to work with hash
+  `374b56b` of the FleCSI _stable_ branch, and hash `e78c594` of the
+  FleCSI-SP _stable_ branch.
+
+The [documentation](http://portage.lanl.gov) is built using doxygen (1.8+).
+
+For more details regarding CMake settings, see
+the [documentation](http://portage.lanl.gov) page.
+
+### Installing
+
+In the simplest case where you have the appropriate versions mentioned
+above and Boost and LAPACKE are in the usual locations that CMake
+searches, then the build step is:
+
+```sh
+portage $ mkdir build
+portage $ cd build
+portage/build $ cmake -DENABLE_APP_TESTS=True ..
+portage/build $ make
+```
+
+This compiles the serial code and about a dozen application tests.  To
+run the tests, simply execute
+
+```sh
+portage/build $ make tests
+```
+
+If you wish to install the code into the `CMAKE_INSTALL_PREFIX` then
+simply execute
+```sh
+portage/build $ make install
+```
+
+To build the documentation, one would configure with the
+`-DENABLE_DOXYGEN=True` flag, and then `make doxygen`.
+
+See the examples below, or the
+[documentation](http://portage.lanl.gov) for more build instructions.
+
+# License
+
+This project is licensed under a modified 3-clause BSD license - see
+the [LICENSE](https://github.com/laristra/portage/blob/master/LICENSE)
+file for details.
+
+# Release
+
+This software has been approved for open source release and has been
+assigned **LA-CC-16-084**.
+
+----
+----
+
+# Example builds
+
+Below we list copy & paste instructions for several local machines; we
+have a script that parses this README file to execute the examples
+below to ensure they build.
+
+## Darwin
+
+Execute the following from the portage root directory:
+
+```c++
+# machine=darwin-fe
+module load openmpi/2.0.1-intel_17.0.0 cmake/3.7.1
+JALI_INSTALL_PREFIX=/projects/ngc/private/jali/0.9.8-intel-17.0.0-openmpi-2.0.1
+TPL_INSTALL_PREFIX=/projects/ngc/private/jali-tpl/1.0.9-intel-17.0.0-openmpi-2.0.1
+mkdir build
+cd build
+cmake \
+    -D CMAKE_C_COMPILER=`which mpicc` \
+    -D CMAKE_CXX_COMPILER=`which mpiCC` \
+    -D CMAKE_BUILD_TYPE=Debug \
+    -D ENABLE_UNIT_TESTS=True \
+    -D ENABLE_APP_TESTS=True \
+    -D ENABLE_MPI=True \
+    -D Jali_DIR:FILEPATH=$JALI_INSTALL_PREFIX/lib \
+    -D Boost_INCLUDE_DIR:PATH=$TPL_INSTALL_PREFIX/include \
+    ..
+make -j16
+ctest -j16 --output-on-failure
+```
+
+## Moonlight
+
+Execute the following from the portage root directory:
+
+```c++
+# machine=ml-fey
+module load intel/17.0.1 openmpi/1.10.5 cmake
+JALI_INSTALL_PREFIX=/usr/projects/ngc/private/jali/0.9.8-intel-17.0.1-openmpi-1.10.5
+mkdir build
+cd build
+cmake \
+    -D CMAKE_C_COMPILER=`which mpicc` \
+    -D CMAKE_CXX_COMPILER=`which mpiCC` \
+    -D CMAKE_BUILD_TYPE=Debug \
+    -D ENABLE_UNIT_TESTS=True \
+    -D ENABLE_APP_TESTS=True \
+    -D ENABLE_MPI=True \
+    -D Jali_DIR:FILEPATH=$JALI_INSTALL_PREFIX/lib \
+    ..
+make -j16
+ctest -j16 --output-on-failure
+```
+
+## Varan
+
+__Note the typo in the version of the build system we are using: it is
+indeed `PC_LAPACKE_NCLUDE_DIRS`.  This will be fixed in the CMake
+files in a coming release.__
+
+Execute the following from the portage root directory:
+
+```c++
+# machine=varan
+export MODULEPATH=""
+. /opt/local/packages/Modules/default/init/sh
+module load intel/17.0.1 openmpi/1.10.5 cmake
+JALI_INSTALL_PREFIX=/usr/local/codes/ngc/private/jali/0.9.8-intel-17.0.1-openmpi-1.10.5
+LAPACKE_INCLUDE_DIR=/usr/local/codes/ngc/private/lapack/lapack-3.7.1-intel-17.0.1/include
+LAPACKE_LIBRARY_DIR=/usr/local/codes/ngc/private/lapack/lapack-3.7.1-intel-17.0.1
+mkdir build
+cd build
+cmake \
+    -D CMAKE_C_COMPILER=`which mpicc` \
+    -D CMAKE_CXX_COMPILER=`which mpiCC` \
+    -D CMAKE_BUILD_TYPE=Debug \
+    -D ENABLE_UNIT_TESTS=True \
+    -D ENABLE_APP_TESTS=True \
+    -D ENABLE_MPI=True \
+    -D Jali_DIR:FILEPATH=$JALI_INSTALL_PREFIX/lib \
+    -D PC_LAPACKE_NCLUDE_DIRS=$LAPACKE_INCLUDE_DIR \
+    -D PC_LAPACKE_LIBRARY_DIRS=$LAPACKE_LIBRARY_DIR \
+    ..
+make -j2
+ctest -j2 --output-on-failure
+```
+
+---
+
+If you want to build an app that uses
+[FleCSI](https://github.com/losalamos/flecsi), you can link against a built
+verison of FleCSI on Varan.  An example is below:
+
+```c++
+# machine=varan::flecsi
+export MODULEPATH=""
+. /opt/local/packages/Modules/default/init/sh
+module load gcc/5.3.0 openmpi/1.10.3 cmake
+FLECSI_INSTALL_PREFIX=/usr/local/codes/ngc/private/flecsi/gcc5.3_openmpi1.10.3
+FLECSISP_INSTALL_PREFIX=/usr/local/codes/ngc/private/flecsi-sp/gcc5.3_openmpi1.10.3
+LAPACKE_INCLUDE_DIR=/usr/local/codes/ngc/private/lapack/lapack-3.7.1-gcc-5.3.0/include
+LAPACKE_LIBRARY_DIR=/usr/local/codes/ngc/private/lapack/lapack-3.7.1-gcc-5.3.0
+mkdir build-flecsi
+cd build-flecsi
+cmake \
+    -D CMAKE_C_COMPILER=`which mpicc` \
+    -D CMAKE_CXX_COMPILER=`which mpiCC` \
+    -D CMAKE_BUILD_TYPE=Debug \
+    -D ENABLE_UNIT_TESTS=True \
+    -D ENABLE_APP_TESTS=True \
+    -D ENABLE_MPI=True \
+    -D ENABLE_FleCSI=True \
+    -D CMAKE_PREFIX_PATH="$FLECSI_INSTALL_PREFIX;$FLECSISP_INSTALL_PREFIX" \
+    -D PC_LAPACKE_NCLUDE_DIRS=$LAPACKE_INCLUDE_DIR \
+    -D PC_LAPACKE_LIBRARY_DIRS=$LAPACKE_LIBRARY_DIR \
+    ..
+make -j2
+ctest -j2 --output-on-failure
+```
+

@@ -1,45 +1,8 @@
 /*
-Copyright (c) 2016, Los Alamos National Security, LLC
-All rights reserved.
-
-Copyright 2016. Los Alamos National Security, LLC. This software was produced
-under U.S. Government contract DE-AC52-06NA25396 for Los Alamos National
-Laboratory (LANL), which is operated by Los Alamos National Security, LLC for
-the U.S. Department of Energy. The U.S. Government has rights to use,
-reproduce, and distribute this software.  NEITHER THE GOVERNMENT NOR LOS ALAMOS
-NATIONAL SECURITY, LLC MAKES ANY WARRANTY, EXPRESS OR IMPLIED, OR ASSUMES ANY
-LIABILITY FOR THE USE OF THIS SOFTWARE.  If software is modified to produce
-derivative works, such modified software should be clearly marked, so as not to
-confuse it with the version available from LANL.
-
-Additionally, redistribution and use in source and binary forms, with or
-without modification, are permitted provided that the following conditions are
-met:
-
-1. Redistributions of source code must retain the above copyright notice,
-   this list of conditions and the following disclaimer.
-2. Redistributions in binary form must reproduce the above copyright
-   notice, this list of conditions and the following disclaimer in the
-   documentation and/or other materials provided with the distribution.
-3. Neither the name of Los Alamos National Security, LLC, Los Alamos
-   National Laboratory, LANL, the U.S. Government, nor the names of its
-   contributors may be used to endorse or promote products derived from this
-   software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY LOS ALAMOS NATIONAL SECURITY, LLC AND
-CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
-PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL LOS ALAMOS NATIONAL
-SECURITY, LLC OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
-BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER
-IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-POSSIBILITY OF SUCH DAMAGE.
+This file is part of the Ristra portage project.
+Please see the license file at the root of this repository, or at:
+    https://github.com/laristra/portage/blob/master/LICENSE
 */
-
-
 
 #ifndef SRC_DRIVER_DRIVER_H_
 #define SRC_DRIVER_DRIVER_H_
@@ -61,8 +24,8 @@ POSSIBILITY OF SUCH DAMAGE.
 #include "portage/intersect/intersect_r3d.h"
 #include "portage/interpolate/interpolate_1st_order.h"
 #include "portage/interpolate/interpolate_2nd_order.h"
-#include "portage/wrappers/mesh/flat/flat_mesh_wrapper.h"
-#include "portage/wrappers/state/flat/flat_state_wrapper.h"
+#include "portage/wonton/mesh/flat/flat_mesh_wrapper.h"
+#include "portage/wonton/state/flat/flat_state_wrapper.h"
 
 #ifdef ENABLE_MPI
 #include "portage/distributed/mpi_bounding_boxes.h"
@@ -268,8 +231,6 @@ class MeshWrapperDual {  // cellid is the dual cell (i.e. node) id
 // Forward definitions
 template <typename SearchType> struct SearchFunctor;
 template <typename IntersectType> struct IntersectFunctor;
-template <typename SearchType, typename IsectType, typename InterpType>
-struct RemapFunctor;
 
 /*!
   @class Driver "driver.h"
@@ -292,6 +253,14 @@ template <template <int, class, class> class Search,
           class TargetMesh_Wrapper = SourceMesh_Wrapper,
           class TargetState_Wrapper = SourceState_Wrapper>
 class Driver {
+
+  // Something like this would be very helpful to users
+  // static_assert(
+  //   Dim == Interpolate::Dim,
+  //   "The dimension of Driver and Interpolate do not match!"
+  // );
+
+
  public:
   /*!
     @brief Constructor for running the interpolation driver.
@@ -322,14 +291,20 @@ class Driver {
   ~Driver() {}
 
   /*!
-    @brief Specify the names of the variables to be interpolated
+    @brief Specify the names of the variables to be interpolated along with the
+    limiter to use for all of them
     @param[in] remap_var_names A list of variable names of the variables to
     interpolate from the source mesh to the target mesh.  This variable must
     exist in both meshes' state manager
+    @param[in] limiter_type The type of limiter to use (NOLIMITER, BARTH_JESPERSEN)
   */
-  void set_remap_var_names(std::vector<std::string> const &remap_var_names) {
-    source_remap_var_names_ = remap_var_names;
-    target_remap_var_names_ = remap_var_names;
+  void set_remap_var_names(std::vector<std::string> const &remap_var_names,
+                           LimiterType limiter_type = NOLIMITER) {
+    // All variables use the same type of limiters
+    std::vector<LimiterType> limiters(remap_var_names.size(), limiter_type);
+
+    // remap variable names same in source and target mesh
+    set_remap_var_names(remap_var_names, remap_var_names, limiters);
   }
 
   /*!
@@ -338,10 +313,32 @@ class Driver {
     variables to interpolate from the source mesh.
     @param[in] target_remap_var_names  A list of the variables names of the
     variables to interpolate to the target mesh.
+    @param[in] limiter_type The limiter to use for higher order remaps (NOLIMITER, BARTH_JESPERSEN)
   */
   void set_remap_var_names(
-      std::vector<std::string> const &source_remap_var_names,
-      std::vector<std::string> const &target_remap_var_names) {
+      std::vector<std::string> const & source_remap_var_names,
+      std::vector<std::string> const & target_remap_var_names,
+      LimiterType limiter_type = NOLIMITER) {
+    std::vector<LimiterType> limiters(source_remap_var_names.size(),
+                                      limiter_type);
+    
+    set_remap_var_names(source_remap_var_names, target_remap_var_names,
+                        limiters);
+  }
+
+  /*!
+    @brief Specify the names of the variables to be interpolated
+    @param[in] source_remap_var_names A list of the variables names of the
+    variables to interpolate from the source mesh.
+    @param[in] target_remap_var_names  A list of the variables names of the
+    variables to interpolate to the target mesh.
+    @param[in] limiter_types Limiters to use for each remapped variable (NOLIMITER, BARTH_JESPERSEN)
+  */
+
+  void set_remap_var_names(
+      std::vector<std::string> const & source_remap_var_names,
+      std::vector<std::string> const & target_remap_var_names,
+      std::vector<LimiterType> const & limiter_types) {
     assert(source_remap_var_names.size() == target_remap_var_names.size());
 
     int nvars = source_remap_var_names.size();
@@ -351,6 +348,7 @@ class Driver {
 
     source_remap_var_names_ = source_remap_var_names;
     target_remap_var_names_ = target_remap_var_names;
+    limiters_ = limiter_types;
   }
 
   /*!
@@ -380,16 +378,7 @@ class Driver {
   }
 
   /*!
-    @brief This method calls specialized functions to do the remapping
-    based on the dimensionality of the mesh, the type of data and the
-    order of interpolation.
-
-    The individual routines run specialized search, intersect, and
-    interpolation routines needed to map one mesh to another. Most of the
-    heavy lifting in these routines is via a @c Portage::transform()
-    over the cells in the target mesh, applying a custom @c
-    RemapFunctor() (defined below) that specifies how the search,
-    intersect, and interpolation calculations should be performed.
+    @brief Execute the remapping process
   */
   void run(bool distributed) {
 
@@ -415,6 +404,9 @@ class Driver {
               << numTargetCells << std::endl;
 
     int nvars = source_remap_var_names_.size();
+
+    Flat_Mesh_Wrapper<> source_mesh_flat;
+    Flat_State_Wrapper<> source_state_flat;
 
     // Collect all cell based variables and remap them
 
@@ -443,9 +435,6 @@ class Driver {
       
       Portage::vector<std::vector<int>> candidates(ntargetcells);
       Portage::vector<std::vector<Weights_t>> source_cells_and_weights(ntargetcells);
-
-      Flat_Mesh_Wrapper<> source_mesh_flat;
-      Flat_State_Wrapper<> source_state_flat;
 
       if (distributed) {
 
@@ -546,8 +535,8 @@ class Driver {
 
       gettimeofday(&begin_timeval, 0);
 
-      nvars = source_cellvar_names.size();
-      if (comm_rank == 0) std::cout << "number of cell variables to remap is " << nvars << std::endl;
+      int ncvars = source_cellvar_names.size();
+      if (comm_rank == 0) std::cout << "number of cell variables to remap is " << ncvars << std::endl;
 
       if (distributed) {
 
@@ -556,9 +545,9 @@ class Driver {
         Interpolate<Flat_Mesh_Wrapper<>, TargetMesh_Wrapper, Flat_State_Wrapper<>, CELL, Dim>
             interpolate(source_mesh_flat, target_mesh_, source_state_flat);
 
-        for (int i = 0; i < nvars; ++i) {
-
-          interpolate.set_interpolation_variable(source_cellvar_names[i]);
+        for (int i = 0; i < ncvars; ++i) {
+          interpolate.set_interpolation_variable(source_cellvar_names[i],
+                                                   limiters_[i]);
 
           double *target_field_raw = nullptr;
           target_state_.get_data(CELL, target_cellvar_names[i], &target_field_raw);
@@ -577,11 +566,13 @@ class Driver {
         Interpolate<SourceMesh_Wrapper, TargetMesh_Wrapper, SourceState_Wrapper, CELL, Dim>
             interpolate(source_mesh_, target_mesh_, source_state_);
         
-        for (int i = 0; i < nvars; ++i) {
+        for (int i = 0; i < ncvars; ++i) {
           //amh: ?? add back accuracy output statement??
           if (comm_rank == 0) std::cout << "Remapping cell variable " << source_cellvar_names[i]
                                         << " to variable " << target_cellvar_names[i] << std::endl;
-          interpolate.set_interpolation_variable(source_cellvar_names[i]);
+          interpolate.set_interpolation_variable(source_cellvar_names[i],
+                                                   limiters_[i]);
+
           // This populates targetField with the values returned by the
           // remapper operator
           
@@ -641,67 +632,110 @@ class Driver {
 
     if (source_nodevar_names.size() > 0) {
 
-      if (distributed) {
-        std::cerr <<
-            "Portage ERROR: REMAPPING OF NODAL QUANTITIES NOT IMPLEMENTED FOR DISTRIBUTED MESHES\n" << std::endl;
-        return;
-      }
-        
       float tot_seconds = 0.0, tot_seconds_srch = 0.0,
             tot_seconds_xsect = 0.0, tot_seconds_interp = 0.0;
       struct timeval begin_timeval, end_timeval, diff_timeval;
 
-      int ntargetcells = target_mesh_.num_entities(NODE);
+      int ntargetnodes = target_mesh_.num_entities(NODE);
 
       // SEARCH
 
-      gettimeofday(&begin_timeval, 0);
+      Portage::vector<std::vector<int>> candidates(ntargetnodes);
+      Portage::vector<std::vector<Weights_t>> source_cells_and_weights(ntargetnodes);
 
-      Portage::vector<std::vector<int>> candidates(ntargetcells);
+      MeshWrapperDual<Flat_Mesh_Wrapper<>> sourceDualFlat(source_mesh_flat);
 
-      // Get an instance of the desired search algorithm type
-      const Search<Dim, MeshWrapperDual<SourceMesh_Wrapper>,
-                   MeshWrapperDual<TargetMesh_Wrapper>>
-            search(sourceDualWrapper, targetDualWrapper);
-      SearchFunctor<Search<Dim, MeshWrapperDual<SourceMesh_Wrapper>,
-                           MeshWrapperDual<TargetMesh_Wrapper>>>
-          searchfunctor(&search);
-      Portage::transform(target_mesh_.begin(NODE, PARALLEL_OWNED),
-                         target_mesh_.end(NODE, PARALLEL_OWNED),
-                         candidates.begin(), searchfunctor);
+      if (distributed) {
+#ifdef ENABLE_MPI 
+        // Create flat wrappers to distribute source cells
+        gettimeofday(&begin_timeval, 0);
+
+        source_mesh_flat.initialize(source_mesh_);
+        source_state_flat.initialize(source_state_, source_remap_var_names_);
+        MPI_Bounding_Boxes distributor;
+        distributor.distribute(source_mesh_flat, source_state_flat, target_mesh_,
+                               target_state_);
+        gettimeofday(&end_timeval, 0);
+        timersub(&end_timeval, &begin_timeval, &diff_timeval);
+        float tot_seconds_flat = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
+        std::cout << "Redistribution Time Rank " << comm_rank << " (s): " << tot_seconds_flat << std::endl;
+
+        // Get an instance of the desired search algorithm type
+        gettimeofday(&begin_timeval, 0);
+        const Search<Dim, MeshWrapperDual<Flat_Mesh_Wrapper<>>, MeshWrapperDual<TargetMesh_Wrapper>> search(sourceDualFlat, targetDualWrapper);
+        SearchFunctor<Search<Dim, MeshWrapperDual<Flat_Mesh_Wrapper<>>, MeshWrapperDual<TargetMesh_Wrapper>>> searchfunctor(&search);
+
+        Portage::transform(target_mesh_.begin(NODE, PARALLEL_OWNED),
+                           target_mesh_.end(NODE, PARALLEL_OWNED),
+                           candidates.begin(), searchfunctor);
+#endif
+      }
+      else {
+
+        gettimeofday(&begin_timeval, 0);
+
+        // Get an instance of the desired search algorithm type
+        const Search<Dim, MeshWrapperDual<SourceMesh_Wrapper>,
+                     MeshWrapperDual<TargetMesh_Wrapper>>
+              search(sourceDualWrapper, targetDualWrapper);
+        SearchFunctor<Search<Dim, MeshWrapperDual<SourceMesh_Wrapper>,
+                             MeshWrapperDual<TargetMesh_Wrapper>>>
+            searchfunctor(&search);
+        Portage::transform(target_mesh_.begin(NODE, PARALLEL_OWNED),
+                           target_mesh_.end(NODE, PARALLEL_OWNED),
+                           candidates.begin(), searchfunctor);
+      }
+
       gettimeofday(&end_timeval, 0);
       timersub(&end_timeval, &begin_timeval, &diff_timeval);
       tot_seconds_srch = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
 
-      // Make an instance of the functor doing the search and intersection
+      // INTERSECT
 
       gettimeofday(&begin_timeval, 0);
 
-      const Intersect<MeshWrapperDual<SourceMesh_Wrapper>,
-                      MeshWrapperDual<TargetMesh_Wrapper>>
-            intersect(sourceDualWrapper, targetDualWrapper);
-      IntersectFunctor<Intersect<MeshWrapperDual<SourceMesh_Wrapper>,
-                                 MeshWrapperDual<TargetMesh_Wrapper>>>
-            intersectfunctor(&intersect);
+      if (distributed) {
 
-      // For each cell in the target mesh get a list of candidate-weight
-      // pairings (in a traditional mesh, not particle mesh, the weights
-      // are moments). Note that this candidate list is different from the
-      // search candidate list in that (1) it may not include some
-      // candidates and (2) some candidates may occur twice to account for
-      // the fact that the intersection of two cells is more than one
-      // disjoint piece (if one of the cells is non-convex). Also, note
-      // that for 2nd order and higher remaps, we get multiple moments
-      // (0th, 1st, etc) for each target-source cell intersection
+#ifdef ENABLE_MPI 
+        // Get an instance of the desired intersect algorithm type
+        const Intersect<MeshWrapperDual<Flat_Mesh_Wrapper<>>, MeshWrapperDual<TargetMesh_Wrapper>>
+            intersect(sourceDualFlat, targetDualWrapper);
+        IntersectFunctor<Intersect<MeshWrapperDual<Flat_Mesh_Wrapper<>>, MeshWrapperDual<TargetMesh_Wrapper>>> intersectfunctor(&intersect);
 
-      int ntargetnodes = target_mesh_.num_entities(NODE);
-      Portage::vector<std::vector<Weights_t>> source_cells_and_weights(ntargetnodes);
+        Portage::transform(target_mesh_.begin(NODE, PARALLEL_OWNED),
+                           target_mesh_.end(NODE, PARALLEL_OWNED),
+                           candidates.begin(),
+                           source_cells_and_weights.begin(),
+                           intersectfunctor);
+#endif
+      }
+      else {
 
-      Portage::transform(target_mesh_.begin(NODE, PARALLEL_OWNED),
-                         target_mesh_.end(NODE, PARALLEL_OWNED),
-                         candidates.begin(),
-                         source_cells_and_weights.begin(),
-                         intersectfunctor);
+        // Get an instance of the desired intersect algorithm type
+        const Intersect<MeshWrapperDual<SourceMesh_Wrapper>,
+                        MeshWrapperDual<TargetMesh_Wrapper>>
+              intersect(sourceDualWrapper, targetDualWrapper);
+        IntersectFunctor<Intersect<MeshWrapperDual<SourceMesh_Wrapper>,
+                                   MeshWrapperDual<TargetMesh_Wrapper>>>
+              intersectfunctor(&intersect);
+
+        // For each cell in the target mesh get a list of candidate-weight
+        // pairings (in a traditional mesh, not particle mesh, the weights
+        // are moments). Note that this candidate list is different from the
+        // search candidate list in that (1) it may not include some
+        // candidates and (2) some candidates may occur twice to account for
+        // the fact that the intersection of two cells is more than one
+        // disjoint piece (if one of the cells is non-convex). Also, note
+        // that for 2nd order and higher remaps, we get multiple moments
+        // (0th, 1st, etc) for each target-source cell intersection
+
+        Portage::transform(target_mesh_.begin(NODE, PARALLEL_OWNED),
+                           target_mesh_.end(NODE, PARALLEL_OWNED),
+                           candidates.begin(),
+                           source_cells_and_weights.begin(),
+                           intersectfunctor);
+      }
+
       gettimeofday(&end_timeval, 0);
       timersub(&end_timeval, &begin_timeval, &diff_timeval);
       tot_seconds_xsect = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
@@ -710,40 +744,70 @@ class Driver {
 
       gettimeofday(&begin_timeval, 0);
 
-      nvars = source_nodevar_names.size();
-      if (comm_rank == 0) std::cout << "number of node variables to remap is " << nvars << std::endl;
+      int nnvars = source_nodevar_names.size();
+      if (comm_rank == 0) std::cout << "number of node variables to remap is " << nnvars << std::endl;
 
-      for (int i = 0; i < nvars; ++i) {
-        if (comm_rank == 0) std::cout << "Remapping node variable " << source_nodevar_names[i]
-               << " to variable " << target_nodevar_names[i] << std::endl;
+      if (distributed) {
+
+#ifdef ENABLE_MPI
+        Interpolate<Flat_Mesh_Wrapper<>, TargetMesh_Wrapper, Flat_State_Wrapper<>, NODE, Dim>
+            interpolate(source_mesh_flat, target_mesh_, source_state_flat);
+
+        for (int i = 0; i < nnvars; ++i) {
+          interpolate.set_interpolation_variable(source_nodevar_names[i],
+                                                 limiters_[i]);
+
+          double *target_field_raw = nullptr;
+          target_state_.get_data(NODE, target_nodevar_names[i], &target_field_raw);
+          Portage::pointer<double> target_field(target_field_raw);
+
+          Portage::transform(target_mesh_.begin(NODE, PARALLEL_OWNED),
+                             target_mesh_.end(NODE, PARALLEL_OWNED),
+                             source_cells_and_weights.begin(),
+                             target_field, interpolate);
+        }
+#endif
+      }
+      else {
 
         Interpolate<SourceMesh_Wrapper, TargetMesh_Wrapper,
                     SourceState_Wrapper, NODE, Dim>
               interpolate(source_mesh_, target_mesh_, source_state_);
-        interpolate.set_interpolation_variable(source_nodevar_names[i]);
 
-        // This populates targetField with the values returned by the
-        // interpolate operator
+        for (int i = 0; i < nnvars; ++i) {
+          if (comm_rank == 0) std::cout << "Remapping node variable " << source_nodevar_names[i]
+                 << " to variable " << target_nodevar_names[i] << std::endl;
 
-        /*  UNCOMMENT WHEN WE RESTORE get_type in jali_state_wrapper
-            if (typeid(source_state_.get_type(source_var_names[i])) ==
-            typeid(double)) {
-        */
-        double *target_field_raw = nullptr;
-        target_state_.get_data(NODE, target_nodevar_names[i], &target_field_raw);
-        Portage::pointer<double> target_field(target_field_raw);
+          Interpolate<SourceMesh_Wrapper, TargetMesh_Wrapper,
+                      SourceState_Wrapper, NODE, Dim>
+                interpolate(source_mesh_, target_mesh_, source_state_);
 
-        Portage::transform(target_mesh_.begin(NODE, PARALLEL_OWNED),
-                           target_mesh_.end(NODE, PARALLEL_OWNED),
-                           source_cells_and_weights.begin(),
-                           target_field, interpolate);
-        /*  UNCOMMENT WHEN WE RESTORE get_type in jali_state_wrapper
-            } else {
-            std::cerr << "Cannot remap " << source_var_names[i] <<
-            " because it is not a scalar double variable\n";
-            continue;
-            }
-        */
+          interpolate.set_interpolation_variable(source_nodevar_names[i],
+                                                 limiters_[i]);
+
+          // This populates targetField with the values returned by the
+          // interpolate operator
+
+          /*  UNCOMMENT WHEN WE RESTORE get_type in jali_state_wrapper
+              if (typeid(source_state_.get_type(source_var_names[i])) ==
+              typeid(double)) {
+          */
+          double *target_field_raw = nullptr;
+          target_state_.get_data(NODE, target_nodevar_names[i], &target_field_raw);
+          Portage::pointer<double> target_field(target_field_raw);
+
+          Portage::transform(target_mesh_.begin(NODE, PARALLEL_OWNED),
+                             target_mesh_.end(NODE, PARALLEL_OWNED),
+                             source_cells_and_weights.begin(),
+                             target_field, interpolate);
+          /*  UNCOMMENT WHEN WE RESTORE get_type in jali_state_wrapper
+              } else {
+              std::cerr << "Cannot remap " << source_var_names[i] <<
+              " because it is not a scalar double variable\n";
+              continue;
+              }
+          */
+        }
       }
 
       gettimeofday(&end_timeval, 0);
@@ -772,6 +836,7 @@ class Driver {
   TargetState_Wrapper& target_state_;
   std::vector<std::string> source_remap_var_names_;
   std::vector<std::string> target_remap_var_names_;
+  std::vector<LimiterType> limiters_;
   unsigned int dim_;
 };  // class Driver
 

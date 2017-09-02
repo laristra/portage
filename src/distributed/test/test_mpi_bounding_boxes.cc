@@ -1,51 +1,15 @@
 /*
-Copyright (c) 2016, Los Alamos National Security, LLC
-All rights reserved.
-
-Copyright 2016. Los Alamos National Security, LLC. This software was produced
-under U.S. Government contract DE-AC52-06NA25396 for Los Alamos National
-Laboratory (LANL), which is operated by Los Alamos National Security, LLC for
-the U.S. Department of Energy. The U.S. Government has rights to use,
-reproduce, and distribute this software.  NEITHER THE GOVERNMENT NOR LOS ALAMOS
-NATIONAL SECURITY, LLC MAKES ANY WARRANTY, EXPRESS OR IMPLIED, OR ASSUMES ANY
-LIABILITY FOR THE USE OF THIS SOFTWARE.  If software is modified to produce
-derivative works, such modified software should be clearly marked, so as not to
-confuse it with the version available from LANL.
-
-Additionally, redistribution and use in source and binary forms, with or
-without modification, are permitted provided that the following conditions are
-met:
-
-1. Redistributions of source code must retain the above copyright notice,
-   this list of conditions and the following disclaimer.
-2. Redistributions in binary form must reproduce the above copyright
-   notice, this list of conditions and the following disclaimer in the
-   documentation and/or other materials provided with the distribution.
-3. Neither the name of Los Alamos National Security, LLC, Los Alamos
-   National Laboratory, LANL, the U.S. Government, nor the names of its
-   contributors may be used to endorse or promote products derived from this
-   software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY LOS ALAMOS NATIONAL SECURITY, LLC AND
-CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
-PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL LOS ALAMOS NATIONAL
-SECURITY, LLC OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
-BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER
-IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-POSSIBILITY OF SUCH DAMAGE.
+This file is part of the Ristra portage project.
+Please see the license file at the root of this repository, or at:
+    https://github.com/laristra/portage/blob/master/LICENSE
 */
-
 
 
 #include "portage/support/Point.h"
 #include "portage/distributed/mpi_bounding_boxes.h"
-#include "portage/wrappers/state/jali/jali_state_wrapper.h"
-#include "portage/wrappers/state/flat/flat_state_wrapper.h"
-#include "portage/wrappers/mesh/flat/flat_mesh_wrapper.h"
+#include "portage/wonton/state/jali/jali_state_wrapper.h"
+#include "portage/wonton/state/flat/flat_state_wrapper.h"
+#include "portage/wonton/mesh/flat/flat_mesh_wrapper.h"
 
 #include <iostream>
 
@@ -55,7 +19,7 @@ POSSIBILITY OF SUCH DAMAGE.
 #include "Mesh.hh"
 #include "MeshFactory.hh"
 
-#include "portage/wrappers/mesh/jali/jali_mesh_wrapper.h"
+#include "portage/wonton/mesh/jali/jali_mesh_wrapper.h"
 
 
 TEST(MPI_Bounding_Boxes, SimpleTest3D) {
@@ -129,9 +93,8 @@ TEST(MPI_Bounding_Boxes, SimpleTest3D) {
   // List coordinates of cell 0 - others are equal to this
   // with a shift
   std::vector<Portage::Point<3>> cell0Coords =
-    {{0.0, 0.0, 0.0},  {0.5, 0.0, 0.0},  {0.5, 0.5, 0.0},  {0.0, 0.5, 0.0},
-     {0.0, 0.0, 0.5},  {0.5, 0.0, 0.5},  {0.5, 0.5, 0.5},  {0.0, 0.5, 0.5}};
-                                                              
+    {{0.0, 0.0, 0.0},  {0.0, 0.0, 0.5},  {0.0, 0.5, 0.0},  {0.0, 0.5, 0.5},
+     {0.5, 0.0, 0.0},  {0.5, 0.0, 0.5},  {0.5, 0.5, 0.0},  {0.5, 0.5, 0.5}};
   // List owned cells that should have been sent to each rank
   std::vector<int> expOwnedGids;
   switch (commRank) {
@@ -153,6 +116,7 @@ TEST(MPI_Bounding_Boxes, SimpleTest3D) {
     std::vector<Portage::Point<3>> myCoords;
     source_mesh_flat.cell_get_coordinates(c, &myCoords);
     ASSERT_EQ(8, myCoords.size());
+    std::sort(myCoords.begin(), myCoords.end());
     int gid = expOwnedGids[c];
     double dx = (gid & 4 ? 0.5 : 0.0);
     double dy = (gid & 2 ? 0.5 : 0.0);
@@ -171,8 +135,8 @@ TEST(MPI_Bounding_Boxes, SimpleTest3D) {
     ASSERT_EQ(expOwnedGids[c], gids[c]);
 
   // Check neighbors
-  // Each cell should have all of the 7 other cells as neighbors
-  for (int c=0; c<num_cells; ++c) {
+  // Each owned cell should have all of the 7 other cells as neighbors
+  for (int c=0; c<num_owned_cells; ++c) {
     // Get my 7 neighbors
     std::vector<int> myNeighbors;
     source_mesh_flat.cell_get_node_adj_cells(c, Portage::ALL, &myNeighbors);

@@ -4,6 +4,8 @@
 #     $WORKSPACE/jenkins/build_matrix_entry.sh <compiler> <build_type>
 #
 # The exit code determines if the test succeeded or failed.
+# Note that the environment variable WORKSPACE must be set (Jenkins
+# will do this automatically).
 
 # Exit on error
 set -e
@@ -15,19 +17,22 @@ build_type=$2
 
 # set modules and install paths
 
-jali_version=0.9.2
+jali_version=0.9.8
 
 export NGC=/usr/local/codes/ngc
 ngc_include_dir=$NGC/private/include
 
 # compiler-specific settings
-if [[ $compiler == "intel15" ]]; then
-  cxxmodule=intel/15.0.3
-  jali_install_dir=$NGC/private/jali/${jali_version}-intel-15.0.3-openmpi-1.6.5-rh6
-elif [[ $compiler == "gcc53" ]]; then
+if [[ $compiler == "intel" ]]; then
+  cxxmodule=intel/17.0.1
+  openmpi_version=1.10.5
+  jali_install_dir=$NGC/private/jali/${jali_version}-intel-17.0.1-openmpi-${openmpi_version}
+elif [[ $compiler == "gcc" ]]; then
   cxxmodule=gcc/5.3.0
-  jali_install_dir=$NGC/private/jali/${jali_version}-gcc-5.3.0-openmpi-1.6.5-rh6
-  flecsi_install_dir=$NGC/private/flecsi-gcc
+  openmpi_version=1.10.3
+  jali_install_dir=$NGC/private/jali/${jali_version}-gcc-5.3.0-openmpi-${openmpi_version}
+  flecsi_install_prefix=$NGC/private/flecsi/gcc5.3_openmpi1.10.3
+  flecsisp_install_prefix=$NGC/private/flecsi-sp/gcc5.3_openmpi1.10.3
 fi
   
 cmake_build_type=Release
@@ -37,11 +42,13 @@ if [[ $build_type == "debug" ]]; then
 elif [[ $build_type == "thrust" ]]; then
   extra_flags="-D ENABLE_THRUST=True"
 elif [[ $build_type == "flecsi" ]]; then
-  extra_flags="-D FLECSI_INSTALL_DIR:FILEPATH=$flecsi_install_dir"
+  extra_flags="-D CMAKE_PREFIX_PATH='$flecsi_install_prefix;$flecsisp_install_prefix' \
+               -D ENABLE_FleCSI=True"
 elif [[ $build_type == "coverage" ]]; then
   extra_flags="-D CMAKE_C_FLAGS='-coverage' \
                -D CMAKE_CXX_FLAGS='-coverage'"
   cmake_build_type=Debug
+  export PATH=$NGC/private/bin:${PATH}
 fi
 
 export SHELL=/bin/sh
@@ -49,7 +56,7 @@ export SHELL=/bin/sh
 export MODULEPATH=""
 . /opt/local/packages/Modules/default/init/sh
 module load $cxxmodule
-module load openmpi/1.6.5
+module load openmpi/${openmpi_version}
 module load cmake # 3.0 or higher is required
 
 echo $WORKSPACE
@@ -66,7 +73,6 @@ cmake \
   -D ENABLE_APP_TESTS=True \
   -D ENABLE_JENKINS_OUTPUT=True \
   -D ENABLE_MPI=True \
-  -D ENABLE_MPI_CXX_BINDINGS=True \
   -D Jali_DIR:FILEPATH=$jali_install_dir/lib \
   -D NGC_INCLUDE_DIR:FILEPATH=$ngc_include_dir \
   $extra_flags \

@@ -11,17 +11,20 @@ ARG CI
 ARG TRAVIS
 ARG TRAVIS_BRANCH
 ARG TRAVIS_JOB_NUMBER
-ARG TRAVIS_PULL_REQUEST 
+ARG TRAVIS_PULL_REQUEST
 ARG TRAVIS_JOB_ID
 ARG TRAVIS_TAG
 ARG TRAVIS_REPO_SLUG
 ARG TRAVIS_COMMIT
 ARG TRAVIS_OS_NAME
 
+# for docs
+ARG DOCS
+
 COPY portage /home/portage/portage
 
 USER root
-RUN chown -R portage:portage /home/portage/portage 
+RUN chown -R portage:portage /home/portage/portage
 USER portage
 WORKDIR /home/portage/portage
 RUN mkdir build
@@ -36,6 +39,9 @@ RUN cd .. && if [ ${COVERAGE} ]; then \
     $HOME/.local/bin/codecov; \
   fi; \
 fi && cd -
+RUN if [ ${DOCS} ]; then \
+  make doxygen; \
+fi
 RUN cd .. && if [ ${SONARQUBE} ]; then \
   sonar-scanner \
     -Dsonar.projectKey=${TRAVIS_REPO_SLUG##*/} \

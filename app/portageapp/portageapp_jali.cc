@@ -1,44 +1,8 @@
 /*
-Copyright (c) 2016, Los Alamos National Security, LLC
-All rights reserved.
-
-Copyright 2016. Los Alamos National Security, LLC. This software was produced
-under U.S. Government contract DE-AC52-06NA25396 for Los Alamos National
-Laboratory (LANL), which is operated by Los Alamos National Security, LLC for
-the U.S. Department of Energy. The U.S. Government has rights to use,
-reproduce, and distribute this software.  NEITHER THE GOVERNMENT NOR LOS ALAMOS
-NATIONAL SECURITY, LLC MAKES ANY WARRANTY, EXPRESS OR IMPLIED, OR ASSUMES ANY
-LIABILITY FOR THE USE OF THIS SOFTWARE.  If software is modified to produce
-derivative works, such modified software should be clearly marked, so as not to
-confuse it with the version available from LANL.
-
-Additionally, redistribution and use in source and binary forms, with or
-without modification, are permitted provided that the following conditions are
-met:
-
-1. Redistributions of source code must retain the above copyright notice,
-   this list of conditions and the following disclaimer.
-2. Redistributions in binary form must reproduce the above copyright
-   notice, this list of conditions and the following disclaimer in the
-   documentation and/or other materials provided with the distribution.
-3. Neither the name of Los Alamos National Security, LLC, Los Alamos
-   National Laboratory, LANL, the U.S. Government, nor the names of its
-   contributors may be used to endorse or promote products derived from this
-   software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY LOS ALAMOS NATIONAL SECURITY, LLC AND
-CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
-PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL LOS ALAMOS NATIONAL
-SECURITY, LLC OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
-BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER
-IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-POSSIBILITY OF SUCH DAMAGE.
+This file is part of the Ristra portage project.
+Please see the license file at the root of this repository, or at:
+    https://github.com/laristra/portage/blob/master/LICENSE
 */
-
 
 
 
@@ -63,8 +27,8 @@ POSSIBILITY OF SUCH DAMAGE.
 #include "portage/support/Point.h"
 #include "portage/support/mpi_collate.h"
 #include "portage/driver/driver.h"
-#include "portage/wrappers/mesh/jali/jali_mesh_wrapper.h"
-#include "portage/wrappers/state/jali/jali_state_wrapper.h"
+#include "portage/wonton/mesh/jali/jali_mesh_wrapper.h"
+#include "portage/wonton/state/jali/jali_state_wrapper.h"
 
 #include "Mesh.hh"
 #include "MeshFactory.hh"
@@ -96,22 +60,16 @@ int print_usage() {
   std::cout << std::endl;
   std::cout << "Usage: portageapp " <<
       "--dim=2|3 --nsourcecells=N --ntargetcells=M --conformal=y|n \n" << 
-      "--reverse_ranks=y|n --entity_kind=cell|node --field_order=0|1|2 \n" <<
+      "--entity_kind=cell|node --field_order=0|1|2 \n" <<
       "--remap_order=1|2 --output_results=y|n \n\n";
 
   std::cout << "--dim (default = 2): spatial dimension of mesh\n\n";
-  std::cout << "--nsourcecells (NO DEFAULT): Num cells per in each " <<
+  std::cout << "--nsourcecells (NO DEFAULT): Num cells in each " <<
       "coord dir in source mesh\n\n";
-  std::cout << "--ntargetcells (NO DEFAULT): Num of cells in each " <<
+  std::cout << "--ntargetcells (NO DEFAULT): Num cells in each " <<
       "coord dir in target mesh\n\n";
 
   std::cout << "--conformal (default = y): 'y' means mesh boundaries match\n\n";
-
-  std::cout << "--reverse_ranks (default = n): " <<
-      "Applicable only for distributed runs.\n";
-  std::cout << "  if 'y', then a greater mismatch is created " <<
-      "between source and target meshes \n";
-  std::cout << "  by reversing the assignment order of source mesh partitions to MPI ranks\n\n";
 
   std::cout << "--entity_kind (default = cell): entities on which remapping is to be done\n\n";
 
@@ -149,6 +107,7 @@ int create_meshes(int const dim, int const n_source, int const n_target,
   // The mesh factory and mesh setup
   Jali::MeshFactory mf(MPI_COMM_WORLD);
   mf.included_entities({Jali::Entity_kind::ALL_KIND});
+  mf.partitioner(Jali::Partitioner_type::BLOCK);
 
   if (dim == 2) {
     // 2d quad input mesh from (0,0) to (1,1) with n_source x n_source zones
@@ -164,89 +123,28 @@ int create_meshes(int const dim, int const n_source, int const n_target,
       *targetMesh = mf(0.0, 0.0, 1.0+1.5*dx, 1.0+1.5*dx, n_target, n_target);
     }
   } else if (dim == 3) {
-    if (numpe == 1) {
-      // 3d hex input mesh from (0,0,0) to (1,1,1) with n_source x
-      // n_source x n_source zones
+    // 3d hex input mesh from (0,0,0) to (1,1,1) with n_source x
+    // n_source x n_source zones
 
-      *sourceMesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, n_source, n_source,
-                       n_source);
+    *sourceMesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, n_source, n_source,
+                     n_source);
 
-      if (conformal_meshes) {
-        // 3d hex output mesh from (0,0,0) to (1,1,1) with n_target
-        // x n_target x n_target zones
+    if (conformal_meshes) {
+      // 3d hex output mesh from (0,0,0) to (1,1,1) with n_target
+      // x n_target x n_target zones
 
-        *targetMesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, n_target, n_target,
-                         n_target);
-      } else {
-        // 3d hex output mesh from (0,0,0) to
-        // (1+1.5dx,1+1.5dx,1+1.5dx) with
-        // (n_target)x(n_target)x(n_target) zones and dx equal to
-        // the sourceMesh grid spacing
+      *targetMesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, n_target, n_target,
+                       n_target);
+    } else {
+      // 3d hex output mesh from (0,0,0) to
+      // (1+1.5dx,1+1.5dx,1+1.5dx) with
+      // (n_target)x(n_target)x(n_target) zones and dx equal to
+      // the sourceMesh grid spacing
 
-        double dx = 1.0/static_cast<double>(n_target);
-        *targetMesh = mf(0.0, 0.0, 0.0, 1.0+1.5*dx, 1.0+1.5*dx, 1.0+1.5*dx,
-                         n_target, n_target, n_target);
-      }
-    } else {  // generate the input and target meshes for the distributed case
-
-      int source_dim = cbrt(1.0f*numpe) + 0.01f;
-
-#ifdef MANUAL_SOURCE_DECOMPOSITION
-      // Set up a local communicator so that we can define mesh partitions
-      // explicitly on each rank without Jali distributing it for us
-      MPI_Group world_group, local_group;
-      MPI_Comm_group(MPI_COMM_WORLD, &world_group);
-      int ranks[1];  ranks[0] = rank;
-      MPI_Group_incl(world_group, 1, ranks, &local_group);
-      MPI_Comm local_comm;
-      MPI_Comm_create(MPI_COMM_WORLD, local_group, &local_comm);
-      Jali::MeshFactory mf_local(local_comm);
-
-      mf_local.included_entities({Jali::Entity_kind::ALL_KIND});
-      mf_local.boundary_ghosts_requested(false);
-      mf_local.num_ghost_layers_distmesh(1);
-
-      // compute the local partition of the source mesh based on the rank;
-      // n_source is the number of cells in each dimension in each partition;
-      // the number of ranks must be a perfect cube (1, 8, 27, etc.)
-      double source_step = 1.0f / source_dim;
-      int rrank = reverse_source_ranks ? numpe - rank - 1 : rank;
-      int source_x = rrank % source_dim;
-      int source_y = (rrank / source_dim) % source_dim;
-      int source_z = rrank / (source_dim*source_dim);
-
-      *sourceMesh = mf_local(source_step*source_x, source_step*source_y,
-                             source_step*source_z, source_step*(source_x+1),
-                             source_step*(source_y+1), source_step*(source_z+1),
-                             n_source, n_source, n_source);
-
-#else
-
-      mf.included_entities({Jali::Entity_kind::FACE, Jali::Entity_kind::EDGE,
-              Jali::Entity_kind::WEDGE});
-      mf.boundary_ghosts_requested(false);
-      mf.num_ghost_layers_distmesh(1);
-      mf.partitioner(Jali::Partitioner_type::BLOCK);
-      *sourceMesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, n_source*source_dim,
-                       n_source*source_dim, n_source*source_dim);
-#endif
-
-
-      // n_target is the number of cells in each dimension in each partition;
-      // the number of ranks must be a perfect cube (1, 8, 27, etc.)
-
-      int target_dim = cbrt(1.0f*numpe) + 0.01f;
-      if (conformal_meshes) {
-        *targetMesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, n_target*target_dim,
-                         n_target*target_dim, n_target*target_dim);
-      } else {
-        double dx = 1.0/static_cast<double>(n_target*target_dim);
-        *targetMesh = mf(0.0, 0.0, 0.0, 1.0+1.5*dx, 1.0+1.5*dx, 1.0+1.5*dx,
-                         n_target*target_dim, n_target*target_dim,
-                         n_target*target_dim);
-      }
-
-    }  // distributed case
+      double dx = 1.0/static_cast<double>(n_target);
+      *targetMesh = mf(0.0, 0.0, 0.0, 1.0+1.5*dx, 1.0+1.5*dx, 1.0+1.5*dx,
+                       n_target, n_target, n_target);
+    }
   }
 
 }
@@ -278,7 +176,6 @@ int main(int argc, char** argv) {
   int interp_order = 1;
   int poly_order = 0;
   bool dump_output = true;
-  bool reverse_source_ranks = false;
   Jali::Entity_kind entityKind = Jali::Entity_kind::CELL;
 
   if (argc < 3) return print_usage();
@@ -310,8 +207,6 @@ int main(int argc, char** argv) {
       n_target = stoi(valueword);
     else if (keyword == "conformal")
       conformal = (valueword == "y");
-    else if (keyword == "reverse_ranks")
-      reverse_source_ranks = (numpe > 1 && valueword == "y");
     else if (keyword == "remap_order") {
       interp_order = stoi(valueword);
       assert(interp_order > 0 && interp_order < 3);
@@ -322,14 +217,6 @@ int main(int argc, char** argv) {
       dump_output = (valueword == "y");
     else
       std::cerr << "Unrecognized option " << keyword << std::endl;
-  }
-
-  if (numpe > 1 && entityKind == Jali::Entity_kind::NODE) {
-    if (rank == 0)
-      std::cerr << std::endl <<
-          "portageapp_jali - ERROR - NODE CENTERED REMAP NOT IMPLEMENTED FOR DISTRIBUTED MESHES\n" << std::endl;
-    MPI_Finalize();
-    return -1;
   }
 
   if (rank == 0)
@@ -700,12 +587,11 @@ int main(int argc, char** argv) {
 
     // construct the field file name and open the file
 
-    std::string fieldfilename = "field_" +
+    std::string fieldfilename = "jali_field_" +
         std::to_string(static_cast<long long>(dim)) + "d_" +
         entstr + "_f" + std::to_string(static_cast<long long>(poly_order)) + "_r" +
         std::to_string(static_cast<long long>(interp_order));
     if (!conformal) fieldfilename = fieldfilename + "_nc";
-    if (reverse_source_ranks) fieldfilename = fieldfilename + "_rev";
     fieldfilename = fieldfilename + ".txt";
     if (numpe > 1) {
       int maxwidth = static_cast<long long>(std::ceil(std::log10(numpe)));

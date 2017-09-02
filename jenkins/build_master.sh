@@ -11,10 +11,11 @@ set -e
 set -x
 
 # Tag or git commit hash of Jali version to build and use for this PR:
-JALI_VERSION=v0.9.2
+JALI_VERSION=v0.9.8
+openmpi_version=1.10.5
 
 # Where to find Jali's TPLs:
-TPL_INSTALL_PREFIX=/usr/local/codes/ngc/private/jali-tpl/1.0.7-intel-15.0.3-openmpi-1.6.5-rh6
+TPL_INSTALL_PREFIX=/usr/local/codes/ngc/private/jali-tpl/1.0.9-intel-17.0.1-openmpi-${openmpi_version}
 
 
 git config user.email ""
@@ -25,8 +26,8 @@ export SHELL=/bin/sh
 
 export MODULEPATH=""
 . /opt/local/packages/Modules/default/init/sh
-module load intel/15.0.3
-module load openmpi/1.6.5
+module load intel/17.0.1
+module load openmpi/${openmpi_version}
 module load cmake
 
 echo $WORKSPACE
@@ -70,7 +71,6 @@ cmake \
   -D CMAKE_BUILD_TYPE=Release \
   -D ENABLE_UNIT_TESTS=True \
   -D ENABLE_MPI=True \
-  -D ENABLE_MPI_CXX_BINDINGS=True \
   -D ENABLE_JENKINS_OUTPUT=True \
   -D Jali_DIR:FILEPATH=$JALI_INSTALL_PREFIX/lib \
   ..

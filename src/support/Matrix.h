@@ -1,45 +1,8 @@
 /*
-Copyright (c) 2016, Los Alamos National Security, LLC
-All rights reserved.
-
-Copyright 2016. Los Alamos National Security, LLC. This software was produced
-under U.S. Government contract DE-AC52-06NA25396 for Los Alamos National
-Laboratory (LANL), which is operated by Los Alamos National Security, LLC for
-the U.S. Department of Energy. The U.S. Government has rights to use,
-reproduce, and distribute this software.  NEITHER THE GOVERNMENT NOR LOS ALAMOS
-NATIONAL SECURITY, LLC MAKES ANY WARRANTY, EXPRESS OR IMPLIED, OR ASSUMES ANY
-LIABILITY FOR THE USE OF THIS SOFTWARE.  If software is modified to produce
-derivative works, such modified software should be clearly marked, so as not to
-confuse it with the version available from LANL.
-
-Additionally, redistribution and use in source and binary forms, with or
-without modification, are permitted provided that the following conditions are
-met:
-
-1. Redistributions of source code must retain the above copyright notice,
-   this list of conditions and the following disclaimer.
-2. Redistributions in binary form must reproduce the above copyright
-   notice, this list of conditions and the following disclaimer in the
-   documentation and/or other materials provided with the distribution.
-3. Neither the name of Los Alamos National Security, LLC, Los Alamos
-   National Laboratory, LANL, the U.S. Government, nor the names of its
-   contributors may be used to endorse or promote products derived from this
-   software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY LOS ALAMOS NATIONAL SECURITY, LLC AND
-CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
-PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL LOS ALAMOS NATIONAL
-SECURITY, LLC OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
-BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER
-IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-POSSIBILITY OF SUCH DAMAGE.
+This file is part of the Ristra portage project.
+Please see the license file at the root of this repository, or at:
+    https://github.com/laristra/portage/blob/master/LICENSE
 */
-
-
 
 #ifndef PORTAGE_MATRIX_H
 #define PORTAGE_MATRIX_H
@@ -49,6 +12,12 @@ POSSIBILITY OF SUCH DAMAGE.
 #include <array>
 #include <iostream>
 #include <type_traits>
+
+#ifdef HAVE_LAPACKE
+#define HAVE_LAPACK_CONFIG_H
+#define LAPACK_COMPLEX_CPP
+#include "lapacke.h"
+#endif  // LAPACKE
 
 #include "Vector.h"   // Portage::Vector
 
@@ -252,14 +221,288 @@ class Matrix {
     return AB;
   }
 
+  /*!
+    @brief  Matrix-scalar multiply
+    @param[in] b   scalar to post-multiply with
+  */
+
+  Matrix operator*(double b) {
+
+    Matrix Ab(Rows_, Columns_);
+
+    for (int i = 0; i < Rows_; ++i)
+        for (int k = 0; k < Columns_; ++k)
+          Ab[i][k] = A_[i*Columns_+k]*b;
+
+    return Ab;
+  }
+
+  /*!
+    @brief  solve a linear system A X = B with this matrix (A)
+    @param[in] B  right-hand sides (multiple)
+    @param[in] method what method to use for solution
+    @return the solution X
+
+    method=="inverse" ==> use the  inverse operator
+    method=="dposv" ==> use lapack dposvx for symmetric positive definite A.
+    method=="dsysv" ==> use lapack dsysvx for symmetric  A.
+    method=="dgesv" ==> use lapack dgesvx for general A.
+  */
+  Matrix solve(Matrix const& B,
+               std::string method="inverse")
+  {
+    assert(Rows_ == Columns_);
+    assert(B.rows() == Columns_);
+    method_ = method;
+
+    Matrix X(B.rows(), B.columns(), 0.);
+
+    // built-in inverse
+    if (method == "inverse") {
+      auto inverse = this->inverse();
+      X = inverse*B;
+      
+    }
+#ifdef HAVE_LAPACKE    
+    else if (method == "lapack-posv") {  // LAPACK positive-definite matrix
+
+      // check symmetric
+      bool symm = true;
+      for (size_t i=0; i<Rows_; i++) for (size_t j=i; j<Columns_; j++) {
+        symm = symm and ((*this)[i][j] - (*this)[j][i]) < 1.e-13;
+      }
+      if (not symm) std::cerr << "solve(dposv): matrix is not symmetric" << std::endl;
+      assert(symm);
+
+      // setup
+      AEquilibrated_ = std::vector<double>(A_);
+      AFactored_     = std::vector<double>(Rows_*Columns_,0.);
+      Scale_         = std::vector<double>(Rows_,1.);
+      Error_         = std::vector<double>(B.columns(),0.);
+      BackError_     = std::vector<double>(B.columns(),0.);
+      Matrix BT = B.transpose();
+      Matrix XT = X.transpose();
+
+      // The data for this matrix class is in row-major form.
+      // LAPACKE creates temporaries and transposes the data, which does not
+      // work on some systems. We transpose the input data ourselves and go
+      // into LAPACKE in column-major form for direct access to the fortran
+      // routines.
+
+      int        matrix_layout =  LAPACK_COL_MAJOR;
+      char       fact = 'E';
+      char       uplo = 'U';
+      lapack_int n = Rows_;
+      lapack_int nrhs = B.columns();
+      double    *a = &(AEquilibrated_[0]);
+      lapack_int lda = Rows_;
+      double    *af = &(AFactored_[0]);
+      lapack_int ldaf = Rows_;
+      char       equed[2] = {' ','\n'};
+      double    *s = &(Scale_[0]);
+      double    *b = const_cast<double *>(BT[0]);
+      lapack_int ldb = Rows_;
+      double    *x = XT[0];
+      lapack_int ldx = Rows_;
+      double     rcond;
+      double    *ferr = &(Error_[0]);
+      double    *berr = &(BackError_[0]);
+
+      // solve it
+      lapack_int info =  LAPACKE_dposvx ( matrix_layout,
+        fact,     uplo,       n,          nrhs,        a,        lda,
+        af,       ldaf,       equed,      s,           b,        ldb,
+        x,        ldx,        &rcond,     ferr,        berr
+      );
+
+      X = XT.transpose();
+
+      // checks
+      if (info <0) {
+        std::cerr << "solve(posv): illegal value in "<<-info<<"-th position"
+            << std::endl;
+      }
+      if (info>0 and info<=n) {
+        std::cerr <<
+        "solve(posv): leading minor "<<info<<" is not positive definite"
+        << std::endl;
+      }
+      if (info == n+1) {
+        std::cerr <<
+        "solve(posv): reciprocal condition number is less than machine precision"
+        << std::endl;
+      }
+
+    } else if (method == "lapack-sysv") {  // LAPACK symmetric matrix
+      // check symmetric
+      bool symm = true;
+      for (size_t i=0; i<Rows_; i++) for (size_t j=i; j<Columns_; j++) {
+        symm = symm and ((*this)[i][j] - (*this)[j][i]) < 1.e-13;
+      }
+      if (not symm) std::cerr << "solve(dposv): matrix is not symmetric" << std::endl;
+      assert(symm);
+
+      // setup
+      AEquilibrated_ = std::vector<double>(A_);
+      AFactored_     = std::vector<double>(Rows_*Columns_,0.);
+      Error_         = std::vector<double>(B.columns(),0.);
+      BackError_     = std::vector<double>(B.columns(),0.);
+      Pivot_         = std::vector<lapack_int>(Rows_,0);
+      Matrix BT = B.transpose();
+      Matrix XT = X.transpose();
+
+      // The data for this matrix class is in row-major form.
+      // LAPACKE creates temporaries and transposes the data, which does not
+      // work on some systems. We transpose the input data ourselves and go
+      // into LAPACKE in column-major form for direct access to the fortran
+      // routines.
+
+      int        matrix_layout =  LAPACK_COL_MAJOR;
+      char       fact = 'N';
+      char       uplo = 'U';
+      lapack_int n = Rows_;
+      lapack_int nrhs = B.columns();
+      double    *a = &(AEquilibrated_[0]);
+      lapack_int lda = Rows_;
+      double    *af = &(AFactored_[0]);
+      lapack_int ldaf = Rows_;
+      lapack_int *ipiv = &(Pivot_[0]);
+      double    *b = const_cast<double *>(BT[0]);
+      lapack_int ldb = Rows_;
+      double    *x = XT[0];
+      lapack_int ldx = Rows_;
+      double     rcond;
+      double    *ferr = &(Error_[0]);
+      double    *berr = &(BackError_[0]);
+
+      // solve it
+      lapack_int info =  LAPACKE_dsysvx ( matrix_layout,
+        fact,     uplo,       n,          nrhs,        a,        lda,
+        af,       ldaf,       ipiv,       b,           ldb,
+        x,        ldx,        &rcond,     ferr,        berr
+      );
+
+      X = XT.transpose();
+
+      // checks
+      if (info <0) {
+        std::cerr << "solve(sysv): illegal value in "<<-info<<"-th position"
+            << std::endl;
+      }
+      if (info>0 and info<=n) {
+        std::cerr <<
+            "solve(sysv): diagonal entry "<<info<<" is zero"
+            << std::endl;
+      }
+      if (info == n+1) {
+        std::cerr <<
+            "solve(sysv): reciprocal condition number is less than machine precision"
+            << std::endl;
+      }
+
+    } else if (method == "lapack-gesv") {  // LAPACK general matrix
+
+      // setup
+      AEquilibrated_ = std::vector<double>(A_);
+      AFactored_     = std::vector<double>(Rows_*Columns_,0.);
+      Scale_         = std::vector<double>(Rows_,1.);
+      Scale2_        = std::vector<double>(Rows_,1.);
+      Error_         = std::vector<double>(B.columns(),0.);
+      BackError_     = std::vector<double>(B.columns(),0.);
+      Pivot_         = std::vector<lapack_int>(Rows_,0.);
+      Rpivot_        = std::vector<double>(Rows_,0.);
+      Matrix BT = B.transpose();
+      Matrix XT = X.transpose();
+
+      // The data for this matrix class is in row-major form.
+      // LAPACKE creates temporaries and transposes the data, which does not
+      // work on some systems. We transpose the input data ourselves and go
+      // into LAPACKE in column-major form for direct access to the fortran
+      // routines.
+
+      int        matrix_layout =  LAPACK_COL_MAJOR;
+      char       fact = 'E';
+      char       trans = 'N';
+      lapack_int n = Rows_;
+      lapack_int nrhs = B.columns();
+      double    *a = &(AEquilibrated_[0]);
+      lapack_int lda = Rows_;
+      double    *af = &(AFactored_[0]);
+      lapack_int ldaf = Rows_;
+      lapack_int *ipiv = &(Pivot_[0]);
+      char       equed[2] = {' ','\n'};
+      double    *r = &(Scale_[0]);
+      double    *c = &(Scale2_[0]);
+      double    *b = const_cast<double *>(BT[0]);
+      lapack_int ldb = Rows_;
+      double    *x = XT[0];
+      lapack_int ldx = Rows_;
+      double     rcond;
+      double    *ferr = &(Error_[0]);
+      double    *berr = &(BackError_[0]);
+      double    *rpivot = &(Rpivot_[0]);
+
+      // solve it
+      lapack_int info =  LAPACKE_dgesvx ( matrix_layout,
+        fact,     trans,      n,          nrhs,        a,        lda,
+        af,       ldaf,       ipiv,       equed,       r,        c,
+        b,           ldb,     x,          ldx,        &rcond,
+        ferr,        berr,    rpivot
+      );
+
+      X = XT.transpose();
+
+      // checks
+      if (info <0) {
+        std::cerr << "solve(gesv): illegal value in "<<-info<<"-th position"
+            << std::endl;
+      }
+      if (info>0 and info<=n) {
+        std::cerr <<
+            "solve(gesv): upper triangle entry "<<info<<" is zero"
+            << std::endl;
+      }
+      if (info == n+1) {
+        std::cerr <<
+            "solve(gesv): reciprocal condition number is less than machine precision"
+            << std::endl;
+      } 
+    } else {
+      throw std::runtime_error(std::string("LAPACK solve requested but solver ")+method+" unrecognized");
+    }
+#else
+    else {
+      throw std::runtime_error("Invalid solver type or LAPACK solve requested but code not built with LAPACK support");
+    }
+#endif  // HAVE_LAPACKE
+
+    return X;
+  }
 
  private:
   int Rows_, Columns_;
   std::vector<double> A_;
+  std::string method_;
 
-  friend class MatrixRow;
+  // stuff for lapack which is useful for solves where matrix is already
+  // factored
+  std::vector<double> AFactored_;
+  std::vector<double> AEquilibrated_;
+  std::vector<double> Scale_;
+  std::vector<double> Scale2_;
+  std::vector<double> Error_;
+  std::vector<double> BackError_;
+  std::vector<lapack_int> Pivot_;
+  std::vector<double> Rpivot_;
 };
+
+template<long D>
+Vector<D> matsolve(Matrix const& matrix, Vector<D> const& rhs) {
+  auto inverse = matrix.inverse();
+  Vector<D> result = inverse*rhs;
+  return result;
+}
 
 }  // namespace Portage
 
-#endif
+#endif // PORTAGE_MATRIX_H
