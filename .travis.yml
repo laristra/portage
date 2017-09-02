@@ -36,11 +36,10 @@ after_success:
       docker push "${TRAVIS_REPO_SLUG}:latest";
     fi
 #  - if [[ ${DOCS} ]]; then
-  - cd ${HOME}/docker/portage;
-    CON=$(docker run -d ${TRAVIS_REPO_SLUG}:latest) && docker cp ${CON}:/home/portage/portage/build/doc . ;
-    pwd; ls -R;
+  - cd ${HOME}/docker/portage; mkdir built-docs
+    CON=$(docker run -d ${TRAVIS_REPO_SLUG}:latest) && docker cp ${CON}:/home/portage/portage/build/doc ./built-docs ;
     pip3 install doctr;
-    doctr deploy --no-require-master . --built-docs doc/portage/doxygen/html;
+    doctr deploy --no-require-master . --built-docs built-docs/doxygen/html;
 #    fi
 
 env:
