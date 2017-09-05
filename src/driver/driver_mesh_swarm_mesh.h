@@ -315,7 +315,7 @@ class MSM_Driver {
                                        basis_);
 
       // do the remap
-      swarm_driver.run(false, false);
+      swarm_driver.run(false, true);
 
       // transfer data back to target mesh
       for (auto name=target_cellvar_names.begin();
@@ -398,7 +398,7 @@ class MSM_Driver {
                                        basis_);
 
       // do the remap
-      swarm_driver.run(false, false);
+      swarm_driver.run(false, true);
 
       // transfer data back to target mesh
       for (auto name=target_nodevar_names.begin();
