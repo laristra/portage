@@ -406,13 +406,13 @@ class SwarmDriver {
       tot_seconds = tot_seconds_srch + tot_seconds_xsect + tot_seconds_interp;
       
       if (report_time) {
-        std::cout << "Transform Time Rank " << comm_rank << " (s): " <<
+        std::cout << "Swarm Transform Time Rank " << comm_rank << " (s): " <<
           tot_seconds << std::endl;
-        std::cout << "  Search Time Rank " << comm_rank << " (s): " <<
+        std::cout << "  Swarm Search Time Rank " << comm_rank << " (s): " <<
           tot_seconds_srch << std::endl;
-        std::cout << "  Intersect Time Rank " << comm_rank << " (s): " <<
+        std::cout << "  Swarm Accumulate Time Rank " << comm_rank << " (s): " <<
           tot_seconds_xsect << std::endl;
-        std::cout << "  Interpolate Time Rank " << comm_rank << " (s): " <<
+        std::cout << "  Swarm Estimate Time Rank " << comm_rank << " (s): " <<
           tot_seconds_interp << std::endl;
       }
     }
