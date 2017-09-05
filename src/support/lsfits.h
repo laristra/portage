@@ -159,8 +159,8 @@ template<long D>
   }
 
   size_t ma = D*(D+3)/2;
-  std::vector<std::vector<double> > u(nvals-1, vector<double>(ma));
-  std::vector<std::vector<double> > v(ma, vector<double>(ma));
+  std::vector<std::vector<double> > u(nvals-1, std::vector<double>(ma));
+  std::vector<std::vector<double> > v(ma, std::vector<double>(ma));
   std::vector<double> w(ma);
   for (int i=0; i < nvals-1; i++) {
     for (int j=0; j < D*(D+3)/2; j++) {
@@ -194,7 +194,7 @@ template<long D>
   }
 
   // solve the problem for coefficients, in "result".
-  vector<double> result(ma);
+  std::vector<double> result(ma);
   svd_solve(u,w,v,F,result);
 
   return result;
