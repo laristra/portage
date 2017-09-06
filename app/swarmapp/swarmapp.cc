@@ -50,29 +50,30 @@ template<unsigned int D>
 double field_func(int field_order, Portage::Point<D> coord) {
   double value = 0.0;
   switch (field_order) {
-    case -1: {
-      double rsqr = 0.0;
-      for (int i = 0; i < D; i++) 
-        rsqr += coord[i]*coord[i];
-      value = 1.0;
-      for (int i = 0; i < D; i++)
-        value *= sin(2*M_PI*coord[i]);
-      break;
-    }
-    case 0:
-      value = 25.3;
-      break;
-    case 1:
-      for (int i = 0; i < D; i++) value += coord[i];
-      break;
-    case 2:
-      for (int i = 0; i < D; i++) value += coord[i]*coord[i];
-      break;
-    case 3:
-      for (int i = 0; i < D; i++) value += coord[i]*coord[i]*coord[i];
-      break;
-    default:
-      throw std::runtime_error("Unknown field_order!");
+  case -1: {
+    double rsqr = 0.0;
+    for (int i = 0; i < D; i++) 
+      rsqr += (coord[i])*(coord[i]);
+    value = 1.0;
+    for (int i = 0; i < D; i++)
+      value *= sin(0.9*2.*3.1415926535898*(coord[i]));
+    value *= exp(-1.5*sqrt(rsqr));
+    break;
+  }
+  case 0:
+    value = 25.3;
+    break;
+  case 1:
+    for (int i = 0; i < D; i++) value += coord[i];
+    break;
+  case 2:
+    for (int i = 0; i < D; i++) value += coord[i]*coord[i];
+    break;
+  case 3:
+    for (int i = 0; i < D; i++) value += coord[i]*coord[i]*coord[i];
+    break;
+  default:
+    throw std::runtime_error("Unknown field_order!");
   }
 
   return value;
@@ -126,7 +127,7 @@ std::vector<example_properties> setup_examples() {
 
 void usage() {
   auto examples = setup_examples();
-  std::cout << "Usage: swarmapp example-number nsourcepts ntargetpts"
+  std::cout << "Usage: swarmapp example-number nsourcepts ntargetpts distribution"
             << std::endl;
   std::cout << "List of example numbers:" << std::endl;
   int i = 0;
@@ -140,7 +141,7 @@ void usage() {
 }
 
 int main(int argc, char** argv) {
-  int example_num, n_source, n_target;
+  int example_num, n_source, n_target, distribution;
   if (argc <= 3) {
     usage();
     return 0;
@@ -149,6 +150,8 @@ int main(int argc, char** argv) {
   example_num = atoi(argv[1]);
   n_source = atoi(argv[2]);
   n_target = atoi(argv[3]);
+  distribution = atoi(argv[4]);
+  
 
 #ifdef ENABLE_MPI
   int mpi_init_flag;
@@ -170,9 +173,9 @@ int main(int argc, char** argv) {
   example_properties example = setup_examples()[example_num];
 
   // Regularly ordered input swarm; randomly ordered output swarm
-  auto inputSwarm = SwarmFactory(-1.25, -1.25, 1.25, 1.25, n_source*n_source,
-                                 1);
-  auto targetSwarm = SwarmFactory(-1.0, -1.0, 1.0, 1.0, n_target*n_target, 2);
+  auto inputSwarm = SwarmFactory(-1.1, -1.1, 1.1, 1.1, n_source*n_source,
+                                 distribution);
+  auto targetSwarm = SwarmFactory(-1.0, -1.0, 1.0, 1.0, n_target*n_target, distribution);
   
   auto inputState = make_shared<SwarmState<2>>(*inputSwarm);
   auto targetState = make_shared<SwarmState<2>>(*targetSwarm);
