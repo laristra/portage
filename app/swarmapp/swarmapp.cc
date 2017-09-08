@@ -174,10 +174,9 @@ int main(int argc, char** argv) {
   example_properties example = setup_examples()[example_num];
 
   // Regularly ordered input swarm; randomly ordered output swarm
-  auto inputSwarm = SwarmFactory(-1.25, -1.25, 1.25, 1.25, n_source*n_source,
+  auto inputSwarm = SwarmFactory(-1.1, -1.1, 1.1, 1.1, n_source*n_source,
                                  distribution);
-  auto targetSwarm = SwarmFactory(-1.0, -1.0, 1.0, 1.0, n_target*n_target,
-				  distribution);
+  auto targetSwarm = SwarmFactory(-1.0, -1.0, 1.0, 1.0, n_target*n_target, distribution);
   
   auto inputState = make_shared<SwarmState<2>>(*inputSwarm);
   auto targetState = make_shared<SwarmState<2>>(*targetSwarm);
