@@ -112,8 +112,8 @@ double field_func(int example, Portage::Point<D> coord) {
       rsqr += (coord[i]-.5)*(coord[i]-.5);
     value = 1.0;
     for (int i = 0; i < D; i++)
-      value *= sin(4*2.*3.1415926535898*(coord[i]-.5));
-    value *= exp(-8.*sqrt(rsqr));
+      value *= sin(0.9*2.*3.1415926535898*(coord[i]-.5));
+    value *= exp(-1.5*sqrt(rsqr));
     break;
   }
   case 0:
