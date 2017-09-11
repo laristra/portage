@@ -28,8 +28,6 @@ Please see the license file at the root of this repository, or at:
 #define MAX(x,y) ((x)>(y)?(x):(y))
 #define SIGN(a, b) ((b) >= 0.0 ? fabs(a) : -fabs(a))
 
-using namespace std; 
-
 static double PYTHAG(double a, double b)
 {
     double at = fabs(a), bt = fabs(b), ct, result;
@@ -42,7 +40,7 @@ static double PYTHAG(double a, double b)
 
 // Perform singular value decomposition
 
-int svd(vector<vector<double> > & a, vector<double> & w, vector<vector<double> > & v)
+int svd(std::vector<std::vector<double> > & a, std::vector<double> & w, std::vector<std::vector<double> > & v)
 {
     int flag, i, its, j, jj, k, l, nm;
     int m, n;        // dimensions of a (and u) 
@@ -316,9 +314,9 @@ int svd(vector<vector<double> > & a, vector<double> & w, vector<vector<double> >
 
 // Singular value backsubstitution.
 
-void svd_solve(const vector<vector<double> > & u, const vector<double> & w, \
-	       const vector<vector<double> > & v, \
-	       vector<double> & b, vector<double> & x)
+void svd_solve(const std::vector<std::vector<double> > & u, const std::vector<double> & w, \
+	       const std::vector<std::vector<double> > & v, \
+	       std::vector<double> & b, std::vector<double> & x)
  // Solves A*x=b for vector x.  A is specified by the arrays
  //   u[1...m][1...n], w[1...n],v[1...n[1...n], as returned by
  //   svd.  m and n are the dimensions of a. b[1...m] is the rhs.
@@ -332,7 +330,7 @@ void svd_solve(const vector<vector<double> > & u, const vector<double> & w, \
   m = u.size();     // number of rows
   n = u[0].size();  // number of columns
 
-  vector<double> tmp(n,0.0);
+  std::vector<double> tmp(n,0.0);
   for (j=0;j<=n-1;j++) {
     s=0.0;
     if (w[j]) {
