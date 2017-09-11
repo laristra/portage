@@ -25,7 +25,7 @@ if (ENABLE_FleCSI)
         )
 endif ()
 
-set(wrappers_HEADERS
+set(wonton_HEADERS
     ${jali_wrapper_headers}
     ${flecsi_wrapper_headers}
     mesh/AuxMeshTopology.h
