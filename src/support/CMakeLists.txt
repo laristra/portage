@@ -23,6 +23,7 @@ set(support_HEADERS
 
 # Add source files
 set(support_SOURCES
+    svd.cc
     PARENT_SCOPE
 )
 
