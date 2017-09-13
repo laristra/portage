@@ -40,7 +40,7 @@ RUN cd .. && if [ ${COVERAGE} ]; then \
   fi; \
 fi && cd -
 RUN if [ ${DOCS} ]; then \
-  make doxygen;
+  make doxygen; \
 fi
 RUN cd .. && if [ ${SONARQUBE} ]; then \
   sonar-scanner \
