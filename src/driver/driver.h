@@ -39,6 +39,7 @@ Please see the license file at the root of this repository, or at:
   and datastructures.
 */
 
+using namespace Wonton;
 namespace Portage {
 
   /*!

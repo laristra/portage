@@ -19,7 +19,8 @@ Please see the license file at the root of this repository, or at:
 #include "portage/support/portage.h"
 #include "portage/support/Point.h"
 
-namespace Portage {
+using namespace Portage;
+namespace Wonton {
 
 // Some helper functions
 //! Compute volume of 1D side
@@ -2009,6 +2010,6 @@ void AuxMeshTopology<BasicMesh>::cell_get_coordinates(int const cellid,
 }
 
 
-}  // namespace Portage
+}  // namespace Wonton
 
 #endif  // AUX_MESH_TOPOLOGY_H_

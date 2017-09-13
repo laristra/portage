@@ -24,7 +24,13 @@ Please see the license file at the root of this repository, or at:
 #include "portage/support/portage.h"
 #include "portage/support/Point.h"
 
-namespace Portage {
+#ifdef ENABLE_MPI
+#include "portage/distributed/mpi_bounding_boxes.h"
+#endif
+
+using namespace Portage;
+
+namespace Wonton {
 
 /*!
   \class Flat_Mesh_Wrapper flat_mesh_wrapper.h
@@ -515,7 +521,7 @@ class Flat_Mesh_Wrapper : public AuxMeshTopology<Flat_Mesh_Wrapper<>> {
   int space_dimension() const { return dim_; }
 
 private:
-  friend class MPI_Bounding_Boxes;
+  friend class Portage::MPI_Bounding_Boxes;
   std::vector<T> nodeCoords_;
   std::vector<int> cellToNodeList_;
   std::vector<int> cellNodeCounts_;
@@ -582,6 +588,6 @@ void node_radius(Portage::Flat_Mesh_Wrapper<double> &wrapper,
   }
 }
 
-} // end namespace Portage
+} // end namespace Wonton
 
 #endif // FLAT_MESH_WRAPPER_H_

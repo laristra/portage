@@ -19,7 +19,7 @@
 #include <string>
 
 //namespace flecsale {
-namespace wonton {
+namespace Wonton {
 
 ////////////////////////////////////////////////////////////////////////////////
 /// \brief Provides access to data stored in Flecsi_State

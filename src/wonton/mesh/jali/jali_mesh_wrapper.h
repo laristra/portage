@@ -24,7 +24,7 @@ Please see the license file at the root of this repository, or at:
 #include "portage/support/Point.h"
 
 
-namespace Portage {
+namespace Wonton {
 
 /*!
   \class Jali_Mesh_Wrapper jali_mesh_wrapper.h
@@ -226,6 +226,6 @@ class Jali_Mesh_Wrapper : public AuxMeshTopology<Jali_Mesh_Wrapper> {
 };  // class Jali_Mesh_Wrapper
 
 
-}  // end namespace Portage
+}  // end namespace Wonton
 
 #endif // JALI_MESH_WRAPPER_H_
