@@ -32,20 +32,24 @@ RUN 	apt-get update && apt-get install -y \
 #RUN sonar-scanner -h
 
 USER 	${user}
+WORKDIR /home/${user}
+#COPY 	.ssh .ssh
 
 # install coverage tools as user, and get portage
 ENV 	PATH=/usr/lib/ccache:${PATH}
-WORKDIR ~
-RUN 	pip install --user codecov coverxygen && \
- 	git clone --recursive ssh://git@xcp-stash.lanl.gov:7999/~shevitz/portage.git && \
- 	#git clone --recursive https://github.com/laristra/portage && \
-	mkdir -p portage/build && \
-	cd portage/build && \
-	cmake -DENABLE_APP_TESTS=True .. && \
-	make
+RUN 	git clone --recursive ssh://git@xcp-stash.lanl.gov:7999/~shevitz/portage.git
+	
+	#pip install --user codecov coverxygen && \
+ 	 
+	#&& \
+ 	##git clone --recursive https://github.com/laristra/portage && \
+	#mkdir -p portage/build && \
+	#cd portage/build && \
+	#cmake -DENABLE_APP_TESTS=True .. && \
+	#make
 
 # leave the user in ~/portage/build
-WORKDIR ~/portage/build
+#WORKDIR ~/portage/build
 
 
 #USER root
