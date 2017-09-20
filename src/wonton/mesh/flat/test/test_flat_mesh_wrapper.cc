@@ -94,9 +94,9 @@ TEST(Flat_Mesh_Wrapper, basic_routines_3d) {
 
   // Test cell and node radius
   double cradius, nradius;
-  Portage::cell_radius<3>(mesh_flat, 0, &cradius);
+  Wonton::cell_radius<3>(mesh_flat, 0, &cradius);
   ASSERT_EQ(sqrt(3.0)/4., cradius);
-  Portage::node_radius<3>(mesh_flat, 0, &nradius);
+  Wonton::node_radius<3>(mesh_flat, 0, &nradius);
   ASSERT_EQ(sqrt(3.0)/2., nradius);
 
   // Test cell_volume()
