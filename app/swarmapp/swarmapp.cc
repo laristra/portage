@@ -56,8 +56,9 @@ double field_func(int field_order, Portage::Point<D> coord) {
         rsqr += coord[i]*coord[i];
       value = 1.0;
       for (int i = 0; i < D; i++)
-        value *= sin(2*M_PI*coord[i]);
+        value *= sin(0.9*2*M_PI*coord[i]);
       break;
+      value *= exp(-1.5*sqrt(rsqr));
     }
     case 0:
       value = 25.3;
@@ -118,7 +119,7 @@ std::vector<example_properties> setup_examples() {
   // cubic func, quadratic basis
   examples.emplace_back(3, 2);
 
-  // exp(4*r^2)*sin(2*pi*x)*sin(2*pi*y)
+  // exp(-1.5*r)*sin(0.9*2*pi*x)*sin(0.9*2*pi*y)
   examples.emplace_back(-1, 2);
 
   return examples;
@@ -126,7 +127,9 @@ std::vector<example_properties> setup_examples() {
 
 void usage() {
   auto examples = setup_examples();
-  std::cout << "Usage: swarmapp example-number nsourcepts ntargetpts"
+  std::cout << "Usage: swarmapp example-number nsourcepts ntargetpts distribution"
+            << std::endl;
+  std::cout << "distribution = 0 for random, 1 for regular grid, 2 for perturbed regular grid"
             << std::endl;
   std::cout << "List of example numbers:" << std::endl;
   int i = 0;
@@ -140,8 +143,8 @@ void usage() {
 }
 
 int main(int argc, char** argv) {
-  int example_num, n_source, n_target;
-  if (argc <= 3) {
+  int example_num, n_source, n_target, distribution;
+  if (argc <= 4) {
     usage();
     return 0;
   }
@@ -149,6 +152,7 @@ int main(int argc, char** argv) {
   example_num = atoi(argv[1]);
   n_source = atoi(argv[2]);
   n_target = atoi(argv[3]);
+  distribution = atoi(argv[4]);
 
 #ifdef ENABLE_MPI
   int mpi_init_flag;
@@ -170,9 +174,9 @@ int main(int argc, char** argv) {
   example_properties example = setup_examples()[example_num];
 
   // Regularly ordered input swarm; randomly ordered output swarm
-  auto inputSwarm = SwarmFactory(-1.25, -1.25, 1.25, 1.25, n_source*n_source,
-                                 1);
-  auto targetSwarm = SwarmFactory(-1.0, -1.0, 1.0, 1.0, n_target*n_target, 2);
+  auto inputSwarm = SwarmFactory(-1.1, -1.1, 1.1, 1.1, n_source*n_source,
+                                 distribution);
+  auto targetSwarm = SwarmFactory(-1.0, -1.0, 1.0, 1.0, n_target*n_target, distribution);
   
   auto inputState = make_shared<SwarmState<2>>(*inputSwarm);
   auto targetState = make_shared<SwarmState<2>>(*targetSwarm);
@@ -200,7 +204,6 @@ int main(int argc, char** argv) {
   auto smoothing_lengths =
       vector<vector<vector<double>>>(ntarpts, vector<vector<double>>(1, vector<double>(2, 2.05*h)));
                                                                       
-
   SwarmDriver<
     SearchPointsByCells,
     Accumulate,
@@ -222,7 +225,7 @@ int main(int argc, char** argv) {
     d.set_remap_var_names(remap_fields, remap_fields,
                           Portage::Meshfree::LocalRegression,
                           Portage::Meshfree::Basis::Quadratic);
-  d.run(false);
+  d.run(false, true);
 
   std::vector<double> expected_value(ntarpts, 0.0);
 
