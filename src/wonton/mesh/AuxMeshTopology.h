@@ -331,6 +331,11 @@ class AuxMeshTopology {
   void cell_get_node_adj_cells(int const cellid,
                                Entity_type const ptype,
                                std::vector<int> *adjcells) const {
+
+    // If it does not interfere with the GPU implementation, we could
+    // insert into a std::set (nlog(n) instead of n^2) and then copy
+    // into the output vector
+
     adjcells->clear();
 
     // Find the nodes attached to this cell
@@ -381,6 +386,10 @@ class AuxMeshTopology {
                                Entity_type const ptype,
                                std::vector<int> *adjnodes) const {
     adjnodes->clear();
+
+    // If it does not interfere with the GPU implementation, we could
+    // insert into a std::set (nlog(n) instead of n^2) and then copy
+    // into the output vector
 
     // Find the cells attached to this node
     std::vector<int> nodecells;
@@ -1119,6 +1128,10 @@ class AuxMeshTopology {
 #endif
     assert(basicmesh_ptr_->space_dimension() == 3);
     assert(wedges_requested_);
+
+    // If it does not interfere with the GPU implementation, we could
+    // insert into a std::set (nlog(n) instead of n^2) and then copy
+    // into the output vector
 
     // wedge_get_coordinates - (node, edge center, face centroid, cell centroid)
     std::array<Point<3>, 4> wcoords;
