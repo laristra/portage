@@ -12,7 +12,7 @@ env:
   matrix:
     - MPI=OFF DOCS=true
     - MPI=ON DOCKERHUB=true
-    - MPI=On COVERAGE=ON SONARQUBE=ON
+    - MPI=ON COVERAGE=ON SONARQUBE=ON
 
 script:
   - set -e
@@ -35,7 +35,7 @@ after_success:
       docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD";
       docker push "${TRAVIS_REPO_SLUG}:latest";
     fi
-  - if [[ ${DOCS} = true ]]; then
+  - if [[ ${DOCS} ]]; then
       cd ${HOME}/docker/portage;
       CON=$(docker run -d ${TRAVIS_REPO_SLUG}:latest) && docker cp ${CON}:/home/portage/portage/build/doc . ;
       pip3 install doctr;
