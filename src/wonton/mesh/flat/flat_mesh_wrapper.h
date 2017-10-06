@@ -378,6 +378,11 @@ class Flat_Mesh_Wrapper : public AuxMeshTopology<Flat_Mesh_Wrapper<>> {
     return (cellid < numOwnedCells_ ? PARALLEL_OWNED : PARALLEL_GHOST);
   }
 
+  //! Get the type of the node - PARALLEL_OWNED or PARALLEL_GHOST
+  Portage::Entity_type node_get_type(int const nodeid) const {
+    return (nodeid < numOwnedNodes_ ? PARALLEL_OWNED : PARALLEL_GHOST);
+  }
+
   //! Get the element type of a cell - TRI, QUAD, POLYGON, TET, HEX,
   //! PRISM OR POLYHEDRON
   Portage::Element_type cell_get_element_type(int const cellid) const {
@@ -432,11 +437,22 @@ class Flat_Mesh_Wrapper : public AuxMeshTopology<Flat_Mesh_Wrapper<>> {
   }
 
   //! Get list of cells for a node
-  void node_get_cells(int const nodeid, std::vector<int> *cells) const {
+  void node_get_cells(int const nodeid, Entity_type const ptype,
+                      std::vector<int> *cells) const {
     int offset = nodeCellOffsets_[nodeid];
     int count = nodeCellCounts_[nodeid];
-    cells->assign(&nodeToCellList_[offset],
-                  &nodeToCellList_[offset+count]);
+    if (ptype == Entity_type::ALL)
+      cells->assign(&nodeToCellList_[offset],
+                    &nodeToCellList_[offset+count]);
+    else {
+      cells->clear();
+      cells->reserve(count);
+      for (int i = 0; i < count; i++) {
+        int c = nodeToCellList_[offset+i];
+        if (cell_get_type(c) == ptype)
+          cells->push_back(c);
+      }
+    }
   }
 
   //! Coords of nodes of a cell
@@ -451,49 +467,6 @@ class Flat_Mesh_Wrapper : public AuxMeshTopology<Flat_Mesh_Wrapper<>> {
     pplist->resize(cellNumNodes);
     for (unsigned int i=0; i<cellNumNodes; ++i)
       node_get_coordinates(nodes[i], &((*pplist)[i]));
-  }
-
-  //! Get node connected neighbors of cell
-  void cell_get_node_adj_cells(int const cellid,
-                               Entity_type const ptype,
-                               std::vector<int> *adjcells) const {
-
-    // TODO:  remove assumption that ptype == ALL (if needed)?
-    std::vector<int> cellnodes;
-    cell_get_nodes(cellid, &cellnodes);
-    std::set<int> cellcells;
-
-    for (auto const& n : cellnodes) {
-      std::vector<int> nodecells;
-      node_get_cells(n, &nodecells);
-
-      for (auto const& c : nodecells) {
-        if (c != cellid) cellcells.insert(c);
-      }
-    }
-    adjcells->assign(cellcells.begin(), cellcells.end());
-  }
-
-  //! Get "adjacent" nodes of given node - nodes that share a common
-  //! cell with given node
-  void node_get_cell_adj_nodes(int const nodeid,
-                               Entity_type const ptype,
-                               std::vector<int> *adjnodes) const {
-
-    // TODO:  remove assumption that ptype == ALL (if needed)?
-    std::vector<int> nodecells;
-    node_get_cells(nodeid, &nodecells);
-    std::set<int> nodenodes;
-
-    for (auto const& c : nodecells) {
-      std::vector<int> cellnodes;
-      cell_get_nodes(c, &cellnodes);
-
-      for (auto const& n : cellnodes) {
-        if (n != nodeid) nodenodes.insert(n);
-      }
-    }
-    adjnodes->assign(nodenodes.begin(), nodenodes.end());
   }
 
   //! get coordinates
