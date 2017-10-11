@@ -12,7 +12,9 @@ Please see the license file at the root of this repository, or at:
 # Simple_Mesh test
 add_executable(simple_mesh_app simple_mesh_app.cc)
 target_link_libraries(simple_mesh_app portage ${EXTRA_LIBS})
-
+if (ENABLE_MPI)
+  target_link_libraries(simple_mesh_app ${MPI_CXX_LIBRARIES})
+endif (ENABLE_MPI)
 
 #TCMalloc option
 set(ENABLE_TCMALLOC TRUE CACHE BOOL "Use TCMalloc")

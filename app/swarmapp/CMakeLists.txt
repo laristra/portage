@@ -12,6 +12,9 @@ Please see the license file at the root of this repository, or at:
 # Swarm test
 add_executable(swarmapp swarmapp.cc)
 target_link_libraries(swarmapp portage ${EXTRA_LIBS} ${LAPACKE_LIBRARIES})
+if (ENABLE_MPI)
+  target_link_libraries(swarmapp ${MPI_CXX_LIBRARIES})
+endif (ENABLE_MPI)
 
 
 #TCMalloc option
