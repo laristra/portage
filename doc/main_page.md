@@ -39,13 +39,7 @@ Distributed parallelism of portage is currently supported through MPI;
 regular testing is performed with OpenMPI 1.10.3+ .  Most application
 tests and all of the units tests are currently only built if MPI is
 used.  MPI is enabled in portage by setting the CMake variable
-`ENABLE_MPI=True`.  In addition, you'll likely need to tell CMake to
-use the MPI-wrapped compiler by setting something like
-
-~~~
-CMAKE_C_COMPILER=`which mpicc`
-CMAKE_CXX_COMPILER=`which mpiCC`
-~~~
+`ENABLE_MPI=True`.
 
 On-node parallelism is exposed through
 the [Thrust](https://thrust.github.io) library.  Enabling Thrust
@@ -91,9 +85,7 @@ like:
 ~~~sh
 portage/ $ mkdir build
 portage/ $ cd build
-portage/build/ $ cmake -DCMAKE_C_COMPILER=`which mpicc` \
-                       -DCMAKE_CXX_COMPILER=`which mpiCC` \
-					   -DENABLE_APP_TESTS=True -DENABLE_UNIT_TESTS=True \
+portage/build/ $ cmake -DENABLE_APP_TESTS=True -DENABLE_UNIT_TESTS=True \
 					   -DENABLE_MPI=True \
 					   -DENABLE_THRUST=True -DTHRUST_DIR=/path/to/thrust/include/directory \
 					   -DJali_DIR=path/ to/Jali/lib \
