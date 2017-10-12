@@ -245,6 +245,7 @@ class Matrix {
 
     method=="inverse" ==> use the  inverse operator
     method=="dposv" ==> use lapack dposvx for symmetric positive definite A.
+    method=="dsytr" ==> use lapack dsytrf & dsytrs for symmetric A.
     method=="dsysv" ==> use lapack dsysvx for symmetric  A.
     method=="dgesv" ==> use lapack dgesvx for general A.
   */
@@ -332,6 +333,61 @@ class Matrix {
         "solve(posv): reciprocal condition number is less than machine precision"
         << std::endl;
       }
+
+    } else if (method == "lapack-sytr") {  // LAPACK symmetric matrix
+
+      // check symmetric
+      bool symm = true;
+      for (size_t i=0; i<Rows_; i++) for (size_t j=i; j<Columns_; j++) {
+        symm = symm and ((*this)[i][j] - (*this)[j][i]) < 1.e-13;
+      }
+      if (not symm) std::cerr << "solve(sytr): matrix is not symmetric" << std::endl;
+      assert(symm);
+
+      // setup
+      AEquilibrated_ = std::vector<double>(A_);
+      Pivot_         = std::vector<lapack_int>(Rows_,0);
+      Matrix XT(B.transpose());
+
+      // The data for this matrix class is in row-major form.
+      // LAPACKE creates temporaries and transposes the data, which does not
+      // work on some systems. We transpose the input data ourselves and go
+      // into LAPACKE in column-major form for direct access to the fortran
+      // routines.
+
+      int        matrix_layout =  LAPACK_COL_MAJOR;
+      char       uplo = 'U';
+      lapack_int n = Rows_;
+      lapack_int nrhs = B.columns();
+      double    *a = &(AEquilibrated_[0]);
+      lapack_int lda = Rows_;
+      lapack_int *ipiv = &(Pivot_[0]);
+      double    *b = XT[0];
+      lapack_int ldb = Rows_;
+      lapack_int info;
+
+      // factorize a
+      info = LAPACKE_dsytrf(matrix_layout,uplo,n,a,lda,ipiv);
+
+      // checks
+      if (info < 0) {
+        std::cerr << "solve(sytr): illegal value in "<<-info<<"-th position"
+            << std::endl;
+      } else if (info > 0) {
+        std::cerr <<
+            "solve(sytr): diagonal entry "<<info<<" is zero"<< std::endl;
+      }
+
+      // solve it
+      info = LAPACKE_dsytrs(matrix_layout,uplo,n,nrhs,a,lda,ipiv,b,ldb);
+
+      // checks
+      if (info < 0) {
+        std::cerr << "solve(sytr): illegal value in "<<-info<<"-th position"
+            << std::endl;
+      }
+
+      X = XT.transpose();
 
     } else if (method == "lapack-sysv") {  // LAPACK symmetric matrix
       // check symmetric
