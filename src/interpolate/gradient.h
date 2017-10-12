@@ -1,45 +1,8 @@
 /*
-Copyright (c) 2016, Los Alamos National Security, LLC
-All rights reserved.
-
-Copyright 2016. Los Alamos National Security, LLC. This software was produced
-under U.S. Government contract DE-AC52-06NA25396 for Los Alamos National
-Laboratory (LANL), which is operated by Los Alamos National Security, LLC for
-the U.S. Department of Energy. The U.S. Government has rights to use,
-reproduce, and distribute this software.  NEITHER THE GOVERNMENT NOR LOS ALAMOS
-NATIONAL SECURITY, LLC MAKES ANY WARRANTY, EXPRESS OR IMPLIED, OR ASSUMES ANY
-LIABILITY FOR THE USE OF THIS SOFTWARE.  If software is modified to produce
-derivative works, such modified software should be clearly marked, so as not to
-confuse it with the version available from LANL.
-
-Additionally, redistribution and use in source and binary forms, with or
-without modification, are permitted provided that the following conditions are
-met:
-
-1. Redistributions of source code must retain the above copyright notice,
-   this list of conditions and the following disclaimer.
-2. Redistributions in binary form must reproduce the above copyright
-   notice, this list of conditions and the following disclaimer in the
-   documentation and/or other materials provided with the distribution.
-3. Neither the name of Los Alamos National Security, LLC, Los Alamos
-   National Laboratory, LANL, the U.S. Government, nor the names of its
-   contributors may be used to endorse or promote products derived from this
-   software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY LOS ALAMOS NATIONAL SECURITY, LLC AND
-CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
-PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL LOS ALAMOS NATIONAL
-SECURITY, LLC OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
-BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER
-IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-POSSIBILITY OF SUCH DAMAGE.
+This file is part of the Ristra portage project.
+Please see the license file at the root of this repository, or at:
+    https://github.com/laristra/portage/blob/master/LICENSE
 */
-
-
 
 #ifndef SRC_INTERPOLATE_GRADIENT_H_
 #define SRC_INTERPOLATE_GRADIENT_H_
@@ -48,80 +11,14 @@ POSSIBILITY OF SUCH DAMAGE.
 #include <stdexcept>
 #include <string>
 #include <vector>
+#include <iostream>
 
 #include "portage/support/portage.h"
 #include "portage/support/Point.h"
 #include "portage/support/Matrix.h"
+#include "portage/support/lsfits.h"
 
 namespace Portage {
-
-
-/*!
-  @brief Compute least squares gradient from set of values
-  @param[in] coords Vector of coordinates at which values are given
-  @param[in] vals   Vector of values at said coordinates
-
-  Compute a least squares gradient from a set of values. The first
-  point is assumed to be the point where the gradient must be computed
-  and the first value is assumed to the value at this reference point
-
-  This operator does not know anything about a mesh.
-
-*/
-
-template<long D>
-Vector<D> ls_gradient(std::vector<Point<D>> const & coords,
-                      std::vector<double> const & vals) {
-
-  Point<D> coord0 = coords[0];
-
-  double val0 = vals[0];
-
-  // There are nvals but the first is the reference point where we
-  // are trying to compute the gradient; so the matrix sizes etc
-  // will only be nvals-1
-
-  int nvals = vals.size();
-
-  // Each row of A contains the components of the vector from
-  // coord0 to the candidate point being used in the Least Squares
-  // approximation (X_i-X_0).
-
-  Matrix A(nvals-1, D);
-  for (int i = 0; i < nvals-1; ++i) {
-    for (int j = 0; j < D; ++j)
-      A[i][j] = coords[i+1][j]-coord0[j];
-  }
-
-
-  // A is a matrix of size nvals-1 by D (where D is the space
-  // dimension). So transpose(A)*A is D by D
-
-  Matrix AT = A.transpose();
-
-  Matrix ATA = AT*A;
-
-  // Each entry/row of F contains the difference between the
-  // function value at the candidate point and the function value
-  // at the point where we are computing (f-f_0)
-
-  std::vector<double> F(nvals-1);
-  for (int i = 0; i < nvals-1; ++i)
-    F[i] = vals[i+1]-val0;
-
-  // F is a vector of nvals. So transpose(A)*F is vector of D
-  // (where D is the space dimension)
-
-  Vector<D> ATF = Vector<D>(AT*F);
-
-  // Inverse of ATA
-
-  Matrix ATAinv = ATA.inverse();
-
-  // Gradient of length D
-
-  return ATAinv*ATF;
-}
 
 
 /*! @class Limited_Gradient gradient.h
@@ -176,7 +73,7 @@ class Limited_Gradient {
   /// cells, nodes
 
   Vector<D> operator()(int entity_id) {
-    std::cerr << "Limited gradient not implementd for this entity kind\n";
+    std::cerr << "Limited gradient not implemented for this entity kind\n";
   }
 
  private:
@@ -288,7 +185,8 @@ Limited_Gradient<MeshType, StateType, CELL, D>::operator() (int const cellid) {
 
   // Limit the gradient to enforce monotonicity preservation
   
-  if (limtype_ == BARTH_JESPERSEN) {
+  if (limtype_ == BARTH_JESPERSEN &&
+      !mesh_.on_exterior_boundary(CELL, cellid)) {  // No limiting on boundary
     
     phi = 1.0;
     
@@ -389,7 +287,7 @@ class Limited_Gradient<MeshType, StateType, NODE, D> {
 
   /// Functor
 
-  Vector<D> operator()(int cellid);
+  Vector<D> operator()(int nodeid);
 
  private:
 
@@ -430,8 +328,9 @@ Limited_Gradient<MeshType, StateType, NODE, D>::operator() (int const nodeid) {
   }
   
   grad = ls_gradient(nodecoords, nodevalues);
-  
-  if (limtype_ == BARTH_JESPERSEN) {
+
+  if (limtype_ == BARTH_JESPERSEN &&
+      !mesh_.on_exterior_boundary(NODE, nodeid)) {  // No limiting on boundary
     
     // Min and max vals of function (cell centered vals) among neighbors
     

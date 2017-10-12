@@ -1,45 +1,8 @@
 /*
-Copyright (c) 2016, Los Alamos National Security, LLC
-All rights reserved.
-
-Copyright 2016. Los Alamos National Security, LLC. This software was produced
-under U.S. Government contract DE-AC52-06NA25396 for Los Alamos National
-Laboratory (LANL), which is operated by Los Alamos National Security, LLC for
-the U.S. Department of Energy. The U.S. Government has rights to use,
-reproduce, and distribute this software.  NEITHER THE GOVERNMENT NOR LOS ALAMOS
-NATIONAL SECURITY, LLC MAKES ANY WARRANTY, EXPRESS OR IMPLIED, OR ASSUMES ANY
-LIABILITY FOR THE USE OF THIS SOFTWARE.  If software is modified to produce
-derivative works, such modified software should be clearly marked, so as not to
-confuse it with the version available from LANL.
-
-Additionally, redistribution and use in source and binary forms, with or
-without modification, are permitted provided that the following conditions are
-met:
-
-1. Redistributions of source code must retain the above copyright notice,
-   this list of conditions and the following disclaimer.
-2. Redistributions in binary form must reproduce the above copyright
-   notice, this list of conditions and the following disclaimer in the
-   documentation and/or other materials provided with the distribution.
-3. Neither the name of Los Alamos National Security, LLC, Los Alamos
-   National Laboratory, LANL, the U.S. Government, nor the names of its
-   contributors may be used to endorse or promote products derived from this
-   software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY LOS ALAMOS NATIONAL SECURITY, LLC AND
-CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
-PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL LOS ALAMOS NATIONAL
-SECURITY, LLC OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
-BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER
-IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-POSSIBILITY OF SUCH DAMAGE.
+This file is part of the Ristra portage project.
+Please see the license file at the root of this repository, or at:
+    https://github.com/laristra/portage/blob/master/LICENSE
 */
-
-
 
 #ifndef SRC_DRIVER_DRIVER_H_
 #define SRC_DRIVER_DRIVER_H_
@@ -61,8 +24,8 @@ POSSIBILITY OF SUCH DAMAGE.
 #include "portage/intersect/intersect_r3d.h"
 #include "portage/interpolate/interpolate_1st_order.h"
 #include "portage/interpolate/interpolate_2nd_order.h"
-#include "portage/wrappers/mesh/flat/flat_mesh_wrapper.h"
-#include "portage/wrappers/state/flat/flat_state_wrapper.h"
+#include "portage/wonton/mesh/flat/flat_mesh_wrapper.h"
+#include "portage/wonton/state/flat/flat_state_wrapper.h"
 
 #ifdef ENABLE_MPI
 #include "portage/distributed/mpi_bounding_boxes.h"
@@ -572,8 +535,8 @@ class Driver {
 
       gettimeofday(&begin_timeval, 0);
 
-      nvars = source_cellvar_names.size();
-      if (comm_rank == 0) std::cout << "number of cell variables to remap is " << nvars << std::endl;
+      int ncvars = source_cellvar_names.size();
+      if (comm_rank == 0) std::cout << "number of cell variables to remap is " << ncvars << std::endl;
 
       if (distributed) {
 
@@ -582,7 +545,7 @@ class Driver {
         Interpolate<Flat_Mesh_Wrapper<>, TargetMesh_Wrapper, Flat_State_Wrapper<>, CELL, Dim>
             interpolate(source_mesh_flat, target_mesh_, source_state_flat);
 
-        for (int i = 0; i < nvars; ++i) {
+        for (int i = 0; i < ncvars; ++i) {
           interpolate.set_interpolation_variable(source_cellvar_names[i],
                                                    limiters_[i]);
 
@@ -603,7 +566,7 @@ class Driver {
         Interpolate<SourceMesh_Wrapper, TargetMesh_Wrapper, SourceState_Wrapper, CELL, Dim>
             interpolate(source_mesh_, target_mesh_, source_state_);
         
-        for (int i = 0; i < nvars; ++i) {
+        for (int i = 0; i < ncvars; ++i) {
           //amh: ?? add back accuracy output statement??
           if (comm_rank == 0) std::cout << "Remapping cell variable " << source_cellvar_names[i]
                                         << " to variable " << target_cellvar_names[i] << std::endl;
@@ -641,13 +604,13 @@ class Driver {
 
       tot_seconds = tot_seconds_srch + tot_seconds_xsect + tot_seconds_interp;
 
-      std::cout << "Transform Time Rank " << comm_rank << " (s): " <<
+      std::cout << "Cell Transform Time Rank " << comm_rank << " (s): " <<
           tot_seconds << std::endl;
-      std::cout << "  Search Time Rank " << comm_rank << " (s): " <<
+      std::cout << "  Cell Search Time Rank " << comm_rank << " (s): " <<
           tot_seconds_srch << std::endl;
-      std::cout << "  Intersect Time Rank " << comm_rank << " (s): " <<
+      std::cout << "  Cell Intersect Time Rank " << comm_rank << " (s): " <<
           tot_seconds_xsect << std::endl;
-      std::cout << "  Interpolate Time Rank " << comm_rank << " (s): " <<
+      std::cout << "  Cell Interpolate Time Rank " << comm_rank << " (s): " <<
           tot_seconds_interp << std::endl;
     }
 
@@ -683,7 +646,7 @@ class Driver {
       MeshWrapperDual<Flat_Mesh_Wrapper<>> sourceDualFlat(source_mesh_flat);
 
       if (distributed) {
-#ifndef PORTAGE_SERIAL_ONLY
+#ifdef ENABLE_MPI 
         // Create flat wrappers to distribute source cells
         gettimeofday(&begin_timeval, 0);
 
@@ -733,7 +696,7 @@ class Driver {
 
       if (distributed) {
 
-#ifndef PORTAGE_SERIAL_ONLY
+#ifdef ENABLE_MPI 
         // Get an instance of the desired intersect algorithm type
         const Intersect<MeshWrapperDual<Flat_Mesh_Wrapper<>>, MeshWrapperDual<TargetMesh_Wrapper>>
             intersect(sourceDualFlat, targetDualWrapper);
@@ -781,8 +744,8 @@ class Driver {
 
       gettimeofday(&begin_timeval, 0);
 
-      nvars = source_nodevar_names.size();
-      if (comm_rank == 0) std::cout << "number of node variables to remap is " << nvars << std::endl;
+      int nnvars = source_nodevar_names.size();
+      if (comm_rank == 0) std::cout << "number of node variables to remap is " << nnvars << std::endl;
 
       if (distributed) {
 
@@ -790,7 +753,7 @@ class Driver {
         Interpolate<Flat_Mesh_Wrapper<>, TargetMesh_Wrapper, Flat_State_Wrapper<>, NODE, Dim>
             interpolate(source_mesh_flat, target_mesh_, source_state_flat);
 
-        for (int i = 0; i < nvars; ++i) {
+        for (int i = 0; i < nnvars; ++i) {
           interpolate.set_interpolation_variable(source_nodevar_names[i],
                                                  limiters_[i]);
 
@@ -811,7 +774,7 @@ class Driver {
                     SourceState_Wrapper, NODE, Dim>
               interpolate(source_mesh_, target_mesh_, source_state_);
 
-        for (int i = 0; i < nvars; ++i) {
+        for (int i = 0; i < nnvars; ++i) {
           if (comm_rank == 0) std::cout << "Remapping node variable " << source_nodevar_names[i]
                  << " to variable " << target_nodevar_names[i] << std::endl;
 
@@ -853,13 +816,13 @@ class Driver {
 
       tot_seconds = tot_seconds_srch + tot_seconds_xsect + tot_seconds_interp;
 
-      std::cout << "Transform Time Rank " << comm_rank << " (s): " <<
+      std::cout << "Node Transform Time Rank " << comm_rank << " (s): " <<
           tot_seconds << std::endl;
-      std::cout << "  Search Time Rank " << comm_rank << " (s): " <<
+      std::cout << "  Node Search Time Rank " << comm_rank << " (s): " <<
           tot_seconds_srch << std::endl;
-      std::cout << "  Intersect Time Rank " << comm_rank << " (s): " <<
+      std::cout << "  Node Intersect Time Rank " << comm_rank << " (s): " <<
           tot_seconds_xsect << std::endl;
-      std::cout << "  Interpolate Time Rank " << comm_rank << " (s): " <<
+      std::cout << "  Node Interpolate Time Rank " << comm_rank << " (s): " <<
           tot_seconds_interp << std::endl;
     }
 

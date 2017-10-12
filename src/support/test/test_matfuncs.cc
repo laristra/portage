@@ -1,44 +1,8 @@
 /*
-Copyright (c) 2016, Los Alamos National Security, LLC
-All rights reserved.
-
-Copyright 2016. Los Alamos National Security, LLC. This software was produced
-under U.S. Government contract DE-AC52-06NA25396 for Los Alamos National
-Laboratory (LANL), which is operated by Los Alamos National Security, LLC for
-the U.S. Department of Energy. The U.S. Government has rights to use,
-reproduce, and distribute this software.  NEITHER THE GOVERNMENT NOR LOS ALAMOS
-NATIONAL SECURITY, LLC MAKES ANY WARRANTY, EXPRESS OR IMPLIED, OR ASSUMES ANY
-LIABILITY FOR THE USE OF THIS SOFTWARE.  If software is modified to produce
-derivative works, such modified software should be clearly marked, so as not to
-confuse it with the version available from LANL.
-
-Additionally, redistribution and use in source and binary forms, with or
-without modification, are permitted provided that the following conditions are
-met:
-
-1. Redistributions of source code must retain the above copyright notice,
-   this list of conditions and the following disclaimer.
-2. Redistributions in binary form must reproduce the above copyright
-   notice, this list of conditions and the following disclaimer in the
-   documentation and/or other materials provided with the distribution.
-3. Neither the name of Los Alamos National Security, LLC, Los Alamos
-   National Laboratory, LANL, the U.S. Government, nor the names of its
-   contributors may be used to endorse or promote products derived from this
-   software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY LOS ALAMOS NATIONAL SECURITY, LLC AND
-CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
-PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL LOS ALAMOS NATIONAL
-SECURITY, LLC OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
-BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER
-IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-POSSIBILITY OF SUCH DAMAGE.
+This file is part of the Ristra portage project.
+Please see the license file at the root of this repository, or at:
+    https://github.com/laristra/portage/blob/master/LICENSE
 */
-
 #include "portage/support/Vector.h"
 #include "portage/support/Matrix.h"
 
@@ -208,6 +172,38 @@ TEST(Matrix, SolveWithInverse) {
   for (int i = 0; i < B.rows(); ++i)
     for (int j = 0; j < B.columns(); ++j)
       ASSERT_NEAR(AinvB_expected[i][j], AinvB[i][j], 1.0e-6);
+
+}
+
+/*!
+  @brief Test the matrix solve functionality
+ */
+TEST(Matrix, SolveWithJunk) {
+
+  /* Mathematica code to generate this example:
+   *
+   * a = RotationMatrix[{{1, 2.5, -1., 3.0}, {2., -3, -2, 1.0}}];
+   * eval = DiagonalMatrix[{1., 2., 3., 4.}];
+   * aa = a.eval.Transpose[a];
+   *
+   * The matrix aa is symmetric positive-definite with eigenvalues 1,2,3,4.
+   */
+
+  Portage::Matrix A({{1.5909092362921544, 0.3023197488806776, -0.0008986359725132367,
+    0.5719175069965953}, {0.3023197488806776, 3.684725833270652, 0.22450059345997342,
+    -0.7267204571061852}, {-0.0008986359725132367, 0.22450059345997342,
+    2.410888035652873, 0.6054854449257954}, {0.5719175069965953, -0.7267204571061852,
+    0.6054854449257954, 2.3134768947843307}});
+
+  Portage::Matrix B({{1.2, 3.4}, {-5.6, 1.7}, {9.8, -7.6}, {3.1, 6.2}});
+
+  try {
+    Portage::Matrix AinvB = A.solve(B, "la-di-da");
+    ASSERT_TRUE(false);
+  }
+  catch (...) {
+    ASSERT_TRUE(true);
+  }
 
 }
 

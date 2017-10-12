@@ -1,13 +1,18 @@
+/*---------------------------------------------------------------------------~*
+This file is part of the Ristra portage project.
+Please see the license file at the root of this repository, or at:
+    https://github.com/laristra/portage/blob/master/LICENSE
+ *---------------------------------------------------------------------------~*/
 #ifndef LRE_PILE_INCLUDED
 #define LRE_PILE_INCLUDED
-
-// $Header: /cvsroot/loreli1/loreli/src/estimator/pile.hh,v 1.7 2015/03/23 23:33:12 gad Exp $
 
 #include <vector>
 #include <valarray>
 #include <cassert>
 
-namespace lre {
+namespace Portage {
+namespace Meshfree {
+namespace Pairs {
   using std::vector;
   using std::valarray;
 
@@ -455,6 +460,8 @@ namespace lre {
     dot(r, m1, m2);
     return r;
   }
+}
+}
 }
 
 #endif

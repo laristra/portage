@@ -1,44 +1,8 @@
 /*
-Copyright (c) 2016, Los Alamos National Security, LLC
-All rights reserved.
-
-Copyright 2016. Los Alamos National Security, LLC. This software was produced
-under U.S. Government contract DE-AC52-06NA25396 for Los Alamos National
-Laboratory (LANL), which is operated by Los Alamos National Security, LLC for
-the U.S. Department of Energy. The U.S. Government has rights to use,
-reproduce, and distribute this software.  NEITHER THE GOVERNMENT NOR LOS ALAMOS
-NATIONAL SECURITY, LLC MAKES ANY WARRANTY, EXPRESS OR IMPLIED, OR ASSUMES ANY
-LIABILITY FOR THE USE OF THIS SOFTWARE.  If software is modified to produce
-derivative works, such modified software should be clearly marked, so as not to
-confuse it with the version available from LANL.
-
-Additionally, redistribution and use in source and binary forms, with or
-without modification, are permitted provided that the following conditions are
-met:
-
-1. Redistributions of source code must retain the above copyright notice,
-   this list of conditions and the following disclaimer.
-2. Redistributions in binary form must reproduce the above copyright
-   notice, this list of conditions and the following disclaimer in the
-   documentation and/or other materials provided with the distribution.
-3. Neither the name of Los Alamos National Security, LLC, Los Alamos
-   National Laboratory, LANL, the U.S. Government, nor the names of its
-   contributors may be used to endorse or promote products derived from this
-   software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY LOS ALAMOS NATIONAL SECURITY, LLC AND
-CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
-PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL LOS ALAMOS NATIONAL
-SECURITY, LLC OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
-BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER
-IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-POSSIBILITY OF SUCH DAMAGE.
+This file is part of the Ristra portage project.
+Please see the license file at the root of this repository, or at:
+    https://github.com/laristra/portage/blob/master/LICENSE
 */
-
 
 
 
@@ -96,11 +60,11 @@ double field_func(int field_order, Portage::Point<D> coord) {
       double rsqr = 0.0;
       for (int i = 0; i < D; i++) 
         rsqr += coord[i]*coord[i];
-      //      value = exp(4*rsqr);
       value = 1.0;
       for (int i = 0; i < D; i++)
-        value *= sin(2*M_PI*coord[i]);
+        value *= sin(0.9*2*M_PI*coord[i]);
       break;
+      value *= exp(-1.5*sqrt(rsqr));
     }
     case 0:
       value = 25.3;
@@ -125,8 +89,8 @@ struct example_properties {
   example_properties(const int field_order, const int estimation_order)
       : field_order(field_order), estimation_order(estimation_order)
   { }
-  int estimation_order;           // estimation order in example
-  int field_order;     // order of the field to map
+  int estimation_order;   // estimation order in example
+  int field_order;        // order of the field to map
 };
 
 // Use this to add new problems.  If needed, we can extend the
@@ -161,7 +125,7 @@ std::vector<example_properties> setup_examples() {
   // cubic func, quadratic basis
   examples.emplace_back(3, 2);
 
-  // exp(4*r^2)*sin(2*pi*x)*sin(2*pi*y)
+  // exp(-1.5*r)*sin(0.9*2*pi*x)*sin(0.9*2*pi*y)
   examples.emplace_back(-1, 2);
 
   return examples;
@@ -169,7 +133,9 @@ std::vector<example_properties> setup_examples() {
 
 void usage() {
   auto examples = setup_examples();
-  std::cout << "Usage: swarmapp example-number nsourcepts ntargetpts"
+  std::cout << "Usage: swarmapp example-number nsourcepts ntargetpts distribution"
+            << std::endl;
+  std::cout << "distribution = 0 for random, 1 for regular grid, 2 for perturbed regular grid"
             << std::endl;
   std::cout << "List of example numbers:" << std::endl;
   int i = 0;
@@ -183,8 +149,8 @@ void usage() {
 }
 
 int main(int argc, char** argv) {
-  int example_num, n_source, n_target;
-  if (argc <= 3) {
+  int example_num, n_source, n_target, distribution;
+  if (argc <= 4) {
     usage();
     return 0;
   }
@@ -192,9 +158,7 @@ int main(int argc, char** argv) {
   example_num = atoi(argv[1]);
   n_source = atoi(argv[2]);
   n_target = atoi(argv[3]);
-
-  // Even though Simple_Mesh is serial only, we still need to initialize MPI
-  // for other Portage code.
+  distribution = atoi(argv[4]);
 
 #ifdef ENABLE_MPI
   int mpi_init_flag;
@@ -216,9 +180,9 @@ int main(int argc, char** argv) {
   example_properties example = setup_examples()[example_num];
 
   // Regularly ordered input swarm; randomly ordered output swarm
-  auto inputSwarm = SwarmFactory(-1.25, -1.25, 1.25, 1.25, n_source*n_source,
-                                 1);
-  auto targetSwarm = SwarmFactory(-1.0, -1.0, 1.0, 1.0, n_target*n_target, 2);
+  auto inputSwarm = SwarmFactory(-1.1, -1.1, 1.1, 1.1, n_source*n_source,
+                                 distribution);
+  auto targetSwarm = SwarmFactory(-1.0, -1.0, 1.0, 1.0, n_target*n_target, distribution);
   
   auto inputState = make_shared<SwarmState<2>>(*inputSwarm);
   auto targetState = make_shared<SwarmState<2>>(*targetSwarm);
@@ -293,7 +257,7 @@ int main(int argc, char** argv) {
     d.set_remap_var_names(remap_fields, remap_fields,
                           Portage::Meshfree::LocalRegression,
                           Portage::Meshfree::Basis::Quadratic);
-  d.run(false);
+  d.run(false, true);
 #endif
 
   std::vector<double> expected_value(ntarpts, 0.0);

@@ -1,4 +1,8 @@
-// $Header: /cvsroot/loreli1/loreli/src/estimator/pairs.hh,v 1.5 2008/02/06 19:44:01 gad Exp $
+/*---------------------------------------------------------------------------~
+This file is part of the Ristra portage project.
+Please see the license file at the root of this repository, or at:
+    https://github.com/laristra/portage/blob/master/LICENSE
+ *---------------------------------------------------------------------------~*/
 
 #ifndef pairs_INCLUDED
 #define pairs_INCLUDED
@@ -10,7 +14,9 @@
 #include "pile.hh"
 #include "lretypes.hh"
 
-namespace lre {
+namespace Portage {
+namespace Meshfree {
+namespace Pairs {
 
   //\///////////////////////////////////////////////////////////////////////////
   // pair finding functions
@@ -24,6 +30,8 @@ namespace lre {
       const vpile &x, const vpile &y, const vpile &h,
 		  const contain_type type=CELLS, const bool half_pairs=false);
 
+}
+}
 }
 
 #endif

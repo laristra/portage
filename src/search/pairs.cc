@@ -1,4 +1,8 @@
-// $Header: /cvsroot/loreli1/loreli/src/estimator/pairs.cc,v 1.11 2008/07/17 23:30:38 gad Exp $
+/*
+This file is part of the Ristra portage project.
+Please see the license file at the root of this repository, or at:
+    https://github.com/laristra/portage/blob/master/LICENSE
+*/
 
 #include <climits>
 
@@ -64,7 +68,9 @@ using std::make_shared;
 
 #include "pairs.hh"
 
-namespace lre {
+namespace Portage {
+namespace Meshfree {
+namespace Pairs {
 
 /// number of bits in an unsigned long
 const size_t nbits_ulong = CHAR_BIT * sizeof(ulong) / sizeof(char);
@@ -479,7 +485,7 @@ shared_ptr<vector<list<ulong>>> PairsContainSort(const vpile &x, const vpile &y,
 #ifdef TIME_PAIRS
   t2 = clock();
   t=(double(t2-t1)/CLOCKS_PER_SEC);
-  cout << "lre::PairsContain<"<<dim<<">:"<< t <<" sec for y-bits\n";
+  cout << "PairsContain<"<<dim<<">:"<< t <<" sec for y-bits\n";
 #endif
 
   // number of y's and x's that are in bounding box
@@ -532,7 +538,7 @@ shared_ptr<vector<list<ulong>>> PairsContainSort(const vpile &x, const vpile &y,
 #ifdef TIME_PAIRS
   t2 = clock();
   t=(double(t2-t1)/CLOCKS_PER_SEC);
-  cout << "lre::PairsContain<"<<dim<<">:"<< t <<" sec for x-bits\n";
+  cout << "PairsContain<"<<dim<<">:"<< t <<" sec for x-bits\n";
 #endif
 
   // remove unneeded points to shorten sort
@@ -550,7 +556,7 @@ shared_ptr<vector<list<ulong>>> PairsContainSort(const vpile &x, const vpile &y,
 #ifdef TIME_PAIRS
   t2 = clock();
   t=(double(t2-t1)/CLOCKS_PER_SEC);
-  cout << "lre::PairsContain<"<<dim<<">:"<< t <<" sec for sort\n";
+  cout << "PairsContain<"<<dim<<">:"<< t <<" sec for sort\n";
 #endif
 
 #ifdef DEBUG_PAIRS
@@ -639,13 +645,13 @@ shared_ptr<vector<list<ulong>>> PairsContainSort(const vpile &x, const vpile &y,
   }
 
 #ifdef TIME_PAIRS
-  cout << "lre::PairsContain<"<<dim<<">:" << " open_max = " << nopenmax << "\n";
-  cout << "lre::PairsContain<"<<dim<<">:" << " open_average = " << (1.*nopenavg)/nx << "\n";
-  cout << "lre::PairsContain<"<<dim<<">:" << " reject_max = " << nrejmax << "\n";
-  cout << "lre::PairsContain<"<<dim<<">:" << " reject_average = " << (1.*nrejavg)/nx << "\n";
+  cout << "PairsContain<"<<dim<<">:" << " open_max = " << nopenmax << "\n";
+  cout << "PairsContain<"<<dim<<">:" << " open_average = " << (1.*nopenavg)/nx << "\n";
+  cout << "PairsContain<"<<dim<<">:" << " reject_max = " << nrejmax << "\n";
+  cout << "PairsContain<"<<dim<<">:" << " reject_average = " << (1.*nrejavg)/nx << "\n";
   t2 = clock();
   t=(double(t2-t1)/CLOCKS_PER_SEC);
-  cout << "lre::PairsContain<"<<dim<<">:"<< t <<" sec for scan\n";
+  cout << "PairsContain<"<<dim<<">:"<< t <<" sec for scan\n";
 #endif
 
 #ifdef DEBUG_PAIRS
@@ -995,4 +1001,7 @@ shared_ptr<vector<list<ulong>>> PairsFind(
   return make_shared<vector<list<ulong>>>(0);
 }
 
-}
+} // namespace Pairs
+} // namespace Meshfree
+} // namespace Portage
+
