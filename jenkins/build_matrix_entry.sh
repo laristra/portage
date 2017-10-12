@@ -38,9 +38,7 @@ fi
 cmake_build_type=Release
 extra_flags=
 jali_flags="-D Jali_DIR:FILEPATH=$jali_install_dir/lib"
-mpi_flags="-D CMAKE_C_COMPILER=`which mpicc` \
-           -D CMAKE_CXX_COMPILER=`which mpiCC` \
-           -D ENABLE_MPI=True"
+mpi_flags="-D ENABLE_MPI=True"
 
 if [[ $build_type == "debug" ]]; then
   cmake_build_type=Debug
@@ -67,6 +65,11 @@ export MODULEPATH=""
 module load $cxxmodule
 module load openmpi/${openmpi_version}
 module load cmake # 3.0 or higher is required
+
+if [[ -n "$mpi_flags" ]] ; then
+  mpi_flags+=" -D CMAKE_C_COMPILER=`which mpicc` \
+               -D CMAKE_CXX_COMPILER=`which mpiCC`"
+fi
 
 echo $WORKSPACE
 cd $WORKSPACE
