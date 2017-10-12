@@ -244,10 +244,10 @@ class Matrix {
     @return the solution X
 
     method=="inverse" ==> use the  inverse operator
-    method=="dposv" ==> use lapack dposvx for symmetric positive definite A.
-    method=="dsytr" ==> use lapack dsytrf & dsytrs for symmetric A.
-    method=="dsysv" ==> use lapack dsysvx for symmetric  A.
-    method=="dgesv" ==> use lapack dgesvx for general A.
+    method=="lapack-posv" ==> use lapack dposvx for symmetric positive definite A.
+    method=="lapack-sytr" ==> use lapack dsytrf & dsytrs for symmetric A.
+    method=="lapack-sysv" ==> use lapack dsysvx for symmetric A.
+    method=="lapack-gesv" ==> use lapack dgesvx for general A.
   */
   Matrix solve(Matrix const& B,
                std::string method="inverse")
