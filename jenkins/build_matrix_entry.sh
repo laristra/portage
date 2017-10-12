@@ -37,8 +37,17 @@ fi
   
 cmake_build_type=Release
 extra_flags=
+jali_flags="-D Jali_DIR:FILEPATH=$jali_install_dir/lib"
+mpi_flags="-D CMAKE_C_COMPILER=`which mpicc` \
+           -D CMAKE_CXX_COMPILER=`which mpiCC` \
+           -D ENABLE_MPI=True"
+
 if [[ $build_type == "debug" ]]; then
   cmake_build_type=Debug
+elif [[ $build_type == "serial" ]]; then
+  mpi_flags=
+  # jali is not available in serial
+  jali_flags=
 elif [[ $build_type == "thrust" ]]; then
   extra_flags="-D ENABLE_THRUST=True"
 elif [[ $build_type == "flecsi" ]]; then
@@ -66,15 +75,13 @@ mkdir build
 cd build
 
 cmake \
-  -D CMAKE_C_COMPILER=`which mpicc` \
-  -D CMAKE_CXX_COMPILER=`which mpiCC` \
   -D CMAKE_BUILD_TYPE=$cmake_build_type \
   -D ENABLE_UNIT_TESTS=True \
   -D ENABLE_APP_TESTS=True \
   -D ENABLE_JENKINS_OUTPUT=True \
-  -D ENABLE_MPI=True \
-  -D Jali_DIR:FILEPATH=$jali_install_dir/lib \
   -D NGC_INCLUDE_DIR:FILEPATH=$ngc_include_dir \
+  $mpi_flags \
+  $jali_flags \
   $extra_flags \
   ..
 make -j2
