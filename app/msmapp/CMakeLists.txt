@@ -12,6 +12,9 @@ Please see the license file at the root of this repository, or at:
 # Msm test
 add_executable(msmapp msmapp.cc)
 target_link_libraries(msmapp portage ${EXTRA_LIBS} ${LAPACKE_LIBRARIES})
+if (ENABLE_MPI)
+  target_link_libraries(msmapp ${MPI_CXX_LIBRARIES})
+endif (ENABLE_MPI)
 
 
 #TCMalloc option
