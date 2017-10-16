@@ -541,6 +541,7 @@ class Matrix {
   std::vector<double> A_;
   std::string method_;
 
+#ifdef HAVE_LAPACKE
   // stuff for lapack which is useful for solves where matrix is already
   // factored
   std::vector<double> AFactored_;
@@ -551,6 +552,7 @@ class Matrix {
   std::vector<double> BackError_;
   std::vector<lapack_int> Pivot_;
   std::vector<double> Rpivot_;
+#endif
 };
 
 template<long D>
