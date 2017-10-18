@@ -2,7 +2,7 @@ FROM ubuntu
 
 #to run this script: docker build -t docker-portage .
 #to start the container: docker run -h simpleportage -it -v /Users:/Users --rm docker-portage
-#to run as root in it: docker ls; docker exec -itu root <id> bash
+#to run as root in it: docker ls; docker exec -itu root <id>  bash
 
 # use and arg to build the directory
 ARG	user=portage
