@@ -6,4 +6,5 @@ Makefile
 cmake_install.cmake
 *~
 .DS_Store
-build
+build*/
+
