@@ -5,6 +5,13 @@ Please see the license file at the root of this repository, or at:
 ]]
 message(STATUS "Adding simple_mesh_app test")
 
+# this app can be run in serial or mpi mode - set an environment
+# variable so that either will work
+if(ENABLE_MPI)
+  set(RUN_COMMAND "mpirun -np 1")
+else()
+  set(RUN_COMMAND "")
+endif(ENABLE_MPI)
 
 macro(ADD_SIMPLE_MESH_TEST TEST_NUM)
   file(COPY simple_mesh_test${TEST_NUM}.sh
@@ -14,7 +21,9 @@ macro(ADD_SIMPLE_MESH_TEST TEST_NUM)
   add_test(NAME simple_mesh_test${TEST_NUM}
     COMMAND ./simple_mesh_test${TEST_NUM}.sh)
   set_property(TEST simple_mesh_test${TEST_NUM}
-    PROPERTY ENVIRONMENT APPDIR=${CMAKE_BINARY_DIR}/bin)
+    PROPERTY ENVIRONMENT
+    APPDIR=${CMAKE_BINARY_DIR}/bin
+    RUN_COMMAND=${RUN_COMMAND})
   set_property(TEST simple_mesh_test${TEST_NUM}
     PROPERTY PROCESSORS 1)
 endmacro(ADD_SIMPLE_MESH_TEST)
