@@ -129,6 +129,17 @@ class Simple_Mesh_Wrapper : public AuxMeshTopology<Simple_Mesh_Wrapper> {
     return Entity_type::PARALLEL_OWNED;
   }
 
+  // node type: Simple_Mesh only has OWNED
+  /*!
+    @brief Get the Entity_type (e.g. PARALLEL_OWNED) of a specific node.
+    @param[in] nodeid The ID of the node.
+    @returns The Entity_type of this node. @b NOTE: Simple_Mesh _only_ has
+    PARALLEL_OWNED data as it is a serial implementation
+   */
+  Entity_type node_get_type(int const nodeid) const {
+    return Entity_type::PARALLEL_OWNED;
+  }
+
   // cell element type: Simple_Mesh only deals with HEX
   /*!
     @brief Get the Element_type (e.g. HEX) of a specific cell.
@@ -175,6 +186,19 @@ class Simple_Mesh_Wrapper : public AuxMeshTopology<Simple_Mesh_Wrapper> {
     mesh_.face_get_nodes(faceid, nodes);
   }
 
+  /*!
+    @brief Get the list of IDs of all cells of a particular parallel type attached to a node.
+    @param[in] nodeid The ID of the node.
+    @param[in] ptype The Entity_type (e.g. PARALLEL_OWNED); @b NOTE: Simple_Mesh
+    only contains PARALLEL_OWNED data, no ghosts.
+    @param[out] nodecells The list of IDs for cells of @c ptype attached to @c nodeid
+   */
+  void node_get_cells(int const nodeid,
+                      Entity_type const ptype,
+                      std::vector<int> *nodecells) const {
+    mesh_.node_get_cells(nodeid, nodecells);
+  }
+
   /// Get the global ID. @b NOTE: Simple_Mesh only has local IDs.
   int get_global_id(int const id, Entity_kind const kind) const {
     return id;
@@ -188,75 +212,9 @@ class Simple_Mesh_Wrapper : public AuxMeshTopology<Simple_Mesh_Wrapper> {
     @param[out] The Portage::Point containing the coordiantes of node @c nodeid.
    */
   template<long D=3>
-      void node_get_coordinates(int const nodeid, Point<D>* pp) const {
+  void node_get_coordinates(int const nodeid, Point<D>* pp) const {
     mesh_.node_get_coordinates(nodeid, pp);
   }
-
-  /*!
-    @brief Get the list of node IDs for all nodes attached to all cells
-    attached to a specific node.
-    @param[in] nodeid The ID of the node.
-    @param[in] ptype The Entity_type (e.g. PARALLEL_OWNED); @b NOTE: Simple_Mesh
-    only contains PARALLEL_OWNED data, no ghosts.
-    @param[out] adjnodes The list of node IDs for all cells attached to
-    @c nodeid, excluding @c nodeid.
-   */
-  void node_get_cell_adj_nodes(int const nodeid,
-                               Entity_type const ptype,
-                               std::vector<int> *adjnodes) const {
-    adjnodes->clear();
-
-    // Find the cells attached to this node
-    std::vector<int> nodecells;
-    mesh_.node_get_cells(nodeid, &nodecells);
-
-    // Loop over these cells, and find their nodes; these are the ones we seek
-    // but make sure we aren't duplicating them
-    for (auto const& c : nodecells) {
-      std::vector<int> cellnodes;
-      cell_get_nodes(c, &cellnodes);
-
-      for (auto const& n : cellnodes) {
-        if (n == nodeid) continue;
-        if (std::find(adjnodes->begin(), adjnodes->end(), n) == adjnodes->end())
-          adjnodes->emplace_back(n);
-      }
-    }
-  }  // node_get_cell_adj_nodes
-
-  //////////////////////////////////////////////////////////////////////
-  // The following methods are needed elsewhere in the source.
-  /*!
-    @brief Get the list of cell IDs for all cells attached to a specific
-    cell through its nodes.
-    @param[in] cellid The ID of the cell.
-    @param[in] ptype The Entity_type (e.g. PARALLEL_OWNED); @b NOTE: Simple_Mesh
-    only contains PARALLEL_OWNED data, no ghosts.
-    @param[out] adjcells The list of cell IDs for all cells attached to
-    cell @c cellid through its nodes, excluding @c cellid.
-   */
-  void cell_get_node_adj_cells(int const cellid,
-                               Entity_type const ptype,
-                               std::vector<int> *adjcells) const {
-    adjcells->clear();
-
-    // Find the nodes attached to this cell
-    std::vector<int> cellnodes;
-    cell_get_nodes(cellid, &cellnodes);
-
-    // Loop over these nodes and find the associated cells; these are the ones
-    // we seek, but make sure there are not duplicates.
-    for (auto const& n : cellnodes) {
-      std::vector<int> nodecells;
-      mesh_.node_get_cells(n, &nodecells);
-
-      for (auto const& c : nodecells) {
-        if (c == cellid) continue;
-        if (std::find(adjcells->begin(), adjcells->end(), c) == adjcells->end())
-          adjcells->emplace_back(c);
-      }
-    }
-  }  // cell_get_node_adj_cells
 
  private:
   /// The mesh to wrap.

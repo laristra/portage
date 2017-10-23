@@ -96,7 +96,7 @@ This compiles the serial code and about a dozen application tests.  To
 run the tests, simply execute
 
 ```sh
-portage/build $ make tests
+portage/build $ make test
 ```
 
 If you wish to install the code into the `CMAKE_INSTALL_PREFIX` then
