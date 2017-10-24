@@ -21,9 +21,9 @@ Please see the license file at the root of this repository, or at:
   @file simple_state_wrapper.h
   @brief Definitions for a wrapper to Simple_State
 */
-using namespace Portage;
 namespace Wonton {
 
+using namespace Portage;
   /*!
     @class Simple_State_Wrapper simple_state_wrapper.h
     @brief A thin wrapper that implements state methods for Simple_State needed

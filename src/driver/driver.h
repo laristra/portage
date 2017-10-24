@@ -39,9 +39,9 @@ Please see the license file at the root of this repository, or at:
   and datastructures.
 */
 
-using namespace Wonton;
 namespace Portage {
 
+using namespace Wonton;
   /*!
     @class MeshWrapperDual "driver.h"
     @brief Wrapper for dual mesh.

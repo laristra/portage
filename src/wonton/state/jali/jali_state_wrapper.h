@@ -20,9 +20,9 @@ Please see the license file at the root of this repository, or at:
   @file jali_state_wrapper.h
   @brief Wrapper for interfacing with the Jali state manager
  */
-using namespace Portage;
 namespace Wonton {
 
+using namespace Portage;
 /*!
   @class Jali_State_Wrapper "jali_state_wrapper.h"
   @brief Provides access to data stored in Jali_State

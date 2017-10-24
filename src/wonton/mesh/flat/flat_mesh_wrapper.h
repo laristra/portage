@@ -28,10 +28,9 @@ Please see the license file at the root of this repository, or at:
 #include "portage/distributed/mpi_bounding_boxes.h"
 #endif
 
-using namespace Portage;
-
 namespace Wonton {
 
+using namespace Portage;
 /*!
   \class Flat_Mesh_Wrapper flat_mesh_wrapper.h
   \brief Flat_Mesh_Wrapper implements mesh methods
