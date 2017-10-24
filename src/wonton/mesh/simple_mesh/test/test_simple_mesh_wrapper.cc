@@ -17,7 +17,6 @@ Please see the license file at the root of this repository, or at:
 #include "portage/support/Point.h"
 
 #include "gtest/gtest.h"
-#include "mpi.h"
 
 TEST(Simple_Mesh, OneCell) {
   Portage::Simple_Mesh mesh(0.0, 0.0, 0.0,
