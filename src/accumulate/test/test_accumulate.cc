@@ -12,7 +12,7 @@ Please see the license file at the root of this repository, or at:
 #include "portage/swarm/swarm.h"
 #include "portage/accumulate/accumulate.h"
 
-//using std::vector;
+using std::vector;
 using std::shared_ptr;
 using std::make_shared;
 using Portage::Point;
@@ -51,10 +51,10 @@ void test_accumulate(Portage::Meshfree::EstimateType etype,
   // create source+target swarms, kernels, geometries, and smoothing lengths
   Swarm<dim> src_swarm(src_pts);
   Swarm<dim> tgt_swarm(tgt_pts);
-  std::vector<Weight::Kernel> kernels(npoints, Weight::B4);
-  std::vector<Weight::Geometry> geometries(npoints, Weight::TENSOR);
-  std::vector<std::vector<std::vector<double>>> smoothingh(npoints,
-                                            std::vector<std::vector<double>>(1, std::vector<double>(dim, smoothing)));
+  vector<Weight::Kernel> kernels(npoints, Weight::B4);
+  vector<Weight::Geometry> geometries(npoints, Weight::TENSOR);
+  vector<vector<vector<double>>> smoothingh(npoints,
+                                            vector<vector<double>>(1, vector<double>(dim, smoothing)));
 
   {
     // create the accumulator
@@ -76,16 +76,16 @@ void test_accumulate(Portage::Meshfree::EstimateType etype,
     ASSERT_EQ(jsize[1], bsize);
 
     // list of src swarm particles (indices)
-    std::vector<unsigned int> src_particles(npoints);
+    vector<unsigned int> src_particles(npoints);
     for (size_t i=0; i<npoints; i++) src_particles[i] = i;
 
     // Loop through target particles
     for (size_t i=0; i<npoints; i++) {
-      std::vector<std::vector<double>> sums(jsize[0], std::vector<double>(jsize[1],0.));
+      vector<vector<double>> sums(jsize[0], vector<double>(jsize[1],0.));
 
       // do the accumulation loop for each target particle against all
       // the source particles
-      std::vector<Portage::Weights_t> shape_vecs = accum(i, src_particles);
+      vector<Portage::Weights_t> shape_vecs = accum(i, src_particles);
 
       if (etype == KernelDensity) {
         for (size_t j=0; j<npoints; j++) {

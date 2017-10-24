@@ -493,7 +493,11 @@ class Flat_Mesh_Wrapper : public AuxMeshTopology<Flat_Mesh_Wrapper<>> {
   int space_dimension() const { return dim_; }
 
 private:
+
+#ifdef ENABLE_MPI
   friend class Portage::MPI_Bounding_Boxes;
+#endif 
+
   std::vector<T> nodeCoords_;
   std::vector<int> cellToNodeList_;
   std::vector<int> cellNodeCounts_;
