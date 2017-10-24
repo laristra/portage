@@ -41,7 +41,7 @@ if(ENABLE_UNIT_TESTS)
   endif (Jali_DIR)
   cinch_add_unit(search_kdtree3_test
     SOURCES search_kdtree3_test.cc
-    LIBRARIES portage ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
+    LIBRARIES portage
     POLICY SERIAL)
   cinch_add_unit(search_simple_points_test
     SOURCES search_simple_points_test.cc
