@@ -13,6 +13,18 @@ Please see the license file at the root of this repository, or at:
 add_executable(msmapp msmapp.cc)
 target_link_libraries(msmapp portage ${EXTRA_LIBS} ${LAPACKE_LIBRARIES})
 
+if (Jali_DIR)
+    # MPI additions - need to push this down into cinch
+    if (ENABLE_MPI)
+        target_link_libraries(msmapp ${MPI_CXX_LIBRARIES})
+        set_target_properties(msmapp PROPERTIES
+                              LINK_FLAGS "${MPI_CXX_LINK_FLAGS}")
+    endif (ENABLE_MPI)
+
+    # Jali additions
+    include_directories(${Jali_INCLUDE_DIRS} ${Jali_TPL_INCLUDE_DIRS})
+    target_link_libraries(msmapp ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES})
+endif (Jali_DIR)
 
 #TCMalloc option
 set(ENABLE_TCMALLOC TRUE CACHE BOOL "Use TCMalloc")
