@@ -220,20 +220,6 @@ int main(int argc, char** argv) {
     SwarmState<2>>
       d(*inputSwarm, *inputState, *targetSwarm, *targetState,
         smoothing_lengths);
-
-  if (example.estimation_order == 0)
-    d.set_remap_var_names(remap_fields, remap_fields,
-                          Portage::Meshfree::LocalRegression,
-                          Portage::Meshfree::Basis::Unitary);
-  else if (example.estimation_order == 1)
-    d.set_remap_var_names(remap_fields, remap_fields,
-                          Portage::Meshfree::LocalRegression,
-                          Portage::Meshfree::Basis::Linear);
-  else if (example.estimation_order == 2)
-    d.set_remap_var_names(remap_fields, remap_fields,
-                          Portage::Meshfree::LocalRegression,
-                          Portage::Meshfree::Basis::Quadratic);
-  d.run(false);
 #else
   SwarmDriver<
     SearchPointsByCells,
@@ -244,6 +230,7 @@ int main(int argc, char** argv) {
     SwarmState<2>>
       d(*inputSwarm, *inputState, *targetSwarm, *targetState,
         smoothing_lengths);
+#endif
 
   if (example.estimation_order == 0)
     d.set_remap_var_names(remap_fields, remap_fields,
@@ -258,7 +245,7 @@ int main(int argc, char** argv) {
                           Portage::Meshfree::LocalRegression,
                           Portage::Meshfree::Basis::Quadratic);
   d.run(false, true);
-#endif
+
 
   std::vector<double> expected_value(ntarpts, 0.0);
 
