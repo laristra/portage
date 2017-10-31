@@ -24,10 +24,6 @@ Please see the license file at the root of this repository, or at:
 #include "portage/support/portage.h"
 #include "portage/support/Point.h"
 
-//#ifdef ENABLE_MPI
-//#include "portage/distributed/mpi_bounding_boxes.h"
-//#endif
-
 namespace Wonton {
 
 using namespace Portage;
@@ -569,29 +565,24 @@ class Flat_Mesh_Wrapper : public AuxMeshTopology<Flat_Mesh_Wrapper<>> {
 
 private:
 
-//#ifdef ENABLE_MPI
-//  friend class Portage::MPI_Bounding_Boxes;
-//#endif
-//  friend class MPI_Bounding_Boxes; 
-
-  std::vector<T> nodeCoords_;
-  std::vector<int> cellToNodeList_;
-  std::vector<int> cellNodeCounts_;
-  std::vector<int> cellNodeOffsets_;
-  std::vector<int> cellToFaceList_;
-  std::vector<bool> cellToFaceDirs_;
-  // unused in 2D (identical to cellNodeCounts_)
-  std::vector<int> cellFaceCounts_;
-  // unused in 2D (identical to cellNodeOffsets_)
-  std::vector<int> cellFaceOffsets_;
-  std::vector<int> faceToNodeList_;
-  std::vector<int> faceNodeCounts_; // unused in 2D (always 2)
-  std::vector<int> faceNodeOffsets_; // unused in 2D (can be computed)
-  std::vector<int> nodeToCellList_;
-  std::vector<int> nodeCellCounts_;
-  std::vector<int> nodeCellOffsets_;
-  std::vector<int> cellGlobalIds_;
-  std::vector<int> nodeGlobalIds_;
+  std::vector<T>    nodeCoords_;
+  std::vector<int>  cellToNodeList_;
+  std::vector<int>  cellNodeCounts_;
+  std::vector<int>  cellNodeOffsets_;
+  std::vector<int>  cellToFaceList_;
+  std::vector<bool> cellToFaceDirs_;  // unused in 2D (identical 
+                                      // to cellNodeCounts_)
+  std::vector<int>  cellFaceCounts_;  // unused in 2D (identical 
+                                      // to cellNodeOffsets_)
+  std::vector<int>  cellFaceOffsets_;
+  std::vector<int>  faceToNodeList_;
+  std::vector<int>  faceNodeCounts_;  // unused in 2D (always 2)
+  std::vector<int>  faceNodeOffsets_; // unused in 2D (can be computed)
+  std::vector<int>  nodeToCellList_;
+  std::vector<int>  nodeCellCounts_;
+  std::vector<int>  nodeCellOffsets_;
+  std::vector<int>  cellGlobalIds_;
+  std::vector<int>  nodeGlobalIds_;
   int dim_;
   int numOwnedCells_;
   int numOwnedFaces_;
