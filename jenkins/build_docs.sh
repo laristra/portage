@@ -39,8 +39,6 @@ mkdir build
 cd build
 
 cmake \
-    -D CMAKE_CXX_COMPILER=`which mpiCC` \
-    -D CMAKE_C_COMPILER=`which mpicc` \
     -D Jali_DIR:FILEPATH=${JALI_INST}/lib \
     -D ENABLE_DOXYGEN=True \
     -D DOXYGEN_EXECUTABLE=$DOXY_EXE \
