@@ -143,8 +143,6 @@ TPL_INSTALL_PREFIX=/projects/ngc/private/jali-tpl/1.0.9-intel-17.0.0-openmpi-2.0
 mkdir build
 cd build
 cmake \
-    -D CMAKE_C_COMPILER=`which mpicc` \
-    -D CMAKE_CXX_COMPILER=`which mpiCC` \
     -D CMAKE_BUILD_TYPE=Debug \
     -D ENABLE_UNIT_TESTS=True \
     -D ENABLE_APP_TESTS=True \
@@ -167,8 +165,6 @@ JALI_INSTALL_PREFIX=/usr/projects/ngc/private/jali/0.9.8-intel-17.0.1-openmpi-1.
 mkdir build
 cd build
 cmake \
-    -D CMAKE_C_COMPILER=`which mpicc` \
-    -D CMAKE_CXX_COMPILER=`which mpiCC` \
     -D CMAKE_BUILD_TYPE=Debug \
     -D ENABLE_UNIT_TESTS=True \
     -D ENABLE_APP_TESTS=True \
@@ -198,8 +194,6 @@ LAPACKE_LIBRARY_DIR=/usr/local/codes/ngc/private/lapack/lapack-3.7.1-intel-17.0.
 mkdir build
 cd build
 cmake \
-    -D CMAKE_C_COMPILER=`which mpicc` \
-    -D CMAKE_CXX_COMPILER=`which mpiCC` \
     -D CMAKE_BUILD_TYPE=Debug \
     -D ENABLE_UNIT_TESTS=True \
     -D ENABLE_APP_TESTS=True \
@@ -230,8 +224,6 @@ LAPACKE_LIBRARY_DIR=/usr/local/codes/ngc/private/lapack/lapack-3.7.1-gcc-5.3.0
 mkdir build-flecsi
 cd build-flecsi
 cmake \
-    -D CMAKE_C_COMPILER=`which mpicc` \
-    -D CMAKE_CXX_COMPILER=`which mpiCC` \
     -D CMAKE_BUILD_TYPE=Debug \
     -D ENABLE_UNIT_TESTS=True \
     -D ENABLE_APP_TESTS=True \
