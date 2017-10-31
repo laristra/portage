@@ -19,11 +19,11 @@ TEST(search_kdtree3, case1)
     // each target mesh cell gives eight candidate source cells
     Portage::Simple_Mesh smesh{0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 3, 3, 3};
     Portage::Simple_Mesh tmesh{0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2, 2, 2};
-    const Portage::Simple_Mesh_Wrapper source_mesh_wrapper(smesh);
-    const Portage::Simple_Mesh_Wrapper target_mesh_wrapper(tmesh);
+    const Wonton::Simple_Mesh_Wrapper source_mesh_wrapper(smesh);
+    const Wonton::Simple_Mesh_Wrapper target_mesh_wrapper(tmesh);
 
     Portage::SearchKDTree<3,
-        Portage::Simple_Mesh_Wrapper, Portage::Simple_Mesh_Wrapper>
+        Wonton::Simple_Mesh_Wrapper, Wonton::Simple_Mesh_Wrapper>
         search(source_mesh_wrapper, target_mesh_wrapper);
 
     for (int tc = 0; tc < 8; ++tc) {

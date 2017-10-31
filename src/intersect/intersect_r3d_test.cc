@@ -10,11 +10,11 @@ Please see the license file at the root of this repository, or at:
 TEST(intersectR3D, simple1) {
   Portage::Simple_Mesh sm{0,0,0, 2,2,2, 1,1,1};
   Portage::Simple_Mesh tm{1,1,1, 2,2,2, 1,1,1};
-  const Portage::Simple_Mesh_Wrapper s(sm);
-  const Portage::Simple_Mesh_Wrapper t(tm);
+  const Wonton::Simple_Mesh_Wrapper s(sm);
+  const Wonton::Simple_Mesh_Wrapper t(tm);
 
   const double eps = 1e-12;
-  const Portage::IntersectR3D<Portage::Simple_Mesh_Wrapper> isect{s , t};
+  const Portage::IntersectR3D<Wonton::Simple_Mesh_Wrapper> isect{s , t};
   const std::vector<std::vector<double> > moments = isect(0, 0);
   for(int i=0;i<moments.size();i++){
     for(int j=0;j<moments[i].size();j++){
@@ -34,11 +34,11 @@ TEST(intersectR3D, simple1) {
 TEST(intersectR3D, simple2) {
   Portage::Simple_Mesh sm{0,0,0, 2,2,2, 1,1,1};
   Portage::Simple_Mesh tm{0,0,0, 2,2,2, 1,1,1};
-  const Portage::Simple_Mesh_Wrapper s(sm);
-  const Portage::Simple_Mesh_Wrapper t(tm);
+  const Wonton::Simple_Mesh_Wrapper s(sm);
+  const Wonton::Simple_Mesh_Wrapper t(tm);
 
   const double eps = 1e-12;
-  const Portage::IntersectR3D<Portage::Simple_Mesh_Wrapper> isect{s , t};
+  const Portage::IntersectR3D<Wonton::Simple_Mesh_Wrapper> isect{s , t};
   const std::vector<std::vector<double> > moments = isect(0, 0);
   for(int i=0;i<moments.size();i++){
     for(int j=0;j<moments[i].size();j++){
@@ -58,11 +58,11 @@ TEST(intersectR3D, simple2) {
 TEST(intersectR3D, simple3) {
   Portage::Simple_Mesh sm{0,0,0, 3,3,3, 1,1,1};
   Portage::Simple_Mesh tm{1,1,1, 2,2,2, 1,1,1};
-  const Portage::Simple_Mesh_Wrapper s(sm);
-  const Portage::Simple_Mesh_Wrapper t(tm);
+  const Wonton::Simple_Mesh_Wrapper s(sm);
+  const Wonton::Simple_Mesh_Wrapper t(tm);
 
   const double eps = 1e-12;
-  const Portage::IntersectR3D<Portage::Simple_Mesh_Wrapper> isect{s , t};
+  const Portage::IntersectR3D<Wonton::Simple_Mesh_Wrapper> isect{s , t};
   const std::vector<std::vector<double> > moments = isect(0, 0);
   for(int i=0;i<moments.size();i++){
     for(int j=0;j<moments[i].size();j++){
@@ -82,11 +82,11 @@ TEST(intersectR3D, simple3) {
 TEST(intersectR3D, simple4) {
   Portage::Simple_Mesh sm{0,0,0, 2,2,2, 1,1,1};
   Portage::Simple_Mesh tm{1,1,1, 3,3,3, 1,1,1};
-  const Portage::Simple_Mesh_Wrapper s(sm);
-  const Portage::Simple_Mesh_Wrapper t(tm);
+  const Wonton::Simple_Mesh_Wrapper s(sm);
+  const Wonton::Simple_Mesh_Wrapper t(tm);
 
   const double eps = 1e-12;
-  const Portage::IntersectR3D<Portage::Simple_Mesh_Wrapper> isect{s , t};
+  const Portage::IntersectR3D<Wonton::Simple_Mesh_Wrapper> isect{s , t};
   const std::vector<std::vector<double> > moments = isect(0, 0);
   for(int i=0;i<moments.size();i++){
     for(int j=0;j<moments[i].size();j++){
@@ -106,11 +106,11 @@ TEST(intersectR3D, simple4) {
 TEST(intersectR3D, simple5) {
   Portage::Simple_Mesh sm{0,0,0, 10,10,10, 1,1,1};
   Portage::Simple_Mesh tm{-5,-5,-5, 5,5,5, 1,1,1};
-  const Portage::Simple_Mesh_Wrapper s(sm);
-  const Portage::Simple_Mesh_Wrapper t(tm);
+  const Wonton::Simple_Mesh_Wrapper s(sm);
+  const Wonton::Simple_Mesh_Wrapper t(tm);
 
   const double eps = 1e-12;
-  const Portage::IntersectR3D<Portage::Simple_Mesh_Wrapper> isect{s , t};
+  const Portage::IntersectR3D<Wonton::Simple_Mesh_Wrapper> isect{s , t};
   const std::vector<std::vector<double> > moments = isect(0, 0);
   for(int i=0;i<moments.size();i++){
     for(int j=0;j<moments[i].size();j++){
@@ -130,11 +130,11 @@ TEST(intersectR3D, simple5) {
 TEST(intersectR3D, simple6) {
   Portage::Simple_Mesh sm{0,0,0, 10,10,10, 5,5,5};
   Portage::Simple_Mesh tm{0,0,0, 10,10,10, 2,2,2};
-  const Portage::Simple_Mesh_Wrapper s(sm);
-  const Portage::Simple_Mesh_Wrapper t(tm);
+  const Wonton::Simple_Mesh_Wrapper s(sm);
+  const Wonton::Simple_Mesh_Wrapper t(tm);
 
   const double eps = 1e-12;
-  const Portage::IntersectR3D<Portage::Simple_Mesh_Wrapper> isect{s , t};
+  const Portage::IntersectR3D<Wonton::Simple_Mesh_Wrapper> isect{s , t};
   std::vector<std::vector<double> > moments = isect(0, 0);
   for(int i=0;i<moments.size();i++){
     for(int j=0;j<moments[i].size();j++){
@@ -185,11 +185,11 @@ TEST(intersectR3D, simple6) {
 TEST(intersectR3D, simple7) {
   Portage::Simple_Mesh sm{-2,-2,-2, 0,0,0, 1,1,1};
   Portage::Simple_Mesh tm{-1,-1,-1, 0,0,0, 1,1,1};
-  const Portage::Simple_Mesh_Wrapper s(sm);
-  const Portage::Simple_Mesh_Wrapper t(tm);
+  const Wonton::Simple_Mesh_Wrapper s(sm);
+  const Wonton::Simple_Mesh_Wrapper t(tm);
 
   const double eps = 1e-12;
-  const Portage::IntersectR3D<Portage::Simple_Mesh_Wrapper> isect{s , t};
+  const Portage::IntersectR3D<Wonton::Simple_Mesh_Wrapper> isect{s , t};
   const std::vector<std::vector<double> > moments = isect(0, 0);
   for(int i=0;i<moments.size();i++){
     for(int j=0;j<moments[i].size();j++){
@@ -209,11 +209,11 @@ TEST(intersectR3D, simple7) {
 TEST(intersectR3D, simple8) {
   Portage::Simple_Mesh sm{-4,-4,-4, 0,0,0, 1,1,1};
   Portage::Simple_Mesh tm{-3,-3,-3, 0,0,0, 1,1,1};
-  const Portage::Simple_Mesh_Wrapper s(sm);
-  const Portage::Simple_Mesh_Wrapper t(tm);
+  const Wonton::Simple_Mesh_Wrapper s(sm);
+  const Wonton::Simple_Mesh_Wrapper t(tm);
 
   const double eps = 1e-12;
-  const Portage::IntersectR3D<Portage::Simple_Mesh_Wrapper> isect{s , t};
+  const Portage::IntersectR3D<Wonton::Simple_Mesh_Wrapper> isect{s , t};
   const std::vector<std::vector<double> > moments = isect(0, 0);
   for(int i=0;i<moments.size();i++){
     for(int j=0;j<moments[i].size();j++){
@@ -233,11 +233,11 @@ TEST(intersectR3D, simple8) {
 TEST(intersectR3D, simple9) {
   Portage::Simple_Mesh sm{-4,-3,-2, 0,1,2, 1,1,1};
   Portage::Simple_Mesh tm{-3,-2,-1, 0,1,2, 1,1,1};
-  const Portage::Simple_Mesh_Wrapper s(sm);
-  const Portage::Simple_Mesh_Wrapper t(tm);
+  const Wonton::Simple_Mesh_Wrapper s(sm);
+  const Wonton::Simple_Mesh_Wrapper t(tm);
 
   const double eps = 1e-12;
-  const Portage::IntersectR3D<Portage::Simple_Mesh_Wrapper> isect{s , t};
+  const Portage::IntersectR3D<Wonton::Simple_Mesh_Wrapper> isect{s , t};
   const std::vector<std::vector<double> > moments = isect(0, 0);
   for(int i=0;i<moments.size();i++){
     for(int j=0;j<moments[i].size();j++){
