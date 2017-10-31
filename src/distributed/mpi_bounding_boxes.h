@@ -141,9 +141,11 @@ class MPI_Bounding_Boxes {
       sourceNumFaces = source_mesh_flat.num_owned_faces() + source_mesh_flat.num_ghost_faces();
     }
     std::vector<double>& sourceCoords = source_mesh_flat.get_coords();
-    std::vector<int>& sourceNodeCounts = source_mesh_flat.get_node_counts();
-    std::vector<int>& sourceCellGlobalIds = source_mesh_flat.cellGlobalIds_;
-    std::vector<int>& sourceNodeGlobalIds = source_mesh_flat.nodeGlobalIds_;
+    std::vector<int>& sourceNodeCounts = source_mesh_flat.get_cell_node_counts();
+    std::vector<int>& sourceCellGlobalIds = source_mesh_flat.get_global_cell_ids();
+    std::vector<int>& sourceNodeGlobalIds = source_mesh_flat.get_global_node_ids();
+    //std::vector<int>& sourceCellGlobalIds = source_mesh_flat.cellGlobalIds_;
+    //std::vector<int>& sourceNodeGlobalIds = source_mesh_flat.nodeGlobalIds_;
 
     // Compute the bounding box for the source mesh on this rank
     std::vector<double> sourceBoundingBox(2*dim);
@@ -232,10 +234,16 @@ class MPI_Bounding_Boxes {
 
     if (dim == 2)
     {
-      int sizeCellToNodeList = source_mesh_flat.cellToNodeList_.size();
+      std::vector<int>& sourceCellToNodeList = source_mesh_flat.get_cell_to_node_list(); 
+      std::vector<int>& sourceCellNodeOffsets = source_mesh_flat.get_cell_node_offsets(); 
+      int sizeCellToNodeList = sourceCellToNodeList.size();
       int sizeOwnedCellToNodeList = (
           sourceNumCells == sourceNumOwnedCells ? sizeCellToNodeList :
-          source_mesh_flat.cellNodeOffsets_[sourceNumOwnedCells]);
+          sourceCellNodeOffsets[sourceNumOwnedCells]);
+      //int sizeCellToNodeList = source_mesh_flat.cellToNodeList_.size();
+      //int sizeOwnedCellToNodeList = (
+      //    sourceNumCells == sourceNumOwnedCells ? sizeCellToNodeList :
+      //    source_mesh_flat.cellNodeOffsets_[sourceNumOwnedCells]);
 
       setInfo(&cellToNodeInfo, commSize, sendFlags,
               sizeCellToNodeList, sizeOwnedCellToNodeList);
@@ -246,18 +254,30 @@ class MPI_Bounding_Boxes {
       setInfo(&faceInfo, commSize, sendFlags,
               sourceNumFaces, sourceNumOwnedFaces);
 
-      int sizeCellToFaceList = source_mesh_flat.cellToFaceList_.size();
+      std::vector<int>& sourceCellToFaceList = source_mesh_flat.get_cell_to_face_list(); 
+      std::vector<int>& sourceCellFaceOffsets = source_mesh_flat.get_cell_face_offsets(); 
+      int sizeCellToFaceList = sourceCellToFaceList.size();
       int sizeOwnedCellToFaceList = (
           sourceNumCells == sourceNumOwnedCells ? sizeCellToFaceList :
-          source_mesh_flat.cellFaceOffsets_[sourceNumOwnedCells]);
+          sourceCellFaceOffsets[sourceNumOwnedCells]);
+      //int sizeCellToFaceList = source_mesh_flat.cellToFaceList_.size();
+      //int sizeOwnedCellToFaceList = (
+      //    sourceNumCells == sourceNumOwnedCells ? sizeCellToFaceList :
+      //    source_mesh_flat.cellFaceOffsets_[sourceNumOwnedCells]);
 
       setInfo(&cellToFaceInfo, commSize, sendFlags,
               sizeCellToFaceList, sizeOwnedCellToFaceList);
 
-      int sizeFaceToNodeList = source_mesh_flat.faceToNodeList_.size();
+      std::vector<int>& sourceFaceToNodeList = source_mesh_flat.get_face_to_node_list(); 
+      std::vector<int>& sourceFaceNodeOffsets = source_mesh_flat.get_face_node_offsets(); 
+      int sizeFaceToNodeList = sourceFaceToNodeList.size();
       int sizeOwnedFaceToNodeList = (
           sourceNumFaces == sourceNumOwnedFaces ? sizeFaceToNodeList :
-          source_mesh_flat.faceNodeOffsets_[sourceNumOwnedFaces]);
+          sourceFaceNodeOffsets[sourceNumOwnedFaces]);
+      //int sizeFaceToNodeList = source_mesh_flat.faceToNodeList_.size();
+      //int sizeOwnedFaceToNodeList = (
+      //    sourceNumFaces == sourceNumOwnedFaces ? sizeFaceToNodeList :
+      //    source_mesh_flat.faceNodeOffsets_[sourceNumOwnedFaces]);
 
       setInfo(&faceToNodeInfo, commSize, sendFlags,
               sizeFaceToNodeList, sizeOwnedFaceToNodeList);
@@ -301,29 +321,42 @@ class MPI_Bounding_Boxes {
                 sourceNodeCounts, &newCellNodeCounts);
 
       // SEND CELL-TO-NODE MAP
-
+      std::vector<int>& sourceCellToNodeList = source_mesh_flat.get_cell_to_node_list(); 
+      //moveField(cellToNodeInfo, commRank, commSize, MPI_INT, 1,
+      //          source_mesh_flat.cellToNodeList_, &newCellToNodeList);
       moveField(cellToNodeInfo, commRank, commSize, MPI_INT, 1,
-                source_mesh_flat.cellToNodeList_, &newCellToNodeList);
+                sourceCellToNodeList, &newCellToNodeList);
+
     }
 
     if (dim == 3)
     {
       // SEND NUMBER OF FACES FOR EACH CELL
-
+      std::vector<int>& sourceCellFaceCounts = source_mesh_flat.get_cell_face_counts(); 
       moveField(cellInfo, commRank, commSize, MPI_INT, 1,
-                source_mesh_flat.cellFaceCounts_, &newCellFaceCounts);
+                sourceCellFaceCounts, &newCellFaceCounts);
+      //moveField(cellInfo, commRank, commSize, MPI_INT, 1,
+      //          source_mesh_flat.cellFaceCounts_, &newCellFaceCounts);
 
       // SEND CELL-TO-FACE MAP
       // For this array only, pack up face IDs + dirs and send together
-      int size = source_mesh_flat.cellToFaceList_.size();
+      std::vector<int>& sourceCellToFaceList = source_mesh_flat.get_cell_to_face_list(); 
+      std::vector<bool>& sourceCellToFaceDirs = source_mesh_flat.get_cell_to_face_dirs();
+      int size = sourceCellToFaceList.size();
+      //int size = source_mesh_flat.cellToFaceList_.size();
       for (unsigned int j=0; j<size; ++j)
       {
-        int f = source_mesh_flat.cellToFaceList_[j];
-        int dir = static_cast<int>(source_mesh_flat.cellToFaceDirs_[j]);
-        source_mesh_flat.cellToFaceList_[j] = (f << 1) | dir;
+        int f = sourceCellToFaceList[j];
+        int dir = static_cast<int>(sourceCellToFaceDirs[j]);
+        sourceCellToFaceList[j] = (f << 1) | dir;
+        //int f = source_mesh_flat.cellToFaceList_[j];
+        //int dir = static_cast<int>(source_mesh_flat.cellToFaceDirs_[j]);
+        //source_mesh_flat.cellToFaceList_[j] = (f << 1) | dir;
       }
       moveField(cellToFaceInfo, commRank, commSize, MPI_INT, 1,
-                source_mesh_flat.cellToFaceList_, &newCellToFaceList);
+                sourceCellToFaceList, &newCellToFaceList);
+      //moveField(cellToFaceInfo, commRank, commSize, MPI_INT, 1,
+      //          source_mesh_flat.cellToFaceList_, &newCellToFaceList);
       // Unpack face IDs and dirs
       for (unsigned int j=0; j<newCellToFaceList.size(); ++j)
       {
@@ -333,14 +366,18 @@ class MPI_Bounding_Boxes {
       }
 
       // SEND NUMBER OF NODES FOR EACH FACE
-
+      std::vector<int>& sourceFaceNodeCounts = source_mesh_flat.get_face_node_counts(); 
       moveField(faceInfo, commRank, commSize, MPI_INT, 1,
-                source_mesh_flat.faceNodeCounts_, &newFaceNodeCounts);
+                sourceFaceNodeCounts, &newFaceNodeCounts); 
+      //moveField(faceInfo, commRank, commSize, MPI_INT, 1,
+      //          source_mesh_flat.faceNodeCounts_, &newFaceNodeCounts);
 
       // SEND FACE-TO-NODE MAP
-
+      std::vector<int>& sourceFaceToNodeList = source_mesh_flat.get_face_to_node_list(); 
       moveField(faceToNodeInfo, commRank, commSize, MPI_INT, 1,
-                source_mesh_flat.faceToNodeList_, &newFaceToNodeList);
+                sourceFaceToNodeList, &newFaceToNodeList);
+      //moveField(faceToNodeInfo, commRank, commSize, MPI_INT, 1,
+      //          source_mesh_flat.faceToNodeList_, &newFaceToNodeList);
     }
 
     // SEND GLOBAL CELL IDS
@@ -390,30 +427,39 @@ class MPI_Bounding_Boxes {
     // TODO:  replace with swap
     sourceCoords = newCoords;
     sourceCellGlobalIds = newCellGlobalIds;
-    std::swap(source_mesh_flat.nodeGlobalIds_, newNodeGlobalIds);
+    //std::swap(source_mesh_flat.nodeGlobalIds_, newNodeGlobalIds);
+    source_mesh_flat.set_node_global_ids(newNodeGlobalIds);
     source_mesh_flat.set_num_owned_cells(cellInfo.newNumOwned);
     source_mesh_flat.set_num_owned_nodes(nodeInfo.newNumOwned);
 
     if (dim == 2)
     {
-      std::swap(source_mesh_flat.cellNodeCounts_, newCellNodeCounts);
+      //std::swap(source_mesh_flat.cellNodeCounts_, newCellNodeCounts);
+      source_mesh_flat.set_cell_node_counts(newCellNodeCounts);
       fixListIndices(cellToNodeInfo, nodeInfo, commSize, &newCellToNodeList);
-      std::swap(source_mesh_flat.cellToNodeList_, newCellToNodeList);
+      source_mesh_flat.set_cell_to_node_list(newCellToNodeList);
+      //std::swap(source_mesh_flat.cellToNodeList_, newCellToNodeList);
     }
 
     if (dim == 3)
     {
-      std::swap(source_mesh_flat.cellFaceCounts_, newCellFaceCounts);
-      std::swap(source_mesh_flat.faceNodeCounts_, newFaceNodeCounts);
+      source_mesh_flat.set_cell_face_counts(newCellFaceCounts);
+      source_mesh_flat.set_face_node_counts(newFaceNodeCounts);
+      source_mesh_flat.set_num_owned_faces(faceInfo.newNumOwned);
+      //std::swap(source_mesh_flat.cellFaceCounts_, newCellFaceCounts);
+      //std::swap(source_mesh_flat.faceNodeCounts_, newFaceNodeCounts);
 
-      source_mesh_flat.numOwnedFaces_ = faceInfo.newNumOwned;
+      //source_mesh_flat.numOwnedFaces_ = faceInfo.newNumOwned;
 
       fixListIndices(cellToFaceInfo, faceInfo, commSize, &newCellToFaceList);
-      std::swap(source_mesh_flat.cellToFaceList_, newCellToFaceList);
-      std::swap(source_mesh_flat.cellToFaceDirs_, newCellToFaceDirs);
+      source_mesh_flat.set_cell_to_face_list(newCellToFaceList);
+      source_mesh_flat.set_cell_to_face_dirs(newCellToFaceDirs);
+      //std::swap(source_mesh_flat.cellToFaceList_, newCellToFaceList);
+      //std::swap(source_mesh_flat.cellToFaceDirs_, newCellToFaceDirs);
 
       fixListIndices(faceToNodeInfo, nodeInfo, commSize, &newFaceToNodeList);
-      std::swap(source_mesh_flat.faceToNodeList_, newFaceToNodeList);
+      source_mesh_flat.set_face_to_node_list(newFaceToNodeList);
+      //std::swap(source_mesh_flat.faceToNodeList_, newFaceToNodeList);
     }
 
     // Finish initialization using redistributed data
