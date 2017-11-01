@@ -29,6 +29,9 @@ Please see the license file at the root of this repository, or at:
 #include "portage/search/search_points_by_cells.h"
 #include "portage/accumulate/accumulate.h"
 #include "portage/estimate/estimate.h"
+#ifdef HAVE_NANOFLANN
+#include "portage/search/search_kdtree_nanoflann.h"
+#endif
 
 using std::vector;
 using std::shared_ptr;
@@ -40,6 +43,9 @@ using Portage::Meshfree::SwarmFactory;
 using Portage::Meshfree::Accumulate;
 using Portage::Meshfree::Estimate;
 using Portage::SearchSimplePoints;
+#ifdef HAVE_NANOFLANN
+using Portage::Search_KDTree_Nanoflann;
+#endif
 using Portage::SearchPointsByCells;
 
 
@@ -204,6 +210,17 @@ int main(int argc, char** argv) {
   auto smoothing_lengths =
       vector<vector<vector<double>>>(ntarpts, vector<vector<double>>(1, vector<double>(2, 2.05*h)));
                                                                       
+#ifdef HAVE_NANOFLANN  // Search by kdtree
+  SwarmDriver<
+    Search_KDTree_Nanoflann,
+    Accumulate,
+    Estimate,
+    2,
+    Swarm<2>,
+    SwarmState<2>>
+      d(*inputSwarm, *inputState, *targetSwarm, *targetState,
+        smoothing_lengths);
+#else
   SwarmDriver<
     SearchPointsByCells,
     Accumulate,
@@ -213,6 +230,8 @@ int main(int argc, char** argv) {
     SwarmState<2>>
       d(*inputSwarm, *inputState, *targetSwarm, *targetState,
         smoothing_lengths);
+#endif
+
   if (example.estimation_order == 0)
     d.set_remap_var_names(remap_fields, remap_fields,
                           Portage::Meshfree::LocalRegression,
@@ -227,6 +246,7 @@ int main(int argc, char** argv) {
                           Portage::Meshfree::Basis::Quadratic);
   d.run(false, true);
 
+
   std::vector<double> expected_value(ntarpts, 0.0);
 
   double toterr = 0.0;
@@ -236,10 +256,11 @@ int main(int argc, char** argv) {
     expected_value[p] = field_func<2>(example.field_order, coord);
     double error = expected_value[p] - (*targetData)[p];
 
-    std::printf("Particle=% 4d Coord = (% 5.3lf,% 5.3lf)", p,
-                coord[0], coord[1]);
-    std::printf("  Value = % 10.6lf  Err = % lf\n", (*targetData)[p], error);
-    
+    if (ntarpts < 10) {
+      std::printf("Particle=% 4d Coord = (% 5.3lf,% 5.3lf)", p,
+                  coord[0], coord[1]);
+      std::printf("  Value = % 10.6lf  Err = % lf\n", (*targetData)[p], error);
+    }
     toterr += error*error;
   }
 
