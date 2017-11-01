@@ -88,8 +88,8 @@ int main(int argc, char** argv) {
   Portage::make_mesh_cart2d(xmin, xmax, ymin, ymax, nx+1, ny+1, targetMesh);
 
   // Create the mesh wrappers
-  Portage::Jali_Mesh_Wrapper inputMeshWrapper(*inputMesh);
-  Portage::Flecsi_Mesh_Wrapper targetMeshWrapper(targetMesh);
+  Wonton::Jali_Mesh_Wrapper inputMeshWrapper(*inputMesh);
+  Wonton::Flecsi_Mesh_Wrapper targetMeshWrapper(targetMesh);
 
   // Fill the input state with linear func
   const int nsrccells = inputMeshWrapper.num_owned_cells();
@@ -102,17 +102,17 @@ int main(int argc, char** argv) {
   }
   inputState.add("celldata", inputMesh, Jali::Entity_kind::CELL,
           Jali::Entity_type::ALL, &(inputData[0]));
-  Portage::Jali_State_Wrapper inputStateWrapper(inputState);
+  Wonton::Jali_State_Wrapper inputStateWrapper(inputState);
 
   // Declare the target storage
   register_state(targetMesh, "celldata", cells, real_t, flecsi::persistent);
-  Portage::Flecsi_State_Wrapper targetStateWrapper(targetMesh);
+  Wonton::Flecsi_State_Wrapper targetStateWrapper(targetMesh);
 
   // Setup the main driver for this mesh type
-  Portage::Driver<Portage::Jali_Mesh_Wrapper,
-                  Portage::Jali_State_Wrapper,
-                  Portage::Flecsi_Mesh_Wrapper,
-                  Portage::Flecsi_State_Wrapper> d(inputMeshWrapper,
+  Portage::Driver<Wonton::Jali_Mesh_Wrapper,
+                  Wonton::Jali_State_Wrapper,
+                  Wonton::Flecsi_Mesh_Wrapper,
+                  Wonton::Flecsi_State_Wrapper> d(inputMeshWrapper,
                                                    inputStateWrapper,
                                                    targetMeshWrapper,
                                                    targetStateWrapper);

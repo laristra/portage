@@ -22,7 +22,7 @@ TEST(Simple_Mesh, OneCell) {
   Portage::Simple_Mesh mesh(0.0, 0.0, 0.0,
                             1.0, 1.0, 1.0,
                             1, 1, 1);
-  Portage::Simple_Mesh_Wrapper mesh_wrapper(mesh);
+  Wonton::Simple_Mesh_Wrapper mesh_wrapper(mesh);
 
   // Check basic dimensionality
   ASSERT_EQ(mesh_wrapper.space_dimension(), 3);
@@ -120,7 +120,7 @@ TEST(Simple_Mesh, MultiCell) {
   Portage::Simple_Mesh mesh(xmin, ymin, zmin,
                             xmax, ymax, zmax,
                             nx, ny, nz);
-  Portage::Simple_Mesh_Wrapper mesh_wrapper(mesh);
+  Wonton::Simple_Mesh_Wrapper mesh_wrapper(mesh);
 
   // Check basic dimensionality
   ASSERT_EQ(mesh_wrapper.space_dimension(), 3);
@@ -366,7 +366,7 @@ TEST(Simple_Mesh, AdjCell) {
   Portage::Simple_Mesh mesh(xmin, ymin, zmin,
                             xmax, ymax, zmax,
                             nx, ny, nz);
-  Portage::Simple_Mesh_Wrapper mesh_wrapper(mesh);
+  Wonton::Simple_Mesh_Wrapper mesh_wrapper(mesh);
 
   int ncells = mesh_wrapper.num_owned_cells();
   ASSERT_EQ(ncells, nx*ny*nz);
@@ -405,7 +405,7 @@ TEST(Simple_Mesh, GlobalID) {
   Portage::Simple_Mesh mesh(0.0, 0.0, 0.0,
                             1.0, 1.0, 1.0,
                             10, 10, 10);
-  Portage::Simple_Mesh_Wrapper mesh_wrapper(mesh);
+  Wonton::Simple_Mesh_Wrapper mesh_wrapper(mesh);
 
   int ncells = mesh_wrapper.num_owned_cells();
 

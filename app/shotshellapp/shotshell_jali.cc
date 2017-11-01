@@ -33,8 +33,8 @@ Please see the license file at the root of this repository, or at:
 #define MSTK_HAVE_MPI
 #include "Mesh_MSTK.hh"
 
-using Portage::Jali_Mesh_Wrapper;
-using Portage::Jali_State_Wrapper;
+using Wonton::Jali_Mesh_Wrapper;
+using Wonton::Jali_State_Wrapper;
 using Portage::argsort;
 using Portage::reorder;
 
@@ -239,8 +239,8 @@ int main(int argc, char** argv) {
                       Portage::IntersectR2D,
                       Portage::Interpolate_1stOrder,
                       2,
-                      Portage::Jali_Mesh_Wrapper,
-                      Portage::Jali_State_Wrapper>
+                      Wonton::Jali_Mesh_Wrapper,
+                      Wonton::Jali_State_Wrapper>
           d(sourceMeshWrapper, sourceStateWrapper, targetMeshWrapper,
             targetStateWrapper);
       d.set_remap_var_names(remap_fields);
@@ -250,8 +250,8 @@ int main(int argc, char** argv) {
                       Portage::IntersectR2D,
                       Portage::Interpolate_2ndOrder,
                       2,
-                      Portage::Jali_Mesh_Wrapper,
-                      Portage::Jali_State_Wrapper>
+                      Wonton::Jali_Mesh_Wrapper,
+                      Wonton::Jali_State_Wrapper>
           d(sourceMeshWrapper, sourceStateWrapper, targetMeshWrapper,
             targetStateWrapper);
       d.set_remap_var_names(remap_fields);
@@ -263,8 +263,8 @@ int main(int argc, char** argv) {
                       Portage::IntersectR3D,
                       Portage::Interpolate_1stOrder,
                       3,
-                      Portage::Jali_Mesh_Wrapper,
-                      Portage::Jali_State_Wrapper>
+                      Wonton::Jali_Mesh_Wrapper,
+                      Wonton::Jali_State_Wrapper>
           d(sourceMeshWrapper, sourceStateWrapper, targetMeshWrapper,
             targetStateWrapper);
       d.set_remap_var_names(remap_fields);
@@ -274,8 +274,8 @@ int main(int argc, char** argv) {
                       Portage::IntersectR3D,
                       Portage::Interpolate_2ndOrder,
                       3,
-                      Portage::Jali_Mesh_Wrapper,
-                      Portage::Jali_State_Wrapper>
+                      Wonton::Jali_Mesh_Wrapper,
+                      Wonton::Jali_State_Wrapper>
           d(sourceMeshWrapper, sourceStateWrapper, targetMeshWrapper,
             targetStateWrapper);
       d.set_remap_var_names(remap_fields);

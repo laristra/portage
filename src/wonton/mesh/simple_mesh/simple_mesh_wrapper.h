@@ -25,7 +25,7 @@ Please see the license file at the root of this repository, or at:
   @brief Definitions for a wrapper to Simple_Mesh
  */
 
-namespace Portage {
+namespace Wonton {
   /*!
     @class Simple_Mesh_Wrapper simple_mesh_wrapper.h
     @brief A thin wrapper that implements mesh methods for Simple_Mesh
@@ -220,6 +220,6 @@ class Simple_Mesh_Wrapper : public AuxMeshTopology<Simple_Mesh_Wrapper> {
   /// The mesh to wrap.
   Simple_Mesh const & mesh_;
 };  // class Simple_Mesh_Wrapper
-}  // namespace Portage
+}  // namespace Wonton
 
 #endif  // SIMPLE_MESH_WRAPPER_H_

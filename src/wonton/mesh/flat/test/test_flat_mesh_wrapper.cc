@@ -41,8 +41,8 @@ TEST(Flat_Mesh_Wrapper, basic_routines_3d) {
                         Jali::Entity_kind::CORNER});
   std::shared_ptr<Jali::Mesh> mesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2, 2, 2);
   ASSERT_TRUE(mesh != NULL);
-  Portage::Jali_Mesh_Wrapper mesh_wrapper(*mesh);
-  Portage::Flat_Mesh_Wrapper<> mesh_flat;
+  Wonton::Jali_Mesh_Wrapper mesh_wrapper(*mesh);
+  Wonton::Flat_Mesh_Wrapper<> mesh_flat;
   mesh_flat.initialize(mesh_wrapper);
 
   ASSERT_EQ(3, mesh_flat.space_dimension());
@@ -94,9 +94,9 @@ TEST(Flat_Mesh_Wrapper, basic_routines_3d) {
 
   // Test cell and node radius
   double cradius, nradius;
-  Portage::cell_radius<3>(mesh_flat, 0, &cradius);
+  Wonton::cell_radius<3>(mesh_flat, 0, &cradius);
   ASSERT_EQ(sqrt(3.0)/4., cradius);
-  Portage::node_radius<3>(mesh_flat, 0, &nradius);
+  Wonton::node_radius<3>(mesh_flat, 0, &nradius);
   ASSERT_EQ(sqrt(3.0)/2., nradius);
 
   // Test cell_volume()
@@ -157,8 +157,8 @@ TEST(Flat_Mesh_Wrapper, basic_routines_2d) {
                         Jali::Entity_kind::CORNER});
   std::shared_ptr<Jali::Mesh> mesh = mf(0.0, 0.0, 1.0, 1.0, 4, 4);
   ASSERT_TRUE(mesh != NULL);
-  Portage::Jali_Mesh_Wrapper mesh_wrapper(*mesh);
-  Portage::Flat_Mesh_Wrapper<> mesh_flat;
+  Wonton::Jali_Mesh_Wrapper mesh_wrapper(*mesh);
+  Wonton::Flat_Mesh_Wrapper<> mesh_flat;
   mesh_flat.initialize(mesh_wrapper);
   ASSERT_EQ(2, mesh_flat.space_dimension());
 

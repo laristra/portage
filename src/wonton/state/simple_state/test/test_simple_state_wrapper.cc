@@ -29,8 +29,8 @@ TEST(Simple_State_Wrapper, WrapperTest) {
   Portage::Simple_State mystate(std::make_shared<Portage::Simple_Mesh>(mymesh));
 
   // Wrappers
-  Portage::Simple_Mesh_Wrapper mymesh_wrapper(mymesh);
-  Portage::Simple_State_Wrapper mystate_wrapper(mystate);
+  Wonton::Simple_Mesh_Wrapper mymesh_wrapper(mymesh);
+  Wonton::Simple_State_Wrapper mystate_wrapper(mystate);
 
   auto numcells = mymesh_wrapper.num_owned_cells();
   auto numnodes = mymesh_wrapper.num_owned_nodes();

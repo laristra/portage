@@ -77,7 +77,7 @@ void coordinates_canonical_rotation(
   @param[in,out] xylist The xylist
  */
 void dual_cell_coordinates_canonical_rotation(
-    const Portage::Jali_Mesh_Wrapper &mesh_wrapper,
+    const Wonton::Jali_Mesh_Wrapper &mesh_wrapper,
     int const nodeid,
     std::vector<Portage::Point<2>> * const xylist) {
   Portage::Point<2> center_node;
@@ -165,7 +165,7 @@ TEST(Jali_Mesh_Wrapper, ccw) {
     Jali::MeshFactory mf(MPI_COMM_WORLD);
     std::shared_ptr<Jali::Mesh> mesh = mf(0.0, 0.0, 1.0, 1.0, 2, 2);
     ASSERT_TRUE(mesh != nullptr);
-    Portage::Jali_Mesh_Wrapper mesh_wrapper(*mesh);
+    Wonton::Jali_Mesh_Wrapper mesh_wrapper(*mesh);
 
     ASSERT_TRUE(mesh_wrapper.ccw({-1, 0}, {0, 0}, {0, 1}));
     ASSERT_TRUE(not mesh_wrapper.ccw({1, 0}, {0, 0}, {0, 1}));
@@ -186,7 +186,7 @@ TEST(Jali_Mesh_Wrapper, dual_cell_get_coordinates) {
                           Jali::Entity_kind::CORNER});
     std::shared_ptr<Jali::Mesh> mesh = mf(0.0, 0.0, 1.0, 1.0, 2, 2);
     ASSERT_TRUE(mesh != nullptr);
-    Portage::Jali_Mesh_Wrapper mesh_wrapper(*mesh);
+    Wonton::Jali_Mesh_Wrapper mesh_wrapper(*mesh);
     double eps = 1e-12;
 
     std::vector<Portage::Point<2>> xylist;
@@ -301,7 +301,7 @@ TEST(Jali_Mesh_Wrapper, Get_Neighbor_Cells) {
   Jali::MeshFactory mf(MPI_COMM_WORLD);
   std::shared_ptr<Jali::Mesh> mesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2, 2, 2);
   ASSERT_TRUE(mesh != NULL);
-  Portage::Jali_Mesh_Wrapper mesh_wrapper(*mesh);
+  Wonton::Jali_Mesh_Wrapper mesh_wrapper(*mesh);
 
   // This is a regular mesh with 2 cells (3 nodes) in each direction
 
@@ -370,7 +370,7 @@ TEST(Jali_Mesh_Wrapper, Get_Exterior_Flag) {
   Jali::MeshFactory mf(MPI_COMM_WORLD);
   std::shared_ptr<Jali::Mesh> mesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2, 2, 2);
   ASSERT_TRUE(mesh != NULL);
-  Portage::Jali_Mesh_Wrapper mesh_wrapper(*mesh);
+  Wonton::Jali_Mesh_Wrapper mesh_wrapper(*mesh);
 
   int nfaces = mesh_wrapper.num_entities(Portage::Entity_kind::FACE,
                                          Portage::Entity_type::ALL);
@@ -434,7 +434,7 @@ TEST(Jali_Mesh_Wrapper, Decompose_Cell_Into_Tets) {
                                   Jali::Entity_kind::CORNER});
   std::shared_ptr<Jali::Mesh> mesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2, 2, 2);
   ASSERT_NE(mesh, nullptr);
-  Portage::Jali_Mesh_Wrapper mesh_wrapper(*mesh);
+  Wonton::Jali_Mesh_Wrapper mesh_wrapper(*mesh);
 
   std::vector<std::array<Portage::Point<3>, 4>> tcoords;
 
@@ -466,7 +466,7 @@ TEST(Jali_Mesh_Wrapper, MESH_SIDES_2D) {
   mf.included_entities({Jali::Entity_kind::FACE});
   std::shared_ptr<Jali::Mesh> mesh = mf(0.0, 0.0, 1.0, 1.0, 2, 2);
 
-  Portage::Jali_Mesh_Wrapper mesh_wrapper(*mesh);
+  Wonton::Jali_Mesh_Wrapper mesh_wrapper(*mesh);
 
   int nsides_owned = mesh_wrapper.num_entities(Portage::SIDE,
                                                Portage::PARALLEL_OWNED);
@@ -603,7 +603,7 @@ TEST(Jali_Mesh_Wrapper, MESH_SIDES_3D) {
 
   std::shared_ptr<Jali::Mesh> mesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2, 2, 2);
   
-  Portage::Jali_Mesh_Wrapper mesh_wrapper(*mesh);
+  Wonton::Jali_Mesh_Wrapper mesh_wrapper(*mesh);
 
   int ncells = mesh_wrapper.num_entities(Portage::CELL, Portage::ALL);
   double dp;
@@ -736,7 +736,7 @@ TEST(Jali_Mesh_Wrapper, MESH_WEDGES_2D) {
   mf.included_entities({Jali::Entity_kind::FACE});
   std::shared_ptr<Jali::Mesh> mesh = mf(0.0, 0.0, 1.0, 1.0, 2, 2);
 
-  Portage::Jali_Mesh_Wrapper mesh_wrapper(*mesh);
+  Wonton::Jali_Mesh_Wrapper mesh_wrapper(*mesh);
 
   int nwedges_owned = mesh_wrapper.num_entities(Portage::WEDGE,
                                                 Portage::PARALLEL_OWNED);
@@ -886,7 +886,7 @@ TEST(Jali_Mesh_Wrapper, MESH_WEDGES_3D) {
   mf.included_entities({Jali::Entity_kind::FACE});
   std::shared_ptr<Jali::Mesh> mesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2, 2, 2);
 
-  Portage::Jali_Mesh_Wrapper mesh_wrapper(*mesh);
+  Wonton::Jali_Mesh_Wrapper mesh_wrapper(*mesh);
 
   double dp;
   int ncells = mesh_wrapper.num_entities(Portage::CELL, Portage::ALL);
@@ -1031,7 +1031,7 @@ TEST(Jali_Mesh_Wrapper, MESH_CORNERS_2D) {
   mf.included_entities({Jali::Entity_kind::FACE});
   std::shared_ptr<Jali::Mesh> mesh = mf(0.0, 0.0, 1.0, 1.0, 2, 2);
 
-  Portage::Jali_Mesh_Wrapper mesh_wrapper(*mesh);
+  Wonton::Jali_Mesh_Wrapper mesh_wrapper(*mesh);
 
   int ncorners_owned = mesh_wrapper.num_entities(Portage::CORNER,
                                                  Portage::PARALLEL_OWNED);
@@ -1154,7 +1154,7 @@ TEST(Jali_Mesh_Wrapper, MESH_CORNERS_3D) {
   mf.included_entities({Jali::Entity_kind::FACE});
   std::shared_ptr<Jali::Mesh> mesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2, 2, 2);
 
-  Portage::Jali_Mesh_Wrapper mesh_wrapper(*mesh);
+  Wonton::Jali_Mesh_Wrapper mesh_wrapper(*mesh);
 
   double totalvol = 0.0;  // total volume of domain
   int ncells = mesh_wrapper.num_entities(Portage::CELL, Portage::ALL);
@@ -1274,7 +1274,7 @@ TEST(Jali_Mesh_Wrapper, MESH_NON_DEFAULT_OPTS) {
   bool request_wedges = false;
   bool request_corners = false;
 
-  Portage::Jali_Mesh_Wrapper mesh_wrapper1(*mesh, request_sides, request_wedges,
+  Wonton::Jali_Mesh_Wrapper mesh_wrapper1(*mesh, request_sides, request_wedges,
                                            request_corners);
 
   ASSERT_GT(mesh_wrapper1.num_entities(Portage::SIDE, Portage::ALL), 0);
@@ -1290,7 +1290,7 @@ TEST(Jali_Mesh_Wrapper, MESH_NON_DEFAULT_OPTS) {
   request_wedges = true;
   request_corners = false;
 
-  Portage::Jali_Mesh_Wrapper mesh_wrapper2(*mesh, request_sides, request_wedges,
+  Wonton::Jali_Mesh_Wrapper mesh_wrapper2(*mesh, request_sides, request_wedges,
                                            request_corners);
 
   ASSERT_GT(mesh_wrapper2.num_entities(Portage::SIDE, Portage::ALL), 0);
@@ -1306,7 +1306,7 @@ TEST(Jali_Mesh_Wrapper, MESH_NON_DEFAULT_OPTS) {
   request_wedges = false;
   request_corners = true;
 
-  Portage::Jali_Mesh_Wrapper mesh_wrapper3(*mesh, request_sides, request_wedges,
+  Wonton::Jali_Mesh_Wrapper mesh_wrapper3(*mesh, request_sides, request_wedges,
                                            request_corners);
 
   ASSERT_GT(mesh_wrapper3.num_entities(Portage::SIDE, Portage::ALL), 0);
@@ -1320,7 +1320,7 @@ TEST(Jali_Mesh_Wrapper, MESH_NON_DEFAULT_OPTS) {
   request_wedges = false;
   request_corners = false;
 
-  Portage::Jali_Mesh_Wrapper mesh_wrapper4(*mesh, request_sides, request_wedges,
+  Wonton::Jali_Mesh_Wrapper mesh_wrapper4(*mesh, request_sides, request_wedges,
                                            request_corners);
 
   ASSERT_EQ(mesh_wrapper4.num_entities(Portage::SIDE, Portage::ALL), 0);
