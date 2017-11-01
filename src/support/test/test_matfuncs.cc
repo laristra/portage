@@ -323,7 +323,7 @@ TEST(Matrix, SolveWithErrorMsg) {
   Portage::Matrix A(3,3,0.);
   A[0][0] = 1.; A[1][1] = 1.; A[2][2] = -1.;
 
-  Portage::Matrix B(3,1,0);
+  Portage::Matrix B(3,1,7.3);
 
   std::string errormsg="ignore";
   Portage::Matrix AinvB = A.solve(B, "lapack-posv", errormsg);
@@ -336,5 +336,12 @@ TEST(Matrix, SolveWithErrorMsg) {
   std::cout << "error message: " << errormsg << std::endl;
 
   ASSERT_TRUE(errormsg!="blahblah");
+
+  errormsg="blahblah";
+  A[2][2] = 2.;
+  AinvB = A.solve(B, "lapack-posv", errormsg);
+  std::cout << "error message: " << errormsg << std::endl;
+
+  ASSERT_TRUE(errormsg=="none");
 
 }
