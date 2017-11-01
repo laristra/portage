@@ -29,7 +29,10 @@ USER portage
 WORKDIR /home/portage/portage
 RUN mkdir build
 WORKDIR build
-RUN cmake -D CMAKE_BUILD_TYPE=Debug -D ENABLE_UNIT_TESTS=True -D ENABLE_APP_TESTS=True -D ENABLE_MPI=${MPI} -D ENABLE_MPI_CXX_BINDINGS=True ${COVERAGE:+-DENABLE_COVERAGE_BUILD=ON} ..
+RUN cmake -D CMAKE_BUILD_TYPE=Debug -D ENABLE_UNIT_TESTS=True \
+    -D ENABLE_APP_TESTS=True -D ENABLE_MPI=${MPI} \
+    -D ENABLE_MPI_CXX_BINDINGS=True ${COVERAGE:+-DENABLE_COVERAGE_BUILD=ON} \
+    -D ENABLE_DOXYGEN=True ..
 RUN ${SONARQUBE:+build-wrapper-linux-x86-64 --out-dir bw-output} make VERBOSE=1 -j2
 RUN make test
 RUN cd .. && if [ ${COVERAGE} ]; then \
@@ -39,7 +42,7 @@ RUN cd .. && if [ ${COVERAGE} ]; then \
     $HOME/.local/bin/codecov; \
   fi; \
 fi && cd -
-RUN if [ ${DOCS} ]; then \
+RUN if [ ${DOCS} || -n ${TRAVIS_TAG} ]; then \
   make doxygen; \
 fi
 RUN cd .. && if [ ${SONARQUBE} ]; then \

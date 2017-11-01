@@ -12,7 +12,7 @@ set -e
 set -x
 
 # 3d 1st order cell-centered remap of linear func
-mpirun -np 1 ${APPDIR}/simple_mesh_app 0 4 5
+${RUN_COMMAND} ${APPDIR}/simple_mesh_app 0 4 5
 
 # Compare the values for the field
 ${APPDIR}/apptest_cmp field_gold0.txt field0.txt 1e-12

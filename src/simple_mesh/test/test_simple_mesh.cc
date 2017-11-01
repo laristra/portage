@@ -14,7 +14,6 @@ Please see the license file at the root of this repository, or at:
 #include "portage/support/Point.h"
 
 #include "gtest/gtest.h"
-#include "mpi.h"
 
 /*!
   @file test_simple_mesh.cc

@@ -11,7 +11,8 @@ Please see the license file at the root of this repository, or at:
 
 # Simple_Mesh test
 add_executable(simple_mesh_app simple_mesh_app.cc)
-target_link_libraries(simple_mesh_app portage ${EXTRA_LIBS})
+target_link_libraries(simple_mesh_app portage
+  ${EXTRA_LIBS} ${MPI_CXX_LIBRARIES})
 
 
 #TCMalloc option

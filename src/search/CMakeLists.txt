@@ -42,13 +42,12 @@ if(ENABLE_UNIT_TESTS)
       LIBRARIES portage ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
       POLICY MPI
       THREADS 1)
-    cinch_add_unit(search_kdtree3_test
-      SOURCES search_kdtree3_test.cc
-      LIBRARIES portage ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
-      POLICY MPI
-      THREADS 1)
   endif (Jali_DIR)
 
+  cinch_add_unit(search_kdtree3_test
+    SOURCES search_kdtree3_test.cc
+    LIBRARIES portage
+    POLICY SERIAL)
   cinch_add_unit(search_simple_points_test
     SOURCES search_simple_points_test.cc
     LIBRARIES portage 

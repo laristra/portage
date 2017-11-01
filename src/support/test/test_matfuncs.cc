@@ -243,7 +243,6 @@ TEST(Matrix, SolveWithPOSV) {
       ASSERT_NEAR(AinvB_expected[i][j], AinvB[i][j], 1.0e-12);
       ASSERT_NEAR(resB[i][j], B[i][j], 1.e-12);
     }
-
 }
 
 /*!
@@ -306,3 +305,40 @@ TEST(Matrix, SolveWithGESV) {
 
 }
 
+/*!
+  @brief Test the matrix solve functionality
+ */
+TEST(Matrix, SolveWithSYTR) {
+
+  /* Mathematica code to generate this example:
+   *
+   * a = RotationMatrix[{{1, 2.5, -1., 3.0}, {2., -3, -2, 1.0}}];
+   * eval = DiagonalMatrix[{1., 2., 3., 4.}];
+   * aa = a.eval.Transpose[a];
+   *
+   * The matrix aa is symmetric positive-definite with eigenvalues 1,2,3,4.
+   */
+
+  Portage::Matrix A({{1.5909092362921544, 0.3023197488806776, -0.0008986359725132367,
+    0.5719175069965953}, {0.3023197488806776, 3.684725833270652, 0.22450059345997342,
+    -0.7267204571061852}, {-0.0008986359725132367, 0.22450059345997342,
+    2.410888035652873, 0.6054854449257954}, {0.5719175069965953, -0.7267204571061852,
+    0.6054854449257954, 2.3134768947843307}});
+
+  Portage::Matrix B({{1.2, 3.4}, {-5.6, 1.7}, {9.8, -7.6}, {3.1, 6.2}});
+
+  Portage::Matrix AinvB = A.solve(B, "lapack-sytr");
+
+  Portage::Matrix AinvB_expected({{1.4543699572914695, 0.3263211034432376},
+    {-2.077583421788211, 1.5322821892984466},
+      {4.470408685674243, -4.354857599247892},
+     {-0.8421823492688412, 4.2203641515254}});
+
+  Portage::Matrix resB = A*AinvB;
+
+  for (int i = 0; i < B.rows(); ++i)
+    for (int j = 0; j < B.columns(); ++j) {
+      ASSERT_NEAR(AinvB_expected[i][j], AinvB[i][j], 1.0e-12);
+      ASSERT_NEAR(resB[i][j], B[i][j], 1.e-12);
+    }
+}

@@ -1,4 +1,5 @@
 # axis_varan.yml
+# matrix of builds tested nightly on varan
 COMPILER:
   - intel
   - gcc
@@ -6,6 +7,7 @@ COMPILER:
 BUILD_TYPE:
   - base
   - debug
+  - serial
   - thrust
   - flecsi
   - coverage
