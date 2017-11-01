@@ -148,24 +148,29 @@ class Accumulate {
         size_t nbasis = Basis::function_size<dim>(basis_);
         Point<dim> x = target_.get_particle_coordinates(particleB);
         
-        // Calculate weights and moment matrix (P*W*transpose(P))
+	// If too few particles, set estimate to zero for this target
+	bool zilchit = false;
         if (source_particles.size() < nbasis) {
-          throw std::runtime_error("too few source particles for local regression");
+          zilchit = true;
         }
+
+        // Calculate weights and moment matrix (P*W*transpose(P))
         vector<double> weight_val(source_particles.size());
         Matrix moment(nbasis,nbasis,0.);
         size_t iA = 0;
-        for (auto const& particleA : source_particles) {
-          weight_val[iA] = weight(particleA, particleB); // save weights for later
-          Point<dim> y = source_.get_particle_coordinates(particleA);
-          auto basis = Basis::shift<dim>(basis_,x,y);
-          for (size_t i=0; i<nbasis; i++) {
-            for (size_t j=0; j<nbasis; j++) {
-              moment[i][j] += basis[i]*basis[j]*weight_val[iA];
-            }
-          }
-          iA++;
-        }
+	if (not zilchit) {
+	  for (auto const& particleA : source_particles) {
+	    weight_val[iA] = weight(particleA, particleB); // save weights for later
+	    Point<dim> y = source_.get_particle_coordinates(particleA);
+	    auto basis = Basis::shift<dim>(basis_,x,y);
+	    for (size_t i=0; i<nbasis; i++) {
+	      for (size_t j=0; j<nbasis; j++) {
+		moment[i][j] += basis[i]*basis[j]*weight_val[iA];
+	      }
+	    }
+	    iA++;
+	  }
+	}
         
         // Calculate inverse(P*W*transpose(P))*P*W
         iA = 0;
@@ -179,13 +184,17 @@ class Accumulate {
           for (size_t i=0; i<nbasis; i++) basis_matrix[i][0] = basis[i];
 
           // solve the linear system
+	  if (not zilchit) {
 #ifdef HAVE_LAPACKE 
-          Matrix pair_result_matrix = moment.solve(basis_matrix, "lapack-posv");
+	    Matrix pair_result_matrix = moment.solve(basis_matrix, "lapack-posv");
 #else
-          Matrix pair_result_matrix = moment.solve(basis_matrix);
+	    Matrix pair_result_matrix = moment.solve(basis_matrix);
 #endif
+	    for (size_t i=0; i<nbasis; i++) pair_result[i] = pair_result_matrix[i][0]*weight_val[iA];
+	  } else if (zilchit) {
+	    for (size_t i=0; i<nbasis; i++) pair_result[i] = 0.;
+	  }
 
-          for (size_t i=0; i<nbasis; i++) pair_result[i] = pair_result_matrix[i][0]*weight_val[iA];
           result.emplace_back(particleA, pair_result);
           iA++;
         }

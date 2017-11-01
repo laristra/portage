@@ -306,3 +306,35 @@ TEST(Matrix, SolveWithGESV) {
 
 }
 
+/*!
+  @brief Test the matrix solve functionality
+ */
+TEST(Matrix, SolveWithErrorMsg) {
+
+  /* Mathematica code to generate this example:
+   *
+   * a = RotationMatrix[{{1, 2.5, -1., 3.0}, {2., -3, -2, 1.0}}];
+   * eval = DiagonalMatrix[{1., 2., 3., 4.}];
+   * aa = a.eval.Transpose[a];
+   *
+   * The matrix aa is symmetric positive-definite with eigenvalues 1,2,3,4.
+   */
+
+  Portage::Matrix A(3,3,0.);
+  A[0][0] = 1.; A[1][1] = 1.; A[2][2] = -1.;
+
+  Portage::Matrix B(3,1,0);
+
+  std::string errormsg="ignore";
+  Portage::Matrix AinvB = A.solve(B, "lapack-posv", errormsg);
+  std::cout << "error message: " << errormsg << std::endl;
+
+  ASSERT_TRUE(errormsg=="ignore");
+
+  errormsg="blahblah";
+  AinvB = A.solve(B, "lapack-posv", errormsg);
+  std::cout << "error message: " << errormsg << std::endl;
+
+  ASSERT_TRUE(errormsg!="blahblah");
+
+}
