@@ -253,8 +253,10 @@ class Matrix {
     method=="dsysv" ==> use lapack dsysvx for symmetric  A.
     method=="dgesv" ==> use lapack dgesvx for general A.
 
-    Set \code error\endcode to any value other than "ignore" on input to get a message.
     If \code error\endcode is not present or has value "ignore", no message will be returned.
+      The value of  \code error\endcode will be "ignore" on return.
+    If \code error\endcode is present and has a value other than "ignore", the value "none" 
+      will be returned if no error was generated, or contain the appropriate error message.
   */
   Matrix solve(Matrix const& B,
                std::string method="inverse",
@@ -329,6 +331,7 @@ class Matrix {
 
       // checks
       if (error != "ignore") {
+	error = "none";
 	if (info <0) {
 	  infoword << -info;
 	  error = 
@@ -398,6 +401,7 @@ class Matrix {
 
       // checks
       if (error != "ignore") {
+	error = "none";
 	if (info <0) {
 	  infoword<<-info;
 	  error =  std::string("solve(sysv): illegal value in ")+infoword.str()+"-th position";
@@ -467,6 +471,7 @@ class Matrix {
 
       // checks
       if (error != "ignore") {
+	error = "none";
 	if (info <0) {
 	  infoword<<-info;
 	  error =  std::string("solve(gesv): illegal value in ")+infoword.str()+"-th position";
