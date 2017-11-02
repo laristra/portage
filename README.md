@@ -154,14 +154,14 @@ make -j16
 ctest -j16 --output-on-failure
 ```
 
-## Moonlight
+## Snow
 
 Execute the following from the portage root directory:
 
 ```c++
-# machine=ml-fey
-module load intel/17.0.1 openmpi/1.10.5 cmake
-JALI_INSTALL_PREFIX=/usr/projects/ngc/private/jali/0.9.8-intel-17.0.1-openmpi-1.10.5
+# machine=sn-fey
+module load intel/17.0.4 openmpi/2.1.2 cmake
+JALI_INSTALL_PREFIX=/usr/projects/ngc/private/jali/0.9.8-intel-17.0.4-openmpi-2.1.2
 mkdir build
 cd build
 cmake \
