@@ -41,6 +41,7 @@ Please see the license file at the root of this repository, or at:
 
 namespace Portage {
 
+using namespace Wonton;
   /*!
     @class MeshWrapperDual "driver.h"
     @brief Wrapper for dual mesh.

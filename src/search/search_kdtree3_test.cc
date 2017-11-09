@@ -11,23 +11,19 @@ Please see the license file at the root of this repository, or at:
 
 #include "gtest/gtest.h"
 
-#include "Mesh.hh"
-#include "MeshFactory.hh"
-
-#include "portage/wonton/mesh/jali/jali_mesh_wrapper.h"
+#include "portage/wonton/mesh/simple_mesh/simple_mesh_wrapper.h"
 
 TEST(search_kdtree3, case1)
 {
-    Jali::MeshFactory mf(MPI_COMM_WORLD);
     // overlay a 2x2x2 target mesh on a 3x3x3 source mesh
     // each target mesh cell gives eight candidate source cells
-    const std::shared_ptr<Jali::Mesh> smesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 3, 3, 3);
-    const std::shared_ptr<Jali::Mesh> tmesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2, 2, 2);
-    const Portage::Jali_Mesh_Wrapper source_mesh_wrapper(*smesh);
-    const Portage::Jali_Mesh_Wrapper target_mesh_wrapper(*tmesh);
+    Portage::Simple_Mesh smesh{0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 3, 3, 3};
+    Portage::Simple_Mesh tmesh{0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2, 2, 2};
+    const Wonton::Simple_Mesh_Wrapper source_mesh_wrapper(smesh);
+    const Wonton::Simple_Mesh_Wrapper target_mesh_wrapper(tmesh);
 
     Portage::SearchKDTree<3,
-        Portage::Jali_Mesh_Wrapper, Portage::Jali_Mesh_Wrapper>
+        Wonton::Simple_Mesh_Wrapper, Wonton::Simple_Mesh_Wrapper>
         search(source_mesh_wrapper, target_mesh_wrapper);
 
     for (int tc = 0; tc < 8; ++tc) {

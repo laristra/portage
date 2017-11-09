@@ -133,6 +133,21 @@ if (LAPACKE_FOUND)
    add_definitions("-DHAVE_LAPACKE")
 endif (LAPACKE_FOUND)
 
+#------------------------------------------------------------------------------#
+# Find the NANOFLANN (https://github.com/jlblancoc/nanoflann) package
+# Nanoflann is a header only package
+#------------------------------------------------------------------------------#
+
+if (NANOFLANN_DIR)
+    find_path(nanoflann_FOUND
+              nanoflann.hpp
+              HINTS ${NANOFLANN_DIR}/include)
+    if (nanoflann_FOUND)
+      include_directories(${NANOFLANN_DIR}/include)
+      add_definitions("-DHAVE_NANOFLANN")
+    endif (nanoflann_FOUND)
+endif (NANOFLANN_DIR)
+
 #-----------------------------------------------------------------------------
 # General NGC include directory information
 #-----------------------------------------------------------------------------

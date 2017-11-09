@@ -19,6 +19,10 @@ set(search_HEADERS
     PARENT_SCOPE
 )
 
+if (nanoflann_FOUND)
+  list(APPEND search_HEADERS search_kdtree_nanoflann.h)
+endif (nanoflann_FOUND)
+
 # Add source files
 set(search_SOURCES
     pairs.cc
@@ -38,12 +42,12 @@ if(ENABLE_UNIT_TESTS)
       LIBRARIES portage ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
       POLICY MPI
       THREADS 1)
-    cinch_add_unit(search_kdtree3_test
-      SOURCES search_kdtree3_test.cc
-      LIBRARIES portage ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
-      POLICY MPI
-      THREADS 1)
   endif (Jali_DIR)
+
+  cinch_add_unit(search_kdtree3_test
+    SOURCES search_kdtree3_test.cc
+    LIBRARIES portage
+    POLICY SERIAL)
   cinch_add_unit(search_simple_points_test
     SOURCES search_simple_points_test.cc
     LIBRARIES portage 
@@ -54,5 +58,14 @@ if(ENABLE_UNIT_TESTS)
     LIBRARIES portage
     POLICY MPI
     THREADS 1)
+
+  if (nanoflann_FOUND)
+    cinch_add_unit(test_search_kdtree_nanoflann
+      SOURCES test_search_kdtree_nanoflann.cc
+      LIBRARIES portage
+      POLICY MPI
+      THREADS 1)
+  endif (nanoflann_FOUND)
+
 endif(ENABLE_UNIT_TESTS)
 

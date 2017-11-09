@@ -84,12 +84,12 @@ int main(int argc, char** argv) {
   targetMesh = mesh::box<mesh_t>(nx+1, ny+1, 0, 0, lenx, leny);
 
   // Setup::portage-flecsi mesh wrappers
-  wonton::flecsi_mesh_t<mesh_t> inputMeshWrapper(inputMesh);
-  wonton::flecsi_mesh_t<mesh_t> targetMeshWrapper(targetMesh);
+  Wonton::flecsi_mesh_t<mesh_t> inputMeshWrapper(inputMesh);
+  Wonton::flecsi_mesh_t<mesh_t> targetMeshWrapper(targetMesh);
 
   // Setup::portage-flecsi  state wrappers
-  wonton::flecsi_state_t<mesh_t> inputStateWrapper(inputMesh);
-  wonton::flecsi_state_t<mesh_t> targetStateWrapper(targetMesh);
+  Wonton::flecsi_state_t<mesh_t> inputStateWrapper(inputMesh);
+  Wonton::flecsi_state_t<mesh_t> targetStateWrapper(targetMesh);
 
   // Register data on input and target mesh
   flecsi_register_data(inputMesh, hydro, cell_data, real_t, dense, 1, cells);
@@ -121,8 +121,8 @@ int main(int argc, char** argv) {
       Portage::IntersectR2D,
       Portage::Interpolate_2ndOrder,
       2,
-      wonton::flecsi_mesh_t<mesh_t>,
-      wonton::flecsi_state_t<mesh_t> >
+      Wonton::flecsi_mesh_t<mesh_t>,
+      Wonton::flecsi_state_t<mesh_t> >
       d(inputMeshWrapper, inputStateWrapper,
         targetMeshWrapper, targetStateWrapper);
 
@@ -141,8 +141,8 @@ int main(int argc, char** argv) {
       Portage::IntersectR2D,
       Portage::Interpolate_1stOrder,
       2,
-      wonton::flecsi_mesh_t<mesh_t>,
-      wonton::flecsi_state_t<mesh_t> >
+      Wonton::flecsi_mesh_t<mesh_t>,
+      Wonton::flecsi_state_t<mesh_t> >
       d(inputMeshWrapper, inputStateWrapper,
         targetMeshWrapper, targetStateWrapper);
 

@@ -58,9 +58,9 @@ TEST(Interpolate_1st_Order, Cell_Ctr_Const_2D) {
                                   &(data[0]));
   source_state.add(myvec);
 
-  Portage::Jali_Mesh_Wrapper sourceMeshWrapper(*source_mesh);
-  Portage::Jali_Mesh_Wrapper targetMeshWrapper(*target_mesh);
-  Portage::Jali_State_Wrapper sourceStateWrapper(source_state);
+  Wonton::Jali_Mesh_Wrapper sourceMeshWrapper(*source_mesh);
+  Wonton::Jali_Mesh_Wrapper targetMeshWrapper(*target_mesh);
+  Wonton::Jali_State_Wrapper sourceStateWrapper(source_state);
 
   // Gather the cell coordinates for source and target meshes for intersection
 
@@ -97,9 +97,9 @@ TEST(Interpolate_1st_Order, Cell_Ctr_Const_2D) {
 
   // Create Interpolation object
 
-  Portage::Interpolate_1stOrder<Portage::Jali_Mesh_Wrapper,
-                                Portage::Jali_Mesh_Wrapper,
-                                Portage::Jali_State_Wrapper,
+  Portage::Interpolate_1stOrder<Wonton::Jali_Mesh_Wrapper,
+                                Wonton::Jali_Mesh_Wrapper,
+                                Wonton::Jali_State_Wrapper,
                                 Portage::CELL, 2>
       interpolater(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper);
 
@@ -155,9 +155,9 @@ TEST(Interpolate_1st_Order, Cell_Ctr_Lin_2D) {
 
   // Create Interpolation objects
 
-  Portage::Jali_Mesh_Wrapper sourceMeshWrapper(*source_mesh);
-  Portage::Jali_Mesh_Wrapper targetMeshWrapper(*target_mesh);
-  Portage::Jali_State_Wrapper sourceStateWrapper(source_state);
+  Wonton::Jali_Mesh_Wrapper sourceMeshWrapper(*source_mesh);
+  Wonton::Jali_Mesh_Wrapper targetMeshWrapper(*target_mesh);
+  Wonton::Jali_State_Wrapper sourceStateWrapper(source_state);
 
   // Gather the cell coordinates for source and target meshes for intersection
 
@@ -193,9 +193,9 @@ TEST(Interpolate_1st_Order, Cell_Ctr_Lin_2D) {
     sources_and_weights[c] = wtsvec;
   }
 
-  Portage::Interpolate_1stOrder<Portage::Jali_Mesh_Wrapper,
-                                Portage::Jali_Mesh_Wrapper,
-                                Portage::Jali_State_Wrapper,
+  Portage::Interpolate_1stOrder<Wonton::Jali_Mesh_Wrapper,
+                                Wonton::Jali_Mesh_Wrapper,
+                                Wonton::Jali_State_Wrapper,
                                 Portage::CELL, 2>
       interpolater(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper);
 
@@ -263,9 +263,9 @@ TEST(Interpolate_1st_Order, Node_Ctr_Const_2D) {
 
   // Create Interpolation objects
 
-  Portage::Jali_Mesh_Wrapper sourceMeshWrapper(*source_mesh);
-  Portage::Jali_Mesh_Wrapper targetMeshWrapper(*target_mesh);
-  Portage::Jali_State_Wrapper sourceStateWrapper(source_state);
+  Wonton::Jali_Mesh_Wrapper sourceMeshWrapper(*source_mesh);
+  Wonton::Jali_Mesh_Wrapper targetMeshWrapper(*target_mesh);
+  Wonton::Jali_State_Wrapper sourceStateWrapper(source_state);
 
   // Gather the dual cell coordinates for source and target meshes for
   // intersection
@@ -333,9 +333,9 @@ TEST(Interpolate_1st_Order, Node_Ctr_Const_2D) {
   std::vector<double> outvals(nnodes_target);
 
   Portage::Interpolate_1stOrder<
-    Portage::Jali_Mesh_Wrapper,
-    Portage::Jali_Mesh_Wrapper,
-    Portage::Jali_State_Wrapper,
+    Wonton::Jali_Mesh_Wrapper,
+    Wonton::Jali_Mesh_Wrapper,
+    Wonton::Jali_State_Wrapper,
     Portage::NODE, 2>
       interpolater(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper);
 
@@ -388,9 +388,9 @@ TEST(Interpolate_1st_Order, Cell_Ctr_Const_3D) {
                                   &(data[0]));
   source_state.add(myvec);
 
-  Portage::Jali_Mesh_Wrapper sourceMeshWrapper(*source_mesh);
-  Portage::Jali_Mesh_Wrapper targetMeshWrapper(*target_mesh);
-  Portage::Jali_State_Wrapper sourceStateWrapper(source_state);
+  Wonton::Jali_Mesh_Wrapper sourceMeshWrapper(*source_mesh);
+  Wonton::Jali_Mesh_Wrapper targetMeshWrapper(*target_mesh);
+  Wonton::Jali_State_Wrapper sourceStateWrapper(source_state);
 
   // Gather the cell coordinates for source and target meshes for intersection
 
@@ -432,9 +432,9 @@ TEST(Interpolate_1st_Order, Cell_Ctr_Const_3D) {
 
   // Create Interpolation object
 
-  Portage::Interpolate_1stOrder<Portage::Jali_Mesh_Wrapper,
-                                Portage::Jali_Mesh_Wrapper,
-                                Portage::Jali_State_Wrapper,
+  Portage::Interpolate_1stOrder<Wonton::Jali_Mesh_Wrapper,
+                                Wonton::Jali_Mesh_Wrapper,
+                                Wonton::Jali_State_Wrapper,
                                 Portage::CELL, 3>
       interpolater(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper);
 
@@ -488,9 +488,9 @@ TEST(Interpolate_1st_Order, Cell_Ctr_Lin_3D) {
                                   &(data[0]));
   source_state.add(myvec);
 
-  Portage::Jali_Mesh_Wrapper sourceMeshWrapper(*source_mesh);
-  Portage::Jali_Mesh_Wrapper targetMeshWrapper(*target_mesh);
-  Portage::Jali_State_Wrapper sourceStateWrapper(source_state);
+  Wonton::Jali_Mesh_Wrapper sourceMeshWrapper(*source_mesh);
+  Wonton::Jali_Mesh_Wrapper targetMeshWrapper(*target_mesh);
+  Wonton::Jali_State_Wrapper sourceStateWrapper(source_state);
 
   // Gather the cell coordinates for source and target meshes for intersection
 
@@ -531,9 +531,9 @@ TEST(Interpolate_1st_Order, Cell_Ctr_Lin_3D) {
 
   // Create Interpolation objects
 
-  Portage::Interpolate_1stOrder<Portage::Jali_Mesh_Wrapper,
-                                Portage::Jali_Mesh_Wrapper,
-                                Portage::Jali_State_Wrapper,
+  Portage::Interpolate_1stOrder<Wonton::Jali_Mesh_Wrapper,
+                                Wonton::Jali_Mesh_Wrapper,
+                                Wonton::Jali_State_Wrapper,
                                 Portage::CELL, 3>
       interpolater(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper);
 
@@ -598,9 +598,9 @@ TEST(Interpolate_1st_Order, Node_Ctr_Const_3D) {
                                   &(data[0]));
   source_state.add(myvec);
 
-  Portage::Jali_Mesh_Wrapper sourceMeshWrapper(*source_mesh);
-  Portage::Jali_Mesh_Wrapper targetMeshWrapper(*target_mesh);
-  Portage::Jali_State_Wrapper sourceStateWrapper(source_state);
+  Wonton::Jali_Mesh_Wrapper sourceMeshWrapper(*source_mesh);
+  Wonton::Jali_Mesh_Wrapper targetMeshWrapper(*target_mesh);
+  Wonton::Jali_State_Wrapper sourceStateWrapper(source_state);
 
 
   // Interpolate from source to target mesh
@@ -673,9 +673,9 @@ TEST(Interpolate_1st_Order, Node_Ctr_Const_3D) {
   // Create Interpolation object
 
   Portage::Interpolate_1stOrder<
-    Portage::Jali_Mesh_Wrapper,
-    Portage::Jali_Mesh_Wrapper,
-    Portage::Jali_State_Wrapper,
+    Wonton::Jali_Mesh_Wrapper,
+    Wonton::Jali_Mesh_Wrapper,
+    Wonton::Jali_State_Wrapper,
     Portage::NODE, 3>
       interpolater(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper);
 

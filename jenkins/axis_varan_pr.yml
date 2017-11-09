@@ -1,11 +1,13 @@
 # axis_varan_pr.yml
+# matrix of builds tested for pull requests on varan
 COMPILER:
   - intel
   - gcc
 
 BUILD_TYPE:
   - base
-  - debug
+  - serial
+  - thrust
   - flecsi
 
 exclude:

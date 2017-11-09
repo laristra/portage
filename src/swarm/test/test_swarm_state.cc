@@ -130,8 +130,8 @@ TEST(SwarmState, basic) {
 */
 TEST(Swarm, Flat_Mesh_Wrapper_Cell) {
   Portage::Simple_Mesh mesh(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2, 2, 2);
-  Portage::Simple_Mesh_Wrapper mesh_wrapper(mesh);
-  Portage::Flat_Mesh_Wrapper<double> mesh_flat;
+  Wonton::Simple_Mesh_Wrapper mesh_wrapper(mesh);
+  Wonton::Flat_Mesh_Wrapper<double> mesh_flat;
   mesh_flat.initialize(mesh_wrapper);
 
   int ncells = mesh_flat.num_owned_cells();
@@ -149,7 +149,7 @@ TEST(Swarm, Flat_Mesh_Wrapper_Cell) {
   std::vector<Portage::Entity_kind> entities = {Portage::NODE,
                                                 Portage::CELL};
   std::vector<std::string> names = {"nf1", "cf1"};
-  Portage::Flat_State_Wrapper<double> state_flat;
+  Wonton::Flat_State_Wrapper<double> state_flat;
   state_flat.initialize(names, entities, data);
 
   // create swarm state from mesh and state wrappers for cells
@@ -177,8 +177,8 @@ TEST(Swarm, Flat_Mesh_Wrapper_Cell) {
 */
 TEST(Swarm, Flat_Mesh_Wrapper_Node) {
   Portage::Simple_Mesh mesh(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2, 2, 2);
-  Portage::Simple_Mesh_Wrapper mesh_wrapper(mesh);
-  Portage::Flat_Mesh_Wrapper<double> mesh_flat;
+  Wonton::Simple_Mesh_Wrapper mesh_wrapper(mesh);
+  Wonton::Flat_Mesh_Wrapper<double> mesh_flat;
   mesh_flat.initialize(mesh_wrapper);
 
   int ncells = mesh_flat.num_owned_cells();
@@ -196,7 +196,7 @@ TEST(Swarm, Flat_Mesh_Wrapper_Node) {
   std::vector<Portage::Entity_kind> entities = {Portage::NODE,
                                                 Portage::CELL};
   std::vector<std::string> names = {"nf1", "cf1"};
-  Portage::Flat_State_Wrapper<double> state_flat;
+  Wonton::Flat_State_Wrapper<double> state_flat;
   state_flat.initialize(names, entities, data);
 
   // create swarm state from mesh and state wrappers for nodes

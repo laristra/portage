@@ -24,8 +24,9 @@ Please see the license file at the root of this repository, or at:
 #include "portage/support/portage.h"
 #include "portage/support/Point.h"
 
-namespace Portage {
+namespace Wonton {
 
+using namespace Portage;
 /*!
   \class Flat_Mesh_Wrapper flat_mesh_wrapper.h
   \brief Flat_Mesh_Wrapper implements mesh methods
@@ -469,44 +470,119 @@ class Flat_Mesh_Wrapper : public AuxMeshTopology<Flat_Mesh_Wrapper<>> {
       node_get_coordinates(nodes[i], &((*pplist)[i]));
   }
 
+  
   //! get coordinates
   std::vector<T>& get_coords() { return nodeCoords_; }
 
-  //! get node counts
-  std::vector<int>& get_node_counts() { return cellNodeCounts_; }
+  /// cell --> node 
+  //! get/set cell to node lists
+  std::vector<int>& get_cell_to_node_list() { return cellToNodeList_; }
+  
+  void set_cell_to_node_list(std::vector<int>& cellToNodeList) 
+  { cellToNodeList_ = cellToNodeList; }
+  
+  //! get/set cell node counts
+  std::vector<int>& get_cell_node_counts() { return cellNodeCounts_; }
+  
+  void set_cell_node_counts(std::vector<int>& cellNodeCounts) 
+  { cellNodeCounts_ = cellNodeCounts; }
+  
+  //! get cell node offsets
+  std::vector<int>& get_cell_node_offsets() { return cellNodeOffsets_; }
 
+  /// cell --> face
+  //! get/set cell to face list
+  std::vector<int>& get_cell_to_face_list() { return cellToFaceList_; }
+  
+  void set_cell_to_face_list(std::vector<int>& cellToFaceList) 
+  { cellToFaceList_ = cellToFaceList; }
+
+  //! get/set cell to face dirs
+  std::vector<bool>& get_cell_to_face_dirs() { return cellToFaceDirs_; }
+  
+  void set_cell_to_face_dirs(std::vector<bool>& cellToFaceDirs) 
+  { cellToFaceDirs_ = cellToFaceDirs; }
+
+  //! get/set cell  face counts
+  std::vector<int>& get_cell_face_counts() { return cellFaceCounts_; }
+
+  void set_cell_face_counts(std::vector<int>& cellFaceCounts) 
+  { cellFaceCounts_ = cellFaceCounts; }
+
+  //! get cell face offsets
+  std::vector<int>& get_cell_face_offsets() { return cellFaceOffsets_; }
+
+  /// face --> node
+  //! get/set face to node list
+  std::vector<int>& get_face_to_node_list() { return faceToNodeList_; }
+  
+  void set_face_to_node_list(std::vector<int>& faceToNodeList) 
+  { faceToNodeList_ = faceToNodeList; }
+
+  //! get/set face node counts
+  std::vector<int>& get_face_node_counts() { return faceNodeCounts_; }
+ 
+  void set_face_node_counts(std::vector<int>& faceNodeCounts)
+  { faceNodeCounts_ = faceNodeCounts; }
+
+  //! get face node offsets
+  std::vector<int>& get_face_node_offsets() { return faceNodeOffsets_; }
+
+  /// node --> cell
+  //! get node to cell list
+  std::vector<int>& get_node_to_cell_list() { return nodeToCellList_; }
+
+  //! get node cell counts
+  std::vector<int>& get_node_cell_counts() { return nodeCellCounts_; }
+
+  //! get node cell offsets
+  std::vector<int>& get_node_cell_offsets() { return nodeCellOffsets_; }
+
+ 
   //! get global cell ids
   std::vector<int>& get_global_cell_ids() { return cellGlobalIds_; }
+  
+  //! get global node ids
+  std::vector<int>& get_global_node_ids() { return nodeGlobalIds_; }
+ 
+  void set_node_global_ids(std::vector<int>& nodeGlobalIds) 
+  { nodeGlobalIds_ = nodeGlobalIds; }
 
   //! set the number of owned cells
-  void set_num_owned_cells(int numOwnedCells) { numOwnedCells_ = numOwnedCells; }
+  void set_num_owned_cells(int numOwnedCells) 
+  { numOwnedCells_ = numOwnedCells; }
+
+  //! set the number of owned cells
+  void set_num_owned_faces(int numOwnedFaces) 
+  { numOwnedFaces_ = numOwnedFaces; }
 
   //! set the number of owned nodes
-  void set_num_owned_nodes(int numOwnedNodes) { numOwnedNodes_ = numOwnedNodes; }
+  void set_num_owned_nodes(int numOwnedNodes) 
+  { numOwnedNodes_ = numOwnedNodes; }
 
   //! get spatial dimension
   int space_dimension() const { return dim_; }
 
 private:
-  friend class MPI_Bounding_Boxes;
-  std::vector<T> nodeCoords_;
-  std::vector<int> cellToNodeList_;
-  std::vector<int> cellNodeCounts_;
-  std::vector<int> cellNodeOffsets_;
-  std::vector<int> cellToFaceList_;
-  std::vector<bool> cellToFaceDirs_;
-  // unused in 2D (identical to cellNodeCounts_)
-  std::vector<int> cellFaceCounts_;
-  // unused in 2D (identical to cellNodeOffsets_)
-  std::vector<int> cellFaceOffsets_;
-  std::vector<int> faceToNodeList_;
-  std::vector<int> faceNodeCounts_; // unused in 2D (always 2)
-  std::vector<int> faceNodeOffsets_; // unused in 2D (can be computed)
-  std::vector<int> nodeToCellList_;
-  std::vector<int> nodeCellCounts_;
-  std::vector<int> nodeCellOffsets_;
-  std::vector<int> cellGlobalIds_;
-  std::vector<int> nodeGlobalIds_;
+
+  std::vector<T>    nodeCoords_;
+  std::vector<int>  cellToNodeList_;
+  std::vector<int>  cellNodeCounts_;
+  std::vector<int>  cellNodeOffsets_;
+  std::vector<int>  cellToFaceList_;
+  std::vector<bool> cellToFaceDirs_;  // unused in 2D (identical 
+                                      // to cellNodeCounts_)
+  std::vector<int>  cellFaceCounts_;  // unused in 2D (identical 
+                                      // to cellNodeOffsets_)
+  std::vector<int>  cellFaceOffsets_;
+  std::vector<int>  faceToNodeList_;
+  std::vector<int>  faceNodeCounts_;  // unused in 2D (always 2)
+  std::vector<int>  faceNodeOffsets_; // unused in 2D (can be computed)
+  std::vector<int>  nodeToCellList_;
+  std::vector<int>  nodeCellCounts_;
+  std::vector<int>  nodeCellOffsets_;
+  std::vector<int>  cellGlobalIds_;
+  std::vector<int>  nodeGlobalIds_;
   int dim_;
   int numOwnedCells_;
   int numOwnedFaces_;
@@ -516,7 +592,7 @@ private:
 
 //! Get radius of minimum-enclosing-sphere of a cell centered at the centroid
 template<size_t D>
-void cell_radius(Portage::Flat_Mesh_Wrapper<double> &wrapper,
+void cell_radius(Wonton::Flat_Mesh_Wrapper<double> &wrapper,
                  int const cellid, double *radius) {
   Point<D> centroid;
   wrapper.cell_centroid<D>(cellid, &centroid);
@@ -537,7 +613,7 @@ void cell_radius(Portage::Flat_Mesh_Wrapper<double> &wrapper,
 
 //! Get radius of minimum-enclosing-sphere of all nodes connected by a cell
 template<size_t D>
-void node_radius(Portage::Flat_Mesh_Wrapper<double> &wrapper,
+void node_radius(Wonton::Flat_Mesh_Wrapper<double> &wrapper,
                  int const nodeid, double *radius) {
   std::vector<int> nodes;
   wrapper.node_get_cell_adj_nodes(nodeid, ALL, &nodes);
@@ -555,6 +631,6 @@ void node_radius(Portage::Flat_Mesh_Wrapper<double> &wrapper,
   }
 }
 
-} // end namespace Portage
+} // end namespace Wonton
 
 #endif // FLAT_MESH_WRAPPER_H_

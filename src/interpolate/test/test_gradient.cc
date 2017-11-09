@@ -69,26 +69,26 @@ TEST(Gradient, Fields_Cell_Ctr) {
                                    &(data2[0]));
   Jali::StateVector<double> &addvec2 = mystate.add(myvec2);
 
-  Portage::Jali_Mesh_Wrapper meshwrapper(*mesh1);
-  Portage::Jali_State_Wrapper statewrapper(mystate);
+  Wonton::Jali_Mesh_Wrapper meshwrapper(*mesh1);
+  Wonton::Jali_State_Wrapper statewrapper(mystate);
 
   // Create Gradient objects
 
-  Portage::Limited_Gradient<Portage::Jali_Mesh_Wrapper,
-                            Portage::Jali_State_Wrapper,
+  Portage::Limited_Gradient<Wonton::Jali_Mesh_Wrapper,
+                            Wonton::Jali_State_Wrapper,
                             Portage::CELL, 2>
       gradcalc1(meshwrapper, statewrapper, "cellvars1", Portage::NOLIMITER);
-  Portage::Limited_Gradient<Portage::Jali_Mesh_Wrapper,
-                            Portage::Jali_State_Wrapper,
+  Portage::Limited_Gradient<Wonton::Jali_Mesh_Wrapper,
+                            Wonton::Jali_State_Wrapper,
                             Portage::CELL, 2>
       gradcalc2(meshwrapper, statewrapper, "cellvars2", Portage::NOLIMITER);
-  Portage::Limited_Gradient<Portage::Jali_Mesh_Wrapper,
-                            Portage::Jali_State_Wrapper,
+  Portage::Limited_Gradient<Wonton::Jali_Mesh_Wrapper,
+                            Wonton::Jali_State_Wrapper,
                             Portage::CELL, 2>
       gradcalc3(meshwrapper, statewrapper, "cellvars1",
                 Portage::BARTH_JESPERSEN);
-  Portage::Limited_Gradient<Portage::Jali_Mesh_Wrapper,
-                            Portage::Jali_State_Wrapper,
+  Portage::Limited_Gradient<Wonton::Jali_Mesh_Wrapper,
+                            Wonton::Jali_State_Wrapper,
                             Portage::CELL, 2>
       gradcalc4(meshwrapper, statewrapper, "cellvars2",
                 Portage::BARTH_JESPERSEN);
@@ -200,24 +200,24 @@ TEST(Gradient, Fields_Node_Ctr) {
 
   // Create Gradient calculater objects
 
-  Portage::Jali_Mesh_Wrapper meshwrapper(*mesh1);
-  Portage::Jali_State_Wrapper statewrapper(mystate);
+  Wonton::Jali_Mesh_Wrapper meshwrapper(*mesh1);
+  Wonton::Jali_State_Wrapper statewrapper(mystate);
 
-  Portage::Limited_Gradient<Portage::Jali_Mesh_Wrapper,
-                            Portage::Jali_State_Wrapper,
+  Portage::Limited_Gradient<Wonton::Jali_Mesh_Wrapper,
+                            Wonton::Jali_State_Wrapper,
                             Portage::NODE, 2>
       gradcalc1(meshwrapper, statewrapper, "nodevars1", Portage::NOLIMITER);
-  Portage::Limited_Gradient<Portage::Jali_Mesh_Wrapper,
-                            Portage::Jali_State_Wrapper,
+  Portage::Limited_Gradient<Wonton::Jali_Mesh_Wrapper,
+                            Wonton::Jali_State_Wrapper,
                             Portage::NODE, 2>
       gradcalc2(meshwrapper, statewrapper, "nodevars2", Portage::NOLIMITER);
-  Portage::Limited_Gradient<Portage::Jali_Mesh_Wrapper,
-                            Portage::Jali_State_Wrapper,
+  Portage::Limited_Gradient<Wonton::Jali_Mesh_Wrapper,
+                            Wonton::Jali_State_Wrapper,
                             Portage::NODE, 2>
       gradcalc3(meshwrapper, statewrapper, "nodevars1",
                 Portage::BARTH_JESPERSEN);
-  Portage::Limited_Gradient<Portage::Jali_Mesh_Wrapper,
-                            Portage::Jali_State_Wrapper,
+  Portage::Limited_Gradient<Wonton::Jali_Mesh_Wrapper,
+                            Wonton::Jali_State_Wrapper,
                             Portage::NODE, 2>
       gradcalc4(meshwrapper, statewrapper, "nodevars2",
                 Portage::BARTH_JESPERSEN);

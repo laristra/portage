@@ -35,9 +35,9 @@ public:
   using mesh_t = mesh_3d_t;
 
   //! \brief the portage mesh wrapper type
-  using flecsi_mesh_t = wonton::flecsi_mesh_t<mesh_t>;
+  using flecsi_mesh_t = Wonton::flecsi_mesh_t<mesh_t>;
   //! \brief the portage state wrapper typename
-  using flecsi_state_t = wonton::flecsi_state_t<mesh_t>;
+  using flecsi_state_t = Wonton::flecsi_state_t<mesh_t>;
   //! \brief The portage driver type
   using portage_1st_order_driver_t =
     Portage::Driver<

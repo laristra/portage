@@ -55,9 +55,9 @@ class SwarmState {
    * @param entity entity on which to get data (e.g. CELL, NODE, etc.)
    * @param state the field data on the mesh
    */
-  SwarmState(Portage::Flat_Mesh_Wrapper<double> &mesh,
+  SwarmState(Wonton::Flat_Mesh_Wrapper<double> &mesh,
 	     Portage::Entity_kind entity, 
-	     Portage::Flat_State_Wrapper<double> &state);
+	     Wonton::Flat_State_Wrapper<double> &state);
 
   /*! @brief Set an integer field on the swarm.
    * @param name the name of the integer field
@@ -144,9 +144,9 @@ class SwarmState {
 //=======================================================================
 
 template<size_t dim>
-SwarmState<dim>::SwarmState(Portage::Flat_Mesh_Wrapper<double> &mesh,
+SwarmState<dim>::SwarmState(Wonton::Flat_Mesh_Wrapper<double> &mesh,
                                  Portage::Entity_kind entity,
-				 Portage::Flat_State_Wrapper<double> &state)
+				 Wonton::Flat_State_Wrapper<double> &state)
   : num_particles_(0)
 {
   if (dim != mesh.space_dimension()) {
