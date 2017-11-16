@@ -28,7 +28,7 @@
             "includePath": [
                 "/usr/include",
                 "/usr/local/include",
-                "${workspaceRoot}"
+                "${workspaceRoot}/src/swarm"
             ],
             "defines": [],
             "intelliSenseMode": "clang-x64",
@@ -38,8 +38,8 @@
                     "/usr/local/include",
                     "${workspaceRoot}"
                 ],
-                "limitSymbolsToIncludedHeaders": true,
-                "databaseFilename": ""
+                "limitSymbolsToIncludedHeaders": false,
+                "databaseFilename": "${workspaceRoot}/.vscode/symbols"
             }
         },
         {
