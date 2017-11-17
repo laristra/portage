@@ -17,6 +17,9 @@ Please see the license file at the root of this repository, or at:
 #include <iostream>
 #include <type_traits>
 
+#include "tangram/driver/driver.h"
+#include "tangram/reconstruct/xmof2D_wrapper.h"
+
 #include "portage/support/portage.h"
 #include "portage/support/Point.h"
 #include "portage/search/search_kdtree.h"
@@ -483,6 +486,31 @@ class Driver {
       gettimeofday(&end_timeval, 0);
       timersub(&end_timeval, &begin_timeval, &diff_timeval);
       tot_seconds_srch = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
+
+
+      // INTERFACE RECONSTRUCTION (BUT RIGHT NOW WE ARE NOT USING IT)
+      // Normally we would get the interface reconstructor sent in but
+      // we don't want to change the signature for the portage driver
+      // until we are really ready, so we will just use XMOF2D
+
+      Tangram::Driver<Tangram::XMOF2D_Wrapper, 2, SourceMesh_Wrapper>
+          interface_reconstructor(source_mesh_);
+      
+      // Since we don't really have multiple materials and volume
+      // fractions of those materials in cells, we will pretend that
+      // we have two materials in each cell and that the volume
+      // fraction of each material in each cell is 0.5
+
+      int nmats = 2;
+      int nsourcecells = source_mesh_.num_entities(CELL, ALL);
+      std::vector<int> cell_num_mats(nsourcecells, nmats);
+      std::vector<int> cell_mat_ids(nsourcecells*nmats);
+      std::vector<double> cell_mat_volfracs(nsourcecells*nmats, 0.5);
+      interface_reconstructor.set_volume_fractions(cell_num_mats,
+                                                   cell_mat_ids,
+                                                   cell_mat_volfracs);
+      interface_reconstructor.reconstruct();
+
 
       // INTERSECT
 
