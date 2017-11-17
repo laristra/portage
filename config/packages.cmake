@@ -148,6 +148,35 @@ if (NANOFLANN_DIR)
     endif (nanoflann_FOUND)
 endif (NANOFLANN_DIR)
 
+#------------------------------------------------------------------------------#
+# Find Tangram (includes only package)
+#------------------------------------------------------------------------------#
+
+if (TANGRAM_DIR)
+  find_path(TANGRAM
+  	    REQUIRED
+            tangram/support/tangram.h
+            HINTS ${TANGRAM_DIR}/include)
+  message(STATUS "TANGRAM FOUND? ${TANGRAM}")
+  if (TANGRAM)
+    set(TANGRAM_FOUND ON)
+    set(TANGRAM_INCLUDE_DIRS ${TANGRAM_DIR}/include)
+    include_directories(${TANGRAM_INCLUDE_DIRS})
+  endif (TANGRAM)
+else (TANGRAM_DIR)
+  message(STATUS "TANGRAM_DIR not specified. Restricted to single material remap")
+endif (TANGRAM_DIR)
+
+#------------------------------------------------------------------------------#
+# Find XMOF2D
+#------------------------------------------------------------------------------#
+
+find_package(XMOF2D
+             HINTS ${XMOF2D_DIR})
+if (XMOF2D_FOUND)
+  include_directories(${XMOF2D_INCLUDE_DIRS})
+endif (XMOF2D_FOUND)
+
 #-----------------------------------------------------------------------------
 # General NGC include directory information
 #-----------------------------------------------------------------------------
