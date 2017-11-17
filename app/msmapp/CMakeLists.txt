@@ -9,9 +9,9 @@ Please see the license file at the root of this repository, or at:
 # Add a rule to build the executable
 #------------------------------------------------------------------------------#
 
-# Swarm test
-add_executable(swarmapp swarmapp.cc)
-target_link_libraries(swarmapp portage
+# Msm test
+add_executable(msmapp msmapp.cc)
+target_link_libraries(msmapp portage
   ${EXTRA_LIBS} ${LAPACKE_LIBRARIES} ${MPI_CXX_LIBRARIES})
 
 
@@ -20,7 +20,7 @@ set(ENABLE_TCMALLOC TRUE CACHE BOOL "Use TCMalloc")
 if(ENABLE_TCMALLOC)
   set(TCMALLOC_LIB "${HOME}" CACHE STRING "Set the TCMalloc library")
 
-  target_link_libraries(swarmapp ${TCMALLOC_LIB})
+  target_link_libraries(msmapp ${TCMALLOC_LIB})
 endif(ENABLE_TCMALLOC)
 
 # Profiling option (to allow pausing and resuming profiling during execution)
@@ -31,7 +31,7 @@ if(ENABLE_PROFILE)
 
   include_directories(${VTUNE_INCLUDE_DIR})
 
-  target_link_libraries(swarmapp ${VTUNE_LIB})
+  target_link_libraries(msmapp ${VTUNE_LIB})
 endif(ENABLE_PROFILE)
 
 

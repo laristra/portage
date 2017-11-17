@@ -41,6 +41,7 @@ Please see the license file at the root of this repository, or at:
 
 namespace Portage {
 
+using namespace Wonton;
   /*!
     @class MeshWrapperDual "driver.h"
     @brief Wrapper for dual mesh.
@@ -604,13 +605,13 @@ class Driver {
 
       tot_seconds = tot_seconds_srch + tot_seconds_xsect + tot_seconds_interp;
 
-      std::cout << "Transform Time Rank " << comm_rank << " (s): " <<
+      std::cout << "Cell Transform Time Rank " << comm_rank << " (s): " <<
           tot_seconds << std::endl;
-      std::cout << "  Search Time Rank " << comm_rank << " (s): " <<
+      std::cout << "  Cell Search Time Rank " << comm_rank << " (s): " <<
           tot_seconds_srch << std::endl;
-      std::cout << "  Intersect Time Rank " << comm_rank << " (s): " <<
+      std::cout << "  Cell Intersect Time Rank " << comm_rank << " (s): " <<
           tot_seconds_xsect << std::endl;
-      std::cout << "  Interpolate Time Rank " << comm_rank << " (s): " <<
+      std::cout << "  Cell Interpolate Time Rank " << comm_rank << " (s): " <<
           tot_seconds_interp << std::endl;
     }
 
@@ -816,13 +817,13 @@ class Driver {
 
       tot_seconds = tot_seconds_srch + tot_seconds_xsect + tot_seconds_interp;
 
-      std::cout << "Transform Time Rank " << comm_rank << " (s): " <<
+      std::cout << "Node Transform Time Rank " << comm_rank << " (s): " <<
           tot_seconds << std::endl;
-      std::cout << "  Search Time Rank " << comm_rank << " (s): " <<
+      std::cout << "  Node Search Time Rank " << comm_rank << " (s): " <<
           tot_seconds_srch << std::endl;
-      std::cout << "  Intersect Time Rank " << comm_rank << " (s): " <<
+      std::cout << "  Node Intersect Time Rank " << comm_rank << " (s): " <<
           tot_seconds_xsect << std::endl;
-      std::cout << "  Interpolate Time Rank " << comm_rank << " (s): " <<
+      std::cout << "  Node Interpolate Time Rank " << comm_rank << " (s): " <<
           tot_seconds_interp << std::endl;
     }
 

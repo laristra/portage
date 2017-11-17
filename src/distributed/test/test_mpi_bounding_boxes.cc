@@ -38,26 +38,26 @@ TEST(MPI_Bounding_Boxes, SimpleTest3D) {
   // Source mesh
   std::shared_ptr<Jali::Mesh> source_mesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0,
         2, 2, 2);
-  Portage::Jali_Mesh_Wrapper inputMeshWrapper(*source_mesh);
+  Wonton::Jali_Mesh_Wrapper inputMeshWrapper(*source_mesh);
   Jali::State state(source_mesh);
-  Portage::Jali_State_Wrapper wrapper(state);
+  Wonton::Jali_State_Wrapper wrapper(state);
 
   state.add("d1", source_mesh, Jali::Entity_kind::CELL,
             Jali::Entity_type::ALL, dtest1);
   state.add("d2", source_mesh, Jali::Entity_kind::CELL,
             Jali::Entity_type::ALL, dtest2);
 
-  Portage::Flat_Mesh_Wrapper<> source_mesh_flat;
+  Wonton::Flat_Mesh_Wrapper<> source_mesh_flat;
   source_mesh_flat.initialize(inputMeshWrapper);
-  Portage::Flat_State_Wrapper<> source_state_flat;
+  Wonton::Flat_State_Wrapper<> source_state_flat;
   source_state_flat.initialize(wrapper, {"d1", "d2"});
 
   // Target mesh
   std::shared_ptr<Jali::Mesh> target_mesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0,
         3, 3, 3);
-  Portage::Jali_Mesh_Wrapper target_mesh_(*target_mesh);
+  Wonton::Jali_Mesh_Wrapper target_mesh_(*target_mesh);
   Jali::State target_state(target_mesh);
-  Portage::Jali_State_Wrapper target_state_(target_state);
+  Wonton::Jali_State_Wrapper target_state_(target_state);
 
   // Use a bounding box distributor to send the source cells to the target
   // partitions where they are needed
@@ -194,24 +194,24 @@ TEST(MPI_Bounding_Boxes, SimpleTest2D) {
   //   0  4  8 12
   // This is computed by swapping the middle 2 bits of the 4-bit gid.
   std::shared_ptr<Jali::Mesh> source_mesh = mf(0.0, 0.0, 1.0, 1.0, 4, 4);
-  Portage::Jali_Mesh_Wrapper inputMeshWrapper(*source_mesh);
+  Wonton::Jali_Mesh_Wrapper inputMeshWrapper(*source_mesh);
   Jali::State state(source_mesh);
-  Portage::Jali_State_Wrapper wrapper(state);
+  Wonton::Jali_State_Wrapper wrapper(state);
 
   state.add("d1", source_mesh, Jali::Entity_kind::CELL,
             Jali::Entity_type::ALL, dtest1);
   state.add("d2", source_mesh, Jali::Entity_kind::CELL,
             Jali::Entity_type::ALL, dtest2);
 
-  Portage::Flat_Mesh_Wrapper<> source_mesh_flat;
+  Wonton::Flat_Mesh_Wrapper<> source_mesh_flat;
   source_mesh_flat.initialize(inputMeshWrapper);
-  Portage::Flat_State_Wrapper<> source_state_flat;
+  Wonton::Flat_State_Wrapper<> source_state_flat;
   source_state_flat.initialize(wrapper, {"d1", "d2"});
   // Target mesh
   std::shared_ptr<Jali::Mesh> target_mesh = mf(0.0, 0.0, 1.0, 1.0, 3, 3);
-  Portage::Jali_Mesh_Wrapper target_mesh_(*target_mesh);
+  Wonton::Jali_Mesh_Wrapper target_mesh_(*target_mesh);
   Jali::State target_state(target_mesh);
-  Portage::Jali_State_Wrapper target_state_(target_state);
+  Wonton::Jali_State_Wrapper target_state_(target_state);
 
   // Use a bounding box distributor to send the source cells to the target
   // partitions where they are needed

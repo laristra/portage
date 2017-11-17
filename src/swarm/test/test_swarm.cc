@@ -59,8 +59,8 @@ TEST(Swarm, Sanity_Check) {
 */
 TEST(Swarm, Build_Flat_Mesh_Wrapper_Cell) {
   Portage::Simple_Mesh mesh(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2, 2, 2);
-  Portage::Simple_Mesh_Wrapper mesh_wrapper(mesh);
-  Portage::Flat_Mesh_Wrapper<double> mesh_flat;
+  Wonton::Simple_Mesh_Wrapper mesh_wrapper(mesh);
+  Wonton::Flat_Mesh_Wrapper<double> mesh_flat;
   mesh_flat.initialize(mesh_wrapper);
 
   // create swarm from mesh wrapper cells
@@ -84,8 +84,8 @@ TEST(Swarm, Build_Flat_Mesh_Wrapper_Cell) {
 */
 TEST(Swarm, Build_Flat_Mesh_Wrapper_Node) {
   Portage::Simple_Mesh mesh(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2, 2, 2);
-  Portage::Simple_Mesh_Wrapper mesh_wrapper(mesh);
-  Portage::Flat_Mesh_Wrapper<double> mesh_flat;
+  Wonton::Simple_Mesh_Wrapper mesh_wrapper(mesh);
+  Wonton::Flat_Mesh_Wrapper<double> mesh_flat;
   mesh_flat.initialize(mesh_wrapper);
 
   // create swarm from mesh wrapper cells

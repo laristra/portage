@@ -92,13 +92,11 @@ if (ENABLE_UNIT_TESTS)
    cinch_add_unit(test_simple_mesh_wrapper
      SOURCES mesh/simple_mesh/test/test_simple_mesh_wrapper.cc
      LIBRARIES portage
-     POLICY MPI
-     THREADS 1)
+     POLICY SERIAL)
    # Simple State wrapper
    cinch_add_unit(test_simple_state_wrapper
      SOURCES state/simple_state/test/test_simple_state_wrapper.cc
      LIBRARIES portage
-     POLICY MPI
-     THREADS 1)
+     POLICY SERIAL)
 endif(ENABLE_UNIT_TESTS)
 

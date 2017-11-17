@@ -25,7 +25,7 @@ Please see the license file at the root of this repository, or at:
   @brief Wrapper for interfacing with the Flat state manager
  */
 
-namespace Portage {
+namespace Wonton {
 
 /*!
   @class Flat_State_Wrapper "flat_state_wrapper.h"
@@ -315,6 +315,6 @@ private:
   }
 }; // Flat_State_Wrapper
 
-} // namespace Portage
+} // namespace Wonton
 
 #endif // FLAT_STATE_WRAPPER_H_

@@ -84,35 +84,35 @@ TEST(Quadfit, Fields_Cell_Ctr) {
                                    &(data3[0]));
   Jali::StateVector<double> &addvec3 = mystate.add(myvec3);
 
-  Portage::Jali_Mesh_Wrapper meshwrapper(*mesh1);
-  Portage::Jali_State_Wrapper statewrapper(mystate);
+  Wonton::Jali_Mesh_Wrapper meshwrapper(*mesh1);
+  Wonton::Jali_State_Wrapper statewrapper(mystate);
 
   // Create Quadfit objects
 
-  Portage::Limited_Quadfit<Portage::Jali_Mesh_Wrapper,
-                            Portage::Jali_State_Wrapper,
+  Portage::Limited_Quadfit<Wonton::Jali_Mesh_Wrapper,
+                            Wonton::Jali_State_Wrapper,
                             Portage::CELL, 2>
       qfitcalc1(meshwrapper, statewrapper, "cellvars1", Portage::NOLIMITER);
-  Portage::Limited_Quadfit<Portage::Jali_Mesh_Wrapper,
-                            Portage::Jali_State_Wrapper,
+  Portage::Limited_Quadfit<Wonton::Jali_Mesh_Wrapper,
+                            Wonton::Jali_State_Wrapper,
                             Portage::CELL, 2>
       qfitcalc2(meshwrapper, statewrapper, "cellvars2", Portage::NOLIMITER);
-  Portage::Limited_Quadfit<Portage::Jali_Mesh_Wrapper,
-                            Portage::Jali_State_Wrapper,
+  Portage::Limited_Quadfit<Wonton::Jali_Mesh_Wrapper,
+                            Wonton::Jali_State_Wrapper,
                             Portage::CELL, 2>
       qfitcalc3(meshwrapper, statewrapper, "cellvars3", Portage::NOLIMITER);
-  Portage::Limited_Quadfit<Portage::Jali_Mesh_Wrapper,
-                            Portage::Jali_State_Wrapper,
+  Portage::Limited_Quadfit<Wonton::Jali_Mesh_Wrapper,
+                            Wonton::Jali_State_Wrapper,
                             Portage::CELL, 2>
       qfitcalc4(meshwrapper, statewrapper, "cellvars1",
                 Portage::BARTH_JESPERSEN);
-  Portage::Limited_Quadfit<Portage::Jali_Mesh_Wrapper,
-                            Portage::Jali_State_Wrapper,
+  Portage::Limited_Quadfit<Wonton::Jali_Mesh_Wrapper,
+                            Wonton::Jali_State_Wrapper,
                             Portage::CELL, 2>
       qfitcalc5(meshwrapper, statewrapper, "cellvars2",
                 Portage::BARTH_JESPERSEN);
-  Portage::Limited_Quadfit<Portage::Jali_Mesh_Wrapper,
-                            Portage::Jali_State_Wrapper,
+  Portage::Limited_Quadfit<Wonton::Jali_Mesh_Wrapper,
+                            Wonton::Jali_State_Wrapper,
                             Portage::CELL, 2>
       qfitcalc6(meshwrapper, statewrapper, "cellvars3",
                 Portage::BARTH_JESPERSEN);
@@ -285,33 +285,33 @@ TEST(Quadfit, Fields_Node_Ctr) {
 
   // Create Quadfit calculater objects
 
-  Portage::Jali_Mesh_Wrapper meshwrapper(*mesh1);
-  Portage::Jali_State_Wrapper statewrapper(mystate);
+  Wonton::Jali_Mesh_Wrapper meshwrapper(*mesh1);
+  Wonton::Jali_State_Wrapper statewrapper(mystate);
 
-  Portage::Limited_Quadfit<Portage::Jali_Mesh_Wrapper,			     
-  			    Portage::Jali_State_Wrapper,		     
+  Portage::Limited_Quadfit<Wonton::Jali_Mesh_Wrapper,			     
+  			    Wonton::Jali_State_Wrapper,		     
   			    Portage::NODE, 2>				     
       qfitcalc1(meshwrapper, statewrapper, "nodevars1", Portage::NOLIMITER); 
-  Portage::Limited_Quadfit<Portage::Jali_Mesh_Wrapper,			     
-  			    Portage::Jali_State_Wrapper,		     
+  Portage::Limited_Quadfit<Wonton::Jali_Mesh_Wrapper,			     
+  			    Wonton::Jali_State_Wrapper,		     
   			    Portage::NODE, 2>				     
       qfitcalc2(meshwrapper, statewrapper, "nodevars2", Portage::NOLIMITER); 
-  Portage::Limited_Quadfit<Portage::Jali_Mesh_Wrapper,
-                            Portage::Jali_State_Wrapper,
+  Portage::Limited_Quadfit<Wonton::Jali_Mesh_Wrapper,
+                            Wonton::Jali_State_Wrapper,
                             Portage::NODE, 2>
       qfitcalc3(meshwrapper, statewrapper, "nodevars3", Portage::NOLIMITER);
-  Portage::Limited_Quadfit<Portage::Jali_Mesh_Wrapper,
-                            Portage::Jali_State_Wrapper,
+  Portage::Limited_Quadfit<Wonton::Jali_Mesh_Wrapper,
+                            Wonton::Jali_State_Wrapper,
                             Portage::NODE, 2>
       qfitcalc4(meshwrapper, statewrapper, "nodevars1",
                 Portage::BARTH_JESPERSEN);
-  Portage::Limited_Quadfit<Portage::Jali_Mesh_Wrapper,
-                            Portage::Jali_State_Wrapper,
+  Portage::Limited_Quadfit<Wonton::Jali_Mesh_Wrapper,
+                            Wonton::Jali_State_Wrapper,
                             Portage::NODE, 2>
       qfitcalc5(meshwrapper, statewrapper, "nodevars2",
                 Portage::BARTH_JESPERSEN);
-  Portage::Limited_Quadfit<Portage::Jali_Mesh_Wrapper,
-                            Portage::Jali_State_Wrapper,
+  Portage::Limited_Quadfit<Wonton::Jali_Mesh_Wrapper,
+                            Wonton::Jali_State_Wrapper,
                             Portage::NODE, 2>
       qfitcalc6(meshwrapper, statewrapper, "nodevars3", 
                 Portage::BARTH_JESPERSEN);

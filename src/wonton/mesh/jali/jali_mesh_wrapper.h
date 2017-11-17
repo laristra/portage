@@ -24,7 +24,7 @@ Please see the license file at the root of this repository, or at:
 #include "portage/support/Point.h"
 
 
-namespace Portage {
+namespace Wonton {
 
 /*!
   \class Jali_Mesh_Wrapper jali_mesh_wrapper.h
@@ -133,22 +133,27 @@ class Jali_Mesh_Wrapper : public AuxMeshTopology<Jali_Mesh_Wrapper> {
   //! enum types to avoid switch statements
 
   Portage::Entity_type cell_get_type(int const cellid) const {
-    static Portage::Entity_type jali2portage_type[5] =
-        {DELETED, PARALLEL_OWNED, PARALLEL_GHOST, BOUNDARY_GHOST, ALL};
     Jali::Entity_type etype =
         jali_mesh_.entity_get_type(Jali::Entity_kind::CELL, cellid);
-    return jali2portage_type[static_cast<int>(etype)];
+    return jali2portage_type(etype);
+  }
+
+  //! Get the type of the node - PARALLEL_OWNED or PARALLEL_GHOST
+  //! Assumes a 1-1 correspondence between integer values of the
+  //! enum types to avoid switch statements
+
+  Portage::Entity_type node_get_type(int const nodeid) const {
+    Jali::Entity_type etype =
+        jali_mesh_.entity_get_type(Jali::Entity_kind::NODE, nodeid);
+    return jali2portage_type(etype);
   }
 
   //! Get the element type of a cell - TRI, QUAD, POLYGON, TET, HEX,
   //! PRISM OR POLYHEDRON
 
   Portage::Element_type cell_get_element_type(int const cellid) const {
-    static Portage::Element_type jali2portage_elemtype[9] =
-        {UNKNOWN_TOPOLOGY, TRI, QUAD, POLYGON, TET, PRISM, PYRAMID, HEX,
-         POLYHEDRON};
     Jali::Cell_type ctype = jali_mesh_.cell_get_type(cellid);
-    return jali2portage_elemtype[static_cast<int>(ctype)];
+    return jali2portage_elemtype(ctype);
   }
 
   //! Get cell faces and the directions in which they are used
@@ -177,33 +182,18 @@ class Jali_Mesh_Wrapper : public AuxMeshTopology<Jali_Mesh_Wrapper> {
                                        adjcells);
   }
 
-  //! \brief Get "adjacent" nodes of given node
-  //!
-  //! Get "adjacent" nodes of given node - nodes that share a common
-  //! cell with given node
-  void node_get_cell_adj_nodes(int const nodeid,
-                               Entity_type const ptype,
-                               std::vector<int> *adjnodes) const {
-    adjnodes->clear();
-
-    Jali::Entity_ID_List nodecells;
-    jali_mesh_.node_get_cells(nodeid, (Jali::Entity_type) ptype, &nodecells);
-
-    for (auto const& c : nodecells) {
-      Jali::Entity_ID_List cellnodes;
-      jali_mesh_.cell_get_nodes(c, &cellnodes);
-
-      for (auto const& n : cellnodes) {
-        if (n == nodeid) continue;
-        if (std::find(adjnodes->begin(), adjnodes->end(), n) == adjnodes->end())
-          adjnodes->emplace_back(n);
-      }
-    }
-  }
-
   //! Get nodes of a face
   void face_get_nodes(int const faceid, std::vector<int> *fnodes) const {
     jali_mesh_.face_get_nodes(faceid, fnodes);
+  }
+
+
+  //! Get cells of a node
+  void node_get_cells(int const nodeid,
+                      Entity_type const ptype,
+                      std::vector<int> *nodecells) const {
+    jali_mesh_.node_get_cells(nodeid, (Jali::Entity_type) ptype,
+                              nodecells);
   }
 
   //! Get global id
@@ -221,11 +211,24 @@ class Jali_Mesh_Wrapper : public AuxMeshTopology<Jali_Mesh_Wrapper> {
   }
 
  private:
-  Jali::Mesh const & jali_mesh_;
+
+  Portage::Entity_type jali2portage_type(Jali::Entity_type etype) const {
+    static Portage::Entity_type jali2portage_type_[5] =
+        {DELETED, PARALLEL_OWNED, PARALLEL_GHOST, BOUNDARY_GHOST, ALL};
+    return jali2portage_type_[static_cast<int>(etype)];
+  }
   
+  Portage::Element_type jali2portage_elemtype(Jali::Cell_type elemtype) const {
+    static Portage::Element_type jali2portage_elemtype_[9] =
+        {UNKNOWN_TOPOLOGY, TRI, QUAD, POLYGON, TET, PRISM, PYRAMID, HEX,
+         POLYHEDRON};
+    return jali2portage_elemtype_[static_cast<int>(elemtype)];
+  }
+    
+  Jali::Mesh const & jali_mesh_;
 };  // class Jali_Mesh_Wrapper
 
 
-}  // end namespace Portage
+}  // end namespace Wonton
 
 #endif // JALI_MESH_WRAPPER_H_

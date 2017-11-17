@@ -23,7 +23,7 @@
 #include <vector>
 #include <iostream>
 
-namespace wonton {
+namespace Wonton {
 namespace portage {
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -133,7 +133,7 @@ const typename portage_mesh_base_t<M>::shape_map_t
 ///  \brief Implements a mesh wrapper for Portage mesh queries.
 ////////////////////////////////////////////////////////////////////////////////
 template< typename M >
-class flecsi_mesh_t : public Portage::AuxMeshTopology<flecsi_mesh_t<M>> 
+class flecsi_mesh_t : public Wonton::AuxMeshTopology<flecsi_mesh_t<M>> 
 {
 
 public:
@@ -143,7 +143,7 @@ public:
   //============================================================================
 
   //! \brief the auxiliary class
-  using portage_mesh_aux_t = Portage::AuxMeshTopology<flecsi_mesh_t<M>>;
+  using portage_mesh_aux_t = Wonton::AuxMeshTopology<flecsi_mesh_t<M>>;
 
   //! \brief The mesh type
   using mesh_t = M;
@@ -386,57 +386,27 @@ public:
     //std::reverse( nodes->begin(), nodes->end() );
   }
 
-  //! Get node connected neighbors of cell
-  //! \param [in] cell_id  The id of the cell in question
-  //! \param [in] type  The type of indexes to include (ghost, shared, 
-  //!   all, etc...) 
-  //! \param [in,out] adj_cells  The list of cell neighbors to populate
-  template< typename T >
-  void cell_get_node_adj_cells(
-    size_t cell_id,
-    entity_type_t const type,
-    std::vector<T> *adj_cells
-  ) const 
-  {
-    auto this_cell = cells_[cell_id];
-    adj_cells->clear();
-    // Loop over all nodes of this cell
-    for (auto node : mesh_->vertices(this_cell)) {
-      // Loop over all cells associated with this node
-      for (auto cell : mesh_->cells(node)) {
-        if (cell != this_cell) {
-          adj_cells->emplace_back(cell.id());
-         }
-     }
-    }
-  }
-
-  //! \brief Get "adjacent" nodes of given node
+  //! \brief Get connected cells of given node
   //!
-  //! Get "adjacent" nodes of given node - nodes that share a common
-  //! cell with given node
+  //! Get connected cells of given node 
   //!
   //! \param [in] node_id  The node index
   //! \param [in] type  The type of indexes to include (ghost, shared, 
   //!   all, etc...) 
-  //! \param [in,out] adj_nodes  The list of node neighbors to populate
+  //! \param [in,out] adj_cells  The list of cell neighbors to populate
+  //!
+  //!  NOTE: For now we are not distinguishing between parallel types
   template< typename T >
-  void node_get_cell_adj_nodes(
+  void node_get_cells(
     size_t node_id,
     entity_type_t type,
-    std::vector<T> *adj_nodes
+    std::vector<T> *adj_cells
   ) const 
   {
+    adj_cells->clear();
     auto this_node = vertices_[node_id];
-    adj_nodes->clear();
-    // Loop over cells associated with this node
-    for (auto cell : mesh_->cells(this_node)) {
-      // Loop over nodes of this cell
-      for (auto node : mesh_->vertices(cell)) {
-        if (this_node != node)
-          adj_nodes->emplace_back(node.global_id());
-      }
-    }
+    for (auto cell : mesh_->cells(this_node))
+      adj_cells->emplace_back(cell.id());
   }
 
   //! @brief Get adjacent "dual cells" of a given "dual cell"
@@ -589,6 +559,8 @@ public:
   //! enum types to avoid switch statements
   //! 
   //! \param [in] cell_id  The index of the cell in question.
+  //!
+  //! NOTE: Currently FleCSI is not exposing this info
   auto cell_get_type(size_t cell_id) const 
   {
     return entity_type_t::PARALLEL_OWNED;
@@ -620,6 +592,19 @@ public:
        return element_type_t::HEX;
     else
       return element_type_t::UNKNOWN_TOPOLOGY;
+  }
+
+  //! \brief Get the type of the node - PARALLEL_OWNED or PARALLEL_GHOST
+  //!
+  //! Assumes a 1-1 correspondence between integer values of the
+  //! enum types to avoid switch statements
+  //! 
+  //! \param [in] cell_id  The index of the node in question.
+  //!
+  //! NOTE: Currently FleCSI is not exposing this info
+  auto node_get_type(size_t node_id) const 
+  {
+    return entity_type_t::PARALLEL_OWNED;
   }
 
   //! Get global id

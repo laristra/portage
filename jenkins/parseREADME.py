@@ -35,8 +35,7 @@ for host in scripts:
         scripts[host] += 'cd ..;rm -Rf build;'
         print scripts[host]
         sshHost = host.split(':')[0]
-        proc = subprocess.Popen(['ssh', '-T', "jenksrvngc@" + sshHost],
-                                stdin = subprocess.PIPE)
+        proc = subprocess.Popen(['bash'], stdin = subprocess.PIPE)
         print "opened process"
         proc.communicate("".join(scripts[host]))
         if proc.returncode:

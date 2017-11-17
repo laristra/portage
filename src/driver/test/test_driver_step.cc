@@ -39,10 +39,10 @@ class DriverTest : public ::testing::Test {
   Jali::State sourceState;
   Jali::State targetState;
   // Wrappers for interfacing with the underlying mesh data structures
-  Portage::Jali_Mesh_Wrapper sourceMeshWrapper;
-  Portage::Jali_Mesh_Wrapper targetMeshWrapper;
-  Portage::Jali_State_Wrapper sourceStateWrapper;
-  Portage::Jali_State_Wrapper targetStateWrapper;
+  Wonton::Jali_Mesh_Wrapper sourceMeshWrapper;
+  Wonton::Jali_Mesh_Wrapper targetMeshWrapper;
+  Wonton::Jali_State_Wrapper sourceStateWrapper;
+  Wonton::Jali_State_Wrapper targetStateWrapper;
 
   //This is the basic test method to be called for each unit test.  It will
   //work for 2-D and 3-D, coincident and non-coincident cell-centered remaps.
@@ -81,8 +81,8 @@ class DriverTest : public ::testing::Test {
     Portage::Driver<Portage::SearchKDTree,
     Intersect,
     Interpolate, Dimension,
-    Portage::Jali_Mesh_Wrapper, Portage::Jali_State_Wrapper,
-    Portage::Jali_Mesh_Wrapper, Portage::Jali_State_Wrapper>
+    Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
+    Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper>
     d(sourceMeshWrapper, sourceStateWrapper,targetMeshWrapper,
       targetStateWrapper);
     d.set_remap_var_names(remap_fields, limiter);
