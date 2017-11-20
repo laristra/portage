@@ -6,6 +6,8 @@ Please see the license file at the root of this repository, or at:
 #include "intersect_r3d.h"
 #include "gtest/gtest.h"
 #include "portage/wonton/mesh/simple_mesh/simple_mesh_wrapper.h"
+// #include "MeshFactory.hh"
+// #include "portage/wonton/mesh/jali/jali_mesh_wrapper.h"
 
 TEST(intersectR3D, simple1) {
   Portage::Simple_Mesh sm{0, 0, 0, 2, 2, 2, 1, 1, 1};
@@ -263,7 +265,7 @@ TEST(intersectR3D, simple9) {
   ASSERT_TRUE(std::abs(moments[0][2] / moments[0][0] - (-0.5)) < eps);
   ASSERT_TRUE(std::abs(moments[0][3] / moments[0][0] - (+0.5)) < eps);
 }
-
+/*
 // test intersecting a cube, read in from a file,
 // against itself
 TEST(intersectR3D, cube_self_intersection) {
@@ -285,11 +287,11 @@ TEST(intersectR3D, cube_self_intersection) {
   std::shared_ptr<Jali::Mesh> tm = mesh_factory("../test_data/1x3d.exo");
   ASSERT_TRUE(tm != NULL);
 
-  const Portage::Jali_Mesh_Wrapper s(*sm);
-  const Portage::Jali_Mesh_Wrapper t(*tm);
+  const Wonton::Jali_Mesh_Wrapper s(*sm);
+  const Wonton::Jali_Mesh_Wrapper t(*tm);
 
   const double eps = 1e-12;
-  const Portage::IntersectR3D<Portage::Jali_Mesh_Wrapper> isect{s, t};
+  const Portage::IntersectR3D<Wonton::Jali_Mesh_Wrapper> isect{s, t};
   const std::vector<std::vector<double>> moments = isect(0, 0);
   for (int i = 0; i < moments.size(); i++) {
     for (int j = 0; j < moments[i].size(); j++) {
@@ -328,11 +330,11 @@ TEST(intersectR3D, cube_0_5) {
   std::shared_ptr<Jali::Mesh> tm = mesh_factory("../test_data/cube_0.5.exo");
   ASSERT_TRUE(tm != NULL);
 
-  const Portage::Jali_Mesh_Wrapper s(*sm);
-  const Portage::Jali_Mesh_Wrapper t(*tm);
+  const Wonton::Jali_Mesh_Wrapper s(*sm);
+  const Wonton::Jali_Mesh_Wrapper t(*tm);
 
   const double eps = 1e-12;
-  const Portage::IntersectR3D<Portage::Jali_Mesh_Wrapper> isect{s, t};
+  const Portage::IntersectR3D<Wonton::Jali_Mesh_Wrapper> isect{s, t};
   const std::vector<std::vector<double>> moments = isect(0, 0);
   for (int i = 0; i < moments.size(); i++) {
     for (int j = 0; j < moments[i].size(); j++) {
@@ -369,11 +371,11 @@ TEST(intersectR3D, cube_no_intersect) {
   std::shared_ptr<Jali::Mesh> tm = mesh_factory("../test_data/cube_2.exo");
   ASSERT_TRUE(tm != NULL);
 
-  const Portage::Jali_Mesh_Wrapper s(*sm);
-  const Portage::Jali_Mesh_Wrapper t(*tm);
+  const Wonton::Jali_Mesh_Wrapper s(*sm);
+  const Wonton::Jali_Mesh_Wrapper t(*tm);
 
   const double eps = 1e-12;
-  const Portage::IntersectR3D<Portage::Jali_Mesh_Wrapper> isect{s, t};
+  const Portage::IntersectR3D<Wonton::Jali_Mesh_Wrapper> isect{s, t};
   const std::vector<std::vector<double>> moments = isect(0, 0);
   for (int i = 0; i < moments.size(); i++) {
     for (int j = 0; j < moments[i].size(); j++) {
@@ -411,11 +413,11 @@ TEST(intersectR3D, cube_0_1) {
   std::shared_ptr<Jali::Mesh> tm = mesh_factory("../test_data/cube_1.exo");
   ASSERT_TRUE(tm != NULL);
 
-  const Portage::Jali_Mesh_Wrapper s(*sm);
-  const Portage::Jali_Mesh_Wrapper t(*tm);
+  const Wonton::Jali_Mesh_Wrapper s(*sm);
+  const Wonton::Jali_Mesh_Wrapper t(*tm);
 
   const double eps = 1e-12;
-  const Portage::IntersectR3D<Portage::Jali_Mesh_Wrapper> isect{s, t};
+  const Portage::IntersectR3D<Wonton::Jali_Mesh_Wrapper> isect{s, t};
   const std::vector<std::vector<double>> moments = isect(0, 0);
   for (int i = 0; i < moments.size(); i++) {
     for (int j = 0; j < moments[i].size(); j++) {
@@ -432,3 +434,4 @@ TEST(intersectR3D, cube_0_1) {
   ASSERT_TRUE(std::abs(moments[0][2] - 0) < eps);
   ASSERT_TRUE(std::abs(moments[0][3] - 0) < eps);
 }
+*/
