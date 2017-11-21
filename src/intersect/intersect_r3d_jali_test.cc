@@ -22,11 +22,11 @@ TEST(intersectR3D, cube_self_intersection) {
        Jali::Entity_kind::WEDGE, Jali::Entity_kind::CORNER});
 
   // read the source exodus file
-  std::shared_ptr<Jali::Mesh> sm = mesh_factory("../test_data/1x3d.exo");
+  std::shared_ptr<Jali::Mesh> sm = mesh_factory("test/intersect/1x3d.exo");
   ASSERT_TRUE(sm != NULL);
 
   // read the target exodus file
-  std::shared_ptr<Jali::Mesh> tm = mesh_factory("../test_data/1x3d.exo");
+  std::shared_ptr<Jali::Mesh> tm = mesh_factory("test/intersect/1x3d.exo");
   ASSERT_TRUE(tm != NULL);
 
   const Wonton::Jali_Mesh_Wrapper s(*sm);
@@ -65,11 +65,11 @@ TEST(intersectR3D, cube_0_5) {
        Jali::Entity_kind::WEDGE, Jali::Entity_kind::CORNER});
 
   // read the source exodus file
-  std::shared_ptr<Jali::Mesh> sm = mesh_factory("../test_data/cube_0.exo");
+  std::shared_ptr<Jali::Mesh> sm = mesh_factory("test/intersect/cube_0.exo");
   ASSERT_TRUE(sm != NULL);
 
   // read the target exodus file
-  std::shared_ptr<Jali::Mesh> tm = mesh_factory("../test_data/cube_0.5.exo");
+  std::shared_ptr<Jali::Mesh> tm = mesh_factory("test/intersect/cube_0.5.exo");
   ASSERT_TRUE(tm != NULL);
 
   const Wonton::Jali_Mesh_Wrapper s(*sm);
@@ -106,11 +106,11 @@ TEST(intersectR3D, cube_no_intersect) {
        Jali::Entity_kind::WEDGE, Jali::Entity_kind::CORNER});
 
   // read the source exodus file
-  std::shared_ptr<Jali::Mesh> sm = mesh_factory("../test_data/cube_0.exo");
+  std::shared_ptr<Jali::Mesh> sm = mesh_factory("test/intersect/cube_0.exo");
   ASSERT_TRUE(sm != NULL);
 
   // read the target exodus file
-  std::shared_ptr<Jali::Mesh> tm = mesh_factory("../test_data/cube_2.exo");
+  std::shared_ptr<Jali::Mesh> tm = mesh_factory("test/intersect/cube_2.exo");
   ASSERT_TRUE(tm != NULL);
 
   const Wonton::Jali_Mesh_Wrapper s(*sm);
@@ -148,11 +148,11 @@ TEST(intersectR3D, cube_0_1) {
        Jali::Entity_kind::WEDGE, Jali::Entity_kind::CORNER});
 
   // read the source exodus file
-  std::shared_ptr<Jali::Mesh> sm = mesh_factory("../test_data/cube_0.exo");
+  std::shared_ptr<Jali::Mesh> sm = mesh_factory("test/intersect/cube_0.exo");
   ASSERT_TRUE(sm != NULL);
 
   // read the target exodus file
-  std::shared_ptr<Jali::Mesh> tm = mesh_factory("../test_data/cube_1.exo");
+  std::shared_ptr<Jali::Mesh> tm = mesh_factory("test/intersect/cube_1.exo");
   ASSERT_TRUE(tm != NULL);
 
   const Wonton::Jali_Mesh_Wrapper s(*sm);
