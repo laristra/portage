@@ -45,6 +45,8 @@ if(ENABLE_UNIT_TESTS)
     cinch_add_unit(intersect_r3d_jali
       SOURCES intersect_r3d_jali_test.cc r3d.c
       LIBRARIES ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
+      # this is relative to thisCMakeLists.txt directory
+      INPUTS ../../test_data/1x3d.exo ../../test_data/cube_0.exo ../../test_data/cube_0.5.exo ../../test_data/cube_1.exo ../../test_data/cube_2.exo
       POLICY MPI
       )
   endif (Jali_DIR)
