@@ -40,7 +40,7 @@ if(ENABLE_UNIT_TESTS)
       SOURCES intersect_r2d_test.cc r2d.c
       LIBRARIES ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
       POLICY MPI
-      )   
+      )
   endif (Jali_DIR)
 
   cinch_add_unit(intersect_r3d
