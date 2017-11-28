@@ -26,10 +26,10 @@ TEST(intersectR3D, simple1) {
   ASSERT_TRUE(moments.size() == 1);
   ASSERT_TRUE(moments[0].size() == 4);
 
-  ASSERT_TRUE(std::abs(moments[0][0] - 1) < eps);
-  ASSERT_TRUE(std::abs(moments[0][1] / moments[0][0] - 1.5) < eps);
-  ASSERT_TRUE(std::abs(moments[0][2] / moments[0][0] - 1.5) < eps);
-  ASSERT_TRUE(std::abs(moments[0][3] / moments[0][0] - 1.5) < eps);
+  ASSERT_NEAR(moments[0][0], 1, eps);
+  ASSERT_NEAR(moments[0][1] / moments[0][0], 1.5, eps);
+  ASSERT_NEAR(moments[0][2] / moments[0][0], 1.5, eps);
+  ASSERT_NEAR(moments[0][3] / moments[0][0], 1.5, eps);
 }
 
 TEST(intersectR3D, simple2) {
@@ -51,10 +51,10 @@ TEST(intersectR3D, simple2) {
   ASSERT_TRUE(moments.size() == 1);
   ASSERT_TRUE(moments[0].size() == 4);
 
-  ASSERT_TRUE(std::abs(moments[0][0] - 8) < eps);
-  ASSERT_TRUE(std::abs(moments[0][1] / moments[0][0] - 1) < eps);
-  ASSERT_TRUE(std::abs(moments[0][2] / moments[0][0] - 1) < eps);
-  ASSERT_TRUE(std::abs(moments[0][3] / moments[0][0] - 1) < eps);
+  ASSERT_NEAR(moments[0][0], 8, eps);
+  ASSERT_NEAR(moments[0][1] / moments[0][0], 1, eps);
+  ASSERT_NEAR(moments[0][2] / moments[0][0], 1, eps);
+  ASSERT_NEAR(moments[0][3] / moments[0][0], 1, eps);
 }
 
 TEST(intersectR3D, simple3) {
@@ -76,10 +76,10 @@ TEST(intersectR3D, simple3) {
   ASSERT_TRUE(moments.size() == 1);
   ASSERT_TRUE(moments[0].size() == 4);
 
-  ASSERT_TRUE(std::abs(moments[0][0] - 1) < eps);
-  ASSERT_TRUE(std::abs(moments[0][1] / moments[0][0] - 1.5) < eps);
-  ASSERT_TRUE(std::abs(moments[0][2] / moments[0][0] - 1.5) < eps);
-  ASSERT_TRUE(std::abs(moments[0][3] / moments[0][0] - 1.5) < eps);
+  ASSERT_NEAR(moments[0][0], 1, eps);
+  ASSERT_NEAR(moments[0][1] / moments[0][0], 1.5, eps);
+  ASSERT_NEAR(moments[0][2] / moments[0][0], 1.5, eps);
+  ASSERT_NEAR(moments[0][3] / moments[0][0], 1.5, eps);
 }
 
 TEST(intersectR3D, simple4) {
@@ -101,10 +101,10 @@ TEST(intersectR3D, simple4) {
   ASSERT_TRUE(moments.size() == 1);
   ASSERT_TRUE(moments[0].size() == 4);
 
-  ASSERT_TRUE(std::abs(moments[0][0] - 1) < eps);
-  ASSERT_TRUE(std::abs(moments[0][1] / moments[0][0] - 1.5) < eps);
-  ASSERT_TRUE(std::abs(moments[0][2] / moments[0][0] - 1.5) < eps);
-  ASSERT_TRUE(std::abs(moments[0][3] / moments[0][0] - 1.5) < eps);
+  ASSERT_NEAR(moments[0][0], 1, eps);
+  ASSERT_NEAR(moments[0][1] / moments[0][0], 1.5, eps);
+  ASSERT_NEAR(moments[0][2] / moments[0][0], 1.5, eps);
+  ASSERT_NEAR(moments[0][3] / moments[0][0], 1.5, eps);
 }
 
 TEST(intersectR3D, simple5) {
@@ -126,10 +126,10 @@ TEST(intersectR3D, simple5) {
   ASSERT_TRUE(moments.size() == 1);
   ASSERT_TRUE(moments[0].size() == 4);
 
-  ASSERT_TRUE(std::abs(moments[0][0] - 125) < eps);
-  ASSERT_TRUE(std::abs(moments[0][1] / moments[0][0] - 2.5) < eps);
-  ASSERT_TRUE(std::abs(moments[0][2] / moments[0][0] - 2.5) < eps);
-  ASSERT_TRUE(std::abs(moments[0][3] / moments[0][0] - 2.5) < eps);
+  ASSERT_NEAR(moments[0][0], 125, eps);
+  ASSERT_NEAR(moments[0][1] / moments[0][0], 2.5, eps);
+  ASSERT_NEAR(moments[0][2] / moments[0][0], 2.5, eps);
+  ASSERT_NEAR(moments[0][3] / moments[0][0], 2.5, eps);
 }
 
 TEST(intersectR3D, simple6) {
@@ -151,10 +151,10 @@ TEST(intersectR3D, simple6) {
   ASSERT_TRUE(moments.size() == 1);
   ASSERT_TRUE(moments[0].size() == 4);
 
-  ASSERT_TRUE(std::abs(moments[0][0] - 8) < eps);
-  ASSERT_TRUE(std::abs(moments[0][1] / moments[0][0] - 1) < eps);
-  ASSERT_TRUE(std::abs(moments[0][2] / moments[0][0] - 1) < eps);
-  ASSERT_TRUE(std::abs(moments[0][3] / moments[0][0] - 1) < eps);
+  ASSERT_NEAR(moments[0][0], 8, eps);
+  ASSERT_NEAR(moments[0][1] / moments[0][0], 1, eps);
+  ASSERT_NEAR(moments[0][2] / moments[0][0], 1, eps);
+  ASSERT_NEAR(moments[0][3] / moments[0][0], 1, eps);
 
   moments = isect(1, 0);
   for (int i = 0; i < moments.size(); i++) {
@@ -167,10 +167,10 @@ TEST(intersectR3D, simple6) {
   ASSERT_TRUE(moments.size() == 1);
   ASSERT_TRUE(moments[0].size() == 4);
 
-  ASSERT_TRUE(std::abs(moments[0][0] - 8) < eps);
-  ASSERT_TRUE(std::abs(moments[0][1] / moments[0][0] - 3) < eps);
-  ASSERT_TRUE(std::abs(moments[0][2] / moments[0][0] - 1) < eps);
-  ASSERT_TRUE(std::abs(moments[0][3] / moments[0][0] - 1) < eps);
+  ASSERT_NEAR(moments[0][0], 8, eps);
+  ASSERT_NEAR(moments[0][1] / moments[0][0], 3, eps);
+  ASSERT_NEAR(moments[0][2] / moments[0][0], 1, eps);
+  ASSERT_NEAR(moments[0][3] / moments[0][0], 1, eps);
 
   moments = isect(2, 0);
   for (int i = 0; i < moments.size(); i++) {
@@ -183,10 +183,10 @@ TEST(intersectR3D, simple6) {
   ASSERT_TRUE(moments.size() == 1);
   ASSERT_TRUE(moments[0].size() == 4);
 
-  ASSERT_TRUE(std::abs(moments[0][0] - 4) < eps);
-  ASSERT_TRUE(std::abs(moments[0][1] / moments[0][0] - 4.5) < eps);
-  ASSERT_TRUE(std::abs(moments[0][2] / moments[0][0] - 1) < eps);
-  ASSERT_TRUE(std::abs(moments[0][3] / moments[0][0] - 1) < eps);
+  ASSERT_NEAR(moments[0][0], 4, eps);
+  ASSERT_NEAR(moments[0][1] / moments[0][0], 4.5, eps);
+  ASSERT_NEAR(moments[0][2] / moments[0][0], 1, eps);
+  ASSERT_NEAR(moments[0][3] / moments[0][0], 1, eps);
 }
 
 TEST(intersectR3D, simple7) {
@@ -208,10 +208,10 @@ TEST(intersectR3D, simple7) {
   ASSERT_TRUE(moments.size() == 1);
   ASSERT_TRUE(moments[0].size() == 4);
 
-  ASSERT_TRUE(std::abs(moments[0][0] - 1) < eps);
-  ASSERT_TRUE(std::abs(moments[0][1] / moments[0][0] - (-0.5)) < eps);
-  ASSERT_TRUE(std::abs(moments[0][2] / moments[0][0] - (-0.5)) < eps);
-  ASSERT_TRUE(std::abs(moments[0][3] / moments[0][0] - (-0.5)) < eps);
+  ASSERT_NEAR(moments[0][0], 1, eps);
+  ASSERT_NEAR(moments[0][1] / moments[0][0], -.5, eps);
+  ASSERT_NEAR(moments[0][2] / moments[0][0], -.5, eps);
+  ASSERT_NEAR(moments[0][3] / moments[0][0], -.5, eps);
 }
 
 TEST(intersectR3D, simple8) {
@@ -233,10 +233,10 @@ TEST(intersectR3D, simple8) {
   ASSERT_TRUE(moments.size() == 1);
   ASSERT_TRUE(moments[0].size() == 4);
 
-  ASSERT_TRUE(std::abs(moments[0][0] - 27) < eps);
-  ASSERT_TRUE(std::abs(moments[0][1] / moments[0][0] - (-1.5)) < eps);
-  ASSERT_TRUE(std::abs(moments[0][2] / moments[0][0] - (-1.5)) < eps);
-  ASSERT_TRUE(std::abs(moments[0][3] / moments[0][0] - (-1.5)) < eps);
+  ASSERT_NEAR(moments[0][0], 27, eps);
+  ASSERT_NEAR(moments[0][1] / moments[0][0], -1.5, eps);
+  ASSERT_NEAR(moments[0][2] / moments[0][0], -1.5, eps);
+  ASSERT_NEAR(moments[0][3] / moments[0][0], -1.5, eps);
 }
 
 TEST(intersectR3D, simple9) {
@@ -258,10 +258,10 @@ TEST(intersectR3D, simple9) {
   ASSERT_TRUE(moments.size() == 1);
   ASSERT_TRUE(moments[0].size() == 4);
 
-  ASSERT_TRUE(std::abs(moments[0][0] - 27) < eps);
-  ASSERT_TRUE(std::abs(moments[0][1] / moments[0][0] - (-1.5)) < eps);
-  ASSERT_TRUE(std::abs(moments[0][2] / moments[0][0] - (-0.5)) < eps);
-  ASSERT_TRUE(std::abs(moments[0][3] / moments[0][0] - (+0.5)) < eps);
+  ASSERT_NEAR(moments[0][0], 27, eps);
+  ASSERT_NEAR(moments[0][1] / moments[0][0], -1.5, eps);
+  ASSERT_NEAR(moments[0][2] / moments[0][0], -.5, eps);
+  ASSERT_NEAR(moments[0][3] / moments[0][0], .5, eps);
 }
 
 // in this test, the cubes don't intersect at all
@@ -312,8 +312,8 @@ TEST(intersectR3D, cube_0_1) {
   ASSERT_TRUE(moments.size() == 1);
   ASSERT_TRUE(moments[0].size() == 4);
 
-  ASSERT_TRUE(std::abs(moments[0][0] - 0) < eps);
-  ASSERT_TRUE(std::abs(moments[0][1] - 0) < eps);
-  ASSERT_TRUE(std::abs(moments[0][2] - 0) < eps);
-  ASSERT_TRUE(std::abs(moments[0][3] - 0) < eps);
+  ASSERT_NEAR(moments[0][0], 0, eps);
+  ASSERT_NEAR(moments[0][1], 0, eps);
+  ASSERT_NEAR(moments[0][2], 0, eps);
+  ASSERT_NEAR(moments[0][3], 0, eps);
 }
