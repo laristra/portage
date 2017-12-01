@@ -9,6 +9,7 @@ Please see the license file at the root of this repository, or at:
 #include <memory>
 #include <vector>
 #include <cstdlib>
+#include <algorithm>
 
 #include "gtest/gtest.h"
 
@@ -288,7 +289,7 @@ TEST(search_by_cells, scatter_2d_random)
   std::vector<Portage::Point<2>> tgtp, tgte;
   auto tgtpts = std::make_shared<std::vector<Portage::Point<2>>>(tgtp);
   auto tgtexts = std::make_shared<std::vector<Portage::Point<2>>>(tgte);
-  const size_t ntgt = 256;
+  const size_t ntgt = 128;
   for (int j = 0; j < nsrc; ++j) {
     double x = 1.0*rand()/RAND_MAX;
     double y = 1.0*rand()/RAND_MAX;
@@ -313,6 +314,7 @@ TEST(search_by_cells, scatter_2d_random)
 
     ASSERT_EQ(snbr.size(), cnbr.size());
 
+    std::sort(cnbr.begin(), cnbr.end());
     for (int j=0; j<snbr.size(); j++) {
       ASSERT_EQ(snbr[j], cnbr[j]);
     }
@@ -341,7 +343,7 @@ TEST(search_by_cells, scatter_3d_random)
   std::vector<Portage::Point<3>> tgtp, tgte;
   auto tgtpts = std::make_shared<std::vector<Portage::Point<3>>>(tgtp);
   auto tgtexts = std::make_shared<std::vector<Portage::Point<3>>>(tgte);
-  const size_t ntgt = 1000;
+  const size_t ntgt = 512;
   for (int j = 0; j < nsrc; ++j) {
     double x = 1.0*rand()/RAND_MAX;
     double y = 1.0*rand()/RAND_MAX;
@@ -367,6 +369,7 @@ TEST(search_by_cells, scatter_3d_random)
 
     ASSERT_EQ(snbr.size(), cnbr.size());
 
+    std::sort(cnbr.begin(), cnbr.end());
     for (int j=0; j<snbr.size(); j++) {
       ASSERT_EQ(snbr[j], cnbr[j]);
     }
@@ -394,7 +397,7 @@ TEST(search_by_cells, gather_2d_random)
   std::vector<Portage::Point<2>> tgtp, tgte;
   auto tgtpts = std::make_shared<std::vector<Portage::Point<2>>>(tgtp);
   auto tgtexts = std::make_shared<std::vector<Portage::Point<2>>>(tgte);
-  const size_t ntgt = 256;
+  const size_t ntgt = 128;
   for (int j = 0; j < nsrc; ++j) {
     double x = 1.0*rand()/RAND_MAX;
     double y = 1.0*rand()/RAND_MAX;
@@ -406,7 +409,7 @@ TEST(search_by_cells, gather_2d_random)
 
   Portage::SearchPointsByCells<
   2, Portage::Meshfree::Swarm<2>, Portage::Meshfree::Swarm<2>>
-  cellsearch(srcswarm, tgtswarm, srcexts, tgtexts);
+  cellsearch(srcswarm, tgtswarm, srcexts, tgtexts, Portage::Meshfree::Gather);
 
   Portage::SearchSimplePoints<
   2, Portage::Meshfree::Swarm<2>, Portage::Meshfree::Swarm<2>>
@@ -419,6 +422,7 @@ TEST(search_by_cells, gather_2d_random)
 
     ASSERT_EQ(snbr.size(), cnbr.size());
 
+    std::sort(cnbr.begin(), cnbr.end());
     for (int j=0; j<snbr.size(); j++) {
       ASSERT_EQ(snbr[j], cnbr[j]);
     }
@@ -447,7 +451,7 @@ TEST(search_by_cells, gather_3d_random)
   std::vector<Portage::Point<3>> tgtp, tgte;
   auto tgtpts = std::make_shared<std::vector<Portage::Point<3>>>(tgtp);
   auto tgtexts = std::make_shared<std::vector<Portage::Point<3>>>(tgte);
-  const size_t ntgt = 1000;
+  const size_t ntgt = 500;
   for (int j = 0; j < nsrc; ++j) {
     double x = 1.0*rand()/RAND_MAX;
     double y = 1.0*rand()/RAND_MAX;
@@ -460,7 +464,7 @@ TEST(search_by_cells, gather_3d_random)
 
   Portage::SearchPointsByCells<
   3, Portage::Meshfree::Swarm<3>, Portage::Meshfree::Swarm<3>>
-  cellsearch(srcswarm, tgtswarm, srcexts, tgtexts);
+  cellsearch(srcswarm, tgtswarm, srcexts, tgtexts, Portage::Meshfree::Gather);
 
   Portage::SearchSimplePoints<
   3, Portage::Meshfree::Swarm<3>, Portage::Meshfree::Swarm<3>>
@@ -473,6 +477,7 @@ TEST(search_by_cells, gather_3d_random)
 
     ASSERT_EQ(snbr.size(), cnbr.size());
 
+    std::sort(cnbr.begin(), cnbr.end());
     for (int j=0; j<snbr.size(); j++) {
       ASSERT_EQ(snbr[j], cnbr[j]);
     }
@@ -500,7 +505,7 @@ TEST(search_by_cells, scatter_2d_random_disjoint)
   std::vector<Portage::Point<2>> tgtp, tgte;
   auto tgtpts = std::make_shared<std::vector<Portage::Point<2>>>(tgtp);
   auto tgtexts = std::make_shared<std::vector<Portage::Point<2>>>(tgte);
-  const size_t ntgt = 256;
+  const size_t ntgt = 128;
   for (int j = 0; j < nsrc; ++j) {
     double x = 1.0*rand()/RAND_MAX + 10.;
     double y = 1.0*rand()/RAND_MAX + 10.;
@@ -549,7 +554,7 @@ TEST(search_by_cells, scatter_2d_random_edge)
   std::vector<Portage::Point<2>> tgtp, tgte;
   auto tgtpts = std::make_shared<std::vector<Portage::Point<2>>>(tgtp);
   auto tgtexts = std::make_shared<std::vector<Portage::Point<2>>>(tgte);
-  const size_t ntgt = 256;
+  const size_t ntgt = 128;
   for (int j = 0; j < nsrc; ++j) {
     double x = 1.0*rand()/RAND_MAX + .5;
     double y = 1.0*rand()/RAND_MAX + .5;
@@ -574,6 +579,7 @@ TEST(search_by_cells, scatter_2d_random_edge)
 
     ASSERT_EQ(snbr.size(), cnbr.size());
 
+    std::sort(cnbr.begin(), cnbr.end());
     for (int j=0; j<snbr.size(); j++) {
       ASSERT_EQ(snbr[j], cnbr[j]);
     }
