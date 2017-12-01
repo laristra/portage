@@ -106,8 +106,8 @@ inline void PairsIntegize(const size_t &dim, const pile &value,
 
 /// convert real coordinates scaled to unit box to integers in [0,ulong_max]
 inline void PairsIntegize(const size_t &dim, const pile &value,
-                          const vpile &minmax, const pile &delta, vulong &sizes,
-                          vulong &ivalue) {
+                          const vpile &minmax, const pile &delta,
+                          const vulong &sizes, vulong &ivalue) {
   for (size_t m = 0; m < dim; m++) {
     ivalue[m] = max<ulong>(
         min<ulong>(
@@ -127,7 +127,8 @@ class less_vulong0 : public binary_function<vulong, vulong, bool> {
 };
 
 // index from indices
-inline ulong cellindex(size_t &dim, vulong &strides, vulong &indices) {
+inline ulong cellindex(const size_t &dim, const vulong &strides,
+                       const vulong &indices) {
   ulong result = 0;
   for (size_t m = 0; m < dim; m++) {
     result += indices[m] * strides[m];
@@ -183,7 +184,8 @@ inline void cellindices(size_t &dim, vulong &strides, ulong &index,
  \param half_pairs if true, checks that &x==&y and only returns pairs (i,j) with i>=j
 
  */
-shared_ptr<vector<list<ulong>>> PairsContainCells(const vpile &x, const vpile &y, const vpile &h,
+shared_ptr<pairs_data_t> PairsContainCells(
+    const vpile &x, const vpile &y, const vpile &h,
     const bool half_pairs)
 {
   // get sizes and check
@@ -198,13 +200,27 @@ shared_ptr<vector<list<ulong>>> PairsContainCells(const vpile &x, const vpile &y
     assert(&x == &y);
   }
 
+  auto pairdata_p = make_shared<pairs_data_t>();
+  pairdata_p->x = x;
+  pairdata_p->y = y;
+  pairdata_p->h = h;
+
   // find min and max of enclosing box of y points
-  vpile yminmax(PairsMinMax(y,h));
-  pile delta(yminmax[1]-yminmax[0]);
+  vpile& yminmax = pairdata_p->yminmax;
+  yminmax = PairsMinMax(y,h);
+  pile& delta = pairdata_p->delta;
+  delta = yminmax[1]-yminmax[0];
 
   // decide on size of grid - this is a maximum value
   ulong maxmemory=nx/10;
   size_t nsidemax=max<size_t>(static_cast<size_t>(ceil(pow(maxmemory*1., (1./dim)))),1);
+
+  // find max h
+  pile& hmax = pairdata_p->hmax;
+  hmax.resize(dim);
+  for (size_t m = 0; m < dim; m++) {
+    hmax[m] = h[m].max();
+  }
 
   // find avg of min and max h
   pile havg(dim);
@@ -221,13 +237,16 @@ shared_ptr<vector<list<ulong>>> PairsContainCells(const vpile &x, const vpile &y
   for (size_t m=0;m<dim;m++) nsides[m] = min<ulong>(nsidemax, nsideh[m]);
   size_t ncells=1;
   for (size_t m=0;m<dim;m++) ncells*=nsides[m];
-  vulong nsidesm(nsides-static_cast<ulong>(1));
+  vulong& nsidesm = pairdata_p->nsidesm;
+  nsidesm = nsides-static_cast<ulong>(1);
 
   // allocate grid of lists
-  vector< vector<ulong> > cells(ncells);
+  vector<vector<ulong>>& cells = pairdata_p->cells;
+  cells.resize(ncells);
 
   // strides
-  vulong strides(dim);
+  vulong& strides = pairdata_p->strides;
+  strides.resize(dim);
   strides[dim-1] = 1;
   for(int m=dim-2; m>=0; m--) {
     strides[m] = strides[m+1]*nsides[m+1];
@@ -254,15 +273,31 @@ shared_ptr<vector<list<ulong>>> PairsContainCells(const vpile &x, const vpile &y
     cells[index].push_back(i);
   }
 
-  // list of pairs
-  auto pairlist_p = make_shared<vector<list<ulong>>>(nx);
-  vector<list<ulong>> &pairlist(*pairlist_p);
+  return pairdata_p;
+}
 
-  // size of pairs list
-  ulong npairs=0;
+list<ulong> PairsContainCellsG(
+  const shared_ptr<pairs_data_t> pairdata_p,
+  const ulong j)
+{
+  auto& x = pairdata_p->x;
+  auto& y = pairdata_p->y;
+  auto& h = pairdata_p->h;
+  const vpile& yminmax = pairdata_p->yminmax;
+  const pile& delta = pairdata_p->delta;
+  const vulong& nsidesm = pairdata_p->nsidesm;
+  const vulong& strides = pairdata_p->strides;
+  const vector< vector<ulong>>& cells = pairdata_p->cells;
+
+  // get sizes and check
+  size_t dim=x.size()[0];
+  ulong nx=x.size()[1];
+  ulong ny=y.size()[1];
+
+  list<ulong> pairlist;
 
   // scan y-points and add pairs
-  for (ulong j=0; j<ny; j++) {
+//  for (ulong j=0; j<ny; j++) {
     // get cell indices lower left and upper right corners of box
     pile yll(dim), yur(dim);
     for (size_t m=0;m<dim;m++) {
@@ -297,7 +332,7 @@ shared_ptr<vector<list<ulong>>> PairsContainCells(const vpile &x, const vpile &y
         if (cellis[m]==iyl[m] || cellis[m]==iyu[m]) ybndry=true;
 
       // loop over all x's in this cell's list
-      for (vector<ulong>::iterator i=cells[celli].begin();
+      for (vector<ulong>::const_iterator i=cells[celli].begin();
           i != cells[celli].end(); i++) {
         // if on y-cell boundary, check that x's are contained
         bool inside = true;
@@ -307,20 +342,93 @@ shared_ptr<vector<list<ulong>>> PairsContainCells(const vpile &x, const vpile &y
             if (x[m][*i] >= yur[m]) inside = false;
           }
         }
-        if (half_pairs and *i<j) inside = false;
 
         // add pair: put x's in this y-cell onto neighbor list, if inside
         if (inside) {
-          pairlist[*i].push_back(j);
-          npairs++;
+          pairlist.push_back(*i);
         }
       }
     }
-  }
+//  }  // for j
 
-  return pairlist_p;
+  return pairlist;
 }
 
+list<ulong> PairsContainCellsS(
+  const std::shared_ptr<pairs_data_t> pairdata_p,
+  const ulong j)
+{
+  auto& x = pairdata_p->x;
+  auto& y = pairdata_p->y;
+  auto& h = pairdata_p->h;
+  auto& hmax = pairdata_p->hmax;
+  const vpile& yminmax = pairdata_p->yminmax;
+  const pile& delta = pairdata_p->delta;
+  const vulong& nsidesm = pairdata_p->nsidesm;
+  const vulong& strides = pairdata_p->strides;
+  const vector< vector<ulong>>& cells = pairdata_p->cells;
+
+  size_t dim=x.size()[0];
+
+  list<ulong> pairlist;
+
+  // scan y-points and add pairs
+//  for (ulong j=0; j<ny; j++) {
+    // get cell indices lower left and upper right corners of box
+    pile yllmax(dim), yurmax(dim);
+    for (size_t m=0;m<dim;m++) {
+      yllmax[m]=y[m][j]-2.*hmax[m];
+      yurmax[m]=y[m][j]+2.*hmax[m];
+    }
+    vulong iyl(dim), iyu(dim);
+    PairsIntegize(dim, yllmax, yminmax, delta, nsidesm, iyl);
+    PairsIntegize(dim, yurmax, yminmax, delta, nsidesm, iyu);
+
+    // total number of cells for this y
+    ulong ncellsy=iyu[dim-1]-iyl[dim-1]+1;
+    vulong ystrides(dim);
+    ystrides[dim-1] = 1;
+    for(int m=dim-2; m>=0; m--) {
+      ystrides[m] = ncellsy;
+      ncellsy*=iyu[m]-iyl[m]+1;
+    }
+
+    // scan cells for this y
+    for (ulong cell=0; cell<ncellsy; cell++) {
+      // convert local y-cell indices to global cell index
+      vulong yndx(dim);
+      cellindices(dim, ystrides, cell, yndx);
+      vulong cellis(dim);
+      for(size_t m=0; m<dim; m++) cellis[m] = iyl[m]+yndx[m];
+      size_t celli = cellindex(dim, strides, cellis);
+
+      // loop over all x's in this cell's list
+      for (vector<ulong>::const_iterator i=cells[celli].begin();
+          i != cells[celli].end(); i++) {
+        pile yll(dim), yur(dim);
+        for (size_t m=0;m<dim;m++) {
+          yll[m]=y[m][j]-2.*h[m][*i];
+          yur[m]=y[m][j]+2.*h[m][*i];
+        }
+        // check that x's are contained
+        bool inside = true;
+        for(size_t m=0; m<dim; m++) {
+          if (x[m][*i] <= yll[m]) inside = false;
+          if (x[m][*i] >= yur[m]) inside = false;
+        }
+
+        // add pair: put x's in this y-cell onto neighbor list, if inside
+        if (inside) {
+          pairlist.push_back(*i);
+        }
+      }
+    }
+//  }  // for j
+
+  return pairlist;
+}
+
+#if 0
 /// neighbor finding using sort
 /** order is approximately n^1.6 in 2D and n^1.8 in 3D, n=number of points
  number of open boxes grows as n^.5, time for sort as n^1.2
@@ -954,10 +1062,12 @@ shared_ptr<vector<list<ulong>>> PairsContainHashY(const vpile &x, const vpile &y
 
   return pairlist_p;
 }
+#endif
 
 /// neighbor finding driver routine
-shared_ptr<vector<list<ulong>>> PairsFind(
+shared_ptr<pairs_data_t> PairsFind(
     const vpile &x, const vpile &y, const vpile &h,
+    const bool do_scatter,
     const contain_type type, const bool half_pairs)
 {
   // get and check sizes
@@ -973,6 +1083,7 @@ shared_ptr<vector<list<ulong>>> PairsFind(
   switch (type) {
     case CELLS:
     return PairsContainCells(x,y,h,half_pairs);
+#if 0
     case SORT:
     return PairsContainSort(x,y,h);
     case HASHY:
@@ -994,11 +1105,12 @@ shared_ptr<vector<list<ulong>>> PairsFind(
       default:
       assert(false);  // nothing else allowed
     }
+#endif
     default:
     assert(false);  // not allowed
   }
 
-  return make_shared<vector<list<ulong>>>(0);
+  return make_shared<pairs_data_t>();
 }
 
 } // namespace Pairs

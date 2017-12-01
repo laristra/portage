@@ -25,10 +25,30 @@ namespace Pairs {
   /// types of pair finder
   enum contain_type{CELLS, SORT, HASHX, HASHY};
 
+  /// data structure
+  struct pairs_data_t {
+    vpile x, y, h;
+    pile hmax;
+    vpile yminmax;
+    pile delta;
+    vulong nsidesm;
+    vulong strides;
+    vector<vector<ulong>> cells;
+  };
+
+  std::list<ulong> PairsContainCellsG(
+      const std::shared_ptr<pairs_data_t> pairdata_p,
+      const ulong j);
+
+  std::list<ulong> PairsContainCellsS(
+      const std::shared_ptr<pairs_data_t> pairdata_p,
+      const ulong j);
+
   /// Neighbor finding based on containment: driver function
-  std::shared_ptr<std::vector<std::list<ulong>>> PairsFind(
+  std::shared_ptr<pairs_data_t> PairsFind(
       const vpile &x, const vpile &y, const vpile &h,
-		  const contain_type type=CELLS, const bool half_pairs=false);
+		  const bool do_scatter,
+      const contain_type type=CELLS, const bool half_pairs=false);
 
 }
 }

@@ -53,7 +53,7 @@ class SearchPointsByCells {
       Meshfree::WeightCenter center=Meshfree::Scatter)
       : sourceSwarm_(source_swarm), targetSwarm_(target_swarm),
         sourceExtents_(source_extents), targetExtents_(target_extents),
-        lre_pairs_(NULL), center_(center)
+        pairdata_(NULL), center_(center)
   {
     // check sizes
     if (center == Meshfree::Scatter) {
@@ -95,22 +95,13 @@ class SearchPointsByCells {
 
     // h on source
     if (center_ == Meshfree::Scatter) {
-      lre_pairs_ = Meshfree::Pairs::PairsFind(target_vp, source_vp, source_extents_vp);
+      pairdata_ = Meshfree::Pairs::PairsFind(
+          source_vp, target_vp, source_extents_vp, true);
 
     // h on target
     } else if (center_ == Meshfree::Gather) {
-      std::shared_ptr<std::vector<std::list<ulong>>> pairs =
-          Meshfree::Pairs::PairsFind(source_vp, target_vp, target_extents_vp);
-      assert(pairs->size() == sourceSwarm_.num_particles());
-
-      // for this case we have to transpose the pair lists
-      lre_pairs_ = std::make_shared<std::vector<std::list<ulong>>>
-                     (targetSwarm_.num_particles());
-      for (size_t si=0; si<pairs->size(); si++) {
-        for (auto ti=(*pairs)[si].begin(); ti!=(*pairs)[si].end(); ti++) {
-          (*lre_pairs_)[*ti].push_back(si);
-        }
-      }
+      pairdata_ = Meshfree::Pairs::PairsFind(
+          source_vp, target_vp, target_extents_vp, false);
     }
   } // SearchPointsByCells::SearchPointsByCells
 
@@ -141,7 +132,7 @@ class SearchPointsByCells {
   const TargetSwarmType & targetSwarm_;
   std::shared_ptr<std::vector<Point<D>>> sourceExtents_;
   std::shared_ptr<std::vector<Point<D>>> targetExtents_;
-  std::shared_ptr<std::vector<std::list<Meshfree::Pairs::ulong>>> lre_pairs_;
+  std::shared_ptr<Meshfree::Pairs::pairs_data_t> pairdata_;
   Meshfree::WeightCenter center_;
 
 }; // class SearchPointsByCells
@@ -152,13 +143,14 @@ std::vector<unsigned int>
 SearchPointsByCells<D, SourceSwarmType, TargetSwarmType>::
 operator() (const int pointId) const {
 
-  std::vector<unsigned int> candidates;
-
-  for (auto it=(*lre_pairs_)[pointId].begin(); it!=(*lre_pairs_)[pointId].end(); it++) {
-    candidates.push_back(*it);
+  if (center_ == Meshfree::Gather) {
+    auto result = PairsContainCellsG(pairdata_, pointId);
+    return std::vector<unsigned int>(result.begin(), result.end());
   }
-
-  return candidates;
+  else {  // scatter
+    auto result = PairsContainCellsS(pairdata_, pointId);
+    return std::vector<unsigned int>(result.begin(), result.end());
+  }
 } // SearchPointsByCells::operator()
 
 
