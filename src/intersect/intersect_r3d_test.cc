@@ -14,22 +14,25 @@ TEST(intersectR3D, simple1) {
   const Wonton::Simple_Mesh_Wrapper t(tm);
 
   const double eps = 1e-12;
-  const Portage::IntersectR3D<Wonton::Simple_Mesh_Wrapper> isect{s, t};
-  const std::vector<std::vector<double>> moments = isect(0, 0);
-  for (int i = 0; i < moments.size(); i++) {
-    for (int j = 0; j < moments[i].size(); j++) {
-      std::cout << "i, j, m " << i << ", " << j << ", " << moments[i][j]
-                << std::endl;
+  const Portage::IntersectR3D<Portage::Entity_kind::CELL,
+                              Wonton::Simple_Mesh_Wrapper,
+                              Wonton::Simple_Mesh_Wrapper> isect{s , t};
+  std::vector<int> srccells({0});
+  const std::vector<Portage::Weights_t> srcwts = isect(0, srccells);
+
+  ASSERT_EQ(1, srcwts.size());
+  int srcent = srcwts[0].entityID;
+  std::vector<double> moments = srcwts[0].weights;
+  for(int j=0;j<moments.size();j++){
+    std::cout << "i, j, m " << srcent << ", " << j << ", " << moments[j] << std::endl;
     }
-  }
 
-  ASSERT_TRUE(moments.size() == 1);
-  ASSERT_TRUE(moments[0].size() == 4);
+  ASSERT_TRUE(moments.size() == 4);
 
-  ASSERT_NEAR(moments[0][0], 1, eps);
-  ASSERT_NEAR(moments[0][1] / moments[0][0], 1.5, eps);
-  ASSERT_NEAR(moments[0][2] / moments[0][0], 1.5, eps);
-  ASSERT_NEAR(moments[0][3] / moments[0][0], 1.5, eps);
+  ASSERT_NEAR(moments[0], 1, eps);
+  ASSERT_NEAR(moments[1]/moments[0], 1.5, eps);
+  ASSERT_NEAR(moments[2]/moments[0], 1.5, eps);
+  ASSERT_NEAR(moments[3]/moments[0], 1.5, eps);
 }
 
 TEST(intersectR3D, simple2) {
@@ -39,22 +42,25 @@ TEST(intersectR3D, simple2) {
   const Wonton::Simple_Mesh_Wrapper t(tm);
 
   const double eps = 1e-12;
-  const Portage::IntersectR3D<Wonton::Simple_Mesh_Wrapper> isect{s, t};
-  const std::vector<std::vector<double>> moments = isect(0, 0);
-  for (int i = 0; i < moments.size(); i++) {
-    for (int j = 0; j < moments[i].size(); j++) {
-      std::cout << "i, j, m " << i << ", " << j << ", " << moments[i][j]
-                << std::endl;
-    }
+  const Portage::IntersectR3D<Portage::Entity_kind::CELL,
+                              Wonton::Simple_Mesh_Wrapper,
+                              Wonton::Simple_Mesh_Wrapper> isect{s , t};
+  std::vector<int> srccells({0});
+  const std::vector<Portage::Weights_t> srcwts = isect(0, srccells);
+
+  ASSERT_EQ(1, srcwts.size());
+  int srcent = srcwts[0].entityID;
+  std::vector<double> moments = srcwts[0].weights;
+  for(int j=0;j<moments.size();j++){
+    std::cout << "i, j, m " << srcent << ", " << j << ", " << moments[j] << std::endl;
   }
 
-  ASSERT_TRUE(moments.size() == 1);
-  ASSERT_TRUE(moments[0].size() == 4);
+  ASSERT_TRUE(moments.size() == 4);
 
-  ASSERT_NEAR(moments[0][0], 8, eps);
-  ASSERT_NEAR(moments[0][1] / moments[0][0], 1, eps);
-  ASSERT_NEAR(moments[0][2] / moments[0][0], 1, eps);
-  ASSERT_NEAR(moments[0][3] / moments[0][0], 1, eps);
+  ASSERT_NEAR(moments[0], 8, eps);
+  ASSERT_NEAR(moments[1]/moments[0], 1, eps);
+  ASSERT_NEAR(moments[2]/moments[0], 1, eps);
+  ASSERT_NEAR(moments[3]/moments[0], 1, eps);
 }
 
 TEST(intersectR3D, simple3) {
@@ -64,22 +70,25 @@ TEST(intersectR3D, simple3) {
   const Wonton::Simple_Mesh_Wrapper t(tm);
 
   const double eps = 1e-12;
-  const Portage::IntersectR3D<Wonton::Simple_Mesh_Wrapper> isect{s, t};
-  const std::vector<std::vector<double>> moments = isect(0, 0);
-  for (int i = 0; i < moments.size(); i++) {
-    for (int j = 0; j < moments[i].size(); j++) {
-      std::cout << "i, j, m " << i << ", " << j << ", " << moments[i][j]
-                << std::endl;
-    }
+  const Portage::IntersectR3D<Portage::Entity_kind::CELL,
+                              Wonton::Simple_Mesh_Wrapper,
+                              Wonton::Simple_Mesh_Wrapper> isect{s , t};
+  std::vector<int> srccells({0});
+  const std::vector<Portage::Weights_t> srcwts = isect(0, srccells);
+
+  ASSERT_EQ(1, srcwts.size());
+  int srcent = srcwts[0].entityID;
+  std::vector<double> moments = srcwts[0].weights;
+  for(int j=0;j<moments.size();j++){
+    std::cout << "i, j, m " << srcent << ", " << j << ", " << moments[j] << std::endl;
   }
 
-  ASSERT_TRUE(moments.size() == 1);
-  ASSERT_TRUE(moments[0].size() == 4);
+  ASSERT_TRUE(moments.size() == 4);
 
-  ASSERT_NEAR(moments[0][0], 1, eps);
-  ASSERT_NEAR(moments[0][1] / moments[0][0], 1.5, eps);
-  ASSERT_NEAR(moments[0][2] / moments[0][0], 1.5, eps);
-  ASSERT_NEAR(moments[0][3] / moments[0][0], 1.5, eps);
+  ASSERT_NEAR(moments[0], 1, eps);
+  ASSERT_NEAR(moments[1]/moments[0], 1.5, eps);
+  ASSERT_NEAR(moments[2]/moments[0], 1.5, eps);
+  ASSERT_NEAR(moments[3]/moments[0], 1.5, eps);
 }
 
 TEST(intersectR3D, simple4) {
@@ -89,22 +98,25 @@ TEST(intersectR3D, simple4) {
   const Wonton::Simple_Mesh_Wrapper t(tm);
 
   const double eps = 1e-12;
-  const Portage::IntersectR3D<Wonton::Simple_Mesh_Wrapper> isect{s, t};
-  const std::vector<std::vector<double>> moments = isect(0, 0);
-  for (int i = 0; i < moments.size(); i++) {
-    for (int j = 0; j < moments[i].size(); j++) {
-      std::cout << "i, j, m " << i << ", " << j << ", " << moments[i][j]
-                << std::endl;
-    }
+  const Portage::IntersectR3D<Portage::Entity_kind::CELL,
+                              Wonton::Simple_Mesh_Wrapper,
+                              Wonton::Simple_Mesh_Wrapper> isect{s , t};
+  std::vector<int> srccells({0});
+  const std::vector<Portage::Weights_t> srcwts = isect(0, srccells);
+
+  ASSERT_EQ(1, srcwts.size());
+  int srcent = srcwts[0].entityID;
+  std::vector<double> moments = srcwts[0].weights;
+  for(int j=0;j<moments.size();j++){
+    std::cout << "i, j, m " << srcent << ", " << j << ", " << moments[j] << std::endl;
   }
 
-  ASSERT_TRUE(moments.size() == 1);
-  ASSERT_TRUE(moments[0].size() == 4);
+  ASSERT_TRUE(moments.size() == 4);
 
-  ASSERT_NEAR(moments[0][0], 1, eps);
-  ASSERT_NEAR(moments[0][1] / moments[0][0], 1.5, eps);
-  ASSERT_NEAR(moments[0][2] / moments[0][0], 1.5, eps);
-  ASSERT_NEAR(moments[0][3] / moments[0][0], 1.5, eps);
+  ASSERT_NEAR(moments[0], 1, eps);
+  ASSERT_NEAR(moments[1]/moments[0], 1.5, eps);
+  ASSERT_NEAR(moments[2]/moments[0], 1.5, eps);
+  ASSERT_NEAR(moments[3]/moments[0], 1.5, eps);
 }
 
 TEST(intersectR3D, simple5) {
@@ -114,22 +126,25 @@ TEST(intersectR3D, simple5) {
   const Wonton::Simple_Mesh_Wrapper t(tm);
 
   const double eps = 1e-12;
-  const Portage::IntersectR3D<Wonton::Simple_Mesh_Wrapper> isect{s, t};
-  const std::vector<std::vector<double>> moments = isect(0, 0);
-  for (int i = 0; i < moments.size(); i++) {
-    for (int j = 0; j < moments[i].size(); j++) {
-      std::cout << "i, j, m " << i << ", " << j << ", " << moments[i][j]
-                << std::endl;
-    }
+  const Portage::IntersectR3D<Portage::Entity_kind::CELL,
+                              Wonton::Simple_Mesh_Wrapper,
+                              Wonton::Simple_Mesh_Wrapper> isect{s , t};
+  std::vector<int> srccells({0});
+  const std::vector<Portage::Weights_t> srcwts = isect(0, srccells);
+
+  ASSERT_EQ(1, srcwts.size());
+  int srcent = srcwts[0].entityID;
+  std::vector<double> moments = srcwts[0].weights;
+  for(int j=0;j<moments.size();j++){
+    std::cout << "i, j, m " << srcent << ", " << j << ", " << moments[j] << std::endl;
   }
 
-  ASSERT_TRUE(moments.size() == 1);
-  ASSERT_TRUE(moments[0].size() == 4);
+  ASSERT_TRUE(moments.size() == 4);
 
-  ASSERT_NEAR(moments[0][0], 125, eps);
-  ASSERT_NEAR(moments[0][1] / moments[0][0], 2.5, eps);
-  ASSERT_NEAR(moments[0][2] / moments[0][0], 2.5, eps);
-  ASSERT_NEAR(moments[0][3] / moments[0][0], 2.5, eps);
+  ASSERT_NEAR(moments[0], 125, eps);
+  ASSERT_NEAR(moments[1]/moments[0], 2.5, eps);
+  ASSERT_NEAR(moments[2]/moments[0], 2.5, eps);
+  ASSERT_NEAR(moments[3]/moments[0], 2.5, eps);
 }
 
 TEST(intersectR3D, simple6) {
@@ -139,54 +154,56 @@ TEST(intersectR3D, simple6) {
   const Wonton::Simple_Mesh_Wrapper t(tm);
 
   const double eps = 1e-12;
-  const Portage::IntersectR3D<Wonton::Simple_Mesh_Wrapper> isect{s, t};
-  std::vector<std::vector<double>> moments = isect(0, 0);
-  for (int i = 0; i < moments.size(); i++) {
-    for (int j = 0; j < moments[i].size(); j++) {
-      std::cout << "i, j, m " << i << ", " << j << ", " << moments[i][j]
-                << std::endl;
-    }
-  }
+  const Portage::IntersectR3D<Portage::Entity_kind::CELL,
+                              Wonton::Simple_Mesh_Wrapper,
+                              Wonton::Simple_Mesh_Wrapper> isect{s , t};
+  std::vector<int> srccells({0});
+  std::vector<Portage::Weights_t> srcwts = isect(0, srccells);
 
-  ASSERT_TRUE(moments.size() == 1);
-  ASSERT_TRUE(moments[0].size() == 4);
+  ASSERT_EQ(1, srcwts.size());
+  int srcent = srcwts[0].entityID;
+  std::vector<double> moments = srcwts[0].weights;
+  for(int j=0;j<moments.size();j++)
+    std::cout << "i, j, m " << srcent << ", " << j << ", " << moments[j] << std::endl;
 
-  ASSERT_NEAR(moments[0][0], 8, eps);
-  ASSERT_NEAR(moments[0][1] / moments[0][0], 1, eps);
-  ASSERT_NEAR(moments[0][2] / moments[0][0], 1, eps);
-  ASSERT_NEAR(moments[0][3] / moments[0][0], 1, eps);
+  ASSERT_TRUE(moments.size() == 4);
 
-  moments = isect(1, 0);
-  for (int i = 0; i < moments.size(); i++) {
-    for (int j = 0; j < moments[i].size(); j++) {
-      std::cout << "i, j, m " << i << ", " << j << ", " << moments[i][j]
-                << std::endl;
-    }
-  }
+  ASSERT_NEAR(moments[0], 8, eps);
+  ASSERT_NEAR(moments[1]/moments[0], 1, eps);
+  ASSERT_NEAR(moments[2]/moments[0], 1, eps);
+  ASSERT_NEAR(moments[3]/moments[0], 1, eps);
 
-  ASSERT_TRUE(moments.size() == 1);
-  ASSERT_TRUE(moments[0].size() == 4);
+  srccells[0] = 1;
+  srcwts = isect(0, srccells);
 
-  ASSERT_NEAR(moments[0][0], 8, eps);
-  ASSERT_NEAR(moments[0][1] / moments[0][0], 3, eps);
-  ASSERT_NEAR(moments[0][2] / moments[0][0], 1, eps);
-  ASSERT_NEAR(moments[0][3] / moments[0][0], 1, eps);
+  ASSERT_EQ(1, srcwts.size());
+  srcent = srcwts[0].entityID;
+  moments = srcwts[0].weights;
+  for(int j=0;j<moments.size();j++)
+    std::cout << "i, j, m " << srcent << ", " << j << ", " << moments[j] << std::endl;
 
-  moments = isect(2, 0);
-  for (int i = 0; i < moments.size(); i++) {
-    for (int j = 0; j < moments[i].size(); j++) {
-      std::cout << "i, j, m " << i << ", " << j << ", " << moments[i][j]
-                << std::endl;
-    }
-  }
+  ASSERT_TRUE(moments.size() == 4);
 
-  ASSERT_TRUE(moments.size() == 1);
-  ASSERT_TRUE(moments[0].size() == 4);
+  ASSERT_NEAR(moments[0], 8, eps);
+  ASSERT_NEAR(moments[1]/moments[0], 3, eps);
+  ASSERT_NEAR(moments[2]/moments[0], 1, eps);
+  ASSERT_NEAR(moments[3]/moments[0], 1, eps);
 
-  ASSERT_NEAR(moments[0][0], 4, eps);
-  ASSERT_NEAR(moments[0][1] / moments[0][0], 4.5, eps);
-  ASSERT_NEAR(moments[0][2] / moments[0][0], 1, eps);
-  ASSERT_NEAR(moments[0][3] / moments[0][0], 1, eps);
+  srccells[0] = 2;
+  srcwts = isect(0, srccells);
+
+  ASSERT_EQ(1, srcwts.size());
+  srcent = srcwts[0].entityID;
+  moments = srcwts[0].weights;
+  for(int j=0;j<moments.size();j++)
+    std::cout << "i, j, m " << srcent << ", " << j << ", " << moments[j] << std::endl;
+
+  ASSERT_TRUE(moments.size() == 4);
+
+  ASSERT_NEAR(moments[0], 4, eps);
+  ASSERT_NEAR(moments[1]/moments[0], 4.5, eps);
+  ASSERT_NEAR(moments[2]/moments[0], 1, eps);
+  ASSERT_NEAR(moments[3]/moments[0], 1, eps);
 }
 
 TEST(intersectR3D, simple7) {
@@ -196,22 +213,24 @@ TEST(intersectR3D, simple7) {
   const Wonton::Simple_Mesh_Wrapper t(tm);
 
   const double eps = 1e-12;
-  const Portage::IntersectR3D<Wonton::Simple_Mesh_Wrapper> isect{s, t};
-  const std::vector<std::vector<double>> moments = isect(0, 0);
-  for (int i = 0; i < moments.size(); i++) {
-    for (int j = 0; j < moments[i].size(); j++) {
-      std::cout << "i, j, m " << i << ", " << j << ", " << moments[i][j]
-                << std::endl;
-    }
+  const Portage::IntersectR3D<Portage::Entity_kind::CELL,
+                              Wonton::Simple_Mesh_Wrapper,
+                              Wonton::Simple_Mesh_Wrapper> isect{s , t};
+  std::vector<int> srccells({0});
+  const std::vector<Portage::Weights_t> srcwts = isect(0, srccells);
+  ASSERT_EQ(1, srcwts.size());
+  int srcent = srcwts[0].entityID;
+  std::vector<double> moments = srcwts[0].weights;
+  for(int j=0;j<moments.size();j++){
+    std::cout << "i, j, m " << srcent << ", " << j << ", " << moments[j] << std::endl;
   }
 
-  ASSERT_TRUE(moments.size() == 1);
-  ASSERT_TRUE(moments[0].size() == 4);
+  ASSERT_TRUE(moments.size() == 4);
 
-  ASSERT_NEAR(moments[0][0], 1, eps);
-  ASSERT_NEAR(moments[0][1] / moments[0][0], -.5, eps);
-  ASSERT_NEAR(moments[0][2] / moments[0][0], -.5, eps);
-  ASSERT_NEAR(moments[0][3] / moments[0][0], -.5, eps);
+  ASSERT_NEAR(moments[0], 1, eps);
+  ASSERT_NEAR(moments[1]/moments[0], -0.5, eps);
+  ASSERT_NEAR(moments[2]/moments[0], -0.5, eps);
+  ASSERT_NEAR(moments[3]/moments[0], -0.5, eps);
 }
 
 TEST(intersectR3D, simple8) {
@@ -221,22 +240,24 @@ TEST(intersectR3D, simple8) {
   const Wonton::Simple_Mesh_Wrapper t(tm);
 
   const double eps = 1e-12;
-  const Portage::IntersectR3D<Wonton::Simple_Mesh_Wrapper> isect{s, t};
-  const std::vector<std::vector<double>> moments = isect(0, 0);
-  for (int i = 0; i < moments.size(); i++) {
-    for (int j = 0; j < moments[i].size(); j++) {
-      std::cout << "i, j, m " << i << ", " << j << ", " << moments[i][j]
-                << std::endl;
-    }
-  }
+  const Portage::IntersectR3D<Portage::Entity_kind::CELL,
+                              Wonton::Simple_Mesh_Wrapper,
+                              Wonton::Simple_Mesh_Wrapper> isect{s , t};
+  std::vector<int> srccells({0});
+  const std::vector<Portage::Weights_t> srcwts = isect(0, srccells);
 
-  ASSERT_TRUE(moments.size() == 1);
-  ASSERT_TRUE(moments[0].size() == 4);
+  ASSERT_EQ(1, srcwts.size());
+  int srcent = srcwts[0].entityID;
+  std::vector<double> moments = srcwts[0].weights;
+  for(int j=0;j<moments.size();j++)
+    std::cout << "i, j, m " << srcent << ", " << j << ", " << moments[j] << std::endl;
 
-  ASSERT_NEAR(moments[0][0], 27, eps);
-  ASSERT_NEAR(moments[0][1] / moments[0][0], -1.5, eps);
-  ASSERT_NEAR(moments[0][2] / moments[0][0], -1.5, eps);
-  ASSERT_NEAR(moments[0][3] / moments[0][0], -1.5, eps);
+  ASSERT_TRUE(moments.size() == 4);
+
+  ASSERT_NEAR(moments[0], 27, eps);
+  ASSERT_NEAR(moments[1]/moments[0], -1.5, eps);
+  ASSERT_NEAR(moments[2]/moments[0], -1.5, eps);
+  ASSERT_NEAR(moments[3]/moments[0], -1.5, eps);
 }
 
 TEST(intersectR3D, simple9) {
@@ -246,22 +267,24 @@ TEST(intersectR3D, simple9) {
   const Wonton::Simple_Mesh_Wrapper t(tm);
 
   const double eps = 1e-12;
-  const Portage::IntersectR3D<Wonton::Simple_Mesh_Wrapper> isect{s, t};
-  const std::vector<std::vector<double>> moments = isect(0, 0);
-  for (int i = 0; i < moments.size(); i++) {
-    for (int j = 0; j < moments[i].size(); j++) {
-      std::cout << "i, j, m " << i << ", " << j << ", " << moments[i][j]
-                << std::endl;
-    }
-  }
+  const Portage::IntersectR3D<Portage::Entity_kind::CELL,
+                              Wonton::Simple_Mesh_Wrapper,
+                              Wonton::Simple_Mesh_Wrapper> isect{s, t};
+  std::vector<int> srccells({0});
+  const std::vector<Portage::Weights_t> srcwts = isect(0, srccells);
 
-  ASSERT_TRUE(moments.size() == 1);
-  ASSERT_TRUE(moments[0].size() == 4);
+  ASSERT_EQ(1, srcwts.size());
+  int srcent = srcwts[0].entityID;
+  std::vector<double> moments = srcwts[0].weights;
+  for(int j=0;j<moments.size();j++)
+    std::cout << "i, j, m " << srcent << ", " << j << ", " << moments[j] << std::endl;
 
-  ASSERT_NEAR(moments[0][0], 27, eps);
-  ASSERT_NEAR(moments[0][1] / moments[0][0], -1.5, eps);
-  ASSERT_NEAR(moments[0][2] / moments[0][0], -.5, eps);
-  ASSERT_NEAR(moments[0][3] / moments[0][0], .5, eps);
+  ASSERT_TRUE(moments.size() == 4);
+
+  ASSERT_NEAR(moments[0], 27, eps);
+  ASSERT_NEAR(moments[1]/moments[0], -1.5, eps);
+  ASSERT_NEAR(moments[2]/moments[0], -0.5, eps);
+  ASSERT_NEAR(moments[3]/moments[0],  0.5, eps);
 }
 
 // in this test, the cubes don't intersect at all
@@ -273,22 +296,13 @@ TEST(intersectR3D, cube_no_intersect) {
   const Wonton::Simple_Mesh_Wrapper t(tm);
 
   const double eps = 1e-12;
-  const Portage::IntersectR3D<Wonton::Simple_Mesh_Wrapper> isect{s, t};
-  const std::vector<std::vector<double>> moments = isect(0, 0);
-  for (int i = 0; i < moments.size(); i++) {
-    for (int j = 0; j < moments[i].size(); j++) {
-      std::cout << "i, j, m " << i << ", " << j << ", " << moments[i][j]
-                << std::endl;
-    }
-  }
+  const Portage::IntersectR3D<Portage::Entity_kind::CELL,
+                              Wonton::Simple_Mesh_Wrapper,
+                              Wonton::Simple_Mesh_Wrapper> isect{s, t};
+  std::vector<int> srccells({0});
+  const std::vector<Portage::Weights_t> srcwts = isect(0, srccells);
 
-  ASSERT_TRUE(moments.size() == 1);
-  ASSERT_TRUE(moments[0].size() == 4);
-
-  ASSERT_TRUE(std::abs(moments[0][0] - 0) < eps);
-  ASSERT_TRUE(isnan(moments[0][1] / moments[0][0]));
-  ASSERT_TRUE(isnan(moments[0][2] / moments[0][0]));
-  ASSERT_TRUE(isnan(moments[0][3] / moments[0][0]));
+  ASSERT_EQ(0, srcwts.size());
 }
 
 // in this test, the cubes share a face but have zero intersection volume
@@ -300,20 +314,22 @@ TEST(intersectR3D, cube_0_1) {
   const Wonton::Simple_Mesh_Wrapper t(tm);
 
   const double eps = 1e-12;
-  const Portage::IntersectR3D<Wonton::Simple_Mesh_Wrapper> isect{s, t};
-  const std::vector<std::vector<double>> moments = isect(0, 0);
-  for (int i = 0; i < moments.size(); i++) {
-    for (int j = 0; j < moments[i].size(); j++) {
-      std::cout << "i, j, m " << i << ", " << j << ", " << moments[i][j]
-                << std::endl;
-    }
-  }
+  const Portage::IntersectR3D<Portage::Entity_kind::CELL,
+                              Wonton::Simple_Mesh_Wrapper,
+                              Wonton::Simple_Mesh_Wrapper> isect{s, t};
+  std::vector<int> srccells({0});
+  const std::vector<Portage::Weights_t> srcwts = isect(0, srccells);
 
-  ASSERT_TRUE(moments.size() == 1);
-  ASSERT_TRUE(moments[0].size() == 4);
+  ASSERT_EQ(1, srcwts.size());
+  int srcent = srcwts[0].entityID;
+  std::vector<double> moments = srcwts[0].weights;
+  for(int j=0;j<moments.size();j++)
+    std::cout << "i, j, m " << srcent << ", " << j << ", " << moments[j] << std::endl;
 
-  ASSERT_NEAR(moments[0][0], 0, eps);
-  ASSERT_NEAR(moments[0][1], 0, eps);
-  ASSERT_NEAR(moments[0][2], 0, eps);
-  ASSERT_NEAR(moments[0][3], 0, eps);
+  ASSERT_TRUE(moments.size() == 4);
+
+  ASSERT_NEAR(moments[0], 0, eps);
+  ASSERT_NEAR(moments[1], 0, eps);
+  ASSERT_NEAR(moments[2], 0, eps);
+  ASSERT_NEAR(moments[3], 0, eps);
 }

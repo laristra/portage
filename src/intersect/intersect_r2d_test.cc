@@ -3,10 +3,12 @@ This file is part of the Ristra portage project.
 Please see the license file at the root of this repository, or at:
     https://github.com/laristra/portage/blob/master/LICENSE
 */
+
 #include "intersect_r2d.h"
 #include "gtest/gtest.h"
 #include "Mesh.hh"
 #include "MeshFactory.hh"
+#include "portage/support/portage.h"
 #include "portage/wonton/mesh/jali/jali_mesh_wrapper.h"
 
 /*! 
@@ -17,21 +19,28 @@ Please see the license file at the root of this repository, or at:
  */
 TEST(intersectR2D, simple1) {
   Jali::MeshFactory mf(MPI_COMM_WORLD);
-  //Create mesh from 0, 0 to 2.4, 2 1x1
-  std::shared_ptr<Jali::Mesh> sm = mf(0, 0, 2, 2, 1,1);
-  std::shared_ptr<Jali::Mesh> tm = mf(1,1,2, 2, 1, 1);
+  // Create mesh from 0, 0 to 2.4, 2 1x1
+  std::shared_ptr<Jali::Mesh> sm = mf(0, 0, 2, 2, 1, 1);
+  std::shared_ptr<Jali::Mesh> tm = mf(1, 1, 2, 2, 1, 1);
   const Wonton::Jali_Mesh_Wrapper s(*sm);
   const Wonton::Jali_Mesh_Wrapper t(*tm);
-  Portage::IntersectR2D<Wonton::Jali_Mesh_Wrapper> isect{s , t};
-  std::vector<std::vector<double> > moments = isect(0, 0); 
-  for(int i=0;i<moments.size();i++){
-    for(int j=0;j<moments[i].size();j++){
-      std::cout << "i, j, m " << i << ", " << j << ", " << moments[i][j] << std::endl;
-    }   
-  }
 
-  ASSERT_EQ(moments[0][0], 1);
-  ASSERT_EQ(moments[0][1], 1.5);
-  ASSERT_EQ(moments[0][2], 1.5);
+  Portage::IntersectR2D<Portage::Entity_kind::CELL,
+                        Wonton::Jali_Mesh_Wrapper,
+                        Wonton::Jali_Mesh_Wrapper> isect{s , t};
+
+  std::vector<int> srccells({0});
+
+  std::vector<Portage::Weights_t> srcwts = isect(0, srccells);
+  ASSERT_EQ(1, srcwts.size());
+  int srcent = srcwts[0].entityID;
+  std::vector<double> moments = srcwts[0].weights;
+  for (int j = 0; j < moments.size(); j++)
+    std::cout << "i, j, m " << srcent << ", " << j << ", " << moments[j] << std::endl;
+
+  double eps = 1.0e-12;
+  ASSERT_NEAR(moments[0], 1, eps);
+  ASSERT_NEAR(moments[1], 1.5, eps);
+  ASSERT_NEAR(moments[2], 1.5, eps);
 }
 
