@@ -17,9 +17,6 @@ Please see the license file at the root of this repository, or at:
 #include <iostream>
 #include <type_traits>
 
-#include "tangram/driver/driver.h"
-#include "tangram/reconstruct/xmof2D_wrapper.h"
-
 #include "portage/support/portage.h"
 #include "portage/support/Point.h"
 #include "portage/search/search_kdtree.h"
