@@ -12,7 +12,9 @@ Please see the license file at the root of this repository, or at:
 #include "portage/interpolate/interpolate_2nd_order.h"
 
 #include "gtest/gtest.h"
+#ifdef ENABLE_MPI
 #include "mpi.h"
+#endif
 
 // Jali includes
 #include "Mesh.hh"
@@ -104,10 +106,10 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Const_No_Limiter_2D) {
 
   // Create Interpolation object
 
-  Portage::Interpolate_2ndOrder<Wonton::Jali_Mesh_Wrapper,
+  Portage::Interpolate_2ndOrder<2, Portage::CELL,
                                 Wonton::Jali_Mesh_Wrapper,
-                                Wonton::Jali_State_Wrapper,
-                                Portage::CELL, 2>
+                                Wonton::Jali_Mesh_Wrapper,
+                                Wonton::Jali_State_Wrapper>
       interpolater(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper);
 
   // Compute the target mesh vals
@@ -205,10 +207,10 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Lin_No_Limiter_2D) {
 
   // Create Interpolation object
 
-  Portage::Interpolate_2ndOrder<Wonton::Jali_Mesh_Wrapper,
+  Portage::Interpolate_2ndOrder<2, Portage::CELL,
                                 Wonton::Jali_Mesh_Wrapper,
-                                Wonton::Jali_State_Wrapper,
-                                Portage::CELL, 2>
+                                Wonton::Jali_Mesh_Wrapper,
+                                Wonton::Jali_State_Wrapper>
       interpolater(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper);
 
   // Compute the target mesh vals
@@ -319,10 +321,10 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Lin_BJ_Limiter_2D) {
 
   // Create Interpolation object
 
-  Portage::Interpolate_2ndOrder<Wonton::Jali_Mesh_Wrapper,
+  Portage::Interpolate_2ndOrder<2, Portage::CELL,
                                 Wonton::Jali_Mesh_Wrapper,
-                                Wonton::Jali_State_Wrapper,
-                                Portage::CELL, 2>
+                                Wonton::Jali_Mesh_Wrapper,
+                                Wonton::Jali_State_Wrapper>
       interpolater(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper);
 
   // Compute the target mesh vals
@@ -481,10 +483,10 @@ TEST(Interpolate_2nd_Order, Node_Ctr_Const_No_Limiter) {
 
   // Create Interpolation object
 
-  Portage::Interpolate_2ndOrder<Wonton::Jali_Mesh_Wrapper,
+  Portage::Interpolate_2ndOrder<2, Portage::NODE,
                                 Wonton::Jali_Mesh_Wrapper,
-                                Wonton::Jali_State_Wrapper,
-                                Portage::NODE, 2>
+                                Wonton::Jali_Mesh_Wrapper,
+                                Wonton::Jali_State_Wrapper>
       interpolater(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper);
 
   // Compute the target mesh vals
@@ -629,10 +631,10 @@ TEST(Interpolate_2nd_Order, Node_Ctr_Lin_No_Limiter) {
 
   // Create Interpolation object
 
-  Portage::Interpolate_2ndOrder<Wonton::Jali_Mesh_Wrapper,
+  Portage::Interpolate_2ndOrder<2, Portage::NODE,
                                 Wonton::Jali_Mesh_Wrapper,
-                                Wonton::Jali_State_Wrapper,
-                                Portage::NODE, 2>
+                                Wonton::Jali_Mesh_Wrapper,
+                                Wonton::Jali_State_Wrapper>
       interpolater(sourceMeshWrapper, targetMeshWrapper,
                    source_state);
 
@@ -742,10 +744,10 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Const_No_Limiter_3D) {
 
   // Create Interpolation object
 
-  Portage::Interpolate_2ndOrder<Wonton::Jali_Mesh_Wrapper,
+  Portage::Interpolate_2ndOrder<3, Portage::CELL,
                                 Wonton::Jali_Mesh_Wrapper,
-                                Wonton::Jali_State_Wrapper,
-                                Portage::CELL, 3>
+                                Wonton::Jali_Mesh_Wrapper,
+                                Wonton::Jali_State_Wrapper>
       interpolater(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper);
 
   // Compute the target mesh vals
@@ -844,10 +846,10 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Lin_No_Limiter_3D) {
 
   // Create Interpolation object
 
-  Portage::Interpolate_2ndOrder<Wonton::Jali_Mesh_Wrapper,
+  Portage::Interpolate_2ndOrder<3, Portage::CELL,
                                 Wonton::Jali_Mesh_Wrapper,
-                                Wonton::Jali_State_Wrapper,
-                                Portage::CELL, 3>
+                                Wonton::Jali_Mesh_Wrapper,
+                                Wonton::Jali_State_Wrapper>
       interpolater(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper);
 
   // Compute the target mesh vals
@@ -958,10 +960,10 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_BJ_Limiter_3D) {
   // Create Interpolation object - run it once with no limiter and
   // once with limiter
 
-  Portage::Interpolate_2ndOrder<Wonton::Jali_Mesh_Wrapper,
+  Portage::Interpolate_2ndOrder<3, Portage::CELL,
                                 Wonton::Jali_Mesh_Wrapper,
-                                Wonton::Jali_State_Wrapper,
-                                Portage::CELL, 3>
+                                Wonton::Jali_Mesh_Wrapper,
+                                Wonton::Jali_State_Wrapper>
       interpolater(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper);
 
   // Compute the target mesh vals
@@ -1124,10 +1126,10 @@ TEST(Interpolate_2nd_Order, Node_Ctr_Const_No_Limiter_3D) {
 
   // Create Interpolation object
 
-  Portage::Interpolate_2ndOrder<Wonton::Jali_Mesh_Wrapper,
+  Portage::Interpolate_2ndOrder<3, Portage::NODE,
                                 Wonton::Jali_Mesh_Wrapper,
-                                Wonton::Jali_State_Wrapper,
-                                Portage::NODE, 3>
+                                Wonton::Jali_Mesh_Wrapper,
+                                Wonton::Jali_State_Wrapper>
       interpolater(sourceMeshWrapper, targetMeshWrapper,
                    source_state);
 
@@ -1273,10 +1275,10 @@ TEST(Interpolate_2nd_Order, Node_Ctr_Lin_No_Limiter_3D) {
 
   // Create Interpolation object
 
-  Portage::Interpolate_2ndOrder<Wonton::Jali_Mesh_Wrapper,
+  Portage::Interpolate_2ndOrder<3, Portage::NODE,
                                 Wonton::Jali_Mesh_Wrapper,
-                                Wonton::Jali_State_Wrapper,
-                                Portage::NODE, 3>
+                                Wonton::Jali_Mesh_Wrapper,
+                                Wonton::Jali_State_Wrapper>
       interpolater(sourceMeshWrapper, targetMeshWrapper,
                    source_state);
 
@@ -1433,17 +1435,17 @@ TEST(Interpolate_2nd_Order, Node_Ctr_BJ_Limiter_3D) {
 
   // Create Interpolation objects - one with no limiter and one with limiter
 
-  Portage::Interpolate_2ndOrder<Wonton::Jali_Mesh_Wrapper,
+  Portage::Interpolate_2ndOrder<2, Portage::NODE,
                                 Wonton::Jali_Mesh_Wrapper,
-                                Wonton::Jali_State_Wrapper,
-                                Portage::NODE, 2>
+                                Wonton::Jali_Mesh_Wrapper,
+                                Wonton::Jali_State_Wrapper>
                          interpolater1(sourceMeshWrapper, targetMeshWrapper,
                                        source_state);
 
-  Portage::Interpolate_2ndOrder<Wonton::Jali_Mesh_Wrapper,
+  Portage::Interpolate_2ndOrder<2, Portage::NODE,
                                 Wonton::Jali_Mesh_Wrapper,
-                                Wonton::Jali_State_Wrapper,
-                                Portage::NODE, 2>
+                                Wonton::Jali_Mesh_Wrapper,
+                                Wonton::Jali_State_Wrapper>
                          interpolater2(sourceMeshWrapper, targetMeshWrapper,
                                        source_state);
 

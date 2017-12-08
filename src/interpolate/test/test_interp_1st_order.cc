@@ -97,10 +97,10 @@ TEST(Interpolate_1st_Order, Cell_Ctr_Const_2D) {
 
   // Create Interpolation object
 
-  Portage::Interpolate_1stOrder<Wonton::Jali_Mesh_Wrapper,
+  Portage::Interpolate_1stOrder<2, Portage::CELL,
                                 Wonton::Jali_Mesh_Wrapper,
-                                Wonton::Jali_State_Wrapper,
-                                Portage::CELL, 2>
+                                Wonton::Jali_Mesh_Wrapper,
+                                Wonton::Jali_State_Wrapper>
       interpolater(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper);
 
   interpolater.set_interpolation_variable("cellvars");
@@ -193,10 +193,10 @@ TEST(Interpolate_1st_Order, Cell_Ctr_Lin_2D) {
     sources_and_weights[c] = wtsvec;
   }
 
-  Portage::Interpolate_1stOrder<Wonton::Jali_Mesh_Wrapper,
+  Portage::Interpolate_1stOrder<2, Portage::CELL,
                                 Wonton::Jali_Mesh_Wrapper,
-                                Wonton::Jali_State_Wrapper,
-                                Portage::CELL, 2>
+                                Wonton::Jali_Mesh_Wrapper,
+                                Wonton::Jali_State_Wrapper>
       interpolater(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper);
 
   interpolater.set_interpolation_variable("cellvars");
@@ -332,11 +332,10 @@ TEST(Interpolate_1st_Order, Node_Ctr_Const_2D) {
 
   std::vector<double> outvals(nnodes_target);
 
-  Portage::Interpolate_1stOrder<
-    Wonton::Jali_Mesh_Wrapper,
-    Wonton::Jali_Mesh_Wrapper,
-    Wonton::Jali_State_Wrapper,
-    Portage::NODE, 2>
+  Portage::Interpolate_1stOrder<2, Portage::NODE,
+                                Wonton::Jali_Mesh_Wrapper,
+                                Wonton::Jali_Mesh_Wrapper,
+                                Wonton::Jali_State_Wrapper>
       interpolater(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper);
 
   interpolater.set_interpolation_variable("nodevars");
@@ -432,10 +431,10 @@ TEST(Interpolate_1st_Order, Cell_Ctr_Const_3D) {
 
   // Create Interpolation object
 
-  Portage::Interpolate_1stOrder<Wonton::Jali_Mesh_Wrapper,
+  Portage::Interpolate_1stOrder<3, Portage::CELL,
                                 Wonton::Jali_Mesh_Wrapper,
-                                Wonton::Jali_State_Wrapper,
-                                Portage::CELL, 3>
+                                Wonton::Jali_Mesh_Wrapper,
+                                Wonton::Jali_State_Wrapper>
       interpolater(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper);
 
   interpolater.set_interpolation_variable("cellvars");
@@ -531,10 +530,10 @@ TEST(Interpolate_1st_Order, Cell_Ctr_Lin_3D) {
 
   // Create Interpolation objects
 
-  Portage::Interpolate_1stOrder<Wonton::Jali_Mesh_Wrapper,
+  Portage::Interpolate_1stOrder<3, Portage::CELL,
                                 Wonton::Jali_Mesh_Wrapper,
-                                Wonton::Jali_State_Wrapper,
-                                Portage::CELL, 3>
+                                Wonton::Jali_Mesh_Wrapper,
+                                Wonton::Jali_State_Wrapper>
       interpolater(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper);
 
   interpolater.set_interpolation_variable("cellvars");
@@ -672,11 +671,10 @@ TEST(Interpolate_1st_Order, Node_Ctr_Const_3D) {
 
   // Create Interpolation object
 
-  Portage::Interpolate_1stOrder<
-    Wonton::Jali_Mesh_Wrapper,
-    Wonton::Jali_Mesh_Wrapper,
-    Wonton::Jali_State_Wrapper,
-    Portage::NODE, 3>
+  Portage::Interpolate_1stOrder<3, Portage::NODE,
+                                Wonton::Jali_Mesh_Wrapper,
+                                Wonton::Jali_Mesh_Wrapper,
+                                Wonton::Jali_State_Wrapper>
       interpolater(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper);
 
   interpolater.set_interpolation_variable("nodevars");
