@@ -43,7 +43,7 @@ struct Controls {
   int print_detail;
 };
 
-template<template<class, class, class, Portage::Entity_kind, long> class T>
+template<template<int, Portage::Entity_kind, class, class, class> class T>
 class consistent_order{
 public:
   static bool check(Portage::Meshfree::Basis::Type type) {return false;}
@@ -134,11 +134,11 @@ public:
   // This is the basic test method to be called for each unit test. It will work
   // for 2-D and 3-D, coincident and non-coincident cell-centered remaps.
   template <
-    template<class, class> class Intersect,
-    template<class, class, class, Portage::Entity_kind, long> class Interpolate,
-    template <int, class, class> class SwarmSearch,
-    int Dimension=3
-    >
+  template<Portage::Entity_kind, class, class> class Intersect,
+  template<int, Portage::Entity_kind, class, class, class> class Interpolate,
+  template <int, class, class> class SwarmSearch,
+  int Dimension=3
+  >
   void runit()
   {
     if (Dimension != 3) {
@@ -206,7 +206,7 @@ public:
       mmdriver(sourceMeshWrapper, sourceStateWrapper,
                targetMeshWrapper, targetStateWrapper);
     mmdriver.set_remap_var_names(remap_fields);
-    //run on one processor
+    // run on one processor
     mmdriver.run(false);
 
     // Build the mesh-swarm-mesh driver data for this mesh type

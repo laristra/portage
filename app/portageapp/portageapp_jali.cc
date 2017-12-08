@@ -239,6 +239,9 @@ int main(int argc, char** argv) {
   create_meshes(dim, n_source, n_target, conformal, &sourceMesh, &targetMesh,
                 MPI_COMM_WORLD);
 
+  sourceMesh->write_to_gmv_file("source.gmv");
+  targetMesh->write_to_gmv_file("target.gmv");
+
   // Wrappers for interfacing with the underlying mesh data structures.
   Wonton::Jali_Mesh_Wrapper sourceMeshWrapper(*sourceMesh);
   Wonton::Jali_Mesh_Wrapper targetMeshWrapper(*targetMesh);
