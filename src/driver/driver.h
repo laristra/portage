@@ -17,8 +17,9 @@ Please see the license file at the root of this repository, or at:
 #include <iostream>
 #include <type_traits>
 
+#ifdef HAVE_TANGRAM
 #include "tangram/driver/driver.h"
-#include "tangram/reconstruct/xmof2D_wrapper.h"
+#endif
 
 #include "portage/support/portage.h"
 #include "portage/support/Point.h"
@@ -236,26 +237,59 @@ class MeshWrapperDual {  // cellid is the dual cell (i.e. node) id
 template <typename SearchType> struct SearchFunctor;
 template <typename IntersectType> struct IntersectFunctor;
 
+// Dummy interface reconstruction class, if external interface
+// reconstruction methods are not found
+template<class Mesh_Wrapper, int Dim> class DummyInterfaceReconstructor {
+ public:
+  DummyInterfaceReconstructor(Mesh_Wrapper const & mesh) {};
+  void set_volume_fractions(std::vector<int> const& cell_num_mats,
+                            std::vector<int> const& cell_mat_ids,
+                            std::vector<double> const& cell_mat_volfracs,
+                            std::vector<Tangram::Point<Dim>> const& cell_mat_centroids) {}; 
+  void set_cell_indices_to_operate_on(std::vector<int> const& cellIDs_to_op_on) {}
+  std::shared_ptr<Tangram::CellMatPoly<Dim>> operator()(const int cell_op_ID) const {}
+};
+
 /*!
   @class Driver "driver.h"
   @brief Driver provides the API to mapping from one mesh to another.
+
+  @tparam Search  A search method that takes the dimension, source mesh class
+  and target mesh class as template parameters
+
+  @tparam Intersect  A polyhedron-polyhedron intersection class that takes
+  the source and taget mesh classes as template parameters
+
+  @tparam Interpolate An interpolation class that takes the source and
+  target mesh classes, the source state class (that stores source
+  field values), the kind of entity the interpolation is on and the
+  dimension of the problem as template parameters
+
+  @tparam InterfaceReconstructor An interface reconstruction class
+  that takes the raw interface reconstruction method, the dimension of
+  the problem and the source mesh class as template parameters
+
   @tparam SourceMesh_Wrapper A lightweight wrapper to a specific input mesh
   implementation that provides certain functionality.
+
   @tparam SourceState_Wrapper A lightweight wrapper to a specific input state
   manager implementation that provides certain functionality.
+
   @tparam TargetMesh_Wrapper A lightweight wrapper to a specific target mesh
   implementation that provides certain functionality.
+
   @tparam TargetState_Wrapper A lightweight wrapper to a specific target state
   manager implementation that provides certain functionality.
 */
 template <template <int, class, class> class Search,
           template <class, class> class Intersect,
-          template<class, class, class, Entity_kind, long> class Interpolate,
+          template <class, class, class, Entity_kind, long> class Interpolate,
           int Dim,
           class SourceMesh_Wrapper,
           class SourceState_Wrapper,
           class TargetMesh_Wrapper = SourceMesh_Wrapper,
-          class TargetState_Wrapper = SourceState_Wrapper>
+          class TargetState_Wrapper = SourceState_Wrapper,
+          template <class, int> class InterfaceReconstructor = DummyInterfaceReconstructor>
 class Driver {
 
   // Something like this would be very helpful to users
@@ -487,30 +521,34 @@ class Driver {
       timersub(&end_timeval, &begin_timeval, &diff_timeval);
       tot_seconds_srch = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
 
+      // Call interface reconstruction only if we got a method from the 
+      // calling app
 
-      // INTERFACE RECONSTRUCTION (BUT RIGHT NOW WE ARE NOT USING IT)
-      // Normally we would get the interface reconstructor sent in but
-      // we don't want to change the signature for the portage driver
-      // until we are really ready, so we will just use XMOF2D
-
-      Tangram::Driver<Tangram::XMOF2D_Wrapper, 2, SourceMesh_Wrapper>
-          interface_reconstructor(source_mesh_);
-      
-      // Since we don't really have multiple materials and volume
-      // fractions of those materials in cells, we will pretend that
-      // we have two materials in each cell and that the volume
-      // fraction of each material in each cell is 0.5
-
-      int nmats = 2;
-      int nsourcecells = source_mesh_.num_entities(CELL, ALL);
-      std::vector<int> cell_num_mats(nsourcecells, nmats);
-      std::vector<int> cell_mat_ids(nsourcecells*nmats);
-      std::vector<double> cell_mat_volfracs(nsourcecells*nmats, 0.5);
-      interface_reconstructor.set_volume_fractions(cell_num_mats,
-                                                   cell_mat_ids,
-                                                   cell_mat_volfracs);
-      interface_reconstructor.reconstruct();
-
+      if (typeid(InterfaceReconstructor<SourceMesh_Wrapper, Dim>) !=
+          typeid(DummyInterfaceReconstructor<SourceMesh_Wrapper, Dim>)) {
+        // INTERFACE RECONSTRUCTION (BUT RIGHT NOW WE ARE NOT USING IT)
+        // Normally we would get the interface reconstructor sent in but
+        // we don't want to change the signature for the portage driver
+        // until we are really ready, so we will just use XMOF2D
+        
+        Tangram::Driver<InterfaceReconstructor, Dim, SourceMesh_Wrapper>
+            interface_reconstructor(source_mesh_);
+        
+        // Since we don't really have multiple materials and volume
+        // fractions of those materials in cells, we will pretend that
+        // we have two materials in each cell and that the volume
+        // fraction of each material in each cell is 0.5
+        
+        int nmats = 2;
+        int nsourcecells = source_mesh_.num_entities(CELL, ALL);
+        std::vector<int> cell_num_mats(nsourcecells, nmats);
+        std::vector<int> cell_mat_ids(nsourcecells*nmats);
+        std::vector<double> cell_mat_volfracs(nsourcecells*nmats, 0.5);
+        interface_reconstructor.set_volume_fractions(cell_num_mats,
+                                                     cell_mat_ids,
+                                                     cell_mat_volfracs);
+        interface_reconstructor.reconstruct();
+      }
 
       // INTERSECT
 
