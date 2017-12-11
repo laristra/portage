@@ -162,6 +162,7 @@ if (TANGRAM_DIR)
     set(TANGRAM_FOUND ON)
     set(TANGRAM_INCLUDE_DIRS ${TANGRAM_DIR}/include)
     include_directories(${TANGRAM_INCLUDE_DIRS})
+    add_definitions("-DHAVE_TANGRAM")
   endif (TANGRAM)
 else (TANGRAM_DIR)
   message(STATUS "TANGRAM_DIR not specified. Restricted to single material remap")
@@ -171,11 +172,24 @@ endif (TANGRAM_DIR)
 # Find XMOF2D
 #------------------------------------------------------------------------------#
 
-find_package(XMOF2D
-             HINTS ${XMOF2D_DIR})
-if (XMOF2D_FOUND)
-  include_directories(${XMOF2D_INCLUDE_DIRS})
-endif (XMOF2D_FOUND)
+if (TANGRAM_FOUND)
+  find_package(XMOF2D
+    HINTS ${XMOF2D_DIR})
+  if (XMOF2D_FOUND)
+    include_directories(${XMOF2D_INCLUDE_DIRS})
+
+# What XMOF2D puts as XMOF2D_LIBRARIES is not a complete path but just a name
+# Discover the library and cat it with the library dir to make XMOF2D_LIBRARIES
+    message(STATUS "XMOF2D LIBRARIES ---> ${XMOF2D_LIBRARIES}")
+    find_library(XMOF2D_LIBRARY
+      NAMES ${XMOF2D_LIBRARY_NAME}
+      HINTS ${XMOF2D_LIBRARY_DIR})
+    if (XMOF2D_LIBRARY)
+      set(XMOF2D_LIBRARIES ${XMOF2D_LIBRARY})
+    endif (XMOF2D_LIBRARY)
+    message(STATUS "XMOF2D LIBRARIES ---> ${XMOF2D_LIBRARIES}")
+  endif (XMOF2D_FOUND)
+endif (TANGRAM_FOUND)
 
 #-----------------------------------------------------------------------------
 # General NGC include directory information
