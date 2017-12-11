@@ -19,6 +19,12 @@ Please see the license file at the root of this repository, or at:
 #include "portage/support/portage.h"
 #include "portage/support/Point.h"
 
+
+// Temporary - until we pull WONTON out as a separate repository
+#ifdef HAVE_TANGRAM
+#include "tangram/support/tangram.h"
+#endif
+
 namespace Wonton {
 
 using namespace Portage;
@@ -252,6 +258,16 @@ class AuxMeshTopology {
   }
 
 
+#ifdef HAVE_TANGRAM
+  // TEMPORARY - until we pull WONTON out as a separate repository
+  int num_entities(Tangram::Entity_kind const entity,
+                   Tangram::Entity_type const etype = Tangram::Entity_type::ALL)
+      const {
+    return num_entities(static_cast<Portage::Entity_kind>(entity),
+                        static_cast<Portage::Entity_type>(etype));
+  }
+#endif
+
   //! Number of items of given entity
   int num_entities(Entity_kind const entity,
                    Entity_type const etype = Entity_type::ALL) const {
@@ -320,7 +336,22 @@ class AuxMeshTopology {
     return (make_counting_iterator(start_index) + num_entities(entity, etype));
   }
 
+#ifdef HAVE_TANGRAM
+  // TEMPORARY - until we pull WONTON out as a separate repository
+  //! Iterators on mesh entity - begin
+  counting_iterator begin(Tangram::Entity_kind const entity,
+                          Tangram::Entity_type const etype = Tangram::Entity_type::ALL) const {
+    return begin(static_cast<Portage::Entity_kind>(entity),
+                 static_cast<Portage::Entity_type>(etype));
+  }
 
+  //! Iterator on mesh entity - end
+  counting_iterator end(Tangram::Entity_kind const entity,
+                        Tangram::Entity_type const etype = Tangram::Entity_type::ALL) const {
+    return end(static_cast<Portage::Entity_kind>(entity),
+               static_cast<Portage::Entity_type>(etype));
+  }
+#endif
   /*!
     @brief Get the list of cell IDs for all cells attached to a specific
     cell through its nodes.
@@ -1230,6 +1261,29 @@ class AuxMeshTopology {
   }
 
 
+#ifdef HAVE_TANGRAM
+  // TEMPORARY - Until we pull out WONTON into separate repository
+  template <long D>
+  void cell_get_coordinates(int const cellid,
+                            std::vector<Tangram::Point<D>> *tplist) const {
+    std::vector<Point<D>> pplist;
+    cell_get_coordinates(cellid, &pplist);
+
+    tplist->clear();
+    for (auto const& pp : pplist)
+      tplist->emplace_back(pp);
+  }
+
+  //! Get cells of given Entity_type connected to face (in no particular order)
+  void face_get_cells(int const faceid, Tangram::Entity_type const etype,
+                      std::vector<int> *cells) const {
+    face_get_cells(faceid, static_cast<Entity_type>(etype), cells);
+  }
+#endif
+
+
+
+
  protected:
   void build_aux_entities() {
     compute_cell_centroids();
@@ -1252,6 +1306,7 @@ class AuxMeshTopology {
     build_face_to_cell_adjacency();
     flag_entities_on_exterior_boundary();
   }
+
 
  private:
   void compute_cell_centroids();
