@@ -521,6 +521,7 @@ class Driver {
       timersub(&end_timeval, &begin_timeval, &diff_timeval);
       tot_seconds_srch = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
 
+#ifdef HAVE_TANGRAM
       // Call interface reconstruction only if we got a method from the 
       // calling app
 
@@ -549,6 +550,7 @@ class Driver {
                                                      cell_mat_volfracs);
         interface_reconstructor.reconstruct();
       }
+#endif
 
       // INTERSECT
 
