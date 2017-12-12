@@ -12,6 +12,8 @@ Please see the license file at the root of this repository, or at:
 #include <array>
 #include <iostream>
 #include <type_traits>
+#include <string>
+#include <sstream>
 
 #ifdef HAVE_LAPACKE
 #define HAVE_LAPACK_CONFIG_H
@@ -24,10 +26,12 @@ Please see the license file at the root of this repository, or at:
 /*!
   @file Matrix.h
   @brief Matrix class for Portage 
-*/
+*/ 
 
 namespace Portage {
 
+  static std::string ignore_msg="ignore";
+  static std::string &ignore_msg_ref(ignore_msg);
 
 class Matrix {
  public:
@@ -241,6 +245,7 @@ class Matrix {
     @brief  solve a linear system A X = B with this matrix (A)
     @param[in] B  right-hand sides (multiple)
     @param[in] method what method to use for solution
+    @param[in,out] error message, if any 
     @return the solution X
 
     method=="inverse" ==> use the  inverse operator
@@ -248,13 +253,20 @@ class Matrix {
     method=="lapack-sysv" ==> use lapack dsysvx for symmetric A.
     method=="lapack-gesv" ==> use lapack dgesvx for general A.
     method=="lapack-sytr" ==> use lapack dsytrf & dsytrs for symmetric A.
+
+    If \code error\endcode is not present or has value "ignore", no message will be returned.
+      The value of  \code error\endcode will be "ignore" on return.
+    If \code error\endcode is present and has a value other than "ignore", the value "none" 
+      will be returned if no error was generated, or contain the appropriate error message.
   */
   Matrix solve(Matrix const& B,
-               std::string method="inverse")
+               std::string method="inverse",
+	       std::string &error=ignore_msg_ref)
   {
     assert(Rows_ == Columns_);
     assert(B.rows() == Columns_);
     method_ = method;
+    std::stringstream infoword;
 
     Matrix X(B.rows(), B.columns(), 0.);
 
@@ -319,19 +331,22 @@ class Matrix {
       X = XT.transpose();
 
       // checks
-      if (info <0) {
-        std::cerr << "solve(posv): illegal value in "<<-info<<"-th position"
-            << std::endl;
-      }
-      if (info>0 and info<=n) {
-        std::cerr <<
-        "solve(posv): leading minor "<<info<<" is not positive definite"
-        << std::endl;
-      }
-      if (info == n+1) {
-        std::cerr <<
-        "solve(posv): reciprocal condition number is less than machine precision"
-        << std::endl;
+      if (error != "ignore") {
+	error = "none";
+	if (info <0) {
+	  infoword << -info;
+	  error = 
+	    std::string("solve(posv): illegal value in ")+infoword.str()+"-th position";
+	}
+	if (info>0 and info<=n) {
+	  infoword << info;
+	  error = 
+	    std::string("solve(posv): leading minor ")+infoword.str()+" is not positive definite";
+	}
+	if (info == n+1) {
+	  error = 
+	    std::string("solve(posv): reciprocal condition number is less than machine precision");
+	}
       }
 
     } else if (method == "lapack-sysv") {  // LAPACK symmetric matrix
@@ -386,19 +401,21 @@ class Matrix {
       X = XT.transpose();
 
       // checks
-      if (info <0) {
-        std::cerr << "solve(sysv): illegal value in "<<-info<<"-th position"
-            << std::endl;
-      }
-      if (info>0 and info<=n) {
-        std::cerr <<
-            "solve(sysv): diagonal entry "<<info<<" is zero"
-            << std::endl;
-      }
-      if (info == n+1) {
-        std::cerr <<
-            "solve(sysv): reciprocal condition number is less than machine precision"
-            << std::endl;
+      if (error != "ignore") {
+	error = "none";
+	if (info <0) {
+	  infoword<<-info;
+	  error =  std::string("solve(sysv): illegal value in ")+infoword.str()+"-th position";
+	}
+	if (info>0 and info<=n) {
+	  infoword<<info;
+	  error = 
+	    std::string("solve(sysv): diagonal entry ")+infoword.str()+" is zero";
+	}
+	if (info == n+1) {
+	  error = 
+	    std::string("solve(sysv): reciprocal condition number is less than machine precision");
+	}
       }
 
     } else if (method == "lapack-gesv") {  // LAPACK general matrix
@@ -454,20 +471,22 @@ class Matrix {
       X = XT.transpose();
 
       // checks
-      if (info <0) {
-        std::cerr << "solve(gesv): illegal value in "<<-info<<"-th position"
-            << std::endl;
+      if (error != "ignore") {
+	error = "none";
+	if (info <0) {
+	  infoword<<-info;
+	  error =  std::string("solve(gesv): illegal value in ")+infoword.str()+"-th position";
+	}
+	if (info>0 and info<=n) {
+	  infoword<<info;
+	  error = 
+	    std::string("solve(gesv): upper triangle entry ")+infoword.str()+" is zero";
+	}
+	if (info == n+1) {
+	  error = 
+	    std::string("solve(gesv): reciprocal condition number is less than machine precision");
+	} 
       }
-      if (info>0 and info<=n) {
-        std::cerr <<
-            "solve(gesv): upper triangle entry "<<info<<" is zero"
-            << std::endl;
-      }
-      if (info == n+1) {
-        std::cerr <<
-            "solve(gesv): reciprocal condition number is less than machine precision"
-            << std::endl;
-      } 
 
     } else if (method == "lapack-sytr") {  // LAPACK symmetric matrix
 
@@ -505,21 +524,32 @@ class Matrix {
       info = LAPACKE_dsytrf(matrix_layout,uplo,n,a,lda,ipiv);
 
       // checks
-      if (info < 0) {
-        std::cerr << "solve(sytr): illegal value in "<<-info<<"-th position"
-            << std::endl;
-      } else if (info > 0) {
-        std::cerr <<
-            "solve(sytr): diagonal entry "<<info<<" is zero"<< std::endl;
+      bool skip=false;
+      if (error != "ignore") {
+	error = "none";
+	if (info < 0) {
+	  infoword<<-info;
+	  error = std::string("solve(sytr): illegal value in ")+infoword.str()+"-th position";
+	  skip = true;
+	} else if (info > 0) {
+	  infoword<<info;
+	  error = std::string("solve(sytr): diagonal entry ")+infoword.str()+" is zero";
+	  skip = true;
+	}
       }
 
       // solve it
-      info = LAPACKE_dsytrs(matrix_layout,uplo,n,nrhs,a,lda,ipiv,b,ldb);
+      if (not skip) {
+	info = LAPACKE_dsytrs(matrix_layout,uplo,n,nrhs,a,lda,ipiv,b,ldb);
 
-      // checks
-      if (info < 0) {
-        std::cerr << "solve(sytr): illegal value in "<<-info<<"-th position"
-            << std::endl;
+	// checks
+	if (error != "ignore") {
+	  error = "none";
+	  if (info < 0) {
+	    infoword<<-info;
+	    error = std::string("solve(sytr): illegal value in ")+infoword.str()+"-th position";
+	  }
+	}
       }
 
       X = XT.transpose();

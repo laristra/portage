@@ -342,3 +342,32 @@ TEST(Matrix, SolveWithSYTR) {
       ASSERT_NEAR(resB[i][j], B[i][j], 1.e-12);
     }
 }
+
+/*!
+  @brief Test the matrix solve functionality
+ */
+TEST(Matrix, SolveWithErrorMsg) {
+  Portage::Matrix A(3,3,0.);
+  A[0][0] = 1.; A[1][1] = 1.; A[2][2] = -1.;
+
+  Portage::Matrix B(3,1,7.3);
+
+  std::string errormsg="ignore";
+  Portage::Matrix AinvB = A.solve(B, "lapack-posv", errormsg);
+  std::cout << "error message: " << errormsg << std::endl;
+
+  ASSERT_TRUE(errormsg=="ignore");
+
+  errormsg="blahblah";
+  AinvB = A.solve(B, "lapack-posv", errormsg);
+  std::cout << "error message: " << errormsg << std::endl;
+
+  ASSERT_TRUE(errormsg!="blahblah");
+
+  errormsg="blahblah";
+  A[2][2] = 2.;
+  AinvB = A.solve(B, "lapack-posv", errormsg);
+  std::cout << "error message: " << errormsg << std::endl;
+
+  ASSERT_TRUE(errormsg=="none");
+}

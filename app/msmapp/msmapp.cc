@@ -32,6 +32,11 @@ Please see the license file at the root of this repository, or at:
 #include "portage/wonton/mesh/simple_mesh/simple_mesh_wrapper.h"
 #include "portage/wonton/state/simple_state/simple_state_wrapper.h"
 #include "portage/wonton/mesh/flat/flat_mesh_wrapper.h"
+#include "portage/wonton/mesh/jali/jali_mesh_wrapper.h"
+#include "portage/wonton/state/jali/jali_state_wrapper.h"
+#include "Mesh.hh"
+#include "MeshFactory.hh"
+#include "JaliState.h"
 
 template<size_t dim>
 struct Controls {
@@ -41,6 +46,7 @@ struct Controls {
   int example;
   double smoothing_factor;
   int print_detail;
+  std::string source_file="none", target_file="none";
 };
 
 template<template<int, Portage::Entity_kind, class, class, class> class T>
@@ -112,7 +118,6 @@ double field_func(int example, Portage::Point<D> coord) {
 // class for running examples
 class runMSM {
 protected:
-  
   //Source and target meshes
   std::shared_ptr<Portage::Simple_Mesh> sourceMesh;
   std::shared_ptr<Portage::Simple_Mesh> targetMesh;
@@ -295,6 +300,194 @@ public:
   {}
 };
 
+
+// class for running examples
+class runMSMJali {
+protected:
+  //Source and target meshes
+  std::shared_ptr<Jali::Mesh> sourceMesh;
+  std::shared_ptr<Jali::Mesh> targetMesh;
+  //Source and target mesh state
+  Jali::State sourceState;
+  Jali::State targetState;
+  Jali::State targetState2;
+protected:
+  //Source and target mesh and state wrappers
+  Portage::Jali_Mesh_Wrapper sourceMeshWrapper;
+  Portage::Jali_Mesh_Wrapper targetMeshWrapper;
+  Portage::Jali_State_Wrapper sourceStateWrapper;
+  Portage::Jali_State_Wrapper targetStateWrapper;
+  Portage::Jali_State_Wrapper targetStateWrapper2;
+  // run parameters
+  Controls<3> controls_;
+
+public:
+  
+  // This is the basic test method to be called for each unit test. It will work
+  // for 2-D and 3-D, coincident and non-coincident cell-centered remaps.
+  template <
+    template<class, class> class Intersect,
+    template<class, class, class, Portage::Entity_kind, long> class Interpolate,
+    template <int, class, class> class SwarmSearch,
+    int Dimension=3
+    >
+  void runit()
+  {
+    if (Dimension != 3) {
+      throw std::runtime_error("2D not available yet");
+    }
+
+    double smoothing_factor = controls_.smoothing_factor;
+    Portage::Meshfree::Basis::Type basis;
+    if (controls_.order == 0) basis = Portage::Meshfree::Basis::Unitary;
+    if (controls_.order == 1) basis = Portage::Meshfree::Basis::Linear;
+    if (controls_.order == 2) basis = Portage::Meshfree::Basis::Quadratic;
+    assert(consistent_order<Interpolate>::check(basis));      
+
+    // Fill the source state data with the specified profile
+    const int nsrccells = sourceMeshWrapper.num_owned_cells();
+    std::vector<double> sourceData(nsrccells);
+    const int nsrcnodes = sourceMeshWrapper.num_owned_nodes();
+    std::vector<double> sourceDataNode(nsrcnodes);
+
+    //Create the source data for given function
+    Portage::Flat_Mesh_Wrapper<double> sourceFlatMesh;
+    sourceFlatMesh.initialize(sourceMeshWrapper);
+    for (unsigned int c = 0; c < nsrccells; ++c) {
+      Portage::Point<Dimension> cen;
+      sourceFlatMesh.cell_centroid(c, &cen);
+      sourceData[c] = field_func<3>(controls_.example, cen);
+    }
+    Jali::StateVector<double> &sourceVec(sourceState.add("celldata",
+      sourceMesh, Jali::Entity_kind::CELL, Jali::Entity_type::ALL, &(sourceData[0])));
+    
+    for (unsigned int c = 0; c < nsrcnodes; ++c) {
+      Portage::Point<Dimension> cen;
+      sourceFlatMesh.node_get_coordinates(c, &cen);
+      sourceDataNode[c] = field_func<3>(controls_.example, cen);
+    }
+    Jali::StateVector<double> &sourceVecNode(sourceState.add("nodedata",
+      sourceMesh, Jali::Entity_kind::NODE, Jali::Entity_type::ALL, &(sourceDataNode[0])));
+
+    //Build the target state storage
+    const int ntarcells = targetMeshWrapper.num_owned_cells();
+    const int ntarnodes = targetMeshWrapper.num_owned_nodes();
+    std::vector<double> targetData(ntarcells), targetData2(ntarcells);
+    std::vector<double> targetDataNode(ntarnodes), targetData2Node(ntarnodes);
+    targetStateWrapper. add_data(targetMesh, Portage::Entity_kind::CELL, "celldata", &(targetData[0]));
+    targetStateWrapper2.add_data(targetMesh, Portage::Entity_kind::CELL, "celldata", &(targetData2[0]));
+    targetStateWrapper. add_data(targetMesh, Portage::Entity_kind::NODE, "nodedata", &(targetDataNode[0]));
+    targetStateWrapper2.add_data(targetMesh, Portage::Entity_kind::NODE, "nodedata", &(targetData2Node[0]));
+
+    // Register the variable name and interpolation order with the driver
+    std::vector<std::string> remap_fields;
+    remap_fields.push_back("celldata");
+    remap_fields.push_back("nodedata");
+
+    // Build the mesh-mesh driver data for this mesh type
+    Portage::Driver<Portage::SearchKDTree,
+                    Intersect,
+                    Interpolate,
+                    Dimension,
+                    Portage::Jali_Mesh_Wrapper, Portage::Jali_State_Wrapper,
+                    Portage::Jali_Mesh_Wrapper, Portage::Jali_State_Wrapper>
+      mmdriver(sourceMeshWrapper, sourceStateWrapper,
+               targetMeshWrapper, targetStateWrapper);
+    mmdriver.set_remap_var_names(remap_fields);
+    //run on one processor
+    mmdriver.run(false);
+
+    // Build the mesh-swarm-mesh driver data for this mesh type
+    Portage::MSM_Driver<
+      SwarmSearch,
+      Portage::Meshfree::Accumulate,
+      Portage::Meshfree::Estimate,
+      Dimension,
+      Portage::Jali_Mesh_Wrapper, Portage::Jali_State_Wrapper,
+      Portage::Jali_Mesh_Wrapper, Portage::Jali_State_Wrapper
+      >
+      msmdriver(sourceMeshWrapper, sourceStateWrapper,
+                targetMeshWrapper, targetStateWrapper2,
+                smoothing_factor, basis);
+    msmdriver.set_remap_var_names(remap_fields);
+    //run on one processor
+    msmdriver.run(false);
+
+    //Check the answer
+    double stdval, err;
+    double totmerr=0., totserr=0.;
+
+    std::vector<double> cellvecout(ntarcells), cellvecout2(ntarcells);
+    std::vector<double> nodevecout(ntarnodes), nodevecout2(ntarnodes);
+    Jali::StateVector<double, Jali::Mesh> cvp, cv2p, nvp, nv2p;
+    targetState. get("celldata", targetMesh, Jali::Entity_kind::CELL, Jali::Entity_type::ALL, &cvp);
+    targetState2.get("celldata", targetMesh, Jali::Entity_kind::CELL, Jali::Entity_type::ALL, &cv2p);
+    targetState. get("nodedata", targetMesh, Jali::Entity_kind::NODE, Jali::Entity_type::ALL, &nvp);
+    targetState2.get("nodedata", targetMesh, Jali::Entity_kind::NODE, Jali::Entity_type::ALL, &nv2p);
+    for (int i=0; i<ntarcells; i++) {cellvecout[i]=cvp[i]; cellvecout2[i]=cv2p[i];}
+    for (int i=0; i<ntarnodes; i++) {nodevecout[i]=nvp[i]; nodevecout2[i]=nv2p[i];}
+
+    Portage::Flat_Mesh_Wrapper<double> targetFlatMesh;
+    targetFlatMesh.initialize(targetMeshWrapper);
+    if (controls_.print_detail == 1) {
+      std::printf("Cell Centroid-coord-1-2-3 Exact Mesh-Mesh Error Mesh-Swarm-Mesh Error\n");
+    }
+    for (int c = 0; c < ntarcells; ++c) {
+      Portage::Point<Dimension> ccen;
+      targetFlatMesh.cell_centroid(c, &ccen);
+      double value = field_func<3>(controls_.example, ccen);
+      double merror, serror;
+      merror = cellvecout[c] - value;
+      serror = cellvecout2[c] - value;
+      // dump diagnostics for each cell
+      if (controls_.print_detail == 1){
+	std::printf("cell-data %8d %19.13le %19.13le %19.13le ", c, ccen[0], ccen[1], ccen[2]);
+	std::printf("%19.13le %19.13le %19.13le %19.13le %19.13le\n",
+		    value, cellvecout[c], merror, cellvecout2[c], serror);
+      }
+      totmerr = std::max(totmerr, std::fabs(merror));
+      totserr = std::max(totserr, std::fabs(serror));
+    }
+
+    std::printf("\n\nLinf NORM OF MM CELL ERROR: %le\n\n", totmerr);
+    std::printf("\n\nLinf NORM OF MSM CELL ERROR: %le\n\n", totserr);
+
+    if (controls_.print_detail == 1) {
+      std::printf("Node Node-coord-1-2-3 Exact Mesh-Mesh Error Mesh-Swarm-Mesh Error\n");
+    }
+    totmerr = totserr = 0.;
+    for (int n = 0; n < ntarnodes; ++n) {
+      Portage::Point<Dimension> node;
+      targetFlatMesh.node_get_coordinates(n, &node);
+      double value = field_func<3>(controls_.example, node);
+      double merror, serror;
+      merror = nodevecout[n] - value;
+      serror = nodevecout2[n] - value;
+      // dump diagnostics for each node
+      if (controls_.print_detail == 1){
+	std::printf("node-data %8d %19.13le %19.13le %19.13le ", n, node[0], node[1], node[2]);
+	std::printf("%19.13le %19.13le %19.13le %19.13le %19.13le\n",
+		    value, cellvecout[n], merror, cellvecout2[n], serror);
+      }
+      totmerr = std::max(totmerr, std::fabs(merror));
+      totserr = std::max(totserr, std::fabs(serror));
+    }
+
+    std::printf("\n\nLinf NORM OF MM NODE ERROR: %lf\n\n", totmerr);
+    std::printf("\n\nLinf NORM OF MSM NODE ERROR: %lf\n\n", totserr);
+  }
+
+  //Constructor
+  runMSMJali(Controls<3> controls, std::shared_ptr<Jali::Mesh> s,std::shared_ptr<Jali::Mesh> t) :
+    sourceMesh(s), targetMesh(t), 
+    sourceState(sourceMesh), targetState(targetMesh), targetState2(targetMesh),
+    sourceMeshWrapper(*sourceMesh), targetMeshWrapper(*targetMesh),
+    sourceStateWrapper(sourceState), targetStateWrapper(targetState), 
+    targetStateWrapper2(targetState2), 
+    controls_(controls)
+  {}
+};
+
 void usage() {
   std::cout << "Usage: msmapp file" << std::endl;
   std::cout << "\
@@ -310,6 +503,10 @@ void usage() {
     example, int, choice of -1...3:         3\n\
     double, smoothing factor:             1.5\n\
     print detail, choice of 0 or 1:         1\n\
+    (optional) source mesh EXODUS file:  src_file_name \n\
+    (optional) target mesh EXODUS file:  tgt_file_name \n\
+\n\
+    must specify both source and target mesh files if so using \n\
   ";
 }
 
@@ -334,6 +531,11 @@ int main(int argc, char** argv) {
   file >> ctl.example;
   file >> ctl.smoothing_factor;
   file >> ctl.print_detail;
+  try {
+    file >> ctl.source_file;
+    file >> ctl.target_file;
+  } catch (...) {
+  }
 
   bool error = false;
   for (int i; i<3; i++) {
@@ -346,6 +548,8 @@ int main(int argc, char** argv) {
   if (ctl.example<-1 or ctl.example>3) error = true;
   if (ctl.smoothing_factor<0.) error = true;
   if (ctl.print_detail<0 or ctl.print_detail>1) error = true;
+  if (ctl.source_file == "none" and ctl.target_file != "none") error = true;
+  if (ctl.target_file == "none" and ctl.source_file != "none") error = true;
   if (error) {
     throw std::runtime_error("error in input file");
   }
@@ -364,29 +568,54 @@ int main(int argc, char** argv) {
   }
 #endif
 
-  std::shared_ptr<Portage::Simple_Mesh> src_mesh = std::make_shared<Portage::Simple_Mesh>
-    (ctl.smin[0], ctl.smin[1], ctl.smin[2], ctl.smax[0], ctl.smax[1], ctl.smax[2],
-     ctl.scells[0], ctl.scells[1], ctl.scells[2]);
-  std::shared_ptr<Portage::Simple_Mesh> tgt_mesh = std::make_shared<Portage::Simple_Mesh>
-    (ctl.tmin[0], ctl.tmin[1], ctl.tmin[2], ctl.tmax[0], ctl.tmax[1], ctl.tmax[2],
-     ctl.tcells[0], ctl.tcells[1], ctl.tcells[2]);
+  if (ctl.source_file == "none") {
+    std::shared_ptr<Portage::Simple_Mesh> src_mesh = std::make_shared<Portage::Simple_Mesh>
+      (ctl.smin[0], ctl.smin[1], ctl.smin[2], ctl.smax[0], ctl.smax[1], ctl.smax[2],
+       ctl.scells[0], ctl.scells[1], ctl.scells[2]);
+    std::shared_ptr<Portage::Simple_Mesh> tgt_mesh = std::make_shared<Portage::Simple_Mesh>
+      (ctl.tmin[0], ctl.tmin[1], ctl.tmin[2], ctl.tmax[0], ctl.tmax[1], ctl.tmax[2],
+       ctl.tcells[0], ctl.tcells[1], ctl.tcells[2]);
   
-  runMSM msmguy(ctl, src_mesh, tgt_mesh);
+    runMSM msmguy(ctl, src_mesh, tgt_mesh);
 
-  if (ctl.order == 1) {
+    std::cout << "starting msmapp..." << std::endl;
+    std::cout << "running with input file " << filename << std::endl;
+
+    if (ctl.order == 1) {
   
-    msmguy.runit<Portage::IntersectR3D, 
-                 Portage::Interpolate_1stOrder, 
-                 Portage::SearchPointsByCells, 3>();
+      msmguy.runit<Portage::IntersectR3D, 
+		   Portage::Interpolate_1stOrder, 
+		   Portage::SearchPointsByCells, 3>();
   
-  } else if (ctl.order == 2) {
+    } else if (ctl.order == 2) {
  
-    msmguy.runit<Portage::IntersectR3D, 
-		 Portage::Interpolate_2ndOrder, 
-		 Portage::SearchPointsByCells, 3>();
+      msmguy.runit<Portage::IntersectR3D, 
+		   Portage::Interpolate_2ndOrder, 
+		   Portage::SearchPointsByCells, 3>();
 
+    }
+  } else {
+    Jali::MeshFactory jmf(MPI_COMM_WORLD);
+    std::shared_ptr<Jali::Mesh> src_mesh = jmf(ctl.source_file);
+    std::shared_ptr<Jali::Mesh> tgt_mesh = jmf(ctl.target_file);
+  
+    runMSMJali msmguy(ctl, src_mesh, tgt_mesh);
+
+    std::cout << "starting msmapp..." << std::endl;
+    std::cout << "running with input file " << filename << std::endl;
+
+    if (ctl.order == 1) {
+  
+      msmguy.runit<Portage::IntersectR3D, 
+		   Portage::Interpolate_1stOrder, 
+		   Portage::SearchPointsByCells, 3>();
+  
+    } else if (ctl.order == 2) {
+ 
+      msmguy.runit<Portage::IntersectR3D, 
+		   Portage::Interpolate_2ndOrder, 
+		   Portage::SearchPointsByCells, 3>();
+
+    }
   }
-
-  std::cout << "starting msmapp..." << std::endl;
-  std::cout << "running with input file " << filename << std::endl;
 }
