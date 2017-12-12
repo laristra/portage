@@ -4,8 +4,6 @@ Please see the license file at the root of this repository, or at:
     https://github.com/laristra/portage/blob/master/LICENSE
 ]]
 
-  message(STATUS "TANGRAM_FOUND value in app/portageapp/CMakeLists.txt is ${TANGRAM_FOUND}")
-  message(STATUS "TANGRAM_INCLUDE_DIRS value in app/portageapp/CMakeLists.txt is ${TANGRAM_INCLUDE_DIRS}")
 
 if (Jali_DIR)
     add_executable(portageapp_jali portageapp_jali.cc)
@@ -35,16 +33,6 @@ if (Jali_DIR)
     # Jali additions
     include_directories(${Jali_INCLUDE_DIRS} ${Jali_TPL_INCLUDE_DIRS})
     target_link_libraries(portageapp_jali_file ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES})
-
-  if (TANGRAM_FOUND)    # tangram is header only package
-    include_directories(${TANGRAM_INCLUDE_DIRS})
-    if (XMOF2D_FOUND)   # Right now we are using tangram with XMOF2D
-      include_directories(${XMOF2D_INCLUDE_DIRS})
-      target_link_libraries(portageapp_jali ${XMOF2D_LIBRARIES})
-      target_link_libraries(portageapp_jali_file ${XMOF2D_LIBRARIES})
-    endif (XMOF2D_FOUND)
-  endif (TANGRAM_FOUND)
-
 endif (Jali_DIR)
 
 # FleCSI example
@@ -59,13 +47,6 @@ if (ENABLE_FleCSI)
       set_target_properties(portageapp_flecsi PROPERTIES
                             LINK_FLAGS "${MPI_CXX_LINK_FLAGS}")
   endif (ENABLE_MPI)
-
-  if (TANGRAM_FOUND)    # tangram is header only package
-    include_directories(${TANGRAM_INCLUDE_DIRS})
-    if (XMOF2D_FOUND)   # Right now we are using tangram with XMOF2D
-      target_link_libraries(portageapp_flecsi ${XMOF2D_LIBRARIES})
-    endif (XMOF2D_FOUND)
-  endif (TANGRAM_FOUND)
 endif (ENABLE_FleCSI)
 
 if (JALI_DIR AND ENABLE_FleCSI)
@@ -82,14 +63,7 @@ if (JALI_DIR AND ENABLE_FleCSI)
   target_link_libraries(portageapp_jali2flecsi ${Jali_LIBRARIES}
                         ${Jali_TPL_LIBRARIES})
 
-  if (TANGRAM_FOUND)    # tangram is header only package
-    include_directories(${TANGRAM_INCLUDE_DIRS})
-    if (XMOF2D_FOUND)   # Right now we are using tangram with XMOF2D
-      target_link_libraries(portageapp_jali2flecsi ${XMOF2D_LIBRARIES})
-    endif (XMOF2D_FOUND)
-  endif (TANGRAM_FOUND)
 endif (JALI_DIR AND ENABLE_FleCSI)
-
 
 #TCMalloc option
 set(ENABLE_TCMALLOC TRUE CACHE BOOL "Use TCMalloc")
