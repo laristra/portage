@@ -271,16 +271,12 @@ Simple_Mesh(double x0, double y0, double z0,
     @param[out] pp The @c Point object of dimension @c D containing the
     coordinates of node @nodeid.
 
-    This is the general specification.  @c Simple_Mesh is only 3D.
+    This is the general specification.  
    */
   template<long D>
   void node_get_coordinates(const ID nodeid,
                             Point<D> *pp) const {
     assert(D == space_dimension());
-    //if (D==3)
-    //   *pp = coordinates3d_[nodeid];
-    //else
-    //   *pp = coordinates2d_[nodeid];
   }
 
  private:
@@ -650,7 +646,7 @@ Simple_Mesh(double x0, double y0, double z0,
 
 // Specializations
 /*!
-  @brief Get the 3D coordinates of a specific node as @c Portage::Point object.
+  @brief Get the 2D/3D coordinates of a specific node as @c Portage::Point object.
   @param[in] nodeid The ID of the node.
   @param[out] pp The @c Portage::Point containing the coordinates for node
   @c nodeid.
