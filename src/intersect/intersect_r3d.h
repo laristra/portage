@@ -24,7 +24,11 @@ namespace Portage {
 
 typedef
 struct facetedpoly {
-  std::vector<std::vector<int>> facetpoints;
+  std::vector<std::vector<int>> facetpoints;  // we can flatten this to a
+  //                                          // 1D array if we assume only
+  //                                          // triangular facets or we
+  //                                          // include the number of points
+  //                                          // in each facet
   std::vector<Point<3>> points;
 } facetedpoly_t;
 
@@ -268,6 +272,8 @@ class IntersectR3D<CELL, SourceMeshType, TargetMeshType> {
     targetMeshWrapper.decompose_cell_into_tets(tgt_cell, &target_tet_coords,
                                                rectangular_mesh_);
 
+
+    // CAN MAKE THIS INTO A THRUST::TRANSFORM CALL
     int nsrc = src_cells.size();
     std::vector<Weights_t> sources_and_weights(nsrc);
     int ninserted = 0;
@@ -337,15 +343,12 @@ class IntersectR3D<NODE, SourceMeshType, TargetMeshType> {
     targetMeshWrapper.dual_wedges_get_coordinates(tgt_node, &target_tet_coords);
 
 
+    // CAN MAKE THIS INTO A THRUST TRANSFORM CALL
     int nsrc = src_nodes.size();
     std::vector<Weights_t> sources_and_weights(nsrc);
     int ninserted = 0;
     for (int i = 0; i < nsrc; i++) {
       int s = src_nodes[i];
-
-      // Debug
-      Point<3> srcxyz;
-      sourceMeshWrapper.node_get_coordinates(s, &srcxyz);
 
       facetedpoly_t srcpoly;
       sourceMeshWrapper.dual_cell_get_facetization(s, &srcpoly.facetpoints,
