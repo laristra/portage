@@ -48,8 +48,8 @@ intersect_3Dpolys(facetedpoly_t srcpoly,
   // unnecessary computation (EVEN if the target cell is much
   // smaller than the source cell)
 
-  std::array<double, 6> source_cell_bounds =  {1e99, -1e99, 1e99, -1e99,
-                                               1e99, -1e99};
+  std::vector<double> source_cell_bounds =  {1e99, -1e99, 1e99, -1e99,
+                                             1e99, -1e99};
 
   // Initialize the source polyhedron description in a form R3D wants
   // Simultaneously compute the bounding box
@@ -128,12 +128,11 @@ intersect_3Dpolys(facetedpoly_t srcpoly,
   // Finished building source poly; now intersect with tets of target cell
 
   std::vector<double> moments(4, 0);
+  for (auto const & target_cell_tet : target_tet_coords) {
+    std::vector<r3d_plane> faces(4);
 
-  for (const auto &target_cell_tet : target_tet_coords) {
-    std::array<r3d_plane, 4> faces;
-
-    std::array<double, 6> target_tet_bounds = {1e99, -1e99, 1e99,
-                                               -1e99, 1e99, -1e99};
+    std::vector<double> target_tet_bounds = {1e99, -1e99, 1e99,
+                                             -1e99, 1e99, -1e99};
     r3d_rvec3 verts2[4];
     for (int i = 0; i < 4; i++)
       for (int j = 0; j < 3; j++) {
