@@ -26,13 +26,6 @@ if (Jali_DIR)
   include_directories(${Jali_INCLUDE_DIRS} ${Jali_TPL_INCLUDE_DIRS})
   target_link_libraries(msmapp ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES})
 
-  # Tangram (header only) and XMOF2D
-  if (TANGRAM_FOUND)
-    if (XMOF2D_FOUND)   # Right now we are using tangram with XMOF2D
-      target_link_libraries(msmapp ${XMOF2D_LIBRARIES})
-    endif (XMOF2D_FOUND)
-  endif (TANGRAM_FOUND)
-
   #TCMalloc option
   set(ENABLE_TCMALLOC TRUE CACHE BOOL "Use TCMalloc")
   if(ENABLE_TCMALLOC)

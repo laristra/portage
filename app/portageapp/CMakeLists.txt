@@ -4,6 +4,7 @@ Please see the license file at the root of this repository, or at:
     https://github.com/laristra/portage/blob/master/LICENSE
 ]]
 
+
 if (Jali_DIR)
     add_executable(portageapp_jali portageapp_jali.cc)
     target_link_libraries(portageapp_jali portage ${EXTRA_LIBS})
@@ -32,12 +33,6 @@ if (Jali_DIR)
     # Jali additions
     include_directories(${Jali_INCLUDE_DIRS} ${Jali_TPL_INCLUDE_DIRS})
     target_link_libraries(portageapp_jali_file ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES})
-
-    if (XMOF2D_FOUND)   # Right now we are using tangram with XMOF2D
-      target_link_libraries(portageapp_jali ${XMOF2D_LIBRARIES})
-      target_link_libraries(portageapp_jali_file ${XMOF2D_LIBRARIES})
-    endif (XMOF2D_FOUND)
-
 endif (Jali_DIR)
 
 # FleCSI example
@@ -52,10 +47,6 @@ if (ENABLE_FleCSI)
       set_target_properties(portageapp_flecsi PROPERTIES
                             LINK_FLAGS "${MPI_CXX_LINK_FLAGS}")
   endif (ENABLE_MPI)
-
-  if (XMOF2D_FOUND) # Right now we are using tangram with XMOF2D
-    target_link_libraries(portageapp_flecsi ${XMOF2D_LIBRARIES})
-  endif (XMOF2D_FOUND)
 endif (ENABLE_FleCSI)
 
 if (JALI_DIR AND ENABLE_FleCSI)
@@ -63,20 +54,16 @@ if (JALI_DIR AND ENABLE_FleCSI)
   target_link_libraries(portageapp_jali2flecsi portageapp_jali2flecsi ${EXTRA_LIBS})
   include_directories(${FleCSI_INCLUDE_DIR} ${FleCSISP_INCLUDE_DIR})
   target_link_libraries(portageapp_jali2flecsi ${FleCSI_LIBRARIES} ${FleCSISP_LIBRARIES})
-  # these appear needed because of something we are pulling in within src
+# these appear needed because of something we are pulling in within src
   if (ENABLE_MPI)
-    target_link_libraries(portageapp_jali2flecsi ${MPI_CXX_LIBRARIES})
-    set_target_properties(portageapp_jali2flecsi PROPERTIES
-      LINK_FLAGS "${MPI_CXX_LINK_FLAGS}")
+      target_link_libraries(portageapp_jali2flecsi ${MPI_CXX_LIBRARIES})
+      set_target_properties(portageapp_jali2flecsi PROPERTIES
+                            LINK_FLAGS "${MPI_CXX_LINK_FLAGS}")
   endif (ENABLE_MPI)
   target_link_libraries(portageapp_jali2flecsi ${Jali_LIBRARIES}
-    ${Jali_TPL_LIBRARIES})
-  
-  if (XMOF2D_FOUND)   # Right now we are using tangram with XMOF2D
-    target_link_libraries(portageapp_jali2flecsi ${XMOF2D_LIBRARIES})
-  endif (XMOF2D_FOUND)
-endif (JALI_DIR AND ENABLE_FleCSI)
+                        ${Jali_TPL_LIBRARIES})
 
+endif (JALI_DIR AND ENABLE_FleCSI)
 
 #TCMalloc option
 set(ENABLE_TCMALLOC TRUE CACHE BOOL "Use TCMalloc")
