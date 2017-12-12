@@ -8,6 +8,7 @@ Please see the license file at the root of this repository, or at:
 #define SEARCH_KDTREE_H
 
 #include <vector>
+#include <memory>
 
 #include "portage/support/Point.h"
 #include "portage/support/portage.h"
