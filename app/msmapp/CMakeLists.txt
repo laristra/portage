@@ -9,9 +9,6 @@ Please see the license file at the root of this repository, or at:
 # Add a rule to build the executable
 #------------------------------------------------------------------------------#
 
-  message(STATUS "TANGRAM_FOUND value in app/msmapp/CMakeLists.txt is ${TANGRAM_FOUND}")
-  message(STATUS "TANGRAM_INCLUDE_DIRS value in app/msmapp/CMakeLists.txt is ${TANGRAM_INCLUDE_DIRS}")
-
 # Msm test
 if (ENABLE_MPI)
 if (Jali_DIR)
