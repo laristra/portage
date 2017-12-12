@@ -654,12 +654,14 @@ Simple_Mesh(double x0, double y0, double z0,
 template<>
 void Simple_Mesh::node_get_coordinates<3>(const ID nodeid,
                                           Point<3> *pp) const {
+  assert(spacedim == 3);
   *pp = coordinates3d_[nodeid];
 }
 
 template<>
 void Simple_Mesh::node_get_coordinates<2>(const ID nodeid,
                                           Point<2> *pp) const {
+  assert(spacedim == 2);
   *pp = coordinates2d_[nodeid];
 }
 
