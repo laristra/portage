@@ -118,16 +118,7 @@ endif (Jali_DIR)
 # Configure LAPACKE
 #------------------------------------------------------------------------------#
 
-if (LAPACKE_DIR)
-  # Directly look for cmake config file in LAPACKE_DIR
-  find_package(LAPACKE REQUIRED NO_MODULE HINTS ${LAPACKE_DIR})
-else (LAPACKE_DIR)
-  # Use FindLAPACKE.cmake provided by cinch or cmake to find it
-  # FindLAPACKE.cmake provided by cinch requires PC_LAPACKE_NCLUDE_DIRS and
-  # PC_LAPACKE_LIBRARY to be able to find LAPACKE
-  find_package(LAPACKE REQUIRED)
-endif (LAPACKE_DIR)
-
+find_package(LAPACKE REQUIRED)
 if (LAPACKE_FOUND) 
    include_directories(${LAPACKE_INCLUDE_DIRS})
    add_definitions("-DHAVE_LAPACKE")
@@ -147,35 +138,6 @@ if (NANOFLANN_DIR)
       add_definitions("-DHAVE_NANOFLANN")
     endif (nanoflann_FOUND)
 endif (NANOFLANN_DIR)
-
-#------------------------------------------------------------------------------#
-# Find Tangram (includes only package)
-#------------------------------------------------------------------------------#
-
-if (TANGRAM_DIR)
-  find_path(TANGRAM
-  	    REQUIRED
-            tangram/support/tangram.h
-            HINTS ${TANGRAM_DIR}/include)
-  message(STATUS "TANGRAM FOUND? ${TANGRAM}")
-  if (TANGRAM)
-    set(TANGRAM_FOUND ON)
-    set(TANGRAM_INCLUDE_DIRS ${TANGRAM_DIR}/include)
-    include_directories(${TANGRAM_INCLUDE_DIRS})
-  endif (TANGRAM)
-else (TANGRAM_DIR)
-  message(STATUS "TANGRAM_DIR not specified. Restricted to single material remap")
-endif (TANGRAM_DIR)
-
-#------------------------------------------------------------------------------#
-# Find XMOF2D
-#------------------------------------------------------------------------------#
-
-find_package(XMOF2D
-             HINTS ${XMOF2D_DIR})
-if (XMOF2D_FOUND)
-  include_directories(${XMOF2D_INCLUDE_DIRS})
-endif (XMOF2D_FOUND)
 
 #-----------------------------------------------------------------------------
 # General NGC include directory information
