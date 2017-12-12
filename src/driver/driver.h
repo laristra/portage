@@ -257,11 +257,11 @@ class Driver {
     }
     
     if (source_cellvar_names.size()) {
-      if (distributed)
 #ifdef ENABLE_MPI
+      if (distributed)
         remap_distributed<CELL>(source_cellvar_names, target_cellvar_names);
-#endif
       else
+#endif
         remap<CELL>(source_cellvar_names, target_cellvar_names);
     }
 
@@ -280,11 +280,11 @@ class Driver {
     }
     
     if (source_nodevar_names.size()) {
-      if (distributed)
 #ifdef ENABLE_MPI
+      if (distributed)
         remap_distributed<NODE>(source_nodevar_names, target_nodevar_names);
-#endif
       else
+#endif
         remap<NODE>(source_nodevar_names, target_nodevar_names);
     }  
   }  // run
