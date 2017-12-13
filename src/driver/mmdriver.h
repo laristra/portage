@@ -246,6 +246,10 @@ template<class Mesh_Wrapper, int Dim> class DummyInterfaceReconstructor {
                             std::vector<int> const& cell_mat_ids,
                             std::vector<double> const& cell_mat_volfracs,
                             std::vector<Tangram::Point<Dim>> const& cell_mat_centroids) {}; 
+  void set_volume_fractions(std::vector<int> const& cell_num_mats,
+                            std::vector<int> const& cell_mat_ids,
+                            std::vector<double> const& cell_mat_volfracs) {};
+
   void set_cell_indices_to_operate_on(std::vector<int> const& cellIDs_to_op_on) {}
   std::shared_ptr<Tangram::CellMatPoly<Dim>> operator()(const int cell_op_ID) const {}
 };
@@ -545,9 +549,11 @@ class MMDriver {
         std::vector<int> cell_num_mats(nsourcecells, nmats);
         std::vector<int> cell_mat_ids(nsourcecells*nmats);
         std::vector<double> cell_mat_volfracs(nsourcecells*nmats, 0.5);
+        std::vector<Tangram::Point<Dim>> cell_mat_centroids(nsourcecells*nmats);
         interface_reconstructor.set_volume_fractions(cell_num_mats,
                                                      cell_mat_ids,
-                                                     cell_mat_volfracs);
+                                                     cell_mat_volfracs,
+                                                     cell_mat_centroids);
         interface_reconstructor.reconstruct();
       }
 #endif
