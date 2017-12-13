@@ -59,11 +59,11 @@ class Simple_Mesh {
   */
 Simple_Mesh(double x0, double y0, double z0,
             double x1, double y1, double z1,
-            int    nx, int    ny, int    nz) :
+            int nx, int ny, int nz) :
             nx_(nx), ny_(ny), nz_(nz),
             x0_(x0), y0_(y0), z0_(z0),
             x1_(x1), y1_(y1), z1_(z1) {
-    spacedim = 3;
+    spacedim_ = 3;
     num_cells_ = nx*ny*nz;
     num_nodes_ = (nx+1)*(ny+1)*(nz+1);
     num_faces_ = (nx_+1)*ny_*nz_ + nx_*(ny_+1)*nz_ + nx_*ny_*(nz_+1);
@@ -106,11 +106,11 @@ Simple_Mesh(double x0, double y0, double z0,
   */
   Simple_Mesh(double x0, double y0,
               double x1, double y1, 
-              int    nx, int    ny) :
+              int nx, int ny) :
               nx_(nx), ny_(ny), 
               x0_(x0), y0_(y0),
               x1_(x1), y1_(y1)  {
-    spacedim = 2; 
+    spacedim_ = 2; 
     num_cells_ = nx*ny;
     num_nodes_ = (nx+1)*(ny+1);
     num_faces_ = (nx_+1)*ny_ + nx_*(ny_+1);
@@ -148,7 +148,7 @@ Simple_Mesh(double x0, double y0, double z0,
 
   /// Spatial dimension of the mesh
   inline int space_dimension() const {
-    return spacedim;
+    return spacedim_;
   }
 
   /*!
@@ -581,8 +581,8 @@ Simple_Mesh(double x0, double y0, double z0,
   }
 
 
-  /// @c Simple_Mesh can be only 2D or 3D 
-  int spacedim ;
+  /// @c Simple_Mesh can be 2D or 3D 
+  int spacedim_ ;
 
   /// Number of cells in the three coordinate directions.
   int nx_, ny_, nz_;
@@ -654,14 +654,14 @@ Simple_Mesh(double x0, double y0, double z0,
 template<>
 void Simple_Mesh::node_get_coordinates<3>(const ID nodeid,
                                           Point<3> *pp) const {
-  assert(spacedim == 3);
+  assert(spacedim_ == 3);
   *pp = coordinates3d_[nodeid];
 }
 
 template<>
 void Simple_Mesh::node_get_coordinates<2>(const ID nodeid,
                                           Point<2> *pp) const {
-  assert(spacedim == 2);
+  assert(spacedim_ == 2);
   *pp = coordinates2d_[nodeid];
 }
 
