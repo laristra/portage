@@ -188,6 +188,12 @@ intersect_3Dpolys(facetedpoly_t srcpoly,
       moments[i] += om[i];
   }
 
+  delete [] verts;
+  delete [] face_num_verts;
+  for (int i = 0; i < num_faces; i++)
+    delete [] face_vert_ids[i];
+  delete [] face_vert_ids;
+
   return moments;
 }  // intersect_3Dpolys
 
