@@ -227,7 +227,7 @@ class Jali_Mesh_Wrapper : public AuxMeshTopology<Jali_Mesh_Wrapper> {
   template <long D>
   void node_get_coordinates(int const nodeid, Tangram::Point<D> *tcoord) const {
     Point<D> pcoord;
-    node_get_coordinates(nodeid, tcoord);
+    node_get_coordinates(nodeid, &pcoord);
     *tcoord = pcoord;
   }
 #endif

@@ -226,7 +226,7 @@ class Simple_Mesh_Wrapper : public AuxMeshTopology<Simple_Mesh_Wrapper> {
   template<long D=3>
   void node_get_coordinates(int const nodeid, Tangram::Point<D>* tcoord) const {
     Point<D> pcoord;
-    node_get_coordinates(nodeid, tcoord);
+    node_get_coordinates(nodeid, &pcoord);
     *tcoord = pcoord;
   }
 #endif
