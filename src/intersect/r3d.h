@@ -21,6 +21,10 @@
 #ifndef _R3D_H_
 #define _R3D_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <stdint.h>
 
 /**
@@ -111,6 +115,32 @@ typedef struct {
  *
  */
 void r3d_clip(r3d_poly* poly, r3d_plane* planes, r3d_int nplanes);
+
+/**
+ * \brief Splits a list of polyhedra across a single plane.  
+ *
+ * \param [in] inpolys 
+ * Array of input polyhedra to be split 
+ *
+ * \param [in] npolys 
+ * The number of input polyhedra 
+ *
+ * \param [in] plane 
+ * The plane about which to split the input polys 
+ *
+ * \param[out] out_pos 
+ * The output array of fragments on the positive side of the clip plane. Must be at least npolys
+ * long. out_pos[i] and out_neg[i] correspond to inpolys[i], where out_neg[i].nverts or
+ * out.pos[i].nverts are set to zero if the poly lies entirely in the positive or negative side of
+ * the plane, respectively.
+
+ *
+ * \param[out] out_neg 
+ * The output array of fragments on the negitive side of the clip plane. Must be at least npolys
+ * long. 
+ *
+ */
+void r3d_split(r3d_poly* inpolys, r3d_int npolys, r3d_plane plane, r3d_poly* out_pos, r3d_poly* out_neg);
 
 /**
  * \brief Integrate a polynomial density over a polyhedron using simplicial decomposition.
@@ -348,5 +378,8 @@ void r3d_box_faces_from_verts(r3d_plane* faces, r3d_rvec3* rbounds);
 void r3d_poly_faces_from_verts(r3d_plane* faces, r3d_rvec3* vertices, r3d_int numverts, 
 						r3d_int** faceinds, r3d_int* numvertsperface, r3d_int numfaces);
 
+#ifdef __cplusplus
+}
+#endif
 
 #endif // _R3D_H_
