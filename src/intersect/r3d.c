@@ -517,7 +517,7 @@ void r3d_init_poly(r3d_poly* poly, r3d_rvec3* vertices, r3d_int numverts,
 					r3d_int** faceinds, r3d_int* numvertsperface, r3d_int numfaces) {
 
 	// dummy vars
-	r3d_int v, vprev, vcur, vnext, f, np;
+        r3d_int v, vprev, vcur, vnext, vcur_old, f, np;
 
 	// direct access to vertex buffer
 	r3d_vertex* vertbuffer = poly->verts; 
@@ -612,7 +612,10 @@ void r3d_init_poly(r3d_poly* poly, r3d_rvec3* vertices, r3d_int numverts,
 				vprev = faceinds[f][v];
 				vcur = faceinds[f][(v+1)%numvertsperface[f]];
 				vnext = faceinds[f][(v+2)%numvertsperface[f]];
-				vcur = vstart[vcur] + util[vcur]++;
+                                //				vcur = vstart[vcur] + util[vcur]++;
+                                vcur_old = vcur;
+                                vcur = vstart[vcur] + util[vcur];
+                                util[vcur_old]++;
 				vbtmp[vcur].pnbrs[1] = vnext;
 				vbtmp[vcur].pnbrs[2] = vprev;
 			}
