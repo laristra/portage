@@ -343,7 +343,7 @@ TEST(search_by_cells, scatter_3d_random)
   std::vector<Portage::Point<3>> tgtp, tgte;
   auto tgtpts = std::make_shared<std::vector<Portage::Point<3>>>(tgtp);
   auto tgtexts = std::make_shared<std::vector<Portage::Point<3>>>(tgte);
-  const size_t ntgt = 512;
+  const size_t ntgt = 500;
   for (int j = 0; j < nsrc; ++j) {
     double x = 1.0*rand()/RAND_MAX;
     double y = 1.0*rand()/RAND_MAX;
