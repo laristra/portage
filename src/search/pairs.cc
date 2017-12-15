@@ -118,6 +118,7 @@ inline void PairsIntegize(const size_t &dim, const pile &value,
   }
 }
 
+#if 0
 /// comparator for sort routine
 class less_vulong0 : public binary_function<vulong, vulong, bool> {
  public:
@@ -125,6 +126,7 @@ class less_vulong0 : public binary_function<vulong, vulong, bool> {
     return x[0] < y[0];
   }
 };
+#endif
 
 // index from indices
 inline ulong cellindex(const size_t &dim, const vulong &strides,
@@ -137,8 +139,8 @@ inline ulong cellindex(const size_t &dim, const vulong &strides,
 }
 
 // index from indices
-inline void cellindices(size_t &dim, vulong &strides, ulong &index,
-                        vulong &indices) {
+inline void cellindices(const size_t &dim, const vulong &strides,
+                        const ulong &index, vulong &indices) {
   size_t offset = 0;
   for (size_t m = 0; m < dim; m++) {
     indices[m] = (index - offset) / strides[m];
@@ -184,31 +186,24 @@ inline void cellindices(size_t &dim, vulong &strides, ulong &index,
  \param half_pairs if true, checks that &x==&y and only returns pairs (i,j) with i>=j
 
  */
-shared_ptr<pairs_data_t> PairsContainCells(
-    const vpile &x, const vpile &y, const vpile &h,
-    const bool half_pairs)
+CellPairFinder::CellPairFinder(
+    const vpile &xin, const vpile &yin, const vpile &hin,
+    const bool do_scatter_in)
+    : x(xin), y(yin), h(hin), dim(x.size()[0]),
+      do_scatter(do_scatter_in)
 {
   // get sizes and check
-  size_t dim=x.size()[0];
   ulong nx=x.size()[1];
   ulong ny=y.size()[1];
   assert (y.size()[0] == dim);
   assert (h.size()[0] >= dim);
-  assert (h.size()[1] == ny);
-  if (half_pairs) {
-    assert(nx == ny);
-    assert(&x == &y);
-  }
-
-  auto pairdata_p = make_shared<pairs_data_t>();
-  pairdata_p->x = x;
-  pairdata_p->y = y;
-  pairdata_p->h = h;
+  if (do_scatter)
+    assert (h.size()[1] == nx);
+  else
+    assert (h.size()[1] == ny);
 
   // find min and max of enclosing box of y points
-  vpile& yminmax = pairdata_p->yminmax;
   yminmax = PairsMinMax(y,h);
-  pile& delta = pairdata_p->delta;
   delta = yminmax[1]-yminmax[0];
 
   // decide on size of grid - this is a maximum value
@@ -216,7 +211,6 @@ shared_ptr<pairs_data_t> PairsContainCells(
   size_t nsidemax=max<size_t>(static_cast<size_t>(ceil(pow(maxmemory*1., (1./dim)))),1);
 
   // find max h
-  pile& hmax = pairdata_p->hmax;
   hmax.resize(dim);
   for (size_t m = 0; m < dim; m++) {
     hmax[m] = h[m].max();
@@ -237,15 +231,12 @@ shared_ptr<pairs_data_t> PairsContainCells(
   for (size_t m=0;m<dim;m++) nsides[m] = min<ulong>(nsidemax, nsideh[m]);
   size_t ncells=1;
   for (size_t m=0;m<dim;m++) ncells*=nsides[m];
-  vulong& nsidesm = pairdata_p->nsidesm;
   nsidesm = nsides-static_cast<ulong>(1);
 
   // allocate grid of lists
-  vector<vector<ulong>>& cells = pairdata_p->cells;
   cells.resize(ncells);
 
   // strides
-  vulong& strides = pairdata_p->strides;
   strides.resize(dim);
   strides[dim-1] = 1;
   for(int m=dim-2; m>=0; m--) {
@@ -273,27 +264,11 @@ shared_ptr<pairs_data_t> PairsContainCells(
     cells[index].push_back(i);
   }
 
-  return pairdata_p;
-}
+}  // CellPairFinder::CellPairFinder
 
-list<ulong> PairsContainCellsG(
-  const shared_ptr<pairs_data_t> pairdata_p,
-  const ulong j)
+
+list<ulong> CellPairFinder::find_gather(const ulong j) const
 {
-  auto& x = pairdata_p->x;
-  auto& y = pairdata_p->y;
-  auto& h = pairdata_p->h;
-  const vpile& yminmax = pairdata_p->yminmax;
-  const pile& delta = pairdata_p->delta;
-  const vulong& nsidesm = pairdata_p->nsidesm;
-  const vulong& strides = pairdata_p->strides;
-  const vector< vector<ulong>>& cells = pairdata_p->cells;
-
-  // get sizes and check
-  size_t dim=x.size()[0];
-  ulong nx=x.size()[1];
-  ulong ny=y.size()[1];
-
   list<ulong> pairlist;
 
   // scan y-points and add pairs
@@ -352,24 +327,11 @@ list<ulong> PairsContainCellsG(
 //  }  // for j
 
   return pairlist;
-}
+}  // CellPairFinder::find_gather
 
-list<ulong> PairsContainCellsS(
-  const std::shared_ptr<pairs_data_t> pairdata_p,
-  const ulong j)
+
+list<ulong> CellPairFinder::find_scatter(const ulong j) const
 {
-  auto& x = pairdata_p->x;
-  auto& y = pairdata_p->y;
-  auto& h = pairdata_p->h;
-  auto& hmax = pairdata_p->hmax;
-  const vpile& yminmax = pairdata_p->yminmax;
-  const pile& delta = pairdata_p->delta;
-  const vulong& nsidesm = pairdata_p->nsidesm;
-  const vulong& strides = pairdata_p->strides;
-  const vector< vector<ulong>>& cells = pairdata_p->cells;
-
-  size_t dim=x.size()[0];
-
   list<ulong> pairlist;
 
   // scan y-points and add pairs
@@ -426,7 +388,17 @@ list<ulong> PairsContainCellsS(
 //  }  // for j
 
   return pairlist;
-}
+}  // CellPairFinder::find_scatter
+
+
+list<ulong> CellPairFinder::find(const ulong j) const
+{
+  if (do_scatter)
+    return(find_scatter(j));
+  else  // gather
+    return(find_gather(j));
+}  // CellPairFinder::find
+
 
 #if 0
 /// neighbor finding using sort
@@ -1062,7 +1034,6 @@ shared_ptr<vector<list<ulong>>> PairsContainHashY(const vpile &x, const vpile &y
 
   return pairlist_p;
 }
-#endif
 
 /// neighbor finding driver routine
 shared_ptr<pairs_data_t> PairsFind(
@@ -1083,7 +1054,6 @@ shared_ptr<pairs_data_t> PairsFind(
   switch (type) {
     case CELLS:
     return PairsContainCells(x,y,h,half_pairs);
-#if 0
     case SORT:
     return PairsContainSort(x,y,h);
     case HASHY:
@@ -1105,13 +1075,13 @@ shared_ptr<pairs_data_t> PairsFind(
       default:
       assert(false);  // nothing else allowed
     }
-#endif
     default:
     assert(false);  // not allowed
   }
 
   return make_shared<pairs_data_t>();
 }
+#endif
 
 } // namespace Pairs
 } // namespace Meshfree

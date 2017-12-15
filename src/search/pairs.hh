@@ -9,7 +9,6 @@ Please see the license file at the root of this repository, or at:
 
 #include <vector>
 #include <list>
-#include <memory>
 
 #include "pile.hh"
 #include "lretypes.hh"
@@ -25,30 +24,32 @@ namespace Pairs {
   /// types of pair finder
   enum contain_type{CELLS, SORT, HASHX, HASHY};
 
-  /// data structure
-  struct pairs_data_t {
+  /// search structure
+  class CellPairFinder {
+   public:
+
+    /// Neighbor finding based on containment: build structure
+    CellPairFinder(
+      const vpile &x, const vpile &y, const vpile &h,
+		  const bool do_scatter);
+
+    /// Neighbor finding based on containment: find for given point
+    std::list<ulong> find(const ulong j) const;
+
+   private:
+    std::list<ulong> find_gather(const ulong j) const;
+    std::list<ulong> find_scatter(const ulong j) const;
+
     vpile x, y, h;
+    size_t dim;
+    bool do_scatter;
     pile hmax;
     vpile yminmax;
     pile delta;
     vulong nsidesm;
     vulong strides;
-    vector<vector<ulong>> cells;
+    std::vector<std::vector<ulong>> cells;
   };
-
-  std::list<ulong> PairsContainCellsG(
-      const std::shared_ptr<pairs_data_t> pairdata_p,
-      const ulong j);
-
-  std::list<ulong> PairsContainCellsS(
-      const std::shared_ptr<pairs_data_t> pairdata_p,
-      const ulong j);
-
-  /// Neighbor finding based on containment: driver function
-  std::shared_ptr<pairs_data_t> PairsFind(
-      const vpile &x, const vpile &y, const vpile &h,
-		  const bool do_scatter,
-      const contain_type type=CELLS, const bool half_pairs=false);
 
 }
 }

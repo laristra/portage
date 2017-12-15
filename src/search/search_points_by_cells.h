@@ -53,7 +53,7 @@ class SearchPointsByCells {
       Meshfree::WeightCenter center=Meshfree::Scatter)
       : sourceSwarm_(source_swarm), targetSwarm_(target_swarm),
         sourceExtents_(source_extents), targetExtents_(target_extents),
-        pairdata_(NULL), center_(center)
+        pair_finder_(NULL), center_(center)
   {
     // check sizes
     if (center == Meshfree::Scatter) {
@@ -95,12 +95,12 @@ class SearchPointsByCells {
 
     // h on source
     if (center_ == Meshfree::Scatter) {
-      pairdata_ = Meshfree::Pairs::PairsFind(
+      pair_finder_ = std::make_shared<Meshfree::Pairs::CellPairFinder>(
           source_vp, target_vp, source_extents_vp, true);
 
     // h on target
     } else if (center_ == Meshfree::Gather) {
-      pairdata_ = Meshfree::Pairs::PairsFind(
+      pair_finder_ = std::make_shared<Meshfree::Pairs::CellPairFinder>(
           source_vp, target_vp, target_extents_vp, false);
     }
   } // SearchPointsByCells::SearchPointsByCells
@@ -132,7 +132,7 @@ class SearchPointsByCells {
   const TargetSwarmType & targetSwarm_;
   std::shared_ptr<std::vector<Point<D>>> sourceExtents_;
   std::shared_ptr<std::vector<Point<D>>> targetExtents_;
-  std::shared_ptr<Meshfree::Pairs::pairs_data_t> pairdata_;
+  std::shared_ptr<Meshfree::Pairs::CellPairFinder> pair_finder_;
   Meshfree::WeightCenter center_;
 
 }; // class SearchPointsByCells
@@ -143,14 +143,9 @@ std::vector<unsigned int>
 SearchPointsByCells<D, SourceSwarmType, TargetSwarmType>::
 operator() (const int pointId) const {
 
-  if (center_ == Meshfree::Gather) {
-    auto result = PairsContainCellsG(pairdata_, pointId);
-    return std::vector<unsigned int>(result.begin(), result.end());
-  }
-  else {  // scatter
-    auto result = PairsContainCellsS(pairdata_, pointId);
-    return std::vector<unsigned int>(result.begin(), result.end());
-  }
+  auto result = pair_finder_->find(pointId);
+  return std::vector<unsigned int>(result.begin(), result.end());
+
 } // SearchPointsByCells::operator()
 
 
