@@ -130,7 +130,7 @@ int create_meshes(int const dim, int const n_source, int const n_target,
                      n_source);
 
     if (conformal_meshes) {
-      // 3d hex output mesh from (0,0,0) to (1,1,1) with n_target
+       // 3d hex output mesh from (0,0,0) to (1,1,1) with n_target
       // x n_target x n_target zones
 
       *targetMesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, n_target, n_target,
@@ -149,7 +149,22 @@ int create_meshes(int const dim, int const n_source, int const n_target,
 
 }
 
-
+template<long D> int point_dim(const Portage::Point<D>&){return D;}
+int point_dim(const JaliGeometry::Point &p){return p.dim();}
+//This function computes a simple function value at a point 
+//based on the point value itself and an order
+//For point x, y with order 1; it returns x+y
+//This is only intended to be used as a simple test data generator
+template<class P> double source_data(const P &c, int order ){
+  if(order==0)
+    return const_val;
+  //order ==1 or 2
+  double value=0;
+  for(int i=0;i<point_dim(c);i++){
+    value+=std::pow(c[i],order);
+  }
+  return value;
+}
 
 int main(int argc, char** argv) {
   // Pause profiling until main loop
@@ -186,7 +201,7 @@ int main(int argc, char** argv) {
     std::size_t keyword_end = arg.find_first_of("=");
     std::string keyword = arg.substr(keyword_beg, keyword_end-keyword_beg);
     std::string valueword = arg.substr(keyword_end+1, len-(keyword_end+1));
-
+    
     if (keyword == "entity_kind") {
       if (valueword == "cell" || valueword == "CELL")
         entityKind = Jali::Entity_kind::CELL;
@@ -261,24 +276,9 @@ int main(int argc, char** argv) {
   // Cell-centered remaps
   if (entityKind == Jali::Entity_kind::CELL) {
     sourceData.resize(nsrccells);
-
-    if (poly_order == 0) {
-      for (unsigned int c = 0; c < nsrccells; ++c)
-        sourceData[c] = const_val;
-    } else if (poly_order == 1) {
-      for (unsigned int c = 0; c < nsrccells; ++c) {
-        JaliGeometry::Point cen = sourceMesh->cell_centroid(c);
-        sourceData[c] = cen[0]+cen[1];
-        if (dim == 3)
-          sourceData[c] += cen[2];
-      }
-    } else {  // quadratic function
-      for (unsigned int c = 0; c < nsrccells; ++c) {
-        JaliGeometry::Point cen = sourceMesh->cell_centroid(c);
-        sourceData[c] = cen[0]*cen[0]+cen[1]*cen[1];
-        if (dim == 3)
-          sourceData[c] += cen[2]*cen[2];
-      }
+    
+    for (unsigned int c = 0; c < nsrccells; ++c) {
+      sourceData[c] = source_data(sourceMesh->cell_centroid(c), poly_order);
     }
 
     sourceState.add("celldata", sourceMesh, Jali::Entity_kind::CELL,
@@ -290,38 +290,28 @@ int main(int argc, char** argv) {
     // Register the variable name and interpolation order with the driver
     remap_fields.push_back("celldata");
 
-  } else {
+  } else { //node-centered
     sourceData.resize(nsrcnodes);
 
     /*!
       @todo make node_get_coordinates be consistent in data type with
       cell_centroid?
     */
-    if (poly_order == 0) {
-      for (int i = 0; i < nsrcnodes; ++i)
-        sourceData[i] = const_val;
-    } else {
-      if (dim == 2) {
-        Portage::Point<2> nodexy;
-        for (int i = 0; i < nsrcnodes; ++i) {
-          sourceMeshWrapper.node_get_coordinates(i, &nodexy);
-          if (poly_order == 1)
-            sourceData[i] = nodexy[0] + nodexy[1];
-          else
-            sourceData[i] = nodexy[0]*nodexy[0] + nodexy[1]*nodexy[1];
-        }
+    if (dim == 2) {
+      Portage::Point<2> nodexy;
+      for (int i = 0; i < nsrcnodes; ++i) {
+        sourceMeshWrapper.node_get_coordinates(i, &nodexy);
+        sourceData[i] = source_data(nodexy, poly_order);
+      }
+
       } else {  // 3d
         Portage::Point<3> nodexyz;
         for (int i = 0; i < nsrcnodes; ++i) {
           sourceMeshWrapper.node_get_coordinates(i, &nodexyz);
-          if (poly_order == 1)
-            sourceData[i] = nodexyz[0] + nodexyz[1] + nodexyz[2];
-          else
-            sourceData[i] = nodexyz[0]*nodexyz[0] + nodexyz[1]*nodexyz[1]
-                + nodexyz[2]*nodexyz[2];
+          sourceData[i] = source_data(nodexyz, poly_order);
         }
+
       }
-    }
 
     sourceState.add("nodedata", sourceMesh, Jali::Entity_kind::NODE,
                     Jali::Entity_type::ALL, &(sourceData[0]));
@@ -376,7 +366,7 @@ int main(int argc, char** argv) {
       d.set_remap_var_names(remap_fields);
       d.run(numpe > 1);
     }
-  } else {
+  } else { //3D
     if (interp_order == 1) {
       Portage::Driver<
         Portage::SearchKDTree,
@@ -420,7 +410,7 @@ int main(int argc, char** argv) {
   double const * cellvecout;
   double const * nodevecout;
 
-  if (entityKind == Jali::Entity_kind::CELL) {
+  if (entityKind == Jali::Entity_kind::CELL)  { //CELL error computation
     targetStateWrapper.get_data<double>(Portage::CELL, "celldata",
                                         &cellvecout);
 
@@ -428,51 +418,47 @@ int main(int argc, char** argv) {
       std::cout << "celldata vector on target mesh after remapping is:"
                 << std::endl;
 
+
     if (dim == 2) {
+      Portage::Point<2> ccen;
       for (int c = 0; c < ntarcells; ++c) {
-        Portage::Point<2> ccen;
+        error = 0;
         targetMeshWrapper.cell_centroid(c, &ccen);
         
-        if (poly_order == 0)
-          error = const_val - cellvecout[c];
-        else if (poly_order == 1)
-          error = ccen[0] + ccen[1] - cellvecout[c];
-        else  // quadratic
-          error = ccen[0]*ccen[0] + ccen[1]*ccen[1] + ccen[2]*ccen[2] -
-              cellvecout[c];
-
+        if( targetMeshWrapper.on_exterior_boundary(Portage::Entity_kind::CELL, c))
+            error = source_data(ccen,poly_order) - cellvecout[c];
+          
         if (numpe == 1 && n_target < 10) {
           std::printf("Cell=% 4d Centroid = (% 5.3lf,% 5.3lf)", c,
                       ccen[0], ccen[1]);
           std::printf("  Value = % 10.6lf  Err = % lf\n",
                       cellvecout[c], error);
         }
+
+        //        toterr += error*error*targetMeshWrapper.cell_volume(c);
         toterr += error*error;
       }
-    } else {  // dim == 3
+    }
+   else {  // dim == 3
       for (int c = 0; c < ntarcells; ++c) {
+        error = 0;
         Portage::Point<3> ccen;
         targetMeshWrapper.cell_centroid(c, &ccen);
-        
-        if (poly_order == 0)
-          error = const_val - cellvecout[c];
-        else if (poly_order == 1)
-          error = ccen[0] + ccen[1] + ccen[2] - cellvecout[c];
-        else  // quadratic
-          error = ccen[0]*ccen[0] + ccen[1]*ccen[1] + ccen[2]*ccen[2] -
-              cellvecout[c];
-        
+        if( targetMeshWrapper.on_exterior_boundary(Portage::Entity_kind::CELL, c))                
+          error = source_data(ccen,poly_order)-cellvecout[c];
+       
         if (numpe == 1 && n_target < 10) {
           std::printf("%d Cell=% 4d Centroid = (% 5.3lf,% 5.3lf,% 5.3lf)",
                       rank, c, ccen[0], ccen[1], ccen[2]);
           std::printf("  Value = % 10.6lf  Err = % lf\n",
                       cellvecout[c], error);
         }
+        //        toterr += error*error*targetMeshWrapper.cell_volume(c);
         toterr += error*error;
       } 
     }
-    
-  } else {
+  } 
+  else { //NODE error computation
 
     targetStateWrapper.get_data<double>(Portage::NODE, "nodedata",
                                         &nodevecout);
@@ -484,14 +470,10 @@ int main(int argc, char** argv) {
     if (dim == 2) {
       Portage::Point<2> nodexy;
       for (int i = 0; i < ntarnodes; ++i) {
+        error = 0;
         targetMeshWrapper.node_get_coordinates(i, &nodexy);
-
-        if (poly_order == 0)
-          error = const_val - nodevecout[i];
-        else if (poly_order == 1)
-          error = nodexy[0] + nodexy[1] - nodevecout[i];
-        else
-          error = nodexy[0]*nodexy[0] + nodexy[1]*nodexy[1] - nodevecout[i];
+        if( targetMeshWrapper.on_exterior_boundary(Portage::Entity_kind::NODE, nodevecout[i]))
+          error = source_data(nodexy,poly_order)-nodevecout[i];
 
         if (n_target < 10) {
           std::printf("Node=% 4d Coords = (% 5.3lf,% 5.3lf) ", i,
@@ -504,22 +486,14 @@ int main(int argc, char** argv) {
     } else {  // dim == 3
       Portage::Point<3> nodexyz;
       for (int i = 0; i < ntarnodes; ++i) {
-        targetMeshWrapper.node_get_coordinates(i, &nodexyz);
-        
-        if (poly_order == 0)
-          error = const_val - nodevecout[i];
-        else if (poly_order == 1)
-          error = nodexyz[0] + nodexyz[1] + nodexyz[2] - nodevecout[i];
-        else
-          error = nodexyz[0]*nodexyz[0] + nodexyz[1]*nodexyz[1]
-              + nodexyz[2]*nodexyz[2] - nodevecout[i];
+        targetMeshWrapper.node_get_coordinates(i, &nodexyz);       
+        error = source_data(nodexyz, poly_order)-nodevecout[i];
 
         if (numpe == 1 && n_target < 10) {
           std::printf("Node=% 4d Coords = (% 5.3lf,% 5.3lf,% 5.3lf) ", i,
                       nodexyz[0], nodexyz[1], nodexyz[2]);
           std::printf("Value = %10.6lf Err = % lf\n", nodevecout[i], error);
         }
-
         toterr += error*error;
       }
     }
