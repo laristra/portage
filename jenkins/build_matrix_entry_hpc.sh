@@ -36,8 +36,8 @@ elif [[ $compiler == "gcc" ]]; then
   gcc_version=6.4.0
   cxxmodule=gcc/${gcc_version}
   jali_install_dir=$NGC/private/jali/${jali_version}-gcc-${gcc_version}-openmpi-${openmpi_version}
-  tangram_install_dir=$NGC/private/tangram/${tangram_version}-intel-${gcc_version}-openmpi-${openmpi_version}
-  xmof2d_install_dir=$NGC/private/xmof2d/${xmof2d_version}-intel-${gcc_version}-openmpi-${opempi_version}
+  tangram_install_dir=$NGC/private/tangram/${tangram_version}-gcc-${gcc_version}-openmpi-${openmpi_version}
+  xmof2d_install_dir=$NGC/private/xmof2d/${xmof2d_version}-gcc-${gcc_version}-openmpi-${openmpi_version}
 fi
   
 cmake_build_type=Release

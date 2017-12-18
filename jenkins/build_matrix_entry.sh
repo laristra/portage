@@ -30,7 +30,7 @@ if [[ $compiler == "intel" ]]; then
   openmpi_version=1.10.5
   jali_install_dir=$NGC/private/jali/${jali_version}-intel-17.0.1-openmpi-${openmpi_version}
   tangram_install_dir=$NGC/private/tangram/${tangram_version}-intel-17.0.1-openmpi-${openmpi_version}
-  xmof2d_install_dir=$NGC/private/xmof2d/${xmof2d_version}-intel-17.0.1-openmpi-${opempi_version}
+  xmof2d_install_dir=$NGC/private/xmof2d/${xmof2d_version}-intel-17.0.1-openmpi-${openmpi_version}
 elif [[ $compiler == "gcc" ]]; then
   cxxmodule=gcc/5.3.0
   openmpi_version=1.10.3
