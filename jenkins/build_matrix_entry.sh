@@ -38,7 +38,7 @@ elif [[ $compiler == "gcc" ]]; then
   flecsi_install_prefix=$NGC/private/flecsi/gcc5.3_openmpi1.10.3
   flecsisp_install_prefix=$NGC/private/flecsi-sp/gcc5.3_openmpi1.10.3
   tangram_install_dir=$NGC/private/tangram/${tangram_version}-gcc-5.3.0-openmpi-${openmpi_version}
-  xmof2d_install_dir=$NGC/private/xmof2d/${xmof2d_version}-gcc-5.3.0-openmpi-${opempi_version}
+  xmof2d_install_dir=$NGC/private/xmof2d/${xmof2d_version}-gcc-5.3.0-openmpi-${openmpi_version}
 fi
   
 cmake_build_type=Release
