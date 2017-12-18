@@ -4,8 +4,8 @@ Please see the license file at the root of this repository, or at:
     https://github.com/laristra/portage/blob/master/LICENSE
 */
 
-#ifndef SRC_DRIVER_DRIVER_H_
-#define SRC_DRIVER_DRIVER_H_
+#ifndef PORTAGE_DRIVER_H_
+#define PORTAGE_DRIVER_H_
 
 #include <sys/time.h>
 
@@ -951,8 +951,6 @@ struct IntersectFunctor {
       std::vector<std::vector<double>> & candidate_moments = moments[i];
       int num_moment_sets = candidate_moments.size();
       for (int j = 0; j < num_moment_sets; j++) {
-        //        (source_cells_and_weights[ninserted]).entityID = candidates[i];
-        //        (source_cells_and_weights[ninserted]).weights = candidate_moments[j];
         Weights_t & this_wt = source_cells_and_weights[ninserted];
         this_wt.entityID = candidates[i];
         this_wt.weights = candidate_moments[j];
@@ -966,4 +964,4 @@ struct IntersectFunctor {
 
 }  // namespace Portage
 
-#endif  // SRC_DRIVER_DRIVER_H_
+#endif  // PORTAGE_DRIVER_H_
