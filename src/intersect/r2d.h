@@ -21,6 +21,10 @@
 #ifndef _R2D_H_
 #define _R2D_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <stdint.h>
 
 /**
@@ -109,6 +113,31 @@ typedef struct {
  *
  */
 void r2d_clip(r2d_poly* poly, r2d_plane* planes, r2d_int nplanes);
+
+/**
+ * \brief Splits a list of polygons across a single plane.  
+ *
+ * \param [in] inpolys 
+ * Array input polyhedra to be split 
+ *
+ * \param [in] npolys 
+ * The number of input polygons
+ *
+ * \param [in] plane 
+ * The plane about which to split the input polys 
+ *
+ * \param[out] out_pos 
+ * The output array of fragments on the positive side of the clip plane. Must be at least npolys
+ * long. out_pos[i] and out_neg[i] correspond to inpolys[i], where out_neg[i].nverts or
+ * out.pos[i].nverts are set to zero if the poly lies entirely in the positive or negative side of
+ * the plane, respectively.
+ *
+ * \param[out] out_neg 
+ * The output array of fragments on the negitive side of the clip plane. Must be at least npolys
+ * long. 
+ *
+ */
+void r2d_split(r2d_poly* inpolys, r2d_int npolys, r2d_plane plane, r2d_poly* out_pos, r2d_poly* out_neg);
 
 /**
  * \brief Integrate a polynomial density over a polygon using simplicial decomposition.
@@ -290,5 +319,8 @@ void r2d_box_faces_from_verts(r2d_plane* faces, r2d_rvec2* rbounds);
  */
 void r2d_poly_faces_from_verts(r2d_plane* faces, r2d_rvec2* vertices, r2d_int numverts);
 
+#ifdef __cplusplus
+}
+#endif
 
 #endif // _R2D_H_
