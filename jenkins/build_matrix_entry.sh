@@ -37,8 +37,8 @@ elif [[ $compiler == "gcc" ]]; then
   jali_install_dir=$NGC/private/jali/${jali_version}-gcc-5.3.0-openmpi-${openmpi_version}
   flecsi_install_prefix=$NGC/private/flecsi/gcc5.3_openmpi1.10.3
   flecsisp_install_prefix=$NGC/private/flecsi-sp/gcc5.3_openmpi1.10.3
-  tangram_install_dir=$NGC/private/tangram/${tangram_version}-intel-5.3.0-openmpi-${openmpi_version}
-  xmof2d_install_dir=$NGC/private/xmof2d/${xmof2d_version}-intel-5.3.0-openmpi-${opempi_version}
+  tangram_install_dir=$NGC/private/tangram/${tangram_version}-gcc-5.3.0-openmpi-${openmpi_version}
+  xmof2d_install_dir=$NGC/private/xmof2d/${xmof2d_version}-gcc-5.3.0-openmpi-${opempi_version}
 fi
   
 cmake_build_type=Release

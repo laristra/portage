@@ -7,10 +7,10 @@ set -x
 
 
 #General NGC directory
-NGC=/usr/local/codes/ngc/private
+NGC=/usr/local/codes/ngc
 
 # General NGC include directory
-NGC_INCLUDE_DIR=/usr/local/codes/ngc/private/include
+NGC_INCLUDE_DIR=$NGC/private/include
 
 export MODULEPATH=""
 . /opt/local/packages/Modules/default/init/sh
@@ -18,8 +18,8 @@ module load gcc/5.3.0
 module load openmpi/1.10.3
 
 JALI_INSTALL_PREFIX=$NGC/private/jali/0.9.8-gcc-5.3.0-openmpi-1.10.3
-TANGRAM_INSTALL_PREFIX=$NGC/private/tangram/133c1db580f-gcc-5.3.0-openmpi-1.10.5
-XMOF2D_INSTALL_PREFIX=$NGC/private/xmof2d/0.9-gcc-5.3.0-openmpi-1.10.5
+TANGRAM_INSTALL_PREFIX=$NGC/private/tangram/133c1db580f-gcc-5.3.0-openmpi-1.10.3
+XMOF2D_INSTALL_PREFIX=$NGC/private/xmof2d/0.9-gcc-5.3.0-openmpi-1.10.3
 
 echo $WORKSPACE
 cd $WORKSPACE
