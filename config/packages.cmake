@@ -180,7 +180,6 @@ if (TANGRAM_FOUND)
 
 # What XMOF2D puts as XMOF2D_LIBRARIES is not a complete path but just a name
 # Discover the library and cat it with the library dir to make XMOF2D_LIBRARIES
-    message(STATUS "XMOF2D LIBRARIES ---> ${XMOF2D_LIBRARIES}")
     find_library(XMOF2D_LIBRARY
       NAMES ${XMOF2D_LIBRARY_NAME}
       HINTS ${XMOF2D_LIBRARY_DIR})
