@@ -21,9 +21,6 @@ namespace Pairs {
   // pair finding functions
   //\///////////////////////////////////////////////////////////////////////////
 
-  /// types of pair finder
-  enum contain_type{CELLS, SORT, HASHX, HASHY};
-
   /// search structure
   class CellPairFinder {
    public:
@@ -51,8 +48,8 @@ namespace Pairs {
     std::vector<std::vector<ulong>> cells;
   };
 
-}
-}
-}
+}  // namespace Pairs
+}  // namespace Meshfree
+}  // namespace Portage
 
 #endif
