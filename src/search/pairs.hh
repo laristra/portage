@@ -28,7 +28,16 @@ namespace Pairs {
     /// Neighbor finding based on containment: build structure
     CellPairFinder(
       const vpile &x, const vpile &y, const vpile &h,
-		  const bool do_scatter);
+      const bool do_scatter);
+
+    /// Copy constructor
+    CellPairFinder(const CellPairFinder &) = delete;
+
+    /// Assignment operator (disabled)
+    CellPairFinder & operator = (const CellPairFinder &) = delete;
+
+    /// Destructor
+    ~CellPairFinder() = default;
 
     /// Neighbor finding based on containment: find for given point
     std::list<ulong> find(const ulong j) const;
