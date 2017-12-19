@@ -4,8 +4,8 @@ Please see the license file at the root of this repository, or at:
     https://github.com/laristra/portage/blob/master/LICENSE
 */
 
-#ifndef PORTAGE_DRIVER_H_
-#define PORTAGE_DRIVER_H_
+#ifndef PORTAGE_MMDRIVER_H_
+#define PORTAGE_MMDRIVER_H_
 
 #include <sys/time.h>
 
@@ -16,6 +16,10 @@ Please see the license file at the root of this repository, or at:
 #include <utility>
 #include <iostream>
 #include <type_traits>
+
+#ifdef HAVE_TANGRAM
+#include "tangram/driver/driver.h"
+#endif
 
 #include "portage/support/portage.h"
 #include "portage/support/Point.h"
@@ -233,27 +237,64 @@ class MeshWrapperDual {  // cellid is the dual cell (i.e. node) id
 template <typename SearchType> struct SearchFunctor;
 template <typename IntersectType> struct IntersectFunctor;
 
+// Dummy interface reconstruction class, if external interface
+// reconstruction methods are not found
+template<class Mesh_Wrapper, int Dim> class DummyInterfaceReconstructor {
+ public:
+  DummyInterfaceReconstructor(Mesh_Wrapper const & mesh) {};
+  void set_volume_fractions(std::vector<int> const& cell_num_mats,
+                            std::vector<int> const& cell_mat_ids,
+                            std::vector<double> const& cell_mat_volfracs,
+                            std::vector<Tangram::Point<Dim>> const& cell_mat_centroids) {}; 
+  void set_volume_fractions(std::vector<int> const& cell_num_mats,
+                            std::vector<int> const& cell_mat_ids,
+                            std::vector<double> const& cell_mat_volfracs) {};
+
+  void set_cell_indices_to_operate_on(std::vector<int> const& cellIDs_to_op_on) {}
+  std::shared_ptr<Tangram::CellMatPoly<Dim>> operator()(const int cell_op_ID) const {}
+};
+
 /*!
-  @class Driver "driver.h"
-  @brief Driver provides the API to mapping from one mesh to another.
+  @class MMDriver "mmdriver.h"
+  @brief MMDriver provides the API to mapping multi-material data from one mesh to another.
+
+  @tparam Search  A search method that takes the dimension, source mesh class
+  and target mesh class as template parameters
+
+  @tparam Intersect  A polyhedron-polyhedron intersection class that takes
+  the source and taget mesh classes as template parameters
+
+  @tparam Interpolate An interpolation class that takes the source and
+  target mesh classes, the source state class (that stores source
+  field values), the kind of entity the interpolation is on and the
+  dimension of the problem as template parameters
+
   @tparam SourceMesh_Wrapper A lightweight wrapper to a specific input mesh
   implementation that provides certain functionality.
+
   @tparam SourceState_Wrapper A lightweight wrapper to a specific input state
   manager implementation that provides certain functionality.
+
   @tparam TargetMesh_Wrapper A lightweight wrapper to a specific target mesh
   implementation that provides certain functionality.
+
   @tparam TargetState_Wrapper A lightweight wrapper to a specific target state
   manager implementation that provides certain functionality.
+
+  @tparam InterfaceReconstructor An interface reconstruction class
+  that takes the raw interface reconstruction method, the dimension of
+  the problem and the source mesh class as template parameters
 */
 template <template <int, class, class> class Search,
           template <class, class> class Intersect,
-          template<class, class, class, Entity_kind, long> class Interpolate,
+          template <class, class, class, Entity_kind, long> class Interpolate,
           int Dim,
           class SourceMesh_Wrapper,
           class SourceState_Wrapper,
           class TargetMesh_Wrapper = SourceMesh_Wrapper,
-          class TargetState_Wrapper = SourceState_Wrapper>
-class Driver {
+          class TargetState_Wrapper = SourceState_Wrapper,
+          template <class, int> class InterfaceReconstructor = DummyInterfaceReconstructor>
+class MMDriver {
 
   // Something like this would be very helpful to users
   // static_assert(
@@ -272,7 +313,7 @@ class Driver {
     @param[in,out] targetState A @c TargetState_Wrapper for the data that will
     be mapped to the target mesh.
   */
-  Driver(SourceMesh_Wrapper const& sourceMesh,
+  MMDriver(SourceMesh_Wrapper const& sourceMesh,
          SourceState_Wrapper const& sourceState,
          TargetMesh_Wrapper const& targetMesh,
          TargetState_Wrapper& targetState)
@@ -283,13 +324,13 @@ class Driver {
   }
 
   /// Copy constructor (disabled)
-  Driver(const Driver &) = delete;
+  MMDriver(const MMDriver &) = delete;
 
   /// Assignment operator (disabled)
-  Driver & operator = (const Driver &) = delete;
+  MMDriver & operator = (const MMDriver &) = delete;
 
   /// Destructor
-  ~Driver() {}
+  ~MMDriver() {}
 
   /*!
     @brief Specify the names of the variables to be interpolated along with the
@@ -397,7 +438,7 @@ class Driver {
     MPI_Comm_rank(MPI_COMM_WORLD, &comm_rank);
 #endif
 
-    if (comm_rank == 0) std::printf("in Driver::run()...\n");
+    if (comm_rank == 0) std::printf("in MMDriver::run()...\n");
 
     int numTargetCells = target_mesh_.num_owned_cells();
     std::cout << "Number of target cells in target mesh on rank "
@@ -483,6 +524,39 @@ class Driver {
       gettimeofday(&end_timeval, 0);
       timersub(&end_timeval, &begin_timeval, &diff_timeval);
       tot_seconds_srch = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
+
+#ifdef HAVE_TANGRAM
+      // Call interface reconstruction only if we got a method from the 
+      // calling app
+
+      if (typeid(InterfaceReconstructor<SourceMesh_Wrapper, Dim>) !=
+          typeid(DummyInterfaceReconstructor<SourceMesh_Wrapper, Dim>)) {
+        // INTERFACE RECONSTRUCTION (BUT RIGHT NOW WE ARE NOT USING IT)
+        // Normally we would get the interface reconstructor sent in but
+        // we don't want to change the signature for the portage driver
+        // until we are really ready, so we will just use XMOF2D
+        
+        Tangram::Driver<InterfaceReconstructor, Dim, SourceMesh_Wrapper>
+            interface_reconstructor(source_mesh_);
+        
+        // Since we don't really have multiple materials and volume
+        // fractions of those materials in cells, we will pretend that
+        // we have two materials in each cell and that the volume
+        // fraction of each material in each cell is 0.5
+        
+        int nmats = 2;
+        int nsourcecells = source_mesh_.num_entities(CELL, ALL);
+        std::vector<int> cell_num_mats(nsourcecells, nmats);
+        std::vector<int> cell_mat_ids(nsourcecells*nmats);
+        std::vector<double> cell_mat_volfracs(nsourcecells*nmats, 0.5);
+        std::vector<Tangram::Point<Dim>> cell_mat_centroids(nsourcecells*nmats);
+        interface_reconstructor.set_volume_fractions(cell_num_mats,
+                                                     cell_mat_ids,
+                                                     cell_mat_volfracs,
+                                                     cell_mat_centroids);
+        interface_reconstructor.reconstruct();
+      }
+#endif
 
       // INTERSECT
 
@@ -839,13 +913,13 @@ class Driver {
   std::vector<std::string> target_remap_var_names_;
   std::vector<LimiterType> limiters_;
   unsigned int dim_;
-};  // class Driver
+};  // class MMDriver
 
 
 /*!
   @struct SearchFunctor "driver.h"
   @brief This functor is used inside a Portage::transform() inside
-  Driver::run() to actually do the search
+  MMDriver::run() to actually do the search
   @tparam SearchType The type of search method (e.g. SearchSimple or
   SearchKDTree).
   //amh: FIXME! this is a search adapter which converts a parameter which is a reference into a return by value
@@ -888,7 +962,7 @@ struct SearchFunctor {
 /*!
   @struct IntersectFunctor "driver.h"
   @brief This functor is used inside a Portage::transform() inside
-  Driver::run() to actually do the intersection of the target cell with candidate source cells
+  MMDriver::run() to actually do the intersection of the target cell with candidate source cells
   @tparam IsectType The type of intersect method (e.g. IntersectClipper).
 //amh: FIXME!  this is an intersect adapter which takes an intersection for two cells and changes it to an intersect for multiple cells
 
@@ -964,4 +1038,4 @@ struct IntersectFunctor {
 
 }  // namespace Portage
 
-#endif  // PORTAGE_DRIVER_H_
+#endif  // PORTAGE_MMDRIVER_H_
