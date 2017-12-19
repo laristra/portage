@@ -32,6 +32,9 @@ Please see the license file at the root of this repository, or at:
 #include <vector>
 #include "portage/support/Vector.h"
 
+#ifdef HAVE_TANGRAM
+#include "tangram/support/Point.h"
+#endif
 
 namespace Portage {
 
@@ -109,6 +112,22 @@ class Point {
     for (int i = 0; i < D; i++)
       m_loc[i] = rhs[i];
   }
+
+#ifdef HAVE_TANGRAM
+  // TEMPORARY converter from Tangram to Portage Points
+  inline Point(Tangram::Point<D> const& rhs) {
+    for (int i = 0; i < D; i++)
+      m_loc[i] = rhs[i];
+  }
+
+  // TEMPORARY converter from Portage points to Tangram
+  operator Tangram::Point<D> () const {
+    Tangram::Point<D> p;
+    for (int i = 0; i < D; i++)
+      p[i] = m_loc[i];
+    return p;
+  }
+#endif
 
   /// Return component @c i of the Point.
   inline const double& operator[](const int& i) const {
