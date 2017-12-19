@@ -46,12 +46,27 @@ using namespace Wonton;
 /*!
   @class Driver "driver.h"
   @brief Driver provides the API to mapping from one mesh to another.
+
+  @tparam Search  A search method that takes the dimension, source mesh class
+  and target mesh class as template parameters
+
+  @tparam Intersect  A polyhedron-polyhedron intersection class that takes
+  the source and taget mesh classes as template parameters
+
+  @tparam Interpolate An interpolation class that takes the source and
+  target mesh classes, the source state class (that stores source
+  field values), the kind of entity the interpolation is on and the
+  dimension of the problem as template parameters
+
   @tparam SourceMesh_Wrapper A lightweight wrapper to a specific input mesh
   implementation that provides certain functionality.
+
   @tparam SourceState_Wrapper A lightweight wrapper to a specific input state
   manager implementation that provides certain functionality.
+
   @tparam TargetMesh_Wrapper A lightweight wrapper to a specific target mesh
   implementation that provides certain functionality.
+
   @tparam TargetState_Wrapper A lightweight wrapper to a specific target state
   manager implementation that provides certain functionality.
 */
@@ -132,7 +147,7 @@ class Driver {
       LimiterType limiter_type = NOLIMITER) {
     std::vector<LimiterType> limiters(source_remap_var_names.size(),
                                       limiter_type);
-    
+
     set_remap_var_names(source_remap_var_names, target_remap_var_names,
                         limiters);
   }
@@ -219,7 +234,7 @@ class Driver {
     @brief Execute the remapping process
   */
   void run(bool distributed) {
-    
+
 #ifndef ENABLE_MPI
     if (distributed) {
       std::cout << "Request is for a parallel run but Portage is compiled " <<
@@ -227,25 +242,25 @@ class Driver {
       return;
     }
 #endif
-    
+
     int comm_rank = 0;
 #ifdef ENABLE_MPI
     MPI_Comm_rank(MPI_COMM_WORLD, &comm_rank);
 #endif
-    
+
     if (comm_rank == 0)
       std::cout << "in Driver::run()...\n";
-    
+
     int numTargetCells = target_mesh_.num_owned_cells();
     std::cout << "Number of target cells in target mesh on rank "
               << comm_rank << ": "
               << numTargetCells << std::endl;
-    
-    
+
+
     int nvars = source_remap_var_names_.size();
-    
+
     // Collect all cell based variables and remap them
-    
+
     std::vector<std::string> source_cellvar_names;
     std::vector<std::string> target_cellvar_names;
     for (int i = 0; i < nvars; ++i) {
@@ -255,7 +270,7 @@ class Driver {
         target_cellvar_names.emplace_back(target_remap_var_names_[i]);
       }
     }
-    
+
     if (source_cellvar_names.size()) {
 #ifdef ENABLE_MPI
       if (distributed)
@@ -267,10 +282,10 @@ class Driver {
 
 
     // Collect all node based variables and remap them
-    
+
     std::vector<std::string> source_nodevar_names;
     std::vector<std::string> target_nodevar_names;
-    
+
     for (int i = 0; i < nvars; ++i) {
       Entity_kind onwhat = source_state_.get_entity(source_remap_var_names_[i]);
       if (onwhat == NODE) {
@@ -278,7 +293,7 @@ class Driver {
         target_nodevar_names.emplace_back(target_remap_var_names_[i]);
       }
     }
-    
+
     if (source_nodevar_names.size()) {
 #ifdef ENABLE_MPI
       if (distributed)
@@ -286,7 +301,7 @@ class Driver {
       else
 #endif
         remap<NODE>(source_nodevar_names, target_nodevar_names);
-    }  
+    }
   }  // run
 
  private:
@@ -331,16 +346,16 @@ void Driver<Search, Intersect, Interpolate, D,
   std::cout << "Number of target entities of kind " << onwhat <<
       " in target mesh on rank " << comm_rank << ": " <<
       ntarget_ents_owned << std::endl;
-  
+
   int ntarget_ents = target_mesh_.num_entities(onwhat, ALL);
-  
+
   float tot_seconds = 0.0, tot_seconds_srch = 0.0,
       tot_seconds_xsect = 0.0, tot_seconds_interp = 0.0;
   struct timeval begin_timeval, end_timeval, diff_timeval;
-  
+
 
   // SEARCH
-      
+
   Portage::vector<std::vector<int>> candidates(ntarget_ents);
   Portage::vector<std::vector<Weights_t>> source_ents_and_weights(ntarget_ents);
 
@@ -348,23 +363,23 @@ void Driver<Search, Intersect, Interpolate, D,
   gettimeofday(&begin_timeval, 0);
   const Search<D, onwhat, SourceMesh_Wrapper, TargetMesh_Wrapper>
       search(source_mesh_, target_mesh_);
-  
+
   Portage::transform(target_mesh_.begin(onwhat, PARALLEL_OWNED),
                      target_mesh_.end(onwhat, PARALLEL_OWNED),
                      candidates.begin(), search);
-  
+
   gettimeofday(&end_timeval, 0);
   timersub(&end_timeval, &begin_timeval, &diff_timeval);
   tot_seconds_srch = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
-  
+
   // INTERSECT
-  
+
   gettimeofday(&begin_timeval, 0);
-  
+
   // Get an instance of the desired intersect algorithm type
   const Intersect<onwhat, SourceMesh_Wrapper, TargetMesh_Wrapper>
       intersect(source_mesh_, target_mesh_);
-  
+
   // For each cell in the target mesh get a list of candidate-weight
   // pairings (in a traditional mesh, not particle mesh, the weights
   // are moments). Note that this candidate list is different from the
@@ -372,7 +387,7 @@ void Driver<Search, Intersect, Interpolate, D,
   // search candidates. Also, note that for 2nd order and higher
   // remaps, we get multiple moments (0th, 1st, etc) for each
   // target-source cell intersection
-  
+
   Portage::transform(target_mesh_.begin(onwhat, PARALLEL_OWNED),
                      target_mesh_.end(onwhat, PARALLEL_OWNED),
                      candidates.begin(),
@@ -382,11 +397,11 @@ void Driver<Search, Intersect, Interpolate, D,
   gettimeofday(&end_timeval, 0);
   timersub(&end_timeval, &begin_timeval, &diff_timeval);
   tot_seconds_xsect = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
-  
+
   // INTERPOLATE (one variable at a time)
-  
+
   gettimeofday(&begin_timeval, 0);
-  
+
   int nvars = src_varnames.size();
   if (comm_rank == 0)
     std::cout << "Number of variables on entity kind " << onwhat <<
@@ -414,9 +429,9 @@ void Driver<Search, Intersect, Interpolate, D,
   gettimeofday(&end_timeval, 0);
   timersub(&end_timeval, &begin_timeval, &diff_timeval);
   tot_seconds_interp = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
-  
+
   tot_seconds = tot_seconds_srch + tot_seconds_xsect + tot_seconds_interp;
-  
+
   std::cout << "Transform Time for Entity Kind " << onwhat << " on Rank " <<
       comm_rank << " (s): " << tot_seconds << std::endl;
   std::cout << "   Search Time Rank " << comm_rank << " (s): " <<
@@ -453,24 +468,24 @@ void Driver<Search, Intersect, Interpolate, D,
 
   int comm_rank = 0;
   MPI_Comm_rank(MPI_COMM_WORLD, &comm_rank);
-  
+
   int ntarget_ents_owned = target_mesh_.num_entities(onwhat, PARALLEL_OWNED);
   std::cout << "Number of target entities of kind " << onwhat <<
       " in target mesh on rank " << comm_rank << ": " <<
       ntarget_ents_owned << std::endl;
-  
+
   int ntarget_ents = target_mesh_.num_entities(onwhat, ALL);
 
   Flat_Mesh_Wrapper<> source_mesh_flat;
   Flat_State_Wrapper<> source_state_flat;
-  
+
   float tot_seconds = 0.0, tot_seconds_srch = 0.0,
       tot_seconds_xsect = 0.0, tot_seconds_interp = 0.0;
   struct timeval begin_timeval, end_timeval, diff_timeval;
-  
+
 
   // SEARCH
-      
+
   Portage::vector<std::vector<int>> candidates(ntarget_ents);
   Portage::vector<std::vector<Weights_t>> source_ents_and_weights(ntarget_ents);
 
@@ -493,23 +508,23 @@ void Driver<Search, Intersect, Interpolate, D,
   gettimeofday(&begin_timeval, 0);
   const Search<D, onwhat, Flat_Mesh_Wrapper<>, TargetMesh_Wrapper>
       search(source_mesh_flat, target_mesh_);
-  
+
   Portage::transform(target_mesh_.begin(onwhat, PARALLEL_OWNED),
                      target_mesh_.end(onwhat, PARALLEL_OWNED),
                      candidates.begin(), search);
-  
+
   gettimeofday(&end_timeval, 0);
   timersub(&end_timeval, &begin_timeval, &diff_timeval);
   tot_seconds_srch = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
-  
+
   // INTERSECT
-  
+
   gettimeofday(&begin_timeval, 0);
-  
+
   // Get an instance of the desired intersect algorithm type
   const Intersect<onwhat, Flat_Mesh_Wrapper<>, TargetMesh_Wrapper>
       intersect(source_mesh_flat, target_mesh_);
-  
+
   // For each cell in the target mesh get a list of candidate-weight
   // pairings (in a traditional mesh, not particle mesh, the weights
   // are moments). Note that this candidate list is different from the
@@ -517,7 +532,7 @@ void Driver<Search, Intersect, Interpolate, D,
   // search candidates. Also, note that for 2nd order and higher
   // remaps, we get multiple moments (0th, 1st, etc) for each
   // target-source cell intersection
-  
+
   Portage::transform(target_mesh_.begin(onwhat, PARALLEL_OWNED),
                      target_mesh_.end(onwhat, PARALLEL_OWNED),
                      candidates.begin(),
@@ -527,11 +542,11 @@ void Driver<Search, Intersect, Interpolate, D,
   gettimeofday(&end_timeval, 0);
   timersub(&end_timeval, &begin_timeval, &diff_timeval);
   tot_seconds_xsect = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
-  
+
   // INTERPOLATE (one variable at a time)
-  
+
   gettimeofday(&begin_timeval, 0);
-  
+
   int nvars = src_varnames.size();
   if (comm_rank == 0)
     std::cout << "Number of variables on entity kind " << onwhat <<
@@ -559,9 +574,9 @@ void Driver<Search, Intersect, Interpolate, D,
   gettimeofday(&end_timeval, 0);
   timersub(&end_timeval, &begin_timeval, &diff_timeval);
   tot_seconds_interp = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
-  
+
   tot_seconds = tot_seconds_srch + tot_seconds_xsect + tot_seconds_interp;
-  
+
   std::cout << "Transform Time for Entity Kind " << onwhat << " on Rank " <<
       comm_rank << " (s): " << tot_seconds << std::endl;
   std::cout << "   Search Time Rank " << comm_rank << " (s): " <<
