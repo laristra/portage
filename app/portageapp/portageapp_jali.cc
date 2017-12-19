@@ -1,7 +1,7 @@
 /*
-This file is part of the Ristra portage project.
-Please see the license file at the root of this repository, or at:
-    https://github.com/laristra/portage/blob/master/LICENSE
+  This file is part of the Ristra portage project.
+  Please see the license file at the root of this repository, or at:
+  https://github.com/laristra/portage/blob/master/LICENSE
 */
 
 
@@ -49,7 +49,7 @@ using Portage::reorder;
   linear or quadratic data.  For the cases of remapping linear data
   with a second-order interpolator, the L2 norm output at the end
   should be identically zero.
- */
+*/
 
 //////////////////////////////////////////////////////////////////////
 
@@ -82,7 +82,8 @@ int print_usage() {
 
   std::cout << "--remap order (default = 1): " <<
       "order of accuracy of interpolation\n\n";
-
+  std::cout << "--convergence_study (default = 1): provide the number of times you want to"
+            << " double source and target mesh sizes \n \n";
   std::cout << "--output_results (default = y)" << std::endl;
   std::cout << "  If 'y', the two meshes are output with the " <<
       "remapped field attached. \n";
@@ -130,7 +131,7 @@ int create_meshes(int const dim, int const n_source, int const n_target,
                      n_source);
 
     if (conformal_meshes) {
-       // 3d hex output mesh from (0,0,0) to (1,1,1) with n_target
+      // 3d hex output mesh from (0,0,0) to (1,1,1) with n_target
       // x n_target x n_target zones
 
       *targetMesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, n_target, n_target,
@@ -146,19 +147,20 @@ int create_meshes(int const dim, int const n_source, int const n_target,
                        n_target, n_target, n_target);
     }
   }
-
 }
 
-template<long D> int point_dim(const Portage::Point<D>&){return D;}
-int point_dim(const JaliGeometry::Point &p){return p.dim();}
-//This function computes a simple function value at a point 
-//based on the point value itself and an order
-//For point x, y with order 1; it returns x+y
-//This is only intended to be used as a simple test data generator
+template<long D> int point_dim(const Portage::Point<D>&) { return D; }
+
+int point_dim(const JaliGeometry::Point &p) {return p.dim();}
+
+// This function computes a simple function value at a point 
+// based on the point value itself and an order
+// For point x, y with order 1; it returns x+y
+// This is only intended to be used as a simple test data generator
 template<class P> double source_data(const P &c, int order ){
-  if(order==0)
+  if(order == 0)
     return const_val;
-  //order ==1 or 2
+  // order == 1 or 2
   double value=0;
   for(int i=0;i<point_dim(c);i++){
     value+=std::pow(c[i],order);
@@ -166,12 +168,13 @@ template<class P> double source_data(const P &c, int order ){
   return value;
 }
 
+template<int dim> double run(int n_source, int n_target, bool conformal, int interp_order, int poly_order, bool dump_output, int rank ,   int numpe, Jali::Entity_kind entityKind);
+
 int main(int argc, char** argv) {
   // Pause profiling until main loop
 #ifdef ENABLE_PROFILE
   __itt_pause();
 #endif
-
 
   // Initialize MPI
   int mpi_init_flag;
@@ -191,6 +194,7 @@ int main(int argc, char** argv) {
   int interp_order = 1;
   int poly_order = 0;
   bool dump_output = true;
+  int n_converge = 1;
   Jali::Entity_kind entityKind = Jali::Entity_kind::CELL;
 
   if (argc < 3) return print_usage();
@@ -228,11 +232,41 @@ int main(int argc, char** argv) {
     } else if (keyword == "field_order") {
       poly_order = stoi(valueword);
       assert(poly_order >=0 && poly_order < 3);
-    } else if (keyword == "output_results")
+    } else if (keyword == "output_results"){
       dump_output = (valueword == "y");
+    } else if (keyword == "convergence_study") {
+      n_converge = stoi(valueword);
+    }
+      
     else
       std::cerr << "Unrecognized option " << keyword << std::endl;
   }
+
+  std::vector<double> l2_err;
+  for(int i=0;i<n_converge;i++){
+    switch(dim){
+      case 2:
+        l2_err.push_back(run<2>(n_source, n_target, conformal, interp_order, poly_order, dump_output, rank, numpe, entityKind));
+        break;
+      case 3:
+        l2_err.push_back(run<3>(n_source, n_target, conformal, interp_order, poly_order, dump_output, rank, numpe, entityKind));  
+        break;
+      default: 
+        std::cerr << "Dimension not 2 or 3" << std::endl;
+        return 2;
+    }
+    n_source *= 2;
+    n_target *= 2;
+
+  }
+
+  for(int i=1;i<l2_err.size();i++)
+    std::cout << "error ratio l2(i-1)/l2(i) is " << l2_err[i-1]/l2_err[i] << std::endl;
+
+  MPI_Finalize();
+}
+
+template<int dim> double run(int n_source, int n_target, bool conformal, int interp_order, int poly_order, bool dump_output, int rank, int numpe, Jali::Entity_kind entityKind ){
 
   if (rank == 0)
   {
@@ -290,35 +324,25 @@ int main(int argc, char** argv) {
     // Register the variable name and interpolation order with the driver
     remap_fields.push_back("celldata");
 
-  } else { //node-centered
+  } else { // node-centered
     sourceData.resize(nsrcnodes);
 
     /*!
       @todo make node_get_coordinates be consistent in data type with
       cell_centroid?
     */
-    if (dim == 2) {
-      Portage::Point<2> nodexy;
-      for (int i = 0; i < nsrcnodes; ++i) {
-        sourceMeshWrapper.node_get_coordinates(i, &nodexy);
-        sourceData[i] = source_data(nodexy, poly_order);
-      }
 
-      } else {  // 3d
-        Portage::Point<3> nodexyz;
-        for (int i = 0; i < nsrcnodes; ++i) {
-          sourceMeshWrapper.node_get_coordinates(i, &nodexyz);
-          sourceData[i] = source_data(nodexyz, poly_order);
-        }
-
-      }
+    Portage::Point<dim> node;
+    for (int i = 0; i < nsrcnodes; ++i) {
+      sourceMeshWrapper.node_get_coordinates(i, &node);
+      sourceData[i] = source_data(node, poly_order);
+    }
 
     sourceState.add("nodedata", sourceMesh, Jali::Entity_kind::NODE,
                     Jali::Entity_type::ALL, &(sourceData[0]));
 
     targetState.add("nodedata", targetMesh, Jali::Entity_kind::NODE,
                     Jali::Entity_type::ALL, 0.0);
-
 
     // Register the variable name and remap order with the driver
     remap_fields.push_back("nodedata");
@@ -336,7 +360,6 @@ int main(int argc, char** argv) {
 
 
   // Portage wrappers for source and target fields
-
   Wonton::Jali_State_Wrapper sourceStateWrapper(sourceState);
   Wonton::Jali_State_Wrapper targetStateWrapper(targetState);
 
@@ -379,7 +402,7 @@ int main(int argc, char** argv) {
             targetMeshWrapper, targetStateWrapper);
       d.set_remap_var_names(remap_fields);
       d.run(numpe > 1);
-    } else {
+    } else {// 2nd order & 3D
       Portage::Driver<
         Portage::SearchKDTree,
         Portage::IntersectR3D,
@@ -394,8 +417,6 @@ int main(int argc, char** argv) {
     }
   }
 
-
-
   // Dump some timing information
   if (numpe > 1) MPI_Barrier(MPI_COMM_WORLD);
   gettimeofday(&end, 0);
@@ -403,14 +424,12 @@ int main(int argc, char** argv) {
   const float seconds = diff.tv_sec + 1.0E-6*diff.tv_usec;
   if (rank == 0) std::cout << "Time: " << seconds << std::endl;
 
-
-
   // Output results for small test cases
   double error, toterr = 0.0;
   double const * cellvecout;
   double const * nodevecout;
-
-  if (entityKind == Jali::Entity_kind::CELL)  { //CELL error computation
+  double totvolume = 0.;
+  if (entityKind == Jali::Entity_kind::CELL)  { // CELL error computation
     targetStateWrapper.get_data<double>(Portage::CELL, "celldata",
                                         &cellvecout);
 
@@ -419,88 +438,50 @@ int main(int argc, char** argv) {
                 << std::endl;
 
 
-    if (dim == 2) {
-      Portage::Point<2> ccen;
-      for (int c = 0; c < ntarcells; ++c) {
-        error = 0;
-        targetMeshWrapper.cell_centroid(c, &ccen);
+    // Cell error computation
+    Portage::Point<dim> ccen;
+    for (int c = 0; c < ntarcells; ++c) {
+      targetMeshWrapper.cell_centroid(c, &ccen);
+      error = source_data(ccen,poly_order) - cellvecout[c];
         
-        if( targetMeshWrapper.on_exterior_boundary(Portage::Entity_kind::CELL, c))
-            error = source_data(ccen,poly_order) - cellvecout[c];
-          
-        if (numpe == 1 && n_target < 10) {
-          std::printf("Cell=% 4d Centroid = (% 5.3lf,% 5.3lf)", c,
-                      ccen[0], ccen[1]);
-          std::printf("  Value = % 10.6lf  Err = % lf\n",
-                      cellvecout[c], error);
-        }
-
-        //        toterr += error*error*targetMeshWrapper.cell_volume(c);
-        toterr += error*error;
+      if(!targetMeshWrapper.on_exterior_boundary(Portage::Entity_kind::CELL, c)){
+        totvolume+=targetMeshWrapper.cell_volume(c);
+        toterr += error*error*targetMeshWrapper.cell_volume(c);          
+      }
+      if (numpe == 1 && n_target < 10) {
+        std::printf("Cell=% 4d Centroid = (% 5.3lf,% 5.3lf)", c,
+                    ccen[0], ccen[1]);
+        std::printf("  Value = % 10.6lf  Err = % lf\n",
+                    cellvecout[c], error);
       }
     }
-   else {  // dim == 3
-      for (int c = 0; c < ntarcells; ++c) {
-        error = 0;
-        Portage::Point<3> ccen;
-        targetMeshWrapper.cell_centroid(c, &ccen);
-        if( targetMeshWrapper.on_exterior_boundary(Portage::Entity_kind::CELL, c))                
-          error = source_data(ccen,poly_order)-cellvecout[c];
-       
-        if (numpe == 1 && n_target < 10) {
-          std::printf("%d Cell=% 4d Centroid = (% 5.3lf,% 5.3lf,% 5.3lf)",
-                      rank, c, ccen[0], ccen[1], ccen[2]);
-          std::printf("  Value = % 10.6lf  Err = % lf\n",
-                      cellvecout[c], error);
-        }
-        //        toterr += error*error*targetMeshWrapper.cell_volume(c);
-        toterr += error*error;
-      } 
-    }
   } 
-  else { //NODE error computation
+  else { // NODE error computation
 
     targetStateWrapper.get_data<double>(Portage::NODE, "nodedata",
                                         &nodevecout);
-
     if (numpe == 1 && n_target < 10)
       std::cout << "nodedata vector on target mesh after remapping is:"
                 << std::endl;
 
-    if (dim == 2) {
-      Portage::Point<2> nodexy;
-      for (int i = 0; i < ntarnodes; ++i) {
-        error = 0;
-        targetMeshWrapper.node_get_coordinates(i, &nodexy);
-        if( targetMeshWrapper.on_exterior_boundary(Portage::Entity_kind::NODE, nodevecout[i]))
-          error = source_data(nodexy,poly_order)-nodevecout[i];
-
-        if (n_target < 10) {
-          std::printf("Node=% 4d Coords = (% 5.3lf,% 5.3lf) ", i,
-                      nodexy[0], nodexy[1]);
-          std::printf("Value = %10.6lf Err = % lf\n", nodevecout[i], error);
-        }
-
-        toterr += error*error;
+    Portage::Point<dim> nodexy;
+    for (int i = 0; i < ntarnodes; ++i) {
+      targetMeshWrapper.node_get_coordinates(i, &nodexy);
+      error = source_data(nodexy,poly_order)-nodevecout[i];
+      if(!targetMeshWrapper.on_exterior_boundary(Portage::Entity_kind::NODE, i)){
+        totvolume+=targetMeshWrapper.dual_cell_volume(i);
+        toterr += error*error*targetMeshWrapper.dual_cell_volume(i);        
       }
-    } else {  // dim == 3
-      Portage::Point<3> nodexyz;
-      for (int i = 0; i < ntarnodes; ++i) {
-        targetMeshWrapper.node_get_coordinates(i, &nodexyz);       
-        error = source_data(nodexyz, poly_order)-nodevecout[i];
-
-        if (numpe == 1 && n_target < 10) {
-          std::printf("Node=% 4d Coords = (% 5.3lf,% 5.3lf,% 5.3lf) ", i,
-                      nodexyz[0], nodexyz[1], nodexyz[2]);
-          std::printf("Value = %10.6lf Err = % lf\n", nodevecout[i], error);
-        }
-        toterr += error*error;
+      if (n_target < 10) {
+        std::printf("Node=% 4d Coords = (% 5.3lf,% 5.3lf) ", i,
+                    nodexy[0], nodexy[1]);
+        std::printf("Value = %10.6lf Err = % lf\n", nodevecout[i], error);
       }
     }
   }
-
+  double finalerr = sqrt(toterr/totvolume);
   if (numpe == 1) {
-    std::printf("\n\nL2 NORM OF ERROR = %lf\n\n", sqrt(toterr));
+    std::printf("\n\nL2 NORM OF ERROR = %lf\n\n", finalerr);
   } else {
     std::cout << std::flush << std::endl;
     MPI_Barrier(MPI_COMM_WORLD);
@@ -508,9 +489,8 @@ int main(int argc, char** argv) {
     MPI_Reduce(&toterr, &globalerr, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
 
     if (rank == 0)
-      std::printf("\n\nL2 NORM OF ERROR = %lf\n\n", sqrt(globalerr));
+      std::printf("\n\nL2 NORM OF ERROR = %lf\n\n", finalerr);
   }
-
 
   // Dump output, if requested
   if (dump_output) {
@@ -553,7 +533,6 @@ int main(int argc, char** argv) {
     }
 
     // sort the field values by global ID
-
     std::vector<int> idx;
     argsort(lgid, idx);   // find sorting indices based on global IDS
     reorder(lgid, idx);   // sort the global ids
@@ -582,8 +561,7 @@ int main(int argc, char** argv) {
     for (int i=0; i < lgid.size(); i++)
       fout << lgid[i] << " " << lvalues[i] << std::endl;
   }  // if (dump_output)
-
+  
   std::printf("finishing portageapp...\n");
-
-  MPI_Finalize();
+  return finalerr;
 }
