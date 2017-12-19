@@ -324,6 +324,11 @@ list<ulong> CellPairFinder::find_scatter(const ulong j) const
     for(size_t m=0; m<dim; m++) cellis[m] = iyl[m]+yndx[m];
     size_t celli = cellindex(dim, strides, cellis);
 
+    // TODO:  Try adding a boundary test, similar to what's in
+    // find_gather, based on hmin instead of individual h's.
+    // Do profiling to see whether that speeds up the search
+    // in typical larger cases.
+
     // loop over all x's in this cell's list
     for (vector<ulong>::const_iterator i=cells[celli].begin();
         i != cells[celli].end(); i++) {
