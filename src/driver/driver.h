@@ -4,8 +4,8 @@ Please see the license file at the root of this repository, or at:
     https://github.com/laristra/portage/blob/master/LICENSE
 */
 
-#ifndef SRC_DRIVER_DRIVER_H_
-#define SRC_DRIVER_DRIVER_H_
+#ifndef PORTAGE_DRIVER_H_
+#define PORTAGE_DRIVER_H_
 
 #include <sys/time.h>
 
@@ -575,4 +575,4 @@ void Driver<Search, Intersect, Interpolate, D,
 
 }  // namespace Portage
 
-#endif  // SRC_DRIVER_DRIVER_H_
+#endif  // PORTAGE_DRIVER_H_

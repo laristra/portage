@@ -23,6 +23,10 @@ Please see the license file at the root of this repository, or at:
 #include "portage/support/portage.h"
 #include "portage/support/Point.h"
 
+#ifdef HAVE_TANGRAM
+#include "tangram/support/tangram.h"
+#include "tangram/support/Point.h"
+#endif
 
 namespace Wonton {
 
@@ -201,6 +205,15 @@ class Jali_Mesh_Wrapper : public AuxMeshTopology<Jali_Mesh_Wrapper> {
     return jali_mesh_.GID(id, (Jali::Entity_kind)kind);
   }
 
+#ifdef HAVE_TANGRAM
+  // TEMPORARY - until we pull WONTON out as a separate repository
+  int get_global_id(int const id, Tangram::Entity_kind const kind) const {
+    return get_global_id(id, static_cast<Portage::Entity_kind>(kind));
+  }
+#endif
+    
+
+
   //! coords of a node
   template <long D>
   void node_get_coordinates(int const nodeid, Point<D>* pp) const {
@@ -209,6 +222,15 @@ class Jali_Mesh_Wrapper : public AuxMeshTopology<Jali_Mesh_Wrapper> {
     assert(jp.dim() == D);
     *pp = toPortagePoint<D>(jp);
   }
+
+#ifdef HAVE_TANGRAM
+  template <long D>
+  void node_get_coordinates(int const nodeid, Tangram::Point<D> *tcoord) const {
+    Point<D> pcoord;
+    node_get_coordinates(nodeid, &pcoord);
+    *tcoord = pcoord;
+  }
+#endif
 
  private:
 
