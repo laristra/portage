@@ -75,11 +75,9 @@ namespace Pairs {
 /// number of bits in an unsigned long
 const size_t nbits_ulong = CHAR_BIT * sizeof(ulong) / sizeof(char);
 
-/// find bounding box of all the y-boxes
+/// find bounding box of all the y-boxes, variable h
 vpile PairsMinMax(const vpile& y, const vpile &h) {
   vector<size_t> ny(y.size());  // sizes
-  vector<size_t> nh(h.size());  // sizes
-  assert(ny[0] && ny[0] <= nh[0]);
   size_t dim = ny[0];
   vpile r(2, dim);
 
@@ -88,6 +86,23 @@ vpile PairsMinMax(const vpile& y, const vpile &h) {
   for (size_t m = 0; m < dim; m++) {
     r[0][m] = (y[m] - 2. * h[m]).min();
     r[1][m] = (y[m] + 2. * h[m]).max();
+  }
+  r[0] -= shift;
+  r[1] += shift;
+  return r;
+}
+
+/// find bounding box of all the y-boxes, constant h
+vpile PairsMinMax(const vpile& y, const pile &h) {
+  vector<size_t> ny(y.size());  // sizes
+  size_t dim = ny[0];
+  vpile r(2, dim);
+
+  // find mins and maxes
+  double shift = 2.0 * numeric_limits<double>::epsilon();  // smallest increment
+  for (size_t m = 0; m < dim; m++) {
+    r[0][m] = y[m].min() - 2. * h[m];
+    r[1][m] = y[m].max() + 2. * h[m];
   }
   r[0] -= shift;
   r[1] += shift;
@@ -202,19 +217,22 @@ CellPairFinder::CellPairFinder(
   else
     assert (h.size()[1] == ny);
 
-  // find min and max of enclosing box of y points
-  yminmax = PairsMinMax(y,h);
-  delta = yminmax[1]-yminmax[0];
-
-  // decide on size of grid - this is a maximum value
-  ulong maxmemory=nx/10;
-  size_t nsidemax=max<size_t>(static_cast<size_t>(ceil(pow(maxmemory*1., (1./dim)))),1);
-
   // find max h
   hmax.resize(dim);
   for (size_t m = 0; m < dim; m++) {
     hmax[m] = h[m].max();
   }
+
+  // find min and max of enclosing box of y points
+  if (do_scatter)
+    yminmax = PairsMinMax(y,hmax);
+  else
+    yminmax = PairsMinMax(y,h);
+  delta = yminmax[1]-yminmax[0];
+
+  // decide on size of grid - this is a maximum value
+  ulong maxmemory=nx/10;
+  size_t nsidemax=max<size_t>(static_cast<size_t>(ceil(pow(maxmemory*1., (1./dim)))),1);
 
   // find avg of min and max h
   pile havg(dim);
