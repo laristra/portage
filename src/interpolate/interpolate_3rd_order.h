@@ -41,8 +41,8 @@ namespace Portage {
 */
 
 
-template<typename SourceMeshType, typename TargetMeshType, typename StateType,
-         Entity_kind on_what, long D>
+template<int D, Entity_kind on_what,
+         typename SourceMeshType, typename TargetMeshType, typename StateType>
 class Interpolate_3rdOrder {
  public:
   /*!
@@ -81,18 +81,18 @@ class Interpolate_3rdOrder {
     limiter_type_ = limiter_type;
 
     // Extract the field data from the statemanager
-    
+
     source_state_.get_data(on_what, interp_var_name, &source_vals_);
-    
+
     // Compute the limited quadfits for the field
-    
-    Limited_Quadfit<SourceMeshType, StateType, on_what, D>
+
+    Limited_Quadfit<D, on_what, SourceMeshType, StateType>
         limqfit(source_mesh_, source_state_, interp_var_name, limiter_type_);
-    
-    
+
+
     int nentities = source_mesh_.end(on_what)-source_mesh_.begin(on_what);
     quadfits_.resize(nentities);
-    
+
     // call transform functor to take the values of the variable on
     // the cells and compute a "limited" quadfit of the field on the
     // cells (for transform definition, see portage.h)
@@ -156,9 +156,9 @@ class Interpolate_3rdOrder {
   cells and vector of contribution weights
 */
 
-template<typename SourceMeshType, typename TargetMeshType, typename StateType,
-         long D>
-class Interpolate_3rdOrder<SourceMeshType, TargetMeshType, StateType, CELL, D> {
+template<int D,
+         typename SourceMeshType, typename TargetMeshType, typename StateType>
+class Interpolate_3rdOrder<D, CELL, SourceMeshType, TargetMeshType, StateType> {
  public:
   Interpolate_3rdOrder(SourceMeshType const & source_mesh,
                        TargetMeshType const & target_mesh,
@@ -170,7 +170,7 @@ class Interpolate_3rdOrder<SourceMeshType, TargetMeshType, StateType, CELL, D> {
       limiter_type_(NOLIMITER),
       source_vals_(nullptr) {}
 
-  
+
   /// Set the name of the interpolation variable and the limiter type
 
   void set_interpolation_variable(std::string const & interp_var_name,
@@ -185,7 +185,7 @@ class Interpolate_3rdOrder<SourceMeshType, TargetMeshType, StateType, CELL, D> {
 
     // Compute the limited quadfits for the field
 
-    Limited_Quadfit<SourceMeshType, StateType, CELL, D>
+    Limited_Quadfit<D, CELL, SourceMeshType, StateType>
         limqfit(source_mesh_, source_state_, interp_var_name_, limiter_type_);
 
     int nentities = source_mesh_.end(CELL)-source_mesh_.begin(CELL);
@@ -219,7 +219,7 @@ class Interpolate_3rdOrder<SourceMeshType, TargetMeshType, StateType, CELL, D> {
     @brief   Functor to do the 3rd order interpolation of cell values
 
     @param[in] targetCellID The index of the target cell.
-    
+
     @param[in] sources_and_weights Vector of source mesh entities and
     corresponding weight vectors.  Each element of the weights vector
     is a moment of the source data over the target entity; for first
@@ -251,17 +251,17 @@ class Interpolate_3rdOrder<SourceMeshType, TargetMeshType, StateType, CELL, D> {
 /*! Implementation of the () operator for 3rd order interpolation on cells
  *  Method: Uses an SVD decomposition to compute a quadratic
  *  multinomial fit to a given field, and approximates the
- *  field using the quadratic multinomial at points around 
+ *  field using the quadratic multinomial at points around
  *  the CELL center.
  */
 
-template<typename SourceMeshType, typename TargetMeshType, typename StateType,
-         long D>
-double Interpolate_3rdOrder<SourceMeshType, TargetMeshType,
-                            StateType, CELL, D>::operator()
+template<int D,
+         typename SourceMeshType, typename TargetMeshType, typename StateType>
+double Interpolate_3rdOrder<D, CELL, SourceMeshType, TargetMeshType,
+                            StateType>::operator()
     (int const targetCellID, std::vector<Weights_t> const & sources_and_weights)
     const {
-  
+
   int nsrccells = sources_and_weights.size();
   if (!nsrccells) {
 #ifdef DEBUG
@@ -303,7 +303,7 @@ double Interpolate_3rdOrder<SourceMeshType, TargetMeshType,
       // Add the quadratic terms
       for (int k = 0; k <= j; ++k) {
         dvec[j1] = dvec[k]*dvec[j];
-	j1 += 1;
+        j1 += 1;
         //dvec[D+j+k] = dvec[k]*dvec[j];
       }
     }
@@ -331,9 +331,9 @@ double Interpolate_3rdOrder<SourceMeshType, TargetMeshType,
   source nodes (dual cells) and vector of contribution weights
 */
 
-template<typename SourceMeshType, typename TargetMeshType, typename StateType,
-         long D>
-class Interpolate_3rdOrder<SourceMeshType, TargetMeshType, StateType, NODE, D> {
+template<int D,
+         typename SourceMeshType, typename TargetMeshType, typename StateType>
+class Interpolate_3rdOrder<D, NODE, SourceMeshType, TargetMeshType, StateType> {
  public:
   Interpolate_3rdOrder(SourceMeshType const & source_mesh,
                        TargetMeshType const & target_mesh,
@@ -364,21 +364,21 @@ class Interpolate_3rdOrder<SourceMeshType, TargetMeshType, StateType, NODE, D> {
     limiter_type_ = limiter_type;
 
     // Extract the field data from the statemanager
-    
+
     source_state_.get_data(NODE, interp_var_name, &source_vals_);
-    
+
     // Compute the limited quadfits for the field
-    
-    Limited_Quadfit<SourceMeshType, StateType, NODE, D>
+
+    Limited_Quadfit<D, NODE, SourceMeshType, StateType>
         limqfit(source_mesh_, source_state_, interp_var_name, limiter_type);
-    
+
     int nentities = source_mesh_.end(NODE)-source_mesh_.begin(NODE);
     quadfits_.resize(nentities);
-    
+
     // call transform functor to take the values of the variable on
     // the cells and compute a "limited" quadfit of the field on the
     // cells (for transform definition, see portage.h)
-    
+
     // Even though we defined Portage::transform (to be
     // thrust::transform or boost::transform) in portage.h, the
     // compiler is not able to disambiguate this call and is getting
@@ -430,14 +430,14 @@ class Interpolate_3rdOrder<SourceMeshType, TargetMeshType, StateType, NODE, D> {
 /*! implementation of the () operator for 3rd order interpolate on nodes
  *  Method: Uses an SVD decomposition to compute a quadratic
  *  multinomial fit to a given field, and approximates the
- *  field using the quadratic multinomial at points around 
+ *  field using the quadratic multinomial at points around
  *  the central NODE.
  */
 
-template<typename SourceMeshType, typename TargetMeshType, typename StateType,
-         long D>
-double Interpolate_3rdOrder<SourceMeshType, TargetMeshType,
-                            StateType, NODE, D> :: operator()
+template<int D,
+         typename SourceMeshType, typename TargetMeshType, typename StateType>
+double Interpolate_3rdOrder<D, NODE, SourceMeshType, TargetMeshType,
+                            StateType> :: operator()
     (int const targetNodeID, std::vector<Weights_t> const & sources_and_weights)
     const {
 
@@ -483,8 +483,8 @@ double Interpolate_3rdOrder<SourceMeshType, TargetMeshType,
       dvec[j] = vec[j];
       // Add the quadratic terms
       for (int k = 0; k <= j; ++k) {
-	dvec[j1] = dvec[k]*dvec[j];
-	j1 += 1;
+        dvec[j1] = dvec[k]*dvec[j];
+        j1 += 1;
         // dvec[D+j+k] = dvec[k]*dvec[j];
       }
     }

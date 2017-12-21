@@ -36,8 +36,7 @@ namespace Portage {
 
 */
 
-template<typename MeshType, typename StateType, Entity_kind on_what,
-         long D>
+template<int D, Entity_kind on_what, typename MeshType, typename StateType>
 class Limited_Quadfit {
  public:
   /*! @brief Constructor
@@ -99,8 +98,8 @@ class Limited_Quadfit {
     @tparam StateType A state manager class that one can query for field info
 */
 
-template<typename MeshType, typename StateType, long D>
-class Limited_Quadfit<MeshType, StateType, CELL, D> {
+template<int D, typename MeshType, typename StateType>
+class Limited_Quadfit<D, CELL, MeshType, StateType> {
  public:
   /*! @brief Constructor
       @param[in] mesh  Mesh class than one can query for mesh info
@@ -167,9 +166,9 @@ class Limited_Quadfit<MeshType, StateType, CELL, D> {
       Uses an SVD decomposition for the LS regression.
 
   */
-template<typename MeshType, typename StateType, long D>
+template<int D, typename MeshType, typename StateType>
   Vector<D*(D+3)/2>
-Limited_Quadfit<MeshType, StateType, CELL, D>::operator() (int const cellid) {
+Limited_Quadfit<D, CELL, MeshType, StateType>::operator() (int const cellid) {
 
   assert(D == mesh_.space_dimension());
   assert(D == 2 || D == 3);
@@ -255,8 +254,8 @@ Limited_Quadfit<MeshType, StateType, CELL, D>::operator() (int const cellid) {
 */
 
 
-template<typename MeshType, typename StateType, long D>
-class Limited_Quadfit<MeshType, StateType, NODE, D> {
+template<int D, typename MeshType, typename StateType>
+class Limited_Quadfit<D, NODE, MeshType, StateType> {
  public:
 
   /*! @brief Constructor
@@ -326,9 +325,9 @@ class Limited_Quadfit<MeshType, StateType, NODE, D> {
    */
 
 
-template<typename MeshType, typename StateType, long D>
+template<int D, typename MeshType, typename StateType>
   Vector<D*(D+3)/2>
-Limited_Quadfit<MeshType, StateType, NODE, D>::operator() (int const nodeid) {
+Limited_Quadfit<D, NODE, MeshType, StateType>::operator() (int const nodeid) {
 
   assert(D == mesh_.space_dimension());
   assert(D == 2 || D == 3);
