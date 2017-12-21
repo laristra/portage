@@ -39,7 +39,7 @@ if (ENABLE_UNIT_TESTS)
    if (Jali_DIR)
       cinch_add_unit(test_jali_mesh_wrapper
                     SOURCES mesh/jali/test/test_jali_mesh_wrapper.cc
-                    LIBRARIES portage ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
+                    LIBRARIES portage  ${LAPACKE_LIBRARIES} ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
                     # this is relative to the wrapper directory
                     INPUTS ../../test_data/shotshell.exo
                     ../../test_data/shotshell-v.exo
@@ -48,14 +48,14 @@ if (ENABLE_UNIT_TESTS)
 
       cinch_add_unit(test_jali_state_wrapper
                      SOURCES state/jali/test/test_jali_state_wrapper.cc
-                     LIBRARIES portage ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
+                     LIBRARIES portage ${LAPACKE_LIBRARIES} ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
                      POLICY MPI
                      THREADS 1)
 
       # Flat mesh wrapper
       cinch_add_unit(test_flat_mesh_wrapper
                      SOURCES mesh/flat/test/test_flat_mesh_wrapper.cc
-                     LIBRARIES portage ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
+                     LIBRARIES portage  ${LAPACKE_LIBRARIES} ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
                      # this is relative to the wrapper directory
                      INPUTS ../../test_data/shotshell.exo
                      ../../test_data/shotshell-v.exo
@@ -65,7 +65,7 @@ if (ENABLE_UNIT_TESTS)
       # Flat state wrapper
       cinch_add_unit(test_flat_state_wrapper
                      SOURCES state/flat/test/test_flat_state_wrapper.cc
-                     LIBRARIES portage ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
+                     LIBRARIES portage ${LAPACKE_LIBRARIES} ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
                      POLICY MPI
                      THREADS 1)
    endif (Jali_DIR)
@@ -73,13 +73,13 @@ if (ENABLE_UNIT_TESTS)
     if (ENABLE_FleCSI)
       cinch_add_unit(flecsi_2d
                      SOURCES mesh/flecsi/test/flecsi_2d.cc
-                     LIBRARIES portage ${FleCSI_LIBRARIES} ${FleCSISP_LIBRARIES}
+                     LIBRARIES portage ${LAPACKE_LIBRARIES} ${FleCSI_LIBRARIES} ${FleCSISP_LIBRARIES}
                      POLICY MPI
                      THREADS 1)
       
       cinch_add_unit(flecsi_3d
                      SOURCES mesh/flecsi/test/flecsi_3d.cc
-                     LIBRARIES portage ${FleCSI_LIBRARIES} ${FleCSISP_LIBRARIES}
+                     LIBRARIES portage ${LAPACKE_LIBRARIES} ${FleCSI_LIBRARIES} ${FleCSISP_LIBRARIES}
                      POLICY MPI
                      THREADS 1)
 
@@ -91,12 +91,12 @@ if (ENABLE_UNIT_TESTS)
    # Simple Mesh wrapper
    cinch_add_unit(test_simple_mesh_wrapper
      SOURCES mesh/simple_mesh/test/test_simple_mesh_wrapper.cc
-     LIBRARIES portage
+     LIBRARIES portage ${LAPACKE_LIBRARIES}
      POLICY SERIAL)
    # Simple State wrapper
    cinch_add_unit(test_simple_state_wrapper
      SOURCES state/simple_state/test/test_simple_state_wrapper.cc
-     LIBRARIES portage
+     LIBRARIES portage ${LAPACKE_LIBRARIES}
      POLICY SERIAL)
 endif(ENABLE_UNIT_TESTS)
 

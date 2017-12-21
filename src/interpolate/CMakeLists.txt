@@ -25,31 +25,31 @@ if (ENABLE_UNIT_TESTS)
   if (Jali_DIR)
     cinch_add_unit(test_gradient
       SOURCES  test/test_gradient.cc
-      LIBRARIES portage ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
+      LIBRARIES portage ${LAPACKE_LIBRARIES} ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
       POLICY MPI
       THREADS 1)
 
     cinch_add_unit(test_quadfit
       SOURCES  test/test_quadfit.cc
-      LIBRARIES portage ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
+      LIBRARIES portage  ${LAPACKE_LIBRARIES} ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
       POLICY MPI
       THREADS 1)
 
     cinch_add_unit(test_interpolate_1st_order
       SOURCES  test/test_interp_1st_order.cc
-      LIBRARIES portage ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
+      LIBRARIES portage  ${LAPACKE_LIBRARIES} ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
       POLICY MPI
       THREADS 1)
 
     cinch_add_unit(test_interpolate_2nd_order
       SOURCES test/test_interp_2nd_order.cc
-      LIBRARIES portage ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
+      LIBRARIES portage  ${LAPACKE_LIBRARIES} ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
       POLICY MPI
       THREADS 1)
 
     cinch_add_unit(test_interpolate_3rd_order
       SOURCES test/test_interp_3rd_order.cc
-      LIBRARIES portage ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
+      LIBRARIES portage  ${LAPACKE_LIBRARIES} ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
       POLICY MPI
       THREADS 1)
 
