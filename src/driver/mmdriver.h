@@ -401,28 +401,50 @@ void MMDriver<Search, Intersect, Interpolate, D,
   timersub(&end_timeval, &begin_timeval, &diff_timeval);
   tot_seconds_srch = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
 
+
+  // NEW
+  int nmats = source_state_.num_materials();
+  // NEW
+
 #ifdef HAVE_TANGRAM
   // Call interface reconstruction only if we got a method from the
   // calling app
   
   if (typeid(InterfaceReconstructor<SourceMesh_Wrapper, D>) !=
       typeid(DummyInterfaceReconstructor<SourceMesh_Wrapper, D>)) {
-    // INTERFACE RECONSTRUCTION (BUT RIGHT NOW WE ARE NOT USING IT)
     
     Tangram::Driver<InterfaceReconstructor, D, SourceMesh_Wrapper>
         interface_reconstructor(source_mesh_);
     
-    // Since we don't really have multiple materials and volume
-    // fractions of those materials in cells, we will pretend that we
-    // have two materials in each cell and that the volume fraction of
-    // each material in each cell is 0.5
-    
-    int nmats = 2;
     int nsourcecells = source_mesh_.num_entities(CELL, ALL);
     std::vector<int> cell_num_mats(nsourcecells, nmats);
     std::vector<int> cell_mat_ids(nsourcecells*nmats);
-    std::vector<double> cell_mat_volfracs(nsourcecells*nmats, 0.5);
+    std::vector<double> cell_mat_volfracs(nsourcecells*nmats, 0.0);
     std::vector<Tangram::Point<D>> cell_mat_centroids(nsourcecells*nmats);
+  
+    for (int m = 0; m < nmats; m++) {
+      // Variant 1
+      std::vector<double> matfracvec;
+      source_state_.mat_get_cellvals("volume_fraction", m, &cellids,
+                                     &matfracvec);
+      for (int c = 0; c < cellids.size(); c++)
+        cell_mat_volfracs[nsourcecells*m + cellids[c]] = matfracvec[c];
+
+      // Variant 2
+      double const * const matfracptr =
+          source_state_.mat_get_celldata("volume_fraction", m, &cellids);
+      for (int c = 0; c < cellids.size(); c++)
+        cell_mat_volfracs[nsourcecells*m + cellids[c]] = matfracptr[c];
+
+      // Variant 1
+      std::vector<Tangram::Point<D>> matcenvec;
+      source_state_.mat_get_cellvals("mat_centroids", m, &cellids, &matcenvec);
+      for (int c = 0; c < cellids.size(); c++)
+        cell_mat_centroids[nsourcecells*m + cellids[c]] = matcenvec[c];
+
+    }
+      
+
     interface_reconstructor.set_volume_fractions(cell_num_mats,
                                                  cell_mat_ids,
                                                  cell_mat_volfracs,
@@ -431,59 +453,149 @@ void MMDriver<Search, Intersect, Interpolate, D,
   }
 #endif
 
-  // INTERSECT
+  // Material centric loop
 
-  gettimeofday(&begin_timeval, 0);
+  for (int m = 0; m < nmats; m++) {  
 
-  // Get an instance of the desired intersect algorithm type
-  const Intersect<onwhat, SourceMesh_Wrapper, TargetMesh_Wrapper>
-      intersect(source_mesh_, target_mesh_);
+    // INTERSECT
+    
+    gettimeofday(&begin_timeval, 0);
 
-  // For each cell in the target mesh get a list of candidate-weight
-  // pairings (in a traditional mesh, not particle mesh, the weights
-  // are moments). Note that this candidate list is different from the
-  // search candidate list in that it may not include some of the
-  // search candidates. Also, note that for 2nd order and higher
-  // remaps, we get multiple moments (0th, 1st, etc) for each
-  // target-source cell intersection
+#ifdef OPTION1
+    {
+      // Option 1: We gather material polygons for material 'm', send
+      // the list into intersect functor. Intersect functor does not
+      // know anything about a reconstructor. Has the advantage that
+      // if someone (**FLAG**) insisted on giving us material polygons
+      // that they reconstructed somehow, we could send them in to our
+      // functor. In this option, the intersector does not even need
+      // to know which material its dealing with or that its dealing
+      // with material polygons. We could even send in cell
+      // polygons/polyhedra for the source cells so that we don't have
+      // to recompute them for every target cell we intersect with it.
+      
+      std::vector<MatPoly_t> matpolys;
+      for (int c = 0; c < nsourcecells; c++) 
+        interface_reconstructor.get_matpoly(c, m, &matpolys[c]);
+      
+      const Intersect<onwhat, SourceMesh_Wrapper, TargetMesh_Wrapper>
+          intersect(source_mesh_, target_mesh_, matpolys);
+    }
+#else
+    {
+      // Option 2: Send in the interface reconstructor object and
+      // extract the data from it in the intersect functor
+      // constructor. Looks cleaner and we don't have to expose
+      // MatPoly_t but we have to send in the material index
 
-  Portage::transform(target_mesh_.begin(onwhat, PARALLEL_OWNED),
-                     target_mesh_.end(onwhat, PARALLEL_OWNED),
-                     candidates.begin(),
-                     source_ents_and_weights.begin(),
-                     intersect);
+      const Intersect<onwhat, SourceMesh_Wrapper, TargetMesh_Wrapper,
+                      InterfaceReconstructor>
+          intersect(source_mesh_, target_mesh_, interface_reconstructor);
+      
+      intersect.set_material(m);
+    }
+#endif
 
-  gettimeofday(&end_timeval, 0);
-  timersub(&end_timeval, &begin_timeval, &diff_timeval);
-  tot_seconds_xsect = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
-
-  // INTERPOLATE (one variable at a time)
-
-  gettimeofday(&begin_timeval, 0);
-
-  int nvars = src_varnames.size();
-  if (comm_rank == 0)
-    std::cout << "Number of variables on entity kind " << onwhat <<
-        " to remap is " << nvars << std::endl;
-
-  // Get an instance of the desired interpolate algorithm type
-  Interpolate<D, onwhat, SourceMesh_Wrapper, TargetMesh_Wrapper,
-              SourceState_Wrapper>
-      interpolate(source_mesh_, target_mesh_, source_state_);
-
-  for (int i = 0; i < nvars; ++i) {
-    interpolate.set_interpolation_variable(src_varnames[i],
-                                           limiters_[i]);
-
-    double *target_field_raw = nullptr;
-    target_state_.get_data(onwhat, trg_varnames[i], &target_field_raw);
-    Portage::pointer<double> target_field(target_field_raw);
-
+     // For each cell in the target mesh get a list of candidate-weight
+    // pairings (in a traditional mesh, not particle mesh, the weights
+    // are moments). Note that this candidate list is different from the
+    // search candidate list in that it may not include some of the
+    // search candidates. Also, note that for 2nd order and higher
+    // remaps, we get multiple moments (0th, 1st, etc) for each
+    // target-source cell intersection
+    
     Portage::transform(target_mesh_.begin(onwhat, PARALLEL_OWNED),
                        target_mesh_.end(onwhat, PARALLEL_OWNED),
+                       candidates.begin(),
                        source_ents_and_weights.begin(),
-                       target_field, interpolate);
-  }
+                       intersect);
+    
+    gettimeofday(&end_timeval, 0);
+    timersub(&end_timeval, &begin_timeval, &diff_timeval);
+    tot_seconds_xsect = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
+
+
+    // LOOK AT INTERSECTION WEIGHTS TO DETERMINE WHICH TARGET CELLS
+    // WILL GET NEW MATERIALS
+
+    for (int c = 0; c < ntargetcells; c++) {
+      int found = 0;
+      for (int s = 0; s < source_ents_and_weights[c].size(); s++) {
+        std::vector<double> wts = source_ents_and_weights[c].weights;
+        if (wt[0] > 0.0) {
+          found = 1;
+          break;
+        }
+      }
+      matcellstgt.push_back(c);
+    }
+
+    // If any processor is adding this material to the target state,
+    // add it on all the processors
+
+    int nmatcells = matcellstgt.size();
+    int nmatcells_global = 0;
+    MPI_Allreduce(&nmatcell, 1, MPI_INT, &nmatcells_global, 1, MPI_SUM);
+    if (nmatcells_global)
+      target_state_.add_material(matcellstgt);
+    else
+      continue;  // maybe the target mesh does not overlap this material
+
+
+    // INTERPOLATE (one variable at a time)
+
+    gettimeofday(&begin_timeval, 0);
+
+    int nvars = src_varnames.size();
+    if (comm_rank == 0)
+      std::cout << "Number of variables on entity kind " << onwhat <<
+          " to remap is " << nvars << std::endl;
+
+    // Get an instance of the desired interpolate algorithm type
+    Interpolate<D, onwhat, SourceMesh_Wrapper, TargetMesh_Wrapper,
+                SourceState_Wrapper>
+        interpolate(source_mesh_, target_mesh_, source_state_);
+
+    interpolate.set_material(m);    // We have to do this so we know
+                                    // which material values we have
+                                    // to grab from the source state
+
+    for (int i = 0; i < nvars; ++i) {
+      interpolate.set_interpolation_variable(src_varnames[i],
+                                             limiters_[i]);
+
+      // Get a handle to a memory location where the target state
+      // would like us to write this material variable into. If it is
+      // NULL, we allocate it ourself
+
+      double *target_field_raw =
+          target_state_.mat_get_cellvals(varnames[i], m, &cellids);
+      bool external_mem = true;
+      if (target_field_raw == nullptr) {
+        external_mem = false;
+        target_field_raw = new SOME_TYPE[ntargetcells];
+      }
+
+      Portage::pointer<double> target_field(target_field_raw);
+
+      Portage::transform(target_mesh_.begin(onwhat, PARALLEL_OWNED),
+                         target_mesh_.end(onwhat, PARALLEL_OWNED),
+                         source_ents_and_weights.begin(),
+                         target_field, interpolate);
+
+      // If the state wrapper knows that the target data is already
+      // laid out in this way and it gave us a pointer to the array
+      // where the values reside, it has to do nothing in this
+      // call. If the storage format is different, however, it may
+      // have to copy the values into their proper locations
+
+      target_state_.mat_set_cellvals(varnames[i], m, target_field_raw);
+
+      if (!external_mem)
+        delete [] target_field_raw;
+    }
+
+  }  // for nmats
 
   gettimeofday(&end_timeval, 0);
   timersub(&end_timeval, &begin_timeval, &diff_timeval);
