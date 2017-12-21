@@ -16,6 +16,7 @@ set(support_HEADERS
     Matrix.h
     weight.h
     basis.h
+    operator.h
     lsfits.h
     svd.h
     PARENT_SCOPE
@@ -46,6 +47,12 @@ if (ENABLE_UNIT_TESTS)
 
   cinch_add_unit(test_basis
     SOURCES test/test_basis.cc
+    POLICY MPI
+    THREADS 1
+    )
+
+  cinch_add_unit(test_operator
+    SOURCES test/test_operator.cc
     POLICY MPI
     THREADS 1
     )
