@@ -41,8 +41,8 @@ namespace Portage {
 */
 
 
-template<typename SourceMeshType, typename TargetMeshType, typename StateType,
-         Entity_kind on_what, long D>
+template<int D, Entity_kind on_what,
+         typename SourceMeshType, typename TargetMeshType, typename StateType>
 class Interpolate_2ndOrder {
  public:
   /*!
@@ -86,7 +86,7 @@ class Interpolate_2ndOrder {
     
     // Compute the limited gradients for the field
     
-    Limited_Gradient<SourceMeshType, StateType, on_what, D>
+    Limited_Gradient<D, on_what, SourceMeshType, StateType>
         limgrad(source_mesh_, source_state_, interp_var_name, limiter_type_);
     
     
@@ -156,9 +156,9 @@ class Interpolate_2ndOrder {
   cells and vector of contribution weights
 */
 
-template<typename SourceMeshType, typename TargetMeshType, typename StateType,
-         long D>
-class Interpolate_2ndOrder<SourceMeshType, TargetMeshType, StateType, CELL, D> {
+template<int D,
+         typename SourceMeshType, typename TargetMeshType, typename StateType>
+class Interpolate_2ndOrder<D, CELL, SourceMeshType, TargetMeshType, StateType> {
  public:
   Interpolate_2ndOrder(SourceMeshType const & source_mesh,
                        TargetMeshType const & target_mesh,
@@ -185,7 +185,7 @@ class Interpolate_2ndOrder<SourceMeshType, TargetMeshType, StateType, CELL, D> {
 
     // Compute the limited gradients for the field
 
-    Limited_Gradient<SourceMeshType, StateType, CELL, D>
+    Limited_Gradient<D, CELL, SourceMeshType, StateType>
         limgrad(source_mesh_, source_state_, interp_var_name_, limiter_type_);
 
     int nentities = source_mesh_.end(CELL)-source_mesh_.begin(CELL);
@@ -251,10 +251,10 @@ class Interpolate_2ndOrder<SourceMeshType, TargetMeshType, StateType, CELL, D> {
 // Implementation of the () operator for 2nd order interpolation on cells
 
 
-template<typename SourceMeshType, typename TargetMeshType, typename StateType,
-         long D>
-double Interpolate_2ndOrder<SourceMeshType, TargetMeshType,
-                            StateType, CELL, D>::operator()
+template<int D,
+         typename SourceMeshType, typename TargetMeshType, typename StateType>
+double Interpolate_2ndOrder<D, CELL, SourceMeshType, TargetMeshType,
+                            StateType> :: operator()
     (int const targetCellID, std::vector<Weights_t> const & sources_and_weights)
     const {
   
@@ -307,7 +307,8 @@ double Interpolate_2ndOrder<SourceMeshType, TargetMeshType,
 #ifdef DEBUG
   static bool first = true;
   if (first && fabs((vol-wtsum0)/vol) > 1.0e-10) {
-    std::cerr << "WARNING: Meshes may be mismatched in the neighborhood of cell " <<
+    std::cerr <<
+        "WARNING: Meshes may be mismatched in the neighborhood of cell " <<
         targetCellID << " in the target mesh (and maybe other places too)\n";
     first = false;
   }
@@ -325,9 +326,9 @@ double Interpolate_2ndOrder<SourceMeshType, TargetMeshType,
   @brief 2nd order interpolate class specialization for nodes
 */
 
-template<typename SourceMeshType, typename TargetMeshType, typename StateType,
-         long D>
-class Interpolate_2ndOrder<SourceMeshType, TargetMeshType, StateType, NODE, D> {
+template<int D,
+         typename SourceMeshType, typename TargetMeshType, typename StateType>
+class Interpolate_2ndOrder<D, NODE, SourceMeshType, TargetMeshType, StateType> {
  public:
   Interpolate_2ndOrder(SourceMeshType const & source_mesh,
                        TargetMeshType const & target_mesh,
@@ -363,7 +364,7 @@ class Interpolate_2ndOrder<SourceMeshType, TargetMeshType, StateType, NODE, D> {
     
     // Compute the limited gradients for the field
     
-    Limited_Gradient<SourceMeshType, StateType, NODE, D>
+    Limited_Gradient<D, NODE, SourceMeshType, StateType>
         limgrad(source_mesh_, source_state_, interp_var_name, limiter_type);
     
     int nentities = source_mesh_.end(NODE)-source_mesh_.begin(NODE);
@@ -423,10 +424,10 @@ class Interpolate_2ndOrder<SourceMeshType, TargetMeshType, StateType, NODE, D> {
 
 /// implementation of the () operator for 2nd order interpolate on nodes
 
-template<typename SourceMeshType, typename TargetMeshType, typename StateType,
-         long D>
-double Interpolate_2ndOrder<SourceMeshType, TargetMeshType,
-                            StateType, NODE, D> :: operator()
+template<int D,
+         typename SourceMeshType, typename TargetMeshType, typename StateType>
+double Interpolate_2ndOrder<D, NODE, SourceMeshType, TargetMeshType,
+                            StateType> :: operator()
     (int const targetNodeID, std::vector<Weights_t> const & sources_and_weights)
     const {
 
@@ -481,7 +482,8 @@ double Interpolate_2ndOrder<SourceMeshType, TargetMeshType,
 #ifdef DEBUG
   static bool first = true;
   if (first && fabs((vol-wtsum0)/vol) > 1.0e-10) {
-    std::cerr << "WARNING: Meshes may be mismatched in the neighborhood of node " <<
+    std::cerr <<
+        "WARNING: Meshes may be mismatched in the neighborhood of node " <<
         targetNodeID << " in the target mesh (and maybe other places too) \n";
     first = false;
   }

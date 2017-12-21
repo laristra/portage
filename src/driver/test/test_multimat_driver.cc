@@ -56,8 +56,8 @@ class DriverTest : public ::testing::Test {
   //  It will work for 2-D and 3-D, coincident and non-coincident
   //  cell-centered remaps.
   template <
-    template<class, class> class Intersect,
-    template<class, class, class, Portage::Entity_kind, long> class Interpolate,
+    template<Portage::Entity_kind, class, class> class Intersect,
+    template<int, Portage::Entity_kind, class, class, class> class Interpolate,
     int Dimension
   >
   void unitTest(double compute_initial_field(JaliGeometry::Point centroid),
@@ -151,7 +151,8 @@ class DriverTest : public ::testing::Test {
 
   // Constructor for Driver test
   DriverTest(std::shared_ptr<Jali::Mesh> s, std::shared_ptr<Jali::Mesh> t) :
-    sourceMesh(s), targetMesh(t), sourceState(sourceMesh), targetState(targetMesh),
+    sourceMesh(s), targetMesh(t), sourceState(sourceMesh),
+    targetState(targetMesh),
     sourceMeshWrapper(*sourceMesh), targetMeshWrapper(*targetMesh),
     sourceStateWrapper(sourceState), targetStateWrapper(targetState){
   }
@@ -195,7 +196,8 @@ double compute_quadratic_field(JaliGeometry::Point centroid) {
   return centroid[0]*centroid[0]+centroid[1]*centroid[1];
 }
 double compute_quadratic_field_3d(JaliGeometry::Point centroid) {
-  return centroid[0]*centroid[0] + centroid[1]*centroid[1] + centroid[2]*centroid[2];
+  return centroid[0]*centroid[0] + centroid[1]*centroid[1] +
+      centroid[2]*centroid[2];
 }
 
 // Test cases: these are constructed by calling TEST_F with the name

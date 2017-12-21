@@ -16,7 +16,7 @@ Please see the license file at the root of this repository, or at:
 
 #include "portage/wonton/mesh/jali/jali_mesh_wrapper.h"
 
-TEST(search_kdtree2, case1)
+TEST(search_kdtree2, cell)
 {
     Jali::MeshFactory mf(MPI_COMM_WORLD);
     // overlay a 2x2 target mesh on a 3x3 source mesh
@@ -26,13 +26,12 @@ TEST(search_kdtree2, case1)
     const Wonton::Jali_Mesh_Wrapper source_mesh_wrapper(*smesh);
     const Wonton::Jali_Mesh_Wrapper target_mesh_wrapper(*tmesh);
 
-    Portage::SearchKDTree<2,
+    Portage::SearchKDTree<2, Portage::Entity_kind::CELL,
         Wonton::Jali_Mesh_Wrapper, Wonton::Jali_Mesh_Wrapper>
         search(source_mesh_wrapper, target_mesh_wrapper);
 
     for (int tc = 0; tc < 4; ++tc) {
-        std::vector<int> candidates;
-        search(tc, &candidates);
+        std::vector<int> candidates = search(tc);
 
         // there should be four candidate source cells, in a square
         // compute scbase = index of lower left source cell
@@ -48,23 +47,9 @@ TEST(search_kdtree2, case1)
         ASSERT_EQ(scbase + 4, candidates[3]);
     }
 
-} // TEST(search_kdtree2, case1)
+}  // TEST(search_kdtree2, cell)
 
-class MeshWrapperDual {
-  public:
-    MeshWrapperDual(const Wonton::Jali_Mesh_Wrapper &w) : w_(w) {}
-    int num_owned_cells() const { return w_.num_owned_nodes(); }
-    int num_ghost_cells() const { return w_.num_ghost_nodes(); }
-    void cell_get_coordinates(int const cellid,
-            std::vector<Portage::Point<2>> *pplist) const {
-        w_.dual_cell_get_coordinates(cellid, pplist);
-    }
-  private:
-    const Wonton::Jali_Mesh_Wrapper &w_;
-};
-
-
-TEST(search_kdtree2, dual)
+TEST(search_kdtree2, node)
 {
     Jali::MeshFactory mf(MPI_COMM_WORLD);
     mf.included_entities({Jali::Entity_kind::EDGE,
@@ -78,15 +63,12 @@ TEST(search_kdtree2, dual)
     const Wonton::Jali_Mesh_Wrapper source_mesh_wrapper(*smesh);
     const Wonton::Jali_Mesh_Wrapper target_mesh_wrapper(*tmesh);
 
-    const MeshWrapperDual s2(source_mesh_wrapper);
-    const MeshWrapperDual t2(target_mesh_wrapper);
-
-    Portage::SearchKDTree<2, MeshWrapperDual, MeshWrapperDual>
-        search(s2, t2);
+    Portage::SearchKDTree<2, Portage::Entity_kind::NODE,
+        Wonton::Jali_Mesh_Wrapper, Wonton::Jali_Mesh_Wrapper>
+        search(source_mesh_wrapper, target_mesh_wrapper);
 
     for (int tc = 0; tc < 9; ++tc) {
-        std::vector<int> candidates;
-        search(tc, &candidates);
+        std::vector<int> candidates = search(tc);
 
         // there should be four candidate source nodes, in a square
         // compute snbase = index of lower left source node
@@ -102,5 +84,5 @@ TEST(search_kdtree2, dual)
         ASSERT_EQ(snbase + 5, candidates[3]);
     }
 
-} // TEST(search_kdtree2, dual)
+}  // TEST(search_kdtree2, node)
 
