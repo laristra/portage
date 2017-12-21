@@ -61,8 +61,8 @@ namespace Portage {
 
 */
 
-template<int D, Entity_kind on_what,
-         typename SourceMeshType, typename TargetMeshType, typename StateType>
+template<typename SourceMeshType, typename TargetMeshType,
+         typename StateType, Entity_kind on_what, long D>
 class Interpolate_1stOrder {
  public:
   /*!
@@ -106,7 +106,7 @@ class Interpolate_1stOrder {
   void set_interpolation_variable(std::string const & interp_var_name,
                                   LimiterType limtype=NOLIMITER) {
     interp_var_name_ = interp_var_name;
-    source_state_.get_data(on_what, interp_var_name, &source_vals_);
+    source_state_.mat_get_data(on_what, interp_var_name, &source_vals_);
   }
 
   /*!
@@ -126,11 +126,7 @@ class Interpolate_1stOrder {
   */
 
   double operator() (int const targetEntityId,
-                     std::vector<Weights_t> const & sources_and_weights) const {
-    std::cerr << "Interpolation operator not implemented for this entity type"
-              << std::endl;
-    return 0.0;
-  }
+                     std::vector<Weights_t> const & sources_and_weights) const;
 
  private:
   SourceMeshType const & source_mesh_;
@@ -141,15 +137,36 @@ class Interpolate_1stOrder {
 };
 
 
+/*!
+  @brief 1st order interpolation operator on general entity types
+  @param[in] sources_and_weights Pair containing vector of contributing source
+  entities and vector of contribution weights
+*/
+
+template<typename SourceMeshType, typename TargetMeshType,
+         typename StateType, Entity_kind on_what, long D>
+double Interpolate_1stOrder<SourceMeshType, TargetMeshType, StateType,
+                            on_what, D> :: operator()
+    (int const targetEntityID,
+     std::vector<Weights_t> const & sources_and_weights) const {
+  
+  std::cerr << "Interpolation operator not implemented for this entity type"
+            << std::endl;
+  
+  return 0.0;
+}
+
+
+
 
 //////////////////////////////////////////////////////////////////////////////
 /*!
   @brief Interpolate_1stOrder specialization for cells
 */
 
-template<int D,
-         typename SourceMeshType, typename TargetMeshType, typename StateType>
-class Interpolate_1stOrder<D, CELL, SourceMeshType, TargetMeshType, StateType> {
+template<typename SourceMeshType, typename TargetMeshType, typename StateType,
+         long D>
+class Interpolate_1stOrder<SourceMeshType, TargetMeshType, StateType, CELL, D> {
  public:
   /*!
     @brief Constructor.
@@ -188,10 +205,10 @@ class Interpolate_1stOrder<D, CELL, SourceMeshType, TargetMeshType, StateType> {
   // order interpolators and so all interpolators need to have a
   // uniform interface
 
-  void set_interpolation_variable(std::string const & interp_var_name,
+  void set_interpolation_variable(std::string const & interp_var_name, 
                                   LimiterType limtype = NOLIMITER) {
     interp_var_name_ = interp_var_name;
-    source_state_.get_data(CELL, interp_var_name, &source_vals_);
+    source_state_.mat_get_cellvals(interp_var_name, m, &cellids, &source_vals_);
   }
 
   /*!
@@ -228,10 +245,10 @@ class Interpolate_1stOrder<D, CELL, SourceMeshType, TargetMeshType, StateType> {
   cells and vector of contribution weights
 */
 
-template<int D,
-         typename SourceMeshType, typename TargetMeshType, typename StateType>
-double Interpolate_1stOrder<D, CELL, SourceMeshType, TargetMeshType,
-                            StateType> :: operator()
+template<typename SourceMeshType, typename TargetMeshType, typename StateType,
+         long D>
+double Interpolate_1stOrder<SourceMeshType, TargetMeshType, StateType,
+                            CELL, D> :: operator()
     (int const targetCellID,
      std::vector<Weights_t> const & sources_and_weights) const {
 
@@ -251,20 +268,19 @@ double Interpolate_1stOrder<D, CELL, SourceMeshType, TargetMeshType,
   for (auto const& wt : sources_and_weights) {
     int srccell = wt.entityID;
     std::vector<double> pair_weights = wt.weights;
-    val += source_vals_[srccell] * pair_weights[0];  // 1st order
+    val += source_vals_[local_index_of_srccell] * pair_weights[0];  // 1st order
     wtsum0 += pair_weights[0];
   }
 
   // Normalize the value by sum of all the weights
 
   double vol = target_mesh_.cell_volume(targetCellID);
-  val /= vol;
+  val /= vol; // DIVIDE BY WTSUM0;
 
 #ifdef DEBUG
   static bool first = true;
   if (first && fabs((vol-wtsum0)/vol) > 1.0e-10) {
-    std::cerr <<
-        "WARNING: Meshes may be mismatched in the neighborhood of cell " <<
+    std::cerr << "WARNING: Meshes may be mismatched in the neighborhood of cell " <<
         targetCellID << " in the target mesh (and maybe other places too)\n";
     first = false;
   }
@@ -281,9 +297,9 @@ double Interpolate_1stOrder<D, CELL, SourceMeshType, TargetMeshType,
   @brief Interpolate_1stOrder specialization for nodes
 */
 
-template<int D,
-         typename SourceMeshType, typename TargetMeshType, typename StateType>
-class Interpolate_1stOrder<D, NODE, SourceMeshType, TargetMeshType, StateType> {
+template<typename SourceMeshType, typename TargetMeshType, typename StateType,
+         long D>
+class Interpolate_1stOrder<SourceMeshType, TargetMeshType, StateType, NODE, D> {
  public:
   /*!
     @brief Constructor.
@@ -359,10 +375,10 @@ class Interpolate_1stOrder<D, NODE, SourceMeshType, TargetMeshType, StateType> {
   @brief 1st order interpolation operator on nodes
 */
 
-template<int D,
-         typename SourceMeshType, typename TargetMeshType, typename StateType>
-double Interpolate_1stOrder<D, NODE, SourceMeshType, TargetMeshType,
-                            StateType> :: operator()
+template<typename SourceMeshType, typename TargetMeshType, typename StateType,
+         long D>
+double Interpolate_1stOrder<SourceMeshType, TargetMeshType, StateType,
+                            NODE, D> :: operator()
     (int const targetNodeID,
      std::vector<Weights_t> const & sources_and_weights) const {
 
@@ -392,12 +408,11 @@ double Interpolate_1stOrder<D, NODE, SourceMeshType, TargetMeshType,
 
   double vol = target_mesh_.dual_cell_volume(targetNodeID);
   val /= vol;
-
+  
 #ifdef DEBUG
   static bool first = true;
   if (first && fabs((vol-wtsum0)/vol) > 1.0e-10) {
-    std::cerr <<
-        "WARNING: Meshes may be mismatched in the neighborhood of node " <<
+    std::cerr << "WARNING: Meshes may be mismatched in the neighborhood of node " <<
         targetNodeID << " in the target mesh (and maybe other places too)\n";
     first = false;
   }
