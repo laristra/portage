@@ -13,7 +13,6 @@ Please see the license file at the root of this repository, or at:
 #include "Mesh.hh"
 #include "MeshFactory.hh"
 
-#include "portage/wonton/mesh/jali/jali_mesh_wrapper.h"
 #include "portage/wonton/mesh/simple_mesh/simple_mesh_wrapper.h"
 
 TEST(search_kdtree2, cell) {
@@ -52,9 +51,9 @@ TEST(search_kdtree2, node) {
   const Wonton::Simple_Mesh_Wrapper source_mesh_wrapper(sm);
   const Wonton::Simple_Mesh_Wrapper target_mesh_wrapper(tm);
 
-
   Portage::SearchKDTree<2, Portage::Entity_kind::NODE,
-                        Wonton::Simple_Mesh_Wrapper, Wonton::Simple_Mesh_Wrapper>
+                        Wonton::Simple_Mesh_Wrapper,
+                        Wonton::Simple_Mesh_Wrapper>
       search(source_mesh_wrapper, target_mesh_wrapper);
 
   for (int tc = 0; tc < 9; ++tc) {
