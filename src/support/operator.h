@@ -527,6 +527,22 @@ result[3][0]=
 	  }
 	}
 
+      // shift incoming points by their average
+      template<class OP>
+	inline void shift_points(typename OP::points_t &apts)
+	{
+	  typename Point<OP::dim> center;
+	  center.fill(0.);
+	  for (int i=0; i<OP::point_size; i++)
+	    for (int j=0; j<OP::dim; j++)
+	      center[j] += apts[i][j];
+	  for (int j=0; j<OP::dim; j++)
+	    center[j] /= OP::point_size;
+	  for (int i=0; i<OP::point_size; i++)
+	    for (int j=0; j<OP::dim; j++)
+	      apts[i][j] = points[i][j] - center[j];
+	}
+
       template<class OP>
 	inline void copy_result(const typename OP::result_t &ares, 
 				vector<vector<double>> &result) 
