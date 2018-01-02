@@ -151,7 +151,6 @@ vector<vector<double>> result;
   ASSERT_EQ(result[3][0], 0.5);
 }
 
-/*
 TEST(VolumeIntegral, UnitaryWedgeBasic) {
 vector<vector<double>> result;
  Portage::Meshfree::Operator::get_result<Operator<VolumeIntegral, Unitary, Wedge>>(wedge_points_, result);
@@ -189,4 +188,4 @@ vector<vector<double>> result;
   ASSERT_EQ(result[2][0], 1./24.);
   ASSERT_EQ(result[3][0], 1./24.);
 }
-*/
+
