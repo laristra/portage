@@ -189,3 +189,20 @@ vector<vector<double>> result;
   ASSERT_EQ(result[3][0], 1./24.);
 }
 
+TEST(VolumeIntegral, QuadraticTetrahedronBasic) {
+vector<vector<double>> result;
+ Portage::Meshfree::Operator::get_result<Operator<VolumeIntegral, Quadratic, Tetrahedron>>(tetrahedron_points_, result);
+  ASSERT_EQ(result.size(), 10);
+  ASSERT_EQ(result[0].size(), 1);
+  ASSERT_EQ(result[0][0], 1./6.);
+  ASSERT_EQ(result[1][0], 1./24.);
+  ASSERT_EQ(result[2][0], 1./24.);
+  ASSERT_EQ(result[3][0], 1./24.);
+  ASSERT_EQ(result[4][0], 1./120.);
+  ASSERT_EQ(result[5][0], 1./120.);
+  ASSERT_EQ(result[6][0], 1./120.);
+  ASSERT_EQ(result[7][0], 1./120.);
+  ASSERT_EQ(result[8][0], 1./120.);
+  ASSERT_EQ(result[9][0], 1./120.);
+}
+
