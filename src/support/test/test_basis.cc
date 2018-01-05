@@ -165,7 +165,7 @@ class BasisTest : public ::testing::Test {
 
     // Check that transfactors work correctly
     {
-      auto tf = transfactor<type,Dim>(c);
+      typename Traits<type,Dim>::matrix_t tf = transfactor<type,Dim>(c);
       ASSERT_EQ(tf.size(), fs0);
       for (int i=0; i<fs0; i++) ASSERT_EQ(tf[i].size(), fs0);
       std::vector<double> tbf_x(fs0,0.);
