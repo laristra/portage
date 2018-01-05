@@ -221,6 +221,7 @@ vector<vector<double>> jet(Type type, Point<dim> x){
 
 template<Type type, size_t dim>
 typename Traits<type,dim>::matrix_t transfactor(const Point<dim> &c) {
+  typename Traits<type,dim>::matrix_t result;
   assert(false);
   return result;
 }
