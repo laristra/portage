@@ -123,7 +123,6 @@ TEST(Gradient, Fields_Cell_Ctr) {
     for (auto f : cfaces) {
       std::vector<int> fcells;
       meshwrapper.face_get_cells(f, Portage::Entity_type::ALL, &fcells);
-      std::cout << "just got face cells" << std::endl;
       if (fcells.size() == 1) {
         boundary_cell = true;
         break;
