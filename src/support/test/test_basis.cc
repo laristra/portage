@@ -22,6 +22,7 @@ using Portage::Meshfree::Basis::jet_size;
 using Portage::Meshfree::Basis::shift;
 using Portage::Meshfree::Basis::jet;
 using Portage::Meshfree::Basis::inverse_jet;
+using Portage::Meshfree::Basis::transfactor;
 using Portage::Point;
 using std::array;
 
@@ -83,11 +84,15 @@ class BasisTest : public ::testing::Test {
   template<Type type, int Dim>
   void checkBasis() {
     srand(time(NULL));
-    Point<Dim> x, y;
+    Point<Dim> x, y, c, xc;
     for (size_t d = 0; d < Dim; d++)
       x[d] = ((double)rand())/RAND_MAX;
     for (size_t d = 0; d < Dim; d++)
       y[d] = ((double)rand())/RAND_MAX;
+    for (size_t d = 0; d < Dim; d++)
+      c[d] = 8*((double)rand())/RAND_MAX;
+    for (size_t d = 0; d < Dim; d++)
+      xc[d] = x[d]+c[d];
 
     auto bf_x = function<type, Dim>(x);
     auto bf_y = function<type, Dim>(y);
@@ -96,6 +101,7 @@ class BasisTest : public ::testing::Test {
     auto bj_x = jet<type, Dim>(x);
     auto bj_negx = jet<type, Dim>(-1.0*x);
     auto bjinv_x = inverse_jet<type, Dim>(x);
+    auto bf_xc = function<type, Dim>(xc);
 
     // Check that J(x)*Jinverse(x) is identity
     auto j_jinv = matmatmult(bj_x, bjinv_x);
@@ -155,6 +161,16 @@ class BasisTest : public ::testing::Test {
           ASSERT_EQ(bj_x[i][j], result[i][j]);
         }
       }
+    }
+
+    // Check that transfactors work correctly
+    {
+      auto tf = transfactor<type,Dim>(c);
+      ASSERT_EQ(tf.size(), fs0);
+      for (int i=0; i<fs0; i++) ASSERT_EQ(tf[i].size(), fs0);
+      std::vector<double> tbf_x(fs0,0.);
+      for (int i=0; i<fs0; i++) for (int j=0; j<fs0; j++) tbf_x[i] += tf[i][j]*bf_x[j];
+      for (int i=0; i<fs0; i++) ASSERT_NEAR(tbf_x[i], bf_xc[i], 1.e-10);
     }
   }
 
