@@ -138,6 +138,13 @@ shift(Point<dim> x, Point<dim> y){
   return r;
 }
 
+template<Type type, size_t dim>
+typename Traits<type,dim>::matrix_t transfactor(const Point<dim> &c) {
+  typename Traits<type,dim>::matrix_t result;
+  assert(false);
+  return result;
+}
+
 template<size_t dim>
 vector<double> function(Type type, Point<dim> x){
   size_t nbasis = function_size<dim>(type);
@@ -219,10 +226,29 @@ vector<vector<double>> jet(Type type, Point<dim> x){
   return result;
 }
 
-template<Type type, size_t dim>
-typename Traits<type,dim>::matrix_t transfactor(const Point<dim> &c) {
-  typename Traits<type,dim>::matrix_t result;
-  assert(false);
+template<size_t dim>
+  vector<vector<double>> transfactor(const Type type, const Point<dim> &c) {
+  size_t nbasis = function_size<dim>(type);
+  vector<vector<double>> result(nbasis, vector<double>(nbasis,0.));
+  switch(type) {
+  case Unitary: {
+    auto tf = transfactor<Unitary,dim>(c);
+    for (size_t i=0; i<nbasis; i++) for (size_t j=0; j<nbasis; j++) result[i][j] = tf[i][j];
+    break;
+  }
+  case Linear: {
+    auto tf = transfactor<Linear,dim>(c);
+    for (size_t i=0; i<nbasis; i++) for (size_t j=0; j<nbasis; j++) result[i][j] = tf[i][j];
+    break;
+  }
+  case Quadratic: {
+    auto tf = transfactor<Quadratic,dim>(c);
+    for (size_t i=0; i<nbasis; i++) for (size_t j=0; j<nbasis; j++) result[i][j] = tf[i][j];
+    break;
+  }
+  default:
+    assert(false);
+  }
   return result;
 }
 
