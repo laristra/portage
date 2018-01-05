@@ -171,6 +171,9 @@ class BasisTest : public ::testing::Test {
       std::vector<double> tbf_x(fs0,0.);
       for (int i=0; i<fs0; i++) for (int j=0; j<fs0; j++) tbf_x[i] += tf[i][j]*bf_x[j];
       for (int i=0; i<fs0; i++) ASSERT_NEAR(tbf_x[i], bf_xc[i], 1.e-12);
+
+      auto tf2 = transfactor<Dim>(type,c);
+      for (int i=0; i<fs0; i++) for (int j=0; j<fs0; j++) ASSERT_EQ(tf[i][j], tf2[i][j]);
     }
   }
 
