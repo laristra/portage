@@ -21,6 +21,8 @@ namespace Portage {
 
       using std::array;
       using std::vector;
+      using Basis::Traits;
+      using Basis::transfactor;
 
       enum Geometry{
 	Interval,         // 1D
@@ -61,11 +63,24 @@ namespace Portage {
       }
 
       ////////////////////////////////////////////////////////////////////////////////
+      // Template for integral operator base class
+      ////////////////////////////////////////////////////////////////////////////////
+
+      template<Type type, Basis::Type basis_type, Geometry geo_type>
+	class OperatorBase
+      {
+      public:
+	Type operator_type=type;
+	static constexpr Basis::Type basis=basis_type;
+	static constexpr Geometry geo=geo_type;
+      };
+
+      ////////////////////////////////////////////////////////////////////////////////
       // Template for integral operators
       ////////////////////////////////////////////////////////////////////////////////
 
       template<Type type, Basis::Type basis_type, Geometry geo_type>
-	class Operator
+	class Operator: public OperatorBase<type,basis_type,geo_type>
       {
       public:
 	static constexpr size_t dim = dimension(geo_type);
@@ -90,7 +105,8 @@ namespace Portage {
       // 1D
 
       template<>
-	class Operator<VolumeIntegral, Basis::Unitary, Interval>
+	class Operator<VolumeIntegral, Basis::Unitary, Interval>: 
+          public OperatorBase<VolumeIntegral, Basis::Unitary, Interval>
 	{
 	public:
 	  static constexpr size_t dim = dimension(Interval);
@@ -110,7 +126,8 @@ namespace Portage {
 	};
 
       template<>
-	class Operator<VolumeIntegral, Basis::Linear, Interval>
+	class Operator<VolumeIntegral, Basis::Linear, Interval>: 
+          public OperatorBase<VolumeIntegral, Basis::Linear, Interval>
 	{
 	public:
 	  static constexpr size_t dim = dimension(Interval);
@@ -131,7 +148,8 @@ namespace Portage {
 	};
 
       template<>
-	class Operator<VolumeIntegral, Basis::Quadratic, Interval>
+	class Operator<VolumeIntegral, Basis::Quadratic, Interval>: 
+          public OperatorBase<VolumeIntegral, Basis::Quadratic, Interval>
 	{
 	public:
 	  static constexpr size_t dim = dimension(Interval);
@@ -155,7 +173,8 @@ namespace Portage {
       // 2D Triangle
 
       template<>
-	class Operator<VolumeIntegral, Basis::Unitary, Triangle>
+	class Operator<VolumeIntegral, Basis::Unitary, Triangle>: 
+          public OperatorBase<VolumeIntegral, Basis::Unitary, Interval>
 	{
 	public:
 	  static constexpr size_t dim = dimension(Triangle);
@@ -179,7 +198,8 @@ namespace Portage {
 	};
 
       template<>
-	class Operator<VolumeIntegral, Basis::Linear, Triangle>
+	class Operator<VolumeIntegral, Basis::Linear, Triangle>: 
+          public OperatorBase<VolumeIntegral, Basis::Linear, Interval>
 	{
 	public:
 	  static constexpr size_t dim = dimension(Triangle);
@@ -206,7 +226,8 @@ namespace Portage {
 	};
 
       template<>
-	class Operator<VolumeIntegral, Basis::Quadratic, Triangle>
+	class Operator<VolumeIntegral, Basis::Quadratic, Triangle>: 
+          public OperatorBase<VolumeIntegral, Basis::Quadratic, Interval>
 	{
 	public:
 	  static constexpr size_t dim = dimension(Triangle);
@@ -244,7 +265,8 @@ namespace Portage {
       // 2D Quadrilateral
 
       template<>
-	class Operator<VolumeIntegral, Basis::Unitary, Quadrilateral>
+	class Operator<VolumeIntegral, Basis::Unitary, Quadrilateral>: 
+          public OperatorBase<VolumeIntegral, Basis::Unitary, Interval>
 	{
 	public:
 	  static constexpr size_t dim = dimension(Quadrilateral);
@@ -267,7 +289,8 @@ namespace Portage {
 	};
 
       template<>
-	class Operator<VolumeIntegral, Basis::Linear, Quadrilateral>
+	class Operator<VolumeIntegral, Basis::Linear, Quadrilateral>: 
+          public OperatorBase<VolumeIntegral, Basis::Linear, Interval>
 	{
 	public:
 	  static constexpr size_t dim = dimension(Quadrilateral);
@@ -296,7 +319,8 @@ namespace Portage {
 	};
 
       template<>
-	class Operator<VolumeIntegral, Basis::Quadratic, Quadrilateral>
+	class Operator<VolumeIntegral, Basis::Quadratic, Quadrilateral>: 
+          public OperatorBase<VolumeIntegral, Basis::Quadratic, Interval>
 	{
 	public:
 	  static constexpr size_t dim = dimension(Quadrilateral);
@@ -336,7 +360,8 @@ namespace Portage {
       // 3D Hexahedron
 
       template<>
-	class Operator<VolumeIntegral, Basis::Unitary, Hexahedron>
+	class Operator<VolumeIntegral, Basis::Unitary, Hexahedron>: 
+          public OperatorBase<VolumeIntegral, Basis::Unitary, Interval>
 	{
 	public:
 	  static constexpr size_t dim = dimension(Hexahedron);
@@ -359,7 +384,8 @@ namespace Portage {
 	};
 
       template<>
-	class Operator<VolumeIntegral, Basis::Linear, Hexahedron>
+	class Operator<VolumeIntegral, Basis::Linear, Hexahedron>: 
+          public OperatorBase<VolumeIntegral, Basis::Linear, Interval>
 	{
 	public:
 	  static constexpr size_t dim = dimension(Hexahedron);
@@ -393,7 +419,8 @@ namespace Portage {
       // 3D Wedge
 
       template<>
-	class Operator<VolumeIntegral, Basis::Unitary, Wedge>
+	class Operator<VolumeIntegral, Basis::Unitary, Wedge>: 
+          public OperatorBase<VolumeIntegral, Basis::Unitary, Interval>
 	{
 	public:
 	  static constexpr size_t dim = dimension(Hexahedron);
@@ -416,7 +443,8 @@ namespace Portage {
 	};
 
       template<>
-	class Operator<VolumeIntegral, Basis::Linear, Wedge>
+	class Operator<VolumeIntegral, Basis::Linear, Wedge>: 
+          public OperatorBase<VolumeIntegral, Basis::Linear, Interval>
 	{
 	public:
 	  static constexpr size_t dim = dimension(Wedge);
@@ -450,7 +478,8 @@ result[3][0]=
       // 3D Tetrahedron
 
       template<>
-	class Operator<VolumeIntegral, Basis::Unitary, Tetrahedron>
+	class Operator<VolumeIntegral, Basis::Unitary, Tetrahedron>: 
+          public OperatorBase<VolumeIntegral, Basis::Unitary, Interval>
 	{
 	public:
 	  static constexpr size_t dim = dimension(Tetrahedron);
@@ -473,7 +502,8 @@ result[0][0]=
 	};
 
       template<>
-	class Operator<VolumeIntegral, Basis::Linear, Tetrahedron>
+	class Operator<VolumeIntegral, Basis::Linear, Tetrahedron>: 
+          public OperatorBase<VolumeIntegral, Basis::Linear, Interval>
 	{
 	public:
 	  static constexpr size_t dim = dimension(Tetrahedron);
@@ -506,7 +536,8 @@ result[3][0]=
 	};
 
       template<>
-	class Operator<VolumeIntegral, Basis::Quadratic, Tetrahedron>
+	class Operator<VolumeIntegral, Basis::Quadratic, Tetrahedron>: 
+          public OperatorBase<VolumeIntegral, Basis::Quadratic, Interval>
 	{
 	public:
 	  static constexpr size_t dim = dimension(Tetrahedron);
@@ -560,6 +591,36 @@ result[9][0]=
       ////////////////////////////////////////////////////////////////////////////////
 
       template<class OP>
+	inline void copy_points(const vector<Point<OP::dim>> &points, 
+				typename OP::points_t &apts) 
+	{
+	  for (int i=0; i<OP::point_size; i++) {
+	    apts[i] = points[i];
+	  }
+	}
+
+      template<class OP>
+	inline Point<OP::dim> centroid(const typename OP::points_t &apts)
+	{
+	  Point<OP::dim> cent;
+	  for (int j=0; j<OP::dim; j++) cent[j]=0.;
+	  for (int i=0; i<OP::point_size; i++)
+	    for (int j=0; j<OP::dim; j++)
+	      cent[j] += apts[i][j];
+	  for (int j=0; j<OP::dim; j++)
+	    cent[j] /= OP::point_size;
+	  return cent;
+	}
+
+      template<class OP>
+	inline void shift_points(const Point<OP::dim> c, typename OP::points_t &apts)
+	{
+	  for (int i=0; i<OP::point_size; i++)
+	    for (int j=0; j<OP::dim; j++)
+	      apts[i][j] = apts[i][j] - c[j];
+	}
+
+      template<class OP>
 	inline void resize_result(vector<vector<double>> &result) 
 	{
 	  result.resize(OP::basis_size); 
@@ -569,35 +630,9 @@ result[9][0]=
 	}
 
       template<class OP>
-	inline void copy_points(const vector<Point<OP::dim>> &points, 
-				typename OP::points_t &apts) 
-	{
-	  for (int i=0; i<OP::point_size; i++) {
-	    apts[i] = points[i];
-	  }
-	}
-
-      // shift incoming points by their average
-      template<class OP>
-	inline void shift_points(typename OP::points_t &apts)
-	{
-	  typename Point<OP::dim> center;
-	  center.fill(0.);
-	  for (int i=0; i<OP::point_size; i++)
-	    for (int j=0; j<OP::dim; j++)
-	      center[j] += apts[i][j];
-	  for (int j=0; j<OP::dim; j++)
-	    center[j] /= OP::point_size;
-	  for (int i=0; i<OP::point_size; i++)
-	    for (int j=0; j<OP::dim; j++)
-	      apts[i][j] = points[i][j] - center[j];
-	}
-
-      template<class OP>
 	inline void copy_result(const typename OP::result_t &ares, 
 				vector<vector<double>> &result) 
 	{
-	  resize_result<OP>(result);
 	  for (int i=0; i<OP::basis_size; i++) {
 	    for (int j=0; j<OP::operator_size; j++) {
 	      result[i][j] = ares[i][j];
@@ -607,11 +642,28 @@ result[9][0]=
 
       template<class OP>
 	inline void get_result(const vector<Point<OP::dim>> &points, 
-			       vector<vector<double>> &result) 
+			       vector<vector<double>> &result, bool center=true) 
 	{
+	  resize_result<OP>(result);
 	  typename OP::points_t apts; copy_points<OP>(points, apts);
-	  typename OP::result_t ares = OP::apply(apts);
-	  copy_result<OP>(ares, result);
+	  if (center) {
+	    Point<OP::dim> c = centroid<OP>(apts);
+	    shift_points<OP>(c, apts);
+	    auto tf = Basis::transfactor<OP::dim>(OP::basis, c);
+	    typename OP::result_t ares = OP::apply(apts);
+	    for (int i=0; i<OP::basis_size; i++) 
+	      for (int j=0; j<OP::operator_size; j++) {
+		result[i][j]=0.;
+	      }
+	    for (int j=0; j<OP::operator_size; j++) 
+	      for (int i=0; i<OP::basis_size; i++) 
+		for (int k=0; k<OP::basis_size; k++) {
+		  result[i][j] += tf[i][k]*ares[k][j];
+		}
+	  } else {
+	    typename OP::result_t ares = OP::apply(apts);
+	    copy_result<OP>(ares, result);
+	  }
 	}
 
       ////////////////////////////////////////////////////////////////////////////////
