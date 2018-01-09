@@ -54,14 +54,7 @@ vector<Point<dim>> shift_points(const vector<Point<dim>> &points,
   }
   return result;
 }
-/*
-array<array<double,2>,2> matrix2 = 
-  {{2.8549186535902855, -4.346198279115005}, {0.14208725143260595, 0.0933338790596824}};
-array<array<double,3>,3> matrix3 = 
-  {{3.1611889909865836, -3.1727215693209625, -2.6421056009990864}, 
-   {0.0636728533375156, 0.13338461548842906, -0.0839899523685015}, 
-   {1.4212135017018008, 0.22338659728810717, 1.4321838606591486}};
-*/
+
 vector<vector<double>> matrix2 = 
   {{2.8549186535902855, -4.346198279115005}, {0.14208725143260595, 0.0933338790596824}};
 vector<vector<double>> matrix3 = 
@@ -145,7 +138,7 @@ vector<vector<double>> result;
 Portage::Meshfree::Operator::get_result<Operator<VolumeIntegral, Unitary, Interval>>(interval_points_, result, false);
   ASSERT_EQ(result.size(), 1);
   ASSERT_EQ(result[0].size(), 1);
-  ASSERT_NEAR(result[0][0], exactUnitaryInterval[0], 1.e-12);
+  for (int i=0; i<result.size(); i++) ASSERT_NEAR(result[i][0], exactUnitaryInterval[i], 1.e-12);
 }
 
 TEST(VolumeIntegral, LinearIntervalBasic) {
@@ -153,7 +146,7 @@ vector<vector<double>> result;
 Portage::Meshfree::Operator::get_result<Operator<VolumeIntegral, Linear, Interval>>(interval_points_, result, false);
   ASSERT_EQ(result.size(), 2);
   ASSERT_EQ(result[0].size(), 1);
-  ASSERT_NEAR(result[0][0], exactLinearInterval[0], 1.e-12);
+  for (int i=0; i<result.size(); i++) ASSERT_NEAR(result[i][0], exactLinearInterval[i], 1.e-12);
   ASSERT_NEAR(result[1][0], exactLinearInterval[1], 1.e-12);
 }
 
@@ -162,9 +155,7 @@ vector<vector<double>> result;
 Portage::Meshfree::Operator::get_result<Operator<VolumeIntegral, Quadratic, Interval>>(interval_points_, result, false);
   ASSERT_EQ(result.size(), 3);
   ASSERT_EQ(result[0].size(), 1);
-  ASSERT_NEAR(result[0][0], exactQuadraticInterval[0], 1.e-12);
-  ASSERT_NEAR(result[1][0], exactQuadraticInterval[1], 1.e-12);
-  ASSERT_NEAR(result[2][0], exactQuadraticInterval[2], 1.e-12);
+  for (int i=0; i<result.size(); i++) ASSERT_NEAR(result[i][0], exactQuadraticInterval[i], 1.e-12);
 }
 
 TEST(VolumeIntegral, UnitaryQuadrilateralBasic) {
@@ -172,7 +163,7 @@ vector<vector<double>> result;
  Portage::Meshfree::Operator::get_result<Operator<VolumeIntegral, Unitary, Quadrilateral>>(quadrilateral_points_, result, false);
   ASSERT_EQ(result.size(), 1);
   ASSERT_EQ(result[0].size(), 1);
-  ASSERT_NEAR(result[0][0], exactUnitaryQuadrilateral[0], 1.e-12);
+  for (int i=0; i<result.size(); i++) ASSERT_NEAR(result[i][0], exactUnitaryQuadrilateral[i], 1.e-12);
 }
 
 TEST(VolumeIntegral, LinearQuadrilateralBasic) {
@@ -180,9 +171,7 @@ vector<vector<double>> result;
  Portage::Meshfree::Operator::get_result<Operator<VolumeIntegral, Linear, Quadrilateral>>(quadrilateral_points_, result, false);
   ASSERT_EQ(result.size(), 3);
   ASSERT_EQ(result[0].size(), 1);
-  ASSERT_NEAR(result[0][0], exactLinearQuadrilateral[0], 1.e-12);
-  ASSERT_NEAR(result[1][0], exactLinearQuadrilateral[1], 1.e-12);
-  ASSERT_NEAR(result[2][0], exactLinearQuadrilateral[2], 1.e-12);
+  for (int i=0; i<result.size(); i++) ASSERT_NEAR(result[i][0], exactLinearQuadrilateral[i], 1.e-12);
 }
 
 TEST(VolumeIntegral, QuadraticQuadrilateralBasic) {
@@ -190,12 +179,7 @@ vector<vector<double>> result;
  Portage::Meshfree::Operator::get_result<Operator<VolumeIntegral, Quadratic, Quadrilateral>>(quadrilateral_points_, result, false);
   ASSERT_EQ(result.size(), 6);
   ASSERT_EQ(result[0].size(), 1);
-  ASSERT_NEAR(result[0][0], exactQuadraticQuadrilateral[0], 1.e-12);
-  ASSERT_NEAR(result[1][0], exactQuadraticQuadrilateral[1], 1.e-12);
-  ASSERT_NEAR(result[2][0], exactQuadraticQuadrilateral[2], 1.e-12);
-  ASSERT_NEAR(result[3][0], exactQuadraticQuadrilateral[3], 1.e-12);
-  ASSERT_NEAR(result[4][0], exactQuadraticQuadrilateral[4], 1.e-12);
-  ASSERT_NEAR(result[5][0], exactQuadraticQuadrilateral[5], 1.e-12);
+  for (int i=0; i<result.size(); i++) ASSERT_NEAR(result[i][0], exactQuadraticQuadrilateral[i], 1.e-12);
 }
 
 TEST(VolumeIntegral, UnitaryTriangleBasic) {
@@ -203,7 +187,7 @@ vector<vector<double>> result;
  Portage::Meshfree::Operator::get_result<Operator<VolumeIntegral, Unitary, Triangle>>(triangle_points_, result, false);
   ASSERT_EQ(result.size(), 1);
   ASSERT_EQ(result[0].size(), 1);
-  ASSERT_NEAR(result[0][0], exactUnitaryTriangle[0], 1.e-12);
+  for (int i=0; i<result.size(); i++) ASSERT_NEAR(result[i][0], exactUnitaryTriangle[i], 1.e-12);
 }
 
 TEST(VolumeIntegral, LinearTriangleBasic) {
@@ -211,9 +195,7 @@ vector<vector<double>> result;
  Portage::Meshfree::Operator::get_result<Operator<VolumeIntegral, Linear, Triangle>>(triangle_points_, result, false);
   ASSERT_EQ(result.size(), 3);
   ASSERT_EQ(result[0].size(), 1);
-  ASSERT_NEAR(result[0][0], exactLinearTriangle[0], 1.e-12);
-  ASSERT_NEAR(result[1][0], exactLinearTriangle[1], 1.e-12);
-  ASSERT_NEAR(result[2][0], exactLinearTriangle[2], 1.e-12);
+  for (int i=0; i<result.size(); i++) ASSERT_NEAR(result[i][0], exactLinearTriangle[i], 1.e-12);
 }
 
 TEST(VolumeIntegral, QuadraticTriangleBasic) {
@@ -221,12 +203,7 @@ vector<vector<double>> result;
  Portage::Meshfree::Operator::get_result<Operator<VolumeIntegral, Quadratic, Triangle>>(triangle_points_, result, false);
   ASSERT_EQ(result.size(), 6);
   ASSERT_EQ(result[0].size(), 1);
-  ASSERT_NEAR(result[0][0], exactQuadraticTriangle[0], 1.e-12);
-  ASSERT_NEAR(result[1][0], exactQuadraticTriangle[1], 1.e-12);
-  ASSERT_NEAR(result[2][0], exactQuadraticTriangle[2], 1.e-12);
-  ASSERT_NEAR(result[3][0], exactQuadraticTriangle[3], 1.e-12);
-  ASSERT_NEAR(result[4][0], exactQuadraticTriangle[4], 1.e-12);
-  ASSERT_NEAR(result[5][0], exactQuadraticTriangle[5], 1.e-12);
+  for (int i=0; i<result.size(); i++) ASSERT_NEAR(result[i][0], exactQuadraticTriangle[i], 1.e-12);
 }
 
 TEST(VolumeIntegral, UnitaryHexahedronBasic) {
@@ -234,7 +211,7 @@ vector<vector<double>> result;
  Portage::Meshfree::Operator::get_result<Operator<VolumeIntegral, Unitary, Hexahedron>>(hexahedron_points_, result, false);
   ASSERT_EQ(result.size(), 1);
   ASSERT_EQ(result[0].size(), 1);
-  ASSERT_NEAR(result[0][0], exactUnitaryHexahedron[0], 1.e-12);
+  for (int i=0; i<result.size(); i++) ASSERT_NEAR(result[i][0], exactUnitaryHexahedron[i], 1.e-12);
 }
 
 TEST(VolumeIntegral, LinearHexahedronBasic) {
@@ -242,10 +219,7 @@ vector<vector<double>> result;
  Portage::Meshfree::Operator::get_result<Operator<VolumeIntegral, Linear, Hexahedron>>(hexahedron_points_, result, false);
   ASSERT_EQ(result.size(), 4);
   ASSERT_EQ(result[0].size(), 1);
-  ASSERT_NEAR(result[0][0], exactLinearHexahedron[0], 1.e-12);
-  ASSERT_NEAR(result[1][0], exactLinearHexahedron[1], 1.e-12);
-  ASSERT_NEAR(result[2][0], exactLinearHexahedron[2], 1.e-12);
-  ASSERT_NEAR(result[3][0], exactLinearHexahedron[3], 1.e-12);
+  for (int i=0; i<result.size(); i++) ASSERT_NEAR(result[i][0], exactLinearHexahedron[i], 1.e-12);
 }
 
 TEST(VolumeIntegral, UnitaryWedgeBasic) {
@@ -253,7 +227,7 @@ vector<vector<double>> result;
  Portage::Meshfree::Operator::get_result<Operator<VolumeIntegral, Unitary, Wedge>>(wedge_points_, result, false);
   ASSERT_EQ(result.size(), 1);
   ASSERT_EQ(result[0].size(), 1);
-  ASSERT_NEAR(result[0][0], exactUnitaryWedge[0], 1.e-12);
+  for (int i=0; i<result.size(); i++) ASSERT_NEAR(result[i][0], exactUnitaryWedge[i], 1.e-12);
 }
 
 TEST(VolumeIntegral, LinearWedgeBasic) {
@@ -261,10 +235,7 @@ vector<vector<double>> result;
  Portage::Meshfree::Operator::get_result<Operator<VolumeIntegral, Linear, Wedge>>(wedge_points_, result, false);
   ASSERT_EQ(result.size(), 4);
   ASSERT_EQ(result[0].size(), 1);
-  ASSERT_NEAR(result[0][0], exactLinearWedge[0], 1.e-12);
-  ASSERT_NEAR(result[1][0], exactLinearWedge[1], 1.e-12);
-  ASSERT_NEAR(result[2][0], exactLinearWedge[2], 1.e-12);
-  ASSERT_NEAR(result[3][0], exactLinearWedge[3], 1.e-12);
+  for (int i=0; i<result.size(); i++) ASSERT_NEAR(result[i][0], exactLinearWedge[i], 1.e-12);
 }
 
 TEST(VolumeIntegral, UnitaryTetrahedronBasic) {
@@ -272,7 +243,7 @@ vector<vector<double>> result;
  Portage::Meshfree::Operator::get_result<Operator<VolumeIntegral, Unitary, Tetrahedron>>(tetrahedron_points_, result, false);
   ASSERT_EQ(result.size(), 1);
   ASSERT_EQ(result[0].size(), 1);
-  ASSERT_NEAR(result[0][0], exactUnitaryTetrahedron[0], 1.e-12);
+  for (int i=0; i<result.size(); i++) ASSERT_NEAR(result[i][0], exactUnitaryTetrahedron[i], 1.e-12);
 }
 
 TEST(VolumeIntegral, LinearTetrahedronBasic) {
@@ -280,10 +251,7 @@ vector<vector<double>> result;
  Portage::Meshfree::Operator::get_result<Operator<VolumeIntegral, Linear, Tetrahedron>>(tetrahedron_points_, result, false);
   ASSERT_EQ(result.size(), 4);
   ASSERT_EQ(result[0].size(), 1);
-  ASSERT_NEAR(result[0][0], exactLinearTetrahedron[0], 1.e-12);
-  ASSERT_NEAR(result[1][0], exactLinearTetrahedron[1], 1.e-12);
-  ASSERT_NEAR(result[2][0], exactLinearTetrahedron[2], 1.e-12);
-  ASSERT_NEAR(result[3][0], exactLinearTetrahedron[3], 1.e-12);
+  for (int i=0; i<result.size(); i++) ASSERT_NEAR(result[i][0], exactLinearTetrahedron[i], 1.e-12);
 }
 
 TEST(VolumeIntegral, QuadraticTetrahedronBasic) {
@@ -291,16 +259,7 @@ vector<vector<double>> result;
  Portage::Meshfree::Operator::get_result<Operator<VolumeIntegral, Quadratic, Tetrahedron>>(tetrahedron_points_, result, false);
   ASSERT_EQ(result.size(), 10);
   ASSERT_EQ(result[0].size(), 1);
-  ASSERT_NEAR(result[0][0], exactQuadraticTetrahedron[0], 1.e-12);
-  ASSERT_NEAR(result[1][0], exactQuadraticTetrahedron[1], 1.e-12);
-  ASSERT_NEAR(result[2][0], exactQuadraticTetrahedron[2], 1.e-12);
-  ASSERT_NEAR(result[3][0], exactQuadraticTetrahedron[3], 1.e-12);
-  ASSERT_NEAR(result[4][0], exactQuadraticTetrahedron[4], 1.e-12);
-  ASSERT_NEAR(result[5][0], exactQuadraticTetrahedron[5], 1.e-12);
-  ASSERT_NEAR(result[6][0], exactQuadraticTetrahedron[6], 1.e-12);
-  ASSERT_NEAR(result[7][0], exactQuadraticTetrahedron[7], 1.e-12);
-  ASSERT_NEAR(result[8][0], exactQuadraticTetrahedron[8], 1.e-12);
-  ASSERT_NEAR(result[9][0], exactQuadraticTetrahedron[9], 1.e-12);
+  for (int i=0; i<result.size(); i++) ASSERT_NEAR(result[i][0], exactQuadraticTetrahedron[i], 1.e-12);
 }
 
 // Test transfactor operation on unit interval, square, cube, wedge, tet
