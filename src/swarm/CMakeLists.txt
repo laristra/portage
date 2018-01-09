@@ -22,14 +22,14 @@ set (simple_mesh_SOURCES
 if (ENABLE_UNIT_TESTS)
   cinch_add_unit(test_swarm
     SOURCES test/test_swarm.cc
-    LIBRARIES portage
+    LIBRARIES portage ${LAPACKE_LIBRARIES}
     POLICY MPI
     THREADS 1
     )
 
   cinch_add_unit(test_swarm_state
     SOURCES test/test_swarm_state.cc
-    LIBRARIES portage
+    LIBRARIES portage ${LAPACKE_LIBRARIES}
     POLICY MPI
     THREADS 1
     )
