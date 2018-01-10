@@ -18,9 +18,9 @@ set -x
 mpirun -np 1 $APPDIR/portageapp_jali \
 --dim=2 --nsourcecells=5 --ntargetcells=7 \
 --conformal=y \
---entity_kind=cell --field_order=1 \
+--entity_kind=cell --field="x+y" \
 --remap_order=2 \
---output_results=y
+--results_file="jali_field_2d_cell_f1_r2.txt"
 
 # Compare the values for the field
 $APPDIR/apptest_cmp GOLD_jali-field_2d_cell_f1_r2.txt jali_field_2d_cell_f1_r2.txt 1e-12
@@ -30,9 +30,9 @@ $APPDIR/apptest_cmp GOLD_jali-field_2d_cell_f1_r2.txt jali_field_2d_cell_f1_r2.t
 mpirun -np 4 $APPDIR/portageapp_jali \
 --dim=2 --nsourcecells=5 --ntargetcells=7 \
 --conformal=n \
---entity_kind=cell --field_order=1 \
+--entity_kind=cell --field="x+y" \
 --remap_order=2 \
---output_results=y
+--results_file="jali_field_2d_cell_f1_r2_nc.txt"
 
 # Compare the values for the field
 $APPDIR/apptest_cmp GOLD_jali-field_2d_cell_f1_r2_nc.txt.0 jali_field_2d_cell_f1_r2_nc.txt.0 1e-12
