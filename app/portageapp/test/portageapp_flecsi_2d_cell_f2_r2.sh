@@ -19,4 +19,4 @@ mpirun -np 1 $APPDIR/portageapp_flecsi \
        6 6 2 y # nx, ny, order, dump_output
 
 # Compare the values for the field
-$APPDIR/apptest_cmp GOLD_flecsi-field_2d_cell_f2_r2.txt flecsi_field_2d_cell_f2_r2.txt 1e-12
+$APPDIR/apptest_cmp GOLD_flecsi_rect_2d_cell_f2_r2.txt flecsi_field_2d_cell_f2_r2.txt 1e-12
