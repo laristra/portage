@@ -9,11 +9,22 @@ Please see the license file at the root of this repository, or at:
 
 message(STATUS "Adding portageapp test")
 
+macro(ADD_SPECIFIC_APPTEST TYPE SUFFIX)
+  file(COPY portageapp_${TYPE}_${SUFFIX}.sh
+    DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+  file(GLOB GOLDFILES gold/GOLD_${TYPE}_${SUFFIX}*.txt*)
+  file(COPY ${GOLDFILES} DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+  add_test(NAME portageapp_${TYPE}_${SUFFIX}
+    COMMAND ./portageapp_${TYPE}_${SUFFIX}.sh)
+  set_property(TEST portageapp_${TYPE}_${SUFFIX}
+    PROPERTY ENVIRONMENT APPDIR=${CMAKE_BINARY_DIR}/bin)
+endmacro(ADD_SPECIFIC_APPTEST)
+
 macro(ADD_PORTAGEAPP_TEST DIM ENTITY FIELDORDER REMAPORDER)
-  set(SUFFIX "${DIM}d_${ENTITY}_f${FIELDORDER}_r${REMAPORDER}")
+  set(SUFFIX "rect_${DIM}d_${ENTITY}_f${FIELDORDER}_r${REMAPORDER}")
 
   if (Jali_DIR)
-    ADD_SPECIFIC_APPTEST(jali_rect ${SUFFIX})
+    ADD_SPECIFIC_APPTEST(jali ${SUFFIX})
   endif (Jali_DIR)
 
   if (ENABLE_FleCSI)
@@ -26,17 +37,6 @@ macro(ADD_PORTAGEAPP_TEST DIM ENTITY FIELDORDER REMAPORDER)
     endif()
   endif (ENABLE_FleCSI)
 endmacro(ADD_PORTAGEAPP_TEST)
-
-macro(ADD_SPECIFIC_APPTEST TYPE SUFFIX)
-  file(COPY portageapp_${TYPE}_${SUFFIX}.sh
-    DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
-  file(GLOB GOLDFILES gold/GOLD_${TYPE}_${SUFFIX}*.txt*)
-  file(COPY ${GOLDFILES} DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
-  add_test(NAME portageapp_${TYPE}_${SUFFIX}
-    COMMAND ./portageapp_${TYPE}_${SUFFIX}.sh)
-  set_property(TEST portageapp_${TYPE}_${SUFFIX}
-    PROPERTY ENVIRONMENT APPDIR=${CMAKE_BINARY_DIR}/bin)
-endmacro(ADD_SPECIFIC_APPTEST)
 
 # all of these scripts use mpirun to launch the job, so only include them
 # if we know about MPI
