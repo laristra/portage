@@ -24,6 +24,8 @@ Please see the license file at the root of this repository, or at:
 
 using std::abs;
 
+#define TOL 1.0e-12
+
 /*!
   @file test_flag_mesh_wrapper.cc
   @brief Unit tests for the flat mesh wrapper class
@@ -90,18 +92,18 @@ TEST(Flat_Mesh_Wrapper, basic_routines_3d) {
   Portage::Point<3> centroid;
   mesh_flat.cell_centroid(0, &centroid);
   for (int d=0; d<3; ++d)
-    ASSERT_EQ(0.25, centroid[d]);
+    ASSERT_NEAR(0.25, centroid[d], TOL);
 
   // Test cell and node radius
   double cradius, nradius;
   Wonton::cell_radius<3>(mesh_flat, 0, &cradius);
-  ASSERT_EQ(sqrt(3.0)/4., cradius);
+  ASSERT_NEAR(sqrt(3.0)/4., cradius, TOL);
   Wonton::node_radius<3>(mesh_flat, 0, &nradius);
-  ASSERT_EQ(sqrt(3.0)/2., nradius);
+  ASSERT_NEAR(sqrt(3.0)/2., nradius, TOL);
 
   // Test cell_volume()
   for (int c=0; c<8; ++c)
-    ASSERT_TRUE(abs(mesh_flat.cell_volume(c)-0.125) < 1e-12);
+    ASSERT_NEAR(mesh_flat.cell_volume(c), 0.125, TOL);
 
   // Test cell neighbors
   for (int c=0; c<8; ++c) {
@@ -194,11 +196,11 @@ TEST(Flat_Mesh_Wrapper, basic_routines_2d) {
   Portage::Point<2> centroid;
   mesh_flat.cell_centroid(0, &centroid);
   for (int d=0; d<2; ++d)
-    ASSERT_EQ(0.125, centroid[d]);
+    ASSERT_NEAR(0.125, centroid[d], TOL);
 
   // Test cell_volume()
   for (int c=0; c<16; ++c)
-    ASSERT_TRUE(abs(mesh_flat.cell_volume(c)-0.0625) < 1e-12);
+    ASSERT_NEAR(mesh_flat.cell_volume(c), 0.0625, TOL);
 
   // Test cell neighbors
   for (int c=0; c<16; ++c) {
