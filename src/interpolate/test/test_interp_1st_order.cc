@@ -160,7 +160,7 @@ TEST(Interpolate_1st_Order, Cell_Ctr_Lin_2D) {
 
   Portage::Simple_State source_state(source_mesh);
 
-// Define a state vector with constant value and add it to the source state
+// Define a state vector with linear value and add it to the source state
 
   std::vector<double> data(ncells_source);
   for (int c = 0; c < ncells_source; ++c) {
