@@ -29,14 +29,14 @@ if (ENABLE_UNIT_TESTS)
       POLICY MPI
       THREADS 1)
 
-    cinch_add_unit(test_quadfit
-      SOURCES  test/test_quadfit.cc
+    cinch_add_unit(test_interpolate_1st_order
+      SOURCES  test/test_interp_1st_order.cc
       LIBRARIES portage ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
       POLICY MPI
       THREADS 1)
 
-    cinch_add_unit(test_interpolate_1st_order
-      SOURCES  test/test_interp_1st_order.cc
+    #[[cinch_add_unit(test_quadfit
+      SOURCES  test/test_quadfit.cc
       LIBRARIES portage ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
       POLICY MPI
       THREADS 1)
@@ -52,7 +52,7 @@ if (ENABLE_UNIT_TESTS)
       LIBRARIES portage ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
       POLICY MPI
       THREADS 1)
-
+    ]]
   endif (Jali_DIR)
 
 endif(ENABLE_UNIT_TESTS)
