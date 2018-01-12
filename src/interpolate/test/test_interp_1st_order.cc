@@ -12,12 +12,6 @@ Please see the license file at the root of this repository, or at:
 #include <memory>
 
 #include "gtest/gtest.h"
-#include "mpi.h"
-
-#include "Mesh.hh"
-#include "MeshFactory.hh"
-#include "JaliState.h"
-#include "JaliStateVector.h"
 
 #include "portage/support/portage.h"
 #include "portage/wonton/mesh/simple_mesh/simple_mesh_wrapper.h"
