@@ -10,9 +10,6 @@ Please see the license file at the root of this repository, or at:
 
 #include "gtest/gtest.h"
 
-#include "Mesh.hh"
-#include "MeshFactory.hh"
-
 #include "portage/wonton/mesh/simple_mesh/simple_mesh_wrapper.h"
 
 TEST(search_kdtree2, cell) {

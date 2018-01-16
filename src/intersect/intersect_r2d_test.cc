@@ -5,8 +5,6 @@ Please see the license file at the root of this repository, or at:
 */
 
 #include "intersect_r2d.h"
-#include "Mesh.hh"
-#include "MeshFactory.hh"
 #include "gtest/gtest.h"
 #include "portage/support/portage.h"
 #include "portage/wonton/mesh/simple_mesh/simple_mesh_wrapper.h"
