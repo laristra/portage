@@ -106,6 +106,8 @@ class BasisTest : public ::testing::Test {
     // Check that J(x)*Jinverse(x) is identity
     auto j_jinv = matmatmult(bj_x, bjinv_x);
     ASSERT_TRUE(is_identity(j_jinv, 1.0e-12));
+    j_jinv = matmatmult(bjinv_x, bj_x);
+    ASSERT_TRUE(is_identity(j_jinv, 1.0e-12));
     
     // Check that Jinverse(x) = J(-x)
     ASSERT_TRUE(is_equal(bj_negx, bjinv_x, 1.0e-12));
@@ -152,7 +154,7 @@ class BasisTest : public ::testing::Test {
       }
     }
 
-    // Check that matrix-valued jet is correct
+    // Check that vector<vector>-valued jet is correct
     {
       std::vector<std::vector<double>> result(jet<Dim>(type, x));
       auto jsize = jet_size<Dim>(type);
@@ -161,6 +163,16 @@ class BasisTest : public ::testing::Test {
           ASSERT_EQ(bj_x[i][j], result[i][j]);
         }
       }
+    }
+
+    // Check that vector<vector>-valued inverse_jet is correct
+    {
+      auto result(Portage::Meshfree::Basis::inverse_jet<Dim>(type, x));
+      auto jsize = jet_size<Dim>(type);
+      for (int i=0; i<jsize[0]; i++) 
+	for (int j=0; j<jsize[1]; j++) {
+          ASSERT_EQ(bjinv_x[i][j], result[i][j]);
+	}
     }
 
     // Check that transfactors work correctly
