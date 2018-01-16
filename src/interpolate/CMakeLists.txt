@@ -38,17 +38,17 @@ if (ENABLE_UNIT_TESTS)
       LIBRARIES portage 
       POLICY SERIAL)
 
+    cinch_add_unit(test_interpolate_3rd_order
+      SOURCES test/test_interp_3rd_order.cc
+      LIBRARIES portage 
+      POLICY SERIAL)
+
     #[[cinch_add_unit(test_quadfit
       SOURCES  test/test_quadfit.cc
       LIBRARIES portage ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
       POLICY MPI
       THREADS 1)
 
-    cinch_add_unit(test_interpolate_3rd_order
-      SOURCES test/test_interp_3rd_order.cc
-      LIBRARIES portage ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
-      POLICY MPI
-      THREADS 1)
     ]]
   endif (Jali_DIR)
 

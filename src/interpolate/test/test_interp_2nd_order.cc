@@ -257,10 +257,10 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Lin_No_Limiter_2D) {
 }
 
 
-///*!
-//  @brief Second order interpolate of linear cell-centered field with
-//  Barth-Jespersen limiting in 2D
-// STAR/
+/*!
+  @brief Second order interpolate of linear cell-centered field with
+  Barth-Jespersen limiting in 2D
+ */
 
 TEST(Interpolate_2nd_Order, Cell_Ctr_Lin_BJ_Limiter_2D) {
 
@@ -862,7 +862,7 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Lin_No_Limiter_3D) {
 
   std::vector<double> data(ncells_source);
   for (int c = 0; c < ncells_source; ++c) {
-    Portage::Point<2> cen;
+    Portage::Point<3> cen;
     sourceMeshWrapper.cell_centroid(c, &cen);
     data[c] = cen[0]+cen[1]+cen[2];
   }
@@ -945,17 +945,18 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Lin_No_Limiter_3D) {
   
   std::vector<double> stdvals(ncells_target);
   for (int c = 0; c < ncells_target; ++c) {
-    Portage::Point<2> cen;
+    Portage::Point<3> cen;
     targetMeshWrapper.cell_centroid(c, &cen);
     stdvals[c] = cen[0]+cen[1]+cen[2];
   }
 
+  double TOL = 1e-12;
   for (int c = 0; c < ncells_target; ++c)
-    ASSERT_DOUBLE_EQ(stdvals[c], outvals[c]);
+    ASSERT_NEAR(stdvals[c], outvals[c], TOL);
 
 }
 
-/// Second order interpolation of discontinuous cell-centered field with
+/// Second order interpolation of discontinuous cell-centered linear field with
 /// Barth-Jespersen limiting in 3D
 
 TEST(Interpolate_2nd_Order, Cell_Ctr_BJ_Limiter_3D) {
@@ -1082,15 +1083,6 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_BJ_Limiter_3D) {
                      targetMeshWrapper.end(Portage::Entity_kind::CELL),
                      sources_and_weights.begin(),
                      outvals2.begin(), interpolater);
-  
-  // Make sure we retrieved the correct value for each cell on the target
-
-  std::vector<double> stdvals(ncells_target);
-  for (int c = 0; c < ncells_target; ++c) {
-    Portage::Point<3> cen;
-    targetMeshWrapper.cell_centroid(c, &cen);
-    stdvals[c] = cen[0]+cen[1]+cen[2];
-  }
   
   // Check if we violated the bounds on at least one cell in the
   // unlimited interpolation and if we respected the bounds in all

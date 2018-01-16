@@ -14,20 +14,10 @@ Please see the license file at the root of this repository, or at:
 #include "portage/interpolate/interpolate_3rd_order.h"
 
 #include "gtest/gtest.h"
-#include "mpi.h"
-
-// Jali includes
-#include "Mesh.hh"
-#include "MeshFactory.hh"
-#include "JaliState.h"
-#include "JaliStateVector.h"
-#include "Point.hh"
 
 #include "portage/support/portage.h"
-#include "portage/wonton/mesh/jali/jali_mesh_wrapper.h"
-#include "portage/wonton/state/jali/jali_state_wrapper.h"
-
-// Local include
+#include "portage/wonton/mesh/simple_mesh/simple_mesh_wrapper.h"
+#include "portage/wonton/state/simple_state/simple_state_wrapper.h"
 #include "portage/interpolate/test/simple_intersect_for_tests.h"
 
 /// Third order interpolation of constant cell-centered field with no
@@ -37,97 +27,112 @@ double TOL = 1e-12;  // tolerance for constant and linear fits.
 double TOL2 = 5.e-2; // tolerance for quadratic fits much higher
 
 TEST(Interpolate_3rd_Order, Cell_Ctr_Const_No_Limiter_2D) {
-  Jali::MeshFactory mf(MPI_COMM_WORLD);
 
-  if (Jali::framework_available(Jali::MSTK))
-    mf.framework(Jali::MSTK);
+  // Create simple meshes
+  
+  std::shared_ptr<Portage::Simple_Mesh> source_mesh =
+    std::make_shared<Portage::Simple_Mesh>(0.0, 0.0, 1.0, 1.0, 4, 4);
+  std::shared_ptr<Portage::Simple_Mesh> target_mesh =
+    std::make_shared<Portage::Simple_Mesh>(0.0, 0.0, 1.0, 1.0, 5, 5);
 
-  std::shared_ptr<Jali::Mesh> source_mesh = mf(0.0, 0.0, 1.0, 1.0, 4, 4);
-  std::shared_ptr<Jali::Mesh> target_mesh = mf(0.0, 0.0, 1.0, 1.0, 5, 5);
-  Jali::State source_state(source_mesh);
-  Jali::State target_state(target_mesh);
+  // Create mesh wrappers
+  
+  Wonton::Simple_Mesh_Wrapper sourceMeshWrapper(*source_mesh);
+  Wonton::Simple_Mesh_Wrapper targetMeshWrapper(*target_mesh);
 
-  // Define two state vectors, one with constant value and the other
-  // with a linear function that is x+y
-
+  // count cells
+  
   const int ncells_source =
-      source_mesh->num_entities(Jali::Entity_kind::CELL,
-                                Jali::Entity_type::PARALLEL_OWNED);
-  // "data" is the constant field of value 1.25 over the mesh
-  std::vector<double> data(ncells_source, 1.25);
-  Jali::StateVector<double> myvec("cellvars", source_mesh,
-                                  Jali::Entity_kind::CELL,
-                                  Jali::Entity_type::PARALLEL_OWNED,
-                                  &(data[0]));
-  source_state.add(myvec);
-
+      sourceMeshWrapper.num_owned_cells();
   const int ncells_target =
-      target_mesh->num_entities(Jali::Entity_kind::CELL,
-                                Jali::Entity_type::PARALLEL_OWNED);
+      targetMeshWrapper.num_owned_cells();
 
-  Wonton::Jali_Mesh_Wrapper sourceMeshWrapper(*source_mesh);
-  Wonton::Jali_Mesh_Wrapper targetMeshWrapper(*target_mesh);
-  Wonton::Jali_State_Wrapper sourceStateWrapper(source_state);
+  // Create a state object
 
-  // Gather the cell coordinates for source and target meshes for intersection
+  Portage::Simple_State source_state(source_mesh);
 
-  std::vector<std::vector<JaliGeometry::Point>>
+  // Define a state vector with constant value and add it to the source state
+
+  std::vector<double> data(ncells_source, 1.25);
+  source_state.add("cellvars", Portage::Entity_kind::CELL, &(data[0]));
+  
+  // Create state wrapper
+  
+  Wonton::Simple_State_Wrapper sourceStateWrapper(source_state);
+
+  // Gather the cell coordinates as Portage Points for source and target meshes 
+  // for intersection. The outer vector is the cells, the inner vector is the
+  // points of the vertices of that cell.
+
+  std::vector<std::vector<Portage::Point<2>>>
       source_cell_coords(ncells_source);
-  std::vector<std::vector<JaliGeometry::Point>>
+  std::vector<std::vector<Portage::Point<2>>>
       target_cell_coords(ncells_target);
 
+  // Actually get the Portage::Points
+  
   for (int c = 0; c < ncells_source; ++c)
     source_mesh->cell_get_coordinates(c, &(source_cell_coords[c]));
   for (int c = 0; c < ncells_target; ++c)
     target_mesh->cell_get_coordinates(c, &(target_cell_coords[c]));
 
-  // Interpolate from source to target mesh
+  // Interpolate from source to target mesh using the independent calculation
+  // in simple_intersect_for_tests.h
 
-  std::vector<double> outvals(ncells_target);  // field values on target mesh
-  std::vector<std::vector<Portage::Weights_t>> sources_and_weights(ncells_target);
-
-  Jali::Entity_ID_List const& targetcells =
-      target_mesh->cells<Jali::Entity_type::ALL>();
-
-  for (auto const& c : targetcells) {
+  std::vector<double> outvals(ncells_target);
+  std::vector<std::vector<Portage::Weights_t>>
+      sources_and_weights(ncells_target);
+      
+  // Loop over target cells
+      
+  for (int c = 0; c < ncells_target; ++c) {
+  
     std::vector<int> xcells;
-    std::vector<std::vector<double>> xweights;
+    std::vector<std::vector<double>> xwts;
 
-    BOX_INTERSECT::intersection_moments(target_cell_coords[c],
+		// Compute the moments
+		// xcells is the source cell indices that intersect
+		// xwts is the moments vector for each cell that intersects
+		
+    BOX_INTERSECT::intersection_moments<2>(target_cell_coords[c],
                                         source_cell_coords,
-                                        &xcells, &xweights);
+                                        &xcells, &xwts);
 
-
+    // Pack the results into a vector of true Portage::Weights_t
+    
     std::vector<Portage::Weights_t> wtsvec(xcells.size());
     for (int i = 0; i < xcells.size(); ++i) {
       wtsvec[i].entityID = xcells[i];
-      wtsvec[i].weights = xweights[i];
+      wtsvec[i].weights = xwts[i];
     }
+    
+    // Put the weights in final form
+    
     sources_and_weights[c] = wtsvec;
   }
-
+  
+  // Now do it the Portage way
+  
   // Create Interpolation object
 
   Portage::Interpolate_3rdOrder<2, Portage::CELL,
-                                Wonton::Jali_Mesh_Wrapper,
-                                Wonton::Jali_Mesh_Wrapper,
-                                Wonton::Jali_State_Wrapper>
-    interpolater(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper);
+                                Wonton::Simple_Mesh_Wrapper,
+                                Wonton::Simple_Mesh_Wrapper,
+                                Wonton::Simple_State_Wrapper>
+      interpolater(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper);
 
-  // Compute the target mesh vals
+  interpolater.set_interpolation_variable("cellvars");
 
-  interpolater.set_interpolation_variable("cellvars", Portage::NOLIMITER);
-
-  Portage::transform(targetcells.begin(), targetcells.end(),
+      
+  Portage::transform(targetMeshWrapper.begin(Portage::Entity_kind::CELL), 
+                     targetMeshWrapper.end(Portage::Entity_kind::CELL),
                      sources_and_weights.begin(),
                      outvals.begin(), interpolater);
 
-
   // Make sure we retrieved the correct value for each cell on the target
-
   const double stdval = data[0];
-  for (int c = 0; c < ncells_target; ++c)
-    ASSERT_NEAR(stdval, outvals[c], TOL);
+  for (int c = 0; c < ncells_target; ++c) ASSERT_DOUBLE_EQ(stdval, outvals[c]);
+
 }
 
 
@@ -136,104 +141,124 @@ TEST(Interpolate_3rd_Order, Cell_Ctr_Const_No_Limiter_2D) {
 /// limiting in 2D
 
 TEST(Interpolate_3rd_Order, Cell_Ctr_Lin_No_Limiter_2D) {
-  Jali::MeshFactory mf(MPI_COMM_WORLD);
+  // Create simple meshes
+  
+  std::shared_ptr<Portage::Simple_Mesh> source_mesh =
+    std::make_shared<Portage::Simple_Mesh>(0.0, 0.0, 1.0, 1.0, 4, 4);
+  std::shared_ptr<Portage::Simple_Mesh> target_mesh =
+    std::make_shared<Portage::Simple_Mesh>(0.0, 0.0, 1.0, 1.0, 5, 5);
 
-  if (Jali::framework_available(Jali::MSTK))
-    mf.framework(Jali::MSTK);
+  // Create mesh wrappers
+  
+  Wonton::Simple_Mesh_Wrapper sourceMeshWrapper(*source_mesh);
+  Wonton::Simple_Mesh_Wrapper targetMeshWrapper(*target_mesh);
 
-  std::shared_ptr<Jali::Mesh> source_mesh = mf(0.0, 0.0, 1.0, 1.0, 4, 4);
-  std::shared_ptr<Jali::Mesh> target_mesh = mf(0.0, 0.0, 1.0, 1.0, 5, 5);
-  Jali::State source_state(source_mesh);
-  Jali::State target_state(target_mesh);
-
-  // Define a state vectors, with a linear function that is x+y
-
+  // count cells
+  
   const int ncells_source =
-      source_mesh->num_entities(Jali::Entity_kind::CELL,
-                                Jali::Entity_type::PARALLEL_OWNED);
-  // "data" is the linear field over the mesh
+      sourceMeshWrapper.num_owned_cells();
+  const int ncells_target =
+      targetMeshWrapper.num_owned_cells();
+
+  // Create a state object
+
+  Portage::Simple_State source_state(source_mesh);
+
+// Define a state vector with linear value and add it to the source state
+
   std::vector<double> data(ncells_source);
   for (int c = 0; c < ncells_source; ++c) {
-    JaliGeometry::Point ccen = source_mesh->cell_centroid(c);
-    data[c] = ccen[0]+ccen[1];
+    Portage::Point<2> cen;
+    sourceMeshWrapper.cell_centroid(c, &cen);
+    data[c] = cen[0]+cen[1];
   }
+  source_state.add("cellvars", Portage::Entity_kind::CELL, &(data[0]));  
 
-  Jali::StateVector<double> myvec("cellvars", source_mesh,
-                                  Jali::Entity_kind::CELL,
-                                  Jali::Entity_type::PARALLEL_OWNED,
-                                  &(data[0]));
-  source_state.add(myvec);
+  // Create state wrapper
+  
+  Wonton::Simple_State_Wrapper sourceStateWrapper(source_state);
 
-  // Create Interpolation objects
+  // Gather the cell coordinates as Portage Points for source and target meshes 
+  // for intersection. The outer vector is the cells, the inner vector is the
+  // points of the vertices of that cell.
 
-  Wonton::Jali_Mesh_Wrapper sourceMeshWrapper(*source_mesh);
-  Wonton::Jali_Mesh_Wrapper targetMeshWrapper(*target_mesh);
-  Wonton::Jali_State_Wrapper sourceStateWrapper(source_state);
-
-  // Gather the cell coordinates for source and target meshes for intersection
-
-  const int ncells_target =
-      target_mesh->num_entities(Jali::Entity_kind::CELL,
-                                Jali::Entity_type::PARALLEL_OWNED);
-  std::vector<std::vector<JaliGeometry::Point>>
+  std::vector<std::vector<Portage::Point<2>>>
       source_cell_coords(ncells_source);
-  std::vector<std::vector<JaliGeometry::Point>>
+  std::vector<std::vector<Portage::Point<2>>>
       target_cell_coords(ncells_target);
 
+  // Actually get the Portage::Points
+  
   for (int c = 0; c < ncells_source; ++c)
     source_mesh->cell_get_coordinates(c, &(source_cell_coords[c]));
   for (int c = 0; c < ncells_target; ++c)
     target_mesh->cell_get_coordinates(c, &(target_cell_coords[c]));
 
-  // Interpolate from source to target mesh
+  // Interpolate from source to target mesh using the independent calculation
+  // in simple_intersect_for_tests.h
+
   std::vector<double> outvals(ncells_target);
-  std::vector<std::vector<Portage::Weights_t>> sources_and_weights(ncells_target);
-
-  Jali::Entity_ID_List const& targetcells =
-      target_mesh->cells<Jali::Entity_type::ALL>();
-
-  for (auto const& c : targetcells) {
+  std::vector<std::vector<Portage::Weights_t>>
+      sources_and_weights(ncells_target);
+      
+  // Loop over target cells
+      
+  for (int c = 0; c < ncells_target; ++c) {
+  
     std::vector<int> xcells;
-    std::vector<std::vector<double>> xweights;
+    std::vector<std::vector<double>> xwts;
 
-    BOX_INTERSECT::intersection_moments(target_cell_coords[c],
+		// Compute the moments
+		// xcells is the source cell indices that intersect
+		// xwts is the moments vector for each cell that intersects
+		
+    BOX_INTERSECT::intersection_moments<2>(target_cell_coords[c],
                                         source_cell_coords,
-                                        &xcells, &xweights);
+                                        &xcells, &xwts);
 
-
+    // Pack the results into a vector of true Portage::Weights_t
+    
     std::vector<Portage::Weights_t> wtsvec(xcells.size());
     for (int i = 0; i < xcells.size(); ++i) {
       wtsvec[i].entityID = xcells[i];
-      wtsvec[i].weights = xweights[i];
+      wtsvec[i].weights = xwts[i];
     }
+    
+    // Put the weights in final form
+    
     sources_and_weights[c] = wtsvec;
   }
-
+  
+  // Now do it the Portage way
+  
   // Create Interpolation object
 
   Portage::Interpolate_3rdOrder<2, Portage::CELL,
-                                Wonton::Jali_Mesh_Wrapper,
-                                Wonton::Jali_Mesh_Wrapper,
-                                Wonton::Jali_State_Wrapper>
+                                Wonton::Simple_Mesh_Wrapper,
+                                Wonton::Simple_Mesh_Wrapper,
+                                Wonton::Simple_State_Wrapper>
       interpolater(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper);
 
-  // Compute the target mesh vals
+  interpolater.set_interpolation_variable("cellvars");
 
-  interpolater.set_interpolation_variable("cellvars", Portage::NOLIMITER);
-
-  Portage::transform(targetcells.begin(), targetcells.end(),
+      
+  Portage::transform(targetMeshWrapper.begin(Portage::Entity_kind::CELL), 
+                     targetMeshWrapper.end(Portage::Entity_kind::CELL),
                      sources_and_weights.begin(),
                      outvals.begin(), interpolater);
-
+  
   // Make sure we retrieved the correct value for each cell on the target
-
+  
   std::vector<double> stdvals(ncells_target);
   for (int c = 0; c < ncells_target; ++c) {
-    JaliGeometry::Point ccen = target_mesh->cell_centroid(c);
-    stdvals[c] = ccen[0]+ccen[1];
+    Portage::Point<2> cen;
+    targetMeshWrapper.cell_centroid(c, &cen);
+    stdvals[c] = cen[0]+cen[1];
   }
+
   for (int c = 0; c < ncells_target; ++c)
-    ASSERT_NEAR(stdvals[c], outvals[c], TOL);
+    ASSERT_DOUBLE_EQ(stdvals[c], outvals[c]);
+
 }
 
 
@@ -243,25 +268,38 @@ TEST(Interpolate_3rd_Order, Cell_Ctr_Lin_No_Limiter_2D) {
 */
 
 TEST(Interpolate_3rd_Order, Cell_Ctr_Lin_BJ_Limiter_2D) {
-  Jali::MeshFactory mf(MPI_COMM_WORLD);
 
-  if (Jali::framework_available(Jali::MSTK))
-    mf.framework(Jali::MSTK);
+  // Create simple meshes
+  
+  std::shared_ptr<Portage::Simple_Mesh> source_mesh =
+    std::make_shared<Portage::Simple_Mesh>(0.0, 0.0, 1.0, 1.0, 4, 4);
+  std::shared_ptr<Portage::Simple_Mesh> target_mesh =
+    std::make_shared<Portage::Simple_Mesh>(0.0, 0.0, 1.0, 1.0, 5, 5);
 
-  std::shared_ptr<Jali::Mesh> source_mesh = mf(0.0, 0.0, 1.0, 1.0, 4, 4);
-  std::shared_ptr<Jali::Mesh> target_mesh = mf(0.0, 0.0, 1.0, 1.0, 5, 5);
-  Jali::State source_state(source_mesh);
-  Jali::State target_state(target_mesh);
+  // Create mesh wrappers
+  
+  Wonton::Simple_Mesh_Wrapper sourceMeshWrapper(*source_mesh);
+  Wonton::Simple_Mesh_Wrapper targetMeshWrapper(*target_mesh);
 
-  // Define a state vectors, with a linear function that is x+y
-
+  // count cells
+  
   const int ncells_source =
-      source_mesh->num_entities(Jali::Entity_kind::CELL,
-                                Jali::Entity_type::PARALLEL_OWNED);
-  std::vector<double> data(ncells_source);
+      sourceMeshWrapper.num_owned_cells();
+  const int ncells_target =
+      targetMeshWrapper.num_owned_cells();
+
+  // Create a state object
+
+  Portage::Simple_State source_state(source_mesh);
+
+  // Define a state vector with linear value and add it to the source state
+
   double minval = 1e+10, maxval = -1e+10;
+  
+  std::vector<double> data(ncells_source);
   for (int c = 0; c < ncells_source; ++c) {
-    JaliGeometry::Point ccen = source_mesh->cell_centroid(c);
+    Portage::Point<2> ccen;
+    sourceMeshWrapper.cell_centroid(c, &ccen);
     if (ccen[0] < 0.5)
       data[c] = ccen[0]+ccen[1];
     else
@@ -269,89 +307,102 @@ TEST(Interpolate_3rd_Order, Cell_Ctr_Lin_BJ_Limiter_2D) {
     if (data[c] < minval) minval = data[c];
     if (data[c] > maxval) maxval = data[c];
   }
+  source_state.add("cellvars", Portage::Entity_kind::CELL, &(data[0]));  
 
-  Jali::StateVector<double> myvec("cellvars", source_mesh,
-                                  Jali::Entity_kind::CELL,
-                                  Jali::Entity_type::PARALLEL_OWNED,
-                                  &(data[0]));
-  source_state.add(myvec);
+  // Create state wrapper
+  
+  Wonton::Simple_State_Wrapper sourceStateWrapper(source_state);
 
-  // Create Interpolate objects - one with no limiter and one with limiter
-  Wonton::Jali_Mesh_Wrapper sourceMeshWrapper(*source_mesh);
-  Wonton::Jali_Mesh_Wrapper targetMeshWrapper(*target_mesh);
-  Wonton::Jali_State_Wrapper sourceStateWrapper(source_state);
+  // Gather the cell coordinates as Portage Points for source and target meshes 
+  // for intersection. The outer vector is the cells, the inner vector is the
+  // points of the vertices of that cell.
 
-  // Gather the cell coordinates for the source and target meshes for
-  // intersection
-
-  const int ncells_target =
-      target_mesh->num_entities(Jali::Entity_kind::CELL,
-                                Jali::Entity_type::PARALLEL_OWNED);
-  std::vector<std::vector<JaliGeometry::Point>>
+  std::vector<std::vector<Portage::Point<2>>>
       source_cell_coords(ncells_source);
-  std::vector<std::vector<JaliGeometry::Point>>
+  std::vector<std::vector<Portage::Point<2>>>
       target_cell_coords(ncells_target);
 
+  // Actually get the Portage::Points
+  
   for (int c = 0; c < ncells_source; ++c)
     source_mesh->cell_get_coordinates(c, &(source_cell_coords[c]));
   for (int c = 0; c < ncells_target; ++c)
     target_mesh->cell_get_coordinates(c, &(target_cell_coords[c]));
 
+  // Interpolate from source to target mesh using the independent calculation
+  // in simple_intersect_for_tests.h
+
   std::vector<double> outvals1(ncells_target);
   std::vector<double> outvals2(ncells_target);
   std::vector<std::vector<Portage::Weights_t>>
       sources_and_weights(ncells_target);
-
-  Jali::Entity_ID_List const& targetcells =
-      target_mesh->cells<Jali::Entity_type::ALL>();
-
-  // Interpolate from source to target mesh
-  for (auto const& c : targetcells) {
+      
+  // Loop over target cells
+      
+  for (int c = 0; c < ncells_target; ++c) {
+  
     std::vector<int> xcells;
-    std::vector<std::vector<double>> xweights;
+    std::vector<std::vector<double>> xwts;
 
-    BOX_INTERSECT::intersection_moments(target_cell_coords[c],
+		// Compute the moments
+		// xcells is the source cell indices that intersect
+		// xwts is the moments vector for each cell that intersects
+		
+    BOX_INTERSECT::intersection_moments<2>(target_cell_coords[c],
                                         source_cell_coords,
-                                        &xcells, &xweights);
+                                        &xcells, &xwts);
 
-
+    // Pack the results into a vector of true Portage::Weights_t
+    
     std::vector<Portage::Weights_t> wtsvec(xcells.size());
     for (int i = 0; i < xcells.size(); ++i) {
       wtsvec[i].entityID = xcells[i];
-      wtsvec[i].weights = xweights[i];
+      wtsvec[i].weights = xwts[i];
     }
+    
+    // Put the weights in final form
+    
     sources_and_weights[c] = wtsvec;
   }
-
+  
+  // Now do it the Portage way
+  
   // Create Interpolation object
 
   Portage::Interpolate_3rdOrder<2, Portage::CELL,
-                                Wonton::Jali_Mesh_Wrapper,
-                                Wonton::Jali_Mesh_Wrapper,
-                                Wonton::Jali_State_Wrapper>
+                                Wonton::Simple_Mesh_Wrapper,
+                                Wonton::Simple_Mesh_Wrapper,
+                                Wonton::Simple_State_Wrapper>
       interpolater(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper);
-
-  // Compute the target mesh vals
 
   interpolater.set_interpolation_variable("cellvars", Portage::NOLIMITER);
 
-  Portage::transform(targetcells.begin(), targetcells.end(),
+      
+  Portage::transform(targetMeshWrapper.begin(Portage::Entity_kind::CELL), 
+                     targetMeshWrapper.end(Portage::Entity_kind::CELL),
                      sources_and_weights.begin(),
                      outvals1.begin(), interpolater);
+  
+  interpolater.set_interpolation_variable("cellvars", Portage::BARTH_JESPERSEN);
 
-
-  interpolater.set_interpolation_variable("cellvars",
-                                           Portage::BARTH_JESPERSEN);
-
-  // Compute the target mesh vals
-
-  Portage::transform(targetcells.begin(), targetcells.end(),
+      
+  Portage::transform(targetMeshWrapper.begin(Portage::Entity_kind::CELL), 
+                     targetMeshWrapper.end(Portage::Entity_kind::CELL),
                      sources_and_weights.begin(),
                      outvals2.begin(), interpolater);
+  
+  // Make sure we retrieved the correct value for each cell on the target
 
+  std::vector<double> stdvals(ncells_target);
+  for (int c = 0; c < ncells_target; ++c) {
+    Portage::Point<2> cen;
+    targetMeshWrapper.cell_centroid(c, &cen);
+    stdvals[c] = cen[0]+cen[1];
+  }
+  
   // Check if we violated the bounds on at least one cell in the
   // unlimited interpolation and if we respected the bounds in all
-  // interior cells in the limited case
+  // cells in the limited case
 
   bool outofbounds_unlimited = false;
   for (int c = 0; c < ncells_target; ++c) {
@@ -373,113 +424,135 @@ TEST(Interpolate_3rd_Order, Cell_Ctr_Lin_BJ_Limiter_2D) {
     }
   }
   EXPECT_TRUE(outofbounds_unlimited && inbounds_limited);
+
 }
    
+
 /// Third order interpolation of quadratic cell-centered field with no
 /// limiting in 2D
 
 TEST(Interpolate_3rd_Order, Cell_Ctr_Quad_No_Limiter_2D) {
-  Jali::MeshFactory mf(MPI_COMM_WORLD);
+  // Create simple meshes
+  
+  std::shared_ptr<Portage::Simple_Mesh> source_mesh =
+    std::make_shared<Portage::Simple_Mesh>(0.0, 0.0, 1.0, 1.0, 4, 4);
+  std::shared_ptr<Portage::Simple_Mesh> target_mesh =
+    std::make_shared<Portage::Simple_Mesh>(0.0, 0.0, 1.0, 1.0, 5, 5);
 
-  if (Jali::framework_available(Jali::MSTK))
-    mf.framework(Jali::MSTK);
+  // Create mesh wrappers
+  
+  Wonton::Simple_Mesh_Wrapper sourceMeshWrapper(*source_mesh);
+  Wonton::Simple_Mesh_Wrapper targetMeshWrapper(*target_mesh);
 
-  std::shared_ptr<Jali::Mesh> source_mesh = mf(0.0, 0.0, 1.0, 1.0, 4, 4);
-  std::shared_ptr<Jali::Mesh> target_mesh = mf(0.0, 0.0, 1.0, 1.0, 5, 5);
-  Jali::State source_state(source_mesh);
-  Jali::State target_state(target_mesh);
-
-  // Define a state vectors, with a quadratic function that is x*x+y*y
-
+  // count cells
+  
   const int ncells_source =
-      source_mesh->num_entities(Jali::Entity_kind::CELL,
-                                Jali::Entity_type::PARALLEL_OWNED);
-  // "data" is the quadratic field over the mesh
+      sourceMeshWrapper.num_owned_cells();
+  const int ncells_target =
+      targetMeshWrapper.num_owned_cells();
+
+  // Create a state object
+
+  Portage::Simple_State source_state(source_mesh);
+
+// Define a state vector with linear value and add it to the source state
+
   std::vector<double> data(ncells_source);
   for (int c = 0; c < ncells_source; ++c) {
-    JaliGeometry::Point ccen = source_mesh->cell_centroid(c);
-    data[c] = ccen[0]*ccen[0]+ccen[1]*ccen[1];
+    Portage::Point<2> cen;
+    sourceMeshWrapper.cell_centroid(c, &cen);
+    data[c] = cen[0]*cen[0]+cen[1]*cen[1];
   }
+  source_state.add("cellvars", Portage::Entity_kind::CELL, &(data[0]));  
 
-  Jali::StateVector<double> myvec("cellvars", source_mesh,
-                                  Jali::Entity_kind::CELL,
-                                  Jali::Entity_type::PARALLEL_OWNED,
-                                  &(data[0]));
-  source_state.add(myvec);
+  // Create state wrapper
+  
+  Wonton::Simple_State_Wrapper sourceStateWrapper(source_state);
 
-  // Create Interpolation objects
+  // Gather the cell coordinates as Portage Points for source and target meshes 
+  // for intersection. The outer vector is the cells, the inner vector is the
+  // points of the vertices of that cell.
 
-  Wonton::Jali_Mesh_Wrapper sourceMeshWrapper(*source_mesh);
-  Wonton::Jali_Mesh_Wrapper targetMeshWrapper(*target_mesh);
-  Wonton::Jali_State_Wrapper sourceStateWrapper(source_state);
-
-  // Gather the cell coordinates for source and target meshes for intersection
-
-  const int ncells_target =
-      target_mesh->num_entities(Jali::Entity_kind::CELL,
-                                Jali::Entity_type::PARALLEL_OWNED);
-  std::vector<std::vector<JaliGeometry::Point>>
+  std::vector<std::vector<Portage::Point<2>>>
       source_cell_coords(ncells_source);
-  std::vector<std::vector<JaliGeometry::Point>>
+  std::vector<std::vector<Portage::Point<2>>>
       target_cell_coords(ncells_target);
 
+  // Actually get the Portage::Points
+  
   for (int c = 0; c < ncells_source; ++c)
     source_mesh->cell_get_coordinates(c, &(source_cell_coords[c]));
   for (int c = 0; c < ncells_target; ++c)
     target_mesh->cell_get_coordinates(c, &(target_cell_coords[c]));
 
-  // Interpolate from source to target mesh
+  // Interpolate from source to target mesh using the independent calculation
+  // in simple_intersect_for_tests.h
+
   std::vector<double> outvals(ncells_target);
-  std::vector<std::vector<Portage::Weights_t>> sources_and_weights(ncells_target);
-
-  Jali::Entity_ID_List const& targetcells =
-      target_mesh->cells<Jali::Entity_type::ALL>();
-
-  for (auto const& c : targetcells) {
+  std::vector<std::vector<Portage::Weights_t>>
+      sources_and_weights(ncells_target);
+      
+  // Loop over target cells
+      
+  for (int c = 0; c < ncells_target; ++c) {
+  
     std::vector<int> xcells;
-    std::vector<std::vector<double>> xweights;
+    std::vector<std::vector<double>> xwts;
 
-    BOX_INTERSECT::intersection_moments(target_cell_coords[c],
+		// Compute the moments
+		// xcells is the source cell indices that intersect
+		// xwts is the moments vector for each cell that intersects
+		
+    BOX_INTERSECT::intersection_moments<2>(target_cell_coords[c],
                                         source_cell_coords,
-                                        &xcells, &xweights);
+                                        &xcells, &xwts);
 
-
+    // Pack the results into a vector of true Portage::Weights_t
+    
     std::vector<Portage::Weights_t> wtsvec(xcells.size());
     for (int i = 0; i < xcells.size(); ++i) {
       wtsvec[i].entityID = xcells[i];
-      wtsvec[i].weights = xweights[i];
+      wtsvec[i].weights = xwts[i];
     }
+    
+    // Put the weights in final form
+    
     sources_and_weights[c] = wtsvec;
   }
-
+  
+  // Now do it the Portage way
+  
   // Create Interpolation object
 
-  Portage::Interpolate_3rdOrder<2, Portage::CELL,
-                                Wonton::Jali_Mesh_Wrapper,
-                                Wonton::Jali_Mesh_Wrapper,
-                                Wonton::Jali_State_Wrapper>
+  Portage::Interpolate_2ndOrder<2, Portage::CELL,
+                                Wonton::Simple_Mesh_Wrapper,
+                                Wonton::Simple_Mesh_Wrapper,
+                                Wonton::Simple_State_Wrapper>
       interpolater(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper);
 
-  // Compute the target mesh vals
+  interpolater.set_interpolation_variable("cellvars");
 
-  interpolater.set_interpolation_variable("cellvars", Portage::NOLIMITER);
-
-  Portage::transform(targetcells.begin(), targetcells.end(),
+      
+  Portage::transform(targetMeshWrapper.begin(Portage::Entity_kind::CELL), 
+                     targetMeshWrapper.end(Portage::Entity_kind::CELL),
                      sources_and_weights.begin(),
                      outvals.begin(), interpolater);
-
+  
   // Make sure we retrieved the correct value for each cell on the target
-
+  
   std::vector<double> stdvals(ncells_target);
   for (int c = 0; c < ncells_target; ++c) {
-    JaliGeometry::Point ccen = target_mesh->cell_centroid(c);
-    stdvals[c] = ccen[0]*ccen[0]+ccen[1]*ccen[1];
+    Portage::Point<2> cen;
+    targetMeshWrapper.cell_centroid(c, &cen);
+    stdvals[c] = cen[0]*cen[0]+cen[1]*cen[1];
   }
+
   for (int c = 0; c < ncells_target; ++c) 
     // Restrict to interior cells for higher precision
     if (!targetMeshWrapper.on_exterior_boundary(Portage::CELL, c)) {    
       ASSERT_NEAR(stdvals[c], outvals[c], TOL2);
     }
+
 }
 
 
@@ -489,25 +562,38 @@ TEST(Interpolate_3rd_Order, Cell_Ctr_Quad_No_Limiter_2D) {
 */
 
 TEST(Interpolate_3rd_Order, Cell_Ctr_Quad_BJ_Limiter_2D) {
-  Jali::MeshFactory mf(MPI_COMM_WORLD);
 
-  if (Jali::framework_available(Jali::MSTK))
-    mf.framework(Jali::MSTK);
+  // Create simple meshes
+  
+  std::shared_ptr<Portage::Simple_Mesh> source_mesh =
+    std::make_shared<Portage::Simple_Mesh>(0.0, 0.0, 1.0, 1.0, 4, 4);
+  std::shared_ptr<Portage::Simple_Mesh> target_mesh =
+    std::make_shared<Portage::Simple_Mesh>(0.0, 0.0, 1.0, 1.0, 5, 5);
 
-  std::shared_ptr<Jali::Mesh> source_mesh = mf(0.0, 0.0, 1.0, 1.0, 4, 4);
-  std::shared_ptr<Jali::Mesh> target_mesh = mf(0.0, 0.0, 1.0, 1.0, 5, 5);
-  Jali::State source_state(source_mesh);
-  Jali::State target_state(target_mesh);
+  // Create mesh wrappers
+  
+  Wonton::Simple_Mesh_Wrapper sourceMeshWrapper(*source_mesh);
+  Wonton::Simple_Mesh_Wrapper targetMeshWrapper(*target_mesh);
 
-  // Define a state vectors, with a quadratic function that is x*x+y*y
-
+  // count cells
+  
   const int ncells_source =
-      source_mesh->num_entities(Jali::Entity_kind::CELL,
-                                Jali::Entity_type::PARALLEL_OWNED);
-  std::vector<double> data(ncells_source);
+      sourceMeshWrapper.num_owned_cells();
+  const int ncells_target =
+      targetMeshWrapper.num_owned_cells();
+
+  // Create a state object
+
+  Portage::Simple_State source_state(source_mesh);
+
+  // Define a state vector with linear value and add it to the source state
+
   double minval = 1e+10, maxval = -1e+10;
+  
+  std::vector<double> data(ncells_source);
   for (int c = 0; c < ncells_source; ++c) {
-    JaliGeometry::Point ccen = source_mesh->cell_centroid(c);
+    Portage::Point<2> ccen;
+    sourceMeshWrapper.cell_centroid(c, &ccen);
     if (ccen[0] < 0.5)
       data[c] = ccen[0]*ccen[0]+ccen[1]*ccen[1];
     else
@@ -515,89 +601,94 @@ TEST(Interpolate_3rd_Order, Cell_Ctr_Quad_BJ_Limiter_2D) {
     if (data[c] < minval) minval = data[c];
     if (data[c] > maxval) maxval = data[c];
   }
+  source_state.add("cellvars", Portage::Entity_kind::CELL, &(data[0]));  
 
-  Jali::StateVector<double> myvec("cellvars", source_mesh,
-                                  Jali::Entity_kind::CELL,
-                                  Jali::Entity_type::PARALLEL_OWNED,
-                                  &(data[0]));
-  source_state.add(myvec);
+  // Create state wrapper
+  
+  Wonton::Simple_State_Wrapper sourceStateWrapper(source_state);
 
-  // Create Interpolate objects - one with no limiter and one with limiter
-  Wonton::Jali_Mesh_Wrapper sourceMeshWrapper(*source_mesh);
-  Wonton::Jali_Mesh_Wrapper targetMeshWrapper(*target_mesh);
-  Wonton::Jali_State_Wrapper sourceStateWrapper(source_state);
+  // Gather the cell coordinates as Portage Points for source and target meshes 
+  // for intersection. The outer vector is the cells, the inner vector is the
+  // points of the vertices of that cell.
 
-  // Gather the cell coordinates for the source and target meshes for
-  // intersection
-
-  const int ncells_target =
-      target_mesh->num_entities(Jali::Entity_kind::CELL,
-                                Jali::Entity_type::PARALLEL_OWNED);
-  std::vector<std::vector<JaliGeometry::Point>>
+  std::vector<std::vector<Portage::Point<2>>>
       source_cell_coords(ncells_source);
-  std::vector<std::vector<JaliGeometry::Point>>
+  std::vector<std::vector<Portage::Point<2>>>
       target_cell_coords(ncells_target);
 
+  // Actually get the Portage::Points
+  
   for (int c = 0; c < ncells_source; ++c)
     source_mesh->cell_get_coordinates(c, &(source_cell_coords[c]));
   for (int c = 0; c < ncells_target; ++c)
     target_mesh->cell_get_coordinates(c, &(target_cell_coords[c]));
 
+  // Interpolate from source to target mesh using the independent calculation
+  // in simple_intersect_for_tests.h
+
   std::vector<double> outvals1(ncells_target);
   std::vector<double> outvals2(ncells_target);
   std::vector<std::vector<Portage::Weights_t>>
       sources_and_weights(ncells_target);
-
-  Jali::Entity_ID_List const& targetcells =
-      target_mesh->cells<Jali::Entity_type::ALL>();
-
-  // Interpolate from source to target mesh
-  for (auto const& c : targetcells) {
+      
+  // Loop over target cells
+      
+  for (int c = 0; c < ncells_target; ++c) {
+  
     std::vector<int> xcells;
-    std::vector<std::vector<double>> xweights;
+    std::vector<std::vector<double>> xwts;
 
-    BOX_INTERSECT::intersection_moments(target_cell_coords[c],
+		// Compute the moments
+		// xcells is the source cell indices that intersect
+		// xwts is the moments vector for each cell that intersects
+		
+    BOX_INTERSECT::intersection_moments<2>(target_cell_coords[c],
                                         source_cell_coords,
-                                        &xcells, &xweights);
+                                        &xcells, &xwts);
 
-
+    // Pack the results into a vector of true Portage::Weights_t
+    
     std::vector<Portage::Weights_t> wtsvec(xcells.size());
     for (int i = 0; i < xcells.size(); ++i) {
       wtsvec[i].entityID = xcells[i];
-      wtsvec[i].weights = xweights[i];
+      wtsvec[i].weights = xwts[i];
     }
+    
+    // Put the weights in final form
+    
     sources_and_weights[c] = wtsvec;
   }
-
+  
+  // Now do it the Portage way
+  
   // Create Interpolation object
 
   Portage::Interpolate_3rdOrder<2, Portage::CELL,
-                                Wonton::Jali_Mesh_Wrapper,
-                                Wonton::Jali_Mesh_Wrapper,
-                                Wonton::Jali_State_Wrapper>
+                                Wonton::Simple_Mesh_Wrapper,
+                                Wonton::Simple_Mesh_Wrapper,
+                                Wonton::Simple_State_Wrapper>
       interpolater(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper);
-
-  // Compute the target mesh vals
 
   interpolater.set_interpolation_variable("cellvars", Portage::NOLIMITER);
 
-  Portage::transform(targetcells.begin(), targetcells.end(),
+      
+  Portage::transform(targetMeshWrapper.begin(Portage::Entity_kind::CELL), 
+                     targetMeshWrapper.end(Portage::Entity_kind::CELL),
                      sources_and_weights.begin(),
                      outvals1.begin(), interpolater);
+  
+  interpolater.set_interpolation_variable("cellvars", Portage::BARTH_JESPERSEN);
 
-
-  interpolater.set_interpolation_variable("cellvars",
-                                           Portage::BARTH_JESPERSEN);
-
-  // Compute the target mesh vals
-
-  Portage::transform(targetcells.begin(), targetcells.end(),
+      
+  Portage::transform(targetMeshWrapper.begin(Portage::Entity_kind::CELL), 
+                     targetMeshWrapper.end(Portage::Entity_kind::CELL),
                      sources_and_weights.begin(),
                      outvals2.begin(), interpolater);
-
+  
+ 
   // Check if we violated the bounds on at least one cell in the
   // unlimited interpolation and if we respected the bounds in all
-  // interior cells in the limited case
+  // cells in the limited case
 
   bool outofbounds_unlimited = false;
   for (int c = 0; c < ncells_target; ++c) {
@@ -619,8 +710,10 @@ TEST(Interpolate_3rd_Order, Cell_Ctr_Quad_BJ_Limiter_2D) {
     }
   }
   EXPECT_TRUE(outofbounds_unlimited && inbounds_limited);
+
 }
 
+/*
 /// Third order interpolation of constant node-centered field with no
 /// limiting in 2D
 
@@ -1062,243 +1155,282 @@ TEST(Interpolate_3rd_Order, Node_Ctr_Quad_No_Limiter) {
     EXPECT_NEAR(stdvals[n], outvals[n], TOL2);
   }
 }
-
+*/
 /// Third order interpolation of constant cell-centered field with no
 /// limiting in 3D
 
 TEST(Interpolate_3rd_Order, Cell_Ctr_Const_No_Limiter_3D) {
-  Jali::MeshFactory mf(MPI_COMM_WORLD);
 
-  if (Jali::framework_available(Jali::MSTK))
-    mf.framework(Jali::MSTK);
+  // Create simple meshes
+  
+  std::shared_ptr<Portage::Simple_Mesh> source_mesh =
+    std::make_shared<Portage::Simple_Mesh>(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 4, 4, 4);
+  std::shared_ptr<Portage::Simple_Mesh> target_mesh =
+    std::make_shared<Portage::Simple_Mesh>(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 5, 5, 5);
 
-  std::shared_ptr<Jali::Mesh> source_mesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0,
-                                               4, 4, 4);
-  std::shared_ptr<Jali::Mesh> target_mesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0,
-                                               5, 5, 5);
-  Jali::State source_state(source_mesh);
-  Jali::State target_state(target_mesh);
+  // Create mesh wrappers
+  
+  Wonton::Simple_Mesh_Wrapper sourceMeshWrapper(*source_mesh);
+  Wonton::Simple_Mesh_Wrapper targetMeshWrapper(*target_mesh);
 
-  // Define two state vectors, one with constant value and the other
-  // with a linear function that is x+y
-
+  // count cells
+  
   const int ncells_source =
-      source_mesh->num_entities(Jali::Entity_kind::CELL,
-                                Jali::Entity_type::PARALLEL_OWNED);
-  std::vector<double> data(ncells_source, 1.25);
-  Jali::StateVector<double> myvec("cellvars", source_mesh,
-                                  Jali::Entity_kind::CELL,
-                                  Jali::Entity_type::PARALLEL_OWNED,
-                                  &(data[0]));
-  source_state.add(myvec);
-
+      sourceMeshWrapper.num_owned_cells();
   const int ncells_target =
-      target_mesh->num_entities(Jali::Entity_kind::CELL,
-                                Jali::Entity_type::PARALLEL_OWNED);
+      targetMeshWrapper.num_owned_cells();
 
-  Wonton::Jali_Mesh_Wrapper sourceMeshWrapper(*source_mesh);
-  Wonton::Jali_Mesh_Wrapper targetMeshWrapper(*target_mesh);
-  Wonton::Jali_State_Wrapper sourceStateWrapper(source_state);
+  // Create a state object
 
-  // Gather the cell coordinates for source and target meshes for intersection
+  Portage::Simple_State source_state(source_mesh);
 
-  std::vector<std::vector<JaliGeometry::Point>>
+  // Define a state vector with constant value and add it to the source state
+
+  std::vector<double> data(ncells_source, 1.25);
+  source_state.add("cellvars", Portage::Entity_kind::CELL, &(data[0]));
+  
+  // Create state wrapper
+  
+  Wonton::Simple_State_Wrapper sourceStateWrapper(source_state);
+
+  // Gather the cell coordinates as Portage Points for source and target meshes 
+  // for intersection. The outer vector is the cells, the inner vector is the
+  // points of the vertices of that cell.
+
+  std::vector<std::vector<Portage::Point<3>>>
       source_cell_coords(ncells_source);
-  std::vector<std::vector<JaliGeometry::Point>>
+  std::vector<std::vector<Portage::Point<3>>>
       target_cell_coords(ncells_target);
 
+  // Actually get the Portage::Points
+  
   for (int c = 0; c < ncells_source; ++c)
     source_mesh->cell_get_coordinates(c, &(source_cell_coords[c]));
   for (int c = 0; c < ncells_target; ++c)
     target_mesh->cell_get_coordinates(c, &(target_cell_coords[c]));
 
-  // Interpolate from source to target mesh
+  // Interpolate from source to target mesh using the independent calculation
+  // in simple_intersect_for_tests.h
 
-  std::vector<double> outvals(ncells_target);  // field values on target mesh
+  std::vector<double> outvals(ncells_target);
   std::vector<std::vector<Portage::Weights_t>>
       sources_and_weights(ncells_target);
-
-  Jali::Entity_ID_List const& targetcells =
-      target_mesh->cells<Jali::Entity_type::ALL>();
-
-  for (auto const& c : targetcells) {
+      
+  // Loop over target cells
+      
+  for (int c = 0; c < ncells_target; ++c) {
+  
     std::vector<int> xcells;
-    std::vector<std::vector<double>> xweights;
+    std::vector<std::vector<double>> xwts;
 
-    BOX_INTERSECT::intersection_moments(target_cell_coords[c],
+		// Compute the moments
+		// xcells is the source cell indices that intersect
+		// xwts is the moments vector for each cell that intersects
+		
+    BOX_INTERSECT::intersection_moments<3>(target_cell_coords[c],
                                         source_cell_coords,
-                                        &xcells, &xweights);
+                                        &xcells, &xwts);
 
-
+    // Pack the results into a vector of true Portage::Weights_t
+    
     std::vector<Portage::Weights_t> wtsvec(xcells.size());
     for (int i = 0; i < xcells.size(); ++i) {
       wtsvec[i].entityID = xcells[i];
-      wtsvec[i].weights = xweights[i];
+      wtsvec[i].weights = xwts[i];
     }
+    
+    // Put the weights in final form
+    
     sources_and_weights[c] = wtsvec;
   }
-
+  
+  // Now do it the Portage way
+  
   // Create Interpolation object
 
   Portage::Interpolate_3rdOrder<3, Portage::CELL,
-                                Wonton::Jali_Mesh_Wrapper,
-                                Wonton::Jali_Mesh_Wrapper,
-                                Wonton::Jali_State_Wrapper>
+                                Wonton::Simple_Mesh_Wrapper,
+                                Wonton::Simple_Mesh_Wrapper,
+                                Wonton::Simple_State_Wrapper>
       interpolater(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper);
 
-  // Compute the target mesh vals
+  interpolater.set_interpolation_variable("cellvars");
 
-  interpolater.set_interpolation_variable("cellvars", Portage::NOLIMITER);
-
-  Portage::transform(targetcells.begin(), targetcells.end(),
+      
+  Portage::transform(targetMeshWrapper.begin(Portage::Entity_kind::CELL), 
+                     targetMeshWrapper.end(Portage::Entity_kind::CELL),
                      sources_and_weights.begin(),
                      outvals.begin(), interpolater);
 
   // Make sure we retrieved the correct value for each cell on the target
-
   const double stdval = data[0];
-  for (int c = 0; c < ncells_target; ++c)
-    ASSERT_NEAR(stdval, outvals[c], TOL);
-}
+  for (int c = 0; c < ncells_target; ++c) ASSERT_DOUBLE_EQ(stdval, outvals[c]);
 
+}
 
 /// Third order interpolation of linear cell-centered field with no
 /// limiting in 3D
 
 TEST(Interpolate_3rd_Order, Cell_Ctr_Lin_No_Limiter_3D) {
-  Jali::MeshFactory mf(MPI_COMM_WORLD);
+ // Create simple meshes
+  
+  std::shared_ptr<Portage::Simple_Mesh> source_mesh =
+    std::make_shared<Portage::Simple_Mesh>(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 4, 4, 4);
+  std::shared_ptr<Portage::Simple_Mesh> target_mesh =
+    std::make_shared<Portage::Simple_Mesh>(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 5, 5, 5);
 
-  if (Jali::framework_available(Jali::MSTK))
-    mf.framework(Jali::MSTK);
+  // Create mesh wrappers
+  
+  Wonton::Simple_Mesh_Wrapper sourceMeshWrapper(*source_mesh);
+  Wonton::Simple_Mesh_Wrapper targetMeshWrapper(*target_mesh);
 
-  std::shared_ptr<Jali::Mesh> source_mesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0,
-                                               4, 4, 4);
-  std::shared_ptr<Jali::Mesh> target_mesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0,
-                                               5, 5, 5);
-  Jali::State source_state(source_mesh);
-  Jali::State target_state(target_mesh);
-
-  // Define a state vectors, with a linear function that is x+y
-
+  // count cells
+  
   const int ncells_source =
-      source_mesh->num_entities(Jali::Entity_kind::CELL,
-                                Jali::Entity_type::PARALLEL_OWNED);
+      sourceMeshWrapper.num_owned_cells();
+  const int ncells_target =
+      targetMeshWrapper.num_owned_cells();
+
+  // Create a state object
+
+  Portage::Simple_State source_state(source_mesh);
+
+// Define a state vector with linear value and add it to the source state
+
   std::vector<double> data(ncells_source);
   for (int c = 0; c < ncells_source; ++c) {
-    JaliGeometry::Point ccen = source_mesh->cell_centroid(c);
-    data[c] = ccen[0]+ccen[1]+ccen[2];
+    Portage::Point<3> cen;
+    sourceMeshWrapper.cell_centroid(c, &cen);
+    data[c] = cen[0]+cen[1]+cen[2];
   }
+  source_state.add("cellvars", Portage::Entity_kind::CELL, &(data[0]));  
 
-  Jali::StateVector<double> myvec("cellvars", source_mesh,
-                                  Jali::Entity_kind::CELL,
-                                  Jali::Entity_type::PARALLEL_OWNED,
-                                  &(data[0]));
-  source_state.add(myvec);
+  // Create state wrapper
+  
+  Wonton::Simple_State_Wrapper sourceStateWrapper(source_state);
 
-  Wonton::Jali_Mesh_Wrapper sourceMeshWrapper(*source_mesh);
-  Wonton::Jali_Mesh_Wrapper targetMeshWrapper(*target_mesh);
-  Wonton::Jali_State_Wrapper sourceStateWrapper(source_state);
+  // Gather the cell coordinates as Portage Points for source and target meshes 
+  // for intersection. The outer vector is the cells, the inner vector is the
+  // points of the vertices of that cell.
 
-  // Gather the cell coordinates for source and target meshes for intersection
-
-  const int ncells_target =
-      target_mesh->num_entities(Jali::Entity_kind::CELL,
-                                Jali::Entity_type::PARALLEL_OWNED);
-  std::vector<std::vector<JaliGeometry::Point>>
+  std::vector<std::vector<Portage::Point<3>>>
       source_cell_coords(ncells_source);
-  std::vector<std::vector<JaliGeometry::Point>>
+  std::vector<std::vector<Portage::Point<3>>>
       target_cell_coords(ncells_target);
 
+  // Actually get the Portage::Points
+  
   for (int c = 0; c < ncells_source; ++c)
     source_mesh->cell_get_coordinates(c, &(source_cell_coords[c]));
   for (int c = 0; c < ncells_target; ++c)
     target_mesh->cell_get_coordinates(c, &(target_cell_coords[c]));
 
-  // Interpolate from source to target mesh
+  // Interpolate from source to target mesh using the independent calculation
+  // in simple_intersect_for_tests.h
 
   std::vector<double> outvals(ncells_target);
   std::vector<std::vector<Portage::Weights_t>>
       sources_and_weights(ncells_target);
-
-  Jali::Entity_ID_List const& targetcells =
-      target_mesh->cells<Jali::Entity_type::ALL>();
-
-  for (auto const& c : targetcells) {
+      
+  // Loop over target cells
+      
+  for (int c = 0; c < ncells_target; ++c) {
+  
     std::vector<int> xcells;
-    std::vector<std::vector<double>> xweights;
+    std::vector<std::vector<double>> xwts;
 
-    BOX_INTERSECT::intersection_moments(target_cell_coords[c],
+		// Compute the moments
+		// xcells is the source cell indices that intersect
+		// xwts is the moments vector for each cell that intersects
+		
+    BOX_INTERSECT::intersection_moments<3>(target_cell_coords[c],
                                         source_cell_coords,
-                                        &xcells, &xweights);
+                                        &xcells, &xwts);
 
-
+    // Pack the results into a vector of true Portage::Weights_t
+    
     std::vector<Portage::Weights_t> wtsvec(xcells.size());
     for (int i = 0; i < xcells.size(); ++i) {
       wtsvec[i].entityID = xcells[i];
-      wtsvec[i].weights = xweights[i];
+      wtsvec[i].weights = xwts[i];
     }
+    
+    // Put the weights in final form
+    
     sources_and_weights[c] = wtsvec;
   }
-
+  
+  // Now do it the Portage way
+  
   // Create Interpolation object
 
   Portage::Interpolate_3rdOrder<3, Portage::CELL,
-                                Wonton::Jali_Mesh_Wrapper,
-                                Wonton::Jali_Mesh_Wrapper,
-                                Wonton::Jali_State_Wrapper>
+                                Wonton::Simple_Mesh_Wrapper,
+                                Wonton::Simple_Mesh_Wrapper,
+                                Wonton::Simple_State_Wrapper>
       interpolater(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper);
 
-  // Portage::Interpolate_2ndOrder<3, Portage::CELL,
-  //                               Wonton::Jali_Mesh_Wrapper,
-  //                               Wonton::Jali_Mesh_Wrapper,
-  //                               Wonton::Jali_State_Wrapper>
-  //     interpolater(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper);
+  interpolater.set_interpolation_variable("cellvars");
 
-  // Compute the target mesh vals
-
-  interpolater.set_interpolation_variable("cellvars", Portage::NOLIMITER);
-
-  Portage::transform(targetcells.begin(), targetcells.end(),
+      
+  Portage::transform(targetMeshWrapper.begin(Portage::Entity_kind::CELL), 
+                     targetMeshWrapper.end(Portage::Entity_kind::CELL),
                      sources_and_weights.begin(),
                      outvals.begin(), interpolater);
-
+  
   // Make sure we retrieved the correct value for each cell on the target
-
+  
   std::vector<double> stdvals(ncells_target);
   for (int c = 0; c < ncells_target; ++c) {
-    JaliGeometry::Point ccen = target_mesh->cell_centroid(c);
-    stdvals[c] = ccen[0]+ccen[1]+ccen[2];
+    Portage::Point<3> cen;
+    targetMeshWrapper.cell_centroid(c, &cen);
+    stdvals[c] = cen[0]+cen[1]+cen[2];
   }
+
+  double TOL = 1e-12;
   for (int c = 0; c < ncells_target; ++c)
     ASSERT_NEAR(stdvals[c], outvals[c], TOL);
+
 }
 
 
-/// Third order interpolation of discontinuous cell-centered field with
+/// Third order interpolation of discontinuous cell-centered linear field with
 /// Barth-Jespersen limiting in 3D
 
 TEST(Interpolate_3rd_Order, Cell_Ctr_BJ_Limiter_3D) {
-  Jali::MeshFactory mf(MPI_COMM_WORLD);
 
-  if (Jali::framework_available(Jali::MSTK))
-    mf.framework(Jali::MSTK);
+  // Create simple meshes
+  
+  std::shared_ptr<Portage::Simple_Mesh> source_mesh =
+    std::make_shared<Portage::Simple_Mesh>(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 4, 4, 4);
+  std::shared_ptr<Portage::Simple_Mesh> target_mesh =
+    std::make_shared<Portage::Simple_Mesh>(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 5, 5, 5);
 
-  std::shared_ptr<Jali::Mesh> source_mesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0,
-                                               4, 4, 4);
-  std::shared_ptr<Jali::Mesh> target_mesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0,
-                                               5, 5, 5);
-  Jali::State source_state(source_mesh);
-  Jali::State target_state(target_mesh);
 
-  // Define a state vectors, with a linear function that is x+y
+  // Create mesh wrappers
+  
+  Wonton::Simple_Mesh_Wrapper sourceMeshWrapper(*source_mesh);
+  Wonton::Simple_Mesh_Wrapper targetMeshWrapper(*target_mesh);
 
+  // count cells
+  
   const int ncells_source =
-      source_mesh->num_entities(Jali::Entity_kind::CELL,
-                                Jali::Entity_type::PARALLEL_OWNED);
-  std::vector<double> data(ncells_source);
+      sourceMeshWrapper.num_owned_cells();
+  const int ncells_target =
+      targetMeshWrapper.num_owned_cells();
+
+  // Create a state object
+
+  Portage::Simple_State source_state(source_mesh);
+
+  // Define a state vector with linear value and add it to the source state
+
   double minval = 1e+10, maxval = -1e+10;
+  
+  std::vector<double> data(ncells_source);
   for (int c = 0; c < ncells_source; ++c) {
-    JaliGeometry::Point ccen = source_mesh->cell_centroid(c);
+    Portage::Point<3> ccen;
+    sourceMeshWrapper.cell_centroid(c, &ccen);
     if (ccen[0] < 0.5)
       data[c] = ccen[0]+ccen[1]+ccen[2];
     else
@@ -1306,88 +1438,93 @@ TEST(Interpolate_3rd_Order, Cell_Ctr_BJ_Limiter_3D) {
     if (data[c] < minval) minval = data[c];
     if (data[c] > maxval) maxval = data[c];
   }
+  source_state.add("cellvars", Portage::Entity_kind::CELL, &(data[0]));  
 
-  Jali::StateVector<double> myvec("cellvars", source_mesh,
-                                  Jali::Entity_kind::CELL,
-                                  Jali::Entity_type::PARALLEL_OWNED,
-                                  &(data[0]));
-  source_state.add(myvec);
+  // Create state wrapper
+  
+  Wonton::Simple_State_Wrapper sourceStateWrapper(source_state);
 
-  Wonton::Jali_Mesh_Wrapper sourceMeshWrapper(*source_mesh);
-  Wonton::Jali_Mesh_Wrapper targetMeshWrapper(*target_mesh);
-  Wonton::Jali_State_Wrapper sourceStateWrapper(source_state);
+  // Gather the cell coordinates as Portage Points for source and target meshes 
+  // for intersection. The outer vector is the cells, the inner vector is the
+  // points of the vertices of that cell.
 
-  // Gather the cell coordinates for the source and target meshes for
-  // intersection
-
-  const int ncells_target =
-      target_mesh->num_entities(Jali::Entity_kind::CELL,
-                                Jali::Entity_type::PARALLEL_OWNED);
-  std::vector<std::vector<JaliGeometry::Point>>
+  std::vector<std::vector<Portage::Point<3>>>
       source_cell_coords(ncells_source);
-  std::vector<std::vector<JaliGeometry::Point>>
+  std::vector<std::vector<Portage::Point<3>>>
       target_cell_coords(ncells_target);
 
+  // Actually get the Portage::Points
+  
   for (int c = 0; c < ncells_source; ++c)
     source_mesh->cell_get_coordinates(c, &(source_cell_coords[c]));
   for (int c = 0; c < ncells_target; ++c)
     target_mesh->cell_get_coordinates(c, &(target_cell_coords[c]));
 
+  // Interpolate from source to target mesh using the independent calculation
+  // in simple_intersect_for_tests.h
+
   std::vector<double> outvals1(ncells_target);
   std::vector<double> outvals2(ncells_target);
   std::vector<std::vector<Portage::Weights_t>>
       sources_and_weights(ncells_target);
-
-  Jali::Entity_ID_List const& targetcells =
-      target_mesh->cells<Jali::Entity_type::ALL>();
-
-  // Interpolate from source to target mesh
-  for (auto const& c : targetcells) {
+      
+  // Loop over target cells
+      
+  for (int c = 0; c < ncells_target; ++c) {
+  
     std::vector<int> xcells;
-    std::vector<std::vector<double>> xweights;
+    std::vector<std::vector<double>> xwts;
 
-    BOX_INTERSECT::intersection_moments(target_cell_coords[c],
+		// Compute the moments
+		// xcells is the source cell indices that intersect
+		// xwts is the moments vector for each cell that intersects
+		
+    BOX_INTERSECT::intersection_moments<3>(target_cell_coords[c],
                                         source_cell_coords,
-                                        &xcells, &xweights);
+                                        &xcells, &xwts);
 
-
+    // Pack the results into a vector of true Portage::Weights_t
+    
     std::vector<Portage::Weights_t> wtsvec(xcells.size());
     for (int i = 0; i < xcells.size(); ++i) {
       wtsvec[i].entityID = xcells[i];
-      wtsvec[i].weights = xweights[i];
+      wtsvec[i].weights = xwts[i];
     }
+    
+    // Put the weights in final form
+    
     sources_and_weights[c] = wtsvec;
   }
-
-  // Create Interpolation object - run it once with no limiter and
-  // once with limiter
+  
+  // Now do it the Portage way
+  
+  // Create Interpolation object
 
   Portage::Interpolate_3rdOrder<3, Portage::CELL,
-                                Wonton::Jali_Mesh_Wrapper,
-                                Wonton::Jali_Mesh_Wrapper,
-                                Wonton::Jali_State_Wrapper>
+                                Wonton::Simple_Mesh_Wrapper,
+                                Wonton::Simple_Mesh_Wrapper,
+                                Wonton::Simple_State_Wrapper>
       interpolater(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper);
-
-  // Compute the target mesh vals
 
   interpolater.set_interpolation_variable("cellvars", Portage::NOLIMITER);
 
-  Portage::transform(targetcells.begin(), targetcells.end(),
+      
+  Portage::transform(targetMeshWrapper.begin(Portage::Entity_kind::CELL), 
+                     targetMeshWrapper.end(Portage::Entity_kind::CELL),
                      sources_and_weights.begin(),
                      outvals1.begin(), interpolater);
+  
+  interpolater.set_interpolation_variable("cellvars", Portage::BARTH_JESPERSEN);
 
-  interpolater.set_interpolation_variable("cellvars",
-                                           Portage::BARTH_JESPERSEN);
-
-  // Compute the target mesh vals
-
-  Portage::transform(targetcells.begin(), targetcells.end(),
+      
+  Portage::transform(targetMeshWrapper.begin(Portage::Entity_kind::CELL), 
+                     targetMeshWrapper.end(Portage::Entity_kind::CELL),
                      sources_and_weights.begin(),
                      outvals2.begin(), interpolater);
-
+  
   // Check if we violated the bounds on at least one cell in the
-  // unlimited interpolate and if we respected the bounds in all cells in
-  // the limited case
+  // unlimited interpolation and if we respected the bounds in all
+  // cells in the limited case
 
   bool outofbounds_unlimited = false;
   for (int c = 0; c < ncells_target; ++c) {
@@ -1408,120 +1545,136 @@ TEST(Interpolate_3rd_Order, Cell_Ctr_BJ_Limiter_3D) {
       }
     }
   }
-  EXPECT_TRUE(outofbounds_unlimited && inbounds_limited);
+  EXPECT_TRUE(outofbounds_unlimited);
+  EXPECT_TRUE(inbounds_limited);
+
 }
 
 /// Third order interpolation of quadratic cell-centered 
 /// field with no limiting in 3D
 
 TEST(Interpolate_3rd_Order, Cell_Ctr_Quad_No_Limiter_3D) {
-  Jali::MeshFactory mf(MPI_COMM_WORLD);
+ // Create simple meshes
+  
+  std::shared_ptr<Portage::Simple_Mesh> source_mesh =
+    std::make_shared<Portage::Simple_Mesh>(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 4, 4, 4);
+  std::shared_ptr<Portage::Simple_Mesh> target_mesh =
+    std::make_shared<Portage::Simple_Mesh>(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 5, 5, 5);
 
-  if (Jali::framework_available(Jali::MSTK))
-    mf.framework(Jali::MSTK);
+  // Create mesh wrappers
+  
+  Wonton::Simple_Mesh_Wrapper sourceMeshWrapper(*source_mesh);
+  Wonton::Simple_Mesh_Wrapper targetMeshWrapper(*target_mesh);
 
-  std::shared_ptr<Jali::Mesh> source_mesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0,
-                                               4, 4, 4);
-  std::shared_ptr<Jali::Mesh> target_mesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0,
-                                               5, 5, 5);
-  Jali::State source_state(source_mesh);
-  Jali::State target_state(target_mesh);
-
-  // Define a state vectors, with a quadratic function that is x*x+y*y
-
+  // count cells
+  
   const int ncells_source =
-      source_mesh->num_entities(Jali::Entity_kind::CELL,
-                                Jali::Entity_type::PARALLEL_OWNED);
+      sourceMeshWrapper.num_owned_cells();
+  const int ncells_target =
+      targetMeshWrapper.num_owned_cells();
+
+  // Create a state object
+
+  Portage::Simple_State source_state(source_mesh);
+
+// Define a state vector with linear value and add it to the source state
+
   std::vector<double> data(ncells_source);
   for (int c = 0; c < ncells_source; ++c) {
-    JaliGeometry::Point ccen = source_mesh->cell_centroid(c);
-    data[c] = ccen[0]*ccen[0]+ccen[1]*ccen[1]+ccen[2]*ccen[2];
+    Portage::Point<3> cen;
+    sourceMeshWrapper.cell_centroid(c, &cen);
+    data[c] = cen[0]*cen[0]+cen[1]*cen[1]+cen[2]*cen[2];
   }
+  source_state.add("cellvars", Portage::Entity_kind::CELL, &(data[0]));  
 
-  Jali::StateVector<double> myvec("cellvars", source_mesh,
-                                  Jali::Entity_kind::CELL,
-                                  Jali::Entity_type::PARALLEL_OWNED,
-                                  &(data[0]));
-  source_state.add(myvec);
+  // Create state wrapper
+  
+  Wonton::Simple_State_Wrapper sourceStateWrapper(source_state);
 
-  Wonton::Jali_Mesh_Wrapper sourceMeshWrapper(*source_mesh);
-  Wonton::Jali_Mesh_Wrapper targetMeshWrapper(*target_mesh);
-  Wonton::Jali_State_Wrapper sourceStateWrapper(source_state);
+  // Gather the cell coordinates as Portage Points for source and target meshes 
+  // for intersection. The outer vector is the cells, the inner vector is the
+  // points of the vertices of that cell.
 
-  // Gather the cell coordinates for source and target meshes for intersection
-
-  const int ncells_target =
-      target_mesh->num_entities(Jali::Entity_kind::CELL,
-                                Jali::Entity_type::PARALLEL_OWNED);
-  std::vector<std::vector<JaliGeometry::Point>>
+  std::vector<std::vector<Portage::Point<3>>>
       source_cell_coords(ncells_source);
-  std::vector<std::vector<JaliGeometry::Point>>
+  std::vector<std::vector<Portage::Point<3>>>
       target_cell_coords(ncells_target);
 
+  // Actually get the Portage::Points
+  
   for (int c = 0; c < ncells_source; ++c)
     source_mesh->cell_get_coordinates(c, &(source_cell_coords[c]));
   for (int c = 0; c < ncells_target; ++c)
     target_mesh->cell_get_coordinates(c, &(target_cell_coords[c]));
 
-  // Interpolate from source to target mesh
+  // Interpolate from source to target mesh using the independent calculation
+  // in simple_intersect_for_tests.h
 
   std::vector<double> outvals(ncells_target);
   std::vector<std::vector<Portage::Weights_t>>
       sources_and_weights(ncells_target);
-
-  Jali::Entity_ID_List const& targetcells =
-      target_mesh->cells<Jali::Entity_type::ALL>();
-
-  for (auto const& c : targetcells) {
+      
+  // Loop over target cells
+      
+  for (int c = 0; c < ncells_target; ++c) {
+  
     std::vector<int> xcells;
-    std::vector<std::vector<double>> xweights;
+    std::vector<std::vector<double>> xwts;
 
-    BOX_INTERSECT::intersection_moments(target_cell_coords[c],
+		// Compute the moments
+		// xcells is the source cell indices that intersect
+		// xwts is the moments vector for each cell that intersects
+		
+    BOX_INTERSECT::intersection_moments<3>(target_cell_coords[c],
                                         source_cell_coords,
-                                        &xcells, &xweights);
+                                        &xcells, &xwts);
 
-
+    // Pack the results into a vector of true Portage::Weights_t
+    
     std::vector<Portage::Weights_t> wtsvec(xcells.size());
     for (int i = 0; i < xcells.size(); ++i) {
       wtsvec[i].entityID = xcells[i];
-      wtsvec[i].weights = xweights[i];
+      wtsvec[i].weights = xwts[i];
     }
+    
+    // Put the weights in final form
+    
     sources_and_weights[c] = wtsvec;
   }
-
+  
+  // Now do it the Portage way
+  
   // Create Interpolation object
 
   Portage::Interpolate_3rdOrder<3, Portage::CELL,
-                                Wonton::Jali_Mesh_Wrapper,
-                                Wonton::Jali_Mesh_Wrapper,
-                                Wonton::Jali_State_Wrapper>
+                                Wonton::Simple_Mesh_Wrapper,
+                                Wonton::Simple_Mesh_Wrapper,
+                                Wonton::Simple_State_Wrapper>
       interpolater(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper);
 
-  // Portage::Interpolate_2ndOrder<3, Portage::CELL,
-  //                               Wonton::Jali_Mesh_Wrapper,
-  //                               Wonton::Jali_Mesh_Wrapper,
-  //                               Wonton::Jali_State_Wrapper>
-  //     interpolater(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper);
+  interpolater.set_interpolation_variable("cellvars");
 
-  // Compute the target mesh vals
-
-  interpolater.set_interpolation_variable("cellvars", Portage::NOLIMITER);
-
-  Portage::transform(targetcells.begin(), targetcells.end(),
+      
+  Portage::transform(targetMeshWrapper.begin(Portage::Entity_kind::CELL), 
+                     targetMeshWrapper.end(Portage::Entity_kind::CELL),
                      sources_and_weights.begin(),
                      outvals.begin(), interpolater);
-
+  
   // Make sure we retrieved the correct value for each cell on the target
-
+  
   std::vector<double> stdvals(ncells_target);
   for (int c = 0; c < ncells_target; ++c) {
-    JaliGeometry::Point ccen = target_mesh->cell_centroid(c);
-    stdvals[c] = ccen[0]*ccen[0]+ccen[1]*ccen[1]+ccen[2]*ccen[2];
+    Portage::Point<3> cen;
+    targetMeshWrapper.cell_centroid(c, &cen);
+    stdvals[c] = cen[0]*cen[0]+cen[1]*cen[1]+cen[2]*cen[2];
   }
+
   for (int c = 0; c < ncells_target; ++c)
     ASSERT_NEAR(stdvals[c], outvals[c], TOL2);
+
 }
 
+/*
 /// Third order interpolation of constant node-centered field with no
 /// limiting in 3D
 
@@ -2163,4 +2316,6 @@ TEST(Interpolate_3rd_Order, Node_Ctr_BJ_Limiter_3D) {
     }
   }
   EXPECT_TRUE(outofbounds_unlimited || inbounds_limited);
-}
+
+}  
+*/
