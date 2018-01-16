@@ -227,6 +227,35 @@ vector<vector<double>> jet(Type type, Point<dim> x){
 }
 
 template<size_t dim>
+vector<vector<double>> inverse_jet(Type type, Point<dim> x){
+  auto njet = jet_size<dim>(type);
+  vector<vector<double>> result(njet[0],vector<double>(njet[1],0.));
+  switch (type) {
+    case Unitary: {
+      auto resulta = inverse_jet<Unitary, dim>(x);
+      for (size_t i=0; i<njet[0]; i++) for (size_t j=0; j<njet[1]; j++)
+        result[i][j] = resulta[i][j];
+      break;
+    }
+    case Linear: {
+      auto resulta = inverse_jet<Linear, dim>(x);
+      for (size_t i=0; i<njet[0]; i++) for (size_t j=0; j<njet[1]; j++)
+        result[i][j] = resulta[i][j];
+      break;
+    }
+    case Quadratic: {
+      auto resulta = inverse_jet<Quadratic, dim>(x);
+      for (size_t i=0; i<njet[0]; i++) for (size_t j=0; j<njet[1]; j++)
+        result[i][j] = resulta[i][j];
+      break;
+    }
+    default:
+      assert(false);
+  }
+  return result;
+}
+
+template<size_t dim>
   vector<vector<double>> transfactor(const Type type, const Point<dim> &c) {
   size_t nbasis = function_size<dim>(type);
   vector<vector<double>> result(nbasis, vector<double>(nbasis,0.));
