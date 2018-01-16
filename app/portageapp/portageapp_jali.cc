@@ -246,6 +246,11 @@ int main(int argc, char** argv) {
     std::cout << "Will do single remap and exit\n";
     n_converge = 1;
   }
+  if (nsourcecells > 0 && field_expression.length() == 0) {
+    std::cout << "No field imposed on internally generated source mesh\n";
+    std::cout << "Nothing to remap. Exiting...";
+    MPI_Abort(MPI_COMM_WORLD, -1);
+  }
 
 
   gettimeofday(&begin, 0);
@@ -409,7 +414,10 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
   Jali::State targetState(targetMesh);
 
   std::vector<double> sourceData;
-  user_field_t source_field(dim, field_expression);
+  user_field_t source_field;
+  if (!source_field.initialize(dim, field_expression))
+    MPI_Abort(MPI_COMM_WORLD, -1);
+
   std::vector<std::string> remap_fields;
 
   // Cell-centered remaps
