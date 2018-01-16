@@ -25,11 +25,7 @@ typedef struct user_field {
 
   user_field() : dim_(0) {}
 
-  user_field(int dim, std::string const& expression_str) : dim_(dim) {
-    initialize(dim, expression_str);
-  }
-
-  void initialize(int dim, std::string const& expression_str) {
+  int initialize(int dim, std::string const& expression_str) {
     dim_ = dim;
     assert(dim_ >= 1 && dim_ <= 3);
     if (dim_ > 0) symbol_table.add_variable("x", x);
@@ -47,8 +43,10 @@ typedef struct user_field {
                 << "do not match the specified dimension of the problem" 
                 << std::endl;
       std::cerr << "Also check the page http://www.partow.net/programming/exprtk/ for syntax description" << std::endl;
-      exit(-1);  // Exit the program gracefully
+      return 0;
     }
+    
+    return 1;
   }
 
   template<class P> double operator()(const P &c) {
