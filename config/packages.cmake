@@ -118,10 +118,21 @@ endif (Jali_DIR)
 # Configure LAPACKE
 #------------------------------------------------------------------------------#
 
-find_package(LAPACKE REQUIRED)
+if (LAPACKE_DIR)
+  # Directly look for cmake config file in LAPACKE_DIR
+  find_package(LAPACKE NO_MODULE HINTS ${LAPACKE_DIR})
+else (LAPACKE_DIR)
+  # Use FindLAPACKE.cmake provided by cinch or cmake to find it
+  # FindLAPACKE.cmake provided by cinch requires PC_LAPACKE_NCLUDE_DIRS and
+  # PC_LAPACKE_LIBRARY to be able to find LAPACKE
+  find_package(LAPACKE)
+endif (LAPACKE_DIR)
+
 if (LAPACKE_FOUND) 
    include_directories(${LAPACKE_INCLUDE_DIRS})
    add_definitions("-DHAVE_LAPACKE")
+else (LAPACKE_FOUND)
+   unset(LAPACKE_LIBRARIES)  # otherwise it will be LAPACKE-NOTFOUND or something
 endif (LAPACKE_FOUND)
 
 #------------------------------------------------------------------------------#

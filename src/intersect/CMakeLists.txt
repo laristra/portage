@@ -46,7 +46,7 @@ if(ENABLE_UNIT_TESTS)
     
   cinch_add_unit(intersect_r3d
     SOURCES intersect_r3d_test.cc r3d.c
-    LIBRARIES portage 
+    LIBRARIES portage  ${LAPACKE_LIBRARIES}
     POLICY SERIAL
     )
 endif(ENABLE_UNIT_TESTS)

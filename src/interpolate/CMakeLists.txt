@@ -22,7 +22,6 @@ set(interpolate_HEADERS
 
 if (ENABLE_UNIT_TESTS)
 
-  if (Jali_DIR)
     cinch_add_unit(test_gradient
       SOURCES  test/test_gradient.cc
       LIBRARIES portage 
@@ -48,7 +47,6 @@ if (ENABLE_UNIT_TESTS)
       LIBRARIES portage 
       POLICY SERIAL)
 
-  endif (Jali_DIR)
 
 endif(ENABLE_UNIT_TESTS)
 

@@ -13,7 +13,7 @@ if (Jali_DIR)
 # timing example
 
   add_executable(timingapp timingapp.cc)
-  target_link_libraries(timingapp portage ${EXTRA_LIBS})
+  target_link_libraries(timingapp portage  ${LAPACKE_LIBRARIES} ${EXTRA_LIBS})
   if (ENABLE_MPI)
     target_link_libraries(timingapp ${MPI_CXX_LIBRARIES})
     set_target_properties(timingapp PROPERTIES
