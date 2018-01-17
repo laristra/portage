@@ -388,9 +388,9 @@ TEST(Interpolate_3rd_Order, Cell_Ctr_Lin_BJ_Limiter_2D) {
                      targetMeshWrapper.end(Portage::Entity_kind::CELL),
                      sources_and_weights.begin(),
                      outvals2.begin(), interpolater);
-  
-  // Make sure we retrieved the correct value for each cell on the target
 
+  // COULD REMOVE
+  // Make sure we retrieved the correct value for each cell on the target
   std::vector<double> stdvals(ncells_target);
   for (int c = 0; c < ncells_target; ++c) {
     Portage::Point<2> cen;

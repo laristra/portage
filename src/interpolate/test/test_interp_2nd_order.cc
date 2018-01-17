@@ -386,8 +386,8 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Lin_BJ_Limiter_2D) {
                      sources_and_weights.begin(),
                      outvals2.begin(), interpolater);
   
+  // COULD REMOVE
   // Make sure we retrieved the correct value for each cell on the target
-
   std::vector<double> stdvals(ncells_target);
   for (int c = 0; c < ncells_target; ++c) {
     Portage::Point<2> cen;
