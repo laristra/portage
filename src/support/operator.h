@@ -642,7 +642,7 @@ result[9][0]=
 
       template<class OP>
 	inline void get_result(const vector<Point<OP::dim>> &points, 
-			       vector<vector<double>> &result, bool center=true) 
+			       vector<vector<double>> &result, const bool center=true) 
 	{
 	  resize_result<OP>(result);
 	  typename OP::points_t apts; copy_points<OP>(points, apts);
@@ -671,9 +671,16 @@ result[9][0]=
       ////////////////////////////////////////////////////////////////////////////////
 
       template<size_t dim>
-      void apply(Type type, Basis::Type basis_type, Domain domain_type, 
-		 vector<Point<dim>> &points, vector<vector<double>> &result) 
+      void apply(const Type type, const Basis::Type basis_type, 
+		 const Domain domain_type, const vector<Point<dim>> &points, 
+		 vector<vector<double>> &result);
+
+      template<>
+      void apply<1>(const Type type, const Basis::Type basis_type, 
+		    const Domain domain_type, const vector<Point<1>> &points, 
+		    vector<vector<double>> &result)
       {
+	bool center = true;
 	switch(type) {
 	case VolumeIntegral:
 	  switch(domain_type) {
@@ -681,33 +688,51 @@ result[9][0]=
 	    switch(basis_type) {
 	    case Basis::Unitary:
 	      {using OP=Operator<VolumeIntegral, Basis::Unitary, Interval>;
-		get_result<OP>(points, result);}
+		get_result<OP>(points, result, center);}
 	      break;
 	    case Basis::Linear:
 	      {using OP=Operator<VolumeIntegral, Basis::Linear, Interval>;
-		get_result<OP>(points, result);}
+		get_result<OP>(points, result, center);}
 	      break;
 	    case Basis::Quadratic:
 	      {using OP=Operator<VolumeIntegral, Basis::Quadratic, Interval>;
-		get_result<OP>(points, result);}
+		get_result<OP>(points, result, center);}
 	      break;
 	    default:
 	      throw(std::runtime_error("invalid basis"));
 	    }
 	    break;
+	  default:
+	    throw(std::runtime_error("invalid domain"));
+	  }
+	  break;
+	default:
+	  throw(std::runtime_error("invalid operator"));
+	}
+      }
+
+      template<>
+      void apply<2>(const Type type, const Basis::Type basis_type, 
+		    const Domain domain_type, const vector<Point<2>> &points, 
+		    vector<vector<double>> &result)
+      {
+	bool center = true;
+	switch(type) {
+	case VolumeIntegral:
+	  switch(domain_type) {
 	  case Quadrilateral:
 	    switch(basis_type) {
 	    case Basis::Unitary:
 	      {using OP=Operator<VolumeIntegral, Basis::Unitary, Quadrilateral>;
-		get_result<OP>(points, result);}
+		get_result<OP>(points, result, center);}
 	      break;
 	    case Basis::Linear:
 	      {using OP=Operator<VolumeIntegral, Basis::Linear, Quadrilateral>;
-		get_result<OP>(points, result);}
+		get_result<OP>(points, result, center);}
 	      break;
 	    case Basis::Quadratic:
 	      {using OP=Operator<VolumeIntegral, Basis::Quadratic, Quadrilateral>;
-		get_result<OP>(points, result);}
+		get_result<OP>(points, result, center);}
 	      break;
 	    default:
 	      throw(std::runtime_error("invalid basis"));
@@ -717,29 +742,47 @@ result[9][0]=
 	    switch(basis_type) {
 	    case Basis::Unitary:
 	      {using OP=Operator<VolumeIntegral, Basis::Unitary, Triangle>;
-		get_result<OP>(points, result);}
+		get_result<OP>(points, result, center);}
 	      break;
 	    case Basis::Linear:
 	      {using OP=Operator<VolumeIntegral, Basis::Linear, Triangle>;
-		get_result<OP>(points, result);}
+		get_result<OP>(points, result, center);}
 	      break;
 	    case Basis::Quadratic:
 	      {using OP=Operator<VolumeIntegral, Basis::Quadratic, Triangle>;
-		get_result<OP>(points, result);}
+		get_result<OP>(points, result, center);}
 	      break;
 	    default:
 	      throw(std::runtime_error("invalid basis"));
 	    }
 	    break;
+	  default:
+	    throw(std::runtime_error("invalid domain"));
+	  }
+	  break;
+	default:
+	  throw(std::runtime_error("invalid operator"));
+	}
+      }
+
+      template<>
+      void apply<3>(const Type type, const Basis::Type basis_type, 
+		    const Domain domain_type, const vector<Point<3>> &points, 
+		    vector<vector<double>> &result)
+      {
+	bool center = true;
+	switch(type) {
+	case VolumeIntegral:
+	  switch(domain_type) {
 	  case Hexahedron:
 	    switch (basis_type) {
 	    case Basis::Unitary:
 	      {using OP=Operator<VolumeIntegral, Basis::Unitary, Hexahedron>;
-		get_result<OP>(points, result);}
+		get_result<OP>(points, result, center);}
 	      break;
 	    case Basis::Linear:
 	      {using OP=Operator<VolumeIntegral, Basis::Linear, Hexahedron>;
-		get_result<OP>(points, result);}
+		get_result<OP>(points, result, center);}
 	      break;
 	    default:
 	      throw(std::runtime_error("invalid basis"));
@@ -749,11 +792,11 @@ result[9][0]=
 	    switch (basis_type) {
 	    case Basis::Unitary:
 	      {using OP=Operator<VolumeIntegral, Basis::Unitary, Wedge>;
-		get_result<OP>(points, result);}
+		get_result<OP>(points, result, center);}
 	      break;
 	    case Basis::Linear:
 	      {using OP=Operator<VolumeIntegral, Basis::Linear, Wedge>;
-		get_result<OP>(points, result);}
+		get_result<OP>(points, result, center);}
 	      break;
 	    default:
 	      throw(std::runtime_error("invalid basis"));
@@ -763,11 +806,15 @@ result[9][0]=
 	    switch (basis_type) {
 	    case Basis::Unitary:
 	      {using OP=Operator<VolumeIntegral, Basis::Unitary, Tetrahedron>;
-		get_result<OP>(points, result);}
+		get_result<OP>(points, result, center);}
 	      break;
 	    case Basis::Linear:
 	      {using OP=Operator<VolumeIntegral, Basis::Linear, Tetrahedron>;
-		get_result<OP>(points, result);}
+		get_result<OP>(points, result, center);}
+	      break;
+	    case Basis::Quadratic:
+	      {using OP=Operator<VolumeIntegral, Basis::Quadratic, Tetrahedron>;
+		get_result<OP>(points, result, center);}
 	      break;
 	    default:
 	      throw(std::runtime_error("invalid basis"));

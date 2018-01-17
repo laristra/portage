@@ -461,3 +461,43 @@ TEST(VolumeIntegral, UnitaryTetrahedronDeform) {
   Portage::Meshfree::Operator::get_result<Operator<VolumeIntegral, Unitary, Tetrahedron>>(points, result);
   ASSERT_NEAR(result[0][0], exactUnitaryTetrahedron[0]*determinant3, 1.e-12);
 }
+ 
+// Test dynamic interface. 
+
+TEST(VolumeIntegral, QuadraticIntervalTFDynamic) {
+  vector<vector<double>> result;
+  auto points = shift_points<1>(interval_points_, shift1d);
+  Portage::Meshfree::Operator::apply<1>(VolumeIntegral, Quadratic, Interval, points, result);
+  auto tex = makeTranslatedExact<Quadratic,1>(exactQuadraticInterval, shift1d);
+  ASSERT_EQ(result.size(), 3);
+  ASSERT_EQ(result[0].size(), 1);
+  for (int i=0; i<tex.size(); i++) ASSERT_NEAR(result[i][0], tex[i], 1.e-7*fabs(tex[i]));
+}
+
+TEST(VolumeIntegral, UnitaryQuadrilateralDeformDynamic) {
+  vector<vector<double>> result;
+  auto points = deform_points<2>(quadrilateral_points_, matrix2);
+  Portage::Meshfree::Operator::apply<2>(VolumeIntegral, Unitary, Quadrilateral, points, result);
+  ASSERT_EQ(result.size(), 1);
+  ASSERT_EQ(result[0].size(), 1);
+  ASSERT_NEAR(result[0][0], exactUnitaryQuadrilateral[0]*determinant2, 1.e-12);
+}
+
+TEST(VolumeIntegral, UnitaryHexahedronDeformDynamic) {
+  vector<vector<double>> result;
+  auto points = deform_points<3>(hexahedron_points_, matrix3);
+  Portage::Meshfree::Operator::apply<3>(VolumeIntegral, Unitary, Hexahedron, points, result);
+  ASSERT_EQ(result.size(), 1);
+  ASSERT_EQ(result[0].size(), 1);
+  ASSERT_NEAR(result[0][0], exactUnitaryHexahedron[0]*determinant3, 1.e-12);
+}
+
+TEST(VolumeIntegral, QuadraticTetrahedronTFDynamic) {
+vector<vector<double>> result;
+  auto points = shift_points<3>(tetrahedron_points_, shift3d);
+  Portage::Meshfree::Operator::apply<3>(VolumeIntegral, Quadratic, Tetrahedron, points, result);
+  auto tex = makeTranslatedExact<Quadratic,3>(exactQuadraticTetrahedron, shift3d);
+  ASSERT_EQ(result.size(), 10);
+  ASSERT_EQ(result[0].size(), 1);
+  for (int i=0; i<tex.size(); i++) ASSERT_NEAR(result[i][0], tex[i], 1.e-7*fabs(tex[i]));
+}
