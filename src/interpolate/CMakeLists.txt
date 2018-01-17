@@ -43,13 +43,11 @@ if (ENABLE_UNIT_TESTS)
       LIBRARIES portage 
       POLICY SERIAL)
 
-    #[[cinch_add_unit(test_quadfit
+    cinch_add_unit(test_quadfit
       SOURCES  test/test_quadfit.cc
-      LIBRARIES portage ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
-      POLICY MPI
-      THREADS 1)
+      LIBRARIES portage 
+      POLICY SERIAL)
 
-    ]]
   endif (Jali_DIR)
 
 endif(ENABLE_UNIT_TESTS)
