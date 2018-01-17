@@ -9,6 +9,9 @@ Please see the license file at the root of this repository, or at:
 #include <iostream>
 
 #include "gtest/gtest.h"
+#ifdef ENABLE_MPI
+#include "mpi.h"
+#endif
 
 #include "portage/support/Vector.h"
 #include "portage/support/portage.h"

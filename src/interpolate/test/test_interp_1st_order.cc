@@ -12,6 +12,9 @@ Please see the license file at the root of this repository, or at:
 #include <memory>
 
 #include "gtest/gtest.h"
+#ifdef ENABLE_MPI
+#include "mpi.h"
+#endif
 
 #include "portage/support/portage.h"
 #include "portage/wonton/mesh/simple_mesh/simple_mesh_wrapper.h"
