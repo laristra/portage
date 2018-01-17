@@ -591,7 +591,7 @@ TEST(Interpolate_2nd_Order, Node_Ctr_Lin_No_Limiter) {
   std::vector<double> data(nnodes_source);
   for (int n = 0; n < nnodes_source; ++n) {
     Portage::Point<2> coord;
-    source_mesh->node_get_coordinates(n, &coord);
+    sourceMeshWrapper.node_get_coordinates(n, &coord);
     data[n] = coord[0]+coord[1];
   }
   source_state.add("nodevars", Portage::Entity_kind::NODE, &(data[0]));
@@ -680,7 +680,7 @@ TEST(Interpolate_2nd_Order, Node_Ctr_Lin_No_Limiter) {
   std::vector<double> stdvals(nnodes_target);
   for (int n = 0; n < nnodes_target; ++n) {
     Portage::Point<2> coord;
-    target_mesh->node_get_coordinates(n, &coord);
+    targetMeshWrapper.node_get_coordinates(n, &coord);
     if (fabs(coord[0]) < 1e-16 || fabs(1-coord[0]) < 1e-16 ||
         fabs(coord[1]) < 1e-16 || fabs(1-coord[1]) < 1.e-16)
       continue;
@@ -1246,7 +1246,7 @@ TEST(Interpolate_2nd_Order, Node_Ctr_Lin_No_Limiter_3D) {
   std::vector<double> data(nnodes_source);
   for (int n = 0; n < nnodes_source; ++n) {
     Portage::Point<3> coord;
-    source_mesh->node_get_coordinates(n, &coord);
+    sourceMeshWrapper.node_get_coordinates(n, &coord);
     data[n] = coord[0]+coord[1]+coord[2];
   }
   source_state.add("nodevars", Portage::Entity_kind::NODE, &(data[0]));
@@ -1336,7 +1336,7 @@ TEST(Interpolate_2nd_Order, Node_Ctr_Lin_No_Limiter_3D) {
   std::vector<double> stdvals(nnodes_target);
   for (int n = 0; n < nnodes_target; ++n) {
     Portage::Point<3> coord;
-    target_mesh->node_get_coordinates(n, &coord);
+    targetMeshWrapper.node_get_coordinates(n, &coord);
     if (fabs(coord[0]) < 1e-16 || fabs(1-coord[0]) < 1e-16 ||
         fabs(coord[1]) < 1e-16 || fabs(1-coord[1]) < 1.e-16 ||
         fabs(coord[2]) < 1e-16 || fabs(1-coord[2]) < 1.e-16)
@@ -1382,7 +1382,7 @@ TEST(Interpolate_2nd_Order, Node_Ctr_BJ_Limiter_3D) {
   double minval = 1e+10, maxval = -1e+10;
   for (int n = 0; n < nnodes_source; ++n) {
     Portage::Point<3> coord;
-    source_mesh->node_get_coordinates(n, &coord);
+    sourceMeshWrapper.node_get_coordinates(n, &coord);
     if (coord[0] >= 0.5)
       data[n] = 100*(coord[0]+coord[1]+coord[2]);
     else
