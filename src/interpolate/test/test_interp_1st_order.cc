@@ -69,9 +69,9 @@ TEST(Interpolate_1st_Order, Cell_Ctr_Const_2D) {
   // Actually get the Portage::Points
   
   for (int c = 0; c < ncells_source; ++c)
-    source_mesh->cell_get_coordinates(c, &(source_cell_coords[c]));
+    sourceMeshWrapper.cell_get_coordinates(c, &(source_cell_coords[c]));
   for (int c = 0; c < ncells_target; ++c)
-    target_mesh->cell_get_coordinates(c, &(target_cell_coords[c]));
+    targetMeshWrapper.cell_get_coordinates(c, &(target_cell_coords[c]));
 
   // Interpolate from source to target mesh using the independent calculation
   // in simple_intersect_for_tests.h
@@ -186,9 +186,9 @@ TEST(Interpolate_1st_Order, Cell_Ctr_Lin_2D) {
   // Actually get the Portage::Points
   
   for (int c = 0; c < ncells_source; ++c)
-    source_mesh->cell_get_coordinates(c, &(source_cell_coords[c]));
+    sourceMeshWrapper.cell_get_coordinates(c, &(source_cell_coords[c]));
   for (int c = 0; c < ncells_target; ++c)
-    target_mesh->cell_get_coordinates(c, &(target_cell_coords[c]));
+    targetMeshWrapper.cell_get_coordinates(c, &(target_cell_coords[c]));
 
   // Interpolate from source to target mesh using the independent calculation
   // in simple_intersect_for_tests.h
@@ -445,9 +445,9 @@ TEST(Interpolate_1st_Order, Cell_Ctr_Const_3D) {
   // Actually get the Portage::Points
   
   for (int c = 0; c < ncells_source; ++c)
-    source_mesh->cell_get_coordinates(c, &(source_cell_coords[c]));
+    sourceMeshWrapper.cell_get_coordinates(c, &(source_cell_coords[c]));
   for (int c = 0; c < ncells_target; ++c)
-    target_mesh->cell_get_coordinates(c, &(target_cell_coords[c]));
+    targetMeshWrapper.cell_get_coordinates(c, &(target_cell_coords[c]));
 
   // Interpolate from source to target mesh using the independent calculation
   // in simple_intersect_for_tests.h
@@ -561,9 +561,9 @@ TEST(Interpolate_1st_Order, Cell_Ctr_Lin_3D) {
   // Actually get the Portage::Points
   
   for (int c = 0; c < ncells_source; ++c)
-    source_mesh->cell_get_coordinates(c, &(source_cell_coords[c]));
+    sourceMeshWrapper.cell_get_coordinates(c, &(source_cell_coords[c]));
   for (int c = 0; c < ncells_target; ++c)
-    target_mesh->cell_get_coordinates(c, &(target_cell_coords[c]));
+    targetMeshWrapper.cell_get_coordinates(c, &(target_cell_coords[c]));
 
   // Interpolate from source to target mesh using the independent calculation
   // in simple_intersect_for_tests.h
