@@ -375,7 +375,7 @@ TEST(Interpolate_1st_Order, Node_Ctr_Const_2D) {
   
   // Create Interpolation object
 
-  Portage::Interpolate_1stOrder<2, Portage::NODE,
+  Portage::Interpolate_1stOrder<2, Portage::Entity_kind::NODE,
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_State_Wrapper>
@@ -751,7 +751,7 @@ TEST(Interpolate_1st_Order, Node_Ctr_Const_3D) {
   
   // Create Interpolation object
 
-  Portage::Interpolate_1stOrder<3, Portage::NODE,
+  Portage::Interpolate_1stOrder<3, Portage::Entity_kind::NODE,
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_State_Wrapper>
