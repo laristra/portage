@@ -24,7 +24,7 @@ namespace Portage {
       using Basis::Traits;
       using Basis::transfactor;
 
-      enum Volume{
+      enum Domain{
 	Interval,         // 1D
 	Quadrilateral,    // 2D
 	Triangle,     
@@ -33,31 +33,31 @@ namespace Portage {
 	Tetrahedron,  
 	Wedge, 
 	Sphere, 
-	LastVolume
+	LastDomain
       };
 
       enum Type {VolumeIntegral, SurfaceIntegral, LastOperator};
 
-      template<Volume vol> class VolumeTraits   {public: static const size_t dimension=0;};
-      template<> class VolumeTraits<Interval>     {public: static const size_t dimension=1;};
-      template<> class VolumeTraits<Quadrilateral>{public: static const size_t dimension=2;};
-      template<> class VolumeTraits<Triangle>     {public: static const size_t dimension=2;};
-      template<> class VolumeTraits<Circle>       {public: static const size_t dimension=2;};
-      template<> class VolumeTraits<Hexahedron>   {public: static const size_t dimension=3;};
-      template<> class VolumeTraits<Tetrahedron>  {public: static const size_t dimension=3;};
-      template<> class VolumeTraits<Wedge>        {public: static const size_t dimension=3;};
-      template<> class VolumeTraits<Sphere>       {public: static const size_t dimension=3;};
+      template<Domain vol> class DomainTraits   {public: static const size_t dimension=0;};
+      template<> class DomainTraits<Interval>     {public: static const size_t dimension=1;};
+      template<> class DomainTraits<Quadrilateral>{public: static const size_t dimension=2;};
+      template<> class DomainTraits<Triangle>     {public: static const size_t dimension=2;};
+      template<> class DomainTraits<Circle>       {public: static const size_t dimension=2;};
+      template<> class DomainTraits<Hexahedron>   {public: static const size_t dimension=3;};
+      template<> class DomainTraits<Tetrahedron>  {public: static const size_t dimension=3;};
+      template<> class DomainTraits<Wedge>        {public: static const size_t dimension=3;};
+      template<> class DomainTraits<Sphere>       {public: static const size_t dimension=3;};
 
-      constexpr size_t dimension(Volume vol) {
+      constexpr size_t dimension(Domain vol) {
         switch (vol) {
-	case Interval:      return VolumeTraits<Interval>::dimension;      break;
-	case Quadrilateral: return VolumeTraits<Quadrilateral>::dimension; break;
-	case Triangle:      return VolumeTraits<Triangle>::dimension;      break;
-	case Circle:        return VolumeTraits<Circle>::dimension;        break;
-	case Hexahedron:    return VolumeTraits<Hexahedron>::dimension;    break;
-	case Tetrahedron:   return VolumeTraits<Tetrahedron>::dimension;   break;
-	case Wedge:         return VolumeTraits<Wedge>::dimension;         break;
-	case Sphere:        return VolumeTraits<Sphere>::dimension;        break;
+	case Interval:      return DomainTraits<Interval>::dimension;      break;
+	case Quadrilateral: return DomainTraits<Quadrilateral>::dimension; break;
+	case Triangle:      return DomainTraits<Triangle>::dimension;      break;
+	case Circle:        return DomainTraits<Circle>::dimension;        break;
+	case Hexahedron:    return DomainTraits<Hexahedron>::dimension;    break;
+	case Tetrahedron:   return DomainTraits<Tetrahedron>::dimension;   break;
+	case Wedge:         return DomainTraits<Wedge>::dimension;         break;
+	case Sphere:        return DomainTraits<Sphere>::dimension;        break;
 	default: return 0; 
         }
       }
@@ -66,20 +66,20 @@ namespace Portage {
       // Template for integral operator base class
       ////////////////////////////////////////////////////////////////////////////////
 
-      template<Type type, Basis::Type basis_type, Volume vol_type>
+      template<Type type, Basis::Type basis_type, Domain vol_type>
 	class OperatorBase
       {
       public:
 	Type operator_type=type;
 	static constexpr Basis::Type basis=basis_type;
-	static constexpr Volume vol=vol_type;
+	static constexpr Domain vol=vol_type;
       };
 
       ////////////////////////////////////////////////////////////////////////////////
       // Template for integral operators
       ////////////////////////////////////////////////////////////////////////////////
 
-      template<Type type, Basis::Type basis_type, Volume vol_type>
+      template<Type type, Basis::Type basis_type, Domain vol_type>
 	class Operator: public OperatorBase<type,basis_type,vol_type>
       {
       public:
@@ -671,7 +671,7 @@ result[9][0]=
       ////////////////////////////////////////////////////////////////////////////////
 
       template<size_t dim>
-      void apply(Type type, Basis::Type basis_type, Volume vol_type, 
+      void apply(Type type, Basis::Type basis_type, Domain vol_type, 
 		 vector<Point<dim>> &points, vector<vector<double>> &result) 
       {
 	switch(type) {
