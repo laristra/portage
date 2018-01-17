@@ -24,7 +24,7 @@ namespace Portage {
       using Basis::Traits;
       using Basis::transfactor;
 
-      enum Geometry{
+      enum Volume{
 	Interval,         // 1D
 	Quadrilateral,    // 2D
 	Triangle,     
@@ -33,31 +33,31 @@ namespace Portage {
 	Tetrahedron,  
 	Wedge, 
 	Sphere, 
-	LastGeometry
+	LastVolume
       };
 
       enum Type {VolumeIntegral, SurfaceIntegral, LastOperator};
 
-      template<Geometry geo> class GeometryTraits   {public: static const size_t dimension=0;};
-      template<> class GeometryTraits<Interval>     {public: static const size_t dimension=1;};
-      template<> class GeometryTraits<Quadrilateral>{public: static const size_t dimension=2;};
-      template<> class GeometryTraits<Triangle>     {public: static const size_t dimension=2;};
-      template<> class GeometryTraits<Circle>       {public: static const size_t dimension=2;};
-      template<> class GeometryTraits<Hexahedron>   {public: static const size_t dimension=3;};
-      template<> class GeometryTraits<Tetrahedron>  {public: static const size_t dimension=3;};
-      template<> class GeometryTraits<Wedge>        {public: static const size_t dimension=3;};
-      template<> class GeometryTraits<Sphere>       {public: static const size_t dimension=3;};
+      template<Volume vol> class VolumeTraits   {public: static const size_t dimension=0;};
+      template<> class VolumeTraits<Interval>     {public: static const size_t dimension=1;};
+      template<> class VolumeTraits<Quadrilateral>{public: static const size_t dimension=2;};
+      template<> class VolumeTraits<Triangle>     {public: static const size_t dimension=2;};
+      template<> class VolumeTraits<Circle>       {public: static const size_t dimension=2;};
+      template<> class VolumeTraits<Hexahedron>   {public: static const size_t dimension=3;};
+      template<> class VolumeTraits<Tetrahedron>  {public: static const size_t dimension=3;};
+      template<> class VolumeTraits<Wedge>        {public: static const size_t dimension=3;};
+      template<> class VolumeTraits<Sphere>       {public: static const size_t dimension=3;};
 
-      constexpr size_t dimension(Geometry geo) {
-        switch (geo) {
-	case Interval:      return GeometryTraits<Interval>::dimension;      break;
-	case Quadrilateral: return GeometryTraits<Quadrilateral>::dimension; break;
-	case Triangle:      return GeometryTraits<Triangle>::dimension;      break;
-	case Circle:        return GeometryTraits<Circle>::dimension;        break;
-	case Hexahedron:    return GeometryTraits<Hexahedron>::dimension;    break;
-	case Tetrahedron:   return GeometryTraits<Tetrahedron>::dimension;   break;
-	case Wedge:         return GeometryTraits<Wedge>::dimension;         break;
-	case Sphere:        return GeometryTraits<Sphere>::dimension;        break;
+      constexpr size_t dimension(Volume vol) {
+        switch (vol) {
+	case Interval:      return VolumeTraits<Interval>::dimension;      break;
+	case Quadrilateral: return VolumeTraits<Quadrilateral>::dimension; break;
+	case Triangle:      return VolumeTraits<Triangle>::dimension;      break;
+	case Circle:        return VolumeTraits<Circle>::dimension;        break;
+	case Hexahedron:    return VolumeTraits<Hexahedron>::dimension;    break;
+	case Tetrahedron:   return VolumeTraits<Tetrahedron>::dimension;   break;
+	case Wedge:         return VolumeTraits<Wedge>::dimension;         break;
+	case Sphere:        return VolumeTraits<Sphere>::dimension;        break;
 	default: return 0; 
         }
       }
@@ -66,24 +66,24 @@ namespace Portage {
       // Template for integral operator base class
       ////////////////////////////////////////////////////////////////////////////////
 
-      template<Type type, Basis::Type basis_type, Geometry geo_type>
+      template<Type type, Basis::Type basis_type, Volume vol_type>
 	class OperatorBase
       {
       public:
 	Type operator_type=type;
 	static constexpr Basis::Type basis=basis_type;
-	static constexpr Geometry geo=geo_type;
+	static constexpr Volume vol=vol_type;
       };
 
       ////////////////////////////////////////////////////////////////////////////////
       // Template for integral operators
       ////////////////////////////////////////////////////////////////////////////////
 
-      template<Type type, Basis::Type basis_type, Geometry geo_type>
-	class Operator: public OperatorBase<type,basis_type,geo_type>
+      template<Type type, Basis::Type basis_type, Volume vol_type>
+	class Operator: public OperatorBase<type,basis_type,vol_type>
       {
       public:
-	static constexpr size_t dim = dimension(geo_type);
+	static constexpr size_t dim = dimension(vol_type);
 	static constexpr size_t operator_size=0;
 	static constexpr size_t basis_size=0;
 	static constexpr size_t point_size=0;
@@ -671,12 +671,12 @@ result[9][0]=
       ////////////////////////////////////////////////////////////////////////////////
 
       template<size_t dim>
-      void apply(Type type, Basis::Type basis_type, Geometry geo_type, 
+      void apply(Type type, Basis::Type basis_type, Volume vol_type, 
 		 vector<Point<dim>> &points, vector<vector<double>> &result) 
       {
 	switch(type) {
 	case VolumeIntegral:
-	  switch(geo_type) {
+	  switch(vol_type) {
 	  case Interval:
 	    switch(basis_type) {
 	    case Basis::Unitary:
@@ -774,7 +774,7 @@ result[9][0]=
 	    }
 	    break;
 	  default:
-	    throw(std::runtime_error("invalid geometry"));
+	    throw(std::runtime_error("invalid volume"));
 	  }
 	  break;
 	default:
