@@ -306,35 +306,13 @@ TEST(Interpolate_1st_Order, Node_Ctr_Const_2D) {
   std::vector<std::vector<Portage::Point<2>>>
       target_dualcell_coords(nnodes_target);
 
-  // get the coordinates of the source dual cells via the wedges
+  // Actually get the Portage::Points for the dual cells 
+   
+  for (int n = 0; n < nnodes_source; ++n) 
+	  sourceMeshWrapper.dual_cell_get_coordinates(n, &source_dualcell_coords[n]);
+  for (int n = 0; n < nnodes_target; ++n) 
+	  targetMeshWrapper.dual_cell_get_coordinates(n, &target_dualcell_coords[n]);
   
-  for (int n = 0; n < nnodes_source; ++n) {
-    std::vector<Portage::Point<2>> dualcoords;
-    std::vector<int> wedges;
-    sourceMeshWrapper.node_get_wedges(n, Portage::Entity_type::ALL, &wedges);
-
-    for (auto w : wedges) {
-      std::array<Portage::Point<2>,3> wcoords;
-      sourceMeshWrapper.wedge_get_coordinates(w, &wcoords);
-      for (auto coord : wcoords)
-        source_dualcell_coords[n].push_back(coord);
-    }
-  }
-
-  // get the coordinates of the target dual cells via the wedges
-  
-  for (int n = 0; n < nnodes_target; ++n) {
-    std::vector<Portage::Point<2>> dualcoords;
-    std::vector<int> wedges;
-    targetMeshWrapper.node_get_wedges(n, Portage::Entity_type::ALL, &wedges);
-
-    for (auto w : wedges) {
-      std::array<Portage::Point<2>,3> wcoords;
-      targetMeshWrapper.wedge_get_coordinates(w, &wcoords);
-      for (auto coord : wcoords)
-        target_dualcell_coords[n].push_back(coord);
-    }
-  }
 
   // Interpolate from source to target mesh using the independent calculation
   // in simple_intersect_for_tests.h
@@ -682,35 +660,12 @@ TEST(Interpolate_1st_Order, Node_Ctr_Const_3D) {
   std::vector<std::vector<Portage::Point<3>>>
       target_dualcell_coords(nnodes_target);
 
-  // get the coordinates of the source dual cells via the wedges
-  
-  for (int n = 0; n < nnodes_source; ++n) {
-    std::vector<Portage::Point<3>> dualcoords;
-    std::vector<int> wedges;
-    sourceMeshWrapper.node_get_wedges(n, Portage::Entity_type::ALL, &wedges);
-
-    for (auto w : wedges) {
-      std::array<Portage::Point<3>,4> wcoords;
-      sourceMeshWrapper.wedge_get_coordinates(w, &wcoords);
-      for (auto coord : wcoords)
-        source_dualcell_coords[n].push_back(coord);
-    }
-  }
-
-  // get the coordinates of the target dual cells via the wedges
-  
-  for (int n = 0; n < nnodes_target; ++n) {
-    std::vector<Portage::Point<3>> dualcoords;
-    std::vector<int> wedges;
-    targetMeshWrapper.node_get_wedges(n, Portage::Entity_type::ALL, &wedges);
-
-    for (auto w : wedges) {
-      std::array<Portage::Point<3>,4> wcoords;
-      targetMeshWrapper.wedge_get_coordinates(w, &wcoords);
-      for (auto coord : wcoords)
-        target_dualcell_coords[n].push_back(coord);
-    }
-  }
+  // Actually get the Portage::Points for the dual cells 
+   
+  for (int n = 0; n < nnodes_source; ++n) 
+	  sourceMeshWrapper.dual_cell_get_coordinates(n, &source_dualcell_coords[n]);
+  for (int n = 0; n < nnodes_target; ++n) 
+	  targetMeshWrapper.dual_cell_get_coordinates(n, &target_dualcell_coords[n]);
 
   // Interpolate from source to target mesh using the independent calculation
   // in simple_intersect_for_tests.h
