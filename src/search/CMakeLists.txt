@@ -33,12 +33,12 @@ set(search_SOURCES
 if(ENABLE_UNIT_TESTS)
    cinch_add_unit(search_simple_test
     SOURCES search_simple_test.cc
-    LIBRARIES portage 
+    LIBRARIES portage  ${LAPACKE_LIBRARIES}
     POLICY SERIAL)
   
   cinch_add_unit(search_kdtree2_test
     SOURCES search_kdtree2_test.cc
-    LIBRARIES portage 
+    LIBRARIES portage  ${LAPACKE_LIBRARIES}
     POLICY SERIAL)
 
   cinch_add_unit(search_kdtree3_test

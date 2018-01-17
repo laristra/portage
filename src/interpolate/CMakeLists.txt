@@ -24,27 +24,27 @@ if (ENABLE_UNIT_TESTS)
 
     cinch_add_unit(test_gradient
       SOURCES  test/test_gradient.cc
-      LIBRARIES portage 
+      LIBRARIES portage  ${LAPACKE_LIBRARIES}
       POLICY SERIAL)
 
     cinch_add_unit(test_interpolate_1st_order
       SOURCES  test/test_interp_1st_order.cc
-      LIBRARIES portage 
+      LIBRARIES portage  ${LAPACKE_LIBRARIES}
       POLICY SERIAL)
 
     cinch_add_unit(test_interpolate_2nd_order
       SOURCES test/test_interp_2nd_order.cc
-      LIBRARIES portage 
+      LIBRARIES portage  ${LAPACKE_LIBRARIES}
       POLICY SERIAL)
 
     cinch_add_unit(test_interpolate_3rd_order
       SOURCES test/test_interp_3rd_order.cc
-      LIBRARIES portage 
+      LIBRARIES portage  ${LAPACKE_LIBRARIES}
       POLICY SERIAL)
 
     cinch_add_unit(test_quadfit
       SOURCES  test/test_quadfit.cc
-      LIBRARIES portage 
+      LIBRARIES portage  ${LAPACKE_LIBRARIES}
       POLICY SERIAL)
 
 
