@@ -38,7 +38,7 @@ namespace Portage {
 
       enum Type {VolumeIntegral, SurfaceIntegral, LastOperator};
 
-      template<Domain vol> class DomainTraits   {public: static const size_t dimension=0;};
+      template<Domain domain> class DomainTraits   {public: static const size_t dimension=0;};
       template<> class DomainTraits<Interval>     {public: static const size_t dimension=1;};
       template<> class DomainTraits<Quadrilateral>{public: static const size_t dimension=2;};
       template<> class DomainTraits<Triangle>     {public: static const size_t dimension=2;};
@@ -48,8 +48,8 @@ namespace Portage {
       template<> class DomainTraits<Wedge>        {public: static const size_t dimension=3;};
       template<> class DomainTraits<Sphere>       {public: static const size_t dimension=3;};
 
-      constexpr size_t dimension(Domain vol) {
-        switch (vol) {
+      constexpr size_t dimension(Domain domain) {
+        switch (domain) {
 	case Interval:      return DomainTraits<Interval>::dimension;      break;
 	case Quadrilateral: return DomainTraits<Quadrilateral>::dimension; break;
 	case Triangle:      return DomainTraits<Triangle>::dimension;      break;
@@ -66,24 +66,24 @@ namespace Portage {
       // Template for integral operator base class
       ////////////////////////////////////////////////////////////////////////////////
 
-      template<Type type, Basis::Type basis_type, Domain vol_type>
+      template<Type type, Basis::Type basis_type, Domain domain_type>
 	class OperatorBase
       {
       public:
 	Type operator_type=type;
 	static constexpr Basis::Type basis=basis_type;
-	static constexpr Domain vol=vol_type;
+	static constexpr Domain domain=domain_type;
       };
 
       ////////////////////////////////////////////////////////////////////////////////
       // Template for integral operators
       ////////////////////////////////////////////////////////////////////////////////
 
-      template<Type type, Basis::Type basis_type, Domain vol_type>
-	class Operator: public OperatorBase<type,basis_type,vol_type>
+      template<Type type, Basis::Type basis_type, Domain domain_type>
+	class Operator: public OperatorBase<type,basis_type,domain_type>
       {
       public:
-	static constexpr size_t dim = dimension(vol_type);
+	static constexpr size_t dim = dimension(domain_type);
 	static constexpr size_t operator_size=0;
 	static constexpr size_t basis_size=0;
 	static constexpr size_t point_size=0;
@@ -671,12 +671,12 @@ result[9][0]=
       ////////////////////////////////////////////////////////////////////////////////
 
       template<size_t dim>
-      void apply(Type type, Basis::Type basis_type, Domain vol_type, 
+      void apply(Type type, Basis::Type basis_type, Domain domain_type, 
 		 vector<Point<dim>> &points, vector<vector<double>> &result) 
       {
 	switch(type) {
 	case VolumeIntegral:
-	  switch(vol_type) {
+	  switch(domain_type) {
 	  case Interval:
 	    switch(basis_type) {
 	    case Basis::Unitary:
@@ -774,7 +774,7 @@ result[9][0]=
 	    }
 	    break;
 	  default:
-	    throw(std::runtime_error("invalid volume"));
+	    throw(std::runtime_error("invalid domain"));
 	  }
 	  break;
 	default:
