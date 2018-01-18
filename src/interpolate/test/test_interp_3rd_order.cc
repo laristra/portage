@@ -12,9 +12,13 @@ Please see the license file at the root of this repository, or at:
 #include "portage/interpolate/interpolate_3rd_order.h"
 
 #include "gtest/gtest.h"
-#ifdef ENABLE_MPI
 #include "mpi.h"
-#endif
+#include "portage/wonton/mesh/jali/jali_mesh_wrapper.h"
+#include "portage/wonton/state/jali/jali_state_wrapper.h"
+#include "Mesh.hh"
+#include "MeshFactory.hh"
+#include "JaliState.h"
+#include "JaliStateVector.h"
 
 #include "portage/support/portage.h"
 #include "portage/wonton/mesh/simple_mesh/simple_mesh_wrapper.h"
