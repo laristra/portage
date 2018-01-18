@@ -4,20 +4,16 @@ Please see the license file at the root of this repository, or at:
     https://github.com/laristra/portage/blob/master/LICENSE
 */
 
-#include "portage/interpolate/quadfit.h"
 
 #include <iostream>
 
 #include "gtest/gtest.h"
-#ifdef ENABLE_MPI
-#include "mpi.h"
-#endif
 
-#include "portage/support/portage.h"
+#include "portage/interpolate/quadfit.h"
 #include "portage/support/Vector.h"
+#include "portage/support/portage.h"
 #include "portage/wonton/mesh/simple_mesh/simple_mesh_wrapper.h"
 #include "portage/wonton/state/simple_state/simple_state_wrapper.h"
-#include "portage/wonton/mesh/AuxMeshTopology.h"
 
 /// Test quadfit computation for cell centered fields
 

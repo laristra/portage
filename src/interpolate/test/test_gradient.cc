@@ -4,15 +4,12 @@ Please see the license file at the root of this repository, or at:
     https://github.com/laristra/portage/blob/master/LICENSE
 */
 
-#include "portage/interpolate/gradient.h"
 
 #include <iostream>
 
 #include "gtest/gtest.h"
-#ifdef ENABLE_MPI
-#include "mpi.h"
-#endif
 
+#include "portage/interpolate/gradient.h"
 #include "portage/support/Vector.h"
 #include "portage/support/portage.h"
 #include "portage/wonton/mesh/simple_mesh/simple_mesh_wrapper.h"
