@@ -14,6 +14,10 @@ Please see the license file at the root of this repository, or at:
 #include "gtest/gtest.h"
 #ifdef ENABLE_MPI
 #include "mpi.h"
+#include "Mesh.hh"
+#include "MeshFactory.hh"
+#include "JaliState.h"
+#include "JaliStateVector.h"
 #endif
 
 #include "portage/support/portage.h"
