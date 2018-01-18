@@ -5,28 +5,18 @@ Please see the license file at the root of this repository, or at:
 */
 
 
-#include "portage/driver/driver.h"
-#include "portage/interpolate/interpolate_1st_order.h"
-
 #include <iostream>
 #include <memory>
 
 #include "gtest/gtest.h"
-#include "mpi.h"
-#include "portage/wonton/mesh/jali/jali_mesh_wrapper.h"
-#include "portage/wonton/state/jali/jali_state_wrapper.h"
-#include "Mesh.hh"
-#include "MeshFactory.hh"
-#include "JaliState.h"
-#include "JaliStateVector.h"
 
+#include "portage/interpolate/interpolate_1st_order.h"
 #include "portage/support/portage.h"
 #include "portage/wonton/mesh/simple_mesh/simple_mesh_wrapper.h"
 #include "portage/wonton/state/simple_state/simple_state_wrapper.h"
 #include "portage/interpolate/test/simple_intersect_for_tests.h"
 
 double TOL = 1e-12;
-
 
 /// First order interpolation of constant cell-centered field in 2D
 

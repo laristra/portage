@@ -7,28 +7,19 @@ Please see the license file at the root of this repository, or at:
 
 #include <iostream>
 #include <memory>
-#include <cmath>
-
-#include "portage/interpolate/interpolate_2nd_order.h"
 
 #include "gtest/gtest.h"
-#include "mpi.h"
-#include "portage/wonton/mesh/jali/jali_mesh_wrapper.h"
-#include "portage/wonton/state/jali/jali_state_wrapper.h"
-#include "Mesh.hh"
-#include "MeshFactory.hh"
-#include "JaliState.h"
-#include "JaliStateVector.h"
 
+#include "portage/interpolate/interpolate_2nd_order.h"
 #include "portage/support/portage.h"
 #include "portage/wonton/mesh/simple_mesh/simple_mesh_wrapper.h"
 #include "portage/wonton/state/simple_state/simple_state_wrapper.h"
 #include "portage/interpolate/test/simple_intersect_for_tests.h"
 
+double TOL = 1e-12;
+
 /// Second order interpolation of constant cell-centered field with no
 /// limiter in 2D
-
-double TOL = 1e-12;
 
 TEST(Interpolate_2nd_Order, Cell_Ctr_Const_No_Limiter_2D) {
 
