@@ -268,7 +268,7 @@ int main(int argc, char** argv) {
     trghi += 1.5*dx;
   }
 
-  // If a file is being read from file, do it outside convergence loop
+  // If a mesh is being read from file, do it outside convergence loop
   if (srcfile.length() > 0) {
     mf.partitioner(Jali::Partitioner_type::METIS);
     source_mesh = mf(srcfile);
