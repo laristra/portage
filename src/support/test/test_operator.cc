@@ -29,6 +29,8 @@ using Portage::Meshfree::Operator::Hexahedron;
 using Portage::Meshfree::Operator::Wedge;
 using Portage::Meshfree::Operator::Tetrahedron;
 
+using Portage::Meshfree::Operator::size_info;
+
 using std::vector;
 
 // Basic tests on unit interval, square, cube, wedge, tet
@@ -401,3 +403,4 @@ TEST(VolumeIntegral, QuadraticTetrahedronTFDynamic) {
   ASSERT_EQ(result[0].size(), 1);
   for (int i=0; i<tex.size(); i++) ASSERT_NEAR(result[i][0], tex[i], 1.e-7*fabs(tex[i]));
 }
+
