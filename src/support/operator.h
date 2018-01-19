@@ -587,6 +587,78 @@ result[9][0]=
 	};
 
       ////////////////////////////////////////////////////////////////////////////////
+      // Dynamic size information 
+      ////////////////////////////////////////////////////////////////////////////////
+	 
+	  array<size_t, 3> size_info(Type otype, Basis::Type btype, Domain domain) {
+	    array<size_t, 3> r;
+	    if (otype == VolumeIntegral) {
+	      switch(btype) {
+	      case Basis::Unitary:
+		switch (domain) {
+		case Interval: 
+		  {using OP=Operator<VolumeIntegral,Basis::Unitary,Interval>; 
+		    r[0]=OP::operator_size; r[1]=OP::basis_size; r[2]=OP::point_size; break;}
+		case Quadrilateral:
+		  {using OP=Operator<VolumeIntegral,Basis::Unitary,Quadrilateral>; 
+		    r[0]=OP::operator_size; r[1]=OP::basis_size; r[2]=OP::point_size; break;}
+		case Triangle:
+		  {using OP=Operator<VolumeIntegral,Basis::Unitary,Triangle>; 
+		    r[0]=OP::operator_size; r[1]=OP::basis_size; r[2]=OP::point_size; break;}
+		case Hexahedron:
+		  {using OP=Operator<VolumeIntegral,Basis::Unitary,Hexahedron>; 
+		    r[0]=OP::operator_size; r[1]=OP::basis_size; r[2]=OP::point_size; break;}
+		case Wedge:
+		  {using OP=Operator<VolumeIntegral,Basis::Unitary,Wedge>; 
+		    r[0]=OP::operator_size; r[1]=OP::basis_size; r[2]=OP::point_size; break;}
+		case Tetrahedron:
+		  {using OP=Operator<VolumeIntegral,Basis::Unitary,Tetrahedron>; 
+		    r[0]=OP::operator_size; r[1]=OP::basis_size; r[2]=OP::point_size; break;}
+		}
+		break;
+	      case Basis::Linear:
+		switch (domain) {
+		case Interval: 
+		  {using OP=Operator<VolumeIntegral,Basis::Linear,Interval>; 
+		    r[0]=OP::operator_size; r[1]=OP::basis_size; r[2]=OP::point_size; break;}
+		case Quadrilateral:
+		  {using OP=Operator<VolumeIntegral,Basis::Linear,Quadrilateral>; 
+		    r[0]=OP::operator_size; r[1]=OP::basis_size; r[2]=OP::point_size; break;}
+		case Triangle:
+		  {using OP=Operator<VolumeIntegral,Basis::Linear,Triangle>; 
+		    r[0]=OP::operator_size; r[1]=OP::basis_size; r[2]=OP::point_size; break;}
+		case Hexahedron:
+		  {using OP=Operator<VolumeIntegral,Basis::Linear,Hexahedron>; 
+		    r[0]=OP::operator_size; r[1]=OP::basis_size; r[2]=OP::point_size; break;}
+		case Wedge:
+		  {using OP=Operator<VolumeIntegral,Basis::Linear,Wedge>; 
+		    r[0]=OP::operator_size; r[1]=OP::basis_size; r[2]=OP::point_size; break;}
+		case Tetrahedron:
+		  {using OP=Operator<VolumeIntegral,Basis::Linear,Tetrahedron>; 
+		    r[0]=OP::operator_size; r[1]=OP::basis_size; r[2]=OP::point_size; break;}
+		}
+		break;
+	      case Basis::Quadratic:
+		switch (domain) {
+		case Interval: 
+		  {using OP=Operator<VolumeIntegral,Basis::Quadratic,Interval>; 
+		    r[0]=OP::operator_size; r[1]=OP::basis_size; r[2]=OP::point_size; break;}
+		case Quadrilateral:
+		  {using OP=Operator<VolumeIntegral,Basis::Quadratic,Quadrilateral>; 
+		    r[0]=OP::operator_size; r[1]=OP::basis_size; r[2]=OP::point_size; break;}
+		case Triangle:
+		  {using OP=Operator<VolumeIntegral,Basis::Quadratic,Triangle>; 
+		    r[0]=OP::operator_size; r[1]=OP::basis_size; r[2]=OP::point_size; break;}
+		case Tetrahedron:
+		  {using OP=Operator<VolumeIntegral,Basis::Quadratic,Tetrahedron>; 
+		    r[0]=OP::operator_size; r[1]=OP::basis_size; r[2]=OP::point_size; break;}
+		}
+		break;
+	      }
+	    }
+	  }
+
+      ////////////////////////////////////////////////////////////////////////////////
       // Helper template functions
       ////////////////////////////////////////////////////////////////////////////////
 
