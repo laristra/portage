@@ -18,7 +18,7 @@ Please see the license file at the root of this repository, or at:
 /// Test gradient computation for cell centered fields
 
 TEST(Gradient, Fields_Cell_Ctr) {
-  // Create a 4 cell mesh
+  // Create a 4 x 4 cell mesh
   std::shared_ptr<Portage::Simple_Mesh> mesh1 =
       std::make_shared<Portage::Simple_Mesh>(0.0, 0.0, 1.0, 1.0, 4, 4);
   ASSERT_TRUE(mesh1 != nullptr);
