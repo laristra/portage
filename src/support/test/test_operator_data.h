@@ -15,6 +15,15 @@ using Portage::Point;
 using Portage::Meshfree::Basis::Unitary;
 using Portage::Meshfree::Basis::Linear;
 using Portage::Meshfree::Basis::Quadratic;
+using Portage::Meshfree::Operator::Interval;
+using Portage::Meshfree::Operator::Quadrilateral;
+using Portage::Meshfree::Operator::Triangle;
+using Portage::Meshfree::Operator::Hexahedron;
+using Portage::Meshfree::Operator::Tetrahedron;
+using Portage::Meshfree::Operator::Wedge;
+using Portage::Meshfree::Operator::dimension;
+
+// reference points for different domains
 
 vector<Point<1>> interval_points_=
   {{0},{1}};
@@ -29,6 +38,45 @@ vector<Point<3>> wedge_points_=
 vector<Point<3>> tetrahedron_points_=
   {{0, 0, 0}, {1, 0, 0}, {0, 1, 0}, {0, 0, 1}};
 
+// accessor for different reference points
+
+template<Portage::Meshfree::Operator::Domain domain> 
+vector<Point<dimension(domain)>> 
+reference_points() 
+{};
+
+template<> 
+vector<Point<dimension(Interval)>>
+reference_points<Interval>()
+{return interval_points_;}
+
+template<> 
+vector<Point<dimension(Quadrilateral)>>
+reference_points<Quadrilateral>()
+{return quadrilateral_points_;}
+
+template<> 
+vector<Point<dimension(Triangle)>>
+reference_points<Triangle>()
+{return triangle_points_;}
+
+template<> 
+vector<Point<dimension(Hexahedron)>>
+reference_points<Hexahedron>()
+{return hexahedron_points_;}
+
+template<> 
+vector<Point<dimension(Wedge)>>
+reference_points<Wedge>()
+{return wedge_points_;}
+
+template<> 
+vector<Point<dimension(Tetrahedron)>>
+reference_points<Tetrahedron>()
+{return tetrahedron_points_;}
+
+// function to shift reference points
+
 template<size_t dim>
 vector<Point<dim>> shift_points(const vector<Point<dim>> &points, 
 				const Point<dim> &shift) {
@@ -41,9 +89,13 @@ vector<Point<dim>> shift_points(const vector<Point<dim>> &points,
   return result;
 }
 
+// standard shift vectors
+
 Point<1> shift1d={1.e8};
 Point<2> shift2d={1.e8,2.e8};
 Point<3> shift3d={1.e8,2.e8,3.e8};
+
+// standard deformation vectors
 
 vector<vector<double>> matrix2 = 
   {{2.8549186535902855, -4.346198279115005}, {0.14208725143260595, 0.0933338790596824}};
@@ -53,6 +105,8 @@ vector<vector<double>> matrix3 =
    {1.4212135017018008, 0.22338659728810717, 1.4321838606591486}};
 double determinant2 = 0.884;
 double determinant3 = 1.79452;
+
+// function to deform reference points
 
 template<size_t dim>
 vector<Point<dim>> deform_points(const vector<Point<dim>> &points, 
@@ -72,6 +126,8 @@ vector<Point<dim>> deform_points(const vector<Point<dim>> &points,
   }
   return result;
 }
+
+// exact results for integrations of bases over different domains
 
 typename Portage::Meshfree::Basis::Traits<Unitary,1>::array_t exactUnitaryInterval={1.0};
 typename Portage::Meshfree::Basis::Traits<Unitary,2>::array_t exactUnitaryQuadrilateral={1.0};
@@ -101,6 +157,8 @@ typename Portage::Meshfree::Basis::Traits<Quadratic,2>::array_t exactQuadraticTr
   {0.5, 1./6., 1./6., 1./24., 1./24., 1./24.};
 typename Portage::Meshfree::Basis::Traits<Quadratic,3>::array_t exactQuadraticTetrahedron=
   {1./6., 1./24., 1./24., 1./24., 1./120., 1./120., 1./120., 1./120, 1./120., 1./120.};
+
+// apply translation operator to exact results
 
 template<Portage::Meshfree::Basis::Type type, size_t dim>
 typename Portage::Meshfree::Basis::Traits<type,dim>::array_t 
