@@ -725,7 +725,7 @@ TEST(Interpolate_3rd_Order, Node_Ctr_Const_No_Limiter) {
   Wonton::Simple_Mesh_Wrapper sourceMeshWrapper(*source_mesh);
   Wonton::Simple_Mesh_Wrapper targetMeshWrapper(*target_mesh);
 
-  // count cells
+  // count nodes
   
   const int nnodes_source =
       sourceMeshWrapper.num_owned_nodes();
@@ -768,7 +768,7 @@ TEST(Interpolate_3rd_Order, Node_Ctr_Const_No_Limiter) {
   std::vector<std::vector<Portage::Weights_t>>
       sources_and_weights(nnodes_target);
       
-  // Loop over target cells
+  // Loop over target nodes
       
   for (int c = 0; c < nnodes_target; ++c) {
   
@@ -815,7 +815,7 @@ TEST(Interpolate_3rd_Order, Node_Ctr_Const_No_Limiter) {
                      outvals.begin(), interpolater);
 
   // Make sure we retrieved the correct value for each node on the
-  // target. Second order interpolation should preserve a linear field
+  // target. Third order interpolation should preserve a second order field
   // exactly but node-centered interpolation has some quirks - the field
   // does not get preserved exactly at the boundary because the source
   // values for boundary dual cells are not specified inside the dual
@@ -851,7 +851,7 @@ TEST(Interpolate_3rd_Order, Node_Ctr_Lin_No_Limiter) {
   Wonton::Simple_Mesh_Wrapper sourceMeshWrapper(*source_mesh);
   Wonton::Simple_Mesh_Wrapper targetMeshWrapper(*target_mesh);
 
-  // count cells
+  // count nodes
   
   const int nnodes_source =
       sourceMeshWrapper.num_owned_nodes();
@@ -899,7 +899,7 @@ TEST(Interpolate_3rd_Order, Node_Ctr_Lin_No_Limiter) {
   std::vector<std::vector<Portage::Weights_t>>
       sources_and_weights(nnodes_target);
       
-  // Loop over target cells
+  // Loop over target nodes
       
   for (int c = 0; c < nnodes_target; ++c) {
   
@@ -946,7 +946,7 @@ TEST(Interpolate_3rd_Order, Node_Ctr_Lin_No_Limiter) {
                      outvals.begin(), interpolater);
 
   // Make sure we retrieved the correct value for each node on the
-  // target. Second order interpolation should preserve a linear field
+  // target. Third order interpolation should preserve a second order field
   // exactly but node-centered interpolation has some quirks - the field
   // does not get preserved exactly at the boundary because the source
   // values for boundary dual cells are not specified inside the dual
@@ -983,7 +983,7 @@ TEST(Interpolate_3rd_Order, Node_Ctr_Quad_No_Limiter) {
   Wonton::Simple_Mesh_Wrapper sourceMeshWrapper(*source_mesh);
   Wonton::Simple_Mesh_Wrapper targetMeshWrapper(*target_mesh);
 
-  // count cells
+  // count nodes
   
   const int nnodes_source =
       sourceMeshWrapper.num_owned_nodes();
@@ -1031,7 +1031,7 @@ TEST(Interpolate_3rd_Order, Node_Ctr_Quad_No_Limiter) {
   std::vector<std::vector<Portage::Weights_t>>
       sources_and_weights(nnodes_target);
       
-  // Loop over target cells
+  // Loop over target nodes
       
   for (int c = 0; c < nnodes_target; ++c) {
   
@@ -1078,7 +1078,7 @@ TEST(Interpolate_3rd_Order, Node_Ctr_Quad_No_Limiter) {
                      outvals.begin(), interpolater);
 
   // Make sure we retrieved the correct value for each node on the
-  // target. Second order interpolation should preserve a linear field
+  // target. Third order interpolation should preserve a second order field
   // exactly but node-centered interpolation has some quirks - the field
   // does not get preserved exactly at the boundary because the source
   // values for boundary dual cells are not specified inside the dual
@@ -1632,7 +1632,7 @@ TEST(Interpolate_3rd_Order, Node_Ctr_Const_No_Limiter_3D) {
   Wonton::Simple_Mesh_Wrapper sourceMeshWrapper(*source_mesh);
   Wonton::Simple_Mesh_Wrapper targetMeshWrapper(*target_mesh);
 
-  // count cells
+  // count nodes
   
   const int nnodes_source =
       sourceMeshWrapper.num_owned_nodes();
@@ -1676,7 +1676,7 @@ TEST(Interpolate_3rd_Order, Node_Ctr_Const_No_Limiter_3D) {
   std::vector<std::vector<Portage::Weights_t>>
       sources_and_weights(nnodes_target);
       
-  // Loop over target cells
+  // Loop over target nodes
       
   for (int c = 0; c < nnodes_target; ++c) {
   
@@ -1723,7 +1723,7 @@ TEST(Interpolate_3rd_Order, Node_Ctr_Const_No_Limiter_3D) {
                      outvals.begin(), interpolater);
 
   // Make sure we retrieved the correct value for each node on the
-  // target. Second order interpolation should preserve a linear field
+  // target. Third order interpolation should preserve a second order field
   // exactly but node-centered interpolation has some quirks - the field
   // does not get preserved exactly at the boundary because the source
   // values for boundary dual cells are not specified inside the dual
@@ -1761,7 +1761,7 @@ TEST(Interpolate_3rd_Order, Node_Ctr_Lin_No_Limiter_3D) {
   Wonton::Simple_Mesh_Wrapper sourceMeshWrapper(*source_mesh);
   Wonton::Simple_Mesh_Wrapper targetMeshWrapper(*target_mesh);
 
-  // count cells
+  // count nodes
   
   const int nnodes_source =
       sourceMeshWrapper.num_owned_nodes();
@@ -1810,7 +1810,7 @@ TEST(Interpolate_3rd_Order, Node_Ctr_Lin_No_Limiter_3D) {
   std::vector<std::vector<Portage::Weights_t>>
       sources_and_weights(nnodes_target);
       
-  // Loop over target cells
+  // Loop over target nodes
       
   for (int c = 0; c < nnodes_target; ++c) {
   
@@ -1857,7 +1857,7 @@ TEST(Interpolate_3rd_Order, Node_Ctr_Lin_No_Limiter_3D) {
                      outvals.begin(), interpolater);
 
   // Make sure we retrieved the correct value for each node on the
-  // target. Second order interpolation should preserve a linear field
+  // target. Third order interpolation should preserve a second order field
   // exactly but node-centered interpolation has some quirks - the field
   // does not get preserved exactly at the boundary because the source
   // values for boundary dual cells are not specified inside the dual
@@ -1896,7 +1896,7 @@ TEST(Interpolate_3rd_Order, Node_Ctr_Quad_No_Limiter_3D) {
   Wonton::Simple_Mesh_Wrapper sourceMeshWrapper(*source_mesh);
   Wonton::Simple_Mesh_Wrapper targetMeshWrapper(*target_mesh);
 
-  // count cells
+  // count nodes
   
   const int nnodes_source =
       sourceMeshWrapper.num_owned_nodes();
@@ -1945,7 +1945,7 @@ TEST(Interpolate_3rd_Order, Node_Ctr_Quad_No_Limiter_3D) {
   std::vector<std::vector<Portage::Weights_t>>
       sources_and_weights(nnodes_target);
       
-  // Loop over target cells
+  // Loop over target nodes
       
   for (int c = 0; c < nnodes_target; ++c) {
   
@@ -1992,7 +1992,7 @@ TEST(Interpolate_3rd_Order, Node_Ctr_Quad_No_Limiter_3D) {
                      outvals.begin(), interpolater);
 
   // Make sure we retrieved the correct value for each node on the
-  // target. Second order interpolation should preserve a linear field
+  // target. Third order interpolation should preserve a second order field
   // exactly but node-centered interpolation has some quirks - the field
   // does not get preserved exactly at the boundary because the source
   // values for boundary dual cells are not specified inside the dual
@@ -2030,7 +2030,7 @@ TEST(Interpolate_3rd_Order, Node_Ctr_BJ_Limiter_3D) {
   Wonton::Simple_Mesh_Wrapper sourceMeshWrapper(*source_mesh);
   Wonton::Simple_Mesh_Wrapper targetMeshWrapper(*target_mesh);
 
-  // count cells
+  // count nodes
   
   const int nnodes_source =
       sourceMeshWrapper.num_owned_nodes();
