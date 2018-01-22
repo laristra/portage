@@ -14,6 +14,7 @@ Please see the license file at the root of this repository, or at:
 #include "portage/support/Point.h"
 #include "portage/support/weight.h"
 #include "portage/support/basis.h"
+#include "portage/support/operator.h"
 #include "portage/swarm/swarm.h"
 #include "portage/support/Matrix.h"
 
@@ -26,7 +27,8 @@ using std::shared_ptr;
 /// Different kinds of estimates to do
 enum EstimateType {
   KernelDensity,
-  LocalRegression
+  LocalRegression,
+  OperatorRegression
 };
 
 /// Denote which points smoothing length is centered on
@@ -56,7 +58,7 @@ class Accumulate {
    * @param estimate what type of estimate to do: currently kernel density or local regression
    * @param center where the smoothing paramaters are attached: Gather->target, Scatter->source
    * @param kernels kernel specifiers
-   * @param geometries geometry specifiers
+   * @param geometries geometry specifiers for weight functions
    * @param smoothing smoothing lengths (or bandwidths)
    * 
    * The parameters @code kernels@endcode, @code geometries@endcode and @code smoothing@endcode 
@@ -72,7 +74,11 @@ class Accumulate {
       vector<Weight::Kernel> const& kernels,
       vector<Weight::Geometry> const& geometries,
       vector<vector<vector<double>>> const& smoothing,
-      Basis::Type basis):
+      Basis::Type basis,
+      Operator::Type operator_spec = Operator::LastOperator,
+      Operator::Domain operator_domain = Operator::LastDomain,
+      vector<Point<dim>> const& operator_data=
+      vector<Point<dim>>(0,Point<dim>(vector<double>(dim,0.)))):
    source_(source),
    target_(target),
    estimate_(estimate),
@@ -80,7 +86,10 @@ class Accumulate {
    kernels_(kernels),
    geometries_(geometries),
    smoothing_(smoothing),
-   basis_(basis)
+   basis_(basis),
+   operator_spec_(operator_spec),
+   operator_domain_(operator_domain),
+   operator_data_(operator_data)
   {
     // check sizes of inputs are consistent
     size_t n_particles;
@@ -144,6 +153,7 @@ class Accumulate {
         }
         break;
       }
+      case OperatorRegression:
       case LocalRegression: {
         size_t nbasis = Basis::function_size<dim>(basis_);
         Point<dim> x = target_.get_particle_coordinates(particleB);
@@ -195,12 +205,30 @@ class Accumulate {
 	    for (size_t i=0; i<nbasis; i++) pair_result[i] = 0.;
 	  }
 
+	  // If an operator is being applied, adjust final weights. 
+	  if (estimate_ == OperatorRegression) {
+	    auto ijet = Basis::inverse_jet<dim>(basis_, x);
+	    vector<vector<double>> basisop;
+	    Operator::apply<dim>(operator_spec_, basis_, operator_domain_, 
+				 operator_data_, basisop);
+	    size_t opsize = Operator::size_info(operator_spec_, basis_, operator_domain_)[0];
+	    vector<double> operator_result(opsize, 0.);
+	    for (int j=0; j<opsize; j++) {
+	      for (int k=0; k<nbasis; k++) {
+		for (int m=0; m<nbasis; m++) {
+		  operator_result[j] += pair_result[k]*ijet[k][m]*basisop[m][j];
+		}
+	      }
+	    }
+	    for (int j=0; j<nbasis; j++) pair_result[j] = operator_result[j];
+	  }
           result.emplace_back(particleA, pair_result);
           iA++;
         }
-        break;
+	break;
       }
-      default:  assert(false);
+      default:  // invalid estimate
+	assert(false);
     }
     return result;
   }
@@ -214,6 +242,9 @@ class Accumulate {
   vector<Weight::Geometry> const& geometries_;
   vector<vector<vector<double>>> const& smoothing_;
   Basis::Type basis_;
+  Operator::Type operator_spec_;
+  Operator::Domain operator_domain_;
+  vector<Point<dim>> operator_data_;
 };
 
 }}
