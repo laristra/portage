@@ -320,16 +320,20 @@ TEST(intersectR3D, cube_0_1) {
   std::vector<int> srccells({0});
   const std::vector<Portage::Weights_t> srcwts = isect(0, srccells);
 
-  ASSERT_EQ(1, srcwts.size());
-  int srcent = srcwts[0].entityID;
-  std::vector<double> moments = srcwts[0].weights;
-  for(int j=0;j<moments.size();j++)
-    std::cout << "i, j, m " << srcent << ", " << j << ", " << moments[j] << std::endl;
-
-  ASSERT_TRUE(moments.size() == 4);
-
-  ASSERT_NEAR(moments[0], 0, eps);
-  ASSERT_NEAR(moments[1], 0, eps);
-  ASSERT_NEAR(moments[2], 0, eps);
-  ASSERT_NEAR(moments[3], 0, eps);
+  // We can't be sure that this will or will not give an intersection.
+  // Check for 0 moments if we do get an intersection
+  if (srcwts.size()) {
+    ASSERT_EQ(1, srcwts.size());
+    int srcent = srcwts[0].entityID;
+    std::vector<double> moments = srcwts[0].weights;
+    for(int j=0;j<moments.size();j++)
+      std::cout << "i, j, m " << srcent << ", " << j << ", " << moments[j] << std::endl;
+    
+    ASSERT_TRUE(moments.size() == 4);
+    
+    ASSERT_NEAR(moments[0], 0, eps);
+    ASSERT_NEAR(moments[1], 0, eps);
+    ASSERT_NEAR(moments[2], 0, eps);
+    ASSERT_NEAR(moments[3], 0, eps);
+  }
 }

@@ -9,8 +9,19 @@ Please see the license file at the root of this repository, or at:
 
 message(STATUS "Adding portageapp test")
 
+macro(ADD_SPECIFIC_APPTEST TYPE SUFFIX)
+  file(COPY portageapp_${TYPE}_${SUFFIX}.sh
+    DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+  file(GLOB GOLDFILES gold/GOLD_${TYPE}_${SUFFIX}*.txt*)
+  file(COPY ${GOLDFILES} DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+  add_test(NAME portageapp_${TYPE}_${SUFFIX}
+    COMMAND ./portageapp_${TYPE}_${SUFFIX}.sh)
+  set_property(TEST portageapp_${TYPE}_${SUFFIX}
+    PROPERTY ENVIRONMENT APPDIR=${CMAKE_BINARY_DIR}/bin)
+endmacro(ADD_SPECIFIC_APPTEST)
+
 macro(ADD_PORTAGEAPP_TEST DIM ENTITY FIELDORDER REMAPORDER)
-  set(SUFFIX "${DIM}d_${ENTITY}_f${FIELDORDER}_r${REMAPORDER}")
+  set(SUFFIX "rect_${DIM}d_${ENTITY}_f${FIELDORDER}_r${REMAPORDER}")
 
   if (Jali_DIR)
     ADD_SPECIFIC_APPTEST(jali ${SUFFIX})
@@ -26,17 +37,6 @@ macro(ADD_PORTAGEAPP_TEST DIM ENTITY FIELDORDER REMAPORDER)
     endif()
   endif (ENABLE_FleCSI)
 endmacro(ADD_PORTAGEAPP_TEST)
-
-macro(ADD_SPECIFIC_APPTEST TYPE SUFFIX)
-  file(COPY portageapp_${TYPE}_${SUFFIX}.sh
-    DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
-  file(GLOB GOLDFILES gold/GOLD_${TYPE}-field_${SUFFIX}*.txt*)
-  file(COPY ${GOLDFILES} DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
-  add_test(NAME portageapp_${TYPE}_${SUFFIX}
-    COMMAND ./portageapp_${TYPE}_${SUFFIX}.sh)
-  set_property(TEST portageapp_${TYPE}_${SUFFIX}
-    PROPERTY ENVIRONMENT APPDIR=${CMAKE_BINARY_DIR}/bin)
-endmacro(ADD_SPECIFIC_APPTEST)
 
 # all of these scripts use mpirun to launch the job, so only include them
 # if we know about MPI
@@ -57,4 +57,48 @@ if (ENABLE_MPI)
   ADD_PORTAGEAPP_TEST(3 node 1 1)
   ADD_PORTAGEAPP_TEST(3 node 1 2)
   ADD_PORTAGEAPP_TEST(3 node 2 2)
+
+  if (Jali_DIR)
+    ADD_SPECIFIC_APPTEST(jali_rect 3d_cell_gen_r2)
+  endif (Jali_DIR)
 endif (ENABLE_MPI)
+
+
+macro(ADD_UNSTRUC_TEST DIM ENTITY FIELDORDER REMAPORDER)
+  set(SUFFIX "${DIM}d_${ENTITY}_f${FIELDORDER}_r${REMAPORDER}")
+  file(COPY portageapp_jali_unstruc_${SUFFIX}.sh DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+  file(GLOB GOLDFILES gold/GOLD_jali_unstruc_${SUFFIX}.txt*)
+  file(COPY ${GOLDFILES} DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+
+  file(COPY ../../../test_data/shotshell.exo
+            ../../../test_data/shotshell-v.exo
+	    ../../../test_data/cube-poly1.exo
+	    ../../../test_data/cube-poly2.exo 
+       DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+  add_test(NAME portageapp_jali_unstruc_${SUFFIX}
+    COMMAND ./portageapp_jali_unstruc_${SUFFIX}.sh)
+  set_property(TEST portageapp_jali_unstruc_${SUFFIX}
+    PROPERTY ENVIRONMENT APPDIR=${CMAKE_BINARY_DIR}/bin)
+endmacro(ADD_UNSTRUC_TEST)
+
+if (ENABLE_MPI AND Jali_DIR)
+  ADD_UNSTRUC_TEST(2 cell 0 1)
+  ADD_UNSTRUC_TEST(2 cell 1 1)
+  ADD_UNSTRUC_TEST(2 cell 1 2)
+  ADD_UNSTRUC_TEST(2 cell 2 2)
+  ADD_UNSTRUC_TEST(2 node 0 1)
+  ADD_UNSTRUC_TEST(2 node 1 1)
+  ADD_UNSTRUC_TEST(2 node 1 2)
+  ADD_UNSTRUC_TEST(2 node 2 2)
+  ADD_UNSTRUC_TEST(3 cell 0 1)
+  ADD_UNSTRUC_TEST(3 cell 1 1)
+  ADD_UNSTRUC_TEST(3 cell 1 2)
+  ADD_UNSTRUC_TEST(3 cell 2 2)
+  ADD_UNSTRUC_TEST(3 node 0 1)
+  ADD_UNSTRUC_TEST(3 node 1 1)
+  ADD_UNSTRUC_TEST(3 node 1 2)
+  ADD_UNSTRUC_TEST(3 node 2 2)
+
+  ADD_SPECIFIC_APPTEST(jali_unstruc 2d_cell_gen_r2)
+  ADD_SPECIFIC_APPTEST(jali_unstruc 3d_cell_gen_r2)
+endif (ENABLE_MPI AND Jali_DIR)

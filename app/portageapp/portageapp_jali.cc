@@ -11,6 +11,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <fstream>
+#include <sstream>
 #include <vector>
 #include <string>
 #include <memory>
@@ -23,6 +24,15 @@
 #include "ittnotify.h"
 #endif
 
+// Jali mesh infrastructure library
+// See https://github.com/lanl/jali
+
+#include "Mesh.hh"
+#include "MeshFactory.hh"
+#include "JaliStateVector.h"
+#include "JaliState.h"
+
+
 #include "portage/support/portage.h"
 #include "portage/support/Point.h"
 #include "portage/support/mpi_collate.h"
@@ -30,18 +40,18 @@
 #include "portage/wonton/mesh/jali/jali_mesh_wrapper.h"
 #include "portage/wonton/state/jali/jali_state_wrapper.h"
 
-#include "Mesh.hh"
-#include "MeshFactory.hh"
-#include "JaliStateVector.h"
-#include "JaliState.h"
+// For parsing and evaluating user defined expressions in apps
+
+#include "user_field.h"
 
 using Wonton::Jali_Mesh_Wrapper;
 using Portage::argsort;
 using Portage::reorder;
 
-/*!
-  @file portageapp_jali.cc
-  @brief A simple application that drives our remap routines.
+/*!  @file portageapp_jali.cc
+  @brief A simple application that remaps fields between two meshes -
+  the meshes can be internally generated rectangular meshes or
+  externally read unstructured meshes
 
   This program is used to showcase our capabilities with various types
   of remap operations (e.g. interpolation order) on various types of
@@ -54,127 +64,80 @@ using Portage::reorder;
 //////////////////////////////////////////////////////////////////////
 
 
-double const const_val = 73.98;   // some random number
-
 int print_usage() {
   std::cout << std::endl;
   std::cout << "Usage: portageapp " <<
       "--dim=2|3 --nsourcecells=N --ntargetcells=M --conformal=y|n \n" << 
-      "--entity_kind=cell|node --field_order=0|1|2 \n" <<
-      "--remap_order=1|2 --output_results=y|n \n\n";
+      "--entity_kind=cell|node --field=\"your_math_expression\" --remap_order=1|2 \n" <<
+      "--output_meshes=y|n --results_file=filename --convergence_study=NREF \n\n";
 
   std::cout << "--dim (default = 2): spatial dimension of mesh\n\n";
-  std::cout << "--nsourcecells (NO DEFAULT): Num cells in each " <<
-      "coord dir in source mesh\n\n";
-  std::cout << "--ntargetcells (NO DEFAULT): Num cells in each " <<
-      "coord dir in target mesh\n\n";
 
-  std::cout << "--conformal (default = y): 'y' means mesh boundaries match\n\n";
+  std::cout << "--nsourcecells (NO DEFAULT): Internally generated rectangular "
+            << "SOURCE mesh with num cells in each coord dir\n\n";
+  std::cout << "        -----  OR  ----- \n";
+  std::cout << "--source_file=srcfilename: file name of source mesh (Exodus II format only)\n\n";
 
-  std::cout << "--entity_kind (default = cell): entities on which remapping is to be done\n\n";
+  std::cout << "--ntargetcells (NO DEFAULT): Internally generated rectangular "
+            << "TARGET mesh with num cells in each coord dir\n\n";
+  std::cout << "        -----  OR  ----- \n";
+  std::cout << "--target_file=trgfilename: file name of target mesh (Exodus II format only)\n\n";
 
-  std::cout << "--field order (default = 0): " <<
-      "polynomial order of source field\n";
-  std::cout << "  0th order function = " << const_val << "\n";
-  std::cout << "  1st order function = x+y+z \n";
-  std::cout << "  2nd order function = x*x+y*y+z*z \n";
-  std::cout << "  Here, (x,y,z) is cell centroid or node coordinate\n\n";
+  std::cout << "--conformal (default = y): 'y' means mesh boundaries match\n" <<
+      "If 'n', target mesh is shifted in all directions by half-domain width\n";
+  std::cout << " ONLY APPLICABLE TO INTERNALLY GENERATED TARGET MESH\n\n";
+
+  std::cout << "--field (NO DEFAULT): A math expression enclosed in \"\" " <<
+      " expressed in terms of \n" << "x, y and z following the syntax of " <<
+      " the expression parser package ExprTk \n" <<
+      "(http://www.partow.net/programming/exprtk/)\n";
+  std::cout << "The syntax is generally predictable, e.g. " <<
+      " \"24*x + y*y\" or \"x + log(abs(y)+1)\"\n";
+  std::cout << "Advanced features include if-then-else and loop-statements\n\n";
+
+  std::cout << "--entity_kind (default = cell): entities on which " <<
+      "remapping field is to be done\n\n";
 
   std::cout << "--remap order (default = 1): " <<
       "order of accuracy of interpolation\n\n";
-  std::cout << "--convergence_study (default = 1): provide the number of times you want to"
-            << " double source and target mesh sizes \n \n";
-  std::cout << "--output_results (default = y)" << std::endl;
-  std::cout << "  If 'y', the two meshes are output with the " <<
-      "remapped field attached. \n";
-  std::cout << "  Also, the target field values are output to a text file called\n";
-  std::cout << "  'field_cell_rA_fB.txt' or 'field_node_rA_rB.txt' where 'A' is\n";
-  std::cout << "  the field polynomial order and B is the remap/interpolation order\n\n";
+
+  std::cout << "--convergence_study (default = 1): provide the number of times "
+            << "you want to double source and target mesh sizes \n";
+  std::cout << "  ONLY APPLICABLE IF BOTH MESHES ARE INTERNALLY GENERATED\n\n";
+
+  std::cout << "--output_meshes (default = y)\n";
+  std::cout << "  If 'y', the source and target meshes are output with the " <<
+      "remapped field attached as input.exo and output.exo. \n\n";
+
+  std::cout << "--results_file=results_filename (default = output.txt)\n";
+  std::cout << "  If a filename is specified, the target field values are " <<
+      "output to the file given by 'results_filename' in ascii format\n\n";
   return 0;
 }
 //////////////////////////////////////////////////////////////////////
 
 
-int create_meshes(int const dim, int const n_source, int const n_target,
-                  bool const conformal_meshes,
-                  std::shared_ptr<Jali::Mesh> *sourceMesh,
-                  std::shared_ptr<Jali::Mesh> *targetMesh,
-                  MPI_Comm mpicomm) {
+// Forward declaration of function to run remap on two meshes and
+// return the L1 and L2 error norm in the remapped field w.r.t. to an
+// analytically imposed field. If no field was imposed, the errors are
+// returned as 0
 
-  int numpe, rank;
-  MPI_Comm_size(mpicomm, &numpe);
-  MPI_Comm_rank(mpicomm, &rank);
-
-  // The mesh factory and mesh setup
-  Jali::MeshFactory mf(MPI_COMM_WORLD);
-  mf.included_entities({Jali::Entity_kind::ALL_KIND});
-  mf.partitioner(Jali::Partitioner_type::BLOCK);
-
-  if (dim == 2) {
-    // 2d quad input mesh from (0,0) to (1,1) with n_source x n_source zones
-    *sourceMesh = mf(0.0, 0.0, 1.0, 1.0, n_source, n_source);
-
-    if (conformal_meshes) {
-      // 2d quad output mesh from (0,0) to (1,1) with n_target x n_target zones
-      *targetMesh = mf(0.0, 0.0, 1.0, 1.0, n_target, n_target);
-    } else {
-      // 2d quad output mesh from (0,0) to (1+1.5dx,1) with (n+1)x(n+1)
-      // zones and dx equal to the sourceMesh grid spacing
-      double dx = 1.0/static_cast<double>(n_target);
-      *targetMesh = mf(0.0, 0.0, 1.0+1.5*dx, 1.0+1.5*dx, n_target, n_target);
-    }
-  } else if (dim == 3) {
-    // 3d hex input mesh from (0,0,0) to (1,1,1) with n_source x
-    // n_source x n_source zones
-
-    *sourceMesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, n_source, n_source,
-                     n_source);
-
-    if (conformal_meshes) {
-      // 3d hex output mesh from (0,0,0) to (1,1,1) with n_target
-      // x n_target x n_target zones
-
-      *targetMesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, n_target, n_target,
-                       n_target);
-    } else {
-      // 3d hex output mesh from (0,0,0) to
-      // (1+1.5dx,1+1.5dx,1+1.5dx) with
-      // (n_target)x(n_target)x(n_target) zones and dx equal to
-      // the sourceMesh grid spacing
-
-      double dx = 1.0/static_cast<double>(n_target);
-      *targetMesh = mf(0.0, 0.0, 0.0, 1.0+1.5*dx, 1.0+1.5*dx, 1.0+1.5*dx,
-                       n_target, n_target, n_target);
-    }
-  }
-}
-
-template<long D> int point_dim(const Portage::Point<D>&) { return D; }
-
-int point_dim(const JaliGeometry::Point &p) {return p.dim();}
-
-// This function computes a simple function value at a point 
-// based on the point value itself and an order
-// For point x, y with order 1; it returns x+y
-// This is only intended to be used as a simple test data generator
-template<class P> double source_data(const P &c, int order ){
-  if(order == 0)
-    return const_val;
-  // order == 1 or 2
-  double value=0;
-  for(int i=0;i<point_dim(c);i++){
-    value+=std::pow(c[i],order);
-  }
-  return value;
-}
-
-template<int dim> double run(int n_source, int n_target, bool conformal, int interp_order, int poly_order, bool dump_output, int rank ,   int numpe, Jali::Entity_kind entityKind);
+template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
+                           std::shared_ptr<Jali::Mesh> targetMesh,
+                           int interp_order, 
+                           std::string field_expression,
+                           std::string field_filename,
+                           bool mesh_output, int rank, int numpe,
+                           Jali::Entity_kind entityKind,
+                           double *L1_error, double *L2_error);
 
 int main(int argc, char** argv) {
   // Pause profiling until main loop
 #ifdef ENABLE_PROFILE
   __itt_pause();
 #endif
+
+  struct timeval begin, end, diff;
 
   // Initialize MPI
   int mpi_init_flag;
@@ -186,18 +149,21 @@ int main(int argc, char** argv) {
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
 
-  // Get the example to run from command-line parameter
-  int n_source = 0, n_target = 0;
+  int nsourcecells = 0, ntargetcells = 0;  // No default
   int dim = 2;
   bool conformal = true;
+  std::string field_expression;
+  std::string srcfile, trgfile;  // No default
 
   int interp_order = 1;
-  int poly_order = 0;
-  bool dump_output = true;
+  bool mesh_output = true;
   int n_converge = 1;
   Jali::Entity_kind entityKind = Jali::Entity_kind::CELL;
 
-  if (argc < 3) return print_usage();
+  std::string field_filename;  // No default
+
+  // Parse the input
+
   for (int i = 1; i < argc; i++) {
     std::string arg(argv[i]);
     std::size_t len = arg.length();
@@ -221,72 +187,200 @@ int main(int argc, char** argv) {
       dim = stoi(valueword);
       assert(dim == 2 || dim == 3);
     } else if (keyword == "nsourcecells")
-      n_source = stoi(valueword);
+      nsourcecells = stoi(valueword);
     else if (keyword == "ntargetcells")
-      n_target = stoi(valueword);
+      ntargetcells = stoi(valueword);
+    else if (keyword == "source_file")
+      srcfile = valueword;
+    else if (keyword == "target_file")
+      trgfile = valueword;
     else if (keyword == "conformal")
       conformal = (valueword == "y");
     else if (keyword == "remap_order") {
       interp_order = stoi(valueword);
       assert(interp_order > 0 && interp_order < 3);
-    } else if (keyword == "field_order") {
-      poly_order = stoi(valueword);
-      assert(poly_order >=0 && poly_order < 3);
-    } else if (keyword == "output_results"){
-      dump_output = (valueword == "y");
+    } else if (keyword == "field") {
+      field_expression = valueword;
+    } else if (keyword == "output_meshes") {
+      mesh_output = (valueword == "y");
+    } else if (keyword == "results_file") {
+      field_filename = valueword;
     } else if (keyword == "convergence_study") {
       n_converge = stoi(valueword);
+      if (n_converge <= 0) {
+        std::cerr << "Number of meshes for convergence study should be greater than 0" << std::endl;
+        throw std::exception();
+      }
     }
-      
     else
       std::cerr << "Unrecognized option " << keyword << std::endl;
   }
 
-  std::vector<double> l2_err;
-  for(int i=0;i<n_converge;i++){
-    switch(dim){
+
+  // Some input error checking
+
+  if (nsourcecells > 0 && srcfile.length() > 0) {
+    std::cout << "Cannot request internally generated source mesh "
+              << "(--nsourcecells) and external file read (--source_file)\n\n";
+    MPI_Abort(MPI_COMM_WORLD, -1);
+  }
+  if (!nsourcecells && srcfile.length() == 0) {
+    std::cout << "Must specify one of the two options --nsourcecells "
+              << "or --source_file\n";
+    MPI_Abort(MPI_COMM_WORLD, -1);
+  }
+
+  if (ntargetcells > 0 && trgfile.length() > 0) {
+    std::cout << "Cannot request internally generated target mesh "
+              << "(--ntargetcells) and external file read (--target_file)\n\n";
+    MPI_Abort(MPI_COMM_WORLD, -1);
+  }
+  if (!ntargetcells && trgfile.length() == 0) {
+    std::cout << "Must specify one of the two options --ntargetcells "
+              << "or --target_file\n";
+    MPI_Abort(MPI_COMM_WORLD, -1);
+  }
+  if ((srcfile.length() || trgfile.length()) && n_converge > 1) {
+    std::cout <<
+        "Convergence study possible only for internally generated meshes\n";
+    std::cout << "Will do single remap and exit\n";
+    n_converge = 1;
+  }
+  if (nsourcecells > 0 && field_expression.length() == 0) {
+    std::cout << "No field imposed on internally generated source mesh\n";
+    std::cout << "Nothing to remap. Exiting...";
+    MPI_Abort(MPI_COMM_WORLD, -1);
+  }
+
+
+  gettimeofday(&begin, 0);
+
+
+  // The mesh factory and mesh setup
+  std::shared_ptr<Jali::Mesh> source_mesh, target_mesh;
+  Jali::MeshFactory mf(MPI_COMM_WORLD);
+  mf.included_entities({Jali::Entity_kind::ALL_KIND});
+
+  double srclo = 0.0, srchi = 1.0;  // bounds of generated mesh in each dir
+  double trglo = 0.0, trghi = 1.0;
+  if (!conformal) {
+    double dx = (trghi-trglo)/static_cast<double>(ntargetcells);
+    trghi += 1.5*dx;
+  }
+
+  // If a mesh is being read from file, do it outside convergence loop
+  if (srcfile.length() > 0) {
+    mf.partitioner(Jali::Partitioner_type::METIS);
+    source_mesh = mf(srcfile);
+  }
+  if (trgfile.length() > 0) {
+    mf.partitioner(Jali::Partitioner_type::METIS);
+    target_mesh = mf(trgfile);
+  }
+
+  // partitioner for internally generated meshes is a BLOCK partitioner
+  mf.partitioner(Jali::Partitioner_type::BLOCK);
+
+  std::vector<double> l1_err(n_converge, 0.0), l2_err(n_converge, 0.0);
+  for (int i = 0; i < n_converge; i++) {
+
+    // If a file is being internally generated, do it inside convergence loop
+    if (nsourcecells)
+      if (dim == 2)
+        source_mesh = mf(srclo, srclo, srchi, srchi, nsourcecells,
+                         nsourcecells);
+      else if (dim == 3)
+        source_mesh = mf(srclo, srclo, srclo, srchi, srchi, srchi,
+                         nsourcecells, nsourcecells, nsourcecells);
+    if (ntargetcells)
+      if (dim == 2)
+        target_mesh = mf(trglo, trglo, trghi, trghi,
+                         ntargetcells, ntargetcells);
+      else if (dim == 3)
+        target_mesh = mf(trglo, trglo, trglo, trghi, trghi, trghi,
+                         ntargetcells, ntargetcells, ntargetcells);
+
+    gettimeofday(&end, 0);
+    timersub(&end, &begin, &diff);
+    float seconds = diff.tv_sec + 1.0E-6*diff.tv_usec;
+    if (rank == 0) {
+      if (n_converge == 1)
+        std::cout << "Mesh Initialization Time: " << seconds << std::endl;
+      else
+        std::cout << "Mesh Initialization Time (Iteration i): " <<
+            seconds << std::endl;
+    }
+    gettimeofday(&begin, 0);
+
+    // Make sure we have the right dimension and that source and
+    // target mesh dimensions match (important when one or both of the
+    // meshes are read in)
+    assert(source_mesh->space_dimension() == target_mesh->space_dimension());
+    dim = source_mesh->space_dimension();
+
+    double error_L1 = 0.0, error_L2 = 0.0;
+
+    // Now run the remap on the meshes and get back the L2 error
+    switch (dim) {
       case 2:
-        l2_err.push_back(run<2>(n_source, n_target, conformal, interp_order, poly_order, dump_output, rank, numpe, entityKind));
+        run<2>(source_mesh, target_mesh, interp_order,
+               field_expression, field_filename, mesh_output,
+               rank, numpe, entityKind, &(l1_err[i]), &(l2_err[i]));
         break;
       case 3:
-        l2_err.push_back(run<3>(n_source, n_target, conformal, interp_order, poly_order, dump_output, rank, numpe, entityKind));  
+        run<3>(source_mesh, target_mesh, interp_order,
+               field_expression, field_filename, mesh_output,
+               rank, numpe, entityKind, &(l1_err[i]), &(l2_err[i]));
         break;
-      default: 
+      default:
         std::cerr << "Dimension not 2 or 3" << std::endl;
         return 2;
     }
-    n_source *= 2;
-    n_target *= 2;
+    std::cout << "L1 norm of error for iteration " << i << " is " <<
+        l2_err[i] << std::endl;
+    std::cout << "L2 norm of error for iteration " << i << " is " <<
+        l2_err[i] << std::endl;
 
+    gettimeofday(&end, 0);
+    timersub(&end, &begin, &diff);
+    seconds = diff.tv_sec + 1.0E-6*diff.tv_usec;
+    if (rank == 0) {
+      if (n_converge == 1)
+        std::cout << "Remap Time: " << seconds << std::endl;
+      else
+        std::cout << "Remap Time (Iteration i): " << seconds << std::endl;
+    }
+    gettimeofday(&begin, 0);
+
+
+    // if convergence study, double the mesh resolution
+    nsourcecells *= 2;
+    ntargetcells *= 2;
   }
 
-  for(int i=1;i<l2_err.size();i++)
-    std::cout << "error ratio l2(i-1)/l2(i) is " << l2_err[i-1]/l2_err[i] << std::endl;
+  for (int i = 1; i < n_converge; i++) {
+    std::cout << "Error ratio L1(" << i-1 << ")/L1(" << i << ") is " <<
+        l1_err[i-1]/l1_err[i] << std::endl;
+    std::cout << "Error ratio L2(" << i-1 << ")/L2(" << i << ") is " <<
+        l2_err[i-1]/l2_err[i] << std::endl;
+  }
 
   MPI_Finalize();
 }
 
-template<int dim> double run(int n_source, int n_target, bool conformal, int interp_order, int poly_order, bool dump_output, int rank, int numpe, Jali::Entity_kind entityKind ){
 
-  if (rank == 0)
-  {
-    std::cout << "starting portageapp...\n";
-    std::cout << "   Problem is in " << dim << " dimensions\n";
-    std::cout << "   Source mesh has " << n_source << " cells in each dir\n";
-    std::cout << "   Target mesh has " << n_target << " cells in each dir\n";
-    std::cout << "   Field is of polynomial order " << poly_order << "\n";
-    std::cout << "   Field lives on entity kind " << entityKind << "\n";
-    std::cout << "   Interpolation order is " << interp_order << "\n";
-  }
+// Run a remap between two meshes and return the L1 and L2 error norms
+// with respect to the specified field. If a field was not specified and
+// 
 
-  struct timeval begin, end, diff;
-  gettimeofday(&begin, 0);
+template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
+                           std::shared_ptr<Jali::Mesh> targetMesh,
+                           int interp_order, std::string field_expression,
+                           std::string field_filename, bool mesh_output,
+                           int rank, int numpe, Jali::Entity_kind entityKind,
+                           double *L1_error, double *L2_error) {
 
-  std::shared_ptr<Jali::Mesh> sourceMesh;
-  std::shared_ptr<Jali::Mesh> targetMesh;
-
-  create_meshes(dim, n_source, n_target, conformal, &sourceMesh, &targetMesh,
-                MPI_COMM_WORLD);
+  Portage::LimiterType limiter = Portage::LimiterType::BARTH_JESPERSEN;
 
   // Wrappers for interfacing with the underlying mesh data structures.
   Wonton::Jali_Mesh_Wrapper sourceMeshWrapper(*sourceMesh);
@@ -300,20 +394,38 @@ template<int dim> double run(int n_source, int n_target, bool conformal, int int
       sourceMeshWrapper.num_ghost_nodes();
   const int ntarnodes = targetMeshWrapper.num_owned_nodes();
 
+  if (rank == 0) {
+    std::cout << "starting portageapp_jali...\n";
+    std::cout << "Source mesh has " << nsrccells << " cells\n";
+    std::cout << "Target mesh has " << ntarcells << " cells\n";
+    std::cout << "All fields on" << entityKind << "including "
+              << "the command line field (if specified) will be remapped\n";
+    if (field_expression.length())
+      std::cout << " Specified field is " << field_expression << "\n";
+    std::cout << "   Interpolation order is " << interp_order << "\n";
+    if (interp_order == 2)
+      std::cout << "   Limiter type is " << limiter << "\n";
+  }
+
+
+
   // Native jali state managers for source and target
   Jali::State sourceState(sourceMesh);
   Jali::State targetState(targetMesh);
 
   std::vector<double> sourceData;
+  user_field_t source_field;
+  if (!source_field.initialize(dim, field_expression))
+    MPI_Abort(MPI_COMM_WORLD, -1);
+
   std::vector<std::string> remap_fields;
 
   // Cell-centered remaps
   if (entityKind == Jali::Entity_kind::CELL) {
     sourceData.resize(nsrccells);
     
-    for (unsigned int c = 0; c < nsrccells; ++c) {
-      sourceData[c] = source_data(sourceMesh->cell_centroid(c), poly_order);
-    }
+    for (unsigned int c = 0; c < nsrccells; ++c)
+      sourceData[c] = source_field(sourceMesh->cell_centroid(c));
 
     sourceState.add("celldata", sourceMesh, Jali::Entity_kind::CELL,
                     Jali::Entity_type::ALL, &(sourceData[0]));
@@ -324,7 +436,7 @@ template<int dim> double run(int n_source, int n_target, bool conformal, int int
     // Register the variable name and interpolation order with the driver
     remap_fields.push_back("celldata");
 
-  } else { // node-centered
+  } else {  // node-centered
     sourceData.resize(nsrcnodes);
 
     /*!
@@ -335,7 +447,7 @@ template<int dim> double run(int n_source, int n_target, bool conformal, int int
     Portage::Point<dim> node;
     for (int i = 0; i < nsrcnodes; ++i) {
       sourceMeshWrapper.node_get_coordinates(i, &node);
-      sourceData[i] = source_data(node, poly_order);
+      sourceData[i] = source_field(node);
     }
 
     sourceState.add("nodedata", sourceMesh, Jali::Entity_kind::NODE,
@@ -350,14 +462,6 @@ template<int dim> double run(int n_source, int n_target, bool conformal, int int
   }
 
   if (numpe > 1) MPI_Barrier(MPI_COMM_WORLD);
-  gettimeofday(&end, 0);
-  timersub(&end, &begin, &diff);
-  const float seconds_init = diff.tv_sec + 1.0E-6*diff.tv_usec;
-  if (rank == 0) std::cout << "Mesh Initialization Time: " << seconds_init <<
-                     std::endl;
-  
-  gettimeofday(&begin, 0);
-
 
   // Portage wrappers for source and target fields
   Wonton::Jali_State_Wrapper sourceStateWrapper(sourceState);
@@ -389,7 +493,7 @@ template<int dim> double run(int n_source, int n_target, bool conformal, int int
       d.set_remap_var_names(remap_fields);
       d.run(numpe > 1);
     }
-  } else { //3D
+  } else {  // 3D
     if (interp_order == 1) {
       Portage::Driver<
         Portage::SearchKDTree,
@@ -402,7 +506,7 @@ template<int dim> double run(int n_source, int n_target, bool conformal, int int
             targetMeshWrapper, targetStateWrapper);
       d.set_remap_var_names(remap_fields);
       d.run(numpe > 1);
-    } else {// 2nd order & 3D
+    } else {  // 2nd order & 3D
       Portage::Driver<
         Portage::SearchKDTree,
         Portage::IntersectR3D,
@@ -419,21 +523,17 @@ template<int dim> double run(int n_source, int n_target, bool conformal, int int
 
   // Dump some timing information
   if (numpe > 1) MPI_Barrier(MPI_COMM_WORLD);
-  gettimeofday(&end, 0);
-  timersub(&end, &begin, &diff);
-  const float seconds = diff.tv_sec + 1.0E-6*diff.tv_usec;
-  if (rank == 0) std::cout << "Time: " << seconds << std::endl;
 
   // Output results for small test cases
   double error, toterr = 0.0;
   double const * cellvecout;
   double const * nodevecout;
   double totvolume = 0.;
-  if (entityKind == Jali::Entity_kind::CELL)  { // CELL error computation
+  if (entityKind == Jali::Entity_kind::CELL)  {  // CELL error computation
     targetStateWrapper.get_data<double>(Portage::CELL, "celldata",
                                         &cellvecout);
 
-    if (numpe == 1 && n_target < 10)
+    if (numpe == 1 && ntarcells < 10)
       std::cout << "celldata vector on target mesh after remapping is:"
                 << std::endl;
 
@@ -442,60 +542,66 @@ template<int dim> double run(int n_source, int n_target, bool conformal, int int
     Portage::Point<dim> ccen;
     for (int c = 0; c < ntarcells; ++c) {
       targetMeshWrapper.cell_centroid(c, &ccen);
-      error = source_data(ccen,poly_order) - cellvecout[c];
-        
-      if(!targetMeshWrapper.on_exterior_boundary(Portage::Entity_kind::CELL, c)){
-        totvolume+=targetMeshWrapper.cell_volume(c);
-        toterr += error*error*targetMeshWrapper.cell_volume(c);          
+      error = source_field(ccen) - cellvecout[c];
+
+      if (!targetMeshWrapper.on_exterior_boundary(Portage::Entity_kind::CELL, c)) {
+        double cellvol = targetMeshWrapper.cell_volume(c);
+        totvolume += cellvol;
+        *L1_error += fabs(error)*cellvol;
+        *L2_error += error*error*cellvol;
       }
-      if (numpe == 1 && n_target < 10) {
+      if (numpe == 1 && ntarcells < 10) {
         std::printf("Cell=% 4d Centroid = (% 5.3lf,% 5.3lf)", c,
                     ccen[0], ccen[1]);
-        std::printf("  Value = % 10.6lf  Err = % lf\n",
+        std::printf("  Value = % 10.6lf  L2 Err = % lf\n",
                     cellvecout[c], error);
       }
     }
-  } 
-  else { // NODE error computation
-
+  } else {  // NODE error computation
     targetStateWrapper.get_data<double>(Portage::NODE, "nodedata",
                                         &nodevecout);
-    if (numpe == 1 && n_target < 10)
+    if (numpe == 1 && ntarnodes < 10)
       std::cout << "nodedata vector on target mesh after remapping is:"
                 << std::endl;
 
     Portage::Point<dim> nodexy;
     for (int i = 0; i < ntarnodes; ++i) {
       targetMeshWrapper.node_get_coordinates(i, &nodexy);
-      error = source_data(nodexy,poly_order)-nodevecout[i];
-      if(!targetMeshWrapper.on_exterior_boundary(Portage::Entity_kind::NODE, i)){
-        totvolume+=targetMeshWrapper.dual_cell_volume(i);
-        toterr += error*error*targetMeshWrapper.dual_cell_volume(i);        
+      error = source_field(nodexy) - nodevecout[i];
+      if (!targetMeshWrapper.on_exterior_boundary(Portage::Entity_kind::NODE, i)) {
+        double dualcellvol = targetMeshWrapper.dual_cell_volume(i);
+        totvolume += dualcellvol;
+        *L1_error += fabs(error)*dualcellvol;
+        *L2_error += error*error*dualcellvol;
       }
-      if (n_target < 10) {
+      if (ntarnodes < 10) {
         std::printf("Node=% 4d Coords = (% 5.3lf,% 5.3lf) ", i,
                     nodexy[0], nodexy[1]);
         std::printf("Value = %10.6lf Err = % lf\n", nodevecout[i], error);
       }
     }
   }
-  double finalerr = sqrt(toterr/totvolume);
-  if (numpe == 1) {
-    std::printf("\n\nL2 NORM OF ERROR = %lf\n\n", finalerr);
-  } else {
+  *L2_error = sqrt(*L2_error);
+  if (numpe > 1) {
     std::cout << std::flush << std::endl;
     MPI_Barrier(MPI_COMM_WORLD);
-    double globalerr;
-    MPI_Reduce(&toterr, &globalerr, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
 
-    if (rank == 0)
-      std::printf("\n\nL2 NORM OF ERROR = %lf\n\n", finalerr);
+    double globalerr;
+    MPI_Reduce(L1_error, &globalerr, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+    *L1_error = globalerr;
+
+    MPI_Reduce(L2_error, &globalerr, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+    *L2_error = globalerr;
+  }
+  if (rank == 0) {
+    std::printf("\n\nL1 NORM OF ERROR = %lf\n", *L1_error);
+    std::printf("L2 NORM OF ERROR = %lf\n\n", *L2_error);
   }
 
-  // Dump output, if requested
-  if (dump_output) {
+  // Write out the meshes if requested
+  if (mesh_output) {
 
-    // The current version of MSTK (2.27rc2) has a bug in writing out 
+    // The current version of MSTK (2.27rc2) has a bug in writing out
     // exodus files with node variables in parallel and so we will avoid
     // the exodus export in this situation. The 'if' statement can be
     // removed once we upgrade to the next version of MSTK
@@ -503,14 +609,20 @@ template<int dim> double run(int n_source, int n_target, bool conformal, int int
     if (numpe == 1) {
       if (rank == 0)
         std::cout << "Dumping data to Exodus files..." << std::endl;
-      sourceState.export_to_mesh();
+      if (field_expression.length() > 0) {
+        sourceState.export_to_mesh();
+        sourceMesh->write_to_exodus_file("input.exo");
+      }
       targetState.export_to_mesh();
-      sourceMesh->write_to_exodus_file("input.exo");
       targetMesh->write_to_exodus_file("output.exo");
       if (rank == 0)
         std::cout << "...done." << std::endl;
     }
+  }  // if (dump_meshes)
 
+  // construct the field file name and open the file
+  
+  if (field_filename.length()) {
     std::vector<int> lgid;
     std::vector<double> lvalues;
     std::string entstr;
@@ -537,31 +649,19 @@ template<int dim> double run(int n_source, int n_target, bool conformal, int int
     argsort(lgid, idx);   // find sorting indices based on global IDS
     reorder(lgid, idx);   // sort the global ids
     reorder(lvalues, idx);  // sort the values
-
-    // construct the field file name and open the file
-
-    std::string fieldfilename = "jali_field_" +
-        std::to_string(static_cast<long long>(dim)) + "d_" +
-        entstr + "_f" + std::to_string(static_cast<long long>(poly_order)) + "_r" +
-        std::to_string(static_cast<long long>(interp_order));
-    if (!conformal) fieldfilename = fieldfilename + "_nc";
-    fieldfilename = fieldfilename + ".txt";
+    
     if (numpe > 1) {
       int maxwidth = static_cast<long long>(std::ceil(std::log10(numpe)));
       char rankstr[10];
       std::snprintf(rankstr, sizeof(rankstr), "%0*d", maxwidth, rank);
-      fieldfilename = fieldfilename + "." + std::string(rankstr);
+      field_filename = field_filename + "." + std::string(rankstr);
     }
-    std::ofstream fout(fieldfilename);
+    std::ofstream fout(field_filename);
     fout << std::scientific;
     fout.precision(17);
-
+    
     // write out the values
-
     for (int i=0; i < lgid.size(); i++)
       fout << lgid[i] << " " << lvalues[i] << std::endl;
-  }  // if (dump_output)
-  
-  std::printf("finishing portageapp...\n");
-  return finalerr;
+  }
 }
