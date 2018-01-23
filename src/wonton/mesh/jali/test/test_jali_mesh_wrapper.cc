@@ -90,26 +90,27 @@ void dual_cell_coordinates_canonical_rotation(
   @param fctpoints Vector of unique points of facetization
   @param facets  Vector of vector of facet points (indexing fctpoints)
   @param centroid  Centroid of polyhedron
-  @param expected_area  Expected area of polyhedron surface
-  @param expected_volume  Expected volume of polyhedron
-
-  RESTRICTIONS: TRIANGULAR FACETIZATION OF HEXES ONLY FOR NOW
+  @param expected_area  Expected area of polyhedron surface (-1 means don't check)
+  @param expected_volume  Expected volume of polyhedron (-1 means don't check)
+  @param expected_centroid Expected centroid of polyhedron ([-99, -99, -99] means don't check)
 */
 
 bool faceted_poly_ok(std::vector<Portage::Point<3>> const & fctpoints,
                      std::vector<std::vector<int>> const & facets,
                      double expected_area, double expected_volume,
+                     Portage::Point<3> expected_centroid,
                      double tol) {
 
   int nfacets = facets.size();
 
-  Portage::Point<3> cen(0.0, 0.0, 0.0);
+  Portage::Point<3> gcen(0.0, 0.0, 0.0);  // Geometric center
   int npoints = fctpoints.size();
   for (int i = 0; i < npoints; i++)
-    cen += fctpoints[i];
-  cen /= npoints;
+    gcen += fctpoints[i];
+  gcen /= npoints;
 
   double ctetvolume = 0.0, cfctvolume = 0.0, cfctarea = 0.0;
+  Portage::Point<3> cfctcen, ctetcen;
   for (int i = 0; i < nfacets; i++) {
     int nfpoints = facets[i].size();
     for (int j = 1; j < nfpoints-1; j++) {
@@ -119,44 +120,71 @@ bool faceted_poly_ok(std::vector<Portage::Point<3>> const & fctpoints,
 
       Portage::Vector<3> v0 = p1 - p0;
       Portage::Vector<3> v1 = p2 - p0;
-      Portage::Vector<3> outnormal = cross(v0, v1)/2.0;
+      Portage::Vector<3> outnormal = cross(v0, v1);
+      double fctarea = outnormal.norm()/2.0;
 
-      cfctarea += outnormal.norm();
+      cfctarea += fctarea;
 
-      //*********************************************************
-      // We are using the fact the cell is an axis aligned cube to do
-      // a short cut form for integral of X.N where X is the
-      // coordinate vector at any point on the face and N is the area
-      // weighted normal of the face
-      //*********************************************************
+      // Compute contribution to the volume by divergence theorem
+      Portage::Vector<3> vec;
+      for (int k = 0; k < 3; k++)
+        vec[k] = p0[k];
+      cfctvolume += dot(vec, outnormal)/6.0;
 
-      Portage::Vector<3> p0vec(p0[0], p0[1], p0[2]);
-      cfctvolume += dot(p0vec, outnormal)/3.0;
+      // Compute contribution to the centroid by divergence theorem
+      for (int k = 0; k < 3; k++)
+        cfctcen[k] += ((p0[k]+p1[k])*(p0[k]+p1[k]) +
+                       (p1[k]+p2[k])*(p1[k]+p2[k]) +
+                       (p2[k]+p0[k])*(p2[k]+p0[k]))*outnormal[k]/24.0;
 
       // Also compute volume of a tet formed by the facet and the centroid
-      Portage::Vector<3> v2 = cen - p0;
-      double tetvolume = -dot(v2, outnormal)/3.0;
+      Portage::Vector<3> v2 = gcen - p0;
+      double tetvolume = -dot(v2, outnormal)/6.0;
       if (tetvolume < 1.0e-12) {
-        std::cerr << "Tet formed by facet and centroid has volume " << tetvolume << std::endl;
+        std::cerr << "Tet formed by facet and centroid has volume " <<
+            tetvolume << std::endl;
         return false;
       }
       ctetvolume += tetvolume;
+
+      // Also compute centroid by volume weighted sum of tet centroids
+      ctetcen += tetvolume*(p0 + p1 + p2 + gcen)/4.0;
     }
   }
+  cfctcen /= (2*ctetvolume);
+  ctetcen /= ctetvolume;
 
-  if (std::abs(expected_area-cfctarea) > 1.0e-12) {
+  if (expected_area > 0.0 && std::abs(expected_area-cfctarea) > 1.0e-12) {
     std::cerr << "Expected area: " << expected_area << std::endl;
     std::cerr << "Computed area: " << cfctarea << std::endl;
     return false;
   }
-  if (std::abs(expected_volume-cfctvolume) > 1.0e-12) {
+  if (expected_volume > 0.0 && std::abs(expected_volume-cfctvolume) > 1.0e-12) {
     std::cerr << "Expected volume: " << expected_volume << std::endl;
-    std::cerr << "Computed volume by divergence theorem: " << cfctvolume << std::endl;
+    std::cerr << "Computed volume by divergence theorem: " << cfctvolume <<
+        std::endl;
     return false;
   }
-  if (std::abs(expected_volume-ctetvolume) > 1.0e-12) {
+  if (expected_volume > 0.0 && std::abs(expected_volume-ctetvolume) > 1.0e-12) {
     std::cerr << "Expected volume: " << expected_volume << std::endl;
-    std::cerr << "Computed volume by summing tet volumes: " << ctetvolume << std::endl;
+    std::cerr << "Computed volume by summing tet volumes: " << ctetvolume <<
+        std::endl;
+    return false;
+  }
+  Portage::Point<3> dummy_point(-99, -99, -99);
+  if (!Portage::approxEq(expected_centroid, dummy_point) &&
+      !Portage::approxEq(expected_centroid, cfctcen, 1.0e-08)) {
+    std::cerr << "Expected centroid " << expected_centroid[0] << " " <<
+        expected_centroid[1] << " " << expected_centroid[2] << "\n";
+    std::cerr << "Computed centroid by divergence theorem " << cfctcen[0] <<
+        " " << cfctcen[1] << " " << cfctcen[2] << "\n";
+    return false;
+  }
+  if (!Portage::approxEq(expected_centroid, ctetcen, 1.0e-08)) {
+    std::cerr << "Expected centroid " << expected_centroid[0] << " " <<
+        expected_centroid[1] << " " << expected_centroid[2] << "\n";
+    std::cerr << "Computed centroid by vol weighted sum of tet centroids " <<
+        ctetcen[0] << " " << ctetcen[1] << " " << ctetcen[2] << "\n";
     return false;
   }
 
@@ -173,9 +201,9 @@ TEST(Jali_Mesh, vdd_eq) {
     c = {{0.25, 0.25}, {0.25, 0}};
     ASSERT_TRUE(vdd_eq(a, b));
     ASSERT_TRUE(vdd_eq(a, {{0.25, 0}, {0.25, 0.25}}));
-    ASSERT_TRUE(not vdd_eq(a, {{0.25, 0}}));
-    ASSERT_TRUE(not vdd_eq(a, c));
-    ASSERT_TRUE(not vdd_eq(a, {{0.25, 0.25}, {0.25, 0}}));
+    ASSERT_TRUE(!vdd_eq(a, {{0.25, 0}}));
+    ASSERT_TRUE(!vdd_eq(a, c));
+    ASSERT_TRUE(!vdd_eq(a, {{0.25, 0.25}, {0.25, 0}}));
     ASSERT_TRUE(vdd_eq(a, c, 0.5));
 }
 
@@ -246,10 +274,10 @@ TEST(Jali_Mesh_Wrapper, ccw) {
     Wonton::Jali_Mesh_Wrapper mesh_wrapper(*mesh);
 
     ASSERT_TRUE(mesh_wrapper.ccw({-1, 0}, {0, 0}, {0, 1}));
-    ASSERT_TRUE(not mesh_wrapper.ccw({1, 0}, {0, 0}, {0, 1}));
-    ASSERT_TRUE(not mesh_wrapper.ccw({-1, 0}, {0, 0}, {1, 0}));
+    ASSERT_TRUE(!mesh_wrapper.ccw({1, 0}, {0, 0}, {0, 1}));
+    ASSERT_TRUE(!mesh_wrapper.ccw({-1, 0}, {0, 0}, {1, 0}));
     ASSERT_TRUE(mesh_wrapper.ccw({0.25, 0}, {0.5, 0}, {0.25, 0.25}));
-    ASSERT_TRUE(not mesh_wrapper.ccw({0.25, 0}, {0, 0}, {0.25, 0.25}));
+    ASSERT_TRUE(!mesh_wrapper.ccw({0.25, 0}, {0, 0}, {0.25, 0.25}));
     ASSERT_TRUE(mesh_wrapper.ccw({0.25, 0.25}, {0, 0}, {0.25, 0}));
 }
 
@@ -517,9 +545,9 @@ TEST(Jali_Mesh_Wrapper, Get_Exterior_Flag) {
 TEST(Jali_Mesh_Wrapper, Decompose_Cell_Into_Tets) {
   Jali::MeshFactory mf(MPI_COMM_WORLD);
   mf.included_entities({Jali::Entity_kind::EDGE,
-                                  Jali::Entity_kind::FACE,
-                                  Jali::Entity_kind::WEDGE,
-                                  Jali::Entity_kind::CORNER});
+          Jali::Entity_kind::FACE,
+          Jali::Entity_kind::WEDGE,
+          Jali::Entity_kind::CORNER});
   std::shared_ptr<Jali::Mesh> mesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2, 2, 2);
   ASSERT_NE(mesh, nullptr);
   Wonton::Jali_Mesh_Wrapper mesh_wrapper(*mesh);
@@ -1374,14 +1402,12 @@ TEST(Jali_Mesh_Wrapper, MESH_NON_DEFAULT_OPTS) {
   // Should get positive number of wedges but also sides (because wedges are
   // implicitly derived from sides) but 0 for corners
 
-  request_sides = false;
   request_wedges = true;
   request_corners = false;
 
   Wonton::Jali_Mesh_Wrapper mesh_wrapper2(*mesh, request_sides, request_wedges,
                                            request_corners);
 
-  ASSERT_GT(mesh_wrapper2.num_entities(Portage::SIDE, Portage::ALL), 0);
   ASSERT_GT(mesh_wrapper2.num_entities(Portage::WEDGE, Portage::ALL), 0);
   ASSERT_EQ(mesh_wrapper2.num_entities(Portage::CORNER, Portage::ALL), 0);
 
@@ -1390,28 +1416,24 @@ TEST(Jali_Mesh_Wrapper, MESH_NON_DEFAULT_OPTS) {
   // Should get positive number of corners but also sides and wedges (because
   // some corner data is implicitly derived from wedges)
 
-  request_sides = false;
   request_wedges = false;
   request_corners = true;
 
   Wonton::Jali_Mesh_Wrapper mesh_wrapper3(*mesh, request_sides, request_wedges,
                                            request_corners);
 
-  ASSERT_GT(mesh_wrapper3.num_entities(Portage::SIDE, Portage::ALL), 0);
   ASSERT_GT(mesh_wrapper3.num_entities(Portage::WEDGE, Portage::ALL), 0);
   ASSERT_GT(mesh_wrapper3.num_entities(Portage::CORNER, Portage::ALL), 0);
 
 
   // Bare bones mesh wrapper - should get zero for auxiliary entity counts
 
-  request_sides = false;
   request_wedges = false;
   request_corners = false;
 
   Wonton::Jali_Mesh_Wrapper mesh_wrapper4(*mesh, request_sides, request_wedges,
                                            request_corners);
 
-  ASSERT_EQ(mesh_wrapper4.num_entities(Portage::SIDE, Portage::ALL), 0);
   ASSERT_EQ(mesh_wrapper4.num_entities(Portage::WEDGE, Portage::ALL), 0);
   ASSERT_EQ(mesh_wrapper4.num_entities(Portage::CORNER, Portage::ALL), 0);
 
@@ -1467,7 +1489,7 @@ TEST(Jali_Mesh_Wrapper, MultiCell_Facetization) {
   int nfacets = facets.size();
   ASSERT_EQ(24, nfacets);
 
-  ASSERT_TRUE(faceted_poly_ok(fctpoints, facets, cfarea, cvolume, 1e-12));
+  ASSERT_TRUE(faceted_poly_ok(fctpoints, facets, cfarea, cvolume, cen, 1e-12));
 
   // Get the facetization of the control volume around an interior
   // node and check surface area and volume. The volume and surface
@@ -1505,7 +1527,9 @@ TEST(Jali_Mesh_Wrapper, MultiCell_Facetization) {
   nfacets = facets.size();
   ASSERT_EQ(48, nfacets);
 
-  ASSERT_TRUE(faceted_poly_ok(fctpoints, facets, cfarea, cvolume, 1e-12));
+  mesh_wrapper.dual_cell_centroid(inode, &cen);
+
+  ASSERT_TRUE(faceted_poly_ok(fctpoints, facets, cfarea, cvolume, cen, 1e-12));
 
 
   // Get the facetization of the control volume around a corner node
@@ -1529,7 +1553,10 @@ TEST(Jali_Mesh_Wrapper, MultiCell_Facetization) {
   nfacets = facets.size();
   ASSERT_EQ(12, nfacets);
 
-  ASSERT_TRUE(faceted_poly_ok(fctpoints, facets, cfarea/4.0, cvolume/8.0, 1e-12));
+  mesh_wrapper.dual_cell_centroid(inode, &cen);
+
+  ASSERT_TRUE(faceted_poly_ok(fctpoints, facets, cfarea/4.0, cvolume/8.0, cen,
+                              1e-12));
 
   // Get the facetization of the control volume around a corner node
   // and check surface area and volume. The volume should be 1/8th
@@ -1564,11 +1591,14 @@ TEST(Jali_Mesh_Wrapper, MultiCell_Facetization) {
   }
   ASSERT_NE(-1, inode);
   mesh_wrapper.dual_cell_get_facetization(inode, &facets, &fctpoints);
-  
+
   nfacets = facets.size();
   ASSERT_EQ(20, nfacets);
-  
-  ASSERT_TRUE(faceted_poly_ok(fctpoints, facets, 5*cfarea/12, cvolume/4, 1e-12));
+
+  mesh_wrapper.dual_cell_centroid(inode, &cen);
+
+  ASSERT_TRUE(faceted_poly_ok(fctpoints, facets, 5*cfarea/12, cvolume/4, cen,
+                              1e-12));
 
   // Get the facetization of the control volume around a corner node
   // and check surface area and volume. The volume should be 1/8th
@@ -1607,6 +1637,117 @@ TEST(Jali_Mesh_Wrapper, MultiCell_Facetization) {
   nfacets = facets.size();
   ASSERT_EQ(32, nfacets);
 
-  ASSERT_TRUE(faceted_poly_ok(fctpoints, facets, 2*cfarea/3, cvolume/2, 1e-12));
+  mesh_wrapper.dual_cell_centroid(inode, &cen);
 
+  ASSERT_TRUE(faceted_poly_ok(fctpoints, facets, 2*cfarea/3, cvolume/2, cen,
+                              1e-12));
+
+}
+
+
+
+// Check that we can compute volumes and centroids of skewed cells correctly
+
+TEST(Jali_Mesh_Wrapper, Skewed_2DCell_Geometry) {
+  // Create a 1 cell mesh
+  double xmin(0.0), ymin(0.0);
+  double xmax(1.0), ymax(1.0);
+  int nx(1), ny(1);
+
+  int nproc, me;
+  MPI_Comm_size(MPI_COMM_WORLD, &nproc);
+  MPI_Comm_rank(MPI_COMM_WORLD, &me);
+
+  Jali::MeshFactory mf(MPI_COMM_WORLD);
+  mf.included_entities({Jali::Entity_kind::ALL_KIND});
+  mf.partitioner(Jali::Partitioner_type::BLOCK);
+  std::shared_ptr<Jali::Mesh> mesh = mf(xmin, ymin, xmax, ymax, nx, ny);
+
+  // Move the node that's at 1.0, 1.0 to 1.25, 1.25
+  int nnodes = mesh->num_nodes();
+  for (int i = 0; i < nnodes; i++) {
+    JaliGeometry::Point ncoord;
+    mesh->node_get_coordinates(i, &ncoord);
+    if (fabs(ncoord[0]-1.0) < 1.0e-12 && fabs(ncoord[1]-1.0) < 1.0e-12) {
+      ncoord[0] = 1.25; ncoord[1] = 1.25;
+      mesh->node_set_coordinates(i, ncoord);
+      break;
+    }
+  }
+
+  // We can hand-calculate the area and centroid of this skewed 2D element
+  double carea = 1.25;
+  Portage::Point<2> cen(0.58333333333333333, 0.58333333333333333);
+
+  bool request_sides = true;
+  bool request_wedges = true;
+  bool request_corners = true;
+  Wonton::Jali_Mesh_Wrapper mesh_wrapper(*mesh, request_sides, request_wedges,
+                                         request_corners);
+
+  ASSERT_NEAR(carea, mesh_wrapper.cell_volume(0), 1.0e-12);
+
+  Portage::Point<2> cen_computed;
+  mesh_wrapper.cell_centroid(0, &cen_computed);
+  ASSERT_TRUE(Portage::approxEq(cen, cen_computed, 1.0e-8));
+}
+
+
+// Check that we can compute volumes and centroids of skewed cells correctly
+
+TEST(Jali_Mesh_Wrapper, Skewed_3DCell_Geometry) {
+  // Create a 1 cell mesh
+  double xmin(0.0), ymin(0.0), zmin(0.0);
+  double xmax(1.0), ymax(1.0), zmax(1.0);
+  int nx(1), ny(1), nz(1);
+
+  int nproc, me;
+  MPI_Comm_size(MPI_COMM_WORLD, &nproc);
+  MPI_Comm_rank(MPI_COMM_WORLD, &me);
+
+  Jali::MeshFactory mf(MPI_COMM_WORLD);
+  mf.included_entities({Jali::Entity_kind::ALL_KIND});
+  mf.partitioner(Jali::Partitioner_type::BLOCK);
+  std::shared_ptr<Jali::Mesh> mesh = mf(xmin, ymin, zmin,
+                                        xmax, ymax, zmax,
+                                        nx, ny, nz);
+
+  // Move the node that's at 1.0, 1.0, 1.0 to 1.25, 1.25, 1.25
+  int nnodes = mesh->num_nodes();
+  for (int i = 0; i < nnodes; i++) {
+    JaliGeometry::Point ncoord;
+    mesh->node_get_coordinates(i, &ncoord);
+    if (fabs(ncoord[0]-1.0) < 1.0e-12 && fabs(ncoord[1] - 1.0) < 1.0e-12 &&
+        fabs(ncoord[2]-1.0) < 1.0e-12) {
+      ncoord[0] = 1.25; ncoord[1] = 1.25; ncoord[2] = 1.25;
+      mesh->node_set_coordinates(i, ncoord);
+      break;
+    }
+  }
+
+  bool request_sides = true;
+  bool request_wedges = true;
+  bool request_corners = true;
+  Wonton::Jali_Mesh_Wrapper mesh_wrapper(*mesh, request_sides, request_wedges,
+                                         request_corners);
+
+  // Get the facetization of any one cell and check surface area and
+  // volume (by divergence theorem). By definition, each facet is
+  // planar and has only one normal
+
+  std::vector<Portage::Point<3>> fctpoints;
+  std::vector<std::vector<int>> facets;
+  mesh_wrapper.cell_get_facetization(0, &facets, &fctpoints);
+
+  Portage::Point<3> cen;
+  mesh_wrapper.cell_centroid(0, &cen);
+
+  double cvolume = mesh_wrapper.cell_volume(0);
+  
+  // The mesh wrappers don't have face area computation and the Jali
+  // facets use a different face point than Portage mesh wrapper. So
+  // don't compare this
+  double cfarea = -1.0;
+
+  ASSERT_TRUE(faceted_poly_ok(fctpoints, facets, cfarea, cvolume, cen, 1e-12));
 }

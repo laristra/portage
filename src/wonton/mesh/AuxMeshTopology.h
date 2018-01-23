@@ -193,6 +193,12 @@ class AuxMeshTopology {
       wedges_requested_(request_wedges || request_corners),
       corners_requested_(request_corners) {
 
+    // we really cannot do anything without sides, so we will turn
+    // them on all the time. Don't want to change the interface at
+    // this time though.
+    
+    sides_requested_ = true;
+
     // Part of the CRTP magic. Knowing that we will be deriving the
     // BasicMesh class from this class, we can cast a pointer to this
     // class type to a pointer of BasicMesh class type and call its
@@ -470,7 +476,7 @@ class AuxMeshTopology {
   void cell_get_coordinates(int const cellid,
                             std::vector<Point<D>> *pplist) const;
 
-  //! Centroid of a cell
+  //! Centroid of a cell (actually geometric center of cell nodes)
 
   template <long D>
   void cell_centroid(int const cellid, Point<D> *ccen) const {
@@ -493,7 +499,7 @@ class AuxMeshTopology {
   }
 
   
-  //! Centroid of a face
+  //! Centroid of a face (actually geometric center of face nodes)
 
   template <long D>
   void face_centroid(int const faceid, Point<D> *fcen) const {
@@ -1246,17 +1252,34 @@ class AuxMeshTopology {
   //
   // Centroid of a dual cell.
 
-  //! \todo NOTE: THIS IS ASSUMED TO BE THE NODE COORDINATE BECAUSE
-  //! THE NODAL VARIABLES LIVE THERE, BUT FOR DISTORTED GRIDS, THE
-  //! NODE COORDINATE MAY NOT BE THE CENTROID OF THE DUAL CELL
-
   template <long D>
   void dual_cell_centroid(int nodeid, Point<D> *centroid) const {
 #ifdef DEBUG
     assert(nodeid < num_entities(NODE, ALL));
 #endif
-    basicmesh_ptr_->node_get_coordinates(nodeid, centroid);
+    assert(wedges_requested_);
+    
+    bool posvol_order = true;
+    std::vector<int> wedgeids;
+    node_get_wedges(nodeid, ALL, &wedgeids);
+    double vol = 0.0;
+    for (int i = 0; i < D; i++) (*centroid)[i] = 0.0;
+    for (auto const wid : wedgeids) {
+      double wvol = wedge_volume(wid);
+
+      Point<D> wcen;
+      std::array<Point<D>, D+1> wcoords;
+      wedge_get_coordinates(wid, &wcoords, posvol_order);
+      for (int i = 0; i < D+1; i++)
+        wcen += wcoords[i];
+      wcen /= D+1;
+
+      *centroid += wvol*wcen;
+      vol += wvol;
+    }
+    *centroid /= vol;
   }
+
 
   //! Get the volume of dual cell by finding the corners that attach to the node
   double dual_cell_volume(int const nodeid) const {
@@ -1298,22 +1321,74 @@ class AuxMeshTopology {
 
  protected:
   void build_aux_entities() {
-    compute_cell_centroids();
-    compute_face_centroids();
+    int dim = basicmesh_ptr_->space_dimension();
 
-    if (sides_requested_) {
-      if (basicmesh_ptr_->space_dimension() == 1)
-        build_sides_1D(*this);  // needs cell, face centroids
-      else if (basicmesh_ptr_->space_dimension() == 2)
-        build_sides_2D(*this);  // needs cell, face centroids
-      else if (basicmesh_ptr_->space_dimension() == 3)
-        build_sides_3D(*this);  // needs cell, face centroids
+    // We will use the simplicial decomposition of cells to compute
+    // the real centroid of the cells. The sides of a cell provide
+    // such a decomposition but we have a chicken-and-egg problem
+    // since one of the points of the sides is centroid of the
+    // cell. To solve this, we build the simplices by using the
+    // topology of the sides but the geometric centers of the cells
+    // instead of the centroids. Then we compute the real centroids as
+    // the volume weighted average of the centroids of these temporary
+    // simplices. 
+    //
+    // So the steps should be:
+    //
+    // compute_approximate_face_centroids
+    // compute_approximate_cell_centroids
+    //
+    // build_sides (topology only)
+    //
+    // compute_face_centroids
+    // compute_cell_centroids
+    //
+    // compute_side_volumes
+
+    if (dim == 1) {
+      compute_approximate_face_centroids<1>();
+      compute_approximate_cell_centroids<1>();
+
+      if (sides_requested_)
+        build_sides_1D(*this);
+
+      compute_face_centroids<1>();
+      compute_cell_centroids<1>();
+
+      if (sides_requested_)
+        compute_side_volumes<1>();
+
+    } else if (dim == 2) {
+      compute_approximate_face_centroids<2>();
+      compute_approximate_cell_centroids<2>();
+
+      if (sides_requested_)
+        build_sides_2D(*this);
+
+      compute_face_centroids<2>();
+      compute_cell_centroids<2>();
+
+      if (sides_requested_)
+        compute_side_volumes<2>();
+
+    } else if (dim == 3) {
+      compute_approximate_face_centroids<3>();
+      compute_approximate_cell_centroids<3>();
+
+      if (sides_requested_)
+        build_sides_3D(*this);
+
+      compute_face_centroids<3>();
+      compute_cell_centroids<3>();
+
+      if (sides_requested_)
+        compute_side_volumes<3>();
     }
+
+    compute_cell_volumes();  // needs side volumes
+
     if (wedges_requested_) build_wedges();
     if (corners_requested_) build_corners();
-
-    if (sides_requested_)
-      compute_cell_volumes();  // needs side volumes
 
     build_face_to_cell_adjacency();
     flag_entities_on_exterior_boundary();
@@ -1321,8 +1396,11 @@ class AuxMeshTopology {
 
 
  private:
-  void compute_cell_centroids();
-  void compute_face_centroids();
+  template<int dim> void compute_approximate_cell_centroids();
+  template<int dim> void compute_approximate_face_centroids();
+  template<int dim> void compute_cell_centroids();
+  template<int dim> void compute_face_centroids();
+  template<int dim> void compute_side_volumes();
   void compute_cell_volumes();
 
   void build_wedges();
@@ -1649,12 +1727,8 @@ void build_sides_1D(AuxMeshTopology<BasicMesh>& mesh) {
   mesh.side_face_id_.assign(num_sides_all, -1);
   mesh.side_opp_side_id_.assign(num_sides_all, -1);
   mesh.side_node_ids_.assign(num_sides_all, {{-1, -1}});
-  mesh.side_volumes_.resize(num_sides_all);
 
   int iall = 0, iown = 0, ighost = 0;
-  std::array<Point<1>, 2> sxyz;
-  bool posvol_order = true;
-  
   for (int c = 0; c < ncells; ++c) {
     int sideid = 2*c;    // always 2 sides per cell
     
@@ -1691,12 +1765,6 @@ void build_sides_1D(AuxMeshTopology<BasicMesh>& mesh) {
     mesh.side_opp_side_id_[sideid  ] = (sideid == 0) ? -1 : sideid-1;
     mesh.side_opp_side_id_[sideid+1] = (sideid+1 == num_sides_all-1) ?
         -1 : sideid+2;
-    
-    mesh.side_get_coordinates(sideid, &sxyz, posvol_order);
-    mesh.side_volumes_[sideid] = calc_side_volume(sxyz);
-    
-    mesh.side_get_coordinates(sideid+1, &sxyz, posvol_order);
-    mesh.side_volumes_[sideid+1] = calc_side_volume(sxyz);
   }  // for c = 0, ncells-1
 }  // build_sides in 1D
 
@@ -1742,15 +1810,11 @@ void build_sides_2D(AuxMeshTopology<BasicMesh>& mesh) {
   mesh.side_opp_side_id_.clear();
   mesh.side_opp_side_id_.resize(num_sides_all, -1);
   mesh.side_node_ids_.resize(num_sides_all, {{-1, -1}});
-  mesh.side_volumes_.resize(num_sides_all);
 
   std::vector<std::vector<int>> sides_of_node(nnodes);  // Temp. var.
 
   int sideid = 0;
   int iall = 0, iown = 0, ighost = 0;
-  std::array<Point<2>, 3> sxyz;
-  bool posvol_order = true;
-
   for (int c = 0; c < ncells; ++c) {
     std::vector<int> cfaces, cfdirs;
     mesh.basicmesh_ptr_->cell_get_faces_and_dirs(c, &cfaces, &cfdirs);
@@ -1798,10 +1862,6 @@ void build_sides_2D(AuxMeshTopology<BasicMesh>& mesh) {
         }
       }
       sides_of_node[n1].push_back(sideid);
-
-      mesh.side_get_coordinates(sideid, &sxyz, posvol_order);
-      mesh.side_volumes_[sideid] = calc_side_volume(sxyz);
-
       sideid++;
     }
   }  // for c = 0, ncells-1
@@ -1857,15 +1917,11 @@ void build_sides_3D(AuxMeshTopology<BasicMesh>& mesh) {
   mesh.side_opp_side_id_.clear();
   mesh.side_opp_side_id_.assign(num_sides_all, -1);
   mesh.side_node_ids_.assign(num_sides_all, {{-1, -1}});
-  mesh.side_volumes_.resize(num_sides_all);
 
   std::vector<std::vector<int>> sides_of_node(nnodes);  // Temporary variable
 
   int sideid = 0;
   int iall = 0, iown = 0, ighost = 0;
-  std::array<Point<3>, 4> sxyz;
-  bool posvol_order = true;
-
   for (int c = 0; c < ncells; ++c) {
     std::vector<int> cfaces;
     std::vector<int> cfdirs;
@@ -1924,10 +1980,6 @@ void build_sides_3D(AuxMeshTopology<BasicMesh>& mesh) {
           }
         }
         sides_of_node[fnodes[i]].push_back(sideid);
-
-        mesh.side_get_coordinates(sideid, &sxyz, posvol_order);
-        mesh.side_volumes_[sideid] = calc_side_volume(sxyz);
-
         sideid++;
       }  // for (int i = 0; i < nfnodes; ++i)
 
@@ -2060,75 +2112,202 @@ void AuxMeshTopology<BasicMesh>::build_corners() {
 
 }  // build_corners
 
+
+// Compute an approximate centroid as the geometric center of the face nodes
 template<typename BasicMesh>
-void AuxMeshTopology<BasicMesh>::compute_cell_centroids() {
-  int ncells = basicmesh_ptr_->num_owned_cells() +
-      basicmesh_ptr_->num_ghost_cells();
+template<int dim>
+void AuxMeshTopology<BasicMesh>::compute_approximate_face_centroids() {
+  int nfaces = basicmesh_ptr_->num_owned_faces() +
+      basicmesh_ptr_->num_ghost_faces();
 
-  int dim = basicmesh_ptr_->space_dimension();
   std::vector<double> pnt(dim, 0.0);
-  cell_centroids_.resize(ncells, pnt);
+  face_centroids_.assign(nfaces, pnt);
 
-  for (int c = 0; c < ncells; ++c) {
-    std::vector<int> cnodes;
-    basicmesh_ptr_->cell_get_nodes(c, &cnodes);
-    int ncnodes = cnodes.size();
-    std::vector<double> ctr(dim, 0.0);
-
-    if (dim == 2) {
-      Point<2> ncoord;
-      for (int n = 0; n < ncnodes; ++n) {
-        basicmesh_ptr_->node_get_coordinates(cnodes[n], &ncoord);
-        for (int d = 0; d < dim; ++d)
-          ctr[d] += ncoord[d];
-      }
-    } else if (dim == 3) {
-      Point<3> ncoord;
-      for (int n = 0; n < ncnodes; ++n) {
-        basicmesh_ptr_->node_get_coordinates(cnodes[n], &ncoord);
-        for (int d = 0; d < dim; ++d)
-          ctr[d] += ncoord[d];
-      }
+  for (int f = 0; f < nfaces; f++) {
+    std::vector<int> fnodes;
+    basicmesh_ptr_->face_get_nodes(f, &fnodes);
+    int nfnodes = fnodes.size();
+    Point<dim> geomcen;
+    
+    Portage::Point<dim> ncoord;
+    for (int n = 0; n < nfnodes; ++n) {
+      basicmesh_ptr_->node_get_coordinates(fnodes[n], &ncoord);
+      geomcen += ncoord;
     }
+    geomcen /= nfnodes;
     for (int d = 0; d < dim; ++d)
-      cell_centroids_[c][d] = ctr[d] / ncnodes;
+      face_centroids_[f][d] = geomcen[d];
   }
 }
 
+
+// using approximate face centroids and triangulation of the face,
+// compute the real centroid as the area weighted average of the
+// centroids of the triangular facets
+
 template<typename BasicMesh>
+template<int dim>
 void AuxMeshTopology<BasicMesh>::compute_face_centroids() {
   int nfaces = basicmesh_ptr_->num_owned_faces() +
       basicmesh_ptr_->num_ghost_faces();
 
-  int dim = basicmesh_ptr_->space_dimension();
-  std::vector<double> pnt(dim, 0.0);
-  face_centroids_.assign(nfaces, pnt);
+  // Resize (just to be sure) but don't reinitialize since it contains
+  // the approximate centroids (geometric centers)
+  face_centroids_.resize(nfaces);
 
-  for (int f = 0; f < nfaces; ++f) {
-    std::vector<int> fnodes;
-    basicmesh_ptr_->face_get_nodes(f, &fnodes);
-    int nfnodes = fnodes.size();
-    std::vector<double> ctr(dim, 0.0);
+  std::vector<bool> face_processed(nfaces, false);
 
-    if (dim == 2) {
-      Portage::Point<2> ncoord;
-      for (int n = 0; n < nfnodes; ++n) {
-        basicmesh_ptr_->node_get_coordinates(fnodes[n], &ncoord);
-        for (int d = 0; d < dim; ++d)
-          ctr[d] += ncoord[d];
+  int ncells = basicmesh_ptr_->num_owned_cells() +
+      basicmesh_ptr_->num_ghost_cells();
+
+  std::array<Point<dim>, dim+1> sxyz;
+  bool posvol_order = true;
+
+  for (int c = 0; c < ncells; c++) {
+    std::vector<int> csides;
+    cell_get_sides(c, &csides);
+
+    std::vector<int> cfaces, cfdirs;
+    basicmesh_ptr_->cell_get_faces_and_dirs(c, &cfaces, &cfdirs);
+    
+    std::vector<int> fsides;
+    for (auto const& f : cfaces) {
+      if (face_processed[f]) continue;
+
+      // compute the real centroid as the area weighted average of the
+      // facet centroids
+
+      Point<dim> fcen;
+      double farea = 0.0;
+      for (auto const& s : csides) {
+        if (side_get_face(s) == f) {
+          side_get_coordinates(s, &sxyz, posvol_order);
+          
+          // Centroid of facet of side that lies on face (point in 1D,
+          // line in 2D, triangle in 3D)
+          Point<dim> fctcen;
+          for (int j = 0; j < dim; j++)
+            fctcen += sxyz[j];
+          fctcen /= dim;
+
+          double fctarea = 0.0;
+          if (dim == 1)
+            fctarea = 1.0;
+          else if (dim == 2) {
+            Vector<dim> evec = sxyz[1]-sxyz[0];
+            fctarea = evec.norm();
+          }
+          else if (dim == 3) {
+            Vector<3> vec0(sxyz[2][0]-sxyz[0][0], sxyz[2][1]-sxyz[0][1],
+                           sxyz[2][2]-sxyz[0][2]);
+            Vector<3> vec1(sxyz[1][0]-sxyz[0][0], sxyz[1][1]-sxyz[0][1],
+                           sxyz[1][2]-sxyz[0][2]);
+            Vector<3> cpvec = cross(vec0, vec1);
+            fctarea = cpvec.norm();
+          }
+          farea += fctarea;
+
+          fcen += fctcen*fctarea;
+        }
       }
-    } else if (dim == 3) {
-      Portage::Point<3> ncoord;
-      for (int n = 0; n < nfnodes; ++n) {
-        basicmesh_ptr_->node_get_coordinates(fnodes[n], &ncoord);
-        for (int d = 0; d < dim; ++d)
-          ctr[d] += ncoord[d];
-      }
+      fcen /= farea;
+      for (int d = 0; d < dim; d++)
+        face_centroids_[f][d] = fcen[d];
+      face_processed[f] = true;
     }
+  }
+}  // compute_face_centroids
+
+
+// Compute an approximate centroid as the geometric mean of the cell nodes
+
+template<typename BasicMesh>
+template<int dim>
+void AuxMeshTopology<BasicMesh>::compute_approximate_cell_centroids() {
+  int ncells = basicmesh_ptr_->num_owned_cells() +
+      basicmesh_ptr_->num_ghost_cells();
+
+  std::vector<double> pnt(dim, 0.0);
+  cell_centroids_.assign(ncells, pnt);
+
+  for (int c = 0; c < ncells; ++c) {
+
+    // temporarily set cell_centroid to be geometric center
+    std::vector<int> cnodes;
+    basicmesh_ptr_->cell_get_nodes(c, &cnodes);
+    int ncnodes = cnodes.size();
+    Point<dim> geomcen;
+    Point<dim> ncoord;
+    for (int n = 0; n < ncnodes; ++n) {
+      basicmesh_ptr_->node_get_coordinates(cnodes[n], &ncoord);
+      geomcen += ncoord;
+    }
+    geomcen /= ncnodes;
     for (int d = 0; d < dim; ++d)
-      face_centroids_[f][d] = ctr[d] / nfnodes;
+      cell_centroids_[c][d] = geomcen[d];
   }
 }
+
+// Use approximate cell centroids and the geometry of sides (tets)
+// using these approximate centroids to compute the real
+// centroids. The real centroid is computed as the volume weighted
+// average of the centroids of the sides (tets)
+
+template<typename BasicMesh>
+template<int dim>
+void AuxMeshTopology<BasicMesh>::compute_cell_centroids() {
+  int ncells = basicmesh_ptr_->num_owned_cells() +
+      basicmesh_ptr_->num_ghost_cells();
+
+  // Resize (just to be sure) but don't reinitialize since it contains
+  // the approximate centroids (geometric centers)
+
+  cell_centroids_.resize(ncells);
+
+  std::array<Point<dim>, dim+1> sxyz;
+  bool posvol_order = true;
+  for (int c = 0; c < ncells; ++c) {
+    // Now compute the real centroid as the volume weighted average of the
+    // centroids of the sides with the temporary geometry
+
+    std::vector<int> csides;
+    basicmesh_ptr_->cell_get_sides(c, &csides);
+
+    Point<dim> ccen;
+    double cellvol = 0.0;
+    for (auto const& s : csides) {
+      side_get_coordinates(s, &sxyz, posvol_order);
+      Point<dim> scen;
+      for (int i = 0; i < dim+1; i++)
+        scen += sxyz[i];
+      scen /= (dim+1);
+
+      double svol = calc_side_volume(sxyz);
+      cellvol += svol;
+
+      ccen += scen*svol;
+    }
+    ccen /= cellvol;
+    for (int d = 0; d < dim; d++)
+      cell_centroids_[c][d] = ccen[d];  // true centroid
+  }
+}
+
+
+template<typename BasicMesh>
+template<int dim>
+void AuxMeshTopology<BasicMesh>::compute_side_volumes() {
+  int num_sides_all = num_sides_owned_ + num_sides_ghost_;
+  side_volumes_.resize(num_sides_all);
+
+  std::array<Point<dim>, dim+1> sxyz;
+  bool posvol_order = true;
+  for (int s = 0; s < num_sides_all; s++) {
+    side_get_coordinates(s, &sxyz, posvol_order);
+    side_volumes_[s] = calc_side_volume(sxyz);
+  }
+}
+
 
 template<typename BasicMesh>
 void AuxMeshTopology<BasicMesh>::compute_cell_volumes() {

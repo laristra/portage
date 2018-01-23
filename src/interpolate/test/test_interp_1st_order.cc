@@ -124,8 +124,7 @@ TEST(Interpolate_1st_Order, Cell_Ctr_Const_2D) {
 
   // Make sure we retrieved the correct value for each cell on the target
   const double stdval = data[0];
-  for (int c = 0; c < ncells_target; ++c) ASSERT_NEAR(stdval, outvals[c],TOL);
-  
+  for (int c = 0; c < ncells_target; ++c) ASSERT_NEAR(stdval, outvals[c], TOL);
 }
 
 
@@ -253,7 +252,7 @@ TEST(Interpolate_1st_Order, Cell_Ctr_Lin_2D) {
   }
 
   for (int c = 0; c < ncells_target; ++c)
-    ASSERT_NEAR(stdvals[c], outvals[c],TOL);
+    ASSERT_NEAR(stdvals[c], outvals[c], TOL);
 }
 
 /// First order interpolation of constant node-centered field in 2D
@@ -477,9 +476,8 @@ TEST(Interpolate_1st_Order, Cell_Ctr_Const_3D) {
 
   // Make sure we retrieved the correct value for each cell on the target
   const double stdval = data[0];
-  for (int c = 0; c < ncells_target; ++c) 
-    ASSERT_NEAR(stdval, outvals[c],TOL);
-
+  for (int c = 0; c < ncells_target; ++c)
+    ASSERT_NEAR(stdval, outvals[c], TOL);
 }
 
 /// First order interpolation of linear cell-centered field in 3D
@@ -605,8 +603,7 @@ TEST(Interpolate_1st_Order, Cell_Ctr_Lin_3D) {
   }
 
   for (int c = 0; c < ncells_target; ++c)
-    ASSERT_NEAR(stdvals[c], outvals[c],TOL);
-
+    ASSERT_NEAR(stdvals[c], outvals[c], TOL);
 }
 
 
