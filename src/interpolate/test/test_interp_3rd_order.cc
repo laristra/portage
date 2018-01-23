@@ -126,7 +126,8 @@ TEST(Interpolate_3rd_Order, Cell_Ctr_Const_No_Limiter_2D) {
 
   // Make sure we retrieved the correct value for each cell on the target
   const double stdval = data[0];
-  for (int c = 0; c < ncells_target; ++c) ASSERT_DOUBLE_EQ(stdval, outvals[c]);
+  for (int c = 0; c < ncells_target; ++c) 
+    ASSERT_NEAR(stdval, outvals[c],TOL);
 
 }
 
@@ -252,7 +253,7 @@ TEST(Interpolate_3rd_Order, Cell_Ctr_Lin_No_Limiter_2D) {
   }
 
   for (int c = 0; c < ncells_target; ++c)
-    ASSERT_DOUBLE_EQ(stdvals[c], outvals[c]);
+    ASSERT_NEAR(stdvals[c], outvals[c],TOL);
 
 }
 
@@ -1205,7 +1206,8 @@ TEST(Interpolate_3rd_Order, Cell_Ctr_Const_No_Limiter_3D) {
 
   // Make sure we retrieved the correct value for each cell on the target
   const double stdval = data[0];
-  for (int c = 0; c < ncells_target; ++c) ASSERT_DOUBLE_EQ(stdval, outvals[c]);
+  for (int c = 0; c < ncells_target; ++c) 
+    ASSERT_NEAR(stdval, outvals[c],TOL);
 
 }
 
