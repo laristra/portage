@@ -8,7 +8,7 @@ Please see the license file at the root of this repository, or at:
 if (Jali_DIR) 
     # Shotshell example
     add_executable(shotshellapp_jali shotshell_jali.cc)
-    target_link_libraries(shotshellapp_jali portage ${EXTRA_LIBS})
+    target_link_libraries(shotshellapp_jali portage ${LAPACKE_LIBRARIES} ${EXTRA_LIBS})
     if (ENABLE_MPI)
         target_link_libraries(shotshellapp_jali ${MPI_CXX_LIBRARIES})
         set_target_properties(shotshellapp_jali PROPERTIES

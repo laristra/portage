@@ -49,7 +49,7 @@ struct Controls {
   std::string source_file="none", target_file="none";
 };
 
-template<template<class, class, class, Portage::Entity_kind, long> class T>
+template<template<int, Portage::Entity_kind, class, class, class> class T>
 class consistent_order{
 public:
   static bool check(Portage::Meshfree::Basis::Type type) {return false;}
@@ -126,11 +126,11 @@ protected:
   Portage::Simple_State targetState;
   Portage::Simple_State targetState2;
   // Wrappers for interfacing with the underlying mesh data structures
-  Portage::Simple_Mesh_Wrapper sourceMeshWrapper;
-  Portage::Simple_Mesh_Wrapper targetMeshWrapper;
-  Portage::Simple_State_Wrapper sourceStateWrapper;
-  Portage::Simple_State_Wrapper targetStateWrapper;
-  Portage::Simple_State_Wrapper targetStateWrapper2;
+  Wonton::Simple_Mesh_Wrapper sourceMeshWrapper;
+  Wonton::Simple_Mesh_Wrapper targetMeshWrapper;
+  Wonton::Simple_State_Wrapper sourceStateWrapper;
+  Wonton::Simple_State_Wrapper targetStateWrapper;
+  Wonton::Simple_State_Wrapper targetStateWrapper2;
   // run parameters
   Controls<3> controls_;
 
@@ -139,11 +139,11 @@ public:
   // Perform comparison. First remap using traditional mesh techniques. Second remap using particles as intermediary. 
   // Report timing and accuracy.
   template <
-    template<class, class> class Intersect,
-    template<class, class, class, Portage::Entity_kind, long> class Interpolate,
-    template <int, class, class> class SwarmSearch,
-    int Dimension=3
-    >
+  template<Portage::Entity_kind, class, class> class Intersect,
+  template<int, Portage::Entity_kind, class, class, class> class Interpolate,
+  template <int, class, class> class SwarmSearch,
+  int Dimension=3
+  >
   void runit()
   {
     if (Dimension != 3) {
@@ -164,7 +164,7 @@ public:
     std::vector<double> sourceDataNode(nsrcnodes);
 
     //Create the source data for given function
-    Portage::Flat_Mesh_Wrapper<double> sourceFlatMesh;
+    Wonton::Flat_Mesh_Wrapper<double> sourceFlatMesh;
     sourceFlatMesh.initialize(sourceMeshWrapper);
     for (unsigned int c = 0; c < nsrccells; ++c) {
       Portage::Point<Dimension> cen;
@@ -206,12 +206,12 @@ public:
                     Intersect,
                     Interpolate,
                     Dimension,
-                    Portage::Simple_Mesh_Wrapper, Portage::Simple_State_Wrapper,
-                    Portage::Simple_Mesh_Wrapper, Portage::Simple_State_Wrapper>
+                    Wonton::Simple_Mesh_Wrapper, Wonton::Simple_State_Wrapper,
+                    Wonton::Simple_Mesh_Wrapper, Wonton::Simple_State_Wrapper>
       mmdriver(sourceMeshWrapper, sourceStateWrapper,
                targetMeshWrapper, targetStateWrapper);
     mmdriver.set_remap_var_names(remap_fields);
-    //run on one processor
+    // run on one processor
     mmdriver.run(false);
 
     // Build the mesh-swarm-mesh driver data for this mesh type
@@ -220,8 +220,8 @@ public:
       Portage::Meshfree::Accumulate,
       Portage::Meshfree::Estimate,
       Dimension,
-      Portage::Simple_Mesh_Wrapper, Portage::Simple_State_Wrapper,
-      Portage::Simple_Mesh_Wrapper, Portage::Simple_State_Wrapper
+      Wonton::Simple_Mesh_Wrapper, Wonton::Simple_State_Wrapper,
+      Wonton::Simple_Mesh_Wrapper, Wonton::Simple_State_Wrapper
       >
       msmdriver(sourceMeshWrapper, sourceStateWrapper,
                 targetMeshWrapper, targetStateWrapper2,
@@ -239,7 +239,7 @@ public:
     Portage::Simple_State::vec &nodevecout(targetState.get("nodedata", Portage::NODE));
     Portage::Simple_State::vec &nodevecout2(targetState2.get("nodedata", Portage::NODE));
 
-    Portage::Flat_Mesh_Wrapper<double> targetFlatMesh;
+    Wonton::Flat_Mesh_Wrapper<double> targetFlatMesh;
     targetFlatMesh.initialize(targetMeshWrapper);
     if (controls_.print_detail == 1) {
       std::printf("Cell Centroid-coord-1-2-3 Exact Mesh-Mesh Error Mesh-Swarm-Mesh Error\n");
@@ -325,8 +325,8 @@ public:
   // Perform comparison. First remap using traditional mesh techniques. Second remap using particles as intermediary. 
   // Report timing and accuracy.
   template <
-    template<class, class> class Intersect,
-    template<class, class, class, Portage::Entity_kind, long> class Interpolate,
+    template<Portage::Entity_kind, class, class> class Intersect,
+    template<int, Portage::Entity_kind, class, class, class> class Interpolate,
     template <int, class, class> class SwarmSearch,
     int Dimension=3
     >

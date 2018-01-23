@@ -4,8 +4,8 @@ Please see the license file at the root of this repository, or at:
     https://github.com/laristra/portage/blob/master/LICENSE
 */
 
-#ifndef PORTAGE_DRIVER_H_
-#define PORTAGE_DRIVER_H_
+#ifndef PORTAGE_MMDRIVER_H_
+#define PORTAGE_MMDRIVER_H_
 
 #include <sys/time.h>
 
@@ -16,6 +16,10 @@ Please see the license file at the root of this repository, or at:
 #include <utility>
 #include <iostream>
 #include <type_traits>
+
+#ifdef HAVE_TANGRAM
+#include "tangram/driver/driver.h"
+#endif
 
 #include "portage/support/portage.h"
 #include "portage/support/Point.h"
@@ -43,9 +47,27 @@ namespace Portage {
 
 using namespace Wonton;
 
+
+// Dummy interface reconstruction class, if external interface
+// reconstruction methods are not found
+template<class Mesh_Wrapper, int Dim> class DummyInterfaceReconstructor {
+ public:
+  DummyInterfaceReconstructor(Mesh_Wrapper const & mesh) {};
+  void set_volume_fractions(std::vector<int> const& cell_num_mats,
+                            std::vector<int> const& cell_mat_ids,
+                            std::vector<double> const& cell_mat_volfracs,
+                            std::vector<Tangram::Point<Dim>> const& cell_mat_centroids) {}; 
+  void set_volume_fractions(std::vector<int> const& cell_num_mats,
+                            std::vector<int> const& cell_mat_ids,
+                            std::vector<double> const& cell_mat_volfracs) {};
+
+  void set_cell_indices_to_operate_on(std::vector<int> const& cellIDs_to_op_on) {}
+  std::shared_ptr<Tangram::CellMatPoly<Dim>> operator()(const int cell_op_ID) const {}
+};
+
 /*!
-  @class Driver "driver.h"
-  @brief Driver provides the API to mapping from one mesh to another.
+  @class MMDriver "mmdriver.h"
+  @brief MMDriver provides the API to mapping multi-material data from one mesh to another.
 
   @tparam Search  A search method that takes the dimension, source mesh class
   and target mesh class as template parameters
@@ -69,6 +91,10 @@ using namespace Wonton;
 
   @tparam TargetState_Wrapper A lightweight wrapper to a specific target state
   manager implementation that provides certain functionality.
+
+  @tparam InterfaceReconstructor An interface reconstruction class
+  that takes the raw interface reconstruction method, the dimension of
+  the problem and the source mesh class as template parameters
 */
 template <template <int, Entity_kind, class, class> class Search,
           template <Entity_kind, class, class> class Intersect,
@@ -77,8 +103,9 @@ template <template <int, Entity_kind, class, class> class Search,
           class SourceMesh_Wrapper,
           class SourceState_Wrapper,
           class TargetMesh_Wrapper = SourceMesh_Wrapper,
-          class TargetState_Wrapper = SourceState_Wrapper>
-class Driver {
+          class TargetState_Wrapper = SourceState_Wrapper,
+          template <class, int> class InterfaceReconstructor = DummyInterfaceReconstructor>
+class MMDriver {
 
   // Something like this would be very helpful to users
   // static_assert(
@@ -97,10 +124,10 @@ class Driver {
     @param[in,out] targetState A @c TargetState_Wrapper for the data that will
     be mapped to the target mesh.
   */
-  Driver(SourceMesh_Wrapper const& sourceMesh,
-         SourceState_Wrapper const& sourceState,
-         TargetMesh_Wrapper const& targetMesh,
-         TargetState_Wrapper& targetState)
+  MMDriver(SourceMesh_Wrapper const& sourceMesh,
+           SourceState_Wrapper const& sourceState,
+           TargetMesh_Wrapper const& targetMesh,
+           TargetState_Wrapper& targetState)
       : source_mesh_(sourceMesh), source_state_(sourceState),
         target_mesh_(targetMesh), target_state_(targetState),
         dim_(sourceMesh.space_dimension()) {
@@ -108,13 +135,13 @@ class Driver {
   }
 
   /// Copy constructor (disabled)
-  Driver(const Driver &) = delete;
+  MMDriver(const MMDriver &) = delete;
 
   /// Assignment operator (disabled)
-  Driver & operator = (const Driver &) = delete;
+  MMDriver & operator = (const MMDriver &) = delete;
 
   /// Destructor
-  ~Driver() {}
+  ~MMDriver() {}
 
   /*!
     @brief Specify the names of the variables to be interpolated along with the
@@ -249,7 +276,7 @@ class Driver {
 #endif
 
     if (comm_rank == 0)
-      std::cout << "in Driver::run()...\n";
+      std::printf("in MMDriver::run()...\n");
 
     int numTargetCells = target_mesh_.num_owned_cells();
     std::cout << "Number of target cells in target mesh on rank "
@@ -313,7 +340,7 @@ class Driver {
   std::vector<std::string> target_remap_var_names_;
   std::vector<LimiterType> limiters_;
   unsigned int dim_;
-};  // class Driver
+};  // class MMDriver
 
 
 
@@ -326,11 +353,13 @@ template <template <int, Entity_kind, class, class> class Search,
           class SourceMesh_Wrapper,
           class SourceState_Wrapper,
           class TargetMesh_Wrapper,
-          class TargetState_Wrapper>
+          class TargetState_Wrapper,
+          template<class, int> class InterfaceReconstructor>
 template<Entity_kind onwhat>
-void Driver<Search, Intersect, Interpolate, D,
-            SourceMesh_Wrapper, SourceState_Wrapper,
-            TargetMesh_Wrapper, TargetState_Wrapper
+void MMDriver<Search, Intersect, Interpolate, D,
+              SourceMesh_Wrapper, SourceState_Wrapper,
+              TargetMesh_Wrapper, TargetState_Wrapper,
+              InterfaceReconstructor
             >::remap(std::vector<std::string> const &src_varnames,
                      std::vector<std::string> const &trg_varnames) {
 
@@ -371,6 +400,36 @@ void Driver<Search, Intersect, Interpolate, D,
   gettimeofday(&end_timeval, 0);
   timersub(&end_timeval, &begin_timeval, &diff_timeval);
   tot_seconds_srch = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
+
+#ifdef HAVE_TANGRAM
+  // Call interface reconstruction only if we got a method from the
+  // calling app
+  
+  if (typeid(InterfaceReconstructor<SourceMesh_Wrapper, D>) !=
+      typeid(DummyInterfaceReconstructor<SourceMesh_Wrapper, D>)) {
+    // INTERFACE RECONSTRUCTION (BUT RIGHT NOW WE ARE NOT USING IT)
+    
+    Tangram::Driver<InterfaceReconstructor, D, SourceMesh_Wrapper>
+        interface_reconstructor(source_mesh_);
+    
+    // Since we don't really have multiple materials and volume
+    // fractions of those materials in cells, we will pretend that we
+    // have two materials in each cell and that the volume fraction of
+    // each material in each cell is 0.5
+    
+    int nmats = 2;
+    int nsourcecells = source_mesh_.num_entities(CELL, ALL);
+    std::vector<int> cell_num_mats(nsourcecells, nmats);
+    std::vector<int> cell_mat_ids(nsourcecells*nmats);
+    std::vector<double> cell_mat_volfracs(nsourcecells*nmats, 0.5);
+    std::vector<Tangram::Point<D>> cell_mat_centroids(nsourcecells*nmats);
+    interface_reconstructor.set_volume_fractions(cell_num_mats,
+                                                 cell_mat_ids,
+                                                 cell_mat_volfracs,
+                                                 cell_mat_centroids);
+    interface_reconstructor.reconstruct();
+  }
+#endif
 
   // INTERSECT
 
@@ -455,13 +514,15 @@ template <template <int, Entity_kind, class, class> class Search,
           class SourceMesh_Wrapper,
           class SourceState_Wrapper,
           class TargetMesh_Wrapper,
-          class TargetState_Wrapper>
+          class TargetState_Wrapper,
+          template <class, int> class InterfaceReconstructor>
 template<Entity_kind onwhat>
-void Driver<Search, Intersect, Interpolate, D,
-            SourceMesh_Wrapper, SourceState_Wrapper,
-            TargetMesh_Wrapper, TargetState_Wrapper
-            >::remap_distributed(std::vector<std::string> const &src_varnames,
-                                 std::vector<std::string> const &trg_varnames) {
+void MMDriver<Search, Intersect, Interpolate, D,
+              SourceMesh_Wrapper, SourceState_Wrapper,
+              TargetMesh_Wrapper, TargetState_Wrapper,
+              InterfaceReconstructor
+              >::remap_distributed(std::vector<std::string> const &src_varnames,
+                                   std::vector<std::string> const &trg_varnames) {
 
   static_assert(onwhat == NODE || onwhat == CELL,
                 "Remap implemented only for CELL and NODE variables");
@@ -516,6 +577,41 @@ void Driver<Search, Intersect, Interpolate, D,
   gettimeofday(&end_timeval, 0);
   timersub(&end_timeval, &begin_timeval, &diff_timeval);
   tot_seconds_srch = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
+
+#ifdef HAVE_TANGRAM
+  /* WE ARE UNABLE TO CALL TANGRAM DRIVER FROM DISTRIBUTED REMAP
+   * BECAUSE TANGRAM DRIVER CALLS get_global_id WHICH DOES NOT EXIST
+   * FOR FLAT_MESH_WRAPPER. WE CAN UNCOMMENT THIS WHEN TICKET LNK-781
+   * IS RESOLVED */
+
+  // // Call interface reconstruction only if we got a method from the
+  // // calling app
+
+  // if (typeid(InterfaceReconstructor<Flat_Mesh_Wrapper<>, D>) !=
+  //     typeid(DummyInterfaceReconstructor<Flat_Mesh_Wrapper<>, D>)) {
+  //   // INTERFACE RECONSTRUCTION (BUT RIGHT NOW WE ARE NOT USING IT)
+    
+  //   Tangram::Driver<InterfaceReconstructor, D, Flat_Mesh_Wrapper<>>
+  //       interface_reconstructor(source_mesh_flat);
+
+  //   // Since we don't really have multiple materials and volume
+  //   // fractions of those materials in cells, we will pretend that we
+  //   // have two materials in each cell and that the volume fraction of
+  //   // each material in each cell is 0.5
+    
+  //   int nmats = 2;
+  //   int nsourcecells = source_mesh_.num_entities(CELL, ALL);
+  //   std::vector<int> cell_num_mats(nsourcecells, nmats);
+  //   std::vector<int> cell_mat_ids(nsourcecells*nmats);
+  //   std::vector<double> cell_mat_volfracs(nsourcecells*nmats, 0.5);
+  //   std::vector<Tangram::Point<D>> cell_mat_centroids(nsourcecells*nmats);
+  //   interface_reconstructor.set_volume_fractions(cell_num_mats,
+  //                                                cell_mat_ids,
+  //                                                cell_mat_volfracs,
+  //                                                cell_mat_centroids);
+  //   interface_reconstructor.reconstruct();
+  // }
+#endif
 
   // INTERSECT
 

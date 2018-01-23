@@ -25,6 +25,7 @@ set(support_HEADERS
 # Add source files
 set(support_SOURCES
     svd.cc
+    Matrix.cc
     PARENT_SCOPE
 )
 
@@ -34,7 +35,7 @@ if (ENABLE_UNIT_TESTS)
 
   cinch_add_unit(test_matfuncs
     SOURCES test/test_matfuncs.cc
-    LIBRARIES ${LAPACKE_LIBRARIES}
+    LIBRARIES portage ${LAPACKE_LIBRARIES}
     POLICY MPI
     THREADS 1)
 

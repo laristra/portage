@@ -9,6 +9,7 @@ Please see the license file at the root of this repository, or at:
 #include <memory>
 #include <vector>
 #include <cstdlib>
+#include <algorithm>
 
 #include "gtest/gtest.h"
 
@@ -269,13 +270,12 @@ TEST(search_by_cells, gather_3d)
 } // TEST(search_by_cells, gather_3d)
 
 
-TEST(search_by_cells, scatter_2d_random)
+void test_scatter_2d_random(const size_t nsrc, const size_t ntgt)
 { // random point sets and test against SearchSimplePoints
 
   std::vector<Portage::Point<2>> srcp, srce;
   auto srcpts = std::make_shared<std::vector<Portage::Point<2>>>(srcp);
   auto srcexts = std::make_shared<std::vector<Portage::Point<2>>>(srce);
-  const size_t nsrc = 256;
   for (int j = 0; j < nsrc; ++j) {
     double x = 1.2*rand()/RAND_MAX-.1;
     double y = 1.2*rand()/RAND_MAX-.1;
@@ -288,8 +288,7 @@ TEST(search_by_cells, scatter_2d_random)
   std::vector<Portage::Point<2>> tgtp, tgte;
   auto tgtpts = std::make_shared<std::vector<Portage::Point<2>>>(tgtp);
   auto tgtexts = std::make_shared<std::vector<Portage::Point<2>>>(tgte);
-  const size_t ntgt = 256;
-  for (int j = 0; j < nsrc; ++j) {
+  for (int j = 0; j < ntgt; ++j) {
     double x = 1.0*rand()/RAND_MAX;
     double y = 1.0*rand()/RAND_MAX;
     double ext = 1./sqrt(ntgt*1.0);
@@ -313,21 +312,36 @@ TEST(search_by_cells, scatter_2d_random)
 
     ASSERT_EQ(snbr.size(), cnbr.size());
 
+    std::sort(cnbr.begin(), cnbr.end());
     for (int j=0; j<snbr.size(); j++) {
       ASSERT_EQ(snbr[j], cnbr[j]);
     }
   }
 
-} // TEST(search_by_cells, scatter_2d_random)
+} // test_scatter_2d_random
+
+TEST(search_by_cells, scatter_2d_random_case1)
+{
+  test_scatter_2d_random(128, 128);
+}
+
+TEST(search_by_cells, scatter_2d_random_case2)
+{
+  test_scatter_2d_random(256, 128);
+}
+
+TEST(search_by_cells, scatter_2d_random_case3)
+{
+  test_scatter_2d_random(128, 256);
+}
 
 
-TEST(search_by_cells, scatter_3d_random)
+void test_scatter_3d_random(const size_t nsrc, const size_t ntgt)
 { // random point sets and test against SearchSimplePoints
 
   std::vector<Portage::Point<3>> srcp, srce;
   auto srcpts = std::make_shared<std::vector<Portage::Point<3>>>(srcp);
   auto srcexts = std::make_shared<std::vector<Portage::Point<3>>>(srce);
-  const size_t nsrc = 1000;
   for (int j = 0; j < nsrc; ++j) {
     double x = 1.2*rand()/RAND_MAX-.1;
     double y = 1.2*rand()/RAND_MAX-.1;
@@ -341,8 +355,7 @@ TEST(search_by_cells, scatter_3d_random)
   std::vector<Portage::Point<3>> tgtp, tgte;
   auto tgtpts = std::make_shared<std::vector<Portage::Point<3>>>(tgtp);
   auto tgtexts = std::make_shared<std::vector<Portage::Point<3>>>(tgte);
-  const size_t ntgt = 1000;
-  for (int j = 0; j < nsrc; ++j) {
+  for (int j = 0; j < ntgt; ++j) {
     double x = 1.0*rand()/RAND_MAX;
     double y = 1.0*rand()/RAND_MAX;
     double z = 1.0*rand()/RAND_MAX;
@@ -367,21 +380,36 @@ TEST(search_by_cells, scatter_3d_random)
 
     ASSERT_EQ(snbr.size(), cnbr.size());
 
+    std::sort(cnbr.begin(), cnbr.end());
     for (int j=0; j<snbr.size(); j++) {
       ASSERT_EQ(snbr[j], cnbr[j]);
     }
   }
 
-} // TEST(search_by_cells, scatter_3d_random)
+} // test_scatter_3d_random
+
+TEST(search_by_cells, scatter_3d_random_case1)
+{
+  test_scatter_3d_random(500, 500);
+}
+
+TEST(search_by_cells, scatter_3d_random_case2)
+{
+  test_scatter_3d_random(1000, 500);
+}
+
+TEST(search_by_cells, scatter_3d_random_case3)
+{
+  test_scatter_3d_random(500, 1000);
+}
 
 
-TEST(search_by_cells, gather_2d_random)
+void test_gather_2d_random(const size_t nsrc, const size_t ntgt)
 { // random point sets and test against SearchSimplePoints
 
   std::vector<Portage::Point<2>> srcp, srce;
   auto srcpts = std::make_shared<std::vector<Portage::Point<2>>>(srcp);
   auto srcexts = std::make_shared<std::vector<Portage::Point<2>>>(srce);
-  const size_t nsrc = 256;
   for (int j = 0; j < nsrc; ++j) {
     double x = 1.2*rand()/RAND_MAX-.1;
     double y = 1.2*rand()/RAND_MAX-.1;
@@ -394,8 +422,7 @@ TEST(search_by_cells, gather_2d_random)
   std::vector<Portage::Point<2>> tgtp, tgte;
   auto tgtpts = std::make_shared<std::vector<Portage::Point<2>>>(tgtp);
   auto tgtexts = std::make_shared<std::vector<Portage::Point<2>>>(tgte);
-  const size_t ntgt = 256;
-  for (int j = 0; j < nsrc; ++j) {
+  for (int j = 0; j < ntgt; ++j) {
     double x = 1.0*rand()/RAND_MAX;
     double y = 1.0*rand()/RAND_MAX;
     double ext = 1./sqrt(ntgt*1.0);
@@ -406,7 +433,7 @@ TEST(search_by_cells, gather_2d_random)
 
   Portage::SearchPointsByCells<
   2, Portage::Meshfree::Swarm<2>, Portage::Meshfree::Swarm<2>>
-  cellsearch(srcswarm, tgtswarm, srcexts, tgtexts);
+  cellsearch(srcswarm, tgtswarm, srcexts, tgtexts, Portage::Meshfree::Gather);
 
   Portage::SearchSimplePoints<
   2, Portage::Meshfree::Swarm<2>, Portage::Meshfree::Swarm<2>>
@@ -419,21 +446,36 @@ TEST(search_by_cells, gather_2d_random)
 
     ASSERT_EQ(snbr.size(), cnbr.size());
 
+    std::sort(cnbr.begin(), cnbr.end());
     for (int j=0; j<snbr.size(); j++) {
       ASSERT_EQ(snbr[j], cnbr[j]);
     }
   }
 
-} // TEST(search_by_cells, gather_2d_random)
+} // test_gather_2d_random
+
+TEST(search_by_cells, gather_2d_random_case1)
+{
+  test_gather_2d_random(128, 128);
+}
+
+TEST(search_by_cells, gather_2d_random_case2)
+{
+  test_gather_2d_random(256, 128);
+}
+
+TEST(search_by_cells, gather_2d_random_case3)
+{
+  test_gather_2d_random(128, 256);
+}
 
 
-TEST(search_by_cells, gather_3d_random)
+void test_gather_3d_random(const size_t nsrc, const size_t ntgt)
 { // random point sets and test against SearchSimplePoints
 
   std::vector<Portage::Point<3>> srcp, srce;
   auto srcpts = std::make_shared<std::vector<Portage::Point<3>>>(srcp);
   auto srcexts = std::make_shared<std::vector<Portage::Point<3>>>(srce);
-  const size_t nsrc = 1000;
   for (int j = 0; j < nsrc; ++j) {
     double x = 1.2*rand()/RAND_MAX-.1;
     double y = 1.2*rand()/RAND_MAX-.1;
@@ -447,8 +489,7 @@ TEST(search_by_cells, gather_3d_random)
   std::vector<Portage::Point<3>> tgtp, tgte;
   auto tgtpts = std::make_shared<std::vector<Portage::Point<3>>>(tgtp);
   auto tgtexts = std::make_shared<std::vector<Portage::Point<3>>>(tgte);
-  const size_t ntgt = 1000;
-  for (int j = 0; j < nsrc; ++j) {
+  for (int j = 0; j < ntgt; ++j) {
     double x = 1.0*rand()/RAND_MAX;
     double y = 1.0*rand()/RAND_MAX;
     double z = 1.0*rand()/RAND_MAX;
@@ -460,7 +501,7 @@ TEST(search_by_cells, gather_3d_random)
 
   Portage::SearchPointsByCells<
   3, Portage::Meshfree::Swarm<3>, Portage::Meshfree::Swarm<3>>
-  cellsearch(srcswarm, tgtswarm, srcexts, tgtexts);
+  cellsearch(srcswarm, tgtswarm, srcexts, tgtexts, Portage::Meshfree::Gather);
 
   Portage::SearchSimplePoints<
   3, Portage::Meshfree::Swarm<3>, Portage::Meshfree::Swarm<3>>
@@ -473,12 +514,28 @@ TEST(search_by_cells, gather_3d_random)
 
     ASSERT_EQ(snbr.size(), cnbr.size());
 
+    std::sort(cnbr.begin(), cnbr.end());
     for (int j=0; j<snbr.size(); j++) {
       ASSERT_EQ(snbr[j], cnbr[j]);
     }
   }
 
-} // TEST(search_by_cells, gather_3d_random)
+} // test_gather_3d_random
+
+TEST(search_by_cells, gather_3d_random_case1)
+{
+  test_gather_3d_random(500, 500);
+}
+
+TEST(search_by_cells, gather_3d_random_case2)
+{
+  test_gather_3d_random(1000, 500);
+}
+
+TEST(search_by_cells, gather_3d_random_case3)
+{
+  test_gather_3d_random(500, 1000);
+}
 
 
 TEST(search_by_cells, scatter_2d_random_disjoint)
@@ -500,8 +557,8 @@ TEST(search_by_cells, scatter_2d_random_disjoint)
   std::vector<Portage::Point<2>> tgtp, tgte;
   auto tgtpts = std::make_shared<std::vector<Portage::Point<2>>>(tgtp);
   auto tgtexts = std::make_shared<std::vector<Portage::Point<2>>>(tgte);
-  const size_t ntgt = 256;
-  for (int j = 0; j < nsrc; ++j) {
+  const size_t ntgt = 128;
+  for (int j = 0; j < ntgt; ++j) {
     double x = 1.0*rand()/RAND_MAX + 10.;
     double y = 1.0*rand()/RAND_MAX + 10.;
     double ext = 1./sqrt(ntgt*1.0);
@@ -549,8 +606,8 @@ TEST(search_by_cells, scatter_2d_random_edge)
   std::vector<Portage::Point<2>> tgtp, tgte;
   auto tgtpts = std::make_shared<std::vector<Portage::Point<2>>>(tgtp);
   auto tgtexts = std::make_shared<std::vector<Portage::Point<2>>>(tgte);
-  const size_t ntgt = 256;
-  for (int j = 0; j < nsrc; ++j) {
+  const size_t ntgt = 128;
+  for (int j = 0; j < ntgt; ++j) {
     double x = 1.0*rand()/RAND_MAX + .5;
     double y = 1.0*rand()/RAND_MAX + .5;
     double ext = 1./sqrt(ntgt*1.0);
@@ -574,6 +631,7 @@ TEST(search_by_cells, scatter_2d_random_edge)
 
     ASSERT_EQ(snbr.size(), cnbr.size());
 
+    std::sort(cnbr.begin(), cnbr.end());
     for (int j=0; j<snbr.size(); j++) {
       ASSERT_EQ(snbr[j], cnbr[j]);
     }

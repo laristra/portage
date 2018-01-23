@@ -16,6 +16,9 @@ openmpi_version=1.10.3
 NGC_DIR=/usr/local/codes/ngc
 
 JALI_INST=${NGC_DIR}/private/jali/${JALI_VERSION}-gcc-5.3.0-openmpi-${openmpi_version}
+TANGRAM_INSTALL_PREFIX=${NGC_DIR}/private/tangram/133c1db580f-gcc-5.3.0-openmpi-${openmpi_version}
+XMOF_INSTALL_PREFIX=${NGC_DIR}/private/xmof2d/0.9-gcc-5.3.0-openmpi-${openmpi_version}/share/cmake
+
 
 git config user.email ""
 git config user.name "Jenkins"
@@ -40,6 +43,8 @@ cd build
 
 cmake \
     -D Jali_DIR:FILEPATH=${JALI_INST}/lib \
+    -D TANGRAM_DIR:FILEPATH=${TANGRAM_INSTALL_PREFIX} \
+    -D XMOF2D_DIR:FILEPATH=${XMOF2D_INSTALL_PREFIX} \
     -D ENABLE_DOXYGEN=True \
     -D DOXYGEN_EXECUTABLE=$DOXY_EXE \
     ..

@@ -4,14 +4,17 @@ Please see the license file at the root of this repository, or at:
     https://github.com/laristra/portage/blob/master/LICENSE
 */
 
+#ifdef HAVE_TANGRAM
 
 #include <iostream>
 #include <memory>
 
 #include "gtest/gtest.h"
+#ifdef ENABLE_MPI
 #include "mpi.h"
+#endif
 
-#include "portage/driver/driver.h"
+#include "portage/driver/mmdriver.h"
 #include "portage/wonton/mesh/jali/jali_mesh_wrapper.h"
 #include "portage/wonton/state/jali/jali_state_wrapper.h"
 #include "portage/intersect/intersect_r2d.h"
@@ -20,6 +23,10 @@ Please see the license file at the root of this repository, or at:
 #include "MeshFactory.hh"
 #include "JaliStateVector.h"
 #include "JaliState.h"
+
+#include "tangram/reconstruct/xmof2D_wrapper.h"
+#include "tangram/reconstruct/SLIC.h"
+
 // amh: TODO--change to simple mesh?
 namespace {
 
@@ -80,16 +87,36 @@ class DriverTest : public ::testing::Test {
     std::vector<std::string> remap_fields;
     remap_fields.push_back("celldata");
 
-    Portage::Driver<Portage::SearchKDTree,
-    Intersect,
-    Interpolate, Dimension,
-    Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
-    Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper>
-    d(sourceMeshWrapper, sourceStateWrapper, targetMeshWrapper,
-      targetStateWrapper);
-    d.set_remap_var_names(remap_fields);
-    // run on one processor
-    d.run(false);
+
+    if (Dimension == 2) {
+
+      Portage::MMDriver<Portage::SearchKDTree,
+                        Intersect,
+                        Interpolate, 2,
+                        Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
+                        Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
+                        Tangram::XMOF2D_Wrapper>
+          d(sourceMeshWrapper, sourceStateWrapper, targetMeshWrapper,
+          targetStateWrapper);
+      d.set_remap_var_names(remap_fields);
+      // run on one processor
+      d.run(false);
+
+    } else if (Dimension == 3) {
+
+      Portage::MMDriver<Portage::SearchKDTree,
+                        Intersect,
+                        Interpolate, 3,
+                        Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
+                        Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
+                        Tangram::SLIC>
+          d(sourceMeshWrapper, sourceStateWrapper, targetMeshWrapper,
+          targetStateWrapper);
+      d.set_remap_var_names(remap_fields);
+      // run on one processor
+      d.run(false);
+
+    }
 
     // Check the answer
     Portage::Point<Dimension> nodexy;
@@ -119,7 +146,9 @@ class DriverTest : public ::testing::Test {
     // amh: FIXME!!  Compare individual, per-node  values/ error norms here
     std::printf("\n\nL2 NORM OF ERROR = %lf\n\n", sqrt(toterr));
     ASSERT_NEAR(expected_answer, sqrt(toterr), TOL);
-  }
+  }  // unitTest
+
+
   // Constructor for Driver test
   DriverTest(std::shared_ptr<Jali::Mesh> s, std::shared_ptr<Jali::Mesh> t) :
     sourceMesh(s), targetMesh(t), sourceState(sourceMesh),
@@ -239,3 +268,5 @@ TEST_F(DriverTest3DNonCoincident, 3D_2ndOrderQuadraticCellCntrNonCoincident1proc
   (compute_quadratic_field_3d, 12.336822);
 }
 }
+
+#endif  // ifdef HAVE_TANGRAM

@@ -23,7 +23,7 @@
 #include <vector>
 #include <iostream>
 
-namespace wonton {
+namespace Wonton {
 namespace portage {
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -133,7 +133,7 @@ const typename portage_mesh_base_t<M>::shape_map_t
 ///  \brief Implements a mesh wrapper for Portage mesh queries.
 ////////////////////////////////////////////////////////////////////////////////
 template< typename M >
-class flecsi_mesh_t : public Portage::AuxMeshTopology<flecsi_mesh_t<M>> 
+class flecsi_mesh_t : public Wonton::AuxMeshTopology<flecsi_mesh_t<M>> 
 {
 
 public:
@@ -143,7 +143,7 @@ public:
   //============================================================================
 
   //! \brief the auxiliary class
-  using portage_mesh_aux_t = Portage::AuxMeshTopology<flecsi_mesh_t<M>>;
+  using portage_mesh_aux_t = Wonton::AuxMeshTopology<flecsi_mesh_t<M>>;
 
   //! \brief The mesh type
   using mesh_t = M;

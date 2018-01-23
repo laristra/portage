@@ -15,6 +15,7 @@ Please see the license file at the root of this repository, or at:
 #include "portage/simple_mesh/simple_mesh.h"
 #include "portage/support/portage.h"
 #include "portage/support/Point.h"
+#include "portage/support/Vector.h"
 
 #include "gtest/gtest.h"
 
@@ -22,7 +23,7 @@ TEST(Simple_Mesh, OneCell) {
   Portage::Simple_Mesh mesh(0.0, 0.0, 0.0,
                             1.0, 1.0, 1.0,
                             1, 1, 1);
-  Portage::Simple_Mesh_Wrapper mesh_wrapper(mesh);
+  Wonton::Simple_Mesh_Wrapper mesh_wrapper(mesh);
 
   // Check basic dimensionality
   ASSERT_EQ(mesh_wrapper.space_dimension(), 3);
@@ -108,6 +109,63 @@ TEST(Simple_Mesh, OneCell) {
                                        Portage::Entity_type::PARALLEL_OWNED,
                                        &adjcells);
   ASSERT_EQ(adjcells.size(), 0);
+
+  // Get the tet decomposition of the cell (ask for general cell
+  // decomposition with and without using the fact that its a planar
+  // hex) and make sure the volumes add up to the cell volume
+
+  double cvolume = mesh_wrapper.cell_volume(0);
+
+  std::vector<std::array<Portage::Point<3>, 4>> cell_tet_coords;
+
+  // 5 tet decomposition of hex
+
+  bool planar_hex = true;
+  mesh_wrapper.decompose_cell_into_tets(0, &cell_tet_coords, planar_hex);
+
+  int ntets = cell_tet_coords.size();
+  ASSERT_EQ(5, ntets);
+
+  double ctvolume = 0.0;
+  for (int i = 0; i < ntets; i++) {
+    std::array<Portage::Point<3>, 4> & tet_coords = cell_tet_coords[i];
+    Portage::Vector<3> v0 = tet_coords[1] - tet_coords[0];
+    Portage::Vector<3> v1 = tet_coords[2] - tet_coords[0];
+    Portage::Vector<3> v2 = tet_coords[3] - tet_coords[0];
+
+    Portage::Vector<3> cpvec = cross(v0, v1);
+    double tvolume = dot(cpvec, v2)/6.0;
+    ASSERT_GT(tvolume, 0);
+
+    ctvolume += tvolume;
+  }
+
+  ASSERT_NEAR(cvolume, ctvolume, 1.0e-12);
+
+  // 24 tet decomposition of hex
+
+  planar_hex = false;
+  mesh_wrapper.decompose_cell_into_tets(0, &cell_tet_coords, planar_hex);
+
+  ntets = cell_tet_coords.size();
+  ASSERT_EQ(24, ntets);
+
+  ctvolume = 0.0;
+  for (int i = 0; i < ntets; i++) {
+    std::array<Portage::Point<3>, 4> & tet_coords = cell_tet_coords[i];
+    Portage::Vector<3> v0 = tet_coords[1] - tet_coords[0];
+    Portage::Vector<3> v1 = tet_coords[2] - tet_coords[0];
+    Portage::Vector<3> v2 = tet_coords[3] - tet_coords[0];
+
+    Portage::Vector<3> cpvec = cross(v0, v1);
+    double tvolume = dot(cpvec, v2)/6.0;
+    ASSERT_GT(tvolume, 0);
+
+    ctvolume += tvolume;
+  }
+
+  ASSERT_NEAR(cvolume, ctvolume, 1.0e-12);
+
 }
 
 
@@ -120,7 +178,7 @@ TEST(Simple_Mesh, MultiCell) {
   Portage::Simple_Mesh mesh(xmin, ymin, zmin,
                             xmax, ymax, zmax,
                             nx, ny, nz);
-  Portage::Simple_Mesh_Wrapper mesh_wrapper(mesh);
+  Wonton::Simple_Mesh_Wrapper mesh_wrapper(mesh);
 
   // Check basic dimensionality
   ASSERT_EQ(mesh_wrapper.space_dimension(), 3);
@@ -366,7 +424,7 @@ TEST(Simple_Mesh, AdjCell) {
   Portage::Simple_Mesh mesh(xmin, ymin, zmin,
                             xmax, ymax, zmax,
                             nx, ny, nz);
-  Portage::Simple_Mesh_Wrapper mesh_wrapper(mesh);
+  Wonton::Simple_Mesh_Wrapper mesh_wrapper(mesh);
 
   int ncells = mesh_wrapper.num_owned_cells();
   ASSERT_EQ(ncells, nx*ny*nz);
@@ -405,7 +463,7 @@ TEST(Simple_Mesh, GlobalID) {
   Portage::Simple_Mesh mesh(0.0, 0.0, 0.0,
                             1.0, 1.0, 1.0,
                             10, 10, 10);
-  Portage::Simple_Mesh_Wrapper mesh_wrapper(mesh);
+  Wonton::Simple_Mesh_Wrapper mesh_wrapper(mesh);
 
   int ncells = mesh_wrapper.num_owned_cells();
 
@@ -413,3 +471,152 @@ TEST(Simple_Mesh, GlobalID) {
     ASSERT_EQ(c, mesh_wrapper.get_global_id(c, Portage::Entity_kind::CELL));
   }
 }
+
+
+// Check that we can facetize cells and dual cells in 3D correctly
+
+TEST(Simple_Mesh, MultiCell_Facetization) {
+  // Create a 2x2x2 mesh
+  double xmin(0.0), ymin(0.0), zmin(0.0);
+  double xmax(2.0), ymax(2.0), zmax(2.0);
+  int nx(2), ny(2), nz(2);
+  Portage::Simple_Mesh mesh(xmin, ymin, zmin,
+                            xmax, ymax, zmax,
+                            nx, ny, nz);
+  Wonton::Simple_Mesh_Wrapper mesh_wrapper(mesh);
+
+  // The volume of any cell in the mesh is known to be 1
+  double cvolume = 1.0;
+
+  // Sum of areas of the cell faces is known to be 6
+  double cfarea = 6.0;
+
+  // Get the facetization of any one cell and check surface area and
+  // volume (by divergence theorem). By definition, each facet is
+  // planar and has only one normal
+
+  std::vector<Portage::Point<3>> fctpoints;
+  std::vector<std::vector<int>> facets;
+  mesh_wrapper.cell_get_facetization(6, &facets, &fctpoints);
+
+  int nfacets = facets.size();
+  ASSERT_EQ(24, nfacets);
+  double cfctvolume = 0.0, cfctarea = 0.0;
+  for (int i = 0; i < nfacets; i++) {
+    int nfpoints = facets[i].size();
+    for (int j = 1; j < nfpoints-1; j++) {
+      Portage::Point<3> p0 = fctpoints[facets[i][0]];
+      Portage::Point<3> p1 = fctpoints[facets[i][j]];
+      Portage::Point<3> p2 = fctpoints[facets[i][j+1]];
+
+      Portage::Vector<3> v0 = p1 - p0;
+      Portage::Vector<3> v1 = p2 - p0;
+      Portage::Vector<3> cpvec = cross(v0, v1)/2.0;
+
+      cfctarea += cpvec.norm();
+
+      // We are using the fact the cell is an axis aligned cube to do
+      // a short cut form for integral of X.N where X is the
+      // coordinate vector at any point on the face and N is the area
+      // weighted normal of the face
+
+      Portage::Vector<3> p0vec(p0[0], p0[1], p0[2]);
+      cfctvolume += dot(p0vec, cpvec)/3.0;
+    }
+  }
+
+  ASSERT_NEAR(cfarea, cfctarea, 1.0e-12);
+  ASSERT_NEAR(cvolume, cfctvolume, 1.0e-12);
+
+  // Get the facetization of the control volume around an interior
+  // node and check surface area and volume. The volume and surface
+  // area should be the same as a cell
+  
+  // Find index of interior node without assuming any numbering scheme
+  int nnodes = mesh_wrapper.num_owned_nodes();
+  int inode = -1;
+  Portage::Point<3> cen(1.0, 1.0, 1.0);
+  for (int n = 0; n < nnodes; n++) {
+    Portage::Point<3> nxyz;
+    mesh_wrapper.node_get_coordinates(n, &nxyz);
+    if (Portage::approxEq(cen, nxyz, 1.0e-12)) {
+      inode = n;
+      break;
+    }
+  }
+  ASSERT_NE(-1, inode);
+  mesh_wrapper.dual_cell_get_facetization(inode, &facets, &fctpoints);
+
+  nfacets = facets.size();
+  ASSERT_EQ(48, nfacets);
+  cfctvolume = 0.0;
+  cfctarea = 0.0;
+  for (int i = 0; i < nfacets; i++) {
+    int nfpoints = facets[i].size();
+    for (int j = 1; j < nfpoints-1; j++) {
+      Portage::Point<3> p0 = fctpoints[facets[i][0]];
+      Portage::Point<3> p1 = fctpoints[facets[i][j]];
+      Portage::Point<3> p2 = fctpoints[facets[i][j+1]];
+
+      Portage::Vector<3> v0 = p1 - p0;
+      Portage::Vector<3> v1 = p2 - p0;
+      Portage::Vector<3> cpvec = cross(v0, v1)/2.0;
+
+      cfctarea += cpvec.norm();
+
+      // We are using the fact the cell is an axis aligned cube to do
+      // a short cut form for integral of X.N where X is the
+      // coordinate vector at any point on the face and N is the area
+      // weighted normal of the face
+
+      Portage::Vector<3> p0vec(p0[0], p0[1], p0[2]);
+      cfctvolume += dot(p0vec, cpvec)/3.0;
+    }
+  }
+
+  ASSERT_NEAR(cfarea, cfctarea, 1.0e-12);
+  ASSERT_NEAR(cvolume, cfctvolume, 1.0e-12);
+
+
+  // Get the facetization of the control volume around a corner node
+  // (0) and check surface area and volume. The volume should be 1/8th
+  // the volume of a cell and the surface area should be 1/4th the
+  // surface area of a cell. WE ARE NOT TESTING TWO OTHER CASES - NODE
+  // ON AN EXTERIOR EDGE OF THE DOMAIN AND NODE ON AN EXTERIOR FACE OF
+  // THE DOMAIN AS THESE TWO CASES WILL CAPTURE THE POSSIBLE FAILURE
+  // MODES
+  
+  mesh_wrapper.dual_cell_get_facetization(0, &facets, &fctpoints);
+
+  nfacets = facets.size();
+  ASSERT_EQ(12, nfacets);
+  cfctvolume = 0.0;
+  cfctarea = 0.0;
+  for (int i = 0; i < nfacets; i++) {
+    int nfpoints = facets[i].size();
+    for (int j = 1; j < nfpoints-1; j++) {
+      Portage::Point<3> p0 = fctpoints[facets[i][0]];
+      Portage::Point<3> p1 = fctpoints[facets[i][j]];
+      Portage::Point<3> p2 = fctpoints[facets[i][j+1]];
+
+      Portage::Vector<3> v0 = p1 - p0;
+      Portage::Vector<3> v1 = p2 - p0;
+      Portage::Vector<3> cpvec = cross(v0, v1)/2.0;
+
+      cfctarea += cpvec.norm();
+
+      // We are using the fact the cell is an axis aligned cube to do
+      // a short cut form for integral of X.N where X is the
+      // coordinate vector at any point on the face and N is the area
+      // weighted normal of the face
+
+      Portage::Vector<3> p0vec(p0[0], p0[1], p0[2]);
+      cfctvolume += dot(p0vec, cpvec)/3.0;
+    }
+  }
+
+  ASSERT_NEAR(cfarea/4.0, cfctarea, 1.0e-12);
+  ASSERT_NEAR(cvolume/8.0, cfctvolume, 1.0e-12);
+
+}
+

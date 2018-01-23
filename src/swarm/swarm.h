@@ -58,7 +58,7 @@ template<size_t dim> class Swarm {
    * @brief Create a Swarm from a flat mesh wrapper.
    * @param wrapper Input mesh wrapper
    */
-  Swarm(Portage::Flat_Mesh_Wrapper<double> &wrapper, Portage::Entity_kind entity)
+  Swarm(Wonton::Flat_Mesh_Wrapper<double> &wrapper, Portage::Entity_kind entity)
     : points_(NULL), npoints_(0)
   {
     if (entity != NODE and entity != CELL) {

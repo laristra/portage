@@ -9,10 +9,10 @@ Please see the license file at the root of this repository, or at:
 #include <ostream>
 #include "gtest/gtest.h"
 
+#include "portage/estimate/estimate.h"
 #include "portage/support/Point.h"
 #include "portage/swarm/swarm.h"
 #include "portage/accumulate/accumulate.h"
-#include "estimate.h"
 
 using std::vector;
 using std::shared_ptr;

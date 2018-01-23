@@ -30,8 +30,8 @@ Please see the license file at the root of this repository, or at:
 
 using Portage::Simple_Mesh;
 using Portage::Simple_State;
-using Portage::Simple_Mesh_Wrapper;
-using Portage::Simple_State_Wrapper;
+using Wonton::Simple_Mesh_Wrapper;
+using Wonton::Simple_State_Wrapper;
 
 
 

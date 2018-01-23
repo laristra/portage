@@ -31,38 +31,35 @@ set(search_SOURCES
 
 # Add unit test
 if(ENABLE_UNIT_TESTS)
-  if (Jali_DIR)
-    cinch_add_unit(search_simple_test
-      SOURCES search_simple_test.cc
-      LIBRARIES portage ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
-      POLICY MPI
-      THREADS 1)
-    cinch_add_unit(search_kdtree2_test
-      SOURCES search_kdtree2_test.cc
-      LIBRARIES portage ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
-      POLICY MPI
-      THREADS 1)
-  endif (Jali_DIR)
+   cinch_add_unit(search_simple_test
+    SOURCES search_simple_test.cc
+    LIBRARIES portage  ${LAPACKE_LIBRARIES}
+    POLICY SERIAL)
+  
+  cinch_add_unit(search_kdtree2_test
+    SOURCES search_kdtree2_test.cc
+    LIBRARIES portage  ${LAPACKE_LIBRARIES}
+    POLICY SERIAL)
 
   cinch_add_unit(search_kdtree3_test
     SOURCES search_kdtree3_test.cc
-    LIBRARIES portage
+    LIBRARIES portage ${LAPACKE_LIBRARIES}
     POLICY SERIAL)
   cinch_add_unit(search_simple_points_test
     SOURCES search_simple_points_test.cc
-    LIBRARIES portage 
+    LIBRARIES portage ${LAPACKE_LIBRARIES} 
     POLICY MPI
     THREADS 1)
   cinch_add_unit(search_points_by_cells_test
     SOURCES pairs.cc search_points_by_cells_test.cc 
-    LIBRARIES portage
+    LIBRARIES portage ${LAPACKE_LIBRARIES}
     POLICY MPI
     THREADS 1)
 
   if (nanoflann_FOUND)
     cinch_add_unit(test_search_kdtree_nanoflann
       SOURCES test_search_kdtree_nanoflann.cc
-      LIBRARIES portage
+      LIBRARIES portage ${LAPACKE_LIBRARIES}
       POLICY MPI
       THREADS 1)
   endif (nanoflann_FOUND)
