@@ -279,6 +279,34 @@ Simple_Mesh(double x0, double y0, double z0,
     assert(D == space_dimension());
   }
 
+  /*!
+    @brief Get the coordinates of all nodes in a cell.
+    @tparam D Dimension of the cell.
+    @param[in] cellid The ID of the cell.
+    @param[out] ccords The array of @c Point object of dimension @c D containing the
+    coordinates of nodes in cell @cellid.
+   */
+  template<long D>
+  void cell_get_coordinates(const ID cellid,
+                            std::vector<Point<D>> *ccoords) const {
+    assert(D == space_dimension());
+    
+    std::vector<ID> node_indices;
+   	cell_get_nodes(cellid , &node_indices);
+   	
+   	ccoords->clear();
+   	
+   	Point<D> node_coords;
+   	for (int node_id: node_indices){
+    	node_get_coordinates(node_id, &node_coords);
+    	ccoords->push_back(node_coords);
+    }
+  }
+ 
+ 
+ 
+  
+  
  private:
   /*!
     @brief Constructs and stores the node coordinates from the extents and

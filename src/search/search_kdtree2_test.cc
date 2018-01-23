@@ -4,85 +4,70 @@ Please see the license file at the root of this repository, or at:
     https://github.com/laristra/portage/blob/master/LICENSE
 */
 
-
 #include "search_kdtree.h"
 
 #include <algorithm>
 
 #include "gtest/gtest.h"
 
-#include "Mesh.hh"
-#include "MeshFactory.hh"
+#include "portage/wonton/mesh/simple_mesh/simple_mesh_wrapper.h"
 
-#include "portage/wonton/mesh/jali/jali_mesh_wrapper.h"
+TEST(search_kdtree2, cell) {
+  Portage::Simple_Mesh sm{0, 0, 1, 1, 3, 3};
+  Portage::Simple_Mesh tm{0, 0, 1, 1, 2, 2};
+  const Wonton::Simple_Mesh_Wrapper source_mesh_wrapper(sm);
+  const Wonton::Simple_Mesh_Wrapper target_mesh_wrapper(tm);
 
-TEST(search_kdtree2, cell)
-{
-    Jali::MeshFactory mf(MPI_COMM_WORLD);
-    // overlay a 2x2 target mesh on a 3x3 source mesh
-    // each target mesh cell gives four candidate source cells
-    const std::shared_ptr<Jali::Mesh> smesh = mf(0.0, 0.0, 1.0, 1.0, 3, 3);
-    const std::shared_ptr<Jali::Mesh> tmesh = mf(0.0, 0.0, 1.0, 1.0, 2, 2);
-    const Wonton::Jali_Mesh_Wrapper source_mesh_wrapper(*smesh);
-    const Wonton::Jali_Mesh_Wrapper target_mesh_wrapper(*tmesh);
+  Portage::SearchKDTree<2, Portage::Entity_kind::CELL,
+                        Wonton::Simple_Mesh_Wrapper,
+                        Wonton::Simple_Mesh_Wrapper>
+      search(source_mesh_wrapper, target_mesh_wrapper);
 
-    Portage::SearchKDTree<2, Portage::Entity_kind::CELL,
-        Wonton::Jali_Mesh_Wrapper, Wonton::Jali_Mesh_Wrapper>
-        search(source_mesh_wrapper, target_mesh_wrapper);
+  for (int tc = 0; tc < 4; ++tc) {
+    std::vector<int> candidates = search(tc);
 
-    for (int tc = 0; tc < 4; ++tc) {
-        std::vector<int> candidates = search(tc);
-
-        // there should be four candidate source cells, in a square
-        // compute scbase = index of lower left source cell
-        ASSERT_EQ(4, candidates.size());
-        const int tx = tc % 2;
-        const int ty = tc / 2;
-        const int scbase = tx + ty * 3;
-        // candidates might not be in order, so sort them
-        std::sort(candidates.begin(), candidates.end());
-        ASSERT_EQ(scbase,     candidates[0]);
-        ASSERT_EQ(scbase + 1, candidates[1]);
-        ASSERT_EQ(scbase + 3, candidates[2]);
-        ASSERT_EQ(scbase + 4, candidates[3]);
-    }
+    // there should be four candidate source cells, in a square
+    // compute scbase = index of lower left source cell
+    ASSERT_EQ(4, candidates.size());
+    const int tx = tc % 2;
+    const int ty = tc / 2;
+    const int scbase = tx + ty * 3;
+    // candidates might not be in order, so sort them
+    std::sort(candidates.begin(), candidates.end());
+    ASSERT_EQ(scbase, candidates[0]);
+    ASSERT_EQ(scbase + 1, candidates[1]);
+    ASSERT_EQ(scbase + 3, candidates[2]);
+    ASSERT_EQ(scbase + 4, candidates[3]);
+  }
 
 }  // TEST(search_kdtree2, cell)
 
-TEST(search_kdtree2, node)
-{
-    Jali::MeshFactory mf(MPI_COMM_WORLD);
-    mf.included_entities({Jali::Entity_kind::EDGE,
-                          Jali::Entity_kind::FACE,
-                          Jali::Entity_kind::WEDGE,
-                          Jali::Entity_kind::CORNER});
-    // overlay a 2x2 target mesh on a 3x3 source mesh
-    // each target mesh node gives four candidate source nodes
-    const std::shared_ptr<Jali::Mesh> smesh = mf(0.0, 0.0, 1.0, 1.0, 3, 3);
-    const std::shared_ptr<Jali::Mesh> tmesh = mf(0.0, 0.0, 1.0, 1.0, 2, 2);
-    const Wonton::Jali_Mesh_Wrapper source_mesh_wrapper(*smesh);
-    const Wonton::Jali_Mesh_Wrapper target_mesh_wrapper(*tmesh);
+TEST(search_kdtree2, node) {
+  Portage::Simple_Mesh sm{0, 0, 1, 1, 3, 3};
+  Portage::Simple_Mesh tm{0, 0, 1, 1, 2, 2};
+  const Wonton::Simple_Mesh_Wrapper source_mesh_wrapper(sm);
+  const Wonton::Simple_Mesh_Wrapper target_mesh_wrapper(tm);
 
-    Portage::SearchKDTree<2, Portage::Entity_kind::NODE,
-        Wonton::Jali_Mesh_Wrapper, Wonton::Jali_Mesh_Wrapper>
-        search(source_mesh_wrapper, target_mesh_wrapper);
+  Portage::SearchKDTree<2, Portage::Entity_kind::NODE,
+                        Wonton::Simple_Mesh_Wrapper,
+                        Wonton::Simple_Mesh_Wrapper>
+      search(source_mesh_wrapper, target_mesh_wrapper);
 
-    for (int tc = 0; tc < 9; ++tc) {
-        std::vector<int> candidates = search(tc);
+  for (int tc = 0; tc < 9; ++tc) {
+    std::vector<int> candidates = search(tc);
 
-        // there should be four candidate source nodes, in a square
-        // compute snbase = index of lower left source node
-        ASSERT_EQ(4, candidates.size());
-        const int tx = tc % 3;
-        const int ty = tc / 3;
-        const int snbase = tx + ty * 4;
-        // candidates might not be in order, so sort them
-        std::sort(candidates.begin(), candidates.end());
-        ASSERT_EQ(snbase,     candidates[0]);
-        ASSERT_EQ(snbase + 1, candidates[1]);
-        ASSERT_EQ(snbase + 4, candidates[2]);
-        ASSERT_EQ(snbase + 5, candidates[3]);
-    }
+    // there should be four candidate source nodes, in a square
+    // compute snbase = index of lower left source node
+    ASSERT_EQ(4, candidates.size());
+    const int tx = tc % 3;
+    const int ty = tc / 3;
+    const int snbase = tx + ty * 4;
+    // candidates might not be in order, so sort them
+    std::sort(candidates.begin(), candidates.end());
+    ASSERT_EQ(snbase, candidates[0]);
+    ASSERT_EQ(snbase + 1, candidates[1]);
+    ASSERT_EQ(snbase + 4, candidates[2]);
+    ASSERT_EQ(snbase + 5, candidates[3]);
+  }
 
 }  // TEST(search_kdtree2, node)
-
