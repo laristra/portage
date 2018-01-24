@@ -10,6 +10,7 @@ Please see the license file at the root of this repository, or at:
 
 set(distributed_HEADERS
     mpi_bounding_boxes.h
+    mpi_particle_distribute.h
     PARENT_SCOPE)
 
 if (ENABLE_UNIT_TESTS)
@@ -19,6 +20,12 @@ if (ENABLE_UNIT_TESTS)
                    LIBRARIES portage ${LAPACKE_LIBRARIES} ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
                    POLICY MPI
                    THREADS 4)
+
+    cinch_add_unit(test_mpi_particle_distribute
+                   SOURCES test/test_mpi_particle_distribute.cc
+                   LIBRARIES portage ${LAPACKE_LIBRARIES} ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
+                   POLICY MPI
+                   THREADS 2)
   endif (Jali_DIR)
 endif(ENABLE_UNIT_TESTS)
 
