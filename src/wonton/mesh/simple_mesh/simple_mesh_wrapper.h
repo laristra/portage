@@ -212,10 +212,19 @@ class Simple_Mesh_Wrapper : public AuxMeshTopology<Simple_Mesh_Wrapper> {
     @param[in] nodeid The ID of the node.
     @param[out] The Portage::Point containing the coordiantes of node @c nodeid.
    */
-  template<long D=3>
+
+  template<long D>
+  void node_get_coordinates(int const nodeid, Point<D>* pp) const {}
+
+ /* template<long D=3>
   void node_get_coordinates(int const nodeid, Point<D>* pp) const {
     mesh_.node_get_coordinates(nodeid, pp);
   }
+
+  template<long D=2>
+  void node_get_coordinates(int const nodeid, Point<D>* pp) const {
+    mesh_.node_get_coordinates(nodeid, pp);
+  }*/
 
 #ifdef HAVE_TANGRAM
   // TEMPORARY - until we pull WONTON out as a separate repository
@@ -223,18 +232,57 @@ class Simple_Mesh_Wrapper : public AuxMeshTopology<Simple_Mesh_Wrapper> {
     return get_global_id(id, static_cast<Portage::Entity_kind>(kind));
   }
 
-  template<long D=3>
+  template<long D>
+  void node_get_coordinates(int const nodeid, Tangram::Point<D>* tcoord) const {}
+
+  /*template<long D=3>
   void node_get_coordinates(int const nodeid, Tangram::Point<D>* tcoord) const {
     Point<D> pcoord;
     node_get_coordinates(nodeid, &pcoord);
     *tcoord = pcoord;
   }
+
+  template<long D=2>
+  void node_get_coordinates(int const nodeid, Tangram::Point<D>* tcoord) const {
+    Point<D> pcoord;
+    node_get_coordinates(nodeid, &pcoord);
+    *tcoord = pcoord;
+  }*/
 #endif
     
  private:
   /// The mesh to wrap.
   Simple_Mesh const & mesh_;
 };  // class Simple_Mesh_Wrapper
+
+ //Specializations
+  template<>
+  void Simple_Mesh_Wrapper::node_get_coordinates<3>(int const nodeid, Point<3>* pp) const {
+    mesh_.node_get_coordinates(nodeid, pp);
+  }
+
+  template<>
+  void Simple_Mesh_Wrapper::node_get_coordinates<2>(int const nodeid, Point<2>* pp) const {
+    mesh_.node_get_coordinates(nodeid, pp);
+  }
+
+#ifdef HAVE_TANGRAM
+
+  template<>
+  void Simple_Mesh_Wrapper::node_get_coordinates<3>(int const nodeid, Tangram::Point<3>* tcoord) const {
+    Point<3> pcoord;
+    mesh_.node_get_coordinates(nodeid, &pcoord);
+    *tcoord = pcoord;
+  }
+
+  template<>
+  void Simple_Mesh_Wrapper::node_get_coordinates<2>(int const nodeid, Tangram::Point<2>* tcoord) const {
+    Point<2> pcoord;
+    mesh_.node_get_coordinates(nodeid, &pcoord);
+    *tcoord = pcoord;
+  }
+
+#endif
 }  // namespace Wonton
 
 #endif  // SIMPLE_MESH_WRAPPER_H_
