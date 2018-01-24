@@ -209,7 +209,7 @@ class MPI_Particle_Distribute {
     moveField<double>(&src_info, commRank, commSize, MPI_DOUBLE, dim, sourceSendCoords, &sourceRecvCoords);
 
     //DEBUG
-    for (size_t i =0; i < commSize; ++i)
+   /* for (size_t i =0; i < commSize; ++i)
     {
       for (size_t j = 0 ; j < sourceSendCoords[i].size(); ++j)
        std::cout<<"Rank-"<<commRank<<"::sourceSendCoords["<<i<<"]["<<j<<"] = "<<sourceSendCoords[i][j]<<std::endl;
@@ -218,7 +218,7 @@ class MPI_Particle_Distribute {
     }
      for (size_t j = 0 ; j < sourceRecvCoords.size(); ++j)
        std::cout<<"Rank-"<<commRank<<"::sourceRecvCoords["<<j<<"] = "<<sourceRecvCoords[j]<<std::endl;
-
+  */
     //update local source field data with the received data
   /*  int writeOffset = 0;
     for (size_t i = 0; i < commSize; ++i)
@@ -234,7 +234,7 @@ class MPI_Particle_Distribute {
     * Step 5: Collect integer field data from source swarm to be sent         * 
     *         to other ranks                                                  *
     **************************************************************************/
-  /*
+  
     std::vector<std::string> int_field_names = source_state->field_names_int();
 
     for (size_t nvars = 0; nvars < int_field_names.size(); ++nvars)
@@ -260,23 +260,27 @@ class MPI_Particle_Distribute {
       }
 
       //move this field data
-      std::vector<std::vector<int>> sourceRecvData(commSize);
-      moveField<int>(&src_info, commRank, commSize, MPI_INT, 1, sourceSendData, sourceRecvData);
+      //std::vector<std::vector<int>> sourceRecvData(commSize);
+      std::vector<int> sourceRecvData(src_info.newNum);
+      moveField<int>(&src_info, commRank, commSize, MPI_INT, 1, sourceSendData, &sourceRecvData);
 
       //update local source field data with the received data
 
-      for (size_t i = 0; i < commSize; ++i)
-      {
-        source_state->extend_field(int_field_names[nvars], sourceRecvData[i]);
-      }
+      source_state->extend_field(int_field_names[nvars], sourceRecvData);
+      
+      //for (size_t i = 0; i < commSize; ++i)
+      //{
+      //  source_state->extend_field(int_field_names[nvars], sourceRecvData[i]);
+     // }
+      
     }
 
-    */
+    
     /************************************************************************** 
     * Step 6: Collect double field data from source swarm to be sent          * 
     *         to other ranks                                                  *
     **************************************************************************/
-/*
+
     std::vector<std::string> dbl_field_names = source_state->field_names_double();
 
     for (size_t nvars = 0; nvars < dbl_field_names.size(); ++nvars)
@@ -302,17 +306,19 @@ class MPI_Particle_Distribute {
       }
 
       //move this field data
-      std::vector<std::vector<double>> sourceRecvData(commSize);
-      moveField<double>(&src_info, commRank, commSize, MPI_DOUBLE, 1, sourceSendData, sourceRecvData);
+      //std::vector<std::vector<double>> sourceRecvData(commSize);
+      std::vector<double> sourceRecvData(src_info.newNum);
+      moveField<double>(&src_info, commRank, commSize, MPI_DOUBLE, 1, sourceSendData, &sourceRecvData);
 
       //update local source field data with the received data
 
-      for (size_t i = 0; i < commSize; ++i)
-      {
-        source_state->extend_field(dbl_field_names[nvars], sourceRecvData[i]);
-      }
+      source_state->extend_field(dbl_field_names[nvars], sourceRecvData);
+      //for (size_t i = 0; i < commSize; ++i)
+      //{
+      //  source_state->extend_field(dbl_field_names[nvars], sourceRecvData[i]);
+      //}
     }
-   */
+   
 
   } // distribute
 
