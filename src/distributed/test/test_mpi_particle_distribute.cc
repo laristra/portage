@@ -53,23 +53,16 @@ TEST(MPI_Particle_Distribute, SimpleTest2D) {
 
   // Create an integer source data for given function
   const int nsrcpts = source_swarm.num_particles(Portage::Entity_type::ALL);
-  typename Portage::Meshfree::SwarmState<2>::IntVecPtr source_data = 
+  typename Portage::Meshfree::SwarmState<2>::IntVecPtr source_data_int = 
        std::make_shared<typename Portage::Meshfree::SwarmState<2>::IntVec>(nsrcpts);
 
   // Fill the source state data with the specified profile
   for (size_t p = 0; p < nsrcpts; ++p) {
-    (*source_data)[p] = p*p;
+    (*source_data_int)[p] = p*p;
   }
-  source_state->add_field("intdata", source_data);
-
-  // Build the target state storage
-  const int ntarpts = target_swarm.num_particles(Portage::Entity_type::ALL);
-  typename Portage::Meshfree::SwarmState<2>::IntVecPtr target_data = 
-        std::make_shared<typename Portage::Meshfree::SwarmState<2>::IntVec>(ntarpts, 0);
-    target_state->add_field("intdata", target_data);
-
+  source_state->add_field("intdata", source_data_int);
+  
   // Create a double source data for given function
-  const int nsrcpts = source_swarm.num_particles(Portage::Entity_type::ALL);
   typename Portage::Meshfree::SwarmState<2>::DblVecPtr source_data_dbl = 
        std::make_shared<typename Portage::Meshfree::SwarmState<2>::DblVec>(nsrcpts);
 
@@ -81,42 +74,49 @@ TEST(MPI_Particle_Distribute, SimpleTest2D) {
 
   // Build the target state storage
   const int ntarpts = target_swarm.num_particles(Portage::Entity_type::ALL);
+  typename Portage::Meshfree::SwarmState<2>::IntVecPtr target_data_int = 
+        std::make_shared<typename Portage::Meshfree::SwarmState<2>::IntVec>(ntarpts, 0);
+    target_state->add_field("intdata", target_data_int);
+
+  // Build the target state storage
   typename Portage::Meshfree::SwarmState<2>::DblVecPtr target_data_dbl = 
         std::make_shared<typename Portage::Meshfree::SwarmState<2>::DblVec>(ntarpts, 0.0);
     target_state->add_field("dbldata", target_data_dbl);
 
    //Print out source swarm before distribution
-   typename Portage::Meshfree::SwarmState<2>::IntVecPtr sd_before = 
+   typename Portage::Meshfree::SwarmState<2>::IntVecPtr sd_int_before = 
         std::make_shared<typename Portage::Meshfree::SwarmState<2>::IntVec>(nsrcpts);
-   source_state->get_field("intdata",sd_before);
+   source_state->get_field("intdata",sd_int_before);
    
-   typename Portage::Meshfree::SwarmState<2>::DblVecPtr sd__dbl_before = 
+   typename Portage::Meshfree::SwarmState<2>::DblVecPtr sd_dbl_before = 
         std::make_shared<typename Portage::Meshfree::SwarmState<2>::DblVec>(nsrcpts);
    source_state->get_field("dbldata",sd_dbl_before);
 
+   typename Portage::Meshfree::SwarmState<2>::IntVecPtr td_int_before = 
+        std::make_shared<typename Portage::Meshfree::SwarmState<2>::IntVec>(ntarpts);
+   target_state->get_field("intdata",td_int_before);
+
+   typename Portage::Meshfree::SwarmState<2>::DblVecPtr td_dbl_before = 
+        std::make_shared<typename Portage::Meshfree::SwarmState<2>::DblVec>(ntarpts);
+   target_state->get_field("dbldata",td_dbl_before);
+
+   if (commRank == 1) {
    for (size_t p = 0 ; p < nsrcpts; ++p)
    {
 	Portage::Point<2> coords = source_swarm.get_particle_coordinates(p);
         std::cout<<"Rank-"<<commRank<<"::SOURCE-before::coords = [ "<<coords[0]<<", "<<coords[1]<<" ] "<<std::endl;
-        std::cout<<"Rank-"<<commRank<<"::SOURCE-before::intdata = "<<(*sd_before)[p]<<std::endl;
+        std::cout<<"Rank-"<<commRank<<"::SOURCE-before::intdata = "<<(*sd_int_before)[p]<<std::endl;
         std::cout<<"Rank-"<<commRank<<"::SOURCE-before::dbldata = "<<(*sd_dbl_before)[p]<<std::endl;
    }
-
-   typename Portage::Meshfree::SwarmState<2>::IntVecPtr td_before = 
-        std::make_shared<typename Portage::Meshfree::SwarmState<2>::IntVec>(ntarpts);
-   target_state->get_field("intdata",td_before);
-   typename Portage::Meshfree::SwarmState<2>::DblVecPtr td_dbl_before = 
-        std::make_shared<typename Portage::Meshfree::SwarmState<2>::DblVec>(ntarpts);
-   target_state->get_field("dbldata",td_dbl_before);
 
    for (size_t p = 0 ; p < ntarpts; ++p)
    {
 	Portage::Point<2> coords = target_swarm.get_particle_coordinates(p);
         std::cout<<"Rank-"<<commRank<<"::TARGET-before::coords = [ "<<coords[0]<<", "<<coords[1]<<" ] "<<std::endl;
-        std::cout<<"Rank-"<<commRank<<"::TARGET-before::intdata = "<<(*td_before)[p]<<std::endl;
+        std::cout<<"Rank-"<<commRank<<"::TARGET-before::intdata = "<<(*td_int_before)[p]<<std::endl;
         std::cout<<"Rank-"<<commRank<<"::TARGET-before::dbldata = "<<(*td_dbl_before)[p]<<std::endl;
    }
-
+  }
   //Set smoothing lengths 
    auto smoothing_lengths = std::vector<std::vector<std::vector<double>>>(4*4,
                    std::vector<std::vector<double>>(1, std::vector<double>(2, 1.0/3)));
@@ -131,35 +131,39 @@ TEST(MPI_Particle_Distribute, SimpleTest2D) {
   
    //Print out source swarm before distribution
    int nsrcpts_after = source_swarm.num_particles(Portage::Entity_type::ALL);
-   typename Portage::Meshfree::SwarmState<2>::IntVecPtr sd_after = 
+   typename Portage::Meshfree::SwarmState<2>::IntVecPtr sd_int_after = 
         std::make_shared<typename Portage::Meshfree::SwarmState<2>::IntVec>(nsrcpts_after);
-   source_state->get_field("dbldata",sd_after);
+   source_state->get_field("intdata",sd_int_after);
+
    typename Portage::Meshfree::SwarmState<2>::DblVecPtr sd_dbl_after = 
         std::make_shared<typename Portage::Meshfree::SwarmState<2>::DblVec>(nsrcpts_after);
    source_state->get_field("dbldata",sd_dbl_after);
-
-   for (size_t p = 0 ; p < nsrcpts_after; ++p)
-   {
-	Portage::Point<2> coords = source_swarm.get_particle_coordinates(p);
-        std::cout<<"Rank-"<<commRank<<"::SOURCE-after::coords = [ "<<coords[0]<<", "<<coords[1]<<" ] "<<std::endl;
-        std::cout<<"Rank-"<<commRank<<"::SOURCE-after::intdata = "<<(*sd_after)[p]<<std::endl;
-        std::cout<<"Rank-"<<commRank<<"::SOURCE-after::dbldata = "<<(*sd_dbl_after)[p]<<std::endl;
-   }
-
+   
    int ntarpts_after = target_swarm.num_particles(Portage::Entity_type::ALL);
-   typename Portage::Meshfree::SwarmState<2>::IntVecPtr td_after = 
+   typename Portage::Meshfree::SwarmState<2>::IntVecPtr td_int_after = 
         std::make_shared<typename Portage::Meshfree::SwarmState<2>::IntVec>(ntarpts_after);
-   target_state->get_field("intdata",td_after);
+   target_state->get_field("intdata",td_int_after);
 
    typename Portage::Meshfree::SwarmState<2>::DblVecPtr td_dbl_after = 
         std::make_shared<typename Portage::Meshfree::SwarmState<2>::DblVec>(ntarpts_after);
    target_state->get_field("dbldata",td_dbl_after);
+   
+   if (commRank == 1 ){
+   for (size_t p = 0 ; p < nsrcpts_after; ++p)
+   {
+	Portage::Point<2> coords = source_swarm.get_particle_coordinates(p);
+        std::cout<<"Rank-"<<commRank<<"::SOURCE-after::coords = [ "<<coords[0]<<", "<<coords[1]<<" ] "<<std::endl;
+        std::cout<<"Rank-"<<commRank<<"::SOURCE-after::intdata = "<<(*sd_int_after)[p]<<std::endl;
+        std::cout<<"Rank-"<<commRank<<"::SOURCE-after::dbldata = "<<(*sd_dbl_after)[p]<<std::endl;
+   }
+
    for (size_t p = 0 ; p < ntarpts_after; ++p)
    {
 	Portage::Point<2> coords = target_swarm.get_particle_coordinates(p);
         std::cout<<"Rank-"<<commRank<<"::TARGET-after::coords = [ "<<coords[0]<<", "<<coords[1]<<" ] "<<std::endl;
-        std::cout<<"Rank-"<<commRank<<"::TARGET-after::intdata = "<<(*td_after)[p]<<std::endl;
+        std::cout<<"Rank-"<<commRank<<"::TARGET-after::intdata = "<<(*td_int_after)[p]<<std::endl;
         std::cout<<"Rank-"<<commRank<<"::TARGET-after::dbldata = "<<(*td_dbl_after)[p]<<std::endl;
    }
+  }
 }
 

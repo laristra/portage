@@ -431,7 +431,7 @@ class MPI_Particle_Distribute {
       MPI_Waitall(requests.size(), &(requests[0]), &(statuses[0]));
     }
 
-    std::cout<<"placeholder"<<std::endl;
+    //std::cout<<"placeholder"<<std::endl;
   } // moveField
 
 
