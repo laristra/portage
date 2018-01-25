@@ -73,7 +73,7 @@ TEST(SwarmDriver, Test2D) {
     target_state->add_field("particledata", target_data_dbl);
 
   //Set smoothing lengths 
-  auto smoothing_lengths = std::vector<std::vector<std::vector<double>>>(4*4,
+  auto smoothing_lengths = std::vector<std::vector<std::vector<double>>>(ntarpts,
                    std::vector<std::vector<double>>(1, std::vector<double>(2, 2.0/4)));
  
   // Build the swarm driver

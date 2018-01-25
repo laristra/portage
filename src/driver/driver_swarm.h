@@ -111,10 +111,10 @@ class SwarmDriver {
     weight_center_ = center;
 
     if (weight_center_ == Gather) {
-      assert(smoothing_lengths_.size() == target_swarm_.num_particles());
-      kernel_types_ = std::vector<Weight::Kernel>(target_swarm_.num_particles(),
+      assert(smoothing_lengths_.size() == target_swarm_.num_particles(PARALLEL_OWNED));
+      kernel_types_ = std::vector<Weight::Kernel>(target_swarm_.num_particles(PARALLEL_OWNED),
                                                   kernel_type);
-      geom_types_ = std::vector<Weight::Geometry>(target_swarm_.num_particles(),
+      geom_types_ = std::vector<Weight::Geometry>(target_swarm_.num_particles(PARALLEL_OWNED),
                                                   support_geom_type);
     } else if (weight_center_ == Scatter) {
       assert(smoothing_lengths_.size() == source_swarm_.num_particles());
