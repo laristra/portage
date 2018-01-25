@@ -27,6 +27,7 @@ namespace Portage {
   A Simple_Mesh is a non-distributed (i.e. serial), 2D/3D, regular Cartesian mesh.
   The user need only specify the domain extents and the number of cells per
   direction, and the mesh class will create all of the connectivity information.
+  The cells are created in row-first order. 
 
   Simple_Mesh only knows about cells, faces, and nodes.  
 

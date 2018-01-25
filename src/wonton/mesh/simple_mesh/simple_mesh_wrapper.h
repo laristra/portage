@@ -216,16 +216,6 @@ class Simple_Mesh_Wrapper : public AuxMeshTopology<Simple_Mesh_Wrapper> {
   template<long D>
   void node_get_coordinates(int const nodeid, Point<D>* pp) const {}
 
- /* template<long D=3>
-  void node_get_coordinates(int const nodeid, Point<D>* pp) const {
-    mesh_.node_get_coordinates(nodeid, pp);
-  }
-
-  template<long D=2>
-  void node_get_coordinates(int const nodeid, Point<D>* pp) const {
-    mesh_.node_get_coordinates(nodeid, pp);
-  }*/
-
 #ifdef HAVE_TANGRAM
   // TEMPORARY - until we pull WONTON out as a separate repository
   int get_global_id(int const id, Tangram::Entity_kind const kind) const {
@@ -234,20 +224,6 @@ class Simple_Mesh_Wrapper : public AuxMeshTopology<Simple_Mesh_Wrapper> {
 
   template<long D>
   void node_get_coordinates(int const nodeid, Tangram::Point<D>* tcoord) const {}
-
-  /*template<long D=3>
-  void node_get_coordinates(int const nodeid, Tangram::Point<D>* tcoord) const {
-    Point<D> pcoord;
-    node_get_coordinates(nodeid, &pcoord);
-    *tcoord = pcoord;
-  }
-
-  template<long D=2>
-  void node_get_coordinates(int const nodeid, Tangram::Point<D>* tcoord) const {
-    Point<D> pcoord;
-    node_get_coordinates(nodeid, &pcoord);
-    *tcoord = pcoord;
-  }*/
 #endif
     
  private:
