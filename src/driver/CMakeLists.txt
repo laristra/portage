@@ -29,13 +29,21 @@ if (ENABLE_UNIT_TESTS)
        LIBRARIES portage ${LAPACKE_LIBRARIES} ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
        POLICY MPI
        THREADS 1)
+
        cinch_add_unit(test_driver
        SOURCES test/test_driver 
        LIBRARIES portage ${LAPACKE_LIBRARIES} ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
        POLICY MPI
        THREADS 1)
+
        cinch_add_unit(test_driver_step
        SOURCES test/test_driver_step 
+       LIBRARIES portage ${LAPACKE_LIBRARIES} ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
+       POLICY MPI
+       THREADS 1)
+
+       cinch_add_unit(test_driver_swarm_mpi
+       SOURCES test/test_driver_swarm_mpi
        LIBRARIES portage ${LAPACKE_LIBRARIES} ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
        POLICY MPI
        THREADS 1)
@@ -54,7 +62,7 @@ if (ENABLE_UNIT_TESTS)
      LIBRARIES portage ${LAPACKE_LIBRARIES}
      POLICY MPI
      THREADS 1)
-   
+
    cinch_add_unit(test_driver_mesh_swarm_mesh
      SOURCES test/test_driver_mesh_swarm_mesh 
      LIBRARIES portage ${LAPACKE_LIBRARIES}

@@ -12,7 +12,7 @@ Please see the license file at the root of this repository, or at:
 #include "portage/swarm/swarm_state.h"
 #include "portage/wonton/mesh/flat/flat_mesh_wrapper.h"
 #include "portage/wonton/mesh/jali/jali_mesh_wrapper.h"
-#include "portage/wonton/state/flat/flat_state_wrapper.h"
+//#include "portage/wonton/state/flat/flat_state_wrapper.h"
 
 #include "gtest/gtest.h"
 #include "mpi.h"
@@ -123,8 +123,8 @@ TEST(MPI_Particle_Distribute, SimpleTest2D) {
 
   //Distribute 
   Portage::MPI_Particle_Distribute<2> distributor;
-  distributor.distribute(source_swarm, source_state, target_swarm,
-                         target_state, smoothing_lengths, 
+  distributor.distribute(source_swarm, *source_state, target_swarm,
+                         *target_state, smoothing_lengths, 
                          Portage::Meshfree::WeightCenter::Gather);
 
   // Check number of particles received

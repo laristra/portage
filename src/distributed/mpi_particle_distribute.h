@@ -235,13 +235,13 @@ class MPI_Particle_Distribute {
     *         to other ranks                                                  *
     **************************************************************************/
   
-    std::vector<std::string> int_field_names = source_state->field_names_int();
+    std::vector<std::string> int_field_names = source_state.field_names_int();
 
     for (size_t nvars = 0; nvars < int_field_names.size(); ++nvars)
     {
       // Get field data from source state
       std::shared_ptr<std::vector<int>> srcdata; 
-      source_state->get_field(int_field_names[nvars], srcdata);
+      source_state.get_field(int_field_names[nvars], srcdata);
 
       // Collect field data for source particles that need to be sent to other ranks
       std::vector<std::vector<int>> sourceSendData(commSize);
@@ -266,7 +266,7 @@ class MPI_Particle_Distribute {
 
       //update local source field data with the received data
 
-      source_state->extend_field(int_field_names[nvars], sourceRecvData);
+      source_state.extend_field(int_field_names[nvars], sourceRecvData);
       
       //for (size_t i = 0; i < commSize; ++i)
       //{
@@ -281,13 +281,13 @@ class MPI_Particle_Distribute {
     *         to other ranks                                                  *
     **************************************************************************/
 
-    std::vector<std::string> dbl_field_names = source_state->field_names_double();
+    std::vector<std::string> dbl_field_names = source_state.field_names_double();
 
     for (size_t nvars = 0; nvars < dbl_field_names.size(); ++nvars)
     {
       // Get field data from source state
       std::shared_ptr<std::vector<double>> srcdata; 
-      source_state->get_field(dbl_field_names[nvars], srcdata);
+      source_state.get_field(dbl_field_names[nvars], srcdata);
 
       // Collect field data for source particles that need to be sent to other ranks
       std::vector<std::vector<double>> sourceSendData(commSize);
@@ -312,7 +312,7 @@ class MPI_Particle_Distribute {
 
       //update local source field data with the received data
 
-      source_state->extend_field(dbl_field_names[nvars], sourceRecvData);
+      source_state.extend_field(dbl_field_names[nvars], sourceRecvData);
       //for (size_t i = 0; i < commSize; ++i)
       //{
       //  source_state->extend_field(dbl_field_names[nvars], sourceRecvData[i]);
