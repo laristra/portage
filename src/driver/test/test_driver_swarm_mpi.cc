@@ -3,8 +3,11 @@ This file is part of the Ristra portage project.
 Please see the license file at the root of this repository, or at:
     https://github.com/laristra/portage/blob/master/LICENSE
 */
-
+#include <cstdio>
+#include <fstream>
 #include <iostream>
+#include <string>
+
 #include "portage/accumulate/accumulate.h"
 #include "portage/distributed/mpi_particle_distribute.h"
 #include "portage/driver/driver_swarm.h"
@@ -24,9 +27,11 @@ double TOL = 1e-6;
 
 TEST(SwarmDriver, Test2D) {
 
-  int commRank;
+  int commRank,commSize;
   MPI_Comm_rank(MPI_COMM_WORLD, &commRank);
-
+  MPI_Comm_size(MPI_COMM_WORLD, &commSize);
+  
+  //Create jali mesh factory object
   Jali::MeshFactory mf(MPI_COMM_WORLD);
 
   // Create a distributed jali source/target mesh 
@@ -75,7 +80,35 @@ TEST(SwarmDriver, Test2D) {
   //Set smoothing lengths 
   auto smoothing_lengths = std::vector<std::vector<std::vector<double>>>(ntarpts,
                    std::vector<std::vector<double>>(1, std::vector<double>(2, 2.0/4)));
- 
+
+  //Print out values to file
+  typename Portage::Meshfree::SwarmState<2>::DblVecPtr sd_before, td_before;
+  source_state->get_field("particledata",sd_before); 
+  target_state->get_field("particledata",td_before); 
+  
+  std::string fnameb = "particledata_before_dist_rank_" +
+    std::to_string(static_cast<long long>(commRank)) + "_of_" +
+    std::to_string(static_cast<long long>(commSize));
+
+  std::ofstream foutb(fnameb);
+  foutb << std::scientific;
+  foutb.precision(17);
+
+  foutb <<"SOURCE-SWARM-COORDS-FIELD" << std::endl;
+  for (size_t p = 0 ; p < source_swarm.num_particles(Portage::Entity_type::ALL); ++p)
+  {
+    Portage::Point<2> coords = source_swarm.get_particle_coordinates(p);
+    foutb << p << " " << coords[0] <<" "<< coords[1]<<" "<<(*sd_before)[p]<<std::endl;
+  }
+  foutb<<std::endl;
+  foutb <<"TARGET-SWARM-COORDS-FIELD" << std::endl;
+  for (size_t p = 0 ; p < target_swarm.num_particles(Portage::Entity_type::ALL); ++p)
+  {
+    Portage::Point<2> coords = target_swarm.get_particle_coordinates(p);
+    foutb << p << " " << coords[0] <<" "<< coords[1]<<" "<<(*td_before)[p]<<std::endl;
+  }
+  foutb<<std::endl;
+
   // Build the swarm driver
   // Register the variable name and interpolation order with the driver
   std::vector<std::string> remap_fields;
@@ -99,25 +132,53 @@ TEST(SwarmDriver, Test2D) {
   // run on multiple processor
   d.run(true);
 
+  //Get values on source/target swarms
+  typename Portage::Meshfree::SwarmState<2>::DblVecPtr sd_after, td_after ;
+  source_state->get_field("particledata",sd_after);
+  target_state->get_field("particledata",td_after);
+  
   // Check the answer
   double stdval, err;
   double toterr=0.;
 
-  typename Portage::Meshfree::SwarmState<2>::DblVecPtr vecout;
-  target_state->get_field("particledata", vecout);
-  ASSERT_NE(nullptr, vecout);
+  ASSERT_NE(nullptr, td_after);
 
   for (int p = 0; p < ntarpts; ++p) {
     Portage::Point<2> coord = target_swarm.get_particle_coordinates(p);
     double error;
-    error = coord[0]*coord[0]+coord[1]*coord[1] - (*vecout)[p];
-    std::printf("Particle=% 4d Coord = (% 5.3lf,% 5.3lf)", p, coord[0],
-                    coord[1]);
-    std::printf("  Value = % 10.6lf  Err = % lf\n", (*vecout)[p], error);
+    error = coord[0]*coord[0]+coord[1]*coord[1] - (*td_after)[p];
+    std::printf("Particle=% 4d on Rank-%d Coord = (% 5.3lf,% 5.3lf)", p, commRank, coord[0],
+                   coord[1]);
+    std::printf("  Value = % 10.6lf  Err = % lf\n", (*td_after)[p], error);
     toterr += error*error;
    }
 
   std::printf("\n\nL2 NORM OF ERROR = %lf\n\n", sqrt(toterr));
   ASSERT_NEAR(0.0, sqrt(toterr), TOL);
   
+  //Print out values to file
+  std::string fnamea = "particledata_after_dist_rank_" +
+    std::to_string(static_cast<long long>(commRank)) + "_of_" +
+    std::to_string(static_cast<long long>(commSize));
+
+  std::ofstream fouta(fnamea);
+  fouta << std::scientific;
+  fouta.precision(17);
+
+  // write out the values
+  fouta <<"SOURCE-SWARM-COORDS-FIELD" << std::endl;
+  for (size_t p = 0 ; p < source_swarm.num_particles(Portage::Entity_type::ALL); ++p)
+  {
+     Portage::Point<2> coords = source_swarm.get_particle_coordinates(p);
+     fouta << p << " " << coords[0] <<" "<< coords[1]<<" "<<(*sd_after)[p]<<std::endl;
+  }
+  fouta<<std::endl;
+  fouta <<"TARGET-SWARM-COORDS-FIELD" << std::endl;
+  for (size_t p = 0 ; p < target_swarm.num_particles(Portage::Entity_type::ALL); ++p)
+  {
+     Portage::Point<2> coords = target_swarm.get_particle_coordinates(p);
+     fouta << p << " " << coords[0] <<" "<< coords[1]<<" "<<(*td_after)[p]<<std::endl;
+  }
+  fouta<<std::endl;
+
 }

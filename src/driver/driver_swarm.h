@@ -519,7 +519,13 @@ void SwarmDriver<Search, Accumulate, Estimate, Dim,
   gettimeofday(&end_timeval, 0);
   timersub(&end_timeval, &begin_timeval, &diff_timeval);
   tot_seconds_dist = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
-  
+
+  /*if (comm_rank==0)
+  {
+    std::cout<<"#Srcpts-owned = "<<source_swarm_.num_particles(PARALLEL_OWNED);
+    std::cout<<"#Srcpts-all = "<<source_swarm_.num_particles(ALL);
+
+  }*/
   // SEARCH
   Portage::vector<std::vector<unsigned int>> candidates(numTargetPts);
     
