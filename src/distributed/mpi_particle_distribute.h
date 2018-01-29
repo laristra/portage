@@ -7,8 +7,6 @@ Please see the license file at the root of this repository, or at:
 #ifndef MPI_PARTICLE_DISTRIBUTE_H_
 #define MPI_PARTICLE_DISTRIBUTE_H_
 
-//#define DEBUG_MPI
-
 #include <cassert>
 #include <algorithm>
 #include <numeric>
@@ -20,17 +18,15 @@ Please see the license file at the root of this repository, or at:
 #include "mpi.h"
 
 /*!
-  @file mpi_bounding_boxes.h
-  @brief Distributes source data using MPI based on bounding boxes
+  @file mpi_particle_distribute.h
+  @brief Distributes source particles and data using MPI.
  */
 
 namespace Portage {
 
 /*!
   @class MPI_Particle_Distribute
-  @brief Distributes source data using MPI based on bounding boxes
-
-         Currently assumes coordinates and all fields are doubles.
+  @brief Distributes source particles and their data using MPI.
 */
 template<size_t dim> 
 class MPI_Particle_Distribute {
@@ -49,12 +45,12 @@ class MPI_Particle_Distribute {
 
 
   /*!
-    @brief Helper structure containg comms info for a given entity type
+    @brief Helper structure containg comms info 
    */
   struct comm_info_t {
-    //!< Number of entities in source swarm to be sent to each rank
+    //!< Number of particles in source swarm to be sent to each rank
     std::vector<int> sourceNum;
-    //!< Number of total entities in new field
+    //!< Number of total particles in new field
     int newNum = 0;
     //! Array of send sizes from me to all PEs
     std::vector<int> sendCounts;
@@ -64,12 +60,15 @@ class MPI_Particle_Distribute {
 
 
   /*!
-    @brief Compute bounding boxes for all partitions, and send source mesh and state
-           information to all target partitions with an overlapping bounding box using MPI
-    @param[in] source_mesh_flat  Input mesh (must be flat representation)
-    @param[in] source_state_flat Input state (must be flat representation)
-    @param[in] target_mesh       Target mesh
-    @param[in] target_state      Target state (not actually used for now)
+    @brief Compute bounding boxes for target swarm on all partitions, and 
+           send source particles and their data to all target partitions 
+           within a bounding box using MPI
+    @param[in] source_swarm       Input swarm
+    @param[in] source_state       Input swarm state
+    @param[in] target_swarm       Target swarm
+    @param[in] target_state       Target swarm state
+    @param[in] smoothing_lengths  Extents on target(Gather-form) or source(Scatter-form)
+    @param[in] center             Weight center 
    */
   template <class SourceSwarm, class SourceState, class TargetSwarm, class TargetState>
   void distribute(SourceSwarm &source_swarm, SourceState &source_state,
@@ -319,16 +318,12 @@ class MPI_Particle_Distribute {
   /*!
     @brief Move values for a single range of data to all ranks as needed
     @tparam[in] T                C++ type of data to be moved
+    @param[in] info              Structure with send/recv counts  
     @param[in] commRank          MPI rank of this PE
     @param[in] commSize          Total number of MPI ranks
     @param[in] mpiType           MPI type of data (MPI_???) to be moved
-    @param[in] stride            Stride of data field
-    @param[in] sourceStart       Start location in source (send) data
-    @param[in] sourceEnd         End location in source (send) data
-    @param[in] newStart          Start location in new (recv) data
-    @param[in] curSendCounts     Array of send sizes from me to all PEs
-    @param[in] curRecvCounts     Array of recv sizes to me from all PEs
-    @param[in] sourceData        Array of (old) source data
+    @param[in] nvals             Number of values per particle
+    @param[in] sourceData        Source data
     @param[in] newData           Array of new source data
    */
   template<typename T>
@@ -342,36 +337,20 @@ class MPI_Particle_Distribute {
     // which it will receive data values
     int writeOffset = 0;
     std::vector<MPI_Request> requests;
-   // std::vector<T> buffer(info->newNum*nvals);
     size_t rcount = 0; 
     for (unsigned int i=0; i<commSize; i++)
     {
       if ((i != commRank) && (info->recvCounts[i] > 0))
       {
         MPI_Request request;
-        //std::vector<T> buffer(info->recvCounts[i]*nvals);
         MPI_Irecv((void *)&((*newData)[writeOffset]),
                   info->recvCounts[i]*nvals, mpiType, i,
                   MPI_ANY_TAG, MPI_COMM_WORLD, &request);
         requests.push_back(request);
-
-        //DEBUG
-        //for (size_t j = 0; j < buffer.size(); ++j)
-        // std::cout<<"buffer["<<j<<"] = "<<buffer[j]<<std::endl;
-
-        //newData[i].insert(newData[i].end(), buffer.begin(), buffer.end());
-       // rcount += buffer.size();
       }
      writeOffset += info->recvCounts[i]*nvals;
     }
-    //assert(rcount == info->newNum*nvals);
     assert(writeOffset == info->newNum*nvals);
-
-   // for (size_t i = 0; i < commSize; ++i)
-   //{
-   //     newData[i].insert(newData[i].end(), buffer.begin(), buffer.end());
-  // }
-
 
     // Each rank will send its data values to appropriate ranks
     for (unsigned int i=0; i<commSize; i++)
@@ -390,7 +369,6 @@ class MPI_Particle_Distribute {
       MPI_Waitall(requests.size(), &(requests[0]), &(statuses[0]));
     }
 
-    //std::cout<<"placeholder"<<std::endl;
   } // moveField
 
 

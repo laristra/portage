@@ -12,7 +12,6 @@ Please see the license file at the root of this repository, or at:
 #include "portage/swarm/swarm_state.h"
 #include "portage/wonton/mesh/flat/flat_mesh_wrapper.h"
 #include "portage/wonton/mesh/jali/jali_mesh_wrapper.h"
-//#include "portage/wonton/state/flat/flat_state_wrapper.h"
 
 #include "gtest/gtest.h"
 #include "mpi.h"
@@ -117,6 +116,7 @@ TEST(MPI_Particle_Distribute, SimpleTest2D) {
         std::cout<<"Rank-"<<commRank<<"::TARGET-before::dbldata = "<<(*td_dbl_before)[p]<<std::endl;
    }
   }
+
   //Set smoothing lengths 
    auto smoothing_lengths = std::vector<std::vector<std::vector<double>>>(4*4,
                    std::vector<std::vector<double>>(1, std::vector<double>(2, 1.0/3)));

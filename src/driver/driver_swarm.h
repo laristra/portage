@@ -30,8 +30,8 @@ Please see the license file at the root of this repository, or at:
 #endif 
 
 /*!
-  @file driver.h
-  @brief Example driver for mapping between two meshes.
+  @file driver_swarm.h
+  @brief Example driver for mapping between two swarms.
 
   This should serve as a good example for how to write your own driver routine
   and datastructures.
@@ -41,13 +41,13 @@ namespace Portage {
 namespace Meshfree {
 
 /*!
-  @class Driver "driver.h"
-  @brief Driver provides the API to mapping from one mesh to another.
+  @class Driver "driver_swarm.h"
+  @brief Driver provides the API to remap variablesfrom one swarm to another.
   @tparam SourceSwarm A lightweight wrapper to a specific input Swarm
   implementation that provides certain functionality.
   @tparam SourceState A lightweight wrapper to a specific input state
   manager implementation that provides certain functionality.
-  @tparam TargetMesh A lightweight wrapper to a specific target Swarm
+  @tparam TargetSwarm A lightweight wrapper to a specific target Swarm
   implementation that provides certain functionality.
   @tparam TargetState A lightweight wrapper to a specific target state
   manager implementation that provides certain functionality.
@@ -520,12 +520,6 @@ void SwarmDriver<Search, Accumulate, Estimate, Dim,
   timersub(&end_timeval, &begin_timeval, &diff_timeval);
   tot_seconds_dist = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
 
-  /*if (comm_rank==0)
-  {
-    std::cout<<"#Srcpts-owned = "<<source_swarm_.num_particles(PARALLEL_OWNED);
-    std::cout<<"#Srcpts-all = "<<source_swarm_.num_particles(ALL);
-
-  }*/
   // SEARCH
   Portage::vector<std::vector<unsigned int>> candidates(numTargetPts);
     
