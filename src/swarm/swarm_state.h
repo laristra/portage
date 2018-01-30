@@ -47,8 +47,6 @@ class SwarmState {
   /*! @brief Constructor provided a reference swarm.
    * @param swarm the swarm with which the field data are associated.
    */
- //SwarmState(Swarm<dim> const& swarmin): npoints_owned_(swarmin.num_owned_particles())
- //   {}
  SwarmState(Swarm<dim>& swarmin): npoints_owned_(swarmin.num_owned_particles())
     {}
 
@@ -232,14 +230,14 @@ void SwarmState<dim>::get_field(const string name, DblVecPtr &value) const {
   value = dbl_field_map_.at(name);
 }
 
-// Non-const version of get_filed for integer field - inserts the field
+// Non-const version of get_field for integer field - inserts the field
 // if it does not exist
 template<size_t dim>
 void SwarmState<dim>::get_field(const string name, IntVecPtr &value) {
   value = int_field_map_[name];
 }
 
-// Non-const version of get_filed for real field - inserts the field
+// Non-const version of get_field for real field - inserts the field
 // if it does not exist
 template<size_t dim>
 void SwarmState<dim>::get_field(const string name, DblVecPtr &value) {

@@ -532,7 +532,7 @@ void SwarmDriver<Search, Accumulate, Estimate, Dim,
   // those around target points are determined by particle
   // smoothing lengths
 
-  // code below does not with with facted weightssourceExtents =
+  // code below does not work with facted weightssourceExtents =
   std::shared_ptr<std::vector<Point<Dim>>> sourceExtents;
   std::shared_ptr<std::vector<Point<Dim>>> targetExtents;
   if (weight_center_ == Portage::Meshfree::Gather) {

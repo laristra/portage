@@ -42,8 +42,8 @@ if (ENABLE_UNIT_TESTS)
        POLICY MPI
        THREADS 1)
 
-       cinch_add_unit(test_driver_swarm_mpi
-       SOURCES test/test_driver_swarm_mpi
+       cinch_add_unit(test_driver_swarm_dist
+       SOURCES test/test_driver_swarm_dist
        LIBRARIES portage ${LAPACKE_LIBRARIES} ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
        POLICY MPI
        THREADS 1)
