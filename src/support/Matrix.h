@@ -253,7 +253,7 @@ class Matrix {
     The value of \code error\endcode will be "ignore" on return.
     If \code error\endcode is present and has a value other than
     "ignore", the value "none" will be returned if no error was
-    generated, or contain the appropriate error message.
+    generated, or else will contain the appropriate error message.
   */
   Matrix solve(Matrix const& B,
                std::string method="inverse",
