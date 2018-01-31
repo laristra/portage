@@ -74,9 +74,6 @@ class DriverTest : public ::testing::Test {
     sourceSwarm = make_shared<Portage::Meshfree::Swarm<dim>>(source_mesh_flat, Portage::Entity_kind::CELL);
     targetSwarm = make_shared<Portage::Meshfree::Swarm<dim>>(target_mesh_flat, Portage::Entity_kind::CELL);
 
-    //Portage::Meshfree::Swarm<dim> sourceSwarm(source_mesh_flat, Portage::Entity_kind::CELL);
-    //Portage::Meshfree::Swarm<dim> targetSwarm(target_mesh_flat, Portage::Entity_kind::CELL);
-
     sourceState = make_shared<Portage::Meshfree::SwarmState<dim>>(*sourceSwarm);
     targetState = make_shared<Portage::Meshfree::SwarmState<dim>>(*targetSwarm);
   }
@@ -135,7 +132,7 @@ class DriverTest : public ::testing::Test {
     d.set_remap_var_names(remap_fields, remap_fields,
                           Portage::Meshfree::LocalRegression,
                           basis);
-    // run on one processor
+    // run on multiple processors
     d.run(true);
 
     // Check the answer

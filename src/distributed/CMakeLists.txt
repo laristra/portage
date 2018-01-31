@@ -25,7 +25,7 @@ if (ENABLE_UNIT_TESTS)
                    SOURCES test/test_mpi_particle_distribute.cc
                    LIBRARIES portage ${LAPACKE_LIBRARIES} ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
                    POLICY MPI
-                   THREADS 2)
+                   THREADS 4)
   endif (Jali_DIR)
 endif(ENABLE_UNIT_TESTS)
 
