@@ -62,7 +62,8 @@ class MPI_Particle_Distribute {
   /*!
     @brief Compute bounding boxes for target swarm on all partitions, and 
            send source particles and their data to all target partitions 
-           within a bounding box using MPI
+           within a bounding box using MP. Currently, only Gather scheme 
+           is supported.
     @param[in] source_swarm       Input swarm
     @param[in] source_state       Input swarm state
     @param[in] target_swarm       Target swarm
