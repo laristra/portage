@@ -172,8 +172,8 @@ class DriverTest : public ::testing::Test {
 
 // Class which constructs a pair of 2-D swarms (from jali) for remaps
 struct DriverTest2D : DriverTest<2> {
-  DriverTest2D() : DriverTest(Jali::MeshFactory(MPI_COMM_WORLD)(0.0, 0.0, 1.0, 1.0, 8, 8),
-                              Jali::MeshFactory(MPI_COMM_WORLD)(0.0, 0.0, 1.0, 1.0, 4, 4)) 
+  DriverTest2D() : DriverTest(Jali::MeshFactory(MPI_COMM_WORLD)(0.0, 0.0, 1.0, 1.0, 16, 16),
+                              Jali::MeshFactory(MPI_COMM_WORLD)(0.0, 0.0, 1.0, 1.0, 8, 8)) 
   {
     size_t ntarpts = targetSwarm->num_particles(Portage::Entity_type::PARALLEL_OWNED); 
     auto smoothing_lengths = make_shared<vector<vector<vector<double>>>>(ntarpts,
@@ -186,9 +186,9 @@ struct DriverTest2D : DriverTest<2> {
 // Class which constructs a pair of 3-D swarms (from jali) for remaps
 struct DriverTest3D : DriverTest<3> {
   DriverTest3D(): DriverTest(Jali::MeshFactory(MPI_COMM_WORLD)(0.0, 0.0, 0.0, 1.0, 1.0, 1.0,
-                                          8, 8, 8),
+                                          16, 16, 16),
                              Jali::MeshFactory(MPI_COMM_WORLD)(0.0, 0.0, 0.0, 1.0, 1.0, 1.0,
-                                          4, 4, 4)) 
+                                          8, 8, 8)) 
   {
     size_t ntarpts = targetSwarm->num_particles(Portage::Entity_type::PARALLEL_OWNED); 
     auto smoothing_lengths = make_shared<vector<vector<vector<double>>>>(ntarpts,

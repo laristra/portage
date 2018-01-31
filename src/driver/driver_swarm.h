@@ -95,7 +95,7 @@ class SwarmDriver {
   */
   SwarmDriver(SourceSwarm& sourceSwarm,
               SourceState& sourceState,
-              TargetSwarm& targetSwarm,
+              TargetSwarm const& targetSwarm,
               TargetState& targetState,
               std::vector<std::vector<std::vector<double>>> const& smoothing_lengths,
               Weight::Kernel const& kernel_type=Weight::B4,
@@ -145,7 +145,7 @@ class SwarmDriver {
   */
   SwarmDriver(SourceSwarm& sourceSwarm,
               SourceState& sourceState,
-              TargetSwarm& targetSwarm,
+              TargetSwarm const& targetSwarm,
               TargetState& targetState,
               std::vector<std::vector<std::vector<double>>> const& smoothing_lengths,
               std::vector<Weight::Kernel> const& kernel_types,
@@ -292,7 +292,7 @@ class SwarmDriver {
 
  private:
   SourceSwarm& source_swarm_;
-  TargetSwarm& target_swarm_;
+  TargetSwarm const& target_swarm_;
   SourceState& source_state_;
   TargetState& target_state_;
   std::vector<std::string> source_remap_var_names_;

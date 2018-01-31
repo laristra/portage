@@ -46,7 +46,7 @@ if (ENABLE_UNIT_TESTS)
        SOURCES test/test_driver_swarm_dist
        LIBRARIES portage ${LAPACKE_LIBRARIES} ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
        POLICY MPI
-       THREADS 1)
+       THREADS 4)
 
      if (TANGRAM_FOUND AND XMOF2D_FOUND)
        cinch_add_unit(test_multimat_driver
