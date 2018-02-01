@@ -204,7 +204,15 @@ class MPI_Particle_Distribute {
     moveField<double>(&src_info, commRank, commSize, MPI_DOUBLE, dim, sourceSendCoords, &sourceRecvCoords);
     
     // update local source particle list with received new particles
-    source_swarm.extend_particle_list(sourceRecvCoords);
+    std::vector<Point<dim>> RecvCoords;
+    for (size_t i = 0; i < src_info.newNum; ++i)
+    {
+      Point<dim> coord;
+      for (size_t d = 0 ; d < dim; ++d)
+        coord[d] = sourceRecvCoords[dim*i+d];
+      RecvCoords.emplace_back(coord);
+    }
+    source_swarm.extend_particle_list(RecvCoords);
 
     /************************************************************************** 
     * Step 5: Collect integer field data from source swarm to be sent         * 

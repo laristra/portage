@@ -251,7 +251,7 @@ void SwarmState<dim>::extend_field(const string name, IntVec new_value)
    // check if the field already exists
   auto check = int_field_map_.find(name);
   if (check == int_field_map_.end()) {
-    throw std::runtime_error(string("tried to add new int field ")+name);
+    throw std::runtime_error(string("tried to extend an int field that does not exist ")+name);
   }
 
   IntVecPtr val = int_field_map_.at(name);
@@ -264,7 +264,7 @@ void SwarmState<dim>::extend_field(const string name, DblVec new_value)
    // check if the field already exists
   auto check = dbl_field_map_.find(name);
   if (check == dbl_field_map_.end()) {
-    throw std::runtime_error(string("tried to add new dbl field ")+name);
+    throw std::runtime_error(string("tried to extend a double field that does not exist ")+name);
   }
 
   DblVecPtr val = dbl_field_map_.at(name);

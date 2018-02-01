@@ -99,7 +99,9 @@ class Swarm {
 
   /*! @brief return the number of ghost (not owned by this processor)
    * particles in the swarm.
-   * @return the number of ghost particles in the swarm
+   * @return the number of ghost particles in the swarm that are stored
+   * at the end of the particle list i.e., between num_owned_particles
+   * and num_owned_particles+num_ghost_particle.  
    */
   int num_ghost_particles() const {
     return points_->size() - npoints_owned_;
@@ -150,16 +152,9 @@ class Swarm {
   /*! @brief Add new particles to swarm
    * @return 
    */
-  void extend_particle_list(std::vector<double>& new_pts)
+  void extend_particle_list(std::vector<Point<dim>>& new_pts)
   {
-    int npts = new_pts.size()/dim; //number of new points
-    for (size_t i = 0; i < npts; ++i)
-    {
-      Point<dim> coord;
-      for (size_t d = 0 ; d < dim; ++d)
-        coord[d] = new_pts[dim*i+d];
-      (*points_).emplace_back(coord);
-    }
+    (*points_).insert((*points_).end(), new_pts.begin(), new_pts.end());
   }
   
 
