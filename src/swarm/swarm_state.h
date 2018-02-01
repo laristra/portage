@@ -14,7 +14,7 @@ Please see the license file at the root of this repository, or at:
 
 #include "portage/wonton/mesh/flat/flat_mesh_wrapper.h"
 #include "portage/wonton/state/flat/flat_state_wrapper.h"
-#include "swarm.h"
+#include "portage/swarm/swarm.h"
 
 namespace Portage {
 namespace Meshfree {
@@ -47,7 +47,7 @@ class SwarmState {
   /*! @brief Constructor provided a reference swarm.
    * @param swarm the swarm with which the field data are associated.
    */
- SwarmState(Swarm<dim> const& swarmin): num_particles_(swarmin.num_owned_particles())
+ SwarmState(Swarm<dim>& swarmin): npoints_owned_(swarmin.num_owned_particles())
     {}
 
   /*! @brief Constructor provided a flat mesh and flat mesh state.
@@ -108,7 +108,7 @@ class SwarmState {
   /*! @brief Get number of points in swarm
    * @return number of points
    */
-  int get_size(){return num_particles_;}
+  int get_size(){return npoints_owned_;}
 
   /*! @brief Get the names of all integer fields
    */
@@ -130,9 +130,12 @@ class SwarmState {
     return result;
   }
 
+  void extend_field(const string name, IntVec new_value);
+  void extend_field(const string name, DblVec new_value);
+
  private:
-  /** number of particles */
-  int num_particles_;
+  /** number of owned particles */
+  int npoints_owned_;
 
   /** integer data fields */
   map<string, IntVecPtr> int_field_map_;
@@ -147,19 +150,19 @@ template<size_t dim>
 SwarmState<dim>::SwarmState(Wonton::Flat_Mesh_Wrapper<double> &mesh,
                                  Portage::Entity_kind entity,
 				 Wonton::Flat_State_Wrapper<double> &state)
-  : num_particles_(0)
+  : npoints_owned_(0)
 {
   if (dim != mesh.space_dimension()) {
     throw std::runtime_error(string("dimension mismatch"));
   }
 
   if (entity==CELL) {
-    num_particles_ = mesh.num_owned_cells();
+    npoints_owned_ = mesh.num_owned_cells();
   } else if (entity==NODE) {
-    num_particles_ = mesh.num_owned_nodes();
+    npoints_owned_ = mesh.num_owned_nodes();
   }
 
-  assert(state.get_entity_size(entity) == num_particles_);
+  assert(state.get_entity_size(entity) == npoints_owned_);
 
   std::vector<std::string> dnames;
   state.get_names(entity, dnames);
@@ -167,8 +170,8 @@ SwarmState<dim>::SwarmState(Wonton::Flat_Mesh_Wrapper<double> &mesh,
   for (auto iter=dnames.begin(); iter!=dnames.end(); iter++) {
     double *datap;
     state.get_data(entity, *iter, &datap);
-    DblVecPtr data = make_shared<vector<double>>(num_particles_);
-    for (size_t i=0; i<num_particles_; i++) (*data)[i] = datap[i];
+    DblVecPtr data = make_shared<vector<double>>(npoints_owned_);
+    for (size_t i=0; i<npoints_owned_; i++) (*data)[i] = datap[i];
     add_field(*iter, data);
   }
 }
@@ -176,7 +179,7 @@ SwarmState<dim>::SwarmState(Wonton::Flat_Mesh_Wrapper<double> &mesh,
 template<size_t dim>
 void SwarmState<dim>::add_field(const string name, IntVecPtr value) {
   // check size
-  if (value->size() != num_particles_) {
+  if (value->size() != npoints_owned_) {
     throw std::runtime_error(
       string("incorrect size when adding attempting to add int field ")+name);
   }
@@ -196,7 +199,7 @@ void SwarmState<dim>::add_field(const string name, IntVecPtr value) {
 template<size_t dim>
 void SwarmState<dim>::add_field(const string name, DblVecPtr value) {
   // check size
-  if (value->size() != num_particles_) {
+  if (value->size() != npoints_owned_) {
     throw std::runtime_error(
       string("incorrect size when adding attempting to add double field ")+name);
   }
@@ -227,22 +230,49 @@ void SwarmState<dim>::get_field(const string name, DblVecPtr &value) const {
   value = dbl_field_map_.at(name);
 }
 
-// Non-const version of get_filed for integer field - inserts the field
+// Non-const version of get_field for integer field - inserts the field
 // if it does not exist
 template<size_t dim>
 void SwarmState<dim>::get_field(const string name, IntVecPtr &value) {
   value = int_field_map_[name];
 }
 
-// Non-const version of get_filed for real field - inserts the field
+// Non-const version of get_field for real field - inserts the field
 // if it does not exist
 template<size_t dim>
 void SwarmState<dim>::get_field(const string name, DblVecPtr &value) {
   value = dbl_field_map_[name];
 }
 
+
+template<size_t dim>
+void SwarmState<dim>::extend_field(const string name, IntVec new_value)  
+{
+   // check if the field already exists
+  auto check = int_field_map_.find(name);
+  if (check == int_field_map_.end()) {
+    throw std::runtime_error(string("tried to extend an int field that does not exist ")+name);
+  }
+
+  IntVecPtr val = int_field_map_.at(name);
+  val->insert(val->end(), new_value.begin(), new_value.end());
 }
+
+template<size_t dim>
+void SwarmState<dim>::extend_field(const string name, DblVec new_value)  
+{
+   // check if the field already exists
+  auto check = dbl_field_map_.find(name);
+  if (check == dbl_field_map_.end()) {
+    throw std::runtime_error(string("tried to extend a double field that does not exist ")+name);
+  }
+
+  DblVecPtr val = dbl_field_map_.at(name);
+  val->insert(val->end(), new_value.begin(), new_value.end());
 }
+
+} //namespace MeshFree
+} //namespace Portage
 
 #endif // SWARM_STATE_H_INC_
 

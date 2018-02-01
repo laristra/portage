@@ -29,16 +29,24 @@ if (ENABLE_UNIT_TESTS)
        LIBRARIES portage ${LAPACKE_LIBRARIES} ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
        POLICY MPI
        THREADS 1)
+
        cinch_add_unit(test_driver
        SOURCES test/test_driver 
        LIBRARIES portage ${LAPACKE_LIBRARIES} ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
        POLICY MPI
        THREADS 1)
+
        cinch_add_unit(test_driver_step
        SOURCES test/test_driver_step 
        LIBRARIES portage ${LAPACKE_LIBRARIES} ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
        POLICY MPI
        THREADS 1)
+
+       cinch_add_unit(test_driver_swarm_dist
+       SOURCES test/test_driver_swarm_dist
+       LIBRARIES portage ${LAPACKE_LIBRARIES} ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
+       POLICY MPI
+       THREADS 4)
 
      if (TANGRAM_FOUND AND XMOF2D_FOUND)
        cinch_add_unit(test_multimat_driver
@@ -54,7 +62,7 @@ if (ENABLE_UNIT_TESTS)
      LIBRARIES portage ${LAPACKE_LIBRARIES}
      POLICY MPI
      THREADS 1)
-   
+
    cinch_add_unit(test_driver_mesh_swarm_mesh
      SOURCES test/test_driver_mesh_swarm_mesh 
      LIBRARIES portage ${LAPACKE_LIBRARIES}
