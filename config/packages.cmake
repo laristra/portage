@@ -119,21 +119,79 @@ endif (Jali_DIR)
 #------------------------------------------------------------------------------#
 
 if (LAPACKE_DIR)
-  # Directly look for cmake config file in LAPACKE_DIR
-  find_package(LAPACKE NO_MODULE HINTS ${LAPACKE_DIR})
+
+  # Directly look for cmake config file in LAPACKE_DIR and below
+  file(GLOB_RECURSE LAPACKE_CONFIG_FILE ${LAPACKE_DIR}/lapacke-config.cmake)
+
+  if (NOT LAPACKE_CONFIG_FILE)
+    message(FATAL_ERROR " LAPACKE CMAKE config file not found under LAPACKE_DIR (${LAPACKE_DIR})")
+  endif (NOT LAPACKE_CONFIG_FILE)
+
+  message(STATUS "LAPACKE_CONFIG_FILE ${LAPACKE_CONFIG_FILE}")
+
+  get_filename_component(LAPACKE_CONFIG_PATH ${LAPACKE_CONFIG_FILE} DIRECTORY)
+  message(status " LAPACKE_CONFIG_PATH ${LAPACKE_CONFIG_PATH}")
+
+  # If successful, the config file will set LAPACKE_LIBRARIES,
+  # LAPACKE_lapack_LIBRARIES and LAPACKE_blas_LIBRARIES
+
+  find_package(LAPACKE NO_MODULE NO_DEFAULT_PATH HINTS ${LAPACKE_CONFIG_PATH})
+
+  if (LAPACKE_LIBRARIES STREQUAL "lapacke")
+
+    # LAPACKE config file does not set the library path but it does set the
+    # LAPACKE_INCLUDE_DIRS path. Try to back out the library path using this
+    # and the top level directory as starting points for a find_library command
+
+    find_library(LAPACKE_LIBRARY NAMES lapacke
+                 NO_CMAKE_SYSTEM_PATH NO_DEFAULT_PATH
+                 HINTS ${LAPACKE_DIR} ${LAPACKE_INCLUDE_DIRS}/..
+	         PATH_SUFFIXES lib lib64)
+	       
+
+    # Extract path of directory in which library files live to pass as a lib
+    # search directory for the linker to find lapacke, lapack and blas libs
+
+    get_filename_component(LAPACKE_LIBRARY_DIR ${LAPACKE_LIBRARY} DIRECTORY)
+
+    set(LAPACKE_LIBRARIES "-L${LAPACKE_LIBRARY_DIR} -l${LAPACKE_LIBRARIES} -l${LAPACK_lapack_LIBRARIES} -l${LAPACK_blas_LIBRARIES}")
+
+    # If we don't want to link with Fortran then we have to tell it to link
+    # with the Fortran libraries because LAPACK is written/compiled in Fortran
+
+    if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+    elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+      set(LAPACKE_LIBRARIES "${LAPACKE_LIBRARIES} -lgfortran")    
+    elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
+      set(LAPACKE_LIBRARIES "${LAPACKE_LIBRARIES} -lifcore")    
+    endif()
+
+  endif(LAPACKE_LIBRARIES STREQUAL "lapacke")
+
+#  set(LAPACKE_FOUND true)
+
 else (LAPACKE_DIR)
+
   # Use FindLAPACKE.cmake provided by cinch or cmake to find it
-  # FindLAPACKE.cmake provided by cinch requires PC_LAPACKE_NCLUDE_DIRS and
+  # FindLAPACKE.cmake provided by cinch requires PC_LAPACKE_INCLUDE_DIRS and
   # PC_LAPACKE_LIBRARY to be able to find LAPACKE
+
   find_package(LAPACKE)
+
 endif (LAPACKE_DIR)
 
 if (LAPACKE_FOUND) 
-   include_directories(${LAPACKE_INCLUDE_DIRS})
-   add_definitions("-DHAVE_LAPACKE")
+  include_directories(${LAPACKE_INCLUDE_DIRS})
+  add_definitions("-DHAVE_LAPACKE")
+
+  message(STATUS "LAPACKE_FOUND ${LAPACKE_FOUND}")
+  message(STATUS "LAPACKE_LIBRARIES  ${LAPACKE_LIBRARIES}")
+  message(STATUS "LAPACK_blas_LIBRARIES  ${LAPACK_blas_LIBRARIES}")
+  message(STATUS "LAPACK_lapack_LIBRARIES  ${LAPACK_lapack_LIBRARIES}")
 else (LAPACKE_FOUND)
    unset(LAPACKE_LIBRARIES)  # otherwise it will be LAPACKE-NOTFOUND or something
 endif (LAPACKE_FOUND)
+
 
 #------------------------------------------------------------------------------#
 # Find the NANOFLANN (https://github.com/jlblancoc/nanoflann) package
