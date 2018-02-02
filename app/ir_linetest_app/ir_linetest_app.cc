@@ -10,7 +10,11 @@
 #include "tangram/driver/driver.h"
 #include "tangram/reconstruct/xmof2D_wrapper.h"
 #include "tangram/driver/write_to_gmv.h"
-#include <iomanip>
+
+#ifdef ENABLE_MPI
+#include "mpi.h"
+#endif
+
 extern "C" {
 #include "portage/intersect/r2d.h"
 }
