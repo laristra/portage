@@ -346,7 +346,7 @@ void test_scatter_3d_random(const size_t nsrc, const size_t ntgt)
     double x = 1.2*rand()/RAND_MAX-.1;
     double y = 1.2*rand()/RAND_MAX-.1;
     double z = 1.2*rand()/RAND_MAX-.1;
-    double ext = 4./pow(nsrc*1.0,1./3.);
+    double ext = 1./pow(nsrc*1.0,1./3.);
     srcpts->push_back(Portage::Point<3>{x, y, z});
     srcexts->push_back(Portage::Point<3>{ext, ext, ext});
   }
@@ -359,7 +359,7 @@ void test_scatter_3d_random(const size_t nsrc, const size_t ntgt)
     double x = 1.0*rand()/RAND_MAX;
     double y = 1.0*rand()/RAND_MAX;
     double z = 1.0*rand()/RAND_MAX;
-    double ext = 4./pow(ntgt*1.0,1./3.);
+    double ext = 1./pow(ntgt*1.0,1./3.);
     tgtpts->push_back(Portage::Point<3>{x, y, z});
     tgtexts->push_back(Portage::Point<3>{ext, ext, ext});
   }
@@ -390,17 +390,17 @@ void test_scatter_3d_random(const size_t nsrc, const size_t ntgt)
 
 TEST(search_by_cells, scatter_3d_random_case1)
 {
-  test_scatter_3d_random(500, 500);
+  test_scatter_3d_random(1000, 1000);
 }
 
 TEST(search_by_cells, scatter_3d_random_case2)
 {
-  test_scatter_3d_random(1000, 500);
+  test_scatter_3d_random(1000, 729);
 }
 
 TEST(search_by_cells, scatter_3d_random_case3)
 {
-  test_scatter_3d_random(500, 1000);
+  test_scatter_3d_random(729, 1000);
 }
 
 
@@ -480,7 +480,7 @@ void test_gather_3d_random(const size_t nsrc, const size_t ntgt)
     double x = 1.2*rand()/RAND_MAX-.1;
     double y = 1.2*rand()/RAND_MAX-.1;
     double z = 1.2*rand()/RAND_MAX-.1;
-    double ext = 4./pow(nsrc*1.0,1./3.);
+    double ext = 1./pow(nsrc*1.0,1./3.);
     srcpts->push_back(Portage::Point<3>{x, y, z});
     srcexts->push_back(Portage::Point<3>{ext, ext, ext});
   }
@@ -493,7 +493,7 @@ void test_gather_3d_random(const size_t nsrc, const size_t ntgt)
     double x = 1.0*rand()/RAND_MAX;
     double y = 1.0*rand()/RAND_MAX;
     double z = 1.0*rand()/RAND_MAX;
-    double ext = 4./pow(ntgt*1.0,1./3.);
+    double ext = 1./pow(ntgt*1.0,1./3.);
     tgtpts->push_back(Portage::Point<3>{x, y, z});
     tgtexts->push_back(Portage::Point<3>{ext, ext, ext});
   }
