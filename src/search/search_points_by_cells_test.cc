@@ -524,17 +524,17 @@ void test_gather_3d_random(const size_t nsrc, const size_t ntgt)
 
 TEST(search_by_cells, gather_3d_random_case1)
 {
-  test_gather_3d_random(500, 500);
+  test_gather_3d_random(1000, 1000);
 }
 
 TEST(search_by_cells, gather_3d_random_case2)
 {
-  test_gather_3d_random(1000, 500);
+  test_gather_3d_random(1000, 729);
 }
 
 TEST(search_by_cells, gather_3d_random_case3)
 {
-  test_gather_3d_random(500, 1000);
+  test_gather_3d_random(729, 1000);
 }
 
 
