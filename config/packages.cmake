@@ -168,8 +168,6 @@ if (LAPACKE_DIR)
 
   endif(LAPACKE_LIBRARIES STREQUAL "lapacke")
 
-#  set(LAPACKE_FOUND true)
-
 else (LAPACKE_DIR)
 
   # Use FindLAPACKE.cmake provided by cinch or cmake to find it
@@ -186,8 +184,6 @@ if (LAPACKE_FOUND)
 
   message(STATUS "LAPACKE_FOUND ${LAPACKE_FOUND}")
   message(STATUS "LAPACKE_LIBRARIES  ${LAPACKE_LIBRARIES}")
-  message(STATUS "LAPACK_blas_LIBRARIES  ${LAPACK_blas_LIBRARIES}")
-  message(STATUS "LAPACK_lapack_LIBRARIES  ${LAPACK_lapack_LIBRARIES}")
 else (LAPACKE_FOUND)
    unset(LAPACKE_LIBRARIES)  # otherwise it will be LAPACKE-NOTFOUND or something
 endif (LAPACKE_FOUND)
