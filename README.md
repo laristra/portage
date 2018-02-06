@@ -140,6 +140,9 @@ Execute the following from the portage root directory:
 module load openmpi/2.0.1-intel_17.0.0 cmake/3.7.1
 JALI_INSTALL_PREFIX=/projects/ngc/private/jali/0.9.8-intel-17.0.0-openmpi-2.0.1
 TPL_INSTALL_PREFIX=/projects/ngc/private/jali-tpl/1.0.9-intel-17.0.0-openmpi-2.0.1
+LAPACKE_DIR=/usr/local/codes/ngc/private/lapack/lapack-3.7.1-gcc-5.3.0
+LAPACKE_INCLUDE_DIR=$LAPACKE_DIR/include
+LAPACKE_LIBRARY_DIR=$LAPACKE_DIR
 mkdir build
 cd build
 cmake \
@@ -149,6 +152,7 @@ cmake \
     -D ENABLE_MPI=True \
     -D Jali_DIR:FILEPATH=$JALI_INSTALL_PREFIX/lib \
     -D Boost_INCLUDE_DIR:PATH=$TPL_INSTALL_PREFIX/include \
+    -D LAPACKE_DIR=$LAPACKE_DIR \
     ..
 make -j16
 ctest -j16 --output-on-failure
@@ -164,6 +168,9 @@ module load intel/17.0.4 openmpi/2.1.2 cmake
 JALI_INSTALL_PREFIX=/usr/projects/ngc/private/jali/0.9.8-intel-17.0.4-openmpi-2.1.2
 TANGRAM_INSTALL_PREFIX=/usr/projects/ngc/private/tangram/133c1db580f-intel-17.0.4-openmpi-2.1.2
 XMOF2D_INSTALL_PREFIX=/usr/projects/ngc/private/xmof2d/0.9-intel-17.0.4-openmpi-2.1.2
+LAPACKE_DIR=/usr/local/codes/ngc/private/lapack/lapack-3.7.1-gcc-5.3.0
+LAPACKE_INCLUDE_DIR=$LAPACKE_DIR/include
+LAPACKE_LIBRARY_DIR=$LAPACKE_DIR
 mkdir build
 cd build
 cmake \
@@ -174,16 +181,13 @@ cmake \
     -D Jali_DIR:FILEPATH=$JALI_INSTALL_PREFIX/lib \
     -D TANGRAM_DIR:FILEPATH=$TANGRAM_INSTALL_PREFIX \
     -D XMOF2D_DIR:FILEPATH=$XMOF2D_INSTALL_PREFIX/share/cmake \
+    -D LAPACKE_DIR=$LAPACKE_DIR \
     ..
 make -j16
 ctest -j16 --output-on-failure
 ```
 
 ## Varan
-
-__Note the typo in the version of the build system we are using: it is
-indeed `PC_LAPACKE_NCLUDE_DIRS`.  This will be fixed in the CMake
-files in a coming release.__
 
 Execute the following from the portage root directory:
 
@@ -195,8 +199,9 @@ module load intel/17.0.1 openmpi/1.10.5 cmake
 JALI_INSTALL_PREFIX=/usr/local/codes/ngc/private/jali/0.9.8-intel-17.0.1-openmpi-1.10.5
 TANGRAM_INSTALL_PREFIX=/usr/local/codes/ngc/private/tangram/133c1db580f-intel-17.0.1-openmpi-1.10.5
 XMOF2D_INSTALL_PREFIX=/usr/local/codes/ngc/private/xmof2d/0.9-intel-17.0.1-openmpi-1.10.5
-LAPACKE_INCLUDE_DIR=/usr/local/codes/ngc/private/lapack/lapack-3.7.1-intel-17.0.1/include
-LAPACKE_LIBRARY_DIR=/usr/local/codes/ngc/private/lapack/lapack-3.7.1-intel-17.0.1
+LAPACKE_DIR=/usr/local/codes/ngc/private/lapack/lapack-3.7.1-intel-17.0.1/
+LAPACKE_INCLUDE_DIR=$LAPACKE_DIR/include
+LAPACKE_LIBRARY_DIR=$LAPACKE_DIR
 mkdir build
 cd build
 cmake \
@@ -207,8 +212,7 @@ cmake \
     -D Jali_DIR:FILEPATH=$JALI_INSTALL_PREFIX/lib \
     -D TANGRAM_DIR:FILEPATH=$TANGRAM_INSTALL_PREFIX \
     -D XMOF2D_DIR:FILEPATH=$XMOF2D_INSTALL_PREFIX/share/cmake \
-    -D PC_LAPACKE_NCLUDE_DIRS=$LAPACKE_INCLUDE_DIR \
-    -D PC_LAPACKE_LIBRARY_DIRS=$LAPACKE_LIBRARY_DIR \
+    -D LAPACKE_DIR=$LAPACKE_DIR \
     ..
 make -j2
 ctest -j2 --output-on-failure
@@ -229,8 +233,9 @@ FLECSI_INSTALL_PREFIX=/usr/local/codes/ngc/private/flecsi/gcc5.3_openmpi1.10.3
 FLECSISP_INSTALL_PREFIX=/usr/local/codes/ngc/private/flecsi-sp/gcc5.3_openmpi1.10.3
 TANGRAM_INSTALL_PREFIX=/usr/projects/ngc/private/tangram/133c1db580f-gcc-5.3.0-openmpi-1.10.3
 XMOF2D_INSTALL_PREFIX=/usr/projects/ngc/private/xmof2d/0.9-gcc-5.3.0-openmpi-1.10.3
-LAPACKE_INCLUDE_DIR=/usr/local/codes/ngc/private/lapack/lapack-3.7.1-gcc-5.3.0/include
-LAPACKE_LIBRARY_DIR=/usr/local/codes/ngc/private/lapack/lapack-3.7.1-gcc-5.3.0
+LAPACKE_DIR=/usr/local/codes/ngc/private/lapack/lapack-3.7.1-gcc-5.3.0
+LAPACKE_INCLUDE_DIR=$LAPACKE_DIR/include
+LAPACKE_LIBRARY_DIR=$LAPACKE_DIR
 mkdir build-flecsi
 cd build-flecsi
 cmake \
@@ -242,8 +247,7 @@ cmake \
     -D CMAKE_PREFIX_PATH="$FLECSI_INSTALL_PREFIX;$FLECSISP_INSTALL_PREFIX" \
     -D TANGRAM_DIR:FILEPATH=$TANGRAM_INSTALL_PREFIX \
     -D XMOF2D_DIR:FILEPATH=$XMOF2D_INSTALL_PREFIX/share/cmake \
-    -D PC_LAPACKE_NCLUDE_DIRS=$LAPACKE_INCLUDE_DIR \
-    -D PC_LAPACKE_LIBRARY_DIRS=$LAPACKE_LIBRARY_DIR \
+    -D LAPACKE_DIR=$LAPACKE_DIR \
     ..
 make -j2
 ctest -j2 --output-on-failure
