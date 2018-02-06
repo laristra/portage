@@ -29,6 +29,9 @@ Please see the license file at the root of this repository, or at:
 #include "portage/search/search_points_by_cells.h"
 #include "portage/accumulate/accumulate.h"
 #include "portage/estimate/estimate.h"
+#ifdef HAVE_NANOFLANN
+#include "portage/search/search_kdtree_nanoflann.h"
+#endif
 
 using std::vector;
 using std::shared_ptr;
@@ -40,6 +43,9 @@ using Portage::Meshfree::SwarmFactory;
 using Portage::Meshfree::Accumulate;
 using Portage::Meshfree::Estimate;
 using Portage::SearchSimplePoints;
+#ifdef HAVE_NANOFLANN
+using Portage::Search_KDTree_Nanoflann;
+#endif
 using Portage::SearchPointsByCells;
 
 
@@ -50,30 +56,30 @@ template<unsigned int D>
 double field_func(int field_order, Portage::Point<D> coord) {
   double value = 0.0;
   switch (field_order) {
-  case -1: {
-    double rsqr = 0.0;
-    for (int i = 0; i < D; i++) 
-      rsqr += (coord[i])*(coord[i]);
-    value = 1.0;
-    for (int i = 0; i < D; i++)
-      value *= sin(0.9*2.*3.1415926535898*(coord[i]));
-    value *= exp(-1.5*sqrt(rsqr));
-    break;
-  }
-  case 0:
-    value = 25.3;
-    break;
-  case 1:
-    for (int i = 0; i < D; i++) value += coord[i];
-    break;
-  case 2:
-    for (int i = 0; i < D; i++) value += coord[i]*coord[i];
-    break;
-  case 3:
-    for (int i = 0; i < D; i++) value += coord[i]*coord[i]*coord[i];
-    break;
-  default:
-    throw std::runtime_error("Unknown field_order!");
+    case -1: {
+      double rsqr = 0.0;
+      for (int i = 0; i < D; i++) 
+        rsqr += coord[i]*coord[i];
+      value = 1.0;
+      for (int i = 0; i < D; i++)
+        value *= sin(0.9*2*M_PI*coord[i]);
+      break;
+      value *= exp(-1.5*sqrt(rsqr));
+    }
+    case 0:
+      value = 25.3;
+      break;
+    case 1:
+      for (int i = 0; i < D; i++) value += coord[i];
+      break;
+    case 2:
+      for (int i = 0; i < D; i++) value += coord[i]*coord[i];
+      break;
+    case 3:
+      for (int i = 0; i < D; i++) value += coord[i]*coord[i]*coord[i];
+      break;
+    default:
+      throw std::runtime_error("Unknown field_order!");
   }
 
   return value;
@@ -119,7 +125,7 @@ std::vector<example_properties> setup_examples() {
   // cubic func, quadratic basis
   examples.emplace_back(3, 2);
 
-  // exp(4*r^2)*sin(2*pi*x)*sin(2*pi*y)
+  // exp(-1.5*r)*sin(0.9*2*pi*x)*sin(0.9*2*pi*y)
   examples.emplace_back(-1, 2);
 
   return examples;
@@ -128,6 +134,8 @@ std::vector<example_properties> setup_examples() {
 void usage() {
   auto examples = setup_examples();
   std::cout << "Usage: swarmapp example-number nsourcepts ntargetpts distribution"
+            << std::endl;
+  std::cout << "distribution = 0 for random, 1 for regular grid, 2 for perturbed regular grid"
             << std::endl;
   std::cout << "List of example numbers:" << std::endl;
   int i = 0;
@@ -142,7 +150,7 @@ void usage() {
 
 int main(int argc, char** argv) {
   int example_num, n_source, n_target, distribution;
-  if (argc <= 3) {
+  if (argc <= 4) {
     usage();
     return 0;
   }
@@ -151,7 +159,6 @@ int main(int argc, char** argv) {
   n_source = atoi(argv[2]);
   n_target = atoi(argv[3]);
   distribution = atoi(argv[4]);
-  
 
 #ifdef ENABLE_MPI
   int mpi_init_flag;
@@ -203,7 +210,17 @@ int main(int argc, char** argv) {
   auto smoothing_lengths =
       vector<vector<vector<double>>>(ntarpts, vector<vector<double>>(1, vector<double>(2, 2.05*h)));
                                                                       
-
+#ifdef HAVE_NANOFLANN  // Search by kdtree
+  SwarmDriver<
+    Search_KDTree_Nanoflann,
+    Accumulate,
+    Estimate,
+    2,
+    Swarm<2>,
+    SwarmState<2>>
+      d(*inputSwarm, *inputState, *targetSwarm, *targetState,
+        smoothing_lengths);
+#else
   SwarmDriver<
     SearchPointsByCells,
     Accumulate,
@@ -213,6 +230,8 @@ int main(int argc, char** argv) {
     SwarmState<2>>
       d(*inputSwarm, *inputState, *targetSwarm, *targetState,
         smoothing_lengths);
+#endif
+
   if (example.estimation_order == 0)
     d.set_remap_var_names(remap_fields, remap_fields,
                           Portage::Meshfree::LocalRegression,
@@ -225,7 +244,8 @@ int main(int argc, char** argv) {
     d.set_remap_var_names(remap_fields, remap_fields,
                           Portage::Meshfree::LocalRegression,
                           Portage::Meshfree::Basis::Quadratic);
-  d.run(false);
+  d.run(false, true);
+
 
   std::vector<double> expected_value(ntarpts, 0.0);
 
@@ -236,10 +256,11 @@ int main(int argc, char** argv) {
     expected_value[p] = field_func<2>(example.field_order, coord);
     double error = expected_value[p] - (*targetData)[p];
 
-    std::printf("Particle=% 4d Coord = (% 5.3lf,% 5.3lf)", p,
-                coord[0], coord[1]);
-    std::printf("  Value = % 10.6lf  Err = % lf\n", (*targetData)[p], error);
-    
+    if (ntarpts < 10) {
+      std::printf("Particle=% 4d Coord = (% 5.3lf,% 5.3lf)", p,
+                  coord[0], coord[1]);
+      std::printf("  Value = % 10.6lf  Err = % lf\n", (*targetData)[p], error);
+    }
     toterr += error*error;
   }
 

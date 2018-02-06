@@ -110,26 +110,26 @@ TEST(Test_MultiVar_Remap, Test1) {
 
   // Wrappers for interfacing with the underlying mesh data structures.
 
-  Portage::Jali_Mesh_Wrapper sourceMeshWrapper(*source_mesh);
-  Portage::Jali_Mesh_Wrapper targetMeshWrapper(*target_mesh);
+  Wonton::Jali_Mesh_Wrapper sourceMeshWrapper(*source_mesh);
+  Wonton::Jali_Mesh_Wrapper targetMeshWrapper(*target_mesh);
 
   // Wrappers for the source and target state managers
 
-  Portage::Jali_State_Wrapper sourceStateWrapper(source_state);
-  Portage::Jali_State_Wrapper targetStateWrapper(target_state);
+  Wonton::Jali_State_Wrapper sourceStateWrapper(source_state);
+  Wonton::Jali_State_Wrapper targetStateWrapper(target_state);
 
   // Build the main driver object
 
   /////////
 
-  Portage::Driver<Portage::SearchKDTree, 
-      Portage::IntersectR2D, 
-          Portage::Interpolate_1stOrder,
-          2,
-          Portage::Jali_Mesh_Wrapper, 
-          Portage::Jali_State_Wrapper>  
-          remapper(sourceMeshWrapper, sourceStateWrapper, targetMeshWrapper,
-                   targetStateWrapper);
+  Portage::Driver<Portage::SearchKDTree,
+                  Portage::IntersectR2D,
+                  Portage::Interpolate_1stOrder,
+                  2,
+                  Wonton::Jali_Mesh_Wrapper,
+                  Wonton::Jali_State_Wrapper>
+      remapper(sourceMeshWrapper, sourceStateWrapper,
+               targetMeshWrapper, targetStateWrapper);
   /////////
 
   // Specify the fields to be remapped
@@ -235,16 +235,16 @@ TEST(Test_MultiVar_Remap, Nested_Meshes) {
       target_state.add<double>("cellvars", target_mesh,
                                Jali::Entity_kind::CELL,
                                Jali::Entity_type::PARALLEL_OWNED);
-  
+
   // Wrappers for interfacing with the underlying mesh data structures.
 
-  Portage::Jali_Mesh_Wrapper sourceMeshWrapper(*source_mesh);
-  Portage::Jali_Mesh_Wrapper targetMeshWrapper(*target_mesh);
+  Wonton::Jali_Mesh_Wrapper sourceMeshWrapper(*source_mesh);
+  Wonton::Jali_Mesh_Wrapper targetMeshWrapper(*target_mesh);
 
   // Wrappers for the source and target state managers
 
-  Portage::Jali_State_Wrapper sourceStateWrapper(source_state);
-  Portage::Jali_State_Wrapper targetStateWrapper(target_state);
+  Wonton::Jali_State_Wrapper sourceStateWrapper(source_state);
+  Wonton::Jali_State_Wrapper targetStateWrapper(target_state);
 
   // Build the main driver object
 
@@ -252,8 +252,8 @@ TEST(Test_MultiVar_Remap, Nested_Meshes) {
                   Portage::IntersectR2D,
                   Portage::Interpolate_1stOrder,
                   2,
-                  Portage::Jali_Mesh_Wrapper,
-                  Portage::Jali_State_Wrapper> remapper1(sourceMeshWrapper,
+                  Wonton::Jali_Mesh_Wrapper,
+                  Wonton::Jali_State_Wrapper> remapper1(sourceMeshWrapper,
                                                          sourceStateWrapper,
                                                          targetMeshWrapper,
                                                          targetStateWrapper);
@@ -291,8 +291,8 @@ TEST(Test_MultiVar_Remap, Nested_Meshes) {
                   Portage::IntersectR2D,
                   Portage::Interpolate_2ndOrder,
                   2,
-                  Portage::Jali_Mesh_Wrapper,
-                  Portage::Jali_State_Wrapper> remapper2(sourceMeshWrapper,
+                  Wonton::Jali_Mesh_Wrapper,
+                  Wonton::Jali_State_Wrapper> remapper2(sourceMeshWrapper,
                                                          sourceStateWrapper,
                                                          targetMeshWrapper,
                                                          targetStateWrapper);
@@ -315,4 +315,3 @@ TEST(Test_MultiVar_Remap, Nested_Meshes) {
 
 
 }
-

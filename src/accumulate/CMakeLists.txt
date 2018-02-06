@@ -22,7 +22,7 @@ if (ENABLE_UNIT_TESTS)
 
   cinch_add_unit(test_accumulate
     SOURCES test/test_accumulate.cc
-    LIBRARIES ${LAPACKE_LIBRARIES}
+    LIBRARIES portage ${LAPACKE_LIBRARIES}
     POLICY MPI
     THREADS 1
     )

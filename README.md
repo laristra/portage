@@ -96,7 +96,7 @@ This compiles the serial code and about a dozen application tests.  To
 run the tests, simply execute
 
 ```sh
-portage/build $ make tests
+portage/build $ make test
 ```
 
 If you wish to install the code into the `CMAKE_INSTALL_PREFIX` then
@@ -143,8 +143,6 @@ TPL_INSTALL_PREFIX=/projects/ngc/private/jali-tpl/1.0.9-intel-17.0.0-openmpi-2.0
 mkdir build
 cd build
 cmake \
-    -D CMAKE_C_COMPILER=`which mpicc` \
-    -D CMAKE_CXX_COMPILER=`which mpiCC` \
     -D CMAKE_BUILD_TYPE=Debug \
     -D ENABLE_UNIT_TESTS=True \
     -D ENABLE_APP_TESTS=True \
@@ -156,24 +154,26 @@ make -j16
 ctest -j16 --output-on-failure
 ```
 
-## Moonlight
+## Snow
 
 Execute the following from the portage root directory:
 
 ```c++
-# machine=ml-fey
-module load intel/17.0.1 openmpi/1.10.5 cmake
-JALI_INSTALL_PREFIX=/usr/projects/ngc/private/jali/0.9.8-intel-17.0.1-openmpi-1.10.5
+# machine=sn-fey
+module load intel/17.0.4 openmpi/2.1.2 cmake
+JALI_INSTALL_PREFIX=/usr/projects/ngc/private/jali/0.9.8-intel-17.0.4-openmpi-2.1.2
+TANGRAM_INSTALL_PREFIX=/usr/projects/ngc/private/tangram/133c1db580f-intel-17.0.4-openmpi-2.1.2
+XMOF2D_INSTALL_PREFIX=/usr/projects/ngc/private/xmof2d/0.9-intel-17.0.4-openmpi-2.1.2
 mkdir build
 cd build
 cmake \
-    -D CMAKE_C_COMPILER=`which mpicc` \
-    -D CMAKE_CXX_COMPILER=`which mpiCC` \
     -D CMAKE_BUILD_TYPE=Debug \
     -D ENABLE_UNIT_TESTS=True \
     -D ENABLE_APP_TESTS=True \
     -D ENABLE_MPI=True \
     -D Jali_DIR:FILEPATH=$JALI_INSTALL_PREFIX/lib \
+    -D TANGRAM_DIR:FILEPATH=$TANGRAM_INSTALL_PREFIX \
+    -D XMOF2D_DIR:FILEPATH=$XMOF2D_INSTALL_PREFIX/share/cmake \
     ..
 make -j16
 ctest -j16 --output-on-failure
@@ -193,18 +193,20 @@ export MODULEPATH=""
 . /opt/local/packages/Modules/default/init/sh
 module load intel/17.0.1 openmpi/1.10.5 cmake
 JALI_INSTALL_PREFIX=/usr/local/codes/ngc/private/jali/0.9.8-intel-17.0.1-openmpi-1.10.5
+TANGRAM_INSTALL_PREFIX=/usr/local/codes/ngc/private/tangram/133c1db580f-intel-17.0.1-openmpi-1.10.5
+XMOF2D_INSTALL_PREFIX=/usr/local/codes/ngc/private/xmof2d/0.9-intel-17.0.1-openmpi-1.10.5
 LAPACKE_INCLUDE_DIR=/usr/local/codes/ngc/private/lapack/lapack-3.7.1-intel-17.0.1/include
 LAPACKE_LIBRARY_DIR=/usr/local/codes/ngc/private/lapack/lapack-3.7.1-intel-17.0.1
 mkdir build
 cd build
 cmake \
-    -D CMAKE_C_COMPILER=`which mpicc` \
-    -D CMAKE_CXX_COMPILER=`which mpiCC` \
     -D CMAKE_BUILD_TYPE=Debug \
     -D ENABLE_UNIT_TESTS=True \
     -D ENABLE_APP_TESTS=True \
     -D ENABLE_MPI=True \
     -D Jali_DIR:FILEPATH=$JALI_INSTALL_PREFIX/lib \
+    -D TANGRAM_DIR:FILEPATH=$TANGRAM_INSTALL_PREFIX \
+    -D XMOF2D_DIR:FILEPATH=$XMOF2D_INSTALL_PREFIX/share/cmake \
     -D PC_LAPACKE_NCLUDE_DIRS=$LAPACKE_INCLUDE_DIR \
     -D PC_LAPACKE_LIBRARY_DIRS=$LAPACKE_LIBRARY_DIR \
     ..
@@ -225,19 +227,21 @@ export MODULEPATH=""
 module load gcc/5.3.0 openmpi/1.10.3 cmake
 FLECSI_INSTALL_PREFIX=/usr/local/codes/ngc/private/flecsi/gcc5.3_openmpi1.10.3
 FLECSISP_INSTALL_PREFIX=/usr/local/codes/ngc/private/flecsi-sp/gcc5.3_openmpi1.10.3
+TANGRAM_INSTALL_PREFIX=/usr/projects/ngc/private/tangram/133c1db580f-gcc-5.3.0-openmpi-1.10.3
+XMOF2D_INSTALL_PREFIX=/usr/projects/ngc/private/xmof2d/0.9-gcc-5.3.0-openmpi-1.10.3
 LAPACKE_INCLUDE_DIR=/usr/local/codes/ngc/private/lapack/lapack-3.7.1-gcc-5.3.0/include
 LAPACKE_LIBRARY_DIR=/usr/local/codes/ngc/private/lapack/lapack-3.7.1-gcc-5.3.0
 mkdir build-flecsi
 cd build-flecsi
 cmake \
-    -D CMAKE_C_COMPILER=`which mpicc` \
-    -D CMAKE_CXX_COMPILER=`which mpiCC` \
     -D CMAKE_BUILD_TYPE=Debug \
     -D ENABLE_UNIT_TESTS=True \
     -D ENABLE_APP_TESTS=True \
     -D ENABLE_MPI=True \
     -D ENABLE_FleCSI=True \
     -D CMAKE_PREFIX_PATH="$FLECSI_INSTALL_PREFIX;$FLECSISP_INSTALL_PREFIX" \
+    -D TANGRAM_DIR:FILEPATH=$TANGRAM_INSTALL_PREFIX \
+    -D XMOF2D_DIR:FILEPATH=$XMOF2D_INSTALL_PREFIX/share/cmake \
     -D PC_LAPACKE_NCLUDE_DIRS=$LAPACKE_INCLUDE_DIR \
     -D PC_LAPACKE_LIBRARY_DIRS=$LAPACKE_LIBRARY_DIR \
     ..

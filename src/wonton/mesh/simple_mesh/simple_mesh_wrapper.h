@@ -25,7 +25,7 @@ Please see the license file at the root of this repository, or at:
   @brief Definitions for a wrapper to Simple_Mesh
  */
 
-namespace Portage {
+namespace Wonton {
   /*!
     @class Simple_Mesh_Wrapper simple_mesh_wrapper.h
     @brief A thin wrapper that implements mesh methods for Simple_Mesh
@@ -204,6 +204,7 @@ class Simple_Mesh_Wrapper : public AuxMeshTopology<Simple_Mesh_Wrapper> {
     return id;
   }
 
+
   /*!
     @brief Get the coordinates of a specific node as a Portage::Point.
     @tparam D Dimensionality -- this is a specialization, as Simple_Mesh
@@ -216,10 +217,24 @@ class Simple_Mesh_Wrapper : public AuxMeshTopology<Simple_Mesh_Wrapper> {
     mesh_.node_get_coordinates(nodeid, pp);
   }
 
+#ifdef HAVE_TANGRAM
+  // TEMPORARY - until we pull WONTON out as a separate repository
+  int get_global_id(int const id, Tangram::Entity_kind const kind) const {
+    return get_global_id(id, static_cast<Portage::Entity_kind>(kind));
+  }
+
+  template<long D=3>
+  void node_get_coordinates(int const nodeid, Tangram::Point<D>* tcoord) const {
+    Point<D> pcoord;
+    node_get_coordinates(nodeid, &pcoord);
+    *tcoord = pcoord;
+  }
+#endif
+    
  private:
   /// The mesh to wrap.
   Simple_Mesh const & mesh_;
 };  // class Simple_Mesh_Wrapper
-}  // namespace Portage
+}  // namespace Wonton
 
 #endif  // SIMPLE_MESH_WRAPPER_H_

@@ -49,6 +49,7 @@ TEST(Flat_State_Wrapper, VectorInit) {
   std::vector<std::shared_ptr<std::vector<double>>> data ={nf1,cf1,cf2,nf2};
 
   using namespace Portage;
+  using namespace Wonton;
 
   std::vector<Entity_kind> entities = {NODE, CELL, CELL, NODE};
 
@@ -84,6 +85,7 @@ TEST(Flat_State_Wrapper, VectorInitFail1) {
   std::vector<std::shared_ptr<std::vector<double>>> data ={nf1,cf1,cf2,nf2,bf};
 
   using namespace Portage;
+  using namespace Wonton;
 
   std::vector<Entity_kind> entities = {NODE, CELL, CELL, NODE, NODE};
 
@@ -134,6 +136,7 @@ TEST(Flat_State_Wrapper, VectorInitFail2) {
       baddata= {nf1,cf1,cf2};
 
   using namespace Portage;
+  using namespace Wonton;
 
   std::vector<Entity_kind> entities = {NODE, CELL, CELL, NODE}, badentities={NODE, CELL, CELL};
 
@@ -173,9 +176,9 @@ TEST(Flat_State_Wrapper, DataTypes2D) {
   Jali::MeshFactory mf(MPI_COMM_WORLD);
 
   std::shared_ptr<Jali::Mesh> inputMesh = mf(0.0, 0.0, 1.0, 1.0, 2, 2);
-  Portage::Jali_Mesh_Wrapper inputMeshWrapper(*inputMesh);
+  Wonton::Jali_Mesh_Wrapper inputMeshWrapper(*inputMesh);
   Jali::State jali_state(inputMesh);
-  Portage::Jali_State_Wrapper jali_state_wrapper(jali_state);
+  Wonton::Jali_State_Wrapper jali_state_wrapper(jali_state);
 
   jali_state.add("d1", inputMesh, Jali::Entity_kind::CELL,
             Jali::Entity_type::ALL, dtest1);
@@ -184,7 +187,7 @@ TEST(Flat_State_Wrapper, DataTypes2D) {
   jali_state.add("d3", inputMesh, Jali::Entity_kind::CELL,
             Jali::Entity_type::ALL, dtest3);
 
-  Portage::Flat_State_Wrapper<> flat_state;
+  Wonton::Flat_State_Wrapper<> flat_state;
   flat_state.initialize(jali_state_wrapper, {"d1", "d2", "d3"});
 
   // check clear function
@@ -235,9 +238,9 @@ TEST(Flat_State_Wrapper, DataTypes3D) {
   std::shared_ptr<Jali::Mesh> inputMesh = mf(0.0, 0.0, 0.0,
                                              1.0, 1.0, 1.0,
                                              2, 2, 2);
-  Portage::Jali_Mesh_Wrapper inputMeshWrapper(*inputMesh);
+  Wonton::Jali_Mesh_Wrapper inputMeshWrapper(*inputMesh);
   Jali::State jali_state(inputMesh);
-  Portage::Jali_State_Wrapper jali_state_wrapper(jali_state);
+  Wonton::Jali_State_Wrapper jali_state_wrapper(jali_state);
 
   jali_state.add("d1", inputMesh, Jali::Entity_kind::CELL,
             Jali::Entity_type::ALL, dtest1);
@@ -246,7 +249,7 @@ TEST(Flat_State_Wrapper, DataTypes3D) {
   jali_state.add("d3", inputMesh, Jali::Entity_kind::CELL,
             Jali::Entity_type::ALL, dtest3);
 
-  Portage::Flat_State_Wrapper<> flat_state;
+  Wonton::Flat_State_Wrapper<> flat_state;
   flat_state.initialize(jali_state_wrapper, {"d1", "d2", "d3"});
 
   // Check the data using Jali as well as by the Flat_State_Wrapper wrapper
