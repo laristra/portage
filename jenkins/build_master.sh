@@ -81,7 +81,7 @@ cmake \
   -D Jali_DIR:FILEPATH=$JALI_INSTALL_PREFIX/lib \
   -D TANGRAM_DIR:FILEPATH=$TANGRAM_INSTALL_PREFIX \
   -D XMOF2D_DIR:FILEPATH=$XMOF2D_INSTALL_PREFIX/share/cmake \
-  -D LAPACKE_DIR:FILEPATH=$NGC/private/lapack/3.7.1-intel-17.0.1 \
+  -D LAPACKE_DIR:FILEPATH=$NGC/private/lapack/3.8.0-intel-17.0.1 \
   ..
 make -j2
 ctest --output-on-failure

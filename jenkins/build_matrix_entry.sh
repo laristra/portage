@@ -20,7 +20,7 @@ build_type=$2
 jali_version=0.9.8
 tangram_version=133c1db580f
 xmof2d_version=0.9
-lapack_version=3.7.1
+lapack_version=3.8.0
 
 export NGC=/usr/local/codes/ngc
 ngc_include_dir=$NGC/private/include
