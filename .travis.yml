@@ -40,6 +40,7 @@ after_success:
   - if [[ ${DOCS} || -n ${TRAVIS_TAG} ]]; then
       cd ${HOME}/docker/portage;
       CON=$(docker run -d ${TRAVIS_REPO_SLUG}:latest) && docker cp ${CON}:/home/portage/portage/build/doc . ;
+      pyenv versions;
       pip install doctr;
       doctr deploy . --built-docs doc/portage/doxygen/html;
     fi
