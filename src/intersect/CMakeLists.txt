@@ -49,5 +49,27 @@ if(ENABLE_UNIT_TESTS)
     LIBRARIES portage  ${LAPACKE_LIBRARIES}
     POLICY SERIAL
     )
+
+  #[[  
+  if (TANGRAM_FOUND AND XMOF2D_FOUND)
+       cinch_add_unit(test_tangram_intersect
+       SOURCES test/test_tangram_intersect
+       LIBRARIES portage ${LAPACKE_LIBRARIES} ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES} ${XMOF2D_LIBRARIES}
+       POLICY MPI
+       THREADS 1)       
+  endif (TANGRAM_FOUND AND XMOF2D_FOUND)
+  ]]
+
+  if (TANGRAM_FOUND AND XMOF2D_FOUND)
+      include_directories(${TANGRAM_INCLUDE_DIRS})
+      cinch_add_unit(test_tangram_intersect
+       SOURCES test/test_tangram_intersect 
+       LIBRARIES portage  ${LAPACKE_LIBRARIES} 
+       POLICY SERIAL
+       )       
+  endif (TANGRAM_FOUND AND XMOF2D_FOUND)
+     
+ 
+
 endif(ENABLE_UNIT_TESTS)
 
