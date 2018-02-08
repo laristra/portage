@@ -53,9 +53,9 @@ TEST(Jali_State_Wrapper, DataTypes) {
   Jali::MeshFactory mf(MPI_COMM_WORLD);
 
   std::shared_ptr<Jali::Mesh> inputMesh = mf(0.0, 0.0, 1.0, 1.0, 2, 2);
-  Portage::Jali_Mesh_Wrapper inputMeshWrapper(*inputMesh);
+  Wonton::Jali_Mesh_Wrapper inputMeshWrapper(*inputMesh);
   Jali::State state(inputMesh);
-  Portage::Jali_State_Wrapper wrapper(state);
+  Wonton::Jali_State_Wrapper wrapper(state);
 
   state.add("f1", inputMesh, Jali::Entity_kind::CELL,
             Jali::Entity_type::ALL, ftest);

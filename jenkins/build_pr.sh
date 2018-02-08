@@ -37,8 +37,11 @@ JALI_VERSION=0.9.8
 # Where to find Jali's TPLs:
 TPL_INSTALL_PREFIX=/usr/local/codes/ngc/private/jali-tpl/1.0.9-intel-17.0.1-openmpi-1.10.5
 
+#General NGC directory
+NGC=/usr/local/codes/ngc
+
 # General NGC include directory
-NGC_INCLUDE_DIR=/usr/local/codes/ngc/private/include
+NGC_INCLUDE_DIR=$NGC/private/include
 
 git config user.email ""
 git config user.name "Jenkins"
@@ -79,6 +82,9 @@ ctest -j2 --output-on-failure
 make install
 
 
+TANGRAM_INSTALL_PREFIX=$NGC/private/tangram/133c1db580f-intel-17.0.1-openmpi-1.10.5
+XMOF_INSTALL_PREFIX=$NGC/private/xmof2d/0.9-intel-17.0.1-openmpi-1.10.5/share/cmake
+
 # Build Portage with Thrust
 
 cd $WORKSPACE
@@ -86,13 +92,13 @@ mkdir build
 cd build
 
 cmake \
-  -D CMAKE_C_COMPILER=`which mpicc` \
-  -D CMAKE_CXX_COMPILER=`which mpiCC` \
   -D CMAKE_BUILD_TYPE=Release \
   -D ENABLE_UNIT_TESTS=True \
   -D ENABLE_MPI=True \
   -D ENABLE_JENKINS_OUTPUT=True \
   -D Jali_DIR:FILEPATH=$JALI_INSTALL_PREFIX/lib \
+  -D TANGRAM_DIR:FILEPATH=$TANGRAM_INSTALL_PREFIX \
+  -D XMOF2D_DIR:FILEPATH=$XMOF2D_INSTALL_PREFIX/share/cmake \
   -D NGC_INCLUDE_DIR:FILEPATH=$NGC_INCLUDE_DIR \
   -D ENABLE_THRUST=True \
   ..
@@ -110,12 +116,12 @@ mkdir build-nothrust
 cd build-nothrust
 
 cmake \
-  -D CMAKE_C_COMPILER=`which mpicc` \
-  -D CMAKE_CXX_COMPILER=`which mpiCC` \
   -D CMAKE_BUILD_TYPE=Release \
   -D ENABLE_UNIT_TESTS=True \
   -D ENABLE_MPI=True \
   -D Jali_DIR:FILEPATH=$JALI_INSTALL_PREFIX/lib \
+  -D TANGRAM_DIR:FILEPATH=$TANGRAM_INSTALL_PREFIX \
+  -D XMOF2D_DIR:FILEPATH=$XMOF2D_INSTALL_PREFIX/share/cmake \
   -D NGC_INCLUDE_DIR:FILEPATH=$NGC_INCLUDE_DIR \
   -D ENABLE_THRUST=False \
   ..

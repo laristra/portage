@@ -4,119 +4,100 @@ Please see the license file at the root of this repository, or at:
     https://github.com/laristra/portage/blob/master/LICENSE
 */
 
-#include "portage/interpolate/quadfit.h"
 
 #include <iostream>
 
 #include "gtest/gtest.h"
-#include "mpi.h"
 
-#include "Mesh.hh"
-#include "MeshFactory.hh"
-#include "JaliState.h"
-#include "JaliStateVector.h"
-
-#include "portage/support/portage.h"
+#include "portage/interpolate/quadfit.h"
 #include "portage/support/Vector.h"
-#include "portage/wonton/mesh/jali/jali_mesh_wrapper.h"
-#include "portage/wonton/state/jali/jali_state_wrapper.h"
-#include "portage/wonton/mesh/AuxMeshTopology.h"
+#include "portage/support/portage.h"
+#include "portage/wonton/mesh/simple_mesh/simple_mesh_wrapper.h"
+#include "portage/wonton/state/simple_state/simple_state_wrapper.h"
 
 /// Test quadfit computation for cell centered fields
 
 TEST(Quadfit, Fields_Cell_Ctr) {
 
-  // Make a 4x4 mesh
-
-  Jali::MeshFactory mf(MPI_COMM_WORLD);
-
-  if (Jali::framework_available(Jali::MSTK))
-    mf.framework(Jali::MSTK);
-  mf.included_entities({Jali::Entity_kind::EDGE,
-                        Jali::Entity_kind::FACE,
-                        Jali::Entity_kind::WEDGE,
-                        Jali::Entity_kind::CORNER});
-
-  std::shared_ptr<Jali::Mesh> mesh1 = mf(0.0, 0.0, 1.0, 1.0, 4, 4);
+  // Create a 4 cell mesh
+  std::shared_ptr<Portage::Simple_Mesh> mesh1 =
+      std::make_shared<Portage::Simple_Mesh>(0.0, 0.0, 1.0, 1.0, 4, 4);
   ASSERT_TRUE(mesh1 != nullptr);
 
-  // Create a state object and add the first two vectors to it
+  // create the wrapper
+  Wonton::Simple_Mesh_Wrapper meshWrapper(*mesh1);
 
-  Jali::State mystate(mesh1);
+  // Create a state object
+  Portage::Simple_State mystate(mesh1);
 
-  // Define three state vectors, one with constant value, one with 
-  // a linear function that is x+2y, and one with quadratic, x^2+y^2.
+  // Create a state Wrapper
+  Wonton::Simple_State_Wrapper stateWrapper(mystate);
 
-  int nc1 = mesh1->num_entities(Jali::Entity_kind::CELL,
-                                Jali::Entity_type::PARALLEL_OWNED);
+  const int nc1 = meshWrapper.num_owned_cells();
 
-  // constant function
-  std::vector<double> data1(nc1, 1.25); 
-  Jali::StateVector<double> myvec1("cellvars1", mesh1,
-                                   Jali::Entity_kind::CELL,
-                                   Jali::Entity_type::PARALLEL_OWNED,
-                                   &(data1[0]));
-  Jali::StateVector<double> &addvec1 = mystate.add(myvec1);
+  // Define three state vectors, one with constant value, the next
+  // with a linear function that is x+2y, the final x*x+y*y
 
-  // linear function
+  std::vector<double> data1(nc1, 1.25);
+
+  // add the data vector to the state
+  mystate.add("cellvars1", Portage::Entity_kind::CELL, &(data1[0]));
+
+  // create the second vector
   std::vector<double> data2(nc1);
+
+  // set the data (x+2*y)
   for (int c = 0; c < nc1; c++) {
-    JaliGeometry::Point ccen = mesh1->cell_centroid(c);
-    data2[c] = ccen[0]+2*ccen[1];
+    Portage::Point<2> ccen;
+    meshWrapper.cell_centroid(c, &ccen);
+    data2[c] = ccen[0] + 2 * ccen[1];
   }
 
-  Jali::StateVector<double> myvec2("cellvars2", mesh1,
-                                   Jali::Entity_kind::CELL,
-                                   Jali::Entity_type::PARALLEL_OWNED,
-                                   &(data2[0]));
-  Jali::StateVector<double> &addvec2 = mystate.add(myvec2);
+  // add the second data vector to the state
+  mystate.add("cellvars2", Portage::Entity_kind::CELL, &(data2[0]));
 
-  // quadratic function
+  // create the third vector
   std::vector<double> data3(nc1);
+
+  // set the data (x*x+y+y)
   for (int c = 0; c < nc1; c++) {
-    JaliGeometry::Point ccen = mesh1->cell_centroid(c);
-    data3[c] = ccen[0]*ccen[0]+ccen[1]*ccen[1];
+    Portage::Point<2> ccen;
+    meshWrapper.cell_centroid(c, &ccen);
+    data3[c] = ccen[0]*ccen[0] + ccen[1]*ccen[1];
   }
 
-  Jali::StateVector<double> myvec3("cellvars3", mesh1,
-                                   Jali::Entity_kind::CELL,
-                                   Jali::Entity_type::PARALLEL_OWNED,
-                                   &(data3[0]));
-  Jali::StateVector<double> &addvec3 = mystate.add(myvec3);
-
-  Portage::Jali_Mesh_Wrapper meshwrapper(*mesh1);
-  Portage::Jali_State_Wrapper statewrapper(mystate);
+  // add the second data vector to the state
+  mystate.add("cellvars3", Portage::Entity_kind::CELL, &(data3[0]));
 
   // Create Quadfit objects
 
-  Portage::Limited_Quadfit<Portage::Jali_Mesh_Wrapper,
-                            Portage::Jali_State_Wrapper,
-                            Portage::CELL, 2>
-      qfitcalc1(meshwrapper, statewrapper, "cellvars1", Portage::NOLIMITER);
-  Portage::Limited_Quadfit<Portage::Jali_Mesh_Wrapper,
-                            Portage::Jali_State_Wrapper,
-                            Portage::CELL, 2>
-      qfitcalc2(meshwrapper, statewrapper, "cellvars2", Portage::NOLIMITER);
-  Portage::Limited_Quadfit<Portage::Jali_Mesh_Wrapper,
-                            Portage::Jali_State_Wrapper,
-                            Portage::CELL, 2>
-      qfitcalc3(meshwrapper, statewrapper, "cellvars3", Portage::NOLIMITER);
-  Portage::Limited_Quadfit<Portage::Jali_Mesh_Wrapper,
-                            Portage::Jali_State_Wrapper,
-                            Portage::CELL, 2>
-      qfitcalc4(meshwrapper, statewrapper, "cellvars1",
+  Portage::Limited_Quadfit<2, Portage::Entity_kind::CELL,
+                           Wonton::Simple_Mesh_Wrapper,
+                           Wonton::Simple_State_Wrapper>
+      qfitcalc1(meshWrapper, stateWrapper, "cellvars1", Portage::NOLIMITER);
+  Portage::Limited_Quadfit<2, Portage::Entity_kind::CELL,
+                           Wonton::Simple_Mesh_Wrapper,
+                           Wonton::Simple_State_Wrapper>
+      qfitcalc2(meshWrapper, stateWrapper, "cellvars2", Portage::NOLIMITER);
+  Portage::Limited_Quadfit<2, Portage::Entity_kind::CELL,
+                           Wonton::Simple_Mesh_Wrapper,
+                           Wonton::Simple_State_Wrapper>
+      qfitcalc3(meshWrapper, stateWrapper, "cellvars3", Portage::NOLIMITER);
+  Portage::Limited_Quadfit<2, Portage::Entity_kind::CELL,
+                           Wonton::Simple_Mesh_Wrapper,
+                           Wonton::Simple_State_Wrapper>
+      qfitcalc4(meshWrapper, stateWrapper, "cellvars1",
                 Portage::BARTH_JESPERSEN);
-  Portage::Limited_Quadfit<Portage::Jali_Mesh_Wrapper,
-                            Portage::Jali_State_Wrapper,
-                            Portage::CELL, 2>
-      qfitcalc5(meshwrapper, statewrapper, "cellvars2",
+  Portage::Limited_Quadfit<2, Portage::Entity_kind::CELL,
+                           Wonton::Simple_Mesh_Wrapper,
+                           Wonton::Simple_State_Wrapper>
+      qfitcalc5(meshWrapper, stateWrapper, "cellvars2",
                 Portage::BARTH_JESPERSEN);
-  Portage::Limited_Quadfit<Portage::Jali_Mesh_Wrapper,
-                            Portage::Jali_State_Wrapper,
-                            Portage::CELL, 2>
-      qfitcalc6(meshwrapper, statewrapper, "cellvars3",
+  Portage::Limited_Quadfit<2, Portage::Entity_kind::CELL,
+                           Wonton::Simple_Mesh_Wrapper,
+                           Wonton::Simple_State_Wrapper>
+      qfitcalc6(meshWrapper, stateWrapper, "cellvars3",
                 Portage::BARTH_JESPERSEN);
-
 
   // Compute the quadfit for each of these fields
 
@@ -131,17 +112,17 @@ TEST(Quadfit, Fields_Cell_Ctr) {
     // Create boundary_cell logical variable
 
     bool boundary_cell = false;
-    std::vector<int> cfaces;
-    mesh1->cell_get_faces(c, &cfaces);
+    std::vector<int> cfaces, cellfaceDirs;
+    meshWrapper.cell_get_faces_and_dirs(c, &cfaces, &cellfaceDirs);
     for (auto f : cfaces) {
       std::vector<int> fcells;
-      mesh1->face_get_cells(f, Jali::Entity_type::ALL, &fcells);
+      meshWrapper.face_get_cells(f, Portage::Entity_type::ALL, &fcells);
       if (fcells.size() == 1) {
-    	boundary_cell = true;
-    	break;
+        boundary_cell = true;
+        break;
       }
     }
-       
+
     // unlimited quadfit of constant function
 
     qfit = qfitcalc1(c);
@@ -168,11 +149,12 @@ TEST(Quadfit, Fields_Cell_Ctr) {
 
     if (!boundary_cell) {
       qfit = qfitcalc3(c);
-      JaliGeometry::Point ccen = mesh1->cell_centroid(c);
+      Portage::Point<2> ccen;
+      meshWrapper.cell_centroid(c, &ccen);
       double cx = ccen[0]; // x
-      double cy = ccen[1]; // y      
-      ASSERT_NEAR(2.0*cx, qfit[0], 1.0e-10); // partial of f wrt x  
-      ASSERT_NEAR(2.0*cy, qfit[1], 1.0e-10); // partial of f wrt y  
+      double cy = ccen[1]; // y
+      ASSERT_NEAR(2.0*cx, qfit[0], 1.0e-10); // partial of f wrt x
+      ASSERT_NEAR(2.0*cy, qfit[1], 1.0e-10); // partial of f wrt y
       ASSERT_NEAR(1.0, qfit[2], 1.0e-10); // (2nd partial of f wrt x)/2
       ASSERT_NEAR(0.0, qfit[3], 1.0e-10); // (2nd partials of f wrt x and y)/2
       ASSERT_NEAR(1.0, qfit[4], 1.0e-10); // (2nd partial of f wrt y)/2
@@ -198,124 +180,105 @@ TEST(Quadfit, Fields_Cell_Ctr) {
     }
     // limited quadfit of quadratic function
     //
-    // Avoid boundary cells.  LimitedQuadfit won't crash at boundaries, but it 
+    // Avoid boundary cells.  LimitedQuadfit won't crash at boundaries, but it
     // won't give the correct answer in the ASSERT statements for the quadratic
     // function test.
 
     if (!boundary_cell) {
       qfit = qfitcalc6(c);
-      JaliGeometry::Point ccen = mesh1->cell_centroid(c);
+      Portage::Point<2> ccen;
+      meshWrapper.cell_centroid(c, &ccen);
       double cx = ccen[0]; // x
-      double cy = ccen[1]; // y      
-      ASSERT_NEAR(2.0*cx, qfit[0], 1.0e-10); // partial of f wrt x  
-      ASSERT_NEAR(2.0*cy, qfit[1], 1.0e-10); // partial of f wrt y  
+      double cy = ccen[1]; // y
+      ASSERT_NEAR(2.0*cx, qfit[0], 1.0e-10); // partial of f wrt x
+      ASSERT_NEAR(2.0*cy, qfit[1], 1.0e-10); // partial of f wrt y
       ASSERT_NEAR(1.0, qfit[2], 1.0e-10); // (2nd partial of f wrt x)/2
       ASSERT_NEAR(0.0, qfit[3], 1.0e-10); // (2nd partials of f wrt x and y)/2
       ASSERT_NEAR(1.0, qfit[4], 1.0e-10); // (2nd partial of f wrt y)/2
     }
 
-  } 
+  }
 }
-
 
 /// Test quadfit computation with node centered fields
 
 TEST(Quadfit, Fields_Node_Ctr) {
 
-  // Make a 3x3 mesh
-
-  Jali::MeshFactory mf(MPI_COMM_WORLD);
-
-  if (Jali::framework_available(Jali::MSTK))
-    mf.framework(Jali::MSTK);
-  mf.included_entities({Jali::Entity_kind::EDGE,
-                        Jali::Entity_kind::FACE,
-                        Jali::Entity_kind::WEDGE,
-                        Jali::Entity_kind::CORNER});
-
-  std::shared_ptr<Jali::Mesh> mesh1 = mf(0.0, 0.0, 1.0, 1.0, 4, 4);
+  // Create a 4 cell mesh
+  std::shared_ptr<Portage::Simple_Mesh> mesh1 =
+      std::make_shared<Portage::Simple_Mesh>(0.0, 0.0, 1.0, 1.0, 4, 4);
   ASSERT_TRUE(mesh1 != nullptr);
 
-  // Create a state object and add the first two vectors to it
+  // create the wrapper
+  Wonton::Simple_Mesh_Wrapper meshWrapper(*mesh1);
 
-  Jali::State mystate(mesh1);
+  // Create a state object
+  Portage::Simple_State mystate(mesh1);
 
-  // Define three state vectors, one with constant value, the other
-  // with a linear function
+  // Create a state Wrapper
+  Wonton::Simple_State_Wrapper stateWrapper(mystate);
 
-  int nn1 = mesh1->num_entities(Jali::Entity_kind::NODE,
-                                Jali::Entity_type::PARALLEL_OWNED);
+  const int nn1 = meshWrapper.num_owned_nodes();
 
-  // constant function
+  // Define three state vectors, one with constant value, the next
+  // with a linear function that is x+2y, the final x*x+y*y
+
   std::vector<double> data1(nn1, 1.5);
 
-  Jali::StateVector<double> myvec1("nodevars1", mesh1,
-                                   Jali::Entity_kind::NODE,
-                                   Jali::Entity_type::PARALLEL_OWNED,
-                                   &(data1[0]));
-  Jali::StateVector<double> &addvec1 = mystate.add(myvec1);
+  // add the data vector to the state
+  mystate.add("nodevars1", Portage::Entity_kind::NODE, &(data1[0]));
 
-  // linear function
   std::vector<double> data2(nn1);
-  for (int n = 0; n < nn1; ++n) {
-    JaliGeometry::Point nodexy;
-    mesh1->node_get_coordinates(n, &nodexy);
-    data2[n] = 3*nodexy[0]+nodexy[1];
-  }
-  Jali::StateVector<double> myvec2("nodevars2", mesh1,
-                                   Jali::Entity_kind::NODE,
-                                   Jali::Entity_type::PARALLEL_OWNED,
-                                   &(data2[0]));
-  Jali::StateVector<double> &addvec2 = mystate.add(myvec2);
 
-  // quadratic function
+  for (int n = 0; n < nn1; ++n) {
+    Portage::Point<2> nodexy;
+    meshWrapper.node_get_coordinates(n, &nodexy);
+    data2[n] = 3 * nodexy[0] + nodexy[1];
+  }
+
+  // add the data vector to the state
+  mystate.add("nodevars2", Portage::Entity_kind::NODE, &(data2[0]));
+
   std::vector<double> data3(nn1);
+
   for (int n = 0; n < nn1; ++n) {
-    JaliGeometry::Point nodexy;
-    mesh1->node_get_coordinates(n, &nodexy);
+    Portage::Point<2> nodexy;
+    meshWrapper.node_get_coordinates(n, &nodexy);
     data3[n] = nodexy[0]*nodexy[0] + nodexy[1]*nodexy[1];
-    //printf ("data3[%d] = %4.3f\n", n, data3[n]);
   }
 
-  Jali::StateVector<double> myvec3("nodevars3", mesh1,
-                                   Jali::Entity_kind::NODE,
-                                   Jali::Entity_type::PARALLEL_OWNED,
-                                   &(data3[0]));
-  Jali::StateVector<double> &addvec3 = mystate.add(myvec3);
+  // add the data vector to the state
+  mystate.add("nodevars3", Portage::Entity_kind::NODE, &(data3[0]));
 
   // Create Quadfit calculater objects
 
-  Portage::Jali_Mesh_Wrapper meshwrapper(*mesh1);
-  Portage::Jali_State_Wrapper statewrapper(mystate);
-
-  Portage::Limited_Quadfit<Portage::Jali_Mesh_Wrapper,			     
-  			    Portage::Jali_State_Wrapper,		     
-  			    Portage::NODE, 2>				     
-      qfitcalc1(meshwrapper, statewrapper, "nodevars1", Portage::NOLIMITER); 
-  Portage::Limited_Quadfit<Portage::Jali_Mesh_Wrapper,			     
-  			    Portage::Jali_State_Wrapper,		     
-  			    Portage::NODE, 2>				     
-      qfitcalc2(meshwrapper, statewrapper, "nodevars2", Portage::NOLIMITER); 
-  Portage::Limited_Quadfit<Portage::Jali_Mesh_Wrapper,
-                            Portage::Jali_State_Wrapper,
-                            Portage::NODE, 2>
-      qfitcalc3(meshwrapper, statewrapper, "nodevars3", Portage::NOLIMITER);
-  Portage::Limited_Quadfit<Portage::Jali_Mesh_Wrapper,
-                            Portage::Jali_State_Wrapper,
-                            Portage::NODE, 2>
-      qfitcalc4(meshwrapper, statewrapper, "nodevars1",
+  Portage::Limited_Quadfit<2, Portage::Entity_kind::NODE,
+                           Wonton::Simple_Mesh_Wrapper,
+                           Wonton::Simple_State_Wrapper>
+      qfitcalc1(meshWrapper, stateWrapper, "nodevars1", Portage::NOLIMITER);
+  Portage::Limited_Quadfit<2, Portage::Entity_kind::NODE,
+                           Wonton::Simple_Mesh_Wrapper,
+                           Wonton::Simple_State_Wrapper>
+      qfitcalc2(meshWrapper, stateWrapper, "nodevars2", Portage::NOLIMITER);
+  Portage::Limited_Quadfit<2, Portage::Entity_kind::NODE,
+                           Wonton::Simple_Mesh_Wrapper,
+                           Wonton::Simple_State_Wrapper>
+      qfitcalc3(meshWrapper, stateWrapper, "nodevars3", Portage::NOLIMITER);
+  Portage::Limited_Quadfit<2, Portage::Entity_kind::NODE,
+                           Wonton::Simple_Mesh_Wrapper,
+                           Wonton::Simple_State_Wrapper>
+      qfitcalc4(meshWrapper, stateWrapper, "nodevars1",
                 Portage::BARTH_JESPERSEN);
-  Portage::Limited_Quadfit<Portage::Jali_Mesh_Wrapper,
-                            Portage::Jali_State_Wrapper,
-                            Portage::NODE, 2>
-      qfitcalc5(meshwrapper, statewrapper, "nodevars2",
+  Portage::Limited_Quadfit<2, Portage::Entity_kind::NODE,
+                           Wonton::Simple_Mesh_Wrapper,
+                           Wonton::Simple_State_Wrapper>
+      qfitcalc5(meshWrapper, stateWrapper, "nodevars2",
                 Portage::BARTH_JESPERSEN);
-  Portage::Limited_Quadfit<Portage::Jali_Mesh_Wrapper,
-                            Portage::Jali_State_Wrapper,
-                            Portage::NODE, 2>
-      qfitcalc6(meshwrapper, statewrapper, "nodevars3", 
+  Portage::Limited_Quadfit<2, Portage::Entity_kind::NODE,
+                           Wonton::Simple_Mesh_Wrapper,
+                           Wonton::Simple_State_Wrapper>
+      qfitcalc6(meshWrapper, stateWrapper, "nodevars3",
                 Portage::BARTH_JESPERSEN);
-
 
   // Make sure we retrieved the correct quadfit value for each node
   // For field 1, it is a constant
@@ -327,20 +290,20 @@ TEST(Quadfit, Fields_Node_Ctr) {
   for (int n = 0; n < nn1; ++n) {
     bool boundary_node = false;
     std::vector<int> nodecells;
-    mesh1->node_get_cells(n, Jali::Entity_type::ALL, &nodecells);
+    meshWrapper.node_get_cells(n, Portage::Entity_type::ALL, &nodecells);
     for (auto nc : nodecells) {
-      std::vector<int> cfaces;
-      mesh1->cell_get_faces(nc, &cfaces);
+      std::vector<int> cfaces, cellfaceDirs;
+      meshWrapper.cell_get_faces_and_dirs(nc, &cfaces, &cellfaceDirs);
       for (auto f : cfaces) {
-    	std::vector<int> fcells;
-    	mesh1->face_get_cells(f, Jali::Entity_type::ALL, &fcells);
-    	if (fcells.size() == 1) {
-    	  boundary_node = true;
-    	  break;
-    	}
+        std::vector<int> fcells;
+        meshWrapper.face_get_cells(f, Portage::Entity_type::ALL, &fcells);
+        if (fcells.size() == 1) {
+          boundary_node = true;
+          break;
+        }
       }
       if (boundary_node)
-    	break;
+        break;
     }
 
     // if (!boundary_node) {
@@ -363,18 +326,18 @@ TEST(Quadfit, Fields_Node_Ctr) {
 
     // ulimited quadfit of quadratic function
     //
-    // Avoid boundary nodes.  LimitedQuadfit won't crash at boundaries, but it 
+    // Avoid boundary nodes.  LimitedQuadfit won't crash at boundaries, but it
     // won't give the correct answer in the ASSERT statements for the quadratic
     // function test.
 
     if (!boundary_node) {
       qfit = qfitcalc3(n);
-      JaliGeometry::Point nodexy;
-      mesh1->node_get_coordinates(n, &nodexy);
+      Portage::Point<2> nodexy;
+      meshWrapper.node_get_coordinates(n, &nodexy);
       double nx = nodexy[0]; // x
-      double ny = nodexy[1]; // y      
-      ASSERT_NEAR(2.0*nx, qfit[0], 1.0e-10); // partial of f wrt x  
-      ASSERT_NEAR(2.0*ny, qfit[1], 1.0e-10); // partial of f wrt y  
+      double ny = nodexy[1]; // y
+      ASSERT_NEAR(2.0*nx, qfit[0], 1.0e-10); // partial of f wrt x
+      ASSERT_NEAR(2.0*ny, qfit[1], 1.0e-10); // partial of f wrt y
       ASSERT_NEAR(1.0, qfit[2], 1.0e-10); // (2nd partial of f wrt x)/2
       ASSERT_NEAR(0.0, qfit[3], 1.0e-10); // (2nd partial of f wrt x and y)/2
       ASSERT_NEAR(1.0, qfit[4], 1.0e-10); // (2nd partial of f wrt y)/2
@@ -400,25 +363,23 @@ TEST(Quadfit, Fields_Node_Ctr) {
     }
 
     // limited quadfit of quadratic function
-    
-    // Avoid boundary nodes.  LimitedQuadfit won't crash at boundaries, but it 
+
+    // Avoid boundary nodes.  LimitedQuadfit won't crash at boundaries, but it
     // won't give the correct answer in the ASSERT statements for the quadratic
     // function test.
 
     if (!boundary_node) {
       qfit = qfitcalc6(n);
-      JaliGeometry::Point nodexy;
-      mesh1->node_get_coordinates(n, &nodexy);
+      Portage::Point<2> nodexy;
+      meshWrapper.node_get_coordinates(n, &nodexy);
       double nx = nodexy[0]; // x
-      double ny = nodexy[1]; // y      
-      ASSERT_NEAR(2.0*nx, qfit[0], 1.0e-10); // partial of f wrt x  
-      ASSERT_NEAR(2.0*ny, qfit[1], 1.0e-10); // partial of f wrt y  
+      double ny = nodexy[1]; // y
+      ASSERT_NEAR(2.0*nx, qfit[0], 1.0e-10); // partial of f wrt x
+      ASSERT_NEAR(2.0*ny, qfit[1], 1.0e-10); // partial of f wrt y
       ASSERT_NEAR(1.0, qfit[2], 1.0e-10); // (2nd partial of f wrt x)/2
       ASSERT_NEAR(0.0, qfit[3], 1.0e-10); // (2nd partials of f wrt x and y)/2
       ASSERT_NEAR(1.0, qfit[4], 1.0e-10); // (2nd partial of f wrt y)/2
     }
-    //}
   }
 }
-
 

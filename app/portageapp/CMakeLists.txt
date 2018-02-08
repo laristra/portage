@@ -7,7 +7,7 @@ Please see the license file at the root of this repository, or at:
 
 if (Jali_DIR)
     add_executable(portageapp_jali portageapp_jali.cc)
-    target_link_libraries(portageapp_jali portage ${EXTRA_LIBS})
+    target_link_libraries(portageapp_jali portage ${EXTRA_LIBS} ${LAPACKE_LIBRARIES})
 
     # MPI additions - need to push this down into cinch
     if (ENABLE_MPI)
@@ -19,26 +19,12 @@ if (Jali_DIR)
     # Jali additions
     include_directories(${Jali_INCLUDE_DIRS} ${Jali_TPL_INCLUDE_DIRS})
     target_link_libraries(portageapp_jali ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES})
-
-    add_executable(portageapp_jali_file portageapp_jali_file.cc)
-    target_link_libraries(portageapp_jali_file portage ${EXTRA_LIBS})
-
-    # MPI additions - need to push this down into cinch
-    if (ENABLE_MPI)
-        target_link_libraries(portageapp_jali_file ${MPI_CXX_LIBRARIES})
-        set_target_properties(portageapp_jali_file PROPERTIES
-                              LINK_FLAGS "${MPI_CXX_LINK_FLAGS}")
-    endif (ENABLE_MPI)
-
-    # Jali additions
-    include_directories(${Jali_INCLUDE_DIRS} ${Jali_TPL_INCLUDE_DIRS})
-    target_link_libraries(portageapp_jali_file ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES})
 endif (Jali_DIR)
 
 # FleCSI example
 if (ENABLE_FleCSI)
   add_executable(portageapp_flecsi portageapp_flecsi.cc)
-  target_link_libraries(portageapp_flecsi portage ${EXTRA_LIBS})
+  target_link_libraries(portageapp_flecsi portage ${EXTRA_LIBS} ${LAPACKE_LIBRARIES})
   include_directories(${FleCSI_INCLUDE_DIR} ${FleCSISP_INCLUDE_DIR})
   target_link_libraries(portageapp_flecsi ${FleCSI_LIBRARIES} ${FleCSISP_LIBRARIES})
 # these appear needed because of something we are pulling in within src
@@ -51,7 +37,7 @@ endif (ENABLE_FleCSI)
 
 if (JALI_DIR AND ENABLE_FleCSI)
   add_executable(portageapp_jali2flecsi portageapp_jali2flecsi.cc)
-  target_link_libraries(portageapp_jali2flecsi portageapp_jali2flecsi ${EXTRA_LIBS})
+  target_link_libraries(portageapp_jali2flecsi portageapp_jali2flecsi ${EXTRA_LIBS} ${LAPACKE_LIBRARIES})
   include_directories(${FleCSI_INCLUDE_DIR} ${FleCSISP_INCLUDE_DIR})
   target_link_libraries(portageapp_jali2flecsi ${FleCSI_LIBRARIES} ${FleCSISP_LIBRARIES})
 # these appear needed because of something we are pulling in within src

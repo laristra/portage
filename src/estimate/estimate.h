@@ -58,9 +58,7 @@ class Estimate {
                     vector<Weights_t> const &sources_and_mults) const
   {    
     int nsrc = sources_and_mults.size();
-    assert(nsrc > 0);
-
-    assert(derivative_ < sources_and_mults[0].weights.size());
+    if (nsrc > 0) assert(derivative_ < sources_and_mults[0].weights.size());
 
     double result=0.;
     for (size_t i=0; i<nsrc; i++) {

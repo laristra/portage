@@ -153,7 +153,7 @@ template <long D> class Vector {
   }
 
   /// Pretty printing of a Vector to an output stream.
-  std::ostream& writeToStream(std::ostream& os) {
+  std::ostream& writeToStream(std::ostream& os) const {
     for (int i = 0; i < D; i++) {
       if (i > 0) os << ' ';
       os << m_comp[i];
