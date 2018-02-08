@@ -33,7 +33,7 @@ if [[ $compiler == "intel" ]]; then
   jali_install_dir=$NGC/private/jali/${jali_version}-intel-${intel_version}-openmpi-${openmpi_version}
   tangram_install_dir=$NGC/private/tangram/${tangram_version}-intel-${intel_version}-openmpi-${openmpi_version}
   xmof2d_install_dir=$NGC/private/xmof2d/${xmof2d_version}-intel-${intel_version}-openmpi-${openmpi_version}
-  lapacke_dir=$NGC/private/lapack/${lapack_version}-intel-${intel_version}
+  lapacke_dir=$NGC/private/lapack/${lapack_version}-patched-intel-${intel_version}
 elif [[ $compiler == "gcc" ]]; then
   gcc_version=5.3.0
   cxxmodule=gcc/${gcc_version}
