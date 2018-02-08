@@ -233,7 +233,7 @@ FLECSI_INSTALL_PREFIX=/usr/local/codes/ngc/private/flecsi/gcc5.3_openmpi1.10.3
 FLECSISP_INSTALL_PREFIX=/usr/local/codes/ngc/private/flecsi-sp/gcc5.3_openmpi1.10.3
 TANGRAM_INSTALL_PREFIX=/usr/projects/ngc/private/tangram/133c1db580f-gcc-5.3.0-openmpi-1.10.3
 XMOF2D_INSTALL_PREFIX=/usr/projects/ngc/private/xmof2d/0.9-gcc-5.3.0-openmpi-1.10.3
-LAPACKE_DIR=/usr/local/codes/ngc/private/lapack/lapack-3.8.0-gcc-5.3.0
+LAPACKE_DIR=/usr/local/codes/ngc/private/lapack/3.8.0-gcc-5.3.0
 LAPACKE_INCLUDE_DIR=$LAPACKE_DIR/include
 LAPACKE_LIBRARY_DIR=$LAPACKE_DIR
 mkdir build-flecsi
