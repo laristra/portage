@@ -42,6 +42,6 @@ after_success:
       CON=$(docker run -d ${TRAVIS_REPO_SLUG}:latest) && docker cp ${CON}:/home/portage/portage/build/doc . ;
       pyenv local 3.6;
       pip install doctr;
-      pwd; ls;
+      pwd; ls -l doc/*;
       doctr deploy . --built-docs doc/portage/doxygen/html;
     fi
