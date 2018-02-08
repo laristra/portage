@@ -35,7 +35,7 @@ Please see the license file at the root of this repository, or at:
     <nav class="navbar navbar-default" role="navigation">
       <div class="container">
         <div class="navbar-header">
-          <a class="navbar-brand">portage 1.1.0</a>
+          <a class="navbar-brand">portage v1.2.0</a>
         </div>
       </div>
     </nav>
@@ -96,84 +96,76 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div><!--header-->
 <div class="contents">
 <div class="textblock"><dl class="reflist">
-<dt><a class="anchor" id="_todo000031"></a>Member <a class="el" href="classPortage_1_1AuxMeshTopology.html#aa553ac201acbcc2856a1b97fcb2c5edc">Portage::AuxMeshTopology&lt; BasicMesh &gt;::dual_cell_centroid</a>  (int nodeid, Point&lt; D &gt; *centroid) const </dt>
-<dd>NOTE: THIS IS ASSUMED TO BE THE NODE COORDINATE BECAUSE THE NODAL VARIABLES LIVE THERE, BUT FOR DISTORTED GRIDS, THE NODE COORDINATE MAY NOT BE THE CENTROID OF THE DUAL CELL  </dd>
-<dt><a class="anchor" id="_todo000011"></a>Class <a class="el" href="classPortage_1_1Interpolate__1stOrder.html">Portage::Interpolate_1stOrder&lt; SourceMeshType, TargetMeshType, StateType, on_what, D &gt;</a>  </dt>
+<dt><a class="anchor" id="_todo000008"></a>Class <a class="el" href="classPortage_1_1Interpolate__1stOrder.html">Portage::Interpolate_1stOrder&lt; D, on_what, SourceMeshType, TargetMeshType, StateType &gt;</a>  </dt>
 <dd>Template on variable type?? </dd>
-<dt><a class="anchor" id="_todo000016"></a>Member <a class="el" href="classPortage_1_1Interpolate__2ndOrder_3_01SourceMeshType_00_01TargetMeshType_00_01StateType_00_01CELL_00_01D_01_4.html#ac9802e3ec18ef4377709e7e273359df8">Portage::Interpolate_2ndOrder&lt; SourceMeshType, TargetMeshType, StateType, CELL, D &gt;::operator()</a>  (int const targetCellID, std::vector&lt; Weights_t &gt; const &amp;sources_and_weights) const </dt>
+<dt><a class="anchor" id="_todo000013"></a>Member <a class="el" href="classPortage_1_1Interpolate__2ndOrder_3_01D_00_01CELL_00_01SourceMeshType_00_01TargetMeshType_00_01StateType_01_4.html#a9a69a74bd107ef44777b0a753f471229">Portage::Interpolate_2ndOrder&lt; D, CELL, SourceMeshType, TargetMeshType, StateType &gt;::operator()</a>  (int const targetCellID, std::vector&lt; Weights_t &gt; const &amp;sources_and_weights) const </dt>
 <dd><p class="startdd">must remove assumption that field is scalar </p>
 <p class="enddd">Should use zip_iterator here but I am not sure I know how to  </p>
 </dd>
-<dt><a class="anchor" id="_todo000017"></a>Member <a class="el" href="classPortage_1_1Interpolate__2ndOrder_3_01SourceMeshType_00_01TargetMeshType_00_01StateType_00_01NODE_00_01D_01_4.html#a6357256442ede04cef0eadcc48d6544b">Portage::Interpolate_2ndOrder&lt; SourceMeshType, TargetMeshType, StateType, NODE, D &gt;::operator()</a>  (const int targetCellID, std::vector&lt; Weights_t &gt; const &amp;sources_and_weights) const </dt>
+<dt><a class="anchor" id="_todo000014"></a>Member <a class="el" href="classPortage_1_1Interpolate__2ndOrder_3_01D_00_01NODE_00_01SourceMeshType_00_01TargetMeshType_00_01StateType_01_4.html#a0b9172b1d89910eba60ad23f093cb38b">Portage::Interpolate_2ndOrder&lt; D, NODE, SourceMeshType, TargetMeshType, StateType &gt;::operator()</a>  (const int targetCellID, std::vector&lt; Weights_t &gt; const &amp;sources_and_weights) const </dt>
 <dd><p class="startdd">must remove assumption that field is scalar </p>
 <p class="enddd">Should use zip_iterator here but I am not sure I know how to  </p>
 </dd>
-<dt><a class="anchor" id="_todo000012"></a>Class <a class="el" href="classPortage_1_1Interpolate__2ndOrder.html">Portage::Interpolate_2ndOrder&lt; SourceMeshType, TargetMeshType, StateType, on_what, D &gt;</a>  </dt>
+<dt><a class="anchor" id="_todo000009"></a>Class <a class="el" href="classPortage_1_1Interpolate__2ndOrder.html">Portage::Interpolate_2ndOrder&lt; D, on_what, SourceMeshType, TargetMeshType, StateType &gt;</a>  </dt>
 <dd>Template on variable type (YES)  </dd>
-<dt><a class="anchor" id="_todo000015"></a>Member <a class="el" href="classPortage_1_1Interpolate__2ndOrder.html#a87ac251acac56ed638529a039e8cf645">Portage::Interpolate_2ndOrder&lt; SourceMeshType, TargetMeshType, StateType, on_what, D &gt;::operator()</a>  (int const targetCellID, std::vector&lt; Weights_t &gt; const &amp;sources_and_weights) const </dt>
+<dt><a class="anchor" id="_todo000012"></a>Member <a class="el" href="classPortage_1_1Interpolate__2ndOrder.html#ad93717c48f106de589e1373bee21dcb2">Portage::Interpolate_2ndOrder&lt; D, on_what, SourceMeshType, TargetMeshType, StateType &gt;::operator()</a>  (int const targetCellID, std::vector&lt; Weights_t &gt; const &amp;sources_and_weights) const </dt>
 <dd><p class="startdd">Cleanup the datatype for sources_and_weights - it is somewhat confusing. </p>
 <p class="enddd">must remove assumption that field is scalar  </p>
 </dd>
-<dt><a class="anchor" id="_todo000022"></a>Member <a class="el" href="classPortage_1_1Interpolate__3rdOrder_3_01SourceMeshType_00_01TargetMeshType_00_01StateType_00_01CELL_00_01D_01_4.html#a9d3f0161800892e64d8abdb3fa6d34e1">Portage::Interpolate_3rdOrder&lt; SourceMeshType, TargetMeshType, StateType, CELL, D &gt;::operator()</a>  (int const targetCellID, std::vector&lt; Weights_t &gt; const &amp;sources_and_weights) const </dt>
+<dt><a class="anchor" id="_todo000019"></a>Member <a class="el" href="classPortage_1_1Interpolate__3rdOrder_3_01D_00_01CELL_00_01SourceMeshType_00_01TargetMeshType_00_01StateType_01_4.html#a229b995cede195f8920c0aca41963c97">Portage::Interpolate_3rdOrder&lt; D, CELL, SourceMeshType, TargetMeshType, StateType &gt;::operator()</a>  (int const targetCellID, std::vector&lt; Weights_t &gt; const &amp;sources_and_weights) const </dt>
 <dd><p class="startdd">must remove assumption that field is scalar </p>
 <p class="enddd">Should use zip_iterator here but I am not sure I know how to  </p>
 </dd>
-<dt><a class="anchor" id="_todo000023"></a>Member <a class="el" href="classPortage_1_1Interpolate__3rdOrder_3_01SourceMeshType_00_01TargetMeshType_00_01StateType_00_01NODE_00_01D_01_4.html#a79c2ee4e0b718672bc5922c6b14ac25a">Portage::Interpolate_3rdOrder&lt; SourceMeshType, TargetMeshType, StateType, NODE, D &gt;::operator()</a>  (const int targetCellID, std::vector&lt; Weights_t &gt; const &amp;sources_and_weights) const </dt>
+<dt><a class="anchor" id="_todo000020"></a>Member <a class="el" href="classPortage_1_1Interpolate__3rdOrder_3_01D_00_01NODE_00_01SourceMeshType_00_01TargetMeshType_00_01StateType_01_4.html#a9df7ec59fc11297c5628eade56e97ff3">Portage::Interpolate_3rdOrder&lt; D, NODE, SourceMeshType, TargetMeshType, StateType &gt;::operator()</a>  (const int targetCellID, std::vector&lt; Weights_t &gt; const &amp;sources_and_weights) const </dt>
 <dd><p class="startdd">must remove assumption that field is scalar </p>
 <p class="enddd">Should use zip_iterator here but I am not sure I know how to  </p>
 </dd>
-<dt><a class="anchor" id="_todo000018"></a>Class <a class="el" href="classPortage_1_1Interpolate__3rdOrder.html">Portage::Interpolate_3rdOrder&lt; SourceMeshType, TargetMeshType, StateType, on_what, D &gt;</a>  </dt>
+<dt><a class="anchor" id="_todo000015"></a>Class <a class="el" href="classPortage_1_1Interpolate__3rdOrder.html">Portage::Interpolate_3rdOrder&lt; D, on_what, SourceMeshType, TargetMeshType, StateType &gt;</a>  </dt>
 <dd>Template on variable type (YES)  </dd>
-<dt><a class="anchor" id="_todo000021"></a>Member <a class="el" href="classPortage_1_1Interpolate__3rdOrder.html#a19763a6fb2fa25cecfa515cdc273f675">Portage::Interpolate_3rdOrder&lt; SourceMeshType, TargetMeshType, StateType, on_what, D &gt;::operator()</a>  (int const targetCellID, std::vector&lt; Weights_t &gt; const &amp;sources_and_weights) const </dt>
+<dt><a class="anchor" id="_todo000018"></a>Member <a class="el" href="classPortage_1_1Interpolate__3rdOrder.html#ae39872ad8f072959830c20144ac9dcc3">Portage::Interpolate_3rdOrder&lt; D, on_what, SourceMeshType, TargetMeshType, StateType &gt;::operator()</a>  (int const targetCellID, std::vector&lt; Weights_t &gt; const &amp;sources_and_weights) const </dt>
 <dd><p class="startdd">Cleanup the datatype for sources_and_weights - it is somewhat confusing. </p>
 <p class="enddd">must remove assumption that field is scalar  </p>
 </dd>
-<dt><a class="anchor" id="_todo000036"></a>Member <a class="el" href="classPortage_1_1Jali__State__Wrapper.html#a30c2cfaeabd215d95dceb18ec68e8804">Portage::Jali_State_Wrapper::get_data_size</a>  (const Entity_kind on_what, const std::string var_name) const </dt>
-<dd>THIS ASSUMES ONLY DOUBLE VECTORS - WE HAVE TO ACCOUNT FOR OTHER TYPES OR WE HAVE TO GENERALIZE THE FIND FUNCTION!!!  </dd>
-<dt><a class="anchor" id="_todo000035"></a>Member <a class="el" href="classPortage_1_1Jali__State__Wrapper.html#a7a1f6f7302c60dd88b05c015c48623ac">Portage::Jali_State_Wrapper::get_entity</a>  (const std::string var_name) const </dt>
-<dd>THIS ASSUMES ONLY DOUBLE VECTORS - WE HAVE TO ACCOUNT FOR OTHER TYPES OR WE HAVE TO GENERALIZE THE FIND FUNCTION!!!  </dd>
-<dt><a class="anchor" id="_todo000007"></a>Member <a class="el" href="classPortage_1_1Limited__Gradient_3_01MeshType_00_01StateType_00_01CELL_00_01D_01_4.html#a227553c4c19c125630f0f462f32e703b">Portage::Limited_Gradient&lt; MeshType, StateType, CELL, D &gt;::Limited_Gradient</a>  (MeshType const &amp;mesh, StateType const &amp;state, std::string const var_name, LimiterType limiter_type)</dt>
+<dt><a class="anchor" id="_todo000004"></a>Member <a class="el" href="classPortage_1_1Limited__Gradient_3_01D_00_01CELL_00_01MeshType_00_01StateType_01_4.html#a912020331208122f6fb10c01db1fa6ab">Portage::Limited_Gradient&lt; D, CELL, MeshType, StateType &gt;::Limited_Gradient</a>  (MeshType const &amp;mesh, StateType const &amp;state, std::string const var_name, LimiterType limiter_type)</dt>
 <dd>must remove assumption that field is scalar  </dd>
-<dt><a class="anchor" id="_todo000004"></a>Member <a class="el" href="classPortage_1_1Limited__Gradient_3_01MeshType_00_01StateType_00_01CELL_00_01D_01_4.html#ad182450b8871cc6145cb5dca86c04aca">Portage::Limited_Gradient&lt; MeshType, StateType, CELL, D &gt;::operator()</a>  (int cellid)</dt>
+<dt><a class="anchor" id="_todo000001"></a>Member <a class="el" href="classPortage_1_1Limited__Gradient_3_01D_00_01CELL_00_01MeshType_00_01StateType_01_4.html#afee13a71461b6e215786c8a19be8218e">Portage::Limited_Gradient&lt; D, CELL, MeshType, StateType &gt;::operator()</a>  (int cellid)</dt>
 <dd>: must remove assumption the field is scalar  </dd>
-<dt><a class="anchor" id="_todo000008"></a>Member <a class="el" href="classPortage_1_1Limited__Gradient_3_01MeshType_00_01StateType_00_01CELL_00_01D_01_4.html#ad24d285ceb2c7e13503aca9661bd680b">Portage::Limited_Gradient&lt; MeshType, StateType, CELL, D &gt;::operator=</a>  (const <a class="el" href="classPortage_1_1Limited__Gradient.html" title="Compute limited gradient of a field or components of a field. ">Limited_Gradient</a> &amp;)=delete</dt>
+<dt><a class="anchor" id="_todo000005"></a>Member <a class="el" href="classPortage_1_1Limited__Gradient_3_01D_00_01CELL_00_01MeshType_00_01StateType_01_4.html#a347efbb2f3fc7faab42a19ff9890f2e7">Portage::Limited_Gradient&lt; D, CELL, MeshType, StateType &gt;::operator=</a>  (const <a class="el" href="classPortage_1_1Limited__Gradient.html" title="Compute limited gradient of a field or components of a field. ">Limited_Gradient</a> &amp;)=delete</dt>
 <dd>Seems to be needed when using this in a Thrust transform call?  </dd>
-<dt><a class="anchor" id="_todo000009"></a>Member <a class="el" href="classPortage_1_1Limited__Gradient_3_01MeshType_00_01StateType_00_01NODE_00_01D_01_4.html#a94e89985f02aec540a12455b7de871d0">Portage::Limited_Gradient&lt; MeshType, StateType, NODE, D &gt;::Limited_Gradient</a>  (MeshType const &amp;mesh, StateType const &amp;state, std::string const var_name, LimiterType limiter_type)</dt>
+<dt><a class="anchor" id="_todo000006"></a>Member <a class="el" href="classPortage_1_1Limited__Gradient_3_01D_00_01NODE_00_01MeshType_00_01StateType_01_4.html#a088871563cd6f3ee7277bdfc0a0b24ac">Portage::Limited_Gradient&lt; D, NODE, MeshType, StateType &gt;::Limited_Gradient</a>  (MeshType const &amp;mesh, StateType const &amp;state, std::string const var_name, LimiterType limiter_type)</dt>
 <dd>must remove assumption that field is scalar  </dd>
-<dt><a class="anchor" id="_todo000010"></a>Member <a class="el" href="classPortage_1_1Limited__Gradient_3_01MeshType_00_01StateType_00_01NODE_00_01D_01_4.html#a7daa170d22ee826ef58d1f064c952ab5">Portage::Limited_Gradient&lt; MeshType, StateType, NODE, D &gt;::operator=</a>  (const <a class="el" href="classPortage_1_1Limited__Gradient.html" title="Compute limited gradient of a field or components of a field. ">Limited_Gradient</a> &amp;)=delete</dt>
+<dt><a class="anchor" id="_todo000007"></a>Member <a class="el" href="classPortage_1_1Limited__Gradient_3_01D_00_01NODE_00_01MeshType_00_01StateType_01_4.html#a872e7ba1745979f71bad3ec4599877ca">Portage::Limited_Gradient&lt; D, NODE, MeshType, StateType &gt;::operator=</a>  (const <a class="el" href="classPortage_1_1Limited__Gradient.html" title="Compute limited gradient of a field or components of a field. ">Limited_Gradient</a> &amp;)=delete</dt>
 <dd>Seems to be needed when using this in a Thrust transform call?  </dd>
-<dt><a class="anchor" id="_todo000005"></a>Member <a class="el" href="classPortage_1_1Limited__Gradient.html#a8b5530a1b9723a40f1055962bd2f0839">Portage::Limited_Gradient&lt; MeshType, StateType, on_what, D &gt;::Limited_Gradient</a>  (MeshType const &amp;mesh, StateType const &amp;state, std::string const var_name, LimiterType limiter_type)</dt>
+<dt><a class="anchor" id="_todo000002"></a>Member <a class="el" href="classPortage_1_1Limited__Gradient.html#a6d47f806a132724d0d0f3e55b59cd474">Portage::Limited_Gradient&lt; D, on_what, MeshType, StateType &gt;::Limited_Gradient</a>  (MeshType const &amp;mesh, StateType const &amp;state, std::string const var_name, LimiterType limiter_type)</dt>
 <dd>must remove assumption that field is scalar  </dd>
-<dt><a class="anchor" id="_todo000006"></a>Member <a class="el" href="classPortage_1_1Limited__Gradient.html#acf0df90897c2e6c44a76d36e3a5da330">Portage::Limited_Gradient&lt; MeshType, StateType, on_what, D &gt;::operator=</a>  (const <a class="el" href="classPortage_1_1Limited__Gradient.html" title="Compute limited gradient of a field or components of a field. ">Limited_Gradient</a> &amp;)=delete</dt>
+<dt><a class="anchor" id="_todo000003"></a>Member <a class="el" href="classPortage_1_1Limited__Gradient.html#a63c52ab01aaca4af78bda683b0da4ec6">Portage::Limited_Gradient&lt; D, on_what, MeshType, StateType &gt;::operator=</a>  (const <a class="el" href="classPortage_1_1Limited__Gradient.html" title="Compute limited gradient of a field or components of a field. ">Limited_Gradient</a> &amp;)=delete</dt>
 <dd>Seems to be needed when using this in a Thrust transform call?  </dd>
-<dt><a class="anchor" id="_todo000027"></a>Member <a class="el" href="classPortage_1_1Limited__Quadfit_3_01MeshType_00_01StateType_00_01CELL_00_01D_01_4.html#a406af0207da496dbd59347c180320c7f">Portage::Limited_Quadfit&lt; MeshType, StateType, CELL, D &gt;::Limited_Quadfit</a>  (MeshType const &amp;mesh, StateType const &amp;state, std::string const var_name, LimiterType limiter_type)</dt>
+<dt><a class="anchor" id="_todo000024"></a>Member <a class="el" href="classPortage_1_1Limited__Quadfit_3_01D_00_01CELL_00_01MeshType_00_01StateType_01_4.html#a95617a7e1d772bab47844ed49504dd56">Portage::Limited_Quadfit&lt; D, CELL, MeshType, StateType &gt;::Limited_Quadfit</a>  (MeshType const &amp;mesh, StateType const &amp;state, std::string const var_name, LimiterType limiter_type)</dt>
 <dd>must remove assumption that field is scalar  </dd>
-<dt><a class="anchor" id="_todo000024"></a>Member <a class="el" href="classPortage_1_1Limited__Quadfit_3_01MeshType_00_01StateType_00_01CELL_00_01D_01_4.html#a94073d8ff4c15fe22c570fbc35d0c90b">Portage::Limited_Quadfit&lt; MeshType, StateType, CELL, D &gt;::operator()</a>  (int cellid)</dt>
+<dt><a class="anchor" id="_todo000021"></a>Member <a class="el" href="classPortage_1_1Limited__Quadfit_3_01D_00_01CELL_00_01MeshType_00_01StateType_01_4.html#a3d9b8dc6e73e2a14d4d9c90d529783d4">Portage::Limited_Quadfit&lt; D, CELL, MeshType, StateType &gt;::operator()</a>  (int cellid)</dt>
 <dd>: must remove assumption the field is scalar  </dd>
-<dt><a class="anchor" id="_todo000028"></a>Member <a class="el" href="classPortage_1_1Limited__Quadfit_3_01MeshType_00_01StateType_00_01CELL_00_01D_01_4.html#add02e44caf7805017bc3c3fa96b9358b">Portage::Limited_Quadfit&lt; MeshType, StateType, CELL, D &gt;::operator=</a>  (const <a class="el" href="classPortage_1_1Limited__Quadfit.html" title="Compute limited quadfit of a field or components of a field. ">Limited_Quadfit</a> &amp;)=delete</dt>
+<dt><a class="anchor" id="_todo000025"></a>Member <a class="el" href="classPortage_1_1Limited__Quadfit_3_01D_00_01CELL_00_01MeshType_00_01StateType_01_4.html#af9b825898182be755d19bf5fd1e81d74">Portage::Limited_Quadfit&lt; D, CELL, MeshType, StateType &gt;::operator=</a>  (const <a class="el" href="classPortage_1_1Limited__Quadfit.html" title="Compute limited quadfit of a field or components of a field. ">Limited_Quadfit</a> &amp;)=delete</dt>
 <dd>Seems to be needed when using this in a Thrust transform call?  </dd>
-<dt><a class="anchor" id="_todo000029"></a>Member <a class="el" href="classPortage_1_1Limited__Quadfit_3_01MeshType_00_01StateType_00_01NODE_00_01D_01_4.html#ae739a573ce1f4ce95f97bacae4686e6f">Portage::Limited_Quadfit&lt; MeshType, StateType, NODE, D &gt;::Limited_Quadfit</a>  (MeshType const &amp;mesh, StateType const &amp;state, std::string const var_name, LimiterType limiter_type)</dt>
+<dt><a class="anchor" id="_todo000026"></a>Member <a class="el" href="classPortage_1_1Limited__Quadfit_3_01D_00_01NODE_00_01MeshType_00_01StateType_01_4.html#a31d1d8c545c965c4d563e6f23b838048">Portage::Limited_Quadfit&lt; D, NODE, MeshType, StateType &gt;::Limited_Quadfit</a>  (MeshType const &amp;mesh, StateType const &amp;state, std::string const var_name, LimiterType limiter_type)</dt>
 <dd>must remove assumption that field is scalar  </dd>
-<dt><a class="anchor" id="_todo000030"></a>Member <a class="el" href="classPortage_1_1Limited__Quadfit_3_01MeshType_00_01StateType_00_01NODE_00_01D_01_4.html#ac7415116d1e79f17f27f12c948c141df">Portage::Limited_Quadfit&lt; MeshType, StateType, NODE, D &gt;::operator=</a>  (const <a class="el" href="classPortage_1_1Limited__Quadfit.html" title="Compute limited quadfit of a field or components of a field. ">Limited_Quadfit</a> &amp;)=delete</dt>
+<dt><a class="anchor" id="_todo000027"></a>Member <a class="el" href="classPortage_1_1Limited__Quadfit_3_01D_00_01NODE_00_01MeshType_00_01StateType_01_4.html#a62f21cadaf4727c33d55b9b44cad6cea">Portage::Limited_Quadfit&lt; D, NODE, MeshType, StateType &gt;::operator=</a>  (const <a class="el" href="classPortage_1_1Limited__Quadfit.html" title="Compute limited quadfit of a field or components of a field. ">Limited_Quadfit</a> &amp;)=delete</dt>
 <dd>Seems to be needed when using this in a Thrust transform call?  </dd>
-<dt><a class="anchor" id="_todo000025"></a>Member <a class="el" href="classPortage_1_1Limited__Quadfit.html#acdd9770f302ef7bb1d13d672539ed2bc">Portage::Limited_Quadfit&lt; MeshType, StateType, on_what, D &gt;::Limited_Quadfit</a>  (MeshType const &amp;mesh, StateType const &amp;state, std::string const var_name, LimiterType limiter_type)</dt>
+<dt><a class="anchor" id="_todo000022"></a>Member <a class="el" href="classPortage_1_1Limited__Quadfit.html#aea23e29f5740bf9c72e8cf55a3b5a082">Portage::Limited_Quadfit&lt; D, on_what, MeshType, StateType &gt;::Limited_Quadfit</a>  (MeshType const &amp;mesh, StateType const &amp;state, std::string const var_name, LimiterType limiter_type)</dt>
 <dd>must remove assumption that field is scalar  </dd>
-<dt><a class="anchor" id="_todo000026"></a>Member <a class="el" href="classPortage_1_1Limited__Quadfit.html#a3df03f681ec29a4453e54f3ee1fb886c">Portage::Limited_Quadfit&lt; MeshType, StateType, on_what, D &gt;::operator=</a>  (const <a class="el" href="classPortage_1_1Limited__Quadfit.html" title="Compute limited quadfit of a field or components of a field. ">Limited_Quadfit</a> &amp;)=delete</dt>
+<dt><a class="anchor" id="_todo000023"></a>Member <a class="el" href="classPortage_1_1Limited__Quadfit.html#a5cc05e28537e1f8aac7aa3e5dfd6654a">Portage::Limited_Quadfit&lt; D, on_what, MeshType, StateType &gt;::operator=</a>  (const <a class="el" href="classPortage_1_1Limited__Quadfit.html" title="Compute limited quadfit of a field or components of a field. ">Limited_Quadfit</a> &amp;)=delete</dt>
 <dd>Seems to be needed when using this in a Thrust transform call?  </dd>
-<dt><a class="anchor" id="_todo000001"></a>Member <a class="el" href="classPortage_1_1MeshWrapperDual.html#a29f8fa2975d30af9fd2afa36c5999434">Portage::MeshWrapperDual&lt; Mesh_Wrapper_Type &gt;::cellToXY</a>  (int const dualcellID) const </dt>
-<dd>Remove this in favor of <code><a class="el" href="classPortage_1_1MeshWrapperDual.html#a8e8f3cf5f414dcf4144e3fbe63c5aef9" title="Gets the coordinates of the cell centroid in the dual mesh. ">cell_get_coordinates()</a></code> ?  </dd>
-<dt><a class="anchor" id="_todo000003"></a>Member <a class="el" href="classPortage_1_1MeshWrapperDual.html#ad29b159d6923f9b554b817dee66af345">Portage::MeshWrapperDual&lt; Mesh_Wrapper_Type &gt;::dual_cell_centroid</a>  (int const dualnodeID, Point&lt; D &gt; *centroid) const </dt>
-<dd>Clarify this wrt to <code><a class="el" href="classPortage_1_1MeshWrapperDual.html#a99017386b15e2371f8c901b61cc62eec" title="Get the coordinates of the centroid of a given dual mesh cell ID. ">MeshWrapperDual::cell_centroid()</a></code>.  </dd>
-<dt><a class="anchor" id="_todo000002"></a>Member <a class="el" href="classPortage_1_1MeshWrapperDual.html#a67f0b9259a45a736d5a41ca492858198">Portage::MeshWrapperDual&lt; Mesh_Wrapper_Type &gt;::dual_cell_get_node_adj_cells</a>  (int const dualnodeID, Entity_type const type, std::vector&lt; int &gt; *adjnodes) const </dt>
-<dd>Clarify this wrt to <code><a class="el" href="classPortage_1_1MeshWrapperDual.html#a5e06a438b0a9823a3efd9945b39bcd5a" title="Get the IDs of all cells that share a node with the specified cell  of the original mesh ...">MeshWrapperDual::cell_get_node_adj_cells()</a></code>  </dd>
-<dt><a class="anchor" id="_todo000033"></a>Member <a class="el" href="classwonton_1_1flecsi__mesh__t.html#ade91cc7a1492029f31d85d7ee01ae581">wonton::flecsi_mesh_t&lt; M &gt;::dual_cell_centroid</a>  (size_t node_id, point_t *centroid) const </dt>
+<dt><a class="anchor" id="_todo000029"></a>Member <a class="el" href="classWonton_1_1flecsi__mesh__t.html#ab008cc7dcb77194d9e6fd5f36758966f">Wonton::flecsi_mesh_t&lt; M &gt;::dual_cell_centroid</a>  (size_t node_id, point_t *centroid) const </dt>
 <dd>NOTE: THIS IS ASSUMED TO BE THE NODE COORDINATE BECAUSE THE NODAL VARIABLES LIVE THERE, BUT FOR DISTORTED GRIDS, THE NODE COORDINATED MAY NOT BE THE CENTROID OF THE DUAL CELL  </dd>
-<dt><a class="anchor" id="_todo000032"></a>Member <a class="el" href="classwonton_1_1flecsi__mesh__t.html#afabefef28ae6a756030eb9fd4ff6cab4">wonton::flecsi_mesh_t&lt; M &gt;::dual_cell_get_coordinates</a>  (size_t node_id, std::vector&lt; point_t &gt; *point_list) const </dt>
+<dt><a class="anchor" id="_todo000028"></a>Member <a class="el" href="classWonton_1_1flecsi__mesh__t.html#a20f0735eee5d766c9bc48e16acb70f9c">Wonton::flecsi_mesh_t&lt; M &gt;::dual_cell_get_coordinates</a>  (size_t node_id, std::vector&lt; point_t &gt; *point_list) const </dt>
 <dd>worry about boundary cases  </dd>
-<dt><a class="anchor" id="_todo000034"></a>Member <a class="el" href="classwonton_1_1flecsi__state__t.html#a1939ea20a5f42f2282fa44b879632871">wonton::flecsi_state_t&lt; M &gt;::get_entity</a>  (std::string var_name) const </dt>
+<dt><a class="anchor" id="_todo000030"></a>Member <a class="el" href="classWonton_1_1flecsi__state__t.html#a159eda7a6108ec057166c6b9535487ce">Wonton::flecsi_state_t&lt; M &gt;::get_entity</a>  (std::string var_name) const </dt>
 <dd><p class="startdd">THIS ASSUMES ONLY DOUBLE VECTORS - WE HAVE TO ACCOUNT FOR OTHER TYPES OR WE HAVE TO GENERALIZE THE FIND FUNCTION!!! </p>
-<p class="enddd">THIS ALSO DOES NOT CHECK FOR OTHER ENTITY TYPES LIKE EDGE, FACE, SIDE, WEDGE AND CORNER </p>
+<p class="enddd">THIS ALSO DOES NOT CHECK FOR OTHER ENTITY TYPES LIKE EDGE, FACE, SIDE, WEDGE AND CORNER  </p>
 </dd>
+<dt><a class="anchor" id="_todo000032"></a>Member <a class="el" href="classWonton_1_1Jali__State__Wrapper.html#afdee6d40d40febf55a347619464066fc">Wonton::Jali_State_Wrapper::get_data_size</a>  (const Entity_kind on_what, const std::string var_name) const </dt>
+<dd>THIS ASSUMES ONLY DOUBLE VECTORS - WE HAVE TO ACCOUNT FOR OTHER TYPES OR WE HAVE TO GENERALIZE THE FIND FUNCTION!!!  </dd>
+<dt><a class="anchor" id="_todo000031"></a>Member <a class="el" href="classWonton_1_1Jali__State__Wrapper.html#a4419de080c52242c927aab4758b75b2c">Wonton::Jali_State_Wrapper::get_entity</a>  (const std::string var_name) const </dt>
+<dd>THIS ASSUMES ONLY DOUBLE VECTORS - WE HAVE TO ACCOUNT FOR OTHER TYPES OR WE HAVE TO GENERALIZE THE FIND FUNCTION!!! </dd>
 </dl>
 </div></div><!-- contents -->
 <!--
@@ -196,7 +188,7 @@ Generated by &#160;<a href="http://www.doxygen.org/index.html">
 <footer id="footer" class="footer">
   <div class="container">
     <div class="row test-muted">
-      <div class="footer-row col-md-6">Copyright &copy; 2016
+      <div class="footer-row col-md-6">Copyright &copy; 2017
 	<a href="http://lanl.gov"> Los Alamos National Security, LLC</a>
 	All Rights Reserved.
       </div>

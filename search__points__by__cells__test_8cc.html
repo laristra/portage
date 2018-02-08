@@ -17,7 +17,7 @@ Please see the license file at the root of this repository, or at:
     <meta http-equiv="Content-Type" content="text/xhtml;charset=UTF-8"/>
     <meta name="generator" content="Doxygen 1.8.11"/>
     <script type="text/javascript" src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
-    <title>portage: /Users/l280837/code/portage-gh/src/search/search_points_by_cells_test.cc File Reference</title>
+    <title>portage: /home/portage/portage/src/search/search_points_by_cells_test.cc File Reference</title>
     <script type="text/javascript" src="dynsections.js"></script>
     <link href="search/search.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="search/searchdata.js"></script>
@@ -35,7 +35,7 @@ Please see the license file at the root of this repository, or at:
     <nav class="navbar navbar-default" role="navigation">
       <div class="container">
         <div class="navbar-header">
-          <a class="navbar-brand">portage 1.1.0</a>
+          <a class="navbar-brand">portage v1.2.0</a>
         </div>
       </div>
     </nav>
@@ -111,6 +111,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <code>#include &lt;memory&gt;</code><br />
 <code>#include &lt;vector&gt;</code><br />
 <code>#include &lt;cstdlib&gt;</code><br />
+<code>#include &lt;algorithm&gt;</code><br />
 <code>#include &quot;gtest/gtest.h&quot;</code><br />
 <code>#include &quot;portage/support/Point.h&quot;</code><br />
 <code>#include &quot;portage/swarm/swarm.h&quot;</code><br />
@@ -126,14 +127,38 @@ Functions</h2></td></tr>
 <tr class="separator:a0e897c7318de209d21150612497edf57"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a5799274655f5abbf8d934960f067c1fe"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="search__points__by__cells__test_8cc.html#a5799274655f5abbf8d934960f067c1fe">TEST</a> (search_by_cells, gather_3d)</td></tr>
 <tr class="separator:a5799274655f5abbf8d934960f067c1fe"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a162c92378a90d98d0f72916becec77b6"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="search__points__by__cells__test_8cc.html#a162c92378a90d98d0f72916becec77b6">TEST</a> (search_by_cells, scatter_2d_random)</td></tr>
-<tr class="separator:a162c92378a90d98d0f72916becec77b6"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a563de31c3064c40b47d3086fc4e3e7c5"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="search__points__by__cells__test_8cc.html#a563de31c3064c40b47d3086fc4e3e7c5">TEST</a> (search_by_cells, scatter_3d_random)</td></tr>
-<tr class="separator:a563de31c3064c40b47d3086fc4e3e7c5"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a8dd168e119954cfe9f806b5cc4553d5a"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="search__points__by__cells__test_8cc.html#a8dd168e119954cfe9f806b5cc4553d5a">TEST</a> (search_by_cells, gather_2d_random)</td></tr>
-<tr class="separator:a8dd168e119954cfe9f806b5cc4553d5a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a8fff3d05f37b0b784c0b35994848cf26"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="search__points__by__cells__test_8cc.html#a8fff3d05f37b0b784c0b35994848cf26">TEST</a> (search_by_cells, gather_3d_random)</td></tr>
-<tr class="separator:a8fff3d05f37b0b784c0b35994848cf26"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5d77d9f9467e0280e61ccb40ddc37154"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="search__points__by__cells__test_8cc.html#a5d77d9f9467e0280e61ccb40ddc37154">test_scatter_2d_random</a> (const size_t nsrc, const size_t ntgt)</td></tr>
+<tr class="separator:a5d77d9f9467e0280e61ccb40ddc37154"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afc3d18c2ade94df7abaa1095f127d3f7"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="search__points__by__cells__test_8cc.html#afc3d18c2ade94df7abaa1095f127d3f7">TEST</a> (search_by_cells, scatter_2d_random_case1)</td></tr>
+<tr class="separator:afc3d18c2ade94df7abaa1095f127d3f7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aeb85b0219dbc5ddbbf819889e7ad7f05"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="search__points__by__cells__test_8cc.html#aeb85b0219dbc5ddbbf819889e7ad7f05">TEST</a> (search_by_cells, scatter_2d_random_case2)</td></tr>
+<tr class="separator:aeb85b0219dbc5ddbbf819889e7ad7f05"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a151eea7869dec9894bfcf08ebf4c96f6"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="search__points__by__cells__test_8cc.html#a151eea7869dec9894bfcf08ebf4c96f6">TEST</a> (search_by_cells, scatter_2d_random_case3)</td></tr>
+<tr class="separator:a151eea7869dec9894bfcf08ebf4c96f6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a63a778faaf204e5d337de2256a18ad1d"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="search__points__by__cells__test_8cc.html#a63a778faaf204e5d337de2256a18ad1d">test_scatter_3d_random</a> (const size_t nsrc, const size_t ntgt)</td></tr>
+<tr class="separator:a63a778faaf204e5d337de2256a18ad1d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad5f6c306cebe5cc98753c2acf925d959"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="search__points__by__cells__test_8cc.html#ad5f6c306cebe5cc98753c2acf925d959">TEST</a> (search_by_cells, scatter_3d_random_case1)</td></tr>
+<tr class="separator:ad5f6c306cebe5cc98753c2acf925d959"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aae8d9994eddfc7a82e05bebef65a9ba3"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="search__points__by__cells__test_8cc.html#aae8d9994eddfc7a82e05bebef65a9ba3">TEST</a> (search_by_cells, scatter_3d_random_case2)</td></tr>
+<tr class="separator:aae8d9994eddfc7a82e05bebef65a9ba3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad335d9ea73cf0e2992d52c129e938ef8"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="search__points__by__cells__test_8cc.html#ad335d9ea73cf0e2992d52c129e938ef8">TEST</a> (search_by_cells, scatter_3d_random_case3)</td></tr>
+<tr class="separator:ad335d9ea73cf0e2992d52c129e938ef8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a57ba2ba4987f9715b3a37af3145e7fe6"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="search__points__by__cells__test_8cc.html#a57ba2ba4987f9715b3a37af3145e7fe6">test_gather_2d_random</a> (const size_t nsrc, const size_t ntgt)</td></tr>
+<tr class="separator:a57ba2ba4987f9715b3a37af3145e7fe6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a987173d37d74b1d4256c8bbe2c3176ea"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="search__points__by__cells__test_8cc.html#a987173d37d74b1d4256c8bbe2c3176ea">TEST</a> (search_by_cells, gather_2d_random_case1)</td></tr>
+<tr class="separator:a987173d37d74b1d4256c8bbe2c3176ea"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9ec559a474449847c608439b71562b64"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="search__points__by__cells__test_8cc.html#a9ec559a474449847c608439b71562b64">TEST</a> (search_by_cells, gather_2d_random_case2)</td></tr>
+<tr class="separator:a9ec559a474449847c608439b71562b64"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae70208b91f73a45d2be1f09b322da725"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="search__points__by__cells__test_8cc.html#ae70208b91f73a45d2be1f09b322da725">TEST</a> (search_by_cells, gather_2d_random_case3)</td></tr>
+<tr class="separator:ae70208b91f73a45d2be1f09b322da725"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad4bed024ad28e4996859f5c697b98fcc"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="search__points__by__cells__test_8cc.html#ad4bed024ad28e4996859f5c697b98fcc">test_gather_3d_random</a> (const size_t nsrc, const size_t ntgt)</td></tr>
+<tr class="separator:ad4bed024ad28e4996859f5c697b98fcc"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a36a02fd22c8f7f3cd62d903802351232"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="search__points__by__cells__test_8cc.html#a36a02fd22c8f7f3cd62d903802351232">TEST</a> (search_by_cells, gather_3d_random_case1)</td></tr>
+<tr class="separator:a36a02fd22c8f7f3cd62d903802351232"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a86aafa96b7500cee41eb40fd669d5999"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="search__points__by__cells__test_8cc.html#a86aafa96b7500cee41eb40fd669d5999">TEST</a> (search_by_cells, gather_3d_random_case2)</td></tr>
+<tr class="separator:a86aafa96b7500cee41eb40fd669d5999"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5e7628cb50153532c61e02d2614e28bf"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="search__points__by__cells__test_8cc.html#a5e7628cb50153532c61e02d2614e28bf">TEST</a> (search_by_cells, gather_3d_random_case3)</td></tr>
+<tr class="separator:a5e7628cb50153532c61e02d2614e28bf"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a082f8d6c2d0ae8adb1d06f405e6ee566"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="search__points__by__cells__test_8cc.html#a082f8d6c2d0ae8adb1d06f405e6ee566">TEST</a> (search_by_cells, scatter_2d_random_disjoint)</td></tr>
 <tr class="separator:a082f8d6c2d0ae8adb1d06f405e6ee566"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a19c6de496b90e1added213aa05dcdec9"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="search__points__by__cells__test_8cc.html#a19c6de496b90e1added213aa05dcdec9">TEST</a> (search_by_cells, scatter_2d_random_edge)</td></tr>
@@ -244,7 +269,7 @@ Functions</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="a162c92378a90d98d0f72916becec77b6"></a>
+<a class="anchor" id="afc3d18c2ade94df7abaa1095f127d3f7"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
@@ -257,7 +282,7 @@ Functions</h2></td></tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">scatter_2d_random&#160;</td>
+          <td class="paramtype">scatter_2d_random_case1&#160;</td>
           <td class="paramname">&#160;</td>
         </tr>
         <tr>
@@ -270,7 +295,7 @@ Functions</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="a563de31c3064c40b47d3086fc4e3e7c5"></a>
+<a class="anchor" id="aeb85b0219dbc5ddbbf819889e7ad7f05"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
@@ -283,7 +308,7 @@ Functions</h2></td></tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">scatter_3d_random&#160;</td>
+          <td class="paramtype">scatter_2d_random_case2&#160;</td>
           <td class="paramname">&#160;</td>
         </tr>
         <tr>
@@ -296,7 +321,7 @@ Functions</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="a8dd168e119954cfe9f806b5cc4553d5a"></a>
+<a class="anchor" id="a151eea7869dec9894bfcf08ebf4c96f6"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
@@ -309,7 +334,7 @@ Functions</h2></td></tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">gather_2d_random&#160;</td>
+          <td class="paramtype">scatter_2d_random_case3&#160;</td>
           <td class="paramname">&#160;</td>
         </tr>
         <tr>
@@ -322,7 +347,7 @@ Functions</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="a8fff3d05f37b0b784c0b35994848cf26"></a>
+<a class="anchor" id="ad5f6c306cebe5cc98753c2acf925d959"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
@@ -335,7 +360,215 @@ Functions</h2></td></tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">gather_3d_random&#160;</td>
+          <td class="paramtype">scatter_3d_random_case1&#160;</td>
+          <td class="paramname">&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a class="anchor" id="aae8d9994eddfc7a82e05bebef65a9ba3"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">TEST </td>
+          <td>(</td>
+          <td class="paramtype">search_by_cells&#160;</td>
+          <td class="paramname">, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">scatter_3d_random_case2&#160;</td>
+          <td class="paramname">&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a class="anchor" id="ad335d9ea73cf0e2992d52c129e938ef8"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">TEST </td>
+          <td>(</td>
+          <td class="paramtype">search_by_cells&#160;</td>
+          <td class="paramname">, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">scatter_3d_random_case3&#160;</td>
+          <td class="paramname">&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a class="anchor" id="a987173d37d74b1d4256c8bbe2c3176ea"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">TEST </td>
+          <td>(</td>
+          <td class="paramtype">search_by_cells&#160;</td>
+          <td class="paramname">, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">gather_2d_random_case1&#160;</td>
+          <td class="paramname">&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a class="anchor" id="a9ec559a474449847c608439b71562b64"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">TEST </td>
+          <td>(</td>
+          <td class="paramtype">search_by_cells&#160;</td>
+          <td class="paramname">, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">gather_2d_random_case2&#160;</td>
+          <td class="paramname">&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a class="anchor" id="ae70208b91f73a45d2be1f09b322da725"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">TEST </td>
+          <td>(</td>
+          <td class="paramtype">search_by_cells&#160;</td>
+          <td class="paramname">, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">gather_2d_random_case3&#160;</td>
+          <td class="paramname">&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a class="anchor" id="a36a02fd22c8f7f3cd62d903802351232"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">TEST </td>
+          <td>(</td>
+          <td class="paramtype">search_by_cells&#160;</td>
+          <td class="paramname">, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">gather_3d_random_case1&#160;</td>
+          <td class="paramname">&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a class="anchor" id="a86aafa96b7500cee41eb40fd669d5999"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">TEST </td>
+          <td>(</td>
+          <td class="paramtype">search_by_cells&#160;</td>
+          <td class="paramname">, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">gather_3d_random_case2&#160;</td>
+          <td class="paramname">&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a class="anchor" id="a5e7628cb50153532c61e02d2614e28bf"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">TEST </td>
+          <td>(</td>
+          <td class="paramtype">search_by_cells&#160;</td>
+          <td class="paramname">, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">gather_3d_random_case3&#160;</td>
           <td class="paramname">&#160;</td>
         </tr>
         <tr>
@@ -400,6 +633,110 @@ Functions</h2></td></tr>
 
 </div>
 </div>
+<a class="anchor" id="a57ba2ba4987f9715b3a37af3145e7fe6"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void test_gather_2d_random </td>
+          <td>(</td>
+          <td class="paramtype">const size_t&#160;</td>
+          <td class="paramname"><em>nsrc</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const size_t&#160;</td>
+          <td class="paramname"><em>ntgt</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a class="anchor" id="ad4bed024ad28e4996859f5c697b98fcc"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void test_gather_3d_random </td>
+          <td>(</td>
+          <td class="paramtype">const size_t&#160;</td>
+          <td class="paramname"><em>nsrc</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const size_t&#160;</td>
+          <td class="paramname"><em>ntgt</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a class="anchor" id="a5d77d9f9467e0280e61ccb40ddc37154"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void test_scatter_2d_random </td>
+          <td>(</td>
+          <td class="paramtype">const size_t&#160;</td>
+          <td class="paramname"><em>nsrc</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const size_t&#160;</td>
+          <td class="paramname"><em>ntgt</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a class="anchor" id="a63a778faaf204e5d337de2256a18ad1d"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void test_scatter_3d_random </td>
+          <td>(</td>
+          <td class="paramtype">const size_t&#160;</td>
+          <td class="paramname"><em>nsrc</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const size_t&#160;</td>
+          <td class="paramname"><em>ntgt</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
 </div><!-- contents -->
 <!--
 This file is part of the Ristra portage project.
@@ -421,7 +758,7 @@ Generated by &#160;<a href="http://www.doxygen.org/index.html">
 <footer id="footer" class="footer">
   <div class="container">
     <div class="row test-muted">
-      <div class="footer-row col-md-6">Copyright &copy; 2016
+      <div class="footer-row col-md-6">Copyright &copy; 2017
 	<a href="http://lanl.gov"> Los Alamos National Security, LLC</a>
 	All Rights Reserved.
       </div>

@@ -17,7 +17,7 @@ Please see the license file at the root of this repository, or at:
     <meta http-equiv="Content-Type" content="text/xhtml;charset=UTF-8"/>
     <meta name="generator" content="Doxygen 1.8.11"/>
     <script type="text/javascript" src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
-    <title>portage: /Users/l280837/code/portage-gh/src/intersect/r2d.h File Reference</title>
+    <title>portage: /home/portage/portage/src/intersect/r2d.h File Reference</title>
     <script type="text/javascript" src="dynsections.js"></script>
     <link href="search/search.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="search/searchdata.js"></script>
@@ -35,7 +35,7 @@ Please see the license file at the root of this repository, or at:
     <nav class="navbar navbar-default" role="navigation">
       <div class="container">
         <div class="navbar-header">
-          <a class="navbar-brand">portage 1.1.0</a>
+          <a class="navbar-brand">portage v1.2.0</a>
         </div>
       </div>
     </nav>
@@ -159,6 +159,9 @@ Functions</h2></td></tr>
 <tr class="memitem:a7bc340c465a2b0fb0ebdeed61a4b1d09"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="r2d_8h.html#a7bc340c465a2b0fb0ebdeed61a4b1d09">r2d_clip</a> (<a class="el" href="structr2d__poly.html">r2d_poly</a> *poly, <a class="el" href="structr2d__plane.html">r2d_plane</a> *planes, <a class="el" href="r2d_8h.html#a40c43d55f6372345f355d5f34eb919c5">r2d_int</a> nplanes)</td></tr>
 <tr class="memdesc:a7bc340c465a2b0fb0ebdeed61a4b1d09"><td class="mdescLeft">&#160;</td><td class="mdescRight">Clip a polygon against an arbitrary number of clip planes (find its intersection with a set of half-spaces).  <a href="#a7bc340c465a2b0fb0ebdeed61a4b1d09">More...</a><br /></td></tr>
 <tr class="separator:a7bc340c465a2b0fb0ebdeed61a4b1d09"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4e28f6b07d5799645b1590201dc20b69"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="r2d_8h.html#a4e28f6b07d5799645b1590201dc20b69">r2d_split</a> (<a class="el" href="structr2d__poly.html">r2d_poly</a> *inpolys, <a class="el" href="r2d_8h.html#a40c43d55f6372345f355d5f34eb919c5">r2d_int</a> npolys, <a class="el" href="structr2d__plane.html">r2d_plane</a> plane, <a class="el" href="structr2d__poly.html">r2d_poly</a> *out_pos, <a class="el" href="structr2d__poly.html">r2d_poly</a> *out_neg)</td></tr>
+<tr class="memdesc:a4e28f6b07d5799645b1590201dc20b69"><td class="mdescLeft">&#160;</td><td class="mdescRight">Splits a list of polygons across a single plane.  <a href="#a4e28f6b07d5799645b1590201dc20b69">More...</a><br /></td></tr>
+<tr class="separator:a4e28f6b07d5799645b1590201dc20b69"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0ca3136f66f864d6bb8dddb2d588c349"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="r2d_8h.html#a0ca3136f66f864d6bb8dddb2d588c349">r2d_reduce</a> (<a class="el" href="structr2d__poly.html">r2d_poly</a> *poly, <a class="el" href="r2d_8h.html#a7051e2a3074dcda55d4ffe56a31c910c">r2d_real</a> *moments, <a class="el" href="r2d_8h.html#a40c43d55f6372345f355d5f34eb919c5">r2d_int</a> polyorder)</td></tr>
 <tr class="separator:a0ca3136f66f864d6bb8dddb2d588c349"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a20175d3b3f9e15f36cae614012bae181"><td class="memItemLeft" align="right" valign="top"><a class="el" href="r2d_8h.html#a40c43d55f6372345f355d5f34eb919c5">r2d_int</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="r2d_8h.html#a20175d3b3f9e15f36cae614012bae181">r2d_is_good</a> (<a class="el" href="structr2d__poly.html">r2d_poly</a> *poly)</td></tr>
@@ -756,6 +759,62 @@ Functions</h2></td></tr>
 
 </div>
 </div>
+<a class="anchor" id="a4e28f6b07d5799645b1590201dc20b69"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void r2d_split </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="structr2d__poly.html">r2d_poly</a> *&#160;</td>
+          <td class="paramname"><em>inpolys</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="r2d_8h.html#a40c43d55f6372345f355d5f34eb919c5">r2d_int</a>&#160;</td>
+          <td class="paramname"><em>npolys</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="structr2d__plane.html">r2d_plane</a>&#160;</td>
+          <td class="paramname"><em>plane</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="structr2d__poly.html">r2d_poly</a> *&#160;</td>
+          <td class="paramname"><em>out_pos</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="structr2d__poly.html">r2d_poly</a> *&#160;</td>
+          <td class="paramname"><em>out_neg</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Splits a list of polygons across a single plane. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">inpolys</td><td>Array input polyhedra to be split</td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">npolys</td><td>The number of input polygons</td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">plane</td><td>The plane about which to split the input polys</td></tr>
+    <tr><td class="paramdir">[out]</td><td class="paramname">out_pos</td><td>The output array of fragments on the positive side of the clip plane. Must be at least npolys long. out_pos[i] and out_neg[i] correspond to inpolys[i], where out_neg[i].nverts or out.pos[i].nverts are set to zero if the poly lies entirely in the positive or negative side of the plane, respectively.</td></tr>
+    <tr><td class="paramdir">[out]</td><td class="paramname">out_neg</td><td>The output array of fragments on the negitive side of the clip plane. Must be at least npolys long. </td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
 <a class="anchor" id="ab89df0c91479c5d92297f249e967c816"></a>
 <div class="memitem">
 <div class="memproto">
@@ -812,7 +871,7 @@ Generated by &#160;<a href="http://www.doxygen.org/index.html">
 <footer id="footer" class="footer">
   <div class="container">
     <div class="row test-muted">
-      <div class="footer-row col-md-6">Copyright &copy; 2016
+      <div class="footer-row col-md-6">Copyright &copy; 2017
 	<a href="http://lanl.gov"> Los Alamos National Security, LLC</a>
 	All Rights Reserved.
       </div>

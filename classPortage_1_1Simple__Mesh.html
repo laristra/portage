@@ -35,7 +35,7 @@ Please see the license file at the root of this repository, or at:
     <nav class="navbar navbar-default" role="navigation">
       <div class="container">
         <div class="navbar-header">
-          <a class="navbar-brand">portage 1.1.0</a>
+          <a class="navbar-brand">portage v1.2.0</a>
         </div>
       </div>
     </nav>
@@ -111,7 +111,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div><!--header-->
 <div class="contents">
 
-<p>A very light-weight, serial, 3D Cartesian mesh.  
+<p>A very light-weight, serial, 2D/3D Cartesian mesh.  
  <a href="classPortage_1_1Simple__Mesh.html#details">More...</a></p>
 
 <p><code>#include &lt;<a class="el" href="simple__mesh_8h_source.html">simple_mesh.h</a>&gt;</code></p>
@@ -121,6 +121,9 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a31d0ceb7447eed35a2cbccc3c2c3e88e"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1Simple__Mesh.html#a31d0ceb7447eed35a2cbccc3c2c3e88e">Simple_Mesh</a> (double x0, double y0, double z0, double x1, double y1, double z1, int nx, int ny, int nz)</td></tr>
 <tr class="memdesc:a31d0ceb7447eed35a2cbccc3c2c3e88e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructor for creating a serial, 3D Cartesian mesh.  <a href="#a31d0ceb7447eed35a2cbccc3c2c3e88e">More...</a><br /></td></tr>
 <tr class="separator:a31d0ceb7447eed35a2cbccc3c2c3e88e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a38837292e37f813c0ba34c4e37a80f55"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1Simple__Mesh.html#a38837292e37f813c0ba34c4e37a80f55">Simple_Mesh</a> (double x0, double y0, double x1, double y1, int nx, int ny)</td></tr>
+<tr class="memdesc:a38837292e37f813c0ba34c4e37a80f55"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructor for creating a serial, 2D Cartesian mesh.  <a href="#a38837292e37f813c0ba34c4e37a80f55">More...</a><br /></td></tr>
+<tr class="separator:a38837292e37f813c0ba34c4e37a80f55"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0022193f5a977cb39794d5ddad077204"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classPortage_1_1Simple__Mesh.html">Simple_Mesh</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1Simple__Mesh.html#a0022193f5a977cb39794d5ddad077204">operator=</a> (const <a class="el" href="classPortage_1_1Simple__Mesh.html">Simple_Mesh</a> &amp;)=delete</td></tr>
 <tr class="memdesc:a0022193f5a977cb39794d5ddad077204"><td class="mdescLeft">&#160;</td><td class="mdescRight">Assignment operator (disabled).  <a href="#a0022193f5a977cb39794d5ddad077204">More...</a><br /></td></tr>
 <tr class="separator:a0022193f5a977cb39794d5ddad077204"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -149,15 +152,25 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a18a42420a6f41157dd457308f3c5a05c"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classPortage_1_1Simple__Mesh.html#a18a42420a6f41157dd457308f3c5a05c">node_get_coordinates</a> (const ID nodeid, <a class="el" href="classPortage_1_1Point.html">Point</a>&lt; D &gt; *pp) const </td></tr>
 <tr class="memdesc:a18a42420a6f41157dd457308f3c5a05c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the coordinates of a node.  <a href="#a18a42420a6f41157dd457308f3c5a05c">More...</a><br /></td></tr>
 <tr class="separator:a18a42420a6f41157dd457308f3c5a05c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a550c1733336bcfd60434a1f655225dd7"><td class="memTemplParams" colspan="2">template&lt;long D&gt; </td></tr>
+<tr class="memitem:a550c1733336bcfd60434a1f655225dd7"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classPortage_1_1Simple__Mesh.html#a550c1733336bcfd60434a1f655225dd7">cell_get_coordinates</a> (const ID cellid, std::vector&lt; <a class="el" href="classPortage_1_1Point.html">Point</a>&lt; D &gt;&gt; *ccoords) const </td></tr>
+<tr class="memdesc:a550c1733336bcfd60434a1f655225dd7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the coordinates of all nodes in a cell.  <a href="#a550c1733336bcfd60434a1f655225dd7">More...</a><br /></td></tr>
+<tr class="separator:a550c1733336bcfd60434a1f655225dd7"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a22d25da8f31ec049f6872577f64e5693"><td class="memTemplParams" colspan="2">template&lt;&gt; </td></tr>
 <tr class="memitem:a22d25da8f31ec049f6872577f64e5693"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classPortage_1_1Simple__Mesh.html#a22d25da8f31ec049f6872577f64e5693">node_get_coordinates</a> (const ID nodeid, <a class="el" href="classPortage_1_1Point.html">Point</a>&lt; 3 &gt; *pp) const </td></tr>
-<tr class="memdesc:a22d25da8f31ec049f6872577f64e5693"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the 3D coordinates of a specific node as <code><a class="el" href="classPortage_1_1Point.html" title="Represents a point in an N-dimensional space. ">Portage::Point</a></code> object.  <a href="#a22d25da8f31ec049f6872577f64e5693">More...</a><br /></td></tr>
+<tr class="memdesc:a22d25da8f31ec049f6872577f64e5693"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the 2D/3D coordinates of a specific node as <code><a class="el" href="classPortage_1_1Point.html" title="Represents a point in an N-dimensional space. ">Portage::Point</a></code> object.  <a href="#a22d25da8f31ec049f6872577f64e5693">More...</a><br /></td></tr>
 <tr class="separator:a22d25da8f31ec049f6872577f64e5693"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab0663c3b70ad2d1dbd03c5d800b3be1b"><td class="memTemplParams" colspan="2">template&lt;&gt; </td></tr>
+<tr class="memitem:ab0663c3b70ad2d1dbd03c5d800b3be1b"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classPortage_1_1Simple__Mesh.html#ab0663c3b70ad2d1dbd03c5d800b3be1b">node_get_coordinates</a> (const ID nodeid, <a class="el" href="classPortage_1_1Point.html">Point</a>&lt; 2 &gt; *pp) const </td></tr>
+<tr class="separator:ab0663c3b70ad2d1dbd03c5d800b3be1b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
-<div class="textblock"><p>A very light-weight, serial, 3D Cartesian mesh. </p>
-<p>A <a class="el" href="classPortage_1_1Simple__Mesh.html" title="A very light-weight, serial, 3D Cartesian mesh. ">Simple_Mesh</a> is a non-distributed (i.e. serial), 3D, regular Cartesian mesh. The user need only specify the domain extents and the number of cells per direction, and the mesh class will create all of the connectivity information.</p>
-<p><a class="el" href="classPortage_1_1Simple__Mesh.html" title="A very light-weight, serial, 3D Cartesian mesh. ">Simple_Mesh</a> only knows about cells, faces, and nodes. As the mesh is regular, each cell is a rectangular prism with 8 nodes and 6 faces. Likewise, each non-domain-boundary node is connected to 8 cells and each non-domain-boundary face is connected to two cells. Nodes and faces on the domain boundary have less connections as there are no ghost mesh entities in <a class="el" href="classPortage_1_1Simple__Mesh.html" title="A very light-weight, serial, 3D Cartesian mesh. ">Simple_Mesh</a>. </p>
+<div class="textblock"><p>A very light-weight, serial, 2D/3D Cartesian mesh. </p>
+<p>A <a class="el" href="classPortage_1_1Simple__Mesh.html" title="A very light-weight, serial, 2D/3D Cartesian mesh. ">Simple_Mesh</a> is a non-distributed (i.e. serial), 2D/3D, regular Cartesian mesh. The user need only specify the domain extents and the number of cells per direction, and the mesh class will create all of the connectivity information.</p>
+<p><a class="el" href="classPortage_1_1Simple__Mesh.html" title="A very light-weight, serial, 2D/3D Cartesian mesh. ">Simple_Mesh</a> only knows about cells, faces, and nodes.</p>
+<p>In a 3D mesh, each cell is a rectangular prism with 8 nodes and 6 faces. Likewise, each non-domain-boundary node is connected to 8 cells and each non-domain-boundary face is connected to two cells.</p>
+<p>In a 2D mesh, each cell is a quadrilateral with 4 nodes and 4 faces. Likewise, each non-domain-boundary node is connected to 4 cells and each non-domain-boundary face is connected to two cells.</p>
+<p>Nodes and faces on the domain boundary have less connections as there are no ghost mesh entities in <a class="el" href="classPortage_1_1Simple__Mesh.html" title="A very light-weight, serial, 2D/3D Cartesian mesh. ">Simple_Mesh</a>. </p>
 </div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
 <a class="anchor" id="a31d0ceb7447eed35a2cbccc3c2c3e88e"></a>
 <div class="memitem">
@@ -246,6 +259,75 @@ Public Member Functions</h2></td></tr>
 
 </div>
 </div>
+<a class="anchor" id="a38837292e37f813c0ba34c4e37a80f55"></a>
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">Portage::Simple_Mesh::Simple_Mesh </td>
+          <td>(</td>
+          <td class="paramtype">double&#160;</td>
+          <td class="paramname"><em>x0</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">double&#160;</td>
+          <td class="paramname"><em>y0</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">double&#160;</td>
+          <td class="paramname"><em>x1</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">double&#160;</td>
+          <td class="paramname"><em>y1</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>nx</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>ny</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Constructor for creating a serial, 2D Cartesian mesh. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">x0,y0</td><td>The minimum coordinates of the domain. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">x1,y1</td><td>The maximum coordinates of the domain. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">nx,ny</td><td>The number of <em>cells</em> in each direction.</td></tr>
+  </table>
+  </dd>
+</dl>
+<p>By specifying the spatial extents and number of cells in each direction, we create a Cartesian mesh in two dimensions. Connectivity information is automatically built from global IDs. This mesh class has <em>zero</em> ghost mesh entities. </p>
+
+</div>
+</div>
 <a class="anchor" id="a651df324d7fcf859d7d502373390d704"></a>
 <div class="memitem">
 <div class="memproto">
@@ -272,6 +354,57 @@ Public Member Functions</h2></td></tr>
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
+<a class="anchor" id="a550c1733336bcfd60434a1f655225dd7"></a>
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;long D&gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Portage::Simple_Mesh::cell_get_coordinates </td>
+          <td>(</td>
+          <td class="paramtype">const ID&#160;</td>
+          <td class="paramname"><em>cellid</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::vector&lt; <a class="el" href="classPortage_1_1Point.html">Point</a>&lt; D &gt;&gt; *&#160;</td>
+          <td class="paramname"><em>ccoords</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td> const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Get the coordinates of all nodes in a cell. </p>
+<dl class="tparams"><dt>Template Parameters</dt><dd>
+  <table class="tparams">
+    <tr><td class="paramname">D</td><td>Dimension of the cell. </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">cellid</td><td>The ID of the cell. </td></tr>
+    <tr><td class="paramdir">[out]</td><td class="paramname">ccords</td><td>The array of <code><a class="el" href="classPortage_1_1Point.html" title="Represents a point in an N-dimensional space. ">Point</a></code> object of dimension <code>D</code> containing the coordinates of nodes in cell . </td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
 <a class="anchor" id="ab71f845efa2ad2b11444d80eef9eab53"></a>
 <div class="memitem">
 <div class="memproto">
@@ -499,7 +632,7 @@ template&lt;long D&gt; </div>
   </table>
   </dd>
 </dl>
-<p>This is the general specification. <code><a class="el" href="classPortage_1_1Simple__Mesh.html" title="A very light-weight, serial, 3D Cartesian mesh. ">Simple_Mesh</a></code> is only 3D. </p>
+<p>This is the general specification. </p>
 
 </div>
 </div>
@@ -529,7 +662,7 @@ template&lt;&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p>Get the 3D coordinates of a specific node as <code><a class="el" href="classPortage_1_1Point.html" title="Represents a point in an N-dimensional space. ">Portage::Point</a></code> object. </p>
+<p>Get the 2D/3D coordinates of a specific node as <code><a class="el" href="classPortage_1_1Point.html" title="Represents a point in an N-dimensional space. ">Portage::Point</a></code> object. </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramdir">[in]</td><td class="paramname">nodeid</td><td>The ID of the node. </td></tr>
@@ -537,6 +670,34 @@ template&lt;&gt; </div>
   </table>
   </dd>
 </dl>
+
+</div>
+</div>
+<a class="anchor" id="ab0663c3b70ad2d1dbd03c5d800b3be1b"></a>
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;&gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">void Portage::Simple_Mesh::node_get_coordinates </td>
+          <td>(</td>
+          <td class="paramtype">const ID&#160;</td>
+          <td class="paramname"><em>nodeid</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="classPortage_1_1Point.html">Point</a>&lt; 2 &gt; *&#160;</td>
+          <td class="paramname"><em>pp</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td> const</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
 
 </div>
 </div>
@@ -636,7 +797,7 @@ template&lt;&gt; </div>
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li>/Users/l280837/code/portage-gh/src/simple_mesh/<a class="el" href="simple__mesh_8h_source.html">simple_mesh.h</a></li>
+<li>/home/portage/portage/src/simple_mesh/<a class="el" href="simple__mesh_8h_source.html">simple_mesh.h</a></li>
 </ul>
 </div><!-- contents -->
 <!--
@@ -659,7 +820,7 @@ Generated by &#160;<a href="http://www.doxygen.org/index.html">
 <footer id="footer" class="footer">
   <div class="container">
     <div class="row test-muted">
-      <div class="footer-row col-md-6">Copyright &copy; 2016
+      <div class="footer-row col-md-6">Copyright &copy; 2017
 	<a href="http://lanl.gov"> Los Alamos National Security, LLC</a>
 	All Rights Reserved.
       </div>

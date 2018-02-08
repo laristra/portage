@@ -35,7 +35,7 @@ Please see the license file at the root of this repository, or at:
     <nav class="navbar navbar-default" role="navigation">
       <div class="container">
         <div class="navbar-header">
-          <a class="navbar-brand">portage 1.1.0</a>
+          <a class="navbar-brand">portage v1.2.0</a>
         </div>
       </div>
     </nav>
@@ -106,34 +106,39 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
 Functions</h2></td></tr>
-<tr class="memitem:adee651ccf07224a8dc21c346244d830b"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceBOX__INTERSECT.html#adee651ccf07224a8dc21c346244d830b">bounding_box</a> (std::vector&lt; JaliGeometry::Point &gt; coords, JaliGeometry::Point *pmin, JaliGeometry::Point *pmax)</td></tr>
-<tr class="separator:adee651ccf07224a8dc21c346244d830b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad1d42836117f9cdb831512ae4e6ddcc9"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceBOX__INTERSECT.html#ad1d42836117f9cdb831512ae4e6ddcc9">intersect_boxes</a> (JaliGeometry::Point min1, JaliGeometry::Point max1, JaliGeometry::Point min2, JaliGeometry::Point max2, std::vector&lt; double &gt; *xsect_moments)</td></tr>
-<tr class="separator:ad1d42836117f9cdb831512ae4e6ddcc9"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a3ddaa4e9076a2d018b965839bc06920b"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceBOX__INTERSECT.html#a3ddaa4e9076a2d018b965839bc06920b">intersection_moments</a> (std::vector&lt; JaliGeometry::Point &gt; cell_xyz, std::vector&lt; std::vector&lt; JaliGeometry::Point &gt;&gt; candidate_cells_xyz, std::vector&lt; int &gt; *xcells, std::vector&lt; std::vector&lt; double &gt;&gt; *xwts)</td></tr>
-<tr class="separator:a3ddaa4e9076a2d018b965839bc06920b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5d001bf571f46cbcfd92e3ea25372996"><td class="memTemplParams" colspan="2">template&lt;int D&gt; </td></tr>
+<tr class="memitem:a5d001bf571f46cbcfd92e3ea25372996"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespaceBOX__INTERSECT.html#a5d001bf571f46cbcfd92e3ea25372996">bounding_box</a> (std::vector&lt; <a class="el" href="classPortage_1_1Point.html">Portage::Point</a>&lt; D &gt;&gt; coords, <a class="el" href="classPortage_1_1Point.html">Portage::Point</a>&lt; D &gt; *pmin, <a class="el" href="classPortage_1_1Point.html">Portage::Point</a>&lt; D &gt; *pmax)</td></tr>
+<tr class="separator:a5d001bf571f46cbcfd92e3ea25372996"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae03d93efa080d48db845f33bbe5f8424"><td class="memTemplParams" colspan="2">template&lt;int D&gt; </td></tr>
+<tr class="memitem:ae03d93efa080d48db845f33bbe5f8424"><td class="memTemplItemLeft" align="right" valign="top">bool&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespaceBOX__INTERSECT.html#ae03d93efa080d48db845f33bbe5f8424">intersect_boxes</a> (<a class="el" href="classPortage_1_1Point.html">Portage::Point</a>&lt; D &gt; min1, <a class="el" href="classPortage_1_1Point.html">Portage::Point</a>&lt; D &gt; max1, <a class="el" href="classPortage_1_1Point.html">Portage::Point</a>&lt; D &gt; min2, <a class="el" href="classPortage_1_1Point.html">Portage::Point</a>&lt; D &gt; max2, std::vector&lt; double &gt; *xsect_moments)</td></tr>
+<tr class="separator:ae03d93efa080d48db845f33bbe5f8424"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac1e6dcad56be96aa832a438b26ed97a0"><td class="memTemplParams" colspan="2">template&lt;int D&gt; </td></tr>
+<tr class="memitem:ac1e6dcad56be96aa832a438b26ed97a0"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespaceBOX__INTERSECT.html#ac1e6dcad56be96aa832a438b26ed97a0">intersection_moments</a> (std::vector&lt; <a class="el" href="classPortage_1_1Point.html">Portage::Point</a>&lt; D &gt;&gt; cell_xyz, std::vector&lt; std::vector&lt; <a class="el" href="classPortage_1_1Point.html">Portage::Point</a>&lt; D &gt;&gt;&gt; candidate_cells_xyz, std::vector&lt; int &gt; *xcells, std::vector&lt; std::vector&lt; double &gt;&gt; *xwts)</td></tr>
+<tr class="separator:ac1e6dcad56be96aa832a438b26ed97a0"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Function Documentation</h2>
-<a class="anchor" id="adee651ccf07224a8dc21c346244d830b"></a>
+<a class="anchor" id="a5d001bf571f46cbcfd92e3ea25372996"></a>
 <div class="memitem">
 <div class="memproto">
+<div class="memtemplate">
+template&lt;int D&gt; </div>
       <table class="memname">
         <tr>
           <td class="memname">void BOX_INTERSECT::bounding_box </td>
           <td>(</td>
-          <td class="paramtype">std::vector&lt; JaliGeometry::Point &gt;&#160;</td>
+          <td class="paramtype">std::vector&lt; <a class="el" href="classPortage_1_1Point.html">Portage::Point</a>&lt; D &gt;&gt;&#160;</td>
           <td class="paramname"><em>coords</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">JaliGeometry::Point *&#160;</td>
+          <td class="paramtype"><a class="el" href="classPortage_1_1Point.html">Portage::Point</a>&lt; D &gt; *&#160;</td>
           <td class="paramname"><em>pmin</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">JaliGeometry::Point *&#160;</td>
+          <td class="paramtype"><a class="el" href="classPortage_1_1Point.html">Portage::Point</a>&lt; D &gt; *&#160;</td>
           <td class="paramname"><em>pmax</em>&#160;</td>
         </tr>
         <tr>
@@ -146,32 +151,34 @@ Functions</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="ad1d42836117f9cdb831512ae4e6ddcc9"></a>
+<a class="anchor" id="ae03d93efa080d48db845f33bbe5f8424"></a>
 <div class="memitem">
 <div class="memproto">
+<div class="memtemplate">
+template&lt;int D&gt; </div>
       <table class="memname">
         <tr>
           <td class="memname">bool BOX_INTERSECT::intersect_boxes </td>
           <td>(</td>
-          <td class="paramtype">JaliGeometry::Point&#160;</td>
+          <td class="paramtype"><a class="el" href="classPortage_1_1Point.html">Portage::Point</a>&lt; D &gt;&#160;</td>
           <td class="paramname"><em>min1</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">JaliGeometry::Point&#160;</td>
+          <td class="paramtype"><a class="el" href="classPortage_1_1Point.html">Portage::Point</a>&lt; D &gt;&#160;</td>
           <td class="paramname"><em>max1</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">JaliGeometry::Point&#160;</td>
+          <td class="paramtype"><a class="el" href="classPortage_1_1Point.html">Portage::Point</a>&lt; D &gt;&#160;</td>
           <td class="paramname"><em>min2</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">JaliGeometry::Point&#160;</td>
+          <td class="paramtype"><a class="el" href="classPortage_1_1Point.html">Portage::Point</a>&lt; D &gt;&#160;</td>
           <td class="paramname"><em>max2</em>, </td>
         </tr>
         <tr>
@@ -190,20 +197,22 @@ Functions</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="a3ddaa4e9076a2d018b965839bc06920b"></a>
+<a class="anchor" id="ac1e6dcad56be96aa832a438b26ed97a0"></a>
 <div class="memitem">
 <div class="memproto">
+<div class="memtemplate">
+template&lt;int D&gt; </div>
       <table class="memname">
         <tr>
           <td class="memname">void BOX_INTERSECT::intersection_moments </td>
           <td>(</td>
-          <td class="paramtype">std::vector&lt; JaliGeometry::Point &gt;&#160;</td>
+          <td class="paramtype">std::vector&lt; <a class="el" href="classPortage_1_1Point.html">Portage::Point</a>&lt; D &gt;&gt;&#160;</td>
           <td class="paramname"><em>cell_xyz</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">std::vector&lt; std::vector&lt; JaliGeometry::Point &gt;&gt;&#160;</td>
+          <td class="paramtype">std::vector&lt; std::vector&lt; <a class="el" href="classPortage_1_1Point.html">Portage::Point</a>&lt; D &gt;&gt;&gt;&#160;</td>
           <td class="paramname"><em>candidate_cells_xyz</em>, </td>
         </tr>
         <tr>
@@ -249,7 +258,7 @@ Generated by &#160;<a href="http://www.doxygen.org/index.html">
 <footer id="footer" class="footer">
   <div class="container">
     <div class="row test-muted">
-      <div class="footer-row col-md-6">Copyright &copy; 2016
+      <div class="footer-row col-md-6">Copyright &copy; 2017
 	<a href="http://lanl.gov"> Los Alamos National Security, LLC</a>
 	All Rights Reserved.
       </div>

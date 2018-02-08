@@ -23,6 +23,7 @@ var searchData=
   ['r2d_5frvec2',['r2d_rvec2',['../unionr2d__rvec2.html',1,'']]],
   ['r2d_5fscale',['r2d_scale',['../r2d_8h.html#a9774aa58108852d7facef0aba7253071',1,'r2d.h']]],
   ['r2d_5fshear',['r2d_shear',['../r2d_8h.html#a20bdd9020920b1236340a787ad257a53',1,'r2d.h']]],
+  ['r2d_5fsplit',['r2d_split',['../r2d_8h.html#a4e28f6b07d5799645b1590201dc20b69',1,'r2d.h']]],
   ['r2d_5ftranslate',['r2d_translate',['../r2d_8h.html#ab89df0c91479c5d92297f249e967c816',1,'r2d.h']]],
   ['r2d_5fvertex',['r2d_vertex',['../structr2d__vertex.html',1,'']]],
   ['r3d_2eh',['r3d.h',['../r3d_8h.html',1,'']]],
@@ -49,6 +50,7 @@ var searchData=
   ['r3d_5frvec3',['r3d_rvec3',['../unionr3d__rvec3.html',1,'']]],
   ['r3d_5fscale',['r3d_scale',['../r3d_8h.html#a7fc411106f288b10540668f93a42021c',1,'r3d.h']]],
   ['r3d_5fshear',['r3d_shear',['../r3d_8h.html#a6b15c7bdebf8eae4c525ae96280ac90a',1,'r3d.h']]],
+  ['r3d_5fsplit',['r3d_split',['../r3d_8h.html#aad337c9fbabbd571b25490c27f3709d9',1,'r3d.h']]],
   ['r3d_5ftet_5ffaces_5ffrom_5fverts',['r3d_tet_faces_from_verts',['../r3d_8h.html#ad49a73eecd6bd3b443aabba51305cd0a',1,'r3d.h']]],
   ['r3d_5ftranslate',['r3d_translate',['../r3d_8h.html#aa3faa920d359201ed6a26adaf7278ede',1,'r3d.h']]],
   ['r3d_5fvertex',['r3d_vertex',['../structr3d__vertex.html',1,'']]],
@@ -56,10 +58,10 @@ var searchData=
   ['readfromstream',['readFromStream',['../classPortage_1_1Point.html#ad08ebc7f6debdf15b79a752b878e96f3',1,'Portage::Point::readFromStream()'],['../classPortage_1_1Vector.html#ac82341c0f84bf2ab7aac1b59f009c92e',1,'Portage::Vector::readFromStream()']]],
   ['real_5fmax',['REAL_MAX',['../namespacegk.html#add231d5aa82efa1a53be36121531f2be',1,'gk']]],
   ['real_5fmin',['REAL_MIN',['../namespacegk.html#a5b137a8c4da5a49fbac19e2da3f75c88',1,'gk']]],
-  ['real_5ft',['real_t',['../classwonton_1_1flecsi__mesh__t.html#a0557b27700c146211693ceb1d3cd9cc0',1,'wonton::flecsi_mesh_t::real_t()'],['../classflecsi__2d.html#ab3f1d0e461d84065f8fc4dd0f57d486a',1,'flecsi_2d::real_t()'],['../classflecsi__3d.html#aee69c5dc8af576fbd0f45edbc6fbc407',1,'flecsi_3d::real_t()'],['../test__flecsi__mesh__wrapper_8cc.html#ab5831bd05f941d724f47ec2c3fb30e86',1,'real_t():&#160;test_flecsi_mesh_wrapper.cc']]],
+  ['real_5ft',['real_t',['../classWonton_1_1flecsi__mesh__t.html#af9fc0f7e833a54b10b990a0709e90409',1,'Wonton::flecsi_mesh_t::real_t()'],['../classflecsi__2d.html#ab3f1d0e461d84065f8fc4dd0f57d486a',1,'flecsi_2d::real_t()'],['../classflecsi__3d.html#aee69c5dc8af576fbd0f45edbc6fbc407',1,'flecsi_3d::real_t()'],['../test__flecsi__mesh__wrapper_8cc.html#ab5831bd05f941d724f47ec2c3fb30e86',1,'real_t():&#160;test_flecsi_mesh_wrapper.cc']]],
   ['recvcounts',['recvCounts',['../structPortage_1_1MPI__Bounding__Boxes_1_1comm__info__t.html#a2705f1800ddf219255bdecf6d1c17c08',1,'Portage::MPI_Bounding_Boxes::comm_info_t']]],
   ['recvownedcounts',['recvOwnedCounts',['../structPortage_1_1MPI__Bounding__Boxes_1_1comm__info__t.html#a005508366fd5923e757cb2102233ce9c',1,'Portage::MPI_Bounding_Boxes::comm_info_t']]],
+  ['remap',['remap',['../classPortage_1_1Driver.html#a11041b8c64eae5020a2c17d9cd62b6ac',1,'Portage::Driver::remap()'],['../classPortage_1_1MMDriver.html#ad14a0932b4ce05a19f22ead43c78446f',1,'Portage::MMDriver::remap()']]],
   ['reorder',['reorder',['../namespacePortage.html#af64c008a3c3320543a90af23b46e81ff',1,'Portage']]],
-  ['rows',['rows',['../classPortage_1_1Matrix.html#a00a45d5e27ca6253797f3c036728d793',1,'Portage::Matrix']]],
-  ['run',['run',['../classPortage_1_1Driver.html#a1fae2bf74a9f07e07606fb9533ab2672',1,'Portage::Driver::run()'],['../classPortage_1_1MSM__Driver.html#a8a3f84d0237368d922866cc9e5f00ff9',1,'Portage::MSM_Driver::run()'],['../classPortage_1_1Meshfree_1_1SwarmDriver.html#a7e20967c6399421ba641a4b5e05dab38',1,'Portage::Meshfree::SwarmDriver::run()']]]
+  ['run',['run',['../classPortage_1_1Driver.html#a6d37d6884912bf05405f0b7058f7102b',1,'Portage::Driver::run()'],['../classPortage_1_1MSM__Driver.html#a8a3f84d0237368d922866cc9e5f00ff9',1,'Portage::MSM_Driver::run()'],['../classPortage_1_1Meshfree_1_1SwarmDriver.html#a7e20967c6399421ba641a4b5e05dab38',1,'Portage::Meshfree::SwarmDriver::run()'],['../classPortage_1_1MMDriver.html#a8be5a9daf2e79235231a95330ca98916',1,'Portage::MMDriver::run()']]]
 ];

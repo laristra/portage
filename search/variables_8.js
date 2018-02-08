@@ -1,7 +1,6 @@
 var searchData=
 [
   ['n',['n',['../structr2d__plane.html#aab3829f60a24bbfe6af8ba1d237e7935',1,'r2d_plane::n()'],['../structr3d__plane.html#a6447f761d2c41d040a0fbdaa8e2885b1',1,'r3d_plane::n()']]],
-  ['nbits_5fulong',['nbits_ulong',['../namespacePortage_1_1Meshfree_1_1Pairs.html#aa4c6958004f1da2c3dd20b6474670c66',1,'Portage::Meshfree::Pairs']]],
   ['newnum',['newNum',['../structPortage_1_1MPI__Bounding__Boxes_1_1comm__info__t.html#a922785181b5663fcd279eb44ae6203fe',1,'Portage::MPI_Bounding_Boxes::comm_info_t']]],
   ['newnumowned',['newNumOwned',['../structPortage_1_1MPI__Bounding__Boxes_1_1comm__info__t.html#a8025e054ce6d2c00185bd26806b03bfa',1,'Portage::MPI_Bounding_Boxes::comm_info_t']]],
   ['normal',['normal',['../structPortage_1_1Meshfree_1_1Weight_1_1FacetData.html#ae85770648d4e9d7bf5f6aafc67e668a8',1,'Portage::Meshfree::Weight::FacetData']]],

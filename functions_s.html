@@ -35,7 +35,7 @@ Please see the license file at the root of this repository, or at:
     <nav class="navbar navbar-default" role="navigation">
       <div class="container">
         <div class="navbar-header">
-          <a class="navbar-brand">portage 1.1.0</a>
+          <a class="navbar-brand">portage v1.2.0</a>
         </div>
       </div>
     </nav>
@@ -142,17 +142,13 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <li>sbox
 : <a class="el" href="structgk_1_1KDTree.html#a2b1fe16af94aa918af8066b3296d354f">gk::KDTree&lt; D &gt;</a>
 </li>
-<li>search_
-: <a class="el" href="structPortage_1_1SearchFunctor.html#ab35cbc66f89daab7c064c796dbc37ec1">Portage::SearchFunctor&lt; SearchType &gt;</a>
-</li>
-<li>SearchFunctor()
-: <a class="el" href="structPortage_1_1SearchFunctor.html#a5df7b1327cbf6aa76c49b9040de214ac">Portage::SearchFunctor&lt; SearchType &gt;</a>
-</li>
 <li>SearchKDTree()
-: <a class="el" href="classPortage_1_1SearchKDTree.html#a366e83fc0be48d1a1d0c487733b2aebc">Portage::SearchKDTree&lt; D, SourceMeshType, TargetMeshType &gt;</a>
+: <a class="el" href="classPortage_1_1SearchKDTree.html#abac55b84ce78f61a9cca265e83d35083">Portage::SearchKDTree&lt; D, on_what, SourceMeshType, TargetMeshType &gt;</a>
+, <a class="el" href="classPortage_1_1SearchKDTree_3_01D_00_01CELL_00_01SourceMeshType_00_01TargetMeshType_01_4.html#a7049185596c3d759627f22dbc37ba168">Portage::SearchKDTree&lt; D, CELL, SourceMeshType, TargetMeshType &gt;</a>
+, <a class="el" href="classPortage_1_1SearchKDTree_3_01D_00_01NODE_00_01SourceMeshType_00_01TargetMeshType_01_4.html#a4fa3bd772f8f817df76a8eb76483708b">Portage::SearchKDTree&lt; D, NODE, SourceMeshType, TargetMeshType &gt;</a>
 </li>
 <li>SearchPointsByCells()
-: <a class="el" href="classPortage_1_1SearchPointsByCells.html#ad0dc4ba1ea057ca7a5e5391bec8c1776">Portage::SearchPointsByCells&lt; D, SourceSwarmType, TargetSwarmType &gt;</a>
+: <a class="el" href="classPortage_1_1SearchPointsByCells.html#a5d7a1d18d7b92e6b429d80851ebb3746">Portage::SearchPointsByCells&lt; D, SourceSwarmType, TargetSwarmType &gt;</a>
 </li>
 <li>SearchSimple()
 : <a class="el" href="classPortage_1_1SearchSimple.html#aee815ac5f41575525db5428e7b9093c4">Portage::SearchSimple&lt; SourceMeshType, TargetMeshType &gt;</a>
@@ -169,91 +165,123 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <li>set()
 : <a class="el" href="structVec2d.html#a0bf2e8583cbc7e14ad10dcd96da8a8c8">Vec2d</a>
 </li>
+<li>set_cell_face_counts()
+: <a class="el" href="classWonton_1_1Flat__Mesh__Wrapper.html#ab589f64bb695f02ba17bad874b06ff53">Wonton::Flat_Mesh_Wrapper&lt; T &gt;</a>
+</li>
+<li>set_cell_indices_to_operate_on()
+: <a class="el" href="classPortage_1_1DummyInterfaceReconstructor.html#af6432478ba6f6d596bdac807835eebae">Portage::DummyInterfaceReconstructor&lt; Mesh_Wrapper, Dim &gt;</a>
+</li>
+<li>set_cell_node_counts()
+: <a class="el" href="classWonton_1_1Flat__Mesh__Wrapper.html#a87143be07ab80ac0496b228b40d57bfd">Wonton::Flat_Mesh_Wrapper&lt; T &gt;</a>
+</li>
+<li>set_cell_to_face_dirs()
+: <a class="el" href="classWonton_1_1Flat__Mesh__Wrapper.html#a3eb8e0f2e35d4345fd3d694440629df6">Wonton::Flat_Mesh_Wrapper&lt; T &gt;</a>
+</li>
+<li>set_cell_to_face_list()
+: <a class="el" href="classWonton_1_1Flat__Mesh__Wrapper.html#a34931c6a1c1140ee6934ee710faff26d">Wonton::Flat_Mesh_Wrapper&lt; T &gt;</a>
+</li>
+<li>set_cell_to_node_list()
+: <a class="el" href="classWonton_1_1Flat__Mesh__Wrapper.html#ae191bdf0e6eaadd59459caaa7e08fe17">Wonton::Flat_Mesh_Wrapper&lt; T &gt;</a>
+</li>
+<li>set_face_node_counts()
+: <a class="el" href="classWonton_1_1Flat__Mesh__Wrapper.html#aebf82b9d1180b5d936751fe2a03f6c09">Wonton::Flat_Mesh_Wrapper&lt; T &gt;</a>
+</li>
+<li>set_face_to_node_list()
+: <a class="el" href="classWonton_1_1Flat__Mesh__Wrapper.html#a4353c8ff62a6e10066fe1d369a13ba69">Wonton::Flat_Mesh_Wrapper&lt; T &gt;</a>
+</li>
 <li>set_interpolation_variable()
-: <a class="el" href="classPortage_1_1Interpolate__1stOrder.html#afcafaeeb6c4e3c3b6ba7545b1560cffe">Portage::Interpolate_1stOrder&lt; SourceMeshType, TargetMeshType, StateType, on_what, D &gt;</a>
-, <a class="el" href="classPortage_1_1Interpolate__1stOrder_3_01SourceMeshType_00_01TargetMeshType_00_01StateType_00_01CELL_00_01D_01_4.html#ab1433d00c5c605bcb14a7b7f9604b7e4">Portage::Interpolate_1stOrder&lt; SourceMeshType, TargetMeshType, StateType, CELL, D &gt;</a>
-, <a class="el" href="classPortage_1_1Interpolate__1stOrder_3_01SourceMeshType_00_01TargetMeshType_00_01StateType_00_01NODE_00_01D_01_4.html#adeb2c8b9f047aa1a188d88734105e207">Portage::Interpolate_1stOrder&lt; SourceMeshType, TargetMeshType, StateType, NODE, D &gt;</a>
-, <a class="el" href="classPortage_1_1Interpolate__2ndOrder.html#a6f6f4b86a34cd9abdca8eb02641a9a9f">Portage::Interpolate_2ndOrder&lt; SourceMeshType, TargetMeshType, StateType, on_what, D &gt;</a>
-, <a class="el" href="classPortage_1_1Interpolate__2ndOrder_3_01SourceMeshType_00_01TargetMeshType_00_01StateType_00_01CELL_00_01D_01_4.html#a9da4fb2bf25d415ab610cf383c8f9fcd">Portage::Interpolate_2ndOrder&lt; SourceMeshType, TargetMeshType, StateType, CELL, D &gt;</a>
-, <a class="el" href="classPortage_1_1Interpolate__2ndOrder_3_01SourceMeshType_00_01TargetMeshType_00_01StateType_00_01NODE_00_01D_01_4.html#a242e48f41e9edd81ec45dda9649e562b">Portage::Interpolate_2ndOrder&lt; SourceMeshType, TargetMeshType, StateType, NODE, D &gt;</a>
-, <a class="el" href="classPortage_1_1Interpolate__3rdOrder.html#a98cb4242a575ed95b7b3c9adf5f810b0">Portage::Interpolate_3rdOrder&lt; SourceMeshType, TargetMeshType, StateType, on_what, D &gt;</a>
-, <a class="el" href="classPortage_1_1Interpolate__3rdOrder_3_01SourceMeshType_00_01TargetMeshType_00_01StateType_00_01CELL_00_01D_01_4.html#a52a3bc46a7ab961935c677da0274cfa0">Portage::Interpolate_3rdOrder&lt; SourceMeshType, TargetMeshType, StateType, CELL, D &gt;</a>
-, <a class="el" href="classPortage_1_1Interpolate__3rdOrder_3_01SourceMeshType_00_01TargetMeshType_00_01StateType_00_01NODE_00_01D_01_4.html#ae3dc9fb51a7373cdeb2b7c594c28060c">Portage::Interpolate_3rdOrder&lt; SourceMeshType, TargetMeshType, StateType, NODE, D &gt;</a>
+: <a class="el" href="classPortage_1_1Interpolate__1stOrder.html#a2a337810d995363418b8476adc4a8a89">Portage::Interpolate_1stOrder&lt; D, on_what, SourceMeshType, TargetMeshType, StateType &gt;</a>
+, <a class="el" href="classPortage_1_1Interpolate__1stOrder_3_01D_00_01CELL_00_01SourceMeshType_00_01TargetMeshType_00_01StateType_01_4.html#ae44edf92926bf9b2c36523e9f9cde6fd">Portage::Interpolate_1stOrder&lt; D, CELL, SourceMeshType, TargetMeshType, StateType &gt;</a>
+, <a class="el" href="classPortage_1_1Interpolate__1stOrder_3_01D_00_01NODE_00_01SourceMeshType_00_01TargetMeshType_00_01StateType_01_4.html#a225cbdefc0b8eb848c22b40443c31b08">Portage::Interpolate_1stOrder&lt; D, NODE, SourceMeshType, TargetMeshType, StateType &gt;</a>
+, <a class="el" href="classPortage_1_1Interpolate__2ndOrder.html#a7489c97c39a450b6359739290a8ad40b">Portage::Interpolate_2ndOrder&lt; D, on_what, SourceMeshType, TargetMeshType, StateType &gt;</a>
+, <a class="el" href="classPortage_1_1Interpolate__2ndOrder_3_01D_00_01CELL_00_01SourceMeshType_00_01TargetMeshType_00_01StateType_01_4.html#a0384e36d25216c9fbaf7c11b48f0641f">Portage::Interpolate_2ndOrder&lt; D, CELL, SourceMeshType, TargetMeshType, StateType &gt;</a>
+, <a class="el" href="classPortage_1_1Interpolate__2ndOrder_3_01D_00_01NODE_00_01SourceMeshType_00_01TargetMeshType_00_01StateType_01_4.html#abc88d4040a45c0dc9f394d2b57d51514">Portage::Interpolate_2ndOrder&lt; D, NODE, SourceMeshType, TargetMeshType, StateType &gt;</a>
+, <a class="el" href="classPortage_1_1Interpolate__3rdOrder.html#a314bbf4ec8cf79211fd57f6253b7bd92">Portage::Interpolate_3rdOrder&lt; D, on_what, SourceMeshType, TargetMeshType, StateType &gt;</a>
+, <a class="el" href="classPortage_1_1Interpolate__3rdOrder_3_01D_00_01CELL_00_01SourceMeshType_00_01TargetMeshType_00_01StateType_01_4.html#ad6000620cf936246cfe82c431c5e134e">Portage::Interpolate_3rdOrder&lt; D, CELL, SourceMeshType, TargetMeshType, StateType &gt;</a>
+, <a class="el" href="classPortage_1_1Interpolate__3rdOrder_3_01D_00_01NODE_00_01SourceMeshType_00_01TargetMeshType_00_01StateType_01_4.html#ac7d798c008956a634ef94b0cb0a7e72b">Portage::Interpolate_3rdOrder&lt; D, NODE, SourceMeshType, TargetMeshType, StateType &gt;</a>
+</li>
+<li>set_node_global_ids()
+: <a class="el" href="classWonton_1_1Flat__Mesh__Wrapper.html#af54205fbc7b601c703147e0876b4d694">Wonton::Flat_Mesh_Wrapper&lt; T &gt;</a>
 </li>
 <li>set_num_owned_cells()
-: <a class="el" href="classPortage_1_1Flat__Mesh__Wrapper.html#aed88a8dc060601ea3ee89ea52e8f8ef1">Portage::Flat_Mesh_Wrapper&lt; T &gt;</a>
+: <a class="el" href="classWonton_1_1Flat__Mesh__Wrapper.html#afcef0405d76e9417954a60a068b2b1f4">Wonton::Flat_Mesh_Wrapper&lt; T &gt;</a>
+</li>
+<li>set_num_owned_faces()
+: <a class="el" href="classWonton_1_1Flat__Mesh__Wrapper.html#a49713289c31203885359a9e4c4aeccf1">Wonton::Flat_Mesh_Wrapper&lt; T &gt;</a>
 </li>
 <li>set_num_owned_nodes()
-: <a class="el" href="classPortage_1_1Flat__Mesh__Wrapper.html#a1843959cd0326bc64a5d5ba0651e708e">Portage::Flat_Mesh_Wrapper&lt; T &gt;</a>
+: <a class="el" href="classWonton_1_1Flat__Mesh__Wrapper.html#a852ff071e820d9f47cb7e6a7f4a414c3">Wonton::Flat_Mesh_Wrapper&lt; T &gt;</a>
 </li>
 <li>set_remap_var_names()
-: <a class="el" href="classPortage_1_1Driver.html#a62c4ee8511fb8db0ec229aa4d054e971">Portage::Driver&lt; Search, Intersect, Interpolate, Dim, SourceMesh_Wrapper, SourceState_Wrapper, TargetMesh_Wrapper, TargetState_Wrapper &gt;</a>
+: <a class="el" href="classPortage_1_1Driver.html#a715ed7143bf24272209dc6d039d42cc5">Portage::Driver&lt; Search, Intersect, Interpolate, D, SourceMesh_Wrapper, SourceState_Wrapper, TargetMesh_Wrapper, TargetState_Wrapper &gt;</a>
 , <a class="el" href="classPortage_1_1Meshfree_1_1SwarmDriver.html#a70b6a5aeb35f17a0523530c2edf4522d">Portage::Meshfree::SwarmDriver&lt; Search, Accumulate, Estimate, Dim, SourceSwarm, SourceState, TargetSwarm, TargetState &gt;</a>
-, <a class="el" href="classPortage_1_1MSM__Driver.html#a5d21fa1b24b08286ab20ca5dc014ba05">Portage::MSM_Driver&lt; Search, Accumulate, Estimate, Dim, SourceMesh_Wrapper, SourceState_Wrapper, TargetMesh_Wrapper, TargetState_Wrapper &gt;</a>
+, <a class="el" href="classPortage_1_1MMDriver.html#aca0423ba759a045fb8fd8ed7302ccc72">Portage::MMDriver&lt; Search, Intersect, Interpolate, D, SourceMesh_Wrapper, SourceState_Wrapper, TargetMesh_Wrapper, TargetState_Wrapper, InterfaceReconstructor &gt;</a>
+, <a class="el" href="classPortage_1_1MSM__Driver.html#ad1d2c3ea9c654efcf3b10ed217f5a6f3">Portage::MSM_Driver&lt; Search, Accumulate, Estimate, Dim, SourceMesh_Wrapper, SourceState_Wrapper, TargetMesh_Wrapper, TargetState_Wrapper &gt;</a>
+</li>
+<li>set_volume_fractions()
+: <a class="el" href="classPortage_1_1DummyInterfaceReconstructor.html#ac45d34a10d20123e93c13e18db98b69f">Portage::DummyInterfaceReconstructor&lt; Mesh_Wrapper, Dim &gt;</a>
 </li>
 <li>SetUp()
 : <a class="el" href="classflecsi__2d.html#a90e643b1fd0a84713227d75fa5a7a2e9">flecsi_2d</a>
 , <a class="el" href="classflecsi__3d.html#a63c3a2e4e7f7fa898b73b485200908e4">flecsi_3d</a>
 </li>
 <li>shape_map_t
-: <a class="el" href="classwonton_1_1flecsi__mesh__t.html#a241dfd5e649cda4906eae1d99b5f4881">wonton::flecsi_mesh_t&lt; M &gt;</a>
+: <a class="el" href="classWonton_1_1flecsi__mesh__t.html#ae416834b5145afc711caeb2abbf7d1f7">Wonton::flecsi_mesh_t&lt; M &gt;</a>
 </li>
 <li>shape_t
-: <a class="el" href="classwonton_1_1flecsi__mesh__t.html#a70a2016327dd252551b0445801f969f7">wonton::flecsi_mesh_t&lt; M &gt;</a>
+: <a class="el" href="classWonton_1_1flecsi__mesh__t.html#a0521bec89947bdcbd2a6af99a78e4f7d">Wonton::flecsi_mesh_t&lt; M &gt;</a>
 </li>
 <li>shapes_to_portage
-: <a class="el" href="classwonton_1_1flecsi__mesh__t.html#a15d7e84030221a97d47aa25c922ce699">wonton::flecsi_mesh_t&lt; M &gt;</a>
+: <a class="el" href="classWonton_1_1flecsi__mesh__t.html#a2362573f9584e2a6b49976a1ae9611fa">Wonton::flecsi_mesh_t&lt; M &gt;</a>
 </li>
 <li>side_get_cell()
-: <a class="el" href="classPortage_1_1AuxMeshTopology.html#af1f5bca2e914e77ed0855b31a2ead164">Portage::AuxMeshTopology&lt; BasicMesh &gt;</a>
+: <a class="el" href="classWonton_1_1AuxMeshTopology.html#a869b07cea20413c600beb7c047a5d381">Wonton::AuxMeshTopology&lt; BasicMesh &gt;</a>
 </li>
 <li>side_get_coordinates()
-: <a class="el" href="classPortage_1_1AuxMeshTopology.html#a99f30c7d9ebaecdc55d73ca191093641">Portage::AuxMeshTopology&lt; BasicMesh &gt;</a>
+: <a class="el" href="classWonton_1_1AuxMeshTopology.html#abefb697a8c0270b81add8e3df28142e4">Wonton::AuxMeshTopology&lt; BasicMesh &gt;</a>
 </li>
 <li>side_get_face()
-: <a class="el" href="classPortage_1_1AuxMeshTopology.html#ad27b0b53dec4105ad4eb5a333e298349">Portage::AuxMeshTopology&lt; BasicMesh &gt;</a>
+: <a class="el" href="classWonton_1_1AuxMeshTopology.html#a0f0f0c68233aa54ca1bcf6566121fe1d">Wonton::AuxMeshTopology&lt; BasicMesh &gt;</a>
 </li>
 <li>side_get_node()
-: <a class="el" href="classPortage_1_1AuxMeshTopology.html#ae2f47c3477cdae0b4ab1122d0e36c2e0">Portage::AuxMeshTopology&lt; BasicMesh &gt;</a>
+: <a class="el" href="classWonton_1_1AuxMeshTopology.html#ac60d296787eb741fb77dfaf28573f250">Wonton::AuxMeshTopology&lt; BasicMesh &gt;</a>
 </li>
 <li>side_get_opposite_side()
-: <a class="el" href="classPortage_1_1AuxMeshTopology.html#a874888cd2685266bd2c0a06b315b2d8e">Portage::AuxMeshTopology&lt; BasicMesh &gt;</a>
+: <a class="el" href="classWonton_1_1AuxMeshTopology.html#aecb504b6405b96547a4ec9f2771fe340">Wonton::AuxMeshTopology&lt; BasicMesh &gt;</a>
 </li>
 <li>side_get_wedge()
-: <a class="el" href="classPortage_1_1AuxMeshTopology.html#a7c0b77165a9f734eb6ee258e8837dd07">Portage::AuxMeshTopology&lt; BasicMesh &gt;</a>
+: <a class="el" href="classWonton_1_1AuxMeshTopology.html#a317b865006ad3a545ca5705b7395848d">Wonton::AuxMeshTopology&lt; BasicMesh &gt;</a>
 </li>
 <li>side_volume()
-: <a class="el" href="classPortage_1_1AuxMeshTopology.html#a1be9d032ebed72415e602371981999cd">Portage::AuxMeshTopology&lt; BasicMesh &gt;</a>
+: <a class="el" href="classWonton_1_1AuxMeshTopology.html#a0f11b3d263b43cfc5b6b398dded63e3e">Wonton::AuxMeshTopology&lt; BasicMesh &gt;</a>
 </li>
 <li>sides_get_coordinates()
-: <a class="el" href="classPortage_1_1AuxMeshTopology.html#a1ae14f060ebdc46669277e7b415dcfec">Portage::AuxMeshTopology&lt; BasicMesh &gt;</a>
+: <a class="el" href="classWonton_1_1AuxMeshTopology.html#a88db523d69902d3b5bc11020c65b7648">Wonton::AuxMeshTopology&lt; BasicMesh &gt;</a>
 </li>
 <li>Simple_Mesh()
 : <a class="el" href="classPortage_1_1Simple__Mesh.html#a31d0ceb7447eed35a2cbccc3c2c3e88e">Portage::Simple_Mesh</a>
 </li>
 <li>Simple_Mesh_Wrapper()
-: <a class="el" href="classPortage_1_1Simple__Mesh__Wrapper.html#a802d9d2039debf724c07758c61746fc6">Portage::Simple_Mesh_Wrapper</a>
+: <a class="el" href="classWonton_1_1Simple__Mesh__Wrapper.html#a55758a77ef169aa7948c1de4d9f80b29">Wonton::Simple_Mesh_Wrapper</a>
 </li>
 <li>Simple_State()
 : <a class="el" href="classPortage_1_1Simple__State.html#a06d00ae988cb47779f0bd2de9e12065f">Portage::Simple_State</a>
 </li>
 <li>Simple_State_Wrapper()
-: <a class="el" href="classPortage_1_1Simple__State__Wrapper.html#a3584f037318b604b591f4b7a13a6b6f7">Portage::Simple_State_Wrapper</a>
+: <a class="el" href="classWonton_1_1Simple__State__Wrapper.html#ac1b144e1bf6e8e6ee1e53fca56c44849">Wonton::Simple_State_Wrapper</a>
 </li>
 <li>size_t
 : <a class="el" href="classflecsi__2d.html#a9396bbfb0a379db9eeb2a67e62c0c433">flecsi_2d</a>
 , <a class="el" href="classflecsi__3d.html#ac6742d66b5501065681988305fb80b3b">flecsi_3d</a>
-, <a class="el" href="classwonton_1_1flecsi__mesh__t.html#ae41efff31c6a85b58982ab152c03a938">wonton::flecsi_mesh_t&lt; M &gt;</a>
+, <a class="el" href="classWonton_1_1flecsi__mesh__t.html#aa8449da33733c1bd1ff6d9b77dce7737">Wonton::flecsi_mesh_t&lt; M &gt;</a>
 </li>
 <li>smoothing
 : <a class="el" href="structPortage_1_1Meshfree_1_1Weight_1_1FacetData.html#ac9b4137ea9a23524be8a917ef4842ad4">Portage::Meshfree::Weight::FacetData&lt; dim &gt;</a>
 </li>
-<li>solve()
-: <a class="el" href="classPortage_1_1Matrix.html#ab54ab39601d3adf65826ad948b82c275">Portage::Matrix</a>
-</li>
 <li>source_remap_var_names()
-: <a class="el" href="classPortage_1_1Driver.html#a52c5ebc58a37aa2b81cc7ea11dc8052f">Portage::Driver&lt; Search, Intersect, Interpolate, Dim, SourceMesh_Wrapper, SourceState_Wrapper, TargetMesh_Wrapper, TargetState_Wrapper &gt;</a>
+: <a class="el" href="classPortage_1_1Driver.html#a6d8c6584ef68ec3c32adfa2dc63cded8">Portage::Driver&lt; Search, Intersect, Interpolate, D, SourceMesh_Wrapper, SourceState_Wrapper, TargetMesh_Wrapper, TargetState_Wrapper &gt;</a>
 , <a class="el" href="classPortage_1_1Meshfree_1_1SwarmDriver.html#a7ac7a5f3d9f17bcbb64237813f7af4c7">Portage::Meshfree::SwarmDriver&lt; Search, Accumulate, Estimate, Dim, SourceSwarm, SourceState, TargetSwarm, TargetState &gt;</a>
+, <a class="el" href="classPortage_1_1MMDriver.html#ab1a1e80430998a81c44a96096ec1ae30">Portage::MMDriver&lt; Search, Intersect, Interpolate, D, SourceMesh_Wrapper, SourceState_Wrapper, TargetMesh_Wrapper, TargetState_Wrapper, InterfaceReconstructor &gt;</a>
 , <a class="el" href="classPortage_1_1MSM__Driver.html#a32928cdc180c0c8806890d683ae6009d">Portage::MSM_Driver&lt; Search, Accumulate, Estimate, Dim, SourceMesh_Wrapper, SourceState_Wrapper, TargetMesh_Wrapper, TargetState_Wrapper &gt;</a>
 </li>
 <li>sourceNum
@@ -263,25 +291,24 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 : <a class="el" href="structPortage_1_1MPI__Bounding__Boxes_1_1comm__info__t.html#ac5f309965371349f5c9205dabd2ce399">Portage::MPI_Bounding_Boxes::comm_info_t</a>
 </li>
 <li>space_dimension()
-: <a class="el" href="classPortage_1_1Flat__Mesh__Wrapper.html#af34b734e11d0cc8a6e19d10d896dc254">Portage::Flat_Mesh_Wrapper&lt; T &gt;</a>
-, <a class="el" href="classPortage_1_1Jali__Mesh__Wrapper.html#a90f756805c5e0354bdd4a0f65ba8f68f">Portage::Jali_Mesh_Wrapper</a>
-, <a class="el" href="classPortage_1_1Meshfree_1_1Swarm.html#a6bfbc094ced76729754dd6a73b51019e">Portage::Meshfree::Swarm&lt; dim &gt;</a>
-, <a class="el" href="classPortage_1_1MeshWrapperDual.html#ad25eab69f7a42a53a3e072e3945666b0">Portage::MeshWrapperDual&lt; Mesh_Wrapper_Type &gt;</a>
+: <a class="el" href="classPortage_1_1Meshfree_1_1Swarm.html#a6bfbc094ced76729754dd6a73b51019e">Portage::Meshfree::Swarm&lt; dim &gt;</a>
 , <a class="el" href="classPortage_1_1Simple__Mesh.html#a71a2e4438ba1e17c517b2fe48cd26436">Portage::Simple_Mesh</a>
-, <a class="el" href="classPortage_1_1Simple__Mesh__Wrapper.html#a12ed4bb7a0ee480d0dc818a4fcb791d8">Portage::Simple_Mesh_Wrapper</a>
-, <a class="el" href="classwonton_1_1flecsi__mesh__t.html#aa9f5193fd1495471fd04e314ff59e3b5">wonton::flecsi_mesh_t&lt; M &gt;</a>
+, <a class="el" href="classWonton_1_1Flat__Mesh__Wrapper.html#a516df0cd0f9e7628d9bae7bb167133f3">Wonton::Flat_Mesh_Wrapper&lt; T &gt;</a>
+, <a class="el" href="classWonton_1_1flecsi__mesh__t.html#ad1cb2a4ae06e9a476cc628f1daa90b4e">Wonton::flecsi_mesh_t&lt; M &gt;</a>
+, <a class="el" href="classWonton_1_1Jali__Mesh__Wrapper.html#a0161ee34f06b869519b391a06fa1bd78">Wonton::Jali_Mesh_Wrapper</a>
+, <a class="el" href="classWonton_1_1Simple__Mesh__Wrapper.html#a0b7a89c06348ab0e3e9a6f1fd06d311e">Wonton::Simple_Mesh_Wrapper</a>
 </li>
 <li>string_permutation
-: <a class="el" href="classPortage_1_1Jali__State__Wrapper.html#a7d32a6b31534f8187b2ae184e6865c23">Portage::Jali_State_Wrapper</a>
+: <a class="el" href="classWonton_1_1Jali__State__Wrapper.html#aad3d12cdc6697553c4e16405990db72e">Wonton::Jali_State_Wrapper</a>
 </li>
 <li>Swarm()
-: <a class="el" href="classPortage_1_1Meshfree_1_1Swarm.html#a142e9d49c10493d61d118f0e54bcc50e">Portage::Meshfree::Swarm&lt; dim &gt;</a>
+: <a class="el" href="classPortage_1_1Meshfree_1_1Swarm.html#acc293e7a9a4d7d9850b19f3a4a77f767">Portage::Meshfree::Swarm&lt; dim &gt;</a>
 </li>
 <li>SwarmDriver()
-: <a class="el" href="classPortage_1_1Meshfree_1_1SwarmDriver.html#aa4aac3da2f30166c52f219e63536f018">Portage::Meshfree::SwarmDriver&lt; Search, Accumulate, Estimate, Dim, SourceSwarm, SourceState, TargetSwarm, TargetState &gt;</a>
+: <a class="el" href="classPortage_1_1Meshfree_1_1SwarmDriver.html#a11959cc742a31c32875168c77008abb3">Portage::Meshfree::SwarmDriver&lt; Search, Accumulate, Estimate, Dim, SourceSwarm, SourceState, TargetSwarm, TargetState &gt;</a>
 </li>
 <li>SwarmState()
-: <a class="el" href="classPortage_1_1Meshfree_1_1SwarmState.html#a784b6ef21ac2e64e3858c7073e9cd896">Portage::Meshfree::SwarmState&lt; dim &gt;</a>
+: <a class="el" href="classPortage_1_1Meshfree_1_1SwarmState.html#af790b6edea39aedec28018e35d51d51a">Portage::Meshfree::SwarmState&lt; dim &gt;</a>
 </li>
 </ul>
 </div><!-- contents -->
@@ -305,7 +332,7 @@ Generated by &#160;<a href="http://www.doxygen.org/index.html">
 <footer id="footer" class="footer">
   <div class="container">
     <div class="row test-muted">
-      <div class="footer-row col-md-6">Copyright &copy; 2016
+      <div class="footer-row col-md-6">Copyright &copy; 2017
 	<a href="http://lanl.gov"> Los Alamos National Security, LLC</a>
 	All Rights Reserved.
       </div>
