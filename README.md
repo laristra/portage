@@ -47,9 +47,9 @@ version 3.0+.
 
 The following libraries are also _required_ (see examples below):
 
-- LAPACKE (3.7.1+)
+- LAPACKE (3.8.0+)
 
-- **__Either__** Boost (1.53.0+) **__or__** Thrust (1.6.0+):
+- **__Either__** Boost (1.68.0+) **__or__** Thrust (1.6.0+):
   We wrap some features of either one of these packages.  If you would
   like to run with OpenMP or TBB threads, then you _must_ use Thrust.
 
@@ -140,7 +140,7 @@ Execute the following from the portage root directory:
 module load openmpi/2.0.1-intel_17.0.0 cmake/3.7.1
 JALI_INSTALL_PREFIX=/projects/ngc/private/jali/0.9.8-intel-17.0.0-openmpi-2.0.1
 TPL_INSTALL_PREFIX=/projects/ngc/private/jali-tpl/1.0.9-intel-17.0.0-openmpi-2.0.1
-LAPACKE_DIR=/usr/local/codes/ngc/private/lapack/lapack-3.7.1-gcc-5.3.0
+LAPACKE_DIR=/usr/local/codes/ngc/private/lapack/3.8.0-patched-intel-17.0.0
 LAPACKE_INCLUDE_DIR=$LAPACKE_DIR/include
 LAPACKE_LIBRARY_DIR=$LAPACKE_DIR
 mkdir build
@@ -168,7 +168,7 @@ module load intel/17.0.4 openmpi/2.1.2 cmake
 JALI_INSTALL_PREFIX=/usr/projects/ngc/private/jali/0.9.8-intel-17.0.4-openmpi-2.1.2
 TANGRAM_INSTALL_PREFIX=/usr/projects/ngc/private/tangram/133c1db580f-intel-17.0.4-openmpi-2.1.2
 XMOF2D_INSTALL_PREFIX=/usr/projects/ngc/private/xmof2d/0.9-intel-17.0.4-openmpi-2.1.2
-LAPACKE_DIR=/usr/local/codes/ngc/private/lapack/lapack-3.7.1-gcc-5.3.0
+LAPACKE_DIR=/usr/local/codes/ngc/private/lapack/lapack-3.8.0-patched-intel-17.0.4
 LAPACKE_INCLUDE_DIR=$LAPACKE_DIR/include
 LAPACKE_LIBRARY_DIR=$LAPACKE_DIR
 mkdir build
@@ -199,7 +199,7 @@ module load intel/17.0.1 openmpi/1.10.5 cmake
 JALI_INSTALL_PREFIX=/usr/local/codes/ngc/private/jali/0.9.8-intel-17.0.1-openmpi-1.10.5
 TANGRAM_INSTALL_PREFIX=/usr/local/codes/ngc/private/tangram/133c1db580f-intel-17.0.1-openmpi-1.10.5
 XMOF2D_INSTALL_PREFIX=/usr/local/codes/ngc/private/xmof2d/0.9-intel-17.0.1-openmpi-1.10.5
-LAPACKE_DIR=/usr/local/codes/ngc/private/lapack/lapack-3.7.1-intel-17.0.1/
+LAPACKE_DIR=/usr/local/codes/ngc/private/lapack/lapack-3.8.0-patched-intel-17.0.1/
 LAPACKE_INCLUDE_DIR=$LAPACKE_DIR/include
 LAPACKE_LIBRARY_DIR=$LAPACKE_DIR
 mkdir build
@@ -233,7 +233,7 @@ FLECSI_INSTALL_PREFIX=/usr/local/codes/ngc/private/flecsi/gcc5.3_openmpi1.10.3
 FLECSISP_INSTALL_PREFIX=/usr/local/codes/ngc/private/flecsi-sp/gcc5.3_openmpi1.10.3
 TANGRAM_INSTALL_PREFIX=/usr/projects/ngc/private/tangram/133c1db580f-gcc-5.3.0-openmpi-1.10.3
 XMOF2D_INSTALL_PREFIX=/usr/projects/ngc/private/xmof2d/0.9-gcc-5.3.0-openmpi-1.10.3
-LAPACKE_DIR=/usr/local/codes/ngc/private/lapack/lapack-3.7.1-gcc-5.3.0
+LAPACKE_DIR=/usr/local/codes/ngc/private/lapack/lapack-3.8.0-gcc-5.3.0
 LAPACKE_INCLUDE_DIR=$LAPACKE_DIR/include
 LAPACKE_LIBRARY_DIR=$LAPACKE_DIR
 mkdir build-flecsi
