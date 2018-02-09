@@ -9,9 +9,9 @@ Please see the license file at the root of this repository, or at:
 #include <iostream>
 #include "gtest/gtest.h"
 
-#include "tangram/support/MatPoly.h"
 #include "tangram/driver/CellMatPoly.h"
-#include "tangram/simple_mesh/simple_mesh.h"
+#include "tangram/support/MatPoly.h"
+//#include "tangram/simple_mesh/simple_mesh.h"
 
 #include "portage/intersect/intersect_r2d.h"
 #include "portage/simple_mesh/simple_mesh.h"
@@ -244,7 +244,5 @@ TEST(TANGRAM, test_cellmatpoly_succeeds) {
   Tangram::CellMatPoly<2> cellmatpoly;
   SUCCEED();
 }
-
-
 
 #endif
