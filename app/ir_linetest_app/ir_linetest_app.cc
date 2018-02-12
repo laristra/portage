@@ -263,7 +263,7 @@ int PointPosition(const Portage::Point2& pt,
   double prj = dot(vec2line, line_nvec);
   int pos;
   if (std::fabs(prj) < eps) pos = 0;
-  else pos = signbit(prj) ? -1 : 1;
+  else pos = std::signbit(prj) ? -1 : 1;
   
   return pos;
 }
