@@ -82,7 +82,7 @@ ctest -j2 --output-on-failure
 make install
 
 
-TANGRAM_INSTALL_PREFIX=$NGC/private/tangram/133c1db580f-intel-17.0.1-openmpi-1.10.5
+TANGRAM_INSTALL_PREFIX=$NGC/private/tangram/4f600ec441a-intel-17.0.1-openmpi-1.10.5
 XMOF_INSTALL_PREFIX=$NGC/private/xmof2d/0.9-intel-17.0.1-openmpi-1.10.5/share/cmake
 
 # Build Portage with Thrust

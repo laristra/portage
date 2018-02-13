@@ -18,7 +18,7 @@ build_type=$2
 # set modules and install paths
 
 jali_version=0.9.8
-tangram_version=133c1db580f
+tangram_version=4f600ec441a
 xmof2d_version=0.9
 
 export NGC=/usr/local/codes/ngc
