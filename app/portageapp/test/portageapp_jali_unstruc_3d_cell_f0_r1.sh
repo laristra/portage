@@ -14,7 +14,7 @@ set -x
 DATA_DIR=.
 
 # SERIAL
-mpirun -np 1 ${APPDIR}/portageapp_jali \
+mpirun -np 1 ${TESTAPPDIR}/portageapp_jali \
     --source_file=${DATA_DIR}/cube-poly1.exo \
     --target_file=${DATA_DIR}/cube-poly2.exo \
     --entity_kind=cell \
@@ -23,12 +23,12 @@ mpirun -np 1 ${APPDIR}/portageapp_jali \
     --results_file="jali_unstruc_3d_cell_f0_r1.txt"
 
 # Compare the values for the field
-$APPDIR/apptest_cmp GOLD_jali_unstruc_3d_cell_f0_r1.txt jali_unstruc_3d_cell_f0_r1.txt 1e-9
+$CMPAPPDIR/apptest_cmp GOLD_jali_unstruc_3d_cell_f0_r1.txt jali_unstruc_3d_cell_f0_r1.txt 1e-9
 
 
 # PARALLEL
 
-mpirun -np 4 ${APPDIR}/portageapp_jali \
+mpirun -np 4 ${TESTAPPDIR}/portageapp_jali \
     --source_file=${DATA_DIR}/cube-poly1.exo \
     --target_file=${DATA_DIR}/cube-poly2.exo \
     --entity_kind=cell \
@@ -37,7 +37,7 @@ mpirun -np 4 ${APPDIR}/portageapp_jali \
     --results_file="jali_unstruc_3d_cell_f0_r1.txt"
 
 # Compare the values for the field
-$APPDIR/apptest_cmp GOLD_jali_unstruc_3d_cell_f0_r1.txt.0 jali_unstruc_3d_cell_f0_r1.txt.0 1e-9
-$APPDIR/apptest_cmp GOLD_jali_unstruc_3d_cell_f0_r1.txt.1 jali_unstruc_3d_cell_f0_r1.txt.1 1e-9
-$APPDIR/apptest_cmp GOLD_jali_unstruc_3d_cell_f0_r1.txt.2 jali_unstruc_3d_cell_f0_r1.txt.2 1e-9
-$APPDIR/apptest_cmp GOLD_jali_unstruc_3d_cell_f0_r1.txt.3 jali_unstruc_3d_cell_f0_r1.txt.3 1e-9
+$CMPAPPDIR/apptest_cmp GOLD_jali_unstruc_3d_cell_f0_r1.txt.0 jali_unstruc_3d_cell_f0_r1.txt.0 1e-9
+$CMPAPPDIR/apptest_cmp GOLD_jali_unstruc_3d_cell_f0_r1.txt.1 jali_unstruc_3d_cell_f0_r1.txt.1 1e-9
+$CMPAPPDIR/apptest_cmp GOLD_jali_unstruc_3d_cell_f0_r1.txt.2 jali_unstruc_3d_cell_f0_r1.txt.2 1e-9
+$CMPAPPDIR/apptest_cmp GOLD_jali_unstruc_3d_cell_f0_r1.txt.3 jali_unstruc_3d_cell_f0_r1.txt.3 1e-9

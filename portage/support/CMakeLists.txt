@@ -34,7 +34,7 @@ if (ENABLE_UNIT_TESTS)
 
   cinch_add_unit(test_matfuncs
     SOURCES test/test_matfuncs.cc
-    LIBRARIES portage ${LAPACKE_LIBRARIES}
+    LIBRARIES portage 
     POLICY MPI
     THREADS 1)
 
