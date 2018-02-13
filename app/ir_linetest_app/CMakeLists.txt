@@ -9,7 +9,8 @@ Please see the license file at the root of this repository, or at:
 #-------------------------------------------------------------------------------
 add_executable(ir_linetest_app ir_linetest_app.cc)
 target_link_libraries(ir_linetest_app
-                      portage ${LAPACKE_LIBRARIES} ${XMOF2D_LIBRARIES} ${EXTRA_LIBS})
+                      portage ${LAPACKE_LIBRARIES} ${XMOF2D_LIBRARIES} 
+                      ${MPI_CXX_LIBRARIES} ${EXTRA_LIBS})
 #TCMalloc option
 set(ENABLE_TCMALLOC TRUE CACHE BOOL "Use TCMalloc")
 if(ENABLE_TCMALLOC)
