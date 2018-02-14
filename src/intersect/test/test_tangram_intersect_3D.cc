@@ -349,8 +349,8 @@ TEST(TANGRAM_3D, test_matpoly_faceted_cube) {
   std::vector<std::vector<int>> facetpoints;
   for (int iface = 0; iface < faceted_matpoly.num_faces(); ++iface){
     const std::vector<int>& face_vertices = faceted_matpoly.face_vertices(iface);
-    for (int f: face_vertices) std::cout << f << ", ";
-  	std::cout <<std::endl;
+    //for (int f: face_vertices) std::cout << f << ", ";
+  	//std::cout <<std::endl;
     facetpoints.push_back(face_vertices);
   }
   
@@ -368,9 +368,13 @@ TEST(TANGRAM_3D, test_matpoly_faceted_cube) {
   std::vector<double> moments(Portage::intersect_3Dpolys(srcpoly, target_tet_coords));
 
   // test that the moments are correct
-  ASSERT_NEAR(moments[0], 1./6., eps);
-  //ASSERT_NEAR(moments[1], 12., eps);
-  //ASSERT_NEAR(moments[2], 12., eps);
+  ASSERT_NEAR(moments[0], 1./6., eps); 
+  ASSERT_NEAR(moments[1]/moments[0], .25, eps);
+  ASSERT_NEAR(moments[2]/moments[0], .25, eps);
+  ASSERT_NEAR(moments[3]/moments[0], .25, eps);
+  
+  for (auto m: moments) std::cout << m << ", ";
+  std::cout <<std::endl;
 
     
   std::cout <<"finished 3"<<std::endl;
