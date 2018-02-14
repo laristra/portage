@@ -20,7 +20,7 @@ Please see the license file at the root of this repository, or at:
 
 double eps = 1.e-8;
 
-TEST(TANGRAM, test_tangram_exists) {
+TEST(TANGRAM_2D, test_tangram_exists) {
   // test that we can instantiate a Tangram Point even though we don't include
   // the Tangram header
 
@@ -30,7 +30,7 @@ TEST(TANGRAM, test_tangram_exists) {
   ASSERT_FLOAT_EQ(y, p[1]);
 }
 
-TEST(TANGRAM, test_portage_exists) {
+TEST(TANGRAM_2D, test_portage_exists) {
   // test that we can instantiate a Portage Point
 
   float x{1.}, y{2};
@@ -39,7 +39,7 @@ TEST(TANGRAM, test_portage_exists) {
   ASSERT_FLOAT_EQ(y, p[1]);
 }
 
-TEST(TANGRAM, test_tangram_to_portage) {
+TEST(TANGRAM_2D, test_tangram_to_portage) {
   // test that we can create a Portage Point from a Tangram Point
 
   float x{1.}, y{2};
@@ -49,7 +49,7 @@ TEST(TANGRAM, test_tangram_to_portage) {
   ASSERT_FLOAT_EQ(y, pp[1]);
 }
 
-TEST(TANGRAM, test_portage_to_tangram) {
+TEST(TANGRAM_2D, test_portage_to_tangram) {
   // test that we can create a Tangram Point from a Portage Point
 
   float x{1.}, y{2};
@@ -59,14 +59,14 @@ TEST(TANGRAM, test_portage_to_tangram) {
   ASSERT_FLOAT_EQ(y, pt[1]);
 }
 
-TEST(TANGRAM, test_matpoly_succeeds) {
+TEST(TANGRAM_2D, test_matpoly_succeeds) {
   // test that we can create a Tangram MatPoly
 
   Tangram::MatPoly<2> matpoly;
   SUCCEED();
 }
 
-TEST(TANGRAM, test_matpoly_create) {
+TEST(TANGRAM_2D, test_matpoly_create) {
   // test that we can construct a real matpoly (lifted from
   // tangram/src/support/test/test_MatPoly_2D.cc)
   int mat_id = 1;
@@ -112,7 +112,7 @@ TEST(TANGRAM, test_matpoly_create) {
                          square_matpoly.face_centroid(iface), 1.0e-15));
 }
 
-TEST(TANGRAM, test_matpoly_extract_points) {
+TEST(TANGRAM_2D, test_matpoly_extract_points) {
   // test that we can construct a matpoly and extract its points
   int mat_id = 1;
 
@@ -144,7 +144,7 @@ TEST(TANGRAM, test_matpoly_extract_points) {
   ASSERT_FLOAT_EQ(1., points[3][1]);
 }
 
-TEST(TANGRAM, test_matpoly_intersect_unit_cells) {
+TEST(TANGRAM_2D, test_matpoly_intersect_unit_cells) {
   // test that we can construct a matpoly and intersect with a cell
   // the source and target geometries are both unit cells
   int mat_id = 1;
@@ -190,7 +190,7 @@ TEST(TANGRAM, test_matpoly_intersect_unit_cells) {
   ASSERT_NEAR(moments[2], moments[0] * (yh - yl) / 2., eps);
 }
 
-TEST(TANGRAM, test_matpoly_intersect_non_coincident) {
+TEST(TANGRAM_2D, test_matpoly_intersect_non_coincident) {
   // test that we can construct a matpoly and intersect with a cell
   // the source and target geometries are side 4 squares that intersect
   // at a corner
@@ -238,14 +238,14 @@ TEST(TANGRAM, test_matpoly_intersect_non_coincident) {
   ASSERT_NEAR(moments[2], 12., eps);
 }
 
-TEST(TANGRAM, test_cellmatpoly_succeeds) {
+TEST(TANGRAM_2D, test_cellmatpoly_succeeds) {
   // test that we can create a Tangram CellMatPoly
 
   Tangram::CellMatPoly<2> cellmatpoly;
   SUCCEED();
 }
 
-TEST(TANGRAM, test_cellmatpoly_create) {
+TEST(TANGRAM_2D, test_cellmatpoly_create) {
   // create a CellMatPoly by hand
   // taken from tangram/src/driver/test/test_CellMatPoly_2D
 
@@ -521,7 +521,7 @@ TEST(TANGRAM, test_cellmatpoly_create) {
   }
 }
 
-TEST(TANGRAM, test_cellmatpoly_intersect) {
+TEST(TANGRAM_2D, test_cellmatpoly_intersect) {
   // create a CellMatPoly by hand
   // taken from tangram/src/driver/test/test_CellMatPoly_2D
 
