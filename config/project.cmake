@@ -184,13 +184,15 @@ if (LAPACKE_DIR)
 
     # If we don't want to link with Fortran then we have to tell it to link
     # with the Fortran libraries because LAPACK is written/compiled in Fortran
+    #
+    # NEEDED FOR STATIC LAPACK LIBS
 
-#    if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-#    elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-#      set(LAPACKE_LIBRARIES "${LAPACKE_LIBRARIES} -lgfortran")    
-#    elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
-#      set(LAPACKE_LIBRARIES "${LAPACKE_LIBRARIES} -lifcore")    
-#    endif()
+    if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+    elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+      set(LAPACKE_LIBRARIES "${LAPACKE_LIBRARIES} -lgfortran")    
+    elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
+      set(LAPACKE_LIBRARIES "${LAPACKE_LIBRARIES} -lifcore")    
+    endif()
 
   endif(LAPACKE_LIBRARIES STREQUAL "lapacke")
 
