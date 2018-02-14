@@ -166,7 +166,7 @@ Execute the following from the portage root directory:
 # machine=sn-fey
 module load intel/17.0.4 openmpi/2.1.2 cmake
 JALI_INSTALL_PREFIX=/usr/projects/ngc/private/jali/0.9.8-intel-17.0.4-openmpi-2.1.2
-TANGRAM_INSTALL_PREFIX=/usr/projects/ngc/private/tangram/133c1db580f-intel-17.0.4-openmpi-2.1.2
+TANGRAM_INSTALL_PREFIX=/usr/projects/ngc/private/tangram/4f600ec441a-intel-17.0.4-openmpi-2.1.2
 XMOF2D_INSTALL_PREFIX=/usr/projects/ngc/private/xmof2d/0.9-intel-17.0.4-openmpi-2.1.2
 LAPACKE_DIR=/usr/local/codes/ngc/private/lapack/3.8.0-patched-intel-17.0.4
 LAPACKE_INCLUDE_DIR=$LAPACKE_DIR/include
@@ -197,7 +197,7 @@ export MODULEPATH=""
 . /opt/local/packages/Modules/default/init/sh
 module load intel/17.0.1 openmpi/1.10.5 cmake
 JALI_INSTALL_PREFIX=/usr/local/codes/ngc/private/jali/0.9.8-intel-17.0.1-openmpi-1.10.5
-TANGRAM_INSTALL_PREFIX=/usr/local/codes/ngc/private/tangram/133c1db580f-intel-17.0.1-openmpi-1.10.5
+TANGRAM_INSTALL_PREFIX=/usr/local/codes/ngc/private/tangram/4f600ec441a-intel-17.0.1-openmpi-1.10.5
 XMOF2D_INSTALL_PREFIX=/usr/local/codes/ngc/private/xmof2d/0.9-intel-17.0.1-openmpi-1.10.5
 LAPACKE_DIR=/usr/local/codes/ngc/private/lapack/3.8.0-patched-intel-17.0.1/
 LAPACKE_INCLUDE_DIR=$LAPACKE_DIR/include
@@ -231,7 +231,7 @@ export MODULEPATH=""
 module load gcc/5.3.0 openmpi/1.10.3 cmake
 FLECSI_INSTALL_PREFIX=/usr/local/codes/ngc/private/flecsi/gcc5.3_openmpi1.10.3
 FLECSISP_INSTALL_PREFIX=/usr/local/codes/ngc/private/flecsi-sp/gcc5.3_openmpi1.10.3
-TANGRAM_INSTALL_PREFIX=/usr/projects/ngc/private/tangram/133c1db580f-gcc-5.3.0-openmpi-1.10.3
+TANGRAM_INSTALL_PREFIX=/usr/projects/ngc/private/tangram/4f600ec441a-gcc-5.3.0-openmpi-1.10.3
 XMOF2D_INSTALL_PREFIX=/usr/projects/ngc/private/xmof2d/0.9-gcc-5.3.0-openmpi-1.10.3
 LAPACKE_DIR=/usr/local/codes/ngc/private/lapack/3.8.0-gcc-5.3.0
 LAPACKE_INCLUDE_DIR=$LAPACKE_DIR/include
