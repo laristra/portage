@@ -186,7 +186,7 @@ class Accumulate {
           // solve the linear system
 	  if (not zilchit) {
 #ifdef HAVE_LAPACKE 
-	    Matrix pair_result_matrix = moment.solve(basis_matrix, "lapack-posv");
+	    Matrix pair_result_matrix = moment.solve(basis_matrix, "lapack-sytr");
 #else
 	    Matrix pair_result_matrix = moment.solve(basis_matrix);
 #endif
