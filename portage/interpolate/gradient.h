@@ -190,13 +190,14 @@ Limited_Gradient<D, CELL, MeshType, StateType>::operator() (int const cellid) {
     phi = 1.0;
     
     // Min and max vals of function (cell centered vals) among neighbors
+    // and the cell itself
     /// @todo: must remove assumption the field is scalar
     
     double minval = vals_[cellid];
     double maxval = vals_[cellid];
     
     int nnbr = nbrids.size();
-    for (int i = 0; i < nnbr; ++i) {
+    for (int i = 0; i < nnbr + 1; ++i) {
       minval = std::min(cellvalues[i], minval);
       maxval = std::max(cellvalues[i], maxval);
     }
