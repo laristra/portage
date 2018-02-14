@@ -62,7 +62,6 @@ if(ENABLE_UNIT_TESTS)
 
   if (TANGRAM_FOUND AND XMOF2D_FOUND)
       include_directories(${TANGRAM_INCLUDE_DIRS})
-      message("  ***** DWS included Tangram Directory: " ${TANGRAM_INCLUDE_DIRS})
       cinch_add_unit(test_tangram_intersect_2D
        SOURCES test/test_tangram_intersect_2D
        LIBRARIES portage  ${LAPACKE_LIBRARIES} 
