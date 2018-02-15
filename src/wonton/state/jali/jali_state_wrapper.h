@@ -121,9 +121,11 @@ class Jali_State_Wrapper {
    */
   template <class T, class DomainType>
   void add_data(std::shared_ptr<DomainType> domain, const Entity_kind on_what,
-		const std::string var_name, T const * const value)
+		const std::string var_name, T const * value)
   {
-    jali_state_.add(var_name, domain, (Jali::Entity_kind) on_what, Jali::Entity_type::ALL, value);
+    jali_state_.add<T, DomainType>(var_name, domain,
+                                   (Jali::Entity_kind) on_what,
+                                   Jali::Entity_type::ALL, value);
   }
 
   /*!
@@ -135,9 +137,15 @@ class Jali_State_Wrapper {
    */
   template <class T, class DomainType>
   void add_data(std::shared_ptr<DomainType> domain, const Entity_kind on_what,
-		const std::string var_name, const T value)
+		const std::string var_name, T value)
   {
-    jali_state_.add(var_name, domain, (Jali::Entity_kind) on_what, Jali::Entity_type::ALL, value);
+    // Not sure why its needs us to tell it to create a StateVector
+    // Should be obvious
+    jali_state_.add<T,
+                    DomainType,
+                    Jali::StateVector>(var_name, domain,
+                                       (Jali::Entity_kind) on_what,
+                                       Jali::Entity_type::ALL, value);
   }
 
 

@@ -44,8 +44,8 @@ class DriverTest : public ::testing::Test {
   std::shared_ptr<Jali::Mesh> sourceMesh;
   std::shared_ptr<Jali::Mesh> targetMesh;
   // Source and target mesh state
-  Jali::State sourceState;
-  Jali::State targetState;
+  std::shared_ptr<Jali::State> sourceState;
+  std::shared_ptr<Jali::State> targetState;
   //  Wrappers for interfacing with the underlying mesh data structures
   Wonton::Jali_Mesh_Wrapper sourceMeshWrapper;
   Wonton::Jali_Mesh_Wrapper targetMeshWrapper;
@@ -73,14 +73,14 @@ class DriverTest : public ::testing::Test {
       JaliGeometry::Point cen = sourceMesh->cell_centroid(c);
       sourceData[c] = compute_initial_field(cen);
     }
-    sourceState.add("celldata", sourceMesh, Jali::Entity_kind::CELL,
-                    Jali::Entity_type::ALL, &(sourceData[0]));
+    sourceState->add("celldata", sourceMesh, Jali::Entity_kind::CELL,
+                     Jali::Entity_type::ALL, &(sourceData[0]));
 
     // Build the target state storage
     const int ntarcells = targetMeshWrapper.num_owned_cells();
     std::vector<double> targetData(ntarcells, 0.0);
-    targetState.add("celldata", targetMesh, Jali::Entity_kind::CELL,
-                    Jali::Entity_type::ALL, &(targetData[0]));
+    targetState->add("celldata", targetMesh, Jali::Entity_kind::CELL,
+                     Jali::Entity_type::ALL, &(targetData[0]));
 
     //  Build the main driver data for this mesh type
     //  Register the variable name and interpolation order with the driver
@@ -125,10 +125,10 @@ class DriverTest : public ::testing::Test {
     double toterr = 0.;
 
     Jali::StateVector<double, Jali::Mesh> cellvecout;
-    bool found = targetState.get<double, Jali::Mesh>("celldata", targetMesh,
-                                                     Jali::Entity_kind::CELL,
-                                                     Jali::Entity_type::ALL,
-                                                     &cellvecout);
+    bool found = targetState->get<double, Jali::Mesh>("celldata", targetMesh,
+                                                      Jali::Entity_kind::CELL,
+                                                      Jali::Entity_type::ALL,
+                                                      &cellvecout);
     ASSERT_TRUE(found);
 
     for (int c = 0; c < ntarcells; ++c) {
@@ -151,10 +151,11 @@ class DriverTest : public ::testing::Test {
 
   // Constructor for Driver test
   DriverTest(std::shared_ptr<Jali::Mesh> s, std::shared_ptr<Jali::Mesh> t) :
-    sourceMesh(s), targetMesh(t), sourceState(sourceMesh),
-    targetState(targetMesh),
+    sourceMesh(s), targetMesh(t),
+    sourceState(Jali::State::create(sourceMesh)),
+    targetState(Jali::State::create(targetMesh)),
     sourceMeshWrapper(*sourceMesh), targetMeshWrapper(*targetMesh),
-    sourceStateWrapper(sourceState), targetStateWrapper(targetState){
+    sourceStateWrapper(*sourceState), targetStateWrapper(*targetState){
   }
 
 };

@@ -43,70 +43,70 @@ TEST(Test_MultiVar_Remap, Test1) {
 
   // Create state objects for source and target mesh
 
-  Jali::State source_state(source_mesh);
-  Jali::State target_state(target_mesh);
+  std::shared_ptr<Jali::State> source_state(Jali::State::create(source_mesh));
+  std::shared_ptr<Jali::State> target_state(Jali::State::create(target_mesh));
 
   // Add a constant value state vector on source cells
 
   double Constant1 = 1.25;
-  Jali::StateVector<double> myvec1("srccellvars1", source_mesh,
+  Jali::StateVector<double> myvec1("srccellvars1", source_mesh, nullptr,
                                    Jali::Entity_kind::CELL,
                                    Jali::Entity_type::PARALLEL_OWNED,
                                    Constant1);
-  source_state.add(myvec1);
+  source_state->add(myvec1);
 
   // Add another constant value state vector on source cells
 
   double Constant2 = -91.5;
-  Jali::StateVector<double> myvec2("srccellvars2", source_mesh,
+  Jali::StateVector<double> myvec2("srccellvars2", source_mesh, nullptr,
                                    Jali::Entity_kind::CELL,
                                    Jali::Entity_type::PARALLEL_OWNED,
                                    Constant2);
-  source_state.add(myvec2);
+  source_state->add(myvec2);
 
   // Add a constant value state vector on source nodes
 
   double Constant3 = 3.14;
-  Jali::StateVector<double> myvec3("srcnodevars", source_mesh,
+  Jali::StateVector<double> myvec3("srcnodevars", source_mesh, nullptr,
                                    Jali::Entity_kind::NODE,
                                    Jali::Entity_type::PARALLEL_OWNED,
                                    Constant3);
-  source_state.add(myvec3);
+  source_state->add(myvec3);
 
 
   // Add zero value state vectors on target cells and nodes - once with
   // the old name and once with the new name
 
-  Jali::StateVector<double> myvec4("trgcellvars1", target_mesh,
+  Jali::StateVector<double> myvec4("trgcellvars1", target_mesh, nullptr,
                                    Jali::Entity_kind::CELL,
                                    Jali::Entity_type::PARALLEL_OWNED);
 
-  target_state.add(myvec4);
-  Jali::StateVector<double> myvec5("srccellvars1", target_mesh,
+  target_state->add(myvec4);
+  Jali::StateVector<double> myvec5("srccellvars1", target_mesh, nullptr,
                                    Jali::Entity_kind::CELL,
                                    Jali::Entity_type::PARALLEL_OWNED);
-  target_state.add(myvec5);
+  target_state->add(myvec5);
 
-  Jali::StateVector<double> myvec6("trgcellvars2", target_mesh,
+  Jali::StateVector<double> myvec6("trgcellvars2", target_mesh, nullptr,
                                    Jali::Entity_kind::CELL,
                                    Jali::Entity_type::PARALLEL_OWNED);
 
-  target_state.add(myvec6);
-  Jali::StateVector<double> myvec7("srccellvars2", target_mesh,
+  target_state->add(myvec6);
+  Jali::StateVector<double> myvec7("srccellvars2", target_mesh, nullptr,
                                    Jali::Entity_kind::CELL,
                                    Jali::Entity_type::PARALLEL_OWNED);
-  target_state.add(myvec7);
+  target_state->add(myvec7);
 
   std::vector<double> zerodata2(nnodes_target, 0.0);
-  Jali::StateVector<double> myvec8("trgnodevars", target_mesh,
+  Jali::StateVector<double> myvec8("trgnodevars", target_mesh, nullptr,
                                    Jali::Entity_kind::NODE,
                                    Jali::Entity_type::PARALLEL_OWNED);
 
-  target_state.add(myvec8);
-  Jali::StateVector<double> myvec9("srcnodevars", target_mesh,
+  target_state->add(myvec8);
+  Jali::StateVector<double> myvec9("srcnodevars", target_mesh, nullptr,
                                    Jali::Entity_kind::NODE,
                                    Jali::Entity_type::PARALLEL_OWNED);
-  target_state.add(myvec9);
+  target_state->add(myvec9);
 
   // Wrappers for interfacing with the underlying mesh data structures.
 
@@ -115,8 +115,8 @@ TEST(Test_MultiVar_Remap, Test1) {
 
   // Wrappers for the source and target state managers
 
-  Wonton::Jali_State_Wrapper sourceStateWrapper(source_state);
-  Wonton::Jali_State_Wrapper targetStateWrapper(target_state);
+  Wonton::Jali_State_Wrapper sourceStateWrapper(*source_state);
+  Wonton::Jali_State_Wrapper targetStateWrapper(*target_state);
 
   // Build the main driver object
 
@@ -213,28 +213,29 @@ TEST(Test_MultiVar_Remap, Nested_Meshes) {
 
   // Create state objects for source and target mesh
 
-  Jali::State source_state(source_mesh);
-  Jali::State target_state(target_mesh);
+  std::shared_ptr<Jali::State> source_state(Jali::State::create(source_mesh));
+  std::shared_ptr<Jali::State> target_state(Jali::State::create(target_mesh));
 
   // Add a state vector on source cells with values dependent on the
   // centroid of each cell
 
-  Jali::StateVector<double> sourcevec("cellvars", source_mesh,
+  Jali::StateVector<double> sourcevec("cellvars", source_mesh, nullptr,
                                       Jali::Entity_kind::CELL,
                                       Jali::Entity_type::PARALLEL_OWNED);
   for (int c = 0; c < ncells_source; ++c) {
     JaliGeometry::Point ccen = source_mesh->cell_centroid(c);
     sourcevec[c] = ccen[0] + ccen[1];
   }
-  source_state.add(sourcevec);
+  source_state->add(sourcevec);
 
   // Add zero value state vectors on target cells and nodes - once with
   // the old name and once with the new name
 
-  Jali::StateVector<double>& targetvec =
-      target_state.add<double>("cellvars", target_mesh,
-                               Jali::Entity_kind::CELL,
-                               Jali::Entity_type::PARALLEL_OWNED);
+  Jali::StateVector<double, Jali::Mesh>& targetvec =
+      target_state->add<double, Jali::Mesh, Jali::StateVector>("cellvars",
+                                  target_mesh,
+                                  Jali::Entity_kind::CELL,
+                                  Jali::Entity_type::PARALLEL_OWNED);
 
   // Wrappers for interfacing with the underlying mesh data structures.
 
@@ -243,8 +244,8 @@ TEST(Test_MultiVar_Remap, Nested_Meshes) {
 
   // Wrappers for the source and target state managers
 
-  Wonton::Jali_State_Wrapper sourceStateWrapper(source_state);
-  Wonton::Jali_State_Wrapper targetStateWrapper(target_state);
+  Wonton::Jali_State_Wrapper sourceStateWrapper(*source_state);
+  Wonton::Jali_State_Wrapper targetStateWrapper(*target_state);
 
   // Build the main driver object
 

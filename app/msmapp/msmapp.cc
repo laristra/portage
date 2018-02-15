@@ -294,8 +294,8 @@ public:
     sourceMesh(s), targetMesh(t), 
     sourceState(sourceMesh), targetState(targetMesh), targetState2(targetMesh),
     sourceMeshWrapper(*sourceMesh), targetMeshWrapper(*targetMesh),
-    sourceStateWrapper(sourceState), targetStateWrapper(targetState), 
-    targetStateWrapper2(targetState2), 
+    sourceStateWrapper(sourceState), targetStateWrapper(targetState),
+    targetStateWrapper2(targetState2),
     controls_(controls)
   {}
 };
@@ -308,9 +308,9 @@ protected:
   std::shared_ptr<Jali::Mesh> sourceMesh;
   std::shared_ptr<Jali::Mesh> targetMesh;
   //Source and target mesh state
-  Jali::State sourceState;
-  Jali::State targetState;
-  Jali::State targetState2;
+  std::shared_ptr<Jali::State> sourceState;
+  std::shared_ptr<Jali::State> targetState;
+  std::shared_ptr<Jali::State> targetState2;
 protected:
   //Source and target mesh and state wrappers
   Portage::Jali_Mesh_Wrapper sourceMeshWrapper;
@@ -358,7 +358,7 @@ public:
       sourceFlatMesh.cell_centroid(c, &cen);
       sourceData[c] = field_func<3>(controls_.example, cen);
     }
-    Jali::StateVector<double> &sourceVec(sourceState.add("celldata",
+    Jali::StateVector<double> &sourceVec(sourceState->add("celldata",
       sourceMesh, Jali::Entity_kind::CELL, Jali::Entity_type::ALL, &(sourceData[0])));
     
     for (unsigned int c = 0; c < nsrcnodes; ++c) {
@@ -366,7 +366,7 @@ public:
       sourceFlatMesh.node_get_coordinates(c, &cen);
       sourceDataNode[c] = field_func<3>(controls_.example, cen);
     }
-    Jali::StateVector<double> &sourceVecNode(sourceState.add("nodedata",
+    Jali::StateVector<double> &sourceVecNode(sourceState->add("nodedata",
       sourceMesh, Jali::Entity_kind::NODE, Jali::Entity_type::ALL, &(sourceDataNode[0])));
 
     //Build the target state storage
@@ -374,10 +374,10 @@ public:
     const int ntarnodes = targetMeshWrapper.num_owned_nodes();
     std::vector<double> targetData(ntarcells), targetData2(ntarcells);
     std::vector<double> targetDataNode(ntarnodes), targetData2Node(ntarnodes);
-    targetStateWrapper. add_data(targetMesh, Portage::Entity_kind::CELL, "celldata", &(targetData[0]));
-    targetStateWrapper2.add_data(targetMesh, Portage::Entity_kind::CELL, "celldata", &(targetData2[0]));
-    targetStateWrapper. add_data(targetMesh, Portage::Entity_kind::NODE, "nodedata", &(targetDataNode[0]));
-    targetStateWrapper2.add_data(targetMesh, Portage::Entity_kind::NODE, "nodedata", &(targetData2Node[0]));
+    targetStateWrapper. add_data<double>(targetMesh, Portage::Entity_kind::CELL, "celldata", &(targetData[0]));
+    targetStateWrapper2.add_data<double>(targetMesh, Portage::Entity_kind::CELL, "celldata", &(targetData2[0]));
+    targetStateWrapper. add_data<double>(targetMesh, Portage::Entity_kind::NODE, "nodedata", &(targetDataNode[0]));
+    targetStateWrapper2.add_data<double>(targetMesh, Portage::Entity_kind::NODE, "nodedata", &(targetData2Node[0]));
 
     // Register the variable name and interpolation order with the driver
     std::vector<std::string> remap_fields;
@@ -420,10 +420,10 @@ public:
     std::vector<double> cellvecout(ntarcells), cellvecout2(ntarcells);
     std::vector<double> nodevecout(ntarnodes), nodevecout2(ntarnodes);
     Jali::StateVector<double, Jali::Mesh> cvp, cv2p, nvp, nv2p;
-    targetState. get("celldata", targetMesh, Jali::Entity_kind::CELL, Jali::Entity_type::ALL, &cvp);
-    targetState2.get("celldata", targetMesh, Jali::Entity_kind::CELL, Jali::Entity_type::ALL, &cv2p);
-    targetState. get("nodedata", targetMesh, Jali::Entity_kind::NODE, Jali::Entity_type::ALL, &nvp);
-    targetState2.get("nodedata", targetMesh, Jali::Entity_kind::NODE, Jali::Entity_type::ALL, &nv2p);
+    targetState->get("celldata", targetMesh, Jali::Entity_kind::CELL, Jali::Entity_type::ALL, &cvp);
+    targetState2->get("celldata", targetMesh, Jali::Entity_kind::CELL, Jali::Entity_type::ALL, &cv2p);
+    targetState->get("nodedata", targetMesh, Jali::Entity_kind::NODE, Jali::Entity_type::ALL, &nvp);
+    targetState2->get("nodedata", targetMesh, Jali::Entity_kind::NODE, Jali::Entity_type::ALL, &nv2p);
     for (int i=0; i<ntarcells; i++) {cellvecout[i]=cvp[i]; cellvecout2[i]=cv2p[i];}
     for (int i=0; i<ntarnodes; i++) {nodevecout[i]=nvp[i]; nodevecout2[i]=nv2p[i];}
 
@@ -480,10 +480,12 @@ public:
   //Constructor
   runMSMJali(Controls<3> controls, std::shared_ptr<Jali::Mesh> s,std::shared_ptr<Jali::Mesh> t) :
     sourceMesh(s), targetMesh(t), 
-    sourceState(sourceMesh), targetState(targetMesh), targetState2(targetMesh),
+    sourceState(Jali::State::create(sourceMesh)),
+    targetState(Jali::State::create(targetMesh)),
+    targetState2(Jali::State::create(targetMesh)),
     sourceMeshWrapper(*sourceMesh), targetMeshWrapper(*targetMesh),
-    sourceStateWrapper(sourceState), targetStateWrapper(targetState), 
-    targetStateWrapper2(targetState2), 
+    sourceStateWrapper(*sourceState), targetStateWrapper(*targetState), 
+    targetStateWrapper2(*targetState2), 
     controls_(controls)
   {}
 };
