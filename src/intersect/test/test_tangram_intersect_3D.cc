@@ -381,6 +381,105 @@ TEST(TANGRAM_3D, test_matpoly_faceted_cube) {
   
 }
 
+TEST(TANGRAM_3D, test_matpoly_faceted_cube2) {
+  // test that we can construct a cube matpoly and extract its points
+  int mat_id = 1;
+  
+  //Test for a cube
+  std::vector<Tangram::Point<3>> cube_points = {
+    Tangram::Point<3>(0.0, 0.0, 0.0), Tangram::Point<3>(1.0, 0.0, 0.0),
+    Tangram::Point<3>(1.0, 1.0, 0.0), Tangram::Point<3>(0.0, 1.0, 0.0),
+    Tangram::Point<3>(0.0, 0.0, 1.0), Tangram::Point<3>(1.0, 0.0, 1.0),
+    Tangram::Point<3>(1.0, 1.0, 1.0), Tangram::Point<3>(0.0, 1.0, 1.0)};
+  std::vector< std::vector<int> >cube_faces = {
+    {0, 1, 5, 4},{1, 2, 6, 5},{2, 3, 7, 6},{3, 0, 4, 7},{0, 3, 2, 1},
+    {4, 5, 6, 7} };
+  std::vector<Tangram::Point<3>> face_centroids = {
+    Tangram::Point<3>(0.5, 0.0, 0.5), Tangram::Point<3>(1.0, 0.5, 0.5),
+    Tangram::Point<3>(0.5, 1.0, 0.5), Tangram::Point<3>(0.0, 0.5, 0.5),
+    Tangram::Point<3>(0.5, 0.5, 0.0), Tangram::Point<3>(0.5, 0.5, 1.0) };
+  
+  //Check material ID correctness
+  Tangram::MatPoly<3> matpoly(mat_id);
+  ASSERT_EQ(mat_id, matpoly.mat_id());
+  
+  //Initialization
+  matpoly.initialize(cube_points, cube_faces);
+  
+  //Verify coordinates
+  const std::vector<Tangram::Point<3>>& matpoly_points = matpoly.points();
+  ASSERT_EQ(cube_points.size(), matpoly.num_vertices());
+  for (int ivrt = 0; ivrt < cube_points.size(); ivrt++)
+    for (int j=0; j<3; j++)
+    	ASSERT_NEAR(cube_points[ivrt][j], matpoly_points[ivrt][j], 1.0e-15);
+    	
+  //Verify faces
+  ASSERT_EQ(cube_faces.size(), matpoly.num_faces());
+  for (int iface = 0; iface < cube_faces.size(); iface++) {
+    const std::vector<int>& face_vertices = matpoly.face_vertices(iface);
+    ASSERT_EQ(cube_faces[iface].size(), face_vertices.size());
+    for (int ivrt = 0; ivrt < cube_faces[iface].size(); ivrt++)
+      ASSERT_EQ(cube_faces[iface][ivrt], face_vertices[ivrt]);
+  }
+  
+  //Verify centroids
+  for (int iface = 0; iface < cube_faces.size(); iface++)
+    ASSERT_TRUE(approxEq(face_centroids[iface],
+                         matpoly.face_centroid(iface), 1.0e-15));
+  
+  //Facet the cube
+  Tangram::MatPoly<3> faceted_matpoly;
+  matpoly.faceted_matpoly(&faceted_matpoly);
+  
+  //Check that the faceted matpoly has 24 faces and 14 vertices
+  ASSERT_EQ(faceted_matpoly.num_faces(), 24);
+  ASSERT_EQ(faceted_matpoly.num_vertices(), 14);
+  
+  //Convert the points
+  std::vector<Tangram::Point<3>> _source_points = faceted_matpoly.points();
+  std::vector<Portage::Point<3>> source_points;
+  for (auto p : _source_points) source_points.push_back(Portage::Point<3>(p));
+  
+  //Convert the face indices from the matpoly to a Portage style
+  /* WITH THE NEW API FUNCTION THIS IS NOW UNNECESSARY
+  std::vector<std::vector<int>> facetpoints;
+  for (int iface = 0; iface < faceted_matpoly.num_faces(); ++iface){
+    const std::vector<int>& face_vertices = faceted_matpoly.face_vertices(iface);
+    //for (int f: face_vertices) std::cout << f << ", ";
+  	//std::cout <<std::endl;
+    facetpoints.push_back(face_vertices);
+  }
+  */
+  
+  //Create the facetedpoly_t structure
+  Portage::facetedpoly_t srcpoly{faceted_matpoly.face_vertices(), source_points};
+  //NOW DIFFERENT
+  //Portage::facetedpoly_t srcpoly{facetpoints, source_points};
+  
+  //Create a length 1 vector of tets by hand
+  std::vector<std::array<Portage::Point<3>, 4>> target_tet_coords{{
+    Portage::Point<3>{0.,0.,0.},
+    Portage::Point<3>{1.,0.,0.},
+    Portage::Point<3>{0.,1.,0.},
+    Portage::Point<3>{0.,0.,1.}}};
+    
+  //Hope for a miracle with intersection
+  std::vector<double> moments(Portage::intersect_3Dpolys(srcpoly, target_tet_coords));
+
+  // test that the moments are correct
+  ASSERT_NEAR(moments[0], 1./6., eps); 
+  ASSERT_NEAR(moments[1]/moments[0], .25, eps);
+  ASSERT_NEAR(moments[2]/moments[0], .25, eps);
+  ASSERT_NEAR(moments[3]/moments[0], .25, eps);
+  
+  for (auto m: moments) std::cout << m << ", ";
+  std::cout <<std::endl;
+
+    
+  std::cout <<"finished 3"<<std::endl;
+  
+}
+
 /*
 TEST(TANGRAM_3D, test_matpoly_faceted_cube_intersection) {
   // test that we can construct a cube matpoly and extract its points
