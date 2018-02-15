@@ -25,9 +25,13 @@ Please see the license file at the root of this repository, or at:
 #include "portage/accumulate/accumulate.h"
 #include "portage/estimate/estimate.h"
 
+#ifdef ENABLE_MPI
+#include "portage/distributed/mpi_particle_distribute.h"
+#endif 
+
 /*!
-  @file driver.h
-  @brief Example driver for mapping between two meshes.
+  @file driver_swarm.h
+  @brief Example driver for mapping between two swarms.
 
   This should serve as a good example for how to write your own driver routine
   and datastructures.
@@ -37,13 +41,13 @@ namespace Portage {
 namespace Meshfree {
 
 /*!
-  @class Driver "driver.h"
-  @brief Driver provides the API to mapping from one mesh to another.
+  @class Driver "driver_swarm.h"
+  @brief Driver provides the API to remap variablesfrom one swarm to another.
   @tparam SourceSwarm A lightweight wrapper to a specific input Swarm
   implementation that provides certain functionality.
   @tparam SourceState A lightweight wrapper to a specific input state
   manager implementation that provides certain functionality.
-  @tparam TargetMesh A lightweight wrapper to a specific target Swarm
+  @tparam TargetSwarm A lightweight wrapper to a specific target Swarm
   implementation that provides certain functionality.
   @tparam TargetState A lightweight wrapper to a specific target state
   manager implementation that provides certain functionality.
@@ -89,8 +93,8 @@ class SwarmDriver {
     @c smoothing_lengths must have the size of @c SourceSwarm if center is @c Scatter and 
     of @c TargetSwarm if center is @c Gather.
   */
-  SwarmDriver(SourceSwarm const& sourceSwarm,
-              SourceState const& sourceState,
+  SwarmDriver(SourceSwarm& sourceSwarm,
+              SourceState& sourceState,
               TargetSwarm const& targetSwarm,
               TargetState& targetState,
               std::vector<std::vector<std::vector<double>>> const& smoothing_lengths,
@@ -107,10 +111,10 @@ class SwarmDriver {
     weight_center_ = center;
 
     if (weight_center_ == Gather) {
-      assert(smoothing_lengths_.size() == target_swarm_.num_particles());
-      kernel_types_ = std::vector<Weight::Kernel>(target_swarm_.num_particles(),
+      assert(smoothing_lengths_.size() == target_swarm_.num_particles(PARALLEL_OWNED));
+      kernel_types_ = std::vector<Weight::Kernel>(target_swarm_.num_particles(PARALLEL_OWNED),
                                                   kernel_type);
-      geom_types_ = std::vector<Weight::Geometry>(target_swarm_.num_particles(),
+      geom_types_ = std::vector<Weight::Geometry>(target_swarm_.num_particles(PARALLEL_OWNED),
                                                   support_geom_type);
     } else if (weight_center_ == Scatter) {
       assert(smoothing_lengths_.size() == source_swarm_.num_particles());
@@ -139,8 +143,8 @@ class SwarmDriver {
     @param[in] geom_types The geometry of the support (ELLIPTIC, TENSOR,
     FACETED) for each target particle
   */
-  SwarmDriver(SourceSwarm const& sourceSwarm,
-              SourceState const& sourceState,
+  SwarmDriver(SourceSwarm& sourceSwarm,
+              SourceState& sourceState,
               TargetSwarm const& targetSwarm,
               TargetState& targetState,
               std::vector<std::vector<std::vector<double>>> const& smoothing_lengths,
@@ -233,35 +237,40 @@ class SwarmDriver {
     return target_remap_var_names_;
   }
 
+  void remap(std::vector<std::string> const &src_varnames,
+             std::vector<std::string> const &trg_varnames,
+             bool distributed,
+             bool report_time);
+
   /*!
     @brief Execute the remapping process
   */
- void run(bool distributed, bool report_time=true) {
+  void run(bool distributed, bool report_time=true) {
 
-    int comm_rank = 0;
 #ifndef ENABLE_MPI
     if (distributed) {
-      std::cout << "Request is for a parallel run but Portage is compiled for serial runs only\n";
+      std::cout << "Request is for a parallel run but Portage is compiled " <<
+          "for serial runs only\n";
       return;
     }
 #endif
 
-    // EVEN OTHERWISE WE DON'T HAVE THE ABILITY TO DO DISTRIBUTED SWARMS
-    if (distributed) {
-      std::cout << "CANNOT DO DISTRIBUTED REMAPPING WITH SWARMS\n";
-      return;
-    }
+    int comm_rank = 0;
+#ifdef ENABLE_MPI
+    MPI_Comm_rank(MPI_COMM_WORLD, &comm_rank);
+#endif
 
-    int numSourcePts = source_swarm_.num_owned_particles();
+    if (comm_rank == 0)
+      std::cout << "in SwarmDriver::run()...\n";
+
     int numTargetPts = target_swarm_.num_owned_particles();
-    std::cout << "Number of target cells in target swarm on rank "
+    std::cout << "Number of target particles in target swarm on rank "
               << comm_rank << ": "
               << numTargetPts << std::endl;
 
     int nvars = source_remap_var_names_.size();
 
     // Collect all variables and remap them
-
     std::vector<std::string> source_var_names;
     std::vector<std::string> target_var_names;
     for (int i = 0; i < nvars; ++i) {
@@ -269,160 +278,14 @@ class SwarmDriver {
       target_var_names.emplace_back(target_remap_var_names_[i]);
     }
 
-    if (source_var_names.size() > 0)
-    {
-      
-      float tot_seconds = 0.0, tot_seconds_srch = 0.0,
-          tot_seconds_xsect = 0.0, tot_seconds_interp = 0.0;
-      struct timeval begin_timeval, end_timeval, diff_timeval;
-      
-      // SEARCH
-      Portage::vector<std::vector<unsigned int>> candidates(numTargetPts);
-      
-      // Get an instance of the desired search algorithm type which is expected
-      // to be a functor with an operator() of the right form
-
-      gettimeofday(&begin_timeval, 0);
-
-      // search boxes around source points are of zero dimension but
-      // those around target points are determined by particle
-      // smoothing lengths
-
-      // code below does not with with facted weightssourceExtents =
-      std::shared_ptr<std::vector<Point<Dim>>> sourceExtents;
-      std::shared_ptr<std::vector<Point<Dim>>> targetExtents;
-      if (weight_center_ == Portage::Meshfree::Gather) {
-        targetExtents = std::make_shared<std::vector<Point<Dim>>>(numTargetPts);
-        for (int i = 0; i < numTargetPts; i++) {
-          if (geom_types_[i] == Weight::FACETED) {
-            throw std::runtime_error("FACETED geometry is not available here");
-          }
-          (*targetExtents)[i] = Point<Dim>(smoothing_lengths_[i][0]);
-        }
-      }
-      if (weight_center_ == Portage::Meshfree::Scatter) {
-        sourceExtents = std::make_shared<std::vector<Point<Dim>>>(numSourcePts);
-        for (int i = 0; i < numSourcePts; i++) {
-          if (geom_types_[i] == Weight::FACETED) {
-            throw std::runtime_error("FACETED geometry is not available here");
-          }
-          (*sourceExtents)[i] = Point<Dim>(smoothing_lengths_[i][0]);
-        }
-      }
-
-      const Search<Dim, SourceSwarm, TargetSwarm>
-          searchfunctor(source_swarm_, target_swarm_,
-                        sourceExtents, targetExtents,
-                        weight_center_);
-      
-      Portage::transform(target_swarm_.begin(PARTICLE, PARALLEL_OWNED),
-                         target_swarm_.end(PARTICLE, PARALLEL_OWNED),
-                         candidates.begin(), searchfunctor);
-
-      gettimeofday(&end_timeval, 0);
-      timersub(&end_timeval, &begin_timeval, &diff_timeval);
-      tot_seconds_srch = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
-      
-
-
-      // ACCUMULATE (build moment matrix, calculate shape functions)
-      // EQUIVALENT TO INTERSECT IN MESH-MESH REMAP
-
-      gettimeofday(&begin_timeval, 0);
+    remap(source_var_names, target_var_names, distributed, report_time);
     
-      // Get an instance of the desired accumulate algorithm type which is 
-      // expected to be a functor with an operator() of the right form
-
-      const Accumulate<Dim, SourceSwarm, TargetSwarm>
-          accumulateFunctor(source_swarm_, target_swarm_,
-                            estimator_type_, weight_center_,
-                            kernel_types_, geom_types_, smoothing_lengths_,
-                            basis_type_);
-    
-      Portage::vector<std::vector<Weights_t>> source_pts_and_mults(numTargetPts);
-      
-      // For each particle in the target swarm get the shape functions
-      // (multipliers for source particle values)
-      
-      Portage::transform(target_swarm_.begin(PARTICLE, PARALLEL_OWNED),
-                         target_swarm_.end(PARTICLE, PARALLEL_OWNED),
-                         candidates.begin(),
-                         source_pts_and_mults.begin(),
-                         accumulateFunctor);
-      
-      gettimeofday(&end_timeval, 0);
-      timersub(&end_timeval, &begin_timeval, &diff_timeval);
-      tot_seconds_xsect = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
-      
-      
-      // ESTIMATE (one variable at a time)
-      
-      gettimeofday(&begin_timeval, 0);
-      
-      nvars = source_var_names.size();
-      if (comm_rank == 0)
-        std::cout << "number of variables to remap is " << nvars <<
-            std::endl;
-      
-      // Get an instance of the desired interpolate algorithm type
-      Estimate<Dim, SourceState> estimateFunctor(source_state_);
-      
-      for (int i = 0; i < nvars; ++i) {
-        //amh: ?? add back accuracy output statement??
-        if (comm_rank == 0) std::cout << "Remapping cell variable " <<
-                                source_var_names[i] <<
-                                " to variable " << target_var_names[i] <<
-                                std::endl;
-
-        estimateFunctor.set_variable(source_var_names[i]);
-        
-        // This populates targetField with the values returned by the
-        // remapper operator
-        
-        // ***************** NOTE NOTE NOTE NOTE ********************
-        // THE CURRENT SWARM_STATE DOES NOT HAVE AN OPERATOR TO RETURN
-        // A RAW POINTER TO THE DATA. INSTEAD IT RETURNS THIS REQUIRES
-        // A SPECIFIC TYPE OF THE SWARM_STATE CLASS. THIS IS A BAD
-        // IDEA BECAUSE IT FORCES ALL OTHER SWARM_STATE CLASSES TO
-        // HAVE THIS SAME DEFINITION. IT ALSO LEADS TO THE UGLY USAGE
-        // WE SEE BELOW BECAUSE WE NEED A PORTAGE POINTER TO BE ABLE
-        // TO USE THRUST
-
-        typename SwarmState<Dim>::DblVecPtr target_field_shared_ptr;
-        
-        target_state_.get_field(target_var_names[i], target_field_shared_ptr);
-        Portage::pointer<double> target_field(&((*target_field_shared_ptr)[0]));
-        
-        Portage::transform(target_swarm_.begin(PARTICLE, PARALLEL_OWNED),
-                           target_swarm_.end(PARTICLE, PARALLEL_OWNED),
-                           source_pts_and_mults.begin(),
-                           target_field, estimateFunctor);
-      }
-      
-      gettimeofday(&end_timeval, 0);
-      timersub(&end_timeval, &begin_timeval, &diff_timeval);
-      tot_seconds_interp = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
-      
-      tot_seconds = tot_seconds_srch + tot_seconds_xsect + tot_seconds_interp;
-      
-      if (report_time) {
-        std::cout << "Swarm Transform Time Rank " << comm_rank << " (s): " <<
-          tot_seconds << std::endl;
-        std::cout << "  Swarm Search Time Rank " << comm_rank << " (s): " <<
-          tot_seconds_srch << std::endl;
-        std::cout << "  Swarm Accumulate Time Rank " << comm_rank << " (s): " <<
-          tot_seconds_xsect << std::endl;
-        std::cout << "  Swarm Estimate Time Rank " << comm_rank << " (s): " <<
-          tot_seconds_interp << std::endl;
-      }
-    }
-  }
-
+  }  // run
 
  private:
-  SourceSwarm const& source_swarm_;
+  SourceSwarm& source_swarm_;
   TargetSwarm const& target_swarm_;
-  SourceState const& source_state_;
+  SourceState& source_state_;
   TargetState& target_state_;
   std::vector<std::string> source_remap_var_names_;
   std::vector<std::string> target_remap_var_names_;
@@ -433,6 +296,207 @@ class SwarmDriver {
   EstimateType estimator_type_;
   Basis::Type basis_type_;
 };  // class Driver_Swarm
+
+template <template <int, class, class> class Search,
+          template <size_t, class, class> class Accumulate,
+          template<size_t, class> class Estimate,
+          int Dim,
+          class SourceSwarm,
+          class SourceState,
+          class TargetSwarm,
+          class TargetState>
+void SwarmDriver<Search,
+                 Accumulate, 
+                 Estimate, 
+                 Dim, 
+                 SourceSwarm, 
+                 SourceState,
+                 TargetSwarm, 
+                 TargetState>::
+remap(std::vector<std::string> const &src_varnames,
+      std::vector<std::string> const &trg_varnames,
+      bool distributed,
+      bool report_time)
+{
+
+  int comm_rank = 0;
+
+#ifdef ENABLE_MPI
+  MPI_Comm_rank(MPI_COMM_WORLD, &comm_rank);
+#endif
+
+  int numSourcePts = source_swarm_.num_particles(PARALLEL_OWNED);
+  int numTargetPts = target_swarm_.num_particles(PARALLEL_OWNED);
+
+  int nvars = source_remap_var_names_.size();
+   
+  float tot_seconds = 0.0, tot_seconds_dist = 0.0, 
+        tot_seconds_srch = 0.0, tot_seconds_xsect = 0.0, 
+        tot_seconds_interp = 0.0;
+  struct timeval begin_timeval, end_timeval, diff_timeval;
+
+  //DISTRIBUTE
+  // This step would change the input source swarm and its state
+  // if after distribution it receives particles from other 
+  // ranks. 
+#ifdef ENABLE_MPI
+  if (distributed) {
+  gettimeofday(&begin_timeval, 0);
+  MPI_Particle_Distribute<Dim> distributor;
+  distributor.distribute(source_swarm_, source_state_,
+                         target_swarm_, target_state_,
+                         smoothing_lengths_, weight_center_);
+
+  gettimeofday(&end_timeval, 0);
+  timersub(&end_timeval, &begin_timeval, &diff_timeval);
+  tot_seconds_dist = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
+}
+#endif 
+
+  // SEARCH
+  Portage::vector<std::vector<unsigned int>> candidates(numTargetPts);
+    
+  // Get an instance of the desired search algorithm type which is expected
+  // to be a functor with an operator() of the right form
+
+  gettimeofday(&begin_timeval, 0);
+
+  // search boxes around source points are of zero dimension but
+  // those around target points are determined by particle
+  // smoothing lengths
+
+  // code below does not work with facted weightssourceExtents =
+  std::shared_ptr<std::vector<Point<Dim>>> sourceExtents;
+  std::shared_ptr<std::vector<Point<Dim>>> targetExtents;
+  if (weight_center_ == Portage::Meshfree::Gather) {
+    targetExtents = std::make_shared<std::vector<Point<Dim>>>(numTargetPts);
+    for (int i = 0; i < numTargetPts; i++) {
+      if (geom_types_[i] == Weight::FACETED) {
+        throw std::runtime_error("FACETED geometry is not available here");
+      }
+      (*targetExtents)[i] = Point<Dim>(smoothing_lengths_[i][0]);
+    }
+  }
+  if (weight_center_ == Portage::Meshfree::Scatter) {
+    sourceExtents = std::make_shared<std::vector<Point<Dim>>>(numSourcePts);
+    for (int i = 0; i < numSourcePts; i++) {
+      if (geom_types_[i] == Weight::FACETED) {
+        throw std::runtime_error("FACETED geometry is not available here");
+      }
+      (*sourceExtents)[i] = Point<Dim>(smoothing_lengths_[i][0]);
+    }
+  }
+
+  const Search<Dim, SourceSwarm, TargetSwarm>
+      searchfunctor(source_swarm_, target_swarm_,
+                    sourceExtents, targetExtents,
+                    weight_center_);
+
+  Portage::transform(target_swarm_.begin(PARTICLE, PARALLEL_OWNED),
+                     target_swarm_.end(PARTICLE, PARALLEL_OWNED),
+                     candidates.begin(), searchfunctor);
+
+  gettimeofday(&end_timeval, 0);
+  timersub(&end_timeval, &begin_timeval, &diff_timeval);
+  tot_seconds_srch = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
+
+
+  // ACCUMULATE (build moment matrix, calculate shape functions)
+  // EQUIVALENT TO INTERSECT IN MESH-MESH REMAP
+
+  gettimeofday(&begin_timeval, 0);
+
+  // Get an instance of the desired accumulate algorithm type which is 
+  // expected to be a functor with an operator() of the right form
+
+  const Accumulate<Dim, SourceSwarm, TargetSwarm>
+      accumulateFunctor(source_swarm_, target_swarm_,
+                        estimator_type_, weight_center_,
+                        kernel_types_, geom_types_, smoothing_lengths_,
+                        basis_type_);
+
+  Portage::vector<std::vector<Weights_t>> source_pts_and_mults(numTargetPts);
+  
+  // For each particle in the target swarm get the shape functions
+  // (multipliers for source particle values)
+  
+  Portage::transform(target_swarm_.begin(PARTICLE, PARALLEL_OWNED),
+                     target_swarm_.end(PARTICLE, PARALLEL_OWNED),
+                     candidates.begin(),
+                     source_pts_and_mults.begin(),
+                     accumulateFunctor);
+  
+  gettimeofday(&end_timeval, 0);
+  timersub(&end_timeval, &begin_timeval, &diff_timeval);
+  tot_seconds_xsect = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
+  
+  
+  // ESTIMATE (one variable at a time)
+  
+  gettimeofday(&begin_timeval, 0);
+  
+  nvars = src_varnames.size();
+  if (comm_rank == 0)
+    std::cout << "number of variables to remap is " << nvars <<
+        std::endl;
+  
+  // Get an instance of the desired interpolate algorithm type
+  Estimate<Dim, SourceState> estimateFunctor(source_state_);
+  
+  for (int i = 0; i < nvars; ++i) {
+    //amh: ?? add back accuracy output statement??
+    if (comm_rank == 0) std::cout << "Remapping swarm variable " <<
+                            src_varnames[i] <<
+                            " to variable " << trg_varnames[i] <<
+                            std::endl;
+
+    estimateFunctor.set_variable(src_varnames[i]);
+    
+    // This populates targetField with the values returned by the
+    // remapper operator
+    
+    // ***************** NOTE NOTE NOTE NOTE ********************
+    // THE CURRENT SWARM_STATE DOES NOT HAVE AN OPERATOR TO RETURN
+    // A RAW POINTER TO THE DATA. INSTEAD IT RETURNS THIS REQUIRES
+    // A SPECIFIC TYPE OF THE SWARM_STATE CLASS. THIS IS A BAD
+    // IDEA BECAUSE IT FORCES ALL OTHER SWARM_STATE CLASSES TO
+    // HAVE THIS SAME DEFINITION. IT ALSO LEADS TO THE UGLY USAGE
+    // WE SEE BELOW BECAUSE WE NEED A PORTAGE POINTER TO BE ABLE
+    // TO USE THRUST
+
+    typename SwarmState<Dim>::DblVecPtr target_field_shared_ptr;
+    
+    target_state_.get_field(trg_varnames[i], target_field_shared_ptr);
+    Portage::pointer<double> target_field(&((*target_field_shared_ptr)[0]));
+    
+    Portage::transform(target_swarm_.begin(PARTICLE, PARALLEL_OWNED),
+                       target_swarm_.end(PARTICLE, PARALLEL_OWNED),
+                       source_pts_and_mults.begin(),
+                       target_field, estimateFunctor);
+    
+    
+    gettimeofday(&end_timeval, 0);
+    timersub(&end_timeval, &begin_timeval, &diff_timeval);
+    tot_seconds_interp = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
+    
+    tot_seconds = tot_seconds_dist + tot_seconds_srch +
+                  tot_seconds_xsect + tot_seconds_interp;
+    
+    if (report_time) {
+      std::cout << "Swarm Transform Time Rank " << comm_rank << " (s): " <<
+        tot_seconds << std::endl;
+      std::cout << "  Swarm Distribution Time Rank " << comm_rank << " (s): " <<
+        tot_seconds_dist << std::endl;
+      std::cout << "  Swarm Search Time Rank " << comm_rank << " (s): " <<
+        tot_seconds_srch << std::endl;
+      std::cout << "  Swarm Accumulate Time Rank " << comm_rank << " (s): " <<
+        tot_seconds_xsect << std::endl;
+      std::cout << "  Swarm Estimate Time Rank " << comm_rank << " (s): " <<
+        tot_seconds_interp << std::endl;
+    }
+  }
+
+}//remap
 
 
 }  // namespace Meshfree

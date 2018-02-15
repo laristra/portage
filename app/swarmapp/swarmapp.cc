@@ -58,13 +58,12 @@ double field_func(int field_order, Portage::Point<D> coord) {
   switch (field_order) {
     case -1: {
       double rsqr = 0.0;
-      for (int i = 0; i < D; i++) 
+      for (int i = 0; i < D; i++)
         rsqr += coord[i]*coord[i];
       value = 1.0;
       for (int i = 0; i < D; i++)
         value *= sin(0.9*2*M_PI*coord[i]);
       break;
-      value *= exp(-1.5*sqrt(rsqr));
     }
     case 0:
       value = 25.3;

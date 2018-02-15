@@ -32,7 +32,8 @@ using std::make_shared;
  @brief An effective "mesh" class for a collection disconnected points (particles).
  @tparam dim The dimension of the problem space.
  */
-template<size_t dim> class Swarm {
+template<size_t dim>
+class Swarm {
  public:
 
   // When using PointVec and PointVecPtr in another file, they have to
@@ -50,7 +51,7 @@ template<size_t dim> class Swarm {
    * @param extents the widths of the particle bounding boxes in each dimension
    */
   Swarm(PointVecPtr points)
-      : points_(points), npoints_(points_->size()) 
+      : points_(points), npoints_owned_(points_->size()) 
   {}
 
 
@@ -59,25 +60,25 @@ template<size_t dim> class Swarm {
    * @param wrapper Input mesh wrapper
    */
   Swarm(Wonton::Flat_Mesh_Wrapper<double> &wrapper, Portage::Entity_kind entity)
-    : points_(NULL), npoints_(0)
+    : points_(NULL), npoints_owned_(0)
   {
     if (entity != NODE and entity != CELL) {
       throw(std::runtime_error("only nodes and cells allowed"));
     }
 
     if (entity == NODE) {
-      npoints_ = wrapper.num_owned_nodes();
-      points_ = make_shared<vector<Point<dim>>>(npoints_);
+      npoints_owned_ = wrapper.num_owned_nodes();
+      points_ = make_shared<vector<Point<dim>>>(npoints_owned_);
       Point<dim> node;
-      for (size_t i=0; i<npoints_; i++) {
+      for (size_t i=0; i<npoints_owned_; i++) {
         wrapper.node_get_coordinates(i, &node);
         (*points_)[i] = node;
       }
     } else if (entity == CELL) {
-      npoints_ = wrapper.num_owned_cells();
-      points_ = make_shared<vector<Point<dim>>>(npoints_);
+      npoints_owned_ = wrapper.num_owned_cells();
+      points_ = make_shared<vector<Point<dim>>>(npoints_owned_);
       Point<dim> centroid;
-      for (size_t i=0; i<npoints_; i++) {
+      for (size_t i=0; i<npoints_owned_; i++) {
         wrapper.cell_centroid<dim>(i, &centroid);
         (*points_)[i] = centroid;
       }
@@ -93,15 +94,17 @@ template<size_t dim> class Swarm {
    * @return the number of owned particles in the swarm
    */
   int num_owned_particles() const {
-    return npoints_;
+    return npoints_owned_;
   }
 
   /*! @brief return the number of ghost (not owned by this processor)
    * particles in the swarm.
-   * @return the number of ghost particles in the swarm
+   * @return the number of ghost particles in the swarm that are stored
+   * at the end of the particle list i.e., between num_owned_particles
+   * and num_owned_particles+num_ghost_particle.  
    */
   int num_ghost_particles() const {
-    return 0;
+    return points_->size() - npoints_owned_;
   }
 
   /*! @brief return the number of particles of given type
@@ -146,14 +149,21 @@ template<size_t dim> class Swarm {
     return (make_counting_iterator(start_index) + num_particles(etype));
   }
 
+  /*! @brief Add new particles to swarm
+   * @return 
+   */
+  void extend_particle_list(std::vector<Point<dim>>& new_pts)
+  {
+    (*points_).insert((*points_).end(), new_pts.begin(), new_pts.end());
+  }
   
 
  private:
   /** the centers of the particles */
   PointVecPtr points_;
 
-  /** the number of particles in the swarm */
-  size_t npoints_;
+  /** the number of owned particles in the swarm */
+  size_t npoints_owned_;
 };
 
 // Factory for making swarms in 1 dimensions with random or uniform

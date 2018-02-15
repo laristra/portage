@@ -102,7 +102,7 @@ operator() (const int pointId) const {
   // now see which source points are within an appropriate distance
   // of the target point
   // do a naive linear search
-  const int numPoints = sourceSwarm_.num_owned_particles();
+  const int numPoints = sourceSwarm_.num_particles(ALL);
   for (int p = 0; p < numPoints; ++p) {
     Point<D> spcoord = sourceSwarm_.get_particle_coordinates(p);
     bool contained = true;
