@@ -16,4 +16,7 @@ endif (Jali_DIR OR ENABLE_FleCSI)
 if (Jali_DIR)
   add_subdirectory(timingapp)
 endif (Jali_DIR)
+if(TANGRAM_FOUND AND XMOF2D_FOUND)
+  add_subdirectory(ir_linetest_app)
+endif(TANGRAM_FOUND AND XMOF2D_FOUND)
 
