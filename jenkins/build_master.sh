@@ -64,7 +64,7 @@ ctest -j2 --output-on-failure
 make install
 
 
-TANGRAM_INSTALL_PREFIX=$NGC/private/tangram/4f600ec441a-intel-17.0.1-openmpi-${openmpi_version}
+TANGRAM_INSTALL_PREFIX=$NGC/private/tangram/475b813919f-intel-17.0.1-openmpi-${openmpi_version}
 XMOF_INSTALL_PREFIX=$NGC/private/xmof2d/0.9-intel-17.0.1-openmpi-${openmpi_version}/share/cmake
 
 # Build Portage

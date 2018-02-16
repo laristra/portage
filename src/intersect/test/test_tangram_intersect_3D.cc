@@ -436,9 +436,8 @@ TEST(TANGRAM_3D, test_matpoly_faceted_cube2) {
   ASSERT_EQ(faceted_matpoly.num_vertices(), 14);
   
   //Convert the points
-  std::vector<Tangram::Point<3>> _source_points = faceted_matpoly.points();
-  std::vector<Portage::Point<3>> source_points;
-  for (auto p : _source_points) source_points.push_back(Portage::Point<3>(p));
+  Portage::facetedpoly_t srcpoly{faceted_matpoly.face_vertices()};
+  for (auto p : faceted_matpoly.points()) srcpoly.points.push_back(Portage::Point<3>(p));
   
   //Convert the face indices from the matpoly to a Portage style
   /* WITH THE NEW API FUNCTION THIS IS NOW UNNECESSARY
@@ -452,7 +451,9 @@ TEST(TANGRAM_3D, test_matpoly_faceted_cube2) {
   */
   
   //Create the facetedpoly_t structure
-  Portage::facetedpoly_t srcpoly{faceted_matpoly.face_vertices(), source_points};
+  //Portage::facetedpoly_t srcpoly{faceted_matpoly.face_vertices(), &source_points};
+  
+  //srcpoly.
   //NOW DIFFERENT
   //Portage::facetedpoly_t srcpoly{facetpoints, source_points};
   

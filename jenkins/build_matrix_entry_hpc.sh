@@ -19,7 +19,7 @@ build_type=$2
 
 jali_version=0.9.8
 openmpi_version=2.1.2
-tangram_version=4f600ec441a
+tangram_version=475b813919f
 xmof2d_version=0.9
 
 export NGC=/usr/projects/ngc
