@@ -12,6 +12,6 @@ file(COPY field4.txt DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 add_test(NAME apptest_cmp
          COMMAND ./apptest_cmp.sh)
 set_property(TEST apptest_cmp
-         PROPERTY ENVIRONMENT APPDIR=${CMAKE_BINARY_DIR}/bin)
+         PROPERTY ENVIRONMENT APPDIR=${CMAKE_CURRENT_BINARY_DIR}/..)
 
 

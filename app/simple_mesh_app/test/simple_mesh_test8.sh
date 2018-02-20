@@ -12,7 +12,7 @@ set -e
 set -x
 
 # 3d 2nd order node-centered remap of quad func
-${RUN_COMMAND} $APPDIR/simple_mesh_app 8 4 5
+${RUN_COMMAND} $TESTAPPDIR/simple_mesh_app 8 4 5
 
 # Compare the values for the field
-$APPDIR/apptest_cmp field_gold8.txt field8.txt 1e-12
+$CMPAPPDIR/apptest_cmp field_gold8.txt field8.txt 1e-12

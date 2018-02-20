@@ -6,31 +6,25 @@ Please see the license file at the root of this repository, or at:
 
 
 # Add header files
-set (swarm_HEADERS
-  swarm.h
-  swarm_state.h
+set (accumulate_HEADERS
+  accumulate.h
   PARENT_SCOPE
   )
 
 # Add source files
-set (simple_mesh_SOURCES
+set (accumulate_SOURCES
   PARENT_SCOPE
   )
 
 # Unit tests
 
 if (ENABLE_UNIT_TESTS)
-  cinch_add_unit(test_swarm
-    SOURCES test/test_swarm.cc
-    LIBRARIES portage ${LAPACKE_LIBRARIES}
+
+  cinch_add_unit(test_accumulate
+    SOURCES test/test_accumulate.cc
+    LIBRARIES portage 
     POLICY MPI
     THREADS 1
     )
 
-  cinch_add_unit(test_swarm_state
-    SOURCES test/test_swarm_state.cc
-    LIBRARIES portage ${LAPACKE_LIBRARIES}
-    POLICY MPI
-    THREADS 1
-    )
 endif (ENABLE_UNIT_TESTS)
