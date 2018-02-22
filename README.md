@@ -140,7 +140,7 @@ Execute the following from the portage root directory:
 module load openmpi/2.0.1-intel_17.0.0 cmake/3.7.1
 JALI_INSTALL_PREFIX=/projects/ngc/private/jali/0.9.8-intel-17.0.0-openmpi-2.0.1
 TPL_INSTALL_PREFIX=/projects/ngc/private/jali-tpl/1.0.9-intel-17.0.0-openmpi-2.0.1
-LAPACKE_DIR=/usr/local/codes/ngc/private/lapack/3.8.0-patched-intel-17.0.0
+LAPACKE_DIR=/projects/ngc/private/lapack/3.8.0-patched-intel-17.0.6
 LAPACKE_INCLUDE_DIR=$LAPACKE_DIR/include
 LAPACKE_LIBRARY_DIR=$LAPACKE_DIR
 mkdir build
