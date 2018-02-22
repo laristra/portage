@@ -64,12 +64,12 @@ if(ENABLE_UNIT_TESTS)
       include_directories(${TANGRAM_INCLUDE_DIRS})
       cinch_add_unit(test_tangram_intersect_2D
        SOURCES test/test_tangram_intersect_2D
-       LIBRARIES portage  ${LAPACKE_LIBRARIES} 
+       LIBRARIES portage 
        POLICY SERIAL
        )       
       cinch_add_unit(test_tangram_intersect_3D
        SOURCES test/test_tangram_intersect_3D
-       LIBRARIES portage  ${LAPACKE_LIBRARIES} 
+       LIBRARIES portage 
        POLICY SERIAL
        )       
   endif (TANGRAM_FOUND AND XMOF2D_FOUND)
