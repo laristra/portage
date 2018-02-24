@@ -76,7 +76,7 @@ class Flat_State_Wrapper {
 
 		  // get pointer to data for state from input state wrapper
 		  T const* data;
-		  input.get_data(entity, varname, &data);
+		  input.mesh_get_data(entity, varname, &data);
 
 		  // copy input state data into new vector storage
 		  size_t dataSize = input.get_data_size(entity, varname);
@@ -149,7 +149,7 @@ class Flat_State_Wrapper {
     *
     * Data is associated with the name-entity combination. Both values must be valid.
    */
-  void get_data(const Entity_kind on_what, const std::string var_name, T** data) {
+  void mesh_get_data(const Entity_kind on_what, const std::string var_name, T** data) {
     pair_t pr(var_name, on_what);
     auto iter = name_map_.find(pr);
     if (iter != name_map_.end()) {
@@ -167,7 +167,7 @@ class Flat_State_Wrapper {
     *
     * Data is associated with the name-entity combination. Both values must be valid.
    */
-  void get_data(const Entity_kind on_what, const std::string var_name, T const **data) const {
+  void mesh_get_data(const Entity_kind on_what, const std::string var_name, T const **data) const {
     pair_t pr(var_name, on_what);
     auto iter = name_map_.find(pr);
     if (iter != name_map_.end()) {
