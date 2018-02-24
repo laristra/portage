@@ -8,7 +8,7 @@ Please see the license file at the root of this repository, or at:
 
 
 
-#include "portage/wonton/state/jali/jali_state_wrapper.h"
+#include "portage/wonton/state/jali/jali_mmstate_wrapper.h"
 #include "portage/wonton/mesh/jali/jali_mesh_wrapper.h"
 
 #include "portage/support/portage.h"
@@ -177,8 +177,8 @@ TEST(Flat_State_Wrapper, DataTypes2D) {
 
   std::shared_ptr<Jali::Mesh> inputMesh = mf(0.0, 0.0, 1.0, 1.0, 2, 2);
   Wonton::Jali_Mesh_Wrapper inputMeshWrapper(*inputMesh);
-  Jali::State jali_state(inputMesh);
-  Wonton::Jali_State_Wrapper jali_state_wrapper(jali_state);
+  std::shared_ptr<Jali::State> jali_state(Jali::State::create(inputMesh));
+  Wonton::Jali_MMState_Wrapper jali_state_wrapper(*jali_state);
 
   jali_state.add("d1", inputMesh, Jali::Entity_kind::CELL,
             Jali::Entity_type::ALL, dtest1);
@@ -197,23 +197,26 @@ TEST(Flat_State_Wrapper, DataTypes2D) {
 
   // Get raw float data using wrapper
   double* ddata = nullptr;
-  jali_state_wrapper.get_data(Portage::CELL, "d1", &ddata);
-  for (unsigned int i=0; i<n_cells; i++) ASSERT_EQ(ddata[i], dtest1[i]);
-
-  // Get raw float data using the flat mesh wrapper (d1)
-  ddata = nullptr;
-  flat_state.get_data(Portage::CELL, "d1", &ddata);
-  for (unsigned int i=0; i<n_cells; i++) ASSERT_EQ(ddata[i], dtest1[i]);
 
   // Get raw float data using the flat mesh wrapper (d2)
   ddata = nullptr;
-  flat_state.get_data(Portage::CELL, "d2", &ddata);
-  for (unsigned int i=0; i<n_cells; i++) ASSERT_EQ(ddata[i], dtest2[i]);
+  jali_state_wrapper.mesh_get_data(Portage::CELL, "d1", &ddata);
+  for (unsigned int i = 0; i < n_cells; i++) ASSERT_EQ(ddata[i], dtest1[i]);
+
+  // Get raw float data using the flat mesh wrapper (d1)
+  ddata = nullptr;
+  flat_state.mesh_get_data(Portage::CELL, "d1", &ddata);
+  for (unsigned int i = 0; i < n_cells; i++) ASSERT_EQ(ddata[i], dtest1[i]);
+
+  // Get raw float data using the flat mesh wrapper (d2)
+  ddata = nullptr;
+  flat_state.mesh_get_data(Portage::CELL, "d2", &ddata);
+  for (unsigned int i = 0; i < n_cells; i++) ASSERT_EQ(ddata[i], dtest2[i]);
 
   // Get raw float data using the flat mesh wrapper (d3)
   ddata = nullptr;
-  flat_state.get_data(Portage::CELL, "d3", &ddata);
-  for (unsigned int i=0; i<n_cells; i++) ASSERT_EQ(ddata[i], dtest3[i]);
+  flat_state.mesh_get_data(Portage::CELL, "d3", &ddata);
+  for (unsigned int i = 0; i < n_cells; i++) ASSERT_EQ(ddata[i], dtest3[i]);
 
   // Check entity types
   Portage::Entity_kind entity;
@@ -239,8 +242,8 @@ TEST(Flat_State_Wrapper, DataTypes3D) {
                                              1.0, 1.0, 1.0,
                                              2, 2, 2);
   Wonton::Jali_Mesh_Wrapper inputMeshWrapper(*inputMesh);
-  Jali::State jali_state(inputMesh);
-  Wonton::Jali_State_Wrapper jali_state_wrapper(jali_state);
+  std::shared_ptr<Jali::State> jali_state(Jali::State::create(inputMesh));
+  Wonton::Jali_MMState_Wrapper jali_state_wrapper(*jali_state);
 
   jali_state.add("d1", inputMesh, Jali::Entity_kind::CELL,
             Jali::Entity_type::ALL, dtest1);
@@ -256,23 +259,23 @@ TEST(Flat_State_Wrapper, DataTypes3D) {
 
   // Get raw float data using wrapper
   double* ddata = nullptr;
-  jali_state_wrapper.get_data(Portage::CELL, "d1", &ddata);
-  for (unsigned int i=0; i<n_cells; i++) ASSERT_EQ(ddata[i], dtest1[i]);
+  jali_state_wrapper.mesh_get_data(Portage::CELL, "d1", &ddata);
+  for (unsigned int i = 0; i < n_cells; i++) ASSERT_EQ(ddata[i], dtest1[i]);
 
   // Get raw float data using the flat mesh wrapper (d1)
   ddata = nullptr;
-  flat_state.get_data(Portage::CELL, "d1", &ddata);
-  for (unsigned int i=0; i<n_cells; i++) ASSERT_EQ(ddata[i], dtest1[i]);
+  flat_state.mesh_get_data(Portage::CELL, "d1", &ddata);
+  for (unsigned int i = 0; i < n_cells; i++) ASSERT_EQ(ddata[i], dtest1[i]);
 
   // Get raw float data using the flat mesh wrapper (d2)
   ddata = nullptr;
-  flat_state.get_data(Portage::CELL, "d2", &ddata);
-  for (unsigned int i=0; i<n_cells; i++) ASSERT_EQ(ddata[i], dtest2[i]);
+  flat_state.mesh_get_data(Portage::CELL, "d2", &ddata);
+  for (unsigned int i = 0; i < n_cells; i++) ASSERT_EQ(ddata[i], dtest2[i]);
 
   // Get raw float data using the flat mesh wrapper (d3)
   ddata = nullptr;
-  flat_state.get_data(Portage::CELL, "d3", &ddata);
-  for (unsigned int i=0; i<n_cells; i++) ASSERT_EQ(ddata[i], dtest3[i]);
+  flat_state.mesh_get_data(Portage::CELL, "d3", &ddata);
+  for (unsigned int i = 0; i < n_cells; i++) ASSERT_EQ(ddata[i], dtest3[i]);
 
   // Check entity types
   Portage::Entity_kind entity;
