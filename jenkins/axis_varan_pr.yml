@@ -9,8 +9,11 @@ BUILD_TYPE:
   - serial
   - thrust
   - flecsi
+  - readme
 
 exclude:
   - COMPILER: intel
     BUILD_TYPE: flecsi
+  - COMPILER: gcc
+    BUILD_TYPE: readme
 

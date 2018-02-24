@@ -19,6 +19,30 @@ extern "C" {
 #include "portage/intersect/r2d.h"
 }
 
+/*!
+ @file ir_linetest_app.cc
+ @brief Integration test for Portage and Tangram that uses XMOF2D interface reconstructor.
+ The domain is a unit square with two material separated by a linear interface.
+ Source and target meshes are rectangular (SimpleMesh2D) with dimensions specified
+ by a user.
+ For a given material interface the reference volume fractions and centroids are computed
+ on the source mesh using R2D. Tangram driver is used to perform interface reconstuction
+ and obtain a vector of CellMatPoly objects for multi-material cells. The reconstructor
+ used by Tangram is XMOF2D.
+ For target cells intersecting with multi-material source cells volume fractions and
+ centroids of their intersections with single-material polygons in respective CellMatPoly
+ objects are computed, and for both materials their overall volume fractions and centroids
+ are found in every target cell.
+ The obtained volume fractions and centroids are used to perform interface reconstruction
+ on the target mesh using Tangram driver with XMOF2D as a reconstructor.
+ For every multi-material cell, the Hausdorff distance between the reconstructed and
+ reference material interfaces is computed, the max distance over all multi-material cells
+ is then compared to a given tolerance to determine if the interface reconstruction was
+ performed correctly.
+ Requires Tangram and XMOF2D libraries to be linked.
+*/
+
+
 /* Refence material interface is given in the form
    y = mat_int_a*x + mat_int_b 
    Point (Px,Py) is below the line if 
@@ -33,19 +57,47 @@ const double mat_int_b = -0.25;
 const int mat_id_above = 0;
 const int mat_id_below = 1;
 
-const double deps = 1.0e-15;	 //Distance tolerance
-const double seps = 1.0e-14;	 //Size(area) tolerance
-const double denom_eps = 1.0e-6; //Denominator tolerance
+const double IR_tol = 1.0e-8;     //Max allowed Hausdorff distance between
+                                  //reference and reconstructed material interfaces
+const double deps = 1.0e-15;	    //Distance tolerance
+const double seps = 1.0e-14;	    //Size(area) tolerance
+const double denom_eps = 1.0e-6;  //Denominator tolerance
 
+/*!
+ @brief Convert the line given by y = line_a*x + line_b to the R2D format.
+ @param[in] line_a Slope of the line.
+ @param[in] line_b y-intercept of the line.
+ @param[out] r2d_line Corresponding line in R2D format
+*/
 void R2DizeLine(const double line_a,
                 const double line_b,
                 r2d_plane& r2d_line);
 
+/*!
+ @brief Convert a mesh cell into an R2D polygon.
+ @tparam Mesh_Wrapper A lightweight wrapper to a specific input mesh
+                      implementation that provides required functionality.
+ @param[in] Mesh Mesh wrapper.
+ @param[in] cell_id Index of the cell to convert.
+ @param[out] r2d_polygon Corresponding polygon in R2D format
+*/
 template <class Mesh_Wrapper>
 void R2DizeCell(const Mesh_Wrapper& Mesh,
                 const int cell_id,
                 r2d_poly& r2d_polygon);
-
+/*!
+ @brief Determines the position of a mesh cell with respect to a line.
+ @tparam Mesh_Wrapper A lightweight wrapper to a specific input mesh
+                      implementation that provides required functionality.
+ @param[in] Mesh Mesh wrapper.
+ @param[in] cell_id Index of the cell to test for position.
+ @param[in] line_a Slope of the reference material interface.
+ @param[in] line_b y-intercept of the the reference material interface.
+ @param[in] yeps Max difference in y-coordinate from the value given by the line equation
+                 for points on the line.
+ @return -1 if the cell is below the line, 1 if the cell is above the line,
+          0 if the line passes through the interior of the cell
+*/
 template <class Mesh_Wrapper>
 int CellPosition(const Mesh_Wrapper& Mesh,
                  const int cell_id,
@@ -53,6 +105,21 @@ int CellPosition(const Mesh_Wrapper& Mesh,
                  const double line_b,
                  const double yeps = deps);
 
+/*!
+ @brief Computes material data for a mesh and a given linear material interface using R2D.
+ @tparam Mesh_Wrapper A lightweight wrapper to a specific input mesh
+                      implementation that provides required functionality.
+ @param[in] Mesh Mesh wrapper.
+ @param[in] line_a Slope of the line.
+ @param[in] line_b y-intercept of the line.
+ @param[out] cell_num_mats Number of material in each mesh cell, vector of length cell_num
+ @param[out] cell_mat_ids Indices of materials in each mesh cell, a flat vector, requires
+                          computations of offsets
+ @param[out] cell_mat_volfracs Volume fractions of materials in each mesh cell, a flat
+                               vector, requires computations of offsets
+ @param[out] cell_mat_centroids Centroids of materials in each mesh cell, a flat vector,
+                                requires computations of offsets
+*/
 template <class Mesh_Wrapper>
 void get_materials_data(const Mesh_Wrapper& Mesh,
                         const double line_a,
@@ -61,18 +128,53 @@ void get_materials_data(const Mesh_Wrapper& Mesh,
                         std::vector<int>& cell_mat_ids,
                         std::vector<double>& cell_mat_volfracs,
                         std::vector<Tangram::Point2>& cell_mat_centroids);
-
+/*!
+ @brief Determines the position of a point with respect to a line.
+ @param[in] pt Point coordinates.
+ @param[in] line_nvec Normal vector to the line.
+ @param[in] line_pt Point on the line.
+ @param[in] eps Max distance between the line and points considered to be on the line.
+ @return -1 if the point is below the line, 1 if the point is above the line,
+          0 if the point is on the line
+*/
 int PointPosition(const Portage::Point2& pt,
                   const Portage::Vector2& line_nvec,
                   const Portage::Point2& line_pt,
                   const double eps = deps);
 
+/*!
+ @brief Computes the intersection of two non-parallel lines.
+ @param[in] lines_pts Two pairs of points defining the intersecting lines.
+ @param[in] den_eps Minimal value of the denominator for which the analytical formula is
+                    to be used, if the denominator is smaller, the bisection algorithm
+                    is used instead.
+ @param[in] eps Max distance between points that are considered coincident.
+ @return Intersection point
+*/
 Portage::Point2 LinesIntersect(std::vector< std::vector<Portage::Point2> > lines_pts,
                                double den_eps,
                                double eps = deps);
-
+/*!
+ @brief Computes Hausdorff distance between two linear segments.
+ @param[in] segments Two pairs of points defining the linear segments.
+ @return Hausdorff distance
+*/
 double SegmentsDistance(const std::vector<std::vector<Portage::Point2>>& segments);
 
+/*!
+ @brief Computes the max Hausdorff distance between the reference and reconstructed
+        interfaces over the multi-material cells in a mesh.
+ @tparam Mesh_Wrapper A lightweight wrapper to a specific input mesh
+                      implementation that provides required functionality.
+ @param[in] Mesh Mesh wrapper.
+ @param[in] line_a Slope of the reference material interface.
+ @param[in] line_b y-intercept of the the reference material interface.
+ @param[in] cell_num_mats Reference number of materials for every mesh cell.
+ @param[in] cellmatpoly_list Vector of pointers to CellMatPoly objects corresponding to
+                             the results of interface reconstruction
+ @param[in] eps Max distance between points that are considered coincident.
+ @return Max Hausdorff distance
+*/
 template <class Mesh_Wrapper>
 double get_ir_error(const Mesh_Wrapper& Mesh,
                     const double line_a,
@@ -132,6 +234,12 @@ int main(int argc, char** argv) {
 #endif
 }
 
+/*!
+ @brief Convert the line given by y = line_a*x + line_b to the R2D format.
+ @param[in] line_a Slope of the line.
+ @param[in] line_b y-intercept of the line.
+ @param[out] r2d_line Corresponding line in R2D format
+*/
 void R2DizeLine(const double line_a,
                 const double line_b,
                 r2d_plane& r2d_line) {
@@ -141,6 +249,14 @@ void R2DizeLine(const double line_a,
   r2d_line.d   = -line_b*r2d_line.n.y;
 }
 
+/*!
+ @brief Convert a mesh cell into an R2D polygon.
+ @tparam Mesh_Wrapper A lightweight wrapper to a specific input mesh
+ implementation that provides required functionality.
+ @param[in] Mesh Mesh wrapper.
+ @param[in] cell_id Index of the cell to convert.
+ @param[out] r2d_polygon Corresponding polygon in R2D format
+*/
 template <class Mesh_Wrapper>
 void R2DizeCell(const Mesh_Wrapper& Mesh,
                 const int cell_id,
@@ -158,6 +274,19 @@ void R2DizeCell(const Mesh_Wrapper& Mesh,
   delete vertices;
 }
 
+/*!
+ @brief Determines the position of a mesh cell with respect to a line.
+ @tparam Mesh_Wrapper A lightweight wrapper to a specific input mesh
+ implementation that provides required functionality.
+ @param[in] Mesh Mesh wrapper.
+ @param[in] cell_id Index of the cell to test for position.
+ @param[in] line_a Slope of the reference material interface.
+ @param[in] line_b y-intercept of the the reference material interface.
+ @param[in] yeps Max difference in y-coordinate from the value given by the line equation
+ for points on the line.
+ @return -1 if the cell is below the line, 1 if the cell is above the line,
+ 0 if the line passes through the interior of the cell
+*/
 template <class Mesh_Wrapper>
 int CellPosition(const Mesh_Wrapper& Mesh,
                  const int cell_id,
@@ -185,6 +314,21 @@ int CellPosition(const Mesh_Wrapper& Mesh,
   return result;
 }
 
+/*!
+ @brief Computes material data for a mesh and a given linear material interface using R2D.
+ @tparam Mesh_Wrapper A lightweight wrapper to a specific input mesh
+ implementation that provides required functionality.
+ @param[in] Mesh Mesh wrapper.
+ @param[in] line_a Slope of the line.
+ @param[in] line_b y-intercept of the line.
+ @param[out] cell_num_mats Number of material in each mesh cell, vector of length cell_num
+ @param[out] cell_mat_ids Indices of materials in each mesh cell, a flat vector, requires
+ computations of offsets
+ @param[out] cell_mat_volfracs Volume fractions of materials in each mesh cell, a flat
+ vector, requires computations of offsets
+ @param[out] cell_mat_centroids Centroids of materials in each mesh cell, a flat vector,
+ requires computations of offsets
+*/
 template <class Mesh_Wrapper>
 void get_materials_data(const Mesh_Wrapper& Mesh,
                         const double line_a,
@@ -255,6 +399,15 @@ void get_materials_data(const Mesh_Wrapper& Mesh,
   }
 }
 
+/*!
+ @brief Determines the position of a point with respect to a line.
+ @param[in] pt Point coordinates.
+ @param[in] line_nvec Normal vector to the line.
+ @param[in] line_pt Point on the line.
+ @param[in] eps Max distance between the line and points considered to be on the line.
+ @return -1 if the point is below the line, 1 if the point is above the line,
+ 0 if the point is on the line
+*/
 int PointPosition(const Portage::Point2& pt,
                   const Portage::Vector2& line_nvec,
                   const Portage::Point2& line_pt,
@@ -268,6 +421,15 @@ int PointPosition(const Portage::Point2& pt,
   return pos;
 }
 
+/*!
+ @brief Computes the intersection of two non-parallel lines.
+ @param[in] lines_pts Two pairs of points defining the intersecting lines.
+ @param[in] den_eps Minimal value of the denominator for which the analytical formula is
+ to be used, if the denominator is smaller, the bisection algorithm
+ is used instead.
+ @param[in] eps Max distance between points that are considered coincident.
+ @return Intersection point
+*/
 Portage::Point2 LinesIntersect(std::vector< std::vector<Portage::Point2> > lines_pts,
                                double denom_eps,
                                double eps) {
@@ -326,6 +488,11 @@ Portage::Point2 LinesIntersect(std::vector< std::vector<Portage::Point2> > lines
   return p_int;
 }
 
+/*!
+ @brief Computes Hausdorff distance between two linear segments.
+ @param[in] segments Two pairs of points defining the linear segments.
+ @return Hausdorff distance
+*/
 double SegmentsDistance(const std::vector<std::vector<Portage::Point2>>& segments) {
   double max_dist = 0.0;
   for (int iseg = 0; iseg < 2; iseg++) {
@@ -350,6 +517,20 @@ double SegmentsDistance(const std::vector<std::vector<Portage::Point2>>& segment
   return max_dist;
 }
 
+/*!
+ @brief Computes the max Hausdorff distance between the reference and reconstructed
+ interfaces over the multi-material cells in a mesh.
+ @tparam Mesh_Wrapper A lightweight wrapper to a specific input mesh
+ implementation that provides required functionality.
+ @param[in] Mesh Mesh wrapper.
+ @param[in] line_a Slope of the reference material interface.
+ @param[in] line_b y-intercept of the the reference material interface.
+ @param[in] cell_num_mats Reference number of materials for every mesh cell.
+ @param[in] cellmatpoly_list Vector of pointers to CellMatPoly objects corresponding to
+ the results of interface reconstruction
+ @param[in] eps Max distance between points that are considered coincident.
+ @return Max Hausdorff distance
+*/
 template <class Mesh_Wrapper>
 double get_ir_error(const Mesh_Wrapper& Mesh,
                     const double line_a,

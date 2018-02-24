@@ -7,7 +7,7 @@ Please see the license file at the root of this repository, or at:
 
 if (Jali_DIR)
     add_executable(portageapp_jali portageapp_jali.cc)
-    target_link_libraries(portageapp_jali portage ${EXTRA_LIBS} ${LAPACKE_LIBRARIES})
+    target_link_libraries(portageapp_jali portage ${EXTRA_LIBS} ${LAPACKX_LIBRARIES})
 
     # MPI additions - need to push this down into cinch
     if (ENABLE_MPI)
@@ -24,7 +24,7 @@ endif (Jali_DIR)
 # FleCSI example
 if (ENABLE_FleCSI)
   add_executable(portageapp_flecsi portageapp_flecsi.cc)
-  target_link_libraries(portageapp_flecsi portage ${EXTRA_LIBS} ${LAPACKE_LIBRARIES})
+  target_link_libraries(portageapp_flecsi portage ${EXTRA_LIBS} ${LAPACKX_LIBRARIES})
   include_directories(${FleCSI_INCLUDE_DIR} ${FleCSISP_INCLUDE_DIR})
   target_link_libraries(portageapp_flecsi ${FleCSI_LIBRARIES} ${FleCSISP_LIBRARIES})
 # these appear needed because of something we are pulling in within src
@@ -37,7 +37,7 @@ endif (ENABLE_FleCSI)
 
 if (JALI_DIR AND ENABLE_FleCSI)
   add_executable(portageapp_jali2flecsi portageapp_jali2flecsi.cc)
-  target_link_libraries(portageapp_jali2flecsi portageapp_jali2flecsi ${EXTRA_LIBS} ${LAPACKE_LIBRARIES})
+  target_link_libraries(portageapp_jali2flecsi portageapp_jali2flecsi ${EXTRA_LIBS} ${LAPACKX_LIBRARIES})
   include_directories(${FleCSI_INCLUDE_DIR} ${FleCSISP_INCLUDE_DIR})
   target_link_libraries(portageapp_jali2flecsi ${FleCSI_LIBRARIES} ${FleCSISP_LIBRARIES})
 # these appear needed because of something we are pulling in within src

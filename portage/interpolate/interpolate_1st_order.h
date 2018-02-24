@@ -106,7 +106,7 @@ class Interpolate_1stOrder {
   void set_interpolation_variable(std::string const & interp_var_name,
                                   LimiterType limtype=NOLIMITER) {
     interp_var_name_ = interp_var_name;
-    source_state_.mat_get_data(on_what, interp_var_name, &source_vals_);
+    source_state_.mesh_get_data(on_what, interp_var_name, &source_vals_);
   }
 
   /*!
@@ -195,6 +195,13 @@ class Interpolate_1stOrder<SourceMeshType, TargetMeshType, StateType, CELL, D> {
   /// Destructor
   ~Interpolate_1stOrder() {}
 
+
+  /// Set the variable we are operating on
+
+  int set_material(int m) {
+    matid_ = m;
+  }
+
   /// Set the variable name to be interpolated
 
 
@@ -208,7 +215,7 @@ class Interpolate_1stOrder<SourceMeshType, TargetMeshType, StateType, CELL, D> {
   void set_interpolation_variable(std::string const & interp_var_name, 
                                   LimiterType limtype = NOLIMITER) {
     interp_var_name_ = interp_var_name;
-    source_state_.mat_get_cellvals(interp_var_name, m, &cellids, &source_vals_);
+    source_state_.mat_get_celldata(interp_var_name, matid_, &source_vals_);
   }
 
   /*!
@@ -236,6 +243,7 @@ class Interpolate_1stOrder<SourceMeshType, TargetMeshType, StateType, CELL, D> {
   StateType const & source_state_;
   std::string interp_var_name_;
   double const * source_vals_;
+  int matid_;
 };
 
 
@@ -267,8 +275,9 @@ double Interpolate_1stOrder<SourceMeshType, TargetMeshType, StateType,
   double wtsum0 = 0.0;
   for (auto const& wt : sources_and_weights) {
     int srccell = wt.entityID;
+    int matcell = source_state_.cell_index_in_material(srccell, matid_);
     std::vector<double> pair_weights = wt.weights;
-    val += source_vals_[local_index_of_srccell] * pair_weights[0];  // 1st order
+    val += source_vals_[matcell] * pair_weights[0];  // 1st order
     wtsum0 += pair_weights[0];
   }
 
@@ -340,7 +349,7 @@ class Interpolate_1stOrder<SourceMeshType, TargetMeshType, StateType, NODE, D> {
   void set_interpolation_variable(std::string const & interp_var_name,
                                   LimiterType limtype = NOLIMITER) {
     interp_var_name_ = interp_var_name;
-    source_state_.get_data(NODE, interp_var_name, &source_vals_);
+    source_state_.mesh_get_data(NODE, interp_var_name, &source_vals_);
   }
 
   /*!

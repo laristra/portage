@@ -22,7 +22,8 @@ macro(ADD_SIMPLE_MESH_TEST TEST_NUM)
     COMMAND ./simple_mesh_test${TEST_NUM}.sh)
   set_property(TEST simple_mesh_test${TEST_NUM}
     PROPERTY ENVIRONMENT
-    APPDIR=${CMAKE_BINARY_DIR}/bin
+    TESTAPPDIR=${CMAKE_CURRENT_BINARY_DIR}/..
+    CMPAPPDIR=${CMAKE_BINARY_DIR}/app/apptest_cmp
     RUN_COMMAND=${RUN_COMMAND})
   set_property(TEST simple_mesh_test${TEST_NUM}
     PROPERTY PROCESSORS 1)
