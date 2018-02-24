@@ -15,9 +15,9 @@ set -x
 
 # SERIAL RUN
 
-mpirun -np 1 $APPDIR/portageapp_flecsi \
+mpirun -np 1 $TESTAPPDIR/portageapp_flecsi \
        6 6 1 y # nx, ny, order, dump_output
 
 # Compare the values for the field
-$APPDIR/apptest_cmp GOLD_flecsi_rect_2d_cell_f1_r1.txt flecsi_field_2d_cell_f1_r1.txt 1e-12
+$CMPAPPDIR/apptest_cmp GOLD_flecsi_rect_2d_cell_f1_r1.txt flecsi_field_2d_cell_f1_r1.txt 1e-12
 

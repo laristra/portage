@@ -11,10 +11,13 @@ BUILD_TYPE:
   - thrust
   - flecsi
   - coverage
+  - readme
 
 exclude:
   - COMPILER: intel
     BUILD_TYPE: flecsi
   - COMPILER: intel
     BUILD_TYPE: coverage
+  - COMPILER: gcc
+    BUILD_TYPE: readme
 

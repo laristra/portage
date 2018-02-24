@@ -12,7 +12,7 @@ set -e
 set -x
 
 # 3d 1st order node-centered remap of linear func
-${RUN_COMMAND} $APPDIR/simple_mesh_app 5 4 5
+${RUN_COMMAND} $TESTAPPDIR/simple_mesh_app 5 4 5
 
 # Compare the values for the field
-$APPDIR/apptest_cmp field_gold5.txt field5.txt 1e-12
+$CMPAPPDIR/apptest_cmp field_gold5.txt field5.txt 1e-12
