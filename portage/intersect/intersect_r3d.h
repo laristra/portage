@@ -16,6 +16,10 @@ extern "C" {
 #include "r3d.h"
 }
 
+#ifdef HAVE_TANGRAM
+#include "tangram/support/MatPoly.h"
+#endif
+
 #include "portage/support/Point.h"
 #include "portage/support/portage.h"
 
@@ -32,6 +36,25 @@ struct facetedpoly {
   std::vector<Point<3>> points;
 } facetedpoly_t;
 
+#ifdef HAVE_TANGRAM
+/*!
+ @brief Facetizes a 3D MatPoly and converts it to the facetedpoly_t structure
+ @param matpoly  3D material polyhedron object to be converted
+ @return  Corresponding facetedpoly_t structure
+*/
+facetedpoly_t get_faceted_matpoly(const Tangram::MatPoly<3>& matpoly) {
+  // facet the matpoly
+  Tangram::MatPoly<3> faceted_matpoly;
+  matpoly.faceted_matpoly(&faceted_matpoly);
+  
+  // initialize the result with the face vertices
+  facetedpoly_t result{faceted_matpoly.face_vertices()};
+  
+  // convert tangram points to portage points for facetedpoly_t.points
+  for (auto p : faceted_matpoly.points()) result.points.push_back(Portage::Point<3>(p));
+  return result; 
+}
+#endif
 
 
 // Intersect one source polyhedron (possibly non-convex but with
@@ -39,8 +62,8 @@ struct facetedpoly {
 // polyhedron
 
 std::vector<double>
-intersect_3Dpolys(facetedpoly_t srcpoly,
-                  std::vector<std::array<Point<3>, 4>> target_tet_coords) {
+intersect_3Dpolys(const facetedpoly_t &srcpoly,
+                  const std::vector<std::array<Point<3>, 4>> &target_tet_coords) {
 
   // Bounding box of the target cell - will be used to compute
   // epsilon for bounding box check. We could use the source cell
@@ -104,9 +127,9 @@ intersect_3Dpolys(facetedpoly_t srcpoly,
   for (int i = 0; i < num_faces; i++) {
     // p0, p1, p2 traversed in order form a triangle whose normal
     // points out of the source polyhedron
-    Point<3> &p0 = srcpoly.points[srcpoly.facetpoints[i][0]];
-    Point<3> &p1 = srcpoly.points[srcpoly.facetpoints[i][1]];
-    Point<3> &p2 = srcpoly.points[srcpoly.facetpoints[i][2]];
+    const Point<3> &p0 = srcpoly.points[srcpoly.facetpoints[i][0]];
+    const Point<3> &p1 = srcpoly.points[srcpoly.facetpoints[i][1]];
+    const Point<3> &p2 = srcpoly.points[srcpoly.facetpoints[i][2]];
 
     Vector<3> v0 = p1-p0;
     Vector<3> v1 = p2-p0;
