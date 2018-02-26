@@ -82,7 +82,7 @@ class Interpolate_2ndOrder {
 
     // Extract the field data from the statemanager
     
-    source_state_.get_data(on_what, interp_var_name, &source_vals_);
+    source_state_.mesh_get_data(on_what, interp_var_name, &source_vals_);
     
     // Compute the limited gradients for the field
     
@@ -181,7 +181,7 @@ class Interpolate_2ndOrder<D, CELL, SourceMeshType, TargetMeshType, StateType> {
 
     // Extract the field data from the statemanager
 
-    source_state_.get_data(CELL, interp_var_name, &source_vals_);
+    source_state_.mesh_get_data(CELL, interp_var_name, &source_vals_);
 
     // Compute the limited gradients for the field
 
@@ -360,7 +360,7 @@ class Interpolate_2ndOrder<D, NODE, SourceMeshType, TargetMeshType, StateType> {
 
     // Extract the field data from the statemanager
     
-    source_state_.get_data(NODE, interp_var_name, &source_vals_);
+    source_state_.mesh_get_data(NODE, interp_var_name, &source_vals_);
     
     // Compute the limited gradients for the field
     
