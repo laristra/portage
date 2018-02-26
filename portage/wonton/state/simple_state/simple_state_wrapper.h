@@ -54,7 +54,7 @@ class Simple_State_Wrapper {
     @param data A pointer to the data array.  If the requested data is not
     found in the state manager, a @c nullptr is returned.
    */
-  void get_data(const Entity_kind on_what, const std::string name,
+  void mesh_get_data(const Entity_kind on_what, const std::string name,
                 double **data) {
     auto it = state_.find(name, on_what);
     if (it != state_.end()) {
@@ -76,7 +76,7 @@ class Simple_State_Wrapper {
     @param data A @c pointer to the const data array.  If the requested data is
     not found in the state manager, a @c nullptr is returned.
    */
-  void get_data(const Entity_kind on_what, const std::string name,
+  void mesh_get_data(const Entity_kind on_what, const std::string name,
                   double const **data) const {
     auto it = state_.find(name, on_what);
     if (it != state_.end()) {
@@ -98,7 +98,7 @@ class Simple_State_Wrapper {
     @param data A @c pointer to the const data array.  If the requested data is
     not found in the state manager, a @c nullptr is returned.
    */
-  void add_data(const Entity_kind on_what, const std::string name,
+  void mesh_add_data(const Entity_kind on_what, const std::string name,
                   double const **data) const {
     auto vec = state_.add(name, on_what, *data);
   }
