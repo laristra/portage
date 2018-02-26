@@ -534,7 +534,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
   double const * nodevecout;
   double totvolume = 0.;
   if (entityKind == Jali::Entity_kind::CELL)  {  // CELL error computation
-    targetStateWrapper.get_data<double>(Portage::CELL, "celldata",
+    targetStateWrapper.mesh_get_data<double>(Portage::CELL, "celldata",
                                         &cellvecout);
 
     if (numpe == 1 && ntarcells < 10)
@@ -562,7 +562,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
       }
     }
   } else {  // NODE error computation
-    targetStateWrapper.get_data<double>(Portage::NODE, "nodedata",
+    targetStateWrapper.mesh_get_data<double>(Portage::NODE, "nodedata",
                                         &nodevecout);
     if (numpe == 1 && ntarnodes < 10)
       std::cout << "nodedata vector on target mesh after remapping is:"
