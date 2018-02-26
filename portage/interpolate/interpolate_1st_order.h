@@ -106,7 +106,7 @@ class Interpolate_1stOrder {
   void set_interpolation_variable(std::string const & interp_var_name,
                                   LimiterType limtype=NOLIMITER) {
     interp_var_name_ = interp_var_name;
-    source_state_.get_data(on_what, interp_var_name, &source_vals_);
+    source_state_.mesh_get_data(on_what, interp_var_name, &source_vals_);
   }
 
   /*!
@@ -191,7 +191,7 @@ class Interpolate_1stOrder<D, CELL, SourceMeshType, TargetMeshType, StateType> {
   void set_interpolation_variable(std::string const & interp_var_name,
                                   LimiterType limtype = NOLIMITER) {
     interp_var_name_ = interp_var_name;
-    source_state_.get_data(CELL, interp_var_name, &source_vals_);
+    source_state_.mesh_get_data(CELL, interp_var_name, &source_vals_);
   }
 
   /*!
@@ -324,7 +324,7 @@ class Interpolate_1stOrder<D, NODE, SourceMeshType, TargetMeshType, StateType> {
   void set_interpolation_variable(std::string const & interp_var_name,
                                   LimiterType limtype = NOLIMITER) {
     interp_var_name_ = interp_var_name;
-    source_state_.get_data(NODE, interp_var_name, &source_vals_);
+    source_state_.mesh_get_data(NODE, interp_var_name, &source_vals_);
   }
 
   /*!
