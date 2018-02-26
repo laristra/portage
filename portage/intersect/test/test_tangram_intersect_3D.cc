@@ -4,8 +4,6 @@ Please see the license file at the root of this repository, or at:
     https://github.com/laristra/portage/blob/master/LICENSE
 */
 
-#ifdef HAVE_TANGRAM
-
 #include <iostream>
 #include "gtest/gtest.h"
 
@@ -250,34 +248,11 @@ TEST(TANGRAM_3D, test_matpoly_faceted_cube_by_hand) {
       Tangram::Point<3>(0.5, 0.0, 0.5), Tangram::Point<3>(1.0, 0.5, 0.5),
       Tangram::Point<3>(0.5, 1.0, 0.5), Tangram::Point<3>(0.0, 0.5, 0.5),
       Tangram::Point<3>(0.5, 0.5, 0.0), Tangram::Point<3>(0.5, 0.5, 1.0)};
-  std::vector<std::vector<int>> faceted_cube_faces = {{0, 1, 8},
-                                                      {1, 5, 8},
-                                                      {5, 4, 8},
-                                                      {4, 0, 8},
-                                                      {1, 2, 9},
-                                                      {2, 6, 9},
-                                                      {6, 5, 9},
-                                                      {5, 1, 9},
-                                                      {2, 3, 10},
-                                                      {3, 7, 10},
-                                                      {7, 6, 10},
-                                                      {6, 2, 10},
-                                                      {3, 0, 11},
-                                                      {0, 4, 11},
-                                                      {4, 7, 11},
-                                                      {7, 3, 11},
-                                                      {0, 3, 12},
-                                                      {3, 2, 12},
-                                                      {
-                                                          2,
-                                                          1,
-                                                          12,
-                                                      },
-                                                      {1, 0, 12},
-                                                      {4, 5, 13},
-                                                      {5, 6, 13},
-                                                      {6, 7, 13},
-                                                      {7, 4, 12}};
+  std::vector<std::vector<int>> faceted_cube_faces = {{0, 1, 8}, {1, 5, 8},
+      {5, 4, 8}, {4, 0, 8}, {1, 2, 9}, {2, 6, 9}, {6, 5, 9}, {5, 1, 9},
+      {2, 3, 10}, {3, 7, 10}, {7, 6, 10}, {6, 2, 10}, {3, 0, 11}, {0, 4, 11},
+      {4, 7, 11}, {7, 3, 11}, {0, 3, 12}, {3, 2, 12}, {2, 1, 12}, {1, 0, 12},
+      {4, 5, 13}, {5, 6, 13}, {6, 7, 13}, {7, 4, 12}};
 
   // Check material ID correctness
   Tangram::MatPoly<3> matpoly(mat_id);
@@ -557,5 +532,3 @@ TEST(TANGRAM_3D, test_intersect_matpoly_gold4) {
   ASSERT_NEAR(moments[2] / moments[0], .75, eps);
   ASSERT_NEAR(moments[3] / moments[0], .75, eps);
 }
-
-#endif

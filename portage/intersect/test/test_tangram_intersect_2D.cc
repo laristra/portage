@@ -4,8 +4,6 @@ Please see the license file at the root of this repository, or at:
     https://github.com/laristra/portage/blob/master/LICENSE
 */
 
-#ifdef HAVE_TANGRAM
-
 #include <iostream>
 #include "gtest/gtest.h"
 
@@ -205,6 +203,3 @@ TEST(TANGRAM_2D, test_matpoly_intersect_non_coincident) {
   ASSERT_NEAR(moments[1], 12., eps);
   ASSERT_NEAR(moments[2], 12., eps);
 }
-
-
-#endif
