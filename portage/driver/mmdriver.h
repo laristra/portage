@@ -402,9 +402,7 @@ void MMDriver<Search, Intersect, Interpolate, D,
   tot_seconds_srch = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
 
 
-  // NEW
   int nmats = source_state_.num_materials();
-  // NEW
 
 #ifdef HAVE_TANGRAM
   // Call interface reconstruction only if we got a method from the
@@ -423,22 +421,16 @@ void MMDriver<Search, Intersect, Interpolate, D,
     std::vector<Tangram::Point<D>> cell_mat_centroids(nsourcecells*nmats);
   
     for (int m = 0; m < nmats; m++) {
-      // Variant 1
-      std::vector<double> matfracvec;
-      source_state_.mat_get_cellvals("volume_fraction", m, &cellids,
-                                     &matfracvec);
-      for (int c = 0; c < cellids.size(); c++)
-        cell_mat_volfracs[nsourcecells*m + cellids[c]] = matfracvec[c];
+      std::vector<int> cellids;
+      source_state_.mat_get_cells(m, &cellids);
 
-      // Variant 2
-      double const * const matfracptr =
-          source_state_.mat_get_celldata("volume_fraction", m, &cellids);
+      double const * matfracptr;
+      source_state_.mat_get_celldata("volume_fraction", m, &matfracptr);
       for (int c = 0; c < cellids.size(); c++)
         cell_mat_volfracs[nsourcecells*m + cellids[c]] = matfracptr[c];
 
-      // Variant 1
-      std::vector<Tangram::Point<D>> matcenvec;
-      source_state_.mat_get_cellvals("mat_centroids", m, &cellids, &matcenvec);
+      Portage::Point<D> const *matcenvec;
+      source_state_.mat_get_celldata("mat_centroids", m, &matcenvec);
       for (int c = 0; c < cellids.size(); c++)
         cell_mat_centroids[nsourcecells*m + cellids[c]] = matcenvec[c];
 

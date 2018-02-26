@@ -417,7 +417,7 @@ void Driver<Search, Intersect, Interpolate, D,
                                            limiters_[i]);
 
     double *target_field_raw = nullptr;
-    target_state_.get_data(onwhat, trg_varnames[i], &target_field_raw);
+    target_state_.mesh_get_data(onwhat, trg_varnames[i], &target_field_raw);
     Portage::pointer<double> target_field(target_field_raw);
 
     Portage::transform(target_mesh_.begin(onwhat, PARALLEL_OWNED),
@@ -562,7 +562,7 @@ void Driver<Search, Intersect, Interpolate, D,
                                            limiters_[i]);
 
     double *target_field_raw = nullptr;
-    target_state_.get_data(onwhat, trg_varnames[i], &target_field_raw);
+    target_state_.mesh_get_data(onwhat, trg_varnames[i], &target_field_raw);
     Portage::pointer<double> target_field(target_field_raw);
 
     Portage::transform(target_mesh_.begin(onwhat, PARALLEL_OWNED),
