@@ -46,8 +46,35 @@ if(ENABLE_UNIT_TESTS)
     
   cinch_add_unit(intersect_r3d
     SOURCES intersect_r3d_test.cc r3d.c
-    LIBRARIES portage  ${LAPACKE_LIBRARIES}
+    LIBRARIES portage  
     POLICY SERIAL
     )
+
+  #[[  
+  if (TANGRAM_FOUND AND XMOF2D_FOUND)
+       cinch_add_unit(test_tangram_intersect
+       SOURCES test/test_tangram_intersect
+       LIBRARIES portage ${LAPACKE_LIBRARIES} ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES} ${XMOF2D_LIBRARIES}
+       POLICY MPI
+       THREADS 1)       
+  endif (TANGRAM_FOUND AND XMOF2D_FOUND)
+  ]]
+
+  if (TANGRAM_FOUND AND XMOF2D_FOUND)
+      include_directories(${TANGRAM_INCLUDE_DIRS})
+      cinch_add_unit(test_tangram_intersect_2D
+       SOURCES test/test_tangram_intersect_2D
+       LIBRARIES portage 
+       POLICY SERIAL
+       )       
+      cinch_add_unit(test_tangram_intersect_3D
+       SOURCES test/test_tangram_intersect_3D
+       LIBRARIES portage 
+       POLICY SERIAL
+       )       
+  endif (TANGRAM_FOUND AND XMOF2D_FOUND)
+     
+ 
+
 endif(ENABLE_UNIT_TESTS)
 

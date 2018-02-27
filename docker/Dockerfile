@@ -42,7 +42,7 @@ RUN cd .. && if [ ${COVERAGE} ]; then \
     $HOME/.local/bin/codecov; \
   fi; \
 fi && cd -
-RUN if [ ${DOCS} || -n ${TRAVIS_TAG} ]; then \
+RUN if [ ${DOCS} ] || [ -n "${TRAVIS_TAG}" ]; then \
   make doxygen; \
 fi
 RUN cd .. && if [ ${SONARQUBE} ]; then \

@@ -19,8 +19,9 @@ build_type=$2
 
 jali_version=0.9.8
 openmpi_version=2.1.2
-tangram_version=133c1db580f
+tangram_version=475b813919f
 xmof2d_version=0.9
+lapack_version=3.8.0
 
 export NGC=/usr/projects/ngc
 ngc_include_dir=$NGC/private/include
@@ -32,12 +33,14 @@ if [[ $compiler == "intel" ]]; then
   jali_install_dir=$NGC/private/jali/${jali_version}-intel-${intel_version}-openmpi-${openmpi_version}
   tangram_install_dir=$NGC/private/tangram/${tangram_version}-intel-${intel_version}-openmpi-${openmpi_version}
   xmof2d_install_dir=$NGC/private/xmof2d/${xmof2d_version}-intel-${intel_version}-openmpi-${openmpi_version}
+  lapacke_dir=$NGC/private/lapack/${lapack_version}-patched-intel-${intel_version}
 elif [[ $compiler == "gcc" ]]; then
   gcc_version=6.4.0
   cxxmodule=gcc/${gcc_version}
   jali_install_dir=$NGC/private/jali/${jali_version}-gcc-${gcc_version}-openmpi-${openmpi_version}
   tangram_install_dir=$NGC/private/tangram/${tangram_version}-gcc-${gcc_version}-openmpi-${openmpi_version}
   xmof2d_install_dir=$NGC/private/xmof2d/${xmof2d_version}-gcc-${gcc_version}-openmpi-${openmpi_version}
+  lapacke_dir=$NGC/private/lapack/${lapack_version}-gcc-${gcc_version}
 fi
   
 cmake_build_type=Release
@@ -46,6 +49,7 @@ jali_flags="-D Jali_DIR:FILEPATH=$jali_install_dir/lib"
 tangram_flags="-D TANGRAM_DIR:FILEPATH=$tangram_install_dir"
 xmof2d_flags="-D XMOF2D_DIR:FILEPATH=$xmof2d_install_dir/share/cmake"
 mpi_flags="-D ENABLE_MPI=True"
+lapacke_flags="-D LAPACKE_DIR:FILEPATH=$lapacke_dir"
 
 if [[ $build_type == "debug" ]]; then
   cmake_build_type=Debug
@@ -83,6 +87,7 @@ cmake \
   $jali_flags \
   $tangram_flags \
   $xmof2d_flags \
+  $lapacke_flags \
   $extra_flags \
   ..
 make -j2

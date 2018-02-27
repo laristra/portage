@@ -15,7 +15,7 @@ if (Jali_DIR)
 
   add_executable(msmapp msmapp.cc)
   target_link_libraries(msmapp portage
-    ${EXTRA_LIBS} ${LAPACKE_LIBRARIES} ${MPI_CXX_LIBRARIES})
+    ${EXTRA_LIBS} ${LAPACKX_LIBRARIES} ${MPI_CXX_LIBRARIES})
 
   # MPI additions - need to push this down into cinch
   target_link_libraries(msmapp ${MPI_CXX_LIBRARIES})
