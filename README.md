@@ -168,7 +168,7 @@ module load intel/17.0.4 openmpi/2.1.2 cmake
 JALI_INSTALL_PREFIX=/usr/projects/ngc/private/jali/0.9.8-intel-17.0.4-openmpi-2.1.2
 TANGRAM_INSTALL_PREFIX=/usr/projects/ngc/private/tangram/4f600ec441a-intel-17.0.4-openmpi-2.1.2
 XMOF2D_INSTALL_PREFIX=/usr/projects/ngc/private/xmof2d/0.9-intel-17.0.4-openmpi-2.1.2
-LAPACKE_DIR=/usr/local/codes/ngc/private/lapack/3.8.0-patched-intel-17.0.4
+LAPACKE_DIR=/usr/projects/ngc/private/lapack/3.8.0-patched-intel-17.0.4
 LAPACKE_INCLUDE_DIR=$LAPACKE_DIR/include
 LAPACKE_LIBRARY_DIR=$LAPACKE_DIR
 mkdir build
