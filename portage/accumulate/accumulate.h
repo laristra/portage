@@ -77,8 +77,8 @@ class Accumulate {
       Basis::Type basis,
       Operator::Type operator_spec = Operator::LastOperator,
       Operator::Domain operator_domain = Operator::LastDomain,
-      vector<Point<dim>> const& operator_data=
-      vector<Point<dim>>(0,Point<dim>(vector<double>(dim,0.)))):
+      vector<vector<Point<dim>>> const& operator_data=
+      vector<vector<Point<dim>>>(0,vector<Point<dim>>(0,Point<dim>(vector<double>(dim,0.))))):
    source_(source),
    target_(target),
    estimate_(estimate),
@@ -101,6 +101,8 @@ class Accumulate {
     assert(n_particles == kernels_.size());
     assert(n_particles == geometries_.size());
     assert(n_particles == smoothing_.size());
+    if (operator_spec_ != Operator::LastOperator) 
+      assert(operator_data_.size() == target_.num_owned_particles());
   }
 
   /** 
@@ -210,7 +212,7 @@ class Accumulate {
 	    auto ijet = Basis::inverse_jet<dim>(basis_, x);
 	    vector<vector<double>> basisop;
 	    Operator::apply<dim>(operator_spec_, basis_, operator_domain_, 
-				 operator_data_, basisop);
+				 operator_data_[particleB], basisop);
 	    size_t opsize = Operator::size_info(operator_spec_, basis_, operator_domain_)[0];
 	    vector<double> operator_result(opsize, 0.);
 	    for (int j=0; j<opsize; j++) {
@@ -244,7 +246,7 @@ class Accumulate {
   Basis::Type basis_;
   Operator::Type operator_spec_;
   Operator::Domain operator_domain_;
-  vector<Point<dim>> operator_data_;
+  vector<vector<Point<dim>>> operator_data_;
 };
 
 }}
