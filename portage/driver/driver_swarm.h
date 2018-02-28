@@ -21,6 +21,7 @@ Please see the license file at the root of this repository, or at:
 #include "portage/support/Point.h"
 #include "portage/support/basis.h"
 #include "portage/support/weight.h"
+#include "portage/support/operator.h"
 #include "portage/search/search_simple_points.h"
 #include "portage/accumulate/accumulate.h"
 #include "portage/estimate/estimate.h"
@@ -60,14 +61,7 @@ template <template <int, class, class> class Search,
           class SourceState,
           class TargetSwarm = SourceSwarm,
           class TargetState = SourceState>
-class SwarmDriver {
-  
-  // Something like this would be very helpful to users
-  // static_assert(
-  //   Dim == Interpolate::Dim,
-  //   "The dimension of Driver and Interpolate do not match!"
-  // );
-  
+class SwarmDriver { 
 
  public:
   /*!
@@ -207,8 +201,12 @@ class SwarmDriver {
       std::vector<std::string> const & source_remap_var_names,
       std::vector<std::string> const & target_remap_var_names,
       EstimateType const& estimator_type = LocalRegression,
-      Basis::Type const& basis_type = Basis::Unitary) {
-
+      Basis::Type const& basis_type = Basis::Unitary,
+      Operator::Type operator_spec = Operator::LastOperator,
+      vector<Operator::Domain> operator_domains = vector<Operator::Domain>(0),
+      vector<vector<Point<Dim>>> const& operator_data=
+        vector<vector<Point<Dim>>>(0,vector<Point<Dim>>(0))) 
+  {
     assert(source_remap_var_names.size() == target_remap_var_names.size());
 
     int nvars = source_remap_var_names.size();
@@ -216,6 +214,13 @@ class SwarmDriver {
     target_remap_var_names_ = target_remap_var_names;
     estimator_type_ = estimator_type;
     basis_type_ = basis_type;
+    operator_spec_ = operator_spec;
+    operator_domains_ = operator_domains;
+    operator_data_ = operator_data;
+    if (operator_spec_ != Operator::LastOperator) { 
+      assert(operator_domains_.size() == target_swarm_.num_owned_particles());
+      assert(operator_data_.size() == target_swarm_.num_owned_particles());
+    }
   }
 
 
@@ -289,12 +294,15 @@ class SwarmDriver {
   TargetState& target_state_;
   std::vector<std::string> source_remap_var_names_;
   std::vector<std::string> target_remap_var_names_;
-  WeightCenter weight_center_ = Gather;  // smoothing len. centered on trgt. pts
+  WeightCenter weight_center_ = Gather;
   std::vector<std::vector<std::vector<double>>> smoothing_lengths_;
   std::vector<Weight::Kernel> kernel_types_;
   std::vector<Weight::Geometry> geom_types_;
   EstimateType estimator_type_;
   Basis::Type basis_type_;
+  Operator::Type operator_spec_;
+  vector<Operator::Domain> operator_domains_;
+  vector<vector<Point<Dim>>> operator_data_;
 };  // class Driver_Swarm
 
 template <template <int, class, class> class Search,
@@ -412,8 +420,9 @@ remap(std::vector<std::string> const &src_varnames,
   const Accumulate<Dim, SourceSwarm, TargetSwarm>
       accumulateFunctor(source_swarm_, target_swarm_,
                         estimator_type_, weight_center_,
-                        kernel_types_, geom_types_, smoothing_lengths_,
-                        basis_type_);
+                        kernel_types_, geom_types_, smoothing_lengths_, 
+                        basis_type_, 
+                        operator_spec_, operator_domains_, operator_data_);
 
   Portage::vector<std::vector<Weights_t>> source_pts_and_mults(numTargetPts);
   
