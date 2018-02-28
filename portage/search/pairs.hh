@@ -50,7 +50,7 @@ namespace Pairs {
     size_t dim;
     bool do_scatter;
     pile hmax;
-    vpile yminmax;
+    vpile cminmax;
     pile delta;
     vulong nsidesm;
     vulong strides;
