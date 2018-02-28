@@ -157,6 +157,8 @@ void test_operator(Portage::Meshfree::WeightCenter center) {
     centroid[k] /= domain_points[0].size();
     (*tgt_pts)[0][k] = centroid[k];
   }
+  vector<Portage::Meshfree::Operator::Domain> domains(1);
+  domains[0] = domain;
 
   // create source+target swarms, kernels, geometries, and smoothing lengths
   Swarm<dim> src_swarm(src_pts);
@@ -178,7 +180,7 @@ void test_operator(Portage::Meshfree::WeightCenter center) {
 	  smoothingh,
 	  btype, 
 	  opertype,
-	  domain, 
+	  domains, 
 	  domain_points);
 
   // check sizes and allocate test array
