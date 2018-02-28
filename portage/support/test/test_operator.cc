@@ -12,7 +12,7 @@
 #include "portage/support/operator.h"
 #include "portage/support/Point.h"
 
-#include "test_operator_data.h"
+#include "portage/support/test_operator_data.h"
 
 using Portage::Point;
 

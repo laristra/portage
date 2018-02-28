@@ -11,7 +11,7 @@ Please see the license file at the root of this repository, or at:
 #include "portage/support/Point.h"
 #include "portage/swarm/swarm.h"
 #include "portage/accumulate/accumulate.h"
-#include "../support/test/test_operator_data.h"
+#include "portage/support/test_operator_data.h"
 
 using std::vector;
 using std::shared_ptr;

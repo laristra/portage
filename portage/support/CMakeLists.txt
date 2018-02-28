@@ -19,6 +19,7 @@ set(support_HEADERS
     operator.h
     lsfits.h
     svd.h
+    test_operator_data.h
     PARENT_SCOPE
 )
 
