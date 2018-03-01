@@ -40,7 +40,10 @@ ngc_include_dir=$NGC/private/include
 if [[ $compiler == "intel" ]]; then
   intel_version=17.0.1
   cxxmodule=intel/${intel_version}
+  # openmpi version that libs were built against
   openmpi_version=1.10.5
+  # openmpi module for compiling and linking
+  mpi_module=openmpi/1.10.7
   jali_install_dir=$NGC/private/jali/${jali_version}-intel-${intel_version}-openmpi-${openmpi_version}
   tangram_install_dir=$NGC/private/tangram/${tangram_version}-intel-${intel_version}-openmpi-${openmpi_version}
   xmof2d_install_dir=$NGC/private/xmof2d/${xmof2d_version}-intel-${intel_version}-openmpi-${openmpi_version}
@@ -48,7 +51,10 @@ if [[ $compiler == "intel" ]]; then
 elif [[ $compiler == "gcc" ]]; then
   gcc_version=5.3.0
   cxxmodule=gcc/${gcc_version}
+  # openmpi version that libs were built against
   openmpi_version=1.10.3
+  # openmpi module for compiling and linking
+  mpi_module=openmpi/1.10.7
   jali_install_dir=$NGC/private/jali/${jali_version}-gcc-${gcc_version}-openmpi-${openmpi_version}
   flecsi_install_prefix=$NGC/private/flecsi/gcc5.3_openmpi1.10.3
   flecsisp_install_prefix=$NGC/private/flecsi-sp/gcc5.3_openmpi1.10.3
@@ -91,7 +97,7 @@ module load $cxxmodule
 module load cmake # 3.0 or higher is required
 
 if [[ -n "$mpi_flags" ]] ; then
-  module load openmpi/${openmpi_version}
+  module load ${mpi_module}
   mpi_flags+=" -D CMAKE_C_COMPILER=`which mpicc` \
                -D CMAKE_CXX_COMPILER=`which mpiCC`"
 fi
