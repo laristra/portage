@@ -195,7 +195,7 @@ Execute the following from the portage root directory:
 # machine=varan
 export MODULEPATH=""
 . /opt/local/packages/Modules/default/init/sh
-module load intel/17.0.1 openmpi/1.10.5 cmake
+module load intel/17.0.1 openmpi/1.10.7 cmake
 JALI_INSTALL_PREFIX=/usr/local/codes/ngc/private/jali/0.9.8-intel-17.0.1-openmpi-1.10.5
 TANGRAM_INSTALL_PREFIX=/usr/local/codes/ngc/private/tangram/475b813919f-intel-17.0.1-openmpi-1.10.5
 XMOF2D_INSTALL_PREFIX=/usr/local/codes/ngc/private/xmof2d/0.9-intel-17.0.1-openmpi-1.10.5
@@ -228,7 +228,7 @@ verison of FleCSI on Varan.  An example is below:
 # machine=varan::flecsi
 export MODULEPATH=""
 . /opt/local/packages/Modules/default/init/sh
-module load gcc/5.3.0 openmpi/1.10.3 cmake
+module load gcc/5.3.0 openmpi/1.10.7 cmake
 FLECSI_INSTALL_PREFIX=/usr/local/codes/ngc/private/flecsi/gcc5.3_openmpi1.10.3
 FLECSISP_INSTALL_PREFIX=/usr/local/codes/ngc/private/flecsi-sp/gcc5.3_openmpi1.10.3
 TANGRAM_INSTALL_PREFIX=/usr/projects/ngc/private/tangram/4f600ec441a-gcc-5.3.0-openmpi-1.10.3
