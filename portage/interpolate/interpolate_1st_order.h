@@ -4,8 +4,8 @@ Please see the license file at the root of this repository, or at:
     https://github.com/laristra/portage/blob/master/LICENSE
 */
 
-#ifndef SRC_INTERPOLATE_INTERPOLATE_1ST_ORDER_H_
-#define SRC_INTERPOLATE_INTERPOLATE_1ST_ORDER_H_
+#ifndef INTERPOLATE_1ST_ORDER_MM_H_
+#define INTERPOLATE_1ST_ORDER_MM_H_
 
 
 #include <cassert>
@@ -63,7 +63,7 @@ namespace Portage {
 
 template<int D, Entity_kind on_what,
          typename SourceMeshType, typename TargetMeshType, typename StateType>
-class Interpolate_1stOrder {
+class Interpolate_1stOrder_MM {
  public:
   /*!
     @brief Constructor.
@@ -75,7 +75,7 @@ class Interpolate_1stOrder {
     @param[in] interp_var_name The string name of the variable to interpolate.
     @param[in] sources_and_weights Vector of source entities and their weights for each target entity
   */
-  Interpolate_1stOrder(SourceMeshType const & source_mesh,
+  Interpolate_1stOrder_MM(SourceMeshType const & source_mesh,
                        TargetMeshType const & target_mesh,
                        StateType const & source_state) :
       source_mesh_(source_mesh),
@@ -92,7 +92,13 @@ class Interpolate_1stOrder {
   //  Interpolate_1stOrder & operator = (const Interpolate_1stOrder &) = delete;
 
   /// Destructor
-  ~Interpolate_1stOrder() {}
+  ~Interpolate_1stOrder_MM() {}
+
+  /// Set the material we are operating on
+
+  int set_material(int m) {
+    matid_ = m;
+  }
 
   /// Set the variable name to be interpolated.
 
@@ -106,7 +112,12 @@ class Interpolate_1stOrder {
   void set_interpolation_variable(std::string const & interp_var_name,
                                   LimiterType limtype=NOLIMITER) {
     interp_var_name_ = interp_var_name;
-    source_state_.mesh_get_data(on_what, interp_var_name, &source_vals_);
+    field_type_ = source_state_.field_type(CELL, interp_var_name);
+    if (field_type_ == Field_type::MESH_FIELD)
+      source_state_.mesh_get_data(CELL, interp_var_name,
+                                  &source_vals_);
+    else
+      source_state_.mat_get_celldata(interp_var_name, matid_, &source_vals_);
   }
 
   /*!
@@ -138,6 +149,8 @@ class Interpolate_1stOrder {
   StateType const & source_state_;
   std::string interp_var_name_;
   double const * source_vals_;
+  int matid_;
+  Field_type field_type_;
 };
 
 
@@ -149,7 +162,7 @@ class Interpolate_1stOrder {
 
 template<int D,
          typename SourceMeshType, typename TargetMeshType, typename StateType>
-class Interpolate_1stOrder<D, CELL, SourceMeshType, TargetMeshType, StateType> {
+class Interpolate_1stOrder_MM<D, CELL, SourceMeshType, TargetMeshType, StateType> {
  public:
   /*!
     @brief Constructor.
@@ -159,7 +172,7 @@ class Interpolate_1stOrder<D, CELL, SourceMeshType, TargetMeshType, StateType> {
     @param[in] interp_var_name The string name of the variable to interpolate.
     @param[in] sources_and_weights Vector of source entities and their weights for each target entity
   */
-  Interpolate_1stOrder(SourceMeshType const & source_mesh,
+  Interpolate_1stOrder_MM(SourceMeshType const & source_mesh,
                        TargetMeshType const & target_mesh,
                        StateType const & source_state) :
       source_mesh_(source_mesh),
@@ -176,7 +189,14 @@ class Interpolate_1stOrder<D, CELL, SourceMeshType, TargetMeshType, StateType> {
   //  Interpolate_1stOrder & operator = (const Interpolate_1stOrder &) = delete;
 
   /// Destructor
-  ~Interpolate_1stOrder() {}
+  ~Interpolate_1stOrder_MM() {}
+
+
+  /// Set the material we are operating on
+
+  int set_material(int m) {
+    matid_ = m;
+  }
 
   /// Set the variable name to be interpolated
 
@@ -188,10 +208,15 @@ class Interpolate_1stOrder<D, CELL, SourceMeshType, TargetMeshType, StateType> {
   // order interpolators and so all interpolators need to have a
   // uniform interface
 
-  void set_interpolation_variable(std::string const & interp_var_name,
+  void set_interpolation_variable(std::string const & interp_var_name, 
                                   LimiterType limtype = NOLIMITER) {
     interp_var_name_ = interp_var_name;
-    source_state_.mesh_get_data(CELL, interp_var_name, &source_vals_);
+    field_type_ = source_state_.field_type(CELL, interp_var_name);
+    if (field_type_ == Field_type::MESH_FIELD)
+      source_state_.mesh_get_data(CELL, interp_var_name,
+                                  &source_vals_);
+    else
+      source_state_.mat_get_celldata(interp_var_name, matid_, &source_vals_);
   }
 
   /*!
@@ -219,6 +244,8 @@ class Interpolate_1stOrder<D, CELL, SourceMeshType, TargetMeshType, StateType> {
   StateType const & source_state_;
   std::string interp_var_name_;
   double const * source_vals_;
+  int matid_;
+  Field_type field_type_;
 };
 
 
@@ -230,7 +257,7 @@ class Interpolate_1stOrder<D, CELL, SourceMeshType, TargetMeshType, StateType> {
 
 template<int D,
          typename SourceMeshType, typename TargetMeshType, typename StateType>
-double Interpolate_1stOrder<D, CELL, SourceMeshType, TargetMeshType,
+double Interpolate_1stOrder_MM<D, CELL, SourceMeshType, TargetMeshType,
                             StateType> :: operator()
     (int const targetCellID,
      std::vector<Weights_t> const & sources_and_weights) const {
@@ -246,17 +273,28 @@ double Interpolate_1stOrder<D, CELL, SourceMeshType, TargetMeshType,
 
   // contribution of the source cell is its field value weighted by
   // its "weight" (in this case, its 0th moment/area/volume)
+  
   double val = 0.0;
   double wtsum0 = 0.0;
-  for (auto const& wt : sources_and_weights) {
-    int srccell = wt.entityID;
-    std::vector<double> pair_weights = wt.weights;
-    val += source_vals_[srccell] * pair_weights[0];  // 1st order
-    wtsum0 += pair_weights[0];
+
+  if (field_type_ == Field_type::MESH_FIELD) {
+    for (auto const& wt : sources_and_weights) {
+      int srccell = wt.entityID;
+      std::vector<double> pair_weights = wt.weights;
+      val += source_vals_[srccell] * pair_weights[0];
+      wtsum0 += pair_weights[0];
+    }
+  } else if (field_type_ == Field_type::MULTIMATERIAL_FIELD) {
+    for (auto const& wt : sources_and_weights) {
+      int srccell = wt.entityID;
+      std::vector<double> pair_weights = wt.weights;
+      int matcell = source_state_.cell_index_in_material(srccell, matid_);
+      val += source_vals_[matcell] * pair_weights[0];  // 1st order
+      wtsum0 += pair_weights[0];
+    }
   }
-
-  // Normalize the value by sum of all the weights
-
+  
+  // Normalize the value by volume of targetCell
   double vol = target_mesh_.cell_volume(targetCellID);
   val /= vol;
 
@@ -283,7 +321,7 @@ double Interpolate_1stOrder<D, CELL, SourceMeshType, TargetMeshType,
 
 template<int D,
          typename SourceMeshType, typename TargetMeshType, typename StateType>
-class Interpolate_1stOrder<D, NODE, SourceMeshType, TargetMeshType, StateType> {
+class Interpolate_1stOrder_MM<D, NODE, SourceMeshType, TargetMeshType, StateType> {
  public:
   /*!
     @brief Constructor.
@@ -293,7 +331,7 @@ class Interpolate_1stOrder<D, NODE, SourceMeshType, TargetMeshType, StateType> {
     @param[in] interp_var_name The string name of the variable to interpolate.
     @param[in] sources_and_weights Vector of source entities and their weights for each target entity
   */
-  Interpolate_1stOrder(SourceMeshType const & source_mesh,
+  Interpolate_1stOrder_MM(SourceMeshType const & source_mesh,
                        TargetMeshType const & target_mesh,
                        StateType const & source_state) :
       source_mesh_(source_mesh),
@@ -310,7 +348,13 @@ class Interpolate_1stOrder<D, NODE, SourceMeshType, TargetMeshType, StateType> {
   //  Interpolate_1stOrder & operator = (const Interpolate_1stOrder &) = delete;
 
   /// Destructor
-  ~Interpolate_1stOrder() {}
+  ~Interpolate_1stOrder_MM() {}
+
+  /// Set the material we are operating on
+
+  int set_material(int m) {
+    matid_ = m;
+  }
 
   /// Set the variable name to be interpolated
 
@@ -324,7 +368,14 @@ class Interpolate_1stOrder<D, NODE, SourceMeshType, TargetMeshType, StateType> {
   void set_interpolation_variable(std::string const & interp_var_name,
                                   LimiterType limtype = NOLIMITER) {
     interp_var_name_ = interp_var_name;
-    source_state_.mesh_get_data(NODE, interp_var_name, &source_vals_);
+    field_type_ = source_state_.field_type(NODE, interp_var_name);
+    if (field_type_ == Field_type::MESH_FIELD)
+      source_state_.mesh_get_data(NODE, interp_var_name,
+                                  &source_vals_);
+    else {
+      source_state_.mat_get_celldata(interp_var_name, matid_, &source_vals_);
+      std::cerr << "Cannot remap NODE-centered multi-material data" << "\n";
+    }
   }
 
   /*!
@@ -352,6 +403,8 @@ class Interpolate_1stOrder<D, NODE, SourceMeshType, TargetMeshType, StateType> {
   StateType const & source_state_;
   std::string interp_var_name_;
   double const * source_vals_;
+  int matid_;
+  Field_type field_type_;
 };
 
 
@@ -361,10 +414,11 @@ class Interpolate_1stOrder<D, NODE, SourceMeshType, TargetMeshType, StateType> {
 
 template<int D,
          typename SourceMeshType, typename TargetMeshType, typename StateType>
-double Interpolate_1stOrder<D, NODE, SourceMeshType, TargetMeshType,
+double Interpolate_1stOrder_MM<D, NODE, SourceMeshType, TargetMeshType,
                             StateType> :: operator()
     (int const targetNodeID,
      std::vector<Weights_t> const & sources_and_weights) const {
+  if (field_type_ != Field_type::MESH_FIELD) return 0.0;
 
   int nsrcdualcells = sources_and_weights.size();
   if (!nsrcdualcells) {
@@ -392,7 +446,7 @@ double Interpolate_1stOrder<D, NODE, SourceMeshType, TargetMeshType,
 
   double vol = target_mesh_.dual_cell_volume(targetNodeID);
   val /= vol;
-
+  
 #ifdef DEBUG
   static bool first = true;
   if (first && fabs((vol-wtsum0)/vol) > 1.0e-10) {
@@ -410,4 +464,4 @@ double Interpolate_1stOrder<D, NODE, SourceMeshType, TargetMeshType,
 
 }  // namespace Portage
 
-#endif  // SRC_INTERPOLATE_INTERPOLATE_1ST_ORDER_H_
+#endif  // INTERPOLATE_1ST_ORDER_MM_H_
