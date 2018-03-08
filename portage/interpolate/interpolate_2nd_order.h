@@ -72,6 +72,11 @@ class Interpolate_2ndOrder {
   /// Destructor
   ~Interpolate_2ndOrder() {}
 
+  /// Set the material we are operating on (MM interpolate not implemented yet)
+
+  int set_material(int m) {
+    assert(0);
+  }
 
   /// Set the name of the interpolation variable and the limiter type
 
@@ -214,6 +219,12 @@ class Interpolate_2ndOrder<D, CELL, SourceMeshType, TargetMeshType, StateType> {
   /// Destructor
   ~Interpolate_2ndOrder() {}
 
+
+  /// Set the material we are operating on (MM interpolate not implemented yet)
+
+  int set_material(int m) {
+    assert(0);
+  }
 
   /*!
     @brief   Functor to do the 2nd order interpolation of cell values
@@ -383,6 +394,12 @@ class Interpolate_2ndOrder<D, NODE, SourceMeshType, TargetMeshType, StateType> {
                        gradients_.begin(), limgrad);
   }
 
+
+  /// Set the material we are operating on (MM interpolate not implemented yet)
+
+  int set_material(int m) {
+    assert(0);
+  }
 
   /*!
     @brief Functor to do the 2nd order interpolation of node values
