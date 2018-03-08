@@ -7,6 +7,8 @@ Please see the license file at the root of this repository, or at:
 
 #include <iostream>
 #include <memory>
+#include <cassert>
+#include <cmath>
 
 #include "gtest/gtest.h"
 #include "mpi.h"
@@ -16,6 +18,8 @@ Please see the license file at the root of this repository, or at:
 #include "portage/swarm/swarm_state.h"
 #include "portage/accumulate/accumulate.h"
 #include "portage/estimate/estimate.h"
+#include "portage/support/operator.h"
+#include "portage/support/Point.h"
 
 namespace {
 
@@ -23,6 +27,7 @@ using std::vector;
 using std::shared_ptr;
 using std::make_shared;
 using Portage::Meshfree::SwarmFactory;
+using Portage::Point;
 
 
 double TOL = 1e-6;
@@ -46,19 +51,111 @@ class DriverTest : public ::testing::Test {
 
   shared_ptr<vector<vector<vector<double>>>> smoothing_lengths_;
 
+  // Operator info
+  Portage::Meshfree::Operator::Type operator_;
+  vector<Portage::Meshfree::Operator::Domain> domains_;
+  vector<vector<Point<dim>>> operator_data_;
+
   Portage::Meshfree::WeightCenter center_;
 
   // Constructor for Driver test
   DriverTest(shared_ptr<Portage::Meshfree::Swarm<dim>> s,
-             shared_ptr<Portage::Meshfree::Swarm<dim>> t) :
+             shared_ptr<Portage::Meshfree::Swarm<dim>> t, 
+             Portage::Meshfree::Operator::Type op=Portage::Meshfree::Operator::LastOperator):
     sourceSwarm(s), targetSwarm(t), smoothing_lengths_(nullptr),
-    center_(Portage::Meshfree::Gather) {
+    center_(Portage::Meshfree::Gather), operator_(op)
+  {
     sourceState = make_shared<Portage::Meshfree::SwarmState<dim>>(*sourceSwarm);
-    targetState = make_shared<Portage::Meshfree::SwarmState<dim>>(*targetSwarm);
+    targetState = make_shared<Portage::Meshfree::SwarmState<dim>>(*targetSwarm); 
+    domains_ = vector<Portage::Meshfree::Operator::Domain>(targetSwarm->num_owned_particles());
+
+    // Set up for operators
+    if (operator_ != Portage::Meshfree::Operator::LastOperator) {
+      size_t npdim;
+      if (dim==1) {
+        operator_data_ = vector<vector<Point<dim>>>
+          (targetSwarm->num_owned_particles(),vector<Point<dim>>(2));
+        npdim = operator_data_.size();
+        int n=0;
+        // Create points determining the integration volume. 
+        // Assumes target swarm is created from SwarmFactory.
+        for (int i=0; i<npdim; i++) {
+          int ij[2]; 
+          ij[0]=i; ij[1]=(i+1);
+          for (int m=0; m<2; m++) {
+            if (i==npdim-1) {
+              // particles on the upper boundaries get an integration volume of zero
+              operator_data_[n][m] = targetSwarm->get_particle_coordinates(ij[0]);
+            } else {
+              operator_data_[n][m] = targetSwarm->get_particle_coordinates(ij[m]);
+            }
+          }
+          domains_[n] = Portage::Meshfree::Operator::Interval;
+          n++;
+        }
+        assert(n==targetSwarm->num_owned_particles());
+      }
+      if (dim==2) {
+        operator_data_ = vector<vector<Point<dim>>>
+          (targetSwarm->num_owned_particles(),vector<Point<dim>>(4));
+        npdim = static_cast<size_t>(sqrt(1.01*operator_data_.size()));
+        assert(npdim*npdim == targetSwarm->num_owned_particles());
+        int n=0;
+        // Create points determining the integration volume. 
+        // Assumes target swarm is created from SwarmFactory.
+        for (int i=0; i<npdim; i++) {
+          for (int j=0; j<npdim; j++) {
+            int ij[4]; 
+            ij[0]=i*npdim+j; ij[1]=(i+1)*npdim+j; ij[2]=(i+1)*npdim+j+1; ij[3]=i*npdim+j+1;
+            for (int m=0; m<4; m++) {
+              if (i==npdim-1 or j==npdim-1) {
+                // particles on the upper boundaries get an integration volume of zero
+                operator_data_[n][m] = targetSwarm->get_particle_coordinates(ij[0]);
+              } else {
+                operator_data_[n][m] = targetSwarm->get_particle_coordinates(ij[m]);
+              }
+            }
+            domains_[n] = Portage::Meshfree::Operator::Quadrilateral;
+            n++;
+          }
+        }
+        assert(n==targetSwarm->num_owned_particles());
+      }
+      if (dim==3) {
+        operator_data_ = vector<vector<Point<dim>>>
+          (targetSwarm->num_owned_particles(),vector<Point<dim>>(8));
+        npdim = static_cast<size_t>(pow(1.001*operator_data_.size(),1./3.));
+        assert(npdim*npdim*npdim == targetSwarm->num_owned_particles());
+        int n=0;
+        // Create points determining the integration volume.
+        // Assumes target swarm is created from SwarmFactory.
+        for (int i=0; i<npdim; i++) {
+          for (int j=0; j<npdim; j++) {
+            for (int k=0; k<npdim; k++) {
+              int ij[8]; 
+              ij[0]=npdim*(i*npdim+j)+k;         ij[1]=npdim*((i+1)*npdim+j)+k; 
+              ij[2]=npdim*((i+1)*npdim+j+1)+k;   ij[3]=npdim*(i*npdim+j+1)+k;
+              ij[4]=npdim*(i*npdim+j)+k+1;       ij[5]=npdim*((i+1)*npdim+j)+k+1; 
+              ij[6]=npdim*((i+1)*npdim+j+1)+k+1; ij[7]=npdim*(i*npdim+j+1)+k+1;
+              for (int m=0; m<8; m++) {
+                if (i==npdim-1 or j==npdim-1 or k==npdim-1) {
+                  // particles on the upper boundaries get an integration volume of zero
+                  operator_data_[n][m] = targetSwarm->get_particle_coordinates(ij[0]);
+                } else {
+                  operator_data_[n][m] = targetSwarm->get_particle_coordinates(ij[m]);
+                }
+              }
+              domains_[n] = Portage::Meshfree::Operator::Hexahedron;
+              n++;
+            }
+          }
+        }
+        assert(n==targetSwarm->num_owned_particles());
+      }
+    }
   }
 
-  void set_smoothing_lengths(shared_ptr<vector<vector<vector<double>>>>
-                             smoothing_lengths,
+  void set_smoothing_lengths(shared_ptr<vector<vector<vector<double>>>> smoothing_lengths,
 			     Portage::Meshfree::WeightCenter center=Portage::Meshfree::Gather) {
     smoothing_lengths_ = smoothing_lengths;
     center_ = center;
@@ -108,40 +205,49 @@ class DriverTest : public ::testing::Test {
                                    Portage::Meshfree::SwarmState<dim>>
         d(*sourceSwarm, *sourceState, *targetSwarm, *targetState, *smoothing_lengths_,
 	  Portage::Meshfree::Weight::B4, Portage::Meshfree::Weight::ELLIPTIC, center_);
+
+    Portage::Meshfree::EstimateType estimator=Portage::Meshfree::LocalRegression;
+    if (operator_ != Portage::Meshfree::Operator::LastOperator) 
+      estimator = Portage::Meshfree::OperatorRegression;
+
     d.set_remap_var_names(remap_fields, remap_fields,
-                          Portage::Meshfree::LocalRegression,
-                          basis);
+                          estimator, basis, 
+                          operator_, domains_, operator_data_);
     // run on one processor
     d.run(false);
 
     // Check the answer
-    Portage::Point<dim> nodexy;
-    double stdval, err;
     double toterr=0.;
-
     typename Portage::Meshfree::SwarmState<dim>::DblVecPtr vecout;
     targetState->get_field("particledata", vecout);
     ASSERT_NE(nullptr, vecout);
-
-    for (int p = 0; p < ntarpts; ++p) {
-      Portage::Point<dim> coord = targetSwarm->get_particle_coordinates(p);
-      double error;
-      error = compute_initial_field(coord) - (*vecout)[p];
-      // dump diagnostics for each particle
-      if (dim == 1)
-        std::printf("Particle=% 4d Coord = (% 5.3lf)", p, coord[0]);
-      else if (dim == 2)
-        std::printf("Particle=% 4d Coord = (% 5.3lf,% 5.3lf)", p, coord[0],
-                    coord[1]);
-      else if (dim == 3)
-        std::printf("Particle=% 4d Coord = (% 5.3lf,% 5.3lf,% 5.3lf)", p,
-                    coord[0], coord[1], coord[2]);
-      std::printf("  Value = % 10.6lf  Err = % lf\n", (*vecout)[p], error);
-      toterr += error*error;
-    }
+    if (operator_ == Portage::Meshfree::Operator::LastOperator) {
+      for (int p = 0; p < ntarpts; ++p) {
+        Portage::Point<dim> coord = targetSwarm->get_particle_coordinates(p);
+        double error;
+        error = compute_initial_field(coord) - (*vecout)[p];
+        // dump diagnostics for each particle
+        if (dim == 1)
+          std::printf("Particle=% 4d Coord = (% 5.3lf)", p, coord[0]);
+        else if (dim == 2)
+          std::printf("Particle=% 4d Coord = (% 5.3lf,% 5.3lf)", p, coord[0],
+                      coord[1]);
+        else if (dim == 3)
+          std::printf("Particle=% 4d Coord = (% 5.3lf,% 5.3lf,% 5.3lf)", p,
+                      coord[0], coord[1], coord[2]);
+        std::printf("  Value = % 10.6lf  Err = % lf\n", (*vecout)[p], error);
+        toterr += error*error;
+      }
     
-    std::printf("\n\nL2 NORM OF ERROR = %lf\n\n", sqrt(toterr));
-    ASSERT_NEAR(expected_answer, sqrt(toterr), TOL);
+      std::printf("\n\nL2 NORM OF ERROR = %lf\n\n", sqrt(toterr));
+      ASSERT_NEAR(expected_answer, sqrt(toterr), TOL);
+    } else if (operator_ == Portage::Meshfree::Operator::VolumeIntegral) {
+      double total = 0.;
+      for (int p = 0; p < ntarpts; ++p) {
+        total += (*vecout)[p];
+      }
+      ASSERT_NEAR(expected_answer, total, TOL);
+    }
   }
 
 };
@@ -221,6 +327,46 @@ struct DriverTest3DScatter : DriverTest<3> {
 };
 
 
+
+// Class which constructs a pair of 1-D swarms (ordered distribution) for remaps, and integrates
+struct IntegrateDriverTest1D : DriverTest<1> {
+  IntegrateDriverTest1D() : DriverTest(SwarmFactory(0.0, 1.0, 7, 1),
+                                       SwarmFactory(0.0, 1.0, 5, 1),
+                                       Portage::Meshfree::Operator::VolumeIntegral)
+  {
+    auto smoothing_lengths = make_shared<vector<vector<vector<double>>>>(5,
+                   vector<vector<double>>(1, vector<double>(1, 2.0/4)));
+    DriverTest::set_smoothing_lengths(smoothing_lengths);
+  }
+};
+
+
+// Class which constructs a pair of 2-D swarms (ordered distribution) for remaps, and integrates
+struct IntegrateDriverTest2D : DriverTest<2> {
+  IntegrateDriverTest2D() : DriverTest(SwarmFactory(0.0, 0.0, 1.0, 1.0, 7*7, 1),
+                                       SwarmFactory(0.0, 0.0, 1.0, 1.0, 5*5, 1),
+                                       Portage::Meshfree::Operator::VolumeIntegral) {
+    auto smoothing_lengths = make_shared<vector<vector<vector<double>>>>(5*5,
+                   vector<vector<double>>(1, vector<double>(2, 2.0/4)));
+    DriverTest::set_smoothing_lengths(smoothing_lengths);
+  }
+};
+
+
+// Class which constructs a pair of 3-D swarms (ordered distribution) for remaps, and integrates
+struct IntegrateDriverTest3D : DriverTest<3> {
+  IntegrateDriverTest3D(): DriverTest(SwarmFactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0,
+                                          7*7*7, 1),
+                                      SwarmFactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0,
+                                          5*5*5, 1),
+                                      Portage::Meshfree::Operator::VolumeIntegral) {
+    auto smoothing_lengths = make_shared<vector<vector<vector<double>>>>(5*5*5,
+                   vector<vector<double>>(1, vector<double>(3, 2.0/4)));
+    DriverTest::set_smoothing_lengths(smoothing_lengths);
+  }
+};
+
+
 template<size_t Dimension>
     double compute_constant_field(Portage::Point<Dimension> coord) {
   return 25.0;
@@ -274,6 +420,16 @@ TEST_F(DriverTest1D, 1D_QuadraticFieldQuadraticBasis) {
 TEST_F(DriverTest1DScatter, 1D_QuadraticFieldQuadraticBasisScatter) {
   unitTest<Portage::SearchSimplePoints, Portage::Meshfree::Basis::Quadratic>
       (compute_quadratic_field<1>, 0.0);
+}
+
+TEST_F(IntegrateDriverTest1D, 1D_LinearFieldLinearBasis) {
+  unitTest<Portage::SearchSimplePoints, Portage::Meshfree::Basis::Linear>
+      (compute_linear_field<1>, 1./2.);
+}
+
+TEST_F(IntegrateDriverTest1D, 1D_QuadraticFieldQuadraticBasis) {
+  unitTest<Portage::SearchSimplePoints, Portage::Meshfree::Basis::Quadratic>
+      (compute_quadratic_field<1>, 1./3.);
 }
 
 
