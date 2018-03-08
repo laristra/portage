@@ -70,6 +70,17 @@ public:
   //============================================================================
 
 
+  //! \brief Type of field (MESH_FIELD or MULTIMATERIAL_FIELD)
+  //! \param[in] onwhat   Entity_kind that field is defined on
+  //! \param[in] varname  Name of field
+  //! \return             Field_type
+
+  Field_type field_type(Entity_kind on_what, std::string const& var_name)
+      const {
+    return Field_type::MESH_FIELD;  // MULTI-MATERIAL FIELDS NOT ACCESSED YET
+  }
+  
+
   //! \brief Get the entity type on which the given field is defined
   //! \param[in] var_name The string name of the data field
   //! \return The Entity_kind enum for the entity type on which the field is defined
@@ -78,7 +89,7 @@ public:
   //!        OR WE HAVE TO GENERALIZE THE FIND FUNCTION!!!
   //! \todo  THIS ALSO DOES NOT CHECK FOR OTHER ENTITY TYPES LIKE EDGE, FACE,
   //!        SIDE, WEDGE AND CORNER
-  entity_kind_t get_entity(std::string var_name) const 
+  entity_kind_t get_entity(std::string const& var_name) const 
   {
     auto cell_field_list = flecsi_get_accessors_all(
       *mesh_, real_t, dense, 0, flecsi_is_at(cells)
@@ -103,11 +114,8 @@ public:
   //! \param[in] var_name The string name of the data field
   //! \param[in,out] data A pointer to an array of data
   template <class T>
-  void get_data(
-    entity_kind_t on_what,
-    std::string var_name, 
-    T ** data
-  ) const {
+  void mesh_get_data(entity_kind_t on_what, std::string const& var_name, 
+                     T ** data) const {
     // Ignore on_what here - the state manager knows where it lives
     // based on its name
 
@@ -136,7 +144,7 @@ public:
   }
 
 
-  int get_data_size(const entity_kind_t on_what, const std::string var_name) const 
+  int get_data_size(entity_kind_t on_what, std::string const& var_name) const 
   {
     raise_runtime_error( "get_data_size not implemented yet!" );
   }
@@ -149,8 +157,8 @@ public:
     @param[in,out] data A pointer to an array of data
   */
   template <class T>
-  void get_data(const Entity_kind on_what,
-                const std::string var_name, T** data) {
+  void mesh_get_data(entity_kind_t on_what,
+                     std::string const& var_name, T** data) {
     // Ignore on_what here - the state manager knows where it lives
     // based on its name
     // NOTE: access_state needs a const_string_t, which is a flecsi
@@ -170,7 +178,7 @@ public:
     @param[in] var_name The string name of the data field
     @return The data size for the field with the given name on the given entity type
    */
-  int get_data_size(const Entity_kind on_what, const std::string var_name) const {
+  int get_data_size(entity_kind_t on_what, std::string const& var_name) const {
 
    const const_string_t flecsiname(var_name.c_str());
    auto dat = access_state(flecsi_mesh_,
