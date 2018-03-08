@@ -148,7 +148,7 @@ TEST(TANGRAM_2D, test_matpoly_intersect_unit_cells) {
 
   // actually intersect
   std::vector<double> moments =
-      Portage::intersect_2Dpolys(source_points, target_points);
+      Portage::intersect_polys_r2d(source_points, target_points);
 
   // test that the moments are correct
   ASSERT_NEAR(moments[0], (xh - xl) * (yh - yl), eps);
@@ -196,7 +196,7 @@ TEST(TANGRAM_2D, test_matpoly_intersect_non_coincident) {
 
   // actually intersect
   std::vector<double> moments =
-      Portage::intersect_2Dpolys(source_points, target_points);
+      Portage::intersect_polys_r2d(source_points, target_points);
 
   // test that the moments are correct
   ASSERT_NEAR(moments[0], 4., eps);
