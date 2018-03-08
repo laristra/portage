@@ -63,6 +63,7 @@ double field_func(int field_order, Portage::Point<D> coord) {
       value = 1.0;
       for (int i = 0; i < D; i++)
         value *= sin(0.9*2*M_PI*coord[i]);
+      value *= exp(-1.5*sqrt(rsqr));
       break;
     }
     case 0:
@@ -166,11 +167,6 @@ int main(int argc, char** argv) {
     MPI_Init(&argc, &argv);
   int numpe;
   MPI_Comm_size(MPI_COMM_WORLD, &numpe);
-  if (numpe > 1) {
-    std::cerr << "Particle Remap is only designed for a single process!"
-              << std::endl;
-    return 1;
-  }
 #endif
 
   std::cout << "starting swarm app..." << std::endl;
@@ -243,7 +239,7 @@ int main(int argc, char** argv) {
     d.set_remap_var_names(remap_fields, remap_fields,
                           Portage::Meshfree::LocalRegression,
                           Portage::Meshfree::Basis::Quadratic);
-  d.run(false, true);
+  d.run(true, true);
 
 
   std::vector<double> expected_value(ntarpts, 0.0);
