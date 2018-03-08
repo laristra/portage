@@ -82,19 +82,52 @@ class Jali_State_Wrapper {
   */
 
   std::string material_name(int matid) const {
-    assert(matid >= 0 && matid < jali_state_.num_materials());
+    assert(matid >= 0 && matid < num_materials());
     return jali_state_.material_name(matid);
+  }
+
+  /*!
+    @brief Get number of cells containing a particular material
+    @param matid    Index of material (0, num_materials()-1)
+    @return         Number of cells containing material 'matid'
+  */
+
+  int mat_get_num_cells(int matid) const {
+    assert(matid >= 0 && matid < num_materials());
+    return jali_state_.material_cells(matid).size();
   }
 
   /*!
     @brief Get cell indices containing a particular material
     @param matid    Index of material (0, num_materials()-1)
-    @param matcells Cells contained in that materials
+    @param matcells Cells containing material 'matid'
   */
 
   void mat_get_cells(int matid, std::vector<int> *matcells) const {
+    assert(matid >= 0 && matid < num_materials());
     matcells->clear();
-    (*matcells) = jali_state_.material_cells(matid);
+    *matcells = jali_state_.material_cells(matid);
+  }
+
+  /*!
+    @brief Get number of materials contained in a cell
+    @param cellid  Index of cell in mesh
+    @return        Number of materials in cell
+  */
+
+  int cell_get_num_mats(int cellid) const {
+    jali_state_.num_cell_materials(cellid);
+  }
+
+  /*!
+    @brief Get the IDs of materials in a cell
+    @param cellid    Index of cell in mesh
+    @param cellmats  Indices of materials in cell
+  */
+
+  void cell_get_mats(int cellid, std::vector<int> *cellmats) const {
+    cellmats->clear();
+    *cellmats = jali_state_.cell_materials(cellid);
   }
 
   /*!
@@ -108,8 +141,30 @@ class Jali_State_Wrapper {
     return jali_state_.cell_index_in_material(meshcell, matid);
   }
 
+  /*!
+    @brief Type of field (MESH_FIELD or MULTIMATERIAL_FIELD)
+    @param onwhat    Entity_kind that field is defined on
+    @param varname   Name of field
+    @return          Field type
+  */
 
+  Field_type field_type(Entity_kind on_what, std::string const& var_name)
+      const {
+    Jali::State::const_iterator it = jali_state_.cbegin();
+    while (it != jali_state_.cend()) {
+      std::shared_ptr<Jali::BaseStateVector> bvec = *it;
+      if (bvec->name() == var_name &&
+          static_cast<Portage::Entity_kind>(bvec->entity_kind()) == on_what) {
+        if (bvec->get_type() == Jali::StateVector_type::UNIVAL)
+          return Field_type::MESH_FIELD;
+        else
+          return Field_type::MULTIMATERIAL_FIELD;
+      }
+      it++;
+    }
+  }
 
+  
   /*!
     @brief Get a pointer to read-only single-valued data on the mesh
     @param[in] on_what The entity type on which to get the data
@@ -117,8 +172,8 @@ class Jali_State_Wrapper {
     @param[in,out] data A vector containing the data
    */
 
-  template <typename T>
-  void mesh_get_data(const Entity_kind on_what, const std::string var_name,
+  template <class T>
+  void mesh_get_data(Entity_kind on_what, std::string const& var_name,
                      T const **data) const {
     Jali::StateVector<T, Jali::Mesh> vector;
     if (jali_state_.get<T, Jali::Mesh, Jali::StateVector>(var_name,
@@ -146,7 +201,7 @@ class Jali_State_Wrapper {
     to const data. Thanks StackOverflow!
    */
   template <class T>
-  void mesh_get_data(const Entity_kind on_what, const std::string var_name,
+  void mesh_get_data(Entity_kind on_what, std::string const& var_name,
                      T **data) {
     using T1 = typename std::remove_const<T>::type;
     Jali::StateVector<T1, Jali::Mesh> vector;
@@ -170,7 +225,8 @@ class Jali_State_Wrapper {
    */
 
   template <class T>
-  void mat_get_celldata(const std::string var_name, int matid, T const **data) const {
+  void mat_get_celldata(std::string const& var_name, int matid,
+                        T const **data) const {
     Jali::MMStateVector<T, Jali::Mesh> mmvector;
     if (jali_state_.get<T, Jali::Mesh, Jali::MMStateVector>(var_name,
                                                       jali_state_.mesh(),
@@ -200,7 +256,7 @@ class Jali_State_Wrapper {
    */
 
   template <class T>
-  void mat_get_celldata(const std::string var_name, int matid, T **data) {
+  void mat_get_celldata(std::string const& var_name, int matid, T **data) {
     using T1 = typename std::remove_const<T>::type;
 
     Jali::MMStateVector<T1, Jali::Mesh> mmvector;
@@ -224,8 +280,8 @@ class Jali_State_Wrapper {
    @param[in] values Initialize with this array of values
    */
   template <class T>
-  void mesh_add_data(const Entity_kind on_what, const std::string var_name,
-                      T const * const values) {
+  void mesh_add_data(Entity_kind on_what, std::string const& var_name,
+                     T const * const values) {
     jali_state_.add(var_name, jali_state_.mesh(), (Jali::Entity_kind) on_what,
                     Jali::Entity_type::ALL, values);
   }
@@ -237,7 +293,7 @@ class Jali_State_Wrapper {
    @param[in] value Initialize with this value
    */
   template <class T>
-  void mesh_add_data(const Entity_kind on_what, const std::string var_name,
+  void mesh_add_data(Entity_kind on_what, std::string const& var_name,
                       const T value) {
     // Compiler needs some help deducing template parameters here
     jali_state_.add<T, Jali::Mesh, Jali::StateVector>(var_name,
@@ -257,9 +313,33 @@ class Jali_State_Wrapper {
    The 2D array will be read and values copied according to which materials
    are contained in which cells. If a material+cell combination is not active
    providing a value for the array will have no effect. 
+
+   This version of the overloaded operator is being DISABLED for
+   pointer and array types (via the line 'typename
+   std::enable_if....type') because template deduction rules are
+   making the compiler invoke this version, when we call it with a
+   const double ** pointer
+   
+   See, stackoverflow.com Q&A
+   
+   http://stackoverflow.com/questions/13665574/template-argument-deduction-and-pointers-to-constants
+
+    We could make it work for some cases using
+
+    template <class T, class DomainType,
+              template<class, class> class StateVecType>
+    auto add(........,
+             T const& data) -> StateVecType<decltype(data+data), DomainType>&
+
+    but this does not work if T is a double[3] or std::array<double, 3>
+    as there is no + operator defined for these types
    */
+
   template <class T>
-  void mat_add_celldata(const std::string var_name, const T value) {
+  typename std::enable_if<(!std::is_pointer<T>::value &&
+                           !std::is_array<T>::value),
+                          void>::type
+  mat_add_celldata(std::string const& var_name, T value) {
     jali_state_.add(var_name, jali_state_.mesh(), Jali::Entity_kind::CELL,
                     Jali::Entity_type::ALL, value);
   }
@@ -277,8 +357,8 @@ class Jali_State_Wrapper {
    providing a value for the array will have no effect. 
    */
   template <class T>
-  void mat_add_celldata(const std::string var_name,
-                        T const **values = nullptr,
+  void mat_add_celldata(std::string const& var_name,
+                        T const * const *values = nullptr,
                         Data_layout layout = Data_layout::MATERIAL_CENTRIC) {
     jali_state_.add(var_name, jali_state_.mesh(), Jali::Entity_kind::CELL,
                     Jali::Entity_type::ALL, (Jali::Data_layout) layout, values);
@@ -297,8 +377,8 @@ class Jali_State_Wrapper {
    field and just add the data.
    */
   template <class T>
-  void mat_add_celldata(const std::string var_name, int matid,
-                    T const * const values) {
+  void mat_add_celldata(std::string const& var_name, int matid,
+                        T const * values) {
     auto it = jali_state_.find<T, Jali::Mesh, Jali::MMStateVector>(var_name,
                                                         jali_state_.mesh(),
                                                         Jali::Entity_kind::CELL,
@@ -332,9 +412,23 @@ class Jali_State_Wrapper {
 
    Subsequent calls to this function with the same name will find the added
    field and just add the data.
+
+   Need to disable this call for deductions where T is a pointer;
+   otherwise when we call mat_add_celldata with a pointer to a
+   non-const type, this function is called by interpreting T as 'type
+   *' (e.g. this overload is called with T = double *, instead of
+   calling the pointer version with T = double)
+
+   See stackoverflow.com Q&A
+
+   http://stackoverflow.com/questions/13665574/template-argument-deduction-and-pointers-to-constants
+
    */
   template <class T>
-  void mat_add_celldata(const std::string var_name, int matid, const T value) {
+  typename
+  std::enable_if<(!std::is_pointer<T>::value && !std::is_array<T>::value),
+                 void>::type 
+  mat_add_celldata(std::string const& var_name, int matid, T value) {
     auto it = jali_state_.find<T, Jali::Mesh, Jali::MMStateVector>(var_name,
                                                         jali_state_.mesh(),
                                                         Jali::Entity_kind::CELL,
@@ -366,7 +460,7 @@ class Jali_State_Wrapper {
     @param[in] newcells Vector of new cells in material
   */
 
-  void mat_add_cells(int matid, std::vector<int> const & newcells) {
+  void mat_add_cells(int matid, std::vector<int> const& newcells) {
     jali_state_.add_cells_to_material(matid, newcells);
   }
 
@@ -377,7 +471,7 @@ class Jali_State_Wrapper {
     @param[in] matcells Vector of to be removed cells
   */
   
-  void mat_rem_cells(int matid, std::vector<int> const & delcells) {
+  void mat_rem_cells(int matid, std::vector<int> const& delcells) {
     jali_state_.rem_cells_from_material(matid, delcells);
   }
 
@@ -429,8 +523,7 @@ class Jali_State_Wrapper {
          
     For multi-material state, this will give the number of materials for now
    */
-  int get_data_size(const Entity_kind on_what,
-                    const std::string var_name) const {
+  int get_data_size(Entity_kind on_what, std::string const& var_name) const {
 
     // ****** CHANGE WHEN JALISTATE find FUNCTION IS FIXED TO NOT NEED
     // ****** THE DATA TYPE
@@ -455,7 +548,7 @@ class Jali_State_Wrapper {
     @param[in] var_name The string name of the data field
     @return A reference to the type_info struct for the field's data type
    */
-  const std::type_info& get_type(const std::string var_name) const {
+  const std::type_info& get_type(std::string const& var_name) const {
 
     Jali::State::const_iterator it =
         jali_state_.find(var_name, jali_state_.mesh());
@@ -496,7 +589,7 @@ class Jali_State_Wrapper {
     @param[in] on_what The desired entity type
     @return Permutation iterator to start of string vector
    */
-  string_permutation names_entity_begin(Entity_kind const on_what) const {
+  string_permutation names_entity_begin(Entity_kind on_what) const {
     return jali_state_.names_entity_begin((Jali::Entity_kind)on_what);
   }
 
@@ -504,7 +597,7 @@ class Jali_State_Wrapper {
     @brief End iterator on vector of names of specific entity type
     @param[in] on_what The desired entity type
    */
-  string_permutation names_entity_end(Entity_kind const on_what) const {
+  string_permutation names_entity_end(Entity_kind on_what) const {
     return jali_state_.names_entity_end((Jali::Entity_kind)on_what);
   }
 
