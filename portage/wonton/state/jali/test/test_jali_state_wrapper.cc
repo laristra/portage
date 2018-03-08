@@ -77,7 +77,7 @@ TEST(Jali_State_Wrapper, DataTypes) {
 
   // Get raw Vec2d data using wrapper
   Vec2d* vdata;
-  wrapper.get_data(Portage::CELL, "v1", &vdata);
+  wrapper.mesh_get_data(Portage::CELL, "v1", &vdata);
   for (unsigned int i = 0; i < n_cells; i++) 
   {
     ASSERT_EQ(vdata[i].x, vtest[i].x);
@@ -85,8 +85,8 @@ TEST(Jali_State_Wrapper, DataTypes) {
   }
 
   // add data through wrapper
-  wrapper.mesh_add_data<double>(inputMesh, Portage::CELL, "d1", dtest);
-  wrapper.mesh_add_data<double>(inputMesh, Portage::CELL, "d2", 123.456);
+  wrapper.mesh_add_data<double>(Portage::CELL, "d1", dtest);
+  wrapper.mesh_add_data<double>(Portage::CELL, "d2", 123.456);
 
   double *ddata;
   wrapper.mesh_get_data(Portage::CELL, "d1", &ddata);
@@ -110,7 +110,7 @@ TEST(Jali_State_Wrapper, DataTypes) {
     else if (typeid(int) == wrapper.get_type(*it))
     {
       int* idata;
-      wrapper.get_data(on_what, *it, &idata);
+      wrapper.mesh_get_data(on_what, *it, &idata);
       for (unsigned int i = 0; i < inputMeshWrapper.num_entities(on_what); i++) ASSERT_EQ(idata[i], itest[i]);
     }
     else if (typeid(Vec2d) == wrapper.get_type(*it))
@@ -230,7 +230,7 @@ TEST(Jali_State_Wrapper, MMState) {
 
   // Try to get const and non-const version of the raw data
 
-  Wonton::Jali_MMState_Wrapper const statewrapper2(*state);
+  Wonton::Jali_State_Wrapper const statewrapper2(*state);
 
   //  double *rho;
   //  statewrapper2.mesh_get_data(Portage::Entity_kind::CELL, "cell_density", &rho);
@@ -263,9 +263,9 @@ TEST(Jali_State_Wrapper, MMState) {
   std::vector<std::vector<int>> matcells = {{0, 1, 3, 4, 6, 7},
                                             {1, 2, 4, 5},
                                             {4, 5, 7, 8}};
-  std::vector<std::vector<int>> cell_matindex = {{0, 1, -1, 2, 3, -1, 4, 5, -1},
-                                              {-1, 0, 1, -1, 2, 3, -1, -1, -1},
-                                              {-1, -1, -1, -1, 0, 1, -1, 2, 3}};
+  std::vector<std::vector<int>> cellmats = {{0}, {0, 1}, {1},
+                                            {0}, {0, 1, 2}, {1, 2},
+                                            {0}, {0, 2}, {2}};
 
   statewrapper.add_material("steel1", matcells[0]);
   statewrapper.add_material("aluminum1", matcells[1]);
@@ -280,7 +280,14 @@ TEST(Jali_State_Wrapper, MMState) {
   nmats++;
   ASSERT_EQ(nmats, statewrapper.num_materials());  // should have incremented
 
-  
+  for (int i = 0; i < 9; i++) {
+    ASSERT_EQ(cellmats[i].size(), statewrapper.cell_get_num_mats(i));
+    std::vector<int> cellmats2;
+    statewrapper.cell_get_mats(i, &cellmats2);
+    for (int j = 0; j < cellmats[i].size(); j++)
+      ASSERT_EQ(cellmats[i][j], cellmats2[j]);
+  }
+
 
   ASSERT_EQ(statewrapper.material_name(0), "steel1");
   ASSERT_EQ(statewrapper.material_name(1), "aluminum1");
@@ -370,6 +377,21 @@ TEST(Jali_State_Wrapper, MMState) {
   std::vector<int> matcells3 = {3 , 4, 6, 7};
   statewrapper.add_material("steel2", matcells3);
   nmats = statewrapper.num_materials();
+
+  // Material 3 is added to cells 3, 4, 6, 7 but material 0 is not removed
+  // (only its volume fraction is zeroed out)
+  cellmats[3].push_back(3);
+  cellmats[4].push_back(3);
+  cellmats[6].push_back(3);
+  cellmats[7].push_back(3);
+
+  for (int i = 0; i < 9; i++) {
+    ASSERT_EQ(cellmats[i].size(), statewrapper.cell_get_num_mats(i));
+    std::vector<int> cellmats2;
+    statewrapper.cell_get_mats(i, &cellmats2);
+    for (int j = 0; j < cellmats[i].size(); j++)
+      ASSERT_EQ(cellmats[i][j], cellmats2[j]);
+  }
 
   // Set the volume fractions material 3 in cells in the input vectors
   vf_in[3][3] = 0.5;
