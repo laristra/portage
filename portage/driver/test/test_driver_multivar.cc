@@ -15,7 +15,7 @@ Please see the license file at the root of this repository, or at:
 #include "portage/support/Point.h"
 #include "portage/wonton/mesh/jali/jali_mesh_wrapper.h"
 #include "portage/wonton/state/jali/jali_state_wrapper.h"
-#include "portage/driver/driver.h"
+#include "portage/driver/mmdriver.h"
 
 #include "Mesh.hh"
 #include "MeshFactory.hh"
@@ -122,7 +122,7 @@ TEST(Test_MultiVar_Remap, Test1) {
 
   /////////
 
-  Portage::Driver<Portage::SearchKDTree,
+  Portage::MMDriver<Portage::SearchKDTree,
                   Portage::IntersectR2D,
                   Portage::Interpolate_1stOrder,
                   2,
@@ -153,13 +153,13 @@ TEST(Test_MultiVar_Remap, Test1) {
   // Verify that we got the fields we wanted
 
   double *outcellvec1;
-  targetStateWrapper.get_data(Portage::CELL, "trgcellvars1", &outcellvec1);
+  targetStateWrapper.mesh_get_data(Portage::CELL, "trgcellvars1", &outcellvec1);
 
   for (int i = 0; i < ncells_target; i++)
     ASSERT_NEAR(Constant1, outcellvec1[i], TOL);
 
   double *outcellvec2;
-  targetStateWrapper.get_data(Portage::CELL, "trgcellvars2", &outcellvec2);
+  targetStateWrapper.mesh_get_data(Portage::CELL, "trgcellvars2", &outcellvec2);
 
   for (int i = 0; i < ncells_target; i++)
     ASSERT_NEAR(Constant2, outcellvec2[i], TOL);
@@ -181,17 +181,17 @@ TEST(Test_MultiVar_Remap, Test1) {
 
   // Verify that we got the fields we wanted
 
-  targetStateWrapper.get_data(Portage::CELL, "srccellvars1", &outcellvec1);
+  targetStateWrapper.mesh_get_data(Portage::CELL, "srccellvars1", &outcellvec1);
 
   for (int i = 0; i < ncells_target; i++)
     ASSERT_NEAR(Constant1, outcellvec1[i], TOL);
 
-  targetStateWrapper.get_data(Portage::CELL, "srccellvars2", &outcellvec2);
+  targetStateWrapper.mesh_get_data(Portage::CELL, "srccellvars2", &outcellvec2);
 
   for (int i = 0; i < ncells_target; i++)
     ASSERT_NEAR(Constant2, outcellvec2[i], TOL);
 
-  // targetStateWrapper.get_data(Portage::NODE, "srcnodevars", &outnodevec);
+  // targetStateWrapper.mesh_get_data(Portage::NODE, "srcnodevars", &outnodevec);
   // for (int i = 0; i < ncells_target; i++)
   //   ASSERT_NEAR(Constant3, outnodevec[i], TOL);
 }
@@ -249,7 +249,7 @@ TEST(Test_MultiVar_Remap, Nested_Meshes) {
 
   // Build the main driver object
 
-  Portage::Driver<Portage::SearchKDTree,
+  Portage::MMDriver<Portage::SearchKDTree,
                   Portage::IntersectR2D,
                   Portage::Interpolate_1stOrder,
                   2,
@@ -288,7 +288,7 @@ TEST(Test_MultiVar_Remap, Nested_Meshes) {
 
   // Build the main driver object
 
-  Portage::Driver<Portage::SearchKDTree,
+  Portage::MMDriver<Portage::SearchKDTree,
                   Portage::IntersectR2D,
                   Portage::Interpolate_2ndOrder,
                   2,

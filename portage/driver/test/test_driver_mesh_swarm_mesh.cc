@@ -52,7 +52,7 @@ POSSIBILITY OF SUCH DAMAGE.
 #include "mpi.h"
 #endif
 
-#include "portage/driver/driver.h"
+#include "portage/driver/mmdriver.h"
 #include "portage/driver/driver_mesh_swarm_mesh.h"
 #include "portage/simple_mesh/simple_mesh.h"
 #include "portage/simple_mesh/simple_state.h"
@@ -97,7 +97,8 @@ class MSMDriverTest : public ::testing::Test {
   //  This is the basic test method to be called for each unit test. It will work
   //  for 2-D and 3-D, coincident and non-coincident cell-centered remaps.
   template <
-    template<Portage::Entity_kind, class, class> class Intersect,
+    template<Portage::Entity_kind, class, class, class,
+             template<class, int> class> class Intersect,
     template<int, Portage::Entity_kind, class, class, class> class Interpolate,
     template <int, class, class> class SwarmSearch,
     int Dimension = 3
@@ -154,7 +155,7 @@ class MSMDriverTest : public ::testing::Test {
     remap_fields.push_back("nodedata");
 
     //  Build the mesh-mesh driver data for this mesh type
-    Portage::Driver<Portage::SearchKDTree,
+    Portage::MMDriver<Portage::SearchKDTree,
     Intersect,
     Interpolate,
     Dimension,

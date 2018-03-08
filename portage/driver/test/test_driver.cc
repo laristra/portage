@@ -11,7 +11,7 @@ Please see the license file at the root of this repository, or at:
 #include "gtest/gtest.h"
 #include "mpi.h"
 
-#include "portage/driver/driver.h"
+#include "portage/driver/mmdriver.h"
 #include "portage/wonton/mesh/jali/jali_mesh_wrapper.h"
 #include "portage/wonton/state/jali/jali_state_wrapper.h"
 #include "portage/intersect/intersect_r2d.h"
@@ -50,7 +50,8 @@ class DriverTest : public ::testing::Test {
   //  It will work for 2-D and 3-D, coincident and non-coincident
   //  cell-centered remaps.
   template <
-    template<Portage::Entity_kind, class, class> class Intersect,
+    template<Portage::Entity_kind, class, class, class,
+             template<class, int> class> class Intersect,
     template<int, Portage::Entity_kind, class, class, class> class Interpolate,
     int Dimension
   >
@@ -81,7 +82,7 @@ class DriverTest : public ::testing::Test {
     std::vector<std::string> remap_fields;
     remap_fields.push_back("celldata");
 
-    Portage::Driver<Portage::SearchKDTree,
+    Portage::MMDriver<Portage::SearchKDTree,
     Intersect,
     Interpolate, Dimension,
     Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
