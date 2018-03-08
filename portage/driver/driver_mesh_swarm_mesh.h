@@ -60,6 +60,7 @@ POSSIBILITY OF SUCH DAMAGE.
 #include "portage/wonton/state/flat/flat_state_wrapper.h"
 #include "portage/support/basis.h"
 #include "portage/support/weight.h"
+#include "portage/support/operator.h"
 #include "portage/swarm/swarm.h"
 #include "portage/swarm/swarm_state.h"
 //#include "portage/search/search_simple_points.h"
@@ -121,8 +122,6 @@ class MSM_Driver {
          TargetMesh_Wrapper const& targetMesh,
 	 TargetState_Wrapper& targetState, 
 	 double smoothing_factor             = 1.5,
-	 Meshfree::Basis::Type      basis    = Meshfree::Basis::Unitary,
-	 Meshfree::EstimateType     estimate = Meshfree::LocalRegression,
 	 Meshfree::Weight::Geometry geometry = Meshfree::Weight::TENSOR,
          Meshfree::Weight::Kernel   kernel   = Meshfree::Weight::B4,
          Meshfree::WeightCenter     center   = Meshfree::Gather)
@@ -132,8 +131,6 @@ class MSM_Driver {
         geometry_(geometry),
         kernel_(kernel),
         center_(center),
-        estimate_(estimate),
-        basis_(basis), 
         dim_(sourceMesh.space_dimension()) 
   {
     assert(sourceMesh.space_dimension() == targetMesh.space_dimension());
@@ -170,7 +167,14 @@ class MSM_Driver {
 
   void set_remap_var_names(
       std::vector<std::string> const & source_remap_var_names,
-      std::vector<std::string> const & target_remap_var_names) {
+      std::vector<std::string> const & target_remap_var_names,
+      Meshfree::EstimateType const& estimator_type = LocalRegression,
+      Meshfree::Basis::Type const& basis_type = Basis::Unitary,
+      Meshfree::Operator::Type operator_spec = Meshfree::Operator::LastOperator,
+      vector<Meshfree::Operator::Domain> operator_domains = 
+      vector<Meshfree::Operator::Domain>(0),
+      vector<vector<Point<Dim>>> const& operator_data=
+      vector<vector<Point<Dim>>>(0,vector<Point<Dim>>(0))) {
     assert(source_remap_var_names.size() == target_remap_var_names.size());
 
     int nvars = source_remap_var_names.size();
@@ -180,6 +184,11 @@ class MSM_Driver {
 
     source_remap_var_names_ = source_remap_var_names;
     target_remap_var_names_ = target_remap_var_names;
+    estimate_ = estimator_type;
+    basis_ = basis_type;
+    operator_spec_ = operator_spec;
+    operator_domains_ = operator_domains;
+    operator_data_ = operator_data;
   }
 
   /*!
@@ -317,7 +326,10 @@ class MSM_Driver {
       swarm_driver.set_remap_var_names(source_cellvar_names,
                                        target_cellvar_names,
                                        estimate_,
-                                       basis_);
+                                       basis_,
+				       operator_spec_,
+				       operator_domains_,
+				       operator_data_);
 
       // do the remap
       swarm_driver.run(false, true);
@@ -403,7 +415,10 @@ class MSM_Driver {
       swarm_driver.set_remap_var_names(source_nodevar_names,
                                        target_nodevar_names,
                                        estimate_,
-                                       basis_);
+                                       basis_,
+                                       operator_spec_,
+                                       operator_domains_,
+                                       operator_data_);
 
       // do the remap
       swarm_driver.run(false, true);
@@ -444,6 +459,9 @@ class MSM_Driver {
   Meshfree::WeightCenter center_;
   Meshfree::EstimateType estimate_;
   Meshfree::Basis::Type basis_;
+  Operator::Type operator_spec_;
+  vector<Operator::Domain> operator_domains_;
+  vector<vector<Point<Dim>>> operator_data_;
   unsigned int dim_;
 };  // class MSM_Driver
 
