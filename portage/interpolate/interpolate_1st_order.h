@@ -4,8 +4,8 @@ Please see the license file at the root of this repository, or at:
     https://github.com/laristra/portage/blob/master/LICENSE
 */
 
-#ifndef INTERPOLATE_1ST_ORDER_MM_H_
-#define INTERPOLATE_1ST_ORDER_MM_H_
+#ifndef INTERPOLATE_1ST_ORDER_H_
+#define INTERPOLATE_1ST_ORDER_H_
 
 
 #include <cassert>
@@ -63,7 +63,7 @@ namespace Portage {
 
 template<int D, Entity_kind on_what,
          typename SourceMeshType, typename TargetMeshType, typename StateType>
-class Interpolate_1stOrder_MM {
+class Interpolate_1stOrder {
  public:
   /*!
     @brief Constructor.
@@ -75,7 +75,7 @@ class Interpolate_1stOrder_MM {
     @param[in] interp_var_name The string name of the variable to interpolate.
     @param[in] sources_and_weights Vector of source entities and their weights for each target entity
   */
-  Interpolate_1stOrder_MM(SourceMeshType const & source_mesh,
+  Interpolate_1stOrder(SourceMeshType const & source_mesh,
                        TargetMeshType const & target_mesh,
                        StateType const & source_state) :
       source_mesh_(source_mesh),
@@ -92,7 +92,7 @@ class Interpolate_1stOrder_MM {
   //  Interpolate_1stOrder & operator = (const Interpolate_1stOrder &) = delete;
 
   /// Destructor
-  ~Interpolate_1stOrder_MM() {}
+  ~Interpolate_1stOrder() {}
 
   /// Set the material we are operating on
 
@@ -162,7 +162,7 @@ class Interpolate_1stOrder_MM {
 
 template<int D,
          typename SourceMeshType, typename TargetMeshType, typename StateType>
-class Interpolate_1stOrder_MM<D, CELL, SourceMeshType, TargetMeshType, StateType> {
+class Interpolate_1stOrder<D, CELL, SourceMeshType, TargetMeshType, StateType> {
  public:
   /*!
     @brief Constructor.
@@ -172,7 +172,7 @@ class Interpolate_1stOrder_MM<D, CELL, SourceMeshType, TargetMeshType, StateType
     @param[in] interp_var_name The string name of the variable to interpolate.
     @param[in] sources_and_weights Vector of source entities and their weights for each target entity
   */
-  Interpolate_1stOrder_MM(SourceMeshType const & source_mesh,
+  Interpolate_1stOrder(SourceMeshType const & source_mesh,
                        TargetMeshType const & target_mesh,
                        StateType const & source_state) :
       source_mesh_(source_mesh),
@@ -189,7 +189,7 @@ class Interpolate_1stOrder_MM<D, CELL, SourceMeshType, TargetMeshType, StateType
   //  Interpolate_1stOrder & operator = (const Interpolate_1stOrder &) = delete;
 
   /// Destructor
-  ~Interpolate_1stOrder_MM() {}
+  ~Interpolate_1stOrder() {}
 
 
   /// Set the material we are operating on
@@ -257,7 +257,7 @@ class Interpolate_1stOrder_MM<D, CELL, SourceMeshType, TargetMeshType, StateType
 
 template<int D,
          typename SourceMeshType, typename TargetMeshType, typename StateType>
-double Interpolate_1stOrder_MM<D, CELL, SourceMeshType, TargetMeshType,
+double Interpolate_1stOrder<D, CELL, SourceMeshType, TargetMeshType,
                             StateType> :: operator()
     (int const targetCellID,
      std::vector<Weights_t> const & sources_and_weights) const {
@@ -321,7 +321,7 @@ double Interpolate_1stOrder_MM<D, CELL, SourceMeshType, TargetMeshType,
 
 template<int D,
          typename SourceMeshType, typename TargetMeshType, typename StateType>
-class Interpolate_1stOrder_MM<D, NODE, SourceMeshType, TargetMeshType, StateType> {
+class Interpolate_1stOrder<D, NODE, SourceMeshType, TargetMeshType, StateType> {
  public:
   /*!
     @brief Constructor.
@@ -331,7 +331,7 @@ class Interpolate_1stOrder_MM<D, NODE, SourceMeshType, TargetMeshType, StateType
     @param[in] interp_var_name The string name of the variable to interpolate.
     @param[in] sources_and_weights Vector of source entities and their weights for each target entity
   */
-  Interpolate_1stOrder_MM(SourceMeshType const & source_mesh,
+  Interpolate_1stOrder(SourceMeshType const & source_mesh,
                        TargetMeshType const & target_mesh,
                        StateType const & source_state) :
       source_mesh_(source_mesh),
@@ -348,7 +348,7 @@ class Interpolate_1stOrder_MM<D, NODE, SourceMeshType, TargetMeshType, StateType
   //  Interpolate_1stOrder & operator = (const Interpolate_1stOrder &) = delete;
 
   /// Destructor
-  ~Interpolate_1stOrder_MM() {}
+  ~Interpolate_1stOrder() {}
 
   /// Set the material we are operating on
 
@@ -414,7 +414,7 @@ class Interpolate_1stOrder_MM<D, NODE, SourceMeshType, TargetMeshType, StateType
 
 template<int D,
          typename SourceMeshType, typename TargetMeshType, typename StateType>
-double Interpolate_1stOrder_MM<D, NODE, SourceMeshType, TargetMeshType,
+double Interpolate_1stOrder<D, NODE, SourceMeshType, TargetMeshType,
                             StateType> :: operator()
     (int const targetNodeID,
      std::vector<Weights_t> const & sources_and_weights) const {
@@ -464,4 +464,4 @@ double Interpolate_1stOrder_MM<D, NODE, SourceMeshType, TargetMeshType,
 
 }  // namespace Portage
 
-#endif  // INTERPOLATE_1ST_ORDER_MM_H_
+#endif  // INTERPOLATE_1ST_ORDER_H_
