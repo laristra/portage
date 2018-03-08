@@ -36,9 +36,16 @@
 #include "portage/support/portage.h"
 #include "portage/support/Point.h"
 #include "portage/support/mpi_collate.h"
-#include "portage/driver/driver.h"
+#include "portage/driver/mmdriver.h"
 #include "portage/wonton/mesh/jali/jali_mesh_wrapper.h"
 #include "portage/wonton/state/jali/jali_state_wrapper.h"
+
+#ifdef XMOF2D
+#endif
+
+#ifdef HAVE_TANGRAM
+#include "tangram/driver/driver.h"
+#endif
 
 // For parsing and evaluating user defined expressions in apps
 
@@ -137,6 +144,8 @@ int main(int argc, char** argv) {
   __itt_pause();
 #endif
 
+  if (argc == 1) print_usage();
+  
   struct timeval begin, end, diff;
 
   // Initialize MPI
@@ -211,8 +220,9 @@ int main(int argc, char** argv) {
         std::cerr << "Number of meshes for convergence study should be greater than 0" << std::endl;
         throw std::exception();
       }
-    }
-    else
+    } else if (keyword == "help") {
+      print_usage();
+    } else
       std::cerr << "Unrecognized option " << keyword << std::endl;
   }
 
@@ -222,17 +232,20 @@ int main(int argc, char** argv) {
   if (nsourcecells > 0 && srcfile.length() > 0) {
     std::cout << "Cannot request internally generated source mesh "
               << "(--nsourcecells) and external file read (--source_file)\n\n";
+    print_usage();
     MPI_Abort(MPI_COMM_WORLD, -1);
   }
   if (!nsourcecells && srcfile.length() == 0) {
     std::cout << "Must specify one of the two options --nsourcecells "
               << "or --source_file\n";
+    print_usage();
     MPI_Abort(MPI_COMM_WORLD, -1);
   }
 
   if (ntargetcells > 0 && trgfile.length() > 0) {
     std::cout << "Cannot request internally generated target mesh "
               << "(--ntargetcells) and external file read (--target_file)\n\n";
+    print_usage();
     MPI_Abort(MPI_COMM_WORLD, -1);
   }
   if (!ntargetcells && trgfile.length() == 0) {
@@ -249,6 +262,7 @@ int main(int argc, char** argv) {
   if (nsourcecells > 0 && field_expression.length() == 0) {
     std::cout << "No field imposed on internally generated source mesh\n";
     std::cout << "Nothing to remap. Exiting...";
+    print_usage();
     MPI_Abort(MPI_COMM_WORLD, -1);
   }
 
@@ -473,7 +487,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
 
   if (dim == 2) {
     if (interp_order == 1) {
-      Portage::Driver<
+      Portage::MMDriver<
         Portage::SearchKDTree,
         Portage::IntersectR2D,
         Portage::Interpolate_1stOrder,
@@ -485,7 +499,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
       d.set_remap_var_names(remap_fields);
       d.run(numpe > 1);
     } else if (interp_order == 2) {
-      Portage::Driver<
+      Portage::MMDriver<
         Portage::SearchKDTree,
         Portage::IntersectR2D,
         Portage::Interpolate_2ndOrder,
@@ -499,7 +513,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
     }
   } else {  // 3D
     if (interp_order == 1) {
-      Portage::Driver<
+      Portage::MMDriver<
         Portage::SearchKDTree,
         Portage::IntersectR3D,
         Portage::Interpolate_1stOrder,
@@ -511,7 +525,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
       d.set_remap_var_names(remap_fields);
       d.run(numpe > 1);
     } else {  // 2nd order & 3D
-      Portage::Driver<
+      Portage::MMDriver<
         Portage::SearchKDTree,
         Portage::IntersectR3D,
         Portage::Interpolate_2ndOrder,
