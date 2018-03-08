@@ -153,9 +153,9 @@ TEST(MPI_Bounding_Boxes, SimpleTest3D) {
 
   // Check field values
   double* ddata1 = nullptr;
-  source_state_flat.get_data(Portage::CELL, "d1", &ddata1);
+  source_state_flat.mesh_get_data(Portage::CELL, "d1", &ddata1);
   double* ddata2 = nullptr;
-  source_state_flat.get_data(Portage::CELL, "d2", &ddata2);
+  source_state_flat.mesh_get_data(Portage::CELL, "d2", &ddata2);
   for (int c=0; c<num_owned_cells; ++c) {
     int gid = gids[c];
     int expValue1 = 10. + gid;
@@ -320,9 +320,9 @@ TEST(MPI_Bounding_Boxes, SimpleTest2D) {
 
   // Check field values
   double* ddata1 = nullptr;
-  source_state_flat.get_data(Portage::CELL, "d1", &ddata1);
+  source_state_flat.mesh_get_data(Portage::CELL, "d1", &ddata1);
   double* ddata2 = nullptr;
-  source_state_flat.get_data(Portage::CELL, "d2", &ddata2);
+  source_state_flat.mesh_get_data(Portage::CELL, "d2", &ddata2);
   for (int c=0; c<num_owned_cells; ++c) {
     int gid = gids[c];
     int expValue1 = 10. + gid;
