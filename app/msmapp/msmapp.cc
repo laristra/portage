@@ -17,7 +17,7 @@ Please see the license file at the root of this repository, or at:
 #define PORTAGE_SERIAL_ONLY
 #endif
 
-#include "portage/driver/driver.h"
+#include "portage/driver/mmdriver.h"
 #include "portage/driver/driver_mesh_swarm_mesh.h"
 #include "portage/simple_mesh/simple_mesh.h"
 #include "portage/simple_mesh/simple_state.h"
@@ -139,7 +139,8 @@ public:
   // This is the basic test method to be called for each unit test. It will work
   // for 2-D and 3-D, coincident and non-coincident cell-centered remaps.
   template <
-  template<Portage::Entity_kind, class, class> class Intersect,
+  template<Portage::Entity_kind, class, class, class,
+           template <class, int> class> class Intersect,
   template<int, Portage::Entity_kind, class, class, class> class Interpolate,
   template <int, class, class> class SwarmSearch,
   int Dimension=3
@@ -202,7 +203,7 @@ public:
     remap_fields.push_back("nodedata");
 
     // Build the mesh-mesh driver data for this mesh type
-    Portage::Driver<Portage::SearchKDTree,
+    Portage::MMDriver<Portage::SearchKDTree,
                     Intersect,
                     Interpolate,
                     Dimension,
@@ -321,12 +322,13 @@ protected:
   // run parameters
   Controls<3> controls_;
 
-public:
+ public:
   
   // This is the basic test method to be called for each unit test. It will work
   // for 2-D and 3-D, coincident and non-coincident cell-centered remaps.
   template <
-    template<Portage::Entity_kind, class, class> class Intersect,
+   template<Portage::Entity_kind, class, class, class,
+            template<class, int> class> class Intersect,
     template<int, Portage::Entity_kind, class, class, class> class Interpolate,
     template <int, class, class> class SwarmSearch,
     int Dimension=3
@@ -374,10 +376,10 @@ public:
     const int ntarnodes = targetMeshWrapper.num_owned_nodes();
     std::vector<double> targetData(ntarcells), targetData2(ntarcells);
     std::vector<double> targetDataNode(ntarnodes), targetData2Node(ntarnodes);
-    targetStateWrapper. add_data<double>(targetMesh, Portage::Entity_kind::CELL, "celldata", &(targetData[0]));
-    targetStateWrapper2.add_data<double>(targetMesh, Portage::Entity_kind::CELL, "celldata", &(targetData2[0]));
-    targetStateWrapper. add_data<double>(targetMesh, Portage::Entity_kind::NODE, "nodedata", &(targetDataNode[0]));
-    targetStateWrapper2.add_data<double>(targetMesh, Portage::Entity_kind::NODE, "nodedata", &(targetData2Node[0]));
+    targetStateWrapper.mesh_add_data<double>(Portage::Entity_kind::CELL, "celldata", &(targetData[0]));
+    targetStateWrapper2.mesh_add_data<double>(Portage::Entity_kind::CELL, "celldata", &(targetData2[0]));
+    targetStateWrapper.mesh_add_data<double>(Portage::Entity_kind::NODE, "nodedata", &(targetDataNode[0]));
+    targetStateWrapper2.mesh_add_data<double>(Portage::Entity_kind::NODE, "nodedata", &(targetData2Node[0]));
 
     // Register the variable name and interpolation order with the driver
     std::vector<std::string> remap_fields;
@@ -385,7 +387,7 @@ public:
     remap_fields.push_back("nodedata");
 
     // Build the mesh-mesh driver data for this mesh type
-    Portage::Driver<Portage::SearchKDTree,
+    Portage::MMDriver<Portage::SearchKDTree,
                     Intersect,
                     Interpolate,
                     Dimension,
@@ -591,9 +593,9 @@ int main(int argc, char** argv) {
   
     } else if (ctl.order == 2) {
  
-      msmguy.runit<Portage::IntersectR3D, 
-		   Portage::Interpolate_2ndOrder, 
-		   Portage::SearchPointsByCells, 3>();
+      //      msmguy.runit<Portage::IntersectR3D, 
+      //		   Portage::Interpolate_2ndOrder, 
+      //		   Portage::SearchPointsByCells, 3>();
 
     }
   } else {
@@ -614,9 +616,9 @@ int main(int argc, char** argv) {
   
     } else if (ctl.order == 2) {
  
-      msmguy.runit<Portage::IntersectR3D, 
-		   Portage::Interpolate_2ndOrder, 
-		   Portage::SearchPointsByCells, 3>();
+      //      msmguy.runit<Portage::IntersectR3D, 
+      //		   Portage::Interpolate_2ndOrder, 
+      //		   Portage::SearchPointsByCells, 3>();
 
     }
   }
