@@ -107,11 +107,18 @@ enum Element_type {
 typedef enum {NOLIMITER, BARTH_JESPERSEN}
   LimiterType;
 
+
+/// Field type - whether it is mesh field or multi-material field
+
+enum class Field_type {UNKNOWN_TYPE_FIELD = -1, MESH_FIELD, MULTIMATERIAL_FIELD};
+
+
 /// Layout of 2D input data to state - CELL_CENTRIC means the first
 /// index is the cell and the second is the material; MATERIAL_CENTRIC
 /// means the first index is the material and the second is the cell
 
 enum class Data_layout {CELL_CENTRIC, MATERIAL_CENTRIC};
+
 
 #ifdef THRUST
 
