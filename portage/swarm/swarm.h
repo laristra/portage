@@ -190,7 +190,6 @@ std::shared_ptr<Swarm<1>> SwarmFactory(double xmin, double xmax,
     if (distribution == 2) {
       srand(time(NULL));
       unsigned int rand_state;
-      double h = (xmax-xmin)/(nparticles-1);
       for (size_t i = 0; i < nparticles; i++)
         (*pts)[i][0] +=
             0.25*h*((2*static_cast<double>(rand_r(&rand_state))/RAND_MAX)-1.0);
