@@ -181,8 +181,8 @@ cmake \
     -D XMOF2D_DIR:FILEPATH=$XMOF2D_INSTALL_PREFIX/share/cmake \
     -D LAPACKE_DIR=$LAPACKE_DIR \
     ..
-make -j16
-ctest -j16 --output-on-failure
+make -j4
+ctest -j4 --output-on-failure
 ```
 
 ## Varan
