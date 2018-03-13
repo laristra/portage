@@ -166,11 +166,9 @@ Execute the following from the portage root directory:
 # machine=sn-fey
 module load intel/17.0.4 openmpi/2.1.2 cmake
 JALI_INSTALL_PREFIX=/usr/projects/ngc/private/jali/0.9.8-intel-17.0.4-openmpi-2.1.2
-TANGRAM_INSTALL_PREFIX=/usr/projects/ngc/private/tangram/4f600ec441a-intel-17.0.4-openmpi-2.1.2
+TANGRAM_INSTALL_PREFIX=/usr/projects/ngc/private/tangram/475b813919f-intel-17.0.4-openmpi-2.1.2
 XMOF2D_INSTALL_PREFIX=/usr/projects/ngc/private/xmof2d/0.9-intel-17.0.4-openmpi-2.1.2
-LAPACKE_DIR=/usr/local/codes/ngc/private/lapack/3.8.0-patched-intel-17.0.4
-LAPACKE_INCLUDE_DIR=$LAPACKE_DIR/include
-LAPACKE_LIBRARY_DIR=$LAPACKE_DIR
+LAPACKE_DIR=/usr/projects/ngc/private/lapack/3.8.0-patched-intel-17.0.4
 mkdir build
 cd build
 cmake \
@@ -239,6 +237,8 @@ LAPACKE_LIBRARY_DIR=$LAPACKE_DIR
 mkdir build-flecsi
 cd build-flecsi
 cmake \
+    -D CMAKE_C_COMPILER=`which mpicc` \
+    -D CMAKE_CXX_COMPILER=`which mpiCC` \
     -D CMAKE_BUILD_TYPE=Debug \
     -D ENABLE_UNIT_TESTS=True \
     -D ENABLE_APP_TESTS=True \
