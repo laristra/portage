@@ -18,7 +18,7 @@ module load gcc/5.3.0
 module load openmpi/1.10.3
 
 JALI_INSTALL_PREFIX=$NGC/private/jali/0.9.8-gcc-5.3.0-openmpi-1.10.3
-TANGRAM_INSTALL_PREFIX=$NGC/private/tangram/133c1db580f-gcc-5.3.0-openmpi-1.10.3
+TANGRAM_INSTALL_PREFIX=$NGC/private/tangram/475b813919f-gcc-5.3.0-openmpi-1.10.3
 XMOF2D_INSTALL_PREFIX=$NGC/private/xmof2d/0.9-gcc-5.3.0-openmpi-1.10.3
 
 echo $WORKSPACE

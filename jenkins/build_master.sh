@@ -64,7 +64,7 @@ ctest -j2 --output-on-failure
 make install
 
 
-TANGRAM_INSTALL_PREFIX=$NGC/private/tangram/133c1db580f-intel-17.0.1-openmpi-${openmpi_version}
+TANGRAM_INSTALL_PREFIX=$NGC/private/tangram/475b813919f-intel-17.0.1-openmpi-${openmpi_version}
 XMOF_INSTALL_PREFIX=$NGC/private/xmof2d/0.9-intel-17.0.1-openmpi-${openmpi_version}/share/cmake
 
 # Build Portage
@@ -81,6 +81,7 @@ cmake \
   -D Jali_DIR:FILEPATH=$JALI_INSTALL_PREFIX/lib \
   -D TANGRAM_DIR:FILEPATH=$TANGRAM_INSTALL_PREFIX \
   -D XMOF2D_DIR:FILEPATH=$XMOF2D_INSTALL_PREFIX/share/cmake \
+  -D LAPACKE_DIR:FILEPATH=$NGC/private/lapack/3.8.0-patched-intel-17.0.1 \
   ..
 make -j2
 ctest --output-on-failure
