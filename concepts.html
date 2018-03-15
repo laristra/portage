@@ -35,7 +35,7 @@ Please see the license file at the root of this repository, or at:
     <nav class="navbar navbar-default" role="navigation">
       <div class="container">
         <div class="navbar-header">
-          <a class="navbar-brand">portage v1.2.0</a>
+          <a class="navbar-brand">portage </a>
         </div>
       </div>
     </nav>
@@ -55,8 +55,6 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
       <li><a href="index.html"><span>Main&#160;Page</span></a></li>
       <li><a href="concepts.html"><span>Concepts</span></a></li>
       <li><a href="example.html"><span>Example&#160;Use</span></a></li>
-      <li><a href="namespaces.html"><span>Namespaces</span></a></li>
-      <li><a href="annotated.html"><span>Classes</span></a></li>
       <li>
         <div id="MSearchBox" class="MSearchBoxInactive">
         <span class="left">
@@ -113,15 +111,15 @@ An example mesh-mesh configuration. Blue is target mesh, black is source mesh.</
 <img src="search.svg" alt="search.svg"/>
 <div class="caption">
 Candidates are in yellow.</div></div>
-<p> <a class="el" href="namespacePortage.html">Portage</a> has several search algorithms with varying degrees of sophistication/speed. These are the search methods for meshes:</p>
+<p> Portage has several search algorithms with varying degrees of sophistication/speed. These are the search methods for meshes:</p>
 <ul>
-<li><a class="el" href="classPortage_1_1SearchSimple.html" title="A simple, crude search algorithm that utilizes bounding boxes in 2d. ">Portage::SearchSimple</a> - 2d, bounding box search</li>
-<li><a class="el" href="classPortage_1_1SearchKDTree.html" title="A k-d tree search class that allows us to search for control volumes of entities from one mesh (sourc...">Portage::SearchKDTree</a> - 2d or 3d parallel k-d tree search</li>
+<li>Portage::SearchSimple - 2d, bounding box search</li>
+<li>Portage::SearchKDTree - 2d or 3d parallel k-d tree search</li>
 </ul>
 <p>For particle swarms, the search concepts are similar, except any sort of bounding needs to take into account the fact that the particles can have some extent via shape and kernel functions. These are the search methods for particles:</p>
 <ul>
-<li><a class="el" href="classPortage_1_1SearchSimplePoints.html" title="A simple, crude search algorithm that does a quadratic-time search over a swarm of points...">Portage::SearchSimplePoints</a> - any-d quadratic time search over particle swarms</li>
-<li><a class="el" href="classPortage_1_1SearchPointsByCells.html" title="A simple, crude search algorithm that does a linear-time search over a swarm of points. ">Portage::SearchPointsByCells</a> - any-d linear time search over particle swarms using a bounding box containing particles and their smoothing lengths</li>
+<li>Portage::SearchSimplePoints - any-d quadratic time search over particle swarms</li>
+<li>Portage::SearchPointsByCells - any-d linear time search over particle swarms using a bounding box containing particles and their smoothing lengths</li>
 </ul>
 <h2>Intersect</h2>
 <p>Given the list of source candidates for intersection for a target entity, this step calculates the actual weights going into the intersection.</p>
@@ -132,9 +130,9 @@ The exact intersection volumes are in green.</div></div>
 <p> For meshes, this step uses exact intersection methods to calculate various <em>moments</em> of the polygon/polyhedron of intersection; moments of higher order than the 0th (i.e. the area or volume of the intersection) are needed for higher order remap. It is possible that some candidates are determined to have zero intersection, or that some candidates have multiple intersections in the case of non-convex cells.</p>
 <p>The available intersectors for meshes are:</p>
 <ul>
-<li><a class="el" href="classPortage_1_1IntersectClipper.html" title="2-D intersection algorithm for arbitrary convex and non-convex polyhedra ">Portage::IntersectClipper</a> - 2d, exact intersection method based on the <a href="www.angusj.com/delphi/clipper.php">Clipper</a> library for polygon intersection and clipping</li>
-<li><a class="el" href="classPortage_1_1IntersectR2D.html">Portage::IntersectR2D</a> - 2d, fast, exact polygonal intersection method based on the <a href="https://github.com/laristra/r3d">r3d</a> library.</li>
-<li><a class="el" href="classPortage_1_1IntersectR3D.html">Portage::IntersectR3D</a> - 3d, fast, exact polyhedral intersection method based on the <a href="https://github.com/laristra/r3d">r3d</a> library.</li>
+<li>Portage::IntersectClipper - 2d, exact intersection method based on the <a href="www.angusj.com/delphi/clipper.php">Clipper</a> library for polygon intersection and clipping</li>
+<li>Portage::IntersectR2D - 2d, fast, exact polygonal intersection method based on the <a href="https://github.com/laristra/r3d">r3d</a> library.</li>
+<li>Portage::IntersectR3D - 3d, fast, exact polyhedral intersection method based on the <a href="https://github.com/laristra/r3d">r3d</a> library.</li>
 </ul>
 <p>For particles, this step is referred to as <em>accumulation</em>. The distinction in terminology stems from the fact that for particles, local regression estimators (LRE) are used to do the remap. In this stage, the LRE weights from particle contributions are accumulated by computing the weight functions and local regression corrections to those weights. If LRE is performed with enough points, one can obtain weights for arbitrary orders of derivatives of the field data, which can be used to perform higher-order estimation.</p>
 <p>The available meshfree method is:</p>
@@ -149,9 +147,9 @@ The exact intersection volumes are in green.</div></div>
 The weights, calculated during intersection, are combined to interpolate data in the target cell.</div></div>
 <p> The current interpolation methods for meshes are the following:</p>
 <ul>
-<li><a class="el" href="classPortage_1_1Interpolate__1stOrder.html" title="Interpolate_1stOrder does a 1st order interpolation of scalars. ">Portage::Interpolate_1stOrder</a> - no limiting gets applied here.</li>
-<li><a class="el" href="classPortage_1_1Interpolate__2ndOrder.html" title="Interpolate_2ndOrder does a 2nd order interpolation of scalars. ">Portage::Interpolate_2ndOrder</a> - capable of performing a limited linear fit (2nd order accurate).</li>
-<li><a class="el" href="classPortage_1_1Interpolate__3rdOrder.html" title="Interpolate_3rdOrder does a 3rd order interpolation of scalars. ">Portage::Interpolate_3rdOrder</a> - capable of performing a least-squares, limited quadratic fit (3rd order accurate).</li>
+<li>Portage::Interpolate_1stOrder - no limiting gets applied here.</li>
+<li>Portage::Interpolate_2ndOrder - capable of performing a limited linear fit (2nd order accurate).</li>
+<li>Portage::Interpolate_3rdOrder - capable of performing a least-squares, limited quadratic fit (3rd order accurate).</li>
 </ul>
 <p>For particles, the terminology for the interpolate step changes to <em>estimate</em>. All of the heavy-lifting of the remap for particles has been done in the accumulate phase, such that this step results in a basic matrix vector multiply between the field data on source particles and the weights taking into account various orders of derivative information.</p>
 <p>The available meshfree method is:</p>
@@ -160,11 +158,11 @@ The weights, calculated during intersection, are combined to interpolate data in
 </li>
 </ul>
 <h2>Drivers</h2>
-<p><a class="el" href="namespacePortage.html">Portage</a> comes with a few <em>drivers</em> to help facilitate using the above methods with your own mesh/particle data. The drivers are all templated on source and target mesh/particle swarm and state data. Furthermore, they are templated on the Search, Intersect (or Accumulate), and Interpolate (or Estimate) methods above. In particular, the following drivers are provided:</p>
+<p>Portage comes with a few <em>drivers</em> to help facilitate using the above methods with your own mesh/particle data. The drivers are all templated on source and target mesh/particle swarm and state data. Furthermore, they are templated on the Search, Intersect (or Accumulate), and Interpolate (or Estimate) methods above. In particular, the following drivers are provided:</p>
 <ul>
-<li><a class="el" href="classPortage_1_1Driver.html" title="Driver provides the API to mapping from one mesh to another. ">Portage::Driver</a> - for mesh-mesh remap</li>
-<li><a class="el" href="classPortage_1_1Meshfree_1_1SwarmDriver.html">Portage::Meshfree::SwarmDriver</a> - for particle-particle remap</li>
-<li><a class="el" href="classPortage_1_1MSM__Driver.html" title="MSM_Driver provides the API to mapping from one mesh to another. ">Portage::MSM_Driver</a> - for mesh to mesh remap with particles as an intermediary</li>
+<li>Portage::Driver - for mesh-mesh remap</li>
+<li>Portage::Meshfree::SwarmDriver - for particle-particle remap</li>
+<li>Portage::MSM_Driver - for mesh to mesh remap with particles as an intermediary</li>
 </ul>
 <p>The drivers are all used within our application tests within the <code>apps</code> directory. The applications choose a particular mesh or particle swarm type, select specfic Search, Intersect, and Interpolate algorithms, along with associated settings for remap order of accuracy, data locality for meshes (cells or nodes), and any limiters needed for higher-order remap. Users are encouraged to write their own specialized drivers, but the above should serve as a starting point. </p>
 </div></div><!-- contents -->
