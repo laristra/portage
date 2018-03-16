@@ -164,6 +164,7 @@ Execute the following from the portage root directory:
 
 ```c++
 # machine=sn-fey
+. /usr/share/lmod/lmod/init/sh
 module load intel/17.0.4 openmpi/2.1.2 cmake
 JALI_INSTALL_PREFIX=/usr/projects/ngc/private/jali/0.9.8-intel-17.0.4-openmpi-2.1.2
 TANGRAM_INSTALL_PREFIX=/usr/projects/ngc/private/tangram/475b813919f-intel-17.0.4-openmpi-2.1.2
