@@ -115,7 +115,7 @@ double field_func(int example, Portage::Point<D> coord) {
 }
 
 
-// class for running examples
+// Class for performing mesh-mesh and mesh-swarm-mesh remapping comparisons using simple mesh. 
 class runMSM {
 protected:
   //Source and target meshes
@@ -136,8 +136,8 @@ protected:
 
 public:
   
-  // This is the basic test method to be called for each unit test. It will work
-  // for 2-D and 3-D, coincident and non-coincident cell-centered remaps.
+  // Perform comparison. First remap using traditional mesh techniques. Second remap using particles as intermediary. 
+  // Report timing and accuracy.
   template <
   template<Portage::Entity_kind, class, class, class,
            template <class, int> class> class Intersect,
@@ -301,8 +301,7 @@ public:
   {}
 };
 
-
-// class for running examples
+// Class for performing mesh-mesh and mesh-swarm-mesh remapping comparisons using jali mesh. 
 class runMSMJali {
 protected:
   //Source and target meshes
@@ -324,8 +323,8 @@ protected:
 
  public:
   
-  // This is the basic test method to be called for each unit test. It will work
-  // for 2-D and 3-D, coincident and non-coincident cell-centered remaps.
+  // Perform comparison. First remap using traditional mesh techniques. Second remap using particles as intermediary. 
+  // Report timing and accuracy.
   template <
    template<Portage::Entity_kind, class, class, class,
             template<class, int> class> class Intersect,

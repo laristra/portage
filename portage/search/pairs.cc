@@ -57,17 +57,17 @@ vpile PairsMinMax(const vpile& y, const vpile &h) {
   return r;
 }
 
-/// find bounding box of all the y-boxes, constant h
-vpile PairsMinMax(const vpile& y, const pile &h) {
-  vector<size_t> ny(y.size());  // sizes
-  size_t dim = ny[0];
+/// find bounding box of all the y-boxes
+vpile PairsMinMax(const vpile& c, const pile &h) {
+  vector<size_t> nc(c.size());  // sizes
+  size_t dim = nc[0];
   vpile r(2, dim);
 
   // find mins and maxes
   double shift = 2.0 * numeric_limits<double>::epsilon();  // smallest increment
   for (size_t m = 0; m < dim; m++) {
-    r[0][m] = y[m].min() - 2. * h[m];
-    r[1][m] = y[m].max() + 2. * h[m];
+    r[0][m] = c[m].min() - 2. * h[m];
+    r[1][m] = c[m].max() + 2. * h[m];
   }
   r[0] -= shift;
   r[1] += shift;
@@ -162,30 +162,27 @@ CellPairFinder::CellPairFinder(
   else
     assert (h.size()[1] == ny);
 
-  // find max h
-  hmax.resize(dim);
-  for (size_t m = 0; m < dim; m++) {
-    hmax[m] = h[m].max();
-  }
-
-  // find min and max of enclosing box of y points
+  // find min and max of enclosing boxes to get bounding box for cells
   if (do_scatter)
-    yminmax = PairsMinMax(y,hmax);
+    cminmax = PairsMinMax(x,h);
   else
-    yminmax = PairsMinMax(y,h);
-  delta = yminmax[1]-yminmax[0];
+    cminmax = PairsMinMax(y,h);
+  delta = cminmax[1]-cminmax[0];
 
   // decide on size of grid - this is a maximum value
-  ulong maxmemory=nx/10;
+  ulong maxmemory;
+  if (do_scatter) maxmemory=nx/10; else maxmemory = ny/10;
   size_t nsidemax=max<size_t>(static_cast<size_t>(ceil(pow(maxmemory*1., (1./dim)))),1);
 
-  // find avg of min and max h
+  // find avg of h
   pile havg(dim);
   havg = 0.;
-  for (size_t m=0; m<dim; m++) for (size_t i=0; i<ny; i++) {
-    havg[m] += fabs(h[m][i]);
+  for (size_t m=0; m<dim; m++) havg[m] += h[m].apply(fabs).sum();
+  if (do_scatter) {
+    havg = 4.*havg/(1.*nx) + numeric_limits<double>::epsilon();
+  } else {
+    havg = 4.*havg/(1.*ny) + numeric_limits<double>::epsilon();
   }
-  havg = 4.*havg/(1.*ny) + numeric_limits<double>::epsilon();
   vulong nsideh(dim);
   for (size_t m=0; m<dim; m++) nsideh[m] = static_cast<size_t>(ceil(delta[m]/havg[m]));
 
@@ -206,25 +203,47 @@ CellPairFinder::CellPairFinder(
     strides[m] = strides[m+1]*nsides[m+1];
   }
 
-  // hash x-points
-  for (ulong i=0; i<nx; i++) {
-    // ignore x values outside bounding box
-    bool outside=false;
-    pile xi(dim);
-    for (size_t m=0;m<dim;m++) {
-      if (x[m][i]<=yminmax[0][m]) outside=true;
-      if (x[m][i]>=yminmax[1][m]) outside=true;
-      xi[m]=x[m][i];
+  // hash x-corners for scatter form
+  if (do_scatter) {
+    for (ulong i=0; i<nx; i++) {
+      // get lower left and upper right bounds and indices for source box
+      pile xll(dim), xur(dim);
+      for (size_t m=0;m<dim;m++) {
+	xll[m]=x[m][i]-2.*h[m][i];
+	xur[m]=x[m][i]+2.*h[m][i];
+      }
+      vulong ixl(dim), ixu(dim);
+      PairsIntegize(dim, xll, cminmax, delta, nsidesm, ixl);
+      PairsIntegize(dim, xur, cminmax, delta, nsidesm, ixu);
+      size_t ndxll = cellindex(dim, strides, ixl);
+      size_t ndxur = cellindex(dim, strides, ixu)+1;
+
+      // add x to all cells covered or intersected by this source box
+      for (size_t ndx=ndxll; ndx<ndxur; ndx++) {
+	cells[ndx].push_back(i);
+      }
     }
-    if (outside) continue;
+  } else {
+    // hash x-points for gather form
+    for (ulong i=0; i<nx; i++) {
+      // ignore x values outside bounding box
+      bool outside=false;
+      pile xi(dim);
+      for (size_t m=0;m<dim;m++) {
+	if (x[m][i]<=cminmax[0][m]) outside=true;
+	if (x[m][i]>=cminmax[1][m]) outside=true;
+	xi[m]=x[m][i];
+      }
+      if (outside) continue;
 
-    // get cell indices this x
-    vulong ix(dim);
-    PairsIntegize(dim, xi, yminmax, delta, nsidesm, ix);
+      // get cell indices this x
+      vulong ix(dim);
+      PairsIntegize(dim, xi, cminmax, delta, nsidesm, ix);
 
-    // add this x to cell list
-    ulong index=cellindex(dim, strides, ix);
-    cells[index].push_back(i);
+      // add this x to cell list
+      ulong ndx=cellindex(dim, strides, ix);
+      cells[ndx].push_back(i);
+    }
   }
 
 }  // CellPairFinder::CellPairFinder
@@ -242,8 +261,8 @@ list<ulong> CellPairFinder::find_gather(const ulong j) const
     yur[m]=y[m][j]+2.*h[m][j];
   }
   vulong iyl(dim), iyu(dim);
-  PairsIntegize(dim, yll, yminmax, delta, nsidesm, iyl);
-  PairsIntegize(dim, yur, yminmax, delta, nsidesm, iyu);
+  PairsIntegize(dim, yll, cminmax, delta, nsidesm, iyl);
+  PairsIntegize(dim, yur, cminmax, delta, nsidesm, iyu);
 
   // total number of cells for this y
   ulong ncellsy=iyu[dim-1]-iyl[dim-1]+1;
@@ -270,7 +289,8 @@ list<ulong> CellPairFinder::find_gather(const ulong j) const
 
     // loop over all x's in this cell's list
     for (vector<ulong>::const_iterator i=cells[celli].begin();
-        i != cells[celli].end(); i++) {
+        i != cells[celli].end(); i++) 
+    {
       // if on y-cell boundary, check that x's are contained
       bool inside = true;
       if (ybndry) {
@@ -296,60 +316,46 @@ list<ulong> CellPairFinder::find_scatter(const ulong j) const
 {
   list<ulong> pairlist;
 
-  // get cell indices lower left and upper right corners of box
-  pile yllmax(dim), yurmax(dim);
+  // get a compact representation of this point
+  pile ypt(dim);
+  for (size_t m=0;m<dim;m++) ypt[m]=y[m][j];
+
+  // check for completely outside source boxes
+  bool outside = false;
   for (size_t m=0;m<dim;m++) {
-    yllmax[m]=y[m][j]-2.*hmax[m];
-    yurmax[m]=y[m][j]+2.*hmax[m];
+    if (y[m][j]<=cminmax[0][m]) outside=true;
+    if (y[m][j]>=cminmax[1][m]) outside=true;
   }
-  vulong iyl(dim), iyu(dim);
-  PairsIntegize(dim, yllmax, yminmax, delta, nsidesm, iyl);
-  PairsIntegize(dim, yurmax, yminmax, delta, nsidesm, iyu);
+  if (outside) return pairlist;
 
-  // total number of cells for this y
-  ulong ncellsy=iyu[dim-1]-iyl[dim-1]+1;
-  vulong ystrides(dim);
-  ystrides[dim-1] = 1;
-  for(int m=dim-2; m>=0; m--) {
-    ystrides[m] = ncellsy;
-    ncellsy*=iyu[m]-iyl[m]+1;
-  }
+  // get cell indices of input y-point
+  vulong iy(dim);
+  PairsIntegize(dim, ypt, cminmax, delta, nsidesm, iy);
+  size_t ndx = cellindex(dim, strides, iy);
 
-  // scan cells for this y
-  for (ulong cell=0; cell<ncellsy; cell++) {
-    // convert local y-cell indices to global cell index
-    vulong yndx(dim);
-    cellindices(dim, ystrides, cell, yndx);
-    vulong cellis(dim);
-    for(size_t m=0; m<dim; m++) cellis[m] = iyl[m]+yndx[m];
-    size_t celli = cellindex(dim, strides, cellis);
+  // loop over all x's in this y-cell's list
+  for (vector<ulong>::const_iterator i=cells[ndx].begin();
+       i != cells[ndx].end(); i++) 
+  {
+    // get lower left and upper right coords for this x
+    pile xll(dim), xur(dim);
+    for (size_t m=0;m<dim;m++) {
+      xll[m]=x[m][*i]-2.*h[m][*i];
+      xur[m]=x[m][*i]+2.*h[m][*i];
+    }
 
-    // TODO:  Try adding a boundary test, similar to what's in
-    // find_gather, based on hmin instead of individual h's.
-    // Do profiling to see whether that speeds up the search
-    // in typical larger cases.
+    // check that y is contained
+    bool inside = true;
+    for(size_t m=0; m<dim; m++) {
+      if (y[m][j] <= xll[m]) inside = false;
+      if (y[m][j] >= xur[m]) inside = false;
+    }
 
-    // loop over all x's in this cell's list
-    for (vector<ulong>::const_iterator i=cells[celli].begin();
-        i != cells[celli].end(); i++) {
-      pile yll(dim), yur(dim);
-      for (size_t m=0;m<dim;m++) {
-        yll[m]=y[m][j]-2.*h[m][*i];
-        yur[m]=y[m][j]+2.*h[m][*i];
-      }
-      // check that x's are contained
-      bool inside = true;
-      for(size_t m=0; m<dim; m++) {
-        if (x[m][*i] <= yll[m]) inside = false;
-        if (x[m][*i] >= yur[m]) inside = false;
-      }
-
-      // add pair: put x's in this y-cell onto neighbor list, if inside
-      if (inside) {
-        pairlist.push_back(*i);
-      }
-    }  // for i
-  }  // for cell
+    // add pair: put x's in this y-cell onto neighbor list, if inside
+    if (inside) {
+      pairlist.push_back(*i);
+    }
+  }  // for i
 
   return pairlist;
 }  // CellPairFinder::find_scatter

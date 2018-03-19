@@ -104,7 +104,8 @@ class MSMDriverTest : public ::testing::Test {
     int Dimension = 3
   >
   void unitTest(double compute_initial_field(Portage::Point<Dimension> centroid),
-                double smoothing_factor, Portage::Meshfree::Basis::Type basis)
+                double smoothing_factor, Portage::Meshfree::Basis::Type basis, 
+		Portage::Meshfree::WeightCenter center=Portage::Meshfree::Gather)
   {
     if (Dimension != 3) {
       throw std::runtime_error("2D not available yet");
@@ -178,7 +179,11 @@ class MSMDriverTest : public ::testing::Test {
     >
     msmdriver(sourceMeshWrapper, sourceStateWrapper,
               targetMeshWrapper, targetStateWrapper2,
-              smoothing_factor, basis);
+              smoothing_factor, basis, 
+	      Portage::Meshfree::LocalRegression, 
+	      Portage::Meshfree::Weight::TENSOR, 
+	      Portage::Meshfree::Weight::B4, 
+	      center);
     msmdriver.set_remap_var_names(remap_fields);
     // run on one processor
     msmdriver.run(false);
@@ -295,6 +300,22 @@ TEST_F(MSMDriverTest3D, 3D2ndOrderQuadratic) {
            Portage::Interpolate_2ndOrder,
            Portage::SearchPointsByCells, 3>
     (&compute_quadratic_field_3d, 1.5, Portage::Meshfree::Basis::Quadratic);
+}
+
+TEST_F(MSMDriverTest3D, 3D1stOrderLinearScatter) {
+  unitTest<Portage::IntersectR3D,
+           Portage::Interpolate_1stOrder,
+           Portage::SearchPointsByCells, 3>
+    (&compute_linear_field_3d, .75, Portage::Meshfree::Basis::Linear, 
+     Portage::Meshfree::Scatter);
+}
+
+TEST_F(MSMDriverTest3D, 3D2ndOrderQuadraticScatter) {
+  unitTest<Portage::IntersectR3D,
+           Portage::Interpolate_2ndOrder,
+           Portage::SearchPointsByCells, 3>
+    (&compute_quadratic_field_3d, 1.5, Portage::Meshfree::Basis::Quadratic, 
+     Portage::Meshfree::Scatter);
 }
 
 }  // namespace

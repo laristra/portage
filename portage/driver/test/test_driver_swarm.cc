@@ -320,12 +320,10 @@ TEST_F(DriverTest2D, 2D_QuadraticFieldQuadraticBasis) {
       (compute_quadratic_field<2>, 0.0);
 }
 
-  /*
 TEST_F(DriverTest2DScatter, 2D_QuadraticFieldQuadraticBasisScatter) {
   unitTest<Portage::SearchSimplePoints, Portage::Meshfree::Basis::Quadratic>
       (compute_quadratic_field<2>, 0.0);
 }
-  */
 
 //TEST_F(DriverTest2D, 2D_CubicFieldQuadraticBasis) {
 //  unitTest<Portage::SearchSimplePoints, Portage::Meshfree::Basis::Quadratic>
@@ -358,12 +356,10 @@ TEST_F(DriverTest3D, 3D_QuadraticFieldQuadraticBasis) {
       (compute_quadratic_field<3>, 0.0);
 }
 
-  /*
 TEST_F(DriverTest3DScatter, 3D_QuadraticFieldQuadraticBasisScatter) {
   unitTest<Portage::SearchSimplePoints, Portage::Meshfree::Basis::Quadratic>
       (compute_quadratic_field<3>, 0.0);
 }
-  */
 
 //TEST_F(DriverTest1D, 3D_CubicFieldQuadraticBasis) {
 //  unitTest<Portage::SearchSimplePoints, Portage::Meshfree::Basis::Quadratic>

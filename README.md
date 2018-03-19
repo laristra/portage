@@ -228,7 +228,7 @@ verison of FleCSI on Varan.  An example is below:
 # machine=varan::flecsi
 export MODULEPATH=""
 . /opt/local/packages/Modules/default/init/sh
-module load gcc/5.3.0 openmpi/1.10.3 cmake
+module load gcc/5.3.0 openmpi/1.10.7 cmake
 FLECSI_INSTALL_PREFIX=/usr/local/codes/ngc/private/flecsi/gcc5.3_openmpi1.10.3
 FLECSISP_INSTALL_PREFIX=/usr/local/codes/ngc/private/flecsi-sp/gcc5.3_openmpi1.10.3
 TANGRAM_INSTALL_PREFIX=/usr/projects/ngc/private/tangram/4f600ec441a-gcc-5.3.0-openmpi-1.10.3
@@ -239,6 +239,8 @@ LAPACKE_LIBRARY_DIR=$LAPACKE_DIR
 mkdir build-flecsi
 cd build-flecsi
 cmake \
+    -D CMAKE_C_COMPILER=`which mpicc` \
+    -D CMAKE_CXX_COMPILER=`which mpiCC` \
     -D CMAKE_BUILD_TYPE=Debug \
     -D ENABLE_UNIT_TESTS=True \
     -D ENABLE_APP_TESTS=True \

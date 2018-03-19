@@ -123,13 +123,15 @@ class MSM_Driver {
 	 double smoothing_factor             = 1.5,
 	 Meshfree::Basis::Type      basis    = Meshfree::Basis::Unitary,
 	 Meshfree::EstimateType     estimate = Meshfree::LocalRegression,
-	 Meshfree::Weight::Geometry geometry = Meshfree::Weight::ELLIPTIC,
-	 Meshfree::Weight::Kernel   kernel   = Meshfree::Weight::B4)
+	 Meshfree::Weight::Geometry geometry = Meshfree::Weight::TENSOR,
+         Meshfree::Weight::Kernel   kernel   = Meshfree::Weight::B4,
+         Meshfree::WeightCenter     center   = Meshfree::Gather)
       : source_mesh_(sourceMesh), source_state_(sourceState),
         target_mesh_(targetMesh), target_state_(targetState),
         smoothing_factor_(smoothing_factor),
-        kernel_(kernel),
         geometry_(geometry),
+        kernel_(kernel),
+        center_(center),
         estimate_(estimate),
         basis_(basis), 
         dim_(sourceMesh.space_dimension()) 
@@ -283,13 +285,16 @@ class MSM_Driver {
 
       // create spherically symmetric smoothing lengths for now
       using std::vector;
-      int ncells = source_mesh_flat.num_owned_cells();
+      int ncells;
+      if      (center_ == Meshfree::Scatter) ncells = source_mesh_flat.num_owned_cells();
+      else if (center_ == Meshfree::Gather)  ncells = target_mesh_flat.num_owned_cells();
       vector<vector<vector<double>>> smoothing_lengths
         (ncells, vector<vector<double>>(1, vector<double>(Dim)));
       for (int i=0; i<ncells; i++) {
         double radius;
-        cell_radius<Dim>(source_mesh_flat, i, &radius);
-        smoothing_lengths[i][0] = vector<double>(Dim, radius*smoothing_factor_);
+        if      (center_ == Meshfree::Scatter) cell_radius<Dim>(source_mesh_flat, i, &radius);
+	else if (center_ == Meshfree::Gather)  cell_radius<Dim>(target_mesh_flat, i, &radius);
+	smoothing_lengths[i][0] = vector<double>(Dim, radius*smoothing_factor_);
       }
 
       // create swarm remap driver
@@ -307,7 +312,7 @@ class MSM_Driver {
                      smoothing_lengths,
                      kernel_,
                      geometry_,
-                     Meshfree::Scatter);
+                     center_);
 
       swarm_driver.set_remap_var_names(source_cellvar_names,
                                        target_cellvar_names,
@@ -366,12 +371,15 @@ class MSM_Driver {
 
       // create smoothing lengths
       using std::vector;
-      int nnodes = source_mesh_flat.num_owned_nodes();
+      int nnodes;
+      if      (center_ == Meshfree::Scatter) nnodes = source_mesh_flat.num_owned_nodes();
+      else if (center_ == Meshfree::Gather)  nnodes = target_mesh_flat.num_owned_nodes();
       vector<vector<vector<double>>> smoothing_lengths
         (nnodes, vector<vector<double>>(1, vector<double>(Dim)));
       for (int i=0; i<nnodes; i++) {
         double radius;
-        node_radius<Dim>(source_mesh_flat, i, &radius);
+        if      (center_ == Meshfree::Scatter) node_radius<Dim>(source_mesh_flat, i, &radius);
+	else if (center_ == Meshfree::Gather)  node_radius<Dim>(target_mesh_flat, i, &radius);
         smoothing_lengths[i][0] = vector<double>(Dim, radius*smoothing_factor_);
       }
 
@@ -390,7 +398,7 @@ class MSM_Driver {
                      smoothing_lengths,
                      kernel_,
                      geometry_,
-                     Meshfree::Scatter);
+                     center_);
 
       swarm_driver.set_remap_var_names(source_nodevar_names,
                                        target_nodevar_names,
@@ -433,6 +441,7 @@ class MSM_Driver {
   double smoothing_factor_;
   Meshfree::Weight::Kernel kernel_;
   Meshfree::Weight::Geometry geometry_;
+  Meshfree::WeightCenter center_;
   Meshfree::EstimateType estimate_;
   Meshfree::Basis::Type basis_;
   unsigned int dim_;
