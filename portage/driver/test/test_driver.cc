@@ -99,7 +99,7 @@ class DriverTest : public ::testing::Test {
     double stdval, err;
     double toterr = 0.;
 
-    Jali::StateVector<double, Jali::Mesh> cellvecout;
+    Jali::UniStateVector<double, Jali::Mesh> cellvecout;
     bool found = targetState->get<double, Jali::Mesh>("celldata", targetMesh,
                                                       Jali::Entity_kind::CELL,
                                                       Jali::Entity_type::ALL,
