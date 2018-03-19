@@ -199,7 +199,7 @@ class IntersectR3D<CELL, SourceMeshType, SourceStateType, TargetMeshType,
 #endif
       
       // Increment if vol of intersection > 0; otherwise, allow overwrite
-      if (this_wt.weights[0] > 0.0)
+      if (this_wt.weights.size() && this_wt.weights[0] > 0.0)
         ninserted++;
     }
 
@@ -289,7 +289,7 @@ class IntersectR3D<NODE, SourceMeshType, SourceStateType, TargetMeshType,
       this_wt.weights = intersect_polys_r3d(srcpoly, target_tet_coords);
 
       // Increment if vol of intersection > 0; otherwise, allow overwrite
-      if (this_wt.weights[0] > 0.0)
+      if (this_wt.weights.size() && this_wt.weights[0] > 0.0)
         ninserted++;
     }
 
