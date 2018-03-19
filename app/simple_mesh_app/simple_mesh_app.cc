@@ -22,7 +22,7 @@ Please see the license file at the root of this repository, or at:
 #endif
 
 #include "portage/support/portage.h"
-#include "portage/driver/mmdriver.h"
+#include "portage/driver/driver.h"
 #include "portage/simple_mesh/simple_mesh.h"
 #include "portage/simple_mesh/simple_state.h"
 #include "portage/wonton/mesh/simple_mesh/simple_mesh_wrapper.h"
@@ -219,7 +219,7 @@ int main(int argc, char** argv) {
     remap_fields.push_back("celldata");
 
     if (example.order == 1) {
-      Portage::MMDriver<
+      Portage::Driver<
         Portage::SearchKDTree,
         Portage::IntersectR3D,
         Portage::Interpolate_1stOrder,
@@ -231,7 +231,7 @@ int main(int argc, char** argv) {
       d.set_remap_var_names(remap_fields);
       d.run(false);
     } else {  // 2nd order
-      Portage::MMDriver<
+      Portage::Driver<
         Portage::SearchKDTree,
         Portage::IntersectR3D,
         Portage::Interpolate_2ndOrder,
@@ -347,7 +347,7 @@ int main(int argc, char** argv) {
     remap_fields.push_back("nodedata");
 
     if (example.order == 1) {
-      Portage::MMDriver<
+      Portage::Driver<
         Portage::SearchKDTree,
         Portage::IntersectR3D,
         Portage::Interpolate_1stOrder,
@@ -359,7 +359,7 @@ int main(int argc, char** argv) {
       d.set_remap_var_names(remap_fields);
       d.run(false);
     } else {
-      Portage::MMDriver<
+      Portage::Driver<
         Portage::SearchKDTree,
         Portage::IntersectR3D,
         Portage::Interpolate_2ndOrder,
