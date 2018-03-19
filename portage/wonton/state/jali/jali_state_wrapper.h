@@ -15,6 +15,7 @@ Please see the license file at the root of this repository, or at:
 #include <vector>
 
 #include "portage/support/portage.h"
+#include "portage/support/Point.h"
 
 #include "Mesh.hh"       // Jali mesh declarations
 #include "JaliState.h"  // Jali-based state manager declarations
@@ -150,12 +151,13 @@ class Jali_State_Wrapper {
 
   Field_type field_type(Entity_kind on_what, std::string const& var_name)
       const {
+
     Jali::State::const_iterator it = jali_state_.cbegin();
     while (it != jali_state_.cend()) {
-      std::shared_ptr<Jali::BaseStateVector> bvec = *it;
+      std::shared_ptr<Jali::StateVectorBase> bvec = *it;
       if (bvec->name() == var_name &&
           static_cast<Portage::Entity_kind>(bvec->entity_kind()) == on_what) {
-        if (bvec->get_type() == Jali::StateVector_type::UNIVAL)
+        if (bvec->type() == Jali::StateVector_type::UNIVAL)
           return Field_type::MESH_FIELD;
         else
           return Field_type::MULTIMATERIAL_FIELD;
@@ -175,16 +177,17 @@ class Jali_State_Wrapper {
   template <class T>
   void mesh_get_data(Entity_kind on_what, std::string const& var_name,
                      T const **data) const {
-    Jali::StateVector<T, Jali::Mesh> vector;
-    if (jali_state_.get<T, Jali::Mesh, Jali::StateVector>(var_name,
+    Jali::UniStateVector<T, Jali::Mesh> vector;
+    if (jali_state_.get<T, Jali::Mesh, Jali::UniStateVector>(var_name,
                                                     jali_state_.mesh(),
                                                     (Jali::Entity_kind) on_what,
                                                     Jali::Entity_type::ALL,
                                                     &vector)) {
       *data = (T const *) vector.get_raw_data();
-    }
-    else
+    } else {
       std::cerr << "Could not find state variable " << var_name << "\n";
+      *data = nullptr;
+    }
   }
 
 
@@ -204,16 +207,17 @@ class Jali_State_Wrapper {
   void mesh_get_data(Entity_kind on_what, std::string const& var_name,
                      T **data) {
     using T1 = typename std::remove_const<T>::type;
-    Jali::StateVector<T1, Jali::Mesh> vector;
-    if (jali_state_.get<T1, Jali::Mesh, Jali::StateVector>(var_name,
+    Jali::UniStateVector<T1, Jali::Mesh> vector;
+    if (jali_state_.get<T1, Jali::Mesh, Jali::UniStateVector>(var_name,
                                                     jali_state_.mesh(),
                                                     (Jali::Entity_kind) on_what,
                                                     Jali::Entity_type::ALL,
                                                     &vector)) {
       *data = vector.get_raw_data();
-    }
-    else
+    } else {
       std::cerr << "Could not find state variable " << var_name << "\n";
+      *data = nullptr;
+    }
   }
 
 
@@ -227,17 +231,18 @@ class Jali_State_Wrapper {
   template <class T>
   void mat_get_celldata(std::string const& var_name, int matid,
                         T const **data) const {
-    Jali::MMStateVector<T, Jali::Mesh> mmvector;
-    if (jali_state_.get<T, Jali::Mesh, Jali::MMStateVector>(var_name,
+    Jali::MultiStateVector<T, Jali::Mesh> mmvector;
+    if (jali_state_.get<T, Jali::Mesh, Jali::MultiStateVector>(var_name,
                                                       jali_state_.mesh(),
                                                       Jali::Entity_kind::CELL,
                                                       Jali::Entity_type::ALL,
                                                       &mmvector)) {
       // data copy
       *data = (T const *) mmvector.get_raw_data(matid);
-    }
-    else
+    } else {
       std::cerr << "Could not find state variable " << var_name << "\n";
+      *data = nullptr;
+    }
   }
 
 
@@ -259,17 +264,18 @@ class Jali_State_Wrapper {
   void mat_get_celldata(std::string const& var_name, int matid, T **data) {
     using T1 = typename std::remove_const<T>::type;
 
-    Jali::MMStateVector<T1, Jali::Mesh> mmvector;
-    if (jali_state_.get<T1, Jali::Mesh, Jali::MMStateVector>(var_name,
+    Jali::MultiStateVector<T1, Jali::Mesh> mmvector;
+    if (jali_state_.get<T1, Jali::Mesh, Jali::MultiStateVector>(var_name,
                                                       jali_state_.mesh(),
                                                       Jali::Entity_kind::CELL,
                                                       Jali::Entity_type::ALL,
                                                       &mmvector)) {
       // data copy
       *data = mmvector.get_raw_data(matid);
-    }
-    else
+    } else {
       std::cerr << "Could not find state variable " << var_name << "\n";
+      *data = nullptr;
+    }
   }
 
 
@@ -296,7 +302,7 @@ class Jali_State_Wrapper {
   void mesh_add_data(Entity_kind on_what, std::string const& var_name,
                       const T value) {
     // Compiler needs some help deducing template parameters here
-    jali_state_.add<T, Jali::Mesh, Jali::StateVector>(var_name,
+    jali_state_.add<T, Jali::Mesh, Jali::UniStateVector>(var_name,
                                                     jali_state_.mesh(),
                                                     (Jali::Entity_kind) on_what,
                                                     Jali::Entity_type::ALL,
@@ -340,8 +346,11 @@ class Jali_State_Wrapper {
                            !std::is_array<T>::value),
                           void>::type
   mat_add_celldata(std::string const& var_name, T value) {
-    jali_state_.add(var_name, jali_state_.mesh(), Jali::Entity_kind::CELL,
-                    Jali::Entity_type::ALL, value);
+    jali_state_.add<T, Jali::Mesh, Jali::MultiStateVector>(var_name,
+                                                        jali_state_.mesh(),
+                                                        Jali::Entity_kind::CELL,
+                                                        Jali::Entity_type::ALL,
+                                                        value);
   }
 
 
@@ -379,14 +388,14 @@ class Jali_State_Wrapper {
   template <class T>
   void mat_add_celldata(std::string const& var_name, int matid,
                         T const * values) {
-    auto it = jali_state_.find<T, Jali::Mesh, Jali::MMStateVector>(var_name,
+    auto it = jali_state_.find<T, Jali::Mesh, Jali::MultiStateVector>(var_name,
                                                         jali_state_.mesh(),
                                                         Jali::Entity_kind::CELL,
                                                         Jali::Entity_type::ALL);
 
     if (it == jali_state_.end()) {
-      Jali::MMStateVector<T, Jali::Mesh>& mmvec =
-          jali_state_.add<T, Jali::Mesh, Jali::MMStateVector>(var_name,
+      Jali::MultiStateVector<T, Jali::Mesh>& mmvec =
+          jali_state_.add<T, Jali::Mesh, Jali::MultiStateVector>(var_name,
                                                   jali_state_.mesh(),
                                                   Jali::Entity_kind::CELL,
                                                   Jali::Entity_type::ALL);
@@ -394,8 +403,8 @@ class Jali_State_Wrapper {
       int nmatcells = matdata.size();
       matdata.assign(values, values+nmatcells);
     } else {
-      Jali::MMStateVector<T, Jali::Mesh>& mmvec =
-          *(std::dynamic_pointer_cast<Jali::MMStateVector<T, Jali::Mesh>>(*it));
+      Jali::MultiStateVector<T, Jali::Mesh>& mmvec =
+          *(std::dynamic_pointer_cast<Jali::MultiStateVector<T, Jali::Mesh>>(*it));
       std::vector<T>& matdata = mmvec.get_matdata(matid);
       int nmatcells = matdata.size();
       matdata.assign(values, values+nmatcells);
@@ -429,14 +438,14 @@ class Jali_State_Wrapper {
   std::enable_if<(!std::is_pointer<T>::value && !std::is_array<T>::value),
                  void>::type 
   mat_add_celldata(std::string const& var_name, int matid, T value) {
-    auto it = jali_state_.find<T, Jali::Mesh, Jali::MMStateVector>(var_name,
+    auto it = jali_state_.find<T, Jali::Mesh, Jali::MultiStateVector>(var_name,
                                                         jali_state_.mesh(),
                                                         Jali::Entity_kind::CELL,
                                                         Jali::Entity_type::ALL);
 
     if (it == jali_state_.end()) {
-      Jali::MMStateVector<T, Jali::Mesh>& mmvec =
-          jali_state_.add<T, Jali::Mesh, Jali::MMStateVector>(var_name,
+      Jali::MultiStateVector<T, Jali::Mesh>& mmvec =
+          jali_state_.add<T, Jali::Mesh, Jali::MultiStateVector>(var_name,
                                                   jali_state_.mesh(),
                                                   Jali::Entity_kind::CELL,
                                                   Jali::Entity_type::ALL);
@@ -444,8 +453,8 @@ class Jali_State_Wrapper {
       int nmatcells = matdata.size();
       matdata.assign(nmatcells, value);
     } else {
-      Jali::MMStateVector<T, Jali::Mesh>& mmvec =
-          *(std::dynamic_pointer_cast<Jali::MMStateVector<T, Jali::Mesh>>(*it));
+      Jali::MultiStateVector<T, Jali::Mesh>& mmvec =
+          *(std::dynamic_pointer_cast<Jali::MultiStateVector<T, Jali::Mesh>>(*it));
       std::vector<T>& matdata = mmvec.get_matdata(matid);
       int nmatcells = matdata.size();
       matdata.assign(nmatcells, value);
@@ -490,19 +499,12 @@ class Jali_State_Wrapper {
     @brief Get the entity type on which the given field is defined
     @param[in] var_name The string name of the data field
     @return The Entity_kind enum for the entity type on which the field is defined
-
-    @todo  THIS ASSUMES ONLY DOUBLE VECTORS - WE HAVE TO ACCOUNT FOR OTHER TYPES
-           OR WE HAVE TO GENERALIZE THE FIND FUNCTION!!!
    */
   Entity_kind get_entity(const std::string var_name) const {
-
-    // ****** CHANGE WHEN JALISTATE find FUNCTION IS FIXED TO NOT NEED
-    // ****** THE DATA TYPE
-
-    Jali::State::const_iterator it =
-        jali_state_.find<double, Jali::Mesh>(var_name, jali_state_.mesh());
+    
+    Jali::State::const_iterator it = jali_state_.find(var_name);
     if (it != jali_state_.cend()) {
-      std::shared_ptr<Jali::BaseStateVector> vector = *it;
+      std::shared_ptr<Jali::StateVectorBase> vector = *it;
       if (vector)
         return (Portage::Entity_kind) vector->entity_kind();
     }
@@ -517,24 +519,25 @@ class Jali_State_Wrapper {
     @param[in] on_what  The entity type on which the data field is defined
     @param[in] var_name The string name of the data field
     @return The data size for the field with the given name on the given entity type
-
-    @todo  THIS ASSUMES ONLY DOUBLE VECTORS - WE HAVE TO ACCOUNT FOR OTHER TYPES
-    OR WE HAVE TO GENERALIZE THE FIND FUNCTION!!!
          
     For multi-material state, this will give the number of materials for now
    */
   int get_data_size(Entity_kind on_what, std::string const& var_name) const {
 
-    // ****** CHANGE WHEN JALISTATE find FUNCTION IS FIXED TO NOT NEED
-    // ****** THE DATA TYPE
-
-    Jali::State::const_iterator it =
-        jali_state_.find<double, Jali::Mesh>(var_name, jali_state_.mesh(),
-                                        (Jali::Entity_kind) on_what);
+    Jali::State::const_iterator it = jali_state_.find(var_name);
     if (it != jali_state_.cend()) {
-      std::shared_ptr<Jali::BaseStateVector> vector = *it;
-      if (vector)
-        return (vector->size());
+      std::shared_ptr<Jali::StateVectorBase> vector = *it;
+      if (vector && on_what == (Portage::Entity_kind) vector->entity_kind()) {
+        if (vector->type() == Jali::StateVector_type::UNIVAL) {
+          auto uvec = std::dynamic_pointer_cast<Jali::UniStateVectorBase<Jali::Mesh>>(vector);
+          if (uvec && uvec->domain() == jali_state_.mesh())
+            return uvec->size();
+        } else if (vector->type() == Jali::StateVector_type::MULTIVAL) {
+          auto mmvec = std::dynamic_pointer_cast<Jali::MultiStateVectorBase<Jali::Mesh>>(vector);
+          if (mmvec && mmvec->domain() == jali_state_.mesh())
+              return (vector->size());
+        }
+      }
     }
 
     std::cerr << "Could not find state variable " << var_name << "\n";
@@ -553,7 +556,7 @@ class Jali_State_Wrapper {
     Jali::State::const_iterator it =
         jali_state_.find(var_name, jali_state_.mesh());
     if (it != jali_state_.cend()) {
-      std::shared_ptr<Jali::BaseStateVector> vector = *it;
+      std::shared_ptr<Jali::StateVectorBase> vector = *it;
       if (vector)
         return vector->get_type();
     }
