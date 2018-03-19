@@ -49,63 +49,63 @@ TEST(Test_MultiVar_Remap, Test1) {
   // Add a constant value state vector on source cells
 
   double Constant1 = 1.25;
-  Jali::StateVector<double> myvec1("srccellvars1", source_mesh, nullptr,
-                                   Jali::Entity_kind::CELL,
-                                   Jali::Entity_type::PARALLEL_OWNED,
-                                   Constant1);
+  Jali::UniStateVector<double> myvec1("srccellvars1", source_mesh, nullptr,
+                                      Jali::Entity_kind::CELL,
+                                      Jali::Entity_type::PARALLEL_OWNED,
+                                      Constant1);
   source_state->add(myvec1);
 
   // Add another constant value state vector on source cells
 
   double Constant2 = -91.5;
-  Jali::StateVector<double> myvec2("srccellvars2", source_mesh, nullptr,
-                                   Jali::Entity_kind::CELL,
-                                   Jali::Entity_type::PARALLEL_OWNED,
-                                   Constant2);
+  Jali::UniStateVector<double> myvec2("srccellvars2", source_mesh, nullptr,
+                                      Jali::Entity_kind::CELL,
+                                      Jali::Entity_type::PARALLEL_OWNED,
+                                      Constant2);
   source_state->add(myvec2);
 
   // Add a constant value state vector on source nodes
 
   double Constant3 = 3.14;
-  Jali::StateVector<double> myvec3("srcnodevars", source_mesh, nullptr,
-                                   Jali::Entity_kind::NODE,
-                                   Jali::Entity_type::PARALLEL_OWNED,
-                                   Constant3);
+  Jali::UniStateVector<double> myvec3("srcnodevars", source_mesh, nullptr,
+                                      Jali::Entity_kind::NODE,
+                                      Jali::Entity_type::PARALLEL_OWNED,
+                                      Constant3);
   source_state->add(myvec3);
 
 
   // Add zero value state vectors on target cells and nodes - once with
   // the old name and once with the new name
 
-  Jali::StateVector<double> myvec4("trgcellvars1", target_mesh, nullptr,
-                                   Jali::Entity_kind::CELL,
-                                   Jali::Entity_type::PARALLEL_OWNED);
-
+  Jali::UniStateVector<double> myvec4("trgcellvars1", target_mesh, nullptr,
+                                      Jali::Entity_kind::CELL,
+                                      Jali::Entity_type::PARALLEL_OWNED);
+  
   target_state->add(myvec4);
-  Jali::StateVector<double> myvec5("srccellvars1", target_mesh, nullptr,
-                                   Jali::Entity_kind::CELL,
-                                   Jali::Entity_type::PARALLEL_OWNED);
+  Jali::UniStateVector<double> myvec5("srccellvars1", target_mesh, nullptr,
+                                      Jali::Entity_kind::CELL,
+                                      Jali::Entity_type::PARALLEL_OWNED);
   target_state->add(myvec5);
 
-  Jali::StateVector<double> myvec6("trgcellvars2", target_mesh, nullptr,
-                                   Jali::Entity_kind::CELL,
-                                   Jali::Entity_type::PARALLEL_OWNED);
-
+  Jali::UniStateVector<double> myvec6("trgcellvars2", target_mesh, nullptr,
+                                      Jali::Entity_kind::CELL,
+                                      Jali::Entity_type::PARALLEL_OWNED);
+  
   target_state->add(myvec6);
-  Jali::StateVector<double> myvec7("srccellvars2", target_mesh, nullptr,
-                                   Jali::Entity_kind::CELL,
-                                   Jali::Entity_type::PARALLEL_OWNED);
+  Jali::UniStateVector<double> myvec7("srccellvars2", target_mesh, nullptr,
+                                      Jali::Entity_kind::CELL,
+                                      Jali::Entity_type::PARALLEL_OWNED);
   target_state->add(myvec7);
 
   std::vector<double> zerodata2(nnodes_target, 0.0);
-  Jali::StateVector<double> myvec8("trgnodevars", target_mesh, nullptr,
-                                   Jali::Entity_kind::NODE,
-                                   Jali::Entity_type::PARALLEL_OWNED);
-
+  Jali::UniStateVector<double> myvec8("trgnodevars", target_mesh, nullptr,
+                                      Jali::Entity_kind::NODE,
+                                      Jali::Entity_type::PARALLEL_OWNED);
+  
   target_state->add(myvec8);
-  Jali::StateVector<double> myvec9("srcnodevars", target_mesh, nullptr,
-                                   Jali::Entity_kind::NODE,
-                                   Jali::Entity_type::PARALLEL_OWNED);
+  Jali::UniStateVector<double> myvec9("srcnodevars", target_mesh, nullptr,
+                                      Jali::Entity_kind::NODE,
+                                      Jali::Entity_type::PARALLEL_OWNED);
   target_state->add(myvec9);
 
   // Wrappers for interfacing with the underlying mesh data structures.
@@ -219,7 +219,7 @@ TEST(Test_MultiVar_Remap, Nested_Meshes) {
   // Add a state vector on source cells with values dependent on the
   // centroid of each cell
 
-  Jali::StateVector<double> sourcevec("cellvars", source_mesh, nullptr,
+  Jali::UniStateVector<double> sourcevec("cellvars", source_mesh, nullptr,
                                       Jali::Entity_kind::CELL,
                                       Jali::Entity_type::PARALLEL_OWNED);
   for (int c = 0; c < ncells_source; ++c) {
@@ -231,8 +231,8 @@ TEST(Test_MultiVar_Remap, Nested_Meshes) {
   // Add zero value state vectors on target cells and nodes - once with
   // the old name and once with the new name
 
-  Jali::StateVector<double, Jali::Mesh>& targetvec =
-      target_state->add<double, Jali::Mesh, Jali::StateVector>("cellvars",
+  Jali::UniStateVector<double, Jali::Mesh>& targetvec =
+      target_state->add<double, Jali::Mesh, Jali::UniStateVector>("cellvars",
                                   target_mesh,
                                   Jali::Entity_kind::CELL,
                                   Jali::Entity_type::PARALLEL_OWNED);
