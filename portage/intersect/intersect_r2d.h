@@ -168,9 +168,9 @@ class IntersectR2D<CELL, SourceMeshType, SourceStateType, TargetMeshType,
           std::vector<Tangram::MatPoly<2>> matpolys =
               cellmatpoly.get_matpolys(matid_);
           
-          for (int j = 0; j < 3; j++) this_wt.weights[j] = 0.0;
+          this_wt.weights.resize(3, 0.0);
           for (int j = 0; j < matpolys.size(); j++) {
-            std::vector<Tangram::Point<2>> tpnts = matpolys[i].points();
+            std::vector<Tangram::Point<2>> tpnts = matpolys[j].points();
             std::vector<Point<2>> source_poly;
             source_poly.reserve(tpnts.size());
             for (auto const & p : tpnts) source_poly.push_back(p);
@@ -190,7 +190,7 @@ class IntersectR2D<CELL, SourceMeshType, SourceStateType, TargetMeshType,
 #endif
         
       // Increment if vol of intersection > 0; otherwise, allow overwrite
-        if (this_wt.weights[0] > 0.0)
+        if (this_wt.weights.size() && this_wt.weights[0] > 0.0)
         ninserted++;
     }
 
@@ -270,7 +270,7 @@ class IntersectR2D<NODE, SourceMeshType, SourceStateType, TargetMeshType,
       this_wt.weights = intersect_polys_r2d(source_poly, target_poly);
 
       // Increment if vol of intersection > 0; otherwise, allow overwrite
-      if (this_wt.weights[0] > 0.0)
+      if (this_wt.weights.size() && this_wt.weights[0] > 0.0)
         ninserted++;
     }
 
