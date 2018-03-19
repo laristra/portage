@@ -444,7 +444,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
     sourceState->add("celldata", sourceMesh, Jali::Entity_kind::CELL,
                      Jali::Entity_type::ALL, &(sourceData[0]));
 
-    targetState->add<double, Jali::Mesh, Jali::StateVector>("celldata",
+    targetState->add<double, Jali::Mesh, Jali::UniStateVector>("celldata",
                                                             targetMesh,
                                                 Jali::Entity_kind::CELL,
                                                 Jali::Entity_type::ALL, 0.0);
@@ -469,7 +469,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
     sourceState->add("nodedata", sourceMesh, Jali::Entity_kind::NODE,
                     Jali::Entity_type::ALL, &(sourceData[0]));
 
-    targetState->add<double, Jali::Mesh, Jali::StateVector>("nodedata",
+    targetState->add<double, Jali::Mesh, Jali::UniStateVector>("nodedata",
                                                             targetMesh,
                                                 Jali::Entity_kind::NODE,
                                                 Jali::Entity_type::ALL, 0.0);
