@@ -17,7 +17,7 @@ Please see the license file at the root of this repository, or at:
 #define PORTAGE_SERIAL_ONLY
 #endif
 
-#include "portage/driver/mmdriver.h"
+#include "portage/driver/driver.h"
 #include "portage/driver/driver_mesh_swarm_mesh.h"
 #include "portage/simple_mesh/simple_mesh.h"
 #include "portage/simple_mesh/simple_state.h"
@@ -203,17 +203,17 @@ public:
     remap_fields.push_back("nodedata");
 
     // Build the mesh-mesh driver data for this mesh type
-    Portage::MMDriver<Portage::SearchKDTree,
+    Portage::Driver<Portage::SearchKDTree,
                     Intersect,
                     Interpolate,
                     Dimension,
                     Wonton::Simple_Mesh_Wrapper, Wonton::Simple_State_Wrapper,
                     Wonton::Simple_Mesh_Wrapper, Wonton::Simple_State_Wrapper>
-      mmdriver(sourceMeshWrapper, sourceStateWrapper,
-               targetMeshWrapper, targetStateWrapper);
-    mmdriver.set_remap_var_names(remap_fields);
+      driver(sourceMeshWrapper, sourceStateWrapper,
+             targetMeshWrapper, targetStateWrapper);
+    driver.set_remap_var_names(remap_fields);
     // run on one processor
-    mmdriver.run(false);
+    driver.run(false);
 
     // Build the mesh-swarm-mesh driver data for this mesh type
     Portage::MSM_Driver<
@@ -360,7 +360,7 @@ protected:
       sourceFlatMesh.cell_centroid(c, &cen);
       sourceData[c] = field_func<3>(controls_.example, cen);
     }
-    Jali::StateVector<double> &sourceVec(sourceState->add("celldata",
+    Jali::UniStateVector<double> &sourceVec(sourceState->add("celldata",
       sourceMesh, Jali::Entity_kind::CELL, Jali::Entity_type::ALL, &(sourceData[0])));
     
     for (unsigned int c = 0; c < nsrcnodes; ++c) {
@@ -368,7 +368,7 @@ protected:
       sourceFlatMesh.node_get_coordinates(c, &cen);
       sourceDataNode[c] = field_func<3>(controls_.example, cen);
     }
-    Jali::StateVector<double> &sourceVecNode(sourceState->add("nodedata",
+    Jali::UniStateVector<double> &sourceVecNode(sourceState->add("nodedata",
       sourceMesh, Jali::Entity_kind::NODE, Jali::Entity_type::ALL, &(sourceDataNode[0])));
 
     //Build the target state storage
@@ -387,17 +387,17 @@ protected:
     remap_fields.push_back("nodedata");
 
     // Build the mesh-mesh driver data for this mesh type
-    Portage::MMDriver<Portage::SearchKDTree,
+    Portage::Driver<Portage::SearchKDTree,
                     Intersect,
                     Interpolate,
                     Dimension,
                     Portage::Jali_Mesh_Wrapper, Portage::Jali_State_Wrapper,
                     Portage::Jali_Mesh_Wrapper, Portage::Jali_State_Wrapper>
-      mmdriver(sourceMeshWrapper, sourceStateWrapper,
-               targetMeshWrapper, targetStateWrapper);
-    mmdriver.set_remap_var_names(remap_fields);
+    driver(sourceMeshWrapper, sourceStateWrapper,
+           targetMeshWrapper, targetStateWrapper);
+    driver.set_remap_var_names(remap_fields);
     //run on one processor
-    mmdriver.run(false);
+    driver.run(false);
 
     // Build the mesh-swarm-mesh driver data for this mesh type
     Portage::MSM_Driver<
@@ -421,7 +421,7 @@ protected:
 
     std::vector<double> cellvecout(ntarcells), cellvecout2(ntarcells);
     std::vector<double> nodevecout(ntarnodes), nodevecout2(ntarnodes);
-    Jali::StateVector<double, Jali::Mesh> cvp, cv2p, nvp, nv2p;
+    Jali::UniStateVector<double, Jali::Mesh> cvp, cv2p, nvp, nv2p;
     targetState->get("celldata", targetMesh, Jali::Entity_kind::CELL, Jali::Entity_type::ALL, &cvp);
     targetState2->get("celldata", targetMesh, Jali::Entity_kind::CELL, Jali::Entity_type::ALL, &cv2p);
     targetState->get("nodedata", targetMesh, Jali::Entity_kind::NODE, Jali::Entity_type::ALL, &nvp);
