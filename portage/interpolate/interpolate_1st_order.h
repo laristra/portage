@@ -276,6 +276,7 @@ double Interpolate_1stOrder<D, CELL, SourceMeshType, TargetMeshType,
   
   double val = 0.0;
   double wtsum0 = 0.0;
+  double vol = target_mesh_.cell_volume(targetCellID);
 
   if (field_type_ == Field_type::MESH_FIELD) {
     for (auto const& wt : sources_and_weights) {
@@ -294,9 +295,14 @@ double Interpolate_1stOrder<D, CELL, SourceMeshType, TargetMeshType,
     }
   }
   
-  // Normalize the value by volume of targetCell
-  double vol = target_mesh_.cell_volume(targetCellID);
-  val /= vol;
+  // Normalize the value by the volume of the intersection of the target cells
+  // with the source mesh. This will do the right thing for single-material
+  // and multi-material remap (conservative and constant preserving) if there
+  // is NO mismatch between source and target mesh boundaries. IF THERE IS A
+  // MISMATCH, THIS WILL PRESERVE CONSTANT VALUES BUT NOT BE CONSERVATIVE. THEN
+  // WE HAVE TO DO A SEMI-LOCAL OR GLOBAL REPAIR.
+
+  val /= wtsum0;
 
 #ifdef DEBUG
   static bool first = true;
