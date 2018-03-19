@@ -20,6 +20,7 @@ Please see the license file at the root of this repository, or at:
 #include "portage/search/search_kdtree.h"
 #include "portage/intersect/intersect_r2d.h"
 #include "portage/intersect/intersect_r3d.h"
+#include "portage/intersect/simple_intersect_for_tests.h"
 #include "portage/interpolate/interpolate_1st_order.h"
 #include "Mesh.hh"
 #include "MeshFactory.hh"
@@ -28,235 +29,347 @@ Please see the license file at the root of this repository, or at:
 
 #include "tangram/reconstruct/xmof2D_wrapper.h"
 #include "tangram/reconstruct/SLIC.h"
-
-// amh: TODO--change to simple mesh?
-namespace {
+#include "tangram/driver/driver.h"
+#include "tangram/driver/write_to_gmv.h"
 
 double TOL = 1e-6;
 
-// This is a set of integration tests based off of main.cc.  There
-// will be at least one test corresponding to each case found in
-// main.cc.  This is a test fixture and must be derived from the
-// ::testing::Test class.  Specializations of this class, such as
-// 2D/3D coincident and non-coincident remaps should be derived from
-// this.
-class DriverTest : public ::testing::Test {
- protected:
+TEST(MMDriver, Pure2Mixed) {
   // Source and target meshes
   std::shared_ptr<Jali::Mesh> sourceMesh;
   std::shared_ptr<Jali::Mesh> targetMesh;
   // Source and target mesh state
   std::shared_ptr<Jali::State> sourceState;
   std::shared_ptr<Jali::State> targetState;
-  //  Wrappers for interfacing with the underlying mesh data structures
-  Wonton::Jali_Mesh_Wrapper sourceMeshWrapper;
-  Wonton::Jali_Mesh_Wrapper targetMeshWrapper;
-  Wonton::Jali_State_Wrapper sourceStateWrapper;
-  Wonton::Jali_State_Wrapper targetStateWrapper;
-  const int nsrccells;
-  const int ntarcells;
+
+  sourceMesh = Jali::MeshFactory(MPI_COMM_WORLD)(0.0, 0.0, 1.0, 1.0, 5, 5);
+  targetMesh = Jali::MeshFactory(MPI_COMM_WORLD)(0.0, 0.0, 1.0, 1.0, 7, 6);
+
+  sourceState = Jali::State::create(sourceMesh);
+  targetState = Jali::State::create(targetMesh);
+
+  Wonton::Jali_Mesh_Wrapper sourceMeshWrapper(*sourceMesh);
+  Wonton::Jali_Mesh_Wrapper targetMeshWrapper(*targetMesh);
+  Wonton::Jali_State_Wrapper sourceStateWrapper(*sourceState);
+  Wonton::Jali_State_Wrapper targetStateWrapper(*targetState);
+  
+  // The material geometry in the overall domain will look like this
+  // and we will put down a rectangular mesh that has multiple cells
+  // in each direction on this domain so that we get some pure and
+  // some mixed cells
+  //
+  // Note that only MOF type algorithms or VOF algorithms with the
+  // material ordering 0,1,2 will get the T-junction geometry right
+  //
+  //    0,1           0.5,1         1,1
+  //     *-------------:------------*
+  //     |             :            |
+  //     |             :        2   |
+  //     |             :     mat2   |
+  //     |             :            |
+  //     |             :            |
+  //     |     0       +............|1,0.5
+  //     |   mat0      :            |
+  //     |             :            |
+  //     |             :     mat1   |
+  //     |             :        1   |
+  //     |             :            |
+  //     *-------------:------------*
+  //    0,0           0.5,0         1,0
+
+  constexpr int nmats = 3;
+  std::string matnames[nmats] = {"mat0", "mat1", "mat2"};
+
+  // Extents of the materials in the overall domain
+  
+  Portage::Point<2> matlo[nmats], mathi[nmats];
+  matlo[0] = Portage::Point<2>(0.0, 0.0);
+  mathi[0] = Portage::Point<2>(0.5, 1.0);
+  matlo[1] = Portage::Point<2>(0.5, 0.0);
+  mathi[1] = Portage::Point<2>(1.0, 0.5);
+  matlo[2] = Portage::Point<2>(0.5, 0.5);
+  mathi[2] = Portage::Point<2>(1.0, 1.0);
+
+  double matrho[nmats] = {0.1, 10.0, 100.0};
+  double matvol[nmats] = {0.5, 0.25, 0.25};
+  double matmass[nmats] = {0.05, 2.5, 25.0};
+  Portage::Point<2> matcen[nmats] = {Portage::Point<2>(0.25,0.5),
+                                     Portage::Point<2>(0.75,0.25),
+                                     Portage::Point<2>(0.75,0.75)};
+
+  std::vector<int> matcells_src[nmats];
+  std::vector<double> matvf_src[nmats];
+  std::vector<Portage::Point<2>> matcen_src[nmats];
+
+
+  //-------------------------------------------------------------------
+  // COMPUTE MATERIAL DATA ON SOURCE SIDE - VOLUME FRACTIONS, CENTROID
+  // CELL LISTS
+  //-------------------------------------------------------------------
+  //
+  // Based on the material geometry, make a list of SOURCE cells that
+  // are in each material and collect their material volume fractions
+  // and material centroids
+  
+  int nsrccells = sourceMeshWrapper.num_entities(Portage::Entity_kind::CELL,
+                                                 Portage::Entity_type::ALL);
+  for (int c = 0; c < nsrccells; c++) {
+    std::vector<Portage::Point<2>> ccoords;
+    sourceMeshWrapper.cell_get_coordinates(c, &ccoords);
+
+    double cellvol = sourceMeshWrapper.cell_volume(c);
+
+    Portage::Point<2> cell_lo, cell_hi;
+    BOX_INTERSECT::bounding_box<2>(ccoords, &cell_lo, &cell_hi);
+
+    std::vector<double> xmoments;
+    for (int m = 0; m < nmats; m++) {
+      if (BOX_INTERSECT::intersect_boxes<2>(matlo[m], mathi[m],
+                                            cell_lo, cell_hi, &xmoments)) {
+        if (xmoments[0] > 1.0e-06) {  // non-trivial intersection
+          matcells_src[m].push_back(c);
+          matvf_src[m].push_back(xmoments[0]/cellvol);
+          
+          Portage::Point<2> mcen(xmoments[1]/xmoments[0],
+                                 xmoments[2]/xmoments[0]);
+          matcen_src[m].push_back(mcen);
+        }
+      }
+    }
+  }
+
+
+  //-------------------------------------------------------------------  
+  // Now add the material and material cells to the source state
+  //-------------------------------------------------------------------
+  
+  for (int m = 0; m < nmats; m++)
+    sourceStateWrapper.add_material(matnames[m], matcells_src[m]);
+
+  // Create multi-material variables to store the volume fractions and
+  // centroids for each material in the cells
+  for (int m = 0; m < nmats; m++) {
+    sourceStateWrapper.mat_add_celldata("mat_volfracs", m, &(matvf_src[m][0]));
+    sourceStateWrapper.mat_add_celldata("mat_centroids", m, &(matcen_src[m][0]));
+  }
+
+  // Also assign a different constant density value for each material
+  for (int m = 0; m < nmats; m++)
+    sourceStateWrapper.mat_add_celldata("density", m, matrho[m]);
   
 
-  // This is the basic test method to be called for each unit test.
-  //  It will work for 2-D and 3-D, coincident and non-coincident
-  //  cell-centered remaps.
-  template <
-    template<Portage::Entity_kind, class, class, class,
-             template<class, int> class> class Intersect,
-    template<int, Portage::Entity_kind, class, class, class> class Interpolate,
-    template<class, int> class InterfaceReconstructor,
-    int Dimension
-  >
-  void unitTest(double compute_initial_field(JaliGeometry::Point centroid),
-                double expected_answer) {
+  //-------------------------------------------------------------------  
+  // Sanity check - do we get the right volumes and masses for
+  // materials from the source state
+  //-------------------------------------------------------------------
 
-    //  Fill the source state data with the specified profile
-    std::vector<double> sourceData(nsrccells);
+  for (int m = 0; m < nmats; m++) {
+    std::vector<int> matcells;
+    sourceStateWrapper.mat_get_cells(m, &matcells);
+    double const *vf;
+    double const *rho;
+    sourceStateWrapper.mat_get_celldata("mat_volfracs", m, &vf);
+    sourceStateWrapper.mat_get_celldata("density", m, &rho);
 
-    // Create the source data for given function
-    for (unsigned int c = 0; c < nsrccells; ++c) {
-      JaliGeometry::Point cen = sourceMesh->cell_centroid(c);
-      sourceData[c] = compute_initial_field(cen);
-    }
-    sourceState->add("celldata", sourceMesh, Jali::Entity_kind::CELL,
-                     Jali::Entity_type::ALL, &(sourceData[0]));
-
-    // Build the target state storage
-    std::vector<double> targetData(ntarcells, 0.0);
-    targetState->add("celldata", targetMesh, Jali::Entity_kind::CELL,
-                     Jali::Entity_type::ALL, &(targetData[0]));
-
-    //  Build the main driver data for this mesh type
-    //  Register the variable name and interpolation order with the driver
-    std::vector<std::string> remap_fields;
-    remap_fields.push_back("celldata");
-
-    Portage::MMDriver<Portage::SearchKDTree, Intersect, Interpolate,
-                      Dimension,
-                      Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
-                      Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
-                      InterfaceReconstructor>
-        d(sourceMeshWrapper, sourceStateWrapper, targetMeshWrapper,
-          targetStateWrapper);
-    d.set_remap_var_names(remap_fields);
-    // run on one processor
-    d.run(false);
-
-    // Check the answer
-    double stdval, err;
-    double toterr = 0.;
-
-    Jali::StateVector<double, Jali::Mesh> cellvecout;
-    bool found = targetState->get<double, Jali::Mesh>("celldata", targetMesh,
-                                                      Jali::Entity_kind::CELL,
-                                                      Jali::Entity_type::ALL,
-                                                      &cellvecout);
-    ASSERT_TRUE(found);
-
-    for (int c = 0; c < ntarcells; ++c) {
-      JaliGeometry::Point ccen = targetMesh->cell_centroid(c);
-      double error;
-      error = compute_initial_field(ccen) - cellvecout[c];
-      //  dump diagnostics for each cell
-      std::printf("Cell=% 4d Centroid = (% 5.3lf,% 5.3lf)", c,
-                  ccen[0], ccen[1]);
-      std::printf("  Value = % 10.6lf  Err = % lf\n",
-                  cellvecout[c], error);
-      toterr += error*error;
+    double volume = 0.0, mass = 0.0;
+    for (int ic = 0; ic < matcells.size(); ic++) {
+      double cellvol = vf[ic]*sourceMeshWrapper.cell_volume(matcells[ic]);
+      volume += cellvol;
+      mass += rho[ic]*cellvol;
     }
 
-    std::printf("\n\nL2 NORM OF ERROR = %lf\n\n", sqrt(toterr));
-    ASSERT_NEAR(expected_answer, sqrt(toterr), TOL);
-  }  // unitTest
-
-  // Constructor for Driver test
-  DriverTest(std::shared_ptr<Jali::Mesh> s, std::shared_ptr<Jali::Mesh> t) :
-    sourceMesh(s), targetMesh(t),
-    sourceState(Jali::State::create(sourceMesh)),
-    targetState(Jali::State::create(targetMesh)),
-    sourceMeshWrapper(*sourceMesh), targetMeshWrapper(*targetMesh),
-    sourceStateWrapper(*sourceState), targetStateWrapper(*targetState),
-    nsrccells(sourceMeshWrapper.num_owned_cells() +
-              sourceMeshWrapper.num_ghost_cells()),
-    ntarcells(targetMeshWrapper.num_owned_cells()) {}
-
-};
+    ASSERT_NEAR(matvol[m], volume, 1.0e-10);
+    ASSERT_NEAR(matmass[m], mass, 1.0e-10);
+  }
 
 
-// Class which constructs a pair simple 2-D coincident meshes for remaps
-struct DriverTest2D : DriverTest {
-  DriverTest2D() : DriverTest(Jali::MeshFactory(MPI_COMM_WORLD)
-  (0.0, 0.0, 1.0, 1.0, 11, 11),
-  Jali::MeshFactory(MPI_COMM_WORLD) (0.0, 0.0, 1.0, 1.0, 3, 3)) {}
-};
+  //-------------------------------------------------------------------
+  // Field(s) we have to remap
+  //-------------------------------------------------------------------
 
-// Class which constructs a pair of simple 2-D non-coincident meshes for remaps
-struct DriverTest2DNonCoincident : DriverTest {
-  DriverTest2DNonCoincident() : DriverTest(Jali::MeshFactory(MPI_COMM_WORLD)
-  (0.0, 0.0, 1.0, 1.0, 11, 11),
-  Jali::MeshFactory(MPI_COMM_WORLD) (0.0, 0.0, 1.0+1.5*(1/3.), 1.0, 3, 3)) {}
-};
+  std::vector<std::string> remap_fields = {"density"};
 
-// Class which constructs a pair simple 3-D coincident meshes for remaps
-struct DriverTest3D : DriverTest {
-  DriverTest3D(): DriverTest(Jali::MeshFactory(MPI_COMM_WORLD)
-  (0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 11, 11, 11),
-  Jali::MeshFactory(MPI_COMM_WORLD)(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 3, 3, 3)) {}
-};
 
-// Class which constructs a pair simple 3-D non-coincident meshes for remaps
-struct DriverTest3DNonCoincident : DriverTest {
-  DriverTest3DNonCoincident(): DriverTest(Jali::MeshFactory(MPI_COMM_WORLD)
-  (0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 11, 11, 11),
-  Jali::MeshFactory(MPI_COMM_WORLD)(0.0, 0.0, 0.0, 1.0+1.5*1/3.,
-      1.0+1.5*1/3., 1.0+1.5*1/3., 3, 3, 3)) {}
-};
+  //-------------------------------------------------------------------
+  // Add the materials and fields to the target mesh.
+  //-------------------------------------------------------------------
 
-// Methods for computing initial field values
-double compute_linear_field(JaliGeometry::Point centroid) {
-  return centroid[0]+centroid[1];
-}
-double compute_quadratic_field(JaliGeometry::Point centroid) {
-  return centroid[0]*centroid[0]+centroid[1]*centroid[1];
-}
-double compute_quadratic_field_3d(JaliGeometry::Point centroid) {
-  return centroid[0]*centroid[0] + centroid[1]*centroid[1] +
-      centroid[2]*centroid[2];
-}
+  std::vector<int> dummymatcells;
+  targetStateWrapper.add_material("mat0", dummymatcells);
+  targetStateWrapper.add_material("mat1", dummymatcells);
+  targetStateWrapper.add_material("mat2", dummymatcells);
 
-// Test cases: these are constructed by calling TEST_F with the name
-// of the test class you want to use.  The unit test method is then
-// called inside each test with the appropriate template arguments.
-// Google test will pick up each test and run it as part of the larger
-// test fixture.  If any one of these fails the whole test_driver
-// fails.
+  targetStateWrapper.mat_add_celldata<double>("mat_volfracs");
+  targetStateWrapper.mat_add_celldata<Portage::Point<2>>("mat_centroids");
+  targetStateWrapper.mat_add_celldata<double>("density", 0.0);
 
-// Example 0
-TEST_F(DriverTest2D, 2D_1stOrderLinearCellCntrCoincident1proc) {
-  unitTest<Portage::IntersectR2D, Portage::Interpolate_1stOrder,
-           Tangram::XMOF2D_Wrapper, 2>
-  (compute_linear_field, 0.0095429796560267122);
-}
-// Example 1
-// TEST_F(DriverTest2D, 2D_2ndOrderLinearCellCntrCoincident1proc) {
-//   unitTest<Portage::IntersectR2D, Portage::Interpolate_2ndOrder, 2>
-//   (compute_linear_field, 0.);
-// }
-// Example 2
-TEST_F(DriverTest2DNonCoincident, 2D_1stOrderLinearCellCntrNonCoincident1proc) {
-  unitTest<Portage::IntersectR2D, Portage::Interpolate_1stOrder,
-           Tangram::XMOF2D_Wrapper, 2>
-  (compute_linear_field, 3.067536);
-}
-// Example 3
-// TEST_F(DriverTest2DNonCoincident, 2D_2ndOrderLinearCellCntrNonCoincident1proc) {
-//   unitTest<Portage::IntersectR2D, Portage::Interpolate_2ndOrder, 2>
-//   (compute_linear_field, 3.067527);
-// }
-// Example 4
-TEST_F(DriverTest2D, 2D_1stOrderQuadraticCellCntrCoincident1proc) {
-  unitTest<Portage::IntersectR2D, Portage::Interpolate_1stOrder,
-           Tangram::XMOF2D_Wrapper, 2>
-  (compute_quadratic_field, 0.052627);
-}
-// Example 5
-// TEST_F(DriverTest2D, 2D_2ndOrderQuadraticCellCntrCoincident1proc) {
-//   unitTest<Portage::IntersectR2D, Portage::Interpolate_2ndOrder, 2>
-//   (compute_quadratic_field, 0.051424);
-// }
-// Example 6
-TEST_F(DriverTest2DNonCoincident, 2D_1stOrderQuadraticCellCntrNonCoincident1proc) {
-  unitTest<Portage::IntersectR2D, Portage::Interpolate_1stOrder,
-           Tangram::XMOF2D_Wrapper, 2>
-  (compute_quadratic_field, 3.303476);
-}
-// Example 7
-// TEST_F(DriverTest2DNonCoincident, 2D_2ndOrderQuadraticCellCntrNonCoincident1proc) {
-//   unitTest<Portage::IntersectR2D, Portage::Interpolate_2ndOrder, 2>
-//   (compute_quadratic_field, 3.303466);
-// }
-// Example 8
-TEST_F(DriverTest3D, 3D_1stOrderQuadraticCellCntrCoincident1proc) {
-  unitTest<Portage::IntersectR3D, Portage::Interpolate_1stOrder,
-           Tangram::SLIC, 3>
-  (compute_quadratic_field_3d, .135694);
-}
-// Example 9
-// TEST_F(DriverTest3D, 3D_2ndOrderQuadraticCellCntrCoincident1proc) {
-//   unitTest<Portage::IntersectR3D, Portage::Interpolate_2ndOrder, 3>
-//   (compute_quadratic_field_3d, .133602);
-// }
-// Example 10
-TEST_F(DriverTest3DNonCoincident, 3D_1stOrderQuadraticCellCntrNonCoincident1proc) {
-  unitTest<Portage::IntersectR3D, Portage::Interpolate_1stOrder,
-           Tangram::SLIC, 3>
-  (compute_quadratic_field_3d, 12.336827);
-}
-// Example 11
-// TEST_F(DriverTest3DNonCoincident, 3D_2ndOrderQuadraticCellCntrNonCoincident1proc) {
-//   unitTest<Portage::IntersectR3D, Portage::Interpolate_2ndOrder, 3>
-//   (compute_quadratic_field_3d, 12.336822);
-// }
-}
+
+  //-------------------------------------------------------------------
+  //  Run the remap driver using XMOF-2D as the interface
+  //  reconstructor which is guaranteed to recover the correct
+  //  geometry of the T-junction. A VOF-based interface reconstructor
+  //  will get the right geometry for the T-junction only if the
+  //  material ordering is 0, 1, 2
+  //-------------------------------------------------------------------
+
+  Portage::MMDriver<Portage::SearchKDTree,
+                    Portage::IntersectR2D,
+                    Portage::Interpolate_1stOrder,
+                    2,
+                    Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
+                    Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
+                    Tangram::XMOF2D_Wrapper>
+      d(sourceMeshWrapper, sourceStateWrapper,
+        targetMeshWrapper, targetStateWrapper);
+  d.set_remap_var_names(remap_fields);
+  d.run(false);
+  
+
+
+  //-------------------------------------------------------------------
+  // Based on the material geometry, make a list of the TARGET cells
+  // that are in each material and collect their material volume
+  // fractions and material centroids
+  //-------------------------------------------------------------------
+
+  std::vector<int> matcells_trg[nmats];
+  std::vector<double> matvf_trg[nmats];
+  std::vector<Portage::Point<2>> matcen_trg[nmats];
+
+  int ntrgcells = targetMeshWrapper.num_entities(Portage::Entity_kind::CELL,
+                                                 Portage::Entity_type::ALL);
+  for (int c = 0; c < ntrgcells; c++) {
+    std::vector<Portage::Point<2>> ccoords;
+    targetMeshWrapper.cell_get_coordinates(c, &ccoords);
+
+    double cellvol = targetMeshWrapper.cell_volume(c);
+
+    Portage::Point<2> cell_lo, cell_hi;
+    BOX_INTERSECT::bounding_box<2>(ccoords, &cell_lo, &cell_hi);
+
+    std::vector<double> xmoments;
+    for (int m = 0; m < nmats; m++) {
+      if (BOX_INTERSECT::intersect_boxes<2>(matlo[m], mathi[m],
+                                            cell_lo, cell_hi, &xmoments)) {
+        if (xmoments[0] > 1.0e-06) {  // non-trivial intersection
+          matcells_trg[m].push_back(c);
+          matvf_trg[m].push_back(xmoments[0]/cellvol);
+          
+          Portage::Point<2> mcen(xmoments[1]/xmoments[0],
+                                 xmoments[2]/xmoments[0]);
+          matcen_trg[m].push_back(mcen);
+        }
+      }
+    }
+  }
+
+
+  //-------------------------------------------------------------------
+  // CHECK REMAPPING RESULTS ON TARGET MESH SIDE
+  //-------------------------------------------------------------------
+
+  //-------------------------------------------------------------------
+  // First we check that we got 'nmats' materials in the target state
+  //-------------------------------------------------------------------
+
+  ASSERT_EQ(nmats, targetStateWrapper.num_materials());
+  for (int m = 0; m < nmats; m++)
+  ASSERT_EQ(matnames[m], targetStateWrapper.material_name(m));
+
+  std::cerr << "\n\n\n";
+  std::cerr << " Number of materials in target mesh: " << nmats << "\n";
+  std::cerr << " Material names: ";
+  for (int m = 0; m < nmats; m++) std::cerr << " " << matnames[m];
+  std::cerr << "\n\n";
+  
+  // We compare the material sets calculated by the remapper to
+  // the ones calculated independently above
+
+  std::vector<int> matcells_remap[nmats];
+  for (int m = 0; m < nmats; m++) {
+    targetStateWrapper.mat_get_cells(m, &matcells_remap[m]);
+    int nmatcells = matcells_remap[m].size();
+
+    ASSERT_EQ(matcells_trg[m].size(), nmatcells);
+
+    std::sort(matcells_remap[m].begin(), matcells_remap[m].end());
+    std::sort(matcells_trg[m].begin(), matcells_trg[m].end());
+
+    for (int ic = 0; ic < nmatcells; ic++)
+      ASSERT_EQ(matcells_remap[m][ic], matcells_trg[m][ic]);
+  }
+
+  
+  
+  // Then check volume fracs and centroids with independently calculated vals
+  for (int m = 0; m < nmats; m++) {
+    int nmatcells = matcells_remap[m].size();
+    
+    double const *matvf_remap;
+    targetStateWrapper.mat_get_celldata("mat_volfracs", m, &matvf_remap);
+
+    for (int ic = 0; ic < nmatcells; ic++)
+      ASSERT_NEAR(matvf_trg[m][ic], matvf_remap[ic], 1.0e-12);
+    
+    Portage::Point<2> const *matcen_remap;
+    targetStateWrapper.mat_get_celldata("mat_centroids", m, &matcen_remap);
+
+    for (int ic = 0; ic < nmatcells; ic++)
+      for (int d = 0; d < 2; d++)
+        ASSERT_NEAR(matcen_trg[m][ic][d], matcen_remap[ic][d], 1.0e-12);
+
+    double const *density_remap;
+    targetStateWrapper.mat_get_celldata("density", m, &density_remap);
+
+    for (int ic = 0; ic < nmatcells; ic++)
+      ASSERT_NEAR(matrho[m], density_remap[ic], 1.0e-12);
+
+    std::cerr << "Number of cells in material " << m << " is " << nmatcells << "\n";
+    std::cerr << "Material " << m << " cell ids, volume fractions, centroids:"
+              << "\n";
+    for (int ic = 0; ic < nmatcells; ic++)
+      std::cerr <<
+          "  ID = " << std::setw(2) << matcells_remap[m][ic] <<
+          "  Vol.Frac. = " << std::setw(6) << matvf_remap[ic] <<
+          "  Centroid = " << std::setw(6) << matcen_remap[ic][0] << std::setw(6) << matcen_remap[ic][1] <<
+          "  Density = " << std::setw(4) << density_remap[ic] << "\n";
+    std::cerr << "\n";
+  }
+
+  // Also check total material volume and mass on the target side 
+  for (int m = 0; m < nmats; m++) {
+    std::vector<int> matcells;
+    targetStateWrapper.mat_get_cells(m, &matcells);
+    double *vf, *rho;
+    Portage::Point<2> *cen;
+    targetStateWrapper.mat_get_celldata("mat_volfracs", m, &vf);
+    targetStateWrapper.mat_get_celldata("mat_centroids", m, &cen);
+    targetStateWrapper.mat_get_celldata("density", m, &rho);
+
+    Portage::Point<2> totcen;
+    double volume = 0.0, mass = 0.0;
+    for (int ic = 0; ic < matcells.size(); ic++) {
+      double cellvol = vf[ic]*targetMeshWrapper.cell_volume(matcells[ic]);
+      volume += cellvol;
+      mass += rho[ic]*cellvol;
+      totcen += rho[ic]*cen[ic]*cellvol;
+    }
+    totcen /= mass;
+    
+    ASSERT_NEAR(matvol[m], volume, 1.0e-10);
+    ASSERT_NEAR(matmass[m], mass, 1.0e-10);
+
+    std::cerr << "\nMaterial " << m << "\n";
+    std::cerr << " Expected volume " << std::setw(3) <<
+        matvol[m] << "    Computed volume " << std::setw(3) << volume << "\n";
+    std::cerr << " Expected mass " << std::setw(3) <<
+        matmass[m] << "   Computed mass " << std::setw(3) << mass << "\n";
+    std::cerr << " Expected centroid " << std::setw(6) <<
+        matcen[m] << "  Computed centroid " << totcen << "\n";
+    std::cerr << "\n\n";
+  }
+
+}  // unitTest
+
 
 #endif  // ifdef HAVE_TANGRAM
