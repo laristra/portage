@@ -52,7 +52,7 @@ POSSIBILITY OF SUCH DAMAGE.
 #include "mpi.h"
 #endif
 
-#include "portage/driver/mmdriver.h"
+#include "portage/driver/driver.h"
 #include "portage/driver/driver_mesh_swarm_mesh.h"
 #include "portage/simple_mesh/simple_mesh.h"
 #include "portage/simple_mesh/simple_state.h"
@@ -155,7 +155,7 @@ class MSMDriverTest : public ::testing::Test {
     remap_fields.push_back("nodedata");
 
     //  Build the mesh-mesh driver data for this mesh type
-    Portage::MMDriver<Portage::SearchKDTree,
+    Portage::Driver<Portage::SearchKDTree,
     Intersect,
     Interpolate,
     Dimension,
