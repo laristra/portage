@@ -28,7 +28,7 @@ fi
 
 # set modules and install paths
 
-jali_version=0.9.8
+jali_version=1.0.0
 tangram_version=475b813919f
 xmof2d_version=0.9
 lapack_version=3.8.0
@@ -38,23 +38,23 @@ ngc_include_dir=$NGC/private/include
 
 # compiler-specific settings
 if [[ $compiler == "intel" ]]; then
-  intel_version=17.0.1
+  intel_version=18.0.1
   cxxmodule=intel/${intel_version}
   # openmpi version that libs were built against
-  openmpi_version=1.10.5
+  openmpi_version=2.1.2
   # openmpi module for compiling and linking
-  mpi_module=openmpi/1.10.7
+  mpi_module=openmpi/2.1.2
   jali_install_dir=$NGC/private/jali/${jali_version}-intel-${intel_version}-openmpi-${openmpi_version}
   tangram_install_dir=$NGC/private/tangram/${tangram_version}-intel-${intel_version}-openmpi-${openmpi_version}
   xmof2d_install_dir=$NGC/private/xmof2d/${xmof2d_version}-intel-${intel_version}-openmpi-${openmpi_version}
   lapacke_dir=$NGC/private/lapack/${lapack_version}-patched-intel-${intel_version}
 elif [[ $compiler == "gcc" ]]; then
-  gcc_version=5.3.0
+  gcc_version=6.4.0
   cxxmodule=gcc/${gcc_version}
   # openmpi version that libs were built against
-  openmpi_version=1.10.3
+  openmpi_version=2.1.2
   # openmpi module for compiling and linking
-  mpi_module=openmpi/1.10.7
+  mpi_module=openmpi/2.1.2
   jali_install_dir=$NGC/private/jali/${jali_version}-gcc-${gcc_version}-openmpi-${openmpi_version}
   flecsi_install_prefix=$NGC/private/flecsi/gcc5.3_openmpi1.10.3
   flecsisp_install_prefix=$NGC/private/flecsi-sp/gcc5.3_openmpi1.10.3
