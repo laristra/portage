@@ -12,6 +12,8 @@ BUILD_TYPE:
   - readme
 
 exclude:
+  - BUILD_TYPE: flecsi  # for now exclude all flecsi builds
+  - BUILD_TYPE: base    # exclude parallel builds too
   - COMPILER: intel
     BUILD_TYPE: flecsi
   - COMPILER: gcc
