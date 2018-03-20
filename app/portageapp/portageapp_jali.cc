@@ -76,6 +76,7 @@ int print_usage() {
   std::cout << "Usage: portageapp " <<
       "--dim=2|3 --nsourcecells=N --ntargetcells=M --conformal=y|n \n" << 
       "--entity_kind=cell|node --field=\"your_math_expression\" --remap_order=1|2 \n" <<
+      "--limiter=barth_jespersen --mesh_min=0. --mesh_max=1. \n" <<
       "--output_meshes=y|n --results_file=filename --convergence_study=NREF \n\n";
 
   std::cout << "--dim (default = 2): spatial dimension of mesh\n\n";
@@ -108,6 +109,15 @@ int print_usage() {
   std::cout << "--remap order (default = 1): " <<
       "order of accuracy of interpolation\n\n";
 
+  std::cout << "--limiter (default = 0): " <<
+      "slope limiter for a piecewise linear reconstrution\n\n";
+
+  std::cout << "--mesh_min (default = 0.): " <<
+      "coordinates (same in x, y, and z) of the lower corner of a mesh\n\n";
+
+  std::cout << "--mesh_max (default = 1.): " <<
+      "coordinates (same in x, y, and z) of the upper corner of a mesh\n\n";
+
   std::cout << "--convergence_study (default = 1): provide the number of times "
             << "you want to double source and target mesh sizes \n";
   std::cout << "  ONLY APPLICABLE IF BOTH MESHES ARE INTERNALLY GENERATED\n\n";
@@ -131,6 +141,7 @@ int print_usage() {
 
 template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
                            std::shared_ptr<Jali::Mesh> targetMesh,
+                           Portage::LimiterType limiter,
                            int interp_order, 
                            std::string field_expression,
                            std::string field_filename,
@@ -168,6 +179,8 @@ int main(int argc, char** argv) {
   bool mesh_output = true;
   int n_converge = 1;
   Jali::Entity_kind entityKind = Jali::Entity_kind::CELL;
+  Portage::LimiterType limiter = Portage::LimiterType::NOLIMITER;
+  double srclo = 0.0, srchi = 1.0;  // bounds of generated mesh in each dir
 
   std::string field_filename;  // No default
 
@@ -210,6 +223,13 @@ int main(int argc, char** argv) {
       assert(interp_order > 0 && interp_order < 3);
     } else if (keyword == "field") {
       field_expression = valueword;
+    } else if (keyword == "limiter") {
+      if (valueword == "barth_jespersen" || valueword == "BARTH_JESPERSEN")
+        limiter = Portage::LimiterType::BARTH_JESPERSEN;
+    } else if (keyword == "mesh_min") {
+      srclo = stof(valueword);
+    } else if (keyword == "mesh_max") {
+      srchi = stof(valueword);
     } else if (keyword == "output_meshes") {
       mesh_output = (valueword == "y");
     } else if (keyword == "results_file") {
@@ -275,8 +295,7 @@ int main(int argc, char** argv) {
   Jali::MeshFactory mf(MPI_COMM_WORLD);
   mf.included_entities({Jali::Entity_kind::ALL_KIND});
 
-  double srclo = 0.0, srchi = 1.0;  // bounds of generated mesh in each dir
-  double trglo = 0.0, trghi = 1.0;
+  double trglo = srclo, trghi = srchi;  // bounds of generated mesh in each dir
   if (!conformal) {
     double dx = (trghi-trglo)/static_cast<double>(ntargetcells);
     trghi += 1.5*dx;
@@ -337,12 +356,12 @@ int main(int argc, char** argv) {
     // Now run the remap on the meshes and get back the L2 error
     switch (dim) {
       case 2:
-        run<2>(source_mesh, target_mesh, interp_order,
+        run<2>(source_mesh, target_mesh, limiter, interp_order,
                field_expression, field_filename, mesh_output,
                rank, numpe, entityKind, &(l1_err[i]), &(l2_err[i]));
         break;
       case 3:
-        run<3>(source_mesh, target_mesh, interp_order,
+        run<3>(source_mesh, target_mesh, limiter, interp_order,
                field_expression, field_filename, mesh_output,
                rank, numpe, entityKind, &(l1_err[i]), &(l2_err[i]));
         break;
@@ -389,12 +408,11 @@ int main(int argc, char** argv) {
 
 template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
                            std::shared_ptr<Jali::Mesh> targetMesh,
+                           Portage::LimiterType limiter,
                            int interp_order, std::string field_expression,
                            std::string field_filename, bool mesh_output,
                            int rank, int numpe, Jali::Entity_kind entityKind,
                            double *L1_error, double *L2_error) {
-
-  Portage::LimiterType limiter = Portage::LimiterType::BARTH_JESPERSEN;
 
   // Wrappers for interfacing with the underlying mesh data structures.
   Wonton::Jali_Mesh_Wrapper sourceMeshWrapper(*sourceMesh);
@@ -508,7 +526,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
         Wonton::Jali_State_Wrapper>
           d(sourceMeshWrapper, sourceStateWrapper,
             targetMeshWrapper, targetStateWrapper);
-      d.set_remap_var_names(remap_fields);
+      d.set_remap_var_names(remap_fields, limiter);
       d.run(numpe > 1);
     }
   } else {  // 3D
@@ -534,7 +552,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
         Wonton::Jali_State_Wrapper>
           d(sourceMeshWrapper, sourceStateWrapper,
             targetMeshWrapper, targetStateWrapper);
-      d.set_remap_var_names(remap_fields);
+      d.set_remap_var_names(remap_fields, limiter);
       d.run(numpe > 1);
     }
   }
