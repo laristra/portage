@@ -195,7 +195,7 @@ Execute the following from the portage root directory:
 # machine=varan
 export MODULEPATH=""
 . /opt/local/packages/Modules/default/init/sh
-module load intel/17.0.1 openmpi/1.10.5 cmake
+module load intel/18.0.1 openmpi/2.1.2 cmake
 JALI_INSTALL_PREFIX=/usr/local/codes/ngc/private/jali/1.0.0-intel-18.0.1-openmpi-2.1.2
 TANGRAM_INSTALL_PREFIX=/usr/local/codes/ngc/private/tangram/7740b340637-intel-18.0.1-openmpi-2.1.2
 XMOF2D_INSTALL_PREFIX=/usr/local/codes/ngc/private/xmof2d/6023dea445c-intel-18.0.1-openmpi-2.1.2
