@@ -234,7 +234,7 @@ TEST_F(DriverTest3D, 3D_2ndOrderQuadraticCellCntrCoincident1proc) {
 // Example 10
 TEST_F(DriverTest3DNonCoincident, 3D_1stOrderQuadraticCellCntrNonCoincident1proc) {
   unitTest<Portage::IntersectR3D, Portage::Interpolate_1stOrder, 3>
-  (compute_quadratic_field_3d, 12.336827);
+  (compute_quadratic_field_3d, 8.1858378);
 }
 // Example 11
 TEST_F(DriverTest3DNonCoincident, 3D_2ndOrderQuadraticCellCntrNonCoincident1proc) {
