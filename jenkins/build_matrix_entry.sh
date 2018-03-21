@@ -29,9 +29,10 @@ fi
 # set modules and install paths
 
 jali_version=0.9.8
-tangram_version=475b813919f
-xmof2d_version=0.9
+tangram_version=7740b340637
+xmof2d_version=6023dea445c
 lapack_version=3.8.0
+ 
 
 export NGC=/usr/local/codes/ngc
 ngc_include_dir=$NGC/private/include
