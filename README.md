@@ -231,7 +231,7 @@ FLECSI_INSTALL_PREFIX=/usr/local/codes/ngc/private/flecsi/374b56b-gcc-6.4.0
 FLECSISP_INSTALL_PREFIX=/usr/local/codes/ngc/private/flecsi-sp/e78c594-gcc-6.4.0
 TANGRAM_INSTALL_PREFIX=/usr/projects/ngc/private/tangram/7740b340637-gcc-6.4.0-openmpi-2.1.2
 XMOF2D_INSTALL_PREFIX=/usr/projects/ngc/private/xmof2d/6023dea445c-intel-18.0.1-openmpi-2.1.2
-LAPACKE_DIR=/usr/local/codes/ngc/private/lapack/3.8.0-gcc-6.4.0
+LAPACKE_DIR=/usr/local/codes/ngc/private/lapack/3.8.0-patched-gcc-6.4.0
 LAPACKE_INCLUDE_DIR=$LAPACKE_DIR/include
 LAPACKE_LIBRARY_DIR=$LAPACKE_DIR
 mkdir build-flecsi

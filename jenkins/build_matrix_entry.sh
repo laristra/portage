@@ -61,7 +61,7 @@ elif [[ $compiler == "gcc" ]]; then
   flecsisp_install_prefix=$NGC/private/flecsi-sp/gcc5.3_openmpi1.10.3
   tangram_install_dir=$NGC/private/tangram/${tangram_version}-gcc-${gcc_version}-openmpi-${openmpi_version}
   xmof2d_install_dir=$NGC/private/xmof2d/${xmof2d_version}-gcc-${gcc_version}-openmpi-${openmpi_version}
-  lapacke_dir=$NGC/private/lapack/${lapack_version}-gcc-${gcc_version}
+  lapacke_dir=$NGC/private/lapack/${lapack_version}-patched-gcc-${gcc_version}
 fi
   
 cmake_build_type=Release
