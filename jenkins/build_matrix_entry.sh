@@ -57,8 +57,8 @@ elif [[ $compiler == "gcc" ]]; then
   # openmpi module for compiling and linking
   mpi_module=openmpi/2.1.2
   jali_install_dir=$NGC/private/jali/${jali_version}-gcc-${gcc_version}-openmpi-${openmpi_version}
-  flecsi_install_prefix=$NGC/private/flecsi/gcc5.3_openmpi1.10.3
-  flecsisp_install_prefix=$NGC/private/flecsi-sp/gcc5.3_openmpi1.10.3
+  flecsi_install_prefix=$NGC/private/flecsi/374b56b-gcc-6.4.0
+  flecsisp_install_prefix=$NGC/private/flecsi-sp/e78c594-gcc-6.4.0
   tangram_install_dir=$NGC/private/tangram/${tangram_version}-gcc-${gcc_version}-openmpi-${openmpi_version}
   xmof2d_install_dir=$NGC/private/xmof2d/${xmof2d_version}-gcc-${gcc_version}-openmpi-${openmpi_version}
   lapacke_dir=$NGC/private/lapack/${lapack_version}-patched-gcc-${gcc_version}
