@@ -53,7 +53,7 @@ class IntersectR2D {
   IntersectR2D(SourceMeshType const & source_mesh,
                SourceStateType const & source_state,
                TargetMeshType const & target_mesh,
-               std::shared_ptr<InterfaceReconstructor2D> ir = nullptr)
+               std::shared_ptr<InterfaceReconstructor2D> ir)
       : sourceMeshWrapper(source_mesh), sourceStateWrapper(source_state),
         targetMeshWrapper(target_mesh), interface_reconstructor(ir) {}
 #endif
@@ -123,7 +123,7 @@ class IntersectR2D<CELL, SourceMeshType, SourceStateType, TargetMeshType,
   IntersectR2D(SourceMeshType const & source_mesh,
                SourceStateType const & source_state,
                TargetMeshType const & target_mesh,
-               std::shared_ptr<InterfaceReconstructor2D> ir = nullptr)
+               std::shared_ptr<InterfaceReconstructor2D> ir)
       : sourceMeshWrapper(source_mesh), sourceStateWrapper(source_state),
         targetMeshWrapper(target_mesh), interface_reconstructor(ir) {}
 #endif
@@ -265,7 +265,7 @@ class IntersectR2D<NODE, SourceMeshType, SourceStateType, TargetMeshType,
   IntersectR2D(SourceMeshType const & source_mesh,
                SourceStateType const & source_state,
                TargetMeshType const & target_mesh,
-               std::shared_ptr<InterfaceReconstructor2D> ir = nullptr)
+               std::shared_ptr<InterfaceReconstructor2D> ir)
       : sourceMeshWrapper(source_mesh), sourceStateWrapper(source_state),
         targetMeshWrapper(target_mesh), interface_reconstructor(ir) {}
 #endif
