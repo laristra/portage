@@ -158,12 +158,14 @@ make -j16
 ctest -j16 --output-on-failure
 ```
 
+
 ## Snow
 
 Execute the following from the portage root directory:
 
 ```c++
 # machine=sn-fey
+. /usr/share/lmod/lmod/init/sh
 module load intel/17.0.4 openmpi/2.1.2 cmake
 JALI_INSTALL_PREFIX=/usr/projects/ngc/private/jali/0.9.8-intel-17.0.4-openmpi-2.1.2
 TANGRAM_INSTALL_PREFIX=/usr/projects/ngc/private/tangram/475b813919f-intel-17.0.4-openmpi-2.1.2
@@ -181,9 +183,43 @@ cmake \
     -D XMOF2D_DIR:FILEPATH=$XMOF2D_INSTALL_PREFIX/share/cmake \
     -D LAPACKE_DIR=$LAPACKE_DIR \
     ..
-make -j16
-ctest -j16 --output-on-failure
+make -j4
+ctest -j4 --output-on-failure
 ```
+
+---
+
+If you want to build an app for performance testing, you should include
+Thrust and TCMalloc in your build.  The cmake command for this is:
+
+```c++
+# machine=sn-fey::thrust
+. /usr/share/lmod/lmod/init/sh
+module load intel/17.0.4 openmpi/2.1.2 cmake
+JALI_INSTALL_PREFIX=/usr/projects/ngc/private/jali/0.9.8-intel-17.0.4-openmpi-2.1.2
+TANGRAM_INSTALL_PREFIX=/usr/projects/ngc/private/tangram/475b813919f-intel-17.0.4-openmpi-2.1.2
+XMOF2D_INSTALL_PREFIX=/usr/projects/ngc/private/xmof2d/0.9-intel-17.0.4-openmpi-2.1.2
+LAPACKE_DIR=/usr/projects/ngc/private/lapack/3.8.0-patched-intel-17.0.4
+mkdir build-thrust
+cd build-thrust
+cmake \
+   -D CMAKE_BUILD_TYPE=Release \
+   -D ENABLE_UNIT_TESTS=True \
+   -D ENABLE_APP_TESTS=True \
+   -D ENABLE_MPI=True \
+   -D Jali_DIR:FILEPATH=$JALI_INSTALL_PREFIX/lib \
+   -D TANGRAM_DIR:FILEPATH=$TANGRAM_INSTALL_PREFIX \
+   -D XMOF2D_DIR:FILEPATH=$XMOF2D_INSTALL_PREFIX/share/cmake \
+   -D ENABLE_THRUST=True \
+   -D THRUST_DIR:FILEPATH=/usr/projects/ngc/private/include \
+   -D ENABLE_TCMALLOC=True \
+   -D TCMALLOC_LIB:FILEPATH=/usr/lib64/libtcmalloc.so \
+   -D LAPACKE_DIR=$LAPACKE_DIR \
+   ..
+make -j4
+ctest -j4 --output-on-failure
+```
+
 
 ## Varan
 
