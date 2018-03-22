@@ -25,7 +25,7 @@ extern "C" {
 }
 
 /*!
- @file ntersect_reconstruct_app.cc
+ @file intersect_reconstruct_app.cc
  @brief Implements multi-material intersect using Tangram, XMOF2D, and Jali.
  The domain is a unit square. Source and target meshes are read from Exodus II files
  (Jali), the material data for the source mesh is read from a provided file. 
@@ -367,22 +367,29 @@ void get_target_material_data(const Mesh_Wrapper& SourceMesh,
   
   // Target cells loop
   for (int icell = 0; icell < ncells; icell++) {
+    //Target cell data
     std::vector<Portage::Point<2>> target_points;
     TargetMesh.cell_get_coordinates(icell, &target_points);
     double cell_size = TargetMesh.cell_volume(icell);
+
     // Accumulator for target cell material moments
     std::vector<std::vector<double>> mat_moments;
     // Search for candidate source cells to intersect with the target cell
     std::vector<int> sc_candidates;
     search(icell, &sc_candidates);
+
+    //Accumulate moments of intersections of the target cell and material 
+    //poly's in canditate source cells
     for (int isc : sc_candidates) {
       // Source candidate cellmatpoly
       auto cellmatpoly_ptr = cellmatpoly_list[isc];
+
       if (cellmatpoly_ptr != nullptr) { // Mixed material cell
         // Access all matpolys from source candidate cellmatpoly
         for (int ipoly = 0; ipoly < cellmatpoly_ptr->num_matpolys(); ipoly++) {
           // Get the matpoly material
           int mat_id = cellmatpoly_ptr->matpoly_matid(ipoly);
+
           // Get Tangram points for matpoly, convert to Portage points
           std::vector<Portage::Point<2>> source_points;
           for (auto p : cellmatpoly_ptr->matpoly_points(ipoly))
@@ -391,10 +398,10 @@ void get_target_material_data(const Mesh_Wrapper& SourceMesh,
           add_intersect_moments(source_points, target_points, mat_id, mat_moments);
         }
       } else { // Single material cell
-        // Get Tangram points for matpoly, convert to Portage points
         std::vector<Portage::Point<2>> source_points;
         SourceMesh.cell_get_coordinates(isc, &source_points);
         int mat_id = source_mat_ids[source_offsets[isc]];
+
         add_intersect_moments(source_points, target_points, mat_id, mat_moments);
       }
     } // Finish gathering material moments for target cell
@@ -404,7 +411,9 @@ void get_target_material_data(const Mesh_Wrapper& SourceMesh,
       if (!mat_moments[imat].empty()) {
         cell_num_mats[icell]++;
         cell_mat_ids.push_back(imat);
+
         cell_mat_volfracs.push_back(mat_moments[imat][0]/cell_size);
+
         cell_mat_centroids.push_back(Portage::Point2(
           mat_moments[imat][1]/mat_moments[imat][0],
           mat_moments[imat][2]/mat_moments[imat][0]));
