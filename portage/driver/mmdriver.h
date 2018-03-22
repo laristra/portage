@@ -501,7 +501,6 @@ void MMDriver<Search, Intersect, Interpolate, D,
                                                   cell_mat_centroids);
     interface_reconstructor->reconstruct();
   }
-#endif
 
   
   // Make an intersector which knows about the source state (to be able
@@ -513,6 +512,13 @@ void MMDriver<Search, Intersect, Interpolate, D,
       intersect(source_mesh_, source_state_, target_mesh_,
                 interface_reconstructor);
 
+#else
+
+  Intersect<onwhat, SourceMesh_Wrapper, SourceState_Wrapper,
+            TargetMesh_Wrapper, DummyInterfaceReconstructor>
+      intersect(source_mesh_, source_state_, target_mesh_);
+
+#endif  // HAVE_TANGRAM
 
   // Get an instance of the desired interpolate algorithm type
   Interpolate<D, onwhat, SourceMesh_Wrapper, TargetMesh_Wrapper,
@@ -586,6 +592,7 @@ void MMDriver<Search, Intersect, Interpolate, D,
   // REMAP MULTIMATERIAL FIELDS NEXT, ONE MATERIAL AT A TIME
   //--------------------------------------------------------------------
 
+  if (src_matvarnames.size() == 0) return;
   if (onwhat != CELL) return;
   
   // Material centric loop

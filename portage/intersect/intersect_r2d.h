@@ -4,6 +4,7 @@ Please see the license file at the root of this repository, or at:
     https://github.com/laristra/portage/blob/master/LICENSE
 */
 
+
 #ifndef INTERSECT_R2D_H
 #define INTERSECT_R2D_H
 
@@ -29,41 +30,52 @@ extern "C" {
 
 namespace Portage {
 
-/*!
- * \class IntersectR2D  2-D intersection algorithm
- */
+///
+/// \class IntersectR2D  2-D intersection algorithm
+ 
 
 template <Entity_kind on_what, class SourceMeshType,
           class SourceStateType, class TargetMeshType,
           template<class, int> class InterfaceReconstructorType =
           DummyInterfaceReconstructor>
 class IntersectR2D {
+
+#ifdef HAVE_TANGRAM
   using InterfaceReconstructor2D =
       Tangram::Driver<InterfaceReconstructorType, 2, SourceMeshType>;
+#endif
 
  public:
 
-  /// Constructor
-  //  Since InterfaceReconstructor2D is a const reference it allows us
-  //  to specify a temporary object 
+#ifdef HAVE_TANGRAM
+  /// Constructor with interface reconstructor
+
   IntersectR2D(SourceMeshType const & source_mesh,
                SourceStateType const & source_state,
                TargetMeshType const & target_mesh,
                std::shared_ptr<InterfaceReconstructor2D> ir = nullptr)
       : sourceMeshWrapper(source_mesh), sourceStateWrapper(source_state),
         targetMeshWrapper(target_mesh), interface_reconstructor(ir) {}
+#endif
 
-  /*! \brief Set the source mesh material that we have to intersect against */
+  /// Constructor WITHOUT interface reconstructor
+
+  IntersectR2D(SourceMeshType const & source_mesh,
+               SourceStateType const & source_state,
+               TargetMeshType const & target_mesh)
+      : sourceMeshWrapper(source_mesh), sourceStateWrapper(source_state),
+        targetMeshWrapper(target_mesh) {}
   
+  /// \brief Set the source mesh material that we have to intersect against   
+
   int set_material(int m) {
     matid_ = m;
   }
-  
-  /*! \brief Intersect control volume of a target entity with control volumes of a set of source entities
-   * \param[in] tgt_entity  Entity of target mesh to intersect
-   * \param[in] src_entities Entities of source mesh to intersect against
-   * \return vector of Weights_t structure containing moments of intersection
-   */
+
+  /// \brief Intersect control volume of a target entity with control volumes of a set of source entities
+  /// \param[in] tgt_entity  Entity of target mesh to intersect
+  /// \param[in] src_entities Entities of source mesh to intersect against
+  /// \return vector of Weights_t structure containing moments of intersection
 
   std::vector<Weights_t>
   operator() (const int tgt_entity, const std::vector<int> src_entities) const {
@@ -73,15 +85,18 @@ class IntersectR2D {
 
   IntersectR2D() = delete;
 
-  //! Assignment operator (disabled)
+  /// Assignment operator (disabled)
   IntersectR2D & operator = (const IntersectR2D &) = delete;
 
  private:
   SourceMeshType const & sourceMeshWrapper;
   SourceStateType const & sourceStateWrapper;
   TargetMeshType const & targetMeshWrapper;
-  std::shared_ptr<InterfaceReconstructor2D> interface_reconstructor;
   int matid_ = -1;
+
+#ifdef HAVE_TANGRAM
+  std::shared_ptr<InterfaceReconstructor2D> interface_reconstructor;
+#endif
 };  // class IntersectR2D
 
 
@@ -93,34 +108,45 @@ template <class SourceMeshType, class SourceStateType,
           class TargetMeshType,
           template <class, int> class InterfaceReconstructorType>
 class IntersectR2D<CELL, SourceMeshType, SourceStateType, TargetMeshType,
-                      InterfaceReconstructorType> {
+                   InterfaceReconstructorType> {
+
+#ifdef HAVE_TANGRAM
   using InterfaceReconstructor2D =
       Tangram::Driver<InterfaceReconstructorType, 2, SourceMeshType>;
+#endif
 
  public:
 
-  /// Constructor taking a source mesh @c s and a target mesh @c t.
-  //  Since InterfaceReconstructor2D is a const reference it allows us
-  //  to specify a temporary object 
+#ifdef HAVE_TANGRAM
+  /// Constructor with interface reconstructor
+
   IntersectR2D(SourceMeshType const & source_mesh,
-                  SourceStateType const & source_state,
-                  TargetMeshType const & target_mesh,
-                  std::shared_ptr<InterfaceReconstructor2D> ir = nullptr)
+               SourceStateType const & source_state,
+               TargetMeshType const & target_mesh,
+               std::shared_ptr<InterfaceReconstructor2D> ir = nullptr)
       : sourceMeshWrapper(source_mesh), sourceStateWrapper(source_state),
         targetMeshWrapper(target_mesh), interface_reconstructor(ir) {}
+#endif
 
-  /*! \brief Set the source mesh material that we have to intersect against */
+  /// Constructor WITHOUT interface reconstructor
+
+  IntersectR2D(SourceMeshType const & source_mesh,
+               SourceStateType const & source_state,
+               TargetMeshType const & target_mesh)
+      : sourceMeshWrapper(source_mesh), sourceStateWrapper(source_state),
+        targetMeshWrapper(target_mesh) {}
+
+  /// \brief Set the source mesh material that we have to intersect against 
   
   int set_material(int m) {
     matid_ = m;
   }
 
-  /*! \brief Intersect target cell with a set of source cell
-   * \param[in] tgt_entity  Cell of target mesh to intersect
-   * \param[in] src_entities List of source cells to intersect against
-   * \return vector of Weights_t structure containing moments of intersection
-   */
-
+  /// \brief Intersect target cell with a set of source cell
+  /// \param[in] tgt_entity  Cell of target mesh to intersect
+  /// \param[in] src_entities List of source cells to intersect against
+  /// \return vector of Weights_t structure containing moments of intersection
+   
   std::vector<Weights_t>
   operator() (const int tgt_cell, const std::vector<int> src_cells) const {
     std::vector<Point<2>> target_poly;
@@ -190,7 +216,7 @@ class IntersectR2D<CELL, SourceMeshType, SourceStateType, TargetMeshType,
 #endif
         
       // Increment if vol of intersection > 0; otherwise, allow overwrite
-        if (this_wt.weights.size() && this_wt.weights[0] > 0.0)
+      if (this_wt.weights.size() && this_wt.weights[0] > 0.0)
         ninserted++;
     }
 
@@ -200,15 +226,18 @@ class IntersectR2D<CELL, SourceMeshType, SourceStateType, TargetMeshType,
 
   IntersectR2D() = delete;
 
-  //! Assignment operator (disabled)
+  /// Assignment operator (disabled)
   IntersectR2D & operator = (const IntersectR2D &) = delete;
 
  private:
   SourceMeshType const & sourceMeshWrapper;
   SourceStateType const & sourceStateWrapper;
   TargetMeshType const & targetMeshWrapper;
-  std::shared_ptr<InterfaceReconstructor2D> interface_reconstructor;
   int matid_ = -1;
+
+#ifdef HAVE_TANGRAM
+  std::shared_ptr<InterfaceReconstructor2D> interface_reconstructor;
+#endif
 };  // class IntersectR2D
 
 
@@ -221,36 +250,46 @@ template <class SourceMeshType, class SourceStateType,
           class TargetMeshType,
           template <class, int> class InterfaceReconstructorType>
 class IntersectR2D<NODE, SourceMeshType, SourceStateType, TargetMeshType,
-                      InterfaceReconstructorType> {
+                   InterfaceReconstructorType> {
+
+#ifdef HAVE_TANGRAM
   using InterfaceReconstructor2D =
       Tangram::Driver<InterfaceReconstructorType, 2, SourceMeshType>;
+#endif
 
  public:
 
-  /// Constructor taking a source mesh @c s and a target mesh @c t.
-  //  Since InterfaceReconstructor2D is a const reference it allows us
-  //  to specify a temporary object 
+#ifdef HAVE_TANGRAM
+  /// Constructor with interface reconstructor
+
   IntersectR2D(SourceMeshType const & source_mesh,
-                  SourceStateType const & source_state,
-                  TargetMeshType const & target_mesh,
-                  std::shared_ptr<InterfaceReconstructor2D> ir = nullptr)
+               SourceStateType const & source_state,
+               TargetMeshType const & target_mesh,
+               std::shared_ptr<InterfaceReconstructor2D> ir = nullptr)
       : sourceMeshWrapper(source_mesh), sourceStateWrapper(source_state),
         targetMeshWrapper(target_mesh), interface_reconstructor(ir) {}
+#endif
 
 
-  /*! \brief Set the source mesh material that we have to intersect against */
+  /// Constructor WITHOUT interface reconstructor
+
+  IntersectR2D(SourceMeshType const & source_mesh,
+               SourceStateType const & source_state,
+               TargetMeshType const & target_mesh)
+      : sourceMeshWrapper(source_mesh), sourceStateWrapper(source_state),
+        targetMeshWrapper(target_mesh) {}
+
+  /// \brief Set the source mesh material that we have to intersect against 
   
   int set_material(int m) {
     matid_ = m;
   }
-
   
-  /*! \brief Intersect control volume of a target node with control volumes of
-   * a set of source nodes
-   * \param[in] tgt_node  Target mesh node whose control volume we consider
-   * \param[in] src_nodes List of source nodes whose control volumes we will intersect against
-   * \return vector of Weights_t structure containing moments of intersection
-   */
+  /// \brief Intersect control volume of a target node with control volumes of
+  /// a set of source nodes
+  /// \param[in] tgt_node  Target mesh node whose control volume we consider
+  /// \param[in] src_nodes List of source nodes whose control volumes we will intersect against
+  /// \return vector of Weights_t structure containing moments of intersection
 
   std::vector<Weights_t>
   operator() (const int tgt_node, const std::vector<int> src_nodes) const {
@@ -280,15 +319,19 @@ class IntersectR2D<NODE, SourceMeshType, SourceStateType, TargetMeshType,
 
   IntersectR2D() = delete;
 
-  //! Assignment operator (disabled)
+  /// Assignment operator (disabled)
+
   IntersectR2D & operator = (const IntersectR2D &) = delete;
 
  private:
   SourceMeshType const & sourceMeshWrapper;
   SourceStateType const & sourceStateWrapper;
   TargetMeshType const & targetMeshWrapper;
-  std::shared_ptr<InterfaceReconstructor2D> interface_reconstructor;
   int matid_ = -1;
+
+#ifdef HAVE_TANGRAM
+  std::shared_ptr<InterfaceReconstructor2D> interface_reconstructor;
+#endif
 };  // class IntersectR2D
 
 } // namespace Portage
