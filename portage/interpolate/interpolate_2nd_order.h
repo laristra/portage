@@ -286,13 +286,15 @@ double Interpolate_2ndOrder<D, CELL, SourceMeshType, TargetMeshType,
 
   /// @todo Should use zip_iterator here but I am not sure I know how to
 
+  double vol = target_mesh_.cell_volume(targetCellID);
+  int nsummed = 0;
   for (int j = 0; j < nsrccells; ++j) {
     int srccell = sources_and_weights[j].entityID;
     std::vector<double> xsect_weights = sources_and_weights[j].weights;
     double xsect_volume = xsect_weights[0];
 
-    double eps = 1e-30;
-    if (xsect_volume <= eps) continue;  // no intersection
+    double eps = 1e-16;
+    if (xsect_volume/vol <= eps) continue;  // no intersection
 
     Point<D> srccell_centroid;
     source_mesh_.cell_centroid(srccell, &srccell_centroid);
@@ -307,13 +309,20 @@ double Interpolate_2ndOrder<D, CELL, SourceMeshType, TargetMeshType,
     val *= xsect_volume;
     totalval += val;
     wtsum0 += xsect_volume;
+    nsummed++;
   }
 
-  // Normalize the value by sum of all the 0th weights (which is the
-  // same as the total volume of the source cell)
+  // Normalize the value by the volume of the intersection of the target cells
+  // with the source mesh. This will do the right thing for single-material
+  // and multi-material remap (conservative and constant preserving) if there
+  // is NO mismatch between source and target mesh boundaries. IF THERE IS A
+  // MISMATCH, THIS WILL PRESERVE CONSTANT VALUES BUT NOT BE CONSERVATIVE. THEN
+  // WE HAVE TO DO A SEMI-LOCAL OR GLOBAL REPAIR.
 
-  double vol = target_mesh_.cell_volume(targetCellID);
-  totalval /= vol;
+  if (nsummed)
+    totalval /= wtsum0;
+  else
+    totalval = 0.0;
 
 #ifdef DEBUG
   static bool first = true;
@@ -465,13 +474,15 @@ double Interpolate_2ndOrder<D, NODE, SourceMeshType, TargetMeshType,
 
   /// @todo Should use zip_iterator here but I am not sure I know how to
 
+  double vol = target_mesh_.dual_cell_volume(targetNodeID);
+  int nsummed = 0;
   for (int j = 0; j < nsrcnodes; ++j) {
     int srcnode = sources_and_weights[j].entityID;
     std::vector<double> xsect_weights = sources_and_weights[j].weights;
     double xsect_volume = xsect_weights[0];
 
-    double eps = 1e-30;
-    if (xsect_volume <= eps) continue;  // no intersection
+    double eps = 1e-16;
+    if (xsect_volume/vol <= eps) continue;  // no intersection
 
     // note: here we are getting the node coord, not the centroid of
     // the dual cell
@@ -489,12 +500,22 @@ double Interpolate_2ndOrder<D, NODE, SourceMeshType, TargetMeshType,
     val *= xsect_volume;
     totalval += val;
     wtsum0 += xsect_volume;
+    nsummed++;
   }
 
   // Normalize the value by volume of the target dual cell
 
-  double vol = target_mesh_.dual_cell_volume(targetNodeID);
-  totalval /= vol;
+  // Normalize the value by the volume of the intersection of the target cells
+  // with the source mesh. This will do the right thing for single-material
+  // and multi-material remap (conservative and constant preserving) if there
+  // is NO mismatch between source and target mesh boundaries. IF THERE IS A
+  // MISMATCH, THIS WILL PRESERVE CONSTANT VALUES BUT NOT BE CONSERVATIVE. THEN
+  // WE HAVE TO DO A SEMI-LOCAL OR GLOBAL REPAIR.
+  
+  if (nsummed)
+    totalval /= wtsum0;
+  else
+    totalval = 0.0;
 
 #ifdef DEBUG
   static bool first = true;
