@@ -265,8 +265,8 @@ double Interpolate_1stOrder<D, CELL, SourceMeshType, TargetMeshType,
   int nsrccells = sources_and_weights.size();
   if (!nsrccells) {
 #ifdef DEBUG
-    std::cerr << "WARNING: No source cells contribute to target cell." <<
-        std::endl;
+    std::cerr << "WARNING: No source cells contribute to target cell" <<
+        targetCellID << std::endl;
 #endif
     return 0.0;
   }
@@ -278,20 +278,25 @@ double Interpolate_1stOrder<D, CELL, SourceMeshType, TargetMeshType,
   double wtsum0 = 0.0;
   double vol = target_mesh_.cell_volume(targetCellID);
 
+  int nsummed = 0;
   if (field_type_ == Field_type::MESH_FIELD) {
     for (auto const& wt : sources_and_weights) {
       int srccell = wt.entityID;
       std::vector<double> pair_weights = wt.weights;
+      if (pair_weights[0]/vol < 1.0e-16) continue;  // skip small intersections
       val += source_vals_[srccell] * pair_weights[0];
       wtsum0 += pair_weights[0];
+      nsummed++;
     }
   } else if (field_type_ == Field_type::MULTIMATERIAL_FIELD) {
     for (auto const& wt : sources_and_weights) {
       int srccell = wt.entityID;
       std::vector<double> pair_weights = wt.weights;
+      if (pair_weights[0]/vol < 1.0e-16) continue;  // skip small intersections
       int matcell = source_state_.cell_index_in_material(srccell, matid_);
       val += source_vals_[matcell] * pair_weights[0];  // 1st order
       wtsum0 += pair_weights[0];
+      nsummed++;
     }
   }
   
@@ -301,8 +306,10 @@ double Interpolate_1stOrder<D, CELL, SourceMeshType, TargetMeshType,
   // is NO mismatch between source and target mesh boundaries. IF THERE IS A
   // MISMATCH, THIS WILL PRESERVE CONSTANT VALUES BUT NOT BE CONSERVATIVE. THEN
   // WE HAVE TO DO A SEMI-LOCAL OR GLOBAL REPAIR.
-
-  val /= wtsum0;
+  if (nsummed)
+    val /= wtsum0;
+  else
+    val = 0.0;
 
 #ifdef DEBUG
   static bool first = true;
@@ -438,20 +445,31 @@ double Interpolate_1stOrder<D, NODE, SourceMeshType, TargetMeshType,
   // contribution of the source node (dual cell) is its field value
   // weighted by its "weight" (in this case, the 0th
   // moment/area/volume of its intersection with the target dual cell)
+  double vol = target_mesh_.dual_cell_volume(targetNodeID);
 
   double val = 0.0;
   double wtsum0 = 0.0;
+  int nsummed = 0;
   for (auto const& wt : sources_and_weights) {
     int srcnode = wt.entityID;
     std::vector<double> pair_weights = wt.weights;
+    if (pair_weights[0]/vol < 1.0e-16) continue;  // skip small intersections
     val += source_vals_[srcnode] * pair_weights[0];  // 1st order
     wtsum0 += pair_weights[0];
+    nsummed++;
   }
 
-  // Normalize the value by volume of the target dual cell
+  // Normalize the value by the volume of the intersection of the target cells
+  // with the source mesh. This will do the right thing for single-material
+  // and multi-material remap (conservative and constant preserving) if there
+  // is NO mismatch between source and target mesh boundaries. IF THERE IS A
+  // MISMATCH, THIS WILL PRESERVE CONSTANT VALUES BUT NOT BE CONSERVATIVE. THEN
+  // WE HAVE TO DO A SEMI-LOCAL OR GLOBAL REPAIR.
 
-  double vol = target_mesh_.dual_cell_volume(targetNodeID);
-  val /= vol;
+  if (nsummed)
+    val /= wtsum0;
+  else
+    val = 0.0;
   
 #ifdef DEBUG
   static bool first = true;
