@@ -638,8 +638,10 @@ void MMDriver<Search, Intersect, Interpolate, D,
     std::vector<int> matcellstgt;
     
     for (int c = 0; c < ntargetcells; c++) {
-      for (int s = 0; s < source_ents_and_weights[c].size(); s++) {
-        std::vector<double>& wts = source_ents_and_weights[c][s].weights;
+      std::vector<Weights_t> const& cell_sources_and_weights =
+          source_ents_and_weights[c];
+      for (int s = 0; s < cell_sources_and_weights.size(); s++) {
+        std::vector<double> const& wts = cell_sources_and_weights[s].weights;
         if (wts[0] > 0.0) {
           double vol = target_mesh_.cell_volume(c);
           if (wts[0]/vol > 1.0e-10) {  // Check that the volume of material
@@ -689,8 +691,10 @@ void MMDriver<Search, Intersect, Interpolate, D,
       int c = matcellstgt[ic];
       double matvol = 0.0;
       Point<D> matcen;
-      for (int s = 0; s < source_ents_and_weights[c].size(); s++) {
-        std::vector<double>& wts = source_ents_and_weights[c][s].weights;
+      std::vector<Weights_t> const& cell_sources_and_weights =
+          source_ents_and_weights[c];
+      for (int s = 0; s < cell_sources_and_weights.size(); s++) {
+        std::vector<double> const& wts = cell_sources_and_weights[s].weights;
         matvol += wts[0];
         for (int d = 0; d < D; d++)
           matcen[d] += wts[d+1];
@@ -699,7 +703,7 @@ void MMDriver<Search, Intersect, Interpolate, D,
       mat_volfracs[ic] = matvol/target_mesh_.cell_volume(c);
       mat_centroids[ic] = matcen;
 
-      mat_sources_and_weights[ic] = source_ents_and_weights[c];
+      mat_sources_and_weights[ic] = cell_sources_and_weights;
     }
 
     target_state_.mat_add_celldata("mat_volfracs", m, &(mat_volfracs[0]));
