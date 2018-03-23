@@ -117,7 +117,7 @@ class Jali_State_Wrapper {
   */
 
   int cell_get_num_mats(int cellid) const {
-    jali_state_.num_cell_materials(cellid);
+    return jali_state_.num_cell_materials(cellid);
   }
 
   /*!
