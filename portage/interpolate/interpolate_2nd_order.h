@@ -293,7 +293,7 @@ double Interpolate_2ndOrder<D, CELL, SourceMeshType, TargetMeshType,
     std::vector<double> xsect_weights = sources_and_weights[j].weights;
     double xsect_volume = xsect_weights[0];
 
-    double eps = 1e-16;
+    double eps = 1e-12;
     if (xsect_volume/vol <= eps) continue;  // no intersection
 
     Point<D> srccell_centroid;
@@ -481,7 +481,7 @@ double Interpolate_2ndOrder<D, NODE, SourceMeshType, TargetMeshType,
     std::vector<double> xsect_weights = sources_and_weights[j].weights;
     double xsect_volume = xsect_weights[0];
 
-    double eps = 1e-16;
+    double eps = 1e-12;
     if (xsect_volume/vol <= eps) continue;  // no intersection
 
     // note: here we are getting the node coord, not the centroid of
