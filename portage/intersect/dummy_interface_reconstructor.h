@@ -19,10 +19,14 @@ template<class Mesh_Wrapper, int Dim>
 class DummyInterfaceReconstructor {
  public:
   DummyInterfaceReconstructor(Mesh_Wrapper const& mesh) {}
+
+#ifdef HAVE_TANGRAM
   void set_volume_fractions(std::vector<int> const& cell_num_mats,
                             std::vector<int> const& cell_mat_ids,
                             std::vector<double> const& cell_mat_volfracs,
                             std::vector<Tangram::Point<Dim>> const& cell_mat_centroids) {}
+#endif
+
   void set_volume_fractions(std::vector<int> const& cell_num_mats,
                             std::vector<int> const& cell_mat_ids,
                             std::vector<double> const& cell_mat_volfracs) {}
