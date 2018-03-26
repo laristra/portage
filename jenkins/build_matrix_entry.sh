@@ -22,7 +22,10 @@ if [[ $build_type == "readme" ]]; then
   export CTEST_OUTPUT_ON_FAILURE=1
   CACHE_OPTIONS="-D ENABLE_JENKINS_OUTPUT=True"
   sed "s/^ *cmake/& $CACHE_OPTIONS/g" $WORKSPACE/README.md >$WORKSPACE/README.md.1
-  python2 $WORKSPACE/jenkins/parseREADME.py $WORKSPACE/README.md.1 $WORKSPACE
+  python2 $WORKSPACE/jenkins/parseREADME.py \
+      $WORKSPACE/README.md.1 \
+      $WORKSPACE \
+      varan
   exit
 fi
 
