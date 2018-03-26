@@ -283,7 +283,7 @@ double Interpolate_1stOrder<D, CELL, SourceMeshType, TargetMeshType,
     for (auto const& wt : sources_and_weights) {
       int srccell = wt.entityID;
       std::vector<double> pair_weights = wt.weights;
-      if (pair_weights[0]/vol < 1.0e-16) continue;  // skip small intersections
+      if (pair_weights[0]/vol < 1.0e-12) continue;  // skip small intersections
       val += source_vals_[srccell] * pair_weights[0];
       wtsum0 += pair_weights[0];
       nsummed++;
@@ -292,7 +292,7 @@ double Interpolate_1stOrder<D, CELL, SourceMeshType, TargetMeshType,
     for (auto const& wt : sources_and_weights) {
       int srccell = wt.entityID;
       std::vector<double> pair_weights = wt.weights;
-      if (pair_weights[0]/vol < 1.0e-16) continue;  // skip small intersections
+      if (pair_weights[0]/vol < 1.0e-12) continue;  // skip small intersections
       int matcell = source_state_.cell_index_in_material(srccell, matid_);
       val += source_vals_[matcell] * pair_weights[0];  // 1st order
       wtsum0 += pair_weights[0];
