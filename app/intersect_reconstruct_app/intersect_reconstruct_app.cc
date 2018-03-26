@@ -331,7 +331,7 @@ void add_intersect_moments(const std::vector<Portage::Point<2>>& source_points,
                            std::vector<std::vector<double>>& mat_moments) {
   // Intersect source candidate matpoly with target cell
   std::vector<double> moments =
-    Portage::intersect_2Dpolys(source_points, target_points);
+    Portage::intersect_polys_r2d(source_points, target_points);
   // Accumulate moments (if any) from the intersection
   if (moments[0] > seps) {
     //Check if new mat_id is the max of all previously added
