@@ -21,6 +21,7 @@ Please see the license file at the root of this repository, or at:
 namespace Portage {
 namespace Meshfree {
 
+using std::vector;
 using std::shared_ptr;
 
 /// Different kinds of estimates to do
@@ -76,8 +77,8 @@ class Accumulate {
       Basis::Type basis,
       Operator::Type operator_spec = Operator::LastOperator,
       vector<Operator::Domain> const& operator_domain = vector<Operator::Domain>(0),
-      vector<std::vector<Point<dim>>> const& operator_data=
-      vector<std::vector<Point<dim>>>(0,std::vector<Point<dim>>(0))):
+      vector<vector<Point<dim>>> const& operator_data=
+      vector<vector<Point<dim>>>(0,vector<Point<dim>>(0))):
    source_(source),
    target_(target),
    estimate_(estimate),
@@ -248,7 +249,7 @@ class Accumulate {
   Basis::Type basis_;
   Operator::Type operator_spec_;
   vector<Operator::Domain> operator_domain_;
-  vector<std::vector<Point<dim>>> operator_data_;
+  vector<vector<Point<dim>>> operator_data_;
 };
 
 }}
