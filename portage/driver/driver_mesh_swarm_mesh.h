@@ -163,18 +163,23 @@ class MSM_Driver {
     variables to interpolate from the source mesh.
     @param[in] target_remap_var_names  A list of the variables names of the
     variables to interpolate to the target mesh.
+    @param[in] estimator_type What type of estimator to apply in particle stage
+    @param[in] basis_type what regression basis to use
+    @param[in] operator_spec what type of operator to use in regression, if any
+    @param[in] operator_domains if using an integral operator, what domains of integration to use
+    @param[in] operator_data node data for integral domains, if needed
   */
 
   void set_remap_var_names(
       std::vector<std::string> const & source_remap_var_names,
       std::vector<std::string> const & target_remap_var_names,
-      Meshfree::EstimateType const& estimator_type = LocalRegression,
-      Meshfree::Basis::Type const& basis_type = Basis::Unitary,
+      Meshfree::EstimateType const& estimator_type = Meshfree::LocalRegression,
+      Meshfree::Basis::Type const& basis_type = Meshfree::Basis::Unitary,
       Meshfree::Operator::Type operator_spec = Meshfree::Operator::LastOperator,
       vector<Meshfree::Operator::Domain> operator_domains = 
-      vector<Meshfree::Operator::Domain>(0),
-      vector<vector<Point<Dim>>> const& operator_data=
-      vector<vector<Point<Dim>>>(0,vector<Point<Dim>>(0))) {
+        vector<Meshfree::Operator::Domain>(0),
+      vector<std::vector<Point<Dim>>> const& operator_data=
+        vector<std::vector<Point<Dim>>>(0,std::vector<Point<Dim>>(0))) {
     assert(source_remap_var_names.size() == target_remap_var_names.size());
 
     int nvars = source_remap_var_names.size();
@@ -329,7 +334,7 @@ class MSM_Driver {
                                        basis_,
 				       operator_spec_,
 				       operator_domains_,
-				       operator_data_);
+                                       operator_data_);
 
       // do the remap
       swarm_driver.run(false, true);
@@ -414,11 +419,8 @@ class MSM_Driver {
 
       swarm_driver.set_remap_var_names(source_nodevar_names,
                                        target_nodevar_names,
-                                       estimate_,
-                                       basis_,
-                                       operator_spec_,
-                                       operator_domains_,
-                                       operator_data_);
+                                       Meshfree::LocalRegression,
+                                       basis_);
 
       // do the remap
       swarm_driver.run(false, true);
@@ -459,9 +461,9 @@ class MSM_Driver {
   Meshfree::WeightCenter center_;
   Meshfree::EstimateType estimate_;
   Meshfree::Basis::Type basis_;
-  Operator::Type operator_spec_;
-  vector<Operator::Domain> operator_domains_;
-  vector<vector<Point<Dim>>> operator_data_;
+  Meshfree::Operator::Type operator_spec_;
+  Portage::vector<Meshfree::Operator::Domain> operator_domains_;
+  Portage::vector<std::vector<Point<Dim>>> operator_data_;
   unsigned int dim_;
 };  // class MSM_Driver
 
