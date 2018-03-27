@@ -111,8 +111,12 @@ class DriverTest : public ::testing::Test {
       double error;
       error = compute_initial_field(ccen) - cellvecout[c];
       //  dump diagnostics for each cell
-      std::printf("Cell=% 4d Centroid = (% 5.3lf,% 5.3lf)", c,
-                  ccen[0], ccen[1]);
+      if (Dimension == 2)
+        std::printf("Cell=% 4d Centroid = (% 5.3lf,% 5.3lf)", c,
+                    ccen[0], ccen[1]);
+      else
+        std::printf("Cell=% 4d Centroid = (% 5.3lf,% 5.3lf,% 5.3lf)", c,
+                    ccen[0], ccen[1], ccen[2]);
       std::printf("  Value = % 10.6lf  Err = % lf\n",
                   cellvecout[c], error);
       toterr += error*error;
@@ -234,7 +238,7 @@ TEST_F(DriverTest3D, 3D_2ndOrderQuadraticCellCntrCoincident1proc) {
 // Example 10
 TEST_F(DriverTest3DNonCoincident, 3D_1stOrderQuadraticCellCntrNonCoincident1proc) {
   unitTest<Portage::IntersectR3D, Portage::Interpolate_1stOrder, 3>
-  (compute_quadratic_field_3d, 12.336827);
+  (compute_quadratic_field_3d, 12.336826);
 }
 // Example 11
 TEST_F(DriverTest3DNonCoincident, 3D_2ndOrderQuadraticCellCntrNonCoincident1proc) {

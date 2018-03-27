@@ -18,5 +18,8 @@ endif (Jali_DIR OR ENABLE_FleCSI)
 #endif (Jali_DIR)
 if(TANGRAM_FOUND AND XMOF2D_FOUND)
   add_subdirectory(ir_linetest_app)
+  if (Jali_DIR)
+    add_subdirectory(intersect_reconstruct_app)
+  endif (Jali_DIR)
 endif(TANGRAM_FOUND AND XMOF2D_FOUND)
 

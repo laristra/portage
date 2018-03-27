@@ -75,7 +75,10 @@ macro(ADD_UNSTRUC_TEST DIM ENTITY FIELDORDER REMAPORDER)
   file(COPY ../../../test_data/shotshell.exo
             ../../../test_data/shotshell-v.exo
 	    ../../../test_data/cube-poly1.exo
-	    ../../../test_data/cube-poly2.exo 
+	    ../../../test_data/cube-poly2.exo
+            ../../../test_data/coarse_poly2D.exo
+            ../../../test_data/fine_poly2D.exo 
+            ../../../test_data/3dvoro-voronoized-10k.exo
        DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
   add_test(NAME portageapp_jali_unstruc_${SUFFIX}
     COMMAND ./portageapp_jali_unstruc_${SUFFIX}.sh)
@@ -102,6 +105,8 @@ if (ENABLE_MPI AND Jali_DIR)
   ADD_UNSTRUC_TEST(3 node 1 1)
   ADD_UNSTRUC_TEST(3 node 1 2)
   ADD_UNSTRUC_TEST(3 node 2 2)
+  ADD_UNSTRUC_TEST(2 cell 1 8)
+  ADD_UNSTRUC_TEST(3 cell 8 8)
 
   ADD_SPECIFIC_APPTEST(jali_unstruc 2d_cell_gen_r2)
   ADD_SPECIFIC_APPTEST(jali_unstruc 3d_cell_gen_r2)
