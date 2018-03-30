@@ -198,14 +198,14 @@ class SwarmDriver {
     (UNITARY, LINEAR, QUADRATIC)
   */
   void set_remap_var_names(
-      std::vector<std::string> const & source_remap_var_names,
-      std::vector<std::string> const & target_remap_var_names,
-      EstimateType const& estimator_type = LocalRegression,
-      Basis::Type const& basis_type = Basis::Unitary,
-      Operator::Type operator_spec = Operator::LastOperator,
-      vector<Operator::Domain> operator_domains = vector<Operator::Domain>(0),
-      vector<vector<Point<Dim>>> const& operator_data=
-        vector<vector<Point<Dim>>>(0,vector<Point<Dim>>(0))) 
+      std::vector<std::string> const &source_remap_var_names,
+      std::vector<std::string> const &target_remap_var_names,
+      EstimateType const estimator_type = LocalRegression,
+      Basis::Type const basis_type = Basis::Unitary,
+      Operator::Type const operator_spec = Operator::LastOperator,
+      vector<Operator::Domain> const &operator_domains = vector<Operator::Domain>(0),
+      vector<std::vector<Point<Dim>>> const &operator_data=
+        vector<std::vector<Point<Dim>>>(0,std::vector<Point<Dim>>(0))) 
   {
     assert(source_remap_var_names.size() == target_remap_var_names.size());
 
@@ -302,7 +302,7 @@ class SwarmDriver {
   Basis::Type basis_type_;
   Operator::Type operator_spec_;
   vector<Operator::Domain> operator_domains_;
-  vector<vector<Point<Dim>>> operator_data_;
+  vector<std::vector<Point<Dim>>> operator_data_;
 };  // class Driver_Swarm
 
 template <template <int, class, class> class Search,
