@@ -62,6 +62,36 @@ namespace Portage {
         }
       }
 
+      template<size_t dim>
+      Domain domain_from_points(vector<Point<dim>> &points) {
+        Domain result;
+        switch(dim) {
+        case 2: 
+          switch(points.size()) {
+          case 3:
+            result = Triangle; break;
+          case 4:
+            result = Quadrilateral; break;
+          default:
+            throw(std::runtime_error("invalid number of points for this dimension"));
+          }
+          break;
+        case 3:
+          switch(points.size()) {
+          case 4:
+            result = Tetrahedron; break;
+          case 6:
+            result = Wedge; break;
+          case 8:
+            result = Hexahedron; break;
+          default:
+            throw(std::runtime_error("invalid number of points for this dimension"));
+          }
+          break;
+        }
+        return result;
+      }
+
       ////////////////////////////////////////////////////////////////////////////////
       // Template for integral operator base class
       ////////////////////////////////////////////////////////////////////////////////
