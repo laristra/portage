@@ -172,7 +172,7 @@ class MSMDriverTest : public ::testing::Test {
     mmdriver.run(false);
 
     // Set up the operator information if needed
-    std::vector<std::vector<Portage::Point<Dimension>>> data;
+    Portage::vector<std::vector<Portage::Point<Dimension>>> data;
     std::vector<double> exact;
     Portage::Meshfree::Operator::Domain domain_types[3]=
       {Portage::Meshfree::Operator::Interval,

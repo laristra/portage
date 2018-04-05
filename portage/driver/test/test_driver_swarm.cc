@@ -20,6 +20,7 @@ Please see the license file at the root of this repository, or at:
 #include "portage/estimate/estimate.h"
 #include "portage/support/operator.h"
 #include "portage/support/Point.h"
+#include "portage/support/portage.h"
 
 namespace {
 
@@ -53,8 +54,8 @@ class DriverTest : public ::testing::Test {
 
   // Operator info
   Portage::Meshfree::Operator::Type operator_;
-  vector<Portage::Meshfree::Operator::Domain> domains_;
-  vector<vector<Point<dim>>> operator_data_;
+  Portage::vector<Portage::Meshfree::Operator::Domain> domains_;
+  Portage::vector<vector<Point<dim>>> operator_data_;
 
   Portage::Meshfree::WeightCenter center_;
 
@@ -67,90 +68,55 @@ class DriverTest : public ::testing::Test {
   {
     sourceState = make_shared<Portage::Meshfree::SwarmState<dim>>(*sourceSwarm);
     targetState = make_shared<Portage::Meshfree::SwarmState<dim>>(*targetSwarm); 
-    domains_ = vector<Portage::Meshfree::Operator::Domain>(targetSwarm->num_owned_particles());
 
-    // Set up for operators
-    if (operator_ != Portage::Meshfree::Operator::LastOperator) {
-      size_t npdim;
-      if (dim==1) {
-        operator_data_ = vector<vector<Point<dim>>>
-          (targetSwarm->num_owned_particles(),vector<Point<dim>>(2));
-        npdim = operator_data_.size();
-        int n=0;
-        // Create points determining the integration volume. 
-        // Assumes target swarm is created from SwarmFactory.
-        for (int i=0; i<npdim; i++) {
-          int ij[2]; 
-          ij[0]=i; ij[1]=(i+1);
-          for (int m=0; m<2; m++) {
-            if (i==npdim-1) {
-              // particles on the upper boundaries get an integration volume of zero
-              operator_data_[n][m] = targetSwarm->get_particle_coordinates(ij[0]);
-            } else {
-              operator_data_[n][m] = targetSwarm->get_particle_coordinates(ij[m]);
-            }
-          }
-          domains_[n] = Portage::Meshfree::Operator::Interval;
-          n++;
-        }
-        assert(n==targetSwarm->num_owned_particles());
-      }
-      if (dim==2) {
-        operator_data_ = vector<vector<Point<dim>>>
-          (targetSwarm->num_owned_particles(),vector<Point<dim>>(4));
-        npdim = static_cast<size_t>(sqrt(1.01*operator_data_.size()));
-        assert(npdim*npdim == targetSwarm->num_owned_particles());
-        int n=0;
-        // Create points determining the integration volume. 
-        // Assumes target swarm is created from SwarmFactory.
-        for (int i=0; i<npdim; i++) {
-          for (int j=0; j<npdim; j++) {
-            int ij[4]; 
-            ij[0]=i*npdim+j; ij[1]=(i+1)*npdim+j; ij[2]=(i+1)*npdim+j+1; ij[3]=i*npdim+j+1;
-            for (int m=0; m<4; m++) {
-              if (i==npdim-1 or j==npdim-1) {
-                // particles on the upper boundaries get an integration volume of zero
-                operator_data_[n][m] = targetSwarm->get_particle_coordinates(ij[0]);
-              } else {
-                operator_data_[n][m] = targetSwarm->get_particle_coordinates(ij[m]);
-              }
-            }
-            domains_[n] = Portage::Meshfree::Operator::Quadrilateral;
-            n++;
-          }
-        }
-        assert(n==targetSwarm->num_owned_particles());
-      }
-      if (dim==3) {
-        operator_data_ = vector<vector<Point<dim>>>
-          (targetSwarm->num_owned_particles(),vector<Point<dim>>(8));
-        npdim = static_cast<size_t>(pow(1.001*operator_data_.size(),1./3.));
-        assert(npdim*npdim*npdim == targetSwarm->num_owned_particles());
-        int n=0;
-        // Create points determining the integration volume.
-        // Assumes target swarm is created from SwarmFactory.
-        for (int i=0; i<npdim; i++) {
-          for (int j=0; j<npdim; j++) {
-            for (int k=0; k<npdim; k++) {
-              int ij[8]; 
-              ij[0]=npdim*(i*npdim+j)+k;         ij[1]=npdim*((i+1)*npdim+j)+k; 
-              ij[2]=npdim*((i+1)*npdim+j+1)+k;   ij[3]=npdim*(i*npdim+j+1)+k;
-              ij[4]=npdim*(i*npdim+j)+k+1;       ij[5]=npdim*((i+1)*npdim+j)+k+1; 
-              ij[6]=npdim*((i+1)*npdim+j+1)+k+1; ij[7]=npdim*(i*npdim+j+1)+k+1;
-              for (int m=0; m<8; m++) {
-                if (i==npdim-1 or j==npdim-1 or k==npdim-1) {
-                  // particles on the upper boundaries get an integration volume of zero
-                  operator_data_[n][m] = targetSwarm->get_particle_coordinates(ij[0]);
-                } else {
-                  operator_data_[n][m] = targetSwarm->get_particle_coordinates(ij[m]);
-                }
-              }
-              domains_[n] = Portage::Meshfree::Operator::Hexahedron;
-              n++;
-            }
-          }
-        }
-        assert(n==targetSwarm->num_owned_particles());
+    if (op != Portage::Meshfree::Operator::LastOperator) {
+      domains_ = Portage::vector<Portage::Meshfree::Operator::Domain>(targetSwarm->num_owned_particles());
+      size_t npoints[3]={2,4,8};
+      operator_data_ = Portage::vector<vector<Point<dim>>>
+	(targetSwarm->num_owned_particles(),vector<Point<dim>>(npoints[dim-1]));
+      size_t npdim = static_cast<size_t>(pow(1.001*operator_data_.size(),1./dim));
+      size_t nptot = 1; for (size_t m=0; m<dim; m++) nptot *= npdim;
+      assert(nptot == targetSwarm->num_owned_particles());
+      assert(npdim>1);
+      size_t n=0;
+      size_t ij[npoints[dim-1]]; 
+      size_t i=0,j=0,k=0;
+      Point<dim> pt;
+      vector<Point<dim>> points(npoints[dim-1]);
+      // Create points determining the integration volume.
+      // Assumes target swarm is created from SwarmFactory and represents a perfect cubic array of points.
+      for (size_t n=0; n<nptot; n++) {
+	switch(dim){
+	case 1:
+	  i = n;
+	  ij[0]=i; ij[1]=(i+1);
+	  break;
+	case 2:
+	  i = n/npdim;
+	  j = n - i*npdim;
+	  ij[0]=i*npdim+j; ij[1]=(i+1)*npdim+j; ij[2]=(i+1)*npdim+j+1; ij[3]=i*npdim+j+1;
+	  break;
+	case 3:
+	  i = n/npdim/npdim;
+	  j = (n - i*npdim*npdim)/npdim;
+	  k = n - i*npdim*npdim - j*npdim;
+	  ij[0]=npdim*(i*npdim+j)+k;         ij[1]=npdim*((i+1)*npdim+j)+k; 
+	  ij[2]=npdim*((i+1)*npdim+j+1)+k;   ij[3]=npdim*(i*npdim+j+1)+k;
+	  ij[4]=npdim*(i*npdim+j)+k+1;       ij[5]=npdim*((i+1)*npdim+j)+k+1; 
+	  ij[6]=npdim*((i+1)*npdim+j+1)+k+1; ij[7]=npdim*(i*npdim+j+1)+k+1;
+	  break;
+	}
+	for (int m=0; m<npoints[dim-1]; m++) {
+	  if (i==npdim-1 or j==npdim-1 or k==npdim-1) {
+	    // particles on the upper boundaries get an integration volume of zero
+	    pt = targetSwarm->get_particle_coordinates(ij[0]);
+	  } else {
+	    pt = targetSwarm->get_particle_coordinates(ij[m]);
+	  }
+	  points[m] = pt;
+	}
+	operator_data_[n] = points;
+	domains_[n] = Portage::Meshfree::Operator::domain_from_points<dim>(points);
       }
     }
   }
@@ -368,29 +334,34 @@ struct IntegrateDriverTest3D : DriverTest<3> {
 
 
 template<size_t Dimension>
-    double compute_constant_field(Portage::Point<Dimension> coord) {
+double compute_constant_field(Portage::Point<Dimension> coord) {
   return 25.0;
 }
 
 // Methods for computing initial field values
 template<size_t Dimension>
-    double compute_linear_field(Portage::Point<Dimension> coord) {
+double compute_linear_field(Portage::Point<Dimension> coord) {
   double val = 0.0;
   for (size_t i = 0; i < Dimension; i++) val += coord[i];
   return val;
 }
 
 template<size_t Dimension>
-    double compute_quadratic_field(Portage::Point<Dimension> coord) {
+double compute_quadratic_field(Portage::Point<Dimension> coord) {
   double val = 0.0;
-  for (size_t i = 0; i < Dimension; i++) val += coord[i]*coord[i];
+  for (size_t i = 0; i < Dimension; i++) 
+    for (size_t j = i; j < Dimension; j++) 
+      val += coord[i]*coord[j];
   return val;
 }
 
 template<size_t Dimension>
-    double compute_cubic_field(Portage::Point<Dimension> coord) {
+double compute_cubic_field(Portage::Point<Dimension> coord) {
   double val = 0.0;
-  for (size_t i = 0; i < Dimension; i++) val += coord[i]*coord[i]*coord[i];
+  for (size_t i = 0; i < Dimension; i++)
+    for (size_t j = i; j < Dimension; j++) 
+      for (size_t k = j; k < Dimension; k++) 
+      val += coord[i]*coord[j]*coord[k];
   return val;
 }
 
@@ -422,17 +393,6 @@ TEST_F(DriverTest1DScatter, 1D_QuadraticFieldQuadraticBasisScatter) {
       (compute_quadratic_field<1>, 0.0);
 }
 
-TEST_F(IntegrateDriverTest1D, 1D_LinearFieldLinearBasis) {
-  unitTest<Portage::SearchSimplePoints, Portage::Meshfree::Basis::Linear>
-      (compute_linear_field<1>, 1./2.);
-}
-
-TEST_F(IntegrateDriverTest1D, 1D_QuadraticFieldQuadraticBasis) {
-  unitTest<Portage::SearchSimplePoints, Portage::Meshfree::Basis::Quadratic>
-      (compute_quadratic_field<1>, 1./3.);
-}
-
-
 TEST_F(DriverTest2D, 2D_ConstantFieldUnitaryBasis) {
   unitTest<Portage::SearchSimplePoints, Portage::Meshfree::Basis::Unitary>
       (compute_constant_field<2>, 0.0);
@@ -453,7 +413,6 @@ TEST_F(DriverTest2DScatter, 2D_QuadraticFieldQuadraticBasisScatter) {
       (compute_quadratic_field<2>, 0.0);
 }
 
-
 TEST_F(DriverTest3D, 3D_ConstantFieldUnitaryBasis) {
    unitTest<Portage::SearchSimplePoints, Portage::Meshfree::Basis::Unitary>
        (compute_constant_field<3>, 0.0);
@@ -473,5 +432,31 @@ TEST_F(DriverTest3DScatter, 3D_QuadraticFieldQuadraticBasisScatter) {
   unitTest<Portage::SearchSimplePoints, Portage::Meshfree::Basis::Quadratic>
       (compute_quadratic_field<3>, 0.0);
 }
+
+
+TEST_F(IntegrateDriverTest1D, 1D_LinearFieldLinearBasis) {
+  unitTest<Portage::SearchSimplePoints, Portage::Meshfree::Basis::Linear>
+      (compute_linear_field<1>, 1./2.);
+}
+
+TEST_F(IntegrateDriverTest1D, 1D_QuadraticFieldQuadraticBasis) {
+  unitTest<Portage::SearchSimplePoints, Portage::Meshfree::Basis::Quadratic>
+      (compute_quadratic_field<1>, 1./3.);
+}
+
+TEST_F(IntegrateDriverTest2D, 2D_LinearFieldLinearBasis) {
+  unitTest<Portage::SearchSimplePoints, Portage::Meshfree::Basis::Linear>
+      (compute_linear_field<2>, 1.0);
+}
+
+TEST_F(IntegrateDriverTest2D, 2D_QuadraticFieldQuadraticBasis) {
+  unitTest<Portage::SearchSimplePoints, Portage::Meshfree::Basis::Quadratic>
+    (compute_quadratic_field<2>, 2./3. + 1./4.); // 0.9166666666666666
+}
+
+  //TEST_F(IntegrateDriverTest3D, 3D_LinearFieldLinearBasis) {
+  //  unitTest<Portage::SearchSimplePoints, Portage::Meshfree::Basis::Linear>
+  //      (compute_linear_field<3>, 3./2.);
+  //}
 
 }  // end namespace

@@ -176,9 +176,9 @@ class MSM_Driver {
       Meshfree::EstimateType const& estimator_type = Meshfree::LocalRegression,
       Meshfree::Basis::Type const& basis_type = Meshfree::Basis::Unitary,
       Meshfree::Operator::Type operator_spec = Meshfree::Operator::LastOperator,
-      vector<Meshfree::Operator::Domain> operator_domains = 
+      Portage::vector<Meshfree::Operator::Domain> operator_domains = 
         vector<Meshfree::Operator::Domain>(0),
-      vector<std::vector<Point<Dim>>> const& operator_data=
+      Portage::vector<std::vector<Point<Dim>>> const& operator_data=
         vector<std::vector<Point<Dim>>>(0,std::vector<Point<Dim>>(0))) {
     assert(source_remap_var_names.size() == target_remap_var_names.size());
 

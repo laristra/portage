@@ -203,8 +203,8 @@ class SwarmDriver {
       EstimateType const estimator_type = LocalRegression,
       Basis::Type const basis_type = Basis::Unitary,
       Operator::Type const operator_spec = Operator::LastOperator,
-      vector<Operator::Domain> const &operator_domains = vector<Operator::Domain>(0),
-      vector<std::vector<Point<Dim>>> const &operator_data=
+      Portage::vector<Operator::Domain> const &operator_domains = vector<Operator::Domain>(0),
+      Portage::vector<std::vector<Point<Dim>>> const &operator_data=
         vector<std::vector<Point<Dim>>>(0,std::vector<Point<Dim>>(0))) 
   {
     assert(source_remap_var_names.size() == target_remap_var_names.size());
@@ -301,8 +301,8 @@ class SwarmDriver {
   EstimateType estimator_type_;
   Basis::Type basis_type_;
   Operator::Type operator_spec_;
-  vector<Operator::Domain> operator_domains_;
-  vector<std::vector<Point<Dim>>> operator_data_;
+  Portage::vector<Operator::Domain> operator_domains_;
+  Portage::vector<std::vector<Point<Dim>>> operator_data_;
 };  // class Driver_Swarm
 
 template <template <int, class, class> class Search,
