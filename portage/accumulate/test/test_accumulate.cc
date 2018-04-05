@@ -147,17 +147,18 @@ void test_operator(Portage::Meshfree::WeightCenter center) {
 
   // create the target swarm input geometry data based on integration domains.
   auto tgt_pts = make_shared<typename Swarm<dim>::PointVec>(1);
-  vector<vector<Point<dim>>> domain_points(1);
+  Portage::vector<vector<Point<dim>>> domain_points(1);
   domain_points[0] = reference_points<domain>();
+  vector<Point<dim>> refpnts = reference_points<domain>();
   Point<dim> centroid(vector<double>(dim,0.));
-  for (int i=0; i<domain_points[0].size(); i++) {
-    for (int j=0; j<dim; j++) centroid[j] += domain_points[0][i][j];
+  for (int i=0; i<refpnts.size(); i++) {
+    for (int j=0; j<dim; j++) centroid[j] += refpnts[i][j];
   }
   for (int k=0; k<dim; k++) {
-    centroid[k] /= domain_points[0].size();
+    centroid[k] /= refpnts.size();
     (*tgt_pts)[0][k] = centroid[k];
   }
-  vector<Portage::Meshfree::Operator::Domain> domains(1);
+  Portage::vector<Portage::Meshfree::Operator::Domain> domains(1);
   domains[0] = domain;
 
   // create source+target swarms, kernels, geometries, and smoothing lengths

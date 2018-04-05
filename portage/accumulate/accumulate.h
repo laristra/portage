@@ -76,8 +76,8 @@ class Accumulate {
       vector<vector<vector<double>>> const& smoothing,
       Basis::Type basis,
       Operator::Type operator_spec = Operator::LastOperator,
-      vector<Operator::Domain> const& operator_domain = vector<Operator::Domain>(0),
-      vector<vector<Point<dim>>> const& operator_data=
+      Portage::vector<Operator::Domain> const& operator_domain = vector<Operator::Domain>(0),
+      Portage::vector<vector<Point<dim>>> const& operator_data=
       vector<vector<Point<dim>>>(0,vector<Point<dim>>(0))):
    source_(source),
    target_(target),
@@ -248,8 +248,8 @@ class Accumulate {
   vector<vector<vector<double>>> const& smoothing_;
   Basis::Type basis_;
   Operator::Type operator_spec_;
-  vector<Operator::Domain> operator_domain_;
-  vector<vector<Point<dim>>> operator_data_;
+  Portage::vector<Operator::Domain> operator_domain_;
+  Portage::vector<vector<Point<dim>>> operator_data_;
 };
 
 }}
