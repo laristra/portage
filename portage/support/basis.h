@@ -22,7 +22,7 @@ using std::vector;
 
 enum Type {Unitary, Linear, Quadratic, LastBasis};
 
-constexpr size_t quadratic_sizes[4]={0,3,6,10};
+ constexpr array<size_t,4> quadratic_sizes={0,3,6,10};
 
 ////////////////////////////////////////////////////////////////////////////////
 // Traits
