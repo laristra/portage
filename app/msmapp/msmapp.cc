@@ -17,6 +17,7 @@ Please see the license file at the root of this repository, or at:
 #define PORTAGE_SERIAL_ONLY
 #endif
 
+#include "portage/support/portage.h"
 #include "portage/driver/driver.h"
 #include "portage/driver/driver_mesh_swarm_mesh.h"
 #include "portage/simple_mesh/simple_mesh.h"
@@ -226,7 +227,7 @@ public:
         std::vector<Portage::Point<Dimension>> cellverts;
         targetMesh->cell_get_coordinates(c, &cellverts);
         data[c] = cellverts;
-        domains[c] = Portage::Meshfree::Operator::domain_from_points<Dimension>(data[c]);
+        domains[c] = Portage::Meshfree::Operator::domain_from_points<Dimension>(cellverts);
       }
     }
 
@@ -491,7 +492,7 @@ public:
           targetMeshWrapper.node_get_coordinates(cellnodes[i], &cellverts[i]);
         }
         data[c] = cellverts;
-        domains[c] = Portage::Meshfree::Operator::domain_from_points<Dimension>(data[c]);
+        domains[c] = Portage::Meshfree::Operator::domain_from_points<Dimension>(cellverts);
       }
     }
 
