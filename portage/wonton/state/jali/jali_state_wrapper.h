@@ -297,10 +297,33 @@ class Jali_State_Wrapper {
    @param[in] on_what The entity type on which the data is defined
    @param[in] var_name The name of the data field
    @param[in] value Initialize with this value
+
+   This version of the overloaded operator is being DISABLED for
+   pointer and array types (via the line 'typename
+   std::enable_if....type') because template deduction rules are
+   making the compiler invoke this version, when we call it with a
+   const double ** pointer
+   
+   See, stackoverflow.com Q&A
+   
+   http://stackoverflow.com/questions/13665574/template-argument-deduction-and-pointers-to-constants
+
+    We could make it work for some cases using
+
+    template <class T, class DomainType,
+              template<class, class> class StateVecType>
+    auto add(........,
+             T const& data) -> StateVecType<decltype(data+data), DomainType>&
+
+    but this does not work if T is a double[3] or std::array<double, 3>
+    as there is no + operator defined for these types
    */
   template <class T>
-  void mesh_add_data(Entity_kind on_what, std::string const& var_name,
-                      const T value) {
+  typename std::enable_if<(!std::is_pointer<T>::value &&
+                           !std::is_array<T>::value),
+                          void>::type
+  mesh_add_data(Entity_kind on_what, std::string const& var_name,
+                const T value) {
     // Compiler needs some help deducing template parameters here
     jali_state_.add<T, Jali::Mesh, Jali::UniStateVector>(var_name,
                                                     jali_state_.mesh(),
