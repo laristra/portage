@@ -288,14 +288,15 @@ class MMDriver {
       }
     }
 
-    if (source_cellvar_names.size()) {
+    // Always call because we may have to remap only material volume
+    // fractions and centroids
+    
 #ifdef ENABLE_MPI
-      if (distributed)
-        remap_distributed<CELL>(source_cellvar_names, target_cellvar_names);
-      else
+    if (distributed)
+      remap_distributed<CELL>(source_cellvar_names, target_cellvar_names);
+    else
 #endif
-        remap<CELL>(source_cellvar_names, target_cellvar_names);
-    }
+      remap<CELL>(source_cellvar_names, target_cellvar_names);
 
 
     // Collect all node based variables and remap them
@@ -592,7 +593,6 @@ void MMDriver<Search, Intersect, Interpolate, D,
   // REMAP MULTIMATERIAL FIELDS NEXT, ONE MATERIAL AT A TIME
   //--------------------------------------------------------------------
 
-  if (src_matvarnames.size() == 0) return;
   if (onwhat != CELL) return;
   
   // Material centric loop
