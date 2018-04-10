@@ -607,20 +607,22 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
 
   
   // User specified fields on source
-  
+
   std::vector<user_field_t> mat_fields(nmats);
-  for (int m = 0; m < nmats; m++) {
-    if (!mat_fields[m].initialize(dim, material_field_expressions[m]))
-      MPI_Abort(MPI_COMM_WORLD, -1);
-
-    int nmatcells = matcells[m].size();
-    std::vector<double> matData(nmatcells);
-    for (int ic = 0; ic < nmatcells; ic++) {
-      int c = matcells[m][ic];
-      matData[ic] = mat_fields[m](sourceMesh->cell_centroid(c));
+  if (material_field_expressions.size()) {
+    for (int m = 0; m < nmats; m++) {
+      if (!mat_fields[m].initialize(dim, material_field_expressions[m]))
+        MPI_Abort(MPI_COMM_WORLD, -1);
+      
+      int nmatcells = matcells[m].size();
+      std::vector<double> matData(nmatcells);
+      for (int ic = 0; ic < nmatcells; ic++) {
+        int c = matcells[m][ic];
+        matData[ic] = mat_fields[m](sourceMesh->cell_centroid(c));
+      }
+      
+      sourceStateWrapper.mat_add_celldata("cellmatdata", m, &(matData[0]));
     }
-
-    sourceStateWrapper.mat_add_celldata("cellmatdata", m, &(matData[0]));
   }
 
 
@@ -638,14 +640,17 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
   // Add the volume fractions, centroids and cellmatdata variables
   targetStateWrapper.mat_add_celldata<double>("mat_volfracs");
   targetStateWrapper.mat_add_celldata<Portage::Point<2>>("mat_centroids");
-  targetStateWrapper.mat_add_celldata<double>("cellmatdata");
 
-
-  
   // Register the variable name and interpolation order with the driver
   std::vector<std::string> remap_fields;
-  remap_fields.push_back("cellmatdata");
 
+  // If the user specified some material fields, then add a placeholder for
+  // them on the target side
+  if (material_field_expressions.size()) {
+    targetStateWrapper.mat_add_celldata<double>("cellmatdata");
+    remap_fields.push_back("cellmatdata");
+  }
+  
   if (numpe > 1) MPI_Barrier(MPI_COMM_WORLD);
 
   if (dim == 2) {
@@ -782,29 +787,31 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
 
   
   // Compute error
-  
-  double error, toterr = 0.0;
-  double const * cellmatvals;
-  double totvolume = 0.;
-  for (int m = 0; m < nmats; m++) {
-    targetStateWrapper.mat_get_celldata<double>("cellmatdata", m, &cellmatvals);
 
-    std::vector<int> matcells;
-    targetStateWrapper.mat_get_cells(m, &matcells);
-    
-    // Cell error computation
-    Portage::Point<dim> ccen;
-    int nmatcells = 0;
-    for (int ic = 0; ic < nmatcells; ++ic) {
-      int c = matcells[ic];
-      targetMeshWrapper.cell_centroid(c, &ccen);
-      error = mat_fields[m](ccen) - cellmatvals[c];
-
-      if (!targetMeshWrapper.on_exterior_boundary(Portage::Entity_kind::CELL, c)) {
-        double cellvol = targetMeshWrapper.cell_volume(c);
-        totvolume += cellvol;
-        *L1_error += fabs(error)*cellvol;
-        *L2_error += error*error*cellvol;
+  if (material_field_expressions.size()) {
+    double error, toterr = 0.0;
+    double const * cellmatvals;
+    double totvolume = 0.;
+    for (int m = 0; m < nmats; m++) {
+      targetStateWrapper.mat_get_celldata<double>("cellmatdata", m, &cellmatvals);
+      
+      std::vector<int> matcells;
+      targetStateWrapper.mat_get_cells(m, &matcells);
+      
+      // Cell error computation
+      Portage::Point<dim> ccen;
+      int nmatcells = 0;
+      for (int ic = 0; ic < nmatcells; ++ic) {
+        int c = matcells[ic];
+        targetMeshWrapper.cell_centroid(c, &ccen);
+        error = mat_fields[m](ccen) - cellmatvals[c];
+        
+        if (!targetMeshWrapper.on_exterior_boundary(Portage::Entity_kind::CELL, c)) {
+          double cellvol = targetMeshWrapper.cell_volume(c);
+          totvolume += cellvol;
+          *L1_error += fabs(error)*cellvol;
+          *L2_error += error*error*cellvol;
+        }
       }
     }
   }
