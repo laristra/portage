@@ -17,6 +17,7 @@ Please see the license file at the root of this repository, or at:
 #include <utility>
 #include <algorithm>
 #include <unordered_map>
+#include <set>
 
 #include "portage/support/portage.h"
 #include "portage/support/Point.h"
@@ -537,7 +538,15 @@ private:
   std::vector<std::vector<int>> mat_cellids_;
   std::unordered_map<int, std::set<int>> cell_to_mats_;
   std::map<pair_t, Portage::Field_type> field_types_;
-
+  /* 
+  In the above declarations, at some point, we should do some diagnostics to 
+  determine whether maps or unordered maps are best. My initial philosophy is 
+  that if the lookups are small, we might as well use an ordered map so you 
+  don't have to hash, but I could be wrong. In general, the number of cells may 
+  be large so I made cell_to_mats_ and unordered set while the number of fields 
+  is small so best to use an ordered map.
+  */
+  
   /*!
    * @brief Forget all internal data so initialization can start over
    */
