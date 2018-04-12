@@ -321,6 +321,34 @@ class Flat_State_Wrapper {
     return entity_size_map_[ent];
   }
 
+
+  /*!
+    @brief Get the data type of the given field
+    @param[in] name The string name of the data field
+    @return A reference to the type_info struct for the field's data type
+   */
+  const std::type_info& get_data_type(std::string const& name) const {
+    size_t index = -1;
+    pair_t name_cell_pair(name, Portage::Entity_kind::CELL);
+    auto it = name_map_.find(name_cell_pair);
+    if (it != name_map_.end())
+      index = get_vector_index(Portage::Entity_kind::CELL, name);
+    else {
+      pair_t name_node_pair(name, Portage::Entity_kind::NODE, name);
+      it = name_map_.find(name_node_pair);
+      if (it != name_map_.end())
+        index = get_vector_index(Portage::Entity_kind::NODE, name);
+    }
+
+    if (index >= 0) {
+      return typeid(T);
+    } else {
+      std::cerr << "Could not find state variable " << name << "\n";
+      return typeid(0);
+    }
+  }
+
+
   /*!
    * @brief Get index for entity and name
    */

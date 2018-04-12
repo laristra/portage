@@ -325,6 +325,19 @@ public:
   {
     raise_runtime_error( "get_data_size not implemented yet!" );
   }
+
+
+
+  //!
+  //! @brief Get the data type of the given field
+  //! @param[in] var_name The string name of the data field
+  //! @return A reference to the type_info struct for the field's data type
+
+  const std::type_info& get_data_type(std::string const& var_name) const {
+    return typeid(double);  // thats the only type we can represent
+  }
+  
+
 #if 0
 
   //! \brief Get pointer to scalar data
