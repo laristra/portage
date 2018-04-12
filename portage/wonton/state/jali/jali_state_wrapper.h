@@ -568,26 +568,24 @@ class Jali_State_Wrapper {
   }
 
 
-#if 0
   /*!
     @brief Get the data type of the given field
     @param[in] var_name The string name of the data field
     @return A reference to the type_info struct for the field's data type
    */
-  const std::type_info& get_type(std::string const& var_name) const {
+  const std::type_info& get_data_type(std::string const& var_name) const {
 
     Jali::State::const_iterator it =
         jali_state_.find(var_name, jali_state_.mesh());
     if (it != jali_state_.cend()) {
       std::shared_ptr<Jali::StateVectorBase> vector = *it;
       if (vector)
-        return vector->get_type();
+        return vector->data_type();
     }
 
     std::cerr << "Could not find state variable " << var_name << "\n";
     return typeid(0);
   }
-#endif
 
   /*!
     @brief Begin iterator on vector names
@@ -603,28 +601,6 @@ class Jali_State_Wrapper {
    */
   std::vector<std::string>::iterator names_end() const {
     return jali_state_.names_end();
-  }
-
-  /*!
-    @brief Typedef for permutation iterator on vector of strings
-   */
-  typedef Jali::State::string_permutation string_permutation;
-
-  /*!
-    @brief Begin iterator on vector names of specific entity type
-    @param[in] on_what The desired entity type
-    @return Permutation iterator to start of string vector
-   */
-  string_permutation names_entity_begin(Entity_kind on_what) const {
-    return jali_state_.names_entity_begin((Jali::Entity_kind)on_what);
-  }
-
-  /*!
-    @brief End iterator on vector of names of specific entity type
-    @param[in] on_what The desired entity type
-   */
-  string_permutation names_entity_end(Entity_kind on_what) const {
-    return jali_state_.names_entity_end((Jali::Entity_kind)on_what);
   }
 
  private:
