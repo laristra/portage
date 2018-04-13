@@ -10,6 +10,11 @@
 #include "tangram/driver/driver.h"
 #include "tangram/reconstruct/xmof2D_wrapper.h"
 #include "tangram/driver/write_to_gmv.h"
+#include "portage/search/search_simple.h"
+#include "tangram/driver/CellMatPoly.h"
+#include "tangram/support/MatPoly.h"
+#include "portage/intersect/intersect_r2d.h"
+#include "tangram/simple_mesh/simple_mesh.h"
 
 #ifdef ENABLE_MPI
 #include "mpi.h"
@@ -56,11 +61,13 @@ const double mat_int_b = -0.25;
 */
 const int mat_id_above = 0;
 const int mat_id_below = 1;
+const int NUM_MATS = 2;
+const int NUM_MOMENTS=3;
 
 const double IR_tol = 1.0e-8;     //Max allowed Hausdorff distance between
                                   //reference and reconstructed material interfaces
-const double deps = 1.0e-15;	    //Distance tolerance
-const double seps = 1.0e-14;	    //Size(area) tolerance
+const double deps = 1.0e-15;        //Distance tolerance
+const double seps = 1.0e-14;        //Size(area) tolerance
 const double denom_eps = 1.0e-6;  //Denominator tolerance
 
 /*!
@@ -127,7 +134,8 @@ void get_materials_data(const Mesh_Wrapper& Mesh,
                         std::vector<int>& cell_num_mats,
                         std::vector<int>& cell_mat_ids,
                         std::vector<double>& cell_mat_volfracs,
-                        std::vector<Tangram::Point2>& cell_mat_centroids);
+                        std::vector<Tangram::Point2>& cell_mat_centroids,
+                        std::vector<int>& offsets);
 /*!
  @brief Determines the position of a point with respect to a line.
  @param[in] pt Point coordinates.
@@ -181,54 +189,196 @@ double get_ir_error(const Mesh_Wrapper& Mesh,
                     const double line_b,
                     const std::vector<int>& cell_num_mats,
                     const std::vector<std::shared_ptr<Tangram::CellMatPoly<2>>>&
-                      cellmatpoly_list,
+                    cellmatpoly_list,
                     const double eps = deps);
+
+/*!
+ @brief Intersects material polygons of source cell with target cell and accumulates 
+        material moment data.
+ @param[in/out] mat_moments 2D vector containing moment data by material (indexed first by
+             mat_id and then by moment).
+ @param[in] mat_id Material ID corresponding to source_points.
+ @param[in] source_points Points corresonding to some region in source mesh (could
+            be an entire cell or a matpoly within a cell).
+ @param[in] target_points Points corresonding to a cell in the target mesh.
+ @param[in/out] tcell_num_ids Indices of materials in each mesh cell, a flat vector, requires
+            computations of offsets.
+ @param[in/out] tcell_num_mats Reference number of materials for every target mesh cell.
+ @param[in] tc Target cell ID.
+ @param[in] idx Offset into cell_mat_ids giving start of data for current target cell.
+*/
+void add_intersect_data(std::vector<std::vector<double> >& mat_moments,
+                        int mat_id,
+                        const std::vector<Portage::Point<2> >& source_points,
+                        const std::vector<Portage::Point<2> >& target_points,
+                        std::vector<int>& tcell_mat_ids,
+                        std::vector<int>& tcell_num_mats,
+                        int tc,
+                        int idx){
+  // Intersect source candidate matpoly with target cell
+  std::vector<double> moments =
+    Portage::intersect_2Dpolys(source_points, target_points);
+  // Accumulate moments (if any) from the intersection
+  if (moments[0] > seps) {
+    for(int moment=0;moment<NUM_MOMENTS;++moment){
+      mat_moments[mat_id][moment]+=moments[moment];
+    }
+    // The same type of material could be contributed by multiple source cells, or
+    // multiple matpolys of a single source cell; only record the first time a
+    // particular material id is seen for the target cell
+    auto begin=&tcell_mat_ids[0]+idx;
+    auto end=begin+tcell_num_mats[tc];
+    if (std::find(begin, end, mat_id)==end) {
+      ++tcell_num_mats[tc];
+      tcell_mat_ids.push_back(mat_id);
+    }
+  }
+}
 
 int main(int argc, char** argv) {
 #ifdef ENABLE_MPI
   MPI_Init(&argc, &argv);
 #endif
-  if (argc != 3) {
+  if (argc != 5) {
     std::ostringstream os;
-    os << std::endl << "Correct usage: ir_linetest_app <nx> <ny>" << std::endl;
+    os << std::endl << "Correct usage: ir_linetest_app  <nx_source> <ny_source> <nx_target> <ny_target>" << std::endl;
     throw std::runtime_error(os.str());
   }
 
-  int nx = atoi(argv[1]);
-  int ny = atoi(argv[2]);
+  int s_nx = atoi(argv[1]);
+  int s_ny = atoi(argv[2]);
   std::vector<double> xbnds = {0.0, 1.0};
   std::vector<double> ybnds = {0.0, 1.0};
  
   Portage::Simple_Mesh source_mesh(xbnds[0], ybnds[0],
                                    xbnds[1], ybnds[1],
-                                   nx, ny);
+                                   s_nx, s_ny);
   Wonton::Simple_Mesh_Wrapper source_mesh_wrapper(source_mesh);
+
+  int t_nx = atoi(argv[3]);
+  int t_ny = atoi(argv[4]);
+  Portage::Simple_Mesh target_mesh(xbnds[0], ybnds[0],
+                                   xbnds[1], ybnds[1],
+                                   t_nx, t_ny);
+  Wonton::Simple_Mesh_Wrapper target_mesh_wrapper(target_mesh);
+
+  Portage::SearchSimple<Wonton::Simple_Mesh_Wrapper,
+                        Wonton::Simple_Mesh_Wrapper>
+    search(source_mesh_wrapper, target_mesh_wrapper);
 
   std::vector<int> cell_num_mats;
   std::vector<int> cell_mat_ids;
   std::vector<double> cell_mat_volfracs;
   std::vector<Tangram::Point2> cell_mat_centroids;
+  std::vector<int> offsets;
   get_materials_data(source_mesh_wrapper, mat_int_a, mat_int_b,
                      cell_num_mats, cell_mat_ids, 
-                     cell_mat_volfracs, cell_mat_centroids);
+                     cell_mat_volfracs, cell_mat_centroids, offsets);
   
   Tangram::Driver<Tangram::XMOF2D_Wrapper, 2,
-    Wonton::Simple_Mesh_Wrapper> xmof_driver(source_mesh_wrapper);
+    Wonton::Simple_Mesh_Wrapper> source_xmof_driver(source_mesh_wrapper);
   
-  xmof_driver.set_volume_fractions(cell_num_mats, cell_mat_ids, 
+  source_xmof_driver.set_volume_fractions(cell_num_mats, cell_mat_ids,
                                    cell_mat_volfracs, cell_mat_centroids);
-  xmof_driver.reconstruct();
-  
+  source_xmof_driver.reconstruct();
+
   const std::vector<std::shared_ptr<Tangram::CellMatPoly<2>>>&
-    cellmatpoly_list = xmof_driver.cell_matpoly_ptrs();
+    cellmatpoly_list = source_xmof_driver.cell_matpoly_ptrs();
 
   double source_ir_rel_error = get_ir_error(source_mesh_wrapper, mat_int_a, mat_int_b,
-                                            cell_num_mats, cellmatpoly_list, deps);
+                                          cell_num_mats, cellmatpoly_list, deps);
   std::cout << "Reconstruction error for the source mesh -> " << source_ir_rel_error <<
-               std::endl;
+             std::endl;
   
   Tangram::write_to_gmv(source_mesh_wrapper, 2, cell_num_mats, cell_mat_ids,
                         cellmatpoly_list, "source_mesh.gmv");
+
+  int tcells = target_mesh_wrapper.num_owned_cells();
+
+  std::vector<int> tcell_num_mats=std::vector<int>(tcells, 0);
+  std::vector<int> tcell_mat_ids{};
+  std::vector<double> tcell_mat_volfracs{};
+  std::vector<Tangram::Point2> tcell_mat_centroids{};
+
+  // Target cells loop
+  for (int tc = 0; tc < tcells; ++tc) {
+    std::vector<Portage::Point<2>> target_points;
+    target_mesh_wrapper.cell_get_coordinates(tc, &target_points);
+    double cell_size = target_mesh_wrapper.cell_volume(tc);
+
+    // Beginning index for current target cell (into flat vector of material ids for all target cells)
+    int idx=tcell_mat_ids.size();
+
+    // Accumulator for target cell material moments
+    std::vector<std::vector<double> > mat_moments(NUM_MATS, std::vector<double>(NUM_MOMENTS,0));
+
+    // Search for candidate overlapping source cells
+    std::vector<int> sc_candidates;
+    search(tc, &sc_candidates);
+    for (int sc : sc_candidates){
+
+      // Source candidate cellmatpoly
+      auto cellmatpoly=cellmatpoly_list[sc];
+
+      if (cellmatpoly){ // Mixed material cell
+
+        // Access all matpolys from source candidate cellmatpoly
+        for (int matpoly_id=0;matpoly_id<cellmatpoly->num_matpolys();++matpoly_id){
+
+          // Get the matpoly and determine which material it contains
+          auto matpoly = cellmatpoly->get_ith_matpoly(matpoly_id);
+          int mat_id=cellmatpoly->matpoly_matid(matpoly_id);
+          
+          // Get Tangram points for matpoly, convert to Portage points
+          std::vector<Portage::Point<2>> source_points;
+          for (auto p : matpoly.points()) {
+            source_points.push_back(Portage::Point<2>(p));
+          }
+          add_intersect_data(mat_moments,mat_id,
+                             source_points,target_points,
+                             tcell_mat_ids,tcell_num_mats,tc,idx);
+        }
+        
+      } else { // Single material cell
+
+        // Get Tangram points for matpoly, convert to Portage points
+        std::vector<Portage::Point<2>> source_points;
+        source_mesh_wrapper.cell_get_coordinates(sc,&source_points);
+        int mat_id=cell_mat_ids[offsets[sc]];
+        add_intersect_data(mat_moments,mat_id,
+                           source_points,target_points,
+                           tcell_mat_ids,tcell_num_mats,tc,idx);
+      }
+    } // Finish gathering material moments for target cell
+
+    // Populate centroid and volfrac data for target cell
+    auto begin=&tcell_mat_ids[0]+idx;
+    auto end=begin+tcell_num_mats[tc];
+    for(auto it=begin; it<end; ++it){
+      int mat_id=*it;
+      tcell_mat_centroids.push_back({
+          mat_moments[mat_id][1]/mat_moments[mat_id][0],
+            mat_moments[mat_id][2]/mat_moments[mat_id][0]});
+      tcell_mat_volfracs.push_back(mat_moments[mat_id][0]/cell_size);
+    }
+  }
+
+  // Perform final interface reconstruction on target mesh, then write to file
+  // for comparison with source mesh
+  Tangram::Driver<Tangram::XMOF2D_Wrapper, 2,
+    Wonton::Simple_Mesh_Wrapper> target_xmof_driver(target_mesh_wrapper);
+  target_xmof_driver.set_volume_fractions(tcell_num_mats, tcell_mat_ids,
+                                   tcell_mat_volfracs, tcell_mat_centroids);
+  target_xmof_driver.reconstruct();
+  const std::vector<std::shared_ptr<Tangram::CellMatPoly<2>>>&
+    tcellmatpoly_list = target_xmof_driver.cell_matpoly_ptrs();
+  double target_ir_rel_error = get_ir_error(target_mesh_wrapper, mat_int_a, mat_int_b,
+  tcell_num_mats, tcellmatpoly_list, deps);
+  std::cout << "Reconstruction error for the target mesh -> " << target_ir_rel_error <<
+           std::endl;
+  Tangram::write_to_gmv(target_mesh_wrapper, 2, tcell_num_mats, tcell_mat_ids,
+  tcellmatpoly_list, "target_mesh.gmv");
+
 #ifdef ENABLE_MPI  
   MPI_Finalize();
 #endif
@@ -328,6 +478,7 @@ int CellPosition(const Mesh_Wrapper& Mesh,
  vector, requires computations of offsets
  @param[out] cell_mat_centroids Centroids of materials in each mesh cell, a flat vector,
  requires computations of offsets
+ @param[out] offsets Offset into cell_mat_ids giving the starting section for each cell 
 */
 template <class Mesh_Wrapper>
 void get_materials_data(const Mesh_Wrapper& Mesh,
@@ -336,7 +487,8 @@ void get_materials_data(const Mesh_Wrapper& Mesh,
                         std::vector<int>& cell_num_mats,
                         std::vector<int>& cell_mat_ids,
                         std::vector<double>& cell_mat_volfracs,
-                        std::vector<Tangram::Point2>& cell_mat_centroids) {
+                        std::vector<Tangram::Point2>& cell_mat_centroids,
+                        std::vector<int>& offsets) {
   const int POLY_ORDER = 1;  //Max degree of moments to calculate
   
   cell_num_mats.clear();
@@ -396,6 +548,7 @@ void get_materials_data(const Mesh_Wrapper& Mesh,
       else
         cell_mat_ids.push_back(mat_id_above);
     }
+    offsets.push_back(cell_mat_ids.size()-1);
   }
 }
 
@@ -537,7 +690,7 @@ double get_ir_error(const Mesh_Wrapper& Mesh,
                     const double line_b,
                     const std::vector<int>& cell_num_mats,
                     const std::vector<std::shared_ptr<Tangram::CellMatPoly<2>>>&
-                      cellmatpoly_list,
+                    cellmatpoly_list,
                     const double eps) {
   int ncells = Mesh.num_owned_cells();
   double max_hdist = 0.0;

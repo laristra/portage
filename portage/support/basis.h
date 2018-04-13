@@ -37,6 +37,8 @@ class Traits<Unitary, dim>
   public:
   static constexpr size_t function_size=1;
   static constexpr array<size_t,2> jet_size={1,1};
+  using array_t = array<double, function_size>;
+  using matrix_t = array<array<double, function_size>, function_size>;
 };
 
 template<size_t dim>
@@ -45,6 +47,8 @@ class Traits<Linear, dim>
   public:
   static constexpr size_t function_size=dim+1;
   static constexpr array<size_t,2> jet_size={dim+1,dim+1};
+  using array_t = array<double, function_size>;
+  using matrix_t = array<array<double, function_size>, function_size>;
 };
 
 template<size_t dim>
@@ -52,8 +56,13 @@ class Traits<Quadratic, dim>
 {
   public:
   static constexpr size_t function_size=quadratic_sizes[dim];
+  // Intel 18.0.1 compiler cannot handle this declaration so we use the alternative
+  //  static constexpr array<size_t,2>
+  //    jet_size={quadratic_sizes[dim], quadratic_sizes[dim]};  
   static constexpr array<size_t,2>
-    jet_size={quadratic_sizes[dim], quadratic_sizes[dim]};
+    jet_size={function_size, function_size};
+  using array_t = array<double, function_size>;
+  using matrix_t = array<array<double, function_size>, function_size>;
 };
 
 template<size_t dim>
@@ -130,6 +139,13 @@ shift(Point<dim> x, Point<dim> y){
   }
 
   return r;
+}
+
+template<Type type, size_t dim>
+typename Traits<type,dim>::matrix_t transfactor(const Point<dim> &c) {
+  typename Traits<type,dim>::matrix_t result;
+  assert(false);
+  return result;
 }
 
 template<size_t dim>
@@ -209,6 +225,61 @@ vector<vector<double>> jet(Type type, Point<dim> x){
     }
     default:
       assert(false);
+  }
+  return result;
+}
+
+template<size_t dim>
+vector<vector<double>> inverse_jet(Type type, Point<dim> x){
+  auto njet = jet_size<dim>(type);
+  vector<vector<double>> result(njet[0],vector<double>(njet[1],0.));
+  switch (type) {
+    case Unitary: {
+      auto resulta = inverse_jet<Unitary, dim>(x);
+      for (size_t i=0; i<njet[0]; i++) for (size_t j=0; j<njet[1]; j++)
+        result[i][j] = resulta[i][j];
+      break;
+    }
+    case Linear: {
+      auto resulta = inverse_jet<Linear, dim>(x);
+      for (size_t i=0; i<njet[0]; i++) for (size_t j=0; j<njet[1]; j++)
+        result[i][j] = resulta[i][j];
+      break;
+    }
+    case Quadratic: {
+      auto resulta = inverse_jet<Quadratic, dim>(x);
+      for (size_t i=0; i<njet[0]; i++) for (size_t j=0; j<njet[1]; j++)
+        result[i][j] = resulta[i][j];
+      break;
+    }
+    default:
+      assert(false);
+  }
+  return result;
+}
+
+template<size_t dim>
+  vector<vector<double>> transfactor(const Type type, const Point<dim> &c) {
+  size_t nbasis = function_size<dim>(type);
+  vector<vector<double>> result(nbasis, vector<double>(nbasis,0.));
+  switch(type) {
+  case Unitary: {
+    auto tf = transfactor<Unitary,dim>(c);
+    for (size_t i=0; i<nbasis; i++) for (size_t j=0; j<nbasis; j++) result[i][j] = tf[i][j];
+    break;
+  }
+  case Linear: {
+    auto tf = transfactor<Linear,dim>(c);
+    for (size_t i=0; i<nbasis; i++) for (size_t j=0; j<nbasis; j++) result[i][j] = tf[i][j];
+    break;
+  }
+  case Quadratic: {
+    auto tf = transfactor<Quadratic,dim>(c);
+    for (size_t i=0; i<nbasis; i++) for (size_t j=0; j<nbasis; j++) result[i][j] = tf[i][j];
+    break;
+  }
+  default:
+    assert(false);
   }
   return result;
 }
@@ -353,6 +424,29 @@ shift<Unitary, 3>(Point<3> x, Point<3> y) {
   array<double, Traits<Unitary, 3>::function_size> r{0.0};
   r[0] = 1.;
   return r;
+}
+
+//---------------------------------------------------------------
+
+template<>
+typename Traits<Unitary,1>::matrix_t transfactor<Unitary,1>(const Point<1> &c) {
+  typename Traits<Unitary,1>::matrix_t tf;
+  tf[0][0] = 1.;
+  return tf;
+}
+
+template<>
+typename Traits<Unitary,2>::matrix_t transfactor<Unitary,2>(const Point<2> &c) {
+  typename Traits<Unitary,2>::matrix_t tf;
+  tf[0][0] = 1.;
+  return tf;
+}
+
+template<>
+typename Traits<Unitary,3>::matrix_t transfactor<Unitary,3>(const Point<3> &c) {
+  typename Traits<Unitary,3>::matrix_t tf;
+  tf[0][0] = 1.;
+  return tf;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -561,6 +655,55 @@ shift<Linear, 3>(Point<3> x, Point<3> y) {
   return r;
 }
 
+//---------------------------------------------------------------
+
+template<>
+typename Traits<Linear,1>::matrix_t transfactor<Linear,1>(const Point<1> &c) {
+  typename Traits<Linear,1>::matrix_t tf;
+  tf[0][0]=1;
+  tf[0][1]=0;
+  tf[1][0]=c[0];
+  tf[1][1]=1;
+  return tf;
+}
+
+template<>
+typename Traits<Linear,2>::matrix_t transfactor<Linear,2>(const Point<2> &c) {
+  typename Traits<Linear,2>::matrix_t tf;
+  tf[0][0]=1;
+  tf[0][1]=0;
+  tf[0][2]=0;
+  tf[1][0]=c[0];
+  tf[1][1]=1;
+  tf[1][2]=0;
+  tf[2][0]=c[1];
+  tf[2][1]=0;
+  tf[2][2]=1;
+  return tf;
+}
+
+template<>
+typename Traits<Linear,3>::matrix_t transfactor<Linear,3>(const Point<3> &c) {
+  typename Traits<Linear,3>::matrix_t tf;
+  tf[0][0]=1;
+  tf[0][1]=0;
+  tf[0][2]=0;
+  tf[0][3]=0;
+  tf[1][0]=c[0];
+  tf[1][1]=1;
+  tf[1][2]=0;
+  tf[1][3]=0;
+  tf[2][0]=c[1];
+  tf[2][1]=0;
+  tf[2][2]=1;
+  tf[2][3]=0;
+  tf[3][0]=c[2];
+  tf[3][1]=0;
+  tf[3][2]=0;
+  tf[3][3]=1;  
+ return tf;
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // Quadratic
 ////////////////////////////////////////////////////////////////////////////////
@@ -758,6 +901,171 @@ shift<Quadratic, 3>(Point<3> x, Point<3> y) {
   Point<3> d;
   for (size_t i=0; i<3; i++) d[i] = y[i]-x[i];
   return function<Quadratic,3>(d);
+}
+
+//---------------------------------------------------------------
+
+template<>
+typename Traits<Quadratic,1>::matrix_t transfactor<Quadratic,1>(const Point<1> &c) {
+  typename Traits<Quadratic,1>::matrix_t tf;
+  tf[0][0]=1;
+  tf[0][1]=0;
+  tf[0][2]=0;
+  tf[1][0]=c[0];
+  tf[1][1]=1;
+  tf[1][2]=0;
+  tf[2][0]=pow(c[0], 2)/2;
+  tf[2][1]=c[0];
+  tf[2][2]=1;
+  return tf;
+}
+
+template<>
+typename Traits<Quadratic,2>::matrix_t transfactor<Quadratic,2>(const Point<2> &c) {
+  typename Traits<Quadratic,2>::matrix_t tf;
+  tf[0][0]=1;
+  tf[0][1]=0;
+  tf[0][2]=0;
+  tf[0][3]=0;
+  tf[0][4]=0;
+  tf[0][5]=0;
+  tf[1][0]=c[0];
+  tf[1][1]=1;
+  tf[1][2]=0;
+  tf[1][3]=0;
+  tf[1][4]=0;
+  tf[1][5]=0;
+  tf[2][0]=c[1];
+  tf[2][1]=0;
+  tf[2][2]=1;
+  tf[2][3]=0;
+  tf[2][4]=0;
+  tf[2][5]=0;
+  tf[3][0]=pow(c[0], 2)/2;
+  tf[3][1]=c[0];
+  tf[3][2]=0;
+  tf[3][3]=1;
+  tf[3][4]=0;
+  tf[3][5]=0;
+  tf[4][0]=c[0]*c[1];
+  tf[4][1]=c[1];
+  tf[4][2]=c[0];
+  tf[4][3]=0;
+  tf[4][4]=1;
+  tf[4][5]=0;
+  tf[5][0]=pow(c[1], 2)/2;
+  tf[5][1]=0;
+  tf[5][2]=c[1];
+  tf[5][3]=0;
+  tf[5][4]=0;
+  tf[5][5]=1;
+  return tf;
+}
+
+template<>
+typename Traits<Quadratic,3>::matrix_t transfactor<Quadratic,3>(const Point<3> &c) {
+  typename Traits<Quadratic,3>::matrix_t tf;
+  tf[0][0]=1;
+  tf[0][1]=0;
+  tf[0][2]=0;
+  tf[0][3]=0;
+  tf[0][4]=0;
+  tf[0][5]=0;
+  tf[0][6]=0;
+  tf[0][7]=0;
+  tf[0][8]=0;
+  tf[0][9]=0;
+  tf[1][0]=c[0];
+  tf[1][1]=1;
+  tf[1][2]=0;
+  tf[1][3]=0;
+  tf[1][4]=0;
+  tf[1][5]=0;
+  tf[1][6]=0;
+  tf[1][7]=0;
+  tf[1][8]=0;
+  tf[1][9]=0;
+  tf[2][0]=c[1];
+  tf[2][1]=0;
+  tf[2][2]=1;
+  tf[2][3]=0;
+  tf[2][4]=0;
+  tf[2][5]=0;
+  tf[2][6]=0;
+  tf[2][7]=0;
+  tf[2][8]=0;
+  tf[2][9]=0;
+  tf[3][0]=c[2];
+  tf[3][1]=0;
+  tf[3][2]=0;
+  tf[3][3]=1;
+  tf[3][4]=0;
+  tf[3][5]=0;
+  tf[3][6]=0;
+  tf[3][7]=0;
+  tf[3][8]=0;
+  tf[3][9]=0;
+  tf[4][0]=pow(c[0], 2)/2;
+  tf[4][1]=c[0];
+  tf[4][2]=0;
+  tf[4][3]=0;
+  tf[4][4]=1;
+  tf[4][5]=0;
+  tf[4][6]=0;
+  tf[4][7]=0;
+  tf[4][8]=0;
+  tf[4][9]=0;
+  tf[5][0]=c[0]*c[1];
+  tf[5][1]=c[1];
+  tf[5][2]=c[0];
+  tf[5][3]=0;
+  tf[5][4]=0;
+  tf[5][5]=1;
+  tf[5][6]=0;
+  tf[5][7]=0;
+  tf[5][8]=0;
+  tf[5][9]=0;
+  tf[6][0]=c[0]*c[2];
+  tf[6][1]=c[2];
+  tf[6][2]=0;
+  tf[6][3]=c[0];
+  tf[6][4]=0;
+  tf[6][5]=0;
+  tf[6][6]=1;
+  tf[6][7]=0;
+  tf[6][8]=0;
+  tf[6][9]=0;
+  tf[7][0]=pow(c[1], 2)/2;
+  tf[7][1]=0;
+  tf[7][2]=c[1];
+  tf[7][3]=0;
+  tf[7][4]=0;
+  tf[7][5]=0;
+  tf[7][6]=0;
+  tf[7][7]=1;
+  tf[7][8]=0;
+  tf[7][9]=0;
+  tf[8][0]=c[1]*c[2];
+  tf[8][1]=0;
+  tf[8][2]=c[2];
+  tf[8][3]=c[1];
+  tf[8][4]=0;
+  tf[8][5]=0;
+  tf[8][6]=0;
+  tf[8][7]=0;
+  tf[8][8]=1;
+  tf[8][9]=0;
+  tf[9][0]=pow(c[2], 2)/2;
+  tf[9][1]=0;
+  tf[9][2]=0;
+  tf[9][3]=c[2];
+  tf[9][4]=0;
+  tf[9][5]=0;
+  tf[9][6]=0;
+  tf[9][7]=0;
+  tf[9][8]=0;
+  tf[9][9]=1;
+  return tf;
 }
 
 }

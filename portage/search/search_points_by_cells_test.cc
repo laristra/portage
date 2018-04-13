@@ -336,7 +336,7 @@ TEST(search_by_cells, scatter_2d_random_case3)
 }
 
 
-void test_scatter_3d_random(const size_t nsrc, const size_t ntgt)
+void test_scatter_3d_random(const size_t nsrc, const size_t ntgt, bool check=true)
 { // random point sets and test against SearchSimplePoints
 
   std::vector<Portage::Point<3>> srcp, srce;
@@ -346,7 +346,7 @@ void test_scatter_3d_random(const size_t nsrc, const size_t ntgt)
     double x = 1.2*rand()/RAND_MAX-.1;
     double y = 1.2*rand()/RAND_MAX-.1;
     double z = 1.2*rand()/RAND_MAX-.1;
-    double ext = 4./pow(nsrc*1.0,1./3.);
+    double ext = 1./pow(nsrc*1.0,1./3.);
     srcpts->push_back(Portage::Point<3>{x, y, z});
     srcexts->push_back(Portage::Point<3>{ext, ext, ext});
   }
@@ -359,7 +359,7 @@ void test_scatter_3d_random(const size_t nsrc, const size_t ntgt)
     double x = 1.0*rand()/RAND_MAX;
     double y = 1.0*rand()/RAND_MAX;
     double z = 1.0*rand()/RAND_MAX;
-    double ext = 4./pow(ntgt*1.0,1./3.);
+    double ext = 1./pow(ntgt*1.0,1./3.);
     tgtpts->push_back(Portage::Point<3>{x, y, z});
     tgtexts->push_back(Portage::Point<3>{ext, ext, ext});
   }
@@ -369,20 +369,27 @@ void test_scatter_3d_random(const size_t nsrc, const size_t ntgt)
   3, Portage::Meshfree::Swarm<3>, Portage::Meshfree::Swarm<3>>
   cellsearch(srcswarm, tgtswarm, srcexts, tgtexts);
 
-  Portage::SearchSimplePoints<
-  3, Portage::Meshfree::Swarm<3>, Portage::Meshfree::Swarm<3>>
-  simplesearch(srcswarm, tgtswarm, srcexts, tgtexts);
+  if (check) {
+    Portage::SearchSimplePoints<
+      3, Portage::Meshfree::Swarm<3>, Portage::Meshfree::Swarm<3>>
+      simplesearch(srcswarm, tgtswarm, srcexts, tgtexts);
 
-  for (int tp = 0; tp < ntgt; tp++) {
-    std::vector<unsigned int> cnbr, snbr;
-    cnbr = cellsearch(tp);
-    snbr = simplesearch(tp);
+    for (int tp = 0; tp < ntgt; tp++) {
+      std::vector<unsigned int> cnbr, snbr;
+      cnbr = cellsearch(tp);
+      snbr = simplesearch(tp);
 
-    ASSERT_EQ(snbr.size(), cnbr.size());
+      ASSERT_EQ(snbr.size(), cnbr.size());
 
-    std::sort(cnbr.begin(), cnbr.end());
-    for (int j=0; j<snbr.size(); j++) {
-      ASSERT_EQ(snbr[j], cnbr[j]);
+      std::sort(cnbr.begin(), cnbr.end());
+      for (int j=0; j<snbr.size(); j++) {
+	ASSERT_EQ(snbr[j], cnbr[j]);
+      }
+    }
+  } else {
+    for (int tp = 0; tp < ntgt; tp++) {
+      std::vector<unsigned int> cnbr, snbr;
+      cnbr = cellsearch(tp);
     }
   }
 
@@ -390,17 +397,22 @@ void test_scatter_3d_random(const size_t nsrc, const size_t ntgt)
 
 TEST(search_by_cells, scatter_3d_random_case1)
 {
-  test_scatter_3d_random(500, 500);
+  test_scatter_3d_random(1000, 1000);
 }
 
 TEST(search_by_cells, scatter_3d_random_case2)
 {
-  test_scatter_3d_random(1000, 500);
+  test_scatter_3d_random(1000, 729);
 }
 
 TEST(search_by_cells, scatter_3d_random_case3)
 {
-  test_scatter_3d_random(500, 1000);
+  test_scatter_3d_random(729, 1000);
+}
+
+TEST(search_by_cells, scatter_3d_random_case3_nocheck)
+{
+  test_scatter_3d_random(2744, 2744, false);
 }
 
 
@@ -470,7 +482,7 @@ TEST(search_by_cells, gather_2d_random_case3)
 }
 
 
-void test_gather_3d_random(const size_t nsrc, const size_t ntgt)
+void test_gather_3d_random(const size_t nsrc, const size_t ntgt, bool check = true)
 { // random point sets and test against SearchSimplePoints
 
   std::vector<Portage::Point<3>> srcp, srce;
@@ -480,7 +492,7 @@ void test_gather_3d_random(const size_t nsrc, const size_t ntgt)
     double x = 1.2*rand()/RAND_MAX-.1;
     double y = 1.2*rand()/RAND_MAX-.1;
     double z = 1.2*rand()/RAND_MAX-.1;
-    double ext = 4./pow(nsrc*1.0,1./3.);
+    double ext = 1./pow(nsrc*1.0,1./3.);
     srcpts->push_back(Portage::Point<3>{x, y, z});
     srcexts->push_back(Portage::Point<3>{ext, ext, ext});
   }
@@ -493,7 +505,7 @@ void test_gather_3d_random(const size_t nsrc, const size_t ntgt)
     double x = 1.0*rand()/RAND_MAX;
     double y = 1.0*rand()/RAND_MAX;
     double z = 1.0*rand()/RAND_MAX;
-    double ext = 4./pow(ntgt*1.0,1./3.);
+    double ext = 1./pow(ntgt*1.0,1./3.);
     tgtpts->push_back(Portage::Point<3>{x, y, z});
     tgtexts->push_back(Portage::Point<3>{ext, ext, ext});
   }
@@ -503,20 +515,27 @@ void test_gather_3d_random(const size_t nsrc, const size_t ntgt)
   3, Portage::Meshfree::Swarm<3>, Portage::Meshfree::Swarm<3>>
   cellsearch(srcswarm, tgtswarm, srcexts, tgtexts, Portage::Meshfree::Gather);
 
-  Portage::SearchSimplePoints<
-  3, Portage::Meshfree::Swarm<3>, Portage::Meshfree::Swarm<3>>
-  simplesearch(srcswarm, tgtswarm, srcexts, tgtexts, Portage::Meshfree::Gather);
+  if (check) {
+    Portage::SearchSimplePoints<
+      3, Portage::Meshfree::Swarm<3>, Portage::Meshfree::Swarm<3>>
+      simplesearch(srcswarm, tgtswarm, srcexts, tgtexts, Portage::Meshfree::Gather);
 
-  for (int tp = 0; tp < ntgt; tp++) {
-    std::vector<unsigned int> cnbr, snbr;
-    cnbr = cellsearch(tp);
-    snbr = simplesearch(tp);
+    for (int tp = 0; tp < ntgt; tp++) {
+      std::vector<unsigned int> cnbr, snbr;
+      cnbr = cellsearch(tp);
+      snbr = simplesearch(tp);
 
-    ASSERT_EQ(snbr.size(), cnbr.size());
+      ASSERT_EQ(snbr.size(), cnbr.size());
 
-    std::sort(cnbr.begin(), cnbr.end());
-    for (int j=0; j<snbr.size(); j++) {
-      ASSERT_EQ(snbr[j], cnbr[j]);
+      std::sort(cnbr.begin(), cnbr.end());
+      for (int j=0; j<snbr.size(); j++) {
+	ASSERT_EQ(snbr[j], cnbr[j]);
+      }
+    }
+  } else {
+    for (int tp = 0; tp < ntgt; tp++) {
+      std::vector<unsigned int> cnbr, snbr;
+      snbr = cellsearch(tp);
     }
   }
 
@@ -524,17 +543,22 @@ void test_gather_3d_random(const size_t nsrc, const size_t ntgt)
 
 TEST(search_by_cells, gather_3d_random_case1)
 {
-  test_gather_3d_random(500, 500);
+  test_gather_3d_random(1000, 1000);
 }
 
 TEST(search_by_cells, gather_3d_random_case2)
 {
-  test_gather_3d_random(1000, 500);
+  test_gather_3d_random(1000, 729);
 }
 
 TEST(search_by_cells, gather_3d_random_case3)
 {
-  test_gather_3d_random(500, 1000);
+  test_gather_3d_random(729, 1000);
+}
+
+TEST(search_by_cells, gather_3d_random_case1_nocheck)
+{
+  test_gather_3d_random(2744, 2744, false);
 }
 
 
