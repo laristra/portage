@@ -39,3 +39,4 @@ namespace Portage {
     };
   }
 }
+#endif // SRC_IR_DUMMY_H_
