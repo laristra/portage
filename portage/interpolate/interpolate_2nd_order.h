@@ -121,9 +121,9 @@ class Interpolate_2ndOrder {
     limiter_type_ = limiter_type;
 
     // Extract the field data from the statemanager
-    field_type_ = source_state_.field_type(CELL, interp_var_name);
+    field_type_ = source_state_.field_type(on_what, interp_var_name);
     if (field_type_ == Field_type::MESH_FIELD)
-      source_state_.mesh_get_data(CELL, interp_var_name,
+      source_state_.mesh_get_data(on_what, interp_var_name,
                                   &source_vals_);
     else
       source_state_.mat_get_celldata(interp_var_name, matid_, &source_vals_);
@@ -133,12 +133,12 @@ class Interpolate_2ndOrder {
   #ifdef HAVE_TANGRAM  
     Limited_Gradient<D, on_what, SourceMeshType, StateType, InterfaceReconstructor>
         limgrad(source_mesh_, source_state_, interface_reconstructor_);
+   limgrad.set_material(matid_);      
   #else      
     Limited_Gradient<D, on_what, SourceMeshType, StateType>
         limgrad(source_mesh_, source_state_);
   #endif 
 
-   limgrad.set_material(matid_);      
    limgrad.set_variable(interp_var_name_, limiter_type_);
 
    // Get the correct number of source cells for which the gradient has to be computed
@@ -290,11 +290,11 @@ class Interpolate_2ndOrder<D,
     // Compute the limited gradients for the field 
   #ifdef HAVE_TANGRAM  
     Limited_Gradient<D, CELL, SourceMeshType, StateType, InterfaceReconstructor>
-        limgrad(source_mesh_, source_state_, interp_var_name, limiter_type_, 
-          interface_reconstructor_);
+        limgrad(source_mesh_, source_state_, interface_reconstructor_);
+     limgrad.set_material(matid_);      
   #else      
     Limited_Gradient<D, CELL, SourceMeshType, StateType>
-        limgrad(source_mesh_, source_state_, interp_var_name, limiter_type_);
+        limgrad(source_mesh_, source_state_);
   #endif 
 
    // Get the correct number of source cells for which the gradient has to be computed

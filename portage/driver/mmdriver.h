@@ -512,18 +512,22 @@ void MMDriver<Search, Intersect, Interpolate, D,
       intersect(source_mesh_, source_state_, target_mesh_,
                 interface_reconstructor);
 
+  // Get an instance of the desired interpolate algorithm type
+  Interpolate<D, onwhat, SourceMesh_Wrapper, TargetMesh_Wrapper,
+              SourceState_Wrapper, InterfaceReconstructorType>
+      interpolate(source_mesh_, target_mesh_, source_state_, 
+                  interface_reconstructor);
 #else
 
   Intersect<onwhat, SourceMesh_Wrapper, SourceState_Wrapper,
             TargetMesh_Wrapper, DummyInterfaceReconstructor>
       intersect(source_mesh_, source_state_, target_mesh_);
 
-#endif  // HAVE_TANGRAM
-
   // Get an instance of the desired interpolate algorithm type
   Interpolate<D, onwhat, SourceMesh_Wrapper, TargetMesh_Wrapper,
               SourceState_Wrapper>
       interpolate(source_mesh_, target_mesh_, source_state_);
+#endif  // HAVE_TANGRAM
 
   
   //--------------------------------------------------------------------
