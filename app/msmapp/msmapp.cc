@@ -326,16 +326,13 @@ public:
       if (controls_.print_detail == 1) {
         std::printf("Cell Centroid-coord-1-2-3 Exact Mesh-Swarm-Mesh Error\n");
       }
+      totmerr = totserr = 0.;
       for (int c = 0; c < ntarcells; ++c) {
         Portage::Point<Dimension> ccen;
         targetFlatMesh.cell_centroid(c, &ccen);
         double value = field_func<3>(controls_.example, ccen);
         double serror;
         serror = cellvecout2[c] - value;
-        // accumulate integral
-        if (oper8tor == Portage::Meshfree::Operator::VolumeIntegral) { 
-          totint += cellvecout2[c];
-        }
         // dump diagnostics for each cell
         if (controls_.print_detail == 1){
           std::printf("cell-data %8d %19.13le %19.13le %19.13le ", c, ccen[0], ccen[1], ccen[2]);
@@ -346,6 +343,13 @@ public:
           }
         }
         totserr = std::max(totserr, std::fabs(serror));
+      }
+      // accumulate integral 
+      totint = 0.;
+      if (oper8tor == Portage::Meshfree::Operator::VolumeIntegral) {
+        for (int c = 0; c < ntarcells; ++c) { 
+          totint += cellvecout2[c];
+        }
       }
 
       std::printf("\n\nLinf NORM OF MSM CELL ERROR: %le\n\n", totserr);
@@ -594,6 +598,7 @@ public:
       if (controls_.print_detail == 1) {
         std::printf("Cell Centroid-coord-1-2-3 Exact Mesh-Swarm-Mesh Error\n");
       }
+      totserr = totint = 0.;
       for (int c = 0; c < ntarcells; ++c) {
         Portage::Point<Dimension> ccen;
         targetFlatMesh.cell_centroid(c, &ccen);
@@ -615,7 +620,6 @@ public:
         }
         totserr = std::max(totserr, std::fabs(serror));
       }
-
       std::printf("\n\nLinf NORM OF MSM CELL ERROR: %le\n\n", totserr);
       if (oper8tor == Portage::Meshfree::Operator::VolumeIntegral)
         std::printf("\n\nTOTAL INTEGRAL: %le\n\n", totint);
