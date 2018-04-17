@@ -54,7 +54,7 @@ namespace Portage {
     assert(D == 2 || D == 3);
   }
 
-  void init(int matid, std::string const var_name, LimiterType limiter_type) {
+  void set_material(int matid, std::string const var_name, LimiterType limiter_type) {
     matid_ = matid;
     var_name_ = var_name;
     limtype_ = limiter_type;
@@ -164,12 +164,10 @@ namespace Portage {
     /* Collect and keep the list of neighbors for each CELL as it may
        be expensive to go to the mesh layer and collect this data for
        each cell during the actual gradient calculation */
-    void init(int matid,
+    void set_material(int matid,
 	      std::string const var_name, 
 	      LimiterType limiter_type) {
-
-      this->init(matid,var_name,limiter_type);
-
+      this->set_material(matid,var_name,limiter_type);
       this->state_.mesh_get_data(NODE, this->var_name_, &this->vals_);
     }
 
@@ -286,7 +284,7 @@ namespace Portage {
       this->limtype_=limiter_type;   // TODO: remove
     }
   
-    void init(int matid,
+    void set_material(int matid,
 	      std::string const var_name, 
 	      LimiterType limiter_type) {
 
