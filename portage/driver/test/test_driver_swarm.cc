@@ -97,7 +97,7 @@ class DriverTest : public ::testing::Test {
 	  ij[0]=i*npdim+j; ij[1]=(i+1)*npdim+j; ij[2]=(i+1)*npdim+j+1; ij[3]=i*npdim+j+1;
 	  break;
 	case 3:
-	  i = n/npdim/npdim;
+	  i = n/(npdim*npdim);
 	  j = (n - i*npdim*npdim)/npdim;
 	  k = n - i*npdim*npdim - j*npdim;
 	  ij[0]=npdim*(i*npdim+j)+k;         ij[1]=npdim*((i+1)*npdim+j)+k; 
@@ -454,9 +454,9 @@ TEST_F(IntegrateDriverTest2D, 2D_QuadraticFieldQuadraticBasis) {
     (compute_quadratic_field<2>, 2./3. + 1./4.); // 0.9166666666666666
 }
 
-  //TEST_F(IntegrateDriverTest3D, 3D_LinearFieldLinearBasis) {
-  //  unitTest<Portage::SearchSimplePoints, Portage::Meshfree::Basis::Linear>
-  //      (compute_linear_field<3>, 3./2.);
-  //}
+TEST_F(IntegrateDriverTest3D, 3D_LinearFieldLinearBasis) {
+  unitTest<Portage::SearchSimplePoints, Portage::Meshfree::Basis::Linear>
+    (compute_linear_field<3>, 3./2.);
+}
 
 }  // end namespace
