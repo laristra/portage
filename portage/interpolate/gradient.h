@@ -45,11 +45,14 @@ namespace Portage {
 
   Limited_Gradient_Base(MeshType const & mesh, StateType const & state,
 			std::shared_ptr<InterfaceReconstructor> ir) :
-  mesh_(mesh), state_(state), interface_reconstructor_(ir) {}
+  Limited_Gradient_Base(mesh,state), interface_reconstructor_(ir) {}
 #endif  
 
   Limited_Gradient_Base(MeshType const & mesh, StateType const & state)
-  : mesh_(mesh),state_(state),vals_(nullptr) {}
+  : mesh_(mesh),state_(state),vals_(nullptr) {
+    assert(D == this->mesh_.space_dimension());
+    assert(D == 2 || D == 3);
+  }
 
   void init(int matid, std::string const var_name, LimiterType limiter_type) {
     matid_ = matid;
@@ -62,12 +65,6 @@ namespace Portage {
  
   Vector<D> operator()(int entity_id) {
     std::cerr << "Limited gradient not implemented for this entity kind\n";
-  }
-
-  void asserts(){
-    assert(this->vals_);
-    assert(D == this->mesh_.space_dimension());
-    assert(D == 2 || D == 3);
   }
  
   protected:
@@ -156,7 +153,13 @@ namespace Portage {
   Limited_Gradient(MeshType const & mesh, StateType const & state,
 		   std::string const var_name,
 		   LimiterType limiter_type)
-    : LIMITED_GRADIENT_BASE_NIR(NODE)(mesh, state) {}
+    : LIMITED_GRADIENT_BASE_NIR(NODE)(mesh, state) {
+      int nnodes = this->mesh_.num_entities(NODE);
+      node_neighbors_.resize(nnodes);
+      Portage::for_each(this->mesh_.begin(NODE), this->mesh_.end(NODE),
+			[this](int n) { this->mesh_.dual_cell_get_node_adj_cells(
+					n, ALL, &(node_neighbors_[n])); } );
+    }
 
     /* Collect and keep the list of neighbors for each CELL as it may
        be expensive to go to the mesh layer and collect this data for
@@ -168,11 +171,6 @@ namespace Portage {
       this->init(matid,var_name,limiter_type);
 
       this->state_.mesh_get_data(NODE, this->var_name_, &this->vals_);
-      int nnodes = this->mesh_.num_entities(NODE);
-      node_neighbors_.resize(nnodes);
-      Portage::for_each(this->mesh_.begin(NODE), this->mesh_.end(NODE),
-			[this](int n) { this->mesh_.dual_cell_get_node_adj_cells(
-										 n, ALL, &(node_neighbors_[n])); } );
     }
 
     Vector<D> operator() (int nodeid);
@@ -186,8 +184,7 @@ namespace Portage {
   template<int D, typename MeshType, typename StateType>
     Vector<D> LIMITED_GRADIENT_NIR(NODE)::operator() (int nodeid) {
 
-    if(!this->vals_) init(this->matid_,this->var_name_,this->limtype_);
-    this->asserts();
+    assert(this->vals_);
 
     double phi = 1.0;
     Vector<D> grad;
@@ -268,6 +265,15 @@ namespace Portage {
     : LIMITED_GRADIENT_BASE(CELL) (mesh, state, ir) { 
       this->var_name_=var_name;      // TODO: remove
       this->limtype_=limiter_type;   // TODO: remove
+
+      // Collect and keep the list of neighbors for each CELL as it may
+      // be expensive to go to the mesh layer and collect this data for
+      // each cell during the actual gradient calculation
+
+      cell_neighbors_.resize(this->mesh_.num_entities(CELL));
+      Portage::for_each(this->mesh_.begin(CELL), this->mesh_.end(CELL), 
+			[this](int c) { this->mesh_.cell_get_node_adj_cells(
+					 c, ALL, &(cell_neighbors_[c])); } );
     }
 #endif
   
@@ -292,25 +298,6 @@ namespace Portage {
 	this->state_.mat_get_celldata(this->var_name_, this->matid_, &this->vals_);
       }
       assert(this->vals_);
-
-      // Collect and keep the list of neighbors for each CELL as it may
-      // be expensive to go to the mesh layer and collect this data for
-      // each cell during the actual gradient calculation
-#ifdef HAVE_TANGRAM
-      std::vector<int> cellids;
-      this->state_.mat_get_cells(this->matid_, &cellids);
-      int ncells = cellids.size();
-      cell_neighbors_.resize(ncells);
-      Portage::for_each(cellids.begin(), cellids.end(), 
-			[this](int c) { this->mesh_.cell_get_node_adj_cells(
-									    c, ALL, &(cell_neighbors_[c])); } );
-#else
-      int ncells = this->mesh_.num_entities(CELL);
-      cell_neighbors_.resize(ncells);
-      Portage::for_each(this->mesh_.begin(CELL), this->mesh_.end(CELL), 
-			[this](int c) { this->mesh_.cell_get_node_adj_cells(
-									    c, ALL, &(cell_neighbors_[c])); } );
-#endif    
     }
 
     Vector<D> operator() (int cellid);
@@ -324,9 +311,6 @@ namespace Portage {
   template<int D, typename MeshType, typename StateType, 
     template<class, int> class InterfaceReconstructorType>
     Vector<D> LIMITED_GRADIENT(CELL)::operator()(int cellid) {
-
-    if(!this->vals_) init(this->matid_,this->var_name_,this->limtype_);
-    this->asserts();
 
     double phi = 1.0;
     Vector<D> grad;
