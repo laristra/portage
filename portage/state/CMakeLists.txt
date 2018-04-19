@@ -7,7 +7,10 @@ Please see the license file at the root of this repository, or at:
 
 # Add header files
 set (state_HEADERS
-  state_vector.h
+  state_vector_base.h
+  state_vector_uni.h
+  state_vector_multi.h
+  state_manager.h
   PARENT_SCOPE
   )
 
@@ -20,8 +23,13 @@ set (state_SOURCES
 
 if (ENABLE_UNIT_TESTS)
 
-  cinch_add_unit(test_state_vector
-    SOURCES test/test_state_vector.cc
+  cinch_add_unit(test_state_vector_uni
+    SOURCES test/test_state_vector_uni.cc
+    POLICY SERIAL
+    )
+
+  cinch_add_unit(test_state_vector_multi
+    SOURCES test/test_state_vector_multi.cc
     POLICY SERIAL
     )
 
