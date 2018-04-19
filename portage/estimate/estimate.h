@@ -11,12 +11,12 @@ Please see the license file at the root of this repository, or at:
 #include <cassert>
 
 #include "portage/swarm/swarm_state.h"
+#include "portage/support/portage.h"
 
 namespace Portage {
 namespace Meshfree {
 
 using std::string;
-using std::vector;
 
 /**
  * @class Estimate portage/estimate/estimate.h
@@ -55,7 +55,7 @@ class Estimate {
    * @return the derivative of the data in @code source_state_@endcode specified by @code derivative_@endcode
    */
   double operator()(int const target_index,
-                    vector<Weights_t> const &sources_and_mults) const
+                    std::vector<Weights_t> const &sources_and_mults) const
   {    
     int nsrc = sources_and_mults.size();
     if (nsrc > 0) assert(derivative_ < sources_and_mults[0].weights.size());
@@ -64,7 +64,7 @@ class Estimate {
     for (size_t i=0; i<nsrc; i++) {
       Weights_t const& wt = sources_and_mults[i];
       int p = wt.entityID;
-      vector<double> const& shape_vec = wt.weights;
+      std::vector<double> const& shape_vec = wt.weights;
       result += source_vals_[p] * shape_vec[derivative_];
     }
     return result;

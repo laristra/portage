@@ -14,7 +14,6 @@
 #include <cstdlib>
 #include <ctime>
 #include <algorithm>
-#include <vector>
 #include <memory>
 
 #include "portage/wonton/mesh/simple_mesh/simple_mesh_wrapper.h"
@@ -27,7 +26,7 @@
 #include "gtest/gtest.h"
 
 TEST(Swarm, Sanity_Check) {
-  std::vector<Portage::Point<3>> points(10);
+  Portage::vector<Portage::Point<3>> points(10);
 
   srand(time(NULL));
   for (int i = 0; i < 10; i++)
@@ -36,7 +35,7 @@ TEST(Swarm, Sanity_Check) {
         (static_cast<double>(rand()) / RAND_MAX),
         (static_cast<double>(rand()) / RAND_MAX));
 
-  auto p_ptr = std::make_shared<std::vector<Portage::Point<3>>>(points);
+  auto p_ptr = std::make_shared<Portage::vector<Portage::Point<3>>>(points);
 
   Portage::Meshfree::Swarm<3> swarm(p_ptr);
 

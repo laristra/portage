@@ -91,7 +91,7 @@ class SwarmDriver {
               SourceState& sourceState,
               TargetSwarm const& targetSwarm,
               TargetState& targetState,
-              std::vector<std::vector<std::vector<double>>> const& smoothing_lengths,
+              vector<std::vector<std::vector<double>>> const& smoothing_lengths,
               Weight::Kernel const& kernel_type=Weight::B4,
               Weight::Geometry const& support_geom_type=Weight::ELLIPTIC,
               WeightCenter center=Gather)
@@ -106,15 +106,15 @@ class SwarmDriver {
 
     if (weight_center_ == Gather) {
       assert(smoothing_lengths_.size() == target_swarm_.num_particles(PARALLEL_OWNED));
-      kernel_types_ = std::vector<Weight::Kernel>(target_swarm_.num_particles(PARALLEL_OWNED),
+      kernel_types_ = vector<Weight::Kernel>(target_swarm_.num_particles(PARALLEL_OWNED),
                                                   kernel_type);
-      geom_types_ = std::vector<Weight::Geometry>(target_swarm_.num_particles(PARALLEL_OWNED),
+      geom_types_ = vector<Weight::Geometry>(target_swarm_.num_particles(PARALLEL_OWNED),
                                                   support_geom_type);
     } else if (weight_center_ == Scatter) {
       assert(smoothing_lengths_.size() == source_swarm_.num_particles());
-      kernel_types_ = std::vector<Weight::Kernel>(source_swarm_.num_particles(),
+      kernel_types_ = vector<Weight::Kernel>(source_swarm_.num_particles(),
                                                   kernel_type);
-      geom_types_ = std::vector<Weight::Geometry>(source_swarm_.num_particles(),
+      geom_types_ = vector<Weight::Geometry>(source_swarm_.num_particles(),
                                                   support_geom_type);
     }
   }
@@ -141,9 +141,9 @@ class SwarmDriver {
               SourceState& sourceState,
               TargetSwarm const& targetSwarm,
               TargetState& targetState,
-              std::vector<std::vector<std::vector<double>>> const& smoothing_lengths,
-              std::vector<Weight::Kernel> const& kernel_types,
-              std::vector<Weight::Geometry> const& geom_types,
+              vector<std::vector<std::vector<double>>> const& smoothing_lengths,
+              vector<Weight::Kernel> const& kernel_types,
+              vector<Weight::Geometry> const& geom_types,
               WeightCenter center=Gather)
       : source_swarm_(sourceSwarm), source_state_(sourceState),
         target_swarm_(targetSwarm), target_state_(targetState),
@@ -295,9 +295,9 @@ class SwarmDriver {
   std::vector<std::string> source_remap_var_names_;
   std::vector<std::string> target_remap_var_names_;
   WeightCenter weight_center_ = Gather;
-  std::vector<std::vector<std::vector<double>>> smoothing_lengths_;
-  std::vector<Weight::Kernel> kernel_types_;
-  std::vector<Weight::Geometry> geom_types_;
+  vector<std::vector<std::vector<double>>> smoothing_lengths_;
+  vector<Weight::Kernel> kernel_types_;
+  vector<Weight::Geometry> geom_types_;
   EstimateType estimator_type_;
   Basis::Type basis_type_;
   Operator::Type operator_spec_;
@@ -374,10 +374,10 @@ remap(std::vector<std::string> const &src_varnames,
   // smoothing lengths
 
   // code below does not work with facted weightssourceExtents =
-  std::shared_ptr<std::vector<Point<Dim>>> sourceExtents;
-  std::shared_ptr<std::vector<Point<Dim>>> targetExtents;
+  std::shared_ptr<vector<Point<Dim>>> sourceExtents;
+  std::shared_ptr<vector<Point<Dim>>> targetExtents;
   if (weight_center_ == Portage::Meshfree::Gather) {
-    targetExtents = std::make_shared<std::vector<Point<Dim>>>(numTargetPts);
+    targetExtents = std::make_shared<vector<Point<Dim>>>(numTargetPts);
     for (int i = 0; i < numTargetPts; i++) {
       if (geom_types_[i] == Weight::FACETED) {
         throw std::runtime_error("FACETED geometry is not available here");
@@ -386,7 +386,7 @@ remap(std::vector<std::string> const &src_varnames,
     }
   }
   if (weight_center_ == Portage::Meshfree::Scatter) {
-    sourceExtents = std::make_shared<std::vector<Point<Dim>>>(numSourcePts);
+    sourceExtents = std::make_shared<vector<Point<Dim>>>(numSourcePts);
     for (int i = 0; i < numSourcePts; i++) {
       if (geom_types_[i] == Weight::FACETED) {
         throw std::runtime_error("FACETED geometry is not available here");

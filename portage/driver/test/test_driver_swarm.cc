@@ -24,7 +24,6 @@ Please see the license file at the root of this repository, or at:
 
 namespace {
 
-using std::vector;
 using std::shared_ptr;
 using std::make_shared;
 using Portage::Meshfree::SwarmFactory;
@@ -50,12 +49,12 @@ class DriverTest : public ::testing::Test {
   shared_ptr<Portage::Meshfree::SwarmState<dim>> sourceState;
   shared_ptr<Portage::Meshfree::SwarmState<dim>> targetState;
 
-  shared_ptr<vector<vector<vector<double>>>> smoothing_lengths_;
+  shared_ptr<Portage::vector<std::vector<std::vector<double>>>> smoothing_lengths_;
 
   // Operator info
   Portage::Meshfree::Operator::Type operator_;
   Portage::vector<Portage::Meshfree::Operator::Domain> domains_;
-  Portage::vector<vector<Point<dim>>> operator_data_;
+  Portage::vector<std::vector<Point<dim>>> operator_data_;
 
   Portage::Meshfree::WeightCenter center_;
 
@@ -72,8 +71,8 @@ class DriverTest : public ::testing::Test {
     if (op != Portage::Meshfree::Operator::LastOperator) {
       domains_ = Portage::vector<Portage::Meshfree::Operator::Domain>(targetSwarm->num_owned_particles());
       size_t npoints[3]={2,4,8};
-      operator_data_ = Portage::vector<vector<Point<dim>>>
-	(targetSwarm->num_owned_particles(),vector<Point<dim>>(npoints[dim-1]));
+      operator_data_ = Portage::vector<std::vector<Point<dim>>>
+	(targetSwarm->num_owned_particles(),std::vector<Point<dim>>(npoints[dim-1]));
       size_t npdim = static_cast<size_t>(pow(1.001*operator_data_.size(),1./dim));
       size_t nptot = 1; for (size_t m=0; m<dim; m++) nptot *= npdim;
       assert(nptot == targetSwarm->num_owned_particles());
@@ -82,7 +81,7 @@ class DriverTest : public ::testing::Test {
       size_t ij[npoints[dim-1]]; 
       size_t i=0,j=0,k=0;
       Point<dim> pt;
-      vector<Point<dim>> points(npoints[dim-1]);
+      std::vector<Point<dim>> points(npoints[dim-1]);
       // Create points determining the integration volume.
       // Assumes target swarm is created from SwarmFactory and represents a perfect cubic array of points.
       for (size_t n=0; n<nptot; n++) {
@@ -121,7 +120,7 @@ class DriverTest : public ::testing::Test {
     }
   }
 
-  void set_smoothing_lengths(shared_ptr<vector<vector<vector<double>>>> smoothing_lengths,
+  void set_smoothing_lengths(shared_ptr<Portage::vector<std::vector<std::vector<double>>>> smoothing_lengths,
 			     Portage::Meshfree::WeightCenter center=Portage::Meshfree::Gather) {
     smoothing_lengths_ = smoothing_lengths;
     center_ = center;
@@ -158,7 +157,7 @@ class DriverTest : public ::testing::Test {
 
     // Build the main driver data for this mesh type
     // Register the variable name and interpolation order with the driver
-    vector<std::string> remap_fields;
+    std::vector<std::string> remap_fields;
     remap_fields.push_back("particledata");
 
     Portage::Meshfree::SwarmDriver<Search,
@@ -225,8 +224,8 @@ struct DriverTest1D : DriverTest<1> {
   DriverTest1D() : DriverTest(SwarmFactory(0.0, 1.0, 7, 2),
                               SwarmFactory(0.0, 1.0, 5, 2))
   {
-    auto smoothing_lengths = make_shared<vector<vector<vector<double>>>>(5,
-                   vector<vector<double>>(1, vector<double>(1, 2.0/4)));
+    auto smoothing_lengths = make_shared<Portage::vector<std::vector<std::vector<double>>>>(5,
+                   std::vector<std::vector<double>>(1, std::vector<double>(1, 2.0/4)));
     DriverTest::set_smoothing_lengths(smoothing_lengths);
   }
 };
@@ -236,8 +235,8 @@ struct DriverTest1D : DriverTest<1> {
 struct DriverTest2D : DriverTest<2> {
   DriverTest2D() : DriverTest(SwarmFactory(0.0, 0.0, 1.0, 1.0, 7*7, 2),
                               SwarmFactory(0.0, 0.0, 1.0, 1.0, 5*5, 2)) {
-    auto smoothing_lengths = make_shared<vector<vector<vector<double>>>>(5*5,
-                   vector<vector<double>>(1, vector<double>(2, 2.0/4)));
+    auto smoothing_lengths = make_shared<Portage::vector<std::vector<std::vector<double>>>>(5*5,
+                   std::vector<std::vector<double>>(1, std::vector<double>(2, 2.0/4)));
     DriverTest::set_smoothing_lengths(smoothing_lengths);
   }
 };
@@ -249,8 +248,8 @@ struct DriverTest3D : DriverTest<3> {
                                           7*7*7, 2),
                              SwarmFactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0,
                                           5*5*5, 2)) {
-    auto smoothing_lengths = make_shared<vector<vector<vector<double>>>>(5*5*5,
-                   vector<vector<double>>(1, vector<double>(3, 2.0/4)));
+    auto smoothing_lengths = make_shared<Portage::vector<std::vector<std::vector<double>>>>(5*5*5,
+                   std::vector<std::vector<double>>(1, std::vector<double>(3, 2.0/4)));
     DriverTest::set_smoothing_lengths(smoothing_lengths);
   }
 };
@@ -262,8 +261,8 @@ struct DriverTest1DScatter : DriverTest<1> {
   DriverTest1DScatter() : DriverTest(SwarmFactory(0.0, 1.0, 7, 2),
                               SwarmFactory(0.0, 1.0, 5, 2))
   {
-    auto smoothing_lengths = make_shared<vector<vector<vector<double>>>>(7,
-                   vector<vector<double>>(1, vector<double>(1, 2.0/6)));
+    auto smoothing_lengths = make_shared<Portage::vector<std::vector<std::vector<double>>>>(7,
+                   std::vector<std::vector<double>>(1, std::vector<double>(1, 2.0/6)));
     DriverTest::set_smoothing_lengths(smoothing_lengths, Portage::Meshfree::Scatter);
   }
 };
@@ -273,8 +272,8 @@ struct DriverTest1DScatter : DriverTest<1> {
 struct DriverTest2DScatter : DriverTest<2> {
   DriverTest2DScatter() : DriverTest(SwarmFactory(0.0, 0.0, 1.0, 1.0, 7*7, 2),
                               SwarmFactory(0.0, 0.0, 1.0, 1.0, 5*5, 2)) {
-    auto smoothing_lengths = make_shared<vector<vector<vector<double>>>>(7*7,
-                   vector<vector<double>>(1, vector<double>(2, 2.0/6)));
+    auto smoothing_lengths = make_shared<Portage::vector<std::vector<std::vector<double>>>>(7*7,
+                   std::vector<std::vector<double>>(1, std::vector<double>(2, 2.0/6)));
     DriverTest::set_smoothing_lengths(smoothing_lengths, Portage::Meshfree::Scatter);
   }
 };
@@ -286,8 +285,8 @@ struct DriverTest3DScatter : DriverTest<3> {
                                           7*7*7, 2),
                              SwarmFactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0,
                                           5*5*5, 2)) {
-    auto smoothing_lengths = make_shared<vector<vector<vector<double>>>>(7*7*7,
-                   vector<vector<double>>(1, vector<double>(3, 2.0/6)));
+    auto smoothing_lengths = make_shared<Portage::vector<std::vector<std::vector<double>>>>(7*7*7,
+                   std::vector<std::vector<double>>(1, std::vector<double>(3, 2.0/6)));
     DriverTest::set_smoothing_lengths(smoothing_lengths, Portage::Meshfree::Scatter);
   }
 };
@@ -300,8 +299,8 @@ struct IntegrateDriverTest1D : DriverTest<1> {
                                        SwarmFactory(0.0, 1.0, 5, 1),
                                        Portage::Meshfree::Operator::VolumeIntegral)
   {
-    auto smoothing_lengths = make_shared<vector<vector<vector<double>>>>(5,
-                   vector<vector<double>>(1, vector<double>(1, 2.0/4)));
+    auto smoothing_lengths = make_shared<Portage::vector<std::vector<std::vector<double>>>>(5,
+                   std::vector<std::vector<double>>(1, std::vector<double>(1, 2.0/4)));
     DriverTest::set_smoothing_lengths(smoothing_lengths);
   }
 };
@@ -312,8 +311,8 @@ struct IntegrateDriverTest2D : DriverTest<2> {
   IntegrateDriverTest2D() : DriverTest(SwarmFactory(0.0, 0.0, 1.0, 1.0, 7*7, 1),
                                        SwarmFactory(0.0, 0.0, 1.0, 1.0, 5*5, 1),
                                        Portage::Meshfree::Operator::VolumeIntegral) {
-    auto smoothing_lengths = make_shared<vector<vector<vector<double>>>>(5*5,
-                   vector<vector<double>>(1, vector<double>(2, 2.0/4)));
+    auto smoothing_lengths = make_shared<Portage::vector<std::vector<std::vector<double>>>>(5*5,
+                   std::vector<std::vector<double>>(1, std::vector<double>(2, 2.0/4)));
     DriverTest::set_smoothing_lengths(smoothing_lengths);
   }
 };
@@ -326,8 +325,8 @@ struct IntegrateDriverTest3D : DriverTest<3> {
                                       SwarmFactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0,
                                           5*5*5, 1),
                                       Portage::Meshfree::Operator::VolumeIntegral) {
-    auto smoothing_lengths = make_shared<vector<vector<vector<double>>>>(5*5*5,
-                   vector<vector<double>>(1, vector<double>(3, 2.0/4)));
+    auto smoothing_lengths = make_shared<Portage::vector<std::vector<std::vector<double>>>>(5*5*5,
+                   std::vector<std::vector<double>>(1, std::vector<double>(3, 2.0/4)));
     DriverTest::set_smoothing_lengths(smoothing_lengths);
   }
 };

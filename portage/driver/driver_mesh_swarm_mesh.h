@@ -298,17 +298,16 @@ class MSM_Driver {
                                                    target_state_flat);
 
       // create spherically symmetric smoothing lengths for now
-      using std::vector;
       int ncells;
       if      (center_ == Meshfree::Scatter) ncells = source_mesh_flat.num_owned_cells();
       else if (center_ == Meshfree::Gather)  ncells = target_mesh_flat.num_owned_cells();
-      vector<vector<vector<double>>> smoothing_lengths
-        (ncells, vector<vector<double>>(1, vector<double>(Dim)));
+      vector<std::vector<std::vector<double>>> smoothing_lengths
+        (ncells, std::vector<std::vector<double>>(1, std::vector<double>(Dim)));
       for (int i=0; i<ncells; i++) {
         double radius;
         if      (center_ == Meshfree::Scatter) cell_radius<Dim>(source_mesh_flat, i, &radius);
 	else if (center_ == Meshfree::Gather)  cell_radius<Dim>(target_mesh_flat, i, &radius);
-	smoothing_lengths[i][0] = vector<double>(Dim, radius*smoothing_factor_);
+	smoothing_lengths[i][0] = std::vector<double>(Dim, radius*smoothing_factor_);
       }
 
       // create swarm remap driver
@@ -387,17 +386,16 @@ class MSM_Driver {
                                                    target_state_flat);
 
       // create smoothing lengths
-      using std::vector;
       int nnodes;
       if      (center_ == Meshfree::Scatter) nnodes = source_mesh_flat.num_owned_nodes();
       else if (center_ == Meshfree::Gather)  nnodes = target_mesh_flat.num_owned_nodes();
-      vector<vector<vector<double>>> smoothing_lengths
-        (nnodes, vector<vector<double>>(1, vector<double>(Dim)));
+      vector<std::vector<std::vector<double>>> smoothing_lengths
+        (nnodes, std::vector<std::vector<double>>(1, std::vector<double>(Dim)));
       for (int i=0; i<nnodes; i++) {
         double radius;
         if      (center_ == Meshfree::Scatter) node_radius<Dim>(source_mesh_flat, i, &radius);
 	else if (center_ == Meshfree::Gather)  node_radius<Dim>(target_mesh_flat, i, &radius);
-        smoothing_lengths[i][0] = vector<double>(Dim, radius*smoothing_factor_);
+        smoothing_lengths[i][0] = std::vector<double>(Dim, radius*smoothing_factor_);
       }
 
       // create swarm remap driver

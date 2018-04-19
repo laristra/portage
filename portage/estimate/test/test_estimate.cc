@@ -13,8 +13,8 @@ Please see the license file at the root of this repository, or at:
 #include "portage/support/Point.h"
 #include "portage/swarm/swarm.h"
 #include "portage/accumulate/accumulate.h"
+#include "portage/support/portage.h"
 
-using std::vector;
 using std::shared_ptr;
 using std::make_shared;
 using std::cout;
@@ -73,10 +73,10 @@ void test_estimate(Portage::Meshfree::EstimateType etype,
   auto tgt_state = SwarmState<dim>(tgt_swarm);
   size_t nkern;
   if (center == Gather) nkern = ntgt; else if (center == Scatter) nkern = nsrc;
-  auto kernels = vector<Weight::Kernel>(nkern, Weight::B4);
-  auto geometries = vector<Weight::Geometry>(nkern, Weight::TENSOR);
-  auto smoothingh = vector<vector<vector<double>>>
-      (nkern, vector<vector<double>>(1, vector<double>(dim)));
+  auto kernels = Portage::vector<Weight::Kernel>(nkern, Weight::B4);
+  auto geometries = Portage::vector<Weight::Geometry>(nkern, Weight::TENSOR);
+  auto smoothingh = Portage::vector<std::vector<std::vector<double>>>
+      (nkern, std::vector<std::vector<double>>(1, std::vector<double>(dim)));
   for (size_t i=0; i<nkern; i++) for (size_t j=0; j<dim; j++) smoothingh[i][0][j] = (*extents)[i][j];
 
   // create the accumulator
@@ -97,7 +97,7 @@ void test_estimate(Portage::Meshfree::EstimateType etype,
   ASSERT_EQ(jsize[1], bsize);
 
   // list of src swarm particles (indices)
-  vector<unsigned int> src_particles(nsrc);
+  std::vector<unsigned int> src_particles(nsrc);
   for (unsigned int i=0; i<nsrc; i++) src_particles[i] = i;
 
   // add fields
@@ -157,7 +157,7 @@ void test_estimate(Portage::Meshfree::EstimateType etype,
 	// save value
 	if (k==0) field[i] = result;
 
-	// check the estimate
+	// check the estimate, verifying reproducing property
 	ASSERT_NEAR(result, jetx[j][k], 1.e-11);
       }
     }

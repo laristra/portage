@@ -23,7 +23,6 @@ namespace Portage {
 namespace Meshfree {
 
 using std::string;
-using std::vector;
 using std::shared_ptr;
 using std::make_shared;
 
@@ -41,7 +40,7 @@ class Swarm {
   
   //  SEE --- https://stackoverflow.com/questions/610245/where-and-why-do-i-have-to-put-the-template-and-typename-keywords
 
-  using PointVecPtr = shared_ptr<std::vector<Point<dim>>>;
+  using PointVecPtr = shared_ptr<vector<Point<dim>>>;
   using PointVec = vector<Point<dim>>;
   
   
