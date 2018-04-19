@@ -33,4 +33,9 @@ if (ENABLE_UNIT_TESTS)
     POLICY SERIAL
     )
 
+  cinch_add_unit(test_state_manager
+    SOURCES test/test_state_manager.cc
+    POLICY SERIAL
+    )
+
 endif (ENABLE_UNIT_TESTS)

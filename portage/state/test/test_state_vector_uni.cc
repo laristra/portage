@@ -11,7 +11,7 @@ Please see the license file at the root of this repository, or at:
 
 using namespace Portage;
 
-TEST(State, BasicInt) {
+TEST(StateUni, BasicInt) {
 
 	std::string name{"field"};
 	Portage::Field_type field_type{Field_type::MESH_FIELD};
@@ -25,7 +25,7 @@ TEST(State, BasicInt) {
   
 }
 
-TEST(State, BasicDouble1) {
+TEST(StateUni, BasicDouble1) {
 
 	std::string name{"field"};
 	Portage::Field_type field_type{Field_type::MESH_FIELD};
@@ -41,7 +41,7 @@ TEST(State, BasicDouble1) {
 
 
 
-TEST(State, DataAccess) {
+TEST(StateUni, DataAccess) {
 
 	std::string name{"field"};
 	Portage::Field_type field_type{Field_type::MESH_FIELD};	

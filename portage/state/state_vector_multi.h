@@ -23,9 +23,9 @@ class StateVectorMulti : public StateVectorBase {
   
   StateVectorMulti(
   	std::string name, 
-  	Portage::Field_type type,
-  	const T const * pdata=nullptr
-  ) : StateVectorBase(name, type), pdata_(pdata) {}
+  	T** hdata=nullptr
+  ) : StateVectorBase(name, Portage::Field_type::MULTIMATERIAL_FIELD), 
+  			hdata_(hdata) {}
 
 
   //! Destructor
@@ -44,11 +44,11 @@ class StateVectorMulti : public StateVectorBase {
 	}
 		
 	/// Get a shared pointer to the data
-  const T const * get_data() { return pdata_; }
+  T** get_data() { return hdata_; }
  	
  private:
  
- 	const T const * pdata_;
+ 	T** hdata_;
  
 };
 

@@ -17,38 +17,6 @@ class StateManager {
 
  public:
   
-  /*!
-    @brief Constructor with a name
-    @param name   Name of the StateVector
-    @param type   Type of the StateVector (Portage::Field_type)
-  */  
-  explicit StateVectorBase(std::string name, Portage::Field_type type) :
-      name_(name), type_(type) {}
-
-
-  //! Destructor
-
-  virtual ~StateVectorBase() {}
-
-  //! Virtual methods
-
-  virtual std::ostream & print(std::ostream & os) const {
-    os << "Print not implemented for data type of StateVectorBase\n";
-    return os;
-  }
-  virtual size_t size() const = 0;
-  virtual const std::type_info& data_type() = 0;
-
-  //! Query Metadata
-
-	std::string name() const { return name_; }
-	Portage::Field_type type() const { return type_; }
-	
- protected:
- 
-  std::string name_;
-  Portage::Field_type type_;
-
 };
 
 }

@@ -13,33 +13,52 @@ Please see the license file at the root of this repository, or at:
 
 using namespace Portage;
 
-TEST(State, BasicInt) {
+
+
+TEST(StateMulti, BasicInt) {
 
 	std::string name{"field"};
-	Portage::Field_type field_type{Field_type::MESH_FIELD};
 	
-	StateVectorMulti<int> v(name, field_type);
+	StateVectorMulti<int> v(name);
   
   ASSERT_EQ(v.name(), name);
-  ASSERT_EQ(v.type(), field_type);
+  ASSERT_EQ(v.type(), Portage::Field_type::MULTIMATERIAL_FIELD);
   ASSERT_EQ(v.data_type(), typeid(int));
   ASSERT_NE(v.data_type(), typeid(double));
   
 }
 
-TEST(State, BasicDouble1) {
+TEST(StateMulti, BasicDouble1) {
 
 	std::string name{"field"};
-	Portage::Field_type field_type{Field_type::MESH_FIELD};
 	
-	StateVectorMulti<> v(name, field_type);
+	StateVectorMulti<> v(name);
   
   ASSERT_EQ(v.name(), name);
-  ASSERT_EQ(v.type(), field_type);
+  ASSERT_EQ(v.type(), Portage::Field_type::MULTIMATERIAL_FIELD);
   ASSERT_EQ(v.data_type(), typeid(double));
   ASSERT_EQ(v.get_data(), nullptr);
   
 }
 
+
+TEST(StateMulti, DataAccess) {
+
+	std::string name{"field"};
+	std::vector<std::vector<double>> data {{1.,2.,3.},{4.,5.},{6.}};	
+	double *temp[3];
+	for (int i=0; i<3; i++)temp[i]=data[i].data();
+	
+	StateVectorMulti<double> sv(name, temp);
+	
+	double const * const * const sv_data{sv.get_data()};
+
+	for (int i=0; i<data.size(); i++) {
+		for (int j=0; j<data[i].size(); j++){
+			ASSERT_EQ(sv_data[i][j],data[i][j]);
+		}
+	}  
+  
+}
 
 
