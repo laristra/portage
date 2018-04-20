@@ -33,7 +33,6 @@ Please see the license file at the root of this repository, or at:
 #include "portage/search/search_kdtree_nanoflann.h"
 #endif
 
-using std::vector;
 using std::shared_ptr;
 using std::make_shared;
 using Portage::Meshfree::Swarm;
@@ -203,7 +202,8 @@ int main(int argc, char** argv) {
   // function) in each dimension
   double h = 2.0/n_target;
   auto smoothing_lengths =
-      vector<vector<vector<double>>>(ntarpts, vector<vector<double>>(1, vector<double>(2, 2.05*h)));
+    Portage::vector<std::vector<std::vector<double>>>
+      (ntarpts, std::vector<std::vector<double>>(1, std::vector<double>(2, 2.05*h)));
                                                                       
 #ifdef HAVE_NANOFLANN  // Search by kdtree
   SwarmDriver<
