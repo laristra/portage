@@ -4,8 +4,8 @@ Please see the license file at the root of this repository, or at:
     https://github.com/laristra/portage/blob/master/LICENSE
 */
 
-#ifndef SRC_INTERPOLATE_INTERPOLATE_2ND_ORDER_H_
-#define SRC_INTERPOLATE_INTERPOLATE_2ND_ORDER_H_
+#ifndef PORTAGE_INTERPOLATE_INTERPOLATE_2ND_ORDER_H_
+#define PORTAGE_INTERPOLATE_INTERPOLATE_2ND_ORDER_H_
 
 #include <cassert>
 #include <stdexcept>
@@ -291,20 +291,20 @@ class Interpolate_2ndOrder<D,
   #ifdef HAVE_TANGRAM  
     Limited_Gradient<D, CELL, SourceMeshType, StateType, InterfaceReconstructor>
         limgrad(source_mesh_, source_state_, interface_reconstructor_);
-     limgrad.set_material(matid_);      
+     limgrad.set_material(matid_, interp_var_name_, limiter_type_);      
   #else      
     Limited_Gradient<D, CELL, SourceMeshType, StateType>
-        limgrad(source_mesh_, source_state_);
+        limgrad(source_mesh_, source_state_, interp_var_name_, limiter_type_);
   #endif 
 
    // Get the correct number of source cells for which the gradient has to be computed
    #ifdef HAVE_TANGRAM
     std::vector<int> cellids;
     source_state_.mat_get_cells(matid_, &cellids);
-    int nentities =  cellids.size();
+    int nentities =  source_mesh_.mat_get_num_cells(matid_);
    #else
     int nentities = source_mesh_.num_entities(CELL);
-   #endif   
+   #endif  
 
     gradients_.resize(nentities);
     
@@ -320,7 +320,7 @@ class Interpolate_2ndOrder<D,
     Portage::transform(cellids.begin(), cellids.end(),
                        gradients_.begin(), limgrad);
   #else 
-    Portage::transform(source_mesh_.begin(on_what), source_mesh_.end(on_what),
+    Portage::transform(source_mesh_.begin(CELL), source_mesh_.end(CELL),
                        gradients_.begin(), limgrad);
   #endif  
   } //set_interpolation_variable
@@ -437,7 +437,6 @@ class Interpolate_2ndOrder<D,
 #else
      source_mesh_.cell_centroid(srccell, &srccell_centroid);
 #endif
-
     
    //Computer intersection centroid
     Point<D> xsect_centroid;
@@ -521,7 +520,7 @@ class Interpolate_2ndOrder<D,
                            NODE, 
                            SourceMeshType, 
                            TargetMeshType, 
-                           StateType
+                           StateType,
                            InterfaceReconstructorType> {
 
 #ifdef HAVE_TANGRAM
@@ -590,12 +589,12 @@ class Interpolate_2ndOrder<D,
     
   #ifdef HAVE_TANGRAM  
     Limited_Gradient<D, NODE, SourceMeshType, StateType, InterfaceReconstructor>
-        limgrad(source_mesh_, source_state_, interp_var_name, limiter_type_, 
+        limgrad(source_mesh_, source_state_, interp_var_name_, limiter_type_, 
           interface_reconstructor_);
   #else 
    Limited_Gradient<D, NODE, SourceMeshType, StateType>
-        limgrad(source_mesh_, source_state_, interp_var_name, limiter_type);
-  #ifdef
+        limgrad(source_mesh_, source_state_, interp_var_name_, limiter_type_);
+  #endif
   
     int nentities = source_mesh_.end(NODE)-source_mesh_.begin(NODE);
     gradients_.resize(nentities);
@@ -642,7 +641,7 @@ class Interpolate_2ndOrder<D,
     @todo must remove assumption that field is scalar
   */
 
-  double operator() (const int targetCellID,
+  double operator() (const int targetNodeID,
                      std::vector<Weights_t> const & sources_and_weights) const
   {
      int nsrcnodes = sources_and_weights.size();
@@ -742,4 +741,4 @@ class Interpolate_2ndOrder<D,
 
 }  // namespace Portage
 
-#endif  // SRC_INTERPOLATE_INTERPOLATE_2ND_ORDER_H_
+#endif  // PORTAGE_INTERPOLATE_INTERPOLATE_2ND_ORDER_H_

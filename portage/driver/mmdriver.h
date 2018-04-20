@@ -83,7 +83,8 @@ using namespace Wonton;
 template <template <int, Entity_kind, class, class> class Search,
           template <Entity_kind, class, class, class,
                     template <class, int> class> class Intersect,
-          template<int, Entity_kind, class, class, class> class Interpolate,
+          template<int, Entity_kind, class, class, class,
+                    template<class, int> class> class Interpolate,
           int D,
           class SourceMesh_Wrapper,
           class SourceState_Wrapper,
@@ -339,7 +340,8 @@ class MMDriver {
 template <template <int, Entity_kind, class, class> class Search,
           template <Entity_kind, class, class, class,
                     template <class, int> class> class Intersect,
-          template<int, Entity_kind, class, class, class> class Interpolate,
+          template<int, Entity_kind, class, class, class,
+                    template<class, int> class> class Interpolate,
           int D,
           class SourceMesh_Wrapper,
           class SourceState_Wrapper,
@@ -525,7 +527,7 @@ void MMDriver<Search, Intersect, Interpolate, D,
 
   // Get an instance of the desired interpolate algorithm type
   Interpolate<D, onwhat, SourceMesh_Wrapper, TargetMesh_Wrapper,
-              SourceState_Wrapper>
+              SourceState_Wrapper, DummyInterfaceReconstructor>
       interpolate(source_mesh_, target_mesh_, source_state_);
 #endif  // HAVE_TANGRAM
 
@@ -786,7 +788,8 @@ void MMDriver<Search, Intersect, Interpolate, D,
 template <template <int, Entity_kind, class, class> class Search,
           template <Entity_kind, class, class, class,
                     template <class, int> class> class Intersect,
-          template<int, Entity_kind, class, class, class> class Interpolate,
+          template<int, Entity_kind, class, class, class,
+                    template<class, int> class> class Interpolate,
           int D,
           class SourceMesh_Wrapper,
           class SourceState_Wrapper,
@@ -930,9 +933,16 @@ void MMDriver<Search, Intersect, Interpolate, D,
         " to remap is " << nvars << std::endl;
 
   // Get an instance of the desired interpolate algorithm type
+#ifdef HAVE_TANGRAM
   Interpolate<D, onwhat, Flat_Mesh_Wrapper<>, TargetMesh_Wrapper,
-              Flat_State_Wrapper<>>
+              Flat_State_Wrapper<>, InterfaceReconstructorType>
+      interpolate(source_mesh_flat, target_mesh_, source_state_flat,
+                  interface_reconstructor);
+#else
+   Interpolate<D, onwhat, Flat_Mesh_Wrapper<>, TargetMesh_Wrapper,
+              Flat_State_Wrapper<>, DummyInterfaceReconstructor>
       interpolate(source_mesh_flat, target_mesh_, source_state_flat);
+#endif
 
   for (int i = 0; i < nvars; ++i) {
     interpolate.set_interpolation_variable(src_varnames[i],
