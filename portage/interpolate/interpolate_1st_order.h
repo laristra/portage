@@ -87,7 +87,7 @@ class Interpolate_1stOrder {
       source_mesh_(source_mesh),
       target_mesh_(target_mesh),
       source_state_(source_state),
-      interface_reconstructor_(ir)
+      interface_reconstructor_(ir),
       interp_var_name_("VariableNameNotSet"),
       source_vals_(nullptr) {}
 #endif 

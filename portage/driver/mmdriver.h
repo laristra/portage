@@ -923,6 +923,7 @@ void MMDriver<Search, Intersect, Interpolate, D,
   timersub(&end_timeval, &begin_timeval, &diff_timeval);
   tot_seconds_xsect = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
 
+  ///////// UNCOMMENT WHEN WE ENABLE PARALLEL INTERFACE RECONSTRUCTION
   // INTERPOLATE (one variable at a time)
 
   gettimeofday(&begin_timeval, 0);
@@ -934,16 +935,16 @@ void MMDriver<Search, Intersect, Interpolate, D,
 
   // Get an instance of the desired interpolate algorithm type
 #ifdef HAVE_TANGRAM
-  Interpolate<D, onwhat, Flat_Mesh_Wrapper<>, TargetMesh_Wrapper,
-              Flat_State_Wrapper<>, InterfaceReconstructorType>
-      interpolate(source_mesh_flat, target_mesh_, source_state_flat,
-                  interface_reconstructor);
+  //Interpolate<D, onwhat, Flat_Mesh_Wrapper<>, TargetMesh_Wrapper,
+ //             Flat_State_Wrapper<>, InterfaceReconstructorType>
+ //     interpolate(source_mesh_flat, target_mesh_, source_state_flat,
+ //                 interface_reconstructor);
 #else
-   Interpolate<D, onwhat, Flat_Mesh_Wrapper<>, TargetMesh_Wrapper,
-              Flat_State_Wrapper<>, DummyInterfaceReconstructor>
-      interpolate(source_mesh_flat, target_mesh_, source_state_flat);
+ //  Interpolate<D, onwhat, Flat_Mesh_Wrapper<>, TargetMesh_Wrapper,
+ //             Flat_State_Wrapper<>, DummyInterfaceReconstructor>
+ //     interpolate(source_mesh_flat, target_mesh_, source_state_flat);
 #endif
-
+/*
   for (int i = 0; i < nvars; ++i) {
     interpolate.set_interpolation_variable(src_varnames[i],
                                            limiters_[i]);
@@ -959,7 +960,7 @@ void MMDriver<Search, Intersect, Interpolate, D,
                        source_ents_and_weights.begin(),
                        target_field, interpolate);
   }
-
+*/
   gettimeofday(&end_timeval, 0);
   timersub(&end_timeval, &begin_timeval, &diff_timeval);
   tot_seconds_interp = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;

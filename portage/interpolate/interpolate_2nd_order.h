@@ -75,7 +75,7 @@ class Interpolate_2ndOrder {
       source_mesh_(source_mesh),
       target_mesh_(target_mesh),
       source_state_(source_state),
-      interface_reconstructor_(ir)
+      interface_reconstructor_(ir),
       interp_var_name_("VariableNameNotSet"),
       limiter_type_(NOLIMITER),
       source_vals_(nullptr) {}
@@ -131,15 +131,14 @@ class Interpolate_2ndOrder {
     
     // Compute the limited gradients for the field 
   #ifdef HAVE_TANGRAM  
-    Limited_Gradient<D, on_what, SourceMeshType, StateType, InterfaceReconstructor>
-        limgrad(source_mesh_, source_state_, interface_reconstructor_);
-   limgrad.set_material(matid_);      
+    Limited_Gradient<D, on_what, SourceMeshType, StateType, InterfaceReconstructorType>
+        limgrad(source_mesh_, source_state_, interp_var_name_, limiter_type_, 
+                interface_reconstructor_);
+   limgrad.set_material(matid_, interp_var_name_, limiter_type_);      
   #else      
     Limited_Gradient<D, on_what, SourceMeshType, StateType>
         limgrad(source_mesh_, source_state_);
   #endif 
-
-   limgrad.set_variable(interp_var_name_, limiter_type_);
 
    // Get the correct number of source cells for which the gradient has to be computed
    #ifdef HAVE_TANGRAM
@@ -254,7 +253,7 @@ class Interpolate_2ndOrder<D,
       source_mesh_(source_mesh),
       target_mesh_(target_mesh),
       source_state_(source_state),
-      interface_reconstructor_(ir)
+      interface_reconstructor_(ir),
       interp_var_name_("VariableNameNotSet"),
       limiter_type_(NOLIMITER),
       source_vals_(nullptr) {}
@@ -289,8 +288,9 @@ class Interpolate_2ndOrder<D,
     
     // Compute the limited gradients for the field 
   #ifdef HAVE_TANGRAM  
-    Limited_Gradient<D, CELL, SourceMeshType, StateType, InterfaceReconstructor>
-        limgrad(source_mesh_, source_state_, interface_reconstructor_);
+    Limited_Gradient<D, CELL, SourceMeshType, StateType, InterfaceReconstructorType>
+        limgrad(source_mesh_, source_state_, interp_var_name_, limiter_type_, 
+                interface_reconstructor_);
      limgrad.set_material(matid_, interp_var_name_, limiter_type_);      
   #else      
     Limited_Gradient<D, CELL, SourceMeshType, StateType>
@@ -301,7 +301,7 @@ class Interpolate_2ndOrder<D,
    #ifdef HAVE_TANGRAM
     std::vector<int> cellids;
     source_state_.mat_get_cells(matid_, &cellids);
-    int nentities =  source_mesh_.mat_get_num_cells(matid_);
+    int nentities =  source_state_.mat_get_num_cells(matid_);
    #else
     int nentities = source_mesh_.num_entities(CELL);
    #endif  
@@ -397,7 +397,7 @@ class Interpolate_2ndOrder<D,
       Point<D> srccell_centroid;
 
 #ifdef HAVE_TANGRAM
-      int nmats = source_state.cell_get_num_mats(srccell);
+      int nmats = source_state_.cell_get_num_mats(srccell);
       std::vector<int> cellmats;
       source_state_.cell_get_mats(srccell, &cellmats);
       
@@ -420,15 +420,15 @@ class Interpolate_2ndOrder<D,
               cellmatpoly.get_matpolys(matid_);
 
           int cnt = 0;
-          for (int k=0; k<D; k++) srccell_centroid[k]=0;
+          for (int k = 0; k < D; k++) srccell_centroid[k]=0;
 
           //Compute centroid of all matpoly's 
-          for (int j=0; i < matpolys.size(); j++)
+          for (int j = 0; j < matpolys.size(); j++)
           {
             std::vector<Tangram::Point<D>> tpnts = matpolys[j].points();
             cnt += tpnts.size();
-            for (int i=0; i<tpnts.size(): i++)
-               for (int k=0; k<D; k++)
+            for (int i = 0; i < tpnts.size(); i++)
+               for (int k = 0; k < D; k++)
                  srccell_centroid[k] += tpnts[i][k];
           }
           srccell_centroid = srccell_centroid/cnt; 
@@ -539,7 +539,7 @@ class Interpolate_2ndOrder<D,
       source_mesh_(source_mesh),
       target_mesh_(target_mesh),
       source_state_(source_state),
-      interface_reconstructor_(ir)
+      interface_reconstructor_(ir),
       interp_var_name_("VariableNameNotSet"),
       limiter_type_(NOLIMITER),
       source_vals_(nullptr) {}
@@ -587,14 +587,14 @@ class Interpolate_2ndOrder<D,
 
     // Compute the limited gradients for the field
     
-  #ifdef HAVE_TANGRAM  
-    Limited_Gradient<D, NODE, SourceMeshType, StateType, InterfaceReconstructor>
-        limgrad(source_mesh_, source_state_, interp_var_name_, limiter_type_, 
-          interface_reconstructor_);
-  #else 
+// #ifdef HAVE_TANGRAM  
+//    Limited_Gradient<D, NODE, SourceMeshType, StateType, InterfaceReconstructorType>
+//        limgrad(source_mesh_, source_state_, interp_var_name_, limiter_type_, 
+//          interface_reconstructor_);
+//  #else 
    Limited_Gradient<D, NODE, SourceMeshType, StateType>
         limgrad(source_mesh_, source_state_, interp_var_name_, limiter_type_);
-  #endif
+//  #endif
   
     int nentities = source_mesh_.end(NODE)-source_mesh_.begin(NODE);
     gradients_.resize(nentities);
