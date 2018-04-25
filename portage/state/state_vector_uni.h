@@ -23,9 +23,8 @@ class StateVectorUni : public StateVectorBase {
   
   StateVectorUni(
   	std::string name, 
-  	Portage::Field_type type,
-  	const T const * pdata=nullptr
-  ) : StateVectorBase(name, type),pdata_(pdata) {}
+  	T* pdata=nullptr
+  ) : StateVectorBase(name, Field_type::MESH_FIELD),pdata_(pdata) {}
   
 
   //! Destructor
@@ -44,11 +43,11 @@ class StateVectorUni : public StateVectorBase {
 	}
 		
 	/// Get a shared pointer to the data
-  const T const* get_data() { return pdata_; }
+  T* get_data() { return pdata_; }
  	
  private:
  
- 	const T const* pdata_;
+ 	T* pdata_;
  
 };
 
