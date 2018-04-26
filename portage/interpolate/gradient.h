@@ -15,14 +15,12 @@
 
 #include "portage/support/portage.h"
 #include "portage/support/Point.h"
-#include "portage/support/Matrix.h"
 #include "portage/support/lsfits.h"
+#include "portage/intersect/dummy_interface_reconstructor.h"
 
 #include "tangram/driver/driver.h"
 #include "tangram/driver/CellMatPoly.h"
 #include "tangram/support/MatPoly.h"
-
-#include "portage/interpolate/ir_dummy.h"
 
 namespace Portage {
 
@@ -34,7 +32,7 @@ namespace Portage {
 
   template<int D, Entity_kind on_what, typename MeshType, typename StateType,
     template<class, int> class InterfaceReconstructorType =
-    detail::DummyInterfaceReconstructor>
+    DummyInterfaceReconstructor>
     class Limited_Gradient_Base {
 
   public:
@@ -87,7 +85,7 @@ namespace Portage {
 
   template<int D, Entity_kind on_what, typename MeshType,typename StateType,
     template<class, int> class InterfaceReconstructorType =
-    detail::DummyInterfaceReconstructor>
+    DummyInterfaceReconstructor>
 
     class Limited_Gradient : public LIMITED_GRADIENT_BASE(on_what) {
   public:
