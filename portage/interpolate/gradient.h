@@ -351,8 +351,6 @@ namespace Portage {
 	  // If there are multiple matpolys in this cell for the material of interest,
 	  // aggregate moments to compute new centroid
 	  for (int ipoly=0; ipoly<matpolys.size(); ipoly++) {
-	    Portage::Point2 cell_centroid;
-	    this->mesh_.cell_centroid(nbrid_g, &cell_centroid);
 	    ls_coords.push_back(cellmatpoly.matpoly_centroid(ipoly));
 	    break; // TODO: Instead of cutting out after the first matpoly,
 	    // Get matpoly moments directly using new interface in Tangram,
