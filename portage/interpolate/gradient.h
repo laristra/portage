@@ -53,12 +53,6 @@ namespace Portage {
     assert(D == this->mesh_.space_dimension());
     assert(D == 2 || D == 3);
   }
-
-  void set_material(int matid, std::string const var_name, LimiterType limiter_type) {
-    matid_ = matid;
-    var_name_ = var_name;
-    limtype_ = limiter_type;
-  }
  
   Limited_Gradient_Base & operator = (const Limited_Gradient_Base &) = delete;
   ~Limited_Gradient_Base() {}
@@ -159,15 +153,20 @@ namespace Portage {
       Portage::for_each(this->mesh_.begin(NODE), this->mesh_.end(NODE),
 			[this](int n) { this->mesh_.dual_cell_get_node_adj_cells(
 					n, ALL, &(node_neighbors_[n])); } );
+      this->set_interpolation_variable(var_name,limiter_type);
     }
 
     /* Collect and keep the list of neighbors for each CELL as it may
        be expensive to go to the mesh layer and collect this data for
        each cell during the actual gradient calculation */
-    void set_material(int matid,
-	      std::string const var_name, 
-	      LimiterType limiter_type) {
-      this->set_material(matid,var_name,limiter_type);
+    void set_material(int matid) {
+      this->matid_=matid;
+    }
+
+    void set_interpolation_variable(std::string const var_name,
+				    LimiterType limtype) {
+      this->var_name_=var_name;
+      this->limtype_=limtype;
       this->state_.mesh_get_data(NODE, this->var_name_, &this->vals_);
     }
 
@@ -272,30 +271,29 @@ namespace Portage {
       Portage::for_each(this->mesh_.begin(CELL), this->mesh_.end(CELL), 
 			[this](int c) { this->mesh_.cell_get_node_adj_cells(
 					 c, ALL, &(cell_neighbors_[c])); } );
+
+      set_interpolation_variable(var_name,limiter_type);
+      assert(this->vals_);
     }
 #endif
   
-  Limited_Gradient(MeshType const & mesh, 
-		   StateType const & state, 
-		   std::string const var_name, // TODO: remove
-		   LimiterType limiter_type)   // TODO: remove
-    : LIMITED_GRADIENT_BASE_NIR(CELL) (mesh, state) { 
-      this->var_name_=var_name;      // TODO: remove
-      this->limtype_=limiter_type;   // TODO: remove
+    void set_material(int matid) {
+      this->matid_=matid;
+      // Extract the field data from the statemanager
+      if (this->field_type_ != Field_type::MESH_FIELD) {
+	this->state_.mat_get_celldata(this->var_name_, this->matid_, &this->vals_);
+      }
     }
-  
-    void set_material(int matid,
-	      std::string const var_name, 
-	      LimiterType limiter_type) {
 
+    void set_interpolation_variable(std::string const var_name,
+				    LimiterType limtype) {
+      this->var_name_=var_name;
+      this->limtype_=limtype;
       // Extract the field data from the statemanager
       this->field_type_ = this->state_.field_type(CELL, this->var_name_);
       if (this->field_type_ == Field_type::MESH_FIELD) {
 	this->state_.mesh_get_data(CELL, this->var_name_, &this->vals_);
-      } else {
-	this->state_.mat_get_celldata(this->var_name_, this->matid_, &this->vals_);
       }
-      assert(this->vals_);
     }
 
     Vector<D> operator() (int cellid);
