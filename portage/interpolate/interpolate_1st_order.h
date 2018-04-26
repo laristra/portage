@@ -4,8 +4,8 @@ Please see the license file at the root of this repository, or at:
     https://github.com/laristra/portage/blob/master/LICENSE
 */
 
-#ifndef INTERPOLATE_1ST_ORDER_H_
-#define INTERPOLATE_1ST_ORDER_H_
+#ifndef PORTAGE_INTERPOLATE_INTERPOLATE_1ST_ORDER_H_
+#define PORTAGE_INTERPOLATE_INTERPOLATE_1ST_ORDER_H_
 
 
 #include <cassert>
@@ -87,7 +87,7 @@ class Interpolate_1stOrder {
       source_mesh_(source_mesh),
       target_mesh_(target_mesh),
       source_state_(source_state),
-      interface_reconstructor_(ir)
+      interface_reconstructor_(ir),
       interp_var_name_("VariableNameNotSet"),
       source_vals_(nullptr) {}
 #endif 
@@ -196,7 +196,7 @@ template<int D,
          typename SourceMeshType, 
          typename TargetMeshType, 
          typename StateType,
-         template<class, int> class InterfaceReconstructorType>>
+         template<class, int> class InterfaceReconstructorType>
 class Interpolate_1stOrder<D, 
                            CELL, 
                            SourceMeshType, 
@@ -294,7 +294,7 @@ class Interpolate_1stOrder<D,
 
   */
 
-  double operator() (int const targetCellId,
+  double operator() (int const targetCellID,
                      std::vector<Weights_t> const & sources_and_weights) const
   {
     int nsrccells = sources_and_weights.size();
@@ -386,7 +386,7 @@ template<int D,
          typename SourceMeshType, 
          typename TargetMeshType, 
          typename StateType,
-         template<class, int> class InterfaceReconstructorType>>
+         template<class, int> class InterfaceReconstructorType>
 class Interpolate_1stOrder<D, 
                            NODE, 
                            SourceMeshType, 
@@ -486,7 +486,7 @@ class Interpolate_1stOrder<D,
 
   */
 
-  double operator() (int const targetNodeId,
+  double operator() (int const targetNodeID,
                      std::vector<Weights_t> const & sources_and_weights) const
   {
     if (field_type_ != Field_type::MESH_FIELD) return 0.0;
@@ -561,4 +561,4 @@ class Interpolate_1stOrder<D,
 
 }  // namespace Portage
 
-#endif  // INTERPOLATE_1ST_ORDER_H_
+#endif  // PORTAGE_INTERPOLATE_INTERPOLATE_1ST_ORDER_H_

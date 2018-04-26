@@ -49,7 +49,8 @@ struct Controls {
   std::string source_file="none", target_file="none";
 };
 
-template<template<int, Portage::Entity_kind, class, class, class> class T>
+template<template<int, Portage::Entity_kind, class, class, class,
+                  template<class, int> class> class T>
 class consistent_order{
 public:
   static bool check(Portage::Meshfree::Basis::Type type) {return false;}
@@ -141,7 +142,8 @@ public:
   template <
   template<Portage::Entity_kind, class, class, class,
            template <class, int> class> class Intersect,
-  template<int, Portage::Entity_kind, class, class, class> class Interpolate,
+  template<int, Portage::Entity_kind, class, class, class,
+           template<class, int> class> class Interpolate,
   template <int, class, class> class SwarmSearch,
   int Dimension=3
   >
@@ -328,7 +330,8 @@ protected:
   template <
    template<Portage::Entity_kind, class, class, class,
             template<class, int> class> class Intersect,
-    template<int, Portage::Entity_kind, class, class, class> class Interpolate,
+    template<int, Portage::Entity_kind, class, class, class,
+            template<class, int> class> class Interpolate,
     template <int, class, class> class SwarmSearch,
     int Dimension=3
     >
