@@ -22,8 +22,9 @@ class StateVectorBase {
     @param name   Name of the StateVector
     @param type   Type of the StateVector (Portage::Field_type)
   */  
-  explicit StateVectorBase(std::string name, Portage::Field_type type) :
-      name_(name), type_(type) {}
+  explicit StateVectorBase(std::string name, Portage::Field_type type,
+  	Portage::Entity_kind kind=Portage::Entity_kind::CELL) :
+      name_(name), type_(type), kind_(kind) {}
 
 
   //! Destructor
@@ -42,11 +43,13 @@ class StateVectorBase {
 
 	std::string name() const { return name_; }
 	Portage::Field_type type() const { return type_; }
+	Portage::Entity_kind kind() const { return kind_; }
 	
  protected:
  
   std::string name_;
   Portage::Field_type type_;
+  Portage::Entity_kind kind_;
 
 };
 

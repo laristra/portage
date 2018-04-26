@@ -24,7 +24,7 @@ class StateVectorMulti : public StateVectorBase {
   StateVectorMulti(
   	std::string name, 
   	T** hdata=nullptr
-  ) : StateVectorBase(name, Portage::Field_type::MULTIMATERIAL_FIELD), 
+  ) : StateVectorBase(name, Field_type::MULTIMATERIAL_FIELD, Entity_kind::CELL), 
   			hdata_(hdata) {}
 
 

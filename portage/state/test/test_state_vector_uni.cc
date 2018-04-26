@@ -44,7 +44,7 @@ TEST(StateUni, DataAccess) {
 	std::string name{"field"};
 	std::vector<double> data {1.,2.,3.};	
 	
-	StateVectorUni<double> sv(name, data.data());
+	StateVectorUni<double> sv(name, Entity_kind::CELL, data.data());
 	
 	const double const * sv_data{sv.get_data()};
 

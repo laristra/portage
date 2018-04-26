@@ -23,8 +23,9 @@ class StateVectorUni : public StateVectorBase {
   
   StateVectorUni(
   	std::string name, 
+  	Entity_kind kind=Entity_kind::CELL,
   	T* pdata=nullptr
-  ) : StateVectorBase(name, Field_type::MESH_FIELD),pdata_(pdata) {}
+  ) : StateVectorBase(name, Field_type::MESH_FIELD, kind),pdata_(pdata) {}
   
 
   //! Destructor

@@ -23,7 +23,7 @@ TEST(StateManager, testPointerStateManager){
 	// create the uni state vector
 	std::string name1{"field1"};
 	std::vector<double> data1 {1.,2.,3.};	
-	StateVectorUni<> sv1(name1, data1.data());
+	StateVectorUni<> sv1(name1, Entity_kind::CELL, data1.data());
 
 	// check we can get the data out
 	double *sv1_data = sv1.get_data();
@@ -53,7 +53,7 @@ TEST(StateManager, testSharedPointerStateManager){
 	std::string name1{"field1"};
 	std::vector<double> data1 {1.,2.,3.};	
 	std::shared_ptr<StateVectorUni<>> pv = std::make_shared<StateVectorUni<>> (
-		name1, data1.data());
+		name1, Entity_kind::CELL, data1.data());
 
 	// check we can get the data out
 	double *pv_data = pv->get_data();
@@ -82,7 +82,7 @@ TEST(StateManager, testSharedPointerStateManagerMap){
 	std::string name1{"field1"};
 	std::vector<double> data1 {1.,2.,3.};	
 	std::shared_ptr<StateVectorUni<>> pv = std::make_shared<StateVectorUni<>> (
-		name1, data1.data());
+		name1, Entity_kind::CELL, data1.data());
 
 	// check we can get the data out
 	double *pv_data = pv->get_data();
@@ -114,7 +114,7 @@ TEST(StateManager, test1){
 	// create the uni state vector
 	std::string name1{"field1"};
 	std::vector<double> data1 {1.,2.,3.};	
-	StateVectorUni<> sv1(name1, data1.data());
+	StateVectorUni<> sv1(name1, Entity_kind::CELL, data1.data());
 
 	// check we can get the data out
 	double *sv1_data = sv1.get_data();
@@ -231,16 +231,16 @@ TEST(StateManager, manageMeshField2){
 
 	// create a uni state vector
 	std::shared_ptr<StateVectorUni<>> pv = std::make_shared<StateVectorUni<>> (
-		"field", data.data());
+		"field", Entity_kind::CELL, data.data());
 	
 	// make sure the data access is correct
 	ASSERT_EQ(data[0], pv->get_data()[0]);
 	
 	// create the state manager
-	StateManager<Simple_Mesh_Wrapper> manager{wrapper, Entity_kind::CELL, pv};
+	StateManager<Simple_Mesh_Wrapper> manager{wrapper, pv};
 	
 	// make sure you can't clobber an existing field
-	ASSERT_THROW(manager.add(Entity_kind::CELL, pv), std::runtime_error);
+	ASSERT_THROW(manager.add(pv), std::runtime_error);
 
 	// make sure the data access is correct
 	std::shared_ptr<StateVectorBase> pv2;
@@ -278,16 +278,16 @@ TEST(StateManager, manageMeshFieldTemplate){
 
 	// create a uni state vector
 	std::shared_ptr<StateVectorUni<>> pv = std::make_shared<StateVectorUni<>> (
-		"field", data.data());
+		"field", Entity_kind::CELL, data.data());
 	
 	// make sure the data access is correct
 	ASSERT_EQ(data[0], pv->get_data()[0]);
 	
 	// create the state manager
-	StateManager<Simple_Mesh_Wrapper> manager{wrapper, Entity_kind::CELL, pv};
+	StateManager<Simple_Mesh_Wrapper> manager{wrapper, pv};
 	
 	// make sure you can't clobber an existing field
-	ASSERT_THROW(manager.add(Entity_kind::CELL, pv), std::runtime_error);
+	ASSERT_THROW(manager.add(pv), std::runtime_error);
 
 	// make sure the data access is correct
 	std::shared_ptr<StateVectorUni<>> out;
@@ -316,10 +316,10 @@ TEST(StateManager, manageMeshFieldTemplate){
 
 	// create a uni state vector
 	std::shared_ptr<StateVectorUni<>> pv2 = std::make_shared<StateVectorUni<>> (
-		"field2", data2.data());
+		"field2", Entity_kind::CELL, data2.data());
 		
 	// add the field to the manager
-	manager.add(Entity_kind::CELL, pv2);
+	manager.add(pv2);
 	
 	// check that the value is correct
 	auto out4 = manager.get<double, StateVectorUni>(Entity_kind::CELL, "field2");
@@ -327,6 +327,200 @@ TEST(StateManager, manageMeshFieldTemplate){
 	// test that the value is correct
 	ASSERT_EQ(data2[0], out4->get_data()[0]);
 	
+}
+
+
+TEST(StateManager, multiMatField){
+
+	using namespace Wonton;
+
+	// create the mesh
+	Simple_Mesh mesh{0., 0., 1., 1., 1, 1};
+	
+	// create the wrapper
+	Simple_Mesh_Wrapper wrapper{mesh};
+	
+	std::string name{"field"};
+	std::vector<std::vector<double>> data {{10.},{10.1},{10.2}};	
+	double *temp[3];
+	for (int i=0; i<3; i++)temp[i]=data[i].data();
+	
+	// create a uni state vector
+	auto pv= std::make_shared<StateVectorMulti<>> ("field", temp);
+
+	// make sure the data access is correct
+	for (int i=0; i<data.size(); i++) {
+		for (int j=0; j<data[i].size(); j++){
+			ASSERT_EQ(data[i][j], pv->get_data()[i][j]);
+		}
+	}  
+
+	// create the state manager
+	StateManager<Simple_Mesh_Wrapper> manager{wrapper, pv};
+
+	// try using the return reference
+	auto out = manager.get<double, StateVectorMulti>(Entity_kind::CELL, "field");
+	
+	// test that the value is correct
+	for (int i=0; i<data.size(); i++) {
+		for (int j=0; j<data[i].size(); j++){
+			ASSERT_EQ(data[i][j], out->get_data()[i][j]);
+		}
+	}  
+	
+
+}
+
+
+TEST(StateManager, mixedFields){
+
+	using namespace Wonton;
+
+	// create the mesh
+	Simple_Mesh mesh{0., 0., 1., 1., 1, 1};
+	
+	// create the wrapper
+	Simple_Mesh_Wrapper wrapper{mesh};
+	
+	std::vector<std::vector<double>> data {{10.},{10.1},{10.2}};	
+	double *temp[3];
+	for (int i=0; i<3; i++)temp[i]=data[i].data();
+	
+	// create a uni state vector
+	auto pv= std::make_shared<StateVectorMulti<>> ("pressure", temp);
+
+	// create the state manager
+	StateManager<Simple_Mesh_Wrapper> manager{wrapper, pv};
+
+	// try using the return reference
+	auto out = manager.get<double, StateVectorMulti>(Entity_kind::CELL, "pressure");
+	
+	// test that the values are correct
+	for (int i=0; i<data.size(); i++) {
+		for (int j=0; j<data[i].size(); j++){
+			ASSERT_EQ(data[i][j], out->get_data()[i][j]);
+		}
+	}  
+	
+	// create the data vector
+	std::vector<double> sdata {1.};	
+
+	// create a uni state vector
+	auto puv = std::make_shared<StateVectorUni<>> ("temperature", Entity_kind::CELL, sdata.data());
+		
+	// add the scalar field
+	manager.add(puv);
+	
+	// get the data
+	auto sout = manager.get<double, StateVectorUni>(Entity_kind::CELL, "temperature");
+	
+	// test that the values are correct
+	for (int i=0; i<sdata.size();i++) {
+		ASSERT_EQ(sdata[i], sout->get_data()[i]);
+	}
+
+}
+
+
+TEST(StateManager, mixedFields2){
+
+	using namespace Wonton;
+
+	// create the mesh
+	Simple_Mesh mesh{0., 0., 1., 1., 1, 1};
+	
+	// create the wrapper
+	Simple_Mesh_Wrapper wrapper{mesh};
+	
+	// create the state manager
+	StateManager<Simple_Mesh_Wrapper> manager{wrapper};
+	
+	
+	// scalar mm data
+	std::vector<std::vector<double>> data1 {{10.},{10.1},{10.2}};	
+	double *pdata1[3];
+	for (int i=0; i<3; i++)pdata1[i]=data1[i].data();
+
+	// create a uni state vector
+	auto pv1= std::make_shared<StateVectorMulti<>> ("pressure", pdata1);
+
+	// add the mm field
+	manager.add(pv1);
+	
+	// try using the return reference
+	auto out1 = manager.get<double, StateVectorMulti>(Entity_kind::CELL, "pressure");
+	
+	// test that the values are correct
+	for (int i=0; i<data1.size(); i++) {
+		for (int j=0; j<data1[i].size(); j++){
+			ASSERT_EQ(data1[i][j], out1->get_data()[i][j]);
+		}
+	} 
+	
+	 
+	// vector mm data
+	std::vector<std::vector<Point<2>>> data2 {
+		{Point<2>{10.,-10.}},{Point<2>{10.,-10.}},{Point<2>{10.,-10.}}};	
+	Point<2> *pdata2[3];
+	for (int i=0; i<3; i++)pdata2[i]=data2[i].data();
+
+	// create a uni state vector
+	auto pv2= std::make_shared<StateVectorMulti<Point<2>>> ("mm centroid", pdata2);
+
+	// add the mm field
+	manager.add(pv2);
+	
+	// try using the return reference
+	auto out2 = manager.get<Point<2>, StateVectorMulti>(Entity_kind::CELL, "mm centroid");
+	
+	// test that the values are correct
+	for (int i=0; i<data2.size(); i++) {
+		for (int j=0; j<data2[i].size(); j++){
+			ASSERT_EQ(data2[i][j][0], out2->get_data()[i][j][0]); //x coord
+			ASSERT_EQ(data2[i][j][1], out2->get_data()[i][j][1]); //y coord
+		}
+	} 
+	
+	 
+	
+	// scalar uni data
+	std::vector<double> data3 {1.};	
+
+	// create a uni state vector
+	auto pv3 = std::make_shared<StateVectorUni<>> ("temperature", 
+		Entity_kind::CELL, data3.data());
+		
+	// add the scalar field
+	manager.add(pv3);
+	
+	// get the data
+	auto out3 = manager.get<double, StateVectorUni>(Entity_kind::CELL, "temperature");
+	
+	// test that the values are correct
+	for (int i=0; i<data3.size();i++) {
+		ASSERT_EQ(data3[i], out3->get_data()[i]);
+	}
+
+
+	// vector uni data
+	std::vector<Point<2>> data4 {Point<2>{1.,1.}};	
+
+	// create a uni state vector
+	auto pv4 = std::make_shared<StateVectorUni<Point<2>>> ("cell centroid", 
+		Entity_kind::CELL, data4.data());
+		
+	// add the scalar field
+	manager.add(pv4);
+	
+	// get the data
+	auto out4 = manager.get<Point<2>, StateVectorUni>(Entity_kind::CELL, "cell centroid");
+	
+	// test that the values are correct
+	for (int i=0; i<data4.size();i++) {
+		ASSERT_EQ(data4[i][0], out4->get_data()[i][0]); //x coord
+		ASSERT_EQ(data4[i][1], out4->get_data()[i][1]); //y coord
+	}
+
 }
 
 

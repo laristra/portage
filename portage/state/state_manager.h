@@ -27,9 +27,9 @@ class StateManager {
  		
  		StateManager (const MeshWrapper& mesh):mesh_(mesh){}
  		
- 		StateManager (const MeshWrapper& mesh, Entity_kind kind, 
- 			std::shared_ptr<StateVectorBase> sv):mesh_(mesh) {
- 				add(kind,sv);
+ 		StateManager (const MeshWrapper& mesh, std::shared_ptr<StateVectorBase> sv)
+ 			:mesh_(mesh) {
+ 				add(sv);
  		}
 		
 		void print_counts(){
@@ -38,10 +38,10 @@ class StateManager {
 			std::cout<< "mesh #nodes: "<< mesh_.num_owned_nodes()<<std::endl;
 		}
 		
-		void add(Entity_kind kind, std::shared_ptr<StateVectorBase> sv){
+		void add(std::shared_ptr<StateVectorBase> sv){
 		
 			// create the key
-			pair_t key{kind, sv->name()};
+			pair_t key{sv->kind(), sv->name()};
 			
 			// if the map entry for this key already exists, throw and erro
 			if (state_vectors_[key]!=nullptr) 
