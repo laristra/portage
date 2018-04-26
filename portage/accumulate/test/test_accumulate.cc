@@ -40,21 +40,26 @@ void test_accumulate(Portage::Meshfree::EstimateType etype,
       offset += index*powl(nside, dim-k-1);
 
       double delta;
+      Point<dim> pt;
 
       delta = 2.*(((double)rand())/RAND_MAX -.5)*jitter*deltax;
-      (*src_pts)[i][k] = index*deltax + delta;
+      pt = (*src_pts)[i];
+      pt[k] = index*deltax + delta;
+      (*src_pts)[i] = pt;
 
       delta = 2.*(((double)rand())/RAND_MAX -.5)*jitter*deltax;
-      (*tgt_pts)[i][k] = index*deltax + delta;
+      pt = (*tgt_pts)[i];
+      pt[k] = index*deltax + delta;
+      (*tgt_pts)[i] = pt;
     }
   }
 
   // create source+target swarms, kernels, geometries, and smoothing lengths
   Swarm<dim> src_swarm(src_pts);
   Swarm<dim> tgt_swarm(tgt_pts);
-  vector<Weight::Kernel> kernels(npoints, Weight::B4);
-  vector<Weight::Geometry> geometries(npoints, Weight::TENSOR);
-  vector<std::vector<std::vector<double>>> 
+  Portage::vector<Weight::Kernel> kernels(npoints, Weight::B4);
+  Portage::vector<Weight::Geometry> geometries(npoints, Weight::TENSOR);
+  Portage::vector<std::vector<std::vector<double>>> 
     smoothingh(npoints, std::vector<std::vector<double>>(1, std::vector<double>(dim, smoothing)));
 
   {
@@ -142,32 +147,36 @@ void test_operator(Portage::Meshfree::WeightCenter center) {
       double delta;
 
       delta = (((double)rand())/RAND_MAX)*jitter*deltax;
-      (*src_pts)[i][k] = index*deltax + delta;
+      Point<dim> pt = (*src_pts)[i];
+      pt[k] = index*deltax + delta;
+      (*src_pts)[i] = pt;
     }
   } 
 
   // create the target swarm input geometry data based on integration domains.
   auto tgt_pts = make_shared<typename Swarm<dim>::PointVec>(1);
-  vector<std::vector<Point<dim>>> domain_points(1);
+  Portage::vector<std::vector<Point<dim>>> domain_points(1);
   domain_points[0] = reference_points<domain>();
-  vector<Point<dim>> refpnts = reference_points<domain>();
+  Portage::vector<Point<dim>> refpnts = reference_points<domain>();
   Point<dim> centroid(std::vector<double>(dim,0.));
   for (int i=0; i<refpnts.size(); i++) {
-    for (int j=0; j<dim; j++) centroid[j] += refpnts[i][j];
+    for (int j=0; j<dim; j++) {Point<dim> pt=refpnts[i]; centroid[j] += pt[j];}
   }
   for (int k=0; k<dim; k++) {
     centroid[k] /= refpnts.size();
-    (*tgt_pts)[0][k] = centroid[k];
+    Point<dim> pt = (*tgt_pts)[0];
+    pt[k] = centroid[k];
+    (*tgt_pts)[0] = pt;
   }
-  vector<Portage::Meshfree::Operator::Domain> domains(1);
+  Portage::vector<Portage::Meshfree::Operator::Domain> domains(1);
   domains[0] = domain;
 
   // create source+target swarms, kernels, geometries, and smoothing lengths
   Swarm<dim> src_swarm(src_pts);
   Swarm<dim> tgt_swarm(tgt_pts);
-  vector<Weight::Kernel> kernels(npoints, Weight::B4);
-  vector<Weight::Geometry> geometries(npoints, Weight::TENSOR);
-  vector<std::vector<std::vector<double>>> 
+  Portage::vector<Weight::Kernel> kernels(npoints, Weight::B4);
+  Portage::vector<Weight::Geometry> geometries(npoints, Weight::TENSOR);
+  Portage::vector<std::vector<std::vector<double>>> 
     smoothingh(npoints, std::vector<std::vector<double>>(1, std::vector<double>(dim, smoothing)));
 
   // create the accumulator
