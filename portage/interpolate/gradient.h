@@ -380,6 +380,7 @@ namespace Portage {
 	    ls_vals.push_back(this->vals_[nbrid_l]);
 	  }
 	}
+      }
 #endif
 	// If we get here, we must have mesh data which is cell-centered 
 	// and not dependent on material, so just get the centroid and value
@@ -387,8 +388,6 @@ namespace Portage {
 	this->mesh_.cell_centroid(nbrid_g, &centroid);
 	ls_coords.push_back(centroid);
 	ls_vals.push_back(this->vals_[nbrid_g]);
-
-      }
     }
     grad = ls_gradient(ls_coords, ls_vals);
 
