@@ -346,7 +346,7 @@ namespace Portage {
 	  std::vector<int> cellmats;
 	  this->state_.cell_get_mats(nbrid_g, &cellmats);
 
-	if (this->interface_reconstructor_){ // Multi-material cell
+	if (this->interface_reconstructor_ && cellmats.size() > 1){ // Multi-material cell
 	  // Get cell's cellmatpoly
 	  auto cellmatpoly =
 	    this->interface_reconstructor_->cell_matpoly_data(nbrid_g);
