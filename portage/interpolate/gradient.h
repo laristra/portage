@@ -343,8 +343,8 @@ namespace Portage {
       // (i.e. have valid local id); in the case of mesh data, this is always true,
       // since local cellid (nbrid_l) is equal to global cellid (nbrid_g)
       if (nbrid_l >= 0) { // cell_index_in_material can return -1
-	  std::vector<int> cellmats;
-	  this->state_.cell_get_mats(nbrid_g, &cellmats);
+	std::vector<int> cellmats;
+	this->state_.cell_get_mats(nbrid_g, &cellmats);
 
 	if (this->interface_reconstructor_ && cellmats.size() > 1){ // Multi-material cell
 	  // Get cell's cellmatpoly
@@ -380,12 +380,12 @@ namespace Portage {
 	}
       }
 #endif
-	// If we get here, we must have mesh data which is cell-centered 
-	// and not dependent on material, so just get the centroid and value
-	Point<D> centroid;
-	this->mesh_.cell_centroid(nbrid_g, &centroid);
-	ls_coords.push_back(centroid);
-	ls_vals.push_back(this->vals_[nbrid_g]);
+      // If we get here, we must have mesh data which is cell-centered
+      // and not dependent on material, so just get the centroid and value
+      Point<D> centroid;
+      this->mesh_.cell_centroid(nbrid_g, &centroid);
+      ls_coords.push_back(centroid);
+      ls_vals.push_back(this->vals_[nbrid_g]);
     }
     grad = ls_gradient(ls_coords, ls_vals);
 
