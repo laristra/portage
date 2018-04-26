@@ -343,7 +343,7 @@ namespace Portage {
 	
 	std::vector<int> cellmats;
 	  this->state_.cell_get_mats(nbrid_g, &cellmats);
-	if (cellmats.size() == 1){ // Multi-material cell
+	if (cellmats.size() != 1){ // Multi-material cell
 	  // Collect all the matpolys in this cell for the material of interest
 	  std::vector<Tangram::MatPoly<D>> matpolys =
 	    cellmatpoly.get_matpolys(this->matid_);
