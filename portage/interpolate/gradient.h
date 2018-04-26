@@ -259,14 +259,21 @@ namespace Portage {
 		   std::string const var_name, // TODO: remove
 		   LimiterType limiter_type,   // TODO: remove
 		   std::shared_ptr<typename LIMITED_GRADIENT_BASE(CELL)::InterfaceReconstructor> ir) 
-    : LIMITED_GRADIENT_BASE(CELL) (mesh, state, ir) { 
-      this->var_name_=var_name;      // TODO: remove
-      this->limtype_=limiter_type;   // TODO: remove
+    : LIMITED_GRADIENT_BASE(CELL) (mesh, state, ir) { }
+#endif
+
+  Limited_Gradient(MeshType const & mesh,
+		   StateType const & state,
+		   std::string const var_name, // TODO: remove
+		   LimiterType limiter_type)   // TODO: remove
+    : LIMITED_GRADIENT_BASE_NIR(CELL) (mesh, state) {
 
       // Collect and keep the list of neighbors for each CELL as it may
       // be expensive to go to the mesh layer and collect this data for
       // each cell during the actual gradient calculation
 
+      int ncells = this->mesh_.num_entities(CELL);
+      cell_neighbors_.resize(ncells);
       cell_neighbors_.resize(this->mesh_.num_entities(CELL));
       Portage::for_each(this->mesh_.begin(CELL), this->mesh_.end(CELL), 
 			[this](int c) { this->mesh_.cell_get_node_adj_cells(
@@ -275,7 +282,6 @@ namespace Portage {
       set_interpolation_variable(var_name,limiter_type);
       assert(this->vals_);
     }
-#endif
   
     void set_material(int matid) {
       this->matid_=matid;
@@ -308,13 +314,18 @@ namespace Portage {
     template<class, int> class InterfaceReconstructorType>
     Vector<D> LIMITED_GRADIENT(CELL)::operator()(int cellid) {
 
+    assert(this->vals_);
+
     double phi = 1.0;
     Vector<D> grad;
 
     std::vector<int> nbrids{cellid}; // Include cell where grad is needed as first element
-    nbrids.insert(std::end(nbrids), 
-		  std::begin(cell_neighbors_[cellid]), 
-		  std::end(cell_neighbors_[cellid]));
+
+    if(cell_neighbors_.size()) {
+      nbrids.insert(std::end(nbrids),
+		    std::begin(cell_neighbors_[cellid]),
+		    std::end(cell_neighbors_[cellid]));
+    }
     std::vector<Point<D>> ls_coords;
     std::vector<double> ls_vals;
     
@@ -334,18 +345,18 @@ namespace Portage {
       // (i.e. have valid local id); in the case of mesh data, this is always true,
       // since local cellid (nbrid_l) is equal to global cellid (nbrid_g)
       if (nbrid_l >= 0) { // cell_index_in_material can return -1
-
-	// Get cell's cellmatpoly
-	Tangram::CellMatPoly<D> const& cellmatpoly =
-	  this->interface_reconstructor_->cell_matpoly_data(nbrid_g);
-	
-	std::vector<int> cellmats;
+	  std::vector<int> cellmats;
 	  this->state_.cell_get_mats(nbrid_g, &cellmats);
-	if (cellmats.size() != 1){ // Multi-material cell
+
+	if (this->interface_reconstructor_){ // Multi-material cell
+	  // Get cell's cellmatpoly
+	  auto cellmatpoly =
+	    this->interface_reconstructor_->cell_matpoly_data(nbrid_g);
+
 	  // Collect all the matpolys in this cell for the material of interest
 	  std::vector<Tangram::MatPoly<D>> matpolys =
 	    cellmatpoly.get_matpolys(this->matid_);
-	    
+
 	  // If there are multiple matpolys in this cell for the material of interest,
 	  // aggregate moments to compute new centroid
 	  for (int ipoly=0; ipoly<matpolys.size(); ipoly++) {
@@ -354,12 +365,11 @@ namespace Portage {
 	    // Get matpoly moments directly using new interface in Tangram,
 	    // aggregate, and use to compute overall material centroid
 	  }
-	    
+
 	  // Populate least squares vectors with centroid for material
 	  // of interest and field value in the current cell for that material
 	  ls_vals.push_back(this->vals_[nbrid_l]);
-	    
-	} else { // Single material cell
+	} else if (cellmats.size() == 1) { // Single material cell
 
 	  // Ensure that the single material is the material of interest
 	  if (cellmats[0] == this->matid_) {
@@ -370,14 +380,14 @@ namespace Portage {
 	    ls_vals.push_back(this->vals_[nbrid_l]);
 	  }
 	}
-#else
+#endif
 	// If we get here, we must have mesh data which is cell-centered 
 	// and not dependent on material, so just get the centroid and value
 	Point<D> centroid;
 	this->mesh_.cell_centroid(nbrid_g, &centroid);
 	ls_coords.push_back(centroid);
 	ls_vals.push_back(this->vals_[nbrid_g]);
-#endif
+
       }
     }
     grad = ls_gradient(ls_coords, ls_vals);
