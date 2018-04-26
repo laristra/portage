@@ -330,7 +330,7 @@ namespace Portage {
       // need local compressed neighbor cellid (nbrid_l); for mesh data,
       // local cellid (nbrid_l) and global cellid (nbrid_g) are equal
       int nbrid_l = (this->field_type_ == Field_type::MESH_FIELD) ?
-	nbrid_g : this->state_.cell_index_in_material(cellid, this->matid_);
+	nbrid_g : this->state_.cell_index_in_material(nbrid_g, this->matid_);
       
       // In the case of material-data, need to check that neighbors contain material of interest
       // (i.e. have valid local id); in the case of mesh data, this is always true,
