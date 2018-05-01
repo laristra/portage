@@ -43,7 +43,9 @@ namespace Portage {
 
   Limited_Gradient_Base(MeshType const & mesh, StateType const & state,
 			std::shared_ptr<InterfaceReconstructor> ir) :
-  Limited_Gradient_Base(mesh,state), interface_reconstructor_(ir) {}
+  Limited_Gradient_Base(mesh,state) {
+    interface_reconstructor_=ir;
+}
 #endif  
 
   Limited_Gradient_Base(MeshType const & mesh, StateType const & state)
