@@ -373,7 +373,7 @@ remap(std::vector<std::string> const &src_varnames,
   // those around target points are determined by particle
   // smoothing lengths
 
-  // code below does not work with facted weightssourceExtents =
+  // code below does not work with facted weights
   std::shared_ptr<vector<Point<Dim>>> sourceExtents;
   std::shared_ptr<vector<Point<Dim>>> targetExtents;
   if (weight_center_ == Portage::Meshfree::Gather) {
@@ -382,7 +382,9 @@ remap(std::vector<std::string> const &src_varnames,
       if (geom_types_[i] == Weight::FACETED) {
         throw std::runtime_error("FACETED geometry is not available here");
       }
-      (*targetExtents)[i] = Point<Dim>(smoothing_lengths_[i][0]);
+      {Point<Dim> pt=(*targetExtents)[i];
+       std::vector<std::vector<double>> vv=smoothing_lengths_[i];
+       pt=Point<Dim>(vv[0]); (*targetExtents)[i]=pt;}
     }
   }
   if (weight_center_ == Portage::Meshfree::Scatter) {
@@ -391,7 +393,9 @@ remap(std::vector<std::string> const &src_varnames,
       if (geom_types_[i] == Weight::FACETED) {
         throw std::runtime_error("FACETED geometry is not available here");
       }
-      (*sourceExtents)[i] = Point<Dim>(smoothing_lengths_[i][0]);
+      {Point<Dim> pt=(*sourceExtents)[i];
+       std::vector<std::vector<double>> vv=smoothing_lengths_[i];
+       pt=Point<Dim>(vv[0]); (*sourceExtents)[i]=pt;}
     }
   }
 

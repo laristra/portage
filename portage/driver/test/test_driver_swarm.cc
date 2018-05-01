@@ -200,7 +200,8 @@ class DriverTest : public ::testing::Test {
         else if (dim == 3)
           std::printf("Particle=% 4d Coord = (% 5.3lf,% 5.3lf,% 5.3lf)", p,
                       coord[0], coord[1], coord[2]);
-        std::printf("  Value = % 10.6lf  Err = % lf\n", (*vecout)[p], error);
+	{double val=(*vecout)[p]; 
+	  std::printf("  Value = % 10.6lf  Err = % lf\n", val, error);}
         toterr += error*error;
       }
     

@@ -65,7 +65,7 @@ class Estimate {
       Weights_t const& wt = sources_and_mults[i];
       int p = wt.entityID;
       std::vector<double> const& shape_vec = wt.weights;
-      result += source_vals_[p] * shape_vec[derivative_];
+      {double val=(*source_vals_)[p]; result += val * shape_vec[derivative_];}
     }
     return result;
   }
@@ -73,16 +73,14 @@ class Estimate {
   void set_variable(std::string const & var_name, size_t derivin=0) {
     var_name_ = var_name;
     derivative_ = derivin;
-    typename SwarmState<dim>::DblVecPtr source_field_ptr;
-    source_state_.get_field(var_name_, source_field_ptr);
-    source_vals_ = &((*source_field_ptr)[0]);
+    source_state_.get_field(var_name_, source_vals_);
   }
 
  private:
   SwarmState<dim> const& source_state_;
   std::string var_name_;
   size_t derivative_;
-  double const *source_vals_;
+  typename SwarmState<dim>::DblVecPtr source_vals_;
 };
 
 }

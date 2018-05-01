@@ -11,6 +11,7 @@ Please see the license file at the root of this repository, or at:
 #include <cmath>
 
 #include "portage/support/Point.h"
+#include "portage/support/portage.h"
 #include "portage/accumulate/accumulate.h"
 
 
@@ -44,8 +45,8 @@ class SearchSimplePoints {
   SearchSimplePoints(
       const SourceSwarmType & source_swarm,
       const TargetSwarmType & target_swarm,
-      std::shared_ptr<std::vector<Point<D>>> source_extents,
-      std::shared_ptr<std::vector<Point<D>>> target_extents,
+      std::shared_ptr<vector<Point<D>>> source_extents,
+      std::shared_ptr<vector<Point<D>>> target_extents,
       Meshfree::WeightCenter center=Meshfree::Scatter)
       : sourceSwarm_(source_swarm), targetSwarm_(target_swarm),
         sourceExtents_(source_extents), targetExtents_(target_extents),
@@ -81,8 +82,8 @@ class SearchSimplePoints {
   // Aggregate data members
   const SourceSwarmType & sourceSwarm_;
   const TargetSwarmType & targetSwarm_;
-  std::shared_ptr<std::vector<Point<D>>> sourceExtents_;
-  std::shared_ptr<std::vector<Point<D>>> targetExtents_;
+  std::shared_ptr<vector<Point<D>>> sourceExtents_;
+  std::shared_ptr<vector<Point<D>>> targetExtents_;
   Meshfree::WeightCenter center_;
 
 }; // class SearchSimplePoints
@@ -106,12 +107,14 @@ operator() (const int pointId) const {
   for (int p = 0; p < numPoints; ++p) {
     Point<D> spcoord = sourceSwarm_.get_particle_coordinates(p);
     bool contained = true;
+    Point<D> spt=(*sourceExtents_)[p];
+    Point<D> tpt=(*targetExtents_)[pointId];
     for (int d = 0; d < D; ++d) {
       double maxdist;
       if (center_ == Meshfree::Scatter) {
-        maxdist = 2.*(*sourceExtents_)[p][d];
+        maxdist = 2.*spt[d];
       } else if (center_ == Meshfree::Gather) {
-        maxdist = 2.*(*targetExtents_)[pointId][d];
+        maxdist = 2.*tpt[d];
       }
       contained = contained && (abs(tpcoord[d] - spcoord[d]) < maxdist);
       if (!contained) break;

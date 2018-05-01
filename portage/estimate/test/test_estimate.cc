@@ -45,9 +45,9 @@ void test_estimate(Portage::Meshfree::EstimateType etype,
       offset += index*powl(nside+1, dim-k-1);
 
       double delta = 2.*(((double)rand())/RAND_MAX -.5)*jitter*1.5;
-      (*src_pts)[i][k] = -.25 + 1.5*index*smoothing + delta;
-      (*sextents)[i][k] = 2.0*smoothing;
-      if (index==0 or index == nside) (*sextents)[i][k]*=2;
+      {Point<dim> pt=(*src_pts)[i]; pt[k] = -.25 + 1.5*index*smoothing + delta; (*src_pts)[i] = pt;}
+      {Point<dim> pt=(*sextents)[i]; pt[k] = 2.0*smoothing;
+       if (index==0 or index == nside) pt[k]*=2; (*sextents)[i]=pt;}
     }
     extents = sextents;
   }
@@ -58,10 +58,10 @@ void test_estimate(Portage::Meshfree::EstimateType etype,
       offset += index*powl(nside+3, dim-k-1);
 
       double delta = 2.*(((double)rand())/RAND_MAX -.5)*jitter;
-      (*tgt_pts)[i][k] = index*tsmoothing + delta;
+      {Point<dim> pt=(*tgt_pts)[i]; pt[k] = index*tsmoothing + delta; (*tgt_pts)[i]=pt;}
 
-      (*textents)[i][k] = 2.0*tsmoothing;
-      if (index==0 or index == nside+2) (*textents)[i][k]*=2;
+      {Point<dim> pt=(*textents)[i]; pt[k] = 2.0*tsmoothing;
+       if (index==0 or index == nside+2) pt[k]*=2; (*textents)[i]=pt;}
     }
     extents = textents;
   }
@@ -77,7 +77,12 @@ void test_estimate(Portage::Meshfree::EstimateType etype,
   auto geometries = Portage::vector<Weight::Geometry>(nkern, Weight::TENSOR);
   auto smoothingh = Portage::vector<std::vector<std::vector<double>>>
       (nkern, std::vector<std::vector<double>>(1, std::vector<double>(dim)));
-  for (size_t i=0; i<nkern; i++) for (size_t j=0; j<dim; j++) smoothingh[i][0][j] = (*extents)[i][j];
+  for (size_t i=0; i<nkern; i++) for (size_t j=0; j<dim; j++) {
+      std::vector<std::vector<double>> vv=smoothingh[i];
+      Point<dim> pt = (*extents)[i];
+      vv[0][j] = pt[j];
+      smoothingh[i] = vv;
+    }
 
   // create the accumulator
   Accumulate<dim, Swarm<dim>, Swarm<dim>> accum(
