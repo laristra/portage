@@ -360,6 +360,19 @@ class Simple_State_Wrapper {
     return 0;
   }
 
+
+  /// @brief Get the data type of the given field
+  /// @param[in] var_name The string name of the data field
+  /// @return A reference to the type_info struct for the field's data type
+
+  const std::type_info& get_data_type(std::string const& var_name) const {
+    auto it = state_.find(var_name);
+    if (it != state_.end())
+      return typeid(double);  // Thats the only type we can handle for now
+    else
+      return typeid(void);
+  }
+
   /// An iterator to the beginning of the vector of names in the state manager.
   Simple_State::name_vec_it names_begin() const {
     return state_.names_begin();
