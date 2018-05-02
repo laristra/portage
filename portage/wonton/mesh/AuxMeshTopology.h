@@ -15,6 +15,7 @@ Please see the license file at the root of this repository, or at:
 #include <array>
 #include <algorithm>
 #include <utility>
+#include <limits>
 
 #include "portage/support/portage.h"
 #include "portage/support/Point.h"
@@ -1264,6 +1265,7 @@ class AuxMeshTopology {
     node_get_wedges(nodeid, ALL, &wedgeids);
     double vol = 0.0;
     for (int i = 0; i < D; i++) (*centroid)[i] = 0.0;
+    Point<D> geom_cen;
     for (auto const wid : wedgeids) {
       double wvol = wedge_volume(wid);
 
@@ -1274,10 +1276,13 @@ class AuxMeshTopology {
         wcen += wcoords[i];
       wcen /= D+1;
 
+      geom_cen += wcen;
       *centroid += wvol*wcen;
       vol += wvol;
     }
-    *centroid /= vol;
+    //If we have a degenerate dual cell of zero volume, we use the geometric center
+    if (vol > std::numeric_limits<double>::epsilon()) *centroid /= vol;
+    else *centroid = geom_cen/wedgeids.size();
   }
 
 
@@ -2210,9 +2215,12 @@ void AuxMeshTopology<BasicMesh>::compute_face_centroids() {
           fcen += fctcen*fctarea;
         }
       }
-      fcen /= farea;
-      for (int d = 0; d < dim; d++)
-        face_centroids_[f][d] = fcen[d];
+      //If we have a degenerate face of zero area, we use the geometric center
+      if (farea > std::numeric_limits<double>::epsilon()) {
+        fcen /= farea;
+        for (int d = 0; d < dim; d++)
+          face_centroids_[f][d] = fcen[d];
+      }
       face_processed[f] = true;
     }
   }
@@ -2287,9 +2295,13 @@ void AuxMeshTopology<BasicMesh>::compute_cell_centroids() {
 
       ccen += scen*svol;
     }
-    ccen /= cellvol;
-    for (int d = 0; d < dim; d++)
-      cell_centroids_[c][d] = ccen[d];  // true centroid
+
+    //If we have a degenerate cell of zero volume, we use the geometric center
+    if (cellvol > std::numeric_limits<double>::epsilon()) {    
+      ccen /= cellvol;
+      for (int d = 0; d < dim; d++)
+        cell_centroids_[c][d] = ccen[d];  // true centroid
+    }
   }
 }
 
