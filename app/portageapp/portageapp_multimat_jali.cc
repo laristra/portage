@@ -431,7 +431,7 @@ int main(int argc, char** argv) {
 
 // Run a remap between two meshes and return the L1 and L2 error norms
 // with respect to the specified field. If a field was not specified and
-// 
+// remap only volume fractions (and if specified, centroids)
 
 template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
                            std::shared_ptr<Jali::Mesh> targetMesh,
