@@ -127,28 +127,29 @@ class Interpolate_2ndOrder {
                                   &source_vals_);
     else
       source_state_.mat_get_celldata(interp_var_name, matid_, &source_vals_);
-    
-    
+
     // Compute the limited gradients for the field 
-  #ifdef HAVE_TANGRAM  
+   #ifdef HAVE_TANGRAM
     Limited_Gradient<D, on_what, SourceMeshType, StateType, InterfaceReconstructorType>
-        limgrad(source_mesh_, source_state_, interp_var_name_, limiter_type_, 
+        limgrad(source_mesh_, source_state_, interp_var_name_, limiter_type_,
                 interface_reconstructor_);
-   limgrad.set_material(matid_, interp_var_name_, limiter_type_);      
-  #else      
+   limgrad.set_material(matid_, interp_var_name_, limiter_type_);
+  #else
     Limited_Gradient<D, on_what, SourceMeshType, StateType>
         limgrad(source_mesh_, source_state_);
-  #endif 
+  #endif
 
    // Get the correct number of source cells for which the gradient has to be computed
-   #ifdef HAVE_TANGRAM
+    int nentities;
     std::vector<int> cellids;
-    source_state_.mat_get_cells(matid_, &cellids);
-    int nentities =  cellids.size();
-   #else
-    int nentities = source_mesh_.end(on_what)-source_mesh_.begin(on_what);
-   #endif   
-
+    if (field_type_ == Field_type::MESH_FIELD){
+      nentities = source_mesh_.end(on_what)-source_mesh_.begin(on_what);
+    }
+    else{
+      source_state_.mat_get_cells(matid_, &cellids);
+      nentities =  cellids.size();
+    }
+      
     gradients_.resize(nentities);
     
     // call transform functor to take the values of the variable on
@@ -159,13 +160,14 @@ class Interpolate_2ndOrder {
     // thrust::transform or boost::transform) in portage.h, the
     // compiler is not able to disambiguate this call and is getting
     // confused. So we will explicitly state that this is Portage::transform
-  #ifdef HAVE_TANGRAM
-    Portage::transform(cellids.begin(), cellids.end(),
+    if (field_type_ == Field_type::MESH_FIELD){
+     Portage::transform(source_mesh_.begin(on_what), source_mesh_.end(on_what),
                        gradients_.begin(), limgrad);
-  #else 
-    Portage::transform(source_mesh_.begin(on_what), source_mesh_.end(on_what),
+    }
+    else{
+      Portage::transform(cellids.begin(), cellids.end(),
                        gradients_.begin(), limgrad);
-  #endif  
+    }
   } //set_interpolation_variable 
 
 
@@ -287,25 +289,29 @@ class Interpolate_2ndOrder<D,
       source_state_.mat_get_celldata(interp_var_name, matid_, &source_vals_);
     
     // Compute the limited gradients for the field 
-  #ifdef HAVE_TANGRAM  
+#ifdef HAVE_TANGRAM
     Limited_Gradient<D, CELL, SourceMeshType, StateType, InterfaceReconstructorType>
-        limgrad(source_mesh_, source_state_, interp_var_name_, limiter_type_, 
+        limgrad(source_mesh_, source_state_, interp_var_name_, limiter_type_,
                 interface_reconstructor_);
-     limgrad.set_material(matid_, interp_var_name_, limiter_type_);      
-  #else      
+     limgrad.set_interpolation_variable(interp_var_name_, limiter_type_);      
+     if (field_type_ == Field_type::MULTIMATERIAL_FIELD)
+       limgrad.set_material(matid_);
+#else
     Limited_Gradient<D, CELL, SourceMeshType, StateType>
-        limgrad(source_mesh_, source_state_, interp_var_name_, limiter_type_);
-  #endif 
+        limgrad(source_mesh_, source_state_);
+#endif
 
    // Get the correct number of source cells for which the gradient has to be computed
-   #ifdef HAVE_TANGRAM
+    int nentities;
     std::vector<int> cellids;
-    source_state_.mat_get_cells(matid_, &cellids);
-    int nentities =  source_state_.mat_get_num_cells(matid_);
-   #else
-    int nentities = source_mesh_.num_entities(CELL);
-   #endif  
-
+    if (field_type_ == Field_type::MESH_FIELD){
+      nentities = source_mesh_.num_entities(CELL);
+    }
+    else{
+      source_state_.mat_get_cells(matid_, &cellids);
+      nentities =  cellids.size();
+    }
+      
     gradients_.resize(nentities);
     
     // call transform functor to take the values of the variable on
@@ -316,13 +322,14 @@ class Interpolate_2ndOrder<D,
     // thrust::transform or boost::transform) in portage.h, the
     // compiler is not able to disambiguate this call and is getting
     // confused. So we will explicitly state that this is Portage::transform
-  #ifdef HAVE_TANGRAM
-    Portage::transform(cellids.begin(), cellids.end(),
+    if (field_type_ == Field_type::MESH_FIELD){
+     Portage::transform(source_mesh_.begin(CELL), source_mesh_.end(CELL),
                        gradients_.begin(), limgrad);
-  #else 
-    Portage::transform(source_mesh_.begin(CELL), source_mesh_.end(CELL),
+    }
+    else{
+      Portage::transform(cellids.begin(), cellids.end(),
                        gradients_.begin(), limgrad);
-  #endif  
+    }
   } //set_interpolation_variable
 
 
@@ -395,61 +402,61 @@ class Interpolate_2ndOrder<D,
 
       // Obtain source cell centroid
       Point<D> srccell_centroid;
-
-#ifdef HAVE_TANGRAM
-      int nmats = source_state_.cell_get_num_mats(srccell);
-      std::vector<int> cellmats;
-      source_state_.cell_get_mats(srccell, &cellmats);
+     
+      if (field_type_ == Field_type::MESH_FIELD){
+       source_mesh_.cell_centroid(srccell, &srccell_centroid);
+      }
+      else if (field_type_ == Field_type::MULTIMATERIAL_FIELD){
+      	int nmats = source_state_.cell_get_num_mats(srccell);
+      	std::vector<int> cellmats;
+      	source_state_.cell_get_mats(srccell, &cellmats);
       
-      if (!nmats || (nmats == 1 && cellmats[0] == matid_)) 
-      { //pure cell
-        source_mesh_.cell_centroid(srccell, &srccell_centroid);
-      } 
-     else 
-      { //multi-material cell
-         assert(interface_reconstructor_ != nullptr);  // cannot be nullptr
+      	if (!nmats || (nmats == 1 && cellmats[0] == matid_)) 
+      	{ //pure cell
+        	source_mesh_.cell_centroid(srccell, &srccell_centroid);
+      	}	 
+     	else 
+      	{ //multi-material cell
+          assert(interface_reconstructor_ != nullptr);  // cannot be nullptr
         
-         if (std::find(cellmats.begin(), cellmats.end(), matid_) !=
+          if (std::find(cellmats.begin(), cellmats.end(), matid_) !=
               cellmats.end()) 
-         { // mixed cell containing this material 
+          { // mixed cell containing this material 
 
-          //Obtain matpoly's for this material
-          Tangram::CellMatPoly<D> const& cellmatpoly =
-              interface_reconstructor_->cell_matpoly_data(srccell);
-          std::vector<Tangram::MatPoly<D>> matpolys =
-              cellmatpoly.get_matpolys(matid_);
+           //Obtain matpoly's for this material
+           Tangram::CellMatPoly<D> const& cellmatpoly =
+               interface_reconstructor_->cell_matpoly_data(srccell);
+           std::vector<Tangram::MatPoly<D>> matpolys =
+               cellmatpoly.get_matpolys(matid_);
 
-          int cnt = 0;
-          for (int k = 0; k < D; k++) srccell_centroid[k]=0;
+           int cnt = 0;
+           for (int k = 0; k < D; k++) srccell_centroid[k]=0;
 
-          //Compute centroid of all matpoly's 
-          for (int j = 0; j < matpolys.size(); j++)
-          {
-            std::vector<Tangram::Point<D>> tpnts = matpolys[j].points();
-            cnt += tpnts.size();
-            for (int i = 0; i < tpnts.size(); i++)
-               for (int k = 0; k < D; k++)
-                 srccell_centroid[k] += tpnts[i][k];
-          }
-          srccell_centroid = srccell_centroid/cnt; 
-       }
+           //Compute centroid of all matpoly's 
+           for (int j = 0; j < matpolys.size(); j++)
+           {
+             std::vector<Tangram::Point<D>> tpnts = matpolys[j].points();
+             cnt += tpnts.size();
+             for (int i = 0; i < tpnts.size(); i++)
+                for (int k = 0; k < D; k++)
+                  srccell_centroid[k] += tpnts[i][k];
+           }
+           srccell_centroid = srccell_centroid/cnt; 
+        }
+      }
      }
-#else
-     source_mesh_.cell_centroid(srccell, &srccell_centroid);
-#endif
     
-   //Computer intersection centroid
+   //Compute intersection centroid
     Point<D> xsect_centroid;
     for (int i = 0; i < D; ++i)
       xsect_centroid[i] = xsect_weights[1+i]/xsect_volume;  // (1st moment)/vol
 
    //Get correct source cell index
    int srcindex;
-#ifdef HAVE_TANGRAM
-   srcindex = source_state_.cell_index_in_material(srccell, matid_);
-#else
-   srcindex = srccell;
-#endif  
+   if (field_type_ == Field_type::MESH_FIELD)
+     srcindex = srccell;
+   else if (field_type_ == Field_type::MULTIMATERIAL_FIELD)
+     srcindex = source_state_.cell_index_in_material(srccell, matid_);
 
     Vector<D> gradient = gradients_[srcindex];
     Vector<D> vec = xsect_centroid - srccell_centroid;
@@ -580,7 +587,6 @@ class Interpolate_2ndOrder<D,
       source_state_.mesh_get_data(NODE, interp_var_name,
                                   &source_vals_);
     else {
-      source_state_.mat_get_celldata(interp_var_name, matid_, &source_vals_);
       std::cerr << "Cannot remap NODE-centered multi-material data" << "\n";
     }
     
