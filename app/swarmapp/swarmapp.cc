@@ -254,7 +254,8 @@ int main(int argc, char** argv) {
     if (ntarpts < 10) {
       std::printf("Particle=% 4d Coord = (% 5.3lf,% 5.3lf)", p,
                   coord[0], coord[1]);
-      std::printf("  Value = % 10.6lf  Err = % lf\n", (*targetData)[p], error);
+      double dummy=(*targetData)[p];
+      std::printf("  Value = % 10.6lf  Err = % lf\n", dummy, error);
     }
     toterr += error*error;
   }
