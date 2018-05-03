@@ -307,7 +307,9 @@ class MSM_Driver {
         double radius;
         if      (center_ == Meshfree::Scatter) cell_radius<Dim>(source_mesh_flat, i, &radius);
 	else if (center_ == Meshfree::Gather)  cell_radius<Dim>(target_mesh_flat, i, &radius);
-	smoothing_lengths[i][0] = std::vector<double>(Dim, radius*smoothing_factor_);
+	std::vector<std::vector<double>> h=smoothing_lengths[i];
+	h[0] = std::vector<double>(Dim, radius*smoothing_factor_);
+	smoothing_lengths[i]=h;
       }
 
       // create swarm remap driver
@@ -395,7 +397,9 @@ class MSM_Driver {
         double radius;
         if      (center_ == Meshfree::Scatter) node_radius<Dim>(source_mesh_flat, i, &radius);
 	else if (center_ == Meshfree::Gather)  node_radius<Dim>(target_mesh_flat, i, &radius);
-        smoothing_lengths[i][0] = std::vector<double>(Dim, radius*smoothing_factor_);
+	std::vector<std::vector<double>> h=smoothing_lengths[i];
+        h[0] = std::vector<double>(Dim, radius*smoothing_factor_);
+	smoothing_lengths[i]=h;
       }
 
       // create swarm remap driver
