@@ -19,6 +19,7 @@ Please see the license file at the root of this repository, or at:
 #include "portage/swarm/swarm_state.h"
 #include "portage/wonton/mesh/flat/flat_mesh_wrapper.h"
 #include "portage/wonton/mesh/jali/jali_mesh_wrapper.h"
+#include "portage/search/search_points_by_cells.h"
 
 #include "gtest/gtest.h"
 #include "mpi.h"
@@ -158,7 +159,8 @@ class DriverTest : public ::testing::Test {
       else if (dim == 3)
         std::printf("Particle=% 4d Coord = (% 5.3lf,% 5.3lf,% 5.3lf)", p,
                     coord[0], coord[1], coord[2]);
-      std::printf("  Value = % 10.6lf  Err = % lf\n", (*vecout)[p], error);
+      double dummy= (*vecout)[p];
+      std::printf("  Value = % 10.6lf  Err = % lf\n", dummy, error);
       toterr += error*error;
     }
     
@@ -231,33 +233,33 @@ double compute_cubic_field(Portage::Point<Dimension> coord) {
 // fails.
 
 TEST_F(DriverTest2D, 2D_ConstantFieldUnitaryBasis) {
-  unitTest<Portage::SearchSimplePoints, Portage::Meshfree::Basis::Unitary>
+  unitTest<Portage::SearchPointsByCells, Portage::Meshfree::Basis::Unitary>
       (compute_constant_field<2>, 0.0);
 }
 
 TEST_F(DriverTest2D, 2D_LinearFieldLinearBasis) {
-  unitTest<Portage::SearchSimplePoints, Portage::Meshfree::Basis::Linear>
+  unitTest<Portage::SearchPointsByCells, Portage::Meshfree::Basis::Linear>
       (compute_linear_field<2>, 0.0);
 }
 
 TEST_F(DriverTest2D, 2D_QuadraticFieldQuadraticBasis) {
-  unitTest<Portage::SearchSimplePoints, Portage::Meshfree::Basis::Quadratic>
+  unitTest<Portage::SearchPointsByCells, Portage::Meshfree::Basis::Quadratic>
       (compute_quadratic_field<2>, 0.0);
 }
 
 
 TEST_F(DriverTest3D, 3D_ConstantFieldUnitaryBasis) {
-   unitTest<Portage::SearchSimplePoints, Portage::Meshfree::Basis::Unitary>
+   unitTest<Portage::SearchPointsByCells, Portage::Meshfree::Basis::Unitary>
        (compute_constant_field<3>, 0.0);
 }
 
 TEST_F(DriverTest3D, 3D_LinearFieldLinearBasis) {
-  unitTest<Portage::SearchSimplePoints, Portage::Meshfree::Basis::Linear>
+  unitTest<Portage::SearchPointsByCells, Portage::Meshfree::Basis::Linear>
       (compute_linear_field<3>, 0.0);
 }
 
 TEST_F(DriverTest3D, 3D_QuadraticFieldQuadraticBasis) {
-  unitTest<Portage::SearchSimplePoints, Portage::Meshfree::Basis::Quadratic>
+  unitTest<Portage::SearchPointsByCells, Portage::Meshfree::Basis::Quadratic>
       (compute_quadratic_field<3>, 0.0);
 }
 
