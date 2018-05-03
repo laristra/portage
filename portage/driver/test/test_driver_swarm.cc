@@ -21,6 +21,7 @@ Please see the license file at the root of this repository, or at:
 #include "portage/support/operator.h"
 #include "portage/support/Point.h"
 #include "portage/support/portage.h"
+#include "portage/search/search_points_by_cells.h"
 
 namespace {
 
@@ -374,88 +375,88 @@ double compute_cubic_field(Portage::Point<Dimension> coord) {
 // fails.
 
 TEST_F(DriverTest1D, 1D_ConstantFieldUnitaryBasis) {
-   unitTest<Portage::SearchSimplePoints, Portage::Meshfree::Basis::Unitary>
+   unitTest<Portage::SearchPointsByCells, Portage::Meshfree::Basis::Unitary>
        (compute_constant_field<1>, 0.0);
 }
 
 TEST_F(DriverTest1D, 1D_LinearFieldLinearBasis) {
-  unitTest<Portage::SearchSimplePoints, Portage::Meshfree::Basis::Linear>
+  unitTest<Portage::SearchPointsByCells, Portage::Meshfree::Basis::Linear>
       (compute_linear_field<1>, 0.0);
 }
 
 TEST_F(DriverTest1D, 1D_QuadraticFieldQuadraticBasis) {
-  unitTest<Portage::SearchSimplePoints, Portage::Meshfree::Basis::Quadratic>
+  unitTest<Portage::SearchPointsByCells, Portage::Meshfree::Basis::Quadratic>
       (compute_quadratic_field<1>, 0.0);
 }
 
 TEST_F(DriverTest1DScatter, 1D_QuadraticFieldQuadraticBasisScatter) {
-  unitTest<Portage::SearchSimplePoints, Portage::Meshfree::Basis::Quadratic>
+  unitTest<Portage::SearchPointsByCells, Portage::Meshfree::Basis::Quadratic>
       (compute_quadratic_field<1>, 0.0);
 }
 
 TEST_F(DriverTest2D, 2D_ConstantFieldUnitaryBasis) {
-  unitTest<Portage::SearchSimplePoints, Portage::Meshfree::Basis::Unitary>
+  unitTest<Portage::SearchPointsByCells, Portage::Meshfree::Basis::Unitary>
       (compute_constant_field<2>, 0.0);
 }
 
 TEST_F(DriverTest2D, 2D_LinearFieldLinearBasis) {
-  unitTest<Portage::SearchSimplePoints, Portage::Meshfree::Basis::Linear>
+  unitTest<Portage::SearchPointsByCells, Portage::Meshfree::Basis::Linear>
       (compute_linear_field<2>, 0.0);
 }
 
 TEST_F(DriverTest2D, 2D_QuadraticFieldQuadraticBasis) {
-  unitTest<Portage::SearchSimplePoints, Portage::Meshfree::Basis::Quadratic>
+  unitTest<Portage::SearchPointsByCells, Portage::Meshfree::Basis::Quadratic>
       (compute_quadratic_field<2>, 0.0);
 }
 
 TEST_F(DriverTest2DScatter, 2D_QuadraticFieldQuadraticBasisScatter) {
-  unitTest<Portage::SearchSimplePoints, Portage::Meshfree::Basis::Quadratic>
+  unitTest<Portage::SearchPointsByCells, Portage::Meshfree::Basis::Quadratic>
       (compute_quadratic_field<2>, 0.0);
 }
 
 TEST_F(DriverTest3D, 3D_ConstantFieldUnitaryBasis) {
-   unitTest<Portage::SearchSimplePoints, Portage::Meshfree::Basis::Unitary>
+   unitTest<Portage::SearchPointsByCells, Portage::Meshfree::Basis::Unitary>
        (compute_constant_field<3>, 0.0);
 }
 
 TEST_F(DriverTest3D, 3D_LinearFieldLinearBasis) {
-  unitTest<Portage::SearchSimplePoints, Portage::Meshfree::Basis::Linear>
+  unitTest<Portage::SearchPointsByCells, Portage::Meshfree::Basis::Linear>
       (compute_linear_field<3>, 0.0);
 }
 
 TEST_F(DriverTest3D, 3D_QuadraticFieldQuadraticBasis) {
-  unitTest<Portage::SearchSimplePoints, Portage::Meshfree::Basis::Quadratic>
+  unitTest<Portage::SearchPointsByCells, Portage::Meshfree::Basis::Quadratic>
       (compute_quadratic_field<3>, 0.0);
 }
 
 TEST_F(DriverTest3DScatter, 3D_QuadraticFieldQuadraticBasisScatter) {
-  unitTest<Portage::SearchSimplePoints, Portage::Meshfree::Basis::Quadratic>
+  unitTest<Portage::SearchPointsByCells, Portage::Meshfree::Basis::Quadratic>
       (compute_quadratic_field<3>, 0.0);
 }
 
 
 TEST_F(IntegrateDriverTest1D, 1D_LinearFieldLinearBasis) {
-  unitTest<Portage::SearchSimplePoints, Portage::Meshfree::Basis::Linear>
+  unitTest<Portage::SearchPointsByCells, Portage::Meshfree::Basis::Linear>
       (compute_linear_field<1>, 1./2.);
 }
 
 TEST_F(IntegrateDriverTest1D, 1D_QuadraticFieldQuadraticBasis) {
-  unitTest<Portage::SearchSimplePoints, Portage::Meshfree::Basis::Quadratic>
+  unitTest<Portage::SearchPointsByCells, Portage::Meshfree::Basis::Quadratic>
       (compute_quadratic_field<1>, 1./3.);
 }
 
 TEST_F(IntegrateDriverTest2D, 2D_LinearFieldLinearBasis) {
-  unitTest<Portage::SearchSimplePoints, Portage::Meshfree::Basis::Linear>
+  unitTest<Portage::SearchPointsByCells, Portage::Meshfree::Basis::Linear>
       (compute_linear_field<2>, 1.0);
 }
 
 TEST_F(IntegrateDriverTest2D, 2D_QuadraticFieldQuadraticBasis) {
-  unitTest<Portage::SearchSimplePoints, Portage::Meshfree::Basis::Quadratic>
+  unitTest<Portage::SearchPointsByCells, Portage::Meshfree::Basis::Quadratic>
     (compute_quadratic_field<2>, 2./3. + 1./4.); // 0.9166666666666666
 }
 
 TEST_F(IntegrateDriverTest3D, 3D_LinearFieldLinearBasis) {
-  unitTest<Portage::SearchSimplePoints, Portage::Meshfree::Basis::Linear>
+  unitTest<Portage::SearchPointsByCells, Portage::Meshfree::Basis::Linear>
     (compute_linear_field<3>, 3./2.);
 }
 
