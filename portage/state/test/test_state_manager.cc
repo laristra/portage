@@ -744,11 +744,150 @@ TEST(StateManager,test4Cell){
 	// create the state manager
 	StateManager<Simple_Mesh_Wrapper> manager{wrapper};
 
-	// create the index fields
+	// map of names of materials
+	std::unordered_map<std::string,int> matnames{{"mat0",1},{"mat2",3},{"mat3",5}};
+	
+	// add the names to the manager
+	manager.add_material_names(matnames);
+	
+	// check get_nmats API function
+	ASSERT_EQ(manager.get_num_materials(),3);
+	ASSERT_EQ(manager.get_material_id("mat3"),5);
+	ASSERT_EQ(manager.get_material_name(5),"mat3");
+	
+	// create the material indices
+	std::unordered_map<int,std::vector<int>> indices{{1,{0,1,2,3}},{3,{0,1}},{5,{0,2}}};
+	
+	// add the material indices
+	manager.add_material_indices(indices);
+	
+	// create the material indices
+	std::unordered_map<int,std::vector<int>> indices2{{10,{0,1,2,3}}};
+	
+	// add the material indices
+	ASSERT_THROW(manager.add_material_indices(indices2), std::runtime_error);
+	
+	// make sure the shape is correct
+	for (const auto& kv : manager.get_material_shape()){
+		ASSERT_EQ(indices[kv.first].size(), kv.second);
+	}
+	
+	// create the multi material data
+	std::unordered_map<int,std::vector<double>> density 
+		{{1,{1.,1.1,1.2,1.3}},{3,{10.,10.1}},{5,{100.,100.1}}};
+	
+	// add the data, note the make_shared actually copies the data
+	manager.add(std::make_shared<StateVectorMulti<>>("density",density));
+	
 }
 
 
+/*
+// test a mesh with 4 cells containing 3 materials
+TEST(Flat_State_Wrapper, mm2) {
+	
+	
+	// add the data 
+	for (int m = 0; m < nmats; m++){
+		sourceStateWrapper.mat_add_celldata("density", m, &(density_data[m][0]));
+	}
+	
+	// create the flat state wrapper
+	Wonton::Flat_State_Wrapper<> flat_state;
+	
+	// initialize the flat state wrapper
+	std::vector<std::string> field_names = {"density"};
+  flat_state.initialize(sourceStateWrapper, field_names);
 
+
+	//////////////////////////////////////////////		
+  // diagnostics
+  //////////////////////////////////////////////
+  
+	// check number of materials
+	ASSERT_EQ(nmats, flat_state.num_materials());
+	ASSERT_EQ(sourceStateWrapper.num_materials(), flat_state.num_materials());
+	
+	// check material names
+	for (int m=0; m<nmats; ++m){
+		ASSERT_EQ(matnames[m], flat_state.material_name(m));
+		ASSERT_EQ(sourceStateWrapper.material_name(m), flat_state.material_name(m));
+	}
+			
+	// check number of cells for each material
+	for (int m=0; m<nmats; ++m){
+		ASSERT_EQ(matcells_src[m].size(), flat_state.mat_get_num_cells(m));
+	}
+	
+	// check that the cell id's are correct each material
+	for (int m=0; m<nmats; ++m){
+		
+		// temp storage for the cell id's
+		std::vector<int> cellids;
+		
+		// get the cell id's for this material
+		flat_state.mat_get_cells(m, &cellids);
+		
+	  for (int i=0; i<flat_state.mat_get_num_cells(m); ++i){
+			ASSERT_EQ(matcells_src[m][i], cellids[i]);
+	  }
+	}
+	
+	// check that there are the correct number of materials in the cell
+	ASSERT_EQ(flat_state.cell_get_num_mats(0),3);
+	ASSERT_EQ(flat_state.cell_get_num_mats(1),2);
+	ASSERT_EQ(flat_state.cell_get_num_mats(2),2);
+	ASSERT_EQ(flat_state.cell_get_num_mats(3),1);
+	
+	// check that the materials in the cell are correct
+	// these are ugly tests, but work since we know the answer
+	std::vector<int> cell_mats;
+	flat_state.cell_get_mats(0, &cell_mats);
+	ASSERT_EQ(cell_mats[0],0);
+	ASSERT_EQ(cell_mats[1],1);
+	ASSERT_EQ(cell_mats[2],2);
+	flat_state.cell_get_mats(1, &cell_mats);
+	ASSERT_EQ(cell_mats[0],0);
+	ASSERT_EQ(cell_mats[1],1);
+	flat_state.cell_get_mats(2, &cell_mats);
+	ASSERT_EQ(cell_mats[0],0);
+	ASSERT_EQ(cell_mats[1],2);
+	flat_state.cell_get_mats(3, &cell_mats);
+	ASSERT_EQ(cell_mats[0],0);
+	
+	
+	// check that the material cell indices work
+	ASSERT_EQ(flat_state.cell_index_in_material(0,0),0);
+	ASSERT_EQ(flat_state.cell_index_in_material(1,0),1);
+	ASSERT_EQ(flat_state.cell_index_in_material(2,0),2);
+	ASSERT_EQ(flat_state.cell_index_in_material(3,0),3);	
+	ASSERT_EQ(flat_state.cell_index_in_material(0,1),0);
+	ASSERT_EQ(flat_state.cell_index_in_material(1,1),1);
+	ASSERT_EQ(flat_state.cell_index_in_material(0,2),0);
+	ASSERT_EQ(flat_state.cell_index_in_material(2,2),1);
+	
+	// test the field types
+	ASSERT_EQ(
+		flat_state.field_type(Portage::Entity_kind::CELL, field_names[0]),
+		Portage::Field_type::MULTIMATERIAL_FIELD
+	);
+
+	// test getting the data
+	double *data;
+	flat_state.mat_get_celldata("density", 0, &data);
+	ASSERT_EQ(data[0],density_data[0][0]);
+	ASSERT_EQ(data[1],density_data[0][1]);
+	ASSERT_EQ(data[2],density_data[0][2]);
+	ASSERT_EQ(data[3],density_data[0][3]);
+	flat_state.mat_get_celldata("density", 1, &data);
+	ASSERT_EQ(data[0],density_data[1][0]);
+	ASSERT_EQ(data[1],density_data[1][1]);
+	flat_state.mat_get_celldata("density", 2, &data);
+	ASSERT_EQ(data[0],density_data[2][0]);
+	ASSERT_EQ(data[1],density_data[2][1]);
+
+}
+*/
 
 
 

@@ -25,7 +25,13 @@ class StateManager {
 	
  		using pair_t = std::pair<Portage::Entity_kind, std::string>;
  		
- 		StateManager (const MeshWrapper& mesh):mesh_(mesh){}
+ 		StateManager (const MeshWrapper& mesh, 
+ 			std::unordered_map<std::string,int> names={},
+ 			std::unordered_map<int,std::vector<int>> mat_indices={}
+ 			):mesh_(mesh){
+ 				add_material_names(names);
+ 				add_material_indices(mat_indices);
+ 		}
  		
  		StateManager (const MeshWrapper& mesh, std::shared_ptr<StateVectorBase> sv)
  			:mesh_(mesh) {
@@ -45,7 +51,8 @@ class StateManager {
 			
 			// if the map entry for this key already exists, throw and erro
 			if (state_vectors_[key]!=nullptr) 
-				throw std::runtime_error("Field already exists");
+				throw std::runtime_error("Field " + sv->name() + 
+					" already exists in the state manager");
  			state_vectors_[key]=sv;
 		}
 		
@@ -95,6 +102,43 @@ class StateManager {
 			return std::dynamic_pointer_cast<StateVectorType<T>>(state_vectors_[key]);
  			
 		}	
+		
+		// add the names of the materials
+		void add_material_names(std::unordered_map<std::string,int> names){
+			material_ids_=names;
+			for (auto& kv: names) material_names_[kv.second]=kv.first;				
+		}
+		
+		// get a material name from its id
+		std::string get_material_name(int id) {return material_names_[id];}
+		
+		// get the material id from its name
+		int get_material_id(std::string name){return material_ids_[name];}
+		
+		// add the material indices
+		void add_material_indices(std::unordered_map<int,std::vector<int>> indices){
+		
+			std::unordered_map<int,int> shape;
+			
+			// do some error checking
+			for (auto &kv : indices){
+				if ( material_names_.find(kv.first)==material_names_.end()){
+					throw std::runtime_error("Tried to add indices for an unknown material: "
+						+ std::to_string(kv.first));
+				}
+				shape[kv.first]=kv.second.size();
+			}
+			
+			material_indices_=indices;
+			material_data_shape_=shape;
+		}
+
+		const std::unordered_map<int,int> get_material_shape(){
+				return material_data_shape_;
+		}
+			
+		// get the number of materials
+		int get_num_materials(){return material_names_.size();}
 
 	private:
 	
@@ -104,8 +148,18 @@ class StateManager {
 		// that many state vectors, and also, to use an unordered_map we need
 		// to either provide a key function or a hashing function.
 		std::map<pair_t, std::shared_ptr<StateVectorBase>> state_vectors_;
-	
+		
+		// material names
+		std::unordered_map<std::string,int> material_ids_;
+		
+		// material names
+		std::unordered_map<int, std::string> material_names_;
+		
+		// material indices
+		std::unordered_map<int,std::vector<int>> material_indices_;
   
+  	// material data shape
+  	std::unordered_map<int,int> material_data_shape_;
 };
 
 }
