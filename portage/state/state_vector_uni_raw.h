@@ -4,13 +4,12 @@ Please see the license file at the root of this repository, or at:
     https://github.com/laristra/portage/blob/master/LICENSE
 */
 
-#ifndef SRC_STATE_STATE_VECTOR_MULTI_H_
-#define SRC_STATE_STATE_VECTOR_MULTI_H_
+#ifndef SRC_STATE_STATE_VECTOR_UNI_H_
+#define SRC_STATE_STATE_VECTOR_UNI_H_
 
 #include <string>
 #include <typeinfo>
-#include <vector>
-#include <unordered_map>
+#include <memory>
 
 #include "portage/support/portage.h"
 #include "portage/state/state_vector_base.h"
@@ -18,26 +17,26 @@ Please see the license file at the root of this repository, or at:
 namespace Portage {  
 
 template <class T=double>
-class StateVectorMulti : public StateVectorBase {
+class StateVectorUniRaw : public StateVectorBase {
 
  public:
   
-  StateVectorMulti(
+  StateVectorUniRaw(
   	std::string name, 
-  	std::unordered_map<int, std::vector<T>> data = std::unordered_map<int, std::vector<T>>()
-  ) : StateVectorBase(name, Field_type::MULTIMATERIAL_FIELD, Entity_kind::CELL), 
-  			data_(data) {}
-
+  	Entity_kind kind=Entity_kind::CELL,
+  	T* pdata=nullptr
+  ) : StateVectorBase(name, Field_type::MESH_FIELD, kind),pdata_(pdata) {}
+  
 
   //! Destructor
-  ~StateVectorMulti() {}
+  ~StateVectorUniRaw() {}
   
   // print
   std::ostream & print(std::ostream & os) const {
-    os << "StateVectorMulti\n";
+    os << "UniStateVector\n";
     return os;
   }
-  
+    
   // get the data type
   const std::type_info& data_type() {
   	const std::type_info& ti = typeid(T);
@@ -45,15 +44,15 @@ class StateVectorMulti : public StateVectorBase {
 	}
 		
 	/// Get a shared pointer to the data
-  std::unordered_map<int, std::vector<T>>& get_data() { return data_; }
+  T* get_data() { return pdata_; }
  	
  private:
  
- 	std::unordered_map<int, std::vector<T>> data_;
+ 	T* pdata_;
  
 };
 
 }
 
-#endif //SRC_STATE_STATE_VECTOR_MULTI_H_
+#endif //SRC_STATE_STATE_VECTOR_UNI_H_
 

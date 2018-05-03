@@ -23,7 +23,7 @@ class StateManager {
 
 	public:
 	
- 		using pair_t = std::pair<Portage::Entity_kind,std::string>;
+ 		using pair_t = std::pair<Portage::Entity_kind, std::string>;
  		
  		StateManager (const MeshWrapper& mesh):mesh_(mesh){}
  		
@@ -102,7 +102,7 @@ class StateManager {
 		
 		// I'm using a map instead of an unordered map, because there aren't
 		// that many state vectors, and also, to use an unordered_map we need
-		// to either provide a key function or a hashing functions.
+		// to either provide a key function or a hashing function.
 		std::map<pair_t, std::shared_ptr<StateVectorBase>> state_vectors_;
 	
   

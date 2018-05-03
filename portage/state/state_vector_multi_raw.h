@@ -9,8 +9,7 @@ Please see the license file at the root of this repository, or at:
 
 #include <string>
 #include <typeinfo>
-#include <vector>
-#include <unordered_map>
+#include <memory>
 
 #include "portage/support/portage.h"
 #include "portage/state/state_vector_base.h"
@@ -18,23 +17,23 @@ Please see the license file at the root of this repository, or at:
 namespace Portage {  
 
 template <class T=double>
-class StateVectorMulti : public StateVectorBase {
+class StateVectorMultiRaw : public StateVectorBase {
 
  public:
   
-  StateVectorMulti(
+  StateVectorMultiRaw(
   	std::string name, 
-  	std::unordered_map<int, std::vector<T>> data = std::unordered_map<int, std::vector<T>>()
+  	T** hdata=nullptr
   ) : StateVectorBase(name, Field_type::MULTIMATERIAL_FIELD, Entity_kind::CELL), 
-  			data_(data) {}
+  			hdata_(hdata) {}
 
 
   //! Destructor
-  ~StateVectorMulti() {}
+  ~StateVectorMultiRaw() {}
   
   // print
   std::ostream & print(std::ostream & os) const {
-    os << "StateVectorMulti\n";
+    os << "StateVectorMultiRaw\n";
     return os;
   }
   
@@ -45,11 +44,11 @@ class StateVectorMulti : public StateVectorBase {
 	}
 		
 	/// Get a shared pointer to the data
-  std::unordered_map<int, std::vector<T>>& get_data() { return data_; }
+  T** get_data() { return hdata_; }
  	
  private:
  
- 	std::unordered_map<int, std::vector<T>> data_;
+ 	T** hdata_;
  
 };
 

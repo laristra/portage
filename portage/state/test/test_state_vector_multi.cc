@@ -37,7 +37,6 @@ TEST(StateMulti, BasicDouble1) {
   ASSERT_EQ(v.name(), name);
   ASSERT_EQ(v.type(), Portage::Field_type::MULTIMATERIAL_FIELD);
   ASSERT_EQ(v.data_type(), typeid(double));
-  ASSERT_EQ(v.get_data(), nullptr);
   
 }
 
@@ -45,19 +44,41 @@ TEST(StateMulti, BasicDouble1) {
 TEST(StateMulti, DataAccess) {
 
 	std::string name{"field"};
-	std::vector<std::vector<double>> data {{1.,2.,3.},{4.,5.},{6.}};	
-	double *temp[3];
-	for (int i=0; i<3; i++)temp[i]=data[i].data();
+	std::unordered_map<int, std::vector<double>> data {{1,{1.,2.,3.}},{2,{4.,5.}},{3,{6.}}};	
 	
-	StateVectorMulti<double> sv(name, temp);
+	StateVectorMulti<double> sv(name, data);
 	
-	double const * const * const sv_data{sv.get_data()};
+	std::unordered_map<int, std::vector<double>>& out{sv.get_data()};
 
 	for (int i=0; i<data.size(); i++) {
 		for (int j=0; j<data[i].size(); j++){
-			ASSERT_EQ(sv_data[i][j],data[i][j]);
+			ASSERT_EQ(out[i][j],data[i][j]);
 		}
 	}  
+  
+}
+
+TEST(StateMulti, ModifyProtected) {
+
+	std::string name{"field"};
+	std::unordered_map<int, std::vector<double>> data {{1,{1.,2.,3.}},{2,{4.,5.}},{3,{6.}}};	
+	
+	StateVectorMulti<double> sv(name, data);
+	
+	std::unordered_map<int, std::vector<double>>& out{sv.get_data()};
+
+	for (int i=0; i<data.size(); i++) {
+		for (int j=0; j<data[i].size(); j++){
+			ASSERT_EQ(out[i][j],data[i][j]);
+		}
+	}  
+
+	// changes to out should change the state vector but not the original vector
+	out[1][1]=-1.;
+	ASSERT_EQ(out[1][1], sv.get_data()[1][1]);
+	
+	// check that we are isolated from the original data vector
+	ASSERT_NE(sv.get_data()[1][1], data[1][1]);
   
 }
 

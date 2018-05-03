@@ -9,7 +9,7 @@ Please see the license file at the root of this repository, or at:
 
 #include <string>
 #include <typeinfo>
-#include <memory>
+#include <vector>
 
 #include "portage/support/portage.h"
 #include "portage/state/state_vector_base.h"
@@ -24,8 +24,8 @@ class StateVectorUni : public StateVectorBase {
   StateVectorUni(
   	std::string name, 
   	Entity_kind kind=Entity_kind::CELL,
-  	T* pdata=nullptr
-  ) : StateVectorBase(name, Field_type::MESH_FIELD, kind),pdata_(pdata) {}
+  	std::vector<T> data=std::vector<T>()
+  ) : StateVectorBase(name, Field_type::MESH_FIELD, kind),data_(data) {}
   
 
   //! Destructor
@@ -43,12 +43,12 @@ class StateVectorUni : public StateVectorBase {
 		return ti;
 	}
 		
-	/// Get a shared pointer to the data
-  T* get_data() { return pdata_; }
+	/// Get a reference to the data
+  std::vector<T>& get_data() { return data_; }
  	
  private:
  
- 	T* pdata_;
+ 	std::vector<T> data_;
  
 };
 

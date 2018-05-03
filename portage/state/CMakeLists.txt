@@ -10,6 +10,8 @@ set (state_HEADERS
   state_vector_base.h
   state_vector_uni.h
   state_vector_multi.h
+  state_vector_uni_raw.h
+  state_vector_multi_raw.h
   state_manager.h
   PARENT_SCOPE
   )
@@ -35,6 +37,21 @@ if (ENABLE_UNIT_TESTS)
 
   cinch_add_unit(test_state_manager
     SOURCES test/test_state_manager.cc
+    POLICY SERIAL
+    )
+
+  cinch_add_unit(test_state_vector_uni_raw
+    SOURCES test/test_state_vector_uni_raw.cc
+    POLICY SERIAL
+    )
+
+  cinch_add_unit(test_state_vector_multi_raw
+    SOURCES test/test_state_vector_multi_raw.cc
+    POLICY SERIAL
+    )
+
+  cinch_add_unit(test_state_manager_raw
+    SOURCES test/test_state_manager_raw.cc
     POLICY SERIAL
     )
 
