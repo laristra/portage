@@ -129,15 +129,17 @@ class Interpolate_2ndOrder {
       source_state_.mat_get_celldata(interp_var_name, matid_, &source_vals_);
 
     // Compute the limited gradients for the field 
-   #ifdef HAVE_TANGRAM
+#ifdef HAVE_TANGRAM
     Limited_Gradient<D, on_what, SourceMeshType, StateType, InterfaceReconstructorType>
         limgrad(source_mesh_, source_state_, interp_var_name_, limiter_type_,
                 interface_reconstructor_);
-   limgrad.set_material(matid_, interp_var_name_, limiter_type_);
-  #else
+     limgrad.set_interpolation_variable(interp_var_name_, limiter_type_);      
+     if (field_type_ == Field_type::MULTIMATERIAL_FIELD)
+       limgrad.set_material(matid_);
+#else
     Limited_Gradient<D, on_what, SourceMeshType, StateType>
-        limgrad(source_mesh_, source_state_);
-  #endif
+        limgrad(source_mesh_, source_state_, interp_var_name_, limiter_type_);
+#endif
 
    // Get the correct number of source cells for which the gradient has to be computed
     int nentities;
@@ -298,7 +300,7 @@ class Interpolate_2ndOrder<D,
        limgrad.set_material(matid_);
 #else
     Limited_Gradient<D, CELL, SourceMeshType, StateType>
-        limgrad(source_mesh_, source_state_);
+        limgrad(source_mesh_, source_state_, interp_var_name_, limiter_type_);
 #endif
 
    // Get the correct number of source cells for which the gradient has to be computed
@@ -402,7 +404,7 @@ class Interpolate_2ndOrder<D,
 
       // Obtain source cell centroid
       Point<D> srccell_centroid;
-     
+#ifdef HAVE_TANGRAM     
       if (field_type_ == Field_type::MESH_FIELD){
        source_mesh_.cell_centroid(srccell, &srccell_centroid);
       }
@@ -445,6 +447,9 @@ class Interpolate_2ndOrder<D,
         }
       }
      }
+#else
+       source_mesh_.cell_centroid(srccell, &srccell_centroid);
+#endif 
     
    //Compute intersection centroid
     Point<D> xsect_centroid;
