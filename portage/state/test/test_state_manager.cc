@@ -261,7 +261,8 @@ TEST(StateManager, manageMeshField2){
 	ASSERT_EQ(data[0], pv->get_data()[0]);
 	
 	// create the state manager
-	StateManager<Simple_Mesh_Wrapper> manager{wrapper, pv};
+	StateManager<Simple_Mesh_Wrapper> manager{wrapper};
+	manager.add(pv);
 	
 	// make sure you can't clobber an existing field
 	ASSERT_THROW(manager.add(pv), std::runtime_error);
@@ -308,7 +309,8 @@ TEST(StateManager, manageMeshFieldTemplate){
 	ASSERT_EQ(data[0], pv->get_data()[0]);
 	
 	// create the state manager
-	StateManager<Simple_Mesh_Wrapper> manager{wrapper, pv};
+	StateManager<Simple_Mesh_Wrapper> manager{wrapper};
+	manager.add(pv);
 	
 	// make sure you can't clobber an existing field
 	ASSERT_THROW(manager.add(pv), std::runtime_error);
@@ -380,8 +382,9 @@ TEST(StateManager, multiMatField){
 
 
 	// create the state manager
-	StateManager<Simple_Mesh_Wrapper> manager{wrapper, pv};
-
+	StateManager<Simple_Mesh_Wrapper> manager{wrapper};
+	manager.add(pv);
+	
 	// try using the return reference
 	auto out = manager.get<double, StateVectorMulti>(Entity_kind::CELL, "field");
 
@@ -412,7 +415,8 @@ TEST(StateManager, mixedFields){
 	auto spv= std::make_shared<StateVectorMulti<>> ("pressure", data);
 
 	// create the state manager
-	StateManager<Simple_Mesh_Wrapper> manager{wrapper, spv};
+	StateManager<Simple_Mesh_Wrapper> manager{wrapper};
+	manager.add(spv);
 
 	// try using the return reference
 	auto out = manager.get<double, StateVectorMulti>(Entity_kind::CELL, "pressure");
@@ -579,7 +583,7 @@ TEST(StateManager, testUniIsolation){
 	StateManager<Simple_Mesh_Wrapper> manager{wrapper};
 	
 	// scalar uni data
-	std::vector<double> data {10., 11., 12.};	
+	std::vector<double> data {10.};	
 
 	// add the scalar field
 	manager.add(std::make_shared<StateVectorUni<>> ("temperature", 
@@ -597,9 +601,9 @@ TEST(StateManager, testUniIsolation){
 	out.push_back(-50.);
 	
 	// make sure the sizes are correct and data is unaltered
-	ASSERT_EQ(out.size(), 4);
-	ASSERT_EQ(data.size(), 3);
-	ASSERT_EQ(out[3], -50.);
+	ASSERT_EQ(out.size(), 2);
+	ASSERT_EQ(data.size(), 1);
+	ASSERT_EQ(out[1], -50.);
 }
 
 
@@ -752,24 +756,26 @@ TEST(StateManager,test4Cell){
 	
 	// check get_nmats API function
 	ASSERT_EQ(manager.get_num_materials(),3);
-	ASSERT_EQ(manager.get_material_id("mat3"),5);
-	ASSERT_EQ(manager.get_material_name(5),"mat3");
+	for (const auto& kv: matnames){
+		ASSERT_EQ(manager.get_material_id(kv.first),matnames[kv.first]);
+		ASSERT_EQ(manager.get_material_name(kv.second),kv.first);
+	}
 	
-	// create the material indices
-	std::unordered_map<int,std::vector<int>> indices{{1,{0,1,2,3}},{3,{0,1}},{5,{0,2}}};
+	// create the material cells
+	std::unordered_map<int,std::vector<int>> cells{{1,{0,1,2,3}},{3,{0,1}},{5,{0,2}}};
 	
-	// add the material indices
-	manager.add_material_indices(indices);
+	// add the material cells
+	manager.add_material_cells(cells);
 	
-	// create the material indices
-	std::unordered_map<int,std::vector<int>> indices2{{10,{0,1,2,3}}};
+	// create the material cells
+	std::unordered_map<int,std::vector<int>> cells2{{10,{0,1,2,3}}};
 	
-	// add the material indices
-	ASSERT_THROW(manager.add_material_indices(indices2), std::runtime_error);
+	// add the cell ids for an unknown material
+	ASSERT_THROW(manager.add_material_cells(cells2), std::runtime_error);
 	
 	// make sure the shape is correct
 	for (const auto& kv : manager.get_material_shape()){
-		ASSERT_EQ(indices[kv.first].size(), kv.second);
+		ASSERT_EQ(cells[kv.first].size(), kv.second);
 	}
 	
 	// create the multi material data
@@ -779,65 +785,57 @@ TEST(StateManager,test4Cell){
 	// add the data, note the make_shared actually copies the data
 	manager.add(std::make_shared<StateVectorMulti<>>("density",density));
 	
-}
-
-
-/*
-// test a mesh with 4 cells containing 3 materials
-TEST(Flat_State_Wrapper, mm2) {
+	// try to add incorrectly sized data, missing a key
+	std::unordered_map<int,std::vector<double>> density_bad_shape1
+		{{1,{1.,1.1,1.2,1.3}},{3,{10.,10.1}}};		
+	ASSERT_THROW(
+		manager.add(std::make_shared<StateVectorMulti<>>("density_bad_shape1",density_bad_shape1)),
+		std::runtime_error
+	);
 	
+	// try to add incorrectly sized data, extra cell 
+	std::unordered_map<int,std::vector<double>> density_bad_shape2
+		{{1,{1.,1.1,1.2,1.3, -1.}},{3,{10.,10.1}},{5,{100.,100.1}}};
+	ASSERT_THROW(
+		manager.add(std::make_shared<StateVectorMulti<>>("density_bad_shape2",density_bad_shape2)),
+		std::runtime_error
+	);
 	
-	// add the data 
-	for (int m = 0; m < nmats; m++){
-		sourceStateWrapper.mat_add_celldata("density", m, &(density_data[m][0]));
+	// try to add incorrectly sized data, extra material 
+	std::unordered_map<int,std::vector<double>> density_bad_shape3
+		{{1,{1.,1.1,1.2,1.3}},{3,{10.,10.1}},{5,{100.,100.1}},{7,{100.,100.1}}};
+	ASSERT_THROW(
+		manager.add(std::make_shared<StateVectorMulti<>>("density_bad_shape3",density_bad_shape3)),
+		std::runtime_error
+	);
+	
+	// check that the number of cells for each material is correct
+	for (const auto& kv: cells){
+			ASSERT_EQ(kv.second.size(), manager.num_material_cells(kv.first));
 	}
 	
-	// create the flat state wrapper
-	Wonton::Flat_State_Wrapper<> flat_state;
-	
-	// initialize the flat state wrapper
-	std::vector<std::string> field_names = {"density"};
-  flat_state.initialize(sourceStateWrapper, field_names);
+	// check that the cells ids for each material are correct
+	for (const auto& kv: cells){
+		for (int i=0; i<kv.second.size(); i++){	
+			ASSERT_EQ(kv.second[i],manager.get_material_cells(kv.first)[i]);
+		}
+	}
 
+	// test that the number of materials in each cell is correct
+	ASSERT_EQ(manager.num_cell_materials(0),3);
+	ASSERT_EQ(manager.num_cell_materials(1),2);
+	ASSERT_EQ(manager.num_cell_materials(2),2);
+	ASSERT_EQ(manager.num_cell_materials(3),1);
+	
+	// Friday afternoon about to leave, need to pick up with testing the materials
+	// in a cell works
+}
+/*
 
 	//////////////////////////////////////////////		
   // diagnostics
   //////////////////////////////////////////////
   
-	// check number of materials
-	ASSERT_EQ(nmats, flat_state.num_materials());
-	ASSERT_EQ(sourceStateWrapper.num_materials(), flat_state.num_materials());
-	
-	// check material names
-	for (int m=0; m<nmats; ++m){
-		ASSERT_EQ(matnames[m], flat_state.material_name(m));
-		ASSERT_EQ(sourceStateWrapper.material_name(m), flat_state.material_name(m));
-	}
-			
-	// check number of cells for each material
-	for (int m=0; m<nmats; ++m){
-		ASSERT_EQ(matcells_src[m].size(), flat_state.mat_get_num_cells(m));
-	}
-	
-	// check that the cell id's are correct each material
-	for (int m=0; m<nmats; ++m){
-		
-		// temp storage for the cell id's
-		std::vector<int> cellids;
-		
-		// get the cell id's for this material
-		flat_state.mat_get_cells(m, &cellids);
-		
-	  for (int i=0; i<flat_state.mat_get_num_cells(m); ++i){
-			ASSERT_EQ(matcells_src[m][i], cellids[i]);
-	  }
-	}
-	
-	// check that there are the correct number of materials in the cell
-	ASSERT_EQ(flat_state.cell_get_num_mats(0),3);
-	ASSERT_EQ(flat_state.cell_get_num_mats(1),2);
-	ASSERT_EQ(flat_state.cell_get_num_mats(2),2);
-	ASSERT_EQ(flat_state.cell_get_num_mats(3),1);
 	
 	// check that the materials in the cell are correct
 	// these are ugly tests, but work since we know the answer
