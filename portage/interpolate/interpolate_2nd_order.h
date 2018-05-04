@@ -117,59 +117,8 @@ class Interpolate_2ndOrder {
 
   void set_interpolation_variable(std::string const & interp_var_name,
                                   LimiterType limiter_type = NOLIMITER) {
-    interp_var_name_ = interp_var_name;
-    limiter_type_ = limiter_type;
-
-    // Extract the field data from the statemanager
-    field_type_ = source_state_.field_type(on_what, interp_var_name);
-    if (field_type_ == Field_type::MESH_FIELD)
-      source_state_.mesh_get_data(on_what, interp_var_name,
-                                  &source_vals_);
-    else
-      source_state_.mat_get_celldata(interp_var_name, matid_, &source_vals_);
-
-    // Compute the limited gradients for the field 
-#ifdef HAVE_TANGRAM
-    Limited_Gradient<D, on_what, SourceMeshType, StateType, InterfaceReconstructorType>
-        limgrad(source_mesh_, source_state_, interp_var_name_, limiter_type_,
-                interface_reconstructor_);
-     limgrad.set_interpolation_variable(interp_var_name_, limiter_type_);      
-     if (field_type_ == Field_type::MULTIMATERIAL_FIELD)
-       limgrad.set_material(matid_);
-#else
-    Limited_Gradient<D, on_what, SourceMeshType, StateType>
-        limgrad(source_mesh_, source_state_, interp_var_name_, limiter_type_);
-#endif
-
-   // Get the correct number of source cells for which the gradient has to be computed
-    int nentities;
-    std::vector<int> cellids;
-    if (field_type_ == Field_type::MESH_FIELD){
-      nentities = source_mesh_.end(on_what)-source_mesh_.begin(on_what);
-    }
-    else{
-      source_state_.mat_get_cells(matid_, &cellids);
-      nentities =  cellids.size();
-    }
-      
-    gradients_.resize(nentities);
-    
-    // call transform functor to take the values of the variable on
-    // the cells and compute a "limited" gradient of the field on the
-    // cells (for transform definition, see portage.h)
-
-    // Even though we defined Portage::transform (to be
-    // thrust::transform or boost::transform) in portage.h, the
-    // compiler is not able to disambiguate this call and is getting
-    // confused. So we will explicitly state that this is Portage::transform
-    if (field_type_ == Field_type::MESH_FIELD){
-     Portage::transform(source_mesh_.begin(on_what), source_mesh_.end(on_what),
-                       gradients_.begin(), limgrad);
-    }
-    else{
-      Portage::transform(cellids.begin(), cellids.end(),
-                       gradients_.begin(), limgrad);
-    }
+    std::cerr << "Interpolation is available for only  entity types: CELL, NODE"
+              << std::endl;
   } //set_interpolation_variable 
 
 
@@ -295,7 +244,7 @@ class Interpolate_2ndOrder<D,
     Limited_Gradient<D, CELL, SourceMeshType, StateType, InterfaceReconstructorType>
         limgrad(source_mesh_, source_state_, interp_var_name_, limiter_type_,
                 interface_reconstructor_);
-     limgrad.set_interpolation_variable(interp_var_name_, limiter_type_);      
+     //limgrad.set_interpolation_variable(interp_var_name_, limiter_type_);      
      if (field_type_ == Field_type::MULTIMATERIAL_FIELD)
        limgrad.set_material(matid_);
 #else
@@ -597,15 +546,8 @@ class Interpolate_2ndOrder<D,
     
 
     // Compute the limited gradients for the field
-    
-// #ifdef HAVE_TANGRAM  
-//    Limited_Gradient<D, NODE, SourceMeshType, StateType, InterfaceReconstructorType>
-//        limgrad(source_mesh_, source_state_, interp_var_name_, limiter_type_, 
-//          interface_reconstructor_);
-//  #else 
    Limited_Gradient<D, NODE, SourceMeshType, StateType>
         limgrad(source_mesh_, source_state_, interp_var_name_, limiter_type_);
-//  #endif
   
     int nentities = source_mesh_.end(NODE)-source_mesh_.begin(NODE);
     gradients_.resize(nentities);
