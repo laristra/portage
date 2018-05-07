@@ -273,7 +273,6 @@ namespace Portage {
 				         c, ALL, &(cell_neighbors_[c])); } );
 
       set_interpolation_variable(var_name,limiter_type);
-      assert(this->vals_);
     }
 #endif
 
