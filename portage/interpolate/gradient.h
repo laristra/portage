@@ -259,7 +259,22 @@ namespace Portage {
 		   std::string const var_name, // TODO: remove
 		   LimiterType limiter_type,   // TODO: remove
 		   std::shared_ptr<typename LIMITED_GRADIENT_BASE(CELL)::InterfaceReconstructor> ir) 
-    : LIMITED_GRADIENT_BASE(CELL) (mesh, state, ir) { }
+    : LIMITED_GRADIENT_BASE(CELL) (mesh, state, ir) { 
+
+      // Collect and keep the list of neighbors for each CELL as it may
+      // be expensive to go to the mesh layer and collect this data for
+      // each cell during the actual gradient calculation
+
+      int ncells = this->mesh_.num_entities(CELL);
+      cell_neighbors_.resize(ncells);
+      cell_neighbors_.resize(this->mesh_.num_entities(CELL));
+      Portage::for_each(this->mesh_.begin(CELL), this->mesh_.end(CELL), 
+			[this](int c) { this->mesh_.cell_get_node_adj_cells(
+				         c, ALL, &(cell_neighbors_[c])); } );
+
+      set_interpolation_variable(var_name,limiter_type);
+      assert(this->vals_);
+    }
 #endif
 
   Limited_Gradient(MeshType const & mesh,
@@ -384,10 +399,12 @@ namespace Portage {
 #endif
       // If we get here, we must have mesh data which is cell-centered
       // and not dependent on material, so just get the centroid and value
-      Point<D> centroid;
-      this->mesh_.cell_centroid(nbrid_g, &centroid);
-      ls_coords.push_back(centroid);
-      ls_vals.push_back(this->vals_[nbrid_g]);
+      if (this->field_type_ == Field_type::MESH_FIELD){
+	Point<D> centroid;
+	this->mesh_.cell_centroid(nbrid_g, &centroid);
+	ls_coords.push_back(centroid);
+	ls_vals.push_back(this->vals_[nbrid_g]);
+      }
     }
     grad = ls_gradient(ls_coords, ls_vals);
 
