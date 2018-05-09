@@ -740,7 +740,7 @@ TEST(StateManager,test4Cell){
 	using namespace Wonton;
 
 	// create the mesh
-	Simple_Mesh mesh{0., 0., 1., 1., 2, 2};
+	Simple_Mesh mesh{0., 0., 2., 2., 2, 2};
 	
 	// create the wrapper
 	Simple_Mesh_Wrapper wrapper{mesh};
@@ -827,65 +827,96 @@ TEST(StateManager,test4Cell){
 	ASSERT_EQ(manager.num_cell_materials(2),2);
 	ASSERT_EQ(manager.num_cell_materials(3),1);
 	
-	// Friday afternoon about to leave, need to pick up with testing the materials
-	// in a cell works
-}
-/*
-
-	//////////////////////////////////////////////		
-  // diagnostics
-  //////////////////////////////////////////////
-  
-	
 	// check that the materials in the cell are correct
-	// these are ugly tests, but work since we know the answer
-	std::vector<int> cell_mats;
-	flat_state.cell_get_mats(0, &cell_mats);
-	ASSERT_EQ(cell_mats[0],0);
-	ASSERT_EQ(cell_mats[1],1);
-	ASSERT_EQ(cell_mats[2],2);
-	flat_state.cell_get_mats(1, &cell_mats);
-	ASSERT_EQ(cell_mats[0],0);
-	ASSERT_EQ(cell_mats[1],1);
-	flat_state.cell_get_mats(2, &cell_mats);
-	ASSERT_EQ(cell_mats[0],0);
-	ASSERT_EQ(cell_mats[1],2);
-	flat_state.cell_get_mats(3, &cell_mats);
-	ASSERT_EQ(cell_mats[0],0);
-	
+	std::unordered_set<int> dum{1,3,5};
+	ASSERT_EQ(manager.get_cell_materials(0), dum);
+	dum=std::unordered_set<int>{1,3};
+	ASSERT_EQ(manager.get_cell_materials(1), dum);
+	dum=std::unordered_set<int>{1,5};
+	ASSERT_EQ(manager.get_cell_materials(2), dum);
+	dum=std::unordered_set<int>{1};
+	ASSERT_EQ(manager.get_cell_materials(3), dum);
 	
 	// check that the material cell indices work
-	ASSERT_EQ(flat_state.cell_index_in_material(0,0),0);
-	ASSERT_EQ(flat_state.cell_index_in_material(1,0),1);
-	ASSERT_EQ(flat_state.cell_index_in_material(2,0),2);
-	ASSERT_EQ(flat_state.cell_index_in_material(3,0),3);	
-	ASSERT_EQ(flat_state.cell_index_in_material(0,1),0);
-	ASSERT_EQ(flat_state.cell_index_in_material(1,1),1);
-	ASSERT_EQ(flat_state.cell_index_in_material(0,2),0);
-	ASSERT_EQ(flat_state.cell_index_in_material(2,2),1);
+	ASSERT_EQ(manager.cell_index_in_material(0,1),0);
+	ASSERT_EQ(manager.cell_index_in_material(1,1),1);
+	ASSERT_EQ(manager.cell_index_in_material(2,1),2);
+	ASSERT_EQ(manager.cell_index_in_material(3,1),3);	
+	ASSERT_EQ(manager.cell_index_in_material(0,3),0);
+	ASSERT_EQ(manager.cell_index_in_material(1,3),1);
+	ASSERT_EQ(manager.cell_index_in_material(0,5),0);
+	ASSERT_EQ(manager.cell_index_in_material(2,5),1);
+
+	// get the data
+	auto out = manager.get<double, StateVectorMulti>(Entity_kind::CELL, "density");
 	
-	// test the field types
-	ASSERT_EQ(
-		flat_state.field_type(Portage::Entity_kind::CELL, field_names[0]),
-		Portage::Field_type::MULTIMATERIAL_FIELD
-	);
+	ASSERT_EQ(out->type(),Portage::Field_type::MULTIMATERIAL_FIELD);
 
-	// test getting the data
-	double *data;
-	flat_state.mat_get_celldata("density", 0, &data);
-	ASSERT_EQ(data[0],density_data[0][0]);
-	ASSERT_EQ(data[1],density_data[0][1]);
-	ASSERT_EQ(data[2],density_data[0][2]);
-	ASSERT_EQ(data[3],density_data[0][3]);
-	flat_state.mat_get_celldata("density", 1, &data);
-	ASSERT_EQ(data[0],density_data[1][0]);
-	ASSERT_EQ(data[1],density_data[1][1]);
-	flat_state.mat_get_celldata("density", 2, &data);
-	ASSERT_EQ(data[0],density_data[2][0]);
-	ASSERT_EQ(data[1],density_data[2][1]);
+	auto& out_values= out->get_data();
+	
+	// test that the values obtained through the state manager are correct
+	for (auto& kv : out_values) {
+		auto& d=kv.second;
+		for (int j=0; j<d.size(); j++){
+			ASSERT_EQ(density[kv.first][j], d[j]);
+		}
+	} 
+	
+	// now add centroid data to the mesh
+	// vector mm data
+	std::unordered_map<int, std::vector<Point<2>>> centroid {
+		{1,{Point<2>{.5,.5},Point<2>{1.5,.5},Point<2>{.5,1.5},Point<2>{1.5,1.5}}},
+		{3,{Point<2>{.55,.55},Point<2>{1.55,.55}}},
+		{5,{Point<2>{.45,.45},Point<2>{.45,1.45}}}};	
+	
+	// add the scalar field
+	manager.add(std::make_shared<StateVectorMulti<Point<2>>> ("centroid", centroid));
+	
+	// Try different ways of accessing the data, some using template deduction
+	
+	// get the data
+	auto& out2 = manager.get<Point<2>, StateVectorMulti>(Entity_kind::CELL, "centroid")->get_data();
+	
+	// test that the values obtained through the state manager are correct
+	for (auto& kv : out2) {
+		auto& d=kv.second;
+		for (int j=0; j<d.size(); j++){
+			ASSERT_EQ(centroid[kv.first][j][0], d[j][0]);
+			ASSERT_EQ(centroid[kv.first][j][1], d[j][1]);
+		}
+	} 
 
+	// get the data using the simplified multi material get
+	auto& out3 = manager.get<Point<2>>("centroid")->get_data();
+	
+	// test that the values obtained through the state manager are correct
+	for (auto& kv : out3) {
+		auto& d=kv.second;
+		for (int j=0; j<d.size(); j++){
+			ASSERT_EQ(centroid[kv.first][j][0], d[j][0]);
+			ASSERT_EQ(centroid[kv.first][j][1], d[j][1]);
+		}
+	} 
+
+	// get the data using the template parameter deduction form
+	std::shared_ptr<StateVectorMulti<Point<2>>> sv;
+	manager.get("centroid", sv);
+	auto& out4 =sv->get_data();
+	
+	// test that the values obtained through the state manager are correct
+	for (auto& kv : out4) {
+		auto& d=kv.second;
+		for (int j=0; j<d.size(); j++){
+			ASSERT_EQ(centroid[kv.first][j][0], d[j][0]);
+			ASSERT_EQ(centroid[kv.first][j][1], d[j][1]);
+		}
+	} 
+
+	// what is in the state manager?
+	//for (auto& kv: manager.get_state_keys()){
+	//	std::cout<<"type: "<<kv.first<<" name: " << kv.second<<std::endl;
+	//}
 }
-*/
 
 
 
