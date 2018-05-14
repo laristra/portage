@@ -4,8 +4,8 @@ Please see the license file at the root of this repository, or at:
     https://github.com/laristra/portage/blob/master/LICENSE
 */
 
-#ifndef SRC_STATE_STATE_VECTOR_MULTI_H_
-#define SRC_STATE_STATE_VECTOR_MULTI_H_
+#ifndef SRC_STATE_STATE_VECTOR_MULTI_RAW_H_
+#define SRC_STATE_STATE_VECTOR_MULTI_RAW_H_
 
 #include <string>
 #include <typeinfo>
@@ -54,5 +54,5 @@ class StateVectorMultiRaw : public StateVectorBase {
 
 }
 
-#endif //SRC_STATE_STATE_VECTOR_MULTI_H_
+#endif //SRC_STATE_STATE_VECTOR_MULTI_RAW_H_
 

@@ -18,6 +18,10 @@ Please see the license file at the root of this repository, or at:
 
 #include "portage/support/portage.h"
 #include "portage/state/state_vector_base.h"
+#include "portage/state/state_vector_uni.h"
+#include "portage/state/state_vector_multi.h"
+#include "portage/state/state_vector_uni_raw.h"
+#include "portage/state/state_vector_multi_raw.h"
 
 namespace Portage {  
 

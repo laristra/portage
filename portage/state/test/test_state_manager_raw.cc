@@ -237,8 +237,11 @@ TEST(StateManager, manageMeshField2){
 	ASSERT_EQ(data[0], pv->get_data()[0]);
 	
 	// create the state manager
-	StateManager<Simple_Mesh_Wrapper> manager{wrapper, pv};
+	StateManager<Simple_Mesh_Wrapper> manager{wrapper};
 	
+	// add the data
+	manager.add(pv);
+		
 	// make sure you can't clobber an existing field
 	ASSERT_THROW(manager.add(pv), std::runtime_error);
 
@@ -284,7 +287,10 @@ TEST(StateManager, manageMeshFieldTemplate){
 	ASSERT_EQ(data[0], pv->get_data()[0]);
 	
 	// create the state manager
-	StateManager<Simple_Mesh_Wrapper> manager{wrapper, pv};
+	StateManager<Simple_Mesh_Wrapper> manager{wrapper};
+	
+	// add the data
+	manager.add(pv);
 	
 	// make sure you can't clobber an existing field
 	ASSERT_THROW(manager.add(pv), std::runtime_error);
@@ -356,8 +362,11 @@ TEST(StateManager, multiMatField){
 	}  
 
 	// create the state manager
-	StateManager<Simple_Mesh_Wrapper> manager{wrapper, pv};
+	StateManager<Simple_Mesh_Wrapper> manager{wrapper};
 
+	// add the data
+	manager.add(pv);
+		
 	// try using the return reference
 	auto out = manager.get<double, StateVectorMultiRaw>(Entity_kind::CELL, "field");
 	
@@ -390,8 +399,11 @@ TEST(StateManager, mixedFields){
 	auto pv= std::make_shared<StateVectorMultiRaw<>> ("pressure", temp);
 
 	// create the state manager
-	StateManager<Simple_Mesh_Wrapper> manager{wrapper, pv};
+	StateManager<Simple_Mesh_Wrapper> manager{wrapper};
 
+	// add the data
+	manager.add(pv);
+		
 	// try using the return reference
 	auto out = manager.get<double, StateVectorMultiRaw>(Entity_kind::CELL, "pressure");
 	
