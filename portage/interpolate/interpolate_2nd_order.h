@@ -244,7 +244,6 @@ class Interpolate_2ndOrder<D,
     Limited_Gradient<D, CELL, SourceMeshType, StateType, InterfaceReconstructorType>
         limgrad(source_mesh_, source_state_, interp_var_name_, limiter_type_,
                 interface_reconstructor_);
-     //limgrad.set_interpolation_variable(interp_var_name_, limiter_type_);      
      if (field_type_ == Field_type::MULTIMATERIAL_FIELD)
        limgrad.set_material(matid_);
 #else
@@ -353,12 +352,12 @@ class Interpolate_2ndOrder<D,
 
       // Obtain source cell centroid
       Point<D> srccell_centroid;
-#ifdef HAVE_TANGRAM     
       if (field_type_ == Field_type::MESH_FIELD){
        source_mesh_.cell_centroid(srccell, &srccell_centroid);
       }
       else if (field_type_ == Field_type::MULTIMATERIAL_FIELD){
-      	int nmats = source_state_.cell_get_num_mats(srccell);
+#ifdef HAVE_TANGRAM  
+    	int nmats = source_state_.cell_get_num_mats(srccell);
       	std::vector<int> cellmats;
       	source_state_.cell_get_mats(srccell, &cellmats);
       
@@ -395,10 +394,8 @@ class Interpolate_2ndOrder<D,
            srccell_centroid = srccell_centroid/cnt; 
         }
       }
+#endif
      }
-#else
-       source_mesh_.cell_centroid(srccell, &srccell_centroid);
-#endif 
     
    //Compute intersection centroid
     Point<D> xsect_centroid;

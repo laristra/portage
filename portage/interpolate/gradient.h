@@ -18,9 +18,11 @@
 #include "portage/support/lsfits.h"
 #include "portage/intersect/dummy_interface_reconstructor.h"
 
+#ifdef HAVE_TANGRAM
 #include "tangram/driver/driver.h"
 #include "tangram/driver/CellMatPoly.h"
 #include "tangram/support/MatPoly.h"
+#endif 
 
 namespace Portage {
 
