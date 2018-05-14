@@ -86,38 +86,39 @@ TEST(Jali_State_Wrapper, DataTypes) {
 
   // add data through wrapper
   wrapper.mesh_add_data<double>(Portage::CELL, "d1", dtest);
-  wrapper.mesh_add_data<double>(Portage::CELL, "d2", 123.456);
+  double dval = 123.456;
+  wrapper.mesh_add_data<double>(Portage::CELL, "d2", dval);
 
   double *ddata;
   wrapper.mesh_get_data(Portage::CELL, "d1", &ddata);
   for (unsigned int i = 0; i < n_cells; i++) ASSERT_EQ(ddata[i], dtest[i]);
   wrapper.mesh_get_data(Portage::CELL, "d2", &ddata);
-  for (unsigned int i = 0; i < n_cells; i++) ASSERT_EQ(ddata[i], 123.456);
+  for (unsigned int i = 0; i < n_cells; i++) ASSERT_EQ(ddata[i], dval);
 
   // Iterate through a vector of names
   std::vector<std::string> fields;
   fields.push_back("v1");  fields.push_back("f1");  fields.push_back("i1");
-#if 0
   for (auto it = fields.begin(); it != fields.end(); it++)
   {
     Portage::Entity_kind on_what = wrapper.get_entity(*it);
-    if (typeid(float) == wrapper.get_type(*it))
+    int nent = inputMeshWrapper.num_entities(on_what);
+    if (typeid(float) == wrapper.get_data_type(*it))
     {
       float* fdata;
       wrapper.mesh_get_data(on_what, *it, &fdata);
-      for (unsigned int i = 0; i < inputMeshWrapper.num_entities(on_what); i++) ASSERT_EQ(fdata[i], ftest[i]);
+      for (unsigned int i = 0; i < nent; i++) ASSERT_EQ(fdata[i], ftest[i]);
     }
-    else if (typeid(int) == wrapper.get_type(*it))
+    else if (typeid(int) == wrapper.get_data_type(*it))
     {
       int* idata;
       wrapper.mesh_get_data(on_what, *it, &idata);
-      for (unsigned int i = 0; i < inputMeshWrapper.num_entities(on_what); i++) ASSERT_EQ(idata[i], itest[i]);
+      for (unsigned int i = 0; i < nent; i++) ASSERT_EQ(idata[i], itest[i]);
     }
-    else if (typeid(Vec2d) == wrapper.get_type(*it))
+    else if (typeid(Vec2d) == wrapper.get_data_type(*it))
     {
       Vec2d* vdata;
       wrapper.mesh_get_data(on_what, *it, &vdata);
-      for (unsigned int i = 0; i < inputMeshWrapper.num_entities(on_what); i++)
+      for (unsigned int i = 0; i < nent; i++)
       {
         ASSERT_EQ(vdata[i].x, vtest[i].x);
         ASSERT_EQ(vdata[i].y, vtest[i].y);
@@ -128,30 +129,38 @@ TEST(Jali_State_Wrapper, DataTypes) {
       ASSERT_EQ(0, 1);    // This else should never be reached in this test
     }
   }
-#endif
 
-#if 0
   // Iterate through all fields using the wrapper
   for (auto it = wrapper.names_begin(); it != wrapper.names_end(); it++)
   {
     Portage::Entity_kind on_what = wrapper.get_entity(*it);
-    if (typeid(float) == wrapper.get_type(*it))
+    int nent = inputMeshWrapper.num_entities(on_what);
+    if (typeid(float) == wrapper.get_data_type(*it))
     {
       float* fdata;
       wrapper.mesh_get_data(on_what, *it, &fdata);
-      for (unsigned int i = 0; i < inputMeshWrapper.num_entities(on_what); i++) ASSERT_EQ(fdata[i], ftest[i]);
+      for (unsigned int i = 0; i < nent; i++) ASSERT_EQ(fdata[i], ftest[i]);
     }
-    else if (typeid(int) == wrapper.get_type(*it))
+    else if (typeid(double) == wrapper.get_data_type(*it))
+    {
+      double* ddata;
+      wrapper.mesh_get_data(on_what, *it, &ddata);
+      if (*it == "d1")
+        for (unsigned int i = 0; i < nent; i++) ASSERT_EQ(ddata[i], dtest[i]);
+      else
+        for (unsigned int i = 0; i < nent; i++) ASSERT_EQ(ddata[i], dval);
+    }
+    else if (typeid(int) == wrapper.get_data_type(*it))
     {
       int* idata;
       wrapper.mesh_get_data(on_what, *it, &idata);
-      for (unsigned int i = 0; i < inputMeshWrapper.num_entities(on_what); i++) ASSERT_EQ(idata[i], itest[i]);
+      for (unsigned int i = 0; i < nent; i++) ASSERT_EQ(idata[i], itest[i]);
     }
-    else if (typeid(Vec2d) == wrapper.get_type(*it))
+    else if (typeid(Vec2d) == wrapper.get_data_type(*it))
     {
       Vec2d* vdata;
       wrapper.mesh_get_data(on_what, *it, &vdata);
-      for (unsigned int i = 0; i < inputMeshWrapper.num_entities(on_what); i++)
+      for (unsigned int i = 0; i < nent; i++)
       {
         ASSERT_EQ(vdata[i].x, vtest[i].x);
         ASSERT_EQ(vdata[i].y, vtest[i].y);
@@ -162,41 +171,6 @@ TEST(Jali_State_Wrapper, DataTypes) {
       ASSERT_EQ(0, 1);    // This else should never be reached in this test
     }
   }
-#endif
-
-#if 0
-  // Iterate through fields on cells only using the wrapper
-  for (auto it = wrapper.names_entity_begin(Portage::CELL);
-       it != wrapper.names_entity_end(Portage::CELL); it++)
-  {
-    Portage::Entity_kind on_what = wrapper.get_entity(*it);
-    if (typeid(float) == wrapper.get_type(*it))
-    {
-      float* fdata;
-      wrapper.mesh_get_data(on_what, *it, &fdata);
-      for (unsigned int i = 0; i < inputMeshWrapper.num_entities(on_what); i++) ASSERT_EQ(fdata[i], ftest[i]);
-    }
-    else if (typeid(int) == wrapper.get_type(*it))
-    {
-      ASSERT_EQ(0, 1);   // This else should never be reached in this test
-    }
-    else if (typeid(Vec2d) == wrapper.get_type(*it))
-    {
-      Vec2d* vdata;
-      wrapper.mesh_get_data(on_what, *it, &vdata);
-      for (unsigned int i=0; i<inputMeshWrapper.num_entities(on_what); i++)
-      {
-        ASSERT_EQ(vdata[i].x, vtest[i].x);
-        ASSERT_EQ(vdata[i].y, vtest[i].y);
-      }
-    }
-    else
-    {
-      ASSERT_EQ(0, 1);   // This else should never be reached in this test
-    }
-  }
-#endif
-
 }
 
 

@@ -297,10 +297,33 @@ class Jali_State_Wrapper {
    @param[in] on_what The entity type on which the data is defined
    @param[in] var_name The name of the data field
    @param[in] value Initialize with this value
+
+   This version of the overloaded operator is being DISABLED for
+   pointer and array types (via the line 'typename
+   std::enable_if....type') because template deduction rules are
+   making the compiler invoke this version, when we call it with a
+   const double ** pointer
+   
+   See, stackoverflow.com Q&A
+   
+   http://stackoverflow.com/questions/13665574/template-argument-deduction-and-pointers-to-constants
+
+    We could make it work for some cases using
+
+    template <class T, class DomainType,
+              template<class, class> class StateVecType>
+    auto add(........,
+             T const& data) -> StateVecType<decltype(data+data), DomainType>&
+
+    but this does not work if T is a double[3] or std::array<double, 3>
+    as there is no + operator defined for these types
    */
   template <class T>
-  void mesh_add_data(Entity_kind on_what, std::string const& var_name,
-                      const T value) {
+  typename std::enable_if<(!std::is_pointer<T>::value &&
+                           !std::is_array<T>::value),
+                          void>::type
+  mesh_add_data(Entity_kind on_what, std::string const& var_name,
+                const T value) {
     // Compiler needs some help deducing template parameters here
     jali_state_.add<T, Jali::Mesh, Jali::UniStateVector>(var_name,
                                                     jali_state_.mesh(),
@@ -545,26 +568,24 @@ class Jali_State_Wrapper {
   }
 
 
-#if 0
   /*!
     @brief Get the data type of the given field
     @param[in] var_name The string name of the data field
     @return A reference to the type_info struct for the field's data type
    */
-  const std::type_info& get_type(std::string const& var_name) const {
+  const std::type_info& get_data_type(std::string const& var_name) const {
 
     Jali::State::const_iterator it =
         jali_state_.find(var_name, jali_state_.mesh());
     if (it != jali_state_.cend()) {
       std::shared_ptr<Jali::StateVectorBase> vector = *it;
       if (vector)
-        return vector->get_type();
+        return vector->data_type();
     }
 
     std::cerr << "Could not find state variable " << var_name << "\n";
     return typeid(0);
   }
-#endif
 
   /*!
     @brief Begin iterator on vector names
@@ -580,28 +601,6 @@ class Jali_State_Wrapper {
    */
   std::vector<std::string>::iterator names_end() const {
     return jali_state_.names_end();
-  }
-
-  /*!
-    @brief Typedef for permutation iterator on vector of strings
-   */
-  typedef Jali::State::string_permutation string_permutation;
-
-  /*!
-    @brief Begin iterator on vector names of specific entity type
-    @param[in] on_what The desired entity type
-    @return Permutation iterator to start of string vector
-   */
-  string_permutation names_entity_begin(Entity_kind on_what) const {
-    return jali_state_.names_entity_begin((Jali::Entity_kind)on_what);
-  }
-
-  /*!
-    @brief End iterator on vector of names of specific entity type
-    @param[in] on_what The desired entity type
-   */
-  string_permutation names_entity_end(Entity_kind on_what) const {
-    return jali_state_.names_entity_end((Jali::Entity_kind)on_what);
   }
 
  private:
