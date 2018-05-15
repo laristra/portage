@@ -15,6 +15,14 @@ target_link_libraries(simple_mesh_app portage
   ${EXTRA_LIBS} ${LAPACKX_LIBRARIES} ${MPI_CXX_LIBRARIES})
 
 
+# Simple_Mesh Multi Material test
+if(TANGRAM_FOUND AND XMOF2D_FOUND)
+	add_executable(simple_mesh_mm_app simple_mesh_mm_app.cc)
+	target_link_libraries(simple_mesh_mm_app portage
+  	${EXTRA_LIBS} ${LAPACKX_LIBRARIES} ${MPI_CXX_LIBRARIES})
+endif(TANGRAM_FOUND AND XMOF2D_FOUND)
+
+
 #TCMalloc option
 set(ENABLE_TCMALLOC TRUE CACHE BOOL "Use TCMalloc")
 if(ENABLE_TCMALLOC)
@@ -32,6 +40,7 @@ if(ENABLE_PROFILE)
   include_directories(${VTUNE_INCLUDE_DIR})
 
   target_link_libraries(simple_mesh_app ${VTUNE_LIB})
+  target_link_libraries(simple_mesh_mm_app ${VTUNE_LIB})
 endif(ENABLE_PROFILE)
 
 
