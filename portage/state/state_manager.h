@@ -15,6 +15,7 @@ Please see the license file at the root of this repository, or at:
 #include <memory>
 #include <stdexcept>
 #include <iterator>
+#include <algorithm>
 
 #include "portage/support/portage.h"
 #include "portage/state/state_vector_base.h"

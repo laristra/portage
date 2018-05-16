@@ -6,12 +6,25 @@
 
 #include <iostream>
 #include <sys/time.h>
+#include <unordered_set>
+#include <unordered_map>
+#include <string>
 
 #include "portage/simple_mesh/simple_mesh.h"
 #include "portage/wonton/mesh/simple_mesh/simple_mesh_wrapper.h"
 #include "portage/state/state_manager.h"
-#include "portage/wonton/state/simple_state/simple_state_mm_wrapper.h"
+//#include "portage/wonton/state/simple_state/simple_state_mm_wrapper.h"
+//#include "portage/support/portage.h"
+//#include "portage/support/Point.h"
+
 #include "read_material_data.h"
+
+#ifdef HAVE_TANGRAM
+#include "tangram/driver/driver.h"
+#include "tangram/reconstruct/xmof2D_wrapper.h"
+#include "tangram/reconstruct/SLIC.h"
+#include "tangram/driver/write_to_gmv.h"
+#endif
 
 /*
 
@@ -51,12 +64,6 @@
 #ifdef XMOF2D
 #endif
 
-#ifdef HAVE_TANGRAM
-#include "tangram/driver/driver.h"
-#include "tangram/reconstruct/xmof2D_wrapper.h"
-#include "tangram/reconstruct/SLIC.h"
-#include "tangram/driver/write_to_gmv.h"
-#endif
 
 
 
@@ -114,7 +121,6 @@ int print_usage() {
       "    number of materials in the cell, the material IDs,\n" <<
       "    the volume fractions and the centroids for the materials.\n\n";
 
-/*
   std::cout << "--material_fields: A comma separated list of quoted math expressions \n" <<
       " expressed in terms of \n" << "x, y and z following the syntax of " <<
       " the expression parser package ExprTk \n" <<
@@ -129,10 +135,6 @@ int print_usage() {
   std::cout << "--limiter (default = 0): " <<
       "slope limiter for a piecewise linear reconstrution\n\n";
 
-  std::cout << "--convergence_study (default = 1): provide the number of times "
-            << "you want to double source and target mesh sizes \n";
-  std::cout << "  ONLY APPLICABLE IF BOTH MESHES ARE INTERNALLY GENERATED\n\n";
-
   std::cout << "--output_meshes (default = y)\n";
   std::cout << "  If 'y', the source and target meshes are output with the " <<
       "remapped field attached as input.exo and output.exo. \n\n";
@@ -141,7 +143,7 @@ int print_usage() {
   std::cout << "  If a filename is specified, the target field values are " <<
       "output to the file given by 'results_filename' in ascii format\n\n";
   return 0;
-*/
+
 }
 
 // Run a remap between two meshes and return the L1 and L2 error norms
@@ -150,15 +152,13 @@ int print_usage() {
 void run(
 	const Simple_Mesh& sourceMesh,
   const Simple_Mesh& targetMesh,
-  const std::string material_filename
-  /*,
-                           Portage::LimiterType limiter,
-                           int interp_order,
-                           std::vector<std::string> material_field_expressions,
-                           std::string field_filename, bool mesh_output,
-                           int rank, int numpe, Jali::Entity_kind entityKind,
-                           double *L1_error, double *L2_error
-	*/
+  const std::string material_filename,
+  const std::vector<std::string> material_field_expressions,
+  Portage::LimiterType limiter,
+  int interp_order,
+  std::string field_filename, 
+  bool mesh_output,
+  Portage::Entity_kind entityKind
 	) {
 
   std::cout << "starting simple_mesh_mm_app...\n";
@@ -174,18 +174,8 @@ void run(
   const int nsrcnodes = source_mesh_wrapper.num_owned_nodes() +
       source_mesh_wrapper.num_ghost_nodes(); // I don't believe there are ghosts
   const int ntarnodes = target_mesh_wrapper.num_owned_nodes();
-
   
-  // Native state managers for source and target
-	StateManager<Wonton::Simple_Mesh_Wrapper> source_state{source_mesh_wrapper};
-	StateManager<Wonton::Simple_Mesh_Wrapper> target_state{target_mesh_wrapper};
-
-  // Wonto wrappers for source and target fields
-  Wonton::Simple_State_Wrapper source_state_wrapper(source_state);
-  Wonton::Simple_State_Wrapper target_state_wrapper(target_state);
-
 	// declare local variables for the material data
-  int nmats;
   std::vector<int> cell_num_mats;
   std::vector<int> cell_mat_ids;  // flattened 2D array
   std::vector<double> cell_mat_volfracs;  // flattened 2D array
@@ -193,45 +183,38 @@ void run(
  
   // Read volume fraction and centroid data from file 
   read_material_data<Wonton::Simple_Mesh_Wrapper, 2>(source_mesh_wrapper,
-                                                     material_filename,
-                                                     cell_num_mats,
-                                                     cell_mat_ids,
-                                                     cell_mat_volfracs,
-                                                     cell_mat_centroids);
-/*
+  	material_filename, cell_num_mats, cell_mat_ids, cell_mat_volfracs,
+    cell_mat_centroids);
+  
+  std::cout<<"cell_num_mats: ";
+  for (auto x: cell_num_mats) std::cout<<x<<" "; std::cout<<std::endl;
+                                                     
+  std::cout<<"cell_mat_ids: ";
+  for (auto x: cell_mat_ids) std::cout<<x<<" "; std::cout<<std::endl;
+                                                     
+  std::cout<<"cell_mat_volfracs: ";
+  for (auto x: cell_mat_volfracs) std::cout<<x<<" "; std::cout<<std::endl;
+                                                     
+  std::cout<<"cell_mat_centroids:\n";
+  for (auto x: cell_mat_centroids) std::cout<<x[0]<<" "<<x[1]<<"\n"; std::cout<<std::endl;
+/**/                                                     
+  
   bool mat_centroids_given = (cell_mat_centroids.size() > 0);
 
-  // Compute offsets into flattened arrays based on cell_num_mats
-  
+  // Compute offsets into flattened arrays based on cell_num_mats 
   std::vector<int> offsets(nsrccells);
   offsets[0] = 0;
   for (int i = 1; i < nsrccells; i++)
     offsets[i] = offsets[i-1] + cell_num_mats[i-1];
 
 
-  // Count the number of materials in the problem and gather their IDs
-  
-  std::vector<int> mat_ids;
-  nmats = 0;
-  for (int c = 0; c < nsrccells; c++) {
-    int nmats_cell = cell_num_mats[c];
-    for (int m = 0; m < nmats_cell; m++) {
-      bool found = false;
-      for (int m2 = 0; m2 < nmats; m2++)
-        if (mat_ids[m2] == cell_mat_ids[offsets[c]+m]) {
-          found = true;
-          break;
-        }
-      if (!found) {
-        mat_ids.push_back(cell_mat_ids[offsets[c]+m]);
-        nmats++;
-      }
-    }
-  }
+  // Count the number of materials in the problem and gather their IDs  
+	std::unordered_set<int> mat_ids{cell_mat_ids.begin(), cell_mat_ids.end()};
+  int nmats{mat_ids.size()};
+
 
   // Spit out some information for the user
   
-  if (rank == 0) {
     std::cout << "Source mesh has " << nsrccells << " cells\n";
     std::cout << "Target mesh has " << ntarcells << " cells\n";
     if (material_field_expressions.size()) {
@@ -245,82 +228,73 @@ void run(
     std::cout << "   Interpolation order is " << interp_order << "\n";
     if (interp_order == 2)
       std::cout << "   Limiter type is " << limiter << "\n";
-  }
 
 
 
   // Perform interface reconstruction for pretty pictures (optional)
+  //auto interface_reconstructor =
+  //    std::make_shared<Tangram::Driver<Tangram::XMOF2D_Wrapper, 2,
+   //                                    Wonton::Simple_Mesh_Wrapper>>(source_mesh_wrapper);
 
-  if (dim == 2) {  // XMOF2D works only in 2D (I know, shocking!!)
-    auto interface_reconstructor =
-        std::make_shared<Tangram::Driver<Tangram::XMOF2D_Wrapper, 2,
-                                         Wonton::Jali_Mesh_Wrapper>>(sourceMeshWrapper);
-
-    // convert from Portage point to Tangram point
-    int ncen = cell_mat_centroids.size();
-    std::vector<Tangram::Point<2>> Tcell_mat_centroids(ncen);
-
-    // have to do this manually because cell_mat_centroids can be
-    // Portage::Point<2> or Portage::Point<3> and due to the lack of
-    // static_if condition, the compiler thinks it may have to convert
-    // Portage::Point<3> to Tangram::Point<2>
-    
-    for (int i = 0; i < ncen; i++)
-      for (int j = 0; j < dim; j++)
-        Tcell_mat_centroids[i][j] = cell_mat_centroids[i][j];
-    
-    interface_reconstructor->set_volume_fractions(cell_num_mats,
-                                                  cell_mat_ids,
-                                                  cell_mat_volfracs,
-                                                  Tcell_mat_centroids);
-    interface_reconstructor->reconstruct();
-
-    std::vector<std::shared_ptr<Tangram::CellMatPoly<2>>> const&
-        cellmatpoly_list = interface_reconstructor->cell_matpoly_ptrs();
-
-    Tangram::write_to_gmv<Wonton::Jali_Mesh_Wrapper, 2>(sourceMeshWrapper,
-                                                          nmats,
-                                                          cell_num_mats,
-                                                          cell_mat_ids,
-                                                          cellmatpoly_list,
-                                                          "source_ir.gmv");
-  }
-
-
-
+	Tangram::Driver<Tangram::XMOF2D_Wrapper, 2,Wonton::Simple_Mesh_Wrapper> interface_reconstructor{source_mesh_wrapper};
+	
+  // convert from Portage points to Tangram points
+  std::vector<Tangram::Point<2>> 
+  	Tcell_mat_centroids(cell_mat_centroids.begin(), cell_mat_centroids.end());
+  	
   
+  interface_reconstructor.set_volume_fractions(cell_num_mats,
+                                                cell_mat_ids,
+                                                cell_mat_volfracs,
+                                                Tcell_mat_centroids);
+                                                
+  // do the interface reconstruction (go from volume fraction, centroid) to pure
+  // material polygons
+  interface_reconstructor.reconstruct();
+
+  std::vector<std::shared_ptr<Tangram::CellMatPoly<2>>> const&
+      cellmatpoly_list = interface_reconstructor.cell_matpoly_ptrs();
+
+  Tangram::write_to_gmv<Wonton::Simple_Mesh_Wrapper, 2>(source_mesh_wrapper,
+                                                        nmats,
+                                                        cell_num_mats,
+                                                        cell_mat_ids,
+                                                        cellmatpoly_list,
+                                                        "source_ir.gmv");
+
   // Convert data from cell-centric to material-centric form as we
   // will need it for adding it to the state manager
-  
-  std::vector<std::vector<int>> matcells(nmats);
-  std::vector<std::vector<double>> mat_volfracs(nmats);
-  std::vector<std::vector<Portage::Point<dim>>> mat_centroids(nmats);
+  std::unordered_map<std::string,int> matnames;
+  std::unordered_map<int, std::vector<int>> matcells;
+  std::unordered_map<int, std::vector<double>> mat_volfracs;
+  std::unordered_map<int, std::vector<Point<2>>>mat_centroids;
   for (int c = 0; c < nsrccells; c++) {
     int ibeg = offsets[c];
     for (int j = 0; j < cell_num_mats[c]; j++) {
       int m = cell_mat_ids[ibeg+j];
+      matnames["mat"+std::to_string(m)]=m; //overwrites but no harm
       matcells[m].push_back(c);
       mat_volfracs[m].push_back(cell_mat_volfracs[ibeg+j]);
       if (mat_centroids_given)
         mat_centroids[m].push_back(cell_mat_centroids[ibeg+j]);
     }
   }
+  
+  // Native state managers for source and target
+  // Note unlike portageapp_multimat_jali and others, I do not need to use a
+  // wrapper since the statemanager is feature complete
+	StateManager<Wonton::Simple_Mesh_Wrapper> source_state{
+		source_mesh_wrapper, matnames, matcells};
 
-  // Add materials, volume fractions and centroids to source state
+	// add the volume fractions and centroids
+	source_state.add(std::make_shared<StateVectorMulti<>>("mat_volfracs",mat_volfracs));
+	if (mat_centroids_given) 
+		source_state.add(std::make_shared<StateVectorMulti<Point<2>>> ("mat_centroids", mat_centroids));
 
-  std::vector<std::string> matnames(nmats);
-  for (int m = 0; m < nmats; m++) {
-    std::stringstream matstr;
-    matstr << "mat" << mat_ids[m];
-    matnames[m] = matstr.str();
-    sourceStateWrapper.add_material(matnames[m], matcells[m]);
-  }
 
-  for (int m = 0; m < nmats; m++) {
-    sourceStateWrapper.mat_add_celldata("mat_volfracs", m, &((mat_volfracs[m])[0]));
-    if (mat_centroids_given)
-      sourceStateWrapper.mat_add_celldata("mat_centroids", m, &((mat_centroids[m])[0]));
-  }
+	StateManager<Wonton::Simple_Mesh_Wrapper> target_state{target_mesh_wrapper};
+
+ /*
 
   
   // User specified fields on source
@@ -688,19 +662,14 @@ int main(int argc, char** argv) {
   double srclo = 0.0, srchi = 1.0;  // bounds of generated mesh in each dir
   bool conformal = true;
   std::string material_filename;
-  
-  /*
   std::vector<std::string> material_field_expressions;
   int interp_order = 1;
   bool mesh_output = true;
   int n_converge = 1;
   Portage::LimiterType limiter = Portage::LimiterType::NOLIMITER;
+  Portage::Entity_kind entityKind = Portage::Entity_kind::CELL;
 
-  std::string field_output_filename;  // No default
-	*/
-	
-
-
+  std::string field_output_filename;  
 
   // Parse the input
 
@@ -724,9 +693,7 @@ int main(int argc, char** argv) {
       conformal = (valueword == "y");
     else if (keyword == "material_file") {
       material_filename = valueword;
-    }
-    /*
-    else if (keyword == "remap_order") {
+    }else if (keyword == "remap_order") {
       interp_order = stoi(valueword);
       assert(interp_order > 0 && interp_order < 3);
     }  else if (keyword == "material_fields") {
@@ -762,7 +729,7 @@ int main(int argc, char** argv) {
       }
     } else if (keyword == "help") {
       print_usage();
-    } */ else
+    } else
       std::cerr << "Unrecognized option " << keyword << std::endl;
   }
 
@@ -776,49 +743,26 @@ int main(int argc, char** argv) {
   	srclo + mesh_offset, srclo+ mesh_offset, 
   	srchi + mesh_offset, srchi+ mesh_offset, 
   	ntargetcells, ntargetcells};
-
     
   // Now run the remap on the meshes and get back the L2 error
   run(
-  	source_mesh, target_mesh, material_filename
-  	/*
-  	, limiter, interp_order, material_field_expressions,
-         field_output_filename, mesh_output,
-         rank, numpe, entityKind, &(l1_err[i]), &(l2_err[i])
-    */
+  	source_mesh, 
+  	target_mesh, 
+  	material_filename, 
+  	material_field_expressions,         
+  	limiter, 
+  	interp_order, 
+    field_output_filename,
+    mesh_output, 
+    entityKind
 	);
 	
-/*
-    std::cout << "L1 norm of error for iteration " << i << " is " <<
-        l2_err[i] << std::endl;
-    std::cout << "L2 norm of error for iteration " << i << " is " <<
-        l2_err[i] << std::endl;
 
-    gettimeofday(&end, 0);
-    timersub(&end, &begin, &diff);
-    seconds = diff.tv_sec + 1.0E-6*diff.tv_usec;
-    if (rank == 0) {
-      if (n_converge == 1)
-        std::cout << "Remap Time: " << seconds << std::endl;
-      else
-        std::cout << "Remap Time (Iteration i): " << seconds << std::endl;
-    }
-    gettimeofday(&begin, 0);
+  gettimeofday(&end, 0);
+  timersub(&end, &begin, &diff);
+  float seconds = diff.tv_sec + 1.0E-6*diff.tv_usec;
+  std::cout << "Remap Time: " << seconds << std::endl;
 
-
-    // if convergence study, double the mesh resolution
-    nsourcecells *= 2;
-    ntargetcells *= 2;
-  }
-
-  for (int i = 1; i < n_converge; i++) {
-    std::cout << "Error ratio L1(" << i-1 << ")/L1(" << i << ") is " <<
-        l1_err[i-1]/l1_err[i] << std::endl;
-    std::cout << "Error ratio L2(" << i-1 << ")/L2(" << i << ") is " <<
-        l2_err[i-1]/l2_err[i] << std::endl;
-  }
-
-*/
 	std::cout << "rock solid\n";
 }
 
