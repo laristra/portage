@@ -54,19 +54,20 @@ class Limited_Gradient {
 #ifdef HAVE_TANGRAM
   using InterfaceReconstructor =
   Tangram::Driver<InterfaceReconstructorType, D, MeshType>;
-#endif
+
   Limited_Gradient(MeshType const & mesh, StateType const & state,
                    std::string const var_name,
-                   LimiterType limiter_type
-#ifdef HAVE_TANGRAM 
-                   , std::shared_ptr<InterfaceReconstructor> ir 
-#endif 
-                   ) : mesh_(mesh), state_(state), var_name_(var_name), 
-                       limtype_(limiter_type) {
-#ifdef HAVE_TANGRAM 
+                   LimiterType limiter_type,
+		   std::shared_ptr<InterfaceReconstructor> ir)
+ : mesh_(mesh), state_(state), var_name_(var_name), limtype_(limiter_type) {
    interface_reconstructor_=ir;
-#endif
  }
+#endif
+
+  Limited_Gradient(MeshType const & mesh, StateType const & state,
+                   std::string const var_name,
+                   LimiterType limiter_type)
+    : mesh_(mesh), state_(state), var_name_(var_name), limtype_(limiter_type) {}
 
   /// @todo Seems to be needed when using this in a Thrust transform call?
   //
