@@ -58,7 +58,7 @@ class Limited_Gradient {
   Limited_Gradient(MeshType const & mesh, StateType const & state,
                    std::string const var_name,
                    LimiterType limiter_type,
-		   std::shared_ptr<InterfaceReconstructor> ir)
+                   std::shared_ptr<InterfaceReconstructor> ir)
  : mesh_(mesh), state_(state), var_name_(var_name), limtype_(limiter_type) {
    interface_reconstructor_=ir;
  }
@@ -308,20 +308,20 @@ class Limited_Gradient<D, CELL, MeshType, StateType, InterfaceReconstructorType>
       }
 
       /* Per page 278 of [Kucharik, M. and Shaskov, M, "Conservative
-	 Multi-material Remap for Staggered Multi-material Arbitrary
-	 Lagrangian-Eulerian Methods," Journal of Computational Physics,
-	 v 258, pp. 268-304, 2014], if a cell is a multimaterial cell and the
-	 field is a material field, then the min value (for density, at
-	 least) should be set to 0 and the max value to infinity (or a large
-	 number), so that we don't end up limiting the gradient to 0 and drop
-	 down to 1st order. But we don't know if a variable is density (don't
-	 want to do silly things like string comparison) or pressure or
-	 something else? What if we limit pressure to 0 and it should
-	 actually be allowed to go -ve? In the end, along with the limiter
-	 type, the application should be able to tell Portage the global
-	 bounds that a variable has to satisfy. Then we can impose the global
-	 limits at multi-material cells and boundary cells without limiting
-	 the gradient to 0. */
+         Multi-material Remap for Staggered Multi-material Arbitrary
+         Lagrangian-Eulerian Methods," Journal of Computational Physics,
+         v 258, pp. 268-304, 2014], if a cell is a multimaterial cell and the
+         field is a material field, then the min value (for density, at
+         least) should be set to 0 and the max value to infinity (or a large
+         number), so that we don't end up limiting the gradient to 0 and drop
+         down to 1st order. But we don't know if a variable is density (don't
+         want to do silly things like string comparison) or pressure or
+         something else? What if we limit pressure to 0 and it should
+         actually be allowed to go -ve? In the end, along with the limiter
+         type, the application should be able to tell Portage the global
+         bounds that a variable has to satisfy. Then we can impose the global
+         limits at multi-material cells and boundary cells without limiting
+         the gradient to 0. */
 
       // Find the min and max of the reconstructed function in the cell
       // Since the reconstruction is linear, this will occur at one of
