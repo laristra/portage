@@ -225,7 +225,6 @@ class Limited_Gradient<D, CELL, MeshType, StateType, InterfaceReconstructorType>
     // Loop over cell where grad is needed and its neighboring cells
     for (auto nbrid_g : nbrids) {
 
-      // Regardless of Tangram availablity, could have material or mesh data
 #ifdef HAVE_TANGRAM
     
       // In order to access its field values for material data (non-mesh data), 
@@ -306,7 +305,23 @@ class Limited_Gradient<D, CELL, MeshType, StateType, InterfaceReconstructorType>
         minval = std::min(ls_vals[i], minval);
         maxval = std::max(ls_vals[i], maxval);
       }
-      
+
+      /* Per page 278 of [Kucharik, M. and Shaskov, M, "Conservative
+	 Multi-material Remap for Staggered Multi-material Arbitrary
+	 Lagrangian-Eulerian Methods," Journal of Computational Physics,
+	 v 258, pp. 268-304, 2014], if a cell is a multimaterial cell and the
+	 field is a material field, then the min value (for density, at
+	 least) should be set to 0 and the max value to infinity (or a large
+	 number), so that we don't end up limiting the gradient to 0 and drop
+	 down to 1st order. But we don't know if a variable is density (don't
+	 want to do silly things like string comparison) or pressure or
+	 something else? What if we limit pressure to 0 and it should
+	 actually be allowed to go -ve? In the end, along with the limiter
+	 type, the application should be able to tell Portage the global
+	 bounds that a variable has to satisfy. Then we can impose the global
+	 limits at multi-material cells and boundary cells without limiting
+	 the gradient to 0. */
+
       // Find the min and max of the reconstructed function in the cell
       // Since the reconstruction is linear, this will occur at one of
       // the nodes of the cell. So find the values of the reconstructed
