@@ -6,8 +6,6 @@
 
 #include <vector>
 #include <cmath>
-using std::vector;
-using std::array;
 
 #include "portage/support/operator.h"
 #include "portage/support/Point.h"
@@ -25,60 +23,60 @@ using Portage::Meshfree::Operator::dimension;
 
 // reference points for different domains
 
-vector<Point<1>> interval_points_=
+std::vector<Point<1>> interval_points_=
   {{0},{1}};
-vector<Point<2>> quadrilateral_points_=
+std::vector<Point<2>> quadrilateral_points_=
   {{0, 0}, {1, 0}, {1, 1}, {0, 1}};
-vector<Point<2>> triangle_points_=
+std::vector<Point<2>> triangle_points_=
   {{0, 0}, {1, 0}, {0, 1}};
-vector<Point<3>> hexahedron_points_=
+std::vector<Point<3>> hexahedron_points_=
   {{0, 0, 0}, {1, 0, 0}, {1, 1, 0}, {0, 1, 0}, {0, 0, 1}, {1, 0, 1}, {1, 1, 1}, {0, 1, 1}};
-vector<Point<3>> wedge_points_=
+std::vector<Point<3>> wedge_points_=
   {{0, 0, 0}, {1, 0, 0}, {0, 1, 0}, {0, 0, 1}, {1, 0, 1}, {0, 1, 1}};
-vector<Point<3>> tetrahedron_points_=
+std::vector<Point<3>> tetrahedron_points_=
   {{0, 0, 0}, {1, 0, 0}, {0, 1, 0}, {0, 0, 1}};
 
 // accessor for different reference points
 
 template<Portage::Meshfree::Operator::Domain domain> 
-vector<Point<dimension(domain)>> 
+std::vector<Point<dimension(domain)>> 
 reference_points() 
 {};
 
 template<> 
-vector<Point<dimension(Interval)>>
+std::vector<Point<dimension(Interval)>>
 reference_points<Interval>()
 {return interval_points_;}
 
 template<> 
-vector<Point<dimension(Quadrilateral)>>
+std::vector<Point<dimension(Quadrilateral)>>
 reference_points<Quadrilateral>()
 {return quadrilateral_points_;}
 
 template<> 
-vector<Point<dimension(Triangle)>>
+std::vector<Point<dimension(Triangle)>>
 reference_points<Triangle>()
 {return triangle_points_;}
 
 template<> 
-vector<Point<dimension(Hexahedron)>>
+std::vector<Point<dimension(Hexahedron)>>
 reference_points<Hexahedron>()
 {return hexahedron_points_;}
 
 template<> 
-vector<Point<dimension(Wedge)>>
+std::vector<Point<dimension(Wedge)>>
 reference_points<Wedge>()
 {return wedge_points_;}
 
 template<> 
-vector<Point<dimension(Tetrahedron)>>
+std::vector<Point<dimension(Tetrahedron)>>
 reference_points<Tetrahedron>()
 {return tetrahedron_points_;}
 
 // function to shift reference points
 
 template<size_t dim>
-vector<Point<dim>> shift_points(const vector<Point<dim>> &points, 
+std::vector<Point<dim>> shift_points(const std::vector<Point<dim>> &points, 
 				const Point<dim> &shift) {
   auto result(points);
   for (int i=0; i<points.size(); i++) {
@@ -89,17 +87,17 @@ vector<Point<dim>> shift_points(const vector<Point<dim>> &points,
   return result;
 }
 
-// standard shift vectors
+// standard shift std::vectors
 
 Point<1> shift1d={1.e8};
 Point<2> shift2d={1.e8,2.e8};
 Point<3> shift3d={1.e8,2.e8,3.e8};
 
-// standard deformation vectors
+// standard deformation std::vectors
 
-vector<vector<double>> matrix2 = 
+std::vector<std::vector<double>> matrix2 = 
   {{2.8549186535902855, -4.346198279115005}, {0.14208725143260595, 0.0933338790596824}};
-vector<vector<double>> matrix3 = 
+std::vector<std::vector<double>> matrix3 = 
   {{3.1611889909865836, -3.1727215693209625, -2.6421056009990864}, 
    {0.0636728533375156, 0.13338461548842906, -0.0839899523685015}, 
    {1.4212135017018008, 0.22338659728810717, 1.4321838606591486}};
@@ -109,8 +107,8 @@ double determinant3 = 1.79452;
 // function to deform reference points
 
 template<size_t dim>
-vector<Point<dim>> deform_points(const vector<Point<dim>> &points, 
-				 const vector<vector<double>> &matrix) {
+std::vector<Point<dim>> deform_points(const std::vector<Point<dim>> &points, 
+				 const std::vector<std::vector<double>> &matrix) {
   auto result(points);
   for (int i=0; i<points.size(); i++) {
     for (int j=0; j<dim; j++) {

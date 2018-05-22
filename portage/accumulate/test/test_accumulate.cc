@@ -8,12 +8,12 @@ Please see the license file at the root of this repository, or at:
 #include <vector>
 #include "gtest/gtest.h"
 
+#include "portage/support/portage.h"
 #include "portage/support/Point.h"
 #include "portage/swarm/swarm.h"
 #include "portage/accumulate/accumulate.h"
 #include "portage/support/test_operator_data.h"
 
-using std::vector;
 using std::shared_ptr;
 using std::make_shared;
 using Portage::Point;
@@ -40,22 +40,27 @@ void test_accumulate(Portage::Meshfree::EstimateType etype,
       offset += index*powl(nside, dim-k-1);
 
       double delta;
+      Point<dim> pt;
 
       delta = 2.*(((double)rand())/RAND_MAX -.5)*jitter*deltax;
-      (*src_pts)[i][k] = index*deltax + delta;
+      pt = (*src_pts)[i];
+      pt[k] = index*deltax + delta;
+      (*src_pts)[i] = pt;
 
       delta = 2.*(((double)rand())/RAND_MAX -.5)*jitter*deltax;
-      (*tgt_pts)[i][k] = index*deltax + delta;
+      pt = (*tgt_pts)[i];
+      pt[k] = index*deltax + delta;
+      (*tgt_pts)[i] = pt;
     }
   }
 
   // create source+target swarms, kernels, geometries, and smoothing lengths
   Swarm<dim> src_swarm(src_pts);
   Swarm<dim> tgt_swarm(tgt_pts);
-  vector<Weight::Kernel> kernels(npoints, Weight::B4);
-  vector<Weight::Geometry> geometries(npoints, Weight::TENSOR);
-  vector<vector<vector<double>>> 
-    smoothingh(npoints, vector<vector<double>>(1, vector<double>(dim, smoothing)));
+  Portage::vector<Weight::Kernel> kernels(npoints, Weight::B4);
+  Portage::vector<Weight::Geometry> geometries(npoints, Weight::TENSOR);
+  Portage::vector<std::vector<std::vector<double>>> 
+    smoothingh(npoints, std::vector<std::vector<double>>(1, std::vector<double>(dim, smoothing)));
 
   {
     // create the accumulator
@@ -77,16 +82,16 @@ void test_accumulate(Portage::Meshfree::EstimateType etype,
     ASSERT_EQ(jsize[1], bsize);
 
     // list of src swarm particles (indices)
-    vector<unsigned int> src_particles(npoints);
+    std::vector<unsigned int> src_particles(npoints);
     for (size_t i=0; i<npoints; i++) src_particles[i] = i;
 
     // Loop through target particles
     for (size_t i=0; i<npoints; i++) {
-      vector<vector<double>> sums(jsize[0], vector<double>(jsize[1],0.));
+      std::vector<std::vector<double>> sums(jsize[0], std::vector<double>(jsize[1],0.));
 
       // do the accumulation loop for each target particle against all
       // the source particles
-      vector<Portage::Weights_t> shape_vecs = accum(i, src_particles);
+      std::vector<Portage::Weights_t> shape_vecs = accum(i, src_particles);
 
       if (etype == KernelDensity) {
         for (size_t j=0; j<npoints; j++) {
@@ -94,6 +99,7 @@ void test_accumulate(Portage::Meshfree::EstimateType etype,
           ASSERT_EQ ((shape_vecs[j]).weights[0], weight);
         }
       } else {      
+	// test for reproducing property
         auto x = tgt_swarm.get_particle_coordinates(i);
         auto jetx = Basis::jet<dim>(btype,x);
 
@@ -141,29 +147,37 @@ void test_operator(Portage::Meshfree::WeightCenter center) {
       double delta;
 
       delta = (((double)rand())/RAND_MAX)*jitter*deltax;
-      (*src_pts)[i][k] = index*deltax + delta;
+      Point<dim> pt = (*src_pts)[i];
+      pt[k] = index*deltax + delta;
+      (*src_pts)[i] = pt;
     }
   } 
 
   // create the target swarm input geometry data based on integration domains.
   auto tgt_pts = make_shared<typename Swarm<dim>::PointVec>(1);
-  vector<Point<dim>> domain_points = reference_points<domain>();
-  Point<dim> centroid(vector<double>(dim,0.));
-  for (int i=0; i<domain_points.size(); i++) {
-    for (int j=0; j<dim; j++) centroid[j] += domain_points[i][j];
+  Portage::vector<std::vector<Point<dim>>> domain_points(1);
+  domain_points[0] = reference_points<domain>();
+  Portage::vector<Point<dim>> refpnts = reference_points<domain>();
+  Point<dim> centroid(std::vector<double>(dim,0.));
+  for (int i=0; i<refpnts.size(); i++) {
+    for (int j=0; j<dim; j++) {Point<dim> pt=refpnts[i]; centroid[j] += pt[j];}
   }
   for (int k=0; k<dim; k++) {
-    centroid[k] /= domain_points.size();
-    (*tgt_pts)[0][k] = centroid[k];
+    centroid[k] /= refpnts.size();
+    Point<dim> pt = (*tgt_pts)[0];
+    pt[k] = centroid[k];
+    (*tgt_pts)[0] = pt;
   }
+  Portage::vector<Portage::Meshfree::Operator::Domain> domains(1);
+  domains[0] = domain;
 
   // create source+target swarms, kernels, geometries, and smoothing lengths
   Swarm<dim> src_swarm(src_pts);
   Swarm<dim> tgt_swarm(tgt_pts);
-  vector<Weight::Kernel> kernels(npoints, Weight::B4);
-  vector<Weight::Geometry> geometries(npoints, Weight::TENSOR);
-  vector<vector<vector<double>>> 
-    smoothingh(npoints, vector<vector<double>>(1, vector<double>(dim, smoothing)));
+  Portage::vector<Weight::Kernel> kernels(npoints, Weight::B4);
+  Portage::vector<Weight::Geometry> geometries(npoints, Weight::TENSOR);
+  Portage::vector<std::vector<std::vector<double>>> 
+    smoothingh(npoints, std::vector<std::vector<double>>(1, std::vector<double>(dim, smoothing)));
 
   // create the accumulator
   Accumulate<dim, Swarm<dim>, Swarm<dim>>
@@ -177,7 +191,7 @@ void test_operator(Portage::Meshfree::WeightCenter center) {
 	  smoothingh,
 	  btype, 
 	  opertype,
-	  domain, 
+	  domains, 
 	  domain_points);
 
   // check sizes and allocate test array
@@ -185,14 +199,14 @@ void test_operator(Portage::Meshfree::WeightCenter center) {
   size_t jsize = Operator::Operator<opertype, btype, domain>::operator_size;
 
   // list of src swarm particles (indices)
-  vector<unsigned int> src_particles(npoints);
+  std::vector<unsigned int> src_particles(npoints);
   for (size_t i=0; i<npoints; i++) src_particles[i] = i;
 
-  vector<vector<double>> sums(bsize, vector<double>(jsize,0.));
+  std::vector<std::vector<double>> sums(bsize, std::vector<double>(jsize,0.));
 
   // do the accumulation loop for each target particle against all
   // the source particles
-  vector<Portage::Weights_t> shape_vecs = accum(0, src_particles);
+  std::vector<Portage::Weights_t> shape_vecs = accum(0, src_particles);
 
   for (size_t j=0; j<npoints; j++) {
     auto y = src_swarm.get_particle_coordinates(j);
