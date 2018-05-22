@@ -42,6 +42,7 @@ Please see the license file at the root of this repository, or at:
 
 template<size_t dim>
 struct Controls {
+  // See the usage() function below for the meaning of these quantities.
   double smin[dim], smax[dim], tmin[dim], tmax[dim];
   int scells[dim], tcells[dim];
   int order;

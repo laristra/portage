@@ -166,7 +166,7 @@ class Swarm {
   size_t npoints_owned_;
 };
 
-// Factory for making swarms in 1 dimensions with random or uniform
+// Factories for making swarms in 1/2/3 dimensions with random or uniform
 // distribution of particles. Reason we are having to return a
 // shared_ptr to the Swarm is because of how its used in the
 // DriverTest
@@ -210,8 +210,6 @@ std::shared_ptr<Swarm<1>> SwarmFactory(double xmin, double xmax,
   return swarm;
 }
 
-// Factories for making swarms in 1/2/3 dimensions with random or
-// uniform distribution of particles
 
 std::shared_ptr<Swarm<2>> SwarmFactory(double xmin, double ymin,
                                        double xmax, double ymax,
