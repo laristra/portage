@@ -84,7 +84,7 @@ class MPI_Particle_Distribute {
 
     assert(dim == source_swarm.space_dimension());
     assert(dim == target_swarm.space_dimension());
-    assert(center == Meshfree::WeightCenter::Gather);
+    //assert(center == Meshfree::WeightCenter::Gather);
 
     /************************************************************************** 
     * Step 1: Compute bounding box for target swarm based on weight center    *
@@ -103,21 +103,32 @@ class MPI_Particle_Distribute {
 
     for (size_t c=0; c<targetNumOwnedPts; ++c)
     {
-      Point<dim> coord = target_swarm.get_particle_coordinates(c);
-      Point<dim> ext = Point<dim>(smoothing_lengths[c][0]);
+        Point<dim> coord = target_swarm.get_particle_coordinates(c);
+        Point<dim> ext;
+        if (center == Meshfree::WeightCenter::Gather)
+           ext = Point<dim>(smoothing_lengths[c][0]);
      
-      for (size_t k=0; k < dim; ++k)
-      {
-        double val0 = coord[k]-ext[k];
-        double val1 = coord[k]+ext[k];
+        for (size_t k=0; k < dim; ++k)
+        {
+          double val0, val1; 
+          if (center == Meshfree::WeightCenter::Gather)
+          {
+            val0 = coord[k]-ext[k];
+            val1 = coord[k]+ext[k];
+          }
+          else if (center == Meshfree::WeightCenter::Scatter)
+          {
+             val0 = coord[k];
+             val1 = coord[k];
+          }
+          if (val0 < targetBoundingBoxes[2*dim*commRank+2*k])
+             targetBoundingBoxes[2*dim*commRank+2*k] = val0;
 
-        if (val0 < targetBoundingBoxes[2*dim*commRank+2*k])
-           targetBoundingBoxes[2*dim*commRank+2*k] = val0;
-
-        if (val1 > targetBoundingBoxes[2*dim*commRank+2*k+1])
-           targetBoundingBoxes[2*dim*commRank+2*k+1] = val1;
-      }      
+          if (val1 > targetBoundingBoxes[2*dim*commRank+2*k+1])
+             targetBoundingBoxes[2*dim*commRank+2*k+1] = val1;
+        }      
      }// for c
+
 
     /************************************************************************** 
     * Step 2: Broadcast the target bounding boxes so that each                *
@@ -160,11 +171,30 @@ class MPI_Particle_Distribute {
         for (size_t c = 0; c < sourceNumPts; ++c)
         {
           Point<dim> coord = source_swarm.get_particle_coordinates(c);
+          Point<dim> ext;
+          if (center == Meshfree::WeightCenter::Scatter)
+            ext = Point<dim>(smoothing_lengths[c][0]);
 
           bool thisPt = true; 
           for (size_t k=0; k<dim; ++k)
           {
-            thisPt = thisPt && (coord[k] <= max[k] && coord[k] >= min[k]);
+            double val0, val1; 
+
+            if (center == Meshfree::WeightCenter::Gather)
+            {
+              val0 = coord[k];
+              val1 = coord[k];
+            }
+            else if (center == Meshfree::WeightCenter::Scatter)
+            {
+              val0 = coord[k]-ext[k];
+              val1 = coord[k]+ext[k];
+            }
+       
+            //check if the coordinates or the bnds of the current
+            //source point either inside or intersecting with the 
+            //bounding box of the target swarm. 
+            thisPt = thisPt && (val0 <= max[k] && val1 >= min[k]);
           } 
 
           if (thisPt)

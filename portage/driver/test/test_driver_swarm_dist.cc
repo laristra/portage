@@ -179,6 +179,16 @@ struct DriverTest2D : DriverTest<2> {
   }
 };
 
+struct DriverTest2DScatter : DriverTest<2> {
+  DriverTest2DScatter() : DriverTest(Jali::MeshFactory(MPI_COMM_WORLD)(0.0, 0.0, 1.0, 1.0, 16, 16),
+                              Jali::MeshFactory(MPI_COMM_WORLD)(0.0, 0.0, 1.0, 1.0, 8, 8)) 
+  {
+    size_t nsrcpts = sourceSwarm->num_particles(Portage::Entity_type::PARALLEL_OWNED); 
+    auto smoothing_lengths = make_shared<vector<vector<vector<double>>>>(nsrcpts,
+                   vector<vector<double>>(1, vector<double>(2, 2.0/4)));
+    DriverTest::set_smoothing_lengths(smoothing_lengths, Portage::Meshfree::Scatter);
+  }
+};
 
 // Class which constructs a pair of 3-D swarms (from jali) for remaps
 struct DriverTest3D : DriverTest<3> {
@@ -233,7 +243,12 @@ TEST_F(DriverTest2D, 2D_ConstantFieldUnitaryBasis) {
   unitTest<Portage::SearchSimplePoints, Portage::Meshfree::Basis::Unitary>
       (compute_constant_field<2>, 0.0);
 }
-
+/*
+TEST_F(DriverTest2DScatter, 2D_ConstantFieldUnitaryBasisScatter) {
+  unitTest<Portage::SearchSimplePoints, Portage::Meshfree::Basis::Unitary>
+      (compute_constant_field<2>, 0.0);
+}*/
+/*
 TEST_F(DriverTest2D, 2D_LinearFieldLinearBasis) {
   unitTest<Portage::SearchSimplePoints, Portage::Meshfree::Basis::Linear>
       (compute_linear_field<2>, 0.0);
@@ -259,5 +274,5 @@ TEST_F(DriverTest3D, 3D_QuadraticFieldQuadraticBasis) {
   unitTest<Portage::SearchSimplePoints, Portage::Meshfree::Basis::Quadratic>
       (compute_quadratic_field<3>, 0.0);
 }
-
+*/
 }  // end namespace

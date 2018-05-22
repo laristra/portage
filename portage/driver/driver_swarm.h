@@ -117,10 +117,10 @@ class SwarmDriver {
       geom_types_ = std::vector<Weight::Geometry>(target_swarm_.num_particles(PARALLEL_OWNED),
                                                   support_geom_type);
     } else if (weight_center_ == Scatter) {
-      assert(smoothing_lengths_.size() == source_swarm_.num_particles());
-      kernel_types_ = std::vector<Weight::Kernel>(source_swarm_.num_particles(),
+      assert(smoothing_lengths_.size() == source_swarm_.num_particles(PARALLEL_OWNED));
+      kernel_types_ = std::vector<Weight::Kernel>(source_swarm_.num_particles(PARALLEL_OWNED),
                                                   kernel_type);
-      geom_types_ = std::vector<Weight::Geometry>(source_swarm_.num_particles(),
+      geom_types_ = std::vector<Weight::Geometry>(source_swarm_.num_particles(PARALLEL_OWNED),
                                                   support_geom_type);
     }
   }
@@ -325,7 +325,7 @@ remap(std::vector<std::string> const &src_varnames,
   MPI_Comm_rank(MPI_COMM_WORLD, &comm_rank);
 #endif
 
-  int numSourcePts = source_swarm_.num_particles(PARALLEL_OWNED);
+  //int numSourcePts = source_swarm_.num_particles(PARALLEL_OWNED);
   int numTargetPts = target_swarm_.num_particles(PARALLEL_OWNED);
 
   int nvars = source_remap_var_names_.size();
@@ -378,6 +378,7 @@ remap(std::vector<std::string> const &src_varnames,
     }
   }
   if (weight_center_ == Portage::Meshfree::Scatter) {
+    int numSourcePts = source_swarm_.num_particles();
     sourceExtents = std::make_shared<std::vector<Point<Dim>>>(numSourcePts);
     for (int i = 0; i < numSourcePts; i++) {
       if (geom_types_[i] == Weight::FACETED) {

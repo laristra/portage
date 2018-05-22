@@ -43,8 +43,20 @@ class Swarm {
 
   using PointVecPtr = shared_ptr<std::vector<Point<dim>>>;
   using PointVec = vector<Point<dim>>;
+  using SmoothingLengthPtr = shared_ptr<std::vector<std::vector<std::vector<double>>>>;  
   
-  
+  /*!
+   * @brief A particle has a center point and smoothing lengths in each dimension.
+   * @param points center points of the particles
+   * @param extents the widths of the particle bounding boxes in each dimension
+   */
+  Swarm(PointVecPtr points, 
+        SmoothingLengthPtr smoothing_lengths)
+      : points_(points), 
+        npoints_owned_(points_->size(), 
+        smoothing_lengths_(smoothing_lengths)) 
+  {}
+
   /*!
    * @brief A particle has a center point and smoothing lengths in each dimension.
    * @param points center points of the particles
@@ -53,7 +65,6 @@ class Swarm {
   Swarm(PointVecPtr points)
       : points_(points), npoints_owned_(points_->size()) 
   {}
-
 
   /*!
    * @brief Create a Swarm from a flat mesh wrapper.
@@ -133,6 +144,14 @@ class Swarm {
     return (*points_)[index];
   }
 
+  /*! @brief Get the coordinates of the particle,
+   * @param index index of particle of interest
+   * @return the particle coordinates
+   */
+  Point<dim> get_particle_coordinates(const size_t index) const {
+    return (*smoothing_length_)[index];
+  }
+
   //! Iterators on mesh entity - begin
   counting_iterator begin(Entity_kind const entity = Entity_kind::PARTICLE,
                           Entity_type const etype = Entity_type::ALL) const {
@@ -157,6 +176,14 @@ class Swarm {
     (*points_).insert((*points_).end(), new_pts.begin(), new_pts.end());
   }
   
+  /*! @brief Update smoothing lengths for new particles 
+   * @return 
+   */
+  void update_smoothing_length(std::vector<std::vector<std::vector<double>>>& sm_vals)
+  {
+   
+    (*smoothing_lengths_).insert((*smoothing_lengths_).end(), sm_vals.begin(), sm_vals.end());
+  }
 
  private:
   /** the centers of the particles */
@@ -164,6 +191,9 @@ class Swarm {
 
   /** the number of owned particles in the swarm */
   size_t npoints_owned_;
+
+  /** the smoothing length extents for each particle */
+  SmoothingLengthPtr smoothing_lengths_; 
 };
 
 // Factory for making swarms in 1 dimensions with random or uniform
