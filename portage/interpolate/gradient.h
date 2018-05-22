@@ -59,9 +59,7 @@ class Limited_Gradient {
                    std::string const var_name,
                    LimiterType limiter_type,
                    std::shared_ptr<InterfaceReconstructor> ir)
- : mesh_(mesh), state_(state), var_name_(var_name), limtype_(limiter_type) {
-   interface_reconstructor_=ir;
- }
+ : mesh_(mesh), state_(state), var_name_(var_name), limtype_(limiter_type) {}
 #endif
 
   Limited_Gradient(MeshType const & mesh, StateType const & state,
@@ -125,7 +123,9 @@ class Limited_Gradient<D, CELL, MeshType, StateType, InterfaceReconstructorType>
                    std::string const var_name,
                    LimiterType limiter_type,
                    std::shared_ptr<InterfaceReconstructor> ir)
- : mesh_(mesh),state_(state),vals_(nullptr) {
+    : mesh_(mesh), state_(state), vals_(nullptr), var_name_(var_name), limtype_(limiter_type) {
+
+      interface_reconstructor_=ir;
 
       // Collect and keep the list of neighbors for each CELL as it may
       // be expensive to go to the mesh layer and collect this data for
