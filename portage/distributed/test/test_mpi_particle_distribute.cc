@@ -135,8 +135,17 @@ TEST(MPI_Particle_Distribute, SimpleTest2DScatter) {
   Wonton::Flat_Mesh_Wrapper<> target_mesh_flat;
   target_mesh_flat.initialize(jali_tmesh_wrapper);
 
+  //Set smoothing lengths
+   int nsrcpts = source_mesh_flat.num_owned_cells(); 
+   auto smoothing_lengths = std::vector<std::vector<std::vector<double>>>(nsrcpts,
+                   std::vector<std::vector<double>>(1, std::vector<double>(2, 1.0/3)));
+  
   // Source and target swarms 
-  Portage::Meshfree::Swarm<2> source_swarm(source_mesh_flat, Portage::Entity_kind::CELL);
+  Portage::Meshfree::Swarm<2> source_swarm(source_mesh_flat, Portage::Entity_kind::CELL,
+                                           smoothing_lengths); //Since we are testing
+                                           //the scatter scheme, the source swarm is 
+                                           //constructed using the one with smoothing
+                                           //lengths. 
   Portage::Meshfree::Swarm<2> target_swarm(target_mesh_flat, Portage::Entity_kind::CELL);
 
   // Source and target mesh state
@@ -146,7 +155,6 @@ TEST(MPI_Particle_Distribute, SimpleTest2DScatter) {
   target_state = std::make_shared<Portage::Meshfree::SwarmState<2>>(target_swarm);
 
   // Create an integer source data for given function
-  const int nsrcpts = source_swarm.num_particles(Portage::Entity_type::ALL);
   typename Portage::Meshfree::SwarmState<2>::IntVecPtr source_data_int = 
        std::make_shared<typename Portage::Meshfree::SwarmState<2>::IntVec>(nsrcpts);
 
@@ -179,16 +187,12 @@ TEST(MPI_Particle_Distribute, SimpleTest2DScatter) {
         std::make_shared<typename Portage::Meshfree::SwarmState<2>::DblVec>(ntarpts, 0.0);
     target_state->add_field("dbldata", target_data_dbl);
 
-  //Set smoothing lengths 
-   auto smoothing_lengths = std::vector<std::vector<std::vector<double>>>(nsrcpts,
-                   std::vector<std::vector<double>>(1, std::vector<double>(2, 1.0/3)));
-
   //Distribute 
   Portage::MPI_Particle_Distribute<2> distributor;
   distributor.distribute(source_swarm, *source_state, target_swarm,
                          *target_state, smoothing_lengths, 
                          Portage::Meshfree::WeightCenter::Scatter);
-
+   
    // Check number of particles received
    int nsrcpts_after = source_swarm.num_particles(Portage::Entity_type::ALL);
    typename Portage::Meshfree::SwarmState<2>::IntVecPtr sd_int_after = 
@@ -204,6 +208,9 @@ TEST(MPI_Particle_Distribute, SimpleTest2DScatter) {
    for (size_t p = 0 ; p < nsrcpts_after; ++p)
    { 
      Portage::Point<2> coords = source_swarm.get_particle_coordinates(p);
+     std::vector<std::vector<double>> smlen = source_swarm.get_particle_smoothing_length(p);
+     for (size_t d = 0 ; d < 2; ++d)
+       ASSERT_EQ(smlen[0][d],1.0/3);
      ASSERT_EQ((*sd_int_after)[p],(int)(coords[0]*coords[1]*100));  
      ASSERT_EQ((*sd_dbl_after)[p],(coords[0]*coords[1]));  
    }
@@ -333,9 +340,15 @@ TEST(MPI_Particle_Distribute, SimpleTest3DScatter) {
 
   Wonton::Flat_Mesh_Wrapper<> target_mesh_flat;
   target_mesh_flat.initialize(jali_tmesh_wrapper);
+  
+   //Set smoothing lengths 
+   int nsrcpts = source_mesh_flat.num_owned_cells();
+   auto smoothing_lengths = std::vector<std::vector<std::vector<double>>>(nsrcpts,
+                   std::vector<std::vector<double>>(1, std::vector<double>(3, 1.0/3)));
 
   // Source and target swarms 
-  Portage::Meshfree::Swarm<3> source_swarm(source_mesh_flat, Portage::Entity_kind::CELL);
+  Portage::Meshfree::Swarm<3> source_swarm(source_mesh_flat, Portage::Entity_kind::CELL,
+                                           smoothing_lengths);
   Portage::Meshfree::Swarm<3> target_swarm(target_mesh_flat, Portage::Entity_kind::CELL);
 
   // Source and target mesh state
@@ -345,7 +358,6 @@ TEST(MPI_Particle_Distribute, SimpleTest3DScatter) {
   target_state = std::make_shared<Portage::Meshfree::SwarmState<3>>(target_swarm);
 
   // Create an integer source data for given function
-  const int nsrcpts = source_swarm.num_particles(Portage::Entity_type::ALL);
   typename Portage::Meshfree::SwarmState<3>::IntVecPtr source_data_int = 
        std::make_shared<typename Portage::Meshfree::SwarmState<3>::IntVec>(nsrcpts);
 
@@ -378,10 +390,6 @@ TEST(MPI_Particle_Distribute, SimpleTest3DScatter) {
         std::make_shared<typename Portage::Meshfree::SwarmState<3>::DblVec>(ntarpts, 0.0);
     target_state->add_field("dbldata", target_data_dbl);
 
-  //Set smoothing lengths 
-   auto smoothing_lengths = std::vector<std::vector<std::vector<double>>>(nsrcpts,
-                   std::vector<std::vector<double>>(1, std::vector<double>(3, 1.0/3)));
-
   //Distribute 
   Portage::MPI_Particle_Distribute<3> distributor;
   distributor.distribute(source_swarm, *source_state, target_swarm,
@@ -403,6 +411,9 @@ TEST(MPI_Particle_Distribute, SimpleTest3DScatter) {
    for (size_t p = 0 ; p < nsrcpts_after; ++p)
    { 
      Portage::Point<3> coords = source_swarm.get_particle_coordinates(p);
+     std::vector<std::vector<double>> smlen = source_swarm.get_particle_smoothing_length(p);
+     for (size_t d = 0 ; d < 3; ++d)
+       ASSERT_EQ(smlen[0][d],1.0/3);
      ASSERT_EQ((*sd_int_after)[p],(int)(coords[0]*coords[1]*coords[2]*1000));  
      ASSERT_EQ((*sd_dbl_after)[p],(coords[0]*coords[1]*coords[2]));  
    }

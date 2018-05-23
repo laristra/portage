@@ -245,7 +245,47 @@ class MPI_Particle_Distribute {
     source_swarm.extend_particle_list(RecvCoords);
 
     /************************************************************************** 
-    * Step 5: Collect integer field data from source swarm to be sent         * 
+    * Step 5: Set up communication info and collect smoothing length data     *
+    *         for source particles that need to be sent to other ranks for    *
+    *         the Scatter scheme                                              *
+    ***************************************************************************/
+    if (center == Meshfree::WeightCenter::Scatter)
+    {
+      std::vector<std::vector<double>> sourceSendSmoothLengths(commSize);
+      for (size_t i = 0; i < commSize; ++i)
+      {
+        if ((!sendFlags[i]) || (i==commRank))
+          continue;
+        else 
+        {
+          for (size_t j = 0; j < sourcePtsToSendSize[i]; ++j)
+          {
+            std::vector<std::vector<double>> smlen = 
+            source_swarm.get_particle_smoothing_length(sourcePtsToSend[i][j]);
+            for (size_t d = 0 ; d < dim; ++d)
+              sourceSendSmoothLengths[i].insert(sourceSendSmoothLengths[i].end(), smlen[0][d]);
+          }
+        }
+      }
+      //move this smoothing length data
+      std::vector<double> sourceRecvSmoothLengths(src_info.newNum*dim);
+      moveField<double>(&src_info, commRank, commSize, MPI_DOUBLE, dim, 
+                        sourceSendSmoothLengths,&sourceRecvSmoothLengths);
+    
+      // update local source particle list with received new particles
+      std::vector<std::vector<std::vector<double>>> RecvSmoothLengths;
+      for (size_t i = 0; i < src_info.newNum; ++i)
+      {
+	std::vector<std::vector<double>> smlen(1);
+	for (size_t d = 0 ; d < dim; ++d)
+	  smlen[0].emplace_back(sourceRecvSmoothLengths[dim*i+d]);
+
+	RecvSmoothLengths.emplace_back(smlen);
+      }
+      source_swarm.update_smoothing_lengths(RecvSmoothLengths);
+    }
+    /************************************************************************** 
+    * Step 6: Collect integer field data from source swarm to be sent         * 
     *         to other ranks                                                  *
     **************************************************************************/
     std::vector<std::string> int_field_names = source_state.field_names_int();
@@ -281,7 +321,7 @@ class MPI_Particle_Distribute {
     }
 
     /************************************************************************** 
-    * Step 6: Collect double field data from source swarm to be sent          * 
+    * Step 7: Collect double field data from source swarm to be sent          * 
     *         to other ranks                                                  *
     **************************************************************************/
     std::vector<std::string> dbl_field_names = source_state.field_names_double();
