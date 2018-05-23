@@ -198,8 +198,6 @@ int main(int argc, char** argv) {
   Portage::LimiterType limiter = Portage::LimiterType::NOLIMITER;
   double srclo = 0.0, srchi = 1.0;  // bounds of generated mesh in each dir
 
-  std::string field_output_filename;  // No default
-
   // Parse the input
 
   for (int i = 1; i < argc; i++) {
@@ -665,10 +663,10 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
         Wonton::Jali_Mesh_Wrapper,
         Wonton::Jali_State_Wrapper,
         Tangram::XMOF2D_Wrapper>
-          d(sourceMeshWrapper, sourceStateWrapper,
-            targetMeshWrapper, targetStateWrapper);
-      d.set_remap_var_names(remap_fields);
-      d.run(numpe > 1);
+          driver(sourceMeshWrapper, sourceStateWrapper,
+                 targetMeshWrapper, targetStateWrapper);
+      driver.set_remap_var_names(remap_fields);
+      driver.run(numpe > 1);
     } else if (interp_order == 2) {
       Portage::MMDriver<
         Portage::SearchKDTree,
@@ -680,10 +678,10 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
         Wonton::Jali_Mesh_Wrapper,
         Wonton::Jali_State_Wrapper,
         Tangram::XMOF2D_Wrapper>
-          d(sourceMeshWrapper, sourceStateWrapper,
-            targetMeshWrapper, targetStateWrapper);
-      d.set_remap_var_names(remap_fields, limiter);
-      d.run(numpe > 1);
+          driver(sourceMeshWrapper, sourceStateWrapper,
+                 targetMeshWrapper, targetStateWrapper);
+      driver.set_remap_var_names(remap_fields, limiter);
+      driver.run(numpe > 1);
     }
   } else {  // 3D
     if (interp_order == 1) {
@@ -697,10 +695,10 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
         Wonton::Jali_Mesh_Wrapper,
         Wonton::Jali_State_Wrapper,
         Tangram::SLIC>
-          d(sourceMeshWrapper, sourceStateWrapper,
-            targetMeshWrapper, targetStateWrapper);
-      d.set_remap_var_names(remap_fields);
-      d.run(numpe > 1);
+          driver(sourceMeshWrapper, sourceStateWrapper,
+                 targetMeshWrapper, targetStateWrapper);
+      driver.set_remap_var_names(remap_fields);
+      driver.run(numpe > 1);
     } else {  // 2nd order & 3D
       Portage::MMDriver<
         Portage::SearchKDTree,
@@ -712,10 +710,10 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
         Wonton::Jali_Mesh_Wrapper,
         Wonton::Jali_State_Wrapper,
         Tangram::SLIC>
-          d(sourceMeshWrapper, sourceStateWrapper,
-            targetMeshWrapper, targetStateWrapper);
-      d.set_remap_var_names(remap_fields, limiter);
-      d.run(numpe > 1);
+          driver(sourceMeshWrapper, sourceStateWrapper,
+                 targetMeshWrapper, targetStateWrapper);
+      driver.set_remap_var_names(remap_fields, limiter);
+      driver.run(numpe > 1);
     }
   }
 
@@ -800,11 +798,11 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
       
       // Cell error computation
       Portage::Point<dim> ccen;
-      int nmatcells = 0;
+      int nmatcells = matcells.size();
       for (int ic = 0; ic < nmatcells; ++ic) {
         int c = matcells[ic];
         targetMeshWrapper.cell_centroid(c, &ccen);
-        error = mat_fields[m](ccen) - cellmatvals[c];
+        error = mat_fields[m](ccen) - cellmatvals[ic];
         
         if (!targetMeshWrapper.on_exterior_boundary(Portage::Entity_kind::CELL, c)) {
           double cellvol = targetMeshWrapper.cell_volume(c);
@@ -908,48 +906,4 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
       std::cout << "...done." << std::endl;
   }
 
-  // construct the field file name and open the file
-  
-  if (field_filename.length()) {
-    // std::vector<int> lgid;
-    // std::vector<double> lvalues;
-    // std::string entstr;
-    // if (entityKind == Jali::Entity_kind::CELL) {
-    //   entstr = "cell";
-    //   lgid.resize(ntarcells);
-    //   lvalues.resize(ntarcells);
-    //   for (int i=0; i < ntarcells; i++) {
-    //     lgid[i] = targetMesh->GID(i, Jali::Entity_kind::CELL);
-    //     lvalues[i] = cellvecout[i];
-    //   }
-    // } else {
-    //   entstr = "node";
-    //   lgid.resize(ntarnodes);
-    //   lvalues.resize(ntarnodes);
-    //   for (int i=0; i < ntarnodes; i++) {
-    //     lgid[i] = targetMesh->GID(i, Jali::Entity_kind::NODE);
-    //     lvalues[i] = nodevecout[i];
-    //   }
-    // }
-
-    // // sort the field values by global ID
-    // std::vector<int> idx;
-    // argsort(lgid, idx);   // find sorting indices based on global IDS
-    // reorder(lgid, idx);   // sort the global ids
-    // reorder(lvalues, idx);  // sort the values
-    
-    // if (numpe > 1) {
-    //   int maxwidth = static_cast<long long>(std::ceil(std::log10(numpe)));
-    //   char rankstr[10];
-    //   std::snprintf(rankstr, sizeof(rankstr), "%0*d", maxwidth, rank);
-    //   field_filename = field_filename + "." + std::string(rankstr);
-    // }
-    // std::ofstream fout(field_filename);
-    // fout << std::scientific;
-    // fout.precision(17);
-    
-    // // write out the values
-    // for (int i=0; i < lgid.size(); i++)
-    //   fout << lgid[i] << " " << lvalues[i] << std::endl;
-  }
 }
