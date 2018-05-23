@@ -428,27 +428,6 @@ void MMDriver<Search, Intersect, Interpolate, D,
     
     int nsourcecells = source_mesh_.num_entities(CELL, ALL);
 
-//    std::vector<int> cell_num_mats(nsourcecells, nmats);
-//    std::vector<int> cell_mat_ids(nsourcecells*nmats);
-//    std::vector<double> cell_mat_volfracs(nsourcecells*nmats, 0.0);
-//    std::vector<Tangram::Point<D>> cell_mat_centroids(nsourcecells*nmats);
-//  
-//    for (int m = 0; m < nmats; m++) {
-//      std::vector<int> cellids;
-//      source_state_.mat_get_cells(m, &cellids);
-//
-//      double const * matfracptr;
-//      source_state_.mat_get_celldata("mat_volfracs", m, &matfracptr);
-//      for (int c = 0; c < cellids.size(); c++)
-//        cell_mat_volfracs[nsourcecells*m + cellids[c]] = matfracptr[c];
-//
-//      Portage::Point<D> const *matcenvec;
-//      source_state_.mat_get_celldata("mat_centroids", m, &matcenvec);
-//      for (int c = 0; c < cellids.size(); c++)
-//        cell_mat_centroids[nsourcecells*m + cellids[c]] = matcenvec[c];
-//
-//    }
-      
     // XMOF seems to want things in compact cell centric form - first build 
     // full arrays and then compact
 
@@ -670,11 +649,13 @@ void MMDriver<Search, Intersect, Interpolate, D,
           m2 = i;
           break;
         }
-      if (found)  // material already present - just update its cell list
+      if (found) {  // material already present - just update its cell list
         target_state_.mat_add_cells(m2, matcellstgt);
-      else {  // add material along with the cell list
+      } else {
+        // add material along with the cell list
+
         // NOTE: NOT ONLY DOES THIS ROUTINE ADD A MATERIAL AND ITS
-        // CELLS TO THE STATEMANAGER, IT ALSO MAKE SPACE FOR FIELD
+        // CELLS TO THE STATEMANAGER, IT ALSO MAKES SPACE FOR FIELD
         // VALUES FOR THIS MATERIAL IN EVERY MULTI-MATERIAL VECTOR IN
         // THE STATE MANAGER. THIS ENSURES THAT WHEN WE CALL
         // mat_get_celldata FOR A MATERIAL IN MULTI-MATERIAL STATE
