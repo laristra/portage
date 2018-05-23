@@ -512,6 +512,13 @@ class Jali_State_Wrapper {
     @brief Add a material to state
     @param[in] matname  Name of material
     @param[in] matcells Cells containing the material
+
+    NOTE: NOT ONLY DOES THIS ROUTINE ADD A MATERIAL AND ITS CELLS TO
+    THE STATEMANAGER, IT ALSO MAKE SPACE FOR FIELD VALUES FOR THIS
+    MATERIAL IN EVERY MULTI-MATERIAL VECTOR IN THE STATE MANAGER. THIS
+    ENSURES THAT WHEN WE CALL mat_get_celldata FOR A MATERIAL IN
+    MULTI-MATERIAL STATE VECTOR IT WILL ALWAYS HAVE SPACE ALLOCATED
+    FOR FIELD VALUES OF THAT MATERIAL
    */
   void add_material(std::string const& matname,
                     std::vector<int> const& matcells) {
