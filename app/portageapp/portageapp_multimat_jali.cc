@@ -190,7 +190,8 @@ int main(int argc, char** argv) {
   std::string material_filename;
   std::vector<std::string> material_field_expressions;
   std::string srcfile, trgfile;  // No default
-
+  std::string field_output_filename;  // No default;
+  
   int interp_order = 1;
   bool mesh_output = true;
   int n_converge = 1;
