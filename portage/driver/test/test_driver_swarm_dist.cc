@@ -44,6 +44,9 @@ double TOL = 1e-6;
 template<size_t dim>
 class DriverTest : public ::testing::Test {
  protected:
+  
+  using SmoothingLengthPtr = shared_ptr<Portage::vector<std::vector<std::vector<double>>>>;
+
   // Source and target swarms
   shared_ptr<Portage::Meshfree::Swarm<dim>> sourceSwarm;
   shared_ptr<Portage::Meshfree::Swarm<dim>> targetSwarm;
@@ -52,7 +55,7 @@ class DriverTest : public ::testing::Test {
   shared_ptr<Portage::Meshfree::SwarmState<dim>> sourceState;
   shared_ptr<Portage::Meshfree::SwarmState<dim>> targetState;
 
-  shared_ptr<Portage::vector<std::vector<std::vector<double>>>> smoothing_lengths_;
+  SmoothingLengthPtr smoothing_lengths_;
 
   Portage::Meshfree::WeightCenter center_;
 
@@ -85,6 +88,9 @@ class DriverTest : public ::testing::Test {
 			     Portage::Meshfree::WeightCenter center=Portage::Meshfree::Gather) {
     smoothing_lengths_ = smoothing_lengths;
     center_ = center;
+
+    if (center_ == Portage::Meshfree::Scatter)
+     sourceSwarm->set_smoothing_lengths(smoothing_lengths);
   }
 
 
@@ -183,12 +189,12 @@ struct DriverTest2D : DriverTest<2> {
 };
 
 struct DriverTest2DScatter : DriverTest<2> {
-  DriverTest2DScatter() : DriverTest(Jali::MeshFactory(MPI_COMM_WORLD)(0.0, 0.0, 1.0, 1.0, 16, 16),
-                              Jali::MeshFactory(MPI_COMM_WORLD)(0.0, 0.0, 1.0, 1.0, 8, 8)) 
+  DriverTest2DScatter() : DriverTest(Jali::MeshFactory(MPI_COMM_WORLD)(0.0, 0.0, 1.0, 1.0, 8, 8),
+                              Jali::MeshFactory(MPI_COMM_WORLD)(0.0, 0.0, 1.0, 1.0, 4, 4)) 
   {
     size_t nsrcpts = sourceSwarm->num_particles(Portage::Entity_type::PARALLEL_OWNED); 
-    auto smoothing_lengths = make_shared<vector<vector<vector<double>>>>(nsrcpts,
-                   vector<vector<double>>(1, vector<double>(2, 2.0/4)));
+    auto smoothing_lengths = make_shared<Portage::vector<std::vector<std::vector<double>>>>(nsrcpts,
+                   std::vector<std::vector<double>>(1, std::vector<double>(2, 2.0/8)));
     DriverTest::set_smoothing_lengths(smoothing_lengths, Portage::Meshfree::Scatter);
   }
 };
@@ -207,6 +213,16 @@ struct DriverTest3D : DriverTest<3> {
   }
 };
 
+struct DriverTest3DScatter : DriverTest<3> {
+  DriverTest3DScatter() : DriverTest(Jali::MeshFactory(MPI_COMM_WORLD)(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 8, 8, 8),
+                              Jali::MeshFactory(MPI_COMM_WORLD)(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 4, 4, 4)) 
+  {
+    size_t nsrcpts = sourceSwarm->num_particles(Portage::Entity_type::PARALLEL_OWNED); 
+    auto smoothing_lengths = make_shared<Portage::vector<std::vector<std::vector<double>>>>(nsrcpts,
+                   std::vector<std::vector<double>>(1, std::vector<double>(3, 2.0/8)));
+    DriverTest::set_smoothing_lengths(smoothing_lengths, Portage::Meshfree::Scatter);
+  }
+};
 // Methods for computing initial field values
 template<size_t Dimension>
 double compute_constant_field(Portage::Point<Dimension> coord) {
@@ -246,12 +262,7 @@ TEST_F(DriverTest2D, 2D_ConstantFieldUnitaryBasis) {
   unitTest<Portage::SearchPointsByCells, Portage::Meshfree::Basis::Unitary>
       (compute_constant_field<2>, 0.0);
 }
-/*
-TEST_F(DriverTest2DScatter, 2D_ConstantFieldUnitaryBasisScatter) {
-  unitTest<Portage::SearchSimplePoints, Portage::Meshfree::Basis::Unitary>
-      (compute_constant_field<2>, 0.0);
-}*/
-/*
+
 TEST_F(DriverTest2D, 2D_LinearFieldLinearBasis) {
   unitTest<Portage::SearchPointsByCells, Portage::Meshfree::Basis::Linear>
       (compute_linear_field<2>, 0.0);
@@ -262,6 +273,20 @@ TEST_F(DriverTest2D, 2D_QuadraticFieldQuadraticBasis) {
       (compute_quadratic_field<2>, 0.0);
 }
 
+TEST_F(DriverTest2DScatter, 2D_ConstantFieldUnitaryBasisScatter) {
+  unitTest<Portage::SearchPointsByCells, Portage::Meshfree::Basis::Unitary>
+      (compute_constant_field<2>, 0.0);
+}
+
+TEST_F(DriverTest2DScatter, 2D_LinearFieldLinearBasisScatter) {
+  unitTest<Portage::SearchPointsByCells, Portage::Meshfree::Basis::Linear>
+      (compute_linear_field<2>, 0.0);
+}
+
+TEST_F(DriverTest2DScatter, 2D_QuadraticFieldQuadraticBasisScatter) {
+  unitTest<Portage::SearchPointsByCells, Portage::Meshfree::Basis::Quadratic>
+      (compute_quadratic_field<2>, 0.0);
+}
 
 TEST_F(DriverTest3D, 3D_ConstantFieldUnitaryBasis) {
    unitTest<Portage::SearchPointsByCells, Portage::Meshfree::Basis::Unitary>
@@ -277,5 +302,19 @@ TEST_F(DriverTest3D, 3D_QuadraticFieldQuadraticBasis) {
   unitTest<Portage::SearchPointsByCells, Portage::Meshfree::Basis::Quadratic>
       (compute_quadratic_field<3>, 0.0);
 }
-*/
+
+TEST_F(DriverTest3DScatter, 3D_ConstantFieldUnitaryBasisScatter) {
+  unitTest<Portage::SearchPointsByCells, Portage::Meshfree::Basis::Unitary>
+      (compute_constant_field<3>, 0.0);
+}
+
+TEST_F(DriverTest3DScatter, 3D_LinearFieldLinearBasisScatter) {
+  unitTest<Portage::SearchPointsByCells, Portage::Meshfree::Basis::Linear>
+      (compute_linear_field<3>, 0.0);
+}
+
+TEST_F(DriverTest3DScatter, 3D_QuadraticFieldQuadraticBasisScatter) {
+  unitTest<Portage::SearchPointsByCells, Portage::Meshfree::Basis::Quadratic>
+      (compute_quadratic_field<3>, 0.0);
+}
 }  // end namespace
