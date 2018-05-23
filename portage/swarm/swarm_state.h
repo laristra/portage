@@ -15,12 +15,12 @@ Please see the license file at the root of this repository, or at:
 #include "portage/wonton/mesh/flat/flat_mesh_wrapper.h"
 #include "portage/wonton/state/flat/flat_state_wrapper.h"
 #include "portage/swarm/swarm.h"
+#include "portage/support/portage.h"
 
 namespace Portage {
 namespace Meshfree {
 
 using std::string;
-using std::vector;
 using std::shared_ptr;
 using std::map;
 using std::pair;

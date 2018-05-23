@@ -8,6 +8,7 @@ Please see the license file at the root of this repository, or at:
 #include "portage/accumulate/accumulate.h"
 #include "portage/distributed/mpi_particle_distribute.h"
 #include "portage/support/Point.h"
+#include "portage/support/portage.h"
 #include "portage/swarm/swarm.h"
 #include "portage/swarm/swarm_state.h"
 #include "portage/wonton/mesh/flat/flat_mesh_wrapper.h"
@@ -85,14 +86,14 @@ TEST(MPI_Particle_Distribute, SimpleTest2DGather) {
     target_state->add_field("dbldata", target_data_dbl);
 
   //Set smoothing lengths 
-   auto smoothing_lengths = std::vector<std::vector<std::vector<double>>>(ntarpts,
+   auto smoothing_lengths = Portage::vector<std::vector<std::vector<double>>>(ntarpts,
                    std::vector<std::vector<double>>(1, std::vector<double>(2, 1.0/3)));
 
   //Distribute 
   Portage::MPI_Particle_Distribute<2> distributor;
-  distributor.distribute(source_swarm, *source_state, target_swarm,
-                         *target_state, smoothing_lengths, 
-                         Portage::Meshfree::WeightCenter::Gather);
+  distributor.distribute(source_swarm, *source_state, 
+			 target_swarm, *target_state, smoothing_lengths,
+			 Portage::Meshfree::WeightCenter::Gather);
 
    // Check number of particles received
    int nsrcpts_after = source_swarm.num_particles(Portage::Entity_type::ALL);
@@ -287,13 +288,13 @@ TEST(MPI_Particle_Distribute, SimpleTest3DGather) {
     target_state->add_field("dbldata", target_data_dbl);
 
   //Set smoothing lengths 
-   auto smoothing_lengths = std::vector<std::vector<std::vector<double>>>(ntarpts,
+   auto smoothing_lengths = Portage::vector<std::vector<std::vector<double>>>(ntarpts,
                    std::vector<std::vector<double>>(1, std::vector<double>(3, 1.0/3)));
 
   //Distribute 
   Portage::MPI_Particle_Distribute<3> distributor;
-  distributor.distribute(source_swarm, *source_state, target_swarm,
-                         *target_state, smoothing_lengths, 
+  distributor.distribute(source_swarm, *source_state, 
+			 target_swarm, *target_state, smoothing_lengths, 
                          Portage::Meshfree::WeightCenter::Gather);
 
    // Check number of particles received

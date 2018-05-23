@@ -46,6 +46,7 @@ POSSIBILITY OF SUCH DAMAGE.
 #include <algorithm>
 #include <cmath>
 #include <stdexcept>
+#include <cassert>
 
 #include "gtest/gtest.h"
 #ifdef ENABLE_MPI
@@ -64,6 +65,7 @@ POSSIBILITY OF SUCH DAMAGE.
 #include "portage/accumulate/accumulate.h"
 #include "portage/estimate/estimate.h"
 #include "portage/support/Point.h"
+#include "portage/support/operator.h"
 #include "portage/wonton/mesh/simple_mesh/simple_mesh_wrapper.h"
 #include "portage/wonton/state/simple_state/simple_state_wrapper.h"
 #include "portage/wonton/mesh/flat/flat_mesh_wrapper.h"
@@ -87,12 +89,14 @@ class MSMDriverTest : public ::testing::Test {
   Portage::Simple_State sourceState;
   Portage::Simple_State targetState;
   Portage::Simple_State targetState2;
-  //  Wrappers for interfacing with the underlying mesh data structures
+  // Wrappers for interfacing with the underlying mesh data structures
   Wonton::Simple_Mesh_Wrapper sourceMeshWrapper;
   Wonton::Simple_Mesh_Wrapper targetMeshWrapper;
   Wonton::Simple_State_Wrapper sourceStateWrapper;
   Wonton::Simple_State_Wrapper targetStateWrapper;
   Wonton::Simple_State_Wrapper targetStateWrapper2;
+  // Operator domains and data
+  Portage::vector<Portage::Meshfree::Operator::Domain> domains_;
 
   //  This is the basic test method to be called for each unit test. It will work
   //  for 2-D and 3-D, coincident and non-coincident cell-centered remaps.
@@ -104,11 +108,11 @@ class MSMDriverTest : public ::testing::Test {
   >
   void unitTest(double compute_initial_field(Portage::Point<Dimension> centroid),
                 double smoothing_factor, Portage::Meshfree::Basis::Type basis, 
-		Portage::Meshfree::WeightCenter center=Portage::Meshfree::Gather)
+		Portage::Meshfree::WeightCenter center=Portage::Meshfree::Gather, 
+		Portage::Meshfree::Operator::Type oper8or=Portage::Meshfree::Operator::LastOperator)
   {
-    if (Dimension != 3) {
-      throw std::runtime_error("2D not available yet");
-    }
+    // check dimension - no 1D
+    assert(Dimension > 1);
 
     //  Fill the source state data with the specified profile
     const int nsrccells = sourceMeshWrapper.num_owned_cells();
@@ -167,6 +171,47 @@ class MSMDriverTest : public ::testing::Test {
     // run on one processor
     mmdriver.run(false);
 
+    // Set up the operator information if needed
+    Portage::vector<std::vector<Portage::Point<Dimension>>> data;
+    std::vector<double> exact;
+    Portage::Meshfree::Operator::Domain domain_types[3]=
+      {Portage::Meshfree::Operator::Interval,
+       Portage::Meshfree::Operator::Quadrilateral,
+       Portage::Meshfree::Operator::Hexahedron};
+    if (oper8or == Portage::Meshfree::Operator::VolumeIntegral) {
+      int numcells = targetMesh->num_entities(Portage::Entity_kind::CELL, 
+                                              Portage::Entity_type::ALL);
+      domains_.resize(numcells);
+      data.resize(numcells);
+      exact.resize(numcells);  // each element is resized automatically
+      for (int c=0; c<numcells; c++) {
+	// get integration domains
+        domains_[c] = domain_types[Dimension-1];
+        std::vector<Portage::Point<Dimension>> cellverts;
+        targetMesh->cell_get_coordinates(c, &cellverts);
+        data[c] = cellverts;
+
+	// get exact value of integral
+	std::vector<std::vector<double>> result;
+	Portage::Meshfree::Operator::apply<Dimension>(
+						      Portage::Meshfree::Operator::VolumeIntegral, 
+						      basis, domain_types[Dimension-1], data[c], result);
+	if (Dimension==2) {
+	  if (basis==Portage::Meshfree::Basis::Linear) 
+	    exact[c] = result[1][0]+result[2][0];
+	  if (basis==Portage::Meshfree::Basis::Quadratic) 
+	    exact[c] = 2.*result[3][0]+result[4][0]+2.*result[5][0];
+	}
+	if (Dimension==3) {
+	  if (basis==Portage::Meshfree::Basis::Linear) 
+	    exact[c] = result[1][0]+result[2][0]+result[3][0];
+	  if (basis==Portage::Meshfree::Basis::Quadratic) 
+	    exact[c] = 2.*result[4][0]+result[5][0]+result[6][0]+
+	               2.*result[7][0]+result[8][0]+2.*result[9][0];
+	}
+      }
+    }
+
     //  Build the mesh-swarm-mesh driver data for this mesh type
     Portage::MSM_Driver<
       SwarmSearch,
@@ -178,12 +223,20 @@ class MSMDriverTest : public ::testing::Test {
     >
     msmdriver(sourceMeshWrapper, sourceStateWrapper,
               targetMeshWrapper, targetStateWrapper2,
-              smoothing_factor, basis, 
-	      Portage::Meshfree::LocalRegression, 
+              smoothing_factor, 
 	      Portage::Meshfree::Weight::TENSOR, 
 	      Portage::Meshfree::Weight::B4, 
 	      center);
-    msmdriver.set_remap_var_names(remap_fields);
+    Portage::Meshfree::EstimateType estimator=
+      Portage::Meshfree::LocalRegression;
+    if (oper8or == Portage::Meshfree::Operator::VolumeIntegral) 
+      estimator = Portage::Meshfree::OperatorRegression;
+    msmdriver.set_remap_var_names(remap_fields, remap_fields, 
+                                  estimator, 
+                                  basis,
+                                  oper8or,
+                                  domains_,
+                                  data);
     // run on one processor
     msmdriver.run(false);
 
@@ -202,43 +255,80 @@ class MSMDriverTest : public ::testing::Test {
 
     Wonton::Flat_Mesh_Wrapper<double> targetFlatMesh;
     targetFlatMesh.initialize(targetMeshWrapper);
-    for (int c = 0; c < ntarcells; ++c) {
-      Portage::Point<Dimension> ccen;
-      targetFlatMesh.cell_centroid(c, &ccen);
-      double value = compute_initial_field(ccen);
-      double merror, serror;
-      merror = cellvecout[c] - value;
-      serror = cellvecout2[c] - value;
-      //  dump diagnostics for each cell
-      std::printf("Cell=% 4d Centroid=(% 5.3lf,% 5.3lf,% 5.3lf)", c,
-                  ccen[0], ccen[1], ccen[2]);
-      std::printf(" Val=% 10.6lf MM=% 10.6lf Err=% 10.6lf MSM=% 10.6lf Err=% lf\n",
-                  value, cellvecout[c], merror, cellvecout2[c], serror);
-      toterr = std::max(toterr, std::fabs(serror));
+
+    if (oper8or != Portage::Meshfree::Operator::VolumeIntegral) {
+
+      for (int c = 0; c < ntarcells; ++c) {
+	Portage::Point<Dimension> ccen;
+	targetFlatMesh.cell_centroid(c, &ccen);
+	double value = compute_initial_field(ccen);
+	double merror, serror;
+	merror = cellvecout[c] - value;
+	serror = cellvecout2[c] - value;
+	//  dump diagnostics for each cell
+	if (Dimension == 2) {
+	  std::printf("Cell=% 4d Centroid=(% 5.3lf,% 5.3lf)", c,
+		      ccen[0], ccen[1]);
+	} else if (Dimension == 3) {
+	  std::printf("Cell=% 4d Centroid=(% 5.3lf,% 5.3lf,% 5.3lf)", c,
+		      ccen[0], ccen[1], ccen[2]);
+	}
+	std::printf(" Val=% 10.6lf MM=% 10.6lf Err=% 10.6lf MSM=% 10.6lf Err=% lf\n",
+		    value, cellvecout[c], merror, cellvecout2[c], serror);
+	toterr = std::max(toterr, std::fabs(serror));
+      }
+
+      std::printf("\n\nLinf NORM OF MSM CELL ERROR = %lf\n\n", toterr);
+      ASSERT_LT(toterr, TOL);
+
+      toterr = 0.;
+      for (int n = 0; n < ntarnodes; ++n) {
+	Portage::Point<Dimension> node;
+	targetFlatMesh.node_get_coordinates(n, &node);
+	double value = compute_initial_field(node);
+	double merror, serror;
+	merror = nodevecout[n] - value;
+	serror = nodevecout2[n] - value;
+	//  dump diagnostics for each node
+	if (Dimension == 2) {
+	  std::printf("Node=% 4d Coords=(% 5.3lf,% 5.3lf)", n,
+		      node[0], node[1]);
+	} else if (Dimension == 3) {
+	  std::printf("Node=% 4d Coords=(% 5.3lf,% 5.3lf,% 5.3lf)", n,
+		      node[0], node[1], node[2]);
+	}
+	std::printf(" Val=% 10.6lf MM=% 10.6lf Err=% 10.6lf MSM=% 10.6lf Err=% lf\n",
+		    value, nodevecout[n], merror, nodevecout2[n], serror);
+	toterr = std::max(toterr, std::fabs(serror));
+      }
+
+      std::printf("\n\nLinf NORM OF MSM NODE ERROR = %lf\n\n", toterr);
+      ASSERT_LT(toterr, TOL);
+
+    } else {
+
+      for (int c = 0; c < ntarcells; ++c) {
+	Portage::Point<Dimension> ccen;
+	targetFlatMesh.cell_centroid(c, &ccen);
+	double serror;
+	serror = cellvecout2[c] - exact[c];
+	if (Dimension == 2) {
+	  std::printf("Centroid=% 4d Coords=(% 5.3lf,% 5.3lf)", c,
+		      ccen[0], ccen[1]);
+	} else if (Dimension == 3) {
+	  std::printf("Centroid=% 4d Coords=(% 5.3lf,% 5.3lf,% 5.3lf)", c,
+		      ccen[0], ccen[1], ccen[2]);
+	}
+	std::printf(" Exact=% 10.6lf MSM=% 10.6lf Err=% 10.6lf\n",
+		    exact[c], cellvecout2[c], serror);
+	toterr = std::max(toterr, std::fabs(serror));
+      }
+
+      std::printf("\n\nLinf NORM OF MSM OPERATOR ERROR = %lf\n\n", toterr);
+      ASSERT_LT(toterr, TOL);
+
     }
-
-    std::printf("\n\nLinf NORM OF MSM CELL ERROR = %lf\n\n", toterr);
-    ASSERT_LT(toterr, TOL);
-
-    toterr = 0.;
-    for (int n = 0; n < ntarnodes; ++n) {
-      Portage::Point<Dimension> node;
-      targetFlatMesh.node_get_coordinates(n, &node);
-      double value = compute_initial_field(node);
-      double merror, serror;
-      merror = nodevecout[n] - value;
-      serror = nodevecout2[n] - value;
-      //  dump diagnostics for each node
-      std::printf("Node=% 4d Coords=(% 5.3lf,% 5.3lf,% 5.3lf)", n,
-                  node[0], node[1], node[2]);
-      std::printf(" Val=% 10.6lf MM=% 10.6lf Err=% 10.6lf MSM=% 10.6lf Err=% lf\n",
-                  value, nodevecout[n], merror, nodevecout2[n], serror);
-      toterr = std::max(toterr, std::fabs(serror));
-    }
-
-    std::printf("\n\nLinf NORM OF MSM NODE ERROR = %lf\n\n", toterr);
-    ASSERT_LT(toterr, TOL);
-  }
+}
 
   // Constructor for Driver test
   MSMDriverTest(std::shared_ptr<Portage::Simple_Mesh> s,
@@ -252,12 +342,21 @@ class MSMDriverTest : public ::testing::Test {
 
 };
 
+// Class which constructs a pair of simple 2-D meshes, target
+// contained in source
+struct MSMDriverTest2D : MSMDriverTest {
+  MSMDriverTest2D(): MSMDriverTest(
+    std::make_shared<Portage::Simple_Mesh>(0.0, 0.0, 1.0, 1.0, 10, 10),
+    std::make_shared<Portage::Simple_Mesh>(0.3, 0.3, 0.7, 0.7, 4,  4)) {}
+};
+
+
 // Class which constructs a pair of simple 3-D meshes, target
 // contained in source
 struct MSMDriverTest3D : MSMDriverTest {
   MSMDriverTest3D(): MSMDriverTest(
-      std::make_shared<Portage::Simple_Mesh>(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 10, 10, 10),
-      std::make_shared<Portage::Simple_Mesh>(0.3, 0.3, 0.3, 0.7, 0.7, 0.7,  4,  4,  4)) {}
+    std::make_shared<Portage::Simple_Mesh>(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 10, 10, 10),
+    std::make_shared<Portage::Simple_Mesh>(0.3, 0.3, 0.3, 0.7, 0.7, 0.7,  4,  4,  4)) {}
 };
 
 // Methods for computing initial field values
@@ -286,6 +385,55 @@ double compute_quadratic_field_3d(Portage::Point<3> centroid) {
 // Google test will pick up each test and run it as part of the larger
 // test fixture.  If any one of these fails the whole test_driver
 // fails.
+
+TEST_F(MSMDriverTest2D, 2D1stOrderLinear) {
+  unitTest<Portage::IntersectR2D,
+           Portage::Interpolate_1stOrder,
+           Portage::SearchPointsByCells, 2>
+    (&compute_linear_field_2d, .75, Portage::Meshfree::Basis::Linear);
+}
+
+TEST_F(MSMDriverTest2D, 2D2ndOrderQuadratic) {
+  unitTest<Portage::IntersectR2D,
+           Portage::Interpolate_2ndOrder,
+           Portage::SearchPointsByCells, 2>
+    (&compute_quadratic_field_2d, .75, Portage::Meshfree::Basis::Quadratic);
+}
+
+TEST_F(MSMDriverTest2D, 2D1stOrderLinearScatter) {
+  unitTest<Portage::IntersectR2D,
+           Portage::Interpolate_1stOrder,
+           Portage::SearchPointsByCells, 2>
+    (&compute_linear_field_2d, .75, Portage::Meshfree::Basis::Linear, 
+     Portage::Meshfree::Scatter);
+}
+
+TEST_F(MSMDriverTest2D, 2D2ndOrderQuadraticScatter) {
+  unitTest<Portage::IntersectR2D,
+           Portage::Interpolate_2ndOrder,
+           Portage::SearchPointsByCells, 2>
+    (&compute_quadratic_field_2d, .75, Portage::Meshfree::Basis::Quadratic, 
+     Portage::Meshfree::Scatter);
+}
+
+
+TEST_F(MSMDriverTest2D, 2D1stOrderLinearIntegrate) {
+  unitTest<Portage::IntersectR2D,
+           Portage::Interpolate_1stOrder,
+           Portage::SearchPointsByCells, 2>
+    (&compute_linear_field_2d, .75, Portage::Meshfree::Basis::Linear, 
+     Portage::Meshfree::Gather, Portage::Meshfree::Operator::VolumeIntegral);
+}
+
+
+TEST_F(MSMDriverTest2D, 2D2ndOrderQuadraticIntegrate) {
+  unitTest<Portage::IntersectR2D,
+           Portage::Interpolate_2ndOrder,
+           Portage::SearchPointsByCells, 2>
+    (&compute_quadratic_field_2d, .75, Portage::Meshfree::Basis::Quadratic, 
+     Portage::Meshfree::Gather, Portage::Meshfree::Operator::VolumeIntegral);
+}
+
 
 TEST_F(MSMDriverTest3D, 3D1stOrderLinear) {
   unitTest<Portage::IntersectR3D,
@@ -316,5 +464,14 @@ TEST_F(MSMDriverTest3D, 3D2ndOrderQuadraticScatter) {
     (&compute_quadratic_field_3d, 1.5, Portage::Meshfree::Basis::Quadratic, 
      Portage::Meshfree::Scatter);
 }
+
+TEST_F(MSMDriverTest3D, 3D1stOrderLinearIntegrate) {
+  unitTest<Portage::IntersectR3D,
+           Portage::Interpolate_1stOrder,
+           Portage::SearchPointsByCells, 3>
+    (&compute_linear_field_3d, .75, Portage::Meshfree::Basis::Linear, 
+     Portage::Meshfree::Gather, Portage::Meshfree::Operator::VolumeIntegral);
+}
+
 
 }  // namespace

@@ -18,6 +18,8 @@
 #include "portage/swarm/swarm.h"
 #include "portage/swarm/swarm_state.h"
 
+#include "portage/support/portage.h"
+
 TEST(SwarmState, basic) {
   using std::make_shared;
   using Portage::Meshfree::SwarmState;
@@ -34,7 +36,7 @@ TEST(SwarmState, basic) {
         (static_cast<double>(rand()) / RAND_MAX),
         (static_cast<double>(rand()) / RAND_MAX));
   }
-  auto p_ptr = std::make_shared<std::vector<Portage::Point<3>>>(points);
+  auto p_ptr = std::make_shared<Portage::vector<Portage::Point<3>>>(points);
   auto swarm = Portage::Meshfree::Swarm<3>(p_ptr);
 
   // create state

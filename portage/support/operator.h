@@ -38,7 +38,7 @@ namespace Portage {
 
       enum Type {VolumeIntegral, SurfaceIntegral, LastOperator};
 
-      template<Domain domain> class DomainTraits   {public: static const size_t dimension=0;};
+      template<Domain domain> class DomainTraits  {public: static const size_t dimension=0;};
       template<> class DomainTraits<Interval>     {public: static const size_t dimension=1;};
       template<> class DomainTraits<Quadrilateral>{public: static const size_t dimension=2;};
       template<> class DomainTraits<Triangle>     {public: static const size_t dimension=2;};
@@ -60,6 +60,38 @@ namespace Portage {
 	case Sphere:        return DomainTraits<Sphere>::dimension;        break;
 	default: return 0; 
         }
+      }
+
+      template<size_t dim>
+      Domain domain_from_points(std::vector<Point<dim>> &points) {
+        Domain result;
+        switch(dim) {
+	case 1:
+	  result = Interval; break;
+        case 2: 
+          switch(points.size()) {
+          case 3:
+            result = Triangle; break;
+          case 4:
+            result = Quadrilateral; break;
+          default:
+            throw(std::runtime_error("invalid number of points for this dimension"));
+          }
+          break;
+        case 3:
+          switch(points.size()) {
+          case 4:
+            result = Tetrahedron; break;
+          case 6:
+            result = Wedge; break;
+          case 8:
+            result = Hexahedron; break;
+          default:
+            throw(std::runtime_error("invalid number of points for this dimension"));
+          }
+          break;
+        }
+        return result;
       }
 
       ////////////////////////////////////////////////////////////////////////////////

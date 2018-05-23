@@ -74,7 +74,7 @@ class MPI_Particle_Distribute {
   template <class SourceSwarm, class SourceState, class TargetSwarm, class TargetState>
   void distribute(SourceSwarm &source_swarm, SourceState &source_state,
                   TargetSwarm &target_swarm, TargetState &target_state,
-                  std::vector<std::vector<std::vector<double>>>& smoothing_lengths,
+                  vector<std::vector<std::vector<double>>>& smoothing_lengths,
                   Meshfree::WeightCenter center=Meshfree::WeightCenter::Gather)
   {
     // Get the MPI communicator size and rank information
@@ -293,7 +293,7 @@ class MPI_Particle_Distribute {
     for (size_t nvars = 0; nvars < int_field_names.size(); ++nvars)
     {
       // Get field data from source state
-      std::shared_ptr<std::vector<int>> srcdata; 
+      std::shared_ptr<vector<int>> srcdata; 
       source_state.get_field(int_field_names[nvars], srcdata);
 
       // Collect field data for source particles that need to be sent to other ranks
@@ -317,7 +317,8 @@ class MPI_Particle_Distribute {
       moveField<int>(&src_info, commRank, commSize, MPI_INT, 1, sourceSendData, &sourceRecvData);
 
       //update local source field data with the received data
-      source_state.extend_field(int_field_names[nvars], sourceRecvData);
+      {vector<int> recvtmp(sourceRecvData);
+       source_state.extend_field(int_field_names[nvars], recvtmp);}
     }
 
     /************************************************************************** 
@@ -329,7 +330,7 @@ class MPI_Particle_Distribute {
     for (size_t nvars = 0; nvars < dbl_field_names.size(); ++nvars)
     {
       // Get field data from source state
-      std::shared_ptr<std::vector<double>> srcdata; 
+      std::shared_ptr<vector<double>> srcdata; 
       source_state.get_field(dbl_field_names[nvars], srcdata);
 
       // Collect field data for source particles that need to be sent to other ranks
@@ -353,7 +354,8 @@ class MPI_Particle_Distribute {
       moveField<double>(&src_info, commRank, commSize, MPI_DOUBLE, 1, sourceSendData, &sourceRecvData);
 
       //update local source field data with the received data
-      source_state.extend_field(dbl_field_names[nvars], sourceRecvData);
+      {vector<double> recvtmp(sourceRecvData);
+       source_state.extend_field(dbl_field_names[nvars], recvtmp);}
     }
    
 
