@@ -204,7 +204,7 @@ class StateManager {
  			
 		}	
 		
- 		// convenience function for getting SimpleStateMulti
+ 		// convenience function for getting StateVectorMulti
  		// note this call always works even if the key doesn't exist. We can check
  		// the return against a nullptr
  		template <class T=double>
@@ -222,6 +222,38 @@ class StateManager {
  			
 		}	
 		
+		////////////////////
+		// Const Versions
+		////////////////
+ 		template <class T=double>
+		std::shared_ptr<StateVectorMulti<T>> get(std::string name) const{
+		
+			// create the key
+			pair_t key{Portage::Entity_kind::CELL, name};
+			
+			if (state_vectors_.find(key)==state_vectors_.end()){
+				return nullptr;
+			}			
+			
+			// do the return all in one step
+			return std::dynamic_pointer_cast<StateVectorMulti<T>>(state_vectors_.at(key));
+ 			
+		}	
+		
+ 		template <class T, template<class> class StateVectorType>
+		std::shared_ptr<StateVectorType<T>> get(Entity_kind kind, std::string name) const{
+		
+			// create the key
+			pair_t key{kind, name};
+			
+			if (state_vectors_.find(key)==state_vectors_.end()){
+				return nullptr;
+			}			
+			
+			// do the return all in one step
+			return std::dynamic_pointer_cast<StateVectorType<T>>(state_vectors_.at(key));
+ 			
+		}	
 		// add the names of the materials
 		void add_material_names(std::unordered_map<std::string,int> names){
 			material_ids_=names;
@@ -262,6 +294,7 @@ class StateManager {
 			
 		// get the number of materials
 		int get_num_materials() const {return material_names_.size();}
+		int num_materials() const {return material_names_.size();}
 
 		// get a material name from its id
 		std::string get_material_name(int id) {return material_names_[id];}
@@ -289,10 +322,10 @@ class StateManager {
   	}
   	
   	// Get the cell index in material
-  	int cell_index_in_material(int c, int m){
+  	int cell_index_in_material(int c, int m) const{
   	
   		// get the cell ids for a material
-  		std::vector<int> cells{material_cells_[m]};
+  		std::vector<int> cells{material_cells_.at(m)};
   		
   		// get an iterator to the element
   		auto it = std::find(cells.begin(),cells.end(),c);
@@ -300,6 +333,24 @@ class StateManager {
   		//return the distance
   		return std::distance(cells.begin(),it);
   		
+  	}
+  	
+  	// Get the Entity_kind for a name
+  	// NOTE: This may not be unique, a name can be reused, but for the moment...
+  	Entity_kind get_entity(std::string name) const{
+  	
+  		// for right now, just loop and check that the name is correct
+  		// if we used a string key instead of a pair key, this would be a simple lookup
+  		for (auto& kv: state_vectors_){
+  			if (kv.first.second==name) return kv.second->kind();
+  		}
+  		
+  		// default to CELL data, could also throw an error for not found...
+  		return Entity_kind::CELL;
+  	}
+  	
+  	Field_type field_type(Entity_kind kind, std::string name) const{
+  		return state_vectors_.at(pair_t{kind,name})->type();
   	}
 
 		// Get the states in the states in state manager
@@ -311,7 +362,115 @@ class StateManager {
 			return keys;
 		}
 		
+		void mat_get_cells(int matid, std::vector<int> *matcells) const {
+		  assert(material_cells_.find(matid)!=material_cells_.end());
+		  matcells->clear();
+		  *matcells = material_cells_.at(matid);
+		}
 		
+		template <class T>
+		void mat_get_celldata(std::string const& var_name, int matid,
+		                      T const **data) const {
+		  *data= get<T>(var_name)->get_data()[matid].data();                
+		}
+
+  	int cell_get_num_mats(int cellid) const {
+    	return cell_materials_.at(cellid).size();
+  	}
+	
+		void cell_get_mats(int cellid, std::vector<int> *cellmats) const {
+		  cellmats->clear();
+		  auto& mats=cell_materials_.at(cellid);
+		  *cellmats = std::vector<int>{mats.begin(),mats.end()};
+		} 
+		
+		template <class T>
+		void mesh_get_data(Entity_kind on_what, std::string const& var_name,
+		                   T const **data) const {
+		  *data = get<T,StateVectorUni>(on_what, var_name)->get_data().data();		                 
+		}
+		
+		template <class T>
+		void mesh_get_data(Entity_kind on_what, std::string const& var_name,
+		                   T **data) {
+		  *data = get<T,StateVectorUni>(on_what, var_name)->get_data().data();		                 
+		}
+		
+		std::string material_name(int matid) const {
+     return material_names_.at(matid);
+		} 
+		
+		void mat_add_cells(int matid, std::vector<int> const& newcells) {
+		
+			// assign the cell ids to the material (copy constructor
+		  material_cells_[matid]=newcells;
+		  
+		  // need to update cell_materials_ inverse map
+		  for (int cellid:newcells)
+		  	cell_materials_[cellid].insert(matid);
+		  
+		}
+
+		// starts from scratch, add the material and cell id's
+		// I think this is problematic in a distributed sense, and I don't hit it
+		// in simple_mash app, so for now don't do anythin
+		void add_material(
+			std::string const& matname, std::vector<int> const& matcells) {
+				std::cout<<"in add_material: "<<matname<<std::endl;
+			}
+
+		template <class T>
+		void mat_add_celldata(std::string const& var_name, int matid,
+		                      T const * values) {
+		  // get the number of cells for this material
+		  // should use api, but I'm going to change it
+		  int ncells = material_cells_[matid].size();
+		  
+		  // could use a std::copy, but I'll get to it later
+		  // need a reference,because we are modifying the data in place
+		  std::vector<T>& data=get<T>(var_name)->get_data()[matid];
+		  data.clear();
+		  for (int i=0;i<ncells;++i) data.push_back(*(values+i));
+		}
+	
+		// Discussion points:
+		// This function has a side effect. When this function is called, the 
+		// resulting pointer needs to point to memory that is already allocated
+		// of sufficient size. It cannot be a nullptr. At some point in the code we
+		// need to do the allocation. In our case is an std::vector.reserve call. 
+		// This memory management could be done in add_material like Jali does. The
+		// downside is that this buries the allocation into "hidden" location. I (DWS) 
+		// would personally like to see add_material go away. It is responsible for 
+		// creating a uid for the material in a distributed environment which is
+		// problematic and this memory management which is also problematic. The
+		// memory management is hidden here just the same,and my preferred solution
+		// is to make the reserve explicit. We should add an allocate api that is
+		// called explicitly in mmdriver. That way we know exactly what we are doing
+		// when and where. It adds a step, but hopefully that will remove the segfault
+		// that developers such as myself got because we didn't know when and where
+		// to allocate the target state vectors. 
+		template <class T>
+		void mat_get_celldata(std::string const& var_name, int matid,
+		                      T **data) {
+		                      
+			// get the correct row of the ragged right data structure
+			// NOTE (this bit me) the &, the local reference needs to refer to the 
+			// actual data in the state manager, not a copy
+			std::vector<T>& material_data = get<T>(var_name)->get_data()[matid];
+			
+			int n = material_cells_[matid].size();
+			
+			// if the space in the row isn't already allocated, fix this
+			if (material_data.size() != n) material_data.resize(n);	
+		  
+		  *data= material_data.data();                
+		}
+		
+		std::unordered_map<int,std::vector<int>> const get_material_cells(){
+			return material_cells_;
+		}
+
+
 	private:
 	
 		const MeshWrapper& mesh_;
@@ -324,7 +483,7 @@ class StateManager {
 		// to either provide a key function or a hashing function.
 		std::map<pair_t, std::shared_ptr<StateVectorBase>> state_vectors_;
 		
-		// material names
+		// material ids
 		std::unordered_map<std::string,int> material_ids_;
 		
 		// material names

@@ -20,7 +20,8 @@ class StateVectorBase {
   /*!
     @brief Constructor with a name
     @param name   Name of the StateVector
-    @param type   Type of the StateVector (Portage::Field_type)
+    @param type   Type of the StateVector (Portage::Field_type) (Single/Multi)
+    @param kind   Kind of StateVector (CELL, NODE)
   */  
   explicit StateVectorBase(std::string name, Portage::Field_type type,
   	Portage::Entity_kind kind=Portage::Entity_kind::CELL) :
