@@ -197,7 +197,7 @@ int main(int argc, char** argv) {
   Jali::Entity_kind entityKind = Jali::Entity_kind::CELL;
   Portage::LimiterType limiter = Portage::LimiterType::NOLIMITER;
   double srclo = 0.0, srchi = 1.0;  // bounds of generated mesh in each dir
-
+  
   // Parse the input
 
   for (int i = 1; i < argc; i++) {
@@ -253,8 +253,6 @@ int main(int argc, char** argv) {
       srchi = stof(valueword);
     } else if (keyword == "output_meshes") {
       mesh_output = (valueword == "y");
-    } else if (keyword == "results_file") {
-      field_output_filename = valueword;
     } else if (keyword == "convergence_study") {
       n_converge = stoi(valueword);
       if (n_converge <= 0) {
