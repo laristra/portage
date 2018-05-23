@@ -672,8 +672,21 @@ void MMDriver<Search, Intersect, Interpolate, D,
         }
       if (found)  // material already present - just update its cell list
         target_state_.mat_add_cells(m2, matcellstgt);
-      else   // add material along with the cell list
+      else {  // add material along with the cell list
+        // NOTE: NOT ONLY DOES THIS ROUTINE ADD A MATERIAL AND ITS
+        // CELLS TO THE STATEMANAGER, IT ALSO MAKE SPACE FOR FIELD
+        // VALUES FOR THIS MATERIAL IN EVERY MULTI-MATERIAL VECTOR IN
+        // THE STATE MANAGER. THIS ENSURES THAT WHEN WE CALL
+        // mat_get_celldata FOR A MATERIAL IN MULTI-MATERIAL STATE
+        // VECTOR IT WILL ALREADY HAVE SPACE ALLOCATED FOR FIELD
+        // VALUES OF THAT MATERIAL. SOME STATE WRAPPERS COULD CHOOSE
+        // TO MAKE THIS A SIMPLER ROUTINE THAT ONLY STORES THE NAME
+        // AND THE CELLS IN THE MATERIAL AND ACTUALLY ALLOCATE SPACE
+        // FOR FIELD VALUES OF A MATERIAL IN A MULTI-MATERIAL FIELD
+        // WHEN mat_get_celldata IS INVOKED.
+        
         target_state_.add_material(source_state_.material_name(m), matcellstgt);
+      }
     }
     else
       continue;  // maybe the target mesh does not overlap this material
