@@ -476,7 +476,7 @@ class AuxMeshTopology {
   void cell_get_coordinates(int const cellid,
                             std::vector<Point<D>> *pplist) const;
 
-  //! Centroid of a cell (actually geometric center of cell nodes)
+  //! Centroid of a cell
 
   template <long D>
   void cell_centroid(int const cellid, Point<D> *ccen) const {
@@ -499,7 +499,7 @@ class AuxMeshTopology {
   }
 
   
-  //! Centroid of a face (actually geometric center of face nodes)
+  //! Centroid of a face
 
   template <long D>
   void face_centroid(int const faceid, Point<D> *fcen) const {
