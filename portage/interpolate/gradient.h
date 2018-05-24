@@ -118,6 +118,7 @@ class Limited_Gradient<D, CELL, MeshType, StateType, InterfaceReconstructorType>
   using InterfaceReconstructor =
   Tangram::Driver<InterfaceReconstructorType, D, MeshType>;
 
+  //Constructor with interface reconstructor and to be used for multimaterial remaps.
   Limited_Gradient(MeshType const & mesh, 
                    StateType const & state, 
                    std::string const var_name,
@@ -137,15 +138,21 @@ class Limited_Gradient<D, CELL, MeshType, StateType, InterfaceReconstructorType>
       Portage::for_each(this->mesh_.begin(CELL), this->mesh_.end(CELL), 
                         [this](int c) { this->mesh_.cell_get_node_adj_cells(
                                          c, ALL, &(cell_neighbors_[c])); } );
-
+      
+      //If the field type is a MESH_FIELD, then the corresponding data will 
+      //be stored. If the field_type is a MULTIMATERIAL_FIELD, then the constructor
+      //only stores the variable name. The user code must make a call to the method
+      //set_material to store the material-wise data.   
       set_interpolation_variable(var_name,limiter_type);
     }
 #endif
 
+
+  //Constructor for single material remap
   Limited_Gradient(MeshType const & mesh,
                    StateType const & state,
-                   std::string const var_name, // TODO: remove
-                   LimiterType limiter_type)   // TODO: remove
+                   std::string const var_name, 
+                   LimiterType limiter_type)  
     : mesh_(mesh),state_(state),vals_(nullptr) {
 
       // Collect and keep the list of neighbors for each CELL as it may
@@ -161,7 +168,11 @@ class Limited_Gradient<D, CELL, MeshType, StateType, InterfaceReconstructorType>
 
       set_interpolation_variable(var_name,limiter_type);
     }
-  
+ 
+    //This method should be called by the user if the field type is MULTIMATERIAL_FIELD.
+    //As the constructor with interface reconstructor only sets the variable name
+    //for such fields, this method is needed to properly set the multimaterial data local
+    //to the routine.  
     void set_material(int matid) {
       this->matid_=matid;
       // Extract the field data from the statemanager
