@@ -351,9 +351,9 @@ class Interpolate_2ndOrder<D,
       if (xsect_volume/vol <= eps) continue;  // no intersection
 
       // Obtain source cell centroid
-      Point<D> srccell_centroid;
+      Point<D> src_centroid;
       if (field_type_ == Field_type::MESH_FIELD){
-       source_mesh_.cell_centroid(srccell, &srccell_centroid);
+       source_mesh_.cell_centroid(srccell, &src_centroid);
       }
       else if (field_type_ == Field_type::MULTIMATERIAL_FIELD){
 #ifdef HAVE_TANGRAM  
@@ -363,7 +363,7 @@ class Interpolate_2ndOrder<D,
       
       	if (!nmats || (nmats == 1 && cellmats[0] == matid_)) 
       	{ //pure cell
-        	source_mesh_.cell_centroid(srccell, &srccell_centroid);
+          source_mesh_.cell_centroid(srccell, &src_centroid);
       	}	 
      	else 
       	{ //multi-material cell
@@ -380,18 +380,25 @@ class Interpolate_2ndOrder<D,
                cellmatpoly.get_matpolys(matid_);
 
            int cnt = 0;
-           for (int k = 0; k < D; k++) srccell_centroid[k]=0;
+           for (int k = 0; k < D; k++) src_centroid[k]=0;
 
            //Compute centroid of all matpoly's 
            for (int j = 0; j < matpolys.size(); j++)
            {
+             /* This code snippet should be turned on when the PR 
+  		with changes in Matpoly is merged to Tangram. 
+             std::vector<double> moments = matpolys[j].moments();
+             cnt += 1;
+             for (int k = 0; k < D; k++)
+                src_centroid[k]=moments[k+1]/moments[0];
+	     */
              std::vector<Tangram::Point<D>> tpnts = matpolys[j].points();
              cnt += tpnts.size();
              for (int i = 0; i < tpnts.size(); i++)
                 for (int k = 0; k < D; k++)
-                  srccell_centroid[k] += tpnts[i][k];
+                  src_centroid[k] += tpnts[i][k];
            }
-           srccell_centroid = srccell_centroid/cnt; 
+           src_centroid = src_centroid/cnt; 
         }
       }
 #endif
@@ -410,7 +417,7 @@ class Interpolate_2ndOrder<D,
      srcindex = source_state_.cell_index_in_material(srccell, matid_);
 
     Vector<D> gradient = gradients_[srcindex];
-    Vector<D> vec = xsect_centroid - srccell_centroid;
+    Vector<D> vec = xsect_centroid - src_centroid;
     double val = source_vals_[srcindex] + dot(gradient, vec);
     val *= xsect_volume;
     totalval += val;
