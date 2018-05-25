@@ -406,7 +406,7 @@ remap(std::vector<std::string> const &src_varnames,
   }
   
   int numSourcePts = source_swarm_.num_particles();
-  sourceExtents = std::make_shared<std::vector<Point<Dim>>>(numSourcePts);
+  sourceExtents = std::make_shared<vector<Point<Dim>>>(numSourcePts);
   if (weight_center_ == Portage::Meshfree::Scatter) {
     for (int i = 0; i < numSourcePts; i++) {
       if (geom_types_[i] == Weight::FACETED) {

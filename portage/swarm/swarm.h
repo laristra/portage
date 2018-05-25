@@ -43,7 +43,7 @@ class Swarm {
 
   using PointVecPtr = shared_ptr<vector<Point<dim>>>;
   using PointVec = vector<Point<dim>>;
-  using SmoothingLengthPtr = shared_ptr<std::vector<std::vector<std::vector<double>>>>;  
+  using SmoothingLengthPtr = shared_ptr<vector<std::vector<std::vector<double>>>>;  
   using SmoothingLengthUnit = std::vector<std::vector<double>>;  
   
   /*!
@@ -220,8 +220,12 @@ class Swarm {
    */
   void update_smoothing_lengths(std::vector<std::vector<std::vector<double>>>& sm_vals)
   {
-   
-    (*smoothing_lengths_).insert((*smoothing_lengths_).end(), sm_vals.begin(), sm_vals.end());
+    int numparts = sm_vals.size();
+    for (int i = 0 ; i < numparts; i++)
+    {
+      std::vector<std::vector<double>> val = sm_vals[i];
+      (*smoothing_lengths_).push_back(val);
+    }
   }
 
   void set_smoothing_lengths(SmoothingLengthPtr smoothing_lengths)
@@ -230,7 +234,7 @@ class Swarm {
     smoothing_lengths_ = smoothing_lengths;
   }
 
-  std::vector<std::vector<std::vector<double>>> get_smoothing_lengths()
+  vector<std::vector<std::vector<double>>> get_smoothing_lengths()
   {
     return *smoothing_lengths_;
   }

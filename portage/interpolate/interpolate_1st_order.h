@@ -13,6 +13,7 @@ Please see the license file at the root of this repository, or at:
 #include <iostream>
 #include <utility>
 #include <vector>
+#include <cmath>
 
 #include "portage/support/portage.h"
 

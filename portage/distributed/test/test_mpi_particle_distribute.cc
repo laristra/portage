@@ -138,7 +138,7 @@ TEST(MPI_Particle_Distribute, SimpleTest2DScatter) {
 
   //Set smoothing lengths
    int nsrcpts = source_mesh_flat.num_owned_cells(); 
-   auto smoothing_lengths = std::make_shared<std::vector<std::vector<std::vector<double>>>>(nsrcpts,
+   auto smoothing_lengths = std::make_shared<Portage::vector<std::vector<std::vector<double>>>>(nsrcpts,
                    std::vector<std::vector<double>>(1, std::vector<double>(2, 1.0/3)));
   
   // Source and target swarms 
@@ -344,7 +344,7 @@ TEST(MPI_Particle_Distribute, SimpleTest3DScatter) {
   
    //Set smoothing lengths 
    int nsrcpts = source_mesh_flat.num_owned_cells();
-   auto smoothing_lengths = std::make_shared<std::vector<std::vector<std::vector<double>>>>(nsrcpts,
+   auto smoothing_lengths = std::make_shared<Portage::vector<std::vector<std::vector<double>>>>(nsrcpts,
                    std::vector<std::vector<double>>(1, std::vector<double>(3, 1.0/3)));
 
   // Source and target swarms 

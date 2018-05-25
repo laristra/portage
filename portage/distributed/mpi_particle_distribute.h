@@ -84,7 +84,6 @@ class MPI_Particle_Distribute {
 
     assert(dim == source_swarm.space_dimension());
     assert(dim == target_swarm.space_dimension());
-    //assert(center == Meshfree::WeightCenter::Gather);
 
     /************************************************************************** 
     * Step 1: Compute bounding box for target swarm based on weight center    *
@@ -106,8 +105,10 @@ class MPI_Particle_Distribute {
         Point<dim> coord = target_swarm.get_particle_coordinates(c);
         Point<dim> ext;
         if (center == Meshfree::WeightCenter::Gather)
-           ext = Point<dim>(smoothing_lengths[c][0]);
-     
+        {
+           std::vector<std::vector<double>> val = smoothing_lengths[c];
+           ext = Point<dim>(val[0]);
+        }
         for (size_t k=0; k < dim; ++k)
         {
           double val0, val1; 
@@ -128,7 +129,6 @@ class MPI_Particle_Distribute {
              targetBoundingBoxes[2*dim*commRank+2*k+1] = val1;
         }      
      }// for c
-
 
     /************************************************************************** 
     * Step 2: Broadcast the target bounding boxes so that each                *
@@ -173,8 +173,10 @@ class MPI_Particle_Distribute {
           Point<dim> coord = source_swarm.get_particle_coordinates(c);
           Point<dim> ext;
           if (center == Meshfree::WeightCenter::Scatter)
-            ext = Point<dim>(smoothing_lengths[c][0]);
-
+          {
+           std::vector<std::vector<double>> val = smoothing_lengths[c];
+           ext = Point<dim>(val[0]);
+          }
           bool thisPt = true; 
           for (size_t k=0; k<dim; ++k)
           {
@@ -271,7 +273,7 @@ class MPI_Particle_Distribute {
       std::vector<double> sourceRecvSmoothLengths(src_info.newNum*dim);
       moveField<double>(&src_info, commRank, commSize, MPI_DOUBLE, dim, 
                         sourceSendSmoothLengths,&sourceRecvSmoothLengths);
-    
+      
       // update local source particle list with received new particles
       std::vector<std::vector<std::vector<double>>> RecvSmoothLengths;
       for (size_t i = 0; i < src_info.newNum; ++i)
