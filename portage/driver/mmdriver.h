@@ -288,14 +288,15 @@ class MMDriver {
       }
     }
 
-    if (source_cellvar_names.size()) {
+    // Always call because we may have to remap only material volume
+    // fractions and centroids
+    
 #ifdef ENABLE_MPI
-      if (distributed)
-        remap_distributed<CELL>(source_cellvar_names, target_cellvar_names);
-      else
+    if (distributed)
+      remap_distributed<CELL>(source_cellvar_names, target_cellvar_names);
+    else
 #endif
-        remap<CELL>(source_cellvar_names, target_cellvar_names);
-    }
+      remap<CELL>(source_cellvar_names, target_cellvar_names);
 
 
     // Collect all node based variables and remap them
@@ -427,27 +428,6 @@ void MMDriver<Search, Intersect, Interpolate, D,
     
     int nsourcecells = source_mesh_.num_entities(CELL, ALL);
 
-//    std::vector<int> cell_num_mats(nsourcecells, nmats);
-//    std::vector<int> cell_mat_ids(nsourcecells*nmats);
-//    std::vector<double> cell_mat_volfracs(nsourcecells*nmats, 0.0);
-//    std::vector<Tangram::Point<D>> cell_mat_centroids(nsourcecells*nmats);
-//  
-//    for (int m = 0; m < nmats; m++) {
-//      std::vector<int> cellids;
-//      source_state_.mat_get_cells(m, &cellids);
-//
-//      double const * matfracptr;
-//      source_state_.mat_get_celldata("mat_volfracs", m, &matfracptr);
-//      for (int c = 0; c < cellids.size(); c++)
-//        cell_mat_volfracs[nsourcecells*m + cellids[c]] = matfracptr[c];
-//
-//      Portage::Point<D> const *matcenvec;
-//      source_state_.mat_get_celldata("mat_centroids", m, &matcenvec);
-//      for (int c = 0; c < cellids.size(); c++)
-//        cell_mat_centroids[nsourcecells*m + cellids[c]] = matcenvec[c];
-//
-//    }
-      
     // XMOF seems to want things in compact cell centric form - first build 
     // full arrays and then compact
 
@@ -592,7 +572,6 @@ void MMDriver<Search, Intersect, Interpolate, D,
   // REMAP MULTIMATERIAL FIELDS NEXT, ONE MATERIAL AT A TIME
   //--------------------------------------------------------------------
 
-  if (src_matvarnames.size() == 0) return;
   if (onwhat != CELL) return;
   
   // Material centric loop
@@ -670,10 +649,25 @@ void MMDriver<Search, Intersect, Interpolate, D,
           m2 = i;
           break;
         }
-      if (found)  // material already present - just update its cell list
+      if (found) {  // material already present - just update its cell list
         target_state_.mat_add_cells(m2, matcellstgt);
-      else   // add material along with the cell list
+      } else {
+        // add material along with the cell list
+
+        // NOTE: NOT ONLY DOES THIS ROUTINE ADD A MATERIAL AND ITS
+        // CELLS TO THE STATEMANAGER, IT ALSO MAKES SPACE FOR FIELD
+        // VALUES FOR THIS MATERIAL IN EVERY MULTI-MATERIAL VECTOR IN
+        // THE STATE MANAGER. THIS ENSURES THAT WHEN WE CALL
+        // mat_get_celldata FOR A MATERIAL IN MULTI-MATERIAL STATE
+        // VECTOR IT WILL ALREADY HAVE SPACE ALLOCATED FOR FIELD
+        // VALUES OF THAT MATERIAL. SOME STATE WRAPPERS COULD CHOOSE
+        // TO MAKE THIS A SIMPLER ROUTINE THAT ONLY STORES THE NAME
+        // AND THE CELLS IN THE MATERIAL AND ACTUALLY ALLOCATE SPACE
+        // FOR FIELD VALUES OF A MATERIAL IN A MULTI-MATERIAL FIELD
+        // WHEN mat_get_celldata IS INVOKED.
+        
         target_state_.add_material(source_state_.material_name(m), matcellstgt);
+      }
     }
     else
       continue;  // maybe the target mesh does not overlap this material
