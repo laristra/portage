@@ -363,7 +363,8 @@ class StateManager {
 		}
 		
 		void mat_get_cells(int matid, std::vector<int> *matcells) const {
-		  assert(material_cells_.find(matid)!=material_cells_.end());
+			// the "this" is for a gcc compiler error about assert and templates
+		  assert(this->material_cells_.find(matid)!=this->material_cells_.end());
 		  matcells->clear();
 		  *matcells = material_cells_.at(matid);
 		}

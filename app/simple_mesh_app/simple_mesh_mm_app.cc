@@ -380,7 +380,7 @@ void run(
 	// material dominant volume fractions and centroids
 	std::unordered_map<int,vector<int>> map_target_cell_materials;
 	std::unordered_map<int,vector<double>> map_target_cell_mat_volfracs;
-	std::unordered_map<int,vector<Point<2>>> map_target_cell_mat_centroids;
+	std::unordered_map<int,vector<Tangram::Point<2>>> map_target_cell_mat_centroids;
 	
 	// To calculate the cell dominant volume factions and cell centroids,
 	// instead of using the reverse map of cell materials we go in the forward
@@ -430,9 +430,10 @@ void run(
 	for (int c = 0; c<ntarcells; ++c){
 		
 		// get the vector of material ids,volume fraction and centroid
-		const std::vector<int> mats{map_target_cell_materials.at(c)};
-		const std::vector<double> volfracs{map_target_cell_mat_volfracs.at(c)};
-		const std::vector<Point<2>> centroids{map_target_cell_mat_centroids.at(c)};
+		// with thrust turned on, these need to be portage vectors, not std::vectors
+		const Portage::vector<int> mats{map_target_cell_materials.at(c)};
+		const Portage::vector<double> volfracs{map_target_cell_mat_volfracs.at(c)};
+		const Portage::vector<Tangram::Point<2>> centroids{map_target_cell_mat_centroids.at(c)};
 		
 		// push the size onto the number of mats
 		target_cell_num_mats.push_back(mats.size());
@@ -464,7 +465,7 @@ void run(
 		for (auto x: target_cell_mat_volfracs) std::cout<<x<<" "; std::cout<<std::endl;
 		                                                   
 		std::cout<<"target_cell_mat_centroids:\n";
-		for (auto x: target_cell_mat_centroids) std::cout<<x[0]<<" "<<x[1]<<"\n"; std::cout<<std::endl;
+		for (Tangram::Point<2>  x: target_cell_mat_centroids) std::cout<<x[0]<<" "<<x[1]<<"\n"; std::cout<<std::endl;
 	}
 	
   // Perform interface reconstruction on target mesh for pretty pictures

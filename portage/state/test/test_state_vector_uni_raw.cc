@@ -46,7 +46,7 @@ TEST(StateUni, DataAccess) {
 	
 	StateVectorUniRaw<double> sv(name, Entity_kind::CELL, data.data());
 	
-	const double const * sv_data{sv.get_data()};
+	const double * sv_data{sv.get_data()};
 
 	for (int i=0; i<data.size(); i++) {
 		ASSERT_EQ(sv_data[i],data[i]);
