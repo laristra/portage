@@ -26,6 +26,10 @@
 #include "tangram/driver/write_to_gmv.h"
 #endif
 
+#ifdef ENABLE_MPI
+#include <mpi.h>
+#endif
+
 
 /*! 
   @file simple_mesh_mm_app.cc 
@@ -550,6 +554,11 @@ void run(
 
 int main(int argc, char** argv) {
 
+	#ifdef ENABLE_MPI
+  MPI_Init(&argc, &argv);
+	#endif
+
+
 	// print usage if no args
   if (argc == 1) {
   	print_usage();
@@ -667,6 +676,11 @@ int main(int argc, char** argv) {
   timersub(&end, &begin, &diff);
   float seconds = diff.tv_sec + 1.0E-6*diff.tv_usec;
   std::cout << "Remap Time: " << seconds << std::endl;
+  
+  #ifdef ENABLE_MPI
+  MPI_Finalize();
+	#endif
+
 }
 
 

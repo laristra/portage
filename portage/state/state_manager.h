@@ -470,6 +470,13 @@ class StateManager {
 			return material_cells_;
 		}
 
+		int mat_get_num_cells(int matid) const {
+			return material_cells_.at(matid).size();
+		}
+		
+		int get_data_size(Entity_kind on_what, std::string const& var_name) const {
+			return 0; //fix if ever used
+		}
 
 	private:
 	

@@ -19,7 +19,7 @@ target_link_libraries(simple_mesh_app portage
 if(TANGRAM_FOUND AND XMOF2D_FOUND)
 	add_executable(simple_mesh_mm_app simple_mesh_mm_app.cc)
 	target_link_libraries(simple_mesh_mm_app portage
-  	${EXTRA_LIBS} ${LAPACKX_LIBRARIES}  ${XMOF2D_LIBRARIES})
+  	${EXTRA_LIBS} ${LAPACKX_LIBRARIES} ${XMOF2D_LIBRARIES} ${MPI_CXX_LIBRARIES} )
 endif(TANGRAM_FOUND AND XMOF2D_FOUND)
 
 
