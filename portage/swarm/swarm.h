@@ -43,8 +43,6 @@ class Swarm {
 
   using PointVecPtr = shared_ptr<vector<Point<dim>>>;
   using PointVec = vector<Point<dim>>;
-  using SmoothingLengthPtr = shared_ptr<vector<std::vector<std::vector<double>>>>;  
-  using SmoothingLengthUnit = std::vector<std::vector<double>>;  
   
   /*!
    * @brief A particle has a center point and smoothing lengths in each dimension.
@@ -57,18 +55,6 @@ class Swarm {
   {}
 
   /*!
-   * @brief A particle has a center point and smoothing lengths in each dimension.
-   * @param points center points of the particles
-   * @param extents the widths of the particle bounding boxes in each dimension
-   */
-  Swarm(PointVecPtr points, 
-        SmoothingLengthPtr smoothing_lengths)
-      : points_(points), 
-        npoints_owned_(points_->size(), 
-        smoothing_lengths_(smoothing_lengths)) 
-  {}
-
-  /*!
    * @brief Create a Swarm from a flat mesh wrapper.
    * @param wrapper Input mesh wrapper
    */
@@ -76,40 +62,6 @@ class Swarm {
         Portage::Entity_kind entity)
       : points_(NULL), 
         npoints_owned_(0)
-  {
-    if (entity != NODE and entity != CELL) {
-      throw(std::runtime_error("only nodes and cells allowed"));
-    }
-
-    if (entity == NODE) {
-      npoints_owned_ = wrapper.num_owned_nodes();
-      points_ = make_shared<vector<Point<dim>>>(npoints_owned_);
-      Point<dim> node;
-      for (size_t i=0; i<npoints_owned_; i++) {
-        wrapper.node_get_coordinates(i, &node);
-        (*points_)[i] = node;
-      }
-    } else if (entity == CELL) {
-      npoints_owned_ = wrapper.num_owned_cells();
-      points_ = make_shared<vector<Point<dim>>>(npoints_owned_);
-      Point<dim> centroid;
-      for (size_t i=0; i<npoints_owned_; i++) {
-        wrapper.cell_centroid<dim>(i, &centroid);
-        (*points_)[i] = centroid;
-      }
-    }
-  }
-
-  /*!
-   * @brief Create a Swarm from a flat mesh wrapper along with smoothing lengths
-   * @param wrapper Input mesh wrapper
-   */
-  Swarm(Wonton::Flat_Mesh_Wrapper<double> &wrapper, 
-        Portage::Entity_kind entity,
-        SmoothingLengthPtr smoothing_lengths)
-      : points_(NULL), 
-        npoints_owned_(0),
-        smoothing_lengths_(smoothing_lengths)
   {
     if (entity != NODE and entity != CELL) {
       throw(std::runtime_error("only nodes and cells allowed"));
@@ -182,15 +134,6 @@ class Swarm {
     return (*points_)[index];
   }
 
-  /*! @brief Get the smoothing lengths of the particle which
- *           should be available when Scatter scheme is used. ,
-   * @param index index of particle of interest
-   * @return the particle coordinates
-   */
-  SmoothingLengthUnit get_particle_smoothing_length(const size_t index) const {
-    return (*smoothing_lengths_)[index];
-  }
-
   //! Iterators on mesh entity - begin
   counting_iterator begin(Entity_kind const entity = Entity_kind::PARTICLE,
                           Entity_type const etype = Entity_type::ALL) const {
@@ -215,39 +158,12 @@ class Swarm {
     (*points_).insert((*points_).end(), new_pts.begin(), new_pts.end());
   }
   
-  /*! @brief Update smoothing lengths for new particles 
-   * @return 
-   */
-  void update_smoothing_lengths(std::vector<std::vector<std::vector<double>>>& sm_vals)
-  {
-    int numparts = sm_vals.size();
-    for (int i = 0 ; i < numparts; i++)
-    {
-      std::vector<std::vector<double>> val = sm_vals[i];
-      (*smoothing_lengths_).push_back(val);
-    }
-  }
-
-  void set_smoothing_lengths(SmoothingLengthPtr smoothing_lengths)
-  {
-    assert(!smoothing_lengths_); 
-    smoothing_lengths_ = smoothing_lengths;
-  }
-
-  vector<std::vector<std::vector<double>>> get_smoothing_lengths()
-  {
-    return *smoothing_lengths_;
-  }
-
  private:
   /** the centers of the particles */
   PointVecPtr points_;
 
   /** the number of owned particles in the swarm */
   size_t npoints_owned_;
-
-  /** the smoothing length extents for each particle */
-  SmoothingLengthPtr smoothing_lengths_ = nullptr; 
 };
 
 // Factories for making swarms in 1/2/3 dimensions with random or uniform

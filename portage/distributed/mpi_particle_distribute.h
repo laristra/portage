@@ -85,6 +85,12 @@ class MPI_Particle_Distribute {
     assert(dim == source_swarm.space_dimension());
     assert(dim == target_swarm.space_dimension());
 
+    if (center == Meshfree::WeightCenter::Gather) {
+      assert(smoothing_lengths.size() == target_swarm.num_particles(PARALLEL_OWNED));
+    } else if (center == Meshfree::WeightCenter::Scatter) {
+      assert(smoothing_lengths.size() == source_swarm.num_particles(PARALLEL_OWNED));
+    }
+
     /************************************************************************** 
     * Step 1: Compute bounding box for target swarm based on weight center    *
     *         for the current rank, and put it in a vector that will be       *
@@ -262,8 +268,7 @@ class MPI_Particle_Distribute {
         {
           for (size_t j = 0; j < sourcePtsToSendSize[i]; ++j)
           {
-            std::vector<std::vector<double>> smlen = 
-            source_swarm.get_particle_smoothing_length(sourcePtsToSend[i][j]);
+            std::vector<std::vector<double>> smlen = smoothing_lengths[sourcePtsToSend[i][j]];
             for (size_t d = 0 ; d < dim; ++d)
               sourceSendSmoothLengths[i].insert(sourceSendSmoothLengths[i].end(), smlen[0][d]);
           }
@@ -281,10 +286,9 @@ class MPI_Particle_Distribute {
 	std::vector<std::vector<double>> smlen(1);
 	for (size_t d = 0 ; d < dim; ++d)
 	  smlen[0].emplace_back(sourceRecvSmoothLengths[dim*i+d]);
-
-	RecvSmoothLengths.emplace_back(smlen);
+     
+        smoothing_lengths.emplace_back(smlen);
       }
-      source_swarm.update_smoothing_lengths(RecvSmoothLengths);
     }
     /************************************************************************** 
     * Step 6: Collect integer field data from source swarm to be sent         * 

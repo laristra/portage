@@ -142,11 +142,7 @@ TEST(MPI_Particle_Distribute, SimpleTest2DScatter) {
                    std::vector<std::vector<double>>(1, std::vector<double>(2, 1.0/3)));
   
   // Source and target swarms 
-  Portage::Meshfree::Swarm<2> source_swarm(source_mesh_flat, Portage::Entity_kind::CELL,
-                                           smoothing_lengths); //Since we are testing
-                                           //the scatter scheme, the source swarm is 
-                                           //constructed using the one with smoothing
-                                           //lengths. 
+  Portage::Meshfree::Swarm<2> source_swarm(source_mesh_flat, Portage::Entity_kind::CELL);
   Portage::Meshfree::Swarm<2> target_swarm(target_mesh_flat, Portage::Entity_kind::CELL);
 
   // Source and target mesh state
@@ -209,7 +205,7 @@ TEST(MPI_Particle_Distribute, SimpleTest2DScatter) {
    for (size_t p = 0 ; p < nsrcpts_after; ++p)
    { 
      Portage::Point<2> coords = source_swarm.get_particle_coordinates(p);
-     std::vector<std::vector<double>> smlen = source_swarm.get_particle_smoothing_length(p);
+     std::vector<std::vector<double>> smlen = (*smoothing_lengths)[p];
      for (size_t d = 0 ; d < 2; ++d)
        ASSERT_EQ(smlen[0][d],1.0/3);
      ASSERT_EQ((*sd_int_after)[p],(int)(coords[0]*coords[1]*100));  
@@ -348,8 +344,7 @@ TEST(MPI_Particle_Distribute, SimpleTest3DScatter) {
                    std::vector<std::vector<double>>(1, std::vector<double>(3, 1.0/3)));
 
   // Source and target swarms 
-  Portage::Meshfree::Swarm<3> source_swarm(source_mesh_flat, Portage::Entity_kind::CELL,
-                                           smoothing_lengths);
+  Portage::Meshfree::Swarm<3> source_swarm(source_mesh_flat, Portage::Entity_kind::CELL);
   Portage::Meshfree::Swarm<3> target_swarm(target_mesh_flat, Portage::Entity_kind::CELL);
 
   // Source and target mesh state
@@ -412,7 +407,7 @@ TEST(MPI_Particle_Distribute, SimpleTest3DScatter) {
    for (size_t p = 0 ; p < nsrcpts_after; ++p)
    { 
      Portage::Point<3> coords = source_swarm.get_particle_coordinates(p);
-     std::vector<std::vector<double>> smlen = source_swarm.get_particle_smoothing_length(p);
+     std::vector<std::vector<double>> smlen = (*smoothing_lengths)[p];
      for (size_t d = 0 ; d < 3; ++d)
        ASSERT_EQ(smlen[0][d],1.0/3);
      ASSERT_EQ((*sd_int_after)[p],(int)(coords[0]*coords[1]*coords[2]*1000));  

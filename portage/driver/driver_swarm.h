@@ -333,7 +333,6 @@ remap(std::vector<std::string> const &src_varnames,
   MPI_Comm_rank(MPI_COMM_WORLD, &comm_rank);
 #endif
 
-  //int numSourcePts = source_swarm_.num_particles(PARALLEL_OWNED);
   int numTargetPts = target_swarm_.num_particles(PARALLEL_OWNED);
 
   int nvars = source_remap_var_names_.size();
@@ -348,7 +347,7 @@ remap(std::vector<std::string> const &src_varnames,
   // if after distribution it receives particles from other 
   // ranks. 
   // For the scatter scheme, the smoothing_lengths will also 
-  // be updated. 
+  // be changed. 
 #ifdef ENABLE_MPI
   if (distributed) {
   gettimeofday(&begin_timeval, 0);
@@ -357,10 +356,9 @@ remap(std::vector<std::string> const &src_varnames,
                          target_swarm_, target_state_,
                          smoothing_lengths_, weight_center_);
   //For scatter scheme, the smoothing_lengths are also communicated
-  //and must be updated here as well. 
+  //and must be changed here as well. 
   if (weight_center_ == Portage::Meshfree::Scatter)
   {
-    smoothing_lengths_ = source_swarm_.get_smoothing_lengths(); 
    
     //The vector of kernel_types and geom_types also have to be updated.
     //Since currently, they are the same type for all points, the update

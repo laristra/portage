@@ -88,12 +88,7 @@ class DriverTest : public ::testing::Test {
 			     Portage::Meshfree::WeightCenter center=Portage::Meshfree::Gather) {
     smoothing_lengths_ = smoothing_lengths;
     center_ = center;
-
-    if (center_ == Portage::Meshfree::Scatter)
-     sourceSwarm->set_smoothing_lengths(smoothing_lengths);
   }
-
-
 
   // This is the basic test method to be called for each unit test.
   // It will work for 1, 2-D and 3-D swarms
