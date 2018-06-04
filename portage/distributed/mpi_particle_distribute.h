@@ -14,6 +14,7 @@ Please see the license file at the root of this repository, or at:
 
 #include "portage/accumulate/accumulate.h"
 #include "portage/support/portage.h"
+#include "portage/support/weight.h"
 
 #include "mpi.h"
 
@@ -75,6 +76,8 @@ class MPI_Particle_Distribute {
   void distribute(SourceSwarm &source_swarm, SourceState &source_state,
                   TargetSwarm &target_swarm, TargetState &target_state,
                   vector<std::vector<std::vector<double>>>& smoothing_lengths,
+                  vector<Meshfree::Weight::Kernel>& kernel_types,
+                  vector<Meshfree::Weight::Geometry>& geom_types,
                   Meshfree::WeightCenter center=Meshfree::WeightCenter::Gather)
   {
     // Get the MPI communicator size and rank information
@@ -87,8 +90,12 @@ class MPI_Particle_Distribute {
 
     if (center == Meshfree::WeightCenter::Gather) {
       assert(smoothing_lengths.size() == target_swarm.num_particles(PARALLEL_OWNED));
+      assert(kernel_types.size() == target_swarm.num_particles(PARALLEL_OWNED));
+      assert(geom_types.size() == target_swarm.num_particles(PARALLEL_OWNED));
     } else if (center == Meshfree::WeightCenter::Scatter) {
       assert(smoothing_lengths.size() == source_swarm.num_particles(PARALLEL_OWNED));
+      assert(kernel_types.size() == source_swarm.num_particles(PARALLEL_OWNED));
+      assert(geom_types.size() == source_swarm.num_particles(PARALLEL_OWNED));
     }
 
     /************************************************************************** 
@@ -259,6 +266,7 @@ class MPI_Particle_Distribute {
     ***************************************************************************/
     if (center == Meshfree::WeightCenter::Scatter)
     {
+      //communicate smoothing_lengths
       std::vector<std::vector<double>> sourceSendSmoothLengths(commSize);
       for (size_t i = 0; i < commSize; ++i)
       {
@@ -287,7 +295,59 @@ class MPI_Particle_Distribute {
 	for (size_t d = 0 ; d < dim; ++d)
 	  smlen[0].emplace_back(sourceRecvSmoothLengths[dim*i+d]);
      
-        smoothing_lengths.emplace_back(smlen);
+        smoothing_lengths.push_back(smlen);
+      }
+
+      //communicate kernel_types
+      std::vector<std::vector<int>> sourceSendKernels(commSize);
+      for (size_t i = 0; i < commSize; ++i)
+      {
+        if ((!sendFlags[i]) || (i==commRank))
+          continue;
+        else 
+        {
+          for (size_t j = 0; j < sourcePtsToSendSize[i]; ++j)
+          {
+              sourceSendKernels[i].insert(sourceSendKernels[i].end(), 
+                                  kernel_types[sourcePtsToSend[i][j]]);
+          }
+        }
+      }
+      //move this kernel type data
+      std::vector<int> sourceRecvKernels(src_info.newNum);
+      moveField<int>(&src_info, commRank, commSize, MPI_INT, 1, 
+                        sourceSendKernels,&sourceRecvKernels);
+      
+      // update local source swarm with received kernels
+      for (size_t i = 0; i < src_info.newNum; ++i)
+      {
+        kernel_types.push_back(static_cast<Meshfree::Weight::Kernel>(sourceRecvKernels[i]));
+      }
+
+      //communicate geom_types
+      std::vector<std::vector<int>> sourceSendGeoms(commSize);
+      for (size_t i = 0; i < commSize; ++i)
+      {
+        if ((!sendFlags[i]) || (i==commRank))
+          continue;
+        else 
+        {
+          for (size_t j = 0; j < sourcePtsToSendSize[i]; ++j)
+          {
+              sourceSendGeoms[i].insert(sourceSendGeoms[i].end(), 
+                                  geom_types[sourcePtsToSend[i][j]]);
+          }
+        }
+      }
+      //move this geom type data
+      std::vector<int> sourceRecvGeoms(src_info.newNum);
+      moveField<int>(&src_info, commRank, commSize, MPI_INT, 1, 
+                        sourceSendGeoms,&sourceRecvGeoms);
+      
+      // update local source swarm with received geom types
+      for (size_t i = 0; i < src_info.newNum; ++i)
+      {
+        geom_types.push_back(static_cast<Meshfree::Weight::Geometry>(sourceRecvGeoms[i]));
       }
     }
     /************************************************************************** 

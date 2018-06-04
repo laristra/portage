@@ -112,9 +112,9 @@ class SwarmDriver {
                                                   support_geom_type);
     } else if (weight_center_ == Scatter) {
       assert(smoothing_lengths_.size() == source_swarm_.num_particles(PARALLEL_OWNED));
-      kernel_types_ = std::vector<Weight::Kernel>(source_swarm_.num_particles(PARALLEL_OWNED),
+      kernel_types_ = vector<Weight::Kernel>(source_swarm_.num_particles(PARALLEL_OWNED),
                                                   kernel_type);
-      geom_types_ = std::vector<Weight::Geometry>(source_swarm_.num_particles(PARALLEL_OWNED),
+      geom_types_ = vector<Weight::Geometry>(source_swarm_.num_particles(PARALLEL_OWNED),
                                                   support_geom_type);
     }
   }
@@ -352,24 +352,14 @@ remap(std::vector<std::string> const &src_varnames,
   if (distributed) {
   gettimeofday(&begin_timeval, 0);
   MPI_Particle_Distribute<Dim> distributor;
+  
+  //For scatter scheme, the smoothing_lengths_, kernel_types_
+  //and geom_types_  are also communicated and changed for the
+  //source swarm. 
   distributor.distribute(source_swarm_, source_state_,
                          target_swarm_, target_state_,
-                         smoothing_lengths_, weight_center_);
-  //For scatter scheme, the smoothing_lengths are also communicated
-  //and must be changed here as well. 
-  if (weight_center_ == Portage::Meshfree::Scatter)
-  {
-   
-    //The vector of kernel_types and geom_types also have to be updated.
-    //Since currently, they are the same type for all points, the update
-    //is a copy. However, if the types are different for each pt, then
-    //they will also have to be communicated.  
-    Weight::Kernel kernel_type = kernel_types_[0];
-    kernel_types_ = std::vector<Weight::Kernel>(source_swarm_.num_particles(), kernel_type);
-
-    Weight::Geometry support_geom_type = geom_types_[0];
-    geom_types_ = std::vector<Weight::Geometry>(source_swarm_.num_particles(), support_geom_type);
-  }
+                         smoothing_lengths_, kernel_types_,
+                         geom_types_, weight_center_);
   gettimeofday(&end_timeval, 0);
   timersub(&end_timeval, &begin_timeval, &diff_timeval);
   tot_seconds_dist = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
