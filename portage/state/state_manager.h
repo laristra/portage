@@ -129,8 +129,10 @@ class StateManager {
  		// get the data and do the cast internal to the function
  		// note this call always works even if the key doesn't exist. We can check
  		// the return against a nullptr
- 		template <class T, template<class> class StateVectorType>
-		std::shared_ptr<StateVectorType<T>> get(std::string name){
+ 		// also note that T is the complete type, which is itself typically templated
+ 		// e.g. T=StateVectorMulti<double>
+ 		template <class T>
+		std::shared_ptr<T> get(std::string name){
 		
 			// create the key
 			std::string key{name};
@@ -140,7 +142,7 @@ class StateManager {
 			}			
 			
 			// do the return all in one step
-			return std::dynamic_pointer_cast<StateVectorType<T>>(state_vectors_[key]);
+			return std::dynamic_pointer_cast<T>(state_vectors_[key]);
  			
 		}	
 
@@ -168,8 +170,8 @@ class StateManager {
 		////////////////
 
 		
- 		template <class T, template<class> class StateVectorType>
-		std::shared_ptr<StateVectorType<T>> get(std::string name) const{
+ 		template <class T>
+		std::shared_ptr<T> get(std::string name) const{
 		
 			// create the key
 			std::string key{name};
@@ -179,7 +181,7 @@ class StateManager {
 			}			
 			
 			// do the return all in one step
-			return std::dynamic_pointer_cast<StateVectorType<T>>(state_vectors_.at(key));
+			return std::dynamic_pointer_cast<T>(state_vectors_.at(key));
  			
 		}	
 
@@ -315,7 +317,7 @@ class StateManager {
 		template <class T>
 		void mat_get_celldata(std::string const& var_name, int matid,
 		                      T const **data) const {
-		  *data= get<T,StateVectorMulti>(var_name)->get_data()[matid].data();                
+		  *data= get<StateVectorMulti<T>>(var_name)->get_data()[matid].data();                
 		}
 
 
@@ -334,14 +336,14 @@ class StateManager {
 		template <class T>
 		void mesh_get_data(Entity_kind on_what, std::string const& var_name,
 		                   T const **data) const {
-		  *data = get<T,StateVectorUni>(var_name)->get_data().data();		                 
+		  *data = get<StateVectorUni<T>>(var_name)->get_data().data();		                 
 		}
 
 		
 		template <class T>
 		void mesh_get_data(Entity_kind on_what, std::string const& var_name,
 		                   T **data) {
-		  *data = get<T,StateVectorUni>(var_name)->get_data().data();		                 
+		  *data = get<StateVectorUni<T>>(var_name)->get_data().data();		                 
 		}
 
 		
@@ -380,7 +382,7 @@ class StateManager {
 		  
 		  // could use a std::copy, but I'll get to it later
 		  // need a reference,because we are modifying the data in place
-		  std::vector<T>& data=get<T,StateVectorMulti>(var_name)->get_data()[matid];
+		  std::vector<T>& data=get<StateVectorMulti<T>>(var_name)->get_data()[matid];
 		  data.clear();
 		  for (int i=0;i<ncells;++i) data.push_back(*(values+i));
 		}
@@ -409,7 +411,7 @@ class StateManager {
 			// get the correct row of the ragged right data structure
 			// NOTE (this bit me) the &, the local reference needs to refer to the 
 			// actual data in the state manager, not a copy
-			std::vector<T>& material_data = get<T,StateVectorMulti>(var_name)->get_data()[matid];
+			std::vector<T>& material_data = get<StateVectorMulti<T>>(var_name)->get_data()[matid];
 			
 			int n = material_cells_[matid].size();
 			
