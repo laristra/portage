@@ -30,9 +30,7 @@ template <class MeshWrapper>
 class StateManager {
 
 	public:
-	
- 		using pair_t = std::pair<Portage::Entity_kind, std::string>;
- 		
+	 		
  		StateManager (const MeshWrapper& mesh, 
  			std::unordered_map<std::string,int> names={},
  			std::unordered_map<int,std::vector<int>> material_cells={}
@@ -44,7 +42,7 @@ class StateManager {
 		void add(std::shared_ptr<StateVectorBase> sv){
 		
 			// create the key
-			pair_t key{sv->kind(), sv->name()};
+			std::string  key{sv->name()};
 			
 			// if the map entry for this key already exists, throw and erro
 			if (state_vectors_.find(key)!=state_vectors_.end()) 
@@ -61,7 +59,7 @@ class StateManager {
 		void add(std::shared_ptr<StateVectorUni<T>> sv){
 		
 			// create the key
-			pair_t key{sv->kind(), sv->name()};
+			std::string key{sv->name()};
 			
 			// if the map entry for this key already exists, throw and erro
 			if (state_vectors_.find(key)!=state_vectors_.end()) 
@@ -84,7 +82,7 @@ class StateManager {
 		void add(std::shared_ptr<StateVectorMulti<T>> sv){
 		
 			// create the key
-			pair_t key{sv->kind(), sv->name()};
+			std::string key{sv->name()};
 			
 			// if the map entry for this key already exists, throw an error
 			// Note: the follow is BAD, as it creates the key even if the data is bad
@@ -124,76 +122,15 @@ class StateManager {
 			
 			return true;
 		}
-			
- 
-		// get with no template parameters returns the base vector, can be cast
-		// by client
-		bool get(Entity_kind kind, std::string name, 
-			std::shared_ptr<StateVectorBase>& pv){
-		
-			// create the key
-			pair_t key{kind, name};
-			
-			if (state_vectors_.find(key)==state_vectors_.end()){
-				return false;
-			}
-			
-			pv = state_vectors_[key];
-			return true;
- 			
-		}	
-		
- 		// get the data and do the cast internal to the function
- 		template <class T, template<class> class StateVectorType>
-		bool get(Entity_kind kind, std::string name, 
-			std::shared_ptr<StateVectorType<T>>& pv){
-		
-			// create the key
-			pair_t key{kind, name};
-			
-			if (state_vectors_.find(key)==state_vectors_.end()){
-				return false;
-			}
-			
-			// lookup the vector
-			auto bv = state_vectors_[key];
 					
-			// cast to the desired type
-			pv = std::dynamic_pointer_cast<StateVectorType<T>>(bv);
-			
-			return true;
- 			
-		}	
-		
- 		// convenience function for getting SimpleStateMulti that allows template deduction
- 		// note this call always works even if the key doesn't exist. We can check
- 		// the return against a nullptr
- 		template <class T=double>
-		bool get(std::string name, std::shared_ptr<StateVectorMulti<T>>& sv){
-		
-			// create the key
-			pair_t key{Portage::Entity_kind::CELL, name};
-
-			if (state_vectors_.find(key)==state_vectors_.end()){
-				return false;
-			}			
-			
-			// get the state vector
-			sv = std::dynamic_pointer_cast<StateVectorMulti<T>>(state_vectors_[key]);
-			
-			// do the return all in one step
-			return true;
- 			
-		}	
-		
  		// get the data and do the cast internal to the function
  		// note this call always works even if the key doesn't exist. We can check
  		// the return against a nullptr
  		template <class T, template<class> class StateVectorType>
-		std::shared_ptr<StateVectorType<T>> get(Entity_kind kind, std::string name){
+		std::shared_ptr<StateVectorType<T>> get(std::string name){
 		
 			// create the key
-			pair_t key{kind, name};
+			std::string key{name};
 			
 			if (state_vectors_.find(key)==state_vectors_.end()){
 				return nullptr;
@@ -204,14 +141,31 @@ class StateManager {
  			
 		}	
 		
+ 		// get the data and do the cast internal to the function
+ 		// note this call always works even if the key doesn't exist. We can check
+ 		// the return against a nullptr
+ 		std::shared_ptr<StateVectorBase> get(std::string name){
+		
+			// create the key
+			std::string key{name};
+			
+			if (state_vectors_.find(key)==state_vectors_.end()){
+				return nullptr;
+			}			
+			
+			// do the return all in one step
+			return state_vectors_[key];
+ 			
+		}	
+/**/		
  		// convenience function for getting StateVectorMulti
  		// note this call always works even if the key doesn't exist. We can check
  		// the return against a nullptr
- 		template <class T=double>
+/* 		template <class T=double>
 		std::shared_ptr<StateVectorMulti<T>> get(std::string name){
 		
 			// create the key
-			pair_t key{Portage::Entity_kind::CELL, name};
+			std::string key{name};
 			
 			if (state_vectors_.find(key)==state_vectors_.end()){
 				return nullptr;
@@ -221,15 +175,16 @@ class StateManager {
 			return std::dynamic_pointer_cast<StateVectorMulti<T>>(state_vectors_[key]);
  			
 		}	
+*/
 		
 		////////////////////
 		// Const Versions
 		////////////////
- 		template <class T=double>
+/* 		template <class T=double>
 		std::shared_ptr<StateVectorMulti<T>> get(std::string name) const{
 		
 			// create the key
-			pair_t key{Portage::Entity_kind::CELL, name};
+			std::string key{name};
 			
 			if (state_vectors_.find(key)==state_vectors_.end()){
 				return nullptr;
@@ -239,12 +194,12 @@ class StateManager {
 			return std::dynamic_pointer_cast<StateVectorMulti<T>>(state_vectors_.at(key));
  			
 		}	
-		
+*/		
  		template <class T, template<class> class StateVectorType>
-		std::shared_ptr<StateVectorType<T>> get(Entity_kind kind, std::string name) const{
+		std::shared_ptr<StateVectorType<T>> get(std::string name) const{
 		
 			// create the key
-			pair_t key{kind, name};
+			std::string key{name};
 			
 			if (state_vectors_.find(key)==state_vectors_.end()){
 				return nullptr;
@@ -254,6 +209,7 @@ class StateManager {
 			return std::dynamic_pointer_cast<StateVectorType<T>>(state_vectors_.at(key));
  			
 		}	
+				
 		// add the names of the materials
 		void add_material_names(std::unordered_map<std::string,int> names){
 			material_ids_=names;
@@ -340,9 +296,8 @@ class StateManager {
   	Entity_kind get_entity(std::string name) const{
   	
   		// for right now, just loop and check that the name is correct
-  		// if we used a string key instead of a pair key, this would be a simple lookup
   		for (auto& kv: state_vectors_){
-  			if (kv.first.second==name) return kv.second->kind();
+  			if (kv.first==name) return kv.second->kind();
   		}
   		
   		// default to CELL data, could also throw an error for not found...
@@ -350,12 +305,12 @@ class StateManager {
   	}
   	
   	Field_type field_type(Entity_kind kind, std::string name) const{
-  		return state_vectors_.at(pair_t{kind,name})->type();
+  		return state_vectors_.at(name)->type();
   	}
 
 		// Get the states in the states in state manager
-		std::vector<pair_t> get_state_keys(){
-			std::vector<pair_t> keys;
+		std::vector<std::string> get_state_keys(){
+			std::vector<std::string> keys;
 			for (auto& kv: state_vectors_){
 				keys.push_back(kv.first);
 			} 
@@ -372,7 +327,7 @@ class StateManager {
 		template <class T>
 		void mat_get_celldata(std::string const& var_name, int matid,
 		                      T const **data) const {
-		  *data= get<T>(var_name)->get_data()[matid].data();                
+		  *data= get<T,StateVectorMulti>(var_name)->get_data()[matid].data();                
 		}
 
   	int cell_get_num_mats(int cellid) const {
@@ -388,13 +343,13 @@ class StateManager {
 		template <class T>
 		void mesh_get_data(Entity_kind on_what, std::string const& var_name,
 		                   T const **data) const {
-		  *data = get<T,StateVectorUni>(on_what, var_name)->get_data().data();		                 
+		  *data = get<T,StateVectorUni>(var_name)->get_data().data();		                 
 		}
 		
 		template <class T>
 		void mesh_get_data(Entity_kind on_what, std::string const& var_name,
 		                   T **data) {
-		  *data = get<T,StateVectorUni>(on_what, var_name)->get_data().data();		                 
+		  *data = get<T,StateVectorUni>(var_name)->get_data().data();		                 
 		}
 		
 		std::string material_name(int matid) const {
@@ -429,7 +384,7 @@ class StateManager {
 		  
 		  // could use a std::copy, but I'll get to it later
 		  // need a reference,because we are modifying the data in place
-		  std::vector<T>& data=get<T>(var_name)->get_data()[matid];
+		  std::vector<T>& data=get<T,StateVectorMulti>(var_name)->get_data()[matid];
 		  data.clear();
 		  for (int i=0;i<ncells;++i) data.push_back(*(values+i));
 		}
@@ -457,7 +412,7 @@ class StateManager {
 			// get the correct row of the ragged right data structure
 			// NOTE (this bit me) the &, the local reference needs to refer to the 
 			// actual data in the state manager, not a copy
-			std::vector<T>& material_data = get<T>(var_name)->get_data()[matid];
+			std::vector<T>& material_data = get<T,StateVectorMulti>(var_name)->get_data()[matid];
 			
 			int n = material_cells_[matid].size();
 			
@@ -489,7 +444,7 @@ class StateManager {
 		// I'm using a map instead of an unordered map, because there aren't
 		// that many state vectors, and also, to use an unordered_map we need
 		// to either provide a key function or a hashing function.
-		std::map<pair_t, std::shared_ptr<StateVectorBase>> state_vectors_;
+		std::unordered_map<std::string, std::shared_ptr<StateVectorBase>> state_vectors_;
 		
 		// material ids
 		std::unordered_map<std::string,int> material_ids_;

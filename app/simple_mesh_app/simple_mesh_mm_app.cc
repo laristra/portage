@@ -310,7 +310,7 @@ void run(
 
 	// print what the state manager knows about
   std::cout<<"\nState manager fields: ";
-  for (auto x: source_state.get_state_keys()) std::cout<<x.second<<" ";
+  for (auto x: source_state.get_state_keys()) std::cout<<x<<" ";
   std::cout<<std::endl;
 
   // Add the materials into the target mesh without cell indices
@@ -404,8 +404,8 @@ void run(
 		//const auto& volfracs = target_state.get<double>("mat_volfracs")->get_data()[m];
 		
 		// get the material centroids for this material
-		const auto& volfracs = target_state.get<double>("mat_volfracs")->get_data()[m];		
-		const auto& centroids = target_state.get<Point<2>>("mat_centroids")->get_data()[m];		
+		const auto& volfracs = target_state.get<double, StateVectorMulti>("mat_volfracs")->get_data()[m];		
+		const auto& centroids = target_state.get<Point<2>, StateVectorMulti>("mat_centroids")->get_data()[m];		
 	
 		// loop over the cell id's
 		for (int i = 0; i<cells.size(); ++i){
@@ -543,7 +543,7 @@ void run(
     // write out the values
     for (int m=0; m<nmats; ++m){
     	std::vector<int>cells = target_state.get_material_cells().at(m);
-    	std::vector<double> data = target_state.get("cellmatdata")->get_data().at(m);
+    	std::vector<double> data = target_state.get<double,StateVectorMulti>("cellmatdata")->get_data().at(m);
     	fout << "material: " << m << std::endl;
     	
     	for (int i=0; i<data.size(); ++i){

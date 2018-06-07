@@ -246,8 +246,7 @@ TEST(StateManager, manageMeshField2){
 	ASSERT_THROW(manager.add(pv), std::runtime_error);
 
 	// make sure the data access is correct
-	std::shared_ptr<StateVectorBase> pv2;
-	manager.get(Entity_kind::CELL, "field", pv2);
+	std::shared_ptr<StateVectorBase> pv2=manager.get("field");
 	
 	// now do the pointer cast
 	std::shared_ptr<StateVectorUniRaw<>> out = std::dynamic_pointer_cast<StateVectorUniRaw<>>(pv2);
@@ -296,22 +295,19 @@ TEST(StateManager, manageMeshFieldTemplate){
 	ASSERT_THROW(manager.add(pv), std::runtime_error);
 
 	// make sure the data access is correct
-	std::shared_ptr<StateVectorUniRaw<>> out;
-	
-	// get the data
-	manager.get<double, StateVectorUniRaw>(Entity_kind::CELL, "field", out);
+	auto out=manager.get<double,StateVectorUniRaw>("field");
 	
 	// test that the value is correct
 	ASSERT_EQ(data[0], out->get_data()[0]);
 	
 	// try using the return reference
-	auto out2 = manager.get<double, StateVectorUniRaw>(Entity_kind::CELL, "field");
+	auto out2 = manager.get<double, StateVectorUniRaw>("field");
 	
 	// test that the value is correct
 	ASSERT_EQ(data[0], out2->get_data()[0]);
 	
 	// try getting a non-existent field
-	auto out3 = manager.get<double, StateVectorUniRaw>(Entity_kind::CELL, "nonexistent");
+	auto out3 = manager.get<double, StateVectorUniRaw>("nonexistent");
 	
 	// test that the value is correct
 	ASSERT_EQ(nullptr, out3);
@@ -328,7 +324,7 @@ TEST(StateManager, manageMeshFieldTemplate){
 	manager.add(pv2);
 	
 	// check that the value is correct
-	auto out4 = manager.get<double, StateVectorUniRaw>(Entity_kind::CELL, "field2");
+	auto out4 = manager.get<double, StateVectorUniRaw>("field2");
 	
 	// test that the value is correct
 	ASSERT_EQ(data2[0], out4->get_data()[0]);
@@ -368,7 +364,7 @@ TEST(StateManager, multiMatField){
 	manager.add(pv);
 		
 	// try using the return reference
-	auto out = manager.get<double, StateVectorMultiRaw>(Entity_kind::CELL, "field");
+	auto out = manager.get<double, StateVectorMultiRaw>("field");
 	
 	// test that the value is correct
 	for (int i=0; i<data.size(); i++) {
@@ -405,7 +401,7 @@ TEST(StateManager, mixedFields){
 	manager.add(pv);
 		
 	// try using the return reference
-	auto out = manager.get<double, StateVectorMultiRaw>(Entity_kind::CELL, "pressure");
+	auto out = manager.get<double, StateVectorMultiRaw>("pressure");
 	
 	// test that the values are correct
 	for (int i=0; i<data.size(); i++) {
@@ -424,7 +420,7 @@ TEST(StateManager, mixedFields){
 	manager.add(puv);
 	
 	// get the data
-	auto sout = manager.get<double, StateVectorUniRaw>(Entity_kind::CELL, "temperature");
+	auto sout = manager.get<double, StateVectorUniRaw>("temperature");
 	
 	// test that the values are correct
 	for (int i=0; i<sdata.size();i++) {
@@ -460,7 +456,7 @@ TEST(StateManager, mixedFields2){
 	manager.add(pv1);
 	
 	// try using the return reference
-	auto out1 = manager.get<double, StateVectorMultiRaw>(Entity_kind::CELL, "pressure");
+	auto out1 = manager.get<double, StateVectorMultiRaw>("pressure");
 	
 	// test that the values are correct
 	for (int i=0; i<data1.size(); i++) {
@@ -483,7 +479,7 @@ TEST(StateManager, mixedFields2){
 	manager.add(pv2);
 	
 	// try using the return reference
-	auto out2 = manager.get<Point<2>, StateVectorMultiRaw>(Entity_kind::CELL, "mm centroid");
+	auto out2 = manager.get<Point<2>, StateVectorMultiRaw>("mm centroid");
 	
 	// test that the values are correct
 	for (int i=0; i<data2.size(); i++) {
@@ -506,7 +502,7 @@ TEST(StateManager, mixedFields2){
 	manager.add(pv3);
 	
 	// get the data
-	auto out3 = manager.get<double, StateVectorUniRaw>(Entity_kind::CELL, "temperature");
+	auto out3 = manager.get<double, StateVectorUniRaw>("temperature");
 	
 	// test that the values are correct
 	for (int i=0; i<data3.size();i++) {
@@ -525,7 +521,7 @@ TEST(StateManager, mixedFields2){
 	manager.add(pv4);
 	
 	// get the data
-	auto out4 = manager.get<Point<2>, StateVectorUniRaw>(Entity_kind::CELL, "cell centroid");
+	auto out4 = manager.get<Point<2>, StateVectorUniRaw>("cell centroid");
 	
 	// test that the values are correct
 	for (int i=0; i<data4.size();i++) {

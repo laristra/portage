@@ -268,8 +268,7 @@ TEST(StateManager, manageMeshField2){
 	ASSERT_THROW(manager.add(pv), std::runtime_error);
 
 	// make sure the data access is correct
-	std::shared_ptr<StateVectorBase> pv2;
-	manager.get(Entity_kind::CELL, "field", pv2);
+	std::shared_ptr<StateVectorBase> pv2=manager.get("field");
 	
 	// now do the pointer cast
 	std::shared_ptr<StateVectorUni<>> out = std::dynamic_pointer_cast<StateVectorUni<>>(pv2);
@@ -316,22 +315,19 @@ TEST(StateManager, manageMeshFieldTemplate){
 	ASSERT_THROW(manager.add(pv), std::runtime_error);
 
 	// make sure the data access is correct
-	std::shared_ptr<StateVectorUni<>> out;
-	
-	// get the data
-	manager.get<double, StateVectorUni>(Entity_kind::CELL, "field", out);
+	auto out=manager.get<double, StateVectorUni>("field");
 	
 	// test that the value is correct
 	ASSERT_EQ(data[0], out->get_data()[0]);
 	
 	// try using the return reference
-	auto out2 = manager.get<double, StateVectorUni>(Entity_kind::CELL, "field");
+	auto out2 = manager.get<double, StateVectorUni>("field");
 	
 	// test that the value is correct
 	ASSERT_EQ(data[0], out2->get_data()[0]);
 	
 	// try getting a non-existent field
-	auto out3 = manager.get<double, StateVectorUni>(Entity_kind::CELL, "nonexistent");
+	auto out3 = manager.get<double, StateVectorUni>("nonexistent");
 	
 	// test that the value is correct
 	ASSERT_EQ(nullptr, out3);
@@ -348,7 +344,7 @@ TEST(StateManager, manageMeshFieldTemplate){
 	manager.add(pv2);
 	
 	// check that the value is correct
-	auto out4 = manager.get<double, StateVectorUni>(Entity_kind::CELL, "field2");
+	auto out4 = manager.get<double, StateVectorUni>("field2");
 	
 	// test that the value is correct
 	ASSERT_EQ(data2[0], out4->get_data()[0]);
@@ -386,7 +382,7 @@ TEST(StateManager, multiMatField){
 	manager.add(pv);
 	
 	// try using the return reference
-	auto out = manager.get<double, StateVectorMulti>(Entity_kind::CELL, "field");
+	auto out = manager.get<double, StateVectorMulti>("field");
 
 	// test that the value obtained through the state manager is correct
 	for (auto& kv : out->get_data()) {
@@ -419,7 +415,7 @@ TEST(StateManager, mixedFields){
 	manager.add(spv);
 
 	// try using the return reference
-	auto out = manager.get<double, StateVectorMulti>(Entity_kind::CELL, "pressure");
+	auto out = manager.get<double, StateVectorMulti>("pressure");
 	
 	// test that the value obtained through the state manager is correct
 	for (auto& kv : out->get_data()) {
@@ -439,7 +435,7 @@ TEST(StateManager, mixedFields){
 	manager.add(spsd);
 	
 	// get the data
-	auto sout = manager.get<double, StateVectorUni>(Entity_kind::CELL, "temperature");
+	auto sout = manager.get<double, StateVectorUni>("temperature");
 	
 	// test that the values are correct
 	for (int i=0; i<sdata.size();i++) {
@@ -473,7 +469,7 @@ TEST(StateManager, mixedFields2){
 	manager.add(sp0);
 	
 	// try using the return reference
-	auto out0 = manager.get<int, StateVectorMulti>(Entity_kind::CELL, "indices");
+	auto out0 = manager.get<int, StateVectorMulti>("indices");
 	
 	// test that the values obtained through the state manager are correct
 	for (auto& kv : out0->get_data()) {
@@ -494,7 +490,7 @@ TEST(StateManager, mixedFields2){
 	manager.add(sp1);
 	
 	// try using the return reference
-	auto out1 = manager.get<double, StateVectorMulti>(Entity_kind::CELL, "density");
+	auto out1 = manager.get<double, StateVectorMulti>("density");
 	
 	// test that the values obtained through the state manager are correct
 	for (auto& kv : out1->get_data()) {
@@ -516,7 +512,7 @@ TEST(StateManager, mixedFields2){
 	manager.add(sp2);
 	
 	// try using the return reference
-	auto out2 = manager.get<Point<2>, StateVectorMulti>(Entity_kind::CELL, "mm centroid");
+	auto out2 = manager.get<Point<2>, StateVectorMulti>("mm centroid");
 	
 	// test that the values obtained through the state manager are correct
 	for (auto& kv : out2->get_data()) {
@@ -539,7 +535,7 @@ TEST(StateManager, mixedFields2){
 	manager.add(sp3);
 	
 	// get the data
-	auto out3 = manager.get<double, StateVectorUni>(Entity_kind::CELL, "temperature");
+	auto out3 = manager.get<double, StateVectorUni>("temperature");
 	
 	// test that the values are correct
 	for (int i=0; i<data3.size();i++) {
@@ -559,7 +555,7 @@ TEST(StateManager, mixedFields2){
 	manager.add(sp4);
 	
 	// get the data
-	auto out4 = manager.get<Point<2>, StateVectorUni>(Entity_kind::CELL, "cell centroid");
+	auto out4 = manager.get<Point<2>, StateVectorUni>("cell centroid");
 	
 	// test that the values are correct
 	for (int i=0; i<data4.size();i++) {
@@ -590,7 +586,7 @@ TEST(StateManager, testUniIsolation){
 		Entity_kind::CELL, data));
 	
 	// get the data
-	auto& out = manager.get<double, StateVectorUni>(Entity_kind::CELL, "temperature")->get_data();
+	auto& out = manager.get<double, StateVectorUni>("temperature")->get_data();
 	
 	// test that the values are correct
 	for (int i=0; i<data.size();i++) {
@@ -627,7 +623,7 @@ TEST(StateManager, testMultiIsolation){
 	manager.add(std::make_shared<StateVectorMulti<>> ("pressure", data));
 	
 	// get the data
-	auto& out = manager.get<double, StateVectorMulti>(Entity_kind::CELL, "pressure")->get_data();
+	auto& out = manager.get<double, StateVectorMulti>("pressure")->get_data();
 	
 	// test that the values obtained through the state manager are correct
 	for (auto& kv : out) {
@@ -686,7 +682,7 @@ TEST(StateManager, testMultiIsolationPoint){
 	manager.add(std::make_shared<StateVectorMulti<Point<2>>> ("centroid", data));
 	
 	// get the data
-	auto& out = manager.get<Point<2>, StateVectorMulti>(Entity_kind::CELL, "centroid")->get_data();
+	auto& out = manager.get<Point<2>, StateVectorMulti>("centroid")->get_data();
 	
 	// test that the values obtained through the state manager are correct
 	for (auto& kv : out) {
@@ -848,7 +844,7 @@ TEST(StateManager,test4Cell){
 	ASSERT_EQ(manager.cell_index_in_material(2,5),1);
 
 	// get the data
-	auto out = manager.get<double, StateVectorMulti>(Entity_kind::CELL, "density");
+	auto out = manager.get<double, StateVectorMulti>("density");
 	
 	ASSERT_EQ(out->type(),Portage::Field_type::MULTIMATERIAL_FIELD);
 
@@ -875,7 +871,7 @@ TEST(StateManager,test4Cell){
 	// Try different ways of accessing the data, some using template deduction
 	
 	// get the data
-	auto& out2 = manager.get<Point<2>, StateVectorMulti>(Entity_kind::CELL, "centroid")->get_data();
+	auto& out2 = manager.get<Point<2>, StateVectorMulti>("centroid")->get_data();
 	
 	// test that the values obtained through the state manager are correct
 	for (auto& kv : out2) {
@@ -887,7 +883,7 @@ TEST(StateManager,test4Cell){
 	} 
 
 	// get the data using the simplified multi material get
-	auto& out3 = manager.get<Point<2>>("centroid")->get_data();
+	auto& out3 = manager.get<Point<2>,StateVectorMulti>("centroid")->get_data();
 	
 	// test that the values obtained through the state manager are correct
 	for (auto& kv : out3) {
@@ -899,8 +895,7 @@ TEST(StateManager,test4Cell){
 	} 
 
 	// get the data using the template parameter deduction form
-	std::shared_ptr<StateVectorMulti<Point<2>>> sv;
-	manager.get("centroid", sv);
+	auto sv=manager.get<Point<2>,StateVectorMulti>("centroid");
 	auto& out4 =sv->get_data();
 	
 	// test that the values obtained through the state manager are correct
