@@ -38,7 +38,7 @@ TEST(StateManager, testPointerStateManager){
 	StateVectorUniRaw<double>* out{static_cast<StateVectorUniRaw<double>*>(state[1])};
 	
 	// get the name
-	ASSERT_EQ("field1", out->name());
+	ASSERT_EQ("field1", out->get_name());
 	
 	// make sure the data comes out correctly
 	for (int i=0; i<data1.size(); ++i){
@@ -67,7 +67,7 @@ TEST(StateManager, testSharedPointerStateManager){
 	std::shared_ptr<StateVectorUniRaw<>> out=std::dynamic_pointer_cast<StateVectorUniRaw<>>(state[1]);
 
 	// get the name
-	ASSERT_EQ("field1", out->name());
+	ASSERT_EQ("field1", out->get_name());
 	
 	// make sure the data comes out correctly
 	for (int i=0; i<data1.size(); ++i){
@@ -100,7 +100,7 @@ TEST(StateManager, testSharedPointerStateManagerMap){
 	std::shared_ptr<StateVectorUniRaw<>> out=std::dynamic_pointer_cast<StateVectorUniRaw<>>(state[key]);
 
 	// get the name
-	ASSERT_EQ("field1", out->name());
+	ASSERT_EQ("field1", out->get_name());
 	
 	// make sure the data comes out correctly
 	for (int i=0; i<data1.size(); ++i){
@@ -129,7 +129,7 @@ TEST(StateManager, test1){
 	StateVectorUniRaw<double>* out{static_cast<StateVectorUniRaw<double>*>(state[1])};
 	
 	// get the name
-	ASSERT_EQ("field1", out->name());
+	ASSERT_EQ("field1", out->get_name());
 	
 	// make sure the data comes out correctly
 	for (int i=0; i<data1.size(); ++i){

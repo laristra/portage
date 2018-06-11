@@ -42,7 +42,7 @@ TEST(StateManager, testPointerStateManager){
 	StateVectorUni<double>* pout{static_cast<StateVectorUni<double>*>(state[1])};
 	
 	// get the name
-	ASSERT_EQ("field", pout->name());
+	ASSERT_EQ("field", pout->get_name());
 	
 	// make sure the data comes out correctly
 	for (int i=0; i<data.size(); ++i){
@@ -81,7 +81,7 @@ TEST(StateManager, testSharedPointerStateManager){
 	
 
 	// get the name
-	ASSERT_EQ(name, sp_out->name());
+	ASSERT_EQ(name, sp_out->get_name());
 	
 	// make sure the data comes out correctly
 	for (int i=0; i<data.size(); ++i){
@@ -117,7 +117,7 @@ TEST(StateManager, testSharedPointerStateManagerMap){
 	auto sp_out=std::dynamic_pointer_cast<StateVectorUni<>>(state[key]);
 
 	// get the name
-	ASSERT_EQ(name, sp_out->name());
+	ASSERT_EQ(name, sp_out->get_name());
 	
 	// make sure the data comes out correctly
 	for (int i=0; i<data.size(); ++i){
@@ -846,7 +846,7 @@ TEST(StateManager,test4Cell){
 	// get the data
 	auto out = manager.get<StateVectorMulti<double>>("density");
 	
-	ASSERT_EQ(out->type(),Portage::Field_type::MULTIMATERIAL_FIELD);
+	ASSERT_EQ(out->get_type(),Portage::Field_type::MULTIMATERIAL_FIELD);
 
 	auto& out_values= out->get_data();
 	

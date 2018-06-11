@@ -21,8 +21,8 @@ TEST(StateMulti, BasicInt) {
 	
 	StateVectorMulti<int> v(name);
   
-  ASSERT_EQ(v.name(), name);
-  ASSERT_EQ(v.type(), Portage::Field_type::MULTIMATERIAL_FIELD);
+  ASSERT_EQ(v.get_name(), name);
+  ASSERT_EQ(v.get_type(), Portage::Field_type::MULTIMATERIAL_FIELD);
   ASSERT_EQ(v.data_type(), typeid(int));
   ASSERT_NE(v.data_type(), typeid(double));
   
@@ -34,8 +34,8 @@ TEST(StateMulti, BasicDouble1) {
 	
 	StateVectorMulti<> v(name);
   
-  ASSERT_EQ(v.name(), name);
-  ASSERT_EQ(v.type(), Portage::Field_type::MULTIMATERIAL_FIELD);
+  ASSERT_EQ(v.get_name(), name);
+  ASSERT_EQ(v.get_type(), Portage::Field_type::MULTIMATERIAL_FIELD);
   ASSERT_EQ(v.data_type(), typeid(double));
   
 }

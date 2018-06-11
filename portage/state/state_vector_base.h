@@ -42,9 +42,9 @@ class StateVectorBase {
 
   //! Query Metadata
 
-	std::string name() const { return name_; }
-	Portage::Field_type type() const { return type_; }
-	Portage::Entity_kind kind() const { return kind_; }
+	std::string get_name() const { return name_; }
+	Portage::Field_type get_type() const { return type_; }
+	Portage::Entity_kind get_kind() const { return kind_; }
 	
  protected:
  

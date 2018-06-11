@@ -17,8 +17,8 @@ TEST(StateUni, BasicInt) {
 	
 	StateVectorUni<int> v(name);
   
-  ASSERT_EQ(v.name(), name);
-  ASSERT_EQ(v.type(), Field_type::MESH_FIELD);
+  ASSERT_EQ(v.get_name(), name);
+  ASSERT_EQ(v.get_type(), Field_type::MESH_FIELD);
   ASSERT_EQ(v.data_type(), typeid(int));
   ASSERT_NE(v.data_type(), typeid(double));
   
@@ -30,8 +30,8 @@ TEST(StateUni, BasicDouble1) {
 	
 	StateVectorUni<> v(name);
   
-  ASSERT_EQ(v.name(), name);
-  ASSERT_EQ(v.type(), Field_type::MESH_FIELD);
+  ASSERT_EQ(v.get_name(), name);
+  ASSERT_EQ(v.get_type(), Field_type::MESH_FIELD);
   ASSERT_EQ(v.data_type(), typeid(double));
   ASSERT_EQ(v.get_data(), std::vector<double>());
   

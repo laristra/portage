@@ -125,7 +125,7 @@ class StateManager {
   	
   		// for right now, just loop and check that the name is correct
   		for (auto& kv: state_vectors_){
-  			if (kv.first==name) return kv.second->kind();
+  			if (kv.first==name) return kv.second->get_kind();
   		}
   		
   		// default to CELL data, could also throw an error for not found...
@@ -135,7 +135,7 @@ class StateManager {
   	  	
   	// the kind is not used here, but this is the required signature for mmdriver
   	Field_type field_type(Entity_kind kind, std::string name) const{
-  		return state_vectors_.at(name)->type();
+  		return state_vectors_.at(name)->get_type();
   	}
 
 
@@ -154,11 +154,11 @@ class StateManager {
 		void add(std::shared_ptr<StateVectorBase> sv){
 		
 			// create the key
-			std::string  key{sv->name()};
+			std::string  key{sv->get_name()};
 			
 			// if the map entry for this key already exists, throw and erro
 			if (state_vectors_.find(key)!=state_vectors_.end()) 
-				throw std::runtime_error("Field " + sv->name() + 
+				throw std::runtime_error("Field " + sv->get_name() + 
 					" already exists in the state manager");
 					
 			// copies the shared pointer
@@ -172,11 +172,11 @@ class StateManager {
 		void add(std::shared_ptr<StateVectorUni<T>> sv){
 		
 			// create the key
-			std::string key{sv->name()};
+			std::string key{sv->get_name()};
 			
 			// if the map entry for this key already exists, throw and erro
 			if (state_vectors_.find(key)!=state_vectors_.end()) 
-				throw std::runtime_error("Field " + sv->name() + 
+				throw std::runtime_error("Field " + sv->get_name() + 
 					" already exists in the state manager");
 					
 			// check that the size is correct
@@ -196,13 +196,13 @@ class StateManager {
 		void add(std::shared_ptr<StateVectorMulti<T>> sv){
 		
 			// create the key
-			std::string key{sv->name()};
+			std::string key{sv->get_name()};
 			
 			// if the map entry for this key already exists, throw an error
 			// Note: the follow is BAD, as it creates the key even if the data is bad
 			//if (state_vectors_[key]!=nullptr) 
 			if (state_vectors_.find(key)!=state_vectors_.end()) 
-				throw std::runtime_error("Field " + sv->name() + 
+				throw std::runtime_error("Field " + sv->get_name() + 
 					" already exists in the state manager");
 					
 			// check that the size is correct
