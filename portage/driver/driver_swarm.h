@@ -111,10 +111,10 @@ class SwarmDriver {
       geom_types_ = vector<Weight::Geometry>(target_swarm_.num_particles(PARALLEL_OWNED),
                                                   support_geom_type);
     } else if (weight_center_ == Scatter) {
-      assert(smoothing_lengths_.size() == source_swarm_.num_particles());
-      kernel_types_ = vector<Weight::Kernel>(source_swarm_.num_particles(),
+      assert(smoothing_lengths_.size() == source_swarm_.num_particles(PARALLEL_OWNED));
+      kernel_types_ = vector<Weight::Kernel>(source_swarm_.num_particles(PARALLEL_OWNED),
                                                   kernel_type);
-      geom_types_ = vector<Weight::Geometry>(source_swarm_.num_particles(),
+      geom_types_ = vector<Weight::Geometry>(source_swarm_.num_particles(PARALLEL_OWNED),
                                                   support_geom_type);
     }
   }
@@ -333,7 +333,6 @@ remap(std::vector<std::string> const &src_varnames,
   MPI_Comm_rank(MPI_COMM_WORLD, &comm_rank);
 #endif
 
-  int numSourcePts = source_swarm_.num_particles(PARALLEL_OWNED);
   int numTargetPts = target_swarm_.num_particles(PARALLEL_OWNED);
 
   int nvars = source_remap_var_names_.size();
@@ -347,14 +346,20 @@ remap(std::vector<std::string> const &src_varnames,
   // This step would change the input source swarm and its state
   // if after distribution it receives particles from other 
   // ranks. 
+  // For the scatter scheme, the smoothing_lengths will also 
+  // be changed. 
 #ifdef ENABLE_MPI
   if (distributed) {
   gettimeofday(&begin_timeval, 0);
   MPI_Particle_Distribute<Dim> distributor;
+  
+  //For scatter scheme, the smoothing_lengths_, kernel_types_
+  //and geom_types_  are also communicated and changed for the
+  //source swarm. 
   distributor.distribute(source_swarm_, source_state_,
                          target_swarm_, target_state_,
-                         smoothing_lengths_, weight_center_);
-
+                         smoothing_lengths_, kernel_types_,
+                         geom_types_, weight_center_);
   gettimeofday(&end_timeval, 0);
   timersub(&end_timeval, &begin_timeval, &diff_timeval);
   tot_seconds_dist = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
@@ -376,8 +381,8 @@ remap(std::vector<std::string> const &src_varnames,
   // code below does not work with facted weights
   std::shared_ptr<vector<Point<Dim>>> sourceExtents;
   std::shared_ptr<vector<Point<Dim>>> targetExtents;
+  targetExtents = std::make_shared<vector<Point<Dim>>>(numTargetPts);
   if (weight_center_ == Portage::Meshfree::Gather) {
-    targetExtents = std::make_shared<vector<Point<Dim>>>(numTargetPts);
     for (int i = 0; i < numTargetPts; i++) {
       if (geom_types_[i] == Weight::FACETED) {
         throw std::runtime_error("FACETED geometry is not available here");
@@ -387,8 +392,10 @@ remap(std::vector<std::string> const &src_varnames,
        pt=Point<Dim>(vv[0]); (*targetExtents)[i]=pt;}
     }
   }
+  
+  int numSourcePts = source_swarm_.num_particles();
+  sourceExtents = std::make_shared<vector<Point<Dim>>>(numSourcePts);
   if (weight_center_ == Portage::Meshfree::Scatter) {
-    sourceExtents = std::make_shared<vector<Point<Dim>>>(numSourcePts);
     for (int i = 0; i < numSourcePts; i++) {
       if (geom_types_[i] == Weight::FACETED) {
         throw std::runtime_error("FACETED geometry is not available here");
@@ -411,7 +418,6 @@ remap(std::vector<std::string> const &src_varnames,
   gettimeofday(&end_timeval, 0);
   timersub(&end_timeval, &begin_timeval, &diff_timeval);
   tot_seconds_srch = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
-
 
   // ACCUMULATE (build moment matrix, calculate shape functions)
   // EQUIVALENT TO INTERSECT IN MESH-MESH REMAP
@@ -442,7 +448,6 @@ remap(std::vector<std::string> const &src_varnames,
   gettimeofday(&end_timeval, 0);
   timersub(&end_timeval, &begin_timeval, &diff_timeval);
   tot_seconds_xsect = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
-  
   
   // ESTIMATE (one variable at a time)
   

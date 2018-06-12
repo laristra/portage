@@ -44,23 +44,24 @@ class Swarm {
   using PointVecPtr = shared_ptr<vector<Point<dim>>>;
   using PointVec = vector<Point<dim>>;
   
-  
   /*!
    * @brief A particle has a center point and smoothing lengths in each dimension.
    * @param points center points of the particles
    * @param extents the widths of the particle bounding boxes in each dimension
    */
   Swarm(PointVecPtr points)
-      : points_(points), npoints_owned_(points_->size()) 
+      : points_(points), 
+        npoints_owned_(points_->size()) 
   {}
-
 
   /*!
    * @brief Create a Swarm from a flat mesh wrapper.
    * @param wrapper Input mesh wrapper
    */
-  Swarm(Wonton::Flat_Mesh_Wrapper<double> &wrapper, Portage::Entity_kind entity)
-    : points_(NULL), npoints_owned_(0)
+  Swarm(Wonton::Flat_Mesh_Wrapper<double> &wrapper, 
+        Portage::Entity_kind entity)
+      : points_(NULL), 
+        npoints_owned_(0)
   {
     if (entity != NODE and entity != CELL) {
       throw(std::runtime_error("only nodes and cells allowed"));
@@ -157,7 +158,6 @@ class Swarm {
     (*points_).insert((*points_).end(), new_pts.begin(), new_pts.end());
   }
   
-
  private:
   /** the centers of the particles */
   PointVecPtr points_;
