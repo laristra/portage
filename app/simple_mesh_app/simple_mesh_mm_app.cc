@@ -14,6 +14,7 @@
 #include "portage/simple_mesh/simple_mesh.h"
 #include "portage/wonton/mesh/simple_mesh/simple_mesh_wrapper.h"
 #include "portage/state/state_manager.h"
+#include "portage/wonton/state/simple_state/simple_state_mm_wrapper.h"
 #include "portage/driver/mmdriver.h"
 
 #include "read_material_data.h"
@@ -241,10 +242,12 @@ void run(
   }
   
   // Native state managers for source and target
-  // Note unlike portageapp_multimat_jali and others, I do not need to use a
-  // wrapper since the statemanager is feature complete
-	StateManager<Wonton::Simple_Mesh_Wrapper> source_state{
+	Simple_State_Wrapper<Wonton::Simple_Mesh_Wrapper> source_state{
 		source_mesh_wrapper, matnames, matcells};
+		
+	// Using the state manager directly works as well
+	//StateManager<Wonton::Simple_Mesh_Wrapper> source_state{
+	//	source_mesh_wrapper, matnames, matcells};
 
 	// add the volume fractions and centroids to the state manager
 	source_state.add(std::make_shared<StateVectorMulti<>>("mat_volfracs",mat_volfracs));
@@ -315,7 +318,9 @@ void run(
 
   // Add the materials into the target mesh without cell indices
   // The remap algorithm will figure out which cells contain which materials
-	StateManager<Wonton::Simple_Mesh_Wrapper> target_state{target_mesh_wrapper, matnames};
+	// Using the state manager directly works as well
+	Simple_State_Wrapper<Wonton::Simple_Mesh_Wrapper> target_state{target_mesh_wrapper, matnames};
+	//StateManager<Wonton::Simple_Mesh_Wrapper> target_state{target_mesh_wrapper, matnames};
 
 	// Add the volume fractions, centroids and cellmatdata variables
   target_state.add(

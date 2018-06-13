@@ -50,6 +50,25 @@ class StateManager {
 		}
 
 		
+		// Get the names in the state manager
+		std::vector<std::string> const get_state_keys(){
+			std::vector<std::string> keys;
+			for (auto& kv: state_vectors_){
+				keys.push_back(kv.first);
+			} 
+			return keys;
+		}
+
+
+		// get a material name from its id
+		std::string get_material_name(int m) const {return material_names_.at(m);}
+		std::string material_name(int m) const {return material_names_.at(m); } 
+
+
+		// get the material id from its name
+		int get_material_id(std::string name) const {return material_ids_.at(name);}
+
+
 		// add the material cells
 		void add_material_cells(std::unordered_map<int,std::vector<int>> cells){
 		
@@ -92,25 +111,6 @@ class StateManager {
 		// get the number of materials
 		int get_num_materials() const {return material_names_.size();}
 		int num_materials() const {return material_names_.size();}
-
-
-		// Get the names in the state manager
-		std::vector<std::string> const get_state_keys(){
-			std::vector<std::string> keys;
-			for (auto& kv: state_vectors_){
-				keys.push_back(kv.first);
-			} 
-			return keys;
-		}
-
-
-		// get a material name from its id
-		std::string get_material_name(int m) const {return material_names_.at(m);}
-		std::string material_name(int m) const {return material_names_.at(m); } 
-
-
-		// get the material id from its name
-		int get_material_id(std::string name) const {return material_ids_.at(name);}
 
 
 		
@@ -285,7 +285,7 @@ class StateManager {
 
 
 		// Get the cells in the m'th material. If no materials have been defined
-		// return reference to a dummy vector thats empty
+		// return reference to a dummy vector that is empty
 		std::vector<int> const& get_material_cells(int m)  const {
 			return material_cells_.at(m);
 		}
