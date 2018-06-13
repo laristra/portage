@@ -18,7 +18,6 @@ Please see the license file at the root of this repository, or at:
 
 #include "portage/support/portage.h"
 #include "portage/support/Point.h"
-#include "portage/wonton/mesh/flat/flat_mesh_wrapper.h"
 
 namespace Portage {
 namespace Meshfree {
@@ -53,37 +52,6 @@ class Swarm {
   Swarm(PointVecPtr points)
       : points_(points), npoints_owned_(points_->size()) 
   {}
-
-
-  /*!
-   * @brief Create a Swarm from a flat mesh wrapper.
-   * @param wrapper Input mesh wrapper
-   */
-  Swarm(Wonton::Flat_Mesh_Wrapper<double> &wrapper, Portage::Entity_kind entity)
-    : points_(NULL), npoints_owned_(0)
-  {
-    if (entity != NODE and entity != CELL) {
-      throw(std::runtime_error("only nodes and cells allowed"));
-    }
-
-    if (entity == NODE) {
-      npoints_owned_ = wrapper.num_owned_nodes();
-      points_ = make_shared<vector<Point<dim>>>(npoints_owned_);
-      Point<dim> node;
-      for (size_t i=0; i<npoints_owned_; i++) {
-        wrapper.node_get_coordinates(i, &node);
-        (*points_)[i] = node;
-      }
-    } else if (entity == CELL) {
-      npoints_owned_ = wrapper.num_owned_cells();
-      points_ = make_shared<vector<Point<dim>>>(npoints_owned_);
-      Point<dim> centroid;
-      for (size_t i=0; i<npoints_owned_; i++) {
-        wrapper.cell_centroid<dim>(i, &centroid);
-        (*points_)[i] = centroid;
-      }
-    }
-  }
 
   /*! @brief Dimensionality of points */
   unsigned int space_dimension() const {
@@ -321,6 +289,43 @@ std::shared_ptr<Swarm<3>> SwarmFactory(double xmin, double ymin, double zmin,
   
   std::shared_ptr<Swarm<3>> swarm = make_shared<Swarm<3>>(pts_sp);
   return swarm;
+}
+
+
+/*!
+ * @brief Create a Swarm from an arbitary mesh wrapper.
+ * @param wrapper Input mesh wrapper
+ * @param entity  Where the data is located in the cell
+ */
+template<size_t dim, class MeshWrapper> 
+std::shared_ptr<Swarm<dim>> SwarmFactory(MeshWrapper &wrapper, Portage::Entity_kind entity)
+{
+  size_t npoints_owned;
+  typename Swarm<dim>::PointVecPtr points;
+  if (entity != NODE and entity != CELL) {
+    throw(std::runtime_error("only nodes and cells allowed"));
+  }
+  
+  if (entity == NODE) {
+    npoints_owned = wrapper.num_owned_nodes();
+    points = make_shared<typename Swarm<dim>::PointVec>(npoints_owned);
+    Point<dim> node;
+    for (size_t i=0; i<npoints_owned; i++) {
+      wrapper.node_get_coordinates(i, &node);
+      (*points)[i] = node;
+    }
+  } else if (entity == CELL) {
+    npoints_owned = wrapper.num_owned_cells();
+    points = make_shared<typename Swarm<dim>::PointVec>(npoints_owned);
+    Point<dim> centroid;
+    for (size_t i=0; i<npoints_owned; i++) {
+      wrapper.cell_centroid<dim>(i, &centroid);
+      (*points)[i] = centroid;
+    }
+  }
+
+  std::shared_ptr<Swarm<dim>> result = make_shared<Swarm<dim>>(points);
+  return result;
 }
 
 }
