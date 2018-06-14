@@ -591,8 +591,8 @@ private:
 }; // class Flat_Mesh_Wrapper
 
 //! Get radius of minimum-enclosing-sphere of a cell centered at the centroid
-template<size_t D>
-void cell_radius(Wonton::Flat_Mesh_Wrapper<double> &wrapper,
+template<size_t D, class MeshWrapper>
+void cell_radius(MeshWrapper &wrapper,
                  int const cellid, double *radius) {
   Point<D> centroid;
   wrapper.cell_centroid<D>(cellid, &centroid);
@@ -612,8 +612,8 @@ void cell_radius(Wonton::Flat_Mesh_Wrapper<double> &wrapper,
 
 
 //! Get radius of minimum-enclosing-sphere of all nodes connected by a cell
-template<size_t D>
-void node_radius(Wonton::Flat_Mesh_Wrapper<double> &wrapper,
+template<size_t D, class MeshWrapper>
+void node_radius(MeshWrapper &wrapper,
                  int const nodeid, double *radius) {
   std::vector<int> nodes;
   wrapper.node_get_cell_adj_nodes(nodeid, ALL, &nodes);
