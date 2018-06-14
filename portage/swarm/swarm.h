@@ -294,6 +294,8 @@ std::shared_ptr<Swarm<3>> SwarmFactory(double xmin, double ymin, double zmin,
 
 /*!
  * @brief Create a Swarm from an arbitary mesh wrapper.
+ * @tparm dim Spatial dimension
+ * @tparm MeshWrapper class representing a mesh wrapper
  * @param wrapper Input mesh wrapper
  * @param entity  Where the data is located in the cell
  */
