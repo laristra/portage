@@ -54,8 +54,8 @@ class StateManager {
 
 		
 		/*!
-		  @brief Add the names of the materials 
-		  @param[in] names        		map from material names to material id
+		  @brief Add the names of the materials. 
+		  @param[in] names		map from material names to material id
 
 		  Add the names of the materials. The map from is from material name to id.
 		*/
@@ -66,8 +66,8 @@ class StateManager {
 
 		
 		/*!
-		  @brief Return the names registered by the state manager 
-			@return 										vector of strings of material names
+		  @brief Return the names registered by the state manager. 
+			@return		vector of strings of material names
 			
 		  Return the names registered by the state manager.
 		*/
@@ -81,9 +81,9 @@ class StateManager {
 
 
 		/*!
-		  @brief Return the name of a material from its material id 
-		  @param[in] m        		material id
-		  @return									string of the material name
+		  @brief Return the name of a material from its material id .
+		  @param[in] m		material id
+		  @return					string of the material name
 
 		  Return the name of a material from its material id.
 		*/
@@ -91,9 +91,9 @@ class StateManager {
 
 		
 		/*!
-		  @brief Return the name of a material from its material id 
-		  @param[in] m        		material id
-		  @return									string of the material name
+		  @brief Return the name of a material from its material id. 
+		  @param[in] m		material id
+		  @return					string of the material name
 
 		  Return the name of a material from its material id.
 		*/
@@ -101,9 +101,9 @@ class StateManager {
 
 
 		/*!
-		  @brief Return the material id from its name
-		  @param[in] name        	material name
-		  @return									material id
+		  @brief Return the material id from its name.
+		  @param[in] name		material name
+		  @return						material id
 
 		  Return the material id from its name.
 		*/
@@ -111,8 +111,8 @@ class StateManager {
 
 
 		/*!
-		  @brief Add the material cells
-		  @param[in] cells        map from material id to vector of cell ids
+		  @brief Add the material cells.
+		  @param[in] cells		map from material id to vector of cell ids
 
 		  Add the material cells. The argument is a map from material id to a vector
 		  of cells for that material.
@@ -141,8 +141,8 @@ class StateManager {
 
 
 		/*!
-		  @brief Return the material cells
-		  @return 								map from material id to vector of cell ids
+		  @brief Return the material cells.
+		  @return		map from material id to vector of cell ids
 
 		  Return the material cells. The return value is a map from material id to a vector
 		  of cells for that material.
@@ -153,8 +153,8 @@ class StateManager {
 
 
 		/*!
-		  @brief Return the number of cells for each material
-		  @return 		        		map from material id to the number of cells with this material
+		  @brief Return the number of cells for each material.
+		  @return		map from material id to the number of cells with this material
 
 		  Return the number of cells for each material. The return value is a map 
 		  from material id to the integer number of cells.
@@ -169,8 +169,8 @@ class StateManager {
 
 			
 		/*!
-		  @brief Return the number of materials in the problem
-		  @return 		        		the integer number of materials
+		  @brief Return the number of materials in the problem.
+		  @return		the integer number of materials
 
 		  Return the number of materials in the problem.
 		*/
@@ -178,8 +178,8 @@ class StateManager {
 
 			
 		/*!
-		  @brief Return the number of materials in the problem
-		  @return 		        		the integer number of materials
+		  @brief Return the number of materials in the problem.
+		  @return		the integer number of materials
 
 		  Return the number of materials in the problem.
 		*/
@@ -194,9 +194,9 @@ class StateManager {
  		
 		
 		/*!
-		  @brief Return the entity kind for a state vector
-		  @param[in] name					string of the material name
-		  @return 		        		entity kind (CELL, NODE) of the state vector
+		  @brief Return the entity kind for a state vector.
+		  @param[in] name		string of the material name
+		  @return						entity kind (CELL, NODE) of the state vector
 
 		  Return the entity kind for a state vector. The input parameter is the name
 		  of the state vector, and the return type is a Portage::Entity_kind
@@ -207,11 +207,11 @@ class StateManager {
   	
   	  	
 		/*!
-		  @brief Return the field type of a state vector
-		  @param[in] kind					Portage::Entity_kind of the state vector (not needed)
+		  @brief Return the field type of a state vector.
+		  @param[in] kind		Portage::Entity_kind of the state vector (not needed)
 		  	but required by the signature of mmdrive
-		  @param[in] name					string of the material name
-		  @return 		        		field type (UNIMATERIAL, MULTIMATERIAL) of the state vector
+		  @param[in] name		string of the material name
+		  @return 					field type (UNIMATERIAL, MULTIMATERIAL) of the state vector
 
 		  Return the field type of a state value. The kind is not required as the names
 		  are unique. The original intent was that there could be e.g. a pressure defined
@@ -226,7 +226,7 @@ class StateManager {
 
 
 		/*!
-		  @brief Return the data size 
+		  @brief Return the data size .
 		  
 		  This function is currently not implemented, but is required by the API.
 		*/
@@ -244,7 +244,7 @@ class StateManager {
  		
 		/*!
 		  @brief Add a StateVectorBase to the state manager.
-		  @param[in] sv					shared pointer to StateVectorBase
+		  @param[in] sv		shared pointer to StateVectorBase
 		  
 		  Add a shared pointer to a state vector to the state manager. This specialization
 		  works directly with a StateVectorBase
@@ -265,8 +265,8 @@ class StateManager {
 
 		
 		/*!
-		  @brief Add a StateVectorUni<T> to the state manager
-		  @param[in] sv					shared pointer to StateVectorUni<T>
+		  @brief Add a StateVectorUni<T> to the state manager.
+		  @param[in] sv		shared pointer to StateVectorUni<T>
 		  
 		  Adds a shared pointer to a single material state vector to the state manager. 
 		  This specialization works with a single material StateVectorUni templated
@@ -298,8 +298,8 @@ class StateManager {
 
 		
 		/*!
-		  @brief Add a StateVectorMulti<T> to the state manager
-		  @param[in] sv					shared pointer to StateVectorMulti<T>
+		  @brief Add a StateVectorMulti<T> to the state manager.
+		  @param[in] sv		shared pointer to StateVectorMulti<T>
 		  
 		  Adds a shared pointer to a multi material state vector to the state manager. 
 		  This specialization works with a multi material StateVectorMulti templated
@@ -329,9 +329,9 @@ class StateManager {
 
 		
 		/*!
-		  @brief Get a shared pointer to a StateVectorBase from the state manager
-		  @param[in] name					name of the registered state vector
-		  @return 								shared pointer to StateVectorBase
+		  @brief Get a shared pointer to a StateVectorBase from the state manager.
+		  @param[in] name		name of the registered state vector
+		  @return						shared pointer to StateVectorBase
 		  
 		  Gets a shared pointer to a StateVectorBase from the state manager. The pointer
 		  is to the base class and can be dynamically pointer cast to any type. The
@@ -354,9 +354,9 @@ class StateManager {
 
 
 		/*!
-		  @brief Get a shared pointer to a templated type from the state manager
-		  @param[in] name					name of the registered state vector
-		  @return 								shared pointer to a type T
+		  @brief Get a shared pointer to a templated type from the state manager.
+		  @param[in] name		name of the registered state vector
+		  @return						shared pointer to a type T
 		  
 		  Gets a shared pointer to a type T from the state manager. The pointer will
 		  be dynamically cast to type T. If the name is not found, a nullptr
@@ -382,9 +382,9 @@ class StateManager {
 
 		
 		/*!
-		  @brief Get a shared pointer to a templated type from the state manager
-		  @param[in] name					name of the registered state vector
-		  @return 								const shared pointer to a type T
+		  @brief Get a shared pointer to a templated type from the state manager.
+		  @param[in] name			name of the registered state vector
+		  @return							const shared pointer to a type T
 		  
 		  Gets a shared pointer to a type T from the state manager. The pointer will
 		  be dynamically cast to type T. If the name is not found, a nullptr
@@ -421,8 +421,8 @@ class StateManager {
 		
 		/*!
 		  @brief Return the number of cells for this material id.
-		  @param[in] m        		material id
-		  @return									number of cells containing this material
+		  @param[in] m		material id
+		  @return					number of cells containing this material
 
 		  Return the number of cells for this material id.
 		*/
@@ -431,8 +431,8 @@ class StateManager {
 
 		/*!
 		  @brief Return the number of cells for this material id.
-		  @param[in] m        		material id
-		  @return									number of cells containing this material
+		  @param[in] m		material id
+		  @return					number of cells containing this material
 
 		  Return the number of cells for this material id.
 		*/
@@ -442,8 +442,8 @@ class StateManager {
 
 		/*!
 		  @brief Return the cell ids for this material id.
-		  @param[in] m        		material id
-		  @return									vector of cell indices containing this material
+		  @param[in] m		material id
+		  @return					vector of cell indices containing this material
 
 		  Return a read only reference to the cell ids for this material id. If no 
 		  materials have been defined, return a reference to an empty vector.
@@ -472,9 +472,9 @@ class StateManager {
 		
 		/*!
 		  @brief Return the cell data for this material id.
-		  @param[in] name        	name registered with the state manager
-		  @param[in] m        		material id
-		  @param[out] data				a read only pointer to the cell vector data 
+		  @param[in] name			name registered with the state manager
+		  @param[in] m 				material id
+		  @param[out] data		a read only pointer to the cell vector data 
 
 		  Return the cell data for this material id. This is the in-place version of
 		  the function. The data is returned in a location pointed to by the user
@@ -488,17 +488,18 @@ class StateManager {
 		}
 
 
-  	// Get the cell index in material
-  	// since this uses material dominant structures, I wish the signature was
-  	// int cell_index_in_material(int m, int c)
 		/*!
 		  @brief Return the cell index in this material id.
-		  @param[in] c        	cell id
-		  @param[in] m        	material id
-		  @return								index of cell in material 
+		  @param[in] c		cell id
+		  @param[in] m		material id
+		  @return					index of cell in material 
 
 		  Return the index (location) of this cell within the list of cells for this
 		  material. 
+		  
+  		Get the cell index in material
+  		since this uses material dominant structures, I wish the signature was
+  		int cell_index_in_material(int m, int c)
 		*/
   	int cell_index_in_material(int c, int m) const {
   	
@@ -516,9 +517,9 @@ class StateManager {
 
 		/*!
 		  @brief Return the cell data for this material id.
-		  @param[in] name        	name registered with the state manager
-		  @param[in] m        		material id
-		  @param[out] data				a read only pointer to the cell vector data 
+		  @param[in] name			name registered with the state manager
+		  @param[in] m 				material id
+		  @param[out] data		a read only pointer to the cell vector data 
 
 		  Return the cell data for this material id. This is the in-place version of
 		  the function. The data is returned in a location pointed to by the user
@@ -570,8 +571,8 @@ class StateManager {
 		
 		/*!
 		  @brief Return the number of materials in this cell.
-		  @param[in] c        		cell id
-		  @return				number of material in this cell
+		  @param[in] c		cell id
+		  @return					number of material in this cell
 
 		  Return the number of materials in this cell.
 		*/
@@ -580,8 +581,8 @@ class StateManager {
 
 		/*!
 		  @brief Return the number of materials in this cell.
-		  @param[in] c        		cell id
-		  @return				number of material in this cell
+		  @param[in] c		cell id
+		  @return					number of material in this cell
 
 		  Return the number of materials in this cell.
 		*/
@@ -590,8 +591,8 @@ class StateManager {
   	
 		/*!
 		  @brief Return the unordered set of materials in this cell.
-		  @param[in] c  cell id
-		  @return				unordered set of material ids in this cell
+		  @param[in] c		cell id
+		  @return					unordered set of material ids in this cell
 
 		  Return the unordered set of materials in this cell. While cell id's need
 		  to be kept in order within a material, the reverse is not true. The order
@@ -604,8 +605,8 @@ class StateManager {
 
 		/*!
 		  @brief Return the materials in this cell.
-		  @param[in] c  				cell id
-		  @param[out] cellmats 	pointer to vector of materials in this cell
+		  @param[in] c						cell id
+		  @param[out] cellmats		pointer to vector of materials in this cell
 
 		  Return the unordered set of materials in this cell. While cell id's need
 		  to be kept in order within a material, the reverse is not true. Reflecting
@@ -628,10 +629,10 @@ class StateManager {
 		
 		/*!
 		  @brief Return the const cell data for this material id.
-		  @param[in] on_what       Portage::Entity_kind of data (unused, but required
+		  @param[in] on_what		Portage::Entity_kind of data (unused, but required
 		  	by the API)
-		  @param[in] name        	name registered with the state manager
-		  @param[out] data				a read only pointer to the cell vector data 
+		  @param[in] name				name registered with the state manager
+		  @param[out] data			a read only pointer to the cell vector data 
 
 		  Return the uni material data for this state vector. This is the in-place version of
 		  the function. The data is returned in a location pointed to by the user
@@ -647,10 +648,10 @@ class StateManager {
 		
 		/*!
 		  @brief Return the cell data for this material id.
-		  @param[in] on_what       Portage::Entity_kind of data (unused, but required
+		  @param[in] on_what		Portage::Entity_kind of data (unused, but required
 		  	by the API)
-		  @param[in] name        	name registered with the state manager
-		  @param[out] data				a pointer to the cell vector data 
+		  @param[in] name				name registered with the state manager
+		  @param[out] data			a pointer to the cell vector data 
 
 		  Return the uni material data for this state vector. This is the in-place version of
 		  the function. The data is returned in a location pointed to by the user
@@ -671,8 +672,8 @@ class StateManager {
 
 
 		/*!
-			@brief Add cells for a new material to the material cells
-			@param[in] m		material id
+			@brief Add cells for a new material to the material cells.
+			@param[in] m					material id
 			@param[in] newcells		vector of cell ids containing this material
 			
 			Add cells for a new material to the material cells. This function takes two
@@ -747,8 +748,9 @@ class StateManager {
 		//////////////////////////////////////////////////
  		
 		/*!
-		  @brief Check that a StateVectorMulti<T> has a shape consistent with the state manager
-		  @param[in] sv					shared pointer to StateVectorMulti<T>
+		  @brief Check that a StateVectorMulti<T> has a shape consistent with the 
+		  	state manager.
+		  @param[in] sv		shared pointer to StateVectorMulti<T>
 		  
 		  Check that a StateVectorMulti<T> has a shape consistent with the state 
 		  manager. Both the number of materials and number of cells per material
