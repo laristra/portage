@@ -21,34 +21,39 @@ class StateVectorUni : public StateVectorBase {
 
  public:
   
-  StateVectorUni(
-  	std::string name, 
-  	Entity_kind kind=Entity_kind::CELL,
-  	std::vector<T> data=std::vector<T>()
-  ) : StateVectorBase(name, Field_type::MESH_FIELD, kind),data_(data) {}
-  
-
-  //! Destructor
-  ~StateVectorUni() {}
-  
-  // print
-  std::ostream & print(std::ostream & os) const {
-    os << "UniStateVector\n";
-    return os;
-  }
-    
-  // get the data type
-  const std::type_info& data_type() {
-  	const std::type_info& ti = typeid(T);
-		return ti;
-	}
+		StateVectorUni(
+			std::string name, 
+			Entity_kind kind=Entity_kind::CELL,
+			std::vector<T> data=std::vector<T>()
+		) : StateVectorBase(name, Field_type::MESH_FIELD, kind),data_(data) {}
 		
-	/// Get a reference to the data
-  std::vector<T>& get_data() { return data_; }
+
+		//! Destructor
+		~StateVectorUni() {}
+		
+		// print
+		std::ostream & print(std::ostream & os) const {
+		  os << "UniStateVector\n";
+		  return os;
+		}
+		  
+		// get the data type
+		const std::type_info& data_type() {
+			const std::type_info& ti = typeid(T);
+			return ti;
+		}
+		
+		/*!
+			@brief Return a reference to the data in the state vector.
+			@return a reference to the vector of data in the state vector
+
+			Return a reference to the data in the state vector.
+		*/
+		std::vector<T>& get_data() { return data_; }
  	
  private:
  
- 	std::vector<T> data_;
+ 		std::vector<T> data_;
  
 };
 

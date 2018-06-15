@@ -19,37 +19,42 @@ namespace Portage {
 template <class T=double>
 class StateVectorMultiRaw : public StateVectorBase {
 
- public:
-  
-  StateVectorMultiRaw(
-  	std::string name, 
-  	T** hdata=nullptr
-  ) : StateVectorBase(name, Field_type::MULTIMATERIAL_FIELD, Entity_kind::CELL), 
-  			hdata_(hdata) {}
+	public:
+
+		StateVectorMultiRaw(
+			std::string name, 
+			T** hdata=nullptr
+		) : StateVectorBase(name, Field_type::MULTIMATERIAL_FIELD, Entity_kind::CELL), 
+					hdata_(hdata) {}
 
 
-  //! Destructor
-  ~StateVectorMultiRaw() {}
-  
-  // print
-  std::ostream & print(std::ostream & os) const {
-    os << "StateVectorMultiRaw\n";
-    return os;
-  }
-  
-  // get the data type
-  const std::type_info& data_type() {
-  	const std::type_info& ti = typeid(T);
-		return ti;
-	}
-		
-	/// Get a shared pointer to the data
-  T** get_data() { return hdata_; }
- 	
- private:
- 
- 	T** hdata_;
- 
+		//! Destructor
+		~StateVectorMultiRaw() {}
+
+		// print
+		std::ostream & print(std::ostream & os) const {
+			os << "StateVectorMultiRaw\n";
+			return os;
+		}
+
+		// get the data type
+		const std::type_info& data_type() {
+			const std::type_info& ti = typeid(T);
+			return ti;
+		}
+	
+		/*!
+			@brief Return a reference to the data in the state vector.
+			@return a reference to the vector of data in the state vector
+
+			Return a reference to the data in the state vector.
+		*/
+		T** get_data() { return hdata_; }
+
+	private:
+
+		T** hdata_;
+
 };
 
 }
