@@ -247,7 +247,7 @@ void SwarmState<dim>::extend_field(const string name, DblVec new_value)
 template<size_t dim, class StateWrapper>
 shared_ptr<SwarmState<dim>> SwarmStateFactory(
   StateWrapper &state,
-  Portage::Entity_kind entity)
+  const Portage::Entity_kind entity)
 {
   // create return value
   size_t ndata;
@@ -267,7 +267,7 @@ shared_ptr<SwarmState<dim>> SwarmStateFactory(
     // make sure all fields have same size
     assert(state.get_data_size(entity, *iter) == ndata);
 
-    double *datap;
+    const double *datap;
     state.get_data(entity, *iter, &datap);
     typename SwarmState<dim>::DblVecPtr data = make_shared<vector<double>>(ndata);
     for (size_t i=0; i<result->get_size(); i++) (*data)[i] = datap[i];
