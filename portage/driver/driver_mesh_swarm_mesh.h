@@ -57,7 +57,6 @@ POSSIBILITY OF SUCH DAMAGE.
 #include "portage/support/portage.h"
 #include "portage/support/Point.h"
 #include "portage/wonton/mesh/flat/flat_mesh_wrapper.h"
-#include "portage/wonton/state/flat/flat_state_wrapper.h"
 #include "portage/support/basis.h"
 #include "portage/support/weight.h"
 #include "portage/support/operator.h"
@@ -249,13 +248,6 @@ class MSM_Driver {
 
     int nvars = source_remap_var_names_.size();
 
-    // convert incoming and outgoing mesh wrappers to flat variety
-    Flat_Mesh_Wrapper<> source_mesh_flat;
-    source_mesh_flat.initialize(source_mesh_);
-
-    Flat_Mesh_Wrapper<double> target_mesh_flat;
-    target_mesh_flat.initialize(target_mesh_);
-
     float tot_seconds = 0.0, tot_seconds_srch = 0.0,
         tot_seconds_xsect = 0.0, tot_seconds_interp = 0.0;
     struct timeval begin_timeval, end_timeval, diff_timeval;
@@ -280,33 +272,34 @@ class MSM_Driver {
     // Collect all cell based variables and remap them
     if (source_cellvar_names.size() > 0)
     {
-      // convert flat mesh wrappers to swarm variety
-      Meshfree::Swarm<Dim> source_swarm(source_mesh_flat, CELL);
-      Meshfree::Swarm<Dim> target_swarm(target_mesh_flat, CELL);
-    
-      // convert state wrappers to flat variety
-      Flat_State_Wrapper<double> source_state_flat;
-      source_state_flat.initialize(source_state_, source_cellvar_names);
+      // convert mesh wrappers to swarms
+      std::shared_ptr<Meshfree::Swarm<Dim>> source_swarm_ptr = 
+        Meshfree::SwarmFactory<Dim>(source_mesh_, CELL);
+      std::shared_ptr<Meshfree::Swarm<Dim>> target_swarm_ptr = 
+        Meshfree::SwarmFactory<Dim>(target_mesh_, CELL);
+      Meshfree::Swarm<Dim> &source_swarm(*source_swarm_ptr);
+      Meshfree::Swarm<Dim> &target_swarm(*target_swarm_ptr);
 
-      Flat_State_Wrapper<double> target_state_flat;
-      target_state_flat.initialize(target_state_, target_cellvar_names);
-
-      // convert flat wrappers to swarm variety
-      Meshfree::SwarmState<Dim> source_swarm_state(source_mesh_flat, CELL,
-                                                   source_state_flat);
-      Meshfree::SwarmState<Dim> target_swarm_state(target_mesh_flat, CELL,
-                                                   target_state_flat);
+      // convert state wrappers to swarm variety
+      std::shared_ptr<Meshfree::SwarmState<Dim>> source_swarm_state_ptr = 
+        Meshfree::SwarmStateFactory<Dim>(source_state_, CELL);
+      std::shared_ptr<Meshfree::SwarmState<Dim>> target_swarm_state_ptr = 
+        Meshfree::SwarmStateFactory<Dim>(target_state_, CELL);
+      Meshfree::SwarmState<Dim> &source_swarm_state(*source_swarm_state_ptr);
+      Meshfree::SwarmState<Dim> &target_swarm_state(*target_swarm_state_ptr);
 
       // create spherically symmetric smoothing lengths for now
       int ncells;
-      if      (center_ == Meshfree::Scatter) ncells = source_mesh_flat.num_owned_cells();
-      else if (center_ == Meshfree::Gather)  ncells = target_mesh_flat.num_owned_cells();
+      if      (center_ == Meshfree::Scatter) ncells = source_mesh_.num_owned_cells();
+      else if (center_ == Meshfree::Gather)  ncells = target_mesh_.num_owned_cells();
       vector<std::vector<std::vector<double>>> smoothing_lengths
         (ncells, std::vector<std::vector<double>>(1, std::vector<double>(Dim)));
       for (int i=0; i<ncells; i++) {
         double radius;
-        if      (center_ == Meshfree::Scatter) cell_radius<Dim>(source_mesh_flat, i, &radius);
-	else if (center_ == Meshfree::Gather)  cell_radius<Dim>(target_mesh_flat, i, &radius);
+        if      (center_ == Meshfree::Scatter) 
+	  Wonton::cell_radius<Dim>(source_mesh_, i, &radius);
+	else if (center_ == Meshfree::Gather)  
+	  Wonton::cell_radius<Dim>(target_mesh_, i, &radius);
 	std::vector<std::vector<double>> h=smoothing_lengths[i];
 	h[0] = std::vector<double>(Dim, radius*smoothing_factor_);
 	smoothing_lengths[i]=h;
@@ -370,33 +363,32 @@ class MSM_Driver {
     }
 
     if (source_nodevar_names.size() > 0) {
-      // convert flat mesh wrappers to swarm variety
-      Meshfree::Swarm<Dim> source_swarm(source_mesh_flat, NODE);
-      Meshfree::Swarm<Dim> target_swarm(target_mesh_flat, NODE);
-      
-      // convert state wrappers to flat variety
-      Flat_State_Wrapper<double> source_state_flat;
-      source_state_flat.initialize(source_state_, source_nodevar_names);
+      // convert mesh wrappers to swarm variety
+      std::shared_ptr<Meshfree::Swarm<Dim>> source_swarm_ptr = 
+        Meshfree::SwarmFactory<Dim>(source_mesh_, NODE);
+      std::shared_ptr<Meshfree::Swarm<Dim>> target_swarm_ptr = 
+        Meshfree::SwarmFactory<Dim>(target_mesh_, NODE);
+      Meshfree::Swarm<Dim> &source_swarm(*source_swarm_ptr);
+      Meshfree::Swarm<Dim> &target_swarm(*target_swarm_ptr);
 
-      Flat_State_Wrapper<double> target_state_flat;
-      target_state_flat.initialize(target_state_, target_nodevar_names);
-
-      // convert flat state wrappers to swarm variety
-      Meshfree::SwarmState<Dim> source_swarm_state(source_mesh_flat, NODE,
-                                                   source_state_flat);
-      Meshfree::SwarmState<Dim> target_swarm_state(target_mesh_flat, NODE,
-                                                   target_state_flat);
+      // convert state wrappers to swarm variety
+      std::shared_ptr<Meshfree::SwarmState<Dim>> source_swarm_state_ptr = 
+        Meshfree::SwarmStateFactory<Dim>(source_state_, NODE);
+      std::shared_ptr<Meshfree::SwarmState<Dim>> target_swarm_state_ptr = 
+        Meshfree::SwarmStateFactory<Dim>(target_state_, NODE);
+      Meshfree::SwarmState<Dim> &source_swarm_state(*source_swarm_state_ptr);
+      Meshfree::SwarmState<Dim> &target_swarm_state(*target_swarm_state_ptr);
 
       // create smoothing lengths
       int nnodes;
-      if      (center_ == Meshfree::Scatter) nnodes = source_mesh_flat.num_owned_nodes();
-      else if (center_ == Meshfree::Gather)  nnodes = target_mesh_flat.num_owned_nodes();
+      if      (center_ == Meshfree::Scatter) nnodes = source_mesh_.num_owned_nodes();
+      else if (center_ == Meshfree::Gather)  nnodes = target_mesh_.num_owned_nodes();
       vector<std::vector<std::vector<double>>> smoothing_lengths
         (nnodes, std::vector<std::vector<double>>(1, std::vector<double>(Dim)));
       for (int i=0; i<nnodes; i++) {
         double radius;
-        if      (center_ == Meshfree::Scatter) node_radius<Dim>(source_mesh_flat, i, &radius);
-	else if (center_ == Meshfree::Gather)  node_radius<Dim>(target_mesh_flat, i, &radius);
+        if      (center_ == Meshfree::Scatter) Wonton::node_radius<Dim>(source_mesh_, i, &radius);
+	else if (center_ == Meshfree::Gather)  Wonton::node_radius<Dim>(target_mesh_, i, &radius);
 	std::vector<std::vector<double>> h=smoothing_lengths[i];
         h[0] = std::vector<double>(Dim, radius*smoothing_factor_);
 	smoothing_lengths[i]=h;
