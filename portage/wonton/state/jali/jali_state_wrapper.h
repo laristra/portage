@@ -4,7 +4,7 @@ Please see the license file at the root of this repository, or at:
     https://github.com/laristra/portage/blob/master/LICENSE
 */
 
-
+#include <type_traits>
 
 
 
@@ -71,9 +71,9 @@ class Jali_State_Wrapper {
    */
   template <class T>
   void get_data(const Entity_kind on_what, const std::string var_name, T **data) {
-  
+    using T1 = typename std::remove_const<T>::type;
     Jali::State::const_iterator it =
-        jali_state_.find<T, Jali::Mesh>(var_name, jali_state_.mesh(),
+        jali_state_.find<T1, Jali::Mesh>(var_name, jali_state_.mesh(),
                                         (Jali::Entity_kind) on_what);
     if (it != jali_state_.cend()) {
       std::shared_ptr<Jali::BaseStateVector> vector = *it;
