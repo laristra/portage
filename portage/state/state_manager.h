@@ -287,7 +287,7 @@ class StateManager {
 					
 			// check that the size is correct
 			// I CAN'T BUILD, SO THIS NEEDS TO BE TESTED
-			if (sv->get_data().size()!=mesh_.num_entitites(sv->get_kind())) throw std::runtime_error(
+			if (sv->get_data().size()!=mesh_.num_entities(sv->get_kind())) throw std::runtime_error(
 				"The added data did not have the same number of elements (" + 
 				std::to_string(sv->get_data().size()) +") as the number of cells ("+
 				std::to_string(mesh_.num_owned_cells())+")");
