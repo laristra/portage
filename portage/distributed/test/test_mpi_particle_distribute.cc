@@ -34,10 +34,12 @@ TEST(MPI_Particle_Distribute, SimpleTest2D) {
   Wonton::Jali_Mesh_Wrapper jali_tmesh_wrapper(*target_mesh);
 
   // Source and target swarms 
-  Portage::Meshfree::Swarm<2> &source_swarm(
-    *Portage::Meshfree::SwarmFactory<2>(jali_smesh_wrapper, Portage::Entity_kind::CELL));
-  Portage::Meshfree::Swarm<2> &target_swarm(
-    *Portage::Meshfree::SwarmFactory<2>(jali_tmesh_wrapper, Portage::Entity_kind::CELL));
+  std::shared_ptr<Portage::Meshfree::Swarm<2>> source_swarm_ptr =
+    Portage::Meshfree::SwarmFactory<2>(jali_smesh_wrapper, Portage::Entity_kind::CELL);
+  std::shared_ptr<Portage::Meshfree::Swarm<2>> target_swarm_ptr =
+    Portage::Meshfree::SwarmFactory<2>(jali_tmesh_wrapper, Portage::Entity_kind::CELL);
+  Portage::Meshfree::Swarm<2> &source_swarm(*source_swarm_ptr);
+  Portage::Meshfree::Swarm<2> &target_swarm(*target_swarm_ptr);
 
   // Source and target mesh state
   std::shared_ptr<Portage::Meshfree::SwarmState<2>> source_state;
@@ -129,10 +131,12 @@ TEST(MPI_Particle_Distribute, SimpleTest3D) {
   Wonton::Jali_Mesh_Wrapper jali_tmesh_wrapper(*target_mesh);
 
   // Source and target swarms 
-  Portage::Meshfree::Swarm<3> &source_swarm=
-    *Portage::Meshfree::SwarmFactory<3>(jali_smesh_wrapper, Portage::Entity_kind::CELL);
-  Portage::Meshfree::Swarm<3> &target_swarm=
-    *Portage::Meshfree::SwarmFactory<3>(jali_tmesh_wrapper, Portage::Entity_kind::CELL);
+  std::shared_ptr<Portage::Meshfree::Swarm<3>> source_swarm_ptr =
+    Portage::Meshfree::SwarmFactory<3>(jali_smesh_wrapper, Portage::Entity_kind::CELL);
+  std::shared_ptr<Portage::Meshfree::Swarm<3>> target_swarm_ptr =
+    Portage::Meshfree::SwarmFactory<3>(jali_tmesh_wrapper, Portage::Entity_kind::CELL);
+  Portage::Meshfree::Swarm<3> &source_swarm(*source_swarm_ptr);
+  Portage::Meshfree::Swarm<3> &target_swarm(*target_swarm_ptr);
 
   // Source and target mesh state
   std::shared_ptr<Portage::Meshfree::SwarmState<3>> source_state;
