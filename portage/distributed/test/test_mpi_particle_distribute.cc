@@ -11,7 +11,6 @@ Please see the license file at the root of this repository, or at:
 #include "portage/support/portage.h"
 #include "portage/swarm/swarm.h"
 #include "portage/swarm/swarm_state.h"
-#include "portage/wonton/mesh/flat/flat_mesh_wrapper.h"
 #include "portage/wonton/mesh/jali/jali_mesh_wrapper.h"
 
 #include "gtest/gtest.h"
@@ -34,16 +33,11 @@ TEST(MPI_Particle_Distribute, SimpleTest2D) {
   std::shared_ptr<Jali::Mesh> target_mesh = mf(0.0, 0.0, 1.0, 1.0, 4, 4);
   Wonton::Jali_Mesh_Wrapper jali_tmesh_wrapper(*target_mesh);
 
-  //Create flat mesh wrappers for source/target jali meshes
-  Wonton::Flat_Mesh_Wrapper<> source_mesh_flat;
-  source_mesh_flat.initialize(jali_smesh_wrapper);
-
-  Wonton::Flat_Mesh_Wrapper<> target_mesh_flat;
-  target_mesh_flat.initialize(jali_tmesh_wrapper);
-
   // Source and target swarms 
-  Portage::Meshfree::Swarm<2> source_swarm(source_mesh_flat, Portage::Entity_kind::CELL);
-  Portage::Meshfree::Swarm<2> target_swarm(target_mesh_flat, Portage::Entity_kind::CELL);
+  Portage::Meshfree::Swarm<2> &source_swarm(
+    *Portage::Meshfree::SwarmFactory<2>(jali_smesh_wrapper, Portage::Entity_kind::CELL));
+  Portage::Meshfree::Swarm<2> &target_swarm(
+    *Portage::Meshfree::SwarmFactory<2>(jali_tmesh_wrapper, Portage::Entity_kind::CELL));
 
   // Source and target mesh state
   std::shared_ptr<Portage::Meshfree::SwarmState<2>> source_state;
@@ -134,16 +128,11 @@ TEST(MPI_Particle_Distribute, SimpleTest3D) {
                                                4, 4, 4);
   Wonton::Jali_Mesh_Wrapper jali_tmesh_wrapper(*target_mesh);
 
-  //Create flat mesh wrappers for source/target jali meshes
-  Wonton::Flat_Mesh_Wrapper<> source_mesh_flat;
-  source_mesh_flat.initialize(jali_smesh_wrapper);
-
-  Wonton::Flat_Mesh_Wrapper<> target_mesh_flat;
-  target_mesh_flat.initialize(jali_tmesh_wrapper);
-
   // Source and target swarms 
-  Portage::Meshfree::Swarm<3> source_swarm(source_mesh_flat, Portage::Entity_kind::CELL);
-  Portage::Meshfree::Swarm<3> target_swarm(target_mesh_flat, Portage::Entity_kind::CELL);
+  Portage::Meshfree::Swarm<3> &source_swarm=
+    *Portage::Meshfree::SwarmFactory<3>(jali_smesh_wrapper, Portage::Entity_kind::CELL);
+  Portage::Meshfree::Swarm<3> &target_swarm=
+    *Portage::Meshfree::SwarmFactory<3>(jali_tmesh_wrapper, Portage::Entity_kind::CELL);
 
   // Source and target mesh state
   std::shared_ptr<Portage::Meshfree::SwarmState<3>> source_state;

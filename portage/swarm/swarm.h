@@ -51,7 +51,9 @@ class Swarm {
    */
   Swarm(PointVecPtr points)
       : points_(points), npoints_owned_(points_->size()) 
-  {}
+  {
+    int a=1;
+  }
 
   /*! @brief Dimensionality of points */
   unsigned int space_dimension() const {
