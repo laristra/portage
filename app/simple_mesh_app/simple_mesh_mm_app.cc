@@ -171,7 +171,7 @@ void run(
 
   // Count the number of materials in the problem and gather their IDs  
 	std::unordered_set<int> mat_ids{cell_mat_ids.begin(), cell_mat_ids.end()};
-  int nmats{mat_ids.size()};
+  unsigned long int nmats{mat_ids.size()};
 
 
   // Spit out some information for the user
