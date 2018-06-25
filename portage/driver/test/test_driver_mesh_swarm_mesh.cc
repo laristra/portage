@@ -98,9 +98,9 @@ class MSMDriverTest : public ::testing::Test {
   //  for 2-D and 3-D, coincident and non-coincident cell-centered remaps.
   template <
     template<Portage::Entity_kind, class, class, class,
-             template<class, int> class> class Intersect,
+    template<class, int, class, class> class> class Intersect,
     template<int, Portage::Entity_kind, class, class, class,
-             template<class, int> class> class Interpolate,
+    template<class, int, class, class> class> class Interpolate,
     template <int, class, class> class SwarmSearch,
     int Dimension = 3
   >

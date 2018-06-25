@@ -43,8 +43,8 @@ TEST(MMDriver, Pure2Mixed) {
   std::shared_ptr<Jali::State> sourceState;
   std::shared_ptr<Jali::State> targetState;
 
-  sourceMesh = Jali::MeshFactory(MPI_COMM_WORLD)(0.0, 0.0, 1.0, 1.0, 10, 10);
-  targetMesh = Jali::MeshFactory(MPI_COMM_WORLD)(0.0, 0.0, 1.0, 1.0, 14, 12);
+  sourceMesh = Jali::MeshFactory(MPI_COMM_WORLD)(0.0, 0.0, 1.0, 1.0, 5, 5);
+  targetMesh = Jali::MeshFactory(MPI_COMM_WORLD)(0.0, 0.0, 1.0, 1.0, 7, 6);
 
   sourceState = Jali::State::create(sourceMesh);
   targetState = Jali::State::create(targetMesh);
@@ -327,9 +327,11 @@ TEST(MMDriver, Pure2Mixed) {
     double const *density_remap;
     targetStateWrapper.mat_get_celldata("density", m, &density_remap);
 
-    //for (int ic = 0; ic < nmatcells; ic++)
-    //  ASSERT_NEAR(matrho_trg[m][ic], density_remap[ic], 1.0e-12);
-
+    for (int ic = 0; ic < nmatcells; ic++){
+      std::cerr <<"target cell "<<matcells_remap[m][ic]<< "::rho_computed = "<<density_remap[ic]
+                <<", rho_exact = "<<matrho_trg[m][ic]<<std::endl;
+      ASSERT_NEAR(matrho_trg[m][ic], density_remap[ic], 1.0e-12);
+    }
     std::cerr << "Number of cells in material " << m << " is " << nmatcells << "\n";
     std::cerr << "Material " << m << " cell ids, volume fractions, centroids:"
               << "\n";
@@ -363,7 +365,6 @@ TEST(MMDriver, Pure2Mixed) {
     totcen /= mass;
     
     ASSERT_NEAR(matvol[m], volume, 1.0e-10);
-    //assert_near(matmass[m], mass, 1.0e-10);
 
     std::cerr << "\nmaterial " << m << "\n";
     std::cerr << " expected volume " << std::setw(3) <<

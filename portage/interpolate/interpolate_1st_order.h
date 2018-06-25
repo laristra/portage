@@ -67,7 +67,7 @@ template<int D,
          typename SourceMeshType, 
          typename TargetMeshType, 
          typename StateType,
-         template<class, int> class InterfaceReconstructorType =
+         template<class, int, class, class> class InterfaceReconstructorType =
           DummyInterfaceReconstructor>
 class Interpolate_1stOrder {
 
@@ -196,7 +196,7 @@ template<int D,
          typename SourceMeshType, 
          typename TargetMeshType, 
          typename StateType,
-         template<class, int> class InterfaceReconstructorType>
+         template<class, int, class, class> class InterfaceReconstructorType>
 class Interpolate_1stOrder<D, 
                            CELL, 
                            SourceMeshType, 
@@ -386,7 +386,7 @@ template<int D,
          typename SourceMeshType, 
          typename TargetMeshType, 
          typename StateType,
-         template<class, int> class InterfaceReconstructorType>
+         template<class, int, class, class> class InterfaceReconstructorType>
 class Interpolate_1stOrder<D, 
                            NODE, 
                            SourceMeshType, 

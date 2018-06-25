@@ -37,7 +37,7 @@ namespace Portage {
 */
 
 template<int D, Entity_kind on_what, typename MeshType, typename StateType,
-    template<class, int> class InterfaceReconstructorType =
+    template<class, int, class, class> class InterfaceReconstructorType =
     DummyInterfaceReconstructor>
 class Limited_Gradient {
  public:
@@ -109,7 +109,7 @@ class Limited_Gradient {
 
 
 template<int D, typename MeshType, typename StateType,
-template<class, int> class InterfaceReconstructorType>
+template<class, int, class, class> class InterfaceReconstructorType>
 class Limited_Gradient<D, CELL, MeshType, StateType, InterfaceReconstructorType> {
  
  public:
@@ -213,7 +213,7 @@ class Limited_Gradient<D, CELL, MeshType, StateType, InterfaceReconstructorType>
   // @brief Implementation of Limited_Gradient functor for CELLs
 
   template<int D, typename MeshType, typename StateType, 
-    template<class, int> class InterfaceReconstructorType>
+    template<class, int, class, class> class InterfaceReconstructorType>
     Vector<D> Limited_Gradient <D, CELL, MeshType, StateType, 
     InterfaceReconstructorType>::operator()(int cellid) {
 
@@ -262,7 +262,12 @@ class Limited_Gradient<D, CELL, MeshType, StateType, InterfaceReconstructorType>
           // If there are multiple matpolys in this cell for the material of interest,
           // aggregate moments to compute new centroid
           for (int ipoly=0; ipoly<matpolys.size(); ipoly++) {
-            ls_coords.push_back(cellmatpoly.matpoly_centroid(ipoly));
+            std::vector<double> moments = matpolys[ipoly].moments();
+            Point<D> centroid;
+            for (int k = 0; k < D; k++)
+               centroid[k] = moments[k+1]/moments[0];
+            ls_coords.push_back(centroid);
+            //ls_coords.push_back(cellmatpoly.matpoly_centroid(ipoly)); //BUG ! Should use moments of matpolys
             break; // TODO: Instead of cutting out after the first matpoly,
             // Get matpoly moments directly using new interface in Tangram,
             // aggregate, and use to compute overall material centroid
@@ -295,6 +300,15 @@ class Limited_Gradient<D, CELL, MeshType, StateType, InterfaceReconstructorType>
     }
     grad = ls_gradient(ls_coords, ls_vals);
 
+    //DEBUG
+    /*std::cout<<"\n\nGradient for srccell "<<cellid<<std::endl;
+    std::cout<<"ls_coords : ls_vals "<<std::endl;
+    for (int i = 0; i < ls_coords.size(); i++)
+    {
+      std::cout<<ls_coords[i][0]<<" "<<ls_coords[i][1]<<" : "<<ls_vals[i]<<std::endl;
+    }
+    std::cout<<"grad = ["<<grad[0]<<", "<<grad[1]<<std::endl;
+    */
     // Limit the gradient to enforce monotonicity preservation
     if (this->limtype_ == BARTH_JESPERSEN &&
         !this->mesh_.on_exterior_boundary(CELL, cellid)) {  // No limiting on boundary
@@ -352,6 +366,7 @@ class Limited_Gradient<D, CELL, MeshType, StateType, InterfaceReconstructorType>
     
     // Limited gradient is phi*grad
 
+    //std::cout<<"phi*grad = ["<<phi*grad[0]<<", "<<phi*grad[1]<<"]"<<std::endl;
     return phi*grad;
   }
 

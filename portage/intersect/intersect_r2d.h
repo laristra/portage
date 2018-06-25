@@ -36,7 +36,7 @@ namespace Portage {
 
 template <Entity_kind on_what, class SourceMeshType,
           class SourceStateType, class TargetMeshType,
-          template<class, int> class InterfaceReconstructorType =
+          template<class, int, class, class> class InterfaceReconstructorType =
           DummyInterfaceReconstructor>
 class IntersectR2D {
 
@@ -106,7 +106,7 @@ class IntersectR2D {
 
 template <class SourceMeshType, class SourceStateType,
           class TargetMeshType,
-          template <class, int> class InterfaceReconstructorType>
+          template <class, int, class, class> class InterfaceReconstructorType>
 class IntersectR2D<CELL, SourceMeshType, SourceStateType, TargetMeshType,
                    InterfaceReconstructorType> {
 
@@ -248,7 +248,7 @@ class IntersectR2D<CELL, SourceMeshType, SourceStateType, TargetMeshType,
 
 template <class SourceMeshType, class SourceStateType,
           class TargetMeshType,
-          template <class, int> class InterfaceReconstructorType>
+          template <class, int, class, class> class InterfaceReconstructorType>
 class IntersectR2D<NODE, SourceMeshType, SourceStateType, TargetMeshType,
                    InterfaceReconstructorType> {
 

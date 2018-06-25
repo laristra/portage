@@ -82,15 +82,17 @@ using namespace Wonton;
 */
 template <template <int, Entity_kind, class, class> class Search,
           template <Entity_kind, class, class, class,
-                    template <class, int> class> class Intersect,
+          template <class, int, class, class> class> class Intersect,
           template<int, Entity_kind, class, class, class,
-                    template<class, int> class> class Interpolate,
+          template<class, int, class, class> class> class Interpolate,
           int D,
           class SourceMesh_Wrapper,
           class SourceState_Wrapper,
           class TargetMesh_Wrapper = SourceMesh_Wrapper,
           class TargetState_Wrapper = SourceState_Wrapper,
-          template <class, int> class InterfaceReconstructorType = DummyInterfaceReconstructor>
+          template <class, int, class, class> class InterfaceReconstructorType = DummyInterfaceReconstructor,
+          class Matpoly_Splitter = void,
+          class Matpoly_Clipper = void>
 class MMDriver {
 
   // Something like this would be very helpful to users
@@ -339,20 +341,23 @@ class MMDriver {
 
 template <template <int, Entity_kind, class, class> class Search,
           template <Entity_kind, class, class, class,
-                    template <class, int> class> class Intersect,
+          template <class, int, class, class> class> class Intersect,
           template<int, Entity_kind, class, class, class,
-                    template<class, int> class> class Interpolate,
+          template<class, int, class, class> class> class Interpolate,
           int D,
           class SourceMesh_Wrapper,
           class SourceState_Wrapper,
           class TargetMesh_Wrapper,
           class TargetState_Wrapper,
-          template <class, int> class InterfaceReconstructorType>
+          template <class, int, class, class> class InterfaceReconstructorType,
+          class Matpoly_Splitter,
+          class Matpoly_Clipper>
 template<Entity_kind onwhat>
 void MMDriver<Search, Intersect, Interpolate, D,
               SourceMesh_Wrapper, SourceState_Wrapper,
               TargetMesh_Wrapper, TargetState_Wrapper,
-              InterfaceReconstructorType
+              InterfaceReconstructorType, Matpoly_Splitter,
+              Matpoly_Clipper
             >::remap(std::vector<std::string> const &src_varnames,
                      std::vector<std::string> const &trg_varnames) {
 
@@ -418,14 +423,15 @@ void MMDriver<Search, Intersect, Interpolate, D,
 #ifdef HAVE_TANGRAM
   // Call interface reconstruction only if we got a method from the
   // calling app
-  
+  Tangram::IterativeMethodTolerances_t tol{100, 1e-12, 1e-12}; 
+ 
   auto interface_reconstructor =
       std::make_shared<Tangram::Driver<InterfaceReconstructorType, D,
                                        SourceMesh_Wrapper>
-                       >(source_mesh_);
+                       >(source_mesh_, tol, true);
     
-  if (typeid(InterfaceReconstructorType<SourceMesh_Wrapper, D>) !=
-      typeid(DummyInterfaceReconstructor<SourceMesh_Wrapper, D>)) {
+  if (typeid(InterfaceReconstructorType<SourceMesh_Wrapper, D, Matpoly_Splitter, Matpoly_Clipper >) !=
+      typeid(DummyInterfaceReconstructor<SourceMesh_Wrapper, D, Matpoly_Splitter, Matpoly_Clipper>)) {
     
     int nsourcecells = source_mesh_.num_entities(CELL, ALL);
 
@@ -787,20 +793,23 @@ void MMDriver<Search, Intersect, Interpolate, D,
 
 template <template <int, Entity_kind, class, class> class Search,
           template <Entity_kind, class, class, class,
-                    template <class, int> class> class Intersect,
+          template <class, int, class, class> class> class Intersect,
           template<int, Entity_kind, class, class, class,
-                    template<class, int> class> class Interpolate,
+          template<class, int, class, class> class> class Interpolate,
           int D,
           class SourceMesh_Wrapper,
           class SourceState_Wrapper,
           class TargetMesh_Wrapper,
           class TargetState_Wrapper,
-          template <class, int> class InterfaceReconstructorType>
+          template <class, int, class, class> class InterfaceReconstructorType,
+          class Matpoly_Splitter,
+          class Matpoly_Clipper>
 template<Entity_kind onwhat>
 void MMDriver<Search, Intersect, Interpolate, D,
               SourceMesh_Wrapper, SourceState_Wrapper,
               TargetMesh_Wrapper, TargetState_Wrapper,
-              InterfaceReconstructorType
+              InterfaceReconstructorType, Matpoly_Splitter, 
+              Matpoly_Clipper
               >::remap_distributed(std::vector<std::string> const &src_varnames,
                                    std::vector<std::string> const &trg_varnames) {
 
