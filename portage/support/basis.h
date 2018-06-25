@@ -56,8 +56,11 @@ class Traits<Quadratic, dim>
 {
   public:
   static constexpr size_t function_size=quadratic_sizes[dim];
+  // Intel 18.0.1 compiler cannot handle this declaration so we use the alternative
+  //  static constexpr array<size_t,2>
+  //    jet_size={quadratic_sizes[dim], quadratic_sizes[dim]};  
   static constexpr array<size_t,2>
-    jet_size={quadratic_sizes[dim], quadratic_sizes[dim]};
+    jet_size={function_size, function_size};
   using array_t = array<double, function_size>;
   using matrix_t = array<array<double, function_size>, function_size>;
 };

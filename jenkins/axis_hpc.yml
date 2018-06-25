@@ -8,4 +8,9 @@ BUILD_TYPE:
   - debug
   - serial
   - thrust
+  - readme
+
+exclude:
+  - COMPILER: gcc
+    BUILD_TYPE: readme
 

@@ -43,7 +43,6 @@ class Swarm {
   using PointVecPtr = shared_ptr<vector<Point<dim>>>;
   using PointVec = vector<Point<dim>>;
   
-  
   /*!
    * @brief A particle has a center point and smoothing lengths in each dimension.
    * @param points center points of the particles
@@ -51,9 +50,7 @@ class Swarm {
    */
   Swarm(PointVecPtr points)
       : points_(points), npoints_owned_(points_->size()) 
-  {
-    int a=1;
-  }
+  {}
 
   /*! @brief Dimensionality of points */
   unsigned int space_dimension() const {
@@ -127,7 +124,6 @@ class Swarm {
     (*points_).insert((*points_).end(), new_pts.begin(), new_pts.end());
   }
   
-
  private:
   /** the centers of the particles */
   PointVecPtr points_;

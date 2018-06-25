@@ -94,8 +94,8 @@ class Accumulate {
     size_t n_particles;
     if (center == Gather) {
       n_particles = target_.num_owned_particles();
-    } else if (center == Scatter) {
-      n_particles = source_.num_owned_particles();
+    } else if (center == Scatter) {//this should be all source particles instead of only the owned ones.
+      n_particles = source_.num_particles();
     }
     assert(n_particles == kernels_.size());
     assert(n_particles == geometries_.size());
