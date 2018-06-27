@@ -393,9 +393,6 @@ class Limited_Gradient<D, CELL, MeshType, StateType, InterfaceReconstructorType>
       this->set_interpolation_variable(var_name,limiter_type);
     }
 
-    /* Collect and keep the list of neighbors for each CELL as it may
-       be expensive to go to the mesh layer and collect this data for
-       each cell during the actual gradient calculation */
     void set_material(int matid) {
       this->matid_=matid;
     }
