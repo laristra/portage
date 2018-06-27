@@ -91,7 +91,6 @@ TEST(MMDriver, Pure2Mixed) {
   matlo[2] = Portage::Point<2>(0.5, 0.5);
   mathi[2] = Portage::Point<2>(1.0, 1.0);
 
-  //double matrho[nmats] = {0.1, 10.0, 100.0};
   double matvol[nmats] = {0.5, 0.25, 0.25};
   double matmass[nmats] = {0.375, 0.25, 0.375};
   Portage::Point<2> matcen[nmats] = {Portage::Point<2>(0.25,0.5),

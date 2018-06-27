@@ -335,9 +335,6 @@ class Interpolate_2ndOrder<D,
     // its "weight" (in this case, its 0th moment/area/volume)
 
     /// @todo Should use zip_iterator here but I am not sure I know how to
-    
-    //std::cout<<"\n\n";
-    //std::cout<<"Remap to trgcell = "<<targetCellID<<std::endl;
     double vol = target_mesh_.cell_volume(targetCellID);
     int nsummed = 0;
 
@@ -393,12 +390,6 @@ class Interpolate_2ndOrder<D,
              cnt += 1;
              for (int k = 0; k < D; k++)
                 src_centroid[k]=moments[k+1]/moments[0];
-	     
-             /*std::vector<Tangram::Point<D>> tpnts = matpolys[j].points();
-             cnt += tpnts.size();
-             for (int i = 0; i < tpnts.size(); i++)
-                for (int k = 0; k < D; k++)
-                  src_centroid[k] += tpnts[i][k];*/
            }
            src_centroid = src_centroid/cnt; 
         }
@@ -425,15 +416,6 @@ class Interpolate_2ndOrder<D,
     totalval += val;
     wtsum0 += xsect_volume;
     nsummed++;
-
-    //DEBUG
-    /*
-    std::cout<<"srccell = "<<srccell<<std::endl;
-    std::cout<<"src_centroid = ["<<src_centroid[0]<<", "<<src_centroid[1]<<"]"<<std::endl;
-    std::cout<<"xsect_centroid = ["<<xsect_centroid[0]<<", "<<xsect_centroid[1]<<"]"<<std::endl;
-    std::cout<<"gradient = ["<<gradient[0]<<", "<<gradient[1]<<"]"<<std::endl;
-    std::cout<<"val = "<<val<<", totalval = "<<totalval<<", wtsum0 = "<<wtsum0<<std::endl;
-   */
   }
 
   // Normalize the value by the volume of the intersection of the target cells

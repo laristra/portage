@@ -267,7 +267,6 @@ class Limited_Gradient<D, CELL, MeshType, StateType, InterfaceReconstructorType>
             for (int k = 0; k < D; k++)
                centroid[k] = moments[k+1]/moments[0];
             ls_coords.push_back(centroid);
-            //ls_coords.push_back(cellmatpoly.matpoly_centroid(ipoly)); //BUG ! Should use moments of matpolys
             break; // TODO: Instead of cutting out after the first matpoly,
             // Get matpoly moments directly using new interface in Tangram,
             // aggregate, and use to compute overall material centroid
@@ -300,15 +299,6 @@ class Limited_Gradient<D, CELL, MeshType, StateType, InterfaceReconstructorType>
     }
     grad = ls_gradient(ls_coords, ls_vals);
 
-    //DEBUG
-    /*std::cout<<"\n\nGradient for srccell "<<cellid<<std::endl;
-    std::cout<<"ls_coords : ls_vals "<<std::endl;
-    for (int i = 0; i < ls_coords.size(); i++)
-    {
-      std::cout<<ls_coords[i][0]<<" "<<ls_coords[i][1]<<" : "<<ls_vals[i]<<std::endl;
-    }
-    std::cout<<"grad = ["<<grad[0]<<", "<<grad[1]<<std::endl;
-    */
     // Limit the gradient to enforce monotonicity preservation
     if (this->limtype_ == BARTH_JESPERSEN &&
         !this->mesh_.on_exterior_boundary(CELL, cellid)) {  // No limiting on boundary
@@ -365,8 +355,6 @@ class Limited_Gradient<D, CELL, MeshType, StateType, InterfaceReconstructorType>
     }
     
     // Limited gradient is phi*grad
-
-    //std::cout<<"phi*grad = ["<<phi*grad[0]<<", "<<phi*grad[1]<<"]"<<std::endl;
     return phi*grad;
   }
 
