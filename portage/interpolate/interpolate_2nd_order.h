@@ -49,12 +49,15 @@ template<int D,
          typename TargetMeshType, 
          typename StateType,
          template<class, int, class, class> class InterfaceReconstructorType =
-          DummyInterfaceReconstructor>
+         DummyInterfaceReconstructor,
+         class Matpoly_Splitter = void, 
+         class Matpoly_Clipper = void>
 class Interpolate_2ndOrder {
 
 #ifdef HAVE_TANGRAM
   using InterfaceReconstructor =
-      Tangram::Driver<InterfaceReconstructorType, D, SourceMeshType>;
+      Tangram::Driver<InterfaceReconstructorType, D, SourceMeshType,
+                      Matpoly_Splitter, Matpoly_Clipper>;
 #endif
 
 
@@ -182,17 +185,22 @@ template<int D,
          typename SourceMeshType, 
          typename TargetMeshType, 
          typename StateType,
-         template<class, int, class, class> class InterfaceReconstructorType>
+         template<class, int, class, class> class InterfaceReconstructorType,
+         class Matpoly_Splitter,
+         class Matpoly_Clipper>
 class Interpolate_2ndOrder<D, 
                            CELL, 
                            SourceMeshType, 
                            TargetMeshType, 
                            StateType, 
-                           InterfaceReconstructorType> {
+                           InterfaceReconstructorType,
+                           Matpoly_Splitter,
+                           Matpoly_Clipper> {
 
 #ifdef HAVE_TANGRAM
   using InterfaceReconstructor =
-      Tangram::Driver<InterfaceReconstructorType, D, SourceMeshType>;
+      Tangram::Driver<InterfaceReconstructorType, D, SourceMeshType,
+                      Matpoly_Splitter, Matpoly_Clipper>;
 #endif
 
  public:
@@ -250,7 +258,8 @@ class Interpolate_2ndOrder<D,
     }
     // Compute the limited gradients for the field 
 #ifdef HAVE_TANGRAM
-    Limited_Gradient<D, CELL, SourceMeshType, StateType, InterfaceReconstructorType>
+    Limited_Gradient<D, CELL, SourceMeshType, StateType, InterfaceReconstructorType,
+                     Matpoly_Splitter, Matpoly_Clipper>
         limgrad(source_mesh_, source_state_, interp_var_name_, limiter_type_,
                 interface_reconstructor_);
      if (field_type_ == Field_type::MULTIMATERIAL_FIELD)
@@ -482,17 +491,22 @@ template<int D,
          typename SourceMeshType, 
          typename TargetMeshType, 
          typename StateType,
-         template<class, int, class, class> class InterfaceReconstructorType>
+         template<class, int, class, class> class InterfaceReconstructorType,
+         class Matpoly_Splitter,
+         class Matpoly_Clipper>
 class Interpolate_2ndOrder<D, 
                            NODE, 
                            SourceMeshType, 
                            TargetMeshType, 
                            StateType,
-                           InterfaceReconstructorType> {
+                           InterfaceReconstructorType,
+                           Matpoly_Splitter,
+                           Matpoly_Clipper> {
 
 #ifdef HAVE_TANGRAM
   using InterfaceReconstructor =
-      Tangram::Driver<InterfaceReconstructorType, D, SourceMeshType>;
+      Tangram::Driver<InterfaceReconstructorType, D, SourceMeshType,
+                      Matpoly_Splitter, Matpoly_Clipper>;
 #endif
 
  public:

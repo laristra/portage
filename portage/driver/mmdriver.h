@@ -82,9 +82,11 @@ using namespace Wonton;
 */
 template <template <int, Entity_kind, class, class> class Search,
           template <Entity_kind, class, class, class,
-          template <class, int, class, class> class> class Intersect,
+          template <class, int, class, class> class, 
+          class, class> class Intersect,
           template<int, Entity_kind, class, class, class,
-          template<class, int, class, class> class> class Interpolate,
+          template<class, int, class, class> class,
+          class, class> class Interpolate,
           int D,
           class SourceMesh_Wrapper,
           class SourceState_Wrapper,
@@ -341,9 +343,11 @@ class MMDriver {
 
 template <template <int, Entity_kind, class, class> class Search,
           template <Entity_kind, class, class, class,
-          template <class, int, class, class> class> class Intersect,
+          template <class, int, class, class> class,
+          class, class> class Intersect,
           template<int, Entity_kind, class, class, class,
-          template<class, int, class, class> class> class Interpolate,
+          template<class, int, class, class> class,
+          class, class> class Interpolate,
           int D,
           class SourceMesh_Wrapper,
           class SourceState_Wrapper,
@@ -427,7 +431,9 @@ void MMDriver<Search, Intersect, Interpolate, D,
  
   auto interface_reconstructor =
       std::make_shared<Tangram::Driver<InterfaceReconstructorType, D,
-                                       SourceMesh_Wrapper>
+                                       SourceMesh_Wrapper,
+                                       Matpoly_Splitter,
+                                       Matpoly_Clipper>
                        >(source_mesh_, tol, true);
     
   if (typeid(InterfaceReconstructorType<SourceMesh_Wrapper, D, Matpoly_Splitter, Matpoly_Clipper >) !=
@@ -516,24 +522,28 @@ void MMDriver<Search, Intersect, Interpolate, D,
   // interface reconstructor so that it can retrieve pure material polygons
 
   Intersect<onwhat, SourceMesh_Wrapper, SourceState_Wrapper,
-            TargetMesh_Wrapper, InterfaceReconstructorType>
+            TargetMesh_Wrapper, InterfaceReconstructorType, 
+            Matpoly_Splitter, Matpoly_Clipper>
       intersect(source_mesh_, source_state_, target_mesh_,
                 interface_reconstructor);
 
   // Get an instance of the desired interpolate algorithm type
   Interpolate<D, onwhat, SourceMesh_Wrapper, TargetMesh_Wrapper,
-              SourceState_Wrapper, InterfaceReconstructorType>
+              SourceState_Wrapper, InterfaceReconstructorType,
+              Matpoly_Splitter, Matpoly_Clipper>
       interpolate(source_mesh_, target_mesh_, source_state_, 
                   interface_reconstructor);
 #else
 
   Intersect<onwhat, SourceMesh_Wrapper, SourceState_Wrapper,
-            TargetMesh_Wrapper, DummyInterfaceReconstructor>
+            TargetMesh_Wrapper, DummyInterfaceReconstructor,
+            void, void>
       intersect(source_mesh_, source_state_, target_mesh_);
 
   // Get an instance of the desired interpolate algorithm type
   Interpolate<D, onwhat, SourceMesh_Wrapper, TargetMesh_Wrapper,
-              SourceState_Wrapper, DummyInterfaceReconstructor>
+              SourceState_Wrapper, DummyInterfaceReconstructor,
+              void, void>
       interpolate(source_mesh_, target_mesh_, source_state_);
 #endif  // HAVE_TANGRAM
 
@@ -793,9 +803,11 @@ void MMDriver<Search, Intersect, Interpolate, D,
 
 template <template <int, Entity_kind, class, class> class Search,
           template <Entity_kind, class, class, class,
-          template <class, int, class, class> class> class Intersect,
+          template <class, int, class, class> class,
+          class, class> class Intersect,
           template<int, Entity_kind, class, class, class,
-          template<class, int, class, class> class> class Interpolate,
+          template<class, int, class, class> class,
+          class, class> class Interpolate,
           int D,
           class SourceMesh_Wrapper,
           class SourceState_Wrapper,

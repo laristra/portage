@@ -28,6 +28,7 @@ Please see the license file at the root of this repository, or at:
 #include "JaliStateVector.h"
 #include "JaliState.h"
 
+#include "tangram/intersect/split_r3d.h"
 #include "tangram/reconstruct/xmof2D_wrapper.h"
 #include "tangram/reconstruct/SLIC.h"
 #include "tangram/reconstruct/VOF.h"
@@ -587,13 +588,16 @@ TEST(MMDriver, ThreeMat3D) {
   //  material ordering is 0, 1, 2
   //-------------------------------------------------------------------
 
+  //using VOF = Tangram::VOF<Wonton::Jali_Mesh_Wrapper, 3, Tangram::SplitR3D, Tangram::ClipR3D>;
+
+
   Portage::MMDriver<Portage::SearchKDTree,
                     Portage::IntersectR3D,
                     Portage::Interpolate_2ndOrder,
                     3,
                     Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
                     Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
-                    Tangram::VOF>
+                    Tangram::VOF, Tangram::SplitR3D, Tangram::ClipR3D>
       d(sourceMeshWrapper, sourceStateWrapper,
         targetMeshWrapper, targetStateWrapper);
   d.set_remap_var_names(remap_fields);

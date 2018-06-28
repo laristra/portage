@@ -38,7 +38,9 @@ namespace Portage {
 
 template<int D, Entity_kind on_what, typename MeshType, typename StateType,
     template<class, int, class, class> class InterfaceReconstructorType =
-    DummyInterfaceReconstructor>
+    DummyInterfaceReconstructor,
+    class Matpoly_Splitter = void, 
+    class Matpoly_Clipper = void>
 class Limited_Gradient {
  public:
   /*! @brief Constructor
@@ -53,7 +55,8 @@ class Limited_Gradient {
 
 #ifdef HAVE_TANGRAM
   using InterfaceReconstructor =
-  Tangram::Driver<InterfaceReconstructorType, D, MeshType>;
+  Tangram::Driver<InterfaceReconstructorType, D, MeshType, 
+                  Matpoly_Splitter, Matpoly_Clipper>;
 
   Limited_Gradient(MeshType const & mesh, StateType const & state,
                    std::string const var_name,
@@ -109,14 +112,18 @@ class Limited_Gradient {
 
 
 template<int D, typename MeshType, typename StateType,
-template<class, int, class, class> class InterfaceReconstructorType>
-class Limited_Gradient<D, CELL, MeshType, StateType, InterfaceReconstructorType> {
+template<class, int, class, class> class InterfaceReconstructorType,
+class Matpoly_Splitter, class Matpoly_Clipper>
+class Limited_Gradient<D, CELL, MeshType, StateType, 
+                       InterfaceReconstructorType,
+                       Matpoly_Splitter, Matpoly_Clipper> {
  
  public:
 
 #ifdef HAVE_TANGRAM 
   using InterfaceReconstructor =
-  Tangram::Driver<InterfaceReconstructorType, D, MeshType>;
+  Tangram::Driver<InterfaceReconstructorType, D, MeshType,
+                  Matpoly_Splitter, Matpoly_Clipper>;
 
   //Constructor with interface reconstructor and to be used for multimaterial remaps.
   Limited_Gradient(MeshType const & mesh, 
@@ -212,10 +219,11 @@ class Limited_Gradient<D, CELL, MeshType, StateType, InterfaceReconstructorType>
 
   // @brief Implementation of Limited_Gradient functor for CELLs
 
-  template<int D, typename MeshType, typename StateType, 
-    template<class, int, class, class> class InterfaceReconstructorType>
-    Vector<D> Limited_Gradient <D, CELL, MeshType, StateType, 
-    InterfaceReconstructorType>::operator()(int cellid) {
+template<int D, typename MeshType, typename StateType, 
+template<class, int, class, class> class InterfaceReconstructorType,
+class Matpoly_Splitter, class Matpoly_Clipper>
+Vector<D> Limited_Gradient <D, CELL, MeshType, StateType, 
+InterfaceReconstructorType, Matpoly_Splitter, Matpoly_Clipper>::operator()(int cellid) {
 
     assert(this->vals_);
 

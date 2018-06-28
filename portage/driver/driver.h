@@ -73,9 +73,11 @@ using namespace Wonton;
 */
 template <template <int, Entity_kind, class, class> class Search,
           template <Entity_kind, class, class, class,
-          template<class, int, class, class> class> class Intersect,
+          template<class, int, class, class> class,
+          class, class> class Intersect,
           template<int, Entity_kind, class, class, class, 
-          template<class, int, class, class> class> class Interpolate,
+          template<class, int, class, class> class,
+          class, class> class Interpolate,
           int D,
           class SourceMesh_Wrapper,
           class SourceState_Wrapper,
@@ -324,9 +326,11 @@ class Driver {
 
 template <template <int, Entity_kind, class, class> class Search,
           template <Entity_kind, class, class, class,
-          template<class, int, class, class> class> class Intersect,
+          template<class, int, class, class> class,
+          class, class> class Intersect,
           template<int, Entity_kind, class, class, class,
-          template<class, int, class, class> class> class Interpolate,
+          template<class, int, class, class> class,
+          class, class> class Interpolate,
           int D,
           class SourceMesh_Wrapper,
           class SourceState_Wrapper,
@@ -383,7 +387,7 @@ void Driver<Search, Intersect, Interpolate, D,
 
   // Get an instance of the desired intersect algorithm type
   const Intersect<onwhat, SourceMesh_Wrapper, SourceState_Wrapper,
-                  TargetMesh_Wrapper, DummyInterfaceReconstructor>
+                  TargetMesh_Wrapper, DummyInterfaceReconstructor, void, void>
       intersect(source_mesh_, source_state_, target_mesh_);
 
   // For each cell in the target mesh get a list of candidate-weight
@@ -415,7 +419,7 @@ void Driver<Search, Intersect, Interpolate, D,
 
   // Get an instance of the desired interpolate algorithm type
   Interpolate<D, onwhat, SourceMesh_Wrapper, TargetMesh_Wrapper,
-              SourceState_Wrapper, DummyInterfaceReconstructor>
+              SourceState_Wrapper, DummyInterfaceReconstructor, void, void>
       interpolate(source_mesh_, target_mesh_, source_state_);
 
   for (int i = 0; i < nvars; ++i) {
@@ -456,9 +460,11 @@ void Driver<Search, Intersect, Interpolate, D,
 
 template <template <int, Entity_kind, class, class> class Search,
           template <Entity_kind, class, class, class,
-          template<class, int, class, class> class> class Intersect,
+          template<class, int, class, class> class,
+          class, class> class Intersect,
           template<int, Entity_kind, class, class, class,
-          template<class, int, class, class> class> class Interpolate,
+          template<class, int, class, class> class,
+          class, class> class Interpolate,
           int D,
           class SourceMesh_Wrapper,
           class SourceState_Wrapper,
@@ -531,7 +537,7 @@ void Driver<Search, Intersect, Interpolate, D,
 
   // Get an instance of the desired intersect algorithm type
   const Intersect<onwhat, Flat_Mesh_Wrapper<>, Flat_State_Wrapper<>,
-                  TargetMesh_Wrapper, DummyInterfaceReconstructor>
+                  TargetMesh_Wrapper, DummyInterfaceReconstructor, void, void>
       intersect(source_mesh_flat, source_state_flat, target_mesh_);
 
   // For each cell in the target mesh get a list of candidate-weight
@@ -563,7 +569,7 @@ void Driver<Search, Intersect, Interpolate, D,
 
   // Get an instance of the desired interpolate algorithm type
   Interpolate<D, onwhat, Flat_Mesh_Wrapper<>, TargetMesh_Wrapper,
-              Flat_State_Wrapper<>, DummyInterfaceReconstructor>
+              Flat_State_Wrapper<>, DummyInterfaceReconstructor, void, void>
       interpolate(source_mesh_flat, target_mesh_, source_state_flat);
 
   for (int i = 0; i < nvars; ++i) {

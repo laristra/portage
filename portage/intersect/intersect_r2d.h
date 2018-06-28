@@ -37,12 +37,15 @@ namespace Portage {
 template <Entity_kind on_what, class SourceMeshType,
           class SourceStateType, class TargetMeshType,
           template<class, int, class, class> class InterfaceReconstructorType =
-          DummyInterfaceReconstructor>
+          DummyInterfaceReconstructor, 
+          class Matpoly_Splitter = void,
+          class Matpoly_Clipper = void>
 class IntersectR2D {
 
 #ifdef HAVE_TANGRAM
   using InterfaceReconstructor2D =
-      Tangram::Driver<InterfaceReconstructorType, 2, SourceMeshType>;
+      Tangram::Driver<InterfaceReconstructorType, 2, SourceMeshType,
+                      Matpoly_Splitter, Matpoly_Clipper>;
 #endif
 
  public:
@@ -106,13 +109,15 @@ class IntersectR2D {
 
 template <class SourceMeshType, class SourceStateType,
           class TargetMeshType,
-          template <class, int, class, class> class InterfaceReconstructorType>
+          template <class, int, class, class> class InterfaceReconstructorType,
+          class Matpoly_Splitter, class Matpoly_Clipper>
 class IntersectR2D<CELL, SourceMeshType, SourceStateType, TargetMeshType,
-                   InterfaceReconstructorType> {
+                   InterfaceReconstructorType, Matpoly_Splitter, Matpoly_Clipper> {
 
 #ifdef HAVE_TANGRAM
   using InterfaceReconstructor2D =
-      Tangram::Driver<InterfaceReconstructorType, 2, SourceMeshType>;
+      Tangram::Driver<InterfaceReconstructorType, 2, SourceMeshType,
+                      Matpoly_Splitter, Matpoly_Clipper>;
 #endif
 
  public:
@@ -248,13 +253,15 @@ class IntersectR2D<CELL, SourceMeshType, SourceStateType, TargetMeshType,
 
 template <class SourceMeshType, class SourceStateType,
           class TargetMeshType,
-          template <class, int, class, class> class InterfaceReconstructorType>
+          template <class, int, class, class> class InterfaceReconstructorType,
+          class Matpoly_Splitter, class Matpoly_Clipper>
 class IntersectR2D<NODE, SourceMeshType, SourceStateType, TargetMeshType,
-                   InterfaceReconstructorType> {
+                   InterfaceReconstructorType, Matpoly_Splitter, Matpoly_Clipper> {
 
 #ifdef HAVE_TANGRAM
   using InterfaceReconstructor2D =
-      Tangram::Driver<InterfaceReconstructorType, 2, SourceMeshType>;
+      Tangram::Driver<InterfaceReconstructorType, 2, SourceMeshType,
+                      Matpoly_Splitter, Matpoly_Clipper>;
 #endif
 
  public:

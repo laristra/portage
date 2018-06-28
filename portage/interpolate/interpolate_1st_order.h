@@ -68,12 +68,15 @@ template<int D,
          typename TargetMeshType, 
          typename StateType,
          template<class, int, class, class> class InterfaceReconstructorType =
-          DummyInterfaceReconstructor>
+         DummyInterfaceReconstructor,
+         class Matpoly_Splitter = void,
+         class Matpoly_Clipper = void >
 class Interpolate_1stOrder {
 
 #ifdef HAVE_TANGRAM
   using InterfaceReconstructor =
-      Tangram::Driver<InterfaceReconstructorType, D, SourceMeshType>;
+      Tangram::Driver<InterfaceReconstructorType, D, SourceMeshType,
+                      Matpoly_Splitter, Matpoly_Clipper>;
 #endif
 
  public:
@@ -196,17 +199,22 @@ template<int D,
          typename SourceMeshType, 
          typename TargetMeshType, 
          typename StateType,
-         template<class, int, class, class> class InterfaceReconstructorType>
+         template<class, int, class, class> class InterfaceReconstructorType,
+         class Matpoly_Splitter,
+         class Matpoly_Clipper>
 class Interpolate_1stOrder<D, 
                            CELL, 
                            SourceMeshType, 
                            TargetMeshType, 
                            StateType,
-                           InterfaceReconstructorType> {
+                           InterfaceReconstructorType,
+                           Matpoly_Splitter,
+                           Matpoly_Clipper> {
 
 #ifdef HAVE_TANGRAM
   using InterfaceReconstructor =
-      Tangram::Driver<InterfaceReconstructorType, D, SourceMeshType>;
+      Tangram::Driver<InterfaceReconstructorType, D, SourceMeshType,
+                      Matpoly_Splitter, Matpoly_Clipper>;
 #endif
                             
  public:
@@ -386,17 +394,22 @@ template<int D,
          typename SourceMeshType, 
          typename TargetMeshType, 
          typename StateType,
-         template<class, int, class, class> class InterfaceReconstructorType>
+         template<class, int, class, class> class InterfaceReconstructorType,
+         class Matpoly_Splitter,
+         class Matpoly_Clipper>
 class Interpolate_1stOrder<D, 
                            NODE, 
                            SourceMeshType, 
                            TargetMeshType, 
                            StateType,
-                           InterfaceReconstructorType> {
+                           InterfaceReconstructorType,
+                           Matpoly_Splitter,
+                           Matpoly_Clipper> {
 
 #ifdef HAVE_TANGRAM
   using InterfaceReconstructor =
-      Tangram::Driver<InterfaceReconstructorType, D, SourceMeshType>;
+      Tangram::Driver<InterfaceReconstructorType, D, SourceMeshType,
+                      Matpoly_Splitter, Matpoly_Clipper>;
 #endif
 
  public:
