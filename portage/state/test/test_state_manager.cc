@@ -224,7 +224,7 @@ TEST(StateManager, testStateVectorMultiAccess){
 ///////////////////////////////////////
 // Begin the state manager tests proper
 ///////////////////////////////////////
-TEST(StateManager, manageMeshField1){
+TEST(StateManager, testConstructManager){
 
 	using namespace Wonton;
 
@@ -310,22 +310,7 @@ TEST(StateManager, manageMeshFieldTemplate){
 	// create the state manager
 	StateManager<Simple_Mesh_Wrapper> manager{wrapper};
 	manager.add(pv);
-	
-	// make sure you can't clobber an existing field
-	ASSERT_THROW(manager.add(pv), std::runtime_error);
-
-	// make sure the data access is correct
-	auto out=manager.get<StateVectorUni<double>>("field");
-	
-	// test that the value is correct
-	ASSERT_EQ(data[0], out->get_data()[0]);
-	
-	// try using the return reference
-	auto out2 = manager.get<StateVectorUni<double>>("field");
-	
-	// test that the value is correct
-	ASSERT_EQ(data[0], out2->get_data()[0]);
-	
+		
 	// try getting a non-existent field
 	auto out3 = manager.get<StateVectorUni<double>>("nonexistent");
 	
@@ -751,10 +736,10 @@ TEST(StateManager,test4Cell){
 	manager.add_material_names(matnames);
 	
 	// check get_nmats API function
-	ASSERT_EQ(manager.get_num_materials(),3);
+	ASSERT_EQ(manager.num_materials(),3);
 	for (const auto& kv: matnames){
 		ASSERT_EQ(manager.get_material_id(kv.first),matnames[kv.first]);
-		ASSERT_EQ(manager.get_material_name(kv.second),kv.first);
+		ASSERT_EQ(manager.material_name(kv.second),kv.first);
 	}
 	
 	// create the material cells
@@ -818,10 +803,10 @@ TEST(StateManager,test4Cell){
 	}
 
 	// test that the number of materials in each cell is correct
-	ASSERT_EQ(manager.num_cell_materials(0),3);
-	ASSERT_EQ(manager.num_cell_materials(1),2);
-	ASSERT_EQ(manager.num_cell_materials(2),2);
-	ASSERT_EQ(manager.num_cell_materials(3),1);
+	ASSERT_EQ(manager.cell_get_num_mats(0),3);
+	ASSERT_EQ(manager.cell_get_num_mats(1),2);
+	ASSERT_EQ(manager.cell_get_num_mats(2),2);
+	ASSERT_EQ(manager.cell_get_num_mats(3),1);
 	
 	// check that the materials in the cell are correct
 	std::unordered_set<int> dum{1,3,5};

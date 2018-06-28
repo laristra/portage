@@ -18,6 +18,8 @@ Please see the license file at the root of this repository, or at:
 
 using namespace Portage;
 
+// test the pointer strategy to reference an object in a state manager
+// but this does not in fact use the state manager
 TEST(StateManager, testPointerStateManager){
 
 	// create the uni state vector
@@ -47,6 +49,8 @@ TEST(StateManager, testPointerStateManager){
 
 }
 
+// test the pointer strategy to reference an object in a state manager
+// but this does not in fact use the state manager
 TEST(StateManager, testSharedPointerStateManager){
 
 	// create the uni state vector
@@ -76,6 +80,8 @@ TEST(StateManager, testSharedPointerStateManager){
 
 }
 
+// test the pointer strategy to reference an object in a state manager
+// but this does not in fact use the state manager
 TEST(StateManager, testSharedPointerStateManagerMap){
 
 	// create the uni state vector
@@ -109,6 +115,8 @@ TEST(StateManager, testSharedPointerStateManagerMap){
 	
 }
 
+// test the pointer strategy to reference an object in a state manager
+// but this does not in fact use the state manager
 TEST(StateManager, test1){
 
 	// create the uni state vector
@@ -138,6 +146,8 @@ TEST(StateManager, test1){
 
 }
 
+// test the pointer strategy to reference an object in a state manager
+// but this does not in fact use the state manager
 TEST(StateManager, test2){
 
 	std::string name1{"field1"};
@@ -200,7 +210,7 @@ TEST(StateManager, test2){
 
 }
 
-TEST(StateManager, manageMeshField1){
+TEST(StateManager, testConstructManager){
 
 	using namespace Wonton;
 

@@ -44,6 +44,7 @@ class StateVectorMulti : public StateVectorBase {
 			return ti;
 		}
 	
+	
 		/*!
 			@brief Return a reference to the data in the state vector.
 			@return a reference to the vector of data in the state vector
@@ -51,6 +52,19 @@ class StateVectorMulti : public StateVectorBase {
 			Return a reference to the data in the state vector.
 		*/
 		std::unordered_map<int, std::vector<T>>& get_data() { return data_; }
+		
+		
+		/*!
+			@brief Return a reference to the data in the state vector.
+			@param[in] m	material id
+			@return a reference to the vector of data in the state vector
+
+			Return a reference to the data in the state vector. Note: this function
+			has a potential side effect (which is a good thing, but users need to be
+			aware). If the vector for key m does not exist, it will be created automatically.
+			If you want to throw an error, use get_data().at(m) instead.
+		*/
+		std::vector<T>& get_data(int m) { return data_[m]; }
 
 	private:
  

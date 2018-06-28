@@ -81,16 +81,6 @@ class StateManager {
 
 
 		/*!
-		  @brief Return the name of a material from its material id .
-		  @param[in] m		material id
-		  @return					string of the material name
-
-		  Return the name of a material from its material id.
-		*/
-		std::string get_material_name(int m) const {return material_names_.at(m);}
-
-		
-		/*!
 		  @brief Return the name of a material from its material id. 
 		  @param[in] m		material id
 		  @return					string of the material name
@@ -166,15 +156,6 @@ class StateManager {
 
 				return shape;
 		}
-
-			
-		/*!
-		  @brief Return the number of materials in the problem.
-		  @return		the integer number of materials
-
-		  Return the number of materials in the problem.
-		*/
-		int get_num_materials() const {return material_names_.size();}
 
 			
 		/*!
@@ -393,7 +374,6 @@ class StateManager {
 		  accessing both single material and multi material state vectors. This is a
 		  const version of the function, that is used for read only data. 
 		  
-		  I AM NOT AT ALL CERTAIN THAT THE CV QUALIFIERS OF THIS SIGNATURE ARE CORRECT
 		*/
  		template <class T>
 		std::shared_ptr<T> get(std::string name) const{
@@ -426,17 +406,6 @@ class StateManager {
 		  Return the number of cells for this material id.
 		*/
   	int num_material_cells(int m) const {return material_cells_.at(m).size();}
-
-
-		/*!
-		  @brief Return the number of cells for this material id.
-		  @param[in] m		material id
-		  @return					number of cells containing this material
-
-		  Return the number of cells for this material id.
-		*/
-		int mat_get_num_cells(int m) const {return material_cells_.at(m).size();
-		}		
 
 
 		/*!
@@ -483,7 +452,7 @@ class StateManager {
 		template <class T>
 		void mat_get_celldata(std::string const& name, int m,
 		                      T const **data) const {
-		  *data= get<StateVectorMulti<T>>(name)->get_data()[m].data();                
+		  *data= get<StateVectorMulti<T>>(name)->get_data(m).data();                
 		}
 
 
@@ -529,7 +498,7 @@ class StateManager {
 			This function has a side effect. When this function is called, the 
 			resulting pointer needs to point to memory that is already allocated
 			of sufficient size. It cannot be a nullptr. At some point in the code we
-			need to do the allocation. In our case is an std::vector.resize call. 
+			need to do the allocation. In our case this is an std::vector.resize call. 
 			This memory management could be done in add_material like Jali does. The
 			downside is that this buries the allocation into a "hidden" location. I (DWS) 
 			would personally like to see add_material go away. It is responsible for 
@@ -550,7 +519,7 @@ class StateManager {
 			// get the correct row of the ragged right data structure
 			// NOTE: (this bit me) the &, the local reference needs to refer to the 
 			// actual data in the state manager, not a copy
-			std::vector<T>& material_data = get<StateVectorMulti<T>>(name)->get_data()[m];
+			std::vector<T>& material_data = get<StateVectorMulti<T>>(name)->get_data(m);
 			
 			int n = material_cells_[m].size();
 			
@@ -568,16 +537,6 @@ class StateManager {
 
 					
 		
-		/*!
-		  @brief Return the number of materials in this cell.
-		  @param[in] c		cell id
-		  @return					number of material in this cell
-
-		  Return the number of materials in this cell.
-		*/
-		int num_cell_materials(int c) const { return cell_materials_.at(c).size(); }
-
-
 		/*!
 		  @brief Return the number of materials in this cell.
 		  @param[in] c		cell id
@@ -713,7 +672,7 @@ class StateManager {
 		  
 		  // could use a std::copy, but I'll get to it later
 		  // need a reference,because we are modifying the data in place
-		  std::vector<T>& data=get<StateVectorMulti<T>>(name)->get_data()[m];
+		  std::vector<T>& data=get<StateVectorMulti<T>>(name)->get_data(m);
 		  data.clear();
 		  for (int i=0;i<ncells;++i) data.push_back(*(values+i));
 		}
