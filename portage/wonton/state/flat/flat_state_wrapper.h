@@ -16,13 +16,9 @@ Please see the license file at the root of this repository, or at:
 #include <stdexcept>
 #include <utility>
 #include <algorithm>
-#include <unordered_map>
-#include <set>
 
 #include "portage/support/portage.h"
 #include "portage/support/Point.h"
-
-//#define DBG
 
 /*!
   @file flat_state_wrapper.h
@@ -68,132 +64,28 @@ class Flat_State_Wrapper {
   void initialize(State_Wrapper const & input,
                   std::vector<std::string> var_names)
   {
-		clear(); // forget everything
-		
-		// keep track of whether we have already done multimaterial setup
-		bool has_multimaterial_data = false;
-		
-		// loop over field names
-    for (unsigned int i=0; i<var_names.size(); i++)
-    {
-    
-      // get field name
-      std::string varname = var_names[i];
-      
-				  #ifdef DBG
-      std::cout << "processing " << varname << std::endl;
-					#endif
+          clear(); // forget everything
 
-      // get entity kind
-      Entity_kind entity = input.get_entity(varname);
+          for (unsigned int i=0; i<var_names.size(); i++)
+          {
+                  // get name
+                  std::string varname = var_names[i];
 
-			// define the raw data pointer
-			// in a better world we wouldn't need to copy to this intermediate storage
-			T const* data;
-			
-			// store the field types into the private data member
-			field_types_[pair_t(varname,entity)]=input.field_type(entity, varname);
-			
-			// determine whether this field is single field data or multimaterial data
-			if (input.field_type(entity, varname)==Portage::Field_type::MULTIMATERIAL_FIELD){
-			
-				// the field is multimaterial
-				  #ifdef DBG
-				std::cout << varname << " is a multimaterial field"<<std::endl;
-					#endif
-								
-				// all multimaterial fields are defined on the same cells. If the
-				// material exist in the cell, then all multimaterial fields need to be
-				// defined. The following block of code which defines the shape of the
-				// data only needs to be done once, regardless of the number of multi
-				// material fields
-				if (!has_multimaterial_data){
-				
-				  #ifdef DBG
-					std::cout << "hopefully single setting of sizes " <<std::endl;
-					#endif
-				
-					// get the number of materials and set the private member
-					nmats_ = input.num_materials();
-				  #ifdef DBG
-					std::cout << "  the state wrapper has " << nmats_ << " materials" <<std::endl;
-					#endif
-					
-					// allocate space so we don't need to dynamically allocate
-					mat_names_.reserve(nmats_);
-					mat_ncells_.reserve(nmats_);
-					mat_cellids_.reserve(nmats_);
-					
-					// loop over materials
-					for (int matid=0; matid < nmats_; ++matid){
-					
-						// set the material names
-						mat_names_.push_back(input.material_name(matid));
-					
-					  // set the number of cells for this material 
-					  mat_ncells_.push_back(input.mat_get_num_cells(matid));
-					  
-					  // set the cell id's for this material
-					  std::vector<int> cellids;
-					  input.mat_get_cells(matid, &cellids);
-					  mat_cellids_.push_back(cellids);
-					  
-					  // update the list of materials for each cell id
-					  for (int cellid: cellids){
-					  	cell_to_mats_[cellid].insert(matid);
-					  }
-					  
-					  // increase the private member, flat_size
-						flat_size += mat_ncells_[matid];
-						
-					}
+                  // get entity
+                  Entity_kind entity = input.get_entity(varname);
 
-					// make sure this setup code block is run only once
-					has_multimaterial_data = true;
-					
-				  #ifdef DBG
-					std::cout << "  flat_size= " << flat_size<<std::endl;
-						#endif
-				
-				}
-							
-				// concatenate the data vectors
-				std::vector<T> vdata;
+                  // get pointer to data for state from input state wrapper
+                  T const* data;
+                  input.mesh_get_data(entity, varname, &data);
 
-				// loop over materials
-				for (int matid=0; matid < nmats_; ++matid){
-								  
-				  // copy this material field data into the temp array
-					input.mat_get_celldata(varname, matid, &data);
-					
-				  // append state data to the flat storage vector
-					vdata.insert(vdata.end(), data, data+mat_ncells_[matid]);
-					
-				}
-				
-				// finished copying into vdata. Let's check what's there
-				  #ifdef DBG
-				for (int j=0; j<flat_size; ++j) {std::cout << vdata[j] << " "<<std::endl;}
-					#endif
-				
-				// add to database (by flattening, we are able to shoehorn the multimaterial
-				// data into the same format as regular field data)
-		    mesh_add_data(entity, varname, std::make_shared<std::vector<T>>(vdata));
+                  // copy input state data into new vector storage
+                  size_t dataSize = input.get_data_size(entity, varname);
+                  auto vdata = std::make_shared<std::vector<T>>(dataSize);
+              std::copy(data, data+dataSize, vdata->begin());
 
-			} else {
-			
-		    // get pointer to data for state from input state wrapper
-		    input.mesh_get_data(entity, varname, &data);
-
-		    // copy input state data into new vector storage
-		    size_t dataSize = input.get_data_size(entity, varname);
-		    auto vdata = std::make_shared<std::vector<T>>(dataSize);
-				std::copy(data, data+dataSize, vdata->begin());
-
-				// add to database
-		    mesh_add_data(entity, varname, vdata);
-      }
-    }
+              // add to database
+                  mesh_add_data(entity, varname, vdata);
+          }
   }
 
   /*!
@@ -255,7 +147,7 @@ class Flat_State_Wrapper {
   */
 
   int num_materials() const {
-    return nmats_;
+    return 0;
   }
 
   /*!
@@ -263,7 +155,6 @@ class Flat_State_Wrapper {
   */
 
   std::string material_name(int matid) const {
-    return mat_names_[matid];
   }
 
   /*!
@@ -273,7 +164,7 @@ class Flat_State_Wrapper {
   */
 
   int mat_get_num_cells(int matid) const {
-    return mat_ncells_[matid];
+    return 0;
   }
 
   /*!
@@ -284,7 +175,6 @@ class Flat_State_Wrapper {
 
   void mat_get_cells(int matid, std::vector<int> *matcells) const {
     matcells->clear();
-    *matcells = std::vector<int>(mat_cellids_[matid]);
   }
 
   /*!
@@ -294,7 +184,7 @@ class Flat_State_Wrapper {
   */
 
   int cell_get_num_mats(int cellid) const {
-		return cell_to_mats_.at(cellid).size();
+    return 0;
   }
 
   /*!
@@ -305,9 +195,6 @@ class Flat_State_Wrapper {
 
   void cell_get_mats(int cellid, std::vector<int> *cellmats) const {
     cellmats->clear();
-    // unfortunately, I don't of a way to convert from a set to a vector
-    // without an explicit loop or transform
-    for (auto x: cell_to_mats_.at(cellid)) cellmats->push_back(x);
   }
 
   /*!
@@ -318,13 +205,7 @@ class Flat_State_Wrapper {
   */
 
   int cell_index_in_material(int meshcell, int matid) const {
-  	const std::vector<int> cellids(mat_cellids_[matid]);
-    const auto it = std::find(cellids.begin(), cellids.end(), meshcell);
-    if (it!=cellids.end()){
-    	return std::distance(cellids.begin(), it);
-    } else {
-    	return -1;
-    }
+    return -1;
   }
 
   /*!
@@ -334,9 +215,9 @@ class Flat_State_Wrapper {
     @return          Field type
   */
 
-  Field_type field_type(Entity_kind on_what, std::string const& var_name) const {
-  	pair_t key(var_name,on_what);
-    return field_types_.at(key);  
+  Field_type field_type(Entity_kind on_what, std::string const& var_name)
+      const {
+    return Field_type::MESH_FIELD;  // MULTI-MATERIAL FIELDS NOT IMPLEMENTED
   }
 
   /*!
@@ -404,39 +285,6 @@ class Flat_State_Wrapper {
    */
 
   void mat_get_celldata(std::string const& var_name, int matid, T **data) {
-  
-  		// define the pair_t key
-  		pair_t key(var_name, Portage::Entity_kind::CELL);
-  		
-  		// get the vector index into the state_ vector for this field
-  		size_t flat_data_index= name_map_.at(key);  		
-  		
-  		#ifdef DBG
-  		std::cout <<"flat data index for "<<var_name<<": "<<flat_data_index<<std::endl;
-
-  		// get the flat state vector
- 			std::vector<T> flat_data = *state_[flat_data_index];
- 			
-  		std::cout <<"flat data  for "<<var_name<<": ";
- 			for (int i =0; i<flat_size; ++i){
- 				std::cout<<flat_data[i]<<" ";
- 			}
- 			std::cout<<std::endl;
- 			#endif
- 			
- 			int start=0;
- 			for (int i=0; i<matid; ++i) start += mat_ncells_[i];
- 			
-  		#ifdef DBG
- 			std::cout << "offset for material "<< matid << " is " << start<<std::endl;
- 			#endif
-
-			// this is a complicated expression
-			// state_[flat_data_index] is the shared pointer to the vector of flattened data
-			// *state_[flat_data_index]) is the flattened data
-			// (*state_[flat_data_index])[start] is the start of the data for this material
-			// &((*state_[flat_data_index])[start]) is a pointer to the data for this material
- 			(*data) = (T*)(&((*state_[flat_data_index])[start]));
   }
 
 
@@ -472,34 +320,6 @@ class Flat_State_Wrapper {
   size_t get_entity_size(Entity_kind ent) {
     return entity_size_map_[ent];
   }
-
-
-  /*!
-    @brief Get the data type of the given field
-    @param[in] name The string name of the data field
-    @return A reference to the type_info struct for the field's data type
-   */
-  const std::type_info& get_data_type(std::string const& name) const {
-    size_t index = -1;
-    pair_t name_cell_pair(name, Portage::Entity_kind::CELL);
-    auto it = name_map_.find(name_cell_pair);
-    if (it != name_map_.end())
-      index = get_vector_index(Portage::Entity_kind::CELL, name);
-    else {
-      pair_t name_node_pair(name, Portage::Entity_kind::NODE, name);
-      it = name_map_.find(name_node_pair);
-      if (it != name_map_.end())
-        index = get_vector_index(Portage::Entity_kind::NODE, name);
-    }
-
-    if (index >= 0) {
-      return typeid(T);
-    } else {
-      std::cerr << "Could not find state variable " << name << "\n";
-      return typeid(0);
-    }
-  }
-
 
   /*!
    * @brief Get index for entity and name
@@ -555,26 +375,12 @@ class Flat_State_Wrapper {
 private:
   std::vector<std::shared_ptr<std::vector<T>>> state_;
   int nmats_ = 0;
-  size_t flat_size=0;
-  std::vector<int> mat_ncells_;
   std::map<pair_t, size_t> name_map_;
   std::vector<Entity_kind> entities_;
   std::map<std::string, Entity_kind> entity_map_;
   std::map<Entity_kind, size_t> entity_size_map_;
   std::vector<std::shared_ptr<std::vector<Portage::Point3>>> gradients_;
-  std::vector<std::string> mat_names_;
-  std::vector<std::vector<int>> mat_cellids_;
-  std::unordered_map<int, std::set<int>> cell_to_mats_;
-  std::map<pair_t, Portage::Field_type> field_types_;
-  /* 
-  In the above declarations, at some point, we should do some diagnostics to 
-  determine whether maps or unordered maps are best. My initial philosophy is 
-  that if the lookups are small, we might as well use an ordered map so you 
-  don't have to hash, but I could be wrong. In general, the number of cells may 
-  be large so I made cell_to_mats_ and unordered set while the number of fields 
-  is small so best to use an ordered map.
-  */
-  
+
   /*!
    * @brief Forget all internal data so initialization can start over
    */
@@ -584,10 +390,6 @@ private:
           entity_map_.clear();
           entity_size_map_.clear();
           gradients_.clear();
-          mat_ncells_.clear();
-          mat_names_.clear();
-          mat_cellids_.clear();
-          cell_to_mats_.clear();
   }
 
   /*!
