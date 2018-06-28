@@ -232,13 +232,22 @@ class Interpolate_2ndOrder<D,
     interp_var_name_ = interp_var_name;
     limiter_type_ = limiter_type;
 
-    // Extract the field data from the statemanager
+    // Extract the field data from the statemanager and the source cells for 
+    // which the gradient has to be computed. 
+    int nentities;
+    std::vector<int> cellids;
     field_type_ = source_state_.field_type(CELL, interp_var_name);
     if (field_type_ == Field_type::MESH_FIELD)
+    {
       source_state_.mesh_get_data(CELL, interp_var_name, &source_vals_);
+      nentities = source_mesh_.num_entities(CELL);
+    }
     else
+    {
       source_state_.mat_get_celldata(interp_var_name, matid_, &source_vals_);
-    
+      source_state_.mat_get_cells(matid_, &cellids);
+      nentities =  cellids.size();
+    }
     // Compute the limited gradients for the field 
 #ifdef HAVE_TANGRAM
     Limited_Gradient<D, CELL, SourceMeshType, StateType, InterfaceReconstructorType>
@@ -252,7 +261,7 @@ class Interpolate_2ndOrder<D,
 #endif
 
    // Get the correct number of source cells for which the gradient has to be computed
-    int nentities;
+    /*int nentities;
     std::vector<int> cellids;
     if (field_type_ == Field_type::MESH_FIELD){
       nentities = source_mesh_.num_entities(CELL);
@@ -260,7 +269,7 @@ class Interpolate_2ndOrder<D,
     else{
       source_state_.mat_get_cells(matid_, &cellids);
       nentities =  cellids.size();
-    }
+    }*/
       
     gradients_.resize(nentities);
     

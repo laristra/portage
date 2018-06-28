@@ -236,10 +236,10 @@ class Limited_Gradient<D, CELL, MeshType, StateType, InterfaceReconstructorType>
     for (auto nbrid_g : nbrids) {
 
 #ifdef HAVE_TANGRAM
-    
-      // In order to access its field values for material data (non-mesh data), 
-      // need local compressed neighbor cellid (nbrid_l); for mesh data,
-      // local cellid (nbrid_l) and global cellid (nbrid_g) are equal
+
+      // Field values for each cells in each material are stored according to 
+      // the material's cell list. So, get the local index of each neighbor cell
+      // in the material cell list to access the correct field value
       int nbrid_l = (this->field_type_ == Field_type::MESH_FIELD) ?
         nbrid_g : this->state_.cell_index_in_material(nbrid_g, this->matid_);
       
