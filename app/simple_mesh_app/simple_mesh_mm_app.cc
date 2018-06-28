@@ -53,7 +53,7 @@ using namespace Portage;
 
 int print_usage() {
   std::cout << std::endl;
-  std::cout << "Usage: portageapp \n\n";
+  std::cout << "Usage: simple_mesh_app \n\n";
   
   std::cout << "  --nsourcecells (NO DEFAULT): Internally generated rectangular "
             << "SOURCE mesh with num cells in each coord dir\n\n";
@@ -191,12 +191,6 @@ void run(
     std::cout << "   Limiter type is " << limiter << "\n";
 
 
-
-  // Perform interface reconstruction for pretty pictures (optional)
-  //auto interface_reconstructor =
-  //    std::make_shared<Tangram::Driver<Tangram::XMOF2D_Wrapper, 2,
-   //                                    Wonton::Simple_Mesh_Wrapper>>(source_mesh_wrapper);
-
 	Tangram::Driver<Tangram::XMOF2D_Wrapper, 2,Wonton::Simple_Mesh_Wrapper> interface_reconstructor{source_mesh_wrapper};
 	
   // convert from Portage points to Tangram points
@@ -287,27 +281,9 @@ void run(
       // add the data to the user_field
       user_field[m]=matData;
     }
-    
-    // print block
-    //std::cout<<"\nUser field values by material: "<<std::endl;
-    //for (auto& kv: user_field){
-    //	std::cout<<kv.first<<": ";
-    //	for (auto x:kv.second) std::cout<<x<<" ";
-    //	std::cout<<std::endl;
-    //}
-		
+    		
 		// add the field to the state manager
-		source_state.add(std::make_shared<StateVectorMulti<>>("cellmatdata",user_field));
-		
-		// from the state manager
-    //std::cout<<"\nState Material User field values by material: "<<std::endl;
-    //auto &cellmatdata= source_state.get<double>("cellmatdata")->get_data();
-    //for (auto& kv: cellmatdata){
-    //	std::cout<<kv.first<<": ";
-    //	for (auto x:kv.second) std::cout<<x<<" ";
-    //	std::cout<<std::endl;
-    //}
-		
+		source_state.add(std::make_shared<StateVectorMulti<>>("cellmatdata",user_field));		
 		
   }
 

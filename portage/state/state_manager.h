@@ -57,7 +57,7 @@ class StateManager {
 		  @brief Add the names of the materials. 
 		  @param[in] names		map from material names to material id
 
-		  Add the names of the materials. The map from is from material name to id.
+		  Add the names of the materials. The map from material name to id.
 		*/
 		void add_material_names(std::unordered_map<std::string,int> names){
 			material_ids_=names;
@@ -147,7 +147,7 @@ class StateManager {
 		  Return the material cells. The return value is a map from material id to a vector
 		  of cells for that material.
 		*/
-		std::unordered_map<int,std::vector<int>> const get_material_cells() const {
+		std::unordered_map<int,std::vector<int>> const& get_material_cells() const {
 			return material_cells_;
 		}
 
@@ -201,9 +201,9 @@ class StateManager {
 		  Return the entity kind for a state vector. The input parameter is the name
 		  of the state vector, and the return type is a Portage::Entity_kind
 		*/
-  	Entity_kind get_entity(std::string const& name) const {
-  		return state_vectors_.at(name)->get_kind();
-  	}
+		Entity_kind get_entity(std::string const& name) const {
+			return state_vectors_.at(name)->get_kind();
+		}
   	
   	  	
 		/*!
@@ -286,7 +286,6 @@ class StateManager {
 					" already exists in the state manager");
 					
 			// check that the size is correct
-			// I CAN'T BUILD, SO THIS NEEDS TO BE TESTED
 			if (sv->get_data().size()!=mesh_.num_entities(sv->get_kind())) throw std::runtime_error(
 				"The added data did not have the same number of elements (" + 
 				std::to_string(sv->get_data().size()) +") as the number of cells ("+

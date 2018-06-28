@@ -913,6 +913,39 @@ TEST(StateManager,test4Cell){
 	//}
 }
 
+// Test the data isolation between the original data and the manager data
+TEST(StateManager, testConstness){
+	using namespace Wonton;
+
+	// create the mesh
+	Simple_Mesh mesh{0., 0., 1., 1., 1, 1};
+	
+	// create the wrapper
+	Simple_Mesh_Wrapper wrapper{mesh};
+	
+	// create the state manager
+	StateManager<Simple_Mesh_Wrapper> manager{wrapper};
+	
+	// scalar multi data
+	std::unordered_map<int, std::vector<double>> data {{1,{10.}},{2,{10.1}},{5,{10.2}}};	
+
+	// add the scalar field
+	manager.add(std::make_shared<StateVectorMulti<>> ("pressure", data));
+	
+	// use the const version of the single material get
+	double out[1];
+	double *pout{out};
+	manager.mat_get_celldata<double>("pressure", 2, &pout);
+	std::cout<<pout[0]<<std::endl;
+		
+	pout[0]=-10.1;
+	
+	// use the const version of the single material get
+	double const *cpout{out};
+	manager.mat_get_celldata<double>("pressure", 2, &cpout);
+	std::cout<<cpout[0]<<std::endl;
+
+}
 
 
 
