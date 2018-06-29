@@ -406,7 +406,7 @@ TEST(MMDriver, ThreeMat2D) {
 
 }  // unittest
 
-
+/*
 TEST(MMDriver, ThreeMat3D) {
   // Source and target meshes
   std::shared_ptr<Jali::Mesh> sourceMesh;
@@ -780,6 +780,6 @@ TEST(MMDriver, ThreeMat3D) {
   }
 
 }  // unittest
-
+*/
 
 #endif  // ifdef have_tangram
