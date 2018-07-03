@@ -305,6 +305,7 @@ InterfaceReconstructorType, Matpoly_Splitter, Matpoly_Clipper>::operator()(int c
         ls_vals.push_back(this->vals_[nbrid_g]);
       }
     }
+
     grad = ls_gradient(ls_coords, ls_vals);
 
     // Limit the gradient to enforce monotonicity preservation
