@@ -73,6 +73,10 @@ class Simple_State {
   /// An iterator to the ending fo the variable names vector.
   name_vec_it names_end() { names_.end(); }
 
+  /// The above iterator functions fail sometimes for optimized code, so here 
+  /// we allow access to the complete list of names.
+  name_vec names() const{return names_;}
+
   /*!
     @brief Search for a specific key (name, Entity_kind) within the
     map of known fields and return an iterator to its location.
