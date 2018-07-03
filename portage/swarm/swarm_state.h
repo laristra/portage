@@ -238,7 +238,7 @@ void SwarmState<dim>::extend_field(const string name, DblVec new_value)
 }
 
 /*! @brief SwarmState factory, given a mesh state wrapper.
- * Copies fields from mesh state wrapper to a swarm state wrapper of the 
+ * Copies fields from mesh state -n 1 test/swarm/test_swarm_state wrapper to a swarm state wrapper of the 
  * same size.
  * @param mesh the mesh with which the field data are associated.
  * @param entity entity on which to get data (e.g. CELL, NODE, etc.)
@@ -250,28 +250,33 @@ shared_ptr<SwarmState<dim>> SwarmStateFactory(
   const Portage::Entity_kind entity)
 {
   // create return value
-  size_t ndata;
-  for (auto iter=state.names_begin(); iter!=state.names_end(); iter++) {
+  size_t ndata=0;
+
+  std::vector<std::string> names = state.names();
+  for (size_t i=0; i<names.size(); i++) {
     // Simple_State does not store separte lists of names by entity, 
     // so we have to filter.
-    if (state.get_entity(*iter) != entity) continue;
-    ndata = state.get_data_size(entity, *iter);
-    break;
+    if (state.get_entity(names[i]) == entity) {
+      ndata = state.get_data_size(entity, names[i]);
+      break;
+    }
   }
   shared_ptr<SwarmState<dim>> result=make_shared<SwarmState<dim>>(ndata);
 
   // copy data
-  for (auto iter=state.names_begin(); iter!=state.names_end(); iter++) {
-    if (state.get_entity(*iter) != entity) continue;
+  for (size_t i=0; i<names.size(); i++) {
+    std::string name = names[i];
+    if (state.get_entity(name) != entity) continue;
 
     // make sure all fields have same size
-    assert(state.get_data_size(entity, *iter) == ndata);
+    assert(state.get_data_size(entity, name) == ndata);
 
     const double *datap;
-    state.get_data(entity, *iter, &datap);
+    state.get_data(entity, name, &datap);
     typename SwarmState<dim>::DblVecPtr data = make_shared<vector<double>>(ndata);
-    for (size_t i=0; i<result->get_size(); i++) (*data)[i] = datap[i];
-    result->add_field(*iter, data);
+    
+    for (size_t i=0; i<ndata; i++) (*data)[i] = datap[i];
+    result->add_field(name, data);
   }
 
   return result;
