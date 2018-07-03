@@ -319,7 +319,7 @@ std::shared_ptr<Swarm<dim>> SwarmFactory(MeshWrapper &wrapper, Portage::Entity_k
     points = make_shared<typename Swarm<dim>::PointVec>(npoints_owned);
     Point<dim> centroid;
     for (size_t i=0; i<npoints_owned; i++) {
-      wrapper.cell_centroid<dim>(i, &centroid);
+      wrapper.cell_centroid(i, &centroid);
       (*points)[i] = centroid;
     }
   }

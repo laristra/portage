@@ -595,7 +595,7 @@ template<size_t D, class MeshWrapper>
 void cell_radius(MeshWrapper &wrapper,
                  int const cellid, double *radius) {
   Point<D> centroid;
-  wrapper.cell_centroid<D>(cellid, &centroid);
+  wrapper.cell_centroid(cellid, &centroid);
   std::vector<int> nodes;
   wrapper.cell_get_nodes(cellid, &nodes);
   Point<D> arm, node;
