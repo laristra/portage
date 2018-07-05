@@ -222,7 +222,8 @@ class IntersectR3D<CELL, SourceMeshType, SourceStateType, TargetMeshType,
         std::vector<Tangram::MatPoly<3>> matpolys =
             cellmatpoly.get_matpolys(matid_);
 
-        for (int j = 0; j < 4; j++) this_wt.weights[j] = 0.0;
+        this_wt.weights.resize(4,0.0);
+        //for (int j = 0; j < 4; j++) this_wt.weights[j] = 0.0;
         for (int j = 0; j < matpolys.size(); j++) {
           facetedpoly_t srcpoly = get_faceted_matpoly(matpolys[j]);
 
@@ -240,7 +241,6 @@ class IntersectR3D<CELL, SourceMeshType, SourceStateType, TargetMeshType,
       
       this_wt.weights = intersect_polys_r3d(srcpoly, target_tet_coords);      
 #endif
-      
       // Increment if vol of intersection > 0; otherwise, allow overwrite
       if (this_wt.weights.size() && this_wt.weights[0] > 0.0)
         ninserted++;
