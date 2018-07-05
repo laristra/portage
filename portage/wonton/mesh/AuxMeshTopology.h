@@ -2584,6 +2584,48 @@ void AuxMeshTopology<BasicMesh>::dual_cell_get_facetization(int const nodeid,
 }  // dual_cell_get_facetization
 
 
+//! Get radius of minimum-enclosing-sphere of a cell centered at the centroid
+template<size_t D, class MeshWrapper>
+void cell_radius(MeshWrapper &wrapper,
+                 int const cellid, double *radius) {
+  Point<D> centroid;
+  wrapper.cell_centroid(cellid, &centroid);
+  std::vector<int> nodes;
+  wrapper.cell_get_nodes(cellid, &nodes);
+  Point<D> arm, node;
+  *radius = 0.;
+  for (int i=0; i<nodes.size(); i++) {
+    wrapper.node_get_coordinates(nodes[i], &node);
+    for (int j=0; j<D; j++) arm[j] = node[j]-centroid[j];
+    double distance = 0.0;
+    for (int j=0; j<D; j++) distance += arm[j]*arm[j];
+    distance = sqrt(distance);
+    if (distance > *radius) *radius = distance;
+  }
+}
+
+
+//! Get radius of minimum-enclosing-sphere of all nodes connected by a cell
+template<size_t D, class MeshWrapper>
+void node_radius(MeshWrapper &wrapper,
+                 int const nodeid, double *radius) {
+  std::vector<int> nodes;
+  wrapper.node_get_cell_adj_nodes(nodeid, ALL, &nodes);
+  Point<D> center;
+  wrapper.node_get_coordinates(nodeid, &center);
+  *radius = 0.;
+  Point<D> arm, node;
+  for (int i=0; i<nodes.size(); i++) {
+    wrapper.node_get_coordinates(nodes[i], &node);
+    for (int j=0; j<D; j++) arm[j] = node[j]-center[j];
+    double distance = 0.0;
+    for (int j=0; j<D; j++) distance += arm[j]*arm[j];
+    distance = sqrt(distance);
+    if (distance > *radius) *radius = distance;
+  }
+}
+
+
 }  // namespace Wonton
 
 #endif  // AUX_MESH_TOPOLOGY_H_
