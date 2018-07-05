@@ -71,6 +71,8 @@ class Jali_State_Wrapper {
    */
   template <class T>
   void get_data(const Entity_kind on_what, const std::string var_name, T **data) {
+    // Jali state vector will try to create a std::vector<const double>, which is illegal, 
+    // so we have to remove the const from the type here.
     using T1 = typename std::remove_const<T>::type;
     Jali::State::const_iterator it =
         jali_state_.find<T1, Jali::Mesh>(var_name, jali_state_.mesh(),
