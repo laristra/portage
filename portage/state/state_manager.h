@@ -235,7 +235,7 @@ class StateManager {
 			// create the key
 			std::string  key{sv->get_name()};
 			
-			// if the map entry for this key already exists, throw and erro
+			// if the map entry for this key already exists, throw an error
 			if (state_vectors_.find(key)!=state_vectors_.end()) 
 				throw std::runtime_error("Field " + sv->get_name() + 
 					" already exists in the state manager");
@@ -293,8 +293,8 @@ class StateManager {
 			std::string key{sv->get_name()};
 			
 			// if the map entry for this key already exists, throw an error
-			// Note: the follow is BAD, as it creates the key even if the data is bad
-			//if (state_vectors_[key]!=nullptr) 
+			// Note: we shouldn't use (state_vectors_[key]!=nullptr) as []creates the 
+			// key even if the key doesn't exist
 			if (state_vectors_.find(key)!=state_vectors_.end()) 
 				throw std::runtime_error("Field " + sv->get_name() + 
 					" already exists in the state manager");

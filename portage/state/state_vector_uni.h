@@ -16,11 +16,22 @@ Please see the license file at the root of this repository, or at:
 
 namespace Portage {  
 
+/*!
+	This class implements a state vector for a single material field, meaning there
+	is only one number per mesh entity. The vector of data needs to be the same size 
+	as the number of entitites in the mesh. The field can be define on the cells, 
+	nodes, etc..
+*/
 template <class T=double>
 class StateVectorUni : public StateVectorBase {
 
  public:
   
+  	/*!
+  		@brief Constructor for StateVectorUni
+  		@param[in] kind		the entity kind (CELL, NODE,...) of the data
+  		@param[in] data		the vector of data
+  	*/
 		StateVectorUni(
 			std::string name, 
 			Entity_kind kind=Entity_kind::CELL,

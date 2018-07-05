@@ -13,15 +13,24 @@ Please see the license file at the root of this repository, or at:
 
 namespace Portage {  
 
-class StateVectorBase {
+/*!
+	This class implements a base class state vector. A StateVectorBase instance
+	holds metadata common for all field types, such as the name of the field and
+	on what mesh entity the field is defined. The primary reason for this base class
+	is so that we can implement a single container that holds different conceptual
+	field types such as single or multi material fields with different internal
+	representations. We need a common base class pointer so we can store all the
+	different types together. We can recast the pointer to the correct type whenever
+	needed.
+*/class StateVectorBase {
 
  public:
   
 		/*!
 		  @brief Constructor with a name
-		  @param name   Name of the StateVector
-		  @param type   Type of the StateVector (Portage::Field_type) (Single/Multi)
-		  @param kind   Kind of StateVector (CELL, NODE)
+		  @param name[in]   Name of the StateVector
+		  @param type[in]   Type of the StateVector (Portage::Field_type) (Single/Multi)
+		  @param kind[in]   Kind of StateVector (CELL, NODE)
 		*/  
 		explicit StateVectorBase(std::string name, Portage::Field_type type,
 			Portage::Entity_kind kind=Portage::Entity_kind::CELL) :

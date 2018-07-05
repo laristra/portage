@@ -17,11 +17,23 @@ Please see the license file at the root of this repository, or at:
 
 namespace Portage {  
 
+/*!
+	This class implements a state vector for a multi material field, meaning there
+	are as many numbers per cell as materials in the cell. The current implementation
+	is material dominant, meaning there is a list of cells for each material. 
+	The shape of the data needs to be the same shape as the cell indices of 
+	materials. Multi material fields can only be defined on cells.
+*/
 template <class T=double>
 class StateVectorMulti : public StateVectorBase {
 
 	public:
   
+  	/*!
+  		@brief Constructor for StateVectorMulti
+  		@param[in] data		The map of data. The key of the map is the material id.
+  			The value is the data defined on the material cells
+  	*/
 		StateVectorMulti(
 			std::string name, 
 			std::unordered_map<int, std::vector<T>> data = std::unordered_map<int, std::vector<T>>()
