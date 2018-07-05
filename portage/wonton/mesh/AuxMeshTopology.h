@@ -2585,6 +2585,7 @@ void AuxMeshTopology<BasicMesh>::dual_cell_get_facetization(int const nodeid,
 
 
 //! Get radius of minimum-enclosing-sphere of a cell centered at the centroid
+//! For computing smoothing lengths when converting cell data from meshes to swarms
 template<size_t D, class MeshWrapper>
 void cell_radius(MeshWrapper &wrapper,
                  int const cellid, double *radius) {
@@ -2606,6 +2607,7 @@ void cell_radius(MeshWrapper &wrapper,
 
 
 //! Get radius of minimum-enclosing-sphere of all nodes connected by a cell
+//! For computing smoothing lengths when converting node data from meshes to swarms
 template<size_t D, class MeshWrapper>
 void node_radius(MeshWrapper &wrapper,
                  int const nodeid, double *radius) {
