@@ -56,7 +56,6 @@ POSSIBILITY OF SUCH DAMAGE.
 
 #include "portage/support/portage.h"
 #include "portage/support/Point.h"
-#include "portage/wonton/mesh/flat/flat_mesh_wrapper.h"
 #include "portage/support/basis.h"
 #include "portage/support/weight.h"
 #include "portage/support/operator.h"
