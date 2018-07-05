@@ -238,7 +238,7 @@ void SwarmState<dim>::extend_field(const string name, DblVec new_value)
 }
 
 /*! @brief SwarmState factory, given a mesh state wrapper.
- * Copies fields from mesh state -n 1 test/swarm/test_swarm_state wrapper to a swarm state wrapper of the 
+ * Copies fields from mesh state wrapper to a swarm state wrapper of the 
  * same size.
  * @param mesh the mesh with which the field data are associated.
  * @param entity entity on which to get data (e.g. CELL, NODE, etc.)
