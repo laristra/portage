@@ -22,6 +22,7 @@
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 
 // useful macros
 #define ONE_THIRD 0.333333333333333333333333333333333333333333333333333333

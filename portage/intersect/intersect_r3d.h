@@ -222,12 +222,7 @@ class IntersectR3D<CELL, SourceMeshType, SourceStateType, TargetMeshType,
         std::vector<Tangram::MatPoly<3>> matpolys =
             cellmatpoly.get_matpolys(matid_);
 
-       //DEBUG
-       std::cout<<"tgt_cell "<<tgt_cell<<":: src "<<s<<":#matpolys = "<<matpolys.size()<<std::endl;
-   
-
         this_wt.weights.resize(4,0.0);
-        //for (int j = 0; j < 4; j++) this_wt.weights[j] = 0.0;
         for (int j = 0; j < matpolys.size(); j++) {
           facetedpoly_t srcpoly = get_faceted_matpoly(matpolys[j]);
 
