@@ -189,9 +189,9 @@ void run(
   std::cout << "   Interpolation order is " << interp_order << "\n";
   if (interp_order == 2)
     std::cout << "   Limiter type is " << limiter << "\n";
-
-
-	Tangram::Driver<Tangram::XMOF2D_Wrapper, 2,Wonton::Simple_Mesh_Wrapper> interface_reconstructor{source_mesh_wrapper};
+    Tangram::IterativeMethodTolerances_t tol{100, 1e-12, 1e-12};
+    Tangram::Driver<Tangram::XMOF2D_Wrapper, 2,Wonton::Simple_Mesh_Wrapper> 
+    interface_reconstructor{source_mesh_wrapper,tol,true};
 	
   // convert from Portage points to Tangram points
   std::vector<Tangram::Point<2>> 
@@ -236,17 +236,18 @@ void run(
   }
   
   // Native state managers for source and target
-	Simple_State_Wrapper<Wonton::Simple_Mesh_Wrapper> source_state{
+  Simple_State_Wrapper<Wonton::Simple_Mesh_Wrapper> source_state{
 		source_mesh_wrapper, matnames, matcells};
 		
-	// Using the state manager directly works as well
-	//StateManager<Wonton::Simple_Mesh_Wrapper> source_state{
-	//	source_mesh_wrapper, matnames, matcells};
+  // Using the state manager directly works as well
+  //StateManager<Wonton::Simple_Mesh_Wrapper> source_state{
+  //	source_mesh_wrapper, matnames, matcells};
 
-	// add the volume fractions and centroids to the state manager
-	source_state.add(std::make_shared<StateVectorMulti<>>("mat_volfracs",mat_volfracs));
-	if (mat_centroids_given) 
-		source_state.add(std::make_shared<StateVectorMulti<Point<2>>> ("mat_centroids", mat_centroids));
+  // add the volume fractions and centroids to the state manager
+  source_state.add(std::make_shared<StateVectorMulti<>>("mat_volfracs",mat_volfracs));
+  if (mat_centroids_given) 
+     source_state.add(std::make_shared<StateVectorMulti<Point<2>>> 
+     ("mat_centroids", mat_centroids));
  
   // User specified fields on source
   std::vector<user_field_t> mat_fields(nmats);
@@ -254,13 +255,13 @@ void run(
   // only do this block if there are any user specified fields
   if (material_field_expressions.size()) {
   
-   	// the mm state
-  	std::unordered_map<int,std::vector<double>> user_field;
+    // the mm state
+    std::unordered_map<int,std::vector<double>> user_field;
   
- 		// loop over materials (there needs to be one field per material
+    // loop over materials (there needs to be one field per material
     for (int m = 0; m < nmats; m++) {
     
-    	// if we can't create the user field then die
+      // if we can't create the user field then die
       if (!mat_fields[m].initialize(2, material_field_expressions[m]))
       	throw std::runtime_error("Could not initialize user field: "
       		+material_field_expressions[m]);
@@ -282,23 +283,23 @@ void run(
       user_field[m]=matData;
     }
     		
-		// add the field to the state manager
-		source_state.add(std::make_shared<StateVectorMulti<>>("cellmatdata",user_field));		
+     // add the field to the state manager
+     source_state.add(std::make_shared<StateVectorMulti<>>("cellmatdata",user_field));		
 		
   }
 
-	// print what the state manager knows about
+  // print what the state manager knows about
   std::cout<<"\nState manager fields: ";
   for (auto x: source_state.get_state_keys()) std::cout<<x<<" ";
   std::cout<<std::endl;
 
   // Add the materials into the target mesh without cell indices
   // The remap algorithm will figure out which cells contain which materials
-	// Using the state manager directly works as well
-	Simple_State_Wrapper<Wonton::Simple_Mesh_Wrapper> target_state{target_mesh_wrapper, matnames};
-	//StateManager<Wonton::Simple_Mesh_Wrapper> target_state{target_mesh_wrapper, matnames};
+  // Using the state manager directly works as well
+  Simple_State_Wrapper<Wonton::Simple_Mesh_Wrapper> target_state{target_mesh_wrapper, matnames};
+  //StateManager<Wonton::Simple_Mesh_Wrapper> target_state{target_mesh_wrapper, matnames};
 
-	// Add the volume fractions, centroids and cellmatdata variables
+  // Add the volume fractions, centroids and cellmatdata variables
   target_state.add(
   	std::make_shared<StateVectorMulti<>>(StateVectorMulti<>{"mat_volfracs"}));
   target_state.add(
@@ -315,7 +316,7 @@ void run(
     remap_fields.push_back("cellmatdata");
   } 
 
-	// print what the state manager knows about
+  // print what the state manager knows about
   //std::cout<<"\nTarget state manager fields: ";
   //for (auto x: target_state.get_state_keys()) std::cout<<x.second<<" ";
   //std::cout<<std::endl<<std::endl;
@@ -448,9 +449,10 @@ void run(
   // (optional)
 
   
-  auto target_interface_reconstructor =
-      std::make_shared<Tangram::Driver<Tangram::XMOF2D_Wrapper, 2,
-                                       Wonton::Simple_Mesh_Wrapper>>(target_mesh_wrapper);
+  auto target_interface_reconstructor = std::make_shared<Tangram::Driver<
+                                        Tangram::XMOF2D_Wrapper, 2, 
+                                        Wonton::Simple_Mesh_Wrapper>>
+                                        (target_mesh_wrapper, tol, true);
 
   target_interface_reconstructor->set_volume_fractions(target_cell_num_mats,
                                                 target_cell_mat_ids,
