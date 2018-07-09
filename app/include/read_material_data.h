@@ -6,6 +6,7 @@
 
 #include <stdlib.h>
 #include "portage/support/portage.h"
+#include <fstream>
 
 /*!
  @brief Reads material data for a mesh from a provided binary file.

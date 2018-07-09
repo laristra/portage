@@ -657,8 +657,13 @@ void MMDriver<Search, Intersect, Interpolate, D,
     
     int nmatcells = matcellstgt.size();
     int nmatcells_global = 0;
+    #ifdef ENABLE_MPI
     MPI_Allreduce(&nmatcells, &nmatcells_global, 1, MPI_INT, MPI_SUM,
                   MPI_COMM_WORLD);
+    #else
+    nmatcells_global=nmatcells;
+    #endif
+    
     if (nmatcells_global) {
       int nmatstrg = target_state_.num_materials();
       bool found = false;

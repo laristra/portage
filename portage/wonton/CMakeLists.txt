@@ -31,6 +31,7 @@ set(wonton_HEADERS
     mesh/AuxMeshTopology.h
     mesh/simple_mesh/simple_mesh_wrapper.h
     state/simple_state/simple_state_wrapper.h
+    state/simple_state/simple_state_mm_wrapper.h
     mesh/flat/flat_mesh_wrapper.h
     state/flat/flat_state_wrapper.h
     PARENT_SCOPE)
@@ -93,10 +94,18 @@ if (ENABLE_UNIT_TESTS)
      SOURCES mesh/simple_mesh/test/test_simple_mesh_wrapper.cc
      LIBRARIES portage 
      POLICY SERIAL)
+     
    # Simple State wrapper
    cinch_add_unit(test_simple_state_wrapper
      SOURCES state/simple_state/test/test_simple_state_wrapper.cc
      LIBRARIES portage 
      POLICY SERIAL)
+     
+   # Simple State MMwrapper
+   cinch_add_unit(test_simple_state_mm_wrapper
+     SOURCES state/simple_state/test/test_simple_state_mm_wrapper.cc
+     LIBRARIES portage 
+     POLICY SERIAL)
+       
 endif(ENABLE_UNIT_TESTS)
 
