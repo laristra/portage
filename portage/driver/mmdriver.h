@@ -421,8 +421,16 @@ void MMDriver<Search, Intersect, Interpolate, D,
   timersub(&end_timeval, &begin_timeval, &diff_timeval);
   tot_seconds_srch = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
 
-
-
+  //DEBUG-BEGIN
+  for (auto it = target_mesh_.begin(onwhat, PARALLEL_OWNED); 
+            it != target_mesh_.end(onwhat, PARALLEL_OWNED); it++)
+  {
+    std::cout<<"tgt_cell = "<<*it<<" : candidates ";
+    for (int j = 0; j < candidates[*it].size(); j++)
+      std::cout<<candidates[*it][j]<<" ";
+    std::cout<<std::endl;
+  }
+  //DEBUG-END
   int nmats = source_state_.num_materials();
 
 #ifdef HAVE_TANGRAM
@@ -473,6 +481,33 @@ void MMDriver<Search, Intersect, Interpolate, D,
         cell_mat_centroids_full[cellids[ic]*nmats+m] = matcenvec[ic];
     }
 
+    //DEBUG-BEGIN
+    std::cout<<"CELL_MAT_IDS:FULL\n";
+    std::cout<<"mat	";
+    for (int m = 0; m < nmats; m++)
+     std::cout<<m<<"   ";  
+    std::cout<<std::endl;
+    for (int c = 0; c < nsourcecells; c++)
+    {
+      std::cout<<"cell "<<c<<"  ";
+      for (int m = 0; m < nmats; m++)
+        std::cout<<cell_mat_ids_full[c*nmats+m]<<"  ";
+      std::cout<<std::endl;
+    }
+
+    std::cout<<"CELL_MAT_VF:FULL\n";
+    std::cout<<"mat	";
+    for (int m = 0; m < nmats; m++)
+     std::cout<<m<<"   ";  
+    std::cout<<std::endl;
+    for (int c = 0; c < nsourcecells; c++)
+    {
+      std::cout<<"cell "<<c<<"  ";
+      for (int m = 0; m < nmats; m++)
+        std::cout<<cell_mat_volfracs_full[c*nmats+m]<<"  ";
+      std::cout<<std::endl;
+    }
+    //DEBUG_END
     std::vector<int> cell_mat_ids;
     std::vector<double> cell_mat_volfracs;
     std::vector<Tangram::Point<D>> cell_mat_centroids;
@@ -489,6 +524,15 @@ void MMDriver<Search, Intersect, Interpolate, D,
       }
     }
       
+    //DEBUG-BEGIN
+    std::cout<<"CELL_MAT_IDS:COMPACT\n";
+    for (int c = 0; c < cell_mat_ids.size(); c++)
+      std::cout<<cell_mat_ids[c]<<"  "<<std::endl;
+    
+    std::cout<<"CELL_MAT_VF:COMPACT\n";
+    for (int c = 0; c < cell_mat_volfracs.size(); c++)
+      std::cout<<cell_mat_volfracs[c]<<"  "<<std::endl;
+    //DEBUG_END
     interface_reconstructor->set_volume_fractions(cell_num_mats,
                                                   cell_mat_ids,
                                                   cell_mat_volfracs,
