@@ -127,6 +127,9 @@ TEST(SwarmState, basic) {
   // check creation by size alone
   SwarmState<3> state2(npoints);
   state2.add_field("d1", dbl_field1);
+  SwarmState<3>::DblVecPtr d1p2;
+  state2.get_field("d1", d1p2);
+  ASSERT_EQ(d1p2->size(), npoints);
 }
 
 
