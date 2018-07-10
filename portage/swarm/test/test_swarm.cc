@@ -17,7 +17,6 @@
 #include <memory>
 
 #include "portage/wonton/mesh/simple_mesh/simple_mesh_wrapper.h"
-#include "portage/wonton/mesh/flat/flat_mesh_wrapper.h"
 
 #include "portage/swarm/swarm.h"
 #include "portage/support/Point.h"
@@ -169,16 +168,16 @@ TEST(Swarm, Sanity_Check_3D) {
 
 
 /*!
-  @brief Unit test for constructor with Flat_Mesh_Wrapper in 3D using cells
+  @brief Unit test for constructor with Simple_Mesh_Wrapper in 3D using cells
 */
-TEST(Swarm, Build_Flat_Mesh_Wrapper_Cell) {
+TEST(Swarm, Build_Simple_Mesh_Wrapper_Cell) {
   Portage::Simple_Mesh mesh(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2, 2, 2);
   Wonton::Simple_Mesh_Wrapper mesh_wrapper(mesh);
-  Wonton::Flat_Mesh_Wrapper<double> mesh_flat;
-  mesh_flat.initialize(mesh_wrapper);
 
   // create swarm from mesh wrapper cells
-  Portage::Meshfree::Swarm<3> swarmc(mesh_flat, Portage::CELL);
+  std::shared_ptr<Portage::Meshfree::Swarm<3>> swarmc_ptr =
+    Portage::Meshfree::SwarmFactory<3,Wonton::Simple_Mesh_Wrapper>(mesh_wrapper, Portage::CELL);
+  Portage::Meshfree::Swarm<3> &swarmc(*swarmc_ptr);
 
   // test size
   ASSERT_EQ(8, swarmc.num_particles());
@@ -187,23 +186,23 @@ TEST(Swarm, Build_Flat_Mesh_Wrapper_Cell) {
   for (size_t ijk = 0; ijk < 8; ijk++) {
     auto pt = swarmc.get_particle_coordinates(ijk);
     Portage::Point<3> cent;
-    mesh_flat.cell_centroid<3>(ijk, &cent);
+    mesh_wrapper.cell_centroid<3>(ijk, &cent);
     for (int i = 0; i < 3; i++) ASSERT_TRUE(pt[i] == cent[i]);
   }
 }
 
 
 /*!
-  @brief Unit test for constructor with Flat_Mesh_Wrapper in 3D using cells
+  @brief Unit test for constructor with Simple_Mesh_Wrapper in 3D using cells
 */
-TEST(Swarm, Build_Flat_Mesh_Wrapper_Node) {
+TEST(Swarm, Build_Simple_Mesh_Wrapper_Node) {
   Portage::Simple_Mesh mesh(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2, 2, 2);
   Wonton::Simple_Mesh_Wrapper mesh_wrapper(mesh);
-  Wonton::Flat_Mesh_Wrapper<double> mesh_flat;
-  mesh_flat.initialize(mesh_wrapper);
 
   // create swarm from mesh wrapper cells
-  Portage::Meshfree::Swarm<3> swarmn(mesh_flat, Portage::NODE);
+  std::shared_ptr<Portage::Meshfree::Swarm<3>> swarmn_ptr = 
+    Portage::Meshfree::SwarmFactory<3,Wonton::Simple_Mesh_Wrapper>(mesh_wrapper, Portage::NODE);
+  Portage::Meshfree::Swarm<3> &swarmn(*swarmn_ptr);
 
   // test size
   ASSERT_EQ(27, swarmn.num_particles());
@@ -212,7 +211,7 @@ TEST(Swarm, Build_Flat_Mesh_Wrapper_Node) {
   for (size_t ijk = 0; ijk < 27; ijk++) {
     auto pt = swarmn.get_particle_coordinates(ijk);
     Portage::Point<3> node;
-    mesh_flat.node_get_coordinates(ijk, &node);
+    mesh_wrapper.node_get_coordinates(ijk, &node);
     for (int i = 0; i < 3; i++) ASSERT_TRUE(pt[i] == node[i]);
   }
 }

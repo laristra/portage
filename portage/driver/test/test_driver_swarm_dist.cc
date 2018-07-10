@@ -17,7 +17,6 @@ Please see the license file at the root of this repository, or at:
 #include "portage/support/portage.h"
 #include "portage/swarm/swarm.h"
 #include "portage/swarm/swarm_state.h"
-#include "portage/wonton/mesh/flat/flat_mesh_wrapper.h"
 #include "portage/wonton/mesh/jali/jali_mesh_wrapper.h"
 #include "portage/search/search_points_by_cells.h"
 
@@ -68,16 +67,9 @@ class DriverTest : public ::testing::Test {
     Wonton::Jali_Mesh_Wrapper jali_smesh_wrapper(*source_mesh);
     Wonton::Jali_Mesh_Wrapper jali_tmesh_wrapper(*target_mesh);
 
-    //Create flat mesh wrappers for source/target jali meshes
-    Wonton::Flat_Mesh_Wrapper<> source_mesh_flat;
-    source_mesh_flat.initialize(jali_smesh_wrapper);
-
-    Wonton::Flat_Mesh_Wrapper<> target_mesh_flat;
-    target_mesh_flat.initialize(jali_tmesh_wrapper);
-
     // Source and target swarms
-    sourceSwarm = make_shared<Portage::Meshfree::Swarm<dim>>(source_mesh_flat, Portage::Entity_kind::CELL);
-    targetSwarm = make_shared<Portage::Meshfree::Swarm<dim>>(target_mesh_flat, Portage::Entity_kind::CELL);
+    sourceSwarm = Portage::Meshfree::SwarmFactory<dim>(jali_smesh_wrapper, Portage::Entity_kind::CELL);
+    targetSwarm = Portage::Meshfree::SwarmFactory<dim>(jali_tmesh_wrapper, Portage::Entity_kind::CELL);
 
     sourceState = make_shared<Portage::Meshfree::SwarmState<dim>>(*sourceSwarm);
     targetState = make_shared<Portage::Meshfree::SwarmState<dim>>(*targetSwarm);

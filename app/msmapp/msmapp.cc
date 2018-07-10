@@ -33,7 +33,6 @@ Please see the license file at the root of this repository, or at:
 #include "portage/support/Point.h"
 #include "portage/wonton/mesh/simple_mesh/simple_mesh_wrapper.h"
 #include "portage/wonton/state/simple_state/simple_state_wrapper.h"
-#include "portage/wonton/mesh/flat/flat_mesh_wrapper.h"
 #include "portage/wonton/mesh/jali/jali_mesh_wrapper.h"
 #include "portage/wonton/state/jali/jali_state_wrapper.h"
 #include "Mesh.hh"
@@ -178,11 +177,9 @@ public:
     std::vector<double> sourceDataNode(nsrcnodes);
 
     //Create the source data for given function
-    Wonton::Flat_Mesh_Wrapper<double> sourceFlatMesh;
-    sourceFlatMesh.initialize(sourceMeshWrapper);
     for (unsigned int c = 0; c < nsrccells; ++c) {
       Portage::Point<Dimension> cen;
-      sourceFlatMesh.cell_centroid(c, &cen);
+      sourceMeshWrapper.cell_centroid(c, &cen);
       sourceData[c] = field_func<3>(controls_.example, cen);
     }
     Portage::Simple_State::vec &sourceVec(sourceState.add("celldata",
@@ -190,7 +187,7 @@ public:
     
     for (unsigned int c = 0; c < nsrcnodes; ++c) {
       Portage::Point<Dimension> cen;
-      sourceFlatMesh.node_get_coordinates(c, &cen);
+      sourceMesh->node_get_coordinates(c, &cen);
       sourceDataNode[c] = field_func<3>(controls_.example, cen);
     }
     Portage::Simple_State::vec &sourceVecNode(sourceState.add("nodedata",
@@ -275,15 +272,13 @@ public:
     Portage::Simple_State::vec &nodevecout(targetState.get("nodedata", Portage::NODE));
     Portage::Simple_State::vec &nodevecout2(targetState2.get("nodedata", Portage::NODE));
 
-    Portage::Flat_Mesh_Wrapper<double> targetFlatMesh;
-    targetFlatMesh.initialize(targetMeshWrapper);
     if (controls_.domeshmesh) {
       if (controls_.print_detail == 1) {
         std::printf("Cell Centroid-coord-1-2-3 Exact Mesh-Mesh Error Mesh-Swarm-Mesh Error\n");
       }
       for (int c = 0; c < ntarcells; ++c) {
         Portage::Point<Dimension> ccen;
-        targetFlatMesh.cell_centroid(c, &ccen);
+        targetMeshWrapper.cell_centroid(c, &ccen);
         double value = field_func<3>(controls_.example, ccen);
         double merror, serror;
         merror = cellvecout[c] - value;
@@ -307,7 +302,7 @@ public:
       totmerr = totserr = totint = 0.;
       for (int n = 0; n < ntarnodes; ++n) {
         Portage::Point<Dimension> node;
-        targetFlatMesh.node_get_coordinates(n, &node);
+        targetMesh->node_get_coordinates(n, &node);
         double value = field_func<3>(controls_.example, node);
         double merror, serror;
         merror = nodevecout[n] - value;
@@ -331,7 +326,7 @@ public:
       totmerr = totserr = 0.;
       for (int c = 0; c < ntarcells; ++c) {
         Portage::Point<Dimension> ccen;
-        targetFlatMesh.cell_centroid(c, &ccen);
+        targetMeshWrapper.cell_centroid(c, &ccen);
         double value = field_func<3>(controls_.example, ccen);
         double serror;
         serror = cellvecout2[c] - value;
@@ -364,7 +359,7 @@ public:
       totserr = 0.;
       for (int n = 0; n < ntarnodes; ++n) {
         Portage::Point<Dimension> node;
-        targetFlatMesh.node_get_coordinates(n, &node);
+        targetMesh->node_get_coordinates(n, &node);
         double value = field_func<3>(controls_.example, node);
         double serror;
         serror = nodevecout2[n] - value;
@@ -448,11 +443,9 @@ public:
     std::vector<double> sourceDataNode(nsrcnodes);
 
     //Create the source data for given function
-    Portage::Flat_Mesh_Wrapper<double> sourceFlatMesh;
-    sourceFlatMesh.initialize(sourceMeshWrapper);
     for (unsigned int c = 0; c < nsrccells; ++c) {
       Portage::Point<Dimension> cen;
-      sourceFlatMesh.cell_centroid(c, &cen);
+      sourceMeshWrapper.cell_centroid(c, &cen);
       sourceData[c] = field_func<3>(controls_.example, cen);
     }
     Jali::StateVector<double> &sourceVec(sourceState.add("celldata",
@@ -460,7 +453,7 @@ public:
     
     for (unsigned int c = 0; c < nsrcnodes; ++c) {
       Portage::Point<Dimension> cen;
-      sourceFlatMesh.node_get_coordinates(c, &cen);
+      sourceMeshWrapper.node_get_coordinates(c, &cen);
       sourceDataNode[c] = field_func<3>(controls_.example, cen);
     }
     Jali::StateVector<double> &sourceVecNode(sourceState.add("nodedata",
@@ -547,15 +540,13 @@ public:
     for (int i=0; i<ntarcells; i++) {cellvecout[i]=cvp[i]; cellvecout2[i]=cv2p[i];}
     for (int i=0; i<ntarnodes; i++) {nodevecout[i]=nvp[i]; nodevecout2[i]=nv2p[i];}
 
-    Portage::Flat_Mesh_Wrapper<double> targetFlatMesh;
-    targetFlatMesh.initialize(targetMeshWrapper);
     if (controls_.domeshmesh) {
       if (controls_.print_detail == 1) {
         std::printf("Cell Centroid-coord-1-2-3 Exact Mesh-Mesh Error Mesh-Swarm-Mesh Error\n");
       }
       for (int c = 0; c < ntarcells; ++c) {
         Portage::Point<Dimension> ccen;
-        targetFlatMesh.cell_centroid(c, &ccen);
+        targetMeshWrapper.cell_centroid(c, &ccen);
         double value = field_func<3>(controls_.example, ccen);
         double merror, serror;
         merror = cellvecout[c] - value;
@@ -579,7 +570,7 @@ public:
       totmerr = totserr = 0.;
       for (int n = 0; n < ntarnodes; ++n) {
         Portage::Point<Dimension> node;
-        targetFlatMesh.node_get_coordinates(n, &node);
+        targetMeshWrapper.node_get_coordinates(n, &node);
         double value = field_func<3>(controls_.example, node);
         double merror, serror;
         merror = nodevecout[n] - value;
@@ -603,7 +594,7 @@ public:
       totserr = totint = 0.;
       for (int c = 0; c < ntarcells; ++c) {
         Portage::Point<Dimension> ccen;
-        targetFlatMesh.cell_centroid(c, &ccen);
+        targetMeshWrapper.cell_centroid(c, &ccen);
         double value = field_func<3>(controls_.example, ccen);
         double serror;
         serror = cellvecout2[c] - value;
@@ -632,7 +623,7 @@ public:
       totserr = 0.;
       for (int n = 0; n < ntarnodes; ++n) {
         Portage::Point<Dimension> node;
-        targetFlatMesh.node_get_coordinates(n, &node);
+        targetMeshWrapper.node_get_coordinates(n, &node);
         double value = field_func<3>(controls_.example, node);
         double serror;
         serror = nodevecout2[n] - value;

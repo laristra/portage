@@ -12,8 +12,6 @@ Please see the license file at the root of this repository, or at:
 #include <string>
 #include <cassert>
 
-#include "portage/wonton/mesh/flat/flat_mesh_wrapper.h"
-#include "portage/wonton/state/flat/flat_state_wrapper.h"
 #include "portage/swarm/swarm.h"
 #include "portage/support/portage.h"
 
@@ -22,6 +20,7 @@ namespace Meshfree {
 
 using std::string;
 using std::shared_ptr;
+using std::make_shared;
 using std::map;
 using std::pair;
 
@@ -50,14 +49,11 @@ class SwarmState {
  SwarmState(Swarm<dim>& swarmin): npoints_owned_(swarmin.num_owned_particles())
     {}
 
-  /*! @brief Constructor provided a flat mesh and flat mesh state.
-   * @param mesh the mesh with which the field data are associated.
-   * @param entity entity on which to get data (e.g. CELL, NODE, etc.)
-   * @param state the field data on the mesh
+  /*! @brief Constructor provided a size.
+   * @param data_size the number of data elements
    */
-  SwarmState(Wonton::Flat_Mesh_Wrapper<double> &mesh,
-	     Portage::Entity_kind entity, 
-	     Wonton::Flat_State_Wrapper<double> &state);
+ SwarmState(size_t data_size): npoints_owned_(data_size)
+    {}
 
   /*! @brief Set an integer field on the swarm.
    * @param name the name of the integer field
@@ -145,36 +141,6 @@ class SwarmState {
 };
 
 //=======================================================================
-
-template<size_t dim>
-SwarmState<dim>::SwarmState(Wonton::Flat_Mesh_Wrapper<double> &mesh,
-                                 Portage::Entity_kind entity,
-				 Wonton::Flat_State_Wrapper<double> &state)
-  : npoints_owned_(0)
-{
-  if (dim != mesh.space_dimension()) {
-    throw std::runtime_error(string("dimension mismatch"));
-  }
-
-  if (entity==CELL) {
-    npoints_owned_ = mesh.num_owned_cells();
-  } else if (entity==NODE) {
-    npoints_owned_ = mesh.num_owned_nodes();
-  }
-
-  assert(state.get_entity_size(entity) == npoints_owned_);
-
-  std::vector<std::string> dnames;
-  state.get_names(entity, dnames);
-
-  for (auto iter=dnames.begin(); iter!=dnames.end(); iter++) {
-    double *datap;
-    state.get_data(entity, *iter, &datap);
-    DblVecPtr data = make_shared<vector<double>>(npoints_owned_);
-    for (size_t i=0; i<npoints_owned_; i++) (*data)[i] = datap[i];
-    add_field(*iter, data);
-  }
-}
 
 template<size_t dim>
 void SwarmState<dim>::add_field(const string name, IntVecPtr value) {
@@ -269,6 +235,51 @@ void SwarmState<dim>::extend_field(const string name, DblVec new_value)
 
   DblVecPtr val = dbl_field_map_.at(name);
   val->insert(val->end(), new_value.begin(), new_value.end());
+}
+
+/*! @brief SwarmState factory, given a mesh state wrapper.
+ * Copies fields from mesh state wrapper to a swarm state wrapper of the 
+ * same size.
+ * @param mesh the mesh with which the field data are associated.
+ * @param entity entity on which to get data (e.g. CELL, NODE, etc.)
+ * @param state the field data on the mesh
+ */
+template<size_t dim, class StateWrapper>
+shared_ptr<SwarmState<dim>> SwarmStateFactory(
+  StateWrapper &state,
+  const Portage::Entity_kind entity)
+{
+  // create return value
+  size_t ndata=0;
+
+  std::vector<std::string> names = state.names();
+  for (size_t i=0; i<names.size(); i++) {
+    // Simple_State does not store separte lists of names by entity, 
+    // so we have to filter.
+    if (state.get_entity(names[i]) == entity) {
+      ndata = state.get_data_size(entity, names[i]);
+      break;
+    }
+  }
+  shared_ptr<SwarmState<dim>> result=make_shared<SwarmState<dim>>(ndata);
+
+  // copy data
+  for (size_t i=0; i<names.size(); i++) {
+    std::string name = names[i];
+    if (state.get_entity(name) != entity) continue;
+
+    // make sure all fields have same size
+    assert(state.get_data_size(entity, name) == ndata);
+
+    const double *datap;
+    state.get_data(entity, name, &datap);
+    typename SwarmState<dim>::DblVecPtr data = make_shared<vector<double>>(ndata);
+    
+    for (size_t i=0; i<ndata; i++) (*data)[i] = datap[i];
+    result->add_field(name, data);
+  }
+
+  return result;
 }
 
 } //namespace MeshFree
