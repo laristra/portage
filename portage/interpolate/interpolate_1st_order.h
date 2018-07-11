@@ -4,8 +4,8 @@ Please see the license file at the root of this repository, or at:
     https://github.com/laristra/portage/blob/master/LICENSE
 */
 
-#ifndef INTERPOLATE_1ST_ORDER_H_
-#define INTERPOLATE_1ST_ORDER_H_
+#ifndef PORTAGE_INTERPOLATE_INTERPOLATE_1ST_ORDER_H_
+#define PORTAGE_INTERPOLATE_INTERPOLATE_1ST_ORDER_H_
 
 
 #include <cassert>
@@ -14,6 +14,7 @@ Please see the license file at the root of this repository, or at:
 #include <utility>
 #include <vector>
 
+#include "portage/intersect/dummy_interface_reconstructor.h"
 #include "portage/support/portage.h"
 
 
@@ -61,12 +62,41 @@ namespace Portage {
 
 */
 
-template<int D, Entity_kind on_what,
-         typename SourceMeshType, typename TargetMeshType, typename StateType>
+template<int D, 
+         Entity_kind on_what,
+         typename SourceMeshType, 
+         typename TargetMeshType, 
+         typename StateType,
+         template<class, int, class, class> class InterfaceReconstructorType =
+         DummyInterfaceReconstructor,
+         class Matpoly_Splitter = void,
+         class Matpoly_Clipper = void >
 class Interpolate_1stOrder {
+
+#ifdef HAVE_TANGRAM
+  using InterfaceReconstructor =
+      Tangram::Driver<InterfaceReconstructorType, D, SourceMeshType,
+                      Matpoly_Splitter, Matpoly_Clipper>;
+#endif
+
  public:
+
+  //Constructor with interface reconstructor
+#ifdef HAVE_TANGRAM
+  Interpolate_1stOrder(SourceMeshType const & source_mesh,
+                       TargetMeshType const & target_mesh,
+                       StateType const & source_state, 
+                       std::shared_ptr<InterfaceReconstructor> ir) :
+      source_mesh_(source_mesh),
+      target_mesh_(target_mesh),
+      source_state_(source_state),
+      interface_reconstructor_(ir),
+      interp_var_name_("VariableNameNotSet"),
+      source_vals_(nullptr) {}
+#endif 
+
   /*!
-    @brief Constructor.
+    @brief Constructor without interface reconstructor.
     @param[in] source_mesh The input mesh.
     @param[in] target_mesh The output mesh.
     @param[in] source_state The state manager for data on the input mesh.
@@ -98,7 +128,7 @@ class Interpolate_1stOrder {
 
   int set_material(int m) {
     matid_ = m;
-  }
+  } //set_material
 
   /// Set the variable name to be interpolated.
 
@@ -118,7 +148,7 @@ class Interpolate_1stOrder {
                                   &source_vals_);
     else
       source_state_.mat_get_celldata(interp_var_name, matid_, &source_vals_);
-  }
+  } //set_interpolation_variable
 
   /*!
     @brief Functor to do the actual interpolation.
@@ -151,7 +181,12 @@ class Interpolate_1stOrder {
   double const * source_vals_;
   int matid_;
   Field_type field_type_;
-};
+
+
+#ifdef HAVE_TANGRAM
+  std::shared_ptr<InterfaceReconstructor> interface_reconstructor_;
+#endif
+}; //interpolate_1st_order base
 
 
 
@@ -161,9 +196,41 @@ class Interpolate_1stOrder {
 */
 
 template<int D,
-         typename SourceMeshType, typename TargetMeshType, typename StateType>
-class Interpolate_1stOrder<D, CELL, SourceMeshType, TargetMeshType, StateType> {
+         typename SourceMeshType, 
+         typename TargetMeshType, 
+         typename StateType,
+         template<class, int, class, class> class InterfaceReconstructorType,
+         class Matpoly_Splitter,
+         class Matpoly_Clipper>
+class Interpolate_1stOrder<D, 
+                           CELL, 
+                           SourceMeshType, 
+                           TargetMeshType, 
+                           StateType,
+                           InterfaceReconstructorType,
+                           Matpoly_Splitter,
+                           Matpoly_Clipper> {
+
+#ifdef HAVE_TANGRAM
+  using InterfaceReconstructor =
+      Tangram::Driver<InterfaceReconstructorType, D, SourceMeshType,
+                      Matpoly_Splitter, Matpoly_Clipper>;
+#endif
+                            
  public:
+
+#ifdef HAVE_TANGRAM
+   Interpolate_1stOrder(SourceMeshType const & source_mesh,
+                       TargetMeshType const & target_mesh,
+                       StateType const & source_state,
+                       std::shared_ptr<InterfaceReconstructor> ir) :
+      source_mesh_(source_mesh),
+      target_mesh_(target_mesh),
+      source_state_(source_state),
+      interface_reconstructor_(ir),
+      interp_var_name_("VariableNameNotSet"),
+      source_vals_(nullptr) {}
+#endif 
   /*!
     @brief Constructor.
     @param[in] source_mesh The input mesh.
@@ -196,7 +263,7 @@ class Interpolate_1stOrder<D, CELL, SourceMeshType, TargetMeshType, StateType> {
 
   int set_material(int m) {
     matid_ = m;
-  }
+  } //set_material
 
   /// Set the variable name to be interpolated
 
@@ -217,7 +284,7 @@ class Interpolate_1stOrder<D, CELL, SourceMeshType, TargetMeshType, StateType> {
                                   &source_vals_);
     else
       source_state_.mat_get_celldata(interp_var_name, matid_, &source_vals_);
-  }
+  } //set_interpolation_variable
 
   /*!
     @brief Functor to do the actual interpolation.
@@ -235,8 +302,70 @@ class Interpolate_1stOrder<D, CELL, SourceMeshType, TargetMeshType, StateType> {
 
   */
 
-  double operator() (int const targetCellId,
-                     std::vector<Weights_t> const & sources_and_weights) const;
+  double operator() (int const targetCellID,
+                     std::vector<Weights_t> const & sources_and_weights) const
+  {
+    int nsrccells = sources_and_weights.size();
+    if (!nsrccells) {
+#ifdef DEBUG
+        std::cerr << "WARNING: No source cells contribute to target cell" <<
+          targetCellID << std::endl;
+#endif
+      return 0.0;
+    }
+
+    // contribution of the source cell is its field value weighted by
+    // its "weight" (in this case, its 0th moment/area/volume)
+  
+    double val = 0.0;
+    double wtsum0 = 0.0;
+    double vol = target_mesh_.cell_volume(targetCellID);
+
+    int nsummed = 0;
+    if (field_type_ == Field_type::MESH_FIELD) {
+      for (auto const& wt : sources_and_weights) {
+        int srccell = wt.entityID;
+        std::vector<double> pair_weights = wt.weights;
+        if (pair_weights[0]/vol < 1.0e-12) continue;  // skip small intersections
+        val += source_vals_[srccell] * pair_weights[0];
+        wtsum0 += pair_weights[0];
+        nsummed++;
+      }
+    } else if (field_type_ == Field_type::MULTIMATERIAL_FIELD) {
+      for (auto const& wt : sources_and_weights) {
+        int srccell = wt.entityID;
+        std::vector<double> pair_weights = wt.weights;
+        if (pair_weights[0]/vol < 1.0e-12) continue;  // skip small intersections
+        int matcell = source_state_.cell_index_in_material(srccell, matid_);
+        val += source_vals_[matcell] * pair_weights[0];  // 1st order
+        wtsum0 += pair_weights[0];
+        nsummed++;
+      }
+    }
+  
+    // Normalize the value by the volume of the intersection of the target cells
+    // with the source mesh. This will do the right thing for single-material
+    // and multi-material remap (conservative and constant preserving) if there
+    // is NO mismatch between source and target mesh boundaries. IF THERE IS A
+    // MISMATCH, THIS WILL PRESERVE CONSTANT VALUES BUT NOT BE CONSERVATIVE. THEN
+    // WE HAVE TO DO A SEMI-LOCAL OR GLOBAL REPAIR.
+    if (nsummed)
+      val /= wtsum0;
+    else
+      val = 0.0;
+
+#ifdef DEBUG
+    static bool first = true;
+    if (first && fabs((vol-wtsum0)/vol) > 1.0e-10) {
+      std::cerr <<
+          "WARNING: Meshes may be mismatched in the neighborhood of cell " <<
+          targetCellID << " in the target mesh (and maybe other places too)\n";
+      first = false;
+    }
+#endif
+
+    return val;
+  } //operator()
 
  private:
   SourceMeshType const & source_mesh_;
@@ -246,83 +375,12 @@ class Interpolate_1stOrder<D, CELL, SourceMeshType, TargetMeshType, StateType> {
   double const * source_vals_;
   int matid_;
   Field_type field_type_;
-};
 
-
-/*!
-  @brief 1st order interpolation operator on cells
-  @param[in] sources_and_weights Pair containing vector of contributing source
-  cells and vector of contribution weights
-*/
-
-template<int D,
-         typename SourceMeshType, typename TargetMeshType, typename StateType>
-double Interpolate_1stOrder<D, CELL, SourceMeshType, TargetMeshType,
-                            StateType> :: operator()
-    (int const targetCellID,
-     std::vector<Weights_t> const & sources_and_weights) const {
-
-  int nsrccells = sources_and_weights.size();
-  if (!nsrccells) {
-#ifdef DEBUG
-    std::cerr << "WARNING: No source cells contribute to target cell" <<
-        targetCellID << std::endl;
+#ifdef HAVE_TANGRAM
+  std::shared_ptr<InterfaceReconstructor> interface_reconstructor_;
 #endif
-    return 0.0;
-  }
+}; //interpolate_1st_order specialization for cell
 
-  // contribution of the source cell is its field value weighted by
-  // its "weight" (in this case, its 0th moment/area/volume)
-  
-  double val = 0.0;
-  double wtsum0 = 0.0;
-  double vol = target_mesh_.cell_volume(targetCellID);
-
-  int nsummed = 0;
-  if (field_type_ == Field_type::MESH_FIELD) {
-    for (auto const& wt : sources_and_weights) {
-      int srccell = wt.entityID;
-      std::vector<double> pair_weights = wt.weights;
-      if (pair_weights[0]/vol < 1.0e-12) continue;  // skip small intersections
-      val += source_vals_[srccell] * pair_weights[0];
-      wtsum0 += pair_weights[0];
-      nsummed++;
-    }
-  } else if (field_type_ == Field_type::MULTIMATERIAL_FIELD) {
-    for (auto const& wt : sources_and_weights) {
-      int srccell = wt.entityID;
-      std::vector<double> pair_weights = wt.weights;
-      if (pair_weights[0]/vol < 1.0e-12) continue;  // skip small intersections
-      int matcell = source_state_.cell_index_in_material(srccell, matid_);
-      val += source_vals_[matcell] * pair_weights[0];  // 1st order
-      wtsum0 += pair_weights[0];
-      nsummed++;
-    }
-  }
-  
-  // Normalize the value by the volume of the intersection of the target cells
-  // with the source mesh. This will do the right thing for single-material
-  // and multi-material remap (conservative and constant preserving) if there
-  // is NO mismatch between source and target mesh boundaries. IF THERE IS A
-  // MISMATCH, THIS WILL PRESERVE CONSTANT VALUES BUT NOT BE CONSERVATIVE. THEN
-  // WE HAVE TO DO A SEMI-LOCAL OR GLOBAL REPAIR.
-  if (nsummed)
-    val /= wtsum0;
-  else
-    val = 0.0;
-
-#ifdef DEBUG
-  static bool first = true;
-  if (first && fabs((vol-wtsum0)/vol) > 1.0e-10) {
-    std::cerr <<
-        "WARNING: Meshes may be mismatched in the neighborhood of cell " <<
-        targetCellID << " in the target mesh (and maybe other places too)\n";
-    first = false;
-  }
-#endif
-
-  return val;
-}
 //////////////////////////////////////////////////////////////////////////////
 
 
@@ -333,11 +391,45 @@ double Interpolate_1stOrder<D, CELL, SourceMeshType, TargetMeshType,
 */
 
 template<int D,
-         typename SourceMeshType, typename TargetMeshType, typename StateType>
-class Interpolate_1stOrder<D, NODE, SourceMeshType, TargetMeshType, StateType> {
+         typename SourceMeshType, 
+         typename TargetMeshType, 
+         typename StateType,
+         template<class, int, class, class> class InterfaceReconstructorType,
+         class Matpoly_Splitter,
+         class Matpoly_Clipper>
+class Interpolate_1stOrder<D, 
+                           NODE, 
+                           SourceMeshType, 
+                           TargetMeshType, 
+                           StateType,
+                           InterfaceReconstructorType,
+                           Matpoly_Splitter,
+                           Matpoly_Clipper> {
+
+#ifdef HAVE_TANGRAM
+  using InterfaceReconstructor =
+      Tangram::Driver<InterfaceReconstructorType, D, SourceMeshType,
+                      Matpoly_Splitter, Matpoly_Clipper>;
+#endif
+
  public:
+
+  //Constructor with interface reconstructor
+#ifdef HAVE_TANGRAM
+  Interpolate_1stOrder(SourceMeshType const & source_mesh,
+                       TargetMeshType const & target_mesh,
+                       StateType const & source_state,
+                       std::shared_ptr<InterfaceReconstructor> ir) :
+      source_mesh_(source_mesh),
+      target_mesh_(target_mesh),
+      source_state_(source_state),
+      interface_reconstructor_(ir),
+      interp_var_name_("VariableNameNotSet"),
+      source_vals_(nullptr) {}
+#endif   
+
   /*!
-    @brief Constructor.
+    @brief Constructor without interface reconstructor
     @param[in] source_mesh The input mesh.
     @param[in] target_mesh The output mesh.
     @param[in] source_state The state manager for data on the input mesh.
@@ -367,7 +459,7 @@ class Interpolate_1stOrder<D, NODE, SourceMeshType, TargetMeshType, StateType> {
 
   int set_material(int m) {
     matid_ = m;
-  }
+  } //set_material
 
   /// Set the variable name to be interpolated
 
@@ -389,7 +481,7 @@ class Interpolate_1stOrder<D, NODE, SourceMeshType, TargetMeshType, StateType> {
       source_state_.mat_get_celldata(interp_var_name, matid_, &source_vals_);
       std::cerr << "Cannot remap NODE-centered multi-material data" << "\n";
     }
-  }
+  } //set_interpolation_variable
 
   /*!
     @brief Functor to do the actual interpolation.
@@ -407,8 +499,61 @@ class Interpolate_1stOrder<D, NODE, SourceMeshType, TargetMeshType, StateType> {
 
   */
 
-  double operator() (int const targetNodeId,
-                     std::vector<Weights_t> const & sources_and_weights) const;
+  double operator() (int const targetNodeID,
+                     std::vector<Weights_t> const & sources_and_weights) const
+  {
+    if (field_type_ != Field_type::MESH_FIELD) return 0.0;
+
+    int nsrcdualcells = sources_and_weights.size();
+    if (!nsrcdualcells) {
+#ifdef DEBUG
+      std::cerr << "WARNING: No source nodes contribute to target node." <<
+          std::endl;
+#endif
+      return 0.0;
+    }
+
+    // contribution of the source node (dual cell) is its field value
+    // weighted by its "weight" (in this case, the 0th
+    // moment/area/volume of its intersection with the target dual cell)
+    double vol = target_mesh_.dual_cell_volume(targetNodeID);
+
+    double val = 0.0;
+    double wtsum0 = 0.0;
+    int nsummed = 0;
+    for (auto const& wt : sources_and_weights) {
+      int srcnode = wt.entityID;
+      std::vector<double> pair_weights = wt.weights;
+      if (pair_weights[0]/vol < 1.0e-16) continue;  // skip small intersections
+      val += source_vals_[srcnode] * pair_weights[0];  // 1st order
+      wtsum0 += pair_weights[0];
+      nsummed++;
+    }
+
+    // Normalize the value by the volume of the intersection of the target cells
+    // with the source mesh. This will do the right thing for single-material
+    // and multi-material remap (conservative and constant preserving) if there
+    // is NO mismatch between source and target mesh boundaries. IF THERE IS A
+    // MISMATCH, THIS WILL PRESERVE CONSTANT VALUES BUT NOT BE CONSERVATIVE. THEN
+    // WE HAVE TO DO A SEMI-LOCAL OR GLOBAL REPAIR.
+
+    if (nsummed)
+      val /= wtsum0;
+    else
+      val = 0.0;
+  
+#ifdef DEBUG
+    static bool first = true;
+    if (first && fabs((vol-wtsum0)/vol) > 1.0e-10) {
+      std::cerr <<
+          "WARNING: Meshes may be mismatched in the neighborhood of node " <<
+          targetNodeID << " in the target mesh (and maybe other places too)\n";
+      first = false;
+    }
+#endif
+
+    return val;
+  } //operator()
 
  private:
   SourceMeshType const & source_mesh_;
@@ -418,74 +563,15 @@ class Interpolate_1stOrder<D, NODE, SourceMeshType, TargetMeshType, StateType> {
   double const * source_vals_;
   int matid_;
   Field_type field_type_;
-};
 
-
-/*!
-  @brief 1st order interpolation operator on nodes
-*/
-
-template<int D,
-         typename SourceMeshType, typename TargetMeshType, typename StateType>
-double Interpolate_1stOrder<D, NODE, SourceMeshType, TargetMeshType,
-                            StateType> :: operator()
-    (int const targetNodeID,
-     std::vector<Weights_t> const & sources_and_weights) const {
-  if (field_type_ != Field_type::MESH_FIELD) return 0.0;
-
-  int nsrcdualcells = sources_and_weights.size();
-  if (!nsrcdualcells) {
-#ifdef DEBUG
-    std::cerr << "WARNING: No source nodes contribute to target node." <<
-        std::endl;
+#ifdef HAVE_TANGRAM
+  std::shared_ptr<InterfaceReconstructor> interface_reconstructor_;
 #endif
-    return 0.0;
-  }
+}; //interpolate_1st_order specialization for nodes
 
-  // contribution of the source node (dual cell) is its field value
-  // weighted by its "weight" (in this case, the 0th
-  // moment/area/volume of its intersection with the target dual cell)
-  double vol = target_mesh_.dual_cell_volume(targetNodeID);
-
-  double val = 0.0;
-  double wtsum0 = 0.0;
-  int nsummed = 0;
-  for (auto const& wt : sources_and_weights) {
-    int srcnode = wt.entityID;
-    std::vector<double> pair_weights = wt.weights;
-    if (pair_weights[0]/vol < 1.0e-16) continue;  // skip small intersections
-    val += source_vals_[srcnode] * pair_weights[0];  // 1st order
-    wtsum0 += pair_weights[0];
-    nsummed++;
-  }
-
-  // Normalize the value by the volume of the intersection of the target cells
-  // with the source mesh. This will do the right thing for single-material
-  // and multi-material remap (conservative and constant preserving) if there
-  // is NO mismatch between source and target mesh boundaries. IF THERE IS A
-  // MISMATCH, THIS WILL PRESERVE CONSTANT VALUES BUT NOT BE CONSERVATIVE. THEN
-  // WE HAVE TO DO A SEMI-LOCAL OR GLOBAL REPAIR.
-
-  if (nsummed)
-    val /= wtsum0;
-  else
-    val = 0.0;
-  
-#ifdef DEBUG
-  static bool first = true;
-  if (first && fabs((vol-wtsum0)/vol) > 1.0e-10) {
-    std::cerr <<
-        "WARNING: Meshes may be mismatched in the neighborhood of node " <<
-        targetNodeID << " in the target mesh (and maybe other places too)\n";
-    first = false;
-  }
-#endif
-
-  return val;
-}
 //////////////////////////////////////////////////////////////////////////////
 
 
 }  // namespace Portage
 
-#endif  // INTERPOLATE_1ST_ORDER_H_
+#endif  // PORTAGE_INTERPOLATE_INTERPOLATE_1ST_ORDER_H_

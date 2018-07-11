@@ -48,6 +48,7 @@
 #include "tangram/driver/driver.h"
 #include "tangram/reconstruct/xmof2D_wrapper.h"
 #include "tangram/reconstruct/SLIC.h"
+#include "tangram/intersect/split_r3d.h"
 #include "tangram/driver/write_to_gmv.h"
 #endif
 
@@ -541,9 +542,10 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
   // Perform interface reconstruction for pretty pictures (optional)
 
   if (dim == 2) {  // XMOF2D works only in 2D (I know, shocking!!)
+    Tangram::IterativeMethodTolerances_t tol{100, 1e-12, 1e-12};
     auto interface_reconstructor =
         std::make_shared<Tangram::Driver<Tangram::XMOF2D_Wrapper, 2,
-                                         Wonton::Jali_Mesh_Wrapper>>(sourceMeshWrapper);
+                                         Wonton::Jali_Mesh_Wrapper>>(sourceMeshWrapper, tol, true);
 
     // convert from Portage point to Tangram point
     int ncen = cell_mat_centroids.size();
@@ -702,7 +704,9 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
         Wonton::Jali_State_Wrapper,
         Wonton::Jali_Mesh_Wrapper,
         Wonton::Jali_State_Wrapper,
-        Tangram::SLIC>
+        Tangram::SLIC, 
+        Tangram::SplitR3D,
+        Tangram::ClipR3D>
           driver(sourceMeshWrapper, sourceStateWrapper,
                  targetMeshWrapper, targetStateWrapper);
       driver.set_remap_var_names(remap_fields);
@@ -717,7 +721,9 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
         Wonton::Jali_State_Wrapper,
         Wonton::Jali_Mesh_Wrapper,
         Wonton::Jali_State_Wrapper,
-        Tangram::SLIC>
+        Tangram::SLIC,
+        Tangram::SplitR3D,
+        Tangram::ClipR3D>
           driver(sourceMeshWrapper, sourceStateWrapper,
                  targetMeshWrapper, targetStateWrapper);
       driver.set_remap_var_names(remap_fields, limiter);
@@ -768,9 +774,10 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
   }
 
   if (dim == 2) {  // XMOF2D works only in 2D (I know, shocking!!)
+    Tangram::IterativeMethodTolerances_t tol{100, 1e-12, 1e-12};
     auto interface_reconstructor =
         std::make_shared<Tangram::Driver<Tangram::XMOF2D_Wrapper, 2,
-                                         Wonton::Jali_Mesh_Wrapper>>(targetMeshWrapper);
+                                         Wonton::Jali_Mesh_Wrapper>>(targetMeshWrapper,tol,true);
 
     interface_reconstructor->set_volume_fractions(target_cell_num_mats,
                                                   target_cell_mat_ids,

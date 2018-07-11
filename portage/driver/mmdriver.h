@@ -82,14 +82,19 @@ using namespace Wonton;
 */
 template <template <int, Entity_kind, class, class> class Search,
           template <Entity_kind, class, class, class,
-                    template <class, int> class> class Intersect,
-          template<int, Entity_kind, class, class, class> class Interpolate,
+          template <class, int, class, class> class, 
+          class, class> class Intersect,
+          template<int, Entity_kind, class, class, class,
+          template<class, int, class, class> class,
+          class, class> class Interpolate,
           int D,
           class SourceMesh_Wrapper,
           class SourceState_Wrapper,
           class TargetMesh_Wrapper = SourceMesh_Wrapper,
           class TargetState_Wrapper = SourceState_Wrapper,
-          template <class, int> class InterfaceReconstructorType = DummyInterfaceReconstructor>
+          template <class, int, class, class> class InterfaceReconstructorType = DummyInterfaceReconstructor,
+          class Matpoly_Splitter = void,
+          class Matpoly_Clipper = void>
 class MMDriver {
 
   // Something like this would be very helpful to users
@@ -339,19 +344,25 @@ class MMDriver {
 
 template <template <int, Entity_kind, class, class> class Search,
           template <Entity_kind, class, class, class,
-                    template <class, int> class> class Intersect,
-          template<int, Entity_kind, class, class, class> class Interpolate,
+          template <class, int, class, class> class,
+          class, class> class Intersect,
+          template<int, Entity_kind, class, class, class,
+          template<class, int, class, class> class,
+          class, class> class Interpolate,
           int D,
           class SourceMesh_Wrapper,
           class SourceState_Wrapper,
           class TargetMesh_Wrapper,
           class TargetState_Wrapper,
-          template <class, int> class InterfaceReconstructorType>
+          template <class, int, class, class> class InterfaceReconstructorType,
+          class Matpoly_Splitter,
+          class Matpoly_Clipper>
 template<Entity_kind onwhat>
 void MMDriver<Search, Intersect, Interpolate, D,
               SourceMesh_Wrapper, SourceState_Wrapper,
               TargetMesh_Wrapper, TargetState_Wrapper,
-              InterfaceReconstructorType
+              InterfaceReconstructorType, Matpoly_Splitter,
+              Matpoly_Clipper
             >::remap(std::vector<std::string> const &src_varnames,
                      std::vector<std::string> const &trg_varnames) {
 
@@ -410,21 +421,22 @@ void MMDriver<Search, Intersect, Interpolate, D,
   timersub(&end_timeval, &begin_timeval, &diff_timeval);
   tot_seconds_srch = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
 
-
-
   int nmats = source_state_.num_materials();
 
 #ifdef HAVE_TANGRAM
   // Call interface reconstruction only if we got a method from the
   // calling app
-  
+  Tangram::IterativeMethodTolerances_t tol{200, 1e-12, 1e-12}; 
+ 
   auto interface_reconstructor =
       std::make_shared<Tangram::Driver<InterfaceReconstructorType, D,
-                                       SourceMesh_Wrapper>
-                       >(source_mesh_);
+                                       SourceMesh_Wrapper,
+                                       Matpoly_Splitter,
+                                       Matpoly_Clipper>
+                       >(source_mesh_, tol, true);
     
-  if (typeid(InterfaceReconstructorType<SourceMesh_Wrapper, D>) !=
-      typeid(DummyInterfaceReconstructor<SourceMesh_Wrapper, D>)) {
+  if (typeid(InterfaceReconstructorType<SourceMesh_Wrapper, D, Matpoly_Splitter, Matpoly_Clipper >) !=
+      typeid(DummyInterfaceReconstructor<SourceMesh_Wrapper, D, Matpoly_Splitter, Matpoly_Clipper>)) {
     
     int nsourcecells = source_mesh_.num_entities(CELL, ALL);
 
@@ -488,22 +500,30 @@ void MMDriver<Search, Intersect, Interpolate, D,
   // interface reconstructor so that it can retrieve pure material polygons
 
   Intersect<onwhat, SourceMesh_Wrapper, SourceState_Wrapper,
-            TargetMesh_Wrapper, InterfaceReconstructorType>
+            TargetMesh_Wrapper, InterfaceReconstructorType, 
+            Matpoly_Splitter, Matpoly_Clipper>
       intersect(source_mesh_, source_state_, target_mesh_,
                 interface_reconstructor);
 
+  // Get an instance of the desired interpolate algorithm type
+  Interpolate<D, onwhat, SourceMesh_Wrapper, TargetMesh_Wrapper,
+              SourceState_Wrapper, InterfaceReconstructorType,
+              Matpoly_Splitter, Matpoly_Clipper>
+      interpolate(source_mesh_, target_mesh_, source_state_, 
+                  interface_reconstructor);
 #else
 
   Intersect<onwhat, SourceMesh_Wrapper, SourceState_Wrapper,
-            TargetMesh_Wrapper, DummyInterfaceReconstructor>
+            TargetMesh_Wrapper, DummyInterfaceReconstructor,
+            void, void>
       intersect(source_mesh_, source_state_, target_mesh_);
-
-#endif  // HAVE_TANGRAM
 
   // Get an instance of the desired interpolate algorithm type
   Interpolate<D, onwhat, SourceMesh_Wrapper, TargetMesh_Wrapper,
-              SourceState_Wrapper>
+              SourceState_Wrapper, DummyInterfaceReconstructor,
+              void, void>
       interpolate(source_mesh_, target_mesh_, source_state_);
+#endif  // HAVE_TANGRAM
 
   
   //--------------------------------------------------------------------
@@ -780,19 +800,25 @@ void MMDriver<Search, Intersect, Interpolate, D,
 
 template <template <int, Entity_kind, class, class> class Search,
           template <Entity_kind, class, class, class,
-                    template <class, int> class> class Intersect,
-          template<int, Entity_kind, class, class, class> class Interpolate,
+          template <class, int, class, class> class,
+          class, class> class Intersect,
+          template<int, Entity_kind, class, class, class,
+          template<class, int, class, class> class,
+          class, class> class Interpolate,
           int D,
           class SourceMesh_Wrapper,
           class SourceState_Wrapper,
           class TargetMesh_Wrapper,
           class TargetState_Wrapper,
-          template <class, int> class InterfaceReconstructorType>
+          template <class, int, class, class> class InterfaceReconstructorType,
+          class Matpoly_Splitter,
+          class Matpoly_Clipper>
 template<Entity_kind onwhat>
 void MMDriver<Search, Intersect, Interpolate, D,
               SourceMesh_Wrapper, SourceState_Wrapper,
               TargetMesh_Wrapper, TargetState_Wrapper,
-              InterfaceReconstructorType
+              InterfaceReconstructorType, Matpoly_Splitter, 
+              Matpoly_Clipper
               >::remap_distributed(std::vector<std::string> const &src_varnames,
                                    std::vector<std::string> const &trg_varnames) {
 
@@ -915,6 +941,7 @@ void MMDriver<Search, Intersect, Interpolate, D,
   timersub(&end_timeval, &begin_timeval, &diff_timeval);
   tot_seconds_xsect = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
 
+  ///////// UNCOMMENT WHEN WE ENABLE PARALLEL INTERFACE RECONSTRUCTION
   // INTERPOLATE (one variable at a time)
 
   gettimeofday(&begin_timeval, 0);
@@ -925,10 +952,17 @@ void MMDriver<Search, Intersect, Interpolate, D,
         " to remap is " << nvars << std::endl;
 
   // Get an instance of the desired interpolate algorithm type
-  Interpolate<D, onwhat, Flat_Mesh_Wrapper<>, TargetMesh_Wrapper,
-              Flat_State_Wrapper<>>
-      interpolate(source_mesh_flat, target_mesh_, source_state_flat);
-
+#ifdef HAVE_TANGRAM
+  //Interpolate<D, onwhat, Flat_Mesh_Wrapper<>, TargetMesh_Wrapper,
+ //             Flat_State_Wrapper<>, InterfaceReconstructorType>
+ //     interpolate(source_mesh_flat, target_mesh_, source_state_flat,
+ //                 interface_reconstructor);
+#else
+ //  Interpolate<D, onwhat, Flat_Mesh_Wrapper<>, TargetMesh_Wrapper,
+ //             Flat_State_Wrapper<>, DummyInterfaceReconstructor>
+ //     interpolate(source_mesh_flat, target_mesh_, source_state_flat);
+#endif
+/*
   for (int i = 0; i < nvars; ++i) {
     interpolate.set_interpolation_variable(src_varnames[i],
                                            limiters_[i]);
@@ -944,7 +978,7 @@ void MMDriver<Search, Intersect, Interpolate, D,
                        source_ents_and_weights.begin(),
                        target_field, interpolate);
   }
-
+*/
   gettimeofday(&end_timeval, 0);
   timersub(&end_timeval, &begin_timeval, &diff_timeval);
   tot_seconds_interp = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;

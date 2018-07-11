@@ -79,9 +79,11 @@ The available intersectors for meshes are:
   the [Clipper](www.angusj.com/delphi/clipper.php) library for polygon
   intersection and clipping
 - Portage::IntersectR2D - 2d, fast, exact polygonal intersection
-  method based on the [r3d](https://github.com/laristra/r3d) library.
+  method based on the [r3d](https://github.com/laristra/r3d, 
+  https://github.com/devonmpowell/r3d.git(commit d6799a58)) library.
 - Portage::IntersectR3D - 3d, fast, exact polyhedral intersection
-  method based on the [r3d](https://github.com/laristra/r3d) library.
+  method based on the [r3d](https://github.com/laristra/r3d,
+  https://github.com/devonmpowell/r3d.git(commit d6799a58)) library.
 
 For particles, this step is referred to as _accumulation_.  The
 distinction in terminology stems from the fact that for particles,

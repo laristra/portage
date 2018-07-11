@@ -50,13 +50,16 @@ namespace Portage {
 
 template <Entity_kind on_what, class SourceMeshType,
           class SourceStateType, class TargetMeshType,
-          template <class, int> class InterfaceReconstructorType =
-          DummyInterfaceReconstructor>
+          template <class, int, class, class> class InterfaceReconstructorType =
+          DummyInterfaceReconstructor,
+          class Matpoly_Splitter = void,
+          class Matpoly_Clipper = void>
 class IntersectR3D {
 
 #ifdef HAVE_TANGRAM
   using InterfaceReconstructor3D =
-      Tangram::Driver<InterfaceReconstructorType, 3, SourceMeshType>;
+      Tangram::Driver<InterfaceReconstructorType, 3, SourceMeshType, 
+                      Matpoly_Splitter, Matpoly_Clipper>;
 #endif
 
  public:
@@ -123,13 +126,16 @@ class IntersectR3D {
 
 template <class SourceMeshType, class SourceStateType,
           class TargetMeshType,
-          template <class, int> class InterfaceReconstructorType>
+          template <class, int, class, class> class InterfaceReconstructorType,
+          class Matpoly_Splitter, class Matpoly_Clipper>
 class IntersectR3D<CELL, SourceMeshType, SourceStateType, TargetMeshType,
-                   InterfaceReconstructorType> {
+                   InterfaceReconstructorType,
+                   Matpoly_Splitter, Matpoly_Clipper> {
   
 #ifdef HAVE_TANGRAM
   using InterfaceReconstructor3D =
-      Tangram::Driver<InterfaceReconstructorType, 3, SourceMeshType>;
+      Tangram::Driver<InterfaceReconstructorType, 3, SourceMeshType,
+                      Matpoly_Splitter, Matpoly_Clipper>;
 #endif
 
  public:
@@ -216,7 +222,7 @@ class IntersectR3D<CELL, SourceMeshType, SourceStateType, TargetMeshType,
         std::vector<Tangram::MatPoly<3>> matpolys =
             cellmatpoly.get_matpolys(matid_);
 
-        for (int j = 0; j < 4; j++) this_wt.weights[j] = 0.0;
+        this_wt.weights.resize(4,0.0);
         for (int j = 0; j < matpolys.size(); j++) {
           facetedpoly_t srcpoly = get_faceted_matpoly(matpolys[j]);
 
@@ -234,7 +240,6 @@ class IntersectR3D<CELL, SourceMeshType, SourceStateType, TargetMeshType,
       
       this_wt.weights = intersect_polys_r3d(srcpoly, target_tet_coords);      
 #endif
-      
       // Increment if vol of intersection > 0; otherwise, allow overwrite
       if (this_wt.weights.size() && this_wt.weights[0] > 0.0)
         ninserted++;
@@ -267,13 +272,16 @@ class IntersectR3D<CELL, SourceMeshType, SourceStateType, TargetMeshType,
 
 template <class SourceMeshType, class SourceStateType,
           class TargetMeshType,
-          template <class, int> class InterfaceReconstructorType>
+          template <class, int, class, class> class InterfaceReconstructorType,
+          class Matpoly_Splitter, class Matpoly_Clipper>
 class IntersectR3D<NODE, SourceMeshType, SourceStateType, TargetMeshType,
-                   InterfaceReconstructorType> {
+                   InterfaceReconstructorType,
+                   Matpoly_Splitter, Matpoly_Clipper> {
 
 #ifdef HAVE_TANGRAM
   using InterfaceReconstructor3D =
-      Tangram::Driver<InterfaceReconstructorType, 3, SourceMeshType>;
+      Tangram::Driver<InterfaceReconstructorType, 3, SourceMeshType,
+                      Matpoly_Splitter, Matpoly_Clipper>;
 #endif
 
  public:

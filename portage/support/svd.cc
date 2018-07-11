@@ -19,6 +19,9 @@ Please see the license file at the root of this repository, or at:
  *   v = returns the right orthogonal transformation matrix
 */
 
+#ifndef PORTAGE_SUPPORT_SVD_H_
+#define PORTAGE_SUPPORT_SVD_H_
+
 #include "portage/support/svd.h"
 
 #include <stdio.h>
@@ -353,3 +356,4 @@ void svd_solve(const std::vector<std::vector<double> > & u, const std::vector<do
 
 }  // namespace Portage
 
+#endif
