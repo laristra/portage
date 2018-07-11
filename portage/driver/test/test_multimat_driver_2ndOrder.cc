@@ -18,7 +18,7 @@ Please see the license file at the root of this repository, or at:
 #include "tangram/intersect/split_r3d.h"
 #include "tangram/reconstruct/xmof2D_wrapper.h"
 #include "tangram/reconstruct/SLIC.h"
-#include "tangram/reconstruct/VOF.h"
+#include "tangram/reconstruct/MOF.h"
 #include "tangram/driver/driver.h"
 #include "tangram/driver/write_to_gmv.h"
 
@@ -406,20 +406,6 @@ TEST(MMDriver, ThreeMat2D) {
 
 }  // unittest
 
-/* 
- * THE FOLLOWING 3D TEST IS COMMENTED OUT TEMPORARILY
- * AND SHOULD BE UNCOMMENTED WHEN BUILDS OF LATEST
- * TANGRAM ARE AVAILABLE ON NECESSARY PLATFORMS. 
- *
- * NOTE: Currently, the test returns exact remapped
- * values for the linear density profile with VOF 
- * interface reconstructor. However, it does not 
- * return the centroid's on the target mesh exactly. 
- * This needs to checked more thoroughly against a 
- * better interface reconstruction algorithm such as
- * MOF.  
- * */
-/*
 TEST(MMDriver, ThreeMat3D) {
   // Source and target meshes
   std::shared_ptr<Jali::Mesh> sourceMesh;
@@ -610,7 +596,7 @@ TEST(MMDriver, ThreeMat3D) {
                     3,
                     Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
                     Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
-                    Tangram::VOF, Tangram::SplitR3D, Tangram::ClipR3D>
+                    Tangram::MOF, Tangram::SplitR3D, Tangram::ClipR3D>
       d(sourceMeshWrapper, sourceStateWrapper,
         targetMeshWrapper, targetStateWrapper);
   d.set_remap_var_names(remap_fields);
@@ -711,18 +697,14 @@ TEST(MMDriver, ThreeMat3D) {
     
     for (int ic = 0; ic < nmatcells; ic++)
       for (int d = 0; d < 3; d++)
-        std::cerr <<"target cell "<<matcells_remap[m][ic]<< "::centroid_computed = "<<matcen_remap[ic][d]
-                <<", centroid_exact = "<<matcen_trg[m][ic][d]<<std::endl;
-      //  ASSERT_NEAR(matcen_trg[m][ic][d], matcen_remap[ic][d], 1.0e-12);
-    
+        ASSERT_NEAR(matcen_trg[m][ic][d], matcen_remap[ic][d], 1.0e-12);
+      
     double const *density_remap;
     targetStateWrapper.mat_get_celldata("density", m, &density_remap);
 
-    for (int ic = 0; ic < nmatcells; ic++){
-      std::cerr <<"target cell "<<matcells_remap[m][ic]<< "::rho_computed = "<<density_remap[ic]
-                <<", rho_exact = "<<matrho_trg[m][ic]<<std::endl;
+    for (int ic = 0; ic < nmatcells; ic++)
       ASSERT_NEAR(matrho_trg[m][ic], density_remap[ic], 1.0e-12);
-    }
+    
     std::cerr << "Number of cells in material " << m << " is " << nmatcells << "\n";
     std::cerr << "Material " << m << " cell ids, volume fractions, centroids:"
               << "\n";
@@ -795,6 +777,5 @@ TEST(MMDriver, ThreeMat3D) {
   }
 
 }  // unittest
-*/
 
 #endif  // ifdef have_tangram

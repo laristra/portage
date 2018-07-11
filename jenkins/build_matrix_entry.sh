@@ -32,7 +32,7 @@ fi
 # set modules and install paths
 
 jali_version=1.0.0
-tangram_version=0b1d2113a96
+tangram_version=77c86b58974
 xmof2d_version=529f2dcdbe4
 lapack_version=3.8.0
  
