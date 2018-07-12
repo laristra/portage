@@ -226,31 +226,40 @@ class MMDriver {
   }
 
 
+
   /*!
-    @brief remap for a given set of variables on a given entity kind
+    @brief remap for a given set of MESH and MATERIAL variables on a given entity kind
     @tparam entity_kind  Kind of entity that variables live on
-    @param source_remap_var_names  names of remap variables on source mesh (MUST ALL BE DEFINED ON THE SAME Entity_kind - NODE, CELL)
-    @param target_remap_var_names  names of remap variables on target mesh (MUST ALL BE DEFINED ON THE SAME Entity_kind - NODE, CELL)
+    @param source_meshvar_names  names of remap variables on source mesh
+    @param target_meshvar_names  names of remap variables on target mesh
+    @param source_matvar_names  names of remap variables on materials of source mesh
+    @param target_matvar_names  names of remap variables on materials of target mesh
   */
 
   template<Entity_kind onwhat>
-  void remap(std::vector<std::string> const &source_var_names,
-             std::vector<std::string> const &target_var_names);
+  void remap(std::vector<std::string> const &source_meshvar_names,
+             std::vector<std::string> const &target_meshvar_names,
+             std::vector<std::string> const &source_matvar_names,
+             std::vector<std::string> const &target_matvar_names);
 
 #ifdef ENABLE_MPI
   /*!
     @brief remap for a given set of variables on a given entity kind in a distributed setting with redistribution of data if needed
     @tparam entity_kind  Kind of entity that variables live on
-    @param source_remap_var_names  names of remap variables on source mesh (MUST ALL BE DEFINED ON THE SAME Entity_kind - NODE, CELL)
-    @param target_remap_var_names  names of remap variables on target mesh (MUST ALL BE DEFINED ON THE SAME Entity_kind - NODE, CELL)
+    @param source_meshvar_names  names of remap variables on source mesh
+    @param target_meshvar_names  names of remap variables on target mesh
+    @param source_matvar_names  names of remap variables on materials of source mesh
+    @param target_matvar_names  names of remap variables on materials of target mesh
   */
 
   template<Entity_kind onwhat>
-  void remap_distributed(std::vector<std::string> const &source_var_names,
-                         std::vector<std::string> const &target_var_names);
+  void remap_distributed(std::vector<std::string> const &source_meshvar_names,
+                         std::vector<std::string> const &target_meshvar_names,
+                         std::vector<std::string> const &source_matvar_names,
+                         std::vector<std::string> const &target_matvar_names);
 #endif
 
-
+  
 
   /*!
     @brief Execute the remapping process
@@ -281,52 +290,92 @@ class MMDriver {
 
     int nvars = source_remap_var_names_.size();
 
+
+    std::vector<std::string> src_meshvar_names, src_matvar_names;
+    std::vector<std::string> trg_meshvar_names, trg_matvar_names;
+    
+
+    // -------- CELL VARIABLE REMAP ---------
     // Collect all cell based variables and remap them
 
-    std::vector<std::string> source_cellvar_names;
-    std::vector<std::string> target_cellvar_names;
     for (int i = 0; i < nvars; ++i) {
       Entity_kind onwhat = source_state_.get_entity(source_remap_var_names_[i]);
       if (onwhat == CELL) {
-        source_cellvar_names.emplace_back(source_remap_var_names_[i]);
-        target_cellvar_names.emplace_back(target_remap_var_names_[i]);
+        // Separate out mesh fields and multi-material fields - they will be
+        // processed differently
+
+        int nnames = source_remap_var_names_.size();
+        for (int i = 0; i < nnames; i++) {
+          std::string& srcvarname = source_remap_var_names_[i];
+          std::string& trgvarname = target_remap_var_names_[i];
+
+          Field_type ftype = source_state_.field_type(onwhat, srcvarname);
+
+          if (ftype == Field_type::MESH_FIELD) {
+            src_meshvar_names.push_back(srcvarname);
+            trg_meshvar_names.push_back(trgvarname);
+          } else if (ftype == Field_type::MULTIMATERIAL_FIELD) {
+            src_matvar_names.push_back(srcvarname);
+            trg_matvar_names.push_back(trgvarname);
+          }
+        }
       }
     }
 
-    // Always call because we may have to remap only material volume
-    // fractions and centroids
+    // ALWAYS call because we may have to remap material volume
+    // fractions and centroids which are cell-based fields
     
 #ifdef ENABLE_MPI
     if (distributed)
-      remap_distributed<CELL>(source_cellvar_names, target_cellvar_names);
+      remap_distributed<CELL>(src_meshvar_names, trg_meshvar_names,
+                              src_matvar_names, trg_matvar_names);
     else
 #endif
-      remap<CELL>(source_cellvar_names, target_cellvar_names);
+      remap<CELL>(src_meshvar_names, trg_meshvar_names,
+                  src_matvar_names, trg_matvar_names);
 
 
+
+    // -------- NODE VARIABLE REMAP ---------
     // Collect all node based variables and remap them
+    // (ignore any multi-material variables on NODES - not well defined)
 
-    std::vector<std::string> source_nodevar_names;
-    std::vector<std::string> target_nodevar_names;
-
+    src_meshvar_names.clear(); src_matvar_names.clear();
+    trg_meshvar_names.clear(); trg_matvar_names.clear();
+    
     for (int i = 0; i < nvars; ++i) {
       Entity_kind onwhat = source_state_.get_entity(source_remap_var_names_[i]);
       if (onwhat == NODE) {
-        source_nodevar_names.emplace_back(source_remap_var_names_[i]);
-        target_nodevar_names.emplace_back(target_remap_var_names_[i]);
+        int nnames = source_remap_var_names_.size();
+        for (int i = 0; i < nnames; i++) {
+          std::string& srcvarname = source_remap_var_names_[i];
+          std::string& trgvarname = target_remap_var_names_[i];
+
+          Field_type ftype = source_state_.field_type(onwhat, srcvarname);
+
+          if (ftype == Field_type::MESH_FIELD) {
+            src_meshvar_names.push_back(srcvarname);
+            trg_meshvar_names.push_back(trgvarname);
+          } else if (ftype == Field_type::MULTIMATERIAL_FIELD)
+            std::cerr << "Cannot handle multi-material fields on nodes\n";
+        }
       }
     }
 
-    if (source_nodevar_names.size()) {
+    if (src_meshvar_names.size()) {
 #ifdef ENABLE_MPI
       if (distributed)
-        remap_distributed<NODE>(source_nodevar_names, target_nodevar_names);
+        remap_distributed<NODE>(src_meshvar_names, trg_meshvar_names,
+                                src_matvar_names, trg_matvar_names);
       else
 #endif
-        remap<NODE>(source_nodevar_names, target_nodevar_names);
+        remap<NODE>(src_matvar_names, trg_matvar_names,
+                    src_matvar_names, trg_matvar_names);
     }
   }  // run
 
+
+  
  private:
   SourceMesh_Wrapper const& source_mesh_;
   TargetMesh_Wrapper const& target_mesh_;
@@ -336,6 +385,16 @@ class MMDriver {
   std::vector<std::string> target_remap_var_names_;
   std::vector<LimiterType> limiters_;
   unsigned int dim_;
+
+  // Convert volume fraction and centroid data from compact
+  // material-centric to compact cell-centric (ccc) form as needed by
+  // Tangram
+
+  void ccc_vfcen_data(std::vector<int>& cell_num_mats,
+                      std::vector<int>& cell_mat_ids,
+                      std::vector<double>& cell_matvolfracs,
+                      std::vector<Tangram::Point<D>>& cell_mat_centroids);
+  
 };  // class MMDriver
 
 
@@ -363,8 +422,10 @@ void MMDriver<Search, Intersect, Interpolate, D,
               TargetMesh_Wrapper, TargetState_Wrapper,
               InterfaceReconstructorType, Matpoly_Splitter,
               Matpoly_Clipper
-            >::remap(std::vector<std::string> const &src_varnames,
-                     std::vector<std::string> const &trg_varnames) {
+            >::remap(std::vector<std::string> const &src_meshvar_names,
+                     std::vector<std::string> const &trg_meshvar_names,
+                     std::vector<std::string> const &src_matvar_names,
+                     std::vector<std::string> const &trg_matvar_names) {
 
   static_assert(onwhat == NODE || onwhat == CELL,
                 "Remap implemented only for CELL and NODE variables");
@@ -384,22 +445,6 @@ void MMDriver<Search, Intersect, Interpolate, D,
   float tot_seconds = 0.0, tot_seconds_srch = 0.0,
       tot_seconds_xsect = 0.0, tot_seconds_interp = 0.0;
   struct timeval begin_timeval, end_timeval, diff_timeval;
-
-  // Separate out mesh fields and multi-material fields - they will be
-  // processed differently
-
-  std::vector<std::string> src_meshvarnames, src_matvarnames;
-  std::vector<std::string> trg_meshvarnames, trg_matvarnames;
-  int nnames = src_varnames.size();
-  for (int i = 0; i < nnames; i++) {
-    if (source_state_.field_type(onwhat, src_varnames[i]) == Field_type::MESH_FIELD) {
-      src_meshvarnames.push_back(src_varnames[i]);
-      trg_meshvarnames.push_back(trg_varnames[i]);
-    } else if (source_state_.field_type(onwhat, src_varnames[i]) == Field_type::MULTIMATERIAL_FIELD) {
-      src_matvarnames.push_back(src_varnames[i]);
-      trg_matvarnames.push_back(trg_varnames[i]);
-    }
-  }
 
 
   
@@ -435,57 +480,23 @@ void MMDriver<Search, Intersect, Interpolate, D,
                                        Matpoly_Clipper>
                        >(source_mesh_, tol, true);
     
-  if (typeid(InterfaceReconstructorType<SourceMesh_Wrapper, D, Matpoly_Splitter, Matpoly_Clipper >) !=
-      typeid(DummyInterfaceReconstructor<SourceMesh_Wrapper, D, Matpoly_Splitter, Matpoly_Clipper>)) {
+  if (typeid(InterfaceReconstructorType<SourceMesh_Wrapper, D,
+             Matpoly_Splitter, Matpoly_Clipper >) !=
+      typeid(DummyInterfaceReconstructor<SourceMesh_Wrapper, D,
+             Matpoly_Splitter, Matpoly_Clipper>)) {
     
     int nsourcecells = source_mesh_.num_entities(CELL, ALL);
 
-    // XMOF seems to want things in compact cell centric form - first build 
-    // full arrays and then compact
-
-    std::vector<int> cell_num_mats(nsourcecells, 0);
-    std::vector<int> cell_mat_ids_full(nsourcecells*nmats, -1);
-    std::vector<double> cell_mat_volfracs_full(nsourcecells*nmats, 0.0);
-    std::vector<Tangram::Point<D>> cell_mat_centroids_full(nsourcecells*nmats);
-  
-    int nvals = 0;
-    for (int m = 0; m < nmats; m++) {
-      std::vector<int> cellids;
-      source_state_.mat_get_cells(m, &cellids);
-      for (int ic = 0; ic < cellids.size(); ic++) {
-        int c = cellids[ic];
-        int nmatc = cell_num_mats[c];
-        cell_mat_ids_full[c*nmats+nmatc] = m;
-        cell_num_mats[c]++;
-      }
-      nvals += cellids.size();
-  
-      double const * matfracptr;
-      source_state_.mat_get_celldata("mat_volfracs", m, &matfracptr);
-      for (int ic = 0; ic < cellids.size(); ic++)
-        cell_mat_volfracs_full[cellids[ic]*nmats+m] = matfracptr[ic];
-
-      Portage::Point<D> const *matcenvec;
-      source_state_.mat_get_celldata("mat_centroids", m, &matcenvec);
-      for (int ic = 0; ic < cellids.size(); ic++)
-        cell_mat_centroids_full[cellids[ic]*nmats+m] = matcenvec[ic];
-    }
-
+    std::vector<int> cell_num_mats;
     std::vector<int> cell_mat_ids;
     std::vector<double> cell_mat_volfracs;
     std::vector<Tangram::Point<D>> cell_mat_centroids;
-    cell_mat_ids.reserve(nvals);
-    cell_mat_volfracs.reserve(nvals);
-    cell_mat_centroids.reserve(nvals);
 
-    for (int c = 0; c < nsourcecells; c++) {
-      for (int m = 0; m < cell_num_mats[c]; m++) {
-        int matid = cell_mat_ids_full[c*nmats+m];
-        cell_mat_ids.push_back(matid);
-        cell_mat_volfracs.push_back(cell_mat_volfracs_full[c*nmats+matid]);
-        cell_mat_centroids.push_back(cell_mat_centroids_full[c*nmats+matid]);
-      }
-    }
+    // Extract volume fraction and centroid data for cells in compact
+    // cell-centric form (ccc)
+
+    ccc_vfcen_data(cell_num_mats, cell_mat_ids, cell_mat_volfracs,
+                   cell_mat_centroids);
       
     interface_reconstructor->set_volume_fractions(cell_num_mats,
                                                   cell_mat_ids,
@@ -557,20 +568,20 @@ void MMDriver<Search, Intersect, Interpolate, D,
 
   gettimeofday(&begin_timeval, 0);
   
-  int nvars = src_meshvarnames.size();
+  int nvars = src_meshvar_names.size();
   if (comm_rank == 0)
     std::cout << "Number of mesh variables on entity kind " << onwhat <<
         " to remap is " << nvars << std::endl;
   
   for (int i = 0; i < nvars; ++i) {
-    interpolate.set_interpolation_variable(src_meshvarnames[i], limiters_[i]);
+    interpolate.set_interpolation_variable(src_meshvar_names[i], limiters_[i]);
     
     // Get a handle to a memory location where the target state
     // would like us to write this material variable into. If it is
     // NULL, we allocate it ourself
     
     double *target_field_raw;
-    target_state_.mesh_get_data(onwhat, trg_meshvarnames[i], &target_field_raw);
+    target_state_.mesh_get_data(onwhat, trg_meshvar_names[i], &target_field_raw);
     assert (target_field_raw != nullptr);
     
     
@@ -738,7 +749,7 @@ void MMDriver<Search, Intersect, Interpolate, D,
 
     gettimeofday(&begin_timeval, 0);
 
-    int nmatvars = src_matvarnames.size();
+    int nmatvars = src_matvar_names.size();
     if (comm_rank == 0)
       std::cout << "Number of multi-material variables on entity kind " <<
           onwhat << " to remap is " << nmatvars << std::endl;
@@ -748,14 +759,14 @@ void MMDriver<Search, Intersect, Interpolate, D,
                                     // to grab from the source state
 
     for (int i = 0; i < nmatvars; ++i) {
-      interpolate.set_interpolation_variable(src_matvarnames[i], limiters_[i]);
+      interpolate.set_interpolation_variable(src_matvar_names[i], limiters_[i]);
 
       // Get a handle to a memory location where the target state
       // would like us to write this material variable into. If it is
       // NULL, we allocate it ourself
 
       double *target_field_raw;
-      target_state_.mat_get_celldata(trg_matvarnames[i], m, &target_field_raw);
+      target_state_.mat_get_celldata(trg_matvar_names[i], m, &target_field_raw);
       assert (target_field_raw != nullptr);
 
 
@@ -771,7 +782,7 @@ void MMDriver<Search, Intersect, Interpolate, D,
       // call. If the storage format is different, however, it may
       // have to copy the values into their proper locations
 
-      target_state_.mat_add_celldata(trg_matvarnames[i], m, target_field_raw);
+      target_state_.mat_add_celldata(trg_matvar_names[i], m, target_field_raw);
     }  // nmatvars
 
     gettimeofday(&end_timeval, 0);
@@ -819,8 +830,10 @@ void MMDriver<Search, Intersect, Interpolate, D,
               TargetMesh_Wrapper, TargetState_Wrapper,
               InterfaceReconstructorType, Matpoly_Splitter, 
               Matpoly_Clipper
-              >::remap_distributed(std::vector<std::string> const &src_varnames,
-                                   std::vector<std::string> const &trg_varnames) {
+              >::remap_distributed(std::vector<std::string> const &src_meshvar_names,
+                                   std::vector<std::string> const &trg_meshvar_names,
+                                   std::vector<std::string> const &src_matvar_names,
+                                   std::vector<std::string> const &trg_matvar_names) {
 
   static_assert(onwhat == NODE || onwhat == CELL,
                 "Remap implemented only for CELL and NODE variables");
@@ -946,7 +959,7 @@ void MMDriver<Search, Intersect, Interpolate, D,
 
   gettimeofday(&begin_timeval, 0);
 
-  int nvars = src_varnames.size();
+  int nvars = src_meshvar_names.size();
   if (comm_rank == 0)
     std::cout << "Number of variables on entity kind " << onwhat <<
         " to remap is " << nvars << std::endl;
@@ -995,6 +1008,93 @@ void MMDriver<Search, Intersect, Interpolate, D,
       tot_seconds_interp << std::endl;
 }
 #endif  // ENABLE_MPI
+
+
+// Convert volume fraction and centroid data from compact
+// material-centric to compact cell-centric (ccc) form as needed by
+// Tangram
+
+template <template <int, Entity_kind, class, class> class Search,
+          template <Entity_kind, class, class, class,
+          template <class, int, class, class> class, 
+          class, class> class Intersect,
+          template<int, Entity_kind, class, class, class,
+          template<class, int, class, class> class,
+          class, class> class Interpolate,
+          int D,
+          class SourceMesh_Wrapper,
+          class SourceState_Wrapper,
+          class TargetMesh_Wrapper,
+          class TargetState_Wrapper,
+          template <class, int, class, class> class InterfaceReconstructorType,
+          class Matpoly_Splitter,
+          class Matpoly_Clipper>
+void
+MMDriver<Search, Intersect, Interpolate, D,
+         SourceMesh_Wrapper, SourceState_Wrapper,
+         TargetMesh_Wrapper, TargetState_Wrapper,
+         InterfaceReconstructorType, Matpoly_Splitter, 
+         Matpoly_Clipper
+         >::ccc_vfcen_data(std::vector<int>& cell_num_mats,
+                           std::vector<int>& cell_mat_ids,
+                           std::vector<double>& cell_mat_volfracs,
+                           std::vector<Tangram::Point<D>>& cell_mat_centroids) {
+  
+  int nsourcecells = source_mesh_.num_entities(CELL, ALL);
+  
+  int nmats = source_state_.num_materials();
+  cell_num_mats.assign(nsourcecells, 0);
+  
+  // First build full arrays (as if every cell had every material)
+  
+  std::vector<int> cell_mat_ids_full(nsourcecells*nmats, -1);
+  std::vector<double> cell_mat_volfracs_full(nsourcecells*nmats, 0.0);
+  std::vector<Tangram::Point<D>> cell_mat_centroids_full(nsourcecells*nmats);
+  
+  int nvals = 0;
+  for (int m = 0; m < nmats; m++) {
+    std::vector<int> cellids;
+    source_state_.mat_get_cells(m, &cellids);
+    for (int ic = 0; ic < cellids.size(); ic++) {
+      int c = cellids[ic];
+      int nmatc = cell_num_mats[c];
+      cell_mat_ids_full[c*nmats+nmatc] = m;
+      cell_num_mats[c]++;
+    }
+    nvals += cellids.size();
+    
+    double const * matfracptr;
+    source_state_.mat_get_celldata("mat_volfracs", m, &matfracptr);
+    for (int ic = 0; ic < cellids.size(); ic++)
+      cell_mat_volfracs_full[cellids[ic]*nmats+m] = matfracptr[ic];
+    
+    Portage::Point<D> const *matcenvec;
+    source_state_.mat_get_celldata("mat_centroids", m, &matcenvec);
+    for (int ic = 0; ic < cellids.size(); ic++)
+      cell_mat_centroids_full[cellids[ic]*nmats+m] = matcenvec[ic];
+  }
+  
+  // At this point nvals contains the number of non-zero volume
+  // fraction entries in the full array. Use this and knowledge of
+  // number of materials in each cell to compress the data into
+  // linear arrays
+  
+  cell_mat_ids.resize(nvals);
+  cell_mat_volfracs.resize(nvals);
+  cell_mat_centroids.resize(nvals);
+  
+  int idx = 0;
+  for (int c = 0; c < nsourcecells; c++) {
+    for (int m = 0; m < cell_num_mats[c]; m++) {
+      int matid = cell_mat_ids_full[c*nmats+m];
+      cell_mat_ids[idx] = matid;
+      cell_mat_volfracs[idx] = cell_mat_volfracs_full[c*nmats+matid];
+      cell_mat_centroids[idx] = cell_mat_centroids_full[c*nmats+matid];
+      idx++;
+    }
+  }
+}
+
 
 }  // namespace Portage
 
