@@ -37,6 +37,26 @@ Please see the license file at the root of this repository, or at:
 
 double TOL = 1e-6;
 
+
+// Tests for multi-material remap with 1st Order Accurate Remap
+
+// The conceptual material layout that includes a T-junction and
+// interfaces that are aligned with the coordinate axes/planes. The
+// three materials have densities initialized from a single linear
+// function (x+y+z). Given this setup we know the volume, mass and
+// centroid of each material.
+
+// Knowing the simple material geometry, we can do box intersections
+// to compute exact values of material volume fractions and centroids
+// in each cell on the source and target meshes. We can then compare
+// the geometrically computed values of the volume fractions and
+// centroids to the ones we get out of the code. Additionally, we can
+// compute the mass of the materials based on the REMAPPED densities
+// on the target mesh and compare it to the analytical values.
+// Finally, we make sure that the linear field is recovered on the
+// target mesh side
+
+
 TEST(MMDriver, ThreeMat2D) {
   // Source and target meshes
   std::shared_ptr<Jali::Mesh> sourceMesh;
@@ -55,7 +75,7 @@ TEST(MMDriver, ThreeMat2D) {
   Wonton::Jali_Mesh_Wrapper targetMeshWrapper(*targetMesh);
   Wonton::Jali_State_Wrapper sourceStateWrapper(*sourceState);
   Wonton::Jali_State_Wrapper targetStateWrapper(*targetState);
-  
+
   // The material geometry in the overall domain will look like this
   // and we will put down a rectangular mesh that has multiple cells
   // in each direction on this domain so that we get some pure and
@@ -84,7 +104,7 @@ TEST(MMDriver, ThreeMat2D) {
   std::string matnames[nmats] = {"mat0", "mat1", "mat2"};
 
   // Extents of the materials in the overall domain
-  
+
   Portage::Point<2> matlo[nmats], mathi[nmats];
   matlo[0] = Portage::Point<2>(0.0, 0.0);
   mathi[0] = Portage::Point<2>(0.5, 1.0);
@@ -114,7 +134,7 @@ TEST(MMDriver, ThreeMat2D) {
   // Based on the material geometry, make a list of SOURCE cells that
   // are in each material and collect their material volume fractions
   // and material centroids
-  
+
   int nsrccells = sourceMeshWrapper.num_entities(Portage::Entity_kind::CELL,
                                                  Portage::Entity_type::ALL);
   for (int c = 0; c < nsrccells; c++) {
@@ -133,7 +153,7 @@ TEST(MMDriver, ThreeMat2D) {
         if (xmoments[0] > 1.0e-06) {  // non-trivial intersection
           matcells_src[m].push_back(c);
           matvf_src[m].push_back(xmoments[0]/cellvol);
-          
+
           Portage::Point<2> mcen(xmoments[1]/xmoments[0],
                                  xmoments[2]/xmoments[0]);
           matcen_src[m].push_back(mcen);
@@ -144,10 +164,10 @@ TEST(MMDriver, ThreeMat2D) {
   }
 
 
-  //-------------------------------------------------------------------  
+  //-------------------------------------------------------------------
   // Now add the material and material cells to the source state
   //-------------------------------------------------------------------
-  
+
   for (int m = 0; m < nmats; m++)
     sourceStateWrapper.add_material(matnames[m], matcells_src[m]);
 
@@ -161,9 +181,9 @@ TEST(MMDriver, ThreeMat2D) {
   // Add linear  density profile for each material
   for (int m = 0; m < nmats; m++)
     sourceStateWrapper.mat_add_celldata("density", m, &(matrho_src[m][0]));
-  
 
-  //-------------------------------------------------------------------  
+
+  //-------------------------------------------------------------------
   // Sanity check - do we get the right volumes and masses for
   // materials from the source state
   //-------------------------------------------------------------------
@@ -228,7 +248,7 @@ TEST(MMDriver, ThreeMat2D) {
         targetMeshWrapper, targetStateWrapper);
   d.set_remap_var_names(remap_fields);
   d.run(false);
-  
+
 
 
   //-------------------------------------------------------------------
@@ -260,7 +280,7 @@ TEST(MMDriver, ThreeMat2D) {
         if (xmoments[0] > 1.0e-06) {  // non-trivial intersection
           matcells_trg[m].push_back(c);
           matvf_trg[m].push_back(xmoments[0]/cellvol);
-          
+
           Portage::Point<2> mcen(xmoments[1]/xmoments[0],
                                  xmoments[2]/xmoments[0]);
           matcen_trg[m].push_back(mcen);
@@ -288,7 +308,7 @@ TEST(MMDriver, ThreeMat2D) {
   std::cerr << " Material names: ";
   for (int m = 0; m < nmats; m++) std::cerr << " " << matnames[m];
   std::cerr << "\n\n";
-  
+
   // We compare the material sets calculated by the remapper to
   // the ones calculated independently above
 
@@ -306,18 +326,18 @@ TEST(MMDriver, ThreeMat2D) {
       ASSERT_EQ(matcells_remap[m][ic], matcells_trg[m][ic]);
   }
 
-  
-  
+
+
   // Then check volume fracs and centroids with independently calculated vals
   for (int m = 0; m < nmats; m++) {
     int nmatcells = matcells_remap[m].size();
-    
+
     double const *matvf_remap;
     targetStateWrapper.mat_get_celldata("mat_volfracs", m, &matvf_remap);
 
     for (int ic = 0; ic < nmatcells; ic++)
       ASSERT_NEAR(matvf_trg[m][ic], matvf_remap[ic], 1.0e-12);
-    
+
     Portage::Point<2> const *matcen_remap;
     targetStateWrapper.mat_get_celldata("mat_centroids", m, &matcen_remap);
 
@@ -328,6 +348,7 @@ TEST(MMDriver, ThreeMat2D) {
     double const *density_remap;
     targetStateWrapper.mat_get_celldata("density", m, &density_remap);
 
+#ifdef DEBUG
     for (int ic = 0; ic < nmatcells; ic++){
       std::cerr <<"target cell "<<matcells_remap[m][ic]<< "::rho_computed = "<<density_remap[ic]
                 <<", rho_exact = "<<matrho_trg[m][ic]<<std::endl;
@@ -343,9 +364,10 @@ TEST(MMDriver, ThreeMat2D) {
           "  Centroid = " << std::setw(6) << matcen_remap[ic][0] << std::setw(6) << matcen_remap[ic][1] <<
           "  Density = " << std::setw(4) << density_remap[ic] << "\n";
     std::cerr << "\n";
+#endif
   }
 
-  // Also check total material volume and mass on the target side 
+  // Also check total material volume and mass on the target side
   for (int m = 0; m < nmats; m++) {
     std::vector<int> matcells;
     targetStateWrapper.mat_get_cells(m, &matcells);
@@ -364,9 +386,10 @@ TEST(MMDriver, ThreeMat2D) {
       totcen += rho[ic]*cen[ic]*cellvol;
     }
     totcen /= mass;
-    
+
     ASSERT_NEAR(matvol[m], volume, 1.0e-10);
 
+#ifdef DEBUG
     std::cerr << "\nmaterial " << m << "\n";
     std::cerr << " expected volume " << std::setw(3) <<
         matvol[m] << "    computed volume " << std::setw(3) << volume << "\n";
@@ -375,6 +398,7 @@ TEST(MMDriver, ThreeMat2D) {
     std::cerr << " expected centroid " << std::setw(6) <<
         matcen[m] << "  computed centroid " << totcen << "\n";
     std::cerr << "\n\n";
+#endif
   }
 
   //cell error computation
@@ -390,7 +414,7 @@ TEST(MMDriver, ThreeMat2D) {
     double error = 0.0, l1error = 0.0, l2error = 0.0;
     for (int ic = 0; ic < matcells.size(); ic++) {
       error = matrho_trg[m][ic] - rho[ic];
-  
+
       double cellvol = vf[ic]*targetMeshWrapper.cell_volume(matcells[ic]);
       l1error += fabs(error)*cellvol;
       l2error += error*error*cellvol;
@@ -398,10 +422,14 @@ TEST(MMDriver, ThreeMat2D) {
      }
      l2error = sqrt(l2error);
 
+     ASSERT_NEAR(l2error, 0.0, TOL);
+
+#ifdef DEBUG
      std::cerr << "\n\nmaterial " << m << "\n";
      std::printf("L1 ERROR = %lf\n", l1error);
      std::printf("L2 ERROR = %lf\n", l2error);
-  
+#endif
+
   }
 
 }  // unittest
@@ -424,7 +452,7 @@ TEST(MMDriver, ThreeMat3D) {
   Wonton::Jali_Mesh_Wrapper targetMeshWrapper(*targetMesh);
   Wonton::Jali_State_Wrapper sourceStateWrapper(*sourceState);
   Wonton::Jali_State_Wrapper targetStateWrapper(*targetState);
-  
+
   // The material geometry in the overall domain will look like this
   // and we will put down a rectangular mesh that has multiple cells
   // in each direction on this domain so that we get some pure and
@@ -453,7 +481,7 @@ TEST(MMDriver, ThreeMat3D) {
   std::string matnames[nmats] = {"mat0", "mat1", "mat2"};
 
   // Extents of the materials in the overall domain
-  
+
   Portage::Point<3> matlo[nmats], mathi[nmats];
   matlo[0] = Portage::Point<3>(0.0, 0.0, 0.0);
   mathi[0] = Portage::Point<3>(0.5, 1.0, 1.0);
@@ -483,7 +511,7 @@ TEST(MMDriver, ThreeMat3D) {
   // Based on the material geometry, make a list of SOURCE cells that
   // are in each material and collect their material volume fractions
   // and material centroids
-  
+
   int nsrccells = sourceMeshWrapper.num_entities(Portage::Entity_kind::CELL,
                                                  Portage::Entity_type::ALL);
   for (int c = 0; c < nsrccells; c++) {
@@ -502,9 +530,9 @@ TEST(MMDriver, ThreeMat3D) {
         if (xmoments[0] > 1.0e-06) {  // non-trivial intersection
           matcells_src[m].push_back(c);
           matvf_src[m].push_back(xmoments[0]/cellvol);
-          
+
           Portage::Point<3> mcen(xmoments[1]/xmoments[0],
-                                 xmoments[2]/xmoments[0], 
+                                 xmoments[2]/xmoments[0],
                                  xmoments[3]/xmoments[0]);
           matcen_src[m].push_back(mcen);
           matrho_src[m].push_back(mcen[0]+mcen[1]+mcen[2]);
@@ -514,10 +542,10 @@ TEST(MMDriver, ThreeMat3D) {
   }
 
 
-  //-------------------------------------------------------------------  
+  //-------------------------------------------------------------------
   // Now add the material and material cells to the source state
   //-------------------------------------------------------------------
-  
+
   for (int m = 0; m < nmats; m++)
     sourceStateWrapper.add_material(matnames[m], matcells_src[m]);
 
@@ -531,9 +559,9 @@ TEST(MMDriver, ThreeMat3D) {
   // Add linear  density profile for each material
   for (int m = 0; m < nmats; m++)
     sourceStateWrapper.mat_add_celldata("density", m, &(matrho_src[m][0]));
-  
 
-  //-------------------------------------------------------------------  
+
+  //-------------------------------------------------------------------
   // Sanity check - do we get the right volumes and masses for
   // materials from the source state
   //-------------------------------------------------------------------
@@ -587,8 +615,6 @@ TEST(MMDriver, ThreeMat3D) {
   //  material ordering is 0, 1, 2
   //-------------------------------------------------------------------
 
-  //using VOF = Tangram::VOF<Wonton::Jali_Mesh_Wrapper, 3, Tangram::SplitR3D, Tangram::ClipR3D>;
-
 
   Portage::MMDriver<Portage::SearchKDTree,
                     Portage::IntersectR3D,
@@ -601,7 +627,7 @@ TEST(MMDriver, ThreeMat3D) {
         targetMeshWrapper, targetStateWrapper);
   d.set_remap_var_names(remap_fields);
   d.run(false);
-  
+
 
 
   //-------------------------------------------------------------------
@@ -633,7 +659,7 @@ TEST(MMDriver, ThreeMat3D) {
         if (xmoments[0] > 1.0e-06) {  // non-trivial intersection
           matcells_trg[m].push_back(c);
           matvf_trg[m].push_back(xmoments[0]/cellvol);
-          
+
           Portage::Point<3> mcen(xmoments[1]/xmoments[0],
                                  xmoments[2]/xmoments[0],
                                  xmoments[3]/xmoments[0]);
@@ -662,7 +688,7 @@ TEST(MMDriver, ThreeMat3D) {
   std::cerr << " Material names: ";
   for (int m = 0; m < nmats; m++) std::cerr << " " << matnames[m];
   std::cerr << "\n\n";
-  
+
   // We compare the material sets calculated by the remapper to
   // the ones calculated independently above
 
@@ -680,31 +706,31 @@ TEST(MMDriver, ThreeMat3D) {
       ASSERT_EQ(matcells_remap[m][ic], matcells_trg[m][ic]);
   }
 
-  
-  
+
+
   // Then check volume fracs and centroids with independently calculated vals
   for (int m = 0; m < nmats; m++) {
     int nmatcells = matcells_remap[m].size();
-    
+
     double const *matvf_remap;
     targetStateWrapper.mat_get_celldata("mat_volfracs", m, &matvf_remap);
 
     for (int ic = 0; ic < nmatcells; ic++)
       ASSERT_NEAR(matvf_trg[m][ic], matvf_remap[ic], 1.0e-12);
-    
+
     Portage::Point<3> const *matcen_remap;
     targetStateWrapper.mat_get_celldata("mat_centroids", m, &matcen_remap);
-    
+
     for (int ic = 0; ic < nmatcells; ic++)
       for (int d = 0; d < 3; d++)
         ASSERT_NEAR(matcen_trg[m][ic][d], matcen_remap[ic][d], 1.0e-12);
-      
+
     double const *density_remap;
     targetStateWrapper.mat_get_celldata("density", m, &density_remap);
 
     for (int ic = 0; ic < nmatcells; ic++)
       ASSERT_NEAR(matrho_trg[m][ic], density_remap[ic], 1.0e-12);
-    
+
     std::cerr << "Number of cells in material " << m << " is " << nmatcells << "\n";
     std::cerr << "Material " << m << " cell ids, volume fractions, centroids:"
               << "\n";
@@ -717,7 +743,7 @@ TEST(MMDriver, ThreeMat3D) {
     std::cerr << "\n";
   }
 
-  // Also check total material volume and mass on the target side 
+  // Also check total material volume and mass on the target side
   for (int m = 0; m < nmats; m++) {
     std::vector<int> matcells;
     targetStateWrapper.mat_get_cells(m, &matcells);
@@ -736,9 +762,10 @@ TEST(MMDriver, ThreeMat3D) {
       totcen += rho[ic]*cen[ic]*cellvol;
     }
     totcen /= mass;
-    
+
     ASSERT_NEAR(matvol[m], volume, 1.0e-10);
 
+#ifdef DEBUG
     std::cerr << "\nmaterial " << m << "\n";
     std::cerr << " expected volume " << std::setw(3) <<
         matvol[m] << "    computed volume " << std::setw(3) << volume << "\n";
@@ -747,6 +774,7 @@ TEST(MMDriver, ThreeMat3D) {
     std::cerr << " expected centroid " << std::setw(6) <<
         matcen[m] << "  computed centroid " << totcen << "\n";
     std::cerr << "\n\n";
+#endif
   }
 
   //cell error computation
@@ -762,7 +790,7 @@ TEST(MMDriver, ThreeMat3D) {
     double error = 0.0, l1error = 0.0, l2error = 0.0;
     for (int ic = 0; ic < matcells.size(); ic++) {
       error = matrho_trg[m][ic] - rho[ic];
-  
+
       double cellvol = vf[ic]*targetMeshWrapper.cell_volume(matcells[ic]);
       l1error += fabs(error)*cellvol;
       l2error += error*error*cellvol;
@@ -770,10 +798,14 @@ TEST(MMDriver, ThreeMat3D) {
      }
      l2error = sqrt(l2error);
 
+     ASSERT_NEAR(l2error, 0.0, TOL);
+
+#ifdef DEBUG     
      std::cerr << "\n\nmaterial " << m << "\n";
      std::printf("L1 ERROR = %lf\n", l1error);
      std::printf("L2 ERROR = %lf\n", l2error);
-  
+#endif
+
   }
 
 }  // unittest

@@ -342,6 +342,7 @@ TEST(MMDriver, ThreeMat2D_1stOrder) {
     for (int ic = 0; ic < nmatcells; ic++)
       ASSERT_NEAR(matrho[m], density_remap[ic], 1.0e-12);
 
+#ifdef DEBUG
     std::cerr << "Number of cells in material " << m << " is " << nmatcells << "\n";
     std::cerr << "Material " << m << " cell ids, volume fractions, centroids:"
               << "\n";
@@ -352,6 +353,7 @@ TEST(MMDriver, ThreeMat2D_1stOrder) {
           "  Centroid = " << std::setw(6) << matcen_remap[ic][0] << std::setw(6) << matcen_remap[ic][1] <<
           "  Density = " << std::setw(4) << density_remap[ic] << "\n";
     std::cerr << "\n";
+#endif
   }
 
   // Also check total material volume and mass on the target side
@@ -377,6 +379,7 @@ TEST(MMDriver, ThreeMat2D_1stOrder) {
     ASSERT_NEAR(matvol[m], volume, 1.0e-10);
     ASSERT_NEAR(matmass[m], mass, 1.0e-10);
 
+#ifdef DEBUG
     std::cerr << "\nMaterial " << m << "\n";
     std::cerr << " Expected volume " << std::setw(3) <<
         matvol[m] << "    Computed volume " << std::setw(3) << volume << "\n";
@@ -385,6 +388,7 @@ TEST(MMDriver, ThreeMat2D_1stOrder) {
     std::cerr << " Expected centroid " << std::setw(6) <<
         matcen[m] << "  Computed centroid " << totcen << "\n";
     std::cerr << "\n\n";
+#endif
   }
 
 }  // ThreeMat2D_1stOrder
@@ -686,6 +690,7 @@ TEST(MMDriver, ThreeMat3D_1stOrder) {
     for (int ic = 0; ic < nmatcells; ic++)
       ASSERT_NEAR(matrho[m], density_remap[ic], 1.0e-12);
 
+#ifdef DEBUG
     std::cerr << "Number of cells in material " << m << " is " << nmatcells << "\n";
     std::cerr << "Material " << m << " cell ids, volume fractions, centroids:"
               << "\n";
@@ -697,6 +702,7 @@ TEST(MMDriver, ThreeMat3D_1stOrder) {
           "  Density = " << std::setw(4) << density_remap[ic] << "\n";
     std::cerr << "\n";
   }
+#endif
 
   // Also check total material volume and mass on the target side
   for (int m = 0; m < nmats; m++) {
@@ -720,6 +726,7 @@ TEST(MMDriver, ThreeMat3D_1stOrder) {
 
     ASSERT_NEAR(matvol[m], volume, 1.0e-10);
 
+#ifdef DEBUG
     std::cerr << "\nmaterial " << m << "\n";
     std::cerr << " expected volume " << std::setw(3) <<
         matvol[m] << "    computed volume " << std::setw(3) << volume << "\n";
@@ -728,6 +735,7 @@ TEST(MMDriver, ThreeMat3D_1stOrder) {
     std::cerr << " expected centroid " << std::setw(6) <<
         matcen[m] << "  computed centroid " << totcen << "\n";
     std::cerr << "\n\n";
+#endif
   }
 
 }  // ThreeMat3D_1stOrder
