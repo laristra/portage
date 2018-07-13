@@ -114,7 +114,7 @@ TEST(MMDriver, ThreeMat2D) {
   mathi[2] = Portage::Point<2>(1.0, 1.0);
 
   double matvol[nmats] = {0.5, 0.25, 0.25};
-  double matmass[nmats] = {0.375, 0.25, 0.375};
+  double matmass[nmats] = {0.375, 1.0, 3.3750};
   Portage::Point<2> matcen[nmats] = {Portage::Point<2>(0.25,0.5),
                                      Portage::Point<2>(0.75,0.25),
                                      Portage::Point<2>(0.75,0.75)};
@@ -123,7 +123,7 @@ TEST(MMDriver, ThreeMat2D) {
   std::vector<double> matvf_src[nmats];
   std::vector<Portage::Point<2>> matcen_src[nmats];
 
-  //density rho(x,y) = x+y
+  //density rho(x,y) = (m+1)^2*(x+y)
   std::vector<double> matrho_src[nmats];
 
   //-------------------------------------------------------------------
@@ -157,7 +157,7 @@ TEST(MMDriver, ThreeMat2D) {
           Portage::Point<2> mcen(xmoments[1]/xmoments[0],
                                  xmoments[2]/xmoments[0]);
           matcen_src[m].push_back(mcen);
-          matrho_src[m].push_back(mcen[0]+mcen[1]);
+          matrho_src[m].push_back((m+1)*(m+1)*(mcen[0]+mcen[1]));
         }
       }
     }
@@ -284,7 +284,7 @@ TEST(MMDriver, ThreeMat2D) {
           Portage::Point<2> mcen(xmoments[1]/xmoments[0],
                                  xmoments[2]/xmoments[0]);
           matcen_trg[m].push_back(mcen);
-          matrho_trg[m].push_back(mcen[0]+mcen[1]);
+          matrho_trg[m].push_back((m+1)*(m+1)*(mcen[0]+mcen[1]));
         }
       }
     }
@@ -491,7 +491,7 @@ TEST(MMDriver, ThreeMat3D) {
   mathi[2] = Portage::Point<3>(1.0, 1.0, 1.0);
 
   double matvol[nmats] = {0.5, 0.25, 0.25};
-  double matmass[nmats] = {0.625, 0.375, 0.5};
+  double matmass[nmats] = {0.625, 1.5, 4.5};
   Portage::Point<3> matcen[nmats] = {Portage::Point<3>(0.25,0.5,0.5),
                                      Portage::Point<3>(0.75,0.25,0.5),
                                      Portage::Point<3>(0.75,0.75,0.5)};
@@ -500,7 +500,7 @@ TEST(MMDriver, ThreeMat3D) {
   std::vector<double> matvf_src[nmats];
   std::vector<Portage::Point<3>> matcen_src[nmats];
 
-  //density rho(x,y,z) = x+y+z
+  //density rho(x,y,z) = (m+1)^2*(x+y+z)
   std::vector<double> matrho_src[nmats];
 
   //-------------------------------------------------------------------
@@ -535,7 +535,7 @@ TEST(MMDriver, ThreeMat3D) {
                                  xmoments[2]/xmoments[0],
                                  xmoments[3]/xmoments[0]);
           matcen_src[m].push_back(mcen);
-          matrho_src[m].push_back(mcen[0]+mcen[1]+mcen[2]);
+          matrho_src[m].push_back((m+1)*(m+1)*(mcen[0]+mcen[1]+mcen[2]));
         }
       }
     }
@@ -664,7 +664,7 @@ TEST(MMDriver, ThreeMat3D) {
                                  xmoments[2]/xmoments[0],
                                  xmoments[3]/xmoments[0]);
           matcen_trg[m].push_back(mcen);
-          matrho_trg[m].push_back(mcen[0]+mcen[1]+mcen[2]);
+          matrho_trg[m].push_back((m+1)*(m+1)*(mcen[0]+mcen[1]+mcen[2]));
         }
       }
     }
@@ -683,12 +683,14 @@ TEST(MMDriver, ThreeMat3D) {
   for (int m = 0; m < nmats; m++)
   ASSERT_EQ(matnames[m], targetStateWrapper.material_name(m));
 
+#ifdef DEBUG
   std::cerr << "\n\n\n";
   std::cerr << " Number of materials in target mesh: " << nmats << "\n";
   std::cerr << " Material names: ";
   for (int m = 0; m < nmats; m++) std::cerr << " " << matnames[m];
   std::cerr << "\n\n";
-
+#endif
+  
   // We compare the material sets calculated by the remapper to
   // the ones calculated independently above
 
@@ -731,6 +733,7 @@ TEST(MMDriver, ThreeMat3D) {
     for (int ic = 0; ic < nmatcells; ic++)
       ASSERT_NEAR(matrho_trg[m][ic], density_remap[ic], 1.0e-12);
 
+#ifdef DEBUG
     std::cerr << "Number of cells in material " << m << " is " << nmatcells << "\n";
     std::cerr << "Material " << m << " cell ids, volume fractions, centroids:"
               << "\n";
@@ -741,6 +744,7 @@ TEST(MMDriver, ThreeMat3D) {
           "  Centroid = " << std::setw(6) << matcen_remap[ic][0] << std::setw(6) << matcen_remap[ic][1] <<
           "  Density = " << std::setw(4) << density_remap[ic] << "\n";
     std::cerr << "\n";
+#endif
   }
 
   // Also check total material volume and mass on the target side
