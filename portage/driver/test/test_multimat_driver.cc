@@ -579,7 +579,7 @@ TEST(MMDriver, ThreeMat3D_1stOrder) {
 
   Portage::MMDriver<Portage::SearchKDTree,
                     Portage::IntersectR3D,
-                    Portage::Interpolate_2ndOrder,
+                    Portage::Interpolate_1stOrder,
                     3,
                     Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
                     Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
