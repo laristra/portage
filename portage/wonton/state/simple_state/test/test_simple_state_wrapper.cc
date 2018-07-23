@@ -78,20 +78,20 @@ TEST(Simple_State_Wrapper, WrapperTest) {
   const double *testa = &(nodevar2[0]), *testg;
   mystate_wrapper.add_data(Portage::Entity_kind::NODE, "nodevar2", &testa);
   mystate_wrapper.get_data(Portage::Entity_kind::NODE, "nodevar2", &testg);
-  for (size_t i=0; i<numnodes; i++) ASSERT_EQ(testg[i], nodevar2[i]);
+  for (size_t i = 0; i < numnodes; i++) ASSERT_EQ(testg[i], nodevar2[i]);
 
   // Check names
-  size_t index=0;
-  std::vector<std::string>::iterator iter0=mystate_wrapper.names_begin();
-  std::vector<std::string>::iterator iter1=mystate_wrapper.names_end();
+  size_t index = 0;
+  std::vector<std::string>::iterator iter0 = mystate_wrapper.names_begin();
+  std::vector<std::string>::iterator iter1 = mystate_wrapper.names_end();
   std::vector<std::string> names_test = mystate_wrapper.names();
+
   ASSERT_EQ(names_test.size(), 3);
   ASSERT_EQ(names_test[0], "cellvar1");
   ASSERT_EQ(names_test[1], "nodevar1");
   ASSERT_EQ(names_test[2], "nodevar2");
-  for(std::vector<std::string>::iterator iter=iter0; iter!=iter1; iter++) {
-    // the following code fails in optimized builds for some reason, both intel and gcc
-    // ASSERT_EQ(names[index], *iter);
+  for (std::vector<std::string>::iterator iter=iter0; iter != iter1; ++iter) {
+    ASSERT_EQ(names_test[index], *iter);
     index++;
   }
 }

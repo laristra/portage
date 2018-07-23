@@ -71,7 +71,7 @@ class Simple_State {
   /// An iterator to the beginning of the variable names vector.
   name_vec_it names_begin() { return names_.begin(); }
   /// An iterator to the ending fo the variable names vector.
-  name_vec_it names_end() { names_.end(); }
+  name_vec_it names_end() { return names_.end(); }
 
   /// The above iterator functions fail sometimes for optimized code, so here 
   /// we allow access to the complete list of names.
