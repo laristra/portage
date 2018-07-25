@@ -220,11 +220,6 @@ class Simple_Mesh_Wrapper : public AuxMeshTopology<Simple_Mesh_Wrapper> {
   }
 
 #ifdef HAVE_TANGRAM
-  // TEMPORARY - until we pull WONTON out as a separate repository
-  int get_global_id(int const id, Tangram::Entity_kind const kind) const {
-    return get_global_id(id, static_cast<Portage::Entity_kind>(kind));
-  }
-
   template<long D>
   void node_get_coordinates(int const nodeid, Tangram::Point<D>* tcoord) const 
   {
