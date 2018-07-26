@@ -701,8 +701,8 @@ TEST(MMDriver, ThreeMat3D_1stOrder) {
           "  Centroid = " << std::setw(6) << matcen_remap[ic][0] << std::setw(6) << matcen_remap[ic][1] <<
           "  Density = " << std::setw(4) << density_remap[ic] << "\n";
     std::cerr << "\n";
-  }
 #endif
+  }
 
   // Also check total material volume and mass on the target side
   for (int m = 0; m < nmats; m++) {
