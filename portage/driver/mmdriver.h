@@ -299,25 +299,22 @@ class MMDriver {
     // Collect all cell based variables and remap them
 
     for (int i = 0; i < nvars; ++i) {
-      Entity_kind onwhat = source_state_.get_entity(source_remap_var_names_[i]);
+      std::string& srcvarname = source_remap_var_names_[i];
+      Entity_kind onwhat = source_state_.get_entity(srcvarname);
       if (onwhat == CELL) {
         // Separate out mesh fields and multi-material fields - they will be
         // processed differently
 
-        int nnames = source_remap_var_names_.size();
-        for (int i = 0; i < nnames; i++) {
-          std::string& srcvarname = source_remap_var_names_[i];
-          std::string& trgvarname = target_remap_var_names_[i];
+        std::string& trgvarname = target_remap_var_names_[i];
 
-          Field_type ftype = source_state_.field_type(onwhat, srcvarname);
+        Field_type ftype = source_state_.field_type(onwhat, srcvarname);
 
-          if (ftype == Field_type::MESH_FIELD) {
-            src_meshvar_names.push_back(srcvarname);
-            trg_meshvar_names.push_back(trgvarname);
-          } else if (ftype == Field_type::MULTIMATERIAL_FIELD) {
-            src_matvar_names.push_back(srcvarname);
-            trg_matvar_names.push_back(trgvarname);
-          }
+        if (ftype == Field_type::MESH_FIELD) {
+          src_meshvar_names.push_back(srcvarname);
+          trg_meshvar_names.push_back(trgvarname);
+        } else if (ftype == Field_type::MULTIMATERIAL_FIELD) {
+          src_matvar_names.push_back(srcvarname);
+          trg_matvar_names.push_back(trgvarname);
         }
       }
     }
@@ -344,21 +341,18 @@ class MMDriver {
     trg_meshvar_names.clear(); trg_matvar_names.clear();
     
     for (int i = 0; i < nvars; ++i) {
-      Entity_kind onwhat = source_state_.get_entity(source_remap_var_names_[i]);
+      std::string& srcvarname = source_remap_var_names_[i];
+      Entity_kind onwhat = source_state_.get_entity(srcvarname);
       if (onwhat == NODE) {
-        int nnames = source_remap_var_names_.size();
-        for (int i = 0; i < nnames; i++) {
-          std::string& srcvarname = source_remap_var_names_[i];
-          std::string& trgvarname = target_remap_var_names_[i];
-
-          Field_type ftype = source_state_.field_type(onwhat, srcvarname);
-
-          if (ftype == Field_type::MESH_FIELD) {
-            src_meshvar_names.push_back(srcvarname);
-            trg_meshvar_names.push_back(trgvarname);
-          } else if (ftype == Field_type::MULTIMATERIAL_FIELD)
-            std::cerr << "Cannot handle multi-material fields on nodes\n";
-        }
+        std::string& trgvarname = target_remap_var_names_[i];
+        
+        Field_type ftype = source_state_.field_type(onwhat, srcvarname);
+        
+        if (ftype == Field_type::MESH_FIELD) {
+          src_meshvar_names.push_back(srcvarname);
+          trg_meshvar_names.push_back(trgvarname);
+        } else if (ftype == Field_type::MULTIMATERIAL_FIELD)
+          std::cerr << "Cannot handle multi-material fields on nodes\n";
       }
     }
 
