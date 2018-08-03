@@ -374,6 +374,16 @@ class Flat_Mesh_Wrapper : public AuxMeshTopology<Flat_Mesh_Wrapper<>> {
       (*pp)[j] = nodeCoords_[nodeid*dim_+j];
   }
 
+#ifdef HAVE_TANGRAM
+  template<long D>
+  void node_get_coordinates(int const nodeid, Tangram::Point<D>* tcoord) const 
+  {
+    Point<D> pcoord;
+    node_get_coordinates(nodeid, &pcoord);
+    *tcoord = pcoord;
+  }
+#endif
+
   //! Get the type of the cell - PARALLEL_OWNED or PARALLEL_GHOST
   Portage::Entity_type cell_get_type(int const cellid) const {
     return (cellid < numOwnedCells_ ? PARALLEL_OWNED : PARALLEL_GHOST);
