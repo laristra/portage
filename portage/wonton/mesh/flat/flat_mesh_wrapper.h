@@ -325,10 +325,12 @@ class Flat_Mesh_Wrapper : public AuxMeshTopology<Flat_Mesh_Wrapper<>> {
   int compute_offsets(const std::vector<int>& counts,
                       std::vector<int>* offsets) {
     offsets->resize(counts.size());
-    (*offsets)[0] = 0;
-    std::partial_sum(counts.begin(),
-                     counts.end()-1,
-                     offsets->begin()+1);
+    if (counts.size()) {
+      (*offsets)[0] = 0;
+      std::partial_sum(counts.begin(),
+                       counts.end()-1,
+                       offsets->begin()+1);
+    }
   }
 
   //! Number of owned cells in the mesh
