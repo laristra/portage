@@ -217,7 +217,7 @@ void add_intersect_data(std::vector<std::vector<double> >& mat_moments,
                         int idx){
   // Intersect source candidate matpoly with target cell
   std::vector<double> moments =
-    Portage::intersect_2Dpolys(source_points, target_points);
+    Portage::intersect_polys_r2d(source_points, target_points);
   // Accumulate moments (if any) from the intersection
   if (moments[0] > seps) {
     for(int moment=0;moment<NUM_MOMENTS;++moment){

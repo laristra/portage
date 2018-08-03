@@ -26,6 +26,7 @@ Please see the license file at the root of this repository, or at:
 #include "portage/interpolate/interpolate_2nd_order.h"
 #include "portage/wonton/mesh/flat/flat_mesh_wrapper.h"
 #include "portage/wonton/state/flat/flat_state_wrapper.h"
+#include "portage/intersect/dummy_interface_reconstructor.h"
 
 #ifdef ENABLE_MPI
 #include "portage/distributed/mpi_bounding_boxes.h"
@@ -71,7 +72,8 @@ using namespace Wonton;
   manager implementation that provides certain functionality.
 */
 template <template <int, Entity_kind, class, class> class Search,
-          template <Entity_kind, class, class> class Intersect,
+          template <Entity_kind, class, class, class,
+                    template<class, int> class> class Intersect,
           template<int, Entity_kind, class, class, class> class Interpolate,
           int D,
           class SourceMesh_Wrapper,
@@ -320,7 +322,8 @@ class Driver {
 // Serial remap or Distributed remap with no redistributon of data
 
 template <template <int, Entity_kind, class, class> class Search,
-          template <Entity_kind, class, class> class Intersect,
+          template <Entity_kind, class, class, class,
+                    template<class, int> class> class Intersect,
           template<int, Entity_kind, class, class, class> class Interpolate,
           int D,
           class SourceMesh_Wrapper,
@@ -377,8 +380,9 @@ void Driver<Search, Intersect, Interpolate, D,
   gettimeofday(&begin_timeval, 0);
 
   // Get an instance of the desired intersect algorithm type
-  const Intersect<onwhat, SourceMesh_Wrapper, TargetMesh_Wrapper>
-      intersect(source_mesh_, target_mesh_);
+  const Intersect<onwhat, SourceMesh_Wrapper, SourceState_Wrapper,
+                  TargetMesh_Wrapper, DummyInterfaceReconstructor>
+      intersect(source_mesh_, source_state_, target_mesh_);
 
   // For each cell in the target mesh get a list of candidate-weight
   // pairings (in a traditional mesh, not particle mesh, the weights
@@ -417,7 +421,7 @@ void Driver<Search, Intersect, Interpolate, D,
                                            limiters_[i]);
 
     double *target_field_raw = nullptr;
-    target_state_.get_data(onwhat, trg_varnames[i], &target_field_raw);
+    target_state_.mesh_get_data(onwhat, trg_varnames[i], &target_field_raw);
     Portage::pointer<double> target_field(target_field_raw);
 
     Portage::transform(target_mesh_.begin(onwhat, PARALLEL_OWNED),
@@ -449,7 +453,8 @@ void Driver<Search, Intersect, Interpolate, D,
 // Distributed Remap with redistribution of mesh and data
 
 template <template <int, Entity_kind, class, class> class Search,
-          template <Entity_kind, class, class> class Intersect,
+          template <Entity_kind, class, class, class,
+                    template<class, int> class> class Intersect,
           template<int, Entity_kind, class, class, class> class Interpolate,
           int D,
           class SourceMesh_Wrapper,
@@ -522,8 +527,9 @@ void Driver<Search, Intersect, Interpolate, D,
   gettimeofday(&begin_timeval, 0);
 
   // Get an instance of the desired intersect algorithm type
-  const Intersect<onwhat, Flat_Mesh_Wrapper<>, TargetMesh_Wrapper>
-      intersect(source_mesh_flat, target_mesh_);
+  const Intersect<onwhat, Flat_Mesh_Wrapper<>, Flat_State_Wrapper<>,
+                  TargetMesh_Wrapper, DummyInterfaceReconstructor>
+      intersect(source_mesh_flat, source_state_flat, target_mesh_);
 
   // For each cell in the target mesh get a list of candidate-weight
   // pairings (in a traditional mesh, not particle mesh, the weights
@@ -562,7 +568,7 @@ void Driver<Search, Intersect, Interpolate, D,
                                            limiters_[i]);
 
     double *target_field_raw = nullptr;
-    target_state_.get_data(onwhat, trg_varnames[i], &target_field_raw);
+    target_state_.mesh_get_data(onwhat, trg_varnames[i], &target_field_raw);
     Portage::pointer<double> target_field(target_field_raw);
 
     Portage::transform(target_mesh_.begin(onwhat, PARALLEL_OWNED),

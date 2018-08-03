@@ -72,6 +72,11 @@ class Interpolate_2ndOrder {
   /// Destructor
   ~Interpolate_2ndOrder() {}
 
+  /// Set the material we are operating on (MM interpolate not implemented yet)
+
+  int set_material(int m) {
+    assert(0);
+  }
 
   /// Set the name of the interpolation variable and the limiter type
 
@@ -82,7 +87,7 @@ class Interpolate_2ndOrder {
 
     // Extract the field data from the statemanager
     
-    source_state_.get_data(on_what, interp_var_name, &source_vals_);
+    source_state_.mesh_get_data(on_what, interp_var_name, &source_vals_);
     
     // Compute the limited gradients for the field
     
@@ -181,7 +186,7 @@ class Interpolate_2ndOrder<D, CELL, SourceMeshType, TargetMeshType, StateType> {
 
     // Extract the field data from the statemanager
 
-    source_state_.get_data(CELL, interp_var_name, &source_vals_);
+    source_state_.mesh_get_data(CELL, interp_var_name, &source_vals_);
 
     // Compute the limited gradients for the field
 
@@ -214,6 +219,12 @@ class Interpolate_2ndOrder<D, CELL, SourceMeshType, TargetMeshType, StateType> {
   /// Destructor
   ~Interpolate_2ndOrder() {}
 
+
+  /// Set the material we are operating on (MM interpolate not implemented yet)
+
+  int set_material(int m) {
+    assert(0);
+  }
 
   /*!
     @brief   Functor to do the 2nd order interpolation of cell values
@@ -275,13 +286,15 @@ double Interpolate_2ndOrder<D, CELL, SourceMeshType, TargetMeshType,
 
   /// @todo Should use zip_iterator here but I am not sure I know how to
 
+  double vol = target_mesh_.cell_volume(targetCellID);
+  int nsummed = 0;
   for (int j = 0; j < nsrccells; ++j) {
     int srccell = sources_and_weights[j].entityID;
     std::vector<double> xsect_weights = sources_and_weights[j].weights;
     double xsect_volume = xsect_weights[0];
 
-    double eps = 1e-30;
-    if (xsect_volume <= eps) continue;  // no intersection
+    double eps = 1e-12;
+    if (xsect_volume/vol <= eps) continue;  // no intersection
 
     Point<D> srccell_centroid;
     source_mesh_.cell_centroid(srccell, &srccell_centroid);
@@ -296,13 +309,20 @@ double Interpolate_2ndOrder<D, CELL, SourceMeshType, TargetMeshType,
     val *= xsect_volume;
     totalval += val;
     wtsum0 += xsect_volume;
+    nsummed++;
   }
 
-  // Normalize the value by sum of all the 0th weights (which is the
-  // same as the total volume of the source cell)
+  // Normalize the value by the volume of the intersection of the target cells
+  // with the source mesh. This will do the right thing for single-material
+  // and multi-material remap (conservative and constant preserving) if there
+  // is NO mismatch between source and target mesh boundaries. IF THERE IS A
+  // MISMATCH, THIS WILL PRESERVE CONSTANT VALUES BUT NOT BE CONSERVATIVE. THEN
+  // WE HAVE TO DO A SEMI-LOCAL OR GLOBAL REPAIR.
 
-  double vol = target_mesh_.cell_volume(targetCellID);
-  totalval /= vol;
+  if (nsummed)
+    totalval /= wtsum0;
+  else
+    totalval = 0.0;
 
 #ifdef DEBUG
   static bool first = true;
@@ -360,7 +380,7 @@ class Interpolate_2ndOrder<D, NODE, SourceMeshType, TargetMeshType, StateType> {
 
     // Extract the field data from the statemanager
     
-    source_state_.get_data(NODE, interp_var_name, &source_vals_);
+    source_state_.mesh_get_data(NODE, interp_var_name, &source_vals_);
     
     // Compute the limited gradients for the field
     
@@ -383,6 +403,12 @@ class Interpolate_2ndOrder<D, NODE, SourceMeshType, TargetMeshType, StateType> {
                        gradients_.begin(), limgrad);
   }
 
+
+  /// Set the material we are operating on (MM interpolate not implemented yet)
+
+  int set_material(int m) {
+    assert(0);
+  }
 
   /*!
     @brief Functor to do the 2nd order interpolation of node values
@@ -448,13 +474,15 @@ double Interpolate_2ndOrder<D, NODE, SourceMeshType, TargetMeshType,
 
   /// @todo Should use zip_iterator here but I am not sure I know how to
 
+  double vol = target_mesh_.dual_cell_volume(targetNodeID);
+  int nsummed = 0;
   for (int j = 0; j < nsrcnodes; ++j) {
     int srcnode = sources_and_weights[j].entityID;
     std::vector<double> xsect_weights = sources_and_weights[j].weights;
     double xsect_volume = xsect_weights[0];
 
-    double eps = 1e-30;
-    if (xsect_volume <= eps) continue;  // no intersection
+    double eps = 1e-12;
+    if (xsect_volume/vol <= eps) continue;  // no intersection
 
     // note: here we are getting the node coord, not the centroid of
     // the dual cell
@@ -472,12 +500,22 @@ double Interpolate_2ndOrder<D, NODE, SourceMeshType, TargetMeshType,
     val *= xsect_volume;
     totalval += val;
     wtsum0 += xsect_volume;
+    nsummed++;
   }
 
   // Normalize the value by volume of the target dual cell
 
-  double vol = target_mesh_.dual_cell_volume(targetNodeID);
-  totalval /= vol;
+  // Normalize the value by the volume of the intersection of the target cells
+  // with the source mesh. This will do the right thing for single-material
+  // and multi-material remap (conservative and constant preserving) if there
+  // is NO mismatch between source and target mesh boundaries. IF THERE IS A
+  // MISMATCH, THIS WILL PRESERVE CONSTANT VALUES BUT NOT BE CONSERVATIVE. THEN
+  // WE HAVE TO DO A SEMI-LOCAL OR GLOBAL REPAIR.
+  
+  if (nsummed)
+    totalval /= wtsum0;
+  else
+    totalval = 0.0;
 
 #ifdef DEBUG
   static bool first = true;

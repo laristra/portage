@@ -9,11 +9,15 @@ Please see the license file at the root of this repository, or at:
 set (simple_mesh_HEADERS
   simple_mesh.h
   simple_state.h
+  SimpleStateVector.h
+  SimpleState.h
   PARENT_SCOPE
   )
 
 # Add source files
 set (simple_mesh_SOURCES
+  SimpleStateVector.cc
+  SimpleState.cc
   PARENT_SCOPE
   )
 

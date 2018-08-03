@@ -4,6 +4,7 @@ Please see the license file at the root of this repository, or at:
     https://github.com/laristra/portage/blob/master/LICENSE
 */
 
+
 #ifndef INTERSECT_R2D_H
 #define INTERSECT_R2D_H
 
@@ -16,240 +17,86 @@ extern "C" {
 #include "r2d.h"
 }
 
+#ifdef HAVE_TANGRAM
+#include "tangram/driver/CellMatPoly.h"
+#include "tangram/driver/driver.h"
+#include "tangram/support/MatPoly.h"
+#endif
+
 #include "portage/support/portage.h"
 #include "portage/support/Point.h"
-
+#include "portage/intersect/dummy_interface_reconstructor.h"
+#include "portage/intersect/intersect_polys_r2d.h"
 
 namespace Portage {
 
-// intersect one source polygon (possibly non-convex) with a
-// triangular decomposition of a target polygon
+///
+/// \class IntersectR2D  2-D intersection algorithm
+ 
 
-std::vector<double>
-intersect_2Dpolys(std::vector<Point<2>> const & source_poly,
-                  std::vector<Point<2>> const & target_poly) {
-
-  std::vector<double> moments(3, 0);
-  bool src_convex = true;
-  bool trg_convex = true;
-  const double eps = 1e-14;
-
-  const int POLY_ORDER = 1;  // max degree of moments to calculate
-
-  // Initialize source polygon
-
-  const int size1 = source_poly.size();
-  std::vector<r2d_rvec2> verts1(size1);
-  for (int i = 0; i < size1; ++i) {
-    verts1[i].xy[0] = source_poly[i][0];
-    verts1[i].xy[1] = source_poly[i][1];
-  }
-#ifdef DEBUG
-  double volume1 = 0.;
-  for (int i = 1; i < size1-1; ++i)
-    volume1 += r2d_orient(verts1[0], verts1[i], verts1[i+1]);
-  if (volume1 < 0.)
-    throw std::runtime_error("target_poly has negative volume");
-#endif
-
-  r2d_poly srcpoly_r2d;
-  r2d_init_poly(&srcpoly_r2d, &verts1[0], size1);
-
-#ifdef DEBUG
-  if (r2d_is_good(&srcpoly_r2d) == 0)
-    throw std::runtime_error("source_poly: invalid poly");
-#endif
-
-
-  // Initialize target polygon and check for convexity
-
-  const int size2 = target_poly.size();
-  std::vector<r2d_plane> faces(size2);
-  std::vector<r2d_rvec2> verts2(size2);
-  for (int i = 0; i < size2; ++i) {
-    verts2[i].xy[0] = target_poly[i][0];
-    verts2[i].xy[1] = target_poly[i][1];
-  }
-
-  // check for convexity of target polygon
-  for (int i = 0; i < size2; ++i)
-    if (r2d_orient(verts2[i], verts2[(i+1)%size2], verts2[(i+2)%size2]) < eps)
-      trg_convex = false;
-
-  // case 1:  target_poly is convex
-  // can simply use faces of target_poly as clip planes
-  if (trg_convex) {
-    r2d_poly_faces_from_verts(&faces[0], &verts2[0], size2);
-
-    // clip the first poly against the faces of the second
-    r2d_clip(&srcpoly_r2d, &faces[0], size2);
-
-    // find the moments (up to quadratic order) of the clipped poly
-    r2d_real om[R2D_NUM_MOMENTS(POLY_ORDER)];
-    r2d_reduce(&srcpoly_r2d, om, POLY_ORDER);
-
-    // Check that the returned volume is positive (if the volume is zero,
-    // i.e. abs(om[0]) < eps, then it can sometimes be slightly negative,
-    // like om[0] == -1.24811e-16. For this reason we use the condition
-    // om[0] < -eps.
-    if (om[0] < -eps) throw std::runtime_error("Negative volume");
-
-    // Copy moments:
-    for (int j = 0; j < 3; ++j)
-      moments[j] = om[j];
-
-  } else {  // case 2:  target_poly is non-convex
-
-    // check for convexity of source polygon
-    for (int i = 0; i < size1; ++i)
-      if (r2d_orient(verts1[i], verts1[(i+1)%size1], verts1[(i+2)%size1]) < eps)
-        src_convex = false;
-
-    // if source polygon is convex while target polygon is non-convex,
-    // call the routine with the polygons reversed
-
-    if (src_convex)
-      return intersect_2Dpolys(target_poly, source_poly);
-    else {
-
-      // Must divide target_poly into triangles for clipping.  Choice
-      // of the central point is crucial. Try the centroid first -
-      // computed by the area weighted sum of centroids of any
-      // triangulation of the polygon
-      bool center_point_ok = true;
-      Point<2> cen(0.0, 0.0);
-      r2d_rvec2 cenr2d;
-      cenr2d.xy[0] = 0.0; cenr2d.xy[1] = 0.0;
-      double area_sum = 0.0;
-      for (int i = 1; i < size2; ++i) {
-        double area = r2d_orient(verts2[0], verts2[i], verts2[(i+1)%size2]);
-        area_sum += area;
-        Point<2> tricen =
-            (target_poly[0] + target_poly[i] + target_poly[(i+1)%size2])/3.0;
-        cen += area*tricen;
-      }
-      cen /= area_sum;
-      cenr2d.xy[0] = cen[0]; cenr2d.xy[1] = cen[1];
-
-      for (int i = 0; i < size2; ++i)
-        if (r2d_orient(cenr2d, verts2[i], verts2[(i+1)%size2]) < 0.)
-          center_point_ok = false;
-
-      if (!center_point_ok) {
-        // If the centroid is not ok, we have to find the center of
-        // the feasible set of the polygon. This means clipping the
-        // target_poly with its own face planes/lines. For a
-        // non-convex polygon, this will give a new polygon whose
-        // interior (See Garimella/Shashkov/Pavel paper on untangling)
-
-        r2d_poly fspoly;
-        r2d_init_poly(&fspoly, &verts2[0], size2);
-
-        r2d_poly_faces_from_verts(&faces[0], &verts2[0], size2);
-
-        r2d_clip(&fspoly, &faces[0], size2);
-
-        // If the resulting polygon is empty, we are out of luck
-        if (fspoly.nverts == 0)
-          std::runtime_error("Could not find a valid center point to triangulate non-convex polygon");
-
-        // Have R2D compute first and second moments of polygon and
-        // get its centroid from that
-
-        r2d_real fspoly_moments[R2D_NUM_MOMENTS(POLY_ORDER)];
-        r2d_reduce(&fspoly, fspoly_moments, POLY_ORDER);
-
-        cen[0] = cenr2d.xy[0] = fspoly_moments[1]/fspoly_moments[0];
-        cen[1] = cenr2d.xy[1] = fspoly_moments[2]/fspoly_moments[0];
-
-        // Even if the resulting feasible set polygon has vertices,
-        // maybe its degenerate. So we have to verify that its centroid
-        // indeed is a point that will give valid triangles when
-        // paired with the edges of the target polygon.
-
-        for (int i = 0; i < size2; ++i)
-          if (r2d_orient(cenr2d, verts2[i], verts2[(i+1)%size2]) < 0.)
-            center_point_ok = false;
-      }
-
-      // If we still don't have a good center point, we are out of luck
-      if (!center_point_ok)
-        std::runtime_error("Could not find a valid center point to triangulate non-convex polygon");
-
-
-      for (int i = 0; i < size2; ++i) {
-        verts2[0].xy[0] = cen[0];
-        verts2[0].xy[1] = cen[1];
-        verts2[1].xy[0] = target_poly[i][0];
-        verts2[1].xy[1] = target_poly[i][1];
-        verts2[2].xy[0] = target_poly[(i+1)%size2][0];
-        verts2[2].xy[1] = target_poly[(i+1)%size2][1];
-
-        r2d_poly_faces_from_verts(&faces[0], &verts2[0], 3);
-
-        r2d_poly srcpoly_r2d_copy = srcpoly_r2d;
-
-        // clip the first poly against the faces of the second
-        r2d_clip(&srcpoly_r2d_copy, &faces[0], 3);
-
-        // find the moments (up to quadratic order) of the clipped poly
-        // Only do this check in Debug mode:
-#ifdef DEBUG
-        if (R2D_NUM_MOMENTS(POLY_ORDER) != 3)
-          throw std::runtime_error("Invalid number of moments");
-#endif
-        r2d_real om[R2D_NUM_MOMENTS(POLY_ORDER)];
-        r2d_reduce(&srcpoly_r2d_copy, om, POLY_ORDER);
-
-        // Check that the returned volume is positive (if the volume is zero,
-        // i.e. abs(om[0]) < eps, then it can sometimes be slightly negative,
-        // like om[0] == -1.24811e-16. For this reason we use the condition
-        // om[0] < -eps.
-        if (om[0] < -eps)
-          throw std::runtime_error("Negative volume for triangle of polygon");
-
-        // Accumulate moments:
-        for (int j = 0; j < 3; ++j)
-          moments[j] += om[j];
-      }  // for i
-    }  // if (src_convex) ... else ...
-  }  // if convex {} else {}
-
-  return moments;
-}
-
-
-/*!
- * \class IntersectR2D  2-D intersection algorithm
- */
-
-template <Entity_kind on_what, typename SourceMeshType, typename TargetMeshType>
+template <Entity_kind on_what, class SourceMeshType,
+          class SourceStateType, class TargetMeshType,
+          template<class, int> class InterfaceReconstructorType =
+          DummyInterfaceReconstructor>
 class IntersectR2D {
+
+#ifdef HAVE_TANGRAM
+  using InterfaceReconstructor2D =
+      Tangram::Driver<InterfaceReconstructorType, 2, SourceMeshType>;
+#endif
+
  public:
 
-  /// Constructor taking a source mesh @c s and a target mesh @c t.
-  IntersectR2D(const SourceMeshType &s, const TargetMeshType &t)
-    : sourceMeshWrapper(s), targetMeshWrapper(t) {}
+#ifdef HAVE_TANGRAM
+  /// Constructor with interface reconstructor
 
-  /*! \brief Intersect control volume of a target entity with control volumes of a set of source entities
-   * \param[in] tgt_entity  Entity of target mesh to intersect
-   * \param[in] src_entities Entities of source mesh to intersect against
-   * \return vector of Weights_t structure containing moments of intersection
-   */
+  IntersectR2D(SourceMeshType const & source_mesh,
+               SourceStateType const & source_state,
+               TargetMeshType const & target_mesh,
+               std::shared_ptr<InterfaceReconstructor2D> ir)
+      : sourceMeshWrapper(source_mesh), sourceStateWrapper(source_state),
+        targetMeshWrapper(target_mesh), interface_reconstructor(ir) {}
+#endif
+
+  /// Constructor WITHOUT interface reconstructor
+
+  IntersectR2D(SourceMeshType const & source_mesh,
+               SourceStateType const & source_state,
+               TargetMeshType const & target_mesh)
+      : sourceMeshWrapper(source_mesh), sourceStateWrapper(source_state),
+        targetMeshWrapper(target_mesh) {}
+  
+  /// \brief Set the source mesh material that we have to intersect against   
+
+  int set_material(int m) {
+    matid_ = m;
+  }
+
+  /// \brief Intersect control volume of a target entity with control volumes of a set of source entities
+  /// \param[in] tgt_entity  Entity of target mesh to intersect
+  /// \param[in] src_entities Entities of source mesh to intersect against
+  /// \return vector of Weights_t structure containing moments of intersection
 
   std::vector<Weights_t>
   operator() (const int tgt_entity, const std::vector<int> src_entities) const {
-    std::cerr << "IntersectR3D not implemented for entity type" << std::endl;
+    std::cerr << "IntersectR3D not implemented for this entity type" <<
+        std::endl;
   }
 
   IntersectR2D() = delete;
 
-  //! Assignment operator (disabled)
+  /// Assignment operator (disabled)
   IntersectR2D & operator = (const IntersectR2D &) = delete;
 
  private:
-  const SourceMeshType &sourceMeshWrapper;
-  const TargetMeshType &targetMeshWrapper;
+  SourceMeshType const & sourceMeshWrapper;
+  SourceStateType const & sourceStateWrapper;
+  TargetMeshType const & targetMeshWrapper;
+  int matid_ = -1;
+
+#ifdef HAVE_TANGRAM
+  std::shared_ptr<InterfaceReconstructor2D> interface_reconstructor;
+#endif
 };  // class IntersectR2D
 
 
@@ -257,20 +104,49 @@ class IntersectR2D {
 //////////////////////////////////////////////////////////////////////////////
 // Specialization of Intersect2D class for cells
 
-template <typename SourceMeshType, typename TargetMeshType>
-class IntersectR2D<CELL, SourceMeshType, TargetMeshType> {
+template <class SourceMeshType, class SourceStateType,
+          class TargetMeshType,
+          template <class, int> class InterfaceReconstructorType>
+class IntersectR2D<CELL, SourceMeshType, SourceStateType, TargetMeshType,
+                   InterfaceReconstructorType> {
+
+#ifdef HAVE_TANGRAM
+  using InterfaceReconstructor2D =
+      Tangram::Driver<InterfaceReconstructorType, 2, SourceMeshType>;
+#endif
+
  public:
 
-  /// Constructor taking a source mesh @c s and a target mesh @c t.
-  IntersectR2D(const SourceMeshType &s, const TargetMeshType &t)
-    : sourceMeshWrapper(s), targetMeshWrapper(t) {}
+#ifdef HAVE_TANGRAM
+  /// Constructor with interface reconstructor
 
-  /*! \brief Intersect target cell with a set of source cell
-   * \param[in] tgt_entity  Cell of target mesh to intersect
-   * \param[in] src_entities List of source cells to intersect against
-   * \return vector of Weights_t structure containing moments of intersection
-   */
+  IntersectR2D(SourceMeshType const & source_mesh,
+               SourceStateType const & source_state,
+               TargetMeshType const & target_mesh,
+               std::shared_ptr<InterfaceReconstructor2D> ir)
+      : sourceMeshWrapper(source_mesh), sourceStateWrapper(source_state),
+        targetMeshWrapper(target_mesh), interface_reconstructor(ir) {}
+#endif
 
+  /// Constructor WITHOUT interface reconstructor
+
+  IntersectR2D(SourceMeshType const & source_mesh,
+               SourceStateType const & source_state,
+               TargetMeshType const & target_mesh)
+      : sourceMeshWrapper(source_mesh), sourceStateWrapper(source_state),
+        targetMeshWrapper(target_mesh) {}
+
+  /// \brief Set the source mesh material that we have to intersect against 
+  
+  int set_material(int m) {
+    matid_ = m;
+  }
+
+  /// \brief Intersect target cell with a set of source cell
+  /// \param[in] tgt_entity  Cell of target mesh to intersect
+  /// \param[in] src_entities List of source cells to intersect against
+  /// \return vector of Weights_t structure containing moments of intersection
+   
   std::vector<Weights_t>
   operator() (const int tgt_cell, const std::vector<int> src_cells) const {
     std::vector<Point<2>> target_poly;
@@ -282,15 +158,65 @@ class IntersectR2D<CELL, SourceMeshType, TargetMeshType> {
     for (int i = 0; i < nsrc; i++) {
       int s = src_cells[i];
 
-      std::vector<Point<2>> source_poly;
-      sourceMeshWrapper.cell_get_coordinates(s, &source_poly);
-
       Weights_t & this_wt = sources_and_weights[ninserted];
       this_wt.entityID = s;
-      this_wt.weights = intersect_2Dpolys(source_poly, target_poly);
 
+#ifdef HAVE_TANGRAM
+      int nmats = sourceStateWrapper.cell_get_num_mats(s);
+      std::vector<int> cellmats;
+      sourceStateWrapper.cell_get_mats(s, &cellmats);
+      
+      if (!nmats || (nmats == 1 && cellmats[0] == matid_)) {
+        // pure cell containing this material - intersect with polygon
+        // representing the cell
+
+        std::vector<Point<2>> source_poly;
+        sourceMeshWrapper.cell_get_coordinates(s, &source_poly);
+        
+        this_wt.weights = intersect_polys_r2d(source_poly, target_poly);
+
+      } else {  // multi-material case
+        // How can I check that I didn't get DummyInterfaceReconstructor
+        //
+        // static_assert(InterfaceReconstructorType<SourceMeshType, 2> !=
+        //               DummyInterfaceReconstructor<SourceMeshType, 2>);
+
+        assert(interface_reconstructor != nullptr);  // cannot be nullptr
+        
+        if (std::find(cellmats.begin(), cellmats.end(), matid_) !=
+            cellmats.end()) {
+          // mixed cell containing this material - intersect with
+          // polygon approximation of this material in the cell
+          // (obtained from interface reconstruction)
+          
+          Tangram::CellMatPoly<2> const& cellmatpoly =
+              interface_reconstructor->cell_matpoly_data(s);
+          std::vector<Tangram::MatPoly<2>> matpolys =
+              cellmatpoly.get_matpolys(matid_);
+          
+          this_wt.weights.resize(3, 0.0);
+          for (int j = 0; j < matpolys.size(); j++) {
+            std::vector<Tangram::Point<2>> tpnts = matpolys[j].points();
+            std::vector<Point<2>> source_poly;
+            source_poly.reserve(tpnts.size());
+            for (auto const & p : tpnts) source_poly.push_back(p);
+            
+            std::vector<double> momvec = intersect_polys_r2d(source_poly,
+                                                             target_poly);
+            for (int k = 0; k < 3; k++)
+              this_wt.weights[k] += momvec[k];
+          }
+        }
+      }
+#else
+      std::vector<Point<2>> source_poly;
+      sourceMeshWrapper.cell_get_coordinates(s, &source_poly);
+      
+      this_wt.weights = intersect_polys_r2d(source_poly, target_poly);      
+#endif
+        
       // Increment if vol of intersection > 0; otherwise, allow overwrite
-      if (this_wt.weights[0] > 0.0)
+      if (this_wt.weights.size() && this_wt.weights[0] > 0.0)
         ninserted++;
     }
 
@@ -300,12 +226,18 @@ class IntersectR2D<CELL, SourceMeshType, TargetMeshType> {
 
   IntersectR2D() = delete;
 
-  //! Assignment operator (disabled)
+  /// Assignment operator (disabled)
   IntersectR2D & operator = (const IntersectR2D &) = delete;
 
  private:
-  const SourceMeshType &sourceMeshWrapper;
-  const TargetMeshType &targetMeshWrapper;
+  SourceMeshType const & sourceMeshWrapper;
+  SourceStateType const & sourceStateWrapper;
+  TargetMeshType const & targetMeshWrapper;
+  int matid_ = -1;
+
+#ifdef HAVE_TANGRAM
+  std::shared_ptr<InterfaceReconstructor2D> interface_reconstructor;
+#endif
 };  // class IntersectR2D
 
 
@@ -314,20 +246,50 @@ class IntersectR2D<CELL, SourceMeshType, TargetMeshType> {
 //////////////////////////////////////////////////////////////////////////////
 // Specialization of Intersect2D class for nodes
 
-template <typename SourceMeshType, typename TargetMeshType>
-class IntersectR2D<NODE, SourceMeshType, TargetMeshType> {
+template <class SourceMeshType, class SourceStateType,
+          class TargetMeshType,
+          template <class, int> class InterfaceReconstructorType>
+class IntersectR2D<NODE, SourceMeshType, SourceStateType, TargetMeshType,
+                   InterfaceReconstructorType> {
+
+#ifdef HAVE_TANGRAM
+  using InterfaceReconstructor2D =
+      Tangram::Driver<InterfaceReconstructorType, 2, SourceMeshType>;
+#endif
+
  public:
 
-  /// Constructor taking a source mesh @c s and a target mesh @c t.
-  IntersectR2D(const SourceMeshType &s, const TargetMeshType &t)
-      : sourceMeshWrapper(s), targetMeshWrapper(t) {}
+#ifdef HAVE_TANGRAM
+  /// Constructor with interface reconstructor
 
-  /*! \brief Intersect control volume of a target node with control volumes of
-   * a set of source nodes
-   * \param[in] tgt_node  Target mesh node whose control volume we consider
-   * \param[in] src_nodes List of source nodes whose control volumes we will intersect against
-   * \return vector of Weights_t structure containing moments of intersection
-   */
+  IntersectR2D(SourceMeshType const & source_mesh,
+               SourceStateType const & source_state,
+               TargetMeshType const & target_mesh,
+               std::shared_ptr<InterfaceReconstructor2D> ir)
+      : sourceMeshWrapper(source_mesh), sourceStateWrapper(source_state),
+        targetMeshWrapper(target_mesh), interface_reconstructor(ir) {}
+#endif
+
+
+  /// Constructor WITHOUT interface reconstructor
+
+  IntersectR2D(SourceMeshType const & source_mesh,
+               SourceStateType const & source_state,
+               TargetMeshType const & target_mesh)
+      : sourceMeshWrapper(source_mesh), sourceStateWrapper(source_state),
+        targetMeshWrapper(target_mesh) {}
+
+  /// \brief Set the source mesh material that we have to intersect against 
+  
+  int set_material(int m) {
+    matid_ = m;
+  }
+  
+  /// \brief Intersect control volume of a target node with control volumes of
+  /// a set of source nodes
+  /// \param[in] tgt_node  Target mesh node whose control volume we consider
+  /// \param[in] src_nodes List of source nodes whose control volumes we will intersect against
+  /// \return vector of Weights_t structure containing moments of intersection
 
   std::vector<Weights_t>
   operator() (const int tgt_node, const std::vector<int> src_nodes) const {
@@ -344,10 +306,10 @@ class IntersectR2D<NODE, SourceMeshType, TargetMeshType> {
 
       Weights_t & this_wt = sources_and_weights[ninserted];
       this_wt.entityID = s;
-      this_wt.weights = intersect_2Dpolys(source_poly, target_poly);
+      this_wt.weights = intersect_polys_r2d(source_poly, target_poly);
 
       // Increment if vol of intersection > 0; otherwise, allow overwrite
-      if (this_wt.weights[0] > 0.0)
+      if (this_wt.weights.size() && this_wt.weights[0] > 0.0)
         ninserted++;
     }
 
@@ -357,12 +319,19 @@ class IntersectR2D<NODE, SourceMeshType, TargetMeshType> {
 
   IntersectR2D() = delete;
 
-  //! Assignment operator (disabled)
+  /// Assignment operator (disabled)
+
   IntersectR2D & operator = (const IntersectR2D &) = delete;
 
  private:
-  const SourceMeshType &sourceMeshWrapper;
-  const TargetMeshType &targetMeshWrapper;
+  SourceMeshType const & sourceMeshWrapper;
+  SourceStateType const & sourceStateWrapper;
+  TargetMeshType const & targetMeshWrapper;
+  int matid_ = -1;
+
+#ifdef HAVE_TANGRAM
+  std::shared_ptr<InterfaceReconstructor2D> interface_reconstructor;
+#endif
 };  // class IntersectR2D
 
 } // namespace Portage

@@ -359,7 +359,7 @@ TEST(TANGRAM_3D, test_matpoly_intersect) {
 
   // Hope for a miracle with intersection
   std::vector<double> moments(
-      Portage::intersect_3Dpolys(srcpoly, target_tet_coords));
+      Portage::intersect_polys_r3d(srcpoly, target_tet_coords));
 
   // test that the moments are correct
   ASSERT_NEAR(moments[0], 1. / 6., eps);
@@ -395,7 +395,7 @@ TEST(TANGRAM_3D, test_intersect_matpoly_gold) {
        Portage::Point<3>{0., 1., 0.}, Portage::Point<3>{0., 0., 1.}}};
 
   // Intersect
-  std::vector<double> moments(Portage::intersect_3Dpolys(
+  std::vector<double> moments(Portage::intersect_polys_r3d(
       Portage::get_faceted_matpoly(matpoly), target_tet_coords));
 
   // test that the moments are correct
@@ -437,7 +437,7 @@ TEST(TANGRAM_3D, test_intersect_matpoly_gold2) {
   target_mesh_wrapper.decompose_cell_into_tets(0, &tcoords, planar_hex);
 
   // Intersect
-  std::vector<double> moments(Portage::intersect_3Dpolys(
+  std::vector<double> moments(Portage::intersect_polys_r3d(
       Portage::get_faceted_matpoly(matpoly), tcoords));
 
   // test that the moments are correct
@@ -480,7 +480,7 @@ TEST(TANGRAM_3D, test_intersect_matpoly_gold3) {
   target_mesh_wrapper.decompose_cell_into_tets(0, &tcoords, planar_hex);
 
   // Intersect
-  std::vector<double> moments(Portage::intersect_3Dpolys(
+  std::vector<double> moments(Portage::intersect_polys_r3d(
       Portage::get_faceted_matpoly(matpoly), tcoords));
 
   // test that the moments are correct
@@ -523,7 +523,7 @@ TEST(TANGRAM_3D, test_intersect_matpoly_gold4) {
   target_mesh_wrapper.decompose_cell_into_tets(0, &tcoords, planar_hex);
 
   // Intersect
-  std::vector<double> moments(Portage::intersect_3Dpolys(
+  std::vector<double> moments(Portage::intersect_polys_r3d(
       Portage::get_faceted_matpoly(matpoly), tcoords));
 
   // test that the moments are correct

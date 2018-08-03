@@ -169,7 +169,7 @@ SwarmState<dim>::SwarmState(Wonton::Flat_Mesh_Wrapper<double> &mesh,
 
   for (auto iter=dnames.begin(); iter!=dnames.end(); iter++) {
     double *datap;
-    state.get_data(entity, *iter, &datap);
+    state.mesh_get_data(entity, *iter, &datap);
     DblVecPtr data = make_shared<vector<double>>(npoints_owned_);
     for (size_t i=0; i<npoints_owned_; i++) (*data)[i] = datap[i];
     add_field(*iter, data);

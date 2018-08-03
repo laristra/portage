@@ -57,7 +57,7 @@ class Limited_Quadfit {
 
     // Extract the field data from the statemanager
 
-    state.get_data(on_what, var_name, &vals_);
+    state.mesh_get_data(on_what, var_name, &vals_);
   }
 
   /// @todo Seems to be needed when using this in a Thrust transform call?
@@ -117,7 +117,7 @@ class Limited_Quadfit<D, CELL, MeshType, StateType> {
       limtype_(limiter_type) {
 
     // Extract the field data from the statemanager
-    state.get_data(CELL, var_name, &vals_);
+    state.mesh_get_data(CELL, var_name, &vals_);
 
     // Collect and keep the list of neighbors for each NODE as it may
     // be expensive to go to the mesh layer and collect this data for
@@ -274,7 +274,7 @@ class Limited_Quadfit<D, NODE, MeshType, StateType> {
       limtype_(limiter_type) {
 
     // Extract the field data from the statemanager
-    state.get_data(NODE, var_name, &vals_);
+    state.mesh_get_data(NODE, var_name, &vals_);
 
     // Collect and keep the list of neighbors for each NODE as it may
     // be expensive to go to the mesh layer and collect this data for

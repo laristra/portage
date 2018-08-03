@@ -30,7 +30,7 @@ namespace Wonton {
 /*!
   @class Flat_State_Wrapper "flat_state_wrapper.h"
   @brief Stores state data in a flat representation
-         
+
          Currently all fields must be of the same type
 */
 template <class T=double>
@@ -62,30 +62,30 @@ class Flat_State_Wrapper {
    */
   template <class State_Wrapper>
   void initialize(State_Wrapper const & input,
-                  std::vector<std::string> var_names) 
+                  std::vector<std::string> var_names)
   {
-	  clear(); // forget everything
+          clear(); // forget everything
 
-	  for (unsigned int i=0; i<var_names.size(); i++)
-	  {
-		  // get name
-		  std::string varname = var_names[i];
+          for (unsigned int i=0; i<var_names.size(); i++)
+          {
+                  // get name
+                  std::string varname = var_names[i];
 
-		  // get entity
-		  Entity_kind entity = input.get_entity(varname);
+                  // get entity
+                  Entity_kind entity = input.get_entity(varname);
 
-		  // get pointer to data for state from input state wrapper
-		  T const* data;
-		  input.get_data(entity, varname, &data);
+                  // get pointer to data for state from input state wrapper
+                  T const* data;
+                  input.mesh_get_data(entity, varname, &data);
 
-		  // copy input state data into new vector storage
-		  size_t dataSize = input.get_data_size(entity, varname);
-		  auto vdata = std::make_shared<std::vector<T>>(dataSize);
-	      std::copy(data, data+dataSize, vdata->begin());
+                  // copy input state data into new vector storage
+                  size_t dataSize = input.get_data_size(entity, varname);
+                  auto vdata = std::make_shared<std::vector<T>>(dataSize);
+              std::copy(data, data+dataSize, vdata->begin());
 
-	      // add to database
-		  add_data(entity, varname, vdata);
-	  }
+              // add to database
+                  mesh_add_data(entity, varname, vdata);
+          }
   }
 
   /*!
@@ -112,8 +112,9 @@ class Flat_State_Wrapper {
    *
    * All existing internal data is forgotten.
    */
-  void initialize(std::vector<std::string> names, std::vector<Entity_kind> entities,
-		  	      std::vector<std::shared_ptr<std::vector<T>>> data)
+  void initialize(std::vector<std::string> const& names,
+                  std::vector<Entity_kind> const& entities,
+                  std::vector<std::shared_ptr<std::vector<T>>> const& data)
   {
     if (not (names.size() == entities.size() and names.size() == data.size() and data.size() == entities.size())) {
         throw std::runtime_error("argument sizes do not agree");
@@ -123,7 +124,7 @@ class Flat_State_Wrapper {
 
     size_t index;
     for (size_t i=0; i<names.size(); i++) {
-    	add_data(entities[i], names[i], data[i]);
+        mesh_add_data(entities[i], names[i], data[i]);
     }
   }
 
@@ -132,13 +133,91 @@ class Flat_State_Wrapper {
    @param[in] entity The entity type
    @param[out] names The names associated with the entity. Cleared on entry.
   */
-  void get_names(const Entity_kind on_what, std::vector<std::string> &names) {
+  void get_names(Entity_kind on_what, std::vector<std::string>& names) {
     names.clear();
     for (auto iter=entity_map_.begin(); iter!=entity_map_.end(); iter++) {
       if (iter->second == on_what) {
         names.push_back(iter->first);
       }
     }
+  }
+
+  /*!
+    @brief Number of materials in problem
+  */
+
+  int num_materials() const {
+    return 0;
+  }
+
+  /*!
+    @brief Name of material
+  */
+
+  std::string material_name(int matid) const {
+  }
+
+  /*!
+    @brief Get number of cells containing a particular material
+    @param matid    Index of material (0, num_materials()-1)
+    @return         Number of cells containing material 'matid'
+  */
+
+  int mat_get_num_cells(int matid) const {
+    return 0;
+  }
+
+  /*!
+    @brief Get cell indices containing a particular material
+    @param matid    Index of material (0, num_materials()-1)
+    @param matcells Cells containing material 'matid'
+  */
+
+  void mat_get_cells(int matid, std::vector<int> *matcells) const {
+    matcells->clear();
+  }
+
+  /*!
+    @brief Get number of materials contained in a cell
+    @param cellid  Index of cell in mesh
+    @return        Number of materials in cell
+  */
+
+  int cell_get_num_mats(int cellid) const {
+    return 0;
+  }
+
+  /*!
+    @brief Get the IDs of materials in a cell
+    @param cellid    Index of cell in mesh
+    @param cellmats  Indices of materials in cell
+  */
+
+  void cell_get_mats(int cellid, std::vector<int> *cellmats) const {
+    cellmats->clear();
+  }
+
+  /*!
+    @brief Get the local index of mesh cell in material cell list
+    @param meshcell    Mesh cell ID
+    @param matid       Material ID
+    @return             Local cell index in material cell list
+  */
+
+  int cell_index_in_material(int meshcell, int matid) const {
+    return -1;
+  }
+
+  /*!
+    @brief Type of field (MESH_FIELD or MULTIMATERIAL_FIELD)
+    @param onwhat    Entity_kind that field is defined on
+    @param varname   Name of field
+    @return          Field type
+  */
+
+  Field_type field_type(Entity_kind on_what, std::string const& var_name)
+      const {
+    return Field_type::MESH_FIELD;  // MULTI-MATERIAL FIELDS NOT IMPLEMENTED
   }
 
   /*!
@@ -149,7 +228,8 @@ class Flat_State_Wrapper {
     *
     * Data is associated with the name-entity combination. Both values must be valid.
    */
-  void get_data(const Entity_kind on_what, const std::string var_name, T** data) {
+  void mesh_get_data(Entity_kind on_what, std::string const& var_name,
+                     T** data) {
     pair_t pr(var_name, on_what);
     auto iter = name_map_.find(pr);
     if (iter != name_map_.end()) {
@@ -167,7 +247,8 @@ class Flat_State_Wrapper {
     *
     * Data is associated with the name-entity combination. Both values must be valid.
    */
-  void get_data(const Entity_kind on_what, const std::string var_name, T const **data) const {
+  void mesh_get_data(Entity_kind on_what, std::string const& var_name,
+                     T const **data) const {
     pair_t pr(var_name, on_what);
     auto iter = name_map_.find(pr);
     if (iter != name_map_.end()) {
@@ -176,6 +257,37 @@ class Flat_State_Wrapper {
       (*data) = nullptr;
     }
   }
+
+  /*!
+    @brief Get pointer to read-only scalar cell data for a particular material
+    @param[in] var_name The string name of the data field
+    @param[in] matid   Index (not unique identifier) of the material
+    @param[out] data   vector containing the values corresponding to cells in the material
+   */
+
+  void mat_get_celldata(std::string const& var_name, int matid,
+                        T const **data) const {
+  }
+
+
+  /*!
+    @brief Get pointer to read-write scalar data for a particular material
+    @param[in] on_what The entity type on which to get the data
+    @param[in] var_name The string name of the data field
+    @param[in] matid   Index (not unique identifier) of the material
+    @param[out] data   vector containing the values corresponding to cells in the material
+
+    Removing the constness of the template parameter allows us to call
+    this function and get const data back (e.g. pointer to double const)
+    even if the wrapper object is not const. The alternative is to make
+    another overloaded operator that is non-const but returns a pointer
+    to const data. Thanks StackOverflow!
+   */
+
+  void mat_get_celldata(std::string const& var_name, int matid, T **data) {
+  }
+
+
 
   /*!
     @brief Get the entity type on which the given field is defined
@@ -188,7 +300,7 @@ class Flat_State_Wrapper {
    *
    * This function is provided to make the class compatible with other state wrappers.
    */
-  Entity_kind get_entity(std::string &var_name) {
+  Entity_kind get_entity(std::string const& var_name) {
     return entity_map_[var_name];
   }
 
@@ -197,7 +309,7 @@ class Flat_State_Wrapper {
     @param[in] index The index of the data field
     @return The Entity_kind enum for the entity type on which the field is defined
    */
-  Entity_kind get_entity(const int index) const
+  Entity_kind get_entity(int index) const
   {
     return entities_[index];
   }
@@ -209,10 +321,38 @@ class Flat_State_Wrapper {
     return entity_size_map_[ent];
   }
 
+
+  /*!
+    @brief Get the data type of the given field
+    @param[in] name The string name of the data field
+    @return A reference to the type_info struct for the field's data type
+   */
+  const std::type_info& get_data_type(std::string const& name) const {
+    size_t index = -1;
+    pair_t name_cell_pair(name, Portage::Entity_kind::CELL);
+    auto it = name_map_.find(name_cell_pair);
+    if (it != name_map_.end())
+      index = get_vector_index(Portage::Entity_kind::CELL, name);
+    else {
+      pair_t name_node_pair(name, Portage::Entity_kind::NODE, name);
+      it = name_map_.find(name_node_pair);
+      if (it != name_map_.end())
+        index = get_vector_index(Portage::Entity_kind::NODE, name);
+    }
+
+    if (index >= 0) {
+      return typeid(T);
+    } else {
+      std::cerr << "Could not find state variable " << name << "\n";
+      return typeid(0);
+    }
+  }
+
+
   /*!
    * @brief Get index for entity and name
    */
-  size_t get_vector_index(Entity_kind ent, std::string name) {
+  size_t get_vector_index(Entity_kind ent, std::string const& name) {
     pair_t pair(name, ent);
     return name_map_[pair];
   }
@@ -222,7 +362,7 @@ class Flat_State_Wrapper {
   */
   std::shared_ptr<std::vector<T>> get_vector(size_t index)
   {
-    return state_[index]; 
+    return state_[index];
   }
 
   /*!
@@ -244,10 +384,10 @@ class Flat_State_Wrapper {
   void add_gradients(std::shared_ptr<std::vector<Portage::Point3>> new_grad)
   {
     if (new_grad->size() <= 0) return;
-    gradients_.push_back(new_grad); 
+    gradients_.push_back(new_grad);
   }
 
-  /*! 
+  /*!
     @brief Get field stride
   */
   size_t get_field_stride(size_t index)
@@ -262,6 +402,7 @@ class Flat_State_Wrapper {
 
 private:
   std::vector<std::shared_ptr<std::vector<T>>> state_;
+  int nmats_ = 0;
   std::map<pair_t, size_t> name_map_;
   std::vector<Entity_kind> entities_;
   std::map<std::string, Entity_kind> entity_map_;
@@ -272,11 +413,11 @@ private:
    * @brief Forget all internal data so initialization can start over
    */
   void clear(){
-	  state_.clear();
-	  name_map_.clear();
-	  entity_map_.clear();
-	  entity_size_map_.clear();
-	  gradients_.clear();
+          state_.clear();
+          name_map_.clear();
+          entity_map_.clear();
+          entity_size_map_.clear();
+          gradients_.clear();
   }
 
   /*!
@@ -289,32 +430,35 @@ private:
    * Size of data must match previous size recorded for requested entity.
    * If entity has not been seen before, make that entity's size equal to that of data.
    */
-  void add_data(const Entity_kind on_what, const std::string var_name, std::shared_ptr<std::vector<T>> data) {
-	  // if we have seen this entity before - check size match, else store this size
-	  auto sziter = entity_size_map_.find(on_what);
-	  if (sziter != entity_size_map_.end()) {
-		  if (sziter->second != data->size()) {
-			  throw std::runtime_error(std::string("variable ")+var_name+" has incompatible size on add");
-		  }
-	  } else {
-		  entity_size_map_[on_what] = data->size();
-	  }
-
-	  // store data and update internal book-keeping
-	  pair_t pair(var_name, on_what);
-	  auto iter = name_map_.find(pair);
-	  if (iter == name_map_.end()) {  // have not seen this entity-name combo before, add data
-		  state_.push_back(data);
-		  name_map_[pair] = state_.size() - 1;
-		  entities_.push_back(on_what);
-		  entity_map_[var_name] = on_what;
-		  entity_size_map_[on_what] = data->size();
-	  } else { // have seen the entity-name combo already, replace data. already checked size.
-		  std::copy(data->begin(), data->end(), state_[iter->second]->begin());
-	  }
+  void mesh_add_data(Entity_kind on_what, std::string const& var_name,
+                     std::shared_ptr<std::vector<T>> data) {
+    // if we have seen this entity before - check size match, else
+    // store this size
+    auto sziter = entity_size_map_.find(on_what);
+    if (sziter != entity_size_map_.end()) {
+      if (sziter->second != data->size()) {
+        throw std::runtime_error(std::string("variable ")+var_name+
+                                 " has incompatible size on add");
+      }
+    } else {
+      entity_size_map_[on_what] = data->size();
+    }
+    
+    // store data and update internal book-keeping
+    pair_t pair(var_name, on_what);
+    auto iter = name_map_.find(pair);
+    if (iter == name_map_.end()) {  // have not seen this entity-name combo before, add data
+      state_.push_back(data);
+      name_map_[pair] = state_.size() - 1;
+      entities_.push_back(on_what);
+      entity_map_[var_name] = on_what;
+      entity_size_map_[on_what] = data->size();
+    } else {  // have seen the entity-name combo already, replace data. already checked size.
+      std::copy(data->begin(), data->end(), state_[iter->second]->begin());
+    }
   }
-}; // Flat_State_Wrapper
+};  // Flat_State_Wrapper
 
-} // namespace Wonton
+}  // namespace Wonton
 
-#endif // FLAT_STATE_WRAPPER_H_
+#endif  // FLAT_STATE_WRAPPER_H_

@@ -169,7 +169,7 @@ Execute the following from the portage root directory:
 module load intel/17.0.4 openmpi/2.1.2 cmake
 JALI_INSTALL_PREFIX=/usr/projects/ngc/private/jali/0.9.8-intel-17.0.4-openmpi-2.1.2
 TANGRAM_INSTALL_PREFIX=/usr/projects/ngc/private/tangram/475b813919f-intel-17.0.4-openmpi-2.1.2
-XMOF2D_INSTALL_PREFIX=/usr/projects/ngc/private/xmof2d/0.9-intel-17.0.4-openmpi-2.1.2
+XMOF2D_INSTALL_PREFIX=/usr/projects/ngc/private/xmof2d/0.9-intel-17.0.4
 LAPACKE_DIR=/usr/projects/ngc/private/lapack/3.8.0-patched-intel-17.0.4
 mkdir build
 cd build
@@ -230,7 +230,7 @@ Execute the following from the portage root directory:
 export MODULEPATH=""
 . /opt/local/packages/Modules/default/init/sh
 module load intel/18.0.1 openmpi/2.1.2 cmake
-JALI_INSTALL_PREFIX=/usr/local/codes/ngc/private/jali/0.9.8-intel-18.0.1-openmpi-2.1.2
+JALI_INSTALL_PREFIX=/usr/local/codes/ngc/private/jali/1.0.0-intel-18.0.1-openmpi-2.1.2
 TANGRAM_INSTALL_PREFIX=/usr/local/codes/ngc/private/tangram/7740b340637-intel-18.0.1-openmpi-2.1.2
 XMOF2D_INSTALL_PREFIX=/usr/local/codes/ngc/private/xmof2d/6023dea445c-intel-18.0.1
 LAPACKE_DIR=/usr/local/codes/ngc/private/lapack/3.8.0-patched-intel-18.0.1/
@@ -241,7 +241,7 @@ cd build
 cmake \
     -D CMAKE_BUILD_TYPE=Debug \
     -D ENABLE_UNIT_TESTS=True \
-    -D ENABLE_APP_TESTS=True \
+    -D ENABLE_APP_TESTS=False \
     -D ENABLE_MPI=True \
     -D Jali_DIR:FILEPATH=$JALI_INSTALL_PREFIX/lib \
     -D TANGRAM_DIR:FILEPATH=$TANGRAM_INSTALL_PREFIX \
@@ -277,7 +277,7 @@ cmake \
     -D CMAKE_CXX_COMPILER=`which mpiCC` \
     -D CMAKE_BUILD_TYPE=Debug \
     -D ENABLE_UNIT_TESTS=True \
-    -D ENABLE_APP_TESTS=True \
+    -D ENABLE_APP_TESTS=False \
     -D ENABLE_MPI=True \
     -D ENABLE_FleCSI=True \
     -D CMAKE_PREFIX_PATH="$FLECSI_INSTALL_PREFIX;$FLECSISP_INSTALL_PREFIX" \

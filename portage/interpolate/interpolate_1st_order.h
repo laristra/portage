@@ -4,8 +4,8 @@ Please see the license file at the root of this repository, or at:
     https://github.com/laristra/portage/blob/master/LICENSE
 */
 
-#ifndef SRC_INTERPOLATE_INTERPOLATE_1ST_ORDER_H_
-#define SRC_INTERPOLATE_INTERPOLATE_1ST_ORDER_H_
+#ifndef INTERPOLATE_1ST_ORDER_H_
+#define INTERPOLATE_1ST_ORDER_H_
 
 
 #include <cassert>
@@ -94,6 +94,12 @@ class Interpolate_1stOrder {
   /// Destructor
   ~Interpolate_1stOrder() {}
 
+  /// Set the material we are operating on
+
+  int set_material(int m) {
+    matid_ = m;
+  }
+
   /// Set the variable name to be interpolated.
 
   // Even though 1st order accurate interpolation does not require
@@ -106,7 +112,12 @@ class Interpolate_1stOrder {
   void set_interpolation_variable(std::string const & interp_var_name,
                                   LimiterType limtype=NOLIMITER) {
     interp_var_name_ = interp_var_name;
-    source_state_.get_data(on_what, interp_var_name, &source_vals_);
+    field_type_ = source_state_.field_type(CELL, interp_var_name);
+    if (field_type_ == Field_type::MESH_FIELD)
+      source_state_.mesh_get_data(CELL, interp_var_name,
+                                  &source_vals_);
+    else
+      source_state_.mat_get_celldata(interp_var_name, matid_, &source_vals_);
   }
 
   /*!
@@ -138,6 +149,8 @@ class Interpolate_1stOrder {
   StateType const & source_state_;
   std::string interp_var_name_;
   double const * source_vals_;
+  int matid_;
+  Field_type field_type_;
 };
 
 
@@ -178,6 +191,13 @@ class Interpolate_1stOrder<D, CELL, SourceMeshType, TargetMeshType, StateType> {
   /// Destructor
   ~Interpolate_1stOrder() {}
 
+
+  /// Set the material we are operating on
+
+  int set_material(int m) {
+    matid_ = m;
+  }
+
   /// Set the variable name to be interpolated
 
 
@@ -188,10 +208,15 @@ class Interpolate_1stOrder<D, CELL, SourceMeshType, TargetMeshType, StateType> {
   // order interpolators and so all interpolators need to have a
   // uniform interface
 
-  void set_interpolation_variable(std::string const & interp_var_name,
+  void set_interpolation_variable(std::string const & interp_var_name, 
                                   LimiterType limtype = NOLIMITER) {
     interp_var_name_ = interp_var_name;
-    source_state_.get_data(CELL, interp_var_name, &source_vals_);
+    field_type_ = source_state_.field_type(CELL, interp_var_name);
+    if (field_type_ == Field_type::MESH_FIELD)
+      source_state_.mesh_get_data(CELL, interp_var_name,
+                                  &source_vals_);
+    else
+      source_state_.mat_get_celldata(interp_var_name, matid_, &source_vals_);
   }
 
   /*!
@@ -219,6 +244,8 @@ class Interpolate_1stOrder<D, CELL, SourceMeshType, TargetMeshType, StateType> {
   StateType const & source_state_;
   std::string interp_var_name_;
   double const * source_vals_;
+  int matid_;
+  Field_type field_type_;
 };
 
 
@@ -238,27 +265,51 @@ double Interpolate_1stOrder<D, CELL, SourceMeshType, TargetMeshType,
   int nsrccells = sources_and_weights.size();
   if (!nsrccells) {
 #ifdef DEBUG
-    std::cerr << "WARNING: No source cells contribute to target cell." <<
-        std::endl;
+    std::cerr << "WARNING: No source cells contribute to target cell" <<
+        targetCellID << std::endl;
 #endif
     return 0.0;
   }
 
   // contribution of the source cell is its field value weighted by
   // its "weight" (in this case, its 0th moment/area/volume)
+  
   double val = 0.0;
   double wtsum0 = 0.0;
-  for (auto const& wt : sources_and_weights) {
-    int srccell = wt.entityID;
-    std::vector<double> pair_weights = wt.weights;
-    val += source_vals_[srccell] * pair_weights[0];  // 1st order
-    wtsum0 += pair_weights[0];
-  }
-
-  // Normalize the value by sum of all the weights
-
   double vol = target_mesh_.cell_volume(targetCellID);
-  val /= vol;
+
+  int nsummed = 0;
+  if (field_type_ == Field_type::MESH_FIELD) {
+    for (auto const& wt : sources_and_weights) {
+      int srccell = wt.entityID;
+      std::vector<double> pair_weights = wt.weights;
+      if (pair_weights[0]/vol < 1.0e-12) continue;  // skip small intersections
+      val += source_vals_[srccell] * pair_weights[0];
+      wtsum0 += pair_weights[0];
+      nsummed++;
+    }
+  } else if (field_type_ == Field_type::MULTIMATERIAL_FIELD) {
+    for (auto const& wt : sources_and_weights) {
+      int srccell = wt.entityID;
+      std::vector<double> pair_weights = wt.weights;
+      if (pair_weights[0]/vol < 1.0e-12) continue;  // skip small intersections
+      int matcell = source_state_.cell_index_in_material(srccell, matid_);
+      val += source_vals_[matcell] * pair_weights[0];  // 1st order
+      wtsum0 += pair_weights[0];
+      nsummed++;
+    }
+  }
+  
+  // Normalize the value by the volume of the intersection of the target cells
+  // with the source mesh. This will do the right thing for single-material
+  // and multi-material remap (conservative and constant preserving) if there
+  // is NO mismatch between source and target mesh boundaries. IF THERE IS A
+  // MISMATCH, THIS WILL PRESERVE CONSTANT VALUES BUT NOT BE CONSERVATIVE. THEN
+  // WE HAVE TO DO A SEMI-LOCAL OR GLOBAL REPAIR.
+  if (nsummed)
+    val /= wtsum0;
+  else
+    val = 0.0;
 
 #ifdef DEBUG
   static bool first = true;
@@ -312,6 +363,12 @@ class Interpolate_1stOrder<D, NODE, SourceMeshType, TargetMeshType, StateType> {
   /// Destructor
   ~Interpolate_1stOrder() {}
 
+  /// Set the material we are operating on
+
+  int set_material(int m) {
+    matid_ = m;
+  }
+
   /// Set the variable name to be interpolated
 
   // Even though 1st order accurate interpolation does not require
@@ -324,7 +381,14 @@ class Interpolate_1stOrder<D, NODE, SourceMeshType, TargetMeshType, StateType> {
   void set_interpolation_variable(std::string const & interp_var_name,
                                   LimiterType limtype = NOLIMITER) {
     interp_var_name_ = interp_var_name;
-    source_state_.get_data(NODE, interp_var_name, &source_vals_);
+    field_type_ = source_state_.field_type(NODE, interp_var_name);
+    if (field_type_ == Field_type::MESH_FIELD)
+      source_state_.mesh_get_data(NODE, interp_var_name,
+                                  &source_vals_);
+    else {
+      source_state_.mat_get_celldata(interp_var_name, matid_, &source_vals_);
+      std::cerr << "Cannot remap NODE-centered multi-material data" << "\n";
+    }
   }
 
   /*!
@@ -352,6 +416,8 @@ class Interpolate_1stOrder<D, NODE, SourceMeshType, TargetMeshType, StateType> {
   StateType const & source_state_;
   std::string interp_var_name_;
   double const * source_vals_;
+  int matid_;
+  Field_type field_type_;
 };
 
 
@@ -365,6 +431,7 @@ double Interpolate_1stOrder<D, NODE, SourceMeshType, TargetMeshType,
                             StateType> :: operator()
     (int const targetNodeID,
      std::vector<Weights_t> const & sources_and_weights) const {
+  if (field_type_ != Field_type::MESH_FIELD) return 0.0;
 
   int nsrcdualcells = sources_and_weights.size();
   if (!nsrcdualcells) {
@@ -378,21 +445,32 @@ double Interpolate_1stOrder<D, NODE, SourceMeshType, TargetMeshType,
   // contribution of the source node (dual cell) is its field value
   // weighted by its "weight" (in this case, the 0th
   // moment/area/volume of its intersection with the target dual cell)
+  double vol = target_mesh_.dual_cell_volume(targetNodeID);
 
   double val = 0.0;
   double wtsum0 = 0.0;
+  int nsummed = 0;
   for (auto const& wt : sources_and_weights) {
     int srcnode = wt.entityID;
     std::vector<double> pair_weights = wt.weights;
+    if (pair_weights[0]/vol < 1.0e-16) continue;  // skip small intersections
     val += source_vals_[srcnode] * pair_weights[0];  // 1st order
     wtsum0 += pair_weights[0];
+    nsummed++;
   }
 
-  // Normalize the value by volume of the target dual cell
+  // Normalize the value by the volume of the intersection of the target cells
+  // with the source mesh. This will do the right thing for single-material
+  // and multi-material remap (conservative and constant preserving) if there
+  // is NO mismatch between source and target mesh boundaries. IF THERE IS A
+  // MISMATCH, THIS WILL PRESERVE CONSTANT VALUES BUT NOT BE CONSERVATIVE. THEN
+  // WE HAVE TO DO A SEMI-LOCAL OR GLOBAL REPAIR.
 
-  double vol = target_mesh_.dual_cell_volume(targetNodeID);
-  val /= vol;
-
+  if (nsummed)
+    val /= wtsum0;
+  else
+    val = 0.0;
+  
 #ifdef DEBUG
   static bool first = true;
   if (first && fabs((vol-wtsum0)/vol) > 1.0e-10) {
@@ -410,4 +488,4 @@ double Interpolate_1stOrder<D, NODE, SourceMeshType, TargetMeshType,
 
 }  // namespace Portage
 
-#endif  // SRC_INTERPOLATE_INTERPOLATE_1ST_ORDER_H_
+#endif  // INTERPOLATE_1ST_ORDER_H_

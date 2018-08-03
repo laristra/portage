@@ -31,7 +31,7 @@ fi
 
 # set modules and install paths
 
-jali_version=0.9.8
+jali_version=1.0.0
 tangram_version=7740b340637
 xmof2d_version=6023dea445c
 lapack_version=3.8.0
@@ -115,7 +115,7 @@ cd build
 cmake \
   -D CMAKE_BUILD_TYPE=$cmake_build_type \
   -D ENABLE_UNIT_TESTS=True \
-  -D ENABLE_APP_TESTS=True \
+  -D ENABLE_APP_TESTS=False \
   -D ENABLE_JENKINS_OUTPUT=True \
   -D NGC_INCLUDE_DIR:FILEPATH=$ngc_include_dir \
   $mpi_flags \
