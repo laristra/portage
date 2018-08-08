@@ -115,7 +115,7 @@ cd build
 cmake \
   -D CMAKE_BUILD_TYPE=$cmake_build_type \
   -D ENABLE_UNIT_TESTS=True \
-  -D ENABLE_APP_TESTS=False \
+  -D ENABLE_APP_TESTS=True \
   -D ENABLE_JENKINS_OUTPUT=True \
   -D NGC_INCLUDE_DIR:FILEPATH=$ngc_include_dir \
   $mpi_flags \
