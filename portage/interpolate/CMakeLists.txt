@@ -27,10 +27,12 @@ if (ENABLE_UNIT_TESTS)
       LIBRARIES portage  
       POLICY SERIAL)
 
+if (JALI_DIR)
     cinch_add_unit(test_interpolate_1st_order
-      SOURCES  test/test_interp_1st_order.cc
+      SOURCES  test/test_interp_1st_order_jali.cc
       LIBRARIES portage  
       POLICY SERIAL)
+endif (JALI_DIR)
 
     cinch_add_unit(test_interpolate_2nd_order
       SOURCES test/test_interp_2nd_order.cc

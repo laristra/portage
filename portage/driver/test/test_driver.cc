@@ -11,7 +11,7 @@ Please see the license file at the root of this repository, or at:
 #include "gtest/gtest.h"
 #include "mpi.h"
 
-#include "portage/driver/driver.h"
+#include "portage/driver/mmdriver.h"
 #include "portage/wonton/mesh/jali/jali_mesh_wrapper.h"
 #include "portage/wonton/state/jali/jali_state_wrapper.h"
 #include "portage/intersect/intersect_r2d.h"
@@ -37,8 +37,9 @@ class DriverTest : public ::testing::Test {
   std::shared_ptr<Jali::Mesh> sourceMesh;
   std::shared_ptr<Jali::Mesh> targetMesh;
   // Source and target mesh state
-  Jali::State sourceState;
-  Jali::State targetState;
+  std::shared_ptr<Jali::State> sourceState;
+  std::shared_ptr<Jali::State> targetState;
+
   //  Wrappers for interfacing with the underlying mesh data structures
   Wonton::Jali_Mesh_Wrapper sourceMeshWrapper;
   Wonton::Jali_Mesh_Wrapper targetMeshWrapper;
@@ -49,8 +50,12 @@ class DriverTest : public ::testing::Test {
   //  It will work for 2-D and 3-D, coincident and non-coincident
   //  cell-centered remaps.
   template <
-    template<Portage::Entity_kind, class, class> class Intersect,
-    template<int, Portage::Entity_kind, class, class, class> class Interpolate,
+    template<Portage::Entity_kind, class, class, class,
+    template<class, int, class, class> class,
+    class, class> class Intersect,
+    template<int, Portage::Entity_kind, class, class, class,
+    template<class, int, class, class> class,
+    class, class> class Interpolate,
     int Dimension
   >
   void unitTest(double compute_initial_field(JaliGeometry::Point centroid),
@@ -66,21 +71,21 @@ class DriverTest : public ::testing::Test {
       JaliGeometry::Point cen = sourceMesh->cell_centroid(c);
       sourceData[c] = compute_initial_field(cen);
     }
-    sourceState.add("celldata", sourceMesh, Jali::Entity_kind::CELL,
-                    Jali::Entity_type::ALL, &(sourceData[0]));
+    sourceState->add("celldata", sourceMesh, Jali::Entity_kind::CELL,
+                     Jali::Entity_type::ALL, &(sourceData[0]));
 
     // Build the target state storage
     const int ntarcells = targetMeshWrapper.num_owned_cells();
     std::vector<double> targetData(ntarcells, 0.0);
-    targetState.add("celldata", targetMesh, Jali::Entity_kind::CELL,
-                    Jali::Entity_type::ALL, &(targetData[0]));
+    targetState->add("celldata", targetMesh, Jali::Entity_kind::CELL,
+                     Jali::Entity_type::ALL, &(targetData[0]));
 
     //  Build the main driver data for this mesh type
     //  Register the variable name and interpolation order with the driver
     std::vector<std::string> remap_fields;
     remap_fields.push_back("celldata");
 
-    Portage::Driver<Portage::SearchKDTree,
+    Portage::MMDriver<Portage::SearchKDTree,
     Intersect,
     Interpolate, Dimension,
     Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
@@ -97,11 +102,11 @@ class DriverTest : public ::testing::Test {
     double stdval, err;
     double toterr = 0.;
 
-    Jali::StateVector<double, Jali::Mesh> cellvecout;
-    bool found = targetState.get<double, Jali::Mesh>("celldata", targetMesh,
-                                                     Jali::Entity_kind::CELL,
-                                                     Jali::Entity_type::ALL,
-                                                     &cellvecout);
+    Jali::UniStateVector<double, Jali::Mesh> cellvecout;
+    bool found = targetState->get<double, Jali::Mesh>("celldata", targetMesh,
+                                                      Jali::Entity_kind::CELL,
+                                                      Jali::Entity_type::ALL,
+                                                      &cellvecout);
     ASSERT_TRUE(found);
 
     for (int c = 0; c < ntarcells; ++c) {
@@ -109,8 +114,12 @@ class DriverTest : public ::testing::Test {
       double error;
       error = compute_initial_field(ccen) - cellvecout[c];
       //  dump diagnostics for each cell
-      std::printf("Cell=% 4d Centroid = (% 5.3lf,% 5.3lf)", c,
-                  ccen[0], ccen[1]);
+      if (Dimension == 2)
+        std::printf("Cell=% 4d Centroid = (% 5.3lf,% 5.3lf)", c,
+                    ccen[0], ccen[1]);
+      else
+        std::printf("Cell=% 4d Centroid = (% 5.3lf,% 5.3lf,% 5.3lf)", c,
+                    ccen[0], ccen[1], ccen[2]);
       std::printf("  Value = % 10.6lf  Err = % lf\n",
                   cellvecout[c], error);
       toterr += error*error;
@@ -122,10 +131,11 @@ class DriverTest : public ::testing::Test {
   }
   // Constructor for Driver test
   DriverTest(std::shared_ptr<Jali::Mesh> s, std::shared_ptr<Jali::Mesh> t) :
-    sourceMesh(s), targetMesh(t), sourceState(sourceMesh),
-    targetState(targetMesh),
+      sourceMesh(s), targetMesh(t),
+      sourceState(Jali::State::create(sourceMesh)),
+      targetState(Jali::State::create(targetMesh)),
     sourceMeshWrapper(*sourceMesh), targetMeshWrapper(*targetMesh),
-    sourceStateWrapper(sourceState), targetStateWrapper(targetState){
+    sourceStateWrapper(*sourceState), targetStateWrapper(*targetState) {
   }
 
 };
@@ -231,7 +241,7 @@ TEST_F(DriverTest3D, 3D_2ndOrderQuadraticCellCntrCoincident1proc) {
 // Example 10
 TEST_F(DriverTest3DNonCoincident, 3D_1stOrderQuadraticCellCntrNonCoincident1proc) {
   unitTest<Portage::IntersectR3D, Portage::Interpolate_1stOrder, 3>
-  (compute_quadratic_field_3d, 12.336827);
+  (compute_quadratic_field_3d, 12.336826);
 }
 // Example 11
 TEST_F(DriverTest3DNonCoincident, 3D_2ndOrderQuadraticCellCntrNonCoincident1proc) {

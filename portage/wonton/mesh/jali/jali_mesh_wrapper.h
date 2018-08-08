@@ -177,14 +177,15 @@ class Jali_Mesh_Wrapper : public AuxMeshTopology<Jali_Mesh_Wrapper> {
     jali_mesh_.cell_get_nodes(cellid, nodes);
   }
 
-
+  // !! THIS CODE BLOCK NEEDS TO UNCOMMENTED ONCE WONTON IS A LIBRARY !! //
+  // !! RESOLVING TYPE CONVERSION ISSUES BETWEEN TANGRAM AND PORTAGE  !! // 
   //! Get node connected neighbors of cell
-  void cell_get_node_adj_cells(int const cellid,
-                               Entity_type const ptype,
-                               std::vector<int> *adjcells) const {
-    jali_mesh_.cell_get_node_adj_cells(cellid, (Jali::Entity_type) ptype,
-                                       adjcells);
-  }
+  //  void cell_get_node_adj_cells(int const cellid,
+  //                               Entity_type const ptype,
+  //                               std::vector<int> *adjcells) const {
+  //    jali_mesh_.cell_get_node_adj_cells(cellid, (Jali::Entity_type) ptype,
+  //                                       adjcells);
+  //  }
 
   //! Get nodes of a face
   void face_get_nodes(int const faceid, std::vector<int> *fnodes) const {

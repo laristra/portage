@@ -53,7 +53,9 @@ struct Controls {
   bool domeshmesh=true;
 };
 
-template<template<int, Portage::Entity_kind, class, class, class> class T>
+template<template<int, Portage::Entity_kind, class, class, class,
+                  template<class, int, class, class> class,
+                  class, class> class T>
 class consistent_order{
 public:
   static bool check(Portage::Meshfree::Basis::Type type) {return false;}
@@ -143,8 +145,12 @@ public:
   // Perform comparison. First remap using traditional mesh techniques. Second remap using particles as intermediary. 
   // Report timing and accuracy.
   template <
-  template<Portage::Entity_kind, class, class> class Intersect,
-  template<int, Portage::Entity_kind, class, class, class> class Interpolate,
+  template<Portage::Entity_kind, class, class, class,
+  template <class, int, class, class> class,
+  class, class> class Intersect,
+  template<int, Portage::Entity_kind, class, class, class,
+  template<class, int, class, class> class,
+  class, class> class Interpolate,
   template <int, class, class> class SwarmSearch,
   int Dimension=3
   >
@@ -237,11 +243,11 @@ public:
                     Dimension,
                     Wonton::Simple_Mesh_Wrapper, Wonton::Simple_State_Wrapper,
                     Wonton::Simple_Mesh_Wrapper, Wonton::Simple_State_Wrapper>
-      mmdriver(sourceMeshWrapper, sourceStateWrapper,
-               targetMeshWrapper, targetStateWrapper);
-    mmdriver.set_remap_var_names(remap_fields);
+      driver(sourceMeshWrapper, sourceStateWrapper,
+             targetMeshWrapper, targetStateWrapper);
+    driver.set_remap_var_names(remap_fields);
     // run on one processor
-    if (controls_.domeshmesh) mmdriver.run(false);
+    driver.run(false);
 
     // Build the mesh-swarm-mesh driver data for this mesh type
     Portage::MSM_Driver<
@@ -380,8 +386,8 @@ public:
     sourceMesh(s), targetMesh(t), 
     sourceState(sourceMesh), targetState(targetMesh), targetState2(targetMesh),
     sourceMeshWrapper(*sourceMesh), targetMeshWrapper(*targetMesh),
-    sourceStateWrapper(sourceState), targetStateWrapper(targetState), 
-    targetStateWrapper2(targetState2), 
+    sourceStateWrapper(sourceState), targetStateWrapper(targetState),
+    targetStateWrapper2(targetState2),
     controls_(controls)
   {}
 };
@@ -393,9 +399,9 @@ protected:
   std::shared_ptr<Jali::Mesh> sourceMesh;
   std::shared_ptr<Jali::Mesh> targetMesh;
   //Source and target mesh state
-  Jali::State sourceState;
-  Jali::State targetState;
-  Jali::State targetState2;
+  std::shared_ptr<Jali::State> sourceState;
+  std::shared_ptr<Jali::State> targetState;
+  std::shared_ptr<Jali::State> targetState2;
 protected:
   //Source and target mesh and state wrappers
   Portage::Jali_Mesh_Wrapper sourceMeshWrapper;
@@ -406,13 +412,17 @@ protected:
   // run parameters
   Controls<3> controls_;
 
-public:
+ public:
   
   // Perform comparison. First remap using traditional mesh techniques. Second remap using particles as intermediary. 
   // Report timing and accuracy.
   template <
-    template<Portage::Entity_kind, class, class> class Intersect,
-    template<int, Portage::Entity_kind, class, class, class> class Interpolate,
+    template<Portage::Entity_kind, class, class, class,
+    template<class, int, class, class> class,
+    class, class> class Intersect,
+    template<int, Portage::Entity_kind, class, class, class,
+    template<class, int, class, class> class,
+    class, class> class Interpolate,
     template <int, class, class> class SwarmSearch,
     int Dimension=3
     >
@@ -448,7 +458,7 @@ public:
       sourceMeshWrapper.cell_centroid(c, &cen);
       sourceData[c] = field_func<3>(controls_.example, cen);
     }
-    Jali::StateVector<double> &sourceVec(sourceState.add("celldata",
+    Jali::UniStateVector<double> &sourceVec(sourceState->add("celldata",
       sourceMesh, Jali::Entity_kind::CELL, Jali::Entity_type::ALL, &(sourceData[0])));
     
     for (unsigned int c = 0; c < nsrcnodes; ++c) {
@@ -456,7 +466,7 @@ public:
       sourceMeshWrapper.node_get_coordinates(c, &cen);
       sourceDataNode[c] = field_func<3>(controls_.example, cen);
     }
-    Jali::StateVector<double> &sourceVecNode(sourceState.add("nodedata",
+    Jali::UniStateVector<double> &sourceVecNode(sourceState->add("nodedata",
       sourceMesh, Jali::Entity_kind::NODE, Jali::Entity_type::ALL, &(sourceDataNode[0])));
 
     //Build the target state storage
@@ -464,10 +474,10 @@ public:
     const int ntarnodes = targetMeshWrapper.num_owned_nodes();
     std::vector<double> targetData(ntarcells), targetData2(ntarcells);
     std::vector<double> targetDataNode(ntarnodes), targetData2Node(ntarnodes);
-    targetStateWrapper. add_data(targetMesh, Portage::Entity_kind::CELL, "celldata", &(targetData[0]));
-    targetStateWrapper2.add_data(targetMesh, Portage::Entity_kind::CELL, "celldata", &(targetData2[0]));
-    targetStateWrapper. add_data(targetMesh, Portage::Entity_kind::NODE, "nodedata", &(targetDataNode[0]));
-    targetStateWrapper2.add_data(targetMesh, Portage::Entity_kind::NODE, "nodedata", &(targetData2Node[0]));
+    targetStateWrapper.mesh_add_data<double>(Portage::Entity_kind::CELL, "celldata", &(targetData[0]));
+    targetStateWrapper2.mesh_add_data<double>(Portage::Entity_kind::CELL, "celldata", &(targetData2[0]));
+    targetStateWrapper.mesh_add_data<double>(Portage::Entity_kind::NODE, "nodedata", &(targetDataNode[0]));
+    targetStateWrapper2.mesh_add_data<double>(Portage::Entity_kind::NODE, "nodedata", &(targetData2Node[0]));
 
     // Register the variable name and interpolation order with the driver
     std::vector<std::string> remap_fields;
@@ -502,11 +512,11 @@ public:
                     Dimension,
                     Portage::Jali_Mesh_Wrapper, Portage::Jali_State_Wrapper,
                     Portage::Jali_Mesh_Wrapper, Portage::Jali_State_Wrapper>
-      mmdriver(sourceMeshWrapper, sourceStateWrapper,
-               targetMeshWrapper, targetStateWrapper);
-    mmdriver.set_remap_var_names(remap_fields);
+    driver(sourceMeshWrapper, sourceStateWrapper,
+           targetMeshWrapper, targetStateWrapper);
+    driver.set_remap_var_names(remap_fields);
     //run on one processor
-    if (controls_.domeshmesh) mmdriver.run(false);
+    driver.run(false);
 
     // Build the mesh-swarm-mesh driver data for this mesh type
     Portage::MSM_Driver<
@@ -532,11 +542,11 @@ public:
 
     std::vector<double> cellvecout(ntarcells), cellvecout2(ntarcells);
     std::vector<double> nodevecout(ntarnodes), nodevecout2(ntarnodes);
-    Jali::StateVector<double, Jali::Mesh> cvp, cv2p, nvp, nv2p;
-    targetState. get("celldata", targetMesh, Jali::Entity_kind::CELL, Jali::Entity_type::ALL, &cvp);
-    targetState2.get("celldata", targetMesh, Jali::Entity_kind::CELL, Jali::Entity_type::ALL, &cv2p);
-    targetState. get("nodedata", targetMesh, Jali::Entity_kind::NODE, Jali::Entity_type::ALL, &nvp);
-    targetState2.get("nodedata", targetMesh, Jali::Entity_kind::NODE, Jali::Entity_type::ALL, &nv2p);
+    Jali::UniStateVector<double, Jali::Mesh> cvp, cv2p, nvp, nv2p;
+    targetState->get("celldata", targetMesh, Jali::Entity_kind::CELL, Jali::Entity_type::ALL, &cvp);
+    targetState2->get("celldata", targetMesh, Jali::Entity_kind::CELL, Jali::Entity_type::ALL, &cv2p);
+    targetState->get("nodedata", targetMesh, Jali::Entity_kind::NODE, Jali::Entity_type::ALL, &nvp);
+    targetState2->get("nodedata", targetMesh, Jali::Entity_kind::NODE, Jali::Entity_type::ALL, &nv2p);
     for (int i=0; i<ntarcells; i++) {cellvecout[i]=cvp[i]; cellvecout2[i]=cv2p[i];}
     for (int i=0; i<ntarnodes; i++) {nodevecout[i]=nvp[i]; nodevecout2[i]=nv2p[i];}
 
@@ -643,10 +653,12 @@ public:
   //Constructor
   runMSMJali(Controls<3> controls, std::shared_ptr<Jali::Mesh> s,std::shared_ptr<Jali::Mesh> t) :
     sourceMesh(s), targetMesh(t), 
-    sourceState(sourceMesh), targetState(targetMesh), targetState2(targetMesh),
+    sourceState(Jali::State::create(sourceMesh)),
+    targetState(Jali::State::create(targetMesh)),
+    targetState2(Jali::State::create(targetMesh)),
     sourceMeshWrapper(*sourceMesh), targetMeshWrapper(*targetMesh),
-    sourceStateWrapper(sourceState), targetStateWrapper(targetState), 
-    targetStateWrapper2(targetState2), 
+    sourceStateWrapper(*sourceState), targetStateWrapper(*targetState), 
+    targetStateWrapper2(*targetState2), 
     controls_(controls)
   {}
 };
@@ -771,9 +783,9 @@ int main(int argc, char** argv) {
   
     } else if (ctl.order == 2) {
  
-      msmguy.runit<Portage::IntersectR3D, 
-		   Portage::Interpolate_2ndOrder, 
-		   Portage::SearchPointsByCells, 3>();
+      //      msmguy.runit<Portage::IntersectR3D, 
+      //		   Portage::Interpolate_2ndOrder, 
+      //		   Portage::SearchPointsByCells, 3>();
 
     }
   } else {
@@ -794,9 +806,9 @@ int main(int argc, char** argv) {
   
     } else if (ctl.order == 2) {
  
-      msmguy.runit<Portage::IntersectR3D, 
-		   Portage::Interpolate_2ndOrder, 
-		   Portage::SearchPointsByCells, 3>();
+      //      msmguy.runit<Portage::IntersectR3D, 
+      //		   Portage::Interpolate_2ndOrder, 
+      //		   Portage::SearchPointsByCells, 3>();
 
     }
   }

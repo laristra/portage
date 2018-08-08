@@ -17,243 +17,86 @@ extern "C" {
 }
 
 #ifdef HAVE_TANGRAM
+#include "tangram/driver/CellMatPoly.h"
+#include "tangram/driver/driver.h"
 #include "tangram/support/MatPoly.h"
 #endif
 
 #include "portage/support/Point.h"
 #include "portage/support/portage.h"
-
+#include "portage/intersect/dummy_interface_reconstructor.h"
+#include "portage/intersect/intersect_polys_r3d.h"
 
 namespace Portage {
 
-typedef
-struct facetedpoly {
-  std::vector<std::vector<int>> facetpoints;  // we can flatten this to a
-  //                                          // 1D array if we assume only
-  //                                          // triangular facets or we
-  //                                          // include the number of points
-  //                                          // in each facet
-  std::vector<Point<3>> points;
-} facetedpoly_t;
+///
+/// \class IntersectR3D  3-D intersection algorithm
+///
+/// In this routine, we will utilize the fact that R3d can intersect a
+/// non-convex polyhedron with planar faces with a convex polyhedron
+/// (more precisely, R3D can clip a non-convex polyhedron with a set of
+/// planes). We are given a target polyhedron with possibly non-planar
+/// faces to be intersected with a list of source polyhedra again with
+/// possibly non-planar faces. We will convert the target polyhedron
+/// into a set of convex polyhedra using a symmetric tetrahedral
+/// decomposition (24 tets for a hex). We will convert each source
+/// polyhedron into a faceted non-convex polyhedron where each facet is
+/// a triangle and therefore planar.
+///
+/// If this class is being adapted for use with a different intersector
+/// and it can only intersect convex polyhedra, both target and source
+/// polyhedra may have to be decomposed into tets
+///
+
+template <Entity_kind on_what, class SourceMeshType,
+          class SourceStateType, class TargetMeshType,
+          template <class, int, class, class> class InterfaceReconstructorType =
+          DummyInterfaceReconstructor,
+          class Matpoly_Splitter = void,
+          class Matpoly_Clipper = void>
+class IntersectR3D {
 
 #ifdef HAVE_TANGRAM
-/*!
- @brief Facetizes a 3D MatPoly and converts it to the facetedpoly_t structure
- @param matpoly  3D material polyhedron object to be converted
- @return  Corresponding facetedpoly_t structure
-*/
-facetedpoly_t get_faceted_matpoly(const Tangram::MatPoly<3>& matpoly) {
-  // facet the matpoly
-  Tangram::MatPoly<3> faceted_matpoly;
-  matpoly.faceted_matpoly(&faceted_matpoly);
-  
-  // initialize the result with the face vertices
-  facetedpoly_t result{faceted_matpoly.face_vertices()};
-  
-  // convert tangram points to portage points for facetedpoly_t.points
-  for (auto p : faceted_matpoly.points()) result.points.push_back(Portage::Point<3>(p));
-  return result; 
-}
+  using InterfaceReconstructor3D =
+      Tangram::Driver<InterfaceReconstructorType, 3, SourceMeshType, 
+                      Matpoly_Splitter, Matpoly_Clipper>;
 #endif
 
-
-// Intersect one source polyhedron (possibly non-convex but with
-// triangular facets only) with a bunch of tets forming a target
-// polyhedron
-
-std::vector<double>
-intersect_3Dpolys(const facetedpoly_t &srcpoly,
-                  const std::vector<std::array<Point<3>, 4>> &target_tet_coords) {
-
-  // Bounding box of the target cell - will be used to compute
-  // epsilon for bounding box check. We could use the source cell
-  // coordinates to find the bounds as well but its probably an
-  // unnecessary computation (EVEN if the target cell is much
-  // smaller than the source cell)
-
-  std::vector<double> source_cell_bounds =  {1e99, -1e99, 1e99, -1e99,
-                                             1e99, -1e99};
-
-  // Initialize the source polyhedron description in a form R3D wants
-  // Simultaneously compute the bounding box
-  r3d_poly src_r3dpoly;
-  int num_verts = srcpoly.points.size();
-  r3d_rvec3 *verts = new r3d_rvec3[num_verts];
-  for (int i = 0; i < num_verts; i++) {
-    for (int j = 0; j < 3; j++) {
-      verts[i].xyz[j] = srcpoly.points[i][j];
-
-      if (source_cell_bounds[2*j] > verts[i].xyz[j])
-        source_cell_bounds[2*j] = verts[i].xyz[j];
-      if (source_cell_bounds[2*j+1] < verts[i].xyz[j])
-        source_cell_bounds[2*j+1] = verts[i].xyz[j];
-    }
-  }
-
-  double MAXLEN = -1e99;
-  for (int j = 0; j < 3; j++) {
-    double len = source_cell_bounds[2*j+1]-source_cell_bounds[2*j];
-    if (MAXLEN < len) MAXLEN = len;
-  }
-  double bbeps = 1.0e-12*MAXLEN;  // used only for bounding box check
-  //                            // not for intersections
-
-
-  int num_faces = srcpoly.facetpoints.size();
-  r3d_int *face_num_verts = new r3d_int[num_faces];
-  for (int i = 0; i < num_faces; i++)
-    face_num_verts[i] = srcpoly.facetpoints[i].size();
-
-  r3d_int **face_vert_ids = new r3d_int *[num_faces];
-  for (int i = 0; i < num_faces; i++)
-    face_vert_ids[i] = new r3d_int[face_num_verts[i]];
-
-  for (int i = 0; i < num_faces; i++)
-    std::copy(srcpoly.facetpoints[i].begin(), srcpoly.facetpoints[i].end(),
-              face_vert_ids[i]);
-
-#ifdef DEBUG
-  // Lets check the volume of the source polygon - If its convex or
-  // mildly non-convex, we should get a positive volume
-  
-  // First calculate a center point
-  Point<3> cen(0.0, 0.0, 0.0);
-  for (int i = 0; i < num_verts; i++)
-    cen += srcpoly.points[i];
-  cen /= num_verts;
-
-  // Assume triangular facets only
-  double polyvol = 0.0;
-  for (int i = 0; i < num_faces; i++) {
-    // p0, p1, p2 traversed in order form a triangle whose normal
-    // points out of the source polyhedron
-    const Point<3> &p0 = srcpoly.points[srcpoly.facetpoints[i][0]];
-    const Point<3> &p1 = srcpoly.points[srcpoly.facetpoints[i][1]];
-    const Point<3> &p2 = srcpoly.points[srcpoly.facetpoints[i][2]];
-
-    Vector<3> v0 = p1-p0;
-    Vector<3> v1 = p2-p0;
-    Vector<3> outnormal = cross(v0, v1);
-    Vector<3> v2 = cen-p0;
-    double tetvol = -dot(v2, outnormal)/6.0;
-    if (tetvol < 0.0)
-      std::cerr << "Wrong orientation of facets or non-convex polyhedron" <<
-          std::endl;
-    polyvol += tetvol;
-  }
-  if (polyvol < 0.0)
-    throw std::runtime_error("Source polyhedron has negative volume");
-#endif
-
-  r3d_init_poly(&src_r3dpoly, verts, num_verts, face_vert_ids, face_num_verts,
-                num_faces);
-
-  // Finished building source poly; now intersect with tets of target cell
-
-  std::vector<double> moments(4, 0);
-  for (auto const & target_cell_tet : target_tet_coords) {
-    std::vector<r3d_plane> faces(4);
-
-    std::vector<double> target_tet_bounds = {1e99, -1e99, 1e99,
-                                             -1e99, 1e99, -1e99};
-    r3d_rvec3 verts2[4];
-    for (int i = 0; i < 4; i++)
-      for (int j = 0; j < 3; j++) {
-        verts2[i].xyz[j] = target_cell_tet[i][j];
-
-        if (target_tet_bounds[2*j] > verts2[i].xyz[j])
-          target_tet_bounds[2*j] = verts2[i].xyz[j];
-        if (target_tet_bounds[2*j+1] < verts2[i].xyz[j])
-          target_tet_bounds[2*j+1] = verts2[i].xyz[j];
-      }
-
-    // Check if the target and source bounding boxes overlap - bbeps
-    // is used to subject touching tets to the full intersection
-    // (just in case)
-
-    bool check_bb = true;
-    if (check_bb) {
-      bool disjoint = false;
-      for (int j = 0; j < 3 && !disjoint; ++j)
-        disjoint = (target_tet_bounds[2*j] > source_cell_bounds[2*j+1]+bbeps ||
-                    target_tet_bounds[2*j+1] < source_cell_bounds[2*j]-bbeps);
-      if (disjoint) continue;
-    }
-
-#ifdef DEBUG
-    if (r3d_orient(verts2) < 0)
-      throw std::runtime_error("target_wedge has negative volume");
-#endif
-
-    r3d_tet_faces_from_verts(&faces[0], verts2);
-
-    // clip the source poly against the faces of the target tet - but
-    // make a copy of src_r3dpoly first because it will get modified
-    // in the process of clipping
-    r3d_poly src_r3dpoly_copy = src_r3dpoly;
-    r3d_clip(&src_r3dpoly_copy, &faces[0], 4);
-
-    // find the moments (up to quadratic order) of the clipped poly
-    const int POLY_ORDER = 1;
-    r3d_real om[R3D_NUM_MOMENTS(POLY_ORDER)];
-    r3d_reduce(&src_r3dpoly_copy, om, POLY_ORDER);
-
-    // Check that the returned volume is positive (if the volume is
-    // zero, i.e. abs(om[0]) < eps, then it can sometimes be
-    // slightly negative, like om[0] == -1.24811e-16. For this
-    // reason we use the condition om[0] < -eps.
-
-    const double eps = 1e-14;  // @todo multiply by domain or element size
-    if (om[0] < -eps) throw std::runtime_error("Negative volume");
-
-    // Accumulate moments:
-    for (int i = 0; i < 4; i++)
-      moments[i] += om[i];
-  }
-
-  delete [] verts;
-  delete [] face_num_verts;
-  for (int i = 0; i < num_faces; i++)
-    delete [] face_vert_ids[i];
-  delete [] face_vert_ids;
-
-  return moments;
-}  // intersect_3Dpolys
-
-
-/*!
- * \class IntersectR3D  3-D intersection algorithm
- *
- * In this routine, we will utilize the fact that R3d can intersect a
- * non-convex polyhedron with planar faces with a convex polyhedron
- * (more precisely, R3D can clip a non-convex polyhedron with a set of
- * planes). We are given a target polyhedron with possibly non-planar
- * faces to be intersected with a list of source polyhedra again with
- * possibly non-planar faces. We will convert the target polyhedron
- * into a set of convex polyhedra using a symmetric tetrahedral
- * decomposition (24 tets for a hex). We will convert each source
- * polyhedron into a faceted non-convex polyhedron where each facet is
- * a triangle and therefore planar.
- *
- * If this class is being adapted for use with a different intersector
- * and it can only intersect convex polyhedra, both target and source
- * polyhedra may have to be decomposed into tets
- */
-
-template <Entity_kind on_what, typename SourceMeshType, typename TargetMeshType>
-class IntersectR3D {
  public:
-  IntersectR3D(const SourceMeshType &s, const TargetMeshType &t,
-               const bool rectangular_mesh = false)
-    : sourceMeshWrapper(s), targetMeshWrapper(t),
-      rectangular_mesh_(rectangular_mesh) {}
+#ifdef HAVE_TANGRAM
+  /// Constructor with interface reconstructor
 
-  /*! \brief Intersect a control volume of a target_entity with control volumes of a set of source entities
-   * \param[in] tgt_entity Entity of target mesh to intersect
-   * \param[in] src_entities Entity of source cells to intersect against
-   * \return vector of Weights_t structure containing moments of intersection
-   */
+  IntersectR3D(SourceMeshType const & source_mesh,
+               SourceStateType const & source_state,
+               TargetMeshType const & target_mesh,
+               std::shared_ptr<InterfaceReconstructor3D> ir,
+               bool rectangular_mesh = false)
+      : sourceMeshWrapper(source_mesh), sourceStateWrapper(source_state),
+        targetMeshWrapper(target_mesh), interface_reconstructor(ir),
+        rectangular_mesh_(rectangular_mesh) {}
+#endif
 
+  /// Constructor WITHOUT interface reconstructor
+
+  IntersectR3D(SourceMeshType const & source_mesh,
+               SourceStateType const & source_state,
+               TargetMeshType const & target_mesh,
+               bool rectangular_mesh = false)
+      : sourceMeshWrapper(source_mesh), sourceStateWrapper(source_state),
+        targetMeshWrapper(target_mesh), rectangular_mesh_(rectangular_mesh) {}
+
+  /// \brief Set the source mesh material that we have to intersect against   
+
+  int set_material(int m) {
+    matid_ = m;
+  }
+
+  /// \brief Intersect a control volume of a target_entity with control volumes of a set of source entities
+  /// \param[in] tgt_entity Entity of target mesh to intersect
+  /// \param[in] src_entities Entity of source cells to intersect against
+  /// \return vector of Weights_t structure containing moments of intersection
+  ///
+  
   std::vector<Weights_t>
   operator() (const int tgt_entity, const std::vector<int> src_entities) const {
     std::cerr << "IntersectR3D not implemented for entity type" << std::endl;
@@ -263,43 +106,85 @@ class IntersectR3D {
 
   IntersectR3D() = delete;
 
-  //! Assignment operator (disabled)
+  /// Assignment operator (disabled)
   IntersectR3D & operator = (const IntersectR3D &) = delete;
 
  private:
-  const SourceMeshType &sourceMeshWrapper;
-  const TargetMeshType &targetMeshWrapper;
-  const bool rectangular_mesh_;
+  SourceMeshType const & sourceMeshWrapper;
+  SourceStateType const & sourceStateWrapper;
+  TargetMeshType const & targetMeshWrapper;
+  bool rectangular_mesh_;
+  int matid_ = -1;
+
+#ifdef HAVE_TANGRAM
+  std::shared_ptr<InterfaceReconstructor3D> interface_reconstructor;
+#endif
 };
 
 
 // Specialization of Intersect3D class for cells
 
-template <typename SourceMeshType, typename TargetMeshType>
-class IntersectR3D<CELL, SourceMeshType, TargetMeshType> {
- public:
-  IntersectR3D(const SourceMeshType &s, const TargetMeshType &t,
-               const bool rectangular_mesh = false)
-    : sourceMeshWrapper(s), targetMeshWrapper(t),
-      rectangular_mesh_(rectangular_mesh) {}
+template <class SourceMeshType, class SourceStateType,
+          class TargetMeshType,
+          template <class, int, class, class> class InterfaceReconstructorType,
+          class Matpoly_Splitter, class Matpoly_Clipper>
+class IntersectR3D<CELL, SourceMeshType, SourceStateType, TargetMeshType,
+                   InterfaceReconstructorType,
+                   Matpoly_Splitter, Matpoly_Clipper> {
+  
+#ifdef HAVE_TANGRAM
+  using InterfaceReconstructor3D =
+      Tangram::Driver<InterfaceReconstructorType, 3, SourceMeshType,
+                      Matpoly_Splitter, Matpoly_Clipper>;
+#endif
 
-  /*! \brief Intersect a cell with a set of candidate cells
-   * \param[in] tgt_cell cell of target mesh to intersect
-   * \param[in] src_cells list of source cells to intersect against
-   * \return vector of Weights_t structures containing moments of intersection
-   */
+ public:
+
+#ifdef HAVE_TANGRAM
+  /// Constructor with interface reconstructor
+
+  IntersectR3D(SourceMeshType const & source_mesh,
+               SourceStateType const & source_state,
+               TargetMeshType const & target_mesh,
+               std::shared_ptr<InterfaceReconstructor3D> ir,
+               bool rectangular_mesh = false)
+      : sourceMeshWrapper(source_mesh), sourceStateWrapper(source_state),
+        targetMeshWrapper(target_mesh), interface_reconstructor(ir),
+        rectangular_mesh_(rectangular_mesh) {}
+#endif
+
+  /// Constructor WITHOUT interface reconstructor
+
+  IntersectR3D(SourceMeshType const & source_mesh,
+               SourceStateType const & source_state,
+               TargetMeshType const & target_mesh,
+               bool rectangular_mesh = false)
+      : sourceMeshWrapper(source_mesh), sourceStateWrapper(source_state),
+        targetMeshWrapper(target_mesh), rectangular_mesh_(rectangular_mesh) {}
+  
+  
+  /// \brief Set the source mesh material that we have to intersect against 
+  
+  int set_material(int m) {
+    matid_ = m;
+  }
+
+  /// \brief Intersect a cell with a set of candidate cells
+  /// \param[in] tgt_cell cell of target mesh to intersect
+  /// \param[in] src_cells list of source cells to intersect against
+  /// \return vector of Weights_t structures containing moments of intersection
+  ///
 
   std::vector<Weights_t> operator() (const int tgt_cell,
                                      const std::vector<int> src_cells) const {
 
     std::vector<std::array<Point<3>, 4>> target_tet_coords;
-
+  
     // We should avoid any decomposition for cells of a rectangular
     // mesh but for now we will decompose the target all the time
 
     targetMeshWrapper.decompose_cell_into_tets(tgt_cell, &target_tet_coords,
                                                rectangular_mesh_);
-
 
     // CAN MAKE THIS INTO A THRUST::TRANSFORM CALL
     int nsrc = src_cells.size();
@@ -307,16 +192,56 @@ class IntersectR3D<CELL, SourceMeshType, TargetMeshType> {
     int ninserted = 0;
     for (int i = 0; i < nsrc; i++) {
       int s = src_cells[i];
-      facetedpoly_t srcpoly;
-      sourceMeshWrapper.cell_get_facetization(s, &srcpoly.facetpoints,
-                                              &srcpoly.points);
 
       Weights_t & this_wt = sources_and_weights[ninserted];
       this_wt.entityID = s;
-      this_wt.weights = intersect_3Dpolys(srcpoly, target_tet_coords);
 
+#ifdef HAVE_TANGRAM
+      int nmats = sourceStateWrapper.cell_get_num_mats(s);
+      std::vector<int> cellmats;
+      sourceStateWrapper.cell_get_mats(s, &cellmats);
+
+      if (!nmats || (nmats == 1 && cellmats[0] == matid_)) {
+        // pure cell containing this material - intersect with polyhedron
+        // representing the cell
+
+        facetedpoly_t srcpoly;
+        sourceMeshWrapper.cell_get_facetization(s, &srcpoly.facetpoints,
+                                                &srcpoly.points);
+
+        this_wt.weights = intersect_polys_r3d(srcpoly, target_tet_coords);
+
+      } else if (std::find(cellmats.begin(), cellmats.end(), matid_) !=
+                 cellmats.end()) {
+        // mixed cell containing this material - intersect with
+        // polygon approximation of this material in the cell
+        // (obtained from interface reconstruction)
+
+        Tangram::CellMatPoly<3> const& cellmatpoly =
+            interface_reconstructor->cell_matpoly_data(s);
+        std::vector<Tangram::MatPoly<3>> matpolys =
+            cellmatpoly.get_matpolys(matid_);
+
+        this_wt.weights.resize(4,0.0);
+        for (int j = 0; j < matpolys.size(); j++) {
+          facetedpoly_t srcpoly = get_faceted_matpoly(matpolys[j]);
+
+          std::vector<double> momvec = intersect_polys_r3d(srcpoly,
+                                                           target_tet_coords);
+          for (int k = 0; k < 4; k++)
+            this_wt.weights[k] += momvec[k];
+        }
+
+      }
+#else
+      facetedpoly_t srcpoly;
+      sourceMeshWrapper.cell_get_facetization(s, &srcpoly.facetpoints,
+                                              &srcpoly.points);
+      
+      this_wt.weights = intersect_polys_r3d(srcpoly, target_tet_coords);      
+#endif
       // Increment if vol of intersection > 0; otherwise, allow overwrite
-      if (this_wt.weights[0] > 0.0)
+      if (this_wt.weights.size() && this_wt.weights[0] > 0.0)
         ninserted++;
     }
 
@@ -327,33 +252,75 @@ class IntersectR3D<CELL, SourceMeshType, TargetMeshType> {
 
   IntersectR3D() = delete;
 
-  //! Assignment operator (disabled)
+  /// Assignment operator (disabled)
   IntersectR3D & operator = (const IntersectR3D &) = delete;
 
  private:
-  const SourceMeshType &sourceMeshWrapper;
-  const TargetMeshType &targetMeshWrapper;
-  const bool rectangular_mesh_;
+  SourceMeshType const & sourceMeshWrapper;
+  SourceStateType const & sourceStateWrapper;
+  TargetMeshType const & targetMeshWrapper;
+  bool rectangular_mesh_;
+  int matid_ = -1;
+
+#ifdef HAVE_TANGRAM
+  std::shared_ptr<InterfaceReconstructor3D> interface_reconstructor;
+#endif
 };
 
 
 // Specialization of IntersectR3D class for nodes
 
-template <typename SourceMeshType, typename TargetMeshType>
-class IntersectR3D<NODE, SourceMeshType, TargetMeshType> {
- public:
-  IntersectR3D(const SourceMeshType &s, const TargetMeshType &t,
-               const bool rectangular_mesh = false)
-      : sourceMeshWrapper(s), targetMeshWrapper(t),
-        rectangular_mesh_(rectangular_mesh) {}
+template <class SourceMeshType, class SourceStateType,
+          class TargetMeshType,
+          template <class, int, class, class> class InterfaceReconstructorType,
+          class Matpoly_Splitter, class Matpoly_Clipper>
+class IntersectR3D<NODE, SourceMeshType, SourceStateType, TargetMeshType,
+                   InterfaceReconstructorType,
+                   Matpoly_Splitter, Matpoly_Clipper> {
 
-  /*! \brief Intersect a control volume corresponding to a target node
-   * with a set of control volumes corresponding to candidate source
-   * nodes
-   * \param[in] tgt_node   Target mesh node whose control volume we consider
-   * \param[in] src_nodes  List of source nodes whose control volumes we will intersect against
-   * \return vector of Weights_t structures containing moments of intersection
-   */
+#ifdef HAVE_TANGRAM
+  using InterfaceReconstructor3D =
+      Tangram::Driver<InterfaceReconstructorType, 3, SourceMeshType,
+                      Matpoly_Splitter, Matpoly_Clipper>;
+#endif
+
+ public:
+
+#ifdef HAVE_TANGRAM
+  /// Constructor with interface reconstructor
+
+  IntersectR3D(SourceMeshType const & source_mesh,
+               SourceStateType const & source_state,
+               TargetMeshType const & target_mesh,
+               std::shared_ptr<InterfaceReconstructor3D> ir,
+               bool rectangular_mesh = false)
+      : sourceMeshWrapper(source_mesh), sourceStateWrapper(source_state),
+        targetMeshWrapper(target_mesh), interface_reconstructor(ir),
+        rectangular_mesh_(rectangular_mesh) {}
+#endif
+
+  /// Constructor WITHOUT interface reconstructor
+
+  IntersectR3D(SourceMeshType const & source_mesh,
+               SourceStateType const & source_state,
+               TargetMeshType const & target_mesh,
+               bool rectangular_mesh = false)
+      : sourceMeshWrapper(source_mesh), sourceStateWrapper(source_state),
+        targetMeshWrapper(target_mesh), rectangular_mesh_(rectangular_mesh) {}
+
+  /// \brief Set the source mesh material that we have to intersect against 
+  
+  int set_material(int m) {
+    matid_ = m;
+  }
+
+  /// \brief Intersect a control volume corresponding to a target node
+  /// with a set of control volumes corresponding to candidate source
+  /// nodes
+  /// \param[in] tgt_node   Target mesh node whose control volume we consider
+  /// \param[in] src_nodes  List of source nodes whose control volumes we will intersect against
+  /// \return vector of Weights_t structures containing moments of intersection
+  ///
 
   std::vector<Weights_t> operator() (const int tgt_node,
                                      const std::vector<int> src_nodes) const {
@@ -384,10 +351,10 @@ class IntersectR3D<NODE, SourceMeshType, TargetMeshType> {
 
       Weights_t & this_wt = sources_and_weights[ninserted];
       this_wt.entityID = s;
-      this_wt.weights = intersect_3Dpolys(srcpoly, target_tet_coords);
+      this_wt.weights = intersect_polys_r3d(srcpoly, target_tet_coords);
 
       // Increment if vol of intersection > 0; otherwise, allow overwrite
-      if (this_wt.weights[0] > 0.0)
+      if (this_wt.weights.size() && this_wt.weights[0] > 0.0)
         ninserted++;
     }
 
@@ -398,13 +365,19 @@ class IntersectR3D<NODE, SourceMeshType, TargetMeshType> {
 
   IntersectR3D() = delete;
 
-  //! Assignment operator (disabled)
+  /// Assignment operator (disabled)
   IntersectR3D & operator = (const IntersectR3D &) = delete;
 
  private:
-  const SourceMeshType &sourceMeshWrapper;
-  const TargetMeshType &targetMeshWrapper;
-  const bool rectangular_mesh_;
+  SourceMeshType const & sourceMeshWrapper;
+  SourceStateType const & sourceStateWrapper;
+  TargetMeshType const & targetMeshWrapper;
+  bool rectangular_mesh_;
+  int matid_ = -1;
+
+#ifdef HAVE_TANGRAM
+  std::shared_ptr<InterfaceReconstructor3D> interface_reconstructor;
+#endif
 };  // class IntersectR3D
 
 

@@ -101,8 +101,12 @@ class MSMDriverTest : public ::testing::Test {
   //  This is the basic test method to be called for each unit test. It will work
   //  for 2-D and 3-D, coincident and non-coincident cell-centered remaps.
   template <
-    template<Portage::Entity_kind, class, class> class Intersect,
-    template<int, Portage::Entity_kind, class, class, class> class Interpolate,
+    template<Portage::Entity_kind, class, class, class,
+    template<class, int, class, class> class,
+    class, class> class Intersect,
+    template<int, Portage::Entity_kind, class, class, class,
+    template<class, int, class, class> class,
+    class, class> class Interpolate,
     template <int, class, class> class SwarmSearch,
     int Dimension = 3
   >

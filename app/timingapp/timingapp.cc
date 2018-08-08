@@ -318,8 +318,8 @@ int main(int argc, char** argv) {
   const int ntarnodes = targetMeshWrapper.num_owned_nodes();
 
   // Native jali state managers for source and target
-  Jali::State sourceState(sourceMesh);
-  Jali::State targetState(targetMesh);
+  std::shared_ptr<Jali::State> sourceState(Jali::State::create(sourceMesh));
+  std::shared_ptr<Jali::State> targetState(Jali::State::create(targetMesh));
 
   std::vector<double> sourceData;
   std::vector<std::string> remap_fields;
@@ -347,11 +347,13 @@ int main(int argc, char** argv) {
       }
     }
 
-    sourceState.add("celldata", sourceMesh, Jali::Entity_kind::CELL,
+    sourceState->add("celldata", sourceMesh, Jali::Entity_kind::CELL,
                     Jali::Entity_type::ALL, &(sourceData[0]));
 
-    targetState.add("celldata", targetMesh, Jali::Entity_kind::CELL,
-                    Jali::Entity_type::ALL, 0.0);
+    targetState->add<double, Jali::Mesh, Jali::StateVector>("celldata",
+                                                            targetMesh,
+                                                Jali::Entity_kind::CELL,
+                                                Jali::Entity_type::ALL, 0.0);
 
     // Register the variable name and interpolation order with the driver
     remap_fields.push_back("celldata");
@@ -389,11 +391,13 @@ int main(int argc, char** argv) {
       }
     }
 
-    sourceState.add("nodedata", sourceMesh, Jali::Entity_kind::NODE,
+    sourceState->add("nodedata", sourceMesh, Jali::Entity_kind::NODE,
                     Jali::Entity_type::ALL, &(sourceData[0]));
 
-    targetState.add("nodedata", targetMesh, Jali::Entity_kind::NODE,
-                    Jali::Entity_type::ALL, 0.0);
+    targetState->add<double, Jali::Mesh, Jali::StateVector>("nodedata",
+                                                            targetMesh,
+                                                Jali::Entity_kind::NODE,
+                                                Jali::Entity_type::ALL, 0.0);
 
 
     // Register the variable name and remap order with the driver
@@ -413,8 +417,8 @@ int main(int argc, char** argv) {
 
   // Portage wrappers for source and target fields
 
-  Wonton::Jali_State_Wrapper sourceStateWrapper(sourceState);
-  Wonton::Jali_State_Wrapper targetStateWrapper(targetState);
+  Wonton::Jali_State_Wrapper sourceStateWrapper(*sourceState);
+  Wonton::Jali_State_Wrapper targetStateWrapper(*targetState);
 
   if (dim == 2) {
     if (interp_order == 1) {
@@ -615,8 +619,8 @@ int main(int argc, char** argv) {
     if (numpe == 1) {
       if (rank == 0)
         std::cout << "Dumping data to Exodus files..." << std::endl;
-      sourceState.export_to_mesh();
-      targetState.export_to_mesh();
+      sourceState->export_to_mesh();
+      targetState->export_to_mesh();
       sourceMesh->write_to_exodus_file("input.exo");
       targetMesh->write_to_exodus_file("output.exo");
       if (rank == 0)

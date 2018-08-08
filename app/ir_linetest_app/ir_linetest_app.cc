@@ -217,7 +217,7 @@ void add_intersect_data(std::vector<std::vector<double> >& mat_moments,
                         int idx){
   // Intersect source candidate matpoly with target cell
   std::vector<double> moments =
-    Portage::intersect_2Dpolys(source_points, target_points);
+    Portage::intersect_polys_r2d(source_points, target_points);
   // Accumulate moments (if any) from the intersection
   if (moments[0] > seps) {
     for(int moment=0;moment<NUM_MOMENTS;++moment){
@@ -275,8 +275,9 @@ int main(int argc, char** argv) {
                      cell_num_mats, cell_mat_ids, 
                      cell_mat_volfracs, cell_mat_centroids, offsets);
   
+  Tangram::IterativeMethodTolerances_t tol{100, 1e-12, 1e-12};
   Tangram::Driver<Tangram::XMOF2D_Wrapper, 2,
-    Wonton::Simple_Mesh_Wrapper> source_xmof_driver(source_mesh_wrapper);
+    Wonton::Simple_Mesh_Wrapper> source_xmof_driver(source_mesh_wrapper, tol);
   
   source_xmof_driver.set_volume_fractions(cell_num_mats, cell_mat_ids,
                                    cell_mat_volfracs, cell_mat_centroids);
@@ -366,7 +367,7 @@ int main(int argc, char** argv) {
   // Perform final interface reconstruction on target mesh, then write to file
   // for comparison with source mesh
   Tangram::Driver<Tangram::XMOF2D_Wrapper, 2,
-    Wonton::Simple_Mesh_Wrapper> target_xmof_driver(target_mesh_wrapper);
+    Wonton::Simple_Mesh_Wrapper> target_xmof_driver(target_mesh_wrapper, tol);
   target_xmof_driver.set_volume_fractions(tcell_num_mats, tcell_mat_ids,
                                    tcell_mat_volfracs, tcell_mat_centroids);
   target_xmof_driver.reconstruct();

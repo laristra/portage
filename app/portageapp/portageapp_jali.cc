@@ -36,9 +36,16 @@
 #include "portage/support/portage.h"
 #include "portage/support/Point.h"
 #include "portage/support/mpi_collate.h"
-#include "portage/driver/driver.h"
+#include "portage/driver/mmdriver.h"
 #include "portage/wonton/mesh/jali/jali_mesh_wrapper.h"
 #include "portage/wonton/state/jali/jali_state_wrapper.h"
+
+#ifdef XMOF2D
+#endif
+
+#ifdef HAVE_TANGRAM
+#include "tangram/driver/driver.h"
+#endif
 
 // For parsing and evaluating user defined expressions in apps
 
@@ -151,6 +158,8 @@ int main(int argc, char** argv) {
   __itt_pause();
 #endif
 
+  if (argc == 1) print_usage();
+  
   struct timeval begin, end, diff;
 
   // Initialize MPI
@@ -241,8 +250,9 @@ int main(int argc, char** argv) {
         std::cerr << "Number of meshes for convergence study should be greater than 0" << std::endl;
         throw std::exception();
       }
-    }
-    else
+    } else if (keyword == "help") {
+      print_usage();
+    } else
       std::cerr << "Unrecognized option " << keyword << std::endl;
   }
 
@@ -252,17 +262,20 @@ int main(int argc, char** argv) {
   if (nsourcecells > 0 && srcfile.length() > 0) {
     std::cout << "Cannot request internally generated source mesh "
               << "(--nsourcecells) and external file read (--source_file)\n\n";
+    print_usage();
     MPI_Abort(MPI_COMM_WORLD, -1);
   }
   if (!nsourcecells && srcfile.length() == 0) {
     std::cout << "Must specify one of the two options --nsourcecells "
               << "or --source_file\n";
+    print_usage();
     MPI_Abort(MPI_COMM_WORLD, -1);
   }
 
   if (ntargetcells > 0 && trgfile.length() > 0) {
     std::cout << "Cannot request internally generated target mesh "
               << "(--ntargetcells) and external file read (--target_file)\n\n";
+    print_usage();
     MPI_Abort(MPI_COMM_WORLD, -1);
   }
   if (!ntargetcells && trgfile.length() == 0) {
@@ -279,6 +292,7 @@ int main(int argc, char** argv) {
   if (nsourcecells > 0 && field_expression.length() == 0) {
     std::cout << "No field imposed on internally generated source mesh\n";
     std::cout << "Nothing to remap. Exiting...";
+    print_usage();
     MPI_Abort(MPI_COMM_WORLD, -1);
   }
 
@@ -492,8 +506,8 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
 
 
   // Native jali state managers for source and target
-  Jali::State sourceState(sourceMesh);
-  Jali::State targetState(targetMesh);
+  std::shared_ptr<Jali::State> sourceState(Jali::State::create(sourceMesh));
+  std::shared_ptr<Jali::State> targetState(Jali::State::create(targetMesh));
 
   user_field_t source_field;
   if (!source_field.initialize(dim, field_expression))
@@ -510,11 +524,13 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
         sourceData[c] = source_field(sourceMesh->cell_centroid(c));
     }
 
-    sourceState.add("celldata", sourceMesh, Jali::Entity_kind::CELL,
-                      Jali::Entity_type::ALL, &(sourceData[0]));
+    sourceState->add("celldata", sourceMesh, Jali::Entity_kind::CELL,
+                     Jali::Entity_type::ALL, &(sourceData[0]));
 
-    targetState.add("celldata", targetMesh, Jali::Entity_kind::CELL,
-                    Jali::Entity_type::ALL, 0.0);
+    targetState->add<double, Jali::Mesh, Jali::UniStateVector>("celldata",
+                                                            targetMesh,
+                                                Jali::Entity_kind::CELL,
+                                                Jali::Entity_type::ALL, 0.0);
 
     // Register the variable name and interpolation order with the driver
     remap_fields.push_back("celldata");
@@ -533,11 +549,13 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
       sourceData[i] = source_field(node);
     }
 
-    sourceState.add("nodedata", sourceMesh, Jali::Entity_kind::NODE,
+    sourceState->add("nodedata", sourceMesh, Jali::Entity_kind::NODE,
                     Jali::Entity_type::ALL, &(sourceData[0]));
 
-    targetState.add("nodedata", targetMesh, Jali::Entity_kind::NODE,
-                    Jali::Entity_type::ALL, 0.0);
+    targetState->add<double, Jali::Mesh, Jali::UniStateVector>("nodedata",
+                                                            targetMesh,
+                                                Jali::Entity_kind::NODE,
+                                                Jali::Entity_type::ALL, 0.0);
 
     // Register the variable name and remap order with the driver
     remap_fields.push_back("nodedata");
@@ -547,12 +565,12 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
   if (numpe > 1) MPI_Barrier(MPI_COMM_WORLD);
 
   // Portage wrappers for source and target fields
-  Wonton::Jali_State_Wrapper sourceStateWrapper(sourceState);
-  Wonton::Jali_State_Wrapper targetStateWrapper(targetState);
+  Wonton::Jali_State_Wrapper sourceStateWrapper(*sourceState);
+  Wonton::Jali_State_Wrapper targetStateWrapper(*targetState);
 
   if (dim == 2) {
     if (interp_order == 1) {
-      Portage::Driver<
+      Portage::MMDriver<
         Portage::SearchKDTree,
         Portage::IntersectR2D,
         Portage::Interpolate_1stOrder,
@@ -564,7 +582,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
       d.set_remap_var_names(remap_fields);
       d.run(numpe > 1);
     } else if (interp_order == 2) {
-      Portage::Driver<
+      Portage::MMDriver<
         Portage::SearchKDTree,
         Portage::IntersectR2D,
         Portage::Interpolate_2ndOrder,
@@ -578,7 +596,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
     }
   } else {  // 3D
     if (interp_order == 1) {
-      Portage::Driver<
+      Portage::MMDriver<
         Portage::SearchKDTree,
         Portage::IntersectR3D,
         Portage::Interpolate_1stOrder,
@@ -590,7 +608,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
       d.set_remap_var_names(remap_fields);
       d.run(numpe > 1);
     } else {  // 2nd order & 3D
-      Portage::Driver<
+      Portage::MMDriver<
         Portage::SearchKDTree,
         Portage::IntersectR3D,
         Portage::Interpolate_2ndOrder,
@@ -621,9 +639,9 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
   double source_mass = 0.;
   double totvolume = 0.;
   if (entityKind == Jali::Entity_kind::CELL)  {  // CELL error computation
-    targetStateWrapper.get_data<double>(Portage::CELL, "celldata",
+    targetStateWrapper.mesh_get_data<double>(Portage::CELL, "celldata",
                                         &cellvecout);
-    sourceStateWrapper.get_data<double>(Portage::CELL, "celldata",
+    sourceStateWrapper.mesh_get_data<double>(Portage::CELL, "celldata",
                                         &cellvecin);
     if (numpe == 1 && ntarcells < 10)
       std::cout << "celldata vector on target mesh after remapping is:"
@@ -666,9 +684,9 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
       }
     }
   } else {  // NODE error computation
-    targetStateWrapper.get_data<double>(Portage::NODE, "nodedata",
+    targetStateWrapper.mesh_get_data<double>(Portage::NODE, "nodedata",
                                         &nodevecout);
-    sourceStateWrapper.get_data<double>(Portage::NODE, "nodedata",
+    sourceStateWrapper.mesh_get_data<double>(Portage::NODE, "nodedata",
                                         &nodevecin);
     if (numpe == 1 && ntarnodes < 10)
       std::cout << "nodedata vector on target mesh after remapping is:"
@@ -745,10 +763,10 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
       if (rank == 0)
         std::cout << "Dumping data to Exodus files..." << std::endl;
       if (field_expression.length() > 0) {
-        sourceState.export_to_mesh();
+        sourceState->export_to_mesh();
         sourceMesh->write_to_exodus_file("input.exo");
       }
-      targetState.export_to_mesh();
+      targetState->export_to_mesh();
       targetMesh->write_to_exodus_file("output.exo");
       if (rank == 0)
         std::cout << "...done." << std::endl;

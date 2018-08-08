@@ -23,8 +23,8 @@ Please see the license file at the root of this repository, or at:
 //                                                                           //
 ///////////////////////////////////////////////////////////////////////////////
 
-#ifndef SRC_SUPPORT_POINT_H_
-#define SRC_SUPPORT_POINT_H_
+#ifndef PORTAGE_SUPPORT_POINT_H_
+#define PORTAGE_SUPPORT_POINT_H_
 
 #include <assert.h>
 #include <iostream>
