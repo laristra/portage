@@ -359,6 +359,8 @@ class AuxMeshTopology {
                static_cast<Portage::Entity_type>(etype));
   }
 #endif
+
+
   /*!
     @brief Get the list of cell IDs for all cells attached to a specific
     cell through its nodes.
@@ -394,6 +396,17 @@ class AuxMeshTopology {
       }
     }
   }  // cell_get_node_adj_cells
+
+#ifdef HAVE_TANGRAM
+  // TEMPORARY - until we pull WONTON out as a separate repository
+  void cell_get_node_adj_cells(int const cellid,
+                               Tangram::Entity_type ptype,
+                               std::vector<int> *adjcells) const {
+    cell_get_node_adj_cells(cellid, static_cast<Portage::Entity_type>(ptype),
+			    adjcells);
+  } 
+#endif
+
 
   //! Get cells of given Entity_type connected to face (in no particular order)
   void face_get_cells(int const faceid, Entity_type const etype,
@@ -477,7 +490,7 @@ class AuxMeshTopology {
   void cell_get_coordinates(int const cellid,
                             std::vector<Point<D>> *pplist) const;
 
-  //! Centroid of a cell (actually geometric center of cell nodes)
+  //! Centroid of a cell
 
   template <long D>
   void cell_centroid(int const cellid, Point<D> *ccen) const {
@@ -488,6 +501,14 @@ class AuxMeshTopology {
       (*ccen)[d] = cell_centroids_[cellid][d];    
   }
 
+#ifdef HAVE_TANGRAM
+  // TEMPORARY - until we pull WONTON out as a separate repository
+   template<long D>
+   void cell_centroid(int const cellid,
+                      Tangram::Point<D> *ccen) const {
+    cell_centroid(cellid, reinterpret_cast<Portage::Point<D> *>(ccen));
+  } 
+#endif
 
   //! Volume of a cell
   
@@ -500,7 +521,7 @@ class AuxMeshTopology {
   }
 
   
-  //! Centroid of a face (actually geometric center of face nodes)
+  //! Centroid of a face
 
   template <long D>
   void face_centroid(int const faceid, Point<D> *fcen) const {

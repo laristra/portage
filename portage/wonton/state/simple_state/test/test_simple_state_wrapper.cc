@@ -41,7 +41,7 @@ TEST(Simple_State_Wrapper, WrapperTest) {
   mystate.add("cellvar1", Portage::Entity_kind::CELL, &(cellvar[0]));
 
   double* celldata;
-  mystate_wrapper.get_data(Portage::Entity_kind::CELL, "cellvar1",
+  mystate_wrapper.mesh_get_data(Portage::Entity_kind::CELL, "cellvar1",
                            &celldata);
   for (int i(0); i < numcells; ++i) {
     ASSERT_EQ(cellvar[i], celldata[i]);
@@ -54,7 +54,7 @@ TEST(Simple_State_Wrapper, WrapperTest) {
   mystate.add("nodevar1", Portage::Entity_kind::NODE, &(nodevar[0]));
 
   double* nodedata;
-  mystate_wrapper.get_data(Portage::Entity_kind::NODE, "nodevar1",
+  mystate_wrapper.mesh_get_data(Portage::Entity_kind::NODE, "nodevar1",
                            &nodedata);
   for (int i(0); i < numnodes; ++i) {
     ASSERT_EQ(nodevar[i], nodedata[i]);
@@ -76,8 +76,8 @@ TEST(Simple_State_Wrapper, WrapperTest) {
   for (int i(0); i < numnodes; ++i)
     nodevar2[i] = i*i;
   const double *testa = &(nodevar2[0]), *testg;
-  mystate_wrapper.add_data(Portage::Entity_kind::NODE, "nodevar2", &testa);
-  mystate_wrapper.get_data(Portage::Entity_kind::NODE, "nodevar2", &testg);
+  mystate_wrapper.mesh_add_data(Portage::Entity_kind::NODE, "nodevar2", &testa);
+  mystate_wrapper.mesh_get_data(Portage::Entity_kind::NODE, "nodevar2", &testg);
   for (size_t i = 0; i < numnodes; i++) ASSERT_EQ(testg[i], nodevar2[i]);
 
   // Check names

@@ -272,7 +272,7 @@ shared_ptr<SwarmState<dim>> SwarmStateFactory(
     assert(state.get_data_size(entity, name) == ndata);
 
     const double *datap;
-    state.get_data(entity, name, &datap);
+    state.mesh_get_data(entity, name, &datap);
     typename SwarmState<dim>::DblVecPtr data = make_shared<vector<double>>(ndata);
     
     for (size_t i=0; i<ndata; i++) (*data)[i] = datap[i];
