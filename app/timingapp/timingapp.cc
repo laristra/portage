@@ -350,7 +350,7 @@ int main(int argc, char** argv) {
     sourceState->add("celldata", sourceMesh, Jali::Entity_kind::CELL,
                     Jali::Entity_type::ALL, &(sourceData[0]));
 
-    targetState->add<double, Jali::Mesh, Jali::StateVector>("celldata",
+    targetState->add<double, Jali::Mesh, Jali::UniStateVector>("celldata",
                                                             targetMesh,
                                                 Jali::Entity_kind::CELL,
                                                 Jali::Entity_type::ALL, 0.0);
@@ -394,7 +394,7 @@ int main(int argc, char** argv) {
     sourceState->add("nodedata", sourceMesh, Jali::Entity_kind::NODE,
                     Jali::Entity_type::ALL, &(sourceData[0]));
 
-    targetState->add<double, Jali::Mesh, Jali::StateVector>("nodedata",
+    targetState->add<double, Jali::Mesh, Jali::UniStateVector>("nodedata",
                                                             targetMesh,
                                                 Jali::Entity_kind::NODE,
                                                 Jali::Entity_type::ALL, 0.0);
@@ -491,7 +491,7 @@ int main(int argc, char** argv) {
   double const * nodevecout;
 
   if (entityKind == Jali::Entity_kind::CELL) {
-    targetStateWrapper.get_data<double>(Portage::CELL, "celldata",
+    targetStateWrapper.mesh_get_data<double>(Portage::CELL, "celldata",
                                         &cellvecout);
 
     if (numpe == 1 && n_target < 10)
@@ -544,7 +544,7 @@ int main(int argc, char** argv) {
     
   } else {
 
-    targetStateWrapper.get_data<double>(Portage::NODE, "nodedata",
+    targetStateWrapper.mesh_get_data<double>(Portage::NODE, "nodedata",
                                         &nodevecout);
 
     if (numpe == 1 && n_target < 10)

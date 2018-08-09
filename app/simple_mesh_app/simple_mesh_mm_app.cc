@@ -144,8 +144,8 @@ void run(
   	material_filename, cell_num_mats, cell_mat_ids, cell_mat_volfracs,
     cell_mat_centroids);
   
-	// debug info, easy to remove
-  if (0){
+  #ifdef DEBUG
+  	// debug info
 		std::cout<<"\n\nSource Mesh: \n"<<std::endl;
 		std::cout<<"cell_num_mats: ";
 		for (auto x: cell_num_mats) std::cout<<x<<" "; std::cout<<std::endl;
@@ -158,7 +158,7 @@ void run(
 		                                                   
 		std::cout<<"cell_mat_centroids:\n";
 		for (auto x: cell_mat_centroids) std::cout<<x[0]<<" "<<x[1]<<"\n"; std::cout<<std::endl;
-  }                                                  
+  #endif                                       
   
   bool mat_centroids_given = (cell_mat_centroids.size() > 0);
 
@@ -429,8 +429,8 @@ void run(
 
 	}
 
-	// debug info, easy to remove
-	if (0){
+#ifdef DEBUG
+    // debug info
 		std::cout<<"\n\nTarget Mesh: \n"<<std::endl;
 		std::cout<<"target_cell_num_mats: ";
 		for (auto x: target_cell_num_mats) std::cout<<x<<" "; std::cout<<std::endl;
@@ -443,7 +443,7 @@ void run(
 		                                                   
 		std::cout<<"target_cell_mat_centroids:\n";
 		for (Tangram::Point<2>  x: target_cell_mat_centroids) std::cout<<x[0]<<" "<<x[1]<<"\n"; std::cout<<std::endl;
-	}
+#endif
 	
   // Perform interface reconstruction on target mesh for pretty pictures
   // (optional)
@@ -533,15 +533,21 @@ void run(
 
 int main(int argc, char** argv) {
 
-	#ifdef ENABLE_MPI
-  MPI_Init(&argc, &argv);
-	#endif
+  #ifdef ENABLE_MPI  
+    MPI_Init(&argc, &argv);
+    MPI_Comm comm = MPI_COMM_WORLD;
+
+    int world_size = 1;
+    MPI_Comm_size(comm, &world_size);
+    if (world_size > 1)
+      throw std::runtime_error("This app is designed to run in serial!");
+  #endif  
 
 
 	// print usage if no args
   if (argc == 1) {
   	print_usage();
-  	return 0;
+  	return -1;
   }
   
   struct timeval begin, end, diff;
@@ -620,6 +626,7 @@ int main(int argc, char** argv) {
       }
     } else if (keyword == "help") {
       print_usage();
+      return -1;
     } else
       std::cerr << "Unrecognized option " << keyword << std::endl;
   }

@@ -571,8 +571,7 @@ void MMDriver<Search, Intersect, Interpolate, D,
     interpolate.set_interpolation_variable(src_meshvar_names[i], limiters_[i]);
     
     // Get a handle to a memory location where the target state
-    // would like us to write this material variable into. If it is
-    // NULL, we allocate it ourself
+    // would like us to write this material variable into.
     
     double *target_field_raw;
     target_state_.mesh_get_data(onwhat, trg_meshvar_names[i], &target_field_raw);

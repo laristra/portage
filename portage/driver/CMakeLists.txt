@@ -36,11 +36,11 @@ if (ENABLE_UNIT_TESTS)
        POLICY MPI
        THREADS 1)
 
-#       cinch_add_unit(test_driver_step
-#       SOURCES test/test_driver_step 
-#       LIBRARIES portage ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
-#       POLICY MPI
-#       THREADS 1)
+       #cinch_add_unit(test_driver_step
+       #SOURCES test/test_driver_step 
+       #LIBRARIES portage ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
+       #POLICY MPI
+       #THREADS 1)
 
        cinch_add_unit(test_driver_swarm_dist
        SOURCES test/test_driver_swarm_dist

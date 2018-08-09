@@ -40,13 +40,6 @@
 #include "portage/wonton/mesh/jali/jali_mesh_wrapper.h"
 #include "portage/wonton/state/jali/jali_state_wrapper.h"
 
-#ifdef XMOF2D
-#endif
-
-#ifdef HAVE_TANGRAM
-#include "tangram/driver/driver.h"
-#endif
-
 // For parsing and evaluating user defined expressions in apps
 
 #include "user_field.h"
@@ -158,7 +151,10 @@ int main(int argc, char** argv) {
   __itt_pause();
 #endif
 
-  if (argc == 1) print_usage();
+  if (argc == 1) {
+    print_usage();
+    return -1;
+  }
   
   struct timeval begin, end, diff;
 

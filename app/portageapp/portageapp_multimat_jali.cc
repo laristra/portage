@@ -41,9 +41,6 @@
 #include "portage/wonton/state/jali/jali_state_wrapper.h"
 #include "read_material_data.h"
 
-#ifdef XMOF2D
-#endif
-
 #ifdef HAVE_TANGRAM
 #include "tangram/driver/driver.h"
 #include "tangram/reconstruct/xmof2D_wrapper.h"
@@ -171,7 +168,7 @@ int main(int argc, char** argv) {
   __itt_pause();
 #endif
 
-  if (argc == 1) print_usage();
+
   
   struct timeval begin, end, diff;
 
@@ -184,6 +181,10 @@ int main(int argc, char** argv) {
   MPI_Comm_size(MPI_COMM_WORLD, &numpe);
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
+  if (argc == 1) {
+    print_usage();
+    MPI_Abort(MPI_COMM_WORLD, -1);
+  }
 
   // For now we are not allowing distributed remaps because flat state wrapper
   // is not yet capable of handling multi-material state
@@ -272,6 +273,7 @@ int main(int argc, char** argv) {
       }
     } else if (keyword == "help") {
       print_usage();
+      MPI_Abort(MPI_COMM_WORLD, -1);
     } else
       std::cerr << "Unrecognized option " << keyword << std::endl;
   }

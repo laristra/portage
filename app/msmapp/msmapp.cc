@@ -781,12 +781,10 @@ int main(int argc, char** argv) {
 		   Portage::Interpolate_1stOrder, 
 		   Portage::SearchPointsByCells, 3>();
   
-    } else if (ctl.order == 2) {
- 
-      //      msmguy.runit<Portage::IntersectR3D, 
-      //		   Portage::Interpolate_2ndOrder, 
-      //		   Portage::SearchPointsByCells, 3>();
-
+    } else if (ctl.order == 2) { 
+      msmguy.runit<Portage::IntersectR3D, 
+      Portage::Interpolate_2ndOrder, 
+      Portage::SearchPointsByCells, 3>();
     }
   } else {
     Jali::MeshFactory jmf(MPI_COMM_WORLD);
