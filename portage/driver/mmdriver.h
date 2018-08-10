@@ -31,7 +31,7 @@ Please see the license file at the root of this repository, or at:
 #include "portage/interpolate/interpolate_1st_order.h"
 #include "portage/interpolate/interpolate_2nd_order.h"
 #include "portage/wonton/mesh/flat/flat_mesh_wrapper.h"
-#include "portage/wonton/state/flat/flat_state_wrapper.h"
+#include "portage/wonton/state/flat/flat_state_mm_wrapper.h"
 
 #ifdef ENABLE_MPI
 #include "portage/distributed/mpi_bounding_boxes.h"
@@ -842,7 +842,7 @@ void MMDriver<Search, Intersect, Interpolate, D,
   int ntarget_ents = target_mesh_.num_entities(onwhat, ALL);
 
   Flat_Mesh_Wrapper<> source_mesh_flat;
-  Flat_State_Wrapper<> source_state_flat;
+  Flat_State_Wrapper<Flat_Mesh_Wrapper<>> source_state_flat(source_mesh_flat);
 
   float tot_seconds = 0.0, tot_seconds_srch = 0.0,
       tot_seconds_xsect = 0.0, tot_seconds_interp = 0.0;
@@ -927,7 +927,7 @@ void MMDriver<Search, Intersect, Interpolate, D,
   // interface reconstructor so that it can retrieve pure material polygons
 
 
-  Intersect<onwhat, Flat_Mesh_Wrapper<>, Flat_State_Wrapper<>,
+  Intersect<onwhat, Flat_Mesh_Wrapper<>, Flat_State_Wrapper<Flat_Mesh_Wrapper<>>,
             TargetMesh_Wrapper, InterfaceReconstructorType,
             Matpoly_Splitter, Matpoly_Clipper>
       intersect(source_mesh_flat, source_state_flat, target_mesh_,
@@ -935,7 +935,7 @@ void MMDriver<Search, Intersect, Interpolate, D,
 
   // Get an instance of the desired interpolate algorithm type
   Interpolate<D, onwhat, Flat_Mesh_Wrapper<>, TargetMesh_Wrapper,
-              Flat_State_Wrapper<>, InterfaceReconstructorType,
+              Flat_State_Wrapper<Flat_Mesh_Wrapper<>>, InterfaceReconstructorType,
               Matpoly_Splitter, Matpoly_Clipper>
       interpolate(source_mesh_flat, target_mesh_, source_state_flat, 
                   interface_reconstructor);

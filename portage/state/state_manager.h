@@ -741,7 +741,7 @@ class StateManager {
 		}
 
 		
-	private:
+	protected:
 	
 		// underlying mesh reference
 		const MeshWrapper& mesh_;

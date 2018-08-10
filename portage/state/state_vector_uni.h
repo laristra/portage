@@ -29,6 +29,7 @@ class StateVectorUni : public StateVectorBase {
   
   	/*!
   		@brief Constructor for StateVectorUni
+  		@param[in] name		the name of the state vector
   		@param[in] kind		the entity kind (CELL, NODE,...) of the data
   		@param[in] data		the vector of data
   	*/
@@ -37,6 +38,24 @@ class StateVectorUni : public StateVectorBase {
 			Entity_kind kind=Entity_kind::CELL,
 			std::vector<T> data=std::vector<T>()
 		) : StateVectorBase(name, Field_type::MESH_FIELD, kind),data_(data) {}
+		
+  	/*!
+  		@brief Constructor for StateVectorUni
+  		@param[in] name		the name of the state vector
+  		@param[in] kind		the entity kind (CELL, NODE,...) of the data
+  		@param[in] begin	pointer to the beginning of data to be copied
+  		@param[in] end		pointer to the end of the data to be copied
+  		
+  		Default arguments need to be at the end, so this signature is in a different
+  		order than the other constructor, and we need to be able to disambiguate
+  		with no default arguments.
+  	*/
+		StateVectorUni(
+			std::string name, 
+			T const* begin,
+			T const* end,
+			Entity_kind kind=Entity_kind::CELL
+		) : StateVectorBase(name, Field_type::MESH_FIELD, kind),data_(begin,end) {}
 		
 
 		//! Destructor
