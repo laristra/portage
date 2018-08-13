@@ -74,7 +74,10 @@ if(ENABLE_TCMALLOC)
 
   if (Jali_DIR)
     target_link_libraries(portageapp_jali ${TCMALLOC_LIB})
-    target_link_libraries(portageapp_multimat_jali ${TCMALLOC_LIB})
+    if (TANGRAM_DIR)
+    	# we need Tangram for these libraries to be built
+    	target_link_libraries(portageapp_multimat_jali ${TCMALLOC_LIB})
+    endif (TANGRAM_DIR)
   endif (Jali_DIR)
   if (ENABLE_FleCSI)
     target_link_libraries(portageapp_flecsi ${TCMALLOC_LIB})

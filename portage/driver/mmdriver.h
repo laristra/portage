@@ -380,15 +380,15 @@ class MMDriver {
   std::vector<LimiterType> limiters_;
   unsigned int dim_;
 
+#ifdef HAVE_TANGRAM
   // Convert volume fraction and centroid data from compact
   // material-centric to compact cell-centric (ccc) form as needed by
   // Tangram
-
   void ccc_vfcen_data(std::vector<int>& cell_num_mats,
                       std::vector<int>& cell_mat_ids,
                       std::vector<double>& cell_matvolfracs,
                       std::vector<Tangram::Point<D>>& cell_mat_centroids);
-  
+#endif  
 };  // class MMDriver
 
 
@@ -941,14 +941,14 @@ void MMDriver<Search, Intersect, Interpolate, D,
                   interface_reconstructor);
 #else
 
-  Intersect<onwhat, Flat_Mesh_Wrapper<>, Flat_State_Wrapper<>,
+  Intersect<onwhat, Flat_Mesh_Wrapper<>, Flat_State_Wrapper<Flat_Mesh_Wrapper<>>,
             TargetMesh_Wrapper, DummyInterfaceReconstructor,
             void, void>
       intersect(source_mesh_flat, source_state_flat, target_mesh_);
 
   // Get an instance of the desired interpolate algorithm type
   Interpolate<D, onwhat, Flat_Mesh_Wrapper<>, TargetMesh_Wrapper,
-              Flat_State_Wrapper<>, DummyInterfaceReconstructor,
+              Flat_State_Wrapper<Flat_Mesh_Wrapper<>>, DummyInterfaceReconstructor,
               void, void>
       interpolate(source_mesh_flat, target_mesh_, source_state_flat);
 #endif  // HAVE_TANGRAM
@@ -1222,6 +1222,7 @@ void MMDriver<Search, Intersect, Interpolate, D,
 #endif  // ENABLE_MPI
 
 
+#ifdef HAVE_TANGRAM
 // Convert volume fraction and centroid data from compact
 // material-centric to compact cell-centric (ccc) form as needed by
 // Tangram
@@ -1307,6 +1308,7 @@ MMDriver<Search, Intersect, Interpolate, D,
   }
 }
 
+#endif // HAVE_TANGRAM
 
 }  // namespace Portage
 
