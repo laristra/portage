@@ -7,7 +7,7 @@ Please see the license file at the root of this repository, or at:
 #ifndef MPI_BOUNDING_BOXES_H_
 #define MPI_BOUNDING_BOXES_H_
 
-//#define DEBUG_MPI
+#define DEBUG_MPI
 
 #include <cassert>
 #include <algorithm>
@@ -381,7 +381,7 @@ class MPI_Bounding_Boxes {
                 *sourceField, &newField);
 
 #ifdef DEBUG_MPI
-      if ((r == 1) && (commRank == 1))
+      if (commRank == 1)
       {
         std::cout << "Test: field " << newField.size() << std::endl;
         for (unsigned int f=0; f<newField.size(); f++)
@@ -534,9 +534,9 @@ class MPI_Bounding_Boxes {
 #ifdef DEBUG_MPI
     if (commRank == 1)
     {
-      std::cout << "Test: field " << newData.size() << std::endl;
-      for (unsigned int f=0; f<newData.size(); f++)
-        std::cout << newData[f] << " ";
+      std::cout << "Test: field " << (*newData).size() << std::endl;
+      for (unsigned int f=0; f<(*newData).size(); f++)
+        std::cout << (*newData)[f] << " ";
       std::cout << std::endl << std::endl;
     }
 #endif
