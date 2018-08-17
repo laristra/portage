@@ -488,8 +488,8 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
 
   if (rank == 0) {
     std::cout << "starting portageapp_jali...\n";
-    std::cout << "Source mesh has " << nsrccells << " cells\n";
-    std::cout << "Target mesh has " << ntarcells << " cells\n";
+    std::cout << "Source mesh on rank 0 has " << nsrccells << " cells\n";
+    std::cout << "Target mesh on rank 0 has " << ntarcells << " cells\n";
     std::cout << "All fields on" << entityKind << "including "
               << "the command line field (if specified) will be remapped\n";
     if (field_expression.length())
@@ -672,12 +672,13 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
         *L1_error += fabs(error)*cellvol;
         *L2_error += error*error*cellvol;
       }
-      if (numpe == 1 && ntarcells < 10) {
+      //if (numpe == 1 && ntarcells < 10) {
+      	std::printf("Rank %d\n", rank);
         std::printf("Cell=% 4d Centroid = (% 5.3lf,% 5.3lf)", c,
                     ccen[0], ccen[1]);
         std::printf("  Value = % 10.6lf  L2 Err = % lf\n",
                     cellvecout[c], error);
-      }
+      //}
     }
   } else {  // NODE error computation
     targetStateWrapper.mesh_get_data<double>(Portage::NODE, "nodedata",
@@ -735,10 +736,11 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
   }
   err_norm = err_l1 / err_norm;
   *L2_error = sqrt(*L2_error);
-  if (rank == 0 && !remap_back) {
+  if (!remap_back) {//rank == 0 && 
     std::printf("\n\nL1 NORM OF ERROR (excluding boundary) = %lf\n", *L1_error);
     std::printf("L2 NORM OF ERROR (excluding boundary) = %lf\n\n", *L2_error);
     std::printf("===================================================\n");
+    std::printf("ON RANK %d\n", rank);
     std::printf("Relative L1 error = %.5e \n", err_norm);
     std::printf("Source min/max    = %.15e %.15e \n", minin, maxin);
     std::printf("Target min/max    = %.15e %.15e \n", minout, maxout);

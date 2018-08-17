@@ -176,10 +176,10 @@ class MPI_Bounding_Boxes {
 
 #ifdef DEBUG_MPI
     std::cout << "Target boxes: ";
-    for (unsigned int i=0; i<2*dim*commSize; i++) std::cout << targetBoundingBoxes[i] << " ";
+    for (unsigned int i=0; i<2*dim*commSize; i++) std::cout << targetBoundingBoxes[i] << (i%(2*dim)==2*dim-1?", ":" ");
     std::cout << std::endl;
 
-    std::cout << "Source box : " << commRank << " ";
+    std::cout << "Source box " << commRank << ": ";
     for (unsigned int i=0; i<2*dim; i++) std::cout << sourceBoundingBox[i] << " ";
     std::cout << std::endl;
 #endif
@@ -223,8 +223,8 @@ class MPI_Bounding_Boxes {
             sourceNumCells, sourceNumOwnedCells);
 
 #ifdef DEBUG_MPI
-    std::cout << "Received " << commRank << " " << cellInfo.recvCounts[0] << " " << cellInfo.recvCounts[1] << " " << cellInfo.newNum
-              << " " << (cellInfo.newNum - cellInfo.recvCounts[commRank]) << std::endl;
+    std::cout << "Received  on rank " << commRank << ", from source rank 0:" << cellInfo.recvCounts[0] << ", from source rank 1:" << cellInfo.recvCounts[1] << ",  totaling:" << cellInfo.newNum
+              << " ,of which " << (cellInfo.newNum - cellInfo.recvCounts[commRank]) << " were received from different ranks" << std::endl;
 #endif
 
     setInfo(&nodeInfo, commSize, sendFlags,
@@ -295,19 +295,26 @@ class MPI_Bounding_Boxes {
     std::vector<int> newNodeGlobalIds(nodeInfo.newNum);
 
     // SEND NODE COORDINATES
-
+#ifdef DEBUG_MPI
+		std::cout << std::endl << "Source node coordinates (from all received ranks):" << std::endl;
+#endif
     moveField(nodeInfo, commRank, commSize, MPI_DOUBLE, dim,
               sourceCoords, &newCoords);
-
     if (dim == 2)
     {
       // SEND NUMBER OF NODES FOR EACH CELL
 
+#ifdef DEBUG_MPI
+			std::cout << std::endl << "Source nodes per cell:" << std::endl;
+#endif
       moveField(cellInfo, commRank, commSize, MPI_INT, 1,
                 sourceNodeCounts, &newCellNodeCounts);
 
       // SEND CELL-TO-NODE MAP
       std::vector<int>& sourceCellToNodeList = source_mesh_flat.get_cell_to_node_list(); 
+#ifdef DEBUG_MPI
+			std::cout << std::endl << "Source cell nodes:" << std::endl;
+#endif
       moveField(cellToNodeInfo, commRank, commSize, MPI_INT, 1,
                 sourceCellToNodeList, &newCellToNodeList);
 
@@ -317,6 +324,9 @@ class MPI_Bounding_Boxes {
     {
       // SEND NUMBER OF FACES FOR EACH CELL
       std::vector<int>& sourceCellFaceCounts = source_mesh_flat.get_cell_face_counts(); 
+#ifdef DEBUG_MPI
+			std::cout << std::endl << "Source faces per cell:" << std::endl;
+#endif
       moveField(cellInfo, commRank, commSize, MPI_INT, 1,
                 sourceCellFaceCounts, &newCellFaceCounts);
 
@@ -331,6 +341,9 @@ class MPI_Bounding_Boxes {
         int dir = static_cast<int>(sourceCellToFaceDirs[j]);
         sourceCellToFaceList[j] = (f << 1) | dir;
       }
+#ifdef DEBUG_MPI
+			std::cout << std::endl << "Source cell faces:" << std::endl;
+#endif
       moveField(cellToFaceInfo, commRank, commSize, MPI_INT, 1,
                 sourceCellToFaceList, &newCellToFaceList);
       
@@ -344,22 +357,34 @@ class MPI_Bounding_Boxes {
 
       // SEND NUMBER OF NODES FOR EACH FACE
       std::vector<int>& sourceFaceNodeCounts = source_mesh_flat.get_face_node_counts(); 
+#ifdef DEBUG_MPI
+			std::cout << std::endl << "Source nodes per face:" << std::endl;
+#endif
       moveField(faceInfo, commRank, commSize, MPI_INT, 1,
                 sourceFaceNodeCounts, &newFaceNodeCounts); 
 
       // SEND FACE-TO-NODE MAP
       std::vector<int>& sourceFaceToNodeList = source_mesh_flat.get_face_to_node_list(); 
+#ifdef DEBUG_MPI
+			std::cout << std::endl << "Source face nodes:" << std::endl;
+#endif
       moveField(faceToNodeInfo, commRank, commSize, MPI_INT, 1,
                 sourceFaceToNodeList, &newFaceToNodeList);
     }
 
     // SEND GLOBAL CELL IDS
 
+#ifdef DEBUG_MPI
+			std::cout << std::endl << "Source global cell ids:" << std::endl;
+#endif
     moveField(cellInfo, commRank, commSize, MPI_INT, 1,
               sourceCellGlobalIds, &newCellGlobalIds);
 
     // SEND GLOBAL NODE IDS
 
+#ifdef DEBUG_MPI
+			std::cout << std::endl << "Source global node ids:" << std::endl;
+#endif
     moveField(nodeInfo, commRank, commSize, MPI_INT, 1,
               sourceNodeGlobalIds, &newNodeGlobalIds);
 
@@ -376,19 +401,12 @@ class MPI_Bounding_Boxes {
                            nodeInfo : cellInfo);
       std::vector<double> newField(info.newNum);
 
+#ifdef DEBUG_MPI
+			std::cout << std::endl << "Source user field " << s << ":" << std::endl;
+#endif
       moveField(info, commRank, commSize,
                 MPI_DOUBLE, sourceFieldStride,
                 *sourceField, &newField);
-
-#ifdef DEBUG_MPI
-      if (commRank == 1)
-      {
-        std::cout << "Test: field " << newField.size() << std::endl;
-        for (unsigned int f=0; f<newField.size(); f++)
-          std::cout << newField[f] << " ";
-        std::cout << std::endl << std::endl;
-      }
-#endif
 
       // We will now use the received source state as our new source state on this partition
       sourceField->resize(newField.size());
@@ -429,21 +447,18 @@ class MPI_Bounding_Boxes {
     source_mesh_flat.finish_init();
 
 #ifdef DEBUG_MPI
-    if (commRank == 1)
-    {
-      std::cout << "Sizes: " << commRank << " " << cellInfo.newNum << " " << targetNumOwnedCells
-                << " " << cellInfo.sourceNum << " " << sourceCoords.size() << std::endl;
+    std::cout << "Sizes on rank " << commRank << ",  newNum: " << cellInfo.newNum << ", targetNumOwned: " << targetNumOwnedCells
+              << ", sourceNum: " << cellInfo.sourceNum << ", sourceCoords: " << sourceCoords.size() << std::endl;
 
-      for (unsigned int i=0; i<sourceCellGlobalIds.size(); i++)
-        std::cout << sourceCellGlobalIds[i] << " ";
-      std::cout << std::endl;
-      for (unsigned int i=0; i<sourceCoords.size(); i++)
-      {
-        std::cout << sourceCoords[i] << " " ;
-        if (i % 24 == 23) std::cout << std::endl;
-      }
-      std::cout << std::endl << std::endl;
+    for (unsigned int i=0; i<sourceCellGlobalIds.size(); i++)
+      std::cout << sourceCellGlobalIds[i] << " ";
+    std::cout << std::endl;
+    for (unsigned int i=0; i<sourceCoords.size(); i++)
+    {
+      std::cout << sourceCoords[i] << " " ;
+      if (i % 24 == 23) std::cout << std::endl;
     }
+    std::cout << std::endl << std::endl;
 #endif
 
   } // distribute
@@ -532,13 +547,10 @@ class MPI_Bounding_Boxes {
              sourceData, newData);
 
 #ifdef DEBUG_MPI
-    if (commRank == 1)
-    {
-      std::cout << "Test: field " << (*newData).size() << std::endl;
-      for (unsigned int f=0; f<(*newData).size(); f++)
-        std::cout << (*newData)[f] << " ";
-      std::cout << std::endl << std::endl;
-    }
+    std::cout << "Number of values on rank " << commRank << ": " << (*newData).size() << std::endl;
+    for (unsigned int f=0; f<(*newData).size(); f++)
+      std::cout << (*newData)[f] << " ";
+    std::cout << std::endl << std::endl;
 #endif
   } // moveField
 
