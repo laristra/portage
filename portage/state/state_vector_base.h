@@ -47,6 +47,8 @@ namespace Portage {
 		  os << "Print not implemented for data type of StateVectorBase\n";
 		  return os;
 		}
+		
+		
 		virtual const std::type_info& data_type() = 0;
 
 		//! Query Metadata

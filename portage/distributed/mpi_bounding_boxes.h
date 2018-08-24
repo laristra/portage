@@ -391,28 +391,30 @@ class MPI_Bounding_Boxes {
     // SEND FIELD VALUES
 
     // Send and receive each field to be remapped
-    for (int s=0; s<source_state_flat.get_num_vectors(); s++)
+    for (std::string field_name : source_state_flat.get_state_keys())
     {
-      std::shared_ptr<std::vector<double>> sourceField = source_state_flat.get_vector(s);
-      int sourceFieldStride = source_state_flat.get_field_stride(s);
+    	
+    	//std::vector<double> sourceField{.75, .75, .25, .25};
+      std::vector<double>& sourceField = source_state_flat.get_vector(field_name);
+      int sourceFieldStride = source_state_flat.get_field_stride(field_name);
 
       // Currently only cell and node fields are supported
-      comm_info_t& info = (source_state_flat.get_entity(s) == NODE ?
+      comm_info_t& info = (source_state_flat.get_entity(field_name) == NODE ?
                            nodeInfo : cellInfo);
       std::vector<double> newField(info.newNum);
 
 #ifdef DEBUG_MPI
-			std::cout << std::endl << "Source user field " << s << ":" << std::endl;
+			std::cout << std::endl << "Source user field \"" << field_name << "\":" << std::endl;
 #endif
       moveField(info, commRank, commSize,
                 MPI_DOUBLE, sourceFieldStride,
-                *sourceField, &newField);
+                sourceField, &newField);
 
       // We will now use the received source state as our new source state on this partition
-      sourceField->resize(newField.size());
-      std::copy(newField.begin(), newField.end(), sourceField->begin());
+      sourceField.resize(newField.size());
+      std::copy(newField.begin(), newField.end(), sourceField.begin());
 
-    } // for s
+    } // for field_name
 
     // We will now use the received source mesh data as our new source mesh on this partition
     // TODO:  replace with swap

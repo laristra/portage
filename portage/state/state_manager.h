@@ -210,6 +210,7 @@ class StateManager {
 		  @brief Return the data size .
 		  
 		  This function is currently not implemented, but is required by the API.
+		  Might only make sense for single material vectors, but not sure
 		*/
 		int get_data_size(Entity_kind on_what, std::string const& name) const {
 			return 0; //fix if ever used
@@ -345,7 +346,7 @@ class StateManager {
 		  With this signature we only need one specialization and it is used for
 		  accessing both single material and multi material state vectors. 
 		*/
- 		template <class T>
+ 		template <typename T>
 		std::shared_ptr<T> get(std::string name){
 		
 			// create the key
@@ -375,7 +376,7 @@ class StateManager {
 		  const version of the function, that is used for read only data. 
 		  
 		*/
- 		template <class T>
+ 		template <typename T>
 		std::shared_ptr<T> get(std::string name) const{
 		
 			// create the key

@@ -65,14 +65,13 @@ class Flat_State_Wrapper: public StateManager<MeshWrapper> {
   void initialize(State_Wrapper const & input,
 		  std::vector<std::string> var_names)
   {
+  
 	  clear(); // forget everything
 
-	  for (unsigned int i=0; i<var_names.size(); i++)
+	  for (std::string varname : var_names)
 	  {
-		  // get name
-		  std::string varname = var_names[i];
-
-		  // get entity
+	  
+		  // get the entity kind
 		  Entity_kind entity = input.get_entity(varname);
 
 		  // get pointer to data for state from input state wrapper
@@ -80,7 +79,8 @@ class Flat_State_Wrapper: public StateManager<MeshWrapper> {
 		  double const* data;
 		  input.mesh_get_data(entity, varname, &data);
 		  
-		  // GET_DATA_SIZE IS CURRENTLY NOT IMPLEMENTED
+		  // Note, this get_data_size is of the input wrapper, which is defined
+		  // not the base class state manager get_data_size which is not implemented
 		  size_t dataSize = input.get_data_size(entity, varname);
 
 	    // create a uni state vector
@@ -90,16 +90,6 @@ class Flat_State_Wrapper: public StateManager<MeshWrapper> {
 	    // add to database
 	    StateManager<MeshWrapper>::add(pv);
 
-
-
-
-		  // copy input state data into new vector storage
-		  // I THINK THERE IS A DOUBLE COPY HERE
-		  //auto vdata = std::make_shared<std::vector<double>>(dataSize);
-	    //std::copy(data, data+dataSize, vdata->begin());
-	    
-	    // OLD WAY
-		  // mesh_add_data(entity, varname, vdata);
 	  }
   }
 
@@ -113,25 +103,26 @@ class Flat_State_Wrapper: public StateManager<MeshWrapper> {
 
   /*!
     @brief Get the data vector
+    I am doing a return by reference of the data here. In the flat state manager
+    as it existed before this, the state manager returned data vector. In the
+    new StateManager, we return a shared pointer to a StateVectorBase that has
+    metadata as well. Getting at the data requires one more access that is not
+    by shared pointer but by array reference as currently implemented. This breaks
+    the current MMDriver code, so I need to change MMDriver as well
   */
-  std::shared_ptr<std::vector<double>> get_vector(size_t index)
+  std::vector<double>& get_vector(std::string field_name)
   {
-  	// HARD CODED: FIX, PROBLEM IS CALL BY INDEX IN MMDRIVER
+  	std::shared_ptr<StateVectorBase> p = StateManager<MeshWrapper>::get(field_name);
+  	return std::static_pointer_cast<StateVectorUni<double>>(p)->get_data();
   	
-  	// I NEED TO RESOLVE WHY TEMPLATING WORKS WITH GET IN TEST_STAT_MANAGER.CC
-  	// AND DOESN'T WORK HERE. TO GET THE CODE WORKING I USE THE STATEVECTORBASE
-  	// RETURN AND DO THE CAST EXPLICITLY
-  	std::shared_ptr<StateVectorUni<>> pv = std::dynamic_pointer_cast<StateVectorUni<>>(StateManager<MeshWrapper>::get("celldata"));
-  	
-  	// get a shared pointer to the data
-    return std::make_shared<std::vector<double>> (pv->get_data());
     
   }
-
+  
+  
   /*!
     @brief Get field stride
   */
-  size_t get_field_stride(size_t index)
+  size_t get_field_stride(std::string field_name)
   {
   	// FIX
     return 1;
@@ -142,17 +133,16 @@ class Flat_State_Wrapper: public StateManager<MeshWrapper> {
     @param[in] index The index of the data field
     @return The Entity_kind enum for the entity type on which the field is defined
    */
-  Entity_kind get_entity(int index) 
+  Entity_kind get_entity(std::string field_name) 
   {
-  	// FIX
-  	std::shared_ptr<StateVectorBase> pv = StateManager<MeshWrapper>::get("celldata");
-    return pv->get_kind(); //;CELL
+    return StateManager<MeshWrapper>::get(field_name)->get_kind(); 
   }
  
  private:
 
 
-  void clear(){
+  void clear()
+  {
   	StateManager<MeshWrapper>::state_vectors_.clear();
   	StateManager<MeshWrapper>::material_ids_.clear();
   	StateManager<MeshWrapper>::material_names_.clear();
