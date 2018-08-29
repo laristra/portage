@@ -239,9 +239,9 @@ class MMDriver {
 
   template<Entity_kind onwhat>
   int remap(std::vector<std::string> const &source_meshvar_names,
-             std::vector<std::string> const &target_meshvar_names,
-             std::vector<std::string> const &source_matvar_names,
-             std::vector<std::string> const &target_matvar_names);
+            std::vector<std::string> const &target_meshvar_names,
+            std::vector<std::string> const &source_matvar_names,
+            std::vector<std::string> const &target_matvar_names);
 
 #ifdef ENABLE_MPI
   /*!
@@ -255,10 +255,10 @@ class MMDriver {
   */
 
   template<Entity_kind onwhat>
-  void remap_distributed(std::vector<std::string> const &source_meshvar_names,
-                         std::vector<std::string> const &target_meshvar_names,
-                         std::vector<std::string> const &source_matvar_names,
-                         std::vector<std::string> const &target_matvar_names);
+  int remap_distributed(std::vector<std::string> const &source_meshvar_names,
+                        std::vector<std::string> const &target_meshvar_names,
+                        std::vector<std::string> const &source_matvar_names,
+                        std::vector<std::string> const &target_matvar_names);
 #endif
 
   
@@ -267,7 +267,7 @@ class MMDriver {
     @brief Execute the remapping process
     @return status of remap (1 if successful, 0 if not)
   */
-  int run(bool distributed, std::string *errmsg = nullpt) {
+  int run(bool distributed, std::string *errmsg = nullptr) {
     std::string mesg;
 #ifndef ENABLE_MPI
     if (distributed) {
@@ -602,7 +602,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
   // REMAP MULTIMATERIAL FIELDS NEXT, ONE MATERIAL AT A TIME
   //--------------------------------------------------------------------
 
-  if (onwhat != CELL) return;
+  if (onwhat != CELL) return 1;
   
   // Material centric loop
 
@@ -1022,7 +1022,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
   // REMAP MULTIMATERIAL FIELDS NEXT, ONE MATERIAL AT A TIME
   //--------------------------------------------------------------------
 
-  if (onwhat != CELL) return;
+  if (onwhat != CELL) return 1;
   
   // Material centric loop
 
