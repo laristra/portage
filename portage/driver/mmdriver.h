@@ -272,7 +272,7 @@ class MMDriver {
 #ifndef ENABLE_MPI
     if (distributed) {
       mesg = "Request is for a parallel run but Portage is compiled for serial runs only";
-      if (*errmsg)
+      if (errmsg)
         *errmsg = mesg;
       else
         std::cerr << errmsg << "\n";

@@ -248,7 +248,7 @@ class Driver {
 #ifndef ENABLE_MPI
     if (distributed) {
       message = "Request is for a parallel run but Portage is compiled for serial runs only";
-      if (*errmsg)
+      if (errmsg)
         *errmsg = message;
       else
         std::cerr << message << "\n";
