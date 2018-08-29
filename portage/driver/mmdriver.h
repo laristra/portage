@@ -234,10 +234,11 @@ class MMDriver {
     @param target_meshvar_names  names of remap variables on target mesh
     @param source_matvar_names  names of remap variables on materials of source mesh
     @param target_matvar_names  names of remap variables on materials of target mesh
+    @return status of remap (1 if successful, 0 if not)
   */
 
   template<Entity_kind onwhat>
-  void remap(std::vector<std::string> const &source_meshvar_names,
+  int remap(std::vector<std::string> const &source_meshvar_names,
              std::vector<std::string> const &target_meshvar_names,
              std::vector<std::string> const &source_matvar_names,
              std::vector<std::string> const &target_matvar_names);
@@ -250,6 +251,7 @@ class MMDriver {
     @param target_meshvar_names  names of remap variables on target mesh
     @param source_matvar_names  names of remap variables on materials of source mesh
     @param target_matvar_names  names of remap variables on materials of target mesh
+    @return status of remap (1 if successful, 0 if not)
   */
 
   template<Entity_kind onwhat>
@@ -263,24 +265,29 @@ class MMDriver {
 
   /*!
     @brief Execute the remapping process
+    @return status of remap (1 if successful, 0 if not)
   */
-  void run(bool distributed) {
-
+  int run(bool distributed, std::string *errmsg = nullpt) {
+    std::string mesg;
 #ifndef ENABLE_MPI
     if (distributed) {
-      std::cout << "Request is for a parallel run but Portage is compiled " <<
-          "for serial runs only\n";
-      return;
+      mesg = "Request is for a parallel run but Portage is compiled for serial runs only";
+      if (*errmsg)
+        *errmsg = mesg;
+      else
+        std::cerr << errmsg << "\n";
+      return 0;
     }
 #endif
 
     int comm_rank = 0;
 #ifdef ENABLE_MPI
-    MPI_Comm_rank(MPI_COMM_WORLD, &comm_rank);
+    if (distributed)
+      MPI_Comm_rank(MPI_COMM_WORLD, &comm_rank);
 #endif
 
     if (comm_rank == 0)
-      std::printf("in MMDriver::run()...\n");
+      std::cout << "in MMDriver::run()...\n";
 
     int numTargetCells = target_mesh_.num_owned_cells();
     std::cout << "Number of target cells in target mesh on rank "
@@ -366,6 +373,8 @@ class MMDriver {
         remap<NODE>(src_meshvar_names, trg_meshvar_names,
                     src_meshvar_names, trg_meshvar_names);
     }
+
+    return 1;
   }  // run
 
 
@@ -411,23 +420,20 @@ template <template <int, Entity_kind, class, class> class Search,
           class Matpoly_Splitter,
           class Matpoly_Clipper>
 template<Entity_kind onwhat>
-void MMDriver<Search, Intersect, Interpolate, D,
-              SourceMesh_Wrapper, SourceState_Wrapper,
-              TargetMesh_Wrapper, TargetState_Wrapper,
-              InterfaceReconstructorType, Matpoly_Splitter,
-              Matpoly_Clipper
-            >::remap(std::vector<std::string> const &src_meshvar_names,
-                     std::vector<std::string> const &trg_meshvar_names,
-                     std::vector<std::string> const &src_matvar_names,
-                     std::vector<std::string> const &trg_matvar_names) {
+int MMDriver<Search, Intersect, Interpolate, D,
+             SourceMesh_Wrapper, SourceState_Wrapper,
+             TargetMesh_Wrapper, TargetState_Wrapper,
+             InterfaceReconstructorType, Matpoly_Splitter,
+             Matpoly_Clipper
+             >::remap(std::vector<std::string> const &src_meshvar_names,
+                      std::vector<std::string> const &trg_meshvar_names,
+                      std::vector<std::string> const &src_matvar_names,
+                      std::vector<std::string> const &trg_matvar_names) {
 
   static_assert(onwhat == NODE || onwhat == CELL,
                 "Remap implemented only for CELL and NODE variables");
 
   int comm_rank = 0;
-#ifdef ENABLE_MPI
-  MPI_Comm_rank(MPI_COMM_WORLD, &comm_rank);
-#endif
 
   int ntarget_ents_owned = target_mesh_.num_entities(onwhat, PARALLEL_OWNED);
   std::cout << "Number of target entities of kind " << onwhat <<
@@ -660,13 +666,7 @@ void MMDriver<Search, Intersect, Interpolate, D,
     // add it on all the processors
     
     int nmatcells = matcellstgt.size();
-    int nmatcells_global = 0;
-    #ifdef ENABLE_MPI
-    MPI_Allreduce(&nmatcells, &nmatcells_global, 1, MPI_INT, MPI_SUM,
-                  MPI_COMM_WORLD);
-    #else
-    nmatcells_global=nmatcells;
-    #endif
+    int nmatcells_global = nmatcells;
     
     if (nmatcells_global) {
       int nmatstrg = target_state_.num_materials();
@@ -794,6 +794,8 @@ void MMDriver<Search, Intersect, Interpolate, D,
       tot_seconds_xsect << std::endl;
   std::cout << "   Interpolate Time Rank " << comm_rank << " (s): " <<
       tot_seconds_interp << std::endl;
+
+  return 1;
 }
 
 
@@ -818,15 +820,15 @@ template <template <int, Entity_kind, class, class> class Search,
           class Matpoly_Splitter,
           class Matpoly_Clipper>
 template<Entity_kind onwhat>
-void MMDriver<Search, Intersect, Interpolate, D,
-              SourceMesh_Wrapper, SourceState_Wrapper,
-              TargetMesh_Wrapper, TargetState_Wrapper,
-              InterfaceReconstructorType, Matpoly_Splitter, 
-              Matpoly_Clipper
-              >::remap_distributed(std::vector<std::string> const &src_meshvar_names,
-                                   std::vector<std::string> const &trg_meshvar_names,
-                                   std::vector<std::string> const &src_matvar_names,
-                                   std::vector<std::string> const &trg_matvar_names) {
+int MMDriver<Search, Intersect, Interpolate, D,
+             SourceMesh_Wrapper, SourceState_Wrapper,
+             TargetMesh_Wrapper, TargetState_Wrapper,
+             InterfaceReconstructorType, Matpoly_Splitter, 
+             Matpoly_Clipper
+             >::remap_distributed(std::vector<std::string> const &src_meshvar_names,
+                                  std::vector<std::string> const &trg_meshvar_names,
+                                  std::vector<std::string> const &src_matvar_names,
+                                  std::vector<std::string> const &trg_matvar_names) {
 
   static_assert(onwhat == NODE || onwhat == CELL,
                 "Remap implemented only for CELL and NODE variables");
@@ -1218,6 +1220,8 @@ void MMDriver<Search, Intersect, Interpolate, D,
       tot_seconds_xsect << std::endl;
   std::cout << "   Interpolate Time Rank " << comm_rank << " (s): " <<
       tot_seconds_interp << std::endl;
+
+  return 1;
 }
 #endif  // ENABLE_MPI
 
