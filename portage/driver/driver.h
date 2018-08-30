@@ -243,7 +243,7 @@ class Driver {
     @return status of remap (1 if successful, 0 if not)
   */
   int run(bool distributed, std::string *errmsg = nullptr) {
-    std::string mesg;
+    std::string message;
 
 #ifndef ENABLE_MPI
     if (distributed) {

@@ -268,14 +268,14 @@ class MMDriver {
     @return status of remap (1 if successful, 0 if not)
   */
   int run(bool distributed, std::string *errmsg = nullptr) {
-    std::string mesg;
+    std::string message;
 #ifndef ENABLE_MPI
     if (distributed) {
-      mesg = "Request is for a parallel run but Portage is compiled for serial runs only";
+      message = "Request is for a parallel run but Portage is compiled for serial runs only";
       if (errmsg)
-        *errmsg = mesg;
+        *errmsg = message;
       else
-        std::cerr << errmsg << "\n";
+        std::cerr << message << "\n";
       return 0;
     }
 #endif
