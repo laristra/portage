@@ -71,7 +71,7 @@ class StateManager {
 			
 		  Return the names registered by the state manager.
 		*/
-		std::vector<std::string> const get_state_keys(){
+		std::vector<std::string> const get_state_keys() const {
 			std::vector<std::string> keys;
 			for (auto& kv: state_vectors_){
 				keys.push_back(kv.first);
@@ -208,12 +208,9 @@ class StateManager {
 
 		/*!
 		  @brief Return the data size .
-		  
-		  This function is currently not implemented, but is required by the API.
-		  Might only make sense for single material vectors, but not sure
 		*/
 		int get_data_size(Entity_kind on_what, std::string const& name) const {
-			return 0; //fix if ever used
+			return std::static_pointer_cast<StateVectorUni<>>(state_vectors_.at(name))->get_data().size(); 
 		}
 
 

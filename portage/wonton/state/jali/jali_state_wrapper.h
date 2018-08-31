@@ -621,6 +621,17 @@ class Jali_State_Wrapper {
   }
 
   /*!
+    @brief  Vector of names
+    @return vector of strings
+    REMOVE AT A LATER DATE (NEED TO CHOOSE 	names() OR get_state_keys())
+   */
+  std::vector<std::string> get_state_keys() const { 
+    std::vector<std::string> result(jali_state_.names_begin(), 
+                                    jali_state_.names_end());
+    return result;
+  }
+
+  /*!
     @brief Typedef for permutation iterator on vector of strings
    */
   typedef Jali::State::string_permutation string_permutation;

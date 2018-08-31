@@ -7,7 +7,7 @@ Please see the license file at the root of this repository, or at:
 #ifndef MPI_BOUNDING_BOXES_H_
 #define MPI_BOUNDING_BOXES_H_
 
-#define DEBUG_MPI
+//#define DEBUG_MPI
 
 #include <cassert>
 #include <algorithm>

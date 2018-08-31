@@ -246,26 +246,24 @@ void SwarmState<dim>::extend_field(const string name, DblVec new_value)
  */
 template<size_t dim, class StateWrapper>
 shared_ptr<SwarmState<dim>> SwarmStateFactory(
-  StateWrapper &state,
+  const StateWrapper &state,
   const Portage::Entity_kind entity)
 {
   // create return value
   size_t ndata=0;
 
-  std::vector<std::string> names = state.names();
-  for (size_t i=0; i<names.size(); i++) {
+  for (const std::string name : state.get_state_keys()) {
     // Simple_State does not store separte lists of names by entity, 
     // so we have to filter.
-    if (state.get_entity(names[i]) == entity) {
-      ndata = state.get_data_size(entity, names[i]);
+    if (state.get_entity(name) == entity) {
+      ndata = state.get_data_size(entity, name);
       break;
     }
   }
   shared_ptr<SwarmState<dim>> result=make_shared<SwarmState<dim>>(ndata);
 
   // copy data
-  for (size_t i=0; i<names.size(); i++) {
-    std::string name = names[i];
+  for (const std::string name : state.get_state_keys()) {
     if (state.get_entity(name) != entity) continue;
 
     // make sure all fields have same size

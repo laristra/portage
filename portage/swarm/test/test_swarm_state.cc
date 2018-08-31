@@ -11,7 +11,7 @@
 
 #include "gtest/gtest.h"
 
-#include "portage/wonton/state/simple_state/simple_state_wrapper.h"
+#include "portage/wonton/state/simple_state/simple_state_mm_wrapper.h"
 #include "portage/wonton/mesh/simple_mesh/simple_mesh_wrapper.h"
 
 #include "portage/swarm/swarm.h"
@@ -142,7 +142,7 @@ TEST(SwarmState, Simple_State_Wrapper) {
   Portage::Simple_Mesh &mesh(*mesh_ptr);
   Wonton::Simple_Mesh_Wrapper mesh_wrapper(mesh);
 
-  Portage::Simple_State sstate(mesh_ptr);
+  Wonton::Simple_State_Wrapper<Wonton::Simple_Mesh_Wrapper> sstate(mesh_wrapper);
   int ncells = mesh_wrapper.num_owned_cells();
   int nnodes = mesh_wrapper.num_owned_nodes();
   std::vector<double> &cfield1 = *new std::vector<double>(ncells);
@@ -153,15 +153,20 @@ TEST(SwarmState, Simple_State_Wrapper) {
   for (int i=0; i < nnodes; i++) {
     nfield1[i] = 2.;
   }
-  sstate.add("nf1", Portage::NODE, &nfield1[0]);
-  sstate.add("cf1", Portage::CELL, &cfield1[0]);
-  Wonton::Simple_State_Wrapper state_wrapper(sstate);
-
+  
+  sstate.add(std::make_shared<Portage::StateVectorUni<>>(
+    	"cf1", Portage::Entity_kind::CELL, cfield1)
+    );
+  sstate.add(std::make_shared<Portage::StateVectorUni<>>(
+    	"nf1", Portage::Entity_kind::NODE, nfield1)
+    );
+  
+  
   // create swarm state from mesh state wrapper for cells
   {
     std::shared_ptr<Portage::Meshfree::SwarmState<3>> state_ptr = 
-      Portage::Meshfree::SwarmStateFactory<3,Wonton::Simple_State_Wrapper>
-      (state_wrapper, Portage::CELL);
+      Portage::Meshfree::SwarmStateFactory<3,Wonton::Simple_State_Wrapper<Wonton::Simple_Mesh_Wrapper>>
+      (sstate, Portage::CELL);
     Portage::Meshfree::SwarmState<3> &state(*state_ptr);
 
     // test size
@@ -183,8 +188,8 @@ TEST(SwarmState, Simple_State_Wrapper) {
   // create swarm state from mesh state wrapper for nodes
   {  
     std::shared_ptr<Portage::Meshfree::SwarmState<3>> state_ptr = 
-       Portage::Meshfree::SwarmStateFactory<3,Wonton::Simple_State_Wrapper>
-      (state_wrapper, Portage::NODE);
+       Portage::Meshfree::SwarmStateFactory<3,Wonton::Simple_State_Wrapper<Wonton::Simple_Mesh_Wrapper>>
+      (sstate, Portage::NODE);
     Portage::Meshfree::SwarmState<3> &state(*state_ptr);
 
     // test size
