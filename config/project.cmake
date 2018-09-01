@@ -50,9 +50,10 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/cmake")
 # Set up MPI builds
 # (eventually most of this should be pushed down into cinch)
 #------------------------------------------------------------------------------#
+set(ENABLE_MPI OFF CACHE BOOL "")
 if (ENABLE_MPI)
   find_package(MPI REQUIRED)
-
+  add_definitions(-DENABLE_MPI)
 # TODO:  Modify the below to use wrapper compilers instead of flags
 #        (there isn't an obvious good way to do this)
 #  add_definitions(${MPI_CXX_COMPILE_FLAGS})

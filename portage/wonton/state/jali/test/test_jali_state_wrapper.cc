@@ -95,6 +95,15 @@ TEST(Jali_State_Wrapper, DataTypes) {
   wrapper.mesh_get_data(Portage::CELL, "d2", &ddata);
   for (unsigned int i = 0; i < n_cells; i++) ASSERT_EQ(ddata[i], dval);
 
+  // check names
+  std::vector<std::string> names = wrapper.names();
+  ASSERT_EQ(names.size(), 5);
+  ASSERT_EQ(names[0], "f1");
+  ASSERT_EQ(names[1], "i1");
+  ASSERT_EQ(names[2], "v1");
+  ASSERT_EQ(names[3], "d1");
+  ASSERT_EQ(names[4], "d2");
+
   // Iterate through a vector of names
   std::vector<std::string> fields;
   fields.push_back("v1");  fields.push_back("f1");  fields.push_back("i1");

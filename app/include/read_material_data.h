@@ -6,6 +6,9 @@
 
 #include <stdlib.h>
 #include "portage/support/portage.h"
+#include <fstream>
+#include <vector>
+#include <string>
 
 /*!
  @brief Reads material data for a mesh from a provided binary file.
@@ -13,7 +16,7 @@
                       implementation that provides required functionality.
  @tparam D            Dimensionality of problem
 
- @param[in] Mesh Mesh wrapper.
+ @param[in] mesh Mesh wrapper.
  @param[in] mesh_data_fname Name of the file with material data.
  @param[out] cell_num_mats Number of material in each mesh cell, vector of length cell_num
  @param[out] cell_mat_ids Indices of materials in each mesh cell, a flat vector, requires
@@ -24,7 +27,7 @@
                                 requires computations of offsets
 */
 template <class Mesh_Wrapper, int D>
-void read_material_data(const Mesh_Wrapper& Mesh,
+void read_material_data(const Mesh_Wrapper& mesh,
                         const std::string& mesh_data_fname,
                         std::vector<int>& cell_num_mats,
                         std::vector<int>& cell_mat_ids,
@@ -48,7 +51,7 @@ void read_material_data(const Mesh_Wrapper& Mesh,
   assert(data_dim == D);
   int ncells;
   os.read(reinterpret_cast<char *>(&ncells), sizeof(int));
-  assert(ncells = Mesh.num_owned_cells());
+  assert(ncells = mesh.num_owned_cells());
   cell_num_mats.resize(ncells);
   for (int icell = 0; icell < ncells; icell++) {
     os.read(reinterpret_cast<char *>(&cell_num_mats[icell]), sizeof(int));
@@ -72,7 +75,7 @@ void read_material_data(const Mesh_Wrapper& Mesh,
   for (int icell = 0; icell < ncells; icell++) {
     if (cell_num_mats[icell] == 1) {
       Portage::Point<D> cur_cell_cen;
-      Mesh.cell_centroid(icell, &cur_cell_cen);
+      mesh.cell_centroid(icell, &cur_cell_cen);
       cell_mat_centroids.push_back(Portage::Point<D>(cur_cell_cen));
       continue;
     }

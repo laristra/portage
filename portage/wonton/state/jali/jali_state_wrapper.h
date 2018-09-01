@@ -4,7 +4,7 @@ Please see the license file at the root of this repository, or at:
     https://github.com/laristra/portage/blob/master/LICENSE
 */
 
-
+#include <type_traits>
 
 
 
@@ -512,6 +512,13 @@ class Jali_State_Wrapper {
     @brief Add a material to state
     @param[in] matname  Name of material
     @param[in] matcells Cells containing the material
+
+    NOTE: NOT ONLY DOES THIS ROUTINE ADD A MATERIAL AND ITS CELLS TO
+    THE STATEMANAGER, IT ALSO MAKE SPACE FOR FIELD VALUES FOR THIS
+    MATERIAL IN EVERY MULTI-MATERIAL VECTOR IN THE STATE MANAGER. THIS
+    ENSURES THAT WHEN WE CALL mat_get_celldata FOR A MATERIAL IN
+    MULTI-MATERIAL STATE VECTOR IT WILL ALWAYS HAVE SPACE ALLOCATED
+    FOR FIELD VALUES OF THAT MATERIAL
    */
   void add_material(std::string const& matname,
                     std::vector<int> const& matcells) {
@@ -599,8 +606,40 @@ class Jali_State_Wrapper {
     @brief End iterator on vector names
     @return End iterator on vector of strings
    */
-  std::vector<std::string>::iterator names_end() const {
-    return jali_state_.names_end();
+  std::vector<std::string>::iterator names_end() const { 
+    return jali_state_.names_end(); 
+  }
+
+  /*!
+    @brief  Vector of names
+    @return vector of strings
+   */
+  std::vector<std::string> names() const { 
+    std::vector<std::string> result(jali_state_.names_begin(), 
+                                    jali_state_.names_end());
+    return result;
+  }
+
+  /*!
+    @brief Typedef for permutation iterator on vector of strings
+   */
+  typedef Jali::State::string_permutation string_permutation;
+
+  /*!
+    @brief Begin iterator on vector names of specific entity type
+    @param[in] on_what The desired entity type
+    @return Permutation iterator to start of string vector
+   */
+  string_permutation names_entity_begin(Entity_kind const on_what) const { 
+    return jali_state_.names_entity_begin((Jali::Entity_kind)on_what); 
+  }
+
+  /*!
+    @brief End iterator on vector of names of specific entity type
+    @param[in] on_what The desired entity type
+   */
+  string_permutation names_entity_end(Entity_kind const on_what) const { 
+    return jali_state_.names_entity_end((Jali::Entity_kind)on_what); 
   }
 
  private:

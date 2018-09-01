@@ -14,6 +14,7 @@ Please see the license file at the root of this repository, or at:
 
 #include "portage/accumulate/accumulate.h"
 #include "portage/support/portage.h"
+#include "portage/support/weight.h"
 
 #include "mpi.h"
 
@@ -74,7 +75,9 @@ class MPI_Particle_Distribute {
   template <class SourceSwarm, class SourceState, class TargetSwarm, class TargetState>
   void distribute(SourceSwarm &source_swarm, SourceState &source_state,
                   TargetSwarm &target_swarm, TargetState &target_state,
-                  std::vector<std::vector<std::vector<double>>>& smoothing_lengths,
+                  vector<std::vector<std::vector<double>>>& smoothing_lengths,
+                  vector<Meshfree::Weight::Kernel>& kernel_types,
+                  vector<Meshfree::Weight::Geometry>& geom_types,
                   Meshfree::WeightCenter center=Meshfree::WeightCenter::Gather)
   {
     // Get the MPI communicator size and rank information
@@ -84,7 +87,16 @@ class MPI_Particle_Distribute {
 
     assert(dim == source_swarm.space_dimension());
     assert(dim == target_swarm.space_dimension());
-    assert(center == Meshfree::WeightCenter::Gather);
+
+    if (center == Meshfree::WeightCenter::Gather) {
+      assert(smoothing_lengths.size() == target_swarm.num_particles(PARALLEL_OWNED));
+      assert(kernel_types.size() == target_swarm.num_particles(PARALLEL_OWNED));
+      assert(geom_types.size() == target_swarm.num_particles(PARALLEL_OWNED));
+    } else if (center == Meshfree::WeightCenter::Scatter) {
+      assert(smoothing_lengths.size() == source_swarm.num_particles(PARALLEL_OWNED));
+      assert(kernel_types.size() == source_swarm.num_particles(PARALLEL_OWNED));
+      assert(geom_types.size() == source_swarm.num_particles(PARALLEL_OWNED));
+    }
 
     /************************************************************************** 
     * Step 1: Compute bounding box for target swarm based on weight center    *
@@ -103,20 +115,32 @@ class MPI_Particle_Distribute {
 
     for (size_t c=0; c<targetNumOwnedPts; ++c)
     {
-      Point<dim> coord = target_swarm.get_particle_coordinates(c);
-      Point<dim> ext = Point<dim>(smoothing_lengths[c][0]);
-     
-      for (size_t k=0; k < dim; ++k)
-      {
-        double val0 = coord[k]-ext[k];
-        double val1 = coord[k]+ext[k];
+        Point<dim> coord = target_swarm.get_particle_coordinates(c);
+        Point<dim> ext;
+        if (center == Meshfree::WeightCenter::Gather)
+        {
+           std::vector<std::vector<double>> val = smoothing_lengths[c];
+           ext = Point<dim>(val[0]);
+        }
+        for (size_t k=0; k < dim; ++k)
+        {
+          double val0, val1; 
+          if (center == Meshfree::WeightCenter::Gather)
+          {
+            val0 = coord[k]-ext[k];
+            val1 = coord[k]+ext[k];
+          }
+          else if (center == Meshfree::WeightCenter::Scatter)
+          {
+             val0 = coord[k];
+             val1 = coord[k];
+          }
+          if (val0 < targetBoundingBoxes[2*dim*commRank+2*k])
+             targetBoundingBoxes[2*dim*commRank+2*k] = val0;
 
-        if (val0 < targetBoundingBoxes[2*dim*commRank+2*k])
-           targetBoundingBoxes[2*dim*commRank+2*k] = val0;
-
-        if (val1 > targetBoundingBoxes[2*dim*commRank+2*k+1])
-           targetBoundingBoxes[2*dim*commRank+2*k+1] = val1;
-      }      
+          if (val1 > targetBoundingBoxes[2*dim*commRank+2*k+1])
+             targetBoundingBoxes[2*dim*commRank+2*k+1] = val1;
+        }      
      }// for c
 
     /************************************************************************** 
@@ -160,11 +184,32 @@ class MPI_Particle_Distribute {
         for (size_t c = 0; c < sourceNumPts; ++c)
         {
           Point<dim> coord = source_swarm.get_particle_coordinates(c);
-
+          Point<dim> ext;
+          if (center == Meshfree::WeightCenter::Scatter)
+          {
+           std::vector<std::vector<double>> val = smoothing_lengths[c];
+           ext = Point<dim>(val[0]);
+          }
           bool thisPt = true; 
           for (size_t k=0; k<dim; ++k)
           {
-            thisPt = thisPt && (coord[k] <= max[k] && coord[k] >= min[k]);
+            double val0, val1; 
+
+            if (center == Meshfree::WeightCenter::Gather)
+            {
+              val0 = coord[k];
+              val1 = coord[k];
+            }
+            else if (center == Meshfree::WeightCenter::Scatter)
+            {
+              val0 = coord[k]-ext[k];
+              val1 = coord[k]+ext[k];
+            }
+       
+            //check if the coordinates or the bnds of the current
+            //source point either inside or intersecting with the 
+            //bounding box of the target swarm. 
+            thisPt = thisPt && (val0 <= max[k] && val1 >= min[k]);
           } 
 
           if (thisPt)
@@ -215,7 +260,98 @@ class MPI_Particle_Distribute {
     source_swarm.extend_particle_list(RecvCoords);
 
     /************************************************************************** 
-    * Step 5: Collect integer field data from source swarm to be sent         * 
+    * Step 5: Set up communication info and collect smoothing length data     *
+    *         for source particles that need to be sent to other ranks for    *
+    *         the Scatter scheme                                              *
+    ***************************************************************************/
+    if (center == Meshfree::WeightCenter::Scatter)
+    {
+      //communicate smoothing_lengths
+      std::vector<std::vector<double>> sourceSendSmoothLengths(commSize);
+      for (size_t i = 0; i < commSize; ++i)
+      {
+        if ((!sendFlags[i]) || (i==commRank))
+          continue;
+        else 
+        {
+          for (size_t j = 0; j < sourcePtsToSendSize[i]; ++j)
+          {
+            std::vector<std::vector<double>> smlen = smoothing_lengths[sourcePtsToSend[i][j]];
+            for (size_t d = 0 ; d < dim; ++d)
+              sourceSendSmoothLengths[i].insert(sourceSendSmoothLengths[i].end(), smlen[0][d]);
+          }
+        }
+      }
+      //move this smoothing length data
+      std::vector<double> sourceRecvSmoothLengths(src_info.newNum*dim);
+      moveField<double>(&src_info, commRank, commSize, MPI_DOUBLE, dim, 
+                        sourceSendSmoothLengths,&sourceRecvSmoothLengths);
+      
+      // update local source particle list with received new particles
+      std::vector<std::vector<std::vector<double>>> RecvSmoothLengths;
+      for (size_t i = 0; i < src_info.newNum; ++i)
+      {
+	std::vector<std::vector<double>> smlen(1);
+	for (size_t d = 0 ; d < dim; ++d)
+	  smlen[0].emplace_back(sourceRecvSmoothLengths[dim*i+d]);
+     
+        smoothing_lengths.push_back(smlen);
+      }
+
+      //communicate kernel_types
+      std::vector<std::vector<int>> sourceSendKernels(commSize);
+      for (size_t i = 0; i < commSize; ++i)
+      {
+        if ((!sendFlags[i]) || (i==commRank))
+          continue;
+        else 
+        {
+          for (size_t j = 0; j < sourcePtsToSendSize[i]; ++j)
+          {
+              sourceSendKernels[i].insert(sourceSendKernels[i].end(), 
+                                  kernel_types[sourcePtsToSend[i][j]]);
+          }
+        }
+      }
+      //move this kernel type data
+      std::vector<int> sourceRecvKernels(src_info.newNum);
+      moveField<int>(&src_info, commRank, commSize, MPI_INT, 1, 
+                        sourceSendKernels,&sourceRecvKernels);
+      
+      // update local source swarm with received kernels
+      for (size_t i = 0; i < src_info.newNum; ++i)
+      {
+        kernel_types.push_back(static_cast<Meshfree::Weight::Kernel>(sourceRecvKernels[i]));
+      }
+
+      //communicate geom_types
+      std::vector<std::vector<int>> sourceSendGeoms(commSize);
+      for (size_t i = 0; i < commSize; ++i)
+      {
+        if ((!sendFlags[i]) || (i==commRank))
+          continue;
+        else 
+        {
+          for (size_t j = 0; j < sourcePtsToSendSize[i]; ++j)
+          {
+              sourceSendGeoms[i].insert(sourceSendGeoms[i].end(), 
+                                  geom_types[sourcePtsToSend[i][j]]);
+          }
+        }
+      }
+      //move this geom type data
+      std::vector<int> sourceRecvGeoms(src_info.newNum);
+      moveField<int>(&src_info, commRank, commSize, MPI_INT, 1, 
+                        sourceSendGeoms,&sourceRecvGeoms);
+      
+      // update local source swarm with received geom types
+      for (size_t i = 0; i < src_info.newNum; ++i)
+      {
+        geom_types.push_back(static_cast<Meshfree::Weight::Geometry>(sourceRecvGeoms[i]));
+      }
+    }
+    /************************************************************************** 
+    * Step 6: Collect integer field data from source swarm to be sent         * 
     *         to other ranks                                                  *
     **************************************************************************/
     std::vector<std::string> int_field_names = source_state.field_names_int();
@@ -223,7 +359,7 @@ class MPI_Particle_Distribute {
     for (size_t nvars = 0; nvars < int_field_names.size(); ++nvars)
     {
       // Get field data from source state
-      std::shared_ptr<std::vector<int>> srcdata; 
+      std::shared_ptr<vector<int>> srcdata; 
       source_state.get_field(int_field_names[nvars], srcdata);
 
       // Collect field data for source particles that need to be sent to other ranks
@@ -247,11 +383,12 @@ class MPI_Particle_Distribute {
       moveField<int>(&src_info, commRank, commSize, MPI_INT, 1, sourceSendData, &sourceRecvData);
 
       //update local source field data with the received data
-      source_state.extend_field(int_field_names[nvars], sourceRecvData);
+      {vector<int> recvtmp(sourceRecvData);
+       source_state.extend_field(int_field_names[nvars], recvtmp);}
     }
 
     /************************************************************************** 
-    * Step 6: Collect double field data from source swarm to be sent          * 
+    * Step 7: Collect double field data from source swarm to be sent          * 
     *         to other ranks                                                  *
     **************************************************************************/
     std::vector<std::string> dbl_field_names = source_state.field_names_double();
@@ -259,7 +396,7 @@ class MPI_Particle_Distribute {
     for (size_t nvars = 0; nvars < dbl_field_names.size(); ++nvars)
     {
       // Get field data from source state
-      std::shared_ptr<std::vector<double>> srcdata; 
+      std::shared_ptr<vector<double>> srcdata; 
       source_state.get_field(dbl_field_names[nvars], srcdata);
 
       // Collect field data for source particles that need to be sent to other ranks
@@ -283,7 +420,8 @@ class MPI_Particle_Distribute {
       moveField<double>(&src_info, commRank, commSize, MPI_DOUBLE, 1, sourceSendData, &sourceRecvData);
 
       //update local source field data with the received data
-      source_state.extend_field(dbl_field_names[nvars], sourceRecvData);
+      {vector<double> recvtmp(sourceRecvData);
+       source_state.extend_field(dbl_field_names[nvars], recvtmp);}
     }
    
 

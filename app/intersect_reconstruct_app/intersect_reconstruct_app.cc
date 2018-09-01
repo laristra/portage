@@ -168,9 +168,10 @@ int main(int argc, char** argv) {
   for (int inm = 0; inm < ncells_with_nmats.size() - 1; inm++)
     std::cout << ", " << ncells_with_nmats[inm + 1] << " are " << inm + 2 << "MC's";
   std::cout << std::endl;
-  
+
+  Tangram::IterativeMethodTolerances_t tol{100, 1e-12, 1e-12}; 
   Tangram::Driver<Tangram::XMOF2D_Wrapper, 2,
-    Wonton::Jali_Mesh_Wrapper> source_xmof_driver(source_mesh_wrapper);
+    Wonton::Jali_Mesh_Wrapper> source_xmof_driver(source_mesh_wrapper, tol);
   
   source_xmof_driver.set_volume_fractions(scell_num_mats, scell_mat_ids,
                                           scell_mat_volfracs, scell_mat_centroids);
@@ -224,7 +225,7 @@ int main(int argc, char** argv) {
   std::cout << std::endl;
   
   Tangram::Driver<Tangram::XMOF2D_Wrapper, 2,
-    Wonton::Jali_Mesh_Wrapper> target_xmof_driver(target_mesh_wrapper);
+    Wonton::Jali_Mesh_Wrapper> target_xmof_driver(target_mesh_wrapper, tol);
   target_xmof_driver.set_volume_fractions(tcell_num_mats, tcell_mat_ids,
                                           tcell_mat_volfracs, tcell_mat_centroids);
   std::cout << "Performing interface reconstruction on the target mesh..." << std::endl;

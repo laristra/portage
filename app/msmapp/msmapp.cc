@@ -10,6 +10,7 @@ Please see the license file at the root of this repository, or at:
 #include <cmath>
 #include <stdexcept>
 #include <fstream>
+#include <vector>
 
 #ifdef ENABLE_MPI
 #include <mpi.h>
@@ -17,6 +18,7 @@ Please see the license file at the root of this repository, or at:
 #define PORTAGE_SERIAL_ONLY
 #endif
 
+#include "portage/support/portage.h"
 #include "portage/driver/driver.h"
 #include "portage/driver/driver_mesh_swarm_mesh.h"
 #include "portage/simple_mesh/simple_mesh.h"
@@ -31,7 +33,6 @@ Please see the license file at the root of this repository, or at:
 #include "portage/support/Point.h"
 #include "portage/wonton/mesh/simple_mesh/simple_mesh_wrapper.h"
 #include "portage/wonton/state/simple_state/simple_state_wrapper.h"
-#include "portage/wonton/mesh/flat/flat_mesh_wrapper.h"
 #include "portage/wonton/mesh/jali/jali_mesh_wrapper.h"
 #include "portage/wonton/state/jali/jali_state_wrapper.h"
 #include "Mesh.hh"
@@ -40,6 +41,7 @@ Please see the license file at the root of this repository, or at:
 
 template<size_t dim>
 struct Controls {
+  // See the usage() function below for the meaning of these quantities.
   double smin[dim], smax[dim], tmin[dim], tmax[dim];
   int scells[dim], tcells[dim];
   int order;
@@ -47,9 +49,13 @@ struct Controls {
   double smoothing_factor;
   int print_detail;
   std::string source_file="none", target_file="none";
+  std::string oper8tor="none";
+  bool domeshmesh=true;
 };
 
-template<template<int, Portage::Entity_kind, class, class, class> class T>
+template<template<int, Portage::Entity_kind, class, class, class,
+                  template<class, int, class, class> class,
+                  class, class> class T>
 class consistent_order{
 public:
   static bool check(Portage::Meshfree::Basis::Type type) {return false;}
@@ -140,8 +146,11 @@ public:
   // Report timing and accuracy.
   template <
   template<Portage::Entity_kind, class, class, class,
-           template <class, int> class> class Intersect,
-  template<int, Portage::Entity_kind, class, class, class> class Interpolate,
+  template <class, int, class, class> class,
+  class, class> class Intersect,
+  template<int, Portage::Entity_kind, class, class, class,
+  template<class, int, class, class> class,
+  class, class> class Interpolate,
   template <int, class, class> class SwarmSearch,
   int Dimension=3
   >
@@ -151,12 +160,21 @@ public:
       throw std::runtime_error("2D not available yet");
     }
 
+    // process controls
     double smoothing_factor = controls_.smoothing_factor;
     Portage::Meshfree::Basis::Type basis;
     if (controls_.order == 0) basis = Portage::Meshfree::Basis::Unitary;
     if (controls_.order == 1) basis = Portage::Meshfree::Basis::Linear;
     if (controls_.order == 2) basis = Portage::Meshfree::Basis::Quadratic;
-    assert(consistent_order<Interpolate>::check(basis));      
+    assert(consistent_order<Interpolate>::check(basis));    
+    Portage::Meshfree::Operator::Type oper8tor;
+    if (controls_.oper8tor == "VolumeIntegral") {
+      oper8tor = Portage::Meshfree::Operator::VolumeIntegral;
+    } else if (controls_.oper8tor == "none") {
+      oper8tor = Portage::Meshfree::Operator::LastOperator;
+    } else {
+      throw std::runtime_error("illegal operator specified");
+    }
 
     // Fill the source state data with the specified profile
     const int nsrccells = sourceMeshWrapper.num_owned_cells();
@@ -165,11 +183,9 @@ public:
     std::vector<double> sourceDataNode(nsrcnodes);
 
     //Create the source data for given function
-    Wonton::Flat_Mesh_Wrapper<double> sourceFlatMesh;
-    sourceFlatMesh.initialize(sourceMeshWrapper);
     for (unsigned int c = 0; c < nsrccells; ++c) {
       Portage::Point<Dimension> cen;
-      sourceFlatMesh.cell_centroid(c, &cen);
+      sourceMeshWrapper.cell_centroid(c, &cen);
       sourceData[c] = field_func<3>(controls_.example, cen);
     }
     Portage::Simple_State::vec &sourceVec(sourceState.add("celldata",
@@ -177,11 +193,11 @@ public:
     
     for (unsigned int c = 0; c < nsrcnodes; ++c) {
       Portage::Point<Dimension> cen;
-      sourceFlatMesh.node_get_coordinates(c, &cen);
+      sourceMesh->node_get_coordinates(c, &cen);
       sourceDataNode[c] = field_func<3>(controls_.example, cen);
     }
     Portage::Simple_State::vec &sourceVecNode(sourceState.add("nodedata",
-                                                              Portage::Entity_kind::NODE, &(sourceDataNode[0])));
+      Portage::Entity_kind::NODE, &(sourceDataNode[0])));
 
     //Build the target state storage
     const int ntarcells = targetMeshWrapper.num_owned_cells();
@@ -189,18 +205,36 @@ public:
     std::vector<double> targetData(ntarcells), targetData2(ntarcells);
     std::vector<double> targetDataNode(ntarnodes), targetData2Node(ntarnodes);
     Portage::Simple_State::vec &targetVec(targetState.add("celldata",
-                                                          Portage::Entity_kind::CELL, &(targetData[0])));
+      Portage::Entity_kind::CELL, &(targetData[0])));
     Portage::Simple_State::vec &targetVec2(targetState2.add("celldata",
-                                                            Portage::Entity_kind::CELL, &(targetData2[0])));
+      Portage::Entity_kind::CELL, &(targetData2[0])));
     Portage::Simple_State::vec &targetVecNode(targetState.add("nodedata",
-                                                              Portage::Entity_kind::NODE, &(targetDataNode[0])));
+      Portage::Entity_kind::NODE, &(targetDataNode[0])));
     Portage::Simple_State::vec &targetVec2Node(targetState2.add("nodedata",
-                                                                Portage::Entity_kind::NODE, &(targetData2Node[0])));
+      Portage::Entity_kind::NODE, &(targetData2Node[0])));
 
     // Register the variable name and interpolation order with the driver
     std::vector<std::string> remap_fields;
     remap_fields.push_back("celldata");
     remap_fields.push_back("nodedata");
+
+    // If an operator is requested, collect the information required.
+    Portage::vector<std::vector<Portage::Point<Dimension>>> data;
+    Portage::vector<Portage::Meshfree::Operator::Domain> domains;
+    if (controls_.oper8tor == "VolumeIntegral") {
+      int numcells = targetMesh->num_entities(Portage::Entity_kind::CELL, 
+                                              Portage::Entity_type::ALL);
+      domains.resize(numcells);
+      data.resize(numcells);
+      
+      for (int c=0; c<numcells; c++) {
+	// get integration domains
+        std::vector<Portage::Point<Dimension>> cellverts;
+        targetMesh->cell_get_coordinates(c, &cellverts);
+        data[c] = cellverts;
+        domains[c] = Portage::Meshfree::Operator::domain_from_points<Dimension>(cellverts);
+      }
+    }
 
     // Build the mesh-mesh driver data for this mesh type
     Portage::Driver<Portage::SearchKDTree,
@@ -226,68 +260,125 @@ public:
       >
       msmdriver(sourceMeshWrapper, sourceStateWrapper,
                 targetMeshWrapper, targetStateWrapper2,
-                smoothing_factor, basis);
-    msmdriver.set_remap_var_names(remap_fields);
+                smoothing_factor);
+    Portage::Meshfree::EstimateType estimate=Portage::Meshfree::LocalRegression;
+    if (oper8tor == Portage::Meshfree::Operator::VolumeIntegral) 
+      estimate=Portage::Meshfree::OperatorRegression;
+    msmdriver.set_remap_var_names(remap_fields, remap_fields, 
+                                  estimate, basis, oper8tor, domains, data);
     //run on one processor
     msmdriver.run(false);
 
     //Check the answer
     double stdval, err;
-    double totmerr=0., totserr=0.;
+    double totmerr=0., totserr=0., totint=0.;
 
     Portage::Simple_State::vec &cellvecout(targetState.get("celldata", Portage::CELL));
     Portage::Simple_State::vec &cellvecout2(targetState2.get("celldata", Portage::CELL));
     Portage::Simple_State::vec &nodevecout(targetState.get("nodedata", Portage::NODE));
     Portage::Simple_State::vec &nodevecout2(targetState2.get("nodedata", Portage::NODE));
 
-    Wonton::Flat_Mesh_Wrapper<double> targetFlatMesh;
-    targetFlatMesh.initialize(targetMeshWrapper);
-    if (controls_.print_detail == 1) {
-      std::printf("Cell Centroid-coord-1-2-3 Exact Mesh-Mesh Error Mesh-Swarm-Mesh Error\n");
-    }
-    for (int c = 0; c < ntarcells; ++c) {
-      Portage::Point<Dimension> ccen;
-      targetFlatMesh.cell_centroid(c, &ccen);
-      double value = field_func<3>(controls_.example, ccen);
-      double merror, serror;
-      merror = cellvecout[c] - value;
-      serror = cellvecout2[c] - value;
-      // dump diagnostics for each cell
-      if (controls_.print_detail == 1){
-	std::printf("cell-data %8d %19.13le %19.13le %19.13le ", c, ccen[0], ccen[1], ccen[2]);
-	std::printf("%19.13le %19.13le %19.13le %19.13le %19.13le\n",
-		    value, cellvecout[c], merror, cellvecout2[c], serror);
+    if (controls_.domeshmesh) {
+      if (controls_.print_detail == 1) {
+        std::printf("Cell Centroid-coord-1-2-3 Exact Mesh-Mesh Error Mesh-Swarm-Mesh Error\n");
       }
-      totmerr = std::max(totmerr, std::fabs(merror));
-      totserr = std::max(totserr, std::fabs(serror));
-    }
-
-    std::printf("\n\nLinf NORM OF MM CELL ERROR: %le\n\n", totmerr);
-    std::printf("\n\nLinf NORM OF MSM CELL ERROR: %le\n\n", totserr);
-
-    if (controls_.print_detail == 1) {
-      std::printf("Node Node-coord-1-2-3 Exact Mesh-Mesh Error Mesh-Swarm-Mesh Error\n");
-    }
-    totmerr = totserr = 0.;
-    for (int n = 0; n < ntarnodes; ++n) {
-      Portage::Point<Dimension> node;
-      targetFlatMesh.node_get_coordinates(n, &node);
-      double value = field_func<3>(controls_.example, node);
-      double merror, serror;
-      merror = nodevecout[n] - value;
-      serror = nodevecout2[n] - value;
-      // dump diagnostics for each node
-      if (controls_.print_detail == 1){
-	std::printf("node-data %8d %19.13le %19.13le %19.13le ", n, node[0], node[1], node[2]);
-	std::printf("%19.13le %19.13le %19.13le %19.13le %19.13le\n",
-		    value, cellvecout[n], merror, cellvecout2[n], serror);
+      for (int c = 0; c < ntarcells; ++c) {
+        Portage::Point<Dimension> ccen;
+        targetMeshWrapper.cell_centroid(c, &ccen);
+        double value = field_func<3>(controls_.example, ccen);
+        double merror, serror;
+        merror = cellvecout[c] - value;
+        serror = cellvecout2[c] - value;
+        // dump diagnostics for each cell
+        if (controls_.print_detail == 1){
+          std::printf("cell-data %8d %19.13le %19.13le %19.13le ", c, ccen[0], ccen[1], ccen[2]);
+          std::printf("%19.13le %19.13le %19.13le %19.13le %19.13le\n",
+                      value, cellvecout[c], merror, cellvecout2[c], serror);
+        }
+        totmerr = std::max(totmerr, std::fabs(merror));
+        totserr = std::max(totserr, std::fabs(serror));
       }
-      totmerr = std::max(totmerr, std::fabs(merror));
-      totserr = std::max(totserr, std::fabs(serror));
-    }
 
-    std::printf("\n\nLinf NORM OF MM NODE ERROR: %lf\n\n", totmerr);
-    std::printf("\n\nLinf NORM OF MSM NODE ERROR: %lf\n\n", totserr);
+      std::printf("\n\nLinf NORM OF MM CELL ERROR: %le\n\n", totmerr);
+      std::printf("\n\nLinf NORM OF MSM CELL ERROR: %le\n\n", totserr);
+
+      if (controls_.print_detail == 1) {
+        std::printf("Node Node-coord-1-2-3 Exact Mesh-Mesh Error Mesh-Swarm-Mesh Error\n");
+      }
+      totmerr = totserr = totint = 0.;
+      for (int n = 0; n < ntarnodes; ++n) {
+        Portage::Point<Dimension> node;
+        targetMesh->node_get_coordinates(n, &node);
+        double value = field_func<3>(controls_.example, node);
+        double merror, serror;
+        merror = nodevecout[n] - value;
+        serror = nodevecout2[n] - value;
+        // dump diagnostics for each node
+        if (controls_.print_detail == 1){
+          std::printf("node-data %8d %19.13le %19.13le %19.13le ", n, node[0], node[1], node[2]);
+          std::printf("%19.13le %19.13le %19.13le %19.13le %19.13le\n",
+                      value, cellvecout[n], merror, cellvecout2[n], serror);
+        }
+        totmerr = std::max(totmerr, std::fabs(merror));
+        totserr = std::max(totserr, std::fabs(serror));
+      }
+
+      std::printf("\n\nLinf NORM OF MM NODE ERROR: %lf\n\n", totmerr);
+      std::printf("\n\nLinf NORM OF MSM NODE ERROR: %lf\n\n", totserr);
+    } else {
+      if (controls_.print_detail == 1) {
+        std::printf("Cell Centroid-coord-1-2-3 Exact Mesh-Swarm-Mesh Error\n");
+      }
+      totmerr = totserr = 0.;
+      for (int c = 0; c < ntarcells; ++c) {
+        Portage::Point<Dimension> ccen;
+        targetMeshWrapper.cell_centroid(c, &ccen);
+        double value = field_func<3>(controls_.example, ccen);
+        double serror;
+        serror = cellvecout2[c] - value;
+        // dump diagnostics for each cell
+        if (controls_.print_detail == 1){
+          std::printf("cell-data %8d %19.13le %19.13le %19.13le ", c, ccen[0], ccen[1], ccen[2]);
+          if (oper8tor != Portage::Meshfree::Operator::VolumeIntegral) {
+            std::printf("%19.13le %19.13le %19.13le\n", value, cellvecout2[c], serror);
+          } else {
+            std::printf("%19.13le %19.13le\n", value, cellvecout2[c]);
+          }
+        }
+        totserr = std::max(totserr, std::fabs(serror));
+      }
+      // accumulate integral 
+      totint = 0.;
+      if (oper8tor == Portage::Meshfree::Operator::VolumeIntegral) {
+        for (int c = 0; c < ntarcells; ++c) { 
+          totint += cellvecout2[c];
+        }
+      }
+
+      std::printf("\n\nLinf NORM OF MSM CELL ERROR: %le\n\n", totserr);
+      if (oper8tor == Portage::Meshfree::Operator::VolumeIntegral)
+        std::printf("\n\nTOTAL INTEGRAL: %le\n\n", totint);
+
+      if (controls_.print_detail == 1) {
+        std::printf("Node Node-coord-1-2-3 Exact Mesh-Swarm-Mesh Error\n");
+      }
+      totserr = 0.;
+      for (int n = 0; n < ntarnodes; ++n) {
+        Portage::Point<Dimension> node;
+        targetMesh->node_get_coordinates(n, &node);
+        double value = field_func<3>(controls_.example, node);
+        double serror;
+        serror = nodevecout2[n] - value;
+        // dump diagnostics for each node
+        if (controls_.print_detail == 1){
+          std::printf("node-data %8d %19.13le %19.13le %19.13le ", n, node[0], node[1], node[2]);
+          std::printf("%19.13le %19.13le %19.13le\n", value, cellvecout2[n], serror);
+        }
+        totserr = std::max(totserr, std::fabs(serror));
+      }
+
+      std::printf("\n\nLinf NORM OF MSM NODE ERROR: %lf\n\n", totserr);
+    }
   }
 
   //Constructor
@@ -326,9 +417,12 @@ protected:
   // Perform comparison. First remap using traditional mesh techniques. Second remap using particles as intermediary. 
   // Report timing and accuracy.
   template <
-   template<Portage::Entity_kind, class, class, class,
-            template<class, int> class> class Intersect,
-    template<int, Portage::Entity_kind, class, class, class> class Interpolate,
+    template<Portage::Entity_kind, class, class, class,
+    template<class, int, class, class> class,
+    class, class> class Intersect,
+    template<int, Portage::Entity_kind, class, class, class,
+    template<class, int, class, class> class,
+    class, class> class Interpolate,
     template <int, class, class> class SwarmSearch,
     int Dimension=3
     >
@@ -338,12 +432,19 @@ protected:
       throw std::runtime_error("2D not available yet");
     }
 
+    // process controls
     double smoothing_factor = controls_.smoothing_factor;
     Portage::Meshfree::Basis::Type basis;
     if (controls_.order == 0) basis = Portage::Meshfree::Basis::Unitary;
     if (controls_.order == 1) basis = Portage::Meshfree::Basis::Linear;
     if (controls_.order == 2) basis = Portage::Meshfree::Basis::Quadratic;
-    assert(consistent_order<Interpolate>::check(basis));      
+    assert(consistent_order<Interpolate>::check(basis));     
+    Portage::Meshfree::Operator::Type oper8tor;
+    if (controls_.oper8tor == "VolumeIntegral") {
+      oper8tor = Portage::Meshfree::Operator::VolumeIntegral;
+    } else if (controls_.oper8tor != "none") {
+      throw std::runtime_error("illegal operator specified");
+    }     
 
     // Fill the source state data with the specified profile
     const int nsrccells = sourceMeshWrapper.num_owned_cells();
@@ -352,11 +453,9 @@ protected:
     std::vector<double> sourceDataNode(nsrcnodes);
 
     //Create the source data for given function
-    Portage::Flat_Mesh_Wrapper<double> sourceFlatMesh;
-    sourceFlatMesh.initialize(sourceMeshWrapper);
     for (unsigned int c = 0; c < nsrccells; ++c) {
       Portage::Point<Dimension> cen;
-      sourceFlatMesh.cell_centroid(c, &cen);
+      sourceMeshWrapper.cell_centroid(c, &cen);
       sourceData[c] = field_func<3>(controls_.example, cen);
     }
     Jali::UniStateVector<double> &sourceVec(sourceState->add("celldata",
@@ -364,7 +463,7 @@ protected:
     
     for (unsigned int c = 0; c < nsrcnodes; ++c) {
       Portage::Point<Dimension> cen;
-      sourceFlatMesh.node_get_coordinates(c, &cen);
+      sourceMeshWrapper.node_get_coordinates(c, &cen);
       sourceDataNode[c] = field_func<3>(controls_.example, cen);
     }
     Jali::UniStateVector<double> &sourceVecNode(sourceState->add("nodedata",
@@ -384,6 +483,27 @@ protected:
     std::vector<std::string> remap_fields;
     remap_fields.push_back("celldata");
     remap_fields.push_back("nodedata");
+
+    // If an operator is requested, collect the information required.
+    Portage::vector<std::vector<Portage::Point<Dimension>>> data;
+    Portage::vector<Portage::Meshfree::Operator::Domain> domains;
+    if (controls_.oper8tor == "VolumeIntegral") {
+      int numcells = targetMeshWrapper.num_owned_cells();
+      domains.resize(numcells);
+      data.resize(numcells);
+      
+      for (int c=0; c<numcells; c++) {
+	// get integration domains
+        std::vector<int> cellnodes;
+        targetMesh->cell_get_nodes(c, &cellnodes);
+        std::vector<Portage::Point<Dimension>> cellverts(cellnodes.size());
+        for (int i=0; i<cellnodes.size(); i) {
+          targetMeshWrapper.node_get_coordinates(cellnodes[i], &cellverts[i]);
+        }
+        data[c] = cellverts;
+        domains[c] = Portage::Meshfree::Operator::domain_from_points<Dimension>(cellverts);
+      }
+    }
 
     // Build the mesh-mesh driver data for this mesh type
     Portage::Driver<Portage::SearchKDTree,
@@ -409,14 +529,16 @@ protected:
       >
       msmdriver(sourceMeshWrapper, sourceStateWrapper,
                 targetMeshWrapper, targetStateWrapper2,
-                smoothing_factor, basis);
-    msmdriver.set_remap_var_names(remap_fields);
+                smoothing_factor);
+    msmdriver.set_remap_var_names(remap_fields, remap_fields, 
+                                  Portage::Meshfree::LocalRegression, basis, 
+                                  oper8tor, domains, data);
     //run on one processor
     msmdriver.run(false);
 
     //Check the answer
     double stdval, err;
-    double totmerr=0., totserr=0.;
+    double totmerr=0., totserr=0., totint=0.;
 
     std::vector<double> cellvecout(ntarcells), cellvecout2(ntarcells);
     std::vector<double> nodevecout(ntarnodes), nodevecout2(ntarnodes);
@@ -428,54 +550,104 @@ protected:
     for (int i=0; i<ntarcells; i++) {cellvecout[i]=cvp[i]; cellvecout2[i]=cv2p[i];}
     for (int i=0; i<ntarnodes; i++) {nodevecout[i]=nvp[i]; nodevecout2[i]=nv2p[i];}
 
-    Portage::Flat_Mesh_Wrapper<double> targetFlatMesh;
-    targetFlatMesh.initialize(targetMeshWrapper);
-    if (controls_.print_detail == 1) {
-      std::printf("Cell Centroid-coord-1-2-3 Exact Mesh-Mesh Error Mesh-Swarm-Mesh Error\n");
-    }
-    for (int c = 0; c < ntarcells; ++c) {
-      Portage::Point<Dimension> ccen;
-      targetFlatMesh.cell_centroid(c, &ccen);
-      double value = field_func<3>(controls_.example, ccen);
-      double merror, serror;
-      merror = cellvecout[c] - value;
-      serror = cellvecout2[c] - value;
-      // dump diagnostics for each cell
-      if (controls_.print_detail == 1){
-	std::printf("cell-data %8d %19.13le %19.13le %19.13le ", c, ccen[0], ccen[1], ccen[2]);
-	std::printf("%19.13le %19.13le %19.13le %19.13le %19.13le\n",
-		    value, cellvecout[c], merror, cellvecout2[c], serror);
+    if (controls_.domeshmesh) {
+      if (controls_.print_detail == 1) {
+        std::printf("Cell Centroid-coord-1-2-3 Exact Mesh-Mesh Error Mesh-Swarm-Mesh Error\n");
       }
-      totmerr = std::max(totmerr, std::fabs(merror));
-      totserr = std::max(totserr, std::fabs(serror));
-    }
-
-    std::printf("\n\nLinf NORM OF MM CELL ERROR: %le\n\n", totmerr);
-    std::printf("\n\nLinf NORM OF MSM CELL ERROR: %le\n\n", totserr);
-
-    if (controls_.print_detail == 1) {
-      std::printf("Node Node-coord-1-2-3 Exact Mesh-Mesh Error Mesh-Swarm-Mesh Error\n");
-    }
-    totmerr = totserr = 0.;
-    for (int n = 0; n < ntarnodes; ++n) {
-      Portage::Point<Dimension> node;
-      targetFlatMesh.node_get_coordinates(n, &node);
-      double value = field_func<3>(controls_.example, node);
-      double merror, serror;
-      merror = nodevecout[n] - value;
-      serror = nodevecout2[n] - value;
-      // dump diagnostics for each node
-      if (controls_.print_detail == 1){
-	std::printf("node-data %8d %19.13le %19.13le %19.13le ", n, node[0], node[1], node[2]);
-	std::printf("%19.13le %19.13le %19.13le %19.13le %19.13le\n",
-		    value, cellvecout[n], merror, cellvecout2[n], serror);
+      for (int c = 0; c < ntarcells; ++c) {
+        Portage::Point<Dimension> ccen;
+        targetMeshWrapper.cell_centroid(c, &ccen);
+        double value = field_func<3>(controls_.example, ccen);
+        double merror, serror;
+        merror = cellvecout[c] - value;
+        serror = cellvecout2[c] - value;
+        // dump diagnostics for each cell
+        if (controls_.print_detail == 1){
+          std::printf("cell-data %8d %19.13le %19.13le %19.13le ", c, ccen[0], ccen[1], ccen[2]);
+          std::printf("%19.13le %19.13le %19.13le %19.13le %19.13le\n",
+                      value, cellvecout[c], merror, cellvecout2[c], serror);
+        }
+        totmerr = std::max(totmerr, std::fabs(merror));
+        totserr = std::max(totserr, std::fabs(serror));
       }
-      totmerr = std::max(totmerr, std::fabs(merror));
-      totserr = std::max(totserr, std::fabs(serror));
-    }
 
-    std::printf("\n\nLinf NORM OF MM NODE ERROR: %lf\n\n", totmerr);
-    std::printf("\n\nLinf NORM OF MSM NODE ERROR: %lf\n\n", totserr);
+      std::printf("\n\nLinf NORM OF MM CELL ERROR: %le\n\n", totmerr);
+      std::printf("\n\nLinf NORM OF MSM CELL ERROR: %le\n\n", totserr);
+
+      if (controls_.print_detail == 1) {
+        std::printf("Node Node-coord-1-2-3 Exact Mesh-Mesh Error Mesh-Swarm-Mesh Error\n");
+      }
+      totmerr = totserr = 0.;
+      for (int n = 0; n < ntarnodes; ++n) {
+        Portage::Point<Dimension> node;
+        targetMeshWrapper.node_get_coordinates(n, &node);
+        double value = field_func<3>(controls_.example, node);
+        double merror, serror;
+        merror = nodevecout[n] - value;
+        serror = nodevecout2[n] - value;
+        // dump diagnostics for each node
+        if (controls_.print_detail == 1){
+          std::printf("node-data %8d %19.13le %19.13le %19.13le ", n, node[0], node[1], node[2]);
+          std::printf("%19.13le %19.13le %19.13le %19.13le %19.13le\n",
+                      value, cellvecout[n], merror, cellvecout2[n], serror);
+        }
+        totmerr = std::max(totmerr, std::fabs(merror));
+        totserr = std::max(totserr, std::fabs(serror));
+      }
+
+      std::printf("\n\nLinf NORM OF MM NODE ERROR: %lf\n\n", totmerr);
+      std::printf("\n\nLinf NORM OF MSM NODE ERROR: %lf\n\n", totserr);
+    } else {
+      if (controls_.print_detail == 1) {
+        std::printf("Cell Centroid-coord-1-2-3 Exact Mesh-Swarm-Mesh Error\n");
+      }
+      totserr = totint = 0.;
+      for (int c = 0; c < ntarcells; ++c) {
+        Portage::Point<Dimension> ccen;
+        targetMeshWrapper.cell_centroid(c, &ccen);
+        double value = field_func<3>(controls_.example, ccen);
+        double serror;
+        serror = cellvecout2[c] - value;
+        // accumulate integral
+        if (oper8tor == Portage::Meshfree::Operator::VolumeIntegral) { 
+          totint += cellvecout2[c];
+        }
+        // dump diagnostics for each cell
+        if (controls_.print_detail == 1){
+          std::printf("cell-data %8d %19.13le %19.13le %19.13le ", c, ccen[0], ccen[1], ccen[2]);
+          if (oper8tor != Portage::Meshfree::Operator::VolumeIntegral) {
+            std::printf("%19.13le %19.13le %19.13le\n", value, cellvecout2[c], serror);
+          } else {
+            std::printf("%19.13le %19.13le\n", value, cellvecout2[c]);
+          }
+        }
+        totserr = std::max(totserr, std::fabs(serror));
+      }
+      std::printf("\n\nLinf NORM OF MSM CELL ERROR: %le\n\n", totserr);
+      if (oper8tor == Portage::Meshfree::Operator::VolumeIntegral)
+        std::printf("\n\nTOTAL INTEGRAL: %le\n\n", totint);
+
+      if (controls_.print_detail == 1) {
+        std::printf("Node Node-coord-1-2-3 Exact Mesh-Swarm-Mesh Error\n");
+      }
+      totserr = 0.;
+      for (int n = 0; n < ntarnodes; ++n) {
+        Portage::Point<Dimension> node;
+        targetMeshWrapper.node_get_coordinates(n, &node);
+        double value = field_func<3>(controls_.example, node);
+        double serror;
+        serror = nodevecout2[n] - value;
+        // dump diagnostics for each node
+        if (controls_.print_detail == 1){
+          std::printf("node-data %8d %19.13le %19.13le %19.13le ", n, node[0], node[1], node[2]);
+          std::printf("%19.13le %19.13le %19.13le\n",
+                      value, cellvecout2[n], serror);
+        }
+        totserr = std::max(totserr, std::fabs(serror));
+      }
+
+      std::printf("\n\nLinf NORM OF MSM NODE ERROR: %lf\n\n", totserr);
+    }
   }
 
   //Constructor
@@ -492,8 +664,12 @@ protected:
 };
 
 void usage() {
-  std::cout << "Usage: msmapp file" << std::endl;
+  std::cout << "Usage: msmapp file [-domm | -nomm]" << std::endl;
   std::cout << "\
+    Uses specifications in \"file\" to perform a mesh-mesh and also a mesh-swarm-mesh remap and compare.\n\
+    Options:\n\
+      -domm do the direct mesh-mesh remap\n\
+      -nomm do not do the direct mesh-mesh remap\n\
     example file format: \n\
     note: do not include this line or text before and including \":\" in lines below\n\
     source mesh min, double:          0. 0. 0.\n\
@@ -508,7 +684,8 @@ void usage() {
     print detail, choice of 0 or 1:         1\n\
     (optional) source mesh EXODUS file:  src_file_name \n\
     (optional) target mesh EXODUS file:  tgt_file_name \n\
-\n\
+    (optional) operator specification: VolumeIntegral \n\
+    \n\
     must specify both source and target mesh files if so using \n\
   ";
 }
@@ -536,12 +713,26 @@ int main(int argc, char** argv) {
   file >> ctl.print_detail;
   try {
     file >> ctl.source_file;
-    file >> ctl.target_file;
+    if (ctl.source_file != "VolumeIntegral") {
+      file >> ctl.target_file;
+      try { 
+        file >> ctl.oper8tor;
+      } catch (...) {
+      }
+    } else {
+      ctl.oper8tor = "VolumeIntegral";
+      ctl.source_file = "none";
+    }
   } catch (...) {
   }
 
+  if (argc >= 3) {
+    if (argv[2] == std::string("-domm")) ctl.domeshmesh=true;
+    else if (argv[2] == std::string("-nomm")) ctl.domeshmesh=false;
+  }
+
   bool error = false;
-  for (int i; i<3; i++) {
+  for (size_t i=0; i<3; i++) {
     if (ctl.smin[i]>=ctl.smax[i]) error = true;
     if (ctl.tmin[i]>=ctl.tmax[i]) error = true;
     if (ctl.scells[i]<0) error = true;
@@ -590,12 +781,10 @@ int main(int argc, char** argv) {
 		   Portage::Interpolate_1stOrder, 
 		   Portage::SearchPointsByCells, 3>();
   
-    } else if (ctl.order == 2) {
- 
-      //      msmguy.runit<Portage::IntersectR3D, 
-      //		   Portage::Interpolate_2ndOrder, 
-      //		   Portage::SearchPointsByCells, 3>();
-
+    } else if (ctl.order == 2) { 
+      msmguy.runit<Portage::IntersectR3D, 
+      Portage::Interpolate_2ndOrder, 
+      Portage::SearchPointsByCells, 3>();
     }
   } else {
     Jali::MeshFactory jmf(MPI_COMM_WORLD);

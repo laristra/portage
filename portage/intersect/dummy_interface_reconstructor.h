@@ -1,3 +1,9 @@
+/*
+This file is part of the Ristra portage project.
+Please see the license file at the root of this repository, or at:
+    https://github.com/laristra/portage/blob/master/LICENSE
+*/
+
 /*!
   @file DummyInterfaceReconstructor.h
   @brief A placeholder for a real interface reconstructor from Tangram
@@ -15,12 +21,19 @@ namespace Portage {
 
 // Dummy interface reconstruction class, if external interface
 // reconstruction methods are not found
-template<class Mesh_Wrapper, int Dim>
+template<class Mesh_Wrapper, 
+         int Dim, 
+         class MatPoly_Splitter=void, 
+         class MatPoly_Clipper=void>
 class DummyInterfaceReconstructor {
  public:
   DummyInterfaceReconstructor(Mesh_Wrapper const& mesh) {}
 
 #ifdef HAVE_TANGRAM
+  DummyInterfaceReconstructor(Mesh_Wrapper const& mesh,
+                              const Tangram::IterativeMethodTolerances_t& im_tols,
+                              const bool all_convex = false) {}
+
   void set_volume_fractions(std::vector<int> const& cell_num_mats,
                             std::vector<int> const& cell_mat_ids,
                             std::vector<double> const& cell_mat_volfracs,

@@ -15,6 +15,7 @@ Please see the license file at the root of this repository, or at:
 #include <array>
 #include <algorithm>
 #include <utility>
+#include <limits>
 
 #include "portage/support/portage.h"
 #include "portage/support/Point.h"
@@ -358,6 +359,8 @@ class AuxMeshTopology {
                static_cast<Portage::Entity_type>(etype));
   }
 #endif
+
+
   /*!
     @brief Get the list of cell IDs for all cells attached to a specific
     cell through its nodes.
@@ -393,6 +396,17 @@ class AuxMeshTopology {
       }
     }
   }  // cell_get_node_adj_cells
+
+#ifdef HAVE_TANGRAM
+  // TEMPORARY - until we pull WONTON out as a separate repository
+  void cell_get_node_adj_cells(int const cellid,
+                               Tangram::Entity_type ptype,
+                               std::vector<int> *adjcells) const {
+    cell_get_node_adj_cells(cellid, static_cast<Portage::Entity_type>(ptype),
+			    adjcells);
+  } 
+#endif
+
 
   //! Get cells of given Entity_type connected to face (in no particular order)
   void face_get_cells(int const faceid, Entity_type const etype,
@@ -476,7 +490,7 @@ class AuxMeshTopology {
   void cell_get_coordinates(int const cellid,
                             std::vector<Point<D>> *pplist) const;
 
-  //! Centroid of a cell (actually geometric center of cell nodes)
+  //! Centroid of a cell
 
   template <long D>
   void cell_centroid(int const cellid, Point<D> *ccen) const {
@@ -487,6 +501,14 @@ class AuxMeshTopology {
       (*ccen)[d] = cell_centroids_[cellid][d];    
   }
 
+#ifdef HAVE_TANGRAM
+  // TEMPORARY - until we pull WONTON out as a separate repository
+   template<long D>
+   void cell_centroid(int const cellid,
+                      Tangram::Point<D> *ccen) const {
+    cell_centroid(cellid, reinterpret_cast<Portage::Point<D> *>(ccen));
+  } 
+#endif
 
   //! Volume of a cell
   
@@ -499,7 +521,7 @@ class AuxMeshTopology {
   }
 
   
-  //! Centroid of a face (actually geometric center of face nodes)
+  //! Centroid of a face
 
   template <long D>
   void face_centroid(int const faceid, Point<D> *fcen) const {
@@ -1264,6 +1286,7 @@ class AuxMeshTopology {
     node_get_wedges(nodeid, ALL, &wedgeids);
     double vol = 0.0;
     for (int i = 0; i < D; i++) (*centroid)[i] = 0.0;
+    Point<D> geom_cen;
     for (auto const wid : wedgeids) {
       double wvol = wedge_volume(wid);
 
@@ -1274,10 +1297,13 @@ class AuxMeshTopology {
         wcen += wcoords[i];
       wcen /= D+1;
 
+      geom_cen += wcen;
       *centroid += wvol*wcen;
       vol += wvol;
     }
-    *centroid /= vol;
+    //If we have a degenerate dual cell of zero volume, we use the geometric center
+    if (vol > std::numeric_limits<double>::epsilon()) *centroid /= vol;
+    else *centroid = geom_cen/wedgeids.size();
   }
 
 
@@ -2210,9 +2236,12 @@ void AuxMeshTopology<BasicMesh>::compute_face_centroids() {
           fcen += fctcen*fctarea;
         }
       }
-      fcen /= farea;
-      for (int d = 0; d < dim; d++)
-        face_centroids_[f][d] = fcen[d];
+      //If we have a degenerate face of zero area, we use the geometric center
+      if (farea > std::numeric_limits<double>::epsilon()) {
+        fcen /= farea;
+        for (int d = 0; d < dim; d++)
+          face_centroids_[f][d] = fcen[d];
+      }
       face_processed[f] = true;
     }
   }
@@ -2287,9 +2316,13 @@ void AuxMeshTopology<BasicMesh>::compute_cell_centroids() {
 
       ccen += scen*svol;
     }
-    ccen /= cellvol;
-    for (int d = 0; d < dim; d++)
-      cell_centroids_[c][d] = ccen[d];  // true centroid
+
+    //If we have a degenerate cell of zero volume, we use the geometric center
+    if (cellvol > std::numeric_limits<double>::epsilon()) {    
+      ccen /= cellvol;
+      for (int d = 0; d < dim; d++)
+        cell_centroids_[c][d] = ccen[d];  // true centroid
+    }
   }
 }
 
@@ -2570,6 +2603,50 @@ void AuxMeshTopology<BasicMesh>::dual_cell_get_facetization(int const nodeid,
     points->push_back(pxyz);
   }  // Get coordinates of each unique point
 }  // dual_cell_get_facetization
+
+
+//! Get radius of minimum-enclosing-sphere of a cell centered at the centroid
+//! For computing smoothing lengths when converting cell data from meshes to swarms
+template<size_t D, class MeshWrapper>
+void cell_radius(MeshWrapper &wrapper,
+                 int const cellid, double *radius) {
+  Point<D> centroid;
+  wrapper.cell_centroid(cellid, &centroid);
+  std::vector<int> nodes;
+  wrapper.cell_get_nodes(cellid, &nodes);
+  Point<D> arm, node;
+  *radius = 0.;
+  for (int i=0; i<nodes.size(); i++) {
+    wrapper.node_get_coordinates(nodes[i], &node);
+    for (int j=0; j<D; j++) arm[j] = node[j]-centroid[j];
+    double distance = 0.0;
+    for (int j=0; j<D; j++) distance += arm[j]*arm[j];
+    distance = sqrt(distance);
+    if (distance > *radius) *radius = distance;
+  }
+}
+
+
+//! Get radius of minimum-enclosing-sphere of all nodes connected by a cell
+//! For computing smoothing lengths when converting node data from meshes to swarms
+template<size_t D, class MeshWrapper>
+void node_radius(MeshWrapper &wrapper,
+                 int const nodeid, double *radius) {
+  std::vector<int> nodes;
+  wrapper.node_get_cell_adj_nodes(nodeid, ALL, &nodes);
+  Point<D> center;
+  wrapper.node_get_coordinates(nodeid, &center);
+  *radius = 0.;
+  Point<D> arm, node;
+  for (int i=0; i<nodes.size(); i++) {
+    wrapper.node_get_coordinates(nodes[i], &node);
+    for (int j=0; j<D; j++) arm[j] = node[j]-center[j];
+    double distance = 0.0;
+    for (int j=0; j<D; j++) distance += arm[j]*arm[j];
+    distance = sqrt(distance);
+    if (distance > *radius) *radius = distance;
+  }
+}
 
 
 }  // namespace Wonton

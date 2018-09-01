@@ -383,6 +383,10 @@ class Simple_State_Wrapper {
     return state_.names_end();
   }
 
+  /// The above iterator functions fail sometimes for optimized code, so here 
+  /// we allow access to the complete list of names.
+  typename Simple_State::name_vec names() const {return state_.names();}
+
  private:
   /// The state to be wrapped.
   Simple_State & state_;

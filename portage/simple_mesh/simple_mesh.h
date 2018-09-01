@@ -4,8 +4,8 @@ Please see the license file at the root of this repository, or at:
     https://github.com/laristra/portage/blob/master/LICENSE
 */
 
-#ifndef PORTAGE_SIMPLE_MESH_H_
-#define PORTAGE_SIMPLE_MESH_H_
+#ifndef SRC_SIMPLE_MESH_SIMPLE_MESH_H_
+#define SRC_SIMPLE_MESH_SIMPLE_MESH_H_
 
 #include <vector>
 #include <memory>
@@ -264,37 +264,20 @@ Simple_Mesh(double x0, double y0, double z0,
     }
   }
 
+  // General specification - specialization follows at bottom of file
   /*!
     @brief Get the coordinates of a node.
+    @tparam D Dimension of the node.
     @param[in] nodeid The ID of the node.
     @param[out] pp The @c Point object of dimension @c D containing the
     coordinates of node @nodeid.
-   */
-  void node_get_coordinates(const ID nodeid, Point<1> *pp) const {
-    assert(1 == space_dimension());
-    /* Not implemented */
-  }
 
-  /*!
-    @brief Get the coordinates of a node.
-    @param[in] nodeid The ID of the node.
-    @param[out] pp The @c Point object of dimension @c D containing the
-    coordinates of node @nodeid.
+    This is the general specification.  
    */
-  void node_get_coordinates(const ID nodeid, Point<2> *pp) const {
-    assert(2 == space_dimension());
-    *pp = coordinates2d_[nodeid];
-  }
-
-  /*!
-    @brief Get the coordinates of a node.
-    @param[in] nodeid The ID of the node.
-    @param[out] pp The @c Point object of dimension @c D containing the
-    coordinates of node @nodeid.
-   */
-  void node_get_coordinates(const ID nodeid, Point<3> *pp) const {
-    assert(3 == space_dimension());
-    *pp = coordinates3d_[nodeid];
+  template<long D>
+  void node_get_coordinates(const ID nodeid,
+                            Point<D> *pp) const {
+    assert(D == space_dimension());
   }
 
   /*!
@@ -688,10 +671,30 @@ Simple_Mesh(double x0, double y0, double z0,
   ID yzface_index_(int i, int j, int k) const {
     return i + j*(nx_+1) + k*(nx_+1)*ny_ + xzface_index_(0, 0, nz_);
   }
-
 };  // class Simple_Mesh
+
+// Specializations
+/*!
+  @brief Get the 2D/3D coordinates of a specific node as @c Portage::Point object.
+  @param[in] nodeid The ID of the node.
+  @param[out] pp The @c Portage::Point containing the coordinates for node
+  @c nodeid.
+ */
+template<>
+void Simple_Mesh::node_get_coordinates<3>(const ID nodeid,
+                                          Point<3> *pp) const {
+  assert(spacedim_ == 3);
+  *pp = coordinates3d_[nodeid];
+}
+
+template<>
+void Simple_Mesh::node_get_coordinates<2>(const ID nodeid,
+                                          Point<2> *pp) const {
+  assert(spacedim_ == 2);
+  *pp = coordinates2d_[nodeid];
+}
 
 
 }  // namespace Portage
 
-#endif  // PORTAGE_SIMPLE_MESH_H_
+#endif  // SRC_SIMPLE_MESH_SIMPLE_MESH_H_

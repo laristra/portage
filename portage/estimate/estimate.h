@@ -11,12 +11,12 @@ Please see the license file at the root of this repository, or at:
 #include <cassert>
 
 #include "portage/swarm/swarm_state.h"
+#include "portage/support/portage.h"
 
 namespace Portage {
 namespace Meshfree {
 
 using std::string;
-using std::vector;
 
 /**
  * @class Estimate portage/estimate/estimate.h
@@ -55,7 +55,7 @@ class Estimate {
    * @return the derivative of the data in @code source_state_@endcode specified by @code derivative_@endcode
    */
   double operator()(int const target_index,
-                    vector<Weights_t> const &sources_and_mults) const
+                    std::vector<Weights_t> const &sources_and_mults) const
   {    
     int nsrc = sources_and_mults.size();
     if (nsrc > 0) assert(derivative_ < sources_and_mults[0].weights.size());
@@ -64,8 +64,8 @@ class Estimate {
     for (size_t i=0; i<nsrc; i++) {
       Weights_t const& wt = sources_and_mults[i];
       int p = wt.entityID;
-      vector<double> const& shape_vec = wt.weights;
-      result += source_vals_[p] * shape_vec[derivative_];
+      std::vector<double> const& shape_vec = wt.weights;
+      {double val=(*source_vals_)[p]; result += val * shape_vec[derivative_];}
     }
     return result;
   }
@@ -73,16 +73,14 @@ class Estimate {
   void set_variable(std::string const & var_name, size_t derivin=0) {
     var_name_ = var_name;
     derivative_ = derivin;
-    typename SwarmState<dim>::DblVecPtr source_field_ptr;
-    source_state_.get_field(var_name_, source_field_ptr);
-    source_vals_ = &((*source_field_ptr)[0]);
+    source_state_.get_field(var_name_, source_vals_);
   }
 
  private:
   SwarmState<dim> const& source_state_;
   std::string var_name_;
   size_t derivative_;
-  double const *source_vals_;
+  typename SwarmState<dim>::DblVecPtr source_vals_;
 };
 
 }
