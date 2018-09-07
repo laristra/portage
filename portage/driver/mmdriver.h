@@ -38,7 +38,7 @@ Please see the license file at the root of this repository, or at:
 #endif
 
 /*!
-  @file driver.h
+  @file mmdriver.h
   @brief Example driver for mapping between two meshes.
 
   This should serve as a good example for how to write your own driver routine

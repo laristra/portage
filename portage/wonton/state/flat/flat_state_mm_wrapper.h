@@ -98,7 +98,7 @@ class Flat_State_Wrapper: public StateManager<MeshWrapper> {
     @brief Get the number of data vectors
     @return		The number of state vectors
   */
-  size_t get_num_vectors() { return state_vectors_.size(); }
+  size_t get_num_vectors() { return StateManager<MeshWrapper>::state_vectors_.size(); }
 
 
   /*!
