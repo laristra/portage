@@ -23,6 +23,11 @@
 #include <vector>
 #include <iostream>
 
+#ifdef HAVE_TANGRAM
+#include "tangram/support/tangram.h"
+#include "tangram/support/Point.h"
+#endif
+
 namespace Wonton {
 namespace portage {
 
@@ -303,6 +308,36 @@ public:
         return mesh_->num_wedges();
         break;
       case entity_kind_t::CORNER :
+        return mesh_->num_corners();
+      default :
+        //raise_runtime_error("Unknown entity type");
+        std::cerr<<"Unknown entity type\n";
+        return 0;
+    }
+  }
+
+  //! Number of items of given entity
+  //! \param [in] entity  The enumerated entity of interest
+  //! \param [in] entity_type   The type of entity information (ghost, shared, 
+  //!   all, etc...) 
+  size_t num_entities(
+    Tangram::Entity_kind entity, 
+    entity_type_t entity_type = entity_type_t::ALL
+  ) const 
+  {
+    switch(entity) {
+      case Tangram::Entity_kind::NODE :
+        return num_owned_nodes();
+      case Tangram::Entity_kind::EDGE :
+        return num_owned_edges();
+      case Tangram::Entity_kind::FACE :
+        return num_owned_faces();
+      case Tangram::Entity_kind::CELL :
+        return num_owned_cells();
+      case Tangram::Entity_kind::WEDGE :
+        return mesh_->num_wedges();
+        break;
+      case Tangram::Entity_kind::CORNER :
         return mesh_->num_corners();
       default :
         //raise_runtime_error("Unknown entity type");

@@ -283,6 +283,14 @@ public:
                         double const * values) {
   }
 
+  void mat_add_celldata(std::string const& var_name, int matid,
+                        Portage::Point<2> const *values) {
+  }
+
+  void mat_add_celldata(std::string const& var_name, int matid,
+                        Portage::Point<3> const *values) {
+  }
+
 
   //! \brief Add a scalar multi-valued data field on cells and initialize one
   //! of its material data to a uniform value
@@ -335,6 +343,14 @@ public:
 
   const std::type_info& get_data_type(std::string const& var_name) const {
     return typeid(double);  // thats the only type we can represent
+  }
+  
+  /*!
+    @brief  Vector of names
+    @return vector of strings
+   */
+  std::vector<std::string> get_state_keys() const { 
+    return std::vector<std::string>{};
   }
   
 

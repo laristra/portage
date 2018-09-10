@@ -14,7 +14,7 @@
 
 #include "portage/wonton/mesh/flecsi/flecsi_mesh_wrapper.h"
 #include "portage/wonton/state/flecsi/flecsi_state_wrapper.h"
-#include "portage/driver/driver.h"
+#include "portage/driver/mmdriver.h"
 
 // system includes
 #include <cinchtest.h>
