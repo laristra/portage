@@ -349,7 +349,7 @@ public:
     @brief  Vector of names
     @return vector of strings
    */
-  std::vector<std::string> get_state_keys() const { 
+  std::vector<std::string> names() const { 
     return std::vector<std::string>{};
   }
   

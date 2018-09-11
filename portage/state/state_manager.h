@@ -71,7 +71,7 @@ class StateManager {
 			
 		  Return the names registered by the state manager.
 		*/
-		std::vector<std::string> const get_state_keys() const {
+		std::vector<std::string> const names() const {
 			std::vector<std::string> keys;
 			for (auto& kv: state_vectors_){
 				keys.push_back(kv.first);

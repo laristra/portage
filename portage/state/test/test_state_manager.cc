@@ -892,10 +892,7 @@ TEST(StateManager,test4Cell){
 		}
 	} 
 
-	// what is in the state manager?
-	//for (auto& kv: manager.get_state_keys()){
-	//	std::cout<<"type: "<<kv.first<<" name: " << kv.second<<std::endl;
-	//}
+
 }
 
 // Test the data isolation between the original data and the manager data

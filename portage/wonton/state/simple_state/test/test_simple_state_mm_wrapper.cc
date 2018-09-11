@@ -695,10 +695,7 @@ TEST(Simple_State_Wrapper,test4Cell){
 		}
 	} 
 
-	// what is in the state manager?
-	//for (auto& kv: manager.get_state_keys()){
-	//	std::cout<<"type: "<<kv.first<<" name: " << kv.second<<std::endl;
-	//}
+
 }
 
 

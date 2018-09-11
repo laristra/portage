@@ -252,7 +252,7 @@ shared_ptr<SwarmState<dim>> SwarmStateFactory(
   // create return value
   size_t ndata=0;
 
-  for (const std::string name : state.get_state_keys()) {
+  for (const std::string name : state.names()) {
     // Simple_State does not store separte lists of names by entity, 
     // so we have to filter.
     if (state.get_entity(name) == entity) {
@@ -263,7 +263,7 @@ shared_ptr<SwarmState<dim>> SwarmStateFactory(
   shared_ptr<SwarmState<dim>> result=make_shared<SwarmState<dim>>(ndata);
 
   // copy data
-  for (const std::string name : state.get_state_keys()) {
+  for (const std::string name : state.names()) {
     if (state.get_entity(name) != entity) continue;
 
     // make sure all fields have same size

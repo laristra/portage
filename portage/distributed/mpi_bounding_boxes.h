@@ -391,7 +391,7 @@ class MPI_Bounding_Boxes {
     // SEND FIELD VALUES
 
     // Send and receive each field to be remapped
-    for (std::string field_name : source_state_flat.get_state_keys())
+    for (std::string field_name : source_state_flat.names())
     {
     	
     	//std::vector<double> sourceField{.75, .75, .25, .25};

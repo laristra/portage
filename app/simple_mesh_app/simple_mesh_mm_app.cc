@@ -290,7 +290,7 @@ void run(
 
   // print what the state manager knows about
   std::cout<<"\nState manager fields: ";
-  for (auto x: source_state.get_state_keys()) std::cout<<x<<" ";
+  for (auto x: source_state.names()) std::cout<<x<<" ";
   std::cout<<std::endl;
 
   // Add the materials into the target mesh without cell indices
@@ -318,7 +318,7 @@ void run(
 
   // print what the state manager knows about
   //std::cout<<"\nTarget state manager fields: ";
-  //for (auto x: target_state.get_state_keys()) std::cout<<x.second<<" ";
+  //for (auto x: target_state.names()) std::cout<<x.second<<" ";
   //std::cout<<std::endl<<std::endl;
 
 
