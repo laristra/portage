@@ -394,7 +394,6 @@ class MPI_Bounding_Boxes {
     for (std::string field_name : source_state_flat.names())
     {
     	
-    	//std::vector<double> sourceField{.75, .75, .25, .25};
       std::vector<double>& sourceField = source_state_flat.get_vector(field_name);
       int sourceFieldStride = source_state_flat.get_field_stride(field_name);
 

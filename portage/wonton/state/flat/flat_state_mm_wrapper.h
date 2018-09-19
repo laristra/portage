@@ -31,6 +31,13 @@ class Flat_State_Wrapper: public StateManager<MeshWrapper> {
  
   /*!
     @brief Constructor for the state wrapper
+	  @param[in] mesh							mesh wrapper    
+	  @param[in] names        		optional, map from material names to material id
+	  @param[in] material_cells   optional, map from material id to vector of cells    
+
+	  Constructor that takes the meshwrapper for the underlying mesh and two optional
+	  map arguments: the map from material name to id, and the map from material 
+	  id to the cells containing that material
    */
   Flat_State_Wrapper(const MeshWrapper& mesh, 
  			std::unordered_map<std::string,int> names={},
