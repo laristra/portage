@@ -583,7 +583,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
   std::vector<user_field_t> mat_fields(nmats);
 
 
-  // Perform interface reconstruction for pretty pictures (optional)
+  // Perform interface reconstruction
 
   if (dim == 2) {  // XMOF2D works only in 2D (I know, shocking!!)
     Tangram::IterativeMethodTolerances_t tol{100, 1e-15, 1e-15};
@@ -611,6 +611,13 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
     interface_reconstructor->reconstruct();
 
 
+    // Material fields are evaluated at material polygon centroids.
+    // This allows us to test for near zero error in cases where an
+    // interface reconstruction method can reconstruct the interface
+    // exactly (e.g. MOF with linear interfaces) and the remapping
+    // method can reproduce a field exactly (linear fields with a 2nd
+    // order accurate method)
+    
     if (material_field_expressions.size()) {
       for (int m = 0; m < nmats; m++) {
         if (!mat_fields[m].initialize(dim, material_field_expressions[m]))
@@ -677,6 +684,13 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
     interface_reconstructor->reconstruct();
 
 
+    // Material fields are evaluated at material polygon centroids.
+    // This allows us to test for near zero error in cases where an
+    // interface reconstruction method can reconstruct the interface
+    // exactly (e.g. MOF with linear interfaces) and the remapping
+    // method can reproduce a field exactly (linear fields with a 2nd
+    // order accurate method)
+    
     if (material_field_expressions.size()) {
       for (int m = 0; m < nmats; m++) {
         if (!mat_fields[m].initialize(dim, material_field_expressions[m]))
@@ -818,7 +832,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
 
 
   // Perform interface reconstruction on target mesh for pretty pictures
-  // (optional)
+  // and error computation of material fields
 
   offsets.resize(ntarcells);
   offsets[0] = 0;
@@ -911,13 +925,11 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
               error = mat_fields[m](ccen) - cellmatvals[ic];
               if (fabs(error) > 1.0e-08)
                 std::cout << "Pure cell " << c << " Material " << m << " Error " << error << "\n";
-              
-              //          if (!targetMeshWrapper.on_exterior_boundary(Portage::Entity_kind::CELL, c)) {
+
               double cellvol = targetMeshWrapper.cell_volume(c);
               totvolume += cellvol;
               *L1_error += fabs(error)*cellvol;
               *L2_error += error*error*cellvol;
-              //          }
             }
           } else {
             Tangram::CellMatPoly<2> const& cellmatpoly = 
