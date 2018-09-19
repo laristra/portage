@@ -214,10 +214,11 @@ class Driver {
     @tparam entity_kind  Kind of entity that variables live on
     @param source_remap_var_names  names of remap variables on source mesh (MUST ALL BE DEFINED ON THE SAME Entity_kind - NODE, CELL)
     @param target_remap_var_names  names of remap variables on target mesh (MUST ALL BE DEFINED ON THE SAME Entity_kind - NODE, CELL)
+    @return status of remap (1 if successful, 0 if not)
   */
 
   template<Entity_kind onwhat>
-  void remap(std::vector<std::string> const &source_var_names,
+  int remap(std::vector<std::string> const &source_var_names,
              std::vector<std::string> const &target_var_names);
 
 #ifdef ENABLE_MPI
@@ -226,31 +227,39 @@ class Driver {
     @tparam entity_kind  Kind of entity that variables live on
     @param source_remap_var_names  names of remap variables on source mesh (MUST ALL BE DEFINED ON THE SAME Entity_kind - NODE, CELL)
     @param target_remap_var_names  names of remap variables on target mesh (MUST ALL BE DEFINED ON THE SAME Entity_kind - NODE, CELL)
+    @return status of remap (1 if successful, 0 if not)
   */
 
   template<Entity_kind onwhat>
-  void remap_distributed(std::vector<std::string> const &source_var_names,
-                         std::vector<std::string> const &target_var_names);
+  int remap_distributed(std::vector<std::string> const &source_var_names,
+                        std::vector<std::string> const &target_var_names);
 #endif
 
 
 
   /*!
     @brief Execute the remapping process
+    @param distributed   whether or not to do a parallel remap
+    @return status of remap (1 if successful, 0 if not)
   */
-  void run(bool distributed) {
+  int run(bool distributed, std::string *errmsg = nullptr) {
+    std::string message;
 
 #ifndef ENABLE_MPI
     if (distributed) {
-      std::cout << "Request is for a parallel run but Portage is compiled " <<
-          "for serial runs only\n";
-      return;
+      message = "Request is for a parallel run but Portage is compiled for serial runs only";
+      if (errmsg)
+        *errmsg = message;
+      else
+        std::cerr << message << "\n";
+      return 0;
     }
 #endif
 
     int comm_rank = 0;
 #ifdef ENABLE_MPI
-    MPI_Comm_rank(MPI_COMM_WORLD, &comm_rank);
+    if (distributed)
+      MPI_Comm_rank(MPI_COMM_WORLD, &comm_rank);
 #endif
 
     if (comm_rank == 0)
@@ -307,6 +316,8 @@ class Driver {
 #endif
         remap<NODE>(source_nodevar_names, target_nodevar_names);
     }
+
+    return 1;
   }  // run
 
  private:
@@ -337,7 +348,7 @@ template <template <int, Entity_kind, class, class> class Search,
           class TargetMesh_Wrapper,
           class TargetState_Wrapper>
 template<Entity_kind onwhat>
-void Driver<Search, Intersect, Interpolate, D,
+int Driver<Search, Intersect, Interpolate, D,
             SourceMesh_Wrapper, SourceState_Wrapper,
             TargetMesh_Wrapper, TargetState_Wrapper
             >::remap(std::vector<std::string> const &src_varnames,
@@ -347,9 +358,6 @@ void Driver<Search, Intersect, Interpolate, D,
                 "Remap implemented only for CELL and NODE variables");
 
   int comm_rank = 0;
-#ifdef ENABLE_MPI
-  MPI_Comm_rank(MPI_COMM_WORLD, &comm_rank);
-#endif
 
   int ntarget_ents_owned = target_mesh_.num_entities(onwhat, PARALLEL_OWNED);
   std::cout << "Number of target entities of kind " << onwhat <<
@@ -450,6 +458,8 @@ void Driver<Search, Intersect, Interpolate, D,
       tot_seconds_xsect << std::endl;
   std::cout << "   Interpolate Time Rank " << comm_rank << " (s): " <<
       tot_seconds_interp << std::endl;
+
+  return 1;
 }
 
 
@@ -471,11 +481,11 @@ template <template <int, Entity_kind, class, class> class Search,
           class TargetMesh_Wrapper,
           class TargetState_Wrapper>
 template<Entity_kind onwhat>
-void Driver<Search, Intersect, Interpolate, D,
-            SourceMesh_Wrapper, SourceState_Wrapper,
-            TargetMesh_Wrapper, TargetState_Wrapper
-            >::remap_distributed(std::vector<std::string> const &src_varnames,
-                                 std::vector<std::string> const &trg_varnames) {
+int Driver<Search, Intersect, Interpolate, D,
+           SourceMesh_Wrapper, SourceState_Wrapper,
+           TargetMesh_Wrapper, TargetState_Wrapper
+           >::remap_distributed(std::vector<std::string> const &src_varnames,
+                                std::vector<std::string> const &trg_varnames) {
 
   static_assert(onwhat == NODE || onwhat == CELL,
                 "Remap implemented only for CELL and NODE variables");
@@ -600,6 +610,8 @@ void Driver<Search, Intersect, Interpolate, D,
       tot_seconds_xsect << std::endl;
   std::cout << "   Interpolate Time Rank " << comm_rank << " (s): " <<
       tot_seconds_interp << std::endl;
+
+  return 1;
 }
 #endif  // ENABLE_MPI
 
