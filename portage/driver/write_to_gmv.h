@@ -19,8 +19,6 @@
 /* Do we need to write a variant of this which will work if we don't
  * have TANGRAM and multi-material state? */
 
-#ifdef HAVE_TANGRAM
-
 #include "tangram/driver/CellMatPoly.h"
 
 namespace Portage {
@@ -313,8 +311,5 @@ void write_to_gmv(Mesh_Wrapper const& mesh,
 
 
 }  // namespace Portage
-
-#endif  // HAVE_TANGRAM
-
 
 #endif  // PORTAGE_WRITE_TO_GMV_H_
