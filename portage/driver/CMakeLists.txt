@@ -8,10 +8,15 @@ Please see the license file at the root of this repository, or at:
 
 #-----------------------------------------------------------------------------~#
 
+set(headers  driver.h mmdriver.h driver_swarm.h driver_mesh_swarm_mesh.h)
+if (TANGRAM_FOUND)
+  list(APPEND headers write_to_gmv.h)
+endif (TANGRAM_FOUND)
+
 # Add header files
 set(driver_HEADERS
-    driver.h mmdriver.h driver_swarm.h driver_mesh_swarm_mesh.h
-    PARENT_SCOPE
+   ${headers}
+   PARENT_SCOPE
 )
 
 # Add source files
