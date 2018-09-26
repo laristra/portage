@@ -6,17 +6,22 @@ Please see the license file at the root of this repository, or at:
 #include "intersect_r3d.h"
 #include "gtest/gtest.h"
 #include "portage/wonton/mesh/simple_mesh/simple_mesh_wrapper.h"
+#include "portage/wonton/state/simple_state/simple_state_wrapper.h"
 
 TEST(intersectR3D, simple1) {
-  Portage::Simple_Mesh sm{0, 0, 0, 2, 2, 2, 1, 1, 1};
-  Portage::Simple_Mesh tm{1, 1, 1, 2, 2, 2, 1, 1, 1};
-  const Wonton::Simple_Mesh_Wrapper s(sm);
-  const Wonton::Simple_Mesh_Wrapper t(tm);
+  auto sourcemesh = std::make_shared<Portage::Simple_Mesh>(0, 0, 0, 2, 2, 2, 1, 1, 1);
+  auto targetmesh = std::make_shared<Portage::Simple_Mesh>(1, 1, 1, 2, 2, 2, 1, 1, 1);
+  const Wonton::Simple_Mesh_Wrapper sm(*sourcemesh);
+  const Wonton::Simple_Mesh_Wrapper tm(*targetmesh);
+
+  auto sourcestate = std::make_shared<Portage::Simple_State>(sourcemesh);
+  const Wonton::Simple_State_Wrapper ss(*sourcestate);
 
   const double eps = 1e-12;
   const Portage::IntersectR3D<Portage::Entity_kind::CELL,
                               Wonton::Simple_Mesh_Wrapper,
-                              Wonton::Simple_Mesh_Wrapper> isect{s , t};
+                              Wonton::Simple_State_Wrapper,
+                              Wonton::Simple_Mesh_Wrapper> isect{sm, ss, tm};
   std::vector<int> srccells({0});
   const std::vector<Portage::Weights_t> srcwts = isect(0, srccells);
 
@@ -36,15 +41,19 @@ TEST(intersectR3D, simple1) {
 }
 
 TEST(intersectR3D, simple2) {
-  Portage::Simple_Mesh sm{0, 0, 0, 2, 2, 2, 1, 1, 1};
-  Portage::Simple_Mesh tm{0, 0, 0, 2, 2, 2, 1, 1, 1};
-  const Wonton::Simple_Mesh_Wrapper s(sm);
-  const Wonton::Simple_Mesh_Wrapper t(tm);
+  auto sourcemesh = std::make_shared<Portage::Simple_Mesh>(0, 0, 0, 2, 2, 2, 1, 1, 1);
+  auto targetmesh = std::make_shared<Portage::Simple_Mesh>(0, 0, 0, 2, 2, 2, 1, 1, 1);
+  const Wonton::Simple_Mesh_Wrapper sm(*sourcemesh);
+  const Wonton::Simple_Mesh_Wrapper tm(*targetmesh);
+
+  auto sourcestate = std::make_shared<Portage::Simple_State>(sourcemesh);
+  const Wonton::Simple_State_Wrapper ss(*sourcestate);
 
   const double eps = 1e-12;
   const Portage::IntersectR3D<Portage::Entity_kind::CELL,
                               Wonton::Simple_Mesh_Wrapper,
-                              Wonton::Simple_Mesh_Wrapper> isect{s , t};
+                              Wonton::Simple_State_Wrapper,
+                              Wonton::Simple_Mesh_Wrapper> isect{sm, ss, tm};
   std::vector<int> srccells({0});
   const std::vector<Portage::Weights_t> srcwts = isect(0, srccells);
 
@@ -64,15 +73,19 @@ TEST(intersectR3D, simple2) {
 }
 
 TEST(intersectR3D, simple3) {
-  Portage::Simple_Mesh sm{0, 0, 0, 3, 3, 3, 1, 1, 1};
-  Portage::Simple_Mesh tm{1, 1, 1, 2, 2, 2, 1, 1, 1};
-  const Wonton::Simple_Mesh_Wrapper s(sm);
-  const Wonton::Simple_Mesh_Wrapper t(tm);
+  auto sourcemesh = std::make_shared<Portage::Simple_Mesh>(0, 0, 0, 3, 3, 3, 1, 1, 1);
+  auto targetmesh = std::make_shared<Portage::Simple_Mesh>(1, 1, 1, 2, 2, 2, 1, 1, 1);
+  const Wonton::Simple_Mesh_Wrapper sm(*sourcemesh);
+  const Wonton::Simple_Mesh_Wrapper tm(*targetmesh);
+
+  auto sourcestate = std::make_shared<Portage::Simple_State>(sourcemesh);
+  const Wonton::Simple_State_Wrapper ss(*sourcestate);
 
   const double eps = 1e-12;
   const Portage::IntersectR3D<Portage::Entity_kind::CELL,
                               Wonton::Simple_Mesh_Wrapper,
-                              Wonton::Simple_Mesh_Wrapper> isect{s , t};
+                              Wonton::Simple_State_Wrapper,
+                              Wonton::Simple_Mesh_Wrapper> isect{sm, ss, tm};
   std::vector<int> srccells({0});
   const std::vector<Portage::Weights_t> srcwts = isect(0, srccells);
 
@@ -92,15 +105,19 @@ TEST(intersectR3D, simple3) {
 }
 
 TEST(intersectR3D, simple4) {
-  Portage::Simple_Mesh sm{0, 0, 0, 2, 2, 2, 1, 1, 1};
-  Portage::Simple_Mesh tm{1, 1, 1, 3, 3, 3, 1, 1, 1};
-  const Wonton::Simple_Mesh_Wrapper s(sm);
-  const Wonton::Simple_Mesh_Wrapper t(tm);
+  auto sourcemesh = std::make_shared<Portage::Simple_Mesh>(0, 0, 0, 2, 2, 2, 1, 1, 1);
+  auto targetmesh = std::make_shared<Portage::Simple_Mesh>(1, 1, 1, 3, 3, 3, 1, 1, 1);
+  const Wonton::Simple_Mesh_Wrapper sm(*sourcemesh);
+  const Wonton::Simple_Mesh_Wrapper tm(*targetmesh);
 
+  auto sourcestate = std::make_shared<Portage::Simple_State>(sourcemesh);
+  const Wonton::Simple_State_Wrapper ss(*sourcestate);
+  
   const double eps = 1e-12;
   const Portage::IntersectR3D<Portage::Entity_kind::CELL,
                               Wonton::Simple_Mesh_Wrapper,
-                              Wonton::Simple_Mesh_Wrapper> isect{s , t};
+                              Wonton::Simple_State_Wrapper,
+                              Wonton::Simple_Mesh_Wrapper> isect{sm, ss, tm};
   std::vector<int> srccells({0});
   const std::vector<Portage::Weights_t> srcwts = isect(0, srccells);
 
@@ -120,15 +137,19 @@ TEST(intersectR3D, simple4) {
 }
 
 TEST(intersectR3D, simple5) {
-  Portage::Simple_Mesh sm{0, 0, 0, 10, 10, 10, 1, 1, 1};
-  Portage::Simple_Mesh tm{-5, -5, -5, 5, 5, 5, 1, 1, 1};
-  const Wonton::Simple_Mesh_Wrapper s(sm);
-  const Wonton::Simple_Mesh_Wrapper t(tm);
+  auto sourcemesh = std::make_shared<Portage::Simple_Mesh>(0, 0, 0, 10, 10, 10, 1, 1, 1);
+  auto targetmesh = std::make_shared<Portage::Simple_Mesh>(-5, -5, -5, 5, 5, 5, 1, 1, 1);
+  const Wonton::Simple_Mesh_Wrapper sm(*sourcemesh);
+  const Wonton::Simple_Mesh_Wrapper tm(*targetmesh);
+
+  auto sourcestate = std::make_shared<Portage::Simple_State>(sourcemesh);
+  const Wonton::Simple_State_Wrapper ss(*sourcestate);
 
   const double eps = 1e-12;
   const Portage::IntersectR3D<Portage::Entity_kind::CELL,
                               Wonton::Simple_Mesh_Wrapper,
-                              Wonton::Simple_Mesh_Wrapper> isect{s , t};
+                              Wonton::Simple_State_Wrapper,
+                              Wonton::Simple_Mesh_Wrapper> isect{sm, ss, tm};
   std::vector<int> srccells({0});
   const std::vector<Portage::Weights_t> srcwts = isect(0, srccells);
 
@@ -148,15 +169,19 @@ TEST(intersectR3D, simple5) {
 }
 
 TEST(intersectR3D, simple6) {
-  Portage::Simple_Mesh sm{0, 0, 0, 10, 10, 10, 5, 5, 5};
-  Portage::Simple_Mesh tm{0, 0, 0, 10, 10, 10, 2, 2, 2};
-  const Wonton::Simple_Mesh_Wrapper s(sm);
-  const Wonton::Simple_Mesh_Wrapper t(tm);
+  auto sourcemesh = std::make_shared<Portage::Simple_Mesh>(0, 0, 0, 10, 10, 10, 5, 5, 5);
+  auto targetmesh = std::make_shared<Portage::Simple_Mesh>(0, 0, 0, 10, 10, 10, 2, 2, 2);
+  const Wonton::Simple_Mesh_Wrapper sm(*sourcemesh);
+  const Wonton::Simple_Mesh_Wrapper tm(*targetmesh);
+
+  auto sourcestate = std::make_shared<Portage::Simple_State>(sourcemesh);
+  const Wonton::Simple_State_Wrapper ss(*sourcestate);
 
   const double eps = 1e-12;
   const Portage::IntersectR3D<Portage::Entity_kind::CELL,
                               Wonton::Simple_Mesh_Wrapper,
-                              Wonton::Simple_Mesh_Wrapper> isect{s , t};
+                              Wonton::Simple_State_Wrapper,
+                              Wonton::Simple_Mesh_Wrapper> isect{sm, ss, tm};
   std::vector<int> srccells({0});
   std::vector<Portage::Weights_t> srcwts = isect(0, srccells);
 
@@ -207,15 +232,19 @@ TEST(intersectR3D, simple6) {
 }
 
 TEST(intersectR3D, simple7) {
-  Portage::Simple_Mesh sm{-2, -2, -2, 0, 0, 0, 1, 1, 1};
-  Portage::Simple_Mesh tm{-1, -1, -1, 0, 0, 0, 1, 1, 1};
-  const Wonton::Simple_Mesh_Wrapper s(sm);
-  const Wonton::Simple_Mesh_Wrapper t(tm);
+  auto sourcemesh = std::make_shared<Portage::Simple_Mesh>(-2, -2, -2, 0, 0, 0, 1, 1, 1);
+  auto targetmesh = std::make_shared<Portage::Simple_Mesh>(-1, -1, -1, 0, 0, 0, 1, 1, 1);
+  const Wonton::Simple_Mesh_Wrapper sm(*sourcemesh);
+  const Wonton::Simple_Mesh_Wrapper tm(*targetmesh);
+
+  auto sourcestate = std::make_shared<Portage::Simple_State>(sourcemesh);
+  const Wonton::Simple_State_Wrapper ss(*sourcestate);
 
   const double eps = 1e-12;
   const Portage::IntersectR3D<Portage::Entity_kind::CELL,
                               Wonton::Simple_Mesh_Wrapper,
-                              Wonton::Simple_Mesh_Wrapper> isect{s , t};
+                              Wonton::Simple_State_Wrapper,
+                              Wonton::Simple_Mesh_Wrapper> isect{sm, ss, tm};
   std::vector<int> srccells({0});
   const std::vector<Portage::Weights_t> srcwts = isect(0, srccells);
   ASSERT_EQ(1, srcwts.size());
@@ -234,15 +263,19 @@ TEST(intersectR3D, simple7) {
 }
 
 TEST(intersectR3D, simple8) {
-  Portage::Simple_Mesh sm{-4, -4, -4, 0, 0, 0, 1, 1, 1};
-  Portage::Simple_Mesh tm{-3, -3, -3, 0, 0, 0, 1, 1, 1};
-  const Wonton::Simple_Mesh_Wrapper s(sm);
-  const Wonton::Simple_Mesh_Wrapper t(tm);
+  auto sourcemesh = std::make_shared<Portage::Simple_Mesh>(-4, -4, -4, 0, 0, 0, 1, 1, 1);
+  auto targetmesh = std::make_shared<Portage::Simple_Mesh>(-3, -3, -3, 0, 0, 0, 1, 1, 1);
+  const Wonton::Simple_Mesh_Wrapper sm(*sourcemesh);
+  const Wonton::Simple_Mesh_Wrapper tm(*targetmesh);
+
+  auto sourcestate = std::make_shared<Portage::Simple_State>(sourcemesh);
+  const Wonton::Simple_State_Wrapper ss(*sourcestate);
 
   const double eps = 1e-12;
   const Portage::IntersectR3D<Portage::Entity_kind::CELL,
                               Wonton::Simple_Mesh_Wrapper,
-                              Wonton::Simple_Mesh_Wrapper> isect{s , t};
+                              Wonton::Simple_State_Wrapper,
+                              Wonton::Simple_Mesh_Wrapper> isect{sm, ss, tm};
   std::vector<int> srccells({0});
   const std::vector<Portage::Weights_t> srcwts = isect(0, srccells);
 
@@ -261,15 +294,19 @@ TEST(intersectR3D, simple8) {
 }
 
 TEST(intersectR3D, simple9) {
-  Portage::Simple_Mesh sm{-4, -3, -2, 0, 1, 2, 1, 1, 1};
-  Portage::Simple_Mesh tm{-3, -2, -1, 0, 1, 2, 1, 1, 1};
-  const Wonton::Simple_Mesh_Wrapper s(sm);
-  const Wonton::Simple_Mesh_Wrapper t(tm);
+  auto sourcemesh = std::make_shared<Portage::Simple_Mesh>(-4, -3, -2, 0, 1, 2, 1, 1, 1);
+  auto targetmesh = std::make_shared<Portage::Simple_Mesh>(-3, -2, -1, 0, 1, 2, 1, 1, 1);
+  const Wonton::Simple_Mesh_Wrapper sm(*sourcemesh);
+  const Wonton::Simple_Mesh_Wrapper tm(*targetmesh);
+
+  auto sourcestate = std::make_shared<Portage::Simple_State>(sourcemesh);
+  const Wonton::Simple_State_Wrapper ss(*sourcestate);
 
   const double eps = 1e-12;
   const Portage::IntersectR3D<Portage::Entity_kind::CELL,
                               Wonton::Simple_Mesh_Wrapper,
-                              Wonton::Simple_Mesh_Wrapper> isect{s, t};
+                              Wonton::Simple_State_Wrapper,
+                              Wonton::Simple_Mesh_Wrapper> isect{sm, ss, tm};
   std::vector<int> srccells({0});
   const std::vector<Portage::Weights_t> srcwts = isect(0, srccells);
 
@@ -290,15 +327,19 @@ TEST(intersectR3D, simple9) {
 // in this test, the cubes don't intersect at all
 TEST(intersectR3D, cube_no_intersect) {
 
-  Portage::Simple_Mesh sm{0, 0, 0, 1, 1, 1, 1, 1, 1};
-  Portage::Simple_Mesh tm{2, 0, 0, 3, 1, 1, 1, 1, 1};
-  const Wonton::Simple_Mesh_Wrapper s(sm);
-  const Wonton::Simple_Mesh_Wrapper t(tm);
+  auto sourcemesh = std::make_shared<Portage::Simple_Mesh>(0, 0, 0, 1, 1, 1, 1, 1, 1);
+  auto targetmesh = std::make_shared<Portage::Simple_Mesh>(2, 0, 0, 3, 1, 1, 1, 1, 1);
+  const Wonton::Simple_Mesh_Wrapper sm(*sourcemesh);
+  const Wonton::Simple_Mesh_Wrapper tm(*targetmesh);
+
+  auto sourcestate = std::make_shared<Portage::Simple_State>(sourcemesh);
+  const Wonton::Simple_State_Wrapper ss(*sourcestate);
 
   const double eps = 1e-12;
   const Portage::IntersectR3D<Portage::Entity_kind::CELL,
                               Wonton::Simple_Mesh_Wrapper,
-                              Wonton::Simple_Mesh_Wrapper> isect{s, t};
+                              Wonton::Simple_State_Wrapper,
+                              Wonton::Simple_Mesh_Wrapper> isect{sm, ss, tm};
   std::vector<int> srccells({0});
   const std::vector<Portage::Weights_t> srcwts = isect(0, srccells);
 
@@ -308,15 +349,19 @@ TEST(intersectR3D, cube_no_intersect) {
 // in this test, the cubes share a face but have zero intersection volume
 TEST(intersectR3D, cube_0_1) {
 
-  Portage::Simple_Mesh sm{0, 0, 0, 1, 1, 1, 1, 1, 1};
-  Portage::Simple_Mesh tm{1, 0, 0, 2, 1, 1, 1, 1, 1};
-  const Wonton::Simple_Mesh_Wrapper s(sm);
-  const Wonton::Simple_Mesh_Wrapper t(tm);
+  auto sourcemesh = std::make_shared<Portage::Simple_Mesh>(0, 0, 0, 1, 1, 1, 1, 1, 1);
+  auto targetmesh = std::make_shared<Portage::Simple_Mesh>(1, 0, 0, 2, 1, 1, 1, 1, 1);
+  const Wonton::Simple_Mesh_Wrapper sm(*sourcemesh);
+  const Wonton::Simple_Mesh_Wrapper tm(*targetmesh);
+
+  auto sourcestate = std::make_shared<Portage::Simple_State>(sourcemesh);
+  const Wonton::Simple_State_Wrapper ss(*sourcestate);
 
   const double eps = 1e-12;
   const Portage::IntersectR3D<Portage::Entity_kind::CELL,
                               Wonton::Simple_Mesh_Wrapper,
-                              Wonton::Simple_Mesh_Wrapper> isect{s, t};
+                              Wonton::Simple_State_Wrapper,
+                              Wonton::Simple_Mesh_Wrapper> isect{sm, ss, tm};
   std::vector<int> srccells({0});
   const std::vector<Portage::Weights_t> srcwts = isect(0, srccells);
 

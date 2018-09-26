@@ -15,6 +15,9 @@ set(search_HEADERS
     search_simple_points.h
     search_points_by_cells.h
     kdtree.h
+    pile.hh
+    lretypes.hh
+    pairs.hh
     BoundBox.h
     PARENT_SCOPE
 )

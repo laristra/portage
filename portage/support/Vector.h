@@ -17,8 +17,8 @@ Please see the license file at the root of this repository, or at:
 // Modified for Portage by: Rao Garimella, rao@lanl.gov                      //
 ///////////////////////////////////////////////////////////////////////////////
 
-#ifndef SRC_SUPPORT_VECTOR_H_
-#define SRC_SUPPORT_VECTOR_H_
+#ifndef PORTAGE_SUPPORT_VECTOR_H_
+#define PORTAGE_SUPPORT_VECTOR_H_
 
 #include <math.h>
 #include <assert.h>

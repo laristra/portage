@@ -14,19 +14,20 @@ Please see the license file at the root of this repository, or at:
 #include "portage/support/Point.h"
 #include "portage/support/weight.h"
 #include "portage/support/basis.h"
+#include "portage/support/operator.h"
 #include "portage/swarm/swarm.h"
 #include "portage/support/Matrix.h"
 
 namespace Portage {
 namespace Meshfree {
 
-using std::vector;
 using std::shared_ptr;
 
 /// Different kinds of estimates to do
 enum EstimateType {
   KernelDensity,
-  LocalRegression
+  LocalRegression,
+  OperatorRegression
 };
 
 /// Denote which points smoothing length is centered on
@@ -56,7 +57,7 @@ class Accumulate {
    * @param estimate what type of estimate to do: currently kernel density or local regression
    * @param center where the smoothing paramaters are attached: Gather->target, Scatter->source
    * @param kernels kernel specifiers
-   * @param geometries geometry specifiers
+   * @param geometries geometry specifiers for weight functions
    * @param smoothing smoothing lengths (or bandwidths)
    * 
    * The parameters @code kernels@endcode, @code geometries@endcode and @code smoothing@endcode 
@@ -71,8 +72,12 @@ class Accumulate {
       WeightCenter center,
       vector<Weight::Kernel> const& kernels,
       vector<Weight::Geometry> const& geometries,
-      vector<vector<vector<double>>> const& smoothing,
-      Basis::Type basis):
+      vector<std::vector<std::vector<double>>> const& smoothing,
+      Basis::Type basis,
+      Operator::Type operator_spec = Operator::LastOperator,
+      vector<Operator::Domain> const& operator_domain = vector<Operator::Domain>(0),
+      vector<std::vector<Point<dim>>> const& operator_data=
+      vector<std::vector<Point<dim>>>(0,std::vector<Point<dim>>(0))):
    source_(source),
    target_(target),
    estimate_(estimate),
@@ -80,18 +85,25 @@ class Accumulate {
    kernels_(kernels),
    geometries_(geometries),
    smoothing_(smoothing),
-   basis_(basis)
+   basis_(basis),
+   operator_spec_(operator_spec),
+   operator_domain_(operator_domain),
+   operator_data_(operator_data)
   {
     // check sizes of inputs are consistent
     size_t n_particles;
     if (center == Gather) {
       n_particles = target_.num_owned_particles();
-    } else if (center == Scatter) {
-      n_particles = source_.num_owned_particles();
+    } else if (center == Scatter) {//this should be all source particles instead of only the owned ones.
+      n_particles = source_.num_particles();
     }
     assert(n_particles == kernels_.size());
     assert(n_particles == geometries_.size());
     assert(n_particles == smoothing_.size());
+    if (operator_spec_ != Operator::LastOperator) {
+      assert(operator_data_.size() == target_.num_owned_particles());
+      assert(operator_domain_.size() == target_.num_owned_particles());
+    }
   }
 
   /** 
@@ -130,20 +142,21 @@ class Accumulate {
    * The return matrix is of size n x m  where n is the length of source_particles, 
    * and m is the size of the basis. 
    */
-  vector<Weights_t>
-  operator() (size_t const particleB, vector<unsigned int> const& source_particles) {
-    vector<Weights_t> result;
+  std::vector<Weights_t>
+  operator() (size_t const particleB, std::vector<unsigned int> const& source_particles) {
+    std::vector<Weights_t> result;
     result.reserve(source_particles.size());
     
     switch (estimate_) {
       case KernelDensity:  {
         for (auto const& particleA : source_particles) {
           double weight_val = weight(particleA, particleB);
-          vector<double> pair_result(1, weight_val);
+	  std::vector<double> pair_result(1, weight_val);
           result.emplace_back(particleA, pair_result);
         }
         break;
       }
+      case OperatorRegression:
       case LocalRegression: {
         size_t nbasis = Basis::function_size<dim>(basis_);
         Point<dim> x = target_.get_particle_coordinates(particleB);
@@ -155,7 +168,7 @@ class Accumulate {
         }
 
         // Calculate weights and moment matrix (P*W*transpose(P))
-        vector<double> weight_val(source_particles.size());
+	std::vector<double> weight_val(source_particles.size());
         Matrix moment(nbasis,nbasis,0.);
         size_t iA = 0;
 	if (not zilchit) {
@@ -175,9 +188,9 @@ class Accumulate {
         // Calculate inverse(P*W*transpose(P))*P*W
         iA = 0;
         for (auto const& particleA : source_particles) {
-          vector<double> pair_result(nbasis);
+	  std::vector<double> pair_result(nbasis);
           Point<dim> y = source_.get_particle_coordinates(particleA);
-          vector<double> basis = Basis::shift<dim>(basis_,x,y);
+	  std::vector<double> basis = Basis::shift<dim>(basis_,x,y);
 
           // recast as a Portage::Matrix
           Matrix basis_matrix(nbasis,1);
@@ -195,12 +208,31 @@ class Accumulate {
 	    for (size_t i=0; i<nbasis; i++) pair_result[i] = 0.;
 	  }
 
+	  // If an operator is being applied, adjust final weights. 
+	  if (estimate_ == OperatorRegression) {
+	    auto ijet = Basis::inverse_jet<dim>(basis_, x);
+	    std::vector<std::vector<double>> basisop;
+	    Operator::apply<dim>(operator_spec_, basis_, operator_domain_[particleB], 
+				 operator_data_[particleB], basisop);
+	    size_t opsize = Operator::size_info(operator_spec_, basis_, 
+                                                operator_domain_[particleB])[0];
+	    std::vector<double> operator_result(opsize, 0.);
+	    for (int j=0; j<opsize; j++) {
+	      for (int k=0; k<nbasis; k++) {
+		for (int m=0; m<nbasis; m++) {
+		  operator_result[j] += pair_result[k]*ijet[k][m]*basisop[m][j];
+		}
+	      }
+	    }
+	    for (int j=0; j<nbasis; j++) pair_result[j] = operator_result[j];
+	  }
           result.emplace_back(particleA, pair_result);
           iA++;
         }
-        break;
+	break;
       }
-      default:  assert(false);
+      default:  // invalid estimate
+	assert(false);
     }
     return result;
   }
@@ -212,8 +244,11 @@ class Accumulate {
   WeightCenter center_;
   vector<Weight::Kernel> const& kernels_;
   vector<Weight::Geometry> const& geometries_;
-  vector<vector<vector<double>>> const& smoothing_;
+  vector<std::vector<std::vector<double>>> const& smoothing_;
   Basis::Type basis_;
+  Operator::Type operator_spec_;
+  vector<Operator::Domain> operator_domain_;
+  vector<std::vector<Point<dim>>> operator_data_;
 };
 
 }}

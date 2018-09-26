@@ -6,8 +6,8 @@ Please see the license file at the root of this repository, or at:
 
 
 
-#ifndef SRC_LS_FITS_H_
-#define SRC_LS_FITS_H_
+#ifndef PORTAGE_LS_FITS_H_
+#define PORTAGE_LS_FITS_H_
 
 #include <algorithm>
 #include <stdexcept>

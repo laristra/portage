@@ -26,6 +26,7 @@ Please see the license file at the root of this repository, or at:
 #include "portage/interpolate/interpolate_2nd_order.h"
 #include "portage/wonton/mesh/flat/flat_mesh_wrapper.h"
 #include "portage/wonton/state/flat/flat_state_wrapper.h"
+#include "portage/intersect/dummy_interface_reconstructor.h"
 
 #ifdef ENABLE_MPI
 #include "portage/distributed/mpi_bounding_boxes.h"
@@ -71,8 +72,12 @@ using namespace Wonton;
   manager implementation that provides certain functionality.
 */
 template <template <int, Entity_kind, class, class> class Search,
-          template <Entity_kind, class, class> class Intersect,
-          template<int, Entity_kind, class, class, class> class Interpolate,
+          template <Entity_kind, class, class, class,
+          template<class, int, class, class> class,
+          class, class> class Intersect,
+          template<int, Entity_kind, class, class, class, 
+          template<class, int, class, class> class,
+          class, class> class Interpolate,
           int D,
           class SourceMesh_Wrapper,
           class SourceState_Wrapper,
@@ -209,10 +214,11 @@ class Driver {
     @tparam entity_kind  Kind of entity that variables live on
     @param source_remap_var_names  names of remap variables on source mesh (MUST ALL BE DEFINED ON THE SAME Entity_kind - NODE, CELL)
     @param target_remap_var_names  names of remap variables on target mesh (MUST ALL BE DEFINED ON THE SAME Entity_kind - NODE, CELL)
+    @return status of remap (1 if successful, 0 if not)
   */
 
   template<Entity_kind onwhat>
-  void remap(std::vector<std::string> const &source_var_names,
+  int remap(std::vector<std::string> const &source_var_names,
              std::vector<std::string> const &target_var_names);
 
 #ifdef ENABLE_MPI
@@ -221,31 +227,39 @@ class Driver {
     @tparam entity_kind  Kind of entity that variables live on
     @param source_remap_var_names  names of remap variables on source mesh (MUST ALL BE DEFINED ON THE SAME Entity_kind - NODE, CELL)
     @param target_remap_var_names  names of remap variables on target mesh (MUST ALL BE DEFINED ON THE SAME Entity_kind - NODE, CELL)
+    @return status of remap (1 if successful, 0 if not)
   */
 
   template<Entity_kind onwhat>
-  void remap_distributed(std::vector<std::string> const &source_var_names,
-                         std::vector<std::string> const &target_var_names);
+  int remap_distributed(std::vector<std::string> const &source_var_names,
+                        std::vector<std::string> const &target_var_names);
 #endif
 
 
 
   /*!
     @brief Execute the remapping process
+    @param distributed   whether or not to do a parallel remap
+    @return status of remap (1 if successful, 0 if not)
   */
-  void run(bool distributed) {
+  int run(bool distributed, std::string *errmsg = nullptr) {
+    std::string message;
 
 #ifndef ENABLE_MPI
     if (distributed) {
-      std::cout << "Request is for a parallel run but Portage is compiled " <<
-          "for serial runs only\n";
-      return;
+      message = "Request is for a parallel run but Portage is compiled for serial runs only";
+      if (errmsg)
+        *errmsg = message;
+      else
+        std::cerr << message << "\n";
+      return 0;
     }
 #endif
 
     int comm_rank = 0;
 #ifdef ENABLE_MPI
-    MPI_Comm_rank(MPI_COMM_WORLD, &comm_rank);
+    if (distributed)
+      MPI_Comm_rank(MPI_COMM_WORLD, &comm_rank);
 #endif
 
     if (comm_rank == 0)
@@ -302,6 +316,8 @@ class Driver {
 #endif
         remap<NODE>(source_nodevar_names, target_nodevar_names);
     }
+
+    return 1;
   }  // run
 
  private:
@@ -320,15 +336,19 @@ class Driver {
 // Serial remap or Distributed remap with no redistributon of data
 
 template <template <int, Entity_kind, class, class> class Search,
-          template <Entity_kind, class, class> class Intersect,
-          template<int, Entity_kind, class, class, class> class Interpolate,
+          template <Entity_kind, class, class, class,
+          template<class, int, class, class> class,
+          class, class> class Intersect,
+          template<int, Entity_kind, class, class, class,
+          template<class, int, class, class> class,
+          class, class> class Interpolate,
           int D,
           class SourceMesh_Wrapper,
           class SourceState_Wrapper,
           class TargetMesh_Wrapper,
           class TargetState_Wrapper>
 template<Entity_kind onwhat>
-void Driver<Search, Intersect, Interpolate, D,
+int Driver<Search, Intersect, Interpolate, D,
             SourceMesh_Wrapper, SourceState_Wrapper,
             TargetMesh_Wrapper, TargetState_Wrapper
             >::remap(std::vector<std::string> const &src_varnames,
@@ -338,9 +358,6 @@ void Driver<Search, Intersect, Interpolate, D,
                 "Remap implemented only for CELL and NODE variables");
 
   int comm_rank = 0;
-#ifdef ENABLE_MPI
-  MPI_Comm_rank(MPI_COMM_WORLD, &comm_rank);
-#endif
 
   int ntarget_ents_owned = target_mesh_.num_entities(onwhat, PARALLEL_OWNED);
   std::cout << "Number of target entities of kind " << onwhat <<
@@ -377,8 +394,9 @@ void Driver<Search, Intersect, Interpolate, D,
   gettimeofday(&begin_timeval, 0);
 
   // Get an instance of the desired intersect algorithm type
-  const Intersect<onwhat, SourceMesh_Wrapper, TargetMesh_Wrapper>
-      intersect(source_mesh_, target_mesh_);
+  const Intersect<onwhat, SourceMesh_Wrapper, SourceState_Wrapper,
+                  TargetMesh_Wrapper, DummyInterfaceReconstructor, void, void>
+      intersect(source_mesh_, source_state_, target_mesh_);
 
   // For each cell in the target mesh get a list of candidate-weight
   // pairings (in a traditional mesh, not particle mesh, the weights
@@ -409,7 +427,7 @@ void Driver<Search, Intersect, Interpolate, D,
 
   // Get an instance of the desired interpolate algorithm type
   Interpolate<D, onwhat, SourceMesh_Wrapper, TargetMesh_Wrapper,
-              SourceState_Wrapper>
+              SourceState_Wrapper, DummyInterfaceReconstructor, void, void>
       interpolate(source_mesh_, target_mesh_, source_state_);
 
   for (int i = 0; i < nvars; ++i) {
@@ -417,7 +435,7 @@ void Driver<Search, Intersect, Interpolate, D,
                                            limiters_[i]);
 
     double *target_field_raw = nullptr;
-    target_state_.get_data(onwhat, trg_varnames[i], &target_field_raw);
+    target_state_.mesh_get_data(onwhat, trg_varnames[i], &target_field_raw);
     Portage::pointer<double> target_field(target_field_raw);
 
     Portage::transform(target_mesh_.begin(onwhat, PARALLEL_OWNED),
@@ -440,6 +458,8 @@ void Driver<Search, Intersect, Interpolate, D,
       tot_seconds_xsect << std::endl;
   std::cout << "   Interpolate Time Rank " << comm_rank << " (s): " <<
       tot_seconds_interp << std::endl;
+
+  return 1;
 }
 
 
@@ -449,19 +469,23 @@ void Driver<Search, Intersect, Interpolate, D,
 // Distributed Remap with redistribution of mesh and data
 
 template <template <int, Entity_kind, class, class> class Search,
-          template <Entity_kind, class, class> class Intersect,
-          template<int, Entity_kind, class, class, class> class Interpolate,
+          template <Entity_kind, class, class, class,
+          template<class, int, class, class> class,
+          class, class> class Intersect,
+          template<int, Entity_kind, class, class, class,
+          template<class, int, class, class> class,
+          class, class> class Interpolate,
           int D,
           class SourceMesh_Wrapper,
           class SourceState_Wrapper,
           class TargetMesh_Wrapper,
           class TargetState_Wrapper>
 template<Entity_kind onwhat>
-void Driver<Search, Intersect, Interpolate, D,
-            SourceMesh_Wrapper, SourceState_Wrapper,
-            TargetMesh_Wrapper, TargetState_Wrapper
-            >::remap_distributed(std::vector<std::string> const &src_varnames,
-                                 std::vector<std::string> const &trg_varnames) {
+int Driver<Search, Intersect, Interpolate, D,
+           SourceMesh_Wrapper, SourceState_Wrapper,
+           TargetMesh_Wrapper, TargetState_Wrapper
+           >::remap_distributed(std::vector<std::string> const &src_varnames,
+                                std::vector<std::string> const &trg_varnames) {
 
   static_assert(onwhat == NODE || onwhat == CELL,
                 "Remap implemented only for CELL and NODE variables");
@@ -522,8 +546,9 @@ void Driver<Search, Intersect, Interpolate, D,
   gettimeofday(&begin_timeval, 0);
 
   // Get an instance of the desired intersect algorithm type
-  const Intersect<onwhat, Flat_Mesh_Wrapper<>, TargetMesh_Wrapper>
-      intersect(source_mesh_flat, target_mesh_);
+  const Intersect<onwhat, Flat_Mesh_Wrapper<>, Flat_State_Wrapper<>,
+                  TargetMesh_Wrapper, DummyInterfaceReconstructor, void, void>
+      intersect(source_mesh_flat, source_state_flat, target_mesh_);
 
   // For each cell in the target mesh get a list of candidate-weight
   // pairings (in a traditional mesh, not particle mesh, the weights
@@ -554,7 +579,7 @@ void Driver<Search, Intersect, Interpolate, D,
 
   // Get an instance of the desired interpolate algorithm type
   Interpolate<D, onwhat, Flat_Mesh_Wrapper<>, TargetMesh_Wrapper,
-              Flat_State_Wrapper<>>
+              Flat_State_Wrapper<>, DummyInterfaceReconstructor, void, void>
       interpolate(source_mesh_flat, target_mesh_, source_state_flat);
 
   for (int i = 0; i < nvars; ++i) {
@@ -562,7 +587,7 @@ void Driver<Search, Intersect, Interpolate, D,
                                            limiters_[i]);
 
     double *target_field_raw = nullptr;
-    target_state_.get_data(onwhat, trg_varnames[i], &target_field_raw);
+    target_state_.mesh_get_data(onwhat, trg_varnames[i], &target_field_raw);
     Portage::pointer<double> target_field(target_field_raw);
 
     Portage::transform(target_mesh_.begin(onwhat, PARALLEL_OWNED),
@@ -585,6 +610,8 @@ void Driver<Search, Intersect, Interpolate, D,
       tot_seconds_xsect << std::endl;
   std::cout << "   Interpolate Time Rank " << comm_rank << " (s): " <<
       tot_seconds_interp << std::endl;
+
+  return 1;
 }
 #endif  // ENABLE_MPI
 
