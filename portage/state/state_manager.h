@@ -7,6 +7,7 @@ Please see the license file at the root of this repository, or at:
 #ifndef SRC_STATE_STATE_MANAGER_H_
 #define SRC_STATE_STATE_MANAGER_H_
 
+#include <cassert>
 #include <string>
 #include <iostream>
 #include <unordered_map>
