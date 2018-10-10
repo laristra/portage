@@ -19,10 +19,9 @@ Please see the license file at the root of this repository, or at:
 #endif
 
 #include "portage/support/portage.h"
-#include "portage/driver/driver.h"
+#include "portage/driver/mmdriver.h"
 #include "portage/driver/driver_mesh_swarm_mesh.h"
 #include "portage/simple_mesh/simple_mesh.h"
-#include "portage/simple_mesh/simple_state.h"
 #include "portage/intersect/intersect_r2d.h"
 #include "portage/intersect/intersect_r3d.h"
 #include "portage/interpolate/interpolate_1st_order.h"
@@ -32,7 +31,7 @@ Please see the license file at the root of this repository, or at:
 #include "portage/estimate/estimate.h"
 #include "portage/support/Point.h"
 #include "portage/wonton/mesh/simple_mesh/simple_mesh_wrapper.h"
-#include "portage/wonton/state/simple_state/simple_state_wrapper.h"
+#include "portage/wonton/state/simple_state/simple_state_mm_wrapper.h"
 #include "portage/wonton/mesh/jali/jali_mesh_wrapper.h"
 #include "portage/wonton/state/jali/jali_state_wrapper.h"
 #include "Mesh.hh"
@@ -127,16 +126,13 @@ protected:
   //Source and target meshes
   std::shared_ptr<Portage::Simple_Mesh> sourceMesh;
   std::shared_ptr<Portage::Simple_Mesh> targetMesh;
-  //Source and target mesh state
-  Portage::Simple_State sourceState;
-  Portage::Simple_State targetState;
-  Portage::Simple_State targetState2;
   // Wrappers for interfacing with the underlying mesh data structures
   Wonton::Simple_Mesh_Wrapper sourceMeshWrapper;
   Wonton::Simple_Mesh_Wrapper targetMeshWrapper;
-  Wonton::Simple_State_Wrapper sourceStateWrapper;
-  Wonton::Simple_State_Wrapper targetStateWrapper;
-  Wonton::Simple_State_Wrapper targetStateWrapper2;
+  //Source and target mesh state
+  Wonton::Simple_State_Wrapper<Wonton::Simple_Mesh_Wrapper> sourceStateWrapper;
+  Wonton::Simple_State_Wrapper<Wonton::Simple_Mesh_Wrapper> targetStateWrapper;
+  Wonton::Simple_State_Wrapper<Wonton::Simple_Mesh_Wrapper> targetStateWrapper2;
   // run parameters
   Controls<3> controls_;
 
@@ -188,30 +184,36 @@ public:
       sourceMeshWrapper.cell_centroid(c, &cen);
       sourceData[c] = field_func<3>(controls_.example, cen);
     }
-    Portage::Simple_State::vec &sourceVec(sourceState.add("celldata",
-                                                          Portage::Entity_kind::CELL, &(sourceData[0])));
+    sourceStateWrapper.add(std::make_shared<Portage::StateVectorUni<>>(
+    	"celldata", Portage::Entity_kind::CELL, sourceData)
+    );
     
     for (unsigned int c = 0; c < nsrcnodes; ++c) {
       Portage::Point<Dimension> cen;
       sourceMesh->node_get_coordinates(c, &cen);
       sourceDataNode[c] = field_func<3>(controls_.example, cen);
     }
-    Portage::Simple_State::vec &sourceVecNode(sourceState.add("nodedata",
-      Portage::Entity_kind::NODE, &(sourceDataNode[0])));
+    sourceStateWrapper.add(std::make_shared<Portage::StateVectorUni<>>(
+    	"nodedata", Portage::Entity_kind::NODE, sourceDataNode));
 
     //Build the target state storage
     const int ntarcells = targetMeshWrapper.num_owned_cells();
     const int ntarnodes = targetMeshWrapper.num_owned_nodes();
     std::vector<double> targetData(ntarcells), targetData2(ntarcells);
     std::vector<double> targetDataNode(ntarnodes), targetData2Node(ntarnodes);
-    Portage::Simple_State::vec &targetVec(targetState.add("celldata",
-      Portage::Entity_kind::CELL, &(targetData[0])));
-    Portage::Simple_State::vec &targetVec2(targetState2.add("celldata",
-      Portage::Entity_kind::CELL, &(targetData2[0])));
-    Portage::Simple_State::vec &targetVecNode(targetState.add("nodedata",
-      Portage::Entity_kind::NODE, &(targetDataNode[0])));
-    Portage::Simple_State::vec &targetVec2Node(targetState2.add("nodedata",
-      Portage::Entity_kind::NODE, &(targetData2Node[0])));
+    targetStateWrapper.add(std::make_shared<Portage::StateVectorUni<>>(
+    	"celldata", Portage::Entity_kind::CELL, targetData)
+    );
+    targetStateWrapper.add(std::make_shared<Portage::StateVectorUni<>>(
+    	"nodedata", Portage::Entity_kind::NODE, targetDataNode)
+    );
+
+    targetStateWrapper2.add(std::make_shared<Portage::StateVectorUni<>>(
+    	"celldata", Portage::Entity_kind::CELL, targetData2)
+    );
+    targetStateWrapper2.add(std::make_shared<Portage::StateVectorUni<>>(
+    	"nodedata", Portage::Entity_kind::NODE, targetData2Node)
+    );
 
     // Register the variable name and interpolation order with the driver
     std::vector<std::string> remap_fields;
@@ -237,12 +239,12 @@ public:
     }
 
     // Build the mesh-mesh driver data for this mesh type
-    Portage::Driver<Portage::SearchKDTree,
+    Portage::MMDriver<Portage::SearchKDTree,
                     Intersect,
                     Interpolate,
                     Dimension,
-                    Wonton::Simple_Mesh_Wrapper, Wonton::Simple_State_Wrapper,
-                    Wonton::Simple_Mesh_Wrapper, Wonton::Simple_State_Wrapper>
+                    Wonton::Simple_Mesh_Wrapper, Wonton::Simple_State_Wrapper<Wonton::Simple_Mesh_Wrapper>,
+                    Wonton::Simple_Mesh_Wrapper, Wonton::Simple_State_Wrapper<Wonton::Simple_Mesh_Wrapper>>
       driver(sourceMeshWrapper, sourceStateWrapper,
              targetMeshWrapper, targetStateWrapper);
     driver.set_remap_var_names(remap_fields);
@@ -255,8 +257,8 @@ public:
       Portage::Meshfree::Accumulate,
       Portage::Meshfree::Estimate,
       Dimension,
-      Wonton::Simple_Mesh_Wrapper, Wonton::Simple_State_Wrapper,
-      Wonton::Simple_Mesh_Wrapper, Wonton::Simple_State_Wrapper
+      Wonton::Simple_Mesh_Wrapper, Wonton::Simple_State_Wrapper<Wonton::Simple_Mesh_Wrapper>,
+      Wonton::Simple_Mesh_Wrapper, Wonton::Simple_State_Wrapper<Wonton::Simple_Mesh_Wrapper>
       >
       msmdriver(sourceMeshWrapper, sourceStateWrapper,
                 targetMeshWrapper, targetStateWrapper2,
@@ -273,10 +275,10 @@ public:
     double stdval, err;
     double totmerr=0., totserr=0., totint=0.;
 
-    Portage::Simple_State::vec &cellvecout(targetState.get("celldata", Portage::CELL));
-    Portage::Simple_State::vec &cellvecout2(targetState2.get("celldata", Portage::CELL));
-    Portage::Simple_State::vec &nodevecout(targetState.get("nodedata", Portage::NODE));
-    Portage::Simple_State::vec &nodevecout2(targetState2.get("nodedata", Portage::NODE));
+    auto& cellvecout = std::static_pointer_cast<Portage::StateVectorUni<>>(targetStateWrapper.get("celldata"))->get_data();
+    auto& cellvecout2 = std::static_pointer_cast<Portage::StateVectorUni<>>(targetStateWrapper2.get("celldata"))->get_data();
+    auto& nodevecout = std::static_pointer_cast<Portage::StateVectorUni<>>(targetStateWrapper.get("nodedata"))->get_data();
+    auto& nodevecout2 = std::static_pointer_cast<Portage::StateVectorUni<>>(targetStateWrapper2.get("nodedata"))->get_data();
 
     if (controls_.domeshmesh) {
       if (controls_.print_detail == 1) {
@@ -384,10 +386,9 @@ public:
   //Constructor
   runMSM(Controls<3> controls, std::shared_ptr<Portage::Simple_Mesh> s,std::shared_ptr<Portage::Simple_Mesh> t) :
     sourceMesh(s), targetMesh(t), 
-    sourceState(sourceMesh), targetState(targetMesh), targetState2(targetMesh),
     sourceMeshWrapper(*sourceMesh), targetMeshWrapper(*targetMesh),
-    sourceStateWrapper(sourceState), targetStateWrapper(targetState),
-    targetStateWrapper2(targetState2),
+    sourceStateWrapper(sourceMeshWrapper), targetStateWrapper(targetMeshWrapper),
+    targetStateWrapper2(targetMeshWrapper),
     controls_(controls)
   {}
 };
@@ -506,7 +507,7 @@ protected:
     }
 
     // Build the mesh-mesh driver data for this mesh type
-    Portage::Driver<Portage::SearchKDTree,
+    Portage::MMDriver<Portage::SearchKDTree,
                     Intersect,
                     Interpolate,
                     Dimension,

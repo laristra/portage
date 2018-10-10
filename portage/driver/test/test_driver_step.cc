@@ -11,7 +11,7 @@ Please see the license file at the root of this repository, or at:
 #include "gtest/gtest.h"
 #include "mpi.h"
 
-#include "portage/driver/driver.h"
+#include "portage/driver/mmdriver.h"
 #include "portage/wonton/mesh/jali/jali_mesh_wrapper.h"
 #include "portage/wonton/state/jali/jali_state_wrapper.h"
 #include "portage/interpolate/interpolate_1st_order.h"

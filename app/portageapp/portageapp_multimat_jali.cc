@@ -184,16 +184,7 @@ int main(int argc, char** argv) {
   if (argc == 1) {
     print_usage();
     MPI_Abort(MPI_COMM_WORLD, -1);
-  }
-
-  // For now we are not allowing distributed remaps because flat state wrapper
-  // is not yet capable of handling multi-material state
-
-  if (numpe > 1) {
-    std::cerr << "ERROR: portageapp_multimat_jali only runs in serial for now\n";
-    exit(-1);
-  }
-  
+  }  
 
   int nsourcecells = 0, ntargetcells = 0;  // No default
   int dim = 2;

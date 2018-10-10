@@ -8,7 +8,7 @@ Please see the license file at the root of this repository, or at:
 #include "portage/support/Point.h"
 #include "portage/distributed/mpi_bounding_boxes.h"
 #include "portage/wonton/state/jali/jali_state_wrapper.h"
-#include "portage/wonton/state/flat/flat_state_wrapper.h"
+#include "portage/wonton/state/flat/flat_state_mm_wrapper.h"
 #include "portage/wonton/mesh/flat/flat_mesh_wrapper.h"
 
 #include <iostream>
@@ -49,7 +49,7 @@ TEST(MPI_Bounding_Boxes, SimpleTest3D) {
 
   Wonton::Flat_Mesh_Wrapper<> source_mesh_flat;
   source_mesh_flat.initialize(inputMeshWrapper);
-  Wonton::Flat_State_Wrapper<> source_state_flat;
+  Wonton::Flat_State_Wrapper<Wonton::Flat_Mesh_Wrapper<>> source_state_flat(source_mesh_flat);
   source_state_flat.initialize(wrapper, {"d1", "d2"});
 
   // Target mesh
@@ -205,7 +205,7 @@ TEST(MPI_Bounding_Boxes, SimpleTest2D) {
 
   Wonton::Flat_Mesh_Wrapper<> source_mesh_flat;
   source_mesh_flat.initialize(inputMeshWrapper);
-  Wonton::Flat_State_Wrapper<> source_state_flat;
+  Wonton::Flat_State_Wrapper<Wonton::Flat_Mesh_Wrapper<>> source_state_flat(source_mesh_flat);
   source_state_flat.initialize(wrapper, {"d1", "d2"});
   // Target mesh
   std::shared_ptr<Jali::Mesh> target_mesh = mf(0.0, 0.0, 1.0, 1.0, 3, 3);

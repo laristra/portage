@@ -40,7 +40,7 @@ public:
   using flecsi_state_t = Wonton::flecsi_state_t<mesh_t>;
   //! \brief The portage driver type
   using portage_1st_order_driver_t =
-    Portage::Driver<
+    Portage::MMDriver<
       Portage::SearchKDTree,
       Portage::IntersectR3D,
       Portage::Interpolate_1stOrder,

@@ -10,7 +10,7 @@ Please see the license file at the root of this repository, or at:
 
 # Add header files
 set(driver_HEADERS
-    driver.h mmdriver.h driver_swarm.h driver_mesh_swarm_mesh.h
+    mmdriver.h driver_swarm.h driver_mesh_swarm_mesh.h
     PARENT_SCOPE
 )
 

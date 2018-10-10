@@ -22,11 +22,12 @@ Please see the license file at the root of this repository, or at:
 #endif
 
 #include "portage/support/portage.h"
-#include "portage/driver/driver.h"
+#include "portage/driver/mmdriver.h"
 #include "portage/simple_mesh/simple_mesh.h"
 #include "portage/simple_mesh/simple_state.h"
 #include "portage/wonton/mesh/simple_mesh/simple_mesh_wrapper.h"
-#include "portage/wonton/state/simple_state/simple_state_wrapper.h"
+
+#include "portage/wonton/state/simple_state/simple_state_mm_wrapper.h"
 
 using Portage::Simple_Mesh;
 using Portage::Simple_State;
@@ -178,7 +179,6 @@ int main(int argc, char** argv) {
     const int ninpcells = inputMeshWrapper.num_owned_cells();
     const int ntarcells = targetMeshWrapper.num_owned_cells();
 
-    Simple_State inputState(inputMesh);
     std::vector<double> inputData(ninpcells);
 
     Portage::Point<3> cen;
@@ -205,39 +205,38 @@ int main(int argc, char** argv) {
         throw std::runtime_error("Unknown field order!");
     }
 
-    inputState.add("celldata", Portage::Entity_kind::CELL, &(inputData[0]));
-    Simple_State_Wrapper inputStateWrapper(inputState);
+    Simple_State_Wrapper<Wonton::Simple_Mesh_Wrapper> inputStateWrapper(inputMeshWrapper);
+		inputStateWrapper.add(std::make_shared<Portage::StateVectorUni<>>("celldata", Portage::Entity_kind::CELL, inputData));
 
-    Simple_State targetState(targetMesh);
     std::vector<double> targetData(ntarcells, 0.0);
-    auto& cellvecout = targetState.add("celldata",
-                                       Portage::Entity_kind::CELL,
-                                       &(targetData[0]));
-    Simple_State_Wrapper targetStateWrapper(targetState);
+    
+    Simple_State_Wrapper<Wonton::Simple_Mesh_Wrapper> targetStateWrapper(targetMeshWrapper);
+		targetStateWrapper.add(std::make_shared<Portage::StateVectorUni<>>("celldata", Portage::Entity_kind::CELL, targetData));
+    auto& cellvecout = std::static_pointer_cast<Portage::StateVectorUni<>>(targetStateWrapper.get("celldata"))->get_data();
 
     std::vector<std::string> remap_fields;
     remap_fields.push_back("celldata");
 
     if (example.order == 1) {
-      Portage::Driver<
+      Portage::MMDriver<
         Portage::SearchKDTree,
         Portage::IntersectR3D,
         Portage::Interpolate_1stOrder,
         3,
         Simple_Mesh_Wrapper,
-        Simple_State_Wrapper>
+        Simple_State_Wrapper<Simple_Mesh_Wrapper>>
           d(inputMeshWrapper, inputStateWrapper,
             targetMeshWrapper, targetStateWrapper);
       d.set_remap_var_names(remap_fields);
       d.run(false);
     } else {  // 2nd order
-      Portage::Driver<
+      Portage::MMDriver<
         Portage::SearchKDTree,
         Portage::IntersectR3D,
         Portage::Interpolate_2ndOrder,
         3,
         Simple_Mesh_Wrapper,
-        Simple_State_Wrapper>
+        Simple_State_Wrapper<Simple_Mesh_Wrapper>>
           d(inputMeshWrapper, inputStateWrapper,
             targetMeshWrapper, targetStateWrapper);
       d.set_remap_var_names(remap_fields);
@@ -307,7 +306,6 @@ int main(int argc, char** argv) {
     const int ninpnodes = inputMeshWrapper.num_owned_nodes();
     const int ntarnodes = targetMeshWrapper.num_owned_nodes();
 
-    Simple_State inputState(inputMesh);
     std::vector<double> inputData(ninpnodes);
 
     Portage::Point<3> nodexyz;
@@ -334,38 +332,38 @@ int main(int argc, char** argv) {
         throw std::runtime_error("Unknown field_order!");
     }
 
-    inputState.add("nodedata", Portage::Entity_kind::NODE, &(inputData[0]));
-    Simple_State_Wrapper inputStateWrapper(inputState);
+   	Simple_State_Wrapper<Wonton::Simple_Mesh_Wrapper> inputStateWrapper(inputMeshWrapper);
+		inputStateWrapper.add(std::make_shared<Portage::StateVectorUni<>>("nodedata", Portage::Entity_kind::NODE, inputData));
 
-    Simple_State targetState(targetMesh);
-    auto& nodevecout = targetState.add("nodedata",
-                                       Portage::Entity_kind::NODE,
-                                       0.0);
-    Simple_State_Wrapper targetStateWrapper(targetState);
+    std::vector<double> targetData(ntarnodes, 0.0);
+    
+    Simple_State_Wrapper<Wonton::Simple_Mesh_Wrapper> targetStateWrapper(targetMeshWrapper);
+		targetStateWrapper.add(std::make_shared<Portage::StateVectorUni<>>("nodedata", Portage::Entity_kind::NODE, targetData));
+    auto& nodevecout = std::static_pointer_cast<Portage::StateVectorUni<>>(targetStateWrapper.get("nodedata"))->get_data();
 
     std::vector<std::string> remap_fields;
     remap_fields.push_back("nodedata");
 
     if (example.order == 1) {
-      Portage::Driver<
+      Portage::MMDriver<
         Portage::SearchKDTree,
         Portage::IntersectR3D,
         Portage::Interpolate_1stOrder,
         3,
         Simple_Mesh_Wrapper,
-        Simple_State_Wrapper>
+        Simple_State_Wrapper<Simple_Mesh_Wrapper>>
           d(inputMeshWrapper, inputStateWrapper,
             targetMeshWrapper, targetStateWrapper);
       d.set_remap_var_names(remap_fields);
       d.run(false);
     } else {
-      Portage::Driver<
+      Portage::MMDriver<
         Portage::SearchKDTree,
         Portage::IntersectR3D,
         Portage::Interpolate_2ndOrder,
         3,
         Simple_Mesh_Wrapper,
-        Simple_State_Wrapper>
+        Simple_State_Wrapper<Simple_Mesh_Wrapper>>
           d(inputMeshWrapper, inputStateWrapper,
             targetMeshWrapper, targetStateWrapper);
       d.set_remap_var_names(remap_fields);
