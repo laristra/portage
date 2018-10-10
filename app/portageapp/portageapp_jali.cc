@@ -672,13 +672,11 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
         *L1_error += fabs(error)*cellvol;
         *L2_error += error*error*cellvol;
       }
-      //if (numpe == 1 && ntarcells < 10) {
-      	std::printf("Rank %d\n", rank);
-        std::printf("Cell=% 4d Centroid = (% 5.3lf,% 5.3lf)", c,
-                    ccen[0], ccen[1]);
-        std::printf("  Value = % 10.6lf  L2 Err = % lf\n",
-                    cellvecout[c], error);
-      //}
+    	std::printf("Rank %d\n", rank);
+      std::printf("Cell=% 4d Centroid = (% 5.3lf,% 5.3lf)", c,
+                  ccen[0], ccen[1]);
+      std::printf("  Value = % 10.6lf  L2 Err = % lf\n",
+                  cellvecout[c], error);
     }
   } else {  // NODE error computation
     targetStateWrapper.mesh_get_data<double>(Portage::NODE, "nodedata",
@@ -736,7 +734,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
   }
   err_norm = err_l1 / err_norm;
   *L2_error = sqrt(*L2_error);
-  if (!remap_back) {//rank == 0 && 
+  if (!remap_back) {
     std::printf("\n\nL1 NORM OF ERROR (excluding boundary) = %lf\n", *L1_error);
     std::printf("L2 NORM OF ERROR (excluding boundary) = %lf\n\n", *L2_error);
     std::printf("===================================================\n");
