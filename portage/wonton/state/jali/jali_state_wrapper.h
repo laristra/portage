@@ -621,6 +621,7 @@ class Jali_State_Wrapper {
     return result;
   }
 
+
   /*!
     @brief Typedef for permutation iterator on vector of strings
    */

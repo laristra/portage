@@ -72,7 +72,7 @@ class StateManager {
 			
 		  Return the names registered by the state manager.
 		*/
-		std::vector<std::string> const get_state_keys(){
+		std::vector<std::string> const names() const {
 			std::vector<std::string> keys;
 			for (auto& kv: state_vectors_){
 				keys.push_back(kv.first);
@@ -209,11 +209,9 @@ class StateManager {
 
 		/*!
 		  @brief Return the data size .
-		  
-		  This function is currently not implemented, but is required by the API.
 		*/
 		int get_data_size(Entity_kind on_what, std::string const& name) const {
-			return 0; //fix if ever used
+			return std::static_pointer_cast<StateVectorUni<>>(state_vectors_.at(name))->get_data().size(); 
 		}
 
 
@@ -346,7 +344,7 @@ class StateManager {
 		  With this signature we only need one specialization and it is used for
 		  accessing both single material and multi material state vectors. 
 		*/
- 		template <class T>
+ 		template <typename T>
 		std::shared_ptr<T> get(std::string name){
 		
 			// create the key
@@ -376,7 +374,7 @@ class StateManager {
 		  const version of the function, that is used for read only data. 
 		  
 		*/
- 		template <class T>
+ 		template <typename T>
 		std::shared_ptr<T> get(std::string name) const{
 		
 			// create the key
@@ -544,8 +542,19 @@ class StateManager {
 		  @return					number of material in this cell
 
 		  Return the number of materials in this cell.
+		  NOTE: I don't believe this will handle the case of mixed mesh and multi-
+		  mat fields in the same problem. But for now, I just need to get past this.
+		  In interpolation the mesh fields are proxied by cell_get_num_mats=0, but
+		  in the mixed case there may be mats, but still be a mesh field.
 		*/
-  	int cell_get_num_mats(int c) const {return cell_materials_.at(c).size();}
+  	int cell_get_num_mats(int c) const {
+  		
+  		// if a mesh field problem, then there will be no cell_materials_ defined
+  		if (cell_materials_.size()==0) return 0;
+  		
+  		// a true multimaterial field
+  		return cell_materials_.at(c).size();
+  	}
 
   	
 		/*!
@@ -571,9 +580,21 @@ class StateManager {
 		  to be kept in order within a material, the reverse is not true. Reflecting
 		  the use of an unordered set for the underlying data structure, the order
 		  of the materials is not guaranteed.
+		  NOTE: I don't believe this will handle the case of mixed mesh and multi-
+		  mat fields in the same problem. But for now, I just need to get past this.
+		  In interpolation the mesh fields are proxied by cell_get_num_mats=0, but
+		  in the mixed case there may be mats, but still be a mesh field. Also anything
+		  that calls this should only do so if there are in fact materials which
+		  is not the case in intersect_r3d where it is always called if tangram is 
+		  defined.
+
 		*/
 		void cell_get_mats(int c, std::vector<int> *cellmats) const {
 		  cellmats->clear();
+		  
+		  // if a mesh field problem, then there will be no cell_materials_ defined
+		  if (cell_materials_.size()==0) return;
+		  
 		  auto& mats=cell_materials_.at(c);
 		  *cellmats = std::vector<int>{mats.begin(),mats.end()};
 		} 
@@ -742,7 +763,7 @@ class StateManager {
 		}
 
 		
-	private:
+	protected:
 	
 		// underlying mesh reference
 		const MeshWrapper& mesh_;

@@ -19,7 +19,7 @@ Please see the license file at the root of this repository, or at:
 #include "portage/wonton/state/jali/jali_state_wrapper.h"
 #include "portage/wonton/mesh/flecsi/flecsi_mesh_wrapper.h"
 #include "portage/wonton/state/flecsi/flecsi_state_wrapper.h"
-#include "portage/driver/driver.h"
+#include "portage/driver/mmdriver.h"
 
 // FleCSI includes
 #include "flecsi/specializations/burton/burton.h"

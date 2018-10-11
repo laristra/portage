@@ -29,7 +29,7 @@ Please see the license file at the root of this repository, or at:
 #include "portage/support/portage.h"
 #include "portage/support/Point.h"
 #include "portage/support/mpi_collate.h"
-#include "portage/driver/driver.h"
+#include "portage/driver/mmdriver.h"
 #include "portage/wonton/mesh/jali/jali_mesh_wrapper.h"
 #include "portage/wonton/state/jali/jali_state_wrapper.h"
 
@@ -422,7 +422,7 @@ int main(int argc, char** argv) {
 
   if (dim == 2) {
     if (interp_order == 1) {
-      Portage::Driver<
+      Portage::MMDriver<
         Portage::SearchKDTree,
         Portage::IntersectR2D,
         Portage::Interpolate_1stOrder,
@@ -434,7 +434,7 @@ int main(int argc, char** argv) {
       d.set_remap_var_names(remap_fields);
       d.run(numpe > 1);
     } else if (interp_order == 2) {
-      Portage::Driver<
+      Portage::MMDriver<
         Portage::SearchKDTree,
         Portage::IntersectR2D,
         Portage::Interpolate_2ndOrder,
@@ -448,7 +448,7 @@ int main(int argc, char** argv) {
     }
   } else {
     if (interp_order == 1) {
-      Portage::Driver<
+      Portage::MMDriver<
         Portage::SearchKDTree,
         Portage::IntersectR3D,
         Portage::Interpolate_1stOrder,
@@ -460,7 +460,7 @@ int main(int argc, char** argv) {
       d.set_remap_var_names(remap_fields);
       d.run(numpe > 1);
     } else {
-      Portage::Driver<
+      Portage::MMDriver<
         Portage::SearchKDTree,
         Portage::IntersectR3D,
         Portage::Interpolate_2ndOrder,
