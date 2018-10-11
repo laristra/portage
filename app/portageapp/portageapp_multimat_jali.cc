@@ -158,8 +158,8 @@ template<class MeshWrapper>
 class interface_reconstructor_factory<2, MeshWrapper>{
  public:
   interface_reconstructor_factory(MeshWrapper const& mesh,
-                                  Tangram::IterativeMethodTolerances_t tol) :
-      mesh_(mesh), tols_(tol) {};
+                                  std::vector<Tangram::IterativeMethodTolerances_t> tols) :
+      mesh_(mesh), tols_(tols) {};
 
   auto operator()() -> decltype(auto) {
     return std::make_shared<Tangram::Driver<Tangram::XMOF2D_Wrapper, 2,
@@ -168,15 +168,15 @@ class interface_reconstructor_factory<2, MeshWrapper>{
 
  private:
   MeshWrapper const& mesh_;
-  Tangram::IterativeMethodTolerances_t tols_;
+  std::vector<Tangram::IterativeMethodTolerances_t> tols_;
 };
 
 template<class MeshWrapper>
 class interface_reconstructor_factory<3, MeshWrapper>{
  public:
   interface_reconstructor_factory(MeshWrapper const& mesh,
-                                  Tangram::IterativeMethodTolerances_t tol) :
-      mesh_(mesh), tols_(tol) {};
+                                  std::vector<Tangram::IterativeMethodTolerances_t> tols) :
+      mesh_(mesh), tols_(tols) {};
 
   auto operator()() -> decltype(auto) {
     return std::make_shared<Tangram::Driver<Tangram::MOF, 3, MeshWrapper,
@@ -186,7 +186,7 @@ class interface_reconstructor_factory<3, MeshWrapper>{
 
  private:
   MeshWrapper const& mesh_;
-  Tangram::IterativeMethodTolerances_t tols_;
+  std::vector<Tangram::IterativeMethodTolerances_t> tols_;
 };
 
 // Forward declaration of function to run remap on two meshes and
@@ -629,8 +629,8 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
 
   // Perform interface reconstruction
 
-  Tangram::IterativeMethodTolerances_t tol{1000, 1e-15, 1e-15};
-  interface_reconstructor_factory<dim, Wonton::Jali_Mesh_Wrapper> source_IRFactory(sourceMeshWrapper, tol);
+  std::vector<Tangram::IterativeMethodTolerances_t> tols(2,{1000, 1e-15, 1e-15});
+  interface_reconstructor_factory<dim, Wonton::Jali_Mesh_Wrapper> source_IRFactory(sourceMeshWrapper, tols);
   auto source_interface_reconstructor = source_IRFactory();
 
   // convert from Portage point to Tangram point (will go away when we
@@ -833,7 +833,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
 
 
   interface_reconstructor_factory<dim, Wonton::Jali_Mesh_Wrapper>
-      target_IRFactory(targetMeshWrapper, tol);
+      target_IRFactory(targetMeshWrapper, tols);
   auto target_interface_reconstructor = target_IRFactory();
 
   // convert from Portage point to Tangram point (Will go away when we
