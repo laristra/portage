@@ -167,8 +167,8 @@ Execute the following from the portage root directory:
 # machine=sn-fey
 . /usr/share/lmod/lmod/init/sh
 module load intel/17.0.4 openmpi/2.1.2 cmake
-JALI_INSTALL_PREFIX=/usr/projects/ngc/private/jali/0.9.8-intel-17.0.4-openmpi-2.1.2
-TANGRAM_INSTALL_PREFIX=/usr/projects/ngc/private/tangram/475b813919f-intel-17.0.4-openmpi-2.1.2
+JALI_INSTALL_PREFIX=/usr/projects/ngc/private/jali/1.0.0-intel-17.0.4-openmpi-2.1.2
+TANGRAM_INSTALL_PREFIX=/usr/projects/ngc/private/tangram/0.9.0-intel-17.0.4-openmpi-2.1.2
 XMOF2D_INSTALL_PREFIX=/usr/projects/ngc/private/xmof2d/0.9-intel-17.0.4
 LAPACKE_DIR=/usr/projects/ngc/private/lapack/3.8.0-patched-intel-17.0.4
 mkdir build
@@ -196,8 +196,8 @@ Thrust and TCMalloc in your build.  The cmake command for this is:
 # machine=sn-fey::thrust
 . /usr/share/lmod/lmod/init/sh
 module load intel/17.0.4 openmpi/2.1.2 cmake
-JALI_INSTALL_PREFIX=/usr/projects/ngc/private/jali/0.9.8-intel-17.0.4-openmpi-2.1.2
-TANGRAM_INSTALL_PREFIX=/usr/projects/ngc/private/tangram/475b813919f-intel-17.0.4-openmpi-2.1.2
+JALI_INSTALL_PREFIX=/usr/projects/ngc/private/jali/1.0.0-intel-17.0.4-openmpi-2.1.2
+TANGRAM_INSTALL_PREFIX=/usr/projects/ngc/private/tangram/0.9.0-intel-17.0.4-openmpi-2.1.2
 XMOF2D_INSTALL_PREFIX=/usr/projects/ngc/private/xmof2d/0.9-intel-17.0.4-openmpi-2.1.2
 LAPACKE_DIR=/usr/projects/ngc/private/lapack/3.8.0-patched-intel-17.0.4
 mkdir build-thrust
@@ -231,7 +231,7 @@ export MODULEPATH=""
 . /opt/local/packages/Modules/default/init/sh
 module load intel/18.0.1 openmpi/2.1.2 cmake
 JALI_INSTALL_PREFIX=/usr/local/codes/ngc/private/jali/1.0.0-intel-18.0.1-openmpi-2.1.2
-TANGRAM_INSTALL_PREFIX=/usr/local/codes/ngc/private/tangram/77c86b58974-intel-18.0.1-openmpi-2.1.2
+TANGRAM_INSTALL_PREFIX=/usr/local/codes/ngc/private/tangram/0.9.0-intel-18.0.1-openmpi-2.1.2
 XMOF2D_INSTALL_PREFIX=/usr/local/codes/ngc/private/xmof2d/529f2dcdbe4-intel-18.0.1
 LAPACKE_DIR=/usr/local/codes/ngc/private/lapack/3.8.0-patched-intel-18.0.1/
 LAPACKE_INCLUDE_DIR=$LAPACKE_DIR/include
