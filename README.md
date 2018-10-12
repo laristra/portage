@@ -265,7 +265,7 @@ export MODULEPATH=""
 module load gcc/6.4.0 openmpi/2.1.2 cmake
 FLECSI_INSTALL_PREFIX=/usr/local/codes/ngc/private/flecsi/374b56b-gcc-6.4.0
 FLECSISP_INSTALL_PREFIX=/usr/local/codes/ngc/private/flecsi-sp/e78c594-gcc-6.4.0
-TANGRAM_INSTALL_PREFIX=/usr/local/codes/ngc/private/tangram/77c86b58974-gcc-6.4.0-openmpi-2.1.2
+TANGRAM_INSTALL_PREFIX=/usr/local/codes/ngc/private/tangram/0.9.0-gcc-6.4.0-openmpi-2.1.2
 XMOF2D_INSTALL_PREFIX=/usr/local/codes/ngc/private/xmof2d/529f2dcdbe4-gcc-6.4.0
 LAPACKE_DIR=/usr/local/codes/ngc/private/lapack/3.8.0-patched-gcc-6.4.0
 LAPACKE_INCLUDE_DIR=$LAPACKE_DIR/include
