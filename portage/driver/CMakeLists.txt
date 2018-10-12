@@ -8,7 +8,7 @@ Please see the license file at the root of this repository, or at:
 
 #-----------------------------------------------------------------------------~#
 
-set(headers  driver.h mmdriver.h driver_swarm.h driver_mesh_swarm_mesh.h)
+set(headers  mmdriver.h driver_swarm.h driver_mesh_swarm_mesh.h)
 if (TANGRAM_FOUND)
   list(APPEND headers write_to_gmv.h)
 endif (TANGRAM_FOUND)
