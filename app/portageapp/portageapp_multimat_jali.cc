@@ -44,10 +44,12 @@
 #ifdef HAVE_TANGRAM
 #include "tangram/driver/driver.h"
 #include "tangram/reconstruct/xmof2D_wrapper.h"
-#include "tangram/reconstruct/SLIC.h"
+#include "tangram/reconstruct/MOF.h"
+#include "tangram/reconstruct/VOF.h"
 #include "tangram/intersect/split_r3d.h"
-#include "tangram/driver/write_to_gmv.h"
 #endif
+
+#include "portage/driver/write_to_gmv.h"
 
 // For parsing and evaluating user defined expressions in apps
 
@@ -57,8 +59,8 @@ using Wonton::Jali_Mesh_Wrapper;
 using Portage::argsort;
 using Portage::reorder;
 
-/*! 
-  @file portageapp_jali_multimat.cc 
+/*!
+  @file portageapp_jali_multimat.cc
 
   @brief A simple application that remaps multi-material fields
   between two meshes - the meshes can be internally generated
@@ -79,7 +81,7 @@ using Portage::reorder;
 int print_usage() {
   std::cout << std::endl;
   std::cout << "Usage: portageapp " <<
-      "--dim=2|3 --nsourcecells=N --ntargetcells=M --conformal=y|n \n" << 
+      "--dim=2|3 --nsourcecells=N --ntargetcells=M --conformal=y|n \n" <<
       "--remap_order=1|2 \n" <<
       "--limiter=barth_jespersen --mesh_min=0. --mesh_max=1. \n" <<
       "--output_meshes=y|n --results_file=filename --convergence_study=NREF \n\n";
@@ -146,6 +148,47 @@ int print_usage() {
 //////////////////////////////////////////////////////////////////////
 
 
+// Generic interface reconstructor factory
+
+template<int dim, class MeshWrapper>
+class interface_reconstructor_factory {};
+  
+// Specializations
+template<class MeshWrapper>
+class interface_reconstructor_factory<2, MeshWrapper>{
+ public:
+  interface_reconstructor_factory(MeshWrapper const& mesh,
+                                  std::vector<Tangram::IterativeMethodTolerances_t> tols) :
+      mesh_(mesh), tols_(tols) {};
+
+  auto operator()() -> decltype(auto) {
+    return std::make_shared<Tangram::Driver<Tangram::XMOF2D_Wrapper, 2,
+                                            MeshWrapper>>(mesh_, tols_, true);
+  }
+
+ private:
+  MeshWrapper const& mesh_;
+  std::vector<Tangram::IterativeMethodTolerances_t> tols_;
+};
+
+template<class MeshWrapper>
+class interface_reconstructor_factory<3, MeshWrapper>{
+ public:
+  interface_reconstructor_factory(MeshWrapper const& mesh,
+                                  std::vector<Tangram::IterativeMethodTolerances_t> tols) :
+      mesh_(mesh), tols_(tols) {};
+
+  auto operator()() -> decltype(auto) {
+    return std::make_shared<Tangram::Driver<Tangram::MOF, 3, MeshWrapper,
+                                            Tangram::SplitR3D,
+                                            Tangram::ClipR3D>>(mesh_, tols_, true);
+  }
+
+ private:
+  MeshWrapper const& mesh_;
+  std::vector<Tangram::IterativeMethodTolerances_t> tols_;
+};
+
 // Forward declaration of function to run remap on two meshes and
 // return the L1 and L2 error norm in the remapped field w.r.t. to an
 // analytically imposed field. If no field was imposed, the errors are
@@ -162,6 +205,9 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
                            Jali::Entity_kind entityKind,
                            double *L1_error, double *L2_error);
 
+// Forward declaration of function to run interface reconstruction and
+// write the material polygons and their associated fields to a GMV file
+
 int main(int argc, char** argv) {
   // Pause profiling until main loop
 #ifdef ENABLE_PROFILE
@@ -169,7 +215,7 @@ int main(int argc, char** argv) {
 #endif
 
 
-  
+
   struct timeval begin, end, diff;
 
   // Initialize MPI
@@ -184,7 +230,16 @@ int main(int argc, char** argv) {
   if (argc == 1) {
     print_usage();
     MPI_Abort(MPI_COMM_WORLD, -1);
-  }  
+  }
+
+  // For now we are not allowing distributed remaps because flat state wrapper
+  // is not yet capable of handling multi-material state
+
+  if (numpe > 1) {
+    std::cerr << "ERROR: portageapp_multimat_jali only runs in serial for now\n";
+    exit(-1);
+  }
+
 
   int nsourcecells = 0, ntargetcells = 0;  // No default
   int dim = 2;
@@ -193,14 +248,14 @@ int main(int argc, char** argv) {
   std::vector<std::string> material_field_expressions;
   std::string srcfile, trgfile;  // No default
   std::string field_output_filename;  // No default;
-  
+
   int interp_order = 1;
   bool mesh_output = true;
   int n_converge = 1;
   Jali::Entity_kind entityKind = Jali::Entity_kind::CELL;
   Portage::LimiterType limiter = Portage::LimiterType::NOLIMITER;
   double srclo = 0.0, srchi = 1.0;  // bounds of generated mesh in each dir
-  
+
   // Parse the input
 
   for (int i = 1; i < argc; i++) {
@@ -210,7 +265,7 @@ int main(int argc, char** argv) {
     std::size_t keyword_end = arg.find_first_of("=");
     std::string keyword = arg.substr(keyword_beg, keyword_end-keyword_beg);
     std::string valueword = arg.substr(keyword_end+1, len-(keyword_end+1));
-    
+
     if (keyword == "dim") {
       dim = stoi(valueword);
       assert(dim == 2 || dim == 3);
@@ -357,7 +412,7 @@ int main(int argc, char** argv) {
         target_mesh = mf(trglo, trglo, trglo, trghi, trghi, trghi,
                          ntargetcells, ntargetcells, ntargetcells);
     }
-    
+
     gettimeofday(&end, 0);
     timersub(&end, &begin, &diff);
     float seconds = diff.tv_sec + 1.0E-6*diff.tv_usec;
@@ -458,7 +513,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
       sourceMeshWrapper.num_ghost_nodes();
   const int ntarnodes = targetMeshWrapper.num_owned_nodes();
 
-  
+
   // Native jali state managers for source and target
   std::shared_ptr<Jali::State> sourceState(Jali::State::create(sourceMesh));
   std::shared_ptr<Jali::State> targetState(Jali::State::create(targetMesh));
@@ -467,15 +522,15 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
   Wonton::Jali_State_Wrapper sourceStateWrapper(*sourceState);
   Wonton::Jali_State_Wrapper targetStateWrapper(*targetState);
 
-  
+
   // Read volume fraction and centroid data from file
-  
+
   int nmats;
   std::vector<int> cell_num_mats;
   std::vector<int> cell_mat_ids;  // flattened 2D array
   std::vector<double> cell_mat_volfracs;  // flattened 2D array
   std::vector<Portage::Point<dim>> cell_mat_centroids;  // flattened 2D array
-  
+
   read_material_data<Wonton::Jali_Mesh_Wrapper, dim>(sourceMeshWrapper,
                                                      material_filename,
                                                      cell_num_mats,
@@ -485,15 +540,14 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
   bool mat_centroids_given = (cell_mat_centroids.size() > 0);
 
   // Compute offsets into flattened arrays based on cell_num_mats
-  
+
   std::vector<int> offsets(nsrccells);
   offsets[0] = 0;
   for (int i = 1; i < nsrccells; i++)
     offsets[i] = offsets[i-1] + cell_num_mats[i-1];
 
-
   // Count the number of materials in the problem and gather their IDs
-  
+
   std::vector<int> mat_ids;
   nmats = 0;
   for (int c = 0; c < nsrccells; c++) {
@@ -513,7 +567,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
   }
 
   // Spit out some information for the user
-  
+
   if (rank == 0) {
     std::cout << "Source mesh has " << nsrccells << " cells\n";
     std::cout << "Target mesh has " << ntarcells << " cells\n";
@@ -532,50 +586,11 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
 
 
 
-  // Perform interface reconstruction for pretty pictures (optional)
-
-  if (dim == 2) {  // XMOF2D works only in 2D (I know, shocking!!)
-    Tangram::IterativeMethodTolerances_t tol{100, 1e-12, 1e-12};
-    auto interface_reconstructor =
-        std::make_shared<Tangram::Driver<Tangram::XMOF2D_Wrapper, 2,
-                                         Wonton::Jali_Mesh_Wrapper>>(sourceMeshWrapper, tol, true);
-
-    // convert from Portage point to Tangram point
-    int ncen = cell_mat_centroids.size();
-    std::vector<Tangram::Point<2>> Tcell_mat_centroids(ncen);
-
-    // have to do this manually because cell_mat_centroids can be
-    // Portage::Point<2> or Portage::Point<3> and due to the lack of
-    // static_if condition, the compiler thinks it may have to convert
-    // Portage::Point<3> to Tangram::Point<2>
-    
-    for (int i = 0; i < ncen; i++)
-      for (int j = 0; j < dim; j++)
-        Tcell_mat_centroids[i][j] = cell_mat_centroids[i][j];
-    
-    interface_reconstructor->set_volume_fractions(cell_num_mats,
-                                                  cell_mat_ids,
-                                                  cell_mat_volfracs,
-                                                  Tcell_mat_centroids);
-    interface_reconstructor->reconstruct();
-
-    std::vector<std::shared_ptr<Tangram::CellMatPoly<2>>> const&
-        cellmatpoly_list = interface_reconstructor->cell_matpoly_ptrs();
-
-    Tangram::write_to_gmv<Wonton::Jali_Mesh_Wrapper, 2>(sourceMeshWrapper,
-                                                          nmats,
-                                                          cell_num_mats,
-                                                          cell_mat_ids,
-                                                          cellmatpoly_list,
-                                                          "source_ir.gmv");
-  }
 
 
-
-  
   // Convert data from cell-centric to material-centric form as we
   // will need it for adding it to the state manager
-  
+
   std::vector<std::vector<int>> matcells(nmats);
   std::vector<std::vector<double>> mat_volfracs(nmats);
   std::vector<std::vector<Portage::Point<dim>>> mat_centroids(nmats);
@@ -606,30 +621,80 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
       sourceStateWrapper.mat_add_celldata("mat_centroids", m, &((mat_centroids[m])[0]));
   }
 
-  
+
   // User specified fields on source
 
   std::vector<user_field_t> mat_fields(nmats);
+
+
+  // Perform interface reconstruction
+
+  std::vector<Tangram::IterativeMethodTolerances_t> tols(2,{1000, 1e-15, 1e-15});
+  interface_reconstructor_factory<dim, Wonton::Jali_Mesh_Wrapper> source_IRFactory(sourceMeshWrapper, tols);
+  auto source_interface_reconstructor = source_IRFactory();
+
+  // convert from Portage point to Tangram point (will go away when we
+  // have Wonton:Point
+    
+  int ncen = cell_mat_centroids.size();
+  std::vector<Tangram::Point<dim>> Tcell_mat_centroids(ncen);
+  for (int i = 0; i < ncen; i++)
+    for (int j = 0; j < dim; j++)
+      Tcell_mat_centroids[i][j] = cell_mat_centroids[i][j];
+  
+  source_interface_reconstructor->set_volume_fractions(cell_num_mats,
+                                                cell_mat_ids,
+                                                cell_mat_volfracs,
+                                                Tcell_mat_centroids);
+  source_interface_reconstructor->reconstruct();
+
+
+  // Material fields are evaluated at material polygon centroids.
+  // This allows us to test for near zero error in cases where an
+  // interface reconstruction method can reconstruct the interface
+  // exactly (e.g. MOF with linear interfaces) and the remapping
+  // method can reproduce a field exactly (linear fields with a 2nd
+  // order accurate method)
+
   if (material_field_expressions.size()) {
     for (int m = 0; m < nmats; m++) {
       if (!mat_fields[m].initialize(dim, material_field_expressions[m]))
         MPI_Abort(MPI_COMM_WORLD, -1);
-      
+
       int nmatcells = matcells[m].size();
       std::vector<double> matData(nmatcells);
       for (int ic = 0; ic < nmatcells; ic++) {
         int c = matcells[m][ic];
-        matData[ic] = mat_fields[m](sourceMesh->cell_centroid(c));
+        if (cell_num_mats[c] == 1) {
+          if (cell_mat_ids[offsets[c]] == m) {
+            Portage::Point<dim> ccen;
+            sourceMeshWrapper.cell_centroid(c, &ccen);
+            matData[ic] = mat_fields[m](ccen);
+          }
+        } else {
+          Tangram::CellMatPoly<dim> const& cellmatpoly =
+              source_interface_reconstructor->cell_matpoly_data(c);
+          int nmp = cellmatpoly.num_matpolys();
+          for (int i = 0; i < nmp; i++) {
+            if (cellmatpoly.matpoly_matid(i) == m) {
+              Portage::Point<dim> mcen = cellmatpoly.matpoly_centroid(i);
+              matData[ic] = mat_fields[m](mcen);
+            }
+          }
+        }
       }
-      
+
       sourceStateWrapper.mat_add_celldata("cellmatdata", m, &(matData[0]));
     }
   }
 
 
+  std::vector<std::string> fieldnames;
+  fieldnames.push_back("cellmatdata");
+  Portage::write_to_gmv<dim>(sourceMeshWrapper, sourceStateWrapper,
+                             source_interface_reconstructor, fieldnames,
+                             "source_mm.gmv");
 
-
-  
 
   // Add the materials into the target mesh but with empty cell lists
   // The remap algorithm will figure out which cells contain which materials
@@ -651,7 +716,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
     targetStateWrapper.mat_add_celldata<double>("cellmatdata");
     remap_fields.push_back("cellmatdata");
   }
-  
+
   if (numpe > 1) MPI_Barrier(MPI_COMM_WORLD);
 
   if (dim == 2) {
@@ -697,7 +762,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
         Wonton::Jali_State_Wrapper,
         Wonton::Jali_Mesh_Wrapper,
         Wonton::Jali_State_Wrapper,
-        Tangram::SLIC, 
+        Tangram::MOF,
         Tangram::SplitR3D,
         Tangram::ClipR3D>
           driver(sourceMeshWrapper, sourceStateWrapper,
@@ -714,7 +779,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
         Wonton::Jali_State_Wrapper,
         Wonton::Jali_Mesh_Wrapper,
         Wonton::Jali_State_Wrapper,
-        Tangram::SLIC,
+        Tangram::MOF,
         Tangram::SplitR3D,
         Tangram::ClipR3D>
           driver(sourceMeshWrapper, sourceStateWrapper,
@@ -729,19 +794,19 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
 
 
   // Perform interface reconstruction on target mesh for pretty pictures
-  // (optional)
+  // and error computation of material fields
 
   offsets.resize(ntarcells);
   offsets[0] = 0;
-  for (int c = 0; c < ntarcells; c++)
-    offsets[c+1] = offsets[c] + targetStateWrapper.cell_get_num_mats(c);
+  for (int i = 1; i < ntarcells; i++)
+    offsets[i] = offsets[i-1] + targetStateWrapper.cell_get_num_mats(i-1);
   int ntotal = offsets[ntarcells-1] +
       targetStateWrapper.cell_get_num_mats(ntarcells-1);
 
   std::vector<int> target_cell_num_mats(ntarcells, 0);
   std::vector<int> target_cell_mat_ids(ntotal);
   std::vector<double> target_cell_mat_volfracs(ntotal);
-  std::vector<Tangram::Point<2>> target_cell_mat_centroids(ntotal);
+  std::vector<Tangram::Point<dim>> target_cell_mat_centroids(ntotal);
 
   for (int m = 0; m < nmats; m++) {
     std::vector<int> matcells;
@@ -760,38 +825,37 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
       int& ncmats = target_cell_num_mats[c];
       target_cell_mat_ids[offsets[c]+ncmats] = m;
       target_cell_mat_volfracs[offsets[c]+ncmats] = matvf[ic];
-      for (int i = 0; i < 2; i++)
+      for (int i = 0; i < dim; i++)
         target_cell_mat_centroids[offsets[c]+ncmats][i] = matcen[ic][i];
       ncmats++;
     }
   }
 
-  if (dim == 2) {  // XMOF2D works only in 2D (I know, shocking!!)
-    Tangram::IterativeMethodTolerances_t tol{100, 1e-12, 1e-12};
-    auto interface_reconstructor =
-        std::make_shared<Tangram::Driver<Tangram::XMOF2D_Wrapper, 2,
-                                         Wonton::Jali_Mesh_Wrapper>>(targetMeshWrapper,tol,true);
 
-    interface_reconstructor->set_volume_fractions(target_cell_num_mats,
-                                                  target_cell_mat_ids,
-                                                  target_cell_mat_volfracs,
-                                                  target_cell_mat_centroids);
-    interface_reconstructor->reconstruct();
+  interface_reconstructor_factory<dim, Wonton::Jali_Mesh_Wrapper>
+      target_IRFactory(targetMeshWrapper, tols);
+  auto target_interface_reconstructor = target_IRFactory();
 
-    std::vector<std::shared_ptr<Tangram::CellMatPoly<2>>> const&
-        cellmatpoly_list = interface_reconstructor->cell_matpoly_ptrs();
+  // convert from Portage point to Tangram point (Will go away when we
+  // have Wonton::point)
+  ncen = target_cell_mat_centroids.size();
+  Tcell_mat_centroids.resize(ncen);
 
-    Tangram::write_to_gmv<Wonton::Jali_Mesh_Wrapper, 2>(targetMeshWrapper,
-                                                        nmats,
-                                                        target_cell_num_mats,
-                                                        target_cell_mat_ids,
-                                                        cellmatpoly_list,
-                                                        "target_ir.gmv");
-  }
-
-
-
+  for (int i = 0; i < ncen; i++)
+    for (int j = 0; j < dim; j++)
+      Tcell_mat_centroids[i][j] = target_cell_mat_centroids[i][j];
   
+  target_interface_reconstructor->set_volume_fractions(target_cell_num_mats,
+                                                target_cell_mat_ids,
+                                                target_cell_mat_volfracs,
+                                                Tcell_mat_centroids);
+  target_interface_reconstructor->reconstruct();
+
+  Portage::write_to_gmv<dim>(targetMeshWrapper, targetStateWrapper,
+                             target_interface_reconstructor, fieldnames,
+                             "target_mm.gmv");
+
+
   // Compute error
 
   if (material_field_expressions.size()) {
@@ -800,27 +864,49 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
     double totvolume = 0.;
     for (int m = 0; m < nmats; m++) {
       targetStateWrapper.mat_get_celldata<double>("cellmatdata", m, &cellmatvals);
-      
+
       std::vector<int> matcells;
       targetStateWrapper.mat_get_cells(m, &matcells);
-      
+
       // Cell error computation
-      Portage::Point<dim> ccen;
       int nmatcells = matcells.size();
       for (int ic = 0; ic < nmatcells; ++ic) {
         int c = matcells[ic];
-        targetMeshWrapper.cell_centroid(c, &ccen);
-        error = mat_fields[m](ccen) - cellmatvals[ic];
-        
-        if (!targetMeshWrapper.on_exterior_boundary(Portage::Entity_kind::CELL, c)) {
-          double cellvol = targetMeshWrapper.cell_volume(c);
-          totvolume += cellvol;
-          *L1_error += fabs(error)*cellvol;
-          *L2_error += error*error*cellvol;
+        if (target_cell_num_mats[c] == 1) {
+          if (target_cell_mat_ids[offsets[c]] == m) {
+            Portage::Point<dim> ccen;
+            targetMeshWrapper.cell_centroid(c, &ccen);
+            error = mat_fields[m](ccen) - cellmatvals[ic];
+            if (fabs(error) > 1.0e-08)
+              std::cout << "Pure cell " << c << " Material " << m << " Error " << error << "\n";
+
+            double cellvol = targetMeshWrapper.cell_volume(c);
+            totvolume += cellvol;
+            *L1_error += fabs(error)*cellvol;
+            *L2_error += error*error*cellvol;
+          }
+        } else {
+          Tangram::CellMatPoly<dim> const& cellmatpoly =
+              target_interface_reconstructor->cell_matpoly_data(c);
+          int nmp = cellmatpoly.num_matpolys();
+          for (int i = 0; i < nmp; i++) {
+            if (cellmatpoly.matpoly_matid(i) == m) {
+              Portage::Point<dim> mcen = cellmatpoly.matpoly_centroid(i);
+              error = mat_fields[m](mcen) - cellmatvals[ic];
+
+              double matpolyvol = cellmatpoly.matpoly_volume(i);
+              totvolume += matpolyvol;
+              *L1_error += fabs(error)*matpolyvol;
+              *L2_error += error*error*matpolyvol;
+              break;
+            }
+          }
         }
       }
     }
   }
+
+
 
   *L2_error = sqrt(*L2_error);
   if (numpe > 1) {
@@ -873,7 +959,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
         sourceStateWrapper.mesh_add_data(Portage::CELL, varname1, &(cellvec[0]));
         sourceStateWrapper.mesh_add_data(Portage::CELL, varname2, &(cellvec_wtd[0]));
       }
-    
+
       sourceState->export_to_mesh();
       sourceMesh->write_to_exodus_file("input.exo");
     }
@@ -881,7 +967,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
     if (material_field_expressions.size() > 0) {
       // For now convert each material field into a mesh field with
       // zero values for cells that don't have the material
-      
+
       for (int m = 0; m < nmats; m++) {
         std::string varname1 = "cellmatdata_" + matnames[m];
         std::string varname2 = "cellmatdata_wtd_" + matnames[m];

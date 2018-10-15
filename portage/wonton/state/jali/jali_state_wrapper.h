@@ -146,7 +146,7 @@ class Jali_State_Wrapper {
     @brief Type of field (MESH_FIELD or MULTIMATERIAL_FIELD)
     @param onwhat    Entity_kind that field is defined on
     @param varname   Name of field
-    @return          Field type
+    @return          Field type (UNKNOWN_TYPE_FIELD is field not found)
   */
 
   Field_type field_type(Entity_kind on_what, std::string const& var_name)
@@ -164,6 +164,7 @@ class Jali_State_Wrapper {
       }
       it++;
     }
+    return Field_type::UNKNOWN_TYPE_FIELD;
   }
 
   

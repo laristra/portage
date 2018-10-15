@@ -80,10 +80,15 @@ void read_material_data(const Mesh_Wrapper& mesh,
       continue;
     }
     for (int im = 0; im < cell_num_mats[icell]; im++) {
-      double cen_x, cen_y;
+      double cen_x, cen_y, cen_z;
       os.read(reinterpret_cast<char *>(&cen_x), sizeof(double));
       os.read(reinterpret_cast<char *>(&cen_y), sizeof(double));
-      cell_mat_centroids.push_back(Portage::Point<D>(cen_x, cen_y));
+      if (D == 2)
+        cell_mat_centroids.push_back(Portage::Point<D>(cen_x, cen_y));
+      else if (D == 3) {
+        os.read(reinterpret_cast<char *>(&cen_z), sizeof(double));
+        cell_mat_centroids.push_back(Portage::Point<D>(cen_x, cen_y, cen_z));
+      }
     }
   }
   os.close();

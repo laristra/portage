@@ -189,12 +189,13 @@ void run(
   std::cout << "   Interpolation order is " << interp_order << "\n";
   if (interp_order == 2)
     std::cout << "   Limiter type is " << limiter << "\n";
-    Tangram::IterativeMethodTolerances_t tol{100, 1e-12, 1e-12};
+    std::vector<Tangram::IterativeMethodTolerances_t> tols;
+    tols.push_back({100, 1e-12, 1e-12});
     Tangram::Driver<Tangram::XMOF2D_Wrapper, 2,Wonton::Simple_Mesh_Wrapper> 
-    interface_reconstructor{source_mesh_wrapper,tol,true};
+    interface_reconstructor{source_mesh_wrapper,tols,true};
 	
-  // convert from Portage points to Tangram points
-  std::vector<Tangram::Point<2>> 
+    // convert from Portage points to Tangram points
+    std::vector<Tangram::Point<2>> 
   	Tcell_mat_centroids(cell_mat_centroids.begin(), cell_mat_centroids.end());
   	
   
@@ -452,7 +453,7 @@ void run(
   auto target_interface_reconstructor = std::make_shared<Tangram::Driver<
                                         Tangram::XMOF2D_Wrapper, 2, 
                                         Wonton::Simple_Mesh_Wrapper>>
-                                        (target_mesh_wrapper, tol, true);
+                                        (target_mesh_wrapper, tols, true);
 
   target_interface_reconstructor->set_volume_fractions(target_cell_num_mats,
                                                 target_cell_mat_ids,

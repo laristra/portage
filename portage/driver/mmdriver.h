@@ -471,14 +471,14 @@ int MMDriver<Search, Intersect, Interpolate, D,
 #ifdef HAVE_TANGRAM
   // Call interface reconstruction only if we got a method from the
   // calling app
-  Tangram::IterativeMethodTolerances_t tol{200, 1e-12, 1e-12}; 
+  std::vector<Tangram::IterativeMethodTolerances_t> tols(2, {1000, 1e-12, 1e-12}); 
  
   auto interface_reconstructor =
       std::make_shared<Tangram::Driver<InterfaceReconstructorType, D,
                                        SourceMesh_Wrapper,
                                        Matpoly_Splitter,
                                        Matpoly_Clipper>
-                       >(source_mesh_, tol, true);
+                       >(source_mesh_, tols, true);
     
   if (typeid(InterfaceReconstructorType<SourceMesh_Wrapper, D,
              Matpoly_Splitter, Matpoly_Clipper >) !=
@@ -889,14 +889,14 @@ int MMDriver<Search, Intersect, Interpolate, D,
 #ifdef HAVE_TANGRAM
   // Call interface reconstruction only if we got a method from the
   // calling app
-  Tangram::IterativeMethodTolerances_t tol{200, 1e-12, 1e-12}; 
+  std::vector<Tangram::IterativeMethodTolerances_t> tols(2, {1000, 1e-12, 1e-12}); 
  
   auto interface_reconstructor =
       std::make_shared<Tangram::Driver<InterfaceReconstructorType, D,
                                        Flat_Mesh_Wrapper<>,
                                        Matpoly_Splitter,
                                        Matpoly_Clipper>
-                       >(source_mesh_flat, tol, true);
+                       >(source_mesh_flat, tols, true);
     
   if (typeid(InterfaceReconstructorType<SourceMesh_Wrapper, D,
              Matpoly_Splitter, Matpoly_Clipper >) !=

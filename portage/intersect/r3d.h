@@ -369,7 +369,7 @@ typedef struct r3d_brep
  * of determined components.
  *
  */
-void r3d_init_brep(r3d_poly *poly, r3d_brep **brep, r3d_int *numcomponents);
+void r3d_init_brep(const r3d_poly *poly, r3d_brep **brep, r3d_int *numcomponents);
 
 
 /**
