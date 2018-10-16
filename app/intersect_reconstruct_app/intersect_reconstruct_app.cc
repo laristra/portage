@@ -5,7 +5,7 @@
 */
 
 #include <stdlib.h>
-#include "portage/wonton/mesh/jali/jali_mesh_wrapper.h"
+#include "wonton/mesh/jali/jali_mesh_wrapper.h"
 #include "tangram/driver/driver.h"
 #include "tangram/reconstruct/xmof2D_wrapper.h"
 #include "tangram/driver/write_to_gmv.h"

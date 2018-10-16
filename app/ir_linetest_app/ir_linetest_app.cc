@@ -5,7 +5,7 @@
 */
 
 #include <math.h>
-#include "portage/wonton/mesh/simple_mesh/simple_mesh_wrapper.h"
+#include "wonton/mesh/simple/simple_mesh_wrapper.h"
 #include "portage/simple_mesh/simple_mesh.h"
 #include "tangram/driver/driver.h"
 #include "tangram/reconstruct/xmof2D_wrapper.h"
