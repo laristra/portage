@@ -33,6 +33,34 @@ void load_field(std::iostream &s, std::vector<int> &gid,
   }
 }
 
+void load_gmv_field(std::iostream &s, std::vector<int> &gid,
+                    std::vector<double> &values) {
+  std::string w;
+  std::vector<std::string> words;
+  while (s >> w) {
+    words.push_back(w);
+  }
+  // extract cellmatdata assuming correct data ordering 
+  int g = -1;
+  for (auto w:words) {
+    if (g > 0) {
+      // we are done
+      if(w.compare("endvars") == 0) g = -1;
+      // create gid and read into values
+      else {
+        values.push_back(std::stod(w));
+        gid.push_back(g);
+        g++;
+      }
+    }
+    // skip one element
+    if (g == 0) g++;
+    // we hit the keyword
+    if (w.compare("cellmatdata") == 0) g = 0;
+  }
+}
+
+
 int main(int argc, char** argv) {
   if (argc < 4 || argc > 5) {
     print_usage();
@@ -47,8 +75,15 @@ int main(int argc, char** argv) {
 
   std::vector<int> gid1, gid2;
   std::vector<double> values1, values2;
-  load_field(f1, gid1, values1);
-  load_field(f2, gid2, values2);
+  std::string file_name = argv[1];
+  if (file_name.find(".gmv") != std::string::npos) {
+    load_gmv_field(f1, gid1, values1);
+    load_gmv_field(f2, gid2, values2);
+  }
+  else {
+    load_field(f1, gid1, values1);
+    load_field(f2, gid2, values2);
+  }
 
   std::cout << std::scientific;
   std::cout.precision(17);

@@ -111,3 +111,22 @@ if (ENABLE_MPI AND Jali_DIR)
   ADD_SPECIFIC_APPTEST(jali_unstruc 2d_cell_gen_r2)
   ADD_SPECIFIC_APPTEST(jali_unstruc 3d_cell_gen_r2)
 endif (ENABLE_MPI AND Jali_DIR)
+
+#multimat test
+if (Jali_DIR)
+  file(COPY portageapp_multimat_jali_unstruc_2d_cell_f1_r2.sh DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+  file(COPY gold/GOLD_multimat_jali_unstruc_2d_cell_f1_r2.gmv DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+  file(COPY ../../../test_data/reg10x10.exo
+            ../../../test_data/reg10x10.bvf
+            ../../../test_data/polymesh_10x10.exo
+       DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+  add_test(NAME portageapp_multimat_jali_unstruc_2d_cell_f1_r2
+    COMMAND ./portageapp_multimat_jali_unstruc_2d_cell_f1_r2.sh)
+  set_property(TEST portageapp_multimat_jali_unstruc_2d_cell_f1_r2
+    PROPERTY ENVIRONMENT
+    TESTAPPDIR=${CMAKE_CURRENT_BINARY_DIR}/..
+    CMPAPPDIR=${CMAKE_BINARY_DIR}/app/apptest_cmp)
+
+endif (Jali_DIR)
+
+
