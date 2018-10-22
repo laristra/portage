@@ -9,8 +9,8 @@ Please see the license file at the root of this repository, or at:
 #include "gtest/gtest.h"
 
 #include "portage/support/weight.h"
-#include "portage/support/Point.h"
-#include "portage/support/Vector.h"
+#include "portage/support/portage.h"
+
 
 using Portage::Meshfree::Weight::Geometry;
 using Portage::Meshfree::Weight::ELLIPTIC;

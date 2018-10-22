@@ -4,11 +4,11 @@ Please see the license file at the root of this repository, or at:
     https://github.com/laristra/portage/blob/master/LICENSE
 */
 #include <vector>
+#incldue <array>
 
 #include "gtest/gtest.h"
 
-#include "portage/support/Vector.h"
-#include "portage/support/Point.h"
+#include "portage/support/portage.h"
 #include "portage/support/basis.h"
 
 using Portage::Meshfree::Basis::Type;
@@ -31,7 +31,7 @@ using std::array;
 
 class BasisTest : public ::testing::Test {
  public:
-  template<size_t N1, size_t N2, size_t N3> 
+  template<size_t N1, size_t N2, size_t N3>
   array<array<double, N1>, N3> matmatmult(array<array<double, N2>, N1> mat1,
                                           array<array<double, N3>, N2> mat2) {
     array<array<double, N3>, N1> matout{0.0};
@@ -108,7 +108,7 @@ class BasisTest : public ::testing::Test {
     ASSERT_TRUE(is_identity(j_jinv, 1.0e-12));
     j_jinv = matmatmult(bjinv_x, bj_x);
     ASSERT_TRUE(is_identity(j_jinv, 1.0e-12));
-    
+
     // Check that Jinverse(x) = J(-x)
     ASSERT_TRUE(is_equal(bj_negx, bjinv_x, 1.0e-12));
 
@@ -118,10 +118,10 @@ class BasisTest : public ::testing::Test {
     array<double, Traits<type, Dim>::function_size>
         vec1 = matvecmult(bj_x, e0);
     ASSERT_TRUE(is_equal(bf_x, vec1, 1.0e-12));
-                
+
     // Check that b(y-x) = b_shifted(x,y)
     ASSERT_TRUE(is_equal(bf_shifted_xy, bf_y_minus_x, 1.0e-12));
-    
+
     // Check that b_shifted(x,y) = Jinverse(x)*b(y)
     array<double, Traits<type, Dim>::function_size>
         vec2 = matvecmult(bjinv_x, bf_y);
@@ -169,7 +169,7 @@ class BasisTest : public ::testing::Test {
     {
       auto result(Portage::Meshfree::Basis::inverse_jet<Dim>(type, x));
       auto jsize = jet_size<Dim>(type);
-      for (int i=0; i<jsize[0]; i++) 
+      for (int i=0; i<jsize[0]; i++)
 	for (int j=0; j<jsize[1]; j++) {
           ASSERT_EQ(bjinv_x[i][j], result[i][j]);
 	}
@@ -194,7 +194,7 @@ class BasisTest : public ::testing::Test {
 TEST_F(BasisTest, Unitary_1D) {
   checkBasis<Unitary, 1>();
 }
-  
+
 TEST_F(BasisTest, Unitary_2D) {
   checkBasis<Unitary, 2>();
 }
@@ -226,5 +226,3 @@ TEST_F(BasisTest, Quadratic_2D) {
 TEST_F(BasisTest, Quadratic_3D) {
   checkBasis<Quadratic, 3>();
 }
-
-
