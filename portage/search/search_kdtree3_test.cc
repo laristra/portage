@@ -5,20 +5,23 @@ Please see the license file at the root of this repository, or at:
 */
 
 
-#include "search_kdtree.h"
-
 #include <algorithm>
 
 #include "gtest/gtest.h"
 
-#include "portage/wonton/mesh/simple_mesh/simple_mesh_wrapper.h"
+// portage includes
+#include "portage/search/search_kdtree.h"
+
+// wonton includes
+#include "wonton/mesh/simple/simple_mesh.h"
+#include "wonton/mesh/simple/simple_mesh_wrapper.h"
 
 TEST(search_kdtree3, cell)
 {
     // overlay a 2x2x2 target mesh on a 3x3x3 source mesh
     // each target mesh cell gives eight candidate source cells
-    Portage::Simple_Mesh smesh{0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 3, 3, 3};
-    Portage::Simple_Mesh tmesh{0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2, 2, 2};
+    Wonton::Simple_Mesh smesh{0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 3, 3, 3};
+    Wonton::Simple_Mesh tmesh{0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2, 2, 2};
     const Wonton::Simple_Mesh_Wrapper source_mesh_wrapper(smesh);
     const Wonton::Simple_Mesh_Wrapper target_mesh_wrapper(tmesh);
 
@@ -48,6 +51,4 @@ TEST(search_kdtree3, cell)
         ASSERT_EQ(scbase + 13, candidates[7]);
     }
 
-} // TEST(search_kdtree3, cell)
-
-
+}  // TEST(search_kdtree3, cell)

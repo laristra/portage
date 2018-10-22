@@ -4,15 +4,13 @@ Please see the license file at the root of this repository, or at:
     https://github.com/laristra/portage/blob/master/LICENSE
 */
 
-#include "search_simple_points.h"
-
 #include <memory>
 #include <vector>
 
 #include "gtest/gtest.h"
 
 #include "portage/support/portage.h"
-#include "portage/support/Point.h"
+#include "portage/search/search_simple_points.h"
 #include "portage/swarm/swarm.h"
 #include "portage/accumulate/accumulate.h"
 
@@ -263,7 +261,6 @@ TEST(search_simple_points, gather_3d)
       }
     }
   }
-
-} // TEST(search_simple_points, gather_3d)
+}  // TEST(search_simple_points, gather_3d)
 
 
