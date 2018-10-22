@@ -34,7 +34,7 @@ Please see the license file at the root of this repository, or at:
 #include "wonton/mesh/simple/simple_mesh.h"
 #include "wonton/mesh/simple/simple_mesh_wrapper.h"
 #include "wonton/state/simple/simple_state.h"
-#include "wonton/state/simple/simple_state_wrapper.h"
+#include "wonton/state/simple/simple_state_mm_wrapper.h"
 #include "wonton/mesh/jali/jali_mesh_wrapper.h"
 #include "wonton/state/jali/jali_state_wrapper.h"
 

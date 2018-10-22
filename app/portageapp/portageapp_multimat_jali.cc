@@ -4,8 +4,6 @@
   https://github.com/laristra/portage/blob/master/LICENSE
 */
 
-
-
 #include <sys/time.h>
 
 #include <cstdio>
@@ -34,7 +32,6 @@
 
 
 #include "portage/support/portage.h"
-#include "portage/support/Point.h"
 #include "portage/support/mpi_collate.h"
 #include "portage/driver/mmdriver.h"
 #include "wonton/mesh/jali/jali_mesh_wrapper.h"

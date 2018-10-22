@@ -4,23 +4,32 @@ Please see the license file at the root of this repository, or at:
     https://github.com/laristra/portage/blob/master/LICENSE
 */
 
-
-
-#include "portage/distributed/mpi_bounding_boxes.h"
-#include "wonton/state/jali/jali_state_wrapper.h"
-#include "wonton/state/flat/flat_state_wrapper.h"
-#include "wonton/mesh/flat/flat_mesh_wrapper.h"
-
 #include <iostream>
+#include <memory>
+#include <vector>
+#include <algorithm>
 
 #include "gtest/gtest.h"
+
 #include "mpi.h"
 
+// portage includes
+#include "portage/support/portage.h"
+#include "portage/distributed/mpi_bounding_boxes.h"
+
+// Jali includes
 #include "Mesh.hh"
 #include "MeshFactory.hh"
 
+// wonton includes
+#include "wonton/state/jali/jali_state_wrapper.h"
+#include "wonton/state/flat/flat_state_mm_wrapper.h"
+#include "wonton/mesh/flat/flat_mesh_wrapper.h"
 #include "wonton/mesh/jali/jali_mesh_wrapper.h"
 
+
+using Portage::Entity_type::ALL;
+using Portage::Entity_kind::CELL;
 
 TEST(MPI_Bounding_Boxes, SimpleTest3D) {
 
@@ -139,7 +148,7 @@ TEST(MPI_Bounding_Boxes, SimpleTest3D) {
   for (int c=0; c<num_owned_cells; ++c) {
     // Get my 7 neighbors
     std::vector<int> myNeighbors;
-    source_mesh_flat.cell_get_node_adj_cells(c, Portage::ALL, &myNeighbors);
+    source_mesh_flat.cell_get_node_adj_cells(c, ALL, &myNeighbors);
     ASSERT_EQ(7, myNeighbors.size());
     // Convert to global IDs
     for (int n=0; n<7; ++n) myNeighbors[n] = gids[myNeighbors[n]];
@@ -153,9 +162,9 @@ TEST(MPI_Bounding_Boxes, SimpleTest3D) {
 
   // Check field values
   double* ddata1 = nullptr;
-  source_state_flat.mesh_get_data(Portage::CELL, "d1", &ddata1);
+  source_state_flat.mesh_get_data(CELL, "d1", &ddata1);
   double* ddata2 = nullptr;
-  source_state_flat.mesh_get_data(Portage::CELL, "d2", &ddata2);
+  source_state_flat.mesh_get_data(CELL, "d2", &ddata2);
   for (int c=0; c<num_owned_cells; ++c) {
     int gid = gids[c];
     int expValue1 = 10. + gid;
@@ -285,7 +294,7 @@ TEST(MPI_Bounding_Boxes, SimpleTest2D) {
   for (int c=0; c<num_owned_cells; ++c) {
     // Get my neighbors
     std::vector<int> myNeighbors;
-    source_mesh_flat.cell_get_node_adj_cells(c, Portage::ALL, &myNeighbors);
+    source_mesh_flat.cell_get_node_adj_cells(c, ALL, &myNeighbors);
     int count = myNeighbors.size();
     // Convert to global IDs
     for (int n=0; n<count; ++n) myNeighbors[n] = gids[myNeighbors[n]];
@@ -320,9 +329,9 @@ TEST(MPI_Bounding_Boxes, SimpleTest2D) {
 
   // Check field values
   double* ddata1 = nullptr;
-  source_state_flat.mesh_get_data(Portage::CELL, "d1", &ddata1);
+  source_state_flat.mesh_get_data(CELL, "d1", &ddata1);
   double* ddata2 = nullptr;
-  source_state_flat.mesh_get_data(Portage::CELL, "d2", &ddata2);
+  source_state_flat.mesh_get_data(CELL, "d2", &ddata2);
   for (int c=0; c<num_owned_cells; ++c) {
     int gid = gids[c];
     int expValue1 = 10. + gid;

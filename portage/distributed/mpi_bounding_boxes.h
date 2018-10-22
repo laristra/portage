@@ -102,7 +102,7 @@ class MPI_Bounding_Boxes {
         // ugly hack, since dim is not known at compile time
         if (dim == 3)
         {
-          Portage::Point<3> nodeCoord;
+          Point<3> nodeCoord;
           target_mesh.node_get_coordinates(n, &nodeCoord);
           for (unsigned int k=0; k<dim; ++k)
           {
@@ -114,7 +114,7 @@ class MPI_Bounding_Boxes {
         }
         else if (dim == 2)
         {
-          Portage::Point<2> nodeCoord;
+          Point<2> nodeCoord;
           target_mesh.node_get_coordinates(n, &nodeCoord);
           for (unsigned int k=0; k<dim; ++k)
           {
@@ -232,8 +232,8 @@ class MPI_Bounding_Boxes {
 
     if (dim == 2)
     {
-      std::vector<int>& sourceCellToNodeList = source_mesh_flat.get_cell_to_node_list(); 
-      std::vector<int>& sourceCellNodeOffsets = source_mesh_flat.get_cell_node_offsets(); 
+      std::vector<int>& sourceCellToNodeList = source_mesh_flat.get_cell_to_node_list();
+      std::vector<int>& sourceCellNodeOffsets = source_mesh_flat.get_cell_node_offsets();
       int sizeCellToNodeList = sourceCellToNodeList.size();
       int sizeOwnedCellToNodeList = (
           sourceNumCells == sourceNumOwnedCells ? sizeCellToNodeList :
@@ -248,8 +248,8 @@ class MPI_Bounding_Boxes {
       setInfo(&faceInfo, commSize, sendFlags,
               sourceNumFaces, sourceNumOwnedFaces);
 
-      std::vector<int>& sourceCellToFaceList = source_mesh_flat.get_cell_to_face_list(); 
-      std::vector<int>& sourceCellFaceOffsets = source_mesh_flat.get_cell_face_offsets(); 
+      std::vector<int>& sourceCellToFaceList = source_mesh_flat.get_cell_to_face_list();
+      std::vector<int>& sourceCellFaceOffsets = source_mesh_flat.get_cell_face_offsets();
       int sizeCellToFaceList = sourceCellToFaceList.size();
       int sizeOwnedCellToFaceList = (
           sourceNumCells == sourceNumOwnedCells ? sizeCellToFaceList :
@@ -258,8 +258,8 @@ class MPI_Bounding_Boxes {
       setInfo(&cellToFaceInfo, commSize, sendFlags,
               sizeCellToFaceList, sizeOwnedCellToFaceList);
 
-      std::vector<int>& sourceFaceToNodeList = source_mesh_flat.get_face_to_node_list(); 
-      std::vector<int>& sourceFaceNodeOffsets = source_mesh_flat.get_face_node_offsets(); 
+      std::vector<int>& sourceFaceToNodeList = source_mesh_flat.get_face_to_node_list();
+      std::vector<int>& sourceFaceNodeOffsets = source_mesh_flat.get_face_node_offsets();
       int sizeFaceToNodeList = sourceFaceToNodeList.size();
       int sizeOwnedFaceToNodeList = (
           sourceNumFaces == sourceNumOwnedFaces ? sizeFaceToNodeList :
@@ -296,7 +296,7 @@ class MPI_Bounding_Boxes {
 
     // SEND NODE COORDINATES
 #ifdef DEBUG_MPI
-		std::cout << std::endl << "Source node coordinates (from all received ranks):" << std::endl;
+                std::cout << std::endl << "Source node coordinates (from all received ranks):" << std::endl;
 #endif
     moveField(nodeInfo, commRank, commSize, MPI_DOUBLE, dim,
               sourceCoords, &newCoords);
@@ -305,15 +305,15 @@ class MPI_Bounding_Boxes {
       // SEND NUMBER OF NODES FOR EACH CELL
 
 #ifdef DEBUG_MPI
-			std::cout << std::endl << "Source nodes per cell:" << std::endl;
+                        std::cout << std::endl << "Source nodes per cell:" << std::endl;
 #endif
       moveField(cellInfo, commRank, commSize, MPI_INT, 1,
                 sourceNodeCounts, &newCellNodeCounts);
 
       // SEND CELL-TO-NODE MAP
-      std::vector<int>& sourceCellToNodeList = source_mesh_flat.get_cell_to_node_list(); 
+      std::vector<int>& sourceCellToNodeList = source_mesh_flat.get_cell_to_node_list();
 #ifdef DEBUG_MPI
-			std::cout << std::endl << "Source cell nodes:" << std::endl;
+                        std::cout << std::endl << "Source cell nodes:" << std::endl;
 #endif
       moveField(cellToNodeInfo, commRank, commSize, MPI_INT, 1,
                 sourceCellToNodeList, &newCellToNodeList);
@@ -323,16 +323,16 @@ class MPI_Bounding_Boxes {
     if (dim == 3)
     {
       // SEND NUMBER OF FACES FOR EACH CELL
-      std::vector<int>& sourceCellFaceCounts = source_mesh_flat.get_cell_face_counts(); 
+      std::vector<int>& sourceCellFaceCounts = source_mesh_flat.get_cell_face_counts();
 #ifdef DEBUG_MPI
-			std::cout << std::endl << "Source faces per cell:" << std::endl;
+                        std::cout << std::endl << "Source faces per cell:" << std::endl;
 #endif
       moveField(cellInfo, commRank, commSize, MPI_INT, 1,
                 sourceCellFaceCounts, &newCellFaceCounts);
 
       // SEND CELL-TO-FACE MAP
       // For this array only, pack up face IDs + dirs and send together
-      std::vector<int>& sourceCellToFaceList = source_mesh_flat.get_cell_to_face_list(); 
+      std::vector<int>& sourceCellToFaceList = source_mesh_flat.get_cell_to_face_list();
       std::vector<bool>& sourceCellToFaceDirs = source_mesh_flat.get_cell_to_face_dirs();
       int size = sourceCellToFaceList.size();
       for (unsigned int j=0; j<size; ++j)
@@ -342,11 +342,11 @@ class MPI_Bounding_Boxes {
         sourceCellToFaceList[j] = (f << 1) | dir;
       }
 #ifdef DEBUG_MPI
-			std::cout << std::endl << "Source cell faces:" << std::endl;
+                        std::cout << std::endl << "Source cell faces:" << std::endl;
 #endif
       moveField(cellToFaceInfo, commRank, commSize, MPI_INT, 1,
                 sourceCellToFaceList, &newCellToFaceList);
-      
+
       // Unpack face IDs and dirs
       for (unsigned int j=0; j<newCellToFaceList.size(); ++j)
       {
@@ -356,17 +356,17 @@ class MPI_Bounding_Boxes {
       }
 
       // SEND NUMBER OF NODES FOR EACH FACE
-      std::vector<int>& sourceFaceNodeCounts = source_mesh_flat.get_face_node_counts(); 
+      std::vector<int>& sourceFaceNodeCounts = source_mesh_flat.get_face_node_counts();
 #ifdef DEBUG_MPI
-			std::cout << std::endl << "Source nodes per face:" << std::endl;
+                        std::cout << std::endl << "Source nodes per face:" << std::endl;
 #endif
       moveField(faceInfo, commRank, commSize, MPI_INT, 1,
-                sourceFaceNodeCounts, &newFaceNodeCounts); 
+                sourceFaceNodeCounts, &newFaceNodeCounts);
 
       // SEND FACE-TO-NODE MAP
-      std::vector<int>& sourceFaceToNodeList = source_mesh_flat.get_face_to_node_list(); 
+      std::vector<int>& sourceFaceToNodeList = source_mesh_flat.get_face_to_node_list();
 #ifdef DEBUG_MPI
-			std::cout << std::endl << "Source face nodes:" << std::endl;
+                        std::cout << std::endl << "Source face nodes:" << std::endl;
 #endif
       moveField(faceToNodeInfo, commRank, commSize, MPI_INT, 1,
                 sourceFaceToNodeList, &newFaceToNodeList);
@@ -375,7 +375,7 @@ class MPI_Bounding_Boxes {
     // SEND GLOBAL CELL IDS
 
 #ifdef DEBUG_MPI
-			std::cout << std::endl << "Source global cell ids:" << std::endl;
+                        std::cout << std::endl << "Source global cell ids:" << std::endl;
 #endif
     moveField(cellInfo, commRank, commSize, MPI_INT, 1,
               sourceCellGlobalIds, &newCellGlobalIds);
@@ -383,7 +383,7 @@ class MPI_Bounding_Boxes {
     // SEND GLOBAL NODE IDS
 
 #ifdef DEBUG_MPI
-			std::cout << std::endl << "Source global node ids:" << std::endl;
+                        std::cout << std::endl << "Source global node ids:" << std::endl;
 #endif
     moveField(nodeInfo, commRank, commSize, MPI_INT, 1,
               sourceNodeGlobalIds, &newNodeGlobalIds);
@@ -393,17 +393,17 @@ class MPI_Bounding_Boxes {
     // Send and receive each field to be remapped
     for (std::string field_name : source_state_flat.names())
     {
-    	
+
       std::vector<double>& sourceField = source_state_flat.get_vector(field_name);
       int sourceFieldStride = source_state_flat.get_field_stride(field_name);
 
       // Currently only cell and node fields are supported
-      comm_info_t& info = (source_state_flat.get_entity(field_name) == NODE ?
+      comm_info_t& info = (source_state_flat.get_entity(field_name) == Entity_kind::NODE ?
                            nodeInfo : cellInfo);
       std::vector<double> newField(info.newNum);
 
 #ifdef DEBUG_MPI
-			std::cout << std::endl << "Source user field \"" << field_name << "\":" << std::endl;
+                        std::cout << std::endl << "Source user field \"" << field_name << "\":" << std::endl;
 #endif
       moveField(info, commRank, commSize,
                 MPI_DOUBLE, sourceFieldStride,
