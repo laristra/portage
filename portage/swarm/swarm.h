@@ -3,8 +3,8 @@ This file is part of the Ristra portage project.
 Please see the license file at the root of this repository, or at:
     https://github.com/laristra/portage/blob/master/LICENSE
 */
-#ifndef SWARM_H_INC_
-#define SWARM_H_INC_
+#ifndef PORTAGE_SWARM_SWARM_H_
+#define PORTAGE_SWARM_SWARM_H_
 
 #include <vector>
 #include <memory>
@@ -14,12 +14,22 @@ Please see the license file at the root of this repository, or at:
 #include <algorithm>
 #include <cstdlib>
 #include <stdexcept>
-#include <cmath>
+#include <string>
 
+// portage includes
 #include "portage/support/portage.h"
-#include "portage/support/Point.h"
+
 
 namespace Portage {
+
+using Entity_kind::NODE;
+using Entity_kind::CELL;
+using Entity_kind::PARTICLE;
+
+using Entity_type::ALL;
+using Entity_type::PARALLEL_OWNED;
+using Entity_type::PARALLEL_GHOST;
+
 namespace Meshfree {
 
 using std::string;
@@ -328,8 +338,7 @@ std::shared_ptr<Swarm<dim>> SwarmFactory(MeshWrapper &wrapper, Portage::Entity_k
   return result;
 }
 
-}
-}
+}  // namespace Meshfree
+}  // namespace Portage
 
-#endif // SWARM_H_INC_
-
+#endif  // PORTAGE_SWARM_SWARM_H_
