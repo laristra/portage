@@ -12,9 +12,9 @@ Please see the license file at the root of this repository, or at:
 #include "mpi.h"
 
 #include "portage/support/portage.h"
-#include "portage/support/Point.h"
-#include "portage/wonton/mesh/jali/jali_mesh_wrapper.h"
-#include "portage/wonton/state/jali/jali_state_wrapper.h"
+
+#include "wonton/mesh/jali/jali_mesh_wrapper.h"
+#include "wonton/state/jali/jali_state_wrapper.h"
 #include "portage/driver/mmdriver.h"
 
 #include "Mesh.hh"

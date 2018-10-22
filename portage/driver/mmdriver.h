@@ -4,8 +4,8 @@ Please see the license file at the root of this repository, or at:
     https://github.com/laristra/portage/blob/master/LICENSE
 */
 
-#ifndef PORTAGE_MMDRIVER_H_
-#define PORTAGE_MMDRIVER_H_
+#ifndef PORTAGE_DRIVER_MMDRIVER_H_
+#define PORTAGE_DRIVER_MMDRIVER_H_
 
 #include <sys/time.h>
 
@@ -24,14 +24,14 @@ Please see the license file at the root of this repository, or at:
 #endif
 
 #include "portage/support/portage.h"
-#include "portage/support/Point.h"
+
 #include "portage/search/search_kdtree.h"
 #include "portage/intersect/intersect_r2d.h"
 #include "portage/intersect/intersect_r3d.h"
 #include "portage/interpolate/interpolate_1st_order.h"
 #include "portage/interpolate/interpolate_2nd_order.h"
-#include "portage/wonton/mesh/flat/flat_mesh_wrapper.h"
-#include "portage/wonton/state/flat/flat_state_mm_wrapper.h"
+#include "wonton/mesh/flat/flat_mesh_wrapper.h"
+#include "wonton/state/flat/flat_state_wrapper.h"
 
 #ifdef ENABLE_MPI
 #include "portage/distributed/mpi_bounding_boxes.h"
@@ -82,7 +82,7 @@ using namespace Wonton;
 */
 template <template <int, Entity_kind, class, class> class Search,
           template <Entity_kind, class, class, class,
-          template <class, int, class, class> class, 
+          template <class, int, class, class> class,
           class, class> class Intersect,
           template<int, Entity_kind, class, class, class,
           template<class, int, class, class> class,
@@ -261,7 +261,7 @@ class MMDriver {
                         std::vector<std::string> const &target_matvar_names);
 #endif
 
-  
+
 
   /*!
     @brief Execute the remapping process
@@ -300,7 +300,7 @@ class MMDriver {
 
     std::vector<std::string> src_meshvar_names, src_matvar_names;
     std::vector<std::string> trg_meshvar_names, trg_matvar_names;
-    
+
 
     // -------- CELL VARIABLE REMAP ---------
     // Collect all cell based variables and remap them
@@ -328,7 +328,7 @@ class MMDriver {
 
     // ALWAYS call because we may have to remap material volume
     // fractions and centroids which are cell-based fields
-    
+
 #ifdef ENABLE_MPI
     if (distributed)
       remap_distributed<CELL>(src_meshvar_names, trg_meshvar_names,
@@ -346,15 +346,15 @@ class MMDriver {
 
     src_meshvar_names.clear(); src_matvar_names.clear();
     trg_meshvar_names.clear(); trg_matvar_names.clear();
-    
+
     for (int i = 0; i < nvars; ++i) {
       std::string& srcvarname = source_remap_var_names_[i];
       Entity_kind onwhat = source_state_.get_entity(srcvarname);
       if (onwhat == NODE) {
         std::string& trgvarname = target_remap_var_names_[i];
-        
+
         Field_type ftype = source_state_.field_type(onwhat, srcvarname);
-        
+
         if (ftype == Field_type::MESH_FIELD) {
           src_meshvar_names.push_back(srcvarname);
           trg_meshvar_names.push_back(trgvarname);
@@ -378,7 +378,7 @@ class MMDriver {
   }  // run
 
 
-  
+
  private:
   SourceMesh_Wrapper const& source_mesh_;
   TargetMesh_Wrapper const& target_mesh_;
@@ -397,7 +397,7 @@ class MMDriver {
                       std::vector<int>& cell_mat_ids,
                       std::vector<double>& cell_matvolfracs,
                       std::vector<Tangram::Point<D>>& cell_mat_centroids);
-#endif  
+#endif
 };  // class MMDriver
 
 
@@ -447,7 +447,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
   struct timeval begin_timeval, end_timeval, diff_timeval;
 
 
-  
+
   // SEARCH
 
   Portage::vector<std::vector<int>> candidates(ntarget_ents);
@@ -471,20 +471,20 @@ int MMDriver<Search, Intersect, Interpolate, D,
 #ifdef HAVE_TANGRAM
   // Call interface reconstruction only if we got a method from the
   // calling app
-  std::vector<Tangram::IterativeMethodTolerances_t> tols(2, {1000, 1e-12, 1e-12}); 
- 
+  std::vector<Tangram::IterativeMethodTolerances_t> tols(2, {1000, 1e-12, 1e-12});
+
   auto interface_reconstructor =
       std::make_shared<Tangram::Driver<InterfaceReconstructorType, D,
                                        SourceMesh_Wrapper,
                                        Matpoly_Splitter,
                                        Matpoly_Clipper>
                        >(source_mesh_, tols, true);
-    
+
   if (typeid(InterfaceReconstructorType<SourceMesh_Wrapper, D,
              Matpoly_Splitter, Matpoly_Clipper >) !=
       typeid(DummyInterfaceReconstructor<SourceMesh_Wrapper, D,
              Matpoly_Splitter, Matpoly_Clipper>)) {
-    
+
     int nsourcecells = source_mesh_.num_entities(CELL, ALL);
 
     std::vector<int> cell_num_mats;
@@ -497,7 +497,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
 
     ccc_vfcen_data(cell_num_mats, cell_mat_ids, cell_mat_volfracs,
                    cell_mat_centroids);
-      
+
     interface_reconstructor->set_volume_fractions(cell_num_mats,
                                                   cell_mat_ids,
                                                   cell_mat_volfracs,
@@ -505,13 +505,13 @@ int MMDriver<Search, Intersect, Interpolate, D,
     interface_reconstructor->reconstruct();
   }
 
-  
+
   // Make an intersector which knows about the source state (to be able
   // to query the number of materials, etc) and also knows about the
   // interface reconstructor so that it can retrieve pure material polygons
 
   Intersect<onwhat, SourceMesh_Wrapper, SourceState_Wrapper,
-            TargetMesh_Wrapper, InterfaceReconstructorType, 
+            TargetMesh_Wrapper, InterfaceReconstructorType,
             Matpoly_Splitter, Matpoly_Clipper>
       intersect(source_mesh_, source_state_, target_mesh_,
                 interface_reconstructor);
@@ -520,7 +520,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
   Interpolate<D, onwhat, SourceMesh_Wrapper, TargetMesh_Wrapper,
               SourceState_Wrapper, InterfaceReconstructorType,
               Matpoly_Splitter, Matpoly_Clipper>
-      interpolate(source_mesh_, target_mesh_, source_state_, 
+      interpolate(source_mesh_, target_mesh_, source_state_,
                   interface_reconstructor);
 #else
 
@@ -536,15 +536,15 @@ int MMDriver<Search, Intersect, Interpolate, D,
       interpolate(source_mesh_, target_mesh_, source_state_);
 #endif  // HAVE_TANGRAM
 
-  
+
   //--------------------------------------------------------------------
   // REMAP MESH FIELDS FIRST (this requires just mesh-mesh intersection)
   //--------------------------------------------------------------------
-  
+
   // INTERSECT
-  
+
   gettimeofday(&begin_timeval, 0);
-  
+
   // For each cell in the target mesh get a list of candidate-weight
   // pairings (in a traditional mesh, not particle mesh, the weights
   // are moments). Note that this candidate list is different from the
@@ -552,64 +552,64 @@ int MMDriver<Search, Intersect, Interpolate, D,
   // search candidates. Also, note that for 2nd order and higher
   // remaps, we get multiple moments (0th, 1st, etc) for each
   // target-source cell intersection
-  
+
   Portage::transform(target_mesh_.begin(onwhat, PARALLEL_OWNED),
                      target_mesh_.end(onwhat, PARALLEL_OWNED),
                      candidates.begin(),
                      source_ents_and_weights.begin(),
                      intersect);
-  
+
   gettimeofday(&end_timeval, 0);
   timersub(&end_timeval, &begin_timeval, &diff_timeval);
   tot_seconds_xsect += diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
-  
+
 
   // INTERPOLATE (one variable at a time)
 
   gettimeofday(&begin_timeval, 0);
-  
+
   int nvars = src_meshvar_names.size();
   if (comm_rank == 0)
     std::cout << "Number of mesh variables on entity kind " << onwhat <<
         " to remap is " << nvars << std::endl;
-  
+
   for (int i = 0; i < nvars; ++i) {
     interpolate.set_interpolation_variable(src_meshvar_names[i], limiters_[i]);
-    
+
     // Get a handle to a memory location where the target state
     // would like us to write this material variable into.
-    
+
     double *target_field_raw;
     target_state_.mesh_get_data(onwhat, trg_meshvar_names[i], &target_field_raw);
     assert (target_field_raw != nullptr);
-    
-    
+
+
     Portage::pointer<double> target_field(target_field_raw);
-    
+
     Portage::transform(target_mesh_.begin(onwhat, PARALLEL_OWNED),
                        target_mesh_.end(onwhat, PARALLEL_OWNED),
                        source_ents_and_weights.begin(),
                        target_field, interpolate);
   }
-  
+
   gettimeofday(&end_timeval, 0);
   timersub(&end_timeval, &begin_timeval, &diff_timeval);
   tot_seconds_interp += diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
 
 
-  
+
   //--------------------------------------------------------------------
   // REMAP MULTIMATERIAL FIELDS NEXT, ONE MATERIAL AT A TIME
   //--------------------------------------------------------------------
 
   if (onwhat != CELL) return 1;
-  
+
   // Material centric loop
 
   for (int m = 0; m < nmats; m++) {
 
     // INTERSECT
-    
+
     gettimeofday(&begin_timeval, 0);
 
     intersect.set_material(m);
@@ -629,23 +629,23 @@ int MMDriver<Search, Intersect, Interpolate, D,
     // IT CANNOT MODIFY STATE, THIS MEANS WE CANNOT STORE THE MESH-MESH
     // INTERSECTION VALUES AND REUSE THEM AS NECESSARY FOR MESH-MATERIAL
     // INTERSECTION COMPUTATIONS
-    
+
     Portage::transform(target_mesh_.begin(onwhat, PARALLEL_OWNED),
                        target_mesh_.end(onwhat, PARALLEL_OWNED),
                        candidates.begin(),
                        source_ents_and_weights.begin(),
                        intersect);
-    
+
     gettimeofday(&end_timeval, 0);
     timersub(&end_timeval, &begin_timeval, &diff_timeval);
     tot_seconds_xsect += diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
 
     // LOOK AT INTERSECTION WEIGHTS TO DETERMINE WHICH TARGET CELLS
     // WILL GET NEW MATERIALS
-    
+
     int ntargetcells = target_mesh_.num_entities(CELL, ALL);
     std::vector<int> matcellstgt;
-    
+
     for (int c = 0; c < ntargetcells; c++) {
       std::vector<Weights_t> const& cell_sources_and_weights =
           source_ents_and_weights[c];
@@ -661,13 +661,13 @@ int MMDriver<Search, Intersect, Interpolate, D,
         }
       }
     }
-    
+
     // If any processor is adding this material to the target state,
     // add it on all the processors
-    
+
     int nmatcells = matcellstgt.size();
     int nmatcells_global = nmatcells;
-    
+
     if (nmatcells_global) {
       int nmatstrg = target_state_.num_materials();
       bool found = false;
@@ -694,7 +694,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
         // AND THE CELLS IN THE MATERIAL AND ACTUALLY ALLOCATE SPACE
         // FOR FIELD VALUES OF A MATERIAL IN A MULTI-MATERIAL FIELD
         // WHEN mat_get_celldata IS INVOKED.
-        
+
         target_state_.add_material(source_state_.material_name(m), matcellstgt);
       }
     }
@@ -705,11 +705,11 @@ int MMDriver<Search, Intersect, Interpolate, D,
     //
     // Also make list of sources/weights only for target cells that are
     // getting this material - Can we avoid the copy?
-    
+
     std::vector<double> mat_volfracs(nmatcells);
     std::vector<Point<D>> mat_centroids(nmatcells);
     std::vector<std::vector<Weights_t>> mat_sources_and_weights(nmatcells);
-        
+
     for (int ic = 0; ic < nmatcells; ic++) {
       int c = matcellstgt[ic];
       double matvol = 0.0;
@@ -823,7 +823,7 @@ template<Entity_kind onwhat>
 int MMDriver<Search, Intersect, Interpolate, D,
              SourceMesh_Wrapper, SourceState_Wrapper,
              TargetMesh_Wrapper, TargetState_Wrapper,
-             InterfaceReconstructorType, Matpoly_Splitter, 
+             InterfaceReconstructorType, Matpoly_Splitter,
              Matpoly_Clipper
              >::remap_distributed(std::vector<std::string> const &src_meshvar_names,
                                   std::vector<std::string> const &trg_meshvar_names,
@@ -889,20 +889,20 @@ int MMDriver<Search, Intersect, Interpolate, D,
 #ifdef HAVE_TANGRAM
   // Call interface reconstruction only if we got a method from the
   // calling app
-  std::vector<Tangram::IterativeMethodTolerances_t> tols(2, {1000, 1e-12, 1e-12}); 
- 
+  std::vector<Tangram::IterativeMethodTolerances_t> tols(2, {1000, 1e-12, 1e-12});
+
   auto interface_reconstructor =
       std::make_shared<Tangram::Driver<InterfaceReconstructorType, D,
                                        Flat_Mesh_Wrapper<>,
                                        Matpoly_Splitter,
                                        Matpoly_Clipper>
                        >(source_mesh_flat, tols, true);
-    
+
   if (typeid(InterfaceReconstructorType<SourceMesh_Wrapper, D,
              Matpoly_Splitter, Matpoly_Clipper >) !=
       typeid(DummyInterfaceReconstructor<SourceMesh_Wrapper, D,
              Matpoly_Splitter, Matpoly_Clipper>)) {
-    
+
     int nsourcecells = source_mesh_.num_entities(CELL, ALL);
 
     std::vector<int> cell_num_mats;
@@ -915,7 +915,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
 
     ccc_vfcen_data(cell_num_mats, cell_mat_ids, cell_mat_volfracs,
                    cell_mat_centroids);
-          
+
     interface_reconstructor->set_volume_fractions(cell_num_mats,
                                                   cell_mat_ids,
                                                   cell_mat_volfracs,
@@ -923,7 +923,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
     interface_reconstructor->reconstruct();
   }
 
-  
+
   // Make an intersector which knows about the source state (to be able
   // to query the number of materials, etc) and also knows about the
   // interface reconstructor so that it can retrieve pure material polygons
@@ -939,7 +939,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
   Interpolate<D, onwhat, Flat_Mesh_Wrapper<>, TargetMesh_Wrapper,
               Flat_State_Wrapper<Flat_Mesh_Wrapper<>>, InterfaceReconstructorType,
               Matpoly_Splitter, Matpoly_Clipper>
-      interpolate(source_mesh_flat, target_mesh_, source_state_flat, 
+      interpolate(source_mesh_flat, target_mesh_, source_state_flat,
                   interface_reconstructor);
 #else
 
@@ -955,15 +955,15 @@ int MMDriver<Search, Intersect, Interpolate, D,
       interpolate(source_mesh_flat, target_mesh_, source_state_flat);
 #endif  // HAVE_TANGRAM
 
-  
+
   //--------------------------------------------------------------------
   // REMAP MESH FIELDS FIRST (this requires just mesh-mesh intersection)
   //--------------------------------------------------------------------
-  
+
   // INTERSECT
-  
+
   gettimeofday(&begin_timeval, 0);
-  
+
   // For each cell in the target mesh get a list of candidate-weight
   // pairings (in a traditional mesh, not particle mesh, the weights
   // are moments). Note that this candidate list is different from the
@@ -971,17 +971,17 @@ int MMDriver<Search, Intersect, Interpolate, D,
   // search candidates. Also, note that for 2nd order and higher
   // remaps, we get multiple moments (0th, 1st, etc) for each
   // target-source cell intersection
-  
+
   Portage::transform(target_mesh_.begin(onwhat, PARALLEL_OWNED),
                      target_mesh_.end(onwhat, PARALLEL_OWNED),
                      candidates.begin(),
                      source_ents_and_weights.begin(),
                      intersect);
-  
+
   gettimeofday(&end_timeval, 0);
   timersub(&end_timeval, &begin_timeval, &diff_timeval);
   tot_seconds_xsect += diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
-  
+
 
   // INTERPOLATE (one variable at a time)
 
@@ -994,16 +994,16 @@ int MMDriver<Search, Intersect, Interpolate, D,
 
   for (int i = 0; i < nvars; ++i) {
     interpolate.set_interpolation_variable(src_meshvar_names[i], limiters_[i]);
-    
+
     // Get a handle to a memory location where the target state
     // would like us to write this material variable into. If it is
     // NULL, we allocate it ourself
-    
+
     double *target_field_raw;
     target_state_.mesh_get_data(onwhat, trg_meshvar_names[i], &target_field_raw);
     assert (target_field_raw != nullptr);
-    
-    
+
+
     Portage::pointer<double> target_field(target_field_raw);
 
     Portage::transform(target_mesh_.begin(onwhat, PARALLEL_OWNED),
@@ -1011,25 +1011,25 @@ int MMDriver<Search, Intersect, Interpolate, D,
                        source_ents_and_weights.begin(),
                        target_field, interpolate);
   }
-  
+
   gettimeofday(&end_timeval, 0);
   timersub(&end_timeval, &begin_timeval, &diff_timeval);
   tot_seconds_interp += diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
 
 
-  
+
   //--------------------------------------------------------------------
   // REMAP MULTIMATERIAL FIELDS NEXT, ONE MATERIAL AT A TIME
   //--------------------------------------------------------------------
 
   if (onwhat != CELL) return 1;
-  
+
   // Material centric loop
 
   for (int m = 0; m < nmats; m++) {
 
     // INTERSECT
-    
+
     gettimeofday(&begin_timeval, 0);
 
     intersect.set_material(m);
@@ -1049,23 +1049,23 @@ int MMDriver<Search, Intersect, Interpolate, D,
     // IT CANNOT MODIFY STATE, THIS MEANS WE CANNOT STORE THE MESH-MESH
     // INTERSECTION VALUES AND REUSE THEM AS NECESSARY FOR MESH-MATERIAL
     // INTERSECTION COMPUTATIONS
-    
+
     Portage::transform(target_mesh_.begin(onwhat, PARALLEL_OWNED),
                        target_mesh_.end(onwhat, PARALLEL_OWNED),
                        candidates.begin(),
                        source_ents_and_weights.begin(),
                        intersect);
-    
+
     gettimeofday(&end_timeval, 0);
     timersub(&end_timeval, &begin_timeval, &diff_timeval);
     tot_seconds_xsect += diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
 
     // LOOK AT INTERSECTION WEIGHTS TO DETERMINE WHICH TARGET CELLS
     // WILL GET NEW MATERIALS
-    
+
     int ntargetcells = target_mesh_.num_entities(CELL, ALL);
     std::vector<int> matcellstgt;
-    
+
     for (int c = 0; c < ntargetcells; c++) {
       std::vector<Weights_t> const& cell_sources_and_weights =
           source_ents_and_weights[c];
@@ -1081,10 +1081,10 @@ int MMDriver<Search, Intersect, Interpolate, D,
         }
       }
     }
-    
+
     // If any processor is adding this material to the target state,
     // add it on all the processors
-    
+
     int nmatcells = matcellstgt.size();
     int nmatcells_global = 0;
     #ifdef ENABLE_MPI
@@ -1093,7 +1093,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
     #else
     nmatcells_global=nmatcells;
     #endif
-    
+
     if (nmatcells_global) {
       int nmatstrg = target_state_.num_materials();
       bool found = false;
@@ -1120,7 +1120,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
         // AND THE CELLS IN THE MATERIAL AND ACTUALLY ALLOCATE SPACE
         // FOR FIELD VALUES OF A MATERIAL IN A MULTI-MATERIAL FIELD
         // WHEN mat_get_celldata IS INVOKED.
-        
+
         target_state_.add_material(source_state_.material_name(m), matcellstgt);
       }
     }
@@ -1131,11 +1131,11 @@ int MMDriver<Search, Intersect, Interpolate, D,
     //
     // Also make list of sources/weights only for target cells that are
     // getting this material - Can we avoid the copy?
-    
+
     std::vector<double> mat_volfracs(nmatcells);
     std::vector<Point<D>> mat_centroids(nmatcells);
     std::vector<std::vector<Weights_t>> mat_sources_and_weights(nmatcells);
-        
+
     for (int ic = 0; ic < nmatcells; ic++) {
       int c = matcellstgt[ic];
       double matvol = 0.0;
@@ -1233,7 +1233,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
 
 template <template <int, Entity_kind, class, class> class Search,
           template <Entity_kind, class, class, class,
-          template <class, int, class, class> class, 
+          template <class, int, class, class> class,
           class, class> class Intersect,
           template<int, Entity_kind, class, class, class,
           template<class, int, class, class> class,
@@ -1250,24 +1250,24 @@ void
 MMDriver<Search, Intersect, Interpolate, D,
          SourceMesh_Wrapper, SourceState_Wrapper,
          TargetMesh_Wrapper, TargetState_Wrapper,
-         InterfaceReconstructorType, Matpoly_Splitter, 
+         InterfaceReconstructorType, Matpoly_Splitter,
          Matpoly_Clipper
          >::ccc_vfcen_data(std::vector<int>& cell_num_mats,
                            std::vector<int>& cell_mat_ids,
                            std::vector<double>& cell_mat_volfracs,
                            std::vector<Tangram::Point<D>>& cell_mat_centroids) {
-  
+
   int nsourcecells = source_mesh_.num_entities(CELL, ALL);
-  
+
   int nmats = source_state_.num_materials();
   cell_num_mats.assign(nsourcecells, 0);
-  
+
   // First build full arrays (as if every cell had every material)
-  
+
   std::vector<int> cell_mat_ids_full(nsourcecells*nmats, -1);
   std::vector<double> cell_mat_volfracs_full(nsourcecells*nmats, 0.0);
   std::vector<Tangram::Point<D>> cell_mat_centroids_full(nsourcecells*nmats);
-  
+
   int nvals = 0;
   for (int m = 0; m < nmats; m++) {
     std::vector<int> cellids;
@@ -1279,27 +1279,27 @@ MMDriver<Search, Intersect, Interpolate, D,
       cell_num_mats[c]++;
     }
     nvals += cellids.size();
-    
+
     double const * matfracptr;
     source_state_.mat_get_celldata("mat_volfracs", m, &matfracptr);
     for (int ic = 0; ic < cellids.size(); ic++)
       cell_mat_volfracs_full[cellids[ic]*nmats+m] = matfracptr[ic];
-    
+
     Portage::Point<D> const *matcenvec;
     source_state_.mat_get_celldata("mat_centroids", m, &matcenvec);
     for (int ic = 0; ic < cellids.size(); ic++)
       cell_mat_centroids_full[cellids[ic]*nmats+m] = matcenvec[ic];
   }
-  
+
   // At this point nvals contains the number of non-zero volume
   // fraction entries in the full array. Use this and knowledge of
   // number of materials in each cell to compress the data into
   // linear arrays
-  
+
   cell_mat_ids.resize(nvals);
   cell_mat_volfracs.resize(nvals);
   cell_mat_centroids.resize(nvals);
-  
+
   int idx = 0;
   for (int c = 0; c < nsourcecells; c++) {
     for (int m = 0; m < cell_num_mats[c]; m++) {
@@ -1312,8 +1312,8 @@ MMDriver<Search, Intersect, Interpolate, D,
   }
 }
 
-#endif // HAVE_TANGRAM
+#endif  // HAVE_TANGRAM
 
 }  // namespace Portage
 
-#endif  // PORTAGE_DRIVER_H_
+#endif  // PORTAGE_DRIVER_MMDRIVER_H_

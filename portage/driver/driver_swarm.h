@@ -18,7 +18,7 @@ Please see the license file at the root of this repository, or at:
 #include <type_traits>
 
 #include "portage/support/portage.h"
-#include "portage/support/Point.h"
+
 #include "portage/support/basis.h"
 #include "portage/support/weight.h"
 #include "portage/support/operator.h"

@@ -21,8 +21,8 @@ Please see the license file at the root of this repository, or at:
 #include "tangram/driver/write_to_gmv.h"
 
 #include "portage/driver/mmdriver.h"
-#include "portage/wonton/mesh/jali/jali_mesh_wrapper.h"
-#include "portage/wonton/state/jali/jali_state_wrapper.h"
+#include "wonton/mesh/jali/jali_mesh_wrapper.h"
+#include "wonton/state/jali/jali_state_wrapper.h"
 #include "portage/search/search_kdtree.h"
 #include "portage/intersect/intersect_r2d.h"
 #include "portage/intersect/intersect_r3d.h"

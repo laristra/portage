@@ -14,7 +14,6 @@
 #include <string>
 
 #include "portage/support/portage.h"
-#include "portage/support/Point.h"
 
 /* Do we need to write a variant of this which will work if we don't
  * have TANGRAM and multi-material state? */
@@ -28,7 +27,7 @@ namespace Portage {
   reconstruction and any associated material fields
 
   @tparam D   Dimension of problem
-  @tparam Mesh_Wrapper   A Mesh class 
+  @tparam Mesh_Wrapper   A Mesh class
   @tparam State_Wrapper  A State Manager class
   @tparam InterfaceReconstructor  An Interface Reconstruction class
 
