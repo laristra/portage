@@ -18,7 +18,7 @@
 
 // wonton includes
 #include "wonton/state/simple/simple_state.h"
-#include "wonton/state/simple/simple_state_wrapper.h"
+#include "wonton/state/simple/simple_state_mm_wrapper.h"
 #include "wonton/state/state_vector_uni.h"
 #include "wonton/mesh/simple/simple_mesh.h"
 #include "wonton/mesh/simple/simple_mesh_wrapper.h"
@@ -158,18 +158,18 @@ TEST(SwarmState, Simple_State_Wrapper) {
   for (int i=0; i < nnodes; i++) {
     nfield1[i] = 2.;
   }
-  
+
   sstate.add(std::make_shared<Wonton::StateVectorUni<>>(
     	"cf1", Portage::Entity_kind::CELL, cfield1)
     );
   sstate.add(std::make_shared<Wonton::StateVectorUni<>>(
     	"nf1", Portage::Entity_kind::NODE, nfield1)
     );
-  
-  
+
+
   // create swarm state from mesh state wrapper for cells
   {
-    std::shared_ptr<Portage::Meshfree::SwarmState<3>> state_ptr = 
+    std::shared_ptr<Portage::Meshfree::SwarmState<3>> state_ptr =
       Portage::Meshfree::SwarmStateFactory<3,Wonton::Simple_State_Wrapper<Wonton::Simple_Mesh_Wrapper>>
       (sstate, Portage::CELL);
     Portage::Meshfree::SwarmState<3> &state(*state_ptr);
@@ -191,8 +191,8 @@ TEST(SwarmState, Simple_State_Wrapper) {
   }
 
   // create swarm state from mesh state wrapper for nodes
-  {  
-    std::shared_ptr<Portage::Meshfree::SwarmState<3>> state_ptr = 
+  {
+    std::shared_ptr<Portage::Meshfree::SwarmState<3>> state_ptr =
        Portage::Meshfree::SwarmStateFactory<3,Wonton::Simple_State_Wrapper<Wonton::Simple_Mesh_Wrapper>>
       (sstate, Portage::NODE);
     Portage::Meshfree::SwarmState<3> &state(*state_ptr);

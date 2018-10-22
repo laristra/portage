@@ -31,7 +31,7 @@ Please see the license file at the root of this repository, or at:
 #include "portage/interpolate/interpolate_1st_order.h"
 #include "portage/interpolate/interpolate_2nd_order.h"
 #include "wonton/mesh/flat/flat_mesh_wrapper.h"
-#include "wonton/state/flat/flat_state_wrapper.h"
+#include "wonton/state/flat/flat_state_mm_wrapper.h"
 
 #ifdef ENABLE_MPI
 #include "portage/distributed/mpi_bounding_boxes.h"

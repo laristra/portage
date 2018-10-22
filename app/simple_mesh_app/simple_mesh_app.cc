@@ -4,9 +4,6 @@ Please see the license file at the root of this repository, or at:
     https://github.com/laristra/portage/blob/master/LICENSE
 */
 
-
-
-
 #include <vector>
 #include <string>
 #include <iostream>
@@ -30,8 +27,7 @@ Please see the license file at the root of this repository, or at:
 #include "wonton/mesh/simple/simple_mesh_wrapper.h"
 #include "wonton/state/state_vector_uni.h"
 #include "wonton/state/simple/simple_state.h"
-#include "wonton/state/simple/simple_state_wrapper.h"
-#include "wonton/state/simple_state/simple_state_mm_wrapper.h"
+#include "wonton/state/simple/simple_state_mm_wrapper.h"
 
 using Wonton::Simple_Mesh;
 using Wonton::Simple_State;
