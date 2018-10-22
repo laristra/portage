@@ -4,25 +4,28 @@ Please see the license file at the root of this repository, or at:
     https://github.com/laristra/portage/blob/master/LICENSE
 */
 
-#ifndef SRC_INTERPOLATE_QUADFIT_H_
-#define SRC_INTERPOLATE_QUADFIT_H_
+#ifndef PORTAGE_INTERPOLATE_QUADFIT_H_
+#define PORTAGE_INTERPOLATE_QUADFIT_H_
 
 #include <algorithm>
 #include <stdexcept>
 #include <string>
 #include <vector>
 
-#include <stdio.h>
-#include <stdlib.h>
 #include <iostream>
 
+// portage includes
 #include "portage/support/portage.h"
-#include "portage/support/Point.h"
-#include "portage/support/Matrix.h"
-#include "portage/support/lsfits.h"
+
+// wonton includes
+#include "wonton/support/lsfits.h"
 
 namespace Portage {
 
+using Entity_kind::CELL;
+using Entity_kind::NODE;
+
+using Entity_type::ALL;
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -194,7 +197,7 @@ Limited_Quadfit<D, CELL, MeshType, StateType>::operator() (int const cellid) {
   }
 
   bool boundary_cell =  mesh_.on_exterior_boundary(CELL, cellid);
-  qfit = ls_quadfit(cellcenters, cellvalues, boundary_cell);
+  qfit = Wonton::ls_quadfit(cellcenters, cellvalues, boundary_cell);
   // Limit the gradient to enforce monotonicity preservation
    
   if (limtype_ == BARTH_JESPERSEN && !boundary_cell) {  // No limiting on boundary
@@ -354,7 +357,7 @@ Limited_Quadfit<D, NODE, MeshType, StateType>::operator() (int const nodeid) {
   }
 
   bool boundary_node =  mesh_.on_exterior_boundary(NODE, nodeid);
-  qfit = ls_quadfit(nodecoords, nodevalues, boundary_node);
+  qfit = Wonton::ls_quadfit(nodecoords, nodevalues, boundary_node);
   
   if (limtype_ == BARTH_JESPERSEN && !boundary_node) {  // No limiting on boundary
     
@@ -403,4 +406,4 @@ Limited_Quadfit<D, NODE, MeshType, StateType>::operator() (int const nodeid) {
 
 }  // namespace Portage
 
-#endif  // SRC_INTERPOLATE_QUADFIT_H_
+#endif  // PORTAGE_INTERPOLATE_QUADFIT_H_

@@ -4,8 +4,8 @@
   https://github.com/laristra/portage/blob/master/LICENSE
 */
 
-#ifndef SRC_INTERPOLATE_GRADIENT_H_
-#define SRC_INTERPOLATE_GRADIENT_H_
+#ifndef PORTAGE_INTERPOLATE_GRADIENT_H_
+#define PORTAGE_INTERPOLATE_GRADIENT_H_
 
 #include <algorithm>
 #include <stdexcept>
@@ -13,19 +13,25 @@
 #include <vector>
 #include <iostream>
 
+// portage includes
 #include "portage/support/portage.h"
-#include "portage/support/Point.h"
-#include "portage/support/lsfits.h"
 #include "portage/intersect/dummy_interface_reconstructor.h"
+
+// wonton includes
+#include "wonton/support/lsfits.h"
 
 #ifdef HAVE_TANGRAM
 #include "tangram/driver/driver.h"
 #include "tangram/driver/CellMatPoly.h"
 #include "tangram/support/MatPoly.h"
-#endif 
+#endif
 
 namespace Portage {
 
+  using Entity_kind::CELL;
+  using Entity_kind::NODE;
+
+  using Entity_type::ALL;
 
 /*! @class Limited_Gradient gradient.h
     @brief Compute limited gradient of a field or components of a field
@@ -39,7 +45,7 @@ namespace Portage {
 template<int D, Entity_kind on_what, typename MeshType, typename StateType,
     template<class, int, class, class> class InterfaceReconstructorType =
     DummyInterfaceReconstructor,
-    class Matpoly_Splitter = void, 
+    class Matpoly_Splitter = void,
     class Matpoly_Clipper = void>
 class Limited_Gradient {
  public:
@@ -306,7 +312,7 @@ InterfaceReconstructorType, Matpoly_Splitter, Matpoly_Clipper>::operator()(int c
       }
     }
 
-    grad = ls_gradient(ls_coords, ls_vals);
+    grad = Wonton::ls_gradient(ls_coords, ls_vals);
 
     // Limit the gradient to enforce monotonicity preservation
     if (this->limtype_ == BARTH_JESPERSEN &&
@@ -450,7 +456,7 @@ InterfaceReconstructorType, Matpoly_Splitter, Matpoly_Clipper>::operator()(int c
       i++;
     }
   
-    grad = ls_gradient(nodecoords, nodevalues);
+    grad = Wonton::ls_gradient(nodecoords, nodevalues);
 
     if (this->limtype_ == BARTH_JESPERSEN &&
         !this->mesh_.on_exterior_boundary(NODE, nodeid)) {  // No limiting on boundary
@@ -490,4 +496,4 @@ InterfaceReconstructorType, Matpoly_Splitter, Matpoly_Clipper>::operator()(int c
 
 }  // namespace Portage
 
-#endif  // SRC_INTERPOLATE_GRADIENT_H_
+#endif  // PORTAGE_INTERPOLATE_GRADIENT_H_
