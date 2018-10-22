@@ -21,18 +21,24 @@ Please see the license file at the root of this repository, or at:
 #define PORTAGE_SERIAL_ONLY
 #endif
 
+// portage includes
 #include "portage/support/portage.h"
 #include "portage/driver/mmdriver.h"
-#include "portage/simple_mesh/simple_mesh.h"
-#include "portage/simple_mesh/simple_state.h"
-#include "portage/wonton/mesh/simple_mesh/simple_mesh_wrapper.h"
 
-#include "portage/wonton/state/simple_state/simple_state_mm_wrapper.h"
+// wonton includes
+#include "wonton/mesh/simple/simple_mesh.h"
+#include "wonton/mesh/simple/simple_mesh_wrapper.h"
+#include "wonton/state/state_vector_uni.h"
+#include "wonton/state/simple/simple_state.h"
+#include "wonton/state/simple/simple_state_wrapper.h"
+#include "wonton/state/simple_state/simple_state_mm_wrapper.h"
 
-using Portage::Simple_Mesh;
-using Portage::Simple_State;
+using Wonton::Simple_Mesh;
+using Wonton::Simple_State;
 using Wonton::Simple_Mesh_Wrapper;
 using Wonton::Simple_State_Wrapper;
+using Wonton::Point;
+using Wonton::Entity_kind;
 
 
 
@@ -179,9 +185,10 @@ int main(int argc, char** argv) {
     const int ninpcells = inputMeshWrapper.num_owned_cells();
     const int ntarcells = targetMeshWrapper.num_owned_cells();
 
+    Simple_State inputState(inputMesh);
     std::vector<double> inputData(ninpcells);
 
-    Portage::Point<3> cen;
+    Point<3> cen;
 
     switch (example.field_order) {
       case 0:
@@ -206,13 +213,13 @@ int main(int argc, char** argv) {
     }
 
     Simple_State_Wrapper<Wonton::Simple_Mesh_Wrapper> inputStateWrapper(inputMeshWrapper);
-		inputStateWrapper.add(std::make_shared<Portage::StateVectorUni<>>("celldata", Portage::Entity_kind::CELL, inputData));
+		inputStateWrapper.add(std::make_shared<Wonton::StateVectorUni<>>("celldata", Entity_kind::CELL, inputData));
 
     std::vector<double> targetData(ntarcells, 0.0);
     
     Simple_State_Wrapper<Wonton::Simple_Mesh_Wrapper> targetStateWrapper(targetMeshWrapper);
-		targetStateWrapper.add(std::make_shared<Portage::StateVectorUni<>>("celldata", Portage::Entity_kind::CELL, targetData));
-    auto& cellvecout = std::static_pointer_cast<Portage::StateVectorUni<>>(targetStateWrapper.get("celldata"))->get_data();
+		targetStateWrapper.add(std::make_shared<Wonton::StateVectorUni<>>("celldata", Entity_kind::CELL, targetData));
+    auto& cellvecout = std::static_pointer_cast<Wonton::StateVectorUni<>>(targetStateWrapper.get("celldata"))->get_data();
 
     std::vector<std::string> remap_fields;
     remap_fields.push_back("celldata");
@@ -244,7 +251,7 @@ int main(int argc, char** argv) {
     }
 
     double toterr = 0.0;
-    Portage::Point<3> ccen;
+    Point<3> ccen;
     for (int c(0); c < ntarcells; ++c) {
       targetMeshWrapper.cell_centroid(c, &ccen);
 
@@ -308,7 +315,7 @@ int main(int argc, char** argv) {
 
     std::vector<double> inputData(ninpnodes);
 
-    Portage::Point<3> nodexyz;
+    Point<3> nodexyz;
     switch (example.field_order) {
       case 0:
         for (int i(0); i < ninpnodes; ++i) {
@@ -333,13 +340,13 @@ int main(int argc, char** argv) {
     }
 
    	Simple_State_Wrapper<Wonton::Simple_Mesh_Wrapper> inputStateWrapper(inputMeshWrapper);
-		inputStateWrapper.add(std::make_shared<Portage::StateVectorUni<>>("nodedata", Portage::Entity_kind::NODE, inputData));
+		inputStateWrapper.add(std::make_shared<Wonton::StateVectorUni<>>("nodedata", Entity_kind::NODE, inputData));
 
     std::vector<double> targetData(ntarnodes, 0.0);
     
     Simple_State_Wrapper<Wonton::Simple_Mesh_Wrapper> targetStateWrapper(targetMeshWrapper);
-		targetStateWrapper.add(std::make_shared<Portage::StateVectorUni<>>("nodedata", Portage::Entity_kind::NODE, targetData));
-    auto& nodevecout = std::static_pointer_cast<Portage::StateVectorUni<>>(targetStateWrapper.get("nodedata"))->get_data();
+		targetStateWrapper.add(std::make_shared<Wonton::StateVectorUni<>>("nodedata", Entity_kind::NODE, targetData));
+    auto& nodevecout = std::static_pointer_cast<Wonton::StateVectorUni<>>(targetStateWrapper.get("nodedata"))->get_data();
 
     std::vector<std::string> remap_fields;
     remap_fields.push_back("nodedata");
@@ -372,7 +379,7 @@ int main(int argc, char** argv) {
 
     double toterr(0.0);
     double stdval, err;
-    Portage::Point<3> nnodexyz;
+    Point<3> nnodexyz;
     for (int i(0); i < ntarnodes; ++i) {
       targetMeshWrapper.node_get_coordinates(i, &nnodexyz);
 

@@ -11,10 +11,11 @@
 #include <string>
 #include <memory>
 
-#include "portage/simple_mesh/simple_mesh.h"
-#include "portage/wonton/mesh/simple_mesh/simple_mesh_wrapper.h"
-#include "portage/state/state_manager.h"
-#include "portage/wonton/state/simple_state/simple_state_mm_wrapper.h"
+#include "wonton/mesh/simple/simple_mesh.h"
+#include "wonton/mesh/simple/simple_mesh_wrapper.h"
+#include "wonton/state/state_manager.h"
+#include "wonton/state/simple/simple_state_mm_wrapper.h"
+
 #include "portage/driver/mmdriver.h"
 
 #include "read_material_data.h"
