@@ -178,7 +178,8 @@ TEST(Swarm, Build_Simple_Mesh_Wrapper_Cell) {
 
   // create swarm from mesh wrapper cells
   std::shared_ptr<Portage::Meshfree::Swarm<3>> swarmc_ptr =
-    Portage::Meshfree::SwarmFactory<3,Wonton::Simple_Mesh_Wrapper>(mesh_wrapper, Portage::CELL);
+    Portage::Meshfree::SwarmFactory<3, Wonton::Simple_Mesh_Wrapper>(
+        mesh_wrapper, Portage::Entity_kind::CELL);
   Portage::Meshfree::Swarm<3> &swarmc(*swarmc_ptr);
 
   // test size
@@ -203,7 +204,7 @@ TEST(Swarm, Build_Simple_Mesh_Wrapper_Node) {
 
   // create swarm from mesh wrapper cells
   std::shared_ptr<Portage::Meshfree::Swarm<3>> swarmn_ptr =
-    Portage::Meshfree::SwarmFactory<3,Wonton::Simple_Mesh_Wrapper>(mesh_wrapper, Portage::NODE);
+    Portage::Meshfree::SwarmFactory<3,Wonton::Simple_Mesh_Wrapper>(mesh_wrapper, Portage::Entity_kind::NODE);
   Portage::Meshfree::Swarm<3> &swarmn(*swarmn_ptr);
 
   // test size

@@ -153,19 +153,19 @@ TEST(Test_MultiVar_Remap, Test1) {
   // Verify that we got the fields we wanted
 
   double *outcellvec1;
-  targetStateWrapper.mesh_get_data(Portage::CELL, "trgcellvars1", &outcellvec1);
+  targetStateWrapper.mesh_get_data(Portage::Entity_kind::CELL, "trgcellvars1", &outcellvec1);
 
   for (int i = 0; i < ncells_target; i++)
     ASSERT_NEAR(Constant1, outcellvec1[i], TOL);
 
   double *outcellvec2;
-  targetStateWrapper.mesh_get_data(Portage::CELL, "trgcellvars2", &outcellvec2);
+  targetStateWrapper.mesh_get_data(Portage::Entity_kind::CELL, "trgcellvars2", &outcellvec2);
 
   for (int i = 0; i < ncells_target; i++)
     ASSERT_NEAR(Constant2, outcellvec2[i], TOL);
 
   // double *outnodevec;
-  // targetStateWrapper.get_data(Portage::NODE, "trgnodevars", &outnodevec);
+  // targetStateWrapper.get_data(Portage::Entity_kind::NODE, "trgnodevars", &outnodevec);
 
   // for (int i = 0; i < nnodes_target; i++)
   //   ASSERT_NEAR(Constant3, outnodevec[i], TOL);
@@ -181,17 +181,17 @@ TEST(Test_MultiVar_Remap, Test1) {
 
   // Verify that we got the fields we wanted
 
-  targetStateWrapper.mesh_get_data(Portage::CELL, "srccellvars1", &outcellvec1);
+  targetStateWrapper.mesh_get_data(Portage::Entity_kind::CELL, "srccellvars1", &outcellvec1);
 
   for (int i = 0; i < ncells_target; i++)
     ASSERT_NEAR(Constant1, outcellvec1[i], TOL);
 
-  targetStateWrapper.mesh_get_data(Portage::CELL, "srccellvars2", &outcellvec2);
+  targetStateWrapper.mesh_get_data(Portage::Entity_kind::CELL, "srccellvars2", &outcellvec2);
 
   for (int i = 0; i < ncells_target; i++)
     ASSERT_NEAR(Constant2, outcellvec2[i], TOL);
 
-  // targetStateWrapper.mesh_get_data(Portage::NODE, "srcnodevars", &outnodevec);
+  // targetStateWrapper.mesh_get_data(Portage::Entity_kind::NODE, "srcnodevars", &outnodevec);
   // for (int i = 0; i < ncells_target; i++)
   //   ASSERT_NEAR(Constant3, outnodevec[i], TOL);
 }

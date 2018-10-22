@@ -304,8 +304,8 @@ void test_scatter_2d_random(const size_t nsrc, const size_t ntgt)
   simplesearch(srcswarm, tgtswarm, srcexts, tgtexts);
 
   Portage::vector<std::vector<unsigned int>> candidates(ntgt);
-  Portage::transform(tgtswarm.begin(Portage::PARTICLE, Portage::PARALLEL_OWNED),
-                     tgtswarm.end(Portage::PARTICLE, Portage::PARALLEL_OWNED),
+  Portage::transform(tgtswarm.begin(Portage::Entity_kind::PARTICLE, Portage::Entity_type::PARALLEL_OWNED),
+                     tgtswarm.end(Portage::Entity_kind::PARTICLE, Portage::Entity_type::PARALLEL_OWNED),
                      candidates.begin(), cellsearch);
 
   // use direct application
@@ -377,8 +377,8 @@ void test_scatter_3d_random(const size_t nsrc, const size_t ntgt, bool check=tru
   cellsearch(srcswarm, tgtswarm, srcexts, tgtexts);
 
   Portage::vector<std::vector<unsigned int>> candidates(ntgt);
-  Portage::transform(tgtswarm.begin(Portage::PARTICLE, Portage::PARALLEL_OWNED),
-                     tgtswarm.end(Portage::PARTICLE, Portage::PARALLEL_OWNED),
+  Portage::transform(tgtswarm.begin(Portage::Entity_kind::PARTICLE, Portage::Entity_type::PARALLEL_OWNED),
+                     tgtswarm.end(Portage::Entity_kind::PARTICLE, Portage::Entity_type::PARALLEL_OWNED),
                      candidates.begin(), cellsearch);
 
   if (check) {
@@ -467,8 +467,8 @@ void test_gather_2d_random(const size_t nsrc, const size_t ntgt)
   simplesearch(srcswarm, tgtswarm, srcexts, tgtexts, Portage::Meshfree::Gather);
 
   Portage::vector<std::vector<unsigned int>> candidates(ntgt);
-  Portage::transform(tgtswarm.begin(Portage::PARTICLE, Portage::PARALLEL_OWNED),
-                     tgtswarm.end(Portage::PARTICLE, Portage::PARALLEL_OWNED),
+  Portage::transform(tgtswarm.begin(Portage::Entity_kind::PARTICLE, Portage::Entity_type::PARALLEL_OWNED),
+                     tgtswarm.end(Portage::Entity_kind::PARTICLE, Portage::Entity_type::PARALLEL_OWNED),
                      candidates.begin(), cellsearch);
 
   for (int tp = 0; tp < ntgt; tp++) {
@@ -539,8 +539,8 @@ void test_gather_3d_random(const size_t nsrc, const size_t ntgt, bool check = tr
   cellsearch(srcswarm, tgtswarm, srcexts, tgtexts, Portage::Meshfree::Gather);
 
   Portage::vector<std::vector<unsigned int>> candidates(ntgt);
-  Portage::transform(tgtswarm.begin(Portage::PARTICLE, Portage::PARALLEL_OWNED),
-                     tgtswarm.end(Portage::PARTICLE, Portage::PARALLEL_OWNED),
+  Portage::transform(tgtswarm.begin(Portage::Entity_kind::PARTICLE, Portage::Entity_type::PARALLEL_OWNED),
+                     tgtswarm.end(Portage::Entity_kind::PARTICLE, Portage::Entity_type::PARALLEL_OWNED),
                      candidates.begin(), cellsearch);
 
   if (check) {

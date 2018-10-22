@@ -285,7 +285,7 @@ void write_to_gmv(Mesh_Wrapper const& mesh,
   if (fieldnames.size()) {
     fout << "variable" << std::endl;
     for (auto & fieldname : fieldnames) {
-      if (state.field_type(Portage::CELL, fieldname) ==
+      if (state.field_type(Portage::Entity_kind::CELL, fieldname) ==
           Portage::Field_type::UNKNOWN_TYPE_FIELD)
         continue;
 

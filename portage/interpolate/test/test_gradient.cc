@@ -61,20 +61,20 @@ TEST(Gradient, Fields_Cell_Ctr) {
 
   // Create Gradient objects
 
-  Portage::Limited_Gradient<2, Portage::CELL, Wonton::Simple_Mesh_Wrapper,
+  Portage::Limited_Gradient<2, Portage::Entity_kind::CELL, Wonton::Simple_Mesh_Wrapper,
                             Wonton::Simple_State_Wrapper>
       gradcalc1(meshwrapper, statewrapper, "cellvars1", Portage::NOLIMITER);
 
-  Portage::Limited_Gradient<2, Portage::CELL, Wonton::Simple_Mesh_Wrapper,
+  Portage::Limited_Gradient<2, Portage::Entity_kind::CELL, Wonton::Simple_Mesh_Wrapper,
                             Wonton::Simple_State_Wrapper>
       gradcalc2(meshwrapper, statewrapper, "cellvars2", Portage::NOLIMITER);
 
-  Portage::Limited_Gradient<2, Portage::CELL, Wonton::Simple_Mesh_Wrapper,
+  Portage::Limited_Gradient<2, Portage::Entity_kind::CELL, Wonton::Simple_Mesh_Wrapper,
                             Wonton::Simple_State_Wrapper>
       gradcalc3(meshwrapper, statewrapper, "cellvars1",
                 Portage::BARTH_JESPERSEN);
 
-  Portage::Limited_Gradient<2, Portage::CELL, Wonton::Simple_Mesh_Wrapper,
+  Portage::Limited_Gradient<2, Portage::Entity_kind::CELL, Wonton::Simple_Mesh_Wrapper,
                             Wonton::Simple_State_Wrapper>
       gradcalc4(meshwrapper, statewrapper, "cellvars2",
                 Portage::BARTH_JESPERSEN);
@@ -173,20 +173,20 @@ TEST(Gradient, Fields_Node_Ctr) {
 
   // Create Gradient calculater objects
 
-  Portage::Limited_Gradient<2, Portage::NODE, Wonton::Simple_Mesh_Wrapper,
+  Portage::Limited_Gradient<2, Portage::Entity_kind::NODE, Wonton::Simple_Mesh_Wrapper,
                             Wonton::Simple_State_Wrapper>
       gradcalc1(meshwrapper, statewrapper, "nodevars1", Portage::NOLIMITER);
 
-  Portage::Limited_Gradient<2, Portage::NODE, Wonton::Simple_Mesh_Wrapper,
+  Portage::Limited_Gradient<2, Portage::Entity_kind::NODE, Wonton::Simple_Mesh_Wrapper,
                             Wonton::Simple_State_Wrapper>
       gradcalc2(meshwrapper, statewrapper, "nodevars2", Portage::NOLIMITER);
 
-  Portage::Limited_Gradient<2, Portage::NODE, Wonton::Simple_Mesh_Wrapper,
+  Portage::Limited_Gradient<2, Portage::Entity_kind::NODE, Wonton::Simple_Mesh_Wrapper,
                             Wonton::Simple_State_Wrapper>
       gradcalc3(meshwrapper, statewrapper, "nodevars1",
                 Portage::BARTH_JESPERSEN);
 
-  Portage::Limited_Gradient<2, Portage::NODE, Wonton::Simple_Mesh_Wrapper,
+  Portage::Limited_Gradient<2, Portage::Entity_kind::NODE, Wonton::Simple_Mesh_Wrapper,
                             Wonton::Simple_State_Wrapper>
       gradcalc4(meshwrapper, statewrapper, "nodevars2",
                 Portage::BARTH_JESPERSEN);

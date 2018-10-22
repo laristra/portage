@@ -171,7 +171,7 @@ TEST(SwarmState, Simple_State_Wrapper) {
   {
     std::shared_ptr<Portage::Meshfree::SwarmState<3>> state_ptr =
       Portage::Meshfree::SwarmStateFactory<3,Wonton::Simple_State_Wrapper<Wonton::Simple_Mesh_Wrapper>>
-      (sstate, Portage::CELL);
+        (sstate, Portage::Entity_kind::CELL);
     Portage::Meshfree::SwarmState<3> &state(*state_ptr);
 
     // test size
@@ -194,7 +194,7 @@ TEST(SwarmState, Simple_State_Wrapper) {
   {
     std::shared_ptr<Portage::Meshfree::SwarmState<3>> state_ptr =
        Portage::Meshfree::SwarmStateFactory<3,Wonton::Simple_State_Wrapper<Wonton::Simple_Mesh_Wrapper>>
-      (sstate, Portage::NODE);
+      (sstate, Portage::Entity_kind::NODE);
     Portage::Meshfree::SwarmState<3> &state(*state_ptr);
 
     // test size

@@ -25,7 +25,7 @@ TEST(search_kdtree3, cell)
     const Wonton::Simple_Mesh_Wrapper source_mesh_wrapper(smesh);
     const Wonton::Simple_Mesh_Wrapper target_mesh_wrapper(tmesh);
 
-    Portage::SearchKDTree<3, Portage::CELL,
+    Portage::SearchKDTree<3, Portage::Entity_kind::CELL,
         Wonton::Simple_Mesh_Wrapper, Wonton::Simple_Mesh_Wrapper>
         search(source_mesh_wrapper, target_mesh_wrapper);
 
