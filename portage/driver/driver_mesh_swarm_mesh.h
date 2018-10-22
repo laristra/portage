@@ -225,7 +225,7 @@ class MSM_Driver {
       Entity_kind onwhat =
           source_state_.get_entity(source_remap_var_names_[i]);
 
-      if (onwhat == CELL) {
+      if (onwhat == Entity_kind::CELL) {
         source_cellvar_names.emplace_back(source_remap_var_names_[i]);
         target_cellvar_names.emplace_back(target_remap_var_names_[i]);
       }
@@ -236,17 +236,17 @@ class MSM_Driver {
     {
       // convert mesh wrappers to swarms
       std::shared_ptr<Meshfree::Swarm<Dim>> source_swarm_ptr = 
-        Meshfree::SwarmFactory<Dim>(source_mesh_, CELL);
+        Meshfree::SwarmFactory<Dim>(source_mesh_, Entity_kind::CELL);
       std::shared_ptr<Meshfree::Swarm<Dim>> target_swarm_ptr = 
-        Meshfree::SwarmFactory<Dim>(target_mesh_, CELL);
+        Meshfree::SwarmFactory<Dim>(target_mesh_, Entity_kind::CELL);
       Meshfree::Swarm<Dim> &source_swarm(*source_swarm_ptr);
       Meshfree::Swarm<Dim> &target_swarm(*target_swarm_ptr);
 
       // convert state wrappers to swarm variety
       std::shared_ptr<Meshfree::SwarmState<Dim>> source_swarm_state_ptr = 
-        Meshfree::SwarmStateFactory<Dim>(source_state_, CELL);
+        Meshfree::SwarmStateFactory<Dim>(source_state_, Entity_kind::CELL);
       std::shared_ptr<Meshfree::SwarmState<Dim>> target_swarm_state_ptr = 
-        Meshfree::SwarmStateFactory<Dim>(target_state_, CELL);
+        Meshfree::SwarmStateFactory<Dim>(target_state_, Entity_kind::CELL);
       Meshfree::SwarmState<Dim> &source_swarm_state(*source_swarm_state_ptr);
       Meshfree::SwarmState<Dim> &target_swarm_state(*target_swarm_state_ptr);
 
@@ -302,7 +302,7 @@ class MSM_Driver {
         typename Meshfree::SwarmState<Dim>::DblVecPtr sfield;
         target_swarm_state.get_field(*name, sfield);
         double *mfield;
-        target_state_.mesh_get_data(CELL, *name, &mfield);
+        target_state_.mesh_get_data(Entity_kind::CELL, *name, &mfield);
         for (int i=0; i<target_swarm_state.get_size(); i++) {
           mfield[i] = (*sfield)[i];
         }
@@ -318,7 +318,7 @@ class MSM_Driver {
       Entity_kind onwhat =
           source_state_.get_entity(source_remap_var_names_[i]);
 
-      if (onwhat == NODE) {
+      if (onwhat == Entity_kind::NODE) {
         source_nodevar_names.emplace_back(source_remap_var_names_[i]);
         target_nodevar_names.emplace_back(target_remap_var_names_[i]);
       }
@@ -327,17 +327,17 @@ class MSM_Driver {
     if (source_nodevar_names.size() > 0) {
       // convert mesh wrappers to swarm variety
       std::shared_ptr<Meshfree::Swarm<Dim>> source_swarm_ptr = 
-        Meshfree::SwarmFactory<Dim>(source_mesh_, NODE);
+        Meshfree::SwarmFactory<Dim>(source_mesh_, Entity_kind::NODE);
       std::shared_ptr<Meshfree::Swarm<Dim>> target_swarm_ptr = 
-        Meshfree::SwarmFactory<Dim>(target_mesh_, NODE);
+        Meshfree::SwarmFactory<Dim>(target_mesh_, Entity_kind::NODE);
       Meshfree::Swarm<Dim> &source_swarm(*source_swarm_ptr);
       Meshfree::Swarm<Dim> &target_swarm(*target_swarm_ptr);
 
       // convert state wrappers to swarm variety
       std::shared_ptr<Meshfree::SwarmState<Dim>> source_swarm_state_ptr = 
-        Meshfree::SwarmStateFactory<Dim>(source_state_, NODE);
+        Meshfree::SwarmStateFactory<Dim>(source_state_, Entity_kind::NODE);
       std::shared_ptr<Meshfree::SwarmState<Dim>> target_swarm_state_ptr = 
-        Meshfree::SwarmStateFactory<Dim>(target_state_, NODE);
+        Meshfree::SwarmStateFactory<Dim>(target_state_, Entity_kind::NODE);
       Meshfree::SwarmState<Dim> &source_swarm_state(*source_swarm_state_ptr);
       Meshfree::SwarmState<Dim> &target_swarm_state(*target_swarm_state_ptr);
 
@@ -388,7 +388,7 @@ class MSM_Driver {
         typename Meshfree::SwarmState<Dim>::DblVecPtr sfield;
         target_swarm_state.get_field(*name, sfield);
         double *mfield;
-        target_state_.mesh_get_data(NODE, *name, &mfield);
+        target_state_.mesh_get_data(Entity_kind::NODE, *name, &mfield);
         for (int i=0; i<target_swarm_state.get_size(); i++) {
           mfield[i] = (*sfield)[i];
         }

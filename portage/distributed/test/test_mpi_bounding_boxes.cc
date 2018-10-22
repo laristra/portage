@@ -28,9 +28,6 @@ Please see the license file at the root of this repository, or at:
 #include "wonton/mesh/jali/jali_mesh_wrapper.h"
 
 
-using Portage::Entity_type::ALL;
-using Portage::Entity_kind::CELL;
-
 TEST(MPI_Bounding_Boxes, SimpleTest3D) {
 
   int commRank;
@@ -148,7 +145,7 @@ TEST(MPI_Bounding_Boxes, SimpleTest3D) {
   for (int c=0; c<num_owned_cells; ++c) {
     // Get my 7 neighbors
     std::vector<int> myNeighbors;
-    source_mesh_flat.cell_get_node_adj_cells(c, ALL, &myNeighbors);
+    source_mesh_flat.cell_get_node_adj_cells(c, Portage::Entity_type::ALL, &myNeighbors);
     ASSERT_EQ(7, myNeighbors.size());
     // Convert to global IDs
     for (int n=0; n<7; ++n) myNeighbors[n] = gids[myNeighbors[n]];
@@ -162,9 +159,9 @@ TEST(MPI_Bounding_Boxes, SimpleTest3D) {
 
   // Check field values
   double* ddata1 = nullptr;
-  source_state_flat.mesh_get_data(CELL, "d1", &ddata1);
+  source_state_flat.mesh_get_data(Portage::Entity_kind::CELL, "d1", &ddata1);
   double* ddata2 = nullptr;
-  source_state_flat.mesh_get_data(CELL, "d2", &ddata2);
+  source_state_flat.mesh_get_data(Portage::Entity_kind::CELL, "d2", &ddata2);
   for (int c=0; c<num_owned_cells; ++c) {
     int gid = gids[c];
     int expValue1 = 10. + gid;
@@ -294,7 +291,7 @@ TEST(MPI_Bounding_Boxes, SimpleTest2D) {
   for (int c=0; c<num_owned_cells; ++c) {
     // Get my neighbors
     std::vector<int> myNeighbors;
-    source_mesh_flat.cell_get_node_adj_cells(c, ALL, &myNeighbors);
+    source_mesh_flat.cell_get_node_adj_cells(c, Portage::Entity_type::ALL, &myNeighbors);
     int count = myNeighbors.size();
     // Convert to global IDs
     for (int n=0; n<count; ++n) myNeighbors[n] = gids[myNeighbors[n]];
@@ -329,9 +326,9 @@ TEST(MPI_Bounding_Boxes, SimpleTest2D) {
 
   // Check field values
   double* ddata1 = nullptr;
-  source_state_flat.mesh_get_data(CELL, "d1", &ddata1);
+  source_state_flat.mesh_get_data(Portage::Entity_kind::CELL, "d1", &ddata1);
   double* ddata2 = nullptr;
-  source_state_flat.mesh_get_data(CELL, "d2", &ddata2);
+  source_state_flat.mesh_get_data(Portage::Entity_kind::CELL, "d2", &ddata2);
   for (int c=0; c<num_owned_cells; ++c) {
     int gid = gids[c];
     int expValue1 = 10. + gid;

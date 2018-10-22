@@ -308,7 +308,7 @@ class MMDriver {
     for (int i = 0; i < nvars; ++i) {
       std::string& srcvarname = source_remap_var_names_[i];
       Entity_kind onwhat = source_state_.get_entity(srcvarname);
-      if (onwhat == CELL) {
+      if (onwhat == Entity_kind::CELL) {
         // Separate out mesh fields and multi-material fields - they will be
         // processed differently
 
@@ -331,11 +331,11 @@ class MMDriver {
 
 #ifdef ENABLE_MPI
     if (distributed)
-      remap_distributed<CELL>(src_meshvar_names, trg_meshvar_names,
+      remap_distributed<Entity_kind::CELL>(src_meshvar_names, trg_meshvar_names,
                               src_matvar_names, trg_matvar_names);
     else
 #endif
-      remap<CELL>(src_meshvar_names, trg_meshvar_names,
+      remap<Entity_kind::CELL>(src_meshvar_names, trg_meshvar_names,
                   src_matvar_names, trg_matvar_names);
 
 
@@ -350,7 +350,7 @@ class MMDriver {
     for (int i = 0; i < nvars; ++i) {
       std::string& srcvarname = source_remap_var_names_[i];
       Entity_kind onwhat = source_state_.get_entity(srcvarname);
-      if (onwhat == NODE) {
+      if (onwhat == Entity_kind::NODE) {
         std::string& trgvarname = target_remap_var_names_[i];
 
         Field_type ftype = source_state_.field_type(onwhat, srcvarname);
@@ -366,11 +366,11 @@ class MMDriver {
     if (src_meshvar_names.size()) {
 #ifdef ENABLE_MPI
       if (distributed)
-        remap_distributed<NODE>(src_meshvar_names, trg_meshvar_names,
+        remap_distributed<Entity_kind::NODE>(src_meshvar_names, trg_meshvar_names,
                                 src_matvar_names, trg_matvar_names);
       else
 #endif
-        remap<NODE>(src_meshvar_names, trg_meshvar_names,
+        remap<Entity_kind::NODE>(src_meshvar_names, trg_meshvar_names,
                     src_meshvar_names, trg_meshvar_names);
     }
 
@@ -430,17 +430,17 @@ int MMDriver<Search, Intersect, Interpolate, D,
                       std::vector<std::string> const &src_matvar_names,
                       std::vector<std::string> const &trg_matvar_names) {
 
-  static_assert(onwhat == NODE || onwhat == CELL,
+  static_assert(onwhat == Entity_kind::NODE || onwhat == Entity_kind::CELL,
                 "Remap implemented only for CELL and NODE variables");
 
   int comm_rank = 0;
 
-  int ntarget_ents_owned = target_mesh_.num_entities(onwhat, PARALLEL_OWNED);
+  int ntarget_ents_owned = target_mesh_.num_entities(onwhat, Entity_type::PARALLEL_OWNED);
   std::cout << "Number of target entities of kind " << onwhat <<
       " in target mesh on rank " << comm_rank << ": " <<
       ntarget_ents_owned << std::endl;
 
-  int ntarget_ents = target_mesh_.num_entities(onwhat, ALL);
+  int ntarget_ents = target_mesh_.num_entities(onwhat, Entity_type::ALL);
 
   float tot_seconds = 0.0, tot_seconds_srch = 0.0,
       tot_seconds_xsect = 0.0, tot_seconds_interp = 0.0;
@@ -458,8 +458,8 @@ int MMDriver<Search, Intersect, Interpolate, D,
   const Search<D, onwhat, SourceMesh_Wrapper, TargetMesh_Wrapper>
       search(source_mesh_, target_mesh_);
 
-  Portage::transform(target_mesh_.begin(onwhat, PARALLEL_OWNED),
-                     target_mesh_.end(onwhat, PARALLEL_OWNED),
+  Portage::transform(target_mesh_.begin(onwhat, Entity_type::PARALLEL_OWNED),
+                     target_mesh_.end(onwhat, Entity_type::PARALLEL_OWNED),
                      candidates.begin(), search);
 
   gettimeofday(&end_timeval, 0);
@@ -485,7 +485,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
       typeid(DummyInterfaceReconstructor<SourceMesh_Wrapper, D,
              Matpoly_Splitter, Matpoly_Clipper>)) {
 
-    int nsourcecells = source_mesh_.num_entities(CELL, ALL);
+    int nsourcecells = source_mesh_.num_entities(Entity_kind::CELL, Entity_type::ALL);
 
     std::vector<int> cell_num_mats;
     std::vector<int> cell_mat_ids;
@@ -553,8 +553,8 @@ int MMDriver<Search, Intersect, Interpolate, D,
   // remaps, we get multiple moments (0th, 1st, etc) for each
   // target-source cell intersection
 
-  Portage::transform(target_mesh_.begin(onwhat, PARALLEL_OWNED),
-                     target_mesh_.end(onwhat, PARALLEL_OWNED),
+  Portage::transform(target_mesh_.begin(onwhat, Entity_type::PARALLEL_OWNED),
+                     target_mesh_.end(onwhat, Entity_type::PARALLEL_OWNED),
                      candidates.begin(),
                      source_ents_and_weights.begin(),
                      intersect);
@@ -586,8 +586,8 @@ int MMDriver<Search, Intersect, Interpolate, D,
 
     Portage::pointer<double> target_field(target_field_raw);
 
-    Portage::transform(target_mesh_.begin(onwhat, PARALLEL_OWNED),
-                       target_mesh_.end(onwhat, PARALLEL_OWNED),
+    Portage::transform(target_mesh_.begin(onwhat, Entity_type::PARALLEL_OWNED),
+                       target_mesh_.end(onwhat, Entity_type::PARALLEL_OWNED),
                        source_ents_and_weights.begin(),
                        target_field, interpolate);
   }
@@ -602,7 +602,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
   // REMAP MULTIMATERIAL FIELDS NEXT, ONE MATERIAL AT A TIME
   //--------------------------------------------------------------------
 
-  if (onwhat != CELL) return 1;
+  if (onwhat != Entity_kind::CELL) return 1;
 
   // Material centric loop
 
@@ -630,8 +630,8 @@ int MMDriver<Search, Intersect, Interpolate, D,
     // INTERSECTION VALUES AND REUSE THEM AS NECESSARY FOR MESH-MATERIAL
     // INTERSECTION COMPUTATIONS
 
-    Portage::transform(target_mesh_.begin(onwhat, PARALLEL_OWNED),
-                       target_mesh_.end(onwhat, PARALLEL_OWNED),
+    Portage::transform(target_mesh_.begin(onwhat, Entity_type::PARALLEL_OWNED),
+                       target_mesh_.end(onwhat, Entity_type::PARALLEL_OWNED),
                        candidates.begin(),
                        source_ents_and_weights.begin(),
                        intersect);
@@ -643,7 +643,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
     // LOOK AT INTERSECTION WEIGHTS TO DETERMINE WHICH TARGET CELLS
     // WILL GET NEW MATERIALS
 
-    int ntargetcells = target_mesh_.num_entities(CELL, ALL);
+    int ntargetcells = target_mesh_.num_entities(Entity_kind::CELL, Entity_type::ALL);
     std::vector<int> matcellstgt;
 
     for (int c = 0; c < ntargetcells; c++) {
@@ -830,18 +830,18 @@ int MMDriver<Search, Intersect, Interpolate, D,
                                   std::vector<std::string> const &src_matvar_names,
                                   std::vector<std::string> const &trg_matvar_names) {
 
-  static_assert(onwhat == NODE || onwhat == CELL,
+  static_assert(onwhat == Entity_kind::NODE || onwhat == Entity_kind::CELL,
                 "Remap implemented only for CELL and NODE variables");
 
   int comm_rank = 0;
   MPI_Comm_rank(MPI_COMM_WORLD, &comm_rank);
 
-  int ntarget_ents_owned = target_mesh_.num_entities(onwhat, PARALLEL_OWNED);
+  int ntarget_ents_owned = target_mesh_.num_entities(onwhat, Entity_type::PARALLEL_OWNED);
   std::cout << "Number of target entities of kind " << onwhat <<
       " in target mesh on rank " << comm_rank << ": " <<
       ntarget_ents_owned << std::endl;
 
-  int ntarget_ents = target_mesh_.num_entities(onwhat, ALL);
+  int ntarget_ents = target_mesh_.num_entities(onwhat, Entity_type::ALL);
 
   Flat_Mesh_Wrapper<> source_mesh_flat;
   Flat_State_Wrapper<Flat_Mesh_Wrapper<>> source_state_flat(source_mesh_flat);
@@ -876,8 +876,8 @@ int MMDriver<Search, Intersect, Interpolate, D,
   const Search<D, onwhat, Flat_Mesh_Wrapper<>, TargetMesh_Wrapper>
       search(source_mesh_flat, target_mesh_);
 
-  Portage::transform(target_mesh_.begin(onwhat, PARALLEL_OWNED),
-                     target_mesh_.end(onwhat, PARALLEL_OWNED),
+  Portage::transform(target_mesh_.begin(onwhat, Entity_type::PARALLEL_OWNED),
+                     target_mesh_.end(onwhat, Entity_type::PARALLEL_OWNED),
                      candidates.begin(), search);
 
   gettimeofday(&end_timeval, 0);
@@ -903,7 +903,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
       typeid(DummyInterfaceReconstructor<SourceMesh_Wrapper, D,
              Matpoly_Splitter, Matpoly_Clipper>)) {
 
-    int nsourcecells = source_mesh_.num_entities(CELL, ALL);
+    int nsourcecells = source_mesh_.num_entities(Entity_kind::CELL, Entity_type::ALL);
 
     std::vector<int> cell_num_mats;
     std::vector<int> cell_mat_ids;
@@ -972,8 +972,8 @@ int MMDriver<Search, Intersect, Interpolate, D,
   // remaps, we get multiple moments (0th, 1st, etc) for each
   // target-source cell intersection
 
-  Portage::transform(target_mesh_.begin(onwhat, PARALLEL_OWNED),
-                     target_mesh_.end(onwhat, PARALLEL_OWNED),
+  Portage::transform(target_mesh_.begin(onwhat, Entity_type::PARALLEL_OWNED),
+                     target_mesh_.end(onwhat, Entity_type::PARALLEL_OWNED),
                      candidates.begin(),
                      source_ents_and_weights.begin(),
                      intersect);
@@ -1006,8 +1006,8 @@ int MMDriver<Search, Intersect, Interpolate, D,
 
     Portage::pointer<double> target_field(target_field_raw);
 
-    Portage::transform(target_mesh_.begin(onwhat, PARALLEL_OWNED),
-                       target_mesh_.end(onwhat, PARALLEL_OWNED),
+    Portage::transform(target_mesh_.begin(onwhat, Entity_type::PARALLEL_OWNED),
+                       target_mesh_.end(onwhat, Entity_type::PARALLEL_OWNED),
                        source_ents_and_weights.begin(),
                        target_field, interpolate);
   }
@@ -1022,7 +1022,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
   // REMAP MULTIMATERIAL FIELDS NEXT, ONE MATERIAL AT A TIME
   //--------------------------------------------------------------------
 
-  if (onwhat != CELL) return 1;
+  if (onwhat != Entity_kind::CELL) return 1;
 
   // Material centric loop
 
@@ -1050,8 +1050,8 @@ int MMDriver<Search, Intersect, Interpolate, D,
     // INTERSECTION VALUES AND REUSE THEM AS NECESSARY FOR MESH-MATERIAL
     // INTERSECTION COMPUTATIONS
 
-    Portage::transform(target_mesh_.begin(onwhat, PARALLEL_OWNED),
-                       target_mesh_.end(onwhat, PARALLEL_OWNED),
+    Portage::transform(target_mesh_.begin(onwhat, Entity_type::PARALLEL_OWNED),
+                       target_mesh_.end(onwhat, Entity_type::PARALLEL_OWNED),
                        candidates.begin(),
                        source_ents_and_weights.begin(),
                        intersect);
@@ -1063,7 +1063,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
     // LOOK AT INTERSECTION WEIGHTS TO DETERMINE WHICH TARGET CELLS
     // WILL GET NEW MATERIALS
 
-    int ntargetcells = target_mesh_.num_entities(CELL, ALL);
+    int ntargetcells = target_mesh_.num_entities(Entity_kind::CELL, Entity_type::ALL);
     std::vector<int> matcellstgt;
 
     for (int c = 0; c < ntargetcells; c++) {
@@ -1257,7 +1257,7 @@ MMDriver<Search, Intersect, Interpolate, D,
                            std::vector<double>& cell_mat_volfracs,
                            std::vector<Tangram::Point<D>>& cell_mat_centroids) {
 
-  int nsourcecells = source_mesh_.num_entities(CELL, ALL);
+  int nsourcecells = source_mesh_.num_entities(Entity_kind::CELL, Entity_type::ALL);
 
   int nmats = source_state_.num_materials();
   cell_num_mats.assign(nsourcecells, 0);
