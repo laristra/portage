@@ -18,9 +18,6 @@ Please see the license file at the root of this repository, or at:
 
 namespace Portage {
 
-  using Entity_kind::CELL;
-  using Entity_kind::NODE;
-
 /*!
   @class SearchKDTree "search_kdtree.h"
   @brief A k-d tree search class that allows us to search for control
@@ -89,7 +86,7 @@ class SearchKDTree {
   @tparam TargetMeshType The mesh type of the target mesh.
 */
 template <int D, typename SourceMeshType, typename TargetMeshType>
-class SearchKDTree<D, CELL, SourceMeshType, TargetMeshType> {
+class SearchKDTree<D, Entity_kind::CELL, SourceMeshType, TargetMeshType> {
  public:
 
   //! Default constructor (disabled)
@@ -176,7 +173,7 @@ class SearchKDTree<D, CELL, SourceMeshType, TargetMeshType> {
   @tparam TargetMeshType The mesh type of the target mesh.
 */
 template <int D, typename SourceMeshType, typename TargetMeshType>
-class SearchKDTree<D, NODE, SourceMeshType, TargetMeshType> {
+class SearchKDTree<D, Entity_kind::NODE, SourceMeshType, TargetMeshType> {
  public:
 
   //! Default constructor (disabled)
