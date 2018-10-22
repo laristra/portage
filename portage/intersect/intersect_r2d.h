@@ -30,9 +30,6 @@ extern "C" {
 
 namespace Portage {
 
-  using Entity_kind::CELL;
-  using Entity_kind::NODE;
-
 ///
 /// \class IntersectR2D  2-D intersection algorithm
 
@@ -114,7 +111,7 @@ template <class SourceMeshType, class SourceStateType,
           class TargetMeshType,
           template <class, int, class, class> class InterfaceReconstructorType,
           class Matpoly_Splitter, class Matpoly_Clipper>
-class IntersectR2D<CELL, SourceMeshType, SourceStateType, TargetMeshType,
+class IntersectR2D<Entity_kind::CELL, SourceMeshType, SourceStateType, TargetMeshType,
                    InterfaceReconstructorType, Matpoly_Splitter, Matpoly_Clipper> {
 
 #ifdef HAVE_TANGRAM
@@ -258,7 +255,7 @@ template <class SourceMeshType, class SourceStateType,
           class TargetMeshType,
           template <class, int, class, class> class InterfaceReconstructorType,
           class Matpoly_Splitter, class Matpoly_Clipper>
-class IntersectR2D<NODE, SourceMeshType, SourceStateType, TargetMeshType,
+class IntersectR2D<Entity_kind::NODE, SourceMeshType, SourceStateType, TargetMeshType,
                    InterfaceReconstructorType, Matpoly_Splitter, Matpoly_Clipper> {
 
 #ifdef HAVE_TANGRAM

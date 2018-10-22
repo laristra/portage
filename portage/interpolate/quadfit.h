@@ -22,11 +22,6 @@ Please see the license file at the root of this repository, or at:
 
 namespace Portage {
 
-using Entity_kind::CELL;
-using Entity_kind::NODE;
-
-using Entity_type::ALL;
-
 ///////////////////////////////////////////////////////////////////////////////
 
 
@@ -102,7 +97,7 @@ class Limited_Quadfit {
 */
 
 template<int D, typename MeshType, typename StateType>
-class Limited_Quadfit<D, CELL, MeshType, StateType> {
+class Limited_Quadfit<D, Entity_kind::CELL, MeshType, StateType> {
  public:
   /*! @brief Constructor
       @param[in] mesh  Mesh class than one can query for mesh info
@@ -120,18 +115,18 @@ class Limited_Quadfit<D, CELL, MeshType, StateType> {
       limtype_(limiter_type) {
 
     // Extract the field data from the statemanager
-    state.mesh_get_data(CELL, var_name, &vals_);
+    state.mesh_get_data(Entity_kind::CELL, var_name, &vals_);
 
     // Collect and keep the list of neighbors for each NODE as it may
     // be expensive to go to the mesh layer and collect this data for
     // each cell during the actual quadfit calculation
 
-    int ncells = mesh_.num_entities(CELL);
+    int ncells = mesh_.num_entities(Entity_kind::CELL);
     cell_neighbors_.resize(ncells);
 
-    Portage::for_each(mesh_.begin(CELL), mesh_.end(CELL), 
+    Portage::for_each(mesh_.begin(Entity_kind::CELL), mesh_.end(Entity_kind::CELL),
                       [this](int c) { mesh_.cell_get_node_adj_cells(
-                             c, ALL, &(cell_neighbors_[c])); } );
+                             c, Entity_type::ALL, &(cell_neighbors_[c])); } );
   }
 
   /// @todo Seems to be needed when using this in a Thrust transform call?
@@ -163,7 +158,7 @@ class Limited_Quadfit<D, CELL, MeshType, StateType> {
 
   /*! @brief Implementation of Limited_Quadfit functor for CELLs
       Limited _Quadfit - Fit to a field to a quadratic
-      multinomial using a Least-Squared fit. Returns an  
+      multinomial using a Least-Squared fit. Returns an
       array of parameters.  If the CELL is on a boundary
       the stencil is too small, so it drops to linear order.
       Uses an SVD decomposition for the LS regression.
@@ -171,19 +166,19 @@ class Limited_Quadfit<D, CELL, MeshType, StateType> {
   */
 template<int D, typename MeshType, typename StateType>
   Vector<D*(D+3)/2>
-Limited_Quadfit<D, CELL, MeshType, StateType>::operator() (int const cellid) {
+Limited_Quadfit<D, Entity_kind::CELL, MeshType, StateType>::operator() (int const cellid) {
 
   assert(D == mesh_.space_dimension());
   assert(D == 2 || D == 3);
   double phi = 1.0;
-  Vector<D*(D+3)/2> qfit; 
-  Vector<D*(D+3)/2> dvec; 
+  Vector<D*(D+3)/2> qfit;
+  Vector<D*(D+3)/2> dvec;
 
   std::vector<int> const & nbrids = cell_neighbors_[cellid];
 
   std::vector<Point<D>> cellcenters(nbrids.size()+1);
   std::vector<double> cellvalues(nbrids.size()+1);
-  
+
   // get centroid and value for cellid at center of point cloud
   mesh_.cell_centroid(cellid, &(cellcenters[0]));
 
@@ -196,39 +191,39 @@ Limited_Quadfit<D, CELL, MeshType, StateType>::operator() (int const cellid) {
     i++;
   }
 
-  bool boundary_cell =  mesh_.on_exterior_boundary(CELL, cellid);
+  bool boundary_cell =  mesh_.on_exterior_boundary(Entity_kind::CELL, cellid);
   qfit = Wonton::ls_quadfit(cellcenters, cellvalues, boundary_cell);
   // Limit the gradient to enforce monotonicity preservation
-   
+
   if (limtype_ == BARTH_JESPERSEN && !boundary_cell) {  // No limiting on boundary
-     
+
     // Min and max vals of function (cell centered vals) among neighbors
     /// @todo: must remove assumption the field is scalar
-    
+
     double minval = vals_[cellid];
     double maxval = vals_[cellid];
-    
+
     int nnbr = nbrids.size();
     for (int i = 0; i < nnbr; ++i) {
       minval = std::min(cellvalues[i], minval);
       maxval = std::max(cellvalues[i], maxval);
     }
-    
+
     // Find the min and max of the reconstructed function in the cell
     // Since the reconstruction is linear, this will occur at one of
     // the nodes of the cell. So find the values of the reconstructed
     // function at the nodes of the cell
-    
+
     int dim = mesh_.space_dimension();
-    
+
     double cellcenval = vals_[cellid];
     std::vector<Point<D>> cellcoords;
     mesh_.cell_get_coordinates(cellid, &cellcoords);
-    
+
     for (auto coord : cellcoords) {
       Vector<D> vec = coord-cellcenters[0];
       //Vector<D*(D+3)/2> dvec;
-      for (int j = 0; j < D; ++j) {	  
+      for (int j = 0; j < D; ++j) {
 	dvec[j] = vec[j];
 	// Add the quadratic terms
 	for (int k = 0; k < j; ++k) {
@@ -258,7 +253,7 @@ Limited_Quadfit<D, CELL, MeshType, StateType>::operator() (int const cellid) {
 
 
 template<int D, typename MeshType, typename StateType>
-class Limited_Quadfit<D, NODE, MeshType, StateType> {
+class Limited_Quadfit<D, Entity_kind::NODE, MeshType, StateType> {
  public:
 
   /*! @brief Constructor
@@ -277,18 +272,18 @@ class Limited_Quadfit<D, NODE, MeshType, StateType> {
       limtype_(limiter_type) {
 
     // Extract the field data from the statemanager
-    state.mesh_get_data(NODE, var_name, &vals_);
+    state.mesh_get_data(Entity_kind::NODE, var_name, &vals_);
 
     // Collect and keep the list of neighbors for each NODE as it may
     // be expensive to go to the mesh layer and collect this data for
     // each cell during the actual quadfit calculation
 
-    int nnodes = mesh_.num_entities(NODE);
+    int nnodes = mesh_.num_entities(Entity_kind::NODE);
     node_neighbors_.resize(nnodes);
 
-    Portage::for_each(mesh_.begin(NODE), mesh_.end(NODE), 
+    Portage::for_each(mesh_.begin(Entity_kind::NODE), mesh_.end(Entity_kind::NODE),
                       [this](int n) { mesh_.dual_cell_get_node_adj_cells(
-                             n, ALL, &(node_neighbors_[n])); } );
+                             n, Entity_type::ALL, &(node_neighbors_[n])); } );
   }
 
   /// \todo Seems to be needed when using this in a Thrust transform call?
@@ -321,7 +316,7 @@ class Limited_Quadfit<D, NODE, MeshType, StateType> {
 
   /*! @brief Implementation of Limited_Quadfit functor for NODEs
    *  Limited _Quadfit - Fit to a field to a quadratic
-   *  multinomial using a Least-Squared fit. Returns an  
+   *  multinomial using a Least-Squared fit. Returns an
    *  array of parameters.  If the MODE is on a boundary,
    *  the stencil is too small, so it drops to linear order.
    *  Uses an SVD decomposition for the LS regression.
@@ -330,25 +325,25 @@ class Limited_Quadfit<D, NODE, MeshType, StateType> {
 
 template<int D, typename MeshType, typename StateType>
   Vector<D*(D+3)/2>
-Limited_Quadfit<D, NODE, MeshType, StateType>::operator() (int const nodeid) {
+Limited_Quadfit<D, Entity_kind::NODE, MeshType, StateType>::operator() (int const nodeid) {
 
   assert(D == mesh_.space_dimension());
   assert(D == 2 || D == 3);
   double phi = 1.0;
-  Vector<D*(D+3)/2> qfit; 
-  Vector<D*(D+3)/2> dvec; 
+  Vector<D*(D+3)/2> qfit;
+  Vector<D*(D+3)/2> dvec;
 
   std::vector<int> const & nbrids = node_neighbors_[nodeid];
   int j = 1;
 
   std::vector<Point<D>> nodecoords(nbrids.size()+1);
   std::vector<double> nodevalues(nbrids.size()+1);
-  
+
   Point<D> point;
-  
+
   mesh_.node_get_coordinates(nodeid, &(nodecoords[0]));
   nodevalues[0] = vals_[nodeid];
-  
+
   int i = 1;
   for (auto const & nbrnode : nbrids) {
     mesh_.node_get_coordinates(nbrnode, &nodecoords[i]);
@@ -356,31 +351,31 @@ Limited_Quadfit<D, NODE, MeshType, StateType>::operator() (int const nodeid) {
     i++;
   }
 
-  bool boundary_node =  mesh_.on_exterior_boundary(NODE, nodeid);
+  bool boundary_node =  mesh_.on_exterior_boundary(Entity_kind::NODE, nodeid);
   qfit = Wonton::ls_quadfit(nodecoords, nodevalues, boundary_node);
-  
+
   if (limtype_ == BARTH_JESPERSEN && !boundary_node) {  // No limiting on boundary
-    
+
     // Min and max vals of function (cell centered vals) among neighbors
-    
+
     double minval = vals_[nodeid];
     double maxval = vals_[nodeid];
-    
+
     for (auto const & val : nodevalues) {
       minval = std::min(val, minval);
       maxval = std::max(val, maxval);
     }
-    
+
     // Find the min and max of the reconstructed function in the cell
     // Since the reconstruction is linear, this will occur at one of
     // the nodes of the cell. So find the values of the reconstructed
     // function at the nodes of the cell
-    
+
     double nodeval = vals_[nodeid];
-    
+
     std::vector<Point<D>> dualcellcoords;
     mesh_.dual_cell_get_coordinates(nodeid, &dualcellcoords);
-    
+
     for (auto const & coord : dualcellcoords) {
       Vector<D> vec = coord-nodecoords[0];
       // Vector<D*(D+3)/2> dvec;
