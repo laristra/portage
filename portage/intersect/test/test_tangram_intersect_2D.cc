@@ -11,8 +11,8 @@ Please see the license file at the root of this repository, or at:
 
 #include "portage/intersect/intersect_r2d.h"
 #include "portage/simple_mesh/simple_mesh.h"
-#include "portage/support/Point.h"
-#include "portage/wonton/mesh/simple_mesh/simple_mesh_wrapper.h"
+
+#include "wonton/mesh/simple/simple_mesh_wrapper.h"
 
 double eps = 1.e-8;
 
