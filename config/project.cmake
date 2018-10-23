@@ -46,6 +46,7 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/cmake")
 # Gather all the third party libraries needed for Portage
 #-----------------------------------------------------------------------------
 
+set(portage_LIBRARIES)
 #------------------------------------------------------------------------------#
 # Set up MPI builds
 # (eventually most of this should be pushed down into cinch)
@@ -63,6 +64,24 @@ endif ()
 
 
 set(ARCHOS ${CMAKE_SYSTEM_PROCESSOR}_${CMAKE_SYSTEM_NAME})
+
+#-----------------------------------------------------------------------------
+# Wonton
+#-----------------------------------------------------------------------------
+file(GLOB _wonton_contents ${CMAKE_SOURCE_DIR}/wonton/*)
+if (_wonton_contents)
+  if (CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
+    # We are building portage, and wonton is a subdirectory
+    add_subdirectory(${CMAKE_SOURCE_DIR}/wonton)
+  endif()
+  include_directories(${CMAKE_SOURCE_DIR}/wonton)
+  list(APPEND portage_LIBRARIES wonton)
+else()
+  # wonton is not a subdirectory -- bail for now
+  # may want to revisit this in the future if we want to link against a built
+  # version
+  message(FATAL_ERROR "Missing wonton subdirectory")
+endif(_wonton_contents)
 
 #-----------------------------------------------------------------------------
 # FleCSI and FleCSI-SP location
@@ -348,6 +367,8 @@ endif(NOT ENABLE_THRUST)
 
 cinch_add_application_directory(app)
 cinch_add_library_target(portage portage)
+# TODO - merge LAPACKE_LIBRARIES into portage_LIBRARIES
+cinch_target_link_libraries(portage ${portage_LIBRARIES})
 cinch_target_link_libraries(portage ${LAPACKE_LIBRARIES})
 
 

@@ -3,15 +3,16 @@ This file is part of the Ristra portage project.
 Please see the license file at the root of this repository, or at:
     https://github.com/laristra/portage/blob/master/LICENSE
 */
-#ifndef BASIS_H_INC_
-#define BASIS_H_INC_
+#ifndef PORTAGE_SUPPORT_BASIS_H_
+#define PORTAGE_SUPPORT_BASIS_H_
 
 #include <cassert>
 #include <cmath>
 #include <array>
 #include <vector>
 
-#include "portage/support/Point.h"
+// portage includes
+#include "portage/support/portage.h"
 
 namespace Portage {
 namespace Meshfree {
@@ -58,7 +59,7 @@ class Traits<Quadratic, dim>
   static constexpr size_t function_size=quadratic_sizes[dim];
   // Intel 18.0.1 compiler cannot handle this declaration so we use the alternative
   //  static constexpr array<size_t,2>
-  //    jet_size={quadratic_sizes[dim], quadratic_sizes[dim]};  
+  //    jet_size={quadratic_sizes[dim], quadratic_sizes[dim]};
   static constexpr array<size_t,2>
     jet_size={function_size, function_size};
   using array_t = array<double, function_size>;
@@ -700,7 +701,7 @@ typename Traits<Linear,3>::matrix_t transfactor<Linear,3>(const Point<3> &c) {
   tf[3][0]=c[2];
   tf[3][1]=0;
   tf[3][2]=0;
-  tf[3][3]=1;  
+  tf[3][3]=1;
  return tf;
 }
 
@@ -1068,8 +1069,8 @@ typename Traits<Quadratic,3>::matrix_t transfactor<Quadratic,3>(const Point<3> &
   return tf;
 }
 
-}
-}
-}
+}  // namespace Basis
+}  // namespace Meshfree
+}  // namespace Portage
 
-#endif // BASIS_H_INC
+#endif  // PORTAGE_SUPPORT_BASIS_H_

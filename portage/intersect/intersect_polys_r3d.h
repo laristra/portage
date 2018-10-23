@@ -20,7 +20,7 @@ extern "C" {
 #include "tangram/support/MatPoly.h"
 #endif
 
-#include "portage/support/Point.h"
+
 #include "portage/support/portage.h"
 
 

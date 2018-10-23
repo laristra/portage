@@ -12,7 +12,7 @@ Please see the license file at the root of this repository, or at:
 #include <list>
 
 #include "portage/support/portage.h"
-#include "portage/support/Point.h"
+
 #include "portage/accumulate/accumulate.h"
 
 #include "pile.hh"

@@ -19,7 +19,7 @@ Please see the license file at the root of this repository, or at:
 #include "portage/accumulate/accumulate.h"
 #include "portage/estimate/estimate.h"
 #include "portage/support/operator.h"
-#include "portage/support/Point.h"
+
 #include "portage/support/portage.h"
 #include "portage/search/search_points_by_cells.h"
 

@@ -19,11 +19,10 @@ Please see the license file at the root of this repository, or at:
 #include "flecsi-sp/burton/factory.h"
 #include "flecsi-sp/burton/burton_io_exodus.h"
 
-#include "portage/support/Point.h"
 #include "portage/driver/mmdriver.h"
 #include "portage/support/mpi_collate.h"
-#include "portage/wonton/mesh/flecsi/flecsi_mesh_wrapper.h"
-#include "portage/wonton/state/flecsi/flecsi_state_wrapper.h"
+#include "wonton/mesh/flecsi/flecsi_mesh_wrapper.h"
+#include "wonton/state/flecsi/flecsi_state_wrapper.h"
 
 
 namespace math = flecsi::sp::math;

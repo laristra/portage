@@ -4,8 +4,6 @@
   https://github.com/laristra/portage/blob/master/LICENSE
 */
 
-
-
 #include <sys/time.h>
 
 #include <cstdio>
@@ -34,11 +32,10 @@
 
 
 #include "portage/support/portage.h"
-#include "portage/support/Point.h"
 #include "portage/support/mpi_collate.h"
 #include "portage/driver/mmdriver.h"
-#include "portage/wonton/mesh/jali/jali_mesh_wrapper.h"
-#include "portage/wonton/state/jali/jali_state_wrapper.h"
+#include "wonton/mesh/jali/jali_mesh_wrapper.h"
+#include "wonton/state/jali/jali_state_wrapper.h"
 #include "read_material_data.h"
 
 #ifdef HAVE_TANGRAM
@@ -59,8 +56,8 @@ using Wonton::Jali_Mesh_Wrapper;
 using Portage::argsort;
 using Portage::reorder;
 
-/*!
-  @file portageapp_jali_multimat.cc
+/*! 
+  @file portageapp_jali_multimat.cc 
 
   @brief A simple application that remaps multi-material fields
   between two meshes - the meshes can be internally generated
@@ -81,7 +78,7 @@ using Portage::reorder;
 int print_usage() {
   std::cout << std::endl;
   std::cout << "Usage: portageapp " <<
-      "--dim=2|3 --nsourcecells=N --ntargetcells=M --conformal=y|n \n" <<
+      "--dim=2|3 --nsourcecells=N --ntargetcells=M --conformal=y|n \n" << 
       "--remap_order=1|2 \n" <<
       "--limiter=barth_jespersen --mesh_min=0. --mesh_max=1. \n" <<
       "--output_meshes=y|n --results_file=filename --convergence_study=NREF \n\n";
@@ -905,8 +902,6 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
       }
     }
   }
-
-
 
   *L2_error = sqrt(*L2_error);
   if (numpe > 1) {

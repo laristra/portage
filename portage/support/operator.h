@@ -12,7 +12,7 @@
 #include <vector>
 #include <stdexcept>
 
-#include "portage/support/Point.h"
+
 #include "portage/support/basis.h"
 
 namespace Portage {
