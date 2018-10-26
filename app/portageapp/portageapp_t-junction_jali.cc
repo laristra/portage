@@ -294,7 +294,7 @@ int main(int argc, char** argv) {
   // is not yet capable of handling multi-material state
 
   if (numpe > 1) {
-    std::cerr << "ERROR: portageapp_multimat_jali only runs in serial for now\n";
+    std::cerr << "ERROR: portageapp_t-junction_jali only runs in serial for now\n";
     exit(-1);
   }
 
@@ -558,7 +558,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
                            double *L1_error, double *L2_error) {
 
   if (rank == 0)
-    std::cout << "starting portageapp_jali_multimat...\n";
+    std::cout << "starting portageapp_t-junction_jali...\n";
 
   // Wrappers for interfacing with the underlying mesh data structures.
   Wonton::Jali_Mesh_Wrapper sourceMeshWrapper(*sourceMesh);
