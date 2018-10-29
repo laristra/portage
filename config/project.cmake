@@ -291,6 +291,7 @@ if (TANGRAM_FOUND)
       set(XMOF2D_LIBRARIES ${XMOF2D_LIBRARY})
     endif (XMOF2D_LIBRARY)
     message(STATUS "XMOF2D LIBRARIES ---> ${XMOF2D_LIBRARIES}")
+    add_definitions("-DHAVE_XMOF2D")
   endif (XMOF2D_FOUND)
 endif (TANGRAM_FOUND)
 
