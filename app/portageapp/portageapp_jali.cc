@@ -38,6 +38,8 @@
 // wonton includes
 #include "wonton/mesh/jali/jali_mesh_wrapper.h"
 #include "wonton/state/jali/jali_state_wrapper.h"
+#include "wonton/support/Point.h" 
+#include "wonton/support/wonton.h"
 
 // For parsing and evaluating user defined expressions in apps
 
@@ -487,8 +489,6 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
 
   if (rank == 0) {
     std::cout << "starting portageapp_jali...\n";
-    std::cout << "Source mesh on rank 0 has " << nsrccells << " cells\n";
-    std::cout << "Target mesh on rank 0 has " << ntarcells << " cells\n";
     std::cout << "All fields on" << entityKind << "including "
               << "the command line field (if specified) will be remapped\n";
     if (field_expression.length())
@@ -498,8 +498,33 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
       std::cout << "   Limiter type is " << limiter << "\n";
   }
 
-
-
+  std::cout << "\nSource mesh on rank "<< rank <<" has " << nsrccells << " cells\n";
+  std::cout << "Source mesh on rank "<< rank <<" has " << sourceMeshWrapper.num_owned_cells() << " owned cells\n";
+  std::cout << "Target mesh on rank "<< rank <<" has " << ntarcells << " cells\n";
+  
+  for (int i = 0; i<nsrccells; i++){
+    std::vector<Wonton::Point<2>> coords;
+  	sourceMeshWrapper.cell_get_coordinates(i,&coords);
+  	std::cout << "Src rank " << rank << " cell " << i ;
+  	std::cout << " has gid " << sourceMeshWrapper.get_global_id(i, Wonton::Entity_kind::CELL);
+  	std::cout << " : ";
+  	std::cout << "(" << coords[0][0] << ", " << coords[0][1] << ") ";
+  	std::cout << "(" << coords[1][0] << ", " << coords[1][1] << ") ";
+  	std::cout << "(" << coords[2][0] << ", " << coords[2][1] << ") ";
+  	std::cout << "(" << coords[3][0] << ", " << coords[3][1] << ")"<<std::endl;
+  }
+  
+  for (int i = 0; i<ntarcells; i++){
+    std::vector<Wonton::Point<2>> coords;
+  	targetMeshWrapper.cell_get_coordinates(i,&coords);
+  	std::cout << "tgt rank " << rank << " cell " << i ;
+  	std::cout << " : ";
+  	std::cout << "(" << coords[0][0] << ", " << coords[0][1] << ") ";
+  	std::cout << "(" << coords[1][0] << ", " << coords[1][1] << ") ";
+  	std::cout << "(" << coords[2][0] << ", " << coords[2][1] << ") ";
+  	std::cout << "(" << coords[3][0] << ", " << coords[3][1] << ")"<<std::endl;
+  }
+  
   // Native jali state managers for source and target
   std::shared_ptr<Jali::State> sourceState(Jali::State::create(sourceMesh));
   std::shared_ptr<Jali::State> targetState(Jali::State::create(targetMesh));

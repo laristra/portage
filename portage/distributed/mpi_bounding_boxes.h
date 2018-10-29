@@ -7,7 +7,7 @@ Please see the license file at the root of this repository, or at:
 #ifndef MPI_BOUNDING_BOXES_H_
 #define MPI_BOUNDING_BOXES_H_
 
-//#define DEBUG_MPI
+#define DEBUG_MPI
 
 #include <cassert>
 #include <algorithm>
@@ -223,7 +223,10 @@ class MPI_Bounding_Boxes {
             sourceNumCells, sourceNumOwnedCells);
 
 #ifdef DEBUG_MPI
-    std::cout << "Received  on rank " << commRank << ", from source rank 0:" << cellInfo.recvCounts[0] << ", from source rank 1:" << cellInfo.recvCounts[1] << ",  totaling:" << cellInfo.newNum
+    std::cout << "Received  on rank " << commRank << ", from source rank 0:" << cellInfo.recvCounts[0];
+    std::cout << ", from source rank 1:" << cellInfo.recvCounts[1];
+    std::cout << ", from source rank 2:" << cellInfo.recvCounts[2];
+    std::cout << ",  totaling:" << cellInfo.newNum
               << " ,of which " << (cellInfo.newNum - cellInfo.recvCounts[commRank]) << " were received from different ranks" << std::endl;
 #endif
 
@@ -415,6 +418,18 @@ class MPI_Bounding_Boxes {
 
     } // for field_name
 
+#ifdef DEBUG_MPI
+    for (std::string field_name : source_state_flat.names())
+    {
+      std::vector<double>& sourceField = source_state_flat.get_vector(field_name);
+      std::cout  << "****\nJust distributed source user field \"" << field_name << "\" (rank " << commRank <<"):" << std::endl;
+    	for (double x: sourceField){
+    	  std::cout << x << " ";
+    	}
+    	std::cout << "\n***\n" <<std::endl;
+    } // diagnostic print
+#endif
+
     // We will now use the received source mesh data as our new source mesh on this partition
     // TODO:  replace with swap
     sourceCoords = newCoords;
@@ -462,6 +477,17 @@ class MPI_Bounding_Boxes {
     std::cout << std::endl << std::endl;
 #endif
 
+#ifdef DEBUG_MPI
+    for (std::string field_name : source_state_flat.names())
+    {
+      std::vector<double>& sourceField = source_state_flat.get_vector(field_name);
+      std::cout  << "****\nThe very end of distribute() source user field \"" << field_name << "\" (rank " << commRank <<"):" << std::endl;
+    	for (double x: sourceField){
+    	  std::cout << x << " ";
+    	}
+    	std::cout << "\n***\n" <<std::endl;
+    } // diagnostic print
+#endif
   } // distribute
 
  private:
