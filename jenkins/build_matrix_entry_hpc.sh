@@ -33,8 +33,8 @@ fi
 
 jali_version=1.0.0
 openmpi_version=2.1.2
-tangram_version=0.9.0
-xmof2d_version=529f2dcdbe4
+tangram_version=0.9.1
+xmof2d_version=0.9.1
 lapack_version=3.8.0
 
 export NGC=/usr/projects/ngc

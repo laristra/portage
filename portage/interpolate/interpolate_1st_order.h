@@ -63,10 +63,10 @@ namespace Portage {
 
 */
 
-template<int D, 
+template<int D,
          Entity_kind on_what,
-         typename SourceMeshType, 
-         typename TargetMeshType, 
+         typename SourceMeshType,
+         typename TargetMeshType,
          typename StateType,
          template<class, int, class, class> class InterfaceReconstructorType =
          DummyInterfaceReconstructor,
@@ -86,7 +86,7 @@ class Interpolate_1stOrder {
 #ifdef HAVE_TANGRAM
   Interpolate_1stOrder(SourceMeshType const & source_mesh,
                        TargetMeshType const & target_mesh,
-                       StateType const & source_state, 
+                       StateType const & source_state,
                        std::shared_ptr<InterfaceReconstructor> ir) :
       source_mesh_(source_mesh),
       target_mesh_(target_mesh),
@@ -94,7 +94,7 @@ class Interpolate_1stOrder {
       interface_reconstructor_(ir),
       interp_var_name_("VariableNameNotSet"),
       source_vals_(nullptr) {}
-#endif 
+#endif
 
   /*!
     @brief Constructor without interface reconstructor.
@@ -143,9 +143,9 @@ class Interpolate_1stOrder {
   void set_interpolation_variable(std::string const & interp_var_name,
                                   LimiterType limtype=NOLIMITER) {
     interp_var_name_ = interp_var_name;
-    field_type_ = source_state_.field_type(CELL, interp_var_name);
+    field_type_ = source_state_.field_type(Entity_kind::CELL, interp_var_name);
     if (field_type_ == Field_type::MESH_FIELD)
-      source_state_.mesh_get_data(CELL, interp_var_name,
+      source_state_.mesh_get_data(Entity_kind::CELL, interp_var_name,
                                   &source_vals_);
     else
       source_state_.mat_get_celldata(interp_var_name, matid_, &source_vals_);
@@ -197,16 +197,16 @@ class Interpolate_1stOrder {
 */
 
 template<int D,
-         typename SourceMeshType, 
-         typename TargetMeshType, 
+         typename SourceMeshType,
+         typename TargetMeshType,
          typename StateType,
          template<class, int, class, class> class InterfaceReconstructorType,
          class Matpoly_Splitter,
          class Matpoly_Clipper>
-class Interpolate_1stOrder<D, 
-                           CELL, 
-                           SourceMeshType, 
-                           TargetMeshType, 
+class Interpolate_1stOrder<D,
+                           Entity_kind::CELL,
+                           SourceMeshType,
+                           TargetMeshType,
                            StateType,
                            InterfaceReconstructorType,
                            Matpoly_Splitter,
@@ -217,7 +217,7 @@ class Interpolate_1stOrder<D,
       Tangram::Driver<InterfaceReconstructorType, D, SourceMeshType,
                       Matpoly_Splitter, Matpoly_Clipper>;
 #endif
-                            
+
  public:
 
 #ifdef HAVE_TANGRAM
@@ -231,7 +231,7 @@ class Interpolate_1stOrder<D,
       interface_reconstructor_(ir),
       interp_var_name_("VariableNameNotSet"),
       source_vals_(nullptr) {}
-#endif 
+#endif
   /*!
     @brief Constructor.
     @param[in] source_mesh The input mesh.
@@ -276,12 +276,12 @@ class Interpolate_1stOrder<D,
   // order interpolators and so all interpolators need to have a
   // uniform interface
 
-  void set_interpolation_variable(std::string const & interp_var_name, 
+  void set_interpolation_variable(std::string const & interp_var_name,
                                   LimiterType limtype = NOLIMITER) {
     interp_var_name_ = interp_var_name;
-    field_type_ = source_state_.field_type(CELL, interp_var_name);
+    field_type_ = source_state_.field_type(Entity_kind::CELL, interp_var_name);
     if (field_type_ == Field_type::MESH_FIELD)
-      source_state_.mesh_get_data(CELL, interp_var_name,
+      source_state_.mesh_get_data(Entity_kind::CELL, interp_var_name,
                                   &source_vals_);
     else
       source_state_.mat_get_celldata(interp_var_name, matid_, &source_vals_);
@@ -317,7 +317,7 @@ class Interpolate_1stOrder<D,
 
     // contribution of the source cell is its field value weighted by
     // its "weight" (in this case, its 0th moment/area/volume)
-  
+
     double val = 0.0;
     double wtsum0 = 0.0;
     double vol = target_mesh_.cell_volume(targetCellID);
@@ -343,7 +343,7 @@ class Interpolate_1stOrder<D,
         nsummed++;
       }
     }
-  
+
     // Normalize the value by the volume of the intersection of the target cells
     // with the source mesh. This will do the right thing for single-material
     // and multi-material remap (conservative and constant preserving) if there
@@ -392,16 +392,16 @@ class Interpolate_1stOrder<D,
 */
 
 template<int D,
-         typename SourceMeshType, 
-         typename TargetMeshType, 
+         typename SourceMeshType,
+         typename TargetMeshType,
          typename StateType,
          template<class, int, class, class> class InterfaceReconstructorType,
          class Matpoly_Splitter,
          class Matpoly_Clipper>
-class Interpolate_1stOrder<D, 
-                           NODE, 
-                           SourceMeshType, 
-                           TargetMeshType, 
+class Interpolate_1stOrder<D,
+                           Entity_kind::NODE,
+                           SourceMeshType,
+                           TargetMeshType,
                            StateType,
                            InterfaceReconstructorType,
                            Matpoly_Splitter,
@@ -427,7 +427,7 @@ class Interpolate_1stOrder<D,
       interface_reconstructor_(ir),
       interp_var_name_("VariableNameNotSet"),
       source_vals_(nullptr) {}
-#endif   
+#endif
 
   /*!
     @brief Constructor without interface reconstructor
@@ -474,9 +474,9 @@ class Interpolate_1stOrder<D,
   void set_interpolation_variable(std::string const & interp_var_name,
                                   LimiterType limtype = NOLIMITER) {
     interp_var_name_ = interp_var_name;
-    field_type_ = source_state_.field_type(NODE, interp_var_name);
+    field_type_ = source_state_.field_type(Entity_kind::NODE, interp_var_name);
     if (field_type_ == Field_type::MESH_FIELD)
-      source_state_.mesh_get_data(NODE, interp_var_name,
+      source_state_.mesh_get_data(Entity_kind::NODE, interp_var_name,
                                   &source_vals_);
     else {
       source_state_.mat_get_celldata(interp_var_name, matid_, &source_vals_);
@@ -542,7 +542,7 @@ class Interpolate_1stOrder<D,
       val /= wtsum0;
     else
       val = 0.0;
-  
+
 #ifdef DEBUG
     static bool first = true;
     if (first && fabs((vol-wtsum0)/vol) > 1.0e-10) {

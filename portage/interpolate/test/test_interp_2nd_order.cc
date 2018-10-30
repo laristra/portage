@@ -9,11 +9,16 @@ Please see the license file at the root of this repository, or at:
 
 #include "gtest/gtest.h"
 
+// portage includes
 #include "portage/interpolate/interpolate_2nd_order.h"
-#include "portage/support/portage.h"
-#include "portage/wonton/mesh/simple_mesh/simple_mesh_wrapper.h"
-#include "portage/wonton/state/simple_state/simple_state_wrapper.h"
 #include "portage/intersect/simple_intersect_for_tests.h"
+#include "portage/support/portage.h"
+
+// wonton includes
+#include "wonton/mesh/simple/simple_mesh.h"
+#include "wonton/mesh/simple/simple_mesh_wrapper.h"
+#include "wonton/state/simple/simple_state.h"
+#include "wonton/state/simple/simple_state_wrapper.h"
 
 double TOL = 1e-12;
 
@@ -23,19 +28,19 @@ double TOL = 1e-12;
 TEST(Interpolate_2nd_Order, Cell_Ctr_Const_No_Limiter_2D) {
 
   // Create simple meshes
-  
-  std::shared_ptr<Portage::Simple_Mesh> source_mesh =
-    std::make_shared<Portage::Simple_Mesh>(0.0, 0.0, 1.0, 1.0, 4, 4);
-  std::shared_ptr<Portage::Simple_Mesh> target_mesh =
-    std::make_shared<Portage::Simple_Mesh>(0.0, 0.0, 1.0, 1.0, 5, 5);
+
+  std::shared_ptr<Wonton::Simple_Mesh> source_mesh =
+    std::make_shared<Wonton::Simple_Mesh>(0.0, 0.0, 1.0, 1.0, 4, 4);
+  std::shared_ptr<Wonton::Simple_Mesh> target_mesh =
+    std::make_shared<Wonton::Simple_Mesh>(0.0, 0.0, 1.0, 1.0, 5, 5);
 
   // Create mesh wrappers
-  
+
   Wonton::Simple_Mesh_Wrapper sourceMeshWrapper(*source_mesh);
   Wonton::Simple_Mesh_Wrapper targetMeshWrapper(*target_mesh);
 
   // count cells
-  
+
   const int ncells_source =
       sourceMeshWrapper.num_owned_cells();
   const int ncells_target =
@@ -43,18 +48,18 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Const_No_Limiter_2D) {
 
   // Create a state object
 
-  Portage::Simple_State source_state(source_mesh);
+  Wonton::Simple_State source_state(source_mesh);
 
   // Define a state vector with constant value and add it to the source state
 
   std::vector<double> data(ncells_source, 1.25);
   source_state.add("cellvars", Portage::Entity_kind::CELL, &(data[0]));
-  
+
   // Create state wrapper
-  
+
   Wonton::Simple_State_Wrapper sourceStateWrapper(source_state);
 
-  // Gather the cell coordinates as Portage Points for source and target meshes 
+  // Gather the cell coordinates as Portage Points for source and target meshes
   // for intersection. The outer vector is the cells, the inner vector is the
   // points of the vertices of that cell.
 
@@ -64,7 +69,7 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Const_No_Limiter_2D) {
       target_cell_coords(ncells_target);
 
   // Actually get the Portage::Points
-  
+
   for (int c = 0; c < ncells_source; ++c)
     sourceMeshWrapper.cell_get_coordinates(c, &(source_cell_coords[c]));
   for (int c = 0; c < ncells_target; ++c)
@@ -76,37 +81,37 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Const_No_Limiter_2D) {
   std::vector<double> outvals(ncells_target);
   std::vector<std::vector<Portage::Weights_t>>
       sources_and_weights(ncells_target);
-      
+
   // Loop over target cells
-      
+
   for (int c = 0; c < ncells_target; ++c) {
-  
+
     std::vector<int> xcells;
     std::vector<std::vector<double>> xwts;
 
 		// Compute the moments
 		// xcells is the source cell indices that intersect
 		// xwts is the moments vector for each cell that intersects
-		
+
     BOX_INTERSECT::intersection_moments<2>(target_cell_coords[c],
                                         source_cell_coords,
                                         &xcells, &xwts);
 
     // Pack the results into a vector of true Portage::Weights_t
-    
+
     std::vector<Portage::Weights_t> wtsvec(xcells.size());
     for (int i = 0; i < xcells.size(); ++i) {
       wtsvec[i].entityID = xcells[i];
       wtsvec[i].weights = xwts[i];
     }
-    
+
     // Put the weights in final form
-    
+
     sources_and_weights[c] = wtsvec;
   }
-  
+
   // Now do it the Portage way
-  
+
   // Create Interpolation object
 
   Portage::Interpolate_2ndOrder<2, Portage::Entity_kind::CELL,
@@ -117,15 +122,15 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Const_No_Limiter_2D) {
 
   interpolater.set_interpolation_variable("cellvars");
 
-      
-  Portage::transform(targetMeshWrapper.begin(Portage::Entity_kind::CELL), 
+
+  Portage::transform(targetMeshWrapper.begin(Portage::Entity_kind::CELL),
                      targetMeshWrapper.end(Portage::Entity_kind::CELL),
                      sources_and_weights.begin(),
                      outvals.begin(), interpolater);
 
   // Make sure we retrieved the correct value for each cell on the target
   const double stdval = data[0];
-  for (int c = 0; c < ncells_target; ++c) 
+  for (int c = 0; c < ncells_target; ++c)
     ASSERT_NEAR(stdval, outvals[c],TOL);
 
 }
@@ -136,19 +141,19 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Const_No_Limiter_2D) {
 
 TEST(Interpolate_2nd_Order, Cell_Ctr_Lin_No_Limiter_2D) {
   // Create simple meshes
-  
-  std::shared_ptr<Portage::Simple_Mesh> source_mesh =
-    std::make_shared<Portage::Simple_Mesh>(0.0, 0.0, 1.0, 1.0, 4, 4);
-  std::shared_ptr<Portage::Simple_Mesh> target_mesh =
-    std::make_shared<Portage::Simple_Mesh>(0.0, 0.0, 1.0, 1.0, 5, 5);
+
+  std::shared_ptr<Wonton::Simple_Mesh> source_mesh =
+    std::make_shared<Wonton::Simple_Mesh>(0.0, 0.0, 1.0, 1.0, 4, 4);
+  std::shared_ptr<Wonton::Simple_Mesh> target_mesh =
+    std::make_shared<Wonton::Simple_Mesh>(0.0, 0.0, 1.0, 1.0, 5, 5);
 
   // Create mesh wrappers
-  
+
   Wonton::Simple_Mesh_Wrapper sourceMeshWrapper(*source_mesh);
   Wonton::Simple_Mesh_Wrapper targetMeshWrapper(*target_mesh);
 
   // count cells
-  
+
   const int ncells_source =
       sourceMeshWrapper.num_owned_cells();
   const int ncells_target =
@@ -156,7 +161,7 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Lin_No_Limiter_2D) {
 
   // Create a state object
 
-  Portage::Simple_State source_state(source_mesh);
+  Wonton::Simple_State source_state(source_mesh);
 
 // Define a state vector with linear value and add it to the source state
 
@@ -166,13 +171,13 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Lin_No_Limiter_2D) {
     sourceMeshWrapper.cell_centroid(c, &cen);
     data[c] = cen[0]+cen[1];
   }
-  source_state.add("cellvars", Portage::Entity_kind::CELL, &(data[0]));  
+  source_state.add("cellvars", Portage::Entity_kind::CELL, &(data[0]));
 
   // Create state wrapper
-  
+
   Wonton::Simple_State_Wrapper sourceStateWrapper(source_state);
 
-  // Gather the cell coordinates as Portage Points for source and target meshes 
+  // Gather the cell coordinates as Portage Points for source and target meshes
   // for intersection. The outer vector is the cells, the inner vector is the
   // points of the vertices of that cell.
 
@@ -182,7 +187,7 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Lin_No_Limiter_2D) {
       target_cell_coords(ncells_target);
 
   // Actually get the Portage::Points
-  
+
   for (int c = 0; c < ncells_source; ++c)
     sourceMeshWrapper.cell_get_coordinates(c, &(source_cell_coords[c]));
   for (int c = 0; c < ncells_target; ++c)
@@ -194,37 +199,37 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Lin_No_Limiter_2D) {
   std::vector<double> outvals(ncells_target);
   std::vector<std::vector<Portage::Weights_t>>
       sources_and_weights(ncells_target);
-      
+
   // Loop over target cells
-      
+
   for (int c = 0; c < ncells_target; ++c) {
-  
+
     std::vector<int> xcells;
     std::vector<std::vector<double>> xwts;
 
 		// Compute the moments
 		// xcells is the source cell indices that intersect
 		// xwts is the moments vector for each cell that intersects
-		
+
     BOX_INTERSECT::intersection_moments<2>(target_cell_coords[c],
                                         source_cell_coords,
                                         &xcells, &xwts);
 
     // Pack the results into a vector of true Portage::Weights_t
-    
+
     std::vector<Portage::Weights_t> wtsvec(xcells.size());
     for (int i = 0; i < xcells.size(); ++i) {
       wtsvec[i].entityID = xcells[i];
       wtsvec[i].weights = xwts[i];
     }
-    
+
     // Put the weights in final form
-    
+
     sources_and_weights[c] = wtsvec;
   }
-  
+
   // Now do it the Portage way
-  
+
   // Create Interpolation object
 
   Portage::Interpolate_2ndOrder<2, Portage::Entity_kind::CELL,
@@ -235,14 +240,14 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Lin_No_Limiter_2D) {
 
   interpolater.set_interpolation_variable("cellvars");
 
-      
-  Portage::transform(targetMeshWrapper.begin(Portage::Entity_kind::CELL), 
+
+  Portage::transform(targetMeshWrapper.begin(Portage::Entity_kind::CELL),
                      targetMeshWrapper.end(Portage::Entity_kind::CELL),
                      sources_and_weights.begin(),
                      outvals.begin(), interpolater);
-  
+
   // Make sure we retrieved the correct value for each cell on the target
-  
+
   std::vector<double> stdvals(ncells_target);
   for (int c = 0; c < ncells_target; ++c) {
     Portage::Point<2> cen;
@@ -264,19 +269,19 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Lin_No_Limiter_2D) {
 TEST(Interpolate_2nd_Order, Cell_Ctr_Lin_BJ_Limiter_2D) {
 
   // Create simple meshes
-  
-  std::shared_ptr<Portage::Simple_Mesh> source_mesh =
-    std::make_shared<Portage::Simple_Mesh>(0.0, 0.0, 1.0, 1.0, 4, 4);
-  std::shared_ptr<Portage::Simple_Mesh> target_mesh =
-    std::make_shared<Portage::Simple_Mesh>(0.0, 0.0, 1.0, 1.0, 5, 5);
+
+  std::shared_ptr<Wonton::Simple_Mesh> source_mesh =
+    std::make_shared<Wonton::Simple_Mesh>(0.0, 0.0, 1.0, 1.0, 4, 4);
+  std::shared_ptr<Wonton::Simple_Mesh> target_mesh =
+    std::make_shared<Wonton::Simple_Mesh>(0.0, 0.0, 1.0, 1.0, 5, 5);
 
   // Create mesh wrappers
-  
+
   Wonton::Simple_Mesh_Wrapper sourceMeshWrapper(*source_mesh);
   Wonton::Simple_Mesh_Wrapper targetMeshWrapper(*target_mesh);
 
   // count cells
-  
+
   const int ncells_source =
       sourceMeshWrapper.num_owned_cells();
   const int ncells_target =
@@ -284,12 +289,12 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Lin_BJ_Limiter_2D) {
 
   // Create a state object
 
-  Portage::Simple_State source_state(source_mesh);
+  Wonton::Simple_State source_state(source_mesh);
 
   // Define a state vector with linear value and add it to the source state
 
   double minval = 1e+10, maxval = -1e+10;
-  
+
   std::vector<double> data(ncells_source);
   for (int c = 0; c < ncells_source; ++c) {
     Portage::Point<2> ccen;
@@ -301,13 +306,13 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Lin_BJ_Limiter_2D) {
     if (data[c] < minval) minval = data[c];
     if (data[c] > maxval) maxval = data[c];
   }
-  source_state.add("cellvars", Portage::Entity_kind::CELL, &(data[0]));  
+  source_state.add("cellvars", Portage::Entity_kind::CELL, &(data[0]));
 
   // Create state wrapper
-  
+
   Wonton::Simple_State_Wrapper sourceStateWrapper(source_state);
 
-  // Gather the cell coordinates as Portage Points for source and target meshes 
+  // Gather the cell coordinates as Portage Points for source and target meshes
   // for intersection. The outer vector is the cells, the inner vector is the
   // points of the vertices of that cell.
 
@@ -317,7 +322,7 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Lin_BJ_Limiter_2D) {
       target_cell_coords(ncells_target);
 
   // Actually get the Portage::Points
-  
+
   for (int c = 0; c < ncells_source; ++c)
     sourceMeshWrapper.cell_get_coordinates(c, &(source_cell_coords[c]));
   for (int c = 0; c < ncells_target; ++c)
@@ -330,37 +335,37 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Lin_BJ_Limiter_2D) {
   std::vector<double> outvals2(ncells_target);
   std::vector<std::vector<Portage::Weights_t>>
       sources_and_weights(ncells_target);
-      
+
   // Loop over target cells
-      
+
   for (int c = 0; c < ncells_target; ++c) {
-  
+
     std::vector<int> xcells;
     std::vector<std::vector<double>> xwts;
 
 		// Compute the moments
 		// xcells is the source cell indices that intersect
 		// xwts is the moments vector for each cell that intersects
-		
+
     BOX_INTERSECT::intersection_moments<2>(target_cell_coords[c],
                                         source_cell_coords,
                                         &xcells, &xwts);
 
     // Pack the results into a vector of true Portage::Weights_t
-    
+
     std::vector<Portage::Weights_t> wtsvec(xcells.size());
     for (int i = 0; i < xcells.size(); ++i) {
       wtsvec[i].entityID = xcells[i];
       wtsvec[i].weights = xwts[i];
     }
-    
+
     // Put the weights in final form
-    
+
     sources_and_weights[c] = wtsvec;
   }
-  
+
   // Now do it the Portage way
-  
+
   // Create Interpolation object
 
   Portage::Interpolate_2ndOrder<2, Portage::Entity_kind::CELL,
@@ -371,20 +376,20 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Lin_BJ_Limiter_2D) {
 
   interpolater.set_interpolation_variable("cellvars", Portage::NOLIMITER);
 
-      
-  Portage::transform(targetMeshWrapper.begin(Portage::Entity_kind::CELL), 
+
+  Portage::transform(targetMeshWrapper.begin(Portage::Entity_kind::CELL),
                      targetMeshWrapper.end(Portage::Entity_kind::CELL),
                      sources_and_weights.begin(),
                      outvals1.begin(), interpolater);
-  
+
   interpolater.set_interpolation_variable("cellvars", Portage::BARTH_JESPERSEN);
 
-      
-  Portage::transform(targetMeshWrapper.begin(Portage::Entity_kind::CELL), 
+
+  Portage::transform(targetMeshWrapper.begin(Portage::Entity_kind::CELL),
                      targetMeshWrapper.end(Portage::Entity_kind::CELL),
                      sources_and_weights.begin(),
                      outvals2.begin(), interpolater);
-  
+
   // COULD REMOVE
   // Make sure we retrieved the correct value for each cell on the target
   std::vector<double> stdvals(ncells_target);
@@ -393,7 +398,7 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Lin_BJ_Limiter_2D) {
     targetMeshWrapper.cell_centroid(c, &cen);
     stdvals[c] = cen[0]+cen[1];
   }
-  
+
   // Check if we violated the bounds on at least one cell in the
   // unlimited interpolation and if we respected the bounds in all
   // cells in the limited case
@@ -430,19 +435,19 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Lin_BJ_Limiter_2D) {
 TEST(Interpolate_2nd_Order, Node_Ctr_Const_No_Limiter) {
 
   // Create simple meshes
-  
-  std::shared_ptr<Portage::Simple_Mesh> source_mesh =
-    std::make_shared<Portage::Simple_Mesh>(0.0, 0.0, 1.0, 1.0, 4, 4);
-  std::shared_ptr<Portage::Simple_Mesh> target_mesh =
-    std::make_shared<Portage::Simple_Mesh>(0.0, 0.0, 1.0, 1.0, 5, 5);
+
+  std::shared_ptr<Wonton::Simple_Mesh> source_mesh =
+    std::make_shared<Wonton::Simple_Mesh>(0.0, 0.0, 1.0, 1.0, 4, 4);
+  std::shared_ptr<Wonton::Simple_Mesh> target_mesh =
+    std::make_shared<Wonton::Simple_Mesh>(0.0, 0.0, 1.0, 1.0, 5, 5);
 
   // Create mesh wrappers
-  
+
   Wonton::Simple_Mesh_Wrapper sourceMeshWrapper(*source_mesh);
   Wonton::Simple_Mesh_Wrapper targetMeshWrapper(*target_mesh);
 
   // count nodes
-  
+
   const int nnodes_source =
       sourceMeshWrapper.num_owned_nodes();
   const int nnodes_target =
@@ -450,18 +455,18 @@ TEST(Interpolate_2nd_Order, Node_Ctr_Const_No_Limiter) {
 
   // Create a state object
 
-  Portage::Simple_State source_state(source_mesh);
+  Wonton::Simple_State source_state(source_mesh);
 
   // Define a state vector with constant value and add it to the source state
 
   std::vector<double> data(nnodes_source, 1.25);
   source_state.add("nodevars", Portage::Entity_kind::NODE, &(data[0]));
-  
+
   // Create state wrapper
-  
+
   Wonton::Simple_State_Wrapper sourceStateWrapper(source_state);
 
-  // Gather the cell coordinates as Portage Points for source and target meshes 
+  // Gather the cell coordinates as Portage Points for source and target meshes
   // for intersection. The outer vector is the cells, the inner vector is the
   // points of the vertices of that cell.
 
@@ -470,11 +475,11 @@ TEST(Interpolate_2nd_Order, Node_Ctr_Const_No_Limiter) {
   std::vector<std::vector<Portage::Point<2>>>
       target_dualcell_coords(nnodes_target);
 
-  // Actually get the Portage::Points for the dual cells 
-   
-  for (int n = 0; n < nnodes_source; ++n) 
+  // Actually get the Portage::Points for the dual cells
+
+  for (int n = 0; n < nnodes_source; ++n)
 	  sourceMeshWrapper.dual_cell_get_coordinates(n, &source_dualcell_coords[n]);
-  for (int n = 0; n < nnodes_target; ++n) 
+  for (int n = 0; n < nnodes_target; ++n)
 	  targetMeshWrapper.dual_cell_get_coordinates(n, &target_dualcell_coords[n]);
 
   // Interpolate from source to target mesh using the independent calculation
@@ -483,37 +488,37 @@ TEST(Interpolate_2nd_Order, Node_Ctr_Const_No_Limiter) {
   std::vector<double> outvals(nnodes_target);
   std::vector<std::vector<Portage::Weights_t>>
       sources_and_weights(nnodes_target);
-      
+
   // Loop over target nodes
-      
+
   for (int c = 0; c < nnodes_target; ++c) {
-  
+
     std::vector<int> xcells;
     std::vector<std::vector<double>> xwts;
 
 		// Compute the moments
 		// xcells is the source cell indices that intersect
 		// xwts is the moments vector for each cell that intersects
-		
+
     BOX_INTERSECT::intersection_moments<2>(target_dualcell_coords[c],
                                         source_dualcell_coords,
                                         &xcells, &xwts);
 
     // Pack the results into a vector of true Portage::Weights_t
-    
+
     std::vector<Portage::Weights_t> wtsvec(xcells.size());
     for (int i = 0; i < xcells.size(); ++i) {
       wtsvec[i].entityID = xcells[i];
       wtsvec[i].weights = xwts[i];
     }
-    
+
     // Put the weights in final form
-    
+
     sources_and_weights[c] = wtsvec;
   }
-  
+
    // Now do it the Portage way
-  
+
   // Create Interpolation object
 
   Portage::Interpolate_2ndOrder<2, Portage::Entity_kind::NODE,
@@ -524,8 +529,8 @@ TEST(Interpolate_2nd_Order, Node_Ctr_Const_No_Limiter) {
 
   interpolater.set_interpolation_variable("nodevars");
 
-      
-  Portage::transform(targetMeshWrapper.begin(Portage::Entity_kind::NODE), 
+
+  Portage::transform(targetMeshWrapper.begin(Portage::Entity_kind::NODE),
                      targetMeshWrapper.end(Portage::Entity_kind::NODE),
                      sources_and_weights.begin(),
                      outvals.begin(), interpolater);
@@ -547,7 +552,7 @@ TEST(Interpolate_2nd_Order, Node_Ctr_Const_No_Limiter) {
       continue;
     ASSERT_NEAR(stdval, outvals[n], TOL);
   }
-  
+
 
   // Make sure we retrieved the correct value for each cell on the target
   // this block seems to work as well, despite the note above
@@ -563,19 +568,19 @@ TEST(Interpolate_2nd_Order, Node_Ctr_Const_No_Limiter) {
 TEST(Interpolate_2nd_Order, Node_Ctr_Lin_No_Limiter) {
 
   // Create simple meshes
-  
-  std::shared_ptr<Portage::Simple_Mesh> source_mesh =
-    std::make_shared<Portage::Simple_Mesh>(0.0, 0.0, 1.0, 1.0, 4, 4);
-  std::shared_ptr<Portage::Simple_Mesh> target_mesh =
-    std::make_shared<Portage::Simple_Mesh>(0.0, 0.0, 1.0, 1.0, 5, 5);
+
+  std::shared_ptr<Wonton::Simple_Mesh> source_mesh =
+    std::make_shared<Wonton::Simple_Mesh>(0.0, 0.0, 1.0, 1.0, 4, 4);
+  std::shared_ptr<Wonton::Simple_Mesh> target_mesh =
+    std::make_shared<Wonton::Simple_Mesh>(0.0, 0.0, 1.0, 1.0, 5, 5);
 
   // Create mesh wrappers
-  
+
   Wonton::Simple_Mesh_Wrapper sourceMeshWrapper(*source_mesh);
   Wonton::Simple_Mesh_Wrapper targetMeshWrapper(*target_mesh);
 
   // count nodes
-  
+
   const int nnodes_source =
       sourceMeshWrapper.num_owned_nodes();
   const int nnodes_target =
@@ -583,7 +588,7 @@ TEST(Interpolate_2nd_Order, Node_Ctr_Lin_No_Limiter) {
 
   // Create a state object
 
-  Portage::Simple_State source_state(source_mesh);
+  Wonton::Simple_State source_state(source_mesh);
 
   // Define a state vector with constant value and add it to the source state
 
@@ -594,12 +599,12 @@ TEST(Interpolate_2nd_Order, Node_Ctr_Lin_No_Limiter) {
     data[n] = coord[0]+coord[1];
   }
   source_state.add("nodevars", Portage::Entity_kind::NODE, &(data[0]));
-  
+
   // Create state wrapper
-  
+
   Wonton::Simple_State_Wrapper sourceStateWrapper(source_state);
 
-  // Gather the cell coordinates as Portage Points for source and target meshes 
+  // Gather the cell coordinates as Portage Points for source and target meshes
   // for intersection. The outer vector is the cells, the inner vector is the
   // points of the vertices of that cell.
 
@@ -608,11 +613,11 @@ TEST(Interpolate_2nd_Order, Node_Ctr_Lin_No_Limiter) {
   std::vector<std::vector<Portage::Point<2>>>
       target_dualcell_coords(nnodes_target);
 
-  // Actually get the Portage::Points for the dual cells 
-   
-  for (int n = 0; n < nnodes_source; ++n) 
+  // Actually get the Portage::Points for the dual cells
+
+  for (int n = 0; n < nnodes_source; ++n)
 	  sourceMeshWrapper.dual_cell_get_coordinates(n, &source_dualcell_coords[n]);
-  for (int n = 0; n < nnodes_target; ++n) 
+  for (int n = 0; n < nnodes_target; ++n)
 	  targetMeshWrapper.dual_cell_get_coordinates(n, &target_dualcell_coords[n]);
 
   // Interpolate from source to target mesh using the independent calculation
@@ -621,37 +626,37 @@ TEST(Interpolate_2nd_Order, Node_Ctr_Lin_No_Limiter) {
   std::vector<double> outvals(nnodes_target);
   std::vector<std::vector<Portage::Weights_t>>
       sources_and_weights(nnodes_target);
-      
+
   // Loop over target nodes
-      
+
   for (int c = 0; c < nnodes_target; ++c) {
-  
+
     std::vector<int> xcells;
     std::vector<std::vector<double>> xwts;
 
 		// Compute the moments
 		// xcells is the source cell indices that intersect
 		// xwts is the moments vector for each cell that intersects
-		
+
     BOX_INTERSECT::intersection_moments<2>(target_dualcell_coords[c],
                                         source_dualcell_coords,
                                         &xcells, &xwts);
 
     // Pack the results into a vector of true Portage::Weights_t
-    
+
     std::vector<Portage::Weights_t> wtsvec(xcells.size());
     for (int i = 0; i < xcells.size(); ++i) {
       wtsvec[i].entityID = xcells[i];
       wtsvec[i].weights = xwts[i];
     }
-    
+
     // Put the weights in final form
-    
+
     sources_and_weights[c] = wtsvec;
   }
-  
+
    // Now do it the Portage way
-  
+
   // Create Interpolation object
 
   Portage::Interpolate_2ndOrder<2, Portage::Entity_kind::NODE,
@@ -662,8 +667,8 @@ TEST(Interpolate_2nd_Order, Node_Ctr_Lin_No_Limiter) {
 
   interpolater.set_interpolation_variable("nodevars");
 
-      
-  Portage::transform(targetMeshWrapper.begin(Portage::Entity_kind::NODE), 
+
+  Portage::transform(targetMeshWrapper.begin(Portage::Entity_kind::NODE),
                      targetMeshWrapper.end(Portage::Entity_kind::NODE),
                      sources_and_weights.begin(),
                      outvals.begin(), interpolater);
@@ -686,7 +691,7 @@ TEST(Interpolate_2nd_Order, Node_Ctr_Lin_No_Limiter) {
     stdvals[n] = coord[0]+coord[1];
     EXPECT_NEAR(stdvals[n], outvals[n], TOL);
   }
-  
+
 }
 
 
@@ -696,19 +701,19 @@ TEST(Interpolate_2nd_Order, Node_Ctr_Lin_No_Limiter) {
 TEST(Interpolate_2nd_Order, Cell_Ctr_Const_No_Limiter_3D) {
 
   // Create simple meshes
-  
-  std::shared_ptr<Portage::Simple_Mesh> source_mesh =
-    std::make_shared<Portage::Simple_Mesh>(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 4, 4, 4);
-  std::shared_ptr<Portage::Simple_Mesh> target_mesh =
-    std::make_shared<Portage::Simple_Mesh>(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 5, 5, 5);
+
+  std::shared_ptr<Wonton::Simple_Mesh> source_mesh =
+    std::make_shared<Wonton::Simple_Mesh>(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 4, 4, 4);
+  std::shared_ptr<Wonton::Simple_Mesh> target_mesh =
+    std::make_shared<Wonton::Simple_Mesh>(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 5, 5, 5);
 
   // Create mesh wrappers
-  
+
   Wonton::Simple_Mesh_Wrapper sourceMeshWrapper(*source_mesh);
   Wonton::Simple_Mesh_Wrapper targetMeshWrapper(*target_mesh);
 
   // count cells
-  
+
   const int ncells_source =
       sourceMeshWrapper.num_owned_cells();
   const int ncells_target =
@@ -716,18 +721,18 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Const_No_Limiter_3D) {
 
   // Create a state object
 
-  Portage::Simple_State source_state(source_mesh);
+  Wonton::Simple_State source_state(source_mesh);
 
   // Define a state vector with constant value and add it to the source state
 
   std::vector<double> data(ncells_source, 1.25);
   source_state.add("cellvars", Portage::Entity_kind::CELL, &(data[0]));
-  
+
   // Create state wrapper
-  
+
   Wonton::Simple_State_Wrapper sourceStateWrapper(source_state);
 
-  // Gather the cell coordinates as Portage Points for source and target meshes 
+  // Gather the cell coordinates as Portage Points for source and target meshes
   // for intersection. The outer vector is the cells, the inner vector is the
   // points of the vertices of that cell.
 
@@ -737,7 +742,7 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Const_No_Limiter_3D) {
       target_cell_coords(ncells_target);
 
   // Actually get the Portage::Points
-  
+
   for (int c = 0; c < ncells_source; ++c)
     sourceMeshWrapper.cell_get_coordinates(c, &(source_cell_coords[c]));
   for (int c = 0; c < ncells_target; ++c)
@@ -749,37 +754,37 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Const_No_Limiter_3D) {
   std::vector<double> outvals(ncells_target);
   std::vector<std::vector<Portage::Weights_t>>
       sources_and_weights(ncells_target);
-      
+
   // Loop over target cells
-      
+
   for (int c = 0; c < ncells_target; ++c) {
-  
+
     std::vector<int> xcells;
     std::vector<std::vector<double>> xwts;
 
 		// Compute the moments
 		// xcells is the source cell indices that intersect
 		// xwts is the moments vector for each cell that intersects
-		
+
     BOX_INTERSECT::intersection_moments<3>(target_cell_coords[c],
                                         source_cell_coords,
                                         &xcells, &xwts);
 
     // Pack the results into a vector of true Portage::Weights_t
-    
+
     std::vector<Portage::Weights_t> wtsvec(xcells.size());
     for (int i = 0; i < xcells.size(); ++i) {
       wtsvec[i].entityID = xcells[i];
       wtsvec[i].weights = xwts[i];
     }
-    
+
     // Put the weights in final form
-    
+
     sources_and_weights[c] = wtsvec;
   }
-  
+
   // Now do it the Portage way
-  
+
   // Create Interpolation object
 
   Portage::Interpolate_2ndOrder<3, Portage::Entity_kind::CELL,
@@ -790,15 +795,15 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Const_No_Limiter_3D) {
 
   interpolater.set_interpolation_variable("cellvars");
 
-      
-  Portage::transform(targetMeshWrapper.begin(Portage::Entity_kind::CELL), 
+
+  Portage::transform(targetMeshWrapper.begin(Portage::Entity_kind::CELL),
                      targetMeshWrapper.end(Portage::Entity_kind::CELL),
                      sources_and_weights.begin(),
                      outvals.begin(), interpolater);
 
   // Make sure we retrieved the correct value for each cell on the target
   const double stdval = data[0];
-  for (int c = 0; c < ncells_target; ++c) 
+  for (int c = 0; c < ncells_target; ++c)
     ASSERT_NEAR(stdval, outvals[c],TOL);
 
 }
@@ -808,19 +813,19 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Const_No_Limiter_3D) {
 
 TEST(Interpolate_2nd_Order, Cell_Ctr_Lin_No_Limiter_3D) {
   // Create simple meshes
-  
-  std::shared_ptr<Portage::Simple_Mesh> source_mesh =
-    std::make_shared<Portage::Simple_Mesh>(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 4, 4, 4);
-  std::shared_ptr<Portage::Simple_Mesh> target_mesh =
-    std::make_shared<Portage::Simple_Mesh>(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 5, 5, 5);
+
+  std::shared_ptr<Wonton::Simple_Mesh> source_mesh =
+    std::make_shared<Wonton::Simple_Mesh>(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 4, 4, 4);
+  std::shared_ptr<Wonton::Simple_Mesh> target_mesh =
+    std::make_shared<Wonton::Simple_Mesh>(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 5, 5, 5);
 
   // Create mesh wrappers
-  
+
   Wonton::Simple_Mesh_Wrapper sourceMeshWrapper(*source_mesh);
   Wonton::Simple_Mesh_Wrapper targetMeshWrapper(*target_mesh);
 
   // count cells
-  
+
   const int ncells_source =
       sourceMeshWrapper.num_owned_cells();
   const int ncells_target =
@@ -828,7 +833,7 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Lin_No_Limiter_3D) {
 
   // Create a state object
 
-  Portage::Simple_State source_state(source_mesh);
+  Wonton::Simple_State source_state(source_mesh);
 
 // Define a state vector with linear value and add it to the source state
 
@@ -838,13 +843,13 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Lin_No_Limiter_3D) {
     sourceMeshWrapper.cell_centroid(c, &cen);
     data[c] = cen[0]+cen[1]+cen[2];
   }
-  source_state.add("cellvars", Portage::Entity_kind::CELL, &(data[0]));  
+  source_state.add("cellvars", Portage::Entity_kind::CELL, &(data[0]));
 
   // Create state wrapper
-  
+
   Wonton::Simple_State_Wrapper sourceStateWrapper(source_state);
 
-  // Gather the cell coordinates as Portage Points for source and target meshes 
+  // Gather the cell coordinates as Portage Points for source and target meshes
   // for intersection. The outer vector is the cells, the inner vector is the
   // points of the vertices of that cell.
 
@@ -854,7 +859,7 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Lin_No_Limiter_3D) {
       target_cell_coords(ncells_target);
 
   // Actually get the Portage::Points
-  
+
   for (int c = 0; c < ncells_source; ++c)
     sourceMeshWrapper.cell_get_coordinates(c, &(source_cell_coords[c]));
   for (int c = 0; c < ncells_target; ++c)
@@ -866,37 +871,37 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Lin_No_Limiter_3D) {
   std::vector<double> outvals(ncells_target);
   std::vector<std::vector<Portage::Weights_t>>
       sources_and_weights(ncells_target);
-      
+
   // Loop over target cells
-      
+
   for (int c = 0; c < ncells_target; ++c) {
-  
+
     std::vector<int> xcells;
     std::vector<std::vector<double>> xwts;
 
 		// Compute the moments
 		// xcells is the source cell indices that intersect
 		// xwts is the moments vector for each cell that intersects
-		
+
     BOX_INTERSECT::intersection_moments<3>(target_cell_coords[c],
                                         source_cell_coords,
                                         &xcells, &xwts);
 
     // Pack the results into a vector of true Portage::Weights_t
-    
+
     std::vector<Portage::Weights_t> wtsvec(xcells.size());
     for (int i = 0; i < xcells.size(); ++i) {
       wtsvec[i].entityID = xcells[i];
       wtsvec[i].weights = xwts[i];
     }
-    
+
     // Put the weights in final form
-    
+
     sources_and_weights[c] = wtsvec;
   }
-  
+
   // Now do it the Portage way
-  
+
   // Create Interpolation object
 
   Portage::Interpolate_2ndOrder<3, Portage::Entity_kind::CELL,
@@ -907,14 +912,14 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Lin_No_Limiter_3D) {
 
   interpolater.set_interpolation_variable("cellvars");
 
-      
-  Portage::transform(targetMeshWrapper.begin(Portage::Entity_kind::CELL), 
+
+  Portage::transform(targetMeshWrapper.begin(Portage::Entity_kind::CELL),
                      targetMeshWrapper.end(Portage::Entity_kind::CELL),
                      sources_and_weights.begin(),
                      outvals.begin(), interpolater);
-  
+
   // Make sure we retrieved the correct value for each cell on the target
-  
+
   std::vector<double> stdvals(ncells_target);
   for (int c = 0; c < ncells_target; ++c) {
     Portage::Point<3> cen;
@@ -934,20 +939,20 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Lin_No_Limiter_3D) {
 TEST(Interpolate_2nd_Order, Cell_Ctr_BJ_Limiter_3D) {
 
   // Create simple meshes
-  
-  std::shared_ptr<Portage::Simple_Mesh> source_mesh =
-    std::make_shared<Portage::Simple_Mesh>(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 4, 4, 4);
-  std::shared_ptr<Portage::Simple_Mesh> target_mesh =
-    std::make_shared<Portage::Simple_Mesh>(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 5, 5, 5);
+
+  std::shared_ptr<Wonton::Simple_Mesh> source_mesh =
+    std::make_shared<Wonton::Simple_Mesh>(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 4, 4, 4);
+  std::shared_ptr<Wonton::Simple_Mesh> target_mesh =
+    std::make_shared<Wonton::Simple_Mesh>(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 5, 5, 5);
 
 
   // Create mesh wrappers
-  
+
   Wonton::Simple_Mesh_Wrapper sourceMeshWrapper(*source_mesh);
   Wonton::Simple_Mesh_Wrapper targetMeshWrapper(*target_mesh);
 
   // count cells
-  
+
   const int ncells_source =
       sourceMeshWrapper.num_owned_cells();
   const int ncells_target =
@@ -955,12 +960,12 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_BJ_Limiter_3D) {
 
   // Create a state object
 
-  Portage::Simple_State source_state(source_mesh);
+  Wonton::Simple_State source_state(source_mesh);
 
   // Define a state vector with linear value and add it to the source state
 
   double minval = 1e+10, maxval = -1e+10;
-  
+
   std::vector<double> data(ncells_source);
   for (int c = 0; c < ncells_source; ++c) {
     Portage::Point<3> ccen;
@@ -972,13 +977,13 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_BJ_Limiter_3D) {
     if (data[c] < minval) minval = data[c];
     if (data[c] > maxval) maxval = data[c];
   }
-  source_state.add("cellvars", Portage::Entity_kind::CELL, &(data[0]));  
+  source_state.add("cellvars", Portage::Entity_kind::CELL, &(data[0]));
 
   // Create state wrapper
-  
+
   Wonton::Simple_State_Wrapper sourceStateWrapper(source_state);
 
-  // Gather the cell coordinates as Portage Points for source and target meshes 
+  // Gather the cell coordinates as Portage Points for source and target meshes
   // for intersection. The outer vector is the cells, the inner vector is the
   // points of the vertices of that cell.
 
@@ -988,7 +993,7 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_BJ_Limiter_3D) {
       target_cell_coords(ncells_target);
 
   // Actually get the Portage::Points
-  
+
   for (int c = 0; c < ncells_source; ++c)
     sourceMeshWrapper.cell_get_coordinates(c, &(source_cell_coords[c]));
   for (int c = 0; c < ncells_target; ++c)
@@ -1001,37 +1006,37 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_BJ_Limiter_3D) {
   std::vector<double> outvals2(ncells_target);
   std::vector<std::vector<Portage::Weights_t>>
       sources_and_weights(ncells_target);
-      
+
   // Loop over target cells
-      
+
   for (int c = 0; c < ncells_target; ++c) {
-  
+
     std::vector<int> xcells;
     std::vector<std::vector<double>> xwts;
 
 		// Compute the moments
 		// xcells is the source cell indices that intersect
 		// xwts is the moments vector for each cell that intersects
-		
+
     BOX_INTERSECT::intersection_moments<3>(target_cell_coords[c],
                                         source_cell_coords,
                                         &xcells, &xwts);
 
     // Pack the results into a vector of true Portage::Weights_t
-    
+
     std::vector<Portage::Weights_t> wtsvec(xcells.size());
     for (int i = 0; i < xcells.size(); ++i) {
       wtsvec[i].entityID = xcells[i];
       wtsvec[i].weights = xwts[i];
     }
-    
+
     // Put the weights in final form
-    
+
     sources_and_weights[c] = wtsvec;
   }
-  
+
   // Now do it the Portage way
-  
+
   // Create Interpolation object
 
   Portage::Interpolate_2ndOrder<3, Portage::Entity_kind::CELL,
@@ -1042,20 +1047,20 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_BJ_Limiter_3D) {
 
   interpolater.set_interpolation_variable("cellvars", Portage::NOLIMITER);
 
-      
-  Portage::transform(targetMeshWrapper.begin(Portage::Entity_kind::CELL), 
+
+  Portage::transform(targetMeshWrapper.begin(Portage::Entity_kind::CELL),
                      targetMeshWrapper.end(Portage::Entity_kind::CELL),
                      sources_and_weights.begin(),
                      outvals1.begin(), interpolater);
-  
+
   interpolater.set_interpolation_variable("cellvars", Portage::BARTH_JESPERSEN);
 
-      
-  Portage::transform(targetMeshWrapper.begin(Portage::Entity_kind::CELL), 
+
+  Portage::transform(targetMeshWrapper.begin(Portage::Entity_kind::CELL),
                      targetMeshWrapper.end(Portage::Entity_kind::CELL),
                      sources_and_weights.begin(),
                      outvals2.begin(), interpolater);
-  
+
   // Check if we violated the bounds on at least one cell in the
   // unlimited interpolation and if we respected the bounds in all
   // cells in the limited case
@@ -1093,19 +1098,19 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_BJ_Limiter_3D) {
 TEST(Interpolate_2nd_Order, Node_Ctr_Const_No_Limiter_3D) {
 
   // Create simple meshes
-  
-  std::shared_ptr<Portage::Simple_Mesh> source_mesh =
-    std::make_shared<Portage::Simple_Mesh>(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 4, 4, 4);
-  std::shared_ptr<Portage::Simple_Mesh> target_mesh =
-    std::make_shared<Portage::Simple_Mesh>(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 5, 5, 5);
+
+  std::shared_ptr<Wonton::Simple_Mesh> source_mesh =
+    std::make_shared<Wonton::Simple_Mesh>(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 4, 4, 4);
+  std::shared_ptr<Wonton::Simple_Mesh> target_mesh =
+    std::make_shared<Wonton::Simple_Mesh>(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 5, 5, 5);
 
   // Create mesh wrappers
-  
+
   Wonton::Simple_Mesh_Wrapper sourceMeshWrapper(*source_mesh);
   Wonton::Simple_Mesh_Wrapper targetMeshWrapper(*target_mesh);
 
   // count nodes
-  
+
   const int nnodes_source =
       sourceMeshWrapper.num_owned_nodes();
   const int nnodes_target =
@@ -1113,18 +1118,18 @@ TEST(Interpolate_2nd_Order, Node_Ctr_Const_No_Limiter_3D) {
 
   // Create a state object
 
-  Portage::Simple_State source_state(source_mesh);
+  Wonton::Simple_State source_state(source_mesh);
 
   // Define a state vector with constant value and add it to the source state
 
   std::vector<double> data(nnodes_source, 1.25);
   source_state.add("nodevars", Portage::Entity_kind::NODE, &(data[0]));
-  
+
   // Create state wrapper
-  
+
   Wonton::Simple_State_Wrapper sourceStateWrapper(source_state);
 
-  // Gather the cell coordinates as Portage Points for source and target meshes 
+  // Gather the cell coordinates as Portage Points for source and target meshes
   // for intersection. The outer vector is the cells, the inner vector is the
   // points of the vertices of that cell.
 
@@ -1134,11 +1139,11 @@ TEST(Interpolate_2nd_Order, Node_Ctr_Const_No_Limiter_3D) {
       target_dualcell_coords(nnodes_target);
 
 
-  // Actually get the Portage::Points for the dual cells 
-   
-  for (int n = 0; n < nnodes_source; ++n) 
+  // Actually get the Portage::Points for the dual cells
+
+  for (int n = 0; n < nnodes_source; ++n)
 	  sourceMeshWrapper.dual_cell_get_coordinates(n, &source_dualcell_coords[n]);
-  for (int n = 0; n < nnodes_target; ++n) 
+  for (int n = 0; n < nnodes_target; ++n)
 	  targetMeshWrapper.dual_cell_get_coordinates(n, &target_dualcell_coords[n]);
 
   // Interpolate from source to target mesh using the independent calculation
@@ -1147,37 +1152,37 @@ TEST(Interpolate_2nd_Order, Node_Ctr_Const_No_Limiter_3D) {
   std::vector<double> outvals(nnodes_target);
   std::vector<std::vector<Portage::Weights_t>>
       sources_and_weights(nnodes_target);
-      
+
   // Loop over target nodes
-      
+
   for (int c = 0; c < nnodes_target; ++c) {
-  
+
     std::vector<int> xcells;
     std::vector<std::vector<double>> xwts;
 
 		// Compute the moments
 		// xcells is the source cell indices that intersect
 		// xwts is the moments vector for each cell that intersects
-		
+
     BOX_INTERSECT::intersection_moments<3>(target_dualcell_coords[c],
                                         source_dualcell_coords,
                                         &xcells, &xwts);
 
     // Pack the results into a vector of true Portage::Weights_t
-    
+
     std::vector<Portage::Weights_t> wtsvec(xcells.size());
     for (int i = 0; i < xcells.size(); ++i) {
       wtsvec[i].entityID = xcells[i];
       wtsvec[i].weights = xwts[i];
     }
-    
+
     // Put the weights in final form
-    
+
     sources_and_weights[c] = wtsvec;
   }
- 
+
    // Now do it the Portage way
-  
+
   // Create Interpolation object
 
   Portage::Interpolate_2ndOrder<3, Portage::Entity_kind::NODE,
@@ -1188,8 +1193,8 @@ TEST(Interpolate_2nd_Order, Node_Ctr_Const_No_Limiter_3D) {
 
   interpolater.set_interpolation_variable("nodevars");
 
-      
-  Portage::transform(targetMeshWrapper.begin(Portage::Entity_kind::NODE), 
+
+  Portage::transform(targetMeshWrapper.begin(Portage::Entity_kind::NODE),
                      targetMeshWrapper.end(Portage::Entity_kind::NODE),
                      sources_and_weights.begin(),
                      outvals.begin(), interpolater);
@@ -1219,19 +1224,19 @@ TEST(Interpolate_2nd_Order, Node_Ctr_Lin_No_Limiter_3D) {
 
 
   // Create simple meshes
-  
-  std::shared_ptr<Portage::Simple_Mesh> source_mesh =
-    std::make_shared<Portage::Simple_Mesh>(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 4, 4, 4);
-  std::shared_ptr<Portage::Simple_Mesh> target_mesh =
-    std::make_shared<Portage::Simple_Mesh>(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 5, 5, 5);
+
+  std::shared_ptr<Wonton::Simple_Mesh> source_mesh =
+    std::make_shared<Wonton::Simple_Mesh>(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 4, 4, 4);
+  std::shared_ptr<Wonton::Simple_Mesh> target_mesh =
+    std::make_shared<Wonton::Simple_Mesh>(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 5, 5, 5);
 
   // Create mesh wrappers
-  
+
   Wonton::Simple_Mesh_Wrapper sourceMeshWrapper(*source_mesh);
   Wonton::Simple_Mesh_Wrapper targetMeshWrapper(*target_mesh);
 
   // count nodes
-  
+
   const int nnodes_source =
       sourceMeshWrapper.num_owned_nodes();
   const int nnodes_target =
@@ -1239,7 +1244,7 @@ TEST(Interpolate_2nd_Order, Node_Ctr_Lin_No_Limiter_3D) {
 
   // Create a state object
 
-  Portage::Simple_State source_state(source_mesh);
+  Wonton::Simple_State source_state(source_mesh);
 
   // Define a state vector with constant value and add it to the source state
 
@@ -1250,12 +1255,12 @@ TEST(Interpolate_2nd_Order, Node_Ctr_Lin_No_Limiter_3D) {
     data[n] = coord[0]+coord[1]+coord[2];
   }
   source_state.add("nodevars", Portage::Entity_kind::NODE, &(data[0]));
-  
+
   // Create state wrapper
-  
+
   Wonton::Simple_State_Wrapper sourceStateWrapper(source_state);
 
-  // Gather the cell coordinates as Portage Points for source and target meshes 
+  // Gather the cell coordinates as Portage Points for source and target meshes
   // for intersection. The outer vector is the cells, the inner vector is the
   // points of the vertices of that cell.
 
@@ -1265,11 +1270,11 @@ TEST(Interpolate_2nd_Order, Node_Ctr_Lin_No_Limiter_3D) {
       target_dualcell_coords(nnodes_target);
 
 
-  // Actually get the Portage::Points for the dual cells 
-   
-  for (int n = 0; n < nnodes_source; ++n) 
+  // Actually get the Portage::Points for the dual cells
+
+  for (int n = 0; n < nnodes_source; ++n)
 	  sourceMeshWrapper.dual_cell_get_coordinates(n, &source_dualcell_coords[n]);
-  for (int n = 0; n < nnodes_target; ++n) 
+  for (int n = 0; n < nnodes_target; ++n)
 	  targetMeshWrapper.dual_cell_get_coordinates(n, &target_dualcell_coords[n]);
 
   // Interpolate from source to target mesh using the independent calculation
@@ -1278,37 +1283,37 @@ TEST(Interpolate_2nd_Order, Node_Ctr_Lin_No_Limiter_3D) {
   std::vector<double> outvals(nnodes_target);
   std::vector<std::vector<Portage::Weights_t>>
       sources_and_weights(nnodes_target);
-      
+
   // Loop over target nodes
-      
+
   for (int c = 0; c < nnodes_target; ++c) {
-  
+
     std::vector<int> xcells;
     std::vector<std::vector<double>> xwts;
 
 		// Compute the moments
 		// xcells is the source cell indices that intersect
 		// xwts is the moments vector for each cell that intersects
-		
+
     BOX_INTERSECT::intersection_moments<3>(target_dualcell_coords[c],
                                         source_dualcell_coords,
                                         &xcells, &xwts);
 
     // Pack the results into a vector of true Portage::Weights_t
-    
+
     std::vector<Portage::Weights_t> wtsvec(xcells.size());
     for (int i = 0; i < xcells.size(); ++i) {
       wtsvec[i].entityID = xcells[i];
       wtsvec[i].weights = xwts[i];
     }
-    
+
     // Put the weights in final form
-    
+
     sources_and_weights[c] = wtsvec;
   }
- 
+
    // Now do it the Portage way
-  
+
   // Create Interpolation object
 
   Portage::Interpolate_2ndOrder<3, Portage::Entity_kind::NODE,
@@ -1319,8 +1324,8 @@ TEST(Interpolate_2nd_Order, Node_Ctr_Lin_No_Limiter_3D) {
 
   interpolater.set_interpolation_variable("nodevars");
 
-      
-  Portage::transform(targetMeshWrapper.begin(Portage::Entity_kind::NODE), 
+
+  Portage::transform(targetMeshWrapper.begin(Portage::Entity_kind::NODE),
                      targetMeshWrapper.end(Portage::Entity_kind::NODE),
                      sources_and_weights.begin(),
                      outvals.begin(), interpolater);
@@ -1354,19 +1359,19 @@ TEST(Interpolate_2nd_Order, Node_Ctr_Lin_No_Limiter_3D) {
 TEST(Interpolate_2nd_Order, Node_Ctr_BJ_Limiter_3D) {
 
   // Create simple meshes
-  
-  std::shared_ptr<Portage::Simple_Mesh> source_mesh =
-    std::make_shared<Portage::Simple_Mesh>(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 4, 4, 4);
-  std::shared_ptr<Portage::Simple_Mesh> target_mesh =
-    std::make_shared<Portage::Simple_Mesh>(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 5, 5, 5);
+
+  std::shared_ptr<Wonton::Simple_Mesh> source_mesh =
+    std::make_shared<Wonton::Simple_Mesh>(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 4, 4, 4);
+  std::shared_ptr<Wonton::Simple_Mesh> target_mesh =
+    std::make_shared<Wonton::Simple_Mesh>(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 5, 5, 5);
 
   // Create mesh wrappers
-  
+
   Wonton::Simple_Mesh_Wrapper sourceMeshWrapper(*source_mesh);
   Wonton::Simple_Mesh_Wrapper targetMeshWrapper(*target_mesh);
 
   // count nodes
-  
+
   const int nnodes_source =
       sourceMeshWrapper.num_owned_nodes();
   const int nnodes_target =
@@ -1374,7 +1379,7 @@ TEST(Interpolate_2nd_Order, Node_Ctr_BJ_Limiter_3D) {
 
   // Create a state object
 
-  Portage::Simple_State source_state(source_mesh);
+  Wonton::Simple_State source_state(source_mesh);
 
   // Define a state vector with constant value and add it to the source state
 
@@ -1391,12 +1396,12 @@ TEST(Interpolate_2nd_Order, Node_Ctr_BJ_Limiter_3D) {
     if (data[n] > maxval) maxval = data[n];
   }
   source_state.add("nodevars", Portage::Entity_kind::NODE, &(data[0]));
-  
+
   // Create state wrapper
-  
+
   Wonton::Simple_State_Wrapper sourceStateWrapper(source_state);
 
-  // Gather the cell coordinates as Portage Points for source and target meshes 
+  // Gather the cell coordinates as Portage Points for source and target meshes
   // for intersection. The outer vector is the cells, the inner vector is the
   // points of the vertices of that cell.
 
@@ -1406,11 +1411,11 @@ TEST(Interpolate_2nd_Order, Node_Ctr_BJ_Limiter_3D) {
       target_dualcell_coords(nnodes_target);
 
 
-  // Actually get the Portage::Points for the dual cells 
-   
-  for (int n = 0; n < nnodes_source; ++n) 
+  // Actually get the Portage::Points for the dual cells
+
+  for (int n = 0; n < nnodes_source; ++n)
 	  sourceMeshWrapper.dual_cell_get_coordinates(n, &source_dualcell_coords[n]);
-  for (int n = 0; n < nnodes_target; ++n) 
+  for (int n = 0; n < nnodes_target; ++n)
 	  targetMeshWrapper.dual_cell_get_coordinates(n, &target_dualcell_coords[n]);
 
   // Interpolate from source to target mesh using the independent calculation
@@ -1458,7 +1463,7 @@ TEST(Interpolate_2nd_Order, Node_Ctr_BJ_Limiter_3D) {
 
   interpolater1.set_interpolation_variable("nodevars", Portage::NOLIMITER);
 
-  Portage::transform(targetMeshWrapper.begin(Portage::Entity_kind::NODE), 
+  Portage::transform(targetMeshWrapper.begin(Portage::Entity_kind::NODE),
                      targetMeshWrapper.end(Portage::Entity_kind::NODE),
                      sources_and_weights.begin(),
                      outvals1.begin(), interpolater1);
@@ -1467,7 +1472,7 @@ TEST(Interpolate_2nd_Order, Node_Ctr_BJ_Limiter_3D) {
 
   interpolater2.set_interpolation_variable("nodevars", Portage::BARTH_JESPERSEN);
 
-  Portage::transform(targetMeshWrapper.begin(Portage::Entity_kind::NODE), 
+  Portage::transform(targetMeshWrapper.begin(Portage::Entity_kind::NODE),
                      targetMeshWrapper.end(Portage::Entity_kind::NODE),
                      sources_and_weights.begin(),
                      outvals2.begin(), interpolater2);
@@ -1500,5 +1505,3 @@ TEST(Interpolate_2nd_Order, Node_Ctr_BJ_Limiter_3D) {
   EXPECT_TRUE(inbounds_limited);
 
 }
-
-

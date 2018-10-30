@@ -7,11 +7,11 @@ Please see the license file at the root of this repository, or at:
 #include <iostream>
 #include "portage/accumulate/accumulate.h"
 #include "portage/distributed/mpi_particle_distribute.h"
-#include "portage/support/Point.h"
+
 #include "portage/support/portage.h"
 #include "portage/swarm/swarm.h"
 #include "portage/swarm/swarm_state.h"
-#include "portage/wonton/mesh/jali/jali_mesh_wrapper.h"
+#include "wonton/mesh/jali/jali_mesh_wrapper.h"
 
 #include "gtest/gtest.h"
 #include "mpi.h"

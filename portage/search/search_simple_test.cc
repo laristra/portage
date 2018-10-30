@@ -4,15 +4,18 @@ Please see the license file at the root of this repository, or at:
     https://github.com/laristra/portage/blob/master/LICENSE
 */
 
-#include "search_simple.h"
-
 #include "gtest/gtest.h"
 
-#include "portage/wonton/mesh/simple_mesh/simple_mesh_wrapper.h"
+// portage includes
+#include "portage/search/search_simple.h"
+
+// wonton includes
+#include "wonton/mesh/simple/simple_mesh.h"
+#include "wonton/mesh/simple/simple_mesh_wrapper.h"
 
 TEST(search_simple, case1) {
-  Portage::Simple_Mesh sm{0, 0, 1, 1, 3, 3};
-  Portage::Simple_Mesh tm{0, 0, 1, 1, 2, 2};
+  Wonton::Simple_Mesh sm{0, 0, 1, 1, 3, 3};
+  Wonton::Simple_Mesh tm{0, 0, 1, 1, 2, 2};
   const Wonton::Simple_Mesh_Wrapper source_mesh_wrapper(sm);
   const Wonton::Simple_Mesh_Wrapper target_mesh_wrapper(tm);
 
@@ -53,8 +56,8 @@ class MeshWrapperDual {
 };
 
 TEST(search_simple, dual) {
-  Portage::Simple_Mesh sm{0, 0, 1, 1, 3, 3};
-  Portage::Simple_Mesh tm{0, 0, 1, 1, 2, 2};
+  Wonton::Simple_Mesh sm{0, 0, 1, 1, 3, 3};
+  Wonton::Simple_Mesh tm{0, 0, 1, 1, 2, 2};
   const Wonton::Simple_Mesh_Wrapper source_mesh_wrapper(sm);
   const Wonton::Simple_Mesh_Wrapper target_mesh_wrapper(tm);
 

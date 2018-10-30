@@ -4,11 +4,17 @@ Please see the license file at the root of this repository, or at:
     https://github.com/laristra/portage/blob/master/LICENSE
 */
 
-#include "intersect_r2d.h"
 #include "gtest/gtest.h"
+
+// portage includes
+#include "portage/intersect/intersect_r2d.h"
 #include "portage/support/portage.h"
-#include "portage/wonton/mesh/simple_mesh/simple_mesh_wrapper.h"
-#include "portage/wonton/state/simple_state/simple_state_wrapper.h"
+
+// wonton includes
+#include "wonton/mesh/simple/simple_mesh.h"
+#include "wonton/mesh/simple/simple_mesh_wrapper.h"
+#include "wonton/state/simple/simple_state.h"
+#include "wonton/state/simple/simple_state_wrapper.h"
 
 /*!
  * @brief Intersect two cells on two single cell meshes to compute moments.
@@ -17,9 +23,9 @@ Please see the license file at the root of this repository, or at:
  * Results should be an area of 1 and a centroid of 1.5, 1.5.
  */
 TEST(intersectR2D, simple1) {
-  auto sourcemesh = std::make_shared<Portage::Simple_Mesh>(0, 0, 2, 2, 1, 1);
-  auto targetmesh = std::make_shared<Portage::Simple_Mesh>(1, 1, 2, 2, 1, 1);
-  auto sourcestate = std::make_shared<Portage::Simple_State>(sourcemesh);
+  auto sourcemesh = std::make_shared<Wonton::Simple_Mesh>(0, 0, 2, 2, 1, 1);
+  auto targetmesh = std::make_shared<Wonton::Simple_Mesh>(1, 1, 2, 2, 1, 1);
+  auto sourcestate = std::make_shared<Wonton::Simple_State>(sourcemesh);
   const Wonton::Simple_Mesh_Wrapper sm(*sourcemesh);
   const Wonton::Simple_Mesh_Wrapper tm(*targetmesh);
   const Wonton::Simple_State_Wrapper ss(*sourcestate);

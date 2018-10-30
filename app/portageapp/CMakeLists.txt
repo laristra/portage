@@ -21,23 +21,37 @@ if (Jali_DIR)
     target_link_libraries(portageapp_jali ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES})
 
     if (TANGRAM_FOUND)
-      add_executable(portageapp_multimat_jali portageapp_multimat_jali.cc)
-      target_link_libraries(portageapp_multimat_jali portage ${EXTRA_LIBS} ${LAPACKX_LIBRARIES} ${TANGRAM_LIBRARIES})
+        add_executable(portageapp_t-junction_jali portageapp_t-junction_jali.cc)
+        target_link_libraries(portageapp_t-junction_jali portage ${EXTRA_LIBS}
+    ${LAPACKX_LIBRARIES} ${TANGRAM_LIBRARIES})
+
+        # MPI additions - need to push this down into cinch
+        if (ENABLE_MPI)
+            target_link_libraries(portageapp_t-junction_jali ${MPI_CXX_LIBRARIES})
+            set_target_properties(portageapp_t-junction_jali PROPERTIES
+                                  LINK_FLAGS "${MPI_CXX_LINK_FLAGS}")
+        endif (ENABLE_MPI)
+
+        # Jali additions
+        target_link_libraries(portageapp_t-junction_jali ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES})
 
       if (XMOF2D_FOUND)
-        target_link_libraries(portageapp_multimat_jali ${XMOF2D_LIBRARIES})
-      endif (XMOF2D_FOUND)
+        target_link_libraries(portageapp_t-junction_jali ${XMOF2D_LIBRARIES})
 
-      # MPI additions - need to push this down into cinch
-      if (ENABLE_MPI)
-          target_link_libraries(portageapp_multimat_jali ${MPI_CXX_LIBRARIES})
-          set_target_properties(portageapp_multimat_jali PROPERTIES
-                                LINK_FLAGS "${MPI_CXX_LINK_FLAGS}")
-      endif (ENABLE_MPI)
+        add_executable(portageapp_multimat_jali portageapp_multimat_jali.cc)
+        target_link_libraries(portageapp_multimat_jali portage ${EXTRA_LIBS}
+    ${LAPACKX_LIBRARIES} ${TANGRAM_LIBRARIES} ${XMOF2D_LIBRARIES})
 
-      # Jali additions
-      include_directories(${Jali_INCLUDE_DIRS} ${Jali_TPL_INCLUDE_DIRS})
-      target_link_libraries(portageapp_multimat_jali ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES})
+        # MPI additions - need to push this down into cinch
+        if (ENABLE_MPI)
+            target_link_libraries(portageapp_multimat_jali ${MPI_CXX_LIBRARIES})
+            set_target_properties(portageapp_multimat_jali PROPERTIES
+                                  LINK_FLAGS "${MPI_CXX_LINK_FLAGS}")
+        endif (ENABLE_MPI)
+
+        # Jali additions
+        target_link_libraries(portageapp_multimat_jali ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES})
+      endif(XMOF2D_FOUND)
     endif (TANGRAM_FOUND)
 endif (Jali_DIR)
 
@@ -78,9 +92,9 @@ if(ENABLE_TCMALLOC)
 
   if (Jali_DIR)
     target_link_libraries(portageapp_jali ${TCMALLOC_LIB})
-    if (TANGRAM_FOUND)
+    if (TANGRAM_FOUND AND XMOF2D_FOUND)
       target_link_libraries(portageapp_multimat_jali ${TCMALLOC_LIB})
-    endif (TANGRAM_FOUND)
+    endif (TANGRAM_FOUND AND XMOF2D_FOUND)
   endif (Jali_DIR)
   if (ENABLE_FleCSI)
     target_link_libraries(portageapp_flecsi ${TCMALLOC_LIB})
@@ -101,7 +115,10 @@ if(ENABLE_PROFILE)
   if (Jali_DIR)
     target_link_libraries(portageapp_jali ${VTUNE_LIB})
     if (TANGRAM_FOUND)
-      target_link_libraries(portageapp_multimat_jali ${VTUNE_LIB})
+      target_link_libraries(portageapp_t-junction_jali ${VTUNE_LIB})
+      if (XMOF2D_FOUND)
+        target_link_libraries(portageapp_multimat_jali ${VTUNE_LIB})
+      endif (XMOF2D_FOUND)
     endif(TANGRAM_FOUND)
   endif (Jali_DIR)
   if (ENABLE_FleCSI)

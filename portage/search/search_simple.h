@@ -4,13 +4,15 @@ Please see the license file at the root of this repository, or at:
     https://github.com/laristra/portage/blob/master/LICENSE
 */
 
-#ifndef SEARCH_SIMPLE_H
-#define SEARCH_SIMPLE_H
+#ifndef PORTAGE_SEARCH_SEARCH_SIMPLE_H_
+#define PORTAGE_SEARCH_SEARCH_SIMPLE_H_
 
 #include <vector>
 #include <algorithm>
 
-#include "portage/support/Point.h"
+// portage includes
+#include "portage/support/portage.h"
+
 
 /// file-local namespace
 namespace search_simple {
@@ -44,9 +46,9 @@ void getBoundingBox(
     *xlow = xl;  *xhigh = xh;
     *ylow = yl;  *yhigh = yh;
 
-} // getBoundingBox
+}  // getBoundingBox
 
-} // search_simple
+}  // search_simple
 
 
 namespace Portage {
@@ -66,7 +68,7 @@ class SearchSimple {
 
     //! Default constructor (disabled)
     SearchSimple() = delete;
-    
+
     // Constructor with Meshes
     /*!
       @brief Builds the search structure for finding intersection.
@@ -74,21 +76,21 @@ class SearchSimple {
       getting the source mesh info.
       @param[in] target_mesh_wrapper Pointer to a mesh wrapper for
       getting the target mesh info.
-      
+
       Constructor for search structure for finding cells from a source
       mesh that overlap the target mesh.
     */
-    SearchSimple(const SourceMeshType & source_mesh, 
+    SearchSimple(const SourceMeshType & source_mesh,
                  const TargetMeshType & target_mesh)
             : sourceMesh_(source_mesh), targetMesh_(target_mesh)  {
 
-        const int numCells = sourceMesh_.num_owned_cells() + 
+        const int numCells = sourceMesh_.num_owned_cells() +
                 sourceMesh_.num_ghost_cells();
         xlow_.reserve(numCells);
         xhigh_.reserve(numCells);
         ylow_.reserve(numCells);
         yhigh_.reserve(numCells);
-        
+
         // find bounding boxes for all cells
         for (int c = 0; c < numCells; ++c) {
             std::vector<Point<2>> cell_coord;
@@ -97,7 +99,7 @@ class SearchSimple {
                            &xlow_[c], &xhigh_[c],
                            &ylow_[c], &yhigh_[c]);
         }
-    } // SearchSimple::SearchSimple
+    }  // SearchSimple::SearchSimple
 
     //! Copy constructor (disabled)
     SearchSimple(const SearchSimple &) = delete;
@@ -129,7 +131,7 @@ class SearchSimple {
     std::vector<double> ylow_;
     std::vector<double> yhigh_;
 
-}; // class SearchSimple
+};  // class SearchSimple
 
 
 
@@ -142,7 +144,7 @@ const {
     targetMesh_.cell_get_coordinates(cellId, &cell_coord);
     double txlow, txhigh, tylow, tyhigh;
     search_simple::getBoundingBox(cell_coord, &txlow, &txhigh, &tylow, &tyhigh);
-    
+
     // now see which sourceMesh cells have bounding boxes overlapping
     // with target cell
     // do a naive linear search
@@ -155,12 +157,11 @@ const {
         }
     }
 
-} // SearchSimple::operator()
+}  // SearchSimple::operator()
 
 
 
 
-} // namespace Portage
+}  // namespace Portage
 
-#endif // SEARCH_SIMPLE_H
-
+#endif  // PORTAGE_SEARCH_SEARCH_SIMPLE_H_

@@ -14,7 +14,6 @@
 #include <string>
 
 #include "portage/support/portage.h"
-#include "portage/support/Point.h"
 
 /* Do we need to write a variant of this which will work if we don't
  * have TANGRAM and multi-material state? */
@@ -28,7 +27,7 @@ namespace Portage {
   reconstruction and any associated material fields
 
   @tparam D   Dimension of problem
-  @tparam Mesh_Wrapper   A Mesh class 
+  @tparam Mesh_Wrapper   A Mesh class
   @tparam State_Wrapper  A State Manager class
   @tparam InterfaceReconstructor  An Interface Reconstruction class
 
@@ -286,7 +285,7 @@ void write_to_gmv(Mesh_Wrapper const& mesh,
   if (fieldnames.size()) {
     fout << "variable" << std::endl;
     for (auto & fieldname : fieldnames) {
-      if (state.field_type(Portage::CELL, fieldname) ==
+      if (state.field_type(Portage::Entity_kind::CELL, fieldname) ==
           Portage::Field_type::UNKNOWN_TYPE_FIELD)
         continue;
 

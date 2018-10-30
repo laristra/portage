@@ -4,28 +4,27 @@ Please see the license file at the root of this repository, or at:
     https://github.com/laristra/portage/blob/master/LICENSE
 */
 
-#ifndef INTERSECT_R3D_H
-#define INTERSECT_R3D_H
+#ifndef PORTAGE_INTERSECT_INTERSECT_R3D_H_
+#define PORTAGE_INTERSECT_INTERSECT_R3D_H_
 
 #include <array>
 #include <stdexcept>
 #include <vector>
 #include <algorithm>
 
+// portage includes
 extern "C" {
-#include "r3d.h"
+#include "portage/intersect/r3d.h"
 }
+#include "portage/support/portage.h"
+#include "portage/intersect/dummy_interface_reconstructor.h"
+#include "portage/intersect/intersect_polys_r3d.h"
 
 #ifdef HAVE_TANGRAM
 #include "tangram/driver/CellMatPoly.h"
 #include "tangram/driver/driver.h"
 #include "tangram/support/MatPoly.h"
 #endif
-
-#include "portage/support/Point.h"
-#include "portage/support/portage.h"
-#include "portage/intersect/dummy_interface_reconstructor.h"
-#include "portage/intersect/intersect_polys_r3d.h"
 
 namespace Portage {
 
@@ -58,7 +57,7 @@ class IntersectR3D {
 
 #ifdef HAVE_TANGRAM
   using InterfaceReconstructor3D =
-      Tangram::Driver<InterfaceReconstructorType, 3, SourceMeshType, 
+      Tangram::Driver<InterfaceReconstructorType, 3, SourceMeshType,
                       Matpoly_Splitter, Matpoly_Clipper>;
 #endif
 
@@ -85,7 +84,7 @@ class IntersectR3D {
       : sourceMeshWrapper(source_mesh), sourceStateWrapper(source_state),
         targetMeshWrapper(target_mesh), rectangular_mesh_(rectangular_mesh) {}
 
-  /// \brief Set the source mesh material that we have to intersect against   
+  /// \brief Set the source mesh material that we have to intersect against
 
   int set_material(int m) {
     matid_ = m;
@@ -96,7 +95,7 @@ class IntersectR3D {
   /// \param[in] src_entities Entity of source cells to intersect against
   /// \return vector of Weights_t structure containing moments of intersection
   ///
-  
+
   std::vector<Weights_t>
   operator() (const int tgt_entity, const std::vector<int> src_entities) const {
     std::cerr << "IntersectR3D not implemented for entity type" << std::endl;
@@ -128,10 +127,10 @@ template <class SourceMeshType, class SourceStateType,
           class TargetMeshType,
           template <class, int, class, class> class InterfaceReconstructorType,
           class Matpoly_Splitter, class Matpoly_Clipper>
-class IntersectR3D<CELL, SourceMeshType, SourceStateType, TargetMeshType,
+class IntersectR3D<Entity_kind::CELL, SourceMeshType, SourceStateType, TargetMeshType,
                    InterfaceReconstructorType,
                    Matpoly_Splitter, Matpoly_Clipper> {
-  
+
 #ifdef HAVE_TANGRAM
   using InterfaceReconstructor3D =
       Tangram::Driver<InterfaceReconstructorType, 3, SourceMeshType,
@@ -161,10 +160,10 @@ class IntersectR3D<CELL, SourceMeshType, SourceStateType, TargetMeshType,
                bool rectangular_mesh = false)
       : sourceMeshWrapper(source_mesh), sourceStateWrapper(source_state),
         targetMeshWrapper(target_mesh), rectangular_mesh_(rectangular_mesh) {}
-  
-  
-  /// \brief Set the source mesh material that we have to intersect against 
-  
+
+
+  /// \brief Set the source mesh material that we have to intersect against
+
   int set_material(int m) {
     matid_ = m;
   }
@@ -179,7 +178,7 @@ class IntersectR3D<CELL, SourceMeshType, SourceStateType, TargetMeshType,
                                      const std::vector<int> src_cells) const {
 
     std::vector<std::array<Point<3>, 4>> target_tet_coords;
-  
+
     // We should avoid any decomposition for cells of a rectangular
     // mesh but for now we will decompose the target all the time
 
@@ -237,8 +236,8 @@ class IntersectR3D<CELL, SourceMeshType, SourceStateType, TargetMeshType,
       facetedpoly_t srcpoly;
       sourceMeshWrapper.cell_get_facetization(s, &srcpoly.facetpoints,
                                               &srcpoly.points);
-      
-      this_wt.weights = intersect_polys_r3d(srcpoly, target_tet_coords);      
+
+      this_wt.weights = intersect_polys_r3d(srcpoly, target_tet_coords);
 #endif
       // Increment if vol of intersection > 0; otherwise, allow overwrite
       if (this_wt.weights.size() && this_wt.weights[0] > 0.0)
@@ -274,7 +273,7 @@ template <class SourceMeshType, class SourceStateType,
           class TargetMeshType,
           template <class, int, class, class> class InterfaceReconstructorType,
           class Matpoly_Splitter, class Matpoly_Clipper>
-class IntersectR3D<NODE, SourceMeshType, SourceStateType, TargetMeshType,
+class IntersectR3D<Entity_kind::NODE, SourceMeshType, SourceStateType, TargetMeshType,
                    InterfaceReconstructorType,
                    Matpoly_Splitter, Matpoly_Clipper> {
 
@@ -308,8 +307,8 @@ class IntersectR3D<NODE, SourceMeshType, SourceStateType, TargetMeshType,
       : sourceMeshWrapper(source_mesh), sourceStateWrapper(source_state),
         targetMeshWrapper(target_mesh), rectangular_mesh_(rectangular_mesh) {}
 
-  /// \brief Set the source mesh material that we have to intersect against 
-  
+  /// \brief Set the source mesh material that we have to intersect against
+
   int set_material(int m) {
     matid_ = m;
   }
@@ -383,4 +382,4 @@ class IntersectR3D<NODE, SourceMeshType, SourceStateType, TargetMeshType,
 
 }  // namespace Portage
 
-#endif  // INTERSECT_R3D_H
+#endif  // PORTAGE_INTERSECT_INTERSECT_R3D_H_

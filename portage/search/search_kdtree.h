@@ -4,16 +4,16 @@ Please see the license file at the root of this repository, or at:
     https://github.com/laristra/portage/blob/master/LICENSE
 */
 
-#ifndef SEARCH_KDTREE_H
-#define SEARCH_KDTREE_H
+#ifndef PORTAGE_SEARCH_SEARCH_KDTREE_H_
+#define PORTAGE_SEARCH_SEARCH_KDTREE_H_
 
 #include <vector>
 #include <memory>
 
-#include "portage/support/Point.h"
+// portage includes
 #include "portage/support/portage.h"
-#include "BoundBox.h"
-#include "kdtree.h"
+#include "portage/search/BoundBox.h"
+#include "portage/search/kdtree.h"
 
 
 namespace Portage {
@@ -35,7 +35,7 @@ class SearchKDTree {
 
   //! Default constructor (disabled)
   SearchKDTree() = delete;
-  
+
   /*!
     @brief Builds the k-d tree for searching for intersection
     candidates.
@@ -49,8 +49,8 @@ class SearchKDTree {
   SearchKDTree(const SourceMeshType & source_mesh,
                const TargetMeshType & target_mesh)
       : sourceMesh_(source_mesh), targetMesh_(target_mesh)  {}
-  
-  /*!  
+
+  /*!
     @brief Find the source mesh entities whose control volumes
     potentially overlap control volumes of a given target entity
 
@@ -86,7 +86,7 @@ class SearchKDTree {
   @tparam TargetMeshType The mesh type of the target mesh.
 */
 template <int D, typename SourceMeshType, typename TargetMeshType>
-class SearchKDTree<D, CELL, SourceMeshType, TargetMeshType> {
+class SearchKDTree<D, Entity_kind::CELL, SourceMeshType, TargetMeshType> {
  public:
 
   //! Default constructor (disabled)
@@ -140,7 +140,7 @@ class SearchKDTree<D, CELL, SourceMeshType, TargetMeshType> {
     gk::IsotheticBBox<D> bb;
     for (const auto& cc : cell_coord)
       bb.add(cc);
-    
+
     // now see which sourceMesh cells have bounding boxes overlapping
     // with target cell, using the kdtree - since gk::Intersect does
     // not take a shared_ptr, we have have to dereference and take
@@ -173,7 +173,7 @@ class SearchKDTree<D, CELL, SourceMeshType, TargetMeshType> {
   @tparam TargetMeshType The mesh type of the target mesh.
 */
 template <int D, typename SourceMeshType, typename TargetMeshType>
-class SearchKDTree<D, NODE, SourceMeshType, TargetMeshType> {
+class SearchKDTree<D, Entity_kind::NODE, SourceMeshType, TargetMeshType> {
  public:
 
   //! Default constructor (disabled)
@@ -186,7 +186,7 @@ class SearchKDTree<D, NODE, SourceMeshType, TargetMeshType> {
     @param[in] target_mesh Mesh containing entity for which we search
 
     Constructor for k-d tree for finding nodes from a source
-    mesh whose control volumes overlap the control volume of a node from 
+    mesh whose control volumes overlap the control volume of a node from
     the target mesh.
   */
   SearchKDTree(const SourceMeshType & source_mesh,
@@ -232,7 +232,7 @@ class SearchKDTree<D, NODE, SourceMeshType, TargetMeshType> {
     gk::IsotheticBBox<D> bb;
     for (const auto& cc : dual_cell_coord)
       bb.add(cc);
-    
+
     // now see which sourceMesh dual cells have bounding boxes
     // overlapping with dual cell of targetMesh, using the kdtree -
     // since gk::Intersect does not take a shared_ptr, we have have to
@@ -252,4 +252,4 @@ class SearchKDTree<D, NODE, SourceMeshType, TargetMeshType> {
 
 }  // namespace Portage
 
-#endif  // SEARCH_KDTREE_H
+#endif  // PORTAGE_SEARCH_SEARCH_KDTREE_H_

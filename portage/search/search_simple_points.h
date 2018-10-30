@@ -3,14 +3,14 @@ This file is part of the Ristra portage project.
 Please see the license file at the root of this repository, or at:
     https://github.com/laristra/portage/blob/master/LICENSE
 */
-#ifndef SEARCH_SIMPLE_POINTS_H
-#define SEARCH_SIMPLE_POINTS_H
+#ifndef PORTAGE_SEARCH_SEARCH_SIMPLE_POINTS_H_
+#define PORTAGE_SEARCH_SEARCH_SIMPLE_POINTS_H_
 
 #include <memory>
 #include <vector>
 #include <cmath>
 
-#include "portage/support/Point.h"
+
 #include "portage/support/portage.h"
 #include "portage/accumulate/accumulate.h"
 
@@ -103,7 +103,7 @@ operator() (const int pointId) const {
   // now see which source points are within an appropriate distance
   // of the target point
   // do a naive linear search
-  const int numPoints = sourceSwarm_.num_particles(ALL);
+  const int numPoints = sourceSwarm_.num_particles(Entity_type::ALL);
   for (int p = 0; p < numPoints; ++p) {
     Point<D> spcoord = sourceSwarm_.get_particle_coordinates(p);
     bool contained = true;
@@ -125,10 +125,9 @@ operator() (const int pointId) const {
   }
 
   return candidates;
-} // SearchSimplePoints::operator()
+}  // SearchSimplePoints::operator()
 
 
-} // namespace Portage
+}  // namespace Portage
 
-#endif // SEARCH_SIMPLE_POINTS_H
-
+#endif  // PORTAGE_SEARCH_SEARCH_SIMPLE_POINTS_H_

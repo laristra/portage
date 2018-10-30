@@ -5,14 +5,16 @@ Please see the license file at the root of this repository, or at:
 */
 
 #include <iostream>
+#include <vector>
+
 #include "gtest/gtest.h"
 
 #include "tangram/support/MatPoly.h"
 
 #include "portage/intersect/intersect_r2d.h"
-#include "portage/simple_mesh/simple_mesh.h"
-#include "portage/support/Point.h"
-#include "portage/wonton/mesh/simple_mesh/simple_mesh_wrapper.h"
+
+#include "wonton/mesh/simple/simple_mesh.h"
+#include "wonton/mesh/simple/simple_mesh_wrapper.h"
 
 double eps = 1.e-8;
 
@@ -137,7 +139,7 @@ TEST(TANGRAM_2D, test_matpoly_intersect_unit_cells) {
   for (auto p : _source_points) source_points.push_back(Portage::Point<2>(p));
 
   // create a simple mesh with a single cell
-  Portage::Simple_Mesh mesh(xl, yl, xh, yh, 1, 1);
+  Wonton::Simple_Mesh mesh(xl, yl, xh, yh, 1, 1);
 
   // Create mesh wrappers
   Wonton::Simple_Mesh_Wrapper meshWrapper(mesh);
@@ -184,7 +186,7 @@ TEST(TANGRAM_2D, test_matpoly_intersect_non_coincident) {
   for (auto p : _source_points) source_points.push_back(Portage::Point<2>(p));
 
   // create a simple mesh with a single cell
-  Portage::Simple_Mesh mesh(xl + xoffset, yl + yoffset, xh + xoffset,
+  Wonton::Simple_Mesh mesh(xl + xoffset, yl + yoffset, xh + xoffset,
                             yh + yoffset, 1, 1);
 
   // Create mesh wrappers
