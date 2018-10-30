@@ -21,8 +21,6 @@ ${TESTAPPDIR}/portageapp_multimat_jali \
     --material_file=reg10x10.bvf \
     --remap_order=2 \
     --results_file=multimat_jali_unstruc_2d_cell_f1_r2.gmv
-#    --limiter=barth_jespersen
-#    --ntargetcells=200 --mesh_min=-0.5 --mesh_max=0.5
 
 # Compare the values for the field
 $CMPAPPDIR/apptest_cmp GOLD_multimat_jali_unstruc_2d_cell_f1_r2.gmv multimat_jali_unstruc_2d_cell_f1_r2.gmv  1e-9

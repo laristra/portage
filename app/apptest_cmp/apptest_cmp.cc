@@ -33,6 +33,7 @@ void load_field(std::iostream &s, std::vector<int> &gid,
   }
 }
 
+// this function is intended to work in serial (not parallel)
 void load_gmv_field(std::iostream &s, std::vector<int> &gid,
                     std::vector<double> &values) {
   std::string w;
