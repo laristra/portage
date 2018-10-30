@@ -244,7 +244,6 @@ int main(int argc, char** argv) {
   std::string material_filename;
   std::vector<std::string> material_field_expressions;
   std::string srcfile, trgfile;  // No default
-  std::string field_output_filename;  // No default;
 
   int interp_order = 1;
   bool mesh_output = true;
@@ -252,6 +251,7 @@ int main(int argc, char** argv) {
   Jali::Entity_kind entityKind = Jali::Entity_kind::CELL;
   Portage::LimiterType limiter = Portage::LimiterType::NOLIMITER;
   double srclo = 0.0, srchi = 1.0;  // bounds of generated mesh in each dir
+  std::string field_filename = "target_mm.gmv";
 
   // Parse the input
 
@@ -308,6 +308,8 @@ int main(int argc, char** argv) {
       srchi = stof(valueword);
     } else if (keyword == "output_meshes") {
       mesh_output = (valueword == "y");
+    } else if (keyword == "results_file") {
+      field_filename = valueword;
     } else if (keyword == "convergence_study") {
       n_converge = stoi(valueword);
       if (n_converge <= 0) {
@@ -435,13 +437,13 @@ int main(int argc, char** argv) {
       case 2:
         run<2>(source_mesh, target_mesh, limiter, interp_order,
                material_filename, material_field_expressions,
-               field_output_filename, mesh_output,
+               field_filename, mesh_output,
                rank, numpe, entityKind, &(l1_err[i]), &(l2_err[i]));
         break;
       case 3:
         run<3>(source_mesh, target_mesh, limiter, interp_order,
                material_filename, material_field_expressions,
-               field_output_filename, mesh_output,
+               field_filename, mesh_output,
                rank, numpe, entityKind, &(l1_err[i]), &(l2_err[i]));
         break;
       default:
@@ -850,7 +852,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
 
   Portage::write_to_gmv<dim>(targetMeshWrapper, targetStateWrapper,
                              target_interface_reconstructor, fieldnames,
-                             "target_mm.gmv");
+                             field_filename);
 
 
   // Compute error
