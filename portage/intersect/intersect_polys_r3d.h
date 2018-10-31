@@ -22,12 +22,13 @@ extern "C" {
 
 
 #include "portage/support/portage.h"
+#include "wonton/support/Point.h"
+using Wonton::Point;
 #include "wonton/support/Vector.h"
-
 using Wonton::Vector;
 
-namespace Portage {
 
+namespace Portage {
 typedef
 struct facetedpoly {
   std::vector<std::vector<int>> facetpoints;  // we can flatten this to a
@@ -53,7 +54,7 @@ facetedpoly_t get_faceted_matpoly(const Tangram::MatPoly<3>& matpoly) {
   facetedpoly_t result{faceted_matpoly.face_vertices()};
   
   // convert tangram points to portage points for facetedpoly_t.points
-  for (auto p : faceted_matpoly.points()) result.points.push_back(Portage::Point<3>(p));
+  for (auto p : faceted_matpoly.points()) result.points.push_back(Point<3>(p));
   return result; 
 }
 #endif

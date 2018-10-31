@@ -47,6 +47,7 @@
 #endif
 
 #include "portage/driver/write_to_gmv.h"
+#include "wonton/support/Point.h"
 
 // For parsing and evaluating user defined expressions in apps
 
@@ -528,7 +529,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
   std::vector<int> cell_num_mats;
   std::vector<int> cell_mat_ids;  // flattened 2D array
   std::vector<double> cell_mat_volfracs;  // flattened 2D array
-  std::vector<Portage::Point<dim>> cell_mat_centroids;  // flattened 2D array
+  std::vector<Wonton::Point<dim>> cell_mat_centroids;  // flattened 2D array
 
   read_material_data<Wonton::Jali_Mesh_Wrapper, dim>(sourceMeshWrapper,
                                                      material_filename,
@@ -592,7 +593,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
 
   std::vector<std::vector<int>> matcells(nmats);
   std::vector<std::vector<double>> mat_volfracs(nmats);
-  std::vector<std::vector<Portage::Point<dim>>> mat_centroids(nmats);
+  std::vector<std::vector<Wonton::Point<dim>>> mat_centroids(nmats);
   for (int c = 0; c < nsrccells; c++) {
     int ibeg = offsets[c];
     for (int j = 0; j < cell_num_mats[c]; j++) {
@@ -636,7 +637,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
   // have Wonton:Point
     
   int ncen = cell_mat_centroids.size();
-  std::vector<Tangram::Point<dim>> Tcell_mat_centroids(ncen);
+  std::vector<Wonton::Point<dim>> Tcell_mat_centroids(ncen);
   for (int i = 0; i < ncen; i++)
     for (int j = 0; j < dim; j++)
       Tcell_mat_centroids[i][j] = cell_mat_centroids[i][j];
@@ -666,7 +667,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
         int c = matcells[m][ic];
         if (cell_num_mats[c] == 1) {
           if (cell_mat_ids[offsets[c]] == m) {
-            Portage::Point<dim> ccen;
+            Wonton::Point<dim> ccen;
             sourceMeshWrapper.cell_centroid(c, &ccen);
             matData[ic] = mat_fields[m](ccen);
           }
@@ -676,7 +677,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
           int nmp = cellmatpoly.num_matpolys();
           for (int i = 0; i < nmp; i++) {
             if (cellmatpoly.matpoly_matid(i) == m) {
-              Portage::Point<dim> mcen = cellmatpoly.matpoly_centroid(i);
+              Wonton::Point<dim> mcen = cellmatpoly.matpoly_centroid(i);
               matData[ic] = mat_fields[m](mcen);
             }
           }
@@ -704,7 +705,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
 
   // Add the volume fractions, centroids and cellmatdata variables
   targetStateWrapper.mat_add_celldata<double>("mat_volfracs");
-  targetStateWrapper.mat_add_celldata<Portage::Point<2>>("mat_centroids");
+  targetStateWrapper.mat_add_celldata<Wonton::Point<2>>("mat_centroids");
 
   // Register the variable name and interpolation order with the driver
   std::vector<std::string> remap_fields;
@@ -807,7 +808,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
   std::vector<int> target_cell_num_mats(ntarcells, 0);
   std::vector<int> target_cell_mat_ids(ntotal);
   std::vector<double> target_cell_mat_volfracs(ntotal);
-  std::vector<Tangram::Point<dim>> target_cell_mat_centroids(ntotal);
+  std::vector<Wonton::Point<dim>> target_cell_mat_centroids(ntotal);
 
   for (int m = 0; m < nmats; m++) {
     std::vector<int> matcells;
@@ -816,7 +817,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
     double const *matvf;
     targetStateWrapper.mat_get_celldata("mat_volfracs", m, &matvf);
 
-    Portage::Point<dim> const *matcen;
+    Wonton::Point<dim> const *matcen;
     targetStateWrapper.mat_get_celldata("mat_centroids", m, &matcen);
 
     int nmatcells = matcells.size();
@@ -875,7 +876,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
         int c = matcells[ic];
         if (target_cell_num_mats[c] == 1) {
           if (target_cell_mat_ids[offsets[c]] == m) {
-            Portage::Point<dim> ccen;
+            Wonton::Point<dim> ccen;
             targetMeshWrapper.cell_centroid(c, &ccen);
             error = mat_fields[m](ccen) - cellmatvals[ic];
             if (fabs(error) > 1.0e-08)
@@ -892,7 +893,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
           int nmp = cellmatpoly.num_matpolys();
           for (int i = 0; i < nmp; i++) {
             if (cellmatpoly.matpoly_matid(i) == m) {
-              Portage::Point<dim> mcen = cellmatpoly.matpoly_centroid(i);
+              Wonton::Point<dim> mcen = cellmatpoly.matpoly_centroid(i);
               error = mat_fields[m](mcen) - cellmatvals[ic];
 
               double matpolyvol = cellmatpoly.matpoly_volume(i);

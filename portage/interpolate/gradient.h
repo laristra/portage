@@ -19,6 +19,7 @@
 
 // wonton includes
 #include "wonton/support/lsfits.h"
+#include "wonton/support/Point.h"
 #include "wonton/support/Vector.h"
 
 #ifdef HAVE_TANGRAM
@@ -27,6 +28,7 @@
 #include "tangram/support/MatPoly.h"
 #endif
 
+using Wonton::Point;
 using Wonton::Vector;
 
 namespace Portage {

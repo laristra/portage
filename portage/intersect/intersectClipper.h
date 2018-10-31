@@ -15,6 +15,7 @@ Please see the license file at the root of this repository, or at:
 // portage includes
 #include "portage/intersect/clipper.hpp"
 #include "portage/support/portage.h"
+#include "wonton/support/Point.h"
 
 namespace Portage {
 
@@ -23,7 +24,7 @@ namespace Portage {
   @param[in] poly A vector of a pair of (x,y) coordinates of the nodes making up the polygon.
   @returns std::vector<double>--area, mx, my
 */
-std::vector<double> areaAndMomentPolygon(const std::vector<Portage::Point<2>> poly){
+std::vector<double> areaAndMomentPolygon(const std::vector<Wonton::Point<2>> poly){
   double area = 0;
   double cx = 0;
   double cy = 0;
@@ -62,9 +63,9 @@ template <typename SourceMeshType, typename TargetMeshType=SourceMeshType> class
 public:
 
 /// Alias for a collection of Points.
-typedef std::vector<Portage::Point<2>> Poly;
+typedef std::vector<Wonton::Point<2>> Poly;
 /// Alias to provide volume and centroid
-typedef std::pair<double, Portage::Point<2>> Moment;
+typedef std::pair<double, Wonton::Point<2>> Moment;
 
 /// Constructor taking a source mesh @c s and a target mesh @c t.
 IntersectClipper(const SourceMeshType &s, const TargetMeshType &t):sourceMeshWrapper(s), targetMeshWrapper(t){}
@@ -99,9 +100,9 @@ std::vector<std::vector<double> > operator() (const int cellA, const int cellB) 
   clpr.Execute(ClipperLib::ctIntersection, solution,
                ClipperLib::pftEvenOdd, ClipperLib::pftEvenOdd);
 
-  std::vector<std::vector<Portage::Point<2>>> intersectionList;
+  std::vector<std::vector<Wonton::Point<2>>> intersectionList;
   for(auto const &i: solution){
-    std::vector<Portage::Point<2>> poly;
+    std::vector<Wonton::Point<2>> poly;
     for(auto const &j: i){
       //Build list of intersections and convert back to doubles
       poly.emplace_back(integer2real(j.X, max_size_poly), integer2real(j.Y, max_size_poly));
@@ -128,7 +129,7 @@ IntersectClipper & operator = (const IntersectClipper &) = delete;
 private:
 
 //We must use the same max size for all the polygons, so the number we are looking for is the maximum value in the set--all the X and Y values will be converted using this value
-static double updateMaxSize( const std::vector<Portage::Point<2>> poly, double max_size_poly){
+static double updateMaxSize( const std::vector<Wonton::Point<2>> poly, double max_size_poly){
   for(auto const &i: poly){
     double m = std::max(std::abs(i[0]), std::abs(i[1]));
     if (m > max_size_poly) max_size_poly = m;
@@ -171,10 +172,10 @@ static double integer2real(long a, const double max_size){
   return ldexp(a, exp-DBL_MANT_DIG);
 }
 
-//Convert an entire polygon (specifiied as a std::vector<Portage::Point>) to a std::vector<IntPoint>
-static std::vector<ClipperLib::IntPoint> convertPoly2int(std::vector<Portage::Point<2>> poly, double max_size_poly){
+//Convert an entire polygon (specifiied as a std::vector<Wonton::Point>) to a std::vector<IntPoint>
+static std::vector<ClipperLib::IntPoint> convertPoly2int(std::vector<Wonton::Point<2>> poly, double max_size_poly){
   std::vector<ClipperLib::IntPoint> intpoly(poly.size());
-  std::transform(poly.begin(), poly.end(), intpoly.begin(), [max_size_poly](Portage::Point<2> point){
+  std::transform(poly.begin(), poly.end(), intpoly.begin(), [max_size_poly](Wonton::Point<2> point){
       return ClipperLib::IntPoint(real2integer(point[0], max_size_poly), real2integer(point[1], max_size_poly));});
   return intpoly;
 }

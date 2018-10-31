@@ -22,7 +22,9 @@ extern "C" {
 // wonton includes
 #include "wonton/mesh/simple/simple_mesh.h"
 #include "wonton/mesh/simple/simple_mesh_wrapper.h"
+#include "wonton/support/Point.h"
 #include "wonton/support/Vector.h"
+
 // tangram includes
 #include "tangram/driver/driver.h"
 #include "tangram/reconstruct/xmof2D_wrapper.h"
@@ -34,9 +36,9 @@ extern "C" {
 #include "mpi.h"
 #endif
 
-
+using Wonton::Point;
 /*!
- @file ir_linetest_app.cc
+
  @brief Integration test for Portage and Tangram that uses XMOF2D interface reconstructor.
  The domain is a unit square with two material separated by a linear interface.
  Source and target meshes are rectangular (SimpleMesh2D) with dimensions specified
@@ -145,7 +147,7 @@ void get_materials_data(const Mesh_Wrapper& Mesh,
                         std::vector<int>& cell_num_mats,
                         std::vector<int>& cell_mat_ids,
                         std::vector<double>& cell_mat_volfracs,
-                        std::vector<Tangram::Point2>& cell_mat_centroids,
+                        std::vector<Point<2>>& cell_mat_centroids,
                         std::vector<int>& offsets);
 /*!
  @brief Determines the position of a point with respect to a line.
@@ -156,9 +158,11 @@ void get_materials_data(const Mesh_Wrapper& Mesh,
  @return -1 if the point is below the line, 1 if the point is above the line,
           0 if the point is on the line
 */
-int PointPosition(const Portage::Point2& pt,
+
+
+int PointPosition(const Wonton::Point2& pt,
                   const Wonton::Vector<2>& line_nvec,
-                  const Portage::Point2& line_pt,
+                  const Wonton::Point2& line_pt,
                   const double eps = deps);
 
 /*!
@@ -170,7 +174,7 @@ int PointPosition(const Portage::Point2& pt,
  @param[in] eps Max distance between points that are considered coincident.
  @return Intersection point
 */
-Portage::Point2 LinesIntersect(std::vector< std::vector<Portage::Point2> > lines_pts,
+Point<2> LinesIntersect(std::vector< std::vector<Point<2>> > lines_pts,
                                double den_eps,
                                double eps = deps);
 /*!
@@ -178,7 +182,7 @@ Portage::Point2 LinesIntersect(std::vector< std::vector<Portage::Point2> > lines
  @param[in] segments Two pairs of points defining the linear segments.
  @return Hausdorff distance
 */
-double SegmentsDistance(const std::vector<std::vector<Portage::Point2>>& segments);
+double SegmentsDistance(const std::vector<std::vector<Point<2>>>& segments);
 
 /*!
  @brief Computes the max Hausdorff distance between the reference and reconstructed
@@ -220,8 +224,8 @@ double get_ir_error(const Mesh_Wrapper& Mesh,
 */
 void add_intersect_data(std::vector<std::vector<double> >& mat_moments,
                         int mat_id,
-                        const std::vector<Portage::Point<2> >& source_points,
-                        const std::vector<Portage::Point<2> >& target_points,
+                        const std::vector<Point<2> >& source_points,
+                        const std::vector<Point<2> >& target_points,
                         std::vector<int>& tcell_mat_ids,
                         std::vector<int>& tcell_num_mats,
                         int tc,
@@ -280,7 +284,7 @@ int main(int argc, char** argv) {
   std::vector<int> cell_num_mats;
   std::vector<int> cell_mat_ids;
   std::vector<double> cell_mat_volfracs;
-  std::vector<Tangram::Point2> cell_mat_centroids;
+  std::vector<Point<2>> cell_mat_centroids;
   std::vector<int> offsets;
   get_materials_data(source_mesh_wrapper, mat_int_a, mat_int_b,
                      cell_num_mats, cell_mat_ids,
@@ -310,11 +314,11 @@ int main(int argc, char** argv) {
   std::vector<int> tcell_num_mats=std::vector<int>(tcells, 0);
   std::vector<int> tcell_mat_ids{};
   std::vector<double> tcell_mat_volfracs{};
-  std::vector<Tangram::Point2> tcell_mat_centroids{};
+  std::vector<Point<2>> tcell_mat_centroids{};
 
   // Target cells loop
   for (int tc = 0; tc < tcells; ++tc) {
-    std::vector<Portage::Point<2>> target_points;
+    std::vector<Point<2>> target_points;
     target_mesh_wrapper.cell_get_coordinates(tc, &target_points);
     double cell_size = target_mesh_wrapper.cell_volume(tc);
 
@@ -342,9 +346,9 @@ int main(int argc, char** argv) {
           int mat_id=cellmatpoly->matpoly_matid(matpoly_id);
 
           // Get Tangram points for matpoly, convert to Portage points
-          std::vector<Portage::Point<2>> source_points;
+          std::vector<Point<2>> source_points;
           for (auto p : matpoly.points()) {
-            source_points.push_back(Portage::Point<2>(p));
+            source_points.push_back(Point<2>(p));
           }
           add_intersect_data(mat_moments,mat_id,
                              source_points,target_points,
@@ -354,7 +358,7 @@ int main(int argc, char** argv) {
       } else { // Single material cell
 
         // Get Tangram points for matpoly, convert to Portage points
-        std::vector<Portage::Point<2>> source_points;
+        std::vector<Point<2>> source_points;
         source_mesh_wrapper.cell_get_coordinates(sc,&source_points);
         int mat_id=cell_mat_ids[offsets[sc]];
         add_intersect_data(mat_moments,mat_id,
@@ -423,7 +427,7 @@ template <class Mesh_Wrapper>
 void R2DizeCell(const Mesh_Wrapper& Mesh,
                 const int cell_id,
                 r2d_poly& r2d_polygon) {
-  std::vector<Portage::Point2> cell_points;
+  std::vector<Point<2>> cell_points;
   Mesh.cell_get_coordinates(cell_id, &cell_points);
   int npoints = (int) cell_points.size();
   r2d_rvec2* vertices = new r2d_rvec2[npoints];
@@ -455,7 +459,7 @@ int CellPosition(const Mesh_Wrapper& Mesh,
                  const double line_a,
                  const double line_b,
                  const double yeps) {
-  std::vector<Portage::Point2> cell_points;
+  std::vector<Point<2>> cell_points;
   Mesh.cell_get_coordinates(cell_id, &cell_points);
   int npoints = (int) cell_points.size();
   int counter_off = 0, counter_on = 0;
@@ -499,7 +503,7 @@ void get_materials_data(const Mesh_Wrapper& Mesh,
                         std::vector<int>& cell_num_mats,
                         std::vector<int>& cell_mat_ids,
                         std::vector<double>& cell_mat_volfracs,
-                        std::vector<Tangram::Point2>& cell_mat_centroids,
+                        std::vector<Point<2>>& cell_mat_centroids,
                         std::vector<int>& offsets) {
   const int POLY_ORDER = 1;  //Max degree of moments to calculate
 
@@ -514,9 +518,9 @@ void get_materials_data(const Mesh_Wrapper& Mesh,
   cell_num_mats.resize(ncells, 1);
   for (int icell = 0; icell < ncells; icell++) {
     double cell_size = Mesh.cell_volume(icell);
-    Portage::Point2 cell_centroid;
+    Point<2> cell_centroid;
     Mesh.cell_centroid(icell, &cell_centroid);
-    Tangram::Point2 cell_cen(cell_centroid);
+    Point<2> cell_cen(cell_centroid);
 
     int cell_pos = CellPosition(Mesh, icell, line_a, line_b);
     if (cell_pos == 0) {
@@ -533,13 +537,13 @@ void get_materials_data(const Mesh_Wrapper& Mesh,
         cell_mat_ids.push_back(mat_id_above);
         double poly_above_vfrac = moments[0]/cell_size;
         cell_mat_volfracs.push_back(poly_above_vfrac);
-        Tangram::Point2 poly_above_cen(
+        Point<2> poly_above_cen(
           moments[1]/moments[0], moments[2]/moments[0]);
         cell_mat_centroids.push_back(poly_above_cen);
 
         cell_mat_ids.push_back(mat_id_below);
         cell_mat_volfracs.push_back(1.0 - poly_above_vfrac);
-        Tangram::Point2 poly_below_cen(
+        Point<2> poly_below_cen(
           (cell_cen - poly_above_vfrac*poly_above_cen)/(1.0 - poly_above_vfrac));
         cell_mat_centroids.push_back(poly_below_cen);
       }
@@ -573,9 +577,10 @@ void get_materials_data(const Mesh_Wrapper& Mesh,
  @return -1 if the point is below the line, 1 if the point is above the line,
  0 if the point is on the line
 */
-int PointPosition(const Portage::Point2& pt,
-                  const Wonton::Vector<2>& line_nvec,
-                  const Portage::Point2& line_pt,
+
+int PointPosition(const Point<2>& pt,
+                  const Wonton::Vector2& line_nvec,
+                  const Point<2>& line_pt,
                   const double eps) {
   Wonton::Vector<2> vec2line = line_pt - pt;
   double prj = dot(vec2line, line_nvec);
@@ -595,10 +600,10 @@ int PointPosition(const Portage::Point2& pt,
  @param[in] eps Max distance between points that are considered coincident.
  @return Intersection point
 */
-Portage::Point2 LinesIntersect(std::vector< std::vector<Portage::Point2> > lines_pts,
+Point<2> LinesIntersect(std::vector< std::vector<Point<2>> > lines_pts,
                                double denom_eps,
                                double eps) {
-  Portage::Point2 p_int;
+  Point<2> p_int;
 
   double denom = (lines_pts[0][0][0] - lines_pts[0][1][0])*(lines_pts[1][0][1] - lines_pts[1][1][1]) -
   (lines_pts[0][0][1] - lines_pts[0][1][1])*(lines_pts[1][0][0] - lines_pts[1][1][0]);
@@ -619,7 +624,7 @@ Portage::Point2 LinesIntersect(std::vector< std::vector<Portage::Point2> > lines
     Wonton::Vector<2> line1_nvec(lines_pts[1][1][1] - lines_pts[1][0][1],
                                 lines_pts[1][0][0] - lines_pts[1][1][0]);
     line1_nvec.normalize();
-    Portage::Point2 end_pts[2];
+    Point<2> end_pts[2];
     end_pts[0] = lines_pts[0][0]; end_pts[1] = lines_pts[0][1];
     int end_pts_pos[2];
     end_pts_pos[0] = PointPosition(end_pts[0], line1_nvec, lines_pts[1][0], eps);
@@ -639,7 +644,7 @@ Portage::Point2 LinesIntersect(std::vector< std::vector<Portage::Point2> > lines
     }
     int mid_pt_pos;
     do {
-      Portage::Point2 mid_pt = 0.5*(end_pts[0] + end_pts[1]);
+      Point<2> mid_pt = 0.5*(end_pts[0] + end_pts[1]);
       mid_pt_pos = PointPosition(mid_pt, line1_nvec, lines_pts[1][0], eps);
       if (mid_pt_pos == 0)
         p_int = mid_pt;
@@ -658,7 +663,7 @@ Portage::Point2 LinesIntersect(std::vector< std::vector<Portage::Point2> > lines
  @param[in] segments Two pairs of points defining the linear segments.
  @return Hausdorff distance
 */
-double SegmentsDistance(const std::vector<std::vector<Portage::Point2>>& segments) {
+double SegmentsDistance(const std::vector<std::vector<Point<2>>>& segments) {
   double max_dist = 0.0;
   for (int iseg = 0; iseg < 2; iseg++) {
     int iother = (iseg + 1)%2;
@@ -673,7 +678,7 @@ double SegmentsDistance(const std::vector<std::vector<Portage::Point2>>& segment
       else if (shift >= other_len)
         cur_dist = (segments[iseg][ipt] - segments[iother][1]).norm();
       else {
-        Portage::Point2 prj_pt = segments[iother][0] + shift*other_dvec;
+        Point<2> prj_pt = segments[iother][0] + shift*other_dvec;
         cur_dist = (segments[iseg][ipt] - prj_pt).norm();
       }
       if (cur_dist > max_dist) max_dist = cur_dist;
@@ -719,11 +724,11 @@ double get_ir_error(const Mesh_Wrapper& Mesh,
     std::vector<int> ifaces, fdirs;
     Mesh.cell_get_faces_and_dirs(icell, &ifaces, &fdirs);
     int nsides = (int) ifaces.size();
-    std::vector<Portage::Point2> ref_int_pts;
+    std::vector<Point<2>> ref_int_pts;
     for (int iside = 0; iside < nsides; iside++) {
       std::vector<int> inodes;
       Mesh.face_get_nodes(ifaces[iside], &inodes);
-      std::vector<Portage::Point2> side_pts(2);
+      std::vector<Point<2>> side_pts(2);
       Mesh.node_get_coordinates(inodes[0], &side_pts[0]);
       Mesh.node_get_coordinates(inodes[1], &side_pts[1]);
       int pts_pos[2];
@@ -738,7 +743,7 @@ double get_ir_error(const Mesh_Wrapper& Mesh,
       }
 
       if (!pts_pos[0] || !pts_pos[1]) {
-        Portage::Point2 ref_int = pts_pos[0] ? side_pts[1] : side_pts[0];
+        Point<2> ref_int = pts_pos[0] ? side_pts[1] : side_pts[0];
         bool new_int_pt = true;
         for (int iip = 0; iip < ref_int_pts.size(); iip++)
           if (approxEq(ref_int, ref_int_pts[iip], eps)) {
@@ -749,9 +754,9 @@ double get_ir_error(const Mesh_Wrapper& Mesh,
           ref_int_pts.push_back(ref_int);
       }
       else if (pts_pos[0] != pts_pos[1]) {
-        std::vector<Portage::Point2> line_pts = {
-          Portage::Point2(0.0, line_b), Portage::Point2(1.0, line_a + line_b) };
-        Portage::Point2 ref_int = LinesIntersect({side_pts, line_pts}, denom_eps, eps);
+        std::vector<Point<2>> line_pts = {
+          Point<2>(0.0, line_b), Point<2>(1.0, line_a + line_b) };
+        Point<2> ref_int = LinesIntersect({side_pts, line_pts}, denom_eps, eps);
         ref_int_pts.push_back(ref_int);
       }
     }
@@ -767,10 +772,10 @@ double get_ir_error(const Mesh_Wrapper& Mesh,
     if (iintfaces.size() != 1)
       throw std::runtime_error("All CellMatPoly's are expected to have only one interior face!");
     else {
-      std::vector<Tangram::Point2> int_face_pts =
+      std::vector<Point<2>> int_face_pts =
         cell_mat_poly.matface_points(iintfaces[0]);
-      std::vector<Portage::Point2> ir_int_pts = { Portage::Point2(int_face_pts[0]),
-                                                  Portage::Point2(int_face_pts[1]) };
+      std::vector<Point<2>> ir_int_pts = { Point<2>(int_face_pts[0]),
+                                                  Point<2>(int_face_pts[1]) };
       double cur_mat_int_dist = SegmentsDistance({ ir_int_pts, ref_int_pts });
       if (cur_mat_int_dist > max_hdist)  max_hdist = cur_mat_int_dist;
     }

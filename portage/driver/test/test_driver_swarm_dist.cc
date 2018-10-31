@@ -18,12 +18,14 @@ Please see the license file at the root of this repository, or at:
 #include "portage/swarm/swarm.h"
 #include "portage/swarm/swarm_state.h"
 #include "wonton/mesh/jali/jali_mesh_wrapper.h"
+#include "wonton/support/Point.h"
 #include "portage/search/search_points_by_cells.h"
 
 #include "gtest/gtest.h"
 #include "mpi.h"
 #include "Mesh.hh"
 #include "MeshFactory.hh"
+
 
 namespace {
 
@@ -87,7 +89,7 @@ class DriverTest : public ::testing::Test {
   //
   template <template<int, class, class> class Search,
             Portage::Meshfree::Basis::Type basis>
-  void unitTest(double compute_initial_field(Portage::Point<dim> coord),
+  void unitTest(double compute_initial_field(Wonton::Point<dim> coord),
                 double expected_answer) {
 
     // Fill the source state data with the specified profile
@@ -97,7 +99,7 @@ class DriverTest : public ::testing::Test {
 
     // Create the source data for given function
     for (unsigned int p = 0; p < nsrcpts; ++p) {
-      Portage::Point<dim> coord =
+      Wonton::Point<dim> coord =
           sourceSwarm->get_particle_coordinates(p);
       (*sourceData)[p] = compute_initial_field(coord);
     }
@@ -131,7 +133,7 @@ class DriverTest : public ::testing::Test {
     d.run(true);
 
     // Check the answer
-    Portage::Point<dim> nodexy;
+    Wonton::Point<dim> nodexy;
     double stdval, err;
     double toterr=0.;
 
@@ -140,7 +142,7 @@ class DriverTest : public ::testing::Test {
     ASSERT_NE(nullptr, vecout);
 
     for (int p = 0; p < ntarpts; ++p) {
-      Portage::Point<dim> coord = targetSwarm->get_particle_coordinates(p);
+      Wonton::Point<dim> coord = targetSwarm->get_particle_coordinates(p);
       double error;
       error = compute_initial_field(coord) - (*vecout)[p];
       // dump diagnostics for each particle
@@ -212,26 +214,26 @@ struct DriverTest3DScatter : DriverTest<3> {
 };
 // Methods for computing initial field values
 template<size_t Dimension>
-double compute_constant_field(Portage::Point<Dimension> coord) {
+double compute_constant_field(Wonton::Point<Dimension> coord) {
   return 25.0;
 }
 
 template<size_t Dimension>
-double compute_linear_field(Portage::Point<Dimension> coord) {
+double compute_linear_field(Wonton::Point<Dimension> coord) {
   double val = 0.0;
   for (size_t i = 0; i < Dimension; i++) val += coord[i];
   return val;
 }
 
 template<size_t Dimension>
-double compute_quadratic_field(Portage::Point<Dimension> coord) {
+double compute_quadratic_field(Wonton::Point<Dimension> coord) {
   double val = 0.0;
   for (size_t i = 0; i < Dimension; i++) val += coord[i]*coord[i];
   return val;
 }
 
 template<size_t Dimension>
-double compute_cubic_field(Portage::Point<Dimension> coord) {
+double compute_cubic_field(Wonton::Point<Dimension> coord) {
   double val = 0.0;
   for (size_t i = 0; i < Dimension; i++) val += coord[i]*coord[i]*coord[i];
   return val;

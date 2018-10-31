@@ -18,7 +18,9 @@ Please see the license file at the root of this repository, or at:
 #include "wonton/mesh/simple/simple_mesh_wrapper.h"
 #include "wonton/state/simple/simple_state.h"
 #include "wonton/state/simple/simple_state_wrapper.h"
+#include "wonton/support/Point.h"
 #include "wonton/support/Vector.h"
+
 /// Test gradient computation for cell centered fields
 
 TEST(Gradient, Fields_Cell_Ctr) {
@@ -51,7 +53,7 @@ TEST(Gradient, Fields_Cell_Ctr) {
 
   // set the data (x+2*y)
   for (int c = 0; c < nc1; c++) {
-    Portage::Point<2> ccen;
+    Wonton::Point<2> ccen;
     meshwrapper.cell_centroid(c, &ccen);
     data2[c] = ccen[0] + 2 * ccen[1];
   }
@@ -163,7 +165,7 @@ TEST(Gradient, Fields_Node_Ctr) {
   std::vector<double> data2(nn1);
 
   for (int n = 0; n < nn1; ++n) {
-    Portage::Point<2> nodexy;
+    Wonton::Point<2> nodexy;
     meshwrapper.node_get_coordinates(n, &nodexy);
     data2[n] = 3 * nodexy[0] + nodexy[1];
   }
