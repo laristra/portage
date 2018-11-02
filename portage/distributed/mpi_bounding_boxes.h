@@ -392,12 +392,86 @@ class MPI_Bounding_Boxes {
               sourceNodeGlobalIds, &newNodeGlobalIds);
 
     // SEND FIELD VALUES
+    
+    // is this a multimaterial problem? the following is error prone. Just because
+    // we have more than one material, it may not be. Also, a node can have just
+    // one material and this will fail, but for the moment, it will work. I just realized
+    // that num_materials is ambiguous. It could refer to the number of materials 
+    // registered with the state manager (as in a global registry), but more likely it is the number
+    // of materials on this node
+    int nmats = source_state_flat.num_materials();
+    comm_info_t num_mats_info, num_mat_cells_info;
+    std::vector<int> all_material_ids, all_material_shapes, all_material_cells;
+
+    if (nmats>0){
+    
+      std::cout << "in distribute, this a multimaterial problem with " << nmats << " materials\n";
+      
+      /////////////////////////////////////////////////////////
+      // get the material ids across all nodes
+      /////////////////////////////////////////////////////////
+      
+      // set the info for the number of materials on each node
+      setInfo(&num_mats_info, commSize, sendFlags, nmats, nmats);
+      
+      // get the sorted material ids on this node
+      std::vector<int> material_ids=source_state_flat.get_material_ids();
+      
+      // resize the post distribute material id vector
+      all_material_ids.resize(num_mats_info.newNum);
+
+      // sendData
+      moveData(commRank, commSize, MPI_INT, 1, 0, num_mats_info.sourceNum, 0,
+        num_mats_info.sendCounts, num_mats_info.recvCounts,
+        material_ids, &all_material_ids
+      );
+      
+      /////////////////////////////////////////////////////////
+      // get the material cell shapes across all nodes
+      /////////////////////////////////////////////////////////      
+
+      // get the sorted material shapes on this node
+      std::vector<int> material_shapes=source_state_flat.get_material_shapes();
+      
+      // resize the post distribute material id vector
+      all_material_shapes.resize(num_mats_info.newNum);
+
+      // sendData
+      moveData(commRank, commSize, MPI_INT, 1, 0, num_mats_info.sourceNum, 0,
+        num_mats_info.sendCounts, num_mats_info.recvCounts,
+        material_shapes, &all_material_shapes
+      );
+     
+      /////////////////////////////////////////////////////////
+      // get the material cell ids across all nodes
+      /////////////////////////////////////////////////////////
+      
+      // get the total number of material cell id's on this node
+      int nmatcells = source_state_flat.num_material_cells();
+      
+      // set the info for the number of materials on each node
+      setInfo(&num_mat_cells_info, commSize, sendFlags, nmatcells, nmatcells);
+      
+      // get the sorted material ids on this node
+      std::vector<int> material_cells=source_state_flat.get_material_cells();
+      
+      // resize the post distribute material id vector
+      all_material_cells.resize(num_mat_cells_info.newNum);
+
+      // sendData
+      moveData(commRank, commSize, MPI_INT, 1, 0, num_mat_cells_info.sourceNum, 0,
+        num_mat_cells_info.sendCounts, num_mat_cells_info.recvCounts,
+        material_cells, &all_material_cells
+      );
+      
+
+    }
 
     // Send and receive each field to be remapped
     for (std::string field_name : source_state_flat.names())
     {
 
-      std::vector<double>& sourceField = source_state_flat.get_vector(field_name);
+      std::vector<double> sourceField = source_state_flat.get_vector(field_name);
       int sourceFieldStride = source_state_flat.get_field_stride(field_name);
 
       // Currently only cell and node fields are supported
@@ -419,6 +493,7 @@ class MPI_Bounding_Boxes {
     } // for field_name
 
 #ifdef DEBUG_MPI
+/*
     for (std::string field_name : source_state_flat.names())
     {
       std::vector<double>& sourceField = source_state_flat.get_vector(field_name);
@@ -428,6 +503,7 @@ class MPI_Bounding_Boxes {
     	}
     	std::cout << "\n***\n" <<std::endl;
     } // diagnostic print
+*/
 #endif
 
     // We will now use the received source mesh data as our new source mesh on this partition
@@ -478,6 +554,7 @@ class MPI_Bounding_Boxes {
 #endif
 
 #ifdef DEBUG_MPI
+/*
     for (std::string field_name : source_state_flat.names())
     {
       std::vector<double>& sourceField = source_state_flat.get_vector(field_name);
@@ -487,6 +564,7 @@ class MPI_Bounding_Boxes {
     	}
     	std::cout << "\n***\n" <<std::endl;
     } // diagnostic print
+*/
 #endif
   } // distribute
 

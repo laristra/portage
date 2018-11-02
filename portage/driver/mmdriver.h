@@ -860,6 +860,10 @@ int MMDriver<Search, Intersect, Interpolate, D,
   gettimeofday(&begin_timeval, 0);
 
   source_mesh_flat.initialize(source_mesh_);
+  std::cout << "\nin mmdriver before source_state_flat.initialize, rank: " <<comm_rank <<std::endl;
+  
+  // Note the flat state should be used for everything including the centroids and
+  // volume fractions for interface reconstruction
   source_state_flat.initialize(source_state_, source_remap_var_names_);
   MPI_Bounding_Boxes distributor;
   distributor.distribute(source_mesh_flat, source_state_flat,
