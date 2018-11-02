@@ -290,14 +290,6 @@ int main(int argc, char** argv) {
     MPI_Abort(MPI_COMM_WORLD, -1);
   }
 
-  // For now we are not allowing distributed remaps because flat state wrapper
-  // is not yet capable of handling multi-material state
-
-  if (numpe > 1) {
-    std::cerr << "ERROR: portageapp_t-junction_jali only runs in serial for now\n";
-    exit(-1);
-  }
-
 
   int nsourcecells = 0, ntargetcells = 0;  // No default
   int dim = 2;
@@ -731,13 +723,19 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
     }
   }
 
-
+	std::cout << "***Registered fieldnames:"<<std::endl;
+	for (auto & field_name: sourceStateWrapper.names()) 
+		std::cout << " registered fieldname: " << field_name << std::endl;
+		
   std::vector<std::string> fieldnames;
   fieldnames.push_back("cellmatdata");
+  /*
+  std::stringstream filename;
+  filename <<"source_mm_" << rank << ".gmv";
   Portage::write_to_gmv<dim>(sourceMeshWrapper, sourceStateWrapper,
                              source_interface_reconstructor, fieldnames,
-                             "source_mm.gmv");
-
+                             filename.str());
+  */
 
   // Add the materials into the target mesh but with empty cell lists
   // The remap algorithm will figure out which cells contain which materials
