@@ -471,7 +471,7 @@ class MPI_Bounding_Boxes {
     for (std::string field_name : source_state_flat.names())
     {
 
-      std::vector<double> sourceField = source_state_flat.get_vector(field_name);
+      std::vector<double>& sourceField = source_state_flat.get_vector(field_name);
       int sourceFieldStride = source_state_flat.get_field_stride(field_name);
 
       // Currently only cell and node fields are supported
@@ -493,7 +493,6 @@ class MPI_Bounding_Boxes {
     } // for field_name
 
 #ifdef DEBUG_MPI
-/*
     for (std::string field_name : source_state_flat.names())
     {
       std::vector<double>& sourceField = source_state_flat.get_vector(field_name);
@@ -503,7 +502,6 @@ class MPI_Bounding_Boxes {
     	}
     	std::cout << "\n***\n" <<std::endl;
     } // diagnostic print
-*/
 #endif
 
     // We will now use the received source mesh data as our new source mesh on this partition
@@ -554,7 +552,6 @@ class MPI_Bounding_Boxes {
 #endif
 
 #ifdef DEBUG_MPI
-/*
     for (std::string field_name : source_state_flat.names())
     {
       std::vector<double>& sourceField = source_state_flat.get_vector(field_name);
@@ -564,7 +561,6 @@ class MPI_Bounding_Boxes {
     	}
     	std::cout << "\n***\n" <<std::endl;
     } // diagnostic print
-*/
 #endif
   } // distribute
 
