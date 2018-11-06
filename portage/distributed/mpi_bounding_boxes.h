@@ -15,6 +15,7 @@ Please see the license file at the root of this repository, or at:
 #include <memory>
 
 #include "portage/support/portage.h"
+#include "wonton/state/state_vector_uni.h"
 
 #include "mpi.h"
 
@@ -471,31 +472,64 @@ class MPI_Bounding_Boxes {
     for (std::string field_name : source_state_flat.names())
     {
 
-      std::vector<double>& sourceField = source_state_flat.get_vector(field_name);
+			// this is a serialized version of the field and is not a pointer to the
+			// original field
+      std::vector<double> sourceField = source_state_flat.serialize(field_name);
+      
+      // get the field stride
       int sourceFieldStride = source_state_flat.get_field_stride(field_name);
 
       // Currently only cell and node fields are supported
-      comm_info_t& info = (source_state_flat.get_entity(field_name) == Entity_kind::NODE ?
-                           nodeInfo : cellInfo);
-      std::vector<double> newField(info.newNum);
+      comm_info_t info;
+      if (source_state_flat.get_entity(field_name) == Entity_kind::NODE){
+      	info = nodeInfo;
+      } else if (source_state_flat.field_type(Entity_kind::CELL, field_name) == Wonton::Field_type::MESH_FIELD){
+     		info = cellInfo;
+     	} else {
+     		info = num_mat_cells_info;
+     	}
+                           
+      // allocate storage for the new distribute data, note that this data
+      // is still serialized and raw doubles and will need to be deserialized
+      std::vector<double> newField(sourceFieldStride*info.newNum);
 
 #ifdef DEBUG_MPI
-                        std::cout << std::endl << "Source user field \"" << field_name << "\":" << std::endl;
+      std::cout << std::endl << "Source user field \"" << field_name << "\":" << std::endl;
 #endif
+
+			// move the field
       moveField(info, commRank, commSize,
                 MPI_DOUBLE, sourceFieldStride,
                 sourceField, &newField);
+                
+      // put the received field back into the state vector
+      
+      // get a pointer to the actual data in the state vector
+      //std::shared_ptr<Wonton::StateVectorUni<double>> pv =
+      //	std::dynamic_pointer_cast<Wonton::StateVectorUni<double>>(source_state_flat.get(field_name));
+      
+      // get the actual data vector in the state manager by reference
+      //std::vector<double>& data = pv->get_data();
+      
+      // resize the state vector data to hold the new number
+      // be careful when we get to MM data, the counts and size are not the same
+      // when the stride!=1
+      //data.resize(info.newNum);
+      
+      // deserialize the data
+      //auto new_data = source_state_flat.deserialize(field_name, newField);
+      //std::copy(new_data.begin(), new_data.end(), data.begin());
 
       // We will now use the received source state as our new source state on this partition
-      sourceField.resize(newField.size());
-      std::copy(newField.begin(), newField.end(), sourceField.begin());
+      //sourceField.resize(newField.size());
+      //std::copy(newField.begin(), newField.end(), sourceField.begin());
 
     } // for field_name
 
 #ifdef DEBUG_MPI
     for (std::string field_name : source_state_flat.names())
     {
-      std::vector<double>& sourceField = source_state_flat.get_vector(field_name);
+      std::vector<double> sourceField = source_state_flat.serialize(field_name);
       std::cout  << "****\nJust distributed source user field \"" << field_name << "\" (rank " << commRank <<"):" << std::endl;
     	for (double x: sourceField){
     	  std::cout << x << " ";
@@ -554,7 +588,7 @@ class MPI_Bounding_Boxes {
 #ifdef DEBUG_MPI
     for (std::string field_name : source_state_flat.names())
     {
-      std::vector<double>& sourceField = source_state_flat.get_vector(field_name);
+      std::vector<double> sourceField = source_state_flat.serialize(field_name);
       std::cout  << "****\nThe very end of distribute() source user field \"" << field_name << "\" (rank " << commRank <<"):" << std::endl;
     	for (double x: sourceField){
     	  std::cout << x << " ";
