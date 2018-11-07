@@ -22,7 +22,7 @@ extern "C" {
 // wonton includes
 #include "wonton/mesh/simple/simple_mesh.h"
 #include "wonton/mesh/simple/simple_mesh_wrapper.h"
-
+#include "wonton/support/Vector.h"
 // tangram includes
 #include "tangram/driver/driver.h"
 #include "tangram/reconstruct/xmof2D_wrapper.h"
@@ -157,7 +157,7 @@ void get_materials_data(const Mesh_Wrapper& Mesh,
           0 if the point is on the line
 */
 int PointPosition(const Portage::Point2& pt,
-                  const Portage::Vector2& line_nvec,
+                  const Wonton::Vector<2>& line_nvec,
                   const Portage::Point2& line_pt,
                   const double eps = deps);
 
@@ -574,10 +574,10 @@ void get_materials_data(const Mesh_Wrapper& Mesh,
  0 if the point is on the line
 */
 int PointPosition(const Portage::Point2& pt,
-                  const Portage::Vector2& line_nvec,
+                  const Wonton::Vector<2>& line_nvec,
                   const Portage::Point2& line_pt,
                   const double eps) {
-  Portage::Vector2 vec2line = line_pt - pt;
+  Wonton::Vector<2> vec2line = line_pt - pt;
   double prj = dot(vec2line, line_nvec);
   int pos;
   if (std::fabs(prj) < eps) pos = 0;
@@ -616,7 +616,7 @@ Portage::Point2 LinesIntersect(std::vector< std::vector<Portage::Point2> > lines
     p_int /= denom;
   }
   else {
-    Portage::Vector2 line1_nvec(lines_pts[1][1][1] - lines_pts[1][0][1],
+    Wonton::Vector<2> line1_nvec(lines_pts[1][1][1] - lines_pts[1][0][1],
                                 lines_pts[1][0][0] - lines_pts[1][1][0]);
     line1_nvec.normalize();
     Portage::Point2 end_pts[2];
@@ -627,12 +627,12 @@ Portage::Point2 LinesIntersect(std::vector< std::vector<Portage::Point2> > lines
     if (end_pts_pos[0] == end_pts_pos[1]) {
       double d2line[2];
       for (int ipt = 0; ipt < 2; ipt++) {
-        Portage::Vector2 vec2line = lines_pts[1][0] - end_pts[ipt];
+        Wonton::Vector<2> vec2line = lines_pts[1][0] - end_pts[ipt];
         d2line[ipt] = std::fabs(dot(vec2line, line1_nvec));
       }
       int inearest = (d2line[0] < d2line[1]) ? 0 : 1;
       while (end_pts_pos[0] == end_pts_pos[1]) {
-        Portage::Vector2 dvec = end_pts[inearest] - end_pts[(inearest + 1)%2];
+        Wonton::Vector<2> dvec = end_pts[inearest] - end_pts[(inearest + 1)%2];
         end_pts[inearest] += 2*dvec;
         end_pts_pos[inearest] = PointPosition(end_pts[inearest], line1_nvec, lines_pts[1][0], eps);
       }
@@ -662,7 +662,7 @@ double SegmentsDistance(const std::vector<std::vector<Portage::Point2>>& segment
   double max_dist = 0.0;
   for (int iseg = 0; iseg < 2; iseg++) {
     int iother = (iseg + 1)%2;
-    Portage::Vector2 other_dvec = segments[iother][1] - segments[iother][0];
+    Wonton::Vector<2> other_dvec = segments[iother][1] - segments[iother][0];
     double other_len = other_dvec.norm();
     other_dvec /= other_len;
     for (int ipt = 0; ipt < 2; ipt++) {

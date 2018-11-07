@@ -142,7 +142,7 @@ class Interpolate_3rdOrder {
   double const * source_vals_;
 
   // Portage::vector is generalization of std::vector and
-  // Portage::Vector<D*(D+3)/2> is a geometric vector
+  // Wonton::Vector<D*(D+3)/2> is a geometric vector
   Portage::vector<Vector<D*(D+3)/2>> quadfits_;
 };
 
@@ -244,7 +244,7 @@ class Interpolate_3rdOrder<D, Entity_kind::CELL, SourceMeshType, TargetMeshType,
   double const * source_vals_;
 
   // Portage::vector is generalization of std::vector and
-  // Portage::Vector<D> is a geometric vector
+  // Wonton::Vector<D> is a geometric vector
   Portage::vector<Vector<D*(D+3)/2>> quadfits_;
 };
 
@@ -423,7 +423,7 @@ class Interpolate_3rdOrder<D, Entity_kind::NODE, SourceMeshType, TargetMeshType,
   double const * source_vals_;
 
   // Portage::vector is generalization of std::vector and
-  // Portage::Vector<D> is a geometric vector
+  // Wonton::Vector<D> is a geometric vector
   Portage::vector<Vector<D*(D+3)/2>> quadfits_;
 };
 

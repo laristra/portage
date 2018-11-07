@@ -31,7 +31,7 @@ using Portage::Meshfree::Weight::FacetData;
 using Portage::Meshfree::Weight::faceted;
 
 using Portage::Point;
-using Portage::Vector;
+using Wonton::Vector;
 using std::tuple;
 using std::array;
 using std::vector;

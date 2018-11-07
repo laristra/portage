@@ -72,14 +72,14 @@ using Wonton::Point3;
 using Wonton::Point2;
 using Wonton::Point1;
 
-// Vector aliases
-template<long D>
-using Vector = Wonton::Vector<D>;
-using Wonton::Vector3;
-using Wonton::Vector2;
+/* // Vector aliases */
+/* template<long D> */
+/* using Vector = Wonton::Vector<D>; */
+/* using Wonton::Vector3; */
+/* using Wonton::Vector2; */
 
-// Matrix alias
-using Wonton::Matrix;
+/* // Matrix alias */
+/* using Wonton::Matrix; */
 
 // useful enums
 using Wonton::Entity_kind;

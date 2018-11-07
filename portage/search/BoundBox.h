@@ -29,7 +29,7 @@ Please see the license file at the root of this repository, or at:
 namespace gk {
 
     using Portage::Point;
-    using Portage::Vector;
+    using Wonton::Vector;
 
     const double REAL_MAX = std::numeric_limits<double>::max();
     const double REAL_MIN = std::numeric_limits<double>::min();

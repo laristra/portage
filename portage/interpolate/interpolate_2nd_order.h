@@ -160,7 +160,7 @@ class Interpolate_2ndOrder {
   double const * source_vals_;
 
   // Portage::vector is generalization of std::vector and
-  // Portage::Vector<D> is a geometric vector
+  // Wonton::Vector<D> is a geometric vector
   Portage::vector<Vector<D>> gradients_;
 
   int matid_;
@@ -471,7 +471,7 @@ class Interpolate_2ndOrder<D,
   double const * source_vals_;
 
   // Portage::vector is generalization of std::vector and
-  // Portage::Vector<D> is a geometric vector
+  // Wonton::Vector<D> is a geometric vector
   Portage::vector<Vector<D>> gradients_;
 
   int matid_;
@@ -700,7 +700,7 @@ class Interpolate_2ndOrder<D,
   double const * source_vals_;
 
   // Portage::vector is generalization of std::vector and
-  // Portage::Vector<D> is a geometric vector
+  // Wonton::Vector<D> is a geometric vector
   Portage::vector<Vector<D>> gradients_;
 
   int matid_;

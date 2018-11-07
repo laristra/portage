@@ -18,7 +18,7 @@ Please see the license file at the root of this repository, or at:
 #include "wonton/mesh/simple/simple_mesh_wrapper.h"
 #include "wonton/state/simple/simple_state.h"
 #include "wonton/state/simple/simple_state_wrapper.h"
-
+#include "wonton/support/Vector.h"
 /// Test quadfit computation for cell centered fields
 
 TEST(Quadfit, Fields_Cell_Ctr) {
@@ -105,7 +105,7 @@ TEST(Quadfit, Fields_Cell_Ctr) {
 
   // Compute the quadfit for each of these fields
 
-  Portage::Vector<5> qfit;
+  Wonton::Vector<5> qfit;
 
   // Verify the quadfit values
   // For field 1 (constant), it is is 0,0
@@ -289,7 +289,7 @@ TEST(Quadfit, Fields_Node_Ctr) {
   // For field 2, it is a linear function
   // For field 3, it is a quadratic function
 
-  Portage::Vector<5> qfit;
+  Wonton::Vector<5> qfit;
 
   for (int n = 0; n < nn1; ++n) {
     bool boundary_node = false;
