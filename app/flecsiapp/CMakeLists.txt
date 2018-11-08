@@ -6,17 +6,17 @@ Please see the license file at the root of this repository, or at:
 
 
 if (ENABLE_FleCSI)
-    add_executable(flecsiapp_2d flecsi_2d.cc)
-    target_link_libraries(flecsiapp_2d portage ${EXTRA_LIBS} ${LAPACKX_LIBRARIES})
+    add_executable(flecsiapp flecsiapp.cc)
+    target_link_libraries(flecsiapp portage ${EXTRA_LIBS} ${LAPACKX_LIBRARIES})
 
     # FleCSI/FleCSISP additions
     include_directories(${FleCSI_INCLUDE_DIR} ${FleCSISP_INCLUDE_DIR})
-    target_link_libraries(flecsiapp_2d ${FleCSI_LIBRARIES} ${FleCSISP_LIBRARIES})
+    target_link_libraries(flecsiapp ${FleCSI_LIBRARIES} ${FleCSISP_LIBRARIES})
     
     # MPI additions - need to push this down into cinch
     if (ENABLE_MPI)
-        target_link_libraries(flecsiapp_2d ${MPI_CXX_LIBRARIES})
-        set_target_properties(flecsiapp_2d PROPERTIES
+        target_link_libraries(flecsiapp ${MPI_CXX_LIBRARIES})
+        set_target_properties(flecsiapp PROPERTIES
                               LINK_FLAGS "${MPI_CXX_LINK_FLAGS}")
     endif (ENABLE_MPI)
 
@@ -29,7 +29,7 @@ if(ENABLE_TCMALLOC)
   set(TCMALLOC_LIB "${HOME}" CACHE STRING "Set the TCMalloc library")
 
   if (ENABLE_FleCSI)
-    target_link_libraries(flecsiapp_2d ${TCMALLOC_LIB})
+    target_link_libraries(flecsiapp ${TCMALLOC_LIB})
   endif (ENABLE_FleCSI)
 endif(ENABLE_TCMALLOC)
 
@@ -42,7 +42,7 @@ if(ENABLE_PROFILE)
   include_directories(${VTUNE_INCLUDE_DIR})
 
   if (ENABLE_FleCSI)
-    target_link_libraries(flecsiapp_2d ${VTUNE_LIB})
+    target_link_libraries(flecsiapp ${VTUNE_LIB})
   endif (ENABLE_FleCSI)
 endif(ENABLE_PROFILE)
 
