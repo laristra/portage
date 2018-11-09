@@ -907,7 +907,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
       typeid(DummyInterfaceReconstructor<SourceMesh_Wrapper, D,
              Matpoly_Splitter, Matpoly_Clipper>)) {
 
-    int nsourcecells = source_mesh_.num_entities(Entity_kind::CELL, Entity_type::ALL);
+    int nsourcecells = source_mesh_flat.num_entities(Entity_kind::CELL, Entity_type::ALL);
 
     std::vector<int> cell_num_mats;
     std::vector<int> cell_mat_ids;
@@ -917,6 +917,12 @@ int MMDriver<Search, Intersect, Interpolate, D,
     // Extract volume fraction and centroid data for cells in compact
     // cell-centric form (ccc)
 
+		//////////////////////////////////////////
+		// DWS this is where I left off
+		// There is a problem that Tangram is using the mesh wrapper instead of
+		// the flat mesh wrapper in places, so the counts don't align
+		// the following line breaks
+		/////////////////////////////////////////////
     ccc_vfcen_data(cell_num_mats, cell_mat_ids, cell_mat_volfracs,
                    cell_mat_centroids);
 

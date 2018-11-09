@@ -7,12 +7,13 @@ Please see the license file at the root of this repository, or at:
 #ifndef MPI_BOUNDING_BOXES_H_
 #define MPI_BOUNDING_BOXES_H_
 
-#define DEBUG_MPI
+//#define DEBUG_MPI
 
 #include <cassert>
 #include <algorithm>
 #include <numeric>
 #include <memory>
+#include <unordered_map>
 
 #include "portage/support/portage.h"
 #include "wonton/state/state_vector_uni.h"
@@ -39,7 +40,7 @@ class MPI_Bounding_Boxes {
   /*!
     @brief Constructor of MPI_Bounding_Boxes
    */
-  MPI_Bounding_Boxes() {}
+  MPI_Bounding_Boxes() {};
 
 
   /*!
@@ -465,15 +466,113 @@ class MPI_Bounding_Boxes {
         material_cells, &all_material_cells
       );
       
+		  /////////////////////////////////////////////////////////
+      // compute the cell map from local id to global id back to
+      // first appearance of the local id. This code was copied
+      // verbatim from flat_mesh_wrapper.h
+      /////////////////////////////////////////////////////////
 
+		  // Global to local maps for cells and nodes
+		  std::map<int, int> globalCellMap;
+		  std::vector<int> cellUniqueRep(newCellGlobalIds.size());
+		  for (unsigned int i=0; i<newCellGlobalIds.size(); ++i) {
+		    auto itr = globalCellMap.find(newCellGlobalIds[i]);
+		    if (itr == globalCellMap.end()) {
+		      globalCellMap[newCellGlobalIds[i]] = i;
+		      cellUniqueRep[i] = i;
+		    }
+		    else {
+		      cellUniqueRep[i] = itr->second;
+		    }
+		  }
+		  
+		  /////////////////////////////////////////////////////////
+      // Fix the material cell indices to account for the fact
+      // that they are local indices on the different nodes and 
+      // need to be consistent within this flat mesh. FixListIndices
+      // below is hard coded to work with ghost cells which we don't have
+      // so I'm going to do this inline.
+      /////////////////////////////////////////////////////////
+      
+      // get the local cell index offsets
+      std::vector<int> offsets(commSize);
+      offsets[0]=0;
+ 			std::partial_sum(cellInfo.recvCounts.begin(),cellInfo.recvCounts.end()-1,
+      	offsets.begin()+1);     
+      	
+    	// make life easy by keeping a running counter
+    	int running_counter=0;
+      	
+      // loop over the ranks
+      for (int rank=0; rank<commSize; ++rank){
+      	
+      	// get the cell offset for this rank
+      	int this_offset = offsets[rank];
+      	
+      	// get the number of material cells for this rank
+      	int nmat_cells = num_mat_cells_info.recvCounts[rank];
+      	
+      	// loop over material cells on this rank
+      	for (int i=0; i<nmat_cells; ++i){
+      		
+      		// offset the indices in all_material_cells
+      		all_material_cells[running_counter] += this_offset;
+      		
+      		// use cellUniqueRep to map each cell down to its first appearance
+      		all_material_cells[running_counter++] = cellUniqueRep[all_material_cells[running_counter]];
+      	}	
+      }
+      
+		  /////////////////////////////////////////////////////////
+      // We need to turn the flattened material cells into a correctly shaped
+      // ragged right structure for use as the material cells in the flat
+      // state wrapper. Just as in the flat state mesh field (and associated
+      // cell ids), we aren't removing duplicates, just concatnating by material
+      /////////////////////////////////////////////////////////
+      
+      // allocate the material indices
+      std::unordered_map<int,std::vector<int>> material_indices;
+      
+      // reset the running counter
+      running_counter=0;
+      
+      // loop over material ids on different nodes
+      for (int i=0; i<all_material_ids.size(); ++i){
+      
+      	// get the current working material
+      	int mat_id = all_material_ids[i];
+      	
+      	// get the current number of material cells for this material
+      	int nmat_cells = all_material_shapes[i];
+      	
+      	// get or create a reference to the correct material cell vector
+      	std::vector<int>& these_material_cells = material_indices[mat_id];
+      	
+      	// loop over the correct number of material cells
+      	for (int j=0; j<nmat_cells; ++j){
+      		these_material_cells.push_back(all_material_cells[running_counter++]);
+      	}
+      	
+      }
+      
+      // We are reusing the material cells and cell materials. Since we are using
+      // maps and sets we want to make sure that we are starting clean and not
+      // adding to cruft that is already there.
+      source_state_flat.clear_material_cells();
+      
+      // add the material indices by keys
+      for ( auto& kv: material_indices){
+      	source_state_flat.mat_add_cells(kv.first, kv.second);
+      }
+      
     }
 
     // Send and receive each field to be remapped
     for (std::string field_name : source_state_flat.names())
     {
 
-			// this is a serialized version of the field and is not a pointer to the
-			// original field
+      // this is a serialized version of the field and is not a pointer to the
+      // original field
       std::vector<double> sourceField = source_state_flat.serialize(field_name);
       
       // get the field stride
@@ -482,10 +581,13 @@ class MPI_Bounding_Boxes {
       // Currently only cell and node fields are supported
       comm_info_t info;
       if (source_state_flat.get_entity(field_name) == Entity_kind::NODE){
+      	// node mesh field
       	info = nodeInfo;
       } else if (source_state_flat.field_type(Entity_kind::CELL, field_name) == Wonton::Field_type::MESH_FIELD){
+      	// mesh cell field
      		info = cellInfo;
      	} else {
+     		// multi material field
      		info = num_mat_cells_info;
      	}
                            
@@ -501,7 +603,10 @@ class MPI_Bounding_Boxes {
       moveField(info, commRank, commSize,
                 MPI_DOUBLE, sourceFieldStride,
                 sourceField, &newField);
-                
+      
+      // deserialize the field
+      source_state_flat.deserialize(field_name, newField, all_material_ids, all_material_shapes);
+           
       // put the received field back into the state vector
       
       // get a pointer to the actual data in the state vector
