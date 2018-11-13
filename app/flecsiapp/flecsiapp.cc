@@ -1,12 +1,12 @@
 /*
-This file is part of the Ristra Wonton project.
+This file is part of the Ristra Portage project.
 Please see the license file at the root of this repository, or at:
-    https://github.com/laristra/wonton/blob/master/LICENSE
+    https://github.com/laristra/portage/blob/master/LICENSE
 */
 
 ////////////////////////////////////////////////////////////////////////////////
 // \file
-// \brief Tests general features of the wonton flecsi mesh wrapper.
+// \brief Demo app using  wonton flecsi mesh/state wrappers.
 ////////////////////////////////////////////////////////////////////////////////
 
 // flecsi-sp includes
