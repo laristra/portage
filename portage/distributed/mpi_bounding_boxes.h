@@ -395,16 +395,13 @@ class MPI_Bounding_Boxes {
 
     // SEND FIELD VALUES
     
-    // is this a multimaterial problem? the following is error prone. Just because
-    // we have more than one material, it may not be. Also, a node can have just
-    // one material and this will fail, but for the moment, it will work. I just realized
-    // that num_materials is ambiguous. It could refer to the number of materials 
-    // registered with the state manager (as in a global registry), but more likely it is the number
-    // of materials on this node
+		// multimaterial state info
     int nmats = source_state_flat.num_materials();
     comm_info_t num_mats_info, num_mat_cells_info;
     std::vector<int> all_material_ids, all_material_shapes, all_material_cells;
 
+		// Is the a multimaterial problem? If so we need to pass the cell indices
+		// in addition to the field values
     if (nmats>0){
     
       std::cout << "in distribute, this a multimaterial problem with " << nmats << " materials\n";
