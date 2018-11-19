@@ -501,7 +501,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
   std::cout << "\nSource mesh on rank "<< rank <<" has " << nsrccells << " cells\n";
   std::cout << "Source mesh on rank "<< rank <<" has " << sourceMeshWrapper.num_owned_cells() << " owned cells\n";
   std::cout << "Target mesh on rank "<< rank <<" has " << ntarcells << " cells\n";
-  
+/*  
   for (int i = 0; i<nsrccells; i++){
     std::vector<Wonton::Point<2>> coords;
   	sourceMeshWrapper.cell_get_coordinates(i,&coords);
@@ -524,7 +524,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
   	std::cout << "(" << coords[2][0] << ", " << coords[2][1] << ") ";
   	std::cout << "(" << coords[3][0] << ", " << coords[3][1] << ")"<<std::endl;
   }
-  
+*/  
   // Native jali state managers for source and target
   std::shared_ptr<Jali::State> sourceState(Jali::State::create(sourceMesh));
   std::shared_ptr<Jali::State> targetState(Jali::State::create(targetMesh));
