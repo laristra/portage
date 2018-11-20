@@ -100,7 +100,6 @@ class DriverTest : public ::testing::Test {
     Portage::Point<Dimension> nodexy;
     const int ntarnodes = targetMeshWrapper.num_owned_nodes();
     double stdval, err;
-    double toterr = 0.;
 
     Jali::UniStateVector<double, Jali::Mesh> cellvecout;
     bool found = targetState->get<double, Jali::Mesh>("celldata", targetMesh,
@@ -109,25 +108,32 @@ class DriverTest : public ::testing::Test {
                                                       &cellvecout);
     ASSERT_TRUE(found);
 
-    for (int c = 0; c < ntarcells; ++c) {
-      JaliGeometry::Point ccen = targetMesh->cell_centroid(c);
-      double error;
-      error = compute_initial_field(ccen) - cellvecout[c];
-      //  dump diagnostics for each cell
-      if (Dimension == 2)
-        std::printf("Cell=% 4d Centroid = (% 5.3lf,% 5.3lf)", c,
-                    ccen[0], ccen[1]);
-      else
-        std::printf("Cell=% 4d Centroid = (% 5.3lf,% 5.3lf,% 5.3lf)", c,
-                    ccen[0], ccen[1], ccen[2]);
-      std::printf("  Value = % 10.6lf  Err = % lf\n",
-                  cellvecout[c], error);
-      toterr += error*error;
+    double source_integral = 0.0;
+    for (int c = 0; c < nsrccells; ++c) {
+      double cellvol = sourceMesh->cell_volume(c);
+      source_integral += sourceData[c]*cellvol;
     }
 
-    // amh: FIXME!!  Compare individual, per-node  values/ error norms here
-    std::printf("\n\nL2 NORM OF ERROR = %lf\n\n", sqrt(toterr));
-    ASSERT_NEAR(expected_answer, sqrt(toterr), TOL);
+    
+    double field_err2 = 0., target_integral = 0.;
+    for (int c = 0; c < ntarcells; ++c) {
+      JaliGeometry::Point ccen = targetMesh->cell_centroid(c);
+
+      double error = compute_initial_field(ccen) - cellvecout[c];
+      field_err2 += error*error;
+
+      double cellvol = targetMesh->cell_volume(c);
+      target_integral += cellvecout[c]*cellvol;
+    }
+
+    double field_err = sqrt(field_err2);
+    double conservation_err = source_integral - target_integral;
+    
+    std::printf("\n\nL2 NORM OF ERROR = %lf\n\n", field_err);
+    ASSERT_NEAR(expected_answer, field_err, TOL);
+
+    std::printf("\n\nConservation Error = %18.13lf\n", conservation_err);
+    ASSERT_NEAR(0.0, conservation_err, TOL);
   }
   // Constructor for Driver test
   DriverTest(std::shared_ptr<Jali::Mesh> s, std::shared_ptr<Jali::Mesh> t) :
@@ -143,42 +149,49 @@ class DriverTest : public ::testing::Test {
 // Class which constructs a pair simple 2-D coincident meshes for remaps
 struct DriverTest2D : DriverTest {
   DriverTest2D() : DriverTest(Jali::MeshFactory(MPI_COMM_WORLD)
-  (0.0, 0.0, 1.0, 1.0, 11, 11),
-  Jali::MeshFactory(MPI_COMM_WORLD) (0.0, 0.0, 1.0, 1.0, 3, 3)) {}
+  (0.0, 0.0, 1.0, 1.0, 5, 5),
+  Jali::MeshFactory(MPI_COMM_WORLD) (0.0, 0.0, 1.0, 1.0, 4, 4)) {}
 };
 
 // Class which constructs a pair of simple 2-D non-coincident meshes for remaps
 struct DriverTest2DNonCoincident : DriverTest {
   DriverTest2DNonCoincident() : DriverTest(Jali::MeshFactory(MPI_COMM_WORLD)
-  (0.0, 0.0, 1.0, 1.0, 11, 11),
-  Jali::MeshFactory(MPI_COMM_WORLD) (0.0, 0.0, 1.0+1.5*(1/3.), 1.0, 3, 3)) {}
+  (0.0, 0.0, 1.0, 1.0, 5, 5),
+  Jali::MeshFactory(MPI_COMM_WORLD) (0.2, 0.2, 1.2, 1.2, 4, 4)) {}
 };
 
 // Class which constructs a pair simple 3-D coincident meshes for remaps
 struct DriverTest3D : DriverTest {
   DriverTest3D(): DriverTest(Jali::MeshFactory(MPI_COMM_WORLD)
-  (0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 11, 11, 11),
-  Jali::MeshFactory(MPI_COMM_WORLD)(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 3, 3, 3)) {}
+  (0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 5, 5, 5),
+  Jali::MeshFactory(MPI_COMM_WORLD)(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 4, 4, 4)) {}
 };
 
 // Class which constructs a pair simple 3-D non-coincident meshes for remaps
 struct DriverTest3DNonCoincident : DriverTest {
   DriverTest3DNonCoincident(): DriverTest(Jali::MeshFactory(MPI_COMM_WORLD)
-  (0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 11, 11, 11),
-  Jali::MeshFactory(MPI_COMM_WORLD)(0.0, 0.0, 0.0, 1.0+1.5*1/3.,
-      1.0+1.5*1/3., 1.0+1.5*1/3., 3, 3, 3)) {}
+  (0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 5, 5, 5),
+  Jali::MeshFactory(MPI_COMM_WORLD)(0.2, 0.2, 0.2, 1.2, 1.2, 1.2, 4, 4, 4)) {}
 };
 
 // Methods for computing initial field values
+
+double compute_constant_field(JaliGeometry::Point centroid) {
+  return 10000.0;
+}
+
 double compute_linear_field(JaliGeometry::Point centroid) {
-  return centroid[0]+centroid[1];
+  return 100*(centroid[0]+centroid[1]);
+}
+double compute_linear_field_3d(JaliGeometry::Point centroid) {
+  return 100*(centroid[0]+centroid[1]+centroid[2]);
 }
 double compute_quadratic_field(JaliGeometry::Point centroid) {
-  return centroid[0]*centroid[0]+centroid[1]*centroid[1];
+  return 3*3*centroid[0]*centroid[0]+40*40*centroid[1]*centroid[1];
 }
 double compute_quadratic_field_3d(JaliGeometry::Point centroid) {
-  return centroid[0]*centroid[0] + centroid[1]*centroid[1] +
-      centroid[2]*centroid[2];
+  return 3*3*centroid[0]*centroid[0] + 40*40*centroid[1]*centroid[1] +
+      500*500*centroid[2]*centroid[2];
 }
 
 // Test cases: these are constructed by calling TEST_F with the name
@@ -188,64 +201,118 @@ double compute_quadratic_field_3d(JaliGeometry::Point centroid) {
 // test fixture.  If any one of these fails the whole test_driver
 // fails.
 
+// Cell-centered Remap on 2D Meshes with Coincident Boundaries
 // Example 0
-TEST_F(DriverTest2D, 2D_1stOrderLinearCellCntrCoincident1proc) {
+TEST_F(DriverTest2D, 2D_Constant_1stOrderCellCntr_Coincident) {
   unitTest<Portage::IntersectR2D, Portage::Interpolate_1stOrder, 2>
-  (compute_linear_field, 0.0095429796560267122);
+  (compute_constant_field, 0.0);
 }
 // Example 1
-TEST_F(DriverTest2D, 2D_2ndOrderLinearCellCntrCoincident1proc) {
-  unitTest<Portage::IntersectR2D, Portage::Interpolate_2ndOrder, 2>
-  (compute_linear_field, 0.);
+TEST_F(DriverTest2D, 2D_Linear_1stOrderCellCntr_Coincident) {
+  unitTest<Portage::IntersectR2D, Portage::Interpolate_1stOrder, 2>
+  (compute_linear_field, 6.3245553203367573);
 }
 // Example 2
-TEST_F(DriverTest2DNonCoincident, 2D_1stOrderLinearCellCntrNonCoincident1proc) {
-  unitTest<Portage::IntersectR2D, Portage::Interpolate_1stOrder, 2>
-  (compute_linear_field, 3.067536);
+TEST_F(DriverTest2D, 2D_Linear_2ndOrderCellCntr_Coincident) {
+  unitTest<Portage::IntersectR2D, Portage::Interpolate_2ndOrder, 2>
+  (compute_linear_field, 0.0);
 }
 // Example 3
-TEST_F(DriverTest2DNonCoincident, 2D_2ndOrderLinearCellCntrNonCoincident1proc) {
-  unitTest<Portage::IntersectR2D, Portage::Interpolate_2ndOrder, 2>
-  (compute_linear_field, 3.067527);
+TEST_F(DriverTest2D, 2D_Quadratic_1stOrderCellCntr_Coincident) {
+  unitTest<Portage::IntersectR2D, Portage::Interpolate_1stOrder, 2>
+  (compute_quadratic_field, 83.644493615838698);
 }
 // Example 4
-TEST_F(DriverTest2D, 2D_1stOrderQuadraticCellCntrCoincident1proc) {
-  unitTest<Portage::IntersectR2D, Portage::Interpolate_1stOrder, 2>
-  (compute_quadratic_field, 0.052627);
-}
-// Example 5
-TEST_F(DriverTest2D, 2D_2ndOrderQuadraticCellCntrCoincident1proc) {
+TEST_F(DriverTest2D, 2D_Quadratic_2ndOrderCellCntr_Coincident) {
   unitTest<Portage::IntersectR2D, Portage::Interpolate_2ndOrder, 2>
-  (compute_quadratic_field, 0.051424);
+  (compute_quadratic_field, 12.484585705981344);
+}
+
+// Cell-centered Remap on 2D Meshes with Non-coincident (mismatched)
+// Boundaries
+
+// Example 5 - Since the domains have the same volume but are merely
+// offset the same constant should be reproduced on the target mesh
+// and the error should be zero
+TEST_F(DriverTest2DNonCoincident, 2D_Constant_1stOrderCellCntr_NonCoincident) {
+  unitTest<Portage::IntersectR2D, Portage::Interpolate_1stOrder, 2>
+  (compute_constant_field, 0.0);
 }
 // Example 6
-TEST_F(DriverTest2DNonCoincident, 2D_1stOrderQuadraticCellCntrNonCoincident1proc) {
+TEST_F(DriverTest2DNonCoincident, 2D_Linear_1stOrderCellCntr_NonCoincident) {
   unitTest<Portage::IntersectR2D, Portage::Interpolate_1stOrder, 2>
-  (compute_quadratic_field, 3.303476);
+  (compute_linear_field, 166.01204775557699);
 }
 // Example 7
-TEST_F(DriverTest2DNonCoincident, 2D_2ndOrderQuadraticCellCntrNonCoincident1proc) {
+TEST_F(DriverTest2DNonCoincident, 2D_Linear_2ndOrderCellCntr_NonCoincident) {
   unitTest<Portage::IntersectR2D, Portage::Interpolate_2ndOrder, 2>
-  (compute_quadratic_field, 3.303466);
+  (compute_linear_field, 161.86414056238655);
 }
 // Example 8
-TEST_F(DriverTest3D, 3D_1stOrderQuadraticCellCntrCoincident1proc) {
-  unitTest<Portage::IntersectR3D, Portage::Interpolate_1stOrder, 3>
-  (compute_quadratic_field_3d, .135694);
+TEST_F(DriverTest2DNonCoincident, 2D_Quadratic_1stOrderCellCntr_NonCoincident) {
+  unitTest<Portage::IntersectR2D, Portage::Interpolate_1stOrder, 2>
+  (compute_quadratic_field, 1854.2866181962208);
 }
 // Example 9
-TEST_F(DriverTest3D, 3D_2ndOrderQuadraticCellCntrCoincident1proc) {
-  unitTest<Portage::IntersectR3D, Portage::Interpolate_2ndOrder, 3>
-  (compute_quadratic_field_3d, .133602);
+TEST_F(DriverTest2DNonCoincident, 2D_Quadratic_2ndOrderCellCntrNonCoincident) {
+  unitTest<Portage::IntersectR2D, Portage::Interpolate_2ndOrder, 2>
+  (compute_quadratic_field, 1713.9432215808583);
 }
+
+// Cell-centered Remap on 3D Meshes with Coincident Boundaries
 // Example 10
-TEST_F(DriverTest3DNonCoincident, 3D_1stOrderQuadraticCellCntrNonCoincident1proc) {
+TEST_F(DriverTest3D, 3D_Constant_1stOrderCellCntr_Coincident) {
   unitTest<Portage::IntersectR3D, Portage::Interpolate_1stOrder, 3>
-  (compute_quadratic_field_3d, 12.336826);
+  (compute_constant_field, 0.0);
 }
 // Example 11
-TEST_F(DriverTest3DNonCoincident, 3D_2ndOrderQuadraticCellCntrNonCoincident1proc) {
+TEST_F(DriverTest3D, 3D_Linear_1stOrderCellCntr_Coincident) {
+  unitTest<Portage::IntersectR3D, Portage::Interpolate_1stOrder, 3>
+  (compute_linear_field_3d, 15.491933384829508);
+}
+// Example 12
+TEST_F(DriverTest3D, 3D_Linear_2ndOrderCellCntr_Coincident) {
   unitTest<Portage::IntersectR3D, Portage::Interpolate_2ndOrder, 3>
-  (compute_quadratic_field_3d, 12.336822);
+  (compute_linear_field_3d, 0.0);
+}
+// Example 13
+TEST_F(DriverTest3D, 3D_Quadratic_1stOrderCellCntr_Coincident) {
+  unitTest<Portage::IntersectR3D, Portage::Interpolate_1stOrder, 3>
+  (compute_quadratic_field_3d, 26139.462467794965);
+}
+// Example 14
+TEST_F(DriverTest3D, 3D_Quadratic_2ndOrderCellCntr_Coincident) {
+  unitTest<Portage::IntersectR3D, Portage::Interpolate_2ndOrder, 3>
+  (compute_quadratic_field_3d, 3904.3739523156646);
+}
+
+// Cell-centered Remap on 3D Meshes with Non-coincident (mismatched) Boundaries
+
+// Example 15 - Since the domains have the same volume but are merely
+// offset the same constant should be reproduced on the target mesh
+// and the error should be zero
+TEST_F(DriverTest3DNonCoincident, 3D_Constant_1stOrderCellCntr_NonCoincident) {
+  unitTest<Portage::IntersectR3D, Portage::Interpolate_1stOrder, 3>
+  (compute_constant_field, 0.0);
+}
+// Example 16
+TEST_F(DriverTest3DNonCoincident, 3D_Linear_1stOrderCellCntr_NonCoincident) {
+  unitTest<Portage::IntersectR3D, Portage::Interpolate_1stOrder, 3>
+  (compute_linear_field_3d, 492.09755130461593);
+}
+// Example 17
+TEST_F(DriverTest3DNonCoincident, 3D_Linear_2ndOrderCellCntr_NonCoincident) {
+  unitTest<Portage::IntersectR3D, Portage::Interpolate_2ndOrder, 3>
+  (compute_linear_field_3d, 483.73546489791454);
+}
+// Example 18
+TEST_F(DriverTest3DNonCoincident, 3D_Quadratic_1stOrderCellCntr_NonCoincident) {
+  unitTest<Portage::IntersectR3D, Portage::Interpolate_1stOrder, 3>
+  (compute_quadratic_field_3d, 579705.34412726376);
+}
+// Example 19
+TEST_F(DriverTest3DNonCoincident, 3D_Quadratic_2ndOrderCellCntr_NonCoincident) {
+  unitTest<Portage::IntersectR3D, Portage::Interpolate_2ndOrder, 3>
+  (compute_quadratic_field_3d, 535589.56202598265);
 }
 }
