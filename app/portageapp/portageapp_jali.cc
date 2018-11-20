@@ -305,7 +305,7 @@ int main(int argc, char** argv) {
   double trglo = srclo, trghi = srchi;  // bounds of generated mesh in each dir
   if (!conformal) {
     double dx = (trghi-trglo)/static_cast<double>(ntargetcells);
-    trghi += 1.5*dx;
+    trghi += 0.5*dx;
   }
 
   // If a mesh is being read from file, do it outside convergence loop
@@ -696,11 +696,13 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
         *L1_error += fabs(error)*cellvol;
         *L2_error += error*error*cellvol;
       }
+      if (ntarcells < 10) {
     	std::printf("Rank %d\n", rank);
-      std::printf("Cell=% 4d Centroid = (% 5.3lf,% 5.3lf)", c,
-                  ccen[0], ccen[1]);
-      std::printf("  Value = % 10.6lf  L2 Err = % lf\n",
-                  cellvecout[c], error);
+        std::printf("Cell=% 4d Centroid = (% 5.3lf,% 5.3lf)", c,
+                    ccen[0], ccen[1]);
+        std::printf("  Value = % 10.6lf  L2 Err = % lf\n",
+                    cellvecout[c], error);
+      }
     }
   } else {  // NODE error computation
     targetStateWrapper.mesh_get_data<double>(Portage::NODE, "nodedata",
