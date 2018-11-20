@@ -17,6 +17,7 @@ Please see the license file at the root of this repository, or at:
 #include <iostream>
 #include <type_traits>
 #include <memory>
+#include <limits>
 
 #ifdef HAVE_TANGRAM
 #include "tangram/driver/driver.h"
@@ -34,6 +35,7 @@ Please see the license file at the root of this repository, or at:
 #include "wonton/mesh/flat/flat_mesh_wrapper.h"
 #include "wonton/state/flat/flat_state_mm_wrapper.h"
 #include "wonton/state/state_vector_multi.h"
+#include "portage/driver/fix_mismatch.h"
 
 #ifdef ENABLE_MPI
 #include "portage/distributed/mpi_bounding_boxes.h"
@@ -411,6 +413,7 @@ class MMDriver {
                       Flat_Mesh_Wrapper<> flat_mesh_wrapper,
                       Flat_State_Wrapper<Flat_Mesh_Wrapper<>> flat_state_wrapper);
 #endif
+
 };  // class MMDriver
 
 
@@ -572,6 +575,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
                      source_ents_and_weights.begin(),
                      intersect);
 
+
   gettimeofday(&end_timeval, 0);
   timersub(&end_timeval, &begin_timeval, &diff_timeval);
   tot_seconds_xsect += diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
@@ -604,6 +608,24 @@ int MMDriver<Search, Intersect, Interpolate, D,
                        source_ents_and_weights.begin(),
                        target_field, interpolate);
   }
+
+
+  // Detect if we have a mismatch between source and target domain boundaries
+
+  bool mismatch = detect_mismatch<D, onwhat>(source_mesh_, target_mesh_,
+                                             source_ents_and_weights);
+
+  if (mismatch) {  // If there is mismatch we have to fix it
+    if (onwhat == Entity_kind::NODE)
+      std::cerr << "No fix implemented for node fields remapping " <<
+          "in the presence of mismatched mesh boundaries\n";
+    else
+      fix_mismatch<D, onwhat>(source_mesh_, source_state_,
+                              target_mesh_, target_state_,
+                              source_ents_and_weights,
+                              src_meshvar_names, trg_meshvar_names);
+  }
+
 
   gettimeofday(&end_timeval, 0);
   timersub(&end_timeval, &begin_timeval, &diff_timeval);
@@ -642,6 +664,10 @@ int MMDriver<Search, Intersect, Interpolate, D,
     // IT CANNOT MODIFY STATE, THIS MEANS WE CANNOT STORE THE MESH-MESH
     // INTERSECTION VALUES AND REUSE THEM AS NECESSARY FOR MESH-MATERIAL
     // INTERSECTION COMPUTATIONS
+
+    // CAN WE NOT MAKE A SUBSET OF MIXED CELLS AND GET THEIR INTERSECTION
+    // WEIGHTS FOR THIS MATERIAL AND CONCATENATE WITH CELL-CELL INTERSECTIONS
+    // WHEN THE SOURCE CELL IS PURE AND HAS ONLY THIS MATERIAL?? HMMM...
 
     Portage::transform(target_mesh_.begin(onwhat, Entity_type::PARALLEL_OWNED),
                        target_mesh_.end(onwhat, Entity_type::PARALLEL_OWNED),
@@ -1000,6 +1026,8 @@ int MMDriver<Search, Intersect, Interpolate, D,
                      source_ents_and_weights.begin(),
                      intersect);
 
+
+
   gettimeofday(&end_timeval, 0);
   timersub(&end_timeval, &begin_timeval, &diff_timeval);
   tot_seconds_xsect += diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
@@ -1037,6 +1065,23 @@ int MMDriver<Search, Intersect, Interpolate, D,
   gettimeofday(&end_timeval, 0);
   timersub(&end_timeval, &begin_timeval, &diff_timeval);
   tot_seconds_interp += diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
+
+
+  // Detect if we have a mismatch between source and target domain boundaries
+
+  bool mismatch = detect_mismatch<D, onwhat>(source_mesh_flat, target_mesh_,
+                                             source_ents_and_weights);
+
+  if (mismatch) {  // If there is mismatch we have to fix it
+    if (onwhat == Entity_kind::NODE)
+      std::cerr << "No fix implemented for node fields remapping " <<
+          "in the presence of mismatched mesh boundaries\n";
+    else
+      fix_mismatch<D, onwhat>(source_mesh_flat, source_state_flat,
+                              target_mesh_, target_state_,
+                              source_ents_and_weights,
+                              src_meshvar_names, trg_meshvar_names);
+  }
 
 
 
@@ -1442,6 +1487,8 @@ MMDriver<Search, Intersect, Interpolate, D,
 }
 
 #endif  // HAVE_TANGRAM
+
+
 
 }  // namespace Portage
 

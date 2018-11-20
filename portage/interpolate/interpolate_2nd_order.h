@@ -63,13 +63,13 @@ class Interpolate_2ndOrder {
 
  public:
 
-/*!
-  @brief Constructor with interface reconstructor
-  @param[in] source_mesh The mesh wrapper used to query source mesh info
-  @param[in] target_mesh The mesh wrapper used to query target mesh info
-  @param[in] source_state The state-manager wrapper used to query field info
-  @param[in] ir The interface_reconstructor used to query matpoly's on source mesh
-*/
+  /*!
+    @brief Constructor with interface reconstructor
+    @param[in] source_mesh The mesh wrapper used to query source mesh info
+    @param[in] target_mesh The mesh wrapper used to query target mesh info
+    @param[in] source_state The state-manager wrapper used to query field info
+    @param[in] ir The interface_reconstructor used to query matpoly's on source mesh
+  */
 #ifdef HAVE_TANGRAM
   Interpolate_2ndOrder(SourceMeshType const & source_mesh,
                        TargetMeshType const & target_mesh,
@@ -114,7 +114,7 @@ class Interpolate_2ndOrder {
 
   int set_material(int m) {
     matid_ = m;
-  } //set_material
+  }  // set_material
 
   /// Set the name of the interpolation variable and the limiter type
 
@@ -122,7 +122,7 @@ class Interpolate_2ndOrder {
                                   LimiterType limiter_type = NOLIMITER) {
     std::cerr << "Interpolation is available for only  entity types: CELL, NODE"
               << std::endl;
-  } //set_interpolation_variable
+  }  // set_interpolation_variable
 
 
   /*!
@@ -169,7 +169,7 @@ class Interpolate_2ndOrder {
 #ifdef HAVE_TANGRAM
   std::shared_ptr<InterfaceReconstructor> interface_reconstructor_;
 #endif
-}; // class Interpolate_2ndOrder
+};  // class Interpolate_2ndOrder
 
 
 
@@ -205,7 +205,7 @@ class Interpolate_2ndOrder<D,
 
  public:
 
-// Constructor with interface reconstructor
+  // Constructor with interface reconstructor
 #ifdef HAVE_TANGRAM
   Interpolate_2ndOrder(SourceMeshType const & source_mesh,
                        TargetMeshType const & target_mesh,
@@ -220,7 +220,7 @@ class Interpolate_2ndOrder<D,
       source_vals_(nullptr) {}
 #endif
 
-//Constructor without interface reconstructor
+  // Constructor without interface reconstructor
   Interpolate_2ndOrder(SourceMeshType const & source_mesh,
                        TargetMeshType const & target_mesh,
                        StateType const & source_state) :
@@ -262,23 +262,12 @@ class Interpolate_2ndOrder<D,
                      Matpoly_Splitter, Matpoly_Clipper>
         limgrad(source_mesh_, source_state_, interp_var_name_, limiter_type_,
                 interface_reconstructor_);
-     if (field_type_ == Field_type::MULTIMATERIAL_FIELD)
-       limgrad.set_material(matid_);
+    if (field_type_ == Field_type::MULTIMATERIAL_FIELD)
+      limgrad.set_material(matid_);
 #else
     Limited_Gradient<D, Entity_kind::CELL, SourceMeshType, StateType>
         limgrad(source_mesh_, source_state_, interp_var_name_, limiter_type_);
 #endif
-
-   // Get the correct number of source cells for which the gradient has to be computed
-    /*int nentities;
-    std::vector<int> cellids;
-    if (field_type_ == Field_type::MESH_FIELD){
-      nentities = source_mesh_.num_entities(Entity_kind::CELL);
-    }
-    else{
-      source_state_.mat_get_cells(matid_, &cellids);
-      nentities =  cellids.size();
-    }*/
 
     gradients_.resize(nentities);
 
@@ -291,14 +280,14 @@ class Interpolate_2ndOrder<D,
     // compiler is not able to disambiguate this call and is getting
     // confused. So we will explicitly state that this is Portage::transform
     if (field_type_ == Field_type::MESH_FIELD){
-     Portage::transform(source_mesh_.begin(Entity_kind::CELL), source_mesh_.end(Entity_kind::CELL),
-                       gradients_.begin(), limgrad);
+      Portage::transform(source_mesh_.begin(Entity_kind::CELL), source_mesh_.end(Entity_kind::CELL),
+                         gradients_.begin(), limgrad);
     }
     else{
       Portage::transform(cellids.begin(), cellids.end(),
-                       gradients_.begin(), limgrad);
+                         gradients_.begin(), limgrad);
     }
-  } //set_interpolation_variable
+  }  // set_interpolation_variable
 
 
   /// Copy constructor (disabled)
@@ -315,7 +304,7 @@ class Interpolate_2ndOrder<D,
 
   int set_material(int m) {
     matid_ = m ;
-  } //set_material
+  }  // set_material
 
   /*!
     @brief   Functor to do the 2nd order interpolation of cell values
@@ -337,14 +326,8 @@ class Interpolate_2ndOrder<D,
   double operator() (int const targetCellID,
                      std::vector<Weights_t> const & sources_and_weights) const
   {
-     int nsrccells = sources_and_weights.size();
-     if (!nsrccells) {
-#ifdef DEBUG
-     std::cerr << "WARNING: No source cells contribute to target cell." <<
-        std::endl;
-#endif
-      return 0.0;
-    }
+    int nsrccells = sources_and_weights.size();
+    if (!nsrccells) return 0.0;
 
     double totalval = 0.0;
     double wtsum0 = 0.0;
@@ -356,10 +339,10 @@ class Interpolate_2ndOrder<D,
     double vol = target_mesh_.cell_volume(targetCellID);
     int nsummed = 0;
 
-    //Loop over source cells
+    // Loop over source cells
     for (int j = 0; j < nsrccells; ++j) {
 
-      //Get source cell and the intersection weights
+      // Get source cell and the intersection weights
       int srccell = sources_and_weights[j].entityID;
       std::vector<double> xsect_weights = sources_and_weights[j].weights;
       double xsect_volume = xsect_weights[0];
@@ -370,7 +353,7 @@ class Interpolate_2ndOrder<D,
       // Obtain source cell centroid
       Point<D> src_centroid;
       if (field_type_ == Field_type::MESH_FIELD){
-       source_mesh_.cell_centroid(srccell, &src_centroid);
+        source_mesh_.cell_centroid(srccell, &src_centroid);
       }
       else if (field_type_ == Field_type::MULTIMATERIAL_FIELD){
 #ifdef HAVE_TANGRAM
@@ -379,88 +362,78 @@ class Interpolate_2ndOrder<D,
       	source_state_.cell_get_mats(srccell, &cellmats);
 
       	if (!nmats || (nmats == 1 && cellmats[0] == matid_))
-      	{ //pure cell
+      	{ // pure cell
           source_mesh_.cell_centroid(srccell, &src_centroid);
       	}
      	else
-      	{ //multi-material cell
+      	{ // multi-material cell
           assert(interface_reconstructor_ != nullptr);  // cannot be nullptr
 
           if (std::find(cellmats.begin(), cellmats.end(), matid_) !=
               cellmats.end())
           { // mixed cell containing this material
 
-           //Obtain matpoly's for this material
-           Tangram::CellMatPoly<D> const& cellmatpoly =
-               interface_reconstructor_->cell_matpoly_data(srccell);
-           std::vector<Tangram::MatPoly<D>> matpolys =
-               cellmatpoly.get_matpolys(matid_);
+            // Obtain matpoly's for this material
+            Tangram::CellMatPoly<D> const& cellmatpoly =
+                interface_reconstructor_->cell_matpoly_data(srccell);
+            std::vector<Tangram::MatPoly<D>> matpolys =
+                cellmatpoly.get_matpolys(matid_);
 
-           int cnt = 0;
-           for (int k = 0; k < D; k++) src_centroid[k]=0;
+            int cnt = 0;
+            for (int k = 0; k < D; k++) src_centroid[k]=0;
 
-           //Compute centroid of all matpoly's
-           for (int j = 0; j < matpolys.size(); j++)
-           {
-             /* This code snippet should be turned on when the PR
-  		with changes in Matpoly is merged to Tangram.*/
-             std::vector<double> moments = matpolys[j].moments();
-             cnt += 1;
-             for (int k = 0; k < D; k++)
+            // Compute centroid of all matpoly's
+            for (int j = 0; j < matpolys.size(); j++)
+            {
+              /* This code snippet should be turned on when the PR
+                 with changes in Matpoly is merged to Tangram.*/
+              std::vector<double> moments = matpolys[j].moments();
+              cnt += 1;
+              for (int k = 0; k < D; k++)
                 src_centroid[k]=moments[k+1]/moments[0];
-           }
-           src_centroid = src_centroid/cnt;
+            }
+            src_centroid = src_centroid/cnt;
+          }
         }
+#endif
       }
-#endif
-     }
 
-   //Compute intersection centroid
-    Point<D> xsect_centroid;
-    for (int i = 0; i < D; ++i)
-      xsect_centroid[i] = xsect_weights[1+i]/xsect_volume;  // (1st moment)/vol
+      // Compute intersection centroid
+      Point<D> xsect_centroid;
+      for (int i = 0; i < D; ++i)
+        xsect_centroid[i] = xsect_weights[1+i]/xsect_volume;  // (1st moment)/vol
 
-   //Get correct source cell index
-   int srcindex;
-   if (field_type_ == Field_type::MESH_FIELD)
-     srcindex = srccell;
-   else if (field_type_ == Field_type::MULTIMATERIAL_FIELD)
-     srcindex = source_state_.cell_index_in_material(srccell, matid_);
+      // Get correct source cell index
+      int srcindex;
+      if (field_type_ == Field_type::MESH_FIELD)
+        srcindex = srccell;
+      else if (field_type_ == Field_type::MULTIMATERIAL_FIELD)
+        srcindex = source_state_.cell_index_in_material(srccell, matid_);
 
-    Vector<D> gradient = gradients_[srcindex];
-    Vector<D> vec = xsect_centroid - src_centroid;
-    double val = source_vals_[srcindex] + dot(gradient, vec);
-    val *= xsect_volume;
-    totalval += val;
-    wtsum0 += xsect_volume;
-    nsummed++;
-  }
+      Vector<D> gradient = gradients_[srcindex];
+      Vector<D> vec = xsect_centroid - src_centroid;
+      double val = source_vals_[srcindex] + dot(gradient, vec);
+      val *= xsect_volume;
+      totalval += val;
+      wtsum0 += xsect_volume;
+      nsummed++;
+    }
 
-  // Normalize the value by the volume of the intersection of the target cells
-  // with the source mesh. This will do the right thing for single-material
-  // and multi-material remap (conservative and constant preserving) if there
-  // is NO mismatch between source and target mesh boundaries. IF THERE IS A
-  // MISMATCH, THIS WILL PRESERVE CONSTANT VALUES BUT NOT BE CONSERVATIVE. THEN
-  // WE HAVE TO DO A SEMI-LOCAL OR GLOBAL REPAIR.
+    // Normalize the value by the volume of the intersection of the target cells
+    // with the source mesh. This will do the right thing for single-material
+    // and multi-material remap (conservative and constant preserving) if there
+    // is NO mismatch between source and target mesh boundaries. IF THERE IS A
+    // MISMATCH, THIS WILL PRESERVE CONSTANT VALUES BUT NOT BE CONSERVATIVE. THEN
+    // WE HAVE TO DO A SEMI-LOCAL OR GLOBAL REPAIR.
 
-  if (nsummed)
-    totalval /= wtsum0;
-  else
-    totalval = 0.0;
-
-#ifdef DEBUG
-  static bool first = true;
-  if (first && fabs((vol-wtsum0)/vol) > 1.0e-10) {
-    std::cerr <<
-        "WARNING: Meshes may be mismatched in the neighborhood of cell " <<
-        targetCellID << " in the target mesh (and maybe other places too)\n";
-    first = false;
-  }
-#endif
+    if (nsummed)
+      totalval /= wtsum0;
+    else
+      totalval = 0.0;
 
     return totalval;
 
-} //operator()
+  }  // operator()
 
  private:
   SourceMeshType const & source_mesh_;
@@ -480,7 +453,7 @@ class Interpolate_2ndOrder<D,
 #ifdef HAVE_TANGRAM
   std::shared_ptr<InterfaceReconstructor> interface_reconstructor_;
 #endif
-}; //2nd order interpolate class specialization for cells
+};  // 2nd order interpolate class specialization for cells
 
 
 //////////////////////////////////////////////////////////////////////////////
@@ -511,7 +484,7 @@ class Interpolate_2ndOrder<D,
 
  public:
 
-// Constructor with interface reconstructor
+  // Constructor with interface reconstructor
 #ifdef HAVE_TANGRAM
   Interpolate_2ndOrder(SourceMeshType const & source_mesh,
                        TargetMeshType const & target_mesh,
@@ -526,7 +499,7 @@ class Interpolate_2ndOrder<D,
       source_vals_(nullptr) {}
 #endif
 
-//Constructor without interface reconstructor
+  // Constructor without interface reconstructor
   Interpolate_2ndOrder(SourceMeshType const & source_mesh,
                        TargetMeshType const & target_mesh,
                        StateType const & source_state) :
@@ -566,7 +539,7 @@ class Interpolate_2ndOrder<D,
 
 
     // Compute the limited gradients for the field
-   Limited_Gradient<D, Entity_kind::NODE, SourceMeshType, StateType>
+    Limited_Gradient<D, Entity_kind::NODE, SourceMeshType, StateType>
         limgrad(source_mesh_, source_state_, interp_var_name_, limiter_type_);
 
     int nentities = source_mesh_.end(Entity_kind::NODE)-source_mesh_.begin(Entity_kind::NODE);
@@ -590,7 +563,7 @@ class Interpolate_2ndOrder<D,
 
   int set_material(int m) {
     matid_ = m;
-  } //set_material
+  }  // set_material
 
   /*!
     @brief Functor to do the 2nd order interpolation of node values
@@ -617,14 +590,8 @@ class Interpolate_2ndOrder<D,
   double operator() (const int targetNodeID,
                      std::vector<Weights_t> const & sources_and_weights) const
   {
-     int nsrcnodes = sources_and_weights.size();
-     if (!nsrcnodes) {
-#ifdef DEBUG
-      std::cerr << "WARNING: No source nodes contribute to target node." <<
-          std::endl;
-#endif
-      return 0.0;
-    }
+    int nsrcnodes = sources_and_weights.size();
+    if (!nsrcnodes) return 0.0;
 
     double totalval = 0.0;
     double wtsum0 = 0.0;
@@ -665,31 +632,21 @@ class Interpolate_2ndOrder<D,
 
     // Normalize the value by volume of the target dual cell
 
-    // Normalize the value by the volume of the intersection of the target cells
-    // with the source mesh. This will do the right thing for single-material
-    // and multi-material remap (conservative and constant preserving) if there
-    // is NO mismatch between source and target mesh boundaries. IF THERE IS A
-    // MISMATCH, THIS WILL PRESERVE CONSTANT VALUES BUT NOT BE CONSERVATIVE. THEN
-    // WE HAVE TO DO A SEMI-LOCAL OR GLOBAL REPAIR.
+    // Normalize the value by the volume of the intersection of the
+    // target cells with the source mesh. This will do the right thing
+    // for single-material and multi-material remap (conservative and
+    // constant preserving) if there is NO mismatch between source and
+    // target mesh boundaries. IF THERE IS A MISMATCH, THIS WILL
+    // PRESERVE CONSTANT VALUES BUT NOT BE CONSERVATIVE. THEN WE HAVE
+    // TO DO A SEMI-LOCAL OR GLOBAL REPAIR.
 
     if (nsummed)
       totalval /= wtsum0;
     else
       totalval = 0.0;
 
-#ifdef DEBUG
-    static bool first = true;
-    if (first && fabs((vol-wtsum0)/vol) > 1.0e-10) {
-      std::cerr <<
-          "WARNING: Meshes may be mismatched in the neighborhood of node " <<
-          targetNodeID << " in the target mesh (and maybe other places too) \n";
-      first = false;
-    }
-#endif
-
-
     return totalval;
-} //operator()
+  }  // operator()
 
  private:
   SourceMeshType const & source_mesh_;
