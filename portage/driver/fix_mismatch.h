@@ -227,6 +227,8 @@ bool fix_mismatch(SourceMesh_Wrapper const & source_mesh,
     // this stage, we can just check on-rank intersections only
 
     std::vector<double> xsect_volumes(ntargetents);
+    std::vector<bool> cell_is_empty(ntargetents, false);
+    std::vector<int> emptycells;
     for (int i = 0; i < ntargetents; i++) {
       auto const& sw_vec = source_ents_and_weights[i];
 
@@ -235,12 +237,56 @@ bool fix_mismatch(SourceMesh_Wrapper const & source_mesh,
         xsect_volumes[i] += sw.weights[0];
 
       if (fabs(xsect_volumes[i]) < 1.0e-16) {
-        std::cerr << "\nCannot properly handle target cells with no overlap. " <<
-            "They will get null values\n\n";
-        return false;
+        emptycells.push_back(i);
+        cell_is_empty[i] = true;
       }
     }
+    int nempty = emptycells.size();
+    
+    // Collect the empty target cells in layers starting from the ones
+    // next to partially or fully covered cells. At the end of this
+    // section, partially or fully covered cells will all have a layer
+    // number of 0 and empty cell layers will have positive layer
+    // numbers starting from 1
 
+    std::vector<int> layernum(ntargetents, 0);
+    std::vector<std::vector<int>> emptylayers;
+    if (nempty) {
+      std::cerr << "One or more target cells are not covered by " <<
+          "any source cells.\n" <<
+          " Will assign values based on their neighborhood\n";
+
+      int nlayers = 0;
+      int ntagged = 0;
+      while (ntagged < nempty) {
+        std::vector<int> curlayercells;
+
+        for (int c : emptycells) {
+          if (layernum[c] != 0) continue;
+
+          std::vector<int> cnbrs;
+          target_mesh.cell_get_node_adj_cells(c, Entity_type::ALL, &cnbrs);
+          for (int cnbr : cnbrs)
+            if (!cell_is_empty[cnbr] || layernum[cnbr] != 0) {
+              // At least one neighbor has some material or will
+              // receive some material (indicated by having a +ve
+              // layer number)
+
+              curlayercells.push_back(c);
+              break;
+            }
+        }  // for (c in emptcells)
+        
+        // Tag the current layer cells with the next layer number
+        for (int c : curlayercells)
+          layernum[c] = nlayers+1;
+        ntagged += curlayercells.size();
+        
+        emptylayers.push_back(curlayercells);
+        nlayers++;
+      }
+    }  // if nempty
+      
     // Now process remap variables
 
     int nvars = src_var_names.size();
@@ -256,19 +302,31 @@ bool fix_mismatch(SourceMesh_Wrapper const & source_mesh,
       target_state.mesh_get_data(onwhat, trg_var_names[i], &target_data_raw);
       Portage::pointer<double> target_data(target_data_raw);
 
-      // Do something here to populate fully uncovered target cells. We
-      // can do something simple (like distance-based extrapolation
-      // from populated cells) on processor, but there is no guarantee
-      // that we won't have very different values between two adjacent
-      // cells that are on two processors. Perhaps we could use a
-      // swarm based interpolation instead? How does Local Regression
-      // Estimates work if the support for a target particle does not
-      // overlap any source particle?  Once again, we may have to work
-      // iteratively, starting from known values and expanding out one
-      // layer of elements (particles) at a time
+      // Do something here to populate fully uncovered target
+      // cells. We have layers of empty cells starting out from fully
+      // or partially populated cells. We will assign every empty cell
+      // in a layer 75% of the minimum value of all its populated
+      // neighbors.
 
+      int curlayernum = 1;
+      for (std::vector<int> const& curlayer : emptylayers) {
+        for (int c : curlayer) {
+          std::vector<int> cnbrs;
+          target_mesh.cell_get_node_adj_cells(c, Entity_type::ALL, &cnbrs);
 
-      // call populate_empty_cells_routine()
+          double aveval = 0.0;
+          int nave = 0;
+          for (int cnbr : cnbrs)
+            if (layernum[cnbr] < curlayernum) {
+              aveval += target_data[cnbr];
+              nave++;
+            }
+          aveval /= nave;
+
+          target_data[c] = aveval;
+        }
+        curlayernum++;
+      }
 
 
       // At this point assume that all cells have some value in them
