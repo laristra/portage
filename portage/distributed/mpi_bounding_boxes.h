@@ -458,9 +458,9 @@ class MPI_Bounding_Boxes {
     for (std::string field_name : source_state_flat.names())
     {
 
-      // this is a serialized version of the field and is not a pointer to the
+      // this is a packed version of the field and is not a pointer to the
       // original field
-      std::vector<double> sourceField = source_state_flat.serialize(field_name);
+      std::vector<double> sourceField = source_state_flat.pack(field_name);
       
       // get the field stride
       int sourceFieldStride = source_state_flat.get_field_stride(field_name);
@@ -479,7 +479,7 @@ class MPI_Bounding_Boxes {
      	}
                            
       // allocate storage for the new distribute data, note that this data
-      // is still serialized and raw doubles and will need to be deserialized
+      // is still packed and raw doubles and will need to be unpacked
       std::vector<double> newField(sourceFieldStride*info.newNum);
 
 
@@ -488,13 +488,10 @@ class MPI_Bounding_Boxes {
                 MPI_DOUBLE, sourceFieldStride,
                 sourceField, &newField);
       
-      // deserialize the field
-      source_state_flat.deserialize(field_name, newField, all_material_ids, all_material_shapes);
+      // unpack the field
+      source_state_flat.unpack(field_name, newField, all_material_ids, all_material_shapes);
            
     } 
-
-
-
 
   } // distribute
 
@@ -831,92 +828,6 @@ class MPI_Bounding_Boxes {
     }
 	}
 
-/*	
-#ifdef DEBUG_MPI
-    std::cout << "Received  on rank " << commRank << ", from source rank 0:" << cellInfo.recvCounts[0];
-    std::cout << ", from source rank 1:" << cellInfo.recvCounts[1];
-    std::cout << ", from source rank 2:" << cellInfo.recvCounts[2];
-    std::cout << ",  totaling:" << cellInfo.newNum
-              << " ,of which " << (cellInfo.newNum - cellInfo.recvCounts[commRank]) << " were received from different ranks" << std::endl;
-#endif
-#ifdef DEBUG_MPI
-                std::cout << std::endl << "Source node coordinates (from all received ranks):" << std::endl;
-#endif
-#ifdef DEBUG_MPI
-                        std::cout << std::endl << "Source nodes per cell:" << std::endl;
-#endif
-#ifdef DEBUG_MPI
-                        std::cout << std::endl << "Source cell nodes:" << std::endl;
-#endif
-#ifdef DEBUG_MPI
-                        std::cout << std::endl << "Source faces per cell:" << std::endl;
-#endif
-#ifdef DEBUG_MPI
-                        std::cout << std::endl << "Source cell faces:" << std::endl;
-#endif
-#ifdef DEBUG_MPI
-                        std::cout << std::endl << "Source nodes per face:" << std::endl;
-#endif
-#ifdef DEBUG_MPI
-                        std::cout << std::endl << "Source face nodes:" << std::endl;
-#endif
-#ifdef DEBUG_MPI
-                        std::cout << std::endl << "Source global cell ids:" << std::endl;
-#endif
-#ifdef DEBUG_MPI
-                        std::cout << std::endl << "Source global node ids:" << std::endl;
-#endif
-#ifdef DEBUG_MPI
-    for (std::string field_name : source_state_flat.names())
-    {
-      std::vector<double> sourceField = source_state_flat.serialize(field_name);
-      std::cout  << "****\nJust distributed source user field \"" << field_name << "\" (rank " << commRank <<"):" << std::endl;
-    	for (double x: sourceField){
-    	  std::cout << x << " ";
-    	}
-    	std::cout << "\n***\n" <<std::endl;
-    } // diagnostic print
-#endif
-#ifdef DEBUG_MPI
-    std::cout << "Sizes on rank " << commRank << ",  newNum: " << cellInfo.newNum << ", targetNumOwned: " << targetNumOwnedCells
-              << ", sourceNum: " << cellInfo.sourceNum << ", sourceCoords: " << sourceCoords.size() << std::endl;
-
-    for (unsigned int i=0; i<sourceCellGlobalIds.size(); i++)
-      std::cout << sourceCellGlobalIds[i] << " ";
-    std::cout << std::endl;
-    for (unsigned int i=0; i<sourceCoords.size(); i++)
-    {
-      std::cout << sourceCoords[i] << " " ;
-      if (i % 24 == 23) std::cout << std::endl;
-    }
-    std::cout << std::endl << std::endl;
-#endif
-
-#ifdef DEBUG_MPI
-    for (std::string field_name : source_state_flat.names())
-    {
-      std::vector<double> sourceField = source_state_flat.serialize(field_name);
-      std::cout  << "****\nThe very end of distribute() source user field \"" << field_name << "\" (rank " << commRank <<"):" << std::endl;
-    	for (double x: sourceField){
-    	  std::cout << x << " ";
-    	}
-    	std::cout << "\n***\n" <<std::endl;
-    } // diagnostic print
-#endif
-#ifdef DEBUG_MPI
-      std::cout << std::endl << "Source user field \"" << field_name << "\":" << std::endl;
-#endif
-#ifdef DEBUG_MPI
-    std::cout << "Target boxes: ";
-    for (unsigned int i=0; i<2*dim*commSize; i++) std::cout << targetBoundingBoxes[i] << (i%(2*dim)==2*dim-1?", ":" ");
-    std::cout << std::endl;
-
-    std::cout << "Source box " << commRank << ": ";
-    for (unsigned int i=0; i<2*dim; i++) std::cout << sourceBoundingBox[i] << " ";
-    std::cout << std::endl;
-#endif
-
-*/
 }; // MPI_Bounding_Boxes
 
 } // namespace Portage
