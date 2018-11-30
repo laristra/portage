@@ -72,8 +72,7 @@ using Wonton::Point3;
 using Wonton::Point2;
 using Wonton::Point1;
 
-/* // Matrix alias */
-/* using Wonton::Matrix; */
+using Wonton::Matrix;
 
 // useful enums
 using Wonton::Entity_kind;
