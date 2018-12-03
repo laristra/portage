@@ -14,6 +14,8 @@ Please see the license file at the root of this repository, or at:
 #include <numeric>
 #include <memory>
 #include <unordered_map>
+#include <map>
+#include <vector>
 
 #include "portage/support/portage.h"
 #include "wonton/state/state_vector_uni.h"
@@ -81,7 +83,7 @@ class MPI_Bounding_Boxes {
     MPI_Comm_size(MPI_COMM_WORLD, &commSize);
     MPI_Comm_rank(MPI_COMM_WORLD, &commRank);
 
-    int dim = source_mesh_flat.space_dimension();
+    int dim = dim_ = source_mesh_flat.space_dimension();
     assert(dim == target_mesh.space_dimension());
 
 		// sendFlags, which partitions to send data
@@ -123,10 +125,6 @@ class MPI_Bounding_Boxes {
     // always distributed
     ///////////////////////////////////////////////////////
 
-    // SEND NODE COORDINATES
-    moveField(nodeInfo, commRank, commSize, MPI_DOUBLE, dim,
-              sourceCoords, &newCoords);
-              
     // SEND GLOBAL CELL IDS
     moveField(cellInfo, commRank, commSize, MPI_INT, 1,
               sourceCellGlobalIds, &newCellGlobalIds);
@@ -134,13 +132,18 @@ class MPI_Bounding_Boxes {
     // SEND GLOBAL NODE IDS
     moveField(nodeInfo, commRank, commSize, MPI_INT, 1,
               sourceNodeGlobalIds, &newNodeGlobalIds);
-            
+                
+    // SEND NODE COORDINATES
+    moveField(nodeInfo, commRank, commSize, MPI_DOUBLE, dim,
+              sourceCoords, &newCoords);
+              
+    // Create maps from old uid's to old and new indices
+    create_maps(newNodeGlobalIds, uidToOldNode_, uidToNewNode_);
+    create_maps(newCellGlobalIds, uidToOldCell_, uidToNewCell_);
 
-    sourceCoords = newCoords;
-    sourceCellGlobalIds = newCellGlobalIds;
-    source_mesh_flat.set_node_global_ids(newNodeGlobalIds);
-    source_mesh_flat.set_num_owned_cells(cellInfo.newNumOwned);
-    source_mesh_flat.set_num_owned_nodes(nodeInfo.newNumOwned);
+    // merge and set coordinates in the flat mesh
+    sourceCoords = merge_data(newCoords, uidToOldNode_, dim_);
+    
 
     ///////////////////////////////////////////////////////
     // 2D distributed
@@ -153,8 +156,9 @@ class MPI_Bounding_Boxes {
     {
 		  
 		  // mesh data references
-      std::vector<int>& sourceCellToNodeList = source_mesh_flat.get_cell_to_node_list();
+      std::vector<int>& sourceCellNodeCounts = source_mesh_flat.get_cell_node_counts();
       std::vector<int>& sourceCellNodeOffsets = source_mesh_flat.get_cell_node_offsets();
+      std::vector<int>& sourceCellToNodeList = source_mesh_flat.get_cell_to_node_list();
       
       int sizeCellToNodeList = sourceCellToNodeList.size();
       int sizeOwnedCellToNodeList = (
@@ -175,12 +179,17 @@ class MPI_Bounding_Boxes {
                 
       // move cell to node lists
       moveField(cellToNodeInfo, commRank, commSize, MPI_INT, 1,
-                sourceCellToNodeList, &newCellToNodeList);
+                to_uid(sourceCellToNodeList, sourceNodeGlobalIds), &newCellToNodeList);
 
-      source_mesh_flat.set_cell_node_counts(newCellNodeCounts);
-      fixListIndices(cellToNodeInfo, nodeInfo, commSize, &newCellToNodeList);
-      source_mesh_flat.set_cell_to_node_list(newCellToNodeList);
+      
+      // merge and map cell node lists
+      sourceCellToNodeList = merge_lists(newCellToNodeList, newCellNodeCounts, 
+        uidToOldCell_, uidToNewNode_);
 
+      // merge and set cell node counts, I would like to combine the following 
+      // two lines, but I run afoul of l-valueness. merge_data uses move copy semantics
+      sourceCellNodeCounts=merge_data( newCellNodeCounts, uidToOldCell_);
+      
     }
 
 
@@ -277,8 +286,19 @@ class MPI_Bounding_Boxes {
 
       fixListIndices(faceToNodeInfo, nodeInfo, commSize, &newFaceToNodeList);
       source_mesh_flat.set_face_to_node_list(newFaceToNodeList);
-   }
+    }
     
+    // need to do this at the end of the mesh stuff, because converting to 
+    // uid uses the global id's and we don't want to modify them before we are
+    // done converting the old relationships
+    // merge global ids and set in the flat mesh    
+    sourceCellGlobalIds = merge_data(newCellGlobalIds, uidToOldCell_);
+    sourceNodeGlobalIds = merge_data(newNodeGlobalIds, uidToOldNode_);
+    
+    // set counts for cells and nodes in the flat mesh
+    source_mesh_flat.set_num_owned_cells(sourceCellGlobalIds.size());
+    source_mesh_flat.set_num_owned_nodes(sourceNodeGlobalIds.size());
+
     // Finish initialization using redistributed data
     source_mesh_flat.finish_init();
 
@@ -488,14 +508,21 @@ class MPI_Bounding_Boxes {
                 MPI_DOUBLE, sourceFieldStride,
                 sourceField, &newField);
       
-      // unpack the field
-      source_state_flat.unpack(field_name, newField, all_material_ids, all_material_shapes);
+      // unpack the field, has the correct data types, but still is not merged
+      // fix map for different data types (CELL, NODE)
+      //std::vector<double> temp = merge_data(newField, uidToOldCell_, sourceFieldStride);
+      source_state_flat.unpack(field_name, merge_data(newField, uidToOldCell_, sourceFieldStride), all_material_ids, all_material_shapes);
            
     } 
 
   } // distribute
 
+
  private:
+ 
+   int dim_;
+   std::map<int,int> uidToOldNode_, uidToNewNode_;
+   std::map<int,int> uidToOldCell_, uidToNewCell_;
 
   /*!
     @brief Compute fields needed to do comms for a given entity type
@@ -827,7 +854,49 @@ class MPI_Bounding_Boxes {
       sendFlags[i] = sendThis;
     }
 	}
-
+	
+	std::vector<int> to_uid(std::vector<int> const& in, vector<int>const& uid){
+	  std::vector<int> result;
+	  result.reserve(in.size());
+	  for (auto x:in) result.push_back(uid[x]);
+	  return result;
+	}
+	
+	void create_maps(std::vector<int>const& uids, std::map<int,int>& uidToOld,
+	  std::map<int,int>& uidToNew){
+	  
+	  for (int i=0; i<uids.size(); ++i)
+	    if (uidToOld.find(uids[i])==uidToOld.end())
+	      uidToOld[uids[i]]=i;
+	  int i=0;
+	  for (auto& kv:uidToOld) uidToNew[kv.first]=i++;
+	}
+	
+	template<class T>
+	std::vector<T> merge_data(std::vector<T>const& in, 
+	  std::map<int,int>const& toOld, int stride=1){
+	  
+	  std::vector<T> result;
+	  result.reserve(toOld.size()*stride);
+	  for (auto& kv: toOld)
+	    for (int d=0; d<stride; ++d)
+	      result.push_back(in[stride*kv.second + d]);
+	  return result;
+	}
+	
+  std::vector<int> merge_lists(std::vector<int>const& in, std::vector<int> const & counts,
+    std::map<int,int>const& uidToOld, std::map<int,int>const& uidToNew){
+    
+    std::vector<int> offsets(counts.size());
+    std::partial_sum(counts.begin(), counts.end()-1, offsets.begin()+1);
+    std::vector<int> result;
+    result.reserve(uidToOld.size()*(dim_+1)); // estimate, lower bound
+    for (auto &kv: uidToOld)
+      for (int i=0; i<counts[kv.second]; ++i)
+        result.push_back(uidToNew.at(in[offsets[kv.second]+i]));
+    return result;
+  }
+  
 }; // MPI_Bounding_Boxes
 
 } // namespace Portage
