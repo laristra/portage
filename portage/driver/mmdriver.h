@@ -610,21 +610,13 @@ int MMDriver<Search, Intersect, Interpolate, D,
   }
 
 
-  // Detect if we have a mismatch between source and target domain boundaries
+  // Detect and fix values if we have a mismatch between source and
+  // target domain boundaries
 
-  bool mismatch = detect_mismatch<D, onwhat>(source_mesh_, target_mesh_,
-                                             source_ents_and_weights);
-
-  if (mismatch) {  // If there is mismatch we have to fix it
-    if (onwhat == Entity_kind::NODE)
-      std::cerr << "No fix implemented for node fields remapping " <<
-          "in the presence of mismatched mesh boundaries\n";
-    else
-      fix_mismatch<D, onwhat>(source_mesh_, source_state_,
-                              target_mesh_, target_state_,
-                              source_ents_and_weights,
-                              src_meshvar_names, trg_meshvar_names);
-  }
+  fix_mismatch<D, onwhat>(source_mesh_, source_state_,
+                          target_mesh_, target_state_,
+                          source_ents_and_weights,
+                          src_meshvar_names, trg_meshvar_names);
 
 
   gettimeofday(&end_timeval, 0);
@@ -1067,21 +1059,13 @@ int MMDriver<Search, Intersect, Interpolate, D,
   tot_seconds_interp += diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
 
 
-  // Detect if we have a mismatch between source and target domain boundaries
+  // Detect and fix if we have a mismatch between source and target
+  // domain boundaries
 
-  bool mismatch = detect_mismatch<D, onwhat>(source_mesh_flat, target_mesh_,
-                                             source_ents_and_weights);
-
-  if (mismatch) {  // If there is mismatch we have to fix it
-    if (onwhat == Entity_kind::NODE)
-      std::cerr << "No fix implemented for node fields remapping " <<
-          "in the presence of mismatched mesh boundaries\n";
-    else
-      fix_mismatch<D, onwhat>(source_mesh_flat, source_state_flat,
-                              target_mesh_, target_state_,
-                              source_ents_and_weights,
-                              src_meshvar_names, trg_meshvar_names);
-  }
+  fix_mismatch<D, onwhat>(source_mesh_flat, source_state_flat,
+                          target_mesh_, target_state_,
+                          source_ents_and_weights,
+                          src_meshvar_names, trg_meshvar_names);
 
 
 
