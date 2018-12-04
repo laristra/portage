@@ -394,23 +394,21 @@ bool fix_mismatch(SourceMesh_Wrapper const & source_mesh,
     double source_sum =
         std::inner_product(source_data, source_data + nsourceents,
                            source_cell_volume.begin(), 0.0);
+
+    double global_source_sum = source_sum;
 #ifdef ENABLE_MPI
-    double global_source_sum = 0.0;
     MPI_Allreduce(&source_sum, &global_source_sum, 1, MPI_DOUBLE, MPI_SUM,
                   MPI_COMM_WORLD);
-#else
-    double global_source_sum = source_sum;
 #endif
 
     double target_sum =
         std::inner_product(target_data, target_data + ntargetents,
                            target_cell_volume.begin(), 0.0);
+
+    double global_target_sum = target_sum;
 #ifdef ENABLE_MPI
-    double global_target_sum = 0.0;
     MPI_Allreduce(&target_sum, &global_target_sum, 1, MPI_DOUBLE, MPI_SUM,
                   MPI_COMM_WORLD);
-#else
-    double global_target_sum = target_sum;
 #endif
 
     double global_diff = global_target_sum - global_source_sum;
@@ -486,12 +484,10 @@ bool fix_mismatch(SourceMesh_Wrapper const & source_mesh,
       target_sum = std::inner_product(target_data, target_data + ntargetents,
                                       target_cell_volume.begin(), 0.0);
 
+      global_target_sum = target_sum;
 #ifdef ENABLE_MPI
-      global_target_sum = 0.0;
       MPI_Allreduce(&target_sum, &global_target_sum, 1, MPI_DOUBLE, MPI_SUM,
                     MPI_COMM_WORLD);
-#else
-      global_target_sum = target_sum;
 #endif
 
       // If we did not hit lower or upper bounds, this should be
@@ -503,12 +499,10 @@ bool fix_mismatch(SourceMesh_Wrapper const & source_mesh,
 
       global_diff = global_target_sum - global_source_sum;
 
+      global_adj_target_volume = adj_target_volume;
 #ifdef ENABLE_MPI
-      global_adj_target_volume = 0.0;
       MPI_Allreduce(&adj_target_volume, &global_adj_target_volume, 1,
                     MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-#else
-      global_adj_target_volume = adj_target_volume;
 #endif
 
       udiff = global_diff/global_adj_target_volume;
@@ -524,12 +518,9 @@ bool fix_mismatch(SourceMesh_Wrapper const & source_mesh,
     
     if (fabs(reldiff) > 1.0e-14) {
       if (rank == 0) {
-        std::cerr <<
-            "Redistribution not entirely successfully for variable " <<
+        std::cerr << "Redistribution not entirely successfully for variable " <<
             src_var_name << "\n";
-        std::cerr << "Relative conservation error is " <<
-            global_diff/global_source_sum <<
-            "\n";
+        std::cerr << "Relative conservation error is " << reldiff << "\n";
         std::cerr << "Absolute conservation error is " << global_diff << "\n";
         return false;
       }

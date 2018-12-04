@@ -305,7 +305,7 @@ int main(int argc, char** argv) {
   double trglo = srclo, trghi = srchi;  // bounds of generated mesh in each dir
   if (!conformal) {
     double dx = (trghi-trglo)/static_cast<double>(ntargetcells);
-    trghi += 0.5*dx;
+    trghi += 1.5*dx;
   }
 
   // If a mesh is being read from file, do it outside convergence loop
