@@ -84,12 +84,12 @@ class MPI_Bounding_Boxes {
     int dim = source_mesh_flat.space_dimension();
     assert(dim == target_mesh.space_dimension());
 
-		// sendFlags, which partitions to send data
-		// this is computed via intersection of whole partition bounding boxes
+    // sendFlags, which partitions to send data
+    // this is computed via intersection of whole partition bounding boxes
     std::vector<bool> sendFlags(commSize);   
-		compute_sendflags(source_mesh_flat, target_mesh, sendFlags);		
+        compute_sendflags(source_mesh_flat, target_mesh, sendFlags);        
 
-		// set counts for cells
+    // set counts for cells
     comm_info_t cellInfo;
     int sourceNumOwnedCells = source_mesh_flat.num_owned_cells();
     int sourceNumCells = sourceNumOwnedCells + source_mesh_flat.num_ghost_cells();
@@ -101,7 +101,7 @@ class MPI_Bounding_Boxes {
     int sourceNumNodes = sourceNumOwnedNodes + source_mesh_flat.num_ghost_nodes();
     setSendRecvCounts(&nodeInfo, commSize, sendFlags,sourceNumNodes, sourceNumOwnedNodes);
 
-		// mesh data references
+    // mesh data references
     std::vector<double>& sourceCoords = source_mesh_flat.get_coords();
     std::vector<int>& sourceCellNodeCounts = source_mesh_flat.get_cell_node_counts();
     std::vector<int>& sourceCellGlobalIds = source_mesh_flat.get_global_cell_ids();
@@ -143,8 +143,8 @@ class MPI_Bounding_Boxes {
     
     if (dim == 2)
     {
-		  
-		  // mesh data references
+          
+      // mesh data references
       std::vector<int>& sourceCellToNodeList = source_mesh_flat.get_cell_to_node_list();
       std::vector<int>& sourceCellNodeOffsets = source_mesh_flat.get_cell_node_offsets();
       
@@ -157,7 +157,7 @@ class MPI_Bounding_Boxes {
               sizeCellToNodeList, sizeOwnedCellToNodeList);
               
 
-			// send cell node counts
+      // send cell node counts
       std::vector<int> newCellNodeCounts(cellInfo.newNum);
       sendField(cellInfo, commRank, commSize, MPI_INT, 1,
                 sourceCellNodeCounts, &newCellNodeCounts);
@@ -190,7 +190,7 @@ class MPI_Bounding_Boxes {
       setSendRecvCounts(&faceInfo, commSize, sendFlags,
               sourceNumFaces, sourceNumOwnedFaces);
 
-		  // mesh data references
+      // mesh data references
       std::vector<int>& sourceCellToFaceList = source_mesh_flat.get_cell_to_face_list();
       std::vector<int>& sourceCellFaceOffsets = source_mesh_flat.get_cell_face_offsets();
       
@@ -202,7 +202,7 @@ class MPI_Bounding_Boxes {
       setSendRecvCounts(&cellToFaceInfo, commSize, sendFlags,
               sizeCellToFaceList, sizeOwnedCellToFaceList);
 
-		  // mesh data references
+      // mesh data references
       std::vector<int>& sourceFaceToNodeList = source_mesh_flat.get_face_to_node_list();
       std::vector<int>& sourceFaceNodeOffsets = source_mesh_flat.get_face_node_offsets();
       
@@ -212,9 +212,7 @@ class MPI_Bounding_Boxes {
           sourceFaceNodeOffsets[sourceNumOwnedFaces]);
 
       setSendRecvCounts(&faceToNodeInfo, commSize, sendFlags,
-              sizeFaceToNodeList, sizeOwnedFaceToNodeList);   
-              
-              
+              sizeFaceToNodeList, sizeOwnedFaceToNodeList);                 
       
       // SEND NUMBER OF FACES FOR EACH CELL
       std::vector<int>& sourceCellFaceCounts = source_mesh_flat.get_cell_face_counts();
@@ -266,7 +264,7 @@ class MPI_Bounding_Boxes {
 
       fixListIndices(faceToNodeInfo, nodeInfo, commSize, &newFaceToNodeList);
       source_mesh_flat.set_face_to_node_list(newFaceToNodeList);
-   }
+    }
     
     // Finish initialization using redistributed data
     source_mesh_flat.finish_init();
@@ -274,13 +272,13 @@ class MPI_Bounding_Boxes {
 
     // SEND FIELD VALUES
     
-		// multimaterial state info
+    // multimaterial state info
     int nmats = source_state_flat.num_materials();
     comm_info_t num_mats_info, num_mat_cells_info;
     std::vector<int> all_material_ids, all_material_shapes, all_material_cells;
 
-		// Is the a multimaterial problem? If so we need to pass the cell indices
-		// in addition to the field values
+    // Is the a multimaterial problem? If so we need to pass the cell indices
+    // in addition to the field values
     if (nmats>0){
     
       std::cout << "in distribute, this a multimaterial problem with " << nmats << " materials\n";
@@ -342,27 +340,27 @@ class MPI_Bounding_Boxes {
         material_cells, &all_material_cells
       );
       
-		  /////////////////////////////////////////////////////////
+      /////////////////////////////////////////////////////////
       // compute the cell map from local id to global id back to
       // first appearance of the local id. This code was copied
       // verbatim from flat_mesh_wrapper.h
       /////////////////////////////////////////////////////////
 
-		  // Global to local maps for cells and nodes
-		  std::map<int, int> globalCellMap;
-		  std::vector<int> cellUniqueRep(newCellGlobalIds.size());
-		  for (unsigned int i=0; i<newCellGlobalIds.size(); ++i) {
-		    auto itr = globalCellMap.find(newCellGlobalIds[i]);
-		    if (itr == globalCellMap.end()) {
-		      globalCellMap[newCellGlobalIds[i]] = i;
-		      cellUniqueRep[i] = i;
-		    }
-		    else {
-		      cellUniqueRep[i] = itr->second;
-		    }
-		  }
-		  
-		  /////////////////////////////////////////////////////////
+      // Global to local maps for cells and nodes
+      std::map<int, int> globalCellMap;
+      std::vector<int> cellUniqueRep(newCellGlobalIds.size());
+      for (unsigned int i=0; i<newCellGlobalIds.size(); ++i) {
+        auto itr = globalCellMap.find(newCellGlobalIds[i]);
+        if (itr == globalCellMap.end()) {
+          globalCellMap[newCellGlobalIds[i]] = i;
+          cellUniqueRep[i] = i;
+        }
+        else {
+          cellUniqueRep[i] = itr->second;
+        }
+      }
+      
+      /////////////////////////////////////////////////////////
       // Fix the material cell indices to account for the fact
       // that they are local indices on the different nodes and 
       // need to be consistent within this flat mesh. FixListIndices
@@ -373,33 +371,33 @@ class MPI_Bounding_Boxes {
       // get the local cell index offsets
       std::vector<int> offsets(commSize);
       offsets[0]=0;
- 			std::partial_sum(cellInfo.recvCounts.begin(),cellInfo.recvCounts.end()-1,
-      	offsets.begin()+1);     
-      	
-    	// make life easy by keeping a running counter
-    	int running_counter=0;
-      	
+      std::partial_sum(cellInfo.recvCounts.begin(),cellInfo.recvCounts.end()-1,
+          offsets.begin()+1);     
+          
+      // make life easy by keeping a running counter
+      int running_counter=0;
+          
       // loop over the ranks
       for (int rank=0; rank<commSize; ++rank){
-      	
-      	// get the cell offset for this rank
-      	int this_offset = offsets[rank];
-      	
-      	// get the number of material cells for this rank
-      	int nmat_cells = num_mat_cells_info.recvCounts[rank];
-      	
-      	// loop over material cells on this rank
-      	for (int i=0; i<nmat_cells; ++i){
-      		
-      		// offset the indices in all_material_cells
-      		all_material_cells[running_counter] += this_offset;
-      		
-      		// use cellUniqueRep to map each cell down to its first appearance
-      		all_material_cells[running_counter++] = cellUniqueRep[all_material_cells[running_counter]];
-      	}	
+          
+          // get the cell offset for this rank
+          int this_offset = offsets[rank];
+          
+          // get the number of material cells for this rank
+          int nmat_cells = num_mat_cells_info.recvCounts[rank];
+          
+          // loop over material cells on this rank
+          for (int i=0; i<nmat_cells; ++i){
+              
+              // offset the indices in all_material_cells
+              all_material_cells[running_counter] += this_offset;
+              
+              // use cellUniqueRep to map each cell down to its first appearance
+              all_material_cells[running_counter++] = cellUniqueRep[all_material_cells[running_counter]];
+          }    
       }
       
-		  /////////////////////////////////////////////////////////
+      /////////////////////////////////////////////////////////
       // We need to turn the flattened material cells into a correctly shaped
       // ragged right structure for use as the material cells in the flat
       // state wrapper. Just as in the flat state mesh field (and associated
@@ -415,20 +413,20 @@ class MPI_Bounding_Boxes {
       // loop over material ids on different nodes
       for (int i=0; i<all_material_ids.size(); ++i){
       
-      	// get the current working material
-      	int mat_id = all_material_ids[i];
-      	
-      	// get the current number of material cells for this material
-      	int nmat_cells = all_material_shapes[i];
-      	
-      	// get or create a reference to the correct material cell vector
-      	std::vector<int>& these_material_cells = material_indices[mat_id];
-      	
-      	// loop over the correct number of material cells
-      	for (int j=0; j<nmat_cells; ++j){
-      		these_material_cells.push_back(all_material_cells[running_counter++]);
-      	}
-      	
+          // get the current working material
+          int mat_id = all_material_ids[i];
+          
+          // get the current number of material cells for this material
+          int nmat_cells = all_material_shapes[i];
+          
+          // get or create a reference to the correct material cell vector
+          std::vector<int>& these_material_cells = material_indices[mat_id];
+          
+          // loop over the correct number of material cells
+          for (int j=0; j<nmat_cells; ++j){
+              these_material_cells.push_back(all_material_cells[running_counter++]);
+          }
+          
       }
       
       // We are reusing the material cells and cell materials. Since we are using
@@ -438,7 +436,7 @@ class MPI_Bounding_Boxes {
       
       // add the material indices by keys
       for ( auto& kv: material_indices){
-      	source_state_flat.mat_add_cells(kv.first, kv.second);
+          source_state_flat.mat_add_cells(kv.first, kv.second);
       }
       
     }
@@ -457,22 +455,22 @@ class MPI_Bounding_Boxes {
       // Currently only cell and node fields are supported
       comm_info_t info;
       if (source_state_flat.get_entity(field_name) == Entity_kind::NODE){
-      	// node mesh field
-      	info = nodeInfo;
+          // node mesh field
+          info = nodeInfo;
       } else if (source_state_flat.field_type(Entity_kind::CELL, field_name) == Wonton::Field_type::MESH_FIELD){
-      	// mesh cell field
-     		info = cellInfo;
-     	} else {
-     		// multi material field
-     		info = num_mat_cells_info;
-     	}
+          // mesh cell field
+             info = cellInfo;
+      } else {
+         // multi material field
+         info = num_mat_cells_info;
+      }
                            
       // allocate storage for the new distribute data, note that this data
       // is still packed and raw doubles and will need to be unpacked
       std::vector<double> newField(sourceFieldStride*info.newNum);
 
 
-			// send the field
+      // send the field
       sendField(info, commRank, commSize,
                 MPI_DOUBLE, sourceFieldStride,
                 sourceField, &newField);
@@ -484,7 +482,7 @@ class MPI_Bounding_Boxes {
 
   } // distribute
 
- private:
+  private:
 
   /*!
     @brief Compute fields needed to do comms for a given entity type
@@ -698,10 +696,10 @@ class MPI_Bounding_Boxes {
 
   } // fixListIndices
 
-	template <class Source_Mesh, class Target_Mesh>		
-	void compute_sendflags(Source_Mesh & source_mesh_flat, Target_Mesh &target_mesh, 
-				std::vector<bool> &sendFlags){
-				
+  template <class Source_Mesh, class Target_Mesh>        
+  void compute_sendflags(Source_Mesh & source_mesh_flat, Target_Mesh &target_mesh, 
+              std::vector<bool> &sendFlags){
+                
     // Get the MPI communicator size and rank information
     int commSize, commRank;
     MPI_Comm_size(MPI_COMM_WORLD, &commSize);
@@ -815,7 +813,7 @@ class MPI_Bounding_Boxes {
 
       sendFlags[i] = sendThis;
     }
-	}
+  }
 
 }; // MPI_Bounding_Boxes
 
