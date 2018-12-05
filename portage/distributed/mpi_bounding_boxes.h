@@ -40,13 +40,13 @@ class MPI_Bounding_Boxes {
   /*!
     @brief Constructor of MPI_Bounding_Boxes
    */
-  MPI_Bounding_Boxes() {};
+  MPI_Bounding_Boxes() {}
 
 
   /*!
     @brief Destructor of MPI_Bounding_Boxes
    */
-  ~MPI_Bounding_Boxes() {};
+  ~MPI_Bounding_Boxes() {}
 
 
   /*!
@@ -85,6 +85,7 @@ class MPI_Bounding_Boxes {
     assert(dim == target_mesh.space_dimension());
 
 		// sendFlags, which partitions to send data
+		// this is computed via intersection of whole partition bounding boxes
     std::vector<bool> sendFlags(commSize);   
 		compute_sendflags(source_mesh_flat, target_mesh, sendFlags);		
 
@@ -102,7 +103,7 @@ class MPI_Bounding_Boxes {
 
 		// mesh data references
     std::vector<double>& sourceCoords = source_mesh_flat.get_coords();
-    std::vector<int>& sourceNodeCounts = source_mesh_flat.get_cell_node_counts();
+    std::vector<int>& sourceCellNodeCounts = source_mesh_flat.get_cell_node_counts();
     std::vector<int>& sourceCellGlobalIds = source_mesh_flat.get_global_cell_ids();
     std::vector<int>& sourceNodeGlobalIds = source_mesh_flat.get_global_node_ids();
     
@@ -124,15 +125,15 @@ class MPI_Bounding_Boxes {
     ///////////////////////////////////////////////////////
 
     // SEND NODE COORDINATES
-    moveField(nodeInfo, commRank, commSize, MPI_DOUBLE, dim,
+    sendField(nodeInfo, commRank, commSize, MPI_DOUBLE, dim,
               sourceCoords, &newCoords);
               
     // SEND GLOBAL CELL IDS
-    moveField(cellInfo, commRank, commSize, MPI_INT, 1,
+    sendField(cellInfo, commRank, commSize, MPI_INT, 1,
               sourceCellGlobalIds, &newCellGlobalIds);
 
     // SEND GLOBAL NODE IDS
-    moveField(nodeInfo, commRank, commSize, MPI_INT, 1,
+    sendField(nodeInfo, commRank, commSize, MPI_INT, 1,
               sourceNodeGlobalIds, &newNodeGlobalIds);
             
 
@@ -169,12 +170,12 @@ class MPI_Bounding_Boxes {
       newCellToNodeList.resize(cellToNodeInfo.newNum);
       
 
-			// move cell node counts
-      moveField(cellInfo, commRank, commSize, MPI_INT, 1,
-                sourceNodeCounts, &newCellNodeCounts);
+			// send cell node counts
+      sendField(cellInfo, commRank, commSize, MPI_INT, 1,
+                sourceCellNodeCounts, &newCellNodeCounts);
                 
-      // move cell to node lists
-      moveField(cellToNodeInfo, commRank, commSize, MPI_INT, 1,
+      // send cell to node lists
+      sendField(cellToNodeInfo, commRank, commSize, MPI_INT, 1,
                 sourceCellToNodeList, &newCellToNodeList);
 
       source_mesh_flat.set_cell_node_counts(newCellNodeCounts);
@@ -234,7 +235,7 @@ class MPI_Bounding_Boxes {
       
       // SEND NUMBER OF FACES FOR EACH CELL
       std::vector<int>& sourceCellFaceCounts = source_mesh_flat.get_cell_face_counts();
-      moveField(cellInfo, commRank, commSize, MPI_INT, 1,
+      sendField(cellInfo, commRank, commSize, MPI_INT, 1,
                 sourceCellFaceCounts, &newCellFaceCounts);
 
       // SEND CELL-TO-FACE MAP
@@ -247,7 +248,7 @@ class MPI_Bounding_Boxes {
         int dir = static_cast<int>(sourceCellToFaceDirs[j]);
         sourceCellToFaceList[j] = (f << 1) | dir;
       }
-      moveField(cellToFaceInfo, commRank, commSize, MPI_INT, 1,
+      sendField(cellToFaceInfo, commRank, commSize, MPI_INT, 1,
                 sourceCellToFaceList, &newCellToFaceList);
 
       // Unpack face IDs and dirs
@@ -260,11 +261,11 @@ class MPI_Bounding_Boxes {
 
       // SEND NUMBER OF NODES FOR EACH FACE
       std::vector<int>& sourceFaceNodeCounts = source_mesh_flat.get_face_node_counts();
-      moveField(faceInfo, commRank, commSize, MPI_INT, 1,
+      sendField(faceInfo, commRank, commSize, MPI_INT, 1,
                 sourceFaceNodeCounts, &newFaceNodeCounts);
 
       // SEND FACE-TO-NODE MAP
-      moveField(faceToNodeInfo, commRank, commSize, MPI_INT, 1,
+      sendField(faceToNodeInfo, commRank, commSize, MPI_INT, 1,
                 sourceFaceToNodeList, &newFaceToNodeList); 
                    
       source_mesh_flat.set_cell_face_counts(newCellFaceCounts);
@@ -310,7 +311,7 @@ class MPI_Bounding_Boxes {
       all_material_ids.resize(num_mats_info.newNum);
 
       // sendData
-      moveData(commRank, commSize, MPI_INT, 1, 0, num_mats_info.sourceNum, 0,
+      sendData(commRank, commSize, MPI_INT, 1, 0, num_mats_info.sourceNum, 0,
         num_mats_info.sendCounts, num_mats_info.recvCounts,
         material_ids, &all_material_ids
       );
@@ -326,7 +327,7 @@ class MPI_Bounding_Boxes {
       all_material_shapes.resize(num_mats_info.newNum);
 
       // sendData
-      moveData(commRank, commSize, MPI_INT, 1, 0, num_mats_info.sourceNum, 0,
+      sendData(commRank, commSize, MPI_INT, 1, 0, num_mats_info.sourceNum, 0,
         num_mats_info.sendCounts, num_mats_info.recvCounts,
         material_shapes, &all_material_shapes
       );
@@ -348,7 +349,7 @@ class MPI_Bounding_Boxes {
       all_material_cells.resize(num_mat_cells_info.newNum);
 
       // sendData
-      moveData(commRank, commSize, MPI_INT, 1, 0, num_mat_cells_info.sourceNum, 0,
+      sendData(commRank, commSize, MPI_INT, 1, 0, num_mat_cells_info.sourceNum, 0,
         num_mat_cells_info.sendCounts, num_mat_cells_info.recvCounts,
         material_cells, &all_material_cells
       );
@@ -483,8 +484,8 @@ class MPI_Bounding_Boxes {
       std::vector<double> newField(sourceFieldStride*info.newNum);
 
 
-			// move the field
-      moveField(info, commRank, commSize,
+			// send the field
+      sendField(info, commRank, commSize,
                 MPI_DOUBLE, sourceFieldStride,
                 sourceField, &newField);
       
@@ -540,18 +541,18 @@ class MPI_Bounding_Boxes {
 
 
   /*!
-    @brief Move values for a single data field to all ranks as needed
-    @tparam[in] T                C++ type of data to be moved
+    @brief Send values for a single data field to all ranks as needed
+    @tparam[in] T                C++ type of data to be sent
     @param[in] info              Info struct for entity type of field
     @param[in] commRank          MPI rank of this PE
     @param[in] commSize          Total number of MPI ranks
-    @param[in] mpiType           MPI type of data (MPI_???) to be moved
+    @param[in] mpiType           MPI type of data (MPI_???) to be sent
     @param[in] stride            Stride of data field
     @param[in] sourceData        Array of (old) source data
     @param[in] newData           Array of new source data
    */
   template<typename T>
-  void moveField(const comm_info_t& info,
+  void sendField(const comm_info_t& info,
                  const int commRank, const int commSize,
                  const MPI_Datatype mpiType, const int stride,
                  const std::vector<T>& sourceData,
@@ -567,12 +568,12 @@ class MPI_Bounding_Boxes {
       sendGhostCounts[i] = info.sendCounts[i] - info.sendOwnedCounts[i];
     }
 
-    moveData(commRank, commSize, mpiType, stride,
+    sendData(commRank, commSize, mpiType, stride,
              0, info.sourceNumOwned,
              0,
              info.sendOwnedCounts, info.recvOwnedCounts,
              sourceData, newData);
-    moveData(commRank, commSize, mpiType, stride,
+    sendData(commRank, commSize, mpiType, stride,
              info.sourceNumOwned, info.sourceNum,
              info.newNumOwned,
              sendGhostCounts, recvGhostCounts,
@@ -584,15 +585,15 @@ class MPI_Bounding_Boxes {
       std::cout << (*newData)[f] << " ";
     std::cout << std::endl << std::endl;
 #endif
-  } // moveField
+  } // sendField
 
 
   /*!
-    @brief Move values for a single range of data to all ranks as needed
-    @tparam[in] T                C++ type of data to be moved
+    @brief Send values for a single range of data to all ranks as needed
+    @tparam[in] T                C++ type of data to be sent
     @param[in] commRank          MPI rank of this PE
     @param[in] commSize          Total number of MPI ranks
-    @param[in] mpiType           MPI type of data (MPI_???) to be moved
+    @param[in] mpiType           MPI type of data (MPI_???) to be sent
     @param[in] stride            Stride of data field
     @param[in] sourceStart       Start location in source (send) data
     @param[in] sourceEnd         End location in source (send) data
@@ -603,7 +604,7 @@ class MPI_Bounding_Boxes {
     @param[in] newData           Array of new source data
    */
   template<typename T>
-  void moveData(const int commRank, const int commSize,
+  void sendData(const int commRank, const int commSize,
                 const MPI_Datatype mpiType, const int stride,
                 const int sourceStart, const int sourceEnd,
                 const int newStart,
@@ -657,7 +658,7 @@ class MPI_Bounding_Boxes {
       std::vector<MPI_Status> statuses(requests.size());
       MPI_Waitall(requests.size(), &(requests[0]), &(statuses[0]));
     }
-  } // moveData
+  } // sendData
 
   //! Correct a map to account for concatenated lists
   void fixListIndices(const comm_info_t& mapInfo,
