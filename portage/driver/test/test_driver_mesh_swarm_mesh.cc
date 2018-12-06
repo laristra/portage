@@ -92,9 +92,6 @@ class MSMDriverTest : public ::testing::Test {
     Wonton::Flat_Mesh_Wrapper<double> sourceFlatMesh;
     sourceFlatMesh.initialize(sourceMeshWrapper);
   
-    // now needed for the test since explicitly removed from initialize
-    sourceFlatMesh.finish_init();
-
     for (unsigned int c = 0; c < nsrccells; ++c) {
       Portage::Point<Dimension> cen;
       sourceFlatMesh.cell_centroid(c, &cen);
@@ -233,9 +230,6 @@ class MSMDriverTest : public ::testing::Test {
     Wonton::Flat_Mesh_Wrapper<double> targetFlatMesh;
     targetFlatMesh.initialize(targetMeshWrapper);
   
-    // now needed for the test since explicitly removed from initialize
-    targetFlatMesh.finish_init();
-
     if (oper8or != Portage::Meshfree::Operator::VolumeIntegral) {
 
       for (int c = 0; c < ntarcells; ++c) {

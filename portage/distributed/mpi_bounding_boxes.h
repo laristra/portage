@@ -42,13 +42,13 @@ class MPI_Bounding_Boxes {
   /*!
     @brief Constructor of MPI_Bounding_Boxes
    */
-  MPI_Bounding_Boxes() {};
+  MPI_Bounding_Boxes() {}
 
 
   /*!
     @brief Destructor of MPI_Bounding_Boxes
    */
-  ~MPI_Bounding_Boxes() {};
+  ~MPI_Bounding_Boxes() {}
 
 
   /*!
@@ -86,40 +86,23 @@ class MPI_Bounding_Boxes {
     int dim = dim_ = source_mesh_flat.space_dimension();
     assert(dim == target_mesh.space_dimension());
 
-        // sendFlags, which partitions to send data
+
+    // sendFlags, which partitions to send data
+    // this is computed via intersection of whole partition bounding boxes
     std::vector<bool> sendFlags(commSize);   
         compute_sendflags(source_mesh_flat, target_mesh, sendFlags);        
 
-        // set counts for cells
+    // set counts for cells
     comm_info_t cellInfo;
     int sourceNumOwnedCells = source_mesh_flat.num_owned_cells();
     int sourceNumCells = sourceNumOwnedCells + source_mesh_flat.num_ghost_cells();
-    setInfo(&cellInfo, commSize, sendFlags,sourceNumCells, sourceNumOwnedCells);
+    setSendRecvCounts(&cellInfo, commSize, sendFlags,sourceNumCells, sourceNumOwnedCells);
     
     // set counts for nodes
     comm_info_t nodeInfo;
     int sourceNumOwnedNodes = source_mesh_flat.num_owned_nodes();
     int sourceNumNodes = sourceNumOwnedNodes + source_mesh_flat.num_ghost_nodes();
-    setInfo(&nodeInfo, commSize, sendFlags,sourceNumNodes, sourceNumOwnedNodes);
-
-        // mesh data references
-    std::vector<double>& sourceCoords = source_mesh_flat.get_coords();
-    std::vector<int>& sourceNodeCounts = source_mesh_flat.get_cell_node_counts();
-    std::vector<int>& sourceCellGlobalIds = source_mesh_flat.get_global_cell_ids();
-    std::vector<int>& sourceNodeGlobalIds = source_mesh_flat.get_global_node_ids();
-    std::vector<int>& sourceFaceGlobalIds = source_mesh_flat.get_global_face_ids();
-    
-    // Data structures to hold mesh data received from other ranks
-    std::vector<int> newCellGlobalIds(cellInfo.newNum);
-    std::vector<int> newNodeGlobalIds(nodeInfo.newNum);
-    std::vector<double> newCoords(dim*nodeInfo.newNum);
-    std::vector<int> newCellNodeCounts;
-    std::vector<int> newCellToNodeList;
-    std::vector<int> newCellFaceCounts;
-    std::vector<int> newCellToFaceList;
-    std::vector<bool> newCellToFaceDirs;
-    std::vector<int> newFaceNodeCounts;
-    std::vector<int> newFaceToNodeList;
+    setSendRecvCounts(&nodeInfo, commSize, sendFlags,sourceNumNodes, sourceNumOwnedNodes);
 
 
     ///////////////////////////////////////////////////////
@@ -127,21 +110,27 @@ class MPI_Bounding_Boxes {
     ///////////////////////////////////////////////////////
 
     // SEND GLOBAL CELL IDS
-    moveField(cellInfo, commRank, commSize, MPI_INT, 1,
+    std::vector<int>& sourceCellGlobalIds = source_mesh_flat.get_global_cell_ids();
+    std::vector<int> newCellGlobalIds(cellInfo.newNum);
+    sendField(cellInfo, commRank, commSize, MPI_INT, 1,
               sourceCellGlobalIds, &newCellGlobalIds);
 
     // SEND GLOBAL NODE IDS
-    moveField(nodeInfo, commRank, commSize, MPI_INT, 1,
+    std::vector<int>& sourceNodeGlobalIds = source_mesh_flat.get_global_node_ids();
+    std::vector<int> newNodeGlobalIds(nodeInfo.newNum);
+    sendField(nodeInfo, commRank, commSize, MPI_INT, 1,
               sourceNodeGlobalIds, &newNodeGlobalIds);
-                
+                              
+    // Create maps from old uid's to old and new indices
+    create_maps(newCellGlobalIds, uidToOldCell_, uidToNewCell_);
+    create_maps(newNodeGlobalIds, uidToOldNode_, uidToNewNode_);
+
     // SEND NODE COORDINATES
-    moveField(nodeInfo, commRank, commSize, MPI_DOUBLE, dim,
+    std::vector<double>& sourceCoords = source_mesh_flat.get_coords();
+    std::vector<double> newCoords(dim*nodeInfo.newNum);
+    sendField(nodeInfo, commRank, commSize, MPI_DOUBLE, dim,
               sourceCoords, &newCoords);
               
-    // Create maps from old uid's to old and new indices
-    create_maps(newNodeGlobalIds, uidToOldNode_, uidToNewNode_);
-    create_maps(newCellGlobalIds, uidToOldCell_, uidToNewCell_);
-
     // merge and set coordinates in the flat mesh
     sourceCoords = merge_data(newCoords, uidToOldNode_, dim_);
     
@@ -149,15 +138,23 @@ class MPI_Bounding_Boxes {
     ///////////////////////////////////////////////////////
     // 2D distributed
     ///////////////////////////////////////////////////////
-    
-    // only used in 2D:
-    comm_info_t cellToNodeInfo;
-    
+        
     if (dim == 2)
     {
           
-          // mesh data references
+      comm_info_t cellToNodeInfo;
+      
+      // send cell node counts
       std::vector<int>& sourceCellNodeCounts = source_mesh_flat.get_cell_node_counts();
+      std::vector<int> newCellNodeCounts(cellInfo.newNum);
+      sendField(cellInfo, commRank, commSize, MPI_INT, 1,
+                sourceCellNodeCounts, &newCellNodeCounts);
+                
+      // merge and set cell node counts
+      sourceCellNodeCounts=merge_data( newCellNodeCounts, uidToOldCell_);
+
+
+      // mesh data references
       std::vector<int>& sourceCellNodeOffsets = source_mesh_flat.get_cell_node_offsets();
       std::vector<int>& sourceCellToNodeList = source_mesh_flat.get_cell_to_node_list();
       
@@ -166,24 +163,14 @@ class MPI_Bounding_Boxes {
           sourceNumCells == sourceNumOwnedCells ? sizeCellToNodeList :
           sourceCellNodeOffsets[sourceNumOwnedCells]);
 
-      setInfo(&cellToNodeInfo, commSize, sendFlags,
+      setSendRecvCounts(&cellToNodeInfo, commSize, sendFlags,
               sizeCellToNodeList, sizeOwnedCellToNodeList);
               
-      // resize to handle distributed data
-      newCellNodeCounts.resize(cellInfo.newNum);
-      newCellToNodeList.resize(cellToNodeInfo.newNum);     
-
-      // move cell node counts
-      moveField(cellInfo, commRank, commSize, MPI_INT, 1,
-                sourceNodeCounts, &newCellNodeCounts);
-                
-      // move cell to node lists
-      moveField(cellToNodeInfo, commRank, commSize, MPI_INT, 1,
+      // send cell to node lists
+      std::vector<int> newCellToNodeList(cellToNodeInfo.newNum);
+      sendField(cellToNodeInfo, commRank, commSize, MPI_INT, 1,
                 to_uid(sourceCellToNodeList, sourceNodeGlobalIds), &newCellToNodeList);
-      
-      // merge and set cell node counts
-      sourceCellNodeCounts=merge_data( newCellNodeCounts, uidToOldCell_);
-      
+
       // merge and map cell node lists
       sourceCellToNodeList = merge_lists(newCellToNodeList, newCellNodeCounts, 
         uidToOldCell_, uidToNewNode_);
@@ -194,84 +181,67 @@ class MPI_Bounding_Boxes {
     ///////////////////////////////////////////////////////
     // 3D distributed
     ///////////////////////////////////////////////////////
-    
-    // only used in 3D:
-    comm_info_t faceInfo, cellToFaceInfo, faceToNodeInfo;
-    int sourceNumOwnedFaces = -1, sourceNumFaces = -1;
-    
+        
     if (dim == 3)
     {
-      sourceNumOwnedFaces = source_mesh_flat.num_owned_faces();
-      sourceNumFaces = sourceNumOwnedFaces + source_mesh_flat.num_ghost_faces();
+      comm_info_t faceInfo, cellToFaceInfo, faceToNodeInfo;
+
+      int sourceNumOwnedFaces = source_mesh_flat.num_owned_faces();
+      int sourceNumFaces = sourceNumOwnedFaces + source_mesh_flat.num_ghost_faces();
       
-      setInfo(&faceInfo, commSize, sendFlags,
+      setSendRecvCounts(&faceInfo, commSize, sendFlags,
               sourceNumFaces, sourceNumOwnedFaces);
 
-      std::vector<int> newFaceGlobalIds(faceInfo.newNum);
-      
       // SEND GLOBAL FACE IDS
-      moveField(faceInfo, commRank, commSize, MPI_INT, 1,
+      std::vector<int>& sourceFaceGlobalIds = source_mesh_flat.get_global_face_ids();
+      std::vector<int> newFaceGlobalIds(faceInfo.newNum);
+      sendField(faceInfo, commRank, commSize, MPI_INT, 1,
                 sourceFaceGlobalIds, &newFaceGlobalIds);                  
 
       // Create map from old uid's to old and new indices
       create_maps(newFaceGlobalIds, uidToOldFace_, uidToNewFace_);
 
       // mesh data references
-      std::vector<int>& sourceCellFaceCounts = source_mesh_flat.get_cell_face_counts();
       std::vector<int>& sourceCellFaceOffsets = source_mesh_flat.get_cell_face_offsets();
       std::vector<int>& sourceCellToFaceList = source_mesh_flat.get_cell_to_face_list();
-      std::vector<bool>& sourceCellToFaceDirs = source_mesh_flat.get_cell_to_face_dirs();
-      std::vector<int>& sourceFaceNodeCounts = source_mesh_flat.get_face_node_counts();
-      std::vector<int>& sourceFaceNodeOffsets = source_mesh_flat.get_face_node_offsets();
-      std::vector<int>& sourceFaceToNodeList = source_mesh_flat.get_face_to_node_list();
      
       int sizeCellToFaceList = sourceCellToFaceList.size();
       int sizeOwnedCellToFaceList = (
           sourceNumCells == sourceNumOwnedCells ? sizeCellToFaceList :
           sourceCellFaceOffsets[sourceNumOwnedCells]);
 
-      setInfo(&cellToFaceInfo, commSize, sendFlags,
+      setSendRecvCounts(&cellToFaceInfo, commSize, sendFlags,
               sizeCellToFaceList, sizeOwnedCellToFaceList);
 
-      // mesh data references
-      
-      int sizeFaceToNodeList = sourceFaceToNodeList.size();
-      int sizeOwnedFaceToNodeList = (
-          sourceNumFaces == sourceNumOwnedFaces ? sizeFaceToNodeList :
-          sourceFaceNodeOffsets[sourceNumOwnedFaces]);
-
-      setInfo(&faceToNodeInfo, commSize, sendFlags,
-              sizeFaceToNodeList, sizeOwnedFaceToNodeList);   
-              
-              
-      // resize to handle distributed data
-      newCellFaceCounts.resize(cellInfo.newNum);
-      newCellToFaceList.resize(cellToFaceInfo.newNum);
-      newCellToFaceDirs.resize(cellToFaceInfo.newNum);
-      newFaceNodeCounts.resize(faceInfo.newNum);
-      newFaceToNodeList.resize(faceToNodeInfo.newNum);
-      
       // SEND NUMBER OF FACES FOR EACH CELL
-      moveField(cellInfo, commRank, commSize, MPI_INT, 1,
+
+      std::vector<int>& sourceCellFaceCounts = source_mesh_flat.get_cell_face_counts();
+      std::vector<int> newCellFaceCounts(cellInfo.newNum);
+      sendField(cellInfo, commRank, commSize, MPI_INT, 1,
                 sourceCellFaceCounts, &newCellFaceCounts);
 
+      // merge and set cell face counts
+      sourceCellFaceCounts=merge_data( newCellFaceCounts, uidToOldCell_);
+      
       // SEND CELL-TO-FACE MAP
       // map the cell face list vector to uid's
       std::vector<int> sourceCellToFaceList__= to_uid(sourceCellToFaceList, sourceFaceGlobalIds);
       
       // For this array only, pack up face IDs + dirs and send together
-      int size = sourceCellToFaceList.size();
-      for (unsigned int j=0; j<size; ++j)
+      std::vector<bool>& sourceCellToFaceDirs = source_mesh_flat.get_cell_to_face_dirs();
+      for (unsigned int j=0; j<sourceCellToFaceList.size(); ++j)
       {
         int f = sourceCellToFaceList__[j];
         int dir = static_cast<int>(sourceCellToFaceDirs[j]);
         sourceCellToFaceList[j] = (f << 1) | dir;
       }
 
-      moveField(cellToFaceInfo, commRank, commSize, MPI_INT, 1,
+      std::vector<int> newCellToFaceList(cellToFaceInfo.newNum);
+      sendField(cellToFaceInfo, commRank, commSize, MPI_INT, 1,
                 sourceCellToFaceList, &newCellToFaceList);
 
       // Unpack face IDs and dirs
+      std::vector<bool> newCellToFaceDirs(cellToFaceInfo.newNum);
       for (unsigned int j=0; j<newCellToFaceList.size(); ++j)
       {
         int fd = newCellToFaceList[j];
@@ -279,9 +249,6 @@ class MPI_Bounding_Boxes {
         newCellToFaceDirs[j] = fd & 1;
       }
 
-      
-      // merge and set cell face counts
-      sourceCellFaceCounts=merge_data( newCellFaceCounts, uidToOldCell_);
       
       // merge and map cell face lists
       sourceCellToFaceList = merge_lists(newCellToFaceList, newCellFaceCounts, 
@@ -293,12 +260,27 @@ class MPI_Bounding_Boxes {
       
 
       
+      // mesh data references
+      std::vector<int>& sourceFaceNodeOffsets = source_mesh_flat.get_face_node_offsets();
+      std::vector<int>& sourceFaceToNodeList = source_mesh_flat.get_face_to_node_list();
+      
+      int sizeFaceToNodeList = sourceFaceToNodeList.size();
+      int sizeOwnedFaceToNodeList = (
+          sourceNumFaces == sourceNumOwnedFaces ? sizeFaceToNodeList :
+          sourceFaceNodeOffsets[sourceNumOwnedFaces]);
+
+      setSendRecvCounts(&faceToNodeInfo, commSize, sendFlags,
+              sizeFaceToNodeList, sizeOwnedFaceToNodeList);                 
+      
       // SEND NUMBER OF NODES FOR EACH FACE
-      moveField(faceInfo, commRank, commSize, MPI_INT, 1,
+      std::vector<int>& sourceFaceNodeCounts = source_mesh_flat.get_face_node_counts();
+      std::vector<int> newFaceNodeCounts(faceInfo.newNum);
+      sendField(faceInfo, commRank, commSize, MPI_INT, 1,
                 sourceFaceNodeCounts, &newFaceNodeCounts);
 
       // SEND FACE-TO-NODE MAP
-      moveField(faceToNodeInfo, commRank, commSize, MPI_INT, 1,
+      std::vector<int> newFaceToNodeList(faceToNodeInfo.newNum);
+      sendField(faceToNodeInfo, commRank, commSize, MPI_INT, 1,
                 to_uid(sourceFaceToNodeList, sourceNodeGlobalIds), &newFaceToNodeList); 
                 
       // merge and set face node counts
@@ -322,7 +304,7 @@ class MPI_Bounding_Boxes {
     // merge global ids and set in the flat mesh    
     sourceCellGlobalIds = merge_data(newCellGlobalIds, uidToOldCell_);
     sourceNodeGlobalIds = merge_data(newNodeGlobalIds, uidToOldNode_);
-    
+
     // set counts for cells and nodes in the flat mesh
     source_mesh_flat.set_num_owned_cells(sourceCellGlobalIds.size());
     source_mesh_flat.set_num_owned_nodes(sourceNodeGlobalIds.size());
@@ -333,13 +315,14 @@ class MPI_Bounding_Boxes {
 
     // SEND FIELD VALUES
     
-        // multimaterial state info
+    // multimaterial state info
     int nmats = source_state_flat.num_materials();
     comm_info_t num_mats_info, num_mat_cells_info;
     std::vector<int> all_material_ids, all_material_shapes, all_material_cells;
 
-        // Is the a multimaterial problem? If so we need to pass the cell indices
-        // in addition to the field values
+
+    // Is the a multimaterial problem? If so we need to pass the cell indices
+    // in addition to the field values
     if (nmats>0){
     
       std::cout << "in distribute, this a multimaterial problem with " << nmats << " materials\n";
@@ -349,7 +332,7 @@ class MPI_Bounding_Boxes {
       /////////////////////////////////////////////////////////
       
       // set the info for the number of materials on each node
-      setInfo(&num_mats_info, commSize, sendFlags, nmats, nmats);
+      setSendRecvCounts(&num_mats_info, commSize, sendFlags, nmats, nmats);
       
       // get the sorted material ids on this node
       std::vector<int> material_ids=source_state_flat.get_material_ids();
@@ -358,7 +341,7 @@ class MPI_Bounding_Boxes {
       all_material_ids.resize(num_mats_info.newNum);
 
       // sendData
-      moveData(commRank, commSize, MPI_INT, 1, 0, num_mats_info.sourceNum, 0,
+      sendData(commRank, commSize, MPI_INT, 1, 0, num_mats_info.sourceNum, 0,
         num_mats_info.sendCounts, num_mats_info.recvCounts,
         material_ids, &all_material_ids
       );
@@ -374,7 +357,7 @@ class MPI_Bounding_Boxes {
       all_material_shapes.resize(num_mats_info.newNum);
 
       // sendData
-      moveData(commRank, commSize, MPI_INT, 1, 0, num_mats_info.sourceNum, 0,
+      sendData(commRank, commSize, MPI_INT, 1, 0, num_mats_info.sourceNum, 0,
         num_mats_info.sendCounts, num_mats_info.recvCounts,
         material_shapes, &all_material_shapes
       );
@@ -387,7 +370,7 @@ class MPI_Bounding_Boxes {
       int nmatcells = source_state_flat.num_material_cells();
       
       // set the info for the number of materials on each node
-      setInfo(&num_mat_cells_info, commSize, sendFlags, nmatcells, nmatcells);
+      setSendRecvCounts(&num_mat_cells_info, commSize, sendFlags, nmatcells, nmatcells);
       
       // get the sorted material ids on this node
       std::vector<int> material_cells=source_state_flat.get_material_cells();
@@ -396,7 +379,7 @@ class MPI_Bounding_Boxes {
       all_material_cells.resize(num_mat_cells_info.newNum);
 
       // sendData
-      moveData(commRank, commSize, MPI_INT, 1, 0, num_mat_cells_info.sourceNum, 0,
+      sendData(commRank, commSize, MPI_INT, 1, 0, num_mat_cells_info.sourceNum, 0,
         num_mat_cells_info.sendCounts, num_mat_cells_info.recvCounts,
         material_cells, &all_material_cells
       );
@@ -420,7 +403,7 @@ class MPI_Bounding_Boxes {
           cellUniqueRep[i] = itr->second;
         }
       }
-          
+
       /////////////////////////////////////////////////////////
       // Fix the material cell indices to account for the fact
       // that they are local indices on the different nodes and 
@@ -432,12 +415,13 @@ class MPI_Bounding_Boxes {
       // get the local cell index offsets
       std::vector<int> offsets(commSize);
       offsets[0]=0;
-             std::partial_sum(cellInfo.recvCounts.begin(),cellInfo.recvCounts.end()-1,
+
+      std::partial_sum(cellInfo.recvCounts.begin(),cellInfo.recvCounts.end()-1,
           offsets.begin()+1);     
           
       // make life easy by keeping a running counter
       int running_counter=0;
-        
+
       // loop over the ranks
       for (int rank=0; rank<commSize; ++rank){
           
@@ -531,10 +515,12 @@ class MPI_Bounding_Boxes {
       std::vector<double> newField(sourceFieldStride*info.newNum);
 
 
-      // move the field
-      moveField(info, commRank, commSize,
-                MPI_DOUBLE, sourceFieldStride,
-                sourceField, &newField);
+
+      // send the field
+      sendField(info, commRank, commSize,
+
+      MPI_DOUBLE, sourceFieldStride,
+      sourceField, &newField);
       
       // merge the data before unpacking
       std::vector<double> newField__;
@@ -555,8 +541,7 @@ class MPI_Bounding_Boxes {
 
   } // distribute
 
-
- private:
+  private:
  
   int dim_;
   std::map<int,int> uidToOldNode_, uidToNewNode_;
@@ -571,7 +556,7 @@ class MPI_Bounding_Boxes {
     @param[in] sourceNum         Number of entities (total) on this rank
     @param[in] sourceNumOwned    Number of owned entities on this rank
    */
-  void setInfo(comm_info_t* info,
+  void setSendRecvCounts(comm_info_t* info,
                const int commSize,
                const std::vector<bool>& sendFlags,
                const int sourceNum,
@@ -602,22 +587,22 @@ class MPI_Bounding_Boxes {
       info->newNum += info->recvCounts[i];
     for (unsigned int i=0; i<commSize; i++)
       info->newNumOwned += info->recvOwnedCounts[i];
-  } // setInfo
+  } // setSendRecvCounts
 
 
   /*!
-    @brief Move values for a single data field to all ranks as needed
-    @tparam[in] T                C++ type of data to be moved
+    @brief Send values for a single data field to all ranks as needed
+    @tparam[in] T                C++ type of data to be sent
     @param[in] info              Info struct for entity type of field
     @param[in] commRank          MPI rank of this PE
     @param[in] commSize          Total number of MPI ranks
-    @param[in] mpiType           MPI type of data (MPI_???) to be moved
+    @param[in] mpiType           MPI type of data (MPI_???) to be sent
     @param[in] stride            Stride of data field
     @param[in] sourceData        Array of (old) source data
     @param[in] newData           Array of new source data
    */
   template<typename T>
-  void moveField(const comm_info_t& info,
+  void sendField(const comm_info_t& info,
                  const int commRank, const int commSize,
                  const MPI_Datatype mpiType, const int stride,
                  const std::vector<T>& sourceData,
@@ -633,12 +618,12 @@ class MPI_Bounding_Boxes {
       sendGhostCounts[i] = info.sendCounts[i] - info.sendOwnedCounts[i];
     }
 
-    moveData(commRank, commSize, mpiType, stride,
+    sendData(commRank, commSize, mpiType, stride,
              0, info.sourceNumOwned,
              0,
              info.sendOwnedCounts, info.recvOwnedCounts,
              sourceData, newData);
-    moveData(commRank, commSize, mpiType, stride,
+    sendData(commRank, commSize, mpiType, stride,
              info.sourceNumOwned, info.sourceNum,
              info.newNumOwned,
              sendGhostCounts, recvGhostCounts,
@@ -650,15 +635,15 @@ class MPI_Bounding_Boxes {
       std::cout << (*newData)[f] << " ";
     std::cout << std::endl << std::endl;
 #endif
-  } // moveField
+  } // sendField
 
 
   /*!
-    @brief Move values for a single range of data to all ranks as needed
-    @tparam[in] T                C++ type of data to be moved
+    @brief Send values for a single range of data to all ranks as needed
+    @tparam[in] T                C++ type of data to be sent
     @param[in] commRank          MPI rank of this PE
     @param[in] commSize          Total number of MPI ranks
-    @param[in] mpiType           MPI type of data (MPI_???) to be moved
+    @param[in] mpiType           MPI type of data (MPI_???) to be sent
     @param[in] stride            Stride of data field
     @param[in] sourceStart       Start location in source (send) data
     @param[in] sourceEnd         End location in source (send) data
@@ -669,7 +654,7 @@ class MPI_Bounding_Boxes {
     @param[in] newData           Array of new source data
    */
   template<typename T>
-  void moveData(const int commRank, const int commSize,
+  void sendData(const int commRank, const int commSize,
                 const MPI_Datatype mpiType, const int stride,
                 const int sourceStart, const int sourceEnd,
                 const int newStart,
@@ -723,7 +708,7 @@ class MPI_Bounding_Boxes {
       std::vector<MPI_Status> statuses(requests.size());
       MPI_Waitall(requests.size(), &(requests[0]), &(statuses[0]));
     }
-  } // moveData
+  } // sendData
 
 
   //! Correct a map to account for concatenated lists
@@ -776,11 +761,10 @@ class MPI_Bounding_Boxes {
 
   } // fixListIndices
 
-
   template <class Source_Mesh, class Target_Mesh>        
   void compute_sendflags(Source_Mesh & source_mesh_flat, Target_Mesh &target_mesh, 
               std::vector<bool> &sendFlags){
-              
+                
     // Get the MPI communicator size and rank information
     int commSize, commRank;
     MPI_Comm_size(MPI_COMM_WORLD, &commSize);
@@ -896,7 +880,6 @@ class MPI_Bounding_Boxes {
     }
   }
 
-  
   std::vector<int> to_uid(std::vector<int> const& in, vector<int>const& uid){
     std::vector<int> result;
     result.reserve(in.size());
@@ -958,6 +941,7 @@ class MPI_Bounding_Boxes {
     return result;
   }
   
+
 }; // MPI_Bounding_Boxes
 
 } // namespace Portage
