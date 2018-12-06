@@ -16,6 +16,7 @@ Please see the license file at the root of this repository, or at:
 #include <utility>
 #include <iostream>
 #include <type_traits>
+#include <memory>
 
 #ifdef HAVE_TANGRAM
 #include "tangram/driver/driver.h"
@@ -32,6 +33,7 @@ Please see the license file at the root of this repository, or at:
 #include "portage/interpolate/interpolate_2nd_order.h"
 #include "wonton/mesh/flat/flat_mesh_wrapper.h"
 #include "wonton/state/flat/flat_state_mm_wrapper.h"
+#include "wonton/state/state_vector_multi.h"
 
 #ifdef ENABLE_MPI
 #include "portage/distributed/mpi_bounding_boxes.h"
@@ -397,6 +399,17 @@ class MMDriver {
                       std::vector<int>& cell_mat_ids,
                       std::vector<double>& cell_matvolfracs,
                       std::vector<Tangram::Point<D>>& cell_mat_centroids);
+                      
+  // Convert volume fraction and centroid data from compact
+  // material-centric to compact cell-centric (ccc) form as needed by
+  // Tangram (this form uses the flat mesh and state wrappers and therefore 
+  // requires a different signature
+  void ccc_vfcen_data(std::vector<int>& cell_num_mats,
+                      std::vector<int>& cell_mat_ids,
+                      std::vector<double>& cell_matvolfracs,
+                      std::vector<Tangram::Point<D>>& cell_mat_centroids,
+                      Flat_Mesh_Wrapper<> flat_mesh_wrapper,
+                      Flat_State_Wrapper<Flat_Mesh_Wrapper<>> flat_state_wrapper);
 #endif
 };  // class MMDriver
 
@@ -860,6 +873,9 @@ int MMDriver<Search, Intersect, Interpolate, D,
   gettimeofday(&begin_timeval, 0);
 
   source_mesh_flat.initialize(source_mesh_);
+  
+  // Note the flat state should be used for everything including the centroids and
+  // volume fractions for interface reconstruction
   source_state_flat.initialize(source_state_, source_remap_var_names_);
   MPI_Bounding_Boxes distributor;
   distributor.distribute(source_mesh_flat, source_state_flat,
@@ -884,7 +900,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
   timersub(&end_timeval, &begin_timeval, &diff_timeval);
   tot_seconds_srch = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
 
-  int nmats = source_state_.num_materials();
+  int nmats = source_state_flat.num_materials();
 
 #ifdef HAVE_TANGRAM
   // Call interface reconstruction only if we got a method from the
@@ -903,7 +919,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
       typeid(DummyInterfaceReconstructor<SourceMesh_Wrapper, D,
              Matpoly_Splitter, Matpoly_Clipper>)) {
 
-    int nsourcecells = source_mesh_.num_entities(Entity_kind::CELL, Entity_type::ALL);
+    int nsourcecells = source_mesh_flat.num_entities(Entity_kind::CELL, Entity_type::ALL);
 
     std::vector<int> cell_num_mats;
     std::vector<int> cell_mat_ids;
@@ -913,8 +929,14 @@ int MMDriver<Search, Intersect, Interpolate, D,
     // Extract volume fraction and centroid data for cells in compact
     // cell-centric form (ccc)
 
+		//////////////////////////////////////////
+		// DWS this is where I left off
+		// There is a problem that Tangram is using the mesh wrapper instead of
+		// the flat mesh wrapper in places, so the counts don't align
+		// the following line breaks
+		/////////////////////////////////////////////
     ccc_vfcen_data(cell_num_mats, cell_mat_ids, cell_mat_volfracs,
-                   cell_mat_centroids);
+                   cell_mat_centroids, source_mesh_flat, source_state_flat);
 
     interface_reconstructor->set_volume_fractions(cell_num_mats,
                                                   cell_mat_ids,
@@ -1099,7 +1121,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
       bool found = false;
       int m2 = -1;
       for (int i = 0; i < nmatstrg; i++)
-        if (target_state_.material_name(i) == source_state_.material_name(m)) {
+        if (target_state_.material_name(i) == source_state_flat.material_name(m)) {
           found = true;
           m2 = i;
           break;
@@ -1121,7 +1143,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
         // FOR FIELD VALUES OF A MATERIAL IN A MULTI-MATERIAL FIELD
         // WHEN mat_get_celldata IS INVOKED.
 
-        target_state_.add_material(source_state_.material_name(m), matcellstgt);
+        target_state_.add_material(source_state_flat.material_name(m), matcellstgt);
       }
     }
     else
@@ -1309,6 +1331,113 @@ MMDriver<Search, Intersect, Interpolate, D,
       cell_mat_centroids[idx] = cell_mat_centroids_full[c*nmats+matid];
       idx++;
     }
+  }
+}
+
+
+// Convert volume fraction and centroid data from compact
+// material-centric to compact cell-centric (ccc) form as needed by
+// Tangram. Overloaded to handle the case of the flat mesh and state in 
+// distributed
+
+template <template <int, Entity_kind, class, class> class Search,
+          template <Entity_kind, class, class, class,
+          template <class, int, class, class> class,
+          class, class> class Intersect,
+          template<int, Entity_kind, class, class, class,
+          template<class, int, class, class> class,
+          class, class> class Interpolate,
+          int D,
+          class SourceMesh_Wrapper,
+          class SourceState_Wrapper,
+          class TargetMesh_Wrapper,
+          class TargetState_Wrapper,
+          template <class, int, class, class> class InterfaceReconstructorType,
+          class Matpoly_Splitter,
+          class Matpoly_Clipper>
+void
+MMDriver<Search, Intersect, Interpolate, D,
+         SourceMesh_Wrapper, SourceState_Wrapper,
+         TargetMesh_Wrapper, TargetState_Wrapper,
+         InterfaceReconstructorType, Matpoly_Splitter,
+         Matpoly_Clipper
+         >::ccc_vfcen_data(std::vector<int>& cell_num_mats,
+                           std::vector<int>& cell_mat_ids,
+                           std::vector<double>& cell_mat_volfracs,
+                           std::vector<Tangram::Point<D>>& cell_mat_centroids,
+                           Flat_Mesh_Wrapper<> flat_mesh_wrapper,
+                           Flat_State_Wrapper<Flat_Mesh_Wrapper<>> flat_state_wrapper) {
+                           
+	// get the number of cells in the flat state, Note that by construction, in the
+	// flat state, cells can be duplicated because of ghosting on other nodes
+  int nsourcecells = flat_mesh_wrapper.num_entities(Entity_kind::CELL, Entity_type::ALL);
+
+	// get the number of materials. This is the number of materials in the state
+	// manager with cells, not the number of registered materials
+  int nmats = flat_state_wrapper.num_materials();
+  
+  // a counter for the total number of material/cell combinations
+  // start clean
+  cell_num_mats.assign(nsourcecells, 0);
+  cell_mat_ids.clear();
+  cell_mat_volfracs.clear();
+  cell_mat_centroids.clear();
+  
+  //int nvals = 0;
+  
+  // get the cell materials directly from the state manager, not that by construction
+  // the materials only appear once in the set
+  std::unordered_map<int, std::unordered_set<int>> cell_materials_= 
+  	flat_state_wrapper.get_cell_materials();
+  
+  // get all the data for the volume fractions
+  std::unordered_map<int, std::vector<double>> mat_volfracs = 
+  	flat_state_wrapper.get<StateVectorMulti<double>>("mat_volfracs")->get_data();
+  
+  // get all the data for the volume fractions
+  std::unordered_map<int, std::vector<Wonton::Point<D>>> mat_centroids = 
+  	flat_state_wrapper.get<StateVectorMulti<Wonton::Point<D>>>("mat_centroids")->get_data();
+  	
+  // At this point we have the cell materials only for the unique cells that the flat
+  // state manager defines. The flat state mesh defines cells for all cells in the
+  // constituent nodes, but there are duplicates due to ghosts. The surviving cell
+  // is a little involved. It is not the id of the cell in the node where that cell is owned,
+  // as some cells may only be ghosts. The referenced id is the first appearance
+  // in the flat mesh. It may be a ghost cell in that node but that is the numbering
+  // scheme.
+  
+  // loop over cells since we already have the cell dominant cell_materials_
+  for (int i=0; i<nsourcecells; ++i) {
+  
+  	// get the materials in this cell (may be empty if cell is a duplicate)
+  	auto kv = cell_materials_.find(i);
+  	
+  	// if we don't find the cell, then just skip
+  	if ( kv== cell_materials_.end()) continue;
+  
+  	// unpack the set of materials in this cell
+  	std::unordered_set<int> materials = kv->second;
+  	
+  	// the cell id is the index into the current flat mesh list
+  	cell_num_mats[i]=materials.size();
+  	
+  	// loop over material ids (the order is arbitrary)
+  	for (int m : materials){
+  		
+  		// add the material to the ccc vector
+  		cell_mat_ids.push_back(m);
+  		
+  		// find the cell index in this material 
+  		// we need this step since a cell can appear multiple times in a material
+  		// due to the repeated appearance of ghosts
+  		int ind = flat_state_wrapper.cell_index_in_material(i,m); 		
+  		
+  		// add the volume fraction to the ccc vector
+  		cell_mat_volfracs.push_back(mat_volfracs[m][ind]);
+  		
+  		// add the material centroid to the ccc vector
+  		cell_mat_centroids.push_back(mat_centroids[m][ind]);
+  	}  
   }
 }
 
