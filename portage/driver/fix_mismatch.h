@@ -193,9 +193,9 @@ bool fix_mismatch(SourceMesh_Wrapper const & source_mesh,
 
 
   // Are some source cells not fully covered by target cells?
-  
-  if (fabs((global_xsect_volume-global_source_volume)/global_source_volume)
-      > 1.0e-12) {
+  double relvoldiff_source =
+      fabs((global_xsect_volume-global_source_volume)/global_source_volume);
+  if (relvoldiff_source > 1.0e-12) {
     mismatch = true;
     std::cerr << "\n** MESH MISMATCH -" <<
         " some source cells are not fully covered by the target mesh\n";
@@ -233,11 +233,11 @@ bool fix_mismatch(SourceMesh_Wrapper const & source_mesh,
     std::cerr << "\n";
   }
 
-
   // Are some target cells not fully coverd by source cells?
   
-  if (fabs((global_xsect_volume-global_target_volume)/global_target_volume)
-      > 1.0e-12) {
+  double relvoldiff_target =
+      fabs((global_xsect_volume-global_target_volume)/global_target_volume);
+  if (relvoldiff_target > 1.0e-12) {
     mismatch = true;
     std::cerr << "\n** MESH MISMATCH -" <<
         " some target cells are not fully covered by the source mesh\n";
@@ -269,6 +269,10 @@ bool fix_mismatch(SourceMesh_Wrapper const & source_mesh,
 
   if (!mismatch) return true;
   
+
+  // Discrepancy between intersection volume and source mesh volume PLUS
+  // Discrepancy between intersection volume and target mesh volume
+  double relvoldiff = relvoldiff_source + relvoldiff_target;
   
 
   // Collect the empty target cells in layers starting from the ones
@@ -337,7 +341,29 @@ bool fix_mismatch(SourceMesh_Wrapper const & source_mesh,
     // for now get lower and upper bounds from source mesh itself
     // later we may need to get them from the calling application
     double lower_bound = *std::min_element(source_data, source_data+nsourceents);
+    double global_lower_bound = lower_bound;
+#ifdef ENABLE_MPI
+    MPI_Allreduce(&lower_bound, &global_lower_bound, 1, MPI_INT, MPI_MIN,
+                  MPI_COMM_WORLD);
+#endif
+    
     double upper_bound = *std::max_element(source_data, source_data+nsourceents);
+    double global_upper_bound = upper_bound;
+#ifdef ENABLE_MPI
+    MPI_Allreduce(&upper_bound, &global_upper_bound, 1, MPI_INT, MPI_MAX,
+                  MPI_COMM_WORLD);
+#endif
+    
+
+    if (fabs((global_lower_bound-global_upper_bound)/global_lower_bound) < 1.0e-06) {
+      // The field is constant over the source mesh/part. We HAVE to
+      // relax the bounds to be able to conserve the integral quantity
+      // AND maintain a constant. Relax by margins derived from the
+      // relative difference in volume
+
+      global_lower_bound *= (1.0-1.1*relvoldiff);
+      global_upper_bound *= (1.0+1.1*relvoldiff);
+    }
     
     std::string const& trg_var_name = trg_var_names[i];
     double *target_data;
@@ -438,12 +464,12 @@ bool fix_mismatch(SourceMesh_Wrapper const & source_mesh,
            it != target_mesh.end(onwhat, Entity_type::PARALLEL_OWNED); it++) {
         int t = *it;
 
-        if ((target_data[t]-udiff) < lower_bound) {
+        if ((target_data[t]-udiff) < global_lower_bound) {
           // Subtracting the full excess will make this cell violate the
           // lower bound. So subtract only as much as will put this cell
           // exactly at the lower bound
 
-          target_data[t] = lower_bound;
+          target_data[t] = global_lower_bound;
 
           std::cerr << "Hit lower bound for cell " << t << " on rank " << rank
                     << "\n";
@@ -453,12 +479,12 @@ bool fix_mismatch(SourceMesh_Wrapper const & source_mesh,
 
           adj_target_volume -= target_cell_volume[t];
 
-        } else if ((target_data[t]-udiff) > upper_bound) {  // udiff < 0
+        } else if ((target_data[t]-udiff) > global_upper_bound) {  // udiff < 0
           // Adding the full deficit will make this cell violate the
           // upper bound. So add only as much as will put this cell
           // exactly at the upper bound
 
-          target_data[t] = upper_bound;
+          target_data[t] = global_upper_bound;
 
           std::cerr << "Hit upper bound for cell " << t << " on rank " << rank
                     << "\n";
