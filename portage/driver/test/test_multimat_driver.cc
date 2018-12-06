@@ -21,8 +21,8 @@ Please see the license file at the root of this repository, or at:
 #include "tangram/driver/write_to_gmv.h"
 
 #include "portage/driver/mmdriver.h"
-#include "portage/wonton/mesh/jali/jali_mesh_wrapper.h"
-#include "portage/wonton/state/jali/jali_state_wrapper.h"
+#include "wonton/mesh/jali/jali_mesh_wrapper.h"
+#include "wonton/state/jali/jali_state_wrapper.h"
 #include "portage/search/search_kdtree.h"
 #include "portage/intersect/intersect_r2d.h"
 #include "portage/intersect/intersect_r3d.h"
@@ -334,13 +334,13 @@ TEST(MMDriver, ThreeMat2D_1stOrder) {
 
     for (int ic = 0; ic < nmatcells; ic++)
       for (int d = 0; d < 2; d++)
-        ASSERT_NEAR(matcen_trg[m][ic][d], matcen_remap[ic][d], 1.0e-12);
+        ASSERT_NEAR(matcen_trg[m][ic][d], matcen_remap[ic][d], 1.0e-10);
 
     double const *density_remap;
     targetStateWrapper.mat_get_celldata("density", m, &density_remap);
 
     for (int ic = 0; ic < nmatcells; ic++)
-      ASSERT_NEAR(matrho[m], density_remap[ic], 1.0e-12);
+      ASSERT_NEAR(matrho[m], density_remap[ic], 1.0e-10);
 
 #ifdef DEBUG
     std::cerr << "Number of cells in material " << m << " is " << nmatcells << "\n";
@@ -680,9 +680,11 @@ TEST(MMDriver, ThreeMat3D_1stOrder) {
     Portage::Point<3> const *matcen_remap;
     targetStateWrapper.mat_get_celldata("mat_centroids", m, &matcen_remap);
 
+    // MOF cannot match moments and centroids as well as it can volume
+    // fractions - so use looser tolerances
     for (int ic = 0; ic < nmatcells; ic++)
       for (int d = 0; d < 3; d++)
-        ASSERT_NEAR(matcen_trg[m][ic][d], matcen_remap[ic][d], 1.0e-12);
+        ASSERT_NEAR(matcen_trg[m][ic][d], matcen_remap[ic][d], 1.0e-9);
 
     double const *density_remap;
     targetStateWrapper.mat_get_celldata("density", m, &density_remap);
@@ -698,7 +700,8 @@ TEST(MMDriver, ThreeMat3D_1stOrder) {
       std::cerr <<
           "  ID = " << std::setw(2) << matcells_remap[m][ic] <<
           "  Vol.Frac. = " << std::setw(6) << matvf_remap[ic] <<
-          "  Centroid = " << std::setw(6) << matcen_remap[ic][0] << std::setw(6) << matcen_remap[ic][1] <<
+          "  Centroid = " << std::setw(6) << matcen_remap[ic][0] << " " <<
+          std::setw(6) << matcen_remap[ic][1] << " " << std::setw(6) << matcen_remap[ic][2] <<
           "  Density = " << std::setw(4) << density_remap[ic] << "\n";
     std::cerr << "\n";
 #endif
@@ -724,7 +727,7 @@ TEST(MMDriver, ThreeMat3D_1stOrder) {
     }
     totcen /= mass;
 
-    ASSERT_NEAR(matvol[m], volume, 1.0e-10);
+    ASSERT_NEAR(matvol[m], volume, 1.0e-12);
 
 #ifdef DEBUG
     std::cerr << "\nmaterial " << m << "\n";

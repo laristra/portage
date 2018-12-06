@@ -1,44 +1,8 @@
 /*
-Copyright (c) 2016, Los Alamos National Security, LLC
-All rights reserved.
-
-Copyright 2016. Los Alamos National Security, LLC. This software was produced
-under U.S. Government contract DE-AC52-06NA25396 for Los Alamos National
-Laboratory (LANL), which is operated by Los Alamos National Security, LLC for
-the U.S. Department of Energy. The U.S. Government has rights to use,
-reproduce, and distribute this software.  NEITHER THE GOVERNMENT NOR LOS ALAMOS
-NATIONAL SECURITY, LLC MAKES ANY WARRANTY, EXPRESS OR IMPLIED, OR ASSUMES ANY
-LIABILITY FOR THE USE OF THIS SOFTWARE.  If software is modified to produce
-derivative works, such modified software should be clearly marked, so as not to
-confuse it with the version available from LANL.
-
-Additionally, redistribution and use in source and binary forms, with or
-without modification, are permitted provided that the following conditions are
-met:
-
-1. Redistributions of source code must retain the above copyright notice,
-   this list of conditions and the following disclaimer.
-2. Redistributions in binary form must reproduce the above copyright
-   notice, this list of conditions and the following disclaimer in the
-   documentation and/or other materials provided with the distribution.
-3. Neither the name of Los Alamos National Security, LLC, Los Alamos
-   National Laboratory, LANL, the U.S. Government, nor the names of its
-   contributors may be used to endorse or promote products derived from this
-   software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY LOS ALAMOS NATIONAL SECURITY, LLC AND
-CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
-PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL LOS ALAMOS NATIONAL
-SECURITY, LLC OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
-BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER
-IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-POSSIBILITY OF SUCH DAMAGE.
- */
-
+This file is part of the Ristra portage project.
+Please see the license file at the root of this repository, or at:
+    https://github.com/laristra/portage/blob/master/LICENSE
+*/
 
 
 #include <iostream>
@@ -53,10 +17,9 @@ POSSIBILITY OF SUCH DAMAGE.
 #include "mpi.h"
 #endif
 
-#include "portage/driver/driver.h"
+// portage includes
+#include "portage/driver/mmdriver.h"
 #include "portage/driver/driver_mesh_swarm_mesh.h"
-#include "portage/simple_mesh/simple_mesh.h"
-#include "portage/simple_mesh/simple_state.h"
 #include "portage/intersect/intersect_r2d.h"
 #include "portage/intersect/intersect_r3d.h"
 #include "portage/interpolate/interpolate_1st_order.h"
@@ -64,12 +27,15 @@ POSSIBILITY OF SUCH DAMAGE.
 #include "portage/search/search_points_by_cells.h"
 #include "portage/accumulate/accumulate.h"
 #include "portage/estimate/estimate.h"
-#include "portage/support/Point.h"
 #include "portage/support/operator.h"
-#include "portage/wonton/mesh/simple_mesh/simple_mesh_wrapper.h"
-#include "portage/wonton/state/simple_state/simple_state_wrapper.h"
-#include "portage/wonton/mesh/flat/flat_mesh_wrapper.h"
-// amh: TODO--change to simple mesh?
+
+// wonton includes
+#include "wonton/mesh/simple/simple_mesh.h"
+#include "wonton/mesh/simple/simple_mesh_wrapper.h"
+#include "wonton/state/state_vector_uni.h"
+#include "wonton/state/simple/simple_state_mm_wrapper.h"
+#include "wonton/mesh/flat/flat_mesh_wrapper.h"
+
 namespace {
 
 double TOL = 1e-6;
@@ -83,18 +49,16 @@ double TOL = 1e-6;
 class MSMDriverTest : public ::testing::Test {
  protected:
   // Source and target meshes
-  std::shared_ptr<Portage::Simple_Mesh> sourceMesh;
-  std::shared_ptr<Portage::Simple_Mesh> targetMesh;
-  // Source and target mesh state
-  Portage::Simple_State sourceState;
-  Portage::Simple_State targetState;
-  Portage::Simple_State targetState2;
+  std::shared_ptr<Wonton::Simple_Mesh> sourceMesh;
+  std::shared_ptr<Wonton::Simple_Mesh> targetMesh;
+  
   // Wrappers for interfacing with the underlying mesh data structures
   Wonton::Simple_Mesh_Wrapper sourceMeshWrapper;
   Wonton::Simple_Mesh_Wrapper targetMeshWrapper;
-  Wonton::Simple_State_Wrapper sourceStateWrapper;
-  Wonton::Simple_State_Wrapper targetStateWrapper;
-  Wonton::Simple_State_Wrapper targetStateWrapper2;
+  Wonton::Simple_State_Wrapper<Wonton::Simple_Mesh_Wrapper> sourceStateWrapper;
+  Wonton::Simple_State_Wrapper<Wonton::Simple_Mesh_Wrapper> targetStateWrapper;
+  Wonton::Simple_State_Wrapper<Wonton::Simple_Mesh_Wrapper> targetStateWrapper2;
+  
   // Operator domains and data
   Portage::vector<Portage::Meshfree::Operator::Domain> domains_;
 
@@ -127,35 +91,45 @@ class MSMDriverTest : public ::testing::Test {
     // Create the source data for given function
     Wonton::Flat_Mesh_Wrapper<double> sourceFlatMesh;
     sourceFlatMesh.initialize(sourceMeshWrapper);
+  
     for (unsigned int c = 0; c < nsrccells; ++c) {
       Portage::Point<Dimension> cen;
       sourceFlatMesh.cell_centroid(c, &cen);
       sourceData[c] = compute_initial_field(cen);
     }
-    Portage::Simple_State::vec &sourceVec(sourceState.add("celldata",
-      Portage::Entity_kind::CELL, &(sourceData[0])));
+    
+    sourceStateWrapper.add(std::make_shared<Wonton::StateVectorUni<>>(
+    	"celldata", Portage::Entity_kind::CELL, sourceData)
+    );
 
     for (unsigned int c = 0; c < nsrcnodes; ++c) {
       Portage::Point<Dimension> cen;
       sourceFlatMesh.node_get_coordinates(c, &cen);
       sourceDataNode[c] = compute_initial_field(cen);
     }
-    Portage::Simple_State::vec &sourceVecNode(sourceState.add("nodedata",
-      Portage::Entity_kind::NODE, &(sourceDataNode[0])));
+    sourceStateWrapper.add(std::make_shared<Wonton::StateVectorUni<>>(
+    	"nodedata", Portage::Entity_kind::NODE, sourceDataNode));
 
     // Build the target state storage
     const int ntarcells = targetMeshWrapper.num_owned_cells();
     const int ntarnodes = targetMeshWrapper.num_owned_nodes();
     std::vector<double> targetData(ntarcells), targetData2(ntarcells);
     std::vector<double> targetDataNode(ntarnodes), targetData2Node(ntarnodes);
-    Portage::Simple_State::vec &targetVec(targetState.add("celldata",
-      Portage::Entity_kind::CELL, &(targetData[0])));
-    Portage::Simple_State::vec &targetVec2(targetState2.add("celldata",
-      Portage::Entity_kind::CELL, &(targetData2[0])));
-    Portage::Simple_State::vec &targetVecNode(targetState.add("nodedata",
-      Portage::Entity_kind::NODE, &(targetDataNode[0])));
-    Portage::Simple_State::vec &targetVec2Node(targetState2.add("nodedata",
-      Portage::Entity_kind::NODE, &(targetData2Node[0])));
+    
+    targetStateWrapper.add(std::make_shared<Wonton::StateVectorUni<>>(
+    	"celldata", Portage::Entity_kind::CELL, targetData)
+    );
+    targetStateWrapper.add(std::make_shared<Wonton::StateVectorUni<>>(
+    	"nodedata", Portage::Entity_kind::NODE, targetDataNode)
+    );
+
+    targetStateWrapper2.add(std::make_shared<Wonton::StateVectorUni<>>(
+    	"celldata", Portage::Entity_kind::CELL, targetData2)
+    );
+    targetStateWrapper2.add(std::make_shared<Wonton::StateVectorUni<>>(
+    	"nodedata", Portage::Entity_kind::NODE, targetData2Node)
+    );
+
 
     //  Register the variable name and interpolation order with the driver
     std::vector<std::string> remap_fields;
@@ -163,12 +137,12 @@ class MSMDriverTest : public ::testing::Test {
     remap_fields.push_back("nodedata");
 
     //  Build the mesh-mesh driver data for this mesh type
-    Portage::Driver<Portage::SearchKDTree,
+    Portage::MMDriver<Portage::SearchKDTree,
     Intersect,
     Interpolate,
     Dimension,
-    Wonton::Simple_Mesh_Wrapper, Wonton::Simple_State_Wrapper,
-    Wonton::Simple_Mesh_Wrapper, Wonton::Simple_State_Wrapper>
+    Wonton::Simple_Mesh_Wrapper, Wonton::Simple_State_Wrapper<Wonton::Simple_Mesh_Wrapper>,
+    Wonton::Simple_Mesh_Wrapper, Wonton::Simple_State_Wrapper<Wonton::Simple_Mesh_Wrapper>>
     mmdriver(sourceMeshWrapper, sourceStateWrapper,
              targetMeshWrapper, targetStateWrapper);
     mmdriver.set_remap_var_names(remap_fields);
@@ -222,8 +196,8 @@ class MSMDriverTest : public ::testing::Test {
       Portage::Meshfree::Accumulate,
       Portage::Meshfree::Estimate,
       Dimension,
-      Wonton::Simple_Mesh_Wrapper, Wonton::Simple_State_Wrapper,
-      Wonton::Simple_Mesh_Wrapper, Wonton::Simple_State_Wrapper
+      Wonton::Simple_Mesh_Wrapper, Wonton::Simple_State_Wrapper<Wonton::Simple_Mesh_Wrapper>,
+      Wonton::Simple_Mesh_Wrapper, Wonton::Simple_State_Wrapper<Wonton::Simple_Mesh_Wrapper>
     >
     msmdriver(sourceMeshWrapper, sourceStateWrapper,
               targetMeshWrapper, targetStateWrapper2,
@@ -248,18 +222,14 @@ class MSMDriverTest : public ::testing::Test {
     double stdval, err;
     double toterr = 0.;
 
-    Portage::Simple_State::vec &cellvecout(targetState.get("celldata",
-                                                           Portage::CELL));
-    Portage::Simple_State::vec &cellvecout2(targetState2.get("celldata",
-                                                             Portage::CELL));
-    Portage::Simple_State::vec &nodevecout(targetState.get("nodedata",
-                                                           Portage::NODE));
-    Portage::Simple_State::vec &nodevecout2(targetState2.get("nodedata",
-                                                             Portage::NODE));
+    auto& cellvecout = std::static_pointer_cast<Wonton::StateVectorUni<>>(targetStateWrapper.get("celldata"))->get_data();
+    auto& cellvecout2 = std::static_pointer_cast<Wonton::StateVectorUni<>>(targetStateWrapper2.get("celldata"))->get_data();
+    auto& nodevecout = std::static_pointer_cast<Wonton::StateVectorUni<>>(targetStateWrapper.get("nodedata"))->get_data();
+    auto& nodevecout2 = std::static_pointer_cast<Wonton::StateVectorUni<>>(targetStateWrapper2.get("nodedata"))->get_data();
 
     Wonton::Flat_Mesh_Wrapper<double> targetFlatMesh;
     targetFlatMesh.initialize(targetMeshWrapper);
-
+  
     if (oper8or != Portage::Meshfree::Operator::VolumeIntegral) {
 
       for (int c = 0; c < ntarcells; ++c) {
@@ -335,13 +305,12 @@ class MSMDriverTest : public ::testing::Test {
 }
 
   // Constructor for Driver test
-  MSMDriverTest(std::shared_ptr<Portage::Simple_Mesh> s,
-                std::shared_ptr<Portage::Simple_Mesh> t) :
+  MSMDriverTest(std::shared_ptr<Wonton::Simple_Mesh> s,
+                std::shared_ptr<Wonton::Simple_Mesh> t) :
     sourceMesh(s), targetMesh(t),
-    sourceState(sourceMesh), targetState(targetMesh), targetState2(targetMesh),
     sourceMeshWrapper(*sourceMesh), targetMeshWrapper(*targetMesh),
-    sourceStateWrapper(sourceState), targetStateWrapper(targetState),
-    targetStateWrapper2(targetState2)
+    sourceStateWrapper(sourceMeshWrapper), targetStateWrapper(targetMeshWrapper),
+    targetStateWrapper2(targetMeshWrapper)
   {}
 
 };
@@ -350,8 +319,8 @@ class MSMDriverTest : public ::testing::Test {
 // contained in source
 struct MSMDriverTest2D : MSMDriverTest {
   MSMDriverTest2D(): MSMDriverTest(
-    std::make_shared<Portage::Simple_Mesh>(0.0, 0.0, 1.0, 1.0, 10, 10),
-    std::make_shared<Portage::Simple_Mesh>(0.3, 0.3, 0.7, 0.7, 4,  4)) {}
+    std::make_shared<Wonton::Simple_Mesh>(0.0, 0.0, 1.0, 1.0, 10, 10),
+    std::make_shared<Wonton::Simple_Mesh>(0.3, 0.3, 0.7, 0.7, 4,  4)) {}
 };
 
 
@@ -359,8 +328,8 @@ struct MSMDriverTest2D : MSMDriverTest {
 // contained in source
 struct MSMDriverTest3D : MSMDriverTest {
   MSMDriverTest3D(): MSMDriverTest(
-    std::make_shared<Portage::Simple_Mesh>(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 10, 10, 10),
-    std::make_shared<Portage::Simple_Mesh>(0.3, 0.3, 0.3, 0.7, 0.7, 0.7,  4,  4,  4)) {}
+    std::make_shared<Wonton::Simple_Mesh>(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 10, 10, 10),
+    std::make_shared<Wonton::Simple_Mesh>(0.3, 0.3, 0.3, 0.7, 0.7, 0.7,  4,  4,  4)) {}
 };
 
 // Methods for computing initial field values

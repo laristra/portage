@@ -10,15 +10,16 @@ Please see the license file at the root of this repository, or at:
  ** Contains data structures and prototypes for manipulating polygon data.
  ** ----------------------------------------------------------------------------
  */
-#ifndef _KDTREE_H_
-#define _KDTREE_H_
+#ifndef PORTAGE_SEARCH_KDTREE_H_
+#define PORTAGE_SEARCH_KDTREE_H_
 
 #include <vector>
 #include <set>
 #include <cstdlib>
-#include "BoundBox.h"
-#include "portage/support/Point.h"
-#include "portage/support/Vector.h"
+
+#include "portage/search/BoundBox.h"
+#include "portage/support/portage.h"
+
 
 namespace gk {
 
@@ -486,7 +487,7 @@ void Intersect(const IsotheticBBox<D>& box,
 }
 
 #undef SWAP
-}
+}  // namespace gk
 
-#endif /* _KDTREE_H_ */
+#endif  // PORTAGE_SEARCH_KDTREE_H_
 

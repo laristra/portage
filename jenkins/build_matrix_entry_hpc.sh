@@ -31,10 +31,10 @@ fi
 
 # set modules and install paths
 
-jali_version=0.9.8
+jali_version=1.0.0
 openmpi_version=2.1.2
-tangram_version=475b813919f
-xmof2d_version=0.9
+tangram_version=0.9.1
+xmof2d_version=0.9.1
 lapack_version=3.8.0
 
 export NGC=/usr/projects/ngc

@@ -5,10 +5,15 @@
 */
 
 #include <stdlib.h>
-#include "portage/support/portage.h"
+
+#include <stdexcept>
+#include <iostream>
+#include <sstream>
 #include <fstream>
 #include <vector>
 #include <string>
+
+#include "portage/support/portage.h"
 
 /*!
  @brief Reads material data for a mesh from a provided binary file.
@@ -37,7 +42,7 @@ void read_material_data(const Mesh_Wrapper& mesh,
   cell_mat_ids.clear();
   cell_mat_volfracs.clear();
   cell_mat_centroids.clear();
-  
+
   std::ifstream os(mesh_data_fname.c_str(), std::ifstream::binary);
   if (!os.good()) {
     std::ostringstream os;
@@ -45,7 +50,7 @@ void read_material_data(const Mesh_Wrapper& mesh,
       " for binary input" << std::endl;
     throw std::runtime_error(os.str());
   }
-  
+
   int data_dim;
   os.read(reinterpret_cast<char *>(&data_dim), sizeof(int));
   assert(data_dim == D);
@@ -80,10 +85,15 @@ void read_material_data(const Mesh_Wrapper& mesh,
       continue;
     }
     for (int im = 0; im < cell_num_mats[icell]; im++) {
-      double cen_x, cen_y;
+      double cen_x, cen_y, cen_z;
       os.read(reinterpret_cast<char *>(&cen_x), sizeof(double));
       os.read(reinterpret_cast<char *>(&cen_y), sizeof(double));
-      cell_mat_centroids.push_back(Portage::Point<D>(cen_x, cen_y));
+      if (D == 2)
+        cell_mat_centroids.push_back(Portage::Point<D>(cen_x, cen_y));
+      else if (D == 3) {
+        os.read(reinterpret_cast<char *>(&cen_z), sizeof(double));
+        cell_mat_centroids.push_back(Portage::Point<D>(cen_x, cen_y, cen_z));
+      }
     }
   }
   os.close();

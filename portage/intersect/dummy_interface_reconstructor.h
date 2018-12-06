@@ -31,7 +31,7 @@ class DummyInterfaceReconstructor {
 
 #ifdef HAVE_TANGRAM
   DummyInterfaceReconstructor(Mesh_Wrapper const& mesh,
-                              const Tangram::IterativeMethodTolerances_t& im_tols,
+                              const std::vector<Tangram::IterativeMethodTolerances_t>& im_tols,
                               const bool all_convex = false) {}
 
   void set_volume_fractions(std::vector<int> const& cell_num_mats,

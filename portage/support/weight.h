@@ -3,8 +3,8 @@ This file is part of the Ristra portage project.
 Please see the license file at the root of this repository, or at:
     https://github.com/laristra/portage/blob/master/LICENSE
 */
-#ifndef WEIGHT_H_INC_
-#define WEIGHT_H_INC_
+#ifndef PORTAGE_SUPPORT_WEIGHT_H_
+#define PORTAGE_SUPPORT_WEIGHT_H_
 
 #include <cmath>
 #include <array>
@@ -12,7 +12,8 @@ Please see the license file at the root of this repository, or at:
 #include <limits>
 #include <vector>
 
-#include "portage/support/Point.h"
+// portage includes
+#include "portage/support/portage.h"
 
 namespace Portage {
 namespace Meshfree {
@@ -370,8 +371,8 @@ double eval(const Geometry geo,
   return result;
 }
 
-}
-}
-}
+}  // namespace Weight
+}  // namespace Meshfree
+}  // namespace Portage
 
-#endif // WEIGHT_H_INC_
+#endif  // PORTAGE_SUPPORT_WEIGHT_H_

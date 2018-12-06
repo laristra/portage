@@ -4,25 +4,36 @@
   https://github.com/laristra/portage/blob/master/LICENSE
 */
 
-#include <math.h>
-#include "portage/wonton/mesh/simple_mesh/simple_mesh_wrapper.h"
-#include "portage/simple_mesh/simple_mesh.h"
+#include <cmath>
+#include <vector>
+#include <iostream>
+#include <sstream>
+#include <memory>
+#include <algorithm>
+#include <stdexcept>
+
+// portage includes
+#include "portage/search/search_simple.h"
+extern "C" {
+#include "portage/intersect/r2d.h"
+}
+#include "portage/intersect/intersect_r2d.h"
+
+// wonton includes
+#include "wonton/mesh/simple/simple_mesh.h"
+#include "wonton/mesh/simple/simple_mesh_wrapper.h"
+
+// tangram includes
 #include "tangram/driver/driver.h"
 #include "tangram/reconstruct/xmof2D_wrapper.h"
 #include "tangram/driver/write_to_gmv.h"
-#include "portage/search/search_simple.h"
 #include "tangram/driver/CellMatPoly.h"
 #include "tangram/support/MatPoly.h"
-#include "portage/intersect/intersect_r2d.h"
-#include "tangram/simple_mesh/simple_mesh.h"
 
 #ifdef ENABLE_MPI
 #include "mpi.h"
 #endif
 
-extern "C" {
-#include "portage/intersect/r2d.h"
-}
 
 /*!
  @file ir_linetest_app.cc
@@ -49,8 +60,8 @@ extern "C" {
 
 
 /* Refence material interface is given in the form
-   y = mat_int_a*x + mat_int_b 
-   Point (Px,Py) is below the line if 
+   y = mat_int_a*x + mat_int_b
+   Point (Px,Py) is below the line if
    Py < mat_int_a*Px + mat_int_b
 */
 const double mat_int_a = 1.5;
@@ -193,7 +204,7 @@ double get_ir_error(const Mesh_Wrapper& Mesh,
                     const double eps = deps);
 
 /*!
- @brief Intersects material polygons of source cell with target cell and accumulates 
+ @brief Intersects material polygons of source cell with target cell and accumulates
         material moment data.
  @param[in/out] mat_moments 2D vector containing moment data by material (indexed first by
              mat_id and then by moment).
@@ -249,15 +260,15 @@ int main(int argc, char** argv) {
   int s_ny = atoi(argv[2]);
   std::vector<double> xbnds = {0.0, 1.0};
   std::vector<double> ybnds = {0.0, 1.0};
- 
-  Portage::Simple_Mesh source_mesh(xbnds[0], ybnds[0],
+
+  Wonton::Simple_Mesh source_mesh(xbnds[0], ybnds[0],
                                    xbnds[1], ybnds[1],
                                    s_nx, s_ny);
   Wonton::Simple_Mesh_Wrapper source_mesh_wrapper(source_mesh);
 
   int t_nx = atoi(argv[3]);
   int t_ny = atoi(argv[4]);
-  Portage::Simple_Mesh target_mesh(xbnds[0], ybnds[0],
+  Wonton::Simple_Mesh target_mesh(xbnds[0], ybnds[0],
                                    xbnds[1], ybnds[1],
                                    t_nx, t_ny);
   Wonton::Simple_Mesh_Wrapper target_mesh_wrapper(target_mesh);
@@ -272,13 +283,13 @@ int main(int argc, char** argv) {
   std::vector<Tangram::Point2> cell_mat_centroids;
   std::vector<int> offsets;
   get_materials_data(source_mesh_wrapper, mat_int_a, mat_int_b,
-                     cell_num_mats, cell_mat_ids, 
+                     cell_num_mats, cell_mat_ids,
                      cell_mat_volfracs, cell_mat_centroids, offsets);
-  
-  Tangram::IterativeMethodTolerances_t tol{100, 1e-12, 1e-12};
+
+  std::vector<Tangram::IterativeMethodTolerances_t> tols(2,{100, 1e-12, 1e-12});
   Tangram::Driver<Tangram::XMOF2D_Wrapper, 2,
-    Wonton::Simple_Mesh_Wrapper> source_xmof_driver(source_mesh_wrapper, tol);
-  
+    Wonton::Simple_Mesh_Wrapper> source_xmof_driver(source_mesh_wrapper, tols);
+
   source_xmof_driver.set_volume_fractions(cell_num_mats, cell_mat_ids,
                                    cell_mat_volfracs, cell_mat_centroids);
   source_xmof_driver.reconstruct();
@@ -290,7 +301,7 @@ int main(int argc, char** argv) {
                                           cell_num_mats, cellmatpoly_list, deps);
   std::cout << "Reconstruction error for the source mesh -> " << source_ir_rel_error <<
              std::endl;
-  
+
   Tangram::write_to_gmv(source_mesh_wrapper, 2, cell_num_mats, cell_mat_ids,
                         cellmatpoly_list, "source_mesh.gmv");
 
@@ -329,7 +340,7 @@ int main(int argc, char** argv) {
           // Get the matpoly and determine which material it contains
           auto matpoly = cellmatpoly->get_ith_matpoly(matpoly_id);
           int mat_id=cellmatpoly->matpoly_matid(matpoly_id);
-          
+
           // Get Tangram points for matpoly, convert to Portage points
           std::vector<Portage::Point<2>> source_points;
           for (auto p : matpoly.points()) {
@@ -339,7 +350,7 @@ int main(int argc, char** argv) {
                              source_points,target_points,
                              tcell_mat_ids,tcell_num_mats,tc,idx);
         }
-        
+
       } else { // Single material cell
 
         // Get Tangram points for matpoly, convert to Portage points
@@ -367,7 +378,7 @@ int main(int argc, char** argv) {
   // Perform final interface reconstruction on target mesh, then write to file
   // for comparison with source mesh
   Tangram::Driver<Tangram::XMOF2D_Wrapper, 2,
-    Wonton::Simple_Mesh_Wrapper> target_xmof_driver(target_mesh_wrapper, tol);
+    Wonton::Simple_Mesh_Wrapper> target_xmof_driver(target_mesh_wrapper, tols);
   target_xmof_driver.set_volume_fractions(tcell_num_mats, tcell_mat_ids,
                                    tcell_mat_volfracs, tcell_mat_centroids);
   target_xmof_driver.reconstruct();
@@ -380,7 +391,7 @@ int main(int argc, char** argv) {
   Tangram::write_to_gmv(target_mesh_wrapper, 2, tcell_num_mats, tcell_mat_ids,
   tcellmatpoly_list, "target_mesh.gmv");
 
-#ifdef ENABLE_MPI  
+#ifdef ENABLE_MPI
   MPI_Finalize();
 #endif
 }
@@ -420,7 +431,7 @@ void R2DizeCell(const Mesh_Wrapper& Mesh,
     vertices[ipt].xy[0] = cell_points[ipt][0];
     vertices[ipt].xy[1] = cell_points[ipt][1];
   }
-  
+
   r2d_init_poly(&r2d_polygon, vertices, npoints);
   delete vertices;
 }
@@ -461,7 +472,7 @@ int CellPosition(const Mesh_Wrapper& Mesh,
     result = -1;
   else if (counter_on + counter_off == npoints)
     result = 1;
-  
+
   return result;
 }
 
@@ -479,7 +490,7 @@ int CellPosition(const Mesh_Wrapper& Mesh,
  vector, requires computations of offsets
  @param[out] cell_mat_centroids Centroids of materials in each mesh cell, a flat vector,
  requires computations of offsets
- @param[out] offsets Offset into cell_mat_ids giving the starting section for each cell 
+ @param[out] offsets Offset into cell_mat_ids giving the starting section for each cell
 */
 template <class Mesh_Wrapper>
 void get_materials_data(const Mesh_Wrapper& Mesh,
@@ -491,12 +502,12 @@ void get_materials_data(const Mesh_Wrapper& Mesh,
                         std::vector<Tangram::Point2>& cell_mat_centroids,
                         std::vector<int>& offsets) {
   const int POLY_ORDER = 1;  //Max degree of moments to calculate
-  
+
   cell_num_mats.clear();
   cell_mat_ids.clear();
   cell_mat_volfracs.clear();
   cell_mat_centroids.clear();
-  
+
   r2d_plane r2d_line;
   R2DizeLine(line_a, line_b, r2d_line);
   int ncells = Mesh.num_owned_cells();
@@ -506,7 +517,7 @@ void get_materials_data(const Mesh_Wrapper& Mesh,
     Portage::Point2 cell_centroid;
     Mesh.cell_centroid(icell, &cell_centroid);
     Tangram::Point2 cell_cen(cell_centroid);
-    
+
     int cell_pos = CellPosition(Mesh, icell, line_a, line_b);
     if (cell_pos == 0) {
       r2d_poly cell_r2d_poly;
@@ -518,14 +529,14 @@ void get_materials_data(const Mesh_Wrapper& Mesh,
         throw std::runtime_error("Negative area of the clipped polygon");
       if ((moments[0] > seps) && (moments[0] < cell_size - seps)) {
         cell_num_mats[icell] = 2;
-        
+
         cell_mat_ids.push_back(mat_id_above);
         double poly_above_vfrac = moments[0]/cell_size;
         cell_mat_volfracs.push_back(poly_above_vfrac);
         Tangram::Point2 poly_above_cen(
           moments[1]/moments[0], moments[2]/moments[0]);
         cell_mat_centroids.push_back(poly_above_cen);
-        
+
         cell_mat_ids.push_back(mat_id_below);
         cell_mat_volfracs.push_back(1.0 - poly_above_vfrac);
         Tangram::Point2 poly_below_cen(
@@ -571,7 +582,7 @@ int PointPosition(const Portage::Point2& pt,
   int pos;
   if (std::fabs(prj) < eps) pos = 0;
   else pos = std::signbit(prj) ? -1 : 1;
-  
+
   return pos;
 }
 
@@ -591,7 +602,7 @@ Portage::Point2 LinesIntersect(std::vector< std::vector<Portage::Point2> > lines
 
   double denom = (lines_pts[0][0][0] - lines_pts[0][1][0])*(lines_pts[1][0][1] - lines_pts[1][1][1]) -
   (lines_pts[0][0][1] - lines_pts[0][1][1])*(lines_pts[1][0][0] - lines_pts[1][1][0]);
-  
+
   if (std::fabs(denom) > denom_eps) {
     p_int[0] = (lines_pts[0][0][0]*lines_pts[0][1][1] - lines_pts[0][0][1]*lines_pts[0][1][0])*
     (lines_pts[1][0][0] - lines_pts[1][1][0]) -
@@ -601,7 +612,7 @@ Portage::Point2 LinesIntersect(std::vector< std::vector<Portage::Point2> > lines
     (lines_pts[1][0][1] - lines_pts[1][1][1]) -
     (lines_pts[1][0][0]*lines_pts[1][1][1] - lines_pts[1][0][1]*lines_pts[1][1][0])*
     (lines_pts[0][0][1] - lines_pts[0][1][1]);
-    
+
     p_int /= denom;
   }
   else {
@@ -638,7 +649,7 @@ Portage::Point2 LinesIntersect(std::vector< std::vector<Portage::Point2> > lines
         end_pts[1] = mid_pt;
     } while (mid_pt_pos != 0);
   }
-  
+
   return p_int;
 }
 
@@ -743,7 +754,7 @@ double get_ir_error(const Mesh_Wrapper& Mesh,
         Portage::Point2 ref_int = LinesIntersect({side_pts, line_pts}, denom_eps, eps);
         ref_int_pts.push_back(ref_int);
       }
-    }    
+    }
     if (ref_int_pts.size() != 2)
       throw std::runtime_error("Expected two intersection points!");
 
@@ -758,7 +769,7 @@ double get_ir_error(const Mesh_Wrapper& Mesh,
     else {
       std::vector<Tangram::Point2> int_face_pts =
         cell_mat_poly.matface_points(iintfaces[0]);
-      std::vector<Portage::Point2> ir_int_pts = { Portage::Point2(int_face_pts[0]), 
+      std::vector<Portage::Point2> ir_int_pts = { Portage::Point2(int_face_pts[0]),
                                                   Portage::Point2(int_face_pts[1]) };
       double cur_mat_int_dist = SegmentsDistance({ ir_int_pts, ref_int_pts });
       if (cur_mat_int_dist > max_hdist)  max_hdist = cur_mat_int_dist;
@@ -766,4 +777,3 @@ double get_ir_error(const Mesh_Wrapper& Mesh,
   }
   return (max_hdist > eps) ? max_hdist : 0.0;
 }
-

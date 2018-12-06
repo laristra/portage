@@ -4,8 +4,6 @@
   https://github.com/laristra/portage/blob/master/LICENSE
 */
 
-
-
 #include <sys/time.h>
 
 #include <cstdio>
@@ -32,13 +30,16 @@
 #include "JaliStateVector.h"
 #include "JaliState.h"
 
-
+// portage includes
 #include "portage/support/portage.h"
-#include "portage/support/Point.h"
 #include "portage/support/mpi_collate.h"
 #include "portage/driver/mmdriver.h"
-#include "portage/wonton/mesh/jali/jali_mesh_wrapper.h"
-#include "portage/wonton/state/jali/jali_state_wrapper.h"
+
+// wonton includes
+#include "wonton/mesh/jali/jali_mesh_wrapper.h"
+#include "wonton/state/jali/jali_state_wrapper.h"
+#include "wonton/support/Point.h" 
+#include "wonton/support/wonton.h"
 
 // For parsing and evaluating user defined expressions in apps
 
@@ -67,7 +68,7 @@ using Portage::reorder;
 int print_usage() {
   std::cout << std::endl;
   std::cout << "Usage: portageapp " <<
-      "--dim=2|3 --nsourcecells=N --ntargetcells=M --conformal=y|n \n" << 
+      "--dim=2|3 --nsourcecells=N --ntargetcells=M --conformal=y|n \n" <<
       "--entity_kind=cell|node --field=\"your_math_expression\" --remap_order=1|2 \n" <<
       "--limiter=barth_jespersen --mesh_min=0. --mesh_max=1. \n" <<
       "--output_meshes=y|n --results_file=filename --convergence_study=NREF \n\n";
@@ -135,14 +136,14 @@ int print_usage() {
 template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
                            std::shared_ptr<Jali::Mesh> targetMesh,
                            Portage::LimiterType limiter,
-                           int interp_order, 
+                           int interp_order,
                            std::string field_expression,
                            std::string field_filename,
                            bool mesh_output, int rank, int numpe,
                            Jali::Entity_kind entityKind,
                            double *L1_error, double *L2_error,
-                           bool remap_back, 
-                           std::vector<double> &sourceData, 
+                           bool remap_back,
+                           std::vector<double> &sourceData,
                            std::vector<double> &targetData);
 
 int main(int argc, char** argv) {
@@ -155,7 +156,7 @@ int main(int argc, char** argv) {
     print_usage();
     return -1;
   }
-  
+
   struct timeval begin, end, diff;
 
   // Initialize MPI
@@ -194,7 +195,7 @@ int main(int argc, char** argv) {
     std::size_t keyword_end = arg.find_first_of("=");
     std::string keyword = arg.substr(keyword_beg, keyword_end-keyword_beg);
     std::string valueword = arg.substr(keyword_end+1, len-(keyword_end+1));
-    
+
     if (keyword == "entity_kind") {
       if (valueword == "cell" || valueword == "CELL")
         entityKind = Jali::Entity_kind::CELL;
@@ -374,7 +375,7 @@ int main(int argc, char** argv) {
                field_expression, field_filename, mesh_output,
                rank, numpe, entityKind, &(l1_err[i]), &(l2_err[i]),
                false,sourceData,targetData);
-        if(remap_back) { 
+        if(remap_back) {
           initialData = sourceData;
           run<2>(target_mesh, source_mesh, limiter, interp_order,
                  field_expression, field_filename, mesh_output,
@@ -400,14 +401,14 @@ int main(int argc, char** argv) {
         std::cerr << "Dimension not 2 or 3" << std::endl;
         return 2;
     }
- 
+
     if (remap_back) {
       Wonton::Jali_Mesh_Wrapper sourceMeshWrapper(*source_mesh);
       double cyclic_error = 0.0, cyclic_error_norm = 0.0,
              max_initial = -1.0e50, max_final = -1.0e50,
              min_vol = 1.0e50, max_vol = -1.0e50;
       for (int j=0; j < initialData.size(); j++) {
-        cyclic_error += fabs( initialData[j] - sourceData[j] ) * 
+        cyclic_error += fabs( initialData[j] - sourceData[j] ) *
                         sourceMeshWrapper.cell_volume(j);
         cyclic_error_norm += fabs( initialData[j] ) *
                         sourceMeshWrapper.cell_volume(j);
@@ -416,9 +417,9 @@ int main(int argc, char** argv) {
         min_vol = fmin( min_vol, fabs( sourceMeshWrapper.cell_volume(j) - 1./double(nsourcecells*nsourcecells) ) );
         max_vol = fmax( max_vol, fabs( sourceMeshWrapper.cell_volume(j) - 1./double(nsourcecells*nsourcecells) ) );
       }
-      std::cout << std::endl << std::endl << "CYCLIC REMAP RELATIVE ERROR = " 
-                << cyclic_error/cyclic_error_norm << " , NORM =  " << 
-                cyclic_error_norm << " , MAX BOUND VIOLATION (RELATIVE) = " << 
+      std::cout << std::endl << std::endl << "CYCLIC REMAP RELATIVE ERROR = "
+                << cyclic_error/cyclic_error_norm << " , NORM =  " <<
+                cyclic_error_norm << " , MAX BOUND VIOLATION (RELATIVE) = " <<
                 (max_final - max_initial)/max_initial << std::endl << std::endl;
       min_vol = min_vol * double(nsourcecells*nsourcecells);
       max_vol = max_vol * double(nsourcecells*nsourcecells);
@@ -462,7 +463,7 @@ int main(int argc, char** argv) {
 
 // Run a remap between two meshes and return the L1 and L2 error norms
 // with respect to the specified field. If a field was not specified and
-// 
+//
 
 template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
                            std::shared_ptr<Jali::Mesh> targetMesh,
@@ -471,7 +472,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
                            std::string field_filename, bool mesh_output,
                            int rank, int numpe, Jali::Entity_kind entityKind,
                            double *L1_error, double *L2_error, bool remap_back,
-                           std::vector<double> &sourceData, 
+                           std::vector<double> &sourceData,
                            std::vector<double> &targetData) {
 
   // Wrappers for interfacing with the underlying mesh data structures.
@@ -488,8 +489,6 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
 
   if (rank == 0) {
     std::cout << "starting portageapp_jali...\n";
-    std::cout << "Source mesh has " << nsrccells << " cells\n";
-    std::cout << "Target mesh has " << ntarcells << " cells\n";
     std::cout << "All fields on" << entityKind << "including "
               << "the command line field (if specified) will be remapped\n";
     if (field_expression.length())
@@ -499,8 +498,33 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
       std::cout << "   Limiter type is " << limiter << "\n";
   }
 
-
-
+  std::cout << "\nSource mesh on rank "<< rank <<" has " << nsrccells << " cells\n";
+  std::cout << "Source mesh on rank "<< rank <<" has " << sourceMeshWrapper.num_owned_cells() << " owned cells\n";
+  std::cout << "Target mesh on rank "<< rank <<" has " << ntarcells << " cells\n";
+/*  
+  for (int i = 0; i<nsrccells; i++){
+    std::vector<Wonton::Point<2>> coords;
+  	sourceMeshWrapper.cell_get_coordinates(i,&coords);
+  	std::cout << "Src rank " << rank << " cell " << i ;
+  	std::cout << " has gid " << sourceMeshWrapper.get_global_id(i, Wonton::Entity_kind::CELL);
+  	std::cout << " : ";
+  	std::cout << "(" << coords[0][0] << ", " << coords[0][1] << ") ";
+  	std::cout << "(" << coords[1][0] << ", " << coords[1][1] << ") ";
+  	std::cout << "(" << coords[2][0] << ", " << coords[2][1] << ") ";
+  	std::cout << "(" << coords[3][0] << ", " << coords[3][1] << ")"<<std::endl;
+  }
+  
+  for (int i = 0; i<ntarcells; i++){
+    std::vector<Wonton::Point<2>> coords;
+  	targetMeshWrapper.cell_get_coordinates(i,&coords);
+  	std::cout << "tgt rank " << rank << " cell " << i ;
+  	std::cout << " : ";
+  	std::cout << "(" << coords[0][0] << ", " << coords[0][1] << ") ";
+  	std::cout << "(" << coords[1][0] << ", " << coords[1][1] << ") ";
+  	std::cout << "(" << coords[2][0] << ", " << coords[2][1] << ") ";
+  	std::cout << "(" << coords[3][0] << ", " << coords[3][1] << ")"<<std::endl;
+  }
+*/  
   // Native jali state managers for source and target
   std::shared_ptr<Jali::State> sourceState(Jali::State::create(sourceMesh));
   std::shared_ptr<Jali::State> targetState(Jali::State::create(targetMesh));
@@ -514,7 +538,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
   // Cell-centered remaps
   if (entityKind == Jali::Entity_kind::CELL) {
     sourceData.resize(nsrccells);
-    
+
     if (!remap_back) {
       for (unsigned int c = 0; c < nsrccells; ++c)
         sourceData[c] = source_field(sourceMesh->cell_centroid(c));
@@ -643,7 +667,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
       std::cout << "celldata vector on target mesh after remapping is:"
                 << std::endl;
 
-    targetData.resize(ntarcells);       
+    targetData.resize(ntarcells);
 
     // Compute total mass on the source mesh to check conservation
     for (int c = 0; c < nsrccells; ++c) {
@@ -672,12 +696,11 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
         *L1_error += fabs(error)*cellvol;
         *L2_error += error*error*cellvol;
       }
-      if (numpe == 1 && ntarcells < 10) {
-        std::printf("Cell=% 4d Centroid = (% 5.3lf,% 5.3lf)", c,
-                    ccen[0], ccen[1]);
-        std::printf("  Value = % 10.6lf  L2 Err = % lf\n",
-                    cellvecout[c], error);
-      }
+    	std::printf("Rank %d\n", rank);
+      std::printf("Cell=% 4d Centroid = (% 5.3lf,% 5.3lf)", c,
+                  ccen[0], ccen[1]);
+      std::printf("  Value = % 10.6lf  L2 Err = % lf\n",
+                  cellvecout[c], error);
     }
   } else {  // NODE error computation
     targetStateWrapper.mesh_get_data<double>(Portage::NODE, "nodedata",
@@ -703,12 +726,12 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
       minout = fmin( minout, nodevecout[i] );
       maxout = fmax( maxout, nodevecout[i] );
       err_l1 += fabs(error)*dualcellvol;
-      //std::printf("Source/Target volumes = %.5e, %.5e \n", 
+      //std::printf("Source/Target volumes = %.5e, %.5e \n",
       //      sourceMeshWrapper.dual_cell_volume(i),
       //      targetMeshWrapper.dual_cell_volume(i));
       err_norm  += fabs( nodevecout[i] ) * dualcellvol;
       target_mass += nodevecout[i] * dualcellvol;
-      
+
       if (!targetMeshWrapper.on_exterior_boundary(Portage::Entity_kind::NODE, i)) {
         totvolume += dualcellvol;
         *L1_error += fabs(error)*dualcellvol;
@@ -721,7 +744,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
       }
     }
   }
-  
+
   if (numpe > 1) {
     std::cout << std::flush << std::endl;
     MPI_Barrier(MPI_COMM_WORLD);
@@ -735,10 +758,11 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
   }
   err_norm = err_l1 / err_norm;
   *L2_error = sqrt(*L2_error);
-  if (rank == 0 && !remap_back) {
+  if (!remap_back) {
     std::printf("\n\nL1 NORM OF ERROR (excluding boundary) = %lf\n", *L1_error);
     std::printf("L2 NORM OF ERROR (excluding boundary) = %lf\n\n", *L2_error);
     std::printf("===================================================\n");
+    std::printf("ON RANK %d\n", rank);
     std::printf("Relative L1 error = %.5e \n", err_norm);
     std::printf("Source min/max    = %.15e %.15e \n", minin, maxin);
     std::printf("Target min/max    = %.15e %.15e \n", minout, maxout);
@@ -770,7 +794,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
   }  // if (dump_meshes)
 
   // construct the field file name and open the file
-  
+
   if (field_filename.length()) {
     std::vector<int> lgid;
     std::vector<double> lvalues;
@@ -798,7 +822,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
     argsort(lgid, idx);   // find sorting indices based on global IDS
     reorder(lgid, idx);   // sort the global ids
     reorder(lvalues, idx);  // sort the values
-    
+
     if (numpe > 1) {
       int maxwidth = static_cast<long long>(std::ceil(std::log10(numpe)));
       char rankstr[10];
@@ -808,7 +832,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
     std::ofstream fout(field_filename);
     fout << std::scientific;
     fout.precision(17);
-    
+
     // write out the values
     for (int i=0; i < lgid.size(); i++)
       fout << lgid[i] << " " << lvalues[i] << std::endl;

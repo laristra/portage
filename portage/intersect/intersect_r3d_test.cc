@@ -3,18 +3,24 @@ This file is part of the Ristra portage project.
 Please see the license file at the root of this repository, or at:
     https://github.com/laristra/portage/blob/master/LICENSE
 */
-#include "intersect_r3d.h"
 #include "gtest/gtest.h"
-#include "portage/wonton/mesh/simple_mesh/simple_mesh_wrapper.h"
-#include "portage/wonton/state/simple_state/simple_state_wrapper.h"
+
+// portage includes
+#include "portage/intersect/intersect_r3d.h"
+
+// wonton includes
+#include "wonton/mesh/simple/simple_mesh.h"
+#include "wonton/mesh/simple/simple_mesh_wrapper.h"
+#include "wonton/state/simple/simple_state.h"
+#include "wonton/state/simple/simple_state_wrapper.h"
 
 TEST(intersectR3D, simple1) {
-  auto sourcemesh = std::make_shared<Portage::Simple_Mesh>(0, 0, 0, 2, 2, 2, 1, 1, 1);
-  auto targetmesh = std::make_shared<Portage::Simple_Mesh>(1, 1, 1, 2, 2, 2, 1, 1, 1);
+  auto sourcemesh = std::make_shared<Wonton::Simple_Mesh>(0, 0, 0, 2, 2, 2, 1, 1, 1);
+  auto targetmesh = std::make_shared<Wonton::Simple_Mesh>(1, 1, 1, 2, 2, 2, 1, 1, 1);
   const Wonton::Simple_Mesh_Wrapper sm(*sourcemesh);
   const Wonton::Simple_Mesh_Wrapper tm(*targetmesh);
 
-  auto sourcestate = std::make_shared<Portage::Simple_State>(sourcemesh);
+  auto sourcestate = std::make_shared<Wonton::Simple_State>(sourcemesh);
   const Wonton::Simple_State_Wrapper ss(*sourcestate);
 
   const double eps = 1e-12;
@@ -41,12 +47,12 @@ TEST(intersectR3D, simple1) {
 }
 
 TEST(intersectR3D, simple2) {
-  auto sourcemesh = std::make_shared<Portage::Simple_Mesh>(0, 0, 0, 2, 2, 2, 1, 1, 1);
-  auto targetmesh = std::make_shared<Portage::Simple_Mesh>(0, 0, 0, 2, 2, 2, 1, 1, 1);
+  auto sourcemesh = std::make_shared<Wonton::Simple_Mesh>(0, 0, 0, 2, 2, 2, 1, 1, 1);
+  auto targetmesh = std::make_shared<Wonton::Simple_Mesh>(0, 0, 0, 2, 2, 2, 1, 1, 1);
   const Wonton::Simple_Mesh_Wrapper sm(*sourcemesh);
   const Wonton::Simple_Mesh_Wrapper tm(*targetmesh);
 
-  auto sourcestate = std::make_shared<Portage::Simple_State>(sourcemesh);
+  auto sourcestate = std::make_shared<Wonton::Simple_State>(sourcemesh);
   const Wonton::Simple_State_Wrapper ss(*sourcestate);
 
   const double eps = 1e-12;
@@ -73,12 +79,12 @@ TEST(intersectR3D, simple2) {
 }
 
 TEST(intersectR3D, simple3) {
-  auto sourcemesh = std::make_shared<Portage::Simple_Mesh>(0, 0, 0, 3, 3, 3, 1, 1, 1);
-  auto targetmesh = std::make_shared<Portage::Simple_Mesh>(1, 1, 1, 2, 2, 2, 1, 1, 1);
+  auto sourcemesh = std::make_shared<Wonton::Simple_Mesh>(0, 0, 0, 3, 3, 3, 1, 1, 1);
+  auto targetmesh = std::make_shared<Wonton::Simple_Mesh>(1, 1, 1, 2, 2, 2, 1, 1, 1);
   const Wonton::Simple_Mesh_Wrapper sm(*sourcemesh);
   const Wonton::Simple_Mesh_Wrapper tm(*targetmesh);
 
-  auto sourcestate = std::make_shared<Portage::Simple_State>(sourcemesh);
+  auto sourcestate = std::make_shared<Wonton::Simple_State>(sourcemesh);
   const Wonton::Simple_State_Wrapper ss(*sourcestate);
 
   const double eps = 1e-12;
@@ -105,14 +111,14 @@ TEST(intersectR3D, simple3) {
 }
 
 TEST(intersectR3D, simple4) {
-  auto sourcemesh = std::make_shared<Portage::Simple_Mesh>(0, 0, 0, 2, 2, 2, 1, 1, 1);
-  auto targetmesh = std::make_shared<Portage::Simple_Mesh>(1, 1, 1, 3, 3, 3, 1, 1, 1);
+  auto sourcemesh = std::make_shared<Wonton::Simple_Mesh>(0, 0, 0, 2, 2, 2, 1, 1, 1);
+  auto targetmesh = std::make_shared<Wonton::Simple_Mesh>(1, 1, 1, 3, 3, 3, 1, 1, 1);
   const Wonton::Simple_Mesh_Wrapper sm(*sourcemesh);
   const Wonton::Simple_Mesh_Wrapper tm(*targetmesh);
 
-  auto sourcestate = std::make_shared<Portage::Simple_State>(sourcemesh);
+  auto sourcestate = std::make_shared<Wonton::Simple_State>(sourcemesh);
   const Wonton::Simple_State_Wrapper ss(*sourcestate);
-  
+
   const double eps = 1e-12;
   const Portage::IntersectR3D<Portage::Entity_kind::CELL,
                               Wonton::Simple_Mesh_Wrapper,
@@ -137,12 +143,12 @@ TEST(intersectR3D, simple4) {
 }
 
 TEST(intersectR3D, simple5) {
-  auto sourcemesh = std::make_shared<Portage::Simple_Mesh>(0, 0, 0, 10, 10, 10, 1, 1, 1);
-  auto targetmesh = std::make_shared<Portage::Simple_Mesh>(-5, -5, -5, 5, 5, 5, 1, 1, 1);
+  auto sourcemesh = std::make_shared<Wonton::Simple_Mesh>(0, 0, 0, 10, 10, 10, 1, 1, 1);
+  auto targetmesh = std::make_shared<Wonton::Simple_Mesh>(-5, -5, -5, 5, 5, 5, 1, 1, 1);
   const Wonton::Simple_Mesh_Wrapper sm(*sourcemesh);
   const Wonton::Simple_Mesh_Wrapper tm(*targetmesh);
 
-  auto sourcestate = std::make_shared<Portage::Simple_State>(sourcemesh);
+  auto sourcestate = std::make_shared<Wonton::Simple_State>(sourcemesh);
   const Wonton::Simple_State_Wrapper ss(*sourcestate);
 
   const double eps = 1e-12;
@@ -169,12 +175,12 @@ TEST(intersectR3D, simple5) {
 }
 
 TEST(intersectR3D, simple6) {
-  auto sourcemesh = std::make_shared<Portage::Simple_Mesh>(0, 0, 0, 10, 10, 10, 5, 5, 5);
-  auto targetmesh = std::make_shared<Portage::Simple_Mesh>(0, 0, 0, 10, 10, 10, 2, 2, 2);
+  auto sourcemesh = std::make_shared<Wonton::Simple_Mesh>(0, 0, 0, 10, 10, 10, 5, 5, 5);
+  auto targetmesh = std::make_shared<Wonton::Simple_Mesh>(0, 0, 0, 10, 10, 10, 2, 2, 2);
   const Wonton::Simple_Mesh_Wrapper sm(*sourcemesh);
   const Wonton::Simple_Mesh_Wrapper tm(*targetmesh);
 
-  auto sourcestate = std::make_shared<Portage::Simple_State>(sourcemesh);
+  auto sourcestate = std::make_shared<Wonton::Simple_State>(sourcemesh);
   const Wonton::Simple_State_Wrapper ss(*sourcestate);
 
   const double eps = 1e-12;
@@ -232,12 +238,12 @@ TEST(intersectR3D, simple6) {
 }
 
 TEST(intersectR3D, simple7) {
-  auto sourcemesh = std::make_shared<Portage::Simple_Mesh>(-2, -2, -2, 0, 0, 0, 1, 1, 1);
-  auto targetmesh = std::make_shared<Portage::Simple_Mesh>(-1, -1, -1, 0, 0, 0, 1, 1, 1);
+  auto sourcemesh = std::make_shared<Wonton::Simple_Mesh>(-2, -2, -2, 0, 0, 0, 1, 1, 1);
+  auto targetmesh = std::make_shared<Wonton::Simple_Mesh>(-1, -1, -1, 0, 0, 0, 1, 1, 1);
   const Wonton::Simple_Mesh_Wrapper sm(*sourcemesh);
   const Wonton::Simple_Mesh_Wrapper tm(*targetmesh);
 
-  auto sourcestate = std::make_shared<Portage::Simple_State>(sourcemesh);
+  auto sourcestate = std::make_shared<Wonton::Simple_State>(sourcemesh);
   const Wonton::Simple_State_Wrapper ss(*sourcestate);
 
   const double eps = 1e-12;
@@ -263,12 +269,12 @@ TEST(intersectR3D, simple7) {
 }
 
 TEST(intersectR3D, simple8) {
-  auto sourcemesh = std::make_shared<Portage::Simple_Mesh>(-4, -4, -4, 0, 0, 0, 1, 1, 1);
-  auto targetmesh = std::make_shared<Portage::Simple_Mesh>(-3, -3, -3, 0, 0, 0, 1, 1, 1);
+  auto sourcemesh = std::make_shared<Wonton::Simple_Mesh>(-4, -4, -4, 0, 0, 0, 1, 1, 1);
+  auto targetmesh = std::make_shared<Wonton::Simple_Mesh>(-3, -3, -3, 0, 0, 0, 1, 1, 1);
   const Wonton::Simple_Mesh_Wrapper sm(*sourcemesh);
   const Wonton::Simple_Mesh_Wrapper tm(*targetmesh);
 
-  auto sourcestate = std::make_shared<Portage::Simple_State>(sourcemesh);
+  auto sourcestate = std::make_shared<Wonton::Simple_State>(sourcemesh);
   const Wonton::Simple_State_Wrapper ss(*sourcestate);
 
   const double eps = 1e-12;
@@ -294,12 +300,12 @@ TEST(intersectR3D, simple8) {
 }
 
 TEST(intersectR3D, simple9) {
-  auto sourcemesh = std::make_shared<Portage::Simple_Mesh>(-4, -3, -2, 0, 1, 2, 1, 1, 1);
-  auto targetmesh = std::make_shared<Portage::Simple_Mesh>(-3, -2, -1, 0, 1, 2, 1, 1, 1);
+  auto sourcemesh = std::make_shared<Wonton::Simple_Mesh>(-4, -3, -2, 0, 1, 2, 1, 1, 1);
+  auto targetmesh = std::make_shared<Wonton::Simple_Mesh>(-3, -2, -1, 0, 1, 2, 1, 1, 1);
   const Wonton::Simple_Mesh_Wrapper sm(*sourcemesh);
   const Wonton::Simple_Mesh_Wrapper tm(*targetmesh);
 
-  auto sourcestate = std::make_shared<Portage::Simple_State>(sourcemesh);
+  auto sourcestate = std::make_shared<Wonton::Simple_State>(sourcemesh);
   const Wonton::Simple_State_Wrapper ss(*sourcestate);
 
   const double eps = 1e-12;
@@ -327,12 +333,12 @@ TEST(intersectR3D, simple9) {
 // in this test, the cubes don't intersect at all
 TEST(intersectR3D, cube_no_intersect) {
 
-  auto sourcemesh = std::make_shared<Portage::Simple_Mesh>(0, 0, 0, 1, 1, 1, 1, 1, 1);
-  auto targetmesh = std::make_shared<Portage::Simple_Mesh>(2, 0, 0, 3, 1, 1, 1, 1, 1);
+  auto sourcemesh = std::make_shared<Wonton::Simple_Mesh>(0, 0, 0, 1, 1, 1, 1, 1, 1);
+  auto targetmesh = std::make_shared<Wonton::Simple_Mesh>(2, 0, 0, 3, 1, 1, 1, 1, 1);
   const Wonton::Simple_Mesh_Wrapper sm(*sourcemesh);
   const Wonton::Simple_Mesh_Wrapper tm(*targetmesh);
 
-  auto sourcestate = std::make_shared<Portage::Simple_State>(sourcemesh);
+  auto sourcestate = std::make_shared<Wonton::Simple_State>(sourcemesh);
   const Wonton::Simple_State_Wrapper ss(*sourcestate);
 
   const double eps = 1e-12;
@@ -349,12 +355,12 @@ TEST(intersectR3D, cube_no_intersect) {
 // in this test, the cubes share a face but have zero intersection volume
 TEST(intersectR3D, cube_0_1) {
 
-  auto sourcemesh = std::make_shared<Portage::Simple_Mesh>(0, 0, 0, 1, 1, 1, 1, 1, 1);
-  auto targetmesh = std::make_shared<Portage::Simple_Mesh>(1, 0, 0, 2, 1, 1, 1, 1, 1);
+  auto sourcemesh = std::make_shared<Wonton::Simple_Mesh>(0, 0, 0, 1, 1, 1, 1, 1, 1);
+  auto targetmesh = std::make_shared<Wonton::Simple_Mesh>(1, 0, 0, 2, 1, 1, 1, 1, 1);
   const Wonton::Simple_Mesh_Wrapper sm(*sourcemesh);
   const Wonton::Simple_Mesh_Wrapper tm(*targetmesh);
 
-  auto sourcestate = std::make_shared<Portage::Simple_State>(sourcemesh);
+  auto sourcestate = std::make_shared<Wonton::Simple_State>(sourcemesh);
   const Wonton::Simple_State_Wrapper ss(*sourcestate);
 
   const double eps = 1e-12;
@@ -373,9 +379,9 @@ TEST(intersectR3D, cube_0_1) {
     std::vector<double> moments = srcwts[0].weights;
     for(int j=0;j<moments.size();j++)
       std::cout << "i, j, m " << srcent << ", " << j << ", " << moments[j] << std::endl;
-    
+
     ASSERT_TRUE(moments.size() == 4);
-    
+
     ASSERT_NEAR(moments[0], 0, eps);
     ASSERT_NEAR(moments[1], 0, eps);
     ASSERT_NEAR(moments[2], 0, eps);

@@ -23,8 +23,8 @@ Please see the license file at the root of this repository, or at:
 #include "tangram/driver/write_to_gmv.h"
 
 #include "portage/driver/mmdriver.h"
-#include "portage/wonton/mesh/jali/jali_mesh_wrapper.h"
-#include "portage/wonton/state/jali/jali_state_wrapper.h"
+#include "wonton/mesh/jali/jali_mesh_wrapper.h"
+#include "wonton/state/jali/jali_state_wrapper.h"
 #include "portage/search/search_kdtree.h"
 #include "portage/intersect/intersect_r2d.h"
 #include "portage/intersect/intersect_r3d.h"
@@ -341,9 +341,11 @@ TEST(MMDriver, ThreeMat2D) {
     Portage::Point<2> const *matcen_remap;
     targetStateWrapper.mat_get_celldata("mat_centroids", m, &matcen_remap);
 
+    // MOF cannot match moments and centroids as well as it can volume
+    // fractions - so use looser tolerances
     for (int ic = 0; ic < nmatcells; ic++)
       for (int d = 0; d < 2; d++)
-        ASSERT_NEAR(matcen_trg[m][ic][d], matcen_remap[ic][d], 1.0e-12);
+        ASSERT_NEAR(matcen_trg[m][ic][d], matcen_remap[ic][d], 1.0e-9);
 
     double const *density_remap;
     targetStateWrapper.mat_get_celldata("density", m, &density_remap);
@@ -723,9 +725,11 @@ TEST(MMDriver, ThreeMat3D) {
     Portage::Point<3> const *matcen_remap;
     targetStateWrapper.mat_get_celldata("mat_centroids", m, &matcen_remap);
 
+    // MOF cannot match moments and centroids as well as it can volume
+    // fractions - so use looser tolerances
     for (int ic = 0; ic < nmatcells; ic++)
       for (int d = 0; d < 3; d++)
-        ASSERT_NEAR(matcen_trg[m][ic][d], matcen_remap[ic][d], 1.0e-12);
+        ASSERT_NEAR(matcen_trg[m][ic][d], matcen_remap[ic][d], 1.0e-9);
 
     double const *density_remap;
     targetStateWrapper.mat_get_celldata("density", m, &density_remap);

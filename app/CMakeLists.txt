@@ -23,3 +23,6 @@ if(TANGRAM_FOUND AND XMOF2D_FOUND)
   endif (Jali_DIR)
 endif(TANGRAM_FOUND AND XMOF2D_FOUND)
 
+if (ENABLE_FleCSI)
+  add_subdirectory(flecsiapp)
+endif (ENABLE_FleCSI)

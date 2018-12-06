@@ -11,13 +11,18 @@
 
 #include "gtest/gtest.h"
 
-#include "portage/wonton/state/simple_state/simple_state_wrapper.h"
-#include "portage/wonton/mesh/simple_mesh/simple_mesh_wrapper.h"
-
+// portage includes
 #include "portage/swarm/swarm.h"
 #include "portage/swarm/swarm_state.h"
-
 #include "portage/support/portage.h"
+
+// wonton includes
+#include "wonton/state/simple/simple_state.h"
+#include "wonton/state/simple/simple_state_mm_wrapper.h"
+#include "wonton/state/state_vector_uni.h"
+#include "wonton/mesh/simple/simple_mesh.h"
+#include "wonton/mesh/simple/simple_mesh_wrapper.h"
+
 
 TEST(SwarmState, basic) {
   using std::make_shared;
@@ -137,12 +142,12 @@ TEST(SwarmState, basic) {
   @brief Unit test for constructor with Simple_State_Wrapper in 3D using cells
 */
 TEST(SwarmState, Simple_State_Wrapper) {
-  std::shared_ptr<Portage::Simple_Mesh> mesh_ptr = 
-    std::make_shared<Portage::Simple_Mesh>(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2, 2, 2);
-  Portage::Simple_Mesh &mesh(*mesh_ptr);
+  std::shared_ptr<Wonton::Simple_Mesh> mesh_ptr =
+    std::make_shared<Wonton::Simple_Mesh>(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2, 2, 2);
+  Wonton::Simple_Mesh &mesh(*mesh_ptr);
   Wonton::Simple_Mesh_Wrapper mesh_wrapper(mesh);
 
-  Portage::Simple_State sstate(mesh_ptr);
+  Wonton::Simple_State_Wrapper<Wonton::Simple_Mesh_Wrapper> sstate(mesh_wrapper);
   int ncells = mesh_wrapper.num_owned_cells();
   int nnodes = mesh_wrapper.num_owned_nodes();
   std::vector<double> &cfield1 = *new std::vector<double>(ncells);
@@ -153,15 +158,20 @@ TEST(SwarmState, Simple_State_Wrapper) {
   for (int i=0; i < nnodes; i++) {
     nfield1[i] = 2.;
   }
-  sstate.add("nf1", Portage::NODE, &nfield1[0]);
-  sstate.add("cf1", Portage::CELL, &cfield1[0]);
-  Wonton::Simple_State_Wrapper state_wrapper(sstate);
+
+  sstate.add(std::make_shared<Wonton::StateVectorUni<>>(
+    	"cf1", Portage::Entity_kind::CELL, cfield1)
+    );
+  sstate.add(std::make_shared<Wonton::StateVectorUni<>>(
+    	"nf1", Portage::Entity_kind::NODE, nfield1)
+    );
+
 
   // create swarm state from mesh state wrapper for cells
   {
-    std::shared_ptr<Portage::Meshfree::SwarmState<3>> state_ptr = 
-      Portage::Meshfree::SwarmStateFactory<3,Wonton::Simple_State_Wrapper>
-      (state_wrapper, Portage::CELL);
+    std::shared_ptr<Portage::Meshfree::SwarmState<3>> state_ptr =
+      Portage::Meshfree::SwarmStateFactory<3,Wonton::Simple_State_Wrapper<Wonton::Simple_Mesh_Wrapper>>
+        (sstate, Portage::Entity_kind::CELL);
     Portage::Meshfree::SwarmState<3> &state(*state_ptr);
 
     // test size
@@ -181,10 +191,10 @@ TEST(SwarmState, Simple_State_Wrapper) {
   }
 
   // create swarm state from mesh state wrapper for nodes
-  {  
-    std::shared_ptr<Portage::Meshfree::SwarmState<3>> state_ptr = 
-       Portage::Meshfree::SwarmStateFactory<3,Wonton::Simple_State_Wrapper>
-      (state_wrapper, Portage::NODE);
+  {
+    std::shared_ptr<Portage::Meshfree::SwarmState<3>> state_ptr =
+       Portage::Meshfree::SwarmStateFactory<3,Wonton::Simple_State_Wrapper<Wonton::Simple_Mesh_Wrapper>>
+      (sstate, Portage::Entity_kind::NODE);
     Portage::Meshfree::SwarmState<3> &state(*state_ptr);
 
     // test size
@@ -203,4 +213,3 @@ TEST(SwarmState, Simple_State_Wrapper) {
     }
   }
 }
-

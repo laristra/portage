@@ -5,15 +5,17 @@ Please see the license file at the root of this repository, or at:
 */
 
 #include <iostream>
+#include <vector>
+#include <array>
+
 #include "gtest/gtest.h"
 
 #include "tangram/support/MatPoly.h"
-//#include "tangram/simple_mesh/simple_mesh.h"
 
 #include "portage/intersect/intersect_r3d.h"
-#include "portage/simple_mesh/simple_mesh.h"
-#include "portage/support/Point.h"
-#include "portage/wonton/mesh/simple_mesh/simple_mesh_wrapper.h"
+
+#include "wonton/mesh/simple/simple_mesh.h"
+#include "wonton/mesh/simple/simple_mesh_wrapper.h"
 
 double eps = 1.e-8;
 TEST(TANGRAM_3D, test_tangram_exists) {
@@ -426,7 +428,7 @@ TEST(TANGRAM_3D, test_intersect_matpoly_gold2) {
   matpoly.initialize(cube_points, cube_faces);
 
   // create a simple mesh with a single cell
-  Portage::Simple_Mesh target_mesh(0., 0., 0., 1., 1., 1., 1, 1, 1);
+  Wonton::Simple_Mesh target_mesh(0., 0., 0., 1., 1., 1., 1, 1, 1);
 
   // Create mesh wrappers
   Wonton::Simple_Mesh_Wrapper target_mesh_wrapper(target_mesh);
@@ -469,7 +471,7 @@ TEST(TANGRAM_3D, test_intersect_matpoly_gold3) {
   matpoly.initialize(cube_points, cube_faces);
 
   // create a simple mesh with a single cell
-  Portage::Simple_Mesh target_mesh(0., 0., 0., 1., 1., 1., 1, 1, 1);
+  Wonton::Simple_Mesh target_mesh(0., 0., 0., 1., 1., 1., 1, 1, 1);
 
   // Create mesh wrappers
   Wonton::Simple_Mesh_Wrapper target_mesh_wrapper(target_mesh);
@@ -512,7 +514,7 @@ TEST(TANGRAM_3D, test_intersect_matpoly_gold4) {
   matpoly.initialize(cube_points, cube_faces);
 
   // create a simple mesh with a single cell
-  Portage::Simple_Mesh target_mesh(0.5, 0.5, 0.5, 1.5, 1.5, 1.5, 1, 1, 1);
+  Wonton::Simple_Mesh target_mesh(0.5, 0.5, 0.5, 1.5, 1.5, 1.5, 1, 1, 1);
 
   // Create mesh wrappers
   Wonton::Simple_Mesh_Wrapper target_mesh_wrapper(target_mesh);

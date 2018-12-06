@@ -4,8 +4,8 @@ Please see the license file at the root of this repository, or at:
     https://github.com/laristra/portage/blob/master/LICENSE
 */
 
-#ifndef SRC_SUPPORT_PORTAGE_H_
-#define SRC_SUPPORT_PORTAGE_H_
+#ifndef PORTAGE_SUPPORT_PORTAGE_H_
+#define PORTAGE_SUPPORT_PORTAGE_H_
 
 #ifdef THRUST
 
@@ -21,6 +21,12 @@ Please see the license file at the root of this repository, or at:
 #include <algorithm>
 
 #endif
+
+
+#include "wonton/support/Point.h"
+#include "wonton/support/Vector.h"
+#include "wonton/support/Matrix.h"
+#include "wonton/support/wonton.h"
 
 /*
   @file portage.h
@@ -58,68 +64,37 @@ Please see the license file at the root of this repository, or at:
   an edge that is shared by two wedges in adjacent cells
  */
 namespace Portage {
-// TODO:  Right now we're relying on the fact that this enum is
-//        identical to Jali::Entity_kind.  Need to fix this.
-/// The type of mesh entity.
-enum Entity_kind {
-  ALL_KIND = -3,     /*!< All possible types */
-  ANY_KIND = -2,     /*!< Any of the possible types */
-  UNKNOWN_KIND = -1, /*!< Usually indicates an error */
-  NODE = 0,
-  EDGE,
-  FACE,
-  CELL,
-  SIDE,
-  WEDGE,
-  CORNER,
-  FACET,
-  BOUNDARY_FACE,
-  PARTICLE
-};
 
-const int NUM_ENTITY_KINDS = 8;
+// Point aliases
+template<long D>
+using Point = Wonton::Point<D>;
+using Wonton::Point3;
+using Wonton::Point2;
+using Wonton::Point1;
 
-// Parallel status of entity
-/// The parallel type of a given entity.
-enum Entity_type {
-  TYPE_UNKNOWN = -1,
-  DELETED = 0,
-  PARALLEL_OWNED = 1,   /*!< Owned by this processor */
-  PARALLEL_GHOST = 2,   /*!< Owned by another processor */
-  BOUNDARY_GHOST = 3,   /*!< Ghost/Virtual entity on boundary */
-  ALL  = 4              /*!< PARALLEL_OWNED + PARALLEL_GHOST + BOUNDARY_GHOST */
-};
+// Vector aliases
+template<long D>
+using Vector = Wonton::Vector<D>;
+using Wonton::Vector3;
+using Wonton::Vector2;
 
-/// Element (cell topology) type
-enum Element_type {
-  UNKNOWN_TOPOLOGY = 0,
-  TRI,
-  QUAD,
-  POLYGON,
-  TET,
-  PRISM,
-  PYRAMID,
-  HEX,
-  POLYHEDRON
-};
+// Matrix alias
+using Wonton::Matrix;
+
+// useful enums
+using Wonton::Entity_kind;
+using Wonton::Entity_type;
+using Wonton::Element_type;
+using Wonton::Field_type;
+using Wonton::Data_layout;
+using Wonton::Weights_t;
 
 /// Limiter type
 typedef enum {NOLIMITER, BARTH_JESPERSEN}
   LimiterType;
 
 
-/// Field type - whether it is mesh field or multi-material field
-
-enum class Field_type {UNKNOWN_TYPE_FIELD = -1, MESH_FIELD, MULTIMATERIAL_FIELD};
-
-
-/// Layout of 2D input data to state - CELL_CENTRIC means the first
-/// index is the cell and the second is the material; MATERIAL_CENTRIC
-/// means the first index is the material and the second is the cell
-
-enum class Data_layout {CELL_CENTRIC, MATERIAL_CENTRIC};
-
-
+// Iterators and transforms that depend on Thrust vs. std
 #ifdef THRUST
 
 template<typename T>
@@ -188,20 +163,8 @@ inline void for_each(InputIterator first, InputIterator last,
   std::for_each(first, last, f);
 }
 
-
 #endif
-
-struct Weights_t {
-  Weights_t() : entityID(-1) {}
-  Weights_t(int const entityID_in, std::vector<double> const& weights_in) :
-      entityID(entityID_in), weights(weights_in) {}
-  Weights_t(Weights_t const& source) :
-      entityID(source.entityID), weights(source.weights) {}
-  
-  int entityID;
-  std::vector<double> weights;
-};
 
 }  // namespace Portage
 
-#endif  // SRC_SUPPORT_PORTAGE_H_
+#endif  // PORTAGE_SUPPORT_PORTAGE_H_

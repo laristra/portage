@@ -5,7 +5,7 @@
 */
 
 #include <stdlib.h>
-#include "portage/wonton/mesh/jali/jali_mesh_wrapper.h"
+#include "wonton/mesh/jali/jali_mesh_wrapper.h"
 #include "tangram/driver/driver.h"
 #include "tangram/reconstruct/xmof2D_wrapper.h"
 #include "tangram/driver/write_to_gmv.h"
@@ -169,9 +169,9 @@ int main(int argc, char** argv) {
     std::cout << ", " << ncells_with_nmats[inm + 1] << " are " << inm + 2 << "MC's";
   std::cout << std::endl;
 
-  Tangram::IterativeMethodTolerances_t tol{100, 1e-12, 1e-12}; 
+  std::vector<Tangram::IterativeMethodTolerances_t> tols(2, {100, 1e-12, 1e-12}); 
   Tangram::Driver<Tangram::XMOF2D_Wrapper, 2,
-    Wonton::Jali_Mesh_Wrapper> source_xmof_driver(source_mesh_wrapper, tol);
+    Wonton::Jali_Mesh_Wrapper> source_xmof_driver(source_mesh_wrapper, tols);
   
   source_xmof_driver.set_volume_fractions(scell_num_mats, scell_mat_ids,
                                           scell_mat_volfracs, scell_mat_centroids);
@@ -225,7 +225,7 @@ int main(int argc, char** argv) {
   std::cout << std::endl;
   
   Tangram::Driver<Tangram::XMOF2D_Wrapper, 2,
-    Wonton::Jali_Mesh_Wrapper> target_xmof_driver(target_mesh_wrapper, tol);
+    Wonton::Jali_Mesh_Wrapper> target_xmof_driver(target_mesh_wrapper, tols);
   target_xmof_driver.set_volume_fractions(tcell_num_mats, tcell_mat_ids,
                                           tcell_mat_volfracs, tcell_mat_centroids);
   std::cout << "Performing interface reconstruction on the target mesh..." << std::endl;

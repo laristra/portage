@@ -32,8 +32,8 @@ fi
 # set modules and install paths
 
 jali_version=1.0.0
-tangram_version=77c86b58974
-xmof2d_version=529f2dcdbe4
+tangram_version=0.9.1
+xmof2d_version=0.9.1
 lapack_version=3.8.0
  
 
