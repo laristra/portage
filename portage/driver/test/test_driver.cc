@@ -251,12 +251,12 @@ TEST_F(DriverTest2DNonCoincident, 2D_Linear_2ndOrderCellCntr_NonCoincident) {
 // Example 8
 TEST_F(DriverTest2DNonCoincident, 2D_Quadratic_1stOrderCellCntr_NonCoincident) {
   unitTest<Portage::IntersectR2D, Portage::Interpolate_1stOrder, 2>
-  (compute_quadratic_field, 1854.2866181962208);
+  (compute_quadratic_field, 1864.3054259128905);
 }
 // Example 9
 TEST_F(DriverTest2DNonCoincident, 2D_Quadratic_2ndOrderCellCntrNonCoincident) {
   unitTest<Portage::IntersectR2D, Portage::Interpolate_2ndOrder, 2>
-  (compute_quadratic_field, 1713.9432215808583);
+  (compute_quadratic_field, 1724.7774423007857);
 }
 
 // Cell-centered Remap on 3D Meshes with Coincident Boundaries
@@ -308,11 +308,11 @@ TEST_F(DriverTest3DNonCoincident, 3D_Linear_2ndOrderCellCntr_NonCoincident) {
 // Example 18
 TEST_F(DriverTest3DNonCoincident, 3D_Quadratic_1stOrderCellCntr_NonCoincident) {
   unitTest<Portage::IntersectR3D, Portage::Interpolate_1stOrder, 3>
-  (compute_quadratic_field_3d, 579705.34412726376);
+  (compute_quadratic_field_3d, 582831.37671617966);
 }
 // Example 19
 TEST_F(DriverTest3DNonCoincident, 3D_Quadratic_2ndOrderCellCntr_NonCoincident) {
   unitTest<Portage::IntersectR3D, Portage::Interpolate_2ndOrder, 3>
-  (compute_quadratic_field_3d, 535589.56202598265);
+  (compute_quadratic_field_3d, 538971.52673063509);
 }
 }
