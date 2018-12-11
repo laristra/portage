@@ -90,7 +90,7 @@ class MPI_Bounding_Boxes {
     // sendFlags, which partitions to send data
     // this is computed via intersection of whole partition bounding boxes
     std::vector<bool> sendFlags(commSize);   
-        compute_sendflags(source_mesh_flat, target_mesh, sendFlags);        
+    compute_sendflags(source_mesh_flat, target_mesh, sendFlags);        
 
     // set counts for cells
     comm_info_t cellInfo;
@@ -120,7 +120,7 @@ class MPI_Bounding_Boxes {
     std::vector<int> newNodeGlobalIds(nodeInfo.newNum);
     sendField(nodeInfo, commRank, commSize, MPI_INT, 1,
               sourceNodeGlobalIds, &newNodeGlobalIds);
-                              
+
     // Create maps from old uid's to old and new indices
     create_maps(newCellGlobalIds, uidToOldCell_, uidToNewCell_);
     create_maps(newNodeGlobalIds, uidToOldNode_, uidToNewNode_);
@@ -141,9 +141,7 @@ class MPI_Bounding_Boxes {
         
     if (dim == 2)
     {
-          
-      comm_info_t cellToNodeInfo;
-      
+                
       // send cell node counts
       std::vector<int>& sourceCellNodeCounts = source_mesh_flat.get_cell_node_counts();
       std::vector<int> newCellNodeCounts(cellInfo.newNum);
@@ -163,6 +161,7 @@ class MPI_Bounding_Boxes {
           sourceNumCells == sourceNumOwnedCells ? sizeCellToNodeList :
           sourceCellNodeOffsets[sourceNumOwnedCells]);
 
+      comm_info_t cellToNodeInfo;
       setSendRecvCounts(&cellToNodeInfo, commSize, sendFlags,
               sizeCellToNodeList, sizeOwnedCellToNodeList);
               
@@ -184,13 +183,11 @@ class MPI_Bounding_Boxes {
         
     if (dim == 3)
     {
-      comm_info_t faceInfo, cellToFaceInfo, faceToNodeInfo;
-
       int sourceNumOwnedFaces = source_mesh_flat.num_owned_faces();
       int sourceNumFaces = sourceNumOwnedFaces + source_mesh_flat.num_ghost_faces();
       
-      setSendRecvCounts(&faceInfo, commSize, sendFlags,
-              sourceNumFaces, sourceNumOwnedFaces);
+      comm_info_t faceInfo;
+      setSendRecvCounts(&faceInfo, commSize, sendFlags,sourceNumFaces, sourceNumOwnedFaces);
 
       // SEND GLOBAL FACE IDS
       std::vector<int>& sourceFaceGlobalIds = source_mesh_flat.get_global_face_ids();
@@ -210,6 +207,7 @@ class MPI_Bounding_Boxes {
           sourceNumCells == sourceNumOwnedCells ? sizeCellToFaceList :
           sourceCellFaceOffsets[sourceNumOwnedCells]);
 
+      comm_info_t cellToFaceInfo;
       setSendRecvCounts(&cellToFaceInfo, commSize, sendFlags,
               sizeCellToFaceList, sizeOwnedCellToFaceList);
 
@@ -269,6 +267,7 @@ class MPI_Bounding_Boxes {
           sourceNumFaces == sourceNumOwnedFaces ? sizeFaceToNodeList :
           sourceFaceNodeOffsets[sourceNumOwnedFaces]);
 
+      comm_info_t faceToNodeInfo;
       setSendRecvCounts(&faceToNodeInfo, commSize, sendFlags,
               sizeFaceToNodeList, sizeOwnedFaceToNodeList);                 
       
@@ -517,10 +516,8 @@ class MPI_Bounding_Boxes {
 
 
       // send the field
-      sendField(info, commRank, commSize,
-
-      MPI_DOUBLE, sourceFieldStride,
-      sourceField, &newField);
+      sendField(info, commRank, commSize, MPI_DOUBLE, sourceFieldStride,
+        sourceField, &newField);
       
       // merge the data before unpacking
       std::vector<double> newField__;

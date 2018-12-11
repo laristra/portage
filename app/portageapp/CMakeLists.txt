@@ -55,6 +55,24 @@ if (Jali_DIR)
     endif (TANGRAM_FOUND)
 endif (Jali_DIR)
 
+if (Jali_DIR)
+    add_executable(portageapp_jali_test3 portageapp_jali_test3.cc)
+    target_link_libraries(portageapp_jali_test3 portage ${EXTRA_LIBS} ${LAPACKX_LIBRARIES})
+
+    # MPI additions - need to push this down into cinch
+    if (ENABLE_MPI)
+        target_link_libraries(portageapp_jali_test3 ${MPI_CXX_LIBRARIES})
+        set_target_properties(portageapp_jali_test3 PROPERTIES
+                              LINK_FLAGS "${MPI_CXX_LINK_FLAGS}")
+    endif (ENABLE_MPI)
+
+    # Jali additions
+    include_directories(${Jali_INCLUDE_DIRS} ${Jali_TPL_INCLUDE_DIRS})
+    target_link_libraries(portageapp_jali_test3 ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES})
+
+
+endif (Jali_DIR)
+
 # FleCSI example
 if (ENABLE_FleCSI)
   add_executable(portageapp_flecsi portageapp_flecsi.cc)
