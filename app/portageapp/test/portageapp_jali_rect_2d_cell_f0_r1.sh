@@ -13,7 +13,7 @@ set -x
 
 # 2D, 1st order accurate remap of constant cell-centered function
 
-# SERIAL RUN (conformal)
+# SERIAL RUN, conforming meshes
 
 mpirun -np 1 $TESTAPPDIR/portageapp_jali \
 --dim=2 --nsourcecells=5 --ntargetcells=7 \
@@ -25,7 +25,8 @@ mpirun -np 1 $TESTAPPDIR/portageapp_jali \
 # Compare the values for the field
 $CMPAPPDIR/apptest_cmp GOLD_jali_rect_2d_cell_f0_r1.txt jali_rect_2d_cell_f0_r1.txt 1e-12
 
-# SERIAL RUN (non-conformal)
+
+# SERIAL RUN, non-conforming meshes
 
 mpirun -np 1 $TESTAPPDIR/portageapp_jali \
 --dim=2 --nsourcecells=5 --ntargetcells=7 \
@@ -37,7 +38,24 @@ mpirun -np 1 $TESTAPPDIR/portageapp_jali \
 # Compare the values for the field
 $CMPAPPDIR/apptest_cmp GOLD_jali_rect_2d_cell_f0_r1_nc.txt jali_rect_2d_cell_f0_r1_nc.txt 1e-12
 
-# PARALLEL RUN (non-conformal)
+
+# PARALLEL RUN, conforming meshes
+
+mpirun -np 4 $TESTAPPDIR/portageapp_jali \
+--dim=2 --nsourcecells=5 --ntargetcells=7 \
+--conformal=y \
+--entity_kind=cell --field="73.98" \
+--remap_order=1 \
+--results_file="jali_rect_2d_cell_f0_r1.txt"
+
+# Compare the values for the field
+$CMPAPPDIR/apptest_cmp GOLD_jali_rect_2d_cell_f0_r1.txt.0 jali_rect_2d_cell_f0_r1.txt.0 1e-12
+$CMPAPPDIR/apptest_cmp GOLD_jali_rect_2d_cell_f0_r1.txt.1 jali_rect_2d_cell_f0_r1.txt.1 1e-12
+$CMPAPPDIR/apptest_cmp GOLD_jali_rect_2d_cell_f0_r1.txt.2 jali_rect_2d_cell_f0_r1.txt.2 1e-12
+$CMPAPPDIR/apptest_cmp GOLD_jali_rect_2d_cell_f0_r1.txt.3 jali_rect_2d_cell_f0_r1.txt.3 1e-12
+
+
+# PARALLEL RUN, non-conforming meshes
 
 mpirun -np 4 $TESTAPPDIR/portageapp_jali \
 --dim=2 --nsourcecells=5 --ntargetcells=7 \

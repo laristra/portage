@@ -13,7 +13,7 @@ set -x
 
 # 3D, 2nd order accurate remap of general cell-centered function
 
-# SERIAL RUN
+# SERIAL RUN, conforming meshes
 
 mpirun -np 1 $TESTAPPDIR/portageapp_jali \
 --dim=3 --nsourcecells=5 --ntargetcells=7 \
@@ -25,7 +25,24 @@ mpirun -np 1 $TESTAPPDIR/portageapp_jali \
 # Compare the values for the field
 $CMPAPPDIR/apptest_cmp GOLD_jali_rect_3d_cell_gen_r2.txt jali_rect_3d_cell_gen_r2.txt 1e-12
 
-# PARALLEL RUN
+
+# PARALLEL RUN, conforming meshes
+
+mpirun -np 4 $TESTAPPDIR/portageapp_jali \
+--dim=3 --nsourcecells=5 --ntargetcells=7 \
+--conformal=y \
+--entity_kind=cell --field="sin(10*x)+cos(10*y)+tan(z)" \
+--remap_order=2 \
+--results_file="jali_rect_3d_cell_gen_r2.txt"
+
+# Compare the values for the field
+$CMPAPPDIR/apptest_cmp GOLD_jali_rect_3d_cell_gen_r2.txt.0 jali_rect_3d_cell_gen_r2.txt.0 1e-12
+$CMPAPPDIR/apptest_cmp GOLD_jali_rect_3d_cell_gen_r2.txt.1 jali_rect_3d_cell_gen_r2.txt.1 1e-12
+$CMPAPPDIR/apptest_cmp GOLD_jali_rect_3d_cell_gen_r2.txt.2 jali_rect_3d_cell_gen_r2.txt.2 1e-12
+$CMPAPPDIR/apptest_cmp GOLD_jali_rect_3d_cell_gen_r2.txt.3 jali_rect_3d_cell_gen_r2.txt.3 1e-12
+
+
+# PARALLEL RUN, non-conforming meshes
 
 mpirun -np 4 $TESTAPPDIR/portageapp_jali \
 --dim=3 --nsourcecells=5 --ntargetcells=7 \

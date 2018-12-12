@@ -13,7 +13,7 @@ set -x
 
 # 2D, 2nd order accurate remap of quadratic node-centered function
 
-# SERIAL RUN
+# SERIAL RUN, conforming
 
 mpirun -np 1 $TESTAPPDIR/portageapp_jali \
 --dim=2 --nsourcecells=5 --ntargetcells=7 \
@@ -25,7 +25,24 @@ mpirun -np 1 $TESTAPPDIR/portageapp_jali \
 # Compare the values for the field
 $CMPAPPDIR/apptest_cmp GOLD_jali_rect_2d_node_f2_r2.txt jali_rect_2d_node_f2_r2.txt 1e-12
 
-# PARALLEL RUN (Note, reverse_ranks is false here)
+
+# PARALLEL RUN, conforming (Note, reverse_ranks is false here)
+
+mpirun -np 4 $TESTAPPDIR/portageapp_jali \
+--dim=2 --nsourcecells=5 --ntargetcells=7 \
+--conformal=y \
+--entity_kind=node --field="x*x+y*y" \
+--remap_order=2 \
+--results_file="jali_rect_2d_node_f2_r2.txt"
+
+# Compare the values for the field
+$CMPAPPDIR/apptest_cmp GOLD_jali_rect_2d_node_f2_r2.txt.0 jali_rect_2d_node_f2_r2.txt.0 1e-12
+$CMPAPPDIR/apptest_cmp GOLD_jali_rect_2d_node_f2_r2.txt.1 jali_rect_2d_node_f2_r2.txt.1 1e-12
+$CMPAPPDIR/apptest_cmp GOLD_jali_rect_2d_node_f2_r2.txt.2 jali_rect_2d_node_f2_r2.txt.2 1e-12
+$CMPAPPDIR/apptest_cmp GOLD_jali_rect_2d_node_f2_r2.txt.3 jali_rect_2d_node_f2_r2.txt.3 1e-12
+
+
+# PARALLEL RUN, non-conforming (Note, reverse_ranks is false here)
 
 mpirun -np 4 $TESTAPPDIR/portageapp_jali \
 --dim=2 --nsourcecells=5 --ntargetcells=7 \
