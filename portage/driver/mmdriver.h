@@ -929,12 +929,12 @@ int MMDriver<Search, Intersect, Interpolate, D,
     // Extract volume fraction and centroid data for cells in compact
     // cell-centric form (ccc)
 
-		//////////////////////////////////////////
-		// DWS this is where I left off
-		// There is a problem that Tangram is using the mesh wrapper instead of
-		// the flat mesh wrapper in places, so the counts don't align
-		// the following line breaks
-		/////////////////////////////////////////////
+    //////////////////////////////////////////
+    // DWS this is where I left off
+    // There is a problem that Tangram is using the mesh wrapper instead of
+    // the flat mesh wrapper in places, so the counts don't align
+    // the following line breaks
+    /////////////////////////////////////////////
     ccc_vfcen_data(cell_num_mats, cell_mat_ids, cell_mat_volfracs,
                    cell_mat_centroids, source_mesh_flat, source_state_flat);
 
@@ -1368,12 +1368,12 @@ MMDriver<Search, Intersect, Interpolate, D,
                            Flat_Mesh_Wrapper<> flat_mesh_wrapper,
                            Flat_State_Wrapper<Flat_Mesh_Wrapper<>> flat_state_wrapper) {
                            
-	// get the number of cells in the flat state, Note that by construction, in the
-	// flat state, cells can be duplicated because of ghosting on other nodes
+    // get the number of cells in the flat state, Note that by construction, in the
+    // flat state, cells can be duplicated because of ghosting on other nodes
   int nsourcecells = flat_mesh_wrapper.num_entities(Entity_kind::CELL, Entity_type::ALL);
 
-	// get the number of materials. This is the number of materials in the state
-	// manager with cells, not the number of registered materials
+    // get the number of materials. This is the number of materials in the state
+    // manager with cells, not the number of registered materials
   int nmats = flat_state_wrapper.num_materials();
   
   // a counter for the total number of material/cell combinations
@@ -1388,16 +1388,16 @@ MMDriver<Search, Intersect, Interpolate, D,
   // get the cell materials directly from the state manager, not that by construction
   // the materials only appear once in the set
   std::unordered_map<int, std::unordered_set<int>> cell_materials_= 
-  	flat_state_wrapper.get_cell_materials();
+      flat_state_wrapper.get_cell_materials();
   
   // get all the data for the volume fractions
   std::unordered_map<int, std::vector<double>> mat_volfracs = 
-  	flat_state_wrapper.get<StateVectorMulti<double>>("mat_volfracs")->get_data();
+      flat_state_wrapper.get<StateVectorMulti<double>>("mat_volfracs")->get_data();
   
   // get all the data for the volume fractions
   std::unordered_map<int, std::vector<Wonton::Point<D>>> mat_centroids = 
-  	flat_state_wrapper.get<StateVectorMulti<Wonton::Point<D>>>("mat_centroids")->get_data();
-  	
+      flat_state_wrapper.get<StateVectorMulti<Wonton::Point<D>>>("mat_centroids")->get_data();
+      
   // At this point we have the cell materials only for the unique cells that the flat
   // state manager defines. The flat state mesh defines cells for all cells in the
   // constituent nodes, but there are duplicates due to ghosts. The surviving cell
@@ -1409,35 +1409,35 @@ MMDriver<Search, Intersect, Interpolate, D,
   // loop over cells since we already have the cell dominant cell_materials_
   for (int i=0; i<nsourcecells; ++i) {
   
-  	// get the materials in this cell (may be empty if cell is a duplicate)
-  	auto kv = cell_materials_.find(i);
-  	
-  	// if we don't find the cell, then just skip
-  	if ( kv== cell_materials_.end()) continue;
+      // get the materials in this cell (may be empty if cell is a duplicate)
+      auto kv = cell_materials_.find(i);
+      
+      // if we don't find the cell, then just skip
+      if ( kv== cell_materials_.end()) continue;
   
-  	// unpack the set of materials in this cell
-  	std::unordered_set<int> materials = kv->second;
-  	
-  	// the cell id is the index into the current flat mesh list
-  	cell_num_mats[i]=materials.size();
-  	
-  	// loop over material ids (the order is arbitrary)
-  	for (int m : materials){
-  		
-  		// add the material to the ccc vector
-  		cell_mat_ids.push_back(m);
-  		
-  		// find the cell index in this material 
-  		// we need this step since a cell can appear multiple times in a material
-  		// due to the repeated appearance of ghosts
-  		int ind = flat_state_wrapper.cell_index_in_material(i,m); 		
-  		
-  		// add the volume fraction to the ccc vector
-  		cell_mat_volfracs.push_back(mat_volfracs[m][ind]);
-  		
-  		// add the material centroid to the ccc vector
-  		cell_mat_centroids.push_back(mat_centroids[m][ind]);
-  	}  
+      // unpack the set of materials in this cell
+      std::unordered_set<int> materials = kv->second;
+      
+      // the cell id is the index into the current flat mesh list
+      cell_num_mats[i]=materials.size();
+      
+      // loop over material ids (the order is arbitrary)
+      for (int m : materials){
+          
+          // add the material to the ccc vector
+          cell_mat_ids.push_back(m);
+          
+          // find the cell index in this material 
+          // we need this step since a cell can appear multiple times in a material
+          // due to the repeated appearance of ghosts
+          int ind = flat_state_wrapper.cell_index_in_material(i,m);         
+          
+          // add the volume fraction to the ccc vector
+          cell_mat_volfracs.push_back(mat_volfracs[m][ind]);
+          
+          // add the material centroid to the ccc vector
+          cell_mat_centroids.push_back(mat_centroids[m][ind]);
+      }  
   }
 }
 

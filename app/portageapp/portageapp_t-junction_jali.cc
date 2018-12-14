@@ -594,8 +594,20 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
   for (int i = 1; i < nsrccells; i++)
     offsets[i] = offsets[i-1] + cell_num_mats[i-1];
 
-  // Count the number of materials in the problem and gather their IDs
 
+  ////////////////////////////////////////////////////////////////////////////
+  // This is a not to fix later. The problems will also appear in portageapp_multimat_jali.
+  // The problems are with the next 3 blocks of code, not counting the diagnostics.
+  // The problem is that these block treat material id differently and inconsistently.
+  // The problem will bit us particularly if a partition does not have all materials
+  ////////////////////////////////////////////////////////////////////////////
+  
+  
+  ////////////////////////////////////////////////////////////////////////////
+  // in this block, mat_id lists the materials in the order they are encounter 
+  // in the partition when walking over cells
+  ////////////////////////////////////////////////////////////////////////////
+  // Count the number of materials in the problem and gather their IDs
   std::vector<int> mat_ids;
   nmats = 0;
   for (int c = 0; c < nsrccells; c++) {
@@ -634,6 +646,11 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
 
 
 
+  ////////////////////////////////////////////////////////////////////////////
+  // in this block, matcells is dimensioned by the number of materials
+  // and the index really is the cell id. If the materials are not 0...nmats-1
+  // then this will segfault since real material id is used as the index
+  ////////////////////////////////////////////////////////////////////////////
   // Convert data from cell-centric to material-centric form as we
   // will need it for adding it to the state manager
 
@@ -650,12 +667,16 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
     }
   }
 
+  ////////////////////////////////////////////////////////////////////////////
+  // in this block, materials are added sequentially so the internal Jali id
+  // may not match the material id if the materials are sparse
+  ////////////////////////////////////////////////////////////////////////////
   // Add materials, volume fractions and centroids to source state
 
   std::vector<std::string> matnames(nmats);
   for (int m = 0; m < nmats; m++) {
     std::stringstream matstr;
-    matstr << "mat" << mat_ids[m];
+    matstr << "mat" << m;
     matnames[m] = matstr.str();
     sourceStateWrapper.add_material(matnames[m], matcells[m]);
   }

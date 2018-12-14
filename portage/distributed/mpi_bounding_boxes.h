@@ -297,28 +297,10 @@ class MPI_Bounding_Boxes {
                                   
     }
     
-    // need to do this at the end of the mesh stuff, because converting to 
-    // uid uses the global id's and we don't want to modify them before we are
-    // done converting the old relationships
-    // merge global ids and set in the flat mesh    
-    sourceCellGlobalIds = merge_data(newCellGlobalIds, uidToOldCell_);
-    sourceNodeGlobalIds = merge_data(newNodeGlobalIds, uidToOldNode_);
-
-    // set counts for cells and nodes in the flat mesh
-    source_mesh_flat.set_num_owned_cells(sourceCellGlobalIds.size());
-    source_mesh_flat.set_num_owned_nodes(sourceNodeGlobalIds.size());
-
-    // Finish initialization using redistributed data
-    source_mesh_flat.finish_init();
-
-
     // SEND FIELD VALUES
     
     // multimaterial state info
     int nmats = source_state_flat.num_materials();
-    comm_info_t num_mats_info, num_mat_cells_info;
-    std::vector<int> all_material_ids, all_material_shapes, all_material_cells;
-
 
     // Is the a multimaterial problem? If so we need to pass the cell indices
     // in addition to the field values
@@ -331,18 +313,19 @@ class MPI_Bounding_Boxes {
       /////////////////////////////////////////////////////////
       
       // set the info for the number of materials on each node
+      comm_info_t num_mats_info;
       setSendRecvCounts(&num_mats_info, commSize, sendFlags, nmats, nmats);
       
       // get the sorted material ids on this node
       std::vector<int> material_ids=source_state_flat.get_material_ids();
       
-      // resize the post distribute material id vector
-      all_material_ids.resize(num_mats_info.newNum);
-
-      // sendData
+      // get all material ids across
+      all_material_ids_.resize(num_mats_info.newNum);
+      
+      // send all materials to all nodes, num_mats_info.recvCounts is the shape
       sendData(commRank, commSize, MPI_INT, 1, 0, num_mats_info.sourceNum, 0,
         num_mats_info.sendCounts, num_mats_info.recvCounts,
-        material_ids, &all_material_ids
+        material_ids, &all_material_ids_
       );
       
       /////////////////////////////////////////////////////////
@@ -353,134 +336,97 @@ class MPI_Bounding_Boxes {
       std::vector<int> material_shapes=source_state_flat.get_material_shapes();
       
       // resize the post distribute material id vector
-      all_material_shapes.resize(num_mats_info.newNum);
+      all_material_shapes_.resize(num_mats_info.newNum);
 
-      // sendData
+      // send all material shapes to all nodes
       sendData(commRank, commSize, MPI_INT, 1, 0, num_mats_info.sourceNum, 0,
         num_mats_info.sendCounts, num_mats_info.recvCounts,
-        material_shapes, &all_material_shapes
+        material_shapes, &all_material_shapes_
       );
      
       /////////////////////////////////////////////////////////
-      // get the material cell ids across all nodes
+      // get the lists of material cell ids across all nodes
       /////////////////////////////////////////////////////////
       
       // get the total number of material cell id's on this node
       int nmatcells = source_state_flat.num_material_cells();
       
       // set the info for the number of materials on each node
-      setSendRecvCounts(&num_mat_cells_info, commSize, sendFlags, nmatcells, nmatcells);
+      setSendRecvCounts(&num_mat_cells_info_, commSize, sendFlags, nmatcells, nmatcells);
       
       // get the sorted material ids on this node
       std::vector<int> material_cells=source_state_flat.get_material_cells();
       
       // resize the post distribute material id vector
-      all_material_cells.resize(num_mat_cells_info.newNum);
+      all_material_cells_.resize(num_mat_cells_info_.newNum);
 
-      // sendData
-      sendData(commRank, commSize, MPI_INT, 1, 0, num_mat_cells_info.sourceNum, 0,
-        num_mat_cells_info.sendCounts, num_mat_cells_info.recvCounts,
-        material_cells, &all_material_cells
+      // send material cells to all nodes, but first translate to gid
+      sendData(commRank, commSize, MPI_INT, 1, 0, num_mat_cells_info_.sourceNum, 0,
+        num_mat_cells_info_.sendCounts, num_mat_cells_info_.recvCounts,
+        to_uid(material_cells,sourceCellGlobalIds), &all_material_cells_
       );
-      
-      /////////////////////////////////////////////////////////
-      // compute the cell map from local id to global id back to
-      // first appearance of the local id. This code was copied
-      // verbatim from flat_mesh_wrapper.h
-      /////////////////////////////////////////////////////////
-
-      // Global to local maps for cells and nodes
-      std::map<int, int> globalCellMap;
-      std::vector<int> cellUniqueRep(newCellGlobalIds.size());
-      for (unsigned int i=0; i<newCellGlobalIds.size(); ++i) {
-        auto itr = globalCellMap.find(newCellGlobalIds[i]);
-        if (itr == globalCellMap.end()) {
-          globalCellMap[newCellGlobalIds[i]] = i;
-          cellUniqueRep[i] = i;
-        }
-        else {
-          cellUniqueRep[i] = itr->second;
-        }
-      }
-
-      /////////////////////////////////////////////////////////
-      // Fix the material cell indices to account for the fact
-      // that they are local indices on the different nodes and 
-      // need to be consistent within this flat mesh. FixListIndices
-      // below is hard coded to work with ghost cells which we don't have
-      // so I'm going to do this inline.
-      /////////////////////////////////////////////////////////
-      
-      // get the local cell index offsets
-      std::vector<int> offsets(commSize);
-      offsets[0]=0;
-
-      std::partial_sum(cellInfo.recvCounts.begin(),cellInfo.recvCounts.end()-1,
-          offsets.begin()+1);     
-          
-      // make life easy by keeping a running counter
-      int running_counter=0;
-
-      // loop over the ranks
-      for (int rank=0; rank<commSize; ++rank){
-          
-          // get the cell offset for this rank
-          int this_offset = offsets[rank];
-          
-          // get the number of material cells for this rank
-          int nmat_cells = num_mat_cells_info.recvCounts[rank];
-          
-          // loop over material cells on this rank
-          for (int i=0; i<nmat_cells; ++i){
-              
-              // offset the indices in all_material_cells
-              all_material_cells[running_counter] += this_offset;
-              
-              // use cellUniqueRep to map each cell down to its first appearance
-              all_material_cells[running_counter++] = cellUniqueRep[all_material_cells[running_counter]];
-          }    
-      }
+     
       
       /////////////////////////////////////////////////////////
       // We need to turn the flattened material cells into a correctly shaped
       // ragged right structure for use as the material cells in the flat
-      // state wrapper. Just as in the flat state mesh field (and associated
-      // cell ids), we aren't removing duplicates, just concatnating by material
+      // state wrapper. We aren't removing duplicates yet, just concatenating by material
       /////////////////////////////////////////////////////////
       
       // allocate the material indices
       std::unordered_map<int,std::vector<int>> material_indices;
       
       // reset the running counter
-      running_counter=0;
+      int running_counter=0;
       
       // loop over material ids on different nodes
-      for (int i=0; i<all_material_ids.size(); ++i){
+      for (int i=0; i<all_material_ids_.size(); ++i){
       
-          // get the current working material
-          int mat_id = all_material_ids[i];
-          
-          // get the current number of material cells for this material
-          int nmat_cells = all_material_shapes[i];
-          
-          // get or create a reference to the correct material cell vector
-          std::vector<int>& these_material_cells = material_indices[mat_id];
-          
-          // loop over the correct number of material cells
-          for (int j=0; j<nmat_cells; ++j){
-              these_material_cells.push_back(all_material_cells[running_counter++]);
-          }
+        // get the current working material
+        int mat_id = all_material_ids_[i];
+        
+        // get the current number of material cells for this material
+        int nmat_cells = all_material_shapes_[i];
+        
+        // get or create a reference to the correct material cell vector
+        std::vector<int>& these_material_cells = material_indices[mat_id];
+        
+        // loop over the correct number of material cells
+        for (int j=0; j<nmat_cells; ++j){
+            these_material_cells.push_back(all_material_cells_[running_counter++]);
+        }
           
       }
       
-      // We are reusing the material cells and cell materials. Since we are using
-      // maps and sets we want to make sure that we are starting clean and not
-      // adding to cruft that is already there.
+      // cell material indices are added not replaced by vector so we need to
+      // start clean
       source_state_flat.clear_material_cells();
       
-      // add the material indices by keys
-      for ( auto& kv: material_indices){
-          source_state_flat.mat_add_cells(kv.first, kv.second);
+      // merge the material cells and convert to local id (uid sort order)
+      for (auto &kv: material_indices){
+      
+        // get the material id
+        int m = kv.first;
+        
+        // create the maps between uid and index within the material
+        // uidToOldIndexInMaterial_ maps from uid to index in unmerged data
+        // this will be reused to remap data fields
+        create_maps(kv.second, uidToOldIndexInMaterial_[m], uidToNewIndexInMaterial_[m]);
+        
+        // compute unique uid's with  material
+        // material cells (uid's) have duplicates and need to be merged
+        // this step merges the cell uid's within a material so each cell is unique
+        std::vector<int> mat_cell_indices = merge_data(kv.second, uidToOldIndexInMaterial_[m]);
+        
+        // material cells are unique within the material but currently uid's
+        // the uid's need to be converted to a local cell id on the partition
+        std::vector<int> local_mat_cell_indices;
+        local_mat_cell_indices.reserve(mat_cell_indices.size());
+        for (auto uid: mat_cell_indices) 
+          local_mat_cell_indices.push_back(uidToNewCell_[uid]);
+        
+        // add the material cells to the state manager
+        source_state_flat.mat_add_cells(kv.first, local_mat_cell_indices);
       }
       
     }
@@ -506,7 +452,7 @@ class MPI_Bounding_Boxes {
              info = cellInfo;
       } else {
          // multi material field
-         info = num_mat_cells_info;
+         info = num_mat_cells_info_;
       }
                            
       // allocate storage for the new distribute data, note that this data
@@ -527,23 +473,53 @@ class MPI_Bounding_Boxes {
       } else if (source_state_flat.field_type(Entity_kind::CELL, field_name) == Wonton::Field_type::MESH_FIELD){
           // mesh cell field
           newField__ = merge_data(newField, uidToOldCell_, sourceFieldStride);
-         } else {
+      } else {
              // multi material field             
-         }
+      }
          
       // unpack the field, has the correct data types, but still is not merged
-      source_state_flat.unpack(field_name, newField__, all_material_ids, all_material_shapes);
+      source_state_flat.unpack(field_name, newField__, all_material_ids_, all_material_shapes_);
            
     } 
+
+    // need to do this at the end, because converting to 
+    // uid uses the global id's and we don't want to modify them before we are
+    // done converting the old relationships
+    // merge global ids and set in the flat mesh    
+    sourceCellGlobalIds = merge_data(newCellGlobalIds, uidToOldCell_);
+    sourceNodeGlobalIds = merge_data(newNodeGlobalIds, uidToOldNode_);
+
+    // set counts for cells and nodes in the flat mesh
+    source_mesh_flat.set_num_owned_cells(sourceCellGlobalIds.size());
+    source_mesh_flat.set_num_owned_nodes(sourceNodeGlobalIds.size());
+
+    // Finish initialization using redistributed data
+    source_mesh_flat.finish_init();
+
 
   } // distribute
 
   private:
  
   int dim_;
+  
+  // maps between uid and new and old indices
   std::map<int,int> uidToOldNode_, uidToNewNode_;
   std::map<int,int> uidToOldFace_, uidToNewFace_;
   std::map<int,int> uidToOldCell_, uidToNewCell_;
+  
+  // MM maps for material cells by material
+  std::map<int,std::map<int,int>>uidToOldIndexInMaterial_;
+  std::map<int,std::map<int,int>>uidToNewIndexInMaterial_;
+  
+  // vectors for unpacking multimaterial data
+  std::vector<int> all_material_ids_;
+  std::vector<int> all_material_shapes_;
+  std::vector<int>all_material_cells_;
+
+  // comm info data tha is potentially needed in two different scopes
+  comm_info_t num_mat_cells_info_;
+
 
   /*!
     @brief Compute fields needed to do comms for a given entity type
