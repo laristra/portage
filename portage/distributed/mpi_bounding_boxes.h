@@ -435,21 +435,20 @@ class MPI_Bounding_Boxes {
     for (std::string field_name : source_state_flat.names())
     {
 
-      // this is a packed version of the field and is not a pointer to the
+      // this is a packed local version of the field and is not a pointer to the
       // original field
       std::vector<double> sourceField = source_state_flat.pack(field_name);
       
       // get the field stride
       int sourceFieldStride = source_state_flat.get_field_stride(field_name);
 
-      // Currently only cell and node fields are supported
       comm_info_t info;
       if (source_state_flat.get_entity(field_name) == Entity_kind::NODE){
           // node mesh field
           info = nodeInfo;
       } else if (source_state_flat.field_type(Entity_kind::CELL, field_name) == Wonton::Field_type::MESH_FIELD){
           // mesh cell field
-             info = cellInfo;
+          info = cellInfo;
       } else {
          // multi material field
          info = num_mat_cells_info_;
@@ -459,26 +458,35 @@ class MPI_Bounding_Boxes {
       // is still packed and raw doubles and will need to be unpacked
       std::vector<double> newField(sourceFieldStride*info.newNum);
 
-
-
       // send the field
       sendField(info, commRank, commSize, MPI_DOUBLE, sourceFieldStride,
         sourceField, &newField);
       
       // merge the data before unpacking
-      std::vector<double> newField__;
       if (source_state_flat.get_entity(field_name) == Entity_kind::NODE){
-          // node mesh field
-          newField__ = merge_data(newField, uidToOldNode_, sourceFieldStride);
+      
+        // node mesh field
+        std::vector<double> tempNewField = merge_data(newField, uidToOldNode_, sourceFieldStride);
+        
+        // unpack the field, has the correct data types, but still is not merged
+        source_state_flat.unpack(field_name, tempNewField);
+        
       } else if (source_state_flat.field_type(Entity_kind::CELL, field_name) == Wonton::Field_type::MESH_FIELD){
-          // mesh cell field
-          newField__ = merge_data(newField, uidToOldCell_, sourceFieldStride);
+      
+        // mesh cell field
+        std::vector<double> tempNewField = merge_data(newField, uidToOldCell_, sourceFieldStride);
+        
+        // unpack the field, has the correct data types, but still is not merged
+        source_state_flat.unpack(field_name, tempNewField);
+        
       } else {
-             // multi material field             
+      
+        // unpack the field, has the correct data types, but still is not merged
+        source_state_flat.unpack(field_name, newField, 
+          all_material_ids_, all_material_shapes_, uidToOldIndexInMaterial_);
+        
       }
          
-      // unpack the field, has the correct data types, but still is not merged
-      source_state_flat.unpack(field_name, newField__, all_material_ids_, all_material_shapes_);
            
     } 
 
