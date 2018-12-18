@@ -744,19 +744,18 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
     }
   }
 
-	std::cout << "***Registered fieldnames:"<<std::endl;
-	for (auto & field_name: sourceStateWrapper.names()) 
-		std::cout << " registered fieldname: " << field_name << std::endl;
-		
+  std::cout << "***Registered fieldnames:"<<std::endl;
+  for (auto & field_name: sourceStateWrapper.names()) 
+    std::cout << " registered fieldname: " << field_name << std::endl;
+        
   std::vector<std::string> fieldnames;
   fieldnames.push_back("cellmatdata");
-  /*
+  
   std::stringstream filename;
   filename <<"source_mm_" << rank << ".gmv";
-  Portage::write_to_gmv<dim>(sourceMeshWrapper, sourceStateWrapper,
-                             source_interface_reconstructor, fieldnames,
-                             filename.str());
-  */
+  //Portage::write_to_gmv<dim>(sourceMeshWrapper, sourceStateWrapper,
+  //                          source_interface_reconstructor, fieldnames,
+  //                           filename.str());
 
   // Add the materials into the target mesh but with empty cell lists
   // The remap algorithm will figure out which cells contain which materials
@@ -777,7 +776,10 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
   if (material_field_expressions.size()) {
     targetStateWrapper.mat_add_celldata<double>("cellmatdata");
     remap_fields.push_back("cellmatdata");
-  }
+    //double *target_field_raw;
+    //targetStateWrapper.mat_get_celldata("cellmatdata", 0, &target_field_raw);
+    //   assert (target_field_raw != nullptr);
+ }
 
   if (numpe > 1) MPI_Barrier(MPI_COMM_WORLD);
 
@@ -896,7 +898,41 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
       ncmats++;
     }
   }
+  
+  // Cheesy diagnostics
+  for (int m = 0; m < nmats; m++) {
+    std::vector<int> matcells;
+    targetStateWrapper.mat_get_cells(m, &matcells);
 
+    double const *matvf;
+    targetStateWrapper.mat_get_celldata("mat_volfracs", m, &matvf);
+
+    Wonton::Point<dim> const *matcen;
+    targetStateWrapper.mat_get_celldata("mat_centroids", m, &matcen);
+
+    double const *cellmatdata;
+    targetStateWrapper.mat_get_celldata("cellmatdata", m, &cellmatdata);
+
+    int nmatcells = matcells.size();
+    
+    std::cout << "\n----cell indices on rank "<< rank<<" for material "<< m << ": ";
+    for (int ic = 0; ic < nmatcells; ic++) std::cout <<matcells[ic]<< " ";
+    std::cout << std::endl; 
+    
+    std::cout << "----cellmatdata on rank "<< rank<<" for material "<< m <<": ";
+    for (int ic = 0; ic < nmatcells; ic++) std::cout <<cellmatdata[ic]<< " ";
+    std::cout << std::endl; 
+    
+    std::cout << "----mat_volfracs on rank "<< rank<<" for material "<< m <<": ";
+    for (int ic = 0; ic < nmatcells; ic++) std::cout <<matvf[ic]<< " ";
+    std::cout << std::endl << std::endl; 
+    
+  }
+  
+  
+  return;
+  // INTERFACE RECONSTRUCTION ON THE TARGET IS PROBLEMATIC AT THE MOMENT
+  // DUE TO THE HANDLING OF GHOSTS
 
   interface_reconstructor_factory<dim, Wonton::Jali_Mesh_Wrapper>
       target_IRFactory(targetMeshWrapper, tols);
@@ -911,6 +947,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
   Portage::write_to_gmv<dim>(targetMeshWrapper, targetStateWrapper,
                              target_interface_reconstructor, fieldnames,
                              "target_mm.gmv");
+
 
 
   // Compute error
