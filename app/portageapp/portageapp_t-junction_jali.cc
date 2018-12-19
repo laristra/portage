@@ -899,7 +899,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
     }
   }
   
-  // Cheesy diagnostics
+  // Cheesy printout results
   for (int m = 0; m < nmats; m++) {
     std::vector<int> matcells;
     targetStateWrapper.mat_get_cells(m, &matcells);
@@ -919,12 +919,16 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
     for (int ic = 0; ic < nmatcells; ic++) std::cout <<matcells[ic]<< " ";
     std::cout << std::endl; 
     
-    std::cout << "----cellmatdata on rank "<< rank<<" for material "<< m <<": ";
-    for (int ic = 0; ic < nmatcells; ic++) std::cout <<cellmatdata[ic]<< " ";
-    std::cout << std::endl; 
-    
     std::cout << "----mat_volfracs on rank "<< rank<<" for material "<< m <<": ";
     for (int ic = 0; ic < nmatcells; ic++) std::cout <<matvf[ic]<< " ";
+    std::cout << std::endl; 
+    
+    std::cout << "----mat_centroids on rank "<< rank<<" for material "<< m <<": ";
+    for (int ic = 0; ic < nmatcells; ic++) std::cout << "(" << matcen[ic][0]<<", "<< matcen[ic][1]<< ") ";
+    std::cout << std::endl; 
+    
+    std::cout << "----cellmatdata on rank "<< rank<<" for material "<< m <<": ";
+    for (int ic = 0; ic < nmatcells; ic++) std::cout <<cellmatdata[ic]<< " ";
     std::cout << std::endl << std::endl; 
     
   }
