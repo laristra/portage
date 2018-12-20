@@ -915,7 +915,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
 
     int nmatcells = matcells.size();
     
-    std::cout << "\n----cell indices on rank "<< rank<<" for material "<< m << ": ";
+    std::cout << "\n----target cell indices on rank "<< rank<<" for material "<< m << ": ";
     for (int ic = 0; ic < nmatcells; ic++) std::cout <<matcells[ic]<< " ";
     std::cout << std::endl; 
     
