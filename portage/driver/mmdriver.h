@@ -612,11 +612,17 @@ int MMDriver<Search, Intersect, Interpolate, D,
 
   // Detect and fix values if we have a mismatch between source and
   // target domain boundaries
+  
+  MismatchFixer<D, onwhat, SourceMesh_Wrapper, SourceState_Wrapper,
+                TargetMesh_Wrapper, TargetState_Wrapper>
+      mismatch_fixer(source_mesh_, source_state_, target_mesh_, target_state_,
+                     source_ents_and_weights);
 
-  fix_mismatch<D, onwhat>(source_mesh_, source_state_,
-                          target_mesh_, target_state_,
-                          source_ents_and_weights,
-                          src_meshvar_names, trg_meshvar_names);
+  if (mismatch_fixer.has_mismatch()) {
+    for (int i = 0; i < nvars; i++)
+      mismatch_fixer.fix_mismatch(src_meshvar_names[i], trg_meshvar_names[i]);
+  }
+    
 
 
   gettimeofday(&end_timeval, 0);
@@ -1062,12 +1068,21 @@ int MMDriver<Search, Intersect, Interpolate, D,
   // Detect and fix if we have a mismatch between source and target
   // domain boundaries
 
-  fix_mismatch<D, onwhat>(source_mesh_flat, source_state_flat,
-                          target_mesh_, target_state_,
-                          source_ents_and_weights,
-                          src_meshvar_names, trg_meshvar_names);
+  // Detect and fix values if we have a mismatch between source and
+  // target domain boundaries
+  
+  MismatchFixer<D, onwhat, Flat_Mesh_Wrapper<>,
+                Flat_State_Wrapper<Flat_Mesh_Wrapper<>>,
+                TargetMesh_Wrapper, TargetState_Wrapper>
+      mismatch_fixer(source_mesh_flat, source_state_flat,
+                     target_mesh_, target_state_,
+                     source_ents_and_weights);
 
-
+  if (mismatch_fixer.has_mismatch()) {
+    for (int i = 0; i < nvars; i++)
+      mismatch_fixer.fix_mismatch(src_meshvar_names[i], trg_meshvar_names[i]);
+  }
+    
 
   //--------------------------------------------------------------------
   // REMAP MULTIMATERIAL FIELDS NEXT, ONE MATERIAL AT A TIME
