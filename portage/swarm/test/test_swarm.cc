@@ -54,8 +54,7 @@ TEST(SwarmFactory, Check_2D_random_seed) {
   ASSERT_EQ(swarm->num_owned_particles(), 17*17);
   for (int i=0; i<17*17; i++) {
     Portage::Point<2> pt = swarm->get_particle_coordinates(i);
-    Portage::Point<2> pt2 = swarm->get_particle_coordinates(i);
-    Portage::Point<2> pt3 = swarm->get_particle_coordinates(i);
+    Portage::Point<2> pt2 = swarm2->get_particle_coordinates(i);
     ASSERT_EQ(pt[0],  pt2[0]);
     ASSERT_EQ(pt[1],  pt2[1]);
   }
@@ -148,6 +147,23 @@ TEST(SwarmFactory, Check_3D_perturbed) {
 	ASSERT_GE(pt[1], -4.);
 	ASSERT_LE(pt[2],  4.);
 	ASSERT_GE(pt[2], -4.);
+      }
+    }
+  }
+}
+
+TEST(SwarmFactory, Check_3D_perturbed_seed) {
+  std::shared_ptr<Portage::Meshfree::Swarm<3>> swarm=Portage::Meshfree::SwarmFactory(-4.,-4.,-4.,4.,4.,4.,17*17*17,2,1234);
+  std::shared_ptr<Portage::Meshfree::Swarm<3>> swarm2=Portage::Meshfree::SwarmFactory(-4.,-4.,-4.,4.,4.,4.,17*17*17,2,1234);
+  ASSERT_EQ(swarm->num_owned_particles(), 17*17*17);
+  for (int i=0; i<17; i++) {
+    for (int j=0; j<17; j++) {
+      for (int k=0; k<17; k++) {
+	Portage::Point<3> pt = swarm->get_particle_coordinates((i*17+j)*17+k);
+	Portage::Point<3> pt2 = swarm2->get_particle_coordinates((i*17+j)*17+k);
+        ASSERT_EQ(pt[0], pt2[0]);
+        ASSERT_EQ(pt[1], pt2[1]);
+        ASSERT_EQ(pt[2], pt2[2]);
       }
     }
   }
