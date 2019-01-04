@@ -119,7 +119,7 @@ class Interpolate_2ndOrder {
   /// Set the name of the interpolation variable and the limiter type
 
   void set_interpolation_variable(std::string const & interp_var_name,
-                                  LimiterType limiter_type = NOLIMITER) {
+                                  Limiter_type limiter_type = NOLIMITER) {
     std::cerr << "Interpolation is available for only  entity types: CELL, NODE"
               << std::endl;
   }  // set_interpolation_variable
@@ -156,7 +156,7 @@ class Interpolate_2ndOrder {
   TargetMeshType const & target_mesh_;
   StateType const & source_state_;
   std::string interp_var_name_;
-  LimiterType limiter_type_;
+  Limiter_type limiter_type_;
   double const * source_vals_;
 
   // Portage::vector is generalization of std::vector and
@@ -235,7 +235,7 @@ class Interpolate_2ndOrder<D,
   /// Set the name of the interpolation variable and the limiter type
 
   void set_interpolation_variable(std::string const & interp_var_name,
-                                  LimiterType limiter_type = NOLIMITER) {
+                                  Limiter_type limiter_type = NOLIMITER) {
 
     interp_var_name_ = interp_var_name;
     limiter_type_ = limiter_type;
@@ -440,7 +440,7 @@ class Interpolate_2ndOrder<D,
   TargetMeshType const & target_mesh_;
   StateType const & source_state_;
   std::string interp_var_name_;
-  LimiterType limiter_type_;
+  Limiter_type limiter_type_;
   double const * source_vals_;
 
   // Portage::vector is generalization of std::vector and
@@ -523,7 +523,7 @@ class Interpolate_2ndOrder<D,
   /// Set the name of the interpolation variable and the limiter type
 
   void set_interpolation_variable(std::string const & interp_var_name,
-                                  LimiterType limiter_type = NOLIMITER) {
+                                  Limiter_type limiter_type = NOLIMITER) {
 
     interp_var_name_ = interp_var_name;
     limiter_type_ = limiter_type;
@@ -653,7 +653,7 @@ class Interpolate_2ndOrder<D,
   TargetMeshType const & target_mesh_;
   StateType const & source_state_;
   std::string interp_var_name_;
-  LimiterType limiter_type_;
+  Limiter_type limiter_type_;
   double const * source_vals_;
 
   // Portage::vector is generalization of std::vector and
