@@ -326,7 +326,7 @@ InterfaceReconstructorType, Matpoly_Splitter, Matpoly_Clipper>::operator()(int c
 
       // Find min and max values among all neighbors (exlude the first element
       // in nbrids because it corresponds to the cell itself, not a neighbor)
-      for (int i = 1; i < nbrids.size(); ++i) {
+      for (int i = 1; i < ls_vals.size(); ++i) {
         minval = std::min(ls_vals[i], minval);
         maxval = std::max(ls_vals[i], maxval);
       }
