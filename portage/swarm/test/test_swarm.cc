@@ -48,6 +48,19 @@ TEST(SwarmFactory, Check_2D_random) {
   }
 }
 
+TEST(SwarmFactory, Check_2D_random_seed) {
+  std::shared_ptr<Portage::Meshfree::Swarm<2>> swarm=Portage::Meshfree::SwarmFactory(-4.,-4.,4.,4.,17*17,0,1234);
+  std::shared_ptr<Portage::Meshfree::Swarm<2>> swarm2=Portage::Meshfree::SwarmFactory(-4.,-4.,4.,4.,17*17,0,1234);
+  ASSERT_EQ(swarm->num_owned_particles(), 17*17);
+  for (int i=0; i<17*17; i++) {
+    Portage::Point<2> pt = swarm->get_particle_coordinates(i);
+    Portage::Point<2> pt2 = swarm->get_particle_coordinates(i);
+    Portage::Point<2> pt3 = swarm->get_particle_coordinates(i);
+    ASSERT_EQ(pt[0],  pt2[0]);
+    ASSERT_EQ(pt[1],  pt2[1]);
+  }
+}
+
 TEST(SwarmFactory, Check_3D_random) {
   std::shared_ptr<Portage::Meshfree::Swarm<3>> swarm=Portage::Meshfree::SwarmFactory(-4.,-4.,-4.,4.,4.,4.,17*17*17,0);
   ASSERT_EQ(swarm->num_owned_particles(), 17*17*17);

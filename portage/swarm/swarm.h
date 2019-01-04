@@ -181,12 +181,17 @@ std::shared_ptr<Swarm<1>> SwarmFactory(double xmin, double xmax,
 std::shared_ptr<Swarm<2>> SwarmFactory(double xmin, double ymin,
                                        double xmax, double ymax,
                                        unsigned int nparticles,
-                                       unsigned int distribution) {
+                                       unsigned int distribution, 
+                                       unsigned int rand_seed=0) {
 
   auto pts_sp = std::make_shared<typename Swarm<2>::PointVec>(nparticles);
   typename Swarm<2>::PointVec &pts(*pts_sp);
   if (distribution == 0) {  // random distribution of particles
-    srand(time(NULL));
+    if (rand_seed == 0) {
+      srand(time(NULL));
+    } else {
+      srand(rand_seed);
+    }
     unsigned int rand_state;
     for (size_t i = 0; i < nparticles; i++) {
       Point<2> pt=pts[i];
@@ -196,10 +201,6 @@ std::shared_ptr<Swarm<2>> SwarmFactory(double xmin, double ymin,
     }
   } else {
     int npdim = sqrt(nparticles);
-    if (npdim*npdim != nparticles) {
-      std::cerr << "Requested number of particles not a perfect square\n";
-      std::cerr << "Generating only " << npdim << "particles in each dimension\n";
-    }
     double hx = (xmax-xmin)/(npdim-1);
     double hy = (ymax-ymin)/(npdim-1);
     int n = 0;
