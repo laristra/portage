@@ -214,7 +214,11 @@ std::shared_ptr<Swarm<2>> SwarmFactory(double xmin, double ymin,
       }
     }
     if (distribution == 2) {
-      srand(time(NULL));
+      if (rand_seed == 0) {
+        srand(time(NULL));
+      } else {
+        srand(rand_seed);
+      }
       unsigned int rand_state;
       for (size_t i = 0; i < nparticles; i++) {
 	Point<2> pt=pts[i];
@@ -235,12 +239,17 @@ std::shared_ptr<Swarm<2>> SwarmFactory(double xmin, double ymin,
 std::shared_ptr<Swarm<3>> SwarmFactory(double xmin, double ymin, double zmin,
                                        double xmax, double ymax, double zmax,
                                        unsigned int nparticles,
-                                       unsigned int distribution) {
+                                       unsigned int distribution, 
+                                       unsigned int rand_seed=0) {
 
   auto pts_sp = std::make_shared<typename Swarm<3>::PointVec>(nparticles);
   typename Swarm<3>::PointVec &pts(*pts_sp);
   if (distribution == 0) {  // Random distribution
-    srand(time(NULL));
+    if (rand_seed == 0) {
+      srand(time(NULL));
+    } else {
+      srand(rand_seed);
+    }
     unsigned int rand_state;
     for (size_t i = 0; i < nparticles; i++) {
       Point<3> pt=pts[i];
@@ -272,7 +281,11 @@ std::shared_ptr<Swarm<3>> SwarmFactory(double xmin, double ymin, double zmin,
       }
     }
     if (distribution == 2) {
-      srand(time(NULL));
+      if (rand_seed == 0) {
+        srand(time(NULL));
+      } else {
+        srand(rand_seed);
+      }
       unsigned int rand_state;
       for (size_t i = 0; i < nparticles; i++) {
 	Point<3> pt=pts[i];
