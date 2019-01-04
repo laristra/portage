@@ -4,11 +4,11 @@ in SwarmDriver::run()...
 Number of target particles in target swarm on rank 0: 361
 number of variables to remap is 1
 Remapping swarm variable remapdata to variable remapdata
-Swarm Transform Time Rank 0 (s): 0.313582
-  Swarm Distribution Time Rank 0 (s): 0.000329
-  Swarm Search Time Rank 0 (s): 0.013893
-  Swarm Accumulate Time Rank 0 (s): 0.298868
-  Swarm Estimate Time Rank 0 (s): 0.000492
+Swarm Transform Time Rank 0 (s): 0.609251
+  Swarm Distribution Time Rank 0 (s): 0.000546
+  Swarm Search Time Rank 0 (s): 0.028235
+  Swarm Accumulate Time Rank 0 (s): 0.579447
+  Swarm Estimate Time Rank 0 (s): 0.001023
 
 
 L2 NORM OF ERROR = 0.000000
