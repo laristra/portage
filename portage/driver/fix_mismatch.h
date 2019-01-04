@@ -100,7 +100,7 @@ bool get_unique_entity_masks(Mesh_Wrapper const &mesh,
 // Check if we have mismatch of mesh boundaries
 // T is the target mesh, S is the source mesh
 // T_i is the i'th cell of the target mesh and
-// |*| is signifies the extent/volume of an entity)
+// |*| signifies the extent/volume of an entity
 //
 // If sum_i(|T_i intersect S|) NE |S|, some source cells are not
 // completely covered by the target mesh
@@ -142,7 +142,8 @@ class MismatchFixer {
     // don't form a strict tiling (no overlaps) after redistribution
 
     std::vector<int> source_ent_masks(nsourceents_, 1);
-    get_unique_entity_masks<onwhat, SourceMesh_Wrapper>(source_mesh_, &source_ent_masks);
+    get_unique_entity_masks<onwhat, SourceMesh_Wrapper>(source_mesh_,
+                                                        &source_ent_masks);
 
     // collect volumes of entities that are not masked out and sum them up
 
@@ -192,15 +193,15 @@ class MismatchFixer {
     // CELLS EXIST GLOBALLY. So, at this stage, we can just check
     // on-rank intersections only
 
-    std::vector<double> xsect_volumes(ntargetents_, 0.0);
+    xsect_volumes_.resize(ntargetents_, 0.0);
     for (int t = 0; t < ntargetents_; t++) {
       std::vector<Weights_t> const& sw_vec = source_ents_and_weights[t];
       for (auto const& sw : sw_vec)
-        xsect_volumes[t] += sw.weights[0];
+        xsect_volumes_[t] += sw.weights[0];
     }
 
-    double xsect_volume = std::accumulate(xsect_volumes.begin(),
-                                          xsect_volumes.end(), 0.0);
+    double xsect_volume = std::accumulate(xsect_volumes_.begin(),
+                                          xsect_volumes_.end(), 0.0);
 #ifdef ENABLE_MPI
     global_xsect_volume_ = 0.0;
     MPI_Allreduce(&xsect_volume, &global_xsect_volume_, 1,
@@ -215,12 +216,13 @@ class MismatchFixer {
     // Are some source cells not fully covered by target cells?
     relvoldiff_source_ =
         fabs(global_xsect_volume_-global_source_volume_)/global_source_volume_;
-    if (relvoldiff_source_ > 1.0e-12) {
+    if (relvoldiff_source_ > voldifftol_) {
 
       mismatch_ = true;
 
-      std::cerr << "\n** MESH MISMATCH -" <<
-          " some source cells are not fully covered by the target mesh\n";
+      if (rank_ == 0) 
+        std::cerr << "\n** MESH MISMATCH -" <<
+            " some source cells are not fully covered by the target mesh\n";
 
 #ifdef DEBUG
       // Find one source cell (or dual cell) that is not fully covered
@@ -243,7 +245,7 @@ class MismatchFixer {
 
       for (auto it = source_mesh_.begin(onwhat, Entity_type::PARALLEL_OWNED);
            it != source_mesh_.end(onwhat, Entity_type::PARALLEL_OWNED); it++)
-        if (source_covered_vol[*it] > 1.0e-12) {
+        if (source_covered_vol[*it] > voldifftol_) {
           if (onwhat == Entity_kind::CELL)
             std::cerr << "Source cell " << *it <<
                 " not fully covered by target cells \n";
@@ -261,12 +263,13 @@ class MismatchFixer {
 
     relvoldiff_target_ =
         fabs(global_xsect_volume_-global_target_volume_)/global_target_volume_;
-    if (relvoldiff_target_ > 1.0e-12) {
+    if (relvoldiff_target_ > voldifftol_) {
 
       mismatch_ = true;
 
-      std::cerr << "\n** MESH MISMATCH -" <<
-          " some target cells are not fully covered by the source mesh\n";
+      if (rank_ == 0)
+        std::cerr << "\n** MESH MISMATCH -" <<
+            " some target cells are not fully covered by the source mesh\n";
 
 #ifdef DEBUG
       // Find one target cell that is not fully covered by the source mesh and
@@ -278,12 +281,12 @@ class MismatchFixer {
         std::vector<Weights_t> const& sw_vec = source_ents_and_weights[t];
         for (auto const& sw : sw_vec)
           covered_vol += sw.weights[0];
-        if (fabs(covered_vol-target_ent_volumes_[t])/target_ent_volumes_[t] > 1.0e-12) {
+        if (fabs(covered_vol-target_ent_volumes_[t])/target_ent_volumes_[t] > voldifftol_) {
           if (onwhat == Entity_kind::CELL)
-            std::cerr << "Target cell " << *it <<
+            std::cerr << "Target cell " << *it << " on rank " << rank_ <<
                 " not fully covered by source cells \n";
           else
-            std::cerr << "Target dual cell " << *it <<
+            std::cerr << "Target dual cell " << *it << " on rank " << rank_ <<
                 " not fully covered by source dual cells \n";
           break;
         }
@@ -310,14 +313,21 @@ class MismatchFixer {
     std::vector<bool> is_empty(ntargetents_, false);
     std::vector<int> emptyents;
     for (int t = 0; t < ntargetents_; t++) {
-      if (fabs(xsect_volumes[t]) < 1.0e-16) {
+      if (fabs(xsect_volumes_[t]) < std::numeric_limits<double>::epsilon()) {
         emptyents.push_back(t);
         is_empty[t] = true;
       }
     }
     int nempty = emptyents.size();
 
-    if (nempty) {
+    int global_nempty = nempty;
+#ifdef ENABLE_MPI    
+    int *nempty_all = (int *) malloc(nprocs_*sizeof(int));
+    MPI_Gather(&nempty, 1, MPI_INT, nempty_all, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    global_nempty = std::accumulate(nempty_all, nempty_all+nprocs_, 0.0);
+#endif
+    
+    if (global_nempty && rank_ == 0) {
       if (onwhat == Entity_kind::CELL)
         std::cerr << "One or more target cells are not covered by " <<
             "ANY source cells.\n" <<
@@ -326,7 +336,9 @@ class MismatchFixer {
         std::cerr << "One or more target dual cells are not covered by " <<
             "ANY source dual cells.\n" <<
             " Will assign values based on their neighborhood\n";
-
+    }
+    
+    if (nempty) {
       layernum_.resize(ntargetents_, 0);
 
       int nlayers = 0;
@@ -375,244 +387,287 @@ class MismatchFixer {
 
 
 
-  // Repair the remap for this variable to account for mesh boundary mismatch
+  /// @brief Repair the remapped field to account for boundary mismatch
+  /// @param src_var_name        field variable on source mesh
+  /// @param trg_var_name        field variable on target mesh
+  /// @param global_lower_bound  lower limit on variable
+  /// @param global_upper_bound  upper limit on variable
+  /// @param partial_fixup_type  type of fixup in case of partial mismatch
+  /// @param empty_fixup_type    type of fixup in empty target entities
+  ///
+  /// partial_fixup_type can be one of three types:
+  ///
+  /// CONSTANT - Fields will see no perturbations BUT REMAP WILL BE
+  ///            NON-CONSERVATIVE (constant preserving, not linearity
+  ///            preserving)
+  /// CONSERVATIVE - REMAP WILL BE CONSERVATIVE but perturbations will
+  ///                occur in the field (constant fields may not stay
+  ///                constant if there is mismatch)
+  /// SHIFTED_CONSERVATIVE - REMAP WILL BE CONSERVATIVE and field
+  ///                        perturbations will be minimum but field
+  ///                        values may be shifted (Constant fields
+  ///                        will be shifted to different constant; no
+  ///                        guarantees on linearity preservation)
+  ///
+  /// empty_fixup_type can be one of two types:
+  ///
+  /// LEAVE_EMPTY - Leave empty cells as is
+  /// EXTRAPOLATE - Fill empty cells with extrapolated values
+  /// FILL        - Fill empty cells with specified values (not yet implemented)
 
   bool fix_mismatch(std::string const & src_var_name,
-                    std::string const & trg_var_name) {
-    if (onwhat == Entity_kind::CELL &&
-        (source_state_.field_type(onwhat, src_var_name) ==
-         Field_type::MULTIMATERIAL_FIELD))
-      return fix_mismatch_matvar(src_var_name, trg_var_name);
-    else
-      return fix_mismatch_meshvar(src_var_name, trg_var_name);
+                    std::string const & trg_var_name,
+                    double global_lower_bound = -std::numeric_limits<double>::max(),
+                    double global_upper_bound = std::numeric_limits<double>::max(),
+                    Partial_fixup_type partial_fixup_type =
+                    Partial_fixup_type::SHIFTED_CONSERVATIVE,
+                    Empty_fixup_type empty_fixup_type =
+                    Empty_fixup_type::EXTRAPOLATE) {
+
+    if (source_state_.field_type(onwhat, src_var_name) ==
+        Field_type::MESH_FIELD)
+      return fix_mismatch_meshvar(src_var_name, trg_var_name,
+                                  global_lower_bound, global_upper_bound,
+                                  partial_fixup_type, empty_fixup_type);
   }
 
 
-
-  // Repair the remap for this mesh variable to account for mismatch
+  /// @brief Repair a remapped mesh field to account for boundary mismatch
 
   bool fix_mismatch_meshvar(std::string const & src_var_name,
-                            std::string const & trg_var_name) {
+                            std::string const & trg_var_name,
+                            double global_lower_bound,
+                            double global_upper_bound,
+                            Partial_fixup_type partial_fixup_type =
+                            Partial_fixup_type::SHIFTED_CONSERVATIVE,
+                            Empty_fixup_type empty_fixup_type =
+                            Empty_fixup_type::EXTRAPOLATE) {
 
     // Now process remap variables
     double const *source_data;
     source_state_.mesh_get_data(onwhat, src_var_name, &source_data);
 
-    // for now get lower and upper bounds from source mesh itself
-    // later we may need to get them from the calling application
-    double lower_bound = *std::min_element(source_data,
-                                           source_data + nsourceents_);
-    double global_lower_bound = lower_bound;
-#ifdef ENABLE_MPI
-    MPI_Allreduce(&lower_bound, &global_lower_bound, 1, MPI_INT, MPI_MIN,
-                  MPI_COMM_WORLD);
-#endif
-
-    double upper_bound = *std::max_element(source_data,
-                                           source_data + nsourceents_);
-    double global_upper_bound = upper_bound;
-#ifdef ENABLE_MPI
-    MPI_Allreduce(&upper_bound, &global_upper_bound, 1, MPI_INT, MPI_MAX,
-                  MPI_COMM_WORLD);
-#endif
-
-
-    double relbounddiff =
-        fabs((global_lower_bound-global_upper_bound)/global_lower_bound);
-    if (relbounddiff < 1.0e-06) {
-      // The field is constant over the source mesh/part. We HAVE to
-      // relax the bounds to be able to conserve the integral quantity
-      // AND maintain a constant. Relax by margins derived from the
-      // relative difference in volume
-
-      global_lower_bound *= (1.0-1.1*relvoldiff_);
-      global_upper_bound *= (1.0+1.1*relvoldiff_);
-    }
-
     double *target_data;
     target_state_.mesh_get_data(onwhat, trg_var_name, &target_data);
 
-    // Do something here to populate fully uncovered target cells. We
-    // have layers of empty cells starting out from fully or partially
-    // populated cells. We will assign every empty cell in a layer the
-    // average value of all its populated neighbors.  IN A DISTRIBUTED
-    // MESH IT _IS_ POSSIBLE THAT AN EMPTY ENTITY WILL NOT HAVE ANY
-    // OWNED NEIGHBOR IN THIS PARTITION THAT HAS MEANINGFUL DATA TO
-    // EXTRAPOLATE FROM (we remap data only to owned entities)
+    if (empty_fixup_type != Empty_fixup_type::LEAVE_EMPTY) {
+      // Do something here to populate fully uncovered target
+      // cells. We have layers of empty cells starting out from fully
+      // or partially populated cells. We will assign every empty cell
+      // in a layer the average value of all its populated neighbors.
+      // IN A DISTRIBUTED MESH IT _IS_ POSSIBLE THAT AN EMPTY ENTITY
+      // WILL NOT HAVE ANY OWNED NEIGHBOR IN THIS PARTITION THAT HAS
+      // MEANINGFUL DATA TO EXTRAPOLATE FROM (we remap data only to
+      // owned entities)
 
-    int curlayernum = 1;
-    for (std::vector<int> const& curlayer : emptylayers_) {
-      for (int ent : curlayer) {
-        std::vector<int> nbrs;
-        if (onwhat == Entity_kind::CELL)
-          target_mesh_.cell_get_node_adj_cells(ent, Entity_type::PARALLEL_OWNED,
-                                               &nbrs);
-        else
-          target_mesh_.node_get_cell_adj_nodes(ent, Entity_type::PARALLEL_OWNED,
-                                               &nbrs);
-
-        double aveval = 0.0;
-        int nave = 0;
-        for (int nbr : nbrs)
-          if (layernum_[nbr] < curlayernum) {
-            aveval += target_data[nbr];
-            nave++;
+      int curlayernum = 1;
+      for (std::vector<int> const& curlayer : emptylayers_) {
+        for (int ent : curlayer) {
+          std::vector<int> nbrs;
+          if (onwhat == Entity_kind::CELL)
+            target_mesh_.cell_get_node_adj_cells(ent, Entity_type::PARALLEL_OWNED,
+                                                 &nbrs);
+          else
+            target_mesh_.node_get_cell_adj_nodes(ent, Entity_type::PARALLEL_OWNED,
+                                                 &nbrs);
+          
+          double aveval = 0.0;
+          int nave = 0;
+          for (int nbr : nbrs) {
+            if (layernum_[nbr] < curlayernum) {
+              aveval += target_data[nbr];
+              nave++;
+            }
           }
-        if (nave)
-          aveval /= nave;
+          if (nave)
+            aveval /= nave;
 #ifdef DEBUG
-        else
-          std::cerr <<
-              "No owned neighbors of empty entity to extrapolate data from\n";
+          else
+            std::cerr <<
+                "No owned neighbors of empty entity to extrapolate data from\n";
 #endif
-
-        target_data[ent] = aveval;
+          
+          target_data[ent] = aveval;
+        }
+        curlayernum++;
       }
-      curlayernum++;
     }
 
 
-    // At this point assume that all cells have some value in them
-    // for the variable
+    if (partial_fixup_type == Partial_fixup_type::CONSTANT) {
+      // In interpolate step, we divided the accumulated integral in a
+      // target cell by the intersection volume to preserve a constant
+      // and violate conservation. So nothing to do here.
+    
+      return true;
 
-    // Now compute the net discrepancy between integrals over source
-    // and target. Excess comes from target cells not fully covered by
-    // source cells and deficit from source cells not fully covered by
-    // target cells
+    } else if (partial_fixup_type == Partial_fixup_type::CONSERVATIVE) {
+      // In interpolate step, we divided the accumulated integral (U)
+      // in a target cell by the intersection volume (v_i) instead of
+      // the target cell volume (v_c) to give a target field of u_t =
+      // U/v_i. In partially filled cells, this will preserve a
+      // constant source field but fill the cell with too much
+      // material. To restore conservation, we undo the division by
+      // the intersection volume and then divide by the cell volume
+      // (u'_t = U/v_c = u_t*v_i/v_c). This does not affect the values
+      // in fully filled cells
+      
+      for (int t = 0; t < ntargetents_; t++) {
+        if (fabs(xsect_volumes_[t]-target_ent_volumes_[t])/target_ent_volumes_[t] > voldifftol_)
+          target_data[t] *= xsect_volumes_[t]/target_ent_volumes_[t];
+      }
 
-    double source_sum =
-        std::inner_product(source_data, source_data + nsourceents_,
-                           source_ent_volumes_.begin(), 0.0);
+      return true;
 
-    double global_source_sum = source_sum;
+    } else if (partial_fixup_type == Partial_fixup_type::SHIFTED_CONSERVATIVE) {
+    
+      // At this point assume that all cells have some value in them
+      // for the variable
+
+      // Now compute the net discrepancy between integrals over source
+      // and target. Excess comes from target cells not fully covered by
+      // source cells and deficit from source cells not fully covered by
+      // target cells
+
+      double source_sum =
+          std::inner_product(source_data, source_data + nsourceents_,
+                             source_ent_volumes_.begin(), 0.0);
+
+      double global_source_sum = source_sum;
 #ifdef ENABLE_MPI
-    MPI_Allreduce(&source_sum, &global_source_sum, 1, MPI_DOUBLE, MPI_SUM,
-                  MPI_COMM_WORLD);
+      MPI_Allreduce(&source_sum, &global_source_sum, 1, MPI_DOUBLE, MPI_SUM,
+                    MPI_COMM_WORLD);
 #endif
 
-    double target_sum =
-        std::inner_product(target_data, target_data + ntargetents_,
-                           target_ent_volumes_.begin(), 0.0);
+      double target_sum =
+          std::inner_product(target_data, target_data + ntargetents_,
+                             target_ent_volumes_.begin(), 0.0);
 
-    double global_target_sum = target_sum;
-#ifdef ENABLE_MPI
-    MPI_Allreduce(&target_sum, &global_target_sum, 1, MPI_DOUBLE, MPI_SUM,
-                  MPI_COMM_WORLD);
-#endif
-
-    double global_diff = global_target_sum - global_source_sum;
-    double reldiff = global_diff/global_source_sum;
-
-    if (fabs(reldiff) < 1.0e-14)
-      return true;  // discrepancy is too small - nothing to do
-
-    // Now redistribute the discrepancy among cells in proportion to
-    // their volume. This will restore conservation and if the
-    // original distribution was a constant it will make the field a
-    // slightly different constant. Do multiple iterations because
-    // we may have some leftover quantity that we were not able to
-    // add/subtract from some cells in any given iteration. We don't
-    // expect that process to take more than two iterations at the
-    // most.
-
-    double adj_target_volume = target_volume_;
-    double global_adj_target_volume = global_target_volume_;
-
-    // sort of a "unit" discrepancy or difference per unit volume
-    double udiff = global_diff/global_adj_target_volume;
-
-    int iter = 0;
-    while (fabs(reldiff) > 1.0e-14 && iter < 5) {
-      for (auto it = target_mesh_.begin(onwhat, Entity_type::PARALLEL_OWNED);
-           it != target_mesh_.end(onwhat, Entity_type::PARALLEL_OWNED); it++) {
-        int t = *it;
-
-        if ((target_data[t]-udiff) < global_lower_bound) {
-          // Subtracting the full excess will make this cell violate the
-          // lower bound. So subtract only as much as will put this cell
-          // exactly at the lower bound
-
-          target_data[t] = global_lower_bound;
-
-          std::cerr << "Hit lower bound for cell " << t << " on rank " << rank_
-                    << "\n";
-
-          // this cell is no longer in play for adjustment - so remove its
-          // volume from the adjusted target_volume
-
-          adj_target_volume -= target_ent_volumes_[t];
-
-        } else if ((target_data[t]-udiff) > global_upper_bound) {  // udiff < 0
-          // Adding the full deficit will make this cell violate the
-          // upper bound. So add only as much as will put this cell
-          // exactly at the upper bound
-
-          target_data[t] = global_upper_bound;
-
-          std::cerr << "Hit upper bound for cell " << t << " on rank " << rank_
-                    << "\n";
-
-          // this cell is no longer in play for adjustment - so remove its
-          // volume from the adjusted target_volume
-
-          adj_target_volume -= target_ent_volumes_[t];
-
-        } else {
-          // This is the equivalent of
-          //           [curval*cellvol - diff*cellvol/meshvol]
-          // curval = ---------------------------------------
-          //                       cellvol
-
-          target_data[t] -= udiff;
-
-        }
-      }  // iterate through mesh cells
-
-      // Compute the new integral over all processors
-
-      target_sum = std::inner_product(target_data, target_data + ntargetents_,
-                                      target_ent_volumes_.begin(), 0.0);
-
-      global_target_sum = target_sum;
+      double global_target_sum = target_sum;
 #ifdef ENABLE_MPI
       MPI_Allreduce(&target_sum, &global_target_sum, 1, MPI_DOUBLE, MPI_SUM,
                     MPI_COMM_WORLD);
 #endif
 
-      // If we did not hit lower or upper bounds, this should be
-      // zero after the first iteration.  If we did hit some bounds,
-      // then recalculate the discrepancy and discrepancy per unit
-      // volume, but only taking into account volume of cells that
-      // are not already at the bounds - if we use the entire mesh
-      // volume for the recalculation, the convergence slows down
+      double global_diff = global_target_sum - global_source_sum;
+      double reldiff = global_diff/global_source_sum;
 
-      global_diff = global_target_sum - global_source_sum;
+      if (fabs(reldiff) < 1.0e-14)
+        return true;  // discrepancy is too small - nothing to do
 
-      global_adj_target_volume = adj_target_volume;
+      // Now redistribute the discrepancy among cells in proportion to
+      // their volume. This will restore conservation and if the
+      // original distribution was a constant it will make the field a
+      // slightly different constant. Do multiple iterations because
+      // we may have some leftover quantity that we were not able to
+      // add/subtract from some cells in any given iteration. We don't
+      // expect that process to take more than two iterations at the
+      // most.
+
+      double adj_target_volume = target_volume_;
+      double global_adj_target_volume = global_target_volume_;
+
+      // sort of a "unit" discrepancy or difference per unit volume
+      double udiff = global_diff/global_adj_target_volume;
+
+      int iter = 0;
+      while (fabs(reldiff) > 1.0e-14 && iter < 5) {
+        for (auto it = target_mesh_.begin(onwhat, Entity_type::PARALLEL_OWNED);
+             it != target_mesh_.end(onwhat, Entity_type::PARALLEL_OWNED); it++) {
+          int t = *it;
+
+          if ((target_data[t]-udiff) < global_lower_bound) {
+            // Subtracting the full excess will make this cell violate the
+            // lower bound. So subtract only as much as will put this cell
+            // exactly at the lower bound
+
+            target_data[t] = global_lower_bound;
+
+            std::cerr << "Hit lower bound for cell " << t << " on rank " << rank_
+                      << "\n";
+
+            // this cell is no longer in play for adjustment - so remove its
+            // volume from the adjusted target_volume
+
+            adj_target_volume -= target_ent_volumes_[t];
+
+          } else if ((target_data[t]-udiff) > global_upper_bound) {  // udiff < 0
+            // Adding the full deficit will make this cell violate the
+            // upper bound. So add only as much as will put this cell
+            // exactly at the upper bound
+
+            target_data[t] = global_upper_bound;
+
+            std::cerr << "Hit upper bound for cell " << t << " on rank " << rank_
+                      << "\n";
+
+            // this cell is no longer in play for adjustment - so remove its
+            // volume from the adjusted target_volume
+
+            adj_target_volume -= target_ent_volumes_[t];
+
+          } else {
+            // This is the equivalent of
+            //           [curval*cellvol - diff*cellvol/meshvol]
+            // curval = ---------------------------------------
+            //                       cellvol
+
+            target_data[t] -= udiff;
+
+          }
+        }  // iterate through mesh cells
+
+        // Compute the new integral over all processors
+
+        target_sum = std::inner_product(target_data, target_data + ntargetents_,
+                                        target_ent_volumes_.begin(), 0.0);
+
+        global_target_sum = target_sum;
 #ifdef ENABLE_MPI
-      MPI_Allreduce(&adj_target_volume, &global_adj_target_volume, 1,
-                    MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+        MPI_Allreduce(&target_sum, &global_target_sum, 1, MPI_DOUBLE, MPI_SUM,
+                      MPI_COMM_WORLD);
 #endif
 
-      udiff = global_diff/global_adj_target_volume;
-      reldiff = global_diff/global_source_sum;
+        // If we did not hit lower or upper bounds, this should be
+        // zero after the first iteration.  If we did hit some bounds,
+        // then recalculate the discrepancy and discrepancy per unit
+        // volume, but only taking into account volume of cells that
+        // are not already at the bounds - if we use the entire mesh
+        // volume for the recalculation, the convergence slows down
+
+        global_diff = global_target_sum - global_source_sum;
+
+        global_adj_target_volume = adj_target_volume;
+#ifdef ENABLE_MPI
+        MPI_Allreduce(&adj_target_volume, &global_adj_target_volume, 1,
+                      MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+#endif
+
+        udiff = global_diff/global_adj_target_volume;
+        reldiff = global_diff/global_source_sum;
 
 
-      // Now reset adjusted target mesh volume to be the full volume
-      // in preparation for the next iteration
-      global_adj_target_volume = global_target_volume_;
+        // Now reset adjusted target mesh volume to be the full volume
+        // in preparation for the next iteration
+        global_adj_target_volume = global_target_volume_;
 
-      iter++;
-    }  // while leftover is not zero
+        iter++;
+      }  // while leftover is not zero
 
-    if (fabs(reldiff) > 1.0e-14) {
-      if (rank_ == 0) {
-        std::cerr << "Redistribution not entirely successfully for variable " <<
-            src_var_name << "\n";
-        std::cerr << "Relative conservation error is " << reldiff << "\n";
-        std::cerr << "Absolute conservation error is " << global_diff << "\n";
-        return false;
+      if (fabs(reldiff) > 1.0e-14) {
+        if (rank_ == 0) {
+          std::cerr << "Redistribution not entirely successfully for variable " <<
+              src_var_name << "\n";
+          std::cerr << "Relative conservation error is " << reldiff << "\n";
+          std::cerr << "Absolute conservation error is " << global_diff << "\n";
+          return false;
+        }
       }
+
+      return true;
+    } else {
+      std::cerr << "Unknown Partial fixup type\n";
+      return false;
     }
 
   }  // fix_mismatch_meshvar
@@ -623,7 +678,7 @@ class MismatchFixer {
   TargetMesh_Wrapper const& target_mesh_;
   TargetState_Wrapper & target_state_;
   int nsourceents_, ntargetents_;
-  std::vector<double> source_ent_volumes_, target_ent_volumes_;
+  std::vector<double> source_ent_volumes_, target_ent_volumes_, xsect_volumes_;
   double source_volume_, target_volume_;
   double global_source_volume_, global_target_volume_, global_xsect_volume_;
   double relvoldiff_source_, relvoldiff_target_, relvoldiff_;
@@ -631,6 +686,7 @@ class MismatchFixer {
   std::vector<std::vector<int>> emptylayers_;
   bool mismatch_ = false;
   int rank_ = 0, nprocs_ = 1;
+  double voldifftol_ = 100*std::numeric_limits<double>::epsilon();
 };  // MismatchFixer
 
 }  // namespace Portage
