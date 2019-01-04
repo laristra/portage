@@ -286,13 +286,15 @@ int main(int argc, char** argv) {
   // Create the output file for comparison.
   // The `static_cast` is a workaround for Intel compiler, which is missing a
   // `to_string` function for ints.
-  std::ofstream fout("outfield"
-                     + std::to_string(static_cast<long long>(example_num))
+  std::ofstream fout("outfield-"
+                     + std::to_string(static_cast<long long>(example_num)) + "-"
+                     + std::to_string(static_cast<long long>(distribution))
                      + ".txt");
   fout << std::scientific;
   fout.precision(17);
-  std::ofstream fout_csv("outfield"
-                     + std::to_string(static_cast<long long>(example_num))
+  std::ofstream fout_csv("outfield-"
+                     + std::to_string(static_cast<long long>(example_num)) + "-"
+                     + std::to_string(static_cast<long long>(distribution))
                      + ".csv");
   fout_csv << std::scientific;
   fout_csv.precision(17);
