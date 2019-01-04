@@ -138,20 +138,14 @@ class MMDriver {
   ~MMDriver() {}
 
   /*!
-    @brief Specify the names of the variables to be interpolated along with the
-    limiter to use for all of them
+    @brief Specify the names of the variables to be interpolated
     @param[in] remap_var_names A list of variable names of the variables to
     interpolate from the source mesh to the target mesh.  This variable must
     exist in both meshes' state manager
-    @param[in] limiter_type The type of limiter to use (NOLIMITER, BARTH_JESPERSEN)
   */
-  void set_remap_var_names(std::vector<std::string> const &remap_var_names,
-                           LimiterType limiter_type = NOLIMITER) {
-    // All variables use the same type of limiters
-    std::vector<LimiterType> limiters(remap_var_names.size(), limiter_type);
-
+  void set_remap_var_names(std::vector<std::string> const &remap_var_names) {
     // remap variable names same in source and target mesh
-    set_remap_var_names(remap_var_names, remap_var_names, limiters);
+    set_remap_var_names(remap_var_names, remap_var_names);
   }
 
   /*!
@@ -160,32 +154,12 @@ class MMDriver {
     variables to interpolate from the source mesh.
     @param[in] target_remap_var_names  A list of the variables names of the
     variables to interpolate to the target mesh.
-    @param[in] limiter_type The limiter to use for higher order remaps (NOLIMITER, BARTH_JESPERSEN)
-  */
-  void set_remap_var_names(
-      std::vector<std::string> const & source_remap_var_names,
-      std::vector<std::string> const & target_remap_var_names,
-      LimiterType limiter_type = NOLIMITER) {
-    std::vector<LimiterType> limiters(source_remap_var_names.size(),
-                                      limiter_type);
-
-    set_remap_var_names(source_remap_var_names, target_remap_var_names,
-                        limiters);
-  }
-
-  /*!
-    @brief Specify the names of the variables to be interpolated
-    @param[in] source_remap_var_names A list of the variables names of the
-    variables to interpolate from the source mesh.
-    @param[in] target_remap_var_names  A list of the variables names of the
-    variables to interpolate to the target mesh.
-    @param[in] limiter_types Limiters to use for each remapped variable (NOLIMITER, BARTH_JESPERSEN)
   */
 
   void set_remap_var_names(
       std::vector<std::string> const & source_remap_var_names,
-      std::vector<std::string> const & target_remap_var_names,
-      std::vector<LimiterType> const & limiter_types) {
+      std::vector<std::string> const & target_remap_var_names) {
+
     assert(source_remap_var_names.size() == target_remap_var_names.size());
 
     int nvars = source_remap_var_names.size();
@@ -193,15 +167,109 @@ class MMDriver {
       Entity_kind srckind = source_state_.get_entity(source_remap_var_names[i]);
       Entity_kind trgkind = target_state_.get_entity(target_remap_var_names[i]);
       if (trgkind == Entity_kind::UNKNOWN_KIND)
-        continue;  // Presumably field does not exist on target - will get added
+        continue;  // Presumably field does not exist on target - will get adde
+
       assert(srckind == trgkind);  // if target field exists, entity kinds
                                    // must match
     }
 
-    source_remap_var_names_ = source_remap_var_names;
-    target_remap_var_names_ = target_remap_var_names;
-    limiters_ = limiter_types;
+    for (int i = 0; i < nvars; i++) {
+      source_target_varname_map_.emplace(source_remap_var_names[i],
+                                       target_remap_var_names[i]);
+
+      // Set options so that defaults will produce something reasonable
+      limiters_.emplace(target_remap_var_names[i],
+                        Limiter_type::BARTH_JESPERSEN);
+      partial_fixup_types_.emplace(target_remap_var_names[i],
+                                   Partial_fixup_type::SHIFTED_CONSERVATIVE);
+      empty_fixup_types_.emplace(target_remap_var_names[i],
+                                 Empty_fixup_type::EXTRAPOLATE);
+    }
   }
+
+  /*!
+    @brief set limiter for all variables
+    @param limiter  Limiter to use for second order reconstruction (NOLIMITER or BARTH_JESPERSEN)
+  */
+  void set_limiter(Limiter_type limiter) {
+    for (auto const& stpair : source_target_varname_map_) {
+      std::string const& target_var_name = stpair.second;
+      limiters_[target_var_name] = limiter;
+    }
+  }
+  
+  /*!
+    @brief set limiter for all variables
+    @param target_var_name Target mesh variable to limit
+    @param limiter  Limiter to use for second order reconstruction (NOLIMITER
+                     or BARTH_JESPERSEN)
+  */
+  void set_limiter(std::string const& target_var_name, Limiter_type limiter) {
+    limiters_[target_var_name] = limiter;
+  }
+  
+  /*!
+    @brief set repair method in partially filled cells for all variables
+    @param fixup_type Can be Partial_fixup_type::CONSTANT,
+                        Partial_fixup_type::CONSERVATIVE,
+                        Partial_fixup_type::SHIFTED_CONSERVATIVE
+  */
+  void set_partial_fixup_type(Partial_fixup_type fixup_type) {
+    for (auto const& stpair : source_target_varname_map_) {
+      std::string const& target_var_name = stpair.second;
+      partial_fixup_types_[target_var_name] = fixup_type;
+    }
+  }
+  
+  /*!
+    @brief set repair method in partially filled cells for all variables
+    @param target_var_name Target mesh variable to set fixup option for
+    @param fixup_type  Can be Partial_fixup_type::CONSTANT,
+                       Partial_fixup_type::CONSERVATIVE,
+                       Partial_fixup_type::SHIFTED_CONSERVATIVE
+  */
+  void set_partial_fixup_type(std::string const& target_var_name,
+                              Partial_fixup_type fixup_type) {
+    partial_fixup_types_[target_var_name] = fixup_type;
+  }
+  
+  /*!
+    @brief set repair method in empty cells for all variables
+    @param fixup_type Can be Empty_fixup_type::LEAVE_EMPTY,
+                      Empty_fixup_type::EXTRAPOLATE
+  */
+  void set_empty_fixup_type(Empty_fixup_type fixup_type) {
+    for (auto const& stpair : source_target_varname_map_) {
+      std::string const& target_var_name = stpair.second;
+      empty_fixup_types_[target_var_name] = fixup_type;
+    }
+  }
+  
+  /*!
+    @brief set repair method in empty cells for all variables
+    @param target_var_name Target mesh variable to set fixup option for
+    @param fixup_type Can be Empty_fixup_type::LEAVE_EMPTY,
+                      Empty_fixup_type::EXTRAPOLATE
+  */
+  void set_empty_fixup_type(std::string const& target_var_name,
+                            Empty_fixup_type fixup_type) {
+    empty_fixup_types_[target_var_name] = fixup_type;
+  }
+  
+  /*!
+    @brief set the bounds of variable to be remapped on target
+    @param target_var_name Name of variable in target mesh to limit
+  */
+  template<typename T>
+      void set_remap_var_bounds(std::string target_var_name,
+                                T lower_bound, T upper_bound) {
+    if (typeid(T) == typeid(double)) {
+      double_lower_bounds_.emplace(target_var_name, lower_bound);
+      double_upper_bounds_.emplace(target_var_name, upper_bound);
+    } else
+      std::cerr << "Type not supported \n";
+  }
+  
 
   /*!
     @brief Get the names of the variables to be remapped from the
@@ -209,7 +277,11 @@ class MMDriver {
     @return A vector of variable names to be remapped.
   */
   std::vector<std::string> source_remap_var_names() const {
-    return source_remap_var_names_;
+    std::vector<std::string> source_var_names;
+    source_var_names.reserve(source_target_varname_map_.size());
+    for (auto const& stname_pair : source_target_varname_map_)
+      source_var_names.push_back(stname_pair.first);
+    return source_var_names;
   }
 
   /*!
@@ -218,7 +290,11 @@ class MMDriver {
     @return A vector of variable names to be remapped.
   */
   std::vector<std::string> target_remap_var_names() const {
-    return target_remap_var_names_;
+    std::vector<std::string> target_var_names;
+    target_var_names.reserve(source_target_varname_map_.size());
+    for (auto const& stname_pair : source_target_varname_map_)
+      target_var_names.push_back(stname_pair.second);
+    return target_var_names;
   }
 
   /*!
@@ -299,7 +375,7 @@ class MMDriver {
               << numTargetCells << std::endl;
 
 
-    int nvars = source_remap_var_names_.size();
+    int nvars = source_target_varname_map_.size();
 
 
     std::vector<std::string> src_meshvar_names, src_matvar_names;
@@ -309,14 +385,14 @@ class MMDriver {
     // -------- CELL VARIABLE REMAP ---------
     // Collect all cell based variables and remap them
 
-    for (int i = 0; i < nvars; ++i) {
-      std::string& srcvarname = source_remap_var_names_[i];
+    for (auto const& stpair : source_target_varname_map_) {
+      std::string const& srcvarname = stpair.first;
       Entity_kind onwhat = source_state_.get_entity(srcvarname);
       if (onwhat == Entity_kind::CELL) {
         // Separate out mesh fields and multi-material fields - they will be
         // processed differently
 
-        std::string& trgvarname = target_remap_var_names_[i];
+        std::string const& trgvarname = stpair.second;
 
         Field_type ftype = source_state_.field_type(onwhat, srcvarname);
 
@@ -335,8 +411,10 @@ class MMDriver {
 
 #ifdef ENABLE_MPI
     if (distributed)
-      remap_distributed<Entity_kind::CELL>(src_meshvar_names, trg_meshvar_names,
-                              src_matvar_names, trg_matvar_names);
+      remap_distributed<Entity_kind::CELL>(src_meshvar_names,
+                                           trg_meshvar_names,
+                                           src_matvar_names,
+                                           trg_matvar_names);
     else
 #endif
       remap<Entity_kind::CELL>(src_meshvar_names, trg_meshvar_names,
@@ -351,11 +429,11 @@ class MMDriver {
     src_meshvar_names.clear(); src_matvar_names.clear();
     trg_meshvar_names.clear(); trg_matvar_names.clear();
 
-    for (int i = 0; i < nvars; ++i) {
-      std::string& srcvarname = source_remap_var_names_[i];
+    for (auto const& stpair : source_target_varname_map_) {
+      std::string const& srcvarname = stpair.first;
       Entity_kind onwhat = source_state_.get_entity(srcvarname);
       if (onwhat == Entity_kind::NODE) {
-        std::string& trgvarname = target_remap_var_names_[i];
+        std::string const& trgvarname = stpair.second;
 
         Field_type ftype = source_state_.field_type(onwhat, srcvarname);
 
@@ -370,8 +448,10 @@ class MMDriver {
     if (src_meshvar_names.size()) {
 #ifdef ENABLE_MPI
       if (distributed)
-        remap_distributed<Entity_kind::NODE>(src_meshvar_names, trg_meshvar_names,
-                                src_matvar_names, trg_matvar_names);
+        remap_distributed<Entity_kind::NODE>(src_meshvar_names,
+                                             trg_meshvar_names,
+                                             src_matvar_names,
+                                             trg_matvar_names);
       else
 #endif
         remap<Entity_kind::NODE>(src_meshvar_names, trg_meshvar_names,
@@ -388,10 +468,15 @@ class MMDriver {
   TargetMesh_Wrapper const& target_mesh_;
   SourceState_Wrapper const& source_state_;
   TargetState_Wrapper& target_state_;
-  std::vector<std::string> source_remap_var_names_;
-  std::vector<std::string> target_remap_var_names_;
-  std::vector<LimiterType> limiters_;
+  std::unordered_map<std::string, std::string> source_target_varname_map_;
+  std::unordered_map<std::string, Limiter_type> limiters_;
+  std::unordered_map<std::string, Partial_fixup_type> partial_fixup_types_;
+  std::unordered_map<std::string, Empty_fixup_type> empty_fixup_types_;
+  std::unordered_map<std::string, double> double_lower_bounds_;
+  std::unordered_map<std::string, double> double_upper_bounds_;
   unsigned int dim_;
+  double voldifftol_ = 100*std::numeric_limits<double>::epsilon();
+  double consttol_ =  100*std::numeric_limits<double>::epsilon();
 
 #ifdef HAVE_TANGRAM
   // Convert volume fraction and centroid data from compact
@@ -591,7 +676,8 @@ int MMDriver<Search, Intersect, Interpolate, D,
         " to remap is " << nvars << std::endl;
 
   for (int i = 0; i < nvars; ++i) {
-    interpolate.set_interpolation_variable(src_meshvar_names[i], limiters_[i]);
+    interpolate.set_interpolation_variable(src_meshvar_names[i],
+                                           limiters_.at(src_meshvar_names[i]));
 
     // Get a handle to a memory location where the target state
     // would like us to write this material variable into.
@@ -619,12 +705,51 @@ int MMDriver<Search, Intersect, Interpolate, D,
                      source_ents_and_weights);
 
   if (mismatch_fixer.has_mismatch()) {
-    for (int i = 0; i < nvars; i++)
-      mismatch_fixer.fix_mismatch(src_meshvar_names[i], trg_meshvar_names[i]);
+    for (int i = 0; i < nvars; i++) {
+      std::string const& src_var = src_meshvar_names[i];
+      std::string const& trg_var = trg_meshvar_names[i];
+
+      double lower_bound, upper_bound;
+      try {  // see if we have caller specified bounds
+        
+        lower_bound = double_lower_bounds_.at(trg_var);
+        upper_bound = double_upper_bounds_.at(trg_var);
+
+      } catch (const std::out_of_range& oor) {
+
+        // Since caller has not specified bounds for variable,
+        // attempt to derive them from source state.
+        
+        int nsourceents = source_mesh_.num_entities(onwhat,
+                                                    Entity_type::PARALLEL_OWNED);
+        
+        double const *source_data;
+        source_state_.mesh_get_data(onwhat, src_var, &source_data);
+        
+        lower_bound = *std::min_element(source_data,
+                                        source_data + nsourceents);
+        
+        upper_bound = *std::max_element(source_data,
+                                        source_data + nsourceents);
+        
+        double relbounddiff = fabs((upper_bound-lower_bound)/lower_bound);
+        if (relbounddiff < consttol_) {
+          // The field is constant over the source mesh/part. We HAVE to
+          // relax the bounds to be able to conserve the integral quantity
+          // AND maintain a constant. Relax by margins derived from the
+          // relative difference in volume
+          
+          lower_bound -= 0.5*lower_bound;
+          upper_bound += 0.5*upper_bound;
+        }
+      }
+
+      mismatch_fixer.fix_mismatch(src_var, trg_var, lower_bound, upper_bound,
+                                  partial_fixup_types_[trg_var],
+                                  empty_fixup_types_[trg_var]);
+    }
   }
     
-
-
   gettimeofday(&end_timeval, 0);
   timersub(&end_timeval, &begin_timeval, &diff_timeval);
   tot_seconds_interp += diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
@@ -680,7 +805,8 @@ int MMDriver<Search, Intersect, Interpolate, D,
     // LOOK AT INTERSECTION WEIGHTS TO DETERMINE WHICH TARGET CELLS
     // WILL GET NEW MATERIALS
 
-    int ntargetcells = target_mesh_.num_entities(Entity_kind::CELL, Entity_type::ALL);
+    int ntargetcells = target_mesh_.num_entities(Entity_kind::CELL,
+                                                 Entity_type::ALL);
     std::vector<int> matcellstgt;
 
     for (int c = 0; c < ntargetcells; c++) {
@@ -789,7 +915,8 @@ int MMDriver<Search, Intersect, Interpolate, D,
                                     // to grab from the source state
 
     for (int i = 0; i < nmatvars; ++i) {
-      interpolate.set_interpolation_variable(src_matvar_names[i], limiters_[i]);
+      interpolate.set_interpolation_variable(src_matvar_names[i],
+                                             limiters_.at(src_matvar_names[i]));
 
       // Get a handle to a memory location where the target state
       // would like us to write this material variable into. If it is
@@ -900,7 +1027,10 @@ int MMDriver<Search, Intersect, Interpolate, D,
   
   // Note the flat state should be used for everything including the centroids and
   // volume fractions for interface reconstruction
-  source_state_flat.initialize(source_state_, source_remap_var_names_);
+  std::vector<std::string> source_remap_var_names;
+  for (auto & stpair : source_target_varname_map_)
+    source_remap_var_names.push_back(stpair.first);
+  source_state_flat.initialize(source_state_, source_remap_var_names);
   MPI_Bounding_Boxes distributor;
   distributor.distribute(source_mesh_flat, source_state_flat,
                          target_mesh_, target_state_);
@@ -1041,7 +1171,8 @@ int MMDriver<Search, Intersect, Interpolate, D,
         " to remap is " << nvars << std::endl;
 
   for (int i = 0; i < nvars; ++i) {
-    interpolate.set_interpolation_variable(src_meshvar_names[i], limiters_[i]);
+    interpolate.set_interpolation_variable(src_meshvar_names[i],
+                                           limiters_.at(src_meshvar_names[i]));
 
     // Get a handle to a memory location where the target state
     // would like us to write this material variable into. If it is
@@ -1079,8 +1210,62 @@ int MMDriver<Search, Intersect, Interpolate, D,
                      source_ents_and_weights);
 
   if (mismatch_fixer.has_mismatch()) {
-    for (int i = 0; i < nvars; i++)
-      mismatch_fixer.fix_mismatch(src_meshvar_names[i], trg_meshvar_names[i]);
+    for (int i = 0; i < nvars; i++) {
+      std::string const& src_var = src_meshvar_names[i];
+      std::string const& trg_var = trg_meshvar_names[i];
+
+      double lower_bound, upper_bound;
+      try {  // see if we have caller specified bounds
+        
+        lower_bound = double_lower_bounds_.at(trg_var);
+        upper_bound = double_upper_bounds_.at(trg_var);
+
+      } catch (const std::out_of_range& oor) {
+
+        // Caller has not specified bounds for variable,
+        // attempt to derive them from source state.
+        
+        int nsourceents = source_mesh_.num_entities(onwhat,
+                                                    Entity_type::PARALLEL_OWNED);
+        
+        double const *source_data;
+        source_state_.mesh_get_data(onwhat, src_var, &source_data);
+        
+        lower_bound = *std::min_element(source_data,
+                                        source_data + nsourceents);
+
+        //        std::cerr << "Local lower bound on rank " << comm_rank << " --- " << lower_bound << "\n";
+        double global_lower_bound=0.0;
+        MPI_Allreduce(&lower_bound, &global_lower_bound, 1, MPI_DOUBLE, MPI_MIN,
+                      MPI_COMM_WORLD);
+        lower_bound = global_lower_bound;
+
+        upper_bound = *std::max_element(source_data,
+                                        source_data + nsourceents);
+        //        std::cerr << "Local upper bound on rank " << comm_rank << " --- " << upper_bound << "\n";
+        
+        double global_upper_bound=0.0;
+        MPI_Allreduce(&upper_bound, &global_upper_bound, 1, MPI_DOUBLE, MPI_MAX,
+                      MPI_COMM_WORLD);
+        upper_bound = global_upper_bound;
+
+        double relbounddiff = fabs((upper_bound-lower_bound)/lower_bound);
+        if (relbounddiff < consttol_) {
+          // The field is constant over the source mesh/part. We HAVE to
+          // relax the bounds to be able to conserve the integral quantity
+          // AND maintain a constant. Relax by margins derived from the
+          // relative difference in volume
+          
+          lower_bound -= 0.5*lower_bound;
+          upper_bound += 0.5*upper_bound;
+        }
+      }
+
+      //      std::cerr << "Rank " << comm_rank << "Global Lower bound " << lower_bound << " Global Upper bound " << upper_bound << "\n";
+      mismatch_fixer.fix_mismatch(src_var, trg_var, lower_bound, upper_bound,
+                                  partial_fixup_types_[trg_var],
+                                  empty_fixup_types_[trg_var]);
+    }
   }
     
 
@@ -1129,7 +1314,8 @@ int MMDriver<Search, Intersect, Interpolate, D,
     // LOOK AT INTERSECTION WEIGHTS TO DETERMINE WHICH TARGET CELLS
     // WILL GET NEW MATERIALS
 
-    int ntargetcells = target_mesh_.num_entities(Entity_kind::CELL, Entity_type::ALL);
+    int ntargetcells = target_mesh_.num_entities(Entity_kind::CELL,
+                                                 Entity_type::ALL);
     std::vector<int> matcellstgt;
 
     for (int c = 0; c < ntargetcells; c++) {
@@ -1244,7 +1430,8 @@ int MMDriver<Search, Intersect, Interpolate, D,
                                     // to grab from the source state
 
     for (int i = 0; i < nmatvars; ++i) {
-      interpolate.set_interpolation_variable(src_matvar_names[i], limiters_[i]);
+      interpolate.set_interpolation_variable(src_matvar_names[i],
+                                             limiters_.at(src_matvar_names[i]));
 
       // Get a handle to a memory location where the target state
       // would like us to write this material variable into. If it is
