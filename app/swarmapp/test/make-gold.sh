@@ -6,9 +6,9 @@ distribution="0 1"
 for dist in $distribution; do 
   for prob in $problems; do 
     echo "running problem " $prob " in distribution " $dist
-    swarmapp $prob $nsrc $ntgt $dist 2>&1 > gold-output-$prob-$dist
-    mv -f outfield$prob.txt gold-outfield-$prob-$dist.txt
-    rm -f outfield$prob.csv
-    rm -f infield$prob.txt
+    swarmapp $prob $nsrc $ntgt $dist 12345678 2>&1 > gold-output-$prob-$dist
+    mv -f outfield-$prob-$dist.csv gold-outfield-$prob-$dist.csv
+    rm -f outfield-$prob-$dist.txt
+    rm -f infield$prob.{txt,csv}
   done
 done
