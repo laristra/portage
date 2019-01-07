@@ -162,6 +162,9 @@ class MMDriver {
 
     assert(source_remap_var_names.size() == target_remap_var_names.size());
 
+    // No appending allowed
+    source_target_varname_map_.clear();
+    
     int nvars = source_remap_var_names.size();
     for (int i = 0; i < nvars; ++i) {
       Entity_kind srckind = source_state_.get_entity(source_remap_var_names[i]);
@@ -178,7 +181,7 @@ class MMDriver {
                                        target_remap_var_names[i]);
 
       // Set options so that defaults will produce something reasonable
-      limiters_.emplace(target_remap_var_names[i],
+      limiters_.emplace(source_remap_var_names[i],
                         Limiter_type::BARTH_JESPERSEN);
       partial_fixup_types_.emplace(target_remap_var_names[i],
                                    Partial_fixup_type::SHIFTED_CONSERVATIVE);
@@ -193,19 +196,19 @@ class MMDriver {
   */
   void set_limiter(Limiter_type limiter) {
     for (auto const& stpair : source_target_varname_map_) {
-      std::string const& target_var_name = stpair.second;
-      limiters_[target_var_name] = limiter;
+      std::string const& source_var_name = stpair.first;
+      limiters_[source_var_name] = limiter;
     }
   }
   
   /*!
     @brief set limiter for all variables
-    @param target_var_name Target mesh variable to limit
+    @param target_var_name Source mesh variable whose gradient is to be limited
     @param limiter  Limiter to use for second order reconstruction (NOLIMITER
                      or BARTH_JESPERSEN)
   */
-  void set_limiter(std::string const& target_var_name, Limiter_type limiter) {
-    limiters_[target_var_name] = limiter;
+  void set_limiter(std::string const& source_var_name, Limiter_type limiter) {
+    limiters_[source_var_name] = limiter;
   }
   
   /*!
