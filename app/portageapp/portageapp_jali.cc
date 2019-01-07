@@ -135,7 +135,7 @@ int print_usage() {
 
 template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
                            std::shared_ptr<Jali::Mesh> targetMesh,
-                           Portage::LimiterType limiter,
+                           Portage::Limiter_type limiter,
                            int interp_order,
                            std::string field_expression,
                            std::string field_filename,
@@ -179,7 +179,7 @@ int main(int argc, char** argv) {
   bool mesh_output = true;
   int n_converge = 1;
   Jali::Entity_kind entityKind = Jali::Entity_kind::CELL;
-  Portage::LimiterType limiter = Portage::LimiterType::NOLIMITER;
+  Portage::Limiter_type limiter = Portage::Limiter_type::NOLIMITER;
   double srclo = 0.0, srchi = 1.0;  // bounds of generated mesh in each dir
   bool remap_back = false;           // enable for cyclic  remap, i.e. remap
                                     // back to the original mesh
@@ -230,7 +230,7 @@ int main(int argc, char** argv) {
       field_expression = valueword;
     } else if (keyword == "limiter") {
       if (valueword == "barth_jespersen" || valueword == "BARTH_JESPERSEN")
-        limiter = Portage::LimiterType::BARTH_JESPERSEN;
+        limiter = Portage::Limiter_type::BARTH_JESPERSEN;
     } else if (keyword == "mesh_min") {
       srclo = stof(valueword);
     } else if (keyword == "mesh_max") {
@@ -467,7 +467,7 @@ int main(int argc, char** argv) {
 
 template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
                            std::shared_ptr<Jali::Mesh> targetMesh,
-                           Portage::LimiterType limiter,
+                           Portage::Limiter_type limiter,
                            int interp_order, std::string field_expression,
                            std::string field_filename, bool mesh_output,
                            int rank, int numpe, Jali::Entity_kind entityKind,
@@ -600,6 +600,9 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
           d(sourceMeshWrapper, sourceStateWrapper,
             targetMeshWrapper, targetStateWrapper);
       d.set_remap_var_names(remap_fields);
+     for (auto &remap_var : remap_fields)
+       d.set_remap_var_bounds(remap_var, -std::numeric_limits<double>::max(),
+                              std::numeric_limits<double>::max());
       d.run(numpe > 1);
     } else if (interp_order == 2) {
       Portage::MMDriver<
@@ -611,7 +614,11 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
         Wonton::Jali_State_Wrapper>
           d(sourceMeshWrapper, sourceStateWrapper,
             targetMeshWrapper, targetStateWrapper);
-      d.set_remap_var_names(remap_fields, limiter);
+      d.set_remap_var_names(remap_fields);
+      d.set_limiter(limiter);
+     for (auto &remap_var : remap_fields)
+       d.set_remap_var_bounds(remap_var, -std::numeric_limits<double>::max(),
+                              std::numeric_limits<double>::max());
       d.run(numpe > 1);
     }
   } else {  // 3D
@@ -626,6 +633,9 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
           d(sourceMeshWrapper, sourceStateWrapper,
             targetMeshWrapper, targetStateWrapper);
       d.set_remap_var_names(remap_fields);
+     for (auto &remap_var : remap_fields)
+       d.set_remap_var_bounds(remap_var, -std::numeric_limits<double>::max(),
+                              std::numeric_limits<double>::max());
       d.run(numpe > 1);
     } else {  // 2nd order & 3D
       Portage::MMDriver<
@@ -637,7 +647,11 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
         Wonton::Jali_State_Wrapper>
           d(sourceMeshWrapper, sourceStateWrapper,
             targetMeshWrapper, targetStateWrapper);
-      d.set_remap_var_names(remap_fields, limiter);
+      d.set_remap_var_names(remap_fields);
+      d.set_limiter(limiter);
+     for (auto &remap_var : remap_fields)
+       d.set_remap_var_bounds(remap_var, -std::numeric_limits<double>::max(),
+                              std::numeric_limits<double>::max());
       d.run(numpe > 1);
     }
   }
@@ -775,13 +789,6 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
 
   // Write out the meshes if requested
   if (mesh_output) {
-
-    // The current version of MSTK (2.27rc2) has a bug in writing out
-    // exodus files with node variables in parallel and so we will avoid
-    // the exodus export in this situation. The 'if' statement can be
-    // removed once we upgrade to the next version of MSTK
-
-    if (numpe == 1) {
       if (rank == 0)
         std::cout << "Dumping data to Exodus files..." << std::endl;
       if (field_expression.length() > 0) {
@@ -792,7 +799,6 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
       targetMesh->write_to_exodus_file("output.exo");
       if (rank == 0)
         std::cout << "...done." << std::endl;
-    }
   }  // if (dump_meshes)
 
   // construct the field file name and open the file
