@@ -170,23 +170,21 @@ class MMDriver {
       Entity_kind srckind = source_state_.get_entity(source_remap_var_names[i]);
       Entity_kind trgkind = target_state_.get_entity(target_remap_var_names[i]);
       if (trgkind == Entity_kind::UNKNOWN_KIND)
-        continue;  // Presumably field does not exist on target - will get adde
+        continue;  // Presumably field does not exist on target - will get added
 
       assert(srckind == trgkind);  // if target field exists, entity kinds
                                    // must match
     }
 
     for (int i = 0; i < nvars; i++) {
-      source_target_varname_map_.emplace(source_remap_var_names[i],
-                                       target_remap_var_names[i]);
+      source_target_varname_map_[source_remap_var_names[i]] = target_remap_var_names[i];
 
       // Set options so that defaults will produce something reasonable
-      limiters_.emplace(source_remap_var_names[i],
-                        Limiter_type::BARTH_JESPERSEN);
-      partial_fixup_types_.emplace(target_remap_var_names[i],
-                                   Partial_fixup_type::SHIFTED_CONSERVATIVE);
-      empty_fixup_types_.emplace(target_remap_var_names[i],
-                                 Empty_fixup_type::EXTRAPOLATE);
+      limiters_[source_remap_var_names[i]] = Limiter_type::BARTH_JESPERSEN;
+      partial_fixup_types_[target_remap_var_names[i]] =
+          Partial_fixup_type::SHIFTED_CONSERVATIVE;
+      empty_fixup_types_[target_remap_var_names[i]] =
+          Empty_fixup_type::EXTRAPOLATE;
     }
   }
 
@@ -264,15 +262,29 @@ class MMDriver {
     @param target_var_name Name of variable in target mesh to limit
   */
   template<typename T>
-      void set_remap_var_bounds(std::string target_var_name,
-                                T lower_bound, T upper_bound) {
+  void set_remap_var_bounds(std::string target_var_name,
+                            T lower_bound, T upper_bound) {
     if (typeid(T) == typeid(double)) {
-      double_lower_bounds_.emplace(target_var_name, lower_bound);
-      double_upper_bounds_.emplace(target_var_name, upper_bound);
+      double_lower_bounds_[target_var_name] = lower_bound;
+      double_upper_bounds_[target_var_name] = upper_bound;
     } else
       std::cerr << "Type not supported \n";
   }
-  
+
+  /*!
+    @brief set conservation tolerance of variable to be remapped on target
+    @param target_var_name Name of variable in target mesh to limit
+  */
+  template<typename T>
+  void set_conservation_tolerance(std::string target_var_name,
+                                  T conservation_tol) {
+    if (typeid(T) == typeid(double))
+      conservation_tol_[target_var_name] = conservation_tol;
+    else
+      std::cerr << "Type not supported \n";
+  }
+
+
 
   /*!
     @brief Get the names of the variables to be remapped from the
@@ -477,10 +489,12 @@ class MMDriver {
   std::unordered_map<std::string, Empty_fixup_type> empty_fixup_types_;
   std::unordered_map<std::string, double> double_lower_bounds_;
   std::unordered_map<std::string, double> double_upper_bounds_;
+  std::unordered_map<std::string, double> conservation_tol_;
   unsigned int dim_;
   double voldifftol_ = 100*std::numeric_limits<double>::epsilon();
   double consttol_ =  100*std::numeric_limits<double>::epsilon();
 
+  
 #ifdef HAVE_TANGRAM
   // Convert volume fraction and centroid data from compact
   // material-centric to compact cell-centric (ccc) form as needed by
@@ -719,35 +733,33 @@ int MMDriver<Search, Intersect, Interpolate, D,
         upper_bound = double_upper_bounds_.at(trg_var);
 
       } catch (const std::out_of_range& oor) {
-
-        // Since caller has not specified bounds for variable,
-        // attempt to derive them from source state.
-        
-        int nsourceents = source_mesh_.num_entities(onwhat,
-                                                    Entity_type::PARALLEL_OWNED);
-        
+        // Since caller has not specified bounds for variable, attempt
+        // to derive them from source state. This code should go into
+        // Wonton into each state manager
+        int nsrcents = source_mesh_.num_entities(onwhat,
+                                                 Entity_type::PARALLEL_OWNED);
         double const *source_data;
         source_state_.mesh_get_data(onwhat, src_var, &source_data);
-        
-        lower_bound = *std::min_element(source_data,
-                                        source_data + nsourceents);
-        
-        upper_bound = *std::max_element(source_data,
-                                        source_data + nsourceents);
+        lower_bound = *std::min_element(source_data, source_data + nsrcents);
+        upper_bound = *std::max_element(source_data, source_data + nsrcents);
         
         double relbounddiff = fabs((upper_bound-lower_bound)/lower_bound);
         if (relbounddiff < consttol_) {
           // The field is constant over the source mesh/part. We HAVE to
           // relax the bounds to be able to conserve the integral quantity
-          // AND maintain a constant. Relax by margins derived from the
-          // relative difference in volume
-          
+          // AND maintain a constant.
           lower_bound -= 0.5*lower_bound;
           upper_bound += 0.5*upper_bound;
         }
       }
 
+      double conservation_tol = 100*std::numeric_limits<double>::epsilon();
+      try {  // see if caller has specified a tolerance for conservation
+        conservation_tol = conservation_tol_.at(trg_var);
+      } catch ( const std::out_of_range& oor) {}
+
       mismatch_fixer.fix_mismatch(src_var, trg_var, lower_bound, upper_bound,
+                                  conservation_tol,
                                   partial_fixup_types_[trg_var],
                                   empty_fixup_types_[trg_var]);
     }
@@ -1086,12 +1098,6 @@ int MMDriver<Search, Intersect, Interpolate, D,
     // Extract volume fraction and centroid data for cells in compact
     // cell-centric form (ccc)
 
-		//////////////////////////////////////////
-		// DWS this is where I left off
-		// There is a problem that Tangram is using the mesh wrapper instead of
-		// the flat mesh wrapper in places, so the counts don't align
-		// the following line breaks
-		/////////////////////////////////////////////
     ccc_vfcen_data(cell_num_mats, cell_mat_ids, cell_mat_volfracs,
                    cell_mat_centroids, source_mesh_flat, source_state_flat);
 
@@ -1224,30 +1230,23 @@ int MMDriver<Search, Intersect, Interpolate, D,
         upper_bound = double_upper_bounds_.at(trg_var);
 
       } catch (const std::out_of_range& oor) {
-
-        // Caller has not specified bounds for variable,
-        // attempt to derive them from source state.
+        // Since caller has not specified bounds for variable, attempt
+        // to derive them from source state. This code should go into
+        // Wonton into each state manager
         
-        int nsourceents = source_mesh_.num_entities(onwhat,
-                                                    Entity_type::PARALLEL_OWNED);
+        int nsrcents = source_mesh_.num_entities(onwhat,
+                                                 Entity_type::PARALLEL_OWNED);
         
         double const *source_data;
         source_state_.mesh_get_data(onwhat, src_var, &source_data);
-        
-        lower_bound = *std::min_element(source_data,
-                                        source_data + nsourceents);
+        lower_bound = *std::min_element(source_data, source_data + nsrcents);
+        upper_bound = *std::max_element(source_data, source_data + nsrcents);
 
-        //        std::cerr << "Local lower bound on rank " << comm_rank << " --- " << lower_bound << "\n";
-        double global_lower_bound=0.0;
+        double global_lower_bound=0.0, global_upper_bound=0.0;
         MPI_Allreduce(&lower_bound, &global_lower_bound, 1, MPI_DOUBLE, MPI_MIN,
                       MPI_COMM_WORLD);
         lower_bound = global_lower_bound;
 
-        upper_bound = *std::max_element(source_data,
-                                        source_data + nsourceents);
-        //        std::cerr << "Local upper bound on rank " << comm_rank << " --- " << upper_bound << "\n";
-        
-        double global_upper_bound=0.0;
         MPI_Allreduce(&upper_bound, &global_upper_bound, 1, MPI_DOUBLE, MPI_MAX,
                       MPI_COMM_WORLD);
         upper_bound = global_upper_bound;
@@ -1256,16 +1255,19 @@ int MMDriver<Search, Intersect, Interpolate, D,
         if (relbounddiff < consttol_) {
           // The field is constant over the source mesh/part. We HAVE to
           // relax the bounds to be able to conserve the integral quantity
-          // AND maintain a constant. Relax by margins derived from the
-          // relative difference in volume
-          
+          // AND maintain a constant.
           lower_bound -= 0.5*lower_bound;
           upper_bound += 0.5*upper_bound;
         }
       }
 
-      //      std::cerr << "Rank " << comm_rank << "Global Lower bound " << lower_bound << " Global Upper bound " << upper_bound << "\n";
+      double conservation_tol = 100*std::numeric_limits<double>::epsilon();
+      try {  // see if caller has specified a tolerance for conservation
+        conservation_tol = conservation_tol_.at(trg_var);
+      } catch ( const std::out_of_range& oor) {}
+
       mismatch_fixer.fix_mismatch(src_var, trg_var, lower_bound, upper_bound,
+                                  conservation_tol,
                                   partial_fixup_types_[trg_var],
                                   empty_fixup_types_[trg_var]);
     }
