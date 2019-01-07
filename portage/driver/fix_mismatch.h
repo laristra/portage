@@ -254,9 +254,8 @@ class MismatchFixer {
                 " not fully covered by target dual cells \n";
           break;
         }
-#endif
-
       std::cerr << "\n";
+#endif
     }
 
     // Are some target cells not fully covered by source cells?
@@ -291,9 +290,9 @@ class MismatchFixer {
           break;
         }
       }
+      std::cerr << "\n";
 #endif
 
-      std::cerr << "\n";
     }
 
     if (!mismatch_) return;
@@ -322,7 +321,7 @@ class MismatchFixer {
 
     int global_nempty = nempty;
 #ifdef ENABLE_MPI    
-    int *nempty_all = (int *) malloc(nprocs_*sizeof(int));
+    int *nempty_all = new int[nprocs_];
     MPI_Gather(&nempty, 1, MPI_INT, nempty_all, 1, MPI_INT, 0, MPI_COMM_WORLD);
     global_nempty = std::accumulate(nempty_all, nempty_all+nprocs_, 0.0);
 #endif
@@ -375,6 +374,8 @@ class MismatchFixer {
       }
     }  // if nempty
 
+    delete [] nempty_all;
+
   }  // MismatchFixer
 
 
@@ -419,15 +420,18 @@ class MismatchFixer {
                     std::string const & trg_var_name,
                     double global_lower_bound = -std::numeric_limits<double>::max(),
                     double global_upper_bound = std::numeric_limits<double>::max(),
+                    double conservation_tol = 1e2*std::numeric_limits<double>::epsilon(),
                     Partial_fixup_type partial_fixup_type =
                     Partial_fixup_type::SHIFTED_CONSERVATIVE,
                     Empty_fixup_type empty_fixup_type =
                     Empty_fixup_type::EXTRAPOLATE) {
 
+
     if (source_state_.field_type(onwhat, src_var_name) ==
         Field_type::MESH_FIELD)
       return fix_mismatch_meshvar(src_var_name, trg_var_name,
                                   global_lower_bound, global_upper_bound,
+                                  conservation_tol,
                                   partial_fixup_type, empty_fixup_type);
   }
 
@@ -438,6 +442,7 @@ class MismatchFixer {
                             std::string const & trg_var_name,
                             double global_lower_bound,
                             double global_upper_bound,
+                            double conservation_tol = 1e2*std::numeric_limits<double>::epsilon(),
                             Partial_fixup_type partial_fixup_type =
                             Partial_fixup_type::SHIFTED_CONSERVATIVE,
                             Empty_fixup_type empty_fixup_type =
@@ -552,7 +557,7 @@ class MismatchFixer {
       double global_diff = global_target_sum - global_source_sum;
       double reldiff = global_diff/global_source_sum;
 
-      if (fabs(reldiff) < 1.0e-14)
+      if (fabs(reldiff) < conservation_tol)
         return true;  // discrepancy is too small - nothing to do
 
       // Now redistribute the discrepancy among cells in proportion to
@@ -571,7 +576,7 @@ class MismatchFixer {
       double udiff = global_diff/global_adj_target_volume;
 
       int iter = 0;
-      while (fabs(reldiff) > 1.0e-14 && iter < 5) {
+      while (fabs(reldiff) > conservation_tol && iter < 5) {
         for (auto it = target_mesh_.begin(onwhat, Entity_type::PARALLEL_OWNED);
              it != target_mesh_.end(onwhat, Entity_type::PARALLEL_OWNED); it++) {
           int t = *it;
@@ -583,9 +588,11 @@ class MismatchFixer {
 
             target_data[t] = global_lower_bound;
 
-            std::cerr << "Hit lower bound for cell " << t << " on rank " << rank_
-                      << "\n";
-
+#ifdef DEBUG            
+            std::cerr << "Hit lower bound for cell " << t << " on rank " <<
+                rank_ << "\n";
+#endif
+            
             // this cell is no longer in play for adjustment - so remove its
             // volume from the adjusted target_volume
 
@@ -598,9 +605,11 @@ class MismatchFixer {
 
             target_data[t] = global_upper_bound;
 
-            std::cerr << "Hit upper bound for cell " << t << " on rank " << rank_
-                      << "\n";
-
+#ifdef DEBUG            
+            std::cerr << "Hit upper bound for cell " << t << " on rank " <<
+                rank_ << "\n";
+#endif
+            
             // this cell is no longer in play for adjustment - so remove its
             // volume from the adjusted target_volume
 
@@ -686,7 +695,7 @@ class MismatchFixer {
   std::vector<std::vector<int>> emptylayers_;
   bool mismatch_ = false;
   int rank_ = 0, nprocs_ = 1;
-  double voldifftol_ = 100*std::numeric_limits<double>::epsilon();
+  double voldifftol_ = 1e2*std::numeric_limits<double>::epsilon();
 };  // MismatchFixer
 
 }  // namespace Portage
