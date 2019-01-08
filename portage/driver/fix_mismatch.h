@@ -324,6 +324,7 @@ class MismatchFixer {
     int *nempty_all = new int[nprocs_];
     MPI_Gather(&nempty, 1, MPI_INT, nempty_all, 1, MPI_INT, 0, MPI_COMM_WORLD);
     global_nempty = std::accumulate(nempty_all, nempty_all+nprocs_, 0.0);
+    delete [] nempty_all;
 #endif
     
     if (global_nempty && rank_ == 0) {
@@ -373,8 +374,6 @@ class MismatchFixer {
         nlayers++;
       }
     }  // if nempty
-
-    delete [] nempty_all;
 
   }  // MismatchFixer
 
