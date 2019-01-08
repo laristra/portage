@@ -257,6 +257,11 @@ class MMDriver {
     empty_fixup_types_[target_var_name] = fixup_type;
   }
   
+
+  void set_max_fixup_iter(int maxiter) {
+    max_fixup_iter_ = maxiter;
+  }
+  
   /*!
     @brief set the bounds of variable to be remapped on target
     @param target_var_name Name of variable in target mesh to limit
@@ -493,6 +498,7 @@ class MMDriver {
   unsigned int dim_;
   double voldifftol_ = 100*std::numeric_limits<double>::epsilon();
   double consttol_ =  100*std::numeric_limits<double>::epsilon();
+  int max_fixup_iter_ = 5;
 
   
 #ifdef HAVE_TANGRAM
@@ -759,7 +765,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
       } catch ( const std::out_of_range& oor) {}
 
       mismatch_fixer.fix_mismatch(src_var, trg_var, lower_bound, upper_bound,
-                                  conservation_tol,
+                                  conservation_tol, max_fixup_iter_,
                                   partial_fixup_types_[trg_var],
                                   empty_fixup_types_[trg_var]);
     }
@@ -1267,7 +1273,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
       } catch ( const std::out_of_range& oor) {}
 
       mismatch_fixer.fix_mismatch(src_var, trg_var, lower_bound, upper_bound,
-                                  conservation_tol,
+                                  conservation_tol, max_fixup_iter_,
                                   partial_fixup_types_[trg_var],
                                   empty_fixup_types_[trg_var]);
     }

@@ -420,6 +420,7 @@ class MismatchFixer {
                     double global_lower_bound = -std::numeric_limits<double>::max(),
                     double global_upper_bound = std::numeric_limits<double>::max(),
                     double conservation_tol = 1e2*std::numeric_limits<double>::epsilon(),
+                    int maxiter = 5,
                     Partial_fixup_type partial_fixup_type =
                     Partial_fixup_type::SHIFTED_CONSERVATIVE,
                     Empty_fixup_type empty_fixup_type =
@@ -430,7 +431,7 @@ class MismatchFixer {
         Field_type::MESH_FIELD)
       return fix_mismatch_meshvar(src_var_name, trg_var_name,
                                   global_lower_bound, global_upper_bound,
-                                  conservation_tol,
+                                  conservation_tol, maxiter,
                                   partial_fixup_type, empty_fixup_type);
   }
 
@@ -442,6 +443,7 @@ class MismatchFixer {
                             double global_lower_bound,
                             double global_upper_bound,
                             double conservation_tol = 1e2*std::numeric_limits<double>::epsilon(),
+                            int maxiter = 5,
                             Partial_fixup_type partial_fixup_type =
                             Partial_fixup_type::SHIFTED_CONSERVATIVE,
                             Empty_fixup_type empty_fixup_type =
@@ -575,7 +577,7 @@ class MismatchFixer {
       double udiff = global_diff/global_adj_target_volume;
 
       int iter = 0;
-      while (fabs(reldiff) > conservation_tol && iter < 5) {
+      while (fabs(reldiff) > conservation_tol && iter < maxiter) {
         for (auto it = target_mesh_.begin(onwhat, Entity_type::PARALLEL_OWNED);
              it != target_mesh_.end(onwhat, Entity_type::PARALLEL_OWNED); it++) {
           int t = *it;
@@ -662,7 +664,7 @@ class MismatchFixer {
         iter++;
       }  // while leftover is not zero
 
-      if (fabs(reldiff) > 1.0e-14) {
+      if (fabs(reldiff) > conservation_tol) {
         if (rank_ == 0) {
           std::cerr << "Redistribution not entirely successfully for variable " <<
               src_var_name << "\n";
