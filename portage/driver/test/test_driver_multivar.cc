@@ -299,8 +299,8 @@ TEST(Test_MultiVar_Remap, Nested_Meshes) {
                                                          targetStateWrapper);
 
 
-  remapper2.set_remap_var_names(source_var_names, target_var_names,
-                                Portage::NOLIMITER);
+  remapper2.set_remap_var_names(source_var_names, target_var_names);
+  remapper2.set_limiter(Portage::NOLIMITER);
 
   // Execute remapper (distributed=false)
 

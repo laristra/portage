@@ -171,9 +171,12 @@ class IntersectR2D<Entity_kind::CELL, SourceMeshType, SourceStateType, TargetMes
       std::vector<int> cellmats;
       sourceStateWrapper.cell_get_mats(s, &cellmats);
 
-      if (!nmats || (nmats == 1 && cellmats[0] == matid_)) {
-        // pure cell containing this material - intersect with polygon
-        // representing the cell
+      if (!nmats || (matid_ == -1) || (nmats == 1 && cellmats[0] == matid_)) {
+        // ---------- Intersection with pure cell ---------------
+        // nmats == 0 -- no materials ==> single material
+        // matid_ == -1 -- intersect with mesh not a particular material
+        // nmats == 1 && cellmats[0] == matid -- intersection with pure cell
+        //                                       containing matid
 
         std::vector<Point<2>> source_poly;
         sourceMeshWrapper.cell_get_coordinates(s, &source_poly);

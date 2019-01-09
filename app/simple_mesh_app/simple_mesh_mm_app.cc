@@ -120,7 +120,7 @@ void run(
   const Simple_Mesh& targetMesh,
   const std::string material_filename,
   const std::vector<std::string> material_field_expressions,
-  Portage::LimiterType limiter,
+  Portage::Limiter_type limiter,
   int interp_order,
   std::string field_filename,
   bool mesh_output,
@@ -361,7 +361,8 @@ void run(
       Tangram::XMOF2D_Wrapper>
         d(source_mesh_wrapper, source_state,
           target_mesh_wrapper, target_state);
-    d.set_remap_var_names(remap_fields, limiter);
+    d.set_remap_var_names(remap_fields);
+    d.set_limiter(limiter);
     d.run(false);
   }
 
@@ -570,7 +571,7 @@ int main(int argc, char** argv) {
   int interp_order = 1;
   bool mesh_output = true;
   int n_converge = 1;
-  Portage::LimiterType limiter = Portage::LimiterType::NOLIMITER;
+  Portage::Limiter_type limiter = Portage::Limiter_type::NOLIMITER;
   Portage::Entity_kind entityKind = Portage::Entity_kind::CELL;
   double L1_error=0., L2_error=0.;
 
@@ -621,7 +622,7 @@ int main(int argc, char** argv) {
       }
     } else if (keyword == "limiter") {
       if (valueword == "barth_jespersen" || valueword == "BARTH_JESPERSEN")
-        limiter = Portage::LimiterType::BARTH_JESPERSEN;
+        limiter = Portage::Limiter_type::BARTH_JESPERSEN;
     } else if (keyword == "output_meshes") {
       mesh_output = (valueword == "y");
     } else if (keyword == "results_file") {
