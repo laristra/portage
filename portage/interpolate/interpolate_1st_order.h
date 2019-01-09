@@ -82,7 +82,7 @@ class Interpolate_1stOrder {
 
  public:
 
-  //Constructor with interface reconstructor
+  // Constructor with interface reconstructor
 #ifdef HAVE_TANGRAM
   Interpolate_1stOrder(SourceMeshType const & source_mesh,
                        TargetMeshType const & target_mesh,
@@ -129,7 +129,7 @@ class Interpolate_1stOrder {
 
   int set_material(int m) {
     matid_ = m;
-  } //set_material
+  }  // set_material
 
   /// Set the variable name to be interpolated.
 
@@ -141,7 +141,7 @@ class Interpolate_1stOrder {
   // uniform interface
 
   void set_interpolation_variable(std::string const & interp_var_name,
-                                  LimiterType limtype=NOLIMITER) {
+                                  Limiter_type limtype=NOLIMITER) {
     interp_var_name_ = interp_var_name;
     field_type_ = source_state_.field_type(Entity_kind::CELL, interp_var_name);
     if (field_type_ == Field_type::MESH_FIELD)
@@ -149,7 +149,7 @@ class Interpolate_1stOrder {
                                   &source_vals_);
     else
       source_state_.mat_get_celldata(interp_var_name, matid_, &source_vals_);
-  } //set_interpolation_variable
+  }  // set_interpolation_variable
 
   /*!
     @brief Functor to do the actual interpolation.
@@ -187,7 +187,7 @@ class Interpolate_1stOrder {
 #ifdef HAVE_TANGRAM
   std::shared_ptr<InterfaceReconstructor> interface_reconstructor_;
 #endif
-}; //interpolate_1st_order base
+};  // interpolate_1st_order base
 
 
 
@@ -221,7 +221,7 @@ class Interpolate_1stOrder<D,
  public:
 
 #ifdef HAVE_TANGRAM
-   Interpolate_1stOrder(SourceMeshType const & source_mesh,
+  Interpolate_1stOrder(SourceMeshType const & source_mesh,
                        TargetMeshType const & target_mesh,
                        StateType const & source_state,
                        std::shared_ptr<InterfaceReconstructor> ir) :
@@ -264,7 +264,7 @@ class Interpolate_1stOrder<D,
 
   int set_material(int m) {
     matid_ = m;
-  } //set_material
+  }  // set_material
 
   /// Set the variable name to be interpolated
 
@@ -277,7 +277,7 @@ class Interpolate_1stOrder<D,
   // uniform interface
 
   void set_interpolation_variable(std::string const & interp_var_name,
-                                  LimiterType limtype = NOLIMITER) {
+                                  Limiter_type limtype = NOLIMITER) {
     interp_var_name_ = interp_var_name;
     field_type_ = source_state_.field_type(Entity_kind::CELL, interp_var_name);
     if (field_type_ == Field_type::MESH_FIELD)
@@ -285,7 +285,7 @@ class Interpolate_1stOrder<D,
                                   &source_vals_);
     else
       source_state_.mat_get_celldata(interp_var_name, matid_, &source_vals_);
-  } //set_interpolation_variable
+  }  // set_interpolation_variable
 
   /*!
     @brief Functor to do the actual interpolation.
@@ -307,13 +307,7 @@ class Interpolate_1stOrder<D,
                      std::vector<Weights_t> const & sources_and_weights) const
   {
     int nsrccells = sources_and_weights.size();
-    if (!nsrccells) {
-#ifdef DEBUG
-        std::cerr << "WARNING: No source cells contribute to target cell" <<
-          targetCellID << std::endl;
-#endif
-      return 0.0;
-    }
+    if (!nsrccells) return 0.0;
 
     // contribution of the source cell is its field value weighted by
     // its "weight" (in this case, its 0th moment/area/volume)
@@ -344,29 +338,20 @@ class Interpolate_1stOrder<D,
       }
     }
 
-    // Normalize the value by the volume of the intersection of the target cells
-    // with the source mesh. This will do the right thing for single-material
-    // and multi-material remap (conservative and constant preserving) if there
-    // is NO mismatch between source and target mesh boundaries. IF THERE IS A
-    // MISMATCH, THIS WILL PRESERVE CONSTANT VALUES BUT NOT BE CONSERVATIVE. THEN
-    // WE HAVE TO DO A SEMI-LOCAL OR GLOBAL REPAIR.
+    // Normalize the value by the volume of the intersection of the
+    // target cells with the source mesh. This will do the right thing
+    // for single-material and multi-material remap (conservative and
+    // constant preserving) if there is NO mismatch between source and
+    // target mesh boundaries. IF THERE IS A MISMATCH, THIS WILL
+    // PRESERVE CONSTANT VALUES BUT NOT BE CONSERVATIVE. THEN WE HAVE
+    // TO DO A SEMI-LOCAL OR GLOBAL REPAIR.
     if (nsummed)
       val /= wtsum0;
     else
       val = 0.0;
 
-#ifdef DEBUG
-    static bool first = true;
-    if (first && fabs((vol-wtsum0)/vol) > 1.0e-10) {
-      std::cerr <<
-          "WARNING: Meshes may be mismatched in the neighborhood of cell " <<
-          targetCellID << " in the target mesh (and maybe other places too)\n";
-      first = false;
-    }
-#endif
-
     return val;
-  } //operator()
+  }  // operator()
 
  private:
   SourceMeshType const & source_mesh_;
@@ -380,7 +365,7 @@ class Interpolate_1stOrder<D,
 #ifdef HAVE_TANGRAM
   std::shared_ptr<InterfaceReconstructor> interface_reconstructor_;
 #endif
-}; //interpolate_1st_order specialization for cell
+};  // interpolate_1st_order specialization for cell
 
 //////////////////////////////////////////////////////////////////////////////
 
@@ -415,7 +400,7 @@ class Interpolate_1stOrder<D,
 
  public:
 
-  //Constructor with interface reconstructor
+  // Constructor with interface reconstructor
 #ifdef HAVE_TANGRAM
   Interpolate_1stOrder(SourceMeshType const & source_mesh,
                        TargetMeshType const & target_mesh,
@@ -460,7 +445,7 @@ class Interpolate_1stOrder<D,
 
   int set_material(int m) {
     matid_ = m;
-  } //set_material
+  }  // set_material
 
   /// Set the variable name to be interpolated
 
@@ -472,7 +457,7 @@ class Interpolate_1stOrder<D,
   // uniform interface
 
   void set_interpolation_variable(std::string const & interp_var_name,
-                                  LimiterType limtype = NOLIMITER) {
+                                  Limiter_type limtype = NOLIMITER) {
     interp_var_name_ = interp_var_name;
     field_type_ = source_state_.field_type(Entity_kind::NODE, interp_var_name);
     if (field_type_ == Field_type::MESH_FIELD)
@@ -482,7 +467,7 @@ class Interpolate_1stOrder<D,
       source_state_.mat_get_celldata(interp_var_name, matid_, &source_vals_);
       std::cerr << "Cannot remap NODE-centered multi-material data" << "\n";
     }
-  } //set_interpolation_variable
+  }  // set_interpolation_variable
 
   /*!
     @brief Functor to do the actual interpolation.
@@ -506,13 +491,7 @@ class Interpolate_1stOrder<D,
     if (field_type_ != Field_type::MESH_FIELD) return 0.0;
 
     int nsrcdualcells = sources_and_weights.size();
-    if (!nsrcdualcells) {
-#ifdef DEBUG
-      std::cerr << "WARNING: No source nodes contribute to target node." <<
-          std::endl;
-#endif
-      return 0.0;
-    }
+    if (!nsrcdualcells) return 0.0;
 
     // contribution of the source node (dual cell) is its field value
     // weighted by its "weight" (in this case, the 0th
@@ -531,30 +510,21 @@ class Interpolate_1stOrder<D,
       nsummed++;
     }
 
-    // Normalize the value by the volume of the intersection of the target cells
-    // with the source mesh. This will do the right thing for single-material
-    // and multi-material remap (conservative and constant preserving) if there
-    // is NO mismatch between source and target mesh boundaries. IF THERE IS A
-    // MISMATCH, THIS WILL PRESERVE CONSTANT VALUES BUT NOT BE CONSERVATIVE. THEN
-    // WE HAVE TO DO A SEMI-LOCAL OR GLOBAL REPAIR.
+    // Normalize the value by the volume of the intersection of the
+    // target cells with the source mesh. This will do the right thing
+    // for single-material and multi-material remap (conservative and
+    // constant preserving) if there is NO mismatch between source and
+    // target mesh boundaries. IF THERE IS A MISMATCH, THIS WILL
+    // PRESERVE CONSTANT VALUES BUT NOT BE CONSERVATIVE. THEN WE HAVE
+    // TO DO A SEMI-LOCAL OR GLOBAL REPAIR.
 
     if (nsummed)
       val /= wtsum0;
     else
       val = 0.0;
 
-#ifdef DEBUG
-    static bool first = true;
-    if (first && fabs((vol-wtsum0)/vol) > 1.0e-10) {
-      std::cerr <<
-          "WARNING: Meshes may be mismatched in the neighborhood of node " <<
-          targetNodeID << " in the target mesh (and maybe other places too)\n";
-      first = false;
-    }
-#endif
-
     return val;
-  } //operator()
+  }  // operator()
 
  private:
   SourceMeshType const & source_mesh_;
@@ -568,7 +538,7 @@ class Interpolate_1stOrder<D,
 #ifdef HAVE_TANGRAM
   std::shared_ptr<InterfaceReconstructor> interface_reconstructor_;
 #endif
-}; //interpolate_1st_order specialization for nodes
+};  // interpolate_1st_order specialization for nodes
 
 //////////////////////////////////////////////////////////////////////////////
 
