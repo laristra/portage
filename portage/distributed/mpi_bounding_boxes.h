@@ -121,7 +121,12 @@ class MPI_Bounding_Boxes {
     sendField(nodeInfo, commRank, commSize, MPI_INT, 1,
               sourceNodeGlobalIds, &newNodeGlobalIds);
 
-    // Create maps from old uid's to old and new indices
+    // Create maps from uid's to old and new indices for both cells and nodes.
+    // Using the post distribution global id's, calculate two maps for each of
+    // cells and nodes. The first maps from global id to first occurence in the
+    // post distribution data. The second maps from global id to new index in
+    // the merged data. Post distribution data will always be sorted by global
+    // id from low to high.
     create_maps(newCellGlobalIds, uidToOldCell_, uidToNewCell_);
     create_maps(newNodeGlobalIds, uidToOldNode_, uidToNewNode_);
 
@@ -520,19 +525,19 @@ class MPI_Bounding_Boxes {
         sourceField, &newField);
       
       // merge the data before unpacking
-      std::vector<double> newField__;
+      std::vector<double> tempNewField;
       if (source_state_flat.get_entity(field_name) == Entity_kind::NODE){
           // node mesh field
-          newField__ = merge_data(newField, uidToOldNode_, sourceFieldStride);
+          tempNewField = merge_data(newField, uidToOldNode_, sourceFieldStride);
       } else if (source_state_flat.field_type(Entity_kind::CELL, field_name) == Wonton::Field_type::MESH_FIELD){
           // mesh cell field
-          newField__ = merge_data(newField, uidToOldCell_, sourceFieldStride);
+          tempNewField = merge_data(newField, uidToOldCell_, sourceFieldStride);
          } else {
              // multi material field             
          }
          
       // unpack the field, has the correct data types, but still is not merged
-      source_state_flat.unpack(field_name, newField__, all_material_ids, all_material_shapes);
+      source_state_flat.unpack(field_name, tempNewField, all_material_ids, all_material_shapes);
            
     } 
 
@@ -877,14 +882,43 @@ class MPI_Bounding_Boxes {
     }
   }
 
-  std::vector<int> to_uid(std::vector<int> const& in, vector<int>const& uid){
+
+  /*!
+    @brief Convert a vector of integer references to their global id's.
+    
+    @param[in] in  Integer references to convert to uid
+    @param[in] uids  The vector of uid's for each entity pre distribution
+    @return The new vector of uid's after mapping the references
+    
+    This is always used prior to distribution. The idea is that in a topological
+    map such as sourceCellToNodeList, the second type of entity, node in this 
+    case, needs to get converted to uid. We always convert local ids to uids
+    before distributing.
+   */
+  std::vector<int> to_uid(std::vector<int> const& in, vector<int>const& uids){
     std::vector<int> result;
     result.reserve(in.size());
-    for (auto x:in) result.push_back(uid[x]);
+    for (auto x:in) result.push_back(uids[x]);
     return result;
   }
 
-  
+
+  /*!
+    @brief Compute two maps from a post distribution list of uid's 1) from uid to
+           first position in the old vector, and 2) from uid to the new position
+           after merging.
+           
+    @param[in] uids  The vector of uid's for each entity post distribution
+    @param[out] uidToOld  The map from uid to first occurrence in uids
+    @param[out] uidToNew  The map from uid to position in the post distribution
+                          vector
+    
+    This is called after distribution of uids for each entity kind. The vector of
+    uids (with potentially duplicated uid's) is used to create two maps. The first
+    maps the uid to the first position of occurrence in uids vector. The second
+    maps the uid to the index in the post merge compressed data. By using an
+    unordered map, the sort order is guaranteed to be low to high uid.
+   */
   void create_maps(std::vector<int>const& uids, std::map<int,int>& uidToOld,
     std::map<int,int>& uidToNew){
     
@@ -896,6 +930,20 @@ class MPI_Bounding_Boxes {
   }
 
   
+  /*!
+    @brief Merge post distribution flattend data so that each global id appears 
+           only once.
+           
+    @param[in] in   The post distribution data to be merged
+    @param[in] toOld  The map from uid to first occurrence pre distribution
+    @param[in] stride  The number of values associated with the each element of data.
+                       Scalar data has stride 1, centroid data has stride D. 
+    @return The new vector of flattened and merged data
+    
+    This is called after distribution. It takes post distribution data and 
+    selects a single occurrence of each uid. The order is always low to high
+    uid. Each element of data is represented by "stride" number of doubles.
+   */
   template<class T>
   std::vector<T> merge_data(std::vector<T>const& in, 
     std::map<int,int>const& toOld, int stride=1){
@@ -909,6 +957,24 @@ class MPI_Bounding_Boxes {
   }
 
   
+  /*!
+    @brief Merge post distribution lists of topological references.
+           
+    @param[in] in   The post distribution references to be merged
+    @param[in] counts  The vector of the number of references associated with
+                       this entity, e.g. number of faces for this cell
+    @param[in] uidToOld  The map from uid to first occurrence pre distribution of
+                         the "from" part of the mapping, e.g. cell in cellToFace
+    @param[in] uidToNew  The map from uid to position in the post distribution
+                         vector of the "to" part of the mapping, e.g. face in
+                         cellToFace
+    @return The new vector of merged references
+    
+    This is called after distribution. It takes post distribution topological
+    reference data and corrects for two things. The first is the "from" part of
+    the map has duplicates that need to be merged. The second is the "to" part
+    of the map needs to get converted from uid to new index id.   
+   */
   std::vector<int> merge_lists(std::vector<int>const& in, std::vector<int> const & counts,
     std::map<int,int>const& uidToOld, std::map<int,int>const& uidToNew){
     
@@ -923,7 +989,25 @@ class MPI_Bounding_Boxes {
   }
 
   
-  // lists are data, so don't merge
+  /*!
+    @brief Merge post distribution data where the data is variable length lists
+           for each entity.
+           
+    @param[in] in   The post distribution data to be merged
+    @param[in] counts  The vector of the number of references associated with
+                       this entity, e.g. number of faces for this cell
+    @param[in] uidToOld  The map from uid to first occurrence pre distribution of
+                         the "from" part of the mapping, e.g. cell in cellToFace
+    @return The new vector of merged data
+    
+    This is called after distribution. It takes post distribution lists of data 
+    and corrects the "from" part of the map to remove duplicates. The only usage
+    of this signature is compressing the face direction which is a boolean. There
+    are lists for each cell in newCellToFaceDirs, but the values are kept
+    unchanged unlike the signature above with not template parameter where the
+    values are references that need to be remapped as well. Merge_data won't 
+    work because there are variable numbers of data for each entity.
+   */
   template<class T>
   std::vector<T> merge_lists(std::vector<T>const& in, std::vector<int> const & counts,
     std::map<int,int>const& uidToOld){

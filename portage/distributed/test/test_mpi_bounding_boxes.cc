@@ -380,9 +380,7 @@ TEST(MPI_Bounding_Boxes, SimpleTest2D) {
         }
       } 
      }
-     else 
-     {
-     }
+
 
     // Now make sure all expected neighbors are present, in any order
     ASSERT_EQ(expNeighbors.size(), count);

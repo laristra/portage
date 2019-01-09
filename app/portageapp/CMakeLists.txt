@@ -55,7 +55,6 @@ if (Jali_DIR)
     endif (TANGRAM_FOUND)
 endif (Jali_DIR)
 
-
 # FleCSI example
 if (ENABLE_FleCSI)
   add_executable(portageapp_flecsi portageapp_flecsi.cc)
