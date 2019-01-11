@@ -156,7 +156,6 @@ class MismatchFixer {
     source_volume_ =
         std::accumulate(source_ent_volumes_.begin(), source_ent_volumes_.end(),
                         0.0);
-
 #ifdef ENABLE_MPI
     global_source_volume_ = 0.0;
     MPI_Allreduce(&source_volume_, &global_source_volume_, 1, MPI_DOUBLE,
@@ -165,6 +164,8 @@ class MismatchFixer {
     global_source_volume_ = source_volume_;
 #endif
 
+    // DWS diagnostics
+    std::cout<<"  !!!!Source total volume on rank "<<rank_<<": "<<global_source_volume_<<std::endl;
 
     // GLOBAL TARGET VOLUME
     ntargetents_ = (onwhat == Entity_kind::CELL) ?
