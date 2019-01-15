@@ -57,7 +57,7 @@ support for these is _optional_:
 
 - [Jali](http://github.com/lanl/jali):
 
-  We regularly test with verison 0.9.8.  You will need to set the
+  We regularly test with verison 1.0.0.  You will need to set the
   `Jali_Dir` CMake variable if you wish to build support for Jali and
   its tests (see examples below).
 
