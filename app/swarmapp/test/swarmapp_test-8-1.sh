@@ -12,7 +12,7 @@ set -e
 set -x
 
 # 2d 0-th order remap of 0-th order function distribution 0 (grid)
-${RUN_COMMAND} ${TESTAPPDIR}/swarmapp 8 23 19 1 2>&1 > output-8-1
+${RUN_COMMAND} ${TESTAPPDIR}/swarmapp 8 23 19 1 0 2>&1 > output-8-1
 
 # Compare the values for the field
 python compare.py gold-outfield-8-1.csv outfield-8-1.csv 1
