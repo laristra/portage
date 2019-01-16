@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/laristra/portage.svg?branch=master)](https://travis-ci.org/laristra/portage)
+[![Build Status](https://travis-ci.com/laristra/portage.svg?branch=master)](https://travis-ci.com/laristra/portage)
 [![codecov.io](https://codecov.io/github/laristra/portage/coverage.svg?branch=master)](https://codecov.io/github/laristra/portage/portage?branch=master)
 
 # portage
