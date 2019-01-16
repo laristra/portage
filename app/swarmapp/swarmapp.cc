@@ -132,9 +132,11 @@ std::vector<example_properties> setup_examples() {
 
 void usage() {
   auto examples = setup_examples();
-  std::cout << "Usage: swarmapp example-number nsourcepts ntargetpts distribution"
+  std::cout << "Usage: swarmapp example-number nsourcepts ntargetpts distribution seed"
             << std::endl;
   std::cout << "distribution = 0 for random, 1 for regular grid, 2 for perturbed regular grid"
+            << std::endl;
+  std::cout << "seed sets the random number seed to get reproducible results" 
             << std::endl;
   std::cout << "List of example numbers:" << std::endl;
   int i = 0;
@@ -149,7 +151,8 @@ void usage() {
 
 int main(int argc, char** argv) {
   int example_num, n_source, n_target, distribution;
-  if (argc <= 4) {
+  unsigned int seed;
+  if (argc != 6) {
     usage();
     return 0;
   }
@@ -158,6 +161,7 @@ int main(int argc, char** argv) {
   n_source = atoi(argv[2]);
   n_target = atoi(argv[3]);
   distribution = atoi(argv[4]);
+  seed = atoi(argv[5]);
 
 #ifdef ENABLE_MPI
   int mpi_init_flag;
@@ -175,8 +179,9 @@ int main(int argc, char** argv) {
 
   // Regularly ordered input swarm; randomly ordered output swarm
   auto inputSwarm = SwarmFactory(-1.1, -1.1, 1.1, 1.1, n_source*n_source,
-                                 distribution);
-  auto targetSwarm = SwarmFactory(-1.0, -1.0, 1.0, 1.0, n_target*n_target, distribution);
+                                 distribution, seed);
+  auto targetSwarm = SwarmFactory(-1.0, -1.0, 1.0, 1.0, n_target*n_target, 
+                                  distribution, seed);
   
   auto inputState = make_shared<SwarmState<2>>(*inputSwarm);
   auto targetState = make_shared<SwarmState<2>>(*targetSwarm);
