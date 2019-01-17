@@ -1,19 +1,43 @@
 # Introduction {#mainpage} 
 
-Portage is a framework that allows developers to build a **highly
-customized, hybrid parallel (MPI+X) remapping library** for transfer of
-field data between *meshes* or *particle swarms* in computational physics applications.
+Portage is a framework for building a **highly customized, hybrid
+parallel (MPI+X) remapping library** for the transfer of
+field data between *meshes* or *particle swarms* in computational
+physics applications.
 
-Portage provides:
-- Conservative remapping of multi-material fields between general
+Application developers can:
+- **use one of the included drivers** with a mix of available and custom
+components to readily deploy a powerful remapping capability into
+their application, or
+- **write a custom remapping driver** and use it with a mix of available
+and custom components to create a remapping capability uniquely
+tailored to their application needs.
+
+![Portage design](doxygen/images/portage-tangram-diagram.png)
+<br>
+
+The drivers furnished with Portage provide:
+- conservative remapping of multi-material fields between general
   polygonal/polyhedral meshes.
-- Higher-order, non-conservative interpolation between particle swarms
+- higher-order, non-conservative interpolation between particle swarms
   as well between meshes and particle swarms.
-- A modern design templated on the major components - mix and match from
+- a modern design templated on the major components - mix and match from
   the furnished suite or use a custom component.
-- Direct (no-copy) use of client application's native mesh/particle and 
+- direct (no-copy) use of client application's native mesh/particle and 
   field data structures whenever possible (see [distributed remap](@ref distributed_remap)).
 - Built-in distributed and on-node parallelism even with custom components.
+
+They also have the following known limitations:
+- Only remapping of scalar fields is supported; vectors and tensors
+must be remapped component by component.
+- Multi-material remap is not yet supported for distributed meshes.
+- Conservative remapping of compound quantities such as
+momentum is not supported when they are not the primary fields.
+- Field fixup in the presence of mismatched mesh boundaries is not
+implemented for multi-material fields.
+- Remapping involving particles is currently non-conservative.
+
+<br>
 
 See the [Concepts](@ref concepts) page for a high-level discussion of
 the methods used within Portage.
