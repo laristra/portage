@@ -1,9 +1,10 @@
 # Introduction {#mainpage} 
+<a name="Introduction"></a>
 
 Portage is a framework for building a **highly customized, hybrid
 parallel (MPI+X) remapping library** for the transfer of
-field data between *meshes* or *particle swarms* in computational
-physics applications.
+field data between *meshes* or [*particle
+swarms*](concepts.html#meshfree remap) in computational physics applications.
 
 Application developers can:
 - **use one of the included drivers** with a mix of available and custom
@@ -17,15 +18,16 @@ tailored to their application needs.
 <br>
 
 The drivers furnished with Portage provide:
-- conservative remapping of multi-material fields between general
-  polygonal/polyhedral meshes.
-- higher-order, non-conservative interpolation between particle swarms
-  as well between meshes and particle swarms.
+- [conservative remapping of multi-material fields between general
+  polygonal/polyhedral meshes](concepts.html#mesh-mesh remap).
+- [higher-order, non-conservative interpolation between particle
+swarms](concepts.html#meshfree remap) as well as between meshes and
+particle swarms.
 - a modern design templated on the major components - mix and match from
   the furnished suite or use a custom component.
 - direct (no-copy) use of client application's native mesh/particle and 
   field data structures whenever possible (see [distributed remap](@ref distributed_remap)).
-- Built-in distributed and on-node parallelism even with custom components.
+- built-in distributed and on-node parallelism even with custom components.
 
 They also have the following known limitations:
 - Only remapping of scalar fields is supported; vectors and tensors
@@ -47,14 +49,15 @@ hooking Portage up to a mesh and state manager.
 
 ---
 
+<a name="Requirements"></a>
 # Requirements
 
 At a minimum, Portage requires:
 - A C++-11 compatible compiler; regular testing is performed with GCC
   6.3+ and Intel 17+.
-- CMake 3.8+
-- LAPACKE (3.8.0+)
-- Boost (1.68.0+) **or** Thrust (1.8.1+)
+- [CMake](https://cmake.org) 3.8+
+- [LAPACKE](https://https://github.com/Reference-LAPACK/lapack/tree/master/LAPACKE) 3.8.0+
+- [Boost](https://www.boost.org) 1.68.0+ **or** [Thrust](https://thrust.github.io/) 1.8.1+
 
 In addition to the minimum set of libraries, Portage has been known to
 work with version 1.0.0 of the [Jali](https://github.com/lanl/jali) and
@@ -82,7 +85,7 @@ reconstruction and optionally, the
 [XMOF2D](https://github.com/laristra/xmof2d) library. Portage has been
 tested with version 0.9.1 of both Tangram and the X-MOF library.
 
-
+<a name="Downloading"></a>
 ## Downloading
 
 The latest release of [Portage](https://github.com/laristra/Portage)
@@ -93,11 +96,13 @@ cloned recursively:
 git clone --recursive https://github.com/laristra/Portage
 ```
 
+<a name="Building"></a>
 ## Building
 
-Portage uses the CMake build system.  In the simplest case where you
-want to build a serial version of the code, and CMake knows where to
-find your Boost and LAPACKE installations, one can do
+Portage uses the [CMake](https://cmake.org) build system. In the
+simplest case where you want to build a serial version of the code,
+and CMake knows where to find your Boost and LAPACKE installations,
+one can do
 
 ```sh
 Portage/ $ mkdir build
@@ -133,6 +138,7 @@ Portage/build/ $ make doxygen   # builds this HTML and a PDF form of the documen
 Portage/build/ $ make install   # installs the Portage library and headers into CMAKE_INSTALL_PREFIX
 ~~~
 
+<a name="Useful CMake Flags"></a>
 ## Useful CMake Flags
 Below is a non-exhaustive list of useful CMake flags for building
 Portage.
