@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/laristra/portage.svg?branch=master)](https://travis-ci.org/laristra/portage)
+[![Build Status](https://travis-ci.com/laristra/portage.svg?branch=master)](https://travis-ci.com/laristra/portage)
 [![codecov.io](https://codecov.io/github/laristra/portage/coverage.svg?branch=master)](https://codecov.io/github/laristra/portage/portage?branch=master)
 
 # portage
@@ -57,7 +57,7 @@ support for these is _optional_:
 
 - [Jali](http://github.com/lanl/jali):
 
-  We regularly test with verison 0.9.8.  You will need to set the
+  We regularly test with verison 1.0.0.  You will need to set the
   `Jali_Dir` CMake variable if you wish to build support for Jali and
   its tests (see examples below).
 
