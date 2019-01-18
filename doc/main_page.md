@@ -14,8 +14,7 @@ their application, or
 and custom components to create a remapping capability uniquely
 tailored to their application needs.
 
-![Portage design](doxygen/images/portage-tangram-diagram.png)
-<br>
+![Portage design](doxygen/images/portage-tangram-diagram.png)<br>
 
 The drivers furnished with Portage provide:
 - [conservative remapping of multi-material fields between general
