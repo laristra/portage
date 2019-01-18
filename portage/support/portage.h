@@ -91,8 +91,15 @@ using Wonton::Weights_t;
 
 /// Limiter type
 typedef enum {NOLIMITER, BARTH_JESPERSEN}
-  LimiterType;
+  Limiter_type;
 
+/// Fixup options for partially filled cells
+typedef enum {CONSTANT, CONSERVATIVE, SHIFTED_CONSERVATIVE}
+  Partial_fixup_type;
+
+/// Fixup options for empty cells
+typedef enum {LEAVE_EMPTY, EXTRAPOLATE, FILL}
+  Empty_fixup_type;
 
 // Iterators and transforms that depend on Thrust vs. std
 #ifdef THRUST
