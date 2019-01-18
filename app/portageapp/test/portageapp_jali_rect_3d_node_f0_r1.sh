@@ -13,30 +13,48 @@ set -x
 
 # 3D, 1st order accurate remap of constant node-centered function
 
-# SERIAL RUN
+# SERIAL RUN, conforming meshes
 
 mpirun -np 1 $TESTAPPDIR/portageapp_jali \
 --dim=3 --nsourcecells=5 --ntargetcells=7 \
 --conformal=y \
 --entity_kind=node --field="73.98" \
 --remap_order=1 \
---results_file="jali_rect_field_3d_node_f0_r1.txt"
+--results_file="jali_rect_3d_node_f0_r1.txt"
 
 # Compare the values for the field
-$CMPAPPDIR/apptest_cmp GOLD_jali_rect_3d_node_f0_r1.txt jali_rect_field_3d_node_f0_r1.txt 1e-12
+$CMPAPPDIR/apptest_cmp GOLD_jali_rect_3d_node_f0_r1.txt jali_rect_3d_node_f0_r1.txt 1e-12
 
-# PARALLEL RUN
+
+# PARALLEL RUN, conforming meshes
+
+mpirun -np 4 $TESTAPPDIR/portageapp_jali \
+--dim=3 --nsourcecells=5 --ntargetcells=7 \
+--conformal=y \
+--entity_kind=node --field="73.98" \
+--remap_order=1 \
+--results_file="jali_rect_3d_node_f0_r1.txt"
+
+# Compare the values for the field
+# TODO:  tolerance used to be 1e-12 - why did I have to increase it?
+$CMPAPPDIR/apptest_cmp GOLD_jali_rect_3d_node_f0_r1.txt.0 jali_rect_3d_node_f0_r1.txt.0 1e-11
+$CMPAPPDIR/apptest_cmp GOLD_jali_rect_3d_node_f0_r1.txt.1 jali_rect_3d_node_f0_r1.txt.1 1e-11
+$CMPAPPDIR/apptest_cmp GOLD_jali_rect_3d_node_f0_r1.txt.2 jali_rect_3d_node_f0_r1.txt.2 1e-11
+$CMPAPPDIR/apptest_cmp GOLD_jali_rect_3d_node_f0_r1.txt.3 jali_rect_3d_node_f0_r1.txt.3 1e-11
+
+
+# PARALLEL RUN, non-conforming meshes
 
 mpirun -np 4 $TESTAPPDIR/portageapp_jali \
 --dim=3 --nsourcecells=5 --ntargetcells=7 \
 --conformal=n \
 --entity_kind=node --field="73.98" \
 --remap_order=1 \
---results_file="jali_rect_field_3d_node_f0_r1_nc.txt"
+--results_file="jali_rect_3d_node_f0_r1_nc.txt"
 
 # Compare the values for the field
 # TODO:  tolerance used to be 1e-12 - why did I have to increase it?
-$CMPAPPDIR/apptest_cmp GOLD_jali_rect_3d_node_f0_r1_nc.txt.0 jali_rect_field_3d_node_f0_r1_nc.txt.0 1e-11
-$CMPAPPDIR/apptest_cmp GOLD_jali_rect_3d_node_f0_r1_nc.txt.1 jali_rect_field_3d_node_f0_r1_nc.txt.1 1e-11
-$CMPAPPDIR/apptest_cmp GOLD_jali_rect_3d_node_f0_r1_nc.txt.2 jali_rect_field_3d_node_f0_r1_nc.txt.2 1e-11
-$CMPAPPDIR/apptest_cmp GOLD_jali_rect_3d_node_f0_r1_nc.txt.3 jali_rect_field_3d_node_f0_r1_nc.txt.3 1e-11
+$CMPAPPDIR/apptest_cmp GOLD_jali_rect_3d_node_f0_r1_nc.txt.0 jali_rect_3d_node_f0_r1_nc.txt.0 1e-11
+$CMPAPPDIR/apptest_cmp GOLD_jali_rect_3d_node_f0_r1_nc.txt.1 jali_rect_3d_node_f0_r1_nc.txt.1 1e-11
+$CMPAPPDIR/apptest_cmp GOLD_jali_rect_3d_node_f0_r1_nc.txt.2 jali_rect_3d_node_f0_r1_nc.txt.2 1e-11
+$CMPAPPDIR/apptest_cmp GOLD_jali_rect_3d_node_f0_r1_nc.txt.3 jali_rect_3d_node_f0_r1_nc.txt.3 1e-11

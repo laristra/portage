@@ -108,7 +108,8 @@ TEST(MMDriver, ThreeMat2D_1stOrder) {
   matlo[2] = Portage::Point<2>(0.5, 0.5);
   mathi[2] = Portage::Point<2>(1.0, 1.0);
 
-  double matrho[nmats] = {0.1, 10.0, 100.0};
+  double meshtemp = 55;  // scalar temperature on mesh
+  double matrho[nmats] = {0.1, 10.0, 100.0};  // material density
   double matvol[nmats] = {0.5, 0.25, 0.25};
   double matmass[nmats] = {0.05, 2.5, 25.0};
   Portage::Point<2> matcen[nmats] = {Portage::Point<2>(0.25,0.5),
@@ -177,6 +178,14 @@ TEST(MMDriver, ThreeMat2D_1stOrder) {
 
 
   //-------------------------------------------------------------------
+  // Now add temperature field to the mesh
+  //-------------------------------------------------------------------
+
+  sourceStateWrapper.mesh_add_data(Wonton::Entity_kind::CELL,
+                                   "temperature", meshtemp);
+
+  
+  //-------------------------------------------------------------------
   // Sanity check - do we get the right volumes and masses for
   // materials from the source state
   //-------------------------------------------------------------------
@@ -205,7 +214,7 @@ TEST(MMDriver, ThreeMat2D_1stOrder) {
   // Field(s) we have to remap
   //-------------------------------------------------------------------
 
-  std::vector<std::string> remap_fields = {"density"};
+  std::vector<std::string> remap_fields = {"density", "temperature"};
 
 
   //-------------------------------------------------------------------
@@ -221,6 +230,8 @@ TEST(MMDriver, ThreeMat2D_1stOrder) {
   targetStateWrapper.mat_add_celldata<Portage::Point<2>>("mat_centroids");
   targetStateWrapper.mat_add_celldata<double>("density", 0.0);
 
+  targetStateWrapper.mesh_add_data<double>(Wonton::Entity_kind::CELL,
+                                           "temperature", 0.0);
 
   //-------------------------------------------------------------------
   //  Run the remap driver using XMOF-2D as the interface
@@ -391,6 +402,13 @@ TEST(MMDriver, ThreeMat2D_1stOrder) {
 #endif
   }
 
+  // Finally check that we got the right target temperature values
+  double *targettemp;
+  targetStateWrapper.mesh_get_data(Wonton::Entity_kind::CELL, "temperature",
+                                   &targettemp);
+  for (int i = 0; i < ntrgcells; i++)
+    ASSERT_NEAR(targettemp[i], meshtemp, 1.0e-10);
+
 }  // ThreeMat2D_1stOrder
 
 
@@ -453,7 +471,8 @@ TEST(MMDriver, ThreeMat3D_1stOrder) {
   matlo[2] = Portage::Point<3>(0.5, 0.5, 0.0);
   mathi[2] = Portage::Point<3>(1.0, 1.0, 1.0);
 
-  double matrho[nmats] = {0.1, 10.0, 100.0};
+  double meshtemp = 55;  // scalar temperature on mesh
+  double matrho[nmats] = {0.1, 10.0, 100.0};  // material density
   double matvol[nmats] = {0.5, 0.25, 0.25};
   double matmass[nmats] = {0.05, 2.5, 25.0};
   Portage::Point<3> matcen[nmats] = {Portage::Point<3>(0.25,0.5,0.5),
@@ -520,7 +539,15 @@ TEST(MMDriver, ThreeMat3D_1stOrder) {
   for (int m = 0; m < nmats; m++)
     sourceStateWrapper.mat_add_celldata("density", m, matrho[m]);
 
+  
+  //-------------------------------------------------------------------
+  // Now add temperature field to the mesh
+  //-------------------------------------------------------------------
 
+  sourceStateWrapper.mesh_add_data<double>(Wonton::Entity_kind::CELL,
+                                           "temperature", meshtemp);
+  
+  
   //-------------------------------------------------------------------
   // Sanity check - do we get the right volumes and masses for
   // materials from the source state
@@ -550,7 +577,7 @@ TEST(MMDriver, ThreeMat3D_1stOrder) {
   // Field(s) we have to remap
   //-------------------------------------------------------------------
 
-  std::vector<std::string> remap_fields = {"density"};
+  std::vector<std::string> remap_fields = {"density", "temperature"};
 
 
   //-------------------------------------------------------------------
@@ -565,6 +592,9 @@ TEST(MMDriver, ThreeMat3D_1stOrder) {
   targetStateWrapper.mat_add_celldata<double>("mat_volfracs");
   targetStateWrapper.mat_add_celldata<Portage::Point<3>>("mat_centroids");
   targetStateWrapper.mat_add_celldata<double>("density", 0.0);
+
+  targetStateWrapper.mesh_add_data<double>(Wonton::Entity_kind::CELL,
+                                           "temperature", 0.0);
 
 
   //-------------------------------------------------------------------
@@ -740,6 +770,14 @@ TEST(MMDriver, ThreeMat3D_1stOrder) {
     std::cerr << "\n\n";
 #endif
   }
+
+
+  // Finally check that we got the right target temperature values
+  double *targettemp;
+  targetStateWrapper.mesh_get_data(Wonton::Entity_kind::CELL, "temperature",
+                                   &targettemp);
+  for (int i = 0; i < ntrgcells; i++)
+    ASSERT_NEAR(targettemp[i], meshtemp, 1.0e-10);
 
 }  // ThreeMat3D_1stOrder
 

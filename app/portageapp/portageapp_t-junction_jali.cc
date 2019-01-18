@@ -255,7 +255,7 @@ class interface_reconstructor_factory<3, MeshWrapper>{
 
 template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
                            std::shared_ptr<Jali::Mesh> targetMesh,
-                           Portage::LimiterType limiter,
+                           Portage::Limiter_type limiter,
                            int interp_order,
                            std::vector<std::string> material_field_expressions,
                            std::string field_filename,
@@ -302,7 +302,7 @@ int main(int argc, char** argv) {
   bool mesh_output = true;
   int n_converge = 1;
   Jali::Entity_kind entityKind = Jali::Entity_kind::CELL;
-  Portage::LimiterType limiter = Portage::LimiterType::NOLIMITER;
+  Portage::Limiter_type limiter = Portage::Limiter_type::NOLIMITER;
   double srclo = 0.0, srchi = 1.0;  // bounds of generated mesh in each dir
 
   // Parse the input
@@ -351,7 +351,7 @@ int main(int argc, char** argv) {
       }
     } else if (keyword == "limiter") {
       if (valueword == "barth_jespersen" || valueword == "BARTH_JESPERSEN")
-        limiter = Portage::LimiterType::BARTH_JESPERSEN;
+        limiter = Portage::Limiter_type::BARTH_JESPERSEN;
     } else if (keyword == "mesh_min") {
       srclo = stof(valueword);
     } else if (keyword == "mesh_max") {
@@ -542,7 +542,7 @@ int main(int argc, char** argv) {
 
 template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
                            std::shared_ptr<Jali::Mesh> targetMesh,
-                           Portage::LimiterType limiter,
+                           Portage::Limiter_type limiter,
                            int interp_order,
                            std::vector<std::string> material_field_expressions,
                            std::string field_filename, bool mesh_output,
@@ -793,7 +793,8 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
         Tangram::ClipR2D>
           driver(sourceMeshWrapper, sourceStateWrapper,
                  targetMeshWrapper, targetStateWrapper);
-      driver.set_remap_var_names(remap_fields, limiter);
+      driver.set_remap_var_names(remap_fields);
+      driver.set_limiter(limiter);
       driver.run(numpe > 1);
     }
   } else {  // 3D
@@ -829,7 +830,8 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
         Tangram::ClipR3D>
           driver(sourceMeshWrapper, sourceStateWrapper,
                  targetMeshWrapper, targetStateWrapper);
-      driver.set_remap_var_names(remap_fields, limiter);
+      driver.set_remap_var_names(remap_fields);
+      driver.set_limiter(limiter);
       driver.run(numpe > 1);
     }
   }
