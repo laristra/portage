@@ -380,9 +380,4 @@ if(ENABLE_APP_TESTS)
   enable_testing()
 endif()
 
-# We know we are a C++ project, so force the bindings if we are using MPI
-#if (ENABLE_MPI)
-#  set(ENABLE_MPI_CXX_BINDINGS TRUE CACHE BOOL "Enable MPI C++ Bindings" FORCE)
-#  mark_as_advanced(ENABLE_MPI_CXX_BINDINGS)
-#endif (ENABLE_MPI)
 
