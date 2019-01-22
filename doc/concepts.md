@@ -89,7 +89,7 @@ phases (described here for cell-based fields):
    to the remap of a given target cell
 * **interpolate** - using the weights and source field data
    reconstruct the field data for each target cell
-* **fixup** - repair the remapped field due to errors resulting from
+* **repair** - repair the remapped field due to errors resulting from
    mismatch of the two mesh boundaries
 
 <table style="width:100%">
@@ -155,6 +155,18 @@ The available intersectors for meshes in Portage are:
   method based on the [r3d](https://github.com/laristra/r3d,
   https://github.com/devonmpowell/r3d.git(commit d6799a58)) library.
 
+_The R2D/R3D-based intersectors in Portage are capable of intersecting
+two non-convex cells based on the ability of R2D/R3D to clip
+non-convex polygons/polyhedra. Therefore, in Portage's intersectors
+source mesh cells are left as is regardless of whether they are convex
+or non-convex but target cells are decomposed into simplices and the
+simplices intersected with the source cells (unless they are
+explicitly told that the target cells are strictly convex). The
+simplices are derived from the side/wedge data structures built by
+Wonton::AuxMeshTopology class. Note that Portage considers hexahedral
+cells (or any higher polyhedra) with curved faces also as
+non-convex._
+
 Applications can choose to supply their own exact cell-cell
 intersectors or even an alternate algorithm such as the _swept face_
 calculation of contributions from source to target cells sometimes used in
@@ -194,12 +206,17 @@ fields or give second order accurate results._ This is because for the
 method to be second-order accurate the linear reconstruction in the
 source cell (or dual cell) is with respect to the field value at its
 centroid; for the dual mesh, however, the field values are known at
-the nodes, not necessarily the centroids of the dual cells.
+the nodes, not necessarily the centroids of the dual cells. Also, dual
+cells in a general mesh are almost guaranteed to be
+non-convex. Therefore, intersection of dual cells always includes a
+decomposition of the target dual cell into simplices based on
+wedges/corners in Wonton::AuxMeshTopology.
 
 Portage currently does not have an algorithm in place for remapping
-nodal fields to cells and vice-versa.
+nodal fields to cells and vice-versa although a driver to do such a
+thing can be written easily.
 
-### Mismatch Fixup
+### Mismatch Fixup or Repair
 
 Often, the boundaries of the source and target meshes in simulations
 do not exactly match up. This may happen because curved boundaries are
@@ -256,7 +273,7 @@ roughly described as below:
       appropriate limiters, reconstruct the field data for material
       *m* for a given target cell. No limiting is performed at
       material interfaces
-   4. **fixup** - repair the remapped field due to errors resulting
+   4. **repair** - repair the remapped field due to errors resulting
       from mismatch of the two mesh boundaries
 
 Remap of mesh fields on cells and nodes (one value per cell or node)
