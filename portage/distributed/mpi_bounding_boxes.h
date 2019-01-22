@@ -86,7 +86,6 @@ class MPI_Bounding_Boxes {
     int dim = dim_ = source_mesh_flat.space_dimension();
     assert(dim == target_mesh.space_dimension());
 
-
     // sendFlags, which partitions to send data
     // this is computed via intersection of whole partition bounding boxes
     std::vector<bool> sendFlags(commSize);   
@@ -104,40 +103,44 @@ class MPI_Bounding_Boxes {
     int sourceNumNodes = sourceNumOwnedNodes + source_mesh_flat.num_ghost_nodes();
     setSendRecvCounts(&nodeInfo, commSize, sendFlags,sourceNumNodes, sourceNumOwnedNodes);
 
-
     ///////////////////////////////////////////////////////
     // always distributed
     ///////////////////////////////////////////////////////
 
     // SEND GLOBAL CELL IDS
     std::vector<int>& sourceCellGlobalIds = source_mesh_flat.get_global_cell_ids();
-    std::vector<int> newCellGlobalIds(cellInfo.newNum);
+    std::vector<int> distributedCellGlobalIds(cellInfo.newNum);
     sendField(cellInfo, commRank, commSize, MPI_INT, 1,
-              sourceCellGlobalIds, &newCellGlobalIds);
-
+              sourceCellGlobalIds, &distributedCellGlobalIds);
     // SEND GLOBAL NODE IDS
     std::vector<int>& sourceNodeGlobalIds = source_mesh_flat.get_global_node_ids();
-    std::vector<int> newNodeGlobalIds(nodeInfo.newNum);
+    std::vector<int> distributedNodeGlobalIds(nodeInfo.newNum);
     sendField(nodeInfo, commRank, commSize, MPI_INT, 1,
-              sourceNodeGlobalIds, &newNodeGlobalIds);
+              sourceNodeGlobalIds, &distributedNodeGlobalIds);
 
-    // Create maps from gid's to old and new indices for both cells and nodes.
+    // Create maps from gid's to distributed and flat indices for both cells and nodes.
     // Using the post distribution global id's, calculate two maps for each of
     // cells and nodes. The first maps from global id to first occurence in the
     // post distribution data. The second maps from global id to new index in
     // the merged data. Post distribution data will always be sorted by global
     // id from low to high.
-    create_maps(newCellGlobalIds, gidToLocalIdCell_, gidToNewIdCell_, cellInfo.newNumOwned);
-    create_maps(newNodeGlobalIds, gidToLocalIdNode_, gidToNewIdNode_, nodeInfo.newNumOwned);
+    int flatCellNumOwned;
+/*
+
+    create_maps(distributedCellGlobalIds, cellInfo.newNumOwned, flatCellNumOwned, distributedCellIds_, 
+      gidToDistributedCell_, gidToFlatCell_);
+    int flatCellNumOwned;
+    create_maps(distributedNodeGlobalIds, nodeInfo.newNumOwned, flatNodeNumOwned, distributedNodeIds_,
+      gidToDistributedNode_, gidToFlatIdNode_);
 
     // SEND NODE COORDINATES
     std::vector<double>& sourceCoords = source_mesh_flat.get_coords();
-    std::vector<double> newCoords(dim*nodeInfo.newNum);
+    std::vector<double> distributedCoords(dim*nodeInfo.newNum);
     sendField(nodeInfo, commRank, commSize, MPI_DOUBLE, dim,
-              sourceCoords, &newCoords);
+              sourceCoords, &distributedCoords);
               
     // merge and set coordinates in the flat mesh
-    sourceCoords = merge_data(newCoords, gidToLocalIdNode_, dim_);
+    sourceCoords = merge_data(distributedCoords, gidToDistributedNode_, dim_);
     
 
     ///////////////////////////////////////////////////////
@@ -149,12 +152,12 @@ class MPI_Bounding_Boxes {
                 
       // send cell node counts
       std::vector<int>& sourceCellNodeCounts = source_mesh_flat.get_cell_node_counts();
-      std::vector<int> newCellNodeCounts(cellInfo.newNum);
+      std::vector<int> distributedCellNodeCounts(cellInfo.newNum);
       sendField(cellInfo, commRank, commSize, MPI_INT, 1,
-                sourceCellNodeCounts, &newCellNodeCounts);
+                sourceCellNodeCounts, &distributedCellNodeCounts);
                 
       // merge and set cell node counts
-      sourceCellNodeCounts=merge_data( newCellNodeCounts, gidToLocalIdCell_);
+      sourceCellNodeCounts=merge_data( distributedCellNodeCounts, gidToDistributedCell_);
 
 
       // mesh data references
@@ -171,13 +174,13 @@ class MPI_Bounding_Boxes {
               sizeCellToNodeList, sizeOwnedCellToNodeList);
               
       // send cell to node lists
-      std::vector<int> newCellToNodeList(cellToNodeInfo.newNum);
+      std::vector<int> distributedCellToNodeList(cellToNodeInfo.newNum);
       sendField(cellToNodeInfo, commRank, commSize, MPI_INT, 1,
-                to_gid(sourceCellToNodeList, sourceNodeGlobalIds), &newCellToNodeList);
+                to_gid(sourceCellToNodeList, sourceNodeGlobalIds), &distributedCellToNodeList);
 
       // merge and map cell node lists
-      sourceCellToNodeList = merge_lists(newCellToNodeList, newCellNodeCounts, 
-        gidToLocalIdCell_, gidToNewIdNode_);
+      sourceCellToNodeList = merge_lists(distributedCellToNodeList, distributedCellNodeCounts, 
+        gidToDistributedCell_, gidToFlatIdNode_);
 
     }
 
@@ -196,12 +199,13 @@ class MPI_Bounding_Boxes {
 
       // SEND GLOBAL FACE IDS
       std::vector<int>& sourceFaceGlobalIds = source_mesh_flat.get_global_face_ids();
-      std::vector<int> newFaceGlobalIds(faceInfo.newNum);
+      std::vector<int> distributedFaceGlobalIds(faceInfo.newNum);
       sendField(faceInfo, commRank, commSize, MPI_INT, 1,
-                sourceFaceGlobalIds, &newFaceGlobalIds);                  
+                sourceFaceGlobalIds, &distributedFaceGlobalIds);                  
 
-      // Create map from old gid's to old and new indices
-      create_maps(newFaceGlobalIds, gidToLocalIdFace_, gidToNewIdFace_);
+      // Create map from distributed gid's to distributed index and flat indices
+      create_maps(distributedFaceGlobalIds, faceInfo.newNum, distributedFaceIds_,
+        gidToDistributedFace_, gidToFlatFace_);
 
       // mesh data references
       std::vector<int>& sourceCellFaceOffsets = source_mesh_flat.get_cell_face_offsets();
@@ -219,12 +223,12 @@ class MPI_Bounding_Boxes {
       // SEND NUMBER OF FACES FOR EACH CELL
 
       std::vector<int>& sourceCellFaceCounts = source_mesh_flat.get_cell_face_counts();
-      std::vector<int> newCellFaceCounts(cellInfo.newNum);
+      std::vector<int> distributedCellFaceCounts(cellInfo.newNum);
       sendField(cellInfo, commRank, commSize, MPI_INT, 1,
-                sourceCellFaceCounts, &newCellFaceCounts);
+                sourceCellFaceCounts, &distributedCellFaceCounts);
 
       // merge and set cell face counts
-      sourceCellFaceCounts=merge_data( newCellFaceCounts, gidToLocalIdCell_);
+      sourceCellFaceCounts=merge_data( distributedCellFaceCounts, gidToDistributedCell_);
       
       // SEND CELL-TO-FACE MAP
       // map the cell face list vector to gid's
@@ -239,27 +243,27 @@ class MPI_Bounding_Boxes {
         sourceCellToFaceList[j] = (f << 1) | dir;
       }
 
-      std::vector<int> newCellToFaceList(cellToFaceInfo.newNum);
+      std::vector<int> distributedCellToFaceList(cellToFaceInfo.newNum);
       sendField(cellToFaceInfo, commRank, commSize, MPI_INT, 1,
-                sourceCellToFaceList, &newCellToFaceList);
+                sourceCellToFaceList, &distributedCellToFaceList);
 
       // Unpack face IDs and dirs
-      std::vector<bool> newCellToFaceDirs(cellToFaceInfo.newNum);
-      for (unsigned int j=0; j<newCellToFaceList.size(); ++j)
+      std::vector<bool> distributedCellToFaceDirs(cellToFaceInfo.newNum);
+      for (unsigned int j=0; j<distributedCellToFaceList.size(); ++j)
       {
-        int fd = newCellToFaceList[j];
-        newCellToFaceList[j] = fd >> 1;
-        newCellToFaceDirs[j] = fd & 1;
+        int fd = distributedCellToFaceList[j];
+        distributedCellToFaceList[j] = fd >> 1;
+        distributedCellToFaceDirs[j] = fd & 1;
       }
 
       
       // merge and map cell face lists
-      sourceCellToFaceList = merge_lists(newCellToFaceList, newCellFaceCounts, 
-        gidToLocalIdCell_, gidToNewIdFace_);
+      sourceCellToFaceList = merge_lists(distributedCellToFaceList, distributedCellFaceCounts, 
+        gidToDistributedCell_, gidToFlatFace_);
         
       // merge cell face directions
-      sourceCellToFaceDirs = merge_lists(newCellToFaceDirs, newCellFaceCounts, 
-        gidToLocalIdCell_);
+      sourceCellToFaceDirs = merge_lists(distributedCellToFaceDirs, distributedCellFaceCounts, 
+        gidToDistributedCell_);
       
 
       
@@ -278,24 +282,24 @@ class MPI_Bounding_Boxes {
       
       // SEND NUMBER OF NODES FOR EACH FACE
       std::vector<int>& sourceFaceNodeCounts = source_mesh_flat.get_face_node_counts();
-      std::vector<int> newFaceNodeCounts(faceInfo.newNum);
+      std::vector<int> distributedFaceNodeCounts(faceInfo.newNum);
       sendField(faceInfo, commRank, commSize, MPI_INT, 1,
-                sourceFaceNodeCounts, &newFaceNodeCounts);
+                sourceFaceNodeCounts, &distributedFaceNodeCounts);
 
       // SEND FACE-TO-NODE MAP
-      std::vector<int> newFaceToNodeList(faceToNodeInfo.newNum);
+      std::vector<int> distributedFaceToNodeList(faceToNodeInfo.newNum);
       sendField(faceToNodeInfo, commRank, commSize, MPI_INT, 1,
-                to_gid(sourceFaceToNodeList, sourceNodeGlobalIds), &newFaceToNodeList); 
+                to_gid(sourceFaceToNodeList, sourceNodeGlobalIds), &distributedFaceToNodeList); 
                 
       // merge and set face node counts
-      sourceFaceNodeCounts=merge_data( newFaceNodeCounts, gidToLocalIdFace_);
+      sourceFaceNodeCounts=merge_data( distributedFaceNodeCounts, gidToDistributedFace_);
       
       // merge and map face node lists
-      sourceFaceToNodeList = merge_lists(newFaceToNodeList, newFaceNodeCounts, 
-        gidToLocalIdFace_, gidToNewIdNode_);
+      sourceFaceToNodeList = merge_lists(distributedFaceToNodeList, distributedFaceNodeCounts, 
+        gidToDistributedFace_, gidToFlatIdNode_);
 
       // merge face global ids
-      sourceFaceGlobalIds = merge_data(newFaceGlobalIds, gidToLocalIdFace_);
+      sourceFaceGlobalIds = merge_data(distributedFaceGlobalIds, gidToDistributedFace_);
       
       // set counts for faces in the flat mesh
       source_mesh_flat.set_num_owned_faces(sourceFaceGlobalIds.size());
@@ -306,8 +310,8 @@ class MPI_Bounding_Boxes {
     // gid uses the global id's and we don't want to modify them before we are
     // done converting the old relationships
     // merge global ids and set in the flat mesh    
-    sourceCellGlobalIds = merge_data(newCellGlobalIds, gidToLocalIdCell_);
-    sourceNodeGlobalIds = merge_data(newNodeGlobalIds, gidToLocalIdNode_);
+    sourceCellGlobalIds = merge_data(distributedCellGlobalIds, gidToDistributedCell_);
+    sourceNodeGlobalIds = merge_data(distributedNodeGlobalIds, gidToDistributedNode_);
 
     // set counts for cells and nodes in the flat mesh
     source_mesh_flat.set_num_owned_cells(sourceCellGlobalIds.size());
@@ -396,11 +400,11 @@ class MPI_Bounding_Boxes {
 
       // Global to local maps for cells and nodes
       std::map<int, int> globalCellMap;
-      std::vector<int> cellUniqueRep(newCellGlobalIds.size());
-      for (unsigned int i=0; i<newCellGlobalIds.size(); ++i) {
-        auto itr = globalCellMap.find(newCellGlobalIds[i]);
+      std::vector<int> cellUniqueRep(distributedCellGlobalIds.size());
+      for (unsigned int i=0; i<distributedCellGlobalIds.size(); ++i) {
+        auto itr = globalCellMap.find(distributedCellGlobalIds[i]);
         if (itr == globalCellMap.end()) {
-          globalCellMap[newCellGlobalIds[i]] = i;
+          globalCellMap[distributedCellGlobalIds[i]] = i;
           cellUniqueRep[i] = i;
         }
         else {
@@ -516,40 +520,55 @@ class MPI_Bounding_Boxes {
                            
       // allocate storage for the new distribute data, note that this data
       // is still packed and raw doubles and will need to be unpacked
-      std::vector<double> newField(sourceFieldStride*info.newNum);
-
+      std::vector<double> distributedField(sourceFieldStride*info.newNum);
 
 
       // send the field
       sendField(info, commRank, commSize, MPI_DOUBLE, sourceFieldStride,
-        sourceField, &newField);
+        sourceField, &distributedField);
       
       // merge the data before unpacking
-      std::vector<double> tempNewField;
+      std::vector<double> tempDistributedField;
       if (source_state_flat.get_entity(field_name) == Entity_kind::NODE){
           // node mesh field
-          tempNewField = merge_data(newField, gidToLocalIdNode_, sourceFieldStride);
+          tempDistributedField = merge_data(distributedField, gidToDistributedNode_, sourceFieldStride);
       } else if (source_state_flat.field_type(Entity_kind::CELL, field_name) == Wonton::Field_type::MESH_FIELD){
           // mesh cell field
-          tempNewField = merge_data(newField, gidToLocalIdCell_, sourceFieldStride);
-         } else {
+          tempDistributedField = merge_data(distributedField, gidToDistributedCell_, sourceFieldStride);
+      } else {
              // multi material field             
-         }
+      }
          
       // unpack the field, has the correct data types, but still is not merged
-      source_state_flat.unpack(field_name, tempNewField, all_material_ids, all_material_shapes);
+      source_state_flat.unpack(field_name, tempDistributedField, all_material_ids, all_material_shapes);
            
     } 
-
+*/
   } // distribute
 
   private:
  
   int dim_;
-  std::map<int,int> gidToLocalIdNode_, gidToNewIdNode_;
-  std::map<int,int> gidToLocalIdFace_, gidToNewIdFace_;
-  std::map<int,int> gidToLocalIdCell_, gidToNewIdCell_;
+  
+  // the distributed node indices to keep
+  std::vector<int> distributedNodeIds_;
 
+  // maps from gid to distributed node index and flat node index
+  std::map<int,int> gidToDistributedNode_, gidToFlatIdNode_;
+
+  // the distributed face indices to keep
+  std::vector<int> distributedFaceIds_;
+  
+  // maps from gid to distributed face index and flat face index  
+  std::map<int,int> gidToDistributedFace_, gidToFlatFace_;
+  
+  // the distributed cell indices to keep
+  std::vector<int> distributedCellIds_;
+  
+  // maps from gid to distributed cell index and flat cell index  
+  std::map<int,int> gidToDistributedCell_, gidToFlatCell_;
+  
+  
   /*!
     @brief Compute fields needed to do comms for a given entity type
     @param[in] info              Info data structure to be filled
@@ -713,56 +732,6 @@ class MPI_Bounding_Boxes {
   } // sendData
 
 
-  //! Correct a map to account for concatenated lists
-  void fixListIndices(const comm_info_t& mapInfo,
-              const comm_info_t& rangeInfo,
-              const int commSize,
-              std::vector<int>* newMap)
-  {
-    // compute corrections for each rank
-    std::vector<int> ownedOffsets(commSize), ghostOffsets(commSize);
-    ownedOffsets[0] = 0;
-    std::partial_sum(rangeInfo.recvOwnedCounts.begin(),
-                     rangeInfo.recvOwnedCounts.end()-1,
-                     ownedOffsets.begin()+1);
-    std::vector<int> recvGhostCounts(commSize);
-    for (unsigned int i=0; i<commSize; ++i)
-      recvGhostCounts[i] =
-          rangeInfo.recvCounts[i] - rangeInfo.recvOwnedCounts[i];
-    ghostOffsets[0] = 0;
-    std::partial_sum(recvGhostCounts.begin(), recvGhostCounts.end()-1,
-                     ghostOffsets.begin()+1);
-    for (unsigned int i=0; i<commSize; ++i)
-      ghostOffsets[i] += rangeInfo.newNumOwned - rangeInfo.recvOwnedCounts[i];
-
-    // correct owned entities, one rank at a time
-    int base = 0;
-    for (unsigned int i=0; i<commSize; ++i) {
-      int ownedCount = mapInfo.recvOwnedCounts[i];
-      int ownedNodeCount = rangeInfo.recvOwnedCounts[i];
-      for (int j=0; j<ownedCount; ++j) {
-        int n = (*newMap)[base + j];
-        (*newMap)[base + j] +=
-            (n < ownedNodeCount ? ownedOffsets[i] : ghostOffsets[i]);
-      }
-      base += ownedCount;
-    } // for i
-
-    // correct ghost entities, one rank at a time
-    for (unsigned int i=0; i<commSize; ++i) {
-      int ownedCount = mapInfo.recvOwnedCounts[i];
-      int ghostCount = mapInfo.recvCounts[i] - ownedCount;
-      int ownedNodeCount = rangeInfo.recvOwnedCounts[i];
-      for (int j=0; j<ghostCount; ++j) {
-        int n = (*newMap)[base + j];
-        (*newMap)[base + j] +=
-            (n < ownedNodeCount ? ownedOffsets[i] : ghostOffsets[i]);
-      }
-      base += ghostCount;
-    } // for i
-
-  } // fixListIndices
-
   template <class Source_Mesh, class Target_Mesh>        
   void compute_sendflags(Source_Mesh & source_mesh_flat, Target_Mesh &target_mesh, 
               std::vector<bool> &sendFlags){
@@ -909,10 +878,10 @@ class MPI_Bounding_Boxes {
            after merging.
            
     @param[in] gids  The vector of gid's for each entity post distribution
-    @param[out] gidToLocalId  The map from gid to first occurrence in gids
-    @param[out] gidToNewId  The map from gid to position in the post distribution
+    @param[out] gidToDistributedId  The map from gid to first occurrence in gids
+    @param[out] gidToFlatId  The map from gid to position in the post distribution
                           vector gid
-    @param[in] newNumOwned  Gid's with first occurrence less than this number in
+    @param[in] distributedNumOwned  Gid's with first occurrence less than this number in
                             gid's will be considered owned
     
     This is called after distribution of gids for each entity kind. The vector of
@@ -933,48 +902,64 @@ class MPI_Bounding_Boxes {
     ghosts, we unfortunately have that an entity in the flat mesh will typically 
     be owned by many different paritions
    */
-  void create_maps(std::vector<int>const& gids, std::map<int,int>& gidToLocalId,
-    std::map<int,int>& gidToNewId, int const newNumOwned){
+  void create_maps(std::vector<int>const& gids, int const distributedNumOwned,
+    std::vector<int>& flatIds, std::map<int,int>& gidToDistributedId, 
+    std::map<int,int>& gidToFlatId ){
     
-    // define a map for whether each gid is owned
-    std::map<int,bool> is_owned;
+    // define vectors for owned and ghost indices
+    std::vector<int> owned_ids, ghost_ids;
     
     // loop through each gid and check if this a first occurrence
-    for (int i=0; i<gids.size(); ++i)
+    for (int i=0; i<gids.size(); ++i){
+    
+      // temp var
+      int gid = gids[i];
     
       // is this a first occurrence
-      if (gidToLocalId.find(gids[i])==gidToLocalId.end()){
+      if (gidToDistributedId.find(gid)==gidToDistributedId.end()){
       
-        // yes, so set the old local id for this gid
-        gidToLocalId[gids[i]]=i;
+        // yes it is new, so set the  distributed id for this gid
+        gidToDistributedId[gid]=i;
         
-        // determine if this gid is owned
-        is_owned[gid] = i>=newNumOwned;
+        // determine whether this gid is owned or a ghost
+        if (i<distributedNumOwned){
+        
+          // this entity is owned
+          owned_ids.push_back(i);
+        
+        } else {
+        
+          // this entity is a ghost
+          ghost_ids.push_back(i);
+          
+        }
       }  
-    
-    // counters
+    }
+        
+    // counter
     int i=0;
     
-    // iterate of the owned status to collect owned entities
-    for (auto& kv:is_owned) 
-      if (kv.second){
-      
-        // the gid is owned by the flat mesh
-        
-        // set the index
-        gidToNewId[kv.first]=i++;
-        
-        // append to the gid iteration order
-        // DWS LEFT OFF
-        // gid_order.push_back(kv.first)
-      }
-      
-    int flatNumOwned=i;
+    // iterate over the owned entities as owned entities come first
+    for (int gid : owned_ids) {
     
-    // iterate over ghost
+      // append to the gid iteration order
+      flatIds.push_back(gid);
+      
+      // update the new map
+      gidToFlatId[gid]=i++;      
+              
+     }
     
-    // iterate over owned
-    for (auto& kv:gidToLocalId) gidToNewId[kv.first]=i++;
+    // iterate over the ghost entities as ghost entities come second
+    for (int gid : ghost_ids) {
+    
+      // append to the gid iteration order
+      flatIds.push_back(gid);
+      
+      // update the flat map
+      gidToFlatId[gid]=i++;
+              
+    }
   }
 
   
@@ -1011,9 +996,9 @@ class MPI_Bounding_Boxes {
     @param[in] in   The post distribution references to be merged
     @param[in] counts  The vector of the number of references associated with
                        this entity, e.g. number of faces for this cell
-    @param[in] gidToLocalId  The map from gid to first occurrence pre distribution of
+    @param[in] gidToDistributedId  The map from gid to first occurrence pre distribution of
                          the "from" part of the mapping, e.g. cell in cellToFace
-    @param[in] gidToNewId  The map from gid to position in the post distribution
+    @param[in] gidToFlatId  The map from gid to position in the post distribution
                          vector of the "to" part of the mapping, e.g. face in
                          cellToFace
     @return The new vector of merged references
@@ -1024,15 +1009,15 @@ class MPI_Bounding_Boxes {
     of the map needs to get converted from gid to new index id.   
    */
   std::vector<int> merge_lists(std::vector<int>const& in, std::vector<int> const & counts,
-    std::map<int,int>const& gidToLocalId, std::map<int,int>const& gidToNewId){
+    std::map<int,int>const& gidToDistributedId, std::map<int,int>const& gidToFlatId){
     
     std::vector<int> offsets(counts.size());
     std::partial_sum(counts.begin(), counts.end()-1, offsets.begin()+1);
     std::vector<int> result;
-    result.reserve(gidToLocalId.size()*(dim_+1)); // estimate, lower bound
-    for (auto &kv: gidToLocalId)
+    result.reserve(gidToDistributedId.size()*(dim_+1)); // estimate, lower bound
+    for (auto &kv: gidToDistributedId)
       for (int i=0; i<counts[kv.second]; ++i)
-        result.push_back(gidToNewId.at(in[offsets[kv.second]+i]));
+        result.push_back(gidToFlatId.at(in[offsets[kv.second]+i]));
     return result;
   }
 
@@ -1044,27 +1029,27 @@ class MPI_Bounding_Boxes {
     @param[in] in   The post distribution data to be merged
     @param[in] counts  The vector of the number of references associated with
                        this entity, e.g. number of faces for this cell
-    @param[in] gidToLocalId  The map from gid to first occurrence pre distribution of
+    @param[in] gidToDistributedId  The map from gid to first occurrence pre distribution of
                          the "from" part of the mapping, e.g. cell in cellToFace
     @return The new vector of merged data
     
     This is called after distribution. It takes post distribution lists of data 
     and corrects the "from" part of the map to remove duplicates. The only usage
     of this signature is compressing the face direction which is a boolean. There
-    are lists for each cell in newCellToFaceDirs, but the values are kept
+    are lists for each cell in distributedCellToFaceDirs, but the values are kept
     unchanged unlike the signature above with not template parameter where the
     values are references that need to be remapped as well. Merge_data won't 
     work because there are variable numbers of data for each entity.
    */
   template<class T>
   std::vector<T> merge_lists(std::vector<T>const& in, std::vector<int> const & counts,
-    std::map<int,int>const& gidToLocalId){
+    std::map<int,int>const& gidToDistributedId){
     
     std::vector<int> offsets(counts.size());
     std::partial_sum(counts.begin(), counts.end()-1, offsets.begin()+1);
     std::vector<T> result;
-    result.reserve(gidToLocalId.size()*(dim_+1)); // estimate, lower bound
-    for (auto &kv: gidToLocalId)
+    result.reserve(gidToDistributedId.size()*(dim_+1)); // estimate, lower bound
+    for (auto &kv: gidToDistributedId)
       for (int i=0; i<counts[kv.second]; ++i)
         result.push_back(in[offsets[kv.second]+i]);
     return result;
