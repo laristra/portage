@@ -40,13 +40,16 @@ source of Portage's embarrasingly parallel characterization.
 Portage uses a simple algorithm for data distribution which is described 
 presently. A bounding box is computed for the source and target meshes on each
 partition. The bounding boxes are computed by finding the minimum and maximum
-coordinate in each direction for each mesh. An MPI_Bcast is used to distribute 
+coordinate in each direction for each mesh on each partition. An MPI_Bcast is 
+used to distribute 
 the bounding boxes from all target meshes to each source partition. Using the 
-bounding boxes, it is determined which source partitions **might** intersect 
+bounding boxes, it is determined which source partitions intersect 
 each target partition. Bounding box intersections are used to create a vector of booleans, 
 different on each partition, that determine to which target partitions each source 
 partition should send its data. The same communication topology is used for all
-subsequent data communication.
+subsequent data communication. Clearly this sends too much data as only a few
+source cells may intersect target cells, but the algorithm is easy to easy to
+compute.
 
 Many pieces of data are sent from souce partition to target partition. For
 each of these pieces of information, two MPI calls need to be made. The first
@@ -111,7 +114,8 @@ in cell ```j```. Multimaterial data greatly complicates the bookkeeping of doing
 data distribution because each material acts like it's own mini-mesh. All
 multimaterial data is assumed to exist on the same set of cells, so the 
 multimaterial cell data is shared between fields. This implies 
-that if a material exists in a cell, all field values must be known for that 
+that if a material exists in a cell, all multi-material field values must be 
+known for that 
 material in that cell. Distributing multimaterial field data requires sending 
 for each partition the number of materials, the material ids, the number of cells
 having each material, the cell ids, then finally the data itself. Just as with 
