@@ -24,7 +24,7 @@ Please see the license file at the root of this repository, or at:
 namespace gk {
 
 using Portage::Point;
-using Portage::Vector;
+using Wonton::Vector;
 
 #define SWAP(a, b, type) {  \
     type c_ = b; \

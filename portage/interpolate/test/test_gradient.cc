@@ -18,7 +18,7 @@ Please see the license file at the root of this repository, or at:
 #include "wonton/mesh/simple/simple_mesh_wrapper.h"
 #include "wonton/state/simple/simple_state.h"
 #include "wonton/state/simple/simple_state_wrapper.h"
-
+#include "wonton/support/Vector.h"
 /// Test gradient computation for cell centered fields
 
 TEST(Gradient, Fields_Cell_Ctr) {
@@ -81,7 +81,7 @@ TEST(Gradient, Fields_Cell_Ctr) {
 
   // Compute the gradient for each of these fields
 
-  Portage::Vector<2> grad;
+  Wonton::Vector<2> grad;
 
   // Verify the gradient values
   // For field 1 (constant), it is is 0,0
@@ -195,7 +195,7 @@ TEST(Gradient, Fields_Node_Ctr) {
   // For field 1, it is a constant
   // For field 2, it is a linear function
 
-  Portage::Vector<2> grad;
+  Wonton::Vector<2> grad;
 
   for (int n = 0; n < nn1; ++n) {
     // unlimited gradient of constant function

@@ -22,7 +22,9 @@ extern "C" {
 
 
 #include "portage/support/portage.h"
+#include "wonton/support/Vector.h"
 
+using Wonton::Vector;
 
 namespace Portage {
 
