@@ -11,8 +11,21 @@ set -e
 # Echo each command
 set -x
 
-# 2d 0-th order remap of 0-th order function distribution 0 (grid)
-${RUN_COMMAND} ${TESTAPPDIR}/swarmapp 1 23 19 1 0 2>&1 > output-1-1
+# serial id for file names
+prob=1
+id="$prob-1"
+
+# 2d remap
+${RUN_COMMAND} ${TESTAPPDIR}/swarmapp $prob 23 19 1 0 2>&1 > output-$id
 
 # Compare the values for the field
-python compare.py gold-outfield-1-1.csv outfield-1-1.csv 1
+python compare.py gold-outfield-$id.csv outfield-$id.csv 0
+result1=$?
+
+# Compare the values of the error
+grep 'L2 NORM OF ERROR' gold-output-$id > line1-$id
+grep 'L2 NORM OF ERROR' output-$id > line2-$id
+diff line1-$id line2-$id
+result2=$?
+
+test $result1 == 0 -a $result2 == 0
