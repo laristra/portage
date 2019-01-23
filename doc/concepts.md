@@ -177,16 +177,17 @@ Arbitrary-Lagrangian-Eulerian methods.
 Given the source field data, along with the list of source cells and
 their contribution weights to each target cell, the interpolate step
 actually populates the field on the target cells. The first order
-accurate interpolation is simply a weighted sum of the source
-field values. For second order accurate interpolation, a local linear
+accurate interpolation is simply a weighted sum of the source field
+values. For second order accurate interpolation, a local linear
 reconstruction of the source field based on a least squares gradient
 is used to compute more accurate contributions to the target
-cell. Monotonicity of the remapped field (no appearance of new local
-extrema) can be preserved by specifying that the gradient be limited
-(for now only using the Barth-Jespersen limiter).  At domain
-boundaries, however, limiting _can_ be ill-posed if there are no
-boundary conditions; we currently do not support such boundary
-conditions, so we do not limit at domain boundaries.
+cell. Local bounds preservation may be enforced using limiting of
+gradients (for now only using the Barth-Jespersen limiter) - this
+ensures that the remapped value in any target cell will be bounded by
+the cell values of any intersecting source cells and their immediate
+neighbors. At domain boundaries, however, limiting _can_ be ill-posed
+if there are no boundary conditions; we currently do not support such
+boundary conditions, so we do not limit at domain boundaries.
 
 The current interpolation methods for meshes are the following:
 
