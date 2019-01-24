@@ -13,17 +13,19 @@ must be copied from clients in order to minimize data movement.
 <br>
 
 In order to enable this DIY design, Portage requires the remap driver
-to be templated on all its component methods and the mesh and state
-managers for the source and target respectively. The individual
-components are also templated on the mesh and state managers in
-turn. Each component is required to be designed as _functor_, or in
-other words, a struct/class with an ```operator()(...)``` that is
-functional, i.e. has no side effects.
+to be templated on all its component classes implementing the
+necessary methods. It also requires the driver to be templated on the
+mesh and state managers for the source and target respectively. The
+individual components are also templated on the mesh and state
+managers in turn. Each component is required to be designed as a
+[_functor_](https://stackoverflow.com/questions/356950/what-are-c-functors-and-their-uses),
+or in other words, a struct/class with an ```operator()(...)``` that
+is functional, i.e. has no side effects.
 
 The functional design allows a remap driver to be written such that
-populating the fields on target entities is (largely) an embarassingly
+populating the fields on target entities is a nearly embarrassingly
 parallel process on-node. Remapping on distributed meshes/swarms is
-also embarassingly parallel as long as the target and source
+also embarrassingly parallel as long as the target and source
 partitioning is geometrically matching. On the other hand, if there is
 a geometric mismatch of the partitioning on the source and target,
 i.e., source entities overlapping a target entity are on a different
@@ -53,7 +55,7 @@ of components.  The applications choose a particular mesh or
 particle swarm type, select component classes for the remapping steps
 along with associated settings for the remap process. The drivers,
 apps and the regression tests included with the apps are all fairly
-comprehensive and exercise all functionalities of the Portage
+comprehensive and exercise all functionality of the Portage
 framework. Therefore, the included drivers and some of the apps can be
 used as-is if they meet all the needs of a particular application.
 
@@ -115,19 +117,25 @@ target cell.</td>
 </tr>
 </table>
 
+The schematic above shows the algorithm when each target
+cell has access to all source cells that overlap it. As mentioned
+above, an initial source redistribution step (see  [distributed
+remap](@ref distributed_remap)) must be executed if the source and
+target mesh partitions are not geometrically aligned.
+
 ### Search
 
 Given source and target entities, this step simply _identifies_ which
-source mesh entities contribute to each target mesh
+source mesh entities might contribute to each target mesh
 entity. Concretely, for exact intersection based remap of cell fields,
-this step would identify which source cells potentially overlap each
+this step identifies which source cells potentially overlap each
 target cell.
 
 Portage makes available the following search algorithms with varying degrees of
 sophistication/speed:
 
 - Portage::SearchSimple - 2d, bounding box search
-- Portage::SearchKDTree - 2d or 3d, parallel k-d tree search
+- Portage::SearchKDTree - 2d or 3d, k-d tree search (not a true parallel k-d tree)
 
 Application developers may use their own search algorithms (like a
 quadtree or hashed octree algorithm).
@@ -178,16 +186,19 @@ Given the source field data, along with the list of source cells and
 their contribution weights to each target cell, the interpolate step
 actually populates the field on the target cells. The first order
 accurate interpolation is simply a weighted sum of the source field
-values. For second order accurate interpolation, a local linear
+values, where the weights are the intersection volumes of the target
+cells with the source mesh. For second order accurate interpolation, a local linear
 reconstruction of the source field based on a least squares gradient
 is used to compute more accurate contributions to the target
-cell. Local bounds preservation may be enforced using limiting of
-gradients (for now only using the Barth-Jespersen limiter) - this
+cell. Local bounds preservation may be enforced using limited
+gradients (see Portage::Limiter_type) - this
 ensures that the remapped value in any target cell will be bounded by
 the cell values of any intersecting source cells and their immediate
 neighbors. At domain boundaries, however, limiting _can_ be ill-posed
 if there are no boundary conditions; we currently do not support such
-boundary conditions, so we do not limit at domain boundaries.
+boundary conditions, so we do not limit at domain boundaries. The
+linear reconstruction requires knowledge of the first moments or
+centroids of the intersection volumes.
 
 The current interpolation methods for meshes are the following:
 
@@ -226,8 +237,11 @@ two physics packages view the geometry of the domain a bit
 differently. If all of the source mesh is not covered by the target
 mesh or vice versa, the result may violate conservation or introduce
 artifacts in the fields.  Therefore, in this step the field is
-repaired by one of several methods as
-described in the [Mismatch Fixup](@ref mismatch_fixup) section.
+repaired by one of several methods as described in the [Mismatch
+Fixup](@ref mismatch_fixup) section. The options for handling fully
+empty cells are in the enum Portage::Empty_fixup_type and the options
+for repair of partially covered cells are in the enum
+Portage::Partial_fixup_type.
 
 <br>
 
@@ -275,7 +289,7 @@ roughly described as below:
       *m* for a given target cell. No limiting is performed at
       material interfaces
    4. **repair** - repair the remapped field due to errors resulting
-      from mismatch of the two mesh boundaries
+      from mismatch of the two mesh boundaries (*not yet implemented*)
 
 Remap of mesh fields on cells and nodes (one value per cell or node)
 proceeds as in the single material case.
