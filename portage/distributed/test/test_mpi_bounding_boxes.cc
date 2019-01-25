@@ -26,7 +26,7 @@ Please see the license file at the root of this repository, or at:
 #include "wonton/state/flat/flat_state_mm_wrapper.h"
 #include "wonton/mesh/flat/flat_mesh_wrapper.h"
 #include "wonton/mesh/jali/jali_mesh_wrapper.h"
-
+#include "wonton/support/Point.h"
 
 TEST(MPI_Bounding_Boxes, SimpleTest3D) {
 
@@ -98,7 +98,7 @@ TEST(MPI_Bounding_Boxes, SimpleTest3D) {
   // Check coordinates
   // List coordinates of cell 0 - others are equal to this
   // with a shift
-  std::vector<Portage::Point<3>> cell0Coords =
+  std::vector<Wonton::Point<3>> cell0Coords =
     {{0.0, 0.0, 0.0},  {0.0, 0.0, 0.5},  {0.0, 0.5, 0.0},  {0.0, 0.5, 0.5},
      {0.5, 0.0, 0.0},  {0.5, 0.0, 0.5},  {0.5, 0.5, 0.0},  {0.5, 0.5, 0.5}};
   // List owned cells that should have been sent to each rank
@@ -119,7 +119,7 @@ TEST(MPI_Bounding_Boxes, SimpleTest3D) {
   }
 
   for (int c=0; c<num_owned_cells; ++c) {
-    std::vector<Portage::Point<3>> myCoords;
+    std::vector<Wonton::Point<3>> myCoords;
     source_mesh_flat.cell_get_coordinates(c, &myCoords);
     ASSERT_EQ(8, myCoords.size());
     std::sort(myCoords.begin(), myCoords.end());
@@ -248,7 +248,7 @@ TEST(MPI_Bounding_Boxes, SimpleTest2D) {
   // Check coordinates
   // List coordinates of cell 0 - others are equal to this
   // with a shift
-  std::vector<Portage::Point<2>> cell0Coords =
+  std::vector<Wonton::Point<2>> cell0Coords =
     {{0.0, 0.0},  {0.25, 0.0},  {0.25, 0.25},  {0.0, 0.25}};
   // List owned cells that should have been sent to each rank
   std::vector<int> expOwnedGids;
@@ -268,7 +268,7 @@ TEST(MPI_Bounding_Boxes, SimpleTest2D) {
   }
 
   for (int c=0; c<num_owned_cells; ++c) {
-    std::vector<Portage::Point<2>> myCoords;
+    std::vector<Wonton::Point<2>> myCoords;
     source_mesh_flat.cell_get_coordinates(c, &myCoords);
     ASSERT_EQ(4, myCoords.size());
     int gid = expOwnedGids[c];

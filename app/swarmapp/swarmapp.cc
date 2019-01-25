@@ -31,6 +31,7 @@ Please see the license file at the root of this repository, or at:
 #include "portage/estimate/estimate.h"
 #ifdef HAVE_NANOFLANN
 #include "portage/search/search_kdtree_nanoflann.h"
+#include "wonton/support/Point.h"
 #endif
 
 using std::shared_ptr;
@@ -52,7 +53,7 @@ using Portage::SearchPointsByCells;
 // Helper routines and data structures
 
 template<unsigned int D>
-double field_func(int field_order, Portage::Point<D> coord) {
+double field_func(int field_order, Wonton::Point<D> coord) {
   double value = 0.0;
   switch (field_order) {
     case -1: {
@@ -190,7 +191,7 @@ int main(int argc, char** argv) {
   auto inputData = make_shared<typename SwarmState<2>::DblVec>(ninpts, 0.0);
 
   for (int p(0); p < ninpts; ++p) {
-    Portage::Point<2> coord = inputSwarm->get_particle_coordinates(p);
+    Wonton::Point<2> coord = inputSwarm->get_particle_coordinates(p);
     (*inputData)[p] = field_func<2>(example.field_order, coord);
   }
   
@@ -251,7 +252,7 @@ int main(int argc, char** argv) {
 
   double toterr = 0.0;
   for (int p(0); p < ntarpts; ++p) {
-  Portage::Point<2> coord = targetSwarm->get_particle_coordinates(p);
+  Wonton::Point<2> coord = targetSwarm->get_particle_coordinates(p);
 
     expected_value[p] = field_func<2>(example.field_order, coord);
     double error = expected_value[p] - (*targetData)[p];
@@ -282,7 +283,7 @@ int main(int argc, char** argv) {
   finp_csv.precision(17);
   finp_csv << " X, Y, Value\n";
   for (int p(0); p < ninpts; ++p) {
-    Portage::Point<2> coord = inputSwarm->get_particle_coordinates(p);
+    Wonton::Point<2> coord = inputSwarm->get_particle_coordinates(p);
     
     finp << coord[0] << " " << coord[1] << " " << (*inputData)[p] << std::endl;
     finp_csv << coord[0] << ", " << coord[1] << ", " << (*inputData)[p] << std::endl;
@@ -305,7 +306,7 @@ int main(int argc, char** argv) {
   fout_csv.precision(17);
   fout_csv << " X, Y, Value\n";
   for (int p(0); p < ntarpts; ++p) {
-    Portage::Point<2> coord = targetSwarm->get_particle_coordinates(p);
+    Wonton::Point<2> coord = targetSwarm->get_particle_coordinates(p);
     
     fout << coord[0] << " " << coord[1] << " " << (*targetData)[p] << std::endl;
     fout_csv << coord[0] << ", " << coord[1] << ", " << (*targetData)[p] << std::endl;

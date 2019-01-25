@@ -19,12 +19,17 @@
 
 // wonton includes
 #include "wonton/support/lsfits.h"
+#include "wonton/support/Point.h"
+#include "wonton/support/Vector.h"
 
 #ifdef HAVE_TANGRAM
 #include "tangram/driver/driver.h"
 #include "tangram/driver/CellMatPoly.h"
 #include "tangram/support/MatPoly.h"
 #endif
+
+using Wonton::Point;
+using Wonton::Vector;
 
 namespace Portage {
 

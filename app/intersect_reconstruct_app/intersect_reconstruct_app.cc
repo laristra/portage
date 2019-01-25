@@ -15,6 +15,7 @@
 #include "portage/intersect/intersect_r2d.h"
 #include "Mesh.hh"
 #include "MeshFactory.hh"
+#include "wonton/support/Point.h"
 
 #ifdef ENABLE_MPI
 #include "mpi.h"
@@ -65,7 +66,7 @@ void read_material_data(const Mesh_Wrapper& Mesh,
                         std::vector<int>& cell_num_mats,
                         std::vector<int>& cell_mat_ids,
                         std::vector<double>& cell_mat_volfracs,
-                        std::vector<Tangram::Point2>& cell_mat_centroids);
+                        std::vector<Wonton::Point<2>>& cell_mat_centroids);
 
 /*!
  @brief Intersects a material polygon in a source cell with a target cell and accumulates
@@ -77,8 +78,8 @@ void read_material_data(const Mesh_Wrapper& Mesh,
  @param[in/out] mat_moments 2D vector containing moment data for a target cell by material
  (indexed first by mat_id and then by moment).
  */
-void add_intersect_moments(const std::vector<Portage::Point<2>>& source_points,
-                           const std::vector<Portage::Point<2>>& target_points,
+void add_intersect_moments(const std::vector<Wonton::Point<2>>& source_points,
+                           const std::vector<Wonton::Point<2>>& target_points,
                            const int& mat_id,
                            std::vector<std::vector<double>>& mat_moments);
 
@@ -109,7 +110,7 @@ void get_target_material_data(const Mesh_Wrapper& SourceMesh,
                               std::vector<int>& cell_num_mats,
                               std::vector<int>& cell_mat_ids,
                               std::vector<double>& cell_mat_volfracs,
-                              std::vector<Tangram::Point2>& cell_mat_centroids);
+                              std::vector<Wonton::Point<2>>& cell_mat_centroids);
 
 int main(int argc, char** argv) {
   MPI_Init(&argc, &argv);
@@ -144,7 +145,7 @@ int main(int argc, char** argv) {
   std::vector<int> scell_num_mats;
   std::vector<int> scell_mat_ids;
   std::vector<double> scell_mat_volfracs;
-  std::vector<Tangram::Point2> scell_mat_centroids;
+  std::vector<Wonton::Point<2>> scell_mat_centroids;
   
   std::cout << "Reading material data for the source mesh..." << std::endl;
   std::string in_data_fname = argv[1];
@@ -203,7 +204,7 @@ int main(int argc, char** argv) {
   std::vector<int> tcell_num_mats;
   std::vector<int> tcell_mat_ids;
   std::vector<double> tcell_mat_volfracs;
-  std::vector<Tangram::Point2> tcell_mat_centroids;
+  std::vector<Wonton::Point<2>> tcell_mat_centroids;
   
   std::cout << "Intersecting target mesh with source material polygons to get material data..." << std::endl;
   get_target_material_data(source_mesh_wrapper, target_mesh_wrapper, scellmatpoly_list,
@@ -260,7 +261,7 @@ void read_material_data(const Mesh_Wrapper& Mesh,
                         std::vector<int>& cell_num_mats,
                         std::vector<int>& cell_mat_ids,
                         std::vector<double>& cell_mat_volfracs,
-                        std::vector<Tangram::Point2>& cell_mat_centroids) {
+                        std::vector<Wonton::Point<2>>& cell_mat_centroids) {
   cell_mat_ids.clear();
   cell_mat_volfracs.clear();
   cell_mat_centroids.clear();
@@ -301,16 +302,16 @@ void read_material_data(const Mesh_Wrapper& Mesh,
   }
   for (int icell = 0; icell < ncells; icell++) {
     if (cell_num_mats[icell] == 1) {
-      Portage::Point2 cur_cell_cen;
+      Wonton::Point<2> cur_cell_cen;
       Mesh.cell_centroid(icell, &cur_cell_cen);
-      cell_mat_centroids.push_back(Tangram::Point2(cur_cell_cen));
+      cell_mat_centroids.push_back(Wonton::Point<2>(cur_cell_cen));
       continue;
     }
     for (int im = 0; im < cell_num_mats[icell]; im++) {
       double cen_x, cen_y;
       os.read(reinterpret_cast<char *>(&cen_x), sizeof(double));
       os.read(reinterpret_cast<char *>(&cen_y), sizeof(double));
-      cell_mat_centroids.push_back(Tangram::Point2(cen_x, cen_y));
+      cell_mat_centroids.push_back(Wonton::Point<2>(cen_x, cen_y));
     }
   }
   os.close();
@@ -326,8 +327,8 @@ void read_material_data(const Mesh_Wrapper& Mesh,
  @param[in/out] mat_moments 2D vector containing moment data for a target cell by material
  (indexed first by mat_id and then by moment).
 */
-void add_intersect_moments(const std::vector<Portage::Point<2>>& source_points,
-                           const std::vector<Portage::Point<2>>& target_points,
+void add_intersect_moments(const std::vector<Wonton::Point<2>>& source_points,
+                           const std::vector<Wonton::Point<2>>& target_points,
                            const int& mat_id,
                            std::vector<std::vector<double>>& mat_moments) {
   // Intersect source candidate matpoly with target cell
@@ -356,7 +357,7 @@ void get_target_material_data(const Mesh_Wrapper& SourceMesh,
                               std::vector<int>& cell_num_mats,
                               std::vector<int>& cell_mat_ids,
                               std::vector<double>& cell_mat_volfracs,
-                              std::vector<Tangram::Point2>& cell_mat_centroids) {
+                              std::vector<Wonton::Point<2>>& cell_mat_centroids) {
   int ncells = TargetMesh.num_owned_cells();
   cell_num_mats = std::vector<int>(ncells, 0);
   cell_mat_ids.clear();
@@ -369,7 +370,7 @@ void get_target_material_data(const Mesh_Wrapper& SourceMesh,
   // Target cells loop
   for (int icell = 0; icell < ncells; icell++) {
     //Target cell data
-    std::vector<Portage::Point<2>> target_points;
+    std::vector<Wonton::Point<2>> target_points;
     TargetMesh.cell_get_coordinates(icell, &target_points);
     double cell_size = TargetMesh.cell_volume(icell);
 
@@ -392,14 +393,14 @@ void get_target_material_data(const Mesh_Wrapper& SourceMesh,
           int mat_id = cellmatpoly_ptr->matpoly_matid(ipoly);
 
           // Get Tangram points for matpoly, convert to Portage points
-          std::vector<Portage::Point<2>> source_points;
+          std::vector<Wonton::Point<2>> source_points;
           for (auto p : cellmatpoly_ptr->matpoly_points(ipoly))
-            source_points.push_back(Portage::Point<2>(p));
+            source_points.push_back(Wonton::Point<2>(p));
           
           add_intersect_moments(source_points, target_points, mat_id, mat_moments);
         }
       } else { // Single material cell
-        std::vector<Portage::Point<2>> source_points;
+        std::vector<Wonton::Point<2>> source_points;
         SourceMesh.cell_get_coordinates(isc, &source_points);
         int mat_id = source_mat_ids[source_offsets[isc]];
 
@@ -415,7 +416,7 @@ void get_target_material_data(const Mesh_Wrapper& SourceMesh,
 
         cell_mat_volfracs.push_back(mat_moments[imat][0]/cell_size);
 
-        cell_mat_centroids.push_back(Portage::Point2(
+        cell_mat_centroids.push_back(Wonton::Point<2>(
           mat_moments[imat][1]/mat_moments[imat][0],
           mat_moments[imat][2]/mat_moments[imat][0]));
       }

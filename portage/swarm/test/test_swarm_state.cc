@@ -22,25 +22,25 @@
 #include "wonton/state/state_vector_uni.h"
 #include "wonton/mesh/simple/simple_mesh.h"
 #include "wonton/mesh/simple/simple_mesh_wrapper.h"
-
+#include "wonton/support/Point.h"
 
 TEST(SwarmState, basic) {
   using std::make_shared;
   using Portage::Meshfree::SwarmState;
 
   const size_t npoints = 10;
-  std::vector<Portage::Point<3>> points(npoints), extents(npoints);
+  std::vector<Wonton::Point<3>> points(npoints), extents(npoints);
 
   // set up swarm
   double h = 0.01;
   srand(time(NULL));
   for (int i = 0; i < npoints; i++) {
-    points[i] = Portage::Point<3>(
+    points[i] = Wonton::Point<3>(
         (static_cast<double>(rand()) / RAND_MAX),
         (static_cast<double>(rand()) / RAND_MAX),
         (static_cast<double>(rand()) / RAND_MAX));
   }
-  auto p_ptr = std::make_shared<Portage::vector<Portage::Point<3>>>(points);
+  auto p_ptr = std::make_shared<Portage::vector<Wonton::Point<3>>>(points);
   auto swarm = Portage::Meshfree::Swarm<3>(p_ptr);
 
   // create state
