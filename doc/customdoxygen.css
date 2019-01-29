@@ -294,3 +294,19 @@ span.SRScope {
     float: right;
 }
 */
+
+img.fullwidth {
+    width:95% !important;
+}
+img.halfwidth {
+    width:45% !important;
+}
+img.quarterwidth {
+    width:22% !important;
+}
+img.thirdwidth {
+    width:30% !important;
+}
+img.thumbnail {
+    width:10% !important;
+}
