@@ -9,7 +9,7 @@ and matched as necessary as long as they adhere to an interface. Its
 design also seeks to minimize the amount of mesh and field data that
 must be copied from clients in order to minimize data movement.
 
-<img src="portage-tangram-diagram.png" alt="Portage design" width="100%">
+<img src="portage-tangram-diagram.png" class="fullwidth"  alt="Portage design">
 <br>
 
 In order to enable this DIY design, Portage requires the remap driver
@@ -96,13 +96,13 @@ phases (described here for cell-based fields):
 
 <table style="width:100%">
 <tr>
-<td width="22%" valign="top"><img src="meshmesh.svg" alt="Mesh-mesh"></td>
+<td valign="top"><img src="meshmesh.svg" alt="Mesh-mesh" class="fullwidth"></td>
 <td width="4%"></td>
-<td width="22%" valign="top"><img src="search.svg" alt="search"></td>
+<td valign="top"><img src="search.svg" alt="search" class="fullwidth"></td>
 <td width="4%"></td>
-<td width="22%" valign="top"><img src="intersect.svg" alt="intersect"></td>
+<td valign="top"><img src="intersect.svg" alt="intersect" class="fullwidth"></td>
 <td width="4%"></td>
-<td width="22%" valign="top"><img src="interpolate.svg" alt="interpolate"></td> 
+<td valign="top"><img src="interpolate.svg" alt="interpolate" class="fullwidth"></td> 
 </tr>
 <tr>
 <td width="22%" valign="top">A mesh-mesh configuration.  Blue is target mesh, black is source
