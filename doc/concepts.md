@@ -36,9 +36,9 @@ i.e., source entities overlapping a target entity are on a different
 node, Portage performs some communication and data movement in order
 to get source mesh cells onto partitions needing them. Once this step
 is concluded at the outset, the remap still shows excellent
-scaling. More details are given in the [distributed remap](@ref
-distributed_concepts) section and performance plots are shown in the
-[scaling](performance.html#scaling) section.
+scaling. More details are given in the @ref
+distributed_concepts section and performance plots are shown in the
+@ref scaling section.
 
 
 <a name="Drivers-Apps"></a>
@@ -73,7 +73,7 @@ cell centers or on nodes; particle data naturally lives on
 particles which can have various shapes and smoothing lengths.
 
 All of Portage's components work directly (to the extent possible -
-see [distributed remap](@ref distributed_concepts)) with an application's
+see @ref distributed_concepts) with an application's
 mesh/particle data and field data respectively. Portage accesses this
 data through _mesh_ (or _swarm_) and _state wrapper classes_ that
 provide an interface to the queries needed to perform any particular
@@ -123,8 +123,7 @@ target cell.</td>
 
 The schematic above shows the algorithm when each target
 cell has access to all source cells that overlap it. As mentioned
-above, an initial source redistribution step (see  [distributed
-remap](@ref distributed_concepts)) must be executed if the source and
+above, an initial source redistribution step (see @ref distributed_concepts) must be executed if the source and
 target mesh partitions are not geometrically aligned.
 
 ### Search
