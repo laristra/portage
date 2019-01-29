@@ -14,7 +14,8 @@ their application, or
 and custom components to create a remapping capability uniquely
 tailored to their application needs.
 
-![Portage design](doxygen/images/portage-tangram-diagram.png)<br>
+<img src="portage-tangram-diagram.png" alt="Portage design" width="100%">
+<br>
 
 The drivers furnished with Portage provide:
 - [conservative remapping of multi-material fields between general
@@ -26,7 +27,8 @@ particle swarms.
   the furnished suite or use a custom component.
 - direct (no-copy) use of client application's native mesh/particle and 
   field data structures whenever possible (see [distributed remap](@ref distributed_remap)).
-- built-in distributed and on-node parallelism even with custom components.
+- built-in distributed and on-node parallelism even with custom
+components (see [scaling](performance.html#scaling) results).
 
 They also have the following known limitations:
 - Only remapping of scalar fields is supported; vectors and tensors
