@@ -12,6 +12,7 @@ Please see the license file at the root of this repository, or at:
 // wonton includes
 #include "wonton/mesh/simple/simple_mesh.h"
 #include "wonton/mesh/simple/simple_mesh_wrapper.h"
+#include "wonton/support/Point.h"
 
 TEST(search_simple, case1) {
   Wonton::Simple_Mesh sm{0, 0, 1, 1, 3, 3};
@@ -47,7 +48,7 @@ class MeshWrapperDual {
   int num_owned_cells() const { return w_.num_owned_nodes(); }
   int num_ghost_cells() const { return w_.num_ghost_nodes(); }
   void cell_get_coordinates(int const cellid,
-                            std::vector<Portage::Point<2>> *pplist) const {
+                            std::vector<Wonton::Point<2>> *pplist) const {
     w_.dual_cell_get_coordinates(cellid, pplist);
   }
 

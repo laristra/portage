@@ -24,12 +24,14 @@ Please see the license file at the root of this repository, or at:
 #include <cassert>
 #include <limits>
 
+#include "wonton/support/Point.h"
+#include "wonton/support/Vector.h"
 #include "portage/support/portage.h"
 
 namespace gk {
-
-    using Portage::Point;
-    using Portage::Vector;
+    template<long D> 
+    using Point = Wonton::Point<D>; 
+    using Wonton::Vector;
 
     const double REAL_MAX = std::numeric_limits<double>::max();
     const double REAL_MIN = std::numeric_limits<double>::min();

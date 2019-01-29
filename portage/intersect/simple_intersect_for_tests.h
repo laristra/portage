@@ -6,14 +6,14 @@ Please see the license file at the root of this repository, or at:
 
 #include <vector>
 #include "portage/support/portage.h"
-
+#include "wonton/support/Point.h"
 
 
 namespace BOX_INTERSECT {
 
 template <int D>
-void bounding_box(std::vector<Portage::Point<D>> coords,
-                  Portage::Point<D> *pmin, Portage::Point<D> *pmax) {
+void bounding_box(std::vector<Wonton::Point<D>> coords,
+                  Wonton::Point<D> *pmin, Wonton::Point<D> *pmax) {
   *pmin = coords[0];
   *pmax = coords[0];
   int np = coords.size();
@@ -28,11 +28,11 @@ void bounding_box(std::vector<Portage::Point<D>> coords,
 }
 
 template <int D>
-bool intersect_boxes(Portage::Point<D> min1, Portage::Point<D> max1,
-                     Portage::Point<D> min2, Portage::Point<D> max2,
+bool intersect_boxes(Wonton::Point<D> min1, Wonton::Point<D> max1,
+                     Wonton::Point<D> min2, Wonton::Point<D> max2,
                      std::vector<double> *xsect_moments) {
 
-  Portage::Point<D> intmin, intmax;
+  Wonton::Point<D> intmin, intmax;
 
   for (int d = 0; d < D; ++d) {
     // check for non-intersection in this dimension
@@ -71,7 +71,7 @@ bool intersect_boxes(Portage::Point<D> min1, Portage::Point<D> max1,
 
   // Calculate the centroid
 
-  Portage::Point<D> centroid = (intmin+intmax)/2.0;
+  Wonton::Point<D> centroid = (intmin+intmax)/2.0;
 
   // moments
 
@@ -84,8 +84,8 @@ bool intersect_boxes(Portage::Point<D> min1, Portage::Point<D> max1,
 }
 
 template <int D>
-void intersection_moments(std::vector<Portage::Point<D>> cell_xyz,
-                           std::vector<std::vector<Portage::Point<D>>> candidate_cells_xyz,
+void intersection_moments(std::vector<Wonton::Point<D>> cell_xyz,
+                           std::vector<std::vector<Wonton::Point<D>>> candidate_cells_xyz,
                            std::vector<int> *xcells,
                            std::vector<std::vector<double>> *xwts) {
 
@@ -93,11 +93,11 @@ void intersection_moments(std::vector<Portage::Point<D>> cell_xyz,
 
   xwts->clear();
 
-  Portage::Point<D> cmin, cmax;
+  Wonton::Point<D> cmin, cmax;
   bounding_box<D>(cell_xyz, &cmin, &cmax);
 
   for (int c = 0; c < num_candidates; ++c) {
-    Portage::Point<D> cmin2, cmax2;
+    Wonton::Point<D> cmin2, cmax2;
     bounding_box<D>(candidate_cells_xyz[c], &cmin2, &cmax2);
 
     std::vector<double> xsect_moments;
