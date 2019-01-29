@@ -9,6 +9,10 @@ and matched as necessary as long as they adhere to an interface. Its
 design also seeks to minimize the amount of mesh and field data that
 must be copied from clients in order to minimize data movement.
 
+<!-- To include a figure like this you have to modify doxygen.conf.in
+to tell Doxygen (via the HTML_EXTRA_FILES variable) to copy this file
+from doxygen/images the main HTML directory -->
+
 <img src="portage-tangram-diagram.png" class="fullwidth"  alt="Portage design">
 <br>
 
