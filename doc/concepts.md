@@ -37,7 +37,7 @@ node, Portage performs some communication and data movement in order
 to get source mesh cells onto partitions needing them. Once this step
 is concluded at the outset, the remap still shows excellent
 scaling. More details are given in the [distributed remap](@ref
-distributed_remap) section and performance plots are shown in the
+distributed_concepts) section and performance plots are shown in the
 [scaling](performance.html#scaling) section.
 
 
@@ -73,20 +73,20 @@ cell centers or on nodes; particle data naturally lives on
 particles which can have various shapes and smoothing lengths.
 
 All of Portage's components work directly (to the extent possible -
-see [distributed remap](@ref distributed_remap)) with an application's
+see [distributed remap](@ref distributed_concepts)) with an application's
 mesh/particle data and field data respectively. Portage accesses this
 data through _mesh_ (or _swarm_) and _state wrapper classes_ that
 provide an interface to the queries needed to perform any particular
 step. For an illustration of the use of the wrappers in Portage, see
 the [Example Use](@ref example) page. More details about the
 requirements of mesh and state wrappers are given in the documentation
-of the support package, Wonton.
+of the support package, [Wonton](https://github.com/laristra/wonton).
 
 <a name="mesh-mesh remap"></a>
 ## Single Material Mesh-Mesh Remapping
 
 The remapping algorithm within Portage for _single_ material problems
-between two meshes is divided into four
+between two meshes [1][2] is divided into four
 phases (described here for cell-based fields):
 
 * **search** - find candidate source cells that will contribute to
@@ -124,7 +124,7 @@ target cell.</td>
 The schematic above shows the algorithm when each target
 cell has access to all source cells that overlap it. As mentioned
 above, an initial source redistribution step (see  [distributed
-remap](@ref distributed_remap)) must be executed if the source and
+remap](@ref distributed_concepts)) must be executed if the source and
 target mesh partitions are not geometrically aligned.
 
 ### Search
@@ -191,22 +191,23 @@ their contribution weights to each target cell, the interpolate step
 actually populates the field on the target cells. The first order
 accurate interpolation is simply a weighted sum of the source field
 values, where the weights are the intersection volumes of the target
-cells with the source mesh. For second order accurate interpolation, a local linear
-reconstruction of the source field based on a least squares gradient
-is used to compute more accurate contributions to the target
-cell. Local bounds preservation may be enforced using limited
-gradients (see Portage::Limiter_type) - this
-ensures that the remapped value in any target cell will be bounded by
-the cell values of any intersecting source cells and their immediate
-neighbors. At domain boundaries, however, limiting _can_ be ill-posed
-if there are no boundary conditions; we currently do not support such
-boundary conditions, so we do not limit at domain boundaries. The
-linear reconstruction requires knowledge of the first moments or
-centroids of the intersection volumes.
+cells with the source mesh. For second order accurate interpolation, a
+local linear reconstruction of the source field based on a least
+squares gradient is used to compute more accurate contributions to the
+target cell. Local bounds preservation may be enforced using limited
+gradients (see Portage::Limiter_type) - this ensures that the remapped
+value in any target cell will be bounded by the cell values of any
+intersecting source cells and their immediate neighbors. At domain
+boundaries, however, limiting _can_ be ill-posed if there are no
+boundary conditions; we currently do not support such boundary
+conditions, so we do not limit at domain boundaries. The linear
+reconstruction requires knowledge of the first moments or centroids of
+the intersection volumes.
 
 The current interpolation methods for meshes are the following:
 
-- Portage::Interpolate_1stOrder - 1st order accurate, reproduces a constant field.
+- Portage::Interpolate_1stOrder - 1st order accurate, reproduces a
+  constant field.
 - Portage::Interpolate_2ndOrder - 2nd order accurate, reproduces a 
   linear field.
 
@@ -255,7 +256,7 @@ Portage::Partial_fixup_type.
 Portage is also capable of remapping fields for a sparse
 multi-material problem, one in which the source mesh has cells
 possibly containing more than one material but not all materials occur
-in every cell. The materials in each cell are specified by their
+in every cell [3]. The materials in each cell are specified by their
 volume fractions and optionally, by their centroids. Each
 multi-material field on the source mesh has as many values in a cell
 as there are materials in the cell.  _Multi-material remapping cannot
@@ -318,7 +319,7 @@ track the field values of the material cells. These differences
 have strong implications for which loops (cell-dominant or
 material-dominant) work best for each storage pattern.
 
-Based on a [study](references.html#mmdata) of multi-material data structures, the
+Based on a study [4] of multi-material data structures, the
 Portage team has concluded that a material dominant loop for remapping
 is likely to be more cache-friendly and therefore, more performant
 since this is a memory bound algorithm. The team also has designed the
@@ -340,7 +341,7 @@ inefficient way.**
 
 Portage can interpolate data between particle swarms (group of
 particles) using the well developed Local Regression Estimate
-[(LRE)](references.html#lre-ref1) method employing the same algorithmic
+(LRE) [5][6] method employing the same algorithmic
 devices as the mesh-mesh remap.  If LRE is performed with sufficient
 point density, one can obtain weights for arbitrary orders of
 derivatives of the field data enabling higher-order estimation of
@@ -409,3 +410,31 @@ mechanisms for local or global bounds preservation in the
 interpolation. Consequently, users must be conscious of the fact that
 going to higher orders of interpolation carries the risk of bounds
 violation.
+
+<br>
+
+[1] Margolin, L.G. and Shashkov, M.J. "Second-order sign-preserving
+  conservative interpolation (remapping) on general grids," Journal of
+  Computational Physics, v 184, n 1, pp. 266-298, 2003.
+
+[2] Dukowicz, J.K. and Kodis, J.W. "Accurate Conservative Remapping
+  (Rezoning) for Arbitrary Lagrangian-Eulerian Computations," SIAM
+  Journal on Scientific and Statistical Computing, Vol. 8, No. 3,
+  pp. 305-321, 1987.
+
+[3] Kucharik, M. and Shashkov, M.J. "Conservative Multi-Material Remap
+for Staggered Multi-Material Arbitrary Lagrangian-Eulerian Methods,"
+Journal of Computational Physics, v 258, pp. 268-304, 2014.
+
+[4] Fogerty, S., Martineau, M., Garimella, R.V. and Robey, R.W. "A
+Comparative Study of Multi-Material Data Structures for Computational
+Physics Applications," Computers and Mathematics with Applications,
+2018.
+
+[5] Dilts, G.A. "Estimation of Integral Operators on Random Data," Los
+Alamos Technical Report, LA-UR-17-23408, Los Alamos National
+Laboratory, Los Alamos, NM 2017.
+
+[6] Garimella, R.V. "A Simple Introduction to Moving Least Squares and
+Local Regression Estimation," Los Alamos Technical Report,
+LA-UR-17-24975, Los Alamos National Laboratory, Los Alamos, NM 2017.
