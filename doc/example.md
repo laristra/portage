@@ -14,7 +14,8 @@ frameworks, and its wrappers `Wonton::Simple_Mesh_Wrapper` and
 
 As mentioned on the [Concepts](@ref concepts) page, the search,
 intersect, and interpolate actions in portage all operate on
-mesh/particle and state _wrappers_.  The reason for this is that these
+mesh and particle wrappers for geometry and topology and state 
+wrappers for data access. The reason for this is that these
 three steps may need to ask for some information that may not be
 readily available within the original mesh/particle and state
 frameworks, but could be constructed within a wrapper.
@@ -28,22 +29,13 @@ mesh topologies.
 In particular, the advanced mesh topologies and entities, which we
 term _sides_, _corners_, and _wedges_ are utilized in node-centered
 remapping, but are also _required_ if there are cells with non-planar
-faces in the remap.  In 2d, a side is triangle composed of the cell
-center and the two nodes of an edge; a wedge is a triangle composed of
-half of a side, by the cell center and the edge's midpoint and one of
-its nodes; a corner is a quadrilateral formed by the two wedges in a
-cell attached to a node.  In 3d, the idea is extended such that a side
-is a tetrahedron composed of the cell center, the two nodes of an
-edge, and the face center of a face attached to that edge; wedges are
-again half of a side, but this time a tetrahedron composed of the cell
-center, an edge's midpoint and one of its nodes, and the face center;
-a corner is the collection of all wedges in a cell attached to a node.
+faces in the remap.  
 
 # Applications and Tests
 
 Nearly all of the generic unit tests have been designed to work with
 the `Wonton::Simple_Mesh_Wrapper` and `Wonton::Simple_State_Wrapper`
-data structures when a full up mesh is required.  These should serve
+data structures when a full-up mesh is required.  These should serve
 as examples of the types of things one may want to do with a mesh and
 state framework.
 
@@ -61,15 +53,15 @@ starting point for writing one's own remap application.
 
 ## Portageapp_jali
 
-This application demonstrates how to remap (scalar) field data using Jali mesh 
+This application demonstrates how to remap (scalar) field data using the Jali mesh 
 infrastructure. The application `app/portageapp/portageapp_jali.cc` is capable
-of remapping cell- and nodal fields defined on square/cubic meshes or on  
+of remapping cell and nodal fields defined on square/cubic meshes or on  
 unstructured meshes in 2D and 3D, respectively. 
 ![Visualization of a source mesh (red) and a part of a target mesh (black) with remapped data using Paraview.](doxygen/images/jaliapp_example.png)
 
 The app allow users to specify an analytic field on a source mesh. This is done 
 by an algebraic expression in the standard input, see options and examples bellow.   
-An error or remap is calculated by comparing remapped values to exact values in the 
+An error of remap is calculated by comparing remapped values to exact values in the 
 cell-centroids/nodes on a target mesh and the error is printed to standard output. 
 The remapped field on a target mesh is saved into a file `output.exo` 
 if it is not specified otherwise. The app can be run using e.g.     
@@ -98,7 +90,7 @@ Similarly to `portageapp_jali` for scalar fields, `app/portageapp/portageapp_mul
 demonstrates Portage's ability to remap multi-material fields. In order to preserve sharp
 interfaces between materials, Portage relies on [Tangram](https://github.com/laristra/tangram) 
 to perform an interface reconstruction
-on a source mesh. Reconstructed material polygons and further intersected with cells on a target 
+on a source mesh. Reconstructed material polygons are further intersected with cells on a target 
 mesh. Therefore, an input file specifying volume fractions (and optionally material centroids 
 for MOF) is required in addition to specification of the meshes and multiple material fields. 
 The file can be generated e.g. by a `vfgen` application in [Tangram](https://github.com/laristra/tangram).
