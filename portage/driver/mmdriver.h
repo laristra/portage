@@ -214,7 +214,7 @@ class MMDriver {
   /*!
     @brief set repair method in partially filled cells for all variables
     @param fixup_type Can be Partial_fixup_type::CONSTANT,
-                        Partial_fixup_type::CONSERVATIVE,
+                        Partial_fixup_type::LOCALLY_CONSERVATIVE,
                         Partial_fixup_type::SHIFTED_CONSERVATIVE
   */
   void set_partial_fixup_type(Partial_fixup_type fixup_type) {
@@ -228,7 +228,7 @@ class MMDriver {
     @brief set repair method in partially filled cells for all variables
     @param target_var_name Target mesh variable to set fixup option for
     @param fixup_type  Can be Partial_fixup_type::CONSTANT,
-                       Partial_fixup_type::CONSERVATIVE,
+                       Partial_fixup_type::LOCALLY_CONSERVATIVE,
                        Partial_fixup_type::SHIFTED_CONSERVATIVE
   */
   void set_partial_fixup_type(std::string const& target_var_name,
