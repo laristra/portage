@@ -2348,4 +2348,10 @@ HTML_EXTRA_FILES +=  @CMAKE_CURRENT_SOURCE_DIR@/doc/doxygen/images/portage-tangr
 @CMAKE_CURRENT_SOURCE_DIR@/doc/doxygen/images/meshmesh.svg \
 @CMAKE_CURRENT_SOURCE_DIR@/doc/doxygen/images/search.svg \
 @CMAKE_CURRENT_SOURCE_DIR@/doc/doxygen/images/intersect.svg \
-@CMAKE_CURRENT_SOURCE_DIR@/doc/doxygen/images/interpolate.svg
+@CMAKE_CURRENT_SOURCE_DIR@/doc/doxygen/images/interpolate.svg \
+@CMAKE_CURRENT_SOURCE_DIR@/doc/doxygen/images/boundary-mismatch.svg \
+@CMAKE_CURRENT_SOURCE_DIR@/doc/doxygen/images/domain-mismatch.svg \
+@CMAKE_CURRENT_SOURCE_DIR@/doc/doxygen/images/mismatch-layers.svg \
+@CMAKE_CURRENT_SOURCE_DIR@/doc/doxygen/images/mismatch-example-constant.png \
+@CMAKE_CURRENT_SOURCE_DIR@/doc/doxygen/images/mismatch-example-locally-conservative.png \
+@CMAKE_CURRENT_SOURCE_DIR@/doc/doxygen/images/mismatch-example-shifted-conservative.png \
