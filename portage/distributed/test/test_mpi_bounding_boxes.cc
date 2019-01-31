@@ -274,6 +274,7 @@ TEST(MPI_Bounding_Boxes, SimpleTest2D) {
    {0,1,2,3,4,5,6,7,8,9,12,13},
    {0,1,2,3,4,6,8,9,10,11,12,14},
    {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15}};
+
   // Check coordinates
   // List coordinates of cell 0 - others are equal to this
   // with a shift
@@ -309,7 +310,6 @@ TEST(MPI_Bounding_Boxes, SimpleTest2D) {
       ASSERT_EQ(cell0Coords[n][1] + dy, myCoords[n][1]);
     }
   }
->>>>>>> 1a42de35621ea75ef9b54d2f223422412b36e781
 
   // Check global IDs
   std::vector<int>& cell_gids = source_mesh_flat.get_global_cell_ids();
@@ -318,7 +318,7 @@ TEST(MPI_Bounding_Boxes, SimpleTest2D) {
     ASSERT_EQ(expOwnedCellGids[commRank][c], cell_gids[c]);
 
    //Reference list of vertices
-   std::vector<Portage::Point<2>> ref_nodes = 
+   std::vector<Wonton::Point<2>> ref_nodes = 
    {{0.0, 0.0}, {0.25, 0.0}, {0.5, 0.0}, {0.0, 0.25}, {0.25, 0.25},
     {0.5, 0.25}, {0.0, 0.5}, {0.25, 0.5}, {0.5, 0.5}, {0.0, 0.75},
     {0.25, 0.75}, {0.5, 0.75}, {0.0, 1.0}, {0.25, 1.0}, {0.5, 1.0},
@@ -334,7 +334,7 @@ TEST(MPI_Bounding_Boxes, SimpleTest2D) {
  
     // Check coordinates 
     for (int c=0; c<num_owned_cells; ++c) {
-      std::vector<Portage::Point<2>> mycoords;
+      std::vector<Wonton::Point<2>> mycoords;
       source_mesh_flat.cell_get_coordinates(c, &mycoords);
       ASSERT_EQ(4, mycoords.size());
       int gid = expOwnedCellGids[commRank][c];
