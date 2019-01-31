@@ -66,19 +66,12 @@ Please see the license file at the root of this repository, or at:
 namespace Portage {
 
 // Point aliases
-template<long D>
-using Point = Wonton::Point<D>;
-using Wonton::Point3;
-using Wonton::Point2;
-using Wonton::Point1;
+/* template<long D> */
+/* using Point = Wonton::Point<D>; */
+/* using Wonton::Point3; */
+/* using Wonton::Point2; */
+/* using Wonton::Point1; */
 
-// Vector aliases
-template<long D>
-using Vector = Wonton::Vector<D>;
-using Wonton::Vector3;
-using Wonton::Vector2;
-
-// Matrix alias
 using Wonton::Matrix;
 
 // useful enums

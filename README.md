@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/laristra/portage.svg?branch=master)](https://travis-ci.org/laristra/portage)
+[![Build Status](https://travis-ci.com/laristra/portage.svg?branch=master)](https://travis-ci.com/laristra/portage)
 [![codecov.io](https://codecov.io/github/laristra/portage/coverage.svg?branch=master)](https://codecov.io/github/laristra/portage/portage?branch=master)
 
 # portage
@@ -57,7 +57,7 @@ support for these is _optional_:
 
 - [Jali](http://github.com/lanl/jali):
 
-  We regularly test with verison 0.9.8.  You will need to set the
+  We regularly test with verison 1.0.0.  You will need to set the
   `Jali_Dir` CMake variable if you wish to build support for Jali and
   its tests (see examples below).
 
@@ -137,9 +137,9 @@ Execute the following from the portage root directory:
 ```c++
 # machine=darwin-fe
 module load openmpi/2.1.2-intel_17.0.6 boost/1.58.0 cmake
-setenv JALI_INSTALL_PREFIX /usr/projects/ngc/private/jali/1.0.0-intel-17.0.6-openmpi-2.1.2
-setenv TPL_INSTALL_PREFIX /usr/projects/ngc/private/jali-tpl/1.1.0-intel-17.0.6-openmpi-2.1.2
-export LAPACKE_DIR=/usr/projects/ngc/private/lapack/3.8.0-patched-intel-17.0.6
+JALI_INSTALL_PREFIX=/usr/projects/ngc/private/jali/1.0.0-intel-17.0.6-openmpi-2.1.2
+TPL_INSTALL_PREFIX=/usr/projects/ngc/private/jali-tpl/1.1.0-intel-17.0.6-openmpi-2.1.2
+LAPACKE_DIR=/usr/projects/ngc/private/lapack/3.8.0-patched-intel-17.0.6
 mkdir build
 cd build
 cmake \

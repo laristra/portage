@@ -27,7 +27,7 @@ Please see the license file at the root of this repository, or at:
 #include "wonton/mesh/flat/flat_mesh_wrapper.h"
 #include "wonton/mesh/jali/jali_mesh_wrapper.h"
 #include "wonton/support/wonton.h"
-
+#include "wonton/support/Point.h"
 
 TEST(MPI_Bounding_Boxes, SimpleTest3D) {
 
@@ -110,7 +110,7 @@ TEST(MPI_Bounding_Boxes, SimpleTest3D) {
   // Check coordinates
   // List coordinates of cell 0 - others are equal to this
   // with a shift
-  std::vector<Portage::Point<3>> cell0Coords =
+  std::vector<Wonton::Point<3>> cell0Coords =
     {{0.0, 0.0, 0.0},  {0.0, 0.0, 0.5},  {0.0, 0.5, 0.0},  {0.0, 0.5, 0.5},
      {0.5, 0.0, 0.0},  {0.5, 0.0, 0.5},  {0.5, 0.5, 0.0},  {0.5, 0.5, 0.5}};
      
@@ -125,7 +125,7 @@ TEST(MPI_Bounding_Boxes, SimpleTest3D) {
   
   // check coordinates
   for (int c=0; c<num_owned_cells; ++c) {
-    std::vector<Portage::Point<3>> myCoords;
+    std::vector<Wonton::Point<3>> myCoords;
     source_mesh_flat.cell_get_coordinates(c, &myCoords);
     ASSERT_EQ(8, myCoords.size());
     std::sort(myCoords.begin(), myCoords.end());
@@ -274,6 +274,42 @@ TEST(MPI_Bounding_Boxes, SimpleTest2D) {
    {0,1,2,3,4,5,6,7,8,9,12,13},
    {0,1,2,3,4,6,8,9,10,11,12,14},
    {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15}};
+  // Check coordinates
+  // List coordinates of cell 0 - others are equal to this
+  // with a shift
+  std::vector<Wonton::Point<2>> cell0Coords =
+    {{0.0, 0.0},  {0.25, 0.0},  {0.25, 0.25},  {0.0, 0.25}};
+  // List owned cells that should have been sent to each rank
+  std::vector<int> expOwnedGids;
+  switch (commRank) {
+    case 0:
+      expOwnedGids = {0, 1, 2, 3};
+      break;
+    case 1:
+      expOwnedGids = {0, 1, 2, 3, 4, 5, 6, 7};
+      break;
+    case 2:
+      expOwnedGids = {0, 1, 2, 3, 8, 9, 10, 11};
+      break;
+    case 3:
+      expOwnedGids = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15};
+      break;
+  }
+
+  for (int c=0; c<num_owned_cells; ++c) {
+    std::vector<Wonton::Point<2>> myCoords;
+    source_mesh_flat.cell_get_coordinates(c, &myCoords);
+    ASSERT_EQ(4, myCoords.size());
+    int gid = expOwnedGids[c];
+    int cid = (gid & 9) | ((gid & 4) >> 1) | ((gid & 2) << 1);
+    double dx = (cid / 4) * 0.25;
+    double dy = (cid % 4) * 0.25;
+    for (int n=0; n<4; ++n) {
+      ASSERT_EQ(cell0Coords[n][0] + dx, myCoords[n][0]);
+      ASSERT_EQ(cell0Coords[n][1] + dy, myCoords[n][1]);
+    }
+  }
+>>>>>>> 1a42de35621ea75ef9b54d2f223422412b36e781
 
   // Check global IDs
   std::vector<int>& cell_gids = source_mesh_flat.get_global_cell_ids();

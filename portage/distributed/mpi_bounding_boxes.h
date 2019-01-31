@@ -18,10 +18,10 @@ Please see the license file at the root of this repository, or at:
 #include <vector>
 
 #include "portage/support/portage.h"
+#include "wonton/support/Point.h"
 #include "wonton/state/state_vector_uni.h"
-
 #include "mpi.h"
-
+using Wonton::Point;
 /*!
   @file mpi_bounding_boxes.h
   @brief Distributes source data using MPI based on bounding boxes

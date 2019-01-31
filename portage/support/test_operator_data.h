@@ -9,8 +9,9 @@
 
 #include "portage/support/operator.h"
 #include "portage/support/portage.h"
+#include "wonton/support/Point.h"
 
-using Portage::Point;
+using Wonton::Point;
 using Portage::Meshfree::Basis::Unitary;
 using Portage::Meshfree::Basis::Linear;
 using Portage::Meshfree::Basis::Quadratic;

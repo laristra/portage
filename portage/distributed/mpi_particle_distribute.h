@@ -15,6 +15,7 @@ Please see the license file at the root of this repository, or at:
 #include "portage/accumulate/accumulate.h"
 #include "portage/support/portage.h"
 #include "portage/support/weight.h"
+#include "wonton/support/Point.h"
 
 #include "mpi.h"
 
@@ -22,6 +23,7 @@ Please see the license file at the root of this repository, or at:
   @file mpi_particle_distribute.h
   @brief Distributes source particles and data using MPI.
  */
+using Wonton::Point;
 
 namespace Portage {
 

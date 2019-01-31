@@ -34,8 +34,10 @@ Please see the license file at the root of this repository, or at:
 #include "portage/interpolate/interpolate_2nd_order.h"
 #include "wonton/mesh/flat/flat_mesh_wrapper.h"
 #include "wonton/state/flat/flat_state_mm_wrapper.h"
+#include "wonton/support/Point.h"
 #include "wonton/state/state_vector_multi.h"
 #include "portage/driver/fix_mismatch.h"
+
 
 #ifdef ENABLE_MPI
 #include "portage/distributed/mpi_bounding_boxes.h"
@@ -508,8 +510,8 @@ class MMDriver {
   void ccc_vfcen_data(std::vector<int>& cell_num_mats,
                       std::vector<int>& cell_mat_ids,
                       std::vector<double>& cell_matvolfracs,
-                      std::vector<Tangram::Point<D>>& cell_mat_centroids);
-                      
+                      std::vector<Wonton::Point<D>>& cell_mat_centroids);
+
   // Convert volume fraction and centroid data from compact
   // material-centric to compact cell-centric (ccc) form as needed by
   // Tangram (this form uses the flat mesh and state wrappers and therefore 
@@ -614,7 +616,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
     std::vector<int> cell_num_mats;
     std::vector<int> cell_mat_ids;
     std::vector<double> cell_mat_volfracs;
-    std::vector<Tangram::Point<D>> cell_mat_centroids;
+    std::vector<Wonton::Point<D>> cell_mat_centroids;
 
     // Extract volume fraction and centroid data for cells in compact
     // cell-centric form (ccc)
@@ -1099,7 +1101,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
     std::vector<int> cell_num_mats;
     std::vector<int> cell_mat_ids;
     std::vector<double> cell_mat_volfracs;
-    std::vector<Tangram::Point<D>> cell_mat_centroids;
+    std::vector<Wonton::Point<D>> cell_mat_centroids;
 
     // Extract volume fraction and centroid data for cells in compact
     // cell-centric form (ccc)
@@ -1519,7 +1521,7 @@ MMDriver<Search, Intersect, Interpolate, D,
          >::ccc_vfcen_data(std::vector<int>& cell_num_mats,
                            std::vector<int>& cell_mat_ids,
                            std::vector<double>& cell_mat_volfracs,
-                           std::vector<Tangram::Point<D>>& cell_mat_centroids) {
+                           std::vector<Wonton::Point<D>>& cell_mat_centroids) {
 
   int nsourcecells = source_mesh_.num_entities(Entity_kind::CELL, Entity_type::ALL);
 
@@ -1530,7 +1532,7 @@ MMDriver<Search, Intersect, Interpolate, D,
 
   std::vector<int> cell_mat_ids_full(nsourcecells*nmats, -1);
   std::vector<double> cell_mat_volfracs_full(nsourcecells*nmats, 0.0);
-  std::vector<Tangram::Point<D>> cell_mat_centroids_full(nsourcecells*nmats);
+  std::vector<Wonton::Point<D>> cell_mat_centroids_full(nsourcecells*nmats);
 
   int nvals = 0;
   for (int m = 0; m < nmats; m++) {

@@ -1,83 +1,164 @@
-# portage Concepts      {#concepts}
+# Concepts      {#concepts}
 
-The remapping algorithm within portage is divided into three phases,
-which are roughly labelled as
+## Design Principle
 
-1. _search_ - find candidate cells/particles that will contribute to
-   remap of a given target cell/particle
-2. _intersect_ - calculate the weight of each candidate's contribution
-   to the remap of a given target cell/particle; this may include
-   higher-order moments if requested.
-3. _interpolate_ - using the weights and moments, along with
-   appropriate limiters, reconstruct the field data for a given target
-   cell/particle.
+Portage is a framework for creating custom remappers from
+interoperable components and not a monolithic, catch-all remapping
+library. It is designed such that its major components can be mixed
+and matched as necessary as long as they adhere to an interface. Its
+design also seeks to minimize the amount of mesh and field data that
+must be copied from clients in order to minimize data movement.
 
-All of these operations work with your underlying mesh/particles and
-state manager through wrappers that provide an interface to the
-queries needed to perform any particular step.  For an example of the
-requirements of the wrappers, see the [Example Use](@ref example)
-page.  Below, when we refer to _mesh_ or _particles_ in terms
-of the operations, we really mean _mesh wrappers_ and _particle swarm
-wrappers_.  Particle methods are also referred to as _meshfree
-methods_.
+<!-- To include a figure like this you have to modify doxygen.conf.in
+to tell Doxygen (via the HTML_EXTRA_FILES variable) to copy this file
+from doxygen/images the main HTML directory -->
 
-![An example mesh-mesh configuration.  Blue is target mesh, black is source mesh.](doxygen/images/meshmesh.svg)
+<img src="portage-tangram-diagram.png" class="fullwidth"  alt="Portage design">
+<br>
 
-All operations consist of a _source_ mesh/particle swarm and a
-_target_ mesh/particle swarm.  The _source_ entity is the one where we
-have existing field data, and the _target_ entity is the object to which
-we would like to remap the data.  For meshes, the field data can live
-on either cell centers or node centers; particle data naturally lives
-on particles, which can have various shapes and smoothing lengths.
+In order to enable this DIY design, Portage requires the remap driver
+to be templated on all its component classes implementing the
+necessary methods. It also requires the driver to be templated on the
+mesh and state managers for the source and target respectively. The
+individual components are also templated on the mesh and state
+managers in turn. Each component is required to be designed as a
+[_functor_](https://stackoverflow.com/questions/356950/what-are-c-functors-and-their-uses),
+or in other words, a struct/class with an ```operator()(...)``` that
+is functional, i.e. has no side effects.
+
+The functional design allows a remap driver to be written such that
+populating the fields on target entities is a nearly embarrassingly
+parallel process on-node. Remapping on distributed meshes/swarms is
+also embarrassingly parallel as long as the target and source
+partitioning is geometrically matching. On the other hand, if there is
+a geometric mismatch of the partitioning on the source and target,
+i.e., source entities overlapping a target entity are on a different
+node, Portage performs some communication and data movement in order
+to get source mesh cells onto partitions needing them. Once this step
+is concluded at the outset, the remap still shows excellent
+scaling. More details are given in the @ref
+distributed_concepts section and performance plots are shown in the
+@ref scaling section.
 
 
-## Search
+<a name="Drivers-Apps"></a>
+## Drivers and Applications
+
+Portage does come with some full-featured _drivers_ that can be
+directly used to deploy a powerful remapping capability into an
+application. In particular, the following drivers are provided:
+
+- Portage::MMDriver - for single- and multi-material mesh-mesh remap.
+- Portage::Meshfree::SwarmDriver - for particle-particle remap.
+- Portage::MSM_Driver - for mesh-mesh remap with particles as an
+  intermediary.
+
+These drivers are all used within some example applications within the
+`apps` directory to illustrate how the drivers can be used with a mix
+of components.  The applications choose a particular mesh or
+particle swarm type, select component classes for the remapping steps
+along with associated settings for the remap process. The drivers,
+apps and the regression tests included with the apps are all fairly
+comprehensive and exercise all functionality of the Portage
+framework. Therefore, the included drivers and some of the apps can be
+used as-is if they meet all the needs of a particular application.
+
+
+## Mesh/Particle and State data
+
+The remapping problem starts with a _source_ mesh (or particle swarm)
+with field data and a _target_ mesh (or particle swarm) onto which
+the data must be remapped. For meshes, the field data can live on
+cell centers or on nodes; particle data naturally lives on
+particles which can have various shapes and smoothing lengths.
+
+All of Portage's components work directly (to the extent possible -
+see @ref distributed_concepts) with an application's
+mesh/particle data and field data respectively. Portage accesses this
+data through _mesh_ (or _swarm_) and _state wrapper classes_ that
+provide an interface to the queries needed to perform any particular
+step. For an illustration of the use of the wrappers in Portage, see
+the [Example Use](@ref example) page. More details about the
+requirements of mesh and state wrappers are given in the documentation
+of the support package, [Wonton](https://github.com/laristra/wonton).
+
+<a name="mesh-mesh remap"></a>
+## Single Material Mesh-Mesh Remapping
+
+The remapping algorithm within Portage for _single_ material problems
+between two meshes [1][2] is divided into four
+phases (described here for cell-based fields):
+
+* **search** - find candidate source cells that will contribute to
+   remap of each target cell
+* **intersect** - calculate the weight of each candidate's contribution
+   to the remap of a given target cell
+* **interpolate** - using the weights and source field data
+   reconstruct the field data for each target cell
+* **repair** - repair the remapped field due to errors resulting from
+   mismatch of the two mesh boundaries
+
+<table style="width:100%">
+<tr>
+<td valign="top"><img src="meshmesh.svg" alt="Mesh-mesh" class="fullwidth"></td>
+<td width="4%"></td>
+<td valign="top"><img src="search.svg" alt="search" class="fullwidth"></td>
+<td width="4%"></td>
+<td valign="top"><img src="intersect.svg" alt="intersect" class="fullwidth"></td>
+<td width="4%"></td>
+<td valign="top"><img src="interpolate.svg" alt="interpolate" class="fullwidth"></td> 
+</tr>
+<tr>
+<td width="22%" valign="top">A mesh-mesh configuration.  Blue is target mesh, black is source
+mesh.</td>
+<td width="4%"></td>
+<td width="22%" valign="top">Candidates are in yellow.</td>
+<td width="4%"></td>
+<td width="22%" valign="top">The exact intersectiion volumes are in green.</td>
+<td width="4%"></td>
+<td width="22%" valign="top">The intersection weights are combined to interpolate data in the
+target cell.</td>
+</tr>
+</table>
+
+The schematic above shows the algorithm when each target
+cell has access to all source cells that overlap it. As mentioned
+above, an initial source redistribution step (see @ref distributed_concepts) must be executed if the source and
+target mesh partitions are not geometrically aligned.
+
+### Search
 
 Given source and target entities, this step simply _identifies_ which
-parts of the source contribute to which parts of the target.
-Concretely, for mesh-mesh remap this step would identify which source
-cells overlap each target cell.
+source mesh entities might contribute to each target mesh
+entity. Concretely, for exact intersection based remap of cell fields,
+this step identifies which source cells potentially overlap each
+target cell.
 
-![Candidates are in yellow.](doxygen/images/search.svg)
-
-Portage has several search algorithms with varying degrees of
-sophistication/speed.  These are the search methods for meshes:
+Portage makes available the following search algorithms with varying degrees of
+sophistication/speed:
 
 - Portage::SearchSimple - 2d, bounding box search
-- Portage::SearchKDTree - 2d or 3d parallel k-d tree search
+- Portage::SearchKDTree - 2d or 3d, k-d tree search (not a true parallel k-d tree)
 
-For particle swarms, the search concepts are similar, except any sort
-of bounding needs to take into account the fact that the particles can
-have some extent via shape and kernel functions.  These are the search
-methods for particles:
+Application developers may use their own search algorithms (like a
+quadtree or hashed octree algorithm).
 
-- Portage::SearchSimplePoints - any-d quadratic time search over
-  particle swarms
-- Portage::SearchPointsByCells - any-d linear time search over
-  particle swarms using a bounding box containing particles and their
-  smoothing lengths
+### Intersect
 
-## Intersect
+This step calculates the contribution weights from the candidate
+source cells to a target cell. Portage currently uses
+exact intersection methods to calculate various _moments_ of the
+polygon/polyhedron of intersection. First order accurate remap needs
+only the 0th moments (area/volume) of intersection but second order
+remap requires the 1st moments (effectively, the centroids of the
+intersection polyhedra).
 
-Given the list of source candidates for intersection for a target
-entity, this step calculates the actual weights going into the
-intersection.
-
-![The exact intersection volumes are in green.](doxygen/images/intersect.svg)
-
-For meshes, this step uses exact intersection methods to calculate
-various _moments_ of the polygon/polyhedron of intersection; moments
-of higher order than the 0th (i.e. the area or volume of the
-intersection) are needed for higher order remap.  It is possible that
-some candidates are determined to have zero intersection, or that some
-candidates have multiple intersections in the case of non-convex
-cells.
-
-The available intersectors for meshes are:
+The available intersectors for meshes in Portage are:
 
 - Portage::IntersectClipper - 2d, exact intersection method based on
   the [Clipper](www.angusj.com/delphi/clipper.php) library for polygon
-  intersection and clipping
+  intersection and clipping (Unit tested in Portage but not used
+  widely in the App tests)
 - Portage::IntersectR2D - 2d, fast, exact polygonal intersection
   method based on the [r3d](https://github.com/laristra/r3d, 
   https://github.com/devonmpowell/r3d.git(commit d6799a58)) library.
@@ -85,78 +166,274 @@ The available intersectors for meshes are:
   method based on the [r3d](https://github.com/laristra/r3d,
   https://github.com/devonmpowell/r3d.git(commit d6799a58)) library.
 
-For particles, this step is referred to as _accumulation_.  The
-distinction in terminology stems from the fact that for particles,
-local regression estimators (LRE) are used to do the remap.  In this
-stage, the LRE weights from particle contributions are accumulated by
-computing the weight functions and local regression corrections to
-those weights.  If LRE is performed with enough points, one can obtain
-weights for arbitrary orders of derivatives of the field data, which
-can be used to perform higher-order estimation.
+_The R2D/R3D-based intersectors in Portage are capable of intersecting
+two non-convex cells based on the ability of R2D/R3D to clip
+non-convex polygons/polyhedra. Therefore, in Portage's intersectors
+source mesh cells are left as is regardless of whether they are convex
+or non-convex but target cells are decomposed into simplices and the
+simplices intersected with the source cells (unless they are
+explicitly told that the target cells are strictly convex). The
+simplices are derived from the side/wedge data structures built by
+Wonton::AuxMeshTopology class. Note that Portage considers hexahedral
+cells (or any higher polyhedra) with curved faces also as
+non-convex._
 
-The available meshfree method is:
+Applications can choose to supply their own exact cell-cell
+intersectors or even an alternate algorithm such as the _swept face_
+calculation of contributions from source to target cells sometimes used in
+Arbitrary-Lagrangian-Eulerian methods.
+
+### Interpolate
+
+Given the source field data, along with the list of source cells and
+their contribution weights to each target cell, the interpolate step
+actually populates the field on the target cells. The first order
+accurate interpolation is simply a weighted sum of the source field
+values, where the weights are the intersection volumes of the target
+cells with the source mesh. For second order accurate interpolation, a
+local linear reconstruction of the source field based on a least
+squares gradient is used to compute more accurate contributions to the
+target cell. Local bounds preservation may be enforced using limited
+gradients (see Portage::Limiter_type) - this ensures that the remapped
+value in any target cell will be bounded by the cell values of any
+intersecting source cells and their immediate neighbors. At domain
+boundaries, however, limiting _can_ be ill-posed if there are no
+boundary conditions; we currently do not support such boundary
+conditions, so we do not limit at domain boundaries. The linear
+reconstruction requires knowledge of the first moments or centroids of
+the intersection volumes.
+
+The current interpolation methods for meshes are the following:
+
+- Portage::Interpolate_1stOrder - 1st order accurate, reproduces a
+  constant field.
+- Portage::Interpolate_2ndOrder - 2nd order accurate, reproduces a 
+  linear field.
+
+As with search and intersect components, applications can furnish their
+custom interpolation methods.
+
+<br>
+
+For remapping node fields, Portage uses the dual cells of the mesh to
+perform the remapping steps. _Note that the use of 2nd order
+interpolation to node fields is not guaranteed to preserve linear
+fields or give second order accurate results._ This is because for the
+method to be second-order accurate the linear reconstruction in the
+source cell (or dual cell) is with respect to the field value at its
+centroid; for the dual mesh, however, the field values are known at
+the nodes, not necessarily the centroids of the dual cells. Also, dual
+cells in a general mesh are almost guaranteed to be
+non-convex. Therefore, intersection of dual cells always includes a
+decomposition of the target dual cell into simplices based on
+wedges/corners in Wonton::AuxMeshTopology.
+
+Portage currently does not have an algorithm in place for remapping
+nodal fields to cells and vice-versa although a driver to do such a
+thing can be written easily.
+
+### Mismatch Fixup or Repair
+
+Often, the boundaries of the source and target meshes in simulations
+do not exactly match up. This may happen because curved boundaries are
+discretized with different resolutions in the two meshes or because
+two physics packages view the geometry of the domain a bit
+differently. If all of the source mesh is not covered by the target
+mesh or vice versa, the result may violate conservation or introduce
+artifacts in the fields.  Therefore, in this step the field is
+repaired by one of several methods as described in the [Mismatch
+Fixup](@ref mismatch_fixup) section. The options for handling fully
+empty cells are in the enum Portage::Empty_fixup_type and the options
+for repair of partially covered cells are in the enum
+Portage::Partial_fixup_type.
+
+<br>
+
+<a name="mesh-mesh mmremap"></a>
+## Multi-material remapping
+
+Portage is also capable of remapping fields for a sparse
+multi-material problem, one in which the source mesh has cells
+possibly containing more than one material but not all materials occur
+in every cell [3]. The materials in each cell are specified by their
+volume fractions and optionally, by their centroids. Each
+multi-material field on the source mesh has as many values in a cell
+as there are materials in the cell.  _Multi-material remapping cannot
+be used with particle swarms nor does it make sense for nodal field
+remap_.
+
+The algorithm for multi-material remapping involves the use of an
+external interface reconstruction package called [Tangram]
+(https://github.com/laristra/tangram) to perform reconstruction of
+pure material polygons within each cell using the volume fraction (and
+possibly centroid) data. Tangram is designed similar to Portage in
+that one can use it with default or custom components. It has within
+its suite of methods Volume-of-fluid and Moment-of-fluid
+methods.
+
+The algorithm for remapping of multi-material fields is broadly
+similar to the single material remap but now the intersection and
+interpolation must be done per material. Thus the algorithm can be
+roughly described as below:
+
+* **search** - find candidate cells that will contribute to
+   each target cell
+* **interface reconstruct** - given volume fractions of materials (and
+   optionally, centroids) on the source mesh, compute a subdivision of
+   each source cell into pure material polygons
+* For each material *m* in problem:
+   1. **intersect** - calculate the contribution of material *m* 
+       from each candidate cell to a given target cell. This is done
+       by intersecting the material *m*'s reconstructed polygon (if it
+       exists) in the source cell with the target cell
+   2. **populate materials** - based on intersection moments, determine
+      the cells in which this material appears
+   3. **interpolate** - using the intersection weights and moments, along with
+      appropriate limiters, reconstruct the field data for material
+      *m* for a given target cell. No limiting is performed at
+      material interfaces
+   4. **repair** - repair the remapped field due to errors resulting
+      from mismatch of the two mesh boundaries (*not yet implemented*)
+
+Remap of mesh fields on cells and nodes (one value per cell or node)
+proceeds as in the single material case.
+
+The above steps describe what is called a *material-dominant
+loop* - the outer loop is over materials and within each iteration all
+cells containing this material are processed. Also note that, for
+a particular field, the interpolate step requests a *contiguous field
+data* corresponding to *all cells in a particular material* (See
+Wonton documentation for details of the programming interface).
+
+We recognize that not all applications store their fields in the same
+way. A few store field data in a *full data structure* wherein field
+values are stored for every material in the problem in every
+cell. Most applications store this data compactly in *cell-centric* or
+*material-centric* representations. In the *cell-centric* form,
+each cell keeps track of which materials it has and the field values
+corresponding to those materials. On the other hand, *material-centric*
+data representations maintain lists of cells that contain a particular
+material (or put another way, the cells that a material contains) and
+track the field values of the material cells. These differences
+have strong implications for which loops (cell-dominant or
+material-dominant) work best for each storage pattern.
+
+Based on a study [4] of multi-material data structures, the
+Portage team has concluded that a material dominant loop for remapping
+is likely to be more cache-friendly and therefore, more performant
+since this is a memory bound algorithm. The team also has designed the
+state wrappers to retrieve data in a material-centric way, based on
+the same study's conclusion that accessing cell-centric data in
+material-dominant loops and vice versa is highly detrimental to
+performance. **Therefore, we recommend that the field data be
+transformed, if necessary, within the state wrapper to a
+material-centric form before remapping and believe that the cost of
+this transformation will be less than that of accessing the data in an
+inefficient way.**
+
+![Multi-material remapping with interface reconstruction](doxygen/images/mmremap.svg)
+
+<br>
+
+<a name="meshfree remap"></a>
+## Particle Remapping or Meshfree Remapping
+
+Portage can interpolate data between particle swarms (group of
+particles) using the well developed Local Regression Estimate
+(LRE) [5][6] method employing the same algorithmic
+devices as the mesh-mesh remap.  If LRE is performed with sufficient
+point density, one can obtain weights for arbitrary orders of
+derivatives of the field data enabling higher-order estimation of
+fields.  Meshfree remap is performed in the following steps that echo
+those of mesh-mesh remapping:
+
+* **search** - find candidate source particles that will contribute to
+   remap of each target particle.
+* **accumulate** - calculate the weight of each candidate's contribution
+   to the remap of a given target particle.
+* **estimate** - using the weights reconstruct the field data for a
+   given target particle.
+
+### Search
+
+For particle swarms, the search concepts are similar, except any sort
+of bounding needs to take into account the fact that the particles
+have some extent via the geometric support of each particle
+(specified by Portage::MeshFree::Weight::Geometry and smoothing lengths).
+These are the search methods for particles:
+
+- Portage::SearchSimplePoints - any-d quadratic time search over
+  particle swarms
+- Portage::SearchPointsByCells - any-d linear time search over
+  particle swarms using a bounding box containing particles and their
+  smoothing lengths
+
+### Accumulate
+
+Given the list of source particle candidates that may contribute to a target
+particle, this step calculates the actual contribution weights based on overlap of the particle support (or
+smoothing function)
+
+The only available meshfree method for accumulate is:
 
 - Portage::Meshfree::Accumulate - any-d accumulator that works with
   particles of various shapes, various kernel functions, utilizing
   various types of basis functions and estimator models.
 
-## Interpolate
+but a different one can be substituted by application developers.
 
-Given the list of source entities and their weighted contributions to
-a given target entity, along with source field data, this step
-actually populates the target field data on the target entities.
-Performing higher-order reconstructions on meshes require more data to
-construct gradients, hessians, etc., and limiters to ensure
-monotonicity.  At mesh domain boundaries, limiting _can_ be ill-posed
-if there are no boundary conditions; we currently do not support such
-boundary conditions, so we do not limit at domain boundaries.
-Furthermore, if the target mesh is not entirely contained within the
-source mesh, then we currently have no mechanism for including
-background or boundary conditions.
+### Estimate
 
-![The weights, calculated during intersection, are combined to interpolate data in the target cell.](doxygen/images/interpolate.svg)
-
-The current interpolation methods for meshes are the following:
-
-- Portage::Interpolate_1stOrder - no limiting gets applied here.
-- Portage::Interpolate_2ndOrder - capable of performing a
-  limited linear fit (2nd order accurate).
-- Portage::Interpolate_3rdOrder - capable of performing a
-  least-squares, limited quadratic fit (3rd order accurate).
-
-For particles, the terminology for the interpolate step changes to
-_estimate_.  All of the heavy-lifting of the remap for particles has
+Given the list of source particles and their weighted contributions to
+a given target particle, along with source field data, this step
+actually populates the fields on the target particles.
+ All of the heavy-lifting of the remap for particles has
 been done in the accumulate phase, such that this step results in a
 basic matrix vector multiply between the field data on source
 particles and the weights taking into account various orders of
 derivative information.
 
-The available meshfree method is:
+The sole available meshfree method is:
 
 - Portage::Meshfree::Estimate - use the output of Portage::Accumulate
   to estimate the target field data with varying degrees of accuracy.
 
-----
+but developers are free to substitute a different one.
 
-## Drivers
+<br>
 
-Portage comes with a few _drivers_ to help facilitate using the above
-methods with your own mesh/particle data.  The drivers are all
-templated on source and target mesh/particle swarm and state data.
-Furthermore, they are templated on the Search, Intersect (or
-Accumulate), and Interpolate (or Estimate) methods above.  In
-particular, the following drivers are provided:
+Note that while the meshfree interpolation can go to *very high order
+of accuracy* it is still *not strictly conservative* like the mesh-mesh
+remap. Also, meshfree remapping currently does not incorporate
+mechanisms for local or global bounds preservation in the
+interpolation. Consequently, users must be conscious of the fact that
+going to higher orders of interpolation carries the risk of bounds
+violation.
 
-- Portage::Driver - for mesh-mesh remap
-- Portage::Meshfree::SwarmDriver - for particle-particle remap
-- Portage::MSM_Driver - for mesh to mesh remap with particles as an
-  intermediary
+<br>
 
-The drivers are all used within our application tests within the
-`apps` directory.  The applications choose a particular mesh or
-particle swarm type, select specfic Search, Intersect, and Interpolate
-algorithms, along with associated settings for remap order of
-accuracy, data locality for meshes (cells or nodes), and any limiters
-needed for higher-order remap.  Users are encouraged to write their
-own specialized drivers, but the above should serve as a starting
-point.
+[1] Margolin, L.G. and Shashkov, M.J. "Second-order sign-preserving
+  conservative interpolation (remapping) on general grids," Journal of
+  Computational Physics, v 184, n 1, pp. 266-298, 2003.
+
+[2] Dukowicz, J.K. and Kodis, J.W. "Accurate Conservative Remapping
+  (Rezoning) for Arbitrary Lagrangian-Eulerian Computations," SIAM
+  Journal on Scientific and Statistical Computing, Vol. 8, No. 3,
+  pp. 305-321, 1987.
+
+[3] Kucharik, M. and Shashkov, M.J. "Conservative Multi-Material Remap
+for Staggered Multi-Material Arbitrary Lagrangian-Eulerian Methods,"
+Journal of Computational Physics, v 258, pp. 268-304, 2014.
+
+[4] Fogerty, S., Martineau, M., Garimella, R.V. and Robey, R.W. "A
+Comparative Study of Multi-Material Data Structures for Computational
+Physics Applications," Computers and Mathematics with Applications,
+2018.
+
+[5] Dilts, G.A. "Estimation of Integral Operators on Random Data," Los
+Alamos Technical Report, LA-UR-17-23408, Los Alamos National
+Laboratory, Los Alamos, NM 2017.
+
+[6] Garimella, R.V. "A Simple Introduction to Moving Least Squares and
+Local Regression Estimation," Los Alamos Technical Report,
+LA-UR-17-24975, Los Alamos National Laboratory, Los Alamos, NM 2017.

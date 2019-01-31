@@ -14,7 +14,7 @@
 
 
 #include "portage/support/basis.h"
-
+#include "wonton/support/Point.h"
 namespace Portage {
   namespace Meshfree {
     namespace Operator {
@@ -63,7 +63,7 @@ namespace Portage {
       }
 
       template<size_t dim>
-      Domain domain_from_points(std::vector<Point<dim>> &points) {
+      Domain domain_from_points(std::vector<Wonton::Point<dim>> &points) {
         Domain result;
         switch(dim) {
 	case 1:
@@ -121,7 +121,7 @@ namespace Portage {
 	static constexpr size_t point_size=0;
 
 	using result_t = array<array<double, operator_size>, basis_size>;
-	using points_t = array<Point<dim>, point_size>;
+	using points_t = array<Wonton::Point<dim>, point_size>;
 
 	static result_t apply(const points_t p) {
 	  result_t result;
@@ -148,7 +148,7 @@ namespace Portage {
 	  static constexpr size_t point_size=2;
 
 	  using result_t = array<array<double, operator_size>, basis_size>;
-	  using points_t = array<Point<dim>, point_size>;
+	  using points_t = array<Wonton::Point<dim>, point_size>;
 
 	  static result_t apply(const points_t p) {
 	    result_t result;
@@ -169,7 +169,7 @@ namespace Portage {
 	  static constexpr size_t point_size=2;
 
 	  using result_t = array<array<double, operator_size>, basis_size>;
-	  using points_t = array<Point<dim>, point_size>;
+	  using points_t = array<Wonton::Point<dim>, point_size>;
 
 	  static result_t apply(const points_t p) {
 	    result_t result;
@@ -191,7 +191,7 @@ namespace Portage {
 	  static constexpr size_t point_size=2;
 
 	  using result_t = array<array<double, operator_size>, basis_size>;
-	  using points_t = array<Point<dim>, point_size>;
+	  using points_t = array<Wonton::Point<dim>, point_size>;
 
 	  static result_t apply(const points_t p) {
 	    result_t result;
@@ -216,7 +216,7 @@ namespace Portage {
 	  static constexpr size_t point_size=3;
 
 	  using result_t = array<array<double, operator_size>, basis_size>;
-	  using points_t = array<Point<dim>, point_size>;
+	  using points_t = array<Wonton::Point<dim>, point_size>;
 
 	  static result_t apply(const points_t p) {
 	    result_t result;
@@ -241,7 +241,7 @@ namespace Portage {
 	  static constexpr size_t point_size=3;
 
 	  using result_t = array<array<double, operator_size>, basis_size>;
-	  using points_t = array<Point<dim>, point_size>;
+	  using points_t = array<Wonton::Point<dim>, point_size>;
 
 	  static result_t apply(const points_t p) {
 	    result_t result;
@@ -269,7 +269,7 @@ namespace Portage {
 	  static constexpr size_t point_size=3;
 
 	  using result_t = array<array<double, operator_size>, basis_size>;
-	  using points_t = array<Point<dim>, point_size>;
+	  using points_t = array<Wonton::Point<dim>, point_size>;
 
 	  static result_t apply(const points_t p) {
 	    result_t result;
@@ -308,7 +308,7 @@ namespace Portage {
 	  static constexpr size_t point_size=4;
 
 	  using result_t = array<array<double, operator_size>, basis_size>;
-	  using points_t = array<Point<dim>, point_size>;
+	  using points_t = array<Wonton::Point<dim>, point_size>;
 
 	  static result_t apply(const points_t p) {
 	    result_t result;
@@ -332,7 +332,7 @@ namespace Portage {
 	  static constexpr size_t point_size=4;
 
 	  using result_t = array<array<double, operator_size>, basis_size>;
-	  using points_t = array<Point<dim>, point_size>;
+	  using points_t = array<Wonton::Point<dim>, point_size>;
 
 	  static result_t apply(const points_t p) {
 	    result_t result;
@@ -362,7 +362,7 @@ namespace Portage {
 	  static constexpr size_t point_size=4;
 
 	  using result_t = array<array<double, operator_size>, basis_size>;
-	  using points_t = array<Point<dim>, point_size>;
+	  using points_t = array<Wonton::Point<dim>, point_size>;
 
 	  static result_t apply(const points_t p) {
 	    result_t result;
@@ -403,7 +403,7 @@ namespace Portage {
 	  static constexpr size_t point_size=8;
 
 	  using result_t = array<array<double, operator_size>, basis_size>;
-	  using points_t = array<Point<dim>, point_size>;
+	  using points_t = array<Wonton::Point<dim>, point_size>;
 
 	  static result_t apply(const points_t p) {
 	    result_t result;
@@ -427,7 +427,7 @@ namespace Portage {
 	  static constexpr size_t point_size=8;
 
 	  using result_t = array<array<double, operator_size>, basis_size>;
-	  using points_t = array<Point<dim>, point_size>;
+	  using points_t = array<Wonton::Point<dim>, point_size>;
 
 	  static result_t apply(const points_t p) {
 	    result_t result;
@@ -462,7 +462,7 @@ namespace Portage {
 	  static constexpr size_t point_size=6;
 
 	  using result_t = array<array<double, operator_size>, basis_size>;
-	  using points_t = array<Point<dim>, point_size>;
+	  using points_t = array<Wonton::Point<dim>, point_size>;
 
 	  static result_t apply(const points_t p) {
 	    result_t result;
@@ -486,7 +486,7 @@ namespace Portage {
 	  static constexpr size_t point_size=6;
 
 	  using result_t = array<array<double, operator_size>, basis_size>;
-	  using points_t = array<Point<dim>, point_size>;
+	  using points_t = array<Wonton::Point<dim>, point_size>;
 
 	  static result_t apply(const points_t p) {
 	    result_t result;
@@ -521,7 +521,7 @@ result[3][0]=
 	  static constexpr size_t point_size=4;
 
 	  using result_t = array<array<double, operator_size>, basis_size>;
-	  using points_t = array<Point<dim>, point_size>;
+	  using points_t = array<Wonton::Point<dim>, point_size>;
 
 	  static result_t apply(const points_t p) {
 	    result_t result;
@@ -545,7 +545,7 @@ result[0][0]=
 	  static constexpr size_t point_size=4;
 
 	  using result_t = array<array<double, operator_size>, basis_size>;
-	  using points_t = array<Point<dim>, point_size>;
+	  using points_t = array<Wonton::Point<dim>, point_size>;
 
 	  static result_t apply(const points_t p) {
 	    result_t result;
@@ -579,7 +579,7 @@ result[3][0]=
 	  static constexpr size_t point_size=4;
 
 	  using result_t = array<array<double, operator_size>, basis_size>;
-	  using points_t = array<Point<dim>, point_size>;
+	  using points_t = array<Wonton::Point<dim>, point_size>;
 
 	  static result_t apply(const points_t p) {
 	    result_t result;
@@ -696,7 +696,7 @@ result[9][0]=
       ////////////////////////////////////////////////////////////////////////////////
 
       template<class OP>
-	inline void copy_points(const vector<Point<OP::dim>> &points, 
+	inline void copy_points(const vector<Wonton::Point<OP::dim>> &points, 
 				typename OP::points_t &apts) 
 	{
 	  for (int i=0; i<OP::point_size; i++) {
@@ -705,9 +705,9 @@ result[9][0]=
 	}
 
       template<class OP>
-	inline Point<OP::dim> centroid(const typename OP::points_t &apts)
+	inline Wonton::Point<OP::dim> centroid(const typename OP::points_t &apts)
 	{
-	  Point<OP::dim> cent;
+	  Wonton::Point<OP::dim> cent;
 	  for (int j=0; j<OP::dim; j++) cent[j]=0.;
 	  for (int i=0; i<OP::point_size; i++)
 	    for (int j=0; j<OP::dim; j++)
@@ -718,7 +718,7 @@ result[9][0]=
 	}
 
       template<class OP>
-	inline void shift_points(const Point<OP::dim> c, typename OP::points_t &apts)
+	inline void shift_points(const Wonton::Point<OP::dim> c, typename OP::points_t &apts)
 	{
 	  for (int i=0; i<OP::point_size; i++)
 	    for (int j=0; j<OP::dim; j++)
@@ -746,13 +746,13 @@ result[9][0]=
 	}
 
       template<class OP>
-	inline void get_result(const vector<Point<OP::dim>> &points, 
+	inline void get_result(const vector<Wonton::Point<OP::dim>> &points, 
 			       vector<vector<double>> &result, const bool center=true) 
 	{
 	  resize_result<OP>(result);
 	  typename OP::points_t apts; copy_points<OP>(points, apts);
 	  if (center) {
-	    Point<OP::dim> c = centroid<OP>(apts);
+	    Wonton::Point<OP::dim> c = centroid<OP>(apts);
 	    shift_points<OP>(c, apts);
 	    auto tf = Basis::transfactor<OP::dim>(OP::basis, c);
 	    typename OP::result_t ares = OP::apply(apts);
@@ -777,12 +777,12 @@ result[9][0]=
 
       template<size_t dim>
       void apply(const Type type, const Basis::Type basis_type, 
-		 const Domain domain_type, const vector<Point<dim>> &points, 
+		 const Domain domain_type, const vector<Wonton::Point<dim>> &points, 
 		 vector<vector<double>> &result);
 
       template<>
       void apply<1>(const Type type, const Basis::Type basis_type, 
-		    const Domain domain_type, const vector<Point<1>> &points, 
+		    const Domain domain_type, const vector<Wonton::Point<1>> &points, 
 		    vector<vector<double>> &result)
       {
 	bool center = true;
@@ -818,7 +818,7 @@ result[9][0]=
 
       template<>
       void apply<2>(const Type type, const Basis::Type basis_type, 
-		    const Domain domain_type, const vector<Point<2>> &points, 
+		    const Domain domain_type, const vector<Wonton::Point<2>> &points, 
 		    vector<vector<double>> &result)
       {
 	bool center = true;
@@ -872,7 +872,7 @@ result[9][0]=
 
       template<>
       void apply<3>(const Type type, const Basis::Type basis_type, 
-		    const Domain domain_type, const vector<Point<3>> &points, 
+		    const Domain domain_type, const vector<Wonton::Point<3>> &points, 
 		    vector<vector<double>> &result)
       {
 	bool center = true;

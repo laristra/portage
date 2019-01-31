@@ -18,7 +18,7 @@ Please see the license file at the root of this repository, or at:
 
 // portage includes
 #include "portage/support/portage.h"
-
+#include "wonton/support/Point.h"
 
 namespace Portage {
 namespace Meshfree {
@@ -26,7 +26,7 @@ namespace Meshfree {
 using std::string;
 using std::shared_ptr;
 using std::make_shared;
-
+using Wonton::Point;
 /*!
  @class Swarm "swarm.h"
  @brief An effective "mesh" class for a collection disconnected points (particles).

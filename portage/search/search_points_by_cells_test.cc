@@ -16,35 +16,37 @@ Please see the license file at the root of this repository, or at:
 #include "portage/search/search_simple_points.h"
 #include "portage/search/search_points_by_cells.h"
 
+#include "wonton/support/Point.h"
+
 TEST(search_by_cells, scatter_2d)
 {
   // overlay a 3x3 target swarm on a 4x4 source swarm
   // each target point should have four candidate source points
 
-  Portage::vector<Portage::Point<2>> srcp, srce;
-  auto srcpts = std::make_shared<Portage::vector<Portage::Point<2>>>(srcp);
-  auto srcexts = std::make_shared<Portage::vector<Portage::Point<2>>>(srce);
+  Portage::vector<Wonton::Point<2>> srcp, srce;
+  auto srcpts = std::make_shared<Portage::vector<Wonton::Point<2>>>(srcp);
+  auto srcexts = std::make_shared<Portage::vector<Wonton::Point<2>>>(srce);
   for (int j = 0; j < 4; ++j) {
     for (int i = 0; i < 4; ++i) {
       double x = (i + 0.5);
       double y = (j + 0.5);
       double ext = 0.375;
-      srcpts->push_back(Portage::Point<2>{x, y});
-      srcexts->push_back(Portage::Point<2>{ext, ext});
+      srcpts->push_back(Wonton::Point<2>{x, y});
+      srcexts->push_back(Wonton::Point<2>{ext, ext});
     }
   }
   Portage::Meshfree::Swarm<2> srcswarm(srcpts);
 
-  Portage::vector<Portage::Point<2>> tgtp, tgte;
-  auto tgtpts = std::make_shared<Portage::vector<Portage::Point<2>>>(tgtp);
-  auto tgtexts = std::make_shared<Portage::vector<Portage::Point<2>>>(tgte);
+  Portage::vector<Wonton::Point<2>> tgtp, tgte;
+  auto tgtpts = std::make_shared<Portage::vector<Wonton::Point<2>>>(tgtp);
+  auto tgtexts = std::make_shared<Portage::vector<Wonton::Point<2>>>(tgte);
   for (int j = 0; j < 3; ++j) {
     for (int i = 0; i < 3; ++i) {
       double x = (i+1.);
       double y = (j+1.);
       double ext = 0.375;
-      tgtpts->push_back(Portage::Point<2>{x, y});
-      tgtexts->push_back(Portage::Point<2>{ext, ext});
+      tgtpts->push_back(Wonton::Point<2>{x, y});
+      tgtexts->push_back(Wonton::Point<2>{ext, ext});
     }
   }
   Portage::Meshfree::Swarm<2> tgtswarm(tgtpts);
@@ -78,30 +80,30 @@ TEST(search_by_cells, gather_2d)
   // overlay a 3x3 target swarm on a 4x4 source swarm
   // each target point should have four candidate source points
 
-  Portage::vector<Portage::Point<2>> srcp, srce;
-  auto srcpts = std::make_shared<Portage::vector<Portage::Point<2>>>(srcp);
-  auto srcexts = std::make_shared<Portage::vector<Portage::Point<2>>>(srce);
+  Portage::vector<Wonton::Point<2>> srcp, srce;
+  auto srcpts = std::make_shared<Portage::vector<Wonton::Point<2>>>(srcp);
+  auto srcexts = std::make_shared<Portage::vector<Wonton::Point<2>>>(srce);
   for (int j = 0; j < 4; ++j) {
     for (int i = 0; i < 4; ++i) {
       double x = (i + 0.5);
       double y = (j + 0.5);
       double ext = 0.375;
-      srcpts->push_back(Portage::Point<2>{x, y});
-      srcexts->push_back(Portage::Point<2>{ext, ext});
+      srcpts->push_back(Wonton::Point<2>{x, y});
+      srcexts->push_back(Wonton::Point<2>{ext, ext});
     }
   }
   Portage::Meshfree::Swarm<2> srcswarm(srcpts);
 
-  Portage::vector<Portage::Point<2>> tgtp, tgte;
-  auto tgtpts = std::make_shared<Portage::vector<Portage::Point<2>>>(tgtp);
-  auto tgtexts = std::make_shared<Portage::vector<Portage::Point<2>>>(tgte);
+  Portage::vector<Wonton::Point<2>> tgtp, tgte;
+  auto tgtpts = std::make_shared<Portage::vector<Wonton::Point<2>>>(tgtp);
+  auto tgtexts = std::make_shared<Portage::vector<Wonton::Point<2>>>(tgte);
   for (int j = 0; j < 3; ++j) {
     for (int i = 0; i < 3; ++i) {
       double x = (i+1.);
       double y = (j+1.);
       double ext = 0.375;
-      tgtpts->push_back(Portage::Point<2>{x, y});
-      tgtexts->push_back(Portage::Point<2>{ext, ext});
+      tgtpts->push_back(Wonton::Point<2>{x, y});
+      tgtexts->push_back(Wonton::Point<2>{ext, ext});
     }
   }
   Portage::Meshfree::Swarm<2> tgtswarm(tgtpts);
@@ -135,9 +137,9 @@ TEST(search_by_cells, scatter_3d)
   // overlay a 2x2x2 target swarm on a 3x3x3 source swarm
   // each target point should have eight candidate source points
 
-  Portage::vector<Portage::Point<3>> srcp, srce;
-  auto srcpts = std::make_shared<Portage::vector<Portage::Point<3>>>(srcp);
-  auto srcexts = std::make_shared<Portage::vector<Portage::Point<3>>>(srce);
+  Portage::vector<Wonton::Point<3>> srcp, srce;
+  auto srcpts = std::make_shared<Portage::vector<Wonton::Point<3>>>(srcp);
+  auto srcexts = std::make_shared<Portage::vector<Wonton::Point<3>>>(srce);
   for (int k = 0; k < 3; ++k) {
     for (int j = 0; j < 3; ++j) {
       for (int i = 0; i < 3; ++i) {
@@ -145,16 +147,16 @@ TEST(search_by_cells, scatter_3d)
         double y = (j + 0.5);
         double z = (k + 0.5);
         double ext = .375;
-        srcpts->push_back(Portage::Point<3>{x, y, z});
-        srcexts->push_back(Portage::Point<3>{ext, ext, ext});
+        srcpts->push_back(Wonton::Point<3>{x, y, z});
+        srcexts->push_back(Wonton::Point<3>{ext, ext, ext});
       }
     }
   }
   Portage::Meshfree::Swarm<3> srcswarm(srcpts);
 
-  Portage::vector<Portage::Point<3>> tgtp, tgte;
-  auto tgtpts = std::make_shared<Portage::vector<Portage::Point<3>>>(tgtp);
-  auto tgtexts = std::make_shared<Portage::vector<Portage::Point<3>>>(tgte);
+  Portage::vector<Wonton::Point<3>> tgtp, tgte;
+  auto tgtpts = std::make_shared<Portage::vector<Wonton::Point<3>>>(tgtp);
+  auto tgtexts = std::make_shared<Portage::vector<Wonton::Point<3>>>(tgte);
   for (int k = 0; k < 2; ++k) {
     for (int j = 0; j < 2; ++j) {
       for (int i = 0; i < 2; ++i) {
@@ -162,8 +164,8 @@ TEST(search_by_cells, scatter_3d)
         double y = (j + 1.0);
         double z = (k + 1.0);
         double ext = .375;
-        tgtpts->push_back(Portage::Point<3>{x, y, z});
-        tgtexts->push_back(Portage::Point<3>{ext, ext, ext});
+        tgtpts->push_back(Wonton::Point<3>{x, y, z});
+        tgtexts->push_back(Wonton::Point<3>{ext, ext, ext});
       }
     }
   }
@@ -204,9 +206,9 @@ TEST(search_by_cells, gather_3d)
   // overlay a 2x2x2 target swarm on a 3x3x3 source swarm
   // each target point should have eight candidate source points
 
-  Portage::vector<Portage::Point<3>> srcp, srce;
-  auto srcpts = std::make_shared<Portage::vector<Portage::Point<3>>>(srcp);
-  auto srcexts = std::make_shared<Portage::vector<Portage::Point<3>>>(srce);
+  Portage::vector<Wonton::Point<3>> srcp, srce;
+  auto srcpts = std::make_shared<Portage::vector<Wonton::Point<3>>>(srcp);
+  auto srcexts = std::make_shared<Portage::vector<Wonton::Point<3>>>(srce);
   for (int k = 0; k < 3; ++k) {
     for (int j = 0; j < 3; ++j) {
       for (int i = 0; i < 3; ++i) {
@@ -214,16 +216,16 @@ TEST(search_by_cells, gather_3d)
         double y = (j + 0.5);
         double z = (k + 0.5);
         double ext = .375;
-        srcpts->push_back(Portage::Point<3>{x, y, z});
-        srcexts->push_back(Portage::Point<3>{ext, ext, ext});
+        srcpts->push_back(Wonton::Point<3>{x, y, z});
+        srcexts->push_back(Wonton::Point<3>{ext, ext, ext});
       }
     }
   }
   Portage::Meshfree::Swarm<3> srcswarm(srcpts);
 
-  Portage::vector<Portage::Point<3>> tgtp, tgte;
-  auto tgtpts = std::make_shared<Portage::vector<Portage::Point<3>>>(tgtp);
-  auto tgtexts = std::make_shared<Portage::vector<Portage::Point<3>>>(tgte);
+  Portage::vector<Wonton::Point<3>> tgtp, tgte;
+  auto tgtpts = std::make_shared<Portage::vector<Wonton::Point<3>>>(tgtp);
+  auto tgtexts = std::make_shared<Portage::vector<Wonton::Point<3>>>(tgte);
   for (int k = 0; k < 2; ++k) {
     for (int j = 0; j < 2; ++j) {
       for (int i = 0; i < 2; ++i) {
@@ -231,8 +233,8 @@ TEST(search_by_cells, gather_3d)
         double y = (j + 1.0);
         double z = (k + 1.0);
         double ext = .375;
-        tgtpts->push_back(Portage::Point<3>{x, y, z});
-        tgtexts->push_back(Portage::Point<3>{ext, ext, ext});
+        tgtpts->push_back(Wonton::Point<3>{x, y, z});
+        tgtexts->push_back(Wonton::Point<3>{ext, ext, ext});
       }
     }
   }
@@ -271,27 +273,27 @@ TEST(search_by_cells, gather_3d)
 void test_scatter_2d_random(const size_t nsrc, const size_t ntgt)
 { // random point sets and test against SearchSimplePoints
 
-  Portage::vector<Portage::Point<2>> srcp, srce;
-  auto srcpts = std::make_shared<Portage::vector<Portage::Point<2>>>(srcp);
-  auto srcexts = std::make_shared<Portage::vector<Portage::Point<2>>>(srce);
+  Portage::vector<Wonton::Point<2>> srcp, srce;
+  auto srcpts = std::make_shared<Portage::vector<Wonton::Point<2>>>(srcp);
+  auto srcexts = std::make_shared<Portage::vector<Wonton::Point<2>>>(srce);
   for (int j = 0; j < nsrc; ++j) {
     double x = 1.2*rand()/RAND_MAX-.1;
     double y = 1.2*rand()/RAND_MAX-.1;
     double ext = 1./sqrt(nsrc*1.0);
-    srcpts->push_back(Portage::Point<2>{x, y});
-    srcexts->push_back(Portage::Point<2>{ext, ext});
+    srcpts->push_back(Wonton::Point<2>{x, y});
+    srcexts->push_back(Wonton::Point<2>{ext, ext});
   }
   Portage::Meshfree::Swarm<2> srcswarm(srcpts);
 
-  Portage::vector<Portage::Point<2>> tgtp, tgte;
-  auto tgtpts = std::make_shared<Portage::vector<Portage::Point<2>>>(tgtp);
-  auto tgtexts = std::make_shared<Portage::vector<Portage::Point<2>>>(tgte);
+  Portage::vector<Wonton::Point<2>> tgtp, tgte;
+  auto tgtpts = std::make_shared<Portage::vector<Wonton::Point<2>>>(tgtp);
+  auto tgtexts = std::make_shared<Portage::vector<Wonton::Point<2>>>(tgte);
   for (int j = 0; j < ntgt; ++j) {
     double x = 1.0*rand()/RAND_MAX;
     double y = 1.0*rand()/RAND_MAX;
     double ext = 1./sqrt(ntgt*1.0);
-    tgtpts->push_back(Portage::Point<2>{x, y});
-    tgtexts->push_back(Portage::Point<2>{ext, ext});
+    tgtpts->push_back(Wonton::Point<2>{x, y});
+    tgtexts->push_back(Wonton::Point<2>{ext, ext});
   }
   Portage::Meshfree::Swarm<2> tgtswarm(tgtpts);
 
@@ -346,29 +348,29 @@ TEST(search_by_cells, scatter_2d_random_case3)
 void test_scatter_3d_random(const size_t nsrc, const size_t ntgt, bool check=true)
 { // random point sets and test against SearchSimplePoints
 
-  Portage::vector<Portage::Point<3>> srcp, srce;
-  auto srcpts = std::make_shared<Portage::vector<Portage::Point<3>>>(srcp);
-  auto srcexts = std::make_shared<Portage::vector<Portage::Point<3>>>(srce);
+  Portage::vector<Wonton::Point<3>> srcp, srce;
+  auto srcpts = std::make_shared<Portage::vector<Wonton::Point<3>>>(srcp);
+  auto srcexts = std::make_shared<Portage::vector<Wonton::Point<3>>>(srce);
   for (int j = 0; j < nsrc; ++j) {
     double x = 1.2*rand()/RAND_MAX-.1;
     double y = 1.2*rand()/RAND_MAX-.1;
     double z = 1.2*rand()/RAND_MAX-.1;
     double ext = 1./pow(nsrc*1.0,1./3.);
-    srcpts->push_back(Portage::Point<3>{x, y, z});
-    srcexts->push_back(Portage::Point<3>{ext, ext, ext});
+    srcpts->push_back(Wonton::Point<3>{x, y, z});
+    srcexts->push_back(Wonton::Point<3>{ext, ext, ext});
   }
   Portage::Meshfree::Swarm<3> srcswarm(srcpts);
 
-  Portage::vector<Portage::Point<3>> tgtp, tgte;
-  auto tgtpts = std::make_shared<Portage::vector<Portage::Point<3>>>(tgtp);
-  auto tgtexts = std::make_shared<Portage::vector<Portage::Point<3>>>(tgte);
+  Portage::vector<Wonton::Point<3>> tgtp, tgte;
+  auto tgtpts = std::make_shared<Portage::vector<Wonton::Point<3>>>(tgtp);
+  auto tgtexts = std::make_shared<Portage::vector<Wonton::Point<3>>>(tgte);
   for (int j = 0; j < ntgt; ++j) {
     double x = 1.0*rand()/RAND_MAX;
     double y = 1.0*rand()/RAND_MAX;
     double z = 1.0*rand()/RAND_MAX;
     double ext = 1./pow(ntgt*1.0,1./3.);
-    tgtpts->push_back(Portage::Point<3>{x, y, z});
-    tgtexts->push_back(Portage::Point<3>{ext, ext, ext});
+    tgtpts->push_back(Wonton::Point<3>{x, y, z});
+    tgtexts->push_back(Wonton::Point<3>{ext, ext, ext});
   }
   Portage::Meshfree::Swarm<3> tgtswarm(tgtpts);
 
@@ -434,27 +436,27 @@ TEST(search_by_cells, scatter_3d_random_case3_nocheck)
 void test_gather_2d_random(const size_t nsrc, const size_t ntgt)
 { // random point sets and test against SearchSimplePoints
 
-  Portage::vector<Portage::Point<2>> srcp, srce;
-  auto srcpts = std::make_shared<Portage::vector<Portage::Point<2>>>(srcp);
-  auto srcexts = std::make_shared<Portage::vector<Portage::Point<2>>>(srce);
+  Portage::vector<Wonton::Point<2>> srcp, srce;
+  auto srcpts = std::make_shared<Portage::vector<Wonton::Point<2>>>(srcp);
+  auto srcexts = std::make_shared<Portage::vector<Wonton::Point<2>>>(srce);
   for (int j = 0; j < nsrc; ++j) {
     double x = 1.2*rand()/RAND_MAX-.1;
     double y = 1.2*rand()/RAND_MAX-.1;
     double ext = 1./sqrt(nsrc*1.0);
-    srcpts->push_back(Portage::Point<2>{x, y});
-    srcexts->push_back(Portage::Point<2>{ext, ext});
+    srcpts->push_back(Wonton::Point<2>{x, y});
+    srcexts->push_back(Wonton::Point<2>{ext, ext});
   }
   Portage::Meshfree::Swarm<2> srcswarm(srcpts);
 
-  Portage::vector<Portage::Point<2>> tgtp, tgte;
-  auto tgtpts = std::make_shared<Portage::vector<Portage::Point<2>>>(tgtp);
-  auto tgtexts = std::make_shared<Portage::vector<Portage::Point<2>>>(tgte);
+  Portage::vector<Wonton::Point<2>> tgtp, tgte;
+  auto tgtpts = std::make_shared<Portage::vector<Wonton::Point<2>>>(tgtp);
+  auto tgtexts = std::make_shared<Portage::vector<Wonton::Point<2>>>(tgte);
   for (int j = 0; j < ntgt; ++j) {
     double x = 1.0*rand()/RAND_MAX;
     double y = 1.0*rand()/RAND_MAX;
     double ext = 1./sqrt(ntgt*1.0);
-    tgtpts->push_back(Portage::Point<2>{x, y});
-    tgtexts->push_back(Portage::Point<2>{ext, ext});
+    tgtpts->push_back(Wonton::Point<2>{x, y});
+    tgtexts->push_back(Wonton::Point<2>{ext, ext});
   }
   Portage::Meshfree::Swarm<2> tgtswarm(tgtpts);
 
@@ -508,29 +510,29 @@ TEST(search_by_cells, gather_2d_random_case3)
 void test_gather_3d_random(const size_t nsrc, const size_t ntgt, bool check = true)
 { // random point sets and test against SearchSimplePoints
 
-  Portage::vector<Portage::Point<3>> srcp, srce;
-  auto srcpts = std::make_shared<Portage::vector<Portage::Point<3>>>(srcp);
-  auto srcexts = std::make_shared<Portage::vector<Portage::Point<3>>>(srce);
+  Portage::vector<Wonton::Point<3>> srcp, srce;
+  auto srcpts = std::make_shared<Portage::vector<Wonton::Point<3>>>(srcp);
+  auto srcexts = std::make_shared<Portage::vector<Wonton::Point<3>>>(srce);
   for (int j = 0; j < nsrc; ++j) {
     double x = 1.2*rand()/RAND_MAX-.1;
     double y = 1.2*rand()/RAND_MAX-.1;
     double z = 1.2*rand()/RAND_MAX-.1;
     double ext = 1./pow(nsrc*1.0,1./3.);
-    srcpts->push_back(Portage::Point<3>{x, y, z});
-    srcexts->push_back(Portage::Point<3>{ext, ext, ext});
+    srcpts->push_back(Wonton::Point<3>{x, y, z});
+    srcexts->push_back(Wonton::Point<3>{ext, ext, ext});
   }
   Portage::Meshfree::Swarm<3> srcswarm(srcpts);
 
-  Portage::vector<Portage::Point<3>> tgtp, tgte;
-  auto tgtpts = std::make_shared<Portage::vector<Portage::Point<3>>>(tgtp);
-  auto tgtexts = std::make_shared<Portage::vector<Portage::Point<3>>>(tgte);
+  Portage::vector<Wonton::Point<3>> tgtp, tgte;
+  auto tgtpts = std::make_shared<Portage::vector<Wonton::Point<3>>>(tgtp);
+  auto tgtexts = std::make_shared<Portage::vector<Wonton::Point<3>>>(tgte);
   for (int j = 0; j < ntgt; ++j) {
     double x = 1.0*rand()/RAND_MAX;
     double y = 1.0*rand()/RAND_MAX;
     double z = 1.0*rand()/RAND_MAX;
     double ext = 1./pow(ntgt*1.0,1./3.);
-    tgtpts->push_back(Portage::Point<3>{x, y, z});
-    tgtexts->push_back(Portage::Point<3>{ext, ext, ext});
+    tgtpts->push_back(Wonton::Point<3>{x, y, z});
+    tgtexts->push_back(Wonton::Point<3>{ext, ext, ext});
   }
   Portage::Meshfree::Swarm<3> tgtswarm(tgtpts);
 
@@ -596,29 +598,29 @@ TEST(search_by_cells, gather_3d_random_case1_nocheck)
 TEST(search_by_cells, scatter_2d_random_disjoint)
 { // random point sets and test against SearchSimplePoints
 
-  Portage::vector<Portage::Point<2>> srcp, srce;
-  auto srcpts = std::make_shared<Portage::vector<Portage::Point<2>>>(srcp);
-  auto srcexts = std::make_shared<Portage::vector<Portage::Point<2>>>(srce);
+  Portage::vector<Wonton::Point<2>> srcp, srce;
+  auto srcpts = std::make_shared<Portage::vector<Wonton::Point<2>>>(srcp);
+  auto srcexts = std::make_shared<Portage::vector<Wonton::Point<2>>>(srce);
   const size_t nsrc = 256;
   for (int j = 0; j < nsrc; ++j) {
     double x = 1.2*rand()/RAND_MAX-.1;
     double y = 1.2*rand()/RAND_MAX-.1;
     double ext = 1./sqrt(nsrc*1.0);
-    srcpts->push_back(Portage::Point<2>{x, y});
-    srcexts->push_back(Portage::Point<2>{ext, ext});
+    srcpts->push_back(Wonton::Point<2>{x, y});
+    srcexts->push_back(Wonton::Point<2>{ext, ext});
   }
   Portage::Meshfree::Swarm<2> srcswarm(srcpts);
 
-  Portage::vector<Portage::Point<2>> tgtp, tgte;
-  auto tgtpts = std::make_shared<Portage::vector<Portage::Point<2>>>(tgtp);
-  auto tgtexts = std::make_shared<Portage::vector<Portage::Point<2>>>(tgte);
+  Portage::vector<Wonton::Point<2>> tgtp, tgte;
+  auto tgtpts = std::make_shared<Portage::vector<Wonton::Point<2>>>(tgtp);
+  auto tgtexts = std::make_shared<Portage::vector<Wonton::Point<2>>>(tgte);
   const size_t ntgt = 128;
   for (int j = 0; j < ntgt; ++j) {
     double x = 1.0*rand()/RAND_MAX + 10.;
     double y = 1.0*rand()/RAND_MAX + 10.;
     double ext = 1./sqrt(ntgt*1.0);
-    tgtpts->push_back(Portage::Point<2>{x, y});
-    tgtexts->push_back(Portage::Point<2>{ext, ext});
+    tgtpts->push_back(Wonton::Point<2>{x, y});
+    tgtexts->push_back(Wonton::Point<2>{ext, ext});
   }
   Portage::Meshfree::Swarm<2> tgtswarm(tgtpts);
 
@@ -645,29 +647,29 @@ TEST(search_by_cells, scatter_2d_random_disjoint)
 TEST(search_by_cells, scatter_2d_random_edge)
 { // random point sets and test against SearchSimplePoints
 
-  Portage::vector<Portage::Point<2>> srcp, srce;
-  auto srcpts = std::make_shared<Portage::vector<Portage::Point<2>>>(srcp);
-  auto srcexts = std::make_shared<Portage::vector<Portage::Point<2>>>(srce);
+  Portage::vector<Wonton::Point<2>> srcp, srce;
+  auto srcpts = std::make_shared<Portage::vector<Wonton::Point<2>>>(srcp);
+  auto srcexts = std::make_shared<Portage::vector<Wonton::Point<2>>>(srce);
   const size_t nsrc = 256;
   for (int j = 0; j < nsrc; ++j) {
     double x = 1.2*rand()/RAND_MAX-.1;
     double y = 1.2*rand()/RAND_MAX-.1;
     double ext = 1./sqrt(nsrc*1.0);
-    srcpts->push_back(Portage::Point<2>{x, y});
-    srcexts->push_back(Portage::Point<2>{ext, ext});
+    srcpts->push_back(Wonton::Point<2>{x, y});
+    srcexts->push_back(Wonton::Point<2>{ext, ext});
   }
   Portage::Meshfree::Swarm<2> srcswarm(srcpts);
 
-  Portage::vector<Portage::Point<2>> tgtp, tgte;
-  auto tgtpts = std::make_shared<Portage::vector<Portage::Point<2>>>(tgtp);
-  auto tgtexts = std::make_shared<Portage::vector<Portage::Point<2>>>(tgte);
+  Portage::vector<Wonton::Point<2>> tgtp, tgte;
+  auto tgtpts = std::make_shared<Portage::vector<Wonton::Point<2>>>(tgtp);
+  auto tgtexts = std::make_shared<Portage::vector<Wonton::Point<2>>>(tgte);
   const size_t ntgt = 128;
   for (int j = 0; j < ntgt; ++j) {
     double x = 1.0*rand()/RAND_MAX + .5;
     double y = 1.0*rand()/RAND_MAX + .5;
     double ext = 1./sqrt(ntgt*1.0);
-    tgtpts->push_back(Portage::Point<2>{x, y});
-    tgtexts->push_back(Portage::Point<2>{ext, ext});
+    tgtpts->push_back(Wonton::Point<2>{x, y});
+    tgtexts->push_back(Wonton::Point<2>{ext, ext});
   }
   Portage::Meshfree::Swarm<2> tgtswarm(tgtpts);
 

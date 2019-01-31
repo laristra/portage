@@ -2342,3 +2342,10 @@ FILE_PATTERNS += *.md
 USE_MDFILE_AS_MAINPAGE = main_page.md
 
 LAYOUT_FILE = @CMAKE_CURRENT_SOURCE_DIR@/doc/DoxygenLayout.xml
+
+HTML_EXTRA_FILES +=  @CMAKE_CURRENT_SOURCE_DIR@/doc/doxygen/images/portage-tangram-diagram.png \
+@CMAKE_CURRENT_SOURCE_DIR@/doc/doxygen/images/Portage-logo-small.png \
+@CMAKE_CURRENT_SOURCE_DIR@/doc/doxygen/images/meshmesh.svg \
+@CMAKE_CURRENT_SOURCE_DIR@/doc/doxygen/images/search.svg \
+@CMAKE_CURRENT_SOURCE_DIR@/doc/doxygen/images/intersect.svg \
+@CMAKE_CURRENT_SOURCE_DIR@/doc/doxygen/images/interpolate.svg
