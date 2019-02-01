@@ -17,12 +17,12 @@ conservation or introduce artifacts in the fields.
 </tr>
 <tr>
 <td width="45%" valign="top" align="center">Mismatch at mesh boundaries due to
-different mesh resolutions (red - source, blue - target). Example has
-only partially covered source and target cells.</td>
+different mesh resolutions (red - source, blue - target). Source and
+target cells adjacent to curved boundary on right are partially covered.</td>
 <td width="4%"></td>
 <td width="45%" valign="top" align="center">Mismatch due to gross
-differences in domains (red - source, blue - target). Example has both
-partially covered and empty source and target cells.</td>
+differences in domains (red - source, blue - target). Source and
+target meshes have both partially covered and empty cells.</td>
 </tr>
 </table>
 <br>
