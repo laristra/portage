@@ -1,13 +1,13 @@
 # Mismatch Fixup  {#mismatch}
 
-The Portage library includes a repair algorithm to handle remap errors
-arising from the mismatch of the boundaries of two meshes.
-happen because curved boundaries are discretized with different
-resolutions in the source and target meshes or because two physics
-packages exchanging data through Portage view the geometry of the
-domain a bit differently. If all of the source mesh is not covered by
-the target mesh or vice versa, the result may violate conservation or
-introduce artifacts in the fields.
+The Portage library includes an algorithm to repair cell and node
+fields to handle errors arising from the mismatch of the boundaries of
+two meshes. The errors arise because curved boundaries are discretized
+with different resolutions in the source and target meshes or because
+two physics packages exchanging data through Portage view the geometry
+of the domain a bit differently. If all of the source mesh is not
+covered by the target mesh or vice versa, the result may violate
+conservation or introduce artifacts in the fields.
 
 <table style="width:100%">
 <tr>
@@ -17,9 +17,12 @@ introduce artifacts in the fields.
 </tr>
 <tr>
 <td width="45%" valign="top" align="center">Mismatch at mesh boundaries due to
-different mesh resolutions</td>
+different mesh resolutions (red - source, blue - target). Example has
+only partially covered source and target cells.</td>
 <td width="4%"></td>
-<td width="45%" valign="top" align="center">Mismatch due to gross differences in domains</td>
+<td width="45%" valign="top" align="center">Mismatch due to gross
+differences in domains (red - source, blue - target). Example has both
+partially covered and empty source and target cells.</td>
 </tr>
 </table>
 <br>
@@ -31,35 +34,39 @@ The four possible cases of mismatch are:
     * Source cell is partially covered by target cells (partially contributing).
     * Source cell does not overlap any target cells (non-contributing)
 
-If a source cell is partially covered or not covered
-at all the result is a conservation error (missing material in the
-target mesh). If a target cell is partially covered by source cells, the amount of
+If a source cell is only partially covered or not covered at all, it results
+in a conservation error (missing material in the target mesh). If a
+target cell is only partially covered by source cells, the amount of
 material in the cell or its resulting field value may be incorrect
 depending on the weighting used in the interpolation step (more on
-that below). If a target cell is empty, then it's field value
-is undefined or some value that all cells are initialized to, which is
-clearly an error. 
+that below). If a target cell is not covered at all, then it's field value is
+undefined or is some arbitrarily chosen initial value.
 
-Consider a target cell, \\( \\Omega^t_i \\) that is fully covered by
+Consider a target cell, \\( \\Omega^t_i \\) that is *fully covered* by
  a set of source cells \\( \\{
 \\Omega^s_j \\}_{j=1,n} \\). Assume that the field value at each of
 the source cells is \\( u^s_j \\). The sum of the intersection volumes
-is \\( \\sum_j |\\Omega^t_i \\cap \\Omega^s_j| \\) and assuming a
-first order accurate interpolation, the accumulated contribution of
-the overlapping source cells to the target cell is \\( U^t_i = \\sum_j
-u^s_j|\\Omega^t_i \\cap \\Omega^s_j| \\). We derive a cell-averaged
-value \\( u^t_i \\) from the integral quantity \\( U^t_i \\) as \\[
-u^t_i = \\frac{U^t_j}{|\\Omega^t_i|} = \\frac{U^t_j}{\\sum_j
-|\\Omega^t_i \\cap \\Omega^s_j|} \\]
+is \\( \\sum_j |\\Omega^t_i \\cap \\Omega^s_j| \\) and equals the
+ target cell volume \\( |\Omega^t_i \\).
 
-It is guaranteed that this form of interpolation is **locally conservative**,
-i.e., any material from overlapping
-parts of the source mesh are accounted for in the target cell. If, in
-addition, \\[ u^s_j = c \\quad \\forall j \\quad \\mbox{then} \\quad
+Considering a first order accurate interpolation, the accumulated
+contribution of the overlapping source cells to the target cell is \\(
+U^t_i = \\sum_j u^s_j|\\Omega^t_i \\cap \\Omega^s_j| \\). We derive a
+cell-averaged value \\( u^t_i \\) from the integral quantity \\( U^t_i
+\\) as \\[ u^t_i = \\frac{U^t_i}{|\\Omega^t_i|} =
+\\frac{U^t_i}{\\sum_j |\\Omega^t_i \\cap \\Omega^s_j|} \\]
+
+It is guaranteed that this form of interpolation is **locally
+conservative**, i.e., each target cell
+fully contains any material from overlapping parts of the source mesh,
+mathematically expressed as \\[ u^t_i|\\Omega^t_i| = \\sum_j u^s_j
+|\\Omega^t_i \\cap \\Omega^s_j| \\]
+
+If, in addition, \\[ u^s_j = c \\quad \\forall j \\quad \\mbox{then} \\quad
 u^t_i = \\frac{U^t_i}{\\sum_j |\\Omega^t_i \\cap
 \\Omega^s_j|} = \\frac{\\sum_j u^s_j|\\Omega^t_i \\cap
 \\Omega^s_j|}{\\sum_j |\\Omega^t_i \\cap
-\\Omega^s_j|} = \\frac{c\\sum_j |\\Omega^t_i \\cap
+\\Omega^s_j|} = \\frac{\\sum_j c|\\Omega^t_i \\cap
 \\Omega^s_j|}{\\sum_j |\\Omega^t_i \\cap
 \\Omega^s_j|} = c \\]
 i.e. it is **constant preserving**.
@@ -71,12 +78,12 @@ When \\( \\Omega^t_i \\) is partially covered i.e. \\( |\\Omega^t_i|
 convert the integral value \\( U^t_i \\) to a cell-averaged quantity
 \\( u^t_i \\) has significant implications. If we say, \\[ u^t_i =
 \\frac{U^t_i}{|\\Omega^t_i|} \\] then we ensure that the remap onto the
-target cell is **locally conservative**. However, since \\(
+target cell is **locally conservative** as above. However, since \\(
 \\sum_j |\\Omega^t_i \\cap \\Omega^s_j|  \\lt  |\\Omega^t_i|
 \\), this will cause the cell averaged
 value to be lower than it would be if it were fully covered. If, as
 before, \\[ u^s_j = c \\quad \\forall j \\qquad \\mbox{then} \\qquad
-u^t_i = \\frac{U^t_j}{|\\Omega^t_i|} = \\frac{\\sum_j u^s_j|\\Omega^t_i \\cap
+u^t_i = \\frac{U^t_i}{|\\Omega^t_i|} = \\frac{\\sum_j u^s_j|\\Omega^t_i \\cap
 \\Omega^s_j|}{|\\Omega^t_i|} = \\frac{c\\sum_j |\\Omega^t_i \\cap
 \\Omega^s_j|}{|\\Omega^t_i|} = c_1 < c
 \\]
@@ -91,37 +98,38 @@ since \\[ u^t_i|\\Omega^t_i|
 \\neq \\sum_j u^s_j|\\Omega^t_i \\cap
 \\Omega^s_j| \\]
 
-The supplied interpolation routines in Portage adopt the second
-method, i.e. they are constant-preserving but not
-conservative. Conservation is restored, if requested, in the repair
-algorithm described below.
+The basic interpolation routines supplied in Portage adopt the latter
+approach, i.e. they are constant-preserving but not
+conservative. *Conservation is restored, if requested, in the repair
+algorithm described below.*
 
 ## Discrepancy Computation
 
-Given a target mesh \\( \\{\\Omega^s_j\\} \\) and a source mesh \\(
+Given a target mesh \\( \\{\\Omega^t_i\\} \\) and a source mesh \\(
 \\{\\Omega^s_j\\} \\), we compute the following (over all partitions
 in a distributed mesh):
 
-\\[ \mbox{Target} \; \mbox{Volume} = V^t = \\sum_j|\\Omega^t_j| \\]
-\\[ \mbox{Source} \; \mbox{Volume} = V^s = \\sum_i|\\Omega^s_i| \\]
-\\[ \mbox{Intersection} \; \mbox{Volume} = V^i = \\sum_j|\\Omega^t_j \\cap \\{\\Omega^s_i\\}| \\]
+\\[ \mbox{Target} \; \mbox{Volume} = V^t = \\sum_j|\\Omega^t_i| \\]
+\\[ \mbox{Source} \; \mbox{Volume} = V^s = \\sum_i|\\Omega^s_j| \\]
+\\[ \mbox{Intersection} \; \mbox{Volume} = V^i = \\sum_i\\sum_j|\\Omega^t_i \\cap \\{\\Omega^s_j\\}| \\]
 
-If \\( V^t \\neq V^i \\), we can conclude that one or more cells of
-the target mesh are not covered by source mesh. If \\( V^s \\neq V^i
+If \\( V^t \\gt V^i \\), we can conclude that one or more cells of
+the target mesh are not covered by source mesh. If \\( V^s \\gt V^i
 \\), one or more cells of the source mesh are not
 covered by target mesh. It is possible that both conditions exist in a
 pair of meshes.
 
 The conservation error for a field whose values on the target mesh are
-\\( \\{u^s_i\\} \\) and on the source mesh are \\( \\{u^t_i\\} \\), is
+\\( \\{u^t_i\\} \\) and on the source mesh are \\( \\{u^s_j\\} \\), is
 given by
 \\[
-\\Delta{U} = \\sum_j{u^s_j|\\Omega^s_j|} - \\sum_i{u^t_i|\\Omega^t_i|}
+\\Delta{U} = \\sum_i{u^t_i|\\Omega^t_i|} - \\sum_j{u^s_j|\\Omega^s_j|}
 \\]
 
 ## Repair
 
-The repair function in Portage performs a global repair. While its
+The repair function in Portage works for both cell- and
+node-based fields and has a global effect. While its
 exact details depends on user choices for what happens in empty cells
 and partially filled cells, the algorithm has these main steps:
 
@@ -129,7 +137,7 @@ and partially filled cells, the algorithm has these main steps:
 
 The algorithms labels empty cells starting from
 completely filled or partially filled cells and fanning out. Completely or
-partially filled are labeled as belonging to layer 1; subsequent
+partially filled are labeled as belonging to layer 0; subsequent
 layers are built up of empty cells going outward. Empty cells that
 border at least one cell that belongs to layer *N*  are labeled as
 belonging to layer *N+1*. The process continues until no more empty cells
@@ -165,8 +173,8 @@ step [Portage::Partial_fixup_type::CONSTANT](\ref Portage::CONSTANT),
 restoring conservation in partially filled cells
 ([Portage::Partial_fixup_type::LOCALLY_CONSERVATIVE](\ref Portage::LOCALLY_CONSERVATIVE),
 by scaling the source contribution by
-the reciprocal of \\( \\sum_j|\\Omega^t_j \\cap \\{\\Omega^s_i\\}| \\)
-instead of the reciprocal of \\( |\\Omega^t_j| \\) ) or by restoring
+the reciprocal of \\( \\sum_j|\\Omega^t_i \\cap \\{\\Omega^s_j\\}| \\)
+instead of the reciprocal of \\( |\\Omega^t_i| \\) ) or by restoring
 conservation through a global distribution of the excess
 ([Portage::Partial_fixup_type::SHIFTED_CONSERVATIVE](\ref Portage::SHIFTED_CONSERVATIVE),
 described below).
@@ -177,7 +185,7 @@ option attempts to add (or subtract) a
 fraction of the error from each cell. The fraction of the error is
 proportional to fractional volume of the cell with respect to the
 total mesh volume.  \\[ \\delta{U}_i =
-\\Delta{U}\\frac{|\\Omega^t_i|}{\\sum_j|\\Omega^t_j|} \\]
+\\Delta{U}\\frac{|\\Omega^t_i|}{\\sum_k|\\Omega^t_k|} \\]
 
 If the calling application has specified global bounds for the field,
 then the amount that is added (or subtracted) is capped so as to not
@@ -189,19 +197,24 @@ are computed from the source field, with a little slack for constant
 fields, if the global bounds are not specified. 
 
 The effect of restoring conservation on the original mesh using the
-above algorithm is that field maintains its character to the extent
+above algorithm is that the field maintains its character to the extent
 possible but its actual values may be shifted. Thus, a constant field
 might become a different constant field on the target mesh (if the
 source and target volumes are different).
 
+*For node-based remap, the computations described above are replaced
+ by computations over dual cells.*
 
 ### Example
 
 Shown below are the results of remap of a constant field on mismatched
-meshes (source - regular, black edges; target - distorted, while edges)
+meshes (source - regular, black edges; target - distorted, white edges)
 using the three options. The two meshes have the same global
 volume and therefore, we expect that a good remap will conserve mass
-and preserve the constant. If the domain
+and preserve the constant. If the domains had different volumes, the
+constant in the last case
+(>[Portage::Partial_fixup_type::SHIFTED_CONSERVATIVE](\ref
+Portage::SHIFTED_CONSERVATIVE) would be different from the input constant.
 
 <table style="width:100%" markdown="1">
 <tr>
