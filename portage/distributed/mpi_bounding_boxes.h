@@ -140,7 +140,7 @@ class MPI_Bounding_Boxes {
               sourceCoords, &distributedCoords);
               
     // merge and set coordinates in the flat mesh
-    merge_data(distributedCoords, distributedNodeIds_, sourceCoords, dim_);
+    merge_duplicate_data(distributedCoords, distributedNodeIds_, sourceCoords, dim_);
     
 
 
@@ -158,7 +158,7 @@ class MPI_Bounding_Boxes {
                 sourceCellNodeCounts, &distributedCellNodeCounts);
                 
       // merge and set cell node counts
-      merge_data(distributedCellNodeCounts, distributedCellIds_, sourceCellNodeCounts);
+      merge_duplicate_data(distributedCellNodeCounts, distributedCellIds_, sourceCellNodeCounts);
 
       // mesh data references
       std::vector<int>& sourceCellNodeOffsets = source_mesh_flat.get_cell_node_offsets();
@@ -180,7 +180,7 @@ class MPI_Bounding_Boxes {
 
 
       // merge and map cell node lists
-      merge_lists(distributedCellToNodeList, distributedCellNodeCounts, 
+      merge_duplicate_lists(distributedCellToNodeList, distributedCellNodeCounts, 
         distributedCellIds_, gidToFlatNodeId_, sourceCellToNodeList);
 
     }
@@ -232,7 +232,7 @@ class MPI_Bounding_Boxes {
                 sourceCellFaceCounts, &distributedCellFaceCounts);
 
       // merge and set cell face counts
-      merge_data( distributedCellFaceCounts, distributedCellIds_, sourceCellFaceCounts);
+      merge_duplicate_data( distributedCellFaceCounts, distributedCellIds_, sourceCellFaceCounts);
       
       // SEND CELL-TO-FACE MAP
       // map the cell face list vector to gid's
@@ -262,11 +262,11 @@ class MPI_Bounding_Boxes {
 
       
       // merge and map cell face lists
-      merge_lists(distributedCellToFaceList, distributedCellFaceCounts, 
+      merge_duplicate_lists(distributedCellToFaceList, distributedCellFaceCounts, 
         distributedCellIds_, gidToFlatFaceId_, sourceCellToFaceList);
         
       // merge cell face directions
-      merge_lists(distributedCellToFaceDirs, distributedCellFaceCounts, 
+      merge_duplicate_lists(distributedCellToFaceDirs, distributedCellFaceCounts, 
         distributedCellIds_, sourceCellToFaceDirs);
       
       // mesh data references
@@ -294,14 +294,14 @@ class MPI_Bounding_Boxes {
                 to_gid(sourceFaceToNodeList, sourceNodeGlobalIds), &distributedFaceToNodeList);      
                 
       // merge and set face node counts
-      merge_data( distributedFaceNodeCounts, distributedFaceIds_, sourceFaceNodeCounts);
+      merge_duplicate_data( distributedFaceNodeCounts, distributedFaceIds_, sourceFaceNodeCounts);
       
       // merge and map face node lists
-      merge_lists(distributedFaceToNodeList, distributedFaceNodeCounts, 
+      merge_duplicate_lists(distributedFaceToNodeList, distributedFaceNodeCounts, 
         distributedFaceIds_, gidToFlatNodeId_, sourceFaceToNodeList);
 
       // merge face global ids
-      merge_data(distributedFaceGlobalIds, distributedFaceIds_,sourceFaceGlobalIds);
+      merge_duplicate_data(distributedFaceGlobalIds, distributedFaceIds_,sourceFaceGlobalIds);
       
       // set counts for faces in the flat mesh
       source_mesh_flat.set_num_owned_faces(flatFaceNumOwned_);
@@ -312,8 +312,8 @@ class MPI_Bounding_Boxes {
     // gid uses the global id's and we don't want to modify them before we are
     // done converting the old relationships
     // merge global ids and set in the flat mesh    
-    merge_data(distributedCellGlobalIds, distributedCellIds_, sourceCellGlobalIds);
-    merge_data(distributedNodeGlobalIds, distributedNodeIds_, sourceNodeGlobalIds);
+    merge_duplicate_data(distributedCellGlobalIds, distributedCellIds_, sourceCellGlobalIds);
+    merge_duplicate_data(distributedNodeGlobalIds, distributedNodeIds_, sourceNodeGlobalIds);
 
     // set counts for cells and nodes in the flat mesh
     source_mesh_flat.set_num_owned_cells(flatCellNumOwned_);
@@ -534,12 +534,12 @@ class MPI_Bounding_Boxes {
       if (source_state_flat.get_entity(field_name) == Entity_kind::NODE){
       
         // node mesh field
-        merge_data(distributedField, distributedNodeIds_, tempDistributedField, sourceFieldStride);
+        merge_duplicate_data(distributedField, distributedNodeIds_, tempDistributedField, sourceFieldStride);
         
       } else if (source_state_flat.field_type(Entity_kind::CELL, field_name) == Wonton::Field_type::MESH_FIELD){
       
         // mesh cell field
-        merge_data(distributedField, distributedCellIds_, tempDistributedField, sourceFieldStride);
+        merge_duplicate_data(distributedField, distributedCellIds_, tempDistributedField, sourceFieldStride);
 
       } else {
         // multi material field             
@@ -912,17 +912,42 @@ class MPI_Bounding_Boxes {
     @param[out] flatNumOwned  The number of owned entities in the flat mesh
     
     This is called after distribution of gids for each entity kind. The vector of
-    gids (with potentially duplicated gid's) is used to create two vectors. The first
+    gids (with potentially duplicate gid's) is used to create two vectors. The first
     vector is the first position of occurrence in post distribution gids vector. 
     The second vector is the gid in the flat mesh after compression. 
     
-    We handle"ghosts" are in the post distributed data. An entity is considered
-    "owned" by the flat mesh if it was owned on any partition and a "ghost" if
+    We handle"ghosts" in the post distributed data. An entity is considered
+    "owned" by the flat mesh if it was owned on any partition and a "ghost" if it
     was a ghost on all partitions. This implies that an entity will be owned by as many
     partitions as the original source partition was sent to. So while we preserve
     the concept that a ghost is a ghost in the flat mesh only if it was originally
-    ghosts, we unfortunately have that an entity in the flat mesh will typically 
-    be owned by many different paritions
+    only ghosts, we unfortunately have that an entity in the flat mesh will typically 
+    be owned by many different paritions.
+    
+    The following example will hopefully illustrate what this function is doing.
+    Consider the following post distribution set of gids:
+    `3 | 2 7 | 9 10 || 4* 2* | 5* 4* | 4*`
+    where a single vertical bar separates partitions, the double vertical bar
+    separates the owned cells from ghosts and a number followed by an asterisk
+    means it was a ghost on it's original partition. The original distribution
+    returns all owned entities in rank order followed by all ghost entities in
+    rank order. So the example above consists of three partitions. The first
+    partition has owned entity `3` and ghost entities `4,2`. The second partition
+    has owned entities `2,7` and ghost entities `5,4`. The third partition has
+    owned entities `9,10` and ghost entity `4`. After merging, in the flat mesh,
+    the owned entities will `2, 3, 7, 9, 10` and the ghost entities will be
+    `4, 5`. The interesting entity is `2` which is both owned and a ghost on
+    different partitions and is therefore considered owned. The result of the
+    function is `distributedIds=[1, 0, 2, 3, 4, 5,7]` and 
+    `flatGlobalIds=[2, 3, 7, 9, 10, 4, 5]`. The first returned argument, 
+    `distributedIds` is the indices of the unique global ids in the distributed
+    data. The second returned argument `flatGlobalIds` is the gids themselves.
+    In the code, `distributedIds` is used much more frequently than `flatGlobalIds`.
+    The vector `distributedIds` is used to merge all subsequent distributed
+    data and topological reference vectors. The number of owned entities would
+    be `flatNumOwned=5`. Notice that in `flatGlobalIds` the vector consists
+    of two ascending sequences `2, 3, 7, 9, 10` followed by `4, 5`. The first
+    sequence is owned entities. The send is ghosts.
   */
   void compress_with_ghosts(std::vector<int> const& distributedGlobalIds, 
     int const distributedNumOwned, std::vector<int>& distributedIds, 
@@ -994,14 +1019,18 @@ class MPI_Bounding_Boxes {
 
 
   /*!
-    @brief Create a map from flat mesh gid to flat mesh index
+    @brief Create a map from gid to flat mesh index
            
     @param[in] flatGlobalIds  The vector of gid's in the flat mesh
     @param[out] gidToFlat  The map from global id to flat cell index
 
     This function creates a trivial map from global id to flat cell index.
-    The index in the global id is the value of the map. We use this later when
+    The index of the global id is the value of the map. We use this later when
     converting global id's into the new flat mesh local index.
+    
+    In the above example, create_gid_flat_map would take the vector
+    `flatGlobalIds=[2, 3, 7, 9, 10, 4, 5]` and return the map 
+    `gidToFlat={(2:0),(3:1),(7:2),(9:3),(10:4),(4:5),(5:6)}`.
   */
   void create_gid_to_flat_map(std::vector<int> const& flatGlobalIds, 
     std::map<int,int>& gidToFlat){
@@ -1013,8 +1042,8 @@ class MPI_Bounding_Boxes {
 
 
   /*!
-    @brief Merge post distribution flattend data so that each global id appears 
-           only once.
+    @brief Merge post distribution data so that each datum appears 
+           only once for each unique gid.
            
     @param[in] in   The post distribution data to be merged
     @param[in] distributedIds  The vector of distributed indices to keep
@@ -1026,7 +1055,7 @@ class MPI_Bounding_Boxes {
     selects a single occurrence of each gid defined by distributedIds
    */
   template<class T>
-  void merge_data(std::vector<T>const& in, std::vector<int>const& distributedIds, 
+  void merge_duplicate_data(std::vector<T>const& in, std::vector<int>const& distributedIds, 
     std::vector<T>& result, int const stride=1){
 
     // clear result and reserve to stride * the number kept
@@ -1053,11 +1082,11 @@ class MPI_Bounding_Boxes {
     @param[out] result The new vector of merged references
     
     This is called after distribution. It takes post distribution topological
-    reference data and corrects for two things. The first is the input has
-    duplicate offset lists that need to be merged. The second is the references
-    need to get converted from gid to new flat index id.   
+    reference data and corrects for two things. The first thing is that the input has
+    duplicate offset lists that need to be merged. The second thing is that the 
+    topological references need to get converted from gid to their new flat index id.   
   */
-  void merge_lists(std::vector<int>const& in, std::vector<int> const& counts,
+  void merge_duplicate_lists(std::vector<int>const& in, std::vector<int> const& counts,
     std::vector<int>const& distributedIds, std::map<int,int>const& gidToFlatId,
     std::vector<int>& result){
     
@@ -1100,16 +1129,12 @@ class MPI_Bounding_Boxes {
                          the "from" part of the mapping, e.g. cell in cellToFace
     @return The new vector of merged data
     
-    This is called after distribution. It takes post distribution lists of data 
-    and corrects the "from" part of the map to remove duplicates. The only usage
-    of this signature is compressing the face direction which is a boolean. There
-    are lists for each cell in distributedCellToFaceDirs, but the values are kept
-    unchanged unlike the signature above with not template parameter where the
-    values are references that need to be remapped as well. Merge_data won't 
-    work because there are variable numbers of data for each entity.
+    This signature is called after distribution. It takes post distribution lists of data 
+    and corrects the "from" part of the map to remove duplicates. It leaves the
+    data values untouched unlike the signature above which updates topological references.
    */
   template<class T>
-  void merge_lists(std::vector<T>const& in, std::vector<int> const & counts,
+  void merge_duplicate_lists(std::vector<T>const& in, std::vector<int> const & counts,
     std::vector<int>const& distributedIds, std::vector<T>& result){
     
     // allocate offses

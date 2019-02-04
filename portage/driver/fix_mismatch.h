@@ -164,9 +164,6 @@ class MismatchFixer {
     global_source_volume_ = source_volume_;
 #endif
 
-    // DWS diagnostics
-    std::cout<<"  !!!!Source total volume on rank "<<rank_<<": "<<global_source_volume_<<std::endl;
-
     // GLOBAL TARGET VOLUME
     ntargetents_ = (onwhat == Entity_kind::CELL) ?
         target_mesh_.num_owned_cells() : target_mesh_.num_owned_nodes();
