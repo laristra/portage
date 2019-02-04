@@ -31,7 +31,7 @@
 #include "tangram/driver/write_to_gmv.h"
 #endif
 
-#ifdef ENABLE_MPI
+#ifdef PORTAGE_ENABLE_MPI
 #include <mpi.h>
 #endif
 
@@ -347,7 +347,7 @@ void run(
         d(source_mesh_wrapper, source_state,
           target_mesh_wrapper, target_state);
     d.set_remap_var_names(remap_fields);
-    d.run(false);
+    d.run();  // executor arg defaults to nullptr -> serial run
   } else if (interp_order == 2) {
     Portage::MMDriver<
       Portage::SearchKDTree,
@@ -363,7 +363,7 @@ void run(
           target_mesh_wrapper, target_state);
     d.set_remap_var_names(remap_fields);
     d.set_limiter(limiter);
-    d.run(false);
+    d.run();  // executor arg defaults to nullptr -> serial run
   }
 
   // make sure the volume fraction and centroid are available on the target mesh
@@ -542,7 +542,7 @@ void run(
 
 int main(int argc, char** argv) {
 
-  #ifdef ENABLE_MPI
+  #ifdef PORTAGE_ENABLE_MPI
     MPI_Init(&argc, &argv);
     MPI_Comm comm = MPI_COMM_WORLD;
 
@@ -672,7 +672,7 @@ int main(int argc, char** argv) {
   float seconds = diff.tv_sec + 1.0E-6*diff.tv_usec;
   std::cout << "Remap Time: " << seconds << std::endl;
 
-  #ifdef ENABLE_MPI
+  #ifdef PORTAGE_ENABLE_MPI
   MPI_Finalize();
         #endif
 

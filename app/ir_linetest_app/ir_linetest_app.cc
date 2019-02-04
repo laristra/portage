@@ -32,7 +32,7 @@ extern "C" {
 #include "tangram/driver/CellMatPoly.h"
 #include "tangram/support/MatPoly.h"
 
-#ifdef ENABLE_MPI
+#ifdef PORTAGE_ENABLE_MPI
 #include "mpi.h"
 #endif
 
@@ -251,7 +251,7 @@ void add_intersect_data(std::vector<std::vector<double> >& mat_moments,
 }
 
 int main(int argc, char** argv) {
-#ifdef ENABLE_MPI
+#ifdef PORTAGE_ENABLE_MPI
   MPI_Init(&argc, &argv);
 #endif
   if (argc != 5) {
@@ -385,7 +385,7 @@ int main(int argc, char** argv) {
     Wonton::Simple_Mesh_Wrapper> target_xmof_driver(target_mesh_wrapper, tols);
   target_xmof_driver.set_volume_fractions(tcell_num_mats, tcell_mat_ids,
                                    tcell_mat_volfracs, tcell_mat_centroids);
-  target_xmof_driver.reconstruct();
+  target_xmof_driver.reconstruct();  // executor arg defaults to null -> serial
   const std::vector<std::shared_ptr<Tangram::CellMatPoly<2>>>&
     tcellmatpoly_list = target_xmof_driver.cell_matpoly_ptrs();
   double target_ir_rel_error = get_ir_error(target_mesh_wrapper, mat_int_a, mat_int_b,
@@ -395,7 +395,7 @@ int main(int argc, char** argv) {
   Tangram::write_to_gmv(target_mesh_wrapper, 2, tcell_num_mats, tcell_mat_ids,
   tcellmatpoly_list, "target_mesh.gmv");
 
-#ifdef ENABLE_MPI
+#ifdef PORTAGE_ENABLE_MPI
   MPI_Finalize();
 #endif
 }

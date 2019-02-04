@@ -125,7 +125,7 @@ int main(int argc, char** argv) {
   d.set_interpolation_order(order);
 
   // Do the remap
-  d.run();
+  d.run();  // executor argument defaults to nullptr -> serial
 
   // Get the new data - CELL is ignored here
   double * outData;
