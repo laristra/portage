@@ -13,7 +13,7 @@ Please see the license file at the root of this repository, or at:
 #include <cassert>
 
 #include "gtest/gtest.h"
-#ifdef ENABLE_MPI
+#ifdef PORTAGE_ENABLE_MPI
 #include "mpi.h"
 #endif
 
@@ -146,8 +146,7 @@ class MSMDriverTest : public ::testing::Test {
     mmdriver(sourceMeshWrapper, sourceStateWrapper,
              targetMeshWrapper, targetStateWrapper);
     mmdriver.set_remap_var_names(remap_fields);
-    // run on one processor
-    mmdriver.run(false);
+    mmdriver.run();  // run in serial (executor argument defaults to nullptr)
 
     // Set up the operator information if needed
     Portage::vector<std::vector<Portage::Point<Dimension>>> data;
@@ -215,8 +214,7 @@ class MSMDriverTest : public ::testing::Test {
                                   oper8or,
                                   domains_,
                                   data);
-    // run on one processor
-    msmdriver.run(false);
+    msmdriver.run();  // run in serial (executor argument defaults to nullptr)
 
     // Check the answer
     double stdval, err;

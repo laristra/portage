@@ -146,9 +146,9 @@ TEST(Test_MultiVar_Remap, Test1) {
 
   remapper.set_remap_var_names(source_var_names, target_var_names);
 
-  // Execute remapper
-
-  remapper.run(false);
+  // Execute remapper in serial
+  Wonton::SerialExecutor_type executor;
+  remapper.run(&executor);
 
   // Verify that we got the fields we wanted
 
@@ -175,9 +175,9 @@ TEST(Test_MultiVar_Remap, Test1) {
 
   remapper.set_remap_var_names(source_var_names);
 
-  // Execute remapper
+  // Execute remapper in serial
 
-  remapper.run(false);
+  remapper.run();
 
   // Verify that we got the fields we wanted
 
@@ -270,9 +270,9 @@ TEST(Test_MultiVar_Remap, Nested_Meshes) {
 
   remapper1.set_remap_var_names(source_var_names, target_var_names);
 
-  // Execute remapper (distributed=false)
+  // Execute remapper (No arguments implies serial execution)
 
-  remapper1.run(false);
+  remapper1.run();
 
   // Verify that we got the fields we wanted
   for (int c = 0; c < ncells_target; c++) {
@@ -302,9 +302,9 @@ TEST(Test_MultiVar_Remap, Nested_Meshes) {
   remapper2.set_remap_var_names(source_var_names, target_var_names);
   remapper2.set_limiter(Portage::NOLIMITER);
 
-  // Execute remapper (distributed=false)
+  // Execute remapper in serial
 
-  remapper2.run(false);
+  remapper2.run();
 
   // Verify that we got the fields we wanted
   for (int c = 0; c < ncells_target; c++) {

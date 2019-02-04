@@ -10,7 +10,7 @@ Please see the license file at the root of this repository, or at:
 #include <memory>
 
 #include "gtest/gtest.h"
-#ifdef ENABLE_MPI
+#ifdef PORTAGE_ENABLE_MPI
 #include "mpi.h"
 #endif
 
@@ -251,7 +251,7 @@ TEST(MMDriver, ThreeMat2D_1stOrder) {
       d(sourceMeshWrapper, sourceStateWrapper,
         targetMeshWrapper, targetStateWrapper);
   d.set_remap_var_names(remap_fields);
-  d.run(false);
+  d.run();  // No argument implies serial run
 
 
 
@@ -617,7 +617,9 @@ TEST(MMDriver, ThreeMat3D_1stOrder) {
       d(sourceMeshWrapper, sourceStateWrapper,
         targetMeshWrapper, targetStateWrapper);
   d.set_remap_var_names(remap_fields);
-  d.run(false);
+
+  Wonton::SerialExecutor_type executor;
+  d.run(&executor);
 
 
 
