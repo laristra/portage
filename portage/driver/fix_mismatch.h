@@ -156,7 +156,6 @@ class MismatchFixer {
     source_volume_ =
         std::accumulate(source_ent_volumes_.begin(), source_ent_volumes_.end(),
                         0.0);
-
 #ifdef ENABLE_MPI
     global_source_volume_ = 0.0;
     MPI_Allreduce(&source_volume_, &global_source_volume_, 1, MPI_DOUBLE,
@@ -164,7 +163,6 @@ class MismatchFixer {
 #else
     global_source_volume_ = source_volume_;
 #endif
-
 
     // GLOBAL TARGET VOLUME
     ntargetents_ = (onwhat == Entity_kind::CELL) ?
