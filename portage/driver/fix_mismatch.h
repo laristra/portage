@@ -174,7 +174,6 @@ class MismatchFixer {
                     MPI_SUM, mycomm_);
 #endif
 
-
     // GLOBAL TARGET VOLUME
     ntargetents_ = (onwhat == Entity_kind::CELL) ?
         target_mesh_.num_owned_cells() : target_mesh_.num_owned_nodes();
