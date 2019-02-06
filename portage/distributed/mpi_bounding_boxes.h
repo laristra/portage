@@ -16,6 +16,7 @@ Please see the license file at the root of this repository, or at:
 #include <unordered_map>
 #include <map>
 #include <vector>
+#include <set>
 
 #include "portage/support/portage.h"
 #include "wonton/support/Point.h"
@@ -312,12 +313,12 @@ class MPI_Bounding_Boxes {
     
     // multimaterial state info
     int nmats = source_state_flat.num_materials();
-    comm_info_t num_mats_info, num_mat_cells_info;
+    comm_info_t num_mat_cells_info;
 
     // Is the a multimaterial problem? If so we need to pass the cell indices
     // in addition to the field values
     if (nmats>0){
-/*    
+    
       std::cout << "in distribute, this a multimaterial problem with " << nmats << " materials\n";
       
       /////////////////////////////////////////////////////////
@@ -332,12 +333,12 @@ class MPI_Bounding_Boxes {
       std::vector<int> material_ids=source_state_flat.get_material_ids();
       
       // get all material ids across
-      all_material_ids_.resize(num_mats_info.newNum);
+      distributedMaterialIds_.resize(num_mats_info.newNum);
       
       // send all materials to all nodes, num_mats_info.recvCounts is the shape
       sendData(commRank, commSize, MPI_INT, 1, 0, num_mats_info.sourceNum, 0,
         num_mats_info.sendCounts, num_mats_info.recvCounts,
-        material_ids, &all_material_ids_
+        material_ids, &distributedMaterialIds_
       );
       
       /////////////////////////////////////////////////////////
@@ -348,12 +349,12 @@ class MPI_Bounding_Boxes {
       std::vector<int> material_shapes=source_state_flat.get_material_shapes();
       
       // resize the post distribute material id vector
-      all_material_shapes_.resize(num_mats_info.newNum);
+      distributedMaterialShapes_.resize(num_mats_info.newNum);
 
       // send all material shapes to all nodes
       sendData(commRank, commSize, MPI_INT, 1, 0, num_mats_info.sourceNum, 0,
         num_mats_info.sendCounts, num_mats_info.recvCounts,
-        material_shapes, &all_material_shapes_
+        material_shapes, &distributedMaterialShapes_
       );
      
       /////////////////////////////////////////////////////////
@@ -370,12 +371,12 @@ class MPI_Bounding_Boxes {
       std::vector<int> material_cells=source_state_flat.get_material_cells();
       
       // resize the post distribute material id vector
-      all_material_cells_.resize(num_mat_cells_info_.newNum);
+      distributedMaterialCells_.resize(num_mat_cells_info.newNum);
 
       // send material cells to all nodes, but first translate to gid
-      sendData(commRank, commSize, MPI_INT, 1, 0, num_mat_cells_info_.sourceNum, 0,
-        num_mat_cells_info_.sendCounts, num_mat_cells_info_.recvCounts,
-        to_gid(material_cells,sourceCellGlobalIds), &all_material_cells_
+      sendData(commRank, commSize, MPI_INT, 1, 0, num_mat_cells_info.sourceNum, 0,
+        num_mat_cells_info.sendCounts, num_mat_cells_info.recvCounts,
+        to_gid(material_cells, sourceCellGlobalIds), &distributedMaterialCells_
       );
       
       /////////////////////////////////////////////////////////
@@ -391,20 +392,20 @@ class MPI_Bounding_Boxes {
       int running_counter=0;
       
       // loop over material ids on different nodes
-      for (int i=0; i<all_material_ids_.size(); ++i){
+      for (int i=0; i<distributedMaterialIds_.size(); ++i){
       
         // get the current working material
-        int mat_id = all_material_ids_[i];
+        int mat_id = distributedMaterialIds_[i];
         
         // get the current number of material cells for this material
-        int nmat_cells = all_material_shapes_[i];
+        int nmat_cells = distributedMaterialShapes_[i];
         
         // get or create a reference to the correct material cell vector
         std::vector<int>& these_material_cells = material_indices[mat_id];
         
         // loop over the correct number of material cells
         for (int j=0; j<nmat_cells; ++j){
-            these_material_cells.push_back(all_material_cells_[running_counter++]);
+            these_material_cells.push_back(distributedMaterialCells_[running_counter++]);
         }
           
       }
@@ -419,27 +420,21 @@ class MPI_Bounding_Boxes {
         // get the material id
         int m = kv.first;
         
-        // create the maps between gid and index within the material
-        // gidToOldIndexInMaterial_ maps from gid to index in unmerged data
-        // this will be reused to remap data fields
-        create_maps(kv.second, gidToOldIndexInMaterial_[m], gidToNewIndexInMaterial_[m]);
+        // compress the material ids so each gid appears only once per material
+        compress(kv.second, distributedMaterialCellIds_[m]);
         
-        // compute unique gid's with  material
-        // material cells (gid's) have duplicates and need to be merged
-        // this step merges the cell gid's within a material so each cell is unique
-        std::vector<int> mat_cell_indices = merge_data(kv.second, gidToOldIndexInMaterial_[m]);
+        // allocate the flat material cell ids for this material
+        std::vector<int> flatMaterialCellIds;
+        flatMaterialCellIds.reserve(distributedMaterialCellIds_[m].size());
         
-        // material cells are unique within the material but currently gid's
-        // the gid's need to be converted to a local cell id on the partition
-        std::vector<int> local_mat_cell_indices;
-        local_mat_cell_indices.reserve(mat_cell_indices.size());
-        for (auto gid: mat_cell_indices) 
-          local_mat_cell_indices.push_back(gidToNewCell_[gid]);
+        // loop of material cell indices, converting to gid, then flat cell
+        for (auto id: distributedMaterialCellIds_[m]) 
+          flatMaterialCellIds.push_back(gidToFlatCellId_[kv.second[id]]);    
         
         // add the material cells to the state manager
-        source_state_flat.mat_add_cells(kv.first, local_mat_cell_indices);
+        source_state_flat.mat_add_cells(kv.first, flatMaterialCellIds);
+      
       }
-*/      
     }
 
     // Send and receive each field to be remapped
@@ -500,7 +495,9 @@ class MPI_Bounding_Boxes {
         // flat state wrapper while unpacking
                    
         // unpack the field, has the correct data types, but still is not merged
-        source_state_flat.unpack(field_name, tempDistributedField, all_material_ids_, all_material_shapes_);
+        source_state_flat.unpack(field_name, distributedField, 
+          distributedMaterialIds_, distributedMaterialShapes_, 
+          distributedMaterialCellIds_);
       }                   
     } 
 
@@ -561,10 +558,14 @@ class MPI_Bounding_Boxes {
   // maps from gid to distributed cell index and flat cell index  
   std::map<int,int> gidToFlatCellId_;
   
-  // vectors for unpacking multimaterial data
-  std::vector<int> all_material_ids_;
-  std::vector<int> all_material_shapes_;
-  std::vector<int>all_material_cells_;
+  // vectors for distributed multimaterial data
+  std::vector<int> distributedMaterialIds_;
+  std::vector<int> distributedMaterialShapes_;
+  std::vector<int> distributedMaterialCells_;
+  
+  // map for the distributed material cell indices
+  // for each material there is a vector of unique distributed indices
+  std::map<int, std::vector<int>> distributedMaterialCellIds_;
 
   
   /*!
@@ -872,10 +873,72 @@ class MPI_Bounding_Boxes {
 
   /*!
     @brief Compress distributed global id's into the vector of distributed
+    indices(first occurrence for each global id).
+    The global id's are in ascending order.
+           
+    @param[in] distributedGlobalIds  The vector of gid's for each entity post distribution
+    @param[out] distributedIds  The vector of indices of first occurrence in 
+      distributedGlobalIds that produce the global id's in the flat mesh
+    
+    This is called after distribution of gids for each set of material cell gids. 
+    The vector of material cell gids (with potentially duplicate gid's) is used 
+    to create a vector of he first position of occurrence in post distribution 
+    material cell gids vector.
+    
+    The following example will hopefully illustrate what this function is doing.
+    Consider the following post distribution set of material cell gids:
+    `3 | 2 7 3 | 9 10 7 3`
+    where a single vertical bar separates partitions. The original distribution
+    returns all entities in rank order. So the example above consists of three 
+    partitions. The first partition has entity `3`, the second partition has 
+    entities `2, 7, 3`, and the third partition has entities `9,10, 7, 3`. After 
+    merging, in the flat mesh, the  entities will `2, 3, 7, 9, 10`, but we don't 
+    need to return this. The result of the function is 
+    `distributedIds=[1, 0, 2, 4, 5]` . The  returned argument, `distributedIds` 
+    is the indices of the unique global ids in the distributed
+    material cell data. The vector `distributedIds` is used to merge all 
+    subsequent distributed material celldata.
+  */
+  void compress(std::vector<int> const& distributedGlobalIds, 
+    std::vector<int>& distributedIds){
+    
+    // a map for keeping track of what we have already seen
+    std::map<int,int> uniqueGid;
+    
+    // loop over owned cells in the distributed global id's
+    for (int i=0 ; i<distributedGlobalIds.size() ; ++i){
+    
+      // get the current gid
+      int gid = distributedGlobalIds[i];
+      
+      // is this gid new
+      if (uniqueGid.find(gid)==uniqueGid.end()){
+      
+        // make the gid seen
+        uniqueGid[gid]=i;      
+        
+      }
+      
+    }
+
+    // clear and reserve the result
+    distributedIds.clear();
+    distributedIds.reserve(uniqueGid.size());
+       
+    // push the  cells in gid order
+    for (auto const& kv : uniqueGid){
+    
+       // push to the distributed cells id
+      distributedIds.push_back(kv.second);
+    
+    }    
+  }
+  /*!
+    @brief Compress distributed global id's into the vector of distributed
     indices(first occurrence for each global id) and the vector of global id's.
     The global id's are in ascending order of "owned" global id, followed by "ghost"
     global id. In the flat mesh, an entitiy is considered "owned" if it is 
-    owned by any partition, and a "ghost" if it is not owned by any partition
+    owned by any partition, and a "ghost" if it is not owned by any partition.
            
     @param[in] distributedGlobalIds  The vector of gid's for each entity post distribution
     @param[in] distributedNumOwned  The number of entities that are owned after distribution
@@ -902,7 +965,7 @@ class MPI_Bounding_Boxes {
     Consider the following post distribution set of gids:
     `3 | 2 7 | 9 10 || 4* 2* | 5* 4* | 4*`
     where a single vertical bar separates partitions, the double vertical bar
-    separates the owned cells from ghosts and a number followed by an asterisk
+    separates the owned entities from ghosts and a number followed by an asterisk
     means it was a ghost on it's original partition. The original distribution
     returns all owned entities in rank order followed by all ghost entities in
     rank order. So the example above consists of three partitions. The first
@@ -921,7 +984,7 @@ class MPI_Bounding_Boxes {
     data and topological reference vectors. The number of owned entities would
     be `flatNumOwned=5`. Notice that in `flatGlobalIds` the vector consists
     of two ascending sequences `2, 3, 7, 9, 10` followed by `4, 5`. The first
-    sequence is owned entities. The send is ghosts.
+    sequence is owned entities. The second is ghosts.
   */
   void compress_with_ghosts(std::vector<int> const& distributedGlobalIds, 
     int const distributedNumOwned, std::vector<int>& distributedIds, 
@@ -930,7 +993,7 @@ class MPI_Bounding_Boxes {
     // a map for keeping track of what we have already seen
     std::map<int,int> uniqueGid, uniqueGhostGid;
     
-    // loop over owned cells in the distributed global id's
+    // loop over owned entitites in the distributed global id's
     for (int i=0 ; i<distributedNumOwned ; ++i){
     
       // get the current gid
@@ -946,22 +1009,22 @@ class MPI_Bounding_Boxes {
       
     }
     
-    // We have processed owned cells in the distributed mesh, so everything
+    // We have processed owned entitites in the distributed mesh, so everything
     // we have collected to this point is considered owned
     flatNumOwned = uniqueGid.size();
     
-    // push the owned cells first and in gid order
+    // push the owned entitites first and in gid order
     for (auto const& kv : uniqueGid){
     
-      // push to the flat cells gid
+      // push to the flat entitites gid
       flatGlobalIds.push_back(kv.first);
       
-      // push to the distributed cells id
+      // push to the distributed entitites id
       distributedIds.push_back(kv.second);
     
     }
     
-    // loop over owned cells in the distributed global id's
+    // loop over ghost entitites in the distributed global id's
     for (int i=distributedNumOwned ; i<distributedGlobalIds.size() ; ++i){
     
       // get the current gid
@@ -978,13 +1041,13 @@ class MPI_Bounding_Boxes {
       
     }
         
-    // push the owned cells first and in gid order
+    // push the ghost entities in gid order
     for (auto const& kv : uniqueGhostGid){
     
-      // push to the flat cells gid
+      // push to the flat entities gid
       flatGlobalIds.push_back(kv.first);
       
-      // push to the distributed cells id
+      // push to the distributed entities id
       distributedIds.push_back(kv.second);
     
     }
