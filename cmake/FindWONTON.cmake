@@ -3,12 +3,12 @@
 # All rights reserved.
 #------------------------------------------------------------------------------#
 
-# - Find flecsi
-# Find the native FleCSI headers and libraries.
+# - Find wonton
+# Find the native Wonton headers and libraries.
 #
-#  FleCSI_INCLUDE_DIRS - where to find flecsi.h, etc.
-#  FleCSI_LIBRARIES    - List of libraries when using flecsi.
-#  FleCSI_FOUND        - True if flecsi found.
+#  WONTON_INCLUDE_DIRS - where to find wonton.h, etc.
+#  WONTON_LIBRARIES    - List of libraries when using wonton.
+#  WONTON_FOUND        - True if wonton found.
 
 # Look for the header file.
 FIND_PATH(WONTON_INCLUDE_DIR NAMES wonton/support/wonton.h)
@@ -16,7 +16,7 @@ FIND_PATH(WONTON_INCLUDE_DIR NAMES wonton/support/wonton.h)
 # Look for the library.
 FIND_LIBRARY(WONTON_LIBRARY NAMES wonton libwonton)
 
-# handle the QUIETLY and REQUIRED arguments and set FleCSI_FOUND to TRUE if 
+# handle the QUIETLY and REQUIRED arguments and set WONTON_FOUND to TRUE if 
 # all listed variables are TRUE
 INCLUDE(FindPackageHandleStandardArgs)
 FIND_PACKAGE_HANDLE_STANDARD_ARGS(WONTON WONTON_LIBRARY WONTON_INCLUDE_DIR)
