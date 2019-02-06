@@ -76,7 +76,7 @@ class Interpolate_3rdOrder {
   /// Set the name of the interpolation variable and the limiter type
 
   void set_interpolation_variable(std::string const & interp_var_name,
-                                  LimiterType limiter_type = NOLIMITER) {
+                                  Limiter_type limiter_type = NOLIMITER) {
     interp_var_name_ = interp_var_name;
     limiter_type_ = limiter_type;
 
@@ -138,11 +138,11 @@ class Interpolate_3rdOrder {
   TargetMeshType const & target_mesh_;
   StateType const & source_state_;
   std::string interp_var_name_;
-  LimiterType limiter_type_;
+  Limiter_type limiter_type_;
   double const * source_vals_;
 
   // Portage::vector is generalization of std::vector and
-  // Portage::Vector<D*(D+3)/2> is a geometric vector
+  // Wonton::Vector<D*(D+3)/2> is a geometric vector
   Portage::vector<Vector<D*(D+3)/2>> quadfits_;
 };
 
@@ -174,7 +174,7 @@ class Interpolate_3rdOrder<D, Entity_kind::CELL, SourceMeshType, TargetMeshType,
   /// Set the name of the interpolation variable and the limiter type
 
   void set_interpolation_variable(std::string const & interp_var_name,
-                                  LimiterType limiter_type = NOLIMITER) {
+                                  Limiter_type limiter_type = NOLIMITER) {
 
     interp_var_name_ = interp_var_name;
     limiter_type_ = limiter_type;
@@ -240,11 +240,11 @@ class Interpolate_3rdOrder<D, Entity_kind::CELL, SourceMeshType, TargetMeshType,
   TargetMeshType const & target_mesh_;
   StateType const & source_state_;
   std::string interp_var_name_;
-  LimiterType limiter_type_;
+  Limiter_type limiter_type_;
   double const * source_vals_;
 
   // Portage::vector is generalization of std::vector and
-  // Portage::Vector<D> is a geometric vector
+  // Wonton::Vector<D> is a geometric vector
   Portage::vector<Vector<D*(D+3)/2>> quadfits_;
 };
 
@@ -358,7 +358,7 @@ class Interpolate_3rdOrder<D, Entity_kind::NODE, SourceMeshType, TargetMeshType,
   /// Set the name of the interpolation variable and the limiter type
 
   void set_interpolation_variable(std::string const & interp_var_name,
-                                  LimiterType limiter_type = NOLIMITER) {
+                                  Limiter_type limiter_type = NOLIMITER) {
 
     interp_var_name_ = interp_var_name;
     limiter_type_ = limiter_type;
@@ -419,11 +419,11 @@ class Interpolate_3rdOrder<D, Entity_kind::NODE, SourceMeshType, TargetMeshType,
   TargetMeshType const & target_mesh_;
   StateType const & source_state_;
   std::string interp_var_name_;
-  LimiterType limiter_type_;
+  Limiter_type limiter_type_;
   double const * source_vals_;
 
   // Portage::vector is generalization of std::vector and
-  // Portage::Vector<D> is a geometric vector
+  // Wonton::Vector<D> is a geometric vector
   Portage::vector<Vector<D*(D+3)/2>> quadfits_;
 };
 

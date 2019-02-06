@@ -66,19 +66,12 @@ Please see the license file at the root of this repository, or at:
 namespace Portage {
 
 // Point aliases
-template<long D>
-using Point = Wonton::Point<D>;
-using Wonton::Point3;
-using Wonton::Point2;
-using Wonton::Point1;
+/* template<long D> */
+/* using Point = Wonton::Point<D>; */
+/* using Wonton::Point3; */
+/* using Wonton::Point2; */
+/* using Wonton::Point1; */
 
-// Vector aliases
-template<long D>
-using Vector = Wonton::Vector<D>;
-using Wonton::Vector3;
-using Wonton::Vector2;
-
-// Matrix alias
 using Wonton::Matrix;
 
 // useful enums
@@ -91,8 +84,15 @@ using Wonton::Weights_t;
 
 /// Limiter type
 typedef enum {NOLIMITER, BARTH_JESPERSEN}
-  LimiterType;
+  Limiter_type;
 
+/// Fixup options for partially filled cells
+typedef enum {CONSTANT, CONSERVATIVE, SHIFTED_CONSERVATIVE}
+  Partial_fixup_type;
+
+/// Fixup options for empty cells
+typedef enum {LEAVE_EMPTY, EXTRAPOLATE, FILL}
+  Empty_fixup_type;
 
 // Iterators and transforms that depend on Thrust vs. std
 #ifdef THRUST

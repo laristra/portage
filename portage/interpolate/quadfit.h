@@ -19,6 +19,11 @@ Please see the license file at the root of this repository, or at:
 
 // wonton includes
 #include "wonton/support/lsfits.h"
+#include "wonton/support/Point.h"
+#include "wonton/support/Vector.h"
+
+using Wonton::Point;
+using Wonton::Vector;
 
 namespace Portage {
 
@@ -49,7 +54,7 @@ class Limited_Quadfit {
 
   Limited_Quadfit(MeshType const & mesh, StateType const & state,
                    std::string const var_name,
-                   LimiterType limiter_type) :
+                   Limiter_type limiter_type) :
       mesh_(mesh), state_(state),
       var_name_(var_name), limtype_(limiter_type) {
 
@@ -80,7 +85,7 @@ class Limited_Quadfit {
   }
 
  private:
-  LimiterType limtype_;
+  Limiter_type limtype_;
   MeshType const & mesh_;
   StateType const & state_;
   std::string var_name_;
@@ -110,7 +115,7 @@ class Limited_Quadfit<D, Entity_kind::CELL, MeshType, StateType> {
 
   Limited_Quadfit(MeshType const & mesh, StateType const & state,
                    std::string const var_name,
-                   LimiterType limiter_type) :
+                   Limiter_type limiter_type) :
       mesh_(mesh), state_(state), var_name_(var_name),
       limtype_(limiter_type) {
 
@@ -148,7 +153,7 @@ class Limited_Quadfit<D, Entity_kind::CELL, MeshType, StateType> {
   Vector<D*(D+3)/2> operator()(int cellid);
 
  private:
-  LimiterType limtype_;
+  Limiter_type limtype_;
   MeshType const & mesh_;
   StateType const & state_;
   std::string var_name_;
@@ -267,7 +272,7 @@ class Limited_Quadfit<D, Entity_kind::NODE, MeshType, StateType> {
 
   Limited_Quadfit(MeshType const & mesh, StateType const & state,
                    std::string const var_name,
-                   LimiterType limiter_type) :
+                   Limiter_type limiter_type) :
       mesh_(mesh), state_(state), var_name_(var_name),
       limtype_(limiter_type) {
 
@@ -306,7 +311,7 @@ class Limited_Quadfit<D, Entity_kind::NODE, MeshType, StateType> {
 
  private:
 
-  LimiterType limtype_;
+  Limiter_type limtype_;
   MeshType const & mesh_;
   StateType const & state_;
   std::string var_name_;

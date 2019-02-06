@@ -14,7 +14,7 @@ Please see the license file at the root of this repository, or at:
 #include "portage/support/portage.h"
 #include "portage/search/BoundBox.h"
 #include "portage/search/kdtree.h"
-
+#include "wonton/support/Point.h"
 
 namespace Portage {
 
@@ -111,7 +111,7 @@ class SearchKDTree<D, Entity_kind::CELL, SourceMeshType, TargetMeshType> {
 
     // find bounding boxes for all cells
     for (int c = 0; c < numCells; ++c) {
-      std::vector<Point<D>> cell_coord;
+      std::vector<Wonton::Point<D>> cell_coord;
       sourceMesh_.cell_get_coordinates(c, &cell_coord);
       gk::IsotheticBBox<D> bb;
       for (const auto& cc : cell_coord) {
@@ -135,7 +135,7 @@ class SearchKDTree<D, Entity_kind::CELL, SourceMeshType, TargetMeshType> {
   */
   std::vector<int> operator() (const int cellId) const {
     // find bounding box for target cell
-    std::vector<Point<D>> cell_coord;
+    std::vector<Wonton::Point<D>> cell_coord;
     targetMesh_.cell_get_coordinates(cellId, &cell_coord);
     gk::IsotheticBBox<D> bb;
     for (const auto& cc : cell_coord)
@@ -199,7 +199,7 @@ class SearchKDTree<D, Entity_kind::NODE, SourceMeshType, TargetMeshType> {
 
     // find bounding boxes for all cells
     for (int n = 0; n < numNodes; ++n) {
-      std::vector<Point<D>> dual_cell_coord;
+      std::vector<Wonton::Point<D>> dual_cell_coord;
       sourceMesh_.dual_cell_get_coordinates(n, &dual_cell_coord);
       gk::IsotheticBBox<D> bb;
       for (const auto& cc : dual_cell_coord)
@@ -227,7 +227,7 @@ class SearchKDTree<D, Entity_kind::NODE, SourceMeshType, TargetMeshType> {
   */
   std::vector<int> operator() (const int nodeId) const {
     // find bounding box for dual cell of target node
-    std::vector<Point<D>> dual_cell_coord;
+    std::vector<Wonton::Point<D>> dual_cell_coord;
     targetMesh_.dual_cell_get_coordinates(nodeId, &dual_cell_coord);
     gk::IsotheticBBox<D> bb;
     for (const auto& cc : dual_cell_coord)

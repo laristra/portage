@@ -247,6 +247,7 @@ TEST(MMDriver, ThreeMat2D) {
       d(sourceMeshWrapper, sourceStateWrapper,
         targetMeshWrapper, targetStateWrapper);
   d.set_remap_var_names(remap_fields);
+  d.set_limiter(Portage::Limiter_type::NOLIMITER);
   d.run(false);
 
 
@@ -628,6 +629,7 @@ TEST(MMDriver, ThreeMat3D) {
       d(sourceMeshWrapper, sourceStateWrapper,
         targetMeshWrapper, targetStateWrapper);
   d.set_remap_var_names(remap_fields);
+  d.set_limiter(Portage::Limiter_type::NOLIMITER);
   d.run(false);
 
 

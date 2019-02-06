@@ -25,8 +25,9 @@ extern "C" {
 #include "tangram/driver/CellMatPoly.h"
 #include "tangram/driver/driver.h"
 #include "tangram/support/MatPoly.h"
-#endif
+#endif 
 
+#include "wonton/support/Point.h"
 
 namespace Portage {
 
@@ -154,7 +155,7 @@ class IntersectR2D<Entity_kind::CELL, SourceMeshType, SourceStateType, TargetMes
 
   std::vector<Weights_t>
   operator() (const int tgt_cell, const std::vector<int> src_cells) const {
-    std::vector<Point<2>> target_poly;
+    std::vector<Wonton::Point<2>> target_poly;
     targetMeshWrapper.cell_get_coordinates(tgt_cell, &target_poly);
 
     int nsrc = src_cells.size();
@@ -171,11 +172,14 @@ class IntersectR2D<Entity_kind::CELL, SourceMeshType, SourceStateType, TargetMes
       std::vector<int> cellmats;
       sourceStateWrapper.cell_get_mats(s, &cellmats);
 
-      if (!nmats || (nmats == 1 && cellmats[0] == matid_)) {
-        // pure cell containing this material - intersect with polygon
-        // representing the cell
+      if (!nmats || (matid_ == -1) || (nmats == 1 && cellmats[0] == matid_)) {
+        // ---------- Intersection with pure cell ---------------
+        // nmats == 0 -- no materials ==> single material
+        // matid_ == -1 -- intersect with mesh not a particular material
+        // nmats == 1 && cellmats[0] == matid -- intersection with pure cell
+        //                                       containing matid
 
-        std::vector<Point<2>> source_poly;
+        std::vector<Wonton::Point<2>> source_poly;
         sourceMeshWrapper.cell_get_coordinates(s, &source_poly);
 
         this_wt.weights = intersect_polys_r2d(source_poly, target_poly);
@@ -201,8 +205,8 @@ class IntersectR2D<Entity_kind::CELL, SourceMeshType, SourceStateType, TargetMes
 
           this_wt.weights.resize(3, 0.0);
           for (int j = 0; j < matpolys.size(); j++) {
-            std::vector<Tangram::Point<2>> tpnts = matpolys[j].points();
-            std::vector<Point<2>> source_poly;
+            std::vector<Wonton::Point<2>> tpnts = matpolys[j].points();
+            std::vector<Wonton::Point<2>> source_poly;
             source_poly.reserve(tpnts.size());
             for (auto const & p : tpnts) source_poly.push_back(p);
 
@@ -214,7 +218,7 @@ class IntersectR2D<Entity_kind::CELL, SourceMeshType, SourceStateType, TargetMes
         }
       }
 #else
-      std::vector<Point<2>> source_poly;
+      std::vector<Wonton::Point<2>> source_poly;
       sourceMeshWrapper.cell_get_coordinates(s, &source_poly);
 
       this_wt.weights = intersect_polys_r2d(source_poly, target_poly);
@@ -300,7 +304,7 @@ class IntersectR2D<Entity_kind::NODE, SourceMeshType, SourceStateType, TargetMes
 
   std::vector<Weights_t>
   operator() (const int tgt_node, const std::vector<int> src_nodes) const {
-    std::vector<Point<2>> target_poly;
+    std::vector<Wonton::Point<2>> target_poly;
     targetMeshWrapper.dual_cell_get_coordinates(tgt_node, &target_poly);
 
     int nsrc = src_nodes.size();
@@ -308,7 +312,7 @@ class IntersectR2D<Entity_kind::NODE, SourceMeshType, SourceStateType, TargetMes
     int ninserted = 0;
     for (int i = 0; i < nsrc; i++) {
       int s = src_nodes[i];
-      std::vector<Point<2>> source_poly;
+      std::vector<Wonton::Point<2>> source_poly;
       sourceMeshWrapper.dual_cell_get_coordinates(s, &source_poly);
 
       Weights_t & this_wt = sources_and_weights[ninserted];

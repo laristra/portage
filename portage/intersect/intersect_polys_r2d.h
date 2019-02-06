@@ -17,7 +17,7 @@ extern "C" {
 }
 
 #include "portage/support/portage.h"
-
+#include "wonton/support/Point.h"
 
 namespace Portage {
 
@@ -25,8 +25,8 @@ namespace Portage {
 // triangular decomposition of a target polygon
 
 std::vector<double>
-intersect_polys_r2d(std::vector<Point<2>> const & source_poly,
-                    std::vector<Point<2>> const & target_poly) {
+intersect_polys_r2d(std::vector<Wonton::Point<2>> const & source_poly,
+                    std::vector<Wonton::Point<2>> const & target_poly) {
 
   std::vector<double> moments(3, 0);
   bool src_convex = true;
@@ -119,14 +119,14 @@ intersect_polys_r2d(std::vector<Point<2>> const & source_poly,
       // computed by the area weighted sum of centroids of any
       // triangulation of the polygon
       bool center_point_ok = true;
-      Point<2> cen(0.0, 0.0);
+      Wonton::Point<2> cen(0.0, 0.0);
       r2d_rvec2 cenr2d;
       cenr2d.xy[0] = 0.0; cenr2d.xy[1] = 0.0;
       double area_sum = 0.0;
       for (int i = 1; i < size2; ++i) {
         double area = r2d_orient(verts2[0], verts2[i], verts2[(i+1)%size2]);
         area_sum += area;
-        Point<2> tricen =
+        Wonton::Point<2> tricen =
             (target_poly[0] + target_poly[i] + target_poly[(i+1)%size2])/3.0;
         cen += area*tricen;
       }

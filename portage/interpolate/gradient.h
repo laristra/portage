@@ -19,12 +19,17 @@
 
 // wonton includes
 #include "wonton/support/lsfits.h"
+#include "wonton/support/Point.h"
+#include "wonton/support/Vector.h"
 
 #ifdef HAVE_TANGRAM
 #include "tangram/driver/driver.h"
 #include "tangram/driver/CellMatPoly.h"
 #include "tangram/support/MatPoly.h"
 #endif
+
+using Wonton::Point;
+using Wonton::Vector;
 
 namespace Portage {
 
@@ -63,14 +68,14 @@ class Limited_Gradient {
 
   Limited_Gradient(MeshType const & mesh, StateType const & state,
                    std::string const var_name,
-                   LimiterType limiter_type,
+                   Limiter_type limiter_type,
                    std::shared_ptr<InterfaceReconstructor> ir)
  : mesh_(mesh), state_(state), var_name_(var_name), limtype_(limiter_type) {}
 #endif
 
   Limited_Gradient(MeshType const & mesh, StateType const & state,
                    std::string const var_name,
-                   LimiterType limiter_type)
+                   Limiter_type limiter_type)
  : mesh_(mesh), state_(state), var_name_(var_name), limtype_(limiter_type) {}
 
   /// @todo Seems to be needed when using this in a Thrust transform call?
@@ -95,7 +100,7 @@ class Limited_Gradient {
   }
 
  private:
-  LimiterType limtype_;
+  Limiter_type limtype_;
   std::string var_name_;
   int matid_;
   MeshType const & mesh_;
@@ -131,7 +136,7 @@ class Limited_Gradient<D, Entity_kind::CELL, MeshType, StateType,
   Limited_Gradient(MeshType const & mesh,
                    StateType const & state,
                    std::string const var_name,
-                   LimiterType limiter_type,
+                   Limiter_type limiter_type,
                    std::shared_ptr<InterfaceReconstructor> ir)
     : mesh_(mesh), state_(state), vals_(nullptr), var_name_(var_name),
       limtype_(limiter_type) {
@@ -161,7 +166,7 @@ class Limited_Gradient<D, Entity_kind::CELL, MeshType, StateType,
   Limited_Gradient(MeshType const & mesh,
                    StateType const & state,
                    std::string const var_name,
-                   LimiterType limiter_type)
+                   Limiter_type limiter_type)
     : mesh_(mesh),state_(state),vals_(nullptr) {
 
       // Collect and keep the list of neighbors for each CELL as it may
@@ -191,7 +196,7 @@ class Limited_Gradient<D, Entity_kind::CELL, MeshType, StateType,
     }
 
     void set_interpolation_variable(std::string const var_name,
-                                    LimiterType limtype) {
+                                    Limiter_type limtype) {
       this->var_name_=var_name;
       this->limtype_=limtype;
       // Extract the field data from the statemanager
@@ -205,7 +210,7 @@ class Limited_Gradient<D, Entity_kind::CELL, MeshType, StateType,
 
   private:
     std::vector<std::vector<int>> cell_neighbors_;
-    LimiterType limtype_;
+    Limiter_type limtype_;
     std::string var_name_;
     int matid_;
     MeshType const & mesh_;
@@ -326,7 +331,7 @@ InterfaceReconstructorType, Matpoly_Splitter, Matpoly_Clipper>::operator()(int c
 
       // Find min and max values among all neighbors (exlude the first element
       // in nbrids because it corresponds to the cell itself, not a neighbor)
-      for (int i = 1; i < nbrids.size(); ++i) {
+      for (int i = 1; i < ls_vals.size(); ++i) {
         minval = std::min(ls_vals[i], minval);
         maxval = std::max(ls_vals[i], maxval);
       }
@@ -394,7 +399,7 @@ InterfaceReconstructorType, Matpoly_Splitter, Matpoly_Clipper>::operator()(int c
 
   Limited_Gradient(MeshType const & mesh, StateType const & state,
                    std::string const var_name,
-                   LimiterType limiter_type)
+                   Limiter_type limiter_type)
     : mesh_(mesh),state_(state),vals_(nullptr) {
       int nnodes = this->mesh_.num_entities(Entity_kind::NODE);
       node_neighbors_.resize(nnodes);
@@ -409,7 +414,7 @@ InterfaceReconstructorType, Matpoly_Splitter, Matpoly_Clipper>::operator()(int c
     }
 
     void set_interpolation_variable(std::string const var_name,
-                                    LimiterType limtype) {
+                                    Limiter_type limtype) {
       this->var_name_=var_name;
       this->limtype_=limtype;
       this->state_.mesh_get_data(Entity_kind::NODE, this->var_name_, &this->vals_);
@@ -418,7 +423,7 @@ InterfaceReconstructorType, Matpoly_Splitter, Matpoly_Clipper>::operator()(int c
     Vector<D> operator() (int nodeid);
 
   private:
-    LimiterType limtype_;
+    Limiter_type limtype_;
     std::string var_name_;
     int matid_;
     MeshType const & mesh_;
