@@ -1,4 +1,4 @@
-# Simple Mesh Example    {#example}
+# Portage Examples  {#example}
 
 Portage provides very crude mesh and state manager frameworks aptly
 called `Simple_Mesh` and `Simple_State` through its support package, 
@@ -10,7 +10,7 @@ frameworks, and its wrappers `Wonton::Simple_Mesh_Wrapper` and
 `Wonton::Simple_State_Wrapper`, can be found in the
 [Wonton](https://github.com/laristra/wonton) documentation.
 
-# Wrappers
+## Wrappers
 
 As mentioned on the [Concepts](@ref concepts) page, the search,
 intersect, and interpolate actions in portage all operate on
@@ -31,7 +31,61 @@ term _sides_, _corners_, and _wedges_ are utilized in node-centered
 remapping, but are also _required_ if there are cells with non-planar
 faces in the remap.  
 
-# Applications and Tests
+# Putting it all Together
+
+Let us illustrate the usage of Portage with a few lines of code. 
+First, we create two square meshes in a unitary domain with 16 and
+25 computational cells, respectively:
+
+~~~c++
+Wonton::Simple_Mesh sourceMesh = std::make_shared<Simple_Mesh>(0.0, 0.0, 1.0, 1.0, 4, 4);
+Wonton::Simple_Mesh targetMesh = std::make_shared<Simple_Mesh>(0.0, 0.0, 1.0, 1.0, 5, 5);
+~~~
+
+Then, we wrap the meshes with a Portage-compatible wrapper
+
+~~~c++
+Wonton::Simple_Mesh_Wrapper sourceMeshWrapper(*sourceMesh);
+Wonton::Simple_Mesh_Wrapper targetMeshWrapper(*targetMesh);
+~~~
+
+Assuming that we have cell data `inputData` for the source mesh, 
+we need to register data with state wrappers
+
+~~~c++
+Wonton::Simple_State_Wrapper<Wonton::Simple_Mesh_Wrapper> 
+		sourceStateWrapper(sourceMeshWrapper);
+	sourceStateWrapper.add(std::make_shared<Wonton::StateVectorUni<>>
+		("celldata", Entity_kind::CELL, inputData));
+Wonton::Simple_State_Wrapper<Wonton::Simple_Mesh_Wrapper> 
+		targetStateWrapper(targetMeshWrapper);
+	targetStateWrapper.add(std::make_shared<Wonton::StateVectorUni<>>
+		("celldata", Entity_kind::CELL, targetData));
+~~~
+
+Now, we are ready to call a driver to perform remap of `inputData` from 
+`sourceMesh` to the `targetMesh`: 
+
+~~~c++
+Portage::MMDriver<
+	Portage::SearchKDTree,
+	Portage::IntersectR3D,
+	Portage::Interpolate_2ndOrder,
+	dim,
+	Wonton::Simple_Mesh_Wrapper,
+	Wonton::Simple_State_Wrapper<Simple_Mesh_Wrapper>>
+		d(sourceMeshWrapper, sourceStateWrapper,
+			targetMeshWrapper, targetStateWrapper);
+	d.set_remap_var_names(remap_fields);
+	d.run(false);
+~~~
+
+Here, `dim=2` is referring to number of spatial dimensions of the problem, 
+`remap_fileds` is a vector containing a string "celldata", and the first 
+three arguments represent particular methods of search, intersect, and
+interpolate steps as described in [Concepts](@ref concepts).
+
+# Existing Applications and Tests
 
 Nearly all of the generic unit tests have been designed to work with
 the `Wonton::Simple_Mesh_Wrapper` and `Wonton::Simple_State_Wrapper`
@@ -65,6 +119,7 @@ An error of remap is calculated by comparing remapped values to exact values in 
 cell-centroids/nodes on a target mesh and the error is printed to standard output. 
 The remapped field on a target mesh is saved into a file `output.exo` 
 if it is not specified otherwise. The app can be run using e.g.     
+
 ~~~sh
 portageapp_jali \
     --dim=3 \
@@ -75,6 +130,7 @@ portageapp_jali \
 ~~~
 
 More options can by explored by executing 
+
 ~~~sh
 portageapp_jali --help
 
@@ -93,12 +149,12 @@ to perform an interface reconstruction
 on a source mesh. Reconstructed material polygons are further intersected with cells on a target 
 mesh. Therefore, an input file specifying volume fractions (and optionally material centroids 
 for MOF) is required in addition to specification of the meshes and multiple material fields. 
-The file can be generated e.g. by a `vfgen` application in [Tangram](https://github.com/laristra/tangram).
+
 ~~~sh
 portageapp_multimat_jali \
     --dim=2 \
     --source_file=reg10x10.exo \
     --target_file=polymesh_10x10.exo \
-    --material_fields=5*x-y,2*x+4+3*y,-2*x-y \
+    --material_fields='5*x-y,2*x+4+3*y,-2*x-y' \
     --material_file=reg10x10.bvf 
 ~~~ 
