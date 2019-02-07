@@ -4,7 +4,7 @@ Portage provides very crude mesh and state manager frameworks aptly
 called `Simple_Mesh` and `Simple_State` through its support package, 
 [Wonton](https://github.com/laristra/wonton).  The goal of these frameworks
 is to show how one can wrap their favorite mesh and state manager for
-use with portage - _they should not be used in any production sense._
+use with Portage - _they should not be used in any production sense._
 The details on the `Wonton::Simple_Mesh` and `Wonton::Simple_State` 
 frameworks, and its wrappers `Wonton::Simple_Mesh_Wrapper` and 
 `Wonton::Simple_State_Wrapper`, can be found in the
@@ -13,10 +13,11 @@ frameworks, and its wrappers `Wonton::Simple_Mesh_Wrapper` and
 ## Wrappers
 
 As mentioned on the [Concepts](@ref concepts) page, the search,
-intersect, and interpolate actions in portage all operate on
-mesh and particle wrappers for geometry and topology and state 
-wrappers for data access. The reason for this is that these
-three steps may need to ask for some information that may not be
+intersect, and interpolate actions in Portage all operate on
+mesh and particle wrappers for geometry and topology access, 
+and state wrappers for data access. The reason for using wrapper 
+classes instead of the native classes directly is that Portage
+may need some information that may not be
 readily available within the original mesh/particle and state
 frameworks, but could be constructed within a wrapper.
 
@@ -81,7 +82,7 @@ Portage::MMDriver<
 ~~~
 
 Here, `dim=2` is referring to number of spatial dimensions of the problem, 
-`remap_fileds` is a vector containing a string "celldata", and the first 
+`remap_fields` is a vector containing a string "celldata", and the first 
 three arguments represent particular methods of search, intersect, and
 interpolate steps as described in [Concepts](@ref concepts).
 
@@ -89,7 +90,7 @@ interpolate steps as described in [Concepts](@ref concepts).
 
 Nearly all of the generic unit tests have been designed to work with
 the `Wonton::Simple_Mesh_Wrapper` and `Wonton::Simple_State_Wrapper`
-data structures when a full-up mesh is required.  These should serve
+data structures when a mesh with a topology is required. These should serve
 as examples of the types of things one may want to do with a mesh and
 state framework.
 
@@ -99,11 +100,11 @@ Better examples of how to use these wrappers to actually do a remap of
 field data are in the application tests.  In particular, the
 `app/simple_mesh_app/simple_mesh_app.cc` program shows how to wrap
 mesh and state objects, adds some field data to the source state, and
-utilize `Portage::Driver` with various search, intersect, and
-interpolate algorithms to perform the remap.  The `Portage::Driver` is
+utilize \ref Portage::MMDriver with various search, intersect, and
+interpolate algorithms to perform the remap.  The `Portage::MMDriver` is
 templated on mesh wrapper type and state wrapper type, and can be used
-with other frameworks.  It need not be used at all, but is a nice
-starting point for writing one's own remap application.
+with other frameworks. `Portage::MMDriver` and `Portage::SwarmDriver` 
+are a good starting point for writing one's own remap application.
 
 ## Portageapp_jali
 
@@ -114,7 +115,9 @@ unstructured meshes in 2D and 3D, respectively.
 ![Visualization of a source mesh (red) and a part of a target mesh (black) with remapped data using Paraview.](doxygen/images/jaliapp_example.png)
 
 The app allow users to specify an analytic field on a source mesh. This is done 
-by an algebraic expression in the standard input, see options and examples bellow.   
+by an algebraic expression in the standard input, see options and examples bellow. 
+Alternatively, the app can remap all the fields that are on a source mesh that is 
+read from file.    
 An error of remap is calculated by comparing remapped values to exact values in the 
 cell-centroids/nodes on a target mesh and the error is printed to standard output. 
 The remapped field on a target mesh is saved into a file `output.exo` 
@@ -149,6 +152,7 @@ to perform an interface reconstruction
 on a source mesh. Reconstructed material polygons are further intersected with cells on a target 
 mesh. Therefore, an input file specifying volume fractions (and optionally material centroids 
 for MOF) is required in addition to specification of the meshes and multiple material fields. 
+For now, this app works only in serial.
 
 ~~~sh
 portageapp_multimat_jali \
