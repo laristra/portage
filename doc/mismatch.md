@@ -135,7 +135,7 @@ and partially filled cells, the algorithm has these main steps:
 
 ### Empty Layers Detection
 
-The algorithms labels empty cells starting from
+The algorithms labels empty *target* cells starting from
 completely filled or partially filled cells and fanning out. Completely or
 partially filled are labeled as belonging to layer 0; subsequent
 layers are built up of empty cells going outward. Empty cells that
@@ -150,7 +150,7 @@ Layers of target mesh (blue) detected and labeled
 
 ### Filling Empty Cells
 
-The calling application may choose to leave the empty cells untouched
+The calling application may choose to leave the empty target cells untouched
 [Portage::Empty_fixup_type::LEAVE_EMPTY](\ref Portage::LEAVE_EMPTY) or
 to fill it using extrapolation
 [Portage::Empty_fixup_type::EXTRAPOLATE](\ref Portage::EXTRAPOLATE).
@@ -187,7 +187,8 @@ proportional to fractional volume of the cell with respect to the
 total mesh volume.  \\[ \\delta{U}_i =
 \\Delta{U}\\frac{|\\Omega^t_i|}{\\sum_k|\\Omega^t_k|} \\]
 
-If the calling application has specified global bounds for the field,
+If the calling application has specified global bounds for the field
+(as arguments to the Portage::MismatchFixer::fix_mismatch method)
 then the amount that is added (or subtracted) is capped so as to not
 violate these bounds; then the global deficit and the deficit for
 subsequent cells is recalculated. The algorithm may require multiple
