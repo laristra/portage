@@ -87,7 +87,7 @@ typedef enum {NOLIMITER, BARTH_JESPERSEN}
   Limiter_type;
 
 /// Fixup options for partially filled cells
-typedef enum {CONSTANT, CONSERVATIVE, SHIFTED_CONSERVATIVE}
+typedef enum {CONSTANT, LOCALLY_CONSERVATIVE, SHIFTED_CONSERVATIVE}
   Partial_fixup_type;
 
 /// Fixup options for empty cells
