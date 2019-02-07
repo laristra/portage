@@ -148,7 +148,7 @@ cmake \
     -D ENABLE_APP_TESTS=True \
     -D ENABLE_MPI=True \
     -D Jali_DIR:FILEPATH=$JALI_INSTALL_PREFIX/lib \
-    -D TANGRAM_DIR:FILEPATH=/usr/projects/ngc/private/tangram/0.9.1-intel-17.0.6-openmpi-2.1.2 \
+    -D TANGRAM_DIR:FILEPATH=/usr/projects/ngc/private/tangram/08ee5046bbc-intel-17.0.6-openmpi-2.1.2 \
     -D XMOF2D_DIR:FILEPATH=/usr/projects/ngc/private/xmof2d/0.9.1-intel-17.0.6/share/cmake \
     -D Boost_INCLUDE_DIR:PATH=$TPL_INSTALL_PREFIX/include \
     -D LAPACKE_DIR=$LAPACKE_DIR \
@@ -167,7 +167,7 @@ Execute the following from the portage root directory:
 . /usr/share/lmod/lmod/init/sh
 module load intel/17.0.4 openmpi/2.1.2 cmake
 JALI_INSTALL_PREFIX=/usr/projects/ngc/private/jali/1.0.0-intel-17.0.4-openmpi-2.1.2
-TANGRAM_INSTALL_PREFIX=/usr/projects/ngc/private/tangram/0.9.1-intel-17.0.4-openmpi-2.1.2
+TANGRAM_INSTALL_PREFIX=/usr/projects/ngc/private/tangram/08ee5046bbc-intel-17.0.4-openmpi-2.1.2
 XMOF2D_INSTALL_PREFIX=/usr/projects/ngc/private/xmof2d/0.9.1-intel-17.0.4
 LAPACKE_DIR=/usr/projects/ngc/private/lapack/3.8.0-patched-intel-17.0.4
 mkdir build
@@ -196,7 +196,7 @@ Thrust and TCMalloc in your build.  The cmake command for this is:
 . /usr/share/lmod/lmod/init/sh
 module load intel/17.0.4 openmpi/2.1.2 cmake
 JALI_INSTALL_PREFIX=/usr/projects/ngc/private/jali/1.0.0-intel-17.0.4-openmpi-2.1.2
-TANGRAM_INSTALL_PREFIX=/usr/projects/ngc/private/tangram/0.9.1-intel-17.0.4-openmpi-2.1.2
+TANGRAM_INSTALL_PREFIX=/usr/projects/ngc/private/tangram/08ee5046bbc-intel-17.0.4-openmpi-2.1.2
 XMOF2D_INSTALL_PREFIX=/usr/projects/ngc/private/xmof2d/0.9.1-intel-17.0.4-openmpi-2.1.2
 LAPACKE_DIR=/usr/projects/ngc/private/lapack/3.8.0-patched-intel-17.0.4
 mkdir build-thrust
@@ -230,7 +230,7 @@ export MODULEPATH=""
 . /opt/local/packages/Modules/default/init/sh
 module load intel/18.0.1 openmpi/2.1.2 cmake
 JALI_INSTALL_PREFIX=/usr/local/codes/ngc/private/jali/1.0.0-intel-18.0.1-openmpi-2.1.2
-TANGRAM_INSTALL_PREFIX=/usr/local/codes/ngc/private/tangram/0.9.1-intel-18.0.1-openmpi-2.1.2
+TANGRAM_INSTALL_PREFIX=/usr/local/codes/ngc/private/tangram/08ee5046bbc-intel-18.0.1-openmpi-2.1.2
 XMOF2D_INSTALL_PREFIX=/usr/local/codes/ngc/private/xmof2d/0.9.1-intel-18.0.1
 LAPACKE_DIR=/usr/local/codes/ngc/private/lapack/3.8.0-patched-intel-18.0.1/
 LAPACKE_INCLUDE_DIR=$LAPACKE_DIR/include
@@ -264,7 +264,7 @@ export MODULEPATH=""
 module load gcc/6.4.0 openmpi/2.1.2 cmake
 FLECSI_INSTALL_PREFIX=/usr/local/codes/ngc/private/flecsi/374b56b-gcc-6.4.0
 FLECSISP_INSTALL_PREFIX=/usr/local/codes/ngc/private/flecsi-sp/e78c594-gcc-6.4.0
-TANGRAM_INSTALL_PREFIX=/usr/local/codes/ngc/private/tangram/0.9.1-gcc-6.4.0-openmpi-2.1.2
+TANGRAM_INSTALL_PREFIX=/usr/local/codes/ngc/private/tangram/08ee5046bbc-gcc-6.4.0-openmpi-2.1.2
 XMOF2D_INSTALL_PREFIX=/usr/local/codes/ngc/private/xmof2d/0.9.1-gcc-6.4.0
 LAPACKE_DIR=/usr/local/codes/ngc/private/lapack/3.8.0-patched-gcc-6.4.0
 LAPACKE_INCLUDE_DIR=$LAPACKE_DIR/include

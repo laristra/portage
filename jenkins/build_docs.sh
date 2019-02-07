@@ -16,7 +16,7 @@ openmpi_version=2.1.2
 NGC_DIR=/usr/local/codes/ngc
 
 JALI_INST=${NGC_DIR}/private/jali/${JALI_VERSION}-gcc-6.4.0-openmpi-${openmpi_version}
-TANGRAM_INSTALL_PREFIX=${NGC_DIR}/private/tangram/34fc65e27e0-gcc-6.4.0-openmpi-${openmpi_version}
+TANGRAM_INSTALL_PREFIX=${NGC_DIR}/private/tangram/08ee5046bbc-gcc-6.4.0-openmpi-${openmpi_version}
 XMOF_INSTALL_PREFIX=${NGC_DIR}/private/xmof2d/529f2dcdbe4-gcc-6.4.0-openmpi-${openmpi_version}/share/cmake
 
 
