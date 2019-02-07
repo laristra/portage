@@ -111,7 +111,7 @@ in a distributed mesh):
 
 \\[ \mbox{Target} \; \mbox{Volume} = V^t = \\sum_j|\\Omega^t_i| \\]
 \\[ \mbox{Source} \; \mbox{Volume} = V^s = \\sum_i|\\Omega^s_j| \\]
-\\[ \mbox{Intersection} \; \mbox{Volume} = V^i = \\sum_i\\sum_j|\\Omega^t_i \\cap \\{\\Omega^s_j\\}| \\]
+\\[ \mbox{Intersection} \; \mbox{Volume} = V^i = \\sum_i\\sum_j|\\Omega^t_i \\cap \\Omega^s_j| \\]
 
 If \\( V^t \\gt V^i \\), we can conclude that one or more cells of
 the target mesh are not covered by source mesh. If \\( V^s \\gt V^i
@@ -136,7 +136,8 @@ and partially filled cells, the algorithm has these main steps:
 ### Empty Layers Detection
 
 The algorithms labels empty *target* cells starting from
-completely filled or partially filled cells and fanning out. Completely or
+completely filled or partially filled cells and fanning out (across
+faces, edges and vertices). Completely or
 partially filled are labeled as belonging to layer 0; subsequent
 layers are built up of empty cells going outward. Empty cells that
 border at least one cell that belongs to layer *N*  are labeled as
@@ -153,7 +154,10 @@ Layers of target mesh (blue) detected and labeled
 The calling application may choose to leave the empty target cells untouched
 [Portage::Empty_fixup_type::LEAVE_EMPTY](\ref Portage::LEAVE_EMPTY) or
 to fill it using extrapolation
-[Portage::Empty_fixup_type::EXTRAPOLATE](\ref Portage::EXTRAPOLATE).
+[Portage::Empty_fixup_type::EXTRAPOLATE](\ref
+Portage::EXTRAPOLATE). The chosen option for each variable may be communicated to the
+mismatch algorithm through an argument to the \ref
+Portage::MismatchFixer::fix_mismatch method.
 
 If the application asks for empty cells to be filled by extrapolation,
 the algorithm populates them layer by layer in ascending order. The
@@ -173,11 +177,13 @@ step [Portage::Partial_fixup_type::CONSTANT](\ref Portage::CONSTANT),
 restoring conservation in partially filled cells
 ([Portage::Partial_fixup_type::LOCALLY_CONSERVATIVE](\ref Portage::LOCALLY_CONSERVATIVE),
 by scaling the source contribution by
-the reciprocal of \\( \\sum_j|\\Omega^t_i \\cap \\{\\Omega^s_j\\}| \\)
+the reciprocal of \\( \\sum_j|\\Omega^t_i \\cap \\Omega^s_j| \\)
 instead of the reciprocal of \\( |\\Omega^t_i| \\) ) or by restoring
 conservation through a global distribution of the excess
 ([Portage::Partial_fixup_type::SHIFTED_CONSERVATIVE](\ref Portage::SHIFTED_CONSERVATIVE),
-described below).
+described below). The chosen option for each variable may be communicated to the
+mismatch algorithm through an argument to the \ref
+Portage::MismatchFixer::fix_mismatch method.
 
 Given a conservation error of \\( \\Delta{U} \\), the algorithm for
 the [Portage::Partial_fixup_type::SHIFTED_CONSERVATIVE](\ref Portage::SHIFTED_CONSERVATIVE)
@@ -193,7 +199,9 @@ then the amount that is added (or subtracted) is capped so as to not
 violate these bounds; then the global deficit and the deficit for
 subsequent cells is recalculated. The algorithm may require multiple
 iterations for complete redistribution due to bounds
-preservation. In the example driver (Portage::MMDriver), the bounds
+preservation. The number of iterations to take and the tolerance to
+converge to can be passed for each variable as arguments to the \ref
+Portage::MismatchFixer::fix_mismatch method. In the example driver (Portage::MMDriver), the bounds
 are computed from the source field, with a little slack for constant
 fields, if the global bounds are not specified. 
 
