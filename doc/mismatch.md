@@ -47,7 +47,7 @@ Consider a target cell, \\( \\Omega^t_i \\) that is *fully covered* by
 \\Omega^s_j \\}_{j=1,n} \\). Assume that the field value at each of
 the source cells is \\( u^s_j \\). The sum of the intersection volumes
 is \\( \\sum_j |\\Omega^t_i \\cap \\Omega^s_j| \\) and equals the
- target cell volume \\( |\Omega^t_i \\).
+ target cell volume \\( |\\Omega^t_i \\).
 
 Considering a first order accurate interpolation, the accumulated
 contribution of the overlapping source cells to the target cell is \\(
