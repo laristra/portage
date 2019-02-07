@@ -214,8 +214,7 @@ using the three options. The two meshes have the same global
 volume and therefore, we expect that a good remap will conserve mass
 and preserve the constant. If the domains had different volumes, the
 constant in the last case
-(>[Portage::Partial_fixup_type::SHIFTED_CONSERVATIVE](\ref
-Portage::SHIFTED_CONSERVATIVE) would be different from the input constant.
+([Portage::Partial_fixup_type::SHIFTED_CONSERVATIVE](\ref Portage::SHIFTED_CONSERVATIVE)) would be different from the input constant.
 
 <table style="width:100%" markdown="1">
 <tr>
