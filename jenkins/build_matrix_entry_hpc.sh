@@ -33,7 +33,7 @@ fi
 
 jali_version=1.0.0
 openmpi_version=2.1.2
-tangram_version=0.9.1
+tangram_version=0.9.2
 xmof2d_version=0.9.1
 lapack_version=3.8.0
 
