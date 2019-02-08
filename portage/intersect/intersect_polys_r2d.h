@@ -13,7 +13,7 @@ Please see the license file at the root of this repository, or at:
 #include <algorithm>
 
 extern "C" {
-#include "r2d.h"
+#include "wonton/intersect/r3d/r2d.h"
 }
 
 #include "portage/support/portage.h"

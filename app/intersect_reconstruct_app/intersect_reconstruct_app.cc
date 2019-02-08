@@ -22,7 +22,7 @@
 #endif
 
 extern "C" {
-#include "portage/intersect/r2d.h"
+#include "wonton/intersect/r3d/r2d.h"
 }
 
 /*!
