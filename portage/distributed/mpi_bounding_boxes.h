@@ -601,7 +601,6 @@ class MPI_Bounding_Boxes {
   std::map<int,int> gidToFlatCellId_;
   
   
->>>>>>> 70d45f0413695f2f624a44eceac94d527b593a31
   /*!
     @brief Compute fields needed to do comms for a given entity type
     @param[in] info              Info data structure to be filled
