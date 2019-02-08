@@ -84,13 +84,15 @@ else (WONTON_DIR)
    endif()
    include_directories(${CMAKE_SOURCE_DIR}/wonton)
    list(APPEND portage_LIBRARIES wonton)
+   set(WONTON_FOUND TRUE)
  else()
-   # wonton is not a subdirectory -- bail for now
-   # may want to revisit this in the future if we want to link against a built
-   # version
-   message(FATAL_ERROR "Missing wonton subdirectory")
+   set(WONTON_FOUND FALSE)
  endif(_wonton_contents)
 endif (WONTON_DIR)
+
+if (NOT WONTON_FOUND)
+   message(FATAL_ERROR "WONTON_DIR is not specified and Wonton is not a subdirectory !")
+endif() 
 
 #-----------------------------------------------------------------------------
 # FleCSI and FleCSI-SP location
