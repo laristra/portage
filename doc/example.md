@@ -86,6 +86,12 @@ Here, `dim=2` is referring to number of spatial dimensions of the problem,
 three arguments represent particular methods of search, intersect, and
 interpolate steps as described in [Concepts](@ref concepts).
 
+This simple example covers an atypical case where we do not have a source mesh 
+nor any field data on it. Therefore, we added a statevector initialized from our own 
+data vector called inputData. Normally, however, the source mesh would already 
+have such a field on it and we would just have to add empty data to the target mesh
+to make sure we can remap into it.
+
 # Existing Applications and Tests
 
 Nearly all of the generic unit tests have been designed to work with
