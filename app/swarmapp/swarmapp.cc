@@ -241,9 +241,12 @@ int main(int argc, char** argv) {
                           Portage::Meshfree::LocalRegression,
                           Portage::Meshfree::Basis::Quadratic);
 
+#ifdef PORTAGE_ENABLE_MPI
   Wonton::MPIExecutor_type mpiexecutor(MPI_COMM_WORLD);
   d.run(&mpiexecutor, true);
-
+#else
+  d.run();
+#endif
 
   std::vector<double> expected_value(ntarpts, 0.0);
 
