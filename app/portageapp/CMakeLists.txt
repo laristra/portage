@@ -51,7 +51,7 @@ if (ENABLE_MPI)
 
     if (ENABLE_FleCSI)
       add_executable(portageapp_jali2flecsi portageapp_jali2flecsi.cc)
-      target_link_libraries(portageapp_jali2flecsi portageapp_jali2flecsi ${EXTRA_LIBS}
+      target_link_libraries(portageapp_jali2flecsi portage ${EXTRA_LIBS}
                                       ${LAPACKX_LIBRARIES})
       include_directories(${FleCSI_INCLUDE_DIR} ${FleCSISP_INCLUDE_DIR})
       target_link_libraries(portageapp_jali2flecsi ${FleCSI_LIBRARIES}
