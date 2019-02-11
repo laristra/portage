@@ -12,7 +12,7 @@ frameworks, and its wrappers `Wonton::Simple_Mesh_Wrapper` and
 
 ## Wrappers
 
-As mentioned on the [Concepts](@ref concepts) page, the search,
+As mentioned on the [Concepts](\ref concepts) page, the search,
 intersect, and interpolate actions in Portage all operate on
 mesh and particle wrappers for geometry and topology access, 
 and state wrappers for data access. The reason for using wrapper 
@@ -84,7 +84,7 @@ Portage::MMDriver<
 Here, `dim=2` is referring to number of spatial dimensions of the problem, 
 `remap_fields` is a vector containing a string "celldata", and the first 
 three arguments represent particular methods of search, intersect, and
-interpolate steps as described in [Concepts](@ref concepts).
+interpolate steps as described in [Concepts](\ref concepts).
 
 This simple example covers an atypical case where we do not have a source mesh 
 nor any field data on it. Therefore, we added a statevector initialized from our own 
@@ -96,7 +96,7 @@ to make sure we can remap into it.
 
 Nearly all of the generic unit tests have been designed to work with
 the `Wonton::Simple_Mesh_Wrapper` and `Wonton::Simple_State_Wrapper`
-data structures when a mesh with a topology is required. These should serve
+data structures when a mesh with a topology and field data are required. These should serve
 as examples of the types of things one may want to do with a mesh and
 state framework.
 
@@ -120,9 +120,9 @@ of remapping cell and nodal fields defined on square/cubic meshes or on
 unstructured meshes in 2D and 3D, respectively. 
 ![Visualization of a source mesh (red) and a part of a target mesh (black) with remapped data using Paraview.](doxygen/images/jaliapp_example.png)
 
-The app allow users to specify an analytic field on a source mesh. This is done 
-by an algebraic expression in the standard input, see options and examples bellow. 
-Alternatively, the app can remap all the fields that are on a source mesh that is 
+The app allows users to specify an analytic field on a source mesh. This is done 
+by an algebraic expression in the standard input, see options and examples below. 
+The app can also remap all the fields that are on a source mesh that is 
 read from file.    
 An error of remap is calculated by comparing remapped values to exact values in the 
 cell-centroids/nodes on a target mesh and the error is printed to standard output. 
@@ -151,7 +151,7 @@ Usage: portageapp --dim=2|3 --nsourcecells=N --ntargetcells=M --conformal=y|n
 
 ## Portageapp_multimat_jali
 
-Similarly to `portageapp_jali` for scalar fields, `app/portageapp/portageapp_multimat_jali` 
+Similar to `portageapp_jali` for mesh fields, `app/portageapp/portageapp_multimat_jali` 
 demonstrates Portage's ability to remap multi-material fields. In order to preserve sharp
 interfaces between materials, Portage relies on [Tangram](https://github.com/laristra/tangram) 
 to perform an interface reconstruction
