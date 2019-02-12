@@ -504,25 +504,71 @@ class MMDriver {
 
   
 #ifdef HAVE_TANGRAM
-  // Convert volume fraction and centroid data from compact
-  // material-centric to compact cell-centric (ccc) form as needed by
-  // Tangram
-  void ccc_vfcen_data(std::vector<int>& cell_num_mats,
-                      std::vector<int>& cell_mat_ids,
-                      std::vector<double>& cell_matvolfracs,
-                      std::vector<Wonton::Point<D>>& cell_mat_centroids);
 
   // Convert volume fraction and centroid data from compact
   // material-centric to compact cell-centric (ccc) form as needed by
-  // Tangram (this form uses the flat mesh and state wrappers and therefore 
-  // requires a different signature
+  // Tangram
+  template<class StateWrapperInner>
   void ccc_vfcen_data(std::vector<int>& cell_num_mats,
                       std::vector<int>& cell_mat_ids,
-                      std::vector<double>& cell_matvolfracs,
+                      std::vector<double>& cell_mat_volfracs,
                       std::vector<Tangram::Point<D>>& cell_mat_centroids,
-                      Flat_Mesh_Wrapper<> flat_mesh_wrapper,
-                      Flat_State_Wrapper<Flat_Mesh_Wrapper<>> flat_state_wrapper);
-#endif
+                      int nsourcecells, 
+                      StateWrapperInner const& source_state){
+                      
+    int nmats = source_state.num_materials();
+    cell_num_mats.assign(nsourcecells, 0);
+
+    // First build full arrays (as if every cell had every material)
+
+    std::vector<int> cell_mat_ids_full(nsourcecells*nmats, -1);
+    std::vector<double> cell_mat_volfracs_full(nsourcecells*nmats, 0.0);
+    std::vector<Tangram::Point<D>> cell_mat_centroids_full(nsourcecells*nmats);
+
+    int nvals = 0;
+    for (int m = 0; m < nmats; m++) {
+      std::vector<int> cellids;
+      source_state.mat_get_cells(m, &cellids);
+      for (int ic = 0; ic < cellids.size(); ic++) {
+        int c = cellids[ic];
+        int nmatc = cell_num_mats[c];
+        cell_mat_ids_full[c*nmats+nmatc] = m;
+        cell_num_mats[c]++;
+      }
+      nvals += cellids.size();
+
+      double const * matfracptr;
+      source_state.mat_get_celldata("mat_volfracs", m, &matfracptr);
+      for (int ic = 0; ic < cellids.size(); ic++)
+        cell_mat_volfracs_full[cellids[ic]*nmats+m] = matfracptr[ic];
+
+      Portage::Point<D> const *matcenvec;
+      source_state.mat_get_celldata("mat_centroids", m, &matcenvec);
+      for (int ic = 0; ic < cellids.size(); ic++)
+        cell_mat_centroids_full[cellids[ic]*nmats+m] = matcenvec[ic];
+    }
+
+    // At this point nvals contains the number of non-zero volume
+    // fraction entries in the full array. Use this and knowledge of
+    // number of materials in each cell to compress the data into
+    // linear arrays
+
+    cell_mat_ids.resize(nvals);
+    cell_mat_volfracs.resize(nvals);
+    cell_mat_centroids.resize(nvals);
+
+    int idx = 0;
+    for (int c = 0; c < nsourcecells; c++) {
+      for (int m = 0; m < cell_num_mats[c]; m++) {
+        int matid = cell_mat_ids_full[c*nmats+m];
+        cell_mat_ids[idx] = matid;
+        cell_mat_volfracs[idx] = cell_mat_volfracs_full[c*nmats+matid];
+        cell_mat_centroids[idx] = cell_mat_centroids_full[c*nmats+matid];
+        idx++;
+      }
+    }
+  }
+#endif //HAVE_TANGRAM
 
 };  // class MMDriver
 
@@ -622,7 +668,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
     // cell-centric form (ccc)
 
     ccc_vfcen_data(cell_num_mats, cell_mat_ids, cell_mat_volfracs,
-                   cell_mat_centroids);
+                   cell_mat_centroids, nsourcecells, source_state_);
 
     interface_reconstructor->set_volume_fractions(cell_num_mats,
                                                   cell_mat_ids,
@@ -1107,7 +1153,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
     // cell-centric form (ccc)
 
     ccc_vfcen_data(cell_num_mats, cell_mat_ids, cell_mat_volfracs,
-                   cell_mat_centroids, source_mesh_flat, source_state_flat);
+                   cell_mat_centroids, nsourcecells, source_state_flat);
 
     interface_reconstructor->set_volume_fractions(cell_num_mats,
                                                   cell_mat_ids,
@@ -1442,33 +1488,40 @@ int MMDriver<Search, Intersect, Interpolate, D,
                                     // which material values we have
                                     // to grab from the source state
 
-    for (int i = 0; i < nmatvars; ++i) {
-      interpolate.set_interpolation_variable(src_matvar_names[i],
+
+    // if the material has no cells on this partition, then don't bother
+    // interpolating MM variables
+    if (target_state_.mat_get_num_cells(m)) {
+
+      for (int i = 0; i < nmatvars; ++i) {
+        interpolate.set_interpolation_variable(src_matvar_names[i],
                                              limiters_.at(src_matvar_names[i]));
 
-      // Get a handle to a memory location where the target state
-      // would like us to write this material variable into. If it is
-      // NULL, we allocate it ourself
+        // Get a handle to a memory location where the target state
+        // would like us to write this material variable into. If it is
+        // NULL, we allocate it ourself
 
-      double *target_field_raw;
-      target_state_.mat_get_celldata(trg_matvar_names[i], m, &target_field_raw);
-      assert (target_field_raw != nullptr);
+        double *target_field_raw;
+        target_state_.mat_get_celldata(trg_matvar_names[i], m, &target_field_raw);
+        assert (target_field_raw != nullptr);
 
+        Portage::pointer<double> target_field(target_field_raw);
+        
+        Portage::transform(matcellstgt.begin(), matcellstgt.end(),
+                           mat_sources_and_weights.begin(),
+                           target_field, interpolate);
 
-      Portage::pointer<double> target_field(target_field_raw);
+        // If the state wrapper knows that the target data is already
+        // laid out in this way and it gave us a pointer to the array
+        // where the values reside, it has to do nothing in this
+        // call. If the storage format is different, however, it may
+        // have to copy the values into their proper locations
 
-      Portage::transform(matcellstgt.begin(), matcellstgt.end(),
-                         mat_sources_and_weights.begin(),
-                         target_field, interpolate);
+        target_state_.mat_add_celldata(trg_matvar_names[i], m, target_field_raw);
+        
+      }  // nmatvars
 
-      // If the state wrapper knows that the target data is already
-      // laid out in this way and it gave us a pointer to the array
-      // where the values reside, it has to do nothing in this
-      // call. If the storage format is different, however, it may
-      // have to copy the values into their proper locations
-
-      target_state_.mat_add_celldata(trg_matvar_names[i], m, target_field_raw);
-    }  // nmatvars
+    }
 
     gettimeofday(&end_timeval, 0);
     timersub(&end_timeval, &begin_timeval, &diff_timeval);
@@ -1490,203 +1543,6 @@ int MMDriver<Search, Intersect, Interpolate, D,
   return 1;
 }
 #endif  // ENABLE_MPI
-
-
-#ifdef HAVE_TANGRAM
-// Convert volume fraction and centroid data from compact
-// material-centric to compact cell-centric (ccc) form as needed by
-// Tangram
-
-template <template <int, Entity_kind, class, class> class Search,
-          template <Entity_kind, class, class, class,
-          template <class, int, class, class> class,
-          class, class> class Intersect,
-          template<int, Entity_kind, class, class, class,
-          template<class, int, class, class> class,
-          class, class> class Interpolate,
-          int D,
-          class SourceMesh_Wrapper,
-          class SourceState_Wrapper,
-          class TargetMesh_Wrapper,
-          class TargetState_Wrapper,
-          template <class, int, class, class> class InterfaceReconstructorType,
-          class Matpoly_Splitter,
-          class Matpoly_Clipper>
-void
-MMDriver<Search, Intersect, Interpolate, D,
-         SourceMesh_Wrapper, SourceState_Wrapper,
-         TargetMesh_Wrapper, TargetState_Wrapper,
-         InterfaceReconstructorType, Matpoly_Splitter,
-         Matpoly_Clipper
-         >::ccc_vfcen_data(std::vector<int>& cell_num_mats,
-                           std::vector<int>& cell_mat_ids,
-                           std::vector<double>& cell_mat_volfracs,
-                           std::vector<Wonton::Point<D>>& cell_mat_centroids) {
-
-  int nsourcecells = source_mesh_.num_entities(Entity_kind::CELL, Entity_type::ALL);
-
-  int nmats = source_state_.num_materials();
-  cell_num_mats.assign(nsourcecells, 0);
-
-  // First build full arrays (as if every cell had every material)
-
-  std::vector<int> cell_mat_ids_full(nsourcecells*nmats, -1);
-  std::vector<double> cell_mat_volfracs_full(nsourcecells*nmats, 0.0);
-  std::vector<Wonton::Point<D>> cell_mat_centroids_full(nsourcecells*nmats);
-
-  int nvals = 0;
-  for (int m = 0; m < nmats; m++) {
-    std::vector<int> cellids;
-    source_state_.mat_get_cells(m, &cellids);
-    for (int ic = 0; ic < cellids.size(); ic++) {
-      int c = cellids[ic];
-      int nmatc = cell_num_mats[c];
-      cell_mat_ids_full[c*nmats+nmatc] = m;
-      cell_num_mats[c]++;
-    }
-    nvals += cellids.size();
-
-    double const * matfracptr;
-    source_state_.mat_get_celldata("mat_volfracs", m, &matfracptr);
-    for (int ic = 0; ic < cellids.size(); ic++)
-      cell_mat_volfracs_full[cellids[ic]*nmats+m] = matfracptr[ic];
-
-    Portage::Point<D> const *matcenvec;
-    source_state_.mat_get_celldata("mat_centroids", m, &matcenvec);
-    for (int ic = 0; ic < cellids.size(); ic++)
-      cell_mat_centroids_full[cellids[ic]*nmats+m] = matcenvec[ic];
-  }
-
-  // At this point nvals contains the number of non-zero volume
-  // fraction entries in the full array. Use this and knowledge of
-  // number of materials in each cell to compress the data into
-  // linear arrays
-
-  cell_mat_ids.resize(nvals);
-  cell_mat_volfracs.resize(nvals);
-  cell_mat_centroids.resize(nvals);
-
-  int idx = 0;
-  for (int c = 0; c < nsourcecells; c++) {
-    for (int m = 0; m < cell_num_mats[c]; m++) {
-      int matid = cell_mat_ids_full[c*nmats+m];
-      cell_mat_ids[idx] = matid;
-      cell_mat_volfracs[idx] = cell_mat_volfracs_full[c*nmats+matid];
-      cell_mat_centroids[idx] = cell_mat_centroids_full[c*nmats+matid];
-      idx++;
-    }
-  }
-}
-
-
-// Convert volume fraction and centroid data from compact
-// material-centric to compact cell-centric (ccc) form as needed by
-// Tangram. Overloaded to handle the case of the flat mesh and state in 
-// distributed
-
-template <template <int, Entity_kind, class, class> class Search,
-          template <Entity_kind, class, class, class,
-          template <class, int, class, class> class,
-          class, class> class Intersect,
-          template<int, Entity_kind, class, class, class,
-          template<class, int, class, class> class,
-          class, class> class Interpolate,
-          int D,
-          class SourceMesh_Wrapper,
-          class SourceState_Wrapper,
-          class TargetMesh_Wrapper,
-          class TargetState_Wrapper,
-          template <class, int, class, class> class InterfaceReconstructorType,
-          class Matpoly_Splitter,
-          class Matpoly_Clipper>
-void
-MMDriver<Search, Intersect, Interpolate, D,
-         SourceMesh_Wrapper, SourceState_Wrapper,
-         TargetMesh_Wrapper, TargetState_Wrapper,
-         InterfaceReconstructorType, Matpoly_Splitter,
-         Matpoly_Clipper
-         >::ccc_vfcen_data(std::vector<int>& cell_num_mats,
-                           std::vector<int>& cell_mat_ids,
-                           std::vector<double>& cell_mat_volfracs,
-                           std::vector<Tangram::Point<D>>& cell_mat_centroids,
-                           Flat_Mesh_Wrapper<> flat_mesh_wrapper,
-                           Flat_State_Wrapper<Flat_Mesh_Wrapper<>> flat_state_wrapper) {
-                           
-	// get the number of cells in the flat state, Note that by construction, in the
-	// flat state, cells can be duplicated because of ghosting on other nodes
-  int nsourcecells = flat_mesh_wrapper.num_entities(Entity_kind::CELL, Entity_type::ALL);
-
-	// get the number of materials. This is the number of materials in the state
-	// manager with cells, not the number of registered materials
-  int nmats = flat_state_wrapper.num_materials();
-  
-  // a counter for the total number of material/cell combinations
-  // start clean
-  cell_num_mats.assign(nsourcecells, 0);
-  cell_mat_ids.clear();
-  cell_mat_volfracs.clear();
-  cell_mat_centroids.clear();
-  
-  //int nvals = 0;
-  
-  // get the cell materials directly from the state manager, not that by construction
-  // the materials only appear once in the set
-  std::unordered_map<int, std::unordered_set<int>> cell_materials_= 
-  	flat_state_wrapper.get_cell_materials();
-  
-  // get all the data for the volume fractions
-  std::unordered_map<int, std::vector<double>> mat_volfracs = 
-  	flat_state_wrapper.get<StateVectorMulti<double>>("mat_volfracs")->get_data();
-  
-  // get all the data for the volume fractions
-  std::unordered_map<int, std::vector<Wonton::Point<D>>> mat_centroids = 
-  	flat_state_wrapper.get<StateVectorMulti<Wonton::Point<D>>>("mat_centroids")->get_data();
-  	
-  // At this point we have the cell materials only for the unique cells that the flat
-  // state manager defines. The flat state mesh defines cells for all cells in the
-  // constituent nodes, but there are duplicates due to ghosts. The surviving cell
-  // is a little involved. It is not the id of the cell in the node where that cell is owned,
-  // as some cells may only be ghosts. The referenced id is the first appearance
-  // in the flat mesh. It may be a ghost cell in that node but that is the numbering
-  // scheme.
-  
-  // loop over cells since we already have the cell dominant cell_materials_
-  for (int i=0; i<nsourcecells; ++i) {
-  
-  	// get the materials in this cell (may be empty if cell is a duplicate)
-  	auto kv = cell_materials_.find(i);
-  	
-  	// if we don't find the cell, then just skip
-  	if ( kv== cell_materials_.end()) continue;
-  
-  	// unpack the set of materials in this cell
-  	std::unordered_set<int> materials = kv->second;
-  	
-  	// the cell id is the index into the current flat mesh list
-  	cell_num_mats[i]=materials.size();
-  	
-  	// loop over material ids (the order is arbitrary)
-  	for (int m : materials){
-  		
-  		// add the material to the ccc vector
-  		cell_mat_ids.push_back(m);
-  		
-  		// find the cell index in this material 
-  		// we need this step since a cell can appear multiple times in a material
-  		// due to the repeated appearance of ghosts
-  		int ind = flat_state_wrapper.cell_index_in_material(i,m); 		
-  		
-  		// add the volume fraction to the ccc vector
-  		cell_mat_volfracs.push_back(mat_volfracs[m][ind]);
-  		
-  		// add the material centroid to the ccc vector
-  		cell_mat_centroids.push_back(mat_centroids[m][ind]);
-  	}  
-  }
-}
-
-#endif  // HAVE_TANGRAM
-
 
 
 }  // namespace Portage

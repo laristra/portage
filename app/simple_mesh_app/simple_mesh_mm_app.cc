@@ -59,7 +59,6 @@ using Wonton::Simple_Mesh;
 using Wonton::Simple_Mesh_Wrapper;
 using Wonton::Simple_State_Wrapper;
 using Wonton::StateVectorMulti;
-using Wonton::StateManager;
 
 int print_usage() {
   std::cout << std::endl;
@@ -250,10 +249,6 @@ void run(
   Simple_State_Wrapper<Simple_Mesh_Wrapper> source_state{
                 source_mesh_wrapper, matnames, matcells};
 
-  // Using the state manager directly works as well
-  //StateManager<Simple_Mesh_Wrapper> source_state{
-  //    source_mesh_wrapper, matnames, matcells};
-
   // add the volume fractions and centroids to the state manager
   source_state.add(std::make_shared<StateVectorMulti<>>("mat_volfracs",mat_volfracs));
   if (mat_centroids_given)
@@ -308,7 +303,6 @@ void run(
   // The remap algorithm will figure out which cells contain which materials
   // Using the state manager directly works as well
   Simple_State_Wrapper<Simple_Mesh_Wrapper> target_state{target_mesh_wrapper, matnames};
-  //StateManager<Simple_Mesh_Wrapper> target_state{target_mesh_wrapper, matnames};
 
   // Add the volume fractions, centroids and cellmatdata variables
   target_state.add(
@@ -340,9 +334,9 @@ void run(
       Portage::Interpolate_1stOrder,
       2,
       Simple_Mesh_Wrapper,
-      StateManager<Simple_Mesh_Wrapper>,
+      Simple_State_Wrapper<Simple_Mesh_Wrapper>,
       Simple_Mesh_Wrapper,
-      StateManager<Simple_Mesh_Wrapper>,
+      Simple_State_Wrapper<Simple_Mesh_Wrapper>,
       Tangram::XMOF2D_Wrapper>
         d(source_mesh_wrapper, source_state,
           target_mesh_wrapper, target_state);
@@ -355,9 +349,9 @@ void run(
       Portage::Interpolate_2ndOrder,
       2,
       Simple_Mesh_Wrapper,
-      StateManager<Simple_Mesh_Wrapper>,
+      Simple_State_Wrapper<Simple_Mesh_Wrapper>,
       Simple_Mesh_Wrapper,
-      StateManager<Simple_Mesh_Wrapper>,
+      Simple_State_Wrapper<Simple_Mesh_Wrapper>,
       Tangram::XMOF2D_Wrapper>
         d(source_mesh_wrapper, source_state,
           target_mesh_wrapper, target_state);
