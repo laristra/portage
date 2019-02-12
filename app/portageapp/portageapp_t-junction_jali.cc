@@ -595,13 +595,13 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
     offsets[i] = offsets[i-1] + cell_num_mats[i-1];
 
 
-  ////////////////////////////////////////////////////////////////////////////
-  // This is a not to fix later. The problems will also appear in portageapp_multimat_jali.
-  // The problems are with the next 3 blocks of code, not counting the diagnostics.
-  // The problem is that these block treat material id differently and inconsistently.
-  // The problem will bit us particularly if a partition does not have all materials
-  ////////////////////////////////////////////////////////////////////////////
-  
+  /*! 
+  @todo fix the next 75 lines of code or so
+  This is a note to fix later. The problems will also appear in portageapp_multimat_jali.
+  The problems are with the next 3 blocks of code, not counting the diagnostics.
+  The problem is that these block treat material id differently and inconsistently.
+  The problem will bite us particularly if a partition does not have all materials
+  */  
   
   ////////////////////////////////////////////////////////////////////////////
   // in this block, mat_id lists the materials in the order they are encounter 
@@ -751,8 +751,11 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
   std::vector<std::string> fieldnames;
   fieldnames.push_back("cellmatdata");
   
-  std::stringstream filename;
-  filename <<"source_mm_" << rank << ".gmv";
+  // Not sure if we are going to want to output .gmv's for the source, so leave
+  // this in for now.
+  
+  //std::stringstream filename;
+  //filename <<"source_mm_" << rank << ".gmv";
   //Portage::write_to_gmv<dim>(sourceMeshWrapper, sourceStateWrapper,
   //                          source_interface_reconstructor, fieldnames,
   //                           filename.str());
@@ -776,9 +779,6 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
   if (material_field_expressions.size()) {
     targetStateWrapper.mat_add_celldata<double>("cellmatdata");
     remap_fields.push_back("cellmatdata");
-    //double *target_field_raw;
-    //targetStateWrapper.mat_get_celldata("cellmatdata", 0, &target_field_raw);
-    //   assert (target_field_raw != nullptr);
  }
 
   if (numpe > 1) MPI_Barrier(MPI_COMM_WORLD);

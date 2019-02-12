@@ -385,6 +385,17 @@ class MPI_Bounding_Boxes {
       // state wrapper. We aren't removing duplicates yet, just concatenating by material
       /////////////////////////////////////////////////////////
       
+      /*!
+        @todo It might be possible to make the next two code blocks more
+        performant by using some builtin such as insert, std::copy, or transform. 
+        The first block is likely, although I am not sure of the improvement since it
+        is a reshape and would require as many rounds of resizing as partitions.
+        The current way uses the intrinsic vector management and is probably more
+        efficient. The second block needs to convert from gid to flat local id,
+        so that is less promising... Maybe a transform. Don't know if it will be
+        any faster though.  
+      */
+      
       // allocate the material indices
       std::unordered_map<int,std::vector<int>> material_indices;
       
@@ -461,7 +472,7 @@ class MPI_Bounding_Boxes {
       }
                            
       // allocate storage for the new distributed data, note that this data
-      // is still packed and raw doubles and will need to be unpacked
+      // has raw doubles and will need to be merged and type converted
 
       std::vector<double> distributedField(sourceFieldStride*info.newNum);
 
@@ -469,32 +480,32 @@ class MPI_Bounding_Boxes {
       sendField(info, commRank, commSize, MPI_DOUBLE, sourceFieldStride,
         sourceField, &distributedField);
       
-      // merge the data before unpacking
       std::vector<double> tempDistributedField;
+      
       if (source_state_flat.get_entity(field_name) == Entity_kind::NODE){
       
         // node mesh field
+        // merge duplicates, but data still is raw doubles
         merge_duplicate_data(distributedField, distributedNodeIds_, tempDistributedField, sourceFieldStride);
         
-        // unpack the field, has the correct data types, but still is not merged
+        // unpack the field, has the correct data type
         source_state_flat.unpack(field_name, tempDistributedField);
         
       } else if (source_state_flat.field_type(Entity_kind::CELL, field_name) == Wonton::Field_type::MESH_FIELD){
       
         // cell mesh field
+        // merge duplicates, but data still is raw doubles
         merge_duplicate_data(distributedField, distributedCellIds_, tempDistributedField, sourceFieldStride);
 
-        // unpack the field, has the correct data types, but still is not merged
+        // unpack the field, has the correct data types
         source_state_flat.unpack(field_name, tempDistributedField);
         
       } else {
-      
-      
+          
         // multi material field  
-        // as opposed to the preceeding two cases, the merging is done in the
-        // flat state wrapper while unpacking
-                   
-        // unpack the field, has the correct data types, but still is not merged
+        // as opposed to the preceeding two cases, the merging and type conversion
+        // are both done in the unpack routine because there is more to do
+        // getting the shapes correct.
         source_state_flat.unpack(field_name, distributedField, 
           distributedMaterialIds_, distributedMaterialShapes_, 
           distributedMaterialCellIds_);
