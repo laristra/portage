@@ -133,7 +133,9 @@ endif()
 # Configure Jali
 # (this includes the TPLs that Jali will need)
 #------------------------------------------------------------------------------#
-
+if (JALI_DIR)  # forgive users for capitalization mistake
+  set(Jali_DIR ${JALI_DIR})
+endif (JALI_DIR)
 if (Jali_DIR)
 
    # Look for the Jali package
