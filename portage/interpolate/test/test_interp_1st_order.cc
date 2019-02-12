@@ -11,7 +11,7 @@ Please see the license file at the root of this repository, or at:
 
 // portage includes
 #include "portage/interpolate/interpolate_1st_order.h"
-#include "portage/interpolate/test/simple_intersect_for_tests.h"
+#include "portage/intersect/simple_intersect_for_tests.h"
 #include "portage/support/portage.h"
 
 // wonton includes
@@ -19,6 +19,7 @@ Please see the license file at the root of this repository, or at:
 #include "wonton/mesh/simple/simple_mesh_wrapper.h"
 #include "wonton/state/simple/simple_state.h"
 #include "wonton/state/simple/simple_state_wrapper.h"
+#include "wonton/support/Point.h"
 
 double TOL = 1e-12;
 
@@ -52,7 +53,7 @@ TEST(Interpolate_1st_Order, Cell_Ctr_Const_2D) {
   // Define a state vector with constant value and add it to the source state
 
   std::vector<double> data(ncells_source, 1.25);
-  source_state.add("cellvars", Portage::Entity_kind::CELL, &(data[0]));
+  source_state.add("cellvars", Wonton::Entity_kind::CELL, &(data[0]));
 
   // Create state wrapper
 
@@ -62,12 +63,12 @@ TEST(Interpolate_1st_Order, Cell_Ctr_Const_2D) {
   // for intersection. The outer vector is the cells, the inner vector is the
   // points of the vertices of that cell.
 
-  std::vector<std::vector<Portage::Point<2>>>
+  std::vector<std::vector<Wonton::Point<2>>>
       source_cell_coords(ncells_source);
-  std::vector<std::vector<Portage::Point<2>>>
+  std::vector<std::vector<Wonton::Point<2>>>
       target_cell_coords(ncells_target);
 
-  // Actually get the Portage::Points
+  // Actually get the Wonton::Points
 
   for (int c = 0; c < ncells_source; ++c)
     sourceMeshWrapper.cell_get_coordinates(c, &(source_cell_coords[c]));
@@ -113,7 +114,7 @@ TEST(Interpolate_1st_Order, Cell_Ctr_Const_2D) {
 
   // Create Interpolation object
 
-  Portage::Interpolate_1stOrder<2, Portage::Entity_kind::CELL,
+  Portage::Interpolate_1stOrder<2, Wonton::Entity_kind::CELL,
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_State_Wrapper>
@@ -122,8 +123,8 @@ TEST(Interpolate_1st_Order, Cell_Ctr_Const_2D) {
   interpolater.set_interpolation_variable("cellvars");
 
 
-  Portage::transform(targetMeshWrapper.begin(Portage::Entity_kind::CELL),
-                     targetMeshWrapper.end(Portage::Entity_kind::CELL),
+  Wonton::transform(targetMeshWrapper.begin(Wonton::Entity_kind::CELL),
+                     targetMeshWrapper.end(Wonton::Entity_kind::CELL),
                      sources_and_weights.begin(),
                      outvals.begin(), interpolater);
 
@@ -164,11 +165,11 @@ TEST(Interpolate_1st_Order, Cell_Ctr_Lin_2D) {
 
   std::vector<double> data(ncells_source);
   for (int c = 0; c < ncells_source; ++c) {
-    Portage::Point<2> cen;
+    Wonton::Point<2> cen;
     sourceMeshWrapper.cell_centroid(c, &cen);
     data[c] = cen[0]+cen[1];
   }
-  source_state.add("cellvars", Portage::Entity_kind::CELL, &(data[0]));
+  source_state.add("cellvars", Wonton::Entity_kind::CELL, &(data[0]));
 
   // Create state wrapper
 
@@ -178,12 +179,12 @@ TEST(Interpolate_1st_Order, Cell_Ctr_Lin_2D) {
   // for intersection. The outer vector is the cells, the inner vector is the
   // points of the vertices of that cell.
 
-  std::vector<std::vector<Portage::Point<2>>>
+  std::vector<std::vector<Wonton::Point<2>>>
       source_cell_coords(ncells_source);
-  std::vector<std::vector<Portage::Point<2>>>
+  std::vector<std::vector<Wonton::Point<2>>>
       target_cell_coords(ncells_target);
 
-  // Actually get the Portage::Points
+  // Actually get the Wonton::Points
 
   for (int c = 0; c < ncells_source; ++c)
     sourceMeshWrapper.cell_get_coordinates(c, &(source_cell_coords[c]));
@@ -229,7 +230,7 @@ TEST(Interpolate_1st_Order, Cell_Ctr_Lin_2D) {
 
   // Create Interpolation object
 
-  Portage::Interpolate_1stOrder<2, Portage::Entity_kind::CELL,
+  Portage::Interpolate_1stOrder<2, Wonton::Entity_kind::CELL,
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_State_Wrapper>
@@ -238,8 +239,8 @@ TEST(Interpolate_1st_Order, Cell_Ctr_Lin_2D) {
   interpolater.set_interpolation_variable("cellvars");
 
 
-  Portage::transform(targetMeshWrapper.begin(Portage::Entity_kind::CELL),
-                     targetMeshWrapper.end(Portage::Entity_kind::CELL),
+  Wonton::transform(targetMeshWrapper.begin(Wonton::Entity_kind::CELL),
+                     targetMeshWrapper.end(Wonton::Entity_kind::CELL),
                      sources_and_weights.begin(),
                      outvals.begin(), interpolater);
 
@@ -251,7 +252,7 @@ TEST(Interpolate_1st_Order, Cell_Ctr_Lin_2D) {
 
   std::vector<double> stdvals(ncells_target);
   for (int c = 0; c < ncells_target; ++c) {
-    Portage::Point<2> cen;
+    Wonton::Point<2> cen;
     targetMeshWrapper.cell_centroid(c, &cen);
     stdvals[c] = cen[0]+cen[1];
   }
@@ -290,7 +291,7 @@ TEST(Interpolate_1st_Order, Node_Ctr_Const_2D) {
   // Define a state vector with constant value and add it to the source state
 
   std::vector<double> data(nnodes_source, 1.25);
-  source_state.add("nodevars", Portage::Entity_kind::NODE, &(data[0]));
+  source_state.add("nodevars", Wonton::Entity_kind::NODE, &(data[0]));
 
   // Create state wrapper
 
@@ -300,12 +301,12 @@ TEST(Interpolate_1st_Order, Node_Ctr_Const_2D) {
   // for intersection. The outer vector is the cells, the inner vector is the
   // points of the vertices of that cell.
 
-  std::vector<std::vector<Portage::Point<2>>>
+  std::vector<std::vector<Wonton::Point<2>>>
       source_dualcell_coords(nnodes_source);
-  std::vector<std::vector<Portage::Point<2>>>
+  std::vector<std::vector<Wonton::Point<2>>>
       target_dualcell_coords(nnodes_target);
 
-  // Actually get the Portage::Points for the dual cells
+  // Actually get the Wonton::Points for the dual cells
 
   for (int n = 0; n < nnodes_source; ++n)
 	  sourceMeshWrapper.dual_cell_get_coordinates(n, &source_dualcell_coords[n]);
@@ -352,7 +353,7 @@ TEST(Interpolate_1st_Order, Node_Ctr_Const_2D) {
 
   // Create Interpolation object
 
-  Portage::Interpolate_1stOrder<2, Portage::Entity_kind::NODE,
+  Portage::Interpolate_1stOrder<2, Wonton::Entity_kind::NODE,
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_State_Wrapper>
@@ -361,8 +362,8 @@ TEST(Interpolate_1st_Order, Node_Ctr_Const_2D) {
   interpolater.set_interpolation_variable("nodevars");
 
 
-  Portage::transform(targetMeshWrapper.begin(Portage::Entity_kind::NODE),
-                     targetMeshWrapper.end(Portage::Entity_kind::NODE),
+  Wonton::transform(targetMeshWrapper.begin(Wonton::Entity_kind::NODE),
+                     targetMeshWrapper.end(Wonton::Entity_kind::NODE),
                      sources_and_weights.begin(),
                      outvals.begin(), interpolater);
 
@@ -404,7 +405,7 @@ TEST(Interpolate_1st_Order, Cell_Ctr_Const_3D) {
   // Define a state vector with constant value and add it to the source state
 
   std::vector<double> data(ncells_source, 1.25);
-  source_state.add("cellvars", Portage::Entity_kind::CELL, &(data[0]));
+  source_state.add("cellvars", Wonton::Entity_kind::CELL, &(data[0]));
 
   // Create state wrapper
 
@@ -414,12 +415,12 @@ TEST(Interpolate_1st_Order, Cell_Ctr_Const_3D) {
   // for intersection. The outer vector is the cells, the inner vector is the
   // points of the vertices of that cell.
 
-  std::vector<std::vector<Portage::Point<3>>>
+  std::vector<std::vector<Wonton::Point<3>>>
       source_cell_coords(ncells_source);
-  std::vector<std::vector<Portage::Point<3>>>
+  std::vector<std::vector<Wonton::Point<3>>>
       target_cell_coords(ncells_target);
 
-  // Actually get the Portage::Points
+  // Actually get the Wonton::Points
 
   for (int c = 0; c < ncells_source; ++c)
     sourceMeshWrapper.cell_get_coordinates(c, &(source_cell_coords[c]));
@@ -465,7 +466,7 @@ TEST(Interpolate_1st_Order, Cell_Ctr_Const_3D) {
 
   // Create Interpolation object
 
-  Portage::Interpolate_1stOrder<3, Portage::Entity_kind::CELL,
+  Portage::Interpolate_1stOrder<3, Wonton::Entity_kind::CELL,
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_State_Wrapper>
@@ -474,8 +475,8 @@ TEST(Interpolate_1st_Order, Cell_Ctr_Const_3D) {
   interpolater.set_interpolation_variable("cellvars");
 
 
-  Portage::transform(targetMeshWrapper.begin(Portage::Entity_kind::CELL),
-                     targetMeshWrapper.end(Portage::Entity_kind::CELL),
+  Wonton::transform(targetMeshWrapper.begin(Wonton::Entity_kind::CELL),
+                     targetMeshWrapper.end(Wonton::Entity_kind::CELL),
                      sources_and_weights.begin(),
                      outvals.begin(), interpolater);
 
@@ -515,11 +516,11 @@ TEST(Interpolate_1st_Order, Cell_Ctr_Lin_3D) {
 
   std::vector<double> data(ncells_source);
   for (int c = 0; c < ncells_source; ++c) {
-    Portage::Point<3> cen;
+    Wonton::Point<3> cen;
     sourceMeshWrapper.cell_centroid(c, &cen);
     data[c] = cen[0]+cen[1];
   }
-  source_state.add("cellvars", Portage::Entity_kind::CELL, &(data[0]));
+  source_state.add("cellvars", Wonton::Entity_kind::CELL, &(data[0]));
 
   // Create state wrapper
 
@@ -529,12 +530,12 @@ TEST(Interpolate_1st_Order, Cell_Ctr_Lin_3D) {
   // for intersection. The outer vector is the cells, the inner vector is the
   // points of the vertices of that cell.
 
-  std::vector<std::vector<Portage::Point<3>>>
+  std::vector<std::vector<Wonton::Point<3>>>
       source_cell_coords(ncells_source);
-  std::vector<std::vector<Portage::Point<3>>>
+  std::vector<std::vector<Wonton::Point<3>>>
       target_cell_coords(ncells_target);
 
-  // Actually get the Portage::Points
+  // Actually get the Wonton::Points
 
   for (int c = 0; c < ncells_source; ++c)
     sourceMeshWrapper.cell_get_coordinates(c, &(source_cell_coords[c]));
@@ -580,7 +581,7 @@ TEST(Interpolate_1st_Order, Cell_Ctr_Lin_3D) {
 
   // Create Interpolation object
 
-  Portage::Interpolate_1stOrder<3, Portage::Entity_kind::CELL,
+  Portage::Interpolate_1stOrder<3, Wonton::Entity_kind::CELL,
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_State_Wrapper>
@@ -589,8 +590,8 @@ TEST(Interpolate_1st_Order, Cell_Ctr_Lin_3D) {
   interpolater.set_interpolation_variable("cellvars");
 
 
-  Portage::transform(targetMeshWrapper.begin(Portage::Entity_kind::CELL),
-                     targetMeshWrapper.end(Portage::Entity_kind::CELL),
+  Wonton::transform(targetMeshWrapper.begin(Wonton::Entity_kind::CELL),
+                     targetMeshWrapper.end(Wonton::Entity_kind::CELL),
                      sources_and_weights.begin(),
                      outvals.begin(), interpolater);
 
@@ -602,7 +603,7 @@ TEST(Interpolate_1st_Order, Cell_Ctr_Lin_3D) {
 
   std::vector<double> stdvals(ncells_target);
   for (int c = 0; c < ncells_target; ++c) {
-    Portage::Point<3> cen;
+    Wonton::Point<3> cen;
     targetMeshWrapper.cell_centroid(c, &cen);
     stdvals[c] = cen[0]+cen[1];
   }
@@ -642,7 +643,7 @@ TEST(Interpolate_1st_Order, Node_Ctr_Const_3D) {
   // Define a state vector with constant value and add it to the source state
 
   std::vector<double> data(nnodes_source, 1.25);
-  source_state.add("nodevars", Portage::Entity_kind::NODE, &(data[0]));
+  source_state.add("nodevars", Wonton::Entity_kind::NODE, &(data[0]));
 
   // Create state wrapper
 
@@ -652,12 +653,12 @@ TEST(Interpolate_1st_Order, Node_Ctr_Const_3D) {
   // for intersection. The outer vector is the cells, the inner vector is the
   // points of the vertices of that cell.
 
-  std::vector<std::vector<Portage::Point<3>>>
+  std::vector<std::vector<Wonton::Point<3>>>
       source_dualcell_coords(nnodes_source);
-  std::vector<std::vector<Portage::Point<3>>>
+  std::vector<std::vector<Wonton::Point<3>>>
       target_dualcell_coords(nnodes_target);
 
-  // Actually get the Portage::Points for the dual cells
+  // Actually get the Wonton::Points for the dual cells
 
   for (int n = 0; n < nnodes_source; ++n)
 	  sourceMeshWrapper.dual_cell_get_coordinates(n, &source_dualcell_coords[n]);
@@ -703,7 +704,7 @@ TEST(Interpolate_1st_Order, Node_Ctr_Const_3D) {
 
   // Create Interpolation object
 
-  Portage::Interpolate_1stOrder<3, Portage::Entity_kind::NODE,
+  Portage::Interpolate_1stOrder<3, Wonton::Entity_kind::NODE,
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_State_Wrapper>
@@ -712,8 +713,8 @@ TEST(Interpolate_1st_Order, Node_Ctr_Const_3D) {
   interpolater.set_interpolation_variable("nodevars");
 
 
-  Portage::transform(targetMeshWrapper.begin(Portage::Entity_kind::NODE),
-                     targetMeshWrapper.end(Portage::Entity_kind::NODE),
+  Wonton::transform(targetMeshWrapper.begin(Wonton::Entity_kind::NODE),
+                     targetMeshWrapper.end(Wonton::Entity_kind::NODE),
                      sources_and_weights.begin(),
                      outvals.begin(), interpolater);
 
