@@ -12,7 +12,7 @@ frameworks, and its wrappers `Wonton::Simple_Mesh_Wrapper` and
 
 ## Wrappers
 
-As mentioned on the [Concepts](\ref concepts) page, the search,
+As mentioned on the [Concepts](@ref concepts) page, the search,
 intersect, and interpolate actions in Portage all operate on
 mesh and particle wrappers for geometry and topology access, 
 and state wrappers for data access. The reason for using wrapper 
@@ -84,7 +84,7 @@ Portage::MMDriver<
 Here, `dim=2` is referring to number of spatial dimensions of the problem, 
 `remap_fields` is a vector containing a string "celldata", and the first 
 three arguments represent particular methods of search, intersect, and
-interpolate steps as described in [Concepts](\ref concepts).
+interpolate steps as described in [Concepts](@ref concepts).
 
 This simple example covers an atypical case where we do not have a source mesh 
 nor any field data on it. Therefore, we added a statevector initialized from our own 
@@ -106,7 +106,7 @@ Better examples of how to use these wrappers to actually do a remap of
 field data are in the application tests.  In particular, the
 `app/simple_mesh_app/simple_mesh_app.cc` program shows how to wrap
 mesh and state objects, adds some field data to the source state, and
-utilize \ref Portage::MMDriver with various search, intersect, and
+utilize `Portage::MMDriver` with various search, intersect, and
 interpolate algorithms to perform the remap.  The `Portage::MMDriver` is
 templated on mesh wrapper type and state wrapper type, and can be used
 with other frameworks. `Portage::MMDriver` and `Portage::SwarmDriver` 
