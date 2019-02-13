@@ -535,6 +535,9 @@ class MPI_Bounding_Boxes {
   } // distribute
 
   private:
+
+  // The communicator we are using
+  MPI_Comm comm_;
  
   int dim_;
   

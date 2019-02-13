@@ -54,7 +54,7 @@ set(portage_LIBRARIES)
 set(ENABLE_MPI OFF CACHE BOOL "")
 if (ENABLE_MPI)
   find_package(MPI REQUIRED)
-  add_definitions(-DENABLE_MPI -DWONTON_ENABLE_MPI)
+  add_definitions(-DPORTAGE_ENABLE_MPI -DWONTON_ENABLE_MPI)
 endif ()
 
 

@@ -66,7 +66,6 @@ if (ENABLE_MPI)
 
 #      target_link_libraries(portageapp_jali2flecsi ${Jali_LIBRARIES}
 #                                      ${Jali_TPL_LIBRARIES})
-
     endif (ENABLE_FleCSI)
   endif (Jali_DIR)
 
