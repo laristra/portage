@@ -19,6 +19,11 @@ Please see the license file at the root of this repository, or at:
 #include "portage/intersect/dummy_interface_reconstructor.h"
 #include "portage/support/portage.h"
 
+#ifdef HAVE_TANGRAM
+#include "tangram/driver/driver.h"
+#include "tangram/driver/CellMatPoly.h"
+#include "tangram/support/MatPoly.h"
+#endif
 
 namespace Portage {
 
