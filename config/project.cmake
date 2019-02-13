@@ -54,12 +54,7 @@ set(portage_LIBRARIES)
 set(ENABLE_MPI OFF CACHE BOOL "")
 if (ENABLE_MPI)
   find_package(MPI REQUIRED)
-  add_definitions(-DENABLE_MPI)
-# TODO:  Modify the below to use wrapper compilers instead of flags
-#        (there isn't an obvious good way to do this)
-#  add_definitions(${MPI_CXX_COMPILE_FLAGS})
-#  include_directories(${MPI_CXX_INCLUDE_PATH})
-#  link_directories(${MPI_CXX_LIBRARY_DIRS})
+  add_definitions(-DENABLE_MPI -DWONTON_ENABLE_MPI)
 endif ()
 
 
@@ -138,7 +133,9 @@ endif()
 # Configure Jali
 # (this includes the TPLs that Jali will need)
 #------------------------------------------------------------------------------#
-
+if (JALI_DIR)  # forgive users for capitalization mistake
+  set(Jali_DIR ${JALI_DIR})
+endif (JALI_DIR)
 if (Jali_DIR)
 
    # Look for the Jali package
@@ -380,9 +377,4 @@ if(ENABLE_APP_TESTS)
   enable_testing()
 endif()
 
-# We know we are a C++ project, so force the bindings if we are using MPI
-#if (ENABLE_MPI)
-#  set(ENABLE_MPI_CXX_BINDINGS TRUE CACHE BOOL "Enable MPI C++ Bindings" FORCE)
-#  mark_as_advanced(ENABLE_MPI_CXX_BINDINGS)
-#endif (ENABLE_MPI)
 

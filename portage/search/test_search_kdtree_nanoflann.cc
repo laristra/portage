@@ -11,7 +11,7 @@ Please see the license file at the root of this repository, or at:
 
 #include "portage/search/search_kdtree_nanoflann.h"
 #include "portage/swarm/swarm.h"
-
+#include "portage/support/Vector.h"
 #ifdef HAVE_NANOFLANN
 
 TEST(search_kdtree_nanoflann, case2d)
@@ -66,7 +66,7 @@ TEST(search_kdtree_nanoflann, case2d)
 
       for (int sp = 0; sp < srcpts->size(); sp++) {
         Portage::Point<2> psrc = (*srcpts)[sp];
-        Portage::Vector<2> vec = psrc-ptgt;
+        Wonton::Vector<2> vec = psrc-ptgt;
         double dist = vec.norm(true);
         if (dist <= target_radius) {
           // This point should be in the list of candidates
@@ -140,7 +140,7 @@ TEST(search_kdtree_nanoflann, case3d)
 
         for (int sp = 0; sp < srcpts->size(); sp++) {
           Portage::Point<3> psrc = (*srcpts)[sp];
-          Portage::Vector<3> vec = psrc-ptgt;
+          Wonton::Vector<3> vec = psrc-ptgt;
           double dist = vec.norm(true);
           if (dist <= target_radius) {
             // This point should be in the list of candidates

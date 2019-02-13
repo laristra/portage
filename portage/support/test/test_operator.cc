@@ -12,8 +12,9 @@
 #include "portage/support/portage.h"
 #include "portage/support/operator.h"
 #include "portage/support/test_operator_data.h"
+#include "wonton/support/Point.h"
 
-using Portage::Point;
+using Wonton::Point;
 
 using Portage::Meshfree::Basis::Unitary;
 using Portage::Meshfree::Basis::Linear;

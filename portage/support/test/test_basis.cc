@@ -10,6 +10,7 @@ Please see the license file at the root of this repository, or at:
 
 #include "portage/support/portage.h"
 #include "portage/support/basis.h"
+#include "wonton/support/Point.h"
 
 using Portage::Meshfree::Basis::Type;
 using Portage::Meshfree::Basis::Unitary;
@@ -23,7 +24,7 @@ using Portage::Meshfree::Basis::shift;
 using Portage::Meshfree::Basis::jet;
 using Portage::Meshfree::Basis::inverse_jet;
 using Portage::Meshfree::Basis::transfactor;
-using Portage::Point;
+using Wonton::Point;
 using std::array;
 
 // Templated test class that takes type of basis (Unitary, Linear,
