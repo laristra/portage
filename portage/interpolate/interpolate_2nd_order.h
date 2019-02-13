@@ -19,6 +19,11 @@ Please see the license file at the root of this repository, or at:
 #include "portage/intersect/dummy_interface_reconstructor.h"
 #include "portage/support/portage.h"
 
+#ifdef HAVE_TANGRAM
+#include "tangram/driver/driver.h"
+#include "tangram/driver/CellMatPoly.h"
+#include "tangram/support/MatPoly.h"
+#endif
 
 namespace Portage {
 
@@ -160,7 +165,7 @@ class Interpolate_2ndOrder {
   double const * source_vals_;
 
   // Portage::vector is generalization of std::vector and
-  // Portage::Vector<D> is a geometric vector
+  // Wonton::Vector<D> is a geometric vector
   Portage::vector<Vector<D>> gradients_;
 
   int matid_;
@@ -444,7 +449,7 @@ class Interpolate_2ndOrder<D,
   double const * source_vals_;
 
   // Portage::vector is generalization of std::vector and
-  // Portage::Vector<D> is a geometric vector
+  // Wonton::Vector<D> is a geometric vector
   Portage::vector<Vector<D>> gradients_;
 
   int matid_;
@@ -657,7 +662,7 @@ class Interpolate_2ndOrder<D,
   double const * source_vals_;
 
   // Portage::vector is generalization of std::vector and
-  // Portage::Vector<D> is a geometric vector
+  // Wonton::Vector<D> is a geometric vector
   Portage::vector<Vector<D>> gradients_;
 
   int matid_;

@@ -137,9 +137,9 @@ Execute the following from the portage root directory:
 ```c++
 # machine=darwin-fe
 module load openmpi/2.1.2-intel_17.0.6 boost/1.58.0 cmake
-setenv JALI_INSTALL_PREFIX /usr/projects/ngc/private/jali/1.0.0-intel-17.0.6-openmpi-2.1.2
-setenv TPL_INSTALL_PREFIX /usr/projects/ngc/private/jali-tpl/1.1.0-intel-17.0.6-openmpi-2.1.2
-export LAPACKE_DIR=/usr/projects/ngc/private/lapack/3.8.0-patched-intel-17.0.6
+JALI_INSTALL_PREFIX=/usr/projects/ngc/private/jali/1.0.0-intel-17.0.6-openmpi-2.1.2
+TPL_INSTALL_PREFIX=/usr/projects/ngc/private/jali-tpl/1.1.0-intel-17.0.6-openmpi-2.1.2
+LAPACKE_DIR=/usr/projects/ngc/private/lapack/3.8.0-patched-intel-17.0.6
 mkdir build
 cd build
 cmake \

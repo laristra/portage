@@ -594,8 +594,20 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
   for (int i = 1; i < nsrccells; i++)
     offsets[i] = offsets[i-1] + cell_num_mats[i-1];
 
-  // Count the number of materials in the problem and gather their IDs
 
+  /*! 
+  @todo fix the next 75 lines of code or so
+  This is a note to fix later. The problems will also appear in portageapp_multimat_jali.
+  The problems are with the next 3 blocks of code, not counting the diagnostics.
+  The problem is that these block treat material id differently and inconsistently.
+  The problem will bite us particularly if a partition does not have all materials
+  */  
+  
+  ////////////////////////////////////////////////////////////////////////////
+  // in this block, mat_id lists the materials in the order they are encounter 
+  // in the partition when walking over cells
+  ////////////////////////////////////////////////////////////////////////////
+  // Count the number of materials in the problem and gather their IDs
   std::vector<int> mat_ids;
   nmats = 0;
   for (int c = 0; c < nsrccells; c++) {
@@ -634,6 +646,11 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
 
 
 
+  ////////////////////////////////////////////////////////////////////////////
+  // in this block, matcells is dimensioned by the number of materials
+  // and the index really is the cell id. If the materials are not 0...nmats-1
+  // then this will segfault since real material id is used as the index
+  ////////////////////////////////////////////////////////////////////////////
   // Convert data from cell-centric to material-centric form as we
   // will need it for adding it to the state manager
 
@@ -650,12 +667,16 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
     }
   }
 
+  ////////////////////////////////////////////////////////////////////////////
+  // in this block, materials are added sequentially so the internal Jali id
+  // may not match the material id if the materials are sparse
+  ////////////////////////////////////////////////////////////////////////////
   // Add materials, volume fractions and centroids to source state
 
   std::vector<std::string> matnames(nmats);
   for (int m = 0; m < nmats; m++) {
     std::stringstream matstr;
-    matstr << "mat" << mat_ids[m];
+    matstr << "mat" << m;
     matnames[m] = matstr.str();
     sourceStateWrapper.add_material(matnames[m], matcells[m]);
   }
@@ -723,19 +744,21 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
     }
   }
 
-	std::cout << "***Registered fieldnames:"<<std::endl;
-	for (auto & field_name: sourceStateWrapper.names()) 
-		std::cout << " registered fieldname: " << field_name << std::endl;
-		
+  std::cout << "***Registered fieldnames:"<<std::endl;
+  for (auto & field_name: sourceStateWrapper.names()) 
+    std::cout << " registered fieldname: " << field_name << std::endl;
+        
   std::vector<std::string> fieldnames;
   fieldnames.push_back("cellmatdata");
-  /*
-  std::stringstream filename;
-  filename <<"source_mm_" << rank << ".gmv";
-  Portage::write_to_gmv<dim>(sourceMeshWrapper, sourceStateWrapper,
-                             source_interface_reconstructor, fieldnames,
-                             filename.str());
-  */
+  
+  // Not sure if we are going to want to output .gmv's for the source, so leave
+  // this in for now.
+  
+  //std::stringstream filename;
+  //filename <<"source_mm_" << rank << ".gmv";
+  //Portage::write_to_gmv<dim>(sourceMeshWrapper, sourceStateWrapper,
+  //                          source_interface_reconstructor, fieldnames,
+  //                           filename.str());
 
   // Add the materials into the target mesh but with empty cell lists
   // The remap algorithm will figure out which cells contain which materials
@@ -756,7 +779,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
   if (material_field_expressions.size()) {
     targetStateWrapper.mat_add_celldata<double>("cellmatdata");
     remap_fields.push_back("cellmatdata");
-  }
+ }
 
   if (numpe > 1) MPI_Barrier(MPI_COMM_WORLD);
 
@@ -877,7 +900,45 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
       ncmats++;
     }
   }
+  
+  // Cheesy printout results
+  for (int m = 0; m < nmats; m++) {
+    std::vector<int> matcells;
+    targetStateWrapper.mat_get_cells(m, &matcells);
 
+    double const *matvf;
+    targetStateWrapper.mat_get_celldata("mat_volfracs", m, &matvf);
+
+    Wonton::Point<dim> const *matcen;
+    targetStateWrapper.mat_get_celldata("mat_centroids", m, &matcen);
+
+    double const *cellmatdata;
+    targetStateWrapper.mat_get_celldata("cellmatdata", m, &cellmatdata);
+
+    int nmatcells = matcells.size();
+    
+    std::cout << "\n----target cell indices on rank "<< rank<<" for material "<< m << ": ";
+    for (int ic = 0; ic < nmatcells; ic++) std::cout <<matcells[ic]<< " ";
+    std::cout << std::endl; 
+    
+    std::cout << "----mat_volfracs on rank "<< rank<<" for material "<< m <<": ";
+    for (int ic = 0; ic < nmatcells; ic++) std::cout <<matvf[ic]<< " ";
+    std::cout << std::endl; 
+    
+    std::cout << "----mat_centroids on rank "<< rank<<" for material "<< m <<": ";
+    for (int ic = 0; ic < nmatcells; ic++) std::cout << "(" << matcen[ic][0]<<", "<< matcen[ic][1]<< ") ";
+    std::cout << std::endl; 
+    
+    std::cout << "----cellmatdata on rank "<< rank<<" for material "<< m <<": ";
+    for (int ic = 0; ic < nmatcells; ic++) std::cout <<cellmatdata[ic]<< " ";
+    std::cout << std::endl << std::endl; 
+    
+  }
+  
+  
+  return;
+  // INTERFACE RECONSTRUCTION ON THE TARGET IS PROBLEMATIC AT THE MOMENT
+  // DUE TO THE HANDLING OF GHOSTS
 
   interface_reconstructor_factory<dim, Wonton::Jali_Mesh_Wrapper>
       target_IRFactory(targetMeshWrapper, tols);
@@ -892,6 +953,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
   Portage::write_to_gmv<dim>(targetMeshWrapper, targetStateWrapper,
                              target_interface_reconstructor, fieldnames,
                              "target_mm.gmv");
+
 
 
   // Compute error

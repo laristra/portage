@@ -53,13 +53,12 @@
 */
 
 //////////////////////////////////////////////////////////////////////
-using Portage::Point;
+using Wonton::Point;
 
 using Wonton::Simple_Mesh;
 using Wonton::Simple_Mesh_Wrapper;
 using Wonton::Simple_State_Wrapper;
 using Wonton::StateVectorMulti;
-using Wonton::StateManager;
 
 int print_usage() {
   std::cout << std::endl;
@@ -147,7 +146,7 @@ void run(
   std::vector<int> cell_num_mats;
   std::vector<int> cell_mat_ids;  // flattened 2D array
   std::vector<double> cell_mat_volfracs;  // flattened 2D array
-  std::vector<Portage::Point<2>> cell_mat_centroids;  // flattened 2D array
+  std::vector<Wonton::Point<2>> cell_mat_centroids;  // flattened 2D array
 
   // Read volume fraction and centroid data from file
   read_material_data<Simple_Mesh_Wrapper, 2>(source_mesh_wrapper,
@@ -205,7 +204,7 @@ void run(
       interface_reconstructor{source_mesh_wrapper, tols, true};
 
   // convert from Portage points to Tangram points
-  std::vector<Tangram::Point<2>>
+  std::vector<Wonton::Point<2>>
       Tcell_mat_centroids(cell_mat_centroids.begin(), cell_mat_centroids.end());
 
 
@@ -249,10 +248,6 @@ void run(
   // Native state managers for source and target
   Simple_State_Wrapper<Simple_Mesh_Wrapper> source_state{
                 source_mesh_wrapper, matnames, matcells};
-
-  // Using the state manager directly works as well
-  //StateManager<Simple_Mesh_Wrapper> source_state{
-  //    source_mesh_wrapper, matnames, matcells};
 
   // add the volume fractions and centroids to the state manager
   source_state.add(std::make_shared<StateVectorMulti<>>("mat_volfracs",mat_volfracs));
@@ -308,7 +303,6 @@ void run(
   // The remap algorithm will figure out which cells contain which materials
   // Using the state manager directly works as well
   Simple_State_Wrapper<Simple_Mesh_Wrapper> target_state{target_mesh_wrapper, matnames};
-  //StateManager<Simple_Mesh_Wrapper> target_state{target_mesh_wrapper, matnames};
 
   // Add the volume fractions, centroids and cellmatdata variables
   target_state.add(
@@ -340,9 +334,9 @@ void run(
       Portage::Interpolate_1stOrder,
       2,
       Simple_Mesh_Wrapper,
-      StateManager<Simple_Mesh_Wrapper>,
+      Simple_State_Wrapper<Simple_Mesh_Wrapper>,
       Simple_Mesh_Wrapper,
-      StateManager<Simple_Mesh_Wrapper>,
+      Simple_State_Wrapper<Simple_Mesh_Wrapper>,
       Tangram::XMOF2D_Wrapper>
         d(source_mesh_wrapper, source_state,
           target_mesh_wrapper, target_state);
@@ -355,9 +349,9 @@ void run(
       Portage::Interpolate_2ndOrder,
       2,
       Simple_Mesh_Wrapper,
-      StateManager<Simple_Mesh_Wrapper>,
+      Simple_State_Wrapper<Simple_Mesh_Wrapper>,
       Simple_Mesh_Wrapper,
-      StateManager<Simple_Mesh_Wrapper>,
+      Simple_State_Wrapper<Simple_Mesh_Wrapper>,
       Tangram::XMOF2D_Wrapper>
         d(source_mesh_wrapper, source_state,
           target_mesh_wrapper, target_state);
@@ -374,7 +368,7 @@ void run(
   // material dominant volume fractions and centroids
   std::unordered_map<int, std::vector<int>> map_target_cell_materials;
   std::unordered_map<int, std::vector<double>> map_target_cell_mat_volfracs;
-  std::unordered_map<int, std::vector<Tangram::Point<2>>> map_target_cell_mat_centroids;
+  std::unordered_map<int, std::vector<Wonton::Point<2>>> map_target_cell_mat_centroids;
 
   // To calculate the cell dominant volume factions and cell centroids,
   // instead of using the reverse map of cell materials we go in the forward
@@ -411,7 +405,7 @@ void run(
   std::vector<int> target_cell_num_mats;
   std::vector<int> target_cell_mat_ids;
   std::vector<double> target_cell_mat_volfracs;
-  std::vector<Tangram::Point<2>> target_cell_mat_centroids;
+  std::vector<Wonton::Point<2>> target_cell_mat_centroids;
 
         for (int c = 0; c<ntarcells; ++c){
 
@@ -419,7 +413,7 @@ void run(
                 // with thrust turned on, these need to be portage vectors, not std::vectors
                 const Portage::vector<int> mats{map_target_cell_materials.at(c)};
                 const Portage::vector<double> volfracs{map_target_cell_mat_volfracs.at(c)};
-                const Portage::vector<Tangram::Point<2>> centroids{map_target_cell_mat_centroids.at(c)};
+                const Portage::vector<Wonton::Point<2>> centroids{map_target_cell_mat_centroids.at(c)};
 
                 // push the size onto the number of mats
                 target_cell_num_mats.push_back(mats.size());
@@ -451,7 +445,7 @@ void run(
                 for (auto x: target_cell_mat_volfracs) std::cout<<x<<" "; std::cout<<std::endl;
 
                 std::cout<<"target_cell_mat_centroids:\n";
-                for (Tangram::Point<2>  x: target_cell_mat_centroids) std::cout<<x[0]<<" "<<x[1]<<"\n"; std::cout<<std::endl;
+                for (Wonton::Point<2>  x: target_cell_mat_centroids) std::cout<<x[0]<<" "<<x[1]<<"\n"; std::cout<<std::endl;
 #endif
 
   // Perform interface reconstruction on target mesh for pretty pictures
@@ -495,7 +489,7 @@ void run(
       target_state.mat_get_cells(m, &matcells);
 
       // Cell error computation
-      Portage::Point<2> ccen;
+      Wonton::Point<2> ccen;
       int nmatcells = matcells.size();
       for (int ic = 0; ic < nmatcells; ++ic) {
         int c = matcells[ic];

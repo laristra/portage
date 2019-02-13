@@ -12,6 +12,7 @@ Please see the license file at the root of this repository, or at:
 #include "portage/swarm/swarm.h"
 #include "portage/swarm/swarm_state.h"
 #include "wonton/mesh/jali/jali_mesh_wrapper.h"
+#include "wonton/support/Point.h"
 
 #include "gtest/gtest.h"
 #include "mpi.h"
@@ -19,8 +20,10 @@ Please see the license file at the root of this repository, or at:
 #include "Mesh.hh"
 #include "MeshFactory.hh"
 
-TEST(MPI_Particle_Distribute, SimpleTest2DGather) {
 
+
+TEST(MPI_Particle_Distribute, SimpleTest2DGather) {
+  using Wonton::Point;
   int commRank;
   MPI_Comm_rank(MPI_COMM_WORLD, &commRank);
 
@@ -54,7 +57,7 @@ TEST(MPI_Particle_Distribute, SimpleTest2DGather) {
 
   // Fill the source state data with the specified profile
   for (size_t p = 0; p < nsrcpts; ++p) {
-    Portage::Point<2> coords = source_swarm.get_particle_coordinates(p);
+    Point<2> coords = source_swarm.get_particle_coordinates(p);
     (*source_data_int)[p] = (int)(coords[0]*coords[1]*100);
   }
   source_state->add_field("intdata", source_data_int);
@@ -65,7 +68,7 @@ TEST(MPI_Particle_Distribute, SimpleTest2DGather) {
 
   // Fill the source state data with the specified profile
   for (size_t p = 0; p < nsrcpts; ++p) {
-    Portage::Point<2> coords = source_swarm.get_particle_coordinates(p);
+    Point<2> coords = source_swarm.get_particle_coordinates(p);
     (*source_data_dbl)[p] = coords[0]*coords[1];
   }
   source_state->add_field("dbldata", source_data_dbl);
@@ -111,14 +114,14 @@ TEST(MPI_Particle_Distribute, SimpleTest2DGather) {
 
    for (size_t p = 0 ; p < nsrcpts_after; ++p)
    { 
-     Portage::Point<2> coords = source_swarm.get_particle_coordinates(p);
+     Point<2> coords = source_swarm.get_particle_coordinates(p);
      ASSERT_EQ((*sd_int_after)[p],(int)(coords[0]*coords[1]*100));  
      ASSERT_EQ((*sd_dbl_after)[p],(coords[0]*coords[1]));  
    }
 }
 
 TEST(MPI_Particle_Distribute, SimpleTest2DScatter) {
-
+  using Wonton::Point;
   int commRank;
   MPI_Comm_rank(MPI_COMM_WORLD, &commRank);
 
@@ -162,7 +165,7 @@ TEST(MPI_Particle_Distribute, SimpleTest2DScatter) {
 
   // Fill the source state data with the specified profile
   for (size_t p = 0; p < nsrcpts; ++p) {
-    Portage::Point<2> coords = source_swarm.get_particle_coordinates(p);
+    Point<2> coords = source_swarm.get_particle_coordinates(p);
     (*source_data_int)[p] = (int)(coords[0]*coords[1]*100);
   }
   source_state->add_field("intdata", source_data_int);
@@ -173,7 +176,7 @@ TEST(MPI_Particle_Distribute, SimpleTest2DScatter) {
 
   // Fill the source state data with the specified profile
   for (size_t p = 0; p < nsrcpts; ++p) {
-    Portage::Point<2> coords = source_swarm.get_particle_coordinates(p);
+    Point<2> coords = source_swarm.get_particle_coordinates(p);
     (*source_data_dbl)[p] = coords[0]*coords[1];
   }
   source_state->add_field("dbldata", source_data_dbl);
@@ -209,7 +212,7 @@ TEST(MPI_Particle_Distribute, SimpleTest2DScatter) {
 
    for (size_t p = 0 ; p < nsrcpts_after; ++p)
    { 
-     Portage::Point<2> coords = source_swarm.get_particle_coordinates(p);
+     Point<2> coords = source_swarm.get_particle_coordinates(p);
      std::vector<std::vector<double>> smlen = (*smoothing_lengths)[p];
      for (size_t d = 0 ; d < 2; ++d)
        ASSERT_EQ(smlen[0][d],1.0/3);
@@ -220,7 +223,7 @@ TEST(MPI_Particle_Distribute, SimpleTest2DScatter) {
 
 
 TEST(MPI_Particle_Distribute, SimpleTest3DGather) {
-
+  using Wonton::Point;
   int commRank;
   MPI_Comm_rank(MPI_COMM_WORLD, &commRank);
 
@@ -258,7 +261,7 @@ TEST(MPI_Particle_Distribute, SimpleTest3DGather) {
 
   // Fill the source state data with the specified profile
   for (size_t p = 0; p < nsrcpts; ++p) {
-    Portage::Point<3> coords = source_swarm.get_particle_coordinates(p);
+    Point<3> coords = source_swarm.get_particle_coordinates(p);
     (*source_data_int)[p] = (int)(coords[0]*coords[1]*coords[2]*1000);
   }
   source_state->add_field("intdata", source_data_int);
@@ -269,7 +272,7 @@ TEST(MPI_Particle_Distribute, SimpleTest3DGather) {
 
   // Fill the source state data with the specified profile
   for (size_t p = 0; p < nsrcpts; ++p) {
-    Portage::Point<3> coords = source_swarm.get_particle_coordinates(p);
+    Point<3> coords = source_swarm.get_particle_coordinates(p);
     (*source_data_dbl)[p] = coords[0]*coords[1]*coords[2];
   }
   source_state->add_field("dbldata", source_data_dbl);
@@ -316,14 +319,14 @@ TEST(MPI_Particle_Distribute, SimpleTest3DGather) {
 
    for (size_t p = 0 ; p < nsrcpts_after; ++p)
    { 
-     Portage::Point<3> coords = source_swarm.get_particle_coordinates(p);
+     Point<3> coords = source_swarm.get_particle_coordinates(p);
      ASSERT_EQ((*sd_int_after)[p],(int)(coords[0]*coords[1]*coords[2]*1000));  
      ASSERT_EQ((*sd_dbl_after)[p],(coords[0]*coords[1]*coords[2]));  
    }
 }
 
 TEST(MPI_Particle_Distribute, SimpleTest3DScatter) {
-
+  using Wonton::Point;
   int commRank;
   MPI_Comm_rank(MPI_COMM_WORLD, &commRank);
 
@@ -371,7 +374,7 @@ TEST(MPI_Particle_Distribute, SimpleTest3DScatter) {
 
   // Fill the source state data with the specified profile
   for (size_t p = 0; p < nsrcpts; ++p) {
-    Portage::Point<3> coords = source_swarm.get_particle_coordinates(p);
+    Point<3> coords = source_swarm.get_particle_coordinates(p);
     (*source_data_int)[p] = (int)(coords[0]*coords[1]*coords[2]*1000);
   }
   source_state->add_field("intdata", source_data_int);
@@ -382,7 +385,7 @@ TEST(MPI_Particle_Distribute, SimpleTest3DScatter) {
 
   // Fill the source state data with the specified profile
   for (size_t p = 0; p < nsrcpts; ++p) {
-    Portage::Point<3> coords = source_swarm.get_particle_coordinates(p);
+    Point<3> coords = source_swarm.get_particle_coordinates(p);
     (*source_data_dbl)[p] = coords[0]*coords[1]*coords[2];
   }
   source_state->add_field("dbldata", source_data_dbl);
@@ -419,7 +422,7 @@ TEST(MPI_Particle_Distribute, SimpleTest3DScatter) {
 
    for (size_t p = 0 ; p < nsrcpts_after; ++p)
    { 
-     Portage::Point<3> coords = source_swarm.get_particle_coordinates(p);
+     Point<3> coords = source_swarm.get_particle_coordinates(p);
      std::vector<std::vector<double>> smlen = (*smoothing_lengths)[p];
      for (size_t d = 0 ; d < 3; ++d)
        ASSERT_EQ(smlen[0][d],1.0/3);

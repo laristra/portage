@@ -11,6 +11,7 @@ Please see the license file at the root of this repository, or at:
 #ifndef DUMMY_INTERFACE_RECONSTRUCTOR_H
 #define DUMMY_INTERFACE_RECONSTRUCTOR_H
 
+#include "wonton/support/Point.h"
 
 #ifdef HAVE_TANGRAM
 #include "tangram/support/tangram.h"
@@ -37,7 +38,7 @@ class DummyInterfaceReconstructor {
   void set_volume_fractions(std::vector<int> const& cell_num_mats,
                             std::vector<int> const& cell_mat_ids,
                             std::vector<double> const& cell_mat_volfracs,
-                            std::vector<Tangram::Point<Dim>> const& cell_mat_centroids) {}
+                            std::vector<Wonton::Point<Dim>> const& cell_mat_centroids) {}
 #endif
 
   void set_volume_fractions(std::vector<int> const& cell_num_mats,

@@ -156,7 +156,6 @@ class MismatchFixer {
     source_volume_ =
         std::accumulate(source_ent_volumes_.begin(), source_ent_volumes_.end(),
                         0.0);
-
 #ifdef ENABLE_MPI
     global_source_volume_ = 0.0;
     MPI_Allreduce(&source_volume_, &global_source_volume_, 1, MPI_DOUBLE,
@@ -164,7 +163,6 @@ class MismatchFixer {
 #else
     global_source_volume_ = source_volume_;
 #endif
-
 
     // GLOBAL TARGET VOLUME
     ntargetents_ = (onwhat == Entity_kind::CELL) ?
@@ -400,9 +398,11 @@ class MismatchFixer {
   /// CONSTANT - Fields will see no perturbations BUT REMAP WILL BE
   ///            NON-CONSERVATIVE (constant preserving, not linearity
   ///            preserving)
-  /// CONSERVATIVE - REMAP WILL BE CONSERVATIVE but perturbations will
-  ///                occur in the field (constant fields may not stay
-  ///                constant if there is mismatch)
+  /// LOCALLY_CONSERVATIVE - REMAP WILL BE LOCALLY CONSERVATIVE (target cells
+  ///                        will preserve the integral quantities received from
+  ///                        source mesh overlap) but perturbations will
+  ///                        occur in the field (constant fields may not stay
+  ///                        constant if there is mismatch)
   /// SHIFTED_CONSERVATIVE - REMAP WILL BE CONSERVATIVE and field
   ///                        perturbations will be minimum but field
   ///                        values may be shifted (Constant fields
@@ -507,7 +507,7 @@ class MismatchFixer {
     
       return true;
 
-    } else if (partial_fixup_type == Partial_fixup_type::CONSERVATIVE) {
+    } else if (partial_fixup_type == Partial_fixup_type::LOCALLY_CONSERVATIVE) {
       // In interpolate step, we divided the accumulated integral (U)
       // in a target cell by the intersection volume (v_i) instead of
       // the target cell volume (v_c) to give a target field of u_t =

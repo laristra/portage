@@ -14,7 +14,8 @@ their application, or
 and custom components to create a remapping capability uniquely
 tailored to their application needs.
 
-![Portage design](doxygen/images/portage-tangram-diagram.png)<br>
+<img src="portage-tangram-diagram.png" alt="Portage design" width="100%">
+<br>
 
 The drivers furnished with Portage provide:
 - [conservative remapping of multi-material fields between general
@@ -25,8 +26,9 @@ particle swarms.
 - a modern design templated on the major components - mix and match from
   the furnished suite or use a custom component.
 - direct (no-copy) use of client application's native mesh/particle and 
-  field data structures whenever possible (see [distributed remap](@ref distributed_remap)).
-- built-in distributed and on-node parallelism even with custom components.
+  field data structures whenever possible (see [distributed remap](@ref distributed_concepts)).
+- built-in distributed and on-node parallelism even with custom
+components (see [scaling](performance.html#scaling) results).
 
 They also have the following known limitations:
 - Only remapping of scalar fields is supported; vectors and tensors
@@ -58,11 +60,17 @@ At a minimum, Portage requires:
 - [LAPACKE](https://https://github.com/Reference-LAPACK/lapack/tree/master/LAPACKE) 3.8.0+
 - [Boost](https://www.boost.org) 1.68.0+ **or** [Thrust](https://thrust.github.io/) 1.8.1+
 
-In addition to the minimum set of libraries, Portage has been known to
-work with version 1.0.0 of the [Jali](https://github.com/lanl/jali) and
-\#e78c594 of [flecsi-sp](https://github.com/laristra/flecsi-sp) (along
-with \#374b56b of [FleCSI](https://github.com/laristra/flecsi)) that
-provide mesh/state functionality.
+Portage depends on the [Wonton](https://github.com/laristra/wonton)
+library to provide mesh/state wrapper interfaces and some common
+defintions and functionality. Portage is known to work with Wonton
+mesh/state wrappers for version 1.0.0 of the
+[Jali](https://github.com/lanl/jali) and \#e78c594 of
+[flecsi-sp](https://github.com/laristra/flecsi-sp) (along with
+\#374b56b of [FleCSI](https://github.com/laristra/flecsi)).
+
+The supplied mesh-mesh remap driver of Portage also requires the use
+of the [R3D](https://www.github.com/devonmpowell/r3d) library for
+intersection of polyhedra.
 
 **Distributed parallelism** of Portage is currently supported through MPI;
 regular testing is performed with OpenMPI 1.10.3+ .  Most application

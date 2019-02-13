@@ -12,7 +12,8 @@ Please see the license file at the root of this repository, or at:
 
 // portage includes
 #include "portage/support/portage.h"
-
+#include "wonton/support/Point.h"
+using Wonton::Point;
 
 /// file-local namespace
 namespace search_simple {
@@ -28,7 +29,7 @@ namespace search_simple {
     @param[in,out] yhigh Maximum @a y of bounding box.
    */
 void getBoundingBox(
-    const std::vector<Portage::Point<2>> &cell_coord,
+    const std::vector<Point<2>> &cell_coord,
     double* xlow, double* xhigh,
     double* ylow, double* yhigh)
 {

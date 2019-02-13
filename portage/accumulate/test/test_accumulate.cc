@@ -13,10 +13,11 @@ Please see the license file at the root of this repository, or at:
 #include "portage/swarm/swarm.h"
 #include "portage/accumulate/accumulate.h"
 #include "portage/support/test_operator_data.h"
+#include "wonton/support/Point.h"
 
 using std::shared_ptr;
 using std::make_shared;
-using Portage::Point;
+using Wonton::Point;
 
 template<size_t dim>
 void test_accumulate(Portage::Meshfree::EstimateType etype,
