@@ -4,8 +4,11 @@ Please see the license file at the root of this repository, or at:
     https://github.com/laristra/portage/blob/master/LICENSE
 */
 
+
 #ifndef MPI_COLLATE_H_
 #define MPI_COLLATE_H_
+
+#ifdef PORTAGE_ENABLE_MPI
 
 #include <algorithm>
 #include <numeric>
@@ -74,5 +77,7 @@ namespace Portage {
   }
 
 } // namespace Portage
+
+#endif
 
 #endif // MPI_COLLATE_H_

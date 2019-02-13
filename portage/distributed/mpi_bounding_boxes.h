@@ -9,6 +9,8 @@ Please see the license file at the root of this repository, or at:
 
 //#define DEBUG_MPI
 
+#ifdef PORTAGE_ENABLE_MPI
+
 #include <cassert>
 #include <algorithm>
 #include <numeric>
@@ -43,7 +45,10 @@ class MPI_Bounding_Boxes {
   /*!
     @brief Constructor of MPI_Bounding_Boxes
    */
-  MPI_Bounding_Boxes() {}
+  MPI_Bounding_Boxes(Wonton::MPIExecutor_type const *mpiexecutor) {
+    assert(mpiexecutor);
+    comm_ = mpiexecutor->mpicomm;
+  }
 
 
   /*!
@@ -81,8 +86,8 @@ class MPI_Bounding_Boxes {
   {
     // Get the MPI communicator size and rank information
     int commSize, commRank;
-    MPI_Comm_size(MPI_COMM_WORLD, &commSize);
-    MPI_Comm_rank(MPI_COMM_WORLD, &commRank);
+    MPI_Comm_size(comm_, &commSize);
+    MPI_Comm_rank(comm_, &commRank);
 
     int dim = dim_ = source_mesh_flat.space_dimension();
     assert(dim == target_mesh.space_dimension());
@@ -579,6 +584,9 @@ class MPI_Bounding_Boxes {
   std::map<int, std::vector<int>> distributedMaterialCellIds_;
 
   
+  // The communicator we are using
+  MPI_Comm comm_;
+
   /*!
     @brief Compute fields needed to do comms for a given entity type
     @param[in] info              Info data structure to be filled
@@ -603,7 +611,7 @@ class MPI_Bounding_Boxes {
     for (unsigned int i=0; i<commSize; i++)
       info->sendCounts[i] = sendFlags[i] ? info->sourceNum : 0;
     MPI_Alltoall(&(info->sendCounts[0]), 1, MPI_INT,
-                 &(info->recvCounts[0]), 1, MPI_INT, MPI_COMM_WORLD);
+                 &(info->recvCounts[0]), 1, MPI_INT, comm_);
 
     // Each rank will tell each other rank how many owned indexes it is going to send it
     info->sendOwnedCounts.resize(commSize);
@@ -611,7 +619,7 @@ class MPI_Bounding_Boxes {
     for (unsigned int i=0; i<commSize; i++)
       info->sendOwnedCounts[i] = sendFlags[i] ? info->sourceNumOwned : 0;
     MPI_Alltoall(&(info->sendOwnedCounts[0]), 1, MPI_INT,
-                 &(info->recvOwnedCounts[0]), 1, MPI_INT, MPI_COMM_WORLD);
+                 &(info->recvOwnedCounts[0]), 1, MPI_INT, comm_);
 
     // Compute the total number of indexes this rank will receive from all ranks
     for (unsigned int i=0; i<commSize; i++)
@@ -706,7 +714,7 @@ class MPI_Bounding_Boxes {
         MPI_Request request;
         MPI_Irecv((void *)&((*newData)[stride*writeOffset]),
                   stride*curRecvCounts[i], mpiType, i,
-                  MPI_ANY_TAG, MPI_COMM_WORLD, &request);
+                  MPI_ANY_TAG, comm_, &request);
         requests.push_back(request);
       }
       else if (i == commRank)
@@ -729,7 +737,7 @@ class MPI_Bounding_Boxes {
       if ((i != commRank) && (curSendCounts[i] > 0))
       {
         MPI_Send((void *)&(sourceData[stride*sourceStart]),
-                 stride*curSendCounts[i], mpiType, i, 0, MPI_COMM_WORLD);
+                 stride*curSendCounts[i], mpiType, i, 0, comm_);
       }
     }
 
@@ -748,8 +756,8 @@ class MPI_Bounding_Boxes {
                 
     // Get the MPI communicator size and rank information
     int commSize, commRank;
-    MPI_Comm_size(MPI_COMM_WORLD, &commSize);
-    MPI_Comm_rank(MPI_COMM_WORLD, &commRank);
+    MPI_Comm_size(comm_, &commSize);
+    MPI_Comm_rank(comm_, &commRank);
 
     int dim = source_mesh_flat.space_dimension();
 
@@ -829,7 +837,7 @@ class MPI_Bounding_Boxes {
 
     // Broadcast the target bounding boxes so that each rank knows the bounding boxes for all ranks
     for (unsigned int i=0; i<commSize; i++)
-      MPI_Bcast(&(targetBoundingBoxes[0])+i*2*dim, 2*dim, MPI_DOUBLE, i, MPI_COMM_WORLD);
+      MPI_Bcast(&(targetBoundingBoxes[0])+i*2*dim, 2*dim, MPI_DOUBLE, i, comm_);
 
 
     // Offset the source bounding boxes by a fudge factor so that we don't send source data to a rank
@@ -1215,5 +1223,7 @@ class MPI_Bounding_Boxes {
 }; // MPI_Bounding_Boxes
 
 } // namespace Portage
+
+#endif  // PORTAGE_ENABLE_MPI
 
 #endif // MPI_Bounding_Boxes_H_

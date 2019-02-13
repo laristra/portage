@@ -180,8 +180,8 @@ class DriverTest : public ::testing::Test {
     d.set_remap_var_names(remap_fields, remap_fields,
                           estimator, basis, 
                           operator_, domains_, operator_data_);
-    // run on one processor
-    d.run(false);
+    // run on one processor (no argument implies serial run)
+    d.run();
 
     // Check the answer
     double toterr=0.;

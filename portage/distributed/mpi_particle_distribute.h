@@ -7,10 +7,13 @@ Please see the license file at the root of this repository, or at:
 #ifndef MPI_PARTICLE_DISTRIBUTE_H_
 #define MPI_PARTICLE_DISTRIBUTE_H_
 
+#ifdef PORTAGE_ENABLE_MPI
+
 #include <cassert>
 #include <algorithm>
 #include <numeric>
 #include <memory>
+#include <vector>
 
 #include "portage/accumulate/accumulate.h"
 #include "portage/support/portage.h"
@@ -38,7 +41,10 @@ class MPI_Particle_Distribute {
   /*!
     @brief Constructor of MPI_Particle_Distribute
    */
-  MPI_Particle_Distribute() {}
+  MPI_Particle_Distribute(Wonton::MPIExecutor_type const *mpiexecutor) {
+    assert(mpiexecutor);
+    comm_ = mpiexecutor->mpicomm;
+  }
 
 
   /*!
@@ -84,8 +90,8 @@ class MPI_Particle_Distribute {
   {
     // Get the MPI communicator size and rank information
     int commSize, commRank;
-    MPI_Comm_size(MPI_COMM_WORLD, &commSize);
-    MPI_Comm_rank(MPI_COMM_WORLD, &commRank);
+    MPI_Comm_size(comm_, &commSize);
+    MPI_Comm_rank(comm_, &commRank);
 
     assert(dim == source_swarm.space_dimension());
     assert(dim == target_swarm.space_dimension());
@@ -150,7 +156,7 @@ class MPI_Particle_Distribute {
     *         rank knows the bounding boxes for all ranks                     *
     **************************************************************************/
     for (size_t i=0; i<commSize; i++)
-      MPI_Bcast(&(targetBoundingBoxes[0])+2*dim*i, 2*dim, MPI_DOUBLE, i, MPI_COMM_WORLD);
+      MPI_Bcast(&(targetBoundingBoxes[0])+2*dim*i, 2*dim, MPI_DOUBLE, i, comm_);
 
 #ifdef DEBUG_MPI
     std::cout << "Target boxes: ";
@@ -431,6 +437,8 @@ class MPI_Particle_Distribute {
 
  private:
 
+  MPI_Comm comm_;
+  
   /*!
     @brief Compute fields needed to do comms
     @param[in] info              Info data structure to be filled
@@ -457,7 +465,7 @@ class MPI_Particle_Distribute {
     }
 
     MPI_Alltoall(&(info->sendCounts[0]), 1, MPI_INT,
-                 &(info->recvCounts[0]), 1, MPI_INT, MPI_COMM_WORLD);
+                 &(info->recvCounts[0]), 1, MPI_INT, comm_);
 
     // Compute the total number of indexes this rank will receive from all ranks
     for (unsigned int i=0; i<commSize; i++)
@@ -494,7 +502,7 @@ class MPI_Particle_Distribute {
         MPI_Request request;
         MPI_Irecv((void *)&((*newData)[writeOffset]),
                   info->recvCounts[i]*nvals, mpiType, i,
-                  MPI_ANY_TAG, MPI_COMM_WORLD, &request);
+                  MPI_ANY_TAG, comm_, &request);
         requests.push_back(request);
       }
      writeOffset += info->recvCounts[i]*nvals;
@@ -507,7 +515,7 @@ class MPI_Particle_Distribute {
       if ((i != commRank) && (info->sendCounts[i] > 0))
       {
         MPI_Send((void *)&(sourceData[i][0]),
-                 info->sendCounts[i]*nvals, mpiType, i, 0, MPI_COMM_WORLD);
+                 info->sendCounts[i]*nvals, mpiType, i, 0, comm_);
       }
     }
 
@@ -523,5 +531,7 @@ class MPI_Particle_Distribute {
 
 }; // MPI_Particle_Distribute
 } // namespace Portage
+
+#endif  // PORTAGE_ENABLE_MPI
 
 #endif // MPI_Particle_Distribute

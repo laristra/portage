@@ -73,9 +73,11 @@ TEST(MPI_Bounding_Boxes, SimpleTest3D) {
   std::shared_ptr<Jali::State> target_state(Jali::State::create(target_mesh));
   Wonton::Jali_State_Wrapper target_state_(*target_state);
 
+  Wonton::MPIExecutor_type executor(MPI_COMM_WORLD);
+  
   // Use a bounding box distributor to send the source cells to the target
   // partitions where they are needed
-  Portage::MPI_Bounding_Boxes distributor;
+  Portage::MPI_Bounding_Boxes distributor(&executor);
   distributor.distribute(source_mesh_flat, source_state_flat, target_mesh_,
                          target_state_);
 
@@ -236,7 +238,9 @@ TEST(MPI_Bounding_Boxes, SimpleTest2D) {
 
   // Use a bounding box distributor to send the source cells to the target
   // partitions where they are needed
-  Portage::MPI_Bounding_Boxes distributor;
+
+  Wonton::MPIExecutor_type executor(MPI_COMM_WORLD);
+  Portage::MPI_Bounding_Boxes distributor(&executor);
   distributor.distribute(source_mesh_flat, source_state_flat, target_mesh_,
                          target_state_);
 

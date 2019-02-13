@@ -18,50 +18,6 @@ Please see the license file at the root of this repository, or at:
 #include "wonton/mesh/simple/simple_mesh_wrapper.h"
 
 double eps = 1.e-8;
-TEST(TANGRAM_3D, test_tangram_exists) {
-  // test that we can instantiate a Tangram Point even though we don't include
-  // the Tangram header
-
-  float x{1.}, y{2}, z{3};
-  Wonton::Point<3> p{x, y, z};
-  ASSERT_FLOAT_EQ(x, p[0]);
-  ASSERT_FLOAT_EQ(y, p[1]);
-  ASSERT_FLOAT_EQ(z, p[2]);
-}
-
-TEST(TANGRAM_3D, test_portage_exists) {
-  // test that we can instantiate a Portage Point
-  // we are doing this because Wonton::Point includes Wonton::Point and
-  // we want to make sure there is no namespace clobbering
-
-  float x{1.}, y{2}, z{3};
-  Wonton::Point<3> p{x, y, z};
-  ASSERT_FLOAT_EQ(x, p[0]);
-  ASSERT_FLOAT_EQ(y, p[1]);
-  ASSERT_FLOAT_EQ(z, p[2]);
-}
-
-TEST(TANGRAM_3D, test_tangram_to_portage) {
-  // test that we can create a Portage Point from a Tangram Point
-
-  float x{1.}, y{2}, z{3};
-  Wonton::Point<3> pt{x, y, z};
-  Wonton::Point<3> pp{pt};
-  ASSERT_FLOAT_EQ(x, pp[0]);
-  ASSERT_FLOAT_EQ(y, pp[1]);
-  ASSERT_FLOAT_EQ(z, pp[2]);
-}
-
-TEST(TANGRAM_3D, test_portage_to_tangram) {
-  // test that we can create a Tangram Point from a Portage Point
-
-  float x{1.}, y{2}, z{3};
-  Wonton::Point<3> pp{x, y, z};
-  Wonton::Point<3> pt{pp};
-  ASSERT_FLOAT_EQ(x, pt[0]);
-  ASSERT_FLOAT_EQ(y, pt[1]);
-  ASSERT_FLOAT_EQ(z, pt[2]);
-}
 
 TEST(TANGRAM_3D, test_matpoly_succeeds) {
   // test that we can create a Tangram MatPoly
