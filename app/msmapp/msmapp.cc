@@ -12,7 +12,7 @@ Please see the license file at the root of this repository, or at:
 #include <fstream>
 #include <vector>
 
-#ifdef ENABLE_MPI
+#ifdef PORTAGE_ENABLE_MPI
 #include <mpi.h>
 #else
 #define PORTAGE_SERIAL_ONLY
@@ -253,8 +253,8 @@ public:
       driver(sourceMeshWrapper, sourceStateWrapper,
              targetMeshWrapper, targetStateWrapper);
     driver.set_remap_var_names(remap_fields);
-    // run on one processor
-    driver.run(false);
+    driver.run();  // executor argument defaults to nullptr -> run in serial
+
 
     // Build the mesh-swarm-mesh driver data for this mesh type
     Portage::MSM_Driver<
@@ -274,7 +274,7 @@ public:
     msmdriver.set_remap_var_names(remap_fields, remap_fields,
                                   estimate, basis, oper8tor, domains, data);
     //run on one processor
-    msmdriver.run(false);
+    msmdriver.run();
 
     //Check the answer
     double stdval, err;
@@ -521,8 +521,7 @@ protected:
     driver(sourceMeshWrapper, sourceStateWrapper,
            targetMeshWrapper, targetStateWrapper);
     driver.set_remap_var_names(remap_fields);
-    //run on one processor
-    driver.run(false);
+    driver.run();  // executor argument to driver defaults to nullptr -> serial
 
     // Build the mesh-swarm-mesh driver data for this mesh type
     Portage::MSM_Driver<
@@ -539,8 +538,8 @@ protected:
     msmdriver.set_remap_var_names(remap_fields, remap_fields,
                                   Portage::Meshfree::LocalRegression, basis,
                                   oper8tor, domains, data);
-    //run on one processor
-    msmdriver.run(false);
+    // run on one processor
+    msmdriver.run();
 
     //Check the answer
     double stdval, err;
@@ -754,7 +753,7 @@ int main(int argc, char** argv) {
     throw std::runtime_error("error in input file");
   }
 
-#ifdef ENABLE_MPI
+#ifdef PORTAGE_ENABLE_MPI
   int mpi_init_flag;
   MPI_Initialized(&mpi_init_flag);
   if (!mpi_init_flag)

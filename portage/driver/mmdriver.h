@@ -39,7 +39,7 @@ Please see the license file at the root of this repository, or at:
 #include "portage/driver/fix_mismatch.h"
 
 
-#ifdef ENABLE_MPI
+#ifdef PORTAGE_ENABLE_MPI
 #include "portage/distributed/mpi_bounding_boxes.h"
 #endif
 
@@ -336,6 +336,7 @@ class MMDriver {
     @param target_meshvar_names  names of remap variables on target mesh
     @param source_matvar_names  names of remap variables on materials of source mesh
     @param target_matvar_names  names of remap variables on materials of target mesh
+    @param serialexecutor pointer to Serial Executor (generally not needed but introduced for future proofing)
     @return status of remap (1 if successful, 0 if not)
   */
 
@@ -343,9 +344,10 @@ class MMDriver {
   int remap(std::vector<std::string> const &source_meshvar_names,
             std::vector<std::string> const &target_meshvar_names,
             std::vector<std::string> const &source_matvar_names,
-            std::vector<std::string> const &target_matvar_names);
+            std::vector<std::string> const &target_matvar_names,
+            Wonton::SerialExecutor_type const *serialexecutor = nullptr);
 
-#ifdef ENABLE_MPI
+#ifdef PORTAGE_ENABLE_MPI
   /*!
     @brief remap for a given set of variables on a given entity kind in a distributed setting with redistribution of data if needed
     @tparam entity_kind  Kind of entity that variables live on
@@ -353,6 +355,7 @@ class MMDriver {
     @param target_meshvar_names  names of remap variables on target mesh
     @param source_matvar_names  names of remap variables on materials of source mesh
     @param target_matvar_names  names of remap variables on materials of target mesh
+    @param mpiexecutor pointer to a MPI Executor (furnishes the comm for a MPI calls)
     @return status of remap (1 if successful, 0 if not)
   */
 
@@ -360,7 +363,8 @@ class MMDriver {
   int remap_distributed(std::vector<std::string> const &source_meshvar_names,
                         std::vector<std::string> const &target_meshvar_names,
                         std::vector<std::string> const &source_matvar_names,
-                        std::vector<std::string> const &target_matvar_names);
+                        std::vector<std::string> const &target_matvar_names,
+                        Wonton::MPIExecutor_type const *mpiexecutor = nullptr);
 #endif
 
 
@@ -369,25 +373,30 @@ class MMDriver {
     @brief Execute the remapping process
     @return status of remap (1 if successful, 0 if not)
   */
-  int run(bool distributed, std::string *errmsg = nullptr) {
+  int run(Wonton::Executor_type const *executor = nullptr,
+          std::string *errmsg = nullptr) {
     std::string message;
-#ifndef ENABLE_MPI
-    if (distributed) {
-      message = "Request is for a parallel run but Portage is compiled for serial runs only";
-      if (errmsg)
-        *errmsg = message;
-      else
-        std::cerr << message << "\n";
-      return 0;
+
+    bool distributed = false;
+    int comm_rank = 0;
+    int nprocs = 1;
+    
+
+    // Will be null if it's a parallel executor
+    auto serialexecutor = dynamic_cast<Wonton::SerialExecutor_type const *>(executor);
+    
+#ifdef PORTAGE_ENABLE_MPI
+    MPI_Comm mycomm = MPI_COMM_NULL;
+    auto mpiexecutor = dynamic_cast<Wonton::MPIExecutor_type const *>(executor);
+    if (mpiexecutor && mpiexecutor->mpicomm != MPI_COMM_NULL) {
+      mycomm = mpiexecutor->mpicomm;
+      MPI_Comm_rank(mycomm, &comm_rank);
+      MPI_Comm_size(mycomm, &nprocs);
+      if (nprocs > 1)
+        distributed = true;
     }
 #endif
-
-    int comm_rank = 0;
-#ifdef ENABLE_MPI
-    if (distributed)
-      MPI_Comm_rank(MPI_COMM_WORLD, &comm_rank);
-#endif
-
+    
     if (comm_rank == 0)
       std::cout << "in MMDriver::run()...\n";
 
@@ -431,16 +440,20 @@ class MMDriver {
     // ALWAYS call because we may have to remap material volume
     // fractions and centroids which are cell-based fields
 
-#ifdef ENABLE_MPI
+    // Default is serial run (if MPI is not enabled or the
+    // communicator is not defined or the number of processors is 1)
+#ifdef PORTAGE_ENABLE_MPI
     if (distributed)
       remap_distributed<Entity_kind::CELL>(src_meshvar_names,
                                            trg_meshvar_names,
                                            src_matvar_names,
-                                           trg_matvar_names);
+                                           trg_matvar_names,
+                                           mpiexecutor);
     else
 #endif
       remap<Entity_kind::CELL>(src_meshvar_names, trg_meshvar_names,
-                  src_matvar_names, trg_matvar_names);
+                               src_matvar_names, trg_matvar_names,
+                               serialexecutor);
 
 
 
@@ -468,16 +481,18 @@ class MMDriver {
     }
 
     if (src_meshvar_names.size()) {
-#ifdef ENABLE_MPI
+#ifdef PORTAGE_ENABLE_MPI
       if (distributed)
         remap_distributed<Entity_kind::NODE>(src_meshvar_names,
                                              trg_meshvar_names,
                                              src_matvar_names,
-                                             trg_matvar_names);
+                                             trg_matvar_names,
+                                             mpiexecutor);
       else
 #endif
         remap<Entity_kind::NODE>(src_meshvar_names, trg_meshvar_names,
-                    src_meshvar_names, trg_meshvar_names);
+                                 src_meshvar_names, trg_meshvar_names,
+                                 serialexecutor);
     }
 
     return 1;
@@ -600,7 +615,8 @@ int MMDriver<Search, Intersect, Interpolate, D,
              >::remap(std::vector<std::string> const &src_meshvar_names,
                       std::vector<std::string> const &trg_meshvar_names,
                       std::vector<std::string> const &src_matvar_names,
-                      std::vector<std::string> const &trg_matvar_names) {
+                      std::vector<std::string> const &trg_matvar_names,
+                      Wonton::SerialExecutor_type const *serial_executor) {
 
   static_assert(onwhat == Entity_kind::NODE || onwhat == Entity_kind::CELL,
                 "Remap implemented only for CELL and NODE variables");
@@ -773,7 +789,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
   MismatchFixer<D, onwhat, SourceMesh_Wrapper, SourceState_Wrapper,
                 TargetMesh_Wrapper, TargetState_Wrapper>
       mismatch_fixer(source_mesh_, source_state_, target_mesh_, target_state_,
-                     source_ents_and_weights);
+                     source_ents_and_weights, serial_executor);
 
   if (mismatch_fixer.has_mismatch()) {
     for (int i = 0; i < nvars; i++) {
@@ -1033,7 +1049,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
 
 
 
-#ifdef ENABLE_MPI
+#ifdef PORTAGE_ENABLE_MPI
 
 // Distributed Remap with redistribution of mesh and data
 
@@ -1061,15 +1077,22 @@ int MMDriver<Search, Intersect, Interpolate, D,
              >::remap_distributed(std::vector<std::string> const &src_meshvar_names,
                                   std::vector<std::string> const &trg_meshvar_names,
                                   std::vector<std::string> const &src_matvar_names,
-                                  std::vector<std::string> const &trg_matvar_names) {
+                                  std::vector<std::string> const &trg_matvar_names,
+                                  Wonton::MPIExecutor_type const *mpiexecutor) {
+
+  if (!mpiexecutor || mpiexecutor->mpicomm == MPI_COMM_NULL)
+    std::cerr <<
+        "Specify a parallel executor with a valid Comm for parallel runs\n";
+  MPI_Comm mycomm = mpiexecutor->mpicomm;
 
   static_assert(onwhat == Entity_kind::NODE || onwhat == Entity_kind::CELL,
                 "Remap implemented only for CELL and NODE variables");
 
   int comm_rank = 0;
-  MPI_Comm_rank(MPI_COMM_WORLD, &comm_rank);
+  MPI_Comm_rank(mycomm, &comm_rank);
 
-  int ntarget_ents_owned = target_mesh_.num_entities(onwhat, Entity_type::PARALLEL_OWNED);
+  int ntarget_ents_owned = target_mesh_.num_entities(onwhat,
+                                                     Entity_type::PARALLEL_OWNED);
   std::cout << "Number of target entities of kind " << onwhat <<
       " in target mesh on rank " << comm_rank << ": " <<
       ntarget_ents_owned << std::endl;
@@ -1094,13 +1117,14 @@ int MMDriver<Search, Intersect, Interpolate, D,
 
   source_mesh_flat.initialize(source_mesh_);
   
-  // Note the flat state should be used for everything including the centroids and
-  // volume fractions for interface reconstruction
+  // Note the flat state should be used for everything including the
+  // centroids and volume fractions for interface reconstruction
   std::vector<std::string> source_remap_var_names;
   for (auto & stpair : source_target_varname_map_)
     source_remap_var_names.push_back(stpair.first);
   source_state_flat.initialize(source_state_, source_remap_var_names);
-  MPI_Bounding_Boxes distributor;
+
+  MPI_Bounding_Boxes distributor(mpiexecutor);
   distributor.distribute(source_mesh_flat, source_state_flat,
                          target_mesh_, target_state_);
 
@@ -1159,7 +1183,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
                                                   cell_mat_ids,
                                                   cell_mat_volfracs,
                                                   cell_mat_centroids);
-    interface_reconstructor->reconstruct();
+    interface_reconstructor->reconstruct(mpiexecutor);
   }
 
 
@@ -1270,7 +1294,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
                 TargetMesh_Wrapper, TargetState_Wrapper>
       mismatch_fixer(source_mesh_flat, source_state_flat,
                      target_mesh_, target_state_,
-                     source_ents_and_weights);
+                     source_ents_and_weights, mpiexecutor);
 
   if (mismatch_fixer.has_mismatch()) {
     for (int i = 0; i < nvars; i++) {
@@ -1298,11 +1322,11 @@ int MMDriver<Search, Intersect, Interpolate, D,
 
         double global_lower_bound=0.0, global_upper_bound=0.0;
         MPI_Allreduce(&lower_bound, &global_lower_bound, 1, MPI_DOUBLE, MPI_MIN,
-                      MPI_COMM_WORLD);
+                      mycomm);
         lower_bound = global_lower_bound;
 
         MPI_Allreduce(&upper_bound, &global_upper_bound, 1, MPI_DOUBLE, MPI_MAX,
-                      MPI_COMM_WORLD);
+                      mycomm);
         upper_bound = global_upper_bound;
 
         double relbounddiff = fabs((upper_bound-lower_bound)/lower_bound);
@@ -1398,9 +1422,9 @@ int MMDriver<Search, Intersect, Interpolate, D,
 
     int nmatcells = matcellstgt.size();
     int nmatcells_global = 0;
-    #ifdef ENABLE_MPI
+    #ifdef PORTAGE_ENABLE_MPI
     MPI_Allreduce(&nmatcells, &nmatcells_global, 1, MPI_INT, MPI_SUM,
-                  MPI_COMM_WORLD);
+                  mycomm);
     #else
     nmatcells_global=nmatcells;
     #endif
@@ -1542,7 +1566,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
 
   return 1;
 }
-#endif  // ENABLE_MPI
+#endif  // PORTAGE_ENABLE_MPI
 
 
 }  // namespace Portage

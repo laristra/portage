@@ -130,7 +130,7 @@ int main(int argc, char** argv) {
     d.set_remap_var_names(varnames);
 
     // Do the remap
-    d.run(false);
+    d.run();  // executor argument defaults to false -> serial
   }
 
   // Setup the main driver for this mesh type
@@ -150,7 +150,7 @@ int main(int argc, char** argv) {
      d.set_remap_var_names(varnames);
 
      // Do the remap
-     d.run(false);
+     d.run();  // executor arguments defaults to false -> serial
   }
 
 

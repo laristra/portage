@@ -30,7 +30,7 @@ Please see the license file at the root of this repository, or at:
 #include "portage/estimate/estimate.h"
 #include "portage/driver/driver_swarm.h"
 
-#ifdef ENABLE_MPI
+#ifdef PORTAGE_ENABLE_MPI
 #include "portage/distributed/mpi_bounding_boxes.h"
 #endif
 
@@ -186,21 +186,30 @@ class MSM_Driver {
   /*!
     @brief Execute the remapping process
   */
-  void run(bool distributed) {
+  void run(Wonton::Executor_type const *executor = nullptr) {
 
-#ifndef ENABLE_MPI
-    if (distributed) {
-      std::cout << "Request is for a parallel run but Portage is compiled for serial runs only\n";
-      return;
+    bool distributed = false;
+    int comm_rank = 0;
+    int nprocs = 1;
+    
+    // Will be null if it's a parallel executor
+    auto serialexecutor = dynamic_cast<Wonton::SerialExecutor_type const *>(executor);
+    
+#ifdef PORTAGE_ENABLE_MPI
+    MPI_Comm mycomm = MPI_COMM_NULL;
+    auto mpiexecutor = dynamic_cast<Wonton::MPIExecutor_type const *>(executor);
+    if (mpiexecutor && mpiexecutor->mpicomm != MPI_COMM_NULL) {
+      mycomm = mpiexecutor->mpicomm;
+      MPI_Comm_rank(mycomm, &comm_rank);
+      MPI_Comm_size(mycomm, &nprocs);
+      if (nprocs > 1) {
+        distributed = true;
+        std::cerr << "Cannot run Mesh-Swarm-Mesh driver in distributed mode yet\n";
+        return;
+      }
     }
 #endif
-
-    int comm_rank = 0;
-
-#ifdef ENABLE_MPI
-    MPI_Comm_rank(MPI_COMM_WORLD, &comm_rank);
-#endif
-
+    
     if (comm_rank == 0) std::printf("in MSM_Driver::run()...\n");
 
     int numTargetCells = target_mesh_.num_owned_cells();
@@ -293,7 +302,7 @@ class MSM_Driver {
                                        operator_data_);
 
       // do the remap
-      swarm_driver.run(false, true);
+      swarm_driver.run(executor, true);
 
       // transfer data back to target mesh
       for (auto name=target_cellvar_names.begin();
@@ -379,7 +388,7 @@ class MSM_Driver {
                                        basis_);
 
       // do the remap
-      swarm_driver.run(false, true);
+      swarm_driver.run(executor, true);
 
       // transfer data back to target mesh
       for (auto name=target_nodevar_names.begin();

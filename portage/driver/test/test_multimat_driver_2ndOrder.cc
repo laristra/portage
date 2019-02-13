@@ -11,7 +11,7 @@ Please see the license file at the root of this repository, or at:
 #include <cmath>
 
 #include "gtest/gtest.h"
-#ifdef ENABLE_MPI
+#ifdef PORTAGE_ENABLE_MPI
 #include "mpi.h"
 #endif
 
@@ -248,7 +248,7 @@ TEST(MMDriver, ThreeMat2D) {
         targetMeshWrapper, targetStateWrapper);
   d.set_remap_var_names(remap_fields);
   d.set_limiter(Portage::Limiter_type::NOLIMITER);
-  d.run(false);
+  d.run();  // run in serial
 
 
 
@@ -630,7 +630,7 @@ TEST(MMDriver, ThreeMat3D) {
         targetMeshWrapper, targetStateWrapper);
   d.set_remap_var_names(remap_fields);
   d.set_limiter(Portage::Limiter_type::NOLIMITER);
-  d.run(false);
+  d.run();  // run in serial (executor defaults to nullptr)
 
 
 

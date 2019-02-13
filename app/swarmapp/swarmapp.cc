@@ -15,7 +15,7 @@ Please see the license file at the root of this repository, or at:
 #include <memory>
 #include <stdexcept>
 
-#ifdef ENABLE_MPI
+#ifdef PORTAGE_ENABLE_MPI
 #include <mpi.h>
 #else
 #define PORTAGE_SERIAL_ONLY
@@ -160,7 +160,7 @@ int main(int argc, char** argv) {
   n_target = atoi(argv[3]);
   distribution = atoi(argv[4]);
 
-#ifdef ENABLE_MPI
+#ifdef PORTAGE_ENABLE_MPI
   int mpi_init_flag;
   MPI_Initialized(&mpi_init_flag);
   if (!mpi_init_flag)
@@ -240,8 +240,13 @@ int main(int argc, char** argv) {
     d.set_remap_var_names(remap_fields, remap_fields,
                           Portage::Meshfree::LocalRegression,
                           Portage::Meshfree::Basis::Quadratic);
-  d.run(true, true);
 
+#ifdef PORTAGE_ENABLE_MPI
+  Wonton::MPIExecutor_type mpiexecutor(MPI_COMM_WORLD);
+  d.run(&mpiexecutor, true);
+#else
+  d.run();
+#endif
 
   std::vector<double> expected_value(ntarpts, 0.0);
 
@@ -306,7 +311,7 @@ int main(int argc, char** argv) {
   }
   std::cout << "finishing swarm app..." << std::endl;
 
-#ifdef ENABLE_MPI
+#ifdef PORTAGE_ENABLE_MPI
   MPI_Finalize();
 #endif
 }

@@ -86,8 +86,9 @@ class DriverTest : public ::testing::Test {
         d(sourceMeshWrapper, sourceStateWrapper, targetMeshWrapper,
           targetStateWrapper);
     d.set_remap_var_names(remap_fields, limiter);
-    // run on one processor
-    d.run(false);
+
+    Wonton::SerialExecutor_type exec;
+    d.run(&exec);
 
     // Check the answer
     Portage::Point<Dimension> nodexy;

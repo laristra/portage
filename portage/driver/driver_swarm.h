@@ -26,7 +26,7 @@ Please see the license file at the root of this repository, or at:
 #include "portage/accumulate/accumulate.h"
 #include "portage/estimate/estimate.h"
 
-#ifdef ENABLE_MPI
+#ifdef PORTAGE_ENABLE_MPI
 #include "portage/distributed/mpi_particle_distribute.h"
 #endif
 
@@ -244,25 +244,32 @@ class SwarmDriver {
 
   void remap(std::vector<std::string> const &src_varnames,
              std::vector<std::string> const &trg_varnames,
-             bool distributed,
-             bool report_time);
+             Wonton::Executor_type const *executor=nullptr,
+             bool report_time = true);
 
   /*!
     @brief Execute the remapping process
   */
-  void run(bool distributed, bool report_time=true) {
+  void run(Wonton::Executor_type const *executor = nullptr,
+           bool report_time=true) {
 
-#ifndef ENABLE_MPI
-    if (distributed) {
-      std::cout << "Request is for a parallel run but Portage is compiled " <<
-          "for serial runs only\n";
-      return;
-    }
-#endif
-
+    bool distributed = false;
     int comm_rank = 0;
-#ifdef ENABLE_MPI
-    MPI_Comm_rank(MPI_COMM_WORLD, &comm_rank);
+    int nprocs = 1;
+    
+    // Will be null if it's a parallel executor
+    auto serialexecutor = dynamic_cast<Wonton::SerialExecutor_type const *>(executor);
+    
+#ifdef PORTAGE_ENABLE_MPI
+    MPI_Comm mycomm = MPI_COMM_NULL;
+    auto mpiexecutor = dynamic_cast<Wonton::MPIExecutor_type const *>(executor);
+    if (mpiexecutor && mpiexecutor->mpicomm != MPI_COMM_NULL) {
+      mycomm = mpiexecutor->mpicomm;
+      MPI_Comm_rank(mycomm, &comm_rank);
+      MPI_Comm_size(mycomm, &nprocs);
+      if (nprocs > 1)
+        distributed = true;
+    }
 #endif
 
     if (comm_rank == 0)
@@ -283,7 +290,7 @@ class SwarmDriver {
       target_var_names.emplace_back(target_remap_var_names_[i]);
     }
 
-    remap(source_var_names, target_var_names, distributed, report_time);
+    remap(source_var_names, target_var_names, executor, report_time);
 
   }  // run
 
@@ -323,14 +330,24 @@ void SwarmDriver<Search,
                  TargetState>::
 remap(std::vector<std::string> const &src_varnames,
       std::vector<std::string> const &trg_varnames,
-      bool distributed,
+      Wonton::Executor_type const *executor,
       bool report_time)
 {
 
+  bool distributed = false;
   int comm_rank = 0;
-
-#ifdef ENABLE_MPI
-  MPI_Comm_rank(MPI_COMM_WORLD, &comm_rank);
+  int nprocs = 0;
+  
+#ifdef PORTAGE_ENABLE_MPI
+    MPI_Comm mycomm = MPI_COMM_NULL;
+    auto mpiexecutor = dynamic_cast<Wonton::MPIExecutor_type const *>(executor);
+    if (mpiexecutor && mpiexecutor->mpicomm != MPI_COMM_NULL) {
+      mycomm = mpiexecutor->mpicomm;
+      MPI_Comm_rank(mycomm, &comm_rank);
+      MPI_Comm_size(mycomm, &nprocs);
+      if (nprocs > 1)
+        distributed = true;
+    }
 #endif
 
   int numTargetPts = target_swarm_.num_particles(Entity_type::PARALLEL_OWNED);
@@ -348,22 +365,22 @@ remap(std::vector<std::string> const &src_varnames,
   // ranks.
   // For the scatter scheme, the smoothing_lengths will also
   // be changed.
-#ifdef ENABLE_MPI
+#ifdef PORTAGE_ENABLE_MPI
   if (distributed) {
-  gettimeofday(&begin_timeval, 0);
-  MPI_Particle_Distribute<Dim> distributor;
+    gettimeofday(&begin_timeval, 0);
+    MPI_Particle_Distribute<Dim> distributor(mpiexecutor);
 
-  //For scatter scheme, the smoothing_lengths_, kernel_types_
-  //and geom_types_  are also communicated and changed for the
-  //source swarm.
-  distributor.distribute(source_swarm_, source_state_,
-                         target_swarm_, target_state_,
-                         smoothing_lengths_, kernel_types_,
-                         geom_types_, weight_center_);
-  gettimeofday(&end_timeval, 0);
-  timersub(&end_timeval, &begin_timeval, &diff_timeval);
-  tot_seconds_dist = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
-}
+    //For scatter scheme, the smoothing_lengths_, kernel_types_
+    //and geom_types_  are also communicated and changed for the
+    //source swarm.
+    distributor.distribute(source_swarm_, source_state_,
+                           target_swarm_, target_state_,
+                           smoothing_lengths_, kernel_types_,
+                           geom_types_, weight_center_);
+    gettimeofday(&end_timeval, 0);
+    timersub(&end_timeval, &begin_timeval, &diff_timeval);
+    tot_seconds_dist = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
+  }
 #endif
 
   // SEARCH
