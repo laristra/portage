@@ -586,10 +586,6 @@ class MPI_Bounding_Boxes {
   // for each material there is a vector of unique distributed indices
   std::map<int, std::vector<int>> distributedMaterialCellIds_;
 
-  
-  // The communicator we are using
-  MPI_Comm comm_;
-
   /*!
     @brief Compute fields needed to do comms for a given entity type
     @param[in] info              Info data structure to be filled
