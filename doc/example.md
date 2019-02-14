@@ -1,4 +1,4 @@
-# Portage Examples  {#example}
+# Examples  {#example}
 
 Portage provides very crude mesh and state manager frameworks aptly
 called `Simple_Mesh` and `Simple_State` through its support package, 
@@ -91,6 +91,86 @@ nor any field data on it. Therefore, we added a statevector initialized from our
 data vector called inputData. Normally, however, the source mesh would already 
 have such a field on it and we would just have to add empty data to the target mesh
 to make sure we can remap into it.
+
+In the next example, we demonstrate a more typical situation of reading source
+and target meshes from files `source.exo` and `target.exo` using Jali. Instead of 
+using driver, we nstantiate Search, Intersect and Interpolate classes directly:
+
+~~~c++
+std::shared_ptr<Jali::Mesh> sourceMesh;
+Jali::MeshFactory mf(MPI_COMM_WORLD);
+mf.included_entities({Jali::Entity_kind::ALL_KIND});
+mf.partitioner(Jali::Partitioner_type::METIS);
+source_mesh = mf("source.exo");
+~~~
+
+We create a native Jali state manager for a source mesh.
+
+~~~c++
+std::shared_ptr<Jali::State> sourceState(Jali::State::create(sourceMesh));
+~~~
+
+Additionally, we can add cell data from a vector `sourceData` to a state manager 
+
+~~~c++
+sourceState->add("celldata", sourceMesh, Jali::Entity_kind::CELL, Jali::Entity_type::ALL, &(sourceData[0]));
+~~~
+
+Next, we read and wrap a target mesh and add empty data to it
+
+~~~c++
+std::shared_ptr<Jali::Mesh> targetMesh;
+mf.partitioner(Jali::Partitioner_type::METIS);
+target_mesh = mf("target.exo");
+std::shared_ptr<Jali::State> targetState(Jali::State::create(targetMesh));
+targetState->add<double, Jali::Mesh, Jali::UniStateVector>("celldata",
+                                                            targetMesh,
+                                                            Jali::Entity_kind::CELL,
+                                                            Jali::Entity_type::ALL, 0.0);
+~~~
+
+Both meshes are wrapped for interfacing with the underlying mesh data structures.
+
+~~~c++
+Wonton::Jali_Mesh_Wrapper sourceMeshWrapper(*sourceMesh);
+Wonton::Jali_Mesh_Wrapper targetMeshWrapper(*targetMesh);
+~~~
+
+We get an instance of the desired search algorithm type in `dim` spatial dimensions 
+for a cell field.
+
+~~~c++
+const Search<dim, Entity_kind::CELL, Wonton::Jali_Mesh_Wrapper, Wonton::Jali_Mesh_Wrapper>
+      search(sourceMeshWrapper, targetMeshWrapper);
+~~~
+
+Now, we apply Portage wrappers for source and target fields
+
+~~~c++
+Wonton::Jali_State_Wrapper sourceStateWrapper(*sourceState);
+Wonton::Jali_State_Wrapper targetStateWrapper(*targetState);
+~~~
+
+Further, we make an intersector which knows about the source state (to be able
+to query the number of materials, etc). `DummyInterfaceReconstructor` and two 
+`void` arguments indicate that we want to perform intersections of a single-material 
+filed. 
+
+~~~c++
+Intersect<Entity_kind::CELL, Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
+		Wonton::Jali_Mesh_Wrapper, DummyInterfaceReconstructor,
+		void, void>
+	intersect(sourceMeshWrapper, sourceStateWrapper, targetMeshWrapper);
+~~~
+
+Finally, we get an instance of the desired interpolate algorithm type.
+
+~~~c++
+Interpolate<dim, Entity_kind::CELL, Wonton::Jali_Mesh_Wrapper, Wonton::Jali_Mesh_Wrapper,
+		Wonton::Jali_State_Wrapper, DummyInterfaceReconstructor,
+		void, void>
+	interpolate(sourceMeshWrapper, sourceStateWrapper, targetMeshWrapper);
+~~~
 
 # Existing Applications and Tests
 
