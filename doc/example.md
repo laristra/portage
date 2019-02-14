@@ -110,13 +110,13 @@ We create a native Jali state manager for a source mesh.
 std::shared_ptr<Jali::State> sourceState(Jali::State::create(sourceMesh));
 ~~~
 
-Additionally, we can add cell data from a vector `sourceData` to a state manager 
+Additionally, we can add cell data from a vector `sourceData` to a state manager.
 
 ~~~c++
 sourceState->add("celldata", sourceMesh, Jali::Entity_kind::CELL, Jali::Entity_type::ALL, &(sourceData[0]));
 ~~~
 
-Next, we read and wrap a target mesh and add empty data to it
+Next, we read and wrap a target mesh and add empty data to it.
 
 ~~~c++
 std::shared_ptr<Jali::Mesh> targetMesh;
@@ -144,7 +144,7 @@ const Search<dim, Entity_kind::CELL, Wonton::Jali_Mesh_Wrapper, Wonton::Jali_Mes
       search(sourceMeshWrapper, targetMeshWrapper);
 ~~~
 
-Now, we apply Portage wrappers for source and target fields
+Now, we apply Portage wrappers for source and target fields.
 
 ~~~c++
 Wonton::Jali_State_Wrapper sourceStateWrapper(*sourceState);
