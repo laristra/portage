@@ -9,6 +9,14 @@ project(portage)
 cinch_minimum_required(2.0)
 
 
+# SEMANTIC VERSION NUMBERS - UPDATE DILIGENTLY
+# As soon as a change with a new version number is merged into the master,
+# tag the central repository.
+
+set(PORTAGE_VERSION_MAJOR 2)
+set(PORTAGE_VERSION_MINOR 0)
+set(PORTAGE_VERSION_PATCH 0)
+
 
 # If a C++14 compiler is available, then set the appropriate flags
 include(cxx14)
@@ -41,12 +49,15 @@ set(CINCH_HEADER_SUFFIXES "\\.h")
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/cmake")
 
+# set the name of the Portage library
+
+set(PORTAGE_LIBRARY "portage" CACHE STRING "Name of the portage library")
 
 #-----------------------------------------------------------------------------
 # Gather all the third party libraries needed for Portage
 #-----------------------------------------------------------------------------
+set(PORTAGE_EXTRA_LIBRARIES)
 
-set(portage_LIBRARIES)
 #------------------------------------------------------------------------------#
 # Set up MPI builds
 # (eventually most of this should be pushed down into cinch)
@@ -55,6 +66,8 @@ set(ENABLE_MPI OFF CACHE BOOL "")
 if (ENABLE_MPI)
   find_package(MPI REQUIRED)
   add_definitions(-DPORTAGE_ENABLE_MPI -DWONTON_ENABLE_MPI)
+  set(PORTAGE_ENABLE_MPI True CACHE BOOL "Is Portage compiled with MPI?")
+  set(WONTON_ENABLE_MPI True CACHE BOOL "Is Wonton compiled with MPI?")
 endif ()
 
 
@@ -64,13 +77,18 @@ set(ARCHOS ${CMAKE_SYSTEM_PROCESSOR}_${CMAKE_SYSTEM_NAME})
 # Wonton
 #-----------------------------------------------------------------------------
 if (WONTON_DIR)
+
  # Link with an existing installation of Wonton, if provided. 
  find_package(WONTON REQUIRED)
  message(STATUS "WONTON_LIBRARIES=${WONTON_LIBRARIES}" )
  include_directories(${WONTON_INCLUDE_DIR})
  message(STATUS "WONTON_INCLUDE_DIRS=${WONTON_INCLUDE_DIR}")
+ 
+ list(APPEND PORTAGE_EXTRA_LIBRARIES ${WONTON_LIBRARIES})
+
 else (WONTON_DIR)
- # Build Wonton from a submodule
+
+  # Build Wonton from a submodule
  file(GLOB _wonton_contents ${CMAKE_SOURCE_DIR}/wonton/*)
  if (_wonton_contents)
    if (CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
@@ -78,15 +96,18 @@ else (WONTON_DIR)
      add_subdirectory(${CMAKE_SOURCE_DIR}/wonton)
    endif()
    include_directories(${CMAKE_SOURCE_DIR}/wonton)
-   list(APPEND portage_LIBRARIES wonton)
+   list(APPEND PORTAGE_EXTRA_LIBRARIES wonton)
    set(WONTON_FOUND TRUE)
+
+# If Wonton is included as a submodule, it will get installed alongside Portage
+   set(WONTON_DIR ${CMAKE_INSTALL_PREFIX})
  else()
    set(WONTON_FOUND FALSE)
  endif(_wonton_contents)
 endif (WONTON_DIR)
 
 if (NOT WONTON_FOUND)
-   message(FATAL_ERROR "WONTON_DIR is not specified and Wonton is not a subdirectory !")
+  message(FATAL_ERROR "WONTON_DIR is not specified and Wonton is not a subdirectory !")
 endif() 
 
 #-----------------------------------------------------------------------------
@@ -157,7 +178,9 @@ if (Jali_DIR)
    message(STATUS "Located Jali")
    message(STATUS "Jali_DIR=${Jali_DIR}")
 
-   # add full path to jali libs
+   set(ENABLE_Jali True)
+
+   # add full path to jali libs (WHAT ABOUT IF JALI IS COMPILED AS A SHARED LIB?)
    unset(_LIBS)
    foreach (_lib ${Jali_LIBRARIES})
       set(_LIBS ${_LIBS};${Jali_LIBRARY_DIRS}/lib${_lib}.a)
@@ -166,6 +189,7 @@ if (Jali_DIR)
 
    include_directories(${Jali_INCLUDE_DIRS} ${Jali_TPL_INCLUDE_DIRS})
 
+   list(APPEND PORTAGE_EXTRA_LIBRARIES ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES})
 endif (Jali_DIR)
 
 #------------------------------------------------------------------------------#
@@ -237,6 +261,7 @@ endif (LAPACKE_DIR)
 if (LAPACKE_FOUND) 
   include_directories(${LAPACKE_INCLUDE_DIRS})
   add_definitions("-DHAVE_LAPACKE")
+  list(APPEND PORTAGE_EXTRA_LIBRARIES ${LAPACKE_LIBRARIES})
 
   message(STATUS "LAPACKE_FOUND ${LAPACKE_FOUND}")
   message(STATUS "LAPACKE_LIBRARIES  ${LAPACKE_LIBRARIES}")
@@ -271,7 +296,7 @@ if (TANGRAM_DIR)
             HINTS ${TANGRAM_DIR}/include)
   message(STATUS "TANGRAM FOUND? ${TANGRAM}")
   if (TANGRAM)
-    set(TANGRAM_FOUND ON)
+    set(TANGRAM_FOUND True)
     set(TANGRAM_INCLUDE_DIRS ${TANGRAM_DIR}/include)
     include_directories(${TANGRAM_INCLUDE_DIRS})
     add_definitions("-DHAVE_TANGRAM")
@@ -300,6 +325,8 @@ if (TANGRAM_FOUND)
     endif (XMOF2D_LIBRARY)
     message(STATUS "XMOF2D LIBRARIES ---> ${XMOF2D_LIBRARIES}")
     add_definitions("-DHAVE_XMOF2D")
+
+    list(APPEND PORTAGE_EXTRA_LIBRARIES ${XMOF2D_LIBRARIES})
   endif (XMOF2D_FOUND)
 endif (TANGRAM_FOUND)
 
@@ -376,10 +403,8 @@ endif(NOT ENABLE_THRUST)
 
 cinch_add_application_directory(app)
 cinch_add_library_target(portage portage)
-# TODO - merge LAPACKE_LIBRARIES into portage_LIBRARIES
-cinch_target_link_libraries(portage ${portage_LIBRARIES})
-cinch_target_link_libraries(portage ${LAPACKE_LIBRARIES})
-cinch_target_link_libraries(portage ${WONTON_LIBRARIES})
+# TODO - merge LAPACKE_LIBRARIES into PORTAGE_LIBRARIES
+cinch_target_link_libraries(portage ${PORTAGE_EXTRA_LIBRARIES})
 
 
 # Add application tests
@@ -388,5 +413,28 @@ option(ENABLE_APP_TESTS "Enable testing of full app" OFF)
 if(ENABLE_APP_TESTS)
   enable_testing()
 endif()
+
+
+# retrieve all the definitions we added for compiling
+get_directory_property(PORTAGE_COMPILE_DEFINITIONS DIRECTORY ${CMAKE_SOURCE_DIR} COMPILE_DEFINITIONS)
+
+# build the PORTAGE_LIBRARIES variable
+set(PORTAGE_LIBRARIES ${PORTAGE_LIBRARY} ${PORTAGE_EXTRA_LIBRARIES} CACHE STRING "List of libraries to link with portage")
+
+############################################################################## 
+# Write a configuration file from template replacing only variables enclosed
+# by the @ sign. This will let other programs build on PORTAGE discover how
+# PORTAGE was built and which TPLs it used
+#############################################################################
+
+configure_file(${PROJECT_SOURCE_DIR}/cmake/portage_config.cmake.in 
+               ${PROJECT_BINARY_DIR}/portage_config.cmake @ONLY)
+install(FILES ${PROJECT_BINARY_DIR}/portage_config.cmake 
+        DESTINATION ${CMAKE_INSTALL_PREFIX}/share/cmake/)
+
+configure_file(${PROJECT_SOURCE_DIR}/portage/support/portage.h
+               ${PROJECT_BINARY_DIR}/portage/support/portage.h @ONLY)
+install(FILES ${PROJECT_BINARY_DIR}/portage/support/portage.h
+        DESTINATION ${CMAKE_INSTALL_PREFIX}/include/portage/support/)
 
 
