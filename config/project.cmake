@@ -78,32 +78,32 @@ set(ARCHOS ${CMAKE_SYSTEM_PROCESSOR}_${CMAKE_SYSTEM_NAME})
 #-----------------------------------------------------------------------------
 if (WONTON_DIR)
 
- # Link with an existing installation of Wonton, if provided. 
- find_package(WONTON REQUIRED)
- message(STATUS "WONTON_LIBRARIES=${WONTON_LIBRARIES}" )
- include_directories(${WONTON_INCLUDE_DIR})
- message(STATUS "WONTON_INCLUDE_DIRS=${WONTON_INCLUDE_DIR}")
+  # Link with an existing installation of Wonton, if provided. 
+  find_package(WONTON REQUIRED)
+  message(STATUS "WONTON_LIBRARIES=${WONTON_LIBRARIES}" )
+  include_directories(${WONTON_INCLUDE_DIR})
+  message(STATUS "WONTON_INCLUDE_DIRS=${WONTON_INCLUDE_DIR}")
  
- list(APPEND PORTAGE_EXTRA_LIBRARIES ${WONTON_LIBRARIES})
+  list(APPEND PORTAGE_EXTRA_LIBRARIES ${WONTON_LIBRARIES})
 
 else (WONTON_DIR)
 
   # Build Wonton from a submodule
- file(GLOB _wonton_contents ${CMAKE_SOURCE_DIR}/wonton/*)
- if (_wonton_contents)
-   if (CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
-     # We are building portage, and wonton is a subdirectory
-     add_subdirectory(${CMAKE_SOURCE_DIR}/wonton)
-   endif()
-   include_directories(${CMAKE_SOURCE_DIR}/wonton)
-   list(APPEND PORTAGE_EXTRA_LIBRARIES wonton)
-   set(WONTON_FOUND TRUE)
+  file(GLOB _wonton_contents ${CMAKE_SOURCE_DIR}/wonton/*)
+  if (_wonton_contents)
+    if (CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
+      # We are building portage, and wonton is a subdirectory
+      add_subdirectory(${CMAKE_SOURCE_DIR}/wonton)
+    endif()
+    include_directories(${CMAKE_SOURCE_DIR}/wonton)
+    list(APPEND PORTAGE_EXTRA_LIBRARIES wonton)
+    set(WONTON_FOUND TRUE)
 
-# If Wonton is included as a submodule, it will get installed alongside Portage
-   set(WONTON_DIR ${CMAKE_INSTALL_PREFIX})
- else()
-   set(WONTON_FOUND FALSE)
- endif(_wonton_contents)
+    # If Wonton is included as a submodule, it will get installed alongside Portage
+    set(WONTON_DIR ${CMAKE_INSTALL_PREFIX})
+  else()
+    set(WONTON_FOUND FALSE)
+  endif(_wonton_contents)
 endif (WONTON_DIR)
 
 if (NOT WONTON_FOUND)
@@ -121,11 +121,13 @@ if (ENABLE_FleCSI)
  message(STATUS "FleCSI_LIBRARIES=${FleCSI_LIBRARIES}" )
  include_directories(${FleCSI_INCLUDE_DIR})
  message(STATUS "FleCSI_INCLUDE_DIRS=${FleCSI_INCLUDE_DIR}")
+ list(APPEND PORTAGE_EXTRA_LIBRARIES ${FleCSI_LIBRARIES})
 
  find_package(FleCSISP REQUIRED)
  message(STATUS "FleCSISP_LIBRARIES=${FleCSISP_LIBRARIES}" )
  include_directories(${FleCSISP_INCLUDE_DIR})
  message(STATUS "FleCSISP_INCLUDE_DIRS=${FleCSISP_INCLUDE_DIR}")
+ list(APPEND PORTAGE_EXTRA_LIBRARIES ${FleCSISP_LIBRARIES})
 
   ######################################################################
   # This is a placeholder for how we would do IO with FleCSI
