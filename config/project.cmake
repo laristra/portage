@@ -6,7 +6,7 @@ Please see the license file at the root of this repository, or at:
 
 project(portage)
 
-cinch_minimum_required(2.0)
+cinch_minimum_required(VERSION 1.0)
 
 
 # SEMANTIC VERSION NUMBERS - UPDATE DILIGENTLY
