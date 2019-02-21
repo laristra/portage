@@ -7,6 +7,14 @@ Please see the license file at the root of this repository, or at:
 #ifndef PORTAGE_SUPPORT_PORTAGE_H_
 #define PORTAGE_SUPPORT_PORTAGE_H_
 
+// Semantic version numbers for Portage
+// Will be filled in the CMAKE when installing (make install)
+
+#define PORTAGE_VERSION_MAJOR @PORTAGE_VERSION_MAJOR@
+#define PORTAGE_VERSION_MINOR @PORTAGE_VERSION_MINOR@
+#define PORTAGE_VERSION_PATCH @PORTAGE_VERSION_PATCH@
+
+
 #ifdef THRUST
 
 #include "thrust/device_vector.h"

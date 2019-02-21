@@ -719,6 +719,9 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
 
   if (numpe > 1) MPI_Barrier(MPI_COMM_WORLD);
 
+  Wonton::MPIExecutor_type mpiexecutor(MPI_COMM_WORLD);
+  Wonton::Executor_type *executor = (numpe > 1) ? &mpiexecutor : nullptr;
+  
   if (dim == 2) {
     if (interp_order == 1) {
       Portage::MMDriver<
@@ -734,7 +737,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
           driver(sourceMeshWrapper, sourceStateWrapper,
                  targetMeshWrapper, targetStateWrapper);
       driver.set_remap_var_names(remap_fields);
-      driver.run(numpe > 1);
+      driver.run(executor);
     } else if (interp_order == 2) {
       Portage::MMDriver<
         Portage::SearchKDTree,
@@ -750,7 +753,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
                  targetMeshWrapper, targetStateWrapper);
       driver.set_remap_var_names(remap_fields);
       driver.set_limiter(limiter);
-      driver.run(numpe > 1);
+      driver.run(executor);
     }
   } else {  // 3D
     if (interp_order == 1) {
@@ -769,7 +772,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
           driver(sourceMeshWrapper, sourceStateWrapper,
                  targetMeshWrapper, targetStateWrapper);
       driver.set_remap_var_names(remap_fields);
-      driver.run(numpe > 1);
+      driver.run(executor);
     } else {  // 2nd order & 3D
       Portage::MMDriver<
         Portage::SearchKDTree,
@@ -787,7 +790,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
                  targetMeshWrapper, targetStateWrapper);
       driver.set_remap_var_names(remap_fields);
       driver.set_limiter(limiter);
-      driver.run(numpe > 1);
+      driver.run(executor);
     }
   }
 
