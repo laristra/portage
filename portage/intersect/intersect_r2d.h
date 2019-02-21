@@ -15,7 +15,7 @@ Please see the license file at the root of this repository, or at:
 
 // portage includes
 extern "C" {
-#include "portage/intersect/r2d.h"
+#include "wonton/intersect/r3d/r2d.h"
 }
 #include "portage/support/portage.h"
 #include "portage/intersect/dummy_interface_reconstructor.h"

@@ -184,7 +184,7 @@ void run_2d(size_t num_x, size_t num_y, std::string& output_prefix)
   remapper.set_remap_var_names(var_names);
 
   // Do the remap
-  remapper.run(false);
+  remapper.run();  // executor argument defaults to nullptr -> serial run
 
   // the result should the same
   for ( auto c : mesh_b.cells() )
@@ -203,7 +203,7 @@ void run_2d(size_t num_x, size_t num_y, std::string& output_prefix)
   for ( auto c : mesh_b.cells() ) b[c] = 0.0;
 
   // Do the remap
-  remapper.run(false);
+  remapper.run();
 
   // Check the result
   flecsi_2d::real_t total_b = 0;
@@ -263,7 +263,7 @@ void run_3d(size_t num_x, size_t num_y, size_t num_z, std::string& output_prefix
   remapper.set_remap_var_names(var_names);
 
   // Do the remap
-  remapper.run(false);
+  remapper.run();
 
  // the result should the same
   for ( auto c : mesh_b.cells() )
@@ -282,7 +282,7 @@ void run_3d(size_t num_x, size_t num_y, size_t num_z, std::string& output_prefix
   for ( auto c : mesh_b.cells() ) b[c] = 0.0;
 
   // Do the remap
-  remapper.run(false);
+  remapper.run();
 
   // Check the result
   flecsi_3d::real_t total_b = 0;
@@ -303,7 +303,7 @@ void run_3d(size_t num_x, size_t num_y, size_t num_z, std::string& output_prefix
 ////////////////////////////////////////////////////////////////////////////////
 int main(int argc, char** argv)
 {
-#ifdef ENABLE_MPI
+#ifdef PORTAGE_ENABLE_MPI
   MPI_Init(&argc, &argv);
   MPI_Comm comm = MPI_COMM_WORLD;
 

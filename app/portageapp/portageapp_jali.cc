@@ -588,6 +588,9 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
   Wonton::Jali_State_Wrapper sourceStateWrapper(*sourceState);
   Wonton::Jali_State_Wrapper targetStateWrapper(*targetState);
 
+  Wonton::MPIExecutor_type mpiexecutor(MPI_COMM_WORLD);
+  Wonton::Executor_type *executor = (numpe > 1) ? &mpiexecutor : nullptr;
+  
   if (dim == 2) {
     if (interp_order == 1) {
       Portage::MMDriver<
@@ -603,7 +606,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
      for (auto &remap_var : remap_fields)
        d.set_remap_var_bounds(remap_var, -std::numeric_limits<double>::max(),
                               std::numeric_limits<double>::max());
-      d.run(numpe > 1);
+      d.run(executor);
     } else if (interp_order == 2) {
       Portage::MMDriver<
         Portage::SearchKDTree,
@@ -619,7 +622,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
      for (auto &remap_var : remap_fields)
        d.set_remap_var_bounds(remap_var, -std::numeric_limits<double>::max(),
                               std::numeric_limits<double>::max());
-      d.run(numpe > 1);
+      d.run(executor);
     }
   } else {  // 3D
     if (interp_order == 1) {
@@ -636,7 +639,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
      for (auto &remap_var : remap_fields)
        d.set_remap_var_bounds(remap_var, -std::numeric_limits<double>::max(),
                               std::numeric_limits<double>::max());
-      d.run(numpe > 1);
+      d.run(executor);
     } else {  // 2nd order & 3D
       Portage::MMDriver<
         Portage::SearchKDTree,
@@ -652,7 +655,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
      for (auto &remap_var : remap_fields)
        d.set_remap_var_bounds(remap_var, -std::numeric_limits<double>::max(),
                               std::numeric_limits<double>::max());
-      d.run(numpe > 1);
+      d.run(executor);
     }
   }
 

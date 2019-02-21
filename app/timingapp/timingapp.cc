@@ -423,6 +423,9 @@ int main(int argc, char** argv) {
   Wonton::Jali_State_Wrapper sourceStateWrapper(*sourceState);
   Wonton::Jali_State_Wrapper targetStateWrapper(*targetState);
 
+  Wonton::MPIExecutor_type mpiexecutor(MPI_COMM_WORLD);
+  Wonton::Executor_type *executor = (numpe > 1) ? &mpiexecutor : nullptr;
+  
   if (dim == 2) {
     if (interp_order == 1) {
       Portage::MMDriver<
@@ -435,7 +438,7 @@ int main(int argc, char** argv) {
           d(sourceMeshWrapper, sourceStateWrapper,
             targetMeshWrapper, targetStateWrapper);
       d.set_remap_var_names(remap_fields);
-      d.run(numpe > 1);
+      d.run(executor);
     } else if (interp_order == 2) {
       Portage::MMDriver<
         Portage::SearchKDTree,
@@ -447,7 +450,7 @@ int main(int argc, char** argv) {
           d(sourceMeshWrapper, sourceStateWrapper,
             targetMeshWrapper, targetStateWrapper);
       d.set_remap_var_names(remap_fields);
-      d.run(numpe > 1);
+      d.run(executor);
     }
   } else {
     if (interp_order == 1) {
@@ -461,7 +464,7 @@ int main(int argc, char** argv) {
           d(sourceMeshWrapper, sourceStateWrapper,
             targetMeshWrapper, targetStateWrapper);
       d.set_remap_var_names(remap_fields);
-      d.run(numpe > 1);
+      d.run(executor);
     } else {
       Portage::MMDriver<
         Portage::SearchKDTree,
@@ -473,7 +476,7 @@ int main(int argc, char** argv) {
           d(sourceMeshWrapper, sourceStateWrapper,
             targetMeshWrapper, targetStateWrapper);
       d.set_remap_var_names(remap_fields);
-      d.run(numpe > 1);
+      d.run(executor);
     }
   }
 
