@@ -35,7 +35,7 @@ faces in the remap.
 # Putting it all Together
 
 Let us illustrate the usage of Portage with a few lines of code. 
-First, we create two square meshes in a unitary domain with 16 and
+First, we create two square meshes in a unit square domain with 16 and
 25 computational cells, respectively:
 
 ~~~c++
@@ -65,7 +65,7 @@ Wonton::Simple_State_Wrapper<Wonton::Simple_Mesh_Wrapper>
 ~~~
 
 Now, we are ready to call a driver to perform remap of `inputData` from 
-`sourceMesh` to the `targetMesh`: 
+`sourceMesh` to the `targetMesh` via the wrappers: 
 
 ~~~c++
 Portage::MMDriver<
@@ -87,14 +87,14 @@ three arguments represent particular methods of search, intersect, and
 interpolate steps as described in [Concepts](@ref concepts).
 
 This simple example covers an atypical case where we do not have a source mesh 
-nor any field data on it. Therefore, we added a statevector initialized from our own 
+nor any field data on it. Therefore, we added a state vector initialized from our own 
 data vector called inputData. Normally, however, the source mesh would already 
 have such a field on it and we would just have to add empty data to the target mesh
 to make sure we can remap into it.
 
 In the next example, we demonstrate a more typical situation of reading source
 and target meshes from files `source.exo` and `target.exo` using Jali. Instead of 
-using driver, we nstantiate Search, Intersect and Interpolate classes directly:
+using the driver, we instantiate Search, Intersect and Interpolate classes directly:
 
 ~~~c++
 std::shared_ptr<Jali::Mesh> sourceMesh;
@@ -203,7 +203,7 @@ unstructured meshes in 2D and 3D, respectively.
 The app allows users to specify an analytic field on a source mesh. This is done 
 by an algebraic expression in the standard input, see options and examples below. 
 The app can also remap all the fields that are on a source mesh that is 
-read from file.    
+read from a file.    
 An error of remap is calculated by comparing remapped values to exact values in the 
 cell-centroids/nodes on a target mesh and the error is printed to standard output. 
 The remapped field on a target mesh is saved into a file `output.exo` 
@@ -226,7 +226,7 @@ portageapp_jali --help
 Usage: portageapp --dim=2|3 --nsourcecells=N --ntargetcells=M --conformal=y|n 
 --entity_kind=cell|node --field="your_math_expression" --remap_order=1|2 
 --limiter=barth_jespersen --mesh_min=0. --mesh_max=1. 
---output_meshes=y|n --results_file=filename --convergence_study=NREF 
+--output_meshes=y|n --results_file=filename
 ~~~
 
 ## Portageapp_multimat_jali
@@ -234,10 +234,10 @@ Usage: portageapp --dim=2|3 --nsourcecells=N --ntargetcells=M --conformal=y|n
 Similar to `portageapp_jali` for mesh fields, `app/portageapp/portageapp_multimat_jali` 
 demonstrates Portage's ability to remap multi-material fields. In order to preserve sharp
 interfaces between materials, Portage relies on [Tangram](https://github.com/laristra/tangram) 
-to perform an interface reconstruction
-on a source mesh. Reconstructed material polygons are further intersected with cells on a target 
-mesh. Therefore, an input file specifying volume fractions (and optionally material centroids 
-for MOF) is required in addition to specification of the meshes and multiple material fields. 
+to perform interface reconstruction
+on the source mesh. Reconstructed material polygons are intersected with cells on a target 
+mesh. An input file specifying volume fractions (and optionally material centroids 
+for MOF) is required in addition to the meshes and multiple material fields. 
 For now, this app works only in serial.
 
 ~~~sh
