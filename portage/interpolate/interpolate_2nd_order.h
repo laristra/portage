@@ -395,7 +395,7 @@ class Interpolate_2ndOrder<D,
               std::vector<double> moments = matpolys[j].moments();
               cnt += 1;
               for (int k = 0; k < D; k++)
-                src_centroid[k]=moments[k+1]/moments[0];
+                src_centroid[k] +=moments[k+1]/moments[0];
             }
             src_centroid = src_centroid/cnt;
           }
