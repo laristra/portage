@@ -712,8 +712,9 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
       sourceStateWrapper.mat_add_celldata("mat_centroids", m, mat_centroids[m].data());
     } else {
       sourceStateWrapper.add_material(matnames[m], {});
-      sourceStateWrapper.mat_add_celldata("mat_volfracs", m, nullptr);
-      sourceStateWrapper.mat_add_celldata("mat_centroids", m, nullptr);
+      // need to cast the empty data so that type_id works
+      sourceStateWrapper.mat_add_celldata("mat_volfracs", m, static_cast<double*>(nullptr));
+      sourceStateWrapper.mat_add_celldata("mat_centroids", m, static_cast<Wonton::Point<dim>*>(nullptr));
     }
   }
 
