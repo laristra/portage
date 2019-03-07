@@ -17,12 +17,12 @@
 #include "MeshFactory.hh"
 #include "wonton/support/Point.h"
 
-#ifdef ENABLE_MPI
+#ifdef PORTAGE_ENABLE_MPI
 #include "mpi.h"
 #endif
 
 extern "C" {
-#include "portage/intersect/r2d.h"
+#include "wonton/intersect/r3d/r2d.h"
 }
 
 /*!
@@ -177,7 +177,8 @@ int main(int argc, char** argv) {
   source_xmof_driver.set_volume_fractions(scell_num_mats, scell_mat_ids,
                                           scell_mat_volfracs, scell_mat_centroids);
   std::cout << "Performing interface reconstruction on the source mesh..." << std::endl;
-  source_xmof_driver.reconstruct();
+  Wonton::MPIExecutor_type executor(MPI_COMM_WORLD);
+  source_xmof_driver.reconstruct(&executor);
 
   const std::vector<std::shared_ptr<Tangram::CellMatPoly<2>>>&
     scellmatpoly_list = source_xmof_driver.cell_matpoly_ptrs();
@@ -230,7 +231,7 @@ int main(int argc, char** argv) {
   target_xmof_driver.set_volume_fractions(tcell_num_mats, tcell_mat_ids,
                                           tcell_mat_volfracs, tcell_mat_centroids);
   std::cout << "Performing interface reconstruction on the target mesh..." << std::endl;
-  target_xmof_driver.reconstruct();
+  target_xmof_driver.reconstruct(&executor);
   const std::vector<std::shared_ptr<Tangram::CellMatPoly<2>>>&
     tcellmatpoly_list = target_xmof_driver.cell_matpoly_ptrs();
 

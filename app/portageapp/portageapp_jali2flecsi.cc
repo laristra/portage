@@ -22,7 +22,11 @@ Please see the license file at the root of this repository, or at:
 #include "portage/driver/mmdriver.h"
 
 // FleCSI includes
-#include "flecsi/specializations/burton/burton.h"
+#include "flecsi-sp.h"
+#include "flecsi/io/io.h"
+#include "flecsi-sp/burton/burton.h"
+#include "flecsi-sp/burton/factory.h"
+#include "flecsi-sp/burton/burton_io_exodus.h"
 
 // Jali includes
 #include "Mesh.hh"
@@ -125,7 +129,7 @@ int main(int argc, char** argv) {
   d.set_interpolation_order(order);
 
   // Do the remap
-  d.run();
+  d.run();  // executor argument defaults to nullptr -> serial
 
   // Get the new data - CELL is ignored here
   double * outData;

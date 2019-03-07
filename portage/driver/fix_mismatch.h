@@ -41,15 +41,17 @@ using Wonton::Weights_t;
 // processor. This is useful for meshes where the partitioning of cells
 // on ranks is not mutually exclusive.
 
+#ifdef PORTAGE_ENABLE_MPI
+
 template<Entity_kind onwhat, class Mesh_Wrapper>
 bool get_unique_entity_masks(Mesh_Wrapper const &mesh,
-                             std::vector<int> *unique_mask) {
+                             std::vector<int> *unique_mask,
+                             MPI_Comm mycomm) {
+
   int rank = 0;
   int nprocs = 1;
-#ifdef ENABLE_MPI
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-  MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
-#endif
+  MPI_Comm_rank(mycomm, &rank);
+  MPI_Comm_size(mycomm, &nprocs);
 
 
   // collect source and target cell volumes because we will need it
@@ -60,11 +62,9 @@ bool get_unique_entity_masks(Mesh_Wrapper const &mesh,
 
   unique_mask->resize(nents, 1);
 
-#ifdef ENABLE_MPI
   if (nprocs > 1) {
     std::vector<int> nents_all(nprocs, 0);
-    MPI_Allgather(&nents, 1, MPI_INT, &(nents_all[0]), 1, MPI_INT,
-                  MPI_COMM_WORLD);
+    MPI_Allgather(&nents, 1, MPI_INT, &(nents_all[0]), 1, MPI_INT, mycomm);
     int maxents = *std::max_element(nents_all.begin(), nents_all.end());
 
     std::vector<int> gids(maxents, -1);
@@ -73,7 +73,7 @@ bool get_unique_entity_masks(Mesh_Wrapper const &mesh,
 
     std::vector<int> gids_all(nprocs*maxents);
     MPI_Allgather(&(gids[0]), maxents, MPI_INT, &(gids_all[0]), maxents,
-                  MPI_INT, MPI_COMM_WORLD);
+                  MPI_INT, mycomm);
 
     // Add gids from all lower ranks into a set (no duplicates)
 
@@ -92,8 +92,9 @@ bool get_unique_entity_masks(Mesh_Wrapper const &mesh,
         (*unique_mask)[e] = 0;  // ent already in set; mask this instance
     }
   }
-#endif
 }  // get_unique_entity_masks
+
+#endif
 
 
 
@@ -122,16 +123,21 @@ class MismatchFixer {
                 SourceState_Wrapper const& source_state,
                 TargetMesh_Wrapper const& target_mesh,
                 TargetState_Wrapper & target_state,
-                Portage::vector<std::vector<Weights_t>> const & source_ents_and_weights) :
+                Portage::vector<std::vector<Weights_t>> const & source_ents_and_weights,
+                Wonton::Executor_type const *executor) :
       source_mesh_(source_mesh), source_state_(source_state),
       target_mesh_(target_mesh), target_state_(target_state) {
 
-#ifdef ENABLE_MPI
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank_);
-    MPI_Comm_size(MPI_COMM_WORLD, &nprocs_);
+#ifdef PORTAGE_ENABLE_MPI
+    auto mpiexecutor = dynamic_cast<Wonton::MPIExecutor_type const *>(executor);
+    if (mpiexecutor && mpiexecutor->mpicomm != MPI_COMM_NULL) {
+      distributed_ = true;
+      mycomm_ = mpiexecutor->mpicomm;
+      MPI_Comm_rank(mycomm_, &rank_);
+      MPI_Comm_size(mycomm_, &nprocs_);
+    }
 #endif
 
-    // GLOBAL SOURCE VOLUME
     nsourceents_ = (onwhat == Entity_kind::CELL) ?
         source_mesh_.num_owned_cells() : source_mesh_.num_owned_nodes();
 
@@ -142,8 +148,12 @@ class MismatchFixer {
     // don't form a strict tiling (no overlaps) after redistribution
 
     std::vector<int> source_ent_masks(nsourceents_, 1);
-    get_unique_entity_masks<onwhat, SourceMesh_Wrapper>(source_mesh_,
-                                                        &source_ent_masks);
+#ifdef PORTAGE_ENABLE_MPI
+    if (distributed_)
+      get_unique_entity_masks<onwhat, SourceMesh_Wrapper>(source_mesh_,
+                                                          &source_ent_masks,
+                                                          mycomm_);
+#endif
 
     // collect volumes of entities that are not masked out and sum them up
 
@@ -157,14 +167,12 @@ class MismatchFixer {
         std::accumulate(source_ent_volumes_.begin(), source_ent_volumes_.end(),
                         0.0);
 
-#ifdef ENABLE_MPI
-    global_source_volume_ = 0.0;
-    MPI_Allreduce(&source_volume_, &global_source_volume_, 1, MPI_DOUBLE,
-                  MPI_SUM, MPI_COMM_WORLD);
-#else
     global_source_volume_ = source_volume_;
+#ifdef PORTAGE_ENABLE_MPI
+    if (distributed_)
+      MPI_Allreduce(&source_volume_, &global_source_volume_, 1, MPI_DOUBLE,
+                    MPI_SUM, mycomm_);
 #endif
-
 
     // GLOBAL TARGET VOLUME
     ntargetents_ = (onwhat == Entity_kind::CELL) ?
@@ -177,12 +185,13 @@ class MismatchFixer {
 
     target_volume_ = std::accumulate(target_ent_volumes_.begin(),
                                      target_ent_volumes_.end(), 0.0);
-#ifdef ENABLE_MPI
-    global_target_volume_ = 0.0;
-    MPI_Allreduce(&target_volume_, &global_target_volume_, 1, MPI_DOUBLE,
-                  MPI_SUM, MPI_COMM_WORLD);
-#else
+
+
     global_target_volume_ = target_volume_;
+#ifdef PORTAGE_ENABLE_MPI
+    if (distributed_)
+      MPI_Allreduce(&target_volume_, &global_target_volume_, 1, MPI_DOUBLE,
+                    MPI_SUM, mycomm_);
 #endif
 
 
@@ -202,12 +211,12 @@ class MismatchFixer {
 
     double xsect_volume = std::accumulate(xsect_volumes_.begin(),
                                           xsect_volumes_.end(), 0.0);
-#ifdef ENABLE_MPI
-    global_xsect_volume_ = 0.0;
-    MPI_Allreduce(&xsect_volume, &global_xsect_volume_, 1,
-                  MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-#else
+
     global_xsect_volume_ = xsect_volume;
+#ifdef PORTAGE_ENABLE_MPI
+    if (distributed_)
+      MPI_Allreduce(&xsect_volume, &global_xsect_volume_, 1,
+                    MPI_DOUBLE, MPI_SUM, mycomm_);
 #endif
 
 
@@ -320,11 +329,13 @@ class MismatchFixer {
     int nempty = emptyents.size();
 
     int global_nempty = nempty;
-#ifdef ENABLE_MPI    
-    int *nempty_all = new int[nprocs_];
-    MPI_Gather(&nempty, 1, MPI_INT, nempty_all, 1, MPI_INT, 0, MPI_COMM_WORLD);
-    global_nempty = std::accumulate(nempty_all, nempty_all+nprocs_, 0.0);
-    delete [] nempty_all;
+#ifdef PORTAGE_ENABLE_MPI
+    if (distributed_) {
+      int *nempty_all = new int[nprocs_];
+      MPI_Gather(&nempty, 1, MPI_INT, nempty_all, 1, MPI_INT, 0, mycomm_);
+      global_nempty = std::accumulate(nempty_all, nempty_all+nprocs_, 0.0);
+      delete [] nempty_all;
+    }
 #endif
     
     if (global_nempty && rank_ == 0) {
@@ -400,9 +411,11 @@ class MismatchFixer {
   /// CONSTANT - Fields will see no perturbations BUT REMAP WILL BE
   ///            NON-CONSERVATIVE (constant preserving, not linearity
   ///            preserving)
-  /// CONSERVATIVE - REMAP WILL BE CONSERVATIVE but perturbations will
-  ///                occur in the field (constant fields may not stay
-  ///                constant if there is mismatch)
+  /// LOCALLY_CONSERVATIVE - REMAP WILL BE LOCALLY CONSERVATIVE (target cells
+  ///                        will preserve the integral quantities received from
+  ///                        source mesh overlap) but perturbations will
+  ///                        occur in the field (constant fields may not stay
+  ///                        constant if there is mismatch)
   /// SHIFTED_CONSERVATIVE - REMAP WILL BE CONSERVATIVE and field
   ///                        perturbations will be minimum but field
   ///                        values may be shifted (Constant fields
@@ -507,7 +520,7 @@ class MismatchFixer {
     
       return true;
 
-    } else if (partial_fixup_type == Partial_fixup_type::CONSERVATIVE) {
+    } else if (partial_fixup_type == Partial_fixup_type::LOCALLY_CONSERVATIVE) {
       // In interpolate step, we divided the accumulated integral (U)
       // in a target cell by the intersection volume (v_i) instead of
       // the target cell volume (v_c) to give a target field of u_t =
@@ -540,9 +553,10 @@ class MismatchFixer {
                              source_ent_volumes_.begin(), 0.0);
 
       double global_source_sum = source_sum;
-#ifdef ENABLE_MPI
-      MPI_Allreduce(&source_sum, &global_source_sum, 1, MPI_DOUBLE, MPI_SUM,
-                    MPI_COMM_WORLD);
+#ifdef PORTAGE_ENABLE_MPI
+      if (distributed_)
+        MPI_Allreduce(&source_sum, &global_source_sum, 1, MPI_DOUBLE, MPI_SUM,
+                      mycomm_);
 #endif
 
       double target_sum =
@@ -550,9 +564,10 @@ class MismatchFixer {
                              target_ent_volumes_.begin(), 0.0);
 
       double global_target_sum = target_sum;
-#ifdef ENABLE_MPI
-      MPI_Allreduce(&target_sum, &global_target_sum, 1, MPI_DOUBLE, MPI_SUM,
-                    MPI_COMM_WORLD);
+#ifdef PORTAGE_ENABLE_MPI
+      if (distributed_)
+        MPI_Allreduce(&target_sum, &global_target_sum, 1, MPI_DOUBLE, MPI_SUM,
+                      mycomm_);
 #endif
 
       double global_diff = global_target_sum - global_source_sum;
@@ -633,9 +648,10 @@ class MismatchFixer {
                                         target_ent_volumes_.begin(), 0.0);
 
         global_target_sum = target_sum;
-#ifdef ENABLE_MPI
-        MPI_Allreduce(&target_sum, &global_target_sum, 1, MPI_DOUBLE, MPI_SUM,
-                      MPI_COMM_WORLD);
+#ifdef PORTAGE_ENABLE_MPI
+        if (distributed_)
+          MPI_Allreduce(&target_sum, &global_target_sum, 1, MPI_DOUBLE, MPI_SUM,
+                        mycomm_);
 #endif
 
         // If we did not hit lower or upper bounds, this should be
@@ -648,9 +664,10 @@ class MismatchFixer {
         global_diff = global_target_sum - global_source_sum;
 
         global_adj_target_volume = adj_target_volume;
-#ifdef ENABLE_MPI
-        MPI_Allreduce(&adj_target_volume, &global_adj_target_volume, 1,
-                      MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+#ifdef PORTAGE_ENABLE_MPI
+        if (distributed_)
+          MPI_Allreduce(&adj_target_volume, &global_adj_target_volume, 1,
+                        MPI_DOUBLE, MPI_SUM, mycomm_);
 #endif
 
         udiff = global_diff/global_adj_target_volume;
@@ -697,6 +714,10 @@ class MismatchFixer {
   bool mismatch_ = false;
   int rank_ = 0, nprocs_ = 1;
   double voldifftol_ = 1e2*std::numeric_limits<double>::epsilon();
+  bool distributed_ = false;
+#ifdef PORTAGE_ENABLE_MPI
+  MPI_Comm mycomm_ = MPI_COMM_NULL;
+#endif
 };  // MismatchFixer
 
 }  // namespace Portage

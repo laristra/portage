@@ -129,8 +129,9 @@ class DriverTest : public ::testing::Test {
     d.set_remap_var_names(remap_fields, remap_fields,
                           Portage::Meshfree::LocalRegression,
                           basis);
-    // run on multiple processors
-    d.run(true);
+
+    Wonton::MPIExecutor_type executor(MPI_COMM_WORLD);
+    d.run(&executor);
 
     // Check the answer
     Wonton::Point<dim> nodexy;

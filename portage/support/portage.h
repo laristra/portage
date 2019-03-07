@@ -7,6 +7,14 @@ Please see the license file at the root of this repository, or at:
 #ifndef PORTAGE_SUPPORT_PORTAGE_H_
 #define PORTAGE_SUPPORT_PORTAGE_H_
 
+// Semantic version numbers for Portage
+// Will be filled in the CMAKE when installing (make install)
+
+#define PORTAGE_VERSION_MAJOR @PORTAGE_VERSION_MAJOR@
+#define PORTAGE_VERSION_MINOR @PORTAGE_VERSION_MINOR@
+#define PORTAGE_VERSION_PATCH @PORTAGE_VERSION_PATCH@
+
+
 #ifdef THRUST
 
 #include "thrust/device_vector.h"
@@ -66,11 +74,6 @@ Please see the license file at the root of this repository, or at:
 namespace Portage {
 
 // Point aliases
-/* template<long D> */
-/* using Point = Wonton::Point<D>; */
-/* using Wonton::Point3; */
-/* using Wonton::Point2; */
-/* using Wonton::Point1; */
 
 using Wonton::Matrix;
 
@@ -87,7 +90,7 @@ typedef enum {NOLIMITER, BARTH_JESPERSEN}
   Limiter_type;
 
 /// Fixup options for partially filled cells
-typedef enum {CONSTANT, CONSERVATIVE, SHIFTED_CONSERVATIVE}
+typedef enum {CONSTANT, LOCALLY_CONSERVATIVE, SHIFTED_CONSERVATIVE}
   Partial_fixup_type;
 
 /// Fixup options for empty cells

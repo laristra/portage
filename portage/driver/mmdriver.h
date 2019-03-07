@@ -39,7 +39,7 @@ Please see the license file at the root of this repository, or at:
 #include "portage/driver/fix_mismatch.h"
 
 
-#ifdef ENABLE_MPI
+#ifdef PORTAGE_ENABLE_MPI
 #include "portage/distributed/mpi_bounding_boxes.h"
 #endif
 
@@ -214,7 +214,7 @@ class MMDriver {
   /*!
     @brief set repair method in partially filled cells for all variables
     @param fixup_type Can be Partial_fixup_type::CONSTANT,
-                        Partial_fixup_type::CONSERVATIVE,
+                        Partial_fixup_type::LOCALLY_CONSERVATIVE,
                         Partial_fixup_type::SHIFTED_CONSERVATIVE
   */
   void set_partial_fixup_type(Partial_fixup_type fixup_type) {
@@ -228,7 +228,7 @@ class MMDriver {
     @brief set repair method in partially filled cells for all variables
     @param target_var_name Target mesh variable to set fixup option for
     @param fixup_type  Can be Partial_fixup_type::CONSTANT,
-                       Partial_fixup_type::CONSERVATIVE,
+                       Partial_fixup_type::LOCALLY_CONSERVATIVE,
                        Partial_fixup_type::SHIFTED_CONSERVATIVE
   */
   void set_partial_fixup_type(std::string const& target_var_name,
@@ -336,6 +336,7 @@ class MMDriver {
     @param target_meshvar_names  names of remap variables on target mesh
     @param source_matvar_names  names of remap variables on materials of source mesh
     @param target_matvar_names  names of remap variables on materials of target mesh
+    @param serialexecutor pointer to Serial Executor (generally not needed but introduced for future proofing)
     @return status of remap (1 if successful, 0 if not)
   */
 
@@ -343,9 +344,10 @@ class MMDriver {
   int remap(std::vector<std::string> const &source_meshvar_names,
             std::vector<std::string> const &target_meshvar_names,
             std::vector<std::string> const &source_matvar_names,
-            std::vector<std::string> const &target_matvar_names);
+            std::vector<std::string> const &target_matvar_names,
+            Wonton::SerialExecutor_type const *serialexecutor = nullptr);
 
-#ifdef ENABLE_MPI
+#ifdef PORTAGE_ENABLE_MPI
   /*!
     @brief remap for a given set of variables on a given entity kind in a distributed setting with redistribution of data if needed
     @tparam entity_kind  Kind of entity that variables live on
@@ -353,6 +355,7 @@ class MMDriver {
     @param target_meshvar_names  names of remap variables on target mesh
     @param source_matvar_names  names of remap variables on materials of source mesh
     @param target_matvar_names  names of remap variables on materials of target mesh
+    @param mpiexecutor pointer to a MPI Executor (furnishes the comm for a MPI calls)
     @return status of remap (1 if successful, 0 if not)
   */
 
@@ -360,7 +363,8 @@ class MMDriver {
   int remap_distributed(std::vector<std::string> const &source_meshvar_names,
                         std::vector<std::string> const &target_meshvar_names,
                         std::vector<std::string> const &source_matvar_names,
-                        std::vector<std::string> const &target_matvar_names);
+                        std::vector<std::string> const &target_matvar_names,
+                        Wonton::MPIExecutor_type const *mpiexecutor = nullptr);
 #endif
 
 
@@ -369,25 +373,30 @@ class MMDriver {
     @brief Execute the remapping process
     @return status of remap (1 if successful, 0 if not)
   */
-  int run(bool distributed, std::string *errmsg = nullptr) {
+  int run(Wonton::Executor_type const *executor = nullptr,
+          std::string *errmsg = nullptr) {
     std::string message;
-#ifndef ENABLE_MPI
-    if (distributed) {
-      message = "Request is for a parallel run but Portage is compiled for serial runs only";
-      if (errmsg)
-        *errmsg = message;
-      else
-        std::cerr << message << "\n";
-      return 0;
+
+    bool distributed = false;
+    int comm_rank = 0;
+    int nprocs = 1;
+    
+
+    // Will be null if it's a parallel executor
+    auto serialexecutor = dynamic_cast<Wonton::SerialExecutor_type const *>(executor);
+    
+#ifdef PORTAGE_ENABLE_MPI
+    MPI_Comm mycomm = MPI_COMM_NULL;
+    auto mpiexecutor = dynamic_cast<Wonton::MPIExecutor_type const *>(executor);
+    if (mpiexecutor && mpiexecutor->mpicomm != MPI_COMM_NULL) {
+      mycomm = mpiexecutor->mpicomm;
+      MPI_Comm_rank(mycomm, &comm_rank);
+      MPI_Comm_size(mycomm, &nprocs);
+      if (nprocs > 1)
+        distributed = true;
     }
 #endif
-
-    int comm_rank = 0;
-#ifdef ENABLE_MPI
-    if (distributed)
-      MPI_Comm_rank(MPI_COMM_WORLD, &comm_rank);
-#endif
-
+    
     if (comm_rank == 0)
       std::cout << "in MMDriver::run()...\n";
 
@@ -431,16 +440,20 @@ class MMDriver {
     // ALWAYS call because we may have to remap material volume
     // fractions and centroids which are cell-based fields
 
-#ifdef ENABLE_MPI
+    // Default is serial run (if MPI is not enabled or the
+    // communicator is not defined or the number of processors is 1)
+#ifdef PORTAGE_ENABLE_MPI
     if (distributed)
       remap_distributed<Entity_kind::CELL>(src_meshvar_names,
                                            trg_meshvar_names,
                                            src_matvar_names,
-                                           trg_matvar_names);
+                                           trg_matvar_names,
+                                           mpiexecutor);
     else
 #endif
       remap<Entity_kind::CELL>(src_meshvar_names, trg_meshvar_names,
-                  src_matvar_names, trg_matvar_names);
+                               src_matvar_names, trg_matvar_names,
+                               serialexecutor);
 
 
 
@@ -468,16 +481,18 @@ class MMDriver {
     }
 
     if (src_meshvar_names.size()) {
-#ifdef ENABLE_MPI
+#ifdef PORTAGE_ENABLE_MPI
       if (distributed)
         remap_distributed<Entity_kind::NODE>(src_meshvar_names,
                                              trg_meshvar_names,
                                              src_matvar_names,
-                                             trg_matvar_names);
+                                             trg_matvar_names,
+                                             mpiexecutor);
       else
 #endif
         remap<Entity_kind::NODE>(src_meshvar_names, trg_meshvar_names,
-                    src_meshvar_names, trg_meshvar_names);
+                                 src_meshvar_names, trg_meshvar_names,
+                                 serialexecutor);
     }
 
     return 1;
@@ -504,25 +519,71 @@ class MMDriver {
 
   
 #ifdef HAVE_TANGRAM
-  // Convert volume fraction and centroid data from compact
-  // material-centric to compact cell-centric (ccc) form as needed by
-  // Tangram
-  void ccc_vfcen_data(std::vector<int>& cell_num_mats,
-                      std::vector<int>& cell_mat_ids,
-                      std::vector<double>& cell_matvolfracs,
-                      std::vector<Wonton::Point<D>>& cell_mat_centroids);
 
   // Convert volume fraction and centroid data from compact
   // material-centric to compact cell-centric (ccc) form as needed by
-  // Tangram (this form uses the flat mesh and state wrappers and therefore 
-  // requires a different signature
+  // Tangram
+  template<class StateWrapperInner>
   void ccc_vfcen_data(std::vector<int>& cell_num_mats,
                       std::vector<int>& cell_mat_ids,
-                      std::vector<double>& cell_matvolfracs,
+                      std::vector<double>& cell_mat_volfracs,
                       std::vector<Tangram::Point<D>>& cell_mat_centroids,
-                      Flat_Mesh_Wrapper<> flat_mesh_wrapper,
-                      Flat_State_Wrapper<Flat_Mesh_Wrapper<>> flat_state_wrapper);
-#endif
+                      int nsourcecells, 
+                      StateWrapperInner const& source_state){
+                      
+    int nmats = source_state.num_materials();
+    cell_num_mats.assign(nsourcecells, 0);
+
+    // First build full arrays (as if every cell had every material)
+
+    std::vector<int> cell_mat_ids_full(nsourcecells*nmats, -1);
+    std::vector<double> cell_mat_volfracs_full(nsourcecells*nmats, 0.0);
+    std::vector<Tangram::Point<D>> cell_mat_centroids_full(nsourcecells*nmats);
+
+    int nvals = 0;
+    for (int m = 0; m < nmats; m++) {
+      std::vector<int> cellids;
+      source_state.mat_get_cells(m, &cellids);
+      for (int ic = 0; ic < cellids.size(); ic++) {
+        int c = cellids[ic];
+        int nmatc = cell_num_mats[c];
+        cell_mat_ids_full[c*nmats+nmatc] = m;
+        cell_num_mats[c]++;
+      }
+      nvals += cellids.size();
+
+      double const * matfracptr;
+      source_state.mat_get_celldata("mat_volfracs", m, &matfracptr);
+      for (int ic = 0; ic < cellids.size(); ic++)
+        cell_mat_volfracs_full[cellids[ic]*nmats+m] = matfracptr[ic];
+
+      Portage::Point<D> const *matcenvec;
+      source_state.mat_get_celldata("mat_centroids", m, &matcenvec);
+      for (int ic = 0; ic < cellids.size(); ic++)
+        cell_mat_centroids_full[cellids[ic]*nmats+m] = matcenvec[ic];
+    }
+
+    // At this point nvals contains the number of non-zero volume
+    // fraction entries in the full array. Use this and knowledge of
+    // number of materials in each cell to compress the data into
+    // linear arrays
+
+    cell_mat_ids.resize(nvals);
+    cell_mat_volfracs.resize(nvals);
+    cell_mat_centroids.resize(nvals);
+
+    int idx = 0;
+    for (int c = 0; c < nsourcecells; c++) {
+      for (int m = 0; m < cell_num_mats[c]; m++) {
+        int matid = cell_mat_ids_full[c*nmats+m];
+        cell_mat_ids[idx] = matid;
+        cell_mat_volfracs[idx] = cell_mat_volfracs_full[c*nmats+matid];
+        cell_mat_centroids[idx] = cell_mat_centroids_full[c*nmats+matid];
+        idx++;
+      }
+    }
+  }
+#endif //HAVE_TANGRAM
 
 };  // class MMDriver
 
@@ -554,7 +615,8 @@ int MMDriver<Search, Intersect, Interpolate, D,
              >::remap(std::vector<std::string> const &src_meshvar_names,
                       std::vector<std::string> const &trg_meshvar_names,
                       std::vector<std::string> const &src_matvar_names,
-                      std::vector<std::string> const &trg_matvar_names) {
+                      std::vector<std::string> const &trg_matvar_names,
+                      Wonton::SerialExecutor_type const *serial_executor) {
 
   static_assert(onwhat == Entity_kind::NODE || onwhat == Entity_kind::CELL,
                 "Remap implemented only for CELL and NODE variables");
@@ -622,7 +684,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
     // cell-centric form (ccc)
 
     ccc_vfcen_data(cell_num_mats, cell_mat_ids, cell_mat_volfracs,
-                   cell_mat_centroids);
+                   cell_mat_centroids, nsourcecells, source_state_);
 
     interface_reconstructor->set_volume_fractions(cell_num_mats,
                                                   cell_mat_ids,
@@ -727,7 +789,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
   MismatchFixer<D, onwhat, SourceMesh_Wrapper, SourceState_Wrapper,
                 TargetMesh_Wrapper, TargetState_Wrapper>
       mismatch_fixer(source_mesh_, source_state_, target_mesh_, target_state_,
-                     source_ents_and_weights);
+                     source_ents_and_weights, serial_executor);
 
   if (mismatch_fixer.has_mismatch()) {
     for (int i = 0; i < nvars; i++) {
@@ -987,7 +1049,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
 
 
 
-#ifdef ENABLE_MPI
+#ifdef PORTAGE_ENABLE_MPI
 
 // Distributed Remap with redistribution of mesh and data
 
@@ -1015,15 +1077,22 @@ int MMDriver<Search, Intersect, Interpolate, D,
              >::remap_distributed(std::vector<std::string> const &src_meshvar_names,
                                   std::vector<std::string> const &trg_meshvar_names,
                                   std::vector<std::string> const &src_matvar_names,
-                                  std::vector<std::string> const &trg_matvar_names) {
+                                  std::vector<std::string> const &trg_matvar_names,
+                                  Wonton::MPIExecutor_type const *mpiexecutor) {
+
+  if (!mpiexecutor || mpiexecutor->mpicomm == MPI_COMM_NULL)
+    std::cerr <<
+        "Specify a parallel executor with a valid Comm for parallel runs\n";
+  MPI_Comm mycomm = mpiexecutor->mpicomm;
 
   static_assert(onwhat == Entity_kind::NODE || onwhat == Entity_kind::CELL,
                 "Remap implemented only for CELL and NODE variables");
 
   int comm_rank = 0;
-  MPI_Comm_rank(MPI_COMM_WORLD, &comm_rank);
+  MPI_Comm_rank(mycomm, &comm_rank);
 
-  int ntarget_ents_owned = target_mesh_.num_entities(onwhat, Entity_type::PARALLEL_OWNED);
+  int ntarget_ents_owned = target_mesh_.num_entities(onwhat,
+                                                     Entity_type::PARALLEL_OWNED);
   std::cout << "Number of target entities of kind " << onwhat <<
       " in target mesh on rank " << comm_rank << ": " <<
       ntarget_ents_owned << std::endl;
@@ -1048,13 +1117,14 @@ int MMDriver<Search, Intersect, Interpolate, D,
 
   source_mesh_flat.initialize(source_mesh_);
   
-  // Note the flat state should be used for everything including the centroids and
-  // volume fractions for interface reconstruction
+  // Note the flat state should be used for everything including the
+  // centroids and volume fractions for interface reconstruction
   std::vector<std::string> source_remap_var_names;
   for (auto & stpair : source_target_varname_map_)
     source_remap_var_names.push_back(stpair.first);
   source_state_flat.initialize(source_state_, source_remap_var_names);
-  MPI_Bounding_Boxes distributor;
+
+  MPI_Bounding_Boxes distributor(mpiexecutor);
   distributor.distribute(source_mesh_flat, source_state_flat,
                          target_mesh_, target_state_);
 
@@ -1107,13 +1177,13 @@ int MMDriver<Search, Intersect, Interpolate, D,
     // cell-centric form (ccc)
 
     ccc_vfcen_data(cell_num_mats, cell_mat_ids, cell_mat_volfracs,
-                   cell_mat_centroids, source_mesh_flat, source_state_flat);
+                   cell_mat_centroids, nsourcecells, source_state_flat);
 
     interface_reconstructor->set_volume_fractions(cell_num_mats,
                                                   cell_mat_ids,
                                                   cell_mat_volfracs,
                                                   cell_mat_centroids);
-    interface_reconstructor->reconstruct();
+    interface_reconstructor->reconstruct(mpiexecutor);
   }
 
 
@@ -1224,7 +1294,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
                 TargetMesh_Wrapper, TargetState_Wrapper>
       mismatch_fixer(source_mesh_flat, source_state_flat,
                      target_mesh_, target_state_,
-                     source_ents_and_weights);
+                     source_ents_and_weights, mpiexecutor);
 
   if (mismatch_fixer.has_mismatch()) {
     for (int i = 0; i < nvars; i++) {
@@ -1252,11 +1322,11 @@ int MMDriver<Search, Intersect, Interpolate, D,
 
         double global_lower_bound=0.0, global_upper_bound=0.0;
         MPI_Allreduce(&lower_bound, &global_lower_bound, 1, MPI_DOUBLE, MPI_MIN,
-                      MPI_COMM_WORLD);
+                      mycomm);
         lower_bound = global_lower_bound;
 
         MPI_Allreduce(&upper_bound, &global_upper_bound, 1, MPI_DOUBLE, MPI_MAX,
-                      MPI_COMM_WORLD);
+                      mycomm);
         upper_bound = global_upper_bound;
 
         double relbounddiff = fabs((upper_bound-lower_bound)/lower_bound);
@@ -1352,9 +1422,9 @@ int MMDriver<Search, Intersect, Interpolate, D,
 
     int nmatcells = matcellstgt.size();
     int nmatcells_global = 0;
-    #ifdef ENABLE_MPI
+    #ifdef PORTAGE_ENABLE_MPI
     MPI_Allreduce(&nmatcells, &nmatcells_global, 1, MPI_INT, MPI_SUM,
-                  MPI_COMM_WORLD);
+                  mycomm);
     #else
     nmatcells_global=nmatcells;
     #endif
@@ -1442,33 +1512,40 @@ int MMDriver<Search, Intersect, Interpolate, D,
                                     // which material values we have
                                     // to grab from the source state
 
-    for (int i = 0; i < nmatvars; ++i) {
-      interpolate.set_interpolation_variable(src_matvar_names[i],
+
+    // if the material has no cells on this partition, then don't bother
+    // interpolating MM variables
+    if (target_state_.mat_get_num_cells(m)) {
+
+      for (int i = 0; i < nmatvars; ++i) {
+        interpolate.set_interpolation_variable(src_matvar_names[i],
                                              limiters_.at(src_matvar_names[i]));
 
-      // Get a handle to a memory location where the target state
-      // would like us to write this material variable into. If it is
-      // NULL, we allocate it ourself
+        // Get a handle to a memory location where the target state
+        // would like us to write this material variable into. If it is
+        // NULL, we allocate it ourself
 
-      double *target_field_raw;
-      target_state_.mat_get_celldata(trg_matvar_names[i], m, &target_field_raw);
-      assert (target_field_raw != nullptr);
+        double *target_field_raw;
+        target_state_.mat_get_celldata(trg_matvar_names[i], m, &target_field_raw);
+        assert (target_field_raw != nullptr);
 
+        Portage::pointer<double> target_field(target_field_raw);
+        
+        Portage::transform(matcellstgt.begin(), matcellstgt.end(),
+                           mat_sources_and_weights.begin(),
+                           target_field, interpolate);
 
-      Portage::pointer<double> target_field(target_field_raw);
+        // If the state wrapper knows that the target data is already
+        // laid out in this way and it gave us a pointer to the array
+        // where the values reside, it has to do nothing in this
+        // call. If the storage format is different, however, it may
+        // have to copy the values into their proper locations
 
-      Portage::transform(matcellstgt.begin(), matcellstgt.end(),
-                         mat_sources_and_weights.begin(),
-                         target_field, interpolate);
+        target_state_.mat_add_celldata(trg_matvar_names[i], m, target_field_raw);
+        
+      }  // nmatvars
 
-      // If the state wrapper knows that the target data is already
-      // laid out in this way and it gave us a pointer to the array
-      // where the values reside, it has to do nothing in this
-      // call. If the storage format is different, however, it may
-      // have to copy the values into their proper locations
-
-      target_state_.mat_add_celldata(trg_matvar_names[i], m, target_field_raw);
-    }  // nmatvars
+    }
 
     gettimeofday(&end_timeval, 0);
     timersub(&end_timeval, &begin_timeval, &diff_timeval);
@@ -1489,204 +1566,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
 
   return 1;
 }
-#endif  // ENABLE_MPI
-
-
-#ifdef HAVE_TANGRAM
-// Convert volume fraction and centroid data from compact
-// material-centric to compact cell-centric (ccc) form as needed by
-// Tangram
-
-template <template <int, Entity_kind, class, class> class Search,
-          template <Entity_kind, class, class, class,
-          template <class, int, class, class> class,
-          class, class> class Intersect,
-          template<int, Entity_kind, class, class, class,
-          template<class, int, class, class> class,
-          class, class> class Interpolate,
-          int D,
-          class SourceMesh_Wrapper,
-          class SourceState_Wrapper,
-          class TargetMesh_Wrapper,
-          class TargetState_Wrapper,
-          template <class, int, class, class> class InterfaceReconstructorType,
-          class Matpoly_Splitter,
-          class Matpoly_Clipper>
-void
-MMDriver<Search, Intersect, Interpolate, D,
-         SourceMesh_Wrapper, SourceState_Wrapper,
-         TargetMesh_Wrapper, TargetState_Wrapper,
-         InterfaceReconstructorType, Matpoly_Splitter,
-         Matpoly_Clipper
-         >::ccc_vfcen_data(std::vector<int>& cell_num_mats,
-                           std::vector<int>& cell_mat_ids,
-                           std::vector<double>& cell_mat_volfracs,
-                           std::vector<Wonton::Point<D>>& cell_mat_centroids) {
-
-  int nsourcecells = source_mesh_.num_entities(Entity_kind::CELL, Entity_type::ALL);
-
-  int nmats = source_state_.num_materials();
-  cell_num_mats.assign(nsourcecells, 0);
-
-  // First build full arrays (as if every cell had every material)
-
-  std::vector<int> cell_mat_ids_full(nsourcecells*nmats, -1);
-  std::vector<double> cell_mat_volfracs_full(nsourcecells*nmats, 0.0);
-  std::vector<Wonton::Point<D>> cell_mat_centroids_full(nsourcecells*nmats);
-
-  int nvals = 0;
-  for (int m = 0; m < nmats; m++) {
-    std::vector<int> cellids;
-    source_state_.mat_get_cells(m, &cellids);
-    for (int ic = 0; ic < cellids.size(); ic++) {
-      int c = cellids[ic];
-      int nmatc = cell_num_mats[c];
-      cell_mat_ids_full[c*nmats+nmatc] = m;
-      cell_num_mats[c]++;
-    }
-    nvals += cellids.size();
-
-    double const * matfracptr;
-    source_state_.mat_get_celldata("mat_volfracs", m, &matfracptr);
-    for (int ic = 0; ic < cellids.size(); ic++)
-      cell_mat_volfracs_full[cellids[ic]*nmats+m] = matfracptr[ic];
-
-    Portage::Point<D> const *matcenvec;
-    source_state_.mat_get_celldata("mat_centroids", m, &matcenvec);
-    for (int ic = 0; ic < cellids.size(); ic++)
-      cell_mat_centroids_full[cellids[ic]*nmats+m] = matcenvec[ic];
-  }
-
-  // At this point nvals contains the number of non-zero volume
-  // fraction entries in the full array. Use this and knowledge of
-  // number of materials in each cell to compress the data into
-  // linear arrays
-
-  cell_mat_ids.resize(nvals);
-  cell_mat_volfracs.resize(nvals);
-  cell_mat_centroids.resize(nvals);
-
-  int idx = 0;
-  for (int c = 0; c < nsourcecells; c++) {
-    for (int m = 0; m < cell_num_mats[c]; m++) {
-      int matid = cell_mat_ids_full[c*nmats+m];
-      cell_mat_ids[idx] = matid;
-      cell_mat_volfracs[idx] = cell_mat_volfracs_full[c*nmats+matid];
-      cell_mat_centroids[idx] = cell_mat_centroids_full[c*nmats+matid];
-      idx++;
-    }
-  }
-}
-
-
-// Convert volume fraction and centroid data from compact
-// material-centric to compact cell-centric (ccc) form as needed by
-// Tangram. Overloaded to handle the case of the flat mesh and state in 
-// distributed
-
-template <template <int, Entity_kind, class, class> class Search,
-          template <Entity_kind, class, class, class,
-          template <class, int, class, class> class,
-          class, class> class Intersect,
-          template<int, Entity_kind, class, class, class,
-          template<class, int, class, class> class,
-          class, class> class Interpolate,
-          int D,
-          class SourceMesh_Wrapper,
-          class SourceState_Wrapper,
-          class TargetMesh_Wrapper,
-          class TargetState_Wrapper,
-          template <class, int, class, class> class InterfaceReconstructorType,
-          class Matpoly_Splitter,
-          class Matpoly_Clipper>
-void
-MMDriver<Search, Intersect, Interpolate, D,
-         SourceMesh_Wrapper, SourceState_Wrapper,
-         TargetMesh_Wrapper, TargetState_Wrapper,
-         InterfaceReconstructorType, Matpoly_Splitter,
-         Matpoly_Clipper
-         >::ccc_vfcen_data(std::vector<int>& cell_num_mats,
-                           std::vector<int>& cell_mat_ids,
-                           std::vector<double>& cell_mat_volfracs,
-                           std::vector<Tangram::Point<D>>& cell_mat_centroids,
-                           Flat_Mesh_Wrapper<> flat_mesh_wrapper,
-                           Flat_State_Wrapper<Flat_Mesh_Wrapper<>> flat_state_wrapper) {
-                           
-	// get the number of cells in the flat state, Note that by construction, in the
-	// flat state, cells can be duplicated because of ghosting on other nodes
-  int nsourcecells = flat_mesh_wrapper.num_entities(Entity_kind::CELL, Entity_type::ALL);
-
-	// get the number of materials. This is the number of materials in the state
-	// manager with cells, not the number of registered materials
-  int nmats = flat_state_wrapper.num_materials();
-  
-  // a counter for the total number of material/cell combinations
-  // start clean
-  cell_num_mats.assign(nsourcecells, 0);
-  cell_mat_ids.clear();
-  cell_mat_volfracs.clear();
-  cell_mat_centroids.clear();
-  
-  //int nvals = 0;
-  
-  // get the cell materials directly from the state manager, not that by construction
-  // the materials only appear once in the set
-  std::unordered_map<int, std::unordered_set<int>> cell_materials_= 
-  	flat_state_wrapper.get_cell_materials();
-  
-  // get all the data for the volume fractions
-  std::unordered_map<int, std::vector<double>> mat_volfracs = 
-  	flat_state_wrapper.get<StateVectorMulti<double>>("mat_volfracs")->get_data();
-  
-  // get all the data for the volume fractions
-  std::unordered_map<int, std::vector<Wonton::Point<D>>> mat_centroids = 
-  	flat_state_wrapper.get<StateVectorMulti<Wonton::Point<D>>>("mat_centroids")->get_data();
-  	
-  // At this point we have the cell materials only for the unique cells that the flat
-  // state manager defines. The flat state mesh defines cells for all cells in the
-  // constituent nodes, but there are duplicates due to ghosts. The surviving cell
-  // is a little involved. It is not the id of the cell in the node where that cell is owned,
-  // as some cells may only be ghosts. The referenced id is the first appearance
-  // in the flat mesh. It may be a ghost cell in that node but that is the numbering
-  // scheme.
-  
-  // loop over cells since we already have the cell dominant cell_materials_
-  for (int i=0; i<nsourcecells; ++i) {
-  
-  	// get the materials in this cell (may be empty if cell is a duplicate)
-  	auto kv = cell_materials_.find(i);
-  	
-  	// if we don't find the cell, then just skip
-  	if ( kv== cell_materials_.end()) continue;
-  
-  	// unpack the set of materials in this cell
-  	std::unordered_set<int> materials = kv->second;
-  	
-  	// the cell id is the index into the current flat mesh list
-  	cell_num_mats[i]=materials.size();
-  	
-  	// loop over material ids (the order is arbitrary)
-  	for (int m : materials){
-  		
-  		// add the material to the ccc vector
-  		cell_mat_ids.push_back(m);
-  		
-  		// find the cell index in this material 
-  		// we need this step since a cell can appear multiple times in a material
-  		// due to the repeated appearance of ghosts
-  		int ind = flat_state_wrapper.cell_index_in_material(i,m); 		
-  		
-  		// add the volume fraction to the ccc vector
-  		cell_mat_volfracs.push_back(mat_volfracs[m][ind]);
-  		
-  		// add the material centroid to the ccc vector
-  		cell_mat_centroids.push_back(mat_centroids[m][ind]);
-  	}  
-  }
-}
-
-#endif  // HAVE_TANGRAM
-
+#endif  // PORTAGE_ENABLE_MPI
 
 
 }  // namespace Portage
