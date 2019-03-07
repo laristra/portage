@@ -339,9 +339,9 @@ inefficient way.**
 ## Particle or Meshfree Remapping
 
 Portage can estimate functions and derivatives between particle swarms (groups of
-particles) employing the similar algorithmic devices as the mesh-mesh remap. 
+particles) employing  algorithmic devices similar to those of mesh-mesh remap. 
 We say "estimate" instead of "interpolate" because in general, meshfree 
-function constructs pass *near* the data, and not *through* it. 
+function estimates pass *near* the data, and not *through* it. 
 Meshfree remap is performed in the following steps that echo
 those of mesh-mesh remapping:
 
@@ -363,7 +363,13 @@ connecting data points.
 </tr>
 </table>
 
-There are many possible meshfree methods to choose from. Portage currently employs the Kernel Density Estimator (KDE), the basis of the Smooth-Particle Hydrodynamics method (SPH), and the well developed Local Regression Estimator (LRE) [5][6]. If LRE is performed with sufficient point density, one can obtain weights for arbitrary orders of derivatives of the field data enabling higher-order estimation of fields. It can even be used to estimate integral operators of the field data on small domains. It has many exceptional properties that render it useful and practical.
+There are many possible meshfree methods to choose from. Portage currently employs the 
+Kernel Density Estimator (KDE), the basis of the Smooth-Particle Hydrodynamics method (SPH), 
+and the well developed Local Regression Estimator (LRE) [5][6]. If LRE is performed with 
+sufficient point density, one can obtain weights for arbitrary orders of derivatives of the 
+field data enabling higher-order estimation of fields. It can even be used to estimate 
+integral operators of the field data on small domains. It has many exceptional properties 
+that render it useful and practical.
 
 
 ### Search
@@ -380,16 +386,23 @@ with compact support, as shown below.
 <td valign="top"><img src="kernel.png" alt="Kernel" width=33%></td>
 </tr>
 <tr>
-<td width="22%" valign="top"> A typical weight function. The peak value is typically 1 and the minimum zero, with 
-compact support. </td>
+<td width="22%" valign="top"> A typical weight function. The peak value is typically 1 and the 
+minimum zero, with compact support. </td>
 </tr>                                                                                                                              
 </table> 
 
-A weight function support need not be spherical, as illustrated above. Suitable weight functions can be constructed 
-with supports comprised of ellipses, boxes, or arbitrary polygons or polyhedra. A smooth weight function used for particles generalizes the "top-hat" or unitary weight function used for meshes that has a value of 1 inside the cell and 0 outside. Meshes are a special case of particles. In fact, under certain conditions on the weight function, the LRE reproduces finite element nodal shape functions. 
+A weight function support need not be spherical, as illustrated above. Suitable weight 
+functions can be constructed 
+with supports comprised of ellipses, boxes, or arbitrary polygons or polyhedra. 
+A smooth weight function used for particles generalizes the "top-hat" or unitary 
+weight function used for meshes that has a value of 1 inside the cell and 0 outside. 
+Meshes are a special case of particles. In fact, under certain conditions on the weight function, 
+the LRE reproduces finite element nodal shape functions. 
 
-The centers of the weight function supports are typically located in two places. If on the target particles, the estimator 
-is called "gather-form", if on the source particles, the estimator is called "scatter-form", illustrated below.
+The centers of the weight function supports are typically located in two places. 
+If on the target particles, the estimator 
+is called "gather-form", if on the source particles, the estimator is called "scatter-form", 
+illustrated below.
 
 <table style="width:100%">
 <tr>
@@ -398,9 +411,11 @@ is called "gather-form", if on the source particles, the estimator is called "sc
 <td valign="top"><img src="scatter_form.png" alt="Scatter" class="fullwidth"></td>
 </tr>
 <tr>
-<td width="22%" valign="top">Gather-form search. The centers of the weight function supports are located at the target particle centers.</td>
+<td width="22%" valign="top">Gather-form search. The centers of the weight function supports are 
+located at the target particle centers.</td>
 <td width="4%"></td>
-<td width="22%" valign="top">Scatter-form search. The centers of the weight function supports are located at the source 
+<td width="22%" valign="top">Scatter-form search. The centers of the weight function supports are 
+located at the source 
 particle centers. The supports need not all have the same shape.</td>
 </tr>
 </table>
@@ -418,7 +433,8 @@ These are the search methods for particles:
   particle swarms using a bounding box containing the particles and their
   extent based on smoothing lengths
 
-The weight function location is specified by Portage::MeshFree::WeightCenter. A set of input smoothing lengths
+The weight function location is specified by Portage::MeshFree::WeightCenter. 
+A set of input smoothing lengths
 determine the size of the weight function support.
 
 ### Accumulate
@@ -432,8 +448,8 @@ is analogous to the stencil used in a meshed method.
 For LRE, discrete transforms of different powers of the particle coordinates are made (moments), 
 assembled into a matrix, solved against a vector of moments and finally multiplied by 
 the kernel function. This yields a set of weights for each neighboring particle data value, one 
-for each derivative estimate. The concept for gather and scatter forms applied to the second moment of position
-is illustrated below. 
+for each derivative estimate. The concept for gather and scatter forms applied to the second 
+moment of position is illustrated below. 
 
 <table style="width:100%">
 <tr>
@@ -442,9 +458,13 @@ is illustrated below.
 <td valign="top"><img src="scatterScheme.png" alt="ScatterScheme" class="fullwidth"></td>
 </tr>
 <tr>
-<td width="22%" valign="top">Gather-form accumulate. The source data values (blue spikes) multiply the values of a given target kernel (in red) at the location of the spikes and are summed to the value associated with the given red dot.</td>
+<td width="22%" valign="top">Gather-form accumulate. The source data values (blue spikes) 
+multiply the values of a given target kernel (in red) at the location of the spikes and are 
+summed to the value associated with the given red dot.</td>
 <td width="4%"></td>
-<td width="22%" valign="top">Scatter-form accumulate. The source data values (blue spikes) multiply the values of the source kernels at the red dots (centers of the target particles) and are summed there.</td>
+<td width="22%" valign="top">Scatter-form accumulate. The source data values (blue spikes) 
+multiply the values of the source kernels at the red dots (centers of the target particles) 
+and are summed there.</td>
 </tr>
 </table>
 
@@ -466,7 +486,7 @@ basic matrix vector multiply between the field data on source
 particles and the weights for the various orders of
 derivative.
 
-The sole available meshfree method is:
+The sole available Estimate method is:
 
 - Portage::Meshfree::Estimate - use the output of Portage::Accumulate
   to estimate the target field data with varying degrees of accuracy.
