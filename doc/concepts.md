@@ -336,51 +336,144 @@ inefficient way.**
 <br>
 
 <a name="meshfree remap"></a>
-## Particle Remapping or Meshfree Remapping
+## Particle or Meshfree Remapping
 
-Portage can interpolate data between particle swarms (group of
-particles) using the well developed Local Regression Estimate
-(LRE) [5][6] method employing the same algorithmic
-devices as the mesh-mesh remap.  If LRE is performed with sufficient
-point density, one can obtain weights for arbitrary orders of
-derivatives of the field data enabling higher-order estimation of
-fields.  Meshfree remap is performed in the following steps that echo
+Portage can estimate functions and derivatives between particle swarms (groups of
+particles) employing  algorithmic devices similar to those of mesh-mesh remap. 
+We say "estimate" instead of "interpolate" because in general, meshfree 
+function estimates pass *near* the data, and not *through* it. 
+Meshfree remap is performed in the following steps that echo
 those of mesh-mesh remapping:
 
 * **search** - find candidate source particles that will contribute to
-   remap of each target particle.
+   remap at each target particle.
 * **accumulate** - calculate the weight of each candidate's contribution
-   to the remap of a given target particle.
+   to the remap at a given target particle.
 * **estimate** - using the weights reconstruct the field data for a
    given target particle.
 
+The following figure illustrates typical source and target swarms used for remapping. There are no lines 
+connecting data points. 
+<table style="width:100%">
+<tr>
+<td valign="top"><img src="swarm_swarm.png" alt="Swarm-swarm" width=33%></td>
+</tr>
+<tr>
+<td width="22%" valign="top">A swarm-swarm remap configuration.  Blue is source, red is target.</td>
+</tr>
+</table>
+
+There are many possible meshfree methods to choose from. Portage currently employs the 
+Kernel Density Estimator (KDE), the basis of the Smooth-Particle Hydrodynamics method (SPH), 
+and the well developed Local Regression Estimator (LRE) [5][6]. If LRE is performed with 
+sufficient point density, one can obtain weights for arbitrary orders of derivatives of the 
+field data enabling higher-order estimation of fields. It can even be used to estimate 
+integral operators of the field data on small domains. It has many exceptional properties 
+that render it useful and practical.
+
+
 ### Search
 
-For particle swarms, the search concepts are similar, except any sort
-of bounding needs to take into account the fact that the particles
-have some extent via the geometric support of each particle
-(specified by Portage::MeshFree::Weight::Geometry and smoothing lengths).
+For particle swarms, the search concepts are similar, with one imporant 
+difference. With meshes, the region of influence of a data point is 
+given by the cell that includes or is connected to it. With particles, the 
+region of influence of a data point is determined by the support of a weight 
+function that includes it. A typical weight function is positive, smooth and unimodal, 
+with compact support, as shown below. 
+
+<table style="width:100%"> 
+<tr>
+<td valign="top"><img src="kernel.png" alt="Kernel" width=33%></td>
+</tr>
+<tr>
+<td width="22%" valign="top"> A typical weight function. The peak value is typically 1 and the 
+minimum zero, with compact support. </td>
+</tr>                                                                                                                              
+</table> 
+
+A weight function support need not be spherical, as illustrated above. Suitable weight 
+functions can be constructed 
+with supports comprised of ellipses, boxes, or arbitrary polygons or polyhedra. 
+A smooth weight function used for particles generalizes the "top-hat" or unitary 
+weight function used for meshes that has a value of 1 inside the cell and 0 outside. 
+Meshes are a special case of particles. In fact, under certain conditions on the weight function, 
+the LRE reproduces finite element nodal shape functions. 
+
+The centers of the weight function supports are typically located in two places. 
+If on the target particles, the estimator 
+is called "gather-form", if on the source particles, the estimator is called "scatter-form", 
+illustrated below.
+
+<table style="width:100%">
+<tr>
+<td valign="top"><img src="gather_form.png" alt="Gather" class="fullwidth"></td>
+<td width="4%"></td>
+<td valign="top"><img src="scatter_form.png" alt="Scatter" class="fullwidth"></td>
+</tr>
+<tr>
+<td width="22%" valign="top">Gather-form search. The centers of the weight function supports are 
+located at the target particle centers.</td>
+<td width="4%"></td>
+<td width="22%" valign="top">Scatter-form search. The centers of the weight function supports are 
+located at the source 
+particle centers. The supports need not all have the same shape.</td>
+</tr>
+</table>
+
+The weight function kernel and shape are specified by 
+Portage::MeshFree::Weight::Kernel and Portage::MeshFree::Weight::Geometry. 
+
+Any sort of bounding performed, e.g. to partition among processors, 
+needs to take into account the extent of the weight function supports. 
 These are the search methods for particles:
 
 - Portage::SearchSimplePoints - any-d quadratic time search over
   particle swarms
 - Portage::SearchPointsByCells - any-d linear time search over
-  particle swarms using a bounding box containing particles and their
-  smoothing lengths
+  particle swarms using a bounding box containing the particles and their
+  extent based on smoothing lengths
+
+The weight function location is specified by Portage::MeshFree::WeightCenter. 
+A set of input smoothing lengths
+determine the size of the weight function support.
 
 ### Accumulate
 
-Given the list of source particle candidates that may contribute to a target
-particle, this step calculates the actual contribution weights based on overlap of the particle support (or
-smoothing function)
+Most meshfree methods make approximations by means of discrete kernel transforms, 
+which involve summing data values times kernel values at various points. Even though 
+the kernels are defined over the entire swarm, compact support means only a small 
+number of particles typically have non-zero values. The set of such particles 
+is analogous to the stencil used in a meshed method. 
+
+For LRE, discrete transforms of different powers of the particle coordinates are made (moments), 
+assembled into a matrix, solved against a vector of moments and finally multiplied by 
+the kernel function. This yields a set of weights for each neighboring particle data value, one 
+for each derivative estimate. The concept for gather and scatter forms applied to the second 
+moment of position is illustrated below. 
+
+<table style="width:100%">
+<tr>
+<td valign="top"><img src="gatherScheme.png" alt="GatherScheme" class="fullwidth"></td>
+<td width="4%"></td>
+<td valign="top"><img src="scatterScheme.png" alt="ScatterScheme" class="fullwidth"></td>
+</tr>
+<tr>
+<td width="22%" valign="top">Gather-form accumulate. The source data values (blue spikes) 
+multiply the values of a given target kernel (in red) at the location of the spikes and are 
+summed to the value associated with the given red dot.</td>
+<td width="4%"></td>
+<td width="22%" valign="top">Scatter-form accumulate. The source data values (blue spikes) 
+multiply the values of the source kernels at the red dots (centers of the target particles) 
+and are summed there.</td>
+</tr>
+</table>
 
 The only available meshfree method for accumulate is:
 
 - Portage::Meshfree::Accumulate - any-d accumulator that works with
-  particles of various shapes, various kernel functions, utilizing
-  various types of basis functions and estimator models.
+  various weight function shapes, kernel functions, basis functions and estimator models.
 
-but a different one can be substituted by application developers.
+Developers may write their own Accumulate class.
 
 ### Estimate
 
@@ -390,10 +483,10 @@ actually populates the fields on the target particles.
  All of the heavy-lifting of the remap for particles has
 been done in the accumulate phase, such that this step results in a
 basic matrix vector multiply between the field data on source
-particles and the weights taking into account various orders of
-derivative information.
+particles and the weights for the various orders of
+derivative.
 
-The sole available meshfree method is:
+The sole available Estimate method is:
 
 - Portage::Meshfree::Estimate - use the output of Portage::Accumulate
   to estimate the target field data with varying degrees of accuracy.
@@ -408,7 +501,9 @@ remap. Also, meshfree remapping currently does not incorporate
 mechanisms for local or global bounds preservation in the
 interpolation. Consequently, users must be conscious of the fact that
 going to higher orders of interpolation carries the risk of bounds
-violation.
+violation. Furthermore, particle remap is not currently sensitive to 
+multi-material data fields. 
+These difficulties will be addressed in future code releases. 
 
 <br>
 
