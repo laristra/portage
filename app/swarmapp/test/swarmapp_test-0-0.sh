@@ -19,7 +19,7 @@ id="$prob-0"
 ${RUN_COMMAND} ${TESTAPPDIR}/swarmapp $prob 23 19 0 12345678 2>&1 > output-$id
 
 # Compare the values for the field
-python compare.py gold-outfield-$id.csv outfield-$id.csv 0
+../compare gold-outfield-$id.csv outfield-$id.csv
 result1=$?
 
 # Compare the values of the error
