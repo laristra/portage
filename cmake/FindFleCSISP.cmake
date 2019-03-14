@@ -1,5 +1,5 @@
 #------------------------------------------------------------------------------#
-# Copyright (c) 2016 Los Alamos National Security, LLC
+# Copyright (c) 2016 Triad National Security, LLC
 # All rights reserved.
 #------------------------------------------------------------------------------#
 
