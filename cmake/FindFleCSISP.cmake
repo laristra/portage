@@ -1,7 +1,8 @@
-#------------------------------------------------------------------------------#
-# Copyright (c) 2016 Triad National Security, LLC
-# All rights reserved.
-#------------------------------------------------------------------------------#
+#-----------------------------------------------------------------------------
+# This file is part of the Ristra Portate project.
+# Please see the license file at the root of this repository, or at:
+#    https://github.com/laristra/portage/blob/master/LICENSE
+#-----------------------------------------------------------------------------
 
 # - Find flecsi
 # Find the native FleCSI headers and libraries.
