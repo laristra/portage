@@ -50,6 +50,7 @@ int main(int narg, char** argv) {
   goldin.open(goldfile);
   testin.open(testfile);
 
+  int ncol = 0;
   bool goon=true;
   getLineAndSplit(goldin); // skip gold header
   while (goon) {
@@ -57,15 +58,24 @@ int main(int narg, char** argv) {
     if (values.empty()) { // EOF
       goon = false;
     } else if (values.size() == 3) { // NORMAL
+      if (ncol == 0) ncol = 3;
       std::vector<double> newcoord = {stod(values[0]), stod(values[1])};
       goldcoords.push_back(newcoord);
       goldvalues.push_back(stod(values[2]));
-    } else { // wrong number of columns
+    } else if (values.size() == 4) { // NORMAL
+      if (ncol == 0) ncol = 4;
+      std::vector<double> newcoord = {stod(values[0]), stod(values[1]), stod(values[2])};
+      goldcoords.push_back(newcoord);
+      goldvalues.push_back(stod(values[3]));
+    }
+    if (values.size() != ncol and ncol > 0 and goon) { // wrong number of columns
       std::cout << "uneven columns in gold file\n";
       std::exit(1);
     }
   }
+  int ncolgold = ncol;
 
+  ncol = 0;
   goon = true;
   getLineAndSplit(testin); // skip test header
   while (goon) {
@@ -73,18 +83,26 @@ int main(int narg, char** argv) {
     if (values.empty()) { // EOF
       goon = false;
     } else if (values.size() == 3) { // NORMAL
+      if (ncol == 0) ncol = 3;
       std::vector<double> newcoord = {stod(values[0]), stod(values[1])};
       testcoords.push_back(newcoord);
       testvalues.push_back(stod(values[2]));
-    } else { // wrong number of columns
+    } else if (values.size() == 4) { // NORMAL
+      if (ncol == 0) ncol = 4;
+      std::vector<double> newcoord = {stod(values[0]), stod(values[1]), stod(values[2])};
+      testcoords.push_back(newcoord);
+      testvalues.push_back(stod(values[3]));
+    }
+    if (values.size() != ncol and ncol > 0 and goon) { // wrong number of columns
       std::cout << "uneven columns in test file\n";
-      std::exit(2);
+      std::exit(1);
     }
   }
 
   if (goldcoords.size() != testcoords.size() or 
       goldcoords.size() != goldvalues.size() or 
-      testcoords.size() != testvalues.size() ) 
+      testcoords.size() != testvalues.size() or 
+      ncol != ncolgold) 
   {
     std::cout << "length of gold and test data not equal\n";
     std::exit(3);
@@ -92,12 +110,15 @@ int main(int narg, char** argv) {
 
   bool isgood = true;
   for (size_t i=0; i<goldcoords.size(); i++) {
-    bool isgood1, isgood2, isgood3;
-    isgood1 = fabs(goldcoords[i][0] - testcoords[i][0]) < epsilon;
-    isgood2 = fabs(goldcoords[i][1] - testcoords[i][1]) < epsilon;
+    bool isgood0, isgood1, isgood2=true, isgood3;
+    isgood0 = fabs(goldcoords[i][0] - testcoords[i][0]) < epsilon;
+    isgood1 = fabs(goldcoords[i][1] - testcoords[i][1]) < epsilon;
+    if (ncol == 4) {
+      isgood2 = fabs(goldcoords[i][2] - testcoords[i][2]) < epsilon;
+    }
     isgood3 = fabs(goldvalues[i] - testvalues[i]) < epsilon;
-    isgood = isgood and isgood1 and isgood2 and isgood3;
-    if (not isgood2 or not isgood2) {
+    isgood = isgood0 and isgood1 and isgood2 and isgood3;
+    if (not isgood0 or not isgood1 or not isgood2) {
       std::cout << "coordinates disagree: at line " << i << std::endl;
     }
     if (not isgood3) {
