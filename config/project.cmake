@@ -66,6 +66,8 @@ set(ENABLE_MPI OFF CACHE BOOL "")
 if (ENABLE_MPI)
   find_package(MPI REQUIRED)
   set(PORTAGE_ENABLE_MPI True CACHE BOOL "Is Portage compiled with MPI?")
+  set(CMAKE_C_COMPILER ${MPI_C_COMPILER} CACHE FILEPATH "C compiler to use" FORCE)
+  set(CMAKE_CXX_COMPILER ${MPI_CXX_COMPILER} CACHE FILEPATH "C++ compiler to use" FORCE)
 endif ()
 
 
