@@ -27,7 +27,6 @@ Please see the license file at the root of this repository, or at:
 
 #endif
 
-#include "wonton-config.h"
 #include "wonton/support/Point.h"
 #include "wonton/support/Vector.h"
 #include "wonton/support/Matrix.h"
