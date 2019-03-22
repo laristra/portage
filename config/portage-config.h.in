@@ -1,0 +1,30 @@
+/*
+This file is part of the Ristra Portage project.
+Please see the license file at the root of this repository, or at:
+    https://github.com/laristra/portage/blob/master/LICENSE
+*/
+
+#ifndef PORTAGE_CONFIG_H_
+#define PORTAGE_CONFIG_H_
+
+// This file contains a set of defines generated automatically by
+// CMake during installation
+
+
+// PORTAGE version number
+
+#define PORTAGE_VERSION_MAJOR @PORTAGE_VERSION_MAJOR@
+#define PORTAGE_VERSION_MINOR @PORTAGE_VERSION_MINOR@
+#define PORTAGE_VERSION_PATCH @PORTAGE_VERSION_PATCH@
+
+// Is PORTAGE compiled with MPI
+
+#cmakedefine PORTAGE_ENABLE_MPI
+
+// Is PORTAGE compiled with Thrust
+
+#cmakedefine PORTAGE_ENABLE_THRUST
+
+
+#endif  // PORTAGE_CONFIG_H_
+

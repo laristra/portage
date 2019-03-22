@@ -76,13 +76,13 @@ class Interpolate_3rdOrder {
   /// Set the name of the interpolation variable and the limiter type
 
   void set_interpolation_variable(std::string const & interp_var_name,
-                                  LimiterType limiter_type = NOLIMITER) {
+                                  Limiter_type limiter_type = NOLIMITER) {
     interp_var_name_ = interp_var_name;
     limiter_type_ = limiter_type;
 
     // Extract the field data from the statemanager
 
-    source_state_.get_data(on_what, interp_var_name, &source_vals_);
+    source_state_.mesh_get_data(on_what, interp_var_name, &source_vals_);
 
     // Compute the limited quadfits for the field
 
@@ -138,11 +138,11 @@ class Interpolate_3rdOrder {
   TargetMeshType const & target_mesh_;
   StateType const & source_state_;
   std::string interp_var_name_;
-  LimiterType limiter_type_;
+  Limiter_type limiter_type_;
   double const * source_vals_;
 
   // Portage::vector is generalization of std::vector and
-  // Portage::Vector<D*(D+3)/2> is a geometric vector
+  // Wonton::Vector<D*(D+3)/2> is a geometric vector
   Portage::vector<Vector<D*(D+3)/2>> quadfits_;
 };
 
@@ -158,7 +158,7 @@ class Interpolate_3rdOrder {
 
 template<int D,
          typename SourceMeshType, typename TargetMeshType, typename StateType>
-class Interpolate_3rdOrder<D, CELL, SourceMeshType, TargetMeshType, StateType> {
+class Interpolate_3rdOrder<D, Entity_kind::CELL, SourceMeshType, TargetMeshType, StateType> {
  public:
   Interpolate_3rdOrder(SourceMeshType const & source_mesh,
                        TargetMeshType const & target_mesh,
@@ -174,21 +174,21 @@ class Interpolate_3rdOrder<D, CELL, SourceMeshType, TargetMeshType, StateType> {
   /// Set the name of the interpolation variable and the limiter type
 
   void set_interpolation_variable(std::string const & interp_var_name,
-                                  LimiterType limiter_type = NOLIMITER) {
+                                  Limiter_type limiter_type = NOLIMITER) {
 
     interp_var_name_ = interp_var_name;
     limiter_type_ = limiter_type;
 
     // Extract the field data from the statemanager
 
-    source_state_.get_data(CELL, interp_var_name, &source_vals_);
+    source_state_.mesh_get_data(Entity_kind::CELL, interp_var_name, &source_vals_);
 
     // Compute the limited quadfits for the field
 
-    Limited_Quadfit<D, CELL, SourceMeshType, StateType>
+    Limited_Quadfit<D, Entity_kind::CELL, SourceMeshType, StateType>
         limqfit(source_mesh_, source_state_, interp_var_name_, limiter_type_);
 
-    int nentities = source_mesh_.end(CELL)-source_mesh_.begin(CELL);
+    int nentities = source_mesh_.end(Entity_kind::CELL)-source_mesh_.begin(Entity_kind::CELL);
     quadfits_.resize(nentities);
 
     // call transform functor to take the values of the variable on
@@ -200,7 +200,7 @@ class Interpolate_3rdOrder<D, CELL, SourceMeshType, TargetMeshType, StateType> {
     // compiler is not able to disambiguate this call and is getting
     // confused. So we will explicitly state that this is Portage::transform
 
-    Portage::transform(source_mesh_.begin(CELL), source_mesh_.end(CELL),
+    Portage::transform(source_mesh_.begin(Entity_kind::CELL), source_mesh_.end(Entity_kind::CELL),
                        quadfits_.begin(), limqfit);
   }
 
@@ -240,11 +240,11 @@ class Interpolate_3rdOrder<D, CELL, SourceMeshType, TargetMeshType, StateType> {
   TargetMeshType const & target_mesh_;
   StateType const & source_state_;
   std::string interp_var_name_;
-  LimiterType limiter_type_;
+  Limiter_type limiter_type_;
   double const * source_vals_;
 
   // Portage::vector is generalization of std::vector and
-  // Portage::Vector<D> is a geometric vector
+  // Wonton::Vector<D> is a geometric vector
   Portage::vector<Vector<D*(D+3)/2>> quadfits_;
 };
 
@@ -257,7 +257,7 @@ class Interpolate_3rdOrder<D, CELL, SourceMeshType, TargetMeshType, StateType> {
 
 template<int D,
          typename SourceMeshType, typename TargetMeshType, typename StateType>
-double Interpolate_3rdOrder<D, CELL, SourceMeshType, TargetMeshType,
+double Interpolate_3rdOrder<D, Entity_kind::CELL, SourceMeshType, TargetMeshType,
                             StateType>::operator()
     (int const targetCellID, std::vector<Weights_t> const & sources_and_weights)
     const {
@@ -333,7 +333,7 @@ double Interpolate_3rdOrder<D, CELL, SourceMeshType, TargetMeshType,
 
 template<int D,
          typename SourceMeshType, typename TargetMeshType, typename StateType>
-class Interpolate_3rdOrder<D, NODE, SourceMeshType, TargetMeshType, StateType> {
+class Interpolate_3rdOrder<D, Entity_kind::NODE, SourceMeshType, TargetMeshType, StateType> {
  public:
   Interpolate_3rdOrder(SourceMeshType const & source_mesh,
                        TargetMeshType const & target_mesh,
@@ -358,21 +358,21 @@ class Interpolate_3rdOrder<D, NODE, SourceMeshType, TargetMeshType, StateType> {
   /// Set the name of the interpolation variable and the limiter type
 
   void set_interpolation_variable(std::string const & interp_var_name,
-                                  LimiterType limiter_type = NOLIMITER) {
+                                  Limiter_type limiter_type = NOLIMITER) {
 
     interp_var_name_ = interp_var_name;
     limiter_type_ = limiter_type;
 
     // Extract the field data from the statemanager
 
-    source_state_.get_data(NODE, interp_var_name, &source_vals_);
+    source_state_.mesh_get_data(Entity_kind::NODE, interp_var_name, &source_vals_);
 
     // Compute the limited quadfits for the field
 
-    Limited_Quadfit<D, NODE, SourceMeshType, StateType>
+    Limited_Quadfit<D, Entity_kind::NODE, SourceMeshType, StateType>
         limqfit(source_mesh_, source_state_, interp_var_name, limiter_type);
 
-    int nentities = source_mesh_.end(NODE)-source_mesh_.begin(NODE);
+    int nentities = source_mesh_.end(Entity_kind::NODE)-source_mesh_.begin(Entity_kind::NODE);
     quadfits_.resize(nentities);
 
     // call transform functor to take the values of the variable on
@@ -384,7 +384,7 @@ class Interpolate_3rdOrder<D, NODE, SourceMeshType, TargetMeshType, StateType> {
     // compiler is not able to disambiguate this call and is getting
     // confused. So we will explicitly state that this is Portage::transform
 
-    Portage::transform(source_mesh_.begin(NODE), source_mesh_.end(NODE),
+    Portage::transform(source_mesh_.begin(Entity_kind::NODE), source_mesh_.end(Entity_kind::NODE),
                        quadfits_.begin(), limqfit);
   }
 
@@ -419,11 +419,11 @@ class Interpolate_3rdOrder<D, NODE, SourceMeshType, TargetMeshType, StateType> {
   TargetMeshType const & target_mesh_;
   StateType const & source_state_;
   std::string interp_var_name_;
-  LimiterType limiter_type_;
+  Limiter_type limiter_type_;
   double const * source_vals_;
 
   // Portage::vector is generalization of std::vector and
-  // Portage::Vector<D> is a geometric vector
+  // Wonton::Vector<D> is a geometric vector
   Portage::vector<Vector<D*(D+3)/2>> quadfits_;
 };
 
@@ -436,7 +436,7 @@ class Interpolate_3rdOrder<D, NODE, SourceMeshType, TargetMeshType, StateType> {
 
 template<int D,
          typename SourceMeshType, typename TargetMeshType, typename StateType>
-double Interpolate_3rdOrder<D, NODE, SourceMeshType, TargetMeshType,
+double Interpolate_3rdOrder<D, Entity_kind::NODE, SourceMeshType, TargetMeshType,
                             StateType> :: operator()
     (int const targetNodeID, std::vector<Weights_t> const & sources_and_weights)
     const {

@@ -6,8 +6,16 @@ Please see the license file at the root of this repository, or at:
 
 project(portage)
 
-cinch_minimum_required(2.0)
+cinch_minimum_required(VERSION 1.0)
 
+
+# SEMANTIC VERSION NUMBERS - UPDATE DILIGENTLY
+# As soon as a change with a new version number is merged into the master,
+# tag the central repository.
+
+set(PORTAGE_VERSION_MAJOR 2)
+set(PORTAGE_VERSION_MINOR 0)
+set(PORTAGE_VERSION_PATCH 0)
 
 
 # If a C++14 compiler is available, then set the appropriate flags
@@ -41,27 +49,69 @@ set(CINCH_HEADER_SUFFIXES "\\.h")
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/cmake")
 
+# set the name of the Portage library
+
+set(PORTAGE_LIBRARY "portage" CACHE STRING "Name of the portage library")
 
 #-----------------------------------------------------------------------------
 # Gather all the third party libraries needed for Portage
 #-----------------------------------------------------------------------------
+set(PORTAGE_EXTRA_LIBRARIES)
 
 #------------------------------------------------------------------------------#
 # Set up MPI builds
 # (eventually most of this should be pushed down into cinch)
 #------------------------------------------------------------------------------#
+set(ENABLE_MPI OFF CACHE BOOL "")
 if (ENABLE_MPI)
   find_package(MPI REQUIRED)
-
-# TODO:  Modify the below to use wrapper compilers instead of flags
-#        (there isn't an obvious good way to do this)
-#  add_definitions(${MPI_CXX_COMPILE_FLAGS})
-#  include_directories(${MPI_CXX_INCLUDE_PATH})
-#  link_directories(${MPI_CXX_LIBRARY_DIRS})
+  set(PORTAGE_ENABLE_MPI True CACHE BOOL "Is Portage compiled with MPI?")
+  set(CMAKE_C_COMPILER ${MPI_C_COMPILER} CACHE FILEPATH "C compiler to use" FORCE)
+  set(CMAKE_CXX_COMPILER ${MPI_CXX_COMPILER} CACHE FILEPATH "C++ compiler to use" FORCE)
 endif ()
 
 
 set(ARCHOS ${CMAKE_SYSTEM_PROCESSOR}_${CMAKE_SYSTEM_NAME})
+
+#-----------------------------------------------------------------------------
+# Wonton
+#-----------------------------------------------------------------------------
+if (WONTON_DIR)
+
+  # Link with an existing installation of Wonton, if provided. 
+  find_package(WONTON REQUIRED)
+  message(STATUS "WONTON_LIBRARIES=${WONTON_LIBRARIES}" )
+  include_directories(${WONTON_INCLUDE_DIR})
+  message(STATUS "WONTON_INCLUDE_DIRS=${WONTON_INCLUDE_DIR}")
+ 
+  list(APPEND PORTAGE_EXTRA_LIBRARIES ${WONTON_LIBRARIES})
+
+else (WONTON_DIR)
+
+  # Build Wonton from a submodule
+  file(GLOB _wonton_contents ${CMAKE_SOURCE_DIR}/wonton/*)
+  if (_wonton_contents)
+    if (CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
+      # We are building portage, and wonton is a subdirectory
+      add_subdirectory(${CMAKE_SOURCE_DIR}/wonton)
+    endif()
+    
+    include_directories(${CMAKE_SOURCE_DIR}/wonton)
+    include_directories(${CMAKE_BINARY_DIR}/wonton)  # for wonton-config.h
+
+    list(APPEND PORTAGE_EXTRA_LIBRARIES wonton)
+    set(WONTON_FOUND TRUE)
+
+    # If Wonton is included as a submodule, it will get installed alongside Portage
+    set(WONTON_DIR ${CMAKE_INSTALL_PREFIX})
+  else()
+    set(WONTON_FOUND FALSE)
+  endif(_wonton_contents)
+endif (WONTON_DIR)
+
+if (NOT WONTON_FOUND)
+  message(FATAL_ERROR "WONTON_DIR is not specified and Wonton is not a subdirectory !")
+endif() 
 
 #-----------------------------------------------------------------------------
 # FleCSI and FleCSI-SP location
@@ -74,11 +124,13 @@ if (ENABLE_FleCSI)
  message(STATUS "FleCSI_LIBRARIES=${FleCSI_LIBRARIES}" )
  include_directories(${FleCSI_INCLUDE_DIR})
  message(STATUS "FleCSI_INCLUDE_DIRS=${FleCSI_INCLUDE_DIR}")
+ list(APPEND PORTAGE_EXTRA_LIBRARIES ${FleCSI_LIBRARIES})
 
  find_package(FleCSISP REQUIRED)
  message(STATUS "FleCSISP_LIBRARIES=${FleCSISP_LIBRARIES}" )
  include_directories(${FleCSISP_INCLUDE_DIR})
  message(STATUS "FleCSISP_INCLUDE_DIRS=${FleCSISP_INCLUDE_DIR}")
+ list(APPEND PORTAGE_EXTRA_LIBRARIES ${FleCSISP_LIBRARIES})
 
   ######################################################################
   # This is a placeholder for how we would do IO with FleCSI
@@ -118,7 +170,9 @@ endif()
 # Configure Jali
 # (this includes the TPLs that Jali will need)
 #------------------------------------------------------------------------------#
-
+if (JALI_DIR)  # forgive users for capitalization mistake
+  set(Jali_DIR ${JALI_DIR})
+endif (JALI_DIR)
 if (Jali_DIR)
 
    # Look for the Jali package
@@ -129,7 +183,9 @@ if (Jali_DIR)
    message(STATUS "Located Jali")
    message(STATUS "Jali_DIR=${Jali_DIR}")
 
-   # add full path to jali libs
+   set(ENABLE_Jali True)
+
+   # add full path to jali libs (WHAT ABOUT IF JALI IS COMPILED AS A SHARED LIB?)
    unset(_LIBS)
    foreach (_lib ${Jali_LIBRARIES})
       set(_LIBS ${_LIBS};${Jali_LIBRARY_DIRS}/lib${_lib}.a)
@@ -138,6 +194,7 @@ if (Jali_DIR)
 
    include_directories(${Jali_INCLUDE_DIRS} ${Jali_TPL_INCLUDE_DIRS})
 
+   list(APPEND PORTAGE_EXTRA_LIBRARIES ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES})
 endif (Jali_DIR)
 
 #------------------------------------------------------------------------------#
@@ -209,6 +266,7 @@ endif (LAPACKE_DIR)
 if (LAPACKE_FOUND) 
   include_directories(${LAPACKE_INCLUDE_DIRS})
   add_definitions("-DHAVE_LAPACKE")
+  list(APPEND PORTAGE_EXTRA_LIBRARIES ${LAPACKE_LIBRARIES})
 
   message(STATUS "LAPACKE_FOUND ${LAPACKE_FOUND}")
   message(STATUS "LAPACKE_LIBRARIES  ${LAPACKE_LIBRARIES}")
@@ -243,7 +301,7 @@ if (TANGRAM_DIR)
             HINTS ${TANGRAM_DIR}/include)
   message(STATUS "TANGRAM FOUND? ${TANGRAM}")
   if (TANGRAM)
-    set(TANGRAM_FOUND ON)
+    set(TANGRAM_FOUND True)
     set(TANGRAM_INCLUDE_DIRS ${TANGRAM_DIR}/include)
     include_directories(${TANGRAM_INCLUDE_DIRS})
     add_definitions("-DHAVE_TANGRAM")
@@ -271,6 +329,9 @@ if (TANGRAM_FOUND)
       set(XMOF2D_LIBRARIES ${XMOF2D_LIBRARY})
     endif (XMOF2D_LIBRARY)
     message(STATUS "XMOF2D LIBRARIES ---> ${XMOF2D_LIBRARIES}")
+    add_definitions("-DHAVE_XMOF2D")
+
+    list(APPEND PORTAGE_EXTRA_LIBRARIES ${XMOF2D_LIBRARIES})
   endif (XMOF2D_FOUND)
 endif (TANGRAM_FOUND)
 
@@ -288,6 +349,9 @@ endif(NGC_INCLUDE_DIR)
 set(ENABLE_THRUST FALSE CACHE BOOL "Use Thrust")
 if(ENABLE_THRUST)
   message(STATUS "Enabling compilation with Thrust")
+
+  set(PORTAGE_ENABLE_THRUST True CACHE BOOL "Is Portage is compiled with Thrust?")
+
   # allow the user to specify a THRUST_DIR, otherwise use ${NGC_INCLUDE_DIR}
   # NOTE: thrust internally uses include paths from the 'root' directory, e.g.
   #
@@ -303,7 +367,6 @@ if(ENABLE_THRUST)
   set(THRUST_BACKEND "THRUST_DEVICE_SYSTEM_OMP" CACHE STRING "Thrust backend")
   message(STATUS "Using ${THRUST_BACKEND} as Thrust backend.")
   include_directories(${THRUST_DIR})
-  add_definitions(-DTHRUST)
   add_definitions(-DTHRUST_DEVICE_SYSTEM=${THRUST_BACKEND})
 
   if("${THRUST_BACKEND}" STREQUAL "THRUST_DEVICE_SYSTEM_OMP")
@@ -345,9 +408,18 @@ endif(NOT ENABLE_THRUST)
 # Now add the source directories and library targets
 #-----------------------------------------------------------------------------
 
+# In addition to the include directories of the source set by cinch,
+# we need to include the build directory to get the autogenerated
+# wonton-config.h
+
+include_directories(${CMAKE_BINARY_DIRECTORY})
+
+# Libraries
+
 cinch_add_application_directory(app)
 cinch_add_library_target(portage portage)
-cinch_target_link_libraries(portage ${LAPACKE_LIBRARIES})
+# TODO - merge LAPACKE_LIBRARIES into PORTAGE_LIBRARIES
+cinch_target_link_libraries(portage ${PORTAGE_EXTRA_LIBRARIES})
 
 
 # Add application tests
@@ -357,9 +429,27 @@ if(ENABLE_APP_TESTS)
   enable_testing()
 endif()
 
-# We know we are a C++ project, so force the bindings if we are using MPI
-#if (ENABLE_MPI)
-#  set(ENABLE_MPI_CXX_BINDINGS TRUE CACHE BOOL "Enable MPI C++ Bindings" FORCE)
-#  mark_as_advanced(ENABLE_MPI_CXX_BINDINGS)
-#endif (ENABLE_MPI)
+
+# retrieve all the definitions we added for compiling
+get_directory_property(PORTAGE_COMPILE_DEFINITIONS DIRECTORY ${CMAKE_SOURCE_DIR} COMPILE_DEFINITIONS)
+
+# build the PORTAGE_LIBRARIES variable
+set(PORTAGE_LIBRARIES ${PORTAGE_LIBRARY} ${PORTAGE_EXTRA_LIBRARIES} CACHE STRING "List of libraries to link with portage")
+
+############################################################################## 
+# Write a configuration file from template replacing only variables enclosed
+# by the @ sign. This will let other programs build on PORTAGE discover how
+# PORTAGE was built and which TPLs it used
+#############################################################################
+
+configure_file(${PROJECT_SOURCE_DIR}/cmake/portage_config.cmake.in 
+               ${PROJECT_BINARY_DIR}/portage_config.cmake @ONLY)
+install(FILES ${PROJECT_BINARY_DIR}/portage_config.cmake 
+        DESTINATION ${CMAKE_INSTALL_PREFIX}/share/cmake/)
+
+configure_file(${PROJECT_SOURCE_DIR}/config/portage-config.h.in
+               ${PROJECT_BINARY_DIR}/portage-config.h @ONLY)
+install(FILES ${PROJECT_BINARY_DIR}/portage-config.h
+        DESTINATION ${CMAKE_INSTALL_PREFIX}/include/)
+
 

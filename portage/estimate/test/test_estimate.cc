@@ -10,15 +10,16 @@ Please see the license file at the root of this repository, or at:
 #include "gtest/gtest.h"
 
 #include "portage/estimate/estimate.h"
-#include "portage/support/Point.h"
+
 #include "portage/swarm/swarm.h"
 #include "portage/accumulate/accumulate.h"
+#include "portage/support/portage.h"
+#include "wonton/support/Point.h"
 
-using std::vector;
 using std::shared_ptr;
 using std::make_shared;
 using std::cout;
-using Portage::Point;
+using Wonton::Point;
 
 template<size_t dim>
 void test_estimate(Portage::Meshfree::EstimateType etype,
@@ -45,9 +46,9 @@ void test_estimate(Portage::Meshfree::EstimateType etype,
       offset += index*powl(nside+1, dim-k-1);
 
       double delta = 2.*(((double)rand())/RAND_MAX -.5)*jitter*1.5;
-      (*src_pts)[i][k] = -.25 + 1.5*index*smoothing + delta;
-      (*sextents)[i][k] = 2.0*smoothing;
-      if (index==0 or index == nside) (*sextents)[i][k]*=2;
+      {Point<dim> pt=(*src_pts)[i]; pt[k] = -.25 + 1.5*index*smoothing + delta; (*src_pts)[i] = pt;}
+      {Point<dim> pt=(*sextents)[i]; pt[k] = 2.0*smoothing;
+       if (index==0 or index == nside) pt[k]*=2; (*sextents)[i]=pt;}
     }
     extents = sextents;
   }
@@ -58,10 +59,10 @@ void test_estimate(Portage::Meshfree::EstimateType etype,
       offset += index*powl(nside+3, dim-k-1);
 
       double delta = 2.*(((double)rand())/RAND_MAX -.5)*jitter;
-      (*tgt_pts)[i][k] = index*tsmoothing + delta;
+      {Point<dim> pt=(*tgt_pts)[i]; pt[k] = index*tsmoothing + delta; (*tgt_pts)[i]=pt;}
 
-      (*textents)[i][k] = 2.0*tsmoothing;
-      if (index==0 or index == nside+2) (*textents)[i][k]*=2;
+      {Point<dim> pt=(*textents)[i]; pt[k] = 2.0*tsmoothing;
+       if (index==0 or index == nside+2) pt[k]*=2; (*textents)[i]=pt;}
     }
     extents = textents;
   }
@@ -73,11 +74,16 @@ void test_estimate(Portage::Meshfree::EstimateType etype,
   auto tgt_state = SwarmState<dim>(tgt_swarm);
   size_t nkern;
   if (center == Gather) nkern = ntgt; else if (center == Scatter) nkern = nsrc;
-  auto kernels = vector<Weight::Kernel>(nkern, Weight::B4);
-  auto geometries = vector<Weight::Geometry>(nkern, Weight::TENSOR);
-  auto smoothingh = vector<vector<vector<double>>>
-      (nkern, vector<vector<double>>(1, vector<double>(dim)));
-  for (size_t i=0; i<nkern; i++) for (size_t j=0; j<dim; j++) smoothingh[i][0][j] = (*extents)[i][j];
+  auto kernels = Portage::vector<Weight::Kernel>(nkern, Weight::B4);
+  auto geometries = Portage::vector<Weight::Geometry>(nkern, Weight::TENSOR);
+  auto smoothingh = Portage::vector<std::vector<std::vector<double>>>
+      (nkern, std::vector<std::vector<double>>(1, std::vector<double>(dim)));
+  for (size_t i=0; i<nkern; i++) for (size_t j=0; j<dim; j++) {
+      std::vector<std::vector<double>> vv=smoothingh[i];
+      Point<dim> pt = (*extents)[i];
+      vv[0][j] = pt[j];
+      smoothingh[i] = vv;
+    }
 
   // create the accumulator
   Accumulate<dim, Swarm<dim>, Swarm<dim>> accum(
@@ -97,7 +103,7 @@ void test_estimate(Portage::Meshfree::EstimateType etype,
   ASSERT_EQ(jsize[1], bsize);
 
   // list of src swarm particles (indices)
-  vector<unsigned int> src_particles(nsrc);
+  std::vector<unsigned int> src_particles(nsrc);
   for (unsigned int i=0; i<nsrc; i++) src_particles[i] = i;
 
   // add fields
@@ -157,7 +163,7 @@ void test_estimate(Portage::Meshfree::EstimateType etype,
 	// save value
 	if (k==0) field[i] = result;
 
-	// check the estimate
+	// check the estimate, verifying reproducing property
 	ASSERT_NEAR(result, jetx[j][k], 1.e-11);
       }
     }

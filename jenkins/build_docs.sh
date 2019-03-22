@@ -9,15 +9,15 @@ set -e
 # Echo each command
 set -x
 
-JALI_VERSION=0.9.2
-openmpi_version=1.10.3
+JALI_VERSION=1.0.0
+openmpi_version=2.1.2
 
 # location on XLAN
 NGC_DIR=/usr/local/codes/ngc
 
-JALI_INST=${NGC_DIR}/private/jali/${JALI_VERSION}-gcc-5.3.0-openmpi-${openmpi_version}
-TANGRAM_INSTALL_PREFIX=${NGC_DIR}/private/tangram/475b813919f-gcc-5.3.0-openmpi-${openmpi_version}
-XMOF_INSTALL_PREFIX=${NGC_DIR}/private/xmof2d/0.9-gcc-5.3.0-openmpi-${openmpi_version}/share/cmake
+JALI_INST=${NGC_DIR}/private/jali/${JALI_VERSION}-gcc-6.4.0-openmpi-${openmpi_version}
+TANGRAM_INSTALL_PREFIX=${NGC_DIR}/private/tangram/0.9.2-gcc-6.4.0-openmpi-${openmpi_version}
+XMOF_INSTALL_PREFIX=${NGC_DIR}/private/xmof2d/0.9.1-gcc-6.4.0-openmpi-${openmpi_version}/share/cmake
 
 
 git config user.email ""
@@ -29,7 +29,7 @@ export MODULEPATH=""
 
 # Setup modules
 . /opt/local/packages/Modules/default/init/sh
-module load gcc/5.3.0 openmpi/${openmpi_version} cmake
+module load gcc/6.4.0 openmpi/${openmpi_version} cmake
 
 # the system doxygen and LaTeX are too old; use these instead
 export PATH=/usr/local/codes/ngc/home/cmalone/texlive/2016/bin/x86_64-linux/:$PATH

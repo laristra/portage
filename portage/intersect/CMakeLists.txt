@@ -12,18 +12,17 @@ Please see the license file at the root of this repository, or at:
 set(intersect_HEADERS
     clipper.hpp
     intersectClipper.h
-    r2d.h
+    intersect_polys_r2d.h
     intersect_r2d.h
-    r3d.h
+    intersect_polys_r3d.h
     intersect_r3d.h
+    dummy_interface_reconstructor.h
     PARENT_SCOPE
 )
 
 # Add source files
 set(intersect_SOURCES
     clipper.cpp
-    r2d.c
-    r3d.c
     PARENT_SCOPE
 )
 
@@ -39,14 +38,14 @@ if(ENABLE_UNIT_TESTS)
   endif (Jali_DIR)
 
   cinch_add_unit(intersect_r2d
-    SOURCES intersect_r2d_test.cc r2d.c
-    LIBRARIES 
+    SOURCES intersect_r2d_test.cc
+    LIBRARIES wonton
     POLICY SERIAL
     )
     
   cinch_add_unit(intersect_r3d
-    SOURCES intersect_r3d_test.cc r3d.c
-    LIBRARIES portage  
+    SOURCES intersect_r3d_test.cc
+    LIBRARIES portage wonton 
     POLICY SERIAL
     )
 
@@ -54,7 +53,7 @@ if(ENABLE_UNIT_TESTS)
   if (TANGRAM_FOUND AND XMOF2D_FOUND)
        cinch_add_unit(test_tangram_intersect
        SOURCES test/test_tangram_intersect
-       LIBRARIES portage ${LAPACKE_LIBRARIES} ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES} ${XMOF2D_LIBRARIES}
+       LIBRARIES portage ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES} ${XMOF2D_LIBRARIES}
        POLICY MPI
        THREADS 1)       
   endif (TANGRAM_FOUND AND XMOF2D_FOUND)

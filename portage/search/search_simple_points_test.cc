@@ -4,47 +4,46 @@ Please see the license file at the root of this repository, or at:
     https://github.com/laristra/portage/blob/master/LICENSE
 */
 
-#include "search_simple_points.h"
-
 #include <memory>
 #include <vector>
 
 #include "gtest/gtest.h"
 
-#include "portage/support/Point.h"
+#include "portage/support/portage.h"
+#include "portage/search/search_simple_points.h"
 #include "portage/swarm/swarm.h"
 #include "portage/accumulate/accumulate.h"
-
+#include "wonton/support/Point.h"
 
 TEST(search_simple_points, scatter_2d)
 {
   // overlay a 3x3 target swarm on a 4x4 source swarm
   // each target point should have four candidate source points
 
-  std::vector<Portage::Point<2>> srcp, srce;
-  auto srcpts = std::make_shared<std::vector<Portage::Point<2>>>(srcp);
-  auto srcexts = std::make_shared<std::vector<Portage::Point<2>>>(srce);
+  Portage::vector<Wonton::Point<2>> srcp, srce;
+  auto srcpts = std::make_shared<Portage::vector<Wonton::Point<2>>>(srcp);
+  auto srcexts = std::make_shared<Portage::vector<Wonton::Point<2>>>(srce);
   for (int j = 0; j < 4; ++j) {
     for (int i = 0; i < 4; ++i) {
       double x = (i + 0.5);
       double y = (j + 0.5);
       double ext = 0.375;
-      srcpts->push_back(Portage::Point<2>{x, y});
-      srcexts->push_back(Portage::Point<2>{ext, ext});
+      srcpts->push_back(Wonton::Point<2>{x, y});
+      srcexts->push_back(Wonton::Point<2>{ext, ext});
     }
   }
   Portage::Meshfree::Swarm<2> srcswarm(srcpts);
 
-  std::vector<Portage::Point<2>> tgtp, tgte;
-  auto tgtpts = std::make_shared<std::vector<Portage::Point<2>>>(tgtp);
-  auto tgtexts = std::make_shared<std::vector<Portage::Point<2>>>(tgte);
+  Portage::vector<Wonton::Point<2>> tgtp, tgte;
+  auto tgtpts = std::make_shared<Portage::vector<Wonton::Point<2>>>(tgtp);
+  auto tgtexts = std::make_shared<Portage::vector<Wonton::Point<2>>>(tgte);
   for (int j = 0; j < 3; ++j) {
     for (int i = 0; i < 3; ++i) {
       double x = (i + 1.0);
       double y = (j + 1.0);
       double ext = 0.375;
-      tgtpts->push_back(Portage::Point<2>{x, y});
-      tgtexts->push_back(Portage::Point<2>{ext, ext});
+      tgtpts->push_back(Wonton::Point<2>{x, y});
+      tgtexts->push_back(Wonton::Point<2>{ext, ext});
     }
   }
   Portage::Meshfree::Swarm<2> tgtswarm(tgtpts);
@@ -77,9 +76,9 @@ TEST(search_simple_points, scatter_3d)
   // overlay a 2x2x2 target swarm on a 3x3x3 source swarm
   // each target point should have eight candidate source points
 
-  std::vector<Portage::Point<3>> srcp, srce;
-  auto srcpts = std::make_shared<std::vector<Portage::Point<3>>>(srcp);
-  auto srcexts = std::make_shared<std::vector<Portage::Point<3>>>(srce);
+  Portage::vector<Wonton::Point<3>> srcp, srce;
+  auto srcpts = std::make_shared<Portage::vector<Wonton::Point<3>>>(srcp);
+  auto srcexts = std::make_shared<Portage::vector<Wonton::Point<3>>>(srce);
   for (int k = 0; k < 3; ++k) {
     for (int j = 0; j < 3; ++j) {
       for (int i = 0; i < 3; ++i) {
@@ -87,16 +86,16 @@ TEST(search_simple_points, scatter_3d)
         double y = (j + 0.5);
         double z = (k + 0.5);
         double ext = 0.375;
-        srcpts->push_back(Portage::Point<3>{x, y, z});
-        srcexts->push_back(Portage::Point<3>{ext, ext, ext});
+        srcpts->push_back(Wonton::Point<3>{x, y, z});
+        srcexts->push_back(Wonton::Point<3>{ext, ext, ext});
       }
     }
   }
   Portage::Meshfree::Swarm<3> srcswarm(srcpts);
 
-  std::vector<Portage::Point<3>> tgtp, tgte;
-  auto tgtpts = std::make_shared<std::vector<Portage::Point<3>>>(tgtp);
-  auto tgtexts = std::make_shared<std::vector<Portage::Point<3>>>(tgte);
+  Portage::vector<Wonton::Point<3>> tgtp, tgte;
+  auto tgtpts = std::make_shared<Portage::vector<Wonton::Point<3>>>(tgtp);
+  auto tgtexts = std::make_shared<Portage::vector<Wonton::Point<3>>>(tgte);
   for (int k = 0; k < 2; ++k) {
     for (int j = 0; j < 2; ++j) {
       for (int i = 0; i < 2; ++i) {
@@ -104,8 +103,8 @@ TEST(search_simple_points, scatter_3d)
         double y = (j + 1.0);
         double z = (k + 1.0);
         double ext = 0.375;
-        tgtpts->push_back(Portage::Point<3>{x, y, z});
-        tgtexts->push_back(Portage::Point<3>{ext, ext, ext});
+        tgtpts->push_back(Wonton::Point<3>{x, y, z});
+        tgtexts->push_back(Wonton::Point<3>{ext, ext, ext});
       }
     }
   }
@@ -145,30 +144,30 @@ TEST(search_simple_points, gather_2d)
   // overlay a 3x3 target swarm on a 4x4 source swarm
   // each target point should have four candidate source points
 
-  std::vector<Portage::Point<2>> srcp, srce;
-  auto srcpts = std::make_shared<std::vector<Portage::Point<2>>>(srcp);
-  auto srcexts = std::make_shared<std::vector<Portage::Point<2>>>(srce);
+  Portage::vector<Wonton::Point<2>> srcp, srce;
+  auto srcpts = std::make_shared<Portage::vector<Wonton::Point<2>>>(srcp);
+  auto srcexts = std::make_shared<Portage::vector<Wonton::Point<2>>>(srce);
   for (int j = 0; j < 4; ++j) {
     for (int i = 0; i < 4; ++i) {
       double x = (i + 0.5);
       double y = (j + 0.5);
       double ext = 0.375;
-      srcpts->push_back(Portage::Point<2>{x, y});
-      srcexts->push_back(Portage::Point<2>{ext, ext});
+      srcpts->push_back(Wonton::Point<2>{x, y});
+      srcexts->push_back(Wonton::Point<2>{ext, ext});
     }
   }
   Portage::Meshfree::Swarm<2> srcswarm(srcpts);
 
-  std::vector<Portage::Point<2>> tgtp, tgte;
-  auto tgtpts = std::make_shared<std::vector<Portage::Point<2>>>(tgtp);
-  auto tgtexts = std::make_shared<std::vector<Portage::Point<2>>>(tgte);
+  Portage::vector<Wonton::Point<2>> tgtp, tgte;
+  auto tgtpts = std::make_shared<Portage::vector<Wonton::Point<2>>>(tgtp);
+  auto tgtexts = std::make_shared<Portage::vector<Wonton::Point<2>>>(tgte);
   for (int j = 0; j < 3; ++j) {
     for (int i = 0; i < 3; ++i) {
       double x = (i + 1.0);
       double y = (j + 1.0);
       double ext = 0.375;
-      tgtpts->push_back(Portage::Point<2>{x, y});
-      tgtexts->push_back(Portage::Point<2>{ext, ext});
+      tgtpts->push_back(Wonton::Point<2>{x, y});
+      tgtexts->push_back(Wonton::Point<2>{ext, ext});
     }
   }
   Portage::Meshfree::Swarm<2> tgtswarm(tgtpts);
@@ -202,9 +201,9 @@ TEST(search_simple_points, gather_3d)
   // overlay a 2x2x2 target swarm on a 3x3x3 source swarm
   // each target point should have eight candidate source points
 
-  std::vector<Portage::Point<3>> srcp, srce;
-  auto srcpts = std::make_shared<std::vector<Portage::Point<3>>>(srcp);
-  auto srcexts = std::make_shared<std::vector<Portage::Point<3>>>(srce);
+  Portage::vector<Wonton::Point<3>> srcp, srce;
+  auto srcpts = std::make_shared<Portage::vector<Wonton::Point<3>>>(srcp);
+  auto srcexts = std::make_shared<Portage::vector<Wonton::Point<3>>>(srce);
   for (int k = 0; k < 3; ++k) {
     for (int j = 0; j < 3; ++j) {
       for (int i = 0; i < 3; ++i) {
@@ -212,16 +211,16 @@ TEST(search_simple_points, gather_3d)
         double y = (j + 0.5);
         double z = (k + 0.5);
         double ext = 0.375;
-        srcpts->push_back(Portage::Point<3>{x, y, z});
-        srcexts->push_back(Portage::Point<3>{ext, ext, ext});
+        srcpts->push_back(Wonton::Point<3>{x, y, z});
+        srcexts->push_back(Wonton::Point<3>{ext, ext, ext});
       }
     }
   }
   Portage::Meshfree::Swarm<3> srcswarm(srcpts);
 
-  std::vector<Portage::Point<3>> tgtp, tgte;
-  auto tgtpts = std::make_shared<std::vector<Portage::Point<3>>>(tgtp);
-  auto tgtexts = std::make_shared<std::vector<Portage::Point<3>>>(tgte);
+  Portage::vector<Wonton::Point<3>> tgtp, tgte;
+  auto tgtpts = std::make_shared<Portage::vector<Wonton::Point<3>>>(tgtp);
+  auto tgtexts = std::make_shared<Portage::vector<Wonton::Point<3>>>(tgte);
   for (int k = 0; k < 2; ++k) {
     for (int j = 0; j < 2; ++j) {
       for (int i = 0; i < 2; ++i) {
@@ -229,8 +228,8 @@ TEST(search_simple_points, gather_3d)
         double y = (j + 1.0);
         double z = (k + 1.0);
         double ext = 0.375;
-        tgtpts->push_back(Portage::Point<3>{x, y, z});
-        tgtexts->push_back(Portage::Point<3>{ext, ext, ext});
+        tgtpts->push_back(Wonton::Point<3>{x, y, z});
+        tgtexts->push_back(Wonton::Point<3>{ext, ext, ext});
       }
     }
   }
@@ -262,7 +261,6 @@ TEST(search_simple_points, gather_3d)
       }
     }
   }
-
-} // TEST(search_simple_points, gather_3d)
+}  // TEST(search_simple_points, gather_3d)
 
 

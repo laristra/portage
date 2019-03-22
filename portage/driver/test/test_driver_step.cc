@@ -11,9 +11,9 @@ Please see the license file at the root of this repository, or at:
 #include "gtest/gtest.h"
 #include "mpi.h"
 
-#include "portage/driver/driver.h"
-#include "portage/wonton/mesh/jali/jali_mesh_wrapper.h"
-#include "portage/wonton/state/jali/jali_state_wrapper.h"
+#include "portage/driver/mmdriver.h"
+#include "wonton/mesh/jali/jali_mesh_wrapper.h"
+#include "wonton/state/jali/jali_state_wrapper.h"
 #include "portage/interpolate/interpolate_1st_order.h"
 #include "portage/intersect/intersect_r2d.h"
 #include "portage/intersect/intersect_r3d.h"
@@ -37,8 +37,8 @@ class DriverTest : public ::testing::Test {
   std::shared_ptr<Jali::Mesh> sourceMesh;
   std::shared_ptr<Jali::Mesh> targetMesh;
   // Source and target mesh state
-  Jali::State sourceState;
-  Jali::State targetState;
+  std::shared_ptr<Jali::State> sourceState;
+  std::shared_ptr<Jali::State> targetState;
   //  Wrappers for interfacing with the underlying mesh data structures
   Wonton::Jali_Mesh_Wrapper sourceMeshWrapper;
   Wonton::Jali_Mesh_Wrapper targetMeshWrapper;
@@ -64,14 +64,14 @@ class DriverTest : public ::testing::Test {
       JaliGeometry::Point cen = sourceMesh->cell_centroid(c);
       sourceData[c] = compute_initial_field(cen);
     }
-    sourceState.add("celldata", sourceMesh, Jali::Entity_kind::CELL,
-                    Jali::Entity_type::ALL, &(sourceData[0]));
+    sourceState->add("celldata", sourceMesh, Jali::Entity_kind::CELL,
+                     Jali::Entity_type::ALL, &(sourceData[0]));
 
     // Build the target state storage
     const int ntarcells = targetMeshWrapper.num_owned_cells();
     std::vector<double> targetData(ntarcells, 0.0);
-    targetState.add("celldata", targetMesh, Jali::Entity_kind::CELL,
-                    Jali::Entity_type::ALL, &(targetData[0]));
+    targetState->add("celldata", targetMesh, Jali::Entity_kind::CELL,
+                     Jali::Entity_type::ALL, &(targetData[0]));
 
     //  Build the main driver data for this mesh type
     //  Register the variable name and interpolation order with the driver
@@ -86,8 +86,9 @@ class DriverTest : public ::testing::Test {
         d(sourceMeshWrapper, sourceStateWrapper, targetMeshWrapper,
           targetStateWrapper);
     d.set_remap_var_names(remap_fields, limiter);
-    // run on one processor
-    d.run(false);
+
+    Wonton::SerialExecutor_type exec;
+    d.run(&exec);
 
     // Check the answer
     Portage::Point<Dimension> nodexy;
@@ -96,10 +97,10 @@ class DriverTest : public ::testing::Test {
     double toterr = 0.;
 
     Jali::StateVector<double, Jali::Mesh> cellvecout;
-    bool found = targetState.get<double, Jali::Mesh>("celldata", targetMesh,
-                                                     Jali::Entity_kind::CELL,
-                                                     Jali::Entity_type::ALL,
-                                                     &cellvecout);
+    bool found = targetState->get<double, Jali::Mesh>("celldata", targetMesh,
+                                                      Jali::Entity_kind::CELL,
+                                                      Jali::Entity_type::ALL,
+                                                      &cellvecout);
     ASSERT_TRUE(found);
 
     std::printf("DATA_BEGIN\n");
@@ -123,10 +124,11 @@ class DriverTest : public ::testing::Test {
 
   // Constructor for Driver test
   DriverTest(std::shared_ptr<Jali::Mesh> s, std::shared_ptr<Jali::Mesh> t) :
-      sourceMesh(s), targetMesh(t), sourceState(sourceMesh),
-      targetState(targetMesh),
+      sourceMesh(s), targetMesh(t),
+      sourceState(Jali::State::create(sourceMesh)),
+      targetState(Jali::State::create(targetMesh)),
       sourceMeshWrapper(*sourceMesh), targetMeshWrapper(*targetMesh),
-      sourceStateWrapper(sourceState), targetStateWrapper(targetState)
+      sourceStateWrapper(*sourceState), targetStateWrapper(*targetState)
   {}
 
 };
@@ -134,28 +136,32 @@ class DriverTest : public ::testing::Test {
 // Class which constructs a pair simple 2-D coincident meshes for remaps
 struct DriverTest2D : DriverTest {
   DriverTest2D() : DriverTest(Jali::MeshFactory(MPI_COMM_WORLD)
-                              (0.0, 0.0, 1.0, 1.0, 11, 11), Jali::MeshFactory(MPI_COMM_WORLD)
+                              (0.0, 0.0, 1.0, 1.0, 11, 11),
+                              Jali::MeshFactory(MPI_COMM_WORLD)
                               (0.0, 0.0, 1.0, 1.0, 11, 11)) {}
 };
 
 // Class which constructs a pair of simple 2-D non-coincident meshes for remaps
 struct DriverTest2DNonCoincident : DriverTest {
   DriverTest2DNonCoincident() : DriverTest(Jali::MeshFactory(MPI_COMM_WORLD)
-                                           (0.0, 0.0, 1.0, 1.0, 11, 11), Jali::MeshFactory(MPI_COMM_WORLD)
+                                           (0.0, 0.0, 1.0, 1.0, 11, 11),
+                                           Jali::MeshFactory(MPI_COMM_WORLD)
                                            (0.0, 0.0, 1.0, 1.0, 18, 18)) {}
 };
 
 // Class which constructs a pair simple 3-D coincident meshes for remaps
 struct DriverTest3D : DriverTest {
   DriverTest3D(): DriverTest(Jali::MeshFactory(MPI_COMM_WORLD)
-                             (0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 11, 11, 11), Jali::MeshFactory(MPI_COMM_WORLD)
+                             (0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 11, 11, 11),
+                             Jali::MeshFactory(MPI_COMM_WORLD)
                              (0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 11, 11, 11)) {}
 };
 
 // Class which constructs a pair simple 3-D non-coincident meshes for remaps
 struct DriverTest3DNonCoincident : DriverTest {
   DriverTest3DNonCoincident(): DriverTest(Jali::MeshFactory(MPI_COMM_WORLD)
-                                          (0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 11, 11, 11), Jali::MeshFactory(MPI_COMM_WORLD)
+                                          (0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 11, 11, 11),
+                                          Jali::MeshFactory(MPI_COMM_WORLD)
                                           (0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 18, 18, 18)) {}
 };
 

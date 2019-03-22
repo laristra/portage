@@ -19,11 +19,10 @@ Please see the license file at the root of this repository, or at:
 #include "flecsi-sp/burton/factory.h"
 #include "flecsi-sp/burton/burton_io_exodus.h"
 
-#include "portage/support/Point.h"
-#include "portage/driver/driver.h"
+#include "portage/driver/mmdriver.h"
 #include "portage/support/mpi_collate.h"
-#include "portage/wonton/mesh/flecsi/flecsi_mesh_wrapper.h"
-#include "portage/wonton/state/flecsi/flecsi_state_wrapper.h"
+#include "wonton/mesh/flecsi/flecsi_mesh_wrapper.h"
+#include "wonton/state/flecsi/flecsi_state_wrapper.h"
 
 
 namespace math = flecsi::sp::math;
@@ -116,7 +115,7 @@ int main(int argc, char** argv) {
 
   // Setup the main driver for this mesh type 2
   if (order == 2) {
-    Portage::Driver<
+    Portage::MMDriver<
       Portage::SearchKDTree,
       Portage::IntersectR2D,
       Portage::Interpolate_2ndOrder,
@@ -131,12 +130,12 @@ int main(int argc, char** argv) {
     d.set_remap_var_names(varnames);
 
     // Do the remap
-    d.run(false);
+    d.run();  // executor argument defaults to false -> serial
   }
 
   // Setup the main driver for this mesh type
   if (order == 1) {
-     Portage::Driver<
+     Portage::MMDriver<
       Portage::SearchKDTree,
       Portage::IntersectR2D,
       Portage::Interpolate_1stOrder,
@@ -151,7 +150,7 @@ int main(int argc, char** argv) {
      d.set_remap_var_names(varnames);
 
      // Do the remap
-     d.run(false);
+     d.run();  // executor arguments defaults to false -> serial
   }
 
 

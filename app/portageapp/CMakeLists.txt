@@ -5,87 +5,130 @@ Please see the license file at the root of this repository, or at:
 ]]
 
 
-if (Jali_DIR)
+
+# Just put ENABLE_MPI around the whole thing because we can't compile any
+# Jali apps without MPI and we are also pulling in MPI for the FleCSI app
+# for some reason
+
+if (ENABLE_MPI)   
+  if (Jali_DIR)
     add_executable(portageapp_jali portageapp_jali.cc)
     target_link_libraries(portageapp_jali portage ${EXTRA_LIBS} ${LAPACKX_LIBRARIES})
 
-    # MPI additions - need to push this down into cinch
-    if (ENABLE_MPI)
-        target_link_libraries(portageapp_jali ${MPI_CXX_LIBRARIES})
-        set_target_properties(portageapp_jali PROPERTIES
-                              LINK_FLAGS "${MPI_CXX_LINK_FLAGS}")
-    endif (ENABLE_MPI)
-
-    # Jali additions
+    target_link_libraries(portageapp_jali ${MPI_CXX_LIBRARIES})
+    set_target_properties(portageapp_jali PROPERTIES
+                                       LINK_FLAGS "${MPI_CXX_LINK_FLAGS}")
+    
     include_directories(${Jali_INCLUDE_DIRS} ${Jali_TPL_INCLUDE_DIRS})
     target_link_libraries(portageapp_jali ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES})
-endif (Jali_DIR)
 
-# FleCSI example
-if (ENABLE_FleCSI)
-  add_executable(portageapp_flecsi portageapp_flecsi.cc)
-  target_link_libraries(portageapp_flecsi portage ${EXTRA_LIBS} ${LAPACKX_LIBRARIES})
-  include_directories(${FleCSI_INCLUDE_DIR} ${FleCSISP_INCLUDE_DIR})
-  target_link_libraries(portageapp_flecsi ${FleCSI_LIBRARIES} ${FleCSISP_LIBRARIES})
-# these appear needed because of something we are pulling in within src
-  if (ENABLE_MPI)
-      target_link_libraries(portageapp_flecsi ${MPI_CXX_LIBRARIES})
-      set_target_properties(portageapp_flecsi PROPERTIES
-                            LINK_FLAGS "${MPI_CXX_LINK_FLAGS}")
-  endif (ENABLE_MPI)
-endif (ENABLE_FleCSI)
+    if (TANGRAM_FOUND)
+      add_executable(portageapp_t-junction_jali portageapp_t-junction_jali.cc)
+      target_link_libraries(portageapp_t-junction_jali portage ${EXTRA_LIBS}
+                                      ${LAPACKX_LIBRARIES} ${TANGRAM_LIBRARIES})
 
-if (JALI_DIR AND ENABLE_FleCSI)
-  add_executable(portageapp_jali2flecsi portageapp_jali2flecsi.cc)
-  target_link_libraries(portageapp_jali2flecsi portageapp_jali2flecsi ${EXTRA_LIBS} ${LAPACKX_LIBRARIES})
-  include_directories(${FleCSI_INCLUDE_DIR} ${FleCSISP_INCLUDE_DIR})
-  target_link_libraries(portageapp_jali2flecsi ${FleCSI_LIBRARIES} ${FleCSISP_LIBRARIES})
-# these appear needed because of something we are pulling in within src
-  if (ENABLE_MPI)
-      target_link_libraries(portageapp_jali2flecsi ${MPI_CXX_LIBRARIES})
-      set_target_properties(portageapp_jali2flecsi PROPERTIES
-                            LINK_FLAGS "${MPI_CXX_LINK_FLAGS}")
-  endif (ENABLE_MPI)
-  target_link_libraries(portageapp_jali2flecsi ${Jali_LIBRARIES}
-                        ${Jali_TPL_LIBRARIES})
+      target_link_libraries(portageapp_t-junction_jali ${MPI_CXX_LIBRARIES})
+      set_target_properties(portageapp_t-junction_jali PROPERTIES
+                                         LINK_FLAGS "${MPI_CXX_LINK_FLAGS}")
 
-endif (JALI_DIR AND ENABLE_FleCSI)
+      target_link_libraries(portageapp_t-junction_jali ${Jali_LIBRARIES}
+                                      ${Jali_TPL_LIBRARIES})
 
-#TCMalloc option
-set(ENABLE_TCMALLOC TRUE CACHE BOOL "Use TCMalloc")
-if(ENABLE_TCMALLOC)
-  set(TCMALLOC_LIB "${HOME}" CACHE STRING "Set the TCMalloc library")
+      if (XMOF2D_FOUND)
+        target_link_libraries(portageapp_t-junction_jali ${XMOF2D_LIBRARIES})
 
-  if (Jali_DIR)
-    target_link_libraries(portageapp_jali ${TCMALLOC_LIB})
+        add_executable(portageapp_multimat_jali portageapp_multimat_jali.cc)
+        target_link_libraries(portageapp_multimat_jali portage ${EXTRA_LIBS}
+                                        ${LAPACKX_LIBRARIES} ${TANGRAM_LIBRARIES}
+                                        ${XMOF2D_LIBRARIES})
+
+        target_link_libraries(portageapp_multimat_jali ${MPI_CXX_LIBRARIES})
+        set_target_properties(portageapp_multimat_jali PROPERTIES
+                                           LINK_FLAGS "${MPI_CXX_LINK_FLAGS}")
+        target_link_libraries(portageapp_multimat_jali ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES})
+      endif(XMOF2D_FOUND)
+    endif (TANGRAM_FOUND)
+
+    if (ENABLE_FleCSI)
+#
+#  HAS BEEN BROKEN FOR A WHILE UNBEKNOWNST TO US - FIX LATER
+#
+#      add_executable(portageapp_jali2flecsi portageapp_jali2flecsi.cc)
+#      target_link_libraries(portageapp_jali2flecsi portage ${EXTRA_LIBS}
+#                                      ${LAPACKX_LIBRARIES})
+#      include_directories(${FleCSI_INCLUDE_DIR} ${FleCSISP_INCLUDE_DIR})
+#      target_link_libraries(portageapp_jali2flecsi ${FleCSI_LIBRARIES}
+#                                      ${FleCSISP_LIBRARIES})
+
+#      target_link_libraries(portageapp_jali2flecsi ${MPI_CXX_LIBRARIES})
+#      set_target_properties(portageapp_jali2flecsi PROPERTIES
+#                                         LINK_FLAGS "${MPI_CXX_LINK_FLAGS}")
+
+#      target_link_libraries(portageapp_jali2flecsi ${Jali_LIBRARIES}
+#                                      ${Jali_TPL_LIBRARIES})
+    endif (ENABLE_FleCSI)
   endif (Jali_DIR)
+
+  # FleCSI example
   if (ENABLE_FleCSI)
-    target_link_libraries(portageapp_flecsi ${TCMALLOC_LIB})
+    add_executable(portageapp_flecsi portageapp_flecsi.cc)
+    target_link_libraries(portageapp_flecsi portage ${EXTRA_LIBS} ${LAPACKX_LIBRARIES})
+    include_directories(${FleCSI_INCLUDE_DIR} ${FleCSISP_INCLUDE_DIR})
+    target_link_libraries(portageapp_flecsi ${FleCSI_LIBRARIES} ${FleCSISP_LIBRARIES})
+
+# these appear needed because of something we are pulling in within src
+    target_link_libraries(portageapp_flecsi ${MPI_CXX_LIBRARIES})
+    set_target_properties(portageapp_flecsi PROPERTIES
+                            LINK_FLAGS "${MPI_CXX_LINK_FLAGS}")
   endif (ENABLE_FleCSI)
-  if (JALI_DIR AND ENABLE_FleCSI)
-    target_link_libraries(portageapp_jali2flecsi ${TCMALLOC_LIB})
-  endif (JALI_DIR AND ENABLE_FleCSI)
-endif(ENABLE_TCMALLOC)
 
-# Profiling option (to allow pausing and resuming profiling during execution)
-set(ENABLE_PROFILE FALSE CACHE BOOL "Enable VTune Profiling")
-if(ENABLE_PROFILE)
-  set(VTUNE_INCLUDE_DIR "${HOME}" CACHE PATH "Set the locaiton of VTune include")
-  set(VTUNE_LIB "${HOME}" CACHE STRING "Set the VTune library")
 
-  include_directories(${VTUNE_INCLUDE_DIR})
+  #TCMalloc option
+  set(ENABLE_TCMALLOC TRUE CACHE BOOL "Use TCMalloc")
+  if(ENABLE_TCMALLOC)
+    set(TCMALLOC_LIB "${HOME}" CACHE STRING "Set the TCMalloc library")
 
-  if (Jali_DIR)
-    target_link_libraries(portageapp_jali ${VTUNE_LIB})
-  endif (Jali_DIR)
-  if (ENABLE_FleCSI)
-    target_link_libraries(portageapp_flecsi ${VTUNE_LIB})
-  endif (ENABLE_FleCSI)
-  if (JALI_DIR AND ENABLE_FleCSI)
-    target_link_libraries(portageapp_jali2flecsi ${VTUNE_LIB})
-  endif (JALI_DIR AND ENABLE_FleCSI)
-endif(ENABLE_PROFILE)
+    if (Jali_DIR)
+      target_link_libraries(portageapp_jali ${TCMALLOC_LIB})
+      if (TANGRAM_FOUND AND XMOF2D_FOUND)
+        target_link_libraries(portageapp_multimat_jali ${TCMALLOC_LIB})
+      endif (TANGRAM_FOUND AND XMOF2D_FOUND)
+    endif (Jali_DIR)
+    if (ENABLE_FleCSI)
+      target_link_libraries(portageapp_flecsi ${TCMALLOC_LIB})
+    endif (ENABLE_FleCSI)
+#    if (Jali_DIR AND ENABLE_FleCSI)
+#      target_link_libraries(portageapp_jali2flecsi ${TCMALLOC_LIB})
+#    endif (Jali_DIR AND ENABLE_FleCSI)
+  endif(ENABLE_TCMALLOC)
 
-if (ENABLE_APP_TESTS)
-  add_subdirectory(test)
-endif (ENABLE_APP_TESTS)
+  # Profiling option (to allow pausing and resuming profiling during execution)
+  set(ENABLE_PROFILE FALSE CACHE BOOL "Enable VTune Profiling")
+  if(ENABLE_PROFILE)
+    set(VTUNE_INCLUDE_DIR "${HOME}" CACHE PATH "Set the locaiton of VTune include")
+    set(VTUNE_LIB "${HOME}" CACHE STRING "Set the VTune library")
+
+    include_directories(${VTUNE_INCLUDE_DIR})
+
+    if (Jali_DIR)
+      target_link_libraries(portageapp_jali ${VTUNE_LIB})
+      if (TANGRAM_FOUND)
+        target_link_libraries(portageapp_t-junction_jali ${VTUNE_LIB})
+        if (XMOF2D_FOUND)
+          target_link_libraries(portageapp_multimat_jali ${VTUNE_LIB})
+        endif (XMOF2D_FOUND)
+      endif(TANGRAM_FOUND)
+    endif (Jali_DIR)
+    if (ENABLE_FleCSI)
+      target_link_libraries(portageapp_flecsi ${VTUNE_LIB})
+    endif (ENABLE_FleCSI)
+#    if (Jali_DIR AND ENABLE_FleCSI)
+#      target_link_libraries(portageapp_jali2flecsi ${VTUNE_LIB})
+#    endif (Jali_DIR AND ENABLE_FleCSI)
+  endif(ENABLE_PROFILE)
+
+  if (ENABLE_APP_TESTS)
+    add_subdirectory(test)
+  endif (ENABLE_APP_TESTS)
+
+endif (ENABLE_MPI)

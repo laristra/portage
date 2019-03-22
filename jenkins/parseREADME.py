@@ -9,11 +9,16 @@ import subprocess, sys
 # line of a block be a followed by a hostname.  The script will then
 # execute all commands specified after that point on the host machine
 # until the block is closed with a ```.
-# Args: Arg 1 is file to parse, Arg 2 is the workspace
+# Usage:  parseREADME.py <infile> <workspace> <machine>
+
+infile = sys.argv[1]
+workspace = sys.argv[2]
+machine = sys.argv[3]
+
 code = False
 scripts = {}
 mach_kw = "machine="
-for line in open(sys.argv[1]):
+for line in open(infile):
     if line.startswith("```"):
         code = not code
         currentScript = None
@@ -24,15 +29,14 @@ for line in open(sys.argv[1]):
             # with the "machine=" keyword
             if not line.startswith("#") and mach_kw not in line: continue
             host = line.split(mach_kw)[-1].strip()
-            currentScript = ["set -e\n pwd \n cd "+ sys.argv[2] + "\n rm -Rf build \n"]
+            currentScript = ["set -e\n pwd \n cd "+ workspace + "\n"]
             scripts[host] = currentScript
         else: currentScript.append(line)
 
 retcode = 0
 for host in scripts:
-    if(host.startswith('varan')):
+    if(host.startswith(machine)):
         print "HOST " + host
-        scripts[host] += 'cd ..;rm -Rf build;'
         print scripts[host]
         sshHost = host.split(':')[0]
         proc = subprocess.Popen(['bash'], stdin = subprocess.PIPE)

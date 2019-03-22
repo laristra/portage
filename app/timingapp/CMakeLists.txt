@@ -8,17 +8,15 @@ Please see the license file at the root of this repository, or at:
 #------------------------------------------------------------------------------#
 #------------------------------------------------------------------------------#
 
-if (Jali_DIR) 
+if (Jali_DIR AND ENABLE_MPI) 
 # Add a rule to build the executable
 # timing example
 
   add_executable(timingapp timingapp.cc)
   target_link_libraries(timingapp portage  ${LAPACKX_LIBRARIES} ${EXTRA_LIBS})
-  if (ENABLE_MPI)
-    target_link_libraries(timingapp ${MPI_CXX_LIBRARIES})
-    set_target_properties(timingapp PROPERTIES
-                              LINK_FLAGS "${MPI_CXX_LINK_FLAGS}")
-  endif (ENABLE_MPI)
+  target_link_libraries(timingapp ${MPI_CXX_LIBRARIES})
+  set_target_properties(timingapp PROPERTIES
+                        LINK_FLAGS "${MPI_CXX_LINK_FLAGS}")
   target_link_libraries(timingapp ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES})
 
 
@@ -39,4 +37,4 @@ if (Jali_DIR)
 
     target_link_libraries(timingapp ${VTUNE_LIB})
   endif(ENABLE_PROFILE)
-endif (Jali_DIR)
+endif (Jali_DIR AND ENABLE_MPI)

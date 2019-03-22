@@ -4,17 +4,17 @@
   https://github.com/laristra/portage/blob/master/LICENSE
 */
 
-#include "gtest/gtest.h"
-
 #include <vector>
 #include <cmath>
 
+#include "gtest/gtest.h"
+
+#include "portage/support/portage.h"
 #include "portage/support/operator.h"
-#include "portage/support/Point.h"
-
 #include "portage/support/test_operator_data.h"
+#include "wonton/support/Point.h"
 
-using Portage::Point;
+using Wonton::Point;
 
 using Portage::Meshfree::Basis::Unitary;
 using Portage::Meshfree::Basis::Linear;
@@ -363,8 +363,8 @@ TEST(VolumeIntegral, UnitaryTetrahedronDeform) {
   Portage::Meshfree::Operator::get_result<Operator<VolumeIntegral, Unitary, Tetrahedron>>(points, result);
   ASSERT_NEAR(result[0][0], exactUnitaryTetrahedron[0]*determinant3, 1.e-12);
 }
- 
-// Test dynamic interface. 
+
+// Test dynamic interface.
 
 TEST(VolumeIntegral, QuadraticIntervalTFDynamic) {
   vector<vector<double>> result;
@@ -403,4 +403,3 @@ TEST(VolumeIntegral, QuadraticTetrahedronTFDynamic) {
   ASSERT_EQ(result[0].size(), 1);
   for (int i=0; i<tex.size(); i++) ASSERT_NEAR(result[i][0], tex[i], 1.e-7*fabs(tex[i]));
 }
-

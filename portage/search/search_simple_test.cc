@@ -4,15 +4,19 @@ Please see the license file at the root of this repository, or at:
     https://github.com/laristra/portage/blob/master/LICENSE
 */
 
-#include "search_simple.h"
-
 #include "gtest/gtest.h"
 
-#include "portage/wonton/mesh/simple_mesh/simple_mesh_wrapper.h"
+// portage includes
+#include "portage/search/search_simple.h"
+
+// wonton includes
+#include "wonton/mesh/simple/simple_mesh.h"
+#include "wonton/mesh/simple/simple_mesh_wrapper.h"
+#include "wonton/support/Point.h"
 
 TEST(search_simple, case1) {
-  Portage::Simple_Mesh sm{0, 0, 1, 1, 3, 3};
-  Portage::Simple_Mesh tm{0, 0, 1, 1, 2, 2};
+  Wonton::Simple_Mesh sm{0, 0, 1, 1, 3, 3};
+  Wonton::Simple_Mesh tm{0, 0, 1, 1, 2, 2};
   const Wonton::Simple_Mesh_Wrapper source_mesh_wrapper(sm);
   const Wonton::Simple_Mesh_Wrapper target_mesh_wrapper(tm);
 
@@ -44,7 +48,7 @@ class MeshWrapperDual {
   int num_owned_cells() const { return w_.num_owned_nodes(); }
   int num_ghost_cells() const { return w_.num_ghost_nodes(); }
   void cell_get_coordinates(int const cellid,
-                            std::vector<Portage::Point<2>> *pplist) const {
+                            std::vector<Wonton::Point<2>> *pplist) const {
     w_.dual_cell_get_coordinates(cellid, pplist);
   }
 
@@ -53,8 +57,8 @@ class MeshWrapperDual {
 };
 
 TEST(search_simple, dual) {
-  Portage::Simple_Mesh sm{0, 0, 1, 1, 3, 3};
-  Portage::Simple_Mesh tm{0, 0, 1, 1, 2, 2};
+  Wonton::Simple_Mesh sm{0, 0, 1, 1, 3, 3};
+  Wonton::Simple_Mesh tm{0, 0, 1, 1, 2, 2};
   const Wonton::Simple_Mesh_Wrapper source_mesh_wrapper(sm);
   const Wonton::Simple_Mesh_Wrapper target_mesh_wrapper(tm);
 
