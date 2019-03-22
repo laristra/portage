@@ -17,7 +17,7 @@ Please see the license file at the root of this repository, or at:
 #include "nanoflann.hpp"  // KDTree search package NanoFlann
 
 #include "portage/support/portage.h"
-#include "portage/support/Point.h"
+
 #include "portage/accumulate/accumulate.h"  // For Meshfree::WeightCenter
 //                                          // Hope we can get rid of it
 

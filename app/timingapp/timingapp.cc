@@ -26,13 +26,16 @@ Please see the license file at the root of this repository, or at:
 #include "ittnotify.h"
 #endif
 
+// portage includes
 #include "portage/support/portage.h"
-#include "portage/support/Point.h"
 #include "portage/support/mpi_collate.h"
-#include "portage/driver/driver.h"
-#include "portage/wonton/mesh/jali/jali_mesh_wrapper.h"
-#include "portage/wonton/state/jali/jali_state_wrapper.h"
+#include "portage/driver/mmdriver.h"
 
+// wonton includes
+#include "wonton/mesh/jali/jali_mesh_wrapper.h"
+#include "wonton/state/jali/jali_state_wrapper.h"
+
+// Jali includes
 #include "Mesh.hh"
 #include "MeshFactory.hh"
 #include "JaliStateVector.h"
@@ -59,7 +62,7 @@ double const const_val = 73.98;   // some random number
 int print_usage() {
   std::cout << std::endl;
   std::cout << "Usage: timingapp " <<
-      "--dim=2|3 --nsourcecells=N --ntargetcells=M --conformal=y|n \n" << 
+      "--dim=2|3 --nsourcecells=N --ntargetcells=M --conformal=y|n \n" <<
       "--reverse_ranks=y|n --weak_scale=y|n --entity_kind=cell|node \n" <<
       "--field_order=0|1|2 --remap_order=1|2 --output_results=y|n \n\n";
 
@@ -318,8 +321,8 @@ int main(int argc, char** argv) {
   const int ntarnodes = targetMeshWrapper.num_owned_nodes();
 
   // Native jali state managers for source and target
-  Jali::State sourceState(sourceMesh);
-  Jali::State targetState(targetMesh);
+  std::shared_ptr<Jali::State> sourceState(Jali::State::create(sourceMesh));
+  std::shared_ptr<Jali::State> targetState(Jali::State::create(targetMesh));
 
   std::vector<double> sourceData;
   std::vector<std::string> remap_fields;
@@ -347,11 +350,13 @@ int main(int argc, char** argv) {
       }
     }
 
-    sourceState.add("celldata", sourceMesh, Jali::Entity_kind::CELL,
+    sourceState->add("celldata", sourceMesh, Jali::Entity_kind::CELL,
                     Jali::Entity_type::ALL, &(sourceData[0]));
 
-    targetState.add("celldata", targetMesh, Jali::Entity_kind::CELL,
-                    Jali::Entity_type::ALL, 0.0);
+    targetState->add<double, Jali::Mesh, Jali::UniStateVector>("celldata",
+                                                            targetMesh,
+                                                Jali::Entity_kind::CELL,
+                                                Jali::Entity_type::ALL, 0.0);
 
     // Register the variable name and interpolation order with the driver
     remap_fields.push_back("celldata");
@@ -389,11 +394,13 @@ int main(int argc, char** argv) {
       }
     }
 
-    sourceState.add("nodedata", sourceMesh, Jali::Entity_kind::NODE,
+    sourceState->add("nodedata", sourceMesh, Jali::Entity_kind::NODE,
                     Jali::Entity_type::ALL, &(sourceData[0]));
 
-    targetState.add("nodedata", targetMesh, Jali::Entity_kind::NODE,
-                    Jali::Entity_type::ALL, 0.0);
+    targetState->add<double, Jali::Mesh, Jali::UniStateVector>("nodedata",
+                                                            targetMesh,
+                                                Jali::Entity_kind::NODE,
+                                                Jali::Entity_type::ALL, 0.0);
 
 
     // Register the variable name and remap order with the driver
@@ -407,18 +414,21 @@ int main(int argc, char** argv) {
   const float seconds_init = diff.tv_sec + 1.0E-6*diff.tv_usec;
   if (rank == 0) std::cout << "Mesh Initialization Time: " << seconds_init <<
                      std::endl;
-  
+
   gettimeofday(&begin, 0);
 
 
   // Portage wrappers for source and target fields
 
-  Wonton::Jali_State_Wrapper sourceStateWrapper(sourceState);
-  Wonton::Jali_State_Wrapper targetStateWrapper(targetState);
+  Wonton::Jali_State_Wrapper sourceStateWrapper(*sourceState);
+  Wonton::Jali_State_Wrapper targetStateWrapper(*targetState);
 
+  Wonton::MPIExecutor_type mpiexecutor(MPI_COMM_WORLD);
+  Wonton::Executor_type *executor = (numpe > 1) ? &mpiexecutor : nullptr;
+  
   if (dim == 2) {
     if (interp_order == 1) {
-      Portage::Driver<
+      Portage::MMDriver<
         Portage::SearchKDTree,
         Portage::IntersectR2D,
         Portage::Interpolate_1stOrder,
@@ -428,9 +438,9 @@ int main(int argc, char** argv) {
           d(sourceMeshWrapper, sourceStateWrapper,
             targetMeshWrapper, targetStateWrapper);
       d.set_remap_var_names(remap_fields);
-      d.run(numpe > 1);
+      d.run(executor);
     } else if (interp_order == 2) {
-      Portage::Driver<
+      Portage::MMDriver<
         Portage::SearchKDTree,
         Portage::IntersectR2D,
         Portage::Interpolate_2ndOrder,
@@ -440,11 +450,11 @@ int main(int argc, char** argv) {
           d(sourceMeshWrapper, sourceStateWrapper,
             targetMeshWrapper, targetStateWrapper);
       d.set_remap_var_names(remap_fields);
-      d.run(numpe > 1);
+      d.run(executor);
     }
   } else {
     if (interp_order == 1) {
-      Portage::Driver<
+      Portage::MMDriver<
         Portage::SearchKDTree,
         Portage::IntersectR3D,
         Portage::Interpolate_1stOrder,
@@ -454,9 +464,9 @@ int main(int argc, char** argv) {
           d(sourceMeshWrapper, sourceStateWrapper,
             targetMeshWrapper, targetStateWrapper);
       d.set_remap_var_names(remap_fields);
-      d.run(numpe > 1);
+      d.run(executor);
     } else {
-      Portage::Driver<
+      Portage::MMDriver<
         Portage::SearchKDTree,
         Portage::IntersectR3D,
         Portage::Interpolate_2ndOrder,
@@ -466,7 +476,7 @@ int main(int argc, char** argv) {
           d(sourceMeshWrapper, sourceStateWrapper,
             targetMeshWrapper, targetStateWrapper);
       d.set_remap_var_names(remap_fields);
-      d.run(numpe > 1);
+      d.run(executor);
     }
   }
 
@@ -487,7 +497,7 @@ int main(int argc, char** argv) {
   double const * nodevecout;
 
   if (entityKind == Jali::Entity_kind::CELL) {
-    targetStateWrapper.get_data<double>(Portage::CELL, "celldata",
+    targetStateWrapper.mesh_get_data<double>(Portage::CELL, "celldata",
                                         &cellvecout);
 
     if (numpe == 1 && n_target < 10)
@@ -498,7 +508,7 @@ int main(int argc, char** argv) {
       for (int c = 0; c < ntarcells; ++c) {
         Portage::Point<2> ccen;
         targetMeshWrapper.cell_centroid(c, &ccen);
-        
+
         if (poly_order == 0)
           error = const_val - cellvecout[c];
         else if (poly_order == 1)
@@ -519,7 +529,7 @@ int main(int argc, char** argv) {
       for (int c = 0; c < ntarcells; ++c) {
         Portage::Point<3> ccen;
         targetMeshWrapper.cell_centroid(c, &ccen);
-        
+
         if (poly_order == 0)
           error = const_val - cellvecout[c];
         else if (poly_order == 1)
@@ -527,7 +537,7 @@ int main(int argc, char** argv) {
         else  // quadratic
           error = ccen[0]*ccen[0] + ccen[1]*ccen[1] + ccen[2]*ccen[2] -
               cellvecout[c];
-        
+
         if (numpe == 1 && n_target < 10) {
           std::printf("%d Cell=% 4d Centroid = (% 5.3lf,% 5.3lf,% 5.3lf)",
                       rank, c, ccen[0], ccen[1], ccen[2]);
@@ -535,12 +545,12 @@ int main(int argc, char** argv) {
                       cellvecout[c], error);
         }
         toterr += error*error;
-      } 
+      }
     }
-    
+
   } else {
 
-    targetStateWrapper.get_data<double>(Portage::NODE, "nodedata",
+    targetStateWrapper.mesh_get_data<double>(Portage::NODE, "nodedata",
                                         &nodevecout);
 
     if (numpe == 1 && n_target < 10)
@@ -571,7 +581,7 @@ int main(int argc, char** argv) {
       Portage::Point<3> nodexyz;
       for (int i = 0; i < ntarnodes; ++i) {
         targetMeshWrapper.node_get_coordinates(i, &nodexyz);
-        
+
         if (poly_order == 0)
           error = const_val - nodevecout[i];
         else if (poly_order == 1)
@@ -607,7 +617,7 @@ int main(int argc, char** argv) {
   // Dump output, if requested
   if (dump_output) {
 
-    // The current version of MSTK (2.27rc2) has a bug in writing out 
+    // The current version of MSTK (2.27rc2) has a bug in writing out
     // exodus files with node variables in parallel and so we will avoid
     // the exodus export in this situation. The 'if' statement can be
     // removed once we upgrade to the next version of MSTK
@@ -615,8 +625,8 @@ int main(int argc, char** argv) {
     if (numpe == 1) {
       if (rank == 0)
         std::cout << "Dumping data to Exodus files..." << std::endl;
-      sourceState.export_to_mesh();
-      targetState.export_to_mesh();
+      sourceState->export_to_mesh();
+      targetState->export_to_mesh();
       sourceMesh->write_to_exodus_file("input.exo");
       targetMesh->write_to_exodus_file("output.exo");
       if (rank == 0)

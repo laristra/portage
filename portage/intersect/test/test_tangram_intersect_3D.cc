@@ -5,61 +5,19 @@ Please see the license file at the root of this repository, or at:
 */
 
 #include <iostream>
+#include <vector>
+#include <array>
+
 #include "gtest/gtest.h"
 
 #include "tangram/support/MatPoly.h"
-//#include "tangram/simple_mesh/simple_mesh.h"
 
 #include "portage/intersect/intersect_r3d.h"
-#include "portage/simple_mesh/simple_mesh.h"
-#include "portage/support/Point.h"
-#include "portage/wonton/mesh/simple_mesh/simple_mesh_wrapper.h"
+
+#include "wonton/mesh/simple/simple_mesh.h"
+#include "wonton/mesh/simple/simple_mesh_wrapper.h"
 
 double eps = 1.e-8;
-TEST(TANGRAM_3D, test_tangram_exists) {
-  // test that we can instantiate a Tangram Point even though we don't include
-  // the Tangram header
-
-  float x{1.}, y{2}, z{3};
-  Tangram::Point<3> p{x, y, z};
-  ASSERT_FLOAT_EQ(x, p[0]);
-  ASSERT_FLOAT_EQ(y, p[1]);
-  ASSERT_FLOAT_EQ(z, p[2]);
-}
-
-TEST(TANGRAM_3D, test_portage_exists) {
-  // test that we can instantiate a Portage Point
-  // we are doing this because Portage::Point includes Tangram::Point and
-  // we want to make sure there is no namespace clobbering
-
-  float x{1.}, y{2}, z{3};
-  Portage::Point<3> p{x, y, z};
-  ASSERT_FLOAT_EQ(x, p[0]);
-  ASSERT_FLOAT_EQ(y, p[1]);
-  ASSERT_FLOAT_EQ(z, p[2]);
-}
-
-TEST(TANGRAM_3D, test_tangram_to_portage) {
-  // test that we can create a Portage Point from a Tangram Point
-
-  float x{1.}, y{2}, z{3};
-  Tangram::Point<3> pt{x, y, z};
-  Portage::Point<3> pp{pt};
-  ASSERT_FLOAT_EQ(x, pp[0]);
-  ASSERT_FLOAT_EQ(y, pp[1]);
-  ASSERT_FLOAT_EQ(z, pp[2]);
-}
-
-TEST(TANGRAM_3D, test_portage_to_tangram) {
-  // test that we can create a Tangram Point from a Portage Point
-
-  float x{1.}, y{2}, z{3};
-  Portage::Point<3> pp{x, y, z};
-  Tangram::Point<3> pt{pp};
-  ASSERT_FLOAT_EQ(x, pt[0]);
-  ASSERT_FLOAT_EQ(y, pt[1]);
-  ASSERT_FLOAT_EQ(z, pt[2]);
-}
 
 TEST(TANGRAM_3D, test_matpoly_succeeds) {
   // test that we can create a Tangram MatPoly
@@ -74,17 +32,17 @@ TEST(TANGRAM_3D, test_matpoly_create) {
   int mat_id = 1;
 
   // Test for a right triangular prism
-  std::vector<Tangram::Point<3>> prism_points = {
-      Tangram::Point<3>(1.0, 0.0, 0.0), Tangram::Point<3>(0.0, 1.0, 0.0),
-      Tangram::Point<3>(0.0, 0.0, 0.0), Tangram::Point<3>(0.0, 1.0, 1.0),
-      Tangram::Point<3>(1.0, 0.0, 1.0), Tangram::Point<3>(0.0, 0.0, 1.0)};
+  std::vector<Wonton::Point<3>> prism_points = {
+      Wonton::Point<3>(1.0, 0.0, 0.0), Wonton::Point<3>(0.0, 1.0, 0.0),
+      Wonton::Point<3>(0.0, 0.0, 0.0), Wonton::Point<3>(0.0, 1.0, 1.0),
+      Wonton::Point<3>(1.0, 0.0, 1.0), Wonton::Point<3>(0.0, 0.0, 1.0)};
   std::vector<std::vector<int>> prism_faces = {
       {0, 2, 1}, {2, 0, 4, 5}, {3, 4, 0, 1}, {5, 2, 1, 3}, {3, 4, 5}};
-  std::vector<Tangram::Point<3>> face_centroids = {
-      Tangram::Point<3>(1.0 / 3.0, 1.0 / 3.0, 0.0),
-      Tangram::Point<3>(0.5, 0.0, 0.5), Tangram::Point<3>(0.5, 0.5, 0.5),
-      Tangram::Point<3>(0.0, 0.5, 0.5),
-      Tangram::Point<3>(1.0 / 3.0, 1.0 / 3.0, 1.0)};
+  std::vector<Wonton::Point<3>> face_centroids = {
+      Wonton::Point<3>(1.0 / 3.0, 1.0 / 3.0, 0.0),
+      Wonton::Point<3>(0.5, 0.0, 0.5), Wonton::Point<3>(0.5, 0.5, 0.5),
+      Wonton::Point<3>(0.0, 0.5, 0.5),
+      Wonton::Point<3>(1.0 / 3.0, 1.0 / 3.0, 1.0)};
 
   // Check material ID correctness
   Tangram::MatPoly<3> prism_matpoly(mat_id);
@@ -94,7 +52,7 @@ TEST(TANGRAM_3D, test_matpoly_create) {
   prism_matpoly.initialize(prism_points, prism_faces);
 
   // Verify coordinates
-  const std::vector<Tangram::Point<3>>& matpoly_points = prism_matpoly.points();
+  const std::vector<Wonton::Point<3>>& matpoly_points = prism_matpoly.points();
   ASSERT_EQ(prism_points.size(), prism_matpoly.num_vertices());
   for (int ivrt = 0; ivrt < prism_points.size(); ivrt++)
     ASSERT_TRUE(approxEq(prism_points[ivrt], matpoly_points[ivrt], 1.0e-15));
@@ -113,12 +71,12 @@ TEST(TANGRAM_3D, test_matpoly_create) {
     ASSERT_TRUE(approxEq(face_centroids[iface],
                          prism_matpoly.face_centroid(iface), 1.0e-15));
 
-  std::vector<Tangram::Point<3>> faceted_prism_points = {
-      Tangram::Point<3>(1.0, 0.0, 0.0), Tangram::Point<3>(0.0, 1.0, 0.0),
-      Tangram::Point<3>(0.0, 0.0, 0.0), Tangram::Point<3>(0.0, 1.0, 1.0),
-      Tangram::Point<3>(1.0, 0.0, 1.0), Tangram::Point<3>(0.0, 0.0, 1.0),
-      Tangram::Point<3>(0.5, 0.0, 0.5), Tangram::Point<3>(0.5, 0.5, 0.5),
-      Tangram::Point<3>(0.0, 0.5, 0.5),
+  std::vector<Wonton::Point<3>> faceted_prism_points = {
+      Wonton::Point<3>(1.0, 0.0, 0.0), Wonton::Point<3>(0.0, 1.0, 0.0),
+      Wonton::Point<3>(0.0, 0.0, 0.0), Wonton::Point<3>(0.0, 1.0, 1.0),
+      Wonton::Point<3>(1.0, 0.0, 1.0), Wonton::Point<3>(0.0, 0.0, 1.0),
+      Wonton::Point<3>(0.5, 0.0, 0.5), Wonton::Point<3>(0.5, 0.5, 0.5),
+      Wonton::Point<3>(0.0, 0.5, 0.5),
   };
   std::vector<std::vector<int>> faceted_prism_faces = {
       {0, 2, 1}, {6, 2, 0}, {6, 0, 4}, {6, 4, 5}, {6, 5, 2},
@@ -134,7 +92,7 @@ TEST(TANGRAM_3D, test_matpoly_create) {
 
   // Verify facetization
   // Verify node coordinates
-  const std::vector<Tangram::Point<3>>& faceted_matpoly_points =
+  const std::vector<Wonton::Point<3>>& faceted_matpoly_points =
       faceted_prism_matpoly.points();
   ASSERT_EQ(faceted_prism_points.size(), faceted_prism_matpoly.num_vertices());
   for (int ivrt = 0; ivrt < faceted_prism_points.size(); ivrt++)
@@ -152,30 +110,30 @@ TEST(TANGRAM_3D, test_matpoly_create) {
   }
 
   // Non-convex distorted prism
-  std::vector<Tangram::Point<3>> ncv_prism_points = {
-      Tangram::Point<3>(1.0, 0.0, 0.0), Tangram::Point<3>(0.4, 0.8, 0.2),
-      Tangram::Point<3>(1.0, 1.0, 0.0), Tangram::Point<3>(0.0, 1.0, 0.0),
-      Tangram::Point<3>(0.5, 0.1, 0.1), Tangram::Point<3>(0.0, 0.0, 0.0),
-      Tangram::Point<3>(0.0, 0.0, 1.0), Tangram::Point<3>(1.0, 1.0, 1.0),
-      Tangram::Point<3>(0.5, 0.9, 1.1), Tangram::Point<3>(1.0, 0.0, 1.0),
-      Tangram::Point<3>(0.0, 1.0, 1.0), Tangram::Point<3>(0.6, 0.2, 0.8)};
+  std::vector<Wonton::Point<3>> ncv_prism_points = {
+      Wonton::Point<3>(1.0, 0.0, 0.0), Wonton::Point<3>(0.4, 0.8, 0.2),
+      Wonton::Point<3>(1.0, 1.0, 0.0), Wonton::Point<3>(0.0, 1.0, 0.0),
+      Wonton::Point<3>(0.5, 0.1, 0.1), Wonton::Point<3>(0.0, 0.0, 0.0),
+      Wonton::Point<3>(0.0, 0.0, 1.0), Wonton::Point<3>(1.0, 1.0, 1.0),
+      Wonton::Point<3>(0.5, 0.9, 1.1), Wonton::Point<3>(1.0, 0.0, 1.0),
+      Wonton::Point<3>(0.0, 1.0, 1.0), Wonton::Point<3>(0.6, 0.2, 0.8)};
   std::vector<std::vector<int>> ncv_prism_faces = {
       {3, 1, 2, 0, 4, 5}, {5, 4, 11, 10}, {0, 9, 11, 4}, {7, 9, 0, 2},
       {2, 1, 8, 7},       {8, 1, 3, 10},  {5, 6, 10, 3}, {7, 11, 10, 6, 8, 9}};
-  std::vector<Tangram::Point<3>> ncv_prism_face_centroids = {
-      Tangram::Point<3>(0.49982029799691324, 0.48793283780407681,
+  std::vector<Wonton::Point<3>> ncv_prism_face_centroids = {
+      Wonton::Point<3>(0.49982029799691324, 0.48793283780407681,
                         0.038845671672909921),
-      Tangram::Point<3>(0.2519019047393049, 0.36565382681732062,
+      Wonton::Point<3>(0.2519019047393049, 0.36565382681732062,
                         0.51522129026172814),
-      Tangram::Point<3>(0.78729807432173626, 0.070061777159007799,
+      Wonton::Point<3>(0.78729807432173626, 0.070061777159007799,
                         0.46574083274162237),
-      Tangram::Point<3>(1.0, 0.5, 0.5),
-      Tangram::Point<3>(0.72714164844017881, 0.92490808257951729,
+      Wonton::Point<3>(1.0, 0.5, 0.5),
+      Wonton::Point<3>(0.72714164844017881, 0.92490808257951729,
                         0.55650182505587276),
-      Tangram::Point<3>(0.22120243710721832, 0.92700420108481663,
+      Wonton::Point<3>(0.22120243710721832, 0.92700420108481663,
                         0.58407100072352491),
-      Tangram::Point<3>(0.0, 0.5, 0.5),
-      Tangram::Point<3>(0.50915092483338054, 0.51261128330217054,
+      Wonton::Point<3>(0.0, 0.5, 0.5),
+      Wonton::Point<3>(0.50915092483338054, 0.51261128330217054,
                         0.98738871669782957)};
 
   Tangram::MatPoly<3> ncv_prism_matpoly(mat_id);
@@ -193,18 +151,18 @@ TEST(TANGRAM_3D, test_matpoly_cube) {
   int mat_id = 1;
 
   // Test for a cube
-  std::vector<Tangram::Point<3>> cube_points = {
-      Tangram::Point<3>(0.0, 0.0, 0.0), Tangram::Point<3>(1.0, 0.0, 0.0),
-      Tangram::Point<3>(1.0, 1.0, 0.0), Tangram::Point<3>(0.0, 1.0, 0.0),
-      Tangram::Point<3>(0.0, 0.0, 1.0), Tangram::Point<3>(1.0, 0.0, 1.0),
-      Tangram::Point<3>(1.0, 1.0, 1.0), Tangram::Point<3>(0.0, 1.0, 1.0)};
+  std::vector<Wonton::Point<3>> cube_points = {
+      Wonton::Point<3>(0.0, 0.0, 0.0), Wonton::Point<3>(1.0, 0.0, 0.0),
+      Wonton::Point<3>(1.0, 1.0, 0.0), Wonton::Point<3>(0.0, 1.0, 0.0),
+      Wonton::Point<3>(0.0, 0.0, 1.0), Wonton::Point<3>(1.0, 0.0, 1.0),
+      Wonton::Point<3>(1.0, 1.0, 1.0), Wonton::Point<3>(0.0, 1.0, 1.0)};
   std::vector<std::vector<int>> cube_faces = {{0, 1, 5, 4}, {1, 2, 6, 5},
                                               {2, 3, 7, 6}, {3, 0, 4, 7},
                                               {0, 3, 2, 1}, {4, 5, 6, 7}};
-  std::vector<Tangram::Point<3>> face_centroids = {
-      Tangram::Point<3>(0.5, 0.0, 0.5), Tangram::Point<3>(1.0, 0.5, 0.5),
-      Tangram::Point<3>(0.5, 1.0, 0.5), Tangram::Point<3>(0.0, 0.5, 0.5),
-      Tangram::Point<3>(0.5, 0.5, 0.0), Tangram::Point<3>(0.5, 0.5, 1.0)};
+  std::vector<Wonton::Point<3>> face_centroids = {
+      Wonton::Point<3>(0.5, 0.0, 0.5), Wonton::Point<3>(1.0, 0.5, 0.5),
+      Wonton::Point<3>(0.5, 1.0, 0.5), Wonton::Point<3>(0.0, 0.5, 0.5),
+      Wonton::Point<3>(0.5, 0.5, 0.0), Wonton::Point<3>(0.5, 0.5, 1.0)};
 
   // Check material ID correctness
   Tangram::MatPoly<3> matpoly(mat_id);
@@ -214,7 +172,7 @@ TEST(TANGRAM_3D, test_matpoly_cube) {
   matpoly.initialize(cube_points, cube_faces);
 
   // Verify coordinates
-  const std::vector<Tangram::Point<3>>& matpoly_points = matpoly.points();
+  const std::vector<Wonton::Point<3>>& matpoly_points = matpoly.points();
   ASSERT_EQ(cube_points.size(), matpoly.num_vertices());
   for (int ivrt = 0; ivrt < cube_points.size(); ivrt++)
     for (int j = 0; j < 3; j++)
@@ -240,14 +198,14 @@ TEST(TANGRAM_3D, test_matpoly_faceted_cube_by_hand) {
   int mat_id = 1;
 
   // Test for a cube
-  std::vector<Tangram::Point<3>> faceted_cube_points = {
-      Tangram::Point<3>(0.0, 0.0, 0.0), Tangram::Point<3>(1.0, 0.0, 0.0),
-      Tangram::Point<3>(1.0, 1.0, 0.0), Tangram::Point<3>(0.0, 1.0, 0.0),
-      Tangram::Point<3>(0.0, 0.0, 1.0), Tangram::Point<3>(1.0, 0.0, 1.0),
-      Tangram::Point<3>(1.0, 1.0, 1.0), Tangram::Point<3>(0.0, 1.0, 1.0),
-      Tangram::Point<3>(0.5, 0.0, 0.5), Tangram::Point<3>(1.0, 0.5, 0.5),
-      Tangram::Point<3>(0.5, 1.0, 0.5), Tangram::Point<3>(0.0, 0.5, 0.5),
-      Tangram::Point<3>(0.5, 0.5, 0.0), Tangram::Point<3>(0.5, 0.5, 1.0)};
+  std::vector<Wonton::Point<3>> faceted_cube_points = {
+      Wonton::Point<3>(0.0, 0.0, 0.0), Wonton::Point<3>(1.0, 0.0, 0.0),
+      Wonton::Point<3>(1.0, 1.0, 0.0), Wonton::Point<3>(0.0, 1.0, 0.0),
+      Wonton::Point<3>(0.0, 0.0, 1.0), Wonton::Point<3>(1.0, 0.0, 1.0),
+      Wonton::Point<3>(1.0, 1.0, 1.0), Wonton::Point<3>(0.0, 1.0, 1.0),
+      Wonton::Point<3>(0.5, 0.0, 0.5), Wonton::Point<3>(1.0, 0.5, 0.5),
+      Wonton::Point<3>(0.5, 1.0, 0.5), Wonton::Point<3>(0.0, 0.5, 0.5),
+      Wonton::Point<3>(0.5, 0.5, 0.0), Wonton::Point<3>(0.5, 0.5, 1.0)};
   std::vector<std::vector<int>> faceted_cube_faces = {{0, 1, 8}, {1, 5, 8},
       {5, 4, 8}, {4, 0, 8}, {1, 2, 9}, {2, 6, 9}, {6, 5, 9}, {5, 1, 9},
       {2, 3, 10}, {3, 7, 10}, {7, 6, 10}, {6, 2, 10}, {3, 0, 11}, {0, 4, 11},
@@ -262,7 +220,7 @@ TEST(TANGRAM_3D, test_matpoly_faceted_cube_by_hand) {
   matpoly.initialize(faceted_cube_points, faceted_cube_faces);
 
   // Verify coordinates
-  const std::vector<Tangram::Point<3>>& matpoly_points = matpoly.points();
+  const std::vector<Wonton::Point<3>>& matpoly_points = matpoly.points();
   ASSERT_EQ(faceted_cube_points.size(), matpoly.num_vertices());
   for (int ivrt = 0; ivrt < faceted_cube_points.size(); ivrt++)
     for (int j = 0; j < 3; j++)
@@ -285,18 +243,18 @@ TEST(TANGRAM_3D, test_matpoly_intersect) {
   int mat_id = 1;
 
   // Test for a cube
-  std::vector<Tangram::Point<3>> cube_points = {
-      Tangram::Point<3>(0.0, 0.0, 0.0), Tangram::Point<3>(1.0, 0.0, 0.0),
-      Tangram::Point<3>(1.0, 1.0, 0.0), Tangram::Point<3>(0.0, 1.0, 0.0),
-      Tangram::Point<3>(0.0, 0.0, 1.0), Tangram::Point<3>(1.0, 0.0, 1.0),
-      Tangram::Point<3>(1.0, 1.0, 1.0), Tangram::Point<3>(0.0, 1.0, 1.0)};
+  std::vector<Wonton::Point<3>> cube_points = {
+      Wonton::Point<3>(0.0, 0.0, 0.0), Wonton::Point<3>(1.0, 0.0, 0.0),
+      Wonton::Point<3>(1.0, 1.0, 0.0), Wonton::Point<3>(0.0, 1.0, 0.0),
+      Wonton::Point<3>(0.0, 0.0, 1.0), Wonton::Point<3>(1.0, 0.0, 1.0),
+      Wonton::Point<3>(1.0, 1.0, 1.0), Wonton::Point<3>(0.0, 1.0, 1.0)};
   std::vector<std::vector<int>> cube_faces = {{0, 1, 5, 4}, {1, 2, 6, 5},
                                               {2, 3, 7, 6}, {3, 0, 4, 7},
                                               {0, 3, 2, 1}, {4, 5, 6, 7}};
-  std::vector<Tangram::Point<3>> face_centroids = {
-      Tangram::Point<3>(0.5, 0.0, 0.5), Tangram::Point<3>(1.0, 0.5, 0.5),
-      Tangram::Point<3>(0.5, 1.0, 0.5), Tangram::Point<3>(0.0, 0.5, 0.5),
-      Tangram::Point<3>(0.5, 0.5, 0.0), Tangram::Point<3>(0.5, 0.5, 1.0)};
+  std::vector<Wonton::Point<3>> face_centroids = {
+      Wonton::Point<3>(0.5, 0.0, 0.5), Wonton::Point<3>(1.0, 0.5, 0.5),
+      Wonton::Point<3>(0.5, 1.0, 0.5), Wonton::Point<3>(0.0, 0.5, 0.5),
+      Wonton::Point<3>(0.5, 0.5, 0.0), Wonton::Point<3>(0.5, 0.5, 1.0)};
 
   // Check material ID correctness
   Tangram::MatPoly<3> matpoly(mat_id);
@@ -306,7 +264,7 @@ TEST(TANGRAM_3D, test_matpoly_intersect) {
   matpoly.initialize(cube_points, cube_faces);
 
   // Verify coordinates
-  const std::vector<Tangram::Point<3>>& matpoly_points = matpoly.points();
+  const std::vector<Wonton::Point<3>>& matpoly_points = matpoly.points();
   ASSERT_EQ(cube_points.size(), matpoly.num_vertices());
   for (int ivrt = 0; ivrt < cube_points.size(); ivrt++)
     for (int j = 0; j < 3; j++)
@@ -335,9 +293,9 @@ TEST(TANGRAM_3D, test_matpoly_intersect) {
   ASSERT_EQ(faceted_matpoly.num_vertices(), 14);
 
   // Convert the points
-  std::vector<Tangram::Point<3>> _source_points = faceted_matpoly.points();
-  std::vector<Portage::Point<3>> source_points;
-  for (auto p : _source_points) source_points.push_back(Portage::Point<3>(p));
+  std::vector<Wonton::Point<3>> _source_points = faceted_matpoly.points();
+  std::vector<Wonton::Point<3>> source_points;
+  for (auto p : _source_points) source_points.push_back(Wonton::Point<3>(p));
 
   // Convert the face indices from the matpoly to a Portage style
   std::vector<std::vector<int>> facetpoints;
@@ -353,13 +311,13 @@ TEST(TANGRAM_3D, test_matpoly_intersect) {
   Portage::facetedpoly_t srcpoly{facetpoints, source_points};
 
   // Create a length 1 vector of tets by hand
-  std::vector<std::array<Portage::Point<3>, 4>> target_tet_coords{
-      {Portage::Point<3>{0., 0., 0.}, Portage::Point<3>{1., 0., 0.},
-       Portage::Point<3>{0., 1., 0.}, Portage::Point<3>{0., 0., 1.}}};
+  std::vector<std::array<Wonton::Point<3>, 4>> target_tet_coords{
+      {Wonton::Point<3>{0., 0., 0.}, Wonton::Point<3>{1., 0., 0.},
+       Wonton::Point<3>{0., 1., 0.}, Wonton::Point<3>{0., 0., 1.}}};
 
   // Hope for a miracle with intersection
   std::vector<double> moments(
-      Portage::intersect_3Dpolys(srcpoly, target_tet_coords));
+      Portage::intersect_polys_r3d(srcpoly, target_tet_coords));
 
   // test that the moments are correct
   ASSERT_NEAR(moments[0], 1. / 6., eps);
@@ -374,11 +332,11 @@ TEST(TANGRAM_3D, test_intersect_matpoly_gold) {
   int mat_id = 1;
 
   // Test for a cube
-  std::vector<Tangram::Point<3>> cube_points = {
-      Tangram::Point<3>(0.0, 0.0, 0.0), Tangram::Point<3>(1.0, 0.0, 0.0),
-      Tangram::Point<3>(1.0, 1.0, 0.0), Tangram::Point<3>(0.0, 1.0, 0.0),
-      Tangram::Point<3>(0.0, 0.0, 1.0), Tangram::Point<3>(1.0, 0.0, 1.0),
-      Tangram::Point<3>(1.0, 1.0, 1.0), Tangram::Point<3>(0.0, 1.0, 1.0)};
+  std::vector<Wonton::Point<3>> cube_points = {
+      Wonton::Point<3>(0.0, 0.0, 0.0), Wonton::Point<3>(1.0, 0.0, 0.0),
+      Wonton::Point<3>(1.0, 1.0, 0.0), Wonton::Point<3>(0.0, 1.0, 0.0),
+      Wonton::Point<3>(0.0, 0.0, 1.0), Wonton::Point<3>(1.0, 0.0, 1.0),
+      Wonton::Point<3>(1.0, 1.0, 1.0), Wonton::Point<3>(0.0, 1.0, 1.0)};
   std::vector<std::vector<int>> cube_faces = {{0, 1, 5, 4}, {1, 2, 6, 5},
                                               {2, 3, 7, 6}, {3, 0, 4, 7},
                                               {0, 3, 2, 1}, {4, 5, 6, 7}};
@@ -390,12 +348,12 @@ TEST(TANGRAM_3D, test_intersect_matpoly_gold) {
   matpoly.initialize(cube_points, cube_faces);
 
   // Create a length 1 vector of tets by hand
-  std::vector<std::array<Portage::Point<3>, 4>> target_tet_coords{
-      {Portage::Point<3>{0., 0., 0.}, Portage::Point<3>{1., 0., 0.},
-       Portage::Point<3>{0., 1., 0.}, Portage::Point<3>{0., 0., 1.}}};
+  std::vector<std::array<Wonton::Point<3>, 4>> target_tet_coords{
+      {Wonton::Point<3>{0., 0., 0.}, Wonton::Point<3>{1., 0., 0.},
+       Wonton::Point<3>{0., 1., 0.}, Wonton::Point<3>{0., 0., 1.}}};
 
   // Intersect
-  std::vector<double> moments(Portage::intersect_3Dpolys(
+  std::vector<double> moments(Portage::intersect_polys_r3d(
       Portage::get_faceted_matpoly(matpoly), target_tet_coords));
 
   // test that the moments are correct
@@ -410,11 +368,11 @@ TEST(TANGRAM_3D, test_intersect_matpoly_gold2) {
   int mat_id = 1;
 
   // Test for a cube
-  std::vector<Tangram::Point<3>> cube_points = {
-      Tangram::Point<3>(0.0, 0.0, 0.0), Tangram::Point<3>(1.0, 0.0, 0.0),
-      Tangram::Point<3>(1.0, 1.0, 0.0), Tangram::Point<3>(0.0, 1.0, 0.0),
-      Tangram::Point<3>(0.0, 0.0, 1.0), Tangram::Point<3>(1.0, 0.0, 1.0),
-      Tangram::Point<3>(1.0, 1.0, 1.0), Tangram::Point<3>(0.0, 1.0, 1.0)};
+  std::vector<Wonton::Point<3>> cube_points = {
+      Wonton::Point<3>(0.0, 0.0, 0.0), Wonton::Point<3>(1.0, 0.0, 0.0),
+      Wonton::Point<3>(1.0, 1.0, 0.0), Wonton::Point<3>(0.0, 1.0, 0.0),
+      Wonton::Point<3>(0.0, 0.0, 1.0), Wonton::Point<3>(1.0, 0.0, 1.0),
+      Wonton::Point<3>(1.0, 1.0, 1.0), Wonton::Point<3>(0.0, 1.0, 1.0)};
   std::vector<std::vector<int>> cube_faces = {{0, 1, 5, 4}, {1, 2, 6, 5},
                                               {2, 3, 7, 6}, {3, 0, 4, 7},
                                               {0, 3, 2, 1}, {4, 5, 6, 7}};
@@ -426,18 +384,18 @@ TEST(TANGRAM_3D, test_intersect_matpoly_gold2) {
   matpoly.initialize(cube_points, cube_faces);
 
   // create a simple mesh with a single cell
-  Portage::Simple_Mesh target_mesh(0., 0., 0., 1., 1., 1., 1, 1, 1);
+  Wonton::Simple_Mesh target_mesh(0., 0., 0., 1., 1., 1., 1, 1, 1);
 
   // Create mesh wrappers
   Wonton::Simple_Mesh_Wrapper target_mesh_wrapper(target_mesh);
 
   // decompose the cell into tets
-  std::vector<std::array<Portage::Point<3>, 4>> tcoords;
+  std::vector<std::array<Wonton::Point<3>, 4>> tcoords;
   bool planar_hex = true;
   target_mesh_wrapper.decompose_cell_into_tets(0, &tcoords, planar_hex);
 
   // Intersect
-  std::vector<double> moments(Portage::intersect_3Dpolys(
+  std::vector<double> moments(Portage::intersect_polys_r3d(
       Portage::get_faceted_matpoly(matpoly), tcoords));
 
   // test that the moments are correct
@@ -453,11 +411,11 @@ TEST(TANGRAM_3D, test_intersect_matpoly_gold3) {
   int mat_id = 1;
 
   // Test for a cube
-  std::vector<Tangram::Point<3>> cube_points = {
-      Tangram::Point<3>(0.0, 0.0, 0.0), Tangram::Point<3>(1.0, 0.0, 0.0),
-      Tangram::Point<3>(1.0, 1.0, 0.0), Tangram::Point<3>(0.0, 1.0, 0.0),
-      Tangram::Point<3>(0.0, 0.0, 1.0), Tangram::Point<3>(1.0, 0.0, 1.0),
-      Tangram::Point<3>(1.0, 1.0, 1.0), Tangram::Point<3>(0.0, 1.0, 1.0)};
+  std::vector<Wonton::Point<3>> cube_points = {
+      Wonton::Point<3>(0.0, 0.0, 0.0), Wonton::Point<3>(1.0, 0.0, 0.0),
+      Wonton::Point<3>(1.0, 1.0, 0.0), Wonton::Point<3>(0.0, 1.0, 0.0),
+      Wonton::Point<3>(0.0, 0.0, 1.0), Wonton::Point<3>(1.0, 0.0, 1.0),
+      Wonton::Point<3>(1.0, 1.0, 1.0), Wonton::Point<3>(0.0, 1.0, 1.0)};
   std::vector<std::vector<int>> cube_faces = {{0, 1, 5, 4}, {1, 2, 6, 5},
                                               {2, 3, 7, 6}, {3, 0, 4, 7},
                                               {0, 3, 2, 1}, {4, 5, 6, 7}};
@@ -469,18 +427,18 @@ TEST(TANGRAM_3D, test_intersect_matpoly_gold3) {
   matpoly.initialize(cube_points, cube_faces);
 
   // create a simple mesh with a single cell
-  Portage::Simple_Mesh target_mesh(0., 0., 0., 1., 1., 1., 1, 1, 1);
+  Wonton::Simple_Mesh target_mesh(0., 0., 0., 1., 1., 1., 1, 1, 1);
 
   // Create mesh wrappers
   Wonton::Simple_Mesh_Wrapper target_mesh_wrapper(target_mesh);
 
   // decompose the cell into tets
-  std::vector<std::array<Portage::Point<3>, 4>> tcoords;
+  std::vector<std::array<Wonton::Point<3>, 4>> tcoords;
   bool planar_hex = false;
   target_mesh_wrapper.decompose_cell_into_tets(0, &tcoords, planar_hex);
 
   // Intersect
-  std::vector<double> moments(Portage::intersect_3Dpolys(
+  std::vector<double> moments(Portage::intersect_polys_r3d(
       Portage::get_faceted_matpoly(matpoly), tcoords));
 
   // test that the moments are correct
@@ -496,11 +454,11 @@ TEST(TANGRAM_3D, test_intersect_matpoly_gold4) {
   int mat_id = 1;
 
   // Test for a cube
-  std::vector<Tangram::Point<3>> cube_points = {
-      Tangram::Point<3>(0.0, 0.0, 0.0), Tangram::Point<3>(1.0, 0.0, 0.0),
-      Tangram::Point<3>(1.0, 1.0, 0.0), Tangram::Point<3>(0.0, 1.0, 0.0),
-      Tangram::Point<3>(0.0, 0.0, 1.0), Tangram::Point<3>(1.0, 0.0, 1.0),
-      Tangram::Point<3>(1.0, 1.0, 1.0), Tangram::Point<3>(0.0, 1.0, 1.0)};
+  std::vector<Wonton::Point<3>> cube_points = {
+      Wonton::Point<3>(0.0, 0.0, 0.0), Wonton::Point<3>(1.0, 0.0, 0.0),
+      Wonton::Point<3>(1.0, 1.0, 0.0), Wonton::Point<3>(0.0, 1.0, 0.0),
+      Wonton::Point<3>(0.0, 0.0, 1.0), Wonton::Point<3>(1.0, 0.0, 1.0),
+      Wonton::Point<3>(1.0, 1.0, 1.0), Wonton::Point<3>(0.0, 1.0, 1.0)};
   std::vector<std::vector<int>> cube_faces = {{0, 1, 5, 4}, {1, 2, 6, 5},
                                               {2, 3, 7, 6}, {3, 0, 4, 7},
                                               {0, 3, 2, 1}, {4, 5, 6, 7}};
@@ -512,18 +470,18 @@ TEST(TANGRAM_3D, test_intersect_matpoly_gold4) {
   matpoly.initialize(cube_points, cube_faces);
 
   // create a simple mesh with a single cell
-  Portage::Simple_Mesh target_mesh(0.5, 0.5, 0.5, 1.5, 1.5, 1.5, 1, 1, 1);
+  Wonton::Simple_Mesh target_mesh(0.5, 0.5, 0.5, 1.5, 1.5, 1.5, 1, 1, 1);
 
   // Create mesh wrappers
   Wonton::Simple_Mesh_Wrapper target_mesh_wrapper(target_mesh);
 
   // decompose the cell into tets
-  std::vector<std::array<Portage::Point<3>, 4>> tcoords;
+  std::vector<std::array<Wonton::Point<3>, 4>> tcoords;
   bool planar_hex = false;
   target_mesh_wrapper.decompose_cell_into_tets(0, &tcoords, planar_hex);
 
   // Intersect
-  std::vector<double> moments(Portage::intersect_3Dpolys(
+  std::vector<double> moments(Portage::intersect_polys_r3d(
       Portage::get_faceted_matpoly(matpoly), tcoords));
 
   // test that the moments are correct

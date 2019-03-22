@@ -4,16 +4,14 @@ Please see the license file at the root of this repository, or at:
     https://github.com/laristra/portage/blob/master/LICENSE
 */
 
-#include "search_kdtree_nanoflann.h"
-
 #include <memory>
 #include <vector>
 
 #include "gtest/gtest.h"
 
-#include "portage/support/Point.h"
+#include "portage/search/search_kdtree_nanoflann.h"
 #include "portage/swarm/swarm.h"
-
+#include "portage/support/Vector.h"
 #ifdef HAVE_NANOFLANN
 
 TEST(search_kdtree_nanoflann, case2d)
@@ -68,7 +66,7 @@ TEST(search_kdtree_nanoflann, case2d)
 
       for (int sp = 0; sp < srcpts->size(); sp++) {
         Portage::Point<2> psrc = (*srcpts)[sp];
-        Portage::Vector<2> vec = psrc-ptgt;
+        Wonton::Vector<2> vec = psrc-ptgt;
         double dist = vec.norm(true);
         if (dist <= target_radius) {
           // This point should be in the list of candidates
@@ -111,7 +109,7 @@ TEST(search_kdtree_nanoflann, case3d)
   auto tgtexts = std::make_shared<std::vector<Portage::Point<3>>>(tgte);
   const double tgtlen = 1./2.;
   const double target_radius = sqrt(3*(0.75*tgtlen)*(0.75*tgtlen));
-  std::vector<double> tgtradii(8, target_radius);  
+  std::vector<double> tgtradii(8, target_radius);
   for (int k = 0; k < 2; ++k) {
     for (int j = 0; j < 2; ++j) {
       for (int i = 0; i < 2; ++i) {
@@ -129,20 +127,20 @@ TEST(search_kdtree_nanoflann, case3d)
   Portage::Search_KDTree_Nanoflann<
     3, Portage::Meshfree::Swarm<3>, Portage::Meshfree::Swarm<3>>
       search(srcswarm, tgtswarm, srcexts, tgtexts);
-  
+
   for (int k = 0; k < 2; ++k) {
     for (int j = 0; j < 2; ++j) {
       for (int i = 0; i < 2; ++i) {
         const size_t tp = i + j * 2 + k * 4;
         std::vector<unsigned int> candidates = search(tp);
-        
+
         // Independently look for all points within a search radius and
         // see if we got them all
         Portage::Point<3> ptgt = (*tgtpts)[tp];
-        
+
         for (int sp = 0; sp < srcpts->size(); sp++) {
           Portage::Point<3> psrc = (*srcpts)[sp];
-          Portage::Vector<3> vec = psrc-ptgt;
+          Wonton::Vector<3> vec = psrc-ptgt;
           double dist = vec.norm(true);
           if (dist <= target_radius) {
             // This point should be in the list of candidates
@@ -158,4 +156,3 @@ TEST(search_kdtree_nanoflann, case3d)
 }  // TEST(search_kdtree_nanoflann, case3d)
 
 #endif  // HAVE_NANOFLANN
-

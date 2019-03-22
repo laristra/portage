@@ -8,10 +8,15 @@ Please see the license file at the root of this repository, or at:
 
 #-----------------------------------------------------------------------------~#
 
+set(headers  mmdriver.h driver_swarm.h driver_mesh_swarm_mesh.h fix_mismatch.h)
+if (TANGRAM_FOUND)
+  list(APPEND headers write_to_gmv.h)
+endif (TANGRAM_FOUND)
+
 # Add header files
 set(driver_HEADERS
-    driver.h mmdriver.h driver_swarm.h driver_mesh_swarm_mesh.h
-    PARENT_SCOPE
+   ${headers}
+   PARENT_SCOPE
 )
 
 # Add source files
@@ -36,11 +41,17 @@ if (ENABLE_UNIT_TESTS)
        POLICY MPI
        THREADS 1)
 
-       cinch_add_unit(test_driver_step
-       SOURCES test/test_driver_step 
+       #cinch_add_unit(test_driver_step
+       #SOURCES test/test_driver_step 
+       #LIBRARIES portage ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
+       #POLICY MPI
+       #THREADS 1)
+
+       cinch_add_unit(test_driver_swarm_dist
+       SOURCES test/test_driver_swarm_dist
        LIBRARIES portage ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
        POLICY MPI
-       THREADS 1)
+       THREADS 4)
 
        cinch_add_unit(test_driver_swarm_dist
        SOURCES test/test_driver_swarm_dist
@@ -49,11 +60,19 @@ if (ENABLE_UNIT_TESTS)
        THREADS 4)
 
      if (TANGRAM_FOUND AND XMOF2D_FOUND)
+
        cinch_add_unit(test_multimat_driver
        SOURCES test/test_multimat_driver
        LIBRARIES portage ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES} ${XMOF2D_LIBRARIES}
        POLICY MPI
-       THREADS 1)       
+       THREADS 1)
+
+       cinch_add_unit(test_multimat_driver_2ndOrder
+       SOURCES test/test_multimat_driver_2ndOrder
+       LIBRARIES portage ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES} ${XMOF2D_LIBRARIES}
+       POLICY MPI
+       THREADS 1)
+
      endif (TANGRAM_FOUND AND XMOF2D_FOUND)
    endif (Jali_DIR)
 
@@ -64,7 +83,7 @@ if (ENABLE_UNIT_TESTS)
      THREADS 1)
 
    cinch_add_unit(test_driver_mesh_swarm_mesh
-     SOURCES test/test_driver_mesh_swarm_mesh 
+     SOURCES test/test_driver_mesh_swarm_mesh
      LIBRARIES portage
      POLICY MPI
      THREADS 1)

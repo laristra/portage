@@ -28,7 +28,7 @@ if (ENABLE_UNIT_TESTS)
       POLICY SERIAL)
 
     cinch_add_unit(test_interpolate_1st_order
-      SOURCES  test/test_interp_1st_order.cc
+      SOURCES test/test_interp_1st_order.cc
       LIBRARIES portage  
       POLICY SERIAL)
 

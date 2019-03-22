@@ -1,3 +1,6 @@
 [submodule "cinch"]
 	path = cinch
 	url = ../../laristra/cinch.git
+[submodule "wonton"]
+	path = wonton
+	url = https://github.com/laristra/wonton.git
