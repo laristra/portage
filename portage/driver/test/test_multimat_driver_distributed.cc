@@ -14,8 +14,6 @@
 //Tangram includes
 #include "tangram/intersect/split_r2d.h"
 #include "tangram/intersect/split_r3d.h"
-#include "tangram/reconstruct/xmof2D_wrapper.h"
-#include "tangram/reconstruct/SLIC.h"
 #include "tangram/reconstruct/MOF.h"
 #include "tangram/driver/driver.h"
 #include "tangram/driver/write_to_gmv.h"
@@ -337,7 +335,7 @@ void check_fields_after_remap(
   std::vector<Portage::Point<dim>> matcen_ref[nmats];
   std::vector<double> matrho_ref[nmats];
 
-  compute_material_fields_on_mesh(targetMeshWrapper, mdata, 
+  compute_material_fields_on_mesh<dim>(targetMeshWrapper, mdata, 
     matcells_ref, matvf_ref, matcen_ref, matrho_ref, dtype); 
 
  //------------------------------------------------------------------------
@@ -371,15 +369,29 @@ void check_fields_after_remap(
     double const *matvf_remap;
     targetStateWrapper.mat_get_celldata("mat_volfracs", m, &matvf_remap);
 
+#ifdef DEBUG
+   /*
     for (int ic = 0; ic < nmatcells; ic++)
-      ASSERT_NEAR( matvf_remap[ic], matvf_ref[m][ic], 1.0e-10);
+    {
+     if (std::fabs( matvf_remap[ic]-matvf_ref[m][ic]) >= 1.0e-10)
+     {
+       int gid = targetMeshWrapper.get_global_id(ic, Portage::Entity_kind::CELL);
+       std::cout<<std::setprecision(13)<<"On rank "<<commRank<<"::Cell "<<gid<<", ref = "<<matvf_ref[m][ic]
+       <<", remap = "<<matvf_remap[ic]<<std::endl;
+     } 
+    }
+   */
+#endif 
+
+    for (int ic = 0; ic < nmatcells; ic++)
+      ASSERT_NEAR( matvf_remap[ic], matvf_ref[m][ic], 1.0e-09);
 
     // MOF cannot match moments and centroids as well as it can volume
     // fractions - so use looser tolerances
     // In this test, we don't check centroids at all as there will be cells
-    // where two materials will form a t-junction, and MOF will approximate
+    // where two materials interface is a box corner, and MOF will approximate
     // it with a linear interface within that cell, and the centroid of the 
-    // materials in the divided cell would not match the exact one. 
+    // materials in the splitted cell would not match the exact one. 
     //
     //Portage::Point<dim> const *matcen_remap;
     //targetStateWrapper.mat_get_celldata("mat_centroids", m, &matcen_remap);
@@ -457,7 +469,7 @@ void run(std::shared_ptr<Jali::Mesh> &sourceMesh,
   std::vector<Portage::Point<dim>> matcen_src[nmats];
   std::vector<double> matrho_src[nmats];
 
-  compute_material_fields_on_mesh(sourceMeshWrapper, mdata, matcells_src,
+  compute_material_fields_on_mesh<dim>(sourceMeshWrapper, mdata, matcells_src,
   matvf_src, matcen_src, matrho_src, dtype);
 
   //------------------------------------------------------------------------
@@ -628,7 +640,7 @@ void run(std::shared_ptr<Jali::Mesh> &sourceMesh,
   //-------------------------------------------------------------------
   // Check remapping results on target mesh 
   //-------------------------------------------------------------------
-   check_fields_after_remap(targetMeshWrapper, targetStateWrapper, mdata, 
+   check_fields_after_remap<dim>(targetMeshWrapper, targetStateWrapper, mdata, 
    dtype);
 } //run
 
@@ -678,7 +690,6 @@ TEST(MMDriver2D, Linear2ndOrder)
   run<2>(sourceMesh, targetMesh, sourceState, targetState, LINEAR);
 }
 
-/*
 TEST(MMDriver3D, Const1stOrder)
 {
   // Create source/target meshes and states
@@ -725,7 +736,7 @@ TEST(MMDriver3D, Linear2ndOrder)
   //Remap
   run<3>(sourceMesh, targetMesh, sourceState, targetState, LINEAR);
 }
-*/
+
 
 
 #endif  // ifdef have_tangram
