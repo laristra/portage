@@ -67,12 +67,23 @@ if (ENABLE_UNIT_TESTS)
        POLICY MPI
        THREADS 1)
 
-       cinch_add_unit(test_multimat_driver_distributed
+       cinch_add_unit(test_multimat_driver_distributed_r1
        SOURCES test/test_multimat_driver_distributed
        LIBRARIES portage ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES} ${XMOF2D_LIBRARIES}
        POLICY MPI
        THREADS 1)
 
+       cinch_add_unit(test_multimat_driver_distributed_r2
+       SOURCES test/test_multimat_driver_distributed
+       LIBRARIES portage ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES} ${XMOF2D_LIBRARIES}
+       POLICY MPI
+       THREADS 2)
+
+       cinch_add_unit(test_multimat_driver_distributed_r4
+       SOURCES test/test_multimat_driver_distributed
+       LIBRARIES portage ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES} ${XMOF2D_LIBRARIES}
+       POLICY MPI
+       THREADS 4)
      endif (TANGRAM_FOUND AND XMOF2D_FOUND)
    endif (Jali_DIR)
 
