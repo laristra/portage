@@ -1,8 +1,10 @@
 #ifdef HAVE_TANGRAM
 
 #include <cmath>
+#include <iomanip>
 #include <iostream>
 #include <memory>
+#include <type_traits>
 #include <vector> 
 
 //This test is distributed
@@ -112,15 +114,46 @@ struct material_metadata<2>
 
   int mat_nboxes[3] = {4,4,1};
 
-  //Volume 
-  double matvol[3] = {0.64, 0.32, 0.04};
+  // Reference Volume 
+  std::map<int, int> ref_rank = {{1,0}, {2,1}, {4,2}}; 
+
+  std::vector<double> matvol[3][3] = {{{ 0.64}, { 0.3485714285714, 0.4057142857143}, 
+                    		       { 0.1885714285714, 0.2171428571429, 
+					 0.2171428571429, 0.2457142857143 }}, 
+    				      {{ 0.32}, { 0.1885714285714, 0.2685714285714}, 
+				       { 0.1085714285714, 0.1567346938776,  
+					 0.1567346938776, 0.2244897959184 }},
+				      {{ 0.04}, { 0.03428571428571, 0.04}, 
+				       { 0.02938775510204, 0.03428571428571, 
+					 0.03428571428571, 0.04 }}}; 
+
+  // Reference Mass
+  std::vector<double> matmass_const[3][3] = 
+				    {{{ 0.064}, { 0.03485714285714, 0.04057142857143}, 
+                    		       { 0.01885714285714, 0.02171428571429, 
+					 0.02171428571429, 0.02457142857143 }}, 
+    				      {{ 3.2}, { 1.885714285714, 2.685714285714}, 
+				       { 1.085714285714, 1.567346938776,  
+					 1.567346938776, 2.244897959184 }},
+				      {{ 4.0}, { 3.428571428571, 4.0}, 
+				       { 2.938775510204, 3.428571428571, 
+					 3.428571428571, 4.0 }}}; 
+
+  //double matmass_linear[3][3] = {{0.64, 0.32, 0.04}, {}, {}};
+
+  std::vector<double> matmass_linear[3][3] = 
+				    {{{ 0.64}, { 0.2515918367347, 0.4945306122449 }, 
+                    		       { 0.08016326530612, 0.2016326530612 , 
+					 0.2016326530612, 0.3688163265306 }}, 
+    				      {{ 0.32}, {  0.1635918367347, 0.2817959183673 }, 
+				       { 0.07787755102041, 0.1435801749271 ,  
+					 0.1435801749271, 0.2471603498542 }},
+				      {{ 0.04}, { 0.03379591836735, 0.04 }, 
+				       { 0.02854810495627, 0.03379591836735 , 
+					 0.03379591836735, 0.04 }}}; 
 
   // Constant density
-  double matdensity_const[3] = {0.1, 10.0, 100.0};
-
-  // Mass
-  double matmass_const[3] = {0.064, 3.2, 4.0};
-  double matmass_linear[3] = {0.64, 0.32, 0.04};
+  double matdensity_const[3] = {0.1, 10.0, 100.0}; 
 
   double compute_density(Portage::Point<2> &coords, int matid, DENSITY_FUNCTION dtype)
   {
@@ -132,7 +165,7 @@ struct material_metadata<2>
     }
     return value; 
   }   
-}; 
+}; //material_metadata
 
 template<>
 struct material_metadata<3>
@@ -182,16 +215,44 @@ struct material_metadata<3>
 
   int mat_nboxes[3] = {6,6,1};
 
-  //Volume 
-  double matvol[3] = {0.784, 0.208, 0.008};
+  // Reference Volume 
+  std::map<int, int> ref_rank = {{1,0}, {2,1}, {4,2}}; 
+
+  std::vector<double> matvol[3][3] = {{{ 0.784}, { 0.4377142857143, 0.5291428571429}, 
+                    		       { 0.2437551020408, 0.2935510204082 , 
+					 0.2935510204082, 0.3515102040816 }}, 
+    				      {{ 0.208}, { 0.1268571428571, 0.1771428571429}, 
+				       { 0.07689795918367, 0.1077551020408,  
+					 0.1077551020408, 0.150693877551}},
+				      {{ 0.008}, { 0.006857142857143, 0.008}, 
+				       { 0.005877551020408, 0.006857142857143, 
+					 0.006857142857143,  0.008}}}; 
+
+  // Reference Mass
+  std::vector<double> matmass_const[3][3] = 
+				    {{{ 0.0784}, { 0.04377142857143, 0.05291428571429}, 
+                    		       { 0.02437551020408, 0.02935510204082, 
+					 0.02935510204082, 0.03515102040816}}, 
+    				      {{ 2.08}, { 1.268571428571, 1.771428571429}, 
+				       { 0.7689795918367, 1.077551020408,  
+					 1.077551020408, 1.50693877551}},
+				      {{ 0.8}, { 0.6857142857143, 0.8}, 
+				       { 0.5877551020408, 0.6857142857143, 
+					 0.6857142857143, 0.8}}}; 
+
+  std::vector<double> matmass_linear[3][3] = 
+				    {{{ 1.176}, { 0.5494040816327, 0.8878204081633}, 
+                    		       { 0.2446110787172, 0.4193586005831, 
+					 0.4193586005831, 0.6594355685131}}, 
+    				      {{ 0.312}, {  0.1751020408163, 0.2736489795918}, 
+				       { 0.09659475218659, 0.1535440233236,  
+					 0.1535440233236, 0.239643148688}},
+				      {{ 0.012}, { 0.01018775510204, 0.012 }, 
+				       { 0.008648396501458, 0.01018775510204, 
+					 0.01018775510204, 0.012}}}; 
 
   // Constant density
   double matdensity_const[3] = {0.1, 10.0, 100.0};
-
-  // Mass
-  double matmass_const[3] = {0.0784, 2.08, 0.8};
-  double matmass_linear[3] = {0.676, 0.312, 0.012};
-
   double compute_density(Portage::Point<3> coords, int matid, DENSITY_FUNCTION dtype)
   {
     double value = 0;
@@ -202,7 +263,7 @@ struct material_metadata<3>
     }
     return value; 
   }                                       
-};
+}; // material_metadata
 
 template<int dim> 
 void compute_material_fields_on_mesh(
@@ -226,10 +287,6 @@ void compute_material_fields_on_mesh(
     Portage::Point<dim> cell_lo, cell_hi;
     BOX_INTERSECT::bounding_box<dim>(ccoords, &cell_lo, &cell_hi);
 
-    //DBG
-    std::cout<<"Cell "<<c<<" :: Vol = "<<cellvol<<std::endl;
-    //DBG
-
     std::vector<double> xmoments;
     for (int m = 0; m < mdata.nmats; m++) {
      int cnt = 0; 
@@ -241,20 +298,10 @@ void compute_material_fields_on_mesh(
 
       if (BOX_INTERSECT::intersect_boxes<dim>(mdata.matlo[m][nb], mdata.mathi[m][nb],
                                             cell_lo, cell_hi, &xmoments)) {
-
-      //DBG
-      std::cout<<"----> Mat "<<m<<" :: nb "<<nb<<" :: Vol = "<<xmoments[0]<<std::endl;
-      //DBG
-
-
         if (xmoments[0] > 1.0e-06) {  // non-trivial intersection
           vol += xmoments[0];
           for (int d = 0; d < dim; d++)
             mcen[d] += xmoments[d+1];
-          //cnt += 1; 
-          //for (int d = 0; d < dim; d++)
-          //  mcen[d] += xmoments[d+1]/xmoments[0];
-          //cnt += 1; 
         }
        }
       }//num_boxes
@@ -270,7 +317,7 @@ void compute_material_fields_on_mesh(
         }
      } //material_loop
   }//loop over cells
-}
+} //compute_material_fields_on_mesh
 
 template<int dim>
 void check_fields_after_remap(
@@ -310,36 +357,35 @@ void check_fields_after_remap(
     targetStateWrapper.mat_get_cells(m, &matcells_remap[m]);
     int nmatcells = matcells_remap[m].size();
 
-    ASSERT_EQ(nmatcells, matcells_ref[m].size());
-
-    //std::sort(matcells_remap[m].begin(), matcells_remap[m].end());
-    //std::sort(matcells_ref[m].begin(), matcells_ref[m].end());
-
     for (int ic = 0; ic < nmatcells; ic++)
       ASSERT_EQ(matcells_remap[m][ic], matcells_ref[m][ic]);
   }
 
   //------------------------------------------------------------------------
-  // CHECK 3: Material volume fractions, centroids and density
+  // CHECK 3: Material volume fractions and density
   // in each cell in target 
   //------------------------------------------------------------------------
-  /*for (int m = 0; m < nmats; m++) {
+  for (int m = 0; m < nmats; m++) {
     int nmatcells = matcells_remap[m].size();
 
     double const *matvf_remap;
     targetStateWrapper.mat_get_celldata("mat_volfracs", m, &matvf_remap);
 
-    //for (int ic = 0; ic < nmatcells; ic++)
-    //  ASSERT_NEAR( matvf_remap[ic], matvf_ref[m][ic], 1.0e-12);
-
-    Portage::Point<2> const *matcen_remap;
-    targetStateWrapper.mat_get_celldata("mat_centroids", m, &matcen_remap);
+    for (int ic = 0; ic < nmatcells; ic++)
+      ASSERT_NEAR( matvf_remap[ic], matvf_ref[m][ic], 1.0e-10);
 
     // MOF cannot match moments and centroids as well as it can volume
     // fractions - so use looser tolerances
-    for (int ic = 0; ic < nmatcells; ic++)
-      for (int d = 0; d < dim; d++)
-        ASSERT_NEAR(matcen_remap[ic][d], matcen_ref[m][ic][d], 1.0e-9);
+    // In this test, we don't check centroids at all as there will be cells
+    // where two materials will form a t-junction, and MOF will approximate
+    // it with a linear interface within that cell, and the centroid of the 
+    // materials in the divided cell would not match the exact one. 
+    //
+    //Portage::Point<dim> const *matcen_remap;
+    //targetStateWrapper.mat_get_celldata("mat_centroids", m, &matcen_remap);
+    //for (int ic = 0; ic < nmatcells; ic++)
+    //  for (int d = 0; d < dim; d++)
+    //    ASSERT_NEAR(matcen_remap[ic][d], matcen_ref[m][ic][d], 1.0e-9);
 
     double const *matrho_remap;
     targetStateWrapper.mat_get_celldata("density", m, &matrho_remap);
@@ -347,9 +393,10 @@ void check_fields_after_remap(
     for (int ic = 0; ic < nmatcells; ic++)
       ASSERT_NEAR( matrho_remap[ic], matrho_ref[m][ic], 1.0e-10);
   }
-  */
-  //DBG
-  for (int m = 0; m < nmats; m++) {
+  
+#ifdef DEBUG
+   /*
+   for (int m = 0; m < nmats; m++) {
     int nmatcells = matcells_remap[m].size();
 
     double const *matvf_remap;
@@ -361,48 +408,40 @@ void check_fields_after_remap(
     double const *matrho_remap;
     targetStateWrapper.mat_get_celldata("density", m, &matrho_remap);
 
-    std::cout<<"Mat ID "<<m<<std::endl;
+    std::cerr<<"Mat ID "<<m<<std::endl;
     for (int ic = 0; ic < nmatcells; ic++)
     {
-      std::cout<<"----> Ref for cell id  "<<matcells_ref[m][ic]<<" = {";
-      std::cout<<matvf_ref[m][ic]<<", "<<
+      std::cerr<<"----> Ref for cell id  "<<matcells_ref[m][ic]<<" = {";
+      std::cerr<<matvf_ref[m][ic]<<", "<<
                  matcen_ref[m][ic][0]<<", "<<matcen_ref[m][ic][1]<<", "<<
                  matrho_ref[m][ic]<<" }"<<std::endl; 
   
-      std::cout<<"----> After remap for cell id  "<<matcells_remap[m][ic]<<" = {";
-      std::cout<<matvf_remap[ic]<<", "<<
+      std::cerr<<"----> After remap for cell id  "<<matcells_remap[m][ic]<<" = {";
+      std::cerr<<matvf_remap[ic]<<", "<<
                  matcen_remap[ic][0]<<", "<<matcen_remap[ic][1]<<", "<<
                  matrho_remap[ic]<<" }"<<std::endl; 
     } 
+  }*/
+#endif 
+} //check_fields_after_remap
 
-
-  }
-  //DBG
-  
-
-  //------------------------------------------------------------------------
-  // CHECK 4: Total mass, this step requires global communication
-  //------------------------------------------------------------------------
-
-}
-
-TEST(MMDriver2D, Const1stOrder)
+template<int dim>
+void run(std::shared_ptr<Jali::Mesh> &sourceMesh, 
+    std::shared_ptr<Jali::Mesh> &targetMesh,
+    std::shared_ptr<Jali::State> &sourceState,
+    std::shared_ptr<Jali::State> &targetState,
+    DENSITY_FUNCTION dtype)
 {
+  int nranks = 0; 
+  MPI_Comm_size(MPI_COMM_WORLD, &nranks);
+
+  int commRank = 0;
+  MPI_Comm_rank(MPI_COMM_WORLD, &commRank);
+  std::cout<<"On rank "<<commRank<<std::endl;
+
   //------------------------------------------------------------------------
-  // Create source/target meshes and states
+  // Create source/target mesh/state wrappers
   //------------------------------------------------------------------------
-  std::shared_ptr<Jali::Mesh> sourceMesh;
-  std::shared_ptr<Jali::State> sourceState;
-
-  std::shared_ptr<Jali::Mesh> targetMesh;
-  std::shared_ptr<Jali::State> targetState;
-
-  sourceMesh = Jali::MeshFactory(MPI_COMM_WORLD)(0.0, 0.0, 1.0, 1.0, 7, 7);
-  targetMesh = Jali::MeshFactory(MPI_COMM_WORLD)(0.0, 0.0, 1.0, 1.0, 7, 7);
-
-  sourceState = Jali::State::create(sourceMesh);
-  targetState = Jali::State::create(targetMesh);
-
   Wonton::Jali_Mesh_Wrapper sourceMeshWrapper(*sourceMesh);
   Wonton::Jali_Mesh_Wrapper targetMeshWrapper(*targetMesh);
   Wonton::Jali_State_Wrapper sourceStateWrapper(*sourceState);
@@ -411,15 +450,15 @@ TEST(MMDriver2D, Const1stOrder)
   //------------------------------------------------------------------------
   // Create material metadata and obtain field values for source
   //------------------------------------------------------------------------
-  material_metadata<2> mdata; 
+  material_metadata<dim> mdata; 
   constexpr int nmats = 3; 
   std::vector<int> matcells_src[nmats];
   std::vector<double> matvf_src[nmats];
-  std::vector<Portage::Point<2>> matcen_src[nmats];
+  std::vector<Portage::Point<dim>> matcen_src[nmats];
   std::vector<double> matrho_src[nmats];
 
   compute_material_fields_on_mesh(sourceMeshWrapper, mdata, matcells_src,
-    matvf_src, matcen_src, matrho_src, CONSTANT);
+  matvf_src, matcen_src, matrho_src, dtype);
 
   //------------------------------------------------------------------------
   // Add fields to source state 
@@ -437,7 +476,6 @@ TEST(MMDriver2D, Const1stOrder)
   // Add density profile for each material
   for (int m = 0; m < nmats; m++)
     sourceStateWrapper.mat_add_celldata("density", m, &(matrho_src[m][0]));
-
 
   //-------------------------------------------------------------------
   // Sanity check - do we get the right volumes and masses for
@@ -458,14 +496,43 @@ TEST(MMDriver2D, Const1stOrder)
       volume += cellvol;
       mass += rho[ic]*cellvol;
     }
+  
+#ifdef DEBUG
+ /*  
+    std::cerr<<std::setprecision(13)<<"On rank "<<commRank<<" Mat "<<m
+    <<": volume = "<<volume<<", mass = "<<mass<<std::endl;  
+ */
+#endif 
 
-    ASSERT_NEAR(mdata.matvol[m], volume, 1.0e-12);
-    ASSERT_NEAR(mdata.matmass_const[m], mass, 1.0e-12);
+    int id = mdata.ref_rank.find(nranks)->second; 
+    ASSERT_NEAR(mdata.matvol[m][id][commRank], volume, 1.0e-12);
+
+    if (dtype == CONSTANT)
+      ASSERT_NEAR(mdata.matmass_const[m][id][commRank], mass, 1.0e-12);
+    else 
+      ASSERT_NEAR(mdata.matmass_linear[m][id][commRank], mass, 1.0e-12);
   }
 
+#ifdef DEBUG
+  /*
+  std::cerr<<"****** BEFORE REMAP ******"<<std::endl;
+  int nsrccells = sourceMeshWrapper.num_entities(Portage::Entity_kind::CELL,
+                                                 Portage::Entity_type::ALL);
+  std::cerr<<"SOURCE MESH ---->"<<std::endl;
+  for (int c = 0; c < nsrccells; c++) {
+    int gid = sourceMeshWrapper.get_global_id(c, Portage::Entity_kind::CELL);
+    std::cerr<<" ---- Cell "<<gid<<std::endl;
+  } 
 
-
-
+  int  ntgtcells = targetMeshWrapper.num_entities(Portage::Entity_kind::CELL,
+                                                  Portage::Entity_type::ALL);
+  std::cerr<<"TARGET MESH ---->"<<std::endl;
+  for (int c = 0; c < ntgtcells; c++) {
+    int gid = targetMeshWrapper.get_global_id(c, Portage::Entity_kind::CELL);
+    std::cerr<<" ---- Cell "<<gid<<std::endl;
+  }
+  */
+#endif
 
   //-------------------------------------------------------------------
   // Field(s) we have to remap
@@ -476,11 +543,11 @@ TEST(MMDriver2D, Const1stOrder)
    targetStateWrapper.add_material(mdata.matnames[m], dummymatcells);
 
   targetStateWrapper.mat_add_celldata<double>("mat_volfracs");
-  targetStateWrapper.mat_add_celldata<Portage::Point<2>>("mat_centroids");
+  targetStateWrapper.mat_add_celldata<Portage::Point<dim>>("mat_centroids");
   targetStateWrapper.mat_add_celldata<double>("density", 0.0);
 
   //-------------------------------------------------------------------
-  // Run the remap driver using XMOF-2D as the interface
+  // Run the remap driver using MOF as the interface
   // reconstructor which is guaranteed to recover the correct
   // geometry of the linear interfaces. 
   //-------------------------------------------------------------------
@@ -490,134 +557,175 @@ TEST(MMDriver2D, Const1stOrder)
   Wonton::MPIExecutor_type mpiexecutor(MPI_COMM_WORLD);
   Wonton::Executor_type *executor = (numpe > 1) ? &mpiexecutor : nullptr;
 
-  Portage::MMDriver<Portage::SearchKDTree,
-                    Portage::IntersectR2D,
-                    Portage::Interpolate_1stOrder,
-                    2,
-                    Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
-                    Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
-                    Tangram::MOF, Tangram::SplitR2D, Tangram::ClipR2D>
-      d(sourceMeshWrapper, sourceStateWrapper,
-        targetMeshWrapper, targetStateWrapper);
-  d.set_remap_var_names(remap_fields);
-  d.set_limiter(Portage::Limiter_type::NOLIMITER);
-  d.run(executor);  // run in parallel
+  if ((dim == 2) && (dtype == CONSTANT)){
+    Portage::MMDriver<Portage::SearchKDTree, Portage::IntersectR2D,
+		      Portage::Interpolate_1stOrder, 2,
+		      Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
+		      Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
+		      Tangram::MOF, Tangram::SplitR2D, Tangram::ClipR2D>
+    d(sourceMeshWrapper, sourceStateWrapper, targetMeshWrapper, targetStateWrapper);
+    d.set_remap_var_names(remap_fields);
+    d.set_limiter(Portage::Limiter_type::NOLIMITER);
+    d.run(executor);  // run in parallel
+  }
+  else if ((dim == 2) && (dtype == LINEAR)){
+    Portage::MMDriver<Portage::SearchKDTree, Portage::IntersectR2D,
+		      Portage::Interpolate_2ndOrder, 2,
+		      Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
+		      Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
+		      Tangram::MOF, Tangram::SplitR2D, Tangram::ClipR2D>
+    d(sourceMeshWrapper, sourceStateWrapper, targetMeshWrapper, targetStateWrapper);
+    d.set_remap_var_names(remap_fields);
+    d.set_limiter(Portage::Limiter_type::NOLIMITER);
+    d.run(executor);  // run in parallel
+  }
+  else if ((dim == 3) && (dtype == CONSTANT)){
+    Portage::MMDriver<Portage::SearchKDTree, Portage::IntersectR3D,
+		      Portage::Interpolate_1stOrder, 3,
+		      Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
+		      Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
+		      Tangram::MOF, Tangram::SplitR3D, Tangram::ClipR3D>
+    d(sourceMeshWrapper, sourceStateWrapper, targetMeshWrapper, targetStateWrapper);
+    d.set_remap_var_names(remap_fields);
+    d.set_limiter(Portage::Limiter_type::NOLIMITER);
+    d.run(executor);  // run in parallel
+  }
+  else if ((dim == 3) && (dtype == LINEAR)){
+    Portage::MMDriver<Portage::SearchKDTree, Portage::IntersectR3D,
+		      Portage::Interpolate_2ndOrder, 3,
+		      Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
+		      Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
+		      Tangram::MOF, Tangram::SplitR3D, Tangram::ClipR3D>
+    d(sourceMeshWrapper, sourceStateWrapper, targetMeshWrapper, targetStateWrapper);
+    d.set_remap_var_names(remap_fields);
+    d.set_limiter(Portage::Limiter_type::NOLIMITER);
+    d.run(executor);  // run in parallel
+  }
+ else
+   std::cerr<<"Remapping requested for dim != 2 or 3"<<std::endl;
+
+#ifdef DEBUG
+  /*
+  std::cerr<<"****** AFTER REMAP ******"<<std::endl;
+  nsrccells = sourceMeshWrapper.num_entities(Portage::Entity_kind::CELL,
+                                                 Portage::Entity_type::ALL);
+  std::cerr<<"SOURCE MESH ---->"<<std::endl;
+  for (int c = 0; c < nsrccells; c++) {
+    int gid = sourceMeshWrapper.get_global_id(c, Portage::Entity_kind::CELL);
+    std::cerr<<" ---- Cell "<<gid<<std::endl;
+  } 
+
+  ntgtcells = targetMeshWrapper.num_entities(Portage::Entity_kind::CELL,
+                                                 Portage::Entity_type::ALL);
+  std::cerr<<"TARGET MESH ---->"<<std::endl;
+  for (int c = 0; c < ntgtcells; c++) {
+    int gid = targetMeshWrapper.get_global_id(c, Portage::Entity_kind::CELL);
+    std::cerr<<" ---- Cell "<<gid<<std::endl;
+  } 
+  */
+#endif
 
   //-------------------------------------------------------------------
   // Check remapping results on target mesh 
   //-------------------------------------------------------------------
-  check_fields_after_remap(targetMeshWrapper, targetStateWrapper, mdata, 
-  DENSITY_FUNCTION::CONSTANT);
-}
-/*
-TEST(MMDriver2D, Linear2ndOrder)
+   check_fields_after_remap(targetMeshWrapper, targetStateWrapper, mdata, 
+   dtype);
+} //run
+
+TEST(MMDriver2D, Const1stOrder)
 {
-  //------------------------------------------------------------------------
   // Create source/target meshes and states
-  //------------------------------------------------------------------------
   std::shared_ptr<Jali::Mesh> sourceMesh;
   std::shared_ptr<Jali::State> sourceState;
 
   std::shared_ptr<Jali::Mesh> targetMesh;
   std::shared_ptr<Jali::State> targetState;
 
-  sourceMesh = Jali::MeshFactory(MPI_COMM_WORLD)(0.0, 0.0, 1.0, 1.0, 10, 10);
-  targetMesh = Jali::MeshFactory(MPI_COMM_WORLD)(0.0, 0.0, 1.0, 1.0, 10, 10);
+  Jali::MeshFactory mf(MPI_COMM_WORLD);
+  mf.included_entities({Jali::Entity_kind::ALL_KIND});
+  mf.partitioner(Jali::Partitioner_type::BLOCK); 
+
+  sourceMesh = mf(0.0, 0.0, 1.0, 1.0, 7, 7);
+  targetMesh = mf(0.0, 0.0, 1.0, 1.0, 7, 7);
 
   sourceState = Jali::State::create(sourceMesh);
   targetState = Jali::State::create(targetMesh);
 
-  Wonton::Jali_Mesh_Wrapper sourceMeshWrapper(*sourceMesh);
-  Wonton::Jali_Mesh_Wrapper targetMeshWrapper(*targetMesh);
-  Wonton::Jali_State_Wrapper sourceStateWrapper(*sourceState);
-  Wonton::Jali_State_Wrapper targetStateWrapper(*targetState);
-
-  //------------------------------------------------------------------------
-  // Create material metadata and obtain field values for source
-  //------------------------------------------------------------------------
-  material_metadata<2> mdata; 
-  constexpr int nmats = 3; 
-  std::vector<int> matcells_src[nmats];
-  std::vector<double> matvf_src[nmats];
-  std::vector<Portage::Point<2>> matcen_src[nmats];
-  std::vector<double> matrho_src[nmats];
-
-  compute_material_fields_on_mesh(sourceMeshWrapper, mdata, matcells_src,
-    matvf_src, matcen_src, matrho_src, LINEAR);
-
-  //------------------------------------------------------------------------
-  // Add fields to source state 
-  //------------------------------------------------------------------------
-   for (int m = 0; m < nmats; m++)
-    sourceStateWrapper.add_material(mdata.matnames[m], matcells_src[m]);
-
-  // Create multi-material variables to store the volume fractions and
-  // centroids for each material in the cells
-  for (int m = 0; m < nmats; m++) {
-    sourceStateWrapper.mat_add_celldata("mat_volfracs", m, &(matvf_src[m][0]));
-    sourceStateWrapper.mat_add_celldata("mat_centroids", m, &(matcen_src[m][0]));
-  }
-
-  // Add density profile for each material
-  for (int m = 0; m < nmats; m++)
-    sourceStateWrapper.mat_add_celldata("density", m, &(matrho_src[m][0]));
-
-  //-------------------------------------------------------------------
-  // Field(s) we have to remap
-  //-------------------------------------------------------------------
-  std::vector<std::string> remap_fields = {"density"};
-  std::vector<int> dummymatcells;
-  for (int m = 0; m < nmats; m++)
-   targetStateWrapper.add_material(mdata.matnames[m], dummymatcells);
-
-  targetStateWrapper.mat_add_celldata<double>("mat_volfracs");
-  targetStateWrapper.mat_add_celldata<Portage::Point<2>>("mat_centroids");
-  targetStateWrapper.mat_add_celldata<double>("density", 0.0);
-
-  //-------------------------------------------------------------------
-  // Run the remap driver using XMOF-2D as the interface
-  // reconstructor which is guaranteed to recover the correct
-  // geometry of the linear interfaces. 
-  //-------------------------------------------------------------------
-  int numpe; 
-  MPI_Comm_size(MPI_COMM_WORLD, &numpe); 
-
-  Wonton::MPIExecutor_type mpiexecutor(MPI_COMM_WORLD);
-  Wonton::Executor_type *executor = (numpe > 1) ? &mpiexecutor : nullptr;
-
-  Portage::MMDriver<Portage::SearchKDTree,
-                    Portage::IntersectR2D,
-                    Portage::Interpolate_2ndOrder,
-                    2,
-                    Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
-                    Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
-                    Tangram::XMOF2D_Wrapper>
-      d(sourceMeshWrapper, sourceStateWrapper,
-        targetMeshWrapper, targetStateWrapper);
-  d.set_remap_var_names(remap_fields);
-  d.set_limiter(Portage::Limiter_type::NOLIMITER);
-  d.run(executor);  // run in parallel
-
-  //-------------------------------------------------------------------
-  // Check remapping results on target mesh 
-  //-------------------------------------------------------------------
-  check_fields_after_remap(targetMeshWrapper, targetStateWrapper, mdata, 
-  DENSITY_FUNCTION::LINEAR);
+  //Remap 
+  run<2>(sourceMesh, targetMesh, sourceState, targetState, CONSTANT);
 }
 
+TEST(MMDriver2D, Linear2ndOrder)
+{
+  // Create source/target meshes and states
+  std::shared_ptr<Jali::Mesh> sourceMesh;
+  std::shared_ptr<Jali::State> sourceState;
+
+  std::shared_ptr<Jali::Mesh> targetMesh;
+  std::shared_ptr<Jali::State> targetState;
+
+  Jali::MeshFactory mf(MPI_COMM_WORLD);
+  mf.included_entities({Jali::Entity_kind::ALL_KIND});
+  mf.partitioner(Jali::Partitioner_type::BLOCK); 
+
+  sourceMesh = mf(0.0, 0.0, 1.0, 1.0, 7, 7);
+  targetMesh = mf(0.0, 0.0, 1.0, 1.0, 7, 7);
+
+  sourceState = Jali::State::create(sourceMesh);
+  targetState = Jali::State::create(targetMesh);
+
+  //Remap
+  run<2>(sourceMesh, targetMesh, sourceState, targetState, LINEAR);
+}
+
+/*
 TEST(MMDriver3D, Const1stOrder)
 {
+  // Create source/target meshes and states
+  std::shared_ptr<Jali::Mesh> sourceMesh;
+  std::shared_ptr<Jali::State> sourceState;
 
+  std::shared_ptr<Jali::Mesh> targetMesh;
+  std::shared_ptr<Jali::State> targetState;
+
+  Jali::MeshFactory mf(MPI_COMM_WORLD);
+  mf.included_entities({Jali::Entity_kind::ALL_KIND});
+  mf.partitioner(Jali::Partitioner_type::BLOCK); 
+
+  sourceMesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 7, 7, 7);
+  targetMesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 7, 7, 7);
+
+  sourceState = Jali::State::create(sourceMesh);
+  targetState = Jali::State::create(targetMesh);
+
+  //Remap
+  run<3>(sourceMesh, targetMesh, sourceState, targetState, CONSTANT);
 }
+
 
 TEST(MMDriver3D, Linear2ndOrder)
 {
+  // Create source/target meshes and states
+  std::shared_ptr<Jali::Mesh> sourceMesh;
+  std::shared_ptr<Jali::State> sourceState;
 
+  std::shared_ptr<Jali::Mesh> targetMesh;
+  std::shared_ptr<Jali::State> targetState;
+
+  Jali::MeshFactory mf(MPI_COMM_WORLD);
+  mf.included_entities({Jali::Entity_kind::ALL_KIND});
+  mf.partitioner(Jali::Partitioner_type::BLOCK); 
+
+  sourceMesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 7, 7, 7);
+  targetMesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 7, 7, 7);
+
+  sourceState = Jali::State::create(sourceMesh);
+  targetState = Jali::State::create(targetMesh);
+
+  //Remap
+  run<3>(sourceMesh, targetMesh, sourceState, targetState, LINEAR);
 }
 */
-
-
-
 
 
 #endif  // ifdef have_tangram
