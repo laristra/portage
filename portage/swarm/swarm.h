@@ -10,7 +10,7 @@ Please see the license file at the root of this repository, or at:
 #include <memory>
 #include <cassert>
 #include <cmath>
-#include <ctime>
+#include <chrono>
 #include <algorithm>
 #include <cstdlib>
 #include <stdexcept>
@@ -135,6 +135,17 @@ class Swarm {
   size_t npoints_owned_;
 };
 
+// Get a reasonable random number seed if needed.
+unsigned long get_seed() {
+  unsigned long seed;
+  auto clock = std::chrono::high_resolution_clock::now();
+  auto clockdur = clock.time_since_epoch();
+  auto clockmicro = std::chrono::duration_cast<std::chrono::microseconds>(clockdur);
+  seed = clockmicro.count();
+  seed &= (1<<16)-1;
+  return seed;
+}
+
 // Factories for making swarms in 1/2/3 dimensions with random or uniform
 // distribution of particles. Reason we are having to return a
 // shared_ptr to the Swarm is because of how its used in the
@@ -151,7 +162,7 @@ std::shared_ptr<Swarm<1>> SwarmFactory(double xmin, double xmax,
   if (distribution == 0 or distribution == 2) {  // random distribution of particles
     long int seed;
     if (rand_seed == 0) { 
-      seed = time(NULL);
+      seed = get_seed();
     } else {
       seed = rand_seed;
     }
@@ -201,7 +212,8 @@ std::shared_ptr<Swarm<2>> SwarmFactory(double xmin, double ymin,
   if (distribution == 0 or distribution == 2) {  // random distribution of particles
     long int seed;
     if (rand_seed == 0) { 
-      seed = time(NULL);
+      seed = get_seed();      
+      std::cout << "seed is " << seed << std::endl;
     } else {
       seed = rand_seed;
     }
@@ -263,7 +275,7 @@ std::shared_ptr<Swarm<3>> SwarmFactory(double xmin, double ymin, double zmin,
   if (distribution == 0 or distribution == 2) {  // random distribution of particles
     long int seed;
     if (rand_seed == 0) { 
-      seed = time(NULL);
+      seed = get_seed();
     } else {
       seed = rand_seed;
     }
