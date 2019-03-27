@@ -12,6 +12,7 @@ Please see the license file at the root of this repository, or at:
 #include <memory>
 #include <stdexcept>
 #include <cassert>
+#include <cmath>
 
 #ifdef PORTAGE_ENABLE_MPI
 #include <mpi.h>
@@ -167,7 +168,7 @@ std::vector<example_properties> setup_examples() {
 
 void usage() {
   auto examples = setup_examples();
-  std::cout << "Usage: swarmapp example-number nsourcepts ntargetpts distribution seed"
+  std::cout << "Usage: swarmapp example-number nsourcepts ntargetpts distribution seed hfactor center"
             << std::endl;
   std::cout << "example-number must be between 0-9 for 2D and 10-19 for 3D"
             << std::endl;
@@ -178,7 +179,13 @@ void usage() {
   std::cout << "distribution = 0 for random, 1 for regular grid, 2 for perturbed regular grid"
             << std::endl;
   std::cout << "seed sets the random number seed to get reproducible results" 
-            << std::endl;  std::cout << "List of example numbers:" << std::endl;
+            << std::endl;  
+  std::cout << "hfactor scales the smoothing length in multiples of the average inter-particle spacing" 
+            << std::endl;
+  std::cout << "center governs where weights are centered: 0 for target, 1 for source " 
+            << std::endl;
+
+  std::cout << "List of example numbers:" << std::endl;
   int i = 0;
   bool separated = false;
   for (const auto &example : examples) {
@@ -189,8 +196,11 @@ void usage() {
   }
 }
 
+// gather form tests
 void run_test_2d(int example_num, int n_source, int n_target, 
-                 int distribution, int dimension, unsigned int seed) {
+                 int distribution, int dimension, unsigned int seed, 
+                 double hfactor, int center) 
+{
   std::cout << "starting swarm app..." << std::endl;
   std::cout << "running example " << example_num << std::endl;
 
@@ -205,10 +215,10 @@ void run_test_2d(int example_num, int n_source, int n_target,
   auto inputState = make_shared<SwarmState<2>>(*inputSwarm);
   auto targetState = make_shared<SwarmState<2>>(*targetSwarm);
 
-  int ninpts = inputSwarm->num_particles();
-  auto inputData = make_shared<typename SwarmState<2>::DblVec>(ninpts, 0.0);
+  int nsrcpts = inputSwarm->num_particles();
+  auto inputData = make_shared<typename SwarmState<2>::DblVec>(nsrcpts, 0.0);
 
-  for (int p(0); p < ninpts; ++p) {
+  for (int p(0); p < nsrcpts; ++p) {
     Wonton::Point<2> coord = inputSwarm->get_particle_coordinates(p);
     (*inputData)[p] = field_func<2>(example.field_order, coord);
   }
@@ -224,10 +234,21 @@ void run_test_2d(int example_num, int n_source, int n_target,
 
   // Smoothing lengths (or in other words "size" of the support
   // function) in each dimension
-  double h = 2.0/n_target;
+  double h;
+  Portage::Meshfree::WeightCenter center_type;
+  int nsmooth;
+  if(center==0) {
+    center_type = Portage::Meshfree::Gather;
+    h = 2.0*hfactor/n_target;
+    nsmooth = ntarpts;
+  } else if (center==1) {
+    center_type = Portage::Meshfree::Scatter;
+    h = 2.2*hfactor/n_source;
+    nsmooth = nsrcpts;
+  }
   auto smoothing_lengths =
     Portage::vector<std::vector<std::vector<double>>>
-      (ntarpts, std::vector<std::vector<double>>(1, std::vector<double>(2, 2.05*h)));
+      (nsmooth, std::vector<std::vector<double>>(1, std::vector<double>(2, h)));
                                                                       
 #ifdef HAVE_NANOFLANN  // Search by kdtree
   SwarmDriver<
@@ -238,7 +259,8 @@ void run_test_2d(int example_num, int n_source, int n_target,
     Swarm<2>,
     SwarmState<2>>
       d(*inputSwarm, *inputState, *targetSwarm, *targetState,
-        smoothing_lengths);
+        smoothing_lengths, Portage::Meshfree::Weight::B4, 
+        Portage::Meshfree::Weight::ELLIPTIC, center_type);
 #else
   SwarmDriver<
     SearchPointsByCells,
@@ -248,7 +270,8 @@ void run_test_2d(int example_num, int n_source, int n_target,
     Swarm<2>,
     SwarmState<2>>
       d(*inputSwarm, *inputState, *targetSwarm, *targetState,
-        smoothing_lengths);
+        smoothing_lengths, Portage::Meshfree::Weight::B4, 
+        Portage::Meshfree::Weight::ELLIPTIC, center_type);
 #endif
 
   if (example.estimation_order == 0)
@@ -273,23 +296,33 @@ void run_test_2d(int example_num, int n_source, int n_target,
 
   std::vector<double> expected_value(ntarpts, 0.0);
 
-  double toterr = 0.0;
+  std::vector<double> toterr(3,0.);
   for (int p(0); p < ntarpts; ++p) {
-  Wonton::Point<2> coord = targetSwarm->get_particle_coordinates(p);
+    Wonton::Point<2> coord = targetSwarm->get_particle_coordinates(p);
 
     expected_value[p] = field_func<2>(example.field_order, coord);
-    double error = expected_value[p] - (*targetData)[p];
 
-    if (ntarpts < 10) {
-      std::printf("Particle=% 4d Coord = (% 5.3lf,% 5.3lf)", p,
-                  coord[0], coord[1]);
-      double dummy=(*targetData)[p];
-      std::printf("  Value = % 10.6lf  Err = % lf\n", dummy, error);
-    }
-    toterr += error*error;
+    double error = fabs(expected_value[p] - (*targetData)[p]);
+    toterr[0] = fmax(error, toterr[0]);
+    toterr[1] = toterr[1]+error;
+    toterr[2] = toterr[2]+error*error;
   }
+  toterr[1] /= nsrcpts;
+  toterr[2] /= nsrcpts;
+  toterr[2] = sqrt(toterr[2]);
 
-  std::printf("\n\nL2 NORM OF ERROR = %lf\n\n", sqrt(toterr));
+  std::cout << std::endl;
+  std::cout << std::scientific;
+  std::cout.precision(17);
+  std::cout << "weight center = " << center << std::endl;
+  std::cout << "distribution = " << distribution << std::endl;
+  std::cout << "dimension = " << dimension << std::endl;
+  std::cout << "seed = " << seed << std::endl;
+  std::cout << std::endl;
+  std::cout << "smoothing length = " << h << std::endl;
+  std::cout << "Linf NORM OF ERROR = " << toterr[0] << std::endl;
+  std::cout << "L1 NORM OF ERROR = " << toterr[1] << std::endl;
+  std::cout << "L2 NORM OF ERROR = " << toterr[2] << std::endl;
   
   // Create the input file for comparison.
   // The `static_cast` is a workaround for Intel compiler, which is missing a
@@ -300,7 +333,7 @@ void run_test_2d(int example_num, int n_source, int n_target,
   finp_csv << std::scientific;
   finp_csv.precision(17);
   finp_csv << " X, Y, Value\n";
-  for (int p(0); p < ninpts; ++p) {
+  for (int p(0); p < nsrcpts; ++p) {
     Wonton::Point<2> coord = inputSwarm->get_particle_coordinates(p);
     finp_csv << coord[0] << ", " << coord[1] << ", " << (*inputData)[p] << std::endl;
   }
@@ -322,8 +355,11 @@ void run_test_2d(int example_num, int n_source, int n_target,
   std::cout << "finishing swarm app..." << std::endl;
 }
 
+// gather form tests
 void run_test_3d(int example_num, int n_source, int n_target, 
-                 int distribution, int dimension, unsigned int seed) {
+                 int distribution, int dimension, unsigned int seed, 
+                 double hfactor, int center) 
+{
   std::cout << "starting swarm app..." << std::endl;
   std::cout << "running example " << example_num << std::endl;
 
@@ -338,10 +374,10 @@ void run_test_3d(int example_num, int n_source, int n_target,
   auto inputState = make_shared<SwarmState<3>>(*inputSwarm);
   auto targetState = make_shared<SwarmState<3>>(*targetSwarm);
 
-  int ninpts = inputSwarm->num_particles();
-  auto inputData = make_shared<typename SwarmState<2>::DblVec>(ninpts, 0.0);
+  int nsrcpts = inputSwarm->num_particles();
+  auto inputData = make_shared<typename SwarmState<2>::DblVec>(nsrcpts, 0.0);
 
-  for (int p(0); p < ninpts; ++p) {
+  for (int p(0); p < nsrcpts; ++p) {
     Wonton::Point<3> coord = inputSwarm->get_particle_coordinates(p);
     (*inputData)[p] = field_func<3>(example.field_order, coord);
   }
@@ -357,10 +393,21 @@ void run_test_3d(int example_num, int n_source, int n_target,
 
   // Smoothing lengths (or in other words "size" of the support
   // function) in each dimension
-  double h = 2.0/n_target;
+  double h;
+  Portage::Meshfree::WeightCenter center_type;
+  int nsmooth;
+  if(center==0) {
+    center_type = Portage::Meshfree::Gather;
+    h = 2.0*hfactor/n_target;
+    nsmooth = ntarpts;
+  } else if (center==1) {
+    center_type = Portage::Meshfree::Scatter;
+    h = 2.2*hfactor/n_source;
+    nsmooth = nsrcpts;
+  }
   auto smoothing_lengths =
     Portage::vector<std::vector<std::vector<double>>>
-      (ntarpts, std::vector<std::vector<double>>(1, std::vector<double>(3, 2.05*h)));
+      (nsmooth, std::vector<std::vector<double>>(1, std::vector<double>(3, h)));
                                                                       
 #ifdef HAVE_NANOFLANN  // Search by kdtree
   SwarmDriver<
@@ -371,7 +418,8 @@ void run_test_3d(int example_num, int n_source, int n_target,
     Swarm<3>,
     SwarmState<3>>
       d(*inputSwarm, *inputState, *targetSwarm, *targetState,
-        smoothing_lengths);
+        smoothing_lengths, Portage::Meshfree::Weight::B4, 
+        Portage::Meshfree::Weight::ELLIPTIC, center_type);
 #else
   SwarmDriver<
     SearchPointsByCells,
@@ -381,7 +429,8 @@ void run_test_3d(int example_num, int n_source, int n_target,
     Swarm<3>,
     SwarmState<3>>
       d(*inputSwarm, *inputState, *targetSwarm, *targetState,
-        smoothing_lengths);
+        smoothing_lengths, Portage::Meshfree::Weight::B4, 
+        Portage::Meshfree::Weight::ELLIPTIC, center_type);
 #endif
 
   if (example.estimation_order == 0)
@@ -406,23 +455,32 @@ void run_test_3d(int example_num, int n_source, int n_target,
 
   std::vector<double> expected_value(ntarpts, 0.0);
 
-  double toterr = 0.0;
+  std::vector<double> toterr(3,0.0);
   for (int p(0); p < ntarpts; ++p) {
   Wonton::Point<3> coord = targetSwarm->get_particle_coordinates(p);
 
     expected_value[p] = field_func<3>(example.field_order, coord);
-    double error = expected_value[p] - (*targetData)[p];
-
-    if (ntarpts < 10) {
-      std::printf("Particle=% 4d Coord = (% 5.3lf,% 5.3lf,% 5.3lf)", p,
-                  coord[0], coord[1], coord[2]);
-      double dummy=(*targetData)[p];
-      std::printf("  Value = % 10.6lf  Err = % lf\n", dummy, error);
-    }
-    toterr += error*error;
+    double error = fabs(expected_value[p] - (*targetData)[p]);
+    toterr[0] = fmax(error, toterr[0]);
+    toterr[1] = toterr[1]+error;
+    toterr[2] = toterr[2]+error*error;
   }
+  toterr[1] /= nsrcpts;
+  toterr[2] /= nsrcpts;
+  toterr[2] = sqrt(toterr[2]);
 
-  std::printf("\n\nL2 NORM OF ERROR = %lf\n\n", sqrt(toterr));
+  std::cout << std::endl;
+  std::cout << std::scientific;
+  std::cout.precision(17);
+  std::cout << "weight center = " << center << std::endl;
+  std::cout << "distribution = " << distribution << std::endl;
+  std::cout << "dimension = " << dimension << std::endl;
+  std::cout << "seed = " << seed << std::endl;
+  std::cout << std::endl;
+  std::cout << "smoothing length = " << h << std::endl;
+  std::cout << "Linf NORM OF ERROR = " << toterr[0] << std::endl;
+  std::cout << "L1 NORM OF ERROR = " << toterr[1] << std::endl;
+  std::cout << "L2 NORM OF ERROR = " << toterr[2] << std::endl;
   
   // Create the input file for comparison.
   // The `static_cast` is a workaround for Intel compiler, which is missing a
@@ -433,7 +491,7 @@ void run_test_3d(int example_num, int n_source, int n_target,
   finp_csv << std::scientific;
   finp_csv.precision(17);
   finp_csv << " X, Y, Z, Value\n";
-  for (int p(0); p < ninpts; ++p) {
+  for (int p(0); p < nsrcpts; ++p) {
     Wonton::Point<3> coord = inputSwarm->get_particle_coordinates(p);
     finp_csv << coord[0] << ", " << coord[1] << ", " << coord[2] << ", " << (*inputData)[p] << std::endl;
   }
@@ -456,9 +514,10 @@ void run_test_3d(int example_num, int n_source, int n_target,
 }
 
 int main(int argc, char** argv) {
-  int example_num, n_source, n_target, distribution, dimension;
+  int example_num, n_source, n_target, distribution, dimension, center;
+  double hfactor;
   unsigned int seed;
-  if (argc < 6) {
+  if (argc < 7) {
     usage();
     return 0;
   }
@@ -470,12 +529,15 @@ int main(int argc, char** argv) {
   seed = atoi(argv[5]);
   if (example_num<10) dimension = 2;
   else                dimension = 3;
+  hfactor = std::stod(argv[6]);
+  center = std::atoi(argv[7]);
 
   // check inputs
   assert(example_num>=0 and example_num<20);
   assert(n_source>0 and n_target>0);
   assert(distribution>=0 and distribution<=2);
   assert(dimension==2 or dimension==3);
+  assert(center==0 or center==1);
 
 #ifdef PORTAGE_ENABLE_MPI
   int mpi_init_flag;
@@ -486,8 +548,8 @@ int main(int argc, char** argv) {
   MPI_Comm_size(MPI_COMM_WORLD, &numpe);
 #endif
 
-  if (dimension==2) run_test_2d(example_num, n_source, n_target, distribution, dimension, seed);
-  if (dimension==3) run_test_3d(example_num, n_source, n_target, distribution, dimension, seed);
+  if (dimension==2) run_test_2d(example_num, n_source, n_target, distribution, dimension, seed, hfactor, center);
+  if (dimension==3) run_test_3d(example_num, n_source, n_target, distribution, dimension, seed, hfactor, center);
 
 #ifdef PORTAGE_ENABLE_MPI
   MPI_Finalize();
