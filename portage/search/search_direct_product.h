@@ -9,6 +9,8 @@
 #include <utility>
 #include <vector>
 
+#include "wonton/wonton/support/CellID.h"
+#include "wonton/wonton/support/IntPoint.h"
 #include "portage/support/portage.h"
 #include "portage/support/Point.h"
 
@@ -71,22 +73,15 @@ class SearchDirectProduct {
     cells on the source mesh.  Returns the list of overlapping source mesh
     cells.
   */
-  std::vector<int64_t> operator() (const int tgt_cell) const;
+  std::vector<CellID> operator() (const int tgt_cell) const;
 
  private:
-
-  // ==========================================================================
-  // Define convenient shorthands
-
-  // An N-dimensional point (of integers rather than doubles)
-  template <int N>
-  using IntPoint = std::array<int, N>;
 
   // ==========================================================================
   // Private support methods
 
   //! List cells given bounds in each dimension
-  std::vector<int64_t> list_cells(
+  std::vector<CellID> list_cells(
         const IntPoint<D>& ilo, const IntPoint<D>& ihi) const;
 
   // ==========================================================================
@@ -114,7 +109,7 @@ SearchDirectProduct(const SourceMeshType& source_mesh,
 
 // Search for source cells that intersect a given target cell.
 template <int D, typename SourceMeshType, typename TargetMeshType>
-std::vector<int64_t> 
+std::vector<CellID> 
     SearchDirectProduct<D, SourceMeshType, TargetMeshType>::operator() (
     const int tgt_cell) const {
 
@@ -139,7 +134,7 @@ std::vector<int64_t>
     assert(tlo[d] < thi[d]);
     assert(sglo[d] < sghi[d]);
     if (tlo[d] >= sghi[d] || thi[d] <= sglo[d])
-      return std::move(std::vector<int64_t>());
+      return std::move(std::vector<CellID>());
   }
 
   // find which source cells overlap target cell, in each dimension
@@ -181,58 +176,59 @@ std::vector<int64_t>
 
 // List cells given bounds in each dimension
 template <int D, typename SourceMeshType, typename TargetMeshType>
-std::vector<int64_t>
+std::vector<CellID>
     SearchDirectProduct<D, SourceMeshType, TargetMeshType>::list_cells(
     const IntPoint<D>& ilo, const IntPoint<D>& ihi) const {
 
   // Declare the list of cells to be returned
-  std::vector<int64_t> list;
+  std::vector<CellID> list;
 
+  // I think this is less clear than the version below
+  /*IntPoint<3> idx_lo = {0,0,0};
+  IntPoint<3> idx_hi = {1,1,1};
+  for (int d = 0; d < D; ++d) {
+    idx_lo[d] = ilo[d];
+    idx_hi[d] = ihi[d];
+  }
+  IntPoint<3> i3;
+  for (int i3[2] = idx_lo[2]; i3[2] < idx_hi[2]; ++i3[2]) {
+    for (int i3[1] = idx_lo[1]; i3[1] < idx_hi[1]; ++i3[1]) {
+      for (int i3[0] = idx_lo[0]; i3[0] < idx_hi[0]; ++i3[0]) {
+        IntPoint<D> indices;
+        for (int d = 0; d < D; ++d) {
+          indices[d] = i3[d];
+        }
+        list.emplace_back(sourceMesh_.indices_to_cellid(indices));
+      }
+    }
+  }*/
+
+  IntPoint<D> idx;
   switch (D) {
     case 1:
-    // 1D case:  iterate over i only
-    {
-      for (int i = ilo[0]; i < ihi[0]; ++i) {
-        int64_t nglobal = (int64_t) i;
-        list.emplace_back(nglobal);
+      // 1D case:  iterate over i only
+      for (idx[0] = ilo[0]; idx[0] < ihi[0]; ++idx[0]) {
+        list.emplace_back(sourceMesh_.indices_to_cellid(idx));
       }
-    }  // 1D case
-    break;
-
+      break;
     case 2:
     // 2D case:  iterate over i, j
-    {
-      // TODO: don't assume ordering, call a mesh wrapper function
-      //       to convert ijk to global
-      int imax = sourceMesh_.axis_num_cells(0);
-      for (int j = ilo[1]; j < ihi[1]; ++j) {
-        for (int i = ilo[0]; i < ihi[0]; ++i) {
-          int64_t nglobal = ((int64_t) i) +
-                            ((int64_t) j) * imax;
-          list.emplace_back(nglobal);
+      for (idx[1] = ilo[1]; idx[1] < ihi[1]; ++idx[1]) {
+        for (idx[0] = ilo[0]; idx[0] < ihi[0]; ++idx[0]) {
+          list.emplace_back(sourceMesh_.indices_to_cellid(idx));
         }
       }
-    }  // 2D case
-    break;
-
+      break;
     case 3:
-    // 3D case:  iterate over i, j, k
-    {
-      int imax = sourceMesh_.axis_num_cells(0);
-      int jmax = sourceMesh_.axis_num_cells(1);
-      for (int k = ilo[2]; k < ihi[2]; ++k) {
-        for (int j = ilo[1]; j < ihi[1]; ++j) {
-          for (int i = ilo[0]; i < ihi[0]; ++i) {
-            int64_t nglobal = ((int64_t) i) +
-                              ((int64_t) j) * imax +
-                              ((int64_t) k) * imax * jmax;
-            list.emplace_back(nglobal);
+      // 3D case:  iterate over i, j, k
+      for (idx[2] = ilo[2]; idx[2] < ihi[2]; ++idx[2]) {
+        for (idx[1] = ilo[1]; idx[1] < ihi[1]; ++idx[1]) {
+          for (idx[0] = ilo[0]; idx[0] < ihi[0]; ++idx[0]) {
+            list.emplace_back(sourceMesh_.indices_to_cellid(idx));
           }
         }
       }
-    }  // 3D case
-    break;
-
+      break;
   }  // switch D
 
   return std::move(list);
