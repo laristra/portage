@@ -50,30 +50,32 @@ TEST(search_direct_product, case1) {
   // Create meshes
   const std::vector<double> x_tgt = {0.0, 0.5, 1.0};
   const std::vector<double> y_tgt = {0.0, 0.5, 1.0};
-  Wonton::Direct_Product_Mesh tgt(x_tgt,y_tgt);
+  const std::vector<double> edges_tgt[D] = {x_tgt, y_tgt};
+  Wonton::Direct_Product_Mesh<D> tgt(edges_tgt);
   const std::vector<double> x_src = {0.00, 0.25, 0.75, 1.00};
   const std::vector<double> y_src = {0.00, 0.25, 0.75, 1.00};
-  Wonton::Direct_Product_Mesh src(x_src,y_src);
+  const std::vector<double> edges_src[D] = {x_src, y_src};
+  Wonton::Direct_Product_Mesh<D> src(edges_src);
 
   // Create wrappers
-  const Wonton::Direct_Product_Mesh_Wrapper tgt_wrapper(tgt);
-  const Wonton::Direct_Product_Mesh_Wrapper src_wrapper(src);
+  const Wonton::Direct_Product_Mesh_Wrapper<D> tgt_wrapper(tgt);
+  const Wonton::Direct_Product_Mesh_Wrapper<D> src_wrapper(src);
 
   // Declare search
-  Portage::SearchDirectProduct<D, Wonton::Direct_Product_Mesh_Wrapper,
-    Wonton::Direct_Product_Mesh_Wrapper> search(src_wrapper, tgt_wrapper);
+  Portage::SearchDirectProduct<D, Wonton::Direct_Product_Mesh_Wrapper<D>,
+    Wonton::Direct_Product_Mesh_Wrapper<D>> search(src_wrapper, tgt_wrapper);
 
   // Verify overlaps
   for (int j = 0; j < y_tgt.size() - 1; ++j) {
     for (int i = 0; i < x_tgt.size() - 1; ++i) {
       Wonton::IntPoint<D> indices = {i,j};
-      Wonton::CellID id = tgt_wrapper.indices_to_cellid<D>(indices);
+      Wonton::CellID id = tgt_wrapper.indices_to_cellid(indices);
       const std::vector<Wonton::CellID> candidates = search(id);
       int n = 0;
       for (int j2 = j; j2 < j+2; ++j2) {
         for (int i2 = i; i2 < i+2; ++i2) {
           Wonton::IntPoint<D> candidate = {i2,j2};
-          Wonton::CellID c_id = src_wrapper.indices_to_cellid<D>(candidate);
+          Wonton::CellID c_id = src_wrapper.indices_to_cellid(candidate);
           ASSERT_EQ(candidates[n], c_id);
           n++;
         }
