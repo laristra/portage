@@ -64,14 +64,14 @@ TEST(search_direct_product, case1) {
     Wonton::Direct_Product_Mesh_Wrapper> search(src_wrapper, tgt_wrapper);
 
   // Verify overlaps
-  for (int i = 0; i < x_tgt.size() - 1; ++i) {
-    for (int j = 0; j < y_tgt.size() - 1; ++j) {
+  for (int j = 0; j < y_tgt.size() - 1; ++j) {
+    for (int i = 0; i < x_tgt.size() - 1; ++i) {
       Wonton::IntPoint<D> indices = {i,j};
       Wonton::CellID id = tgt_wrapper.indices_to_cellid<D>(indices);
       const std::vector<Wonton::CellID> candidates = search(id);
       int n = 0;
-      for (int i2 = i; i2 < i+2; ++i2) {
-        for (int j2 = j; j2 < j+2; ++j2) {
+      for (int j2 = j; j2 < j+2; ++j2) {
+        for (int i2 = i; i2 < i+2; ++i2) {
           Wonton::IntPoint<D> candidate = {i2,j2};
           Wonton::CellID c_id = src_wrapper.indices_to_cellid<D>(candidate);
           ASSERT_EQ(candidates[n], c_id);
