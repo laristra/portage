@@ -208,14 +208,14 @@ std::vector<Wonton::CellID>
     case 1:
       // 1D case:  iterate over i only
       for (idx[0] = ilo[0]; idx[0] < ihi[0]; ++idx[0]) {
-        list.emplace_back(sourceMesh_.indices_to_cellid<D>(idx));
+        list.emplace_back(sourceMesh_.indices_to_cellid(idx));
       }
       break;
     case 2:
     // 2D case:  iterate over i, j
       for (idx[1] = ilo[1]; idx[1] < ihi[1]; ++idx[1]) {
         for (idx[0] = ilo[0]; idx[0] < ihi[0]; ++idx[0]) {
-          list.emplace_back(sourceMesh_.indices_to_cellid<D>(idx));
+          list.emplace_back(sourceMesh_.indices_to_cellid(idx));
         }
       }
       break;
@@ -224,7 +224,7 @@ std::vector<Wonton::CellID>
       for (idx[2] = ilo[2]; idx[2] < ihi[2]; ++idx[2]) {
         for (idx[1] = ilo[1]; idx[1] < ihi[1]; ++idx[1]) {
           for (idx[0] = ilo[0]; idx[0] < ihi[0]; ++idx[0]) {
-            list.emplace_back(sourceMesh_.indices_to_cellid<D>(idx));
+            list.emplace_back(sourceMesh_.indices_to_cellid(idx));
           }
         }
       }
