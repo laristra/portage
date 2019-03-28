@@ -1,5 +1,5 @@
-#ifndef INTERPOLATORS_EAP_SEARCH_DIRECT_PRODUCT_HH_INCLUDE
-#define INTERPOLATORS_EAP_SEARCH_DIRECT_PRODUCT_HH_INCLUDE
+#ifndef PORTAGE_SEARCH_SEARCH_DIRECT_PRODUCT_H_
+#define PORTAGE_SEARCH_SEARCH_DIRECT_PRODUCT_H_
 
 #include <cassert>
 #include <cstdint>
@@ -11,8 +11,8 @@
 
 #include "wonton/wonton/support/CellID.h"
 #include "wonton/wonton/support/IntPoint.h"
+#include "wonton/wonton/support/Point.h"
 #include "portage/support/portage.h"
-#include "portage/support/Point.h"
 
 /*!
   @file search_direct_product.h
@@ -26,7 +26,7 @@
     provide an axis-aligned bounding box for any cell.
 */
 
-namespace EAP {
+namespace Portage {
 
 /*!
   @class SearchDirectProduct "search_direct_product.h"
@@ -73,7 +73,7 @@ class SearchDirectProduct {
     cells on the source mesh.  Returns the list of overlapping source mesh
     cells.
   */
-  std::vector<CellID> operator() (const int tgt_cell) const;
+  std::vector<Wonton::CellID> operator() (const int tgt_cell) const;
 
  private:
 
@@ -81,8 +81,8 @@ class SearchDirectProduct {
   // Private support methods
 
   //! List cells given bounds in each dimension
-  std::vector<CellID> list_cells(
-        const IntPoint<D>& ilo, const IntPoint<D>& ihi) const;
+  std::vector<Wonton::CellID> list_cells(
+        const Wonton::IntPoint<D>& ilo, const Wonton::IntPoint<D>& ihi) const;
 
   // ==========================================================================
   // Class data
@@ -98,10 +98,10 @@ class SearchDirectProduct {
 
 // ____________________________________________________________________________
 // Constructor with meshes.
-SearchDirectProduct(const SourceMeshType& source_mesh,
-                    const TargetMeshType& target_mesh)
-    : sourceMesh_(source_mesh),
-      targetMesh_(target_mesh) {
+template <int D, typename SourceMeshType, typename TargetMeshType>
+SearchDirectProduct<D,SourceMeshType,TargetMeshType>::SearchDirectProduct(
+    const SourceMeshType& source_mesh, const TargetMeshType& target_mesh)
+    : sourceMesh_(source_mesh), targetMesh_(target_mesh) {
 }
 
 // ============================================================================
@@ -109,7 +109,7 @@ SearchDirectProduct(const SourceMeshType& source_mesh,
 
 // Search for source cells that intersect a given target cell.
 template <int D, typename SourceMeshType, typename TargetMeshType>
-std::vector<CellID> 
+std::vector<Wonton::CellID> 
     SearchDirectProduct<D, SourceMeshType, TargetMeshType>::operator() (
     const int tgt_cell) const {
 
@@ -117,7 +117,7 @@ std::vector<CellID>
   const auto EPSILON = 10. * std::numeric_limits<double>::epsilon();
 
   // Get the bounding box for the target mesh cell
-  Portage::Point<D> tlo, thi;
+  Wonton::Point<D> tlo, thi;
   targetMesh_.cell_get_bounds(tgt_cell, &tlo, &thi);
   for (int d = 0; d < D; ++d) {
     // allow for roundoff error: if the intersection is within epsilon, assume
@@ -128,17 +128,17 @@ std::vector<CellID>
 
   // quick check:  does this cell intersect the source mesh at all?
   // if not, exit early
-  Portage::Point<D> sglo, sghi;
+  Wonton::Point<D> sglo, sghi;
   sourceMesh_.get_global_bounds(&sglo, &sghi);
   for (int d = 0; d < D; ++d) {
     assert(tlo[d] < thi[d]);
     assert(sglo[d] < sghi[d]);
     if (tlo[d] >= sghi[d] || thi[d] <= sglo[d])
-      return std::move(std::vector<CellID>());
+      return std::move(std::vector<Wonton::CellID>());
   }
 
   // find which source cells overlap target cell, in each dimension
-  IntPoint<D> ilo, ihi;
+  Wonton::IntPoint<D> ilo, ihi;
   for (int d = 0; d < D; ++d) {
     auto saxis_begin = sourceMesh_.axis_point_begin(d);
     auto saxis_end   = sourceMesh_.axis_point_end(d);
@@ -176,25 +176,25 @@ std::vector<CellID>
 
 // List cells given bounds in each dimension
 template <int D, typename SourceMeshType, typename TargetMeshType>
-std::vector<CellID>
+std::vector<Wonton::CellID>
     SearchDirectProduct<D, SourceMeshType, TargetMeshType>::list_cells(
-    const IntPoint<D>& ilo, const IntPoint<D>& ihi) const {
+    const Wonton::IntPoint<D>& ilo, const Wonton::IntPoint<D>& ihi) const {
 
   // Declare the list of cells to be returned
-  std::vector<CellID> list;
+  std::vector<Wonton::CellID> list;
 
   // I think this is less clear than the version below
-  /*IntPoint<3> idx_lo = {0,0,0};
-  IntPoint<3> idx_hi = {1,1,1};
+  /*Wonton::IntPoint<3> idx_lo = {0,0,0};
+    Wonton::IntPoint<3> idx_hi = {1,1,1};
   for (int d = 0; d < D; ++d) {
     idx_lo[d] = ilo[d];
     idx_hi[d] = ihi[d];
   }
-  IntPoint<3> i3;
+  Wonton::IntPoint<3> i3;
   for (int i3[2] = idx_lo[2]; i3[2] < idx_hi[2]; ++i3[2]) {
     for (int i3[1] = idx_lo[1]; i3[1] < idx_hi[1]; ++i3[1]) {
       for (int i3[0] = idx_lo[0]; i3[0] < idx_hi[0]; ++i3[0]) {
-        IntPoint<D> indices;
+      Wonton::IntPoint<D> indices;
         for (int d = 0; d < D; ++d) {
           indices[d] = i3[d];
         }
@@ -203,7 +203,7 @@ std::vector<CellID>
     }
   }*/
 
-  IntPoint<D> idx;
+  Wonton::IntPoint<D> idx;
   switch (D) {
     case 1:
       // 1D case:  iterate over i only
@@ -235,6 +235,6 @@ std::vector<CellID>
 
 } // list_cells
 
-} // namespace EAP
+} // namespace Portage
 
-#endif // INTERPOLATORS_EAP_SEARCH_DIRECT_PRODUCT_HH_INCLUDE
+#endif // PORTAGE_SEARCH_SEARCH_DIRECT_PRODUCT_H_
