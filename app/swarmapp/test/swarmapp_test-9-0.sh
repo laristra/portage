@@ -16,7 +16,7 @@ prob=9
 id="$prob-0"
 
 # 2d 0-th order remap of 0-th order function distribution 0 (grid)
-${RUN_COMMAND} ${TESTAPPDIR}/swarmapp $prob 23 19 0 12345678 2>&1 > output-$id
+${RUN_COMMAND} ${TESTAPPDIR}/swarmapp $prob 23 19 0 12345678 1.5 0 2>&1 > output-$id
 
 # Compare the values for the field
 ../swarmcompare gold-outfield-$id.csv outfield-$id.csv

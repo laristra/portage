@@ -16,7 +16,7 @@ prob=14
 id="$prob-1"
 
 # 2d remap
-${RUN_COMMAND} ${TESTAPPDIR}/swarmapp $prob 9 7 1 0 2>&1 > output-$id
+${RUN_COMMAND} ${TESTAPPDIR}/swarmapp $prob 9 7 0 12345678 1.5 1 2>&1 > output-$id
 
 # Compare the values for the field
 ../swarmcompare gold-outfield-$id.csv outfield-$id.csv
