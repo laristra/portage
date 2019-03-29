@@ -189,7 +189,7 @@ void usage() {
   int i = 0;
   bool separated = false;
   for (const auto &example : examples) {
-    std::printf("  %d: order %d remap of order %d func\n",
+    std::printf("  %d: order %d remap of order %d function\n",
                 i, example.estimation_order,
                 example.field_order);
     ++i;
@@ -343,7 +343,7 @@ void run_test_2d(int example_num, int n_source, int n_target,
   // `to_string` function for ints.
   std::ofstream fout_csv("outfield-"
                      + std::to_string(static_cast<long long>(example_num)) + "-"
-                     + std::to_string(static_cast<long long>(distribution))
+                     + std::to_string(static_cast<long long>(center))
                      + ".csv");
   fout_csv << std::scientific;
   fout_csv.precision(17);
@@ -501,7 +501,7 @@ void run_test_3d(int example_num, int n_source, int n_target,
   // `to_string` function for ints.
   std::ofstream fout_csv("outfield-"
                      + std::to_string(static_cast<long long>(example_num)) + "-"
-                     + std::to_string(static_cast<long long>(distribution))
+                     + std::to_string(static_cast<long long>(center))
                      + ".csv");
   fout_csv << std::scientific;
   fout_csv.precision(17);
