@@ -12,11 +12,11 @@
 #include "gtest/gtest.h"
 
 //Tangram includes
+#include "tangram/driver/driver.h"
+#include "tangram/driver/write_to_gmv.h"
 #include "tangram/intersect/split_r2d.h"
 #include "tangram/intersect/split_r3d.h"
 #include "tangram/reconstruct/MOF.h"
-#include "tangram/driver/driver.h"
-#include "tangram/driver/write_to_gmv.h"
 
 //Portage includes
 #include "portage/driver/mmdriver.h"
@@ -33,12 +33,12 @@
 #include "wonton/state/jali/jali_state_wrapper.h"
 
 // Tests for distributed multi-material remap with 1st and 
-// 2nd Order Accurate Remap on 4 ranks. 
+// 2nd Order Accurate Remap on 1,2 and 4 ranks. 
 
 // The conceptual material layout is two nested boxes inside an
 // outer box domain with unit length. The material interfaces
 // align with the coordinate axes/planes. With this layout, all
-// four ranks in the distributed case will have all three materials. 
+// ranks in the distributed case will have all three materials. 
 //
 //
 // 2D 
