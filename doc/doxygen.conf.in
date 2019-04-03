@@ -2355,3 +2355,9 @@ HTML_EXTRA_FILES +=  @CMAKE_CURRENT_SOURCE_DIR@/doc/doxygen/images/portage-tangr
 @CMAKE_CURRENT_SOURCE_DIR@/doc/doxygen/images/mismatch-example-constant.png \
 @CMAKE_CURRENT_SOURCE_DIR@/doc/doxygen/images/mismatch-example-locally-conservative.png \
 @CMAKE_CURRENT_SOURCE_DIR@/doc/doxygen/images/mismatch-example-shifted-conservative.png \
+@CMAKE_CURRENT_SOURCE_DIR@/doc/doxygen/images/swarm_swarm.png \
+@CMAKE_CURRENT_SOURCE_DIR@/doc/doxygen/images/kernel.png \
+@CMAKE_CURRENT_SOURCE_DIR@/doc/doxygen/images/gather_form.png \
+@CMAKE_CURRENT_SOURCE_DIR@/doc/doxygen/images/gatherScheme.png \
+@CMAKE_CURRENT_SOURCE_DIR@/doc/doxygen/images/scatter_form.png \
+@CMAKE_CURRENT_SOURCE_DIR@/doc/doxygen/images/scatterScheme.png

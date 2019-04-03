@@ -38,14 +38,14 @@ Let us illustrate the usage of Portage with a few lines of code.
 First, we create two square meshes in a unit square domain with 16 and
 25 computational cells, respectively:
 
-~~~c++
+~~~cpp
 Wonton::Simple_Mesh sourceMesh = std::make_shared<Simple_Mesh>(0.0, 0.0, 1.0, 1.0, 4, 4);
 Wonton::Simple_Mesh targetMesh = std::make_shared<Simple_Mesh>(0.0, 0.0, 1.0, 1.0, 5, 5);
 ~~~
 
 Then, we wrap the meshes with a Portage-compatible wrapper
 
-~~~c++
+~~~cpp
 Wonton::Simple_Mesh_Wrapper sourceMeshWrapper(*sourceMesh);
 Wonton::Simple_Mesh_Wrapper targetMeshWrapper(*targetMesh);
 ~~~
@@ -53,7 +53,7 @@ Wonton::Simple_Mesh_Wrapper targetMeshWrapper(*targetMesh);
 Assuming that we have cell data `inputData` for the source mesh, 
 we need to register data with state wrappers
 
-~~~c++
+~~~cpp
 Wonton::Simple_State_Wrapper<Wonton::Simple_Mesh_Wrapper> 
 		sourceStateWrapper(sourceMeshWrapper);
 	sourceStateWrapper.add(std::make_shared<Wonton::StateVectorUni<>>
@@ -67,7 +67,7 @@ Wonton::Simple_State_Wrapper<Wonton::Simple_Mesh_Wrapper>
 Now, we are ready to call a driver to perform remap of `inputData` from 
 `sourceMesh` to the `targetMesh` via the wrappers: 
 
-~~~c++
+~~~cpp
 Portage::MMDriver<
 	Portage::SearchKDTree,
 	Portage::IntersectR3D,
@@ -96,7 +96,7 @@ In the next example, we demonstrate a more typical situation of reading source
 and target meshes from files `source.exo` and `target.exo` using Jali. Instead of 
 using the driver, we instantiate Search, Intersect and Interpolate classes directly:
 
-~~~c++
+~~~cpp
 std::shared_ptr<Jali::Mesh> sourceMesh;
 Jali::MeshFactory mf(MPI_COMM_WORLD);
 mf.included_entities({Jali::Entity_kind::ALL_KIND});
@@ -106,19 +106,19 @@ source_mesh = mf("source.exo");
 
 We create a native Jali state manager for a source mesh.
 
-~~~c++
+~~~cpp
 std::shared_ptr<Jali::State> sourceState(Jali::State::create(sourceMesh));
 ~~~
 
 Additionally, we can add cell data from a vector `sourceData` to a state manager.
 
-~~~c++
+~~~cpp
 sourceState->add("celldata", sourceMesh, Jali::Entity_kind::CELL, Jali::Entity_type::ALL, &(sourceData[0]));
 ~~~
 
 Next, we read and wrap a target mesh and add empty data to it.
 
-~~~c++
+~~~cpp
 std::shared_ptr<Jali::Mesh> targetMesh;
 mf.partitioner(Jali::Partitioner_type::METIS);
 target_mesh = mf("target.exo");
@@ -131,7 +131,7 @@ targetState->add<double, Jali::Mesh, Jali::UniStateVector>("celldata",
 
 Both meshes are wrapped for interfacing with the underlying mesh data structures.
 
-~~~c++
+~~~cpp
 Wonton::Jali_Mesh_Wrapper sourceMeshWrapper(*sourceMesh);
 Wonton::Jali_Mesh_Wrapper targetMeshWrapper(*targetMesh);
 ~~~
@@ -139,14 +139,14 @@ Wonton::Jali_Mesh_Wrapper targetMeshWrapper(*targetMesh);
 We get an instance of the desired search algorithm type in `dim` spatial dimensions 
 for a cell field.
 
-~~~c++
+~~~cpp
 const Search<dim, Entity_kind::CELL, Wonton::Jali_Mesh_Wrapper, Wonton::Jali_Mesh_Wrapper>
       search(sourceMeshWrapper, targetMeshWrapper);
 ~~~
 
 Now, we apply Portage wrappers for source and target fields.
 
-~~~c++
+~~~cpp
 Wonton::Jali_State_Wrapper sourceStateWrapper(*sourceState);
 Wonton::Jali_State_Wrapper targetStateWrapper(*targetState);
 ~~~
@@ -156,7 +156,7 @@ to query the number of materials, etc). `DummyInterfaceReconstructor` and two
 `void` arguments indicate that we want to perform intersections of a single-material 
 filed. 
 
-~~~c++
+~~~cpp
 Intersect<Entity_kind::CELL, Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
 		Wonton::Jali_Mesh_Wrapper, DummyInterfaceReconstructor,
 		void, void>
@@ -165,7 +165,7 @@ Intersect<Entity_kind::CELL, Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapp
 
 Finally, we get an instance of the desired interpolate algorithm type.
 
-~~~c++
+~~~cpp
 Interpolate<dim, Entity_kind::CELL, Wonton::Jali_Mesh_Wrapper, Wonton::Jali_Mesh_Wrapper,
 		Wonton::Jali_State_Wrapper, DummyInterfaceReconstructor,
 		void, void>
