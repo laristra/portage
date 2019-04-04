@@ -122,8 +122,9 @@ std::vector<Wonton::CellID>
   for (int d = 0; d < D; ++d) {
     // allow for roundoff error: if the intersection is within epsilon, assume
     // this is a precision issue rather than true physical overlap
-    tlo[d] += EPSILON;
-    thi[d] -= EPSILON;
+    auto eps = EPSILON * (thi[d] - tlo[d]);
+    tlo[d] += eps;
+    thi[d] -= eps;
   }
 
   // quick check:  does this cell intersect the source mesh at all?
