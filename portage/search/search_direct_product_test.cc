@@ -13,7 +13,6 @@ Please see the license file at the root of this repository, or at:
 #include "wonton/mesh/direct_product/direct_product_mesh.h"
 #include "wonton/mesh/direct_product/direct_product_mesh_wrapper.h"
 #include "wonton/wonton/support/CellID.h"
-#include "wonton/wonton/support/IntPoint.h"
 #include "wonton/support/Point.h"
 
 TEST(search_direct_product, case1) {
@@ -68,13 +67,13 @@ TEST(search_direct_product, case1) {
   // Verify overlaps
   for (int j = 0; j < y_tgt.size() - 1; ++j) {
     for (int i = 0; i < x_tgt.size() - 1; ++i) {
-      Wonton::IntPoint<D> indices = {i,j};
+      std::array<int,D> indices = {i,j};
       Wonton::CellID id = tgt_wrapper.indices_to_cellid(indices);
       const std::vector<Wonton::CellID> candidates = search(id);
       int n = 0;
       for (int j2 = j; j2 < j+2; ++j2) {
         for (int i2 = i; i2 < i+2; ++i2) {
-          Wonton::IntPoint<D> candidate = {i2,j2};
+          std::array<int,D> candidate = {i2,j2};
           Wonton::CellID c_id = src_wrapper.indices_to_cellid(candidate);
           ASSERT_EQ(candidates[n], c_id);
           n++;
