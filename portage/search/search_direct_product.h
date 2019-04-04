@@ -10,7 +10,6 @@
 #include <vector>
 
 #include "wonton/wonton/support/CellID.h"
-#include "wonton/wonton/support/IntPoint.h"
 #include "wonton/wonton/support/Point.h"
 #include "portage/support/portage.h"
 
@@ -82,7 +81,7 @@ class SearchDirectProduct {
 
   //! List cells given bounds in each dimension
   std::vector<Wonton::CellID> list_cells(
-        const Wonton::IntPoint<D>& ilo, const Wonton::IntPoint<D>& ihi) const;
+        const std::array<int,D>& ilo, const std::array<int,D>& ihi) const;
 
   // ==========================================================================
   // Class data
@@ -139,7 +138,7 @@ std::vector<Wonton::CellID>
   }
 
   // find which source cells overlap target cell, in each dimension
-  Wonton::IntPoint<D> ilo, ihi;
+  std::array<int,D> ilo, ihi;
   for (int d = 0; d < D; ++d) {
     auto saxis_begin = sourceMesh_.axis_point_begin(d);
     auto saxis_end   = sourceMesh_.axis_point_end(d);
@@ -179,23 +178,23 @@ std::vector<Wonton::CellID>
 template <int D, typename SourceMeshType, typename TargetMeshType>
 std::vector<Wonton::CellID>
     SearchDirectProduct<D, SourceMeshType, TargetMeshType>::list_cells(
-    const Wonton::IntPoint<D>& ilo, const Wonton::IntPoint<D>& ihi) const {
+    const std::array<int,D>& ilo, const std::array<int,D>& ihi) const {
 
   // Declare the list of cells to be returned
   std::vector<Wonton::CellID> list;
 
   // I think this is less clear than the version below
-  /*Wonton::IntPoint<3> idx_lo = {0,0,0};
-    Wonton::IntPoint<3> idx_hi = {1,1,1};
+  /*std::array<int,3> idx_lo = {0,0,0};
+    std::array<int,3> idx_hi = {1,1,1};
   for (int d = 0; d < D; ++d) {
     idx_lo[d] = ilo[d];
     idx_hi[d] = ihi[d];
   }
-  Wonton::IntPoint<3> i3;
+  std::array<int,3> i3;
   for (int i3[2] = idx_lo[2]; i3[2] < idx_hi[2]; ++i3[2]) {
     for (int i3[1] = idx_lo[1]; i3[1] < idx_hi[1]; ++i3[1]) {
       for (int i3[0] = idx_lo[0]; i3[0] < idx_hi[0]; ++i3[0]) {
-      Wonton::IntPoint<D> indices;
+      std::array<int,D> indices;
         for (int d = 0; d < D; ++d) {
           indices[d] = i3[d];
         }
@@ -204,7 +203,9 @@ std::vector<Wonton::CellID>
     }
   }*/
 
-  Wonton::IntPoint<D> idx;
+  // TODO: This could be done for any dimensionality using a recursive
+  //       function.
+  std::array<int,D> idx;
   switch (D) {
     case 1:
       // 1D case:  iterate over i only
