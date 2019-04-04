@@ -163,38 +163,29 @@ TEST(search_direct_product, DPtoAR) {
 
   // Verify overlaps
   // -- Given the ID of a target cell, find the matching source cells
-  /*
-   * 0 --> 000  \
-   * 1 --> 100   >  x = id%2, y = ((id-x)/2)%2, z = (((id-x)/2)-y)/2    CHECK THIS
-   * 2 --> 010  /
-   * 3-10 --> 110   -- always x=1, y=1, z=0
-   * 11 --> 001   \
-   * 12 --> 101    \    I think this is the same as 0-2, but first subtract 7 CHECK THIS
-   * 13 --> 011    /
-   * 14 --> 111   /
-   */
   for (int n = 0; n < tgt_wrapper.total_num_cells(); ++n) {
+    // Get the candidates list
     Wonton::CellID id = (Wonton::CellID) n;
     const std::vector<Wonton::CellID> candidates = search(id);
-  }
-  /*for (int k = 0; k < z_tgt.size() - 1; ++k) {
-    for (int j = 0; j < y_tgt.size() - 1; ++j) {
-      for (int i = 0; i < x_tgt.size() - 1; ++i) {
-        Wonton::IntPoint<D> indices = {i,j,k};
-        Wonton::CellID id = src_wrapper.indices_to_cellid(indices);
-        const std::vector<Wonton::CellID> candidates = search(id);
-        int n = 0;
-        for (int j2 = j; j2 < j+2; ++j2) {
-          for (int i2 = i; i2 < i+2; ++i2) {
-            Wonton::IntPoint<D> candidate = {i2,j2};
-            Wonton::CellID c_id = src_wrapper.indices_to_cellid(candidate);
-            ASSERT_EQ(candidates[n], c_id);
-            n++;
-          }
-        }
-      }
+    // Build the expected candidates list
+    Wonton::IntPoint<D> indices;
+    if (n <= 2) {
+      for (int d = 0; d < D; ++d)
+        indices[d] = (n >> d) % 2;
+    } else if ((n >= 3) && (n <= 10)) {
+      indices = {1, 1, 0};
+    } else {
+      for (int d = 0; d < D; ++d)
+        indices[d] = ((n-7) >> d) % 2;
     }
-  }*/
+    const std::vector<Wonton::CellID> expected =
+      {src_wrapper.indices_to_cellid(indices)};
+    // Verify
+    ASSERT_EQ(candidates.size(), expected.size());
+    for (int c = 0; c < candidates.size(); ++c) {
+      ASSERT_EQ(candidates[c], expected[c]);
+    }
+  }
 
 }  // TEST(search_direct_product, DPtoAR)
 
