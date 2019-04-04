@@ -167,7 +167,7 @@ TEST(search_direct_product, DPtoAR) {
     Wonton::CellID id = (Wonton::CellID) n;
     const std::vector<Wonton::CellID> candidates = search(id);
     // Build the expected candidates list
-    Wonton::IntPoint<D> indices;
+    std::array<int,D> indices;
     if (n <= 2) {
       for (int d = 0; d < D; ++d)
         indices[d] = (n >> d) % 2;
