@@ -143,7 +143,7 @@ LAPACKE_DIR=/usr/projects/ngc/private/lapack/3.8.0-patched-intel-17.0.6
 mkdir build
 cd build
 cmake \
-    -D CMAKE_BUILD_TYPE=Debug \
+    -D CMAKE_BUILD_TYPE=Release \
     -D ENABLE_UNIT_TESTS=True \
     -D ENABLE_APP_TESTS=True \
     -D ENABLE_MPI=True \
@@ -167,13 +167,13 @@ Execute the following from the portage root directory:
 . /usr/share/lmod/lmod/init/sh
 module load intel/17.0.4 openmpi/2.1.2 cmake
 JALI_INSTALL_PREFIX=/usr/projects/ngc/private/jali/1.0.0-intel-17.0.4-openmpi-2.1.2
-TANGRAM_INSTALL_PREFIX=/usr/projects/ngc/private/tangram/0.9.2-intel-17.0.4-openmpi-2.1.2
+TANGRAM_INSTALL_PREFIX=/usr/projects/ngc/private/tangram/0.9.1-intel-17.0.4-openmpi-2.1.2
 XMOF2D_INSTALL_PREFIX=/usr/projects/ngc/private/xmof2d/0.9.1-intel-17.0.4
 LAPACKE_DIR=/usr/projects/ngc/private/lapack/3.8.0-patched-intel-17.0.4
 mkdir build
 cd build
 cmake \
-    -D CMAKE_BUILD_TYPE=Debug \
+    -D CMAKE_BUILD_TYPE=Release \
     -D ENABLE_UNIT_TESTS=True \
     -D ENABLE_APP_TESTS=True \
     -D ENABLE_MPI=True \
@@ -196,7 +196,7 @@ Thrust and TCMalloc in your build.  The cmake command for this is:
 . /usr/share/lmod/lmod/init/sh
 module load intel/17.0.4 openmpi/2.1.2 cmake
 JALI_INSTALL_PREFIX=/usr/projects/ngc/private/jali/1.0.0-intel-17.0.4-openmpi-2.1.2
-TANGRAM_INSTALL_PREFIX=/usr/projects/ngc/private/tangram/0.9.2-intel-17.0.4-openmpi-2.1.2
+TANGRAM_INSTALL_PREFIX=/usr/projects/ngc/private/tangram/0.9.1-intel-17.0.4-openmpi-2.1.2
 XMOF2D_INSTALL_PREFIX=/usr/projects/ngc/private/xmof2d/0.9.1-intel-17.0.4-openmpi-2.1.2
 LAPACKE_DIR=/usr/projects/ngc/private/lapack/3.8.0-patched-intel-17.0.4
 mkdir build-thrust
