@@ -263,7 +263,6 @@ class MismatchFixer {
                 " not fully covered by target dual cells \n";
           break;
         }
-      std::cerr << "\n";
 #endif
     }
 
@@ -299,7 +298,6 @@ class MismatchFixer {
           break;
         }
       }
-      std::cerr << "\n";
 #endif
 
     }
@@ -462,6 +460,8 @@ class MismatchFixer {
                             Empty_fixup_type empty_fixup_type =
                             Empty_fixup_type::EXTRAPOLATE) {
 
+    static bool hit_lobound = false, hit_hibound = false;
+    
     // Now process remap variables
     double const *source_data;
     source_state_.mesh_get_data(onwhat, src_var_name, &source_data);
@@ -604,10 +604,11 @@ class MismatchFixer {
 
             target_data[t] = global_lower_bound;
 
-#ifdef DEBUG            
-            std::cerr << "Hit lower bound for cell " << t << " on rank " <<
-                rank_ << "\n";
-#endif
+            if (!hit_lobound) {
+              std::cerr << "Hit lower bound for cell " << t <<
+                  " (and maybe other cells) on rank " << rank_ << "\n";
+              hit_lobound = true;
+            }
             
             // this cell is no longer in play for adjustment - so remove its
             // volume from the adjusted target_volume
@@ -621,10 +622,11 @@ class MismatchFixer {
 
             target_data[t] = global_upper_bound;
 
-#ifdef DEBUG            
-            std::cerr << "Hit upper bound for cell " << t << " on rank " <<
-                rank_ << "\n";
-#endif
+            if (!hit_hibound) {
+              std::cerr << "Hit upper bound for cell " << t <<
+                  " (and maybe other cells) on rank " << rank_ << "\n";
+              hit_hibound = true;
+            }
             
             // this cell is no longer in play for adjustment - so remove its
             // volume from the adjusted target_volume
