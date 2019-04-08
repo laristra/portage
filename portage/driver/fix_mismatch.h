@@ -263,7 +263,6 @@ class MismatchFixer {
                 " not fully covered by target dual cells \n";
           break;
         }
-      std::cerr << "\n";
 #endif
     }
 
@@ -299,7 +298,6 @@ class MismatchFixer {
           break;
         }
       }
-      std::cerr << "\n";
 #endif
 
     }
