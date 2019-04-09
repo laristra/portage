@@ -49,11 +49,11 @@ TEST(search_direct_product, case1) {
   // Create meshes
   const std::vector<double> x_tgt = {0.0, 0.5, 1.0};
   const std::vector<double> y_tgt = {0.0, 0.5, 1.0};
-  const std::vector<double> edges_tgt[D] = {x_tgt, y_tgt};
+  const std::array<std::vector<double>,D> edges_tgt = {x_tgt, y_tgt};
   Wonton::Direct_Product_Mesh<D> tgt(edges_tgt);
   const std::vector<double> x_src = {0.00, 0.25, 0.75, 1.00};
   const std::vector<double> y_src = {0.00, 0.25, 0.75, 1.00};
-  const std::vector<double> edges_src[D] = {x_src, y_src};
+  const std::array<std::vector<double>,D> edges_src = {x_src, y_src};
   Wonton::Direct_Product_Mesh<D> src(edges_src);
 
   // Create wrappers
