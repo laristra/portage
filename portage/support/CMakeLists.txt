@@ -44,8 +44,7 @@ if (ENABLE_UNIT_TESTS)
 
   cinch_add_unit(test_faceted_setup_simple
     SOURCES test/test_faceted_setup_simple.cc
-    POLICY MPI
-    THREADS 1
+    POLICY SERIAL
     )
 
 endif(ENABLE_UNIT_TESTS)

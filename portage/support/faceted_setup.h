@@ -59,14 +59,16 @@ namespace Portage {
               // Get 3d face normal using average cross product, in case face is not flat
               // or has nodes close together.
               std::vector<std::vector<double>> bivec(2,std::vector<double>(3,0.));
-              for (int k=0;k<3;k++) bivec[0][k] = fncoord[0][k] - fcent[k];
-              normal = 0.;
+              for (int k=0;k<3;k++) {
+                bivec[0][k] = fncoord[0][k] - fcent[k];
+                normal[k] = 0.;
+              }
               for (int k=1; k<=fnodes.size(); k++) {
                 for (int m=0;m<3;m++) bivec[1][m] = fncoord[k][m] - fcent[m];
                 std::vector<double> cross(3,0.);
                 cross[0] =  bivec[1][2]*bivec[0][1] - bivec[1][1]*bivec[0][2];
                 cross[1] = -bivec[1][2]*bivec[0][0] + bivec[1][0]*bivec[0][2];
-                cross[1] =  bivec[1][1]*bivec[0][0] - bivec[1][0]*bivec[0][1];
+                cross[2] =  bivec[1][1]*bivec[0][0] - bivec[1][0]*bivec[0][1];
                 double norm=sqrt(cross[0]*cross[0]+cross[1]*cross[1]+cross[2]*cross[2]);
                 for (int m=0;m<3;m++) {
                   cross[m]/=norm;
@@ -74,6 +76,7 @@ namespace Portage {
                 }
                 bivec[0] = bivec[1];
               }
+              if (fdirs[j]<0) normal*=-1.0;
               double norm=0.;
               for (int k=0;k<3;k++) norm+=normal[k]*normal[k];
               norm=sqrt(norm);
