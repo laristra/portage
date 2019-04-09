@@ -31,10 +31,10 @@ fi
 
 # set modules and install paths
 
-jali_version=1.0.0
+jali_version=1.0.4
 openmpi_version=2.1.2
-tangram_version=0.9.2
-xmof2d_version=0.9.1
+tangram_version=0.9.3
+xmof2d_version=0.9.4
 lapack_version=3.8.0
 
 export NGC=/usr/projects/ngc
@@ -42,14 +42,14 @@ ngc_include_dir=$NGC/private/include
 
 # compiler-specific settings
 if [[ $compiler == "intel" ]]; then
-  intel_version=17.0.4
+  intel_version=18.0.5
   cxxmodule=intel/${intel_version}
   jali_install_dir=$NGC/private/jali/${jali_version}-intel-${intel_version}-openmpi-${openmpi_version}
   tangram_install_dir=$NGC/private/tangram/${tangram_version}-intel-${intel_version}-openmpi-${openmpi_version}
   xmof2d_install_dir=$NGC/private/xmof2d/${xmof2d_version}-intel-${intel_version}-openmpi-${openmpi_version}
   lapacke_dir=$NGC/private/lapack/${lapack_version}-patched-intel-${intel_version}
 elif [[ $compiler == "gcc" ]]; then
-  gcc_version=6.4.0
+  gcc_version=7.4.0
   cxxmodule=gcc/${gcc_version}
   jali_install_dir=$NGC/private/jali/${jali_version}-gcc-${gcc_version}-openmpi-${openmpi_version}
   tangram_install_dir=$NGC/private/tangram/${tangram_version}-gcc-${gcc_version}-openmpi-${openmpi_version}
