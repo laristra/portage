@@ -38,7 +38,7 @@ Please see the license file at the root of this repository, or at:
 double TOL = 1e-6;
 
 
-// Tests for multi-material remap with 1st Order Accurate Remap
+// Tests for multi-material remap with 2nd Order Accurate Remap
 
 // The conceptual material layout that includes a T-junction and
 // interfaces that are aligned with the coordinate axes/planes. The
