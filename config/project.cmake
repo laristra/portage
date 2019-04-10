@@ -14,8 +14,8 @@ cinch_minimum_required(VERSION 1.0)
 # tag the central repository.
 
 set(PORTAGE_VERSION_MAJOR 2)
-set(PORTAGE_VERSION_MINOR 0)
-set(PORTAGE_VERSION_PATCH 0)
+set(PORTAGE_VERSION_MINOR 1)
+set(PORTAGE_VERSION_PATCH 1)
 
 
 # If a C++14 compiler is available, then set the appropriate flags
@@ -387,19 +387,16 @@ if(ENABLE_THRUST)
     endif(TBB_FOUND)
   endif()
 
-endif(ENABLE_THRUST)
-
-
+else(ENABLE_THRUST)
 #-----------------------------------------------------------------------------
 # Find Boost
 #-----------------------------------------------------------------------------
-if(NOT ENABLE_THRUST)
   find_package(Boost REQUIRED)
   if(Boost_FOUND)
     message(STATUS "Boost location: ${Boost_INCLUDE_DIRS}")
     include_directories( ${Boost_INCLUDE_DIRS} )
   endif(Boost_FOUND)
-endif(NOT ENABLE_THRUST)
+endif(ENABLE_THRUST)
 
 
 

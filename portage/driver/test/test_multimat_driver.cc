@@ -18,6 +18,7 @@ Please see the license file at the root of this repository, or at:
 #include "tangram/reconstruct/xmof2D_wrapper.h"
 #include "tangram/reconstruct/SLIC.h"
 #include "tangram/reconstruct/MOF.h"
+#include "tangram/intersect/split_r3d.h"
 #include "tangram/driver/driver.h"
 #include "tangram/driver/write_to_gmv.h"
 
