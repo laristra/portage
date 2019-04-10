@@ -79,6 +79,13 @@ class SearchDirectProduct {
   // ==========================================================================
   // Private support methods
 
+  //! Loop over each dimension recursively and fill the list
+  void fill_list_by_dim(
+    std::vector<Wonton::CellID> &list,
+    const int d, const int idx_start, const std::array<int,D> &step_size,
+    const std::array<int,D> &ilo, const std::array<int,D> &ihi,
+    std::array<int,D> &indices) const;
+
   //! List cells given bounds in each dimension
   std::vector<Wonton::CellID> list_cells(
         const std::array<int,D>& ilo, const std::array<int,D>& ihi) const;
@@ -166,7 +173,7 @@ std::vector<Wonton::CellID>
   }  // for d
 
   // Generate list of cells from lower and upper bounds, return list
-  return std::move(list_cells(ilo, ihi));
+  return(std::move(list_cells(ilo, ihi)));
 
 }  // operator()
 
@@ -174,66 +181,47 @@ std::vector<Wonton::CellID>
 // ============================================================================
 // Private support methods
 
+// Loop over each dimension recursively and fill the list
+template<int D, typename SourceMeshType, typename TargetMeshType>
+void SearchDirectProduct<D,SourceMeshType,TargetMeshType>::fill_list_by_dim(
+    std::vector<Wonton::CellID> &list,
+    const int d, const int idx_start, const std::array<int,D> &step_size,
+    const std::array<int,D> &ilo, const std::array<int,D> &ihi,
+    std::array<int,D> &indices) const {
+  if (d >= 0) {
+    int index = idx_start;
+    for (indices[d] = ilo[d]; indices[d] < ihi[d]; ++indices[d]) {
+      fill_list_by_dim(list, d-1, index, step_size, ilo, ihi, indices);
+      index += step_size[d];
+    }
+  } else {
+    list[idx_start] = sourceMesh_.indices_to_cellid(indices);
+  }
+}
+
+
 // List cells given bounds in each dimension
 template <int D, typename SourceMeshType, typename TargetMeshType>
 std::vector<Wonton::CellID>
     SearchDirectProduct<D, SourceMeshType, TargetMeshType>::list_cells(
     const std::array<int,D>& ilo, const std::array<int,D>& ihi) const {
 
-  // Declare the list of cells to be returned
-  std::vector<Wonton::CellID> list;
-
-  // I think this is less clear than the version below
-  /*std::array<int,3> idx_lo = {0,0,0};
-    std::array<int,3> idx_hi = {1,1,1};
-  for (int d = 0; d < D; ++d) {
-    idx_lo[d] = ilo[d];
-    idx_hi[d] = ihi[d];
+  // Compute step sizes for recursion
+  std::array<int,D> stepsize;
+  stepsize[0] = 1;
+  for(int d = 0; d < D-1; ++d) {
+    stepsize[d+1] = stepsize[d] * (ihi[d] - ilo[d]);
   }
-  std::array<int,3> i3;
-  for (int i3[2] = idx_lo[2]; i3[2] < idx_hi[2]; ++i3[2]) {
-    for (int i3[1] = idx_lo[1]; i3[1] < idx_hi[1]; ++i3[1]) {
-      for (int i3[0] = idx_lo[0]; i3[0] < idx_hi[0]; ++i3[0]) {
-      std::array<int,D> indices;
-        for (int d = 0; d < D; ++d) {
-          indices[d] = i3[d];
-        }
-        list.emplace_back(sourceMesh_.indices_to_cellid<D>(indices));
-      }
-    }
-  }*/
 
-  // TODO: This could be done for any dimensionality using a recursive
-  //       function.
-  std::array<int,D> idx;
-  switch (D) {
-    case 1:
-      // 1D case:  iterate over i only
-      for (idx[0] = ilo[0]; idx[0] < ihi[0]; ++idx[0]) {
-        list.emplace_back(sourceMesh_.indices_to_cellid(idx));
-      }
-      break;
-    case 2:
-    // 2D case:  iterate over i, j
-      for (idx[1] = ilo[1]; idx[1] < ihi[1]; ++idx[1]) {
-        for (idx[0] = ilo[0]; idx[0] < ihi[0]; ++idx[0]) {
-          list.emplace_back(sourceMesh_.indices_to_cellid(idx));
-        }
-      }
-      break;
-    case 3:
-      // 3D case:  iterate over i, j, k
-      for (idx[2] = ilo[2]; idx[2] < ihi[2]; ++idx[2]) {
-        for (idx[1] = ilo[1]; idx[1] < ihi[1]; ++idx[1]) {
-          for (idx[0] = ilo[0]; idx[0] < ihi[0]; ++idx[0]) {
-            list.emplace_back(sourceMesh_.indices_to_cellid(idx));
-          }
-        }
-      }
-      break;
-  }  // switch D
+  // Declare the list of cells to be returned
+  int list_size = stepsize[D-1] * (ihi[D-1] - ilo[D-1]);
+  std::vector<Wonton::CellID> list(list_size);
 
-  return std::move(list);
+  // Recurse across dimensions
+  std::array<int,D> indices;
+  fill_list_by_dim(list, D-1, 0, stepsize, ilo, ihi, indices);
+
+  return(std::move(list));
 
 } // list_cells
 
