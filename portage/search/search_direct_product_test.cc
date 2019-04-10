@@ -34,6 +34,8 @@ namespace search_direct_product_test {
   }
 }  // namespace search_direct_product_test
 
+// ============================================================================
+
 TEST(search_direct_product, DPtoDP1D) {
   /*
    * Overlaps: -------------------------------
