@@ -4,6 +4,9 @@ Please see the license file at the root of this repository, or at:
     https://github.com/laristra/portage/blob/master/LICENSE
 */
 
+#include <array>
+#include <vector>
+
 #include "gtest/gtest.h"
 
 // portage includes
@@ -348,7 +351,7 @@ TEST(search_direct_product, DPtoAR2D) {
   const std::vector<double> x_src = {0.00, 0.5, 1.00};
   const std::vector<double> y_src = {0.00, 0.5, 1.00};
   const std::vector<double> z_src = {0.00, 0.5, 1.00};
-  const std::vector<double> edges_src[D] = {x_src, y_src, z_src};
+  const std::array<std::vector<double>,D> edges_src = {x_src, y_src, z_src};
   Wonton::Direct_Product_Mesh<D> src(edges_src);
 
   // Create wrappers
