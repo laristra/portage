@@ -48,10 +48,6 @@ if [[ $compiler == "intel" ]]; then
   openmpi_version=2.1.2
   # openmpi module for compiling and linking
   mpi_module=openmpi/2.1.2
-  jali_install_dir=$NGC/private/jali/${jali_version}-intel-${intel_version}-openmpi-${openmpi_version}
-  tangram_install_dir=$NGC/private/tangram/${tangram_version}-intel-${intel_version}-openmpi-${openmpi_version}
-  xmof2d_install_dir=$NGC/private/xmof2d/${xmof2d_version}-intel-${intel_version}
-  lapacke_dir=$NGC/private/lapack/${lapack_version}-patched-intel-${intel_version}
 elif [[ $compiler == "gcc" ]]; then
   gcc_version=6.4.0
   cxxmodule=gcc/${gcc_version}
@@ -59,12 +55,17 @@ elif [[ $compiler == "gcc" ]]; then
   openmpi_version=2.1.2
   # openmpi module for compiling and linking
   mpi_module=openmpi/2.1.2
-  jali_install_dir=$NGC/private/jali/${jali_version}-gcc-${gcc_version}-openmpi-${openmpi_version}
+fi
+
+jali_install_dir=$NGC/private/jali/${jali_version}-${compiler}-${intel_version}-openmpi-${openmpi_version}
+tangram_install_dir=$NGC/private/tangram/${tangram_version}-${compiler}-${intel_version}-openmpi-${openmpi_version}
+tangram_install_dir_nompi=$NGC/private/tangram/${tangram_version}-${compiler}-${gcc_version}-nompi
+xmof2d_install_dir=$NGC/private/xmof2d/${xmof2d_version}-${compiler}-${intel_version}
+lapacke_dir=$NGC/private/lapack/${lapack_version}-patched-${compiler}-${intel_version}
+
+if [[ $compiler == "gcc" ]]; then
   flecsi_install_prefix=$NGC/private/flecsi/374b56b-gcc-6.4.0
   flecsisp_install_prefix=$NGC/private/flecsi-sp/e78c594-gcc-6.4.0
-  tangram_install_dir=$NGC/private/tangram/${tangram_version}-gcc-${gcc_version}-openmpi-${openmpi_version}
-  xmof2d_install_dir=$NGC/private/xmof2d/${xmof2d_version}-gcc-${gcc_version}
-  lapacke_dir=$NGC/private/lapack/${lapack_version}-patched-gcc-${gcc_version}
 fi
   
 cmake_build_type=Release
@@ -81,6 +82,8 @@ elif [[ $build_type == "serial" ]]; then
   mpi_flags=
   # jali is not available in serial
   jali_flags=
+  # use serial version of tangram
+  tangram_flags="-D TANGRAM_DIR:FILEPATH=$tangram_install_dir_nompi"
 elif [[ $build_type == "thrust" ]]; then
   extra_flags="-D ENABLE_THRUST=True"
 elif [[ $build_type == "flecsi" ]]; then
