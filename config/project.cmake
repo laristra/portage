@@ -239,18 +239,6 @@ if (LAPACKE_DIR)
 
     set(LAPACKE_LIBRARIES "-Wl,-rpath,${LAPACKE_LIBRARY_DIR} -L${LAPACKE_LIBRARY_DIR} -l${LAPACKE_LIBRARIES} -l${LAPACK_lapack_LIBRARIES} -l${LAPACK_blas_LIBRARIES}")
 
-    # If we don't want to link with Fortran then we have to tell it to link
-    # with the Fortran libraries because LAPACK is written/compiled in Fortran
-    #
-    # NEEDED FOR STATIC LAPACK LIBS
-
-    if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-    elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-      set(LAPACKE_LIBRARIES "${LAPACKE_LIBRARIES} -lgfortran")    
-    elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
-      set(LAPACKE_LIBRARIES "${LAPACKE_LIBRARIES} -lifcore")    
-    endif()
-
   endif(LAPACKE_LIBRARIES STREQUAL "lapacke")
 
 else (LAPACKE_DIR)
@@ -267,6 +255,19 @@ if (LAPACKE_FOUND)
   include_directories(${LAPACKE_INCLUDE_DIRS})
   add_definitions("-DHAVE_LAPACKE")
   list(APPEND PORTAGE_EXTRA_LIBRARIES ${LAPACKE_LIBRARIES})
+
+    # If we don't want to specify the Fortran compiler then we have to
+    # tell it to link with the Fortran libraries because LAPACK is
+    # written/compiled in Fortran
+    #
+    # NEEDED FOR STATIC LAPACK LIBS
+
+    if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+    elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+      set(LAPACKE_LIBRARIES "${LAPACKE_LIBRARIES} -lgfortran")    
+    elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
+      set(LAPACKE_LIBRARIES "${LAPACKE_LIBRARIES} -lifcore")    
+    endif()
 
   message(STATUS "LAPACKE_FOUND ${LAPACKE_FOUND}")
   message(STATUS "LAPACKE_LIBRARIES  ${LAPACKE_LIBRARIES}")
