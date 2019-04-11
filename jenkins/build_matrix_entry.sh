@@ -42,26 +42,26 @@ ngc_include_dir=$NGC/private/include
 
 # compiler-specific settings
 if [[ $compiler == "intel" ]]; then
-  intel_version=18.0.1
-  cxxmodule=intel/${intel_version}
+  compiler_version=18.0.1
+  cxxmodule=intel/${compiler_version}
   # openmpi version that libs were built against
   openmpi_version=2.1.2
   # openmpi module for compiling and linking
   mpi_module=openmpi/2.1.2
 elif [[ $compiler == "gcc" ]]; then
-  gcc_version=6.4.0
-  cxxmodule=gcc/${gcc_version}
+  compiler_version=6.4.0
+  cxxmodule=gcc/${compiler_version}
   # openmpi version that libs were built against
   openmpi_version=2.1.2
   # openmpi module for compiling and linking
   mpi_module=openmpi/2.1.2
 fi
 
-jali_install_dir=$NGC/private/jali/${jali_version}-${compiler}-${intel_version}-openmpi-${openmpi_version}
-tangram_install_dir=$NGC/private/tangram/${tangram_version}-${compiler}-${intel_version}-openmpi-${openmpi_version}
+jali_install_dir=$NGC/private/jali/${jali_version}-${compiler}-${compiler_version}-openmpi-${openmpi_version}
+tangram_install_dir=$NGC/private/tangram/${tangram_version}-${compiler}-${compiler_version}-openmpi-${openmpi_version}
 tangram_install_dir_nompi=$NGC/private/tangram/${tangram_version}-${compiler}-${gcc_version}-nompi
-xmof2d_install_dir=$NGC/private/xmof2d/${xmof2d_version}-${compiler}-${intel_version}
-lapacke_dir=$NGC/private/lapack/${lapack_version}-patched-${compiler}-${intel_version}
+xmof2d_install_dir=$NGC/private/xmof2d/${xmof2d_version}-${compiler}-${compiler_version}
+lapacke_dir=$NGC/private/lapack/${lapack_version}-patched-${compiler}-${compiler_version}
 
 if [[ $compiler == "gcc" ]]; then
   flecsi_install_prefix=$NGC/private/flecsi/374b56b-gcc-6.4.0
