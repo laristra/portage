@@ -368,8 +368,8 @@ TEST(search_direct_product, DPtoAR2D) {
   // -- Given the ID of a target cell, find the matching source cells
   for (int n = 0; n < tgt_wrapper.total_num_cells(); ++n) {
     // Get the candidates list
-    Wonton::CellID id = (Wonton::CellID) n;
-    const std::vector<Wonton::CellID> candidates = search(id);
+    int id = n;
+    const std::vector<int> candidates = search(id);
     // Build the expected candidates list
     std::array<int,D> indices;
     if (n <= 2) {
@@ -381,8 +381,7 @@ TEST(search_direct_product, DPtoAR2D) {
       for (int d = 0; d < D; ++d)
         indices[d] = ((n-7) >> d) % 2;
     }
-    const std::vector<Wonton::CellID> expected =
-      {src_wrapper.indices_to_cellid(indices)};
+    const std::vector<int> expected = {src_wrapper.indices_to_cellid(indices)};
     // Verify
     ASSERT_EQ(candidates.size(), expected.size());
     for (int c = 0; c < candidates.size(); ++c) {
