@@ -316,12 +316,12 @@ class MismatchFixer {
     // number of 0 and empty cell layers will have positive layer
     // numbers starting from 1
 
-    std::vector<bool> is_empty(ntargetents_, false);
+    is_empty_.resize(ntargetents_, false);
     std::vector<int> emptyents;
     for (int t = 0; t < ntargetents_; t++) {
       if (fabs(xsect_volumes_[t]) < std::numeric_limits<double>::epsilon()) {
         emptyents.push_back(t);
-        is_empty[t] = true;
+        is_empty_[t] = true;
       }
     }
     int nempty = emptyents.size();
@@ -364,7 +364,7 @@ class MismatchFixer {
           else
             target_mesh_.node_get_cell_adj_nodes(ent, Entity_type::ALL, &nbrs);
           for (int nbr : nbrs)
-            if (!is_empty[nbr] || layernum_[nbr] != 0) {
+            if (!is_empty_[nbr] || layernum_[nbr] != 0) {
               // At least one neighbor has some material or will
               // receive some material (indicated by having a +ve
               // layer number)
@@ -469,6 +469,25 @@ class MismatchFixer {
     double *target_data;
     target_state_.mesh_get_data(onwhat, trg_var_name, &target_data);
 
+    if (partial_fixup_type == Partial_fixup_type::LOCALLY_CONSERVATIVE) {
+      // In interpolate step, we divided the accumulated integral (U)
+      // in a target cell by the intersection volume (v_i) instead of
+      // the target cell volume (v_c) to give a target field of u_t =
+      // U/v_i. In partially filled cells, this will preserve a
+      // constant source field but fill the cell with too much
+      // material. To restore conservation, we undo the division by
+      // the intersection volume and then divide by the cell volume
+      // (u'_t = U/v_c = u_t*v_i/v_c). This does not affect the values
+      // in fully filled cells
+
+      for (int t = 0; t < ntargetents_; t++) {
+        if (!is_empty_[t]) {
+          if (fabs(xsect_volumes_[t]-target_ent_volumes_[t])/target_ent_volumes_[t] > voldifftol_)
+            target_data[t] *= xsect_volumes_[t]/target_ent_volumes_[t];
+        }
+      }
+    }
+
     if (empty_fixup_type != Empty_fixup_type::LEAVE_EMPTY) {
       // Do something here to populate fully uncovered target
       // cells. We have layers of empty cells starting out from fully
@@ -513,28 +532,8 @@ class MismatchFixer {
     }
 
 
-    if (partial_fixup_type == Partial_fixup_type::CONSTANT) {
-      // In interpolate step, we divided the accumulated integral in a
-      // target cell by the intersection volume to preserve a constant
-      // and violate conservation. So nothing to do here.
-    
-      return true;
-
-    } else if (partial_fixup_type == Partial_fixup_type::LOCALLY_CONSERVATIVE) {
-      // In interpolate step, we divided the accumulated integral (U)
-      // in a target cell by the intersection volume (v_i) instead of
-      // the target cell volume (v_c) to give a target field of u_t =
-      // U/v_i. In partially filled cells, this will preserve a
-      // constant source field but fill the cell with too much
-      // material. To restore conservation, we undo the division by
-      // the intersection volume and then divide by the cell volume
-      // (u'_t = U/v_c = u_t*v_i/v_c). This does not affect the values
-      // in fully filled cells
-      
-      for (int t = 0; t < ntargetents_; t++) {
-        if (fabs(xsect_volumes_[t]-target_ent_volumes_[t])/target_ent_volumes_[t] > voldifftol_)
-          target_data[t] *= xsect_volumes_[t]/target_ent_volumes_[t];
-      }
+    if (partial_fixup_type == Partial_fixup_type::CONSTANT || 
+        partial_fixup_type == Partial_fixup_type::LOCALLY_CONSERVATIVE) {
 
       return true;
 
@@ -711,7 +710,8 @@ class MismatchFixer {
   double source_volume_, target_volume_;
   double global_source_volume_, global_target_volume_, global_xsect_volume_;
   double relvoldiff_source_, relvoldiff_target_, relvoldiff_;
-  std::vector<int> is_empty_, layernum_;
+  std::vector<int> layernum_;
+  std::vector<bool> is_empty_;
   std::vector<std::vector<int>> emptylayers_;
   bool mismatch_ = false;
   int rank_ = 0, nprocs_ = 1;
