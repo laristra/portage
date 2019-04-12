@@ -9,7 +9,6 @@
 #include <utility>
 #include <vector>
 
-#include "wonton/wonton/support/CellID.h"
 #include "wonton/wonton/support/Point.h"
 #include "portage/support/portage.h"
 
@@ -72,7 +71,7 @@ class SearchDirectProduct {
     cells on the source mesh.  Returns the list of overlapping source mesh
     cells.
   */
-  std::vector<Wonton::CellID> operator() (const int tgt_cell) const;
+  std::vector<int> operator() (const int tgt_cell) const;
 
  private:
 
@@ -81,13 +80,13 @@ class SearchDirectProduct {
 
   //! Loop over each dimension recursively and fill the list
   void fill_list_by_dim(
-    std::vector<Wonton::CellID> &list,
+    std::vector<int> &list,
     const int d, const int idx_start, const std::array<int,D> &step_size,
     const std::array<int,D> &ilo, const std::array<int,D> &ihi,
     std::array<int,D> &indices) const;
 
   //! List cells given bounds in each dimension
-  std::vector<Wonton::CellID> list_cells(
+  std::vector<int> list_cells(
         const std::array<int,D>& ilo, const std::array<int,D>& ihi) const;
 
   // ==========================================================================
@@ -115,7 +114,7 @@ SearchDirectProduct<D,SourceMeshType,TargetMeshType>::SearchDirectProduct(
 
 // Search for source cells that intersect a given target cell.
 template <int D, typename SourceMeshType, typename TargetMeshType>
-std::vector<Wonton::CellID> 
+std::vector<int> 
     SearchDirectProduct<D, SourceMeshType, TargetMeshType>::operator() (
     const int tgt_cell) const {
 
@@ -141,7 +140,7 @@ std::vector<Wonton::CellID>
     assert(tlo[d] < thi[d]);
     assert(sglo[d] < sghi[d]);
     if (tlo[d] >= sghi[d] || thi[d] <= sglo[d])
-      return std::move(std::vector<Wonton::CellID>());
+      return std::move(std::vector<int>());
   }
 
   // find which source cells overlap target cell, in each dimension
@@ -152,7 +151,7 @@ std::vector<Wonton::CellID>
 
     // find last axis point less than or equal to tlo
     auto is_point_above = [&] (const double x, const int pid) {
-      return (x < sourceMesh_.axis_point_coordinate(d, pid));
+      return (x < sourceMesh_.get_axis_point(d, pid));
     };
     auto itrlo = std::upper_bound(saxis_begin, saxis_end, tlo[d],
                                   is_point_above);
@@ -163,7 +162,7 @@ std::vector<Wonton::CellID>
 
     // find first axis point greater than or equal to thi
     auto is_point_below = [&] (const int pid, const double x) {
-      return (sourceMesh_.axis_point_coordinate(d, pid) < x);
+      return (sourceMesh_.get_axis_point(d, pid) < x);
     };
     auto itrhi = std::lower_bound(itrlo, saxis_end, thi[d],
                                   is_point_below);
@@ -184,7 +183,7 @@ std::vector<Wonton::CellID>
 // Loop over each dimension recursively and fill the list
 template<int D, typename SourceMeshType, typename TargetMeshType>
 void SearchDirectProduct<D,SourceMeshType,TargetMeshType>::fill_list_by_dim(
-    std::vector<Wonton::CellID> &list,
+    std::vector<int> &list,
     const int d, const int idx_start, const std::array<int,D> &step_size,
     const std::array<int,D> &ilo, const std::array<int,D> &ihi,
     std::array<int,D> &indices) const {
@@ -202,7 +201,7 @@ void SearchDirectProduct<D,SourceMeshType,TargetMeshType>::fill_list_by_dim(
 
 // List cells given bounds in each dimension
 template <int D, typename SourceMeshType, typename TargetMeshType>
-std::vector<Wonton::CellID>
+std::vector<int>
     SearchDirectProduct<D, SourceMeshType, TargetMeshType>::list_cells(
     const std::array<int,D>& ilo, const std::array<int,D>& ihi) const {
 
@@ -215,7 +214,7 @@ std::vector<Wonton::CellID>
 
   // Declare the list of cells to be returned
   int list_size = stepsize[D-1] * (ihi[D-1] - ilo[D-1]);
-  std::vector<Wonton::CellID> list(list_size);
+  std::vector<int> list(list_size);
 
   // Recurse across dimensions
   std::array<int,D> indices;

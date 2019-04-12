@@ -17,7 +17,6 @@ Please see the license file at the root of this repository, or at:
 #include "wonton/mesh/adaptive_refinement/adaptive_refinement_mesh_wrapper.h"
 #include "wonton/mesh/direct_product/direct_product_mesh.h"
 #include "wonton/mesh/direct_product/direct_product_mesh_wrapper.h"
-#include "wonton/wonton/support/CellID.h"
 #include "wonton/support/Point.h"
 
 // ============================================================================
@@ -70,14 +69,14 @@ TEST(search_direct_product, DPtoDP1D) {
   // Verify overlaps
   for (int i = 0; i < tgt_wrapper.axis_num_cells(0); ++i) {
     std::array<int,D> indices = {i};
-    Wonton::CellID id = tgt_wrapper.indices_to_cellid(indices);
-    const std::vector<Wonton::CellID> candidates = search(id);
+    int id = tgt_wrapper.indices_to_cellid(indices);
+    const std::vector<int> candidates = search(id);
     ASSERT_EQ(candidates.size(), 2);
     int n = 0;
     for (int i2 = i; i2 < i+2; ++i2) {
       ASSERT_TRUE(n < candidates.size());
       std::array<int,D> candidate = {i2};
-      Wonton::CellID c_id = src_wrapper.indices_to_cellid(candidate);
+      int c_id = src_wrapper.indices_to_cellid(candidate);
       ASSERT_EQ(candidates[n], c_id);
       n++;
     }
@@ -142,15 +141,15 @@ TEST(search_direct_product, DPtoDP2D) {
   for (int j = 0; j < tgt_wrapper.axis_num_cells(1); ++j) {
     for (int i = 0; i < tgt_wrapper.axis_num_cells(0); ++i) {
       std::array<int,D> indices = {i,j};
-      Wonton::CellID id = tgt_wrapper.indices_to_cellid(indices);
-      const std::vector<Wonton::CellID> candidates = search(id);
+      int id = tgt_wrapper.indices_to_cellid(indices);
+      const std::vector<int> candidates = search(id);
       ASSERT_EQ(candidates.size(), 4);
       int n = 0;
       for (int j2 = j; j2 < j+2; ++j2) {
         for (int i2 = i; i2 < i+2; ++i2) {
           ASSERT_TRUE(n < candidates.size());
           std::array<int,D> candidate = {i2,j2};
-          Wonton::CellID c_id = src_wrapper.indices_to_cellid(candidate);
+          int c_id = src_wrapper.indices_to_cellid(candidate);
           ASSERT_EQ(candidates[n], c_id);
           n++;
         }
@@ -286,8 +285,8 @@ TEST(search_direct_product, DPtoDP3D) {
     for (int j = 0; j < tgt_wrapper.axis_num_cells(1); ++j) {
       for (int i = 0; i < tgt_wrapper.axis_num_cells(0); ++i) {
         std::array<int,D> indices = {i,j,k};
-        Wonton::CellID id = tgt_wrapper.indices_to_cellid(indices);
-        const std::vector<Wonton::CellID> candidates = search(id);
+        int id = tgt_wrapper.indices_to_cellid(indices);
+        const std::vector<int> candidates = search(id);
         ASSERT_EQ(candidates.size(), 8);
         int n = 0;
         for (int k2 = k; k2 < k+2; ++k2) {
@@ -295,7 +294,7 @@ TEST(search_direct_product, DPtoDP3D) {
             for (int i2 = i; i2 < i+2; ++i2) {
               ASSERT_TRUE(n < candidates.size());
               std::array<int,D> candidate = {i2,j2,k2};
-              Wonton::CellID c_id = src_wrapper.indices_to_cellid(candidate);
+              int c_id = src_wrapper.indices_to_cellid(candidate);
               ASSERT_EQ(candidates[n], c_id);
               n++;
             }
