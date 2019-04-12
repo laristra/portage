@@ -4,7 +4,7 @@ Please see the license file at the root of this repository, or at:
     https://github.com/laristra/portage/blob/master/LICENSE
 ]]
 
-project(portage)
+project(portage CXX)
 
 cinch_minimum_required(VERSION 1.0)
 
@@ -16,7 +16,6 @@ cinch_minimum_required(VERSION 1.0)
 set(PORTAGE_VERSION_MAJOR 2)
 set(PORTAGE_VERSION_MINOR 1)
 set(PORTAGE_VERSION_PATCH 1)
-
 
 # If a C++14 compiler is available, then set the appropriate flags
 include(cxx14)
@@ -251,23 +250,13 @@ else (LAPACKE_DIR)
 
 endif (LAPACKE_DIR)
 
-if (LAPACKE_FOUND) 
+if (LAPACKE_FOUND)
+  enable_language(Fortran)
+  include(FortranCInterface)  # will ensure the fortran library is linked in
+  
   include_directories(${LAPACKE_INCLUDE_DIRS})
   add_definitions("-DHAVE_LAPACKE")
   list(APPEND PORTAGE_EXTRA_LIBRARIES ${LAPACKE_LIBRARIES})
-
-    # If we don't want to specify the Fortran compiler then we have to
-    # tell it to link with the Fortran libraries because LAPACK is
-    # written/compiled in Fortran
-    #
-    # NEEDED FOR STATIC LAPACK LIBS
-
-    if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-    elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-      set(LAPACKE_LIBRARIES "${LAPACKE_LIBRARIES} -lgfortran")    
-    elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
-      set(LAPACKE_LIBRARIES "${LAPACKE_LIBRARIES} -lifcore")    
-    endif()
 
   message(STATUS "LAPACKE_FOUND ${LAPACKE_FOUND}")
   message(STATUS "LAPACKE_LIBRARIES  ${LAPACKE_LIBRARIES}")
