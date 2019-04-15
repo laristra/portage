@@ -35,6 +35,12 @@ if (ENABLE_UNIT_TESTS)
        POLICY MPI
        THREADS 1)
 
+       cinch_add_unit(test_mismatch_fixup
+       SOURCES test/test_mismatch_fixup 
+       LIBRARIES portage ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
+       POLICY MPI
+       THREADS 1)
+
        cinch_add_unit(test_driver
        SOURCES test/test_driver 
        LIBRARIES portage ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
