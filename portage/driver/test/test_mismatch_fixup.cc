@@ -117,7 +117,6 @@ TEST(Test_Mismatch_Fixup, Test_Methods) {
   // Verify that we got the fields we wanted
   for (int c = 0; c < ncells_target; c++) {
     ASSERT_NEAR(exact_S_E[c], targetvec[c], TOL);
-    std::cout << "============== targ_values = " << exact_S_E[c] << targetvec[c] << std::endl; 
   }
 
   // Build the main driver object
@@ -146,7 +145,6 @@ TEST(Test_Mismatch_Fixup, Test_Methods) {
   // Verify that we got the fields we wanted
   for (int c = 0; c < ncells_target; c++) {
     ASSERT_NEAR(exact_C_E[c], targetvec[c], TOL);
-    std::cout << "============== targ_values = " << exact_C_E[c] << targetvec[c] << std::endl; 
   }
 
   // Build the main driver object
@@ -175,7 +173,6 @@ TEST(Test_Mismatch_Fixup, Test_Methods) {
   // Verify that we got the fields we wanted
   for (int c = 0; c < ncells_target; c++) {
     ASSERT_NEAR(exact_L_E[c], targetvec[c], TOL);
-    std::cout << "============== targ_values = " << exact_L_E[c] << targetvec[c] << std::endl; 
   }
 
   // Build the main driver object
@@ -204,7 +201,6 @@ TEST(Test_Mismatch_Fixup, Test_Methods) {
   // Verify that we got the fields we wanted
   for (int c = 0; c < ncells_target; c++) {
     ASSERT_NEAR(exact_S_E[c], targetvec[c], TOL);
-    std::cout << "============== targ_values = " << exact_S_E[c] << targetvec[c] << std::endl; 
   }
 
   // Build the main driver object
@@ -233,7 +229,6 @@ TEST(Test_Mismatch_Fixup, Test_Methods) {
   // Verify that we got the fields we wanted
   for (int c = 0; c < ncells_target; c++) {
     ASSERT_NEAR(exact_C_L[c], targetvec[c], TOL);
-    std::cout << "============== targ_values = " << exact_C_L[c] << targetvec[c] << std::endl; 
   }
 
   // Build the main driver object
@@ -262,7 +257,6 @@ TEST(Test_Mismatch_Fixup, Test_Methods) {
   // Verify that we got the fields we wanted
   for (int c = 0; c < ncells_target; c++) {
     ASSERT_NEAR(exact_L_L[c], targetvec[c], TOL);
-    std::cout << "============== targ_values = " << exact_L_L[c] << targetvec[c] << std::endl; 
   }
 
   // Build the main driver object
@@ -291,7 +285,6 @@ TEST(Test_Mismatch_Fixup, Test_Methods) {
   // Verify that we got the fields we wanted
   for (int c = 0; c < ncells_target; c++) {
     ASSERT_NEAR(exact_S_L[c], targetvec[c], TOL);
-    std::cout << "============== targ_values = " << exact_S_L[c] << targetvec[c] << std::endl; 
   }
 
 }
