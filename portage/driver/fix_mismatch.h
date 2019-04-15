@@ -474,8 +474,10 @@ class MismatchFixer {
       // in a target cell by the intersection volume (v_i) instead of
       // the target cell volume (v_c) to give a target field of u_t =
       // U/v_i. In partially filled cells, this will preserve a
-      // constant source field but fill the cell with too much
-      // material. To restore conservation, we undo the division by
+      // constant source field but fill the cell with too much material
+      // (this is the equivalent of requesting Partial_fixup_type::CONSTANT).
+      // To restore conservation (as requested by
+      // Partial_fixup_type::LOCALLY_CONSERVATIVE), we undo the division by
       // the intersection volume and then divide by the cell volume
       // (u'_t = U/v_c = u_t*v_i/v_c). This does not affect the values
       // in fully filled cells
