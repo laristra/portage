@@ -1,5 +1,3 @@
-./arrowdown.png
-./arrowright.png
 ./bc_s.png
 ./bdwn.png
 ./closed.png
@@ -17,6 +15,8 @@
 ./interpolate.svg
 ./intersect.svg
 ./jquery.js
+./menu.js
+./menudata.js
 ./meshmesh.svg
 ./nav_f.png
 ./nav_g.png
