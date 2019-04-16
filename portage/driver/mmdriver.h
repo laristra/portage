@@ -471,7 +471,7 @@ class MMDriver {
                                src_matvar_names,  trg_matvar_names,
                                executor);
     }
-    else
+    else {
 #endif
       // Why is it not able to deduce the template arguments, if I don't specify
       // Source_Mesh_Wrapper and Source_State_Wrapper?
@@ -481,6 +481,7 @@ class MMDriver {
                                src_meshvar_names, trg_meshvar_names,
                                src_matvar_names, trg_matvar_names,
                                executor);
+    }
 
 
 
