@@ -42,8 +42,8 @@ if (ENABLE_UNIT_TESTS)
     THREADS 1
     )
 
-  cinch_add_unit(test_faceted_setup_simple
-    SOURCES test/test_faceted_setup_simple.cc
+  cinch_add_unit(test_faceted_setup
+    SOURCES test/test_faceted_setup.cc
     POLICY SERIAL
     )
 
