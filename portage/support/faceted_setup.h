@@ -72,8 +72,8 @@ namespace Portage {
                 double norm=sqrt(cross[0]*cross[0]+cross[1]*cross[1]+cross[2]*cross[2]);
                 for (int m=0;m<3;m++) {
                   cross[m]/=norm;
-                  normal += cross;
                 }
+                normal += cross;
                 bivec[0] = bivec[1];
               }
               if (fdirs[j]<0) normal*=-1.0;
