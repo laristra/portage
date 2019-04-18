@@ -586,8 +586,29 @@ class MismatchFixer {
       // expect that process to take more than two iterations at the
       // most.
 
-      double adj_target_volume = target_volume_;
-      double global_adj_target_volume = global_target_volume_;
+      double adj_target_volume;
+      double global_adj_target_volume;
+      double global_covered_target_volume;
+      if (empty_fixup_type == Empty_fixup_type::LEAVE_EMPTY) {
+        double covered_target_volume = 0.0;
+        for (int t = 0; t < ntargetents_; t++) {
+          if (!is_empty_[t]) {
+            covered_target_volume += target_ent_volumes_[t];
+          }
+        }
+        global_covered_target_volume = covered_target_volume;
+#ifdef PORTAGE_ENABLE_MPI
+        if (distributed_)
+          MPI_Allreduce(&covered_target_volume, &global_covered_target_volume,
+                        1, MPI_DOUBLE, MPI_SUM, mycomm_);
+#endif
+        adj_target_volume = covered_target_volume;
+        global_adj_target_volume = global_covered_target_volume;
+      }
+      else {
+        adj_target_volume = target_volume_;
+        global_adj_target_volume = global_target_volume_;
+      }
 
       // sort of a "unit" discrepancy or difference per unit volume
       double udiff = global_diff/global_adj_target_volume;
@@ -597,52 +618,54 @@ class MismatchFixer {
         for (auto it = target_mesh_.begin(onwhat, Entity_type::PARALLEL_OWNED);
              it != target_mesh_.end(onwhat, Entity_type::PARALLEL_OWNED); it++) {
           int t = *it;
+          if (empty_fixup_type != Empty_fixup_type::LEAVE_EMPTY || !is_empty_[t]) {
 
-          if ((target_data[t]-udiff) < global_lower_bound) {
-            // Subtracting the full excess will make this cell violate the
-            // lower bound. So subtract only as much as will put this cell
-            // exactly at the lower bound
+            if ((target_data[t]-udiff) < global_lower_bound) {
+              // Subtracting the full excess will make this cell violate the
+              // lower bound. So subtract only as much as will put this cell
+              // exactly at the lower bound
 
-            target_data[t] = global_lower_bound;
+              target_data[t] = global_lower_bound;
 
-            if (!hit_lobound) {
-              std::cerr << "Hit lower bound for cell " << t <<
-                  " (and maybe other cells) on rank " << rank_ << "\n";
-              hit_lobound = true;
+              if (!hit_lobound) {
+                std::cerr << "Hit lower bound for cell " << t <<
+                    " (and maybe other cells) on rank " << rank_ << "\n";
+                hit_lobound = true;
+              }
+
+              // this cell is no longer in play for adjustment - so remove its
+              // volume from the adjusted target_volume
+
+              adj_target_volume -= target_ent_volumes_[t];
+
+            } else if ((target_data[t]-udiff) > global_upper_bound) {  // udiff < 0
+              // Adding the full deficit will make this cell violate the
+              // upper bound. So add only as much as will put this cell
+              // exactly at the upper bound
+
+              target_data[t] = global_upper_bound;
+
+              if (!hit_hibound) {
+                std::cerr << "Hit upper bound for cell " << t <<
+                    " (and maybe other cells) on rank " << rank_ << "\n";
+                hit_hibound = true;
+              }
+
+              // this cell is no longer in play for adjustment - so remove its
+              // volume from the adjusted target_volume
+
+              adj_target_volume -= target_ent_volumes_[t];
+
+            } else {
+              // This is the equivalent of
+              //           [curval*cellvol - diff*cellvol/meshvol]
+              // curval = ---------------------------------------
+              //                       cellvol
+
+              target_data[t] -= udiff;
+
             }
-            
-            // this cell is no longer in play for adjustment - so remove its
-            // volume from the adjusted target_volume
-
-            adj_target_volume -= target_ent_volumes_[t];
-
-          } else if ((target_data[t]-udiff) > global_upper_bound) {  // udiff < 0
-            // Adding the full deficit will make this cell violate the
-            // upper bound. So add only as much as will put this cell
-            // exactly at the upper bound
-
-            target_data[t] = global_upper_bound;
-
-            if (!hit_hibound) {
-              std::cerr << "Hit upper bound for cell " << t <<
-                  " (and maybe other cells) on rank " << rank_ << "\n";
-              hit_hibound = true;
-            }
-            
-            // this cell is no longer in play for adjustment - so remove its
-            // volume from the adjusted target_volume
-
-            adj_target_volume -= target_ent_volumes_[t];
-
-          } else {
-            // This is the equivalent of
-            //           [curval*cellvol - diff*cellvol/meshvol]
-            // curval = ---------------------------------------
-            //                       cellvol
-
-            target_data[t] -= udiff;
-
-          }
+          }  // only non-empty cells
         }  // iterate through mesh cells
 
         // Compute the new integral over all processors
@@ -679,7 +702,10 @@ class MismatchFixer {
 
         // Now reset adjusted target mesh volume to be the full volume
         // in preparation for the next iteration
-        global_adj_target_volume = global_target_volume_;
+        if (empty_fixup_type == Empty_fixup_type::LEAVE_EMPTY)
+          global_adj_target_volume = global_covered_target_volume;
+        else
+          global_adj_target_volume = global_target_volume_;
 
         iter++;
       }  // while leftover is not zero
