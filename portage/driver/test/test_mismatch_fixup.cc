@@ -45,7 +45,7 @@ TEST(Test_Mismatch_Fixup, Test_Methods) {
   double exact_S_E[2] = {0.6, 0.6};
   double exact_C_L[2] = {1.0, 0.0};
   double exact_L_L[2] = {0.4, 0.0};
-  double exact_S_L[2] = {0.7, 0.5};   // THESE VALUES ARE SUSPICIOUS!!!!!!!
+  double exact_S_L[2] = {1.2, 0.0};
 
   const int ncells_source =
       source_mesh->num_entities(Jali::Entity_kind::CELL,
