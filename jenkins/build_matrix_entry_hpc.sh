@@ -31,10 +31,10 @@ fi
 
 # set modules and install paths
 
-jali_version=1.0.0
+jali_version=1.0.4
 openmpi_version=2.1.2
-tangram_version=0.9.2
-xmof2d_version=0.9.1
+tangram_version=0.9.3
+xmof2d_version=0.9.4
 lapack_version=3.8.0
 
 export NGC=/usr/projects/ngc
@@ -42,21 +42,19 @@ ngc_include_dir=$NGC/private/include
 
 # compiler-specific settings
 if [[ $compiler == "intel" ]]; then
-  intel_version=17.0.4
-  cxxmodule=intel/${intel_version}
-  jali_install_dir=$NGC/private/jali/${jali_version}-intel-${intel_version}-openmpi-${openmpi_version}
-  tangram_install_dir=$NGC/private/tangram/${tangram_version}-intel-${intel_version}-openmpi-${openmpi_version}
-  xmof2d_install_dir=$NGC/private/xmof2d/${xmof2d_version}-intel-${intel_version}-openmpi-${openmpi_version}
-  lapacke_dir=$NGC/private/lapack/${lapack_version}-patched-intel-${intel_version}
+  compiler_version=18.0.5
+  cxxmodule=intel/${compiler_version}
 elif [[ $compiler == "gcc" ]]; then
-  gcc_version=6.4.0
-  cxxmodule=gcc/${gcc_version}
-  jali_install_dir=$NGC/private/jali/${jali_version}-gcc-${gcc_version}-openmpi-${openmpi_version}
-  tangram_install_dir=$NGC/private/tangram/${tangram_version}-gcc-${gcc_version}-openmpi-${openmpi_version}
-  xmof2d_install_dir=$NGC/private/xmof2d/${xmof2d_version}-gcc-${gcc_version}-openmpi-${openmpi_version}
-  lapacke_dir=$NGC/private/lapack/${lapack_version}-gcc-${gcc_version}
+  compiler_version=7.4.0
+  cxxmodule=gcc/${compiler_version}
 fi
-  
+
+jali_install_dir=$NGC/private/jali/${jali_version}-${compiler}-${compiler_version}-openmpi-${openmpi_version}
+  tangram_install_dir=$NGC/private/tangram/${tangram_version}-${compiler}-${compiler_version}-openmpi-${openmpi_version}
+  tangram_install_dir_nompi=$NGC/private/tangram/${tangram_version}-${compiler}-${compiler_version}-nompi
+  xmof2d_install_dir=$NGC/private/xmof2d/${xmof2d_version}-${compiler}-${compiler_version}-openmpi-${openmpi_version}
+  lapacke_dir=$NGC/private/lapack/${lapack_version}-patched-${compiler}-${compiler_version}
+
 cmake_build_type=Release
 extra_flags=
 jali_flags="-D Jali_DIR:FILEPATH=$jali_install_dir/lib"
@@ -71,6 +69,8 @@ elif [[ $build_type == "serial" ]]; then
   mpi_flags=
   # jali is not available in serial
   jali_flags=
+  # use serial version of tangram
+  tangram_flags="-D TANGRAM_DIR:FILEPATH=$tangram_install_dir_nompi"
 elif [[ $build_type == "thrust" ]]; then
   extra_flags="-D ENABLE_THRUST=True"
 fi
