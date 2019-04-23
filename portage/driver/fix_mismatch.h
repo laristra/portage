@@ -316,12 +316,12 @@ class MismatchFixer {
     // number of 0 and empty cell layers will have positive layer
     // numbers starting from 1
 
-    is_empty_.resize(ntargetents_, false);
+    is_cell_empty_.resize(ntargetents_, false);
     std::vector<int> emptyents;
     for (int t = 0; t < ntargetents_; t++) {
       if (fabs(xsect_volumes_[t]) < std::numeric_limits<double>::epsilon()) {
         emptyents.push_back(t);
-        is_empty_[t] = true;
+        is_cell_empty_[t] = true;
       }
     }
     int nempty = emptyents.size();
@@ -364,7 +364,7 @@ class MismatchFixer {
           else
             target_mesh_.node_get_cell_adj_nodes(ent, Entity_type::ALL, &nbrs);
           for (int nbr : nbrs)
-            if (!is_empty_[nbr] || layernum_[nbr] != 0) {
+            if (!is_cell_empty_[nbr] || layernum_[nbr] != 0) {
               // At least one neighbor has some material or will
               // receive some material (indicated by having a +ve
               // layer number)
@@ -483,7 +483,7 @@ class MismatchFixer {
       // in fully filled cells
 
       for (int t = 0; t < ntargetents_; t++) {
-        if (!is_empty_[t]) {
+        if (!is_cell_empty_[t]) {
           if (fabs(xsect_volumes_[t]-target_ent_volumes_[t])/target_ent_volumes_[t] > voldifftol_)
             target_data[t] *= xsect_volumes_[t]/target_ent_volumes_[t];
         }
@@ -592,7 +592,7 @@ class MismatchFixer {
       if (empty_fixup_type == Empty_fixup_type::LEAVE_EMPTY) {
         double covered_target_volume = 0.0;
         for (int t = 0; t < ntargetents_; t++) {
-          if (!is_empty_[t]) {
+          if (!is_cell_empty_[t]) {
             covered_target_volume += target_ent_volumes_[t];
           }
         }
@@ -618,7 +618,7 @@ class MismatchFixer {
         for (auto it = target_mesh_.begin(onwhat, Entity_type::PARALLEL_OWNED);
              it != target_mesh_.end(onwhat, Entity_type::PARALLEL_OWNED); it++) {
           int t = *it;
-          if (empty_fixup_type != Empty_fixup_type::LEAVE_EMPTY || !is_empty_[t]) {
+          if (empty_fixup_type != Empty_fixup_type::LEAVE_EMPTY || !is_cell_empty_[t]) {
 
             if ((target_data[t]-udiff) < global_lower_bound) {
               // Subtracting the full excess will make this cell violate the
@@ -739,7 +739,7 @@ class MismatchFixer {
   double global_source_volume_, global_target_volume_, global_xsect_volume_;
   double relvoldiff_source_, relvoldiff_target_, relvoldiff_;
   std::vector<int> layernum_;
-  std::vector<bool> is_empty_;
+  std::vector<bool> is_cell_empty_;
   std::vector<std::vector<int>> emptylayers_;
   bool mismatch_ = false;
   int rank_ = 0, nprocs_ = 1;
