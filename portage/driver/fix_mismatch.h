@@ -247,7 +247,7 @@ class MismatchFixer {
       std::vector<double> source_covered_vol(source_ent_volumes_);
       for (auto it = target_mesh_.begin(onwhat, Entity_type::PARALLEL_OWNED);
            it != target_mesh_.end(onwhat, Entity_type::PARALLEL_OWNED); it++) {
-        auto const& sw_vec = source_ents_and_weights[*it];
+        std::vector<Weights_t> const& sw_vec = source_ents_and_weights[*it];
         for (auto const& sw : sw_vec)
           source_covered_vol[sw.entityID] -= sw.weights[0];
       }
