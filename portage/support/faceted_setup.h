@@ -8,6 +8,7 @@
 #define FACETED_SETUP_H
 
 #include <vector>
+#include <algorithm>
 
 #include "wonton/mesh/AuxMeshTopology.h"
 #include "wonton/support/Point.h"
@@ -20,9 +21,14 @@ namespace Portage {
       template<int DIM, class Mesh_Wrapper> void faceted_setup_cell
         (Mesh_Wrapper &mesh, 
          std::vector<std::vector<std::vector<double>>> &smoothing_lengths,
+         std::vector<Wonton::Point<DIM>> &extents,
          double smoothing_factor)
       {
         int ncells=mesh.num_owned_cells();
+        smoothing_lengths.resize(ncells);
+        extents.resize(ncells);
+        
+        // get face normal and distance information
         for (int i=0; i<ncells; i++) {
           std::vector<int> faces, fdirs;
           mesh.cell_get_faces_and_dirs(i, &faces, &fdirs);
@@ -93,6 +99,30 @@ namespace Portage {
             }
             smoothing_lengths[i][j][DIM] = smoothing_factor*smoothing;
           }
+        }
+
+        // get extent information
+        for (int i=0; i<ncells; i++) {
+          // calculate the min and max of coordinates
+          std::vector<int> node_indices;
+          mesh.cell_get_nodes(i, &node_indices);
+          Wonton::Point<DIM> cmin, cmax, first_coords; 
+          mesh.node_get_coordinates(node_indices[0], &first_coords);
+          for (int k=0; k<DIM; k++) {cmin[k] = first_coords[k]; cmax[k] = first_coords[k];}
+          for (int j=1; j<node_indices.size(); j++) {
+            Wonton::Point<DIM> node_coords;
+            mesh.node_get_coordinates(node_indices[j], &node_coords);
+            for (int k=0; k<DIM; k++) {
+              cmin[k] = std::min(node_coords[k], cmin[k]);
+              cmax[k] = std::max(node_coords[k], cmax[k]);
+            }
+          }
+
+          // subtract to get extents
+          for (int k=0; k<DIM; k++) extents[i][k] = cmax[k] - cmin[k];
+
+          // multiply by smoothing_factor
+          for (int k=0; k<DIM; k++) extents[i][k] *= 2.*smoothing_factor;
         }
       }
 
