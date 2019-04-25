@@ -85,7 +85,7 @@ class SearchDirectProduct {
     const std::array<int,D> &ilo, const std::array<int,D> &ihi,
     std::array<int,D> &indices) const;
 
-  //! List cells given bounds in each dimension
+  //! List cells given index bounds in each dimension
   std::vector<int> list_cells(
         const std::array<int,D>& ilo, const std::array<int,D>& ihi) const;
 
@@ -199,7 +199,7 @@ void SearchDirectProduct<D,SourceMeshType,TargetMeshType>::fill_list_by_dim(
 }
 
 
-// List cells given bounds in each dimension
+// List cells given index bounds in each dimension
 template <int D, typename SourceMeshType, typename TargetMeshType>
 std::vector<int>
     SearchDirectProduct<D, SourceMeshType, TargetMeshType>::list_cells(
