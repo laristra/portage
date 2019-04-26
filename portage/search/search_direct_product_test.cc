@@ -366,7 +366,7 @@ TEST(search_direct_product, DPtoAR2D) {
 
   // Verify overlaps
   // -- Given the ID of a target cell, find the matching source cells
-  for (int n = 0; n < tgt_wrapper.total_num_cells(); ++n) {
+  for (int n = 0; n < tgt_wrapper.num_owned_cells(); ++n) {
     // Get the candidates list
     int id = n;
     const std::vector<int> candidates = search(id);
