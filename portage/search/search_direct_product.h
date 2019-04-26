@@ -85,7 +85,7 @@ class SearchDirectProduct {
     const std::array<int,D> &ilo, const std::array<int,D> &ihi,
     std::array<int,D> &indices) const;
 
-  //! List cells given bounds in each dimension
+  //! List cells given index bounds in each dimension
   std::vector<int> list_cells(
         const std::array<int,D>& ilo, const std::array<int,D>& ihi) const;
 
@@ -150,8 +150,8 @@ std::vector<int>
     auto saxis_end   = sourceMesh_.axis_point_end(d);
 
     // find last axis point less than or equal to tlo
-    auto is_point_above = [&] (const double x, const int pid) {
-      return (x < sourceMesh_.get_axis_point(d, pid));
+    auto is_point_above = [this,d] (const double x, const int pid) {
+      return (x < this->sourceMesh_.get_axis_point(d, pid));
     };
     auto itrlo = std::upper_bound(saxis_begin, saxis_end, tlo[d],
                                   is_point_above);
@@ -161,8 +161,8 @@ std::vector<int>
     ilo[d] = std::max(ilo[d], 0);
 
     // find first axis point greater than or equal to thi
-    auto is_point_below = [&] (const int pid, const double x) {
-      return (sourceMesh_.get_axis_point(d, pid) < x);
+    auto is_point_below = [this,d] (const int pid, const double x) {
+      return (this->sourceMesh_.get_axis_point(d, pid) < x);
     };
     auto itrhi = std::lower_bound(itrlo, saxis_end, thi[d],
                                   is_point_below);
@@ -199,7 +199,7 @@ void SearchDirectProduct<D,SourceMeshType,TargetMeshType>::fill_list_by_dim(
 }
 
 
-// List cells given bounds in each dimension
+// List cells given index bounds in each dimension
 template <int D, typename SourceMeshType, typename TargetMeshType>
 std::vector<int>
     SearchDirectProduct<D, SourceMeshType, TargetMeshType>::list_cells(
