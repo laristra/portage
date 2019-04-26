@@ -136,21 +136,19 @@ Execute the following from the portage root directory:
 
 ```c++
 # machine=darwin-fe
-module load openmpi/2.1.2-intel_17.0.6 boost/1.58.0 cmake
-JALI_INSTALL_PREFIX=/usr/projects/ngc/private/jali/1.0.0-intel-17.0.6-openmpi-2.1.2
-TPL_INSTALL_PREFIX=/usr/projects/ngc/private/jali-tpl/1.1.0-intel-17.0.6-openmpi-2.1.2
-LAPACKE_DIR=/usr/projects/ngc/private/lapack/3.8.0-patched-intel-17.0.6
+module load openmpi/3.1.3-intel_19.0.2 boost/1.58.0 cmake
+JALI_INSTALL_PREFIX=/usr/projects/ngc/private/jali/1.0.4-intel-19.0.2-openmpi-3.1.3
+LAPACKE_DIR=/usr/projects/ngc/private/lapack/3.8.0-patched-intel-19.0.2
 mkdir build
 cd build
 cmake \
-    -D CMAKE_BUILD_TYPE=Debug \
+    -D CMAKE_BUILD_TYPE=Release \
     -D ENABLE_UNIT_TESTS=True \
     -D ENABLE_APP_TESTS=True \
     -D ENABLE_MPI=True \
     -D Jali_DIR:FILEPATH=$JALI_INSTALL_PREFIX/lib \
-    -D TANGRAM_DIR:FILEPATH=/usr/projects/ngc/private/tangram/0.9.2-intel-17.0.6-openmpi-2.1.2 \
-    -D XMOF2D_DIR:FILEPATH=/usr/projects/ngc/private/xmof2d/0.9.1-intel-17.0.6/share/cmake \
-    -D Boost_INCLUDE_DIR:PATH=$TPL_INSTALL_PREFIX/include \
+    -D TANGRAM_DIR:FILEPATH=/usr/projects/ngc/private/tangram/0.9.3-intel-19.0.2-openmpi-3.1.3 \
+    -D XMOF2D_DIR:FILEPATH=/usr/projects/ngc/private/xmof2d/0.9.4-intel-19.0.2/share/cmake \
     -D LAPACKE_DIR=$LAPACKE_DIR \
     ..
 make -j16
@@ -165,15 +163,15 @@ Execute the following from the portage root directory:
 ```c++
 # machine=sn-fey
 . /usr/share/lmod/lmod/init/sh
-module load intel/17.0.4 openmpi/2.1.2 cmake
-JALI_INSTALL_PREFIX=/usr/projects/ngc/private/jali/1.0.0-intel-17.0.4-openmpi-2.1.2
-TANGRAM_INSTALL_PREFIX=/usr/projects/ngc/private/tangram/0.9.2-intel-17.0.4-openmpi-2.1.2
-XMOF2D_INSTALL_PREFIX=/usr/projects/ngc/private/xmof2d/0.9.1-intel-17.0.4
-LAPACKE_DIR=/usr/projects/ngc/private/lapack/3.8.0-patched-intel-17.0.4
+module load intel/18.0.5 openmpi/2.1.2 cmake
+JALI_INSTALL_PREFIX=/usr/projects/ngc/private/jali/1.0.4-intel-18.0.5-openmpi-2.1.2
+TANGRAM_INSTALL_PREFIX=/usr/projects/ngc/private/tangram/0.9.3-intel-18.0.5-openmpi-2.1.2
+XMOF2D_INSTALL_PREFIX=/usr/projects/ngc/private/xmof2d/0.9.4-intel-18.0.5
+LAPACKE_DIR=/usr/projects/ngc/private/lapack/3.8.0-patched-intel-18.0.5
 mkdir build
 cd build
 cmake \
-    -D CMAKE_BUILD_TYPE=Debug \
+    -D CMAKE_BUILD_TYPE=Release \
     -D ENABLE_UNIT_TESTS=True \
     -D ENABLE_APP_TESTS=True \
     -D ENABLE_MPI=True \
@@ -194,11 +192,11 @@ Thrust and TCMalloc in your build.  The cmake command for this is:
 ```c++
 # machine=sn-fey::thrust
 . /usr/share/lmod/lmod/init/sh
-module load intel/17.0.4 openmpi/2.1.2 cmake
-JALI_INSTALL_PREFIX=/usr/projects/ngc/private/jali/1.0.0-intel-17.0.4-openmpi-2.1.2
-TANGRAM_INSTALL_PREFIX=/usr/projects/ngc/private/tangram/0.9.2-intel-17.0.4-openmpi-2.1.2
-XMOF2D_INSTALL_PREFIX=/usr/projects/ngc/private/xmof2d/0.9.1-intel-17.0.4-openmpi-2.1.2
-LAPACKE_DIR=/usr/projects/ngc/private/lapack/3.8.0-patched-intel-17.0.4
+module load intel/18.0.5 openmpi/2.1.2 cmake
+JALI_INSTALL_PREFIX=/usr/projects/ngc/private/jali/1.0.4-intel-18.0.5-openmpi-2.1.2
+TANGRAM_INSTALL_PREFIX=/usr/projects/ngc/private/tangram/0.9.3-intel-18.0.5-openmpi-2.1.2
+XMOF2D_INSTALL_PREFIX=/usr/projects/ngc/private/xmof2d/0.9.4-intel-18.0.5-openmpi-2.1.2
+LAPACKE_DIR=/usr/projects/ngc/private/lapack/3.8.0-patched-intel-18.0.5
 mkdir build-thrust
 cd build-thrust
 cmake \
@@ -229,9 +227,9 @@ Execute the following from the portage root directory:
 export MODULEPATH=""
 . /opt/local/packages/Modules/default/init/sh
 module load intel/18.0.1 openmpi/2.1.2 cmake
-JALI_INSTALL_PREFIX=/usr/local/codes/ngc/private/jali/1.0.0-intel-18.0.1-openmpi-2.1.2
-TANGRAM_INSTALL_PREFIX=/usr/local/codes/ngc/private/tangram/0.9.2-intel-18.0.1-openmpi-2.1.2
-XMOF2D_INSTALL_PREFIX=/usr/local/codes/ngc/private/xmof2d/0.9.1-intel-18.0.1
+JALI_INSTALL_PREFIX=/usr/local/codes/ngc/private/jali/1.0.4-intel-18.0.1-openmpi-2.1.2
+TANGRAM_INSTALL_PREFIX=/usr/local/codes/ngc/private/tangram/0.9.3-intel-18.0.1-openmpi-2.1.2
+XMOF2D_INSTALL_PREFIX=/usr/local/codes/ngc/private/xmof2d/0.9.4-intel-18.0.1
 LAPACKE_DIR=/usr/local/codes/ngc/private/lapack/3.8.0-patched-intel-18.0.1/
 LAPACKE_INCLUDE_DIR=$LAPACKE_DIR/include
 LAPACKE_LIBRARY_DIR=$LAPACKE_DIR

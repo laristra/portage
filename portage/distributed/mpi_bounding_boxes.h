@@ -1159,13 +1159,13 @@ class MPI_Bounding_Boxes {
     for (int i=0; i<distributedIds.size(); ++i){
     
       // temp for the offset of this id
-      int const thisOffet = offsets[distributedIds[i]];
+      int const thisOffset = offsets[distributedIds[i]];
     
       // loop over the references and map them
-      for (int j=0; j<counts[i]; ++j)
+      for (int j=0; j<counts[distributedIds[i]]; ++j)
       
         // push the mapped reference 
-        result.push_back(gidToFlatId.at(in[thisOffet+j]));   
+        result.push_back(gidToFlatId.at(in[thisOffset+j]));   
              
     }    
   }
@@ -1206,13 +1206,13 @@ class MPI_Bounding_Boxes {
     for (int i=0; i<distributedIds.size(); ++i){
     
       // temp for the offset of this id
-      int const thisOffet = offsets[distributedIds[i]];
+      int const thisOffset = offsets[distributedIds[i]];
     
       // loop over the references and map them
-      for (int j=0; j<counts[i]; ++j)
+      for (int j=0; j<counts[distributedIds[i]]; ++j)
       
         // push the mapped reference 
-        result.push_back(in[thisOffet+j]);   
+        result.push_back(in[thisOffset+j]);   
              
     }    
   }
