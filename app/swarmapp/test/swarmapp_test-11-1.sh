@@ -25,7 +25,8 @@ result1=$?
 # Compare the values of the error
 grep 'L2 NORM OF ERROR' gold-output-$id > line1-$id
 grep 'L2 NORM OF ERROR' output-$id > line2-$id
-diff line1-$id line2-$id
-result2=$?
+v1=$(cut -f 2 -d '=' < line1-0-0 | sed -E 's/([+-]?[0-9.]+)[eE]\+?(-?)([0-9]+)/(\1*10^\2\3)/g')
+v2=$(cut -f 2 -d '=' < line2-0-0 | sed -E 's/([+-]?[0-9.]+)[eE]\+?(-?)([0-9]+)/(\1*10^\2\3)/g')
+result2=$(echo scale=16\; v3=$v1-$v2\; if \(v3\<0\) v3=-v3\; if \(v3\<10^-12\) 1 else 0| bc)
 
-test $result1 == 0 -a $result2 == 0
+test $result1 == 0 -a $result2 == 1
