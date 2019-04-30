@@ -9,25 +9,31 @@ Please see the license file at the root of this repository, or at:
 
 #include "gtest/gtest.h"
 
+// portage includes
 #include "portage/interpolate/gradient.h"
-#include "portage/support/Vector.h"
 #include "portage/support/portage.h"
-#include "portage/wonton/mesh/simple_mesh/simple_mesh_wrapper.h"
-#include "portage/wonton/state/simple_state/simple_state_wrapper.h"
+
+// wonton includes
+#include "wonton/mesh/simple/simple_mesh.h"
+#include "wonton/mesh/simple/simple_mesh_wrapper.h"
+#include "wonton/state/simple/simple_state.h"
+#include "wonton/state/simple/simple_state_wrapper.h"
+#include "wonton/support/Point.h"
+#include "wonton/support/Vector.h"
 
 /// Test gradient computation for cell centered fields
 
 TEST(Gradient, Fields_Cell_Ctr) {
   // Create a 4 x 4 cell mesh
-  std::shared_ptr<Portage::Simple_Mesh> mesh1 =
-      std::make_shared<Portage::Simple_Mesh>(0.0, 0.0, 1.0, 1.0, 4, 4);
+  std::shared_ptr<Wonton::Simple_Mesh> mesh1 =
+      std::make_shared<Wonton::Simple_Mesh>(0.0, 0.0, 1.0, 1.0, 4, 4);
   ASSERT_TRUE(mesh1 != nullptr);
 
   // create the wrapper
   Wonton::Simple_Mesh_Wrapper meshwrapper(*mesh1);
 
   // Create a state object
-  Portage::Simple_State mystate(mesh1);
+  Wonton::Simple_State mystate(mesh1);
 
   // Create a state Wrapper
   Wonton::Simple_State_Wrapper statewrapper(mystate);
@@ -47,7 +53,7 @@ TEST(Gradient, Fields_Cell_Ctr) {
 
   // set the data (x+2*y)
   for (int c = 0; c < nc1; c++) {
-    Portage::Point<2> ccen;
+    Wonton::Point<2> ccen;
     meshwrapper.cell_centroid(c, &ccen);
     data2[c] = ccen[0] + 2 * ccen[1];
   }
@@ -57,27 +63,27 @@ TEST(Gradient, Fields_Cell_Ctr) {
 
   // Create Gradient objects
 
-  Portage::Limited_Gradient<2, Portage::CELL, Wonton::Simple_Mesh_Wrapper,
+  Portage::Limited_Gradient<2, Portage::Entity_kind::CELL, Wonton::Simple_Mesh_Wrapper,
                             Wonton::Simple_State_Wrapper>
       gradcalc1(meshwrapper, statewrapper, "cellvars1", Portage::NOLIMITER);
 
-  Portage::Limited_Gradient<2, Portage::CELL, Wonton::Simple_Mesh_Wrapper,
+  Portage::Limited_Gradient<2, Portage::Entity_kind::CELL, Wonton::Simple_Mesh_Wrapper,
                             Wonton::Simple_State_Wrapper>
       gradcalc2(meshwrapper, statewrapper, "cellvars2", Portage::NOLIMITER);
 
-  Portage::Limited_Gradient<2, Portage::CELL, Wonton::Simple_Mesh_Wrapper,
+  Portage::Limited_Gradient<2, Portage::Entity_kind::CELL, Wonton::Simple_Mesh_Wrapper,
                             Wonton::Simple_State_Wrapper>
       gradcalc3(meshwrapper, statewrapper, "cellvars1",
                 Portage::BARTH_JESPERSEN);
 
-  Portage::Limited_Gradient<2, Portage::CELL, Wonton::Simple_Mesh_Wrapper,
+  Portage::Limited_Gradient<2, Portage::Entity_kind::CELL, Wonton::Simple_Mesh_Wrapper,
                             Wonton::Simple_State_Wrapper>
       gradcalc4(meshwrapper, statewrapper, "cellvars2",
                 Portage::BARTH_JESPERSEN);
 
   // Compute the gradient for each of these fields
 
-  Portage::Vector<2> grad;
+  Wonton::Vector<2> grad;
 
   // Verify the gradient values
   // For field 1 (constant), it is is 0,0
@@ -135,15 +141,15 @@ TEST(Gradient, Fields_Cell_Ctr) {
 
 TEST(Gradient, Fields_Node_Ctr) {
   // Make a 3x3 mesh
-  std::shared_ptr<Portage::Simple_Mesh> mesh1 =
-      std::make_shared<Portage::Simple_Mesh>(0.0, 0.0, 1.0, 1.0, 3, 3);
+  std::shared_ptr<Wonton::Simple_Mesh> mesh1 =
+      std::make_shared<Wonton::Simple_Mesh>(0.0, 0.0, 1.0, 1.0, 3, 3);
   ASSERT_TRUE(mesh1 != nullptr);
 
   // create the wrapper
   Wonton::Simple_Mesh_Wrapper meshwrapper(*mesh1);
 
   // Create a state object
-  Portage::Simple_State mystate(mesh1);
+  Wonton::Simple_State mystate(mesh1);
 
   // Create a state Wrapper
   Wonton::Simple_State_Wrapper statewrapper(mystate);
@@ -159,7 +165,7 @@ TEST(Gradient, Fields_Node_Ctr) {
   std::vector<double> data2(nn1);
 
   for (int n = 0; n < nn1; ++n) {
-    Portage::Point<2> nodexy;
+    Wonton::Point<2> nodexy;
     meshwrapper.node_get_coordinates(n, &nodexy);
     data2[n] = 3 * nodexy[0] + nodexy[1];
   }
@@ -169,20 +175,20 @@ TEST(Gradient, Fields_Node_Ctr) {
 
   // Create Gradient calculater objects
 
-  Portage::Limited_Gradient<2, Portage::NODE, Wonton::Simple_Mesh_Wrapper,
+  Portage::Limited_Gradient<2, Portage::Entity_kind::NODE, Wonton::Simple_Mesh_Wrapper,
                             Wonton::Simple_State_Wrapper>
       gradcalc1(meshwrapper, statewrapper, "nodevars1", Portage::NOLIMITER);
 
-  Portage::Limited_Gradient<2, Portage::NODE, Wonton::Simple_Mesh_Wrapper,
+  Portage::Limited_Gradient<2, Portage::Entity_kind::NODE, Wonton::Simple_Mesh_Wrapper,
                             Wonton::Simple_State_Wrapper>
       gradcalc2(meshwrapper, statewrapper, "nodevars2", Portage::NOLIMITER);
 
-  Portage::Limited_Gradient<2, Portage::NODE, Wonton::Simple_Mesh_Wrapper,
+  Portage::Limited_Gradient<2, Portage::Entity_kind::NODE, Wonton::Simple_Mesh_Wrapper,
                             Wonton::Simple_State_Wrapper>
       gradcalc3(meshwrapper, statewrapper, "nodevars1",
                 Portage::BARTH_JESPERSEN);
 
-  Portage::Limited_Gradient<2, Portage::NODE, Wonton::Simple_Mesh_Wrapper,
+  Portage::Limited_Gradient<2, Portage::Entity_kind::NODE, Wonton::Simple_Mesh_Wrapper,
                             Wonton::Simple_State_Wrapper>
       gradcalc4(meshwrapper, statewrapper, "nodevars2",
                 Portage::BARTH_JESPERSEN);
@@ -191,7 +197,7 @@ TEST(Gradient, Fields_Node_Ctr) {
   // For field 1, it is a constant
   // For field 2, it is a linear function
 
-  Portage::Vector<2> grad;
+  Wonton::Vector<2> grad;
 
   for (int n = 0; n < nn1; ++n) {
     // unlimited gradient of constant function

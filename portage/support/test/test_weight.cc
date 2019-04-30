@@ -9,8 +9,8 @@ Please see the license file at the root of this repository, or at:
 #include "gtest/gtest.h"
 
 #include "portage/support/weight.h"
-#include "portage/support/Point.h"
-#include "portage/support/Vector.h"
+#include "portage/support/portage.h"
+#include "wonton/support/Point.h"
 
 using Portage::Meshfree::Weight::Geometry;
 using Portage::Meshfree::Weight::ELLIPTIC;
@@ -30,8 +30,10 @@ using Portage::Meshfree::Weight::eval;
 using Portage::Meshfree::Weight::FacetData;
 using Portage::Meshfree::Weight::faceted;
 
-using Portage::Point;
-using Portage::Vector;
+
+using Wonton::Point;
+using Wonton::Vector;
+
 using std::tuple;
 using std::array;
 using std::vector;

@@ -4,17 +4,18 @@ Please see the license file at the root of this repository, or at:
     https://github.com/laristra/portage/blob/master/LICENSE
 */
 
-#ifndef INTERSECT_CLIPPER_H
-#define INTERSECT_CLIPPER_H
+#ifndef PORTAGE_INTERSECT_INTERSECTCLIPPER_H_
+#define PORTAGE_INTERSECT_INTERSECTCLIPPER_H_
 
-#include "search.h"
-#include "clipper.hpp"
 #include <iostream>
 #include <cmath>
 #include <cfloat>
 #include <algorithm>
 
-#include "portage/support/Point.h"
+// portage includes
+#include "portage/intersect/clipper.hpp"
+#include "portage/support/portage.h"
+#include "wonton/support/Point.h"
 
 namespace Portage {
 
@@ -23,13 +24,13 @@ namespace Portage {
   @param[in] poly A vector of a pair of (x,y) coordinates of the nodes making up the polygon.
   @returns std::vector<double>--area, mx, my
 */
-std::vector<double> areaAndMomentPolygon(const std::vector<Portage::Point<2>> poly){
+std::vector<double> areaAndMomentPolygon(const std::vector<Wonton::Point<2>> poly){
   double area = 0;
   double cx = 0;
   double cy = 0;
   std::vector <double> ret;
   for(int i=0;i<poly.size()-1;i++){
-    double a = (poly[i][0]*poly[i+1][1]-poly[i+1][0]*poly[i][1]);  
+    double a = (poly[i][0]*poly[i+1][1]-poly[i+1][0]*poly[i][1]);
     area+=a;
     cx+= (poly[i][0]+poly[i+1][0])*a;
     cy+= (poly[i][1]+poly[i+1][1])*a;
@@ -51,9 +52,9 @@ std::vector<double> areaAndMomentPolygon(const std::vector<Portage::Point<2>> po
   @brief 2-D intersection algorithm for arbitrary convex and non-convex polyhedra
   @tparam SourceMeshType The mesh type of the input mesh.
   @tparam TargetMeshType The mesh type of the output mesh.
-  
+
   The intersect class is templated on MeshWrapper type.  You must provide a method to convert
-  the template cells to an IntersectClipper::Poly.  
+  the template cells to an IntersectClipper::Poly.
 */
 
 template <typename SourceMeshType, typename TargetMeshType=SourceMeshType> class IntersectClipper
@@ -62,9 +63,9 @@ template <typename SourceMeshType, typename TargetMeshType=SourceMeshType> class
 public:
 
 /// Alias for a collection of Points.
-typedef std::vector<Portage::Point<2>> Poly; 
+typedef std::vector<Wonton::Point<2>> Poly;
 /// Alias to provide volume and centroid
-typedef std::pair<double, Portage::Point<2>> Moment;
+typedef std::pair<double, Wonton::Point<2>> Moment;
 
 /// Constructor taking a source mesh @c s and a target mesh @c t.
 IntersectClipper(const SourceMeshType &s, const TargetMeshType &t):sourceMeshWrapper(s), targetMeshWrapper(t){}
@@ -75,7 +76,7 @@ IntersectClipper(const SourceMeshType &s, const TargetMeshType &t):sourceMeshWra
   @param[in] cellB second cell index to intersect
   @return list of moments; ret[0] == 0th moment; ret[1] == first moment
 */
-std::vector<std::vector<double> > operator() (const int cellA, const int cellB) const {      
+std::vector<std::vector<double> > operator() (const int cellA, const int cellB) const {
   Poly polyA, polyB;
   sourceMeshWrapper.cell_get_coordinates(cellA, &polyA);
   targetMeshWrapper.cell_get_coordinates(cellB, &polyB);
@@ -99,9 +100,9 @@ std::vector<std::vector<double> > operator() (const int cellA, const int cellB) 
   clpr.Execute(ClipperLib::ctIntersection, solution,
                ClipperLib::pftEvenOdd, ClipperLib::pftEvenOdd);
 
-  std::vector<std::vector<Portage::Point<2>>> intersectionList;
+  std::vector<std::vector<Wonton::Point<2>>> intersectionList;
   for(auto const &i: solution){
-    std::vector<Portage::Point<2>> poly;
+    std::vector<Wonton::Point<2>> poly;
     for(auto const &j: i){
       //Build list of intersections and convert back to doubles
       poly.emplace_back(integer2real(j.X, max_size_poly), integer2real(j.Y, max_size_poly));
@@ -111,7 +112,7 @@ std::vector<std::vector<double> > operator() (const int cellA, const int cellB) 
   std::vector<std::vector<double>> moments;
   for(auto const &i: intersectionList){
     moments.emplace_back(areaAndMomentPolygon(i));
-  }    
+  }
   return moments;
 }
 
@@ -128,7 +129,7 @@ IntersectClipper & operator = (const IntersectClipper &) = delete;
 private:
 
 //We must use the same max size for all the polygons, so the number we are looking for is the maximum value in the set--all the X and Y values will be converted using this value
-static double updateMaxSize( const std::vector<Portage::Point<2>> poly, double max_size_poly){
+static double updateMaxSize( const std::vector<Wonton::Point<2>> poly, double max_size_poly){
   for(auto const &i: poly){
     double m = std::max(std::abs(i[0]), std::abs(i[1]));
     if (m > max_size_poly) max_size_poly = m;
@@ -138,11 +139,11 @@ static double updateMaxSize( const std::vector<Portage::Point<2>> poly, double m
 
 /*!
   @brief Convert a double to an integer.
-       
-  @note Could do this by multiplying by a power of 10 large enough to preserve the 
+
+  @note Could do this by multiplying by a power of 10 large enough to preserve the
   number of digits in the original double; however it is more precise to
   multiply by a power of 2.
-       
+
   @param[in] a number to be converted
   @param[in] max_size
 */
@@ -150,41 +151,41 @@ static long real2integer(double a, const double max_size){
   int exp;
 
   // We want to move the decimal point of the floating point number so that the last digit given is before the decimal point.
-  // The alogrithm is to find the exponent (in the floating point representation) of the largest number in the polygons (either X or Y coordinate).  
+  // The alogrithm is to find the exponent (in the floating point representation) of the largest number in the polygons (either X or Y coordinate).
   //Multiply by the power of two which is number of digits in mantissa (in this case, 53) - exponent
   //lrint, then rounds to an integer
 
-  //Compute the exponent 
-  frexp(max_size, &exp);  
+  //Compute the exponent
+  frexp(max_size, &exp);
   //Size of long must be >= size double
   return lrint(ldexp(a, DBL_MANT_DIG-exp));
 }
 
-/*! 
+/*!
   @brief Convert integer back to double given the max_size of the numbers within the problem
   @param[in] a number to convert
-  @param[in] max_size 
+  @param[in] max_size
 */
 static double integer2real(long a, const double max_size){
   int exp;
-  frexp(max_size, &exp);  
+  frexp(max_size, &exp);
   return ldexp(a, exp-DBL_MANT_DIG);
 }
 
-//Convert an entire polygon (specifiied as a std::vector<Portage::Point>) to a std::vector<IntPoint>
-static std::vector<ClipperLib::IntPoint> convertPoly2int(std::vector<Portage::Point<2>> poly, double max_size_poly){
+//Convert an entire polygon (specifiied as a std::vector<Wonton::Point>) to a std::vector<IntPoint>
+static std::vector<ClipperLib::IntPoint> convertPoly2int(std::vector<Wonton::Point<2>> poly, double max_size_poly){
   std::vector<ClipperLib::IntPoint> intpoly(poly.size());
-  std::transform(poly.begin(), poly.end(), intpoly.begin(), [max_size_poly](Portage::Point<2> point){
-      return ClipperLib::IntPoint(real2integer(point[0], max_size_poly), real2integer(point[1], max_size_poly));}); 
+  std::transform(poly.begin(), poly.end(), intpoly.begin(), [max_size_poly](Wonton::Point<2> point){
+      return ClipperLib::IntPoint(real2integer(point[0], max_size_poly), real2integer(point[1], max_size_poly));});
   return intpoly;
 }
-  
+
 private:
 const SourceMeshType &sourceMeshWrapper;
 const TargetMeshType &targetMeshWrapper;
 
-}; // class IntersectClipper
+};  // class IntersectClipper
 
-}
+}  // namespace Portage
 
-#endif // INTERSECT_CLIPPER_H
+#endif  // PORTAGE_INTERSECT_INTERSECTCLIPPER_H_

@@ -1,0 +1,91 @@
+#-----------------------------------------------------------------------------
+# This file is part of the Ristra Portate project.
+# Please see the license file at the root of this repository, or at:
+#    https://github.com/laristra/portage/blob/master/LICENSE
+#
+# Portage configuration file template
+#
+#-----------------------------------------------------------------------------
+
+set(PORTAGE_VERSION_MAJOR @PORTAGE_VERSION_MAJOR@ CACHE STRING "Major version of PORTAGE")
+set(PORTAGE_VERSION_MINOR @PORTAGE_VERSION_MINOR@ CACHE STRING "Minor version of PORTAGE")
+set(PORTAGE_VERSION_MINOR @PORTAGE_VERSION_PATCH@ CACHE STRING "Patch version of PORTAGE")
+
+
+# Compiler Definitions
+set(CMAKE_C_COMPILER @CMAKE_C_COMPILER@ CACHE FILEPATH "C Compiler used for compiling PORTAGE")
+set(CMAKE_CXX_COMPILER @CMAKE_CXX_COMPILER@ CACHE FILEPATH "CXX Compiler used for compiling PORTAGE")
+
+
+# Compiler Flags
+set(CMAKE_C_FLAGS "@CMAKE_C_FLAGS@" CACHE STRING "PORTAGE C compiler flags")
+set(CMAKE_C_FLAGS_DEBUG "@CMAKE_C_FLAGS_DEBUG@" CACHE STRING "PORTAGE C compiler flags")
+set(CMAKE_C_FLAGS_RELEASE "@CMAKE_C_FLAGS_RELEASE@" CACHE STRING "PORTAGE C compiler flags")
+set(CMAKE_C_FLAGS_MINSIZEREL "@CMAKE_C_FLAGS_MINSIZEREL@" CACHE STRING "PORTAGE C compiler flags")
+set(CMAKE_C_FLAGS_RELWITHDEBINFO "@CMAKE_C_FLAGS_RELWITHDEBINFO@" CACHE STRING "PORTAGE C compiler flags")
+
+set(CMAKE_CXX_FLAGS "@CMAKE_CXX_FLAGS@" CACHE STRING "PORTAGE C compiler flags")
+set(CMAKE_CXX_FLAGS_DEBUG "@CMAKE_CXX_FLAGS_DEBUG@" CACHE STRING "PORTAGE C compiler flags")
+set(CMAKE_CXX_FLAGS_RELEASE "@CMAKE_CXX_FLAGS_RELEASE@" CACHE STRING "PORTAGE C compiler flags")
+set(CMAKE_CXX_FLAGS_MINSIZEREL "@CMAKE_CXX_FLAGS_MINSIZEREL@" CACHE STRING "PORTAGE C compiler flags")
+set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "@CMAKE_CXX_FLAGS_RELWITHDEBINFO@" CACHE STRING "PORTAGE C compiler flags")
+
+# PORTAGE Build info
+set(PORTAGE_BUILD_TYPE @CMAKE_BUILD_TYPE@ CACHE STRING "PORTAGE build type")
+
+# PORTAGE library 
+set(PORTAGE_LIBRARY_NAME @PORTAGE_LIBRARY@ CACHE STRING "Name of the Portage library")
+
+# PORTAGE includes
+set(PORTAGE_INCLUDE_DIR @CMAKE_INSTALL_PREFIX@/include CACHE PATH "PORTAGE include file locations")
+
+# PORTAGE options
+
+set(PORTAGE_ENABLE_MPI @PORTAGE_ENABLE_MPI@ CACHE BOOL "Enable MPI Parallelism dfor Portage")
+set(WONTON_ENABLE_MPI @WONTON_ENABLE_MPI@ CACHE BOOL "Enable MPI Parallelism for Wonton")
+
+set(WONTON_DIR @WONTON_DIR@ CACHE PATH "Path to WONTON INSTALLATION")
+
+
+set(ENABLE_FleCSI @ENABLE_FleCSI@ CACHE BOOL "Use FleCSI")
+set(FleCSI_INCLUDE_DIRS @FleCSI_INCLUDE_DIR@ CACHE PATH "FleCSI include dirs")
+set(FleCSISP_INCLUDE_DIRS @FleCSISP_INCLUDE_DIR@ CACHE PATH "FleCSI-SP include dirs")
+set(FleCSI_LIBRARIES @FleCSI_LIBRARIES@ CACHE STRING "FleCSI Libraries")
+set(FleCSISP_LIBRARIES @FleCSISP_LIBRARIES@ CACHE PATH "FleCSI-SP Libraries")
+
+
+set(ENABLE_Jali @ENABLE_Jali@ CACHE STRING "Use Jali")
+set(Jali_INCLUDE_DIRS @Jali_INCLUDE_DIRS@ CACHE PATH "Jali include dirs")
+set(Jali_LIBRARIES @Jali_LIBRARIES@ CACHE STRING "Jali libraries")
+
+
+set(Jali_TPL_INCLUDE_DIRS @Jali_TPL_INCLUDE_DIRS@ CACHE PATH "Jali TPL include dirs")
+set(Jali_TPL_LIBRARIES @Jali_TPL_LIBRARIES@ CACHE STRING "Jali TPL libraries")
+
+
+set(LAPACKE_LIBRARIES @LAPACKE_LIBRARIES@ CACHE STRING "LAPACKE libraries")
+set(LAPACK_INCLUDE_DIRS @LAPACKE_INCLUDE_DIRS@ CACHE STRING "LAPACKE include dirs")
+
+set(TANGRAM_FOUND @TANGRAM_FOUND@ CACHE BOOL "Tangram status")
+set(TANGRAM_DIR @TANGRAM_DIR@ CACHE PATH "Tangram installation dir")
+set(TANGRAM_INCLUDE_DIRS @TANGRAM_INCLUDE_DIRS@ CACHE PATH "Tangram include dirs")
+
+set(XMOF2D_FOUND @XMOF2D_FOUND@ CACHE BOOL "XMOF2D status")
+set(XMOF2D_LIBRARIES @XMOF2D_LIBRARIES@ CACHE STRING "XMOF2D libraries")
+
+
+set(ENABLE_THRUST @ENABLE_THRUST@ CACHE BOOL "Enable NVIDIA Thrust")
+set(THRUST_DIR @ENABLE_THRUST@ CACHE PATH "Thrust installation directory")
+set(THRUST_BACKEND @THRUST_BACKEND@ CACHE STRING "Thrust backedn to use")
+
+set(Boost_FOUND @Boost_FOUND@ CACHE BOOL "Boost status")
+set(Boost_INCLUDE_DIRS @Boost_INCLUDE_DIRS@ "Boost include directories")
+
+set(PORTAGE_COMPILE_DEFINITIONS @PORTAGE_COMPILE_DEFINITIONS@ CACHE STRING "All compiler definitions used at the top level directory")
+set(PORTAGE_LIBRARIES @PORTAGE_LIBRARIES@ CACHE STRING "All extra libraries needed to link with PORTAGE")
+
+
+
+
+
+

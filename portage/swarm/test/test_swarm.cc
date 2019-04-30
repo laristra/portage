@@ -14,29 +14,145 @@
 #include <cstdlib>
 #include <ctime>
 #include <algorithm>
-#include <vector>
 #include <memory>
-
-#include "portage/wonton/mesh/simple_mesh/simple_mesh_wrapper.h"
-#include "portage/wonton/mesh/flat/flat_mesh_wrapper.h"
-
-#include "portage/swarm/swarm.h"
-#include "portage/support/Point.h"
-#include "portage/support/portage.h"
 
 #include "gtest/gtest.h"
 
-TEST(Swarm, Sanity_Check) {
-  std::vector<Portage::Point<3>> points(10);
+// portage includes
+#include "portage/swarm/swarm.h"
+#include "portage/support/portage.h"
+
+// wonton includes
+#include "wonton/mesh/simple/simple_mesh.h"
+#include "wonton/mesh/simple/simple_mesh_wrapper.h"
+#include "wonton/support/Point.h"
+
+
+TEST(SwarmFactory, Check_1D_random) {
+  std::shared_ptr<Portage::Meshfree::Swarm<1>> swarm=Portage::Meshfree::SwarmFactory(-4.,4.,17,0);
+  ASSERT_EQ(swarm->num_owned_particles(), 17);
+  for (int i=0; i<17; i++) {
+    Wonton::Point<1> pt = swarm->get_particle_coordinates(i);
+    ASSERT_LE(pt[0],  4.);
+    ASSERT_GE(pt[0], -4.);
+  }
+}
+
+TEST(SwarmFactory, Check_2D_random) {
+  std::shared_ptr<Portage::Meshfree::Swarm<2>> swarm=Portage::Meshfree::SwarmFactory(-4.,-4.,4.,4.,17*17,0);
+  ASSERT_EQ(swarm->num_owned_particles(), 17*17);
+  for (int i=0; i<17*17; i++) {
+    Wonton::Point<2> pt = swarm->get_particle_coordinates(i);
+    ASSERT_LE(pt[0],  4.);
+    ASSERT_GE(pt[0], -4.);
+    ASSERT_LE(pt[1],  4.);
+    ASSERT_GE(pt[1], -4.);
+  }
+}
+
+TEST(SwarmFactory, Check_3D_random) {
+  std::shared_ptr<Portage::Meshfree::Swarm<3>> swarm=Portage::Meshfree::SwarmFactory(-4.,-4.,-4.,4.,4.,4.,17*17*17,0);
+  ASSERT_EQ(swarm->num_owned_particles(), 17*17*17);
+  for (int i=0; i<17*17*17; i++) {
+    Wonton::Point<3> pt = swarm->get_particle_coordinates(i);
+    ASSERT_LE(pt[0],  4.);
+    ASSERT_GE(pt[0], -4.);
+    ASSERT_LE(pt[1],  4.);
+    ASSERT_GE(pt[1], -4.);
+    ASSERT_LE(pt[2],  4.);
+    ASSERT_GE(pt[2], -4.);
+  }
+}
+
+TEST(SwarmFactory, Check_1D_regular) {
+  std::shared_ptr<Portage::Meshfree::Swarm<1>> swarm=Portage::Meshfree::SwarmFactory(-4.,4.,17,1);
+  ASSERT_EQ(swarm->num_owned_particles(), 17);
+  for (int i=0; i<17; i++) {
+    Wonton::Point<1> pt = swarm->get_particle_coordinates(i);
+    ASSERT_NEAR(pt[0], -4.+8./16.*i, 1.e-12);
+  }
+}
+
+TEST(SwarmFactory, Check_2D_regular) {
+  std::shared_ptr<Portage::Meshfree::Swarm<2>> swarm=Portage::Meshfree::SwarmFactory(-4.,-4.,4.,4.,17*17,1);
+  ASSERT_EQ(swarm->num_owned_particles(), 17*17);
+  for (int i=0; i<17; i++) {
+    for (int j=0; j<17; j++) {
+      Wonton::Point<2> pt = swarm->get_particle_coordinates(i*17+j);
+      ASSERT_NEAR(pt[0], -4.+8./16.*i, 1.e-12);
+      ASSERT_NEAR(pt[1], -4.+8./16.*j, 1.e-12);
+    }
+  }
+}
+
+TEST(SwarmFactory, Check_3D_regular) {
+  std::shared_ptr<Portage::Meshfree::Swarm<3>> swarm=Portage::Meshfree::SwarmFactory(-4.,-4.,-4.,4.,4.,4.,17*17*17,1);
+  ASSERT_EQ(swarm->num_owned_particles(), 17*17*17);
+  for (int i=0; i<17; i++) {
+    for (int j=0; j<17; j++) {
+      for (int k=0; k<17; k++) {
+	Wonton::Point<3> pt = swarm->get_particle_coordinates((i*17+j)*17+k);
+	ASSERT_NEAR(pt[0], -4.+8./16.*i, 1.e-12);
+	ASSERT_NEAR(pt[1], -4.+8./16.*j, 1.e-12);
+	ASSERT_NEAR(pt[2], -4.+8./16.*k, 1.e-12);
+      }
+    }
+  }
+}
+
+TEST(SwarmFactory, Check_1D_perturbed) {
+  std::shared_ptr<Portage::Meshfree::Swarm<1>> swarm=Portage::Meshfree::SwarmFactory(-4.,4.,17,2);
+  ASSERT_EQ(swarm->num_owned_particles(), 17);
+  for (int i=0; i<17; i++) {
+    Wonton::Point<1> pt = swarm->get_particle_coordinates(i);
+    ASSERT_LE(pt[0],  4.);
+    ASSERT_GE(pt[0], -4.);
+  }
+}
+
+TEST(SwarmFactory, Check_2D_perturbed) {
+  std::shared_ptr<Portage::Meshfree::Swarm<2>> swarm=Portage::Meshfree::SwarmFactory(-4.,-4.,4.,4.,17*17,2);
+  ASSERT_EQ(swarm->num_owned_particles(), 17*17);
+  for (int i=0; i<17; i++) {
+    for (int j=0; j<17; j++) {
+      Wonton::Point<2> pt = swarm->get_particle_coordinates(i*17+j);
+      ASSERT_LE(pt[0],  4.);
+      ASSERT_GE(pt[0], -4.);
+      ASSERT_LE(pt[1],  4.);
+      ASSERT_GE(pt[1], -4.);
+    }
+  }
+}
+
+TEST(SwarmFactory, Check_3D_perturbed) {
+  std::shared_ptr<Portage::Meshfree::Swarm<3>> swarm=Portage::Meshfree::SwarmFactory(-4.,-4.,-4.,4.,4.,4.,17*17*17,2);
+  ASSERT_EQ(swarm->num_owned_particles(), 17*17*17);
+  for (int i=0; i<17; i++) {
+    for (int j=0; j<17; j++) {
+      for (int k=0; k<17; k++) {
+	Wonton::Point<3> pt = swarm->get_particle_coordinates((i*17+j)*17+k);
+	ASSERT_LE(pt[0],  4.);
+	ASSERT_GE(pt[0], -4.);
+	ASSERT_LE(pt[1],  4.);
+	ASSERT_GE(pt[1], -4.);
+	ASSERT_LE(pt[2],  4.);
+	ASSERT_GE(pt[2], -4.);
+      }
+    }
+  }
+}
+
+TEST(Swarm, Sanity_Check_3D) {
+  Portage::vector<Wonton::Point<3>> points(10);
 
   srand(time(NULL));
   for (int i = 0; i < 10; i++)
-    points[i] = Portage::Point<3>(
+    points[i] = Wonton::Point<3>(
         (static_cast<double>(rand()) / RAND_MAX),
         (static_cast<double>(rand()) / RAND_MAX),
         (static_cast<double>(rand()) / RAND_MAX));
 
-  auto p_ptr = std::make_shared<std::vector<Portage::Point<3>>>(points);
+  auto p_ptr = std::make_shared<Portage::vector<Wonton::Point<3>>>(points);
 
   Portage::Meshfree::Swarm<3> swarm(p_ptr);
 
@@ -48,23 +164,25 @@ TEST(Swarm, Sanity_Check) {
 
   for (int i = 0; i < 10; i++) {
     // Are the point coordinates correct?
-    auto pt = swarm.get_particle_coordinates(i);
-    for (size_t j=0; j < 3; j++) ASSERT_EQ(pt[j], points[i][j]);
+    Wonton::Point<3> p1 = swarm.get_particle_coordinates(i);
+    Wonton::Point<3> p2 = points[i];
+    for (size_t j=0; j < 3; j++) ASSERT_EQ(p1[j], p2[j]);
   }
 }  // TEST
 
 
 /*!
-  @brief Unit test for constructor with Flat_Mesh_Wrapper in 3D using cells
+  @brief Unit test for constructor with Simple_Mesh_Wrapper in 3D using cells
 */
-TEST(Swarm, Build_Flat_Mesh_Wrapper_Cell) {
-  Portage::Simple_Mesh mesh(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2, 2, 2);
+TEST(Swarm, Build_Simple_Mesh_Wrapper_Cell) {
+  Wonton::Simple_Mesh mesh(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2, 2, 2);
   Wonton::Simple_Mesh_Wrapper mesh_wrapper(mesh);
-  Wonton::Flat_Mesh_Wrapper<double> mesh_flat;
-  mesh_flat.initialize(mesh_wrapper);
 
   // create swarm from mesh wrapper cells
-  Portage::Meshfree::Swarm<3> swarmc(mesh_flat, Portage::CELL);
+  std::shared_ptr<Portage::Meshfree::Swarm<3>> swarmc_ptr =
+    Portage::Meshfree::SwarmFactory<3, Wonton::Simple_Mesh_Wrapper>(
+        mesh_wrapper, Portage::Entity_kind::CELL);
+  Portage::Meshfree::Swarm<3> &swarmc(*swarmc_ptr);
 
   // test size
   ASSERT_EQ(8, swarmc.num_particles());
@@ -72,24 +190,24 @@ TEST(Swarm, Build_Flat_Mesh_Wrapper_Cell) {
   // test points
   for (size_t ijk = 0; ijk < 8; ijk++) {
     auto pt = swarmc.get_particle_coordinates(ijk);
-    Portage::Point<3> cent;
-    mesh_flat.cell_centroid<3>(ijk, &cent);
+    Wonton::Point<3> cent;
+    mesh_wrapper.cell_centroid<3>(ijk, &cent);
     for (int i = 0; i < 3; i++) ASSERT_TRUE(pt[i] == cent[i]);
   }
 }
 
 
 /*!
-  @brief Unit test for constructor with Flat_Mesh_Wrapper in 3D using cells
+  @brief Unit test for constructor with Simple_Mesh_Wrapper in 3D using cells
 */
-TEST(Swarm, Build_Flat_Mesh_Wrapper_Node) {
-  Portage::Simple_Mesh mesh(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2, 2, 2);
+TEST(Swarm, Build_Simple_Mesh_Wrapper_Node) {
+  Wonton::Simple_Mesh mesh(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2, 2, 2);
   Wonton::Simple_Mesh_Wrapper mesh_wrapper(mesh);
-  Wonton::Flat_Mesh_Wrapper<double> mesh_flat;
-  mesh_flat.initialize(mesh_wrapper);
 
   // create swarm from mesh wrapper cells
-  Portage::Meshfree::Swarm<3> swarmn(mesh_flat, Portage::NODE);
+  std::shared_ptr<Portage::Meshfree::Swarm<3>> swarmn_ptr =
+    Portage::Meshfree::SwarmFactory<3,Wonton::Simple_Mesh_Wrapper>(mesh_wrapper, Portage::Entity_kind::NODE);
+  Portage::Meshfree::Swarm<3> &swarmn(*swarmn_ptr);
 
   // test size
   ASSERT_EQ(27, swarmn.num_particles());
@@ -97,8 +215,8 @@ TEST(Swarm, Build_Flat_Mesh_Wrapper_Node) {
   // test points
   for (size_t ijk = 0; ijk < 27; ijk++) {
     auto pt = swarmn.get_particle_coordinates(ijk);
-    Portage::Point<3> node;
-    mesh_flat.node_get_coordinates(ijk, &node);
+    Wonton::Point<3> node;
+    mesh_wrapper.node_get_coordinates(ijk, &node);
     for (int i = 0; i < 3; i++) ASSERT_TRUE(pt[i] == node[i]);
   }
 }

@@ -3,8 +3,8 @@ This file is part of the Ristra portage project.
 Please see the license file at the root of this repository, or at:
     https://github.com/laristra/portage/blob/master/LICENSE
 */
-#ifndef WEIGHT_H_INC_
-#define WEIGHT_H_INC_
+#ifndef PORTAGE_SUPPORT_WEIGHT_H_
+#define PORTAGE_SUPPORT_WEIGHT_H_
 
 #include <cmath>
 #include <array>
@@ -12,7 +12,9 @@ Please see the license file at the root of this repository, or at:
 #include <limits>
 #include <vector>
 
-#include "portage/support/Point.h"
+// portage includes
+#include "portage/support/portage.h"
+#include "wonton/support/Point.h"
 
 namespace Portage {
 namespace Meshfree {
@@ -263,7 +265,7 @@ enum Geometry {ELLIPTIC, TENSOR, FACETED};
 
 /// generic elliptically symmetric weight function argument
 template<size_t dim>
-double elliptic(Point<dim> x, Point<dim> y, array<double,dim> &h) {
+double elliptic(Wonton::Point<dim> x, Wonton::Point<dim> y, array<double,dim> &h) {
   double distance = 0.0, result;
   for (size_t i=0; i<dim; i++) {
     distance += (x[i]-y[i])*(x[i]-y[i])/(h[i]*h[i]);
@@ -275,7 +277,7 @@ double elliptic(Point<dim> x, Point<dim> y, array<double,dim> &h) {
 /// generic tensor weight function arguments
 // template<double f(double), size_t dim>
 template<size_t dim>
-array<double,dim> tensor(Point<dim> x, Point<dim> y, array<double,dim> &h) {
+array<double,dim> tensor(Wonton::Point<dim> x, Wonton::Point<dim> y, array<double,dim> &h) {
   array<double,dim> result;
   for (size_t i=0; i<dim; i++) {
     result[i] = (x[i]-y[i])/h[i];
@@ -287,7 +289,7 @@ array<double,dim> tensor(Point<dim> x, Point<dim> y, array<double,dim> &h) {
 template<size_t dim>
 double eval(const Geometry geo,
             const Kernel kern,
-            const Point<dim> x, const Point<dim> y,
+            const Wonton::Point<dim> x, const Wonton::Point<dim> y,
             array<double,dim> h)
 {
   double result;
@@ -322,7 +324,7 @@ struct FacetData {
 
 /// faceted weight function
 template<size_t dim>
-double faceted(const Point<dim> x, const Point<dim> y,
+double faceted(const Wonton::Point<dim> x, const Wonton::Point<dim> y,
                FacetData<dim>* facets, size_t nsides)
 {
   double result = 1.;
@@ -339,7 +341,7 @@ double faceted(const Point<dim> x, const Point<dim> y,
 template<size_t dim>
 double eval(const Geometry geo,
             const Kernel kern,
-            const Point<dim> x, const Point<dim> y,
+            const Wonton::Point<dim> x, const Wonton::Point<dim> y,
             vector<vector<double>> vh)
 {
   double result;
@@ -370,8 +372,8 @@ double eval(const Geometry geo,
   return result;
 }
 
-}
-}
-}
+}  // namespace Weight
+}  // namespace Meshfree
+}  // namespace Portage
 
-#endif // WEIGHT_H_INC_
+#endif  // PORTAGE_SUPPORT_WEIGHT_H_

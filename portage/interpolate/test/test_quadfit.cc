@@ -9,26 +9,32 @@ Please see the license file at the root of this repository, or at:
 
 #include "gtest/gtest.h"
 
+// portage includes
 #include "portage/interpolate/quadfit.h"
-#include "portage/support/Vector.h"
 #include "portage/support/portage.h"
-#include "portage/wonton/mesh/simple_mesh/simple_mesh_wrapper.h"
-#include "portage/wonton/state/simple_state/simple_state_wrapper.h"
+
+// wonton includes
+#include "wonton/mesh/simple/simple_mesh.h"
+#include "wonton/mesh/simple/simple_mesh_wrapper.h"
+#include "wonton/state/simple/simple_state.h"
+#include "wonton/state/simple/simple_state_wrapper.h"
+#include "wonton/support/Point.h"
+#include "wonton/support/Vector.h"
 
 /// Test quadfit computation for cell centered fields
 
 TEST(Quadfit, Fields_Cell_Ctr) {
 
   // Create a 4 cell mesh
-  std::shared_ptr<Portage::Simple_Mesh> mesh1 =
-      std::make_shared<Portage::Simple_Mesh>(0.0, 0.0, 1.0, 1.0, 4, 4);
+  std::shared_ptr<Wonton::Simple_Mesh> mesh1 =
+      std::make_shared<Wonton::Simple_Mesh>(0.0, 0.0, 1.0, 1.0, 4, 4);
   ASSERT_TRUE(mesh1 != nullptr);
 
   // create the wrapper
   Wonton::Simple_Mesh_Wrapper meshWrapper(*mesh1);
 
   // Create a state object
-  Portage::Simple_State mystate(mesh1);
+  Wonton::Simple_State mystate(mesh1);
 
   // Create a state Wrapper
   Wonton::Simple_State_Wrapper stateWrapper(mystate);
@@ -48,7 +54,7 @@ TEST(Quadfit, Fields_Cell_Ctr) {
 
   // set the data (x+2*y)
   for (int c = 0; c < nc1; c++) {
-    Portage::Point<2> ccen;
+    Wonton::Point<2> ccen;
     meshWrapper.cell_centroid(c, &ccen);
     data2[c] = ccen[0] + 2 * ccen[1];
   }
@@ -61,7 +67,7 @@ TEST(Quadfit, Fields_Cell_Ctr) {
 
   // set the data (x*x+y+y)
   for (int c = 0; c < nc1; c++) {
-    Portage::Point<2> ccen;
+    Wonton::Point<2> ccen;
     meshWrapper.cell_centroid(c, &ccen);
     data3[c] = ccen[0]*ccen[0] + ccen[1]*ccen[1];
   }
@@ -101,7 +107,7 @@ TEST(Quadfit, Fields_Cell_Ctr) {
 
   // Compute the quadfit for each of these fields
 
-  Portage::Vector<5> qfit;
+  Wonton::Vector<5> qfit;
 
   // Verify the quadfit values
   // For field 1 (constant), it is is 0,0
@@ -149,7 +155,7 @@ TEST(Quadfit, Fields_Cell_Ctr) {
 
     if (!boundary_cell) {
       qfit = qfitcalc3(c);
-      Portage::Point<2> ccen;
+      Wonton::Point<2> ccen;
       meshWrapper.cell_centroid(c, &ccen);
       double cx = ccen[0]; // x
       double cy = ccen[1]; // y
@@ -186,7 +192,7 @@ TEST(Quadfit, Fields_Cell_Ctr) {
 
     if (!boundary_cell) {
       qfit = qfitcalc6(c);
-      Portage::Point<2> ccen;
+      Wonton::Point<2> ccen;
       meshWrapper.cell_centroid(c, &ccen);
       double cx = ccen[0]; // x
       double cy = ccen[1]; // y
@@ -205,15 +211,15 @@ TEST(Quadfit, Fields_Cell_Ctr) {
 TEST(Quadfit, Fields_Node_Ctr) {
 
   // Create a 4 cell mesh
-  std::shared_ptr<Portage::Simple_Mesh> mesh1 =
-      std::make_shared<Portage::Simple_Mesh>(0.0, 0.0, 1.0, 1.0, 4, 4);
+  std::shared_ptr<Wonton::Simple_Mesh> mesh1 =
+      std::make_shared<Wonton::Simple_Mesh>(0.0, 0.0, 1.0, 1.0, 4, 4);
   ASSERT_TRUE(mesh1 != nullptr);
 
   // create the wrapper
   Wonton::Simple_Mesh_Wrapper meshWrapper(*mesh1);
 
   // Create a state object
-  Portage::Simple_State mystate(mesh1);
+  Wonton::Simple_State mystate(mesh1);
 
   // Create a state Wrapper
   Wonton::Simple_State_Wrapper stateWrapper(mystate);
@@ -231,7 +237,7 @@ TEST(Quadfit, Fields_Node_Ctr) {
   std::vector<double> data2(nn1);
 
   for (int n = 0; n < nn1; ++n) {
-    Portage::Point<2> nodexy;
+    Wonton::Point<2> nodexy;
     meshWrapper.node_get_coordinates(n, &nodexy);
     data2[n] = 3 * nodexy[0] + nodexy[1];
   }
@@ -242,7 +248,7 @@ TEST(Quadfit, Fields_Node_Ctr) {
   std::vector<double> data3(nn1);
 
   for (int n = 0; n < nn1; ++n) {
-    Portage::Point<2> nodexy;
+    Wonton::Point<2> nodexy;
     meshWrapper.node_get_coordinates(n, &nodexy);
     data3[n] = nodexy[0]*nodexy[0] + nodexy[1]*nodexy[1];
   }
@@ -285,7 +291,7 @@ TEST(Quadfit, Fields_Node_Ctr) {
   // For field 2, it is a linear function
   // For field 3, it is a quadratic function
 
-  Portage::Vector<5> qfit;
+  Wonton::Vector<5> qfit;
 
   for (int n = 0; n < nn1; ++n) {
     bool boundary_node = false;
@@ -332,7 +338,7 @@ TEST(Quadfit, Fields_Node_Ctr) {
 
     if (!boundary_node) {
       qfit = qfitcalc3(n);
-      Portage::Point<2> nodexy;
+      Wonton::Point<2> nodexy;
       meshWrapper.node_get_coordinates(n, &nodexy);
       double nx = nodexy[0]; // x
       double ny = nodexy[1]; // y
@@ -370,7 +376,7 @@ TEST(Quadfit, Fields_Node_Ctr) {
 
     if (!boundary_node) {
       qfit = qfitcalc6(n);
-      Portage::Point<2> nodexy;
+      Wonton::Point<2> nodexy;
       meshWrapper.node_get_coordinates(n, &nodexy);
       double nx = nodexy[0]; // x
       double ny = nodexy[1]; // y
@@ -382,4 +388,3 @@ TEST(Quadfit, Fields_Node_Ctr) {
     }
   }
 }
-

@@ -10,18 +10,22 @@ Please see the license file at the root of this repository, or at:
 #include <memory>
 #include <cassert>
 
+// portage includes
 #include "portage/support/portage.h"
-#include "portage/support/Point.h"
 #include "portage/support/weight.h"
 #include "portage/support/basis.h"
 #include "portage/support/operator.h"
 #include "portage/swarm/swarm.h"
-#include "portage/support/Matrix.h"
+
+// wonton includes
+#include "wonton/support/Matrix.h"
+
 
 namespace Portage {
 namespace Meshfree {
 
-using std::vector;
+using Wonton::Matrix;
+
 using std::shared_ptr;
 
 /// Different kinds of estimates to do
@@ -73,12 +77,12 @@ class Accumulate {
       WeightCenter center,
       vector<Weight::Kernel> const& kernels,
       vector<Weight::Geometry> const& geometries,
-      vector<vector<vector<double>>> const& smoothing,
+      vector<std::vector<std::vector<double>>> const& smoothing,
       Basis::Type basis,
       Operator::Type operator_spec = Operator::LastOperator,
-      Operator::Domain operator_domain = Operator::LastDomain,
-      vector<Point<dim>> const& operator_data=
-      vector<Point<dim>>(0,Point<dim>(vector<double>(dim,0.)))):
+      vector<Operator::Domain> const& operator_domain = vector<Operator::Domain>(0),
+      vector<std::vector<Point<dim>>> const& operator_data=
+      vector<std::vector<Point<dim>>>(0,std::vector<Point<dim>>(0))):
    source_(source),
    target_(target),
    estimate_(estimate),
@@ -95,12 +99,16 @@ class Accumulate {
     size_t n_particles;
     if (center == Gather) {
       n_particles = target_.num_owned_particles();
-    } else if (center == Scatter) {
-      n_particles = source_.num_owned_particles();
+    } else if (center == Scatter) {//this should be all source particles instead of only the owned ones.
+      n_particles = source_.num_particles();
     }
     assert(n_particles == kernels_.size());
     assert(n_particles == geometries_.size());
     assert(n_particles == smoothing_.size());
+    if (operator_spec_ != Operator::LastOperator) {
+      assert(operator_data_.size() == target_.num_owned_particles());
+      assert(operator_domain_.size() == target_.num_owned_particles());
+    }
   }
 
   /** 
@@ -139,16 +147,16 @@ class Accumulate {
    * The return matrix is of size n x m  where n is the length of source_particles, 
    * and m is the size of the basis. 
    */
-  vector<Weights_t>
-  operator() (size_t const particleB, vector<unsigned int> const& source_particles) {
-    vector<Weights_t> result;
+  std::vector<Weights_t>
+  operator() (size_t const particleB, std::vector<unsigned int> const& source_particles) {
+    std::vector<Weights_t> result;
     result.reserve(source_particles.size());
     
     switch (estimate_) {
       case KernelDensity:  {
         for (auto const& particleA : source_particles) {
           double weight_val = weight(particleA, particleB);
-          vector<double> pair_result(1, weight_val);
+	  std::vector<double> pair_result(1, weight_val);
           result.emplace_back(particleA, pair_result);
         }
         break;
@@ -165,7 +173,7 @@ class Accumulate {
         }
 
         // Calculate weights and moment matrix (P*W*transpose(P))
-        vector<double> weight_val(source_particles.size());
+	std::vector<double> weight_val(source_particles.size());
         Matrix moment(nbasis,nbasis,0.);
         size_t iA = 0;
 	if (not zilchit) {
@@ -185,9 +193,9 @@ class Accumulate {
         // Calculate inverse(P*W*transpose(P))*P*W
         iA = 0;
         for (auto const& particleA : source_particles) {
-          vector<double> pair_result(nbasis);
+	  std::vector<double> pair_result(nbasis);
           Point<dim> y = source_.get_particle_coordinates(particleA);
-          vector<double> basis = Basis::shift<dim>(basis_,x,y);
+	  std::vector<double> basis = Basis::shift<dim>(basis_,x,y);
 
           // recast as a Portage::Matrix
           Matrix basis_matrix(nbasis,1);
@@ -208,11 +216,12 @@ class Accumulate {
 	  // If an operator is being applied, adjust final weights. 
 	  if (estimate_ == OperatorRegression) {
 	    auto ijet = Basis::inverse_jet<dim>(basis_, x);
-	    vector<vector<double>> basisop;
-	    Operator::apply<dim>(operator_spec_, basis_, operator_domain_, 
-				 operator_data_, basisop);
-	    size_t opsize = Operator::size_info(operator_spec_, basis_, operator_domain_)[0];
-	    vector<double> operator_result(opsize, 0.);
+	    std::vector<std::vector<double>> basisop;
+	    Operator::apply<dim>(operator_spec_, basis_, operator_domain_[particleB], 
+				 operator_data_[particleB], basisop);
+	    size_t opsize = Operator::size_info(operator_spec_, basis_, 
+                                                operator_domain_[particleB])[0];
+	    std::vector<double> operator_result(opsize, 0.);
 	    for (int j=0; j<opsize; j++) {
 	      for (int k=0; k<nbasis; k++) {
 		for (int m=0; m<nbasis; m++) {
@@ -240,11 +249,11 @@ class Accumulate {
   WeightCenter center_;
   vector<Weight::Kernel> const& kernels_;
   vector<Weight::Geometry> const& geometries_;
-  vector<vector<vector<double>>> const& smoothing_;
+  vector<std::vector<std::vector<double>>> const& smoothing_;
   Basis::Type basis_;
   Operator::Type operator_spec_;
-  Operator::Domain operator_domain_;
-  vector<Point<dim>> operator_data_;
+  vector<Operator::Domain> operator_domain_;
+  vector<std::vector<Point<dim>>> operator_data_;
 };
 
 }}

@@ -15,7 +15,7 @@ Please see the license file at the root of this repository, or at:
 #include <memory>
 #include <stdexcept>
 
-#ifdef ENABLE_MPI
+#ifdef PORTAGE_ENABLE_MPI
 #include <mpi.h>
 #else
 #define PORTAGE_SERIAL_ONLY
@@ -31,9 +31,9 @@ Please see the license file at the root of this repository, or at:
 #include "portage/estimate/estimate.h"
 #ifdef HAVE_NANOFLANN
 #include "portage/search/search_kdtree_nanoflann.h"
+#include "wonton/support/Point.h"
 #endif
 
-using std::vector;
 using std::shared_ptr;
 using std::make_shared;
 using Portage::Meshfree::Swarm;
@@ -53,7 +53,7 @@ using Portage::SearchPointsByCells;
 // Helper routines and data structures
 
 template<unsigned int D>
-double field_func(int field_order, Portage::Point<D> coord) {
+double field_func(int field_order, Wonton::Point<D> coord) {
   double value = 0.0;
   switch (field_order) {
     case -1: {
@@ -160,7 +160,7 @@ int main(int argc, char** argv) {
   n_target = atoi(argv[3]);
   distribution = atoi(argv[4]);
 
-#ifdef ENABLE_MPI
+#ifdef PORTAGE_ENABLE_MPI
   int mpi_init_flag;
   MPI_Initialized(&mpi_init_flag);
   if (!mpi_init_flag)
@@ -186,7 +186,7 @@ int main(int argc, char** argv) {
   auto inputData = make_shared<typename SwarmState<2>::DblVec>(ninpts, 0.0);
 
   for (int p(0); p < ninpts; ++p) {
-    Portage::Point<2> coord = inputSwarm->get_particle_coordinates(p);
+    Wonton::Point<2> coord = inputSwarm->get_particle_coordinates(p);
     (*inputData)[p] = field_func<2>(example.field_order, coord);
   }
   
@@ -203,7 +203,8 @@ int main(int argc, char** argv) {
   // function) in each dimension
   double h = 2.0/n_target;
   auto smoothing_lengths =
-      vector<vector<vector<double>>>(ntarpts, vector<vector<double>>(1, vector<double>(2, 2.05*h)));
+    Portage::vector<std::vector<std::vector<double>>>
+      (ntarpts, std::vector<std::vector<double>>(1, std::vector<double>(2, 2.05*h)));
                                                                       
 #ifdef HAVE_NANOFLANN  // Search by kdtree
   SwarmDriver<
@@ -239,14 +240,19 @@ int main(int argc, char** argv) {
     d.set_remap_var_names(remap_fields, remap_fields,
                           Portage::Meshfree::LocalRegression,
                           Portage::Meshfree::Basis::Quadratic);
-  d.run(true, true);
 
+#ifdef PORTAGE_ENABLE_MPI
+  Wonton::MPIExecutor_type mpiexecutor(MPI_COMM_WORLD);
+  d.run(&mpiexecutor, true);
+#else
+  d.run();
+#endif
 
   std::vector<double> expected_value(ntarpts, 0.0);
 
   double toterr = 0.0;
   for (int p(0); p < ntarpts; ++p) {
-  Portage::Point<2> coord = targetSwarm->get_particle_coordinates(p);
+  Wonton::Point<2> coord = targetSwarm->get_particle_coordinates(p);
 
     expected_value[p] = field_func<2>(example.field_order, coord);
     double error = expected_value[p] - (*targetData)[p];
@@ -254,7 +260,8 @@ int main(int argc, char** argv) {
     if (ntarpts < 10) {
       std::printf("Particle=% 4d Coord = (% 5.3lf,% 5.3lf)", p,
                   coord[0], coord[1]);
-      std::printf("  Value = % 10.6lf  Err = % lf\n", (*targetData)[p], error);
+      double dummy=(*targetData)[p];
+      std::printf("  Value = % 10.6lf  Err = % lf\n", dummy, error);
     }
     toterr += error*error;
   }
@@ -276,7 +283,7 @@ int main(int argc, char** argv) {
   finp_csv.precision(17);
   finp_csv << " X, Y, Value\n";
   for (int p(0); p < ninpts; ++p) {
-    Portage::Point<2> coord = inputSwarm->get_particle_coordinates(p);
+    Wonton::Point<2> coord = inputSwarm->get_particle_coordinates(p);
     
     finp << coord[0] << " " << coord[1] << " " << (*inputData)[p] << std::endl;
     finp_csv << coord[0] << ", " << coord[1] << ", " << (*inputData)[p] << std::endl;
@@ -297,14 +304,14 @@ int main(int argc, char** argv) {
   fout_csv.precision(17);
   fout_csv << " X, Y, Value\n";
   for (int p(0); p < ntarpts; ++p) {
-    Portage::Point<2> coord = targetSwarm->get_particle_coordinates(p);
+    Wonton::Point<2> coord = targetSwarm->get_particle_coordinates(p);
     
     fout << coord[0] << " " << coord[1] << " " << (*targetData)[p] << std::endl;
     fout_csv << coord[0] << ", " << coord[1] << ", " << (*targetData)[p] << std::endl;
   }
   std::cout << "finishing swarm app..." << std::endl;
 
-#ifdef ENABLE_MPI
+#ifdef PORTAGE_ENABLE_MPI
   MPI_Finalize();
 #endif
 }

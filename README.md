@@ -1,6 +1,5 @@
 [![Build Status](https://travis-ci.com/laristra/portage.svg?branch=master)](https://travis-ci.com/laristra/portage)
 [![codecov.io](https://codecov.io/github/laristra/portage/coverage.svg?branch=master)](https://codecov.io/github/laristra/portage/portage?branch=master)
-[![Quality Gate](https://sonarqube.com/api/badges/gate?key=portage%3A%2Fmaster)](https://sonarqube.com/dashboard?id=portage%3A%2Fmaster)
 
 # portage
 
@@ -58,7 +57,7 @@ support for these is _optional_:
 
 - [Jali](http://github.com/lanl/jali):
 
-  We regularly test with verison 0.9.8.  You will need to set the
+  We regularly test with verison 1.0.0.  You will need to set the
   `Jali_Dir` CMake variable if you wish to build support for Jali and
   its tests (see examples below).
 
@@ -137,12 +136,10 @@ Execute the following from the portage root directory:
 
 ```c++
 # machine=darwin-fe
-module load openmpi/2.0.1-intel_17.0.0 cmake/3.7.1
-JALI_INSTALL_PREFIX=/projects/ngc/private/jali/0.9.8-intel-17.0.0-openmpi-2.0.1
-TPL_INSTALL_PREFIX=/projects/ngc/private/jali-tpl/1.0.9-intel-17.0.0-openmpi-2.0.1
-LAPACKE_DIR=/projects/ngc/private/lapack/3.8.0-patched-intel-17.0.6
-LAPACKE_INCLUDE_DIR=$LAPACKE_DIR/include
-LAPACKE_LIBRARY_DIR=$LAPACKE_DIR
+module load openmpi/2.1.2-intel_17.0.6 boost/1.58.0 cmake
+JALI_INSTALL_PREFIX=/usr/projects/ngc/private/jali/1.0.0-intel-17.0.6-openmpi-2.1.2
+TPL_INSTALL_PREFIX=/usr/projects/ngc/private/jali-tpl/1.1.0-intel-17.0.6-openmpi-2.1.2
+LAPACKE_DIR=/usr/projects/ngc/private/lapack/3.8.0-patched-intel-17.0.6
 mkdir build
 cd build
 cmake \
@@ -151,6 +148,8 @@ cmake \
     -D ENABLE_APP_TESTS=True \
     -D ENABLE_MPI=True \
     -D Jali_DIR:FILEPATH=$JALI_INSTALL_PREFIX/lib \
+    -D TANGRAM_DIR:FILEPATH=/usr/projects/ngc/private/tangram/0.9.2-intel-17.0.6-openmpi-2.1.2 \
+    -D XMOF2D_DIR:FILEPATH=/usr/projects/ngc/private/xmof2d/0.9.1-intel-17.0.6/share/cmake \
     -D Boost_INCLUDE_DIR:PATH=$TPL_INSTALL_PREFIX/include \
     -D LAPACKE_DIR=$LAPACKE_DIR \
     ..
@@ -158,16 +157,18 @@ make -j16
 ctest -j16 --output-on-failure
 ```
 
+
 ## Snow
 
 Execute the following from the portage root directory:
 
 ```c++
 # machine=sn-fey
+. /usr/share/lmod/lmod/init/sh
 module load intel/17.0.4 openmpi/2.1.2 cmake
-JALI_INSTALL_PREFIX=/usr/projects/ngc/private/jali/0.9.8-intel-17.0.4-openmpi-2.1.2
-TANGRAM_INSTALL_PREFIX=/usr/projects/ngc/private/tangram/475b813919f-intel-17.0.4-openmpi-2.1.2
-XMOF2D_INSTALL_PREFIX=/usr/projects/ngc/private/xmof2d/0.9-intel-17.0.4-openmpi-2.1.2
+JALI_INSTALL_PREFIX=/usr/projects/ngc/private/jali/1.0.0-intel-17.0.4-openmpi-2.1.2
+TANGRAM_INSTALL_PREFIX=/usr/projects/ngc/private/tangram/0.9.2-intel-17.0.4-openmpi-2.1.2
+XMOF2D_INSTALL_PREFIX=/usr/projects/ngc/private/xmof2d/0.9.1-intel-17.0.4
 LAPACKE_DIR=/usr/projects/ngc/private/lapack/3.8.0-patched-intel-17.0.4
 mkdir build
 cd build
@@ -181,9 +182,43 @@ cmake \
     -D XMOF2D_DIR:FILEPATH=$XMOF2D_INSTALL_PREFIX/share/cmake \
     -D LAPACKE_DIR=$LAPACKE_DIR \
     ..
-make -j16
-ctest -j16 --output-on-failure
+make -j4
+ctest -j4 --output-on-failure
 ```
+
+---
+
+If you want to build an app for performance testing, you should include
+Thrust and TCMalloc in your build.  The cmake command for this is:
+
+```c++
+# machine=sn-fey::thrust
+. /usr/share/lmod/lmod/init/sh
+module load intel/17.0.4 openmpi/2.1.2 cmake
+JALI_INSTALL_PREFIX=/usr/projects/ngc/private/jali/1.0.0-intel-17.0.4-openmpi-2.1.2
+TANGRAM_INSTALL_PREFIX=/usr/projects/ngc/private/tangram/0.9.2-intel-17.0.4-openmpi-2.1.2
+XMOF2D_INSTALL_PREFIX=/usr/projects/ngc/private/xmof2d/0.9.1-intel-17.0.4-openmpi-2.1.2
+LAPACKE_DIR=/usr/projects/ngc/private/lapack/3.8.0-patched-intel-17.0.4
+mkdir build-thrust
+cd build-thrust
+cmake \
+   -D CMAKE_BUILD_TYPE=Release \
+   -D ENABLE_UNIT_TESTS=True \
+   -D ENABLE_APP_TESTS=True \
+   -D ENABLE_MPI=True \
+   -D Jali_DIR:FILEPATH=$JALI_INSTALL_PREFIX/lib \
+   -D TANGRAM_DIR:FILEPATH=$TANGRAM_INSTALL_PREFIX \
+   -D XMOF2D_DIR:FILEPATH=$XMOF2D_INSTALL_PREFIX/share/cmake \
+   -D ENABLE_THRUST=True \
+   -D THRUST_DIR:FILEPATH=/usr/projects/ngc/private/include \
+   -D ENABLE_TCMALLOC=True \
+   -D TCMALLOC_LIB:FILEPATH=/usr/lib64/libtcmalloc.so \
+   -D LAPACKE_DIR=$LAPACKE_DIR \
+   ..
+make -j4
+ctest -j4 --output-on-failure
+```
+
 
 ## Varan
 
@@ -193,11 +228,11 @@ Execute the following from the portage root directory:
 # machine=varan
 export MODULEPATH=""
 . /opt/local/packages/Modules/default/init/sh
-module load intel/17.0.1 openmpi/1.10.7 cmake
-JALI_INSTALL_PREFIX=/usr/local/codes/ngc/private/jali/0.9.8-intel-17.0.1-openmpi-1.10.5
-TANGRAM_INSTALL_PREFIX=/usr/local/codes/ngc/private/tangram/475b813919f-intel-17.0.1-openmpi-1.10.5
-XMOF2D_INSTALL_PREFIX=/usr/local/codes/ngc/private/xmof2d/0.9-intel-17.0.1-openmpi-1.10.5
-LAPACKE_DIR=/usr/local/codes/ngc/private/lapack/3.8.0-patched-intel-17.0.1/
+module load intel/18.0.1 openmpi/2.1.2 cmake
+JALI_INSTALL_PREFIX=/usr/local/codes/ngc/private/jali/1.0.0-intel-18.0.1-openmpi-2.1.2
+TANGRAM_INSTALL_PREFIX=/usr/local/codes/ngc/private/tangram/0.9.2-intel-18.0.1-openmpi-2.1.2
+XMOF2D_INSTALL_PREFIX=/usr/local/codes/ngc/private/xmof2d/0.9.1-intel-18.0.1
+LAPACKE_DIR=/usr/local/codes/ngc/private/lapack/3.8.0-patched-intel-18.0.1/
 LAPACKE_INCLUDE_DIR=$LAPACKE_DIR/include
 LAPACKE_LIBRARY_DIR=$LAPACKE_DIR
 mkdir build
@@ -226,12 +261,12 @@ verison of FleCSI on Varan.  An example is below:
 # machine=varan::flecsi
 export MODULEPATH=""
 . /opt/local/packages/Modules/default/init/sh
-module load gcc/5.3.0 openmpi/1.10.7 cmake
-FLECSI_INSTALL_PREFIX=/usr/local/codes/ngc/private/flecsi/gcc5.3_openmpi1.10.3
-FLECSISP_INSTALL_PREFIX=/usr/local/codes/ngc/private/flecsi-sp/gcc5.3_openmpi1.10.3
-TANGRAM_INSTALL_PREFIX=/usr/projects/ngc/private/tangram/4f600ec441a-gcc-5.3.0-openmpi-1.10.3
-XMOF2D_INSTALL_PREFIX=/usr/projects/ngc/private/xmof2d/0.9-gcc-5.3.0-openmpi-1.10.3
-LAPACKE_DIR=/usr/local/codes/ngc/private/lapack/3.8.0-gcc-5.3.0
+module load gcc/6.4.0 openmpi/2.1.2 cmake
+FLECSI_INSTALL_PREFIX=/usr/local/codes/ngc/private/flecsi/374b56b-gcc-6.4.0
+FLECSISP_INSTALL_PREFIX=/usr/local/codes/ngc/private/flecsi-sp/e78c594-gcc-6.4.0
+TANGRAM_INSTALL_PREFIX=/usr/local/codes/ngc/private/tangram/0.9.2-gcc-6.4.0-openmpi-2.1.2
+XMOF2D_INSTALL_PREFIX=/usr/local/codes/ngc/private/xmof2d/0.9.1-gcc-6.4.0
+LAPACKE_DIR=/usr/local/codes/ngc/private/lapack/3.8.0-patched-gcc-6.4.0
 LAPACKE_INCLUDE_DIR=$LAPACKE_DIR/include
 LAPACKE_LIBRARY_DIR=$LAPACKE_DIR
 mkdir build-flecsi

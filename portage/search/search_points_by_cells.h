@@ -11,7 +11,8 @@ Please see the license file at the root of this repository, or at:
 #include <cmath>
 #include <list>
 
-#include "portage/support/Point.h"
+#include "portage/support/portage.h"
+
 #include "portage/accumulate/accumulate.h"
 
 #include "pile.hh"
@@ -48,8 +49,8 @@ class SearchPointsByCells {
   SearchPointsByCells(
       const SourceSwarmType & source_swarm,
       const TargetSwarmType & target_swarm,
-      std::shared_ptr<std::vector<Point<D>>> source_extents,
-      std::shared_ptr<std::vector<Point<D>>> target_extents,
+      std::shared_ptr<vector<Point<D>>> source_extents,
+      std::shared_ptr<vector<Point<D>>> target_extents,
       Meshfree::WeightCenter center=Meshfree::Scatter)
       : sourceSwarm_(source_swarm), targetSwarm_(target_swarm),
         sourceExtents_(source_extents), targetExtents_(target_extents),
@@ -82,13 +83,17 @@ class SearchPointsByCells {
     if (center == Meshfree::Scatter) {
       for (size_t i=0; i<sourceSwarm_.num_particles(); i++ ) {
 	for (size_t m=0; m<D; m++) {
-	  source_extents_vp[m][i] = (*sourceExtents_)[i][m];
+	  Point<D> pt = (*sourceExtents_)[i];
+	  source_extents_vp[m][i] = pt[m];
+	  (*sourceExtents_)[i] = pt;
 	}
       }
     } else if (center_ == Meshfree::Gather) {
       for (size_t i=0; i<targetSwarm_.num_particles(); i++ ) {
 	for (size_t m=0; m<D; m++) {
-	  target_extents_vp[m][i] = (*targetExtents_)[i][m];
+	  Point<D> pt = (*targetExtents_)[i];
+	  target_extents_vp[m][i] = pt[m];
+	  (*targetExtents_)[i] = pt;
 	}
       }
     }
@@ -130,8 +135,8 @@ class SearchPointsByCells {
   // Aggregate data members
   const SourceSwarmType & sourceSwarm_;
   const TargetSwarmType & targetSwarm_;
-  std::shared_ptr<std::vector<Point<D>>> sourceExtents_;
-  std::shared_ptr<std::vector<Point<D>>> targetExtents_;
+  std::shared_ptr<vector<Point<D>>> sourceExtents_;
+  std::shared_ptr<vector<Point<D>>> targetExtents_;
   std::shared_ptr<Meshfree::Pairs::CellPairFinder> pair_finder_;
   Meshfree::WeightCenter center_;
 
