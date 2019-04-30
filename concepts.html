@@ -17,11 +17,17 @@ Please see the license file at the root of this repository, or at:
     <meta http-equiv="Content-Type" content="text/xhtml;charset=UTF-8"/>
     <meta name="generator" content="Doxygen 1.8.13"/>
     <script type="text/javascript" src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
-    <title>portage: portage Concepts</title>
+    <title>portage: Concepts</title>
     <script type="text/javascript" src="dynsections.js"></script>
     <link href="search/search.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
+    <script type="text/x-mathjax-config">
+  MathJax.Hub.Config({
+    extensions: ["tex2jax.js", "Tex/AMSmath.js", "Tex/AMSsymbols.js"],
+    jax: ["input/TeX","output/HTML-CSS"],
+});
+</script><script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js"></script>
     <link href="doxygen.css" rel="stylesheet" type="text/css" />
     <link href="customdoxygen.css" rel="stylesheet" type="text/css"/>
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"/>
@@ -32,7 +38,7 @@ Please see the license file at the root of this repository, or at:
     <nav class="navbar navbar-default" role="navigation">
       <div class="container">
         <div class="navbar-header">
-          <a class="navbar-brand">portage </a>
+          <img src="Portage-logo-small.png" alt="portage">
         </div>
       </div>
     </nav>
@@ -73,81 +79,208 @@ $(function() {
 </div><!-- top -->
 <div class="header">
   <div class="headertitle">
-<div class="title">portage Concepts </div>  </div>
+<div class="title">Concepts </div>  </div>
 </div><!--header-->
 <div class="contents">
-<div class="textblock"><p>The remapping algorithm within portage is divided into three phases, which are roughly labelled as</p>
-<ol type="1">
-<li><em>search</em> - find candidate cells/particles that will contribute to remap of a given target cell/particle</li>
-<li><em>intersect</em> - calculate the weight of each candidate's contribution to the remap of a given target cell/particle; this may include higher-order moments if requested.</li>
-<li><em>interpolate</em> - using the weights and moments, along with appropriate limiters, reconstruct the field data for a given target cell/particle.</li>
+<div class="textblock"><h2>Design Principle</h2>
+<p><a class="el" href="namespacePortage.html">Portage</a> is a framework for creating custom remappers from interoperable components and not a monolithic, catch-all remapping library. It is designed such that its major components can be mixed and matched as necessary as long as they adhere to an interface. Its design also seeks to minimize the amount of mesh and field data that must be copied from clients in order to minimize data movement.</p>
+<div class="image">
+<img src="portage-tangram-diagram.png" class="fullwidth" alt="Portage design"/>
+</div>
+<p> <br />
+</p>
+<p>In order to enable this DIY design, <a class="el" href="namespacePortage.html">Portage</a> requires the remap driver to be templated on all its component classes implementing the necessary methods. It also requires the driver to be templated on the mesh and state managers for the source and target respectively. The individual components are also templated on the mesh and state managers in turn. Each component is required to be designed as a <a href="https://stackoverflow.com/questions/356950/what-are-c-functors-and-their-uses"><em>functor</em></a>, or in other words, a struct/class with an <code>operator()(...)</code> that is functional, i.e. has no side effects.</p>
+<p>The functional design allows a remap driver to be written such that populating the fields on target entities is a nearly embarrassingly parallel process on-node. Remapping on distributed meshes/swarms is also embarrassingly parallel as long as the target and source partitioning is geometrically matching. On the other hand, if there is a geometric mismatch of the partitioning on the source and target, i.e., source entities overlapping a target entity are on a different node, <a class="el" href="namespacePortage.html">Portage</a> performs some communication and data movement in order to get source mesh cells onto partitions needing them. Once this step is concluded at the outset, the remap still shows excellent scaling. More details are given in the <a class="el" href="distributed_concepts.html">High Level Concepts of Data Distribution During Parallel Remap</a> section and performance plots are shown in the scaling section.</p>
+<p><a class="anchor" id="Drivers-Apps"></a> </p><h2>Drivers and Applications</h2>
+<p><a class="el" href="namespacePortage.html">Portage</a> does come with some full-featured <em>drivers</em> that can be directly used to deploy a powerful remapping capability into an application. In particular, the following drivers are provided:</p>
+<ul>
+<li><a class="el" href="classPortage_1_1MMDriver.html" title="MMDriver provides the API to mapping multi-material data from one mesh to another. ">Portage::MMDriver</a> - for single- and multi-material mesh-mesh remap.</li>
+<li><a class="el" href="classPortage_1_1Meshfree_1_1SwarmDriver.html">Portage::Meshfree::SwarmDriver</a> - for particle-particle remap.</li>
+<li><a class="el" href="classPortage_1_1MSM__Driver.html" title="MSM_Driver provides the API to mapping from one mesh to another. ">Portage::MSM_Driver</a> - for mesh-mesh remap with particles as an intermediary.</li>
+</ul>
+<p>These drivers are all used within some example applications within the <code>apps</code> directory to illustrate how the drivers can be used with a mix of components. The applications choose a particular mesh or particle swarm type, select component classes for the remapping steps along with associated settings for the remap process. The drivers, apps and the regression tests included with the apps are all fairly comprehensive and exercise all functionality of the <a class="el" href="namespacePortage.html">Portage</a> framework. Therefore, the included drivers and some of the apps can be used as-is if they meet all the needs of a particular application.</p>
+<h2>Mesh/Particle and State data</h2>
+<p>The remapping problem starts with a <em>source</em> mesh (or particle swarm) with field data and a <em>target</em> mesh (or particle swarm) onto which the data must be remapped. For meshes, the field data can live on cell centers or on nodes; particle data naturally lives on particles which can have various shapes and smoothing lengths.</p>
+<p>All of <a class="el" href="namespacePortage.html">Portage</a>'s components work directly (to the extent possible - see <a class="el" href="distributed_concepts.html">High Level Concepts of Data Distribution During Parallel Remap</a>) with an application's mesh/particle data and field data respectively. <a class="el" href="namespacePortage.html">Portage</a> accesses this data through <em>mesh</em> (or <em>swarm</em>) and <em>state wrapper classes</em> that provide an interface to the queries needed to perform any particular step. For an illustration of the use of the wrappers in <a class="el" href="namespacePortage.html">Portage</a>, see the <a class="el" href="example.html">Example Use</a> page. More details about the requirements of mesh and state wrappers are given in the documentation of the support package, <a href="https://github.com/laristra/wonton">Wonton</a>.</p>
+<p><a class="anchor" id="mesh-mesh remap"></a> </p><h2>Single Material Mesh-Mesh Remapping</h2>
+<p>The remapping algorithm within <a class="el" href="namespacePortage.html">Portage</a> for <em>single</em> material problems between two meshes [1][2] is divided into four phases (described here for cell-based fields):</p>
+<ul>
+<li><b>search</b> - find candidate source cells that will contribute to remap of each target cell</li>
+<li><b>intersect</b> - calculate the weight of each candidate's contribution to the remap of a given target cell</li>
+<li><b>interpolate</b> - using the weights and source field data reconstruct the field data for each target cell</li>
+<li><b>repair</b> - repair the remapped field due to errors resulting from mismatch of the two mesh boundaries</li>
+</ul>
+<table style="width:100%">
+<tr>
+<td valign="top"><div class="image">
+<object type="image/svg+xml" data="meshmesh.svg" alt="Mesh-mesh" class="fullwidth"></object>
+</div>
+ </td><td width="4%"></td><td valign="top"><div class="image">
+<object type="image/svg+xml" data="search.svg" alt="search" class="fullwidth"></object>
+</div>
+ </td><td width="4%"></td><td valign="top"><div class="image">
+<object type="image/svg+xml" data="intersect.svg" alt="intersect" class="fullwidth"></object>
+</div>
+ </td><td width="4%"></td><td valign="top"><div class="image">
+<object type="image/svg+xml" data="interpolate.svg" alt="interpolate" class="fullwidth"></object>
+</div>
+  </td></tr>
+<tr>
+<td width="22%" valign="top">A mesh-mesh configuration. Blue is target mesh, black is source mesh. </td><td width="4%"></td><td width="22%" valign="top">Candidates are in yellow. </td><td width="4%"></td><td width="22%" valign="top">The exact intersectiion volumes are in green. </td><td width="4%"></td><td width="22%" valign="top">The intersection weights are combined to interpolate data in the target cell.  </td></tr>
+</table>
+<p>The schematic above shows the algorithm when each target cell has access to all source cells that overlap it. As mentioned above, an initial source redistribution step (see <a class="el" href="distributed_concepts.html">High Level Concepts of Data Distribution During Parallel Remap</a>) must be executed if the source and target mesh partitions are not geometrically aligned.</p>
+<h3>Search</h3>
+<p>Given source and target entities, this step simply <em>identifies</em> which source mesh entities might contribute to each target mesh entity. Concretely, for exact intersection based remap of cell fields, this step identifies which source cells potentially overlap each target cell.</p>
+<p><a class="el" href="namespacePortage.html">Portage</a> makes available the following search algorithms with varying degrees of sophistication/speed:</p>
+<ul>
+<li><a class="el" href="classPortage_1_1SearchSimple.html" title="A simple, crude search algorithm that utilizes bounding boxes in 2d. ">Portage::SearchSimple</a> - 2d, bounding box search</li>
+<li><a class="el" href="classPortage_1_1SearchKDTree.html" title="A k-d tree search class that allows us to search for control volumes of entities from one mesh (sourc...">Portage::SearchKDTree</a> - 2d or 3d, k-d tree search (not a true parallel k-d tree)</li>
+</ul>
+<p>Application developers may use their own search algorithms (like a quadtree or hashed octree algorithm).</p>
+<h3>Intersect</h3>
+<p>This step calculates the contribution weights from the candidate source cells to a target cell. <a class="el" href="namespacePortage.html">Portage</a> currently uses exact intersection methods to calculate various <em>moments</em> of the polygon/polyhedron of intersection. First order accurate remap needs only the 0th moments (area/volume) of intersection but second order remap requires the 1st moments (effectively, the centroids of the intersection polyhedra).</p>
+<p>The available intersectors for meshes in <a class="el" href="namespacePortage.html">Portage</a> are:</p>
+<ul>
+<li><a class="el" href="classPortage_1_1IntersectClipper.html" title="2-D intersection algorithm for arbitrary convex and non-convex polyhedra ">Portage::IntersectClipper</a> - 2d, exact intersection method based on the <a href="www.angusj.com/delphi/clipper.php">Clipper</a> library for polygon intersection and clipping (Unit tested in <a class="el" href="namespacePortage.html">Portage</a> but not used widely in the App tests)</li>
+<li><a class="el" href="classPortage_1_1IntersectR2D.html" title="algorithm ">Portage::IntersectR2D</a> - 2d, fast, exact polygonal intersection method based on the <a href="https://github.com/laristra/r3d, 
+  https://github.com/devonmpowell/r3d.git(commit d6799a58)">r3d</a> library.</li>
+<li><a class="el" href="classPortage_1_1IntersectR3D.html">Portage::IntersectR3D</a> - 3d, fast, exact polyhedral intersection method based on the <a href="https://github.com/laristra/r3d,
+  https://github.com/devonmpowell/r3d.git(commit d6799a58)">r3d</a> library.</li>
+</ul>
+<p><em>The R2D/R3D-based intersectors in <a class="el" href="namespacePortage.html">Portage</a> are capable of intersecting two non-convex cells based on the ability of R2D/R3D to clip non-convex polygons/polyhedra. Therefore, in <a class="el" href="namespacePortage.html">Portage</a>'s intersectors source mesh cells are left as is regardless of whether they are convex or non-convex but target cells are decomposed into simplices and the simplices intersected with the source cells (unless they are explicitly told that the target cells are strictly convex). The simplices are derived from the side/wedge data structures built by Wonton::AuxMeshTopology class. Note that <a class="el" href="namespacePortage.html">Portage</a> considers hexahedral cells (or any higher polyhedra) with curved faces also as non-convex.</em></p>
+<p>Applications can choose to supply their own exact cell-cell intersectors or even an alternate algorithm such as the <em>swept face</em> calculation of contributions from source to target cells sometimes used in Arbitrary-Lagrangian-Eulerian methods.</p>
+<h3>Interpolate</h3>
+<p>Given the source field data, along with the list of source cells and their contribution weights to each target cell, the interpolate step actually populates the field on the target cells. The first order accurate interpolation is simply a weighted sum of the source field values, where the weights are the intersection volumes of the target cells with the source mesh. For second order accurate interpolation, a local linear reconstruction of the source field based on a least squares gradient is used to compute more accurate contributions to the target cell. Local bounds preservation may be enforced using limited gradients (see <a class="el" href="namespacePortage.html#a4cb59edee64edb5a23427c8cb2fb5be6" title="Limiter type. ">Portage::Limiter_type</a>) - this ensures that the remapped value in any target cell will be bounded by the cell values of any intersecting source cells and their immediate neighbors. At domain boundaries, however, limiting <em>can</em> be ill-posed if there are no boundary conditions; we currently do not support such boundary conditions, so we do not limit at domain boundaries. The linear reconstruction requires knowledge of the first moments or centroids of the intersection volumes.</p>
+<p>The current interpolation methods for meshes are the following:</p>
+<ul>
+<li><a class="el" href="classPortage_1_1Interpolate__1stOrder.html" title="Interpolate_1stOrder does a 1st order interpolation of scalars. ">Portage::Interpolate_1stOrder</a> - 1st order accurate, reproduces a constant field.</li>
+<li><a class="el" href="classPortage_1_1Interpolate__2ndOrder.html" title="Interpolate_2ndOrder does a 2nd order interpolation of scalars. ">Portage::Interpolate_2ndOrder</a> - 2nd order accurate, reproduces a linear field.</li>
+</ul>
+<p>As with search and intersect components, applications can furnish their custom interpolation methods.</p>
+<p><br />
+</p>
+<p>For remapping node fields, <a class="el" href="namespacePortage.html">Portage</a> uses the dual cells of the mesh to perform the remapping steps. <em>Note that the use of 2nd order interpolation to node fields is not guaranteed to preserve linear fields or give second order accurate results.</em> This is because for the method to be second-order accurate the linear reconstruction in the source cell (or dual cell) is with respect to the field value at its centroid; for the dual mesh, however, the field values are known at the nodes, not necessarily the centroids of the dual cells. Also, dual cells in a general mesh are almost guaranteed to be non-convex. Therefore, intersection of dual cells always includes a decomposition of the target dual cell into simplices based on wedges/corners in Wonton::AuxMeshTopology.</p>
+<p><a class="el" href="namespacePortage.html">Portage</a> currently does not have an algorithm in place for remapping nodal fields to cells and vice-versa although a driver to do such a thing can be written easily.</p>
+<h3>Mismatch Fixup or Repair</h3>
+<p>Often, the boundaries of the source and target meshes in simulations do not exactly match up. This may happen because curved boundaries are discretized with different resolutions in the two meshes or because two physics packages view the geometry of the domain a bit differently. If all of the source mesh is not covered by the target mesh or vice versa, the result may violate conservation or introduce artifacts in the fields. Therefore, in this step the field is repaired by one of several methods as described in the MismatchFixup" section. The options for handling fully empty cells are in the enum <a class="el" href="namespacePortage.html#a98e23e534e4657cb05de2e35f5728dad" title="Fixup options for empty cells. ">Portage::Empty_fixup_type</a> and the options for repair of partially covered cells are in the enum <a class="el" href="namespacePortage.html#a14733964cb2a49126b6094ce7cbdeb1e" title="Fixup options for partially filled cells. ">Portage::Partial_fixup_type</a>.</p>
+<p><br />
+</p>
+<p><a class="anchor" id="mesh-mesh mmremap"></a> </p><h2>Multi-material remapping</h2>
+<p><a class="el" href="namespacePortage.html">Portage</a> is also capable of remapping fields for a sparse multi-material problem, one in which the source mesh has cells possibly containing more than one material but not all materials occur in every cell [3]. The materials in each cell are specified by their volume fractions and optionally, by their centroids. Each multi-material field on the source mesh has as many values in a cell as there are materials in the cell. <em>Multi-material remapping cannot be used with particle swarms nor does it make sense for nodal field remap</em>.</p>
+<p>The algorithm for multi-material remapping involves the use of an external interface reconstruction package called <a href="https://github.com/laristra/tangram">Tangram</a> to perform reconstruction of pure material polygons within each cell using the volume fraction (and possibly centroid) data. Tangram is designed similar to <a class="el" href="namespacePortage.html">Portage</a> in that one can use it with default or custom components. It has within its suite of methods Volume-of-fluid and Moment-of-fluid methods.</p>
+<p>The algorithm for remapping of multi-material fields is broadly similar to the single material remap but now the intersection and interpolation must be done per material. Thus the algorithm can be roughly described as below:</p>
+<ul>
+<li><b>search</b> - find candidate cells that will contribute to each target cell</li>
+<li><b>interface reconstruct</b> - given volume fractions of materials (and optionally, centroids) on the source mesh, compute a subdivision of each source cell into pure material polygons</li>
+<li>For each material <em>m</em> in problem:<ol type="1">
+<li><b>intersect</b> - calculate the contribution of material <em>m</em> from each candidate cell to a given target cell. This is done by intersecting the material <em>m</em>'s reconstructed polygon (if it exists) in the source cell with the target cell</li>
+<li><b>populate materials</b> - based on intersection moments, determine the cells in which this material appears</li>
+<li><b>interpolate</b> - using the intersection weights and moments, along with appropriate limiters, reconstruct the field data for material <em>m</em> for a given target cell. No limiting is performed at material interfaces</li>
+<li><b>repair</b> - repair the remapped field due to errors resulting from mismatch of the two mesh boundaries (<em>not yet implemented</em>)</li>
 </ol>
-<p>All of these operations work with your underlying mesh/particles and state manager through wrappers that provide an interface to the queries needed to perform any particular step. For an example of the requirements of the wrappers, see the <a class="el" href="example.html">Example Use</a> page. Below, when we refer to <em>mesh</em> or <em>particles</em> in terms of the operations, we really mean <em>mesh wrappers</em> and <em>particle swarm wrappers</em>. Particle methods are also referred to as <em>meshfree methods</em>.</p>
-<div class="image">
-<object type="image/svg+xml" data="meshmesh.svg">meshmesh.svg</object>
-<div class="caption">
-An example mesh-mesh configuration. Blue is target mesh, black is source mesh.</div></div>
-<p> All operations consist of a <em>source</em> mesh/particle swarm and a <em>target</em> mesh/particle swarm. The <em>source</em> entity is the one where we have existing field data, and the <em>target</em> entity is the object to which we would like to remap the data. For meshes, the field data can live on either cell centers or node centers; particle data naturally lives on particles, which can have various shapes and smoothing lengths.</p>
-<h2>Search</h2>
-<p>Given source and target entities, this step simply <em>identifies</em> which parts of the source contribute to which parts of the target. Concretely, for mesh-mesh remap this step would identify which source cells overlap each target cell.</p>
-<div class="image">
-<object type="image/svg+xml" data="search.svg">search.svg</object>
-<div class="caption">
-Candidates are in yellow.</div></div>
-<p> Portage has several search algorithms with varying degrees of sophistication/speed. These are the search methods for meshes:</p>
-<ul>
-<li>Portage::SearchSimple - 2d, bounding box search</li>
-<li>Portage::SearchKDTree - 2d or 3d parallel k-d tree search</li>
-</ul>
-<p>For particle swarms, the search concepts are similar, except any sort of bounding needs to take into account the fact that the particles can have some extent via shape and kernel functions. These are the search methods for particles:</p>
-<ul>
-<li>Portage::SearchSimplePoints - any-d quadratic time search over particle swarms</li>
-<li>Portage::SearchPointsByCells - any-d linear time search over particle swarms using a bounding box containing particles and their smoothing lengths</li>
-</ul>
-<h2>Intersect</h2>
-<p>Given the list of source candidates for intersection for a target entity, this step calculates the actual weights going into the intersection.</p>
-<div class="image">
-<object type="image/svg+xml" data="intersect.svg">intersect.svg</object>
-<div class="caption">
-The exact intersection volumes are in green.</div></div>
-<p> For meshes, this step uses exact intersection methods to calculate various <em>moments</em> of the polygon/polyhedron of intersection; moments of higher order than the 0th (i.e. the area or volume of the intersection) are needed for higher order remap. It is possible that some candidates are determined to have zero intersection, or that some candidates have multiple intersections in the case of non-convex cells.</p>
-<p>The available intersectors for meshes are:</p>
-<ul>
-<li>Portage::IntersectClipper - 2d, exact intersection method based on the <a href="www.angusj.com/delphi/clipper.php">Clipper</a> library for polygon intersection and clipping</li>
-<li>Portage::IntersectR2D - 2d, fast, exact polygonal intersection method based on the <a href="https://github.com/laristra/r3d">r3d</a> library.</li>
-<li>Portage::IntersectR3D - 3d, fast, exact polyhedral intersection method based on the <a href="https://github.com/laristra/r3d">r3d</a> library.</li>
-</ul>
-<p>For particles, this step is referred to as <em>accumulation</em>. The distinction in terminology stems from the fact that for particles, local regression estimators (LRE) are used to do the remap. In this stage, the LRE weights from particle contributions are accumulated by computing the weight functions and local regression corrections to those weights. If LRE is performed with enough points, one can obtain weights for arbitrary orders of derivatives of the field data, which can be used to perform higher-order estimation.</p>
-<p>The available meshfree method is:</p>
-<ul>
-<li>Portage::Meshfree::Accumulate - any-d accumulator that works with particles of various shapes, various kernel functions, utilizing various types of basis functions and estimator models.</li>
-</ul>
-<h2>Interpolate</h2>
-<p>Given the list of source entities and their weighted contributions to a given target entity, along with source field data, this step actually populates the target field data on the target entities. Performing higher-order reconstructions on meshes require more data to construct gradients, hessians, etc., and limiters to ensure monotonicity. At mesh domain boundaries, limiting <em>can</em> be ill-posed if there are no boundary conditions; we currently do not support such boundary conditions, so we do not limit at domain boundaries. Furthermore, if the target mesh is not entirely contained within the source mesh, then we currently have no mechanism for including background or boundary conditions.</p>
-<div class="image">
-<object type="image/svg+xml" data="interpolate.svg">interpolate.svg</object>
-<div class="caption">
-The weights, calculated during intersection, are combined to interpolate data in the target cell.</div></div>
-<p> The current interpolation methods for meshes are the following:</p>
-<ul>
-<li>Portage::Interpolate_1stOrder - no limiting gets applied here.</li>
-<li>Portage::Interpolate_2ndOrder - capable of performing a limited linear fit (2nd order accurate).</li>
-<li>Portage::Interpolate_3rdOrder - capable of performing a least-squares, limited quadratic fit (3rd order accurate).</li>
-</ul>
-<p>For particles, the terminology for the interpolate step changes to <em>estimate</em>. All of the heavy-lifting of the remap for particles has been done in the accumulate phase, such that this step results in a basic matrix vector multiply between the field data on source particles and the weights taking into account various orders of derivative information.</p>
-<p>The available meshfree method is:</p>
-<ul>
-<li>Portage::Meshfree::Estimate - use the output of Portage::Accumulate to estimate the target field data with varying degrees of accuracy. <hr/>
 </li>
 </ul>
-<h2>Drivers</h2>
-<p>Portage comes with a few <em>drivers</em> to help facilitate using the above methods with your own mesh/particle data. The drivers are all templated on source and target mesh/particle swarm and state data. Furthermore, they are templated on the Search, Intersect (or Accumulate), and Interpolate (or Estimate) methods above. In particular, the following drivers are provided:</p>
+<p>Remap of mesh fields on cells and nodes (one value per cell or node) proceeds as in the single material case.</p>
+<p>The above steps describe what is called a <em>material-dominant loop</em> - the outer loop is over materials and within each iteration all cells containing this material are processed. Also note that, for a particular field, the interpolate step requests a <em>contiguous field data</em> corresponding to <em>all cells in a particular material</em> (See Wonton documentation for details of the programming interface).</p>
+<p>We recognize that not all applications store their fields in the same way. A few store field data in a <em>full data structure</em> wherein field values are stored for every material in the problem in every cell. Most applications store this data compactly in <em>cell-centric</em> or <em>material-centric</em> representations. In the <em>cell-centric</em> form, each cell keeps track of which materials it has and the field values corresponding to those materials. On the other hand, <em>material-centric</em> data representations maintain lists of cells that contain a particular material (or put another way, the cells that a material contains) and track the field values of the material cells. These differences have strong implications for which loops (cell-dominant or material-dominant) work best for each storage pattern.</p>
+<p>Based on a study [4] of multi-material data structures, the <a class="el" href="namespacePortage.html">Portage</a> team has concluded that a material dominant loop for remapping is likely to be more cache-friendly and therefore, more performant since this is a memory bound algorithm. The team also has designed the state wrappers to retrieve data in a material-centric way, based on the same study's conclusion that accessing cell-centric data in material-dominant loops and vice versa is highly detrimental to performance. <b>Therefore, we recommend that the field data be transformed, if necessary, within the state wrapper to a material-centric form before remapping and believe that the cost of this transformation will be less than that of accessing the data in an inefficient way.</b></p>
+<div class="image">
+<object type="image/svg+xml" data="mmremap.svg">mmremap.svg</object>
+<div class="caption">
+Multi-material remapping with interface reconstruction</div></div>
+<p> <br />
+</p>
+<p><a class="anchor" id="meshfree remap"></a> </p><h2>Particle or Meshfree Remapping</h2>
+<p><a class="el" href="namespacePortage.html">Portage</a> can estimate functions and derivatives between particle swarms (groups of particles) employing algorithmic devices similar to those of mesh-mesh remap. We say "estimate" instead of "interpolate" because in general, meshfree function estimates pass <em>near</em> the data, and not <em>through</em> it. Meshfree remap is performed in the following steps that echo those of mesh-mesh remapping:</p>
 <ul>
-<li>Portage::Driver - for mesh-mesh remap</li>
-<li>Portage::Meshfree::SwarmDriver - for particle-particle remap</li>
-<li>Portage::MSM_Driver - for mesh to mesh remap with particles as an intermediary</li>
+<li><b>search</b> - find candidate source particles that will contribute to remap at each target particle.</li>
+<li><b>accumulate</b> - calculate the weight of each candidate's contribution to the remap at a given target particle.</li>
+<li><b>estimate</b> - using the weights reconstruct the field data for a given target particle.</li>
 </ul>
-<p>The drivers are all used within our application tests within the <code>apps</code> directory. The applications choose a particular mesh or particle swarm type, select specfic Search, Intersect, and Interpolate algorithms, along with associated settings for remap order of accuracy, data locality for meshes (cells or nodes), and any limiters needed for higher-order remap. Users are encouraged to write their own specialized drivers, but the above should serve as a starting point. </p>
+<p>The following figure illustrates typical source and target swarms used for remapping. There are no lines connecting data points. </p><table style="width:100%">
+<tr>
+<td valign="top"><div class="image">
+<img src="swarm_swarm.png" alt="Swarm-swarm" width="33%"/>
+</div>
+  </td></tr>
+<tr>
+<td width="22%" valign="top">A swarm-swarm remap configuration. Blue is source, red is target.  </td></tr>
+</table>
+<p>There are many possible meshfree methods to choose from. <a class="el" href="namespacePortage.html">Portage</a> currently employs the Kernel Density Estimator (KDE), the basis of the Smooth-Particle Hydrodynamics method (SPH), and the well developed Local Regression Estimator (LRE) [5][6]. If LRE is performed with sufficient point density, one can obtain weights for arbitrary orders of derivatives of the field data enabling higher-order estimation of fields. It can even be used to estimate integral operators of the field data on small domains. It has many exceptional properties that render it useful and practical.</p>
+<h3>Search</h3>
+<p>For particle swarms, the search concepts are similar, with one imporant difference. With meshes, the region of influence of a data point is given by the cell that includes or is connected to it. With particles, the region of influence of a data point is determined by the support of a weight function that includes it. A typical weight function is positive, smooth and unimodal, with compact support, as shown below.</p>
+<table style="width:100%">
+<tr>
+<td valign="top"><div class="image">
+<img src="kernel.png" alt="Kernel" width="33%"/>
+</div>
+  </td></tr>
+<tr>
+<td width="22%" valign="top">A typical weight function. The peak value is typically 1 and the minimum zero, with compact support.   </td></tr>
+</table>
+<p>A weight function support need not be spherical, as illustrated above. Suitable weight functions can be constructed with supports comprised of ellipses, boxes, or arbitrary polygons or polyhedra. A smooth weight function used for particles generalizes the "top-hat" or unitary weight function used for meshes that has a value of 1 inside the cell and 0 outside. Meshes are a special case of particles. In fact, under certain conditions on the weight function, the LRE reproduces finite element nodal shape functions.</p>
+<p>The centers of the weight function supports are typically located in two places. If on the target particles, the estimator is called "gather-form", if on the source particles, the estimator is called "scatter-form", illustrated below.</p>
+<table style="width:100%">
+<tr>
+<td valign="top"><div class="image">
+<img src="gather_form.png" alt="Gather" class="fullwidth"/>
+</div>
+ </td><td width="4%"></td><td valign="top"><div class="image">
+<img src="scatter_form.png" alt="Scatter" class="fullwidth"/>
+</div>
+  </td></tr>
+<tr>
+<td width="22%" valign="top">Gather-form search. The centers of the weight function supports are located at the target particle centers. </td><td width="4%"></td><td width="22%" valign="top">Scatter-form search. The centers of the weight function supports are located at the source particle centers. The supports need not all have the same shape.  </td></tr>
+</table>
+<p>The weight function kernel and shape are specified by Portage::MeshFree::Weight::Kernel and Portage::MeshFree::Weight::Geometry.</p>
+<p>Any sort of bounding performed, e.g. to partition among processors, needs to take into account the extent of the weight function supports. These are the search methods for particles:</p>
+<ul>
+<li><a class="el" href="classPortage_1_1SearchSimplePoints.html" title="A simple, crude search algorithm that does a quadratic-time search over a swarm of points...">Portage::SearchSimplePoints</a> - any-d quadratic time search over particle swarms</li>
+<li><a class="el" href="classPortage_1_1SearchPointsByCells.html" title="A simple, crude search algorithm that does a linear-time search over a swarm of points. ">Portage::SearchPointsByCells</a> - any-d linear time search over particle swarms using a bounding box containing the particles and their extent based on smoothing lengths</li>
+</ul>
+<p>The weight function location is specified by Portage::MeshFree::WeightCenter. A set of input smoothing lengths determine the size of the weight function support.</p>
+<h3>Accumulate</h3>
+<p>Most meshfree methods make approximations by means of discrete kernel transforms, which involve summing data values times kernel values at various points. Even though the kernels are defined over the entire swarm, compact support means only a small number of particles typically have non-zero values. The set of such particles is analogous to the stencil used in a meshed method.</p>
+<p>For LRE, discrete transforms of different powers of the particle coordinates are made (moments), assembled into a matrix, solved against a vector of moments and finally multiplied by the kernel function. This yields a set of weights for each neighboring particle data value, one for each derivative estimate. The concept for gather and scatter forms applied to the second moment of position is illustrated below.</p>
+<table style="width:100%">
+<tr>
+<td valign="top"><div class="image">
+<img src="gatherScheme.png" alt="GatherScheme" class="fullwidth"/>
+</div>
+ </td><td width="4%"></td><td valign="top"><div class="image">
+<img src="scatterScheme.png" alt="ScatterScheme" class="fullwidth"/>
+</div>
+  </td></tr>
+<tr>
+<td width="22%" valign="top">Gather-form accumulate. The source data values (blue spikes) multiply the values of a given target kernel (in red) at the location of the spikes and are summed to the value associated with the given red dot. </td><td width="4%"></td><td width="22%" valign="top">Scatter-form accumulate. The source data values (blue spikes) multiply the values of the source kernels at the red dots (centers of the target particles) and are summed there.  </td></tr>
+</table>
+<p>The only available meshfree method for accumulate is:</p>
+<ul>
+<li>Portage::Meshfree::Accumulate - any-d accumulator that works with various weight function shapes, kernel functions, basis functions and estimator models.</li>
+</ul>
+<p>Developers may write their own Accumulate class.</p>
+<h3>Estimate</h3>
+<p>Given the list of source particles and their weighted contributions to a given target particle, along with source field data, this step actually populates the fields on the target particles. All of the heavy-lifting of the remap for particles has been done in the accumulate phase, such that this step results in a basic matrix vector multiply between the field data on source particles and the weights for the various orders of derivative.</p>
+<p>The sole available Estimate method is:</p>
+<ul>
+<li>Portage::Meshfree::Estimate - use the output of Portage::Accumulate to estimate the target field data with varying degrees of accuracy.</li>
+</ul>
+<p>but developers are free to substitute a different one.</p>
+<p><br />
+</p>
+<p>Note that while the meshfree interpolation can go to <em>very high order of accuracy</em> it is still <em>not strictly conservative</em> like the mesh-mesh remap. Also, meshfree remapping currently does not incorporate mechanisms for local or global bounds preservation in the interpolation. Consequently, users must be conscious of the fact that going to higher orders of interpolation carries the risk of bounds violation. Furthermore, particle remap is not currently sensitive to multi-material data fields. These difficulties will be addressed in future code releases.</p>
+<p><br />
+</p>
+<p>[1] Margolin, L.G. and Shashkov, M.J. "Second-order sign-preserving
+  conservative interpolation (remapping) on general grids," Journal of Computational Physics, v 184, n 1, pp. 266-298, 2003.</p>
+<p>[2] Dukowicz, J.K. and Kodis, J.W. "Accurate Conservative Remapping
+  (Rezoning) for Arbitrary Lagrangian-Eulerian Computations," SIAM Journal on Scientific and Statistical Computing, Vol. 8, No. 3, pp. 305-321, 1987.</p>
+<p>[3] Kucharik, M. and Shashkov, M.J. "Conservative Multi-Material Remap
+for Staggered Multi-Material Arbitrary Lagrangian-Eulerian Methods," Journal of Computational Physics, v 258, pp. 268-304, 2014.</p>
+<p>[4] Fogerty, S., Martineau, M., Garimella, R.V. and Robey, R.W. "A Comparative Study of Multi-Material Data Structures for Computational Physics Applications," Computers and Mathematics with Applications, 2018.</p>
+<p>[5] Dilts, G.A. "Estimation of Integral Operators on Random Data," Los Alamos Technical Report, LA-UR-17-23408, Los Alamos National Laboratory, Los Alamos, NM 2017.</p>
+<p>[6] Garimella, R.V. "A Simple Introduction to Moving Least Squares and
+Local Regression Estimation," Los Alamos Technical Report, LA-UR-17-24975, Los Alamos National Laboratory, Los Alamos, NM 2017. </p>
 </div></div><!-- contents -->
 <!--
 This file is part of the Ristra portage project.
@@ -169,8 +302,8 @@ Generated by &#160;<a href="http://www.doxygen.org/index.html">
 <footer id="footer" class="footer">
   <div class="container">
     <div class="row test-muted">
-      <div class="footer-row col-md-6">Copyright &copy; 2017
-	<a href="http://lanl.gov"> Los Alamos National Security, LLC</a>
+      <div class="footer-row col-md-6">Copyright &copy; 2019
+	<a href="http://lanl.gov"> Triad, LLC</a>
 	All Rights Reserved.
       </div>
       <div class="footer-row col-md-2">

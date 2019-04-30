@@ -17,11 +17,17 @@ Please see the license file at the root of this repository, or at:
     <meta http-equiv="Content-Type" content="text/xhtml;charset=UTF-8"/>
     <meta name="generator" content="Doxygen 1.8.13"/>
     <script type="text/javascript" src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
-    <title>portage: Welcome to portage!</title>
+    <title>portage: Introduction</title>
     <script type="text/javascript" src="dynsections.js"></script>
     <link href="search/search.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
+    <script type="text/x-mathjax-config">
+  MathJax.Hub.Config({
+    extensions: ["tex2jax.js", "Tex/AMSmath.js", "Tex/AMSsymbols.js"],
+    jax: ["input/TeX","output/HTML-CSS"],
+});
+</script><script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js"></script>
     <link href="doxygen.css" rel="stylesheet" type="text/css" />
     <link href="customdoxygen.css" rel="stylesheet" type="text/css"/>
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"/>
@@ -32,7 +38,7 @@ Please see the license file at the root of this repository, or at:
     <nav class="navbar navbar-default" role="navigation">
       <div class="container">
         <div class="navbar-header">
-          <a class="navbar-brand">portage </a>
+          <img src="Portage-logo-small.png" alt="portage">
         </div>
       </div>
     </nav>
@@ -73,52 +79,72 @@ $(function() {
 
 <div class="header">
   <div class="headertitle">
-<div class="title">Welcome to portage! </div>  </div>
+<div class="title">Introduction </div>  </div>
 </div><!--header-->
 <div class="contents">
-<div class="textblock"><p>Portage is a framework that computational physics applications can use to build a highly customized, hybrid parallel (MPI+X) conservative remapping library for transfer of field data between meshes, between particles, and between meshes and particles.</p>
-<p>We aim to provide:</p><ul>
-<li>A modern, modular design - pick and choose your preferred search, intersect, and interpolate method</li>
-<li>A conservative, intersection-based remap capability on general polytopal meshes and general particle shape functions</li>
-<li>A pick-and-choose framework for search, intersect, and interpolate algorithms</li>
-<li>High flexibility for application customization</li>
-<li>Algorithms that take advantage of both distrubuted and on-node parallelism</li>
-<li>An <em>Open Source Community</em> for these tools!</li>
-<li>Use of client application's native mesh/particle and state (data/field) data structures</li>
+<div class="textblock"><p><a class="anchor" id="Introduction"></a></p>
+<p><a class="el" href="namespacePortage.html">Portage</a> is a framework for building a <b>highly customized, hybrid parallel (MPI+X) remapping library</b> for the transfer of field data between <em>meshes</em> or <a href="concepts.html#meshfree remap"><em>particle swarms</em></a> in computational physics applications.</p>
+<p>Application developers can:</p><ul>
+<li><b>use one of the included drivers</b> with a mix of available and custom components to readily deploy a powerful remapping capability into their application, or</li>
+<li><b>write a custom remapping driver</b> and use it with a mix of available and custom components to create a remapping capability uniquely tailored to their application needs.</li>
 </ul>
-<p>See the <a class="el" href="concepts.html">Concepts</a> page for a high-level discussion of the methods used within portage.</p>
-<p>See the <a class="el" href="example.html">Example Use</a> page for a simple example of hooking portage up to a mesh and state manager. </p><hr/>
-<h1>Details and Requirements</h1>
-<p>At a minimum, portage requires:</p><ul>
-<li>A C++-11 compatible compiler; regular testing is performed with GCC 5.3+ and Intel 17+.</li>
-<li>CMake 3.0+</li>
-<li>LAPACKE (3.7.1+)</li>
-<li>Boost (1.53.0+) <b>or</b> Thrust (1.6.0+)</li>
+<div class="image">
+<img src="portage-tangram-diagram.png" alt="Portage design" width="100%"/>
+</div>
+<p> <br />
+</p>
+<p>The drivers furnished with <a class="el" href="namespacePortage.html">Portage</a> provide:</p><ul>
+<li><a href="concepts.html#mesh-mesh remap">conservative remapping of multi-material fields between general polygonal/polyhedral meshes</a>.</li>
+<li><a href="concepts.html#meshfree remap">higher-order, non-conservative interpolation between particle swarms</a> as well as between meshes and particle swarms.</li>
+<li>a modern design templated on the major components - mix and match from the furnished suite or use a custom component.</li>
+<li>direct (no-copy) use of client application's native mesh/particle and field data structures whenever possible (see <a class="el" href="distributed_concepts.html">distributed remap</a>).</li>
+<li>built-in distributed and on-node parallelism even with custom components (see <a href="performance.html#scaling">scaling</a> results).</li>
 </ul>
-<p>Distributed parallelism of portage is currently supported through MPI; regular testing is performed with OpenMPI 1.10.3+ . Most application tests and all of the units tests are currently only built if MPI is used. MPI is enabled in portage by setting the CMake variable <code>ENABLE_MPI=True</code>.</p>
-<p>On-node parallelism is exposed through the <a href="https://thrust.github.io">Thrust</a> library. Enabling Thrust within portage requires setting at least two CMake variables: <code>ENABLE_THRUST=True</code> and <code>THRUST_DIR=&lt;path_to_thrust_directory&gt;</code>. Additionally, one can specify the Thrust backend to utilize, with the default being the OpenMP backend <code>THRUST_BACKEND=THRUST_DEVICE_SYSTEM_OMP</code>. Portage also supports the <code>THRUST_DEVICE_SYSTEM_TBB</code> backend. Regular testing happens with Thrust 1.8.</p>
-<h2>Obtaining portage</h2>
-<p>The latest release of <a href="https://github.com/laristra/portage">portage</a> lives on GitHub. Portage makes use of git submodules, so it must be cloned recursively:</p>
-<div class="fragment"><div class="line">git clone --recursive https://github.com/laristra/portage</div></div><!-- fragment --><h2>Building</h2>
-<p>Portage uses the CMake build system. In the simplest case where you want to build a serial version of the code, and CMake knows where to find your Boost and LAPACKE installations, one can do</p>
-<div class="fragment"><div class="line">portage/ $ mkdir build</div><div class="line">portage/ $ cd build</div><div class="line">portage/build/ $ cmake ..</div><div class="line">portage/build/ $ make</div></div><!-- fragment --><p>This will build a serial version of the code into a library (without any tests). A more complete build with MPI, Thrust (for on-node parallelism), unit and application test support, documentation support, and support for both <a href="https://github.com/lanl/jali">Jali</a> and the Burton <a href="https://github.com/laristra/flecsi-sp">specialization</a> of the <a href="https://github.com/laristra/flecsi">FleCSI</a> library would look like:</p>
-<div class="fragment"><div class="line">portage/ $ mkdir build</div><div class="line">portage/ $ cd build</div><div class="line">portage/build/ $ cmake -DENABLE_APP_TESTS=True -DENABLE_UNIT_TESTS=True \</div><div class="line">                       -DENABLE_MPI=True \</div><div class="line">                       -DENABLE_THRUST=True -DTHRUST_DIR=/path/to/thrust/include/directory \</div><div class="line">                       -DJali_DIR=path/ to/Jali/lib \</div><div class="line">                       -DENABLE_FleCSI=True \</div><div class="line">                       -DCMAKE_PREFIX_PATH=&quot;/path/to/FleCSI/install;/path/to/FleCSI-sp/install&quot; \</div><div class="line">                       -DENABLE_DOXYGEN=True \</div><div class="line">                       -DPC_LAPACKE_NCLUDE_DIRS=/path/to/LAPACKE/include \</div><div class="line">                       -DPC_LAPACKE_LIBRARY_DIRS=/path/to/LAPACKE/install \</div><div class="line">                       ..</div><div class="line">portage/build/ $ make           # builds the library and tests</div><div class="line">portage/build/ $ make test      # runs the tests</div><div class="line">portage/build/ $ make doxygen   # builds this HTML and a PDF form of the documentation</div><div class="line">portage/build/ $ make install   # installs the portage library and headers into CMAKE_INSTALL_PREFIX</div></div><!-- fragment --><h2>Useful CMake Flags</h2>
-<p>Below is a non-exhaustive list of useful CMake flags for building portage.</p>
+<p>They also have the following known limitations:</p><ul>
+<li>Only remapping of scalar fields is supported; vectors and tensors must be remapped component by component.</li>
+<li>Multi-material remap is not yet supported for distributed meshes.</li>
+<li>Conservative remapping of compound quantities such as momentum is not supported when they are not the primary fields.</li>
+<li>Field fixup in the presence of mismatched mesh boundaries is not implemented for multi-material fields.</li>
+<li>Remapping involving particles is currently non-conservative.</li>
+</ul>
+<p><br />
+</p>
+<p>See the <a class="el" href="concepts.html">Concepts</a> page for a high-level discussion of the methods used within <a class="el" href="namespacePortage.html">Portage</a>.</p>
+<p>See the <a class="el" href="example.html">Example Use</a> page for a simple example of hooking <a class="el" href="namespacePortage.html">Portage</a> up to a mesh and state manager. </p><hr/>
+<p><a class="anchor" id="Requirements"></a> </p><h1>Requirements</h1>
+<p>At a minimum, <a class="el" href="namespacePortage.html">Portage</a> requires:</p><ul>
+<li>A C++-11 compatible compiler; regular testing is performed with GCC 6.3+ and Intel 17+.</li>
+<li><a href="https://cmake.org">CMake</a> 3.8+</li>
+<li><a href="https://https://github.com/Reference-LAPACK/lapack/tree/master/LAPACKE">LAPACKE</a> 3.8.0+</li>
+<li><a href="https://www.boost.org">Boost</a> 1.68.0+ <b>or</b> <a href="https://thrust.github.io/">Thrust</a> 1.8.1+</li>
+</ul>
+<p><a class="el" href="namespacePortage.html">Portage</a> depends on the <a href="https://github.com/laristra/wonton">Wonton</a> library to provide mesh/state wrapper interfaces and some common defintions and functionality. <a class="el" href="namespacePortage.html">Portage</a> is known to work with Wonton mesh/state wrappers for version 1.0.0 of the <a href="https://github.com/lanl/jali">Jali</a> and #e78c594 of <a href="https://github.com/laristra/flecsi-sp">flecsi-sp</a> (along with #374b56b of <a href="https://github.com/laristra/flecsi">FleCSI</a>).</p>
+<p>The supplied mesh-mesh remap driver of <a class="el" href="namespacePortage.html">Portage</a> also requires the use of the <a href="https://www.github.com/devonmpowell/r3d">R3D</a> library for intersection of polyhedra.</p>
+<p><b>Distributed parallelism</b> of <a class="el" href="namespacePortage.html">Portage</a> is currently supported through MPI; regular testing is performed with OpenMPI 1.10.3+ . Most application tests and all of the units tests are currently only built if MPI is used. MPI is enabled in <a class="el" href="namespacePortage.html">Portage</a> by setting the CMake variable <code>ENABLE_MPI=True</code>.</p>
+<p><b>On-node parallelism</b> is enabled through the <a href="https://thrust.github.io">Thrust</a> library. The default on-node parallelism mechanism is OpenMP (YMMV for TBB, no support yet for CUDA). Regular testing happens with Thrust 1.8. <b>If you turn on Thrust for multi-threading-enabled executables, the team strongly recommends linking to the TCMalloc library available in <a href="https://github.com/gperftools/gperftools">Google Performance Tools</a> to see the expected scaling.</b></p>
+<p><b>Multi-material remapping</b> requires use of the <a href="https://github.com/laristra/tangram">Tangram</a> library for interface reconstruction and optionally, the <a href="https://github.com/laristra/xmof2d">XMOF2D</a> library. <a class="el" href="namespacePortage.html">Portage</a> has been tested with version 0.9.1 of both Tangram and the X-MOF library.</p>
+<p><a class="anchor" id="Downloading"></a> </p><h2>Downloading</h2>
+<p>The latest release of <a href="https://github.com/laristra/Portage">Portage</a> lives on GitHub. <a class="el" href="namespacePortage.html">Portage</a> makes use of git submodules, so it must be cloned recursively:</p>
+<div class="fragment"><div class="line">git clone --recursive https://github.com/laristra/Portage</div></div><!-- fragment --><p><a class="anchor" id="Building"></a> </p><h2>Building</h2>
+<p><a class="el" href="namespacePortage.html">Portage</a> uses the <a href="https://cmake.org">CMake</a> build system. In the simplest case where you want to build a serial version of the code, and CMake knows where to find your Boost and LAPACKE installations, one can do</p>
+<div class="fragment"><div class="line">Portage/ $ mkdir build</div><div class="line">Portage/ $ cd build</div><div class="line">Portage/build/ $ cmake ..</div><div class="line">Portage/build/ $ make</div></div><!-- fragment --><p>This will build a serial version of the code into a library (without any tests). A more complete build with MPI, Thrust/OpenMP, unit and application test support, documentation support, and support for both <a href="https://github.com/lanl/jali">Jali</a> and the Burton <a href="https://github.com/laristra/flecsi-sp">specialization</a> of the <a href="https://github.com/laristra/flecsi">FleCSI</a> library would look like:</p>
+<div class="fragment"><div class="line">Portage/ $ mkdir build</div><div class="line">Portage/ $ cd build</div><div class="line">Portage/build/ $ cmake -DENABLE_APP_TESTS=True \</div><div class="line">                       -DENABLE_UNIT_TESTS=True \</div><div class="line">                       -DENABLE_MPI=True \</div><div class="line">                       -DENABLE_THRUST=True -DTHRUST_DIR=/path/to/thrust/include/directory \</div><div class="line">                       -DENABLE_TCMALLOC=True -DTCMALLOC_LIB=path/to/Optional/TCMalloc/lib \</div><div class="line">                       -DJali_DIR=path/to/Optional/Jali/lib \</div><div class="line">                       -DENABLE_FleCSI=True \</div><div class="line">                       -DCMAKE_PREFIX_PATH=&quot;/path/to/Optional/FleCSI/install;/path/to/FleCSI-sp/install&quot; \</div><div class="line">                       -DENABLE_DOXYGEN=True \</div><div class="line">                       -DLAPACKE_DIR=/path/to/LAPACKE</div><div class="line">                       ..</div><div class="line">Portage/build/ $ make           # builds the library and tests</div><div class="line">Portage/build/ $ make test      # runs the tests</div><div class="line">Portage/build/ $ make doxygen   # builds this HTML and a PDF form of the documentation</div><div class="line">Portage/build/ $ make install   # installs the Portage library and headers into CMAKE_INSTALL_PREFIX</div></div><!-- fragment --><p><a class="anchor" id="Useful CMake Flags"></a> </p><h2>Useful CMake Flags</h2>
+<p>Below is a non-exhaustive list of useful CMake flags for building <a class="el" href="namespacePortage.html">Portage</a>.</p>
 <table class="doxtable">
 <tr>
 <th align="left">CMake flag:type </th><th align="left">Description </th><th align="left">Default  </th></tr>
 <tr>
 <td align="left"><code>CMAKE_BUILD_TYPE:STRING</code></td><td align="left"><code>Debug</code> or optimized <code>Release</code> build </td><td align="left"><code>Debug</code> </td></tr>
 <tr>
-<td align="left"><code>CMAKE_INSTALL_PREFIX:PATH</code> </td><td align="left">Location for the portage library and headers to be installed </td><td align="left"><code>/usr/local</code> </td></tr>
+<td align="left"><code>CMAKE_INSTALL_PREFIX:PATH</code> </td><td align="left">Location for the <a class="el" href="namespacePortage.html">Portage</a> library and headers to be installed </td><td align="left"><code>/usr/local</code> </td></tr>
 <tr>
-<td align="left"><code>CMAKE_PREFIX_PATH:PATH</code> </td><td align="left">Locations where CMake can look for packages; needs to be set to the FleCSI and FleCSI-SP locations if using FleCSI </td><td align="left">"" </td></tr>
+<td align="left"><code>CMAKE_PREFIX_PATH:PATH</code> </td><td align="left">Locations where CMake can look for packages; needs to be set to the FleCSI and FleCSI-SP locations if using FleCSI </td><td align="left">NO_DEFAULT </td></tr>
 <tr>
 <td align="left"><code>ENABLE_APP_TESTS:BOOL</code> </td><td align="left">Turn on compilation and test harness of application tests </td><td align="left"><code>False</code> </td></tr>
 <tr>
 <td align="left"><code>ENABLE_DOXYGEN:BOOL</code> </td><td align="left">Create a target to build this documentation </td><td align="left"><code>False</code> </td></tr>
 <tr>
-<td align="left"><code>ENABLE_FleCSI:BOOL</code> </td><td align="left">Turn on support for the FleCSI Burton specialization; must set <code>CMAKE_PREFIX_PATH</code> to a location where <em>both</em> FleCSI and FleCSI-SP can be found. Both FleCSI packages are under constant development. This version of portage is known to work with hash <code>374b56b</code> of the FleCSI <em>stable</em> branch, and hash <code>e78c594</code> of the FleCSI-SP <em>stable</em> branch. </td><td align="left"><code>False</code> </td></tr>
+<td align="left"><code>ENABLE_FleCSI:BOOL</code> </td><td align="left">Turn on support for the FleCSI Burton specialization; must set <code>CMAKE_PREFIX_PATH</code> to a location where <em>both</em> FleCSI and FleCSI-SP can be found. Both FleCSI packages are under constant development. </td><td align="left"><code>False</code> </td></tr>
 <tr>
 <td align="left"><code>ENABLE_MPI:BOOL</code> </td><td align="left">Build with support for MPI </td><td align="left"><code>False</code> </td></tr>
 <tr>
@@ -130,15 +156,13 @@ $(function() {
 <tr>
 <td align="left"><code>ENABLE_FleCSI:BOOL</code> </td><td align="left">Turn on support for FleCSI; <em>requires C++14-compatible compiler</em> </td><td align="left"><code>False</code> </td></tr>
 <tr>
-<td align="left"><code>Jali_DIR:PATH</code> </td><td align="left">Hint location for CMake to find Jali. This version of portage works with version 0.9.8 of Jali </td><td align="left">"" </td></tr>
+<td align="left"><code>Jali_DIR:PATH</code> </td><td align="left">Hint location for CMake to find Jali </td><td align="left">NO_DEFAULT </td></tr>
 <tr>
-<td align="left"><code>PC_LAPACKE_NCLUDE_DIRS:PATH</code> </td><td align="left">Hint location for CMake to find LAPACKE include files if <code>pkg_config</code> fails. <b>NOTE</b> the variable name <em>indeed</em> includes the typo <code>_NCLUDE</code>; this will be fixed in a future release when we update the build system </td><td align="left">"" </td></tr>
+<td align="left"><code>LAPACKE_DIR:PATH</code> </td><td align="left">Hint location for CMake to find LAPACKE include and library files </td><td align="left">NO_DEFAULT </td></tr>
 <tr>
-<td align="left"><code>PC_LAPACKE_LIBRARY_DIRS:PATH</code> </td><td align="left">Hint location for CMake to find LAPACKE library files if <code>pkg_config</code> fails </td><td align="left">"" </td></tr>
+<td align="left"><code>TCMALLOC_LIB:PATH</code> </td><td align="left">The TCMalloc library to use (recommended if enabling Thrust) </td><td align="left">NO_DEFAULT </td></tr>
 <tr>
-<td align="left"><code>TCMALLOC_LIB:PATH</code> </td><td align="left">The TCMalloc library to use </td><td align="left"><code>${HOME}</code> </td></tr>
-<tr>
-<td align="left"><code>THRUST_DIR:PATH</code> </td><td align="left">Directory of the Thrust install </td><td align="left">"" </td></tr>
+<td align="left"><code>THRUST_DIR:PATH</code> </td><td align="left">Directory of the Thrust install </td><td align="left">NO_DEFAULT </td></tr>
 <tr>
 <td align="left"><code>THRUST_BACKEND:STRING</code> </td><td align="left">Backend to use for Thrust </td><td align="left"><code>"THRUST_DEVICE_SYSTEM_OMP"</code> </td></tr>
 </table>
@@ -163,8 +187,8 @@ Generated by &#160;<a href="http://www.doxygen.org/index.html">
 <footer id="footer" class="footer">
   <div class="container">
     <div class="row test-muted">
-      <div class="footer-row col-md-6">Copyright &copy; 2017
-	<a href="http://lanl.gov"> Los Alamos National Security, LLC</a>
+      <div class="footer-row col-md-6">Copyright &copy; 2019
+	<a href="http://lanl.gov"> Triad, LLC</a>
 	All Rights Reserved.
       </div>
       <div class="footer-row col-md-2">
