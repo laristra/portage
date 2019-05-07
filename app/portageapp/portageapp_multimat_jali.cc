@@ -675,12 +675,17 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
           Tangram::CellMatPoly<dim> const& cellmatpoly =
               source_interface_reconstructor->cell_matpoly_data(c);
           int nmp = cellmatpoly.num_matpolys();
+          matData[ic] = 0.0;
+          double matvolume = 0.0;
           for (int i = 0; i < nmp; i++) {
             if (cellmatpoly.matpoly_matid(i) == m) {
+              double matpolyvolume = cellmatpoly.matpoly_volume(i);
+              matvolume += matpolyvolume;
               Wonton::Point<dim> mcen = cellmatpoly.matpoly_centroid(i);
-              matData[ic] = mat_fields[m](mcen);
+              matData[ic] += mat_fields[m](mcen) * matpolyvolume;
             }
           }
+          matData[ic] /= matvolume;
         }
       }
 
