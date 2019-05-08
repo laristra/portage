@@ -15,9 +15,13 @@ Please see the license file at the root of this repository, or at:
 #include <utility>
 #include <vector>
 
+// portage includes
 #include "portage/interpolate/gradient.h"
 #include "portage/intersect/dummy_interface_reconstructor.h"
 #include "portage/support/portage.h"
+
+// wonton includes
+#include "wonton/support/CoordinateSystem.h"
 
 #ifdef HAVE_TANGRAM
 #include "tangram/driver/driver.h"
@@ -56,7 +60,8 @@ template<int D,
          template<class, int, class, class> class InterfaceReconstructorType =
          DummyInterfaceReconstructor,
          class Matpoly_Splitter = void,
-         class Matpoly_Clipper = void>
+         class Matpoly_Clipper = void,
+         class CoordSys = Wonton::DefaultCoordSys>
 class Interpolate_2ndOrder {
 
 #ifdef HAVE_TANGRAM
@@ -86,7 +91,9 @@ class Interpolate_2ndOrder {
       interface_reconstructor_(ir),
       interp_var_name_("VariableNameNotSet"),
       limiter_type_(NOLIMITER),
-      source_vals_(nullptr) {}
+      source_vals_(nullptr) {
+    CoordSys::template verify_coordinate_system<D>();
+  }
 #endif
 
   /*!
@@ -104,7 +111,9 @@ class Interpolate_2ndOrder {
       source_state_(source_state),
       interp_var_name_("VariableNameNotSet"),
       limiter_type_(NOLIMITER),
-      source_vals_(nullptr) {}
+      source_vals_(nullptr) {
+    CoordSys::template verify_coordinate_system<D>();
+  }
 
   /// Copy constructor (disabled)
   //  Interpolate_2ndOrder(const Interpolate_2ndOrder &) = delete;
@@ -192,7 +201,8 @@ template<int D,
          typename StateType,
          template<class, int, class, class> class InterfaceReconstructorType,
          class Matpoly_Splitter,
-         class Matpoly_Clipper>
+         class Matpoly_Clipper,
+         class CoordSys>
 class Interpolate_2ndOrder<D,
                            Entity_kind::CELL,
                            SourceMeshType,
@@ -200,7 +210,8 @@ class Interpolate_2ndOrder<D,
                            StateType,
                            InterfaceReconstructorType,
                            Matpoly_Splitter,
-                           Matpoly_Clipper> {
+                           Matpoly_Clipper,
+                           CoordSys> {
 
 #ifdef HAVE_TANGRAM
   using InterfaceReconstructor =
@@ -222,7 +233,9 @@ class Interpolate_2ndOrder<D,
       interface_reconstructor_(ir),
       interp_var_name_("VariableNameNotSet"),
       limiter_type_(NOLIMITER),
-      source_vals_(nullptr) {}
+      source_vals_(nullptr) {
+    CoordSys::template verify_coordinate_system<D>();
+  }
 #endif
 
   // Constructor without interface reconstructor
@@ -234,7 +247,9 @@ class Interpolate_2ndOrder<D,
       source_state_(source_state),
       interp_var_name_("VariableNameNotSet"),
       limiter_type_(NOLIMITER),
-      source_vals_(nullptr) {}
+      source_vals_(nullptr) {
+    CoordSys::template verify_coordinate_system<D>();
+  }
 
 
   /// Set the name of the interpolation variable and the limiter type
@@ -416,8 +431,9 @@ class Interpolate_2ndOrder<D,
         srcindex = source_state_.cell_index_in_material(srccell, matid_);
 
       Vector<D> gradient = gradients_[srcindex];
-      Vector<D> vec = xsect_centroid - src_centroid;
-      double val = source_vals_[srcindex] + dot(gradient, vec);
+      Vector<D> dr = xsect_centroid - src_centroid;
+      dr = CoordSys::modify_line_element(dr, src_centroid);
+      double val = source_vals_[srcindex] + dot(gradient, dr);
       val *= xsect_volume;
       totalval += val;
       wtsum0 += xsect_volume;
@@ -471,7 +487,8 @@ template<int D,
          typename StateType,
          template<class, int, class, class> class InterfaceReconstructorType,
          class Matpoly_Splitter,
-         class Matpoly_Clipper>
+         class Matpoly_Clipper,
+         class CoordSys>
 class Interpolate_2ndOrder<D,
                            Entity_kind::NODE,
                            SourceMeshType,
@@ -479,7 +496,8 @@ class Interpolate_2ndOrder<D,
                            StateType,
                            InterfaceReconstructorType,
                            Matpoly_Splitter,
-                           Matpoly_Clipper> {
+                           Matpoly_Clipper,
+                           CoordSys> {
 
 #ifdef HAVE_TANGRAM
   using InterfaceReconstructor =
@@ -627,8 +645,9 @@ class Interpolate_2ndOrder<D,
         xsect_centroid[i] = xsect_weights[1+i]/xsect_volume;
 
       Vector<D> gradient = gradients_[srcnode];
-      Vector<D> vec = xsect_centroid - srcnode_coord;
-      double val = source_vals_[srcnode] + dot(gradient, vec);
+      Vector<D> dr = xsect_centroid - srcnode_coord;
+      dr = CoordSys::modify_line_element(dr, srcnode_coord);
+      double val = source_vals_[srcnode] + dot(gradient, dr);
       val *= xsect_volume;
       totalval += val;
       wtsum0 += xsect_volume;
