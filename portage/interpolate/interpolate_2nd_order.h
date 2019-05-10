@@ -285,7 +285,8 @@ class Interpolate_2ndOrder<D,
     if (field_type_ == Field_type::MULTIMATERIAL_FIELD)
       limgrad.set_material(matid_);
 #else
-    Limited_Gradient<D, Entity_kind::CELL, SourceMeshType, StateType, CoordSys=CoordSys>
+    Limited_Gradient<D, Entity_kind::CELL, SourceMeshType, StateType,
+      InterfaceReconstructorType, Matpoly_Splitter, Matpoly_Clipper, CoordSys>
         limgrad(source_mesh_, source_state_, interp_var_name_, limiter_type_);
 #endif
 
