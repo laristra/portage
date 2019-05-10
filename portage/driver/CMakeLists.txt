@@ -30,31 +30,31 @@ if (ENABLE_UNIT_TESTS)
 
    if (Jali_DIR)
        cinch_add_unit(test_driver_multivar
-       SOURCES test/test_driver_multivar 
+       SOURCES test/test_driver_multivar.cc 
        LIBRARIES portage ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
        POLICY MPI
        THREADS 1)
 
        cinch_add_unit(test_mismatch_fixup
-       SOURCES test/test_mismatch_fixup 
+       SOURCES test/test_mismatch_fixup.cc 
        LIBRARIES portage ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
        POLICY MPI
        THREADS 1)
 
        cinch_add_unit(test_driver
-       SOURCES test/test_driver 
+       SOURCES test/test_driver.cc 
        LIBRARIES portage ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
        POLICY MPI
        THREADS 1)
 
        #cinch_add_unit(test_driver_step
-       #SOURCES test/test_driver_step 
+       #SOURCES test/test_driver_step.cc 
        #LIBRARIES portage ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
        #POLICY MPI
        #THREADS 1)
 
        cinch_add_unit(test_driver_swarm_dist
-       SOURCES test/test_driver_swarm_dist
+       SOURCES test/test_driver_swarm_dist.cc
        LIBRARIES portage ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
        POLICY MPI
        THREADS 4)
@@ -62,13 +62,19 @@ if (ENABLE_UNIT_TESTS)
      if (TANGRAM_FOUND AND XMOF2D_FOUND)
 
        cinch_add_unit(test_multimat_driver
-       SOURCES test/test_multimat_driver
+       SOURCES test/test_multimat_driver.cc
        LIBRARIES portage ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES} ${XMOF2D_LIBRARIES}
        POLICY MPI
        THREADS 1)
 
        cinch_add_unit(test_multimat_driver_2ndOrder
-       SOURCES test/test_multimat_driver_2ndOrder
+       SOURCES test/test_multimat_driver_2ndOrder.cc
+       LIBRARIES portage ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES} ${XMOF2D_LIBRARIES}
+       POLICY MPI
+       THREADS 1)
+
+       cinch_add_unit(test_multimat_partdriver
+       SOURCES test/test_multimat_partdriver.cc
        LIBRARIES portage ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES} ${XMOF2D_LIBRARIES}
        POLICY MPI
        THREADS 1)
@@ -88,13 +94,13 @@ if (ENABLE_UNIT_TESTS)
    endif (Jali_DIR)
 
    cinch_add_unit(test_driver_swarm
-     SOURCES test/test_driver_swarm
+     SOURCES test/test_driver_swarm.cc
      LIBRARIES portage
      POLICY MPI
      THREADS 1)
 
    cinch_add_unit(test_driver_mesh_swarm_mesh
-     SOURCES test/test_driver_mesh_swarm_mesh
+     SOURCES test/test_driver_mesh_swarm_mesh.cc
      LIBRARIES portage
      POLICY MPI
      THREADS 1)
