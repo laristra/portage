@@ -435,50 +435,22 @@ class PartDriver {
       std::cout << "Redistribution Time Rank " << comm_rank_ << " (s): " <<
           tot_seconds_dist << std::endl;
 
-      for (auto onwhat : entity_kinds_) {
-        switch (onwhat) {
-          case Entity_kind::CELL:
-            internal_driver_[onwhat] =
-                std::make_unique<DriverInternal<Entity_kind::CELL,
-                                               Flat_Mesh_Wrapper<>,
-                                               Flat_State_Wrapper<Flat_Mesh_Wrapper<>>>>
-                (source_mesh_flat_, source_state_flat_,
-                 target_mesh_, target_state_, field_types, executor);
-            break;
-          case Entity_kind::NODE:
-            internal_driver_[onwhat] =
-                std::make_unique<DriverInternal<Entity_kind::NODE,
-                                               Flat_Mesh_Wrapper<>,
-                                               Flat_State_Wrapper<Flat_Mesh_Wrapper<>>>>
-                (source_mesh_flat_, source_state_flat_,
-                 target_mesh_, target_state_, field_types, executor);
-            break;
-          default:
-            std::cerr << "Cannot handle remap on entity kind " << onwhat << "\n";
-        }
-      }
+      for (Entity_kind onwhat : entity_kinds_)
+        internal_driver_[onwhat] =
+            make_internal_driver(onwhat,
+                                 source_mesh_flat_, source_state_flat_,
+                                 target_mesh_, target_state_,
+                                 field_types, executor);
     }
     else
 #endif
     {
-      for (Wonton::Entity_kind onwhat : entity_kinds_) {
-        switch (onwhat) {
-          case Entity_kind::CELL:
-            internal_driver_[onwhat] =
-                std::make_unique<DriverInternal<Entity_kind::CELL,
-                                               SourceMesh, SourceState>>
-                (source_mesh_, source_state_, target_mesh_, target_state_,
-                 field_types, executor);
-            break;
-          case Entity_kind::NODE:
-            internal_driver_[onwhat] =
-                std::make_unique<DriverInternal<Entity_kind::NODE,
-                                               SourceMesh, SourceState>>
-                (source_mesh_, source_state_, target_mesh_, target_state_,
-                 field_types, executor);
-            break;
-        }
-      }
+      for (Entity_kind onwhat : entity_kinds_)
+        internal_driver_[onwhat] =
+            make_internal_driver(onwhat,
+                                 source_mesh_, source_state_,
+                                 target_mesh_, target_state_,
+                                 field_types, executor);
     }
   }  // PartDriver::init
 
@@ -1375,8 +1347,36 @@ class PartDriver {
 
     }  // DriverInternal::interpolate_mat_var
   };  // DriverInternal
+
   
- 
+  template <class SourceMesh2, class SourceState2>
+  std::unique_ptr<DriverInternalBase>    // return type
+  make_internal_driver(Entity_kind onwhat,
+                       SourceMesh2 const & source_mesh2,
+                       SourceState2 const & source_state2,
+                       TargetMesh const & target_mesh,
+                       TargetState & target_state,
+                       std::vector<Field_type> const & field_types,
+                       Wonton::Executor_type const *executor) {
+
+    switch (onwhat) {
+      case Entity_kind::CELL:
+        return
+            std::make_unique<DriverInternal<Entity_kind::CELL,
+                                            SourceMesh2, SourceState2>>
+            (source_mesh2, source_state2, target_mesh, target_state,
+             field_types, executor);
+      case Entity_kind::NODE:
+        return
+            std::make_unique<DriverInternal<Entity_kind::NODE,
+                                            SourceMesh2, SourceState2>>
+            (source_mesh2, source_state2, target_mesh, target_state,
+             field_types, executor);
+      default:
+        std::cerr << "Remapping on entity kind " << onwhat << " not implemented\n";
+    }
+  }
+
 };  // PartDriver
 
 }  // namespace Portage
