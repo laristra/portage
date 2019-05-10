@@ -279,13 +279,13 @@ class Interpolate_2ndOrder<D,
     // Compute the limited gradients for the field
 #ifdef HAVE_TANGRAM
     Limited_Gradient<D, Entity_kind::CELL, SourceMeshType, StateType, InterfaceReconstructorType,
-                     Matpoly_Splitter, Matpoly_Clipper>
+                     Matpoly_Splitter, Matpoly_Clipper, CoordSys>
         limgrad(source_mesh_, source_state_, interp_var_name_, limiter_type_,
                 interface_reconstructor_);
     if (field_type_ == Field_type::MULTIMATERIAL_FIELD)
       limgrad.set_material(matid_);
 #else
-    Limited_Gradient<D, Entity_kind::CELL, SourceMeshType, StateType>
+    Limited_Gradient<D, Entity_kind::CELL, SourceMeshType, StateType, CoordSys=CoordSys>
         limgrad(source_mesh_, source_state_, interp_var_name_, limiter_type_);
 #endif
 
@@ -562,7 +562,8 @@ class Interpolate_2ndOrder<D,
 
 
     // Compute the limited gradients for the field
-    Limited_Gradient<D, Entity_kind::NODE, SourceMeshType, StateType>
+    Limited_Gradient<D, Entity_kind::NODE, SourceMeshType, StateType,
+      InterfaceReconstructorType, Matpoly_Splitter, Matpoly_Clipper, CoordSys>
         limgrad(source_mesh_, source_state_, interp_var_name_, limiter_type_);
 
     int nentities = source_mesh_.end(Entity_kind::NODE)-source_mesh_.begin(Entity_kind::NODE);
