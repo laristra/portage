@@ -138,7 +138,7 @@ cmake \
   $lapacke_flags \
   $extra_flags \
   ..
-make -j2
+make -j2 VERBOSE=1
 ctest --output-on-failure
 
 if [[ $build_type == "coverage" ]]; then
