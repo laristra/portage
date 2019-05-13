@@ -553,15 +553,90 @@ class PartDriver {
       } catch ( const std::out_of_range& oor) {}
 
 
-      internal_driver_[onwhat]->interpolate_var(srcvarname, trgvarname,
-                                                limiters.at(srcvarname),
-                                                partial_fixup_types.at(trgvarname),
-                                                empty_fixup_types.at(trgvarname),
-                                                lower_bound, upper_bound,
-                                                conservation_tol,
-                                                max_fixup_iter);
+      interpolate_var(onwhat, srcvarname, trgvarname,
+                      limiters.at(srcvarname),
+                      partial_fixup_types.at(trgvarname),
+                      empty_fixup_types.at(trgvarname),
+                      lower_bound, upper_bound,
+                      conservation_tol,
+                      max_fixup_iter);
     }
-  }  // interpolate_var
+  }  // interpolate
+
+  template<typename T = double>
+  void interpolate_var(Entity_kind onwhat,
+                       std::string srcvarname, std::string trgvarname,
+                       Limiter_type limiter,
+                       Partial_fixup_type partial_fixup_type,
+                       Empty_fixup_type empty_fixup_type,
+                       T lower_bound, T upper_bound,
+                       double conservation_tol,
+                       int max_fixup_iter) {
+    
+    if (source_redistributed_) {
+      switch (onwhat) {
+        case Entity_kind::CELL: {
+          auto internal_driver_onkind =
+              dynamic_cast<DriverInternal<Entity_kind::CELL, Flat_Mesh_Wrapper<>, Flat_State_Wrapper<Flat_Mesh_Wrapper<>>> *>(internal_driver_[onwhat].get());
+
+          internal_driver_onkind->interpolate_var<T>(srcvarname, trgvarname,
+                                                     limiter,
+                                                     partial_fixup_type,
+                                                     empty_fixup_type,
+                                                     lower_bound,
+                                                     upper_bound,
+                                                     conservation_tol,
+                                                     max_fixup_iter);
+          break;
+        }
+        case Entity_kind::NODE: {
+          auto internal_driver_onkind =
+              dynamic_cast<DriverInternal<Entity_kind::NODE, Flat_Mesh_Wrapper<>, Flat_State_Wrapper<Flat_Mesh_Wrapper<>>> *>(internal_driver_[onwhat].get());
+
+          internal_driver_onkind->interpolate_var<T>(srcvarname, trgvarname,
+                                                     limiter,
+                                                     partial_fixup_type,
+                                                     empty_fixup_type,
+                                                     lower_bound,
+                                                     upper_bound,
+                                                     conservation_tol,
+                                                     max_fixup_iter);
+          break;
+        }
+      }
+    } else {
+      switch (onwhat) {
+        case Entity_kind::CELL: {
+          auto internal_driver_onkind =
+              dynamic_cast<DriverInternal<Entity_kind::CELL, SourceMesh, SourceState> *>(internal_driver_[onwhat].get());
+
+          internal_driver_onkind->interpolate_var<T>(srcvarname, trgvarname,
+                                                     limiter,
+                                                     partial_fixup_type,
+                                                     empty_fixup_type,
+                                                     lower_bound,
+                                                     upper_bound,
+                                                     conservation_tol,
+                                                     max_fixup_iter);
+          break;
+        }
+        case Entity_kind::NODE: {
+          auto internal_driver_onkind =
+              dynamic_cast<DriverInternal<Entity_kind::NODE, SourceMesh, SourceState> *>(internal_driver_[onwhat].get());
+          
+          internal_driver_onkind->interpolate_var<T>(srcvarname, trgvarname,
+                                                     limiter,
+                                                     partial_fixup_type,
+                                                     empty_fixup_type,
+                                                     lower_bound,
+                                                     upper_bound,
+                                                     conservation_tol,
+                                                     max_fixup_iter);
+          break;
+        }
+      }
+    }
+  }
 
  private:
 
@@ -622,19 +697,11 @@ class PartDriver {
 
   class DriverInternalBase {
    public:
-    DriverInternalBase() {};
-    virtual ~DriverInternalBase() {};  // Necessary as the instance of
-    // the derived class will get
-    // destroyed through a pointer to
-    // the base class
-    virtual
-    void interpolate_var(std::string srcvarname, std::string trgvarname,
-                         Limiter_type limiter,
-                         Partial_fixup_type partial_fixup_type,
-                         Empty_fixup_type empty_fixup_type,
-                         double lower_bound, double upper_bound,
-                         double conservation_tol,
-                         int max_fixup_iter) {};
+    DriverInternalBase() {}
+    virtual ~DriverInternalBase() {}   // Necessary as the instance of
+                                       // the derived class will get
+                                       // destroyed through a pointer
+                                       // to the base class
   };
 
 
@@ -717,11 +784,12 @@ class PartDriver {
       @param[in] cons..tol   Tolerance for conservation when doing fixup
     */
 
+    template <typename T = double>
     void interpolate_var(std::string srcvarname, std::string trgvarname,
                          Limiter_type limiter,
                          Partial_fixup_type partial_fixup_type,
                          Empty_fixup_type empty_fixup_type,
-                         double lower_bound, double upper_bound,
+                         T lower_bound, T upper_bound,
                          double conservation_tol,
                          int max_fixup_iter) {
 
@@ -734,15 +802,15 @@ class PartDriver {
       Field_type field_type = source_state2_.field_type(ONWHAT, srcvarname);
 
       if (field_type == Field_type::MULTIMATERIAL_FIELD)
-        interpolate_mat_var(srcvarname, trgvarname, limiter,
-                            partial_fixup_type, empty_fixup_type,
-                            lower_bound, upper_bound, conservation_tol,
-                            max_fixup_iter);
+        interpolate_mat_var<T>(srcvarname, trgvarname, limiter,
+                               partial_fixup_type, empty_fixup_type,
+                               lower_bound, upper_bound, conservation_tol,
+                               max_fixup_iter);
       else
-        interpolate_mesh_var(srcvarname, trgvarname, limiter,
-                             partial_fixup_type, empty_fixup_type,
-                             lower_bound, upper_bound, conservation_tol,
-                             max_fixup_iter);
+        interpolate_mesh_var<T>(srcvarname, trgvarname, limiter,
+                                partial_fixup_type, empty_fixup_type,
+                                lower_bound, upper_bound, conservation_tol,
+                                max_fixup_iter);
 
     }  // DriverInternal::interpolate_var
 
@@ -1241,11 +1309,12 @@ class PartDriver {
       @param[in] cons..tol   Tolerance for conservation when doing fixup
     */
 
+    template <typename T = double>
     void interpolate_mesh_var(std::string srcvarname, std::string trgvarname,
                               Limiter_type limiter,
                               Partial_fixup_type partial_fixup_type,
                               Empty_fixup_type empty_fixup_type,
-                              double lower_bound, double upper_bound,
+                              T lower_bound, T upper_bound,
                               double conservation_tol,
                               int max_fixup_iter) {
 
@@ -1260,10 +1329,10 @@ class PartDriver {
       // would like us to write this material variable into. If it is
       // NULL, we allocate it ourself
 
-      double *target_field_raw;
+      T *target_field_raw;
       target_state_.mesh_get_data(ONWHAT, trgvarname, &target_field_raw);
       assert(target_field_raw != nullptr);
-      Portage::pointer<double> target_field(target_field_raw);
+      Portage::pointer<T> target_field(target_field_raw);
 
 
       interpolator_->set_interpolation_variable(srcvarname, limiter);
@@ -1296,11 +1365,12 @@ class PartDriver {
       @param[in] cons..tol   Tolerance for conservation when doing fixup
     */
 
+    template<typename T = double>
     void interpolate_mat_var(std::string srcvarname, std::string trgvarname,
                              Limiter_type limiter,
                              Partial_fixup_type partial_fixup_type,
                              Empty_fixup_type empty_fixup_type,
-                             double lower_bound, double upper_bound,
+                             T lower_bound, T upper_bound,
                              double conservation_tol,
                              int max_fixup_iter) {
 
@@ -1326,11 +1396,11 @@ class PartDriver {
         // would like us to write this material variable into. If it is
         // NULL, we allocate it ourself
 
-        double *target_field_raw;
+        T *target_field_raw;
         target_state_.mat_get_celldata(trgvarname, m, &target_field_raw);
         assert (target_field_raw != nullptr);
 
-        Portage::pointer<double> target_field(target_field_raw);
+        Portage::pointer<T> target_field(target_field_raw);
 
         Portage::transform(matcellstgt_[m].begin(), matcellstgt_[m].end(),
                            source_ents_and_weights_by_mat_[m].begin(),
