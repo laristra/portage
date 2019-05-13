@@ -793,11 +793,13 @@ class PartDriver {
                          double conservation_tol,
                          int max_fixup_iter) {
 
-      if (source_state2_.get_entity(srcvarname) != ONWHAT) {
-        std::cerr << "Variable " << srcvarname <<
-            " not defined on entity kind " << ONWHAT << ". Skipping!\n";
-        return;
-      }
+      // Until we fix flat_state_mm_wrapper to make get_entity a const method,
+      // comment this out
+      // if (source_state2_.get_entity(srcvarname) != ONWHAT) {
+      //   std::cerr << "Variable " << srcvarname <<
+      //       " not defined on entity kind " << ONWHAT << ". Skipping!\n";
+      //   return;
+      // }
 
       Field_type field_type = source_state2_.field_type(ONWHAT, srcvarname);
 
@@ -1318,11 +1320,13 @@ class PartDriver {
                               double conservation_tol,
                               int max_fixup_iter) {
 
-      if (source_state2_.get_entity(srcvarname) != ONWHAT) {
-        std::cerr << "Variable " << srcvarname << " not defined on Entity_kind "
-                  << ONWHAT << ". Skipping!\n";
-        return;
-      }
+      // Until flat_state_mm_wrapper fixes get_entity to be const,
+      // comment this out
+      // if (source_state2_.get_entity(srcvarname) != ONWHAT) {
+      //   std::cerr << "Variable " << srcvarname << " not defined on Entity_kind "
+      //             << ONWHAT << ". Skipping!\n";
+      //   return;
+      // }
 
 
       // Get a handle to a memory location where the target state
