@@ -14,7 +14,6 @@ set(support_HEADERS
     weight.h
     basis.h
     operator.h
-    moment_index.h
     test_operator_data.h
     PARENT_SCOPE
 )
@@ -40,11 +39,6 @@ if (ENABLE_UNIT_TESTS)
     SOURCES test/test_operator.cc
     POLICY MPI
     THREADS 1
-    )
-
-  cinch_add_unit(moment_index
-    SOURCES test/test_moment_index.cc
-    POLICY SERIAL
     )
 
 endif(ENABLE_UNIT_TESTS)
