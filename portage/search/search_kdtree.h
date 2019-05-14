@@ -145,7 +145,7 @@ class SearchKDTree<D, Entity_kind::CELL, SourceMeshType, TargetMeshType> {
     // with target cell, using the kdtree - since gk::Intersect does
     // not take a shared_ptr, we have have to dereference and take
     // address of tree_
-    std::vector<long> lcandidates;
+    std::vector<int> lcandidates;
     gk::Intersect(bb, &(*tree_), lcandidates);
 
     std::vector<int> candidates(lcandidates.begin(), lcandidates.end());
@@ -237,7 +237,7 @@ class SearchKDTree<D, Entity_kind::NODE, SourceMeshType, TargetMeshType> {
     // overlapping with dual cell of targetMesh, using the kdtree -
     // since gk::Intersect does not take a shared_ptr, we have have to
     // dereference and take address of tree_
-    std::vector<long> lcandidates;
+    std::vector<int> lcandidates;
     gk::Intersect(bb, &(*tree_), lcandidates);
 
     std::vector<int> candidates(lcandidates.begin(), lcandidates.end());
