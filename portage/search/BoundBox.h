@@ -29,7 +29,7 @@ Please see the license file at the root of this repository, or at:
 #include "portage/support/portage.h"
 
 namespace gk {
-    template<long D> 
+    template<int D> 
     using Point = Wonton::Point<D>; 
     using Wonton::Vector;
 
@@ -41,7 +41,7 @@ namespace gk {
       @brief An isothetic (axis-aligned) N-dimensional bounding box.
       @tparam D Dimension in which the bounding box lives.  Usually one of [1,2,3].
       */
-    template<long D> class IsotheticBBox
+    template<int D> class IsotheticBBox
     {
         public:
             IsotheticBBox() { clearBox(); }
@@ -59,7 +59,7 @@ namespace gk {
                     min = p; max = p;
                 }
                 else {
-                    for(long i = 0; i < D; i++) {
+                    for(int i = 0; i < D; i++) {
                         if(p[i] < min[i]) min[i] = p[i];
                         else if(p[i] > max[i]) max[i] = p[i];
                     }
@@ -74,7 +74,7 @@ namespace gk {
 
             /// Expand the box by an additive constant
             void bulge(double epsilon) {
-                for(long i = 0; i < D; i++) {
+                for(int i = 0; i < D; i++) {
                     max[i] += epsilon;
                     min[i] -= epsilon;
                 }
@@ -84,8 +84,8 @@ namespace gk {
             /// Calculate the Point of the center of the bounding box.
             Point<D> center() const { return Point<D>((min.asV() + max.asV())/2); }
 
-            /// Calculate the center along the @c axis axis.
-            double center(long axis) const { return (min[axis] + max[axis])/2; }
+            /// Calculate the center aint the @c axis axis.
+            double center(int axis) const { return (min[axis] + max[axis])/2; }
 
             /// Calculate distance from the origin to the center of the bounding box.
             double radius(bool doSqrt = true) const {
@@ -97,21 +97,21 @@ namespace gk {
             const Point<D>& getMin() const { return min; }
 
             /// Return the minimum of the bonding box along axis @c i.
-            double getMin(long i) const { assert(i < D); return min[i]; }
+            double getMin(int i) const { assert(i < D); return min[i]; }
 
             /// Return the maximum of the bounding box.
             const Point<D>& getMax() const { return max; }
 
             /// Return the maximum of the bounding box along axis @c i.
-            double getMax(long i) const { assert(i < D); return max[i]; }
+            double getMax(int i) const { assert(i < D); return max[i]; }
 
             /// Find which axis is the longest of the bounding box.
-            long longAxis() const {
+            int longAxis() const {
                 // Find a longest axis
                 const Vector<D> diff = max-min;
                 double maxVal = diff[0];
-                long maxIdx = 0;
-                for(long i = 1; i < D; i++)
+                int maxIdx = 0;
+                for(int i = 1; i < D; i++)
                     if(diff[i] > maxVal) {
                         maxVal = diff[i];
                         maxIdx = i;
@@ -122,21 +122,21 @@ namespace gk {
             /// Calculate the volume of the bounding box.
             double volume() const {
                 double result = 1.0;
-                for(long i = 0; i < D; i++)  result *= max[i] - min[i];
+                for(int i = 0; i < D; i++)  result *= max[i] - min[i];
                 return result;
             }
 
             // Intersection predicates
             /// Determine if the Point @c p is within the bounding box.
             bool intersect(const Point<D>& p) const {
-                for(long i = 0; i < D; i++)
+                for(int i = 0; i < D; i++)
                     if(p[i] > max[i] || p[i] < min[i]) return false;
                 return true;
             }
 
             /// Determine if the IsotheticBBox @c b is within the bounding box.
             bool intersect(const IsotheticBBox<D>& b) const {
-                for(long i = 0; i < D; i++)
+                for(int i = 0; i < D; i++)
                     if(b.max[i] < min[i] || b.min[i] > max[i]) return false;
                 return true;
             }
@@ -159,7 +159,7 @@ namespace gk {
      * are within tol of each other.  The comparison is made using the
      * approxEq() function for the Point class.
      */
-    template <long D> bool approxEq(const IsotheticBBox<D>& box1,
+    template <int D> bool approxEq(const IsotheticBBox<D>& box1,
                                     const IsotheticBBox<D>& box2,
                                     const double& tol)
     {
@@ -171,7 +171,7 @@ namespace gk {
         return (approxEq(min1,min2,tol) && approxEq(max1,max2,tol));
     }
 
-    template <long D> bool interval(const IsotheticBBox<D>& box,
+    template <int D> bool interval(const IsotheticBBox<D>& box,
                                     const Point<D>& orig,
                                     const Vector<D>& magdir,
                                     double& a, double& b)
@@ -179,7 +179,7 @@ namespace gk {
         a = 0;
         b = 1;
 
-        for(long i = 0; i < D; i++) {
+        for(int i = 0; i < D; i++) {
             if(magdir[i] == 0) {
                 if(orig[i] < box.getMin(i) || orig[i] > box.getMax(i)) return false;
             } else {
@@ -203,8 +203,8 @@ namespace gk {
     typedef IsotheticBBox<3> IsotheticBBox3;
 
 
-    template<long D> inline std::ostream& operator<<(std::ostream& os,
-                                                     const gk::IsotheticBBox<D>& box)
+    template<int D> inline std::ostream& operator<<(std::ostream& os,
+                                                    const gk::IsotheticBBox<D>& box)
     {
         if(box.empty())
             os << "(empty)";
