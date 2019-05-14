@@ -13,6 +13,7 @@
 #include "wonton/mesh/AuxMeshTopology.h"
 #include "wonton/support/Point.h"
 #include "portage/support/weight.h"
+#include "portage/support/portage.h"
 
 namespace Portage {
   namespace Meshfree {
@@ -20,8 +21,8 @@ namespace Portage {
 
       template<int DIM, class Mesh_Wrapper> void faceted_setup_cell
         (Mesh_Wrapper &mesh, 
-         std::vector<std::vector<std::vector<double>>> &smoothing_lengths,
-         std::vector<Wonton::Point<DIM>> &extents,
+         vector<std::vector<std::vector<double>>> &smoothing_lengths,
+         vector<Wonton::Point<DIM>> &extents,
          double smoothing_factor)
       {
         int ncells=mesh.num_owned_cells();
@@ -59,6 +60,7 @@ namespace Portage {
               if (fdirs[j]<0) normal*=-1.0;
               double norm = sqrt(normal[0]*normal[0] + normal[1]*normal[1]);
               normal /= norm;
+              smoothing_lengths[i][j].resize(3);
               smoothing_lengths[i][j][0] = normal[0];
               smoothing_lengths[i][j][1] = normal[1];
             } else if (DIM==3) {
@@ -87,6 +89,7 @@ namespace Portage {
               for (int k=0;k<3;k++) norm+=normal[k]*normal[k];
               norm=sqrt(norm);
               normal /= norm;
+              smoothing_lengths[i][j].resize(4);
               for (int k=0;k<3;k++) smoothing_lengths[i][j][k] = normal[k];
             }
 

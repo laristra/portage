@@ -11,6 +11,7 @@
 #include "portage/support/portage.h"
 #include "portage/swarm/swarm.h"
 #include "portage/swarm/swarm_state.h"
+#include "portage/support/faceted_setup.h"
 #include "wonton/mesh/jali/jali_mesh_wrapper.h"
 #include "wonton/support/Point.h"
 
@@ -19,8 +20,6 @@
 
 #include "Mesh.hh"
 #include "MeshFactory.hh"
-
-
 
 TEST(MPI_Particle_Distribute, SimpleTest2DGather) {
   using Wonton::Point;
@@ -85,8 +84,10 @@ TEST(MPI_Particle_Distribute, SimpleTest2DGather) {
   target_state->add_field("dbldata", target_data_dbl);
 
   //Set smoothing lengths 
-  auto smoothing_lengths = std::make_shared<Portage::vector<std::vector<std::vector<double>>>>(ntarpts,
-                                                                                               std::vector<std::vector<double>>(1, std::vector<double>(2, 1.0/3)));
+  auto smoothing_lengths = std::make_shared<Portage::vector<std::vector<std::vector<double>>>>
+    (ntarpts, std::vector<std::vector<double>>(1, std::vector<double>(2, 1.0/3)));
+
+  auto extents = std::make_shared<Portage::vector<Point<2>>>(ntarpts, Wonton::Point<2>(1.0/3,1.0/3));
 
   auto kernel_types = std::make_shared<Portage::vector<Portage::Meshfree::Weight::Kernel>>
       (ntarpts, Portage::Meshfree::Weight::B4);
@@ -99,7 +100,7 @@ TEST(MPI_Particle_Distribute, SimpleTest2DGather) {
   Portage::MPI_Particle_Distribute<2> distributor(&executor);
   distributor.distribute(source_swarm, *source_state, 
 			 target_swarm, *target_state, 
-                         *smoothing_lengths, *kernel_types,
+                         *smoothing_lengths, *extents, *kernel_types,
 			 *geom_types, Portage::Meshfree::WeightCenter::Gather);
 
   // Check number of particles received
@@ -138,8 +139,10 @@ TEST(MPI_Particle_Distribute, SimpleTest2DScatter) {
 
   //Set smoothing lengths 
   int nsrcpts = jali_smesh_wrapper.num_owned_cells(); 
-  auto smoothing_lengths = std::make_shared<Portage::vector<std::vector<std::vector<double>>>>(nsrcpts,
-                                                                                               std::vector<std::vector<double>>(1, std::vector<double>(2, 1.0/3)));
+  auto smoothing_lengths = std::make_shared<Portage::vector<std::vector<std::vector<double>>>>
+    (nsrcpts, std::vector<std::vector<double>>(1, std::vector<double>(2, 1.0/3)));
+
+  auto extents = std::make_shared<Portage::vector<Point<2>>>(nsrcpts, Wonton::Point<2>(1.0/3,1.0/3));
   
   auto kernel_types = std::make_shared<Portage::vector<Portage::Meshfree::Weight::Kernel>>
       (nsrcpts, Portage::Meshfree::Weight::B4);
@@ -198,7 +201,7 @@ TEST(MPI_Particle_Distribute, SimpleTest2DScatter) {
   Wonton::MPIExecutor_type executor(MPI_COMM_WORLD);
   Portage::MPI_Particle_Distribute<2> distributor(&executor);
   distributor.distribute(source_swarm, *source_state, target_swarm,
-                         *target_state, *smoothing_lengths, *kernel_types,
+                         *target_state, *smoothing_lengths, *extents, *kernel_types,
                          *geom_types, Portage::Meshfree::WeightCenter::Scatter);
    
   // Check number of particles received
@@ -295,6 +298,8 @@ TEST(MPI_Particle_Distribute, SimpleTest3DGather) {
   auto smoothing_lengths = std::make_shared<Portage::vector<std::vector<std::vector<double>>>>
       (ntarpts, std::vector<std::vector<double>>(1, std::vector<double>(3, 1.0/3)));
 
+  auto extents = std::make_shared<Portage::vector<Point<3>>>(ntarpts, Wonton::Point<3>(1.0/3,1.0/3,1.0/3));
+
   auto kernel_types = std::make_shared<Portage::vector<Portage::Meshfree::Weight::Kernel>>
       (ntarpts, Portage::Meshfree::Weight::B4);
    
@@ -306,7 +311,7 @@ TEST(MPI_Particle_Distribute, SimpleTest3DGather) {
   Portage::MPI_Particle_Distribute<3> distributor(&executor);
   distributor.distribute(source_swarm, *source_state, 
 			 target_swarm, *target_state, *smoothing_lengths,
-                         *kernel_types, *geom_types, 
+                         *extents, *kernel_types, *geom_types, 
                          Portage::Meshfree::WeightCenter::Gather);
 
   // Check number of particles received
@@ -349,8 +354,10 @@ TEST(MPI_Particle_Distribute, SimpleTest3DScatter) {
   
   //Set smoothing lengths 
   int nsrcpts = jali_smesh_wrapper.num_owned_cells();
-  auto smoothing_lengths = std::make_shared<Portage::vector<std::vector<std::vector<double>>>>(nsrcpts,
-                                                                                               std::vector<std::vector<double>>(1, std::vector<double>(3, 1.0/3)));
+  auto smoothing_lengths = std::make_shared<Portage::vector<std::vector<std::vector<double>>>>
+    (nsrcpts, std::vector<std::vector<double>>(1, std::vector<double>(3, 1.0/3)));
+
+  auto extents = std::make_shared<Portage::vector<Point<3>>>(nsrcpts, Wonton::Point<3>(1.0/3,1.0/3,1.0/3));
 
   auto kernel_types = std::make_shared<Portage::vector<Portage::Meshfree::Weight::Kernel>>
       (nsrcpts, Portage::Meshfree::Weight::B4);
@@ -409,7 +416,7 @@ TEST(MPI_Particle_Distribute, SimpleTest3DScatter) {
   Wonton::MPIExecutor_type executor(MPI_COMM_WORLD);
   Portage::MPI_Particle_Distribute<3> distributor(&executor);
   distributor.distribute(source_swarm, *source_state, target_swarm,
-                         *target_state, *smoothing_lengths,
+                         *target_state, *smoothing_lengths, *extents,
                          *kernel_types, *geom_types, 
                          Portage::Meshfree::WeightCenter::Scatter);
 
