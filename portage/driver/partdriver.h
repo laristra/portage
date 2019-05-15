@@ -128,16 +128,50 @@ class PartDriver {
              SourceState const& source_state,
              TargetMesh const& target_mesh,
              TargetState& target_state,
-             std::vector<Entity_kind> entity_kinds,
-             std::vector<Field_type> field_types)
+             std::vector<std::string> source_vars_to_remap,
+             Wonton::Executor_type const *executor = nullptr,
+             std::string *errmsg = nullptr)
       : source_mesh_(source_mesh), source_state_(source_state),
         target_mesh_(target_mesh), target_state_(target_state),
-        entity_kinds_(entity_kinds), field_types_(field_types),
-        dim_(source_mesh.space_dimension()) {
-
+        source_vars_to_remap_(source_vars_to_remap),
+        dim_(source_mesh.space_dimension()),
+        executor_(executor) {
+    
     assert(source_mesh.space_dimension() == target_mesh.space_dimension());
 
+    initialize();  // Do all the heavy lifting before interpolate can be called
   }
+
+  /*!
+    @brief Constructor for the remap driver.
+    @param[in] sourceMesh A @c  wrapper to the source mesh.
+    @param[in] sourceState A @c wrapper for the data that lives on the
+    source mesh
+    @param[in] targetMesh A @c TargetMesh to the target mesh
+    @param[in,out] targetState A @c TargetState for the data that will
+    be mapped to the target mesh
+  */
+  PartDriver(SourceMesh const& source_mesh,
+             SourceState const& source_state,
+             TargetMesh const& target_mesh,
+             TargetState& target_state,
+             Wonton::Executor_type const *executor = nullptr,
+             std::string *errmsg = nullptr) 
+      : source_mesh_(source_mesh), source_state_(source_state),
+        target_mesh_(target_mesh), target_state_(target_state),
+        dim_(source_mesh.space_dimension()),
+        executor_(executor) {
+    
+    assert(source_mesh.space_dimension() == target_mesh.space_dimension());
+
+    // if the variables to remap were not listed assume, all variables are
+    // to be remapped
+    if (source_vars_to_remap_.size() == 0)
+      source_vars_to_remap_ = source_state_.names();
+        
+    initialize();  // Do all the heavy lifting before interpolate can be called
+  }
+
 
   /// Copy constructor (disabled)
   PartDriver(const PartDriver &) = delete;
@@ -149,186 +183,6 @@ class PartDriver {
   ~PartDriver() {}
 
   /*!
-    @brief Specify the names of the variables to be interpolated
-    @param[in] remap_var_names A list of variable names of the variables to
-    interpolate from the source mesh to the target mesh.  This variable must
-    exist in both meshes' state manager
-  */
-  void set_remap_var_names(std::vector<std::string> const &remap_var_names) {
-    // remap variable names same in source and target mesh
-    set_remap_var_names(remap_var_names, remap_var_names);
-  }
-
-  /*!
-    @brief Specify the names of the variables to be interpolated
-    @param[in] source_remap_var_names A list of the variables names of the
-    variables to interpolate from the source mesh.
-    @param[in] target_remap_var_names  A list of the variables names of the
-    variables to interpolate to the target mesh.
-  */
-
-  void set_remap_var_names(
-      std::vector<std::string> const & source_remap_var_names,
-      std::vector<std::string> const & target_remap_var_names) {
-
-    assert(source_remap_var_names.size() == target_remap_var_names.size());
-
-    // No appending allowed
-    source_target_varname_map_.clear();
-
-    int nvars = source_remap_var_names.size();
-    for (int i = 0; i < nvars; ++i) {
-      Entity_kind srckind = source_state_.get_entity(source_remap_var_names[i]);
-      Entity_kind trgkind = target_state_.get_entity(target_remap_var_names[i]);
-      if (trgkind == Entity_kind::UNKNOWN_KIND)
-        continue;  // Presumably field does not exist on target - will get added
-
-      assert(srckind == trgkind);  // if target field exists, entity kinds
-      // must match
-    }
-
-    for (int i = 0; i < nvars; i++) {
-      source_target_varname_map_[source_remap_var_names[i]] = target_remap_var_names[i];
-
-      // Set options so that defaults will produce something reasonable
-      limiters_[source_remap_var_names[i]] = Limiter_type::BARTH_JESPERSEN;
-      partial_fixup_types_[target_remap_var_names[i]] =
-          Partial_fixup_type::SHIFTED_CONSERVATIVE;
-      empty_fixup_types_[target_remap_var_names[i]] =
-          Empty_fixup_type::EXTRAPOLATE;
-    }
-  }
-
-  /*!
-    @brief set limiter for all variables
-    @param limiter  Limiter to use for second order reconstruction (NOLIMITER or BARTH_JESPERSEN)
-  */
-  void set_limiter(Limiter_type limiter) {
-    for (auto const& stpair : source_target_varname_map_) {
-      std::string const& source_var_name = stpair.first;
-      limiters_[source_var_name] = limiter;
-    }
-  }
-
-  /*!
-    @brief set limiter for all variables
-    @param target_var_name Source mesh variable whose gradient is to be limited
-    @param limiter  Limiter to use for second order reconstruction (NOLIMITER
-    or BARTH_JESPERSEN)
-  */
-  void set_limiter(std::string const& source_var_name, Limiter_type limiter) {
-    limiters_[source_var_name] = limiter;
-  }
-
-  /*!
-    @brief set repair method in partially filled cells for all variables
-    @param fixup_type Can be Partial_fixup_type::CONSTANT,
-    Partial_fixup_type::LOCALLY_CONSERVATIVE,
-    Partial_fixup_type::SHIFTED_CONSERVATIVE
-  */
-  void set_partial_fixup_type(Partial_fixup_type fixup_type) {
-    for (auto const& stpair : source_target_varname_map_) {
-      std::string const& target_var_name = stpair.second;
-      partial_fixup_types_[target_var_name] = fixup_type;
-    }
-  }
-
-  /*!
-    @brief set repair method in partially filled cells for all variables
-    @param target_var_name Target mesh variable to set fixup option for
-    @param fixup_type  Can be Partial_fixup_type::CONSTANT,
-    Partial_fixup_type::LOCALLY_CONSERVATIVE,
-    Partial_fixup_type::SHIFTED_CONSERVATIVE
-  */
-  void set_partial_fixup_type(std::string const& target_var_name,
-                              Partial_fixup_type fixup_type) {
-    partial_fixup_types_[target_var_name] = fixup_type;
-  }
-
-  /*!
-    @brief set repair method in empty cells for all variables
-    @param fixup_type Can be Empty_fixup_type::LEAVE_EMPTY,
-    Empty_fixup_type::EXTRAPOLATE
-  */
-  void set_empty_fixup_type(Empty_fixup_type fixup_type) {
-    for (auto const& stpair : source_target_varname_map_) {
-      std::string const& target_var_name = stpair.second;
-      empty_fixup_types_[target_var_name] = fixup_type;
-    }
-  }
-
-  /*!
-    @brief set repair method in empty cells for all variables
-    @param target_var_name Target mesh variable to set fixup option for
-    @param fixup_type Can be Empty_fixup_type::LEAVE_EMPTY,
-    Empty_fixup_type::EXTRAPOLATE
-  */
-  void set_empty_fixup_type(std::string const& target_var_name,
-                            Empty_fixup_type fixup_type) {
-    empty_fixup_types_[target_var_name] = fixup_type;
-  }
-
-
-  void set_max_fixup_iter(int maxiter) {
-    max_fixup_iter_ = maxiter;
-  }
-
-  /*!
-    @brief set the bounds of variable to be remapped on target
-    @param target_var_name Name of variable in target mesh to limit
-  */
-  template<typename T>
-  void set_remap_var_bounds(std::string target_var_name,
-                            T lower_bound, T upper_bound) {
-    if (typeid(T) == typeid(double)) {
-      double_lower_bounds_[target_var_name] = lower_bound;
-      double_upper_bounds_[target_var_name] = upper_bound;
-    } else
-      std::cerr << "Type not supported \n";
-  }
-
-  /*!
-    @brief set conservation tolerance of variable to be remapped on target
-    @param target_var_name Name of variable in target mesh to limit
-  */
-  template<typename T>
-  void set_conservation_tolerance(std::string target_var_name,
-                                  T conservation_tol) {
-    if (typeid(T) == typeid(double))
-      conservation_tol_[target_var_name] = conservation_tol;
-    else
-      std::cerr << "Type not supported \n";
-  }
-
-
-
-  /*!
-    @brief Get the names of the variables to be remapped from the
-    source mesh.
-    @return A vector of variable names to be remapped.
-  */
-  std::vector<std::string> source_remap_var_names() const {
-    std::vector<std::string> source_var_names;
-    source_var_names.reserve(source_target_varname_map_.size());
-    for (auto const& stname_pair : source_target_varname_map_)
-      source_var_names.push_back(stname_pair.first);
-    return source_var_names;
-  }
-
-  /*!
-    @brief Get the names of the variables to be remapped to the
-    target mesh.
-    @return A vector of variable names to be remapped.
-  */
-  std::vector<std::string> target_remap_var_names() const {
-    std::vector<std::string> target_var_names;
-    target_var_names.reserve(source_target_varname_map_.size());
-    for (auto const& stname_pair : source_target_varname_map_)
-      target_var_names.push_back(stname_pair.second);
-    return target_var_names;
-  }
-
-  /*!
     @brief Get the dimensionality of the meshes.
     @return The dimensionality of the meshes.
   */
@@ -336,53 +190,119 @@ class PartDriver {
     return dim_;
   }
 
+  /*!
+    @brief Interpolator with the same name for field on source and target
+
+    @tparam T  type of variable being remapped (default double) - underyling
+    interpolator must be able to handle this type
+
+    @param[in] lower_bound  Lower bound for variable
+    @param[in] upper_bound  Upper bound for variable
+    @param[in] limiter      Limiter to use for second order reconstruction
+    @param[in] partial_fixup_type  Method to populate fields on partially filled target entities (cells or dual cells)
+    @param[in] empty_fixup_type    Method to populate fields on empty target entities (cells or dual cells)
+    @param[in] conservation_tol   Tolerance to which source and target integral quantities are to be matched
+    @param[in] max_fixup_iter     Max number of iterations for global repair
+
+    See support/portage.h for options on limiter, partial_fixup_type and
+    empty_fixup_type
+  */
   
-  /*!
-    @brief Execute the remapping process
-    @return status of remap (1 if successful, 0 if not)
-  */
-  int run(Wonton::Executor_type const *executor = nullptr,
-          std::string *errmsg = nullptr) {
+  template<typename T = double>
+  void interpolate(std::string srcvarname,
+                   T lower_bound, T upper_bound,
+                   Limiter_type limiter = DEFAULT_LIMITER,
+                   Partial_fixup_type partial_fixup_type =
+                   DEFAULT_PARTIAL_FIXUP_TYPE,
+                   Empty_fixup_type empty_fixup_type =
+                   DEFAULT_EMPTY_FIXUP_TYPE,
+                   double conservation_tol =
+                   DEFAULT_CONSERVATION_TOL,
+                   int max_fixup_iter = DEFAULT_MAX_FIXUP_ITER) {
+    interpolate(srcvarname, srcvarname, lower_bound, upper_bound,
+                limiter, partial_fixup_type, empty_fixup_type,
+                conservation_tol, max_fixup_iter);
+  }
 
-    // Do initialization which is an understated way of saying do all
-    // the searches and intersects needed for the actual remapping
+  template<typename T = double>
+  void interpolate(std::string srcvarname, std::string trgvarname,
+                   T lower_bound, T upper_bound,
+                   Limiter_type limiter = DEFAULT_LIMITER,
+                   Partial_fixup_type partial_fixup_type =
+                   DEFAULT_PARTIAL_FIXUP_TYPE,
+                   Empty_fixup_type empty_fixup_type =
+                   DEFAULT_EMPTY_FIXUP_TYPE,
+                   double conservation_tol =
+                   DEFAULT_CONSERVATION_TOL,
+                   int max_fixup_iter = DEFAULT_MAX_FIXUP_ITER) {
+
+    Entity_kind onwhat = source_state_.get_entity(srcvarname);
+
+    if (std::find(source_vars_to_remap_.begin(), source_vars_to_remap_.end(),
+                  srcvarname) == source_vars_to_remap_.end()) {
+      std::cerr << "Cannot remap source variable " << srcvarname <<
+          " - not specified in initial variable list in the constructor \n";
+      return;
+    }
     
-    init(entity_kinds_, field_types_, executor, nullptr);
+    internal_driver_[onwhat]->interpolate_var(srcvarname, trgvarname,
+                                              limiter, partial_fixup_type,
+                                              empty_fixup_type,
+                                              lower_bound, upper_bound,
+                                              conservation_tol,
+                                              max_fixup_iter);
+  }
 
-    // interpolate the variables
+ private:
 
-    interpolate(source_target_varname_map_, limiters_,
-                partial_fixup_types_, empty_fixup_types_,
-                double_lower_bounds_, double_upper_bounds_,
-                conservation_tol_, voldifftol_, consttol_, max_fixup_iter_);
+  // Inputs specified by calling app
+  Wonton::Executor_type const *executor_;
+  SourceMesh const& source_mesh_;
+  TargetMesh const& target_mesh_;
+  SourceState const& source_state_;
+  TargetState& target_state_;
+  unsigned int dim_;
+  double voldifftol_ = 100*std::numeric_limits<double>::epsilon();
+  double consttol_ =  100*std::numeric_limits<double>::epsilon();
 
-    return 1;
-  }  // run
+
+  // Internal variables
+  bool distributed_ = false;  // default is serial
+  bool source_redistributed_ = false;  // Did we redistribute the source mesh?
+  int comm_rank_ = 0;
+  int nprocs_ = 1;
+  
+#ifdef PORTAGE_ENABLE_MPI
+  MPI_Comm mycomm_ = MPI_COMM_NULL;
+#endif
+
+  std::vector<std::string> source_vars_to_remap_;
+  std::vector<Entity_kind> entity_kinds_;
+
+  // Pointers to internal drivers designed to work on a particular entity kind
+  // and either redistributed or native source mesh/state
+
+  std::map<Entity_kind, std::unique_ptr<DriverInternalBase>> internal_driver_;
 
 
-  /*!
-    @brief initialization routine for remap - completes search,
-    intersect, interface reconstruction step
-  */
+  /*! @brief Initialize remap driver
+   *
+   *  Do all the preparatory work for remapping individual variables from
+   *  source to target mesh. This includes source redistribution (if necessary),
+   *  intersection candidate search and intersection calculations
+   */
 
-  int init(std::vector<Entity_kind> const & entity_kinds,
-           std::vector<Field_type> const & field_types,
-           Wonton::Executor_type const *executor = nullptr,
-           std::string *errmsg = nullptr) {
-    std::string message;
-    struct timeval begin_timeval, end_timeval, diff_timeval;
-
-    
+  void initialize() {
     // Figure out if we are running in distributed mode
 
-    // Will be null if it's a parallel executor
+    // serialexecutor will be null if it's a parallel executor
     auto serialexecutor =
-        dynamic_cast<Wonton::SerialExecutor_type const *>(executor);
+        dynamic_cast<Wonton::SerialExecutor_type const *>(executor_);
     distributed_ = false;
     
 #ifdef PORTAGE_ENABLE_MPI
     mycomm_ = MPI_COMM_NULL;
-    auto mpiexecutor = dynamic_cast<Wonton::MPIExecutor_type const *>(executor);
+    auto mpiexecutor = dynamic_cast<Wonton::MPIExecutor_type const *>(executor_);
     if (mpiexecutor && mpiexecutor->mpicomm != MPI_COMM_NULL) {
       mycomm_ = mpiexecutor->mpicomm;
       MPI_Comm_rank(mycomm_, &comm_rank_);
@@ -392,10 +312,17 @@ class PartDriver {
     }
 #endif
 
-    Portage::vector<double> test_vector;
-    
-    int numTargetCells = target_mesh_.num_owned_cells();
+    // Record all the kinds of entities we are remapping on 
+    entity_kinds_.clear();
+    for (auto const& source_var : source_vars_to_remap_) {
+      Entity_kind onwhat = source_state_.get_entity(source_var);
+      if (std::find(entity_kinds_.begin(), entity_kinds_.end(), onwhat) ==
+          entity_kinds_.end()) {
+        entity_kinds_.push_back(onwhat);
+      }
+    }
 
+    
     // Default is serial run (if MPI is not enabled or the
     // communicator is not defined or the number of processors is 1)
 #ifdef PORTAGE_ENABLE_MPI
@@ -411,17 +338,11 @@ class PartDriver {
       // REDISTRIBUTION; OTHERWISE, WE JUST INVOKE REMAP WITH THE
       // ORIGINAL WRAPPER
 
-      gettimeofday(&begin_timeval, 0);
-
       Flat_Mesh_Wrapper<> source_mesh_flat_;
       source_mesh_flat_.initialize(source_mesh_);
 
-      std::vector<std::string> source_remap_var_names;
-      for (auto & stpair : source_target_varname_map_)
-        source_remap_var_names.push_back(stpair.first);
-
       Flat_State_Wrapper<Flat_Mesh_Wrapper<>> source_state_flat_(source_mesh_flat_);
-      source_state_flat_.initialize(source_state_, source_remap_var_names);
+      source_state_flat_.initialize(source_state_, source_vars_to_remap_);
 
       MPI_Bounding_Boxes distributor(mpiexecutor);
       distributor.distribute(source_mesh_flat_, source_state_flat_,
@@ -429,252 +350,36 @@ class PartDriver {
 
       source_redistributed_ = true;
 
-      gettimeofday(&end_timeval, 0);
-      timersub(&end_timeval, &begin_timeval, &diff_timeval);
-      float tot_seconds_dist = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
-      std::cout << "Redistribution Time Rank " << comm_rank_ << " (s): " <<
-          tot_seconds_dist << std::endl;
-
+      // For each entity kind, make a new internal driver using the
+      // redistributed source and state classes and store a pointer to
+      // the base class of the driver
+      
       for (Entity_kind onwhat : entity_kinds_)
-        internal_driver_[onwhat] =
-            make_internal_driver(onwhat,
-                                 source_mesh_flat_, source_state_flat_,
-                                 target_mesh_, target_state_,
-                                 field_types, executor);
+        internal_driver_[onwhat] = make_internal_driver(onwhat,
+                                                        source_mesh_flat_,
+                                                        source_state_flat_,
+                                                        target_mesh_,
+                                                        target_state_,
+                                                        executor_);
     }
     else
 #endif
     {
+      // For each entity kind, make a new internal driver using the
+      // redistributed source and state classes and store a pointer to
+      // the base class of the driver
+      
       for (Entity_kind onwhat : entity_kinds_)
-        internal_driver_[onwhat] =
-            make_internal_driver(onwhat,
-                                 source_mesh_, source_state_,
-                                 target_mesh_, target_state_,
-                                 field_types, executor);
+        internal_driver_[onwhat] = make_internal_driver(onwhat,
+                                                        source_mesh_,
+                                                        source_state_,
+                                                        target_mesh_,
+                                                        target_state_,
+                                                        executor_);
     }
-  }  // PartDriver::init
+  }  // initialize 
 
-
-  void interpolate(std::unordered_map<std::string, std::string> const &
-                   source_target_varname_map,
-                   std::unordered_map<std::string, Limiter_type> const &
-                   limiters,
-                   std::unordered_map<std::string, Partial_fixup_type> const &
-                   partial_fixup_types,
-                   std::unordered_map<std::string, Empty_fixup_type> const &
-                   empty_fixup_types,
-                   std::unordered_map<std::string, double> const &
-                   double_lower_bounds,
-                   std::unordered_map<std::string, double> const &
-                   double_upper_bounds,
-                   std::unordered_map<std::string, double> const &
-                   conservation_tols,
-                   double voldifftol, double consttol, int max_fixup_iter) {
-
-    // INTERPOLATE MESH VARIABLE (one variable at a time)
-    
-    for (auto const& stpair : source_target_varname_map) {
-      std::string const & srcvarname = stpair.first;
-      std::string const & trgvarname = stpair.second;
-
-      Entity_kind onwhat = source_state_.get_entity(srcvarname);
-      Field_type field_type = source_state_.field_type(onwhat, srcvarname);
-
-      if (field_type == Field_type::MESH_FIELD)
-        std::cout << "Remapping mesh variable " << srcvarname <<
-            " from source on " << onwhat <<
-            " to " << trgvarname << " on target\n";
-      else
-        std::cout << "Remapping material variable " << srcvarname <<
-            " from source on " << onwhat <<
-            " to " << trgvarname << " on target\n";
-
-        
-      double lower_bound = std::numeric_limits<double>::max();
-      double upper_bound = -lower_bound;
-      try {  // see if we have caller specified bounds
-
-        lower_bound = double_lower_bounds.at(trgvarname);
-        upper_bound = double_upper_bounds.at(trgvarname);
-
-      } catch (const std::out_of_range& oor) {
-        // Since caller has not specified bounds for variable, attempt
-        // to derive them from source state. This code should go into
-        // Wonton into each state manager
-
-        int nsrcents = source_mesh_.num_entities(onwhat,
-                                                 Entity_type::PARALLEL_OWNED);
-
-        double const *source_data;
-        if (field_type == Field_type::MESH_FIELD) {
-          source_state_.mesh_get_data(onwhat, srcvarname, &source_data);
-          lower_bound = *std::min_element(source_data, source_data + nsrcents);
-          upper_bound = *std::max_element(source_data, source_data + nsrcents);
-        } else {
-          // find the min and max over all materials
-          int nmats = source_state_.num_materials();
-          for (int m = 0; m < nmats; m++) {
-            source_state_.mat_get_celldata(srcvarname, m, &source_data);
-            lower_bound = std::min(lower_bound,
-                                   *std::min_element(source_data,
-                                                     source_data + nsrcents));
-            upper_bound = std::max(upper_bound,
-                                   *std::max_element(source_data,
-                                                     source_data + nsrcents));
-          }
-        }
-          
-#ifdef PORTAGE_ENABLE_MPI
-        if (mycomm_!= MPI_COMM_NULL) {
-          double global_lower_bound = 0.0, global_upper_bound = 0.0;
-          MPI_Allreduce(&lower_bound, &global_lower_bound, 1, MPI_DOUBLE,
-                        MPI_MIN, mycomm_);
-          lower_bound = global_lower_bound;
-
-          MPI_Allreduce(&upper_bound, &global_upper_bound, 1, MPI_DOUBLE,
-                        MPI_MAX, mycomm_);
-          upper_bound = global_upper_bound;
-        }
-#endif
-
-        double relbounddiff = fabs((upper_bound-lower_bound)/lower_bound);
-        if (relbounddiff < consttol) {
-          // The field is constant over the source mesh/part. We
-          // HAVE to relax the bounds to be able to conserve the
-          // integral quantity AND maintain a constant.
-          lower_bound -= 0.5*lower_bound;
-          upper_bound += 0.5*upper_bound;
-        }
-      }
-
-      double conservation_tol = 100*std::numeric_limits<double>::epsilon();
-      try {  // see if caller has specified a tolerance for conservation
-        conservation_tol = conservation_tols.at(trgvarname);
-      } catch ( const std::out_of_range& oor) {}
-
-
-      interpolate_var(onwhat, srcvarname, trgvarname,
-                      limiters.at(srcvarname),
-                      partial_fixup_types.at(trgvarname),
-                      empty_fixup_types.at(trgvarname),
-                      lower_bound, upper_bound,
-                      conservation_tol,
-                      max_fixup_iter);
-    }
-  }  // interpolate
-
-  template<typename T = double>
-  void interpolate_var(Entity_kind onwhat,
-                       std::string srcvarname, std::string trgvarname,
-                       Limiter_type limiter,
-                       Partial_fixup_type partial_fixup_type,
-                       Empty_fixup_type empty_fixup_type,
-                       T lower_bound, T upper_bound,
-                       double conservation_tol,
-                       int max_fixup_iter) {
-    
-    if (source_redistributed_) {
-      switch (onwhat) {
-        case Entity_kind::CELL: {
-          auto internal_driver_onkind =
-              dynamic_cast<DriverInternal<Entity_kind::CELL, Flat_Mesh_Wrapper<>, Flat_State_Wrapper<Flat_Mesh_Wrapper<>>> *>(internal_driver_[onwhat].get());
-
-          internal_driver_onkind->interpolate_var<T>(srcvarname, trgvarname,
-                                                     limiter,
-                                                     partial_fixup_type,
-                                                     empty_fixup_type,
-                                                     lower_bound,
-                                                     upper_bound,
-                                                     conservation_tol,
-                                                     max_fixup_iter);
-          break;
-        }
-        case Entity_kind::NODE: {
-          auto internal_driver_onkind =
-              dynamic_cast<DriverInternal<Entity_kind::NODE, Flat_Mesh_Wrapper<>, Flat_State_Wrapper<Flat_Mesh_Wrapper<>>> *>(internal_driver_[onwhat].get());
-
-          internal_driver_onkind->interpolate_var<T>(srcvarname, trgvarname,
-                                                     limiter,
-                                                     partial_fixup_type,
-                                                     empty_fixup_type,
-                                                     lower_bound,
-                                                     upper_bound,
-                                                     conservation_tol,
-                                                     max_fixup_iter);
-          break;
-        }
-      }
-    } else {
-      switch (onwhat) {
-        case Entity_kind::CELL: {
-          auto internal_driver_onkind =
-              dynamic_cast<DriverInternal<Entity_kind::CELL, SourceMesh, SourceState> *>(internal_driver_[onwhat].get());
-
-          internal_driver_onkind->interpolate_var<T>(srcvarname, trgvarname,
-                                                     limiter,
-                                                     partial_fixup_type,
-                                                     empty_fixup_type,
-                                                     lower_bound,
-                                                     upper_bound,
-                                                     conservation_tol,
-                                                     max_fixup_iter);
-          break;
-        }
-        case Entity_kind::NODE: {
-          auto internal_driver_onkind =
-              dynamic_cast<DriverInternal<Entity_kind::NODE, SourceMesh, SourceState> *>(internal_driver_[onwhat].get());
-          
-          internal_driver_onkind->interpolate_var<T>(srcvarname, trgvarname,
-                                                     limiter,
-                                                     partial_fixup_type,
-                                                     empty_fixup_type,
-                                                     lower_bound,
-                                                     upper_bound,
-                                                     conservation_tol,
-                                                     max_fixup_iter);
-          break;
-        }
-      }
-    }
-  }
-
- private:
-
-  // Inputs specified by calling app
-  Wonton::Executor_type const *executor_;
-  SourceMesh const& source_mesh_;
-  TargetMesh const& target_mesh_;
-  SourceState const& source_state_;
-  TargetState& target_state_;
-  std::unordered_map<std::string, std::string> source_target_varname_map_;
-  std::unordered_map<std::string, Limiter_type> limiters_;
-  std::unordered_map<std::string, Partial_fixup_type> partial_fixup_types_;
-  std::unordered_map<std::string, Empty_fixup_type> empty_fixup_types_;
-  std::unordered_map<std::string, double> double_lower_bounds_;
-  std::unordered_map<std::string, double> double_upper_bounds_;
-  std::unordered_map<std::string, double> conservation_tol_;
-  unsigned int dim_;
-  double voldifftol_ = 100*std::numeric_limits<double>::epsilon();
-  double consttol_ =  100*std::numeric_limits<double>::epsilon();
-  int max_fixup_iter_ = 5;
-
-
-  // Internal variables
-  bool distributed_ = false;  // default is serial
-  bool source_redistributed_ = false;  // Did we redistribute the source mesh?
-  int comm_rank_ = 0;          
-  int nprocs_ = 1;
   
-#ifdef PORTAGE_ENABLE_MPI
-  MPI_Comm mycomm_ = MPI_COMM_NULL;
-#endif
-
-  std::vector<Entity_kind> entity_kinds_;
-  std::vector<Field_type> field_types_;
-
-  // Internal driver with the original or redistributed source mesh and state
-
-  std::map<Entity_kind, std::unique_ptr<DriverInternalBase>> internal_driver_;
 
 
   /*!
@@ -702,6 +407,94 @@ class PartDriver {
                                        // the derived class will get
                                        // destroyed through a pointer
                                        // to the base class
+    virtual Entity_kind onwhat() const {return Entity_kind::UNKNOWN_KIND;}
+    virtual const std::type_info& source_mesh_type() const {
+      return typeid(void);
+    }
+
+    template <typename T = double>
+    void interpolate_var(std::string srcvarname, std::string trgvarname,
+                         Limiter_type limiter,
+                         Partial_fixup_type partial_fixup_type,
+                         Empty_fixup_type empty_fixup_type,
+                         T lower_bound, T upper_bound,
+                         double conservation_tol,
+                         int max_fixup_iter) {
+
+      // Cast to derived class and call interpolate var method for derived class
+      Entity_kind entkind = onwhat();
+      if (source_mesh_type() == typeid(Flat_Mesh_Wrapper<>)) {
+        /* Flat/Redistributed mesh and state */
+        switch (entkind) {
+          case Entity_kind::CELL: {
+            auto derived_class_ptr =
+                dynamic_cast<
+              DriverInternal<Entity_kind::CELL, Flat_Mesh_Wrapper<>,
+                             Flat_State_Wrapper<Flat_Mesh_Wrapper<>>> *
+              >(this);
+            derived_class_ptr->interpolate_var<T>(srcvarname, trgvarname,
+                                                  limiter,
+                                                  partial_fixup_type,
+                                                  empty_fixup_type,
+                                                  lower_bound, upper_bound,
+                                                  conservation_tol,
+                                                  max_fixup_iter);
+            break;
+          }
+          case Entity_kind::NODE: {
+            auto derived_class_ptr =
+                dynamic_cast<
+              DriverInternal<Entity_kind::NODE, Flat_Mesh_Wrapper<>,
+                             Flat_State_Wrapper<Flat_Mesh_Wrapper<>>> *
+              >(this);
+            derived_class_ptr->interpolate_var<T>(srcvarname, trgvarname,
+                                                  limiter,
+                                                  partial_fixup_type,
+                                                  empty_fixup_type,
+                                                  lower_bound, upper_bound,
+                                                  conservation_tol,
+                                                  max_fixup_iter);
+            break;
+          }
+          default:
+            std::cerr << "Cannot remap entities on Entity kind " << entkind << "\n";
+        }
+      } else {
+        /* Flat/Redistributed mesh and state */
+        switch (entkind) {
+          case Entity_kind::CELL: {
+            auto derived_class_ptr =
+                dynamic_cast<
+              DriverInternal<Entity_kind::CELL, SourceMesh, SourceState> *
+              >(this);
+            derived_class_ptr->interpolate_var<T>(srcvarname, trgvarname,
+                                                  limiter,
+                                                  partial_fixup_type,
+                                                  empty_fixup_type,
+                                                  lower_bound, upper_bound,
+                                                  conservation_tol,
+                                                  max_fixup_iter);
+            break;
+          }
+          case Entity_kind::NODE: {
+            auto derived_class_ptr =
+                dynamic_cast<
+              DriverInternal<Entity_kind::NODE, SourceMesh, SourceState> *
+              >(this);
+            derived_class_ptr->interpolate_var<T>(srcvarname, trgvarname,
+                                                  limiter,
+                                                  partial_fixup_type,
+                                                  empty_fixup_type,
+                                                  lower_bound, upper_bound,
+                                                  conservation_tol,
+                                                  max_fixup_iter);
+            break;
+          }
+          default:
+            std::cerr << "Cannot remap entities on Entity kind " << entkind << "\n";
+        }
+      }
+    }
   };
 
 
@@ -723,9 +516,7 @@ class PartDriver {
     manager implementation that provides certain functionality.
 
   */
-  template <Entity_kind ONWHAT,
-            class SourceMesh2,
-            class SourceState2>
+  template <Entity_kind ONWHAT, class SourceMesh2, class SourceState2>
   class DriverInternal : public DriverInternalBase {
    public:
     /*!
@@ -741,11 +532,10 @@ class PartDriver {
                    SourceState2 const& source_state,
                    TargetMesh const& target_mesh,
                    TargetState& target_state,
-                   std::vector<Field_type> const & field_types,
                    Wonton::Executor_type const *executor = nullptr)
         : source_mesh2_(source_mesh), source_state2_(source_state),
           target_mesh_(target_mesh), target_state_(target_state),
-          field_types_(field_types), executor_(executor)
+          executor_(executor)
     {
 
 #ifdef PORTAGE_ENABLE_MPI
@@ -770,7 +560,12 @@ class PartDriver {
     /// Destructor
     ~DriverInternal() {}
 
+    std::type_info const& source_mesh_type() const {
+      return typeid(SourceMesh2);
+    }
 
+    Entity_kind onwhat() const {return ONWHAT;}
+    
     /*! DriverInternal::interpolate_var
 
       @brief interpolate a variable
@@ -793,13 +588,11 @@ class PartDriver {
                          double conservation_tol,
                          int max_fixup_iter) {
 
-      // Until we fix flat_state_mm_wrapper to make get_entity a const method,
-      // comment this out
-      // if (source_state2_.get_entity(srcvarname) != ONWHAT) {
-      //   std::cerr << "Variable " << srcvarname <<
-      //       " not defined on entity kind " << ONWHAT << ". Skipping!\n";
-      //   return;
-      // }
+      if (source_state2_.get_entity(srcvarname) != ONWHAT) {
+        std::cerr << "Variable " << srcvarname <<
+            " not defined on entity kind " << ONWHAT << ". Skipping!\n";
+        return;
+      }
 
       Field_type field_type = source_state2_.field_type(ONWHAT, srcvarname);
 
@@ -822,8 +615,6 @@ class PartDriver {
     TargetMesh const & target_mesh_;
     SourceState2 const & source_state2_;
     TargetState & target_state_;
-
-    std::vector<Field_type> const & field_types_;
 
     int comm_rank_ = 0;
     int nprocs_ = 1;
@@ -1430,7 +1221,6 @@ class PartDriver {
                        SourceState2 const & source_state2,
                        TargetMesh const & target_mesh,
                        TargetState & target_state,
-                       std::vector<Field_type> const & field_types,
                        Wonton::Executor_type const *executor) {
 
     switch (onwhat) {
@@ -1438,14 +1228,12 @@ class PartDriver {
         return
             std::make_unique<DriverInternal<Entity_kind::CELL,
                                             SourceMesh2, SourceState2>>
-            (source_mesh2, source_state2, target_mesh, target_state,
-             field_types, executor);
+            (source_mesh2, source_state2, target_mesh, target_state, executor);
       case Entity_kind::NODE:
         return
             std::make_unique<DriverInternal<Entity_kind::NODE,
                                             SourceMesh2, SourceState2>>
-            (source_mesh2, source_state2, target_mesh, target_state,
-             field_types, executor);
+            (source_mesh2, source_state2, target_mesh, target_state, executor);
       default:
         std::cerr << "Remapping on entity kind " << onwhat << " not implemented\n";
     }
