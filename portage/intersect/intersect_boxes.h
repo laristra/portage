@@ -108,19 +108,24 @@ std::vector<Portage::Weights_t>
 
     // Compute and save weights (volume + 1 moment for each dimension)
     auto & weights = this_wt.weights;
-    weights.resize(1 + D);
-    switch (geometry) {
-      weights[0] = CoordSys::modify_volume(vol0, ilo, ihi);
-      Wonton::Point<D> mom0;
-      for (int d = 0; d < D; ++d) {
-        const ibar = 0.5 * (ilo[d] + ihi[d]);
-        mom0[d] = ibar * vol0;
-      }
-      auto first_moments = CoordSys::compute_moments(mom0, ilo, ihi);
-      for (int d = 0; d < D; ++d) {
-        weights[1+d] = first_moments[d];
-      }
+    // TODO: How many orders of moments do we need to provide?  For first-order
+    //       interpolation, we only need zeroth moments; for second-order
+    //       interpolation, we need up through first moments; and so on.
+    //       Unfortunately, the intersector doesn't currently know what order
+    //       of interpolation is needed.  So we'll just have to hard-code this
+    //       for now, assuming second-order interpolation for lack of a better
+    //       choice.
+    weights.resize(1+D);
+    weights[0] = vol;
+    for (int d = 0; d < D; ++d) {
+      const ibar = 0.5 * (ilo[d] + ihi[d]);
+      mom0[1+d] = ibar * vol0;
     }
+    // Instead of calculating extra moments, use the bounding box to explicitly
+    // update the moments.  But this only works if your cells are axis-aligned
+    // boxes.  In other words: this is an optimization for intersect_boxes,
+    // rather than a general-purpose tool for all intersectors.
+    CoordSys::modify_moments(weights, ilo, ihi);
 
     // Increment the count, because we've now inserted a new entry
     ++ninserted;
