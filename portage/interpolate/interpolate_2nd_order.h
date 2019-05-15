@@ -433,7 +433,7 @@ class Interpolate_2ndOrder<D,
 
       Vector<D> gradient = gradients_[srcindex];
       Vector<D> dr = xsect_centroid - src_centroid;
-      dr = CoordSys::modify_line_element(dr, src_centroid);
+      CoordSys::modify_line_element(dr, src_centroid);
       double val = source_vals_[srcindex] + dot(gradient, dr);
       val *= xsect_volume;
       totalval += val;
