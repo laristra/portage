@@ -254,6 +254,7 @@ TEST(PartDriver, ThreeMat2D_1stOrder) {
                 std::numeric_limits<double>::max());
 
 
+
   //-------------------------------------------------------------------
   // Based on the material geometry, make a list of the TARGET cells
   // that are in each material and collect their material volume
@@ -608,11 +609,8 @@ TEST(PartDriver, ThreeMat3D_1stOrder) {
   std::vector<Portage::Entity_kind> entity_kinds({Wonton::Entity_kind::CELL});
   std::vector<Portage::Field_type> field_types({Portage::Field_type::MESH_FIELD, Portage::Field_type::MULTIMATERIAL_FIELD});
   
-<<<<<<< dc1aa54e773482b4a4528c5223156b5087a829ea
   Wonton::SerialExecutor_type executor;
 
-=======
->>>>>>> test new partdriver for full mesh multi-material remap
   Portage::PartDriver<Portage::SearchKDTree,
                       Portage::IntersectR3D,
                       Portage::Interpolate_1stOrder,
@@ -621,21 +619,11 @@ TEST(PartDriver, ThreeMat3D_1stOrder) {
                       Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
                       Tangram::MOF, Tangram::SplitR3D, Tangram::ClipR3D>
       d(sourceMeshWrapper, sourceStateWrapper,
-<<<<<<< dc1aa54e773482b4a4528c5223156b5087a829ea
         targetMeshWrapper, targetStateWrapper, &executor);
 
   d.interpolate("density", "rho", 0.0, std::numeric_limits<double>::max());
   d.interpolate("temperature", "TEMP", -std::numeric_limits<double>::max(),
                 std::numeric_limits<double>::max());
-=======
-        targetMeshWrapper, targetStateWrapper,
-        entity_kinds, field_types);
-  d.set_remap_var_names(remap_fields);
-
-  Wonton::SerialExecutor_type executor;
-  d.run(&executor);
-
->>>>>>> test new partdriver for full mesh multi-material remap
 
 
   //-------------------------------------------------------------------
@@ -734,11 +722,7 @@ TEST(PartDriver, ThreeMat3D_1stOrder) {
         ASSERT_NEAR(matcen_trg[m][ic][d], matcen_remap[ic][d], 1.0e-9);
 
     double const *density_remap;
-<<<<<<< dc1aa54e773482b4a4528c5223156b5087a829ea
     targetStateWrapper.mat_get_celldata("rho", m, &density_remap);
-=======
-    targetStateWrapper.mat_get_celldata("density", m, &density_remap);
->>>>>>> test new partdriver for full mesh multi-material remap
 
     for (int ic = 0; ic < nmatcells; ic++)
       ASSERT_NEAR(matrho[m], density_remap[ic], 1.0e-12);
@@ -766,11 +750,7 @@ TEST(PartDriver, ThreeMat3D_1stOrder) {
     Wonton::Point<3> *cen;
     targetStateWrapper.mat_get_celldata("mat_volfracs", m, &vf);
     targetStateWrapper.mat_get_celldata("mat_centroids", m, &cen);
-<<<<<<< dc1aa54e773482b4a4528c5223156b5087a829ea
     targetStateWrapper.mat_get_celldata("rho", m, &rho);
-=======
-    targetStateWrapper.mat_get_celldata("density", m, &rho);
->>>>>>> test new partdriver for full mesh multi-material remap
 
     Wonton::Point<3> totcen;
     double volume = 0.0, mass = 0.0;
@@ -799,11 +779,7 @@ TEST(PartDriver, ThreeMat3D_1stOrder) {
 
   // Finally check that we got the right target temperature values
   double *targettemp;
-<<<<<<< dc1aa54e773482b4a4528c5223156b5087a829ea
   targetStateWrapper.mesh_get_data(Wonton::Entity_kind::CELL, "TEMP",
-=======
-  targetStateWrapper.mesh_get_data(Wonton::Entity_kind::CELL, "temperature",
->>>>>>> test new partdriver for full mesh multi-material remap
                                    &targettemp);
   for (int i = 0; i < ntrgcells; i++)
     ASSERT_NEAR(targettemp[i], meshtemp, 1.0e-10);
