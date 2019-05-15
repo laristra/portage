@@ -77,7 +77,7 @@ class MPI_Particle_Distribute {
     @param[in] source_state       Input swarm state
     @param[in] target_swarm       Target swarm
     @param[in] target_state       Target swarm state
-    @param[in] smoothing_lengths  Extents on target(Gather-form) or source(Scatter-form)
+    @param[in] smoothing_lengths  Extents on source(Scatter-form). Not used for Gather-form.
     @param[in] center             Weight center
    */
   template <class SourceSwarm, class SourceState, class TargetSwarm, class TargetState>
@@ -99,7 +99,6 @@ class MPI_Particle_Distribute {
 
     if (center == Meshfree::WeightCenter::Gather) {
       assert(smoothing_lengths.size() == target_swarm.num_particles(Entity_type::PARALLEL_OWNED));
-      assert(extents.size() == target_swarm.num_particles(Entity_type::PARALLEL_OWNED));
       assert(kernel_types.size() == target_swarm.num_particles(Entity_type::PARALLEL_OWNED));
       assert(geom_types.size() == target_swarm.num_particles(Entity_type::PARALLEL_OWNED));
     } else if (center == Meshfree::WeightCenter::Scatter) {
@@ -128,7 +127,7 @@ class MPI_Particle_Distribute {
       {
         Point<dim> coord = target_swarm.get_particle_coordinates(c);
         Point<dim> ext;
-        if (center == Meshfree::WeightCenter::Gather)
+        if (center == Meshfree::WeightCenter::Scatter)
           {
             ext = extents[c];
           }
@@ -137,13 +136,13 @@ class MPI_Particle_Distribute {
             double val0, val1;
             if (center == Meshfree::WeightCenter::Gather)
               {
-                val0 = coord[k]-ext[k];
-                val1 = coord[k]+ext[k];
+                val0 = coord[k];
+                val1 = coord[k];
               }
             else if (center == Meshfree::WeightCenter::Scatter)
               {
-                val0 = coord[k];
-                val1 = coord[k];
+                val0 = coord[k]-ext[k];
+                val1 = coord[k]+ext[k];
               }
             if (val0 < targetBoundingBoxes[2*dim*commRank+2*k])
               targetBoundingBoxes[2*dim*commRank+2*k] = val0;
@@ -361,35 +360,38 @@ class MPI_Particle_Distribute {
 
       //-----------------------------------------------
       //communicate extents
-      std::vector<std::vector<double>> sourceSendExtents(commSize);
-      for (size_t i = 0; i < commSize; ++i)
-      {
-        if ((!sendFlags[i]) || (i==commRank))
-          continue;
-        else
+      if (center == Meshfree::WeightCenter::Scatter)
         {
-          for (size_t j = 0; j < sourcePtsToSendSize[i]; ++j)
-          {
-            Point<dim> ext = extents[sourcePtsToSend[i][j]];
-            for (size_t d = 0 ; d < dim; ++d)
-              sourceSendExtents[i].push_back(ext[d]);
-          }
+          std::vector<std::vector<double>> sourceSendExtents(commSize);
+          for (size_t i = 0; i < commSize; ++i)
+            {
+              if ((!sendFlags[i]) || (i==commRank))
+                continue;
+              else
+                {
+                  for (size_t j = 0; j < sourcePtsToSendSize[i]; ++j)
+                    {
+                      Point<dim> ext = extents[sourcePtsToSend[i][j]];
+                      for (size_t d = 0 ; d < dim; ++d)
+                        sourceSendExtents[i].push_back(ext[d]);
+                    }
+                }
+            }
+          //move this extents data
+          std::vector<double> sourceRecvExtents(src_info.newNum*dim);
+          moveField<double>(&src_info, commRank, commSize, MPI_DOUBLE, dim,
+                            sourceSendExtents,&sourceRecvExtents);
+
+          // update local source particle list with received new particles
+          for (size_t i = 0; i < src_info.newNum; ++i)
+            {
+              Point<dim> ext;
+              for (size_t d = 0 ; d < dim; ++d)
+                ext[d] = sourceRecvExtents[dim*i+d];
+
+              extents.push_back(ext);
+            }
         }
-      }
-      //move this extents data
-      std::vector<double> sourceRecvExtents(src_info.newNum*dim);
-      moveField<double>(&src_info, commRank, commSize, MPI_DOUBLE, dim,
-                        sourceSendExtents,&sourceRecvExtents);
-
-      // update local source particle list with received new particles
-      for (size_t i = 0; i < src_info.newNum; ++i)
-      {
-	Point<dim> ext;
-	for (size_t d = 0 ; d < dim; ++d)
-	  ext[d] = sourceRecvExtents[dim*i+d];
-
-        extents.push_back(ext);
-      }
 
       //-----------------------------------------------
       //communicate kernel types
