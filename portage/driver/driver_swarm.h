@@ -144,8 +144,8 @@ class SwarmDriver {
               TargetSwarm const& targetSwarm,
               TargetState& targetState,
               vector<std::vector<std::vector<double>>> const& smoothing_lengths,
-              vector<Weight::Kernel> const kernel_types,
-              vector<Weight::Geometry> const geom_types,
+              vector<Weight::Kernel> const &kernel_types,
+              vector<Weight::Geometry> const &geom_types,
               WeightCenter const center=Gather)
       : source_swarm_(sourceSwarm), source_state_(sourceState),
         target_swarm_(targetSwarm), target_state_(targetState),
