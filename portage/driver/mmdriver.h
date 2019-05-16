@@ -139,6 +139,9 @@ class MMDriver {
   /// Destructor
   ~MMDriver() {}
 
+  /// Enable move semantics
+  MMDriver(MMDriver &&) = default;
+
   /*!
     @brief Specify the names of the variables to be interpolated
     @param[in] remap_var_names A list of variable names of the variables to
