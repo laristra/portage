@@ -53,6 +53,10 @@ class DriverTest : public ::testing::Test {
 
   shared_ptr<Portage::vector<std::vector<std::vector<double>>>> smoothing_lengths_;
 
+  // Kernel and geometry specifications
+  Portage::vector<Portage::Meshfree::Weight::Kernel> kernels_;
+  Portage::vector<Portage::Meshfree::Weight::Geometry> geometries_;
+
   // Operator info
   Portage::Meshfree::Operator::Type operator_;
   Portage::vector<Portage::Meshfree::Operator::Domain> domains_;
@@ -158,10 +162,6 @@ class DriverTest : public ::testing::Test {
     targetState->add_field("particledata", targetData);
 
     // Build the main driver data for this mesh type
-    // Register the variable name and interpolation order with the driver
-    std::vector<std::string> remap_fields;
-    remap_fields.push_back("particledata");
-
     Portage::Meshfree::SwarmDriver<Search,
                                    Portage::Meshfree::Accumulate,
                                    Portage::Meshfree::Estimate,
@@ -177,9 +177,112 @@ class DriverTest : public ::testing::Test {
     if (operator_ != Portage::Meshfree::Operator::LastOperator) 
       estimator = Portage::Meshfree::OperatorRegression;
 
+    // Register the variable name with the driver
+    std::vector<std::string> remap_fields;
+    remap_fields.push_back("particledata");
     d.set_remap_var_names(remap_fields, remap_fields,
                           estimator, basis, 
                           operator_, domains_, operator_data_);
+
+    // run on one processor (no argument implies serial run)
+    d.run();
+
+    // Check the answer
+    double toterr=0.;
+    typename Portage::Meshfree::SwarmState<dim>::DblVecPtr vecout;
+    targetState->get_field("particledata", vecout);
+    ASSERT_NE(nullptr, vecout);
+    if (operator_ == Portage::Meshfree::Operator::LastOperator) {
+      for (int p = 0; p < ntarpts; ++p) {
+        Wonton::Point<dim> coord = targetSwarm->get_particle_coordinates(p);
+        double error;
+        error = compute_initial_field(coord) - (*vecout)[p];
+        // dump diagnostics for each particle
+        if (dim == 1)
+          std::printf("Particle=% 4d Coord = (% 5.3lf)", p, coord[0]);
+        else if (dim == 2)
+          std::printf("Particle=% 4d Coord = (% 5.3lf,% 5.3lf)", p, coord[0],
+                      coord[1]);
+        else if (dim == 3)
+          std::printf("Particle=% 4d Coord = (% 5.3lf,% 5.3lf,% 5.3lf)", p,
+                      coord[0], coord[1], coord[2]);
+	{double val=(*vecout)[p]; 
+	  std::printf("  Value = % 10.6lf  Err = % lf\n", val, error);}
+        toterr += error*error;
+      }
+    
+      std::printf("\n\nL2 NORM OF ERROR = %lf\n\n", sqrt(toterr));
+      ASSERT_NEAR(expected_answer, sqrt(toterr), TOL);
+    } else if (operator_ == Portage::Meshfree::Operator::VolumeIntegral) {
+      double total = 0.;
+      for (int p = 0; p < ntarpts; ++p) {
+        total += (*vecout)[p];
+      }
+      ASSERT_NEAR(expected_answer, total, TOL);
+    }
+  }
+
+
+
+  // This unit test exercises the alternate more detailed constructor.
+  // It will work for 1, 2-D and 3-D swarms
+  //
+  template <template<int, class, class> class Search,
+            Portage::Meshfree::Basis::Type basis>
+  void unitTestAlt(double compute_initial_field(Wonton::Point<dim> coord),
+                double expected_answer) {
+
+    // Fill the source state data with the specified profile
+    const int nsrcpts = sourceSwarm->num_owned_particles();
+    typename Portage::Meshfree::SwarmState<dim>::DblVecPtr sourceData = 
+        make_shared<typename Portage::Meshfree::SwarmState<dim>::DblVec>(nsrcpts);
+
+    // Create the source data for given function
+    for (unsigned int p = 0; p < nsrcpts; ++p) {
+      Wonton::Point<dim> coord =
+          sourceSwarm->get_particle_coordinates(p);
+      (*sourceData)[p] = compute_initial_field(coord);
+    }
+    sourceState->add_field("particledata", sourceData);
+
+    // Build the target state storage
+    const int ntarpts = targetSwarm->num_owned_particles();
+    typename Portage::Meshfree::SwarmState<dim>::DblVecPtr targetData = 
+        make_shared<typename Portage::Meshfree::SwarmState<dim>::DblVec>(ntarpts, 0.0);
+    targetState->add_field("particledata", targetData);
+
+    // Set kernels and geometries
+    if (center_ == Portage::Meshfree::Gather) {
+      kernels_.resize(ntarpts, Portage::Meshfree::Weight::B4);
+      geometries_.resize(ntarpts, Portage::Meshfree::Weight::ELLIPTIC); 
+    } else if (center_ == Portage::Meshfree::Scatter) {
+      kernels_.resize(nsrcpts, Portage::Meshfree::Weight::B4);
+      geometries_.resize(nsrcpts, Portage::Meshfree::Weight::ELLIPTIC); 
+    }
+
+    // Build the main driver data for this mesh type
+    Portage::Meshfree::SwarmDriver<Search,
+                                   Portage::Meshfree::Accumulate,
+                                   Portage::Meshfree::Estimate,
+                                   dim,
+                                   Portage::Meshfree::Swarm<dim>,
+                                   Portage::Meshfree::SwarmState<dim>,
+                                   Portage::Meshfree::Swarm<dim>,
+                                   Portage::Meshfree::SwarmState<dim>>
+        d(*sourceSwarm, *sourceState, *targetSwarm, *targetState, *smoothing_lengths_,
+	  kernels_, geometries_, center_);
+
+    Portage::Meshfree::EstimateType estimator=Portage::Meshfree::LocalRegression;
+    if (operator_ != Portage::Meshfree::Operator::LastOperator) 
+      estimator = Portage::Meshfree::OperatorRegression;
+
+    // Register the variable name and interpolation order with the driver
+    std::vector<std::string> remap_fields;
+    remap_fields.push_back("particledata");
+    d.set_remap_var_names(remap_fields, remap_fields,
+                          estimator, basis, 
+                          operator_, domains_, operator_data_);
+
     // run on one processor (no argument implies serial run)
     d.run();
 
@@ -405,6 +508,11 @@ TEST_F(DriverTest2D, 2D_LinearFieldLinearBasis) {
       (compute_linear_field<2>, 0.0);
 }
 
+TEST_F(DriverTest2D, 2D_LinearFieldLinearBasisAlt) {
+  unitTestAlt<Portage::SearchPointsByCells, Portage::Meshfree::Basis::Linear>
+      (compute_linear_field<2>, 0.0);
+}
+
 TEST_F(DriverTest2D, 2D_QuadraticFieldQuadraticBasis) {
   unitTest<Portage::SearchPointsByCells, Portage::Meshfree::Basis::Quadratic>
       (compute_quadratic_field<2>, 0.0);
@@ -412,6 +520,11 @@ TEST_F(DriverTest2D, 2D_QuadraticFieldQuadraticBasis) {
 
 TEST_F(DriverTest2DScatter, 2D_QuadraticFieldQuadraticBasisScatter) {
   unitTest<Portage::SearchPointsByCells, Portage::Meshfree::Basis::Quadratic>
+      (compute_quadratic_field<2>, 0.0);
+}
+
+TEST_F(DriverTest2DScatter, 2D_QuadraticFieldQuadraticBasisScatterAlt) {
+  unitTestAlt<Portage::SearchPointsByCells, Portage::Meshfree::Basis::Quadratic>
       (compute_quadratic_field<2>, 0.0);
 }
 
@@ -425,6 +538,11 @@ TEST_F(DriverTest3D, 3D_LinearFieldLinearBasis) {
       (compute_linear_field<3>, 0.0);
 }
 
+TEST_F(DriverTest3D, 3D_LinearFieldLinearBasisAlt) {
+  unitTestAlt<Portage::SearchPointsByCells, Portage::Meshfree::Basis::Linear>
+      (compute_linear_field<3>, 0.0);
+}
+
 TEST_F(DriverTest3D, 3D_QuadraticFieldQuadraticBasis) {
   unitTest<Portage::SearchPointsByCells, Portage::Meshfree::Basis::Quadratic>
       (compute_quadratic_field<3>, 0.0);
@@ -432,6 +550,11 @@ TEST_F(DriverTest3D, 3D_QuadraticFieldQuadraticBasis) {
 
 TEST_F(DriverTest3DScatter, 3D_QuadraticFieldQuadraticBasisScatter) {
   unitTest<Portage::SearchPointsByCells, Portage::Meshfree::Basis::Quadratic>
+      (compute_quadratic_field<3>, 0.0);
+}
+
+TEST_F(DriverTest3DScatter, 3D_QuadraticFieldQuadraticBasisScatterAlt) {
+  unitTestAlt<Portage::SearchPointsByCells, Portage::Meshfree::Basis::Quadratic>
       (compute_quadratic_field<3>, 0.0);
 }
 
