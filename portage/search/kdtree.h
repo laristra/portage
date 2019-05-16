@@ -20,11 +20,11 @@ Please see the license file at the root of this repository, or at:
 #include "portage/search/BoundBox.h"
 #include "portage/support/portage.h"
 #include "wonton/support/Point.h"
-using Wonton::Point;
-using Wonton::Vector;
 
 namespace gk {
 
+using Wonton::Point;
+using Wonton::Vector;
 
 #define SWAP(a, b, type) {  \
     type c_ = b; \
