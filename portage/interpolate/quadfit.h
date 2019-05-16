@@ -22,10 +22,10 @@ Please see the license file at the root of this repository, or at:
 #include "wonton/support/Point.h"
 #include "wonton/support/Vector.h"
 
+namespace Portage {
+
 using Wonton::Point;
 using Wonton::Vector;
-
-namespace Portage {
 
 ///////////////////////////////////////////////////////////////////////////////
 
