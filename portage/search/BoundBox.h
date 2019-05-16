@@ -33,8 +33,8 @@ namespace gk {
     using Point = Wonton::Point<D>; 
     using Wonton::Vector;
 
-    const double REAL_MAX = std::numeric_limits<double>::max();
-    const double REAL_MIN = std::numeric_limits<double>::min();
+    const double real_max = std::numeric_limits<double>::max();
+    const double real_min = std::numeric_limits<double>::min();
 
     /*!
       @class IsotheticBBox "BoundBox.h"
@@ -50,7 +50,7 @@ namespace gk {
             void clear() { clearBox(); }
 
             /// Tests if the bounding box contains space.
-            bool empty() const { return min[0] == REAL_MAX; }
+            bool empty() const { return min[0] == real_max; }
 
             // Functions to add new elements to the box
             /// Update the bounding box by adding an additional Point.
@@ -145,8 +145,8 @@ namespace gk {
             Point<D> min,max;
             void clearBox() {
                 for (size_t i=0;i<D;++i) {
-                    min[i] = REAL_MAX;
-                    max[i] = REAL_MIN;
+                    min[i] = real_max;
+                    max[i] = real_min;
                 }
             }
 
