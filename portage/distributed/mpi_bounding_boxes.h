@@ -114,7 +114,7 @@ class MPI_Bounding_Boxes {
     ///////////////////////////////////////////////////////
 
     // SEND GLOBAL CELL IDS
-    std::vector<int>& sourceCellGlobalIds = source_mesh_flat.get_global_cell_ids();
+    std::vector<Wonton::GID_t>& sourceCellGlobalIds = source_mesh_flat.get_global_cell_ids();
     std::vector<int> distributedCellGlobalIds(cellInfo.newNum);
     sendField(cellInfo, commRank, commSize, MPI_INT, 1,
               sourceCellGlobalIds, &distributedCellGlobalIds);
