@@ -416,14 +416,6 @@ class Interpolate_2ndOrder<D,
             }
             for (int k = 0; k < D; k++) src_centroid[k] /=mvol;
 
-            //DBG
-            std::cout<<"srccell = "<<srccell
-            <<", #matpolys ="<<matpolys.size()<<", src_centroid = ["
-            <<src_centroid[0]<<", "<<src_centroid[1]<<"]"
-            <<std::endl;
-            //DBG
-        
-
           }
         }
 #endif

@@ -35,6 +35,10 @@
 // Tests for distributed multi-material remap with 1st and 
 // 2nd Order Accurate Remap on 1,2 and 4 ranks. 
 
+// This distributed test uses two material configurations for 
+// testing purposes. 
+//
+// MATERIAL CONFIGURATION: NESTED_BOX
 // The conceptual material layout is two nested boxes inside an
 // outer box domain with unit length. The material interfaces
 // align with the coordinate axes/planes. With this layout, all
@@ -62,11 +66,34 @@
 //     *------------------------------*
 //    0,0            0.5,0           1,0    
 
+// MATERIAL CONFIGURATION: LAYER
+// The conceptual material layout is three layered materials
+// within the box.  The material interfaces
+// align with the coordinate axes/planes. 
+//
+// 2D 
+//
+//    0,1      0.3,1     0.65,1      1,1
+//     *------------------------------*
+//     |        |          |          |
+//     |        |          |          |
+//     |        |          |          |
+//     |        |          |          |
+//     |        |          |          |
+//     |        |          |          |
+//     |        |          |          |
+//     |        |          |          |
+//     |        |          |          |
+//     |        |          |          |
+//     |        |          |          |
+//     *------------------------------*
+//    0,0      0.3,0     0.65,0      1,0
+
 // The three materials have densities initialized with either constant
-// or linear functions. Given this setup we know the volume, mass and
+// or linear functions. Given these setups we know the volume, mass and
 // centroid of each material.
 
-// Knowing the simple material geometry, we can do box intersections
+// Knowing the material geometry, we can do box intersections
 // to compute exact values of material volume fractions and centroids
 // in each cell on the source and target meshes. We can then compare
 // the geometrically computed values of the volume fractions and
@@ -77,17 +104,24 @@
 // on the target mesh side
 
 double TOL = 1e-6;
+
 enum DENSITY_FUNCTION
 { 
   CONSTANT,
   LINEAR
 };
 
-template<int dim>
+enum MAT_CONFIG
+{
+  NESTED_BOX,
+  LAYER
+};
+
+template<int dim, MAT_CONFIG mconfig>
 struct material_metadata {};
 
 template <>
-struct material_metadata<2>
+struct material_metadata<2, MAT_CONFIG::LAYER>
 {
   const int nmats = 3; 
   std::string matnames[3] = {"mat0", "mat1", "mat2"};
@@ -96,63 +130,38 @@ struct material_metadata<2>
   std::vector<Portage::Point<2>> matlo[3], mathi[3];
 
   material_metadata(){
-    matlo[0] = {Portage::Point<2>(0.0, 0.0), Portage::Point<2>(0.0, 0.2), 
-                Portage::Point<2>(0.8, 0.2), Portage::Point<2>(0.0, 0.8)};
-    mathi[0] = {Portage::Point<2>(1.0, 0.2), Portage::Point<2>(0.2, 0.8), 
-                Portage::Point<2>(1.0, 0.8), Portage::Point<2>(1.0, 1.0)};
-
-    matlo[1] = {Portage::Point<2>(0.2, 0.2), Portage::Point<2>(0.2, 0.4), 
-                Portage::Point<2>(0.6, 0.4), Portage::Point<2>(0.2, 0.6)};
-    mathi[1] = {Portage::Point<2>(0.8, 0.4), Portage::Point<2>(0.4, 0.6), 
-                Portage::Point<2>(0.8, 0.6), Portage::Point<2>(0.8, 0.8)};
-
-    matlo[2] = {Portage::Point<2>(0.4, 0.4)};
-    mathi[2] = {Portage::Point<2>(0.6, 0.6)};
+    matlo[0] = {Portage::Point<2>(0.0, 0.0)}; 
+    mathi[0] = {Portage::Point<2>(0.3, 1.0)}; 
+    matlo[1] = {Portage::Point<2>(0.3, 0.0)};
+    mathi[1] = {Portage::Point<2>(0.65, 1.0)};
+    matlo[2] = {Portage::Point<2>(0.65, 0.0)}; 
+    mathi[2] = {Portage::Point<2>(1.0, 1.0)}; 
   }
-
-  int mat_nboxes[3] = {4,4,1};
+  
+  int mat_nboxes[3] = {1,1,1}; 
 
   // Reference Volume 
-  std::map<int, int> ref_rank = {{1,0}, {2,1}, {4,2}}; 
-
-  std::vector<double> matvol[3][3] = {{{ 0.64}, { 0.3485714285714, 0.4057142857143}, 
-                    		       { 0.1885714285714, 0.2171428571429, 
-					 0.2171428571429, 0.2457142857143 }}, 
-    				      {{ 0.32}, { 0.1885714285714, 0.2685714285714}, 
-				       { 0.1085714285714, 0.1567346938776,  
-					 0.1567346938776, 0.2244897959184 }},
-				      {{ 0.04}, { 0.03428571428571, 0.04}, 
-				       { 0.02938775510204, 0.03428571428571, 
-					 0.03428571428571, 0.04 }}}; 
+  std::vector<double> matvol[4] = {{ 0.1714285714286, 0.1551020408163, 0.0}, 
+				   { 0.2142857142857, 0.1938775510204, 0.0},
+				   { 0.008163265306122, 0.2, 0.2}, 
+				   { 0.01020408163265, 0.25, 0.25}}; 
 
   // Reference Mass
-  std::vector<double> matmass_const[3][3] = 
-				    {{{ 0.064}, { 0.03485714285714, 0.04057142857143}, 
-                    		       { 0.01885714285714, 0.02171428571429, 
-					 0.02171428571429, 0.02457142857143 }}, 
-    				      {{ 3.2}, { 1.885714285714, 2.685714285714}, 
-				       { 1.085714285714, 1.567346938776,  
-					 1.567346938776, 2.244897959184 }},
-				      {{ 4.0}, { 3.428571428571, 4.0}, 
-				       { 2.938775510204, 3.428571428571, 
-					 3.428571428571, 4.0 }}}; 
+  std::vector<double> matmass_const[4] = {{ 0.01714285714286, 1.551020408163, 0.0}, 
+					  { 0.02142857142857, 1.938775510204, 0.0},
+				          { 0.0008163265306122, 2.0, 20.0}, 
+					  { 0.001020408163265, 2.5, 25.0}}; 
 
-  //double matmass_linear[3][3] = {{0.64, 0.32, 0.04}, {}, {}};
 
-  std::vector<double> matmass_linear[3][3] = 
-				    {{{ 0.64}, { 0.2515918367347, 0.4945306122449 }, 
-                    		       { 0.08016326530612, 0.2016326530612 , 
-					 0.2016326530612, 0.3688163265306 }}, 
-    				      {{ 0.32}, {  0.1635918367347, 0.2817959183673 }, 
-				       { 0.07787755102041, 0.1435801749271 ,  
-					 0.1435801749271, 0.2471603498542 }},
-				      {{ 0.04}, { 0.03379591836735, 0.04 }, 
-				       { 0.02854810495627, 0.03379591836735 , 
-					 0.03379591836735, 0.04 }}}; 
+  std::vector<double> matmass_linear[4] = {{ 0.07469387755102, 0.1118950437318, 0.0}, 
+					   { 0.1698979591837, 0.209110787172, 0.0},
+				           { 0.004723032069971, 0.1521428571429, 0.2221428571429}, 
+					   { 0.009548104956268, 0.2794642857143, 0.3669642857143}}; 
 
   // Constant density
   double matdensity_const[3] = {0.1, 10.0, 100.0}; 
 
+  // Compute density
   double compute_density(Portage::Point<2> &coords, int matid, DENSITY_FUNCTION dtype)
   {
     double value = 0;
@@ -165,8 +174,121 @@ struct material_metadata<2>
   }   
 }; //material_metadata
 
+template <>
+struct material_metadata<3, MAT_CONFIG::LAYER>
+{
+  const int nmats = 3; 
+  std::string matnames[3] = {"mat0", "mat1", "mat2"};
+
+  // Extents of the materials in the overall domain
+  std::vector<Portage::Point<3>> matlo[3], mathi[3];
+
+  material_metadata(){
+    matlo[0] = {Portage::Point<3>(0.0, 0.0, 0.0)}; 
+    mathi[0] = {Portage::Point<3>(0.3, 1.0, 1.0)}; 
+    matlo[1] = {Portage::Point<3>(0.3, 0.0, 0.0)};
+    mathi[1] = {Portage::Point<3>(0.65, 1.0, 1.0)};
+    matlo[2] = {Portage::Point<3>(0.65, 0.0, 0.0)}; 
+    mathi[2] = {Portage::Point<3>(1.0, 1.0, 1.0)}; 
+  }
+  
+  int mat_nboxes[3] = {1,1,1}; 
+
+  // Reference Volume 
+  std::vector<double> matvol[4] = {{ 0.1714285714286, 0.1551020408163, 0.0}, 
+				   { 0.2142857142857, 0.1938775510204, 0.0},
+				   { 0.008163265306122, 0.2, 0.2}, 
+				   { 0.01020408163265, 0.25, 0.25}}; 
+
+  // Reference Mass
+  std::vector<double> matmass_const[4] = {{ 0.01714285714286, 1.551020408163, 0.0}, 
+					  { 0.02142857142857, 1.938775510204, 0.0},
+				          { 0.0008163265306122, 2.0, 20.0}, 
+					  { 0.001020408163265, 2.5, 25.0}}; 
+
+
+  std::vector<double> matmass_linear[4] = {{ 0.1604081632653, 0.1894460641399, 0.0}, 
+					   { 0.2770408163265, 0.3060495626822 , 0.0},
+				           { 0.008804664723032, 0.2521428571429, 0.3221428571429}, 
+					   { 0.01465014577259, 0.4044642857143, 0.4919642857143}}; 
+
+  // Constant density
+  double matdensity_const[3] = {0.1, 10.0, 100.0}; 
+
+  // Compute density
+  double compute_density(Portage::Point<3> &coords, int matid, DENSITY_FUNCTION dtype)
+  {
+    double value = 0;
+    switch(dtype)
+    {
+      case CONSTANT : value = matdensity_const[matid]; break; 
+      case LINEAR : value = coords[0]+coords[1]+coords[2]; break; 
+    }
+    return value; 
+  }   
+}; //material_metadata
+
+template <>
+struct material_metadata<2, MAT_CONFIG::NESTED_BOX>
+{
+  const int nmats = 3;
+  std::string matnames[3] = {"mat0", "mat1", "mat2"};
+
+  // Extents of the materials in the overall domain
+  std::vector<Portage::Point<2>> matlo[3], mathi[3];
+
+  material_metadata(){
+    matlo[0] = {Portage::Point<2>(0.0, 0.0), Portage::Point<2>(0.0, 0.2),
+                Portage::Point<2>(0.8, 0.2), Portage::Point<2>(0.0, 0.8)};
+    mathi[0] = {Portage::Point<2>(1.0, 0.2), Portage::Point<2>(0.2, 0.8),
+                Portage::Point<2>(1.0, 0.8), Portage::Point<2>(1.0, 1.0)};
+
+    matlo[1] = {Portage::Point<2>(0.2, 0.2), Portage::Point<2>(0.2, 0.4),
+                Portage::Point<2>(0.6, 0.4), Portage::Point<2>(0.2, 0.6)};
+    mathi[1] = {Portage::Point<2>(0.8, 0.4), Portage::Point<2>(0.4, 0.6),
+                Portage::Point<2>(0.8, 0.6), Portage::Point<2>(0.8, 0.8)};
+
+    matlo[2] = {Portage::Point<2>(0.4, 0.4)};
+    mathi[2] = {Portage::Point<2>(0.6, 0.6)};
+  }
+
+  int mat_nboxes[3] = {4,4,1};
+
+  // Reference Volume
+  std::vector<double> matvol[4] = {{0.2, 0.12, 0.04},
+				   {0.2, 0.12, 0.04},
+				   {0.2, 0.12, 0.04},
+				   {0.2, 0.12, 0.04}}; 
+
+  // Reference Mass
+  std::vector<double> matmass_const[4] = {{0.02, 1.2, 4.0},
+				   {0.02, 1.2, 4.0},
+				   {0.02, 1.2, 4.0},
+				   {0.02, 1.2, 4.0}}; 
+
+  std::vector<double> matmass_linear[4] = {{0.088, 0.088, 0.04},
+				   {0.2, 0.12, 0.04},
+				   {0.2, 0.12, 0.04},
+				   {0.312, 0.152, 0.04}}; 
+
+  // Constant density
+  double matdensity_const[3] = {0.1, 10.0, 100.0};
+
+  // Compute density
+  double compute_density(Portage::Point<2> &coords, int matid, DENSITY_FUNCTION dtype)
+  {
+    double value = 0;
+    switch(dtype)
+    {
+      case CONSTANT : value = matdensity_const[matid]; break;
+      case LINEAR : value = coords[0]+coords[1]; break;
+    }
+    return value;
+  }
+}; //material_metadata
+
 template<>
-struct material_metadata<3>
+struct material_metadata<3, MAT_CONFIG::NESTED_BOX>
 {
   const int nmats = 3;
   std::string matnames[3] = {"mat0", "mat1", "mat2"};
@@ -179,33 +301,33 @@ struct material_metadata<3>
     double y[2][4] = {{0, 0.2, 0.8, 1.0}, {0.2, 0.4, 0.6, 0.8}};
     double z[2][4] = {{0, 0.2, 0.8, 1.0}, {0.2, 0.4, 0.6, 0.8}};
 
-    matlo[0] = {Portage::Point<3>(x[0][0], y[0][0], z[0][0]), 
-		Portage::Point<3>(x[0][0], y[0][2], z[0][0]),
-		Portage::Point<3>(x[0][0], y[0][1], z[0][0]),
-		Portage::Point<3>(x[0][2], y[0][1], z[0][0]),
-		Portage::Point<3>(x[0][1], y[0][1], z[0][0]),
-		Portage::Point<3>(x[0][1], y[0][1], z[0][2])};
+    matlo[0] = {Portage::Point<3>(x[0][0], y[0][0], z[0][0]),
+                Portage::Point<3>(x[0][0], y[0][2], z[0][0]),
+                Portage::Point<3>(x[0][0], y[0][1], z[0][0]),
+                Portage::Point<3>(x[0][2], y[0][1], z[0][0]),
+                Portage::Point<3>(x[0][1], y[0][1], z[0][0]),
+                Portage::Point<3>(x[0][1], y[0][1], z[0][2])};
 
-    mathi[0] = {Portage::Point<3>(x[0][3], y[0][1], z[0][3]), 
-		Portage::Point<3>(x[0][3], y[0][3], z[0][3]),
-		Portage::Point<3>(x[0][1], y[0][2], z[0][3]),
-		Portage::Point<3>(x[0][3], y[0][2], z[0][3]),
-		Portage::Point<3>(x[0][2], y[0][2], z[0][1]),
-		Portage::Point<3>(x[0][2], y[0][2], z[0][3])};
+    mathi[0] = {Portage::Point<3>(x[0][3], y[0][1], z[0][3]),
+                Portage::Point<3>(x[0][3], y[0][3], z[0][3]),
+                Portage::Point<3>(x[0][1], y[0][2], z[0][3]),
+                Portage::Point<3>(x[0][3], y[0][2], z[0][3]),
+                Portage::Point<3>(x[0][2], y[0][2], z[0][1]),
+                Portage::Point<3>(x[0][2], y[0][2], z[0][3])};
 
-    matlo[1] = {Portage::Point<3>(x[1][0], y[1][0], z[1][0]), 
-		Portage::Point<3>(x[1][0], y[1][2], z[1][0]),
-		Portage::Point<3>(x[1][0], y[1][1], z[1][0]),
-		Portage::Point<3>(x[1][2], y[1][1], z[1][0]),
-		Portage::Point<3>(x[1][1], y[1][1], z[1][0]),
-		Portage::Point<3>(x[1][1], y[1][1], z[1][2])};
+    matlo[1] = {Portage::Point<3>(x[1][0], y[1][0], z[1][0]),
+                Portage::Point<3>(x[1][0], y[1][2], z[1][0]),
+                Portage::Point<3>(x[1][0], y[1][1], z[1][0]),
+                Portage::Point<3>(x[1][2], y[1][1], z[1][0]),
+                Portage::Point<3>(x[1][1], y[1][1], z[1][0]),
+                Portage::Point<3>(x[1][1], y[1][1], z[1][2])};
 
-    mathi[1] = {Portage::Point<3>(x[1][3], y[1][1], z[1][3]), 
-		Portage::Point<3>(x[1][3], y[1][3], z[1][3]),
-		Portage::Point<3>(x[1][1], y[1][2], z[1][3]),
-		Portage::Point<3>(x[1][3], y[1][2], z[1][3]),
-		Portage::Point<3>(x[1][2], y[1][2], z[1][1]),
-		Portage::Point<3>(x[1][2], y[1][2], z[1][3])};            
+    mathi[1] = {Portage::Point<3>(x[1][3], y[1][1], z[1][3]),
+                Portage::Point<3>(x[1][3], y[1][3], z[1][3]),
+                Portage::Point<3>(x[1][1], y[1][2], z[1][3]),
+                Portage::Point<3>(x[1][3], y[1][2], z[1][3]),
+                Portage::Point<3>(x[1][2], y[1][2], z[1][1]),
+                Portage::Point<3>(x[1][2], y[1][2], z[1][3])};
 
     matlo[2] = {Portage::Point<3>(0.4, 0.4, 0.4)};
     mathi[2] = {Portage::Point<3>(0.6, 0.6, 0.6)};
@@ -213,60 +335,44 @@ struct material_metadata<3>
 
   int mat_nboxes[3] = {6,6,1};
 
-  // Reference Volume 
-  std::map<int, int> ref_rank = {{1,0}, {2,1}, {4,2}}; 
-
-  std::vector<double> matvol[3][3] = {{{ 0.784}, { 0.4377142857143, 0.5291428571429}, 
-                    		       { 0.2437551020408, 0.2935510204082 , 
-					 0.2935510204082, 0.3515102040816 }}, 
-    				      {{ 0.208}, { 0.1268571428571, 0.1771428571429}, 
-				       { 0.07689795918367, 0.1077551020408,  
-					 0.1077551020408, 0.150693877551}},
-				      {{ 0.008}, { 0.006857142857143, 0.008}, 
-				       { 0.005877551020408, 0.006857142857143, 
-					 0.006857142857143,  0.008}}}; 
+  // Reference Volume
+  std::vector<double> matvol[4] = {{0.264, 0.088, 0.008},
+				   {0.264, 0.088, 0.008},
+				   {0.264, 0.088, 0.008},
+				   {0.264, 0.088, 0.008}}; 
 
   // Reference Mass
-  std::vector<double> matmass_const[3][3] = 
-				    {{{ 0.0784}, { 0.04377142857143, 0.05291428571429}, 
-                    		       { 0.02437551020408, 0.02935510204082, 
-					 0.02935510204082, 0.03515102040816}}, 
-    				      {{ 2.08}, { 1.268571428571, 1.771428571429}, 
-				       { 0.7689795918367, 1.077551020408,  
-					 1.077551020408, 1.50693877551}},
-				      {{ 0.8}, { 0.6857142857143, 0.8}, 
-				       { 0.5877551020408, 0.6857142857143, 
-					 0.6857142857143, 0.8}}}; 
+  std::vector<double> matmass_const[4] = {{0.0264, 0.88, 0.8},
+				   {0.0264, 0.88, 0.8},
+				   {0.0264, 0.88, 0.8},
+				   {0.0264, 0.88, 0.8}}; 
 
-  std::vector<double> matmass_linear[3][3] = 
-				    {{{ 1.176}, { 0.5494040816327, 0.8878204081633}, 
-                    		       { 0.2446110787172, 0.4193586005831, 
-					 0.4193586005831, 0.6594355685131}}, 
-    				      {{ 0.312}, {  0.1751020408163, 0.2736489795918}, 
-				       { 0.09659475218659, 0.1535440233236,  
-					 0.1535440233236, 0.239643148688}},
-				      {{ 0.012}, { 0.01018775510204, 0.012 }, 
-				       { 0.008648396501458, 0.01018775510204, 
-					 0.01018775510204, 0.012}}}; 
+  std::vector<double> matmass_linear[4] = {{0.2712, 0.1128, 0.012},
+				   {0.396, 0.132, 0.012},
+				   {0.396, 0.132, 0.012},
+				   {0.5208, 0.1512, 0.012}}; 
 
   // Constant density
   double matdensity_const[3] = {0.1, 10.0, 100.0};
+
+  // Compute density
   double compute_density(Portage::Point<3> coords, int matid, DENSITY_FUNCTION dtype)
   {
     double value = 0;
     switch(dtype)
     {
-      case CONSTANT : value = matdensity_const[matid]; break; 
-      case LINEAR : value = coords[0]+coords[1]+coords[2]; break; 
+      case CONSTANT : value = matdensity_const[matid]; break;
+      case LINEAR : value = coords[0]+coords[1]+coords[2]; break;
     }
-    return value; 
-  }                                       
+    return value;
+  }
 }; // material_metadata
 
-template<int dim> 
+template<int dim, MAT_CONFIG mconfig> 
 void compute_material_fields_on_mesh(
   Wonton::Jali_Mesh_Wrapper &MeshWrapper, 
-  material_metadata<dim> &mdata,  
+  Portage::Entity_type etype,
+  material_metadata<dim, mconfig> &mdata,  
   std::vector<int> (&matcells)[3],
   std::vector<double> (&matvf)[3], 
   std::vector<Point<dim>> (&matcen)[3], 
@@ -274,7 +380,7 @@ void compute_material_fields_on_mesh(
   DENSITY_FUNCTION dtype)
 {
   int ncells = MeshWrapper.num_entities(Portage::Entity_kind::CELL,
-                                        Portage::Entity_type::ALL);
+                                        etype);
   
   for (int c = 0; c < ncells; c++) {
     std::vector<Portage::Point<dim>> ccoords;
@@ -317,127 +423,133 @@ void compute_material_fields_on_mesh(
   }//loop over cells
 } //compute_material_fields_on_mesh
 
-template<int dim>
+template<int dim, MAT_CONFIG mconfig>
 void check_fields_after_remap(
   Wonton::Jali_Mesh_Wrapper &targetMeshWrapper, 
   Wonton::Jali_State_Wrapper &targetStateWrapper,
-  material_metadata<dim> &mdata, 
-  DENSITY_FUNCTION dtype)
+  material_metadata<dim, mconfig> &mdata, 
+  DENSITY_FUNCTION dtype, bool dbg_print=false)
 {
-  int commRank;
-  MPI_Comm_rank(MPI_COMM_WORLD, &commRank);
+    int commRank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &commRank);
 
-  //Compute reference values by using exact intersections of 
-  //target mesh with the given material bounds
-  constexpr int nmats = 3; 
-  std::vector<int> matcells_ref[nmats];
-  std::vector<double> matvf_ref[nmats];
-  std::vector<Portage::Point<dim>> matcen_ref[nmats];
-  std::vector<double> matrho_ref[nmats];
+    //Compute reference values by using exact intersections of 
+    //target mesh with the given material bounds
+    constexpr int nmats = 3; 
+    std::vector<int> matcells_ref[nmats];
+    std::vector<double> matvf_ref[nmats];
+    std::vector<Portage::Point<dim>> matcen_ref[nmats];
+    std::vector<double> matrho_ref[nmats];
 
-  compute_material_fields_on_mesh<dim>(targetMeshWrapper, mdata, 
+    compute_material_fields_on_mesh<dim, mconfig>(targetMeshWrapper, 
+    Portage::Entity_type::PARALLEL_OWNED, mdata, 
     matcells_ref, matvf_ref, matcen_ref, matrho_ref, dtype); 
 
- //------------------------------------------------------------------------
-  // CHECK 1: Number of materials on target 
-  //-----------------------------------------------------------------------
+    if (dbg_print) {
+     for (int m = 0; m < nmats; m++) {
+ 
+      // Get target material cells and their vf, centroids, density values. 
+      std::vector<int> matcells_remap; 
+      targetStateWrapper.mat_get_cells(m, &matcells_remap);
 
-  ASSERT_EQ(mdata.nmats, targetStateWrapper.num_materials());
-  for (int m = 0; m < nmats; m++)
-  ASSERT_EQ(mdata.matnames[m], targetStateWrapper.material_name(m));
+      double const *matvf_remap;
+      targetStateWrapper.mat_get_celldata("mat_volfracs", m, &matvf_remap);
 
-  //-----------------------------------------------------------------------
-  // CHECK 2: Cells in each material on target 
-  //-----------------------------------------------------------------------
+      Portage::Point<2> const *matcen_remap;
+      targetStateWrapper.mat_get_celldata("mat_centroids", m, &matcen_remap);
 
-  std::vector<int> matcells_remap[nmats];
-  for (int m = 0; m < nmats; m++) {
-    targetStateWrapper.mat_get_cells(m, &matcells_remap[m]);
-    int nmatcells = matcells_remap[m].size();
+      double const *matrho_remap;
+      targetStateWrapper.mat_get_celldata("density", m, &matrho_remap);
 
-    for (int ic = 0; ic < nmatcells; ic++)
-      ASSERT_EQ(matcells_remap[m][ic], matcells_ref[m][ic]);
-  }
+      // Print details   
+      std::cerr<<"Mat ID "<<m<<std::endl;
+      std::cerr<<"matcells_ref.size() = "<<matcells_ref[m].size()<<
+                 ", matcells_remap.size() = "<< matcells_remap.size()<<std::endl; 
+      
+      std::cerr<<" Reference cell id :: { vf,  centroid, density}"<<std::endl;
+      for (int c = 0; c < matcells_ref[m].size(); c++)
+      {
+        int gid = targetMeshWrapper.get_global_id(matcells_ref[m][c], Portage::Entity_kind::CELL); 
+	std::cerr<<gid<<":: { "<<matvf_ref[m][c]
+        <<", {"<<matcen_ref[m][c][0]<<", "<<matcen_ref[m][c][1]
+        <<"}, "<<matrho_ref[m][c]<<" }"<<std::endl; 
+      }
+      std::cerr<<std::endl; 
 
-  //------------------------------------------------------------------------
-  // CHECK 3: Material volume fractions and density
-  // in each cell in target 
-  //------------------------------------------------------------------------
-  for (int m = 0; m < nmats; m++) {
-    int nmatcells = matcells_remap[m].size();
-
-    double const *matvf_remap;
-    targetStateWrapper.mat_get_celldata("mat_volfracs", m, &matvf_remap);
-
-#ifdef DEBUG
-   /*
-    for (int ic = 0; ic < nmatcells; ic++)
-    {
-     if (std::fabs( matvf_remap[ic]-matvf_ref[m][ic]) >= 1.0e-10)
-     {
-       int gid = targetMeshWrapper.get_global_id(ic, Portage::Entity_kind::CELL);
-       std::cout<<std::setprecision(13)<<"On rank "<<commRank<<"::Cell "<<gid<<", ref = "<<matvf_ref[m][ic]
-       <<", remap = "<<matvf_remap[ic]<<std::endl;
-     } 
-    }
-   */
-#endif 
-
-    for (int ic = 0; ic < nmatcells; ic++)
-      ASSERT_NEAR( matvf_remap[ic], matvf_ref[m][ic], 1.0e-09);
-
-    // MOF cannot match moments and centroids as well as it can volume
-    // fractions - so use looser tolerances
-    // In this test, we don't check centroids at all as there will be cells
-    // where two materials interface is a box corner, and MOF will approximate
-    // it with a linear interface within that cell, and the centroid of the 
-    // materials in the splitted cell would not match the exact one. 
-    //
-    //Portage::Point<dim> const *matcen_remap;
-    //targetStateWrapper.mat_get_celldata("mat_centroids", m, &matcen_remap);
-    //for (int ic = 0; ic < nmatcells; ic++)
-    //  for (int d = 0; d < dim; d++)
-    //    ASSERT_NEAR(matcen_remap[ic][d], matcen_ref[m][ic][d], 1.0e-9);
-
-    double const *matrho_remap;
-    targetStateWrapper.mat_get_celldata("density", m, &matrho_remap);
-
-    for (int ic = 0; ic < nmatcells; ic++)
-      ASSERT_NEAR( matrho_remap[ic], matrho_ref[m][ic], 1.0e-10);
-  }
-  
-#ifdef DEBUG
-   /*
-   for (int m = 0; m < nmats; m++) {
-    int nmatcells = matcells_remap[m].size();
-
-    double const *matvf_remap;
-    targetStateWrapper.mat_get_celldata("mat_volfracs", m, &matvf_remap);
-
-    Portage::Point<2> const *matcen_remap;
-    targetStateWrapper.mat_get_celldata("mat_centroids", m, &matcen_remap);
-
-    double const *matrho_remap;
-    targetStateWrapper.mat_get_celldata("density", m, &matrho_remap);
-
-    std::cerr<<"Mat ID "<<m<<std::endl;
-    for (int ic = 0; ic < nmatcells; ic++)
-    {
-      std::cerr<<"----> Ref for cell id  "<<matcells_ref[m][ic]<<" = {";
-      std::cerr<<matvf_ref[m][ic]<<", "<<
-                 matcen_ref[m][ic][0]<<", "<<matcen_ref[m][ic][1]<<", "<<
-                 matrho_ref[m][ic]<<" }"<<std::endl; 
-  
-      std::cerr<<"----> After remap for cell id  "<<matcells_remap[m][ic]<<" = {";
-      std::cerr<<matvf_remap[ic]<<", "<<
-                 matcen_remap[ic][0]<<", "<<matcen_remap[ic][1]<<", "<<
-                 matrho_remap[ic]<<" }"<<std::endl; 
+      std::cerr<<" Remapped cell id :: { vf,  centroid, density}"<<std::endl;
+      for (int c = 0; c < matcells_remap.size(); c++)
+      {
+        int gid = targetMeshWrapper.get_global_id(matcells_remap[c], Portage::Entity_kind::CELL); 
+	std::cerr<<gid<<":: { "<<matvf_remap[c]
+        <<", {"<<matcen_remap[c][0]<<", "<<matcen_remap[c][1]
+        <<"}, "<<matrho_remap[c]<<" }"<<std::endl; 
+      }
     } 
-  }*/
-#endif 
+  }
+  else {
+
+   //------------------------------------------------------------------------
+    // CHECK 1: Number of materials on target 
+    //-----------------------------------------------------------------------
+
+    ASSERT_EQ(mdata.nmats, targetStateWrapper.num_materials());
+    for (int m = 0; m < nmats; m++)
+    ASSERT_EQ(mdata.matnames[m], targetStateWrapper.material_name(m));
+
+    //-----------------------------------------------------------------------
+    // CHECK 2: Cells in each material on target 
+    //-----------------------------------------------------------------------
+
+    std::vector<int> matcells_remap[nmats];
+    for (int m = 0; m < nmats; m++) {
+      targetStateWrapper.mat_get_cells(m, &matcells_remap[m]);
+      int nmatcells = matcells_remap[m].size();
+
+      for (int ic = 0; ic < nmatcells; ic++)
+	ASSERT_EQ(matcells_remap[m][ic], matcells_ref[m][ic]);
+    }
+
+    //------------------------------------------------------------------------
+    // CHECK 3: Material volume fractions and density
+    // in each cell in target 
+    //------------------------------------------------------------------------
+    for (int m = 0; m < nmats; m++) {
+      int nmatcells = matcells_remap[m].size();
+
+      double const *matvf_remap;
+      targetStateWrapper.mat_get_celldata("mat_volfracs", m, &matvf_remap);
+
+      for (int ic = 0; ic < nmatcells; ic++)
+	ASSERT_NEAR( matvf_remap[ic], matvf_ref[m][ic], 1.0e-09);
+
+      // MOF cannot match moments and centroids as well as it can volume
+      // fractions - so use looser tolerances
+      // In this test, we don't check centroids for the nested box configuration 
+      // as there will be cells where two materials interface is a box corner, 
+      // and MOF will approximate it with a linear interface within that cell, 
+      // and the centroid of the materials in the splitted cell would not match
+      // the exact one. 
+      
+      if (mconfig == MAT_CONFIG::LAYER) {
+
+        Portage::Point<dim> const *matcen_remap;
+        targetStateWrapper.mat_get_celldata("mat_centroids", m, &matcen_remap);
+
+        for (int ic = 0; ic < nmatcells; ic++)
+          for (int d = 0; d < dim; d++)
+            ASSERT_NEAR(matcen_remap[ic][d], matcen_ref[m][ic][d], 1.0e-9);
+      }
+
+      double const *matrho_remap;
+      targetStateWrapper.mat_get_celldata("density", m, &matrho_remap);
+
+      for (int ic = 0; ic < nmatcells; ic++)
+	ASSERT_NEAR( matrho_remap[ic], matrho_ref[m][ic], 1.0e-10);
+    }
+ } //dbg_print     
 } //check_fields_after_remap
 
-template<int dim>
+template<int dim, MAT_CONFIG mconfig>
 void run(std::shared_ptr<Jali::Mesh> &sourceMesh, 
     std::shared_ptr<Jali::Mesh> &targetMesh,
     std::shared_ptr<Jali::State> &sourceState,
@@ -462,15 +574,15 @@ void run(std::shared_ptr<Jali::Mesh> &sourceMesh,
   //------------------------------------------------------------------------
   // Create material metadata and obtain field values for source
   //------------------------------------------------------------------------
-  material_metadata<dim> mdata; 
+  material_metadata<dim, mconfig> mdata; 
   constexpr int nmats = 3; 
   std::vector<int> matcells_src[nmats];
   std::vector<double> matvf_src[nmats];
   std::vector<Portage::Point<dim>> matcen_src[nmats];
   std::vector<double> matrho_src[nmats];
 
-  compute_material_fields_on_mesh<dim>(sourceMeshWrapper, mdata, matcells_src,
-  matvf_src, matcen_src, matrho_src, dtype);
+  compute_material_fields_on_mesh<dim, mconfig>(sourceMeshWrapper, Portage::Entity_type::ALL, 
+  mdata, matcells_src, matvf_src, matcen_src, matrho_src, dtype);
 
   //------------------------------------------------------------------------
   // Add fields to source state 
@@ -493,10 +605,10 @@ void run(std::shared_ptr<Jali::Mesh> &sourceMesh,
   // Sanity check - do we get the right volumes and masses for
   // materials from the source state
   //-------------------------------------------------------------------
-
   for (int m = 0; m < nmats; m++) {
     std::vector<int> matcells;
     sourceStateWrapper.mat_get_cells(m, &matcells);
+ 
     double const *vf;
     double const *rho;
     sourceStateWrapper.mat_get_celldata("mat_volfracs", m, &vf);
@@ -510,41 +622,19 @@ void run(std::shared_ptr<Jali::Mesh> &sourceMesh,
     }
   
 #ifdef DEBUG
- /*  
     std::cerr<<std::setprecision(13)<<"On rank "<<commRank<<" Mat "<<m
     <<": volume = "<<volume<<", mass = "<<mass<<std::endl;  
- */
+ 
 #endif 
-
-    int id = mdata.ref_rank.find(nranks)->second; 
-    ASSERT_NEAR(mdata.matvol[m][id][commRank], volume, 1.0e-12);
+   
+    ASSERT_NEAR(mdata.matvol[commRank][m], volume, 1.0e-12);
 
     if (dtype == CONSTANT)
-      ASSERT_NEAR(mdata.matmass_const[m][id][commRank], mass, 1.0e-12);
+      ASSERT_NEAR(mdata.matmass_const[commRank][m], mass, 1.0e-12);
     else 
-      ASSERT_NEAR(mdata.matmass_linear[m][id][commRank], mass, 1.0e-12);
+      ASSERT_NEAR(mdata.matmass_linear[commRank][m], mass, 1.0e-12);
+   
   }
-
-#ifdef DEBUG
-  /*
-  std::cerr<<"****** BEFORE REMAP ******"<<std::endl;
-  int nsrccells = sourceMeshWrapper.num_entities(Portage::Entity_kind::CELL,
-                                                 Portage::Entity_type::ALL);
-  std::cerr<<"SOURCE MESH ---->"<<std::endl;
-  for (int c = 0; c < nsrccells; c++) {
-    int gid = sourceMeshWrapper.get_global_id(c, Portage::Entity_kind::CELL);
-    std::cerr<<" ---- Cell "<<gid<<std::endl;
-  } 
-
-  int  ntgtcells = targetMeshWrapper.num_entities(Portage::Entity_kind::CELL,
-                                                  Portage::Entity_type::ALL);
-  std::cerr<<"TARGET MESH ---->"<<std::endl;
-  for (int c = 0; c < ntgtcells; c++) {
-    int gid = targetMeshWrapper.get_global_id(c, Portage::Entity_kind::CELL);
-    std::cerr<<" ---- Cell "<<gid<<std::endl;
-  }
-  */
-#endif
 
   //-------------------------------------------------------------------
   // Field(s) we have to remap
@@ -616,35 +706,14 @@ void run(std::shared_ptr<Jali::Mesh> &sourceMesh,
  else
    std::cerr<<"Remapping requested for dim != 2 or 3"<<std::endl;
 
-#ifdef DEBUG
-  /*
-  std::cerr<<"****** AFTER REMAP ******"<<std::endl;
-  nsrccells = sourceMeshWrapper.num_entities(Portage::Entity_kind::CELL,
-                                                 Portage::Entity_type::ALL);
-  std::cerr<<"SOURCE MESH ---->"<<std::endl;
-  for (int c = 0; c < nsrccells; c++) {
-    int gid = sourceMeshWrapper.get_global_id(c, Portage::Entity_kind::CELL);
-    std::cerr<<" ---- Cell "<<gid<<std::endl;
-  } 
-
-  ntgtcells = targetMeshWrapper.num_entities(Portage::Entity_kind::CELL,
-                                                 Portage::Entity_type::ALL);
-  std::cerr<<"TARGET MESH ---->"<<std::endl;
-  for (int c = 0; c < ntgtcells; c++) {
-    int gid = targetMeshWrapper.get_global_id(c, Portage::Entity_kind::CELL);
-    std::cerr<<" ---- Cell "<<gid<<std::endl;
-  } 
-  */
-#endif
-
   //-------------------------------------------------------------------
   // Check remapping results on target mesh 
   //-------------------------------------------------------------------
-   check_fields_after_remap<dim>(targetMeshWrapper, targetStateWrapper, mdata, 
+   check_fields_after_remap<dim, mconfig>(targetMeshWrapper, targetStateWrapper, mdata, 
    dtype);
 } //run
 
-TEST(MMDriver2D, Const1stOrder)
+TEST(MMDriver2D, Layer_Const1stOrder)
 {
   // Create source/target meshes and states
   std::shared_ptr<Jali::Mesh> sourceMesh;
@@ -658,16 +727,16 @@ TEST(MMDriver2D, Const1stOrder)
   mf.partitioner(Jali::Partitioner_type::BLOCK); 
 
   sourceMesh = mf(0.0, 0.0, 1.0, 1.0, 7, 7);
-  targetMesh = mf(0.0, 0.0, 1.0, 1.0, 7, 7);
+  targetMesh = mf(0.0, 0.0, 1.0, 1.0, 5, 5);
 
   sourceState = Jali::State::create(sourceMesh);
   targetState = Jali::State::create(targetMesh);
 
   //Remap 
-  run<2>(sourceMesh, targetMesh, sourceState, targetState, CONSTANT);
+  run<2, LAYER>(sourceMesh, targetMesh, sourceState, targetState, CONSTANT);
 }
 
-TEST(MMDriver2D, Linear2ndOrder)
+TEST(MMDriver2D, Layer_Linear2ndOrder)
 {
   // Create source/target meshes and states
   std::shared_ptr<Jali::Mesh> sourceMesh;
@@ -681,16 +750,16 @@ TEST(MMDriver2D, Linear2ndOrder)
   mf.partitioner(Jali::Partitioner_type::BLOCK); 
 
   sourceMesh = mf(0.0, 0.0, 1.0, 1.0, 7, 7);
-  targetMesh = mf(0.0, 0.0, 1.0, 1.0, 7, 7);
+  targetMesh = mf(0.0, 0.0, 1.0, 1.0, 5, 5);
 
   sourceState = Jali::State::create(sourceMesh);
   targetState = Jali::State::create(targetMesh);
 
   //Remap
-  run<2>(sourceMesh, targetMesh, sourceState, targetState, LINEAR);
+  run<2, LAYER>(sourceMesh, targetMesh, sourceState, targetState, LINEAR);
 }
 
-TEST(MMDriver3D, Const1stOrder)
+TEST(MMDriver3D, Layer_Const1stOrder)
 {
   // Create source/target meshes and states
   std::shared_ptr<Jali::Mesh> sourceMesh;
@@ -704,17 +773,17 @@ TEST(MMDriver3D, Const1stOrder)
   mf.partitioner(Jali::Partitioner_type::BLOCK); 
 
   sourceMesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 7, 7, 7);
-  targetMesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 7, 7, 7);
+  targetMesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 5, 5, 5);
 
   sourceState = Jali::State::create(sourceMesh);
   targetState = Jali::State::create(targetMesh);
 
   //Remap
-  run<3>(sourceMesh, targetMesh, sourceState, targetState, CONSTANT);
+  run<3, LAYER>(sourceMesh, targetMesh, sourceState, targetState, CONSTANT);
 }
 
 
-TEST(MMDriver3D, Linear2ndOrder)
+TEST(MMDriver3D, Layer_Linear2ndOrder)
 {
   // Create source/target meshes and states
   std::shared_ptr<Jali::Mesh> sourceMesh;
@@ -728,15 +797,106 @@ TEST(MMDriver3D, Linear2ndOrder)
   mf.partitioner(Jali::Partitioner_type::BLOCK); 
 
   sourceMesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 7, 7, 7);
-  targetMesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 7, 7, 7);
+  targetMesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 5, 5, 5);
 
   sourceState = Jali::State::create(sourceMesh);
   targetState = Jali::State::create(targetMesh);
 
   //Remap
-  run<3>(sourceMesh, targetMesh, sourceState, targetState, LINEAR);
+  run<3, LAYER>(sourceMesh, targetMesh, sourceState, targetState, LINEAR);
 }
 
 
+TEST(MMDriver2D, NestedBox_Const1stOrder)
+{
+  // Create source/target meshes and states
+  std::shared_ptr<Jali::Mesh> sourceMesh;
+  std::shared_ptr<Jali::State> sourceState;
+
+  std::shared_ptr<Jali::Mesh> targetMesh;
+  std::shared_ptr<Jali::State> targetState;
+
+  Jali::MeshFactory mf(MPI_COMM_WORLD);
+  mf.included_entities({Jali::Entity_kind::ALL_KIND});
+  mf.partitioner(Jali::Partitioner_type::BLOCK);
+
+  sourceMesh = mf(0.0, 0.0, 1.0, 1.0, 10, 10);
+  targetMesh = mf(0.0, 0.0, 1.0, 1.0, 5, 5);
+
+  sourceState = Jali::State::create(sourceMesh);
+  targetState = Jali::State::create(targetMesh);
+
+  //Remap
+  run<2, NESTED_BOX>(sourceMesh, targetMesh, sourceState, targetState, CONSTANT);
+}
+
+TEST(MMDriver2D, NestedBox_Linear2ndOrder)
+{
+  // Create source/target meshes and states
+  std::shared_ptr<Jali::Mesh> sourceMesh;
+  std::shared_ptr<Jali::State> sourceState;
+
+  std::shared_ptr<Jali::Mesh> targetMesh;
+  std::shared_ptr<Jali::State> targetState;
+
+  Jali::MeshFactory mf(MPI_COMM_WORLD);
+  mf.included_entities({Jali::Entity_kind::ALL_KIND});
+  mf.partitioner(Jali::Partitioner_type::BLOCK);
+
+  sourceMesh = mf(0.0, 0.0, 1.0, 1.0, 10, 10);
+  targetMesh = mf(0.0, 0.0, 1.0, 1.0, 5, 5);
+
+  sourceState = Jali::State::create(sourceMesh);
+  targetState = Jali::State::create(targetMesh);
+
+  //Remap
+  run<2, NESTED_BOX>(sourceMesh, targetMesh, sourceState, targetState, LINEAR);
+}
+
+TEST(MMDriver3D, NestedBox_Const1stOrder)
+{
+  // Create source/target meshes and states
+  std::shared_ptr<Jali::Mesh> sourceMesh;
+  std::shared_ptr<Jali::State> sourceState;
+
+  std::shared_ptr<Jali::Mesh> targetMesh;
+  std::shared_ptr<Jali::State> targetState;
+
+  Jali::MeshFactory mf(MPI_COMM_WORLD);
+  mf.included_entities({Jali::Entity_kind::ALL_KIND});
+  mf.partitioner(Jali::Partitioner_type::BLOCK);
+
+  sourceMesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 10, 10, 10);
+  targetMesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 5, 5, 5);
+
+  sourceState = Jali::State::create(sourceMesh);
+  targetState = Jali::State::create(targetMesh);
+
+  //Remap
+  run<3, NESTED_BOX>(sourceMesh, targetMesh, sourceState, targetState, CONSTANT);
+}
+
+TEST(MMDriver3D, NestedBox_Linear2ndOrder)
+{
+  // Create source/target meshes and states
+  std::shared_ptr<Jali::Mesh> sourceMesh;
+  std::shared_ptr<Jali::State> sourceState;
+
+  std::shared_ptr<Jali::Mesh> targetMesh;
+  std::shared_ptr<Jali::State> targetState;
+
+  Jali::MeshFactory mf(MPI_COMM_WORLD);
+  mf.included_entities({Jali::Entity_kind::ALL_KIND});
+  mf.partitioner(Jali::Partitioner_type::BLOCK);
+
+  sourceMesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 10, 10, 10);
+  targetMesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 5, 5, 5);
+
+  sourceState = Jali::State::create(sourceMesh);
+  targetState = Jali::State::create(targetMesh);
+
+  //Remap
+  run<3, NESTED_BOX>(sourceMesh, targetMesh, sourceState, targetState, LINEAR);
+}
 
 #endif  // ifdef have_tangram
