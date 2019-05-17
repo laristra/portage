@@ -69,7 +69,7 @@ class SearchKDTree {
  private:
   const SourceMeshType & sourceMesh_;
   const TargetMeshType & targetMesh_;
-  std::shared_ptr<gk::KDTree<D>> tree_;
+  std::shared_ptr<Portage::KDTree<D>> tree_;
 };  // class SearchKDTree
 
 
@@ -106,14 +106,14 @@ class SearchKDTree<D, Entity_kind::CELL, SourceMeshType, TargetMeshType> {
       : sourceMesh_(source_mesh), targetMesh_(target_mesh)  {
 
     const int numCells = sourceMesh_.num_owned_cells();
-    std::vector<gk::IsotheticBBox<D>> bboxes;
+    std::vector<Portage::IsotheticBBox<D>> bboxes;
     bboxes.reserve(numCells);
 
     // find bounding boxes for all cells
     for (int c = 0; c < numCells; ++c) {
       std::vector<Wonton::Point<D>> cell_coord;
       sourceMesh_.cell_get_coordinates(c, &cell_coord);
-      gk::IsotheticBBox<D> bb;
+      Portage::IsotheticBBox<D> bb;
       for (const auto& cc : cell_coord) {
         bb.add(cc);
       }
@@ -121,7 +121,7 @@ class SearchKDTree<D, Entity_kind::CELL, SourceMeshType, TargetMeshType> {
     }
 
     // create the k-d tree
-    tree_ = std::make_shared<gk::KDTree<D>>(*gk::KDTreeCreate(bboxes));
+    tree_ = std::make_shared<Portage::KDTree<D>>(*Portage::KDTreeCreate(bboxes));
 
   }  // SearchKDTree::SearchKDTree
 
@@ -137,16 +137,16 @@ class SearchKDTree<D, Entity_kind::CELL, SourceMeshType, TargetMeshType> {
     // find bounding box for target cell
     std::vector<Wonton::Point<D>> cell_coord;
     targetMesh_.cell_get_coordinates(cellId, &cell_coord);
-    gk::IsotheticBBox<D> bb;
+    Portage::IsotheticBBox<D> bb;
     for (const auto& cc : cell_coord)
       bb.add(cc);
 
     // now see which sourceMesh cells have bounding boxes overlapping
-    // with target cell, using the kdtree - since gk::Intersect does
+    // with target cell, using the kdtree - since Portage::Intersect does
     // not take a shared_ptr, we have have to dereference and take
     // address of tree_
     std::vector<int> lcandidates;
-    gk::Intersect(bb, &(*tree_), lcandidates);
+    Portage::Intersect(bb, &(*tree_), lcandidates);
 
     std::vector<int> candidates(lcandidates.begin(), lcandidates.end());
     return candidates;
@@ -155,7 +155,7 @@ class SearchKDTree<D, Entity_kind::CELL, SourceMeshType, TargetMeshType> {
  private:
   const SourceMeshType & sourceMesh_;
   const TargetMeshType & targetMesh_;
-  std::shared_ptr<gk::KDTree<D>> tree_;
+  std::shared_ptr<Portage::KDTree<D>> tree_;
 };  // class SearchKDTree (CELL specialization)
 
 
@@ -194,21 +194,21 @@ class SearchKDTree<D, Entity_kind::NODE, SourceMeshType, TargetMeshType> {
       : sourceMesh_(source_mesh), targetMesh_(target_mesh)  {
 
     const int numNodes = sourceMesh_.num_owned_nodes();
-    std::vector<gk::IsotheticBBox<D>> bboxes;
+    std::vector<Portage::IsotheticBBox<D>> bboxes;
     bboxes.reserve(numNodes);
 
     // find bounding boxes for all cells
     for (int n = 0; n < numNodes; ++n) {
       std::vector<Wonton::Point<D>> dual_cell_coord;
       sourceMesh_.dual_cell_get_coordinates(n, &dual_cell_coord);
-      gk::IsotheticBBox<D> bb;
+      Portage::IsotheticBBox<D> bb;
       for (const auto& cc : dual_cell_coord)
         bb.add(cc);
       bboxes.emplace_back(bb);
     }
 
     // create the k-d tree
-    tree_ = std::make_shared<gk::KDTree<D>>(*gk::KDTreeCreate(bboxes));
+    tree_ = std::make_shared<Portage::KDTree<D>>(*Portage::KDTreeCreate(bboxes));
 
   }  // SearchKDTree::SearchKDTree
 
@@ -229,16 +229,16 @@ class SearchKDTree<D, Entity_kind::NODE, SourceMeshType, TargetMeshType> {
     // find bounding box for dual cell of target node
     std::vector<Wonton::Point<D>> dual_cell_coord;
     targetMesh_.dual_cell_get_coordinates(nodeId, &dual_cell_coord);
-    gk::IsotheticBBox<D> bb;
+    Portage::IsotheticBBox<D> bb;
     for (const auto& cc : dual_cell_coord)
       bb.add(cc);
 
     // now see which sourceMesh dual cells have bounding boxes
     // overlapping with dual cell of targetMesh, using the kdtree -
-    // since gk::Intersect does not take a shared_ptr, we have have to
+    // since Portage::Intersect does not take a shared_ptr, we have have to
     // dereference and take address of tree_
     std::vector<int> lcandidates;
-    gk::Intersect(bb, &(*tree_), lcandidates);
+    Portage::Intersect(bb, &(*tree_), lcandidates);
 
     std::vector<int> candidates(lcandidates.begin(), lcandidates.end());
     return candidates;
@@ -247,7 +247,7 @@ class SearchKDTree<D, Entity_kind::NODE, SourceMeshType, TargetMeshType> {
  private:
   const SourceMeshType & sourceMesh_;
   const TargetMeshType & targetMesh_;
-  std::shared_ptr<gk::KDTree<D>> tree_;
+  std::shared_ptr<Portage::KDTree<D>> tree_;
 };  // class SearchKDTree (NODE specialization)
 
 }  // namespace Portage

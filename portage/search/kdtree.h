@@ -17,11 +17,11 @@ Please see the license file at the root of this repository, or at:
 #include <set>
 #include <cstdlib>
 
-#include "portage/search/BoundBox.h"
 #include "portage/support/portage.h"
+#include "portage/search/BoundBox.h"
 #include "wonton/support/Point.h"
 
-namespace gk {
+namespace Portage {
 
 using Wonton::Point;
 using Wonton::Vector;
@@ -487,7 +487,7 @@ void Intersect(const IsotheticBBox<D>& box,
 }
 
 #undef SWAP
-}  // namespace gk
+}  // namespace Portage
 
 #endif  // PORTAGE_SEARCH_KDTREE_H_
 
