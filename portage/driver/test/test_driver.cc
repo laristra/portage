@@ -55,7 +55,7 @@ class DriverTest : public ::testing::Test {
     class, class> class Intersect,
     template<int, Portage::Entity_kind, class, class, class,
     template<class, int, class, class> class,
-    class, class> class Interpolate,
+    class, class, class> class Interpolate,
     int Dimension
   >
   void unitTest(double compute_initial_field(JaliGeometry::Point centroid),
