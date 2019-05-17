@@ -77,7 +77,11 @@ class MPI_Particle_Distribute {
     @param[in] source_state       Input swarm state
     @param[in] target_swarm       Target swarm
     @param[in] target_state       Target swarm state
-    @param[in] smoothing_lengths  Extents on source(Scatter-form). Not used for Gather-form.
+    @param[in] smoothing_lengths  Smoothing lengths, sized by target for Gather, source for Scatter
+    @param[in] source_extents     Extents for source partices in Scatter mode    
+    @param[in] smoothing_lengths  Extents for target particles in Gather mode
+    @param[in] kernel_types       Kernel types
+    @param[in] geom_types         Geometry types
     @param[in] center             Weight center
    */
   template <class SourceSwarm, class SourceState, class TargetSwarm, class TargetState>
