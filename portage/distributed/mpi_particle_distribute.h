@@ -84,7 +84,8 @@ class MPI_Particle_Distribute {
   void distribute(SourceSwarm &source_swarm, SourceState &source_state,
                   TargetSwarm &target_swarm, TargetState &target_state,
                   vector<std::vector<std::vector<double>>> &smoothing_lengths,
-                  vector<Point<dim>> &extents,
+                  vector<Point<dim>> &source_extents,
+                  vector<Point<dim>> &target_extents,
                   vector<Meshfree::Weight::Kernel>& kernel_types,
                   vector<Meshfree::Weight::Geometry>& geom_types,
                   Meshfree::WeightCenter center=Meshfree::WeightCenter::Gather)
@@ -99,11 +100,12 @@ class MPI_Particle_Distribute {
 
     if (center == Meshfree::WeightCenter::Gather) {
       assert(smoothing_lengths.size() == target_swarm.num_particles(Entity_type::PARALLEL_OWNED));
+      assert(target_extents.size() == target_swarm.num_particles(Entity_type::PARALLEL_OWNED));
       assert(kernel_types.size() == target_swarm.num_particles(Entity_type::PARALLEL_OWNED));
       assert(geom_types.size() == target_swarm.num_particles(Entity_type::PARALLEL_OWNED));
     } else if (center == Meshfree::WeightCenter::Scatter) {
       assert(smoothing_lengths.size() == source_swarm.num_particles(Entity_type::PARALLEL_OWNED));
-      assert(extents.size() == source_swarm.num_particles(Entity_type::PARALLEL_OWNED));
+      assert(source_extents.size() == source_swarm.num_particles(Entity_type::PARALLEL_OWNED));
       assert(kernel_types.size() == source_swarm.num_particles(Entity_type::PARALLEL_OWNED));
       assert(geom_types.size() == source_swarm.num_particles(Entity_type::PARALLEL_OWNED));
     }
@@ -127,22 +129,22 @@ class MPI_Particle_Distribute {
       {
         Point<dim> coord = target_swarm.get_particle_coordinates(c);
         Point<dim> ext;
-        if (center == Meshfree::WeightCenter::Scatter)
+        if (center == Meshfree::WeightCenter::Gather)
           {
-            ext = extents[c];
+            ext = target_extents[c];
           }
         for (size_t k=0; k < dim; ++k)
           {
             double val0, val1;
             if (center == Meshfree::WeightCenter::Gather)
               {
-                val0 = coord[k];
-                val1 = coord[k];
+                val0 = coord[k]-ext[k];
+                val1 = coord[k]+ext[k];
               }
             else if (center == Meshfree::WeightCenter::Scatter)
               {
-                val0 = coord[k]-ext[k];
-                val1 = coord[k]+ext[k];
+                val0 = coord[k];
+                val1 = coord[k];
               }
             if (val0 < targetBoundingBoxes[2*dim*commRank+2*k])
               targetBoundingBoxes[2*dim*commRank+2*k] = val0;
@@ -196,7 +198,7 @@ class MPI_Particle_Distribute {
           Point<dim> ext;
           if (center == Meshfree::WeightCenter::Scatter)
           {
-            ext = extents[c];
+            ext = source_extents[c];
           }
           bool thisPt = true;
           for (size_t k=0; k<dim; ++k)
@@ -220,8 +222,7 @@ class MPI_Particle_Distribute {
             thisPt = thisPt && (val0 <= max[k] && val1 >= min[k]);
           }
 
-          if (thisPt)
-            sourcePtsToSend[i].emplace_back(c);
+          if (thisPt) sourcePtsToSend[i].push_back(c);
         }
       }
 
@@ -263,7 +264,7 @@ class MPI_Particle_Distribute {
       Point<dim> coord;
       for (size_t d = 0 ; d < dim; ++d)
         coord[d] = sourceRecvCoords[dim*i+d];
-      RecvCoords.emplace_back(coord);
+      RecvCoords.push_back(coord);
     }
     source_swarm.extend_particle_list(RecvCoords);
 
@@ -371,7 +372,7 @@ class MPI_Particle_Distribute {
                 {
                   for (size_t j = 0; j < sourcePtsToSendSize[i]; ++j)
                     {
-                      Point<dim> ext = extents[sourcePtsToSend[i][j]];
+                      Point<dim> ext = source_extents[sourcePtsToSend[i][j]];
                       for (size_t d = 0 ; d < dim; ++d)
                         sourceSendExtents[i].push_back(ext[d]);
                     }
@@ -389,7 +390,7 @@ class MPI_Particle_Distribute {
               for (size_t d = 0 ; d < dim; ++d)
                 ext[d] = sourceRecvExtents[dim*i+d];
 
-              extents.push_back(ext);
+              source_extents.push_back(ext);
             }
         }
 
@@ -468,7 +469,7 @@ class MPI_Particle_Distribute {
           for (size_t j = 0; j < sourcePtsToSendSize[i]; ++j)
           {
             int sid = sourcePtsToSend[i][j];
-            sourceSendData[i].emplace_back((*srcdata)[sid]);
+            sourceSendData[i].push_back((*srcdata)[sid]);
           }
         }
       }
@@ -505,7 +506,7 @@ class MPI_Particle_Distribute {
           for (size_t j = 0; j < sourcePtsToSendSize[i]; ++j)
           {
             int sid = sourcePtsToSend[i][j];
-            sourceSendData[i].emplace_back((*srcdata)[sid]);
+            sourceSendData[i].push_back((*srcdata)[sid]);
           }
         }
       }
