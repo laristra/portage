@@ -69,8 +69,6 @@ Please see the license file at the root of this repository, or at:
  */
 namespace Portage {
 
-// Point aliases
-
 using Wonton::Matrix;
 
 // useful enums

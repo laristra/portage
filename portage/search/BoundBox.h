@@ -15,6 +15,9 @@ Please see the license file at the root of this repository, or at:
 //                     Los Alamos National Laboratory                        //
 //                     505.665.6374                                          //
 //                     baj@lanl.gov                                          //
+//                                                                           //
+// Modified for Portage by: Rao Garimella                                    //
+//                          rao@lanl.gov                                     //
 ///////////////////////////////////////////////////////////////////////////////
 
 #ifndef PORTAGE_SEARCH_BOUNDBOX_H_
@@ -28,9 +31,8 @@ Please see the license file at the root of this repository, or at:
 #include "wonton/support/Vector.h"
 #include "portage/support/portage.h"
 
-namespace gk {
-    template<int D> 
-    using Point = Wonton::Point<D>; 
+namespace Portage {
+    using Wonton::Point; 
     using Wonton::Vector;
 
     const double real_max = std::numeric_limits<double>::max();
@@ -204,7 +206,7 @@ namespace gk {
 
 
     template<int D> inline std::ostream& operator<<(std::ostream& os,
-                                                    const gk::IsotheticBBox<D>& box)
+                                                    const Portage::IsotheticBBox<D>& box)
     {
         if(box.empty())
             os << "(empty)";
@@ -213,6 +215,6 @@ namespace gk {
         return os;
     }
 
-}  // namaespace gk
+}  // namaespace Portage
 
 #endif  // PORTAGE_SEARCH_BOUNDBOX_H_
