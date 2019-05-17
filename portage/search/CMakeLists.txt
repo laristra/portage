@@ -11,6 +11,7 @@ Please see the license file at the root of this repository, or at:
 # Add header files
 set(search_HEADERS
     search_simple.h
+    search_direct_product.h
     search_kdtree.h
     search_simple_points.h
     search_points_by_cells.h
@@ -34,6 +35,11 @@ set(search_SOURCES
 
 # Add unit test
 if(ENABLE_UNIT_TESTS)
+   cinch_add_unit(search_direct_product_test
+    SOURCES search_direct_product_test.cc
+    LIBRARIES portage  
+    POLICY SERIAL)
+  
    cinch_add_unit(search_simple_test
     SOURCES search_simple_test.cc
     LIBRARIES portage  

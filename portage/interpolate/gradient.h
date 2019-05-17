@@ -46,7 +46,8 @@ template<int D, Entity_kind on_what, typename MeshType, typename StateType,
     template<class, int, class, class> class InterfaceReconstructorType =
     DummyInterfaceReconstructor,
     class Matpoly_Splitter = void,
-    class Matpoly_Clipper = void>
+    class Matpoly_Clipper = void,
+    class CoordSys = Wonton::DefaultCoordSys>
 class Limited_Gradient {
  public:
   /*! @brief Constructor
@@ -120,11 +121,11 @@ class Limited_Gradient {
 
 
 template<int D, typename MeshType, typename StateType,
-template<class, int, class, class> class InterfaceReconstructorType,
-class Matpoly_Splitter, class Matpoly_Clipper>
+  template<class, int, class, class> class InterfaceReconstructorType,
+  class Matpoly_Splitter, class Matpoly_Clipper, class CoordSys>
 class Limited_Gradient<D, Entity_kind::CELL, MeshType, StateType,
                        InterfaceReconstructorType,
-                       Matpoly_Splitter, Matpoly_Clipper> {
+                       Matpoly_Splitter, Matpoly_Clipper, CoordSys> {
  public:
 #ifdef HAVE_TANGRAM
   using InterfaceReconstructor =
@@ -227,10 +228,11 @@ class Limited_Gradient<D, Entity_kind::CELL, MeshType, StateType,
   // @brief Implementation of Limited_Gradient functor for CELLs
 
 template<int D, typename MeshType, typename StateType,
-template<class, int, class, class> class InterfaceReconstructorType,
-class Matpoly_Splitter, class Matpoly_Clipper>
+  template<class, int, class, class> class InterfaceReconstructorType,
+  class Matpoly_Splitter, class Matpoly_Clipper, class CoordSys>
 Vector<D> Limited_Gradient <D, Entity_kind::CELL, MeshType, StateType,
-InterfaceReconstructorType, Matpoly_Splitter, Matpoly_Clipper>::operator()(int cellid) {
+  InterfaceReconstructorType, Matpoly_Splitter, Matpoly_Clipper,
+  CoordSys>::operator()(int cellid) {
 
     assert(this->vals_);
 
@@ -313,7 +315,7 @@ InterfaceReconstructorType, Matpoly_Splitter, Matpoly_Clipper>::operator()(int c
       }
     }
 
-    grad = Wonton::ls_gradient(ls_coords, ls_vals);
+    grad = Wonton::ls_gradient<D,CoordSys>(ls_coords, ls_vals);
 
     // Limit the gradient to enforce monotonicity preservation
     if (this->limtype_ == BARTH_JESPERSEN &&
@@ -383,8 +385,12 @@ InterfaceReconstructorType, Matpoly_Splitter, Matpoly_Clipper>::operator()(int c
     @tparam StateType A state manager class that one can query for field info
   */
 
-  template<int D, typename MeshType, typename StateType>
-    class Limited_Gradient<D, Entity_kind::NODE, MeshType, StateType> {
+template<int D, typename MeshType, typename StateType,
+  template<class, int, class, class> class InterfaceReconstructorType,
+  class Matpoly_Splitter, class Matpoly_Clipper, class CoordSys>
+class Limited_Gradient<D, Entity_kind::NODE, MeshType, StateType,
+                       InterfaceReconstructorType,
+                       Matpoly_Splitter, Matpoly_Clipper, CoordSys> {
 
  public:
 
@@ -436,8 +442,12 @@ InterfaceReconstructorType, Matpoly_Splitter, Matpoly_Clipper>::operator()(int c
 
   // @brief Limited gradient functor implementation for NODE
 
-  template<int D, typename MeshType, typename StateType>
-    Vector<D> Limited_Gradient <D, Entity_kind::NODE, MeshType, StateType>::operator() (int nodeid) {
+template<int D, typename MeshType, typename StateType,
+  template<class, int, class, class> class InterfaceReconstructorType,
+  class Matpoly_Splitter, class Matpoly_Clipper, class CoordSys>
+Vector<D> Limited_Gradient <D, Entity_kind::NODE, MeshType, StateType,
+  InterfaceReconstructorType, Matpoly_Splitter, Matpoly_Clipper,
+  CoordSys>::operator() (int nodeid) {
 
     assert(this->vals_);
 
@@ -457,7 +467,7 @@ InterfaceReconstructorType, Matpoly_Splitter, Matpoly_Clipper>::operator()(int c
       i++;
     }
 
-    grad = Wonton::ls_gradient(nodecoords, nodevalues);
+    grad = Wonton::ls_gradient<D,CoordSys>(nodecoords, nodevalues);
 
     if (this->limtype_ == BARTH_JESPERSEN &&
         !this->mesh_.on_exterior_boundary(Entity_kind::NODE, nodeid)) {  // No limiting on boundary

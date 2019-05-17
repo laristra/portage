@@ -118,15 +118,15 @@ TEST(Interpolate_1st_Order, Cell_Ctr_Const_2D) {
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_State_Wrapper>
-      interpolater(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper);
+      interpolator(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper);
 
-  interpolater.set_interpolation_variable("cellvars");
+  interpolator.set_interpolation_variable("cellvars");
 
 
   Wonton::transform(targetMeshWrapper.begin(Wonton::Entity_kind::CELL),
                      targetMeshWrapper.end(Wonton::Entity_kind::CELL),
                      sources_and_weights.begin(),
-                     outvals.begin(), interpolater);
+                     outvals.begin(), interpolator);
 
   // Make sure we retrieved the correct value for each cell on the target
   const double stdval = data[0];
@@ -234,15 +234,15 @@ TEST(Interpolate_1st_Order, Cell_Ctr_Lin_2D) {
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_State_Wrapper>
-      interpolater(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper);
+      interpolator(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper);
 
-  interpolater.set_interpolation_variable("cellvars");
+  interpolator.set_interpolation_variable("cellvars");
 
 
   Wonton::transform(targetMeshWrapper.begin(Wonton::Entity_kind::CELL),
                      targetMeshWrapper.end(Wonton::Entity_kind::CELL),
                      sources_and_weights.begin(),
-                     outvals.begin(), interpolater);
+                     outvals.begin(), interpolator);
 
   // Make sure we retrieved the correct value for each cell on the target
   // NOTE: EVEN THOUGH 1ST ORDER INTERPOLATION ALGORITHM DOES NOT IN
@@ -357,15 +357,15 @@ TEST(Interpolate_1st_Order, Node_Ctr_Const_2D) {
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_State_Wrapper>
-      interpolater(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper);
+      interpolator(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper);
 
-  interpolater.set_interpolation_variable("nodevars");
+  interpolator.set_interpolation_variable("nodevars");
 
 
   Wonton::transform(targetMeshWrapper.begin(Wonton::Entity_kind::NODE),
                      targetMeshWrapper.end(Wonton::Entity_kind::NODE),
                      sources_and_weights.begin(),
-                     outvals.begin(), interpolater);
+                     outvals.begin(), interpolator);
 
   // Make sure we retrieved the correct value for each cell on the target
   const double stdval = data[0];
@@ -470,15 +470,15 @@ TEST(Interpolate_1st_Order, Cell_Ctr_Const_3D) {
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_State_Wrapper>
-      interpolater(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper);
+      interpolator(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper);
 
-  interpolater.set_interpolation_variable("cellvars");
+  interpolator.set_interpolation_variable("cellvars");
 
 
   Wonton::transform(targetMeshWrapper.begin(Wonton::Entity_kind::CELL),
                      targetMeshWrapper.end(Wonton::Entity_kind::CELL),
                      sources_and_weights.begin(),
-                     outvals.begin(), interpolater);
+                     outvals.begin(), interpolator);
 
   // Make sure we retrieved the correct value for each cell on the target
   const double stdval = data[0];
@@ -585,15 +585,15 @@ TEST(Interpolate_1st_Order, Cell_Ctr_Lin_3D) {
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_State_Wrapper>
-      interpolater(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper);
+      interpolator(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper);
 
-  interpolater.set_interpolation_variable("cellvars");
+  interpolator.set_interpolation_variable("cellvars");
 
 
   Wonton::transform(targetMeshWrapper.begin(Wonton::Entity_kind::CELL),
                      targetMeshWrapper.end(Wonton::Entity_kind::CELL),
                      sources_and_weights.begin(),
-                     outvals.begin(), interpolater);
+                     outvals.begin(), interpolator);
 
   // Make sure we retrieved the correct value for each cell on the target
   // NOTE: EVEN THOUGH 1ST ORDER INTERPOLATION ALGORITHM DOES NOT IN
@@ -708,15 +708,15 @@ TEST(Interpolate_1st_Order, Node_Ctr_Const_3D) {
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_State_Wrapper>
-      interpolater(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper);
+      interpolator(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper);
 
-  interpolater.set_interpolation_variable("nodevars");
+  interpolator.set_interpolation_variable("nodevars");
 
 
   Wonton::transform(targetMeshWrapper.begin(Wonton::Entity_kind::NODE),
                      targetMeshWrapper.end(Wonton::Entity_kind::NODE),
                      sources_and_weights.begin(),
-                     outvals.begin(), interpolater);
+                     outvals.begin(), interpolator);
 
   // Make sure we retrieved the correct value for each cell on the target
   const double stdval = data[0];
