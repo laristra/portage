@@ -490,8 +490,8 @@ remap(std::vector<std::string> const &src_varnames,
     //source swarm.
     distributor.distribute(source_swarm_, source_state_,
                            target_swarm_, target_state_,
-                           smoothing_lengths_, *sourceExtents_, kernel_types_,
-                           geom_types_, weight_center_);
+                           smoothing_lengths_, *sourceExtents_, *targetExtents_,
+                           kernel_types_, geom_types_, weight_center_);
     gettimeofday(&end_timeval, 0);
     timersub(&end_timeval, &begin_timeval, &diff_timeval);
     tot_seconds_dist = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
