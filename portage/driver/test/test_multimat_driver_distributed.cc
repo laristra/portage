@@ -33,7 +33,7 @@
 #include "wonton/state/jali/jali_state_wrapper.h"
 
 // Tests for distributed multi-material remap with 1st and 
-// 2nd Order Accurate Remap on 1,2 and 4 ranks. 
+// 2nd Order Accurate Remap on 4 ranks. 
 
 // This distributed test uses two material configurations for 
 // testing purposes. 
