@@ -112,8 +112,8 @@ if (ENABLE_MPI AND Jali_DIR)
   ADD_SPECIFIC_APPTEST(jali_unstruc 3d_cell_gen_r2)
 endif (ENABLE_MPI AND Jali_DIR)
 
-#multimat test on an unstructured grid
-if (Jali_DIR AND XMOF2D_FOUND)
+#multi-material tests
+if (Jali_DIR AND TANGRAM_FOUND)
   file(COPY portageapp_multimat_jali_unstruc_2d_cell_f1_r2.sh DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
   file(COPY gold/GOLD_multimat_jali_unstruc_2d_cell_f1_r2.gmv DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
   file(COPY ../../../test_data/reg10x10.exo
@@ -127,10 +127,7 @@ if (Jali_DIR AND XMOF2D_FOUND)
     TESTAPPDIR=${CMAKE_CURRENT_BINARY_DIR}/..
     CMPAPPDIR=${CMAKE_BINARY_DIR}/app/apptest_cmp)
 
-endif (Jali_DIR AND XMOF2D_FOUND)
 
-#multimat test on a non-convex grid
-if (Jali_DIR AND TANGRAM_FOUND)
   file(COPY portageapp_multimat_jali_nonconvex_2d_cell_f1_r2.sh DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
   file(COPY gold/GOLD_multimat_jali_nonconvex_2d_cell_f1_r2.gmv DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
   file(COPY ../../../test_data/non_convex.exo
