@@ -44,7 +44,7 @@ TEST(MPI_Bounding_Boxes, SimpleTest3D) {
   source_mesh_flat.initialize(inputMeshWrapper);
 
   // Add multiple state vector types
-  std::vector<GID_t>& gids = source_mesh_flat.get_global_cell_ids();
+  std::vector<Wonton::GID_t>& gids = source_mesh_flat.get_global_cell_ids();
 
   // states are merged based on the gid of each cell, so we need to be consistent
   // across ranks. the easiest way to generate fields like this is to make the
@@ -119,11 +119,11 @@ TEST(MPI_Bounding_Boxes, SimpleTest3D) {
     {{0.0, 0.0, 0.0},  {0.0, 0.0, 0.5},  {0.0, 0.5, 0.0},  {0.0, 0.5, 0.5},
      {0.5, 0.0, 0.0},  {0.5, 0.0, 0.5},  {0.5, 0.5, 0.0},  {0.5, 0.5, 0.5}};
 
-  std::vector<GID_t> expOwnedGids = {0, 1, 2, 3, 4, 5, 6, 7};
+  std::vector<Wonton::GID_t> expOwnedGids = {0, 1, 2, 3, 4, 5, 6, 7};
 
   // Check global IDs
-  std::vector<GID_t>& cell_gids = source_mesh_flat.get_global_cell_ids();
-  std::vector<GID_t> cell_gids_sorted = cell_gids;
+  std::vector<Wonton::GID_t>& cell_gids = source_mesh_flat.get_global_cell_ids();
+  std::vector<Wonton::GID_t> cell_gids_sorted = cell_gids;
   std::sort(cell_gids_sorted.begin(), cell_gids_sorted.end());
   ASSERT_EQ(num_cells, cell_gids_sorted.size());
   for (int c=0; c<num_cells; ++c)
@@ -136,7 +136,7 @@ TEST(MPI_Bounding_Boxes, SimpleTest3D) {
     source_mesh_flat.cell_get_coordinates(c, &myCoords);
     ASSERT_EQ(8, myCoords.size());
     std::sort(myCoords.begin(), myCoords.end());
-    GID_t gid = cell_gids[c];
+    Wonton::GID_t gid = cell_gids[c];
     double dx = (gid & 4 ? 0.5 : 0.0);
     double dy = (gid & 2 ? 0.5 : 0.0);
     double dz = (gid & 1 ? 0.5 : 0.0);
@@ -155,7 +155,7 @@ TEST(MPI_Bounding_Boxes, SimpleTest3D) {
     source_mesh_flat.cell_get_node_adj_cells(c, Portage::Entity_type::ALL, &myNeighbors);
     ASSERT_EQ(7, myNeighbors.size());
     
-    std::vector<GID_t> myNeighborsGID(7);
+    std::vector<Wonton::GID_t> myNeighborsGID(7);
     // Convert to global IDs
     for (int n=0; n<7; ++n) myNeighborsGID[n] = cell_gids[myNeighbors[n]];
     // Add my own ID
@@ -173,7 +173,7 @@ TEST(MPI_Bounding_Boxes, SimpleTest3D) {
   source_state_flat.mesh_get_data(Portage::Entity_kind::CELL, "d2", &ddata2);
 
   for (int c=0; c<num_cells; ++c) {
-    GID_t gid = cell_gids[c];
+    Wonton::GID_t gid = cell_gids[c];
     int expValue1 = 10. + gid;
     ASSERT_EQ(expValue1, ddata1[c]);
     int expValue2 = 100. + gid*gid;
@@ -211,7 +211,7 @@ TEST(MPI_Bounding_Boxes, SimpleTest2D) {
 
   // Create state data for source mesh
   // Add multiple state vector types
-  std::vector<GID_t>& gids = source_mesh_flat.get_global_cell_ids();
+  std::vector<Wonton::GID_t>& gids = source_mesh_flat.get_global_cell_ids();
 
   // states are merged based on the gid of each cell, so we need to be consistent
   // across ranks. the easiest way to generate fields like this is to make the
@@ -284,7 +284,7 @@ TEST(MPI_Bounding_Boxes, SimpleTest2D) {
   ASSERT_EQ(ref_all_faces[commRank], num_faces);
 
   // Reference List of owned cells on each rank after distribution
-  std::vector<GID_t> expOwnedCellGids[4] =
+  std::vector<Wonton::GID_t> expOwnedCellGids[4] =
   {{0,1,2,3,4,6,8,9,12},
    {0,1,2,3,4,5,6,7,8,9,12,13},
    {0,1,2,3,4,6,8,9,10,11,12,14},
@@ -296,7 +296,7 @@ TEST(MPI_Bounding_Boxes, SimpleTest2D) {
   std::vector<Wonton::Point<2>> cell0Coords =
     {{0.0, 0.0},  {0.25, 0.0},  {0.25, 0.25},  {0.0, 0.25}};
   // List owned cells that should have been sent to each rank
-  std::vector<GID_t> expOwnedGids;
+  std::vector<Wonton::GID_t> expOwnedGids;
   switch (commRank) {
     case 0:
       expOwnedGids = {0, 1, 2, 3};
@@ -312,8 +312,8 @@ TEST(MPI_Bounding_Boxes, SimpleTest2D) {
       break;
   }
   // Check global IDs
-  std::vector<GID_t>& cell_gids = source_mesh_flat.get_global_cell_ids();
-  std::vector<GID_t> cell_gids_sorted = cell_gids;
+  std::vector<Wonton::GID_t>& cell_gids = source_mesh_flat.get_global_cell_ids();
+  std::vector<Wonton::GID_t> cell_gids_sorted = cell_gids;
   std::sort(cell_gids_sorted.begin(), cell_gids_sorted.end());
   ASSERT_EQ(num_cells, cell_gids.size());
   for (int c=0; c<num_cells; ++c)
@@ -323,7 +323,7 @@ TEST(MPI_Bounding_Boxes, SimpleTest2D) {
     std::vector<Wonton::Point<2>> myCoords;
     source_mesh_flat.cell_get_coordinates(c, &myCoords);
     ASSERT_EQ(4, myCoords.size());
-    GID_t gid = cell_gids[c];
+    Wonton::GID_t gid = cell_gids[c];
     int cid = (gid & 9) | ((gid & 4) >> 1) | ((gid & 2) << 1);
     double dx = (cid / 4) * 0.25;
     double dy = (cid % 4) * 0.25;
@@ -369,7 +369,7 @@ TEST(MPI_Bounding_Boxes, SimpleTest2D) {
     std::vector<int> myNeighbors;
     source_mesh_flat.cell_get_node_adj_cells(c, Portage::Entity_type::ALL, &myNeighbors);
     int count = myNeighbors.size();
-    std::vector<GID_t> myNeighborsGID(count);
+    std::vector<Wonton::GID_t> myNeighborsGID(count);
     // Convert to global IDs
     for (int n=0; n<count; ++n) myNeighborsGID[n] = cell_gids[myNeighbors[n]];
     // Add my own ID
@@ -381,8 +381,8 @@ TEST(MPI_Bounding_Boxes, SimpleTest2D) {
       myNeighborsGID[n] = (ngid & 9) | ((ngid & 4) >> 1) | ((ngid & 2) << 1);
     }
     // Which neighbors do I expect?
-    std::vector<GID_t> expNeighbors;
-    GID_t gid = cell_gids[c];
+    std::vector<Wonton::GID_t> expNeighbors;
+    Wonton::GID_t gid = cell_gids[c];
     int cid = (gid & 9) | ((gid & 4) >> 1) | ((gid & 2) << 1);
 
     // Loop through all possible neighbors, skipping if on boundary
