@@ -25,9 +25,6 @@ Please see the license file at the root of this repository, or at:
 #include "wonton/state/state_vector_uni.h"
 #include "mpi.h"
 
-using Wonton::Point;
-using Wonton::GID_t;
-
 /*!
   @file mpi_bounding_boxes.h
   @brief Distributes source data using MPI based on bounding boxes
@@ -35,6 +32,9 @@ using Wonton::GID_t;
 
 namespace Portage {
 
+using Wonton::Point;
+using Wonton::GID_t;
+using Wonton::to_MPI_Datatype;
 
 /*!
   @class MPI_Bounding_Boxes
@@ -83,13 +83,6 @@ class MPI_Bounding_Boxes {
     @param[in] target_mesh       Target mesh
     @param[in] target_state      Target state (not actually used for now)
 
-
-    FOR NOW WE WILL USE THE IMPLICIT KNOWLEDGE THAT GID_t AND
-    MPI_LONG_LONG ARE OF TYPE int64_t. TO BE REALLY CONSISTENT, WE
-    SHOULD PROBABLY REGISTER GID_t AS A DATATYPE IN MPI AND USE
-    THAT. BUT WE SHOULD DO THAT IN A SEPARATE STEP AND EVALUATE
-    THE COST AND ELEGANCE OF IMPLEMENTATION
-     
    */
   template <class Source_Mesh, class Source_State, class Target_Mesh, class Target_State>
   void distribute(Source_Mesh &source_mesh_flat, Source_State &source_state_flat,
@@ -128,13 +121,13 @@ class MPI_Bounding_Boxes {
 
     std::vector<GID_t>& sourceCellGlobalIds = source_mesh_flat.get_global_cell_ids();
     std::vector<GID_t> distributedCellGlobalIds(cellInfo.newNum);
-    sendField(cellInfo, commRank, commSize, MPI_LONG_LONG, 1,
+    sendField(cellInfo, commRank, commSize, to_MPI_Datatype<GID_t>(), 1,
               sourceCellGlobalIds, &distributedCellGlobalIds);
 
     // SEND GLOBAL NODE IDS
     std::vector<GID_t>& sourceNodeGlobalIds = source_mesh_flat.get_global_node_ids();
     std::vector<GID_t> distributedNodeGlobalIds(nodeInfo.newNum);
-    sendField(nodeInfo, commRank, commSize, MPI_LONG_LONG, 1,
+    sendField(nodeInfo, commRank, commSize, to_MPI_Datatype<GID_t>(), 1,
               sourceNodeGlobalIds, &distributedNodeGlobalIds);
 
     // Using the post distribution global id's, compress the data so that each
@@ -193,7 +186,7 @@ class MPI_Bounding_Boxes {
 
       // send cell to node lists
       std::vector<GID_t> distributedCellToNodeList(cellToNodeInfo.newNum);
-      sendField(cellToNodeInfo, commRank, commSize, MPI_LONG_LONG, 1,
+      sendField(cellToNodeInfo, commRank, commSize, to_MPI_Datatype<GID_t>(), 1,
                 to_gid(sourceCellToNodeList, sourceNodeGlobalIds), &distributedCellToNodeList);
 
 
@@ -254,20 +247,20 @@ class MPI_Bounding_Boxes {
 
       // SEND CELL-TO-FACE MAP
       // map the cell face list vector to gid's
-      std::vector<GID_t> sourceCellToFaceList__ = to_gid(sourceCellToFaceList, sourceFaceGlobalIds);
+      std::vector<GID_t> sourceCellToFaceList_ = to_gid(sourceCellToFaceList, sourceFaceGlobalIds);
 
       // For this array only, pack up face IDs + dirs and send together
       std::vector<bool>& sourceCellToFaceDirs = source_mesh_flat.get_cell_to_face_dirs();
       for (unsigned int j=0; j<sourceCellToFaceList.size(); ++j)
       {
-        int f = sourceCellToFaceList__[j];
+        int f = sourceCellToFaceList_[j];
         int dir = static_cast<int>(sourceCellToFaceDirs[j]);
-        sourceCellToFaceList__[j] = (f << 1) | dir;
+        sourceCellToFaceList_[j] = (f << 1) | dir;
       }
 
       std::vector<GID_t> distributedCellToFaceList(cellToFaceInfo.newNum);
       sendField(cellToFaceInfo, commRank, commSize, MPI_LONG_LONG, 1,
-                sourceCellToFaceList__, &distributedCellToFaceList);
+                sourceCellToFaceList_, &distributedCellToFaceList);
 
       // Unpack face IDs and dirs
       std::vector<bool> distributedCellToFaceDirs(cellToFaceInfo.newNum);
