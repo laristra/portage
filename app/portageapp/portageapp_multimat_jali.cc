@@ -655,6 +655,11 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
   // exactly (e.g. MOF with linear interfaces) and the remapping
   // method can reproduce a field exactly (linear fields with a 2nd
   // order accurate method)
+  // For non-convex cells, we may get multiple material polygons
+  // for each material. Therefore,  we compute a volume weighted
+  // average of the field evaluated at the centroids of each of
+  // those material polygons to properly sum mass contributions of 
+  // each material polygon.
 
   if (material_field_expressions.size()) {
     for (int m = 0; m < nmats; m++) {
@@ -675,12 +680,17 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
           Tangram::CellMatPoly<dim> const& cellmatpoly =
               source_interface_reconstructor->cell_matpoly_data(c);
           int nmp = cellmatpoly.num_matpolys();
+          matData[ic] = 0.0;
+          double matvolume = 0.0;
           for (int i = 0; i < nmp; i++) {
             if (cellmatpoly.matpoly_matid(i) == m) {
+              double matpolyvolume = cellmatpoly.matpoly_volume(i);
+              matvolume += matpolyvolume;
               Wonton::Point<dim> mcen = cellmatpoly.matpoly_centroid(i);
-              matData[ic] = mat_fields[m](mcen);
+              matData[ic] += mat_fields[m](mcen) * matpolyvolume;
             }
           }
+          matData[ic] /= matvolume;
         }
       }
 

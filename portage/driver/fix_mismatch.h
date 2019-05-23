@@ -247,7 +247,7 @@ class MismatchFixer {
       std::vector<double> source_covered_vol(source_ent_volumes_);
       for (auto it = target_mesh_.begin(onwhat, Entity_type::PARALLEL_OWNED);
            it != target_mesh_.end(onwhat, Entity_type::PARALLEL_OWNED); it++) {
-        auto const& sw_vec = source_ents_and_weights[*it];
+        std::vector<Weights_t> const& sw_vec = source_ents_and_weights[*it];
         for (auto const& sw : sw_vec)
           source_covered_vol[sw.entityID] -= sw.weights[0];
       }
@@ -263,7 +263,6 @@ class MismatchFixer {
                 " not fully covered by target dual cells \n";
           break;
         }
-      std::cerr << "\n";
 #endif
     }
 
@@ -299,7 +298,6 @@ class MismatchFixer {
           break;
         }
       }
-      std::cerr << "\n";
 #endif
 
     }
@@ -318,12 +316,12 @@ class MismatchFixer {
     // number of 0 and empty cell layers will have positive layer
     // numbers starting from 1
 
-    std::vector<bool> is_empty(ntargetents_, false);
+    is_cell_empty_.resize(ntargetents_, false);
     std::vector<int> emptyents;
     for (int t = 0; t < ntargetents_; t++) {
       if (fabs(xsect_volumes_[t]) < std::numeric_limits<double>::epsilon()) {
         emptyents.push_back(t);
-        is_empty[t] = true;
+        is_cell_empty_[t] = true;
       }
     }
     int nempty = emptyents.size();
@@ -366,7 +364,7 @@ class MismatchFixer {
           else
             target_mesh_.node_get_cell_adj_nodes(ent, Entity_type::ALL, &nbrs);
           for (int nbr : nbrs)
-            if (!is_empty[nbr] || layernum_[nbr] != 0) {
+            if (!is_cell_empty_[nbr] || layernum_[nbr] != 0) {
               // At least one neighbor has some material or will
               // receive some material (indicated by having a +ve
               // layer number)
@@ -462,12 +460,35 @@ class MismatchFixer {
                             Empty_fixup_type empty_fixup_type =
                             Empty_fixup_type::EXTRAPOLATE) {
 
+    static bool hit_lobound = false, hit_hibound = false;
+    
     // Now process remap variables
     double const *source_data;
     source_state_.mesh_get_data(onwhat, src_var_name, &source_data);
 
     double *target_data;
     target_state_.mesh_get_data(onwhat, trg_var_name, &target_data);
+
+    if (partial_fixup_type == Partial_fixup_type::LOCALLY_CONSERVATIVE) {
+      // In interpolate step, we divided the accumulated integral (U)
+      // in a target cell by the intersection volume (v_i) instead of
+      // the target cell volume (v_c) to give a target field of u_t =
+      // U/v_i. In partially filled cells, this will preserve a
+      // constant source field but fill the cell with too much material
+      // (this is the equivalent of requesting Partial_fixup_type::CONSTANT).
+      // To restore conservation (as requested by
+      // Partial_fixup_type::LOCALLY_CONSERVATIVE), we undo the division by
+      // the intersection volume and then divide by the cell volume
+      // (u'_t = U/v_c = u_t*v_i/v_c). This does not affect the values
+      // in fully filled cells
+
+      for (int t = 0; t < ntargetents_; t++) {
+        if (!is_cell_empty_[t]) {
+          if (fabs(xsect_volumes_[t]-target_ent_volumes_[t])/target_ent_volumes_[t] > voldifftol_)
+            target_data[t] *= xsect_volumes_[t]/target_ent_volumes_[t];
+        }
+      }
+    }
 
     if (empty_fixup_type != Empty_fixup_type::LEAVE_EMPTY) {
       // Do something here to populate fully uncovered target
@@ -513,28 +534,8 @@ class MismatchFixer {
     }
 
 
-    if (partial_fixup_type == Partial_fixup_type::CONSTANT) {
-      // In interpolate step, we divided the accumulated integral in a
-      // target cell by the intersection volume to preserve a constant
-      // and violate conservation. So nothing to do here.
-    
-      return true;
-
-    } else if (partial_fixup_type == Partial_fixup_type::LOCALLY_CONSERVATIVE) {
-      // In interpolate step, we divided the accumulated integral (U)
-      // in a target cell by the intersection volume (v_i) instead of
-      // the target cell volume (v_c) to give a target field of u_t =
-      // U/v_i. In partially filled cells, this will preserve a
-      // constant source field but fill the cell with too much
-      // material. To restore conservation, we undo the division by
-      // the intersection volume and then divide by the cell volume
-      // (u'_t = U/v_c = u_t*v_i/v_c). This does not affect the values
-      // in fully filled cells
-      
-      for (int t = 0; t < ntargetents_; t++) {
-        if (fabs(xsect_volumes_[t]-target_ent_volumes_[t])/target_ent_volumes_[t] > voldifftol_)
-          target_data[t] *= xsect_volumes_[t]/target_ent_volumes_[t];
-      }
+    if (partial_fixup_type == Partial_fixup_type::CONSTANT || 
+        partial_fixup_type == Partial_fixup_type::LOCALLY_CONSERVATIVE) {
 
       return true;
 
@@ -585,8 +586,29 @@ class MismatchFixer {
       // expect that process to take more than two iterations at the
       // most.
 
-      double adj_target_volume = target_volume_;
-      double global_adj_target_volume = global_target_volume_;
+      double adj_target_volume;
+      double global_adj_target_volume;
+      double global_covered_target_volume;
+      if (empty_fixup_type == Empty_fixup_type::LEAVE_EMPTY) {
+        double covered_target_volume = 0.0;
+        for (int t = 0; t < ntargetents_; t++) {
+          if (!is_cell_empty_[t]) {
+            covered_target_volume += target_ent_volumes_[t];
+          }
+        }
+        global_covered_target_volume = covered_target_volume;
+#ifdef PORTAGE_ENABLE_MPI
+        if (distributed_)
+          MPI_Allreduce(&covered_target_volume, &global_covered_target_volume,
+                        1, MPI_DOUBLE, MPI_SUM, mycomm_);
+#endif
+        adj_target_volume = covered_target_volume;
+        global_adj_target_volume = global_covered_target_volume;
+      }
+      else {
+        adj_target_volume = target_volume_;
+        global_adj_target_volume = global_target_volume_;
+      }
 
       // sort of a "unit" discrepancy or difference per unit volume
       double udiff = global_diff/global_adj_target_volume;
@@ -596,50 +618,54 @@ class MismatchFixer {
         for (auto it = target_mesh_.begin(onwhat, Entity_type::PARALLEL_OWNED);
              it != target_mesh_.end(onwhat, Entity_type::PARALLEL_OWNED); it++) {
           int t = *it;
+          if (empty_fixup_type != Empty_fixup_type::LEAVE_EMPTY || !is_cell_empty_[t]) {
 
-          if ((target_data[t]-udiff) < global_lower_bound) {
-            // Subtracting the full excess will make this cell violate the
-            // lower bound. So subtract only as much as will put this cell
-            // exactly at the lower bound
+            if ((target_data[t]-udiff) < global_lower_bound) {
+              // Subtracting the full excess will make this cell violate the
+              // lower bound. So subtract only as much as will put this cell
+              // exactly at the lower bound
 
-            target_data[t] = global_lower_bound;
+              target_data[t] = global_lower_bound;
 
-#ifdef DEBUG            
-            std::cerr << "Hit lower bound for cell " << t << " on rank " <<
-                rank_ << "\n";
-#endif
-            
-            // this cell is no longer in play for adjustment - so remove its
-            // volume from the adjusted target_volume
+              if (!hit_lobound) {
+                std::cerr << "Hit lower bound for cell " << t <<
+                    " (and maybe other cells) on rank " << rank_ << "\n";
+                hit_lobound = true;
+              }
 
-            adj_target_volume -= target_ent_volumes_[t];
+              // this cell is no longer in play for adjustment - so remove its
+              // volume from the adjusted target_volume
 
-          } else if ((target_data[t]-udiff) > global_upper_bound) {  // udiff < 0
-            // Adding the full deficit will make this cell violate the
-            // upper bound. So add only as much as will put this cell
-            // exactly at the upper bound
+              adj_target_volume -= target_ent_volumes_[t];
 
-            target_data[t] = global_upper_bound;
+            } else if ((target_data[t]-udiff) > global_upper_bound) {  // udiff < 0
+              // Adding the full deficit will make this cell violate the
+              // upper bound. So add only as much as will put this cell
+              // exactly at the upper bound
 
-#ifdef DEBUG            
-            std::cerr << "Hit upper bound for cell " << t << " on rank " <<
-                rank_ << "\n";
-#endif
-            
-            // this cell is no longer in play for adjustment - so remove its
-            // volume from the adjusted target_volume
+              target_data[t] = global_upper_bound;
 
-            adj_target_volume -= target_ent_volumes_[t];
+              if (!hit_hibound) {
+                std::cerr << "Hit upper bound for cell " << t <<
+                    " (and maybe other cells) on rank " << rank_ << "\n";
+                hit_hibound = true;
+              }
 
-          } else {
-            // This is the equivalent of
-            //           [curval*cellvol - diff*cellvol/meshvol]
-            // curval = ---------------------------------------
-            //                       cellvol
+              // this cell is no longer in play for adjustment - so remove its
+              // volume from the adjusted target_volume
 
-            target_data[t] -= udiff;
+              adj_target_volume -= target_ent_volumes_[t];
 
-          }
+            } else {
+              // This is the equivalent of
+              //           [curval*cellvol - diff*cellvol/meshvol]
+              // curval = ---------------------------------------
+              //                       cellvol
+
+              target_data[t] -= udiff;
+
+            }
+          }  // only non-empty cells
         }  // iterate through mesh cells
 
         // Compute the new integral over all processors
@@ -676,7 +702,10 @@ class MismatchFixer {
 
         // Now reset adjusted target mesh volume to be the full volume
         // in preparation for the next iteration
-        global_adj_target_volume = global_target_volume_;
+        if (empty_fixup_type == Empty_fixup_type::LEAVE_EMPTY)
+          global_adj_target_volume = global_covered_target_volume;
+        else
+          global_adj_target_volume = global_target_volume_;
 
         iter++;
       }  // while leftover is not zero
@@ -709,7 +738,8 @@ class MismatchFixer {
   double source_volume_, target_volume_;
   double global_source_volume_, global_target_volume_, global_xsect_volume_;
   double relvoldiff_source_, relvoldiff_target_, relvoldiff_;
-  std::vector<int> is_empty_, layernum_;
+  std::vector<int> layernum_;
+  std::vector<bool> is_cell_empty_;
   std::vector<std::vector<int>> emptylayers_;
   bool mismatch_ = false;
   int rank_ = 0, nprocs_ = 1;

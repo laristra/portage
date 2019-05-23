@@ -23,12 +23,14 @@ extern "C" {
 
 #include "portage/support/portage.h"
 #include "wonton/support/Point.h"
-using Wonton::Point;
 #include "wonton/support/Vector.h"
-using Wonton::Vector;
 
 
 namespace Portage {
+
+using Wonton::Point;
+using Wonton::Vector;
+
 typedef
 struct facetedpoly {
   std::vector<std::vector<int>> facetpoints;  // we can flatten this to a

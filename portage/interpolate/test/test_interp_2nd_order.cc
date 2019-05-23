@@ -119,15 +119,15 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Const_No_Limiter_2D) {
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_State_Wrapper>
-      interpolater(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper);
+      interpolator(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper);
 
-  interpolater.set_interpolation_variable("cellvars");
+  interpolator.set_interpolation_variable("cellvars");
 
 
   Portage::transform(targetMeshWrapper.begin(Wonton::Entity_kind::CELL),
                      targetMeshWrapper.end(Wonton::Entity_kind::CELL),
                      sources_and_weights.begin(),
-                     outvals.begin(), interpolater);
+                     outvals.begin(), interpolator);
 
   // Make sure we retrieved the correct value for each cell on the target
   const double stdval = data[0];
@@ -237,15 +237,15 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Lin_No_Limiter_2D) {
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_State_Wrapper>
-      interpolater(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper);
+      interpolator(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper);
 
-  interpolater.set_interpolation_variable("cellvars");
+  interpolator.set_interpolation_variable("cellvars");
 
 
   Portage::transform(targetMeshWrapper.begin(Wonton::Entity_kind::CELL),
                      targetMeshWrapper.end(Wonton::Entity_kind::CELL),
                      sources_and_weights.begin(),
-                     outvals.begin(), interpolater);
+                     outvals.begin(), interpolator);
 
   // Make sure we retrieved the correct value for each cell on the target
 
@@ -373,23 +373,23 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Lin_BJ_Limiter_2D) {
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_State_Wrapper>
-      interpolater(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper);
+      interpolator(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper);
 
-  interpolater.set_interpolation_variable("cellvars", Portage::NOLIMITER);
-
-
-  Portage::transform(targetMeshWrapper.begin(Wonton::Entity_kind::CELL),
-                     targetMeshWrapper.end(Wonton::Entity_kind::CELL),
-                     sources_and_weights.begin(),
-                     outvals1.begin(), interpolater);
-
-  interpolater.set_interpolation_variable("cellvars", Portage::BARTH_JESPERSEN);
+  interpolator.set_interpolation_variable("cellvars", Portage::NOLIMITER);
 
 
   Portage::transform(targetMeshWrapper.begin(Wonton::Entity_kind::CELL),
                      targetMeshWrapper.end(Wonton::Entity_kind::CELL),
                      sources_and_weights.begin(),
-                     outvals2.begin(), interpolater);
+                     outvals1.begin(), interpolator);
+
+  interpolator.set_interpolation_variable("cellvars", Portage::BARTH_JESPERSEN);
+
+
+  Portage::transform(targetMeshWrapper.begin(Wonton::Entity_kind::CELL),
+                     targetMeshWrapper.end(Wonton::Entity_kind::CELL),
+                     sources_and_weights.begin(),
+                     outvals2.begin(), interpolator);
 
   // COULD REMOVE
   // Make sure we retrieved the correct value for each cell on the target
@@ -526,15 +526,15 @@ TEST(Interpolate_2nd_Order, Node_Ctr_Const_No_Limiter) {
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_State_Wrapper>
-      interpolater(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper);
+      interpolator(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper);
 
-  interpolater.set_interpolation_variable("nodevars");
+  interpolator.set_interpolation_variable("nodevars");
 
 
   Portage::transform(targetMeshWrapper.begin(Wonton::Entity_kind::NODE),
                      targetMeshWrapper.end(Wonton::Entity_kind::NODE),
                      sources_and_weights.begin(),
-                     outvals.begin(), interpolater);
+                     outvals.begin(), interpolator);
 
   // Make sure we retrieved the correct value for each node on the
   // target. Second order interpolation should preserve a linear field
@@ -664,15 +664,15 @@ TEST(Interpolate_2nd_Order, Node_Ctr_Lin_No_Limiter) {
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_State_Wrapper>
-      interpolater(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper);
+      interpolator(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper);
 
-  interpolater.set_interpolation_variable("nodevars");
+  interpolator.set_interpolation_variable("nodevars");
 
 
   Portage::transform(targetMeshWrapper.begin(Wonton::Entity_kind::NODE),
                      targetMeshWrapper.end(Wonton::Entity_kind::NODE),
                      sources_and_weights.begin(),
-                     outvals.begin(), interpolater);
+                     outvals.begin(), interpolator);
 
   // Make sure we retrieved the correct value for each node on the
   // target. Second order interpolation should preserve a linear field
@@ -792,15 +792,15 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Const_No_Limiter_3D) {
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_State_Wrapper>
-      interpolater(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper);
+      interpolator(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper);
 
-  interpolater.set_interpolation_variable("cellvars");
+  interpolator.set_interpolation_variable("cellvars");
 
 
   Portage::transform(targetMeshWrapper.begin(Wonton::Entity_kind::CELL),
                      targetMeshWrapper.end(Wonton::Entity_kind::CELL),
                      sources_and_weights.begin(),
-                     outvals.begin(), interpolater);
+                     outvals.begin(), interpolator);
 
   // Make sure we retrieved the correct value for each cell on the target
   const double stdval = data[0];
@@ -909,15 +909,15 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Lin_No_Limiter_3D) {
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_State_Wrapper>
-      interpolater(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper);
+      interpolator(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper);
 
-  interpolater.set_interpolation_variable("cellvars");
+  interpolator.set_interpolation_variable("cellvars");
 
 
   Portage::transform(targetMeshWrapper.begin(Wonton::Entity_kind::CELL),
                      targetMeshWrapper.end(Wonton::Entity_kind::CELL),
                      sources_and_weights.begin(),
-                     outvals.begin(), interpolater);
+                     outvals.begin(), interpolator);
 
   // Make sure we retrieved the correct value for each cell on the target
 
@@ -1044,23 +1044,23 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_BJ_Limiter_3D) {
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_State_Wrapper>
-      interpolater(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper);
+      interpolator(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper);
 
-  interpolater.set_interpolation_variable("cellvars", Portage::NOLIMITER);
-
-
-  Portage::transform(targetMeshWrapper.begin(Wonton::Entity_kind::CELL),
-                     targetMeshWrapper.end(Wonton::Entity_kind::CELL),
-                     sources_and_weights.begin(),
-                     outvals1.begin(), interpolater);
-
-  interpolater.set_interpolation_variable("cellvars", Portage::BARTH_JESPERSEN);
+  interpolator.set_interpolation_variable("cellvars", Portage::NOLIMITER);
 
 
   Portage::transform(targetMeshWrapper.begin(Wonton::Entity_kind::CELL),
                      targetMeshWrapper.end(Wonton::Entity_kind::CELL),
                      sources_and_weights.begin(),
-                     outvals2.begin(), interpolater);
+                     outvals1.begin(), interpolator);
+
+  interpolator.set_interpolation_variable("cellvars", Portage::BARTH_JESPERSEN);
+
+
+  Portage::transform(targetMeshWrapper.begin(Wonton::Entity_kind::CELL),
+                     targetMeshWrapper.end(Wonton::Entity_kind::CELL),
+                     sources_and_weights.begin(),
+                     outvals2.begin(), interpolator);
 
   // Check if we violated the bounds on at least one cell in the
   // unlimited interpolation and if we respected the bounds in all
@@ -1190,15 +1190,15 @@ TEST(Interpolate_2nd_Order, Node_Ctr_Const_No_Limiter_3D) {
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_State_Wrapper>
-      interpolater(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper);
+      interpolator(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper);
 
-  interpolater.set_interpolation_variable("nodevars");
+  interpolator.set_interpolation_variable("nodevars");
 
 
   Portage::transform(targetMeshWrapper.begin(Wonton::Entity_kind::NODE),
                      targetMeshWrapper.end(Wonton::Entity_kind::NODE),
                      sources_and_weights.begin(),
-                     outvals.begin(), interpolater);
+                     outvals.begin(), interpolator);
 
   // Make sure we retrieved the correct value for each node on the
   // target. Second order interpolation should preserve a linear field
@@ -1321,15 +1321,15 @@ TEST(Interpolate_2nd_Order, Node_Ctr_Lin_No_Limiter_3D) {
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_State_Wrapper>
-      interpolater(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper);
+      interpolator(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper);
 
-  interpolater.set_interpolation_variable("nodevars");
+  interpolator.set_interpolation_variable("nodevars");
 
 
   Portage::transform(targetMeshWrapper.begin(Wonton::Entity_kind::NODE),
                      targetMeshWrapper.end(Wonton::Entity_kind::NODE),
                      sources_and_weights.begin(),
-                     outvals.begin(), interpolater);
+                     outvals.begin(), interpolator);
 
   // Make sure we retrieved the correct value for each node on the
   // target. Second order interpolation should preserve a linear field
@@ -1450,33 +1450,33 @@ TEST(Interpolate_2nd_Order, Node_Ctr_BJ_Limiter_3D) {
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_State_Wrapper>
-                         interpolater1(sourceMeshWrapper, targetMeshWrapper,
+                         interpolator1(sourceMeshWrapper, targetMeshWrapper,
                                        sourceStateWrapper);
 
   Portage::Interpolate_2ndOrder<3, Wonton::Entity_kind::NODE,
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_State_Wrapper>
-                         interpolater2(sourceMeshWrapper, targetMeshWrapper,
+                         interpolator2(sourceMeshWrapper, targetMeshWrapper,
                                        sourceStateWrapper);
 
   // Compute the target mesh vals
 
-  interpolater1.set_interpolation_variable("nodevars", Portage::NOLIMITER);
+  interpolator1.set_interpolation_variable("nodevars", Portage::NOLIMITER);
 
   Portage::transform(targetMeshWrapper.begin(Wonton::Entity_kind::NODE),
                      targetMeshWrapper.end(Wonton::Entity_kind::NODE),
                      sources_and_weights.begin(),
-                     outvals1.begin(), interpolater1);
+                     outvals1.begin(), interpolator1);
 
   // Compute the target mesh vals
 
-  interpolater2.set_interpolation_variable("nodevars", Portage::BARTH_JESPERSEN);
+  interpolator2.set_interpolation_variable("nodevars", Portage::BARTH_JESPERSEN);
 
   Portage::transform(targetMeshWrapper.begin(Wonton::Entity_kind::NODE),
                      targetMeshWrapper.end(Wonton::Entity_kind::NODE),
                      sources_and_weights.begin(),
-                     outvals2.begin(), interpolater2);
+                     outvals2.begin(), interpolator2);
 
   // Check if we violated the bounds on at least one node in the
   // unlimited interpolate and if we respected the bounds on all nodes in
