@@ -84,6 +84,8 @@ using Wonton::Weights_t;
 typedef enum {NOLIMITER, BARTH_JESPERSEN} Limiter_type;
 constexpr int NUM_LIMITER_TYPE = 2;
 
+Limiter_type DEFAULT_LIMITER = Limiter_type::BARTH_JESPERSEN;
+
 std::string to_string(Limiter_type limiter_type) {
   static const std::string type2string[NUM_LIMITER_TYPE] =
       {"Limiter_type::NOLIMITER",
