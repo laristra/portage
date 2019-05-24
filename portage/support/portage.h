@@ -136,6 +136,12 @@ std::string to_string(Empty_fixup_type empty_fixup_type) {
 }
 
 
+/// default tolerance for conservation
+constexpr double DEFAULT_CONSERVATION_TOL = 100*std::numeric_limits<double>::eps();
+
+/// default number of iterations for mismatch repair
+constexpr int DEFAULT_MAX_FIXUP_ITER = 5;
+
 
 // Iterators and transforms that depend on Thrust vs. std
 #ifdef PORTAGE_ENABLE_THRUST
