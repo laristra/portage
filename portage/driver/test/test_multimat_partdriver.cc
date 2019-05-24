@@ -242,9 +242,6 @@ TEST(PartDriver, ThreeMat2D_1stOrder) {
   //  material ordering is 0, 1, 2
   //-------------------------------------------------------------------
 
-  std::vector<Portage::Entity_kind> entity_kinds({Wonton::Entity_kind::CELL});
-  std::vector<Portage::Field_type> field_types({Portage::Field_type::MESH_FIELD, Portage::Field_type::MULTIMATERIAL_FIELD});
-  
   Portage::PartDriver<Portage::SearchKDTree,
                       Portage::IntersectR2D,
                       Portage::Interpolate_1stOrder,
@@ -259,7 +256,6 @@ TEST(PartDriver, ThreeMat2D_1stOrder) {
   d.interpolate("density", 0.0, std::numeric_limits<double>::max());
   d.interpolate("temperature", -std::numeric_limits<double>::max(),
                 std::numeric_limits<double>::max());
-
 
 
   //-------------------------------------------------------------------
