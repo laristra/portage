@@ -712,6 +712,11 @@ template<int dim, bool all_convex> void run(std::shared_ptr<Jali::Mesh> sourceMe
   // exactly (e.g. MOF with linear interfaces) and the remapping
   // method can reproduce a field exactly (linear fields with a 2nd
   // order accurate method)
+  // For non-convex cells, we may get multiple material polygons
+  // for each material. Therefore,  we compute a volume weighted
+  // average of the field evaluated at the centroids of each of
+  // those material polygons to properly sum mass contributions of 
+  // each material polygon.
 
   if (material_field_expressions.size()) {
     for (int m = 0; m < nmats; m++) {
