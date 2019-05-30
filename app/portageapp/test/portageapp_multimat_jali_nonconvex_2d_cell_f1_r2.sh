@@ -17,7 +17,7 @@ ${TESTAPPDIR}/portageapp_multimat_jali \
     --dim=2 \
     --source_file=non_convex.exo \
     --ntargetcells=10 \
-    --material_fields=--material_fields=2*x-3*y,2*x-3*y \
+    --material_fields=2*x-3*y,2*x-3*y \
     --material_file=non_convex.bvf \
     --remap_order=2 \
     --all_convex=n \
