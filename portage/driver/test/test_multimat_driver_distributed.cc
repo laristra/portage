@@ -375,7 +375,7 @@ void compute_material_fields_on_mesh(
   material_metadata<dim, mconfig> &mdata,  
   std::vector<int> (&matcells)[3],
   std::vector<double> (&matvf)[3], 
-  std::vector<Point<dim>> (&matcen)[3], 
+  std::vector<Portage::Point<dim>> (&matcen)[3], 
   std::vector<double> (&matrho)[3], 
   DENSITY_FUNCTION dtype)
 {
