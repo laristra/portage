@@ -206,7 +206,7 @@ Thrust and TCMalloc in your build.  The cmake command for this is:
 module load intel/18.0.5 openmpi/2.1.2 cmake
 JALI_INSTALL_PREFIX=/usr/projects/ngc/private/jali/1.0.4-intel-18.0.5-openmpi-2.1.2
 TANGRAM_INSTALL_PREFIX=/usr/projects/ngc/private/tangram/0.9.3-intel-18.0.5-openmpi-2.1.2
-XMOF2D_INSTALL_PREFIX=/usr/projects/ngc/private/xmof2d/0.9.4-intel-18.0.5-openmpi-2.1.2
+XMOF2D_INSTALL_PREFIX=/usr/projects/ngc/private/xmof2d/0.9.4-intel-18.0.5
 LAPACKE_DIR=/usr/projects/ngc/private/lapack/3.8.0-patched-intel-18.0.5
 mkdir build-thrust
 cd build-thrust
