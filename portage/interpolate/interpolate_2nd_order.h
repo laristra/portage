@@ -403,17 +403,19 @@ class Interpolate_2ndOrder<D,
             int cnt = 0;
             for (int k = 0; k < D; k++) src_centroid[k]=0;
 
-            // Compute centroid of all matpoly's
+            // Compute centroid of all matpoly's by summing all the 
+            // first order moments first, and then dividing by the 
+            // total volume of all matpolys.
+            double mvol = 0.0;  
             for (int j = 0; j < matpolys.size(); j++)
             {
-              /* This code snippet should be turned on when the PR
-                 with changes in Matpoly is merged to Tangram.*/
               std::vector<double> moments = matpolys[j].moments();
-              cnt += 1;
+              mvol += moments[0];
               for (int k = 0; k < D; k++)
-                src_centroid[k]=moments[k+1]/moments[0];
+                src_centroid[k] += moments[k+1];
             }
-            src_centroid = src_centroid/cnt;
+            for (int k = 0; k < D; k++) src_centroid[k] /=mvol;
+
           }
         }
 #endif

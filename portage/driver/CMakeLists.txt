@@ -74,6 +74,17 @@ if (ENABLE_UNIT_TESTS)
        THREADS 1)
 
      endif (TANGRAM_FOUND AND XMOF2D_FOUND)
+
+     if (TANGRAM_FOUND)
+
+       cinch_add_unit(test_multimat_driver_distributed
+       SOURCES test/test_multimat_driver_distributed
+       LIBRARIES portage ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES} 
+       POLICY MPI
+       THREADS 4)
+
+     endif (TANGRAM_FOUND)
+
    endif (Jali_DIR)
 
    cinch_add_unit(test_driver_swarm
