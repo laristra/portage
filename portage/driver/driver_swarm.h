@@ -208,11 +208,11 @@ class SwarmDriver {
    ssize = source_swarm_.num_particles(Entity_type::PARALLEL_OWNED);
    if (weight_center_ == Gather) {
      swarm_size = tsize;
+     assert(targetExtents.size() == tsize);
    } else if (weight_center_ == Scatter) {
      swarm_size = ssize;
+     assert(sourceExtents.size() == ssize);
    }
-   assert(sourceExtents.size() == ssize);
-   assert(targetExtents.size() == tsize);
 
    assert(smoothing_lengths.size() == swarm_size);
    kernel_types_ = vector<Weight::Kernel>(swarm_size, Weight::POLYRAMP);
