@@ -102,16 +102,19 @@ class MPI_Particle_Distribute {
     assert(dim == source_swarm.space_dimension());
     assert(dim == target_swarm.space_dimension());
 
+    size_t targetNumPts = target_swarm.num_particles(Entity_type::PARALLEL_OWNED);
+    size_t sourceNumPts = source_swarm.num_particles(Entity_type::PARALLEL_OWNED);
+
     if (center == Meshfree::WeightCenter::Gather) {
-      assert(smoothing_lengths.size() == target_swarm.num_particles(Entity_type::PARALLEL_OWNED));
-      assert(target_extents.size() == target_swarm.num_particles(Entity_type::PARALLEL_OWNED));
-      assert(kernel_types.size() == target_swarm.num_particles(Entity_type::PARALLEL_OWNED));
-      assert(geom_types.size() == target_swarm.num_particles(Entity_type::PARALLEL_OWNED));
+      assert(smoothing_lengths.size() == targetNumPts);
+      assert(target_extents.size() == targetNumPts);
+      assert(kernel_types.size() == targetNumPts);
+      assert(geom_types.size() == targetNumPts);
     } else if (center == Meshfree::WeightCenter::Scatter) {
-      assert(smoothing_lengths.size() == source_swarm.num_particles(Entity_type::PARALLEL_OWNED));
-      assert(source_extents.size() == source_swarm.num_particles(Entity_type::PARALLEL_OWNED));
-      assert(kernel_types.size() == source_swarm.num_particles(Entity_type::PARALLEL_OWNED));
-      assert(geom_types.size() == source_swarm.num_particles(Entity_type::PARALLEL_OWNED));
+      assert(smoothing_lengths.size() == sourceNumPts);
+      assert(source_extents.size() == sourceNumPts);
+      assert(kernel_types.size() == sourceNumPts);
+      assert(geom_types.size() == sourceNumPts);
     }
 
     /**************************************************************************
@@ -119,7 +122,6 @@ class MPI_Particle_Distribute {
     *         for the current rank, and put it in a vector that will be       *
     *         used later to store the target bounding box for each rank       *
     **************************************************************************/
-    size_t targetNumOwnedPts = target_swarm.num_particles(Entity_type::PARALLEL_OWNED);
 
     std::vector<double> targetBoundingBoxes(2*dim*commSize);
 
@@ -129,7 +131,7 @@ class MPI_Particle_Distribute {
       targetBoundingBoxes[2*dim*commRank+i+1] = -std::numeric_limits<double>::max();
     }
 
-    for (size_t c=0; c<targetNumOwnedPts; ++c)
+    for (size_t c=0; c<targetNumPts; ++c)
       {
         Point<dim> coord = target_swarm.get_particle_coordinates(c);
         Point<dim> ext;
@@ -179,8 +181,6 @@ class MPI_Particle_Distribute {
     std::vector<bool> sendFlags(commSize, false);
     std::vector<std::vector<int>> sourcePtsToSend(commSize);
     std::vector<int> sourcePtsToSendSize(commSize);
-
-    size_t sourceNumPts = source_swarm.num_particles(Entity_type::PARALLEL_OWNED);
 
     for (size_t i=0; i<commSize; ++i)
     {
@@ -281,10 +281,9 @@ class MPI_Particle_Distribute {
     {
       //collect smoothing length sizes and get max
       size_t smlen_dim = smoothing_lengths[0][0].size();
-      size_t nsources = source_swarm.num_particles(Entity_type::PARALLEL_OWNED);
-      std::vector<int> smoothing_length_sizes(nsources);
+      std::vector<int> smoothing_length_sizes(sourceNumPts);
       size_t max_slsize=0;
-      for (size_t i=0; i<nsources; i++) {
+      for (size_t i=0; i<sourceNumPts; i++) {
 	smoothing_length_sizes[i] = smoothing_lengths[i].size();
 	max_slsize = std::max<size_t>(smoothing_length_sizes[i], max_slsize);
 	for (size_t j=0; j<smoothing_lengths[i].size(); j++)
@@ -355,8 +354,8 @@ class MPI_Particle_Distribute {
       for (size_t i = 0; i < src_info.newNum; ++i)
       {
 	std::vector<std::vector<double>> smlen
-          (smoothing_length_sizes[nsources+i],std::vector<double>(smlen_dim));
-        for (size_t k=0; k < smoothing_length_sizes[nsources+i]; k++) 
+          (smoothing_length_sizes[sourceNumPts+i],std::vector<double>(smlen_dim));
+        for (size_t k=0; k < smoothing_length_sizes[sourceNumPts+i]; k++) 
           for (size_t d = 0 ; d < smlen_dim; ++d)
             smlen[k][d] = sourceRecvSmoothLengths[recvSLSizeCum[i]+k*smlen_dim+d];
 
