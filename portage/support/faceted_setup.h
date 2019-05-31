@@ -20,7 +20,7 @@ namespace Portage {
     namespace Weight {
 
       template<int DIM, class Mesh_Wrapper> void faceted_setup_cell
-        (Mesh_Wrapper &mesh, 
+        (const Mesh_Wrapper &mesh, 
          vector<std::vector<std::vector<double>>> &smoothing_lengths,
          vector<Wonton::Point<DIM>> &extents,
          double smoothing_factor)
