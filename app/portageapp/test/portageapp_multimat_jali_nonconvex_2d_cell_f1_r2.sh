@@ -24,5 +24,5 @@ ${TESTAPPDIR}/portageapp_multimat_jali \
     --results_file=multimat_jali_nonconvex_2d_cell_f1_r2.gmv
 
 # Compare the values for the field
-$CMPAPPDIR/apptest_cmp GOLD_multimat_jali_nonconvex_2d_cell_f1_r2.gmv multimat_jali_nonconvex_2d_cell_f1_r2.gmv  1e-9
+$CMPAPPDIR/apptest_cmp GOLD_multimat_jali_nonconvex_2d_cell_f1_r2.gmv multimat_jali_nonconvex_2d_cell_f1_r2.gmv  1e-8
 
