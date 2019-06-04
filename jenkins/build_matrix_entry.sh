@@ -41,15 +41,22 @@ export NGC=/usr/local/codes/ngc
 ngc_include_dir=$NGC/private/include
 
 # compiler-specific settings
-if [[ $compiler == "intel" ]]; then
+if [[ $compiler == "intel18" ]]; then
   compiler_version=18.0.1
   cxxmodule=intel/${compiler_version}
   # openmpi version that libs were built against
   openmpi_version=2.1.2
   # openmpi module for compiling and linking
   mpi_module=openmpi/2.1.2
-elif [[ $compiler == "gcc" ]]; then
+elif [[ $compiler == "gcc6" ]]; then
   compiler_version=6.4.0
+  cxxmodule=gcc/${compiler_version}
+  # openmpi version that libs were built against
+  openmpi_version=2.1.2
+  # openmpi module for compiling and linking
+  mpi_module=openmpi/2.1.2
+elif [[ $compiler == "gcc7" ]]; then
+  compiler_version=7.3.0
   cxxmodule=gcc/${compiler_version}
   # openmpi version that libs were built against
   openmpi_version=2.1.2

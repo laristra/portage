@@ -41,10 +41,13 @@ export NGC=/usr/projects/ngc
 ngc_include_dir=$NGC/private/include
 
 # compiler-specific settings
-if [[ $compiler == "intel" ]]; then
+if [[ $compiler == "intel18" ]]; then
   compiler_version=18.0.5
   cxxmodule=intel/${compiler_version}
-elif [[ $compiler == "gcc" ]]; then
+elif [[ $compiler == "gcc6" ]]; then
+  compiler_version=6.4.0
+  cxxmodule=gcc/${compiler_version}
+elif [[ $compiler == "gcc7" ]]; then
   compiler_version=7.4.0
   cxxmodule=gcc/${compiler_version}
 fi
