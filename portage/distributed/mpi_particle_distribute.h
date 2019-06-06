@@ -280,14 +280,16 @@ class MPI_Particle_Distribute {
     if (center == Meshfree::WeightCenter::Scatter)
     {
       //collect smoothing length sizes and get max
-      size_t smlen_dim = smoothing_lengths[0][0].size();
+      std::vector<std::vector<double>> h0 = smoothing_lengths[0];
+      size_t smlen_dim = h0[0].size();
       std::vector<int> smoothing_length_sizes(sourceNumPts);
       size_t max_slsize=0;
       for (size_t i=0; i<sourceNumPts; i++) {
-	smoothing_length_sizes[i] = smoothing_lengths[i].size();
+        std::vector<std::vector<double>> h = smoothing_lengths[i];
+	smoothing_length_sizes[i] = h.size();
 	max_slsize = std::max<size_t>(smoothing_length_sizes[i], max_slsize);
-	for (size_t j=0; j<smoothing_lengths[i].size(); j++)
-	  assert(smoothing_lengths[i][j].size() == smlen_dim);	  
+	for (size_t j=0; j<smoothing_length_sizes[i]; j++)
+	  assert(h[j].size() == smlen_dim);	  
       }
 
       //-----------------------------------------------
@@ -335,9 +337,8 @@ class MPI_Particle_Distribute {
           for (size_t j = 0; j < sourcePtsToSendSize[i]; ++j)
           {
             std::vector<std::vector<double>> smlen(max_slsize,std::vector<double>(smlen_dim,0.));
-	    std::copy(smoothing_lengths[sourcePtsToSend[i][j]].begin(),
-		      smoothing_lengths[sourcePtsToSend[i][j]].end(),
-		      smlen.begin());
+            std::vector<std::vector<double>> h = smoothing_lengths[sourcePtsToSend[i][j]];
+	    std::copy(h.begin(), h.end(), smlen.begin());
 	    for (size_t k = 0 ; k < max_slsize; ++k)
               for (size_t d = 0; d < smlen_dim; d++) 
 		sourceSendSmoothLengths[i].push_back(smlen[k][d]);
