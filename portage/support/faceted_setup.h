@@ -21,8 +21,8 @@ namespace Portage {
 
       template<int DIM, class Mesh_Wrapper> void faceted_setup_cell
         (const Mesh_Wrapper &mesh, 
-         vector<std::vector<std::vector<double>>> &smoothing_lengths,
-         vector<Wonton::Point<DIM>> &extents,
+         Portage::vector<std::vector<std::vector<double>>> &smoothing_lengths,
+         Portage::vector<Wonton::Point<DIM>> &extents,
          double smoothing_factor)
       {
         int ncells=mesh.num_owned_cells();
@@ -35,7 +35,8 @@ namespace Portage {
           mesh.cell_get_faces_and_dirs(i, &faces, &fdirs);
 
           int nfaces = faces.size();
-          smoothing_lengths[i].resize(nfaces);
+          std::vector<std::vector<double>> h = smoothing_lengths[i];
+          h.resize(nfaces);
 
           Wonton::Point<DIM> fcent, ccent, normal, distance;
           std::vector<int> fnodes;
@@ -60,9 +61,9 @@ namespace Portage {
               if (fdirs[j]<0) normal*=-1.0;
               double norm = sqrt(normal[0]*normal[0] + normal[1]*normal[1]);
               normal /= norm;
-              smoothing_lengths[i][j].resize(3);
-              smoothing_lengths[i][j][0] = normal[0];
-              smoothing_lengths[i][j][1] = normal[1];
+              h[j].resize(3);
+              h[j][0] = normal[0];
+              h[j][1] = normal[1];
             } else if (DIM==3) {
               // Get 3d face normal using average cross product, in case face is not flat
               // or has nodes close together.
@@ -89,8 +90,8 @@ namespace Portage {
               for (int k=0;k<3;k++) norm+=normal[k]*normal[k];
               norm=sqrt(norm);
               normal /= norm;
-              smoothing_lengths[i][j].resize(4);
-              for (int k=0;k<3;k++) smoothing_lengths[i][j][k] = normal[k];
+              h[j].resize(4);
+              for (int k=0;k<3;k++) h[j][k] = normal[k];
             }
 
             distance = Wonton::Point<DIM>(fcent-ccent);
@@ -100,8 +101,9 @@ namespace Portage {
               normal = -normal;
               smoothing = -smoothing;
             }
-            smoothing_lengths[i][j][DIM] = smoothing_factor*smoothing;
+            h[j][DIM] = smoothing_factor*smoothing;
           }
+          smoothing_lengths[i] = h;
         }
 
         // get extent information
@@ -122,10 +124,13 @@ namespace Portage {
           }
 
           // subtract to get extents
-          for (int k=0; k<DIM; k++) extents[i][k] = cmax[k] - cmin[k];
+          Wonton::Point<DIM> dx;
+          for (int k=0; k<DIM; k++) dx[k] = cmax[k] - cmin[k];
 
           // multiply by smoothing_factor
-          for (int k=0; k<DIM; k++) extents[i][k] *= 2.*smoothing_factor;
+          for (int k=0; k<DIM; k++) dx[k] *= 2.*smoothing_factor;
+
+          extents[i] = dx;
         }
       }
 

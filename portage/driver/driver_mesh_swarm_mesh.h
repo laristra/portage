@@ -264,8 +264,8 @@ class MSM_Driver {
       Meshfree::SwarmState<Dim> &target_swarm_state(*target_swarm_state_ptr);
 
       // set up smoothing lengths and extents
-      vector<std::vector<std::vector<double>>> smoothing_lengths;
-      vector<Wonton::Point<Dim>> weight_extents, other_extents;
+      Portage::vector<std::vector<std::vector<double>>> smoothing_lengths;
+      Portage::vector<Wonton::Point<Dim>> weight_extents, other_extents;
       if (geometry_ == Meshfree::Weight::FACETED) {
         if (center_ == Meshfree::Scatter) {
           Meshfree::Weight::faceted_setup_cell<Dim,SourceMesh_Wrapper>

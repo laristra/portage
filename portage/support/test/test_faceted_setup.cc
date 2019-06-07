@@ -33,22 +33,24 @@ TEST(Faceted_Setup, Simple2D) {
   ASSERT_EQ(smoothing.size(), NCELLS*NCELLS);
   ASSERT_EQ(extents.size(), NCELLS*NCELLS);
   for (int i=0; i<NCELLS; i++) {
-    ASSERT_EQ(smoothing[i].size(), 4);
-    ASSERT_NEAR(smoothing[i][0][0],  0.0, 1.e-12);
-    ASSERT_NEAR(smoothing[i][0][1], -1.0, 1.e-12);
-    ASSERT_NEAR(smoothing[i][0][2],  dx1, 1.e-12);
-    ASSERT_NEAR(smoothing[i][1][0],  1.0, 1.e-12);
-    ASSERT_NEAR(smoothing[i][1][1],  0.0, 1.e-12);
-    ASSERT_NEAR(smoothing[i][1][2],  dx0, 1.e-12); 
-    ASSERT_NEAR(smoothing[i][2][0],  0.0, 1.e-12);
-    ASSERT_NEAR(smoothing[i][2][1],  1.0, 1.e-12);
-    ASSERT_NEAR(smoothing[i][2][2],  dx1, 1.e-12); 
-    ASSERT_NEAR(smoothing[i][3][0], -1.0, 1.e-12);
-    ASSERT_NEAR(smoothing[i][3][1],  0.0, 1.e-12);
-    ASSERT_NEAR(smoothing[i][3][2],  dx0, 1.e-12); 
+    std::vector<std::vector<double>> h = smoothing[i];
+    ASSERT_EQ(h.size(), 4);
+    ASSERT_NEAR(h[0][0],  0.0, 1.e-12);
+    ASSERT_NEAR(h[0][1], -1.0, 1.e-12);
+    ASSERT_NEAR(h[0][2],  dx1, 1.e-12);
+    ASSERT_NEAR(h[1][0],  1.0, 1.e-12);
+    ASSERT_NEAR(h[1][1],  0.0, 1.e-12);
+    ASSERT_NEAR(h[1][2],  dx0, 1.e-12); 
+    ASSERT_NEAR(h[2][0],  0.0, 1.e-12);
+    ASSERT_NEAR(h[2][1],  1.0, 1.e-12);
+    ASSERT_NEAR(h[2][2],  dx1, 1.e-12); 
+    ASSERT_NEAR(h[3][0], -1.0, 1.e-12);
+    ASSERT_NEAR(h[3][1],  0.0, 1.e-12);
+    ASSERT_NEAR(h[3][2],  dx0, 1.e-12); 
 
-    ASSERT_NEAR(extents[i][0], 2*dx0, 1.e-12);
-    ASSERT_NEAR(extents[i][1], 2*dx1, 1.e-12);
+    Wonton::Point<2> dx=extents[i];
+    ASSERT_NEAR(dx[0], 2*dx0, 1.e-12);
+    ASSERT_NEAR(dx[1], 2*dx1, 1.e-12);
   }
 }
 
@@ -67,35 +69,37 @@ TEST(Faceted_Setup, Simple3D) {
   ASSERT_EQ(smoothing.size(), NCELLS*NCELLS*NCELLS);
   ASSERT_EQ(extents.size(), NCELLS*NCELLS*NCELLS);
   for (int i=0; i<NCELLS; i++) {
-    ASSERT_EQ(smoothing[i].size(), 6);
-    ASSERT_NEAR(smoothing[i][0][0],  0.0, 1.e-12);
-    ASSERT_NEAR(smoothing[i][0][1], -1.0, 1.e-12);
-    ASSERT_NEAR(smoothing[i][0][2],  0.0, 1.e-12);
-    ASSERT_NEAR(smoothing[i][0][3],  dx1, 1.e-12);
-    ASSERT_NEAR(smoothing[i][1][0],  1.0, 1.e-12);
-    ASSERT_NEAR(smoothing[i][1][1],  0.0, 1.e-12);
-    ASSERT_NEAR(smoothing[i][1][2],  0.0, 1.e-12);
-    ASSERT_NEAR(smoothing[i][1][3],  dx0, 1.e-12); 
-    ASSERT_NEAR(smoothing[i][2][0],  0.0, 1.e-12);
-    ASSERT_NEAR(smoothing[i][2][1],  1.0, 1.e-12);
-    ASSERT_NEAR(smoothing[i][2][2],  0.0, 1.e-12);
-    ASSERT_NEAR(smoothing[i][2][3],  dx1, 1.e-12); 
-    ASSERT_NEAR(smoothing[i][3][0], -1.0, 1.e-12);
-    ASSERT_NEAR(smoothing[i][3][1],  0.0, 1.e-12);
-    ASSERT_NEAR(smoothing[i][3][2],  0.0, 1.e-12);
-    ASSERT_NEAR(smoothing[i][3][3],  dx0, 1.e-12); 
-    ASSERT_NEAR(smoothing[i][4][0],  0.0, 1.e-12);
-    ASSERT_NEAR(smoothing[i][4][1],  0.0, 1.e-12);
-    ASSERT_NEAR(smoothing[i][4][2], -1.0, 1.e-12);
-    ASSERT_NEAR(smoothing[i][4][3],  dx2, 1.e-12); 
-    ASSERT_NEAR(smoothing[i][5][0],  0.0, 1.e-12);
-    ASSERT_NEAR(smoothing[i][5][1],  0.0, 1.e-12);
-    ASSERT_NEAR(smoothing[i][5][2],  1.0, 1.e-12);
-    ASSERT_NEAR(smoothing[i][5][3],  dx2, 1.e-12); 
+    std::vector<std::vector<double>> h = smoothing[i];
+    ASSERT_EQ(h.size(), 6);
+    ASSERT_NEAR(h[0][0],  0.0, 1.e-12);
+    ASSERT_NEAR(h[0][1], -1.0, 1.e-12);
+    ASSERT_NEAR(h[0][2],  0.0, 1.e-12);
+    ASSERT_NEAR(h[0][3],  dx1, 1.e-12);
+    ASSERT_NEAR(h[1][0],  1.0, 1.e-12);
+    ASSERT_NEAR(h[1][1],  0.0, 1.e-12);
+    ASSERT_NEAR(h[1][2],  0.0, 1.e-12);
+    ASSERT_NEAR(h[1][3],  dx0, 1.e-12); 
+    ASSERT_NEAR(h[2][0],  0.0, 1.e-12);
+    ASSERT_NEAR(h[2][1],  1.0, 1.e-12);
+    ASSERT_NEAR(h[2][2],  0.0, 1.e-12);
+    ASSERT_NEAR(h[2][3],  dx1, 1.e-12); 
+    ASSERT_NEAR(h[3][0], -1.0, 1.e-12);
+    ASSERT_NEAR(h[3][1],  0.0, 1.e-12);
+    ASSERT_NEAR(h[3][2],  0.0, 1.e-12);
+    ASSERT_NEAR(h[3][3],  dx0, 1.e-12); 
+    ASSERT_NEAR(h[4][0],  0.0, 1.e-12);
+    ASSERT_NEAR(h[4][1],  0.0, 1.e-12);
+    ASSERT_NEAR(h[4][2], -1.0, 1.e-12);
+    ASSERT_NEAR(h[4][3],  dx2, 1.e-12); 
+    ASSERT_NEAR(h[5][0],  0.0, 1.e-12);
+    ASSERT_NEAR(h[5][1],  0.0, 1.e-12);
+    ASSERT_NEAR(h[5][2],  1.0, 1.e-12);
+    ASSERT_NEAR(h[5][3],  dx2, 1.e-12); 
 
-    ASSERT_NEAR(extents[i][0], 2*dx0, 1.e-12);
-    ASSERT_NEAR(extents[i][1], 2*dx1, 1.e-12);
-    ASSERT_NEAR(extents[i][2], 2*dx2, 1.e-12);
+    Wonton::Point<3> dx=extents[i];
+    ASSERT_NEAR(dx[0], 2*dx0, 1.e-12);
+    ASSERT_NEAR(dx[1], 2*dx1, 1.e-12);
+    ASSERT_NEAR(dx[2], 2*dx2, 1.e-12);
   }
 }
 
@@ -129,22 +133,24 @@ TEST(Faceted_Setup, Simple2D_Tilted) {
   ASSERT_EQ(smoothing.size(), NCELLS*NCELLS);
   ASSERT_EQ(extents.size(), NCELLS*NCELLS);
   for (int i=0; i<NCELLS; i++) {
-    ASSERT_EQ(smoothing[i].size(), 4);
-    ASSERT_NEAR(smoothing[i][0][0],  b,  1.e-12);
-    ASSERT_NEAR(smoothing[i][0][1],  -a,  1.e-12);
-    ASSERT_NEAR(smoothing[i][0][2],  dx1,   1.e-12);
-    ASSERT_NEAR(smoothing[i][1][0],  a,  1.e-12);
-    ASSERT_NEAR(smoothing[i][1][1],  b,  1.e-12);
-    ASSERT_NEAR(smoothing[i][1][2],  dx0,   1.e-12); 
-    ASSERT_NEAR(smoothing[i][2][0],  -b,  1.e-12);
-    ASSERT_NEAR(smoothing[i][2][1],  a,  1.e-12);
-    ASSERT_NEAR(smoothing[i][2][2],  dx1,   1.e-12); 
-    ASSERT_NEAR(smoothing[i][3][0],  -a,  1.e-12);
-    ASSERT_NEAR(smoothing[i][3][1],  -b,  1.e-12);
-    ASSERT_NEAR(smoothing[i][3][2],  dx0,   1.e-12); 
+    std::vector<std::vector<double>> h = smoothing[i];
+    ASSERT_EQ(h.size(), 4);
+    ASSERT_NEAR(h[0][0],  b,  1.e-12);
+    ASSERT_NEAR(h[0][1],  -a,  1.e-12);
+    ASSERT_NEAR(h[0][2],  dx1,   1.e-12);
+    ASSERT_NEAR(h[1][0],  a,  1.e-12);
+    ASSERT_NEAR(h[1][1],  b,  1.e-12);
+    ASSERT_NEAR(h[1][2],  dx0,   1.e-12); 
+    ASSERT_NEAR(h[2][0],  -b,  1.e-12);
+    ASSERT_NEAR(h[2][1],  a,  1.e-12);
+    ASSERT_NEAR(h[2][2],  dx1,   1.e-12); 
+    ASSERT_NEAR(h[3][0],  -a,  1.e-12);
+    ASSERT_NEAR(h[3][1],  -b,  1.e-12);
+    ASSERT_NEAR(h[3][2],  dx0,   1.e-12); 
 
-    ASSERT_NEAR(extents[i][0], 2*(xmax[0]-xmin[0]), 1.e-12);
-    ASSERT_NEAR(extents[i][1], 2*(xmax[1]-xmin[1]), 1.e-12);
+    Wonton::Point<2> dx=extents[i];
+    ASSERT_NEAR(dx[0], 2*(xmax[0]-xmin[0]), 1.e-12);
+    ASSERT_NEAR(dx[1], 2*(xmax[1]-xmin[1]), 1.e-12);
   }
 }
 
@@ -186,34 +192,36 @@ TEST(Faceted_Setup, Simple3D_Tilted) {
   ASSERT_EQ(smoothing.size(), NCELLS*NCELLS*NCELLS);
   ASSERT_EQ(extents.size(), NCELLS*NCELLS*NCELLS);
   for (int i=0; i<NCELLS; i++) {
-    ASSERT_EQ(smoothing[i].size(), 6);
-    ASSERT_NEAR(smoothing[i][0][0],  a-b, 1.e-11);
-    ASSERT_NEAR(smoothing[i][0][1],  -b, 1.e-11);
-    ASSERT_NEAR(smoothing[i][0][2],  -a-b, 1.e-11);
-    ASSERT_NEAR(smoothing[i][0][3],  dx1, 1.e-11);
-    ASSERT_NEAR(smoothing[i][1][0],  b, 1.e-11);
-    ASSERT_NEAR(smoothing[i][1][1],  a+b, 1.e-11);
-    ASSERT_NEAR(smoothing[i][1][2],  -a+b, 1.e-11);
-    ASSERT_NEAR(smoothing[i][1][3],  dx0, 1.e-11); 
-    ASSERT_NEAR(smoothing[i][2][0],  -a+b, 1.e-11);
-    ASSERT_NEAR(smoothing[i][2][1],  b, 1.e-11);
-    ASSERT_NEAR(smoothing[i][2][2],  a+b, 1.e-11);
-    ASSERT_NEAR(smoothing[i][2][3],  dx1, 1.e-11); 
-    ASSERT_NEAR(smoothing[i][3][0],  -b, 1.e-11);
-    ASSERT_NEAR(smoothing[i][3][1],  -a-b, 1.e-11);
-    ASSERT_NEAR(smoothing[i][3][2],  a-b, 1.e-11);
-    ASSERT_NEAR(smoothing[i][3][3],  dx0, 1.e-11); 
-    ASSERT_NEAR(smoothing[i][4][0],  -a-b, 1.e-11);
-    ASSERT_NEAR(smoothing[i][4][1],  a-b, 1.e-11);
-    ASSERT_NEAR(smoothing[i][4][2],  -b, 1.e-11);
-    ASSERT_NEAR(smoothing[i][4][3],  dx2, 1.e-11); 
-    ASSERT_NEAR(smoothing[i][5][0],  a+b, 1.e-11);
-    ASSERT_NEAR(smoothing[i][5][1],  -a+b, 1.e-11);
-    ASSERT_NEAR(smoothing[i][5][2],  b, 1.e-11);
-    ASSERT_NEAR(smoothing[i][5][3],  dx2, 1.e-11); 
+    std::vector<std::vector<double>> h = smoothing[i];
+    ASSERT_EQ(h.size(), 6);
+    ASSERT_NEAR(h[0][0],  a-b, 1.e-11);
+    ASSERT_NEAR(h[0][1],  -b, 1.e-11);
+    ASSERT_NEAR(h[0][2],  -a-b, 1.e-11);
+    ASSERT_NEAR(h[0][3],  dx1, 1.e-11);
+    ASSERT_NEAR(h[1][0],  b, 1.e-11);
+    ASSERT_NEAR(h[1][1],  a+b, 1.e-11);
+    ASSERT_NEAR(h[1][2],  -a+b, 1.e-11);
+    ASSERT_NEAR(h[1][3],  dx0, 1.e-11); 
+    ASSERT_NEAR(h[2][0],  -a+b, 1.e-11);
+    ASSERT_NEAR(h[2][1],  b, 1.e-11);
+    ASSERT_NEAR(h[2][2],  a+b, 1.e-11);
+    ASSERT_NEAR(h[2][3],  dx1, 1.e-11); 
+    ASSERT_NEAR(h[3][0],  -b, 1.e-11);
+    ASSERT_NEAR(h[3][1],  -a-b, 1.e-11);
+    ASSERT_NEAR(h[3][2],  a-b, 1.e-11);
+    ASSERT_NEAR(h[3][3],  dx0, 1.e-11); 
+    ASSERT_NEAR(h[4][0],  -a-b, 1.e-11);
+    ASSERT_NEAR(h[4][1],  a-b, 1.e-11);
+    ASSERT_NEAR(h[4][2],  -b, 1.e-11);
+    ASSERT_NEAR(h[4][3],  dx2, 1.e-11); 
+    ASSERT_NEAR(h[5][0],  a+b, 1.e-11);
+    ASSERT_NEAR(h[5][1],  -a+b, 1.e-11);
+    ASSERT_NEAR(h[5][2],  b, 1.e-11);
+    ASSERT_NEAR(h[5][3],  dx2, 1.e-11); 
 
-    ASSERT_NEAR(extents[i][0], 2*(xmax[0]-xmin[0]), 1.e-12);
-    ASSERT_NEAR(extents[i][1], 2*(xmax[1]-xmin[1]), 1.e-12);
-    ASSERT_NEAR(extents[i][2], 2*(xmax[2]-xmin[2]), 1.e-12);
+    Wonton::Point<3> dx=extents[i];
+    ASSERT_NEAR(dx[0], 2*(xmax[0]-xmin[0]), 1.e-12);
+    ASSERT_NEAR(dx[1], 2*(xmax[1]-xmin[1]), 1.e-12);
+    ASSERT_NEAR(dx[2], 2*(xmax[2]-xmin[2]), 1.e-12);
   }
 }
