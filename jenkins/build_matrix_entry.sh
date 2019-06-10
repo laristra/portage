@@ -73,7 +73,7 @@ tangram_install_dir_nompi=$NGC/private/tangram/${tangram_version}-${compiler_typ
 xmof2d_install_dir=$NGC/private/xmof2d/${xmof2d_version}-${compiler_type}-${compiler_version}
 lapacke_dir=$NGC/private/lapack/${lapack_version}-patched-${compiler_type}-${compiler_version}
 
-if [[ $compiler == "gcc" ]]; then
+if [[ $compiler == "gcc6" ]]; then
   flecsi_install_prefix=$NGC/private/flecsi/374b56b-gcc-6.4.0
   flecsisp_install_prefix=$NGC/private/flecsi-sp/e78c594-gcc-6.4.0
 fi
