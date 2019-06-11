@@ -23,4 +23,6 @@ exclude:
     BUILD_TYPE: readme
   - COMPILER: gcc7
     BUILD_TYPE: readme
+  - COMPILER: gcc7
+    BUILD_TYPE: flecsi    
 
