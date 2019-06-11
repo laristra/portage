@@ -28,10 +28,10 @@
 #include "tangram/support/MatPoly.h"
 #endif
 
+namespace Portage {
+
 using Wonton::Point;
 using Wonton::Vector;
-
-namespace Portage {
 
 /*! @class Limited_Gradient gradient.h
     @brief Compute limited gradient of a field or components of a field
