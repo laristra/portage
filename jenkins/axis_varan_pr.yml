@@ -15,10 +15,6 @@ exclude:
   - COMPILER: intel18
     BUILD_TYPE: flecsi
   - COMPILER: gcc6
-    BUILD_TYPE: readme
-  - COMPILER: gcc7
-    BUILD_TYPE: readme
-  - COMPILER: gcc7
-    BUILD_TYPE: flecsi    
+    BUILD_TYPE: readme 
 
 
