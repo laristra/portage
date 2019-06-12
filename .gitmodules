@@ -3,5 +3,5 @@
 	url = ../../laristra/cinch.git
 [submodule "wonton"]
 	path = wonton
-	url = ../laristra/wonton.git
+	url = ../../laristra/wonton.git
 	branch = master
