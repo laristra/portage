@@ -19,6 +19,20 @@ namespace Portage {
   namespace Meshfree {
     namespace Weight {
 
+      /** @brief Function to setup faceted weight data give a mesh wrapper. 
+       *
+       * @param[in] mesh Mesh wrapper from which to pull face normals and distances
+       * @param[out] smoothing_lengths the output normals and distances
+       * @param[out] extents the output bounding boxes of the cells in @code mesh @endcode
+       * 
+       * The smoothing_lengths object has the following structure: 
+       * smoothing_lengths[i][j][k] is interpreted as the k-th component of the normal vector 
+       * to the j-th face of the i-th cell, for k=0,...,dim-1, where dim is the spatial 
+       * dimension of the problem. For k=dim, it is the distance of the j-th face from 
+       * the centroid of the i-th cell. For 3D faces that are non-planar, the normal is the 
+       * average of the normals to the triangles formed by adjacent vertices and face centroids.  
+       */
+
       template<int DIM, class Mesh_Wrapper> void faceted_setup_cell
         (const Mesh_Wrapper &mesh, 
          Portage::vector<std::vector<std::vector<double>>> &smoothing_lengths,

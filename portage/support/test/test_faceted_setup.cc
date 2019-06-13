@@ -18,6 +18,7 @@ Please see the license file at the root of this repository, or at:
 
 const unsigned int NCELLS=5;
 
+// Checks the face normals and distances of a 2D axis-aligned brick mesh. 
 TEST(Faceted_Setup, Simple2D) {
   Wonton::Simple_Mesh mesh(0., 0., 1., .1, NCELLS, NCELLS); // high aspect ratio
   Wonton::Simple_Mesh_Wrapper wrapper(mesh);
@@ -54,6 +55,7 @@ TEST(Faceted_Setup, Simple2D) {
   }
 }
 
+// Checks the face normals and distances of a 3D axis-aligned brick mesh. 
 TEST(Faceted_Setup, Simple3D) {
   Wonton::Simple_Mesh mesh(0., 0., 0., 1., .1, .01, NCELLS, NCELLS, NCELLS); // high aspect ratio
   Wonton::Simple_Mesh_Wrapper wrapper(mesh);
@@ -103,6 +105,7 @@ TEST(Faceted_Setup, Simple3D) {
   }
 }
 
+// Checks the face normals and distances of a 2D brick mesh tilted 30 degrees 
 TEST(Faceted_Setup, Simple2D_Tilted) {
   Wonton::Simple_Mesh mesh(0., 0., 1., .1, NCELLS, NCELLS); // high aspect ratio
   // rotate Pi/6 radians and translate by {10,20}.
@@ -154,6 +157,7 @@ TEST(Faceted_Setup, Simple2D_Tilted) {
   }
 }
 
+// Checks the face normals and distances of a 3D brick mesh tilted 30 degrees 
 TEST(Faceted_Setup, Simple3D_Tilted) {
   Wonton::Simple_Mesh mesh(0., 0., 0., 1., .1, .01, NCELLS, NCELLS, NCELLS); // high aspect ratio
   // rotate Pi/2 radians about the axis {1,1,1} and translate by {10,20,30}.
