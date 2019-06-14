@@ -39,9 +39,9 @@ with Travis CI.
 ### Prerequisites
 
 Portage uses standard C++11 features, so a fairly modern compiler is
-needed.  We regularly test with Intel 17+ or GCC 5.3+.  Utilizing the
-full capabilities of portage will require an MPI implementation; we
-regularly test with OpenMPI 1.10.3+ The build system _requires_ CMake
+needed.  We regularly test with Intel 18.0.1, GCC 6.4.0, and GCC 7.3.0.  
+Utilizing the full capabilities of portage will require an MPI implementation; 
+we regularly test with OpenMPI 2.1.2 The build system _requires_ CMake
 version 3.0+.
 
 The following libraries are also _required_ (see examples below):
@@ -141,7 +141,7 @@ Execute the following from the portage root directory:
 INTEL_VERSION=18.0.3
 MPI_VERSION=2.1.5
 JALI_VERSION=1.0.4
-TANGRAM_VERSION=0.9.3
+TANGRAM_VERSION=0.9.4
 XMOF2D_VERSION=0.9.4
 BOOST_VERSION=1.68.0
 
@@ -176,7 +176,7 @@ Execute the following from the portage root directory:
 . /usr/share/lmod/lmod/init/sh
 module load intel/18.0.5 openmpi/2.1.2 cmake
 JALI_INSTALL_PREFIX=/usr/projects/ngc/private/jali/1.0.4-intel-18.0.5-openmpi-2.1.2
-TANGRAM_INSTALL_PREFIX=/usr/projects/ngc/private/tangram/0.9.3-intel-18.0.5-openmpi-2.1.2
+TANGRAM_INSTALL_PREFIX=/usr/projects/ngc/private/tangram/0.9.4-intel-18.0.5-openmpi-2.1.2
 XMOF2D_INSTALL_PREFIX=/usr/projects/ngc/private/xmof2d/0.9.4-intel-18.0.5
 LAPACKE_DIR=/usr/projects/ngc/private/lapack/3.8.0-patched-intel-18.0.5
 mkdir build
@@ -205,7 +205,7 @@ Thrust and TCMalloc in your build.  The cmake command for this is:
 . /usr/share/lmod/lmod/init/sh
 module load intel/18.0.5 openmpi/2.1.2 cmake
 JALI_INSTALL_PREFIX=/usr/projects/ngc/private/jali/1.0.4-intel-18.0.5-openmpi-2.1.2
-TANGRAM_INSTALL_PREFIX=/usr/projects/ngc/private/tangram/0.9.3-intel-18.0.5-openmpi-2.1.2
+TANGRAM_INSTALL_PREFIX=/usr/projects/ngc/private/tangram/0.9.4-intel-18.0.5-openmpi-2.1.2
 XMOF2D_INSTALL_PREFIX=/usr/projects/ngc/private/xmof2d/0.9.4-intel-18.0.5
 LAPACKE_DIR=/usr/projects/ngc/private/lapack/3.8.0-patched-intel-18.0.5
 mkdir build-thrust
@@ -239,7 +239,7 @@ export MODULEPATH=""
 . /opt/local/packages/Modules/default/init/sh
 module load intel/18.0.1 openmpi/2.1.2 cmake
 JALI_INSTALL_PREFIX=/usr/local/codes/ngc/private/jali/1.0.4-intel-18.0.1-openmpi-2.1.2
-TANGRAM_INSTALL_PREFIX=/usr/local/codes/ngc/private/tangram/0.9.3-intel-18.0.1-openmpi-2.1.2
+TANGRAM_INSTALL_PREFIX=/usr/local/codes/ngc/private/tangram/0.9.4-intel-18.0.1-openmpi-2.1.2
 XMOF2D_INSTALL_PREFIX=/usr/local/codes/ngc/private/xmof2d/0.9.4-intel-18.0.1
 LAPACKE_DIR=/usr/local/codes/ngc/private/lapack/3.8.0-patched-intel-18.0.1/
 LAPACKE_INCLUDE_DIR=$LAPACKE_DIR/include
@@ -273,8 +273,8 @@ export MODULEPATH=""
 module load gcc/6.4.0 openmpi/2.1.2 cmake
 FLECSI_INSTALL_PREFIX=/usr/local/codes/ngc/private/flecsi/374b56b-gcc-6.4.0
 FLECSISP_INSTALL_PREFIX=/usr/local/codes/ngc/private/flecsi-sp/e78c594-gcc-6.4.0
-TANGRAM_INSTALL_PREFIX=/usr/local/codes/ngc/private/tangram/0.9.2-gcc-6.4.0-openmpi-2.1.2
-XMOF2D_INSTALL_PREFIX=/usr/local/codes/ngc/private/xmof2d/0.9.1-gcc-6.4.0
+TANGRAM_INSTALL_PREFIX=/usr/local/codes/ngc/private/tangram/0.9.4-gcc-6.4.0-openmpi-2.1.2
+XMOF2D_INSTALL_PREFIX=/usr/local/codes/ngc/private/xmof2d/0.9.4-gcc-6.4.0
 LAPACKE_DIR=/usr/local/codes/ngc/private/lapack/3.8.0-patched-gcc-6.4.0
 LAPACKE_INCLUDE_DIR=$LAPACKE_DIR/include
 LAPACKE_LIBRARY_DIR=$LAPACKE_DIR
