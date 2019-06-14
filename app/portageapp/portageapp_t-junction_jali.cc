@@ -15,6 +15,8 @@
 #include <memory>
 #include <utility>
 #include <cmath>
+#include <set>
+#include <numeric>
 
 #include <mpi.h>
 
@@ -587,8 +589,11 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
                                                      cell_mat_ids,
                                                      cell_mat_volfracs,
                                                      cell_mat_centroids);
+                                                     
+  int should_be=0;
+  for (auto n:cell_num_mats)should_be+=n;
+  
   // Compute offsets into flattened arrays based on cell_num_mats
-
   std::vector<int> offsets(nsrccells);
   offsets[0] = 0;
   for (int i = 1; i < nsrccells; i++)
@@ -608,23 +613,10 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
   // in the partition when walking over cells
   ////////////////////////////////////////////////////////////////////////////
   // Count the number of materials in the problem and gather their IDs
-  std::vector<int> mat_ids;
-  nmats = 0;
-  for (int c = 0; c < nsrccells; c++) {
-    int nmats_cell = cell_num_mats[c];
-    for (int m = 0; m < nmats_cell; m++) {
-      bool found = false;
-      for (int m2 = 0; m2 < nmats; m2++)
-        if (mat_ids[m2] == cell_mat_ids[offsets[c]+m]) {
-          found = true;
-          break;
-        }
-      if (!found) {
-        mat_ids.push_back(cell_mat_ids[offsets[c]+m]);
-        nmats++;
-      }
-    }
-  }
+  std::set<int> mat_ids;
+  for (auto id: cell_mat_ids) mat_ids.insert(id);
+  nmats = mat_ids.size();
+ 
 
   // Spit out some information for the user
 
@@ -654,9 +646,9 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
   // Convert data from cell-centric to material-centric form as we
   // will need it for adding it to the state manager
 
-  std::vector<std::vector<int>> matcells(nmats);
-  std::vector<std::vector<double>> mat_volfracs(nmats);
-  std::vector<std::vector<Wonton::Point<dim>>> mat_centroids(nmats);
+  std::unordered_map<int, std::vector<int>> matcells;
+  std::unordered_map<int, std::vector<double>> mat_volfracs;
+  std::unordered_map<int, std::vector<Wonton::Point<dim>>> mat_centroids;
   for (int c = 0; c < nsrccells; c++) {
     int ibeg = offsets[c];
     for (int j = 0; j < cell_num_mats[c]; j++) {
@@ -667,29 +659,67 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
     }
   }
 
+  int n_total_mats=1;
+  
+  // use MPI to figure out what materials are in the problem. We will fix the
+  // problem of not every material on every partition, but we are not addressing
+  // the issue (in Jali) of the global material set not being equal to [0,nmats-1]
+  if (numpe > 1) {
+  
+    // Gather all the number of materials on each partition
+    std::vector<int> nmats_all(numpe);
+    MPI_Allgather(&nmats, 1, MPI_INT, nmats_all.data(), 1, MPI_INT, MPI_COMM_WORLD);
+    
+    // Gather all the materials on each partition
+    // FIX DUPLICATION OF PARTIAL SUM
+    int num_mats_all = std::accumulate(nmats_all.begin(), nmats_all.end(),0);
+    std::vector<int> mats_all(num_mats_all);
+    std::vector<int> mat_ids_vector(mat_ids.begin(), mat_ids.end());
+    
+    // compute offsets (note the first element is zero and correct)
+    std::vector<int> offsets(numpe);
+    std::partial_sum(nmats_all.begin(), nmats_all.end(), offsets.begin()+1);
+
+    // gather all the materials on all the processors
+    MPI_Allgatherv(mat_ids_vector.data(), nmats, MPI_INT, mats_all.data(), 
+      nmats_all.data(), offsets.data(), MPI_INT, MPI_COMM_WORLD);
+      
+    // the number of materials in the problem is the max mat_id +1
+    n_total_mats = *std::max_element(mats_all.begin(), mats_all.end())+1;
+  } else {
+  
+    // serial
+    n_total_mats = nmats;
+    
+  }
+
   ////////////////////////////////////////////////////////////////////////////
   // in this block, materials are added sequentially so the internal Jali id
   // may not match the material id if the materials are sparse
   ////////////////////////////////////////////////////////////////////////////
-  // Add materials, volume fractions and centroids to source state
 
-  std::vector<std::string> matnames(nmats);
-  for (int m = 0; m < nmats; m++) {
+  // Add materials, volume fractions and centroids to source state
+  // if the material isn't found, add empty data to the source state
+  // note names are dimensioned on all materials whether in the partition or not
+  std::vector<std::string> matnames(n_total_mats);
+  for (int m = 0; m < n_total_mats; m++) {
     std::stringstream matstr;
     matstr << "mat" << m;
     matnames[m] = matstr.str();
-    sourceStateWrapper.add_material(matnames[m], matcells[m]);
+    if (matcells.find(m)!=matcells.end()){
+      sourceStateWrapper.add_material(matnames[m], matcells[m]);
+      sourceStateWrapper.mat_add_celldata("mat_volfracs", m, mat_volfracs[m].data());
+      sourceStateWrapper.mat_add_celldata("mat_centroids", m, mat_centroids[m].data());
+    } else {
+      sourceStateWrapper.add_material(matnames[m], {});
+      // need to cast the empty data so that type_id works
+      sourceStateWrapper.mat_add_celldata("mat_volfracs", m, static_cast<double*>(nullptr));
+      sourceStateWrapper.mat_add_celldata("mat_centroids", m, static_cast<Wonton::Point<dim>*>(nullptr));
+    }
   }
-
-  for (int m = 0; m < nmats; m++) {
-    sourceStateWrapper.mat_add_celldata("mat_volfracs", m, &((mat_volfracs[m])[0]));
-    sourceStateWrapper.mat_add_celldata("mat_centroids", m, &((mat_centroids[m])[0]));
-  }
-
 
   // User specified fields on source
-
-  std::vector<user_field_t> mat_fields(nmats);
+  std::vector<user_field_t> mat_fields(n_total_mats);
 
 
   // Executor
@@ -717,7 +747,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
   // order accurate method)
 
   if (material_field_expressions.size()) {
-    for (int m = 0; m < nmats; m++) {
+    for (int m = 0; m < n_total_mats; m++) {
       if (!mat_fields[m].initialize(dim, material_field_expressions[m]))
         MPI_Abort(MPI_COMM_WORLD, -1);
 
@@ -768,7 +798,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
   // The remap algorithm will figure out which cells contain which materials
 
   std::vector<int> dummylist;
-  for (int m = 0; m < nmats; m++)
+  for (int m = 0; m < n_total_mats; m++)
     targetStateWrapper.add_material(matnames[m], dummylist);
 
   // Add the volume fractions, centroids and cellmatdata variables
@@ -882,7 +912,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
   std::vector<double> target_cell_mat_volfracs(ntotal);
   std::vector<Tangram::Point<dim>> target_cell_mat_centroids(ntotal);
 
-  for (int m = 0; m < nmats; m++) {
+  for (int m = 0; m < n_total_mats; m++) {
     std::vector<int> matcells;
     targetStateWrapper.mat_get_cells(m, &matcells);
 
@@ -906,7 +936,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
   }
   
   // Cheesy printout results
-  for (int m = 0; m < nmats; m++) {
+  for (int m = 0; m < n_total_mats; m++) {
     std::vector<int> matcells;
     targetStateWrapper.mat_get_cells(m, &matcells);
 
@@ -921,8 +951,9 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
 
     int nmatcells = matcells.size();
     
-    std::cout << "\n----target cell indices on rank "<< rank<<" for material "<< m << ": ";
-    for (int ic = 0; ic < nmatcells; ic++) std::cout <<matcells[ic]<< " ";
+    std::cout << "\n----target cell global indices on rank "<< rank<<" for material "<< m << ": ";
+    for (int ic = 0; ic < nmatcells; ic++) std::cout <<
+      targetMeshWrapper.get_global_id(matcells[ic], Wonton::Entity_kind::CELL) << " ";
     std::cout << std::endl; 
     
     std::cout << "----mat_volfracs on rank "<< rank<<" for material "<< m <<": ";

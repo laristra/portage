@@ -92,7 +92,7 @@ template <template <int, Entity_kind, class, class> class Search,
           class, class> class Intersect,
           template<int, Entity_kind, class, class, class,
           template<class, int, class, class> class,
-          class, class> class Interpolate,
+          class, class, class=Wonton::DefaultCoordSys> class Interpolate,
           int D,
           class SourceMesh_Wrapper,
           class SourceState_Wrapper,
@@ -138,6 +138,9 @@ class MMDriver {
 
   /// Destructor
   ~MMDriver() {}
+
+  /// Enable move semantics
+  MMDriver(MMDriver &&) = default;
 
   /*!
     @brief Specify the names of the variables to be interpolated
@@ -291,7 +294,20 @@ class MMDriver {
       std::cerr << "Type not supported \n";
   }
 
+#ifdef HAVE_TANGRAM
+  /*!
+    @brief set options for interface reconstructor driver  
+    @param tols The vector of tolerances for each moment during reconstruction
+    @param all_convex Should be set to false if the source mesh contains 
+    non-convex cells.  
+  */
+  void set_reconstructor_options(std::vector<Tangram::IterativeMethodTolerances_t> &tols, 
+                                 bool all_convex){
+    reconstructor_tols_ = tols; 
+    reconstructor_all_convex_ = all_convex; 
+  }
 
+#endif
 
   /*!
     @brief Get the names of the variables to be remapped from the
@@ -550,6 +566,21 @@ class MMDriver {
 
 
 #ifdef HAVE_TANGRAM
+  // The following tolerances as well as the all-convex flag are required for 
+  // the interface reconstructor driver. The size of the tols vector is currently 
+  // set to two since MOF requires two different set of tolerances to match the 
+  // 0th-order and 1st-order moments. VOF on the other does not require the second 
+  // tolerance. 
+  // If a new IR method which requires tolerances for higher moment is added to 
+  // Tangram, then this vector size should be generalized. The boolean all_convex 
+  // flag is to specify if a mesh contains only convex cells and set to true in that case. 
+  //
+  // There is an associated method called set_reconstructor_options that should
+  // be invoked to set user-specific values. Otherwise, the remapper will use 
+  // the default values. 
+  std::vector<Tangram::IterativeMethodTolerances_t> reconstructor_tols_ = 
+  {{1000, 1e-12, 1e-12}, {1000, 1e-12, 1e-12}};
+  bool reconstructor_all_convex_ = true;  
 
   // Convert volume fraction and centroid data from compact
   // material-centric to compact cell-centric (ccc) form as needed by
@@ -627,7 +658,7 @@ template <template <int, Entity_kind, class, class> class Search,
           class, class> class Intersect,
           template<int, Entity_kind, class, class, class,
           template<class, int, class, class> class,
-          class, class> class Interpolate,
+          class, class, class=Wonton::DefaultCoordSys> class Interpolate,
           int D,
           class SourceMesh_Wrapper,
           class SourceState_Wrapper,
@@ -714,14 +745,14 @@ int MMDriver<Search, Intersect, Interpolate, D,
 #ifdef HAVE_TANGRAM
   // Call interface reconstruction only if we got a method from the
   // calling app
-  std::vector<Tangram::IterativeMethodTolerances_t> tols(2, {1000, 1e-12, 1e-12});
+  //std::vector<Tangram::IterativeMethodTolerances_t> tols(2, {1000, 1e-12, 1e-12});
 
   auto interface_reconstructor =
       std::make_shared<Tangram::Driver<InterfaceReconstructorType, D,
                                        SourceMesh_Wrapper2,
                                        Matpoly_Splitter,
                                        Matpoly_Clipper>
-                       >(source_mesh2, tols, true);
+                       >(source_mesh2, reconstructor_tols_, reconstructor_all_convex_);
 
   if (typeid(InterfaceReconstructorType<SourceMesh_Wrapper2, D,
              Matpoly_Splitter, Matpoly_Clipper >) !=
