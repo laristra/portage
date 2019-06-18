@@ -535,8 +535,9 @@ remap(std::vector<std::string> const &src_varnames,
       double nnbrsdev=0;
       for (int i=0; i<numTargetPts; i++) {
         int n=0;
-        for (int j=0; j<source_pts_and_mults[i].size(); j++) {
-          if (std::fabs(source_pts_and_mults[i][j].weights[0]) > 0.0) n++;
+        std::vector<Weights_t> wts=source_pts_and_mults[i];
+        for (int j=0; j<wts.size(); j++) {
+          if (std::fabs(wts[j].weights[0]) > 0.0) n++;
         }
         if (n > nnbrmax) nnbrmax = n;
         if (n < nnbrmin) nnbrmin = n;
@@ -545,8 +546,9 @@ remap(std::vector<std::string> const &src_varnames,
       nnbravg = nnbrsum / numTargetPts;
       for (int i=0; i<numTargetPts; i++) {
         int n=0;
-        for (int j=0; j<source_pts_and_mults[i].size(); j++) {
-          if (std::fabs(source_pts_and_mults[i][j].weights[0]) > 0.0) n++;
+        std::vector<Weights_t> wts=source_pts_and_mults[i];
+        for (int j=0; j<wts.size(); j++) {
+          if (std::fabs(wts[j].weights[0]) > 0.0) n++;
         }
         nnbrsdev += (n-nnbravg)*(n-nnbravg);
       }

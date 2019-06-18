@@ -9,6 +9,14 @@ Please see the license file at the root of this repository, or at:
 
 message(STATUS "Adding swarmapp test")
 
+# this app can be run in serial or mpi mode - set an environment
+# variable so that either will work
+if(ENABLE_MPI)
+  set(RUN_COMMAND "mpirun -np 1")
+else()
+  set(RUN_COMMAND "")
+endif(ENABLE_MPI)
+
 macro(ADD_SWARMAPP_TEST EXAMPLE DISTRIBUTION)
   file(COPY swarmapp_test-${EXAMPLE}-${DISTRIBUTION}.sh
     DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
@@ -19,6 +27,7 @@ macro(ADD_SWARMAPP_TEST EXAMPLE DISTRIBUTION)
   set_property(TEST swarmapp_test-${EXAMPLE}-${DISTRIBUTION}
     PROPERTY ENVIRONMENT
     TESTAPPDIR=${CMAKE_CURRENT_BINARY_DIR}/..
+    RUN_COMMAND=${RUN_COMMAND}
     )
 endmacro(ADD_SWARMAPP_TEST)
 
