@@ -422,7 +422,7 @@ class ComponentDriver : public ComponentDriverBase<D,
   intersect_meshes(Portage::vector<std::vector<int>> const& candidates) {
 
     int nents = target_mesh_.num_entities(ONWHAT, PARALLEL_OWNED);
-    Portage::vector<vector<Portage::Weights_t>> sources_and_weights(nents);
+    Portage::vector<std::vector<Portage::Weights_t>> sources_and_weights(nents);
       
     Intersect<ONWHAT, SourceMesh, SourceState, TargetMesh,
               InterfaceReconstructorType, Matpoly_Splitter, Matpoly_Clipper>
