@@ -109,6 +109,7 @@ class BasisTest : public ::testing::Test {
     ASSERT_TRUE(is_identity(j_jinv, 1.0e-12));
     j_jinv = matmatmult(bjinv_x, bj_x);
     ASSERT_TRUE(is_identity(j_jinv, 1.0e-12));
+
     // Check that Jinverse(x) = J(-x)
     ASSERT_TRUE(is_equal(bj_negx, bjinv_x, 1.0e-12));
 

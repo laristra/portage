@@ -1,7 +1,8 @@
 # axis_hpc.yml
 COMPILER:
-  - intel
-  - gcc
+  - intel18
+  - gcc6
+  - gcc7
 
 BUILD_TYPE:
   - base
@@ -11,6 +12,8 @@ BUILD_TYPE:
   - readme
 
 exclude:
-  - COMPILER: gcc
+  - COMPILER: gcc6
+    BUILD_TYPE: readme
+  - COMPILER: gcc7
     BUILD_TYPE: readme
 

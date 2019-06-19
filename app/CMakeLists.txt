@@ -7,6 +7,7 @@ Please see the license file at the root of this repository, or at:
 include_directories(include)  # contains user_field.h for expression parsing
 
 add_subdirectory(apptest_cmp)
+add_subdirectory(distributed_cmp)
 add_subdirectory(simple_mesh_app)
 add_subdirectory(swarmapp)
 add_subdirectory(msmapp)
