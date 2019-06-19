@@ -14,6 +14,8 @@ add_executable(swarmapp swarmapp.cc)
 target_link_libraries(swarmapp portage
   ${EXTRA_LIBS} ${LAPACKX_LIBRARIES} ${MPI_CXX_LIBRARIES})
 
+# Compare
+add_executable(swarmcompare swarmcompare.cc)
 
 #TCMalloc option
 set(ENABLE_TCMALLOC TRUE CACHE BOOL "Use TCMalloc")
@@ -35,6 +37,6 @@ if(ENABLE_PROFILE)
 endif(ENABLE_PROFILE)
 
 
-#if (ENABLE_APP_TESTS)
-#  add_subdirectory(test)
-#endif (ENABLE_APP_TESTS)
+if (ENABLE_APP_TESTS)
+  add_subdirectory(test)
+endif (ENABLE_APP_TESTS)
