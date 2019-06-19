@@ -116,6 +116,9 @@ class ComponentDriverBase {
   ComponentDriverBase() {}
   virtual ~ComponentDriverBase() {}  // Necessary
   
+  // Entity kind that a derived class is defined on
+  virtual Entity_kind onwhat() = 0;
+
   /*! @brief search for candidate source entities whose control volumes
      (cells, dual cells) overlap the control volumes of target cells
      
@@ -128,7 +131,8 @@ class ComponentDriverBase {
            template <int, Entity_kind, class, class> class Search>
   Portage::vector<std::vector<int>>
   search() {
-    auto derived_class_ptr = dynamic_cast<ComponentDriverType<ONWHAT> *>(this);
+    assert(ONWHAT == onwhat());
+    auto derived_class_ptr = static_cast<ComponentDriverType<ONWHAT> *>(this);
     return derived_class_ptr->template search<Search>();
   }
     
@@ -149,7 +153,8 @@ class ComponentDriverBase {
     >
   Portage::vector<std::vector<Portage::Weights_t>>
   intersect_meshes(Portage::vector<std::vector<int>> const& intersection_candidates) {
-    auto derived_class_ptr = dynamic_cast<ComponentDriverType<ONWHAT> *>(this);
+    assert(ONWHAT == onwhat());
+    auto derived_class_ptr = static_cast<ComponentDriverType<ONWHAT> *>(this);
     return derived_class_ptr->template intersect_meshes<Intersect>(intersection_candidates);
   }
     
@@ -170,7 +175,8 @@ class ComponentDriverBase {
     >
   std::vector<Portage::vector<std::vector<Portage::Weights_t>>>
   intersect_materials(Portage::vector<std::vector<int>> const& intersection_candidates) {
-    auto derived_class_ptr = dynamic_cast<ComponentDriverType<CELL> *>(this);
+    assert(onwhat() == CELL);
+    auto derived_class_ptr = static_cast<ComponentDriverType<CELL> *>(this);
     return derived_class_ptr->template intersect_materials<Intersect>(intersection_candidates);
   }
 
@@ -211,8 +217,9 @@ class ComponentDriverBase {
                             Empty_fixup_type empty_fixup_type,
                             double conservation_tol,
                             int max_fixup_iter) {
-
-    auto derived_class_ptr = dynamic_cast<ComponentDriverType<ONWHAT> *>(this);
+    
+    assert(ONWHAT == onwhat());
+    auto derived_class_ptr = static_cast<ComponentDriverType<ONWHAT> *>(this);
     derived_class_ptr->
         template interpolate_mesh_var<T, Interpolate>(srcvarname, trgvarname,
                                                       sources_and_weights,
@@ -257,7 +264,8 @@ class ComponentDriverBase {
                            double conservation_tol,
                            int max_fixup_iter) {
 
-    auto derived_class_ptr = dynamic_cast<ComponentDriverType<CELL> *>(this);
+    assert(onwhat() == CELL);
+    auto derived_class_ptr = static_cast<ComponentDriverType<CELL> *>(this);
      derived_class_ptr->
          template interpolate_mat_var<T, Interpolate>(srcvarname,
                                                       trgvarname,
@@ -281,7 +289,8 @@ class ComponentDriverBase {
   template<Entity_kind ONWHAT>
   bool 
   check_mesh_mismatch(Portage::vector<std::vector<Weights_t>> const& source_weights) {
-    auto derived_class_ptr = dynamic_cast<ComponentDriverType<ONWHAT> *>(this);
+    assert(ONWHAT == onwhat());
+    auto derived_class_ptr = static_cast<ComponentDriverType<ONWHAT> *>(this);
     return derived_class_ptr->check_mesh_mismatch(source_weights);
   }
 
@@ -375,6 +384,9 @@ class ComponentDriver : public ComponentDriverBase<D,
 
   /// Destructor
   ~ComponentDriver() {}
+
+  /// What entity kind is this defined on?
+  Entity_kind onwhat() {return ONWHAT;}
 
   /*!
     Find candidates entities of a particular kind that might
