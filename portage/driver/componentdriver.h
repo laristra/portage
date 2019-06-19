@@ -282,7 +282,7 @@ class ComponentDriverBase {
   bool 
   check_mesh_mismatch(Portage::vector<std::vector<Weights_t>> const& source_weights) {
     auto derived_class_ptr = dynamic_cast<ComponentDriverType<ONWHAT> *>(this);
-    return derived_class_ptr->template check_mesh_mismatch(source_weights);
+    return derived_class_ptr->check_mesh_mismatch(source_weights);
   }
 
 };
