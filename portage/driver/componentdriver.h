@@ -475,12 +475,22 @@ class ComponentDriver : public ComponentDriverBase<D,
     std::vector<Tangram::IterativeMethodTolerances_t>
         tols(2, {1000, 1e-12, 1e-12});
 
+    // Intel 18.0.1 does not recognize std::make_unique even with -std=c++14 flag *ugh*
+    // interface_reconstructor_ =
+    //     std::make_unique<Tangram::Driver<InterfaceReconstructorType, D,
+    //                                      SourceMesh,
+    //                                      Matpoly_Splitter,
+    //                                      Matpoly_Clipper>
+    //                      >(source_mesh_, tols, true);
     interface_reconstructor_ =
-        std::make_unique<Tangram::Driver<InterfaceReconstructorType, D,
-                                         SourceMesh,
-                                         Matpoly_Splitter,
-                                         Matpoly_Clipper>
-                         >(source_mesh_, tols, true);
+        std::unique_ptr<Tangram::Driver<InterfaceReconstructorType, D,
+                                        SourceMesh,
+                                        Matpoly_Splitter,
+                                        Matpoly_Clipper>
+                        >(new Tangram::Driver<InterfaceReconstructorType, D,
+                          SourceMesh,
+                          Matpoly_Splitter,
+                          Matpoly_Clipper>(source_mesh_, tols, true));
     
     int nsourcecells = source_mesh_.num_entities(CELL, ALL);
     int ntargetcells = target_mesh_.num_entities(CELL, PARALLEL_OWNED);
@@ -675,13 +685,24 @@ class ComponentDriver : public ComponentDriverBase<D,
   check_mesh_mismatch(Portage::vector<std::vector<Weights_t>> const& source_weights) {
 
     // Instantiate mismatch fixer for later use
-    if (!mismatch_fixer_)
-      mismatch_fixer_ = std::make_unique<MismatchFixer<D, ONWHAT,
-                                                       SourceMesh, SourceState,
-                                                       TargetMesh,  TargetState>
-                                         >
-          (source_mesh_, source_state_, target_mesh_, target_state_,
-           source_weights, executor_);
+    if (!mismatch_fixer_) {
+      // Intel 18.0.1 does not recognize std::make_unique even with -std=c++14 flag *ugh*
+      // mismatch_fixer_ = std::make_unique<MismatchFixer<D, ONWHAT,
+      //                                                  SourceMesh, SourceState,
+      //                                                  TargetMesh,  TargetState>
+      //                                    >
+      //     (source_mesh_, source_state_, target_mesh_, target_state_,
+      //      source_weights, executor_);
+
+      mismatch_fixer_ = std::unique_ptr<MismatchFixer<D, ONWHAT,
+                                                      SourceMesh, SourceState,
+                                                      TargetMesh,  TargetState>
+                                        >(new MismatchFixer<D, ONWHAT,
+                                          SourceMesh, SourceState,
+                                          TargetMesh,  TargetState>
+                                          (source_mesh_, source_state_, target_mesh_, target_state_,
+                                           source_weights, executor_));
+    }
 
     return mismatch_fixer_->has_mismatch();
   }
@@ -722,15 +743,9 @@ class ComponentDriver : public ComponentDriverBase<D,
     }
 
     // Instantiate particular interpolator
-    auto interpolator =
-        std::make_unique<Interpolate<D, ONWHAT,
-                                     SourceMesh, TargetMesh, SourceState,
-                                     InterfaceReconstructorType,
-                                     Matpoly_Splitter, Matpoly_Clipper,
-                                     CoordSys>
-                         >
-        (source_mesh_, target_mesh_, source_state_,
-         interface_reconstructor_);
+    Interpolate<D, ONWHAT, SourceMesh, TargetMesh, SourceState,
+                InterfaceReconstructorType, Matpoly_Splitter, Matpoly_Clipper, CoordSys>
+        interpolator(source_mesh_, target_mesh_, source_state_, interface_reconstructor_);
       
 
     // Get a handle to a memory location where the target state
@@ -743,13 +758,13 @@ class ComponentDriver : public ComponentDriverBase<D,
     Portage::pointer<T> target_field(target_field_raw);
 
 
-    interpolator->set_interpolation_variable(srcvarname, limiter);
+    interpolator.set_interpolation_variable(srcvarname, limiter);
 
     Portage::transform(target_mesh_.begin(ONWHAT, PARALLEL_OWNED),
                        target_mesh_.end(ONWHAT, PARALLEL_OWNED),
                        sources_and_weights.begin(),
-                       target_field, *interpolator);
-
+                       target_field, interpolator);
+    
     if (has_mismatch_)
       mismatch_fixer_->fix_mismatch(srcvarname, trgvarname,
                                     lower_bound, upper_bound,
@@ -786,31 +801,24 @@ class ComponentDriver : public ComponentDriverBase<D,
                            Empty_fixup_type empty_fixup_type = DEFAULT_EMPTY_FIXUP_TYPE,
                            double conservation_tol = DEFAULT_CONSERVATION_TOL,
                            int max_fixup_iter = DEFAULT_MAX_FIXUP_ITER) {
-
-    // Instantiate particular interpolator
-    auto interpolator =
-        std::make_unique<Interpolate<D, ONWHAT,
-                                     SourceMesh, TargetMesh, SourceState,
-                                     InterfaceReconstructorType,
-                                     Matpoly_Splitter, Matpoly_Clipper,
-                                     CoordSys>
-                         >
-        (source_mesh_, target_mesh_, source_state_, interface_reconstructor_);
-      
+    
+    Interpolate<D, ONWHAT, SourceMesh, TargetMesh, SourceState,
+                InterfaceReconstructorType, Matpoly_Splitter, Matpoly_Clipper, CoordSys>
+        interpolator(source_mesh_, target_mesh_, source_state_, interface_reconstructor_);
       
     int nmats = source_state_.num_materials();
 
 
     for (int m = 0; m < nmats; m++) {
 
-      interpolator->set_material(m);    // We have to do this so we know
+      interpolator.set_material(m);    // We have to do this so we know
       //                                 // which material values we have
       //                                 // to grab from the source state
 
       // FEATURE ;-)  Have to set interpolation variable AFTER setting 
       // the material for multimaterial variables
 
-      interpolator->set_interpolation_variable(srcvarname, limiter);
+      interpolator.set_interpolation_variable(srcvarname, limiter);
 
       // if the material has no cells on this partition, then don't bother
       // interpolating MM variables
@@ -831,7 +839,7 @@ class ComponentDriver : public ComponentDriverBase<D,
 
       Portage::transform(matcellstgt.begin(), matcellstgt.end(),
                          sources_and_weights_by_mat[m].begin(),
-                         target_field, *interpolator);
+                         target_field, interpolator);
 
       // If the state wrapper knows that the target data is already
       // laid out in this way and it gave us a pointer to the array
@@ -974,21 +982,54 @@ make_component_driver(Entity_kind onwhat,
                      Wonton::Executor_type const *executor) {
   switch (onwhat) {
     case CELL:
-      return std::make_unique<ComponentDriver<D, CELL,
+      // Intel 18.0.1 does not recognize std::make_unique even with -std=c++14 flag *ugh*
+      // return std::make_unique<ComponentDriver<D, CELL,
+      //                                        SourceMesh, SourceState,
+      //                                        TargetMesh, TargetState,
+      //                                        InterfaceReconstructorType,
+      //                                        Matpoly_Splitter, Matpoly_Clipper,
+      //                                        CoordSys>>
+      //     (source_mesh, source_state, target_mesh, target_state, executor);
+
+      return std::unique_ptr<ComponentDriver<D, CELL,
                                              SourceMesh, SourceState,
                                              TargetMesh, TargetState,
                                              InterfaceReconstructorType,
                                              Matpoly_Splitter, Matpoly_Clipper,
-                                             CoordSys>>
-          (source_mesh, source_state, target_mesh, target_state, executor);
+                                             CoordSys>>(
+                                                 new ComponentDriver<D, CELL,
+                                                 SourceMesh, SourceState,
+                                                 TargetMesh, TargetState,
+                                                 InterfaceReconstructorType,
+                                                 Matpoly_Splitter, Matpoly_Clipper,
+                                                 CoordSys>
+                                                 (source_mesh, source_state, 
+                                                  target_mesh, target_state, executor)
+                                                        );
     case NODE:
-      return std::make_unique<ComponentDriver<D, NODE,
+      // Intel 18.0.1 does not recognize std::make_unique even with -std=c++14 flag *ugh*
+      // return std::make_unique<ComponentDriver<D, NODE,
+      //                                        SourceMesh, SourceState,
+      //                                        TargetMesh, TargetState,
+      //                                        InterfaceReconstructorType,
+      //                                        Matpoly_Splitter, Matpoly_Clipper,
+      //                                        CoordSys>>
+      //     (source_mesh, source_state, target_mesh, target_state, executor);
+      return std::unique_ptr<ComponentDriver<D, CELL,
                                              SourceMesh, SourceState,
                                              TargetMesh, TargetState,
                                              InterfaceReconstructorType,
                                              Matpoly_Splitter, Matpoly_Clipper,
-                                             CoordSys>>
-          (source_mesh, source_state, target_mesh, target_state, executor);
+                                             CoordSys>>(
+                                                 new ComponentDriver<D, CELL,
+                                                 SourceMesh, SourceState,
+                                                 TargetMesh, TargetState,
+                                                 InterfaceReconstructorType,
+                                                 Matpoly_Splitter, Matpoly_Clipper,
+                                                 CoordSys>
+                                                 (source_mesh, source_state, 
+                                                  target_mesh, target_state, executor)
+                                                        );
     default:
       std::cerr << "Remapping on " << Wonton::to_string(onwhat) <<
           " not implemented\n";
