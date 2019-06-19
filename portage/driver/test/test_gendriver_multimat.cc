@@ -245,6 +245,7 @@ TEST(GenDriver, ThreeMat2D_1stOrder) {
 
   Portage::GenRemapDriver<2,
                           Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
+                          Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
                           Tangram::XMOF2D_Wrapper>
       d(sourceMeshWrapper, sourceStateWrapper,
         targetMeshWrapper, targetStateWrapper);
