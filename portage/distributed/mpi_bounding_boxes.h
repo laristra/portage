@@ -384,9 +384,10 @@ class MPI_Bounding_Boxes {
       distributedMaterialCells_.resize(num_mat_cells_info.newNum);
 
       // send material cells to all nodes, but first translate to gid
-      sendData(commRank, commSize, MPI_INT, 1, 0, num_mat_cells_info.sourceNum, 0,
-        num_mat_cells_info.sendCounts, num_mat_cells_info.recvCounts,
-        to_gid(material_cells, sourceCellGlobalIds), &distributedMaterialCells_
+      sendData(commRank, commSize, to_MPI_Datatype<GID_t>(), 1, 0,
+        num_mat_cells_info.sourceNum, 0, num_mat_cells_info.sendCounts,
+        num_mat_cells_info.recvCounts, to_gid(material_cells, sourceCellGlobalIds),
+        &distributedMaterialCells_
       );
 
       /////////////////////////////////////////////////////////

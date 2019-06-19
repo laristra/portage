@@ -278,16 +278,19 @@ Vector<D> Limited_Gradient <D, Entity_kind::CELL, MeshType, StateType,
 
           // If there are multiple matpolys in this cell for the material of interest,
           // aggregate moments to compute new centroid
+          double mvol = 0.0;
+          Point<D> centroid;
           for (int ipoly=0; ipoly<matpolys.size(); ipoly++) {
             std::vector<double> moments = matpolys[ipoly].moments();
-            Point<D> centroid;
+            mvol += moments[0]; 
             for (int k = 0; k < D; k++)
-               centroid[k] = moments[k+1]/moments[0];
-            ls_coords.push_back(centroid);
-            break; // TODO: Instead of cutting out after the first matpoly,
-            // Get matpoly moments directly using new interface in Tangram,
-            // aggregate, and use to compute overall material centroid
+               centroid[k] += moments[k+1];
           }
+
+          for (int k = 0; k < D; k++)
+             centroid[k] /= mvol;
+    
+          ls_coords.push_back(centroid);
 
           // Populate least squares vectors with centroid for material
           // of interest and field value in the current cell for that material
