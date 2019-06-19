@@ -35,6 +35,12 @@ if (ENABLE_UNIT_TESTS)
        POLICY MPI
        THREADS 1)
 
+       cinch_add_unit(test_mismatch_fixup
+       SOURCES test/test_mismatch_fixup 
+       LIBRARIES portage ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
+       POLICY MPI
+       THREADS 1)
+
        cinch_add_unit(test_driver
        SOURCES test/test_driver 
        LIBRARIES portage ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
@@ -68,6 +74,17 @@ if (ENABLE_UNIT_TESTS)
        THREADS 1)
 
      endif (TANGRAM_FOUND AND XMOF2D_FOUND)
+
+     if (TANGRAM_FOUND)
+
+       cinch_add_unit(test_multimat_driver_distributed
+       SOURCES test/test_multimat_driver_distributed
+       LIBRARIES portage ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES} 
+       POLICY MPI
+       THREADS 4)
+
+     endif (TANGRAM_FOUND)
+
    endif (Jali_DIR)
 
    cinch_add_unit(test_driver_swarm
