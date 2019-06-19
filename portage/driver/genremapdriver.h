@@ -37,7 +37,7 @@ Please see the license file at the root of this repository, or at:
 #include "wonton/support/Point.h"
 #include "wonton/state/state_vector_multi.h"
 #include "portage/driver/fix_mismatch.h"
-#include "portage/driver/component_driver.h"
+#include "portage/driver/componentdriver.h"
 
 
 #ifdef PORTAGE_ENABLE_MPI
