@@ -1,7 +1,7 @@
 /*
-This file is part of the Ristra portage project.
+This file is part of the Ristra wonton project.
 Please see the license file at the root of this repository, or at:
-    https://github.com/laristra/portage/blob/master/LICENSE
+    https://github.com/laristra/wonton/blob/master/LICENSE
 */
 
 
@@ -10,39 +10,108 @@ h1, .h1, h2, .h2, h3, .h3{
     font-weight: 200 !important;
 }
 
-#navrow1, #navrow2, #navrow3, #navrow4, #navrow5{
-    border-bottom: 1px solid #EEEEEE;
+/* Undo some of the smartmenus formatting */
+.sm, .sm-dox {
+    background-image: none !important;
+    line-height: unset;
 }
 
-.adjust-right {
-margin-left: 30px !important;
-font-size: 1.15em !important;
+.sm-dox a,
+.sm-dox a:focus,
+.sm-dox a:active,
+.sm-dox a:hover,
+sm-dox a.highlighted {
+    border-radius: .25rem !important;
+    background-image: none !important;
+    font-family: unset;
+    font-size: unset;
+    font-weight: unset;
+    line-height: unset;
+    padding-bottom: 10px !important;
+    padding-top: 10px !important;
+    padding-left: 15px !important;
+    padding-right: 15px !important;
+    text-shadow: unset;
 }
-.navbar{
- border: 0px solid #222 !important;
+
+.sm-dox a:hover {
+    color: #007bff !important;
+    background-color: #eeeeee !important;
 }
+
+.sm li {
+    line-height: unset;
+    float: unset;
+}
+
+.sm-dox a:hover span.sub-arrow {
+    color: #007bff !important;
+    background-color: #eeeeee !important;
+    border-top-color: #007bff !important;
+}
+
+.sm-dox a.active span.sub-arrow {
+    color: #ffffff !important;
+    border-top-color: #ffffff !important;
+}
+
+.sm-dox ul a:hover {
+    text-shadow: unset;
+}
+
+/* Our styling changes */
+#main-nav{
+    border-bottom: 1px solid #EEEEEE;
+    font-size: 2.0em;
+}
+
 table{
     white-space:pre-wrap !important;
 }
 
-
-
-dl.el {
-    margin-left: -1cm;
+.page-header {
+  margin: 20px 0px !important;
+}
+.page-header .title {
+  display: inline-block;
+}
+.page-header .pull-right {
+  margin-top: 0.3em;
+  margin-left: 0.5em;
+}
+.page-header .label {
+  font-size: 50%;
 }
 
-pre.fragment {
-    border: 1px solid #C4CFE5;
-    background-color: #FBFCFD;
-    padding: 4px 6px;
-    margin: 4px 8px 4px 2px;
-    overflow: auto;
-    word-wrap: break-word;
-    font-size:  9pt;
-    line-height: 125%;
-    font-family: monospace, fixed;
-    font-size: 105%;
+.textblock h1 {
+    font-size: 2.5em;
+    margin-bottom: 0.5em;
 }
+.textblock,
+.textblock > p {
+    font-size: 1.25em;
+}
+.textblock > ul,
+.textblock > ol {
+    font-size: 1.0em;
+}
+
+/* dl.el { */
+/*     margin-left: -1cm; */
+/* } */
+
+/* pre.fragment { */
+/*     border: 1px solid #C4CFE5; */
+/*     background-color: #FBFCFD; */
+/*     padding: 4px 6px; */
+/*     margin: 4px 8px 4px 2px; */
+/*     overflow: auto; */
+/*     word-wrap: break-word; */
+/*     font-size:  9pt; */
+/*     line-height: 125%; */
+/*     font-family: monospace, fixed; */
+/*     font-size: 105%; */
+/* } */
 
 div.fragment {
     padding: 4px 6px;
@@ -80,148 +149,149 @@ div.line:hover{
     background-color: #FBFF00;
 }
 
-div.line.glow {
-    background-color: cyan;
-    box-shadow: 0 0 10px cyan;
-}
+/* div.line.glow { */
+/*     background-color: cyan; */
+/*     box-shadow: 0 0 10px cyan; */
+/* } */
 
 
-span.lineno {
-    padding-right: 4px;
-    text-align: right;
-    color:rgba(0,0,0,0.3);
-    border-right: 1px solid #EEE;
-    border-left: 1px solid #EEE;
-    background-color: #FFF;
-    white-space: pre;
-    font-family: Consolas, "Liberation Mono", Menlo, Courier, monospace ;
-}
-span.lineno a {
-    background-color: #FAFAFA;
-    cursor:pointer;
-}
+/* span.lineno { */
+/*     padding-right: 4px; */
+/*     text-align: right; */
+/*     color:rgba(0,0,0,0.3); */
+/*     border-right: 1px solid #EEE; */
+/*     border-left: 1px solid #EEE; */
+/*     background-color: #FFF; */
+/*     white-space: pre; */
+/*     font-family: Consolas, "Liberation Mono", Menlo, Courier, monospace ; */
+/* } */
+/* span.lineno a { */
+/*     background-color: #FAFAFA; */
+/*     cursor:pointer; */
+/* } */
 
-span.lineno a:hover {
-    background-color: #EFE200;
-    color: #1e1e1e;
-}
+/* span.lineno a:hover { */
+/*     background-color: #EFE200; */
+/*     color: #1e1e1e; */
+/* } */
 
-div.groupHeader {
-    margin-left: 16px;
-    margin-top: 12px;
-    font-weight: bold;
-}
+/* div.groupHeader { */
+/*     margin-left: 16px; */
+/*     margin-top: 12px; */
+/*     font-weight: bold; */
+/* } */
 
-div.groupText {
-    margin-left: 16px;
-    font-style: italic;
-}
+/* div.groupText { */
+/*     margin-left: 16px; */
+/*     font-style: italic; */
+/* } */
 
-/* @group Code Colorization */
+/* /\* @group Code Colorization *\/ */
 
-span.keyword {
-    color: #008000
-}
+/* span.keyword { */
+/*     color: #008000 */
+/* } */
 
-span.keywordtype {
-    color: #604020
-}
+/* span.keywordtype { */
+/*     color: #604020 */
+/* } */
 
-span.keywordflow {
-    color: #e08000
-}
+/* span.keywordflow { */
+/*     color: #e08000 */
+/* } */
 
-span.comment {
-    color: #800000
-}
+/* span.comment { */
+/*     color: #800000 */
+/* } */
 
-span.preprocessor {
-    color: #806020
-}
+/* span.preprocessor { */
+/*     color: #806020 */
+/* } */
 
-span.stringliteral {
-    color: #002080
-}
+/* span.stringliteral { */
+/*     color: #002080 */
+/* } */
 
-span.charliteral {
-    color: #008080
-}
+/* span.charliteral { */
+/*     color: #008080 */
+/* } */
 
-span.vhdldigit {
-    color: #ff00ff
-}
+/* span.vhdldigit { */
+/*     color: #ff00ff */
+/* } */
 
-span.vhdlchar {
-    color: #000000
-}
+/* span.vhdlchar { */
+/*     color: #000000 */
+/* } */
 
-span.vhdlkeyword {
-    color: #700070
-}
+/* span.vhdlkeyword { */
+/*     color: #700070 */
+/* } */
 
-span.vhdllogic {
-    color: #ff0000
-}
+/* span.vhdllogic { */
+/*     color: #ff0000 */
+/* } */
 
-blockquote {
-    background-color: #F7F8FB;
-    border-left: 2px solid #9CAFD4;
-    margin: 0 24px 0 4px;
-    padding: 0 12px 0 16px;
-}
+/* blockquote { */
+/*     background-color: #F7F8FB; */
+/*     border-left: 2px solid #9CAFD4; */
+/*     margin: 0 24px 0 4px; */
+/*     padding: 0 12px 0 16px; */
+/* } */
 
-/*---------------- Search Box */
+/* /\*---------------- Search Box *\/ */
 
-#search-box {
-  margin: 10px 0px;
-}
-#search-box .close {
-  display: none;
-  position: absolute;
-  right: 0px;
-  padding: 6px 12px;
-  z-index: 5;
-}
+/* #search-box { */
+/*   margin: 10px 0px; */
+/* } */
+/* #search-box .close { */
+/*   display: none; */
+/*   position: absolute; */
+/*   right: 0px; */
+/*   padding: 6px 12px; */
+/*   z-index: 5; */
+/* } */
 
-/*---------------- Search results window */
+/* /\*---------------- Search results window *\/ */
 
-#search-results-window {
-  display: none;
-}
+/* #search-results-window { */
+/*   display: none; */
+/* } */
 
-iframe#MSearchResults {
-  width: 100%;
-  height: 1em;
-}
+/* iframe#MSearchResults { */
+/*   width: 100%; */
+/*   height: 1em; */
+/* } */
 
-.SRChildren {
-  padding-left: 3ex; padding-bottom: .5em
-}
-.SRPage .SRChildren {
-  display: none;
-}
-a.SRScope {
-  display: block;
-}
-a.SRSymbol:focus, a.SRSymbol:active,
-a.SRScope:focus, a.SRScope:active {
-  text-decoration: underline;
-}
-span.SRScope {
-  padding-left: 4px;
-}
-.SRResult {
-  display: none;
-}
+/* .SRChildren { */
+/*   padding-left: 3ex; padding-bottom: .5em */
+/* } */
+/* .SRPage .SRChildren { */
+/*   display: none; */
+/* } */
+/* a.SRScope { */
+/*   display: block; */
+/* } */
+/* a.SRSymbol:focus, a.SRSymbol:active, */
+/* a.SRScope:focus, a.SRScope:active { */
+/*   text-decoration: underline; */
+/* } */
+/* span.SRScope { */
+/*   padding-left: 4px; */
+/* } */
+/* .SRResult { */
+/*   display: none; */
+/* } */
 
 /* class and file list */
 .directory .icona,
-.directory .arrow {
+.directory .arrow,
+.directory .icona .icon {
   height: auto;
 }
-.directory .icona .icon {
-  height: 16px;
-}
+/* .directory .icona .icon { */
+/*   height: 16px; */
+/* } */
 .directory .icondoc {
   background-position: 0px 0px;
   height: 20px;
@@ -233,67 +303,47 @@ span.SRScope {
   padding: 7px 8px 6px 8px;
 }
 
-.table > tbody > tr > td.memSeparator {
-  line-height: 0;
-  .table-hover;
-
+.directory .levels {
+    font-size: 1rem !important; /* same as buttons from bootstrap */
 }
 
-.memItemLeft, .memTemplItemLeft {
-  white-space: normal;
-}
-
-/* enumerations */
-.panel-body thead > tr {
-  background-color: #e0e0e0;
-}
-
-/* todo lists */
-.todoname,
-.todoname a {
-  font-weight: bold;
-}
-
-/* Class title */
-.summary {
-  margin-top: 25px;
-}
-.page-header {
-  margin: 20px 0px !important;
-}
-.page-header .title {
-  display: inline-block;
-}
-.page-header .pull-right {
-  margin-top: 0.3em;
-  margin-left: 0.5em;
-}
-.page-header .label {
-  font-size: 50%;
-}
-
-
-.textblock h1 {
-    font-size: 2.5em;
-    margin-bottom: 0.5em;
-}
-
-.textblock p, .textblock ul {
+.memtitle {
     font-size: 1.25em;
 }
 
-#navrow1 {
-    font-size: 2.0em;
+.memproto,
+.memtemplate,
+.mlabels,
+.memname {
+    line-height: 1.15 !important;
 }
 
-/*img {
-    float: right;
-}
+/* .table > tbody > tr > td.memSeparator { */
+/*   line-height: 0; */
+/*   .table-hover; */
 
-.caption {
-    float: right;
-}
-*/
+/* } */
+
+/* .memItemLeft, .memTemplItemLeft { */
+/*   white-space: normal; */
+/* } */
+
+/* /\* enumerations *\/ */
+/* .panel-body thead > tr { */
+/*   background-color: #e0e0e0; */
+/* } */
+
+/* /\* todo lists *\/ */
+/* .todoname, */
+/* .todoname a { */
+/*   font-weight: bold; */
+/* } */
+
+/* /\* Class title *\/ */
+/* .summary { */
+/*   margin-top: 25px; */
+/* } */
+
 
 img.fullwidth {
     width:95% !important;

@@ -1,4 +1,4 @@
-FROM laristra/portage-buildenv:latest
+FROM laristra/portage-buildenv:ubuntu
 
 ARG MPI
 ARG COVERAGE

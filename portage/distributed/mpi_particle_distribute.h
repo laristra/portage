@@ -235,6 +235,7 @@ class MPI_Particle_Distribute {
     **************************************************************************/
     comm_info_t src_info;
     setInfo(&src_info, commSize, sendFlags, sourcePtsToSendSize);
+
     std::vector<std::vector<double>> sourceSendCoords(commSize);
     for (size_t i = 0; i < commSize; ++i)
     {
@@ -254,6 +255,7 @@ class MPI_Particle_Distribute {
     //move this coordinate data
     std::vector<double> sourceRecvCoords(src_info.newNum*dim);
     moveField<double>(&src_info, commRank, commSize, MPI_DOUBLE, dim, sourceSendCoords, &sourceRecvCoords);
+
     // update local source particle list with received new particles
     std::vector<Point<dim>> RecvCoords;
     for (size_t i = 0; i < src_info.newNum; ++i)
@@ -455,6 +457,7 @@ class MPI_Particle_Distribute {
     // Each rank will tell each other rank how many indexes it is going to send it
     info->sendCounts.resize(commSize);
     info->recvCounts.resize(commSize);
+
     for (unsigned int i=0; i<commSize; i++)
     {
       info->sourceNum[i] = sourceNum[i];

@@ -176,7 +176,10 @@ explicitly told that the target cells are strictly convex). The
 simplices are derived from the side/wedge data structures built by
 Wonton::AuxMeshTopology class. Note that Portage considers hexahedral
 cells (or any higher polyhedra) with curved faces also as
-non-convex._
+non-convex. When remapping multi-material fields, a source mesh should
+consist of at least star-convex cells. General non-convex cells would
+require a different simplex decomposition method in
+Wonton::AuxMeshTopology class._
 
 Applications can choose to supply their own exact cell-cell
 intersectors or even an alternate algorithm such as the _swept face_
