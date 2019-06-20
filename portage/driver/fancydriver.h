@@ -633,13 +633,13 @@ class FancyDriver {
 
   //  for each material
   //   ||
-  //   ||               for all target entities
-  //   ||                  of a particular kind
-  //   ||                        ||
-  //   ||                        ||     intersection moments for
-  //   ||                        ||     each target entity
-  //   ||                        ||           ||
-  //   \/                        \/           \/
+  //   ||      for all target entities
+  //   ||         of a particular kind
+  //   ||               ||
+  //   ||               ||     intersection moments for
+  //   ||               ||     each target entity
+  //   ||               ||           ||
+  //   \/               \/           \/
   std::vector<Portage::vector<std::vector<Weights_t>>> source_weights_by_mat_;
 
   /*!
