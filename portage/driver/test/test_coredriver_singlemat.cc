@@ -29,7 +29,7 @@ Please see the license file at the root of this repository, or at:
 #include "JaliStateVector.h"
 #include "JaliState.h"
 
-#include "portage/driver/componentdriver.h"
+#include "portage/driver/coredriver.h"
 
 double TOL = 1e-6;
 
@@ -78,8 +78,8 @@ TEST(CellDriver, 2D_2ndOrder) {
   // Do the basic remap algorithm (search, intersect, interpolate) -
   // no redistribution, no mismatch fixup
 
-  Portage::ComponentDriver<2, Wonton::Entity_kind::CELL,
-                           Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper>
+  Portage::CoreDriver<2, Wonton::Entity_kind::CELL,
+                      Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper>
       d(sourceMeshWrapper, sourceStateWrapper,
         targetMeshWrapper, targetStateWrapper);
 
@@ -171,8 +171,8 @@ TEST(CellDriver, 3D_2ndOrder) {
   
   Wonton::SerialExecutor_type executor;
 
-  Portage::ComponentDriver<3, Wonton::Entity_kind::CELL,
-                           Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper>
+  Portage::CoreDriver<3, Wonton::Entity_kind::CELL,
+                      Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper>
       d(sourceMeshWrapper, sourceStateWrapper,
         targetMeshWrapper, targetStateWrapper, &executor);
 
