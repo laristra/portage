@@ -33,7 +33,7 @@ Please see the license file at the root of this repository, or at:
 #include "JaliStateVector.h"
 #include "JaliState.h"
 
-#include "portage/driver/genremapdriver.h"
+#include "portage/driver/fancydriver.h"
 
 double TOL = 1e-6;
 
@@ -54,7 +54,7 @@ double TOL = 1e-6;
 // on the target mesh and compare it to the analytical values
 
 
-TEST(GenDriver, ThreeMat2D_1stOrder) {
+TEST(FancyDriver, ThreeMat2D_1stOrder) {
   // Source and target meshes
   std::shared_ptr<Jali::Mesh> sourceMesh;
   std::shared_ptr<Jali::Mesh> targetMesh;
@@ -243,10 +243,10 @@ TEST(GenDriver, ThreeMat2D_1stOrder) {
   //  material ordering is 0, 1, 2
   //-------------------------------------------------------------------
 
-  Portage::GenRemapDriver<2,
-                          Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
-                          Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
-                          Tangram::XMOF2D_Wrapper>
+  Portage::FancyDriver<2,
+                       Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
+                       Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
+                       Tangram::XMOF2D_Wrapper>
       d(sourceMeshWrapper, sourceStateWrapper,
         targetMeshWrapper, targetStateWrapper);
 
@@ -422,7 +422,7 @@ TEST(GenDriver, ThreeMat2D_1stOrder) {
 
 
 
-TEST(GenDriver, ThreeMat3D_1stOrder) {
+TEST(FancyDriver, ThreeMat3D_1stOrder) {
   // Source and target meshes
   std::shared_ptr<Jali::Mesh> sourceMesh;
   std::shared_ptr<Jali::Mesh> targetMesh;
@@ -618,10 +618,10 @@ TEST(GenDriver, ThreeMat3D_1stOrder) {
   
   Wonton::SerialExecutor_type executor;
 
-  Portage::GenRemapDriver<3,
-                          Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
-                          Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
-                          Tangram::MOF, Tangram::SplitR3D, Tangram::ClipR3D>
+  Portage::FancyDriver<3,
+                       Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
+                       Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
+                       Tangram::MOF, Tangram::SplitR3D, Tangram::ClipR3D>
       d(sourceMeshWrapper, sourceStateWrapper,
         targetMeshWrapper, targetStateWrapper, &executor);
 
