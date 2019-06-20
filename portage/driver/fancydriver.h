@@ -1,7 +1,7 @@
 /*
-This file is part of the Ristra portage project.
-Please see the license file at the root of this repository, or at:
-    https://github.com/laristra/portage/blob/master/LICENSE
+  This file is part of the Ristra portage project.
+  Please see the license file at the root of this repository, or at:
+  https://github.com/laristra/portage/blob/master/LICENSE
 */
 
 #ifndef PORTAGE_GENREMAP_DRIVER_H_
@@ -37,7 +37,7 @@ Please see the license file at the root of this repository, or at:
 #include "wonton/support/Point.h"
 #include "wonton/state/state_vector_multi.h"
 #include "portage/driver/fix_mismatch.h"
-#include "portage/driver/componentdriver.h"
+#include "portage/driver/coredriver.h"
 
 
 #ifdef PORTAGE_ENABLE_MPI
@@ -63,8 +63,8 @@ using Wonton::Flat_Mesh_Wrapper;
 using Wonton::Flat_State_Wrapper;
 
 /*!
-  @class GenRemapDriver "driver.h"
-  @brief GenRemapDriver provides the API to mapping multi-material data from one mesh to another in a general way
+  @class FancyDriver "driver.h"
+  @brief FancyDriver provides the API to mapping multi-material data from one mesh to another in a general way
 
   @tparam SourceMesh A lightweight wrapper to a specific input mesh
   implementation that provides certain functionality.
@@ -96,23 +96,23 @@ template <int D,
           class Matpoly_Splitter = void, class Matpoly_Clipper = void,
           class CoordSys = Wonton::DefaultCoordSys
           >
-class GenRemapDriver {
+class FancyDriver {
  public:
 
   // A couple of shorthand notations
   
   using SerialDriverType =
-      ComponentDriverBase<D, SourceMesh, SourceState,
-                          TargetMesh, TargetState,
-                          InterfaceReconstructorType,
-                          Matpoly_Splitter, Matpoly_Clipper, CoordSys>;
+      CoreDriverBase<D, SourceMesh, SourceState,
+                     TargetMesh, TargetState,
+                     InterfaceReconstructorType,
+                     Matpoly_Splitter, Matpoly_Clipper, CoordSys>;
   
   using ParallelDriverType =
-      ComponentDriverBase<D, Flat_Mesh_Wrapper<>,
-                          Flat_State_Wrapper<Flat_Mesh_Wrapper<>>,
-                          TargetMesh, TargetState,
-                          InterfaceReconstructorType,
-                          Matpoly_Splitter, Matpoly_Clipper, CoordSys>;
+      CoreDriverBase<D, Flat_Mesh_Wrapper<>,
+                     Flat_State_Wrapper<Flat_Mesh_Wrapper<>>,
+                     TargetMesh, TargetState,
+                     InterfaceReconstructorType,
+                     Matpoly_Splitter, Matpoly_Clipper, CoordSys>;
   
   /*!
     @brief Constructor for the remap driver.
@@ -126,13 +126,13 @@ class GenRemapDriver {
     (if not everything will be remapped)
     @param[in] executor  pointer to an executor allowing us choose between serial and parallel runs
   */
-  GenRemapDriver(SourceMesh const& source_mesh,
-             SourceState const& source_state,
-             TargetMesh const& target_mesh,
-             TargetState& target_state,
-             std::vector<std::string> source_vars_to_remap,
-             Wonton::Executor_type const *executor = nullptr,
-             std::string *errmsg = nullptr)
+  FancyDriver(SourceMesh const& source_mesh,
+              SourceState const& source_state,
+              TargetMesh const& target_mesh,
+              TargetState& target_state,
+              std::vector<std::string> source_vars_to_remap,
+              Wonton::Executor_type const *executor = nullptr,
+              std::string *errmsg = nullptr)
       : source_mesh_(source_mesh), source_state_(source_state),
         target_mesh_(target_mesh), target_state_(target_state),
         source_vars_to_remap_(source_vars_to_remap),
@@ -162,7 +162,7 @@ class GenRemapDriver {
         
     // Make the internal drivers for each entity kind
     
-    instantiate_component_drivers();
+    instantiate_core_drivers();
   }
 
   /*!
@@ -174,12 +174,12 @@ class GenRemapDriver {
     @param[in,out] targetState A @c TargetState for the data that will
     be mapped to the target mesh
   */
-  GenRemapDriver(SourceMesh const& source_mesh,
-             SourceState const& source_state,
-             TargetMesh const& target_mesh,
-             TargetState& target_state,
-             Wonton::Executor_type const *executor = nullptr,
-             std::string *errmsg = nullptr)
+  FancyDriver(SourceMesh const& source_mesh,
+              SourceState const& source_state,
+              TargetMesh const& target_mesh,
+              TargetState& target_state,
+              Wonton::Executor_type const *executor = nullptr,
+              std::string *errmsg = nullptr)
       : source_mesh_(source_mesh), source_state_(source_state),
         target_mesh_(target_mesh), target_state_(target_state),
         dim_(source_mesh.space_dimension()),
@@ -211,20 +211,20 @@ class GenRemapDriver {
         have_multi_material_fields_ = true;
     }
 
-    // Make the component drivers for each entity kind
+    // Make the core drivers for each entity kind
     
-    instantiate_component_drivers();
+    instantiate_core_drivers();
   }
 
 
   /// Copy constructor (disabled)
-  GenRemapDriver(const GenRemapDriver &) = delete;
+  FancyDriver(const FancyDriver &) = delete;
 
   /// Assignment operator (disabled)
-  GenRemapDriver & operator = (const GenRemapDriver &) = delete;
+  FancyDriver & operator = (const FancyDriver &) = delete;
 
   /// Destructor
-  ~GenRemapDriver() {}
+  ~FancyDriver() {}
 
   /// Is this a distributed (multi-rank) run?
 
@@ -340,9 +340,9 @@ class GenRemapDriver {
     search_completed_[ONWHAT] = true;
 
     if (source_redistributed_)
-      return component_driver_parallel_[ONWHAT]->template search<ONWHAT, Search>();
+      return core_driver_parallel_[ONWHAT]->template search<ONWHAT, Search>();
     else
-      return component_driver_serial_[ONWHAT]->template search<ONWHAT, Search>();
+      return core_driver_serial_[ONWHAT]->template search<ONWHAT, Search>();
 
   }
 
@@ -367,9 +367,9 @@ class GenRemapDriver {
     mesh_intersection_completed_[ONWHAT] = true;
 
     if (source_redistributed_)
-      return component_driver_parallel_[ONWHAT]->template intersect_meshes<ONWHAT, Intersect>(candidates);
+      return core_driver_parallel_[ONWHAT]->template intersect_meshes<ONWHAT, Intersect>(candidates);
     else
-      return component_driver_serial_[ONWHAT]->template intersect_meshes<ONWHAT, Intersect>(candidates);
+      return core_driver_serial_[ONWHAT]->template intersect_meshes<ONWHAT, Intersect>(candidates);
 
   }
 
@@ -393,9 +393,9 @@ class GenRemapDriver {
     mat_intersection_completed_ = true;
 
     if (source_redistributed_)
-      return component_driver_parallel_[CELL]->template intersect_materials<Intersect>(candidates);
+      return core_driver_parallel_[CELL]->template intersect_materials<Intersect>(candidates);
     else
-      return component_driver_serial_[CELL]->template intersect_materials<Intersect>(candidates);
+      return core_driver_serial_[CELL]->template intersect_materials<Intersect>(candidates);
 
   }
 
@@ -405,9 +405,9 @@ class GenRemapDriver {
   bool check_mesh_mismatch(Portage::vector<std::vector<Weights_t>> const& source_weights) {
 
     if (source_redistributed_)
-      return component_driver_parallel_[ONWHAT]->template check_mesh_mismatch<ONWHAT>(source_weights);
+      return core_driver_parallel_[ONWHAT]->template check_mesh_mismatch<ONWHAT>(source_weights);
     else
-      return component_driver_serial_[ONWHAT]->template check_mesh_mismatch<ONWHAT>(source_weights);
+      return core_driver_serial_[ONWHAT]->template check_mesh_mismatch<ONWHAT>(source_weights);
 
   }
   
@@ -505,7 +505,7 @@ class GenRemapDriver {
 
     if (source_redistributed_) {
 
-      auto & driver = component_driver_parallel_[ONWHAT];
+      auto & driver = core_driver_parallel_[ONWHAT];
       
       if (source_state_.field_type(ONWHAT, srcvarname) ==
           Field_type::MULTIMATERIAL_FIELD) {
@@ -530,7 +530,7 @@ class GenRemapDriver {
 
     } else {
 
-      auto & driver = component_driver_serial_[ONWHAT];
+      auto & driver = core_driver_serial_[ONWHAT];
       
       if (source_state_.field_type(ONWHAT, srcvarname) ==
           Field_type::MULTIMATERIAL_FIELD) {
@@ -597,20 +597,20 @@ class GenRemapDriver {
   std::map<Entity_kind, bool> mesh_intersection_completed_;
   bool mat_intersection_completed_ = false;
 
-  // Pointers to component drivers designed to work on a particular
+  // Pointers to core drivers designed to work on a particular
   // entity kind on native mesh/state. These are suitable for serial
   // runs or parallel runs with no redistribution (which are
   // equivalent to a serial run on each processor with no
   // communication)
 
-  std::map<Entity_kind, std::unique_ptr<SerialDriverType>> component_driver_serial_;
+  std::map<Entity_kind, std::unique_ptr<SerialDriverType>> core_driver_serial_;
 
-  // Pointers to component drivers designed to work on a particular
+  // Pointers to core drivers designed to work on a particular
   // entity kind on flattened mesh/state (suitable for parallel runs
   // involving redistribution)
 
 
-  std::map<Entity_kind, std::unique_ptr<ParallelDriverType>> component_driver_parallel_;
+  std::map<Entity_kind, std::unique_ptr<ParallelDriverType>> core_driver_parallel_;
 
   // Weights of intersection b/w target entities and source entities
   // Each intersection is between the control volume (cell, dual cell)
@@ -642,15 +642,15 @@ class GenRemapDriver {
   //   \/                        \/           \/
   std::vector<Portage::vector<std::vector<Weights_t>>> source_weights_by_mat_;
 
-   /*!
-    @brief Instantiate component drivers that abstract away whether we
+  /*!
+    @brief Instantiate core drivers that abstract away whether we
     are using a redistributed or native source mesh/state
 
     executor  An executor encoding parallel run parameters (if its parallel executor)
   */
 
-  int instantiate_component_drivers(Wonton::Executor_type const *executor =
-                                   nullptr) {
+  int instantiate_core_drivers(Wonton::Executor_type const *executor =
+                               nullptr) {
     std::string message;
 
     for (auto const& onwhat : entity_kinds_) {
@@ -687,32 +687,32 @@ class GenRemapDriver {
       source_redistributed_ = true;
 
       for (Entity_kind onwhat : entity_kinds_)
-        component_driver_parallel_[onwhat] =
-            make_component_driver<D, Flat_Mesh_Wrapper<>,
-                                 Flat_State_Wrapper<Flat_Mesh_Wrapper<>>,
-                                 TargetMesh, TargetState,
-                                 InterfaceReconstructorType,
-                                 Matpoly_Splitter, Matpoly_Clipper, CoordSys
-                                 >(onwhat,
-                                   source_mesh_flat_, source_state_flat_,
-                                   target_mesh_, target_state_, executor_);
+        core_driver_parallel_[onwhat] =
+            make_core_driver<D, Flat_Mesh_Wrapper<>,
+                             Flat_State_Wrapper<Flat_Mesh_Wrapper<>>,
+                             TargetMesh, TargetState,
+                             InterfaceReconstructorType,
+                             Matpoly_Splitter, Matpoly_Clipper, CoordSys
+                             >(onwhat,
+                               source_mesh_flat_, source_state_flat_,
+                               target_mesh_, target_state_, executor_);
     }
     else
 #endif
     {
       for (Entity_kind onwhat : entity_kinds_)
-        component_driver_serial_[onwhat] =
-            make_component_driver<D, SourceMesh, SourceState,
-                                 TargetMesh, TargetState,
-                                 InterfaceReconstructorType,
-                                 Matpoly_Splitter, Matpoly_Clipper, CoordSys
-                                 >(onwhat,
-                                   source_mesh_, source_state_,
-                                   target_mesh_, target_state_, executor_);
+        core_driver_serial_[onwhat] =
+            make_core_driver<D, SourceMesh, SourceState,
+                             TargetMesh, TargetState,
+                             InterfaceReconstructorType,
+                             Matpoly_Splitter, Matpoly_Clipper, CoordSys
+                             >(onwhat,
+                               source_mesh_, source_state_,
+                               target_mesh_, target_state_, executor_);
     }
-  }  // GenRemapDriver::instantiate_component_drivers
+  }  // FancyDriver::instantiate_core_drivers
 
-};  // GenRemapDriver
+};  // FancyDriver
 
 
 }  // namespace Portage
