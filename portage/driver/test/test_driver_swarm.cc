@@ -298,20 +298,20 @@ class DriverTest : public ::testing::Test {
         error = compute_initial_field(coord) - (*vecout)[p];
         // dump diagnostics for each particle
         if (dim == 1)
-          std::printf("Particle=% 4d Coord = (% 5.3lf)", p, coord[0]);
+          std::printf("Particle=% 4d Coord = (%10.3e)", p, coord[0]);
         else if (dim == 2)
-          std::printf("Particle=% 4d Coord = (% 5.3lf,% 5.3lf)", p, coord[0],
+          std::printf("Particle=% 4d Coord = (%10.3e,%10.3e)", p, coord[0],
                       coord[1]);
         else if (dim == 3)
-          std::printf("Particle=% 4d Coord = (% 5.3lf,% 5.3lf,% 5.3lf)", p,
+          std::printf("Particle=% 4d Coord = (%10.3e,%10.3e,%10.3e)", p,
                       coord[0], coord[1], coord[2]);
 	{double val=(*vecout)[p]; 
-	  std::printf("  Value = % 10.6lf  Err = % lf\n", val, error);}
+	  std::printf("  Value = %10.3e  Err = %10.3e\n", val, error);}
         toterr += error*error;
       }
     
-      std::printf("\n\nL2 NORM OF ERROR = %lf\n\n", sqrt(toterr));
-      ASSERT_NEAR(expected_answer, sqrt(toterr), TOL);
+      std::printf("\n\nL2 NORM OF ERROR = %e10.3\n\n", sqrt(toterr));
+      ASSERT_NEAR(expected_answer, sqrt(toterr/ntarpts), TOL);
     } else if (operator_ == Portage::Meshfree::Operator::VolumeIntegral) {
       double total = 0.;
       for (int p = 0; p < ntarpts; ++p) {

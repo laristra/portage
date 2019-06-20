@@ -1,0 +1,77 @@
+#[[
+This file is part of the Ristra swarm project.
+Please see the license file at the root of this repository, or at:
+    https://github.com/laristra/swarm/blob/master/LICENSE
+]]
+# Config file for a test directory.
+# At some future point, much of what appears here will probably
+# be pulled into a macro.
+
+message(STATUS "Adding swarmapp test")
+
+# this app can be run in serial or mpi mode - set an environment
+# variable so that either will work
+if(ENABLE_MPI)
+  set(RUN_COMMAND "mpirun -np 1")
+else()
+  set(RUN_COMMAND "")
+endif(ENABLE_MPI)
+
+macro(ADD_SWARMAPP_TEST EXAMPLE DISTRIBUTION)
+  file(COPY swarmapp_test-${EXAMPLE}-${DISTRIBUTION}.sh
+    DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+  file(GLOB GOLDFILES gold/gold-out*-${EXAMPLE}-${DISTRIBUTION}*)
+  file(COPY ${GOLDFILES} DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+  add_test(NAME swarmapp_test-${EXAMPLE}-${DISTRIBUTION}
+    COMMAND ./swarmapp_test-${EXAMPLE}-${DISTRIBUTION}.sh)
+  set_property(TEST swarmapp_test-${EXAMPLE}-${DISTRIBUTION}
+    PROPERTY ENVIRONMENT
+    TESTAPPDIR=${CMAKE_CURRENT_BINARY_DIR}/..
+    RUN_COMMAND=${RUN_COMMAND}
+    )
+endmacro(ADD_SWARMAPP_TEST)
+
+ADD_SWARMAPP_TEST(0 0)
+ADD_SWARMAPP_TEST(1 0)
+ADD_SWARMAPP_TEST(2 0)
+ADD_SWARMAPP_TEST(3 0)
+ADD_SWARMAPP_TEST(4 0)
+ADD_SWARMAPP_TEST(5 0)
+ADD_SWARMAPP_TEST(6 0)
+ADD_SWARMAPP_TEST(7 0)
+ADD_SWARMAPP_TEST(8 0)
+ADD_SWARMAPP_TEST(9 0)
+
+ADD_SWARMAPP_TEST(0 1)
+ADD_SWARMAPP_TEST(1 1)
+ADD_SWARMAPP_TEST(2 1)
+ADD_SWARMAPP_TEST(3 1)
+ADD_SWARMAPP_TEST(4 1)
+ADD_SWARMAPP_TEST(5 1)
+ADD_SWARMAPP_TEST(6 1)
+ADD_SWARMAPP_TEST(7 1)
+ADD_SWARMAPP_TEST(8 1)
+ADD_SWARMAPP_TEST(9 1)
+
+ADD_SWARMAPP_TEST(10 0)
+ADD_SWARMAPP_TEST(11 0)
+ADD_SWARMAPP_TEST(12 0)
+ADD_SWARMAPP_TEST(13 0)
+ADD_SWARMAPP_TEST(14 0)
+ADD_SWARMAPP_TEST(15 0)
+ADD_SWARMAPP_TEST(16 0)
+ADD_SWARMAPP_TEST(17 0)
+ADD_SWARMAPP_TEST(18 0)
+ADD_SWARMAPP_TEST(19 0)
+
+ADD_SWARMAPP_TEST(10 1)
+ADD_SWARMAPP_TEST(11 1)
+ADD_SWARMAPP_TEST(12 1)
+ADD_SWARMAPP_TEST(13 1)
+ADD_SWARMAPP_TEST(14 1)
+ADD_SWARMAPP_TEST(15 1)
+ADD_SWARMAPP_TEST(16 1)
+ADD_SWARMAPP_TEST(17 1)
+ADD_SWARMAPP_TEST(18 1)
+ADD_SWARMAPP_TEST(19 1)
+
