@@ -1094,7 +1094,8 @@ make_core_driver(Entity_kind onwhat,
                                             Matpoly_Splitter, Matpoly_Clipper,
                                             CoordSys>
                                             (source_mesh, source_state, 
-                                             target_mesh, target_state, executor)
+                                             target_mesh, target_state,
+                                             executor)
                                                         );
     case NODE:
       // Intel 18.0.1 does not recognize std::make_unique even with -std=c++14 flag *ugh*
@@ -1118,7 +1119,9 @@ make_core_driver(Entity_kind onwhat,
                                             Matpoly_Splitter, Matpoly_Clipper,
                                             CoordSys>
                                             (source_mesh, source_state, 
-                                             target_mesh, target_state, executor)
+                                             target_mesh, target_state,
+                                             executor)
+                                                   );
     default:
       std::cerr << "Remapping on " << Wonton::to_string(onwhat) <<
           " not implemented\n";
