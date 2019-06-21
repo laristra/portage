@@ -134,7 +134,7 @@ class CoreDriverBase {
   Portage::vector<std::vector<int>>
   search() {
     assert(ONWHAT == onwhat());
-    auto derived_class_ptr = static_cast<ComponentDriverType<ONWHAT> *>(this);
+    auto derived_class_ptr = static_cast<CoreDriverType<ONWHAT> *>(this);
     return derived_class_ptr->template search<Search>();
   }
     
@@ -159,7 +159,7 @@ class CoreDriverBase {
   Portage::vector<std::vector<Portage::Weights_t>>
   intersect_meshes(Portage::vector<std::vector<int>> const& intersection_candidates) {
     assert(ONWHAT == onwhat());
-    auto derived_class_ptr = static_cast<ComponentDriverType<ONWHAT> *>(this);
+    auto derived_class_ptr = static_cast<CoreDriverType<ONWHAT> *>(this);
     return derived_class_ptr->template intersect_meshes<Intersect>(intersection_candidates);
   }
     
@@ -185,7 +185,7 @@ class CoreDriverBase {
   std::vector<Portage::vector<std::vector<Portage::Weights_t>>>
   intersect_materials(Portage::vector<std::vector<int>> const& intersection_candidates) {
     assert(onwhat() == CELL);
-    auto derived_class_ptr = static_cast<ComponentDriverType<CELL> *>(this);
+    auto derived_class_ptr = static_cast<CoreDriverType<CELL> *>(this);
     return derived_class_ptr->template intersect_materials<Intersect>(intersection_candidates);
   }
 
@@ -241,7 +241,7 @@ class CoreDriverBase {
                             double conservation_tol,
                             int max_fixup_iter) {
     assert(ONWHAT == onwhat());
-    auto derived_class_ptr = static_cast<ComponentDriverType<ONWHAT> *>(this);
+    auto derived_class_ptr = static_cast<CoreDriverType<ONWHAT> *>(this);
     derived_class_ptr->
         template interpolate_mesh_var<T, Interpolate>(srcvarname, trgvarname,
                                                       sources_and_weights,
@@ -310,7 +310,7 @@ class CoreDriverBase {
                                                      conservation_tol,
                                                      max_fixup_iter);
     assert(onwhat() == CELL);
-    auto derived_class_ptr = static_cast<ComponentDriverType<CELL> *>(this);
+    auto derived_class_ptr = static_cast<CoreDriverType<CELL> *>(this);
      derived_class_ptr->
          template interpolate_mat_var<T, Interpolate>(srcvarname,
                                                       trgvarname,
@@ -337,7 +337,7 @@ class CoreDriverBase {
   bool 
   check_mesh_mismatch(Portage::vector<std::vector<Weights_t>> const& source_weights) {
     assert(ONWHAT == onwhat());
-    auto derived_class_ptr = static_cast<ComponentDriverType<ONWHAT> *>(this);
+    auto derived_class_ptr = static_cast<CoreDriverType<ONWHAT> *>(this);
     return derived_class_ptr->check_mesh_mismatch(source_weights);
   }
 
