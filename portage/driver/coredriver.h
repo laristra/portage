@@ -297,18 +297,6 @@ class CoreDriverBase {
                            double conservation_tol,
                            int max_fixup_iter) {
 
-<<<<<<< HEAD:portage/driver/coredriver.h
-    auto derived_class_ptr = dynamic_cast<CoreDriverType<CELL> *>(this);
-    derived_class_ptr->
-        template interpolate_mat_var<T, Interpolate>(srcvarname,
-                                                     trgvarname,
-                                                     sources_and_weights_by_mat,
-                                                     lower_bound, upper_bound,
-                                                     limiter,
-                                                     partial_fixup_type,
-                                                     empty_fixup_type,
-                                                     conservation_tol,
-                                                     max_fixup_iter);
     assert(onwhat() == CELL);
     auto derived_class_ptr = static_cast<CoreDriverType<CELL> *>(this);
      derived_class_ptr->
