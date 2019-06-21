@@ -46,7 +46,7 @@
 
 /*!
   @file genremapdriver.h
-  @brief Multi-material remapping driver that does EVERYTHING :-)
+  @brief Fancy remapping driver that does EVERYTHING :-)
 
   Remap mesh and material variables from mesh to mesh (in serial or
   distributed settings) with the option of doing a part-by-part remap
@@ -245,9 +245,11 @@ class FancyDriver {
     return distributed_;
   }
 
-  /// Does the source mesh need redistribution due to geometric
-  /// mismatch of partitons (different from mismatch of overall domain
-  /// geometry)
+  /*!
+    Does the source mesh need redistribution due to geometric
+    mismatch of partitons (different from mismatch of overall domain
+    geometry)
+  */
   
   bool source_needs_redistribution(Wonton::Executor_type const *executor =
                                    nullptr) {
@@ -322,11 +324,14 @@ class FancyDriver {
 
 
 
-  /* @brief search for candidate source entities whose control volumes
+  /*!
+    @brief search for candidate source entities whose control volumes
      (cells, dual cells) overlap the control volumes of target cells
 
      @tparam Entity_kind  what kind of entity are we searching on/for
+
      @tparam Search       search functor
+
      @returns    vector of candidate cells for each target cell
   */
 
@@ -347,10 +352,15 @@ class FancyDriver {
   }
 
 
-  /* @brief intersect target control volumes with source control volumes
+  /*!
+    @brief intersect target control volumes with source control volumes
 
      @tparam Entity_kind  what kind of entities are we intersecting
+ 
      @tparam Intersect    intersect functor
+
+     @param[in] candidates Intersection candidates for each target cell
+
      @returns             vector of weights for each target cell
   */
 
@@ -376,10 +386,14 @@ class FancyDriver {
   /* @brief intersect target cells with source material polygons
 
      @tparam Entity_kind  what kind of entities are we intersecting
+
      @tparam Intersect    intersect functor
-     @returns             vector(s) of weights for each target cell organized
-     by material (hence the additional outer std::vector
-     compared to the return type of intersect_meshes) 
+
+     @param[in] candidates intersection candidates for each target cells
+
+     @returns vector(s) of weights for each target cell organized by
+     material (hence the additional outer std::vector compared to the
+     return type of intersect_meshes)
   */
 
   template<
@@ -400,7 +414,15 @@ class FancyDriver {
   }
 
 
-  /* @brief Check if meshes are mismatched */
+  /*!
+    @brief Check if meshes are mismatched 
+
+    @tparam ONWHAT on what kind of entity are we checking mismatch
+
+    @param[in] source_weights Intersection moments/weights 
+
+    @returns whether the mesh has mismatch
+  */
   template<Entity_kind ONWHAT>
   bool check_mesh_mismatch(Portage::vector<std::vector<Weights_t>> const& source_weights) {
 
@@ -420,16 +442,25 @@ class FancyDriver {
 
     @tparam T  type of variable being remapped (default double) - underlying
     interpolator must be able to handle this type
+
     @tparam ONWHAT  Entity kind on which variable resides
+
     @tparam Interpolate  Interpolate functor to do the actual interpolation
 
     @param[in] srcvarname   Variable name on source and target meshes
+
     @param[in] lower_bound  Lower bound for variable
+
     @param[in] upper_bound  Upper bound for variable
+
     @param[in] limiter      Limiter to use for second order reconstruction
+
     @param[in] partial_fixup_type  Method to populate fields on partially filled target entities (cells or dual cells)
+
     @param[in] empty_fixup_type    Method to populate fields on empty target entities (cells or dual cells)
+
     @param[in] conservation_tol   Tolerance to which source and target integral quantities are to be matched
+
     @param[in] max_fixup_iter     Max number of iterations for global repair
 
     See support/portage.h for options on limiter, partial_fixup_type and
@@ -466,13 +497,21 @@ class FancyDriver {
     interpolator must be able to handle this type
 
     @param[in] srcvarname   Variable name on source mesh
+
     @param[in] trgvarname   Variable name on target mesh
+
     @param[in] lower_bound  Lower bound for variable
+
     @param[in] upper_bound  Upper bound for variable
+
     @param[in] limiter      Limiter to use for second order reconstruction
+
     @param[in] partial_fixup_type  Method to populate fields on partially filled target entities (cells or dual cells)
+
     @param[in] empty_fixup_type    Method to populate fields on empty target entities (cells or dual cells)
+
     @param[in] conservation_tol   Tolerance to which source and target integral quantities are to be matched
+
     @param[in] max_fixup_iter     Max number of iterations for global repair
 
     See support/portage.h for options on limiter, partial_fixup_type and
