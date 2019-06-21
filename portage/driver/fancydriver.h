@@ -57,8 +57,8 @@ namespace Portage {
 
 
 
-using Wonton::Entity_kind::CELL;
-using Wonton::Entity_kind::NODE;
+using Wonton::CELL;
+using Wonton::NODE;
 using Wonton::Flat_Mesh_Wrapper;
 using Wonton::Flat_State_Wrapper;
 
