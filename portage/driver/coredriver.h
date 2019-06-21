@@ -107,21 +107,23 @@ class CoreDriverBase {
 
   template<Entity_kind ONWHAT>
   using CoreDriverType = CoreDriver<D, ONWHAT, SourceMesh, SourceState,
-                                            TargetMesh, TargetState,
-                                            InterfaceReconstructorType,
-                                            Matpoly_Splitter, Matpoly_Clipper,
-                                            CoordSys>;
+                                    TargetMesh, TargetState,
+                                    InterfaceReconstructorType,
+                                    Matpoly_Splitter, Matpoly_Clipper,
+                                    CoordSys>;
   
  public:
   CoreDriverBase() {}
   virtual ~CoreDriverBase() {}  // Necessary
   
   /*! @brief search for candidate source entities whose control volumes
-     (cells, dual cells) overlap the control volumes of target cells
+    (cells, dual cells) overlap the control volumes of target cells
      
-     @tparam Entity_kind  what kind of entity are we searching on/for
-     @tparam Search       search functor
-     @returns    vector of intersection candidates for each target entity
+    @tparam Entity_kind  what kind of entity are we searching on/for
+
+    @tparam Search       search functor
+
+    @returns    vector of intersection candidates for each target entity
   */
 
   template<Entity_kind ONWHAT,
@@ -135,10 +137,13 @@ class CoreDriverBase {
 
   /*! @brief intersect target entities with candidate source entities
 
-     @tparam Entity_kind  what kind of entity are we searching on/for
-     @tparam Intersect    intersect functor
-     @param    vector of intersection candidates for each target entity
-     @returns  vector of intersection moments for each target entity
+    @tparam Entity_kind  what kind of entity are we searching on/for
+
+    @tparam Intersect    intersect functor
+
+    @param[in] intersection_candidates  vector of intersection candidates for each target entity
+
+    @returns  vector of intersection moments for each target entity
   */
 
   template<
@@ -158,9 +163,13 @@ class CoreDriverBase {
 
   /*! intersect target cells with source material polygons
 
-     @tparam Intersect   intersect functor
-     @param      vector of intersection candidates for each target entity 
-     @returns    material-wise vector of intersection moments for each target cell
+    @tparam Intersect   intersect functor
+
+    @param[in] intersection_candidates vector of intersection
+    candidates for each target entity
+
+    @returns material-wise vector of intersection moments for each
+    target cell
   */
 
   template<
@@ -175,21 +184,35 @@ class CoreDriverBase {
   }
 
 
-  /*! Interpolate a mesh variable of type T residing on entity kind ONWHAT using
+  /*!
+    Interpolate a mesh variable of type T residing on entity kind ONWHAT using
     previously computed intersection weights
 
     @tparam T   type of variable
+
     @tparam ONWHAT  Entity_kind that field resides on
+
     @tparam Interpolate  Functor for doing the interpolate from mesh to mesh
 
     @param[in] srcvarname   Variable name on source mesh
+
     @param[in] trgvarname   Variable name on target mesh
+
     @param[in] lower_bound  Lower bound for variable
+
     @param[in] upper_bound  Upper bound for variable
+
     @param[in] limiter      Limiter to use for second order reconstruction
-    @param[in] partial_fixup_type  Method to populate fields on partially filled target entities (cells or dual cells)
-    @param[in] empty_fixup_type    Method to populate fields on empty target entities (cells or dual cells)
-    @param[in] conservation_tol   Tolerance to which source and target integral quantities are to be matched
+
+    @param[in] partial_fixup_type Method to populate fields on
+    partially filled target entities (cells or dual cells)
+
+    @param[in] empty_fixup_type Method to populate fields on empty
+    target entities (cells or dual cells)
+
+    @param[in] conservation_tol Tolerance to which source and target
+    integral quantities are to be matched
+
     @param[in] max_fixup_iter     Max number of iterations for global repair
 
     See support/portage.h for options on limiter, partial_fixup_type and
@@ -229,13 +252,24 @@ class CoreDriverBase {
     Interpolate a (multi-)material variable of type T residing on CELLs
     
     @param[in] srcvarname   Variable name on source mesh
+
     @param[in] trgvarname   Variable name on target mesh
+
     @param[in] lower_bound  Lower bound for variable
+
     @param[in] upper_bound  Upper bound for variable
+
     @param[in] limiter      Limiter to use for second order reconstruction
-    @param[in] partial_fixup_type  Method to populate fields on partially filled target entities (cells or dual cells)
-    @param[in] empty_fixup_type    Method to populate fields on empty target entities (cells or dual cells)
-    @param[in] conservation_tol   Tolerance to which source and target integral quantities are to be matched
+
+    @param[in] partial_fixup_type Method to populate fields on
+    partially filled target entities (cells or dual cells)
+
+    @param[in] empty_fixup_type Method to populate fields on empty
+    target entities (cells or dual cells)
+
+    @param[in] conservation_tol Tolerance to which source and target
+    integral quantities are to be matched
+
     @param[in] max_fixup_iter     Max number of iterations for global repair
 
     See support/portage.h for options on limiter, partial_fixup_type and
@@ -258,23 +292,25 @@ class CoreDriverBase {
                            int max_fixup_iter) {
 
     auto derived_class_ptr = dynamic_cast<CoreDriverType<CELL> *>(this);
-     derived_class_ptr->
-         template interpolate_mat_var<T, Interpolate>(srcvarname,
-                                                      trgvarname,
-                                                      sources_and_weights_by_mat,
-                                                      lower_bound, upper_bound,
-                                                      limiter,
-                                                      partial_fixup_type,
-                                                      empty_fixup_type,
-                                                      conservation_tol,
-                                                      max_fixup_iter);
+    derived_class_ptr->
+        template interpolate_mat_var<T, Interpolate>(srcvarname,
+                                                     trgvarname,
+                                                     sources_and_weights_by_mat,
+                                                     lower_bound, upper_bound,
+                                                     limiter,
+                                                     partial_fixup_type,
+                                                     empty_fixup_type,
+                                                     conservation_tol,
+                                                     max_fixup_iter);
   }
 
-  /*!  @brief Check if meshes are mismatched (don't cover identical
+  /*!
+    @brief Check if meshes are mismatched (don't cover identical
     portions of space)
 
     @tparam Entity_kind  What kind of entity are we performing intersection of
-    param[in] sources_weights  Intersection sources and moments (vols, centroids) 
+
+    @param[in] sources_weights  Intersection sources and moments (vols, centroids) 
     @returns   Whether the meshes are mismatched
   */
 
@@ -316,7 +352,9 @@ class CoreDriverBase {
   @tparam InterfaceReconstructorType  The Interface Reconstructor class we will instantiate
 
   @tparam Matpoly_Splitter Class to split a polyhedron into two pieces
-  @tparam Matpoly_Clipper Class to clip a polyhedron with a plane and return the piece behind the plane
+
+  @tparam Matpoly_Clipper Class to clip a polyhedron with a plane and
+  return the piece behind the plane
 
   @tprarm CoordSys  Coordinate system being used for calculations
 
@@ -331,27 +369,32 @@ template <int D,
           class CoordSys = Wonton::DefaultCoordSys
           >
 class CoreDriver : public CoreDriverBase<D,
-                                                 SourceMesh, SourceState,
-                                                 TargetMesh, TargetState,
-                                                 InterfaceReconstructorType,
-                                                 Matpoly_Splitter,
-                                                 Matpoly_Clipper,
-                                                 CoordSys> {
+                                         SourceMesh, SourceState,
+                                         TargetMesh, TargetState,
+                                         InterfaceReconstructorType,
+                                         Matpoly_Splitter,
+                                         Matpoly_Clipper,
+                                         CoordSys> {
  public:
   /*!
     @brief Constructor for the CORE remap driver.
-    @param[in] sourceMesh A @c  wrapper to the source mesh (may be native or redistributed source).
+
+    @param[in] sourceMesh A @c wrapper to the source mesh (may be
+    native or redistributed source).
+
     @param[in] sourceState A @c wrapper for the data that lives on the
     source mesh
+
     @param[in] targetMesh A @c TargetMesh to the target mesh
+
     @param[in,out] targetState A @c TargetState for the data that will
     be mapped to the target mesh
   */
   CoreDriver(SourceMesh const& source_mesh,
-                 SourceState const& source_state,
-                 TargetMesh const& target_mesh,
-                 TargetState& target_state,
-                 Wonton::Executor_type const *executor = nullptr)
+             SourceState const& source_state,
+             TargetMesh const& target_mesh,
+             TargetState& target_state,
+             Wonton::Executor_type const *executor = nullptr)
       : source_mesh_(source_mesh), source_state_(source_state),
         target_mesh_(target_mesh), target_state_(target_state),
         executor_(executor)
@@ -412,12 +455,13 @@ class CoreDriver : public CoreDriverBase<D,
     intersection for each entity
 
     @param candidates Vector of intersection candidates for each target entity
+
     @return vector of intersection moments for each target entity
   */
 
   template<template <Entity_kind, class, class, class,
-          template <class, int, class, class> class,
-          class, class> class Intersect>
+                     template <class, int, class, class> class,
+                     class, class> class Intersect>
   Portage::vector<std::vector<Portage::Weights_t>>
   intersect_meshes(Portage::vector<std::vector<int>> const& candidates) {
 
@@ -445,7 +489,9 @@ class CoreDriver : public CoreDriverBase<D,
     and return the intersecting entities and moments of intersection
     for each entity
 
-    @param candidates Vector of intersection candidates for each target entity
+    @param[in] candidates Vector of intersection candidates for each
+    target entity
+
     @return Material-wise vector of intersection moments for each target entity
 
     NOTE: WE COULD SEND IN THE MESH-MESH INTERSECTION MOMENTS AND REUSE THEM
@@ -667,7 +713,10 @@ class CoreDriver : public CoreDriverBase<D,
 
   /*! 
     Check mismatch between meshes
-    @param[in] sources_and_weights  Intersection sources and moments (vols, centroids)
+
+    @param[in] sources_and_weights Intersection sources and moments
+    (vols, centroids)
+
     @returns   Whether the meshes are mismatched
   */
 
@@ -690,14 +739,24 @@ class CoreDriver : public CoreDriverBase<D,
   /*! CoreDriver::interpolate_mesh_var
 
     @brief interpolate a mmesh variable
+
     @param[in] srcvarname  Mesh variable name on the source mesh
+
     @param[in] trgvarname  Mesh variable name on the target mesh
+
     @param[in] sources_and_weights  weights for mesh-mesh interpolation
+
     @param[in] limiter     Limiter to use for variable
-    @param[in] partial...  How to fixup partly filled target cells (for this var)
+
+    @param[in] partial...  How to fixup partly filled target cells
+    (for this var)
+
     @param[in] emtpy...    How to fixup empty target cells with this var
+
     @param[in] lower_bound Lower bound of variable value when doing fixup
+
     @param[in] upper_bound Upper bound of variable value when doing fixup
+
     @param[in] cons..tol   Tolerance for conservation when doing fixup
   */
 
@@ -763,13 +822,21 @@ class CoreDriver : public CoreDriverBase<D,
   /*! CoreDriver::interpolate_mat_var
 
     @brief interpolate a material variable
+
     @param[in] srcvarname  Material variable name on the source mesh
+
     @param[in] trgvarname  Material variable name on the target mesh
+
     @param[in] limiter     Limiter to use for variable
+
     @param[in] partial...  How to fixup partly filled target cells (for this var)
+
     @param[in] emtpy...    How to fixup empty target cells with this var
+
     @param[in] lower_bound Lower bound of variable value when doing fixup
+
     @param[in] upper_bound Upper bound of variable value when doing fixup
+
     @param[in] cons..tol   Tolerance for conservation when doing fixup
   */
 
@@ -961,33 +1028,33 @@ template <int D,
           class Matpoly_Clipper,
           class CoordSys>
 std::unique_ptr<CoreDriverBase<D, SourceMesh, SourceState,
-                                   TargetMesh, TargetState,
-                                   InterfaceReconstructorType,
-                                   Matpoly_Splitter, Matpoly_Clipper,
-                                   CoordSys>
+                               TargetMesh, TargetState,
+                               InterfaceReconstructorType,
+                               Matpoly_Splitter, Matpoly_Clipper,
+                               CoordSys>
                 >
 make_core_driver(Entity_kind onwhat,
-                     SourceMesh const & source_mesh,
-                     SourceState const & source_state,
-                     TargetMesh const & target_mesh,
-                     TargetState & target_state,
-                     Wonton::Executor_type const *executor) {
+                 SourceMesh const & source_mesh,
+                 SourceState const & source_state,
+                 TargetMesh const & target_mesh,
+                 TargetState & target_state,
+                 Wonton::Executor_type const *executor) {
   switch (onwhat) {
     case CELL:
       return std::make_unique<CoreDriver<D, CELL,
-                                             SourceMesh, SourceState,
-                                             TargetMesh, TargetState,
-                                             InterfaceReconstructorType,
-                                             Matpoly_Splitter, Matpoly_Clipper,
-                                             CoordSys>>
+                                         SourceMesh, SourceState,
+                                         TargetMesh, TargetState,
+                                         InterfaceReconstructorType,
+                                         Matpoly_Splitter, Matpoly_Clipper,
+                                         CoordSys>>
           (source_mesh, source_state, target_mesh, target_state, executor);
     case NODE:
       return std::make_unique<CoreDriver<D, NODE,
-                                             SourceMesh, SourceState,
-                                             TargetMesh, TargetState,
-                                             InterfaceReconstructorType,
-                                             Matpoly_Splitter, Matpoly_Clipper,
-                                             CoordSys>>
+                                         SourceMesh, SourceState,
+                                         TargetMesh, TargetState,
+                                         InterfaceReconstructorType,
+                                         Matpoly_Splitter, Matpoly_Clipper,
+                                         CoordSys>>
           (source_mesh, source_state, target_mesh, target_state, executor);
     default:
       std::cerr << "Remapping on " << Wonton::to_string(onwhat) <<
