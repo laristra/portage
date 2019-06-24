@@ -75,7 +75,7 @@ set(XMOF2D_LIBRARIES @XMOF2D_LIBRARIES@ CACHE STRING "XMOF2D libraries")
 
 
 set(ENABLE_THRUST @ENABLE_THRUST@ CACHE BOOL "Enable NVIDIA Thrust")
-set(THRUST_DIR @ENABLE_THRUST@ CACHE PATH "Thrust installation directory")
+set(THRUST_DIR @THRUST_DIR@ CACHE PATH "Thrust installation directory")
 set(THRUST_BACKEND @THRUST_BACKEND@ CACHE STRING "Thrust backedn to use")
 
 set(Boost_FOUND @Boost_FOUND@ CACHE BOOL "Boost status")

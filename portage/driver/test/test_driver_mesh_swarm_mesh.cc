@@ -70,7 +70,7 @@ class MSMDriverTest : public ::testing::Test {
     class, class> class Intersect,
     template<int, Portage::Entity_kind, class, class, class,
     template<class, int, class, class> class,
-    class, class> class Interpolate,
+    class, class, class> class Interpolate,
     template <int, class, class> class SwarmSearch,
     int Dimension = 3
   >

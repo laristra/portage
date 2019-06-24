@@ -24,6 +24,7 @@ Please see the license file at the root of this repository, or at:
 
 #include <vector>
 #include <algorithm>
+#include <string>
 
 #endif
 
@@ -69,8 +70,6 @@ Please see the license file at the root of this repository, or at:
  */
 namespace Portage {
 
-// Point aliases
-
 using Wonton::Matrix;
 
 // useful enums
@@ -82,16 +81,67 @@ using Wonton::Data_layout;
 using Wonton::Weights_t;
 
 /// Limiter type
-typedef enum {NOLIMITER, BARTH_JESPERSEN}
-  Limiter_type;
+typedef enum {NOLIMITER, BARTH_JESPERSEN} Limiter_type;
+constexpr int NUM_LIMITER_TYPE = 2;
+
+Limiter_type DEFAULT_LIMITER = Limiter_type::BARTH_JESPERSEN;
+
+std::string to_string(Limiter_type limiter_type) {
+  static const std::string type2string[NUM_LIMITER_TYPE] =
+      {"Limiter_type::NOLIMITER",
+       "Limiter_type::BARTH_JESPERSEN"};
+
+  int itype = static_cast<int>(limiter_type);
+  return (itype >= 0 && itype < NUM_LIMITER_TYPE) ?
+      type2string[itype] : "INVALID LIMITER TYPE";
+}
+
 
 /// Fixup options for partially filled cells
 typedef enum {CONSTANT, LOCALLY_CONSERVATIVE, SHIFTED_CONSERVATIVE}
   Partial_fixup_type;
+constexpr int NUM_PARTIAL_FIXUP_TYPE = 3;
+
+Partial_fixup_type DEFAULT_PARTIAL_FIXUP_TYPE =
+    Partial_fixup_type::LOCALLY_CONSERVATIVE;
+
+std::string to_string(Partial_fixup_type partial_fixup_type) {
+  static const std::string type2string[NUM_PARTIAL_FIXUP_TYPE] =
+      {"Partial_fixup_type::CONSTANT",
+       "Partial_fixup_type::LOCALLY_CONSERVATIVE",
+       "Partial_fixup_type::SHIFTED_CONSERVATIVE"};
+
+  int itype = static_cast<int>(partial_fixup_type);
+  return (itype >= 0 && itype < NUM_PARTIAL_FIXUP_TYPE) ? type2string[itype] :
+      "INVALID PARTIAL FIXUP TYPE";
+}
+
 
 /// Fixup options for empty cells
 typedef enum {LEAVE_EMPTY, EXTRAPOLATE, FILL}
   Empty_fixup_type;
+constexpr int NUM_EMPTY_FIXUP_TYPE = 3;
+
+Empty_fixup_type DEFAULT_EMPTY_FIXUP_TYPE = Empty_fixup_type::LEAVE_EMPTY;
+
+std::string to_string(Empty_fixup_type empty_fixup_type) {
+  static const std::string type2string[NUM_EMPTY_FIXUP_TYPE] =
+      {"Empty_fixup_type::LEAVE_EMPTY",
+       "Empty_fixup_type::EXTRAPOLATE",
+       "Empty_fixup_type::FILL"};
+
+  int itype = static_cast<int>(empty_fixup_type);
+  return (itype >= 0 && itype < NUM_EMPTY_FIXUP_TYPE) ? type2string[itype] :
+      "INVALID EMPTY FIXUP TYPE";
+}
+
+
+/// default tolerance for conservation
+constexpr double DEFAULT_CONSERVATION_TOL = 100*std::numeric_limits<double>::epsilon();
+
+/// default number of iterations for mismatch repair
+constexpr int DEFAULT_MAX_FIXUP_ITER = 5;
+
 
 // Iterators and transforms that depend on Thrust vs. std
 #ifdef PORTAGE_ENABLE_THRUST

@@ -15,8 +15,12 @@ Please see the license file at the root of this repository, or at:
 #include <vector>
 #include <cmath>
 
+// portage includes
 #include "portage/intersect/dummy_interface_reconstructor.h"
 #include "portage/support/portage.h"
+
+// wonton includes
+#include "wonton/support/CoordinateSystem.h"
 
 #ifdef HAVE_TANGRAM
 #include "tangram/driver/driver.h"
@@ -76,7 +80,8 @@ template<int D,
          template<class, int, class, class> class InterfaceReconstructorType =
          DummyInterfaceReconstructor,
          class Matpoly_Splitter = void,
-         class Matpoly_Clipper = void >
+         class Matpoly_Clipper = void,
+         class CoordSys = Wonton::DefaultCoordSys>
 class Interpolate_1stOrder {
 
 #ifdef HAVE_TANGRAM
@@ -207,7 +212,8 @@ template<int D,
          typename StateType,
          template<class, int, class, class> class InterfaceReconstructorType,
          class Matpoly_Splitter,
-         class Matpoly_Clipper>
+         class Matpoly_Clipper,
+         class CoordSys>
 class Interpolate_1stOrder<D,
                            Entity_kind::CELL,
                            SourceMeshType,
@@ -215,7 +221,8 @@ class Interpolate_1stOrder<D,
                            StateType,
                            InterfaceReconstructorType,
                            Matpoly_Splitter,
-                           Matpoly_Clipper> {
+                           Matpoly_Clipper,
+                           CoordSys> {
 
 #ifdef HAVE_TANGRAM
   using InterfaceReconstructor =
@@ -387,7 +394,8 @@ template<int D,
          typename StateType,
          template<class, int, class, class> class InterfaceReconstructorType,
          class Matpoly_Splitter,
-         class Matpoly_Clipper>
+         class Matpoly_Clipper,
+         class CoordSys>
 class Interpolate_1stOrder<D,
                            Entity_kind::NODE,
                            SourceMeshType,
@@ -395,7 +403,8 @@ class Interpolate_1stOrder<D,
                            StateType,
                            InterfaceReconstructorType,
                            Matpoly_Splitter,
-                           Matpoly_Clipper> {
+                           Matpoly_Clipper,
+                           CoordSys> {
 
 #ifdef HAVE_TANGRAM
   using InterfaceReconstructor =
