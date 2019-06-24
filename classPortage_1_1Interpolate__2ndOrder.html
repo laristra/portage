@@ -3,36 +3,46 @@ This file is part of the Ristra portage project.
 Please see the license file at the root of this repository, or at:
     https://github.com/laristra/portage/blob/master/LICENSE
 -->
-<!DOCTYPE html>
-<html>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
   <head>
+    <meta http-equiv="Content-Type" content="text/xhtml;charset=UTF-8"/>
     <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+    <meta name="generator" content="Doxygen 1.8.13"/>
     <!-- For Mobile Devices -->
     <meta name="viewport" content="width=device-width, initial-scale=1"/>
     <!-- Font stuff -->
-    <link href='https://fonts.googleapis.com/css?family=Roboto+Slab' rel='stylesheet' type='text/css'/>
-    <!-- Font Awesome -->
-    <!--    <link rel="stylesheet" href="font-awesome-4.3.0/css/font-awesome.min.css"/> -->
-    <script src="https://use.fontawesome.com/3dce4d8e65.js"></script>
-    <meta http-equiv="Content-Type" content="text/xhtml;charset=UTF-8"/>
-    <meta name="generator" content="Doxygen 1.8.13"/>
-    <script type="text/javascript" src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
-    <title>portage: Portage::Interpolate_2ndOrder&lt; D, on_what, SourceMeshType, TargetMeshType, StateType, InterfaceReconstructorType, Matpoly_Splitter, Matpoly_Clipper &gt; Class Template Reference</title>
+    <link href='//fonts.googleapis.com/css?family=Roboto+Slab' rel='stylesheet' type='text/css'/>
+    <script src="//use.fontawesome.com/3dce4d8e65.js"></script>
+    <!-- the default version jquery provided by doxygen is too old for bootstrap
+	 but it also contains local modifications.  we have extracted those that
+	 are needed so that we can use a newer jquery. -->
+    <!-- <script type="text/javascript" src="//code.jquery.com/jquery-3.1.1.min.js"></script> -->
+    <script
+			  src="//code.jquery.com/jquery-3.3.1.min.js"
+			  integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8="
+			  crossorigin="anonymous"></script>
+      <!-- <script src="//code.jquery.com/jquery-3.3.1.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script> -->
+    <script type="text/javascript" src="smartmenu.js"></script>
+    <title>portage: Portage::Interpolate_2ndOrder&lt; D, on_what, SourceMeshType, TargetMeshType, StateType, InterfaceReconstructorType, Matpoly_Splitter, Matpoly_Clipper, CoordSys &gt; Class Template Reference</title>
+    <link href="tabs.css" rel="stylesheet" type="text/css">
+      <!-- this version is too old for bootstrap, but it includes modifications
+	   from standard jquery
+    <script type="text/javascript" src="jquery.js"></script>  -->
     <script type="text/javascript" src="dynsections.js"></script>
-    <link href="search/search.css" rel="stylesheet" type="text/css"/>
-<script type="text/javascript" src="search/searchdata.js"></script>
-<script type="text/javascript" src="search/search.js"></script>
     <script type="text/x-mathjax-config">
   MathJax.Hub.Config({
-    extensions: ["tex2jax.js", "Tex/AMSmath.js", "Tex/AMSsymbols.js"],
+    extensions: ["tex2jax.js", "TeX/AMSmath.js", "TeX/AMSsymbols.js"],
     jax: ["input/TeX","output/HTML-CSS"],
 });
-</script><script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js"></script>
+</script><script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js"></script>
     <link href="doxygen.css" rel="stylesheet" type="text/css" />
     <link href="customdoxygen.css" rel="stylesheet" type="text/css"/>
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"/>
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
-    <script type="text/javascript" src="doxy-boot.js"></script>
+    <link rel="stylesheet" href="//stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+<script src="//cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+<script src="//stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+    <!-- <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"/> -->
+    <!-- <script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script> -->
   </head>
   <body>
     <nav class="navbar navbar-default" role="navigation">
@@ -48,34 +58,16 @@ Please see the license file at the root of this repository, or at:
           <div class="row">
             <div class="col-sm-12 panel " style="padding-bottom: 15px;">
               <div style="margin-bottom: 15px;">
-		<!-- end header part -->
+      		<!-- end header part -->
 <!-- Generated by Doxygen 1.8.13 -->
-<script type="text/javascript">
-var searchBox = new SearchBox("searchBox", "search",false,'Search');
-</script>
 <script type="text/javascript" src="menudata.js"></script>
 <script type="text/javascript" src="menu.js"></script>
 <script type="text/javascript">
 $(function() {
-  initMenu('',true,false,'search.php','Search');
-  $(document).ready(function() { init_search(); });
+  initMenu('',false,false,'search.php','Search');
 });
 </script>
 <div id="main-nav"></div>
-<!-- window showing the filter options -->
-<div id="MSearchSelectWindow"
-     onmouseover="return searchBox.OnSearchSelectShow()"
-     onmouseout="return searchBox.OnSearchSelectHide()"
-     onkeydown="return searchBox.OnSearchSelectKey(event)">
-</div>
-
-<!-- iframe showing the search results (closed by default) -->
-<div id="MSearchResultsWindow">
-<iframe src="javascript:void(0)" frameborder="0" 
-        name="MSearchResults" id="MSearchResults">
-</iframe>
-</div>
-
 <div id="nav-path" class="navpath">
   <ul>
 <li class="navelem"><a class="el" href="namespacePortage.html">Portage</a></li><li class="navelem"><a class="el" href="classPortage_1_1Interpolate__2ndOrder.html">Interpolate_2ndOrder</a></li>  </ul>
@@ -86,7 +78,7 @@ $(function() {
 <a href="#pub-methods">Public Member Functions</a> &#124;
 <a href="classPortage_1_1Interpolate__2ndOrder-members.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">Portage::Interpolate_2ndOrder&lt; D, on_what, SourceMeshType, TargetMeshType, StateType, InterfaceReconstructorType, Matpoly_Splitter, Matpoly_Clipper &gt; Class Template Reference</div>  </div>
+<div class="title">Portage::Interpolate_2ndOrder&lt; D, on_what, SourceMeshType, TargetMeshType, StateType, InterfaceReconstructorType, Matpoly_Splitter, Matpoly_Clipper, CoordSys &gt; Class Template Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
 
@@ -97,28 +89,28 @@ $(function() {
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a0e480e0ebcedffff66dad057395dfdbf"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1Interpolate__2ndOrder.html#a0e480e0ebcedffff66dad057395dfdbf">Interpolate_2ndOrder</a> (SourceMeshType const &amp;source_mesh, TargetMeshType const &amp;target_mesh, StateType const &amp;source_state)</td></tr>
-<tr class="memdesc:a0e480e0ebcedffff66dad057395dfdbf"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructor with interface reconstructor.  <a href="#a0e480e0ebcedffff66dad057395dfdbf">More...</a><br /></td></tr>
-<tr class="separator:a0e480e0ebcedffff66dad057395dfdbf"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a65e1b2394eb28f935774748063d979f6"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classPortage_1_1Interpolate__2ndOrder.html">Interpolate_2ndOrder</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1Interpolate__2ndOrder.html#a65e1b2394eb28f935774748063d979f6">operator=</a> (const <a class="el" href="classPortage_1_1Interpolate__2ndOrder.html">Interpolate_2ndOrder</a> &amp;)=delete</td></tr>
-<tr class="memdesc:a65e1b2394eb28f935774748063d979f6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Copy constructor (disabled)  <a href="#a65e1b2394eb28f935774748063d979f6">More...</a><br /></td></tr>
-<tr class="separator:a65e1b2394eb28f935774748063d979f6"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae9f8b691cf94331309ab369138eaa578"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1Interpolate__2ndOrder.html#ae9f8b691cf94331309ab369138eaa578">~Interpolate_2ndOrder</a> ()</td></tr>
-<tr class="memdesc:ae9f8b691cf94331309ab369138eaa578"><td class="mdescLeft">&#160;</td><td class="mdescRight">Destructor.  <a href="#ae9f8b691cf94331309ab369138eaa578">More...</a><br /></td></tr>
-<tr class="separator:ae9f8b691cf94331309ab369138eaa578"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a4a72402a402cae5f695e383543ac5340"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1Interpolate__2ndOrder.html#a4a72402a402cae5f695e383543ac5340">set_material</a> (int m)</td></tr>
-<tr class="memdesc:a4a72402a402cae5f695e383543ac5340"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set the material we are operating on.  <a href="#a4a72402a402cae5f695e383543ac5340">More...</a><br /></td></tr>
-<tr class="separator:a4a72402a402cae5f695e383543ac5340"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a71ebbc2c08a4a45e4d45cef6fe667e01"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1Interpolate__2ndOrder.html#a71ebbc2c08a4a45e4d45cef6fe667e01">set_interpolation_variable</a> (std::string const &amp;interp_var_name, <a class="el" href="namespacePortage.html#a4cb59edee64edb5a23427c8cb2fb5be6">Limiter_type</a> limiter_type=<a class="el" href="namespacePortage.html#a4cb59edee64edb5a23427c8cb2fb5be6a129ce73da39e28f090a4963952638f0f">NOLIMITER</a>)</td></tr>
-<tr class="memdesc:a71ebbc2c08a4a45e4d45cef6fe667e01"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set the name of the interpolation variable and the limiter type.  <a href="#a71ebbc2c08a4a45e4d45cef6fe667e01">More...</a><br /></td></tr>
-<tr class="separator:a71ebbc2c08a4a45e4d45cef6fe667e01"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a86c37180f6d0190dc55b0746eb5475b9"><td class="memItemLeft" align="right" valign="top">double&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1Interpolate__2ndOrder.html#a86c37180f6d0190dc55b0746eb5475b9">operator()</a> (int const targetCellID, std::vector&lt; Weights_t &gt; const &amp;sources_and_weights) const</td></tr>
-<tr class="memdesc:a86c37180f6d0190dc55b0746eb5475b9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Functor to do the actual interpolate calculation.  <a href="#a86c37180f6d0190dc55b0746eb5475b9">More...</a><br /></td></tr>
-<tr class="separator:a86c37180f6d0190dc55b0746eb5475b9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2a61fb0f3d5d964d028303b0308b88a7"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1Interpolate__2ndOrder.html#a2a61fb0f3d5d964d028303b0308b88a7">Interpolate_2ndOrder</a> (SourceMeshType const &amp;source_mesh, TargetMeshType const &amp;target_mesh, StateType const &amp;source_state)</td></tr>
+<tr class="memdesc:a2a61fb0f3d5d964d028303b0308b88a7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructor with interface reconstructor.  <a href="#a2a61fb0f3d5d964d028303b0308b88a7">More...</a><br /></td></tr>
+<tr class="separator:a2a61fb0f3d5d964d028303b0308b88a7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a082f029ed7fce723cbe6f7c8774ecf6f"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classPortage_1_1Interpolate__2ndOrder.html">Interpolate_2ndOrder</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1Interpolate__2ndOrder.html#a082f029ed7fce723cbe6f7c8774ecf6f">operator=</a> (const <a class="el" href="classPortage_1_1Interpolate__2ndOrder.html">Interpolate_2ndOrder</a> &amp;)=delete</td></tr>
+<tr class="memdesc:a082f029ed7fce723cbe6f7c8774ecf6f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Copy constructor (disabled)  <a href="#a082f029ed7fce723cbe6f7c8774ecf6f">More...</a><br /></td></tr>
+<tr class="separator:a082f029ed7fce723cbe6f7c8774ecf6f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa77332c563381cdeeabf08590b0b30ff"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1Interpolate__2ndOrder.html#aa77332c563381cdeeabf08590b0b30ff">~Interpolate_2ndOrder</a> ()</td></tr>
+<tr class="memdesc:aa77332c563381cdeeabf08590b0b30ff"><td class="mdescLeft">&#160;</td><td class="mdescRight">Destructor.  <a href="#aa77332c563381cdeeabf08590b0b30ff">More...</a><br /></td></tr>
+<tr class="separator:aa77332c563381cdeeabf08590b0b30ff"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1cdb6126bcd08a692c21461797534e44"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1Interpolate__2ndOrder.html#a1cdb6126bcd08a692c21461797534e44">set_material</a> (int m)</td></tr>
+<tr class="memdesc:a1cdb6126bcd08a692c21461797534e44"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set the material we are operating on.  <a href="#a1cdb6126bcd08a692c21461797534e44">More...</a><br /></td></tr>
+<tr class="separator:a1cdb6126bcd08a692c21461797534e44"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a90870cd2ce52157a470d33bbf6eae86f"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1Interpolate__2ndOrder.html#a90870cd2ce52157a470d33bbf6eae86f">set_interpolation_variable</a> (std::string const &amp;interp_var_name, <a class="el" href="namespacePortage.html#a4cb59edee64edb5a23427c8cb2fb5be6">Limiter_type</a> limiter_type=<a class="el" href="namespacePortage.html#a4cb59edee64edb5a23427c8cb2fb5be6a129ce73da39e28f090a4963952638f0f">NOLIMITER</a>)</td></tr>
+<tr class="memdesc:a90870cd2ce52157a470d33bbf6eae86f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set the name of the interpolation variable and the limiter type.  <a href="#a90870cd2ce52157a470d33bbf6eae86f">More...</a><br /></td></tr>
+<tr class="separator:a90870cd2ce52157a470d33bbf6eae86f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2e86f73840088a13fd748ed0672addeb"><td class="memItemLeft" align="right" valign="top">double&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1Interpolate__2ndOrder.html#a2e86f73840088a13fd748ed0672addeb">operator()</a> (int const targetCellID, std::vector&lt; Weights_t &gt; const &amp;sources_and_weights) const</td></tr>
+<tr class="memdesc:a2e86f73840088a13fd748ed0672addeb"><td class="mdescLeft">&#160;</td><td class="mdescRight">Functor to do the actual interpolate calculation.  <a href="#a2e86f73840088a13fd748ed0672addeb">More...</a><br /></td></tr>
+<tr class="separator:a2e86f73840088a13fd748ed0672addeb"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
-<div class="textblock"><h3>template&lt;int D, Entity_kind on_what, typename SourceMeshType, typename TargetMeshType, typename StateType, template&lt; class, int, class, class &gt; class InterfaceReconstructorType = DummyInterfaceReconstructor, class Matpoly_Splitter = void, class Matpoly_Clipper = void&gt;<br />
-class Portage::Interpolate_2ndOrder&lt; D, on_what, SourceMeshType, TargetMeshType, StateType, InterfaceReconstructorType, Matpoly_Splitter, Matpoly_Clipper &gt;</h3>
+<div class="textblock"><h3>template&lt;int D, Entity_kind on_what, typename SourceMeshType, typename TargetMeshType, typename StateType, template&lt; class, int, class, class &gt; class InterfaceReconstructorType = DummyInterfaceReconstructor, class Matpoly_Splitter = void, class Matpoly_Clipper = void, class CoordSys = Wonton::DefaultCoordSys&gt;<br />
+class Portage::Interpolate_2ndOrder&lt; D, on_what, SourceMeshType, TargetMeshType, StateType, InterfaceReconstructorType, Matpoly_Splitter, Matpoly_Clipper, CoordSys &gt;</h3>
 
 <p><a class="el" href="classPortage_1_1Interpolate__2ndOrder.html" title="Interpolate_2ndOrder does a 2nd order interpolation of scalars. ">Interpolate_2ndOrder</a> does a 2nd order interpolation of scalars. </p>
 <dl class="tparams"><dt>Template Parameters</dt><dd>
@@ -135,19 +127,19 @@ conservative interpolation (remapping) on general grids." Journal of Computation
 (Rezoning) for Arbitrary Lagrangian-Eulerian Computations," SIAM Journal on Scientific and Statistical Computing, Vol. 8, No. 3, pp. 305-321, 1987.</p>
 <dl class="todo"><dt><b><a class="el" href="todo.html#_todo000006">Todo:</a></b></dt><dd>Template on variable type (YES) </dd></dl>
 </div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a id="a0e480e0ebcedffff66dad057395dfdbf"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a0e480e0ebcedffff66dad057395dfdbf">&#9670;&nbsp;</a></span>Interpolate_2ndOrder()</h2>
+<a id="a2a61fb0f3d5d964d028303b0308b88a7"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a2a61fb0f3d5d964d028303b0308b88a7">&#9670;&nbsp;</a></span>Interpolate_2ndOrder()</h2>
 
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;int D, Entity_kind on_what, typename SourceMeshType , typename TargetMeshType , typename StateType , template&lt; class, int, class, class &gt; class InterfaceReconstructorType = DummyInterfaceReconstructor, class Matpoly_Splitter  = void, class Matpoly_Clipper  = void&gt; </div>
+template&lt;int D, Entity_kind on_what, typename SourceMeshType , typename TargetMeshType , typename StateType , template&lt; class, int, class, class &gt; class InterfaceReconstructorType = DummyInterfaceReconstructor, class Matpoly_Splitter  = void, class Matpoly_Clipper  = void, class CoordSys  = Wonton::DefaultCoordSys&gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="classPortage_1_1Interpolate__2ndOrder.html">Portage::Interpolate_2ndOrder</a>&lt; D, on_what, SourceMeshType, TargetMeshType, StateType, InterfaceReconstructorType, Matpoly_Splitter, Matpoly_Clipper &gt;::<a class="el" href="classPortage_1_1Interpolate__2ndOrder.html">Interpolate_2ndOrder</a> </td>
+          <td class="memname"><a class="el" href="classPortage_1_1Interpolate__2ndOrder.html">Portage::Interpolate_2ndOrder</a>&lt; D, on_what, SourceMeshType, TargetMeshType, StateType, InterfaceReconstructorType, Matpoly_Splitter, Matpoly_Clipper, CoordSys &gt;::<a class="el" href="classPortage_1_1Interpolate__2ndOrder.html">Interpolate_2ndOrder</a> </td>
           <td>(</td>
           <td class="paramtype">SourceMeshType const &amp;&#160;</td>
           <td class="paramname"><em>source_mesh</em>, </td>
@@ -198,19 +190,19 @@ template&lt;int D, Entity_kind on_what, typename SourceMeshType , typename Targe
 
 </div>
 </div>
-<a id="ae9f8b691cf94331309ab369138eaa578"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ae9f8b691cf94331309ab369138eaa578">&#9670;&nbsp;</a></span>~Interpolate_2ndOrder()</h2>
+<a id="aa77332c563381cdeeabf08590b0b30ff"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa77332c563381cdeeabf08590b0b30ff">&#9670;&nbsp;</a></span>~Interpolate_2ndOrder()</h2>
 
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;int D, Entity_kind on_what, typename SourceMeshType , typename TargetMeshType , typename StateType , template&lt; class, int, class, class &gt; class InterfaceReconstructorType = DummyInterfaceReconstructor, class Matpoly_Splitter  = void, class Matpoly_Clipper  = void&gt; </div>
+template&lt;int D, Entity_kind on_what, typename SourceMeshType , typename TargetMeshType , typename StateType , template&lt; class, int, class, class &gt; class InterfaceReconstructorType = DummyInterfaceReconstructor, class Matpoly_Splitter  = void, class Matpoly_Clipper  = void, class CoordSys  = Wonton::DefaultCoordSys&gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="classPortage_1_1Interpolate__2ndOrder.html">Portage::Interpolate_2ndOrder</a>&lt; D, on_what, SourceMeshType, TargetMeshType, StateType, InterfaceReconstructorType, Matpoly_Splitter, Matpoly_Clipper &gt;::~<a class="el" href="classPortage_1_1Interpolate__2ndOrder.html">Interpolate_2ndOrder</a> </td>
+          <td class="memname"><a class="el" href="classPortage_1_1Interpolate__2ndOrder.html">Portage::Interpolate_2ndOrder</a>&lt; D, on_what, SourceMeshType, TargetMeshType, StateType, InterfaceReconstructorType, Matpoly_Splitter, Matpoly_Clipper, CoordSys &gt;::~<a class="el" href="classPortage_1_1Interpolate__2ndOrder.html">Interpolate_2ndOrder</a> </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td></td>
@@ -228,19 +220,19 @@ template&lt;int D, Entity_kind on_what, typename SourceMeshType , typename Targe
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a id="a86c37180f6d0190dc55b0746eb5475b9"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a86c37180f6d0190dc55b0746eb5475b9">&#9670;&nbsp;</a></span>operator()()</h2>
+<a id="a2e86f73840088a13fd748ed0672addeb"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a2e86f73840088a13fd748ed0672addeb">&#9670;&nbsp;</a></span>operator()()</h2>
 
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;int D, Entity_kind on_what, typename SourceMeshType , typename TargetMeshType , typename StateType , template&lt; class, int, class, class &gt; class InterfaceReconstructorType = DummyInterfaceReconstructor, class Matpoly_Splitter  = void, class Matpoly_Clipper  = void&gt; </div>
+template&lt;int D, Entity_kind on_what, typename SourceMeshType , typename TargetMeshType , typename StateType , template&lt; class, int, class, class &gt; class InterfaceReconstructorType = DummyInterfaceReconstructor, class Matpoly_Splitter  = void, class Matpoly_Clipper  = void, class CoordSys  = Wonton::DefaultCoordSys&gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">double <a class="el" href="classPortage_1_1Interpolate__2ndOrder.html">Portage::Interpolate_2ndOrder</a>&lt; D, on_what, SourceMeshType, TargetMeshType, StateType, InterfaceReconstructorType, Matpoly_Splitter, Matpoly_Clipper &gt;::operator() </td>
+          <td class="memname">double <a class="el" href="classPortage_1_1Interpolate__2ndOrder.html">Portage::Interpolate_2ndOrder</a>&lt; D, on_what, SourceMeshType, TargetMeshType, StateType, InterfaceReconstructorType, Matpoly_Splitter, Matpoly_Clipper, CoordSys &gt;::operator() </td>
           <td>(</td>
           <td class="paramtype">int const&#160;</td>
           <td class="paramname"><em>targetCellID</em>, </td>
@@ -278,21 +270,21 @@ template&lt;int D, Entity_kind on_what, typename SourceMeshType , typename Targe
 
 </div>
 </div>
-<a id="a65e1b2394eb28f935774748063d979f6"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a65e1b2394eb28f935774748063d979f6">&#9670;&nbsp;</a></span>operator=()</h2>
+<a id="a082f029ed7fce723cbe6f7c8774ecf6f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a082f029ed7fce723cbe6f7c8774ecf6f">&#9670;&nbsp;</a></span>operator=()</h2>
 
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;int D, Entity_kind on_what, typename SourceMeshType , typename TargetMeshType , typename StateType , template&lt; class, int, class, class &gt; class InterfaceReconstructorType = DummyInterfaceReconstructor, class Matpoly_Splitter  = void, class Matpoly_Clipper  = void&gt; </div>
+template&lt;int D, Entity_kind on_what, typename SourceMeshType , typename TargetMeshType , typename StateType , template&lt; class, int, class, class &gt; class InterfaceReconstructorType = DummyInterfaceReconstructor, class Matpoly_Splitter  = void, class Matpoly_Clipper  = void, class CoordSys  = Wonton::DefaultCoordSys&gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="classPortage_1_1Interpolate__2ndOrder.html">Interpolate_2ndOrder</a>&amp; <a class="el" href="classPortage_1_1Interpolate__2ndOrder.html">Portage::Interpolate_2ndOrder</a>&lt; D, on_what, SourceMeshType, TargetMeshType, StateType, InterfaceReconstructorType, Matpoly_Splitter, Matpoly_Clipper &gt;::operator= </td>
+          <td class="memname"><a class="el" href="classPortage_1_1Interpolate__2ndOrder.html">Interpolate_2ndOrder</a>&amp; <a class="el" href="classPortage_1_1Interpolate__2ndOrder.html">Portage::Interpolate_2ndOrder</a>&lt; D, on_what, SourceMeshType, TargetMeshType, StateType, InterfaceReconstructorType, Matpoly_Splitter, Matpoly_Clipper, CoordSys &gt;::operator= </td>
           <td>(</td>
-          <td class="paramtype">const <a class="el" href="classPortage_1_1Interpolate__2ndOrder.html">Interpolate_2ndOrder</a>&lt; D, on_what, SourceMeshType, TargetMeshType, StateType, InterfaceReconstructorType, Matpoly_Splitter, Matpoly_Clipper &gt; &amp;&#160;</td>
+          <td class="paramtype">const <a class="el" href="classPortage_1_1Interpolate__2ndOrder.html">Interpolate_2ndOrder</a>&lt; D, on_what, SourceMeshType, TargetMeshType, StateType, InterfaceReconstructorType, Matpoly_Splitter, Matpoly_Clipper, CoordSys &gt; &amp;&#160;</td>
           <td class="paramname"></td><td>)</td>
           <td></td>
         </tr>
@@ -309,19 +301,19 @@ template&lt;int D, Entity_kind on_what, typename SourceMeshType , typename Targe
 
 </div>
 </div>
-<a id="a71ebbc2c08a4a45e4d45cef6fe667e01"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a71ebbc2c08a4a45e4d45cef6fe667e01">&#9670;&nbsp;</a></span>set_interpolation_variable()</h2>
+<a id="a90870cd2ce52157a470d33bbf6eae86f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a90870cd2ce52157a470d33bbf6eae86f">&#9670;&nbsp;</a></span>set_interpolation_variable()</h2>
 
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;int D, Entity_kind on_what, typename SourceMeshType , typename TargetMeshType , typename StateType , template&lt; class, int, class, class &gt; class InterfaceReconstructorType = DummyInterfaceReconstructor, class Matpoly_Splitter  = void, class Matpoly_Clipper  = void&gt; </div>
+template&lt;int D, Entity_kind on_what, typename SourceMeshType , typename TargetMeshType , typename StateType , template&lt; class, int, class, class &gt; class InterfaceReconstructorType = DummyInterfaceReconstructor, class Matpoly_Splitter  = void, class Matpoly_Clipper  = void, class CoordSys  = Wonton::DefaultCoordSys&gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">void <a class="el" href="classPortage_1_1Interpolate__2ndOrder.html">Portage::Interpolate_2ndOrder</a>&lt; D, on_what, SourceMeshType, TargetMeshType, StateType, InterfaceReconstructorType, Matpoly_Splitter, Matpoly_Clipper &gt;::set_interpolation_variable </td>
+          <td class="memname">void <a class="el" href="classPortage_1_1Interpolate__2ndOrder.html">Portage::Interpolate_2ndOrder</a>&lt; D, on_what, SourceMeshType, TargetMeshType, StateType, InterfaceReconstructorType, Matpoly_Splitter, Matpoly_Clipper, CoordSys &gt;::set_interpolation_variable </td>
           <td>(</td>
           <td class="paramtype">std::string const &amp;&#160;</td>
           <td class="paramname"><em>interp_var_name</em>, </td>
@@ -349,19 +341,19 @@ template&lt;int D, Entity_kind on_what, typename SourceMeshType , typename Targe
 
 </div>
 </div>
-<a id="a4a72402a402cae5f695e383543ac5340"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a4a72402a402cae5f695e383543ac5340">&#9670;&nbsp;</a></span>set_material()</h2>
+<a id="a1cdb6126bcd08a692c21461797534e44"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a1cdb6126bcd08a692c21461797534e44">&#9670;&nbsp;</a></span>set_material()</h2>
 
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;int D, Entity_kind on_what, typename SourceMeshType , typename TargetMeshType , typename StateType , template&lt; class, int, class, class &gt; class InterfaceReconstructorType = DummyInterfaceReconstructor, class Matpoly_Splitter  = void, class Matpoly_Clipper  = void&gt; </div>
+template&lt;int D, Entity_kind on_what, typename SourceMeshType , typename TargetMeshType , typename StateType , template&lt; class, int, class, class &gt; class InterfaceReconstructorType = DummyInterfaceReconstructor, class Matpoly_Splitter  = void, class Matpoly_Clipper  = void, class CoordSys  = Wonton::DefaultCoordSys&gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">int <a class="el" href="classPortage_1_1Interpolate__2ndOrder.html">Portage::Interpolate_2ndOrder</a>&lt; D, on_what, SourceMeshType, TargetMeshType, StateType, InterfaceReconstructorType, Matpoly_Splitter, Matpoly_Clipper &gt;::set_material </td>
+          <td class="memname">int <a class="el" href="classPortage_1_1Interpolate__2ndOrder.html">Portage::Interpolate_2ndOrder</a>&lt; D, on_what, SourceMeshType, TargetMeshType, StateType, InterfaceReconstructorType, Matpoly_Splitter, Matpoly_Clipper, CoordSys &gt;::set_material </td>
           <td>(</td>
           <td class="paramtype">int&#160;</td>
           <td class="paramname"><em>m</em></td><td>)</td>
@@ -404,7 +396,7 @@ Generated by &#160;<a href="http://www.doxygen.org/index.html">
   <div class="container">
     <div class="row test-muted">
       <div class="footer-row col-md-6">Copyright &copy; 2019
-	<a href="http://lanl.gov"> Triad, LLC</a>
+	<a href="http://lanl.gov"> Triad National Security, LLC</a>
 	All Rights Reserved.
       </div>
       <div class="footer-row col-md-2">
@@ -428,5 +420,6 @@ Generated by &#160;<a href="http://www.doxygen.org/index.html">
     </div>
   </div>
 </footer>
+<script type="text/javascript" src="doxy-boot.js"></script>
 </body>
 </html>

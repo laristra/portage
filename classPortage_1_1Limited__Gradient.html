@@ -3,36 +3,46 @@ This file is part of the Ristra portage project.
 Please see the license file at the root of this repository, or at:
     https://github.com/laristra/portage/blob/master/LICENSE
 -->
-<!DOCTYPE html>
-<html>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
   <head>
+    <meta http-equiv="Content-Type" content="text/xhtml;charset=UTF-8"/>
     <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+    <meta name="generator" content="Doxygen 1.8.13"/>
     <!-- For Mobile Devices -->
     <meta name="viewport" content="width=device-width, initial-scale=1"/>
     <!-- Font stuff -->
-    <link href='https://fonts.googleapis.com/css?family=Roboto+Slab' rel='stylesheet' type='text/css'/>
-    <!-- Font Awesome -->
-    <!--    <link rel="stylesheet" href="font-awesome-4.3.0/css/font-awesome.min.css"/> -->
-    <script src="https://use.fontawesome.com/3dce4d8e65.js"></script>
-    <meta http-equiv="Content-Type" content="text/xhtml;charset=UTF-8"/>
-    <meta name="generator" content="Doxygen 1.8.13"/>
-    <script type="text/javascript" src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
-    <title>portage: Portage::Limited_Gradient&lt; D, on_what, MeshType, StateType, InterfaceReconstructorType, Matpoly_Splitter, Matpoly_Clipper &gt; Class Template Reference</title>
+    <link href='//fonts.googleapis.com/css?family=Roboto+Slab' rel='stylesheet' type='text/css'/>
+    <script src="//use.fontawesome.com/3dce4d8e65.js"></script>
+    <!-- the default version jquery provided by doxygen is too old for bootstrap
+	 but it also contains local modifications.  we have extracted those that
+	 are needed so that we can use a newer jquery. -->
+    <!-- <script type="text/javascript" src="//code.jquery.com/jquery-3.1.1.min.js"></script> -->
+    <script
+			  src="//code.jquery.com/jquery-3.3.1.min.js"
+			  integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8="
+			  crossorigin="anonymous"></script>
+      <!-- <script src="//code.jquery.com/jquery-3.3.1.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script> -->
+    <script type="text/javascript" src="smartmenu.js"></script>
+    <title>portage: Portage::Limited_Gradient&lt; D, on_what, MeshType, StateType, InterfaceReconstructorType, Matpoly_Splitter, Matpoly_Clipper, CoordSys &gt; Class Template Reference</title>
+    <link href="tabs.css" rel="stylesheet" type="text/css">
+      <!-- this version is too old for bootstrap, but it includes modifications
+	   from standard jquery
+    <script type="text/javascript" src="jquery.js"></script>  -->
     <script type="text/javascript" src="dynsections.js"></script>
-    <link href="search/search.css" rel="stylesheet" type="text/css"/>
-<script type="text/javascript" src="search/searchdata.js"></script>
-<script type="text/javascript" src="search/search.js"></script>
     <script type="text/x-mathjax-config">
   MathJax.Hub.Config({
-    extensions: ["tex2jax.js", "Tex/AMSmath.js", "Tex/AMSsymbols.js"],
+    extensions: ["tex2jax.js", "TeX/AMSmath.js", "TeX/AMSsymbols.js"],
     jax: ["input/TeX","output/HTML-CSS"],
 });
-</script><script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js"></script>
+</script><script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js"></script>
     <link href="doxygen.css" rel="stylesheet" type="text/css" />
     <link href="customdoxygen.css" rel="stylesheet" type="text/css"/>
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"/>
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
-    <script type="text/javascript" src="doxy-boot.js"></script>
+    <link rel="stylesheet" href="//stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+<script src="//cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+<script src="//stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+    <!-- <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"/> -->
+    <!-- <script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script> -->
   </head>
   <body>
     <nav class="navbar navbar-default" role="navigation">
@@ -48,34 +58,16 @@ Please see the license file at the root of this repository, or at:
           <div class="row">
             <div class="col-sm-12 panel " style="padding-bottom: 15px;">
               <div style="margin-bottom: 15px;">
-		<!-- end header part -->
+      		<!-- end header part -->
 <!-- Generated by Doxygen 1.8.13 -->
-<script type="text/javascript">
-var searchBox = new SearchBox("searchBox", "search",false,'Search');
-</script>
 <script type="text/javascript" src="menudata.js"></script>
 <script type="text/javascript" src="menu.js"></script>
 <script type="text/javascript">
 $(function() {
-  initMenu('',true,false,'search.php','Search');
-  $(document).ready(function() { init_search(); });
+  initMenu('',false,false,'search.php','Search');
 });
 </script>
 <div id="main-nav"></div>
-<!-- window showing the filter options -->
-<div id="MSearchSelectWindow"
-     onmouseover="return searchBox.OnSearchSelectShow()"
-     onmouseout="return searchBox.OnSearchSelectHide()"
-     onkeydown="return searchBox.OnSearchSelectKey(event)">
-</div>
-
-<!-- iframe showing the search results (closed by default) -->
-<div id="MSearchResultsWindow">
-<iframe src="javascript:void(0)" frameborder="0" 
-        name="MSearchResults" id="MSearchResults">
-</iframe>
-</div>
-
 <div id="nav-path" class="navpath">
   <ul>
 <li class="navelem"><a class="el" href="namespacePortage.html">Portage</a></li><li class="navelem"><a class="el" href="classPortage_1_1Limited__Gradient.html">Limited_Gradient</a></li>  </ul>
@@ -86,7 +78,7 @@ $(function() {
 <a href="#pub-methods">Public Member Functions</a> &#124;
 <a href="classPortage_1_1Limited__Gradient-members.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">Portage::Limited_Gradient&lt; D, on_what, MeshType, StateType, InterfaceReconstructorType, Matpoly_Splitter, Matpoly_Clipper &gt; Class Template Reference</div>  </div>
+<div class="title">Portage::Limited_Gradient&lt; D, on_what, MeshType, StateType, InterfaceReconstructorType, Matpoly_Splitter, Matpoly_Clipper, CoordSys &gt; Class Template Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
 
@@ -97,21 +89,21 @@ $(function() {
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a2c85db1bdbb398e84ae63127753a56a3"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1Limited__Gradient.html#a2c85db1bdbb398e84ae63127753a56a3">Limited_Gradient</a> (MeshType const &amp;mesh, StateType const &amp;state, std::string const var_name, <a class="el" href="namespacePortage.html#a4cb59edee64edb5a23427c8cb2fb5be6">Limiter_type</a> limiter_type)</td></tr>
-<tr class="memdesc:a2c85db1bdbb398e84ae63127753a56a3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructor.  <a href="#a2c85db1bdbb398e84ae63127753a56a3">More...</a><br /></td></tr>
-<tr class="separator:a2c85db1bdbb398e84ae63127753a56a3"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad590b0a5d9f53f4a0d9c03ef0f7fc894"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classPortage_1_1Limited__Gradient.html">Limited_Gradient</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1Limited__Gradient.html#ad590b0a5d9f53f4a0d9c03ef0f7fc894">operator=</a> (const <a class="el" href="classPortage_1_1Limited__Gradient.html">Limited_Gradient</a> &amp;)=delete</td></tr>
-<tr class="memdesc:ad590b0a5d9f53f4a0d9c03ef0f7fc894"><td class="mdescLeft">&#160;</td><td class="mdescRight">Assignment operator (disabled)  <a href="#ad590b0a5d9f53f4a0d9c03ef0f7fc894">More...</a><br /></td></tr>
-<tr class="separator:ad590b0a5d9f53f4a0d9c03ef0f7fc894"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab66e1cdf23af73995ad36dff6cd90163"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1Limited__Gradient.html#ab66e1cdf23af73995ad36dff6cd90163">~Limited_Gradient</a> ()</td></tr>
-<tr class="memdesc:ab66e1cdf23af73995ad36dff6cd90163"><td class="mdescLeft">&#160;</td><td class="mdescRight">Destructor.  <a href="#ab66e1cdf23af73995ad36dff6cd90163">More...</a><br /></td></tr>
-<tr class="separator:ab66e1cdf23af73995ad36dff6cd90163"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a04d50dfc355c74aa96c02f12ee34d4f3"><td class="memItemLeft" align="right" valign="top">Vector&lt; D &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1Limited__Gradient.html#a04d50dfc355c74aa96c02f12ee34d4f3">operator()</a> (int entity_id)</td></tr>
-<tr class="separator:a04d50dfc355c74aa96c02f12ee34d4f3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0d017f0c999e94c52a71f6d977d90880"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1Limited__Gradient.html#a0d017f0c999e94c52a71f6d977d90880">Limited_Gradient</a> (MeshType const &amp;mesh, StateType const &amp;state, std::string const var_name, <a class="el" href="namespacePortage.html#a4cb59edee64edb5a23427c8cb2fb5be6">Limiter_type</a> limiter_type)</td></tr>
+<tr class="memdesc:a0d017f0c999e94c52a71f6d977d90880"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructor.  <a href="#a0d017f0c999e94c52a71f6d977d90880">More...</a><br /></td></tr>
+<tr class="separator:a0d017f0c999e94c52a71f6d977d90880"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab5cb2dbdba5f0fcae7b1822046333aaa"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classPortage_1_1Limited__Gradient.html">Limited_Gradient</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1Limited__Gradient.html#ab5cb2dbdba5f0fcae7b1822046333aaa">operator=</a> (const <a class="el" href="classPortage_1_1Limited__Gradient.html">Limited_Gradient</a> &amp;)=delete</td></tr>
+<tr class="memdesc:ab5cb2dbdba5f0fcae7b1822046333aaa"><td class="mdescLeft">&#160;</td><td class="mdescRight">Assignment operator (disabled)  <a href="#ab5cb2dbdba5f0fcae7b1822046333aaa">More...</a><br /></td></tr>
+<tr class="separator:ab5cb2dbdba5f0fcae7b1822046333aaa"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a29798fad9f9f5a51c97f10b5694cc5de"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1Limited__Gradient.html#a29798fad9f9f5a51c97f10b5694cc5de">~Limited_Gradient</a> ()</td></tr>
+<tr class="memdesc:a29798fad9f9f5a51c97f10b5694cc5de"><td class="mdescLeft">&#160;</td><td class="mdescRight">Destructor.  <a href="#a29798fad9f9f5a51c97f10b5694cc5de">More...</a><br /></td></tr>
+<tr class="separator:a29798fad9f9f5a51c97f10b5694cc5de"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a77e4b59437b4d0ad745ef8d83d30815d"><td class="memItemLeft" align="right" valign="top">Vector&lt; D &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1Limited__Gradient.html#a77e4b59437b4d0ad745ef8d83d30815d">operator()</a> (int entity_id)</td></tr>
+<tr class="separator:a77e4b59437b4d0ad745ef8d83d30815d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
-<div class="textblock"><h3>template&lt;int D, Entity_kind on_what, typename MeshType, typename StateType, template&lt; class, int, class, class &gt; class InterfaceReconstructorType = DummyInterfaceReconstructor, class Matpoly_Splitter = void, class Matpoly_Clipper = void&gt;<br />
-class Portage::Limited_Gradient&lt; D, on_what, MeshType, StateType, InterfaceReconstructorType, Matpoly_Splitter, Matpoly_Clipper &gt;</h3>
+<div class="textblock"><h3>template&lt;int D, Entity_kind on_what, typename MeshType, typename StateType, template&lt; class, int, class, class &gt; class InterfaceReconstructorType = DummyInterfaceReconstructor, class Matpoly_Splitter = void, class Matpoly_Clipper = void, class CoordSys = Wonton::DefaultCoordSys&gt;<br />
+class Portage::Limited_Gradient&lt; D, on_what, MeshType, StateType, InterfaceReconstructorType, Matpoly_Splitter, Matpoly_Clipper, CoordSys &gt;</h3>
 
 <p>Compute limited gradient of a field or components of a field. </p>
 <dl class="tparams"><dt>Template Parameters</dt><dd>
@@ -123,19 +115,19 @@ class Portage::Limited_Gradient&lt; D, on_what, MeshType, StateType, InterfaceRe
   </dd>
 </dl>
 </div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a id="a2c85db1bdbb398e84ae63127753a56a3"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a2c85db1bdbb398e84ae63127753a56a3">&#9670;&nbsp;</a></span>Limited_Gradient()</h2>
+<a id="a0d017f0c999e94c52a71f6d977d90880"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a0d017f0c999e94c52a71f6d977d90880">&#9670;&nbsp;</a></span>Limited_Gradient()</h2>
 
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;int D, Entity_kind on_what, typename MeshType, typename StateType, template&lt; class, int, class, class &gt; class InterfaceReconstructorType = DummyInterfaceReconstructor, class Matpoly_Splitter = void, class Matpoly_Clipper = void&gt; </div>
+template&lt;int D, Entity_kind on_what, typename MeshType , typename StateType , template&lt; class, int, class, class &gt; class InterfaceReconstructorType = DummyInterfaceReconstructor, class Matpoly_Splitter  = void, class Matpoly_Clipper  = void, class CoordSys  = Wonton::DefaultCoordSys&gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="classPortage_1_1Limited__Gradient.html">Portage::Limited_Gradient</a>&lt; D, on_what, MeshType, StateType, InterfaceReconstructorType, Matpoly_Splitter, Matpoly_Clipper &gt;::<a class="el" href="classPortage_1_1Limited__Gradient.html">Limited_Gradient</a> </td>
+          <td class="memname"><a class="el" href="classPortage_1_1Limited__Gradient.html">Portage::Limited_Gradient</a>&lt; D, on_what, MeshType, StateType, InterfaceReconstructorType, Matpoly_Splitter, Matpoly_Clipper, CoordSys &gt;::<a class="el" href="classPortage_1_1Limited__Gradient.html">Limited_Gradient</a> </td>
           <td>(</td>
           <td class="paramtype">MeshType const &amp;&#160;</td>
           <td class="paramname"><em>mesh</em>, </td>
@@ -186,19 +178,19 @@ template&lt;int D, Entity_kind on_what, typename MeshType, typename StateType, t
 
 </div>
 </div>
-<a id="ab66e1cdf23af73995ad36dff6cd90163"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ab66e1cdf23af73995ad36dff6cd90163">&#9670;&nbsp;</a></span>~Limited_Gradient()</h2>
+<a id="a29798fad9f9f5a51c97f10b5694cc5de"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a29798fad9f9f5a51c97f10b5694cc5de">&#9670;&nbsp;</a></span>~Limited_Gradient()</h2>
 
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;int D, Entity_kind on_what, typename MeshType, typename StateType, template&lt; class, int, class, class &gt; class InterfaceReconstructorType = DummyInterfaceReconstructor, class Matpoly_Splitter = void, class Matpoly_Clipper = void&gt; </div>
+template&lt;int D, Entity_kind on_what, typename MeshType , typename StateType , template&lt; class, int, class, class &gt; class InterfaceReconstructorType = DummyInterfaceReconstructor, class Matpoly_Splitter  = void, class Matpoly_Clipper  = void, class CoordSys  = Wonton::DefaultCoordSys&gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="classPortage_1_1Limited__Gradient.html">Portage::Limited_Gradient</a>&lt; D, on_what, MeshType, StateType, InterfaceReconstructorType, Matpoly_Splitter, Matpoly_Clipper &gt;::~<a class="el" href="classPortage_1_1Limited__Gradient.html">Limited_Gradient</a> </td>
+          <td class="memname"><a class="el" href="classPortage_1_1Limited__Gradient.html">Portage::Limited_Gradient</a>&lt; D, on_what, MeshType, StateType, InterfaceReconstructorType, Matpoly_Splitter, Matpoly_Clipper, CoordSys &gt;::~<a class="el" href="classPortage_1_1Limited__Gradient.html">Limited_Gradient</a> </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td></td>
@@ -216,19 +208,19 @@ template&lt;int D, Entity_kind on_what, typename MeshType, typename StateType, t
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a id="a04d50dfc355c74aa96c02f12ee34d4f3"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a04d50dfc355c74aa96c02f12ee34d4f3">&#9670;&nbsp;</a></span>operator()()</h2>
+<a id="a77e4b59437b4d0ad745ef8d83d30815d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a77e4b59437b4d0ad745ef8d83d30815d">&#9670;&nbsp;</a></span>operator()()</h2>
 
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;int D, Entity_kind on_what, typename MeshType, typename StateType, template&lt; class, int, class, class &gt; class InterfaceReconstructorType = DummyInterfaceReconstructor, class Matpoly_Splitter = void, class Matpoly_Clipper = void&gt; </div>
+template&lt;int D, Entity_kind on_what, typename MeshType , typename StateType , template&lt; class, int, class, class &gt; class InterfaceReconstructorType = DummyInterfaceReconstructor, class Matpoly_Splitter  = void, class Matpoly_Clipper  = void, class CoordSys  = Wonton::DefaultCoordSys&gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">Vector&lt;D&gt; <a class="el" href="classPortage_1_1Limited__Gradient.html">Portage::Limited_Gradient</a>&lt; D, on_what, MeshType, StateType, InterfaceReconstructorType, Matpoly_Splitter, Matpoly_Clipper &gt;::operator() </td>
+          <td class="memname">Vector&lt;D&gt; <a class="el" href="classPortage_1_1Limited__Gradient.html">Portage::Limited_Gradient</a>&lt; D, on_what, MeshType, StateType, InterfaceReconstructorType, Matpoly_Splitter, Matpoly_Clipper, CoordSys &gt;::operator() </td>
           <td>(</td>
           <td class="paramtype">int&#160;</td>
           <td class="paramname"><em>entity_id</em></td><td>)</td>
@@ -245,21 +237,21 @@ template&lt;int D, Entity_kind on_what, typename MeshType, typename StateType, t
 
 </div>
 </div>
-<a id="ad590b0a5d9f53f4a0d9c03ef0f7fc894"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ad590b0a5d9f53f4a0d9c03ef0f7fc894">&#9670;&nbsp;</a></span>operator=()</h2>
+<a id="ab5cb2dbdba5f0fcae7b1822046333aaa"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab5cb2dbdba5f0fcae7b1822046333aaa">&#9670;&nbsp;</a></span>operator=()</h2>
 
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;int D, Entity_kind on_what, typename MeshType, typename StateType, template&lt; class, int, class, class &gt; class InterfaceReconstructorType = DummyInterfaceReconstructor, class Matpoly_Splitter = void, class Matpoly_Clipper = void&gt; </div>
+template&lt;int D, Entity_kind on_what, typename MeshType , typename StateType , template&lt; class, int, class, class &gt; class InterfaceReconstructorType = DummyInterfaceReconstructor, class Matpoly_Splitter  = void, class Matpoly_Clipper  = void, class CoordSys  = Wonton::DefaultCoordSys&gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="classPortage_1_1Limited__Gradient.html">Limited_Gradient</a>&amp; <a class="el" href="classPortage_1_1Limited__Gradient.html">Portage::Limited_Gradient</a>&lt; D, on_what, MeshType, StateType, InterfaceReconstructorType, Matpoly_Splitter, Matpoly_Clipper &gt;::operator= </td>
+          <td class="memname"><a class="el" href="classPortage_1_1Limited__Gradient.html">Limited_Gradient</a>&amp; <a class="el" href="classPortage_1_1Limited__Gradient.html">Portage::Limited_Gradient</a>&lt; D, on_what, MeshType, StateType, InterfaceReconstructorType, Matpoly_Splitter, Matpoly_Clipper, CoordSys &gt;::operator= </td>
           <td>(</td>
-          <td class="paramtype">const <a class="el" href="classPortage_1_1Limited__Gradient.html">Limited_Gradient</a>&lt; D, on_what, MeshType, StateType, InterfaceReconstructorType, Matpoly_Splitter, Matpoly_Clipper &gt; &amp;&#160;</td>
+          <td class="paramtype">const <a class="el" href="classPortage_1_1Limited__Gradient.html">Limited_Gradient</a>&lt; D, on_what, MeshType, StateType, InterfaceReconstructorType, Matpoly_Splitter, Matpoly_Clipper, CoordSys &gt; &amp;&#160;</td>
           <td class="paramname"></td><td>)</td>
           <td></td>
         </tr>
@@ -301,7 +293,7 @@ Generated by &#160;<a href="http://www.doxygen.org/index.html">
   <div class="container">
     <div class="row test-muted">
       <div class="footer-row col-md-6">Copyright &copy; 2019
-	<a href="http://lanl.gov"> Triad, LLC</a>
+	<a href="http://lanl.gov"> Triad National Security, LLC</a>
 	All Rights Reserved.
       </div>
       <div class="footer-row col-md-2">
@@ -325,5 +317,6 @@ Generated by &#160;<a href="http://www.doxygen.org/index.html">
     </div>
   </div>
 </footer>
+<script type="text/javascript" src="doxy-boot.js"></script>
 </body>
 </html>
