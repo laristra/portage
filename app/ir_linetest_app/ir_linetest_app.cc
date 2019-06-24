@@ -305,6 +305,7 @@ int main(int argc, char** argv) {
                                           cell_num_mats, cellmatpoly_list, deps);
   std::cout << "Reconstruction error for the source mesh -> " << source_ir_rel_error <<
              std::endl;
+
   Tangram::write_to_gmv(source_mesh_wrapper, 2, cell_num_mats, cell_mat_ids,
                         cellmatpoly_list, "source_mesh.gmv");
 
@@ -434,6 +435,7 @@ void R2DizeCell(const Mesh_Wrapper& Mesh,
     vertices[ipt].xy[0] = cell_points[ipt][0];
     vertices[ipt].xy[1] = cell_points[ipt][1];
   }
+
   r2d_init_poly(&r2d_polygon, vertices, npoints);
   delete vertices;
 }
@@ -474,6 +476,7 @@ int CellPosition(const Mesh_Wrapper& Mesh,
     result = -1;
   else if (counter_on + counter_off == npoints)
     result = 1;
+
   return result;
 }
 
@@ -508,6 +511,7 @@ void get_materials_data(const Mesh_Wrapper& Mesh,
   cell_mat_ids.clear();
   cell_mat_volfracs.clear();
   cell_mat_centroids.clear();
+
   r2d_plane r2d_line;
   R2DizeLine(line_a, line_b, r2d_line);
   int ncells = Mesh.num_owned_cells();
@@ -583,6 +587,7 @@ int PointPosition(const Point<2>& pt,
   int pos;
   if (std::fabs(prj) < eps) pos = 0;
   else pos = std::signbit(prj) ? -1 : 1;
+
   return pos;
 }
 
@@ -649,6 +654,7 @@ Point<2> LinesIntersect(std::vector< std::vector<Point<2>> > lines_pts,
         end_pts[1] = mid_pt;
     } while (mid_pt_pos != 0);
   }
+
   return p_int;
 }
 

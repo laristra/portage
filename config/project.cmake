@@ -4,7 +4,7 @@ Please see the license file at the root of this repository, or at:
     https://github.com/laristra/portage/blob/master/LICENSE
 ]]
 
-project(portage)
+project(portage CXX)
 
 cinch_minimum_required(VERSION 1.0)
 
@@ -14,9 +14,8 @@ cinch_minimum_required(VERSION 1.0)
 # tag the central repository.
 
 set(PORTAGE_VERSION_MAJOR 2)
-set(PORTAGE_VERSION_MINOR 0)
-set(PORTAGE_VERSION_PATCH 0)
-
+set(PORTAGE_VERSION_MINOR 1)
+set(PORTAGE_VERSION_PATCH 1)
 
 # If a C++14 compiler is available, then set the appropriate flags
 include(cxx14)
@@ -239,18 +238,6 @@ if (LAPACKE_DIR)
 
     set(LAPACKE_LIBRARIES "-Wl,-rpath,${LAPACKE_LIBRARY_DIR} -L${LAPACKE_LIBRARY_DIR} -l${LAPACKE_LIBRARIES} -l${LAPACK_lapack_LIBRARIES} -l${LAPACK_blas_LIBRARIES}")
 
-    # If we don't want to link with Fortran then we have to tell it to link
-    # with the Fortran libraries because LAPACK is written/compiled in Fortran
-    #
-    # NEEDED FOR STATIC LAPACK LIBS
-
-    if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-    elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-      set(LAPACKE_LIBRARIES "${LAPACKE_LIBRARIES} -lgfortran")    
-    elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
-      set(LAPACKE_LIBRARIES "${LAPACKE_LIBRARIES} -lifcore")    
-    endif()
-
   endif(LAPACKE_LIBRARIES STREQUAL "lapacke")
 
 else (LAPACKE_DIR)
@@ -263,7 +250,10 @@ else (LAPACKE_DIR)
 
 endif (LAPACKE_DIR)
 
-if (LAPACKE_FOUND) 
+if (LAPACKE_FOUND)
+  enable_language(Fortran)
+  include(FortranCInterface)  # will ensure the fortran library is linked in
+  
   include_directories(${LAPACKE_INCLUDE_DIRS})
   add_definitions("-DHAVE_LAPACKE")
   list(APPEND PORTAGE_EXTRA_LIBRARIES ${LAPACKE_LIBRARIES})
@@ -387,19 +377,16 @@ if(ENABLE_THRUST)
     endif(TBB_FOUND)
   endif()
 
-endif(ENABLE_THRUST)
-
-
+else(ENABLE_THRUST)
 #-----------------------------------------------------------------------------
 # Find Boost
 #-----------------------------------------------------------------------------
-if(NOT ENABLE_THRUST)
   find_package(Boost REQUIRED)
   if(Boost_FOUND)
     message(STATUS "Boost location: ${Boost_INCLUDE_DIRS}")
     include_directories( ${Boost_INCLUDE_DIRS} )
   endif(Boost_FOUND)
-endif(NOT ENABLE_THRUST)
+endif(ENABLE_THRUST)
 
 
 
