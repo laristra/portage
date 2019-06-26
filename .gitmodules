@@ -4,3 +4,4 @@
 [submodule "wonton"]
 	path = wonton
 	url = ../../laristra/wonton.git
+	branch = master

@@ -16,6 +16,7 @@ Please see the license file at the root of this repository, or at:
 #include <utility>
 #include <iostream>
 #include <type_traits>
+#include <cmath>
 
 #include "portage/support/portage.h"
 
@@ -528,6 +529,34 @@ remap(std::vector<std::string> const &src_varnames,
         tot_seconds_xsect << std::endl;
       std::cout << "  Swarm Estimate Time Rank " << comm_rank << " (s): " <<
         tot_seconds_interp << std::endl;
+
+      // put out neighbor statistics
+      int nnbrmax=0, nnbrmin=numTargetPts, nnbravg=0, nnbrsum=0;
+      double nnbrsdev=0;
+      for (int i=0; i<numTargetPts; i++) {
+        int n=0;
+        std::vector<Weights_t> wts=source_pts_and_mults[i];
+        for (int j=0; j<wts.size(); j++) {
+          if (std::fabs(wts[j].weights[0]) > 0.0) n++;
+        }
+        if (n > nnbrmax) nnbrmax = n;
+        if (n < nnbrmin) nnbrmin = n;
+        nnbrsum += n;
+      }
+      nnbravg = nnbrsum / numTargetPts;
+      for (int i=0; i<numTargetPts; i++) {
+        int n=0;
+        std::vector<Weights_t> wts=source_pts_and_mults[i];
+        for (int j=0; j<wts.size(); j++) {
+          if (std::fabs(wts[j].weights[0]) > 0.0) n++;
+        }
+        nnbrsdev += (n-nnbravg)*(n-nnbravg);
+      }
+      nnbrsdev = std::sqrt(nnbrsdev/numTargetPts);
+      std::cout << "Max number of neighbors: " << nnbrmax << std::endl;
+      std::cout << "Min number of neighbors: " << nnbrmin << std::endl;
+      std::cout << "Avg number of neighbors: " << nnbravg << std::endl;
+      std::cout << "Std Dev for number of neighbors: " << nnbrsdev << std::endl;
     }
   }
 
