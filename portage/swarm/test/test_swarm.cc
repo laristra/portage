@@ -38,6 +38,17 @@ TEST(SwarmFactory, Check_1D_random) {
   }
 }
 
+TEST(SwarmFactory, Check_1D_random_seed) {
+  std::shared_ptr<Portage::Meshfree::Swarm<1>> swarm=Portage::Meshfree::SwarmFactory(-4.,4.,17,0,1234);
+  std::shared_ptr<Portage::Meshfree::Swarm<1>> swarm2=Portage::Meshfree::SwarmFactory(-4.,4.,17,0,1234);
+  ASSERT_EQ(swarm->num_owned_particles(), 17);
+  for (int i=0; i<17; i++) {
+    Wonton::Point<1> pt = swarm->get_particle_coordinates(i);
+    Wonton::Point<1> pt2 = swarm2->get_particle_coordinates(i);
+    ASSERT_EQ(pt[0], pt2[0]);
+  }
+}
+
 TEST(SwarmFactory, Check_2D_random) {
   std::shared_ptr<Portage::Meshfree::Swarm<2>> swarm=Portage::Meshfree::SwarmFactory(-4.,-4.,4.,4.,17*17,0);
   ASSERT_EQ(swarm->num_owned_particles(), 17*17);
@@ -47,6 +58,18 @@ TEST(SwarmFactory, Check_2D_random) {
     ASSERT_GE(pt[0], -4.);
     ASSERT_LE(pt[1],  4.);
     ASSERT_GE(pt[1], -4.);
+  }
+}
+
+TEST(SwarmFactory, Check_2D_random_seed) {
+  std::shared_ptr<Portage::Meshfree::Swarm<2>> swarm=Portage::Meshfree::SwarmFactory(-4.,-4.,4.,4.,17*17,0,1234);
+  std::shared_ptr<Portage::Meshfree::Swarm<2>> swarm2=Portage::Meshfree::SwarmFactory(-4.,-4.,4.,4.,17*17,0,1234);
+  ASSERT_EQ(swarm->num_owned_particles(), 17*17);
+  for (int i=0; i<17*17; i++) {
+    Wonton::Point<2> pt = swarm->get_particle_coordinates(i);
+    Wonton::Point<2> pt2 = swarm2->get_particle_coordinates(i);
+    ASSERT_EQ(pt[0],  pt2[0]);
+    ASSERT_EQ(pt[1],  pt2[1]);
   }
 }
 
@@ -61,6 +84,23 @@ TEST(SwarmFactory, Check_3D_random) {
     ASSERT_GE(pt[1], -4.);
     ASSERT_LE(pt[2],  4.);
     ASSERT_GE(pt[2], -4.);
+  }
+}
+
+TEST(SwarmFactory, Check_3D_random_seed) {
+  std::shared_ptr<Portage::Meshfree::Swarm<3>> swarm=Portage::Meshfree::SwarmFactory(-4.,-4.,-4.,4.,4.,4.,17*17*17,0,1234);
+  std::shared_ptr<Portage::Meshfree::Swarm<3>> swarm2=Portage::Meshfree::SwarmFactory(-4.,-4.,-4.,4.,4.,4.,17*17*17,0,1234);
+  ASSERT_EQ(swarm->num_owned_particles(), 17*17*17);
+  for (int i=0; i<17; i++) {
+    for (int j=0; j<17; j++) {
+      for (int k=0; k<17; k++) {
+	Wonton::Point<3> pt = swarm->get_particle_coordinates((i*17+j)*17+k);
+	Wonton::Point<3> pt2 = swarm2->get_particle_coordinates((i*17+j)*17+k);
+	ASSERT_EQ(pt[0],  pt2[0]);
+	ASSERT_EQ(pt[1],  pt2[1]);
+	ASSERT_EQ(pt[2],  pt2[2]);
+      }
+    }
   }
 }
 
@@ -137,6 +177,23 @@ TEST(SwarmFactory, Check_3D_perturbed) {
 	ASSERT_GE(pt[1], -4.);
 	ASSERT_LE(pt[2],  4.);
 	ASSERT_GE(pt[2], -4.);
+      }
+    }
+  }
+}
+
+TEST(SwarmFactory, Check_3D_perturbed_seed) {
+  std::shared_ptr<Portage::Meshfree::Swarm<3>> swarm=Portage::Meshfree::SwarmFactory(-4.,-4.,-4.,4.,4.,4.,17*17*17,2,1234);
+  std::shared_ptr<Portage::Meshfree::Swarm<3>> swarm2=Portage::Meshfree::SwarmFactory(-4.,-4.,-4.,4.,4.,4.,17*17*17,2,1234);
+  ASSERT_EQ(swarm->num_owned_particles(), 17*17*17);
+  for (int i=0; i<17; i++) {
+    for (int j=0; j<17; j++) {
+      for (int k=0; k<17; k++) {
+	Wonton::Point<3> pt = swarm->get_particle_coordinates((i*17+j)*17+k);
+	Wonton::Point<3> pt2 = swarm2->get_particle_coordinates((i*17+j)*17+k);
+        ASSERT_EQ(pt[0], pt2[0]);
+        ASSERT_EQ(pt[1], pt2[1]);
+        ASSERT_EQ(pt[2], pt2[2]);
       }
     }
   }
