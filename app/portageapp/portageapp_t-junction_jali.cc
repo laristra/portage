@@ -472,7 +472,11 @@ int main(int argc, char** argv) {
 #if ENABLE_TIMINGS
   // save params for after
   params.ranks   = numpe;
+#if defined(_OPENMP)
   params.threads = omp_get_max_threads();
+#else
+  params.threads = 1;
+#endif
   params.nsource = nsourcecells;
   params.ntarget = ntargetcells;
   params.order   = interp_order;
