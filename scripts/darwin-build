@@ -17,7 +17,7 @@ set -u
 set -o pipefail
 
 # build options
-REBUILD_ALL=false
+REBUILD_ALL=true
 PERF_MODE=true
 USE_INTEL=true
 USE_CUDA=false
@@ -35,30 +35,29 @@ BOOST_VERSION=1.68.0
 print_usage() {
   echo "Usage: ./darwin-build [options]"
   echo "Options:"
-  echo "  -h, --help              show this help message and exit"
-  echo "  -c, --compiler <choice> select compiler [intel|gnu]"
-  echo "  -a, --all               clean rebuild"
-  echo "  -p, --perfs             build for performance profiling"
-  echo "  -g, --cuda              use CUDA backend"
-  echo "  -b, --build-dir <path>  use specific build directory"
+  echo "  -h, --help             show this help message and exit"
+  echo "  -c, --compiler CHOICE  select compiler [intel|gnu]"
+  echo "  -a, --all              clean rebuild"
+  echo "  -p, --perfs            build for performance profiling"
+  echo "  -g, --cuda             use CUDA backend"
   exit 1
 }
 
 setup(){
-
-  SHORT_OPT="hc:apgb:"
-  LONG_OPT="help,compiler:,all,perfs,cuda,build-dir:"
-
   # parse options (requires GNU getopt).
-  if [ "$#" -eq 0 ]; then
-    echo -e "Warning: no params supplied"
-    print_usage
-  elif ! options=$(getopt -o "${SHORT_OPT}" -l "${LONG_OPT}" -- "$@"); then
+  if ! options=$(getopt \
+           -o hc:apg \
+           -l help,compiler:,all,perfs,cuda -- "$@"); then
     print_usage
   fi
 
   # evaluate the option list 
   eval set -- "${options}"
+
+  # Handle empty option case 
+  if [ "$#" -eq 1 ]; then
+    echo -e "Warning: running with default params"
+  fi
 
   # process args
   while [ "$#" -gt 0 ]; do
@@ -68,10 +67,9 @@ setup(){
       -a|--all) REBUILD_ALL=true;;
       -p|--perfs) PERF_MODE=true;;
       -g|--cuda) USE_CUDA=true;;
-      -b|--build-dir) BUILD_DIR="$2";;
-      --) break;;
-      -*) print_usage;;
-      *) break;;
+      (--) shift; break;;
+      (-*) print_usage;;
+      (*) break;;
     esac
     shift
   done
@@ -82,27 +80,27 @@ setup(){
     MPI_VERSION=2.1.5
     JALI_VERSION=1.0.4
     TANGRAM_VERSION=0.9.3
-    [ "${BUILD_DIR}" != "" ] || BUILD_DIR="${SOURCE_DIR}/build-intel"
+    BUILD_DIR="${SOURCE_DIR}/build-intel"
+    echo -e "Warning: please check that \e[31m'-lifcore'\e[0m is set in 'wonton/config/project.cmake'"
   else
     GNU_VERSION=6.4.0
     MPI_VERSION=2.1.2
     JALI_VERSION=1.0.3
     TANGRAM_VERSION=0.9.5
-    [ "${BUILD_DIR}" != "" ] || BUILD_DIR="${SOURCE_DIR}/build-gnu"
+    BUILD_DIR="${SOURCE_DIR}/build-gnu"
+    echo -e "Warning: please check that \e[31m'-lgfortran'\e[0m is set in \e[31m'wonton/config/project.cmake'\e[0m"
   fi
-  
-  echo "SOURCE_DIR: ${SOURCE_DIR}"
-  echo "BUILD_DIR: ${BUILD_DIR}"
-  
-  if [ ! -d ${BUILD_DIR} ]; then
+
+  # check if build directory exists
+  if [ -f ${BUILD_DIR} ]; then
     REBUILD_ALL=true
   fi
 
-  # cleanup build directory if necessary
+  # cleanup build directory
   if [ "${REBUILD_ALL}" = true ]; then
     rm -rf ${BUILD_DIR} && mkdir ${BUILD_DIR} && cd ${BUILD_DIR}
   else
-    cd ${BUILD_DIR} #&& rm -rf CMake*
+    cd ${BUILD_DIR} && rm -rf CMake*
   fi
 
   # load required modules
