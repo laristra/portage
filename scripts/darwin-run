@@ -1,0 +1,298 @@
+#!/bin/bash
+
+# Generates a slurm batch script for running
+# single material remap benchmarks on Darwin,
+# based on T-junction app.
+#
+# Author: Hoby Rakotoarivelo
+
+# Run params
+MAX_NODES=1
+NUM_CORES=1
+MAX_THREADS=1
+RANKS_PER_NODE=1
+THREADS_PER_CORE=1
+PARTITION="scaling"
+HYPERTHREADING=false
+OPENMP_ONLY=false
+USER_MAIL="hoby@lanl.gov"
+
+# Remapping params
+DIMENSION=3
+MAX_SOURCE_CELLS=40
+MAX_TARGET_CELLS=120
+REMAP_ORDER=2
+IS_CONFORMAL="n"
+REBUILD=false
+
+# VERSION NUMBERS
+INTEL_VERSION=18.0.3
+MPI_VERSION=2.1.5
+BOOST_VERSION=1.68.0
+SOURCE_DIR="$(pwd)/.."
+BUILD_DIR="${SOURCE_DIR}/build"
+APP_NAME="./app/portageapp/portageapp_t-junction_jali"
+
+# Note:
+# -e: fail if some command exits with non zero status
+# -u: treat undefined variables as error
+# -o pipefail: pipe ok if all involved commands are ok
+set -e             
+set -u
+set -o pipefail
+
+print_usage() {
+  echo "Usage: ./darwin-run [options]"
+  echo "Options:"
+  echo "  -h, --help             show this help message and exit"
+  echo "  -n, --nodes INT        number of nodes"     
+  echo "  -r, --ranks INT        ranks per node"    
+  echo "  -w, --hwthreads CHOICE enable hyperthreading [y|n]"    
+  echo "  -d, --dim INT          mesh dimension [2|3]"    
+  echo "  -s, --nsource INT      source mesh cells count"    
+  echo "  -t, --ntarget INT      target mesh cells count"    
+  echo "  -o, --order INT        remap order"    
+  echo "  -c, --conform CHOICE   is conformal [y|n]"   
+  echo "  -m, --omp-only         openmp multithreading only"
+  echo "  -b, --build            build the application"
+  echo "  -u, --user-mail STRING user mail for notifications"    
+  exit 1
+}
+
+print_params() {
+  echo -e "Run params:"
+  echo -e "- num_nodes: \e[32m${MAX_NODES}\e[0m"
+  echo -e "- num_cores: \e[32m${NUM_CORES}\e[0m"
+  echo -e "- ranks_per_node: \e[32m${RANKS_PER_NODE}\e[0m"
+  echo -e "- threads_per_rank: \e[32m${MAX_THREADS}\e[0m"
+  echo -e "- hyperthreading: \e[32m${HYPERTHREADING}\e[0m"
+  echo -e "- dimension: \e[32m${DIMENSION}\e[0m"
+  echo -e "- source_cells_count: \e[32m${MAX_SOURCE_CELLS}\e[0m"
+  echo -e "- target_cells_count: \e[32m${MAX_TARGET_CELLS}\e[0m"
+  echo -e "- remap_order: \e[32m${REMAP_ORDER}\e[0m"
+  echo -e "- is_conformal: \e[32m${IS_CONFORMAL}\e[0m"
+  echo -e "- user_mail: \e[32m${USER_MAIL}\e[0m"
+}
+
+setup() {
+  # parse options (requires GNU getopt).
+  if ! options=$(getopt \
+           -o hn:r:w:d:s:t:o:c:mbu: \
+           -l help,nodes:,ranks:,hwthreads:,dim:,nsource:,ntarget:,order:,conform:,omp-only,build,user-mail: -- "$@"); then
+    print_usage
+  fi
+ 
+  # evaluate the option list 
+  eval set -- "${options}"
+
+  # Handle empty option case 
+  if [ "$#" -eq 1 ]; then
+    echo -e "Warning: running with default params"
+  fi
+  
+  # process args
+  while [ "$#" -gt 0 ]; do
+    case "$1" in
+      -h|--help) print_usage;;
+      -n|--nodes) MAX_NODES="$2"; shift;;
+      -r|--ranks) RANKS_PER_NODE="$2"; shift;;
+      -w|--hwthreads) [ "$2" = "y" ] && HYPERTHREADING=true || HYPERTHREADING=false; shift;;
+      -d|--dim) DIMENSION="$2"; shift;;
+      -s|--nsource) MAX_SOURCE_CELLS="$2"; shift;; 
+      -t|--ntarget) MAX_TARGET_CELLS="$2"; shift;; 
+      -o|--order) REMAP_ORDER="$2"; shift;; 
+      -c|--conform) IS_CONFORMAL="$2"; shift;; 
+      -m|--omp-only) OPENMP_ONLY=true; MAX_NODES=1;; 
+      -b|--build) REBUILD=true;; 
+      -u|--user-mail) USER_MAIL="$2"; shift;; 
+      (--) shift; break;;
+      (-*) print_usage;;
+      (*) break;;
+    esac
+    shift
+  done
+  
+  # deduce derived params
+  case "${PARTITION}" in
+    "scaling") NUM_CORES=16; ALL_CORES=32;;
+    "skylake-gold") NUM_CORES=22; ALL_CORES=44;;
+    *)
+      NUM_CORES=$(grep ^cpu\\scores /proc/cpuinfo | uniq |  awk '{print $4}');
+      ALL_CORES=$(nproc --all);;
+  esac
+
+  if [ "${HYPERTHREADING}" = true ]; then
+    THREADS_PER_CORE=$((ALL_CORES / NUM_CORES))
+    GRAIN="fine"
+  else
+    THREADS_PER_CORE=1
+    GRAIN="core"
+  fi
+
+  MAX_RANKS=$((MAX_NODES * RANKS_PER_NODE))  
+  MAX_THREADS=$((NUM_CORES * THREADS_PER_CORE))
+  
+  # show all params
+  print_params
+}
+
+run_scaling() {
+ 
+  # check if a rebuild is required 
+  if [ "${REBUILD}" = true ]; then
+    source ./darwin-build
+  fi
+
+  # run dependent options
+  EXTENT=0
+  NUM_NODES=1
+  NUM_THREADS=""
+  NUM_RANKS=""
+  SOURCE_SIZE=0
+  TARGET_SIZE=0
+  MODE=""
+    
+  # adjust the number of ranks if intra/inter-node parallelism
+  if [ "${OPENMP_ONLY}" = true ]; then
+    EXTENT=${MAX_THREADS}
+    NUM_THREADS="\$i"
+    NUM_RANKS="1"
+    NUM_NODES=1
+    MODE="threads_omp"
+  else
+    EXTENT=${MAX_NODES}
+    NUM_THREADS=${MAX_THREADS}
+    NUM_RANKS="\$i"
+    NUM_NODES=${MAX_NODES}
+    MODE="ranks_mpi"
+  fi
+
+  # generate distinct scripts for strong and weak scaling
+  for SCALING_TYPE in "strong" "weak"; do
+
+    # adjust the problem size on weak scaling
+    if [ ${SCALING_TYPE} = "weak" ]; then
+      SOURCE_SIZE="\$((i * ${MAX_SOURCE_CELLS}))" 
+      TARGET_SIZE="\$((i * ${MAX_TARGET_CELLS}))" 
+    else
+      SOURCE_SIZE="${MAX_SOURCE_CELLS}" 
+      TARGET_SIZE="${MAX_TARGET_CELLS}" 
+    fi
+    
+    # generated files
+    OUTPUT="darwin_t-junction_${SCALING_TYPE}_scaling_${EXTENT}_${MODE}.log"
+    SCRIPT="darwin_t-junction_${SCALING_TYPE}_scaling_${EXTENT}_${MODE}.sh"
+
+    echo "#!/bin/bash"                                                 > ${SCRIPT}
+    echo ""                                                           >> ${SCRIPT}
+    echo "# File '${SCRIPT}'"                                         >> ${SCRIPT}
+    echo "# Batch script for t-junction ${SCALING_TYPE} scaling app"  >> ${SCRIPT}
+    echo "# Generated on $(date +'%Y-%m-%d %T')"                      >> ${SCRIPT}
+    echo ""                                                           >> ${SCRIPT}
+    echo "#SBATCH --time=2:00:00"                                     >> ${SCRIPT}                      
+    echo "#SBATCH --partition=${PARTITION}"                           >> ${SCRIPT}                      
+    echo "#SBATCH --nodes=${NUM_NODES}"                               >> ${SCRIPT} 
+    echo "#SBATCH --ntasks-per-node=${RANKS_PER_NODE}"                >> ${SCRIPT}
+    echo "#SBATCH --job-name=remap"                                   >> ${SCRIPT}
+    echo "#SBATCH --error=${OUTPUT}"                                  >> ${SCRIPT}
+    echo "#SBATCH --output=${OUTPUT}"                                 >> ${SCRIPT}
+    echo "#SBATCH --mail-user=${USER_MAIL}"                           >> ${SCRIPT}
+    echo "#SBATCH --mail-type=FAIL"                                   >> ${SCRIPT}
+    echo "#SBATCH --no-requeue"                                       >> ${SCRIPT} 
+    echo "#SBATCH --signal=23@60"                                     >> ${SCRIPT}                  
+    echo ""                                                           >> ${SCRIPT}
+    echo "# load modules"                                             >> ${SCRIPT}
+    echo "module load intel/${INTEL_VERSION}"                         >> ${SCRIPT}
+    echo "module load openmpi/${MPI_VERSION}-intel_${INTEL_VERSION}"  >> ${SCRIPT}
+    echo "module load boost/${BOOST_VERSION}"                         >> ${SCRIPT}
+    echo ""                                                           >> ${SCRIPT}
+    echo "# set thread-core affinity"                                 >> ${SCRIPT}
+    echo "export KMP_AFFINITY=granularity=${GRAIN},compact,verbose"   >> ${SCRIPT}
+    echo ""                                                           >> ${SCRIPT}
+    echo "# run the application"                                      >> ${SCRIPT}
+    echo "cd ${BUILD_DIR}"                                            >> ${SCRIPT}
+    echo ""                                                           >> ${SCRIPT}
+    echo "for ((i=1; i <= ${EXTENT}; i++)); do"                       >> ${SCRIPT}
+    echo "  export OMP_NUM_THREADS=${NUM_THREADS}"                    >> ${SCRIPT}
+    echo "  mpirun -np ${NUM_RANKS} \\"                               >> ${SCRIPT}
+    echo "        --bind-to socket \\"                                >> ${SCRIPT}
+    echo "        --report-bindings \\"                               >> ${SCRIPT}
+    echo "        ${APP_NAME} \\"                                     >> ${SCRIPT}
+    echo "        --dim=${DIMENSION} \\"                              >> ${SCRIPT}
+    echo "        --nsourcecells=${SOURCE_SIZE} \\"                   >> ${SCRIPT}
+    echo "        --ntargetcells=${TARGET_SIZE} \\"                   >> ${SCRIPT}
+    echo "        --conformal=${IS_CONFORMAL} \\"                     >> ${SCRIPT}
+    echo "        --material_fields='x','y','z' \\"                   >> ${SCRIPT}
+    echo "        --remap_order=${REMAP_ORDER}"                       >> ${SCRIPT}
+    echo "done"                                                       >> ${SCRIPT}
+    echo "# ========================================================" >> ${SCRIPT}
+
+    # Run it
+    echo "Running t-junction ${SCALING_TYPE} scaling"
+    [ "${SCALING_TYPE}" = "strong" ] && sbatch -v ${SCRIPT}
+    mv ${SCRIPT} backup/
+  done
+
+  echo "Please run: squeue -u [USER]" 
+}
+
+generate_gnuplot() {
+  
+  MODE=""
+  XMAX=0
+  XLABEL=""
+  XCOL=0
+  SUFFIX=""
+  
+  if [ "${OPENMP_ONLY}" = true ]; then 
+    MODE="OpenMP"
+    XMAX=${MAX_THREADS}
+    XLABEL="threads"
+    XCOL=2
+    SUFFIX="omp"
+  else
+    MODE="MPI+OpenMP"
+    XMAX=${MAX_RANKS}
+    XLABEL="ranks"
+    XCOL=1
+    SUFFIX="mpi"
+  fi
+
+  # generate distinct scripts for strong and weak scaling
+  for SCALING_TYPE in "strong" "weak"; do
+    
+    INPUT="darwin_t-junction_timing_${SUFFIX}.dat"
+    OUTPUT="darwin_t-junction_${SCALING_TYPE}_scaling_${SUFFIX}.eps"
+    SCRIPT="darwin_t-junction_${SCALING_TYPE}_scaling_${SUFFIX}.gnu"
+  
+    echo "# File '${SCRIPT}'"                                          > ${SCRIPT}
+    echo "# Gnuplot script for t-junction ${SCALING_TYPE} scaling"    >> ${SCRIPT}  
+    echo "# Generated on $(date +'%Y-%m-%d %T')"                      >> ${SCRIPT}
+    echo ""                                                           >> ${SCRIPT}
+    echo "reset"                                                      >> ${SCRIPT}
+    echo "set terminal postscript eps enhanced color 14 size 8cm,9cm" >> ${SCRIPT} 
+    echo "set output \"${OUTPUT}\""                                   >> ${SCRIPT} 
+    echo "set size ratio 1"                                           >> ${SCRIPT} 
+    echo "set xlabel \"${XLABEL}\""                                   >> ${SCRIPT} 
+    echo "set ylabel \"elapsed (s)\""                                 >> ${SCRIPT} 
+    echo "set key below maxcols 1"                                    >> ${SCRIPT} 
+    echo ""                                                           >> ${SCRIPT}
+    echo "set xrange [1:${XMAX}]"                                     >> ${SCRIPT} 
+    echo "set logscale x 2"                                           >> ${SCRIPT} 
+    echo "set logscale y 2"                                           >> ${SCRIPT} 
+    echo ""                                                           >> ${SCRIPT}
+    echo "set title \"t-junction ${MODE} ${SCALING_TYPE} scaling\""   >> ${SCRIPT} 
+    echo "set grid"                                                   >> ${SCRIPT}
+    echo "plot \"${INPUT}\" using ${XCOL}:6 with linespoint title \"remap\"     lc rgb '#CB0707' pt 5,\\">> ${SCRIPT}
+    echo "     \"${INPUT}\" using ${XCOL}:5 with linespoint title \"interface\" lc rgb '#800080' pt 2,\\">> ${SCRIPT} 
+    echo "     \"${INPUT}\" using ${XCOL}:7 with linespoint title \"total\"     lc rgb '#000000' pt 3"   >> ${SCRIPT} 
+  
+    # move to build directory
+    mv ${SCRIPT} ${BUILD_DIR}
+    echo "Gnuplot script '${SCRIPT}' generated in build directory"
+  done
+
+}
+
+# main
+setup "$@" && run_scaling && generate_gnuplot
