@@ -21,7 +21,7 @@
 #include <mpi.h>
 
 #ifdef ENABLE_PROFILE
-#include "ittnotify.h"
+  #include "ittnotify.h"
 #endif
 
 // Jali mesh infrastructure library
@@ -31,7 +31,6 @@
 #include "MeshFactory.hh"
 #include "JaliStateVector.h"
 #include "JaliState.h"
-
 
 #include "portage/support/portage.h"
 #include "portage/support/mpi_collate.h"
@@ -55,6 +54,11 @@
 #endif
 
 #include "portage/driver/write_to_gmv.h"
+
+#define ENABLE_TIMINGS 1
+#if ENABLE_TIMINGS
+  #include "portage/support/timer.h"
+#endif
 
 // For parsing and evaluating user defined expressions in apps
 
@@ -82,6 +86,31 @@ using Portage::reorder;
 
 //////////////////////////////////////////////////////////////////////
 
+#if ENABLE_TIMINGS
+namespace {
+struct Timing {
+  float mesh_init   = 0;
+  float redistrib   = 0;
+  float interface   = 0;
+  float remap       = 0;
+  float total       = 0;
+//  float search      = 0;
+//  float intersect   = 0;
+//  float interpolate = 0;
+};
+
+struct Params {
+  int ranks    = 1;
+  int threads  = 1;
+  int dim      = 2;
+  int nsource  = 0;
+  int ntarget  = 0;
+  int nmats    = 0;
+  int order    = 1;
+  std::string output = "";
+};
+} // end anonymous namespace
+#endif
 
 int print_usage() {
   std::cout << std::endl;
@@ -255,6 +284,20 @@ class interface_reconstructor_factory<3, MeshWrapper>{
 // analytically imposed field. If no field was imposed, the errors are
 // returned as 0
 
+#if ENABLE_TIMINGS
+template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
+                           std::shared_ptr<Jali::Mesh> targetMesh,
+                           Portage::Limiter_type limiter,
+                           int interp_order,
+                           std::vector<std::string> material_field_expressions,
+                           std::string field_filename,
+                           bool mesh_output, int rank, int numpe,
+                           Jali::Entity_kind entityKind,
+                           double *L1_error, double *L2_error, Timing& time);
+
+// export timing data
+bool dump_timings(Params const& params, Timing const& time);
+#else
 template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
                            std::shared_ptr<Jali::Mesh> targetMesh,
                            Portage::Limiter_type limiter,
@@ -264,6 +307,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
                            bool mesh_output, int rank, int numpe,
                            Jali::Entity_kind entityKind,
                            double *L1_error, double *L2_error);
+#endif
 
 // Forward declaration of function to run interface reconstruction and
 // write the material polygons and their associated fields to a GMV file
@@ -274,9 +318,13 @@ int main(int argc, char** argv) {
   __itt_pause();
 #endif
 
-
-
   struct timeval begin, end, diff;
+
+#if ENABLE_TIMINGS
+  Timing time;
+  Params params;
+  auto start = timer::now();
+#endif
 
   // Initialize MPI
   int mpi_init_flag;
@@ -420,7 +468,18 @@ int main(int argc, char** argv) {
     }
 
   gettimeofday(&begin, 0);
-
+  
+#if ENABLE_TIMINGS
+  // save params for after
+  params.ranks   = numpe;
+  params.threads = omp_get_max_threads();
+  params.nsource = nsourcecells;
+  params.ntarget = ntargetcells;
+  params.order   = interp_order;
+  params.nmats   = material_field_expressions.size();
+  params.output  = "darwin_t-junction_timing_" + std::string(params.ranks > 1 ? "mpi.dat": "omp.dat");
+  auto tic = timer::now();
+#endif
 
   // The mesh factory and mesh setup
   std::shared_ptr<Jali::Mesh> source_mesh, target_mesh;
@@ -470,6 +529,11 @@ int main(int argc, char** argv) {
     gettimeofday(&end, 0);
     timersub(&end, &begin, &diff);
     float seconds = diff.tv_sec + 1.0E-6*diff.tv_usec;
+
+#if ENABLE_TIMINGS
+    time.mesh_init = timer::elapsed(tic);
+#endif
+
     if (rank == 0) {
       if (n_converge == 1)
         std::cout << "Mesh Initialization Time: " << seconds << std::endl;
@@ -479,6 +543,9 @@ int main(int argc, char** argv) {
     }
     gettimeofday(&begin, 0);
 
+#if ENABLE_TIMINGS
+    tic = timer::now();
+#endif
     // Make sure we have the right dimension and that source and
     // target mesh dimensions match (important when one or both of the
     // meshes are read in)
@@ -493,13 +560,13 @@ int main(int argc, char** argv) {
         run<2>(source_mesh, target_mesh, limiter, interp_order,
                material_field_expressions,
                field_output_filename, mesh_output,
-               rank, numpe, entityKind, &(l1_err[i]), &(l2_err[i]));
+               rank, numpe, entityKind, &(l1_err[i]), &(l2_err[i]), time);
         break;
       case 3:
         run<3>(source_mesh, target_mesh, limiter, interp_order,
                material_field_expressions,
                field_output_filename, mesh_output,
-               rank, numpe, entityKind, &(l1_err[i]), &(l2_err[i]));
+               rank, numpe, entityKind, &(l1_err[i]), &(l2_err[i]), time);
         break;
       default:
         std::cerr << "Dimension not 2 or 3" << std::endl;
@@ -513,6 +580,11 @@ int main(int argc, char** argv) {
     gettimeofday(&end, 0);
     timersub(&end, &begin, &diff);
     seconds = diff.tv_sec + 1.0E-6*diff.tv_usec;
+
+#if ENABLE_TIMINGS
+    time.remap = timer::elapsed(tic);
+#endif
+
     if (rank == 0) {
       if (n_converge == 1)
         std::cout << "Remap Time: " << seconds << std::endl;
@@ -535,6 +607,15 @@ int main(int argc, char** argv) {
   }
 
   MPI_Finalize();
+
+#if ENABLE_TIMINGS
+  time.total = timer::elapsed(start);
+
+  // dump timing data
+  if (rank == 0) {
+    dump_timings(params, time);
+  }
+#endif
 }
 
 
@@ -542,6 +623,16 @@ int main(int argc, char** argv) {
 // with respect to the specified field. If a field was not specified and
 // remap only volume fractions (and if specified, centroids)
 
+#if ENABLE_TIMINGS
+template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
+                           std::shared_ptr<Jali::Mesh> targetMesh,
+                           Portage::Limiter_type limiter,
+                           int interp_order,
+                           std::vector<std::string> material_field_expressions,
+                           std::string field_filename, bool mesh_output,
+                           int rank, int numpe, Jali::Entity_kind entityKind,
+                           double *L1_error, double *L2_error, Timing& time) {
+#else
 template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
                            std::shared_ptr<Jali::Mesh> targetMesh,
                            Portage::Limiter_type limiter,
@@ -550,6 +641,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
                            std::string field_filename, bool mesh_output,
                            int rank, int numpe, Jali::Entity_kind entityKind,
                            double *L1_error, double *L2_error) {
+#endif
 
   if (rank == 0)
     std::cout << "starting portageapp_t-junction_jali...\n";
@@ -727,6 +819,9 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
   Wonton::Executor_type *executor = (numpe > 1) ? &mpiexecutor : nullptr;
   
   // Perform interface reconstruction
+#if ENABLE_TIMINGS 
+  auto tic = timer::now();
+#endif
 
   std::vector<Tangram::IterativeMethodTolerances_t> tols(2,{1000, 1e-15, 1e-15});
   interface_reconstructor_factory<dim, Wonton::Jali_Mesh_Wrapper> source_IRFactory(sourceMeshWrapper, tols);
@@ -737,7 +832,6 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
                                                 cell_mat_volfracs,
                                                 cell_mat_centroids);
   source_interface_reconstructor->reconstruct();
-
 
   // Material fields are evaluated at material polygon centroids.
   // This allows us to test for near zero error in cases where an
@@ -816,6 +910,10 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
  }
 
   if (numpe > 1) MPI_Barrier(MPI_COMM_WORLD);
+
+#if ENABLE_TIMINGS 
+  time.interface = timer::elapsed(tic);
+#endif
 
   if (dim == 2) {
     if (interp_order == 1) {
@@ -951,6 +1049,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
 
     int nmatcells = matcells.size();
     
+#if !ENABLE_TIMINGS   
     std::cout << "\n----target cell global indices on rank "<< rank<<" for material "<< m << ": ";
     for (int ic = 0; ic < nmatcells; ic++) std::cout <<
       targetMeshWrapper.get_global_id(matcells[ic], Wonton::Entity_kind::CELL) << " ";
@@ -967,7 +1066,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
     std::cout << "----cellmatdata on rank "<< rank<<" for material "<< m <<": ";
     for (int ic = 0; ic < nmatcells; ic++) std::cout <<cellmatdata[ic]<< " ";
     std::cout << std::endl << std::endl; 
-    
+#endif    
   }
   
   
@@ -1132,5 +1231,89 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
     if (rank == 0)
       std::cout << "...done." << std::endl;
   }
-
 }
+
+#if ENABLE_TIMINGS
+bool dump_timings(Params const& params, Timing const& time) {
+
+  // save timing for each step
+  constexpr int const nsteps = 3;
+  constexpr float const time_eps = 1.E-4;
+
+  float const elap[nsteps] = { 
+    std::max(time_eps, time.mesh_init), 
+    std::max(time_eps, time.interface), 
+    std::max(time_eps, time.remap) 
+  }; 
+ 
+  int time_ratio[nsteps];
+
+  for (int i = 0; i < nsteps; ++i) {
+    time_ratio[i] = static_cast<int>(elap[i] * 100 / time.total);
+  }
+ 
+  std::string const& path = params.output;
+ 
+  std::printf("\nRecap: total elapsed time %.3f s\n", time.total);
+  std::printf("= %2d %% mesh initialization     (%6.1f s).\n", time_ratio[0], elap[0]); 
+  std::printf("= %2d %% interface recontruction (%6.1f s).\n", time_ratio[1], elap[1]);
+  std::printf("= %2d %% remapping               (%6.1f s).\n", time_ratio[2], elap[2]);  
+  std::fflush(stdout);
+
+  std::printf("Exporting stats to '%s' ... ", path.data());
+  std::fflush(stdout);
+
+  auto tic = timer::now();
+
+  std::ofstream file(path, std::ios::out|std::ios::app);
+  if (not file.good()) {
+    std::fprintf(stderr, "Could not open file :%s\n", path.data());
+    return false;
+  }
+
+  // add header if file is empty
+  std::ifstream checkfile(path);
+  assert(checkfile.good());
+  checkfile.seekg(0, std::ios::end);
+  bool const is_empty = checkfile.tellg() == 0;
+  checkfile.close();
+
+  // generate headers if required
+  if (is_empty) {
+    file << "# Profiling data for t-junction app" << std::endl;
+    file << "#"                                   << std::endl;
+    file << "# Fields"                            << std::endl;
+    file << "#  1. number of ranks"               << std::endl;
+    file << "#  2. number of threads"             << std::endl;
+    file << "#  3. initialization time"           << std::endl;
+    file << "#  4. redistribution time"           << std::endl;
+    file << "#  5. interface reconstruction time" << std::endl;
+    file << "#  6. remapping time"                << std::endl;
+    file << "#  7. total elapsed time"            << std::endl;
+    file << "#  8. mesh dimension"                << std::endl;
+    file << "#  9. source cells count"            << std::endl;
+    file << "# 10. target cells count"            << std::endl;
+    file << "# 11. materials count"               << std::endl;
+    file << "# 12. remap order"      << std::endl << std::endl;
+  }
+
+  file << params.ranks   << "\t"
+       << params.threads << "\t"
+       << time.mesh_init << "\t"
+       << time.redistrib << "\t"
+       << time.interface << "\t"
+       << time.remap     << "\t"
+       << time.total     << "\t"
+       << params.dim     << "\t"
+       << params.nsource << "\t"
+       << params.ntarget << "\t"
+       << params.nmats   << "\t"
+       << params.order   << std::endl;
+
+  file.close();
+  std::printf("done. \e[32m(%.3f s)\e[0m\n", timer::elapsed(tic));
+  std::fflush(stdout);
+  return true;
+}
+#endif
+ 
