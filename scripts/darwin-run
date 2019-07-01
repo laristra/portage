@@ -33,8 +33,8 @@ MPI_VERSION=2.1.5
 BOOST_VERSION=1.68.0
 SOURCE_DIR="$(pwd)/.."
 BUILD_DIR=""
-APP_PREFIX="./app/portageapp/portageapp"
-APP_NAME=""
+APP="t-junction"
+APP_PATH=""
 
 # Note:
 # -e: fail if some command exits with non zero status
@@ -64,10 +64,59 @@ print_usage() {
   exit 1
 }
 
-print_params() {
+check_params() {
+
+  # check the application to profile
+  case "${APP}" in
+    jali) APP_PATH="./app/portageapp/portageapp_jali";;
+    t-junction|multimat) APP_PATH="./app/portageapp/portageapp_${APP}_jali";;
+    distributed_cmp) APP_PATH="./app/${APP}/${APP}";;
+    intersect_reconstruct|ir_linetest|simple_mesh) APP_PATH="./app/${APP}_app/${APP}_app";;
+    ms|swarm|timing) APP_PATH="./app/${APP}app/${APP}app";;
+    (*) echo -e "\e[31mError: invalid application '${APP}'\e[0m"; exit 1;;
+  esac
+
+  # number of nodes
+  if [[ ! "${MAX_NODES}" =~ ^[0-9]+$ ]] || (( ${MAX_NODES} < 1 ))
+  then
+    echo -e "\e[31mError: invalid number of nodes\e[0m"
+    exit 1
+  elif [[ ! "${RANKS_PER_NODE}" =~ ^[0-9]+$ ]] \
+       || (( ${RANKS_PER_NODE} < 1 )) || (( ${RANKS_PER_NODE} > ${NUM_CORES}))
+  then
+    echo -e "\e[31mError: invalid MPI rank per node value\e[0m"
+    exit 1
+  elif [ ! "${COMPILER}" = "intel" ] && [ ! "${COMPILER}" = "gcc" ]
+  then
+    echo -e "\e[31mError: unsupported compiler '${COMPILER}' [intel|gcc]\e[0m"
+    exit 1
+  elif [[ ! "${DIMENSION}" =~ ^[2-3]$ ]]
+  then 
+    echo -e "\e[31mError: invalid mesh dimension [2|3]\e[0m"
+    exit 1
+  elif [[ ! "${MAX_SOURCE_CELLS}" =~ ^[0-9]+$ ]] || (( ${MAX_SOURCE_CELLS} < 1))
+  then
+    echo -e "\e[31mError: invalid number of source cells\e[0m"
+    exit 1 
+  elif [[ ! "${MAX_TARGET_CELLS}" =~ ^[0-9]+$ ]] || (( ${MAX_TARGET_CELLS} < 1))
+  then
+    echo -e "\e[31mError: invalid number of target cells\e[0m"
+    exit 1 
+  elif [[ ! "${REMAP_ORDER}" =~ ^[1-2]$ ]]
+  then
+    echo -e "\e[31mError: invalid remap order [1|2]\e[0m"
+    exit 1 
+  elif [ "${IS_CONFORMAL}" != "y" ] && [ "${IS_CONFORMAL}" != "n" ]
+  then
+    echo -e "\e[31mError: invalid argument for is_conformal [y|n]\e[0m"
+    exit 1
+  fi
+
+  # if everything is ok, print all
   echo -e "Run params:"
   echo -e "- num_nodes: \e[32m${MAX_NODES}\e[0m"
-  echo -e "- num_cores: \e[32m${NUM_CORES}\e[0m"
+  echo -e "- partition: \e[32m${PARTITION}\e[0m"
+  echo -e "- cores_per_node: \e[32m${NUM_CORES}\e[0m"
   echo -e "- compiler: \e[32m${COMPILER}\e[0m"
   echo -e "- ranks_per_node: \e[32m${RANKS_PER_NODE}\e[0m"
   echo -e "- threads_per_rank: \e[32m${MAX_THREADS}\e[0m"
@@ -101,7 +150,7 @@ setup() {
   while [ "$#" -gt 0 ]; do
     case "$1" in
       -h|--help) print_usage;;
-      -a|--app) APP_NAME="${APP_PREFIX}_${2}_jali"; shift;;
+      -a|--app) APP="$2"; shift;;
       -n|--nodes) MAX_NODES="$2"; shift;;
       -r|--ranks) RANKS_PER_NODE="$2"; shift;;
       -c|--compiler) COMPILER="$2"; shift;;
@@ -149,16 +198,13 @@ setup() {
   elif [ "${COMPILER}" = "gcc" ]; then
     COMPILER_VERSION=6.4.0
     CPU_AFFINITY="OMP_PLACES=${GRAIN} OMP_PROC_BIND=close OMP_DISPLAY_ENV=true"
-  else  
-    echo -e "Sorry, the '${COMPILER}' is not yet supported."
-    exit 1
   fi
   
   MAX_RANKS=$((MAX_NODES * RANKS_PER_NODE))  
   MAX_THREADS=$((NUM_CORES * THREADS_PER_CORE))
   
-  # show all params
-  print_params
+  # check all params
+  check_params
 }
 
 run_scaling() {
@@ -242,7 +288,7 @@ run_scaling() {
     echo "  mpirun -np 1 \\"                                          >> ${SCRIPT}
     echo "        --bind-to socket \\"                                >> ${SCRIPT}
     echo "        --report-bindings \\"                               >> ${SCRIPT}
-    echo "        ${APP_NAME} \\"                                     >> ${SCRIPT}
+    echo "        ${APP_PATH} \\"                                     >> ${SCRIPT}
     echo "        --dim=${DIMENSION} \\"                              >> ${SCRIPT}
     echo "        --nsourcecells=${SOURCE_SIZE} \\"                   >> ${SCRIPT}
     echo "        --ntargetcells=${TARGET_SIZE} \\"                   >> ${SCRIPT}
@@ -250,12 +296,12 @@ run_scaling() {
     echo "        --material_fields='x','y','z' \\"                   >> ${SCRIPT}
     echo "        --remap_order=${REMAP_ORDER}"                       >> ${SCRIPT}
     echo ""                                                           >> ${SCRIPT}
-    echo "for ((i=2; i <= ${EXTENT}; i+=2)); do"                       >> ${SCRIPT}
+    echo "for ((i=2; i <= ${EXTENT}; i+=2)); do"                      >> ${SCRIPT}
     echo "  export OMP_NUM_THREADS=${NUM_THREADS}"                    >> ${SCRIPT}
     echo "  mpirun -np ${NUM_RANKS} \\"                               >> ${SCRIPT}
     echo "        --bind-to socket \\"                                >> ${SCRIPT}
     echo "        --report-bindings \\"                               >> ${SCRIPT}
-    echo "        ${APP_NAME} \\"                                     >> ${SCRIPT}
+    echo "        ${APP_PATH} \\"                                     >> ${SCRIPT}
     echo "        --dim=${DIMENSION} \\"                              >> ${SCRIPT}
     echo "        --nsourcecells=${SOURCE_SIZE} \\"                   >> ${SCRIPT}
     echo "        --ntargetcells=${TARGET_SIZE} \\"                   >> ${SCRIPT}
