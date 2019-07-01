@@ -15,7 +15,10 @@ THREADS_PER_CORE=1
 PARTITION="scaling"
 HYPERTHREADING=false
 OPENMP_ONLY=false
-USER_MAIL="hoby@lanl.gov"
+COMPILER="intel"
+CPU_AFFINITY=""
+USER=""
+
 
 # Remapping params
 DIMENSION=3
@@ -26,12 +29,12 @@ IS_CONFORMAL="n"
 REBUILD=false
 
 # VERSION NUMBERS
-INTEL_VERSION=18.0.3
 MPI_VERSION=2.1.5
 BOOST_VERSION=1.68.0
 SOURCE_DIR="$(pwd)/.."
-BUILD_DIR="${SOURCE_DIR}/build"
-APP_NAME="./app/portageapp/portageapp_t-junction_jali"
+BUILD_DIR=""
+APP_PREFIX="./app/portageapp/portageapp"
+APP_NAME=""
 
 # Note:
 # -e: fail if some command exits with non zero status
@@ -44,18 +47,20 @@ set -o pipefail
 print_usage() {
   echo "Usage: ./darwin-run [options]"
   echo "Options:"
-  echo "  -h, --help             show this help message and exit"
-  echo "  -n, --nodes INT        number of nodes"     
-  echo "  -r, --ranks INT        ranks per node"    
-  echo "  -w, --hwthreads CHOICE enable hyperthreading [y|n]"    
-  echo "  -d, --dim INT          mesh dimension [2|3]"    
-  echo "  -s, --nsource INT      source mesh cells count"    
-  echo "  -t, --ntarget INT      target mesh cells count"    
-  echo "  -o, --order INT        remap order"    
-  echo "  -c, --conform CHOICE   is conformal [y|n]"   
-  echo "  -m, --omp-only         openmp multithreading only"
-  echo "  -b, --build            build the application"
-  echo "  -u, --user-mail STRING user mail for notifications"    
+  echo "  -h, --help              show this help message and exit"
+  echo "  -a, --app STRING        name of the application to profile"
+  echo "  -n, --nodes INT         number of nodes"     
+  echo "  -r, --ranks INT         ranks per node"    
+  echo "  -c, --compiler CHOICE   compiler [intel|gcc]"    
+  echo "  -w, --hwthreads CHOICE  enable hyperthreading [y|n]"    
+  echo "  -d, --dim INT           mesh dimension [2|3]"    
+  echo "  -s, --nsource INT       source mesh cells count"    
+  echo "  -t, --ntarget INT       target mesh cells count"    
+  echo "  -o, --order INT         remap order"    
+  echo "  -i, --is-conform CHOICE is conformal [y|n]"   
+  echo "  -m, --openmp            openmp scaling only"
+  echo "  -b, --build             build the application"
+  echo "  -u, --user STRING       slurm user account"    
   exit 1
 }
 
@@ -63,6 +68,7 @@ print_params() {
   echo -e "Run params:"
   echo -e "- num_nodes: \e[32m${MAX_NODES}\e[0m"
   echo -e "- num_cores: \e[32m${NUM_CORES}\e[0m"
+  echo -e "- compiler: \e[32m${COMPILER}\e[0m"
   echo -e "- ranks_per_node: \e[32m${RANKS_PER_NODE}\e[0m"
   echo -e "- threads_per_rank: \e[32m${MAX_THREADS}\e[0m"
   echo -e "- hyperthreading: \e[32m${HYPERTHREADING}\e[0m"
@@ -71,14 +77,15 @@ print_params() {
   echo -e "- target_cells_count: \e[32m${MAX_TARGET_CELLS}\e[0m"
   echo -e "- remap_order: \e[32m${REMAP_ORDER}\e[0m"
   echo -e "- is_conformal: \e[32m${IS_CONFORMAL}\e[0m"
-  echo -e "- user_mail: \e[32m${USER_MAIL}\e[0m"
+  echo -e "- slurm user: \e[32m${USER}\e[0m"
 }
 
 setup() {
   # parse options (requires GNU getopt).
   if ! options=$(getopt \
-           -o hn:r:w:d:s:t:o:c:mbu: \
-           -l help,nodes:,ranks:,hwthreads:,dim:,nsource:,ntarget:,order:,conform:,omp-only,build,user-mail: -- "$@"); then
+           -o ha:n:r:c:w:d:s:t:o:i:mbu: \
+           -l help,app:,nodes:,ranks:,compiler:,hwthreads:,dim:,nsource:,ntarget:,order:,is-conform:,openmp,build,user-mail: -- "$@")
+  then
     print_usage
   fi
  
@@ -94,41 +101,59 @@ setup() {
   while [ "$#" -gt 0 ]; do
     case "$1" in
       -h|--help) print_usage;;
+      -a|--app) APP_NAME="${APP_PREFIX}_${2}_jali"; shift;;
       -n|--nodes) MAX_NODES="$2"; shift;;
       -r|--ranks) RANKS_PER_NODE="$2"; shift;;
+      -c|--compiler) COMPILER="$2"; shift;;
       -w|--hwthreads) [ "$2" = "y" ] && HYPERTHREADING=true || HYPERTHREADING=false; shift;;
       -d|--dim) DIMENSION="$2"; shift;;
       -s|--nsource) MAX_SOURCE_CELLS="$2"; shift;; 
       -t|--ntarget) MAX_TARGET_CELLS="$2"; shift;; 
       -o|--order) REMAP_ORDER="$2"; shift;; 
       -c|--conform) IS_CONFORMAL="$2"; shift;; 
-      -m|--omp-only) OPENMP_ONLY=true; MAX_NODES=1;; 
+      -m|--openmp) OPENMP_ONLY=true; MAX_NODES=1;; 
       -b|--build) REBUILD=true;; 
-      -u|--user-mail) USER_MAIL="$2"; shift;; 
+      -u|--user) USER="$2"; shift;; 
       (--) shift; break;;
       (-*) print_usage;;
       (*) break;;
     esac
     shift
   done
-  
+
+  # set build directory  
+  BUILD_DIR="${SOURCE_DIR}/build-${COMPILER}"
+
   # deduce derived params
   case "${PARTITION}" in
-    "scaling") NUM_CORES=16; ALL_CORES=32;;
-    "skylake-gold") NUM_CORES=22; ALL_CORES=44;;
+    "scaling") NUM_CORES=16; THREADS_PER_CORE=2;;
+    "skylake-gold") NUM_CORES=22; THREADS_PER_CORE=2;;
     *)
       NUM_CORES=$(grep ^cpu\\scores /proc/cpuinfo | uniq |  awk '{print $4}');
-      ALL_CORES=$(nproc --all);;
+      LOG_CORES=$(nproc --all);
+      THREADS_PER_CORE=$((LOG_CORES / NUM_CORES));;
   esac
 
+  # set CPU affinity options
   if [ "${HYPERTHREADING}" = true ]; then
-    THREADS_PER_CORE=$((ALL_CORES / NUM_CORES))
-    GRAIN="fine"
+    [ "COMPILER" = "intel" ] && GRAIN="fine" || GRAIN="threads"
   else
     THREADS_PER_CORE=1
-    GRAIN="core"
+    [ "COMPILER" = "intel" ] && GRAIN="core" || GRAIN="cores"
   fi
 
+  # check compiler, set appropriate version and CPU affinity policy
+  if [ "${COMPILER}" = "intel" ]; then
+    COMPILER_VERSION=18.0.3
+    CPU_AFFINITY="KMP_AFFINITY=granularity=${GRAIN},compact,verbose"
+  elif [ "${COMPILER}" = "gcc" ]; then
+    COMPILER_VERSION=6.4.0
+    CPU_AFFINITY="OMP_PLACES=${GRAIN} OMP_PROC_BIND=close OMP_DISPLAY_ENV=true"
+  else  
+    echo -e "Sorry, the '${COMPILER}' is not yet supported."
+    exit 1
+  fi
+  
   MAX_RANKS=$((MAX_NODES * RANKS_PER_NODE))  
   MAX_THREADS=$((NUM_CORES * THREADS_PER_CORE))
   
@@ -156,16 +181,19 @@ run_scaling() {
   if [ "${OPENMP_ONLY}" = true ]; then
     EXTENT=${MAX_THREADS}
     NUM_THREADS="\$i"
+    INIT_NUM_THREADS=1
     NUM_RANKS="1"
     NUM_NODES=1
     MODE="threads_omp"
   else
     EXTENT=${MAX_NODES}
     NUM_THREADS=${MAX_THREADS}
+    INIT_NUM_THREADS=${NUM_THREADS}
     NUM_RANKS="\$i"
     NUM_NODES=${MAX_NODES}
     MODE="ranks_mpi"
   fi
+    
 
   # generate distinct scripts for strong and weak scaling
   for SCALING_TYPE in "strong" "weak"; do
@@ -196,23 +224,33 @@ run_scaling() {
     echo "#SBATCH --job-name=remap"                                   >> ${SCRIPT}
     echo "#SBATCH --error=${OUTPUT}"                                  >> ${SCRIPT}
     echo "#SBATCH --output=${OUTPUT}"                                 >> ${SCRIPT}
-    echo "#SBATCH --mail-user=${USER_MAIL}"                           >> ${SCRIPT}
-    echo "#SBATCH --mail-type=FAIL"                                   >> ${SCRIPT}
     echo "#SBATCH --no-requeue"                                       >> ${SCRIPT} 
     echo "#SBATCH --signal=23@60"                                     >> ${SCRIPT}                  
     echo ""                                                           >> ${SCRIPT}
     echo "# load modules"                                             >> ${SCRIPT}
-    echo "module load intel/${INTEL_VERSION}"                         >> ${SCRIPT}
-    echo "module load openmpi/${MPI_VERSION}-intel_${INTEL_VERSION}"  >> ${SCRIPT}
+    echo "module load ${COMPILER}/${COMPILER_VERSION}"                >> ${SCRIPT}
+    echo "module load openmpi/${MPI_VERSION}-${COMPILER}_${COMPILER_VERSION}" >> ${SCRIPT}
     echo "module load boost/${BOOST_VERSION}"                         >> ${SCRIPT}
     echo ""                                                           >> ${SCRIPT}
     echo "# set thread-core affinity"                                 >> ${SCRIPT}
-    echo "export KMP_AFFINITY=granularity=${GRAIN},compact,verbose"   >> ${SCRIPT}
+    echo "export ${CPU_AFFINITY}"                                     >> ${SCRIPT}
     echo ""                                                           >> ${SCRIPT}
     echo "# run the application"                                      >> ${SCRIPT}
     echo "cd ${BUILD_DIR}"                                            >> ${SCRIPT}
     echo ""                                                           >> ${SCRIPT}
-    echo "for ((i=1; i <= ${EXTENT}; i++)); do"                       >> ${SCRIPT}
+    echo "  export OMP_NUM_THREADS=${INIT_NUM_THREADS}"               >> ${SCRIPT}
+    echo "  mpirun -np 1 \\"                                          >> ${SCRIPT}
+    echo "        --bind-to socket \\"                                >> ${SCRIPT}
+    echo "        --report-bindings \\"                               >> ${SCRIPT}
+    echo "        ${APP_NAME} \\"                                     >> ${SCRIPT}
+    echo "        --dim=${DIMENSION} \\"                              >> ${SCRIPT}
+    echo "        --nsourcecells=${SOURCE_SIZE} \\"                   >> ${SCRIPT}
+    echo "        --ntargetcells=${TARGET_SIZE} \\"                   >> ${SCRIPT}
+    echo "        --conformal=${IS_CONFORMAL} \\"                     >> ${SCRIPT}
+    echo "        --material_fields='x','y','z' \\"                   >> ${SCRIPT}
+    echo "        --remap_order=${REMAP_ORDER}"                       >> ${SCRIPT}
+    echo ""                                                           >> ${SCRIPT}
+    echo "for ((i=2; i <= ${EXTENT}; i+=2)); do"                       >> ${SCRIPT}
     echo "  export OMP_NUM_THREADS=${NUM_THREADS}"                    >> ${SCRIPT}
     echo "  mpirun -np ${NUM_RANKS} \\"                               >> ${SCRIPT}
     echo "        --bind-to socket \\"                                >> ${SCRIPT}
@@ -230,10 +268,10 @@ run_scaling() {
     # Run it
     echo "Running t-junction ${SCALING_TYPE} scaling"
     [ "${SCALING_TYPE}" = "strong" ] && sbatch -v ${SCRIPT}
-    mv ${SCRIPT} backup/
   done
 
-  echo "Please run: squeue -u [USER]" 
+  # check slurm allocation
+  [ "${USER}" != "" ] && squeue -u ${USER}
 }
 
 generate_gnuplot() {
