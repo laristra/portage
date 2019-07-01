@@ -51,6 +51,7 @@ print_usage() {
   echo "  -a, --app STRING        name of the application to profile"
   echo "  -n, --nodes INT         number of nodes"     
   echo "  -r, --ranks INT         ranks per node"    
+  echo "  -p, --partition STRING  slurm partition"    
   echo "  -c, --compiler CHOICE   compiler [intel|gcc]"    
   echo "  -w, --hwthreads CHOICE  enable hyperthreading [y|n]"    
   echo "  -d, --dim INT           mesh dimension [2|3]"    
@@ -65,16 +66,6 @@ print_usage() {
 }
 
 check_params() {
-
-  # check the application to profile
-  case "${APP}" in
-    jali) APP_PATH="./app/portageapp/portageapp_jali";;
-    t-junction|multimat) APP_PATH="./app/portageapp/portageapp_${APP}_jali";;
-    distributed_cmp) APP_PATH="./app/${APP}/${APP}";;
-    intersect_reconstruct|ir_linetest|simple_mesh) APP_PATH="./app/${APP}_app/${APP}_app";;
-    ms|swarm|timing) APP_PATH="./app/${APP}app/${APP}app";;
-    (*) echo -e "\e[31mError: invalid application '${APP}'\e[0m"; exit 1;;
-  esac
 
   # number of nodes
   if [[ ! "${MAX_NODES}" =~ ^[0-9]+$ ]] || (( ${MAX_NODES} < 1 ))
@@ -132,8 +123,9 @@ check_params() {
 setup() {
   # parse options (requires GNU getopt).
   if ! options=$(getopt \
-           -o ha:n:r:c:w:d:s:t:o:i:mbu: \
-           -l help,app:,nodes:,ranks:,compiler:,hwthreads:,dim:,nsource:,ntarget:,order:,is-conform:,openmp,build,user-mail: -- "$@")
+           -o "ha:n:r:p:c:w:d:s:t:o:i:mbu:" \
+           -l "help,app:,nodes:,ranks:,partition:,compiler:,hwthreads:,"\
+              "dim:,nsource:,ntarget:,order:,is-conform:,openmp,build,user-mail: -- $@")
   then
     print_usage
   fi
@@ -143,44 +135,60 @@ setup() {
 
   # Handle empty option case 
   if [ "$#" -eq 1 ]; then
-    echo -e "Warning: running with default params"
+    echo -e "\e[31mWarning: running with default params\e[0m"
+  else  
+    # process args
+    while [ "$#" -gt 0 ]; do
+      case "$1" in
+        -h|--help) print_usage;;
+        -a|--app) APP="$2"; shift;;
+        -n|--nodes) MAX_NODES="$2"; shift;;
+        -r|--ranks) RANKS_PER_NODE="$2"; shift;;
+        -p|--partition) PARTITION="$2"; shift;;
+        -c|--compiler) COMPILER="$2"; shift;;
+        -w|--hwthreads) [ "$2" = "y" ] && HYPERTHREADING=true || HYPERTHREADING=false; shift;;
+        -d|--dim) DIMENSION="$2"; shift;;
+        -s|--nsource) MAX_SOURCE_CELLS="$2"; shift;; 
+        -t|--ntarget) MAX_TARGET_CELLS="$2"; shift;; 
+        -o|--order) REMAP_ORDER="$2"; shift;; 
+        -c|--conform) IS_CONFORMAL="$2"; shift;; 
+        -m|--openmp) OPENMP_ONLY=true; MAX_NODES=1;; 
+        -b|--build) REBUILD=true;; 
+        -u|--user) USER="$2"; shift;; 
+        (--) shift; break;;
+        (-*) print_usage;;
+        (*) break;;
+      esac
+      shift
+    done
   fi
-  
-  # process args
-  while [ "$#" -gt 0 ]; do
-    case "$1" in
-      -h|--help) print_usage;;
-      -a|--app) APP="$2"; shift;;
-      -n|--nodes) MAX_NODES="$2"; shift;;
-      -r|--ranks) RANKS_PER_NODE="$2"; shift;;
-      -c|--compiler) COMPILER="$2"; shift;;
-      -w|--hwthreads) [ "$2" = "y" ] && HYPERTHREADING=true || HYPERTHREADING=false; shift;;
-      -d|--dim) DIMENSION="$2"; shift;;
-      -s|--nsource) MAX_SOURCE_CELLS="$2"; shift;; 
-      -t|--ntarget) MAX_TARGET_CELLS="$2"; shift;; 
-      -o|--order) REMAP_ORDER="$2"; shift;; 
-      -c|--conform) IS_CONFORMAL="$2"; shift;; 
-      -m|--openmp) OPENMP_ONLY=true; MAX_NODES=1;; 
-      -b|--build) REBUILD=true;; 
-      -u|--user) USER="$2"; shift;; 
-      (--) shift; break;;
-      (-*) print_usage;;
-      (*) break;;
-    esac
-    shift
-  done
 
   # set build directory  
   BUILD_DIR="${SOURCE_DIR}/build-${COMPILER}"
+  
+  # check the application to profile
+  case "${APP}" in
+    jali) APP_PATH="./app/portageapp/portageapp_jali";;
+    t-junction|multimat) APP_PATH="./app/portageapp/portageapp_${APP}_jali";;
+    distributed_cmp) APP_PATH="./app/${APP}/${APP}";;
+    intersect_reconstruct|ir_linetest|simple_mesh) APP_PATH="./app/${APP}_app/${APP}_app";;
+    ms|swarm|timing) APP_PATH="./app/${APP}app/${APP}app";;
+    (*)
+      echo -e "\e[31mError: invalid application '${APP}'\e[0m"
+      exit 1;;
+  esac
 
-  # deduce derived params
+  # slurm partition  
+  #NUM_CORES=$(grep ^cpu\\scores /proc/cpuinfo | uniq |  awk '{print $4}');
+  #LOG_CORES=$(nproc --all);
+  #THREADS_PER_CORE=$((LOG_CORES / NUM_CORES));;
+  
   case "${PARTITION}" in
-    "scaling") NUM_CORES=16; THREADS_PER_CORE=2;;
-    "skylake-gold") NUM_CORES=22; THREADS_PER_CORE=2;;
-    *)
-      NUM_CORES=$(grep ^cpu\\scores /proc/cpuinfo | uniq |  awk '{print $4}');
-      LOG_CORES=$(nproc --all);
-      THREADS_PER_CORE=$((LOG_CORES / NUM_CORES));;
+    scaling) NUM_CORES=16; THREADS_PER_CORE=2;;
+    skylake-gold) NUM_CORES=22; THREADS_PER_CORE=2;;
+    (*) 
+      echo -e "\e[31mError: invalid slurm partition ${PARTITION}\e[0m"
+      exit 1;;
   esac
 
   # set CPU affinity options
@@ -240,7 +248,6 @@ run_scaling() {
     MODE="ranks_mpi"
   fi
     
-
   # generate distinct scripts for strong and weak scaling
   for SCALING_TYPE in "strong" "weak"; do
 
