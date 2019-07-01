@@ -9,6 +9,7 @@
 
 #include <vector>
 #include <algorithm>
+#include <stdexcept>
 
 #include "wonton/mesh/AuxMeshTopology.h"
 #include "wonton/support/Point.h"
@@ -24,6 +25,9 @@ namespace Portage {
        * @param[in] mesh Mesh wrapper from which to pull face normals and distances
        * @param[out] smoothing_lengths the output normals and distances
        * @param[out] extents the output bounding boxes of the cells in @code mesh @endcode
+       * @param[in] smoothing_factor multiple of distance from center to edge to use for smoothing length
+       * @param[in] boundary_factor same as @code smoothing_factor but for boundaries
+       *            zero means use @code smoothing_factor
        * 
        * The smoothing_lengths object has the following structure: 
        * smoothing_lengths[i][j][k] is interpreted as the k-th component of the normal vector 
@@ -37,8 +41,15 @@ namespace Portage {
         (const Mesh_Wrapper &mesh, 
          Portage::vector<std::vector<std::vector<double>>> &smoothing_lengths,
          Portage::vector<Wonton::Point<DIM>> &extents,
-         double smoothing_factor)
+         double smoothing_factor, double boundary_factor=0.)
       {
+	if (smoothing_factor<0.) {
+	  throw std::runtime_error("smoothing_factor must be non-negative");
+	}
+	if (boundary_factor<0.) {
+	  throw std::runtime_error("boundary_factor must be non-negative");
+	}
+	
         int ncells=mesh.num_owned_cells();
         smoothing_lengths.resize(ncells);
         extents.resize(ncells);
@@ -115,7 +126,12 @@ namespace Portage {
               normal = -normal;
               smoothing = -smoothing;
             }
-            h[j][DIM] = smoothing_factor*smoothing;
+	    double factor;
+	    if (mesh.on_exterior_boundary(Wonton::FACE, j) and boundary_factor > 0.) {
+	      h[j][DIM] = boundary_factor*smoothing;
+	    } else {
+	      h[j][DIM] = smoothing_factor*smoothing;
+	    }
           }
           smoothing_lengths[i] = h;
         }

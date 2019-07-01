@@ -229,3 +229,59 @@ TEST(Faceted_Setup, Simple3D_Tilted) {
     ASSERT_NEAR(dx[2], 2*(xmax[2]-xmin[2]), 1.e-12);
   }
 }
+
+
+
+// Checks the face normals and distances of a 2D axis-aligned brick mesh. 
+TEST(Faceted_Setup, Simple2DFace) {
+  Wonton::Simple_Mesh mesh(0., 0., 1., .1, NCELLS, NCELLS); // high aspect ratio
+  Wonton::Simple_Mesh_Wrapper wrapper(mesh);
+  Portage::vector<std::vector<std::vector<double>>> smoothing
+    (NCELLS*NCELLS,std::vector<std::vector<double>>(4,std::vector<double>(3)));
+  Portage::vector<Wonton::Point<2>> extents;
+  double factor = 1.5, bfactor=.5;
+
+  Portage::Meshfree::Weight::faceted_setup_cell
+    <2,Wonton::Simple_Mesh_Wrapper>(wrapper, smoothing, extents, factor, bfactor);
+
+  double dx0=1.*factor/NCELLS, dx1=.1*factor/NCELLS;
+  ASSERT_EQ(smoothing.size(), NCELLS*NCELLS);
+  ASSERT_EQ(extents.size(), NCELLS*NCELLS);
+  for (int i=0; i<NCELLS; i++) {
+    std::vector<std::vector<double>> h = smoothing[i];
+    ASSERT_EQ(h.size(), 4);
+    if (not wrapper.on_exterior_boundary(Wonton::CELL, i)) {
+      ASSERT_NEAR(h[0][0],  0.0, 1.e-12);
+      ASSERT_NEAR(h[0][1], -1.0, 1.e-12);
+      ASSERT_NEAR(h[0][2],  dx1, 1.e-12);
+      ASSERT_NEAR(h[1][0],  1.0, 1.e-12);
+      ASSERT_NEAR(h[1][1],  0.0, 1.e-12);
+      ASSERT_NEAR(h[1][2],  dx0, 1.e-12); 
+      ASSERT_NEAR(h[2][0],  0.0, 1.e-12);
+      ASSERT_NEAR(h[2][1],  1.0, 1.e-12);
+      ASSERT_NEAR(h[2][2],  dx1, 1.e-12); 
+      ASSERT_NEAR(h[3][0], -1.0, 1.e-12);
+      ASSERT_NEAR(h[3][1],  0.0, 1.e-12);
+      ASSERT_NEAR(h[3][2],  dx0, 1.e-12); 
+
+      Wonton::Point<2> dx=extents[i];
+      ASSERT_NEAR(dx[0], 2*dx0, 1.e-12);
+      ASSERT_NEAR(dx[1], 2*dx1, 1.e-12);
+    } else {
+      std::vector<int> faces, dirs;
+      wrapper.cell_get_faces_and_dirs(i, &faces, &dirs);
+      if (wrapper.on_exterior_boundary(Wonton::FACE, faces[0])) {
+        ASSERT_NEAR(h[0][2],  dx1*bfactor/factor, 1.e-12);
+      }
+      if (wrapper.on_exterior_boundary(Wonton::FACE, faces[1])) {
+        ASSERT_NEAR(h[1][2],  dx0*bfactor/factor, 1.e-12);
+      }
+      if (wrapper.on_exterior_boundary(Wonton::FACE, faces[2])) {
+        ASSERT_NEAR(h[2][2],  dx1*bfactor/factor, 1.e-12);
+      }
+      if (wrapper.on_exterior_boundary(Wonton::FACE, faces[2])) {
+        ASSERT_NEAR(h[3][2],  dx0*bfactor/factor, 1.e-12);
+      }
+    }
+  }
+}
