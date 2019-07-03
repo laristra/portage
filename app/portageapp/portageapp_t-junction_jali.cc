@@ -94,9 +94,6 @@ struct Timing {
   float interface   = 0;
   float remap       = 0;
   float total       = 0;
-//  float search      = 0;
-//  float intersect   = 0;
-//  float interpolate = 0;
 };
 
 struct Params {
@@ -318,7 +315,7 @@ int main(int argc, char** argv) {
   __itt_pause();
 #endif
 
-  struct timeval begin, end, diff;
+  //struct timeval begin, end, diff;
 
 #if ENABLE_TIMINGS
   Timing time;
@@ -467,8 +464,6 @@ int main(int argc, char** argv) {
       MPI_Abort(MPI_COMM_WORLD, -1);
     }
 
-  gettimeofday(&begin, 0);
-  
 #if ENABLE_TIMINGS
   // save params for after
   params.ranks   = numpe;
@@ -530,24 +525,18 @@ int main(int argc, char** argv) {
                          ntargetcells, ntargetcells, ntargetcells);
     }
 
-    gettimeofday(&end, 0);
-    timersub(&end, &begin, &diff);
-    float seconds = diff.tv_sec + 1.0E-6*diff.tv_usec;
-
 #if ENABLE_TIMINGS
     time.mesh_init = timer::elapsed(tic);
-#endif
 
     if (rank == 0) {
+      float const seconds = time.mesh_init * 1.E3;
       if (n_converge == 1)
         std::cout << "Mesh Initialization Time: " << seconds << std::endl;
       else
         std::cout << "Mesh Initialization Time (Iteration i): " <<
             seconds << std::endl;
     }
-    gettimeofday(&begin, 0);
 
-#if ENABLE_TIMINGS
     tic = timer::now();
 #endif
     // Make sure we have the right dimension and that source and
@@ -581,22 +570,17 @@ int main(int argc, char** argv) {
     std::cout << "L2 norm of error for iteration " << i << " is " <<
         l2_err[i] << std::endl;
 
-    gettimeofday(&end, 0);
-    timersub(&end, &begin, &diff);
-    seconds = diff.tv_sec + 1.0E-6*diff.tv_usec;
-
 #if ENABLE_TIMINGS
     time.remap = timer::elapsed(tic);
-#endif
 
     if (rank == 0) {
+      float const seconds = time.remap * 1.E3;
       if (n_converge == 1)
         std::cout << "Remap Time: " << seconds << std::endl;
       else
         std::cout << "Remap Time (Iteration i): " << seconds << std::endl;
     }
-    gettimeofday(&begin, 0);
-
+#endif
 
     // if convergence study, double the mesh resolution
     nsourcecells *= 2;
