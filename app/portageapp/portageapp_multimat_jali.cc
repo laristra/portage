@@ -54,6 +54,11 @@
 
 #include "user_field.h"
 
+#define ENABLE_TIMINGS 1
+#if ENABLE_TIMINGS
+  #include "portage/support/timer.h"
+#endif
+
 using Wonton::Jali_Mesh_Wrapper;
 using Portage::argsort;
 using Portage::reorder;
@@ -76,6 +81,28 @@ using Portage::reorder;
 
 //////////////////////////////////////////////////////////////////////
 
+#if ENABLE_TIMINGS
+namespace {
+struct Timing {
+  float mesh_init   = 0;
+  float redistrib   = 0;
+  float interface   = 0;
+  float remap       = 0;
+  float total       = 0;
+};
+
+struct Params {
+  int ranks    = 1;
+  int threads  = 1;
+  int dim      = 2;
+  int nsource  = 0;
+  int ntarget  = 0;
+  int nmats    = 0;
+  int order    = 1;
+  std::string output = "";
+};
+} // end anonymous namespace
+#endif
 
 int print_usage() {
   std::cout << std::endl;
@@ -83,7 +110,7 @@ int print_usage() {
       "--dim=2|3 --nsourcecells=N --ntargetcells=M --conformal=y|n \n" << 
       "--remap_order=1|2 \n" <<
       "--limiter=barth_jespersen --mesh_min=0. --mesh_max=1. \n" <<
-      "--output_meshes=y|n --results_file=filename --convergence_study=NREF \n\n";
+      "--output_meshes=y|n --results_file=filename --convergence_study=NREF --only_threads=y|n\n\n";
 
   std::cout << "--dim (default = 2): spatial dimension of mesh\n\n";
 
@@ -146,6 +173,9 @@ int print_usage() {
   std::cout << "--results_file=results_filename (default = output.txt)\n";
   std::cout << "  If a filename is specified, the target field values are " <<
       "output to the file given by 'results_filename' in ascii format\n\n";
+  
+  std::cout << "--only_threads (default = n)\n";
+  std::cout << " enable if you want to profile only threads scaling\n\n";
   return 0;
 }
 //////////////////////////////////////////////////////////////////////
@@ -233,6 +263,20 @@ class interface_reconstructor_factory<3, MeshWrapper, true>{
 // analytically imposed field. If no field was imposed, the errors are
 // returned as 0
 
+#if ENABLE_TIMINGS
+template<int dim, bool all_convex> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
+                           std::shared_ptr<Jali::Mesh> targetMesh,
+                           Portage::Limiter_type limiter,
+                           int interp_order,
+                           std::string material_filename,
+                           std::vector<std::string> material_field_expressions,
+                           std::string field_filename, bool mesh_output,
+                           int rank, int numpe, Jali::Entity_kind entityKind,
+                           double *L1_error, double *L2_error, Timing& time);
+
+// export timing data
+bool dump_timings(Params const& params, Timing const& time);
+#else
 template<int dim, bool all_convex> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
                            std::shared_ptr<Jali::Mesh> targetMesh,
                            Portage::Limiter_type limiter,
@@ -243,7 +287,7 @@ template<int dim, bool all_convex> void run(std::shared_ptr<Jali::Mesh> sourceMe
                            bool mesh_output, int rank, int numpe,
                            Jali::Entity_kind entityKind,
                            double *L1_error, double *L2_error);
-
+#endif
 // Forward declaration of function to run interface reconstruction and
 // write the material polygons and their associated fields to a GMV file
 
@@ -253,9 +297,11 @@ int main(int argc, char** argv) {
   __itt_pause();
 #endif
 
-
-
-  struct timeval begin, end, diff;
+#if ENABLE_TIMINGS
+  Timing time;
+  Params params;
+  auto start = timer::now();
+#endif
 
   // Initialize MPI
   int mpi_init_flag;
@@ -295,6 +341,8 @@ int main(int argc, char** argv) {
   Portage::Limiter_type limiter = Portage::Limiter_type::NOLIMITER;
   double srclo = 0.0, srchi = 1.0;  // bounds of generated mesh in each dir
   std::string field_filename = "target_mm.gmv";
+
+  bool only_threads = false;
 
   // Parse the input
 
@@ -361,6 +409,8 @@ int main(int argc, char** argv) {
         std::cerr << "Number of meshes for convergence study should be greater than 0" << std::endl;
         throw std::exception();
       }
+    } else if (keyword == "only_threads"){
+      only_threads = (numpe == 1 and valueword == "y");
     } else if (keyword == "help") {
       print_usage();
       MPI_Abort(MPI_COMM_WORLD, -1);
@@ -408,8 +458,22 @@ int main(int argc, char** argv) {
     MPI_Abort(MPI_COMM_WORLD, -1);
   }
 
-
-  gettimeofday(&begin, 0);
+  //gettimeofday(&begin, 0);
+#if ENABLE_TIMINGS
+  // save params for after
+  params.ranks   = numpe;
+#if defined(_OPENMP)
+  params.threads = omp_get_max_threads();
+#else
+  params.threads = 1;
+#endif
+  params.nsource = nsourcecells;
+  params.ntarget = ntargetcells;
+  params.order   = interp_order;
+  params.nmats   = material_field_expressions.size();
+  params.output  = "darwin_multimat_timing_" + std::string(only_threads ? "omp.dat": "mpi.dat");
+  auto tic = timer::now();
+#endif
 
 
   // The mesh factory and mesh setup
@@ -457,17 +521,20 @@ int main(int argc, char** argv) {
                          ntargetcells, ntargetcells, ntargetcells);
     }
 
-    gettimeofday(&end, 0);
-    timersub(&end, &begin, &diff);
-    float seconds = diff.tv_sec + 1.0E-6*diff.tv_usec;
+#if ENABLE_TIMINGS
+    time.mesh_init = timer::elapsed(tic);
+
     if (rank == 0) {
+      float const seconds = time.mesh_init * 1.E3;
       if (n_converge == 1)
         std::cout << "Mesh Initialization Time: " << seconds << std::endl;
       else
         std::cout << "Mesh Initialization Time (Iteration i): " <<
-            seconds << std::endl;
+                  seconds << std::endl;
     }
-    gettimeofday(&begin, 0);
+
+    tic = timer::now();
+#endif
 
     // Make sure we have the right dimension and that source and
     // target mesh dimensions match (important when one or both of the
@@ -480,7 +547,19 @@ int main(int argc, char** argv) {
     // Now run the remap on the meshes and get back the L2 error
     switch (dim) {
       case 2:
+#if ENABLE_TIMINGS
         if (all_convex)
+          run<2, true>(source_mesh, target_mesh, limiter, interp_order,
+               material_filename, material_field_expressions,
+               field_filename, mesh_output,
+               rank, numpe, entityKind, &(l1_err[i]), &(l2_err[i]), time);
+        else
+          run<2, false>(source_mesh, target_mesh, limiter, interp_order,
+               material_filename, material_field_expressions,
+               field_filename, mesh_output,
+               rank, numpe, entityKind, &(l1_err[i]), &(l2_err[i]), time);
+#else
+      if (all_convex)
           run<2, true>(source_mesh, target_mesh, limiter, interp_order,
                material_filename, material_field_expressions,
                field_filename, mesh_output,
@@ -490,9 +569,22 @@ int main(int argc, char** argv) {
                material_filename, material_field_expressions,
                field_filename, mesh_output,
                rank, numpe, entityKind, &(l1_err[i]), &(l2_err[i]));
+#endif
         break;
       case 3:
+#if ENABLE_TIMINGS
         if (all_convex)
+          run<3, true>(source_mesh, target_mesh, limiter, interp_order,
+               material_filename, material_field_expressions,
+               field_filename, mesh_output,
+               rank, numpe, entityKind, &(l1_err[i]), &(l2_err[i]), time);
+        else
+          run<3, false>(source_mesh, target_mesh, limiter, interp_order,
+               material_filename, material_field_expressions,
+               field_filename, mesh_output,
+               rank, numpe, entityKind, &(l1_err[i]), &(l2_err[i]), time);
+#else
+      if (all_convex)
           run<3, true>(source_mesh, target_mesh, limiter, interp_order,
                material_filename, material_field_expressions,
                field_filename, mesh_output,
@@ -502,6 +594,7 @@ int main(int argc, char** argv) {
                material_filename, material_field_expressions,
                field_filename, mesh_output,
                rank, numpe, entityKind, &(l1_err[i]), &(l2_err[i]));
+#endif
         break;
       default:
         std::cerr << "Dimension not 2 or 3" << std::endl;
@@ -512,17 +605,17 @@ int main(int argc, char** argv) {
     std::cout << "L2 norm of error for iteration " << i << " is " <<
         l2_err[i] << std::endl;
 
-    gettimeofday(&end, 0);
-    timersub(&end, &begin, &diff);
-    seconds = diff.tv_sec + 1.0E-6*diff.tv_usec;
+#if ENABLE_TIMINGS
+    time.remap = timer::elapsed(tic);
+
     if (rank == 0) {
+      float const seconds = time.remap * 1.E3;
       if (n_converge == 1)
         std::cout << "Remap Time: " << seconds << std::endl;
       else
         std::cout << "Remap Time (Iteration i): " << seconds << std::endl;
     }
-    gettimeofday(&begin, 0);
-
+#endif
 
     // if convergence study, double the mesh resolution
     nsourcecells *= 2;
@@ -537,13 +630,32 @@ int main(int argc, char** argv) {
   }
 
   MPI_Finalize();
+
+#if ENABLE_TIMINGS
+  time.total = timer::elapsed(start);
+
+  // dump timing data
+  if (rank == 0) {
+    dump_timings(params, time);
+  }
+#endif
 }
 
 
 // Run a remap between two meshes and return the L1 and L2 error norms
 // with respect to the specified field. If a field was not specified and
 // remap only volume fractions (and if specified, centroids)
-
+#if ENABLE_TIMINGS
+template<int dim, bool all_convex> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
+                           std::shared_ptr<Jali::Mesh> targetMesh,
+                           Portage::Limiter_type limiter,
+                           int interp_order,
+                           std::string material_filename,
+                           std::vector<std::string> material_field_expressions,
+                           std::string field_filename, bool mesh_output,
+                           int rank, int numpe, Jali::Entity_kind entityKind,
+                           double *L1_error, double *L2_error, Timing& time) {
+#else
 template<int dim, bool all_convex> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
                            std::shared_ptr<Jali::Mesh> targetMesh,
                            Portage::Limiter_type limiter,
@@ -553,7 +665,7 @@ template<int dim, bool all_convex> void run(std::shared_ptr<Jali::Mesh> sourceMe
                            std::string field_filename, bool mesh_output,
                            int rank, int numpe, Jali::Entity_kind entityKind,
                            double *L1_error, double *L2_error) {
-
+#endif
   if (rank == 0)
     std::cout << "starting portageapp_jali_multimat...\n";
 
@@ -685,7 +797,9 @@ template<int dim, bool all_convex> void run(std::shared_ptr<Jali::Mesh> sourceMe
 
 
   // Perform interface reconstruction
-
+#if ENABLE_TIMINGS
+  auto tic = timer::now();
+#endif
   std::vector<Tangram::IterativeMethodTolerances_t> tols(2,{1000, 1e-15, 1e-15});
   interface_reconstructor_factory<dim, Wonton::Jali_Mesh_Wrapper, all_convex> source_IRFactory(sourceMeshWrapper, tols);
   auto source_interface_reconstructor = source_IRFactory();
@@ -785,6 +899,9 @@ template<int dim, bool all_convex> void run(std::shared_ptr<Jali::Mesh> sourceMe
   }
 
   if (numpe > 1) MPI_Barrier(MPI_COMM_WORLD);
+#if ENABLE_TIMINGS
+  time.interface = timer::elapsed(tic);
+#endif
 
   Wonton::MPIExecutor_type mpiexecutor(MPI_COMM_WORLD);
   Wonton::Executor_type *executor = (numpe > 1) ? &mpiexecutor : nullptr;
@@ -1114,5 +1231,88 @@ template<int dim, bool all_convex> void run(std::shared_ptr<Jali::Mesh> sourceMe
     if (rank == 0)
       std::cout << "...done." << std::endl;
   }
-
 }
+
+#if ENABLE_TIMINGS
+bool dump_timings(Params const& params, Timing const& time) {
+
+  // save timing for each step
+  constexpr int const nsteps = 3;
+  constexpr float const time_eps = 1.E-4;
+
+  float const elap[nsteps] = {
+    std::max(time_eps, time.mesh_init),
+    std::max(time_eps, time.interface),
+    std::max(time_eps, time.remap)
+  };
+
+  int time_ratio[nsteps];
+
+  for (int i = 0; i < nsteps; ++i) {
+    time_ratio[i] = static_cast<int>(elap[i] * 100 / time.total);
+  }
+
+  std::string const& path = params.output;
+
+  std::printf("\nRecap: total elapsed time %.3f s\n", time.total);
+  std::printf("= %2d %% mesh initialization     (%6.1f s).\n", time_ratio[0], elap[0]);
+  std::printf("= %2d %% interface recontruction (%6.1f s).\n", time_ratio[1], elap[1]);
+  std::printf("= %2d %% remapping               (%6.1f s).\n", time_ratio[2], elap[2]);
+  std::fflush(stdout);
+
+  std::printf("Exporting stats to '%s' ... ", path.data());
+  std::fflush(stdout);
+
+  auto tic = timer::now();
+
+  std::ofstream file(path, std::ios::out|std::ios::app);
+  if (not file.good()) {
+    std::fprintf(stderr, "Could not open file :%s\n", path.data());
+    return false;
+  }
+
+  // add header if file is empty
+  std::ifstream checkfile(path);
+  assert(checkfile.good());
+  checkfile.seekg(0, std::ios::end);
+  bool const is_empty = checkfile.tellg() == 0;
+  checkfile.close();
+
+  // generate headers if required
+  if (is_empty) {
+    file << "# Profiling data for t-junction app" << std::endl;
+    file << "#"                                   << std::endl;
+    file << "# Fields"                            << std::endl;
+    file << "#  1. number of ranks"               << std::endl;
+    file << "#  2. number of threads"             << std::endl;
+    file << "#  3. initialization time"           << std::endl;
+    file << "#  4. redistribution time"           << std::endl;
+    file << "#  5. interface reconstruction time" << std::endl;
+    file << "#  6. remapping time"                << std::endl;
+    file << "#  7. total elapsed time"            << std::endl;
+    file << "#  8. mesh dimension"                << std::endl;
+    file << "#  9. source cells count"            << std::endl;
+    file << "# 10. target cells count"            << std::endl;
+    file << "# 11. materials count"               << std::endl;
+    file << "# 12. remap order"      << std::endl << std::endl;
+  }
+
+  file << params.ranks   << "\t"
+       << params.threads << "\t"
+       << time.mesh_init << "\t"
+       << time.redistrib << "\t"
+       << time.interface << "\t"
+       << time.remap     << "\t"
+       << time.total     << "\t"
+       << params.dim     << "\t"
+       << params.nsource << "\t"
+       << params.ntarget << "\t"
+       << params.nmats   << "\t"
+       << params.order   << std::endl;
+
+  file.close();
+  std::printf("done. \e[32m(%.3f s)\e[0m\n", timer::elapsed(tic));
+  std::fflush(stdout);
+  return true;
+}
+#endif
