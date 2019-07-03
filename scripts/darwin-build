@@ -17,7 +17,7 @@ set -u
 set -o pipefail
 
 # build options
-REBUILD_ALL=true
+REBUILD_ALL=false
 PERF_MODE=true
 USE_INTEL=true
 USE_CUDA=false
@@ -46,8 +46,8 @@ print_usage() {
 setup(){
   # parse options (requires GNU getopt).
   if ! options=$(getopt \
-           -o hc:apg \
-           -l help,compiler:,all,perfs,cuda -- "$@"); then
+           -o "hc:apg" \
+           -l "help,compiler:,all,perfs,cuda" -- "$@"); then
     print_usage
   fi
 
@@ -92,7 +92,7 @@ setup(){
   fi
 
   # check if build directory exists
-  if [ -f ${BUILD_DIR} ]; then
+  if [ ! -d ${BUILD_DIR} ]; then
     REBUILD_ALL=true
   fi
 
@@ -100,7 +100,7 @@ setup(){
   if [ "${REBUILD_ALL}" = true ]; then
     rm -rf ${BUILD_DIR} && mkdir ${BUILD_DIR} && cd ${BUILD_DIR}
   else
-    cd ${BUILD_DIR} && rm -rf CMake*
+    cd ${BUILD_DIR}
   fi
 
   # load required modules
