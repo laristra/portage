@@ -124,8 +124,7 @@ setup() {
   # parse options (requires GNU getopt).
   if ! options=$(getopt \
            -o "ha:n:r:p:c:w:d:s:t:o:i:mbu:" \
-           -l "help,app:,nodes:,ranks:,partition:,compiler:,hwthreads:,"\
-              "dim:,nsource:,ntarget:,order:,is-conform:,openmp,build,user-mail: -- $@")
+           -l "help,app:,nodes:,ranks:,partition:,compiler:,hwthreads:,dim:,nsource:,ntarget:,order:,is-conform:,openmp,build,user:" -- $@)
   then
     print_usage
   fi
@@ -134,8 +133,9 @@ setup() {
   eval set -- "${options}"
 
   # Handle empty option case 
-  if [ "$#" -eq 1 ]; then
+  if [ "$#" -eq 0 ]; then
     echo -e "\e[31mWarning: running with default params\e[0m"
+    exit 1
   else  
     # process args
     while [ "$#" -gt 0 ]; do
@@ -230,6 +230,7 @@ run_scaling() {
   SOURCE_SIZE=0
   TARGET_SIZE=0
   MODE=""
+  THREAD_FLAG=""
     
   # adjust the number of ranks if intra/inter-node parallelism
   if [ "${OPENMP_ONLY}" = true ]; then
@@ -239,6 +240,7 @@ run_scaling() {
     NUM_RANKS="1"
     NUM_NODES=1
     MODE="threads_omp"
+    THREAD_FLAG="y"
   else
     EXTENT=${MAX_NODES}
     NUM_THREADS=${MAX_THREADS}
@@ -246,6 +248,7 @@ run_scaling() {
     NUM_RANKS="\$i"
     NUM_NODES=${MAX_NODES}
     MODE="ranks_mpi"
+    THREAD_FLAG="n"
   fi
     
   # generate distinct scripts for strong and weak scaling
@@ -261,13 +264,13 @@ run_scaling() {
     fi
     
     # generated files
-    OUTPUT="darwin_t-junction_${SCALING_TYPE}_scaling_${EXTENT}_${MODE}.log"
-    SCRIPT="darwin_t-junction_${SCALING_TYPE}_scaling_${EXTENT}_${MODE}.sh"
+    OUTPUT="darwin_${APP}_${SCALING_TYPE}_scaling_${EXTENT}_${MODE}.log"
+    SCRIPT="darwin_${APP}_${SCALING_TYPE}_scaling_${EXTENT}_${MODE}.sh"
 
     echo "#!/bin/bash"                                                 > ${SCRIPT}
     echo ""                                                           >> ${SCRIPT}
     echo "# File '${SCRIPT}'"                                         >> ${SCRIPT}
-    echo "# Batch script for t-junction ${SCALING_TYPE} scaling app"  >> ${SCRIPT}
+    echo "# Batch script for ${APP} ${SCALING_TYPE} scaling app"      >> ${SCRIPT}
     echo "# Generated on $(date +'%Y-%m-%d %T')"                      >> ${SCRIPT}
     echo ""                                                           >> ${SCRIPT}
     echo "#SBATCH --time=2:00:00"                                     >> ${SCRIPT}                      
@@ -291,17 +294,18 @@ run_scaling() {
     echo "# run the application"                                      >> ${SCRIPT}
     echo "cd ${BUILD_DIR}"                                            >> ${SCRIPT}
     echo ""                                                           >> ${SCRIPT}
-    echo "  export OMP_NUM_THREADS=${INIT_NUM_THREADS}"               >> ${SCRIPT}
-    echo "  mpirun -np 1 \\"                                          >> ${SCRIPT}
-    echo "        --bind-to socket \\"                                >> ${SCRIPT}
-    echo "        --report-bindings \\"                               >> ${SCRIPT}
-    echo "        ${APP_PATH} \\"                                     >> ${SCRIPT}
-    echo "        --dim=${DIMENSION} \\"                              >> ${SCRIPT}
-    echo "        --nsourcecells=${SOURCE_SIZE} \\"                   >> ${SCRIPT}
-    echo "        --ntargetcells=${TARGET_SIZE} \\"                   >> ${SCRIPT}
-    echo "        --conformal=${IS_CONFORMAL} \\"                     >> ${SCRIPT}
-    echo "        --material_fields='x','y','z' \\"                   >> ${SCRIPT}
-    echo "        --remap_order=${REMAP_ORDER}"                       >> ${SCRIPT}
+    echo "export OMP_NUM_THREADS=${INIT_NUM_THREADS}"                 >> ${SCRIPT}
+    echo "mpirun -np 1 \\"                                            >> ${SCRIPT}
+    echo "      --bind-to socket \\"                                  >> ${SCRIPT}
+    echo "      --report-bindings \\"                                 >> ${SCRIPT}
+    echo "      ${APP_PATH} \\"                                       >> ${SCRIPT}
+    echo "      --dim=${DIMENSION} \\"                                >> ${SCRIPT}
+    echo "      --nsourcecells=${SOURCE_SIZE} \\"                     >> ${SCRIPT}
+    echo "      --ntargetcells=${TARGET_SIZE} \\"                     >> ${SCRIPT}
+    echo "      --conformal=${IS_CONFORMAL} \\"                       >> ${SCRIPT}
+    echo "      --material_fields='x','y','z' \\"                     >> ${SCRIPT}
+    echo "      --remap_order=${REMAP_ORDER} \\"                      >> ${SCRIPT}
+    echo "      --only_threads=${THREAD_FLAG}"                        >> ${SCRIPT}
     echo ""                                                           >> ${SCRIPT}
     echo "for ((i=2; i <= ${EXTENT}; i+=2)); do"                      >> ${SCRIPT}
     echo "  export OMP_NUM_THREADS=${NUM_THREADS}"                    >> ${SCRIPT}
@@ -314,13 +318,15 @@ run_scaling() {
     echo "        --ntargetcells=${TARGET_SIZE} \\"                   >> ${SCRIPT}
     echo "        --conformal=${IS_CONFORMAL} \\"                     >> ${SCRIPT}
     echo "        --material_fields='x','y','z' \\"                   >> ${SCRIPT}
-    echo "        --remap_order=${REMAP_ORDER}"                       >> ${SCRIPT}
+    echo "        --remap_order=${REMAP_ORDER} \\"                    >> ${SCRIPT}
+    echo "        --only_threads=${THREAD_FLAG}"                      >> ${SCRIPT}
     echo "done"                                                       >> ${SCRIPT}
     echo "# ========================================================" >> ${SCRIPT}
 
     # Run it
-    echo "Running t-junction ${SCALING_TYPE} scaling"
+    echo "Running ${APP} ${SCALING_TYPE} scaling"
     [ "${SCALING_TYPE}" = "strong" ] && sbatch -v ${SCRIPT}
+    #[ "${SCALING_TYPE}" = "strong" ] && cat ${SCRIPT}
   done
 
   # check slurm allocation
@@ -352,12 +358,12 @@ generate_gnuplot() {
   # generate distinct scripts for strong and weak scaling
   for SCALING_TYPE in "strong" "weak"; do
     
-    INPUT="darwin_t-junction_timing_${SUFFIX}.dat"
-    OUTPUT="darwin_t-junction_${SCALING_TYPE}_scaling_${SUFFIX}.eps"
-    SCRIPT="darwin_t-junction_${SCALING_TYPE}_scaling_${SUFFIX}.gnu"
+    INPUT="darwin_${APP}_timing_${SUFFIX}.dat"
+    OUTPUT="darwin_${APP}_${SCALING_TYPE}_scaling_${SUFFIX}.eps"
+    SCRIPT="darwin_${APP}_${SCALING_TYPE}_scaling_${SUFFIX}.gnu"
   
     echo "# File '${SCRIPT}'"                                          > ${SCRIPT}
-    echo "# Gnuplot script for t-junction ${SCALING_TYPE} scaling"    >> ${SCRIPT}  
+    echo "# Gnuplot script for ${APP} ${SCALING_TYPE} scaling"    >> ${SCRIPT}  
     echo "# Generated on $(date +'%Y-%m-%d %T')"                      >> ${SCRIPT}
     echo ""                                                           >> ${SCRIPT}
     echo "reset"                                                      >> ${SCRIPT}
@@ -372,7 +378,7 @@ generate_gnuplot() {
     echo "set logscale x 2"                                           >> ${SCRIPT} 
     echo "set logscale y 2"                                           >> ${SCRIPT} 
     echo ""                                                           >> ${SCRIPT}
-    echo "set title \"t-junction ${MODE} ${SCALING_TYPE} scaling\""   >> ${SCRIPT} 
+    echo "set title \"${APP} ${MODE} ${SCALING_TYPE} scaling\""       >> ${SCRIPT} 
     echo "set grid"                                                   >> ${SCRIPT}
     echo "plot \"${INPUT}\" using ${XCOL}:6 with linespoint title \"remap\"     lc rgb '#CB0707' pt 5,\\">> ${SCRIPT}
     echo "     \"${INPUT}\" using ${XCOL}:5 with linespoint title \"interface\" lc rgb '#800080' pt 2,\\">> ${SCRIPT} 
