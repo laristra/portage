@@ -115,7 +115,7 @@ int print_usage() {
       "--dim=2|3 --nsourcecells=N --ntargetcells=M --conformal=y|n \n" << 
       "--remap_order=1|2 \n" <<
       "--limiter=barth_jespersen --mesh_min=0. --mesh_max=1. \n" <<
-      "--output_meshes=y|n --convergence_study=NREF \n\n";
+      "--output_meshes=y|n --convergence_study=NREF --only_threads=y|n\n\n";
 
   std::cout << "--dim (default = 2): spatial dimension of mesh\n\n";
 
@@ -162,6 +162,9 @@ int print_usage() {
   std::cout << "--output_meshes (default = y)\n";
   std::cout << "  If 'y', the source and target meshes are output with the " <<
       "remapped field attached as input.exo and output.exo. \n\n";
+  
+  std::cout << "--only_threads (default = n)\n";
+  std::cout << " enable if you want to profile only threads scaling\n\n";
 
   return 0;
 }
@@ -352,6 +355,8 @@ int main(int argc, char** argv) {
   Portage::Limiter_type limiter = Portage::Limiter_type::NOLIMITER;
   double srclo = 0.0, srchi = 1.0;  // bounds of generated mesh in each dir
 
+  bool only_threads = false;
+
   // Parse the input
 
   for (int i = 1; i < argc; i++) {
@@ -411,6 +416,8 @@ int main(int argc, char** argv) {
         std::cerr << "Number of meshes for convergence study should be greater than 0" << std::endl;
         throw std::exception();
       }
+    } else if (keyword == "only_threads"){
+      only_threads = (numpe == 1 and valueword == "y");
     } else if (keyword == "help") {
       print_usage();
       MPI_Abort(MPI_COMM_WORLD, -1);
@@ -476,7 +483,7 @@ int main(int argc, char** argv) {
   params.ntarget = ntargetcells;
   params.order   = interp_order;
   params.nmats   = material_field_expressions.size();
-  params.output  = "darwin_t-junction_timing_" + std::string(params.ranks > 1 ? "mpi.dat": "omp.dat");
+  params.output  = "darwin_t-junction_timing_" + std::string(only_threads ? "omp.dat": "mpi.dat");
   auto tic = timer::now();
 #endif
 
