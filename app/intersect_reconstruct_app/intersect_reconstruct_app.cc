@@ -5,6 +5,7 @@
 */
 
 #include <stdlib.h>
+#include "portage/support/portage.h"
 #include "wonton/mesh/jali/jali_mesh_wrapper.h"
 #include "tangram/driver/driver.h"
 #include "tangram/reconstruct/xmof2D_wrapper.h"
@@ -332,9 +333,11 @@ void add_intersect_moments(const std::vector<Wonton::Point<2>>& source_points,
                            const std::vector<Wonton::Point<2>>& target_points,
                            const int& mat_id,
                            std::vector<std::vector<double>>& mat_moments) {
+   Portage::NumericalTolerances_t num_tols;
+
   // Intersect source candidate matpoly with target cell
   std::vector<double> moments =
-    Portage::intersect_polys_r2d(source_points, target_points);
+    Portage::intersect_polys_r2d(source_points, target_points, num_tols);
   // Accumulate moments (if any) from the intersection
   if (moments[0] > seps) {
     //Check if new mat_id is the max of all previously added

@@ -267,6 +267,10 @@ class MMDriver {
     max_fixup_iter_ = maxiter;
   }
 
+  void set_num_tols(NumericalTolerances_t num_tols) {
+    num_tols_ = num_tols;
+  }
+
   /*!
     @brief set the bounds of variable to be remapped on target
     @param target_var_name Name of variable in target mesh to limit
@@ -379,6 +383,10 @@ class MMDriver {
     bool distributed = false;
     int comm_rank = 0;
     int nprocs = 1;
+
+    NumericalTolerances_t custom_num_tols;
+    custom_num_tols.intersect_eps = 1e-14;
+    set_num_tols(custom_num_tols);
 
 
     // Will be null if it's a parallel executor
@@ -563,6 +571,7 @@ class MMDriver {
   double voldifftol_ = 100*std::numeric_limits<double>::epsilon();
   double consttol_ =  100*std::numeric_limits<double>::epsilon();
   int max_fixup_iter_ = 5;
+  NumericalTolerances_t num_tols_;
 
 
 #ifdef HAVE_TANGRAM
@@ -788,7 +797,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
   Intersect<onwhat, SourceMesh_Wrapper2, SourceState_Wrapper2,
             TargetMesh_Wrapper, InterfaceReconstructorType,
             Matpoly_Splitter, Matpoly_Clipper>
-      intersect(source_mesh2, source_state2, target_mesh_,
+      intersect(source_mesh2, source_state2, target_mesh_, num_tols_,
                 interface_reconstructor);
 
   // Get an instance of the desired interpolate algorithm type
@@ -802,7 +811,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
   Intersect<onwhat, SourceMesh_Wrapper2, SourceState_Wrapper2,
             TargetMesh_Wrapper, DummyInterfaceReconstructor,
             void, void>
-      intersect(source_mesh2, source_state2, target_mesh_);
+      intersect(source_mesh2, source_state2, target_mesh_, num_tols_);
 
   // Get an instance of the desired interpolate algorithm type
   Interpolate<D, onwhat, SourceMesh_Wrapper2, TargetMesh_Wrapper,

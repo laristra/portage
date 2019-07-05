@@ -26,12 +26,13 @@ namespace Portage {
 
 std::vector<double>
 intersect_polys_r2d(std::vector<Wonton::Point<2>> const & source_poly,
-                    std::vector<Wonton::Point<2>> const & target_poly) {
+                    std::vector<Wonton::Point<2>> const & target_poly,
+                    NumericalTolerances_t num_tols) {
 
   std::vector<double> moments(3, 0);
   bool src_convex = true;
   bool trg_convex = true;
-  const double eps = 1e-14;
+  double eps = num_tols.intersect_eps;
 
   const int POLY_ORDER = 1;  // max degree of moments to calculate
 
@@ -111,7 +112,7 @@ intersect_polys_r2d(std::vector<Wonton::Point<2>> const & source_poly,
     // call the routine with the polygons reversed
 
     if (src_convex)
-      return intersect_polys_r2d(target_poly, source_poly);
+      return intersect_polys_r2d(target_poly, source_poly, num_tols);
     else {
 
       // Must divide target_poly into triangles for clipping.  Choice

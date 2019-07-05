@@ -30,10 +30,12 @@ TEST(intersectR2D, simple1) {
   const Wonton::Simple_Mesh_Wrapper tm(*targetmesh);
   const Wonton::Simple_State_Wrapper ss(*sourcestate);
 
+  Portage::NumericalTolerances_t num_tols;
+
   Portage::IntersectR2D<Portage::Entity_kind::CELL, Wonton::Simple_Mesh_Wrapper,
                         Wonton::Simple_State_Wrapper,
                         Wonton::Simple_Mesh_Wrapper>
-      isect{sm, ss, tm};
+      isect{sm, ss, tm, num_tols};
 
   std::vector<int> srccells({0});
 
