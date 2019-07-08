@@ -129,7 +129,7 @@ TEST(CellDriver, 3D_2ndOrder) {
   std::shared_ptr<Jali::State> targetState;
 
   sourceMesh = Jali::MeshFactory(MPI_COMM_WORLD)(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 3, 3, 3);
-  targetMesh = Jali::MeshFactory(MPI_COMM_WORLD)(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 3, 3, 3);
+  targetMesh = Jali::MeshFactory(MPI_COMM_WORLD)(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 5, 5, 5);
 
   sourceState = Jali::State::create(sourceMesh);
   targetState = Jali::State::create(targetMesh);
