@@ -316,7 +316,7 @@ shared_ptr<SwarmState<dim>> SwarmStateFactory
     assert(sizes[0][wrap]>0);
     for (size_t n=1; n<names.size(); n++) {
       if (sizes[n][wrap] != sizes[0][wrap]) {
-	throw std::runtime_error("field sizes don't match across state wrappers");
+	throw std::runtime_error("field sizes don't match across state names");
       }
     }
   }
