@@ -9,7 +9,7 @@ Please see the license file at the root of this repository, or at:
 #-----------------------------------------------------------------------------~#
 
 set(headers  mmdriver.h driver_swarm.h driver_mesh_swarm_mesh.h fix_mismatch.h
-    componentdriver.h genremapdriver.h)
+    coredriver.h fancydriver.h)
 if (TANGRAM_FOUND)
   list(APPEND headers write_to_gmv.h)
 endif (TANGRAM_FOUND)
@@ -74,8 +74,8 @@ if (ENABLE_UNIT_TESTS)
        POLICY MPI
        THREADS 1)
 
-       cinch_add_unit(test_gendriver_multimat
-       SOURCES test/test_gendriver_multimat.cc
+       cinch_add_unit(test_fancydriver_multimat
+       SOURCES test/test_fancydriver_multimat.cc
        LIBRARIES portage ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES} ${XMOF2D_LIBRARIES}
        POLICY MPI
        THREADS 1)
@@ -92,8 +92,8 @@ if (ENABLE_UNIT_TESTS)
 
      endif (TANGRAM_FOUND)
 
-     cinch_add_unit(test_celldriver_singlemat
-       SOURCES test/test_celldriver_singlemat.cc
+     cinch_add_unit(test_coredriver_singlemat
+       SOURCES test/test_coredriver_singlemat.cc
        LIBRARIES portage ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
        POLICY MPI
        THREADS 1)
