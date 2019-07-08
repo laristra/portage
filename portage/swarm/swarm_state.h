@@ -287,9 +287,9 @@ shared_ptr<SwarmState<dim>> SwarmStateFactory(
  * All fields must exist in all states. In each state, all fields must have same size.
  */
 template<size_t dim, class StateWrapper>
-shared_ptr<SwarmState<dim>> SwarmStateFactory(
-  const std::vector<StateWrapper*> states,
-  const Portage::Entity_kind entity)
+shared_ptr<SwarmState<dim>> SwarmStateFactory
+  (const std::vector<StateWrapper*> states,
+   const Portage::Entity_kind entity)
 {
   // check all fields in all states
   std::vector<std::string> names = states[0]->names();

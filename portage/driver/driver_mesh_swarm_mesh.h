@@ -48,7 +48,7 @@ namespace Portage {
 
 /*!
   @class MSM_Driver "driver_mesh_swarm_mesh.h"
-  @brief MSM_Driver provides the API to mapping from one mesh to another.
+  @brief MSM_Driver provides the API to mapping from one mesh to another using particles.
   @tparam dim Spatial dimension of the source and target meshes
   @tparam SourceMesh_Wrapper A lightweight wrapper to a specific input mesh
   implementation that provides certain functionality.
@@ -269,10 +269,10 @@ class MSM_Driver {
       if (geometry_ == Meshfree::Weight::FACETED) {
         if (center_ == Meshfree::Scatter) {
           Meshfree::Weight::faceted_setup_cell<Dim,SourceMesh_Wrapper>
-            (source_mesh_, smoothing_lengths, weight_extents, smoothing_factor_);
+            (source_mesh_, smoothing_lengths, weight_extents, smoothing_factor_, smoothing_factor_);
         } else if (center_ == Meshfree::Gather) {
           Meshfree::Weight::faceted_setup_cell<Dim,TargetMesh_Wrapper>
-            (target_mesh_, smoothing_lengths, weight_extents, smoothing_factor_);
+            (target_mesh_, smoothing_lengths, weight_extents, smoothing_factor_, smoothing_factor_);
         }
       } else {
         int ncells;

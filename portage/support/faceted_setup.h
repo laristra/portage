@@ -41,7 +41,7 @@ namespace Portage {
         (const Mesh_Wrapper &mesh, 
          Portage::vector<std::vector<std::vector<double>>> &smoothing_lengths,
          Portage::vector<Wonton::Point<DIM>> &extents,
-         double smoothing_factor, double boundary_factor=0.)
+         double smoothing_factor, double boundary_factor)
       {
 	if (smoothing_factor<0.) {
 	  throw std::runtime_error("smoothing_factor must be non-negative");
@@ -161,6 +161,54 @@ namespace Portage {
           for (int k=0; k<DIM; k++) dx[k] *= 2.*smoothing_factor;
 
           extents[i] = dx;
+        }
+      }
+
+
+      /** @brief Function to setup faceted weight data give a set of mesh wrappers. 
+       *
+       * @param[in]  meshes Mesh wrapper pointers from which to pull face normals and distances
+       * @param[out] smoothing_lengths the output normals and distances
+       * @param[out] extents the output bounding boxes of the cells in @code mesh @endcode
+       * @param[in]  smoothing_factor multiple of distance from center to edge to use for smoothing length
+       * @param[in]  boundary_factor same as @code smoothing_factor but for boundaries
+       *             zero means use @code smoothing_factor
+       * 
+       * The smoothing_lengths object has the following structure: 
+       * smoothing_lengths[i][j][k] is interpreted as the k-th component of the normal vector 
+       * to the j-th face of the i-th cell, for k=0,...,dim-1, where dim is the spatial 
+       * dimension of the problem. For k=dim, it is the distance of the j-th face from 
+       * the centroid of the i-th cell. For 3D faces that are non-planar, the normal is the 
+       * average of the normals to the triangles formed by adjacent vertices and face centroids.  
+       */
+
+      template<int DIM, class Mesh_Wrapper> void faceted_setup_cell
+        (std::vector<Mesh_Wrapper*> meshes, 
+         Portage::vector<std::vector<std::vector<double>>> &smoothing_lengths,
+         Portage::vector<Wonton::Point<DIM>> &extents,
+         double smoothing_factor, double boundary_factor) 
+      {
+        size_t total_cells=0;
+        for ((const Mesh_Wrapper)* meshptr: meshes) {
+          const Mesh_Wrapper &mesh(*meshptr);
+          total_cells += mesh.num_owned_cells();
+        }
+
+        smoothing_lengths.resize(total_cells);
+        extents.resize(total_cells);
+
+        size_t offset = 0;
+        for ((const Mesh_Wrapper)* meshptr: meshes) {
+          const Mesh_Wrapper &mesh(*meshptr);
+          size_t ncells = mesh.num_owned_cells();
+          Portage::vector<std::vector<std::vector<double>>> sl;
+          Portage::vector<Wonton::Point<DIM>> ex;
+          faceted_setup_cell<DIM, Mesh_Wrapper>(mesh,sl,ex,smoothing_factor,boundary_factor);
+          for (size_t i=0; i<ncells; i++) {
+            smoothing_lengths[offset+i] = sl[i];
+            extents[offset+i] = ex[i];
+          }
+          offset += ncells;
         }
       }
 

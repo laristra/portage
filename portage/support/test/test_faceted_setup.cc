@@ -25,10 +25,10 @@ TEST(Faceted_Setup, Simple2D) {
   Portage::vector<std::vector<std::vector<double>>> smoothing
     (NCELLS*NCELLS,std::vector<std::vector<double>>(4,std::vector<double>(3)));
   Portage::vector<Wonton::Point<2>> extents;
-  double factor = 1.5;
+  double factor = 1.5, bfactor = 1.5;
 
   Portage::Meshfree::Weight::faceted_setup_cell
-    <2,Wonton::Simple_Mesh_Wrapper>(wrapper, smoothing, extents, factor);
+    <2,Wonton::Simple_Mesh_Wrapper>(wrapper, smoothing, extents, factor, bfactor);
 
   double dx0=1.*factor/NCELLS, dx1=.1*factor/NCELLS;
   ASSERT_EQ(smoothing.size(), NCELLS*NCELLS);
@@ -62,10 +62,10 @@ TEST(Faceted_Setup, Simple3D) {
   Portage::vector<std::vector<std::vector<double>>> smoothing
     (NCELLS*NCELLS*NCELLS,std::vector<std::vector<double>>(6,std::vector<double>(4)));
   Portage::vector<Wonton::Point<3>> extents;
-  double factor = 1.5;
+  double factor = 1.5, bfactor = 1.5;
 
   Portage::Meshfree::Weight::faceted_setup_cell
-    <3,Wonton::Simple_Mesh_Wrapper>(wrapper, smoothing, extents, factor);
+    <3,Wonton::Simple_Mesh_Wrapper>(wrapper, smoothing, extents, factor, bfactor);
 
   double dx0=1.*factor/NCELLS, dx1=.1*factor/NCELLS, dx2=.01*factor/NCELLS;
   ASSERT_EQ(smoothing.size(), NCELLS*NCELLS*NCELLS);
@@ -121,10 +121,10 @@ TEST(Faceted_Setup, Simple2D_Tilted) {
   Portage::vector<std::vector<std::vector<double>>> smoothing
     (NCELLS*NCELLS,std::vector<std::vector<double>>(4,std::vector<double>(3)));
   Portage::vector<Wonton::Point<2>> extents;
-  double factor = 1.5;
+  double factor = 1.5, bfactor = 1.5;
 
   Portage::Meshfree::Weight::faceted_setup_cell
-    <2,Wonton::Simple_Mesh_Wrapper>(wrapper, smoothing, extents, factor);
+    <2,Wonton::Simple_Mesh_Wrapper>(wrapper, smoothing, extents, factor, bfactor);
 
   double dx0=1.*factor/NCELLS, dx1=.1*factor/NCELLS;
   const std::vector<std::vector<double>> xpts=
@@ -174,10 +174,10 @@ TEST(Faceted_Setup, Simple3D_Tilted) {
   Portage::vector<std::vector<std::vector<double>>> smoothing
     (NCELLS*NCELLS*NCELLS,std::vector<std::vector<double>>(6,std::vector<double>(4)));
   Portage::vector<Wonton::Point<3>> extents;
-  double factor = 1.5;
+  double factor = 1.5, bfactor = 1.5;
 
   Portage::Meshfree::Weight::faceted_setup_cell
-    <3,Wonton::Simple_Mesh_Wrapper>(wrapper, smoothing, extents, factor);
+    <3,Wonton::Simple_Mesh_Wrapper>(wrapper, smoothing, extents, factor, bfactor);
 
   double dx0=1.*factor/NCELLS, dx1=.1*factor/NCELLS, dx2=.01*factor/NCELLS;
   const std::vector<std::vector<double>> xpts=
@@ -239,7 +239,7 @@ TEST(Faceted_Setup, Simple2DFace) {
   Portage::vector<std::vector<std::vector<double>>> smoothing
     (NCELLS*NCELLS,std::vector<std::vector<double>>(4,std::vector<double>(3)));
   Portage::vector<Wonton::Point<2>> extents;
-  double factor = 1.5, bfactor=.5;
+  double factor = 1.5, bfactor=0.5;
 
   Portage::Meshfree::Weight::faceted_setup_cell
     <2,Wonton::Simple_Mesh_Wrapper>(wrapper, smoothing, extents, factor, bfactor);

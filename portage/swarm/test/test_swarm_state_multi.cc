@@ -79,7 +79,6 @@ TEST(SwarmState, Multiple2D) {
   VecPtr g0, g1;
   swarm_state_ptr->get_field("f0", g0);
   swarm_state_ptr->get_field("f1", g1);
-  double *gg0=&((*g0)[0]), *gg1=&((*g1)[0]);
 
   for (int i=0; i<90; i++) {
     ASSERT_EQ((*g0)[i], i);
