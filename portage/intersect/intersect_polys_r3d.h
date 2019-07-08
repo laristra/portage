@@ -101,9 +101,9 @@ intersect_polys_r3d(const facetedpoly_t &srcpoly,
     double len = source_cell_bounds[2*j+1]-source_cell_bounds[2*j];
     if (MAXLEN < len) MAXLEN = len;
   }
-  double bbeps = 1.0e-12*MAXLEN;  // used only for bounding box check
-  //                            // not for intersections
 
+  // used only for bounding box check not for intersections
+  double bbeps = num_tols.intersect_bb_eps*MAXLEN;
 
   int num_faces = srcpoly.facetpoints.size();
   r3d_int *face_num_verts = new r3d_int[num_faces];
@@ -206,11 +206,10 @@ intersect_polys_r3d(const facetedpoly_t &srcpoly,
 
     // Check that the returned volume is positive (if the volume is
     // zero, i.e. abs(om[0]) < eps, then it can sometimes be
-    // slightly negative, like om[0] == -1.24811e-16. For this
-    // reason we use the condition om[0] < -eps.
-
-    double eps = num_tols.intersect_eps;  // @todo multiply by domain or element size
-    if (om[0] < -eps) throw std::runtime_error("Negative volume");
+    // slightly negative, like om[0] == -1.24811e-16.
+    // @todo multiply by domain or element size
+    if (om[0] < num_tols.minimal_intersection_volume)
+      throw std::runtime_error("Negative volume");
 
     // Accumulate moments:
     for (int i = 0; i < 4; i++)

@@ -384,11 +384,6 @@ class MMDriver {
     int comm_rank = 0;
     int nprocs = 1;
 
-    NumericalTolerances_t custom_num_tols;
-    custom_num_tols.intersect_eps = 1e-14;
-    set_num_tols(custom_num_tols);
-
-
     // Will be null if it's a parallel executor
     auto serialexecutor = dynamic_cast<Wonton::SerialExecutor_type const *>(executor);
 

@@ -143,7 +143,9 @@ std::string to_string(Empty_fixup_type empty_fixup_type) {
 //constexpr int DEFAULT_MAX_FIXUP_ITER = 5;
 
 struct NumericalTolerances_t {
-    double intersect_eps = 1e-14;
+    double polygon_convexity_eps       =  1e-14;
+    double minimal_intersection_volume = -1e-14;
+    double intersect_bb_eps            =  1e-12;
 };
 
 // Iterators and transforms that depend on Thrust vs. std
