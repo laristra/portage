@@ -115,8 +115,8 @@ TEST(FancyDriver, ThreeMat2D_1stOrder) {
   double matvol[nmats] = {0.5, 0.25, 0.25};
   double matmass[nmats] = {0.05, 2.5, 25.0};
   Wonton::Point<2> matcen[nmats] = {Wonton::Point<2>(0.25,0.5),
-                                     Wonton::Point<2>(0.75,0.25),
-                                     Wonton::Point<2>(0.75,0.75)};
+                                    Wonton::Point<2>(0.75,0.25),
+                                    Wonton::Point<2>(0.75,0.75)};
 
   std::vector<int> matcells_src[nmats];
   std::vector<double> matvf_src[nmats];
@@ -292,7 +292,7 @@ TEST(FancyDriver, ThreeMat2D_1stOrder) {
           matvf_trg[m].push_back(xmoments[0]/cellvol);
 
           Wonton::Point<2> mcen(xmoments[1]/xmoments[0],
-                                 xmoments[2]/xmoments[0]);
+                                xmoments[2]/xmoments[0]);
           matcen_trg[m].push_back(mcen);
         }
       }
@@ -345,7 +345,7 @@ TEST(FancyDriver, ThreeMat2D_1stOrder) {
     targetStateWrapper.mat_get_celldata("mat_volfracs", m, &matvf_remap);
 
     for (int ic = 0; ic < nmatcells; ic++)
-      ASSERT_NEAR(matvf_trg[m][ic], matvf_remap[ic], 1.0e-12);
+      ASSERT_NEAR(matvf_trg[m][ic], matvf_remap[ic], 1.0e-10);
 
     Wonton::Point<2> const *matcen_remap;
     targetStateWrapper.mat_get_celldata("mat_centroids", m, &matcen_remap);
@@ -431,7 +431,7 @@ TEST(FancyDriver, ThreeMat3D_1stOrder) {
   std::shared_ptr<Jali::State> targetState;
 
   sourceMesh = Jali::MeshFactory(MPI_COMM_WORLD)(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 3, 3, 3);
-  targetMesh = Jali::MeshFactory(MPI_COMM_WORLD)(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 3, 3, 3);
+  targetMesh = Jali::MeshFactory(MPI_COMM_WORLD)(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 5, 5, 5);
 
   sourceState = Jali::State::create(sourceMesh);
   targetState = Jali::State::create(targetMesh);
@@ -483,8 +483,8 @@ TEST(FancyDriver, ThreeMat3D_1stOrder) {
   double matvol[nmats] = {0.5, 0.25, 0.25};
   double matmass[nmats] = {0.05, 2.5, 25.0};
   Wonton::Point<3> matcen[nmats] = {Wonton::Point<3>(0.25,0.5,0.5),
-                                     Wonton::Point<3>(0.75,0.25,0.5),
-                                     Wonton::Point<3>(0.75,0.75,0.5)};
+                                    Wonton::Point<3>(0.75,0.25,0.5),
+                                    Wonton::Point<3>(0.75,0.75,0.5)};
 
   std::vector<int> matcells_src[nmats];
   std::vector<double> matvf_src[nmats];
@@ -519,8 +519,8 @@ TEST(FancyDriver, ThreeMat3D_1stOrder) {
           matvf_src[m].push_back(xmoments[0]/cellvol);
 
           Wonton::Point<3> mcen(xmoments[1]/xmoments[0],
-                                 xmoments[2]/xmoments[0],
-                                 xmoments[3]/xmoments[0]);
+                                xmoments[2]/xmoments[0],
+                                xmoments[3]/xmoments[0]);
           matcen_src[m].push_back(mcen);
         }
       }
@@ -722,7 +722,7 @@ TEST(FancyDriver, ThreeMat3D_1stOrder) {
     targetStateWrapper.mat_get_celldata("mat_volfracs", m, &matvf_remap);
 
     for (int ic = 0; ic < nmatcells; ic++)
-      ASSERT_NEAR(matvf_trg[m][ic], matvf_remap[ic], 1.0e-12);
+      ASSERT_NEAR(matvf_trg[m][ic], matvf_remap[ic], 1.0e-9);
 
     Wonton::Point<3> const *matcen_remap;
     targetStateWrapper.mat_get_celldata("mat_centroids", m, &matcen_remap);
