@@ -189,8 +189,8 @@ namespace Portage {
          double smoothing_factor, double boundary_factor) 
       {
         size_t total_cells=0;
-        for ((const Mesh_Wrapper)* meshptr: meshes) {
-          const Mesh_Wrapper &mesh(*meshptr);
+        for (auto meshptr=meshes.begin(); meshptr!=meshes.end(); meshptr++) {
+          const Mesh_Wrapper &mesh(**meshptr);
           total_cells += mesh.num_owned_cells();
         }
 
@@ -198,8 +198,8 @@ namespace Portage {
         extents.resize(total_cells);
 
         size_t offset = 0;
-        for ((const Mesh_Wrapper)* meshptr: meshes) {
-          const Mesh_Wrapper &mesh(*meshptr);
+        for (auto meshptr=meshes.begin(); meshptr!=meshes.end(); meshptr++) {
+          const Mesh_Wrapper &mesh(**meshptr);
           size_t ncells = mesh.num_owned_cells();
           Portage::vector<std::vector<std::vector<double>>> sl;
           Portage::vector<Wonton::Point<DIM>> ex;
