@@ -267,7 +267,7 @@ class MMDriver {
     max_fixup_iter_ = maxiter;
   }
 
-  void set_num_tols(NumericalTolerances_t num_tols) {
+  void set_num_tols(NumericTolerances_t num_tols) {
     num_tols_ = num_tols;
   }
 
@@ -379,6 +379,11 @@ class MMDriver {
     std::string message;
 
     struct timeval begin_timeval, end_timeval, diff_timeval;
+
+    // temporary force default numerical tolerances
+    NumericTolerances_t default_num_tols;
+    default_num_tols.use_default();
+    set_num_tols(default_num_tols);
 
     bool distributed = false;
     int comm_rank = 0;
@@ -566,7 +571,7 @@ class MMDriver {
   double voldifftol_ = 100*std::numeric_limits<double>::epsilon();
   double consttol_ =  100*std::numeric_limits<double>::epsilon();
   int max_fixup_iter_ = 5;
-  NumericalTolerances_t num_tols_;
+  NumericTolerances_t num_tols_;
 
 
 #ifdef HAVE_TANGRAM

@@ -57,7 +57,7 @@ class IntersectR2D {
   IntersectR2D(SourceMeshType const & source_mesh,
                SourceStateType const & source_state,
                TargetMeshType const & target_mesh,
-               NumericalTolerances_t num_tols,
+               NumericTolerances_t num_tols,
                std::shared_ptr<InterfaceReconstructor2D> ir)
       : sourceMeshWrapper(source_mesh), sourceStateWrapper(source_state),
         targetMeshWrapper(target_mesh), interface_reconstructor(ir),
@@ -69,7 +69,7 @@ class IntersectR2D {
   IntersectR2D(SourceMeshType const & source_mesh,
                SourceStateType const & source_state,
                TargetMeshType const & target_mesh,
-               NumericalTolerances_t num_tols)
+               NumericTolerances_t num_tols)
       : sourceMeshWrapper(source_mesh), sourceStateWrapper(source_state),
         targetMeshWrapper(target_mesh), num_tols_(num_tols) {}
 
@@ -100,7 +100,7 @@ class IntersectR2D {
   SourceStateType const & sourceStateWrapper;
   TargetMeshType const & targetMeshWrapper;
   int matid_ = -1;
-  NumericalTolerances_t num_tols_;
+  NumericTolerances_t num_tols_;
 
 #ifdef HAVE_TANGRAM
   std::shared_ptr<InterfaceReconstructor2D> interface_reconstructor;
@@ -133,7 +133,7 @@ class IntersectR2D<Entity_kind::CELL, SourceMeshType, SourceStateType, TargetMes
   IntersectR2D(SourceMeshType const & source_mesh,
                SourceStateType const & source_state,
                TargetMeshType const & target_mesh,
-               NumericalTolerances_t num_tols,
+               NumericTolerances_t num_tols,
                std::shared_ptr<InterfaceReconstructor2D> ir)
       : sourceMeshWrapper(source_mesh), sourceStateWrapper(source_state),
         targetMeshWrapper(target_mesh), interface_reconstructor(ir),
@@ -145,7 +145,7 @@ class IntersectR2D<Entity_kind::CELL, SourceMeshType, SourceStateType, TargetMes
   IntersectR2D(SourceMeshType const & source_mesh,
                SourceStateType const & source_state,
                TargetMeshType const & target_mesh,
-               NumericalTolerances_t num_tols)
+               NumericTolerances_t num_tols)
       : sourceMeshWrapper(source_mesh), sourceStateWrapper(source_state),
         targetMeshWrapper(target_mesh), num_tols_(num_tols) {}
 
@@ -252,7 +252,7 @@ class IntersectR2D<Entity_kind::CELL, SourceMeshType, SourceStateType, TargetMes
   SourceStateType const & sourceStateWrapper;
   TargetMeshType const & targetMeshWrapper;
   int matid_ = -1;
-  NumericalTolerances_t num_tols_;
+  NumericTolerances_t num_tols_;
 
 #ifdef HAVE_TANGRAM
   std::shared_ptr<InterfaceReconstructor2D> interface_reconstructor;
@@ -286,7 +286,7 @@ class IntersectR2D<Entity_kind::NODE, SourceMeshType, SourceStateType, TargetMes
   IntersectR2D(SourceMeshType const & source_mesh,
                SourceStateType const & source_state,
                TargetMeshType const & target_mesh,
-               NumericalTolerances_t num_tols,
+               NumericTolerances_t num_tols,
                std::shared_ptr<InterfaceReconstructor2D> ir)
       : sourceMeshWrapper(source_mesh), sourceStateWrapper(source_state),
         targetMeshWrapper(target_mesh), interface_reconstructor(ir),
@@ -299,7 +299,7 @@ class IntersectR2D<Entity_kind::NODE, SourceMeshType, SourceStateType, TargetMes
   IntersectR2D(SourceMeshType const & source_mesh,
                SourceStateType const & source_state,
                TargetMeshType const & target_mesh,
-               NumericalTolerances_t num_tols)
+               NumericTolerances_t num_tols)
       : sourceMeshWrapper(source_mesh), sourceStateWrapper(source_state),
         targetMeshWrapper(target_mesh), num_tols_(num_tols) {}
 
@@ -353,7 +353,7 @@ class IntersectR2D<Entity_kind::NODE, SourceMeshType, SourceStateType, TargetMes
   SourceStateType const & sourceStateWrapper;
   TargetMeshType const & targetMeshWrapper;
   int matid_ = -1;
-  NumericalTolerances_t num_tols_;
+  NumericTolerances_t num_tols_;
 
 #ifdef HAVE_TANGRAM
   std::shared_ptr<InterfaceReconstructor2D> interface_reconstructor;

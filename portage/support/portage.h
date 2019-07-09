@@ -142,10 +142,16 @@ std::string to_string(Empty_fixup_type empty_fixup_type) {
 /// default number of iterations for mismatch repair
 //constexpr int DEFAULT_MAX_FIXUP_ITER = 5;
 
-struct NumericalTolerances_t {
+struct NumericTolerances_t {
+    double polygon_convexity_eps       =  std::numeric_limits<double>::quiet_NaN();
+    double minimal_intersection_volume =  std::numeric_limits<double>::quiet_NaN();
+    double intersect_bb_eps            =  std::numeric_limits<double>::quiet_NaN();
+
+  void use_default() {
     double polygon_convexity_eps       =  1e-14;
     double minimal_intersection_volume = -1e-14;
     double intersect_bb_eps            =  1e-12;
+  }
 };
 
 // Iterators and transforms that depend on Thrust vs. std

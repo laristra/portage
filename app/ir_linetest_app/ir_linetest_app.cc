@@ -231,7 +231,7 @@ void add_intersect_data(std::vector<std::vector<double> >& mat_moments,
                         std::vector<int>& tcell_num_mats,
                         int tc,
                         int idx){
-  Portage::NumericalTolerances_t num_tols;
+  Portage::NumericTolerances_t num_tols;
   // Intersect source candidate matpoly with target cell
   std::vector<double> moments =
     Portage::intersect_polys_r2d(source_points, target_points, num_tols);

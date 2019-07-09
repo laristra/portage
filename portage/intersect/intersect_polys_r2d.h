@@ -27,7 +27,7 @@ namespace Portage {
 std::vector<double>
 intersect_polys_r2d(std::vector<Wonton::Point<2>> const & source_poly,
                     std::vector<Wonton::Point<2>> const & target_poly,
-                    NumericalTolerances_t num_tols) {
+                    NumericTolerances_t num_tols) {
 
   std::vector<double> moments(3, 0);
   bool src_convex = true;
@@ -208,7 +208,7 @@ intersect_polys_r2d(std::vector<Wonton::Point<2>> const & source_poly,
         // Check that the returned volume is positive (if the volume is zero,
         // i.e. abs(om[0]) < eps, then it can sometimes be slightly negative,
         // like om[0] == -1.24811e-16.
-        if (om[0] < epsnum_tols.minimal_intersection_volume)
+        if (om[0] < num_tols.minimal_intersection_volume)
           throw std::runtime_error("Negative volume for triangle of polygon");
 
         // Accumulate moments:

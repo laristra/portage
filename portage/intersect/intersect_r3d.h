@@ -68,7 +68,7 @@ class IntersectR3D {
   IntersectR3D(SourceMeshType const & source_mesh,
                SourceStateType const & source_state,
                TargetMeshType const & target_mesh,
-               NumericalTolerances_t num_tols,
+               NumericTolerances_t num_tols,
                std::shared_ptr<InterfaceReconstructor3D> ir,
                bool rectangular_mesh = false)
       : sourceMeshWrapper(source_mesh), sourceStateWrapper(source_state),
@@ -81,7 +81,7 @@ class IntersectR3D {
   IntersectR3D(SourceMeshType const & source_mesh,
                SourceStateType const & source_state,
                TargetMeshType const & target_mesh,
-               NumericalTolerances_t num_tols,
+               NumericTolerances_t num_tols,
                bool rectangular_mesh = false)
       : sourceMeshWrapper(source_mesh), sourceStateWrapper(source_state),
         targetMeshWrapper(target_mesh), rectangular_mesh_(rectangular_mesh),
@@ -117,7 +117,7 @@ class IntersectR3D {
   TargetMeshType const & targetMeshWrapper;
   bool rectangular_mesh_;
   int matid_ = -1;
-  NumericalTolerances_t num_tols_;
+  NumericTolerances_t num_tols_;
 
 #ifdef HAVE_TANGRAM
   std::shared_ptr<InterfaceReconstructor3D> interface_reconstructor;
@@ -149,7 +149,7 @@ class IntersectR3D<Entity_kind::CELL, SourceMeshType, SourceStateType, TargetMes
   IntersectR3D(SourceMeshType const & source_mesh,
                SourceStateType const & source_state,
                TargetMeshType const & target_mesh,
-               NumericalTolerances_t num_tols,
+               NumericTolerances_t num_tols,
                std::shared_ptr<InterfaceReconstructor3D> ir,
                bool rectangular_mesh = false)
       : sourceMeshWrapper(source_mesh), sourceStateWrapper(source_state),
@@ -162,7 +162,7 @@ class IntersectR3D<Entity_kind::CELL, SourceMeshType, SourceStateType, TargetMes
   IntersectR3D(SourceMeshType const & source_mesh,
                SourceStateType const & source_state,
                TargetMeshType const & target_mesh,
-               NumericalTolerances_t num_tols,
+               NumericTolerances_t num_tols,
                bool rectangular_mesh = false)
       : sourceMeshWrapper(source_mesh), sourceStateWrapper(source_state),
         targetMeshWrapper(target_mesh), rectangular_mesh_(rectangular_mesh),
@@ -272,7 +272,7 @@ class IntersectR3D<Entity_kind::CELL, SourceMeshType, SourceStateType, TargetMes
   TargetMeshType const & targetMeshWrapper;
   bool rectangular_mesh_;
   int matid_ = -1;
-  NumericalTolerances_t num_tols_;
+  NumericTolerances_t num_tols_;
 
 #ifdef HAVE_TANGRAM
   std::shared_ptr<InterfaceReconstructor3D> interface_reconstructor;
@@ -304,7 +304,7 @@ class IntersectR3D<Entity_kind::NODE, SourceMeshType, SourceStateType, TargetMes
   IntersectR3D(SourceMeshType const & source_mesh,
                SourceStateType const & source_state,
                TargetMeshType const & target_mesh,
-               NumericalTolerances_t num_tols,
+               NumericTolerances_t num_tols,
                std::shared_ptr<InterfaceReconstructor3D> ir,
                bool rectangular_mesh = false)
       : sourceMeshWrapper(source_mesh), sourceStateWrapper(source_state),
@@ -317,7 +317,7 @@ class IntersectR3D<Entity_kind::NODE, SourceMeshType, SourceStateType, TargetMes
   IntersectR3D(SourceMeshType const & source_mesh,
                SourceStateType const & source_state,
                TargetMeshType const & target_mesh,
-               NumericalTolerances_t num_tols,
+               NumericTolerances_t num_tols,
                bool rectangular_mesh = false)
       : sourceMeshWrapper(source_mesh), sourceStateWrapper(source_state),
         targetMeshWrapper(target_mesh), rectangular_mesh_(rectangular_mesh),
@@ -390,7 +390,7 @@ class IntersectR3D<Entity_kind::NODE, SourceMeshType, SourceStateType, TargetMes
   TargetMeshType const & targetMeshWrapper;
   bool rectangular_mesh_;
   int matid_ = -1;
-  NumericalTolerances_t num_tols_;
+  NumericTolerances_t num_tols_;
 
 #ifdef HAVE_TANGRAM
   std::shared_ptr<InterfaceReconstructor3D> interface_reconstructor;

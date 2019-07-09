@@ -69,7 +69,7 @@ facetedpoly_t get_faceted_matpoly(const Tangram::MatPoly<3>& matpoly) {
 std::vector<double>
 intersect_polys_r3d(const facetedpoly_t &srcpoly,
                     const std::vector<std::array<Point<3>, 4>> &target_tet_coords,
-                    NumericalTolerances_t num_tols) {
+                    NumericTolerances_t num_tols) {
 
   // Bounding box of the target cell - will be used to compute
   // epsilon for bounding box check. We could use the source cell
