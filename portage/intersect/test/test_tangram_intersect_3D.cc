@@ -317,6 +317,7 @@ TEST(TANGRAM_3D, test_matpoly_intersect) {
 
   // use default tolerances
   Portage::NumericTolerances_t num_tols;
+  num_tols.use_default();
 
   // Hope for a miracle with intersection
   std::vector<double> moments(
@@ -357,6 +358,7 @@ TEST(TANGRAM_3D, test_intersect_matpoly_gold) {
 
   // use default tolerances
   Portage::NumericTolerances_t num_tols;
+  num_tols.use_default();
 
   // Intersect
   std::vector<double> moments(Portage::intersect_polys_r3d(
@@ -402,6 +404,7 @@ TEST(TANGRAM_3D, test_intersect_matpoly_gold2) {
 
   // use default tolerances
   Portage::NumericTolerances_t num_tols;
+  num_tols.use_default();
 
   // Intersect
   std::vector<double> moments(Portage::intersect_polys_r3d(
@@ -448,6 +451,7 @@ TEST(TANGRAM_3D, test_intersect_matpoly_gold3) {
 
   // use default tolerances
   Portage::NumericTolerances_t num_tols;
+  num_tols.use_default();
 
   // Intersect
   std::vector<double> moments(Portage::intersect_polys_r3d(
@@ -494,6 +498,7 @@ TEST(TANGRAM_3D, test_intersect_matpoly_gold4) {
 
   // use default tolerances
   Portage::NumericTolerances_t num_tols;
+  num_tols.use_default();
 
   // Intersect
   std::vector<double> moments(Portage::intersect_polys_r3d(

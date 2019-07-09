@@ -143,15 +143,19 @@ std::string to_string(Empty_fixup_type empty_fixup_type) {
 //constexpr int DEFAULT_MAX_FIXUP_ITER = 5;
 
 struct NumericTolerances_t {
-    double polygon_convexity_eps       =  std::numeric_limits<double>::quiet_NaN();
-    double minimal_intersection_volume =  std::numeric_limits<double>::quiet_NaN();
-    double intersect_bb_eps            =  std::numeric_limits<double>::quiet_NaN();
+    double polygon_convexity_eps       = error_value_;//;std::numeric_limits<double>::quiet_NaN();
+    double minimal_intersection_volume = error_value_;//;std::numeric_limits<double>::quiet_NaN();
+    double intersect_bb_eps            = error_value_;//;std::numeric_limits<double>::quiet_NaN();
 
-  void use_default() {
-    double polygon_convexity_eps       =  1e-14;
-    double minimal_intersection_volume = -1e-14;
-    double intersect_bb_eps            =  1e-12;
-  }
+    void use_default()
+    {
+        polygon_convexity_eps       =  1e-14;
+        minimal_intersection_volume = -1e-14;
+        intersect_bb_eps            =  1e-12;
+    }
+
+    private:
+	double error_value_ = 1e5;
 };
 
 // Iterators and transforms that depend on Thrust vs. std

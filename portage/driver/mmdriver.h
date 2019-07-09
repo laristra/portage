@@ -128,6 +128,11 @@ class MMDriver {
         target_mesh_(targetMesh), target_state_(targetState),
         dim_(sourceMesh.space_dimension()) {
     assert(sourceMesh.space_dimension() == targetMesh.space_dimension());
+
+    // temporary force default numerical tolerances
+    NumericTolerances_t default_num_tols;
+    default_num_tols.use_default();
+    set_num_tols(default_num_tols);
   }
 
   /// Copy constructor (disabled)
@@ -380,11 +385,6 @@ class MMDriver {
 
     struct timeval begin_timeval, end_timeval, diff_timeval;
 
-    // temporary force default numerical tolerances
-    NumericTolerances_t default_num_tols;
-    default_num_tols.use_default();
-    set_num_tols(default_num_tols);
-
     bool distributed = false;
     int comm_rank = 0;
     int nprocs = 1;
@@ -568,7 +568,7 @@ class MMDriver {
   std::unordered_map<std::string, double> double_upper_bounds_;
   std::unordered_map<std::string, double> conservation_tol_;
   unsigned int dim_;
-  double voldifftol_ = 100*std::numeric_limits<double>::epsilon();
+  //double voldifftol_ = 100*std::numeric_limits<double>::epsilon();
   double consttol_ =  100*std::numeric_limits<double>::epsilon();
   int max_fixup_iter_ = 5;
   NumericTolerances_t num_tols_;
@@ -793,6 +793,10 @@ int MMDriver<Search, Intersect, Interpolate, D,
   // to query the number of materials, etc) and also knows about the
   // interface reconstructor so that it can retrieve pure material polygons
 
+  if(num_tols_.minimal_intersection_volume > 1.) {
+      std::cout << num_tols_.minimal_intersection_volume << std::endl;
+      throw std::runtime_error("!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*");
+      return 1; }
 
   Intersect<onwhat, SourceMesh_Wrapper2, SourceState_Wrapper2,
             TargetMesh_Wrapper, InterfaceReconstructorType,
