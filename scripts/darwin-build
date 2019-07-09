@@ -74,6 +74,8 @@ setup(){
     shift
   done
 
+  echo "SOURCE_DIR: ${SOURCE_DIR}"
+
   # set_version_numbers
   if [ "${USE_INTEL}" = true ]; then 
     INTEL_VERSION=18.0.3
@@ -100,7 +102,7 @@ setup(){
   if [ "${REBUILD_ALL}" = true ]; then
     rm -rf ${BUILD_DIR} && mkdir ${BUILD_DIR} && cd ${BUILD_DIR}
   else
-    cd ${BUILD_DIR}
+    cd ${BUILD_DIR} #&& rm -rf CMake*
   fi
 
   # load required modules
