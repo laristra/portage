@@ -1,7 +1,8 @@
 #!/bin/bash
 
-# Generates a slurm batch script for running
-# remap apps benchmarks on Darwin,
+# Generates slurm batch scripts for running
+# strong/weak scaling benchmarks on Darwin,
+# and gnuplot scripts for result plotting.
 #
 # Author: Hoby Rakotoarivelo
 
@@ -163,6 +164,10 @@ check_params() {
   if [[ ! "${MAX_NODES}" =~ ^[0-9]+$ ]] || (( ${MAX_NODES} < 1 )); then
     echo -e "\e[31mError: invalid number of nodes\e[0m"
     exit 1
+  # no support for distributed multimat
+  elif [ "${APP}" = "multimat" ] && (( ${MAX_NODES} > 1 )); then
+    echo -e "\e[31mSorry, distributed multimat app is not yet supported\e[0m"
+    exit 1
   # invalid rank per node
   elif [[ ! "${RANKS_PER_NODE}" =~ ^[0-9]+$ ]] \
        || (( ${RANKS_PER_NODE} < 1 )) || (( ${RANKS_PER_NODE} > ${CORES})); then
@@ -215,7 +220,6 @@ set_default_params() {
   # todo: check if set and process only if not
   case "${APP}" in
     core)
-      echo "Setting portage core rect_3d_cell_f0_r1"
       [ "${DIMENSION}" -eq 0 ] && DIMENSION=3
       [ "${SOURCE_MAX}" -eq 0 ] && SOURCE_MAX=40
       [ "${TARGET_MAX}" -eq 0 ] && TARGET_MAX=120
@@ -225,7 +229,6 @@ set_default_params() {
       [ "${REMAP_ORDER}" -eq 0 ] && REMAP_ORDER=1
       [ "${RESULT_FILE}" != "" ] || RESULT_FILE="jali_rect_3d_cell_f0_r1.txt";;
     t-junction)
-      echo "Setting t-junction default params"
       [ "${DIMENSION}" -eq 0 ] && DIMENSION=3
       [ "${SOURCE_MAX}" -eq 0 ] && SOURCE_MAX=40
       [ "${TARGET_MAX}" -eq 0 ] && TARGET_MAX=120
@@ -235,7 +238,6 @@ set_default_params() {
       [ "${MATER_FIELD}" != "" ] || MATER_FIELD="'x','y','z'"
       [ "${REMAP_ORDER}" -eq 0 ] && REMAP_ORDER="2";;
     multimat)
-      echo "Setting multimat unstruct_2d_cell_f1_r2"
       [ "${DIMENSION}" -eq 0 ] && DIMENSION=2
       [ "${SOURCE_FILE}" != "" ] || SOURCE_FILE="${DATA_DIR}/reg10x10.exo"
       [ "${TARGET_FILE}" != "" ] || TARGET_FILE="${DATA_DIR}/polymesh_10x10.exo"
@@ -247,7 +249,6 @@ set_default_params() {
       [ "${REMAP_ORDER}" -eq 0 ] && REMAP_ORDER="2"
       [ "${RESULT_FILE}" != "" ] || RESULT_FILE="multimat_jali_unstruc_2d_cell_f1_r2.gmv";;
     timing)
-      echo "Setting timing app default params"
       [ "${DIMENSION}" -eq 0 ] && DIMENSION=2
       [ "${SOURCE_MAX}" -eq 0 ] && SOURCE_MAX=40
       [ "${TARGET_MAX}" -eq 0 ] && TARGET_MAX=120
@@ -452,9 +453,11 @@ setup() {
 }
 
 run_scaling() {
+
+  SCALING_RUNS=( "strong" )
  
   # generate distinct scripts for strong and weak scaling
-  for SCALING_TYPE in "strong" "weak"; do
+  for SCALING_TYPE in "${SCALING_RUNS[@]}"; do
 
     # adjust the problem size on weak scaling
     if [ ${SCALING_TYPE} = "weak" ]; then
@@ -500,19 +503,19 @@ run_scaling() {
     echo -e ""                                                              >> ${SCRIPT}
     echo -e "# run serial"                                                  >> ${SCRIPT}
     echo -e "export OMP_NUM_THREADS=${INIT_THREADS}"                        >> ${SCRIPT}
-    echo -e "srun -np 1 ${MPI_ARGS}"                                        >> ${SCRIPT}
+    echo -e "mpirun -n 1 ${MPI_ARGS}"                                       >> ${SCRIPT}
     echo -e ""                                                              >> ${SCRIPT}
     echo -e "# run parallel"                                                >> ${SCRIPT}
     echo -e "for ((i=2; i <= ${EXTENT}; i+=2)); do"                         >> ${SCRIPT}
     echo -e "  export OMP_NUM_THREADS=${THREADS}"                           >> ${SCRIPT}
-    echo -e "  srun -np ${RANKS} ${MPI_ARGS}"                               >> ${SCRIPT}
+    echo -e "  mpirun -n ${RANKS} ${MPI_ARGS}"                               >> ${SCRIPT}
     echo -e "done"                                                          >> ${SCRIPT}
     echo -e "# ========================================================"    >> ${SCRIPT}
 
     # Run it
     echo "Running ${APP} ${SCALING_TYPE} scaling"
-    [ "${SCALING_TYPE}" = "strong" ] && sbatch -v ${SCRIPT}
-    #[ "${SCALING_TYPE}" = "strong" ] && cat ${SCRIPT}
+    sbatch -v ${SCRIPT}
+    #cat ${SCRIPT}
   done
 
   # check slurm allocation
