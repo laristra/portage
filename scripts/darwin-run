@@ -550,8 +550,10 @@ generate_gnuplot() {
     "w lp lc rgb '#000000' pt 3"
   )
 
+  SCALING_RUNS=( "strong" )
+ 
   # generate distinct scripts for strong and weak scaling
-  for SCALING_TYPE in "strong" "weak"; do
+  for SCALING_TYPE in "${SCALING_RUNS[@]}"; do
     
     INPUT="darwin_${APP}_timing_${SUFFIX}.dat"
     OUTPUT="darwin_${APP}_${SCALING_TYPE}_scaling_${SUFFIX}.eps"
