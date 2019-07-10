@@ -1,12 +1,15 @@
 #!/bin/bash
 
 # Generates slurm batch scripts for running
-# strong/weak scaling benchmarks on Darwin,
+# strong/weak scaling benchmarks on a cluster,
 # and gnuplot scripts for result plotting.
 #
 # Author: Hoby Rakotoarivelo
 
 # Run params
+CLUSTER=""
+SUPPORTED_CLUSTERS=( "darwin" )
+SCALING_RUNS=( "strong" )
 NODES=1
 RANKS=""
 CORES=1
@@ -34,7 +37,6 @@ BOOST_VERSION=1.68.0
 SOURCE_DIR="$(pwd)/.."
 DATA_DIR="../test_data"
 BUILD_DIR=""
-BUILD_SCRIPT="darwin-build"
 
 # Remap params
 APP=""
@@ -73,10 +75,11 @@ print_usage() {
   _INT="\e[32m<int>\e[0m"
   _INT_PATH="\e[32m<int|path>\e[0m"
 
-  echo -e "Usage: \e[32m./darwin-run [options]\e[0m"
+  echo -e "Usage: \e[32m./run [options]\e[0m"
   echo -e "Options:"
   echo -e "  -h, --help                    show this help message and exit"
   echo -e "  -a, --app $_CHOICE            current app [core|t-junction|multimat]"
+  echo -e "  -g, --cluster $_CHOICE        current cluster [darwin]"
   echo -e "  -b, --build                   rebuild the app"
   echo -e "  -n, --nodes $_INT             number of nodes"     
   echo -e "  -r, --ranks $_INT             ranks per node"    
@@ -103,6 +106,7 @@ print_usage() {
 print_params() {
   echo -e "Run params for \e[32m${APP}\e[0m app:"
   echo -e "- nodes: \e[32m${MAX_NODES}\e[0m"
+  echo -e "- cluster: \e[32m${CLUSTER}\e[0m"
   echo -e "- partition: \e[32m${PARTITION}\e[0m"
   echo -e "- slurm user: \e[32m${USER}\e[0m"
   echo -e "- cores_per_node: \e[32m${CORES}\e[0m"
@@ -160,18 +164,22 @@ print_params() {
 
 check_params() {
 
+  # invalid cluster
+  if [ $(echo "${SUPPORTED_CLUSTERS}" | grep -c -w "${CLUSTER}") -ne 1 ]; then
+    echo -e "\e[31mError: unsupported cluster '${CLUSTER}'\e[0m"
+    exit 1
   # invalid number of nodes
-  if [[ ! "${MAX_NODES}" =~ ^[0-9]+$ ]] || (( ${MAX_NODES} < 1 )); then
+  elif [[ ! "${MAX_NODES}" =~ ^[0-9]+$ ]] || (( ${MAX_NODES} < 1 )); then
     echo -e "\e[31mError: invalid number of nodes\e[0m"
     exit 1
   # no support for distributed multimat
   elif [ "${APP}" = "multimat" ] && (( ${MAX_NODES} > 1 )); then
-    echo -e "\e[31mSorry, distributed multimat app is not yet supported\e[0m"
+    echo -e "\e[31mSorry, distributed multimat is not yet supported\e[0m"
     exit 1
   # invalid rank per node
   elif [[ ! "${RANKS_PER_NODE}" =~ ^[0-9]+$ ]] \
        || (( ${RANKS_PER_NODE} < 1 )) || (( ${RANKS_PER_NODE} > ${CORES})); then
-    echo -e "\e[31mError: invalid rank per node value\e[0m"
+    echo -e "\e[31mError: invalid rank per node\e[0m"
     exit 1
   # unsupported compiler
   elif [ "${COMPILER}" != "intel" ] && [ "${COMPILER}" != "gcc" ]; then
@@ -217,7 +225,8 @@ check_params() {
 
 set_default_params() {
 
-  # todo: check if set and process only if not
+  [ "${CLUSTER}" != "" ] || CLUSTER="${SUPPORTED_CLUSTER[0]}"
+
   case "${APP}" in
     core)
       [ "${DIMENSION}" -eq 0 ] && DIMENSION=3
@@ -393,8 +402,8 @@ update_app_options() {
 setup() {
 
   # parse options (requires GNU getopt).
-  SHORT_OPT="ha:b:n:r:p:u:c:w:d:f:q:s:t:m:z:k:o:ixye:" 
-  LONG_OPT="help,app:,build,nodes:,ranks:,partition:,user:,compiler:,hwthreads:,"
+  SHORT_OPT="ha:g:n:r:p:u:c:w:d:f:q:s:t:m:z:k:o:ixye:" 
+  LONG_OPT="help,app:,cluster:,nodes:,ranks:,partition:,user:,compiler:,hwthreads:,"
   LONG_OPT+="dim:,field:,field-order:,source:,target:,material-field:,material-file:,"
   LONG_OPT+="entity:,order:,conform,convex,thread-only,results:"
   options=""
@@ -410,12 +419,14 @@ setup() {
   # evaluate the option list 
   eval set -- "${options}"
 
+  REBUILD=false
+
   # process args
   while [ "$#" -gt 0 ]; do
     case "$1" in
       -h|--help) print_usage;;
       -a|--app) APP="$2"; shift;;
-      -b|--build) source ${BUILD_SCRIPT}; exit 0;; 
+      -g|--cluster) CLUSTER="$2"; shift;;
       -n|--nodes) MAX_NODES="$2"; shift;;
       -r|--ranks) RANKS_PER_NODE="$2"; shift;;
       -p|--partition) PARTITION="$2"; shift;;
@@ -454,8 +465,6 @@ setup() {
 
 run_scaling() {
 
-  SCALING_RUNS=( "strong" )
- 
   # generate distinct scripts for strong and weak scaling
   for SCALING_TYPE in "${SCALING_RUNS[@]}"; do
 
@@ -472,8 +481,8 @@ run_scaling() {
     update_app_options
     
     # generated files
-    OUTPUT="darwin_${APP}_${SCALING_TYPE}_scaling_${EXTENT}_${MODE}.log"
-    SCRIPT="darwin_${APP}_${SCALING_TYPE}_scaling_${EXTENT}_${MODE}.sh"
+    OUTPUT="${CLUSTER}_${APP}_${SCALING_TYPE}_scaling_${EXTENT}_${MODE}.log"
+    SCRIPT="${CLUSTER}_${APP}_${SCALING_TYPE}_scaling_${EXTENT}_${MODE}.sh"
 
     echo -e "#!/bin/bash"                                                    > ${SCRIPT}
     echo -e ""                                                              >> ${SCRIPT}
@@ -549,15 +558,13 @@ generate_gnuplot() {
     "w lp lc rgb '#800080' pt 2"
     "w lp lc rgb '#000000' pt 3"
   )
-
-  SCALING_RUNS=( "strong" )
  
   # generate distinct scripts for strong and weak scaling
   for SCALING_TYPE in "${SCALING_RUNS[@]}"; do
     
-    INPUT="darwin_${APP}_timing_${SUFFIX}.dat"
-    OUTPUT="darwin_${APP}_${SCALING_TYPE}_scaling_${SUFFIX}.eps"
-    SCRIPT="darwin_${APP}_${SCALING_TYPE}_scaling_${SUFFIX}.gnu"
+    INPUT="${CLUSTER}_${APP}_timing_${SUFFIX}.dat"
+    OUTPUT="${CLUSTER}_${APP}_${SCALING_TYPE}_scaling_${SUFFIX}.eps"
+    SCRIPT="${CLUSTER}_${APP}_${SCALING_TYPE}_scaling_${SUFFIX}.gnu"
   
     echo "# Gnuplot script for ${APP} ${SCALING_TYPE} scaling"         > ${SCRIPT}  
     echo "# Generated on $(date +'%Y-%m-%d %T')"                      >> ${SCRIPT}
