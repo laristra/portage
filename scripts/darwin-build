@@ -76,23 +76,23 @@ setup(){
     shift
   done
 
-  echo "SOURCE_DIR: ${SOURCE_DIR}"
-  echo "BUILD_DIR: ${BUILD_DIR}"
-
   # set_version_numbers
   if [ "${USE_INTEL}" = true ]; then 
     INTEL_VERSION=18.0.3
     MPI_VERSION=2.1.5
     JALI_VERSION=1.0.4
     TANGRAM_VERSION=0.9.3
-    [ "${BUILD_DIR}" = "" ] && BUILD_DIR="${SOURCE_DIR}/build-intel"
+    [ "${BUILD_DIR}" != "" ] || BUILD_DIR="${SOURCE_DIR}/build-intel"
   else
     GNU_VERSION=6.4.0
     MPI_VERSION=2.1.2
     JALI_VERSION=1.0.3
     TANGRAM_VERSION=0.9.5
-    [ "${BUILD_DIR}" = "" ] && BUILD_DIR="${SOURCE_DIR}/build-gnu"
+    [ "${BUILD_DIR}" != "" ] || BUILD_DIR="${SOURCE_DIR}/build-gnu"
   fi
+  
+  echo "SOURCE_DIR: ${SOURCE_DIR}"
+  echo "BUILD_DIR: ${BUILD_DIR}"
   
   if [ ! -d ${BUILD_DIR} ]; then
     REBUILD_ALL=true
