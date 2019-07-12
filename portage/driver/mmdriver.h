@@ -793,11 +793,6 @@ int MMDriver<Search, Intersect, Interpolate, D,
   // to query the number of materials, etc) and also knows about the
   // interface reconstructor so that it can retrieve pure material polygons
 
-  if(num_tols_.minimal_intersection_volume > 1.) {
-      std::cout << num_tols_.minimal_intersection_volume << std::endl;
-      throw std::runtime_error("!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*");
-      return 1; }
-
   Intersect<onwhat, SourceMesh_Wrapper2, SourceState_Wrapper2,
             TargetMesh_Wrapper, InterfaceReconstructorType,
             Matpoly_Splitter, Matpoly_Clipper>

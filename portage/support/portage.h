@@ -136,16 +136,11 @@ std::string to_string(Empty_fixup_type empty_fixup_type) {
 }
 
 
-/// default tolerance for conservation
-//constexpr double DEFAULT_CONSERVATION_TOL = 100*std::numeric_limits<double>::epsilon();
-
-/// default number of iterations for mismatch repair
-//constexpr int DEFAULT_MAX_FIXUP_ITER = 5;
-
+/// Intersection and other tolerances to handle tiny values
 struct NumericTolerances_t {
-    double polygon_convexity_eps       = error_value_;//;std::numeric_limits<double>::quiet_NaN();
-    double minimal_intersection_volume = error_value_;//;std::numeric_limits<double>::quiet_NaN();
-    double intersect_bb_eps            = error_value_;//;std::numeric_limits<double>::quiet_NaN();
+    double polygon_convexity_eps       = error_value_;
+    double minimal_intersection_volume = error_value_;
+    double intersect_bb_eps            = error_value_;
 
     void use_default()
     {
