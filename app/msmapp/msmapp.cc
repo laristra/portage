@@ -89,6 +89,17 @@ template<unsigned int D>
 double field_func(int example, Portage::Point<D> coord) {
   double value = 0.0;
   switch (example) {
+  case -2: {
+    if (D==2) {
+      if (sqrt(coord[0]*coord[0]+coord[1]*coord[1]) < .75) value = 1.0;
+      if (fabs(coord[0])<.5 and fabs(coord[1])<.5) value = 2.0;
+      if (fabs(coord[0])<.25 and coord[1]-.25 < .25) value = 3.0;
+    } else if (D==3) {
+      if (sqrt(coord[0]*coord[0]+coord[1]*coord[1]*coord[2]*coord[2]) < .75) value = 1.0;
+      if (fabs(coord[0])<.5 and fabs(coord[1])<.5 and fabs(coord[2])<.5) value = 2.0;
+      if (fabs(coord[0])<.25 and fabs(coord[1])<.25 and fabs(coord[2]-.25)<.25) value = 3.0;
+    }
+  }
   case -1: {
     double rsqr = 0.0;
     for (int i = 0; i < D; i++)
@@ -744,7 +755,7 @@ int main(int argc, char** argv) {
     if (ctl.tcells[i]<0) error = true;
   }
   if (ctl.order<1 or ctl.order>2) error = true;
-  if (ctl.example<-1 or ctl.example>3) error = true;
+  if (ctl.example<-2 or ctl.example>3) error = true;
   if (ctl.smoothing_factor<0.) error = true;
   if (ctl.print_detail<0 or ctl.print_detail>1) error = true;
   if (ctl.source_file == "none" and ctl.target_file != "none") error = true;
@@ -760,11 +771,6 @@ int main(int argc, char** argv) {
     MPI_Init(&argc, &argv);
   int numpe;
   MPI_Comm_size(MPI_COMM_WORLD, &numpe);
-  if (numpe > 1) {
-    std::cerr << "Particle Remap is only designed for a single process!"
-              << std::endl;
-    return 1;
-  }
 #endif
 
   if (ctl.source_file == "none") {
