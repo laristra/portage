@@ -377,8 +377,8 @@ class Interpolate_2ndOrder<D,
       std::vector<double> xsect_weights = sources_and_weights[j].weights;
       double xsect_volume = xsect_weights[0];
 
-      double eps = 1e-12;
-      if (xsect_volume/vol <= eps) continue;  // no intersection
+      if (xsect_volume/vol <= num_tols_.interpolate_small_intersections)
+        continue;  // no intersection
 
       // Obtain source cell centroid
       Point<D> src_centroid;
@@ -649,8 +649,8 @@ class Interpolate_2ndOrder<D,
       std::vector<double> xsect_weights = sources_and_weights[j].weights;
       double xsect_volume = xsect_weights[0];
 
-      double eps = 1e-12;
-      if (xsect_volume/vol <= eps) continue;  // no intersection
+      if (xsect_volume/vol <= num_tols_.interpolate_small_intersections)
+        continue;  // no intersection
 
       // note: here we are getting the node coord, not the centroid of
       // the dual cell

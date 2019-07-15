@@ -290,8 +290,8 @@ double Interpolate_3rdOrder<D, Entity_kind::CELL, SourceMeshType, TargetMeshType
     std::vector<double> xsect_weights = sources_and_weights[j].weights;
     double xsect_volume = xsect_weights[0];
 
-    double eps = 1e-30;
-    if (xsect_volume <= eps) continue;  // no intersection
+    if (xsect_volume <= num_tols_.interpolate_3rd_ord_intersection)
+      continue;  // no intersection
 
     Point<D> srccell_centroid;
     source_mesh_.cell_centroid(srccell, &srccell_centroid);
@@ -471,8 +471,8 @@ double Interpolate_3rdOrder<D, Entity_kind::NODE, SourceMeshType, TargetMeshType
     std::vector<double> xsect_weights = sources_and_weights[j].weights;
     double xsect_volume = xsect_weights[0];
 
-    double eps = 1e-30;
-    if (xsect_volume <= eps) continue;  // no intersection
+    if (xsect_volume <= num_tols_.interpolate_3rd_ord_intersection)
+      continue;  // no intersection
 
     // note: here we are getting the node coord, not the centroid of
     // the dual cell
