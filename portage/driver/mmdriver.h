@@ -804,7 +804,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
               SourceState_Wrapper2, InterfaceReconstructorType,
               Matpoly_Splitter, Matpoly_Clipper>
       interpolate(source_mesh2, target_mesh_, source_state2,
-                  interface_reconstructor);
+                  num_tols_, interface_reconstructor);
 #else
 
   Intersect<onwhat, SourceMesh_Wrapper2, SourceState_Wrapper2,
@@ -816,7 +816,8 @@ int MMDriver<Search, Intersect, Interpolate, D,
   Interpolate<D, onwhat, SourceMesh_Wrapper2, TargetMesh_Wrapper,
               SourceState_Wrapper2, DummyInterfaceReconstructor,
               void, void>
-      interpolate(source_mesh2, target_mesh_, source_state2);
+      interpolate(source_mesh2, target_mesh_, source_state2,
+                  num_tols_);
 #endif  // HAVE_TANGRAM
 
 

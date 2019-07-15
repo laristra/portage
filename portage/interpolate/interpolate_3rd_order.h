@@ -55,13 +55,15 @@ class Interpolate_3rdOrder {
 
   Interpolate_3rdOrder(SourceMeshType const & source_mesh,
                        TargetMeshType const & target_mesh,
-                       StateType const & source_state) :
+                       StateType const & source_state,
+                       NumericTolerances_t num_tols) :
       source_mesh_(source_mesh),
       target_mesh_(target_mesh),
       source_state_(source_state),
       interp_var_name_("VariableNameNotSet"),
       limiter_type_(NOLIMITER),
-      source_vals_(nullptr) {}
+      source_vals_(nullptr),
+      num_tols_(num_tols) {}
 
   /// Copy constructor (disabled)
   //  Interpolate_3rdOrder(const Interpolate_3rdOrder &) = delete;
@@ -140,6 +142,7 @@ class Interpolate_3rdOrder {
   std::string interp_var_name_;
   Limiter_type limiter_type_;
   double const * source_vals_;
+  NumericTolerances_t num_tols_;
 
   // Portage::vector is generalization of std::vector and
   // Wonton::Vector<D*(D+3)/2> is a geometric vector
@@ -162,13 +165,15 @@ class Interpolate_3rdOrder<D, Entity_kind::CELL, SourceMeshType, TargetMeshType,
  public:
   Interpolate_3rdOrder(SourceMeshType const & source_mesh,
                        TargetMeshType const & target_mesh,
-                       StateType const & source_state) :
+                       StateType const & source_state,
+                       NumericTolerances_t num_tols) :
       source_mesh_(source_mesh),
       target_mesh_(target_mesh),
       source_state_(source_state),
       interp_var_name_("VariableNameNotSet"),
       limiter_type_(NOLIMITER),
-      source_vals_(nullptr) {}
+      source_vals_(nullptr),
+      num_tols_(num_tols) {}
 
 
   /// Set the name of the interpolation variable and the limiter type
@@ -242,6 +247,7 @@ class Interpolate_3rdOrder<D, Entity_kind::CELL, SourceMeshType, TargetMeshType,
   std::string interp_var_name_;
   Limiter_type limiter_type_;
   double const * source_vals_;
+  NumericTolerances_t num_tols_;
 
   // Portage::vector is generalization of std::vector and
   // Wonton::Vector<D> is a geometric vector
@@ -337,13 +343,15 @@ class Interpolate_3rdOrder<D, Entity_kind::NODE, SourceMeshType, TargetMeshType,
  public:
   Interpolate_3rdOrder(SourceMeshType const & source_mesh,
                        TargetMeshType const & target_mesh,
-                       StateType const & source_state) :
+                       StateType const & source_state,
+                       NumericTolerances_t num_tols) :
       source_mesh_(source_mesh),
       target_mesh_(target_mesh),
       source_state_(source_state),
       interp_var_name_("VariableNameNotSet"),
       limiter_type_(NOLIMITER),
-      source_vals_(NULL) {}
+      source_vals_(NULL),
+      num_tols_(num_tols) {}
 
   /// Copy constructor (disabled)
   //  Interpolate_3rdOrder(const Interpolate_3rdOrder &) = delete;
@@ -421,6 +429,7 @@ class Interpolate_3rdOrder<D, Entity_kind::NODE, SourceMeshType, TargetMeshType,
   std::string interp_var_name_;
   Limiter_type limiter_type_;
   double const * source_vals_;
+  NumericTolerances_t num_tols_;
 
   // Portage::vector is generalization of std::vector and
   // Wonton::Vector<D> is a geometric vector

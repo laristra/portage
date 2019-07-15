@@ -97,13 +97,15 @@ class Interpolate_1stOrder {
   Interpolate_1stOrder(SourceMeshType const & source_mesh,
                        TargetMeshType const & target_mesh,
                        StateType const & source_state,
+                       NumericTolerances_t num_tols,
                        std::shared_ptr<InterfaceReconstructor> ir) :
       source_mesh_(source_mesh),
       target_mesh_(target_mesh),
       source_state_(source_state),
       interface_reconstructor_(ir),
       interp_var_name_("VariableNameNotSet"),
-      source_vals_(nullptr) {}
+      source_vals_(nullptr),
+      num_tols_(num_tols) {}
 #endif
 
   /*!
@@ -118,12 +120,14 @@ class Interpolate_1stOrder {
   */
   Interpolate_1stOrder(SourceMeshType const & source_mesh,
                        TargetMeshType const & target_mesh,
-                       StateType const & source_state) :
+                       StateType const & source_state,
+                       NumericTolerances_t num_tols) :
       source_mesh_(source_mesh),
       target_mesh_(target_mesh),
       source_state_(source_state),
       interp_var_name_("VariableNameNotSet"),
-      source_vals_(nullptr) {}
+      source_vals_(nullptr),
+      num_tols_(num_tols) {}
 
 
   /// Copy constructor (disabled)
@@ -192,6 +196,7 @@ class Interpolate_1stOrder {
   double const * source_vals_;
   int matid_;
   Field_type field_type_;
+  NumericTolerances_t num_tols_;
 
 
 #ifdef HAVE_TANGRAM
@@ -236,13 +241,15 @@ class Interpolate_1stOrder<D,
   Interpolate_1stOrder(SourceMeshType const & source_mesh,
                        TargetMeshType const & target_mesh,
                        StateType const & source_state,
+                       NumericTolerances_t num_tols,
                        std::shared_ptr<InterfaceReconstructor> ir) :
       source_mesh_(source_mesh),
       target_mesh_(target_mesh),
       source_state_(source_state),
       interface_reconstructor_(ir),
       interp_var_name_("VariableNameNotSet"),
-      source_vals_(nullptr) {}
+      source_vals_(nullptr),
+      num_tols_(num_tols) {}
 #endif
   /*!
     @brief Constructor.
@@ -254,12 +261,14 @@ class Interpolate_1stOrder<D,
   */
   Interpolate_1stOrder(SourceMeshType const & source_mesh,
                        TargetMeshType const & target_mesh,
-                       StateType const & source_state) :
+                       StateType const & source_state,
+                       NumericTolerances_t num_tols) :
       source_mesh_(source_mesh),
       target_mesh_(target_mesh),
       source_state_(source_state),
       interp_var_name_("VariableNameNotSet"),
-      source_vals_(nullptr) {}
+      source_vals_(nullptr),
+      num_tols_(num_tols) {}
 
 
   /// Copy constructor (disabled)
@@ -373,6 +382,7 @@ class Interpolate_1stOrder<D,
   double const * source_vals_;
   int matid_;
   Field_type field_type_;
+  NumericTolerances_t num_tols_;
 
 #ifdef HAVE_TANGRAM
   std::shared_ptr<InterfaceReconstructor> interface_reconstructor_;
@@ -419,13 +429,15 @@ class Interpolate_1stOrder<D,
   Interpolate_1stOrder(SourceMeshType const & source_mesh,
                        TargetMeshType const & target_mesh,
                        StateType const & source_state,
+                       NumericTolerances_t num_tols,
                        std::shared_ptr<InterfaceReconstructor> ir) :
       source_mesh_(source_mesh),
       target_mesh_(target_mesh),
       source_state_(source_state),
       interface_reconstructor_(ir),
       interp_var_name_("VariableNameNotSet"),
-      source_vals_(nullptr) {}
+      source_vals_(nullptr),
+      num_tols_(num_tols) {}
 #endif
 
   /*!
@@ -438,12 +450,14 @@ class Interpolate_1stOrder<D,
   */
   Interpolate_1stOrder(SourceMeshType const & source_mesh,
                        TargetMeshType const & target_mesh,
-                       StateType const & source_state) :
+                       StateType const & source_state,
+                       NumericTolerances_t num_tols) :
       source_mesh_(source_mesh),
       target_mesh_(target_mesh),
       source_state_(source_state),
       interp_var_name_("VariableNameNotSet"),
-      source_vals_(nullptr) {}
+      source_vals_(nullptr),
+      num_tols_(num_tols) {}
 
 
   /// Copy constructor (disabled)
@@ -548,6 +562,7 @@ class Interpolate_1stOrder<D,
   double const * source_vals_;
   int matid_;
   Field_type field_type_;
+  NumericTolerances_t num_tols_;
 
 #ifdef HAVE_TANGRAM
   std::shared_ptr<InterfaceReconstructor> interface_reconstructor_;
