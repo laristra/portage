@@ -6,11 +6,15 @@ Please see the license file at the root of this repository, or at:
 
 #include <vector>
 #include <algorithm>
+#include <memory>
+#include <cassert>
 
 #include "gtest/gtest.h"
 
 #include "wonton/mesh/simple/simple_mesh.h"
 #include "wonton/mesh/simple/simple_mesh_wrapper.h"
+#include "wonton/state/simple/simple_state.h"
+#include "wonton/state/simple/simple_state_wrapper.h"
 #include "wonton/support/Matrix.h"
 #include "portage/support/portage.h"
 #include "portage/support/weight.h"
@@ -180,12 +184,12 @@ TEST(Faceted_Setup, Simple3D_Tilted) {
     <3,Wonton::Simple_Mesh_Wrapper>(wrapper, smoothing, extents, factor, bfactor);
 
   double dx0=1.*factor/NCELLS, dx1=.1*factor/NCELLS, dx2=.01*factor/NCELLS;
-  const std::vector<std::vector<double>> xpts=
-{{0, b*dx0, b*dx0 + (-a + b)*dx1, (-a + b)*dx1, (a + b)*dx2, b*dx0 + (a + b)*dx2, 
+  const std::vector<std::vector<double>> xpts= // Mathematica output
+  {{0, b*dx0, b*dx0 + (-a + b)*dx1, (-a + b)*dx1, (a + b)*dx2, b*dx0 + (a + b)*dx2, 
   b*dx0 + (-a + b)*dx1 + (a + b)*dx2, (-a + b)*dx1 + (a + b)*dx2}, 
- {0, (a + b)*dx0, (a + b)*dx0 + b*dx1, b*dx1, (-a + b)*dx2, (a + b)*dx0 + (-a + b)*dx2, 
+  {0, (a + b)*dx0, (a + b)*dx0 + b*dx1, b*dx1, (-a + b)*dx2, (a + b)*dx0 + (-a + b)*dx2, 
   (a + b)*dx0 + b*dx1 + (-a + b)*dx2, b*dx1 + (-a + b)*dx2}, 
- {0, (-a + b)*dx0, (-a + b)*dx0 + (a + b)*dx1, (a + b)*dx1, b*dx2, (-a + b)*dx0 + b*dx2, 
+  {0, (-a + b)*dx0, (-a + b)*dx0 + (a + b)*dx1, (a + b)*dx1, b*dx2, (-a + b)*dx0 + b*dx2, 
      (-a + b)*dx0 + (a + b)*dx1 + b*dx2, (a + b)*dx1 + b*dx2}};
   const std::vector<double> xmin={*std::min_element(xpts[0].begin(),xpts[0].end()), 
                                   *std::min_element(xpts[1].begin(),xpts[1].end()), 
@@ -285,3 +289,115 @@ TEST(Faceted_Setup, Simple2DFace) {
     }
   }
 }
+
+
+
+// Checks the face normals and distances of a 2D axis-aligned brick mesh with internal boundaries.
+TEST(Faceted_Setup, InternalBoundary) {
+  const size_t NCELLS = 4;
+  std::shared_ptr<Wonton::Simple_Mesh> mesh_ptr = 
+    std::make_shared<Wonton::Simple_Mesh>(-1., -1., 1., 1., NCELLS, NCELLS);
+  Wonton::Simple_Mesh &mesh = *mesh_ptr;
+  Wonton::Simple_Mesh_Wrapper mwrapper(mesh);
+  Portage::vector<std::vector<std::vector<double>>> smoothing;
+  Portage::vector<Wonton::Point<2>> extents;
+  double factor = 1.25, bfactor=0.5, dx=0.5;
+
+  size_t ncells2d = mesh.num_entities(Wonton::CELL, Wonton::PARALLEL_OWNED);
+  assert(ncells2d == NCELLS*NCELLS);
+  std::vector<double> values(ncells2d, 0.0);
+  for (int i=0; i<ncells2d; i++) {
+    Wonton::Point<2> pnt;
+    mwrapper.cell_centroid(i, &pnt);
+    if      (pnt[0]<0. and pnt[1]<0.) values[i] = 1.;
+    else if (pnt[0]>0. and pnt[1]>0.) values[i] = 1.;
+  }
+  double *valptr = values.data();
+
+  Wonton::Simple_State state(mesh_ptr); 
+  std::vector<double> &added = state.add("indicate", Wonton::CELL, valptr);
+  Wonton::Simple_State_Wrapper swrapper(state);
+
+  Portage::Meshfree::Weight::faceted_setup_cell
+    (mwrapper, swrapper, "indicate", 0.25, 
+     smoothing, extents, 
+     factor, bfactor);
+
+  for (int i=0; i<ncells2d; i++) {
+    Wonton::Point<2> pnt;
+    mwrapper.cell_centroid(i, &pnt);
+    if (pnt[0] == -0.25 and pnt[1] == -0.75) {
+      ASSERT_EQ(smoothing[i][0][2],  factor*dx);
+      ASSERT_EQ(smoothing[i][1][2], bfactor*dx);
+      ASSERT_EQ(smoothing[i][2][2],  factor*dx);
+      ASSERT_EQ(smoothing[i][3][2],  factor*dx);
+    } else if (pnt[0] == -0.25 and pnt[1] == -0.25) {
+      ASSERT_EQ(smoothing[i][0][2],  factor*dx);
+      ASSERT_EQ(smoothing[i][1][2], bfactor*dx);
+      ASSERT_EQ(smoothing[i][2][2], bfactor*dx);
+      ASSERT_EQ(smoothing[i][3][2],  factor*dx);
+    } else if (pnt[0] == -0.25 and pnt[1] ==  0.25) {
+      ASSERT_EQ(smoothing[i][0][2], bfactor*dx);
+      ASSERT_EQ(smoothing[i][1][2], bfactor*dx);
+      ASSERT_EQ(smoothing[i][2][2],  factor*dx);
+      ASSERT_EQ(smoothing[i][3][2],  factor*dx);
+    } else if (pnt[0] == -0.25 and pnt[1] ==  0.75) {
+      ASSERT_EQ(smoothing[i][0][2],  factor*dx);
+      ASSERT_EQ(smoothing[i][1][2], bfactor*dx);
+      ASSERT_EQ(smoothing[i][2][2],  factor*dx);
+      ASSERT_EQ(smoothing[i][3][2],  factor*dx);
+
+    } else if (pnt[0] ==  0.25 and pnt[1] == -0.75) {
+      ASSERT_EQ(smoothing[i][0][2],  factor*dx);
+      ASSERT_EQ(smoothing[i][1][2],  factor*dx);
+      ASSERT_EQ(smoothing[i][2][2],  factor*dx);
+      ASSERT_EQ(smoothing[i][3][2], bfactor*dx);
+    } else if (pnt[0] ==  0.25 and pnt[1] == -0.25) {
+      ASSERT_EQ(smoothing[i][0][2],  factor*dx);
+      ASSERT_EQ(smoothing[i][1][2],  factor*dx);
+      ASSERT_EQ(smoothing[i][2][2], bfactor*dx);
+      ASSERT_EQ(smoothing[i][3][2], bfactor*dx);
+    } else if (pnt[0] ==  0.25 and pnt[1] ==  0.25) {
+      ASSERT_EQ(smoothing[i][0][2], bfactor*dx);
+      ASSERT_EQ(smoothing[i][1][2],  factor*dx);
+      ASSERT_EQ(smoothing[i][2][2],  factor*dx);
+      ASSERT_EQ(smoothing[i][3][2], bfactor*dx);
+    } else if (pnt[0] ==  0.25 and pnt[1] ==  0.75) {
+      ASSERT_EQ(smoothing[i][0][2],  factor*dx);
+      ASSERT_EQ(smoothing[i][1][2],  factor*dx);
+      ASSERT_EQ(smoothing[i][2][2],  factor*dx);
+      ASSERT_EQ(smoothing[i][3][2], bfactor*dx);
+
+    } else if (pnt[0] ==  0.75 and pnt[1] == -0.25) {
+      ASSERT_EQ(smoothing[i][0][2],  factor*dx);
+      ASSERT_EQ(smoothing[i][1][2],  factor*dx);
+      ASSERT_EQ(smoothing[i][2][2], bfactor*dx);
+      ASSERT_EQ(smoothing[i][3][2],  factor*dx);
+
+    } else if (pnt[0] ==  0.75 and pnt[1] ==  0.25) {
+      ASSERT_EQ(smoothing[i][0][2], bfactor*dx);
+      ASSERT_EQ(smoothing[i][1][2],  factor*dx);
+      ASSERT_EQ(smoothing[i][2][2],  factor*dx);
+      ASSERT_EQ(smoothing[i][3][2],  factor*dx);
+
+    } else if (pnt[0] == -0.75 and pnt[1] == -0.25) {
+      ASSERT_EQ(smoothing[i][0][2],  factor*dx);
+      ASSERT_EQ(smoothing[i][1][2],  factor*dx);
+      ASSERT_EQ(smoothing[i][2][2], bfactor*dx);
+      ASSERT_EQ(smoothing[i][3][2],  factor*dx);
+
+    } else if (pnt[0] == -0.75 and pnt[1] ==  0.25) {
+      ASSERT_EQ(smoothing[i][0][2], bfactor*dx);
+      ASSERT_EQ(smoothing[i][1][2],  factor*dx);
+      ASSERT_EQ(smoothing[i][2][2],  factor*dx);
+      ASSERT_EQ(smoothing[i][3][2],  factor*dx);
+
+    } else {
+      ASSERT_EQ(smoothing[i][0][2],  factor*dx);
+      ASSERT_EQ(smoothing[i][1][2],  factor*dx);
+      ASSERT_EQ(smoothing[i][2][2],  factor*dx);
+      ASSERT_EQ(smoothing[i][3][2],  factor*dx);
+    }
+  }
+}
+    

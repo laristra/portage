@@ -20,7 +20,7 @@ namespace Portage {
   namespace Meshfree {
     namespace Weight {
 
-      /** @brief Function to setup faceted weight data give a mesh wrapper. 
+      /** @brief Function to setup faceted weight data given a mesh wrapper. 
        *
        * @param[in] mesh Mesh wrapper from which to pull face normals and distances
        * @param[out] smoothing_lengths the output normals and distances
@@ -165,7 +165,7 @@ namespace Portage {
       }
 
 
-      /** @brief Function to setup faceted weight data give a set of mesh wrappers. 
+      /** @brief Function to setup faceted weight data given a set of mesh wrappers. 
        *
        * @param[in]  meshes Mesh wrapper pointers from which to pull face normals and distances
        * @param[out] smoothing_lengths the output normals and distances
@@ -209,6 +209,72 @@ namespace Portage {
             extents[offset+i] = ex[i];
           }
           offset += ncells;
+        }
+      }
+
+
+      /** @brief Function to setup faceted weight data given a field that marks internal boundaries.
+       *
+       * @param[in]  mesh Mesh wrapper from which to pull face normals and distances
+       * @param[in]  state State wrapper containing working field 
+       * @param[in]  field Name of field in @code state to use
+       * @param[in]  tolerance How different the states between neighbors must be to trigger a boundary
+       * @param[out] smoothing_lengths the output normals and distances
+       * @param[out] extents the output bounding boxes of the cells in @code mesh @endcode
+       * @param[in]  smoothing_factor multiple of distance from center to edge to use for smoothing length
+       * @param[in]  boundary_factor same as @code smoothing_factor but for boundaries
+       *             zero means use @code smoothing_factor
+       * 
+       * The smoothing_lengths object has the following structure: 
+       * smoothing_lengths[i][j][k] is interpreted as the k-th component of the normal vector 
+       * to the j-th face of the i-th cell, for k=0,...,dim-1, where dim is the spatial 
+       * dimension of the problem. For k=dim, it is the distance of the j-th face from 
+       * the centroid of the i-th cell. For 3D faces that are non-planar, the normal is the 
+       * average of the normals to the triangles formed by adjacent vertices and face centroids.  
+       *
+       * The setup occurs in the normal fashion initially using @code smoothing_factor interior
+       * and @code boundary_factor on the boundary. A second scan through the mesh is performed 
+       * to test the value of @code field at cell center @code i and neighbor @code j. For face @code k
+       * of cell @code i, and neighbor cell j_k, if 
+       * abs(field[i] - field[j_k]) > tolerance 
+       * then the smoothing distance for that face is set using @code boundary_factor 
+       * instead of @code smoothing_factor. 
+       *
+       * As an example, consider a multi-material existence function 
+       * field[i] = m, if cell center i is in material m, and 
+       * field[i] = 0, otherwise.
+       * Then one can set tolerance = 0.25 and mark the material boundaries. 
+       */
+
+      template<int DIM, class Mesh_Wrapper, class State_Wrapper> void faceted_setup_cell
+        (Mesh_Wrapper &mesh, 
+         State_Wrapper &state, 
+         std::string field, 
+         double tolerance, 
+         Portage::vector<std::vector<std::vector<double>>> &smoothing_lengths,
+         Portage::vector<Wonton::Point<DIM>> &extents,
+         double smoothing_factor, double boundary_factor) 
+      {
+        faceted_setup_cell
+        (mesh, 
+         smoothing_lengths,
+         extents,
+         smoothing_factor, smoothing_factor);
+
+        double *fval;
+        state.mesh_get_data(Wonton::CELL, field, &fval);
+        for (int i=0; i<mesh.num_owned_cells(); i++) {
+          std::vector<int> faces, dirs, fcells;
+          mesh.cell_get_faces_and_dirs(i, &faces, &dirs);
+          for (int j=0; j<faces.size(); j++) {
+            mesh.face_get_cells(faces[j], Wonton::PARALLEL_OWNED, &fcells);
+            for (int k=0; k<fcells.size(); k++) {
+              if (fcells[k] == i) continue;
+              if (fabs(fval[i] - fval[fcells[k]]) > tolerance) {
+                smoothing_lengths[i][j][DIM] *= (boundary_factor / smoothing_factor);
+              }
+            }
+          }
         }
       }
 
