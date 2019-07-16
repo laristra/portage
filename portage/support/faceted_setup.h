@@ -266,15 +266,17 @@ namespace Portage {
         for (int i=0; i<mesh.num_owned_cells(); i++) {
           std::vector<int> faces, dirs, fcells;
           mesh.cell_get_faces_and_dirs(i, &faces, &dirs);
+          std::vector<std::vector<double>> h = smoothing_lengths[i];
           for (int j=0; j<faces.size(); j++) {
             mesh.face_get_cells(faces[j], Wonton::PARALLEL_OWNED, &fcells);
             for (int k=0; k<fcells.size(); k++) {
               if (fcells[k] == i) continue;
               if (fabs(fval[i] - fval[fcells[k]]) > tolerance) {
-                smoothing_lengths[i][j][DIM] *= (boundary_factor / smoothing_factor);
+                h[j][DIM] *= (boundary_factor / smoothing_factor);
               }
             }
           }
+          smoothing_lengths[i] = h; 
         }
       }
 

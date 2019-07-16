@@ -326,77 +326,78 @@ TEST(Faceted_Setup, InternalBoundary) {
   for (int i=0; i<ncells2d; i++) {
     Wonton::Point<2> pnt;
     mwrapper.cell_centroid(i, &pnt);
+    std::vector<std::vector<double>> h = smoothing[i];
     if (pnt[0] == -0.25 and pnt[1] == -0.75) {
-      ASSERT_EQ(smoothing[i][0][2],  factor*dx);
-      ASSERT_EQ(smoothing[i][1][2], bfactor*dx);
-      ASSERT_EQ(smoothing[i][2][2],  factor*dx);
-      ASSERT_EQ(smoothing[i][3][2],  factor*dx);
+      ASSERT_EQ(h[0][2],  factor*dx);
+      ASSERT_EQ(h[1][2], bfactor*dx);
+      ASSERT_EQ(h[2][2],  factor*dx);
+      ASSERT_EQ(h[3][2],  factor*dx);
     } else if (pnt[0] == -0.25 and pnt[1] == -0.25) {
-      ASSERT_EQ(smoothing[i][0][2],  factor*dx);
-      ASSERT_EQ(smoothing[i][1][2], bfactor*dx);
-      ASSERT_EQ(smoothing[i][2][2], bfactor*dx);
-      ASSERT_EQ(smoothing[i][3][2],  factor*dx);
+      ASSERT_EQ(h[0][2],  factor*dx);
+      ASSERT_EQ(h[1][2], bfactor*dx);
+      ASSERT_EQ(h[2][2], bfactor*dx);
+      ASSERT_EQ(h[3][2],  factor*dx);
     } else if (pnt[0] == -0.25 and pnt[1] ==  0.25) {
-      ASSERT_EQ(smoothing[i][0][2], bfactor*dx);
-      ASSERT_EQ(smoothing[i][1][2], bfactor*dx);
-      ASSERT_EQ(smoothing[i][2][2],  factor*dx);
-      ASSERT_EQ(smoothing[i][3][2],  factor*dx);
+      ASSERT_EQ(h[0][2], bfactor*dx);
+      ASSERT_EQ(h[1][2], bfactor*dx);
+      ASSERT_EQ(h[2][2],  factor*dx);
+      ASSERT_EQ(h[3][2],  factor*dx);
     } else if (pnt[0] == -0.25 and pnt[1] ==  0.75) {
-      ASSERT_EQ(smoothing[i][0][2],  factor*dx);
-      ASSERT_EQ(smoothing[i][1][2], bfactor*dx);
-      ASSERT_EQ(smoothing[i][2][2],  factor*dx);
-      ASSERT_EQ(smoothing[i][3][2],  factor*dx);
+      ASSERT_EQ(h[0][2],  factor*dx);
+      ASSERT_EQ(h[1][2], bfactor*dx);
+      ASSERT_EQ(h[2][2],  factor*dx);
+      ASSERT_EQ(h[3][2],  factor*dx);
 
     } else if (pnt[0] ==  0.25 and pnt[1] == -0.75) {
-      ASSERT_EQ(smoothing[i][0][2],  factor*dx);
-      ASSERT_EQ(smoothing[i][1][2],  factor*dx);
-      ASSERT_EQ(smoothing[i][2][2],  factor*dx);
-      ASSERT_EQ(smoothing[i][3][2], bfactor*dx);
+      ASSERT_EQ(h[0][2],  factor*dx);
+      ASSERT_EQ(h[1][2],  factor*dx);
+      ASSERT_EQ(h[2][2],  factor*dx);
+      ASSERT_EQ(h[3][2], bfactor*dx);
     } else if (pnt[0] ==  0.25 and pnt[1] == -0.25) {
-      ASSERT_EQ(smoothing[i][0][2],  factor*dx);
-      ASSERT_EQ(smoothing[i][1][2],  factor*dx);
-      ASSERT_EQ(smoothing[i][2][2], bfactor*dx);
-      ASSERT_EQ(smoothing[i][3][2], bfactor*dx);
+      ASSERT_EQ(h[0][2],  factor*dx);
+      ASSERT_EQ(h[1][2],  factor*dx);
+      ASSERT_EQ(h[2][2], bfactor*dx);
+      ASSERT_EQ(h[3][2], bfactor*dx);
     } else if (pnt[0] ==  0.25 and pnt[1] ==  0.25) {
-      ASSERT_EQ(smoothing[i][0][2], bfactor*dx);
-      ASSERT_EQ(smoothing[i][1][2],  factor*dx);
-      ASSERT_EQ(smoothing[i][2][2],  factor*dx);
-      ASSERT_EQ(smoothing[i][3][2], bfactor*dx);
+      ASSERT_EQ(h[0][2], bfactor*dx);
+      ASSERT_EQ(h[1][2],  factor*dx);
+      ASSERT_EQ(h[2][2],  factor*dx);
+      ASSERT_EQ(h[3][2], bfactor*dx);
     } else if (pnt[0] ==  0.25 and pnt[1] ==  0.75) {
-      ASSERT_EQ(smoothing[i][0][2],  factor*dx);
-      ASSERT_EQ(smoothing[i][1][2],  factor*dx);
-      ASSERT_EQ(smoothing[i][2][2],  factor*dx);
-      ASSERT_EQ(smoothing[i][3][2], bfactor*dx);
+      ASSERT_EQ(h[0][2],  factor*dx);
+      ASSERT_EQ(h[1][2],  factor*dx);
+      ASSERT_EQ(h[2][2],  factor*dx);
+      ASSERT_EQ(h[3][2], bfactor*dx);
 
     } else if (pnt[0] ==  0.75 and pnt[1] == -0.25) {
-      ASSERT_EQ(smoothing[i][0][2],  factor*dx);
-      ASSERT_EQ(smoothing[i][1][2],  factor*dx);
-      ASSERT_EQ(smoothing[i][2][2], bfactor*dx);
-      ASSERT_EQ(smoothing[i][3][2],  factor*dx);
+      ASSERT_EQ(h[0][2],  factor*dx);
+      ASSERT_EQ(h[1][2],  factor*dx);
+      ASSERT_EQ(h[2][2], bfactor*dx);
+      ASSERT_EQ(h[3][2],  factor*dx);
 
     } else if (pnt[0] ==  0.75 and pnt[1] ==  0.25) {
-      ASSERT_EQ(smoothing[i][0][2], bfactor*dx);
-      ASSERT_EQ(smoothing[i][1][2],  factor*dx);
-      ASSERT_EQ(smoothing[i][2][2],  factor*dx);
-      ASSERT_EQ(smoothing[i][3][2],  factor*dx);
+      ASSERT_EQ(h[0][2], bfactor*dx);
+      ASSERT_EQ(h[1][2],  factor*dx);
+      ASSERT_EQ(h[2][2],  factor*dx);
+      ASSERT_EQ(h[3][2],  factor*dx);
 
     } else if (pnt[0] == -0.75 and pnt[1] == -0.25) {
-      ASSERT_EQ(smoothing[i][0][2],  factor*dx);
-      ASSERT_EQ(smoothing[i][1][2],  factor*dx);
-      ASSERT_EQ(smoothing[i][2][2], bfactor*dx);
-      ASSERT_EQ(smoothing[i][3][2],  factor*dx);
+      ASSERT_EQ(h[0][2],  factor*dx);
+      ASSERT_EQ(h[1][2],  factor*dx);
+      ASSERT_EQ(h[2][2], bfactor*dx);
+      ASSERT_EQ(h[3][2],  factor*dx);
 
     } else if (pnt[0] == -0.75 and pnt[1] ==  0.25) {
-      ASSERT_EQ(smoothing[i][0][2], bfactor*dx);
-      ASSERT_EQ(smoothing[i][1][2],  factor*dx);
-      ASSERT_EQ(smoothing[i][2][2],  factor*dx);
-      ASSERT_EQ(smoothing[i][3][2],  factor*dx);
+      ASSERT_EQ(h[0][2], bfactor*dx);
+      ASSERT_EQ(h[1][2],  factor*dx);
+      ASSERT_EQ(h[2][2],  factor*dx);
+      ASSERT_EQ(h[3][2],  factor*dx);
 
     } else {
-      ASSERT_EQ(smoothing[i][0][2],  factor*dx);
-      ASSERT_EQ(smoothing[i][1][2],  factor*dx);
-      ASSERT_EQ(smoothing[i][2][2],  factor*dx);
-      ASSERT_EQ(smoothing[i][3][2],  factor*dx);
+      ASSERT_EQ(h[0][2],  factor*dx);
+      ASSERT_EQ(h[1][2],  factor*dx);
+      ASSERT_EQ(h[2][2],  factor*dx);
+      ASSERT_EQ(h[3][2],  factor*dx);
     }
   }
 }
