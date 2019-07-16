@@ -384,6 +384,7 @@ class MMDriver {
     int comm_rank = 0;
     int nprocs = 1;
 
+
     // Will be null if it's a parallel executor
     auto serialexecutor = dynamic_cast<Wonton::SerialExecutor_type const *>(executor);
 
@@ -563,8 +564,6 @@ class MMDriver {
   std::unordered_map<std::string, double> double_upper_bounds_;
   std::unordered_map<std::string, double> conservation_tol_;
   unsigned int dim_;
-  //double voldifftol_ = 100*std::numeric_limits<double>::epsilon();
-  double consttol_ =  100*std::numeric_limits<double>::epsilon();
   int max_fixup_iter_ = 5;
   NumericTolerances_t num_tols_;
 
@@ -746,6 +745,13 @@ int MMDriver<Search, Intersect, Interpolate, D,
 
   int nmats = source_state2.num_materials();
 
+  // Use default numerical tolerances in case they were not set earlier
+  if (num_tols_.tolerances_set == false) {
+      NumericTolerances_t default_num_tols;
+      default_num_tols.use_default();
+    set_num_tols(default_num_tols);
+  }
+
 #ifdef HAVE_TANGRAM
   // Call interface reconstruction only if we got a method from the
   // calling app
@@ -783,16 +789,11 @@ int MMDriver<Search, Intersect, Interpolate, D,
     interface_reconstructor->reconstruct(executor);
   }
 
-  // Use default numerical tolerances in case they were not set earlier
-  if (num_tols_.tolerances_set == false) {
-      NumericTolerances_t default_num_tols;
-      default_num_tols.use_default();
-      set_num_tols(default_num_tols);
-  }
 
   // Make an intersector which knows about the source state (to be able
   // to query the number of materials, etc) and also knows about the
   // interface reconstructor so that it can retrieve pure material polygons
+
 
   Intersect<onwhat, SourceMesh_Wrapper2, SourceState_Wrapper2,
             TargetMesh_Wrapper, InterfaceReconstructorType,
@@ -937,7 +938,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
 #endif
 
         double relbounddiff = fabs((upper_bound-lower_bound)/lower_bound);
-        if (relbounddiff < consttol_) {
+        if (relbounddiff < num_tols_.mismatch_fixup_constant_value) {
           // The field is constant over the source mesh/part. We HAVE to
           // relax the bounds to be able to conserve the integral quantity
           // AND maintain a constant.
@@ -946,7 +947,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
         }
       }
 
-      double conservation_tol = 100*std::numeric_limits<double>::epsilon();
+      double conservation_tol = num_tols_.mismatch_conservation_all_mat;
       try {  // see if caller has specified a tolerance for conservation
         conservation_tol = conservation_tol_.at(trg_var);
       } catch ( const std::out_of_range& oor) {}

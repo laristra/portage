@@ -146,6 +146,8 @@ struct NumericTolerances_t {
     double interpolate_node_intersections   = error_value_;
     double interpolate_3rd_ord_intersection = error_value_;
     double mmdriver_relative_min_mat_vol    = error_value_;
+    double mismatch_fixup_constant_value    = error_value_;
+    double mismatch_conservation_all_mat    = error_value_;
 
     void use_default()
     {
@@ -157,6 +159,8 @@ struct NumericTolerances_t {
         interpolate_node_intersections  =  1e-16;
         interpolate_3rd_ord_intersection=  1e-30;
         mmdriver_relative_min_mat_vol   =  1e-10;
+        mismatch_fixup_constant_value   =  100*std::numeric_limits<double>::epsilon();
+        mismatch_conservation_all_mat   =  100*std::numeric_limits<double>::epsilon();
     }
 
     private:
