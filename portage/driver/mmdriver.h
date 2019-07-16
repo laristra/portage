@@ -128,11 +128,6 @@ class MMDriver {
         target_mesh_(targetMesh), target_state_(targetState),
         dim_(sourceMesh.space_dimension()) {
     assert(sourceMesh.space_dimension() == targetMesh.space_dimension());
-
-    // temporary force default numerical tolerances
-    NumericTolerances_t default_num_tols;
-    default_num_tols.use_default();
-    set_num_tols(default_num_tols);
   }
 
   /// Copy constructor (disabled)
@@ -788,6 +783,12 @@ int MMDriver<Search, Intersect, Interpolate, D,
     interface_reconstructor->reconstruct(executor);
   }
 
+  // Use default numerical tolerances in case they were not set earlier
+  if (num_tols_.tolerances_set == false) {
+      NumericTolerances_t default_num_tols;
+      default_num_tols.use_default();
+      set_num_tols(default_num_tols);
+  }
 
   // Make an intersector which knows about the source state (to be able
   // to query the number of materials, etc) and also knows about the
@@ -1014,8 +1015,8 @@ int MMDriver<Search, Intersect, Interpolate, D,
         std::vector<double> const& wts = cell_sources_and_weights[s].weights;
         if (wts[0] > 0.0) {
           double vol = target_mesh_.cell_volume(c);
-          if (wts[0]/vol > 1.0e-10) {  // Check that the volume of material
-                                       // we are adding to c is not miniscule
+          // Check that the volume of material we are adding to c is not miniscule
+          if (wts[0]/vol > num_tols_.mmdriver_relative_min_mat_vol) {
             matcellstgt.push_back(c);
             break;
           }

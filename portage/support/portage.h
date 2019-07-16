@@ -138,21 +138,25 @@ std::string to_string(Empty_fixup_type empty_fixup_type) {
 
 /// Intersection and other tolerances to handle tiny values
 struct NumericTolerances_t {
+    bool   tolerances_set                   = false;
     double polygon_convexity_eps            = error_value_;
     double minimal_intersection_volume      = error_value_;
     double intersect_bb_eps                 = error_value_;
     double interpolate_small_intersections  = error_value_;
     double interpolate_node_intersections   = error_value_;
     double interpolate_3rd_ord_intersection = error_value_;
+    double mmdriver_relative_min_mat_vol    = error_value_;
 
     void use_default()
     {
+        tolerances_set                  =   true;
         polygon_convexity_eps           =  1e-14;
         minimal_intersection_volume     = -1e-14;
         intersect_bb_eps                =  1e-12;
         interpolate_small_intersections =  1e-12;
         interpolate_node_intersections  =  1e-16;
         interpolate_3rd_ord_intersection=  1e-30;
+        mmdriver_relative_min_mat_vol   =  1e-10;
     }
 
     private:
