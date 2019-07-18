@@ -82,6 +82,7 @@ Controls<2> truncateControl(Controls<3> ctl) {
   result.kernel = ctl.kernel;
   result.geometry = ctl.geometry;
   result.center = ctl.center;
+
   return result;
 }
 
