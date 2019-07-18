@@ -16,6 +16,7 @@ Please see the license file at the root of this repository, or at:
 #include <utility>
 #include <iostream>
 #include <type_traits>
+#include <string>
 
 #include "portage/support/portage.h"
 
@@ -78,22 +79,35 @@ class MSM_Driver {
     @param[in] targetMesh A @c TargetMesh_Wrapper to the target mesh.
     @param[in,out] targetState A @c TargetState_Wrapper for the data that will
     be mapped to the target mesh.
+    @param[in] smoothing_factor multiplies cell sizes to get smoothing lengths
+    @param[in] boundary_factor with faceted weights only, multiplies center-to-face distance on boundary to get smoothing length
+    @param[in] geometry weight function geometric configuration
+    @param[in] kernel weight function kernel
+    @param[in] center weight function centering (scatter for sources, gather for targets)
+    @param[in] internal_boundary name of field to use for internal boundary determination with faceted weights only
   */
-  MSM_Driver(SourceMesh_Wrapper const& sourceMesh,
+  MSM_Driver
+        (SourceMesh_Wrapper const& sourceMesh,
          SourceState_Wrapper const& sourceState,
          TargetMesh_Wrapper const& targetMesh,
 	 TargetState_Wrapper& targetState, 
 	 double smoothing_factor             = 1.5,
+	 double boundary_factor              = 0.5,
 	 Meshfree::Weight::Geometry geometry = Meshfree::Weight::TENSOR,
          Meshfree::Weight::Kernel   kernel   = Meshfree::Weight::B4,
-         Meshfree::WeightCenter     center   = Meshfree::Gather)
+         Meshfree::WeightCenter     center   = Meshfree::Gather, 
+         std::string internal_boundary = "NONE", 
+         double tolerance_ib = 0.0)
       : source_mesh_(sourceMesh), source_state_(sourceState),
         target_mesh_(targetMesh), target_state_(targetState),
         smoothing_factor_(smoothing_factor),
+        boundary_factor_(boundary_factor),
         geometry_(geometry),
         kernel_(kernel),
         center_(center),
-        dim_(sourceMesh.space_dimension()) 
+        dim_(sourceMesh.space_dimension()),
+        internal_boundary_(internal_boundary), 
+        tolerance_ib_(tolerance_ib)
   {
     assert(sourceMesh.space_dimension() == targetMesh.space_dimension());
     assert(sourceMesh.space_dimension() == Dim);
@@ -267,12 +281,24 @@ class MSM_Driver {
       Portage::vector<std::vector<std::vector<double>>> smoothing_lengths;
       Portage::vector<Wonton::Point<Dim>> weight_extents, other_extents;
       if (geometry_ == Meshfree::Weight::FACETED) {
-        if (center_ == Meshfree::Scatter) {
-          Meshfree::Weight::faceted_setup_cell<Dim,SourceMesh_Wrapper>
-            (source_mesh_, smoothing_lengths, weight_extents, smoothing_factor_, smoothing_factor_);
-        } else if (center_ == Meshfree::Gather) {
-          Meshfree::Weight::faceted_setup_cell<Dim,TargetMesh_Wrapper>
-            (target_mesh_, smoothing_lengths, weight_extents, smoothing_factor_, smoothing_factor_);
+        if (internal_boundary_ == "NONE") {
+          if (center_ == Meshfree::Scatter) {
+            Meshfree::Weight::faceted_setup_cell<Dim,SourceMesh_Wrapper>
+              (source_mesh_, smoothing_lengths, weight_extents, smoothing_factor_, boundary_factor_);
+          } else if (center_ == Meshfree::Gather) {
+            Meshfree::Weight::faceted_setup_cell<Dim,TargetMesh_Wrapper>
+              (target_mesh_, smoothing_lengths, weight_extents, smoothing_factor_, boundary_factor_);
+          }
+        } else {
+          if (center_ == Meshfree::Scatter) {
+            Meshfree::Weight::faceted_setup_cell<Dim,SourceMesh_Wrapper,SourceState_Wrapper>
+              (source_mesh_, source_state_, internal_boundary_, tolerance_ib_, 
+               smoothing_lengths, weight_extents, smoothing_factor_, boundary_factor_);
+          } else if (center_ == Meshfree::Gather) {
+            Meshfree::Weight::faceted_setup_cell<Dim,TargetMesh_Wrapper,TargetState_Wrapper>
+              (target_mesh_, target_state_, internal_boundary_, tolerance_ib_,
+               smoothing_lengths, weight_extents, smoothing_factor_, boundary_factor_);
+          }
         }
       } else {
         int ncells;
@@ -468,9 +494,12 @@ class MSM_Driver {
   std::vector<std::string> source_remap_var_names_;
   std::vector<std::string> target_remap_var_names_;
   double smoothing_factor_;
+  double boundary_factor_;
   Meshfree::Weight::Kernel kernel_;
   Meshfree::Weight::Geometry geometry_;
   Meshfree::WeightCenter center_;
+  std::string internal_boundary_;
+  double tolerance_ib_;
   Meshfree::EstimateType estimate_;
   Meshfree::Basis::Type basis_;
   Meshfree::Operator::Type operator_spec_;

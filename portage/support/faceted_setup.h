@@ -126,7 +126,6 @@ namespace Portage {
               normal = -normal;
               smoothing = -smoothing;
             }
-	    double factor;
 	    if (mesh.on_exterior_boundary(Wonton::FACE, j) and boundary_factor > 0.) {
 	      h[j][DIM] = boundary_factor*smoothing;
 	    } else {
@@ -247,8 +246,8 @@ namespace Portage {
        */
 
       template<int DIM, class Mesh_Wrapper, class State_Wrapper> void faceted_setup_cell
-        (Mesh_Wrapper &mesh, 
-         State_Wrapper &state, 
+        (const Mesh_Wrapper &mesh, 
+         const State_Wrapper &state, 
          std::string field, 
          double tolerance, 
          Portage::vector<std::vector<std::vector<double>>> &smoothing_lengths,
@@ -262,7 +261,7 @@ namespace Portage {
          smoothing_factor, smoothing_factor);
 
         double *fval;
-        state.mesh_get_data(Wonton::CELL, field, &fval);
+        const_cast<State_Wrapper&>(state).mesh_get_data(Wonton::CELL, field, &fval);
         for (int i=0; i<mesh.num_owned_cells(); i++) {
           std::vector<int> faces, dirs, fcells;
           mesh.cell_get_faces_and_dirs(i, &faces, &dirs);

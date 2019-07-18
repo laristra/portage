@@ -11,6 +11,7 @@ Please see the license file at the root of this repository, or at:
 #include <cmath>
 #include <stdexcept>
 #include <cassert>
+#include <string>
 
 #include "gtest/gtest.h"
 #ifdef PORTAGE_ENABLE_MPI
@@ -204,13 +205,17 @@ class MSMDriverTest : public ::testing::Test {
         (sourceMeshWrapper, sourceStateWrapper,
          targetMeshWrapper, targetStateWrapper2,
          smoothing_factor, 
+         smoothing_factor, 
          Portage::Meshfree::Weight::FACETED, 
          Portage::Meshfree::Weight::POLYRAMP, 
-         center);
+         center, 
+         std::string("NONE"), 
+         0.0);
     } else {
       msmdriver_ptr = new MSM_Driver_Type
         (sourceMeshWrapper, sourceStateWrapper,
          targetMeshWrapper, targetStateWrapper2,
+         smoothing_factor, 
          smoothing_factor, 
          Portage::Meshfree::Weight::TENSOR, 
          Portage::Meshfree::Weight::B4, 
