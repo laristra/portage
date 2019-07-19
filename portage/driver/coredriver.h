@@ -50,7 +50,6 @@ using Wonton::Entity_type;
 using Wonton::PARALLEL_OWNED;
 using Wonton::ALL;
 
-
 // Forward declaration of remap driver on particular entity kind
 
 template <int D,
@@ -847,7 +846,6 @@ class CoreDriver : public CoreDriverBase<D,
     Interpolate<D, ONWHAT, SourceMesh, TargetMesh, SourceState,
                 InterfaceReconstructorType, Matpoly_Splitter, Matpoly_Clipper, CoordSys>
         interpolator(source_mesh_, target_mesh_, source_state_, num_tols_);
-      
 
     // Get a handle to a memory location where the target state
     // would like us to write this material variable into. If it is
@@ -865,7 +863,7 @@ class CoreDriver : public CoreDriverBase<D,
                        target_mesh_.end(ONWHAT, PARALLEL_OWNED),
                        sources_and_weights.begin(),
                        target_field, interpolator);
-    
+
     if (has_mismatch_)
       mismatch_fixer_->fix_mismatch(srcvarname, trgvarname,
                                     lower_bound, upper_bound,
@@ -873,6 +871,131 @@ class CoreDriver : public CoreDriverBase<D,
                                     max_fixup_iter,
                                     partial_fixup_type,
                                     empty_fixup_type);
+  }
+
+  /*!
+   @brief part-by-part mesh variable interpolation.
+
+   @param[in] srcvarname          source mesh variable to remap
+   @param[in] trgvarname          target mesh variable to remap
+   @param[in] sources_and_weights weights for mesh-mesh interpolation
+   @param[in] source_entities     source entities ID list
+   @param[in] target_entities     target entities ID list
+   @param[in] limiter             limiter to use
+   @param[in] partial...          how to fixup partly filled target cells
+   @param[in] emtpy...            how to fixup empty target cells with this var
+   @param[in] lower_bound         lower bound of variable value when doing fixup
+   @param[in] upper_bound         upper bound of variable value when doing fixup
+   @param[in] cons..tol           tolerance for conservation when doing fixup
+ */
+
+  template<typename T = double,
+    template<int, Entity_kind, class, class, class,
+    template<class, int, class, class> class,
+    class, class, class> class Interpolate
+  >
+  void interpolate_mesh_var(std::string srcvarname, std::string trgvarname,
+                            Portage::vector<std::vector<Weights_t>> const& sources_and_weights,
+                            std::vector<int> const& source_entities,
+                            std::vector<int> const& target_entities,
+                            T lower_bound, T upper_bound,
+                            Limiter_type limiter = DEFAULT_LIMITER,
+                            Partial_fixup_type partial_fixup_type = DEFAULT_PARTIAL_FIXUP_TYPE,
+                            Empty_fixup_type empty_fixup_type = DEFAULT_EMPTY_FIXUP_TYPE,
+                            double conservation_tol = DEFAULT_CONSERVATION_TOL,
+                            int max_fixup_iter = DEFAULT_MAX_FIXUP_ITER
+  ) {
+
+    if (source_state_.get_entity(srcvarname) != ONWHAT) {
+      std::cerr << "Variable " << srcvarname << " not defined on Entity_kind "
+                << ONWHAT << ". Skipping!" << std::endl;
+      return;
+    }
+
+    // instantiate particular interpolator
+    Interpolate<
+      D, ONWHAT, SourceMesh, TargetMesh, SourceState, InterfaceReconstructorType,
+      Matpoly_Splitter, Matpoly_Clipper, CoordSys
+    > interpolator(source_mesh_, target_mesh_, source_state_, interface_reconstructor_);
+
+    interpolator.set_interpolation_variable(srcvarname, limiter);
+
+    // Get a handle to a memory location where the target state
+    // would like us to write this material variable into.
+    T* target_field_raw = nullptr;
+    target_state_.mesh_get_data(ONWHAT, trgvarname, &target_field_raw);
+    assert(target_field_raw != nullptr);
+
+    if (not source_entities.empty() and not target_entities.empty()) {
+      // quick checks
+      int const& max_source_id = source_mesh_.num_entities(ONWHAT, ALL);
+      int const& max_target_id = target_mesh_.num_entities(ONWHAT, ALL);
+
+      for (auto&& current : source_entities) {
+        if (current > max_source_id) {
+          std::cerr << "Error: wrong source entity ID" << std::endl;
+          return;
+        }
+      }
+
+      for (auto&& current : target_entities) {
+        if (current > max_target_id) {
+          std::cerr << "Error: wrong target entity ID" << std::endl;
+          return;
+        }
+      }
+
+      using entity_weights_t = std::vector<Weights_t>;
+
+      int const target_mesh_size = sources_and_weights.size();
+      int const nb_target_entities = target_entities.size();
+
+      // 1. filter sources_and_weight
+      T target_field_temp[nb_target_entities];
+
+      Portage::pointer<T> target_field(target_field_temp);
+      Portage::vector<entity_weights_t> filtered_weights(nb_target_entities);
+
+      Portage::transform(target_entities.begin(),
+                         target_entities.end(),
+                         filtered_weights.begin(), [&](int entity) {
+          // 'auto' may imply unexpected behavior with thrust enabled
+          entity_weights_t const& entity_weights = sources_and_weights[entity];
+          entity_weights_t heap;
+          heap.reserve(10);
+          for (auto&& weight : entity_weights) {
+            if (std::find(source_entities.begin(),
+                          source_entities.end(),
+                          weight.entityID) != source_entities.end()) {
+              heap.emplace_back(weight);
+            }
+          }
+          heap.shrink_to_fit();
+          return std::move(heap);
+        }
+      );
+
+      // run interpolator afterwards
+      Portage::transform(target_entities.begin(),
+                         target_entities.end(),
+                         filtered_weights.begin(),
+                         target_field, interpolator);
+
+      // copy-back variable field
+      for (int i = 0; i < nb_target_entities; ++i) {
+        auto const& current_id = target_entities[i];
+        target_field_raw[current_id] = target_field[i];
+      }
+    } else /* normal case */ {
+      interpolator.set_interpolation_variable(srcvarname, limiter);
+
+      Portage::pointer<T> target_field(target_field_raw);
+      Portage::transform(target_mesh_.begin(ONWHAT, PARALLEL_OWNED),
+                         target_mesh_.end(ONWHAT, PARALLEL_OWNED),
+                         sources_and_weights.begin(),
+                         target_field, interpolator);
+    }
+    // FIXME: no mismatch fixup at this point for now.
   }
 
 
