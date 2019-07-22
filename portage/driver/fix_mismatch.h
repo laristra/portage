@@ -352,8 +352,10 @@ class MismatchFixer {
       layernum_.resize(ntargetents_, 0);
 
       int nlayers = 0;
-      int ntagged = 0;
-      while (ntagged < nempty) {
+      int ntagged = 0, old_ntagged = -1;
+      while (ntagged < nempty && ntagged > old_ntagged) {
+        old_ntagged = ntagged;
+
         std::vector<int> curlayerents;
 
         for (int ent : emptyents) {

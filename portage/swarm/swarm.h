@@ -10,11 +10,13 @@ Please see the license file at the root of this repository, or at:
 #include <memory>
 #include <cassert>
 #include <cmath>
-#include <ctime>
+#include <chrono>
 #include <algorithm>
 #include <cstdlib>
 #include <stdexcept>
 #include <string>
+#include <iostream>
+#include <stdlib.h>
 
 // portage includes
 #include "portage/support/portage.h"
@@ -133,24 +135,45 @@ class Swarm {
   size_t npoints_owned_;
 };
 
+// Get a reasonable random number seed if needed.
+unsigned long get_seed() {
+  unsigned long seed;
+  auto clock = std::chrono::high_resolution_clock::now();
+  auto clockdur = clock.time_since_epoch();
+  auto clockmicro = std::chrono::duration_cast<std::chrono::microseconds>(clockdur);
+  seed = clockmicro.count();
+  seed &= (1<<16)-1;
+  return seed;
+}
+
 // Factories for making swarms in 1/2/3 dimensions with random or uniform
 // distribution of particles. Reason we are having to return a
 // shared_ptr to the Swarm is because of how its used in the
 // DriverTest
 
 std::shared_ptr<Swarm<1>> SwarmFactory(double xmin, double xmax,
-                                         unsigned int nparticles,
-                                         unsigned int distribution) {
+                                       unsigned int nparticles,
+                                       unsigned int distribution, 
+                                       unsigned int rand_seed=0) {
 
   shared_ptr<typename Swarm<1>::PointVec> pts_sp = std::make_shared<typename Swarm<1>::PointVec>(nparticles);
   typename Swarm<1>::PointVec &pts(*pts_sp);
+  drand48_data rand_state;
+  if (distribution == 0 or distribution == 2) {  // random distribution of particles
+    long int seed;
+    if (rand_seed == 0) { 
+      seed = get_seed();
+    } else {
+      seed = rand_seed;
+    }
+    srand48_r(seed,&rand_state);
+  }
   if (distribution == 0) {  // random distribution of particles
-    srand(time(NULL));
-    unsigned int rand_state;
     for (size_t i=0; i<nparticles; i++) {
       // for some reason intel does not like these two lines combined when using thrust, i.e. pts[i][0]
       Point<1> pt=pts[i];
-      pt[0] = xmin + (xmax-xmin)*(static_cast<double>(rand_r(&rand_state))/RAND_MAX);
+      double rnum; drand48_r(&rand_state, &rnum);
+      pt[0] = xmin + (xmax-xmin)*rnum;
       pts[i] = pt;
     }
   } else { // regular distribution
@@ -162,11 +185,10 @@ std::shared_ptr<Swarm<1>> SwarmFactory(double xmin, double xmax,
     }
 
     if (distribution == 2) { // perturbed regular
-      srand(time(NULL));
-      unsigned int rand_state;
       for (size_t i=0; i < nparticles; i++) {
         Point<1> pt=pts[i];
-        pt[0] += 0.25*h*((2*static_cast<double>(rand_r(&rand_state))/RAND_MAX)-1.0);
+        double rnum; drand48_r(&rand_state, &rnum);
+        pt[0] += 0.25*h*(2*rnum-1.0);
 	pt[0] = fmax(xmin,fmin(xmax,pt[0]));
 	pts[i] = pt;
       }
@@ -181,25 +203,34 @@ std::shared_ptr<Swarm<1>> SwarmFactory(double xmin, double xmax,
 std::shared_ptr<Swarm<2>> SwarmFactory(double xmin, double ymin,
                                        double xmax, double ymax,
                                        unsigned int nparticles,
-                                       unsigned int distribution) {
+                                       unsigned int distribution, 
+                                       unsigned int rand_seed=0) {
 
   auto pts_sp = std::make_shared<typename Swarm<2>::PointVec>(nparticles);
   typename Swarm<2>::PointVec &pts(*pts_sp);
-  if (distribution == 0) {  // random distribution of particles
-    srand(time(NULL));
-    unsigned int rand_state;
+  drand48_data rand_state;
+  if (distribution == 0 or distribution == 2) {  // random distribution of particles
+    long int seed;
+    if (rand_seed == 0) { 
+      seed = get_seed();      
+      std::cout << "seed is " << seed << std::endl;
+    } else {
+      seed = rand_seed;
+    }
+    srand48_r(seed,&rand_state);
+  }
+  if (distribution == 0) {
     for (size_t i = 0; i < nparticles; i++) {
       Point<2> pt=pts[i];
-      pt[0] = xmin + (xmax-xmin)*(static_cast<double>(rand_r(&rand_state))/RAND_MAX);
-      pt[1] = ymin + (ymax-ymin)*(static_cast<double>(rand_r(&rand_state))/RAND_MAX);
+      double rnum; 
+      drand48_r(&rand_state, &rnum);
+      pt[0] = xmin + (xmax-xmin)*rnum;
+      drand48_r(&rand_state, &rnum);
+      pt[1] = ymin + (ymax-ymin)*rnum;
       pts[i] = pt;
     }
   } else {
     int npdim = sqrt(nparticles);
-    if (npdim*npdim != nparticles) {
-      std::cerr << "Requested number of particles not a perfect square\n";
-      std::cerr << "Generating only " << npdim << "particles in each dimension\n";
-    }
     double hx = (xmax-xmin)/(npdim-1);
     double hy = (ymax-ymin)/(npdim-1);
     int n = 0;
@@ -213,12 +244,13 @@ std::shared_ptr<Swarm<2>> SwarmFactory(double xmin, double ymin,
       }
     }
     if (distribution == 2) {
-      srand(time(NULL));
-      unsigned int rand_state;
       for (size_t i = 0; i < nparticles; i++) {
 	Point<2> pt=pts[i];
-        pt[0] += 0.25*hx*((2*static_cast<double>(rand_r(&rand_state))/RAND_MAX)-1.0);
-        pt[1] += 0.25*hy*((2*static_cast<double>(rand_r(&rand_state))/RAND_MAX)-1.0);
+        double rnum; 
+        drand48_r(&rand_state, &rnum);
+        pt[0] += 0.25*hx*(2*rnum-1.0);
+        drand48_r(&rand_state, &rnum);
+        pt[1] += 0.25*hy*(2*rnum-1.0);
 	pt[0] = fmax(xmin,fmin(xmax,pt[0]));
 	pt[1] = fmax(ymin,fmin(ymax,pt[1]));
 	pts[i] = pt;
@@ -234,18 +266,31 @@ std::shared_ptr<Swarm<2>> SwarmFactory(double xmin, double ymin,
 std::shared_ptr<Swarm<3>> SwarmFactory(double xmin, double ymin, double zmin,
                                        double xmax, double ymax, double zmax,
                                        unsigned int nparticles,
-                                       unsigned int distribution) {
+                                       unsigned int distribution, 
+                                       unsigned int rand_seed=0) {
 
   auto pts_sp = std::make_shared<typename Swarm<3>::PointVec>(nparticles);
   typename Swarm<3>::PointVec &pts(*pts_sp);
-  if (distribution == 0) {  // Random distribution
-    srand(time(NULL));
-    unsigned int rand_state;
+  drand48_data rand_state;
+  if (distribution == 0 or distribution == 2) {  // random distribution of particles
+    long int seed;
+    if (rand_seed == 0) { 
+      seed = get_seed();
+    } else {
+      seed = rand_seed;
+    }
+    srand48_r(seed,&rand_state);
+  }
+  if (distribution == 0) {
     for (size_t i = 0; i < nparticles; i++) {
       Point<3> pt=pts[i];
-      pt[0] = xmin + (xmax-xmin)*(static_cast<double>(rand_r(&rand_state))/RAND_MAX);
-      pt[1] = ymin + (ymax-ymin)*(static_cast<double>(rand_r(&rand_state))/RAND_MAX);
-      pt[2] = zmin + (zmax-zmin)*(static_cast<double>(rand_r(&rand_state))/RAND_MAX);
+      double rnum; 
+      drand48_r(&rand_state, &rnum);
+      pt[0] = xmin + (xmax-xmin)*rnum;
+      drand48_r(&rand_state, &rnum);
+      pt[1] = ymin + (ymax-ymin)*rnum;
+      drand48_r(&rand_state, &rnum);
+      pt[2] = zmin + (zmax-zmin)*rnum;
       pts[i] = pt;
     }
   } else {
@@ -271,13 +316,15 @@ std::shared_ptr<Swarm<3>> SwarmFactory(double xmin, double ymin, double zmin,
       }
     }
     if (distribution == 2) {
-      srand(time(NULL));
-      unsigned int rand_state;
       for (size_t i = 0; i < nparticles; i++) {
 	Point<3> pt=pts[i];
-        pt[0] += 0.25*hx*((2*static_cast<double>(rand_r(&rand_state))/RAND_MAX)-1.0);
-        pt[1] += 0.25*hy*((2*static_cast<double>(rand_r(&rand_state))/RAND_MAX)-1.0);
-        pt[2] += 0.25*hz*((2*static_cast<double>(rand_r(&rand_state))/RAND_MAX)-1.0);
+        double rnum; 
+        drand48_r(&rand_state, &rnum);
+        pt[0] += 0.25*hx*(2*rnum-1.0);
+        drand48_r(&rand_state, &rnum);
+        pt[1] += 0.25*hy*(2*rnum-1.0);
+        drand48_r(&rand_state, &rnum);
+        pt[2] += 0.25*hz*(2*rnum-1.0);
 	pt[0] = fmax(xmin,fmin(xmax,pt[0]));
 	pt[1] = fmax(ymin,fmin(ymax,pt[1]));
 	pt[2] = fmax(zmin,fmin(zmax,pt[2]));
