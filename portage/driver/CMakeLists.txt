@@ -80,8 +80,8 @@ if (ENABLE_UNIT_TESTS)
        POLICY MPI
        THREADS 1)
 
-       cinch_add_unit(test_fancydriver_multimat
-       SOURCES test/test_fancydriver_multimat.cc
+       cinch_add_unit(test_uberdriver_multimat
+       SOURCES test/test_uberdriver_multimat.cc
        LIBRARIES portage ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES} ${XMOF2D_LIBRARIES}
        POLICY MPI
        THREADS 1)
