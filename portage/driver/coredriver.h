@@ -986,16 +986,24 @@ class CoreDriver : public CoreDriverBase<D,
         auto const& current_id = target_entities[i];
         target_field_raw[current_id] = target_field[i];
       }
-    } else /* normal case */ {
-      interpolator.set_interpolation_variable(srcvarname, limiter);
+      // FIXME: no mismatch fixup for part-by-part for now.
 
+    } else /* normal case */ {
       Portage::pointer<T> target_field(target_field_raw);
       Portage::transform(target_mesh_.begin(ONWHAT, PARALLEL_OWNED),
                          target_mesh_.end(ONWHAT, PARALLEL_OWNED),
                          sources_and_weights.begin(),
                          target_field, interpolator);
+
+      if (has_mismatch_) {
+        mismatch_fixer_->fix_mismatch(srcvarname, trgvarname,
+                                      lower_bound, upper_bound,
+                                      conservation_tol,
+                                      max_fixup_iter,
+                                      partial_fixup_type,
+                                      empty_fixup_type);
+      }
     }
-    // FIXME: no mismatch fixup at this point for now.
   }
 
 
