@@ -161,6 +161,12 @@ public:
    */
   bool test_mismatch(Portage::vector<entity_weights_t> const& source_ents_and_weights) {
 
+    /*
+    int const nb_part_source_ent = source_entities.size();
+    int const nb_part_target_ent = target_entities.size();
+    // check if we have to do part by part
+    bool const do_part_by_part = nb_part_source_ent > 0 and nb_part_target_ent > 0;*/
+
     nsourceents_ = (onwhat == Entity_kind::CELL) ?
                    source_mesh_.num_owned_cells() :
                    source_mesh_.num_owned_nodes();
@@ -180,13 +186,18 @@ public:
     }
 #endif
 
+    // ---------------------------------------------------
+    // COMPUTE GLOBAL VOLUMES ON SOURCE AND TARGET MESHES
+    // regardless of part-by-part scheme.
+    // ---------------------------------------------------
 
-  // collect volumes of entities that are not masked out and sum them up
+    // collect volumes of entities that are not masked out and sum them up
     source_ent_volumes_.resize(nsourceents_, 0.0);
-    for (int s = 0; s < nsourceents_; s++)
+    for (int s = 0; s < nsourceents_; s++) {
       source_ent_volumes_[s] = (onwhat == Entity_kind::CELL) ?
                                source_ent_masks[s]*source_mesh_.cell_volume(s) :
                                source_ent_masks[s]*source_mesh_.dual_cell_volume(s);
+    }
 
     source_volume_ =
       std::accumulate(source_ent_volumes_.begin(), source_ent_volumes_.end(),
@@ -201,16 +212,18 @@ public:
 
     // GLOBAL TARGET VOLUME
     ntargetents_ = (onwhat == Entity_kind::CELL) ?
-                   target_mesh_.num_owned_cells() : target_mesh_.num_owned_nodes();
+                   target_mesh_.num_owned_cells() :
+                   target_mesh_.num_owned_nodes();
 
     target_ent_volumes_.resize(ntargetents_, 0.0);
-    for (int t = 0; t < ntargetents_; t++)
+    for (int t = 0; t < ntargetents_; t++) {
       target_ent_volumes_[t] = (onwhat == Entity_kind::CELL) ?
-                               target_mesh_.cell_volume(t) : target_mesh_.dual_cell_volume(t);
+                               target_mesh_.cell_volume(t) :
+                               target_mesh_.dual_cell_volume(t);
+    }
 
     target_volume_ = std::accumulate(target_ent_volumes_.begin(),
                                      target_ent_volumes_.end(), 0.0);
-
 
     global_target_volume_ = target_volume_;
 #ifdef PORTAGE_ENABLE_MPI
@@ -220,6 +233,10 @@ public:
 #endif
 
 
+    // ---------------------------------------------------
+    // COMPUTE GLOBAL INTERSECTION VOLUME
+    // regardless of part-by-part scheme.
+    // ---------------------------------------------------
     // GLOBAL INTERSECTION VOLUME
     // In our initial redistribution phase, we will move as many
     // source cells as needed from different partitions to cover the
@@ -229,7 +246,7 @@ public:
 
     xsect_volumes_.resize(ntargetents_, 0.0);
     for (int t = 0; t < ntargetents_; t++) {
-      std::vector<Weights_t> const& sw_vec = source_ents_and_weights[t];
+      entity_weights_t const& sw_vec = source_ents_and_weights[t];
       for (auto const& sw : sw_vec)
         xsect_volumes_[t] += sw.weights[0];
     }
@@ -243,9 +260,6 @@ public:
       MPI_Allreduce(&xsect_volume, &global_xsect_volume_, 1,
                     MPI_DOUBLE, MPI_SUM, mycomm_);
 #endif
-
-
-
 
     // Are some source cells not fully covered by target cells?
     relvoldiff_source_ =
@@ -292,7 +306,6 @@ public:
     }
 
     // Are some target cells not fully covered by source cells?
-
     relvoldiff_target_ =
       fabs(global_xsect_volume_-global_target_volume_)/global_target_volume_;
     if (relvoldiff_target_ > voldifftol_) {
