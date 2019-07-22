@@ -46,7 +46,7 @@
 
 /*!
   @file genremapdriver.h
-  @brief Fancy remapping driver that does EVERYTHING :-)
+  @brief Uber remapping driver that does EVERYTHING :-)
 
   Remap mesh and material variables from mesh to mesh (in serial or
   distributed settings) with the option of doing a part-by-part remap
@@ -63,8 +63,8 @@ using Wonton::Flat_Mesh_Wrapper;
 using Wonton::Flat_State_Wrapper;
 
 /*!
-  @class FancyDriver "driver.h"
-  @brief FancyDriver provides the API to mapping multi-material data from one mesh to another in a general way
+  @class UberDriver "driver.h"
+  @brief UberDriver provides the API to mapping multi-material data from one mesh to another in a general way
 
   @tparam SourceMesh A lightweight wrapper to a specific input mesh
   implementation that provides certain functionality.
@@ -96,7 +96,7 @@ template <int D,
           class Matpoly_Splitter = void, class Matpoly_Clipper = void,
           class CoordSys = Wonton::DefaultCoordSys
           >
-class FancyDriver {
+class UberDriver {
  public:
 
   // A couple of shorthand notations
@@ -126,7 +126,7 @@ class FancyDriver {
     (if not everything will be remapped)
     @param[in] executor  pointer to an executor allowing us choose between serial and parallel runs
   */
-  FancyDriver(SourceMesh const& source_mesh,
+  UberDriver(SourceMesh const& source_mesh,
               SourceState const& source_state,
               TargetMesh const& target_mesh,
               TargetState& target_state,
@@ -174,7 +174,7 @@ class FancyDriver {
     @param[in,out] targetState A @c TargetState for the data that will
     be mapped to the target mesh
   */
-  FancyDriver(SourceMesh const& source_mesh,
+  UberDriver(SourceMesh const& source_mesh,
               SourceState const& source_state,
               TargetMesh const& target_mesh,
               TargetState& target_state,
@@ -218,13 +218,13 @@ class FancyDriver {
 
 
   /// Copy constructor (disabled)
-  FancyDriver(const FancyDriver &) = delete;
+  UberDriver(const UberDriver &) = delete;
 
   /// Assignment operator (disabled)
-  FancyDriver & operator = (const FancyDriver &) = delete;
+  UberDriver & operator = (const UberDriver &) = delete;
 
   /// Destructor
-  ~FancyDriver() {}
+  ~UberDriver() {}
 
   /// Is this a distributed (multi-rank) run?
 
@@ -749,9 +749,9 @@ class FancyDriver {
                                source_mesh_, source_state_,
                                target_mesh_, target_state_, executor_);
     }
-  }  // FancyDriver::instantiate_core_drivers
+  }  // UberDriver::instantiate_core_drivers
 
-};  // FancyDriver
+};  // UberDriver
 
 
 }  // namespace Portage
