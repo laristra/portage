@@ -9,7 +9,7 @@ Please see the license file at the root of this repository, or at:
 #-----------------------------------------------------------------------------~#
 
 set(headers  mmdriver.h driver_swarm.h driver_mesh_swarm_mesh.h fix_mismatch.h
-    coredriver.h fancydriver.h)
+    coredriver.h uberdriver.h)
 if (TANGRAM_FOUND)
   list(APPEND headers write_to_gmv.h)
 endif (TANGRAM_FOUND)
@@ -36,7 +36,7 @@ if (ENABLE_UNIT_TESTS)
        POLICY MPI
        THREADS 1)
 
-       cinch_add_unit(test_mismatch_fixup_serial
+       cinch_add_unit(test_mismatch_fixup
        SOURCES test/test_mismatch_fixup 
        LIBRARIES portage ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
        POLICY MPI
