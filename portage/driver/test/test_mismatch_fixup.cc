@@ -103,112 +103,184 @@ TEST(Test_Mismatch_Fixup, Test_Methods) {
                   Portage::Interpolate_1stOrder,
                   2,
                   Wonton::Jali_Mesh_Wrapper,
-                  Wonton::Jali_State_Wrapper> remapper(sourceMeshWrapper,
+                  Wonton::Jali_State_Wrapper> remapper1(sourceMeshWrapper,
                                                          sourceStateWrapper,
                                                          targetMeshWrapper,
                                                          targetStateWrapper);
 
-  remapper.set_remap_var_names(source_var_names, target_var_names);
+  remapper1.set_remap_var_names(source_var_names, target_var_names);
 
   // Execute remapper (No arguments implies serial execution)
 
-  remapper.run();
+  remapper1.run();
 
   // Verify that we got the fields we wanted
   for (int c = 0; c < ncells_target; c++) {
     ASSERT_NEAR(exact_S_E[c], targetvec[c], TOL);
   }
 
+  // Build the main driver object
 
+  Portage::MMDriver<Portage::SearchKDTree,
+                  Portage::IntersectR2D,
+                  Portage::Interpolate_1stOrder,
+                  2,
+                  Wonton::Jali_Mesh_Wrapper,
+                  Wonton::Jali_State_Wrapper> remapper2(sourceMeshWrapper,
+                                                         sourceStateWrapper,
+                                                         targetMeshWrapper,
+                                                         targetStateWrapper);
+
+  remapper2.set_remap_var_names(source_var_names, target_var_names);
 
   // Set fixup types
 
-  remapper.set_partial_fixup_type(Portage::Partial_fixup_type::CONSTANT);
-  remapper.set_empty_fixup_type(Portage::Empty_fixup_type::EXTRAPOLATE);
+  remapper2.set_partial_fixup_type(Portage::Partial_fixup_type::CONSTANT);
+  remapper2.set_empty_fixup_type(Portage::Empty_fixup_type::EXTRAPOLATE);
 
   // Execute remapper (No arguments implies serial execution)
 
-  remapper.run();
+  remapper2.run();
 
   // Verify that we got the fields we wanted
   for (int c = 0; c < ncells_target; c++) {
     ASSERT_NEAR(exact_C_E[c], targetvec[c], TOL);
   }
 
+  // Build the main driver object
 
+  Portage::MMDriver<Portage::SearchKDTree,
+                  Portage::IntersectR2D,
+                  Portage::Interpolate_1stOrder,
+                  2,
+                  Wonton::Jali_Mesh_Wrapper,
+                  Wonton::Jali_State_Wrapper> remapper3(sourceMeshWrapper,
+                                                         sourceStateWrapper,
+                                                         targetMeshWrapper,
+                                                         targetStateWrapper);
+
+  remapper3.set_remap_var_names(source_var_names, target_var_names);
 
   // Set fixup types
 
-  remapper.set_partial_fixup_type(Portage::Partial_fixup_type::LOCALLY_CONSERVATIVE);
-  remapper.set_empty_fixup_type(Portage::Empty_fixup_type::EXTRAPOLATE);
+  remapper3.set_partial_fixup_type(Portage::Partial_fixup_type::LOCALLY_CONSERVATIVE);
+  remapper3.set_empty_fixup_type(Portage::Empty_fixup_type::EXTRAPOLATE);
 
   // Execute remapper (No arguments implies serial execution)
 
-  remapper.run();
+  remapper3.run();
 
   // Verify that we got the fields we wanted
   for (int c = 0; c < ncells_target; c++) {
     ASSERT_NEAR(exact_L_E[c], targetvec[c], TOL);
   }
 
+  // Build the main driver object
 
+  Portage::MMDriver<Portage::SearchKDTree,
+                  Portage::IntersectR2D,
+                  Portage::Interpolate_1stOrder,
+                  2,
+                  Wonton::Jali_Mesh_Wrapper,
+                  Wonton::Jali_State_Wrapper> remapper4(sourceMeshWrapper,
+                                                         sourceStateWrapper,
+                                                         targetMeshWrapper,
+                                                         targetStateWrapper);
+
+  remapper4.set_remap_var_names(source_var_names, target_var_names);
 
   // Set fixup types
 
-  remapper.set_partial_fixup_type(Portage::Partial_fixup_type::SHIFTED_CONSERVATIVE);
-  remapper.set_empty_fixup_type(Portage::Empty_fixup_type::EXTRAPOLATE);
+  remapper4.set_partial_fixup_type(Portage::Partial_fixup_type::SHIFTED_CONSERVATIVE);
+  remapper4.set_empty_fixup_type(Portage::Empty_fixup_type::EXTRAPOLATE);
 
   // Execute remapper (No arguments implies serial execution)
 
-  remapper.run();
+  remapper4.run();
 
   // Verify that we got the fields we wanted
   for (int c = 0; c < ncells_target; c++) {
     ASSERT_NEAR(exact_S_E[c], targetvec[c], TOL);
   }
 
+  // Build the main driver object
 
+  Portage::MMDriver<Portage::SearchKDTree,
+                  Portage::IntersectR2D,
+                  Portage::Interpolate_1stOrder,
+                  2,
+                  Wonton::Jali_Mesh_Wrapper,
+                  Wonton::Jali_State_Wrapper> remapper5(sourceMeshWrapper,
+                                                         sourceStateWrapper,
+                                                         targetMeshWrapper,
+                                                         targetStateWrapper);
+
+  remapper5.set_remap_var_names(source_var_names, target_var_names);
 
   // Set fixup types
 
-  remapper.set_partial_fixup_type(Portage::Partial_fixup_type::CONSTANT);
-  remapper.set_empty_fixup_type(Portage::Empty_fixup_type::LEAVE_EMPTY);
+  remapper5.set_partial_fixup_type(Portage::Partial_fixup_type::CONSTANT);
+  remapper5.set_empty_fixup_type(Portage::Empty_fixup_type::LEAVE_EMPTY);
 
   // Execute remapper (No arguments implies serial execution)
 
-  remapper.run();
+  remapper5.run();
 
   // Verify that we got the fields we wanted
   for (int c = 0; c < ncells_target; c++) {
     ASSERT_NEAR(exact_C_L[c], targetvec[c], TOL);
   }
 
+  // Build the main driver object
 
+  Portage::MMDriver<Portage::SearchKDTree,
+                  Portage::IntersectR2D,
+                  Portage::Interpolate_1stOrder,
+                  2,
+                  Wonton::Jali_Mesh_Wrapper,
+                  Wonton::Jali_State_Wrapper> remapper6(sourceMeshWrapper,
+                                                         sourceStateWrapper,
+                                                         targetMeshWrapper,
+                                                         targetStateWrapper);
+
+  remapper6.set_remap_var_names(source_var_names, target_var_names);
 
   // Set fixup types
 
-  remapper.set_partial_fixup_type(Portage::Partial_fixup_type::LOCALLY_CONSERVATIVE);
-  remapper.set_empty_fixup_type(Portage::Empty_fixup_type::LEAVE_EMPTY);
+  remapper6.set_partial_fixup_type(Portage::Partial_fixup_type::LOCALLY_CONSERVATIVE);
+  remapper6.set_empty_fixup_type(Portage::Empty_fixup_type::LEAVE_EMPTY);
 
   // Execute remapper (No arguments implies serial execution)
 
-  remapper.run();
+  remapper6.run();
 
   // Verify that we got the fields we wanted
   for (int c = 0; c < ncells_target; c++) {
     ASSERT_NEAR(exact_L_L[c], targetvec[c], TOL);
   }
 
+  // Build the main driver object
 
+  Portage::MMDriver<Portage::SearchKDTree,
+                  Portage::IntersectR2D,
+                  Portage::Interpolate_1stOrder,
+                  2,
+                  Wonton::Jali_Mesh_Wrapper,
+                  Wonton::Jali_State_Wrapper> remapper7(sourceMeshWrapper,
+                                                         sourceStateWrapper,
+                                                         targetMeshWrapper,
+                                                         targetStateWrapper);
+
+  remapper7.set_remap_var_names(source_var_names, target_var_names);
 
   // Set fixup types
 
-  remapper.set_partial_fixup_type(Portage::Partial_fixup_type::SHIFTED_CONSERVATIVE);
-  remapper.set_empty_fixup_type(Portage::Empty_fixup_type::LEAVE_EMPTY);
+  remapper7.set_partial_fixup_type(Portage::Partial_fixup_type::SHIFTED_CONSERVATIVE);
+  remapper7.set_empty_fixup_type(Portage::Empty_fixup_type::LEAVE_EMPTY);
 
   // Execute remapper (No arguments implies serial execution)
 
-  remapper.run();
+  remapper7.run();
 
   // Verify that we got the fields we wanted
   for (int c = 0; c < ncells_target; c++) {
