@@ -30,7 +30,7 @@
 #include "wonton/support/Point.h"
 #include "wonton/state/state_vector_multi.h"
 #include "portage/driver/fix_mismatch.h"
-
+#include "portage/driver/parts.h"
 
 /*!
   @file coredriver.h
@@ -903,7 +903,10 @@ class CoreDriver : public CoreDriverBase<D,
                             Partial_fixup_type partial_fixup_type = DEFAULT_PARTIAL_FIXUP_TYPE,
                             Empty_fixup_type empty_fixup_type = DEFAULT_EMPTY_FIXUP_TYPE,
                             double conservation_tol = DEFAULT_CONSERVATION_TOL,
-                            int max_fixup_iter = DEFAULT_MAX_FIXUP_ITER
+                            int max_fixup_iter = DEFAULT_MAX_FIXUP_ITER,
+                            Parts<D, ONWHAT,
+                                  SourceMesh, SourceState,
+                                  TargetMesh, TargetState>* parts_fixer = nullptr
   ) {
 
     if (source_state_.get_entity(srcvarname) != ONWHAT) {
@@ -986,8 +989,22 @@ class CoreDriver : public CoreDriverBase<D,
         auto const& current_id = target_entities[i];
         target_field_raw[current_id] = target_field[i];
       }
-      // FIXME: no mismatch fixup for part-by-part for now.
 
+      // fix mismatch if necessary
+      if (parts_fixer != nullptr) {
+        if (parts_fixer->has_mismatch()) {
+          std::fprintf(stderr,
+            "There is a mismatch between source and target sub-meshes\n"
+            "Will start fixing interpolated values\n"
+          );
+          parts_fixer->fix_mismatch(srcvarname, trgvarname,
+                                    lower_bound, upper_bound,
+                                    conservation_tol,
+                                    max_fixup_iter,
+                                    partial_fixup_type,
+                                    empty_fixup_type);
+        }
+      }
     } else /* normal case */ {
       Portage::pointer<T> target_field(target_field_raw);
       Portage::transform(target_mesh_.begin(ONWHAT, PARALLEL_OWNED),
@@ -1113,13 +1130,9 @@ class CoreDriver : public CoreDriverBase<D,
 #ifdef PORTAGE_ENABLE_MPI
   MPI_Comm mycomm_ = MPI_COMM_NULL;
 #endif
-
-
-  // Pointers to mismatch fixers
   std::unique_ptr<MismatchFixer<D, ONWHAT,
                                 SourceMesh, SourceState,
-                                TargetMesh, TargetState>
-                  > mismatch_fixer_;
+                                TargetMesh, TargetState>> mismatch_fixer_;
 
   // Flag to indicate if meshes have mismatch
   bool has_mismatch_ = false;
