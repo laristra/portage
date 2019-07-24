@@ -24,7 +24,12 @@
 
 #include "portage/driver/coredriver.h"
 
-TEST(PartDriver, SingleMat_NoMismatch) {
+TEST(PartDriverTest, Basic) {
+
+  using Wonton::Entity_kind;
+  using Wonton::Entity_type;
+  using Wonton::Jali_Mesh_Wrapper;
+  using Wonton::Jali_State_Wrapper;
 
   // useful constants
   double const dblmax  = std::numeric_limits<double>::max();
@@ -42,19 +47,18 @@ TEST(PartDriver, SingleMat_NoMismatch) {
   sourceState = Jali::State::create(sourceMesh);
   targetState = Jali::State::create(targetMesh);
 
-  Wonton::Jali_Mesh_Wrapper  sourceMeshWrapper(*sourceMesh);
-  Wonton::Jali_Mesh_Wrapper  targetMeshWrapper(*targetMesh);
-  Wonton::Jali_State_Wrapper sourceStateWrapper(*sourceState);
-  Wonton::Jali_State_Wrapper targetStateWrapper(*targetState);
+  Jali_Mesh_Wrapper  sourceMeshWrapper(*sourceMesh);
+  Jali_Mesh_Wrapper  targetMeshWrapper(*targetMesh);
+  Jali_State_Wrapper sourceStateWrapper(*sourceState);
+  Jali_State_Wrapper targetStateWrapper(*targetState);
 
-  int const nb_source_cells = sourceMeshWrapper.num_entities(
-    Wonton::Entity_kind::CELL, Wonton::Entity_type::ALL
-  );
+  int const nb_source_cells =
+    sourceMeshWrapper.num_entities(Entity_kind::CELL, Entity_type::ALL);
 
   //-------------------------------------------------------------------
-  // Now add temperature field to the mesh
+  // Now add density field to the mesh
   //-------------------------------------------------------------------
-  auto compute_temperature = [&](int c, Wonton::Jali_Mesh_Wrapper const& mesh) {
+  auto compute_density = [&](int c, Wonton::Jali_Mesh_Wrapper const& mesh) {
     double const x_gap = 0.4;
     double const t_min = 30.;
     double const t_max = 100.;
@@ -64,22 +68,18 @@ TEST(PartDriver, SingleMat_NoMismatch) {
     return (centroid[0] < x_gap ? t_min : t_max);
   };
 
-  double source_temperature[nb_source_cells];
+  double source_density[nb_source_cells];
   for (int c = 0; c < nb_source_cells; c++) {
-    source_temperature[c] = compute_temperature(c, sourceMeshWrapper);
+    source_density[c] = compute_density(c, sourceMeshWrapper);
   }
 
-  sourceStateWrapper.mesh_add_data(
-    Wonton::Entity_kind::CELL, "temperature", source_temperature
-  );
-
-  targetStateWrapper.mesh_add_data<double>(
-    Wonton::Entity_kind::CELL, "temperature", 0.0
-  );
+  sourceStateWrapper.mesh_add_data(Entity_kind::CELL, "density", source_density);
+  targetStateWrapper.mesh_add_data<double>(Entity_kind::CELL, "density", 0.);
 
   // assuming that entities ordering are column-wise,
   // let's pick a couple of aligned subsets of entites
   // from source and target meshes (5x5, 10x10).
+  // FIXME update according to coordinates
   std::vector<int> source_entities {
     6, 11,
     7, 12,
@@ -97,34 +97,30 @@ TEST(PartDriver, SingleMat_NoMismatch) {
 
   // Do the basic remap algorithm (search, intersect, interpolate) -
   // no redistribution, no mismatch fixup
-  Portage::CoreDriver<
-    2, Wonton::Entity_kind::CELL,
-    Wonton::Jali_Mesh_Wrapper,
-    Wonton::Jali_State_Wrapper
-  > d(sourceMeshWrapper, sourceStateWrapper,
+  Portage::CoreDriver<2, Entity_kind::CELL, Jali_Mesh_Wrapper, Jali_State_Wrapper>
+    d(sourceMeshWrapper, sourceStateWrapper,
       targetMeshWrapper, targetStateWrapper);
 
   auto candidates = d.search<Portage::SearchKDTree>();
   auto source_weights = d.intersect_meshes<Portage::IntersectR2D>(candidates);
 
   d.interpolate_mesh_var<double, Portage::Interpolate_1stOrder>(
-    "temperature", "temperature", source_weights,
+    "density", "density", source_weights,
     source_entities, target_entities, dblmin, dblmax
   );
 
   //-------------------------------------------------------------------
   // CHECK REMAPPING RESULTS ON TARGET MESH SIDE
   //-------------------------------------------------------------------
-  // Finally check that we got the right target temperature values
+  // Finally check that we got the right target density values
   double* remapped;
-  targetStateWrapper.mesh_get_data(
-    Wonton::Entity_kind::CELL, "temperature", &remapped
-  );
+  targetStateWrapper.mesh_get_data(Entity_kind::CELL, "density", &remapped);
 
   for (auto&& c : target_entities) {
-    double const expected = compute_temperature(c, targetMeshWrapper);
+    double const expected = compute_density(c, targetMeshWrapper);
 #ifdef DEBUG
-    std::printf("remap[%d]: %.3f, exact[%d]: %.3f\n",
+    std::fprintf(stderr,
+      "remap[%d]: %.3f, exact[%d]: %.3f\n",
       c, remapped[c], c, expected
     );
 #endif
