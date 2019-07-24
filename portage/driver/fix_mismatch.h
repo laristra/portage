@@ -12,6 +12,7 @@ Please see the license file at the root of this repository, or at:
 #include <algorithm>
 #include <vector>
 #include <iterator>
+#include <unordered_set>
 #include <string>
 #include <utility>
 #include <iostream>

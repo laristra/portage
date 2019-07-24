@@ -340,7 +340,7 @@ set(ENABLE_THRUST FALSE CACHE BOOL "Use Thrust")
 if(ENABLE_THRUST)
   message(STATUS "Enabling compilation with Thrust")
 
-  set(PORTAGE_ENABLE_THRUST True CACHE BOOL "Is Portage is compiled with Thrust?")
+  set(PORTAGE_ENABLE_THRUST True CACHE BOOL "Is Portage compiled with Thrust?")
 
   # allow the user to specify a THRUST_DIR, otherwise use ${NGC_INCLUDE_DIR}
   # NOTE: thrust internally uses include paths from the 'root' directory, e.g.
