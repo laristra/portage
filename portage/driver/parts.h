@@ -90,10 +90,12 @@ public:
     }
 #endif
     // update source/target entities metadata
-    source_mesh_size_ = (onwhat == CELL ? source_mesh_.num_owned_cells()
-                                        : source_mesh_.num_owned_nodes());
-    target_mesh_size_ = (onwhat == CELL ? target_mesh_.num_owned_cells()
-                                        : target_mesh_.num_owned_nodes());
+    source_mesh_size_ =
+      (onwhat == Entity_kind::CELL ? source_mesh_.num_owned_cells()
+                                   : source_mesh_.num_owned_nodes());
+    target_mesh_size_ =
+      (onwhat == Entity_kind::CELL ? target_mesh_.num_owned_cells()
+                                   : target_mesh_.num_owned_nodes());
 
     source_part_size_ = source_entities.size();
     target_part_size_ = target_entities.size();
@@ -108,14 +110,14 @@ public:
 #ifdef PORTAGE_ENABLE_MPI
     if (distributed_) {
       get_unique_entity_masks<onwhat, SourceMesh_Wrapper>(
-        source_mesh_, &source_ent_masks, mycomm_
+        source_mesh_, &source_entities_masks_, mycomm_
       );
     }
 #endif
 
     source_entities_volumes_.reserve(source_part_size_);
     target_entities_volumes_.reserve(target_part_size_);
-    intersection_volumes_.reserve(target_part_size);
+    intersection_volumes_.reserve(target_part_size_);
 
     // set relative indexing
     for (int i = 0; i < source_part_size_; ++i) {
@@ -211,16 +213,17 @@ public:
     // ------------------------------------------
     // collect volumes of entities that are not masked out and sum them up
     for (auto&& s : source_entities_) {
-      source_entities_volumes.emplace_back(
-        onwhat == CELL ? source_entities_masks_[s] * source_mesh_.cell_volume(s)
-                       : source_entities_masks_[s] * source_mesh_.dual_cell_volume(s)
+      source_entities_volumes_.emplace_back(
+        onwhat == Entity_kind::CELL
+          ? source_entities_masks_[s] * source_mesh_.cell_volume(s)
+          : source_entities_masks_[s] * source_mesh_.dual_cell_volume(s)
       );
     }
 
     for (auto&& t : target_entities_) {
       target_entities_volumes.emplace_back(
-        onwhat == CELL ? target_mesh_.cell_volume(t)
-                       : target_mesh_.dual_cell_volume(t)
+        onwhat == Entity_kind::CELL ? target_mesh_.cell_volume(t)
+                                    : target_mesh_.dual_cell_volume(t)
       );
     }
 
@@ -248,11 +251,11 @@ public:
 #ifdef PORTAGE_ENABLE_MPI
     if (distributed_) {
       MPI_Allreduce(
-        &source_volume_, &global_source_volume_, 1, MPI_DOUBLE, MPI_SUM, mycomm_
+        &source_volume, &global_source_volume_, 1, MPI_DOUBLE, MPI_SUM, mycomm_
       );
 
       MPI_Allreduce(
-        &target_volume_, &global_target_volume_, 1, MPI_DOUBLE, MPI_SUM, mycomm_
+        &target_volume, &global_target_volume_, 1, MPI_DOUBLE, MPI_SUM, mycomm_
       );
 
       MPI_Allreduce(
@@ -278,7 +281,7 @@ public:
       std::abs(global_intersect_volume_ - global_target_volume_)
       / global_target_volume_;
 
-    if (relative_voldiff_source_ > tolerance_) {
+    if (relative_voldiff_source > tolerance_) {
       has_mismatch_ = true;
 
       if (rank_ == 0) {
@@ -287,7 +290,7 @@ public:
       }
     }
 
-    if (relative_voldiff_target_ > tolerance_) {
+    if (relative_voldiff_target > tolerance_) {
       has_mismatch_ = true;
 
       if (rank_ == 0) {
@@ -334,7 +337,7 @@ public:
 #endif
 
     if (global_nb_empty > 0 and rank_ == 0) {
-      if (onwhat == CELL) {
+      if (onwhat == Entity_kind::CELL) {
         std::fprintf(stderr,
           "One or more target cells are not covered by ANY source cells.\n"
           "Will assign values based on their neighborhood\n"
@@ -365,7 +368,7 @@ public:
           // skip already set entities
           if (layer_num_[i] == 0) {
 
-            auto neighbors = get_target_filtered_neighbors<ALL>(entity);
+            auto neighbors = get_target_filtered_neighbors<Entity_type::ALL>(entity);
 
             for (auto&& neigh : neighbors) {
               auto const& j = target_relative_index_[neigh];
@@ -775,9 +778,9 @@ private:
   bool has_mismatch_    = false;
 
   // useful constants
-  static double const infinity_  = std::numeric_limits<double>::max();
-  static double const epsilon_   = std::numeric_limits<double>::epsilon();
-  static double const tolerance_ = 1.E2 * epsilon_;
+  static constexpr double infinity_  = std::numeric_limits<double>::max();
+  static constexpr double epsilon_   = std::numeric_limits<double>::epsilon();
+  static constexpr double tolerance_ = 1.E2 * epsilon_;
 
   // source/target meshes and related states
   SourceMesh_Wrapper  const& source_mesh_;
