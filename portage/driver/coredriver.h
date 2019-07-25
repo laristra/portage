@@ -725,9 +725,11 @@ class CoreDriver : public CoreDriverBase<D,
 
     }  // for each material m
 
+    return source_weights_by_mat;
+#else
+    return std::vector<Portage::vector<std::vector<Weights_t>>>();
 #endif
 
-    return source_weights_by_mat;
   }
 
 
@@ -815,7 +817,7 @@ class CoreDriver : public CoreDriverBase<D,
     // Instantiate particular interpolator
     Interpolate<D, ONWHAT, SourceMesh, TargetMesh, SourceState,
                 InterfaceReconstructorType, Matpoly_Splitter, Matpoly_Clipper, CoordSys>
-        interpolator(source_mesh_, target_mesh_, source_state_, interface_reconstructor_);
+        interpolator(source_mesh_, target_mesh_, source_state_);
       
 
     // Get a handle to a memory location where the target state
@@ -845,6 +847,8 @@ class CoreDriver : public CoreDriverBase<D,
   }
 
 
+#ifdef HAVE_TANGRAM
+  
   /*! CoreDriver::interpolate_mat_var
 
     @brief interpolate a material variable
@@ -930,6 +934,7 @@ class CoreDriver : public CoreDriverBase<D,
 
   }  // CoreDriver::interpolate_mat_var
 
+#endif  // HAVE_TANGRAM
 
   
  private:
@@ -948,14 +953,6 @@ class CoreDriver : public CoreDriverBase<D,
 #endif
 
 
-  // Pointer to the interface reconstructor object (required by the
-  // interface to be shared)
-  std::shared_ptr<Tangram::Driver<InterfaceReconstructorType, D,
-                                  SourceMesh,
-                                  Matpoly_Splitter, Matpoly_Clipper>
-                  > interface_reconstructor_;
-  
-
   // Pointers to mismatch fixers
   std::unique_ptr<MismatchFixer<D, ONWHAT,
                                 SourceMesh, SourceState,
@@ -967,6 +964,14 @@ class CoreDriver : public CoreDriverBase<D,
 
 
 #ifdef HAVE_TANGRAM
+
+  // Pointer to the interface reconstructor object (required by the
+  // interface to be shared)
+  std::shared_ptr<Tangram::Driver<InterfaceReconstructorType, D,
+                                  SourceMesh,
+                                  Matpoly_Splitter, Matpoly_Clipper>
+                  > interface_reconstructor_;
+  
 
   // Convert volume fraction and centroid data from compact
   // material-centric to compact cell-centric (ccc) form as needed
