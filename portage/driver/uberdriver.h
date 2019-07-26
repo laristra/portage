@@ -549,14 +549,16 @@ class UberDriver {
       if (source_state_.field_type(ONWHAT, srcvarname) ==
           Field_type::MULTIMATERIAL_FIELD) {
 
+#ifdef HAVE_TANGRAM
         assert(mat_intersection_completed_);
         assert(ONWHAT == CELL);
-        
+
         driver->template interpolate_mat_var<T, Interpolate>
             (srcvarname, trgvarname, source_weights_by_mat_,
              lower_bound, upper_bound, limiter, partial_fixup_type,
              empty_fixup_type, conservation_tol, max_fixup_iter);
-
+#endif
+        
       } else {
 
         assert(mesh_intersection_completed_[ONWHAT]);
@@ -574,13 +576,15 @@ class UberDriver {
       if (source_state_.field_type(ONWHAT, srcvarname) ==
           Field_type::MULTIMATERIAL_FIELD) {
 
+#ifdef HAVE_TANGRAM
         assert(mat_intersection_completed_);
         assert(ONWHAT == CELL);
-        
+
         driver->template interpolate_mat_var<T, Interpolate>
             (srcvarname, trgvarname, source_weights_by_mat_,
              lower_bound, upper_bound, limiter, partial_fixup_type,
              empty_fixup_type, conservation_tol, max_fixup_iter);
+#endif
 
       } else {
 
