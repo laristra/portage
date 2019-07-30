@@ -97,8 +97,9 @@ TEST(PartDriverTest, Basic) {
 
   // Do the basic remap algorithm (search, intersect, interpolate) -
   // no redistribution, no mismatch fixup
-  Portage::CoreDriver<2, Entity_kind::CELL, Jali_Mesh_Wrapper, Jali_State_Wrapper>
-    d(sourceMeshWrapper, sourceStateWrapper,
+  Portage::CoreDriver<
+    2, Entity_kind::CELL, Jali_Mesh_Wrapper, Jali_State_Wrapper
+  > d(sourceMeshWrapper, sourceStateWrapper,
       targetMeshWrapper, targetStateWrapper);
 
   auto candidates = d.search<Portage::SearchKDTree>();
@@ -117,13 +118,11 @@ TEST(PartDriverTest, Basic) {
   targetStateWrapper.mesh_get_data(Entity_kind::CELL, "density", &remapped);
 
   for (auto&& c : target_entities) {
-    double const expected = compute_density(c, targetMeshWrapper);
+    auto const& obtained = remapped[c];
+    auto const  expected = compute_density(c, targetMeshWrapper);
 #ifdef DEBUG
-    std::fprintf(stderr,
-      "remap[%d]: %.3f, exact[%d]: %.3f\n",
-      c, remapped[c], c, expected
-    );
+std::printf("cell[%d]: remapped: %.3f, expected: %.3f\n", c, obtained, expected);
 #endif
-    ASSERT_NEAR(remapped[c], expected, epsilon);
+    ASSERT_NEAR(obtained, expected, epsilon);
   }
 }
