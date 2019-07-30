@@ -97,30 +97,35 @@ bool get_unique_entity_masks(Mesh_Wrapper const &mesh,
 
 #endif
 
-/**
- * @brief Check and fix source/target boundaries mismatch.
- *
- * @tparam D                   meshes dimension
- * @tparam onwhat              the entity kind for remap [cell|node]
- * @tparam SourceMesh_Wrapper  the source mesh wrapper to use
- * @tparam SourceState_Wrapper the source state wrapper to use
- * @tparam TargetMesh_Wrapper  the target mesh wrapper to use
- * @tparam TargetState_Wrapper the target state wrapper to use
- */
+
+
+// Check if we have mismatch of mesh boundaries
+// T is the target mesh, S is the source mesh
+// T_i is the i'th cell of the target mesh and
+// |*| signifies the extent/volume of an entity
+//
+// If sum_i(|T_i intersect S|) NE |S|, some source cells are not
+// completely covered by the target mesh
+//
+// If sum_i(|T_i intersect S|) NE |T|, some target cells are not
+// completely covered by the source mesh
+//
+// If there is a mismatch, adjust values for fields to account so that
+// integral quantities are conserved and a constant field is readjusted
+// to a different constant
+
 template<int D, Entity_kind onwhat,
          class SourceMesh_Wrapper, class SourceState_Wrapper,
          class TargetMesh_Wrapper, class TargetState_Wrapper>
 class MismatchFixer {
-  // shortcut
-  using entity_weights_t = std::vector<Weights_t>;
+ public:
 
-public:
-  MismatchFixer(SourceMesh_Wrapper  const& source_mesh,
+  MismatchFixer(SourceMesh_Wrapper const& source_mesh,
                 SourceState_Wrapper const& source_state,
-                TargetMesh_Wrapper  const& target_mesh,
-                TargetState_Wrapper& target_state,
-                Portage::vector<entity_weights_t> const& source_ents_and_weights,
-                Wonton::Executor_type const* executor) :
+                TargetMesh_Wrapper const& target_mesh,
+                TargetState_Wrapper & target_state,
+                Portage::vector<std::vector<Weights_t>> const & source_ents_and_weights,
+                Wonton::Executor_type const *executor) :
       source_mesh_(source_mesh), source_state_(source_state),
       target_mesh_(target_mesh), target_state_(target_state) {
 
@@ -134,42 +139,8 @@ public:
     }
 #endif
 
-    test_mismatch(source_ents_and_weights);
-  }
-
-  // has this problem been found to have mismatched mesh boundaries?
-  bool has_mismatch() const { return mismatch_; }
-
-
-  /**
-   * @brief Check and fix source/target boundaries mismatch.
-   *
-   * T is the target mesh, S is the source mesh
-   * T_i is the i'th cell of the target mesh and
-   * |*| signifies the extent/volume of an entity
-   *
-   * - if sum_i(|T_i intersect S|) NE |S|, some source cells are not
-   *   completely covered by the target mesh.
-   * - if sum_i(|T_i intersect S|) NE |T|, some target cells are not
-   *   completely covered by the source mesh
-   * - if there is a mismatch, adjust values for fields to account so that
-   *   integral quantities are conserved and a constant field is readjusted
-   *   to a different constant
-   *
-   * @param source... source entities ID and weights for each target entity.
-   * @return true if a mismatch has been identified, false otherwise.
-   */
-  bool test_mismatch(Portage::vector<entity_weights_t> const& source_ents_and_weights) {
-
-    /*
-    int const nb_part_source_ent = source_entities.size();
-    int const nb_part_target_ent = target_entities.size();
-    // check if we have to do part by part
-    bool const do_part_by_part = nb_part_source_ent > 0 and nb_part_target_ent > 0;*/
-
     nsourceents_ = (onwhat == Entity_kind::CELL) ?
-                   source_mesh_.num_owned_cells() :
-                   source_mesh_.num_owned_nodes();
+        source_mesh_.num_owned_cells() : source_mesh_.num_owned_nodes();
 
     // Get info about which entities on this processor should be
     // masked out and not accounted for in calculations because they
@@ -179,29 +150,23 @@ public:
 
     std::vector<int> source_ent_masks(nsourceents_, 1);
 #ifdef PORTAGE_ENABLE_MPI
-    if (distributed_) {
-      get_unique_entity_masks<onwhat, SourceMesh_Wrapper>(
-        source_mesh_, &source_ent_masks, mycomm_
-      );
-    }
+    if (distributed_)
+      get_unique_entity_masks<onwhat, SourceMesh_Wrapper>(source_mesh_,
+                                                          &source_ent_masks,
+                                                          mycomm_);
 #endif
 
-    // ---------------------------------------------------
-    // COMPUTE GLOBAL VOLUMES ON SOURCE AND TARGET MESHES
-    // regardless of part-by-part scheme.
-    // ---------------------------------------------------
-
     // collect volumes of entities that are not masked out and sum them up
+
     source_ent_volumes_.resize(nsourceents_, 0.0);
-    for (int s = 0; s < nsourceents_; s++) {
+    for (int s = 0; s < nsourceents_; s++)
       source_ent_volumes_[s] = (onwhat == Entity_kind::CELL) ?
-                               source_ent_masks[s]*source_mesh_.cell_volume(s) :
-                               source_ent_masks[s]*source_mesh_.dual_cell_volume(s);
-    }
+          source_ent_masks[s]*source_mesh_.cell_volume(s) :
+          source_ent_masks[s]*source_mesh_.dual_cell_volume(s);
 
     source_volume_ =
-      std::accumulate(source_ent_volumes_.begin(), source_ent_volumes_.end(),
-                      0.0);
+        std::accumulate(source_ent_volumes_.begin(), source_ent_volumes_.end(),
+                        0.0);
 
     global_source_volume_ = source_volume_;
 #ifdef PORTAGE_ENABLE_MPI
@@ -212,18 +177,16 @@ public:
 
     // GLOBAL TARGET VOLUME
     ntargetents_ = (onwhat == Entity_kind::CELL) ?
-                   target_mesh_.num_owned_cells() :
-                   target_mesh_.num_owned_nodes();
+        target_mesh_.num_owned_cells() : target_mesh_.num_owned_nodes();
 
     target_ent_volumes_.resize(ntargetents_, 0.0);
-    for (int t = 0; t < ntargetents_; t++) {
+    for (int t = 0; t < ntargetents_; t++)
       target_ent_volumes_[t] = (onwhat == Entity_kind::CELL) ?
-                               target_mesh_.cell_volume(t) :
-                               target_mesh_.dual_cell_volume(t);
-    }
+          target_mesh_.cell_volume(t) : target_mesh_.dual_cell_volume(t);
 
     target_volume_ = std::accumulate(target_ent_volumes_.begin(),
                                      target_ent_volumes_.end(), 0.0);
+
 
     global_target_volume_ = target_volume_;
 #ifdef PORTAGE_ENABLE_MPI
@@ -233,10 +196,6 @@ public:
 #endif
 
 
-    // ---------------------------------------------------
-    // COMPUTE GLOBAL INTERSECTION VOLUME
-    // regardless of part-by-part scheme.
-    // ---------------------------------------------------
     // GLOBAL INTERSECTION VOLUME
     // In our initial redistribution phase, we will move as many
     // source cells as needed from different partitions to cover the
@@ -246,7 +205,7 @@ public:
 
     xsect_volumes_.resize(ntargetents_, 0.0);
     for (int t = 0; t < ntargetents_; t++) {
-      entity_weights_t const& sw_vec = source_ents_and_weights[t];
+      std::vector<Weights_t> const& sw_vec = source_ents_and_weights[t];
       for (auto const& sw : sw_vec)
         xsect_volumes_[t] += sw.weights[0];
     }
@@ -261,16 +220,19 @@ public:
                     MPI_DOUBLE, MPI_SUM, mycomm_);
 #endif
 
+
+
+
     // Are some source cells not fully covered by target cells?
     relvoldiff_source_ =
-      fabs(global_xsect_volume_-global_source_volume_)/global_source_volume_;
+        fabs(global_xsect_volume_-global_source_volume_)/global_source_volume_;
     if (relvoldiff_source_ > voldifftol_) {
 
       mismatch_ = true;
 
-      if (rank_ == 0)
+      if (rank_ == 0) 
         std::cerr << "\n** MESH MISMATCH -" <<
-                  " some source cells are not fully covered by the target mesh\n";
+            " some source cells are not fully covered by the target mesh\n";
 
 #ifdef DEBUG
       // Find one source cell (or dual cell) that is not fully covered
@@ -306,15 +268,16 @@ public:
     }
 
     // Are some target cells not fully covered by source cells?
+
     relvoldiff_target_ =
-      fabs(global_xsect_volume_-global_target_volume_)/global_target_volume_;
+        fabs(global_xsect_volume_-global_target_volume_)/global_target_volume_;
     if (relvoldiff_target_ > voldifftol_) {
 
       mismatch_ = true;
 
       if (rank_ == 0)
         std::cerr << "\n** MESH MISMATCH -" <<
-                  " some target cells are not fully covered by the source mesh\n";
+            " some target cells are not fully covered by the source mesh\n";
 
 #ifdef DEBUG
       // Find one target cell that is not fully covered by the source mesh and
@@ -337,10 +300,11 @@ public:
         }
       }
 #endif
+
     }
 
-    if (not mismatch_)
-      return false;
+    if (!mismatch_) return;
+
 
     // Discrepancy between intersection volume and source mesh volume PLUS
     // Discrepancy between intersection volume and target mesh volume
@@ -372,24 +336,26 @@ public:
       delete [] nempty_all;
     }
 #endif
-
+    
     if (global_nempty && rank_ == 0) {
       if (onwhat == Entity_kind::CELL)
         std::cerr << "One or more target cells are not covered by " <<
-                  "ANY source cells.\n" <<
-                  " Will assign values based on their neighborhood\n";
+            "ANY source cells.\n" <<
+            " Will assign values based on their neighborhood\n";
       else
         std::cerr << "One or more target dual cells are not covered by " <<
-                  "ANY source dual cells.\n" <<
-                  " Will assign values based on their neighborhood\n";
+            "ANY source dual cells.\n" <<
+            " Will assign values based on their neighborhood\n";
     }
-
+    
     if (nempty) {
       layernum_.resize(ntargetents_, 0);
 
       int nlayers = 0;
-      int ntagged = 0;
-      while (ntagged < nempty) {
+      int ntagged = 0, old_ntagged = -1;
+      while (ntagged < nempty && ntagged > old_ntagged) {
+        old_ntagged = ntagged;
+
         std::vector<int> curlayerents;
 
         for (int ent : emptyents) {
@@ -421,8 +387,16 @@ public:
       }
     }  // if nempty
 
-    return mismatch_;
-  }
+  }  // MismatchFixer
+
+
+
+
+  // has this problem been found to have mismatched mesh boundaries?
+
+  bool has_mismatch() const {return mismatch_;}
+
+
 
 
   /// @brief Repair the remapped field to account for boundary mismatch
@@ -454,6 +428,7 @@ public:
   /// LEAVE_EMPTY - Leave empty cells as is
   /// EXTRAPOLATE - Fill empty cells with extrapolated values
   /// FILL        - Fill empty cells with specified values (not yet implemented)
+
   bool fix_mismatch(std::string const & src_var_name,
                     std::string const & trg_var_name,
                     double global_lower_bound = -std::numeric_limits<double>::max(),
@@ -463,21 +438,20 @@ public:
                     Partial_fixup_type partial_fixup_type =
                     Partial_fixup_type::SHIFTED_CONSERVATIVE,
                     Empty_fixup_type empty_fixup_type =
-                    Empty_fixup_type::EXTRAPOLATE,
-                    std::vector<int> const& source_entities = {},
-                    std::vector<int> const& target_entities = {}) {
+                    Empty_fixup_type::EXTRAPOLATE) {
 
-    if (source_state_.field_type(onwhat, src_var_name) == Field_type::MESH_FIELD) {
+
+    if (source_state_.field_type(onwhat, src_var_name) ==
+        Field_type::MESH_FIELD)
       return fix_mismatch_meshvar(src_var_name, trg_var_name,
                                   global_lower_bound, global_upper_bound,
                                   conservation_tol, maxiter,
-                                  partial_fixup_type, empty_fixup_type,
-                                  source_entities, target_entities);
-    }
+                                  partial_fixup_type, empty_fixup_type);
   }
 
 
   /// @brief Repair a remapped mesh field to account for boundary mismatch
+
   bool fix_mismatch_meshvar(std::string const & src_var_name,
                             std::string const & trg_var_name,
                             double global_lower_bound,
@@ -487,9 +461,7 @@ public:
                             Partial_fixup_type partial_fixup_type =
                             Partial_fixup_type::SHIFTED_CONSERVATIVE,
                             Empty_fixup_type empty_fixup_type =
-                            Empty_fixup_type::EXTRAPOLATE,
-                            std::vector<int> const& source_entities = {},
-                            std::vector<int> const& target_entities = {}) {
+                            Empty_fixup_type::EXTRAPOLATE) {
 
     static bool hit_lobound = false, hit_hibound = false;
     
@@ -499,9 +471,6 @@ public:
 
     double *target_data;
     target_state_.mesh_get_data(onwhat, trg_var_name, &target_data);
-
-    // check if part by part
-    bool do_part_by_part = not(source_entities.empty() or target_entities.empty());
 
     if (partial_fixup_type == Partial_fixup_type::LOCALLY_CONSERVATIVE) {
       // In interpolate step, we divided the accumulated integral (U)
@@ -762,7 +731,7 @@ public:
 
   }  // fix_mismatch_meshvar
 
-private:
+ private:
   SourceMesh_Wrapper const& source_mesh_;
   SourceState_Wrapper const& source_state_;
   TargetMesh_Wrapper const& target_mesh_;
