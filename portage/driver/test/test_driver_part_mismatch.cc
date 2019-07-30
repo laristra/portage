@@ -255,6 +255,9 @@ public:
     auto source_weights = driver.intersect_meshes<Portage::IntersectR2D>(candidates);
 
     for (int i = 0; i < nb_parts; ++i) {
+      // test for mismatch and compute volumes
+      partitions[i].test_mismatch(source_weights);
+
       // interpolate density part-by-part while fixing mismatched values
       driver.interpolate_mesh_var<double, Portage::Interpolate_1stOrder>(
         "density", "density", source_weights,

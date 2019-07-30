@@ -149,6 +149,12 @@ public:
    */
   bool has_mismatch() const { return has_mismatch_; }
 
+  /**
+   * @brief Is mismatch already tested?
+   *
+   * @return true if so, false otherwise.
+   */
+  bool is_mismatch_tested() const { return is_mismatch_tested_; }
 
   /**
    * @brief Find a needle in a haystack.
@@ -425,6 +431,9 @@ public:
         nb_layers++;
       }
     }
+
+    // toggle flag
+    is_mismatch_tested_ = true;
 
     return has_mismatch_;
   }
@@ -818,8 +827,9 @@ public:
 
 private:
 
-  bool do_part_by_part_ = false;
-  bool has_mismatch_    = false;
+  bool do_part_by_part_    = false;
+  bool is_mismatch_tested_ = false;
+  bool has_mismatch_       = false;
 
   // useful constants
   static constexpr double infinity_  = std::numeric_limits<double>::max();

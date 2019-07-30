@@ -992,9 +992,8 @@ class CoreDriver : public CoreDriverBase<D,
 
       // fix mismatch if necessary
       if (parts_fixer != nullptr) {
-        // check for mismatch
-        // FIXME will be moved elsewhere
-        parts_fixer->test_mismatch(sources_and_weights);
+        // mismatch test should have been already done.
+        assert(parts_fixer->is_mismatch_tested());
 
         if (parts_fixer->has_mismatch()) {
           #ifdef DEBUG
