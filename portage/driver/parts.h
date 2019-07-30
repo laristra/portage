@@ -18,6 +18,8 @@
 
 #include "portage/support/portage.h"
 
+#define DEBUG_PART_BY_PART 1
+
 /**
  * @file  parts.h
  *
@@ -43,7 +45,9 @@ namespace Portage {
  */
   template<int D, Entity_kind onwhat,
     class SourceMesh_Wrapper, class SourceState_Wrapper,
-    class TargetMesh_Wrapper, class TargetState_Wrapper>
+    class TargetMesh_Wrapper = SourceMesh_Wrapper,
+    class TargetState_Wrapper = SourceState_Wrapper
+  >
 class Parts {
   // shortcut
   using entity_weights_t = std::vector<Weights_t>;
@@ -115,9 +119,11 @@ public:
     }
 #endif
 
-    source_entities_volumes_.reserve(source_part_size_);
-    target_entities_volumes_.reserve(target_part_size_);
-    intersection_volumes_.reserve(target_part_size_);
+    //source_entities_volumes_.reserve(source_part_size_);
+    //target_entities_volumes_.reserve(target_part_size_);
+    source_entities_volumes_.resize(source_part_size_);
+    target_entities_volumes_.resize(target_part_size_);
+    intersection_volumes_.resize(target_part_size_);
 
     // set relative indexing
     for (int i = 0; i < source_part_size_; ++i) {
@@ -213,18 +219,30 @@ public:
     // ------------------------------------------
     // collect volumes of entities that are not masked out and sum them up
     for (auto&& s : source_entities_) {
-      source_entities_volumes_.emplace_back(
+      auto const& i = source_relative_index_[s];
+      source_entities_volumes_[i] = (
         onwhat == Entity_kind::CELL
           ? source_entities_masks_[s] * source_mesh_.cell_volume(s)
           : source_entities_masks_[s] * source_mesh_.dual_cell_volume(s)
       );
+      #if DEBUG_PART_BY_PART
+        std::printf("- source_volume[%02d]: %.3f\n", s, source_entities_volumes_[i]);
+        if (i == source_mesh_size_ - 1)
+          std::printf("=======\n");
+      #endif
     }
 
     for (auto&& t : target_entities_) {
-      target_entities_volumes.emplace_back(
+      auto const& i = target_relative_index_[t];
+      target_entities_volumes_[i] = (
         onwhat == Entity_kind::CELL ? target_mesh_.cell_volume(t)
                                     : target_mesh_.dual_cell_volume(t)
       );
+      #if DEBUG_PART_BY_PART
+        std::printf("- target_volume[%02d]: %.3f\n", t, target_entities_volumes_[i]);
+        if (i == target_mesh_size_ - 1)
+          std::printf("=======\n");
+      #endif
     }
 
     for (auto&& t : target_entities_) {
@@ -233,16 +251,29 @@ public:
       entity_weights_t const& weights = source_ents_and_weights[t];
       intersection_volumes_[i] = 0.;
       for (auto&& sw : weights) {
-        intersection_volumes_[i] += sw.weights[0];
+        // matched source cell should be in the source part
+        if (is_found(sw.entityID, source_entities_))
+          intersection_volumes_[i] += sw.weights[0];
+        #if DEBUG_PART_BY_PART
+          std::printf("\tweights[target:%d][source:%d]: %f\n",
+                      t, sw.entityID, sw.weights[0]);
+        #endif
       }
+      #if DEBUG_PART_BY_PART
+        std::printf("intersect_volume[%02d]: %.3f\n", t, intersection_volumes_[i]);
+      #endif
     }
 
     double source_volume = std::accumulate(source_entities_volumes_.begin(),
-                                           source_entities_volumes_.end(), 0);
+                                           source_entities_volumes_.end(), 0.);
     double target_volume = std::accumulate(target_entities_volumes_.begin(),
-                                           target_entities_volumes_.end(), 0);
+                                           target_entities_volumes_.end(), 0.);
     double intersect_volume = std::accumulate(intersection_volumes_.begin(),
-                                              intersection_volumes_.end(), 0);
+                                              intersection_volumes_.end(), 0.);
+
+    std::printf("source_volume: %.3f\n", source_volume);
+    std::printf("target_volume: %.3f\n", target_volume);
+    std::printf("intersect_volume: %.3f\n", intersect_volume);
 
     global_source_volume_    = source_volume;
     global_target_volume_    = target_volume;
@@ -277,7 +308,7 @@ public:
       std::abs(global_intersect_volume_ - global_source_volume_)
       / global_source_volume_;
 
-    double const relative_voldiff_target_ =
+    double const relative_voldiff_target =
       std::abs(global_intersect_volume_ - global_target_volume_)
       / global_target_volume_;
 
@@ -504,6 +535,12 @@ public:
       for (auto&& entity : target_entities_) {
         auto const& t = target_relative_index_[entity];
         if (not is_cell_empty_[t]) {
+
+          #if DEBUG_PART_BY_PART
+            std::printf("fixing target_data[%d] with locally conservative fixup\n", entity);
+            std::printf("= before: %.3f", target_data[entity]);
+          #endif
+
           auto const relative_voldiff =
             std::abs(intersection_volumes_[t] - target_entities_volumes_[t])
             / target_entities_volumes_[t];
@@ -511,6 +548,9 @@ public:
           if (relative_voldiff > tolerance_) {
             target_data[entity] *= intersection_volumes_[t] / target_entities_volumes_[t];
           }
+          #if DEBUG_PART_BY_PART
+            std::printf(", after: %.3f\n", target_data[entity]);
+          #endif
         }
       }
     }
@@ -545,13 +585,13 @@ public:
           if (nb_extrapol > 0) {
             averaged_value /= nb_extrapol;
           }
-#ifdef DEBUG
-          else {
-            std::fprintf(stderr,
-              "No owned neighbors of empty entity to extrapolate data from\n"
-            );
-          }
-#endif
+          #if DEBUG_PART_BY_PART
+            else {
+              std::fprintf(stderr,
+                "No owned neighbors of empty entity to extrapolate data from\n"
+              );
+            }
+          #endif
           target_data[entity] = averaged_value;
         }
         current_layer_number++;
@@ -772,6 +812,10 @@ public:
     }
   }
 
+public:
+  std::vector<int> const& source_entities_;
+  std::vector<int> const& target_entities_;
+
 private:
 
   bool do_part_by_part_ = false;
@@ -795,12 +839,10 @@ private:
   int source_part_size_ = 0;
   int target_part_size_ = 0;
 
-  std::vector<int> const& source_entities_;
-  std::vector<int> const& target_entities_;
-  std::vector<int>        source_entities_masks_   = {};
-  std::vector<double>     source_entities_volumes_ = {};
-  std::vector<double>     target_entities_volumes_ = {};
-  std::vector<double>     intersection_volumes_    = {};
+  std::vector<int>    source_entities_masks_   = {};
+  std::vector<double> source_entities_volumes_ = {};
+  std::vector<double> target_entities_volumes_ = {};
+  std::vector<double> intersection_volumes_    = {};
 
   // data needed for mismatch checks
   double global_source_volume_    = 0.;

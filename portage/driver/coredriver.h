@@ -992,11 +992,17 @@ class CoreDriver : public CoreDriverBase<D,
 
       // fix mismatch if necessary
       if (parts_fixer != nullptr) {
+        // check for mismatch
+        // FIXME will be moved elsewhere
+        parts_fixer->test_mismatch(sources_and_weights);
+
         if (parts_fixer->has_mismatch()) {
-          std::fprintf(stderr,
-            "There is a mismatch between source and target sub-meshes\n"
-            "Will start fixing interpolated values\n"
-          );
+          #ifdef DEBUG
+            std::fprintf(stderr,
+              "There is a mismatch between source and target sub-meshes\n"
+              "Will start fixing interpolated values\n"
+            );
+          #endif
           parts_fixer->fix_mismatch(srcvarname, trgvarname,
                                     lower_bound, upper_bound,
                                     conservation_tol,
