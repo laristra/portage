@@ -223,6 +223,9 @@ class UberDriver {
   /// Assignment operator (disabled)
   UberDriver & operator = (const UberDriver &) = delete;
 
+  /// Enable move semantics
+  UberDriver(UberDriver &&) = default;
+
   /// Destructor
   ~UberDriver() {}
 
