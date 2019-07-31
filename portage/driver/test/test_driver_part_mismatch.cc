@@ -164,7 +164,6 @@ protected:
                                           double unit_mass_target,
                                           double unit_volume_target,
                                           int nb_target_cells) {
-          assert(nb_cells > 0);
           double mass_delta = (unit_mass_target * nb_target_cells) - mass_source;
           double discrepancy = mass_delta / nb_target_cells;
           return (unit_mass_target - discrepancy) / unit_volume_target;
