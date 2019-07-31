@@ -28,12 +28,14 @@ class PartMismatchTest : public testing::Test {
 
 protected:
   // useful shortcuts
-  using Driver = Portage::CoreDriver<2, Wonton::Entity_kind::CELL,
-                                        Wonton::Jali_Mesh_Wrapper,
-                                        Wonton::Jali_State_Wrapper>;
+  using Remapper = Portage::CoreDriver<2, Wonton::Entity_kind::CELL,
+                                          Wonton::Jali_Mesh_Wrapper,
+                                          Wonton::Jali_State_Wrapper>;
   using Partition = Portage::Parts<2, Wonton::Entity_kind::CELL,
                                       Wonton::Jali_Mesh_Wrapper,
                                       Wonton::Jali_State_Wrapper>;
+  using Partial = Portage::Partial_fixup_type;
+  using Empty   = Portage::Empty_fixup_type;
 
   /**
    * @brief compute cell centroid.
@@ -98,32 +100,29 @@ protected:
   /**
    * @brief Compute the expected remapped density on target mesh.
    *
-   * It depends on partial/empty mismatch fixup schemes being used:
-   * - locally-conservative/leave-empty: [100.0|100.0| 50.0|  0.0|1]
-   * - locally-conservative/extrapolate: [100.0|100.0| 50.0| 50.0|1]
-   * - constant/leave-empty:             [100.0|100.0|100.0|  0.0|1]
-   * - constant/extrapolate:             [100.0|100.0|100.0|100.0|1]
-   * - shifted-conservative/leave-empty: [ 83.5| 83.5| 83.5|  0.0|1]
-   * - shifted-conservative/extrapolate: [ 62.5| 62.5| 62.5| 62.5|1]
+   * It depends on Partial/empty mismatch fixup schemes being used:
+   * - locally-conservative/leave-empty: [100.0|100.0| 50.0|  0.0|1.0]
+   * - locally-conservative/extrapolate: [100.0|100.0| 50.0| 50.0|1.0]
+   * - constant/leave-empty:             [100.0|100.0|100.0|  0.0|1.0]
+   * - constant/extrapolate:             [100.0|100.0|100.0|100.0|1.0]
+   * - shifted-conservative/leave-empty: [ 83.3| 83.3| 83.3|  0.0|2.5]
+   * - shifted-conservative/extrapolate: [ 62.5| 62.5| 62.5| 62.5|2.5]
    *
-   * @tparam partial_fixup_type the partial mismatch fixup scheme to use
+   * @tparam partial_fixup_type the Partial mismatch fixup scheme to use
    * @tparam empty_fixup_type   the empty cell fixup scheme to use
    * @param cell                the given cell
    * @return the expected remapped density value
    */
   double get_expected_remapped_density(int const cell,
-                                       Portage::Partial_fixup_type partial_fixup_type,
-                                       Portage::Empty_fixup_type empty_fixup_type) {
-
-    using P = Portage::Partial_fixup_type;
-    using E = Portage::Empty_fixup_type;
+                                       Partial partial_fixup,
+                                       Empty   empty_fixup) {
 
     // get cell position
     auto centroid = get_centroid(cell, target_mesh_wrapper);
 
-    switch (partial_fixup_type) {
-      case P::LOCALLY_CONSERVATIVE: {
-        if (empty_fixup_type == E::LEAVE_EMPTY) {
+    switch (partial_fixup) {
+      case Partial::LOCALLY_CONSERVATIVE: {
+        if (empty_fixup == Empty::LEAVE_EMPTY) {
           if (centroid[0] < 0.4) {
             return 100.;
           } else if (centroid[0] < 0.6) {
@@ -142,8 +141,8 @@ protected:
             return 1.;
           }
         }
-      } case P::CONSTANT: {
-        if (empty_fixup_type == E::LEAVE_EMPTY) {
+      } case Partial::CONSTANT: {
+        if (empty_fixup == Empty::LEAVE_EMPTY) {
           if (centroid[0] < 0.6) {
             return 100.;
           } else if (centroid[0] < 0.8) {
@@ -158,8 +157,9 @@ protected:
             return 1.;
           }
         }
-      } case P::SHIFTED_CONSERVATIVE: {
+      } case Partial::SHIFTED_CONSERVATIVE: {
 
+        /* Correct target cell density for shifted-conservative fixup scheme. */
         auto compute_shifted_density = [](double mass_source,
                                           double unit_mass_target,
                                           double unit_volume_target,
@@ -169,7 +169,7 @@ protected:
           return (unit_mass_target - discrepancy) / unit_volume_target;
         };
 
-        if (empty_fixup_type == E::LEAVE_EMPTY) {
+        if (empty_fixup == Empty::LEAVE_EMPTY) {
           if (centroid[0] < 0.6) {
             return compute_shifted_density(50, 20, 0.2, 3);  // 83.35
           } else if(centroid[0] < 0.8) {
@@ -184,7 +184,7 @@ protected:
             return compute_shifted_density(0.5, 0.2, 0.2, 1);  // 2.5
           }
         } // end extrapolate
-      } default: throw std::runtime_error("Invalid partial fixup type");
+      } default: throw std::runtime_error("Invalid Partial fixup type");
     }
   }
 
@@ -240,27 +240,25 @@ public:
    * @param partial_fixup the partially filled cell fixup scheme to use.
    * @param empty_fixup   the empty cells fixup scheme to use.
    */
-  void unitTest(Portage::Partial_fixup_type partial_fixup,
-                Portage::Empty_fixup_type   empty_fixup) {
+  void unitTest(Partial partial_fixup, Empty empty_fixup) {
 
     using Wonton::Entity_kind;
     using Wonton::Entity_type;
 
     // Perform remapping without redistribution
-    Driver driver(source_mesh_wrapper, source_state_wrapper,
-                  target_mesh_wrapper, target_state_wrapper);
+    Remapper remapper(source_mesh_wrapper, source_state_wrapper,
+                      target_mesh_wrapper, target_state_wrapper);
 
-    auto candidates = driver.search<Portage::SearchKDTree>();
-    auto source_weights = driver.intersect_meshes<Portage::IntersectR2D>(candidates);
+    auto candidates = remapper.search<Portage::SearchKDTree>();
+    auto source_weights = remapper.intersect_meshes<Portage::IntersectR2D>(candidates);
 
     for (int i = 0; i < nb_parts; ++i) {
       // test for mismatch and compute volumes
       partitions[i].test_mismatch(source_weights);
 
       // interpolate density part-by-part while fixing mismatched values
-      driver.interpolate_mesh_var<double, Portage::Interpolate_1stOrder>(
+      remapper.interpolate_mesh_var<double, Portage::Interpolate_1stOrder>(
         "density", "density", source_weights,
-        source_cells[i], target_cells[i],
         lower_bound, higher_bound, Portage::DEFAULT_LIMITER,
         partial_fixup, empty_fixup, Portage::DEFAULT_CONSERVATION_TOL,
         Portage::DEFAULT_MAX_FIXUP_ITER, &(partitions[i])
@@ -313,36 +311,25 @@ protected:
 
 
 TEST_F(PartMismatchTest, LocallyConservative_LeaveEmpty) {
-  unitTest(Portage::Partial_fixup_type::LOCALLY_CONSERVATIVE,
-           Portage::Empty_fixup_type::LEAVE_EMPTY);
+  unitTest(Partial::LOCALLY_CONSERVATIVE, Empty::LEAVE_EMPTY);
 }
-
 
 TEST_F(PartMismatchTest, LocallyConservative_Extrapolate) {
-  unitTest(Portage::Partial_fixup_type::LOCALLY_CONSERVATIVE,
-           Portage::Empty_fixup_type::EXTRAPOLATE);
+  unitTest(Partial::LOCALLY_CONSERVATIVE, Empty::EXTRAPOLATE);
 }
-
 
 TEST_F(PartMismatchTest, Constant_LeaveEmpty) {
-  unitTest(Portage::Partial_fixup_type::CONSTANT,
-           Portage::Empty_fixup_type::LEAVE_EMPTY);
+  unitTest(Partial::CONSTANT, Empty::LEAVE_EMPTY);
 }
-
 
 TEST_F(PartMismatchTest, Constant_Extrapolate) {
-  unitTest(Portage::Partial_fixup_type::CONSTANT,
-           Portage::Empty_fixup_type::EXTRAPOLATE);
+  unitTest(Partial::CONSTANT, Empty::EXTRAPOLATE);
 }
-
 
 TEST_F(PartMismatchTest, ShiftedConservative_LeaveEmpty) {
-  unitTest(Portage::Partial_fixup_type::SHIFTED_CONSERVATIVE,
-           Portage::Empty_fixup_type::LEAVE_EMPTY);
+  unitTest(Partial::SHIFTED_CONSERVATIVE, Empty::LEAVE_EMPTY);
 }
 
-
 TEST_F(PartMismatchTest, ShiftedConservative_Extrapolate) {
-  unitTest(Portage::Partial_fixup_type::SHIFTED_CONSERVATIVE,
-           Portage::Empty_fixup_type::EXTRAPOLATE);
+  unitTest(Partial::SHIFTED_CONSERVATIVE, Empty::EXTRAPOLATE);
 }

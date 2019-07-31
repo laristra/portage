@@ -796,99 +796,22 @@ class CoreDriver : public CoreDriverBase<D,
 
     return mismatch_fixer_->has_mismatch();
   }
-  
 
-  /*! CoreDriver::interpolate_mesh_var
-
-    @brief interpolate a mmesh variable
-
-    @param[in] srcvarname  Mesh variable name on the source mesh
-
-    @param[in] trgvarname  Mesh variable name on the target mesh
-
-    @param[in] sources_and_weights  weights for mesh-mesh interpolation
-
-    @param[in] limiter     Limiter to use for variable
-
-    @param[in] partial...  How to fixup partly filled target cells
-    (for this var)
-
-    @param[in] emtpy...    How to fixup empty target cells with this var
-
-    @param[in] lower_bound Lower bound of variable value when doing fixup
-
-    @param[in] upper_bound Upper bound of variable value when doing fixup
-
-    @param[in] cons..tol   Tolerance for conservation when doing fixup
-  */
-
-  template<typename T = double,
-           template<int, Entity_kind, class, class, class,
-                    template<class, int, class, class> class,
-                    class, class, class> class Interpolate
-           >
-  void interpolate_mesh_var(std::string srcvarname, std::string trgvarname,
-                            Portage::vector<std::vector<Weights_t>> const& sources_and_weights,
-                            T lower_bound, T upper_bound,
-                            Limiter_type limiter = DEFAULT_LIMITER,
-                            Partial_fixup_type partial_fixup_type = DEFAULT_PARTIAL_FIXUP_TYPE,
-                            Empty_fixup_type empty_fixup_type = DEFAULT_EMPTY_FIXUP_TYPE,
-                            double conservation_tol = DEFAULT_CONSERVATION_TOL,
-                            int max_fixup_iter = DEFAULT_MAX_FIXUP_ITER) {
-
-    if (source_state_.get_entity(srcvarname) != ONWHAT) {
-      std::cerr << "Variable " << srcvarname << " not defined on Entity_kind "
-                << ONWHAT << ". Skipping!\n";
-      return;
-    }
-
-    // Instantiate particular interpolator
-    Interpolate<D, ONWHAT, SourceMesh, TargetMesh, SourceState,
-                InterfaceReconstructorType, Matpoly_Splitter, Matpoly_Clipper, CoordSys>
-        interpolator(source_mesh_, target_mesh_, source_state_, num_tols_);
-
-    // Get a handle to a memory location where the target state
-    // would like us to write this material variable into. If it is
-    // NULL, we allocate it ourself
-
-    T *target_field_raw;
-    target_state_.mesh_get_data(ONWHAT, trgvarname, &target_field_raw);
-    assert(target_field_raw != nullptr);
-    Portage::pointer<T> target_field(target_field_raw);
-
-
-    interpolator.set_interpolation_variable(srcvarname, limiter);
-
-    Portage::transform(target_mesh_.begin(ONWHAT, PARALLEL_OWNED),
-                       target_mesh_.end(ONWHAT, PARALLEL_OWNED),
-                       sources_and_weights.begin(),
-                       target_field, interpolator);
-
-    if (has_mismatch_)
-      mismatch_fixer_->fix_mismatch(srcvarname, trgvarname,
-                                    lower_bound, upper_bound,
-                                    conservation_tol,
-                                    max_fixup_iter,
-                                    partial_fixup_type,
-                                    empty_fixup_type);
-  }
-
-  /*!
-   @brief part-by-part mesh variable interpolation.
-
-   @param[in] srcvarname          source mesh variable to remap
-   @param[in] trgvarname          target mesh variable to remap
-   @param[in] sources_and_weights weights for mesh-mesh interpolation
-   @param[in] source_entities     source entities ID list
-   @param[in] target_entities     target entities ID list
-   @param[in] limiter             limiter to use
-   @param[in] partial...          how to fixup partly filled target cells
-   @param[in] emtpy...            how to fixup empty target cells with this var
-   @param[in] lower_bound         lower bound of variable value when doing fixup
-   @param[in] upper_bound         upper bound of variable value when doing fixup
-   @param[in] cons..tol           tolerance for conservation when doing fixup
- */
-
+  /**
+   * @brief Interpolate mesh variable.
+   *
+   * @param[in] srcvarname          source mesh variable to remap
+   * @param[in] trgvarname          target mesh variable to remap
+   * @param[in] sources_and_weights weights for mesh-mesh interpolation
+   * @param[in] lower_bound         lower bound of variable value when doing fixup
+   * @param[in] upper_bound         upper bound of variable value when doing fixup
+   * @param[in] limiter             limiter to use
+   * @param[in] partial...          how to fixup partly filled target cells
+   * @param[in] emtpy...            how to fixup empty target cells with this var
+   * @param[in] cons..tol           tolerance for conservation when doing fixup
+   * @param[in] max_fixup_iter      maximum number of iterations for mismatch fixup
+   * @param[in] partition           source and target entities list for part-by-part
+   */
   template<typename T = double,
     template<int, Entity_kind, class, class, class,
     template<class, int, class, class> class,
@@ -896,8 +819,6 @@ class CoreDriver : public CoreDriverBase<D,
   >
   void interpolate_mesh_var(std::string srcvarname, std::string trgvarname,
                             Portage::vector<std::vector<Weights_t>> const& sources_and_weights,
-                            std::vector<int> const& source_entities,
-                            std::vector<int> const& target_entities,
                             T lower_bound, T upper_bound,
                             Limiter_type limiter = DEFAULT_LIMITER,
                             Partial_fixup_type partial_fixup_type = DEFAULT_PARTIAL_FIXUP_TYPE,
@@ -906,7 +827,7 @@ class CoreDriver : public CoreDriverBase<D,
                             int max_fixup_iter = DEFAULT_MAX_FIXUP_ITER,
                             Parts<D, ONWHAT,
                                   SourceMesh, SourceState,
-                                  TargetMesh, TargetState>* parts_fixer = nullptr
+                                  TargetMesh, TargetState>* partition = nullptr
   ) {
 
     if (source_state_.get_entity(srcvarname) != ONWHAT) {
@@ -915,11 +836,18 @@ class CoreDriver : public CoreDriverBase<D,
       return;
     }
 
-    // instantiate particular interpolator
-    Interpolate<
-      D, ONWHAT, SourceMesh, TargetMesh, SourceState, InterfaceReconstructorType,
-      Matpoly_Splitter, Matpoly_Clipper, CoordSys
-    > interpolator(source_mesh_, target_mesh_, source_state_, interface_reconstructor_);
+    // useful shortcuts
+    using entity_weights_t = std::vector<Weights_t>;
+    using interpolator_t = Interpolate<
+      D, ONWHAT, SourceMesh, TargetMesh, SourceState,
+      InterfaceReconstructorType, Matpoly_Splitter, Matpoly_Clipper, CoordSys
+    >;
+
+    #ifdef HAVE_TANGRAM
+      interpolator_t interpolator(source_mesh_, target_mesh_, source_state_, interface_reconstructor_);
+    #else
+      interpolator_t interpolator(source_mesh_, target_mesh_, source_state_);
+    #endif
 
     interpolator.set_interpolation_variable(srcvarname, limiter);
 
@@ -929,47 +857,53 @@ class CoreDriver : public CoreDriverBase<D,
     target_state_.mesh_get_data(ONWHAT, trgvarname, &target_field_raw);
     assert(target_field_raw != nullptr);
 
-    if (not source_entities.empty() and not target_entities.empty()) {
+    //if (not source_entities.empty() and not target_entities.empty()) {
+    if (partition != nullptr) {
+
+      // basic checks
+      // nb: mismatch test should have been already done.
+      assert(partition->source_part_size() > 0);
+      assert(partition->target_part_size() > 0);
+      assert(partition->is_mismatch_tested());
+
       // quick checks
       int const& max_source_id = source_mesh_.num_entities(ONWHAT, ALL);
       int const& max_target_id = target_mesh_.num_entities(ONWHAT, ALL);
 
-      for (auto&& current : source_entities) {
+      for (auto&& current : partition->source_entities_) {
         if (current > max_source_id) {
           std::cerr << "Error: wrong source entity ID" << std::endl;
           return;
         }
       }
 
-      for (auto&& current : target_entities) {
+      for (auto&& current : partition->target_entities_) {
         if (current > max_target_id) {
           std::cerr << "Error: wrong target entity ID" << std::endl;
           return;
         }
       }
 
-      using entity_weights_t = std::vector<Weights_t>;
-
       int const target_mesh_size = sources_and_weights.size();
-      int const nb_target_entities = target_entities.size();
+      int const target_part_size = partition->target_part_size();
 
       // 1. filter sources_and_weight
-      T target_field_temp[nb_target_entities];
+      T target_field_temp[target_part_size];
 
       Portage::pointer<T> target_field(target_field_temp);
-      Portage::vector<entity_weights_t> filtered_weights(nb_target_entities);
+      Portage::vector<entity_weights_t> filtered_weights(target_part_size);
 
-      Portage::transform(target_entities.begin(),
-                         target_entities.end(),
+      Portage::transform(partition->target_entities_.begin(),
+                         partition->target_entities_.end(),
                          filtered_weights.begin(), [&](int entity) {
           // 'auto' may imply unexpected behavior with thrust enabled
           entity_weights_t const& entity_weights = sources_and_weights[entity];
           entity_weights_t heap;
           heap.reserve(10);
           for (auto&& weight : entity_weights) {
-            if (std::find(source_entities.begin(),
-                          source_entities.end(),
-                          weight.entityID) != source_entities.end()) {
+            if (std::find(partition->source_entities_.begin(),
+                          partition->source_entities_.end(),
+                          weight.entityID) != partition->source_entities_.end()) {
               heap.emplace_back(weight);
             }
           }
@@ -979,36 +913,31 @@ class CoreDriver : public CoreDriverBase<D,
       );
 
       // run interpolator afterwards
-      Portage::transform(target_entities.begin(),
-                         target_entities.end(),
+      Portage::transform(partition->target_entities_.begin(),
+                         partition->target_entities_.end(),
                          filtered_weights.begin(),
                          target_field, interpolator);
 
       // copy-back variable field
-      for (int i = 0; i < nb_target_entities; ++i) {
-        auto const& current_id = target_entities[i];
+      for (int i = 0; i < target_part_size; ++i) {
+        auto const& current_id = partition->target_entities_[i];
         target_field_raw[current_id] = target_field[i];
       }
 
       // fix mismatch if necessary
-      if (parts_fixer != nullptr) {
-        // mismatch test should have been already done.
-        assert(parts_fixer->is_mismatch_tested());
-
-        if (parts_fixer->has_mismatch()) {
-          #ifdef DEBUG
-            std::fprintf(stderr,
-              "There is a mismatch between source and target sub-meshes\n"
-              "Will start fixing interpolated values\n"
-            );
-          #endif
-          parts_fixer->fix_mismatch(srcvarname, trgvarname,
-                                    lower_bound, upper_bound,
-                                    conservation_tol,
-                                    max_fixup_iter,
-                                    partial_fixup_type,
-                                    empty_fixup_type);
-        }
+      if (partition->has_mismatch()) {
+        #ifdef DEBUG
+          std::fprintf(stderr,
+            "There is a mismatch between source and target sub-meshes\n"
+            "Will start fixing interpolated values\n"
+          );
+        #endif
+        partition->fix_mismatch(srcvarname, trgvarname,
+                                  lower_bound, upper_bound,
+                                  conservation_tol,
+                                  max_fixup_iter,
+                                  partial_fixup_type,
+                                  empty_fixup_type);
       }
     } else /* normal case */ {
       Portage::pointer<T> target_field(target_field_raw);

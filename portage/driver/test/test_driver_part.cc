@@ -26,34 +26,42 @@
 
 TEST(PartDriverTest, Basic) {
 
+  // useful shortcuts
   using Wonton::Entity_kind;
   using Wonton::Entity_type;
   using Wonton::Jali_Mesh_Wrapper;
   using Wonton::Jali_State_Wrapper;
 
+  using Remapper = Portage::CoreDriver<2, Wonton::Entity_kind::CELL,
+                                          Wonton::Jali_Mesh_Wrapper,
+                                          Wonton::Jali_State_Wrapper>;
+  using Partition = Portage::Parts<2, Wonton::Entity_kind::CELL,
+                                      Wonton::Jali_Mesh_Wrapper,
+                                      Wonton::Jali_State_Wrapper>;
+
   // useful constants
-  double const dblmax  = std::numeric_limits<double>::max();
-  double const dblmin  = -dblmax;
+  double const upper_bound  = std::numeric_limits<double>::max();
+  double const lower_bound  = -upper_bound;
   double const epsilon = 1.E-10;
 
   // Source and target meshes and states
-  std::shared_ptr<Jali::Mesh>  sourceMesh;
-  std::shared_ptr<Jali::State> sourceState;
-  std::shared_ptr<Jali::Mesh>  targetMesh;
-  std::shared_ptr<Jali::State> targetState;
+  std::shared_ptr<Jali::Mesh>  source_mesh;
+  std::shared_ptr<Jali::State> source_state;
+  std::shared_ptr<Jali::Mesh>  target_mesh;
+  std::shared_ptr<Jali::State> target_state;
 
-  sourceMesh  = Jali::MeshFactory(MPI_COMM_WORLD)(0.0, 0.0, 1.0, 1.0, 5, 5);
-  targetMesh  = Jali::MeshFactory(MPI_COMM_WORLD)(0.0, 0.0, 1.0, 1.0, 10, 10);
-  sourceState = Jali::State::create(sourceMesh);
-  targetState = Jali::State::create(targetMesh);
+  source_mesh  = Jali::MeshFactory(MPI_COMM_WORLD)(0.0, 0.0, 1.0, 1.0, 5, 5);
+  target_mesh  = Jali::MeshFactory(MPI_COMM_WORLD)(0.0, 0.0, 1.0, 1.0, 10, 10);
+  source_state = Jali::State::create(source_mesh);
+  target_state = Jali::State::create(target_mesh);
 
-  Jali_Mesh_Wrapper  sourceMeshWrapper(*sourceMesh);
-  Jali_Mesh_Wrapper  targetMeshWrapper(*targetMesh);
-  Jali_State_Wrapper sourceStateWrapper(*sourceState);
-  Jali_State_Wrapper targetStateWrapper(*targetState);
+  Jali_Mesh_Wrapper  source_mesh_wrapper(*source_mesh);
+  Jali_Mesh_Wrapper  target_mesh_wrapper(*target_mesh);
+  Jali_State_Wrapper source_state_wrapper(*source_state);
+  Jali_State_Wrapper target_state_wrapper(*target_state);
 
   int const nb_source_cells =
-    sourceMeshWrapper.num_entities(Entity_kind::CELL, Entity_type::ALL);
+    source_mesh_wrapper.num_entities(Entity_kind::CELL, Entity_type::ALL);
 
   //-------------------------------------------------------------------
   // Now add density field to the mesh
@@ -70,23 +78,22 @@ TEST(PartDriverTest, Basic) {
 
   double source_density[nb_source_cells];
   for (int c = 0; c < nb_source_cells; c++) {
-    source_density[c] = compute_density(c, sourceMeshWrapper);
+    source_density[c] = compute_density(c, source_mesh_wrapper);
   }
 
-  sourceStateWrapper.mesh_add_data(Entity_kind::CELL, "density", source_density);
-  targetStateWrapper.mesh_add_data<double>(Entity_kind::CELL, "density", 0.);
+  source_state_wrapper.mesh_add_data(Entity_kind::CELL, "density", source_density);
+  target_state_wrapper.mesh_add_data<double>(Entity_kind::CELL, "density", 0.);
 
   // assuming that entities ordering are column-wise,
   // let's pick a couple of aligned subsets of entites
   // from source and target meshes (5x5, 10x10).
-  // FIXME update according to coordinates
-  std::vector<int> source_entities {
+  std::vector<int> source_cells {
     6, 11,
     7, 12,
     8, 13
   };
 
-  std::vector<int> target_entities {
+  std::vector<int> target_cells {
     22, 32, 42,	52,
     23, 33, 43,	53,
     24, 34, 44,	54,
@@ -95,34 +102,39 @@ TEST(PartDriverTest, Basic) {
     27, 37, 47,	57
   };
 
-  // Do the basic remap algorithm (search, intersect, interpolate) -
-  // no redistribution, no mismatch fixup
-  Portage::CoreDriver<
-    2, Entity_kind::CELL, Jali_Mesh_Wrapper, Jali_State_Wrapper
-  > d(sourceMeshWrapper, sourceStateWrapper,
-      targetMeshWrapper, targetStateWrapper);
+  // perform remap without redistribution, nor mismatch fixup
+  Remapper remapper(source_mesh_wrapper, source_state_wrapper,
+                    target_mesh_wrapper, target_state_wrapper);
 
-  auto candidates = d.search<Portage::SearchKDTree>();
-  auto source_weights = d.intersect_meshes<Portage::IntersectR2D>(candidates);
+  Partition partition(source_mesh_wrapper, target_mesh_wrapper,
+                      source_state_wrapper,target_state_wrapper,
+                      source_cells, target_cells, nullptr);
 
-  d.interpolate_mesh_var<double, Portage::Interpolate_1stOrder>(
-    "density", "density", source_weights,
-    source_entities, target_entities, dblmin, dblmax
+  auto candidates = remapper.search<Portage::SearchKDTree>();
+  auto source_weights = remapper.intersect_meshes<Portage::IntersectR2D>(candidates);
+
+  // check mismatch and compute cell volumes before
+  partition.test_mismatch(source_weights);
+  assert(not partition.has_mismatch());
+
+  remapper.interpolate_mesh_var<double, Portage::Interpolate_1stOrder>(
+    "density", "density", source_weights, lower_bound, upper_bound,
+    Portage::DEFAULT_LIMITER, Portage::DEFAULT_PARTIAL_FIXUP_TYPE,
+    Portage::DEFAULT_EMPTY_FIXUP_TYPE, Portage::DEFAULT_CONSERVATION_TOL,
+    Portage::DEFAULT_MAX_FIXUP_ITER, &partition
   );
 
-  //-------------------------------------------------------------------
-  // CHECK REMAPPING RESULTS ON TARGET MESH SIDE
-  //-------------------------------------------------------------------
   // Finally check that we got the right target density values
   double* remapped;
-  targetStateWrapper.mesh_get_data(Entity_kind::CELL, "density", &remapped);
+  target_state_wrapper.mesh_get_data(Entity_kind::CELL, "density", &remapped);
 
-  for (auto&& c : target_entities) {
+  for (auto&& c : target_cells) {
     auto const& obtained = remapped[c];
-    auto const  expected = compute_density(c, targetMeshWrapper);
-#ifdef DEBUG
-std::printf("cell[%d]: remapped: %.3f, expected: %.3f\n", c, obtained, expected);
-#endif
+    auto const  expected = compute_density(c, target_mesh_wrapper);
+    #ifdef DEBUG
+      std::printf("target[%02d]: remapped: %7.3f, expected: %7.3f\n",
+                  c, obtained, expected);
+    #endif
     ASSERT_NEAR(obtained, expected, epsilon);
   }
 }

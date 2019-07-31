@@ -119,8 +119,6 @@ public:
     }
 #endif
 
-    //source_entities_volumes_.reserve(source_part_size_);
-    //target_entities_volumes_.reserve(target_part_size_);
     source_entities_volumes_.resize(source_part_size_);
     target_entities_volumes_.resize(target_part_size_);
     intersection_volumes_.resize(target_part_size_);
@@ -155,6 +153,20 @@ public:
    * @return true if so, false otherwise.
    */
   bool is_mismatch_tested() const { return is_mismatch_tested_; }
+
+  /**
+   * @brief Get source part size.
+   *
+   * @return source entities list size
+   */
+  const int& source_part_size() { return source_part_size_; }
+
+  /**
+   * @brief Get target part size.
+   *
+   * @return target entities list size
+   */
+  const int& target_part_size() { return target_part_size_; }
 
   /**
    * @brief Find a needle in a haystack.
@@ -233,7 +245,7 @@ public:
       );
       #if DEBUG_PART_BY_PART
         std::printf("- source_volume[%02d]: %.3f\n", s, source_entities_volumes_[i]);
-        if (i == source_mesh_size_ - 1)
+        if (i == source_part_size_ - 1)
           std::printf("=======\n");
       #endif
     }
@@ -246,7 +258,7 @@ public:
       );
       #if DEBUG_PART_BY_PART
         std::printf("- target_volume[%02d]: %.3f\n", t, target_entities_volumes_[i]);
-        if (i == target_mesh_size_ - 1)
+        if (i == target_part_size_ - 1)
           std::printf("=======\n");
       #endif
     }
@@ -861,11 +873,11 @@ private:
   double relative_voldiff_        = 0.;
 
   // empty target cells management
-  std::unordered_map<int, int>  source_relative_index_ = {};
-  std::unordered_map<int, int>  target_relative_index_ = {};
-  std::vector<std::vector<int>> empty_layers_          = {};
-  std::vector<int>              layer_num_             = {};
-  std::vector<bool>             is_cell_empty_         = {};
+  std::map<int,int> source_relative_index_    = {};
+  std::map<int,int> target_relative_index_    = {};
+  std::vector<int>  layer_num_                = {};
+  std::vector<bool> is_cell_empty_            = {};
+  std::vector<std::vector<int>> empty_layers_ = {};
 
   // MPI
   int rank_         = 0;
