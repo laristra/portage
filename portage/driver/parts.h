@@ -349,6 +349,7 @@ public:
     }
 
     if (not has_mismatch_) {
+      is_mismatch_tested_ = true;
       return false;
     }
 
@@ -444,9 +445,7 @@ public:
       }
     }
 
-    // toggle flag
     is_mismatch_tested_ = true;
-
     return has_mismatch_;
   }
 
