@@ -323,8 +323,8 @@ int main(int argc, char** argv) {
 #else
   profiler.params.threads = 1;
 #endif
-  profiler.params.nsource = n_source;
-  profiler.params.ntarget = n_target;
+  profiler.params.nsource = std::pow(n_source, dim);
+  profiler.params.ntarget = std::pow(n_target, dim);
   profiler.params.order   = interp_order;
   profiler.params.nmats   = 1;
   profiler.params.output  = "timing_timing_" +
