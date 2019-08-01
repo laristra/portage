@@ -598,21 +598,25 @@ generate_gnuplot() {
     echo ""                                                           >> ${SCRIPT}
     echo "reset"                                                      >> ${SCRIPT}
     echo "set terminal postscript eps enhanced color 14 size 8cm,9cm" >> ${SCRIPT} 
-    echo "set output \"${OUTPUT}\""                                   >> ${SCRIPT} 
+    echo "set output \"${OUTPUT}\""                                   >> ${SCRIPT}
+    echo "set title \"${APP} ${MODE} ${SCALING_TYPE} scaling\""       >> ${SCRIPT}
     echo "set size ratio 1"                                           >> ${SCRIPT} 
     echo "set xlabel \"${XLABEL}\""                                   >> ${SCRIPT} 
     echo "set ylabel \"elapsed (s)\""                                 >> ${SCRIPT} 
     echo "set key below maxcols 1"                                    >> ${SCRIPT} 
     echo ""                                                           >> ${SCRIPT}
-    echo "set xrange [1:${XMAX}]"                                     >> ${SCRIPT} 
+    echo "stats '${INPUT}' using 6 name 'time'"                       >> ${SCRIPT}
+    echo "linear(x)=time_max/x"                                       >> ${SCRIPT}
+    echo ""                                                           >> ${SCRIPT}
+    echo "set grid"                                                   >> ${SCRIPT}
+    echo "set xrange [1:${XMAX}]"                                     >> ${SCRIPT}
     echo "set logscale x 2"                                           >> ${SCRIPT} 
     echo "set logscale y 2"                                           >> ${SCRIPT} 
     echo ""                                                           >> ${SCRIPT}
-    echo "set title \"${APP} ${MODE} ${SCALING_TYPE} scaling\""       >> ${SCRIPT} 
-    echo "set grid"                                                   >> ${SCRIPT}
     echo "plot '${INPUT}' u ${XCOL}:6 t 'remap'     ${FIELDS[0]},\\"  >> ${SCRIPT}
     echo "     '${INPUT}' u ${XCOL}:5 t 'interface' ${FIELDS[1]},\\"  >> ${SCRIPT} 
-    echo "     '${INPUT}' u ${XCOL}:7 t 'total'     ${FIELDS[2]}"     >> ${SCRIPT} 
+    echo "     '${INPUT}' u ${XCOL}:7 t 'total'     ${FIELDS[2]},\\"  >> ${SCRIPT}
+    echo "     linear(x) t 'linear' lc rgb 'blue'"                    >> ${SCRIPT}
   
     # move to build directory
     mv ${SCRIPT} ${BUILD_DIR}
