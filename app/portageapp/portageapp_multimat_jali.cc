@@ -239,29 +239,18 @@ class interface_reconstructor_factory<3, MeshWrapper, true>{
 // return the L1 and L2 error norm in the remapped field w.r.t. to an
 // analytically imposed field. If no field was imposed, the errors are
 // returned as 0
+template<int dim, bool all_convex>
+void run(std::shared_ptr<Jali::Mesh> sourceMesh,
+         std::shared_ptr<Jali::Mesh> targetMesh,
+         Portage::Limiter_type limiter,
+         int interp_order,
+         std::string material_filename,
+         std::vector<std::string> material_field_expressions,
+         std::string field_filename, bool mesh_output,
+         int rank, int numpe, Jali::Entity_kind entityKind,
+         double *L1_error, double *L2_error,
+         std::shared_ptr<Profiler> profiler = nullptr);
 
-#if ENABLE_TIMINGS
-template<int dim, bool all_convex> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
-                           std::shared_ptr<Jali::Mesh> targetMesh,
-                           Portage::Limiter_type limiter,
-                           int interp_order,
-                           std::string material_filename,
-                           std::vector<std::string> material_field_expressions,
-                           std::string field_filename, bool mesh_output,
-                           int rank, int numpe, Jali::Entity_kind entityKind,
-                           double *L1_error, double *L2_error, Profiler& profiler);
-#else
-template<int dim, bool all_convex> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
-                           std::shared_ptr<Jali::Mesh> targetMesh,
-                           Portage::Limiter_type limiter,
-                           int interp_order,
-                           std::string material_filename,
-                           std::vector<std::string> material_field_expressions,
-                           std::string field_filename,
-                           bool mesh_output, int rank, int numpe,
-                           Jali::Entity_kind entityKind,
-                           double *L1_error, double *L2_error);
-#endif
 // Forward declaration of function to run interface reconstruction and
 // write the material polygons and their associated fields to a GMV file
 
@@ -272,7 +261,7 @@ int main(int argc, char** argv) {
 #endif
 
 #if ENABLE_TIMINGS
-  Profiler profiler;
+  auto profiler = std::make_shared<Profiler>();
   auto start = timer::now();
 #endif
 
@@ -434,17 +423,17 @@ int main(int argc, char** argv) {
   //gettimeofday(&begin, 0);
 #if ENABLE_TIMINGS
   // save params for after
-  profiler.params.ranks   = numpe;
+  profiler->params.ranks   = numpe;
 #if defined(_OPENMP)
-  profiler.params.threads = omp_get_max_threads();
+  profiler->params.threads = omp_get_max_threads();
 #else
-  profiler.params.threads = 1;
+  profiler->params.threads = 1;
 #endif
-  profiler.params.nsource = nsourcecells;
-  profiler.params.ntarget = ntargetcells;
-  profiler.params.order   = interp_order;
-  profiler.params.nmats   = material_field_expressions.size();
-  profiler.params.output  = "darwin_multimat_timing_" +
+  profiler->params.nsource = nsourcecells;
+  profiler->params.ntarget = ntargetcells;
+  profiler->params.order   = interp_order;
+  profiler->params.nmats   = material_field_expressions.size();
+  profiler->params.output  = "multimat_timing_" +
     std::string(only_threads ? "omp.dat": "mpi.dat");
   auto tic = timer::now();
 #endif
@@ -496,10 +485,10 @@ int main(int argc, char** argv) {
     }
 
 #if ENABLE_TIMINGS
-    profiler.time.mesh_init = timer::elapsed(tic);
+    profiler->time.mesh_init = timer::elapsed(tic);
 
     if (rank == 0) {
-      float const seconds = profiler.time.mesh_init * 1.E3;
+      float const seconds = profiler->time.mesh_init * 1.E3;
       if (n_converge == 1)
         std::cout << "Mesh Initialization Time: " << seconds << std::endl;
       else
@@ -521,7 +510,6 @@ int main(int argc, char** argv) {
     // Now run the remap on the meshes and get back the L2 error
     switch (dim) {
       case 2:
-#if ENABLE_TIMINGS
         if (all_convex)
           run<2, true>(source_mesh, target_mesh, limiter, interp_order,
                material_filename, material_field_expressions,
@@ -532,21 +520,8 @@ int main(int argc, char** argv) {
                material_filename, material_field_expressions,
                field_filename, mesh_output,
                rank, numpe, entityKind, &(l1_err[i]), &(l2_err[i]), profiler);
-#else
-      if (all_convex)
-          run<2, true>(source_mesh, target_mesh, limiter, interp_order,
-               material_filename, material_field_expressions,
-               field_filename, mesh_output,
-               rank, numpe, entityKind, &(l1_err[i]), &(l2_err[i]));
-        else
-          run<2, false>(source_mesh, target_mesh, limiter, interp_order,
-               material_filename, material_field_expressions,
-               field_filename, mesh_output,
-               rank, numpe, entityKind, &(l1_err[i]), &(l2_err[i]));
-#endif
         break;
       case 3:
-#if ENABLE_TIMINGS
         if (all_convex)
           run<3, true>(source_mesh, target_mesh, limiter, interp_order,
                material_filename, material_field_expressions,
@@ -557,18 +532,6 @@ int main(int argc, char** argv) {
                material_filename, material_field_expressions,
                field_filename, mesh_output,
                rank, numpe, entityKind, &(l1_err[i]), &(l2_err[i]), profiler);
-#else
-      if (all_convex)
-          run<3, true>(source_mesh, target_mesh, limiter, interp_order,
-               material_filename, material_field_expressions,
-               field_filename, mesh_output,
-               rank, numpe, entityKind, &(l1_err[i]), &(l2_err[i]));
-        else
-          run<3, false>(source_mesh, target_mesh, limiter, interp_order,
-               material_filename, material_field_expressions,
-               field_filename, mesh_output,
-               rank, numpe, entityKind, &(l1_err[i]), &(l2_err[i]));
-#endif
         break;
       default:
         std::cerr << "Dimension not 2 or 3" << std::endl;
@@ -580,10 +543,10 @@ int main(int argc, char** argv) {
         l2_err[i] << std::endl;
 
 #if ENABLE_TIMINGS
-    profiler.time.remap = timer::elapsed(tic);
+    profiler->time.remap = timer::elapsed(tic);
 
     if (rank == 0) {
-      float const seconds = profiler.time.remap * 1.E3;
+      float const seconds = profiler->time.remap * 1.E3;
       if (n_converge == 1)
         std::cout << "Remap Time: " << seconds << std::endl;
       else
@@ -606,11 +569,11 @@ int main(int argc, char** argv) {
   MPI_Finalize();
 
 #if ENABLE_TIMINGS
-  profiler.time.total = timer::elapsed(start);
+  profiler->time.total = timer::elapsed(start);
 
   // dump timing data
   if (rank == 0) {
-    profiler.dump();
+    profiler->dump();
   }
 #endif
 }
@@ -619,7 +582,6 @@ int main(int argc, char** argv) {
 // Run a remap between two meshes and return the L1 and L2 error norms
 // with respect to the specified field. If a field was not specified and
 // remap only volume fractions (and if specified, centroids)
-#if ENABLE_TIMINGS
 template<int dim, bool all_convex> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
                            std::shared_ptr<Jali::Mesh> targetMesh,
                            Portage::Limiter_type limiter,
@@ -628,18 +590,9 @@ template<int dim, bool all_convex> void run(std::shared_ptr<Jali::Mesh> sourceMe
                            std::vector<std::string> material_field_expressions,
                            std::string field_filename, bool mesh_output,
                            int rank, int numpe, Jali::Entity_kind entityKind,
-                           double *L1_error, double *L2_error, Profiler& profiler) {
-#else
-template<int dim, bool all_convex> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
-                           std::shared_ptr<Jali::Mesh> targetMesh,
-                           Portage::Limiter_type limiter,
-                           int interp_order,
-                           std::string material_filename,
-                           std::vector<std::string> material_field_expressions,
-                           std::string field_filename, bool mesh_output,
-                           int rank, int numpe, Jali::Entity_kind entityKind,
-                           double *L1_error, double *L2_error) {
-#endif
+                           double *L1_error, double *L2_error,
+                           std::shared_ptr<Profiler> profiler) {
+
   if (rank == 0)
     std::cout << "starting portageapp_jali_multimat...\n";
 
@@ -874,7 +827,7 @@ template<int dim, bool all_convex> void run(std::shared_ptr<Jali::Mesh> sourceMe
 
   if (numpe > 1) MPI_Barrier(MPI_COMM_WORLD);
 #if ENABLE_TIMINGS
-  profiler.time.interface = timer::elapsed(tic);
+  profiler->time.interface = timer::elapsed(tic);
 #endif
 
   Wonton::MPIExecutor_type mpiexecutor(MPI_COMM_WORLD);
