@@ -438,8 +438,8 @@ int main(int argc, char** argv) {
   #else
     profiler->params.threads = 1;
   #endif
-  profiler->params.nsource = nsourcecells;
-  profiler->params.ntarget = ntargetcells;
+  profiler->params.nsource = std::pow(nsourcecells, dim);
+  profiler->params.ntarget = std::pow(ntargetcells, dim);
   profiler->params.order   = interp_order;
   profiler->params.nmats   = material_field_expressions.size();
   profiler->params.output  = "t-junction_timing_" + std::string(only_threads ? "omp.dat": "mpi.dat");
