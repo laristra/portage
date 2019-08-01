@@ -8,10 +8,6 @@ SOURCE_DIR="$(pwd)/.."
 RISTRA_DIR="/usr/projects/ngc/private"
 BUILD_DIR=""
 
-# Note:
-# -e: fail if some command exits with non zero status
-# -u: treat undefined variables as error
-# -o pipefail: pipe ok if all involved commands are ok
 set -e             
 set -o pipefail
 
@@ -99,6 +95,8 @@ setup(){
 
   # load required modules
   module purge
+  module load cmake
+  module load openmpi/${MPI_VERSION}
 
   if ${USE_INTEL}; then
     module load intel/"${INTEL_VERSION}"
@@ -107,9 +105,6 @@ setup(){
     module load gcc/"${GNU_VERSION}"
     COMP="Gnu"
   fi
-  
-  module load openmpi/${MPI_VERSION}
-  module load cmake
 
   if ${USE_CUDA}; then
     module load cuda
