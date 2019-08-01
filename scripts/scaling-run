@@ -231,8 +231,12 @@ set_default_params() {
   fi
 
   case "${CLUSTER}" in
-    darwin) PARTITION="scaling"; MPI_VERSION="2.1.5"; BOOST_VERSION="1.68.0";;
-    snow|grizzly) PARTITION="standard"; MPI_VERSION="2.1.2";;
+    darwin)
+      [ ${PARTITION} = "" ] && PARTITION="scaling";
+      MPI_VERSION="2.1.5"; BOOST_VERSION="1.68.0";;
+    snow|grizzly)
+      [ ${PARTITION} = "" ] && PARTITION="standard";
+      MPI_VERSION="2.1.2";;
     *)
       echo -e "\e[31mError: unsupported cluster ${CLUSTER}\e[0m"
       exit 1;;
