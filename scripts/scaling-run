@@ -75,7 +75,7 @@ print_usage() {
   _INT="\e[32m<int>\e[0m"
   _INT_PATH="\e[32m<int|path>\e[0m"
 
-  echo -e "Usage: \e[32m./run [options]\e[0m"
+  echo -e "Usage: \e[32m./scaling-run [options]\e[0m"
   echo -e "Options:"
   echo -e "  -h, --help                    show this help message and exit"
   echo -e "  -a, --app $_CHOICE            current app [core|t-junction|multimat]"
@@ -165,7 +165,7 @@ print_params() {
 check_params() {
 
   # invalid cluster
-  if [ $(echo "${SUPPORTED_CLUSTERS}" | grep -c -w "${CLUSTER}") -ne 1 ]; then
+  if [ $(echo "${SUPPORTED_CLUSTERS[*]}" | grep -c -w "${CLUSTER}") -ne 1 ]; then
     echo -e "\e[31mError: unsupported cluster '${CLUSTER}'\e[0m"
     exit 1
   # invalid number of nodes
@@ -227,7 +227,7 @@ set_default_params() {
 
   # set default cluster, partition and MPI version
   if [ "${CLUSTER}" = "" ]; then
-    CLUSTER="${SUPPORTED_CLUSTER[0]}"
+    CLUSTER="${SUPPORTED_CLUSTERS[0]}"
   fi
 
   case "${CLUSTER}" in
@@ -324,7 +324,7 @@ setup_run_options() {
 
   # check compiler, set appropriate version and CPU affinity policy
   if [ "${COMPILER}" = "intel" ]; then
-    CXX_VERSION=18.0.3
+    [ "${CLUSTER}" = "darwin" ] && CXX_VERSION=18.0.3 || CXX_VERSION=18.0.5
     CPU_AFFINITY="KMP_AFFINITY=granularity=${GRAIN},compact,verbose"
   elif [ "${COMPILER}" = "gcc" ]; then
     CXX_VERSION=6.4.0
@@ -540,8 +540,9 @@ run_scaling() {
     echo -e "export ${CPU_AFFINITY}"                                          >> ${SCRIPT}
     echo -e ""                                                                >> ${SCRIPT}
     echo -e "# run serial"                                                    >> ${SCRIPT}
+    echo -e "i=1"                                                             >> ${SCRIPT}
     echo -e "export OMP_NUM_THREADS=${INIT_THREADS}"                          >> ${SCRIPT}
-    echo -e "i=1; mpirun -n 1 ${MPI_ARGS}"                                    >> ${SCRIPT}
+    echo -e "mpirun -n \$i ${MPI_ARGS}"                                       >> ${SCRIPT}
     echo -e ""                                                                >> ${SCRIPT}
     echo -e "# run parallel"                                                  >> ${SCRIPT}
     echo -e "for ((i=2; i <= ${EXTENT}; i*=2)); do"                           >> ${SCRIPT}
@@ -552,8 +553,8 @@ run_scaling() {
 
     # Run it
     echo "Running ${APP} ${SCALING_TYPE} scaling"
-    sbatch -v ${SCRIPT}
-    #cat ${SCRIPT}
+    #sbatch -v ${SCRIPT}
+    cat ${SCRIPT}
   done
 }
 
@@ -588,7 +589,7 @@ generate_gnuplot() {
   # generate distinct scripts for strong and weak scaling
   for SCALING_TYPE in "${SCALING_RUNS[@]}"; do
     
-    INPUT="${CLUSTER}_${APP}_timing_${SUFFIX}.dat"
+    INPUT="${APP}_timing_${SUFFIX}.dat"
     OUTPUT="${CLUSTER}_${APP}_${SCALING_TYPE}_scaling_${SUFFIX}.eps"
     SCRIPT="${CLUSTER}_${APP}_${SCALING_TYPE}_scaling_${SUFFIX}.gnu"
   
