@@ -9,7 +9,7 @@
 # Run params
 CLUSTER=""
 SUPPORTED_CLUSTERS=( "darwin" "snow" "grizzly" )
-SCALING_RUNS=( "strong" )
+SCALING_RUNS=( "strong" "weak" )
 NODES=1
 RANKS=""
 CORES=1
@@ -489,8 +489,12 @@ run_scaling() {
   # generate distinct scripts for strong and weak scaling
   for SCALING_TYPE in "${SCALING_RUNS[@]}"; do
 
+    # disable weak scaling for multimat since require distinct input files
+    if [ "${APP}" = "multimat" ] && [ "${SCALING_TYPE}" = "weak" ]; then
+       echo "Sorry, automated weak scaling is not supported for multimat"
+       continue
     # adjust the problem size on weak scaling
-    if [ ${SCALING_TYPE} = "weak" ]; then
+    elif [ ${SCALING_TYPE} = "weak" ]; then
       SOURCE_SIZE="\$((i * ${SOURCE_MAX}))" 
       TARGET_SIZE="\$((i * ${TARGET_MAX}))" 
     else
@@ -537,7 +541,7 @@ run_scaling() {
     echo -e ""                                                                >> ${SCRIPT}
     echo -e "# run serial"                                                    >> ${SCRIPT}
     echo -e "export OMP_NUM_THREADS=${INIT_THREADS}"                          >> ${SCRIPT}
-    echo -e "mpirun -n 1 ${MPI_ARGS}"                                         >> ${SCRIPT}
+    echo -e "i=1; mpirun -n 1 ${MPI_ARGS}"                                    >> ${SCRIPT}
     echo -e ""                                                                >> ${SCRIPT}
     echo -e "# run parallel"                                                  >> ${SCRIPT}
     echo -e "for ((i=2; i <= ${EXTENT}; i*=2)); do"                           >> ${SCRIPT}
