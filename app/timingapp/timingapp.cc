@@ -327,7 +327,7 @@ int main(int argc, char** argv) {
   profiler.params.ntarget = n_target;
   profiler.params.order   = interp_order;
   profiler.params.nmats   = 1;
-  profiler.params.output  = "darwin_timing_timing_" +
+  profiler.params.output  = "timing_timing_" +
                             std::string(only_threads ? "omp.dat": "mpi.dat");
   auto tic = timer::now();
 #endif
