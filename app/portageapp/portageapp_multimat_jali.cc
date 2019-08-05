@@ -54,7 +54,7 @@
 
 #include "user_field.h"
 
-#define ENABLE_TIMINGS 1
+#define ENABLE_TIMINGS 0
 #if ENABLE_TIMINGS
   #include "portage/support/timer.h"
 #endif
@@ -150,9 +150,14 @@ int print_usage() {
   std::cout << "--results_file=results_filename (default = output.txt)\n";
   std::cout << "  If a filename is specified, the target field values are " <<
       "output to the file given by 'results_filename' in ascii format\n\n";
-  
+
+#if ENABLE_TIMINGS
   std::cout << "--only_threads (default = n)\n";
   std::cout << " enable if you want to profile only threads scaling\n\n";
+
+  std::cout << "--scaling (default = strong)\n";
+  std::cout << " specify the scaling study type [strong|weak]\n\n";
+#endif
   return 0;
 }
 //////////////////////////////////////////////////////////////////////
@@ -260,11 +265,6 @@ int main(int argc, char** argv) {
   __itt_pause();
 #endif
 
-#if ENABLE_TIMINGS
-  auto profiler = std::make_shared<Profiler>();
-  auto start = timer::now();
-#endif
-
   // Initialize MPI
   int mpi_init_flag;
   MPI_Initialized(&mpi_init_flag);
@@ -304,10 +304,12 @@ int main(int argc, char** argv) {
   double srclo = 0.0, srchi = 1.0;  // bounds of generated mesh in each dir
   std::string field_filename = "target_mm.gmv";
 
+#if ENABLE_TIMINGS
   bool only_threads = false;
+  std::string scaling_type = "strong";
+#endif
 
   // Parse the input
-
   for (int i = 1; i < argc; i++) {
     std::string arg(argv[i]);
     std::size_t len = arg.length();
@@ -371,9 +373,16 @@ int main(int argc, char** argv) {
         std::cerr << "Number of meshes for convergence study should be greater than 0" << std::endl;
         throw std::exception();
       }
-    } else if (keyword == "only_threads"){
+    }
+#if ENABLE_TIMINGS
+    else if (keyword == "only_threads"){
       only_threads = (numpe == 1 and valueword == "y");
-    } else if (keyword == "help") {
+    } else if (keyword == "scaling") {
+      assert(valueword == "strong" or valueword == "weak");
+      scaling_type = valueword;
+    }
+#endif
+    else if (keyword == "help") {
       print_usage();
       MPI_Abort(MPI_COMM_WORLD, -1);
     } else
@@ -420,24 +429,24 @@ int main(int argc, char** argv) {
     MPI_Abort(MPI_COMM_WORLD, -1);
   }
 
-  //gettimeofday(&begin, 0);
 #if ENABLE_TIMINGS
+  auto profiler = std::make_shared<Profiler>();
   // save params for after
   profiler->params.ranks   = numpe;
-#if defined(_OPENMP)
-  profiler->params.threads = omp_get_max_threads();
-#else
-  profiler->params.threads = 1;
-#endif
   profiler->params.nsource = std::pow(nsourcecells, dim);
   profiler->params.ntarget = std::pow(ntargetcells, dim);
   profiler->params.order   = interp_order;
   profiler->params.nmats   = material_field_expressions.size();
-  profiler->params.output  = "multimat_timing_" +
-    std::string(only_threads ? "omp.dat": "mpi.dat");
+  profiler->params.output  = "multimat_" + scaling_type + "_scaling_"
+                             + std::string(only_threads ? "omp.dat": "mpi.dat");
+
+#if defined(_OPENMP)
+  profiler->params.threads = omp_get_max_threads();
+#endif
+  // start timers here
+  auto start = timer::now();
   auto tic = timer::now();
 #endif
-
 
   // The mesh factory and mesh setup
   std::shared_ptr<Jali::Mesh> source_mesh, target_mesh;
@@ -571,10 +580,8 @@ int main(int argc, char** argv) {
 #if ENABLE_TIMINGS
   profiler->time.total = timer::elapsed(start);
 
-  // dump timing data
-  if (rank == 0) {
+  if (rank == 0)
     profiler->dump();
-  }
 #endif
 }
 
@@ -953,7 +960,7 @@ template<int dim, bool all_convex> void run(std::shared_ptr<Jali::Mesh> sourceMe
   // Dump some timing information
   if (numpe > 1) MPI_Barrier(MPI_COMM_WORLD);
 
-
+#if !ENABLE_TIMINGS
   // Perform interface reconstruction on target mesh for pretty pictures
   // and error computation of material fields
 
@@ -1158,4 +1165,5 @@ template<int dim, bool all_convex> void run(std::shared_ptr<Jali::Mesh> sourceMe
     if (rank == 0)
       std::cout << "...done." << std::endl;
   }
+#endif
 }

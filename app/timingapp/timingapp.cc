@@ -110,8 +110,13 @@ int print_usage() {
   std::cout << "  'field_cell_rA_fB.txt' or 'field_node_rA_rB.txt' where 'A' is\n";
   std::cout << "  the field polynomial order and B is the remap/interpolation order\n\n";
 
+#if ENABLE_TIMINGS
   std::cout << "--only_threads (default = n)\n";
   std::cout << " enable if you want to profile only threads scaling\n\n";
+
+  std::cout << "--scaling (default = strong)\n";
+  std::cout << " specify the scaling study type [strong|weak]\n\n";
+#endif
   return 0;
 }
 //////////////////////////////////////////////////////////////////////
@@ -224,11 +229,6 @@ int main(int argc, char** argv) {
   __itt_pause();
 #endif
 
-#if ENABLE_TIMINGS
-  Profiler profiler;
-  auto start = timer::now();
-#endif
-
   // Initialize MPI
   int mpi_init_flag;
   MPI_Initialized(&mpi_init_flag);
@@ -249,8 +249,12 @@ int main(int argc, char** argv) {
   bool dump_output = true;
   bool reverse_source_ranks = false;
   bool weak_scale = false;
-  bool only_threads = false;
   Jali::Entity_kind entityKind = Jali::Entity_kind::CELL;
+
+#if ENABLE_TIMINGS
+  bool only_threads = false;
+  std::string scaling_type = "strong";
+#endif
 
   if (argc < 3) return print_usage();
   for (int i = 1; i < argc; i++) {
@@ -293,9 +297,14 @@ int main(int argc, char** argv) {
       assert(poly_order >=0 && poly_order < 3);
     } else if (keyword == "output_results")
       dump_output = (valueword == "y");
+#if ENABLE_TIMINGS
     else if (keyword == "only_threads"){
       only_threads = (numpe == 1 and valueword == "y");
+    } else if (keyword == "scaling") {
+      assert(valueword == "strong" or valueword == "weak");
+      scaling_type = valueword;
     }
+#endif
     else
       std::cerr << "Unrecognized option " << keyword << std::endl;
   }
@@ -316,20 +325,22 @@ int main(int argc, char** argv) {
   }
 
 #if ENABLE_TIMINGS
+  Profiler profiler;
   // save params for after
   profiler.params.ranks   = numpe;
-#if defined(_OPENMP)
-  profiler.params.threads = omp_get_max_threads();
-#else
-  profiler.params.threads = 1;
-#endif
   profiler.params.nsource = std::pow(n_source, dim);
   profiler.params.ntarget = std::pow(n_target, dim);
   profiler.params.order   = interp_order;
   profiler.params.nmats   = 1;
-  profiler.params.output  = "timing_timing_" +
-                            std::string(only_threads ? "omp.dat": "mpi.dat");
-  auto tic = timer::now();
+  profiler.params.output  = "timing_" + scaling_type + "_scaling_"
+                            + std::string(only_threads ? "omp.dat": "mpi.dat");
+
+#if defined(_OPENMP)
+  profiler.params.threads = omp_get_max_threads();
+#endif
+  // start timers here
+  auto start = timer::now();
+  auto tic = start;
 #endif
 
   std::shared_ptr<Jali::Mesh> sourceMesh;
@@ -527,8 +538,7 @@ int main(int argc, char** argv) {
     float const seconds = profiler.time.remap * 1.E3;
     std::cout << "Remap Time: " << seconds << std::endl;
   }
-#endif
-
+#else
   // Output results for small test cases
   double error, toterr = 0.0;
   double const * cellvecout;
@@ -651,7 +661,6 @@ int main(int argc, char** argv) {
       std::printf("\n\nL2 NORM OF ERROR = %lf\n\n", sqrt(globalerr));
   }
 
-
   // Dump output, if requested
   if (dump_output) {
 
@@ -723,6 +732,7 @@ int main(int argc, char** argv) {
     for (int i=0; i < lgid.size(); i++)
       fout << lgid[i] << " " << lvalues[i] << std::endl;
   }  // if (dump_output)
+#endif
 
   std::printf("finishing timingapp...\n");
 
