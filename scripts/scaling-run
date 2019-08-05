@@ -557,8 +557,7 @@ run_scaling() {
 
     # Run it
     echo "Running ${APP} ${SCALING_TYPE} scaling"
-    #sbatch -v ${SCRIPT}
-    cat ${SCRIPT}
+    sbatch -v ${SCRIPT}
   done
 }
 
