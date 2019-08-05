@@ -280,10 +280,6 @@ int main(int argc, char** argv) {
   __itt_pause();
 #endif
 
-#if ENABLE_TIMINGS
-  auto profiler = std::make_shared<Profiler>();
-  auto start = timer::now();
-#endif
 
   // Initialize MPI
   int mpi_init_flag;
@@ -431,19 +427,20 @@ int main(int argc, char** argv) {
     }
 
 #if ENABLE_TIMINGS
+  auto profiler = std::make_shared<Profiler>();
   // save params for after
   profiler->params.ranks   = numpe;
-  #if defined(_OPENMP)
-    profiler->params.threads = omp_get_max_threads();
-  #else
-    profiler->params.threads = 1;
-  #endif
   profiler->params.nsource = std::pow(nsourcecells, dim);
   profiler->params.ntarget = std::pow(ntargetcells, dim);
   profiler->params.order   = interp_order;
   profiler->params.nmats   = material_field_expressions.size();
   profiler->params.output  = "t-junction_timing_" + std::string(only_threads ? "omp.dat": "mpi.dat");
-  auto tic = timer::now();
+#if defined(_OPENMP)
+  profiler->params.threads = omp_get_max_threads();
+#endif
+  // start timers here
+  auto start = timer::now();
+  auto tic = start;
 #endif
 
   // The mesh factory and mesh setup
@@ -593,15 +590,6 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
   Wonton::Jali_Mesh_Wrapper sourceMeshWrapper(*sourceMesh);
   Wonton::Jali_Mesh_Wrapper targetMeshWrapper(*targetMesh);
 
-  const int nsrccells = sourceMeshWrapper.num_owned_cells() +
-      sourceMeshWrapper.num_ghost_cells();
-  const int ntarcells = targetMeshWrapper.num_owned_cells();
-
-  const int nsrcnodes = sourceMeshWrapper.num_owned_nodes() +
-      sourceMeshWrapper.num_ghost_nodes();
-  const int ntarnodes = targetMeshWrapper.num_owned_nodes();
-
-
   // Native jali state managers for source and target
   std::shared_ptr<Jali::State> sourceState(Jali::State::create(sourceMesh));
   std::shared_ptr<Jali::State> targetState(Jali::State::create(targetMesh));
@@ -611,14 +599,20 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
   Wonton::Jali_State_Wrapper targetStateWrapper(*targetState);
 
 
-  // Read volume fraction and centroid data from file
-
   int nmats;
   std::vector<int> cell_num_mats;
   std::vector<int> cell_mat_ids;  // flattened 2D array
   std::vector<double> cell_mat_volfracs;  // flattened 2D array
   std::vector<Wonton::Point<dim>> cell_mat_centroids;  // flattened 2D array
 
+  const int nsrccells = sourceMeshWrapper.num_owned_cells()
+                      + sourceMeshWrapper.num_ghost_cells();
+  const int nsrcnodes = sourceMeshWrapper.num_owned_nodes()
+                      + sourceMeshWrapper.num_ghost_nodes();
+  const int ntarcells = targetMeshWrapper.num_owned_cells();
+  const int ntarnodes = targetMeshWrapper.num_owned_nodes();
+
+  // Read volume fraction and centroid data from file
   tjunction_material_data<Wonton::Jali_Mesh_Wrapper>(sourceMeshWrapper,
                                                      cell_num_mats,
                                                      cell_mat_ids,
@@ -937,16 +931,55 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
   // Dump some timing information
   if (numpe > 1) MPI_Barrier(MPI_COMM_WORLD);
 
+#if !ENABLE_TIMINGS
+
+  // Cheesy printout results
+  for (int m = 0; m < n_total_mats; m++) {
+    std::vector<int> matcells;
+    targetStateWrapper.mat_get_cells(m, &matcells);
+
+    double const *matvf;
+    targetStateWrapper.mat_get_celldata("mat_volfracs", m, &matvf);
+
+    Wonton::Point<dim> const *matcen;
+    targetStateWrapper.mat_get_celldata("mat_centroids", m, &matcen);
+
+    double const *cellmatdata;
+    targetStateWrapper.mat_get_celldata("cellmatdata", m, &cellmatdata);
+
+    int nmatcells = matcells.size();
+
+
+    std::cout << "\n----target cell global indices on rank "<< rank<<" for material "<< m << ": ";
+    for (int ic = 0; ic < nmatcells; ic++) std::cout <<
+      targetMeshWrapper.get_global_id(matcells[ic], Wonton::Entity_kind::CELL) << " ";
+    std::cout << std::endl; 
+    
+    std::cout << "----mat_volfracs on rank "<< rank<<" for material "<< m <<": ";
+    for (int ic = 0; ic < nmatcells; ic++) std::cout <<matvf[ic]<< " ";
+    std::cout << std::endl; 
+    
+    std::cout << "----mat_centroids on rank "<< rank<<" for material "<< m <<": ";
+    for (int ic = 0; ic < nmatcells; ic++) std::cout << "(" << matcen[ic][0]<<", "<< matcen[ic][1]<< ") ";
+    std::cout << std::endl; 
+    
+    std::cout << "----cellmatdata on rank "<< rank<<" for material "<< m <<": ";
+    for (int ic = 0; ic < nmatcells; ic++) std::cout <<cellmatdata[ic]<< " ";
+    std::cout << std::endl << std::endl; 
+
+  }
+#endif
+
+  return;
 
   // Perform interface reconstruction on target mesh for pretty pictures
   // and error computation of material fields
-
   offsets.resize(ntarcells);
   offsets[0] = 0;
   for (int i = 1; i < ntarcells; i++)
     offsets[i] = offsets[i-1] + targetStateWrapper.cell_get_num_mats(i-1);
   int ntotal = offsets[ntarcells-1] +
-      targetStateWrapper.cell_get_num_mats(ntarcells-1);
+               targetStateWrapper.cell_get_num_mats(ntarcells-1);
 
   std::vector<int> target_cell_num_mats(ntarcells, 0);
   std::vector<int> target_cell_mat_ids(ntotal);
@@ -975,45 +1008,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
       ncmats++;
     }
   }
-  
-  // Cheesy printout results
-  for (int m = 0; m < n_total_mats; m++) {
-    std::vector<int> matcells;
-    targetStateWrapper.mat_get_cells(m, &matcells);
 
-    double const *matvf;
-    targetStateWrapper.mat_get_celldata("mat_volfracs", m, &matvf);
-
-    Wonton::Point<dim> const *matcen;
-    targetStateWrapper.mat_get_celldata("mat_centroids", m, &matcen);
-
-    double const *cellmatdata;
-    targetStateWrapper.mat_get_celldata("cellmatdata", m, &cellmatdata);
-
-    int nmatcells = matcells.size();
-    
-#if !ENABLE_TIMINGS   
-    std::cout << "\n----target cell global indices on rank "<< rank<<" for material "<< m << ": ";
-    for (int ic = 0; ic < nmatcells; ic++) std::cout <<
-      targetMeshWrapper.get_global_id(matcells[ic], Wonton::Entity_kind::CELL) << " ";
-    std::cout << std::endl; 
-    
-    std::cout << "----mat_volfracs on rank "<< rank<<" for material "<< m <<": ";
-    for (int ic = 0; ic < nmatcells; ic++) std::cout <<matvf[ic]<< " ";
-    std::cout << std::endl; 
-    
-    std::cout << "----mat_centroids on rank "<< rank<<" for material "<< m <<": ";
-    for (int ic = 0; ic < nmatcells; ic++) std::cout << "(" << matcen[ic][0]<<", "<< matcen[ic][1]<< ") ";
-    std::cout << std::endl; 
-    
-    std::cout << "----cellmatdata on rank "<< rank<<" for material "<< m <<": ";
-    for (int ic = 0; ic < nmatcells; ic++) std::cout <<cellmatdata[ic]<< " ";
-    std::cout << std::endl << std::endl; 
-#endif    
-  }
-  
-  
-  return;
   // INTERFACE RECONSTRUCTION ON THE TARGET IS PROBLEMATIC AT THE MOMENT
   // DUE TO THE HANDLING OF GHOSTS
 
