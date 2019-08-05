@@ -139,10 +139,14 @@ int print_usage() {
   std::cout << "--output_meshes (default = y)\n";
   std::cout << "  If 'y', the source and target meshes are output with the " <<
       "remapped field attached as input.exo and output.exo. \n\n";
-  
+
+#if ENABLE_TIMINGS
   std::cout << "--only_threads (default = n)\n";
   std::cout << " enable if you want to profile only threads scaling\n\n";
 
+  std::cout << "--scaling (default = strong)\n";
+  std::cout << " specify the scaling study type [strong|weak]\n\n";
+#endif
   return 0;
 }
 //////////////////////////////////////////////////////////////////////
@@ -310,10 +314,12 @@ int main(int argc, char** argv) {
   Portage::Limiter_type limiter = Portage::Limiter_type::NOLIMITER;
   double srclo = 0.0, srchi = 1.0;  // bounds of generated mesh in each dir
 
+#if ENABLE_TIMINGS
   bool only_threads = false;
+  std::string scaling_type = "strong";
+#endif
 
   // Parse the input
-
   for (int i = 1; i < argc; i++) {
     std::string arg(argv[i]);
     std::size_t len = arg.length();
@@ -371,9 +377,19 @@ int main(int argc, char** argv) {
         std::cerr << "Number of meshes for convergence study should be greater than 0" << std::endl;
         throw std::exception();
       }
-    } else if (keyword == "only_threads"){
+#if ENABLE_TIMINGS
+      assert(n_converge == 1);
+#endif
+    }
+#if ENABLE_TIMINGS
+    else if (keyword == "only_threads"){
       only_threads = (numpe == 1 and valueword == "y");
-    } else if (keyword == "help") {
+    } else if (keyword == "scaling") {
+      assert(valueword == "strong" or valueword == "weak");
+      scaling_type = valueword;
+    }
+#endif
+    else if (keyword == "help") {
       print_usage();
       MPI_Abort(MPI_COMM_WORLD, -1);
     } else
@@ -434,7 +450,8 @@ int main(int argc, char** argv) {
   profiler->params.ntarget = std::pow(ntargetcells, dim);
   profiler->params.order   = interp_order;
   profiler->params.nmats   = material_field_expressions.size();
-  profiler->params.output  = "t-junction_timing_" + std::string(only_threads ? "omp.dat": "mpi.dat");
+  profiler->params.output  = "t-junction_" + scaling_type + "_scaling_"
+                           + std::string(only_threads ? "omp.dat": "mpi.dat");
 #if defined(_OPENMP)
   profiler->params.threads = omp_get_max_threads();
 #endif
