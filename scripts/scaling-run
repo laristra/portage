@@ -593,7 +593,7 @@ generate_gnuplot() {
   # generate distinct scripts for strong and weak scaling
   for SCALING_TYPE in "${SCALING_RUNS[@]}"; do
     
-    INPUT="${APP}_timing_${SUFFIX}.dat"
+    INPUT="${APP}_${SCALING_TYPE}_scaling_${SUFFIX}.dat"
     OUTPUT="${CLUSTER}_${APP}_${SCALING_TYPE}_scaling_${SUFFIX}.eps"
     SCRIPT="${CLUSTER}_${APP}_${SCALING_TYPE}_scaling_${SUFFIX}.gnu"
   
