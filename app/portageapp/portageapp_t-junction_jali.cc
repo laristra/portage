@@ -286,10 +286,6 @@ int main(int argc, char** argv) {
   __itt_pause();
 #endif
 
-#if ENABLE_TIMINGS
-  auto profiler = std::make_shared<Profiler>();
-  auto start = timer::now();
-#endif
 
   // Initialize MPI
   int mpi_init_flag;
@@ -438,19 +434,20 @@ int main(int argc, char** argv) {
     }
 
 #if ENABLE_TIMINGS
+  auto profiler = std::make_shared<Profiler>();
   // save params for after
   profiler->params.ranks   = numpe;
-  #if defined(_OPENMP)
-    profiler->params.threads = omp_get_max_threads();
-  #else
-    profiler->params.threads = 1;
-  #endif
   profiler->params.nsource = std::pow(nsourcecells, dim);
   profiler->params.ntarget = std::pow(ntargetcells, dim);
   profiler->params.order   = interp_order;
   profiler->params.nmats   = material_field_expressions.size();
   profiler->params.output  = "t-junction_timing_" + std::string(only_threads ? "omp.dat": "mpi.dat");
-  auto tic = timer::now();
+#if defined(_OPENMP)
+  profiler->params.threads = omp_get_max_threads();
+#endif
+  // start timers here
+  auto start = timer::now();
+  auto tic = start;
 #endif
 
   // The mesh factory and mesh setup
@@ -1019,39 +1016,6 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
     }
   }
 
-    double const *matvf;
-    targetStateWrapper.mat_get_celldata("mat_volfracs", m, &matvf);
-
-    Wonton::Point<dim> const *matcen;
-    targetStateWrapper.mat_get_celldata("mat_centroids", m, &matcen);
-
-    double const *cellmatdata;
-    targetStateWrapper.mat_get_celldata("cellmatdata", m, &cellmatdata);
-
-    int nmatcells = matcells.size();
-    
-#if !ENABLE_TIMINGS   
-    std::cout << "\n----target cell global indices on rank "<< rank<<" for material "<< m << ": ";
-    for (int ic = 0; ic < nmatcells; ic++) std::cout <<
-      targetMeshWrapper.get_global_id(matcells[ic], Wonton::Entity_kind::CELL) << " ";
-    std::cout << std::endl; 
-    
-    std::cout << "----mat_volfracs on rank "<< rank<<" for material "<< m <<": ";
-    for (int ic = 0; ic < nmatcells; ic++) std::cout <<matvf[ic]<< " ";
-    std::cout << std::endl; 
-    
-    std::cout << "----mat_centroids on rank "<< rank<<" for material "<< m <<": ";
-    for (int ic = 0; ic < nmatcells; ic++) std::cout << "(" << matcen[ic][0]<<", "<< matcen[ic][1]<< ") ";
-    std::cout << std::endl; 
-    
-    std::cout << "----cellmatdata on rank "<< rank<<" for material "<< m <<": ";
-    for (int ic = 0; ic < nmatcells; ic++) std::cout <<cellmatdata[ic]<< " ";
-    std::cout << std::endl << std::endl; 
-#endif    
-  }
-  
-  
-  return;
   // INTERFACE RECONSTRUCTION ON THE TARGET IS PROBLEMATIC AT THE MOMENT
   // DUE TO THE HANDLING OF GHOSTS
 
