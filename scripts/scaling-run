@@ -585,6 +585,7 @@ generate_gnuplot() {
 
   FIELDS=(
     "w lp lc rgb '#CB0707' pt 5"
+    "w lp lc rgb '#4682B4' pt 4"
     "w lp lc rgb '#800080' pt 2"
     "w lp lc rgb '#000000' pt 3"
   )
@@ -617,8 +618,9 @@ generate_gnuplot() {
     echo "set logscale y 2"                                           >> ${SCRIPT} 
     echo ""                                                           >> ${SCRIPT}
     echo "plot '${INPUT}' u ${XCOL}:6 t 'remap'     ${FIELDS[0]},\\"  >> ${SCRIPT}
-    echo "     '${INPUT}' u ${XCOL}:5 t 'interface' ${FIELDS[1]},\\"  >> ${SCRIPT} 
-    echo "     '${INPUT}' u ${XCOL}:7 t 'total'     ${FIELDS[2]},\\"  >> ${SCRIPT}
+    echo "     '${INPUT}' u ${XCOL}:3 t 'init'      ${FIELDS[1]},\\"  >> ${SCRIPT}
+    echo "     '${INPUT}' u ${XCOL}:5 t 'interface' ${FIELDS[2]},\\"  >> ${SCRIPT}
+    echo "     '${INPUT}' u ${XCOL}:7 t 'total'     ${FIELDS[3]},\\"  >> ${SCRIPT}
     echo "     linear(x) t 'linear' lc rgb 'blue'"                    >> ${SCRIPT}
   
     # move to build directory
