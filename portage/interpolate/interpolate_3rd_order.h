@@ -284,13 +284,14 @@ double Interpolate_3rdOrder<D, Entity_kind::CELL, SourceMeshType, TargetMeshType
 
   /// @todo Should use zip_iterator here but I am not sure I know how to
 
+  double vol = target_mesh_.cell_volume(targetCellID);
   for (int j = 0; j < nsrccells; ++j) {
     int srccell = sources_and_weights[j].entityID;
     // int N = D*(D+3)/2;
     std::vector<double> xsect_weights = sources_and_weights[j].weights;
     double xsect_volume = xsect_weights[0];
 
-    if (xsect_volume <= num_tols_.interpolate_3rd_ord_intersection)
+    if (xsect_volume/vol <= num_tols_.min_relative_volume)
       continue;  // no intersection
 
     Point<D> srccell_centroid;
@@ -466,12 +467,13 @@ double Interpolate_3rdOrder<D, Entity_kind::NODE, SourceMeshType, TargetMeshType
 
   /// @todo Should use zip_iterator here but I am not sure I know how to
 
+  double vol = target_mesh_.dual_cell_volume(targetNodeID);
   for (int j = 0; j < nsrcnodes; ++j) {
     int srcnode = sources_and_weights[j].entityID;
     std::vector<double> xsect_weights = sources_and_weights[j].weights;
     double xsect_volume = xsect_weights[0];
 
-    if (xsect_volume <= num_tols_.interpolate_3rd_ord_intersection)
+    if (xsect_volume/vol <= num_tols_.min_relative_volume)
       continue;  // no intersection
 
     // note: here we are getting the node coord, not the centroid of

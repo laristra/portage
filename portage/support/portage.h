@@ -142,9 +142,7 @@ struct NumericTolerances_t {
     double polygon_convexity_eps            = error_value_;
     double minimal_intersection_volume      = error_value_;
     double intersect_bb_eps                 = error_value_;
-    double interpolate_small_intersections  = error_value_;
-    double interpolate_node_intersections   = error_value_;
-    double interpolate_3rd_ord_intersection = error_value_;
+    double min_relative_volume              = error_value_;
     double mmdriver_relative_min_mat_vol    = error_value_;
     double mismatch_fixup_constant_value    = error_value_;
     double mismatch_conservation_all_mat    = error_value_;
@@ -155,9 +153,7 @@ struct NumericTolerances_t {
         polygon_convexity_eps           =  1e-14;
         minimal_intersection_volume     = -1e-14;
         intersect_bb_eps                =  1e-12;
-        interpolate_small_intersections =  1e-12;
-        interpolate_node_intersections  =  1e-16;
-        interpolate_3rd_ord_intersection=  1e-30;
+        min_relative_volume             =  1e-12;
         mmdriver_relative_min_mat_vol   =  1e-10;
         mismatch_fixup_constant_value   =  100*std::numeric_limits<double>::epsilon();
         mismatch_conservation_all_mat   =  100*std::numeric_limits<double>::epsilon();

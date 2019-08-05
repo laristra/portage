@@ -342,7 +342,7 @@ class Interpolate_1stOrder<D,
       for (auto const& wt : sources_and_weights) {
         int srccell = wt.entityID;
         std::vector<double> pair_weights = wt.weights;
-        if (pair_weights[0]/vol < num_tols_.interpolate_small_intersections)
+        if (pair_weights[0]/vol < num_tols_.min_relative_volume)
           continue;  // skip small intersections
         val += source_vals_[srccell] * pair_weights[0];
         wtsum0 += pair_weights[0];
@@ -352,7 +352,7 @@ class Interpolate_1stOrder<D,
       for (auto const& wt : sources_and_weights) {
         int srccell = wt.entityID;
         std::vector<double> pair_weights = wt.weights;
-        if (pair_weights[0]/vol < num_tols_.interpolate_small_intersections)
+        if (pair_weights[0]/vol < num_tols_.min_relative_volume)
           continue;  // skip small intersections
         int matcell = source_state_.cell_index_in_material(srccell, matid_);
         val += source_vals_[matcell] * pair_weights[0];  // 1st order
@@ -534,7 +534,7 @@ class Interpolate_1stOrder<D,
     for (auto const& wt : sources_and_weights) {
       int srcnode = wt.entityID;
       std::vector<double> pair_weights = wt.weights;
-      if (pair_weights[0]/vol < num_tols_.interpolate_node_intersections)
+      if (pair_weights[0]/vol < num_tols_.min_relative_volume)
         continue;  // skip small intersections
       val += source_vals_[srcnode] * pair_weights[0];  // 1st order
       wtsum0 += pair_weights[0];
