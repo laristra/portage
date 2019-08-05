@@ -585,9 +585,10 @@ generate_gnuplot() {
 
   FIELDS=(
     "w lp lc rgb '#CB0707' pt 5"
+    "w lp lc rgb '#000000' pt 3"
+    "w lines lc rgb '#0000CD'"
     "w lp lc rgb '#4682B4' pt 4"
     "w lp lc rgb '#800080' pt 2"
-    "w lp lc rgb '#000000' pt 3"
   )
  
   # generate distinct scripts for strong and weak scaling
@@ -607,7 +608,7 @@ generate_gnuplot() {
     echo "set size ratio 1"                                           >> ${SCRIPT} 
     echo "set xlabel \"${XLABEL}\""                                   >> ${SCRIPT} 
     echo "set ylabel \"elapsed (s)\""                                 >> ${SCRIPT} 
-    echo "set key below maxcols 1"                                    >> ${SCRIPT} 
+    echo "set key below maxcols 2"                                    >> ${SCRIPT}
     echo ""                                                           >> ${SCRIPT}
     echo "stats '${INPUT}' using 6 name 'time'"                       >> ${SCRIPT}
     echo "linear(x)=time_max/x"                                       >> ${SCRIPT}
@@ -618,10 +619,11 @@ generate_gnuplot() {
     echo "set logscale y 2"                                           >> ${SCRIPT} 
     echo ""                                                           >> ${SCRIPT}
     echo "plot '${INPUT}' u ${XCOL}:6 t 'remap'     ${FIELDS[0]},\\"  >> ${SCRIPT}
-    echo "     '${INPUT}' u ${XCOL}:3 t 'init'      ${FIELDS[1]},\\"  >> ${SCRIPT}
-    echo "     '${INPUT}' u ${XCOL}:5 t 'interface' ${FIELDS[2]},\\"  >> ${SCRIPT}
-    echo "     '${INPUT}' u ${XCOL}:7 t 'total'     ${FIELDS[3]},\\"  >> ${SCRIPT}
-    echo "     linear(x) t 'linear' lc rgb 'blue'"                    >> ${SCRIPT}
+    echo "     '${INPUT}' u ${XCOL}:7 t 'total'     ${FIELDS[1]},\\"  >> ${SCRIPT}
+    echo "     linear(x)              t 'linear'    ${FIELDS[2]},\\"  >> ${SCRIPT}
+    echo "     '${INPUT}' u ${XCOL}:3 t 'mesh-init' ${FIELDS[3]},\\"  >> ${SCRIPT}
+    echo "     '${INPUT}' u ${XCOL}:5 t 'interface' ${FIELDS[4]}"     >> ${SCRIPT}
+
   
     # move to build directory
     mv ${SCRIPT} ${BUILD_DIR}
