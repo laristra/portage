@@ -9,6 +9,7 @@ Please see the license file at the root of this repository, or at:
 #include <memory>
 #include <cassert>
 #include <cmath>
+#include <string>
 
 #include "gtest/gtest.h"
 #include "mpi.h"
@@ -19,10 +20,15 @@ Please see the license file at the root of this repository, or at:
 #include "portage/accumulate/accumulate.h"
 #include "portage/estimate/estimate.h"
 #include "portage/support/operator.h"
+#include "portage/support/faceted_setup.h"
 
 #include "portage/support/portage.h"
 #include "portage/search/search_points_by_cells.h"
 #include "wonton/support/Point.h"
+#include "wonton/mesh/simple/simple_mesh.h"
+#include "wonton/mesh/simple/simple_mesh_wrapper.h"
+#include "wonton/state/simple/simple_state.h"
+#include "wonton/state/simple/simple_state_wrapper.h"
 
 namespace {
 
@@ -583,5 +589,214 @@ TEST_F(IntegrateDriverTest3D, 3D_LinearFieldLinearBasis) {
   unitTest<Portage::SearchPointsByCells, Portage::Meshfree::Basis::Linear>
     (compute_linear_field<3>, 3./2.);
 }
+
+  TEST(Part, 2D) {
+    const size_t NCELLS = 4;
+    std::shared_ptr<Wonton::Simple_Mesh> mesh_ptr = 
+      std::make_shared<Wonton::Simple_Mesh>(-1., -1., 1., 1., NCELLS, NCELLS);
+    Wonton::Simple_Mesh &mesh = *mesh_ptr;
+    Wonton::Simple_Mesh_Wrapper mwrapper(mesh);
+    double factor = 1.25, bfactor=0.5, dx=0.5;
+
+    size_t ncellsmesh = mesh.num_entities(Wonton::CELL, Wonton::PARALLEL_OWNED);
+    assert(ncellsmesh == NCELLS*NCELLS);
+    std::vector<double> values(ncellsmesh, 1.0);
+#define DEBUG_HERE 0
+#ifdef DEBUG_HERE 
+    std::cout << "src={"<<std::endl;
+#endif
+    for (int i=0; i<ncellsmesh; i++) {
+      Wonton::Point<2> pnt;
+      mwrapper.cell_centroid(i, &pnt);
+      if      (pnt[0]<0. and pnt[1]<0.) values[i] = 2.;
+      else if (pnt[0]>0. and pnt[1]>0.) values[i] = 2.;
+#ifdef DEBUG_HERE
+      std::cout<<"{"<<pnt[0]<<","<<pnt[1]<<","<<values[i]<<"}";
+      if (i<ncellsmesh-1) std::cout <<","<<std::endl;
+#endif
+    }
+    double *valptr = values.data();
+    std::cout <<"};"<<std::endl;
+
+    Wonton::Simple_State state(mesh_ptr); 
+    std::vector<double> &added = state.add("indicate", Wonton::CELL, valptr);
+    Wonton::Simple_State_Wrapper swrapper(state);
+
+    std::shared_ptr<Portage::Meshfree::Swarm<2>> src_swarm_ptr = 
+      Portage::Meshfree::SwarmFactory<2, Wonton::Simple_Mesh_Wrapper>(mwrapper, Wonton::CELL);
+
+    std::shared_ptr<Portage::Meshfree::SwarmState<2>> src_state_ptr = 
+      Portage::Meshfree::SwarmStateFactory<2, Wonton::Simple_State_Wrapper>(swrapper, Wonton::CELL);
+    
+    int ntarget = (2*NCELLS+2)*(2*NCELLS+2); // keep all target swarm points from overlying any source points
+    auto tgt_swarm_ptr = Portage::Meshfree::SwarmFactory(-1.,-1.,1.,1.,ntarget,1);
+    auto tgt_state_ptr = std::make_shared<Portage::Meshfree::SwarmState<2>>(*tgt_swarm_ptr);
+
+    auto tvalues_ptr = std::make_shared<std::vector<double>>(ntarget);
+    tgt_state_ptr->add_field("indicate",  tvalues_ptr);
+
+    Portage::vector<std::vector<std::vector<double>>> smoothing;
+    Portage::vector<Wonton::Point<2>> extents;
+    Portage::vector<Wonton::Point<2>> dummy;
+    Portage::Meshfree::Weight::faceted_setup_cell<2,Wonton::Simple_Mesh_Wrapper>
+                                           (mwrapper, smoothing, extents, 1.0, 2.0);
+
+    Portage::Meshfree::SwarmDriver<Portage::SearchPointsByCells,
+                                   Portage::Meshfree::Accumulate,
+                                   Portage::Meshfree::Estimate,
+                                   2,
+                                   Portage::Meshfree::Swarm<2>,
+                                   Portage::Meshfree::SwarmState<2>,
+                                   Portage::Meshfree::Swarm<2>,
+                                   Portage::Meshfree::SwarmState<2>>
+      driver(*src_swarm_ptr, *src_state_ptr, *tgt_swarm_ptr, *tgt_state_ptr, smoothing,
+               extents, dummy, Portage::Meshfree::Scatter);
+
+    std::vector<std::string> svars={"indicate"};
+    std::vector<std::string> tvars={"indicate"};
+    Portage::vector<std::vector<std::vector<double>>> psmoothing;
+    Portage::Meshfree::Weight::faceted_setup_cell<2,Wonton::Simple_Mesh_Wrapper>
+                                           (mwrapper, psmoothing, dummy, 0.25, 1.0);
+    driver.set_remap_var_names(svars, tvars, 
+                               Portage::Meshfree::LocalRegression, 
+                               Portage::Meshfree::Basis::Unitary,
+                               Portage::Meshfree::Operator::LastOperator,
+                               std::vector<Portage::Meshfree::Operator::Domain>(0),
+                               std::vector<std::vector<Point<2>>>(0,std::vector<Point<2>>(0)),
+                               "indicate", 0.25, psmoothing);
+
+    driver.run();
+
+    Portage::Meshfree::SwarmState<2>::DblVecPtr indicator_ptr;
+    tgt_state_ptr->get_field("indicate", indicator_ptr);
+    std::vector<double> &indicator=*indicator_ptr;
+
+#ifdef DEBUG_HERE
+    std::cout << "dat={"<<std::endl;
+    for (int i=0; i<ntarget; i++) {
+      Wonton::Point<2> p=tgt_swarm_ptr->get_particle_coordinates(i);
+      double value=0.;
+      if      (p[0]<0. and p[1]<0.) value = 2.;
+      else if (p[0]>0. and p[1]>0.) value = 2.;
+      else value = 1.0;
+      std::cout<<"{"<<p[0]<<","<<p[1]<<","<<indicator[i]<<","<<value<<"}";
+      if (i<ntarget-1) std::cout <<","<<std::endl;
+    }
+    std::cout <<"};"<<std::endl;
+#endif
+    
+    for (size_t i=0; i<ntarget; i++) {
+      Wonton::Point<2> pnt=tgt_swarm_ptr->get_particle_coordinates(i);
+      if      (pnt[0]<0. and pnt[1]<0.) {ASSERT_NEAR(2.0, indicator[i], 1.e-12);}
+      else if (pnt[0]>0. and pnt[1]>0.) {ASSERT_NEAR(2.0, indicator[i], 1.e-12);}
+      else                              {ASSERT_NEAR(1.0, indicator[i], 1.e-12);}
+    }
+
+  }
+
+
+  TEST(Part, 3D) {
+    const size_t NCELLS = 4;
+    std::shared_ptr<Wonton::Simple_Mesh> mesh_ptr = 
+      std::make_shared<Wonton::Simple_Mesh>(-1., -1., -1., 1., 1., 1., NCELLS, NCELLS, NCELLS);
+    Wonton::Simple_Mesh &mesh = *mesh_ptr;
+    Wonton::Simple_Mesh_Wrapper mwrapper(mesh);
+    double factor = 1.25, bfactor=0.5, dx=0.5;
+
+    size_t ncellsmesh = mesh.num_entities(Wonton::CELL, Wonton::PARALLEL_OWNED);
+    assert(ncellsmesh == NCELLS*NCELLS*NCELLS);
+    std::vector<double> values(ncellsmesh, 1.0);
+#ifdef DEBUG_HERE 
+    std::cout << "src={"<<std::endl;
+#endif
+    for (int i=0; i<ncellsmesh; i++) {
+      Wonton::Point<3> pnt;
+      mwrapper.cell_centroid(i, &pnt);
+      if      (pnt[0]<0. and pnt[1]<0. and pnt[2]<0.) values[i] = 2.;
+      else if (pnt[0]>0. and pnt[1]>0. and pnt[2]>0.) values[i] = 2.;
+#ifdef DEBUG_HERE
+      std::cout<<"{"<<pnt[0]<<","<<pnt[1]<<","<<pnt[2]<<","<<values[i]<<"}";
+      if (i<ncellsmesh-1) std::cout <<","<<std::endl;
+#endif
+    }
+    double *valptr = values.data();
+    std::cout <<"};"<<std::endl;
+
+    Wonton::Simple_State state(mesh_ptr); 
+    std::vector<double> &added = state.add("indicate", Wonton::CELL, valptr);
+    Wonton::Simple_State_Wrapper swrapper(state);
+
+    std::shared_ptr<Portage::Meshfree::Swarm<3>> src_swarm_ptr = 
+      Portage::Meshfree::SwarmFactory<3, Wonton::Simple_Mesh_Wrapper>(mwrapper, Wonton::CELL);
+
+    std::shared_ptr<Portage::Meshfree::SwarmState<3>> src_state_ptr = 
+      Portage::Meshfree::SwarmStateFactory<3, Wonton::Simple_State_Wrapper>(swrapper, Wonton::CELL);
+    
+    int ntarget = (2*NCELLS+2)*(2*NCELLS+2)*(2*NCELLS+2); // keep all target swarm points from overlying any source points
+    auto tgt_swarm_ptr = Portage::Meshfree::SwarmFactory(-1.,-1.,-1.,1.,1.,1.,ntarget,1);
+    auto tgt_state_ptr = std::make_shared<Portage::Meshfree::SwarmState<3>>(*tgt_swarm_ptr);
+
+    auto tvalues_ptr = std::make_shared<std::vector<double>>(ntarget);
+    tgt_state_ptr->add_field("indicate",  tvalues_ptr);
+
+    Portage::vector<std::vector<std::vector<double>>> smoothing;
+    Portage::vector<Wonton::Point<3>> extents;
+    Portage::vector<Wonton::Point<3>> dummy;
+    Portage::Meshfree::Weight::faceted_setup_cell<3,Wonton::Simple_Mesh_Wrapper>
+                                           (mwrapper, smoothing, extents, 1.0, 2.0);
+
+    Portage::Meshfree::SwarmDriver<Portage::SearchPointsByCells,
+                                   Portage::Meshfree::Accumulate,
+                                   Portage::Meshfree::Estimate,
+                                   3,
+                                   Portage::Meshfree::Swarm<3>,
+                                   Portage::Meshfree::SwarmState<3>,
+                                   Portage::Meshfree::Swarm<3>,
+                                   Portage::Meshfree::SwarmState<3>>
+      driver(*src_swarm_ptr, *src_state_ptr, *tgt_swarm_ptr, *tgt_state_ptr, smoothing,
+               extents, dummy, Portage::Meshfree::Scatter);
+
+    std::vector<std::string> svars={"indicate"};
+    std::vector<std::string> tvars={"indicate"};
+    Portage::vector<std::vector<std::vector<double>>> psmoothing;
+    Portage::Meshfree::Weight::faceted_setup_cell<3,Wonton::Simple_Mesh_Wrapper>
+                                           (mwrapper, psmoothing, dummy, 0.25, 1.0);
+    driver.set_remap_var_names(svars, tvars, 
+                               Portage::Meshfree::LocalRegression, 
+                               Portage::Meshfree::Basis::Unitary,
+                               Portage::Meshfree::Operator::LastOperator,
+                               std::vector<Portage::Meshfree::Operator::Domain>(0),
+                               std::vector<std::vector<Point<3>>>(0,std::vector<Point<3>>(0)),
+                               "indicate", 0.25, psmoothing);
+
+    driver.run();
+
+    Portage::Meshfree::SwarmState<3>::DblVecPtr indicator_ptr;
+    tgt_state_ptr->get_field("indicate", indicator_ptr);
+    std::vector<double> &indicator=*indicator_ptr;
+
+#ifdef DEBUG_HERE
+    std::cout << "dat={"<<std::endl;
+    for (int i=0; i<ntarget; i++) {
+      Wonton::Point<3> p=tgt_swarm_ptr->get_particle_coordinates(i);
+      double value=0.;
+      if      (p[0]<0. and p[1]<0. and p[2]<0.) value = 2.;
+      else if (p[0]>0. and p[1]>0. and p[2]>0.) value = 2.;
+      else value = 1.0;
+      std::cout<<"{"<<p[0]<<","<<p[1]<<","<<p[2]<<","<<indicator[i]<<","<<value<<"}";
+      if (i<ntarget-1) std::cout <<","<<std::endl;
+    }
+    std::cout <<"};"<<std::endl;
+#endif
+#undef DEBUG_HERE
+    
+    for (size_t i=0; i<ntarget; i++) {
+      Wonton::Point<3> pnt=tgt_swarm_ptr->get_particle_coordinates(i);
+      if      (pnt[0]<0. and pnt[1]<0. and pnt[2]<0.) {ASSERT_NEAR(2.0, indicator[i], 1.e-12);}
+      else if (pnt[0]>0. and pnt[1]>0. and pnt[2]>0.) {ASSERT_NEAR(2.0, indicator[i], 1.e-12);}
+      else                                            {ASSERT_NEAR(1.0, indicator[i], 1.e-12);}
+    }
+
+  }
 
 }  // end namespace

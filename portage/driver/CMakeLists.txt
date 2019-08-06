@@ -99,4 +99,10 @@ if (ENABLE_UNIT_TESTS)
      POLICY MPI
      THREADS 1)
 
+   cinch_add_unit(test_part_by_particle
+     SOURCES test/test_part_by_particle
+     LIBRARIES portage
+     POLICY MPI
+     THREADS 1)
+
 endif (ENABLE_UNIT_TESTS)

@@ -12,6 +12,7 @@ Please see the license file at the root of this repository, or at:
 #include <stdexcept>
 #include <cassert>
 #include <string>
+#include <limits>
 
 #include "gtest/gtest.h"
 #ifdef PORTAGE_ENABLE_MPI
@@ -33,8 +34,9 @@ Please see the license file at the root of this repository, or at:
 // wonton includes
 #include "wonton/mesh/simple/simple_mesh.h"
 #include "wonton/mesh/simple/simple_mesh_wrapper.h"
-#include "wonton/state/state_vector_uni.h"
+#include "wonton/state/simple/simple_state.h"
 #include "wonton/state/simple/simple_state_mm_wrapper.h"
+#include "wonton/state/state_vector_uni.h"
 #include "wonton/mesh/flat/flat_mesh_wrapper.h"
 
 namespace {
@@ -210,7 +212,7 @@ class MSMDriverTest : public ::testing::Test {
          Portage::Meshfree::Weight::POLYRAMP, 
          center, 
          std::string("NONE"), 
-         0.0);
+         std::numeric_limits<double>::infinity());
     } else {
       msmdriver_ptr = new MSM_Driver_Type
         (sourceMeshWrapper, sourceStateWrapper,

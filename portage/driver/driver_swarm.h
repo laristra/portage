@@ -253,6 +253,7 @@ class SwarmDriver {
     (KernelDensity, LocalRegression)
     @param[in] basis   Order of the basis used to remap variables
     (UNITARY, LINEAR, QUADRATIC)
+    @param[in] operator_spec Operator specification
   */
   void set_remap_var_names(
       std::vector<std::string> const &source_remap_var_names,
@@ -262,7 +263,10 @@ class SwarmDriver {
       Operator::Type const operator_spec = Operator::LastOperator,
       Portage::vector<Operator::Domain> const &operator_domains = vector<Operator::Domain>(0),
       Portage::vector<std::vector<Point<Dim>>> const &operator_data=
-        vector<std::vector<Point<Dim>>>(0,std::vector<Point<Dim>>(0)))
+      vector<std::vector<Point<Dim>>>(0,std::vector<Point<Dim>>(0)), 
+      std::string part_field="NONE", double part_tolerance=0., 
+      Portage::vector<std::vector<std::vector<double>>> part_smoothing=
+      Portage::vector<std::vector<std::vector<double>>>(0) )
   {
     assert(source_remap_var_names.size() == target_remap_var_names.size());
 
@@ -278,6 +282,9 @@ class SwarmDriver {
       assert(operator_domains_.size() == target_swarm_.num_owned_particles());
       assert(operator_data_.size() == target_swarm_.num_owned_particles());
     }
+    part_field_ = part_field;
+    part_tolerance_ = part_tolerance;
+    part_smoothing_ = part_smoothing;
   }
 
 
@@ -369,6 +376,9 @@ class SwarmDriver {
   Operator::Type operator_spec_;
   Portage::vector<Operator::Domain> operator_domains_;
   Portage::vector<std::vector<Point<Dim>>> operator_data_;
+  std::string part_field_;
+  double part_tolerance_;
+  Portage::vector<std::vector<std::vector<double>>> part_smoothing_;
 
  void check_sizes_and_set_types(WeightCenter const weight_center, 
                                 Weight::Kernel const kernel_type, 
@@ -520,6 +530,68 @@ remap(std::vector<std::string> const &src_varnames,
   timersub(&end_timeval, &begin_timeval, &diff_timeval);
   tot_seconds_srch = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
 
+  // In case of faceted, scatter, and parts, obtain part assignments on target particles.
+  // Eliminate neighbors that aren't in the same part.
+  // It is assumed that the faceted weight function will be non-zero only on the 
+  // source cell it came from, which is achieved by using a smoothing factor of 1/2.
+  // It is also assumed no target point will appear in more than one source cell.
+  if (geom_types_[0]==Weight::FACETED and weight_center_==Scatter and part_field_!="NONE") {
+    // get source part assignments
+    shared_ptr<vector<double>> sfpart_ptr;
+    source_state_.get_field(part_field_, sfpart_ptr);
+    std::vector<double> &sfpart(*sfpart_ptr);
+
+    // make storage for target part assignments
+    size_t ns=source_swarm_.num_particles(Entity_type::PARALLEL_OWNED);
+    size_t nt=target_swarm_.num_particles(Entity_type::PARALLEL_OWNED);
+
+    // create accumulator to evaluate weight function on source cells
+    std::vector<Weight::Kernel> step_kern(ns, Weight::STEP);
+    Accumulate<Dim, SourceSwarm, TargetSwarm>
+      accumulator(source_swarm_, target_swarm_,
+                  estimator_type_, weight_center_,
+                  step_kern, geom_types_, part_smoothing_,
+                  basis_type_,
+                  operator_spec_, operator_domains_, operator_data_);
+
+    // loop over target points and set part assignments
+    std::vector<double> tfpart(nt);
+    for (size_t i=0; i<nt; i++) {
+      for (size_t j=0; j<candidates[i].size(); j++) {
+        double weight = accumulator.weight(i, candidates[i][j]);
+        if (weight > 0.) {
+	  double part_val = sfpart[candidates[i][j]];
+	  tfpart[i] = part_val;
+#undef DEBUG_HERE
+#ifdef DEBUG_HERE
+          if (Dim==2) {
+            Wonton::Point<Dim> p1,p2;
+            size_t nbr=candidates[i][j];
+            p1=source_swarm_.get_particle_coordinates(nbr);
+            p2=target_swarm_.get_particle_coordinates(i);
+            double h=part_smoothing_[nbr][0][2];
+            std::cout << "i=" << i<<" "<<" nbr="<<nbr<<
+              " "<< fabs(p2[0]-p1[0])/h<<","<<fabs(p2[1]-p1[1])/h<<
+              " w="<<weight<<" part="<<part_val<<std::endl;
+          }
+#endif
+#undef DEBUG_HERE
+        }
+      }
+    }
+
+    // loop over target points and dismiss neighbors that aren't in the same part
+    for (size_t i=0; i<nt; i++) {
+      std::vector<unsigned int> new_candidates;
+      for (size_t j=0; j<candidates[i].size(); j++) {
+        if (fabs(tfpart[i]-sfpart[candidates[i][j]]) < part_tolerance_) {
+	  new_candidates.push_back(candidates[i][j]);
+        }
+      }
+      candidates[i] = new_candidates;
+    }
+  }
+
   // ACCUMULATE (build moment matrix, calculate shape functions)
   // EQUIVALENT TO INTERSECT IN MESH-MESH REMAP
 
@@ -528,12 +600,12 @@ remap(std::vector<std::string> const &src_varnames,
   // Get an instance of the desired accumulate algorithm type which is
   // expected to be a functor with an operator() of the right form
 
-  const Accumulate<Dim, SourceSwarm, TargetSwarm>
-      accumulateFunctor(source_swarm_, target_swarm_,
-                        estimator_type_, weight_center_,
-                        kernel_types_, geom_types_, smoothing_lengths_,
-                        basis_type_,
-                        operator_spec_, operator_domains_, operator_data_);
+  Accumulate<Dim, SourceSwarm, TargetSwarm>
+    accumulateFunctor(source_swarm_, target_swarm_,
+                      estimator_type_, weight_center_,
+                      kernel_types_, geom_types_, smoothing_lengths_,
+                      basis_type_,
+                      operator_spec_, operator_domains_, operator_data_);
 
   Portage::vector<std::vector<Weights_t>> source_pts_and_mults(numTargetPts);
 
@@ -592,7 +664,6 @@ remap(std::vector<std::string> const &src_varnames,
                        target_swarm_.end(Entity_kind::PARTICLE, Entity_type::PARALLEL_OWNED),
                        source_pts_and_mults.begin(),
                        target_field, estimateFunctor);
-
 
     gettimeofday(&end_timeval, 0);
     timersub(&end_timeval, &begin_timeval, &diff_timeval);
