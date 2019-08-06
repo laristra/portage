@@ -36,11 +36,6 @@ Please see the license file at the root of this repository, or at:
 
 #define ENABLE_TIMINGS 1
 
-#define ENABLE_TIMINGS 1
-#if ENABLE_TIMINGS
-  #include "portage/support/timer.h"
-#endif
-
 using Wonton::Jali_Mesh_Wrapper;
 using Portage::argsort;
 using Portage::reorder;

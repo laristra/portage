@@ -51,11 +51,6 @@
 
 #define ENABLE_TIMINGS 0
 
-#define ENABLE_TIMINGS 0
-#if ENABLE_TIMINGS
-  #include "portage/support/timer.h"
-#endif
-
 using Wonton::Jali_Mesh_Wrapper;
 using Portage::argsort;
 using Portage::reorder;
@@ -443,6 +438,8 @@ int main(int argc, char** argv) {
   // start timers here
   auto start = timer::now();
   auto tic = timer::now();
+#else
+  std::shared_ptr<Profiler> profiler = nullptr;
 #endif
 
   // The mesh factory and mesh setup
