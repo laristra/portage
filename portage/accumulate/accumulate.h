@@ -113,8 +113,8 @@ class Accumulate {
 
   /** 
    * @brief Evaluate meshfree weight function
-   * @param particleA source index
-   * @param particleB target index
+   * @param particleA target index
+   * @param particleB source index
    * @return value of weight function
    *
    * Information in constructor arguments decides the details of the weight function.
@@ -122,25 +122,25 @@ class Accumulate {
   double weight(const size_t particleA, const size_t particleB)
   {
     double result;
-    Point<dim> x = target_.get_particle_coordinates(particleB);
-    Point<dim> y = source_.get_particle_coordinates(particleA);
+    Point<dim> x = target_.get_particle_coordinates(particleA);
+    Point<dim> y = source_.get_particle_coordinates(particleB);
     if (center_ == Gather) {
-      result = Weight::eval<dim>(geometries_[particleB],
-                                 kernels_[particleB],
-                                 x,y,
-                                 smoothing_[particleB]);
-    } else if (center_ == Scatter) {
       result = Weight::eval<dim>(geometries_[particleA],
                                  kernels_[particleA],
                                  x,y,
                                  smoothing_[particleA]);
+    } else if (center_ == Scatter) {
+      result = Weight::eval<dim>(geometries_[particleB],
+                                 kernels_[particleB],
+                                 y,x, // faceted weights are asymmetric
+                                 smoothing_[particleB]);
     }
     return result;
   }
 
   /** 
    * @brief Compute local regression correction to weight function
-   * @param particleB target particle index in target swarm
+   * @param particleA target particle index in target swarm
    * @param source_particles list of source particle neighbors of target particle
    * @return the weight or the corrected weight function according to @code estimate_@endcode
    *
@@ -148,23 +148,23 @@ class Accumulate {
    * and m is the size of the basis. 
    */
   std::vector<Weights_t>
-  operator() (size_t const particleB, std::vector<unsigned int> const& source_particles) {
+  operator() (size_t const particleA, std::vector<unsigned int> const& source_particles) {
     std::vector<Weights_t> result;
     result.reserve(source_particles.size());
     
     switch (estimate_) {
       case KernelDensity:  {
-        for (auto const& particleA : source_particles) {
+        for (auto const& particleB : source_particles) {
           double weight_val = weight(particleA, particleB);
 	  std::vector<double> pair_result(1, weight_val);
-          result.emplace_back(particleA, pair_result);
+          result.emplace_back(particleB, pair_result);
         }
         break;
       }
       case OperatorRegression:
       case LocalRegression: {
         size_t nbasis = Basis::function_size<dim>(basis_);
-        Point<dim> x = target_.get_particle_coordinates(particleB);
+        Point<dim> x = target_.get_particle_coordinates(particleA);
         
 	// If too few particles, set estimate to zero for this target
 	bool zilchit = false;
@@ -175,26 +175,26 @@ class Accumulate {
         // Calculate weights and moment matrix (P*W*transpose(P))
 	std::vector<double> weight_val(source_particles.size());
         Matrix moment(nbasis,nbasis,0.);
-        size_t iA = 0;
+        size_t iB = 0;
 	if (not zilchit) {
-	  for (auto const& particleA : source_particles) {
-	    weight_val[iA] = weight(particleA, particleB); // save weights for later
-	    Point<dim> y = source_.get_particle_coordinates(particleA);
+	  for (auto const& particleB : source_particles) {
+	    weight_val[iB] = weight(particleA, particleB); // save weights for later
+	    Point<dim> y = source_.get_particle_coordinates(particleB);
 	    auto basis = Basis::shift<dim>(basis_,x,y);
 	    for (size_t i=0; i<nbasis; i++) {
 	      for (size_t j=0; j<nbasis; j++) {
-		moment[i][j] += basis[i]*basis[j]*weight_val[iA];
+		moment[i][j] += basis[i]*basis[j]*weight_val[iB];
 	      }
 	    }
-	    iA++;
+	    iB++;
 	  }
 	}
         
         // Calculate inverse(P*W*transpose(P))*P*W
-        iA = 0;
-        for (auto const& particleA : source_particles) {
+        iB = 0;
+        for (auto const& particleB : source_particles) {
 	  std::vector<double> pair_result(nbasis);
-          Point<dim> y = source_.get_particle_coordinates(particleA);
+          Point<dim> y = source_.get_particle_coordinates(particleB);
 	  std::vector<double> basis = Basis::shift<dim>(basis_,x,y);
 
           // recast as a Portage::Matrix
@@ -208,7 +208,7 @@ class Accumulate {
 #else
 	    Matrix pair_result_matrix = moment.solve(basis_matrix);
 #endif
-	    for (size_t i=0; i<nbasis; i++) pair_result[i] = pair_result_matrix[i][0]*weight_val[iA];
+	    for (size_t i=0; i<nbasis; i++) pair_result[i] = pair_result_matrix[i][0]*weight_val[iB];
 	  } else if (zilchit) {
 	    for (size_t i=0; i<nbasis; i++) pair_result[i] = 0.;
 	  }
@@ -217,10 +217,10 @@ class Accumulate {
 	  if (estimate_ == OperatorRegression) {
 	    auto ijet = Basis::inverse_jet<dim>(basis_, x);
 	    std::vector<std::vector<double>> basisop;
-	    Operator::apply<dim>(operator_spec_, basis_, operator_domain_[particleB], 
-				 operator_data_[particleB], basisop);
+	    Operator::apply<dim>(operator_spec_, basis_, operator_domain_[particleA], 
+				 operator_data_[particleA], basisop);
 	    size_t opsize = Operator::size_info(operator_spec_, basis_, 
-                                                operator_domain_[particleB])[0];
+                                                operator_domain_[particleA])[0];
 	    std::vector<double> operator_result(opsize, 0.);
 	    for (int j=0; j<opsize; j++) {
 	      for (int k=0; k<nbasis; k++) {
@@ -231,8 +231,8 @@ class Accumulate {
 	    }
 	    for (int j=0; j<nbasis; j++) pair_result[j] = operator_result[j];
 	  }
-          result.emplace_back(particleA, pair_result);
-          iA++;
+          result.emplace_back(particleB, pair_result);
+          iB++;
         }
 	break;
       }
