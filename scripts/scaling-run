@@ -359,8 +359,10 @@ setup_run_options() {
 }
 
 update_app_options() {
-  APP_ARGS=() 
- 
+
+  APP_ARGS=()
+  SCALING_TYPE=$1
+
   # set app-specific argument list
   case "${APP}" in
     core)
@@ -374,17 +376,19 @@ update_app_options() {
         "--remap_order=${REMAP_ORDER}"
         "--results_file=${RESULT_FILE}"
         "--only_threads=${THREAD_FLAG}"
+        "--scaling=${SCALING_TYPE}"
       );;
     t-junction)
       APP_ARGS=(
         "./app/portageapp/portageapp_${APP}_jali"
         "--dim=${DIMENSION}"
-        "--nsourcecells=${SOURCE_SIZE}"
-        "--ntargetcells=${TARGET_SIZE}"
+        "--nsourcecells=\${n_source}"
+        "--ntargetcells=\${n_target}"
         "--conformal=${IS_CONFORMAL}"
         "--material_fields=${MATER_FIELD}"
         "--remap_order=${REMAP_ORDER}"
         "--only_threads=${THREAD_FLAG}"
+        "--scaling=${SCALING_TYPE}"
       );;
     multimat)
       APP_ARGS=(
@@ -397,13 +401,14 @@ update_app_options() {
         "--remap_order=${REMAP_ORDER}"
         "--results_file=${RESULT_FILE}"
         "--only_threads=${THREAD_FLAG}"
+        "--scaling=${SCALING_TYPE}"
       );;
     timing)
       APP_ARGS=(
         "./app/${APP}app/${APP}app"
         "--dim=${DIMENSION}"
-        "--nsourcecells=${SOURCE_SIZE}"
-        "--ntargetcells=${TARGET_SIZE}"
+        "--nsourcecells=\${n_source}"
+        "--ntargetcells=\${n_target}"
         "--conformal=${IS_CONFORMAL}"
         "--reverse_ranks=${REVERSE_RANKS}"
         "--weak_scale=${WEAK_SCALE_ONLY}"
@@ -411,6 +416,7 @@ update_app_options() {
         "--field_order=${FIELD_ORDER}"
         "--remap_order=${REMAP_ORDER}"
         "--only_threads=${THREAD_FLAG}"
+        "--scaling=${SCALING_TYPE}"
       );;
     (*)
       echo -e "\e[31mError: invalid or not yet supported app '${APP}'\e[0m"
@@ -420,7 +426,7 @@ update_app_options() {
   # formatting
   MPI_ARGS="--bind-to socket --report-bindings"
   for option in "${APP_ARGS[@]}"; do
-    MPI_ARGS+=" \\"$'\n'"\t${option}"
+    MPI_ARGS+=" \\"$'\n'"\t\t${option}"
   done
 }
 
@@ -497,17 +503,10 @@ run_scaling() {
     if [ "${APP}" = "multimat" ] && [ "${SCALING_TYPE}" = "weak" ]; then
        echo "Sorry, automated weak scaling is not supported for multimat"
        continue
-    # adjust the problem size on weak scaling
-    elif [ ${SCALING_TYPE} = "weak" ]; then
-      SOURCE_SIZE="\$((i * ${SOURCE_MAX}))" 
-      TARGET_SIZE="\$((i * ${TARGET_MAX}))" 
-    else
-      SOURCE_SIZE="${SOURCE_MAX}" 
-      TARGET_SIZE="${TARGET_MAX}" 
     fi
-  
+
     # set app specific args
-    update_app_options
+    update_app_options ${SCALING_TYPE}
     
     # generated files
     OUTPUT="${CLUSTER}_${APP}_${SCALING_TYPE}_scaling_${EXTENT}_${MODE}.log"
@@ -533,25 +532,33 @@ run_scaling() {
     echo -e ""                                                                >> ${SCRIPT}
     echo -e "# load modules"                                                  >> ${SCRIPT}
     echo -e "module load ${COMPILER}/${CXX_VERSION}"                          >> ${SCRIPT}
+
     if [ "${CLUSTER}" = "darwin" ]; then
       echo -e "module load openmpi/${MPI_VERSION}-${COMPILER}_${CXX_VERSION}" >> ${SCRIPT}
       echo -e "module load boost/${BOOST_VERSION}"                            >> ${SCRIPT}
     else
       echo -e "module load openmpi/${MPI_VERSION}"                            >> ${SCRIPT}
     fi
+
     echo -e ""                                                                >> ${SCRIPT}
     echo -e "# set thread-core affinity"                                      >> ${SCRIPT}
     echo -e "export ${CPU_AFFINITY}"                                          >> ${SCRIPT}
     echo -e ""                                                                >> ${SCRIPT}
-    echo -e "# run serial"                                                    >> ${SCRIPT}
-    echo -e "i=1"                                                             >> ${SCRIPT}
-    echo -e "export OMP_NUM_THREADS=${INIT_THREADS}"                          >> ${SCRIPT}
-    echo -e "mpirun -n \$i ${MPI_ARGS}"                                       >> ${SCRIPT}
-    echo -e ""                                                                >> ${SCRIPT}
-    echo -e "# run parallel"                                                  >> ${SCRIPT}
-    echo -e "for ((i=2; i <= ${EXTENT}; i*=2)); do"                           >> ${SCRIPT}
+    echo -e "for ((i=1; i <= ${EXTENT}; i*=2)); do"                           >> ${SCRIPT}
+    echo -e "  # set number of threads"                                       >> ${SCRIPT}
     echo -e "  export OMP_NUM_THREADS=${THREADS}"                             >> ${SCRIPT}
-    echo -e "  mpirun -n ${RANKS} ${MPI_ARGS}"                                >> ${SCRIPT}
+
+    if [ "${SCALING_TYPE}" = "weak" ]; then
+      echo -e ""                                                              >> ${SCRIPT}
+      echo -e "  # update per-axis source and target mesh resolution"         >> ${SCRIPT}
+      echo -e "  n_source=\`bc -l <<< \"e(l(\$i)/${DIMENSION}) * ${SOURCE_MAX}\"|cut -f1 -d'.'\`" >> ${SCRIPT}
+      echo -e "  n_target=\`bc -l <<< \"e(l(\$i)/${DIMENSION}) * ${TARGET_MAX}\"|cut -f1 -d'.'\`" >> ${SCRIPT}
+      echo -e "  echo \"n_source: \${n_source}, n_target: \${n_target}\""     >> ${SCRIPT}
+      echo -e ""                                                              >> ${SCRIPT}
+    fi
+
+    echo -e "  # run afterwards"                                              >> ${SCRIPT}
+    echo -e "  mpirun -np ${RANKS} ${MPI_ARGS}"                               >> ${SCRIPT}
     echo -e "done"                                                            >> ${SCRIPT}
     echo -e "# ========================================================"      >> ${SCRIPT}
 
