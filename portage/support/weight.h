@@ -239,7 +239,26 @@ inline double ddcoulomb(double x){
   return y;
 }
 
-enum Kernel {B4, SQUARE, EPANECHNIKOV, POLYRAMP, INVSQRT, COULOMB};
+/// step weight
+inline double step(double x){
+  double y=0.;
+  if (x<=2) y=1.;
+  return y;
+}
+
+/// step weight derivative
+inline double dstep(double x){
+  double y=0.;
+  return y;
+}
+
+/// step weight second derivative
+inline double ddstep(double x){
+  double y=0.;
+  return y;
+}
+
+enum Kernel {B4, SQUARE, EPANECHNIKOV, POLYRAMP, INVSQRT, COULOMB, STEP};
 
 /// general kernel function
 double kernel(const Kernel kern, double x) {
@@ -251,6 +270,7 @@ double kernel(const Kernel kern, double x) {
     case POLYRAMP:{result = polyramp(x); break;}
     case INVSQRT:{result = invsqrt(x); break;}
     case COULOMB:{result = coulomb(x); break;}
+    case STEP:{result = step(x); break;}
     default:
       assert(false);
   }
@@ -324,15 +344,17 @@ struct FacetData {
 
 /// faceted weight function
 template<size_t dim>
-double faceted(const Wonton::Point<dim> x, const Wonton::Point<dim> y,
-               FacetData<dim>* facets, size_t nsides)
+  double faceted(const Kernel kern, 
+                 const Wonton::Point<dim> x, const Wonton::Point<dim> y,
+                 vector<FacetData<dim>> facets, size_t nsides)
 {
+  assert(kern==POLYRAMP or kern==STEP);
   double result = 1.;
   for (size_t i=0; i<nsides; i++) {
     double arg = 0.;
     for (size_t j=0; j<dim; j++) arg += facets[i].normal[j]*(y[j]-x[j]);
     arg /= facets[i].smoothing;
-    result *= polyramp(arg);
+    result *= kernel(kern, arg);
   }
   return result;
 }
@@ -357,12 +379,12 @@ double eval(const Geometry geo,
 
     case FACETED:{
       size_t nsides = vh.size();
-      FacetData<dim> facets[nsides];
+      vector<FacetData<dim>> facets(nsides);
       for (size_t i=0; i<nsides; i++) {
         for (size_t j=0; j<dim; j++) facets[i].normal[j] = vh[i][j];
         facets[i].smoothing = vh[i][dim];
       }
-      result = faceted<dim>(x,y,facets,nsides);
+      result = faceted<dim>(kern,x,y,facets,nsides);
       break;
     }
 
