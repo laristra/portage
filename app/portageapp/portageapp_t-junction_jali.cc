@@ -5,7 +5,6 @@
 */
 
 #include <sys/time.h>
-
 #include <cstdio>
 #include <cstdlib>
 #include <fstream>
@@ -17,9 +16,7 @@
 #include <cmath>
 #include <set>
 #include <numeric>
-
 #include <mpi.h>
-
 #ifdef ENABLE_PROFILE
   #include "ittnotify.h"
 #endif
@@ -31,38 +28,30 @@
 #include "MeshFactory.hh"
 #include "JaliStateVector.h"
 #include "JaliState.h"
+#include "user_field.h"
 
 #include "portage/support/portage.h"
 #include "portage/support/mpi_collate.h"
+#include "portage/support/timer.h"
 #include "portage/driver/mmdriver.h"
+#include "portage/driver/write_to_gmv.h"
 #include "wonton/mesh/jali/jali_mesh_wrapper.h"
 #include "wonton/state/jali/jali_state_wrapper.h"
 
 #ifdef HAVE_TANGRAM
-#include "tangram/utility/get_material_moments.h"
-#include "tangram/driver/driver.h"
-#include "tangram/reconstruct/MOF.h"
-#include "tangram/reconstruct/VOF.h"
-
-#ifdef HAVE_XMOF2D
-  #include "tangram/reconstruct/xmof2D_wrapper.h"
-  #define IR_2D XMOF2D_Wrapper
-#else
-  #define IR_2D MOF
+  #include "tangram/utility/get_material_moments.h"
+  #include "tangram/driver/driver.h"
+  #include "tangram/reconstruct/MOF.h"
+  #include "tangram/reconstruct/VOF.h"
+  #ifdef HAVE_XMOF2D
+    #include "tangram/reconstruct/xmof2D_wrapper.h"
+    #define IR_2D XMOF2D_Wrapper
+  #else
+    #define IR_2D MOF
+  #endif
 #endif
-
-#endif
-
-#include "portage/driver/write_to_gmv.h"
 
 #define ENABLE_TIMINGS 1
-#if ENABLE_TIMINGS
-  #include "portage/support/timer.h"
-#endif
-
-// For parsing and evaluating user defined expressions in apps
-
-#include "user_field.h"
 
 using Wonton::Jali_Mesh_Wrapper;
 using Portage::argsort;
@@ -452,12 +441,14 @@ int main(int argc, char** argv) {
   profiler->params.nmats   = material_field_expressions.size();
   profiler->params.output  = "t-junction_" + scaling_type + "_scaling_"
                            + std::string(only_threads ? "omp.dat": "mpi.dat");
-#if defined(_OPENMP)
-  profiler->params.threads = omp_get_max_threads();
-#endif
+  #if defined(_OPENMP)
+    profiler->params.threads = omp_get_max_threads();
+  #endif
   // start timers here
   auto start = timer::now();
   auto tic = start;
+#else
+  std::shared_ptr<Profiler> profiler = nullptr;
 #endif
 
   // The mesh factory and mesh setup

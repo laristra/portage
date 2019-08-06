@@ -5,7 +5,6 @@
 */
 
 #include <sys/time.h>
-
 #include <cstdio>
 #include <cstdlib>
 #include <fstream>
@@ -15,7 +14,6 @@
 #include <memory>
 #include <utility>
 #include <cmath>
-
 #include <mpi.h>
 
 #ifdef ENABLE_PROFILE
@@ -30,13 +28,17 @@
 #include "JaliStateVector.h"
 #include "JaliState.h"
 
-
 #include "portage/support/portage.h"
 #include "portage/support/mpi_collate.h"
+#include "portage/support/timer.h"
 #include "portage/driver/mmdriver.h"
+#include "portage/driver/write_to_gmv.h"
 #include "wonton/mesh/jali/jali_mesh_wrapper.h"
 #include "wonton/state/jali/jali_state_wrapper.h"
+#include "wonton/support/Point.h"
 #include "read_material_data.h"
+#include "user_field.h"
+
 
 #ifdef HAVE_TANGRAM
 #include "tangram/driver/driver.h"
@@ -47,17 +49,7 @@
 #include "tangram/intersect/split_r2d.h"
 #endif
 
-#include "portage/driver/write_to_gmv.h"
-#include "wonton/support/Point.h"
-
-// For parsing and evaluating user defined expressions in apps
-
-#include "user_field.h"
-
 #define ENABLE_TIMINGS 0
-#if ENABLE_TIMINGS
-  #include "portage/support/timer.h"
-#endif
 
 using Wonton::Jali_Mesh_Wrapper;
 using Portage::argsort;
@@ -446,6 +438,8 @@ int main(int argc, char** argv) {
   // start timers here
   auto start = timer::now();
   auto tic = timer::now();
+#else
+  std::shared_ptr<Profiler> profiler = nullptr;
 #endif
 
   // The mesh factory and mesh setup

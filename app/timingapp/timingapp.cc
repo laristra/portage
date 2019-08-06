@@ -4,10 +4,7 @@ Please see the license file at the root of this repository, or at:
     https://github.com/laristra/portage/blob/master/LICENSE
 */
 
-
-
 #include <sys/time.h>
-
 #include <cstdio>
 #include <cstdlib>
 #include <fstream>
@@ -16,35 +13,28 @@ Please see the license file at the root of this repository, or at:
 #include <memory>
 #include <utility>
 #include <cmath>
-
 #include <mpi.h>
 #ifdef _OPENMP
-#include <omp.h>
+  #include <omp.h>
 #endif
 
 #ifdef ENABLE_PROFILE
 #include "ittnotify.h"
 #endif
 
-// portage includes
-#include "portage/support/portage.h"
-#include "portage/support/mpi_collate.h"
-#include "portage/driver/mmdriver.h"
-
-// wonton includes
-#include "wonton/mesh/jali/jali_mesh_wrapper.h"
-#include "wonton/state/jali/jali_state_wrapper.h"
-
-// Jali includes
 #include "Mesh.hh"
 #include "MeshFactory.hh"
 #include "JaliStateVector.h"
 #include "JaliState.h"
 
+#include "portage/support/portage.h"
+#include "portage/support/mpi_collate.h"
+#include "portage/support/timer.h"
+#include "portage/driver/mmdriver.h"
+#include "wonton/mesh/jali/jali_mesh_wrapper.h"
+#include "wonton/state/jali/jali_state_wrapper.h"
+
 #define ENABLE_TIMINGS 1
-#if ENABLE_TIMINGS
-  #include "portage/support/timer.h"
-#endif
 
 using Wonton::Jali_Mesh_Wrapper;
 using Portage::argsort;
