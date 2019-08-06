@@ -126,7 +126,7 @@ namespace Portage {
               normal = -normal;
               smoothing = -smoothing;
             }
-	    if (mesh.on_exterior_boundary(Wonton::FACE, j) and boundary_factor > 0.) {
+	    if (mesh.on_exterior_boundary(Wonton::FACE, faces[j]) and boundary_factor > 0.) {
 	      h[j][DIM] = boundary_factor*smoothing;
 	    } else {
 	      h[j][DIM] = smoothing_factor*smoothing;
