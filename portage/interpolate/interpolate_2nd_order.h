@@ -34,11 +34,18 @@ namespace Portage {
 /*!
   @class Interpolate_2ndOrder interpolate_2nd_order.h
   @brief Interpolate_2ndOrder does a 2nd order interpolation of scalars
-  @tparam MeshType The type of the mesh wrapper used to access mesh info
-  @tparam StateType The type of the state manager used to access data.
-  @tparam OnWhatType The type of entity-based data we wish to interpolate;
-  e.g. does it live on nodes, cells, edges, etc.
 
+  @tparam D  spatial dimension of problem
+  @tparam on_what The type of entity-based data we wish to interpolate;
+  e.g. does it live on nodes, cells, edges, etc.
+  @tparam SourceMeshType Mesh wrapper class used to access source mesh info
+  @tparam TargetMeshType Mesh wrapper class used to access target mesh info
+  @tparam SourceStateType State manager used to access source data.
+  @tparam InterfaceReconstructorType Class for reconstructing material interfaces
+  @tparam MatPoly_Splitter Class used for splitting material polygons
+  @tparam MatPoly_Clipper Class used for clipping material polygons
+  @tparam CoordSys  What coordinate system are we operating in?
+  
   [1] Margolin, L.G. and Shashkov, M.J. "Second-order sign-preserving
   conservative interpolation (remapping) on general grids." Journal of
   Computational Physics, v 184, n 1, pp. 266-298, 2003.
