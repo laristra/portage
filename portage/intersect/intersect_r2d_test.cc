@@ -7,8 +7,10 @@ Please see the license file at the root of this repository, or at:
 #include "gtest/gtest.h"
 
 // portage includes
-#include "portage/intersect/intersect_r2d.h"
 #include "portage/support/portage.h"
+// templated struct for invoking 2D/3D intersect uniformly (see last test)
+// include the include files intersect_r2d.h and intersect_r3d.h
+#include "portage/intersect/intersect_rNd.h"
 
 // wonton includes
 #include "wonton/mesh/simple/simple_mesh.h"
@@ -30,9 +32,10 @@ TEST(intersectR2D, simple1) {
   const Wonton::Simple_Mesh_Wrapper tm(*targetmesh);
   const Wonton::Simple_State_Wrapper ss(*sourcestate);
 
-  Portage::IntersectR2D<Portage::Entity_kind::CELL, Wonton::Simple_Mesh_Wrapper,
-                        Wonton::Simple_State_Wrapper,
-                        Wonton::Simple_Mesh_Wrapper>
+  Portage::IntersectRND<2>::Intersect<Portage::Entity_kind::CELL,
+                                      Wonton::Simple_Mesh_Wrapper,
+                                      Wonton::Simple_State_Wrapper,
+                                      Wonton::Simple_Mesh_Wrapper>
       isect{sm, ss, tm};
 
   std::vector<int> srccells({0});
