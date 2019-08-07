@@ -1,6 +1,8 @@
-//
-// Created by Hoby Rakotarivelo on 2019-07-22.
-//
+/*
+  This file is part of the Ristra portage project.
+  Please see the license file at the root of this repository, or at:
+  https://github.com/laristra/portage/blob/master/LICENSE
+*/
 
 #ifndef PORTAGE_DRIVER_PARTS_H
 #define PORTAGE_DRIVER_PARTS_H
@@ -33,8 +35,8 @@ namespace Portage {
 
 /**
  * @brief Manages source and target sub-meshes for part-by-part remap.
- *        It detects boundaries mismatch and make the necessary
- *        fixup to keep the part-by-part interpolation conservative.
+ *        It detects boundaries mismatch and provides the necessary fixup
+ *        for partially filled and empty cells values.
  *
  * @tparam D                   meshes dimension
  * @tparam onwhat              the entity kind for remap [cell|node]

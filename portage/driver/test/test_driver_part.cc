@@ -1,6 +1,8 @@
-//
-// Created by Hoby Rakotarivelo on 2019-07-17.
-//
+/*
+  This file is part of the Ristra portage project.
+  Please see the license file at the root of this repository, or at:
+  https://github.com/laristra/portage/blob/master/LICENSE
+*/
 
 #include <iostream>
 #include <memory>
@@ -24,6 +26,31 @@
 
 #include "portage/driver/coredriver.h"
 
+/**
+ * @brief Basic test for part-by-part interpolation.
+ *
+ * Here, source and target meshes are partitioned into two parts,
+ * and each part is remapped independently. Remapped values are then
+ * compared to the exact values given by an analytical function.
+ * Here source and target parts are perfectly aligned (no mismatch),
+ * but target mesh resolution is twice that of source mesh.
+ * The generated parts looks like below:
+ *
+ *  0,1                  1,1
+ *    -------------------
+ *   |                   |
+ *   |    _______        |
+ *   |   |       |       |
+ *   |   |       |       |
+ *   |   |       |       |
+ *   |   |       |       |
+ *   |   |       |       |
+ *   |    -------        |
+ *   |                   |
+ *    -------------------
+ *  0,0                 1,0
+ */
+
 TEST(PartDriverTest, Basic) {
 
   // useful shortcuts
@@ -35,7 +62,7 @@ TEST(PartDriverTest, Basic) {
   using Remapper = Portage::CoreDriver<2, Wonton::Entity_kind::CELL,
                                           Wonton::Jali_Mesh_Wrapper,
                                           Wonton::Jali_State_Wrapper>;
-  using Partition = Portage::Parts<2, Wonton::Entity_kind::CELL,
+  using PartsPair = Portage::Parts<2, Wonton::Entity_kind::CELL,
                                       Wonton::Jali_Mesh_Wrapper,
                                       Wonton::Jali_State_Wrapper>;
 
@@ -44,7 +71,7 @@ TEST(PartDriverTest, Basic) {
   double const lower_bound  = -upper_bound;
   double const epsilon = 1.E-10;
 
-  // Source and target meshes and states
+  // source-target meshes and states
   std::shared_ptr<Jali::Mesh>  source_mesh;
   std::shared_ptr<Jali::State> source_state;
   std::shared_ptr<Jali::Mesh>  target_mesh;
@@ -63,9 +90,7 @@ TEST(PartDriverTest, Basic) {
   int const nb_source_cells =
     source_mesh_wrapper.num_entities(Entity_kind::CELL, Entity_type::ALL);
 
-  //-------------------------------------------------------------------
-  // Now add density field to the mesh
-  //-------------------------------------------------------------------
+  // now add density field to the mesh
   auto compute_density = [&](int c, Wonton::Jali_Mesh_Wrapper const& mesh) {
     double const x_gap = 0.4;
     double const t_min = 30.;
@@ -106,22 +131,22 @@ TEST(PartDriverTest, Basic) {
   Remapper remapper(source_mesh_wrapper, source_state_wrapper,
                     target_mesh_wrapper, target_state_wrapper);
 
-  Partition partition(source_mesh_wrapper, target_mesh_wrapper,
-                      source_state_wrapper,target_state_wrapper,
-                      source_cells, target_cells, nullptr);
+  PartsPair parts(source_mesh_wrapper, target_mesh_wrapper,
+                  source_state_wrapper,target_state_wrapper,
+                  source_cells, target_cells, nullptr);
 
   auto candidates = remapper.search<Portage::SearchKDTree>();
   auto source_weights = remapper.intersect_meshes<Portage::IntersectR2D>(candidates);
 
   // check mismatch and compute cell volumes before
-  partition.test_mismatch(source_weights);
+  parts.test_mismatch(source_weights);
   assert(not partition.has_mismatch());
 
   remapper.interpolate_mesh_var<double, Portage::Interpolate_1stOrder>(
     "density", "density", source_weights, lower_bound, upper_bound,
     Portage::DEFAULT_LIMITER, Portage::DEFAULT_PARTIAL_FIXUP_TYPE,
     Portage::DEFAULT_EMPTY_FIXUP_TYPE, Portage::DEFAULT_CONSERVATION_TOL,
-    Portage::DEFAULT_MAX_FIXUP_ITER, &partition
+    Portage::DEFAULT_MAX_FIXUP_ITER, &parts
   );
 
   // Finally check that we got the right target density values

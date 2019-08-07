@@ -1,6 +1,8 @@
-//
-// Created by Hoby Rakotarivelo on 2019-07-23.
-//
+/*
+  This file is part of the Ristra portage project.
+  Please see the license file at the root of this repository, or at:
+  https://github.com/laristra/portage/blob/master/LICENSE
+*/
 
 #include <iostream>
 #include <memory>
@@ -31,7 +33,7 @@ protected:
   using Remapper = Portage::CoreDriver<2, Wonton::Entity_kind::CELL,
                                           Wonton::Jali_Mesh_Wrapper,
                                           Wonton::Jali_State_Wrapper>;
-  using Partition = Portage::Parts<2, Wonton::Entity_kind::CELL,
+  using PartsPair = Portage::Parts<2, Wonton::Entity_kind::CELL,
                                       Wonton::Jali_Mesh_Wrapper,
                                       Wonton::Jali_State_Wrapper>;
   using Partial = Portage::Partial_fixup_type;
@@ -65,17 +67,17 @@ protected:
   };
 
   /**
-   * @brief Create a Partition based on a threshold value.
+   * @brief Create a partition based on a threshold value.
    *
    * @param mesh     the current mesh to split
    * @param nb_cells its number of cells
    * @param thresh   x-axis threshold value
-   * @param parts    the cell Partition
+   * @param part     source or target mesh parts
    */
   void create_partition(Wonton::Jali_Mesh_Wrapper const& mesh,
-                        double thresh, std::vector<int>* parts) {
+                        double thresh, std::vector<int>* part) {
 
-    assert(parts != nullptr);
+    assert(part != nullptr);
     assert(nb_parts == 2);
 
     int const nb_cells =
@@ -83,16 +85,16 @@ protected:
     int const min_heap_size = static_cast<int>(nb_cells / 2);
 
     for (int i = 0; i < nb_parts; ++i) {
-      parts[i].clear();
-      parts[i].reserve(min_heap_size);
+      part[i].clear();
+      part[i].reserve(min_heap_size);
     }
 
     for (int i = 0; i < nb_cells; ++i) {
       auto centroid = get_centroid(i, mesh);
       if (centroid[0] < thresh) {
-        parts[0].emplace_back(i);
+        part[0].emplace_back(i);
       } else {
-        parts[1].emplace_back(i);
+        part[1].emplace_back(i);
       }
     }
   }
@@ -196,7 +198,7 @@ public:
    *
    * It creates both source and target meshes,
    * then computes and assigns a density field on source mesh,
-   * then creates Partitions for both source and target meshes.
+   * then creates parts couples for both source and target meshes.
    */
   PartMismatchTest()
     : source_mesh(Jali::MeshFactory(MPI_COMM_WORLD)(0.0, 0.0, 1.0, 1.0, 4, 4)),
@@ -228,9 +230,9 @@ public:
 
         // set parts
     for (int i = 0; i < nb_parts; ++i) {
-      partitions.emplace_back(source_mesh_wrapper, target_mesh_wrapper,
-                              source_state_wrapper,target_state_wrapper,
-                              source_cells[i], target_cells[i], nullptr);
+      parts.emplace_back(source_mesh_wrapper, target_mesh_wrapper,
+                         source_state_wrapper,target_state_wrapper,
+                         source_cells[i], target_cells[i], nullptr);
     }
   }
 
@@ -254,14 +256,14 @@ public:
 
     for (int i = 0; i < nb_parts; ++i) {
       // test for mismatch and compute volumes
-      partitions[i].test_mismatch(source_weights);
+      parts[i].test_mismatch(source_weights);
 
       // interpolate density part-by-part while fixing mismatched values
       remapper.interpolate_mesh_var<double, Portage::Interpolate_1stOrder>(
         "density", "density", source_weights,
         lower_bound, higher_bound, Portage::DEFAULT_LIMITER,
         partial_fixup, empty_fixup, Portage::DEFAULT_CONSERVATION_TOL,
-        Portage::DEFAULT_MAX_FIXUP_ITER, &(partitions[i])
+        Portage::DEFAULT_MAX_FIXUP_ITER, &(parts[i])
       );
     }
 
@@ -303,8 +305,8 @@ protected:
   Wonton::Jali_State_Wrapper source_state_wrapper;
   Wonton::Jali_State_Wrapper target_state_wrapper;
 
-  // source and target partitions
-  std::vector<Partition> partitions;
+  // source and target parts couples
+  std::vector<PartsPair> parts;
   std::vector<int> source_cells[2];
   std::vector<int> target_cells[2];
 };
