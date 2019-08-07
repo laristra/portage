@@ -618,7 +618,11 @@ generate_gnuplot() {
     echo "set key below maxcols 2"                                    >> ${SCRIPT}
     echo ""                                                           >> ${SCRIPT}
     echo "stats '${INPUT}' using 6 name 'time'"                       >> ${SCRIPT}
-    echo "linear(x)=time_max/x"                                       >> ${SCRIPT}
+    if [ "${SCALING_TYPE}" = "strong" ]; then
+      echo "linear(x)=time_max/x"                                     >> ${SCRIPT}
+    else
+      echo "linear(x)=time_min"                                       >> ${SCRIPT}
+    fi
     echo ""                                                           >> ${SCRIPT}
     echo "set grid"                                                   >> ${SCRIPT}
     echo "set xrange [1:${XMAX}]"                                     >> ${SCRIPT}
