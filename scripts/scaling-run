@@ -9,7 +9,7 @@
 # Run params
 CLUSTER=""
 SUPPORTED_CLUSTERS=( "darwin" "snow" "grizzly" )
-SCALING_RUNS=( "strong" "weak" )
+SCALING_TYPE="strong"
 NODES=1
 RANKS=""
 CORES=1
@@ -97,7 +97,8 @@ print_usage() {
   echo -e "  -k, --entity $_CHOICE         remap entity kind [cell|node]"    
   echo -e "  -o, --order $_INT             interpolation order"    
   echo -e "  -i, --conform                 conformal meshes"   
-  echo -e "  -x, --convex                  convex polygons"   
+  echo -e "  -x, --convex                  convex polygons"
+  echo -e "  -l, --scaling                 scaling type [strong|weak]"
   echo -e "  -y, --thread-only             thread scaling only"
   echo -e "  -e, --results $_PATH          results output file"
   exit 1
@@ -111,6 +112,7 @@ print_params() {
   echo -e "- slurm user: \e[32m${USER}\e[0m"
   echo -e "- cores_per_node: \e[32m${CORES}\e[0m"
   echo -e "- ranks_per_node: \e[32m${RANKS_PER_NODE}\e[0m"
+  echo -e "- scaling_type: \e[32m${SCALING_TYPE}\e[0m"
   echo -e "- threads_per_rank: \e[32m${MAX_THREADS}\e[0m"
   echo -e "- hyperthreading: \e[32m${HYPERTHREADING}\e[0m"
   echo -e "- compiler: \e[32m${COMPILER}\e[0m"
@@ -217,6 +219,14 @@ check_params() {
   elif [[ ! "${FIELD_ORDER}" =~ ^[0-2]$ ]]; then
     echo -e "\e[31mError: invalid field order [0-2]\e[0m"
     exit 1 
+  # invalid scaling type
+  elif [ "${SCALING_TYPE}" != "strong" ] && [ "${SCALING_TYPE}" != "weak" ]; then
+    echo -e "\e[31mError: invalid scaling type '${SCALING_TYPE}'\e[0m"
+    exit 1
+  # disable weak scaling for multimat since require distinct input files
+  elif [ "${APP}" = "multimat" ] && [ "${SCALING_TYPE}" = "weak" ]; then
+     echo "Sorry, automated weak scaling is not supported for multimat"
+     exit 1
   fi
 
   # print params eventually
@@ -361,7 +371,6 @@ setup_run_options() {
 update_app_options() {
 
   APP_ARGS=()
-  SCALING_TYPE=$1
 
   # set app-specific argument list
   case "${APP}" in
@@ -433,10 +442,10 @@ update_app_options() {
 setup() {
 
   # parse options (requires GNU getopt).
-  SHORT_OPT="ha:g:n:r:p:u:c:w:d:f:q:s:t:m:z:k:o:ixye:" 
+  SHORT_OPT="ha:g:n:r:p:u:c:w:d:f:q:s:t:m:z:k:o:ixye:l:"
   LONG_OPT="help,app:,cluster:,nodes:,ranks:,partition:,user:,compiler:,hwthreads:,"
   LONG_OPT+="dim:,field:,field-order:,source:,target:,material-field:,material-file:,"
-  LONG_OPT+="entity:,order:,conform,convex,thread-only,results:"
+  LONG_OPT+="entity:,order:,conform,convex,thread-only,results:scaling:"
   options=""
 
   # handle no option case
@@ -476,7 +485,8 @@ setup() {
       -i|--conform) IS_CONFORMAL="y";; 
       -x|--convex) IS_CONVEX="y";; 
       -y|--thread-only) OPENMP_ONLY=true; MAX_NODES=1;; 
-      -e|--results) RESULT_FILE="$2"; shift;; 
+      -e|--results) RESULT_FILE="$2"; shift;;
+      -l|--scaling) SCALING_TYPE="$2"; shift;;
       --) break;;
       -*) print_usage;;
       *) break;;
@@ -496,77 +506,67 @@ setup() {
 
 run_scaling() {
 
-  # generate distinct scripts for strong and weak scaling
-  for SCALING_TYPE in "${SCALING_RUNS[@]}"; do
+  # set app specific args
+  update_app_options
 
-    # disable weak scaling for multimat since require distinct input files
-    if [ "${APP}" = "multimat" ] && [ "${SCALING_TYPE}" = "weak" ]; then
-       echo "Sorry, automated weak scaling is not supported for multimat"
-       continue
-    fi
+  # generated files
+  OUTPUT="${CLUSTER}_${APP}_${SCALING_TYPE}_scaling_${EXTENT}_${MODE}.log"
+  SCRIPT="${CLUSTER}_${APP}_${SCALING_TYPE}_scaling_${EXTENT}_${MODE}.sh"
 
-    # set app specific args
-    update_app_options ${SCALING_TYPE}
-    
-    # generated files
-    OUTPUT="${CLUSTER}_${APP}_${SCALING_TYPE}_scaling_${EXTENT}_${MODE}.log"
-    SCRIPT="${CLUSTER}_${APP}_${SCALING_TYPE}_scaling_${EXTENT}_${MODE}.sh"
+  echo -e "#!/bin/bash"                                                      > ${SCRIPT}
+  echo -e ""                                                                >> ${SCRIPT}
+  echo -e "# Batch script for ${APP} ${SCALING_TYPE} scaling app"           >> ${SCRIPT}
+  echo -e "# Generated on $(date +'%Y-%m-%d %T')"                           >> ${SCRIPT}
+  echo -e ""                                                                >> ${SCRIPT}
+  echo -e "#SBATCH --time=2:00:00"                                          >> ${SCRIPT}
+  echo -e "#SBATCH --partition=${PARTITION}"                                >> ${SCRIPT}
+  echo -e "#SBATCH --nodes=${NODES}"                                        >> ${SCRIPT}
+  echo -e "#SBATCH --ntasks-per-node=${RANKS_PER_NODE}"                     >> ${SCRIPT}
+  echo -e "#SBATCH --job-name=remap"                                        >> ${SCRIPT}
+  echo -e "#SBATCH --error=${OUTPUT}"                                       >> ${SCRIPT}
+  echo -e "#SBATCH --output=${OUTPUT}"                                      >> ${SCRIPT}
+  echo -e "#SBATCH --no-requeue"                                            >> ${SCRIPT}
+  echo -e "#SBATCH --signal=23@60"                                          >> ${SCRIPT}
+  echo -e ""                                                                >> ${SCRIPT}
+  echo -e "# move to the build directory"                                   >> ${SCRIPT}
+  echo -e "cd ${BUILD_DIR}"                                                 >> ${SCRIPT}
+  echo -e ""                                                                >> ${SCRIPT}
+  echo -e "# load modules"                                                  >> ${SCRIPT}
+  echo -e "module load ${COMPILER}/${CXX_VERSION}"                          >> ${SCRIPT}
 
-    echo -e "#!/bin/bash"                                                      > ${SCRIPT}
-    echo -e ""                                                                >> ${SCRIPT}
-    echo -e "# Batch script for ${APP} ${SCALING_TYPE} scaling app"           >> ${SCRIPT}
-    echo -e "# Generated on $(date +'%Y-%m-%d %T')"                           >> ${SCRIPT}
-    echo -e ""                                                                >> ${SCRIPT}
-    echo -e "#SBATCH --time=2:00:00"                                          >> ${SCRIPT}
-    echo -e "#SBATCH --partition=${PARTITION}"                                >> ${SCRIPT}
-    echo -e "#SBATCH --nodes=${NODES}"                                        >> ${SCRIPT}
-    echo -e "#SBATCH --ntasks-per-node=${RANKS_PER_NODE}"                     >> ${SCRIPT}
-    echo -e "#SBATCH --job-name=remap"                                        >> ${SCRIPT}
-    echo -e "#SBATCH --error=${OUTPUT}"                                       >> ${SCRIPT}
-    echo -e "#SBATCH --output=${OUTPUT}"                                      >> ${SCRIPT}
-    echo -e "#SBATCH --no-requeue"                                            >> ${SCRIPT}
-    echo -e "#SBATCH --signal=23@60"                                          >> ${SCRIPT}
-    echo -e ""                                                                >> ${SCRIPT}
-    echo -e "# move to the build directory"                                   >> ${SCRIPT}
-    echo -e "cd ${BUILD_DIR}"                                                 >> ${SCRIPT}
-    echo -e ""                                                                >> ${SCRIPT}
-    echo -e "# load modules"                                                  >> ${SCRIPT}
-    echo -e "module load ${COMPILER}/${CXX_VERSION}"                          >> ${SCRIPT}
+  if [ "${CLUSTER}" = "darwin" ]; then
+    echo -e "module load openmpi/${MPI_VERSION}-${COMPILER}_${CXX_VERSION}" >> ${SCRIPT}
+    echo -e "module load boost/${BOOST_VERSION}"                            >> ${SCRIPT}
+  else
+    echo -e "module load openmpi/${MPI_VERSION}"                            >> ${SCRIPT}
+  fi
 
-    if [ "${CLUSTER}" = "darwin" ]; then
-      echo -e "module load openmpi/${MPI_VERSION}-${COMPILER}_${CXX_VERSION}" >> ${SCRIPT}
-      echo -e "module load boost/${BOOST_VERSION}"                            >> ${SCRIPT}
-    else
-      echo -e "module load openmpi/${MPI_VERSION}"                            >> ${SCRIPT}
-    fi
+  echo -e ""                                                                >> ${SCRIPT}
+  echo -e "# set thread-core affinity"                                      >> ${SCRIPT}
+  echo -e "export ${CPU_AFFINITY}"                                          >> ${SCRIPT}
+  echo -e ""                                                                >> ${SCRIPT}
+  echo -e "for ((i=1; i <= ${EXTENT}; i*=2)); do"                           >> ${SCRIPT}
+  echo -e "  # set number of threads"                                       >> ${SCRIPT}
+  echo -e "  export OMP_NUM_THREADS=${THREADS}"                             >> ${SCRIPT}
 
-    echo -e ""                                                                >> ${SCRIPT}
-    echo -e "# set thread-core affinity"                                      >> ${SCRIPT}
-    echo -e "export ${CPU_AFFINITY}"                                          >> ${SCRIPT}
-    echo -e ""                                                                >> ${SCRIPT}
-    echo -e "for ((i=1; i <= ${EXTENT}; i*=2)); do"                           >> ${SCRIPT}
-    echo -e "  # set number of threads"                                       >> ${SCRIPT}
-    echo -e "  export OMP_NUM_THREADS=${THREADS}"                             >> ${SCRIPT}
+  if [ "${SCALING_TYPE}" = "weak" ]; then
+    echo -e ""                                                              >> ${SCRIPT}
+    echo -e "  # update per-axis source and target mesh resolution"         >> ${SCRIPT}
+    echo -e "  n_source=\`bc -l <<< \"e(l(\$i)/${DIMENSION}) * ${SOURCE_MAX}\"|cut -f1 -d'.'\`" >> ${SCRIPT}
+    echo -e "  n_target=\`bc -l <<< \"e(l(\$i)/${DIMENSION}) * ${TARGET_MAX}\"|cut -f1 -d'.'\`" >> ${SCRIPT}
+    echo -e "  echo \"n_source per-axis: \${n_source}\""                    >> ${SCRIPT}
+    echo -e "  echo \"n_target per-axis: \${n_target}\""                    >> ${SCRIPT}
+    echo -e ""                                                              >> ${SCRIPT}
+  fi
 
-    if [ "${SCALING_TYPE}" = "weak" ]; then
-      echo -e ""                                                              >> ${SCRIPT}
-      echo -e "  # update per-axis source and target mesh resolution"         >> ${SCRIPT}
-      echo -e "  n_source=\`bc -l <<< \"e(l(\$i)/${DIMENSION}) * ${SOURCE_MAX}\"|cut -f1 -d'.'\`" >> ${SCRIPT}
-      echo -e "  n_target=\`bc -l <<< \"e(l(\$i)/${DIMENSION}) * ${TARGET_MAX}\"|cut -f1 -d'.'\`" >> ${SCRIPT}
-      echo -e "  echo \"n_source per-axis: \${n_source}\""                    >> ${SCRIPT}
-      echo -e "  echo \"n_target per-axis: \${n_target}\""                    >> ${SCRIPT}
-      echo -e ""                                                              >> ${SCRIPT}
-    fi
+  echo -e "  # run afterwards"                                              >> ${SCRIPT}
+  echo -e "  mpirun -np ${RANKS} ${MPI_ARGS}"                               >> ${SCRIPT}
+  echo -e "done"                                                            >> ${SCRIPT}
+  echo -e "# ========================================================"      >> ${SCRIPT}
 
-    echo -e "  # run afterwards"                                              >> ${SCRIPT}
-    echo -e "  mpirun -np ${RANKS} ${MPI_ARGS}"                               >> ${SCRIPT}
-    echo -e "done"                                                            >> ${SCRIPT}
-    echo -e "# ========================================================"      >> ${SCRIPT}
-
-    # Run it
-    echo "Running ${APP} ${SCALING_TYPE} scaling"
-    sbatch -v ${SCRIPT}
-  done
+  # Run it
+  echo "Running ${APP} ${SCALING_TYPE} scaling"
+  sbatch -v ${SCRIPT}
 }
 
 generate_gnuplot() {
@@ -600,47 +600,44 @@ generate_gnuplot() {
   )
  
   # generate distinct scripts for strong and weak scaling
-  for SCALING_TYPE in "${SCALING_RUNS[@]}"; do
-    
-    INPUT="${APP}_${SCALING_TYPE}_scaling_${SUFFIX}.dat"
-    OUTPUT="${CLUSTER}_${APP}_${SCALING_TYPE}_scaling_${SUFFIX}.eps"
-    SCRIPT="${CLUSTER}_${APP}_${SCALING_TYPE}_scaling_${SUFFIX}.gnu"
-  
-    echo "# Gnuplot script for ${APP} ${SCALING_TYPE} scaling"         > ${SCRIPT}  
-    echo "# Generated on $(date +'%Y-%m-%d %T')"                      >> ${SCRIPT}
-    echo ""                                                           >> ${SCRIPT}
-    echo "reset"                                                      >> ${SCRIPT}
-    echo "set terminal postscript eps enhanced color 14 size 8cm,9cm" >> ${SCRIPT} 
-    echo "set output \"${OUTPUT}\""                                   >> ${SCRIPT}
-    echo "set title \"${APP} ${MODE} ${SCALING_TYPE} scaling\""       >> ${SCRIPT}
-    echo "set size ratio 1"                                           >> ${SCRIPT} 
-    echo "set xlabel \"${XLABEL}\""                                   >> ${SCRIPT} 
-    echo "set ylabel \"elapsed (s)\""                                 >> ${SCRIPT} 
-    echo "set key below maxcols 2"                                    >> ${SCRIPT}
-    echo ""                                                           >> ${SCRIPT}
-    echo "stats '${INPUT}' using 6 name 'time'"                       >> ${SCRIPT}
-    if [ "${SCALING_TYPE}" = "strong" ]; then
-      echo "linear(x)=time_max/x"                                     >> ${SCRIPT}
-    else
-      echo "linear(x)=time_min"                                       >> ${SCRIPT}
-    fi
-    echo ""                                                           >> ${SCRIPT}
-    echo "set grid"                                                   >> ${SCRIPT}
-    echo "set xrange [1:${XMAX}]"                                     >> ${SCRIPT}
-    echo "set logscale x 2"                                           >> ${SCRIPT} 
-    echo "set logscale y 2"                                           >> ${SCRIPT} 
-    echo ""                                                           >> ${SCRIPT}
-    echo "plot '${INPUT}' u ${XCOL}:6 t 'remap'     ${FIELDS[0]},\\"  >> ${SCRIPT}
-    echo "     '${INPUT}' u ${XCOL}:7 t 'total'     ${FIELDS[1]},\\"  >> ${SCRIPT}
-    echo "     linear(x)              t 'linear'    ${FIELDS[2]},\\"  >> ${SCRIPT}
-    echo "     '${INPUT}' u ${XCOL}:3 t 'mesh-init' ${FIELDS[3]},\\"  >> ${SCRIPT}
-    echo "     '${INPUT}' u ${XCOL}:5 t 'interface' ${FIELDS[4]}"     >> ${SCRIPT}
+  INPUT="${APP}_${SCALING_TYPE}_scaling_${SUFFIX}.dat"
+  OUTPUT="${CLUSTER}_${APP}_${SCALING_TYPE}_scaling_${SUFFIX}.eps"
+  SCRIPT="${CLUSTER}_${APP}_${SCALING_TYPE}_scaling_${SUFFIX}.gnu"
 
-  
-    # move to build directory
-    mv ${SCRIPT} ${BUILD_DIR}
-    echo "Gnuplot script '${SCRIPT}' generated in build directory"
-  done
+  echo "# Gnuplot script for ${APP} ${SCALING_TYPE} scaling"         > ${SCRIPT}
+  echo "# Generated on $(date +'%Y-%m-%d %T')"                      >> ${SCRIPT}
+  echo ""                                                           >> ${SCRIPT}
+  echo "reset"                                                      >> ${SCRIPT}
+  echo "set terminal postscript eps enhanced color 14 size 8cm,9cm" >> ${SCRIPT}
+  echo "set output \"${OUTPUT}\""                                   >> ${SCRIPT}
+  echo "set title \"${APP} ${MODE} ${SCALING_TYPE} scaling\""       >> ${SCRIPT}
+  echo "set size ratio 1"                                           >> ${SCRIPT}
+  echo "set xlabel \"${XLABEL}\""                                   >> ${SCRIPT}
+  echo "set ylabel \"elapsed (s)\""                                 >> ${SCRIPT}
+  echo "set key below maxcols 2"                                    >> ${SCRIPT}
+  echo ""                                                           >> ${SCRIPT}
+  echo "stats '${INPUT}' using 6 name 'time'"                       >> ${SCRIPT}
+  if [ "${SCALING_TYPE}" = "strong" ]; then
+    echo "linear(x)=time_max/x"                                     >> ${SCRIPT}
+  else
+    echo "linear(x)=time_min"                                       >> ${SCRIPT}
+  fi
+  echo ""                                                           >> ${SCRIPT}
+  echo "set grid"                                                   >> ${SCRIPT}
+  echo "set xrange [1:${XMAX}]"                                     >> ${SCRIPT}
+  echo "set logscale x 2"                                           >> ${SCRIPT}
+  echo "set logscale y 2"                                           >> ${SCRIPT}
+  echo ""                                                           >> ${SCRIPT}
+  echo "plot '${INPUT}' u ${XCOL}:6 t 'remap'     ${FIELDS[0]},\\"  >> ${SCRIPT}
+  echo "     '${INPUT}' u ${XCOL}:7 t 'total'     ${FIELDS[1]},\\"  >> ${SCRIPT}
+  echo "     linear(x)              t 'linear'    ${FIELDS[2]},\\"  >> ${SCRIPT}
+  echo "     '${INPUT}' u ${XCOL}:3 t 'mesh-init' ${FIELDS[3]},\\"  >> ${SCRIPT}
+  echo "     '${INPUT}' u ${XCOL}:5 t 'interface' ${FIELDS[4]}"     >> ${SCRIPT}
+
+
+  # move to build directory
+  mv ${SCRIPT} ${BUILD_DIR}
+  echo "Gnuplot script '${SCRIPT}' generated in build directory"
 }
 
 # main
