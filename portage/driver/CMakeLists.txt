@@ -9,7 +9,7 @@ Please see the license file at the root of this repository, or at:
 #-----------------------------------------------------------------------------~#
 
 set(headers  mmdriver.h driver_swarm.h driver_mesh_swarm_mesh.h fix_mismatch.h
-    coredriver.h uberdriver.h)
+    coredriver.h uberdriver.h parts.h)
 if (TANGRAM_FOUND)
   list(APPEND headers write_to_gmv.h)
 endif (TANGRAM_FOUND)
