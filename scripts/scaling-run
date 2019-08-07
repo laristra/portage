@@ -232,10 +232,10 @@ set_default_params() {
 
   case "${CLUSTER}" in
     darwin)
-      [ ${PARTITION} = "" ] && PARTITION="scaling";
+      [ "${PARTITION}" = "" ] && PARTITION="scaling";
       MPI_VERSION="2.1.5"; BOOST_VERSION="1.68.0";;
     snow|grizzly)
-      [ ${PARTITION} = "" ] && PARTITION="standard";
+      [ "${PARTITION}" = "" ] && PARTITION="standard";
       MPI_VERSION="2.1.2";;
     *)
       echo -e "\e[31mError: unsupported cluster ${CLUSTER}\e[0m"
@@ -553,7 +553,8 @@ run_scaling() {
       echo -e "  # update per-axis source and target mesh resolution"         >> ${SCRIPT}
       echo -e "  n_source=\`bc -l <<< \"e(l(\$i)/${DIMENSION}) * ${SOURCE_MAX}\"|cut -f1 -d'.'\`" >> ${SCRIPT}
       echo -e "  n_target=\`bc -l <<< \"e(l(\$i)/${DIMENSION}) * ${TARGET_MAX}\"|cut -f1 -d'.'\`" >> ${SCRIPT}
-      echo -e "  echo \"n_source: \${n_source}, n_target: \${n_target}\""     >> ${SCRIPT}
+      echo -e "  echo \"n_source per-axis: \${n_source}\""                    >> ${SCRIPT}
+      echo -e "  echo \"n_target per-axis: \${n_target}\""                    >> ${SCRIPT}
       echo -e ""                                                              >> ${SCRIPT}
     fi
 
