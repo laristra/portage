@@ -27,7 +27,7 @@
 #include "portage/driver/coredriver.h"
 
 /**
- * @brief Basic test for part-by-part interpolation.
+ * @brief Basic sanity tests for part-by-part interpolation.
  *
  * Here, source and target meshes are partitioned into two parts,
  * and each part is remapped independently. Remapped values are then

@@ -888,7 +888,13 @@ class CoreDriver : public CoreDriverBase<D,
       // when the part-by-part intersection is implemented.
 
       auto filter_weights = [&](int entity) {
-        // 'auto' may imply unexpected behavior with thrust enabled
+        // For a given target entity, we aim to filter its source weights
+        // list to keep only those which are in the source part list.
+        // that way, we ensure that only the contribution of source part entities
+        // weights are taken into account when doing the interpolation.
+        // For that, we just iterate on the related weight list, and add the
+        // current couple of entity/weights if it belongs to the source part.
+        // nb: 'auto' may imply unexpected behavior with thrust enabled.
         entity_weights_t const& entity_weights = sources_and_weights[entity];
         entity_weights_t heap;
         heap.reserve(10); // size of a local vicinity

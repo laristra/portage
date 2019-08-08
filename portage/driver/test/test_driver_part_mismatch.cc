@@ -6,11 +6,16 @@
 
 #include <iostream>
 #include <memory>
-
 #include "gtest/gtest.h"
+
 #ifdef PORTAGE_ENABLE_MPI
 #include "mpi.h"
 #endif
+
+#include "Mesh.hh"
+#include "MeshFactory.hh"
+#include "JaliStateVector.h"
+#include "JaliState.h"
 
 #include "wonton/mesh/jali/jali_mesh_wrapper.h"
 #include "wonton/state/jali/jali_state_wrapper.h"
@@ -19,13 +24,50 @@
 #include "portage/intersect/intersect_r3d.h"
 #include "portage/intersect/simple_intersect_for_tests.h"
 #include "portage/interpolate/interpolate_1st_order.h"
-#include "Mesh.hh"
-#include "MeshFactory.hh"
-#include "JaliStateVector.h"
-#include "JaliState.h"
-
 #include "portage/driver/coredriver.h"
 
+/**
+ * @brief Parts mismatch fixup tests for part-by-part interpolation.
+ *
+ * Here, the purpose is to test that parts mismatch are correctly
+ * handled when interpolating each pair of source-target part independently.
+ * More precisely, we aim ot ensure that values within partially filled and
+ * empty cells are correctly fixed according to the user-specified fixup
+ * scheme which may be:
+ * - constant and leave empty,
+ * - constant and extrapolate,
+ * - locally conservative and leave empty,
+ * - locally conservative and extrapolate,
+ * - shifted conservative and leave empty,
+ * - shifted conservative and extrapolate.
+ *
+ * Again, source and target meshes are respectively split into two parts,
+ * and each source-target part pair is remapped independently.
+ * Remapped values are then compared to the exact expected values.
+ *
+ *  0,1     source      1,1
+ *    ___________________      source mesh: 4x4 cartesian grid.
+ *   |    |    :    |    |     Here, the domain is halved into two equal parts.
+ *   |____|____:____|____|     The prescribed density is 100 for the first part
+ *   |    |    :    |    |     and 1 for the second part.
+ *   |____0____:____1____|
+ *   |    |    :    |    |
+ *   |____|____:____|____|
+ *   |    |    :    |    |
+ *   |____|____:____|____|
+ *
+ *    ___________________       target mesh: 5x5 cartesian grid.
+ *   |   |   | . |   :   |      Here parts interface is shifted such that the
+ *   |___|___|_._|___:___|      first part is 4/5 of the domain and the last
+ *   |   |   | . |   :   |      part is only 1/5 of it.
+ *   |___|___0_._|___:_1_|      Hence, we have a:
+ *   |   |   | . |   :   |      - partially filled cells layer in [0.5-0.6]
+ *   |___|___|_._|___:___|      - empty cells layer in [0.6-0.8]
+ *   |   |   | . |   :   |
+ *   |___|___|_._|___:___|
+ *
+ *  0,0     target      1,0
+ */
 class PartMismatchTest : public testing::Test {
 
 protected:
@@ -293,13 +335,13 @@ protected:
   static constexpr double lower_bound  = -higher_bound;
   static constexpr double epsilon = 1.E-10;
 
-  // Source and target meshes and states
+  // source and target meshes and states
   std::shared_ptr<Jali::Mesh>  source_mesh;
   std::shared_ptr<Jali::Mesh>  target_mesh;
   std::shared_ptr<Jali::State> source_state;
   std::shared_ptr<Jali::State> target_state;
 
-  // Wrappers for interfacing with the underlying mesh data structures
+  // wrappers for interfacing with the underlying mesh data structures
   Wonton::Jali_Mesh_Wrapper  source_mesh_wrapper;
   Wonton::Jali_Mesh_Wrapper  target_mesh_wrapper;
   Wonton::Jali_State_Wrapper source_state_wrapper;
