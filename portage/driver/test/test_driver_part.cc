@@ -38,11 +38,11 @@
  *
  *  0,1                  1,1
  *    ---------:---------
- *   |   s1    :    t1   |
+ *   |   s1    :         |
  *   |    _____:__       |
  *   |   |     :  |      |
  *   |   |     :  |      |
- *   |   | s0  :t0|      |
+ *   |   | s0  :  |      |
  *   |   |     :  |      |
  *   |   |     :  |      |
  *   |    -----:--       |
@@ -74,22 +74,6 @@ protected:
   };
 
   /**
-   * @brief compute cell density analytically.
-   *
-   * @param c    the given cell.
-   * @param mesh a wrapper to the supporting mesh[source|target].
-   * @return the computed cell density.
-   */
-  double compute_density(int c, Wonton::Jali_Mesh_Wrapper const& mesh) {
-    double const x_gap = 0.4;
-    double const t_min = 30.;
-    double const t_max = 100.;
-
-    auto centroid = get_centroid(c, mesh);
-    return (centroid[0] < x_gap ? t_min : t_max);
-  };
-
-  /**
    * @brief Create a partition based on a threshold value.
    *
    * @param mesh     the current mesh to split
@@ -100,9 +84,6 @@ protected:
   void create_partition(Wonton::Jali_Mesh_Wrapper const& mesh, std::vector<int>* part) {
     assert(part != nullptr);
     assert(nb_parts == 2);
-
-    auto const CELL = Wonton::Entity_kind::CELL;
-    auto const ALL  = Wonton::Entity_type::ALL;
 
     int const nb_cells = mesh.num_entities(CELL, ALL);
     int const min_heap_size = static_cast<int>(nb_cells / 2);
@@ -143,18 +124,12 @@ public:
       source_state_wrapper(*source_state),
       target_state_wrapper(*target_state)
   {
-    // get rid of long namespaces
-    auto const CELL = Wonton::Entity_kind::CELL;
-    auto const ALL  = Wonton::Entity_type::ALL;
+    // save meshes sizes
+    nb_source_cells = source_mesh_wrapper.num_entities(CELL, ALL);
+    nb_target_cells = target_mesh_wrapper.num_entities(CELL, ALL);
 
-    // compute and add density field to the source mesh
-    int const nb_source_cells = source_mesh_wrapper.num_entities(CELL, ALL);
-    double source_density[nb_source_cells];
-    for (int c = 0; c < nb_source_cells; c++) {
-      source_density[c] = compute_density(c, source_mesh_wrapper);
-    }
-
-    source_state_wrapper.mesh_add_data(CELL, "density", source_density);
+    // add density field to both meshes
+    source_state_wrapper.mesh_add_data<double>(CELL, "density", 0.);
     target_state_wrapper.mesh_add_data<double>(CELL, "density", 0.);
 
     // create parts by picking entities within (0.2,0.2) and (0.6,0.6)
@@ -169,18 +144,23 @@ public:
     }
   }
 
-  // useful constants
+  // useful constants and aliases
   static constexpr double upper_bound = std::numeric_limits<double>::max();
   static constexpr double lower_bound = -upper_bound;
   static constexpr double epsilon = 1.E-10;
+  static constexpr auto CELL = Wonton::Entity_kind::CELL;
+  static constexpr auto ALL  = Wonton::Entity_type::ALL;
 
-  // Source and target meshes and states
+  int nb_source_cells = 0;
+  int nb_target_cells = 0;
+
+  // source and target meshes and states
   std::shared_ptr<Jali::Mesh>  source_mesh;
   std::shared_ptr<Jali::Mesh>  target_mesh;
   std::shared_ptr<Jali::State> source_state;
   std::shared_ptr<Jali::State> target_state;
 
-  // Wrappers for interfacing with the underlying mesh data structures
+  // wrappers for interfacing with the underlying mesh data structures
   Wonton::Jali_Mesh_Wrapper  source_mesh_wrapper;
   Wonton::Jali_Mesh_Wrapper  target_mesh_wrapper;
   Wonton::Jali_State_Wrapper source_state_wrapper;
@@ -192,23 +172,34 @@ public:
   std::vector<int> target_cells[2];
 };
 
-
-TEST_F(PartDriverTest, Basic) {
+// sanity check 1: verify that part-by-part interpolation
+// is strictly conservative for a piecewise constant field
+// in absence of mismatch between source and target parts.
+TEST_F(PartDriverTest, PiecewiseConstantField) {
 
   Remapper remapper(source_mesh_wrapper, source_state_wrapper,
                     target_mesh_wrapper, target_state_wrapper);
 
-  // remap without redistribution, nor mismatch fixup
+  double* original = nullptr;
+  double* remapped = nullptr;
+
+  // assign a piecewise constant field on source mesh
+  source_state_wrapper.mesh_get_data(CELL, "density", &original);
+  for (int c = 0; c < nb_source_cells; c++) {
+    auto centroid = get_centroid(c, source_mesh_wrapper);
+    original[c] = (centroid[0] < 0.40 ? 30. : 100.);
+  }
+
+  // process remap
   auto candidates = remapper.search<Portage::SearchKDTree>();
   auto source_weights = remapper.intersect_meshes<Portage::IntersectR2D>(candidates);
 
-  // check mismatch and compute cell volumes before
   for (int i = 0; i < 2; ++i) {
     // test for mismatch and compute volumes
     parts[i].test_mismatch(source_weights);
     assert(not partition.has_mismatch());
 
-    // interpolate density part-by-part while fixing mismatched values
+    // interpolate density for current part
     remapper.interpolate_mesh_var<double, Portage::Interpolate_1stOrder>(
       "density", "density", source_weights, lower_bound, upper_bound,
       Portage::DEFAULT_LIMITER, Portage::DEFAULT_PARTIAL_FIXUP_TYPE,
@@ -217,19 +208,80 @@ TEST_F(PartDriverTest, Basic) {
     );
   }
 
-  // Finally check that we got the right target density values
-  double* remapped;
-  target_state_wrapper.mesh_get_data(Wonton::Entity_kind::CELL, "density", &remapped);
+  // compare remapped values with analytically computed ones
+  target_state_wrapper.mesh_get_data(CELL, "density", &remapped);
 
   for (int i = 0; i < 2; ++i) {
     for (auto&& c : target_cells[i]) {
-      auto const& obtained = remapped[c];
-      auto const  expected = compute_density(c, target_mesh_wrapper);
-      #ifdef DEBUG_PART_BY_PART
+      auto obtained = remapped[c];
+      auto centroid = get_centroid(c, target_mesh_wrapper);
+      auto expected = (centroid[0] < 0.40 ? 30. : 100.);
+      #if DEBUG_PART_BY_PART
         std::printf("target[%02d]: remapped: %7.3f, expected: %7.3f\n",
                     c, obtained, expected);
       #endif
       ASSERT_NEAR(obtained, expected, epsilon);
     }
+  }
+}
+
+// sanity check 2: verify that both part-by-part and mesh-mesh
+// interpolation schemes are equivalent for general fields
+// in absence of mismatch between source and target parts.
+TEST_F(PartDriverTest, MeshMeshRemapComparison) {
+
+  Remapper remapper(source_mesh_wrapper, source_state_wrapper,
+                    target_mesh_wrapper, target_state_wrapper);
+
+  double* original = nullptr;
+  double* remapped = nullptr;
+  double remapped_parts[nb_target_cells];
+
+  // assign a gaussian density field on source mesh
+  source_state_wrapper.mesh_get_data(CELL, "density", &original);
+  for (int c = 0; c < nb_source_cells; c++) {
+    auto centroid = get_centroid(c, source_mesh_wrapper);
+    auto const& x = centroid[0];
+    auto const& y = centroid[1];
+    original[c] = std::exp(-10.*(x*x + y*y));
+  }
+
+  // process remap
+  auto candidates = remapper.search<Portage::SearchKDTree>();
+  auto source_weights = remapper.intersect_meshes<Portage::IntersectR2D>(candidates);
+
+  for (int i = 0; i < 2; ++i) {
+    // test for mismatch and compute volumes
+    parts[i].test_mismatch(source_weights);
+    assert(not partition.has_mismatch());
+
+    // interpolate density for current part
+    remapper.interpolate_mesh_var<double, Portage::Interpolate_1stOrder>(
+      "density", "density", source_weights, lower_bound, upper_bound,
+      Portage::DEFAULT_LIMITER, Portage::DEFAULT_PARTIAL_FIXUP_TYPE,
+      Portage::DEFAULT_EMPTY_FIXUP_TYPE, Portage::DEFAULT_CONSERVATION_TOL,
+      Portage::DEFAULT_MAX_FIXUP_ITER, &(parts[i])
+    );
+  }
+
+  // store the part-by-part remapped values
+  target_state_wrapper.mesh_get_data(CELL, "density", &remapped);
+  std::copy(remapped, remapped + nb_target_cells, remapped_parts);
+  std::fill(remapped, remapped + nb_target_cells, 0.);
+
+  // interpolate density on whole source mesh
+  remapper.interpolate_mesh_var<double, Portage::Interpolate_1stOrder>(
+    "density", "density", source_weights, lower_bound, upper_bound
+  );
+
+  // now compare remapped value for each cell
+  for (int c=0; c < nb_target_cells; ++c) {
+    auto const& value_mesh_remap = remapped[c];
+    auto const& value_part_remap = remapped_parts[c];
+    #if DEBUG_PART_BY_PART
+      std::printf("target[%02d]: value_mesh_remap: %7.3f, value_part_remap: %7.3f\n",
+                  c, value_mesh_remap, value_part_remap);
+    #endif
+    ASSERT_NEAR(value_mesh_remap, value_part_remap, epsilon);
   }
 }
