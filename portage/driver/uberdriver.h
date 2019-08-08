@@ -28,10 +28,8 @@
 #include "portage/support/portage.h"
 
 #include "portage/search/search_kdtree.h"
-#include "portage/intersect/intersect_r2d.h"
-#include "portage/intersect/intersect_r3d.h"
-#include "portage/interpolate/interpolate_1st_order.h"
-#include "portage/interpolate/interpolate_2nd_order.h"
+#include "portage/intersect/intersect_rNd.h"
+#include "portage/interpolate/interpolate_nth_order.h"
 #include "wonton/mesh/flat/flat_mesh_wrapper.h"
 #include "wonton/state/flat/flat_state_mm_wrapper.h"
 #include "wonton/support/Point.h"
@@ -222,6 +220,9 @@ class UberDriver {
 
   /// Assignment operator (disabled)
   UberDriver & operator = (const UberDriver &) = delete;
+
+  /// Enable move semantics
+  UberDriver(UberDriver &&) = default;
 
   /// Destructor
   ~UberDriver() {}
