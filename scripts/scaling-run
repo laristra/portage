@@ -346,7 +346,7 @@ setup_run_options() {
   fi
   
   MAX_RANKS=$((MAX_NODES * RANKS_PER_NODE))  
-  MAX_THREADS=$((CORES * THREADS_PER_CORE))
+  MAX_THREADS=$((CORES * THREADS_PER_CORE / RANKS_PER_NODE))
   
   # run dependent options
   if [ "${OPENMP_ONLY}" = true ]; then
@@ -358,7 +358,7 @@ setup_run_options() {
     MODE="threads_omp"
     THREAD_FLAG="y"
   else
-    EXTENT=${MAX_NODES}
+    EXTENT=${MAX_RANKS}
     THREADS=${MAX_THREADS}
     INIT_THREADS=${THREADS}
     RANKS="\$i"
