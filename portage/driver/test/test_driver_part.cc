@@ -83,7 +83,6 @@ protected:
    */
   void create_partition(Wonton::Jali_Mesh_Wrapper const& mesh, std::vector<int>* part) {
     assert(part != nullptr);
-    assert(nb_parts == 2);
 
     int const nb_cells = mesh.num_entities(CELL, ALL);
     int const min_heap_size = static_cast<int>(nb_cells / 2);
@@ -197,7 +196,7 @@ TEST_F(PartDriverTest, PiecewiseConstantField) {
   for (int i = 0; i < 2; ++i) {
     // test for mismatch and compute volumes
     parts[i].test_mismatch(source_weights);
-    assert(not partition.has_mismatch());
+    assert(not parts[i].has_mismatch());
 
     // interpolate density for current part
     remapper.interpolate_mesh_var<double, Portage::Interpolate_1stOrder>(
@@ -253,7 +252,7 @@ TEST_F(PartDriverTest, MeshMeshRemapComparison) {
   for (int i = 0; i < 2; ++i) {
     // test for mismatch and compute volumes
     parts[i].test_mismatch(source_weights);
-    assert(not partition.has_mismatch());
+    assert(not parts[i].has_mismatch());
 
     // interpolate density for current part
     remapper.interpolate_mesh_var<double, Portage::Interpolate_1stOrder>(
