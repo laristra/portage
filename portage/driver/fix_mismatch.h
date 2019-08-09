@@ -12,6 +12,7 @@ Please see the license file at the root of this repository, or at:
 #include <algorithm>
 #include <vector>
 #include <iterator>
+#include <unordered_set>
 #include <string>
 #include <utility>
 #include <iostream>
@@ -351,8 +352,10 @@ class MismatchFixer {
       layernum_.resize(ntargetents_, 0);
 
       int nlayers = 0;
-      int ntagged = 0;
-      while (ntagged < nempty) {
+      int ntagged = 0, old_ntagged = -1;
+      while (ntagged < nempty && ntagged > old_ntagged) {
+        old_ntagged = ntagged;
+
         std::vector<int> curlayerents;
 
         for (int ent : emptyents) {
