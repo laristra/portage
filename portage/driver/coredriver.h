@@ -481,7 +481,7 @@ class CoreDriver : public CoreDriverBase<D,
       
     Intersect<ONWHAT, SourceMesh, SourceState, TargetMesh,
               InterfaceReconstructorType, Matpoly_Splitter, Matpoly_Clipper>
-        intersector(source_mesh_, source_state_, target_mesh_);
+        intersector(source_mesh_, source_state_, target_mesh_, num_tols_);
 
     Portage::transform(target_mesh_.begin(ONWHAT, PARALLEL_OWNED),
                        target_mesh_.end(ONWHAT, PARALLEL_OWNED),
@@ -492,6 +492,11 @@ class CoreDriver : public CoreDriverBase<D,
     return sources_and_weights;
   }
 
+
+  /// Set numerical tolerances
+  void set_num_tols(NumericTolerances_t num_tols) {
+    num_tols_ = num_tols;
+  }
 
 
   /*! 
@@ -576,7 +581,7 @@ class CoreDriver : public CoreDriverBase<D,
 
     Intersect<CELL, SourceMesh, SourceState, TargetMesh,
               InterfaceReconstructorType, Matpoly_Splitter, Matpoly_Clipper>
-        intersector(source_mesh_, source_state_, target_mesh_,
+        intersector(source_mesh_, source_state_, target_mesh_, num_tols_,
                     interface_reconstructor_);
 
     // Assume (with no harm for sizing purposes) that all materials
@@ -817,7 +822,7 @@ class CoreDriver : public CoreDriverBase<D,
     // Instantiate particular interpolator
     Interpolate<D, ONWHAT, SourceMesh, TargetMesh, SourceState,
                 InterfaceReconstructorType, Matpoly_Splitter, Matpoly_Clipper, CoordSys>
-        interpolator(source_mesh_, target_mesh_, source_state_);
+        interpolator(source_mesh_, target_mesh_, source_state_, num_tols_);
       
 
     // Get a handle to a memory location where the target state
@@ -886,7 +891,7 @@ class CoreDriver : public CoreDriverBase<D,
     
     Interpolate<D, ONWHAT, SourceMesh, TargetMesh, SourceState,
                 InterfaceReconstructorType, Matpoly_Splitter, Matpoly_Clipper, CoordSys>
-        interpolator(source_mesh_, target_mesh_, source_state_, interface_reconstructor_);
+        interpolator(source_mesh_, target_mesh_, source_state_, num_tols_, interface_reconstructor_);
       
     int nmats = source_state_.num_materials();
 
@@ -942,6 +947,8 @@ class CoreDriver : public CoreDriverBase<D,
   TargetMesh const & target_mesh_;
   SourceState const & source_state_;
   TargetState & target_state_;
+
+  NumericTolerances_t num_tols_;
 
   int comm_rank_ = 0;
   int nprocs_ = 1;

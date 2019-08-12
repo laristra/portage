@@ -135,6 +135,11 @@ std::string to_string(Empty_fixup_type empty_fixup_type) {
       "INVALID EMPTY FIXUP TYPE";
 }
 
+/// default tolerance for conservation
+constexpr double DEFAULT_CONSERVATION_TOL = 100*std::numeric_limits<double>::epsilon();
+
+/// default number of iterations for mismatch repair
+constexpr int DEFAULT_MAX_FIXUP_ITER = 5;
 
 /// Intersection and other tolerances to handle tiny values
 struct NumericTolerances_t {

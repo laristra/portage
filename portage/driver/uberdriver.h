@@ -612,8 +612,6 @@ class UberDriver {
   SourceState const& source_state_;
   TargetState& target_state_;
   unsigned int dim_;
-  double voldifftol_ = 100*std::numeric_limits<double>::epsilon();
-  double consttol_ =  100*std::numeric_limits<double>::epsilon();
 
 
   // Component variables
