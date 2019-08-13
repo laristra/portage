@@ -329,6 +329,23 @@ class CoreDriverBase {
     return derived_class_ptr->check_mesh_mismatch(source_weights);
   }
 
+
+  /*!
+    @brief Set numerical tolerances for small volumes, distances, etc.
+
+    @tparam Entity_kind  what kind of entity are we setting for
+
+    @tparam num_tols     struct of selected numerical tolerances
+  */
+
+  template<Entity_kind ONWHAT>
+  void
+  set_num_tols(NumericTolerances_t num_tols) {
+    assert(ONWHAT == onwhat());
+    auto derived_class_ptr = static_cast<CoreDriverType<ONWHAT> *>(this);
+    derived_class_ptr->set_num_tols(num_tols);
+  }
+
 };
 
 
