@@ -493,6 +493,13 @@ class CoreDriver : public CoreDriverBase<D,
   Portage::vector<std::vector<Portage::Weights_t>>
   intersect_meshes(Portage::vector<std::vector<int>> const& candidates) {
 
+    // Use default numerical tolerances in case they were not set earlier
+    if (num_tols_.tolerances_set == false) {
+        NumericTolerances_t default_num_tols;
+        default_num_tols.use_default();
+      set_num_tols(default_num_tols);
+    }
+
     int nents = target_mesh_.num_entities(ONWHAT, PARALLEL_OWNED);
     Portage::vector<std::vector<Portage::Weights_t>> sources_and_weights(nents);
       
@@ -657,8 +664,8 @@ class CoreDriver : public CoreDriverBase<D,
           std::vector<double> const& wts = cell_mat_sources_and_weights[s].weights;
           if (wts[0] > 0.0) {
             double vol = target_mesh_.cell_volume(c);
-            if (wts[0]/vol > 1.0e-10) {  // Check that the volume of material
-              //                         // we are adding is not miniscule
+            // Check that the volume of material we are adding to c is not miniscule
+            if (wts[0]/vol > num_tols_.driver_relative_min_mat_vol) {
               matcellstgt.push_back(c);
               break;
             }

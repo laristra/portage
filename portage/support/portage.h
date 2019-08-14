@@ -148,9 +148,7 @@ struct NumericTolerances_t {
     double minimal_intersection_volume      = error_value_;
     double intersect_bb_eps                 = error_value_;
     double min_relative_volume              = error_value_;
-    double mmdriver_relative_min_mat_vol    = error_value_;
-    double mismatch_fixup_constant_value    = error_value_;
-    double mismatch_conservation_all_mat    = error_value_;
+    double driver_relative_min_mat_vol      = error_value_;
 
     void use_default()
     {
@@ -159,9 +157,7 @@ struct NumericTolerances_t {
         minimal_intersection_volume     = -1e-14;
         intersect_bb_eps                =  1e-12;
         min_relative_volume             =  1e-12;
-        mmdriver_relative_min_mat_vol   =  1e-10;
-        mismatch_fixup_constant_value   =  100*std::numeric_limits<double>::epsilon();
-        mismatch_conservation_all_mat   =  100*std::numeric_limits<double>::epsilon();
+        driver_relative_min_mat_vol     =  1e-10;
     }
 
     private:

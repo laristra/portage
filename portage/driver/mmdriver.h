@@ -564,6 +564,7 @@ class MMDriver {
   std::unordered_map<std::string, double> double_upper_bounds_;
   std::unordered_map<std::string, double> conservation_tol_;
   unsigned int dim_;
+  double consttol_ =  100*std::numeric_limits<double>::epsilon();
   int max_fixup_iter_ = 5;
   NumericTolerances_t num_tols_;
 
@@ -938,7 +939,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
 #endif
 
         double relbounddiff = fabs((upper_bound-lower_bound)/lower_bound);
-        if (relbounddiff < num_tols_.mismatch_fixup_constant_value) {
+        if (relbounddiff < consttol_) {
           // The field is constant over the source mesh/part. We HAVE to
           // relax the bounds to be able to conserve the integral quantity
           // AND maintain a constant.
@@ -947,7 +948,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
         }
       }
 
-      double conservation_tol = num_tols_.mismatch_conservation_all_mat;
+      double conservation_tol = DEFAULT_CONSERVATION_TOL;
       try {  // see if caller has specified a tolerance for conservation
         conservation_tol = conservation_tol_.at(trg_var);
       } catch ( const std::out_of_range& oor) {}
@@ -1017,7 +1018,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
         if (wts[0] > 0.0) {
           double vol = target_mesh_.cell_volume(c);
           // Check that the volume of material we are adding to c is not miniscule
-          if (wts[0]/vol > num_tols_.mmdriver_relative_min_mat_vol) {
+          if (wts[0]/vol > num_tols_.driver_relative_min_mat_vol) {
             matcellstgt.push_back(c);
             break;
           }
