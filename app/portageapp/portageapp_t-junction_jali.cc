@@ -146,7 +146,9 @@ void tjunction_material_data(const Mesh_Wrapper& mesh,
                              std::vector<int>& cell_num_mats,
                              std::vector<int>& cell_mat_ids,
                              std::vector<double>& cell_mat_volfracs,
-                             std::vector< Wonton::Point<2> >& cell_mat_centroids) {
+                             std::vector< Wonton::Point<2> >& cell_mat_centroids,
+                             const double vol_tol,
+                             const double dst_tol) {
   const std::vector<int> mesh_materials = {2, 0, 1};
   const std::vector< Tangram::Vector2 > material_interface_normals = {
     Wonton::Vector<2>(0.5, 0.5), Wonton::Vector<2>(0.5, -0.375)
@@ -169,7 +171,7 @@ void tjunction_material_data(const Mesh_Wrapper& mesh,
 
   get_material_moments<Mesh_Wrapper>(mesh, material_interfaces,
     mesh_materials, cell_num_mats, cell_mat_ids, cell_mat_volfracs, cell_mat_centroids,
-    decompose_cells);  
+    vol_tol, dst_tol, decompose_cells);  
 }
 
 
@@ -178,7 +180,9 @@ void tjunction_material_data(const Mesh_Wrapper& mesh,
                              std::vector<int>& cell_num_mats,
                              std::vector<int>& cell_mat_ids,
                              std::vector<double>& cell_mat_volfracs,
-                             std::vector< Wonton::Point<3> >& cell_mat_centroids) {
+                             std::vector< Wonton::Point<3> >& cell_mat_centroids,
+                             const double vol_tol,
+                             const double dst_tol) {
   const std::vector<int> mesh_materials = {2, 0, 1};
   const std::vector< Tangram::Vector3 > material_interface_normals = {
     Wonton::Vector<3>(0.5, 0.5, 0.0), Wonton::Vector<3>(0.5, 0.025, -0.375)
@@ -201,7 +205,7 @@ void tjunction_material_data(const Mesh_Wrapper& mesh,
 
   get_material_moments<Mesh_Wrapper>(mesh, material_interfaces,
     mesh_materials, cell_num_mats, cell_mat_ids, cell_mat_volfracs, cell_mat_centroids,
-    decompose_cells);  
+    vol_tol, dst_tol, decompose_cells);  
 }
 
 // Generic interface reconstructor factory
@@ -572,7 +576,9 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
   Wonton::Jali_State_Wrapper targetStateWrapper(*targetState);
 
 
-  // Read volume fraction and centroid data from file
+  // Generate volume fraction and centroid data
+  double dst_tol = 1.0e-15;
+  double vol_tol = 1.0e-15;
 
   int nmats;
   std::vector<int> cell_num_mats;
@@ -584,7 +590,9 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
                                                      cell_num_mats,
                                                      cell_mat_ids,
                                                      cell_mat_volfracs,
-                                                     cell_mat_centroids);
+                                                     cell_mat_centroids,
+                                                     vol_tol,
+                                                     dst_tol);
                                                      
   int should_be=0;
   for (auto n:cell_num_mats)should_be+=n;
@@ -724,7 +732,9 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
   
   // Perform interface reconstruction
 
-  std::vector<Tangram::IterativeMethodTolerances_t> tols(2,{1000, 1e-15, 1e-15});
+  std::vector<Tangram::IterativeMethodTolerances_t> tols(2);
+  tols[0] = {1000, dst_tol, vol_tol};
+  tols[1] = {100, 1.0e-15, 1.0e-15};
   interface_reconstructor_factory<dim, Wonton::Jali_Mesh_Wrapper> source_IRFactory(sourceMeshWrapper, tols);
   auto source_interface_reconstructor = source_IRFactory();
 
