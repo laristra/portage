@@ -68,11 +68,12 @@ class IntersectR3D {
   IntersectR3D(SourceMeshType const & source_mesh,
                SourceStateType const & source_state,
                TargetMeshType const & target_mesh,
+               NumericTolerances_t num_tols,
                std::shared_ptr<InterfaceReconstructor3D> ir,
                bool rectangular_mesh = false)
       : sourceMeshWrapper(source_mesh), sourceStateWrapper(source_state),
         targetMeshWrapper(target_mesh), interface_reconstructor(ir),
-        rectangular_mesh_(rectangular_mesh) {}
+        rectangular_mesh_(rectangular_mesh), num_tols_(num_tols) {}
 #endif
 
   /// Constructor WITHOUT interface reconstructor
@@ -80,9 +81,11 @@ class IntersectR3D {
   IntersectR3D(SourceMeshType const & source_mesh,
                SourceStateType const & source_state,
                TargetMeshType const & target_mesh,
+               NumericTolerances_t num_tols,
                bool rectangular_mesh = false)
       : sourceMeshWrapper(source_mesh), sourceStateWrapper(source_state),
-        targetMeshWrapper(target_mesh), rectangular_mesh_(rectangular_mesh) {}
+        targetMeshWrapper(target_mesh), rectangular_mesh_(rectangular_mesh),
+        num_tols_(num_tols) {}
 
   /// \brief Set the source mesh material that we have to intersect against
 
@@ -114,6 +117,7 @@ class IntersectR3D {
   TargetMeshType const & targetMeshWrapper;
   bool rectangular_mesh_;
   int matid_ = -1;
+  NumericTolerances_t num_tols_;
 
 #ifdef HAVE_TANGRAM
   std::shared_ptr<InterfaceReconstructor3D> interface_reconstructor;
@@ -145,11 +149,12 @@ class IntersectR3D<Entity_kind::CELL, SourceMeshType, SourceStateType, TargetMes
   IntersectR3D(SourceMeshType const & source_mesh,
                SourceStateType const & source_state,
                TargetMeshType const & target_mesh,
+               NumericTolerances_t num_tols,
                std::shared_ptr<InterfaceReconstructor3D> ir,
                bool rectangular_mesh = false)
       : sourceMeshWrapper(source_mesh), sourceStateWrapper(source_state),
         targetMeshWrapper(target_mesh), interface_reconstructor(ir),
-        rectangular_mesh_(rectangular_mesh) {}
+        rectangular_mesh_(rectangular_mesh), num_tols_(num_tols) {}
 #endif
 
   /// Constructor WITHOUT interface reconstructor
@@ -157,9 +162,11 @@ class IntersectR3D<Entity_kind::CELL, SourceMeshType, SourceStateType, TargetMes
   IntersectR3D(SourceMeshType const & source_mesh,
                SourceStateType const & source_state,
                TargetMeshType const & target_mesh,
+               NumericTolerances_t num_tols,
                bool rectangular_mesh = false)
       : sourceMeshWrapper(source_mesh), sourceStateWrapper(source_state),
-        targetMeshWrapper(target_mesh), rectangular_mesh_(rectangular_mesh) {}
+        targetMeshWrapper(target_mesh), rectangular_mesh_(rectangular_mesh),
+        num_tols_(num_tols) {}
 
 
   /// \brief Set the source mesh material that we have to intersect against
@@ -211,7 +218,8 @@ class IntersectR3D<Entity_kind::CELL, SourceMeshType, SourceStateType, TargetMes
         sourceMeshWrapper.cell_get_facetization(s, &srcpoly.facetpoints,
                                                 &srcpoly.points);
 
-        this_wt.weights = intersect_polys_r3d(srcpoly, target_tet_coords);
+        this_wt.weights = intersect_polys_r3d(srcpoly, target_tet_coords,
+                                              num_tols_);
 
       } else if (std::find(cellmats.begin(), cellmats.end(), matid_) !=
                  cellmats.end()) {
@@ -229,7 +237,7 @@ class IntersectR3D<Entity_kind::CELL, SourceMeshType, SourceStateType, TargetMes
           facetedpoly_t srcpoly = get_faceted_matpoly(matpolys[j]);
 
           std::vector<double> momvec = intersect_polys_r3d(srcpoly,
-                                                           target_tet_coords);
+                                          target_tet_coords, num_tols_);
           for (int k = 0; k < 4; k++)
             this_wt.weights[k] += momvec[k];
         }
@@ -240,7 +248,8 @@ class IntersectR3D<Entity_kind::CELL, SourceMeshType, SourceStateType, TargetMes
       sourceMeshWrapper.cell_get_facetization(s, &srcpoly.facetpoints,
                                               &srcpoly.points);
 
-      this_wt.weights = intersect_polys_r3d(srcpoly, target_tet_coords);
+      this_wt.weights = intersect_polys_r3d(srcpoly, target_tet_coords,
+                                            num_tols_);
 #endif
       // Increment if vol of intersection > 0; otherwise, allow overwrite
       if (this_wt.weights.size() && this_wt.weights[0] > 0.0)
@@ -263,6 +272,7 @@ class IntersectR3D<Entity_kind::CELL, SourceMeshType, SourceStateType, TargetMes
   TargetMeshType const & targetMeshWrapper;
   bool rectangular_mesh_;
   int matid_ = -1;
+  NumericTolerances_t num_tols_;
 
 #ifdef HAVE_TANGRAM
   std::shared_ptr<InterfaceReconstructor3D> interface_reconstructor;
@@ -294,11 +304,12 @@ class IntersectR3D<Entity_kind::NODE, SourceMeshType, SourceStateType, TargetMes
   IntersectR3D(SourceMeshType const & source_mesh,
                SourceStateType const & source_state,
                TargetMeshType const & target_mesh,
+               NumericTolerances_t num_tols,
                std::shared_ptr<InterfaceReconstructor3D> ir,
                bool rectangular_mesh = false)
       : sourceMeshWrapper(source_mesh), sourceStateWrapper(source_state),
         targetMeshWrapper(target_mesh), interface_reconstructor(ir),
-        rectangular_mesh_(rectangular_mesh) {}
+        rectangular_mesh_(rectangular_mesh), num_tols_(num_tols) {}
 #endif
 
   /// Constructor WITHOUT interface reconstructor
@@ -306,9 +317,11 @@ class IntersectR3D<Entity_kind::NODE, SourceMeshType, SourceStateType, TargetMes
   IntersectR3D(SourceMeshType const & source_mesh,
                SourceStateType const & source_state,
                TargetMeshType const & target_mesh,
+               NumericTolerances_t num_tols,
                bool rectangular_mesh = false)
       : sourceMeshWrapper(source_mesh), sourceStateWrapper(source_state),
-        targetMeshWrapper(target_mesh), rectangular_mesh_(rectangular_mesh) {}
+        targetMeshWrapper(target_mesh), rectangular_mesh_(rectangular_mesh),
+        num_tols_(num_tols) {}
 
   /// \brief Set the source mesh material that we have to intersect against
 
@@ -353,7 +366,8 @@ class IntersectR3D<Entity_kind::NODE, SourceMeshType, SourceStateType, TargetMes
 
       Weights_t & this_wt = sources_and_weights[ninserted];
       this_wt.entityID = s;
-      this_wt.weights = intersect_polys_r3d(srcpoly, target_tet_coords);
+      this_wt.weights = intersect_polys_r3d(srcpoly, target_tet_coords,
+                                            num_tols_);
 
       // Increment if vol of intersection > 0; otherwise, allow overwrite
       if (this_wt.weights.size() && this_wt.weights[0] > 0.0)
@@ -376,6 +390,7 @@ class IntersectR3D<Entity_kind::NODE, SourceMeshType, SourceStateType, TargetMes
   TargetMeshType const & targetMeshWrapper;
   bool rectangular_mesh_;
   int matid_ = -1;
+  NumericTolerances_t num_tols_;
 
 #ifdef HAVE_TANGRAM
   std::shared_ptr<InterfaceReconstructor3D> interface_reconstructor;

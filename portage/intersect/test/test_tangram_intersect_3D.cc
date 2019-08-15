@@ -315,9 +315,13 @@ TEST(TANGRAM_3D, test_matpoly_intersect) {
       {Wonton::Point<3>{0., 0., 0.}, Wonton::Point<3>{1., 0., 0.},
        Wonton::Point<3>{0., 1., 0.}, Wonton::Point<3>{0., 0., 1.}}};
 
+  // use default tolerances
+  Portage::NumericTolerances_t num_tols;
+  num_tols.use_default();
+
   // Hope for a miracle with intersection
   std::vector<double> moments(
-      Portage::intersect_polys_r3d(srcpoly, target_tet_coords));
+      Portage::intersect_polys_r3d(srcpoly, target_tet_coords, num_tols));
 
   // test that the moments are correct
   ASSERT_NEAR(moments[0], 1. / 6., eps);
@@ -352,9 +356,13 @@ TEST(TANGRAM_3D, test_intersect_matpoly_gold) {
       {Wonton::Point<3>{0., 0., 0.}, Wonton::Point<3>{1., 0., 0.},
        Wonton::Point<3>{0., 1., 0.}, Wonton::Point<3>{0., 0., 1.}}};
 
+  // use default tolerances
+  Portage::NumericTolerances_t num_tols;
+  num_tols.use_default();
+
   // Intersect
   std::vector<double> moments(Portage::intersect_polys_r3d(
-      Portage::get_faceted_matpoly(matpoly), target_tet_coords));
+      Portage::get_faceted_matpoly(matpoly), target_tet_coords, num_tols));
 
   // test that the moments are correct
   ASSERT_NEAR(moments[0], 1. / 6., eps);
@@ -394,9 +402,13 @@ TEST(TANGRAM_3D, test_intersect_matpoly_gold2) {
   bool planar_hex = true;
   target_mesh_wrapper.decompose_cell_into_tets(0, &tcoords, planar_hex);
 
+  // use default tolerances
+  Portage::NumericTolerances_t num_tols;
+  num_tols.use_default();
+
   // Intersect
   std::vector<double> moments(Portage::intersect_polys_r3d(
-      Portage::get_faceted_matpoly(matpoly), tcoords));
+      Portage::get_faceted_matpoly(matpoly), tcoords, num_tols));
 
   // test that the moments are correct
   ASSERT_NEAR(moments[0], 1., eps);
@@ -437,9 +449,13 @@ TEST(TANGRAM_3D, test_intersect_matpoly_gold3) {
   bool planar_hex = false;
   target_mesh_wrapper.decompose_cell_into_tets(0, &tcoords, planar_hex);
 
+  // use default tolerances
+  Portage::NumericTolerances_t num_tols;
+  num_tols.use_default();
+
   // Intersect
   std::vector<double> moments(Portage::intersect_polys_r3d(
-      Portage::get_faceted_matpoly(matpoly), tcoords));
+      Portage::get_faceted_matpoly(matpoly), tcoords, num_tols));
 
   // test that the moments are correct
   ASSERT_NEAR(moments[0], 1., eps);
@@ -480,9 +496,13 @@ TEST(TANGRAM_3D, test_intersect_matpoly_gold4) {
   bool planar_hex = false;
   target_mesh_wrapper.decompose_cell_into_tets(0, &tcoords, planar_hex);
 
+  // use default tolerances
+  Portage::NumericTolerances_t num_tols;
+  num_tols.use_default();
+
   // Intersect
   std::vector<double> moments(Portage::intersect_polys_r3d(
-      Portage::get_faceted_matpoly(matpoly), tcoords));
+      Portage::get_faceted_matpoly(matpoly), tcoords, num_tols));
 
   // test that the moments are correct
   ASSERT_NEAR(moments[0], 1. / 8., eps);

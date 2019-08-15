@@ -267,6 +267,10 @@ class MMDriver {
     max_fixup_iter_ = maxiter;
   }
 
+  void set_num_tols(NumericTolerances_t num_tols) {
+    num_tols_ = num_tols;
+  }
+
   /*!
     @brief set the bounds of variable to be remapped on target
     @param target_var_name Name of variable in target mesh to limit
@@ -560,9 +564,9 @@ class MMDriver {
   std::unordered_map<std::string, double> double_upper_bounds_;
   std::unordered_map<std::string, double> conservation_tol_;
   unsigned int dim_;
-  double voldifftol_ = 100*std::numeric_limits<double>::epsilon();
   double consttol_ =  100*std::numeric_limits<double>::epsilon();
   int max_fixup_iter_ = 5;
+  NumericTolerances_t num_tols_;
 
 
 #ifdef HAVE_TANGRAM
@@ -742,6 +746,13 @@ int MMDriver<Search, Intersect, Interpolate, D,
 
   int nmats = source_state2.num_materials();
 
+  // Use default numerical tolerances in case they were not set earlier
+  if (num_tols_.tolerances_set == false) {
+      NumericTolerances_t default_num_tols;
+      default_num_tols.use_default();
+    set_num_tols(default_num_tols);
+  }
+
 #ifdef HAVE_TANGRAM
   // Call interface reconstruction only if we got a method from the
   // calling app
@@ -788,7 +799,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
   Intersect<onwhat, SourceMesh_Wrapper2, SourceState_Wrapper2,
             TargetMesh_Wrapper, InterfaceReconstructorType,
             Matpoly_Splitter, Matpoly_Clipper>
-      intersect(source_mesh2, source_state2, target_mesh_,
+      intersect(source_mesh2, source_state2, target_mesh_, num_tols_,
                 interface_reconstructor);
 
   // Get an instance of the desired interpolate algorithm type
@@ -796,19 +807,20 @@ int MMDriver<Search, Intersect, Interpolate, D,
               SourceState_Wrapper2, InterfaceReconstructorType,
               Matpoly_Splitter, Matpoly_Clipper>
       interpolate(source_mesh2, target_mesh_, source_state2,
-                  interface_reconstructor);
+                  num_tols_, interface_reconstructor);
 #else
 
   Intersect<onwhat, SourceMesh_Wrapper2, SourceState_Wrapper2,
             TargetMesh_Wrapper, DummyInterfaceReconstructor,
             void, void>
-      intersect(source_mesh2, source_state2, target_mesh_);
+      intersect(source_mesh2, source_state2, target_mesh_, num_tols_);
 
   // Get an instance of the desired interpolate algorithm type
   Interpolate<D, onwhat, SourceMesh_Wrapper2, TargetMesh_Wrapper,
               SourceState_Wrapper2, DummyInterfaceReconstructor,
               void, void>
-      interpolate(source_mesh2, target_mesh_, source_state2);
+      interpolate(source_mesh2, target_mesh_, source_state2,
+                  num_tols_);
 #endif  // HAVE_TANGRAM
 
 
@@ -936,7 +948,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
         }
       }
 
-      double conservation_tol = 100*std::numeric_limits<double>::epsilon();
+      double conservation_tol = DEFAULT_CONSERVATION_TOL;
       try {  // see if caller has specified a tolerance for conservation
         conservation_tol = conservation_tol_.at(trg_var);
       } catch ( const std::out_of_range& oor) {}
@@ -1005,8 +1017,8 @@ int MMDriver<Search, Intersect, Interpolate, D,
         std::vector<double> const& wts = cell_sources_and_weights[s].weights;
         if (wts[0] > 0.0) {
           double vol = target_mesh_.cell_volume(c);
-          if (wts[0]/vol > 1.0e-10) {  // Check that the volume of material
-                                       // we are adding to c is not miniscule
+          // Check that the volume of material we are adding to c is not miniscule
+          if (wts[0]/vol > num_tols_.driver_relative_min_mat_vol) {
             matcellstgt.push_back(c);
             break;
           }

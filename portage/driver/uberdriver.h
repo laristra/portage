@@ -323,6 +323,43 @@ class UberDriver {
   }
 
 
+  /*!
+    @brief set numerical tolerances in core driver
+
+     @tparam Entity_kind  what kind of entity are we setting for
+
+     @tparam num_tols     struct of selected numerical tolerances
+  */
+  template<Entity_kind ONWHAT>
+    void set_num_tols(NumericTolerances_t num_tols) {
+    if (source_redistributed_) {
+      for (Entity_kind onwhat : entity_kinds_) {
+        switch (onwhat) {
+          case CELL:
+            core_driver_parallel_[CELL]->set_num_tols<CELL>(num_tols); break;
+          case NODE:
+            core_driver_parallel_[NODE]->set_num_tols<NODE>(num_tols); break;
+          default:
+            std::cerr << "Cannot remap on " << to_string(onwhat) << "\n";
+        }
+      }
+    }
+    else {
+      for (Entity_kind onwhat : entity_kinds_) {
+        switch (onwhat) {
+          case CELL:
+            core_driver_serial_[CELL]->set_num_tols<CELL>(num_tols); break;
+          case NODE:
+            core_driver_serial_[NODE]->set_num_tols<NODE>(num_tols); break;
+          default:
+            std::cerr << "Cannot remap on " << to_string(onwhat) << "\n";
+        }
+      }
+    }
+
+  }
+
+
 
 
   /*!
@@ -612,8 +649,6 @@ class UberDriver {
   SourceState const& source_state_;
   TargetState& target_state_;
   unsigned int dim_;
-  double voldifftol_ = 100*std::numeric_limits<double>::epsilon();
-  double consttol_ =  100*std::numeric_limits<double>::epsilon();
 
 
   // Component variables

@@ -10,6 +10,7 @@ Please see the license file at the root of this repository, or at:
 #include "gtest/gtest.h"
 
 // portage includes
+#include "portage/interpolate/interpolate_1st_order.h"
 #include "portage/intersect/simple_intersect_for_tests.h"
 #include "portage/support/portage.h"
 
@@ -115,13 +116,18 @@ TEST(Interpolate_1st_Order, Cell_Ctr_Const_2D) {
 
   // Now do it the Portage way
 
+  // use default tolerances
+  Portage::NumericTolerances_t num_tols;
+  num_tols.use_default();
+
   // Create Interpolation object
 
   Portage::Interpolate_1stOrder<2, Wonton::Entity_kind::CELL,
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_State_Wrapper>
-      interpolator(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper);
+      interpolator(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper,
+                   num_tols);
 
   interpolator.set_interpolation_variable("cellvars");
 
@@ -231,13 +237,18 @@ TEST(Interpolate_1st_Order, Cell_Ctr_Lin_2D) {
 
   // Now do it the Portage way
 
+  // use default tolerances
+  Portage::NumericTolerances_t num_tols;
+  num_tols.use_default();
+
   // Create Interpolation object
 
   Portage::Interpolate_1stOrder<2, Wonton::Entity_kind::CELL,
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_State_Wrapper>
-      interpolator(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper);
+      interpolator(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper,
+                   num_tols);
 
   interpolator.set_interpolation_variable("cellvars");
 
@@ -352,7 +363,11 @@ TEST(Interpolate_1st_Order, Node_Ctr_Const_2D) {
     sources_and_weights[c] = wtsvec;
   }
 
-   // Now do it the Portage way
+  // Now do it the Portage way
+
+  // use default tolerances
+  Portage::NumericTolerances_t num_tols;
+  num_tols.use_default();
 
   // Create Interpolation object
 
@@ -360,7 +375,8 @@ TEST(Interpolate_1st_Order, Node_Ctr_Const_2D) {
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_State_Wrapper>
-      interpolator(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper);
+      interpolator(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper,
+                   num_tols);
 
   interpolator.set_interpolation_variable("nodevars");
 
@@ -467,13 +483,18 @@ TEST(Interpolate_1st_Order, Cell_Ctr_Const_3D) {
 
   // Now do it the Portage way
 
+  // use default tolerances
+  Portage::NumericTolerances_t num_tols;
+  num_tols.use_default();
+
   // Create Interpolation object
 
   Portage::Interpolate_1stOrder<3, Wonton::Entity_kind::CELL,
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_State_Wrapper>
-      interpolator(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper);
+      interpolator(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper,
+                   num_tols);
 
   interpolator.set_interpolation_variable("cellvars");
 
@@ -582,13 +603,18 @@ TEST(Interpolate_1st_Order, Cell_Ctr_Lin_3D) {
 
   // Now do it the Portage way
 
+  // use default tolerances
+  Portage::NumericTolerances_t num_tols;
+  num_tols.use_default();
+
   // Create Interpolation object
 
   Portage::Interpolate_1stOrder<3, Wonton::Entity_kind::CELL,
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_State_Wrapper>
-      interpolator(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper);
+      interpolator(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper,
+                   num_tols);
 
   interpolator.set_interpolation_variable("cellvars");
 
@@ -703,16 +729,20 @@ TEST(Interpolate_1st_Order, Node_Ctr_Const_3D) {
     sources_and_weights[c] = wtsvec;
   }
 
-   // Now do it the Portage way
+  // Now do it the Portage way
 
-  // Create Interpolation object - but use the generic struct for
-  // invoking arbitrary order interpolation
+  // use default tolerances
+  Portage::NumericTolerances_t num_tols;
+  num_tols.use_default();
 
-  Portage::Interpolate_NthOrder<1>::Interpolate<3, Wonton::Entity_kind::NODE,
-                                                Wonton::Simple_Mesh_Wrapper,
-                                                Wonton::Simple_Mesh_Wrapper,
-                                                Wonton::Simple_State_Wrapper>
-      interpolator(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper);
+  // Create Interpolation object
+
+  Portage::Interpolate_1stOrder<3, Wonton::Entity_kind::NODE,
+                                Wonton::Simple_Mesh_Wrapper,
+                                Wonton::Simple_Mesh_Wrapper,
+                                Wonton::Simple_State_Wrapper>
+      interpolator(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper,
+                   num_tols);
 
   interpolator.set_interpolation_variable("nodevars");
 

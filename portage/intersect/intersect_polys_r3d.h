@@ -68,7 +68,8 @@ facetedpoly_t get_faceted_matpoly(const Tangram::MatPoly<3>& matpoly) {
 
 std::vector<double>
 intersect_polys_r3d(const facetedpoly_t &srcpoly,
-                    const std::vector<std::array<Point<3>, 4>> &target_tet_coords) {
+                    const std::vector<std::array<Point<3>, 4>> &target_tet_coords,
+                    NumericTolerances_t num_tols) {
 
   // Bounding box of the target cell - will be used to compute
   // epsilon for bounding box check. We could use the source cell
@@ -100,9 +101,9 @@ intersect_polys_r3d(const facetedpoly_t &srcpoly,
     double len = source_cell_bounds[2*j+1]-source_cell_bounds[2*j];
     if (MAXLEN < len) MAXLEN = len;
   }
-  double bbeps = 1.0e-12*MAXLEN;  // used only for bounding box check
-  //                            // not for intersections
 
+  // used only for bounding box check not for intersections
+  double bbeps = num_tols.intersect_bb_relative_distance*MAXLEN;
 
   int num_faces = srcpoly.facetpoints.size();
   r3d_int *face_num_verts = new r3d_int[num_faces];
@@ -205,11 +206,10 @@ intersect_polys_r3d(const facetedpoly_t &srcpoly,
 
     // Check that the returned volume is positive (if the volume is
     // zero, i.e. abs(om[0]) < eps, then it can sometimes be
-    // slightly negative, like om[0] == -1.24811e-16. For this
-    // reason we use the condition om[0] < -eps.
-
-    const double eps = 1e-14;  // @todo multiply by domain or element size
-    if (om[0] < -eps) throw std::runtime_error("Negative volume");
+    // slightly negative, like om[0] == -1.24811e-16.
+    // @todo multiply by domain or element size
+    if (om[0] < num_tols.minimal_intersection_volume)
+      throw std::runtime_error("Negative volume");
 
     // Accumulate moments:
     for (int i = 0; i < 4; i++)

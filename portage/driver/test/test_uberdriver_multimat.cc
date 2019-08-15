@@ -625,6 +625,10 @@ TEST(UberDriver, ThreeMat3D_1stOrder) {
       d(sourceMeshWrapper, sourceStateWrapper,
         targetMeshWrapper, targetStateWrapper, &executor);
 
+  Portage::NumericTolerances_t default_num_tols;
+  default_num_tols.use_default();
+  d.set_num_tols<Portage::Entity_kind::CELL>(default_num_tols);
+
   d.compute_interpolation_weights<Portage::SearchKDTree, Portage::IntersectR3D>();
 
   
