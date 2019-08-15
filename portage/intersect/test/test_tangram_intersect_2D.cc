@@ -12,6 +12,7 @@ Please see the license file at the root of this repository, or at:
 #include "tangram/support/MatPoly.h"
 
 #include "portage/intersect/intersect_r2d.h"
+#include "portage/support/portage.h"
 
 #include "wonton/mesh/simple/simple_mesh.h"
 #include "wonton/mesh/simple/simple_mesh_wrapper.h"
@@ -109,9 +110,13 @@ TEST(TANGRAM_2D, test_matpoly_intersect_unit_cells) {
   std::vector<Wonton::Point<2>> target_points;
   meshWrapper.cell_get_coordinates(0, &target_points);
 
+  // use default tolerances
+  Portage::NumericTolerances_t num_tols;
+  num_tols.use_default();
+
   // actually intersect
   std::vector<double> moments =
-      Portage::intersect_polys_r2d(source_points, target_points);
+      Portage::intersect_polys_r2d(source_points, target_points, num_tols);
 
   // test that the moments are correct
   ASSERT_NEAR(moments[0], (xh - xl) * (yh - yl), eps);
@@ -158,9 +163,13 @@ TEST(TANGRAM_2D, test_matpoly_intersect_non_coincident) {
   std::vector<Wonton::Point<2>> target_points;
   meshWrapper.cell_get_coordinates(0, &target_points);
 
+  // use default tolerances
+  Portage::NumericTolerances_t num_tols;
+  num_tols.use_default();
+
   // actually intersect
   std::vector<double> moments =
-      Portage::intersect_polys_r2d(source_points, target_points);
+      Portage::intersect_polys_r2d(source_points, target_points, num_tols);
 
   // test that the moments are correct
   ASSERT_NEAR(moments[0], 4., eps);

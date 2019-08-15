@@ -329,6 +329,23 @@ class CoreDriverBase {
     return derived_class_ptr->check_mesh_mismatch(source_weights);
   }
 
+
+  /*!
+    @brief Set numerical tolerances for small volumes, distances, etc.
+
+    @tparam Entity_kind  what kind of entity are we setting for
+
+    @tparam num_tols     struct of selected numerical tolerances
+  */
+
+  template<Entity_kind ONWHAT>
+  void
+  set_num_tols(NumericTolerances_t num_tols) {
+    assert(ONWHAT == onwhat());
+    auto derived_class_ptr = static_cast<CoreDriverType<ONWHAT> *>(this);
+    derived_class_ptr->set_num_tols(num_tols);
+  }
+
 };
 
 
@@ -476,12 +493,19 @@ class CoreDriver : public CoreDriverBase<D,
   Portage::vector<std::vector<Portage::Weights_t>>
   intersect_meshes(Portage::vector<std::vector<int>> const& candidates) {
 
+    // Use default numerical tolerances in case they were not set earlier
+    if (num_tols_.tolerances_set == false) {
+        NumericTolerances_t default_num_tols;
+        default_num_tols.use_default();
+      set_num_tols(default_num_tols);
+    }
+
     int nents = target_mesh_.num_entities(ONWHAT, PARALLEL_OWNED);
     Portage::vector<std::vector<Portage::Weights_t>> sources_and_weights(nents);
       
     Intersect<ONWHAT, SourceMesh, SourceState, TargetMesh,
               InterfaceReconstructorType, Matpoly_Splitter, Matpoly_Clipper>
-        intersector(source_mesh_, source_state_, target_mesh_);
+        intersector(source_mesh_, source_state_, target_mesh_, num_tols_);
 
     Portage::transform(target_mesh_.begin(ONWHAT, PARALLEL_OWNED),
                        target_mesh_.end(ONWHAT, PARALLEL_OWNED),
@@ -492,6 +516,11 @@ class CoreDriver : public CoreDriverBase<D,
     return sources_and_weights;
   }
 
+
+  /// Set numerical tolerances
+  void set_num_tols(NumericTolerances_t num_tols) {
+    num_tols_ = num_tols;
+  }
 
 
   /*! 
@@ -576,7 +605,7 @@ class CoreDriver : public CoreDriverBase<D,
 
     Intersect<CELL, SourceMesh, SourceState, TargetMesh,
               InterfaceReconstructorType, Matpoly_Splitter, Matpoly_Clipper>
-        intersector(source_mesh_, source_state_, target_mesh_,
+        intersector(source_mesh_, source_state_, target_mesh_, num_tols_,
                     interface_reconstructor_);
 
     // Assume (with no harm for sizing purposes) that all materials
@@ -635,8 +664,8 @@ class CoreDriver : public CoreDriverBase<D,
           std::vector<double> const& wts = cell_mat_sources_and_weights[s].weights;
           if (wts[0] > 0.0) {
             double vol = target_mesh_.cell_volume(c);
-            if (wts[0]/vol > 1.0e-10) {  // Check that the volume of material
-              //                         // we are adding is not miniscule
+            // Check that the volume of material we are adding to c is not miniscule
+            if (wts[0]/vol > num_tols_.driver_relative_min_mat_vol) {
               matcellstgt.push_back(c);
               break;
             }
@@ -817,7 +846,7 @@ class CoreDriver : public CoreDriverBase<D,
     // Instantiate particular interpolator
     Interpolate<D, ONWHAT, SourceMesh, TargetMesh, SourceState,
                 InterfaceReconstructorType, Matpoly_Splitter, Matpoly_Clipper, CoordSys>
-        interpolator(source_mesh_, target_mesh_, source_state_);
+        interpolator(source_mesh_, target_mesh_, source_state_, num_tols_);
       
 
     // Get a handle to a memory location where the target state
@@ -886,7 +915,7 @@ class CoreDriver : public CoreDriverBase<D,
     
     Interpolate<D, ONWHAT, SourceMesh, TargetMesh, SourceState,
                 InterfaceReconstructorType, Matpoly_Splitter, Matpoly_Clipper, CoordSys>
-        interpolator(source_mesh_, target_mesh_, source_state_, interface_reconstructor_);
+        interpolator(source_mesh_, target_mesh_, source_state_, num_tols_, interface_reconstructor_);
       
     int nmats = source_state_.num_materials();
 
@@ -942,6 +971,8 @@ class CoreDriver : public CoreDriverBase<D,
   TargetMesh const & target_mesh_;
   SourceState const & source_state_;
   TargetState & target_state_;
+
+  NumericTolerances_t num_tols_;
 
   int comm_rank_ = 0;
   int nprocs_ = 1;

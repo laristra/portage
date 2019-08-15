@@ -135,7 +135,7 @@ int print_usage() {
             << "you want to double source and target mesh sizes \n";
   std::cout << "  ONLY APPLICABLE IF BOTH MESHES ARE INTERNALLY GENERATED\n\n";
 
-  std::cout << "--output_meshes (default = y)\n";
+  std::cout << "--output_meshes (default = n)\n";
   std::cout << "  If 'y', the source and target meshes are output with the " <<
       "remapped field attached as input.exo and output.exo. \n\n";
 
@@ -289,7 +289,7 @@ int main(int argc, char** argv) {
 
   int interp_order = 1;
   bool all_convex = true;
-  bool mesh_output = true;
+  bool mesh_output = false;
   int n_converge = 1;
   Jali::Entity_kind entityKind = Jali::Entity_kind::CELL;
   Portage::Limiter_type limiter = Portage::Limiter_type::NOLIMITER;

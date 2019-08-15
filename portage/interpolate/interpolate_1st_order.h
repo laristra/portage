@@ -104,13 +104,15 @@ class Interpolate_1stOrder {
   Interpolate_1stOrder(SourceMeshType const & source_mesh,
                        TargetMeshType const & target_mesh,
                        SourceStateType const & source_state,
+                       NumericTolerances_t num_tols,
                        std::shared_ptr<InterfaceReconstructor> ir) :
       source_mesh_(source_mesh),
       target_mesh_(target_mesh),
       source_state_(source_state),
       interface_reconstructor_(ir),
       interp_var_name_("VariableNameNotSet"),
-      source_vals_(nullptr) {}
+      source_vals_(nullptr),
+      num_tols_(num_tols) {}
 #endif
 
   /*!
@@ -125,12 +127,14 @@ class Interpolate_1stOrder {
   */
   Interpolate_1stOrder(SourceMeshType const & source_mesh,
                        TargetMeshType const & target_mesh,
-                       SourceStateType const & source_state) :
+                       SourceStateType const & source_state,
+                       NumericTolerances_t num_tols) :
       source_mesh_(source_mesh),
       target_mesh_(target_mesh),
       source_state_(source_state),
       interp_var_name_("VariableNameNotSet"),
-      source_vals_(nullptr) {}
+      source_vals_(nullptr),
+      num_tols_(num_tols) {}
 
 
   /// Copy constructor (disabled)
@@ -199,6 +203,7 @@ class Interpolate_1stOrder {
   double const * source_vals_;
   int matid_;
   Field_type field_type_;
+  NumericTolerances_t num_tols_;
 
 
 #ifdef HAVE_TANGRAM
@@ -243,13 +248,15 @@ class Interpolate_1stOrder<D,
   Interpolate_1stOrder(SourceMeshType const & source_mesh,
                        TargetMeshType const & target_mesh,
                        SourceStateType const & source_state,
+                       NumericTolerances_t num_tols,
                        std::shared_ptr<InterfaceReconstructor> ir) :
       source_mesh_(source_mesh),
       target_mesh_(target_mesh),
       source_state_(source_state),
       interface_reconstructor_(ir),
       interp_var_name_("VariableNameNotSet"),
-      source_vals_(nullptr) {}
+      source_vals_(nullptr),
+      num_tols_(num_tols) {}
 #endif
   /*!
     @brief Constructor.
@@ -261,12 +268,14 @@ class Interpolate_1stOrder<D,
   */
   Interpolate_1stOrder(SourceMeshType const & source_mesh,
                        TargetMeshType const & target_mesh,
-                       SourceStateType const & source_state) :
+                       SourceStateType const & source_state,
+                       NumericTolerances_t num_tols) :
       source_mesh_(source_mesh),
       target_mesh_(target_mesh),
       source_state_(source_state),
       interp_var_name_("VariableNameNotSet"),
-      source_vals_(nullptr) {}
+      source_vals_(nullptr),
+      num_tols_(num_tols) {}
 
 
   /// Copy constructor (disabled)
@@ -340,7 +349,8 @@ class Interpolate_1stOrder<D,
       for (auto const& wt : sources_and_weights) {
         int srccell = wt.entityID;
         std::vector<double> pair_weights = wt.weights;
-        if (pair_weights[0]/vol < 1.0e-12) continue;  // skip small intersections
+        if (pair_weights[0]/vol < num_tols_.min_relative_volume)
+          continue;  // skip small intersections
         val += source_vals_[srccell] * pair_weights[0];
         wtsum0 += pair_weights[0];
         nsummed++;
@@ -349,7 +359,8 @@ class Interpolate_1stOrder<D,
       for (auto const& wt : sources_and_weights) {
         int srccell = wt.entityID;
         std::vector<double> pair_weights = wt.weights;
-        if (pair_weights[0]/vol < 1.0e-12) continue;  // skip small intersections
+        if (pair_weights[0]/vol < num_tols_.min_relative_volume)
+          continue;  // skip small intersections
         int matcell = source_state_.cell_index_in_material(srccell, matid_);
         val += source_vals_[matcell] * pair_weights[0];  // 1st order
         wtsum0 += pair_weights[0];
@@ -380,6 +391,7 @@ class Interpolate_1stOrder<D,
   double const * source_vals_;
   int matid_;
   Field_type field_type_;
+  NumericTolerances_t num_tols_;
 
 #ifdef HAVE_TANGRAM
   std::shared_ptr<InterfaceReconstructor> interface_reconstructor_;
@@ -426,13 +438,15 @@ class Interpolate_1stOrder<D,
   Interpolate_1stOrder(SourceMeshType const & source_mesh,
                        TargetMeshType const & target_mesh,
                        SourceStateType const & source_state,
+                       NumericTolerances_t num_tols,
                        std::shared_ptr<InterfaceReconstructor> ir) :
       source_mesh_(source_mesh),
       target_mesh_(target_mesh),
       source_state_(source_state),
       interface_reconstructor_(ir),
       interp_var_name_("VariableNameNotSet"),
-      source_vals_(nullptr) {}
+      source_vals_(nullptr),
+      num_tols_(num_tols) {}
 #endif
 
   /*!
@@ -445,12 +459,14 @@ class Interpolate_1stOrder<D,
   */
   Interpolate_1stOrder(SourceMeshType const & source_mesh,
                        TargetMeshType const & target_mesh,
-                       SourceStateType const & source_state) :
+                       SourceStateType const & source_state,
+                       NumericTolerances_t num_tols) :
       source_mesh_(source_mesh),
       target_mesh_(target_mesh),
       source_state_(source_state),
       interp_var_name_("VariableNameNotSet"),
-      source_vals_(nullptr) {}
+      source_vals_(nullptr),
+      num_tols_(num_tols) {}
 
 
   /// Copy constructor (disabled)
@@ -525,7 +541,8 @@ class Interpolate_1stOrder<D,
     for (auto const& wt : sources_and_weights) {
       int srcnode = wt.entityID;
       std::vector<double> pair_weights = wt.weights;
-      if (pair_weights[0]/vol < 1.0e-16) continue;  // skip small intersections
+      if (pair_weights[0]/vol < num_tols_.min_relative_volume)
+        continue;  // skip small intersections
       val += source_vals_[srcnode] * pair_weights[0];  // 1st order
       wtsum0 += pair_weights[0];
       nsummed++;
@@ -555,6 +572,7 @@ class Interpolate_1stOrder<D,
   double const * source_vals_;
   int matid_;
   Field_type field_type_;
+  NumericTolerances_t num_tols_;
 
 #ifdef HAVE_TANGRAM
   std::shared_ptr<InterfaceReconstructor> interface_reconstructor_;
