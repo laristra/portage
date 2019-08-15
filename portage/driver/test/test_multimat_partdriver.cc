@@ -14,8 +14,6 @@ Please see the license file at the root of this repository, or at:
 #include "mpi.h"
 #endif
 
-#include "tangram/intersect/split_r2d.h"
-#include "tangram/intersect/split_r3d.h"
 #include "tangram/reconstruct/xmof2D_wrapper.h"
 #include "tangram/reconstruct/SLIC.h"
 #include "tangram/reconstruct/MOF.h"
@@ -23,7 +21,7 @@ Please see the license file at the root of this repository, or at:
 #include "tangram/driver/driver.h"
 #include "tangram/driver/write_to_gmv.h"
 
-#include "portage/driver/mmdriver.h"
+#include "portage/driver/partdriver.h"
 #include "wonton/mesh/jali/jali_mesh_wrapper.h"
 #include "wonton/state/jali/jali_state_wrapper.h"
 #include "portage/search/search_kdtree.h"
@@ -55,7 +53,7 @@ double TOL = 1e-6;
 // on the target mesh and compare it to the analytical values
 
 
-TEST(MMDriver, ThreeMat2D_1stOrder) {
+TEST(PartDriver, ThreeMat2D_1stOrder) {
   // Source and target meshes
   std::shared_ptr<Jali::Mesh> sourceMesh;
   std::shared_ptr<Jali::Mesh> targetMesh;
@@ -103,25 +101,25 @@ TEST(MMDriver, ThreeMat2D_1stOrder) {
 
   // Extents of the materials in the overall domain
 
-  Portage::Point<2> matlo[nmats], mathi[nmats];
-  matlo[0] = Portage::Point<2>(0.0, 0.0);
-  mathi[0] = Portage::Point<2>(0.5, 1.0);
-  matlo[1] = Portage::Point<2>(0.5, 0.0);
-  mathi[1] = Portage::Point<2>(1.0, 0.5);
-  matlo[2] = Portage::Point<2>(0.5, 0.5);
-  mathi[2] = Portage::Point<2>(1.0, 1.0);
+  Wonton::Point<2> matlo[nmats], mathi[nmats];
+  matlo[0] = Wonton::Point<2>(0.0, 0.0);
+  mathi[0] = Wonton::Point<2>(0.5, 1.0);
+  matlo[1] = Wonton::Point<2>(0.5, 0.0);
+  mathi[1] = Wonton::Point<2>(1.0, 0.5);
+  matlo[2] = Wonton::Point<2>(0.5, 0.5);
+  mathi[2] = Wonton::Point<2>(1.0, 1.0);
 
   double meshtemp = 55;  // scalar temperature on mesh
   double matrho[nmats] = {0.1, 10.0, 100.0};  // material density
   double matvol[nmats] = {0.5, 0.25, 0.25};
   double matmass[nmats] = {0.05, 2.5, 25.0};
-  Portage::Point<2> matcen[nmats] = {Portage::Point<2>(0.25,0.5),
-                                     Portage::Point<2>(0.75,0.25),
-                                     Portage::Point<2>(0.75,0.75)};
+  Wonton::Point<2> matcen[nmats] = {Wonton::Point<2>(0.25,0.5),
+                                     Wonton::Point<2>(0.75,0.25),
+                                     Wonton::Point<2>(0.75,0.75)};
 
   std::vector<int> matcells_src[nmats];
   std::vector<double> matvf_src[nmats];
-  std::vector<Portage::Point<2>> matcen_src[nmats];
+  std::vector<Wonton::Point<2>> matcen_src[nmats];
 
 
   //-------------------------------------------------------------------
@@ -133,15 +131,15 @@ TEST(MMDriver, ThreeMat2D_1stOrder) {
   // are in each material and collect their material volume fractions
   // and material centroids
 
-  int nsrccells = sourceMeshWrapper.num_entities(Portage::Entity_kind::CELL,
-                                                 Portage::Entity_type::ALL);
+  int nsrccells = sourceMeshWrapper.num_entities(Wonton::Entity_kind::CELL,
+                                                 Wonton::Entity_type::ALL);
   for (int c = 0; c < nsrccells; c++) {
-    std::vector<Portage::Point<2>> ccoords;
+    std::vector<Wonton::Point<2>> ccoords;
     sourceMeshWrapper.cell_get_coordinates(c, &ccoords);
 
     double cellvol = sourceMeshWrapper.cell_volume(c);
 
-    Portage::Point<2> cell_lo, cell_hi;
+    Wonton::Point<2> cell_lo, cell_hi;
     BOX_INTERSECT::bounding_box<2>(ccoords, &cell_lo, &cell_hi);
 
     std::vector<double> xmoments;
@@ -152,7 +150,7 @@ TEST(MMDriver, ThreeMat2D_1stOrder) {
           matcells_src[m].push_back(c);
           matvf_src[m].push_back(xmoments[0]/cellvol);
 
-          Portage::Point<2> mcen(xmoments[1]/xmoments[0],
+          Wonton::Point<2> mcen(xmoments[1]/xmoments[0],
                                  xmoments[2]/xmoments[0]);
           matcen_src[m].push_back(mcen);
         }
@@ -214,13 +212,6 @@ TEST(MMDriver, ThreeMat2D_1stOrder) {
 
 
   //-------------------------------------------------------------------
-  // Field(s) we have to remap
-  //-------------------------------------------------------------------
-
-  std::vector<std::string> remap_fields = {"density", "temperature"};
-
-
-  //-------------------------------------------------------------------
   // Add the materials and fields to the target mesh.
   //-------------------------------------------------------------------
 
@@ -230,7 +221,7 @@ TEST(MMDriver, ThreeMat2D_1stOrder) {
   targetStateWrapper.add_material("mat2", dummymatcells);
 
   targetStateWrapper.mat_add_celldata<double>("mat_volfracs");
-  targetStateWrapper.mat_add_celldata<Portage::Point<2>>("mat_centroids");
+  targetStateWrapper.mat_add_celldata<Wonton::Point<2>>("mat_centroids");
   targetStateWrapper.mat_add_celldata<double>("density", 0.0);
 
   targetStateWrapper.mesh_add_data<double>(Wonton::Entity_kind::CELL,
@@ -244,18 +235,20 @@ TEST(MMDriver, ThreeMat2D_1stOrder) {
   //  material ordering is 0, 1, 2
   //-------------------------------------------------------------------
 
-  Portage::MMDriver<Portage::SearchKDTree,
-                    Portage::IntersectR2D,
-                    Portage::Interpolate_1stOrder,
-                    2,
-                    Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
-                    Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
-                    Tangram::MOF, Tangram::SplitR2D, Tangram::ClipR2D>
+  Portage::PartDriver<Portage::SearchKDTree,
+                      Portage::IntersectR2D,
+                      Portage::Interpolate_1stOrder,
+                      2,
+                      Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
+                      Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
+                      Tangram::XMOF2D_Wrapper>
       d(sourceMeshWrapper, sourceStateWrapper,
         targetMeshWrapper, targetStateWrapper);
-  d.set_remap_var_names(remap_fields);
-  d.run();  // No argument implies serial run
 
+  
+  d.interpolate("density", 0.0, std::numeric_limits<double>::max());
+  d.interpolate("temperature", -std::numeric_limits<double>::max(),
+                std::numeric_limits<double>::max());
 
 
   //-------------------------------------------------------------------
@@ -266,17 +259,17 @@ TEST(MMDriver, ThreeMat2D_1stOrder) {
 
   std::vector<int> matcells_trg[nmats];
   std::vector<double> matvf_trg[nmats];
-  std::vector<Portage::Point<2>> matcen_trg[nmats];
+  std::vector<Wonton::Point<2>> matcen_trg[nmats];
 
-  int ntrgcells = targetMeshWrapper.num_entities(Portage::Entity_kind::CELL,
-                                                 Portage::Entity_type::ALL);
+  int ntrgcells = targetMeshWrapper.num_entities(Wonton::Entity_kind::CELL,
+                                                 Wonton::Entity_type::ALL);
   for (int c = 0; c < ntrgcells; c++) {
-    std::vector<Portage::Point<2>> ccoords;
+    std::vector<Wonton::Point<2>> ccoords;
     targetMeshWrapper.cell_get_coordinates(c, &ccoords);
 
     double cellvol = targetMeshWrapper.cell_volume(c);
 
-    Portage::Point<2> cell_lo, cell_hi;
+    Wonton::Point<2> cell_lo, cell_hi;
     BOX_INTERSECT::bounding_box<2>(ccoords, &cell_lo, &cell_hi);
 
     std::vector<double> xmoments;
@@ -287,7 +280,7 @@ TEST(MMDriver, ThreeMat2D_1stOrder) {
           matcells_trg[m].push_back(c);
           matvf_trg[m].push_back(xmoments[0]/cellvol);
 
-          Portage::Point<2> mcen(xmoments[1]/xmoments[0],
+          Wonton::Point<2> mcen(xmoments[1]/xmoments[0],
                                  xmoments[2]/xmoments[0]);
           matcen_trg[m].push_back(mcen);
         }
@@ -341,9 +334,9 @@ TEST(MMDriver, ThreeMat2D_1stOrder) {
     targetStateWrapper.mat_get_celldata("mat_volfracs", m, &matvf_remap);
 
     for (int ic = 0; ic < nmatcells; ic++)
-      ASSERT_NEAR(matvf_trg[m][ic], matvf_remap[ic], 1.0e-10);
+      ASSERT_NEAR(matvf_trg[m][ic], matvf_remap[ic], 1.0e-12);
 
-    Portage::Point<2> const *matcen_remap;
+    Wonton::Point<2> const *matcen_remap;
     targetStateWrapper.mat_get_celldata("mat_centroids", m, &matcen_remap);
 
     for (int ic = 0; ic < nmatcells; ic++)
@@ -375,12 +368,12 @@ TEST(MMDriver, ThreeMat2D_1stOrder) {
     std::vector<int> matcells;
     targetStateWrapper.mat_get_cells(m, &matcells);
     double *vf, *rho;
-    Portage::Point<2> *cen;
+    Wonton::Point<2> *cen;
     targetStateWrapper.mat_get_celldata("mat_volfracs", m, &vf);
     targetStateWrapper.mat_get_celldata("mat_centroids", m, &cen);
     targetStateWrapper.mat_get_celldata("density", m, &rho);
 
-    Portage::Point<2> totcen;
+    Wonton::Point<2> totcen;
     double volume = 0.0, mass = 0.0;
     for (int ic = 0; ic < matcells.size(); ic++) {
       double cellvol = vf[ic]*targetMeshWrapper.cell_volume(matcells[ic]);
@@ -418,7 +411,7 @@ TEST(MMDriver, ThreeMat2D_1stOrder) {
 
 
 
-TEST(MMDriver, ThreeMat3D_1stOrder) {
+TEST(PartDriver, ThreeMat3D_1stOrder) {
   // Source and target meshes
   std::shared_ptr<Jali::Mesh> sourceMesh;
   std::shared_ptr<Jali::Mesh> targetMesh;
@@ -427,7 +420,7 @@ TEST(MMDriver, ThreeMat3D_1stOrder) {
   std::shared_ptr<Jali::State> targetState;
 
   sourceMesh = Jali::MeshFactory(MPI_COMM_WORLD)(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 3, 3, 3);
-  targetMesh = Jali::MeshFactory(MPI_COMM_WORLD)(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 5, 5, 5);
+  targetMesh = Jali::MeshFactory(MPI_COMM_WORLD)(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 3, 3, 3);
 
   sourceState = Jali::State::create(sourceMesh);
   targetState = Jali::State::create(targetMesh);
@@ -466,25 +459,25 @@ TEST(MMDriver, ThreeMat3D_1stOrder) {
 
   // Extents of the materials in the overall domain
 
-  Portage::Point<3> matlo[nmats], mathi[nmats];
-  matlo[0] = Portage::Point<3>(0.0, 0.0, 0.0);
-  mathi[0] = Portage::Point<3>(0.5, 1.0, 1.0);
-  matlo[1] = Portage::Point<3>(0.5, 0.0, 0.0);
-  mathi[1] = Portage::Point<3>(1.0, 0.5, 1.0);
-  matlo[2] = Portage::Point<3>(0.5, 0.5, 0.0);
-  mathi[2] = Portage::Point<3>(1.0, 1.0, 1.0);
+  Wonton::Point<3> matlo[nmats], mathi[nmats];
+  matlo[0] = Wonton::Point<3>(0.0, 0.0, 0.0);
+  mathi[0] = Wonton::Point<3>(0.5, 1.0, 1.0);
+  matlo[1] = Wonton::Point<3>(0.5, 0.0, 0.0);
+  mathi[1] = Wonton::Point<3>(1.0, 0.5, 1.0);
+  matlo[2] = Wonton::Point<3>(0.5, 0.5, 0.0);
+  mathi[2] = Wonton::Point<3>(1.0, 1.0, 1.0);
 
   double meshtemp = 55;  // scalar temperature on mesh
   double matrho[nmats] = {0.1, 10.0, 100.0};  // material density
   double matvol[nmats] = {0.5, 0.25, 0.25};
   double matmass[nmats] = {0.05, 2.5, 25.0};
-  Portage::Point<3> matcen[nmats] = {Portage::Point<3>(0.25,0.5,0.5),
-                                     Portage::Point<3>(0.75,0.25,0.5),
-                                     Portage::Point<3>(0.75,0.75,0.5)};
+  Wonton::Point<3> matcen[nmats] = {Wonton::Point<3>(0.25,0.5,0.5),
+                                     Wonton::Point<3>(0.75,0.25,0.5),
+                                     Wonton::Point<3>(0.75,0.75,0.5)};
 
   std::vector<int> matcells_src[nmats];
   std::vector<double> matvf_src[nmats];
-  std::vector<Portage::Point<3>> matcen_src[nmats];
+  std::vector<Wonton::Point<3>> matcen_src[nmats];
 
   //-------------------------------------------------------------------
   // COMPUTE MATERIAL DATA ON SOURCE SIDE - VOLUME FRACTIONS, CENTROID
@@ -495,15 +488,15 @@ TEST(MMDriver, ThreeMat3D_1stOrder) {
   // are in each material and collect their material volume fractions
   // and material centroids
 
-  int nsrccells = sourceMeshWrapper.num_entities(Portage::Entity_kind::CELL,
-                                                 Portage::Entity_type::ALL);
+  int nsrccells = sourceMeshWrapper.num_entities(Wonton::Entity_kind::CELL,
+                                                 Wonton::Entity_type::ALL);
   for (int c = 0; c < nsrccells; c++) {
-    std::vector<Portage::Point<3>> ccoords;
+    std::vector<Wonton::Point<3>> ccoords;
     sourceMeshWrapper.cell_get_coordinates(c, &ccoords);
 
     double cellvol = sourceMeshWrapper.cell_volume(c);
 
-    Portage::Point<3> cell_lo, cell_hi;
+    Wonton::Point<3> cell_lo, cell_hi;
     BOX_INTERSECT::bounding_box<3>(ccoords, &cell_lo, &cell_hi);
 
     std::vector<double> xmoments;
@@ -514,7 +507,7 @@ TEST(MMDriver, ThreeMat3D_1stOrder) {
           matcells_src[m].push_back(c);
           matvf_src[m].push_back(xmoments[0]/cellvol);
 
-          Portage::Point<3> mcen(xmoments[1]/xmoments[0],
+          Wonton::Point<3> mcen(xmoments[1]/xmoments[0],
                                  xmoments[2]/xmoments[0],
                                  xmoments[3]/xmoments[0]);
           matcen_src[m].push_back(mcen);
@@ -593,7 +586,7 @@ TEST(MMDriver, ThreeMat3D_1stOrder) {
   targetStateWrapper.add_material("mat2", dummymatcells);
 
   targetStateWrapper.mat_add_celldata<double>("mat_volfracs");
-  targetStateWrapper.mat_add_celldata<Portage::Point<3>>("mat_centroids");
+  targetStateWrapper.mat_add_celldata<Wonton::Point<3>>("mat_centroids");
   targetStateWrapper.mat_add_celldata<double>("density", 0.0);
 
   targetStateWrapper.mesh_add_data<double>(Wonton::Entity_kind::CELL,
@@ -609,21 +602,24 @@ TEST(MMDriver, ThreeMat3D_1stOrder) {
   //  orientation of interface on boundary cells
   //-------------------------------------------------------------------
 
-
-  Portage::MMDriver<Portage::SearchKDTree,
-                    Portage::IntersectR3D,
-                    Portage::Interpolate_1stOrder,
-                    3,
-                    Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
-                    Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
-                    Tangram::MOF, Tangram::SplitR3D, Tangram::ClipR3D>
-      d(sourceMeshWrapper, sourceStateWrapper,
-        targetMeshWrapper, targetStateWrapper);
-  d.set_remap_var_names(remap_fields);
-
+  std::vector<Portage::Entity_kind> entity_kinds({Wonton::Entity_kind::CELL});
+  std::vector<Portage::Field_type> field_types({Portage::Field_type::MESH_FIELD, Portage::Field_type::MULTIMATERIAL_FIELD});
+  
   Wonton::SerialExecutor_type executor;
-  d.run(&executor);
 
+  Portage::PartDriver<Portage::SearchKDTree,
+                      Portage::IntersectR3D,
+                      Portage::Interpolate_1stOrder,
+                      3,
+                      Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
+                      Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
+                      Tangram::MOF, Tangram::SplitR3D, Tangram::ClipR3D>
+      d(sourceMeshWrapper, sourceStateWrapper,
+        targetMeshWrapper, targetStateWrapper, &executor);
+
+  d.interpolate("density", "rho", 0.0, std::numeric_limits<double>::max());
+  d.interpolate("temperature", "TEMP", -std::numeric_limits<double>::max(),
+                std::numeric_limits<double>::max());
 
 
   //-------------------------------------------------------------------
@@ -634,17 +630,17 @@ TEST(MMDriver, ThreeMat3D_1stOrder) {
 
   std::vector<int> matcells_trg[nmats];
   std::vector<double> matvf_trg[nmats];
-  std::vector<Portage::Point<3>> matcen_trg[nmats];
+  std::vector<Wonton::Point<3>> matcen_trg[nmats];
 
   int ntrgcells = targetMeshWrapper.num_entities(Portage::Entity_kind::CELL,
                                                  Portage::Entity_type::ALL);
   for (int c = 0; c < ntrgcells; c++) {
-    std::vector<Portage::Point<3>> ccoords;
+    std::vector<Wonton::Point<3>> ccoords;
     targetMeshWrapper.cell_get_coordinates(c, &ccoords);
 
     double cellvol = targetMeshWrapper.cell_volume(c);
 
-    Portage::Point<3> cell_lo, cell_hi;
+    Wonton::Point<3> cell_lo, cell_hi;
     BOX_INTERSECT::bounding_box<3>(ccoords, &cell_lo, &cell_hi);
 
     std::vector<double> xmoments;
@@ -655,7 +651,7 @@ TEST(MMDriver, ThreeMat3D_1stOrder) {
           matcells_trg[m].push_back(c);
           matvf_trg[m].push_back(xmoments[0]/cellvol);
 
-          Portage::Point<3> mcen(xmoments[1]/xmoments[0],
+          Wonton::Point<3> mcen(xmoments[1]/xmoments[0],
                                  xmoments[2]/xmoments[0],
                                  xmoments[3]/xmoments[0]);
           matcen_trg[m].push_back(mcen);
@@ -710,9 +706,9 @@ TEST(MMDriver, ThreeMat3D_1stOrder) {
     targetStateWrapper.mat_get_celldata("mat_volfracs", m, &matvf_remap);
 
     for (int ic = 0; ic < nmatcells; ic++)
-      ASSERT_NEAR(matvf_trg[m][ic], matvf_remap[ic], 1.0e-9);
+      ASSERT_NEAR(matvf_trg[m][ic], matvf_remap[ic], 1.0e-12);
 
-    Portage::Point<3> const *matcen_remap;
+    Wonton::Point<3> const *matcen_remap;
     targetStateWrapper.mat_get_celldata("mat_centroids", m, &matcen_remap);
 
     // MOF cannot match moments and centroids as well as it can volume
@@ -722,7 +718,7 @@ TEST(MMDriver, ThreeMat3D_1stOrder) {
         ASSERT_NEAR(matcen_trg[m][ic][d], matcen_remap[ic][d], 1.0e-9);
 
     double const *density_remap;
-    targetStateWrapper.mat_get_celldata("density", m, &density_remap);
+    targetStateWrapper.mat_get_celldata("rho", m, &density_remap);
 
     for (int ic = 0; ic < nmatcells; ic++)
       ASSERT_NEAR(matrho[m], density_remap[ic], 1.0e-12);
@@ -747,12 +743,12 @@ TEST(MMDriver, ThreeMat3D_1stOrder) {
     std::vector<int> matcells;
     targetStateWrapper.mat_get_cells(m, &matcells);
     double *vf, *rho;
-    Portage::Point<3> *cen;
+    Wonton::Point<3> *cen;
     targetStateWrapper.mat_get_celldata("mat_volfracs", m, &vf);
     targetStateWrapper.mat_get_celldata("mat_centroids", m, &cen);
-    targetStateWrapper.mat_get_celldata("density", m, &rho);
+    targetStateWrapper.mat_get_celldata("rho", m, &rho);
 
-    Portage::Point<3> totcen;
+    Wonton::Point<3> totcen;
     double volume = 0.0, mass = 0.0;
     for (int ic = 0; ic < matcells.size(); ic++) {
       double cellvol = vf[ic]*targetMeshWrapper.cell_volume(matcells[ic]);
@@ -779,7 +775,7 @@ TEST(MMDriver, ThreeMat3D_1stOrder) {
 
   // Finally check that we got the right target temperature values
   double *targettemp;
-  targetStateWrapper.mesh_get_data(Wonton::Entity_kind::CELL, "temperature",
+  targetStateWrapper.mesh_get_data(Wonton::Entity_kind::CELL, "TEMP",
                                    &targettemp);
   for (int i = 0; i < ntrgcells; i++)
     ASSERT_NEAR(targettemp[i], meshtemp, 1.0e-10);

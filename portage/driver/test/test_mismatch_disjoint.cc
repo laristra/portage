@@ -23,29 +23,17 @@ Please see the license file at the root of this repository, or at:
 #include "JaliStateVector.h"
 
 
+// Remap between two completely disjoint meshes
+// Make sure we don't barf or get stuck and only get 0 for the target
+
 double TOL = 1e-12;
 
 TEST(Test_Mismatch_Fixup, Test_Methods) {
   Jali::MeshFactory mf(MPI_COMM_WORLD);
   if (Jali::framework_available(Jali::MSTK))
     mf.framework(Jali::MSTK);
-  std::shared_ptr<Jali::Mesh> source_mesh = mf(-0.8, 0.0, 0.4, 1.0, 1, 1);
-  std::shared_ptr<Jali::Mesh> target_mesh = mf( 0.0, 0.0, 2.0, 1.0, 2, 1);
-
-  // exact results for Partial_fixup_type:
-  //	CONSTANT (C)
-  //    LOCALLY_CONSERVATIVE (L)
-  //    SHIFTED_CONSERVATIVE (S)
-  // and Empty_fixup_type:
-  // 	EXTRAPOLATE (E)
-  //    LEAVE_EMPTY (L)
-
-  double exact_C_E[2] = {1.0, 1.0};
-  double exact_L_E[2] = {0.4, 0.4};
-  double exact_S_E[2] = {0.6, 0.6};
-  double exact_C_L[2] = {1.0, 0.0};
-  double exact_L_L[2] = {0.4, 0.0};
-  double exact_S_L[2] = {1.2, 0.0};
+  std::shared_ptr<Jali::Mesh> source_mesh = mf(0.0, 0.0, 1.0, 1.0, 3, 3);
+  std::shared_ptr<Jali::Mesh> target_mesh = mf(2.0, 2.0, 4.0, 4.0, 2, 2);
 
   const int ncells_source =
       source_mesh->num_entities(Jali::Entity_kind::CELL,
@@ -97,6 +85,9 @@ TEST(Test_Mismatch_Fixup, Test_Methods) {
   target_var_names.push_back("cellvars");
 
   // Build the main driver object to test for default fixup options
+  // Default fixup options are SHIFTED_CONSERVATIVE, so even if the
+  // meshes are disjoint the algorithm will attempt to distribute the
+  // integral values of the source field on to the target
 
   Portage::MMDriver<Portage::SearchKDTree,
                   Portage::IntersectR2D,
@@ -110,109 +101,88 @@ TEST(Test_Mismatch_Fixup, Test_Methods) {
 
   remapper.set_remap_var_names(source_var_names, target_var_names);
 
-  // Execute remapper (No arguments implies serial execution)
+  // Execute remapper with default fixup
 
   remapper.run();
 
-  // Verify that we got the fields we wanted
+  // Verify that we got the fields we wanted (SHIFTED CONSERVATIVE
+  // means the total source value of 3.0 will be distributed equally
+  // over the two target cells)
   for (int c = 0; c < ncells_target; c++) {
-    ASSERT_NEAR(exact_S_E[c], targetvec[c], TOL);
+    ASSERT_NEAR(1.5, targetvec[c], TOL);
   }
 
 
-
-  // Set fixup types
+  // Setup various partial fixup options and test
 
   remapper.set_partial_fixup_type(Portage::Partial_fixup_type::CONSTANT);
   remapper.set_empty_fixup_type(Portage::Empty_fixup_type::EXTRAPOLATE);
 
-  // Execute remapper (No arguments implies serial execution)
-
   remapper.run();
 
-  // Verify that we got the fields we wanted
   for (int c = 0; c < ncells_target; c++) {
-    ASSERT_NEAR(exact_C_E[c], targetvec[c], TOL);
+    ASSERT_NEAR(0.0, targetvec[c], TOL);
   }
 
 
-
-  // Set fixup types
 
   remapper.set_partial_fixup_type(Portage::Partial_fixup_type::LOCALLY_CONSERVATIVE);
   remapper.set_empty_fixup_type(Portage::Empty_fixup_type::EXTRAPOLATE);
 
-  // Execute remapper (No arguments implies serial execution)
-
   remapper.run();
 
-  // Verify that we got the fields we wanted
   for (int c = 0; c < ncells_target; c++) {
-    ASSERT_NEAR(exact_L_E[c], targetvec[c], TOL);
+    ASSERT_NEAR(0.0, targetvec[c], TOL);
   }
 
 
-
-  // Set fixup types
 
   remapper.set_partial_fixup_type(Portage::Partial_fixup_type::SHIFTED_CONSERVATIVE);
   remapper.set_empty_fixup_type(Portage::Empty_fixup_type::EXTRAPOLATE);
 
-  // Execute remapper (No arguments implies serial execution)
-
   remapper.run();
 
-  // Verify that we got the fields we wanted
+  // With SHIFTED_CONSERVATIVE, the integral of the source field which
+  // is 3.0 will be spread out about the target cells
   for (int c = 0; c < ncells_target; c++) {
-    ASSERT_NEAR(exact_S_E[c], targetvec[c], TOL);
+    ASSERT_NEAR(1.5, targetvec[c], TOL);
   }
 
 
-
-  // Set fixup types
 
   remapper.set_partial_fixup_type(Portage::Partial_fixup_type::CONSTANT);
   remapper.set_empty_fixup_type(Portage::Empty_fixup_type::LEAVE_EMPTY);
 
-  // Execute remapper (No arguments implies serial execution)
-
   remapper.run();
 
-  // Verify that we got the fields we wanted
   for (int c = 0; c < ncells_target; c++) {
-    ASSERT_NEAR(exact_C_L[c], targetvec[c], TOL);
+    ASSERT_NEAR(0.0, targetvec[c], TOL);
   }
 
 
-
-  // Set fixup types
 
   remapper.set_partial_fixup_type(Portage::Partial_fixup_type::LOCALLY_CONSERVATIVE);
   remapper.set_empty_fixup_type(Portage::Empty_fixup_type::LEAVE_EMPTY);
 
-  // Execute remapper (No arguments implies serial execution)
-
   remapper.run();
 
-  // Verify that we got the fields we wanted
   for (int c = 0; c < ncells_target; c++) {
-    ASSERT_NEAR(exact_L_L[c], targetvec[c], TOL);
+    ASSERT_NEAR(0.0, targetvec[c], TOL);
   }
 
 
 
-  // Set fixup types
-
   remapper.set_partial_fixup_type(Portage::Partial_fixup_type::SHIFTED_CONSERVATIVE);
   remapper.set_empty_fixup_type(Portage::Empty_fixup_type::LEAVE_EMPTY);
 
-  // Execute remapper (No arguments implies serial execution)
-
   remapper.run();
 
-  // Verify that we got the fields we wanted
+  // Verify that we got the fields we wanted. Even though the integral
+  // value of the source field is 3.0, we cannot put it anywhere
+  // because all the target cells are empty and we requested that they
+  // be left empty
   for (int c = 0; c < ncells_target; c++) {
-    ASSERT_NEAR(exact_S_L[c], targetvec[c], TOL);
+    ASSERT_NEAR(0.0, targetvec[c], TOL);
   }
 
 }

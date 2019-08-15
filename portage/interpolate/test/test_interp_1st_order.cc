@@ -10,9 +10,12 @@ Please see the license file at the root of this repository, or at:
 #include "gtest/gtest.h"
 
 // portage includes
-#include "portage/interpolate/interpolate_1st_order.h"
 #include "portage/intersect/simple_intersect_for_tests.h"
 #include "portage/support/portage.h"
+
+// generic structure for invoking 1st & 2nd order interpolate (see last test)
+// includes the include files for 1st and 2nd order interpolator
+#include "portage/interpolate/interpolate_nth_order.h"
 
 // wonton includes
 #include "wonton/mesh/simple/simple_mesh.h"
@@ -702,12 +705,13 @@ TEST(Interpolate_1st_Order, Node_Ctr_Const_3D) {
 
    // Now do it the Portage way
 
-  // Create Interpolation object
+  // Create Interpolation object - but use the generic struct for
+  // invoking arbitrary order interpolation
 
-  Portage::Interpolate_1stOrder<3, Wonton::Entity_kind::NODE,
-                                Wonton::Simple_Mesh_Wrapper,
-                                Wonton::Simple_Mesh_Wrapper,
-                                Wonton::Simple_State_Wrapper>
+  Portage::Interpolate_NthOrder<1>::Interpolate<3, Wonton::Entity_kind::NODE,
+                                                Wonton::Simple_Mesh_Wrapper,
+                                                Wonton::Simple_Mesh_Wrapper,
+                                                Wonton::Simple_State_Wrapper>
       interpolator(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper);
 
   interpolator.set_interpolation_variable("nodevars");
