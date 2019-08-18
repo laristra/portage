@@ -580,71 +580,37 @@ class UberDriver {
       return;
     }
 
-    if (source_redistributed_) {
-
-      auto & driver = core_driver_parallel_[ONWHAT];
-      
-      if (source_state_.field_type(ONWHAT, srcvarname) ==
-          Field_type::MULTIMATERIAL_FIELD) {
+    if (source_state_.field_type(ONWHAT, srcvarname) ==
+        Field_type::MULTIMATERIAL_FIELD) {
 
 #ifdef HAVE_TANGRAM
-        assert(mat_intersection_completed_);
-        assert(ONWHAT == CELL);
-
-        driver->template interpolate_mat_var<T, Interpolate>
-            (srcvarname, trgvarname, source_weights_by_mat_,
-             lower_bound, upper_bound, limiter, partial_fixup_type,
-             empty_fixup_type, conservation_tol, max_fixup_iter);
+      assert(mat_intersection_completed_);
+      assert(ONWHAT == CELL);
+      
+      interpolate_mat_var<T, Interpolate>
+          (srcvarname, trgvarname, source_weights_by_mat_,
+           lower_bound, upper_bound, limiter, partial_fixup_type,
+           empty_fixup_type, conservation_tol, max_fixup_iter);
 #endif
-        
-      } else {
-
-        assert(mesh_intersection_completed_[ONWHAT]);
-
-        driver->template interpolate_mesh_var<T, ONWHAT, Interpolate>
-            (srcvarname, trgvarname, source_weights_[ONWHAT],
-             lower_bound, upper_bound, limiter, partial_fixup_type,
-             empty_fixup_type, conservation_tol, max_fixup_iter);
-      }
 
     } else {
 
-      auto & driver = core_driver_serial_[ONWHAT];
+      assert(mesh_intersection_completed_[ONWHAT]);
       
-      if (source_state_.field_type(ONWHAT, srcvarname) ==
-          Field_type::MULTIMATERIAL_FIELD) {
-
-#ifdef HAVE_TANGRAM
-        assert(mat_intersection_completed_);
-        assert(ONWHAT == CELL);
-
-        driver->template interpolate_mat_var<T, Interpolate>
-            (srcvarname, trgvarname, source_weights_by_mat_,
-             lower_bound, upper_bound, limiter, partial_fixup_type,
-             empty_fixup_type, conservation_tol, max_fixup_iter);
-#endif
-
-      } else {
-
-        assert(mesh_intersection_completed_[ONWHAT]);
-        
-        driver->template interpolate_mesh_var<T, ONWHAT, Interpolate>
-            (srcvarname, trgvarname, source_weights_[ONWHAT],
-             lower_bound, upper_bound, limiter, partial_fixup_type,
-             empty_fixup_type, conservation_tol, max_fixup_iter);
-
-      }
-      
+      interpolate_mesh_var<T, ONWHAT, Interpolate>
+          (srcvarname, trgvarname, source_weights_[ONWHAT],
+           lower_bound, upper_bound, limiter, partial_fixup_type,
+           empty_fixup_type, conservation_tol, max_fixup_iter);
     }
 
   }  // interpolate
 
-    /*!
+  /*!
     Interpolate a mesh variable of type T residing on entity kind ONWHAT using
     previously computed intersection weights
-
+    
     @tparam T   type of variable
-
+    
     @tparam ONWHAT  Entity_kind that field resides on
 
     @tparam Interpolate  Functor for doing the interpolate from mesh to mesh
