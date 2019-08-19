@@ -557,6 +557,9 @@ run_scaling() {
     echo -e "  echo \"n_source per-axis: \${n_source}\""                    >> ${SCRIPT}
     echo -e "  echo \"n_target per-axis: \${n_target}\""                    >> ${SCRIPT}
     echo -e ""                                                              >> ${SCRIPT}
+  else
+    echo -e "  n_source=${SOURCE_MAX}"                                      >> ${SCRIPT}
+    echo -e "  n_target=${TARGET_MAX}"                                      >> ${SCRIPT}
   fi
 
   echo -e "  # run afterwards"                                              >> ${SCRIPT}
