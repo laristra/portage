@@ -737,8 +737,7 @@ class UberDriver {
                            double conservation_tol,
                            int max_fixup_iter) {
 
-    assert(source_state_.get_entity(srcvarname) == ONWHAT);
-    assert(mesh_intersection_completed_[ONWHAT]);
+    assert(source_state_.get_entity(srcvarname) == CELL);
 
     if (std::find(source_vars_to_remap_.begin(), source_vars_to_remap_.end(),
                   srcvarname) == source_vars_to_remap_.end()) {
@@ -749,11 +748,10 @@ class UberDriver {
 
     if (source_redistributed_) {
 
-      auto & driver = core_driver_parallel_[ONWHAT];
+      auto & driver = core_driver_parallel_[CELL];
       
 #ifdef HAVE_TANGRAM
       assert(mat_intersection_completed_);
-      assert(ONWHAT == CELL);
       
       driver->template interpolate_mat_var<T, Interpolate>
           (srcvarname, trgvarname, source_weights_by_mat_,
@@ -763,11 +761,10 @@ class UberDriver {
         
     } else {
 
-      auto & driver = core_driver_serial_[ONWHAT];
+      auto & driver = core_driver_serial_[CELL];
       
 #ifdef HAVE_TANGRAM
       assert(mat_intersection_completed_);
-      assert(ONWHAT == CELL);
       
       driver->template interpolate_mat_var<T, Interpolate>
           (srcvarname, trgvarname, source_weights_by_mat_,
