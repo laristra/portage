@@ -7,6 +7,7 @@ Please see the license file at the root of this repository, or at:
 
 // portage includes
 #include "portage/intersect/intersect_r3d.h"
+#include "portage/support/portage.h"
 
 // wonton includes
 #include "wonton/mesh/simple/simple_mesh.h"
@@ -24,10 +25,14 @@ TEST(intersectR3D, simple1) {
   const Wonton::Simple_State_Wrapper ss(*sourcestate);
 
   const double eps = 1e-12;
+
+  Portage::NumericTolerances_t num_tols;
+  num_tols.use_default();
+
   const Portage::IntersectR3D<Portage::Entity_kind::CELL,
                               Wonton::Simple_Mesh_Wrapper,
                               Wonton::Simple_State_Wrapper,
-                              Wonton::Simple_Mesh_Wrapper> isect{sm, ss, tm};
+                              Wonton::Simple_Mesh_Wrapper> isect{sm, ss, tm, num_tols};
   std::vector<int> srccells({0});
   const std::vector<Portage::Weights_t> srcwts = isect(0, srccells);
 
@@ -56,10 +61,14 @@ TEST(intersectR3D, simple2) {
   const Wonton::Simple_State_Wrapper ss(*sourcestate);
 
   const double eps = 1e-12;
+
+  Portage::NumericTolerances_t num_tols;
+  num_tols.use_default();
+
   const Portage::IntersectR3D<Portage::Entity_kind::CELL,
                               Wonton::Simple_Mesh_Wrapper,
                               Wonton::Simple_State_Wrapper,
-                              Wonton::Simple_Mesh_Wrapper> isect{sm, ss, tm};
+                              Wonton::Simple_Mesh_Wrapper> isect{sm, ss, tm, num_tols};
   std::vector<int> srccells({0});
   const std::vector<Portage::Weights_t> srcwts = isect(0, srccells);
 
@@ -88,10 +97,14 @@ TEST(intersectR3D, simple3) {
   const Wonton::Simple_State_Wrapper ss(*sourcestate);
 
   const double eps = 1e-12;
+
+  Portage::NumericTolerances_t num_tols;
+  num_tols.use_default();
+
   const Portage::IntersectR3D<Portage::Entity_kind::CELL,
                               Wonton::Simple_Mesh_Wrapper,
                               Wonton::Simple_State_Wrapper,
-                              Wonton::Simple_Mesh_Wrapper> isect{sm, ss, tm};
+                              Wonton::Simple_Mesh_Wrapper> isect{sm, ss, tm, num_tols};
   std::vector<int> srccells({0});
   const std::vector<Portage::Weights_t> srcwts = isect(0, srccells);
 
@@ -120,10 +133,14 @@ TEST(intersectR3D, simple4) {
   const Wonton::Simple_State_Wrapper ss(*sourcestate);
 
   const double eps = 1e-12;
+
+  Portage::NumericTolerances_t num_tols;
+  num_tols.use_default();
+
   const Portage::IntersectR3D<Portage::Entity_kind::CELL,
                               Wonton::Simple_Mesh_Wrapper,
                               Wonton::Simple_State_Wrapper,
-                              Wonton::Simple_Mesh_Wrapper> isect{sm, ss, tm};
+                              Wonton::Simple_Mesh_Wrapper> isect{sm, ss, tm, num_tols};
   std::vector<int> srccells({0});
   const std::vector<Portage::Weights_t> srcwts = isect(0, srccells);
 
@@ -152,10 +169,14 @@ TEST(intersectR3D, simple5) {
   const Wonton::Simple_State_Wrapper ss(*sourcestate);
 
   const double eps = 1e-12;
+
+  Portage::NumericTolerances_t num_tols;
+  num_tols.use_default();
+
   const Portage::IntersectR3D<Portage::Entity_kind::CELL,
                               Wonton::Simple_Mesh_Wrapper,
                               Wonton::Simple_State_Wrapper,
-                              Wonton::Simple_Mesh_Wrapper> isect{sm, ss, tm};
+                              Wonton::Simple_Mesh_Wrapper> isect{sm, ss, tm, num_tols};
   std::vector<int> srccells({0});
   const std::vector<Portage::Weights_t> srcwts = isect(0, srccells);
 
@@ -184,10 +205,14 @@ TEST(intersectR3D, simple6) {
   const Wonton::Simple_State_Wrapper ss(*sourcestate);
 
   const double eps = 1e-12;
+
+  Portage::NumericTolerances_t num_tols;
+  num_tols.use_default();
+
   const Portage::IntersectR3D<Portage::Entity_kind::CELL,
                               Wonton::Simple_Mesh_Wrapper,
                               Wonton::Simple_State_Wrapper,
-                              Wonton::Simple_Mesh_Wrapper> isect{sm, ss, tm};
+                              Wonton::Simple_Mesh_Wrapper> isect{sm, ss, tm, num_tols};
   std::vector<int> srccells({0});
   std::vector<Portage::Weights_t> srcwts = isect(0, srccells);
 
@@ -247,10 +272,14 @@ TEST(intersectR3D, simple7) {
   const Wonton::Simple_State_Wrapper ss(*sourcestate);
 
   const double eps = 1e-12;
+
+  Portage::NumericTolerances_t num_tols;
+  num_tols.use_default();
+
   const Portage::IntersectR3D<Portage::Entity_kind::CELL,
                               Wonton::Simple_Mesh_Wrapper,
                               Wonton::Simple_State_Wrapper,
-                              Wonton::Simple_Mesh_Wrapper> isect{sm, ss, tm};
+                              Wonton::Simple_Mesh_Wrapper> isect{sm, ss, tm, num_tols};
   std::vector<int> srccells({0});
   const std::vector<Portage::Weights_t> srcwts = isect(0, srccells);
   ASSERT_EQ(1, srcwts.size());
@@ -278,10 +307,14 @@ TEST(intersectR3D, simple8) {
   const Wonton::Simple_State_Wrapper ss(*sourcestate);
 
   const double eps = 1e-12;
+
+  Portage::NumericTolerances_t num_tols;
+  num_tols.use_default();
+
   const Portage::IntersectR3D<Portage::Entity_kind::CELL,
                               Wonton::Simple_Mesh_Wrapper,
                               Wonton::Simple_State_Wrapper,
-                              Wonton::Simple_Mesh_Wrapper> isect{sm, ss, tm};
+                              Wonton::Simple_Mesh_Wrapper> isect{sm, ss, tm, num_tols};
   std::vector<int> srccells({0});
   const std::vector<Portage::Weights_t> srcwts = isect(0, srccells);
 
@@ -309,10 +342,14 @@ TEST(intersectR3D, simple9) {
   const Wonton::Simple_State_Wrapper ss(*sourcestate);
 
   const double eps = 1e-12;
+
+  Portage::NumericTolerances_t num_tols;
+  num_tols.use_default();
+
   const Portage::IntersectR3D<Portage::Entity_kind::CELL,
                               Wonton::Simple_Mesh_Wrapper,
                               Wonton::Simple_State_Wrapper,
-                              Wonton::Simple_Mesh_Wrapper> isect{sm, ss, tm};
+                              Wonton::Simple_Mesh_Wrapper> isect{sm, ss, tm, num_tols};
   std::vector<int> srccells({0});
   const std::vector<Portage::Weights_t> srcwts = isect(0, srccells);
 
@@ -342,10 +379,14 @@ TEST(intersectR3D, cube_no_intersect) {
   const Wonton::Simple_State_Wrapper ss(*sourcestate);
 
   const double eps = 1e-12;
+
+  Portage::NumericTolerances_t num_tols;
+  num_tols.use_default();
+
   const Portage::IntersectR3D<Portage::Entity_kind::CELL,
                               Wonton::Simple_Mesh_Wrapper,
                               Wonton::Simple_State_Wrapper,
-                              Wonton::Simple_Mesh_Wrapper> isect{sm, ss, tm};
+                              Wonton::Simple_Mesh_Wrapper> isect{sm, ss, tm, num_tols};
   std::vector<int> srccells({0});
   const std::vector<Portage::Weights_t> srcwts = isect(0, srccells);
 
@@ -364,10 +405,14 @@ TEST(intersectR3D, cube_0_1) {
   const Wonton::Simple_State_Wrapper ss(*sourcestate);
 
   const double eps = 1e-12;
+
+  Portage::NumericTolerances_t num_tols;
+  num_tols.use_default();
+
   const Portage::IntersectR3D<Portage::Entity_kind::CELL,
                               Wonton::Simple_Mesh_Wrapper,
                               Wonton::Simple_State_Wrapper,
-                              Wonton::Simple_Mesh_Wrapper> isect{sm, ss, tm};
+                              Wonton::Simple_Mesh_Wrapper> isect{sm, ss, tm, num_tols};
   std::vector<int> srccells({0});
   const std::vector<Portage::Weights_t> srcwts = isect(0, srccells);
 

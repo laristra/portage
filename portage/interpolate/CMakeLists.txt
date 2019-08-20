@@ -13,6 +13,7 @@ set(interpolate_HEADERS
     interpolate_1st_order.h
     interpolate_2nd_order.h
     interpolate_3rd_order.h
+    interpolate_nth_order.h
     gradient.h
     quadfit.h
     PARENT_SCOPE

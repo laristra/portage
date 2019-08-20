@@ -26,12 +26,12 @@ namespace Portage {
 
 std::vector<double>
 intersect_polys_r2d(std::vector<Wonton::Point<2>> const & source_poly,
-                    std::vector<Wonton::Point<2>> const & target_poly) {
+                    std::vector<Wonton::Point<2>> const & target_poly,
+                    NumericTolerances_t num_tols) {
 
   std::vector<double> moments(3, 0);
   bool src_convex = true;
   bool trg_convex = true;
-  const double eps = 1e-14;
 
   const int POLY_ORDER = 1;  // max degree of moments to calculate
 
@@ -75,7 +75,8 @@ intersect_polys_r2d(std::vector<Wonton::Point<2>> const & source_poly,
 
   // check for convexity of target polygon
   for (int i = 0; i < size2; ++i)
-    if (r2d_orient(verts2[i], verts2[(i+1)%size2], verts2[(i+2)%size2]) < eps)
+    if (r2d_orient(verts2[i], verts2[(i+1)%size2],
+                   verts2[(i+2)%size2]) < num_tols.polygon_convexity_eps)
       trg_convex = false;
 
   // case 1:  target_poly is convex
@@ -92,9 +93,9 @@ intersect_polys_r2d(std::vector<Wonton::Point<2>> const & source_poly,
 
     // Check that the returned volume is positive (if the volume is zero,
     // i.e. abs(om[0]) < eps, then it can sometimes be slightly negative,
-    // like om[0] == -1.24811e-16. For this reason we use the condition
-    // om[0] < -eps.
-    if (om[0] < -eps) throw std::runtime_error("Negative volume");
+    // like om[0] == -1.24811e-16.
+    if (om[0] < num_tols.minimal_intersection_volume)
+       throw std::runtime_error("Negative volume");
 
     // Copy moments:
     for (int j = 0; j < 3; ++j)
@@ -104,14 +105,15 @@ intersect_polys_r2d(std::vector<Wonton::Point<2>> const & source_poly,
 
     // check for convexity of source polygon
     for (int i = 0; i < size1; ++i)
-      if (r2d_orient(verts1[i], verts1[(i+1)%size1], verts1[(i+2)%size1]) < eps)
+      if (r2d_orient(verts1[i], verts1[(i+1)%size1],
+                     verts1[(i+2)%size1]) < num_tols.polygon_convexity_eps)
         src_convex = false;
 
     // if source polygon is convex while target polygon is non-convex,
     // call the routine with the polygons reversed
 
     if (src_convex)
-      return intersect_polys_r2d(target_poly, source_poly);
+      return intersect_polys_r2d(target_poly, source_poly, num_tols);
     else {
 
       // Must divide target_poly into triangles for clipping.  Choice
@@ -205,9 +207,8 @@ intersect_polys_r2d(std::vector<Wonton::Point<2>> const & source_poly,
 
         // Check that the returned volume is positive (if the volume is zero,
         // i.e. abs(om[0]) < eps, then it can sometimes be slightly negative,
-        // like om[0] == -1.24811e-16. For this reason we use the condition
-        // om[0] < -eps.
-        if (om[0] < -eps)
+        // like om[0] == -1.24811e-16.
+        if (om[0] < num_tols.minimal_intersection_volume)
           throw std::runtime_error("Negative volume for triangle of polygon");
 
         // Accumulate moments:

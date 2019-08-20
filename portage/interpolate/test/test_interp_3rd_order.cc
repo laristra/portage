@@ -114,13 +114,18 @@ TEST(Interpolate_3rd_Order, Cell_Ctr_Const_No_Limiter_2D) {
 
   // Now do it the Portage way
 
+  // use default tolerances
+  Portage::NumericTolerances_t num_tols;
+  num_tols.use_default();
+
   // Create Interpolation object
 
   Portage::Interpolate_3rdOrder<2, Portage::Entity_kind::CELL,
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_State_Wrapper>
-      interpolator(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper);
+      interpolator(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper,
+                   num_tols);
 
   interpolator.set_interpolation_variable("cellvars");
 
@@ -233,13 +238,18 @@ TEST(Interpolate_3rd_Order, Cell_Ctr_Lin_No_Limiter_2D) {
 
   // Now do it the Portage way
 
+  // use default tolerances
+  Portage::NumericTolerances_t num_tols;
+  num_tols.use_default();
+
   // Create Interpolation object
 
   Portage::Interpolate_3rdOrder<2, Portage::Entity_kind::CELL,
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_State_Wrapper>
-      interpolator(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper);
+      interpolator(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper,
+                   num_tols);
 
   interpolator.set_interpolation_variable("cellvars");
 
@@ -369,13 +379,18 @@ TEST(Interpolate_3rd_Order, Cell_Ctr_Lin_BJ_Limiter_2D) {
 
   // Now do it the Portage way
 
+  // use default tolerances
+  Portage::NumericTolerances_t num_tols;
+  num_tols.use_default();
+
   // Create Interpolation object
 
   Portage::Interpolate_3rdOrder<2, Portage::Entity_kind::CELL,
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_State_Wrapper>
-      interpolator(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper);
+      interpolator(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper,
+                   num_tols);
 
   interpolator.set_interpolation_variable("cellvars", Portage::NOLIMITER);
 
@@ -524,13 +539,18 @@ TEST(Interpolate_3rd_Order, Cell_Ctr_Quad_No_Limiter_2D) {
 
   // Now do it the Portage way
 
+  // use default tolerances
+  Portage::NumericTolerances_t num_tols;
+  num_tols.use_default();
+
   // Create Interpolation object
 
   Portage::Interpolate_3rdOrder<2, Portage::Entity_kind::CELL,
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_State_Wrapper>
-      interpolator(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper);
+      interpolator(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper,
+                   num_tols);
 
   interpolator.set_interpolation_variable("cellvars");
 
@@ -663,13 +683,18 @@ TEST(Interpolate_3rd_Order, Cell_Ctr_Quad_BJ_Limiter_2D) {
 
   // Now do it the Portage way
 
+  // use default tolerances
+  Portage::NumericTolerances_t num_tols;
+  num_tols.use_default();
+
   // Create Interpolation object
 
   Portage::Interpolate_3rdOrder<2, Portage::Entity_kind::CELL,
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_State_Wrapper>
-      interpolator(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper);
+      interpolator(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper,
+                   num_tols);
 
   interpolator.set_interpolation_variable("cellvars", Portage::NOLIMITER);
 
@@ -805,13 +830,18 @@ TEST(Interpolate_3rd_Order, Node_Ctr_Const_No_Limiter) {
 
    // Now do it the Portage way
 
+  // use default tolerances
+  Portage::NumericTolerances_t num_tols;
+  num_tols.use_default();
+
   // Create Interpolation object
 
   Portage::Interpolate_3rdOrder<2, Portage::Entity_kind::NODE,
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_State_Wrapper>
-      interpolator(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper);
+      interpolator(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper,
+                   num_tols);
 
   interpolator.set_interpolation_variable("nodevars");
 
@@ -936,13 +966,18 @@ TEST(Interpolate_3rd_Order, Node_Ctr_Lin_No_Limiter) {
 
    // Now do it the Portage way
 
+  // use default tolerances
+  Portage::NumericTolerances_t num_tols;
+  num_tols.use_default();
+
   // Create Interpolation object
 
   Portage::Interpolate_3rdOrder<2, Portage::Entity_kind::NODE,
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_State_Wrapper>
-      interpolator(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper);
+      interpolator(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper,
+                   num_tols);
 
   interpolator.set_interpolation_variable("nodevars");
 
@@ -1068,13 +1103,18 @@ TEST(Interpolate_3rd_Order, Node_Ctr_Quad_No_Limiter) {
 
    // Now do it the Portage way
 
+  // use default tolerances
+  Portage::NumericTolerances_t num_tols;
+  num_tols.use_default();
+
   // Create Interpolation object
 
   Portage::Interpolate_3rdOrder<2, Portage::Entity_kind::NODE,
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_State_Wrapper>
-      interpolator(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper);
+      interpolator(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper,
+                   num_tols);
 
   interpolator.set_interpolation_variable("nodevars");
 
@@ -1194,13 +1234,18 @@ TEST(Interpolate_3rd_Order, Cell_Ctr_Const_No_Limiter_3D) {
 
   // Now do it the Portage way
 
+  // use default tolerances
+  Portage::NumericTolerances_t num_tols;
+  num_tols.use_default();
+
   // Create Interpolation object
 
   Portage::Interpolate_3rdOrder<3, Portage::Entity_kind::CELL,
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_State_Wrapper>
-      interpolator(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper);
+      interpolator(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper,
+                   num_tols);
 
   interpolator.set_interpolation_variable("cellvars");
 
@@ -1311,13 +1356,18 @@ TEST(Interpolate_3rd_Order, Cell_Ctr_Lin_No_Limiter_3D) {
 
   // Now do it the Portage way
 
+  // use default tolerances
+  Portage::NumericTolerances_t num_tols;
+  num_tols.use_default();
+
   // Create Interpolation object
 
   Portage::Interpolate_3rdOrder<3, Portage::Entity_kind::CELL,
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_State_Wrapper>
-      interpolator(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper);
+      interpolator(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper,
+                   num_tols);
 
   interpolator.set_interpolation_variable("cellvars");
 
@@ -1447,13 +1497,18 @@ TEST(Interpolate_3rd_Order, Cell_Ctr_BJ_Limiter_3D) {
 
   // Now do it the Portage way
 
+  // use default tolerances
+  Portage::NumericTolerances_t num_tols;
+  num_tols.use_default();
+
   // Create Interpolation object
 
   Portage::Interpolate_3rdOrder<3, Portage::Entity_kind::CELL,
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_State_Wrapper>
-      interpolator(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper);
+      interpolator(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper,
+                   num_tols);
 
   interpolator.set_interpolation_variable("cellvars", Portage::NOLIMITER);
 
@@ -1593,13 +1648,18 @@ TEST(Interpolate_3rd_Order, Cell_Ctr_Quad_No_Limiter_3D) {
 
   // Now do it the Portage way
 
+  // use default tolerances
+  Portage::NumericTolerances_t num_tols;
+  num_tols.use_default();
+
   // Create Interpolation object
 
   Portage::Interpolate_3rdOrder<3, Portage::Entity_kind::CELL,
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_State_Wrapper>
-      interpolator(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper);
+      interpolator(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper,
+                   num_tols);
 
   interpolator.set_interpolation_variable("cellvars");
 
@@ -1714,13 +1774,18 @@ TEST(Interpolate_3rd_Order, Node_Ctr_Const_No_Limiter_3D) {
 
    // Now do it the Portage way
 
+  // use default tolerances
+  Portage::NumericTolerances_t num_tols;
+  num_tols.use_default();
+
   // Create Interpolation object
 
   Portage::Interpolate_3rdOrder<3, Portage::Entity_kind::NODE,
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_State_Wrapper>
-      interpolator(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper);
+      interpolator(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper,
+                   num_tols);
 
   interpolator.set_interpolation_variable("nodevars");
 
@@ -1848,13 +1913,18 @@ TEST(Interpolate_3rd_Order, Node_Ctr_Lin_No_Limiter_3D) {
 
    // Now do it the Portage way
 
+  // use default tolerances
+  Portage::NumericTolerances_t num_tols;
+  num_tols.use_default();
+
   // Create Interpolation object
 
   Portage::Interpolate_3rdOrder<3, Portage::Entity_kind::NODE,
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_State_Wrapper>
-      interpolator(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper);
+      interpolator(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper,
+                   num_tols);
 
   interpolator.set_interpolation_variable("nodevars");
 
@@ -1983,13 +2053,18 @@ TEST(Interpolate_3rd_Order, Node_Ctr_Quad_No_Limiter_3D) {
 
    // Now do it the Portage way
 
+  // use default tolerances
+  Portage::NumericTolerances_t num_tols;
+  num_tols.use_default();
+
   // Create Interpolation object
 
   Portage::Interpolate_3rdOrder<3, Portage::Entity_kind::NODE,
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_State_Wrapper>
-      interpolator(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper);
+      interpolator(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper,
+                   num_tols);
 
   interpolator.set_interpolation_variable("nodevars");
 
@@ -2111,6 +2186,10 @@ TEST(Interpolate_3rd_Order, Node_Ctr_BJ_Limiter_3D) {
     sources_and_weights[n] = wtsvec;
   }
 
+  // use default tolerances
+  Portage::NumericTolerances_t num_tols;
+  num_tols.use_default();
+
   // Create Interpolation objects - one with no limiter and one with limiter
 
   Portage::Interpolate_3rdOrder<3, Portage::Entity_kind::NODE,
@@ -2118,14 +2197,14 @@ TEST(Interpolate_3rd_Order, Node_Ctr_BJ_Limiter_3D) {
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_State_Wrapper>
                          interpolator1(sourceMeshWrapper, targetMeshWrapper,
-                                       sourceStateWrapper);
+                                       sourceStateWrapper, num_tols);
 
   Portage::Interpolate_3rdOrder<3, Portage::Entity_kind::NODE,
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_State_Wrapper>
                          interpolator2(sourceMeshWrapper, targetMeshWrapper,
-                                       sourceStateWrapper);
+                                       sourceStateWrapper, num_tols);
 
   // Compute the target mesh vals
 

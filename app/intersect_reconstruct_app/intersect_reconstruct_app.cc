@@ -5,6 +5,7 @@
 */
 
 #include <stdlib.h>
+#include "portage/support/portage.h"
 #include "wonton/mesh/jali/jali_mesh_wrapper.h"
 #include "tangram/driver/driver.h"
 #include "tangram/reconstruct/xmof2D_wrapper.h"
@@ -77,11 +78,13 @@ void read_material_data(const Mesh_Wrapper& Mesh,
  @param[in] mat_id Material ID corresponding to a material polygon in a source cell.
  @param[in/out] mat_moments 2D vector containing moment data for a target cell by material
  (indexed first by mat_id and then by moment).
+ @param[in] numeric tolerances
  */
 void add_intersect_moments(const std::vector<Wonton::Point<2>>& source_points,
                            const std::vector<Wonton::Point<2>>& target_points,
                            const int& mat_id,
-                           std::vector<std::vector<double>>& mat_moments);
+                           std::vector<std::vector<double>>& mat_moments,
+                           Portage::NumericTolerances_t num_tols);
 
 /*!
  @brief Finds material data for a target mesh by intersecting its cells with material
@@ -94,6 +97,7 @@ void add_intersect_moments(const std::vector<Wonton::Point<2>>& source_points,
  multi-material source cells
  @param[in] source_offsets Offsets into source_mat_ids vector
  @param[in] source_mat_ids Indices of materials in each source cell, a flat vector
+ @param[in] numeric tolerances
  @param[out] cell_num_mats Number of material in each target cell
  @param[out] cell_mat_ids Indices of materials in each target cell, a flat vector
  @param[out] cell_mat_volfracs Volume fractions of materials in each target cell, a flat
@@ -107,6 +111,7 @@ void get_target_material_data(const Mesh_Wrapper& SourceMesh,
                               cellmatpoly_list,
                               const std::vector<int>& source_offsets,
                               const std::vector<int>& source_mat_ids,
+                              Portage::NumericTolerances_t num_tols,
                               std::vector<int>& cell_num_mats,
                               std::vector<int>& cell_mat_ids,
                               std::vector<double>& cell_mat_volfracs,
@@ -130,6 +135,9 @@ int main(int argc, char** argv) {
       std::endl << std::endl;
     exit(EXIT_FAILURE);
   }
+
+  Portage::NumericTolerances_t num_tols;
+  num_tols.use_default();
 
   Jali::MeshFactory mesh_factory(comm);
   mesh_factory.framework(Jali::MSTK);
@@ -209,7 +217,7 @@ int main(int argc, char** argv) {
   
   std::cout << "Intersecting target mesh with source material polygons to get material data..." << std::endl;
   get_target_material_data(source_mesh_wrapper, target_mesh_wrapper, scellmatpoly_list,
-                           source_offsets, scell_mat_ids, tcell_num_mats,
+                           source_offsets, scell_mat_ids, num_tols, tcell_num_mats,
                            tcell_mat_ids, tcell_mat_volfracs, tcell_mat_centroids);
   
   ncells_with_nmats.clear();
@@ -327,14 +335,17 @@ void read_material_data(const Mesh_Wrapper& Mesh,
  @param[in] mat_id Material ID corresponding to a material polygon in a source cell.
  @param[in/out] mat_moments 2D vector containing moment data for a target cell by material
  (indexed first by mat_id and then by moment).
+ @param[in] numeric tolerances
 */
 void add_intersect_moments(const std::vector<Wonton::Point<2>>& source_points,
                            const std::vector<Wonton::Point<2>>& target_points,
                            const int& mat_id,
-                           std::vector<std::vector<double>>& mat_moments) {
+                           std::vector<std::vector<double>>& mat_moments,
+                           Portage::NumericTolerances_t num_tols) {
+
   // Intersect source candidate matpoly with target cell
   std::vector<double> moments =
-    Portage::intersect_polys_r2d(source_points, target_points);
+    Portage::intersect_polys_r2d(source_points, target_points, num_tols);
   // Accumulate moments (if any) from the intersection
   if (moments[0] > seps) {
     //Check if new mat_id is the max of all previously added
@@ -355,6 +366,7 @@ void get_target_material_data(const Mesh_Wrapper& SourceMesh,
                               cellmatpoly_list,
                               const std::vector<int>& source_offsets,
                               const std::vector<int>& source_mat_ids,
+                              Portage::NumericTolerances_t num_tols,
                               std::vector<int>& cell_num_mats,
                               std::vector<int>& cell_mat_ids,
                               std::vector<double>& cell_mat_volfracs,
@@ -398,14 +410,16 @@ void get_target_material_data(const Mesh_Wrapper& SourceMesh,
           for (auto p : cellmatpoly_ptr->matpoly_points(ipoly))
             source_points.push_back(Wonton::Point<2>(p));
           
-          add_intersect_moments(source_points, target_points, mat_id, mat_moments);
+          add_intersect_moments(source_points, target_points, mat_id, mat_moments,
+                                num_tols);
         }
       } else { // Single material cell
         std::vector<Wonton::Point<2>> source_points;
         SourceMesh.cell_get_coordinates(isc, &source_points);
         int mat_id = source_mat_ids[source_offsets[isc]];
 
-        add_intersect_moments(source_points, target_points, mat_id, mat_moments);
+        add_intersect_moments(source_points, target_points, mat_id, mat_moments,
+                              num_tols);
       }
     } // Finish gathering material moments for target cell
     

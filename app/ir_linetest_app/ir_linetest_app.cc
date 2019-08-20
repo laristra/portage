@@ -14,6 +14,7 @@
 
 // portage includes
 #include "portage/search/search_simple.h"
+#include "portage/support/portage.h"
 extern "C" {
 #include "wonton/intersect/r3d/r2d.h"
 }
@@ -230,9 +231,11 @@ void add_intersect_data(std::vector<std::vector<double> >& mat_moments,
                         std::vector<int>& tcell_num_mats,
                         int tc,
                         int idx){
+  Portage::NumericTolerances_t num_tols;
+  num_tols.use_default();
   // Intersect source candidate matpoly with target cell
   std::vector<double> moments =
-    Portage::intersect_polys_r2d(source_points, target_points);
+    Portage::intersect_polys_r2d(source_points, target_points, num_tols);
   // Accumulate moments (if any) from the intersection
   if (moments[0] > seps) {
     for(int moment=0;moment<NUM_MOMENTS;++moment){
