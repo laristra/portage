@@ -649,7 +649,7 @@ class UberDriver {
                     class, class, class> class Interpolate
            >
   void interpolate_mesh_var(std::string srcvarname, std::string trgvarname,
-                            Portage::vector<std::vector<Weights_t>> const& sources_and_weights,
+                            Portage::vector<std::vector<Weights_t>> const& sources_and_weights_in,
                             T lower_bound, T upper_bound,
                             Limiter_type limiter,
                             Partial_fixup_type partial_fixup_type,
@@ -671,7 +671,7 @@ class UberDriver {
       auto & driver = core_driver_parallel_[ONWHAT];
       
       driver->template interpolate_mesh_var<T, ONWHAT, Interpolate>
-          (srcvarname, trgvarname, source_weights_[ONWHAT],
+          (srcvarname, trgvarname, sources_and_weights_in,
            lower_bound, upper_bound, limiter, partial_fixup_type,
            empty_fixup_type, conservation_tol, max_fixup_iter);
 
@@ -680,7 +680,7 @@ class UberDriver {
       auto & driver = core_driver_serial_[ONWHAT];
       
       driver->template interpolate_mesh_var<T, ONWHAT, Interpolate>
-          (srcvarname, trgvarname, source_weights_[ONWHAT],
+          (srcvarname, trgvarname, sources_and_weights_in,
            lower_bound, upper_bound, limiter, partial_fixup_type,
            empty_fixup_type, conservation_tol, max_fixup_iter);
       
@@ -727,7 +727,7 @@ class UberDriver {
                      class, class, class> class Interpolate
             >
   void interpolate_mat_var(std::string srcvarname, std::string trgvarname,
-                           std::vector<Portage::vector<std::vector<Weights_t>>> const& sources_and_weights_by_mat,
+                           std::vector<Portage::vector<std::vector<Weights_t>>> const& sources_and_weights_by_mat_in,
                            T lower_bound, T upper_bound,
                            Limiter_type limiter,
                            Partial_fixup_type partial_fixup_type,
@@ -750,7 +750,7 @@ class UberDriver {
       
 #ifdef HAVE_TANGRAM
       driver->template interpolate_mat_var<T, Interpolate>
-          (srcvarname, trgvarname, source_weights_by_mat_,
+          (srcvarname, trgvarname, sources_and_weights_by_mat_in,
            lower_bound, upper_bound, limiter, partial_fixup_type,
            empty_fixup_type, conservation_tol, max_fixup_iter);
 #endif
@@ -761,7 +761,7 @@ class UberDriver {
       
 #ifdef HAVE_TANGRAM
       driver->template interpolate_mat_var<T, Interpolate>
-          (srcvarname, trgvarname, source_weights_by_mat_,
+          (srcvarname, trgvarname, sources_and_weights_by_mat_in,
            lower_bound, upper_bound, limiter, partial_fixup_type,
            empty_fixup_type, conservation_tol, max_fixup_iter);
 #endif
