@@ -192,6 +192,7 @@ class Accumulate {
         
         // Calculate inverse(P*W*transpose(P))*P*W
         iB = 0;
+        int bad_count=0;
         for (auto const& particleB : source_particles) {
 	  std::vector<double> pair_result(nbasis);
           Point<dim> y = source_.get_particle_coordinates(particleB);
@@ -203,12 +204,16 @@ class Accumulate {
 
           // solve the linear system
 	  if (not zilchit) {
+            std::string error="check";
 #ifdef HAVE_LAPACKE 
-	    Matrix pair_result_matrix = moment.solve(basis_matrix, "lapack-sytr");
+	    Matrix pair_result_matrix = moment.solve(basis_matrix, "lapack-sytr", error);
 #else
-	    Matrix pair_result_matrix = moment.solve(basis_matrix);
+	    Matrix pair_result_matrix = moment.solve(basis_matrix, "inverse", error);
 #endif
 	    for (size_t i=0; i<nbasis; i++) pair_result[i] = pair_result_matrix[i][0]*weight_val[iB];
+            if (basis_matrix.is_singular() == 2 or error != "none") {
+              bad_count++;
+            }
 	  } else if (zilchit) {
 	    for (size_t i=0; i<nbasis; i++) pair_result[i] = 0.;
 	  }
