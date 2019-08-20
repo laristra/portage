@@ -411,7 +411,6 @@ namespace Portage {
     Portage::vector<std::vector<Portage::Weights_t>>         // return type
     intersect_meshes(Portage::vector<std::vector<int>> const& candidates) {
 
-      assert(search_completed_[ONWHAT]);
       mesh_intersection_completed_[ONWHAT] = true;
 
       if (source_redistributed_)
@@ -639,6 +638,8 @@ namespace Portage {
       See support/portage.h for options on limiter, partial_fixup_type and
       empty_fixup_type
 
+      Since this call explicitly takes intersection weights we don't have to
+      check if intersection step is complete
     */
 
     template<typename T = double,
@@ -648,7 +649,7 @@ namespace Portage {
       class, class, class> class Interpolate
     >
     void interpolate_mesh_var(std::string srcvarname, std::string trgvarname,
-                              Portage::vector<std::vector<Weights_t>> const& sources_and_weights,
+                              Portage::vector<std::vector<Weights_t>> const& sources_and_weights_in,
     T lower_bound, T upper_bound,
     Limiter_type limiter,
       Partial_fixup_type partial_fixup_type,
@@ -657,7 +658,6 @@ namespace Portage {
     int max_fixup_iter) {
 
       assert(source_state_.get_entity(srcvarname) == ONWHAT);
-      assert(mesh_intersection_completed_[ONWHAT]);
 
       if (std::find(source_vars_to_remap_.begin(), source_vars_to_remap_.end(),
                     srcvarname) == source_vars_to_remap_.end()) {
@@ -670,10 +670,8 @@ namespace Portage {
 
         auto & driver = core_driver_parallel_[ONWHAT];
 
-        assert(mesh_intersection_completed_[ONWHAT]);
-
         driver->template interpolate_mesh_var<T, ONWHAT, Interpolate>
-          (srcvarname, trgvarname, source_weights_[ONWHAT],
+          (srcvarname, trgvarname, sources_and_weights_in,
            lower_bound, upper_bound, limiter, partial_fixup_type,
            empty_fixup_type, conservation_tol, max_fixup_iter);
 
@@ -681,10 +679,8 @@ namespace Portage {
 
         auto & driver = core_driver_serial_[ONWHAT];
 
-        assert(mesh_intersection_completed_[ONWHAT]);
-
         driver->template interpolate_mesh_var<T, ONWHAT, Interpolate>
-          (srcvarname, trgvarname, source_weights_[ONWHAT],
+          (srcvarname, trgvarname, sources_and_weights_in,
            lower_bound, upper_bound, limiter, partial_fixup_type,
            empty_fixup_type, conservation_tol, max_fixup_iter);
 
@@ -721,6 +717,8 @@ namespace Portage {
       See support/portage.h for options on limiter, partial_fixup_type and
       empty_fixup_type
 
+      Since this call explicitly takes intersection weights we don't have to
+      check if intersection step is complete
     */
 
     template <typename T = double,
@@ -729,7 +727,7 @@ namespace Portage {
       class, class, class> class Interpolate
     >
     void interpolate_mat_var(std::string srcvarname, std::string trgvarname,
-                             std::vector<Portage::vector<std::vector<Weights_t>>> const& sources_and_weights_by_mat,
+                             std::vector<Portage::vector<std::vector<Weights_t>>> const& sources_and_weights_by_mat_in,
     T lower_bound, T upper_bound,
     Limiter_type limiter,
       Partial_fixup_type partial_fixup_type,
@@ -751,10 +749,8 @@ namespace Portage {
         auto & driver = core_driver_parallel_[CELL];
 
 #ifdef HAVE_TANGRAM
-        assert(mat_intersection_completed_);
-
-      driver->template interpolate_mat_var<T, Interpolate>
-          (srcvarname, trgvarname, source_weights_by_mat_,
+        driver->template interpolate_mat_var<T, Interpolate>
+          (srcvarname, trgvarname, sources_and_weights_by_mat_in,
            lower_bound, upper_bound, limiter, partial_fixup_type,
            empty_fixup_type, conservation_tol, max_fixup_iter);
 #endif
@@ -764,10 +760,8 @@ namespace Portage {
         auto & driver = core_driver_serial_[CELL];
 
 #ifdef HAVE_TANGRAM
-        assert(mat_intersection_completed_);
-
-      driver->template interpolate_mat_var<T, Interpolate>
-          (srcvarname, trgvarname, source_weights_by_mat_,
+        driver->template interpolate_mat_var<T, Interpolate>
+          (srcvarname, trgvarname, sources_and_weights_by_mat_in,
            lower_bound, upper_bound, limiter, partial_fixup_type,
            empty_fixup_type, conservation_tol, max_fixup_iter);
 #endif

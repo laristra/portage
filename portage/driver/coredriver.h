@@ -238,7 +238,10 @@ class CoreDriverBase {
                             Partial_fixup_type partial_fixup_type,
                             Empty_fixup_type empty_fixup_type,
                             double conservation_tol,
-                            int max_fixup_iter) {
+                            int max_fixup_iter,
+                            Parts<D, ONWHAT,
+                              SourceMesh, SourceState,
+                              TargetMesh, TargetState>* parts_pair = nullptr) {
     assert(ONWHAT == onwhat());
     auto derived_class_ptr = static_cast<CoreDriverType<ONWHAT> *>(this);
     derived_class_ptr->
@@ -249,7 +252,7 @@ class CoreDriverBase {
                                                       partial_fixup_type,
                                                       empty_fixup_type,
                                                       conservation_tol,
-                                                      max_fixup_iter);
+                                                      max_fixup_iter, parts_pair);
   }
 
 
@@ -841,12 +844,7 @@ class CoreDriver : public CoreDriverBase<D,
       Interpolate<D, ONWHAT, SourceMesh, TargetMesh, SourceState,
         InterfaceReconstructorType, Matpoly_Splitter, Matpoly_Clipper, CoordSys>;
 
-    #ifdef HAVE_TANGRAM
-      interpolator_t interpolator(source_mesh_, target_mesh_, source_state_, interface_reconstructor_);
-    #else
-      interpolator_t interpolator(source_mesh_, target_mesh_, source_state_);
-    #endif
-
+    interpolator_t interpolator(source_mesh_, target_mesh_, source_state_, num_tols_);
     interpolator.set_interpolation_variable(srcvarname, limiter);
 
     // get a handle to a memory location where the target state
