@@ -211,9 +211,10 @@ class Accumulate {
 	    Matrix pair_result_matrix = moment.solve(basis_matrix, "inverse", error);
 #endif
 	    for (size_t i=0; i<nbasis; i++) pair_result[i] = pair_result_matrix[i][0]*weight_val[iB];
-            if (basis_matrix.is_singular() == 2 or error != "none") {
-              bad_count++;
-            }
+            // NOTE: THIS CODE HAS TO WAIT FOR AN UPDATED WONTON
+            //if (basis_matrix.is_singular() == 2 or error != "none") {
+            //  bad_count++;
+            //}
 	  } else if (zilchit) {
 	    for (size_t i=0; i<nbasis; i++) pair_result[i] = 0.;
 	  }
