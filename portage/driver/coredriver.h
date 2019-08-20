@@ -897,7 +897,8 @@ class CoreDriver : public CoreDriverBase<D,
         entity_weights_t heap;
         heap.reserve(10); // size of a local vicinity
         for (auto&& weight : entity_weights) {
-          if (partition->is_found(weight.entityID, partition->source_entities_)) {
+          // constant-time lookup in average case.
+          if(partition->source_lookup_.count(weight.entityID)) {
             heap.emplace_back(weight);
           }
         }

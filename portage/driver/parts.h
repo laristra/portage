@@ -124,16 +124,20 @@ public:
     source_entities_volumes_.resize(source_part_size_);
     target_entities_volumes_.resize(target_part_size_);
     intersection_volumes_.resize(target_part_size_);
+    source_lookup_.reserve(source_part_size_);
+    target_lookup_.reserve(target_part_size_);
 
-    // set relative indexing
+    // set relative indexing and populate lookup hashtables
     for (int i = 0; i < source_part_size_; ++i) {
       auto const& s = source_entities[i];
       source_relative_index_[s] = i;
+      source_lookup_.insert(s);
     }
 
     for (int i = 0; i < target_part_size_; ++i) {
       auto const& t = target_entities[i];
       target_relative_index_[t] = i;
+      target_lookup_.insert(t);
     }
   }
 
@@ -171,19 +175,6 @@ public:
   const int& target_part_size() { return target_part_size_; }
 
   /**
-   * @brief Find a needle in a haystack.
-   *
-   * @tparam T       data type
-   * @param needle   the needle to find
-   * @param haystack the haystack where to search
-   * @return
-   */
-  template<typename T>
-  bool is_found(T needle, std::vector<T> const& haystack) {
-    return std::find(haystack.begin(), haystack.end(), needle) != haystack.end();
-  }
-
-  /**
    * @brief Retrieve the neighbors of the given entity on target mesh.
    *
    * @tparam entity_type the entity type [ALL|PARALLEL_OWNED]
@@ -202,7 +193,7 @@ public:
     // filter then
     filtered.reserve(neighbors.size());
     for (auto&& neigh : neighbors) {
-      if (is_found(neigh, target_entities_)) {
+      if (target_lookup_.count(neigh)) {
         filtered.emplace_back(neigh);
       }
     }
@@ -272,7 +263,7 @@ public:
       intersection_volumes_[i] = 0.;
       for (auto&& sw : weights) {
         // matched source cell should be in the source part
-        if (is_found(sw.entityID, source_entities_))
+        if (source_lookup_.count(sw.entityID))
           intersection_volumes_[i] += sw.weights[0];
         #if DEBUG_PART_BY_PART
           std::printf("\tweights[target:%d][source:%d]: %f\n",
@@ -835,8 +826,13 @@ public:
   }
 
 public:
+  // references to user-provided entities lists
   std::vector<int> const& source_entities_;
   std::vector<int> const& target_entities_;
+  // hashtables to have constant-time parts lookup queries in average case.
+  // remark: for lookup purposes only, not meant to be iterated.
+  std::unordered_set<int> source_lookup_;
+  std::unordered_set<int> target_lookup_;
 
 private:
 
