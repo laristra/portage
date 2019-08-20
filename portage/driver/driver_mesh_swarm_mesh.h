@@ -51,6 +51,9 @@ namespace Portage {
 /*!
   @class MSM_Driver "driver_mesh_swarm_mesh.h"
   @brief MSM_Driver provides the API to mapping from one mesh to another using particles.
+  @tparam Search compatible particle search class
+  @tparam Accumulate Meshfree accumulate class (performs particle sums)
+  @tparam Estimate Meshfree estimator class (performs calculus operations
   @tparam dim Spatial dimension of the source and target meshes
   @tparam SourceMesh_Wrapper A lightweight wrapper to a specific input mesh
   implementation that provides certain functionality.
@@ -282,7 +285,6 @@ class MSM_Driver {
       // set up smoothing lengths and extents
       Portage::vector<std::vector<std::vector<double>>> smoothing_lengths;
       Portage::vector<Wonton::Point<Dim>> weight_extents, other_extents;
-      Portage::vector<std::vector<unsigned int>> candidates; // only for faceted,scatter,parts
       Portage::vector<std::vector<std::vector<double>>> part_smoothing; // only for faceted,scatter,parts
       if (geometry_ == Meshfree::Weight::FACETED) {
         if (part_field_ == "NONE") {
