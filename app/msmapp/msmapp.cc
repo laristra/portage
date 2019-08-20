@@ -12,6 +12,7 @@ Please see the license file at the root of this repository, or at:
 #include <fstream>
 #include <vector>
 #include <string>
+#include <limits>
 
 #ifdef PORTAGE_ENABLE_MPI
 #include <mpi.h>
@@ -53,6 +54,8 @@ struct Controls {
   int example;
   double smoothing_factor;
   double boundary_factor;
+  std::string pbp_field="NONE";
+  double pbp_tolerance = std::numeric_limits<double>::infinity();
   int print_detail;
   std::string source_file="none", target_file="none";
   std::string oper8tor="none";
@@ -74,6 +77,8 @@ Controls<2> truncateControl(Controls<3> ctl) {
   result.example = ctl.example;
   result.smoothing_factor = ctl.smoothing_factor;
   result.boundary_factor = ctl.boundary_factor;
+  result.pbp_field = ctl.pbp_field;
+  result.pbp_tolerance = ctl.pbp_tolerance;
   result.print_detail = ctl.print_detail;
   result.source_file = ctl.source_file;
   result.target_file = ctl.target_file;
@@ -82,7 +87,6 @@ Controls<2> truncateControl(Controls<3> ctl) {
   result.kernel = ctl.kernel;
   result.geometry = ctl.geometry;
   result.center = ctl.center;
-
   return result;
 }
 
@@ -121,11 +125,11 @@ double field_func(int example, Portage::Point<D> coord) {
   case -2: {
     if (D==2) {
       if (sqrt(coord[0]*coord[0]+coord[1]*coord[1]) < .75) value = 1.0;
-      if (fabs(coord[0])<.5 and fabs(coord[1])<.5) value = 2.0;
+      if (fabs(coord[0])<.375 and fabs(coord[1])< .375) value = 2.0;
       if (fabs(coord[0])<.25 and fabs(coord[1]-.25) < .25) value = 3.0;
     } else if (D==3) {
       if (sqrt(coord[0]*coord[0]+coord[1]*coord[1]*coord[2]*coord[2]) < .75) value = 1.0;
-      if (fabs(coord[0])<.5 and fabs(coord[1])<.5 and fabs(coord[2])<.5) value = 2.0;
+      if (fabs(coord[0])<.375 and fabs(coord[1])<.375 and fabs(coord[2])<.375) value = 2.0;
       if (fabs(coord[0])<.25 and fabs(coord[1])<.25 and fabs(coord[2]-.25)<.25) value = 3.0;
     }
     break;
@@ -306,7 +310,8 @@ public:
       msmdriver(sourceMeshWrapper, sourceStateWrapper,
                 targetMeshWrapper, targetStateWrapper2,
                 controls_.smoothing_factor, controls_.boundary_factor, 
-                controls_.geometry, controls_.kernel, controls_.center);
+                controls_.geometry, controls_.kernel, controls_.center, 
+                controls_.pbp_field, controls_.pbp_tolerance);
     Portage::Meshfree::EstimateType estimate=Portage::Meshfree::LocalRegression;
     if (oper8tor == Portage::Meshfree::Operator::VolumeIntegral)
       estimate=Portage::Meshfree::OperatorRegression;
@@ -417,7 +422,7 @@ public:
           std::printf("%19.13le %19.13le %19.13le\n", value, cellvecout2[c], serror);
         } else {
           std::printf("%19.13le %19.13le\n", value, cellvecout2[c]);
-        }
+        }                                                         
       }
       totserr = std::max(totserr, std::fabs(serror));
     }
@@ -428,6 +433,18 @@ public:
         totint += cellvecout2[c];
       }
     }
+
+    if (controls_.center == Portage::Meshfree::Scatter) {
+      for (int i=0; i<nsrccells; i++) {
+        Portage::Point<Dimension> ccen;
+        sourceMeshWrapper.cell_centroid(i, &ccen);
+        std::printf("source-data %19.13le %19.13le ", ccen[0], ccen[1]);
+        if (Dimension==3) std::printf("%19.13le ", ccen[2]);
+        double value = field_func<Dimension>(controls_.example, ccen);
+        std::printf("%19.13le", value);
+        std::printf("\n");
+      }
+    }        
 
     std::printf("\n\nLinf NORM OF MSM CELL ERROR: %le\n\n", totserr);
     if (oper8tor == Portage::Meshfree::Operator::VolumeIntegral)
@@ -608,7 +625,8 @@ protected:
       msmdriver(sourceMeshWrapper, sourceStateWrapper,
                 targetMeshWrapper, targetStateWrapper2,
                 controls_.smoothing_factor, controls_.boundary_factor,
-                controls_.geometry, controls_.kernel, controls_.center);
+                controls_.geometry, controls_.kernel, controls_.center, 
+                controls_.pbp_field, controls_.pbp_tolerance);
     msmdriver.set_remap_var_names(remap_fields, remap_fields,
                                   Portage::Meshfree::LocalRegression, basis,
                                   oper8tor, domains, data);
@@ -800,6 +818,9 @@ void usage() {
     order, int, choice of 1 or 2:           2\n\
     example, int, choice of -1...3:         3\n\
     double, smoothing factor:             1.5\n\
+    double, boundary factor:              0.5\n\
+    string, internal boundary field:   a_name\n\
+    double, boundary tolerance:         0.125\n\
     print detail, choice of 0 or 1:         1\n\
     geometry:                        tensor  \n\
     kernel:                          b4      \n\
@@ -959,17 +980,18 @@ int main(int argc, char** argv) {
   file >> ctl.example;
   file >> ctl.smoothing_factor;
   file >> ctl.boundary_factor;
+  file >> ctl.pbp_field;
+  file >> ctl.pbp_tolerance;
   file >> ctl.print_detail;
-  try {
+  {
     std::string value;
     file >> value;
     if      (value == "tensor")   ctl.geometry = Portage::Meshfree::Weight::TENSOR;
     else if (value == "elliptic") ctl.geometry = Portage::Meshfree::Weight::ELLIPTIC;
     else if (value == "faceted")  ctl.geometry = Portage::Meshfree::Weight::FACETED;
     else throw std::runtime_error("invalid value for geometry");
-  } catch (...) {
   }
-  try {
+  {
     std::string value;
     file >> value;
     if      (value == "b4")            ctl.kernel = Portage::Meshfree::Weight::B4;
@@ -979,15 +1001,13 @@ int main(int argc, char** argv) {
     else if (value == "invsqrt")       ctl.kernel = Portage::Meshfree::Weight::INVSQRT;
     else if (value == "coulomb")       ctl.kernel = Portage::Meshfree::Weight::COULOMB;
     else throw std::runtime_error("invalid value for kernel");
-  } catch (...) {
   }
-  try {
+  {
     std::string value;
     file >> value;
     if      (value == "scatter") ctl.center = Portage::Meshfree::Scatter;
     else if (value == "gather")  ctl.center = Portage::Meshfree::Gather;
     else throw std::runtime_error("invalid value for center");
-  } catch (...) {
   }
   try {
     file >> ctl.source_file;
