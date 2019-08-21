@@ -379,6 +379,9 @@ std::shared_ptr<Swarm<dim>> SwarmFactory(MeshWrapper &wrapper, Portage::Entity_k
 
 /*!
  * @brief Create a Swarm from an set of arbitary mesh wrappers.
+ * This factory is useful for mapping from several meshes at once, 
+ * e.g. for analysis of multiple times, or multiple simulations at the same set of spatial points, 
+ * to obtain statistical properties like average, confidence bounds, and uncertaintities, for example.
  * @tparm dim Spatial dimension
  * @tparm MeshWrapper class representing a mesh wrapper
  * @param wrappers Input mesh wrappers

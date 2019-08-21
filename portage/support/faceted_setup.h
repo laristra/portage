@@ -212,7 +212,7 @@ namespace Portage {
       }
 
 
-      /** @brief Function to setup faceted weight data given a field that marks internal boundaries.
+      /** @brief Function to setup faceted weight data given a field that marks regions of the mesh.
        *
        * @param[in]  mesh Mesh wrapper from which to pull face normals and distances
        * @param[in]  state State wrapper containing working field 
@@ -231,7 +231,7 @@ namespace Portage {
        * the centroid of the i-th cell. For 3D faces that are non-planar, the normal is the 
        * average of the normals to the triangles formed by adjacent vertices and face centroids.  
        *
-       * The setup occurs in the normal fashion initially using @code smoothing_factor interior
+       * The setup occurs in the normal fashion initially using @code smoothing_factor in the interior
        * and @code boundary_factor on the boundary. A second scan through the mesh is performed 
        * to test the value of @code field at cell center @code i and neighbor @code j. For face @code k
        * of cell @code i, and neighbor cell j_k, if 

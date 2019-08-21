@@ -281,6 +281,9 @@ shared_ptr<SwarmState<dim>> SwarmStateFactory(
 
 /*! @brief SwarmState factory, given a set of mesh state wrappers. Only does double fields.
  * Copies fields from mesh state wrappers to a swarm state wrapper of the total size.
+ * This constructor is useful for mapping from several meshes at once, 
+ * e.g. for analysis of multiple times, or multiple simulations at the same set of spatial points, 
+ * to obtain statistical properties like average, confidence bounds, and uncertaintities, for example.
  * @param states the field data on the meshes
  * @param entity entity on which to get data (e.g. CELL, NODE, etc.)
  *
