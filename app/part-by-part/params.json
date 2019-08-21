@@ -1,0 +1,36 @@
+{
+  "input": {
+    "mesh": {
+      "dimension": 3,
+      "source": "/Users/hoby/dev/ristra/portage/data/mesh/semi3-coarse.exo",
+      "target": "/Users/hoby/dev/ristra/portage/data/mesh/semi3-fine.exo",
+      "conformal": true,
+      "export": false
+    },
+    "remap": {
+      "kind": "cell",
+      "order": 1,
+      "limiter": false,
+      "fields": [
+        { "name": "density", "expr": "" },
+        { "name": "temperature", "expr": "" }
+      ]
+    }
+  },
+  "parts": [
+    {
+      "field": "density",
+      "entities": [
+        { "uid": 1, "source": [], "target": [] },
+        { "uid": 2, "source": [], "target": [] }
+      ]
+    },
+    {
+      "field": "temperature",
+      "entities": [
+        { "uid": 3, "source": [], "target": [] },
+        { "uid": 4, "source": [], "target": [] }
+      ]
+    }
+  ]
+}
