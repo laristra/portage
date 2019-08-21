@@ -632,7 +632,7 @@ TEST_F(IntegrateDriverTest3D, 3D_LinearFieldLinearBasis) {
     auto tgt_swarm_ptr = Portage::Meshfree::SwarmFactory(-1.,-1.,1.,1.,ntarget,1);
     auto tgt_state_ptr = std::make_shared<Portage::Meshfree::SwarmState<2>>(*tgt_swarm_ptr);
 
-    auto tvalues_ptr = std::make_shared<std::vector<double>>(ntarget);
+    auto tvalues_ptr = std::make_shared<Portage::vector<double>>(ntarget);
     tgt_state_ptr->add_field("indicate",  tvalues_ptr);
 
     Portage::vector<std::vector<std::vector<double>>> smoothing;
@@ -661,15 +661,15 @@ TEST_F(IntegrateDriverTest3D, 3D_LinearFieldLinearBasis) {
                                Portage::Meshfree::LocalRegression, 
                                Portage::Meshfree::Basis::Unitary,
                                Portage::Meshfree::Operator::LastOperator,
-                               std::vector<Portage::Meshfree::Operator::Domain>(0),
-                               std::vector<std::vector<Point<2>>>(0,std::vector<Point<2>>(0)),
+                               Portage::vector<Portage::Meshfree::Operator::Domain>(0),
+                               Portage::vector<std::vector<Point<2>>>(0,std::vector<Point<2>>(0)),
                                "indicate", 0.25, psmoothing);
 
     driver.run();
 
     Portage::Meshfree::SwarmState<2>::DblVecPtr indicator_ptr;
     tgt_state_ptr->get_field("indicate", indicator_ptr);
-    std::vector<double> &indicator=*indicator_ptr;
+    Portage::vector<double> &indicator=*indicator_ptr;
 
 #ifdef DEBUG_HERE
     std::cout << "dat={"<<std::endl;
@@ -736,7 +736,7 @@ TEST_F(IntegrateDriverTest3D, 3D_LinearFieldLinearBasis) {
     auto tgt_swarm_ptr = Portage::Meshfree::SwarmFactory(-1.,-1.,-1.,1.,1.,1.,ntarget,1);
     auto tgt_state_ptr = std::make_shared<Portage::Meshfree::SwarmState<3>>(*tgt_swarm_ptr);
 
-    auto tvalues_ptr = std::make_shared<std::vector<double>>(ntarget);
+    auto tvalues_ptr = std::make_shared<Portage::vector<double>>(ntarget);
     tgt_state_ptr->add_field("indicate",  tvalues_ptr);
 
     Portage::vector<std::vector<std::vector<double>>> smoothing;
@@ -773,7 +773,7 @@ TEST_F(IntegrateDriverTest3D, 3D_LinearFieldLinearBasis) {
 
     Portage::Meshfree::SwarmState<3>::DblVecPtr indicator_ptr;
     tgt_state_ptr->get_field("indicate", indicator_ptr);
-    std::vector<double> &indicator=*indicator_ptr;
+    Portage::vector<double> &indicator=*indicator_ptr;
 
 #ifdef DEBUG_HERE
     std::cout << "dat={"<<std::endl;

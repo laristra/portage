@@ -539,14 +539,14 @@ remap(std::vector<std::string> const &src_varnames,
     // get source part assignments
     shared_ptr<vector<double>> sfpart_ptr;
     source_state_.get_field(part_field_, sfpart_ptr);
-    std::vector<double> &sfpart(*sfpart_ptr);
+    Portage::vector<double> &sfpart(*sfpart_ptr);
 
     // make storage for target part assignments
     size_t ns=source_swarm_.num_particles(Entity_type::PARALLEL_OWNED);
     size_t nt=target_swarm_.num_particles(Entity_type::PARALLEL_OWNED);
 
     // create accumulator to evaluate weight function on source cells
-    std::vector<Weight::Kernel> step_kern(ns, Weight::STEP);
+    vector<Weight::Kernel> step_kern(ns, Weight::STEP);
     Accumulate<Dim, SourceSwarm, TargetSwarm>
       accumulator(source_swarm_, target_swarm_,
                   estimator_type_, weight_center_,
@@ -557,16 +557,17 @@ remap(std::vector<std::string> const &src_varnames,
     // loop over target points and set part assignments
     std::vector<double> tfpart(nt);
     for (size_t i=0; i<nt; i++) {
-      for (size_t j=0; j<candidates[i].size(); j++) {
-        double weight = accumulator.weight(i, candidates[i][j]);
+      std::vector<unsigned int> possibles = candidates[i];
+      for (size_t j=0; j<possibles.size(); j++) {
+        double weight = accumulator.weight(i, possibles[j]);
         if (weight > 0.) {
-	  double part_val = sfpart[candidates[i][j]];
+	  double part_val = sfpart[possibles[j]];
 	  tfpart[i] = part_val;
 #undef DEBUG_HERE
 #ifdef DEBUG_HERE
           if (Dim==2) {
             Wonton::Point<Dim> p1,p2;
-            size_t nbr=candidates[i][j];
+            size_t nbr=possibles[j];
             p1=source_swarm_.get_particle_coordinates(nbr);
             p2=target_swarm_.get_particle_coordinates(i);
             double h=part_smoothing_[nbr][0][2];
@@ -583,9 +584,10 @@ remap(std::vector<std::string> const &src_varnames,
     // loop over target points and dismiss neighbors that aren't in the same part
     for (size_t i=0; i<nt; i++) {
       std::vector<unsigned int> new_candidates;
-      for (size_t j=0; j<candidates[i].size(); j++) {
-        if (fabs(tfpart[i]-sfpart[candidates[i][j]]) < part_tolerance_) {
-	  new_candidates.push_back(candidates[i][j]);
+      std::vector<unsigned int> possibles = candidates[i];
+      for (size_t j=0; j<possibles.size(); j++) {
+        if (fabs(tfpart[i]-sfpart[possibles[j]]) < part_tolerance_) {
+	  new_candidates.push_back(possibles[j]);
         }
       }
       candidates[i] = new_candidates;
