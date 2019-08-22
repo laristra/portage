@@ -301,7 +301,7 @@ class MSM_Driver {
             // Store these smoothing lengths off on the side for later use in the swarm driver.
             Portage::vector<Wonton::Point<Dim>> dummy_extents;
             Meshfree::Weight::faceted_setup_cell<Dim,SourceMesh_Wrapper>
-              (source_mesh_, part_smoothing, dummy_extents, 0.25, 1.0);
+              (source_mesh_, part_smoothing, dummy_extents, 0.25, 0.25);
 
             // Get usual smoothing lengths and extents 
             Meshfree::Weight::faceted_setup_cell<Dim,SourceMesh_Wrapper>
