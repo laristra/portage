@@ -5,7 +5,6 @@
 */
 
 #include <sys/time.h>
-
 #include <cstdio>
 #include <cstdlib>
 #include <fstream>
@@ -17,11 +16,9 @@
 #include <cmath>
 #include <set>
 #include <numeric>
-
 #include <mpi.h>
-
 #ifdef ENABLE_PROFILE
-#include "ittnotify.h"
+  #include "ittnotify.h"
 #endif
 
 // Jali mesh infrastructure library
@@ -31,34 +28,30 @@
 #include "MeshFactory.hh"
 #include "JaliStateVector.h"
 #include "JaliState.h"
-
+#include "user_field.h"
 
 #include "portage/support/portage.h"
 #include "portage/support/mpi_collate.h"
+#include "portage/support/timer.h"
 #include "portage/driver/mmdriver.h"
+#include "portage/driver/write_to_gmv.h"
 #include "wonton/mesh/jali/jali_mesh_wrapper.h"
 #include "wonton/state/jali/jali_state_wrapper.h"
 
 #ifdef HAVE_TANGRAM
-#include "tangram/utility/get_material_moments.h"
-#include "tangram/driver/driver.h"
-#include "tangram/reconstruct/MOF.h"
-#include "tangram/reconstruct/VOF.h"
-
-#ifdef HAVE_XMOF2D
-  #include "tangram/reconstruct/xmof2D_wrapper.h"
-  #define IR_2D XMOF2D_Wrapper
-#else
-  #define IR_2D MOF
+  #include "tangram/utility/get_material_moments.h"
+  #include "tangram/driver/driver.h"
+  #include "tangram/reconstruct/MOF.h"
+  #include "tangram/reconstruct/VOF.h"
+  #ifdef HAVE_XMOF2D
+    #include "tangram/reconstruct/xmof2D_wrapper.h"
+    #define IR_2D XMOF2D_Wrapper
+  #else
+    #define IR_2D MOF
+  #endif
 #endif
 
-#endif
-
-#include "portage/driver/write_to_gmv.h"
-
-// For parsing and evaluating user defined expressions in apps
-
-#include "user_field.h"
+#define ENABLE_TIMINGS 1
 
 using Wonton::Jali_Mesh_Wrapper;
 using Portage::argsort;
@@ -82,14 +75,13 @@ using Portage::reorder;
 
 //////////////////////////////////////////////////////////////////////
 
-
 int print_usage() {
   std::cout << std::endl;
   std::cout << "Usage: portageapp_t-junction_jali " <<
       "--dim=2|3 --nsourcecells=N --ntargetcells=M --conformal=y|n \n" << 
       "--remap_order=1|2 \n" <<
       "--limiter=barth_jespersen --mesh_min=0. --mesh_max=1. \n" <<
-      "--output_meshes=y|n --convergence_study=NREF \n\n";
+      "--output_meshes=y|n --convergence_study=NREF --only_threads=y|n\n\n";
 
   std::cout << "--dim (default = 2): spatial dimension of mesh\n\n";
 
@@ -137,6 +129,13 @@ int print_usage() {
   std::cout << "  If 'y', the source and target meshes are output with the " <<
       "remapped field attached as input.exo and output.exo. \n\n";
 
+#if ENABLE_TIMINGS
+  std::cout << "--only_threads (default = n)\n";
+  std::cout << " enable if you want to profile only threads scaling\n\n";
+
+  std::cout << "--scaling (default = strong)\n";
+  std::cout << " specify the scaling study type [strong|weak]\n\n";
+#endif
   return 0;
 }
 //////////////////////////////////////////////////////////////////////
@@ -254,7 +253,6 @@ class interface_reconstructor_factory<3, MeshWrapper>{
 // return the L1 and L2 error norm in the remapped field w.r.t. to an
 // analytically imposed field. If no field was imposed, the errors are
 // returned as 0
-
 template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
                            std::shared_ptr<Jali::Mesh> targetMesh,
                            Portage::Limiter_type limiter,
@@ -263,7 +261,8 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
                            std::string field_filename,
                            bool mesh_output, int rank, int numpe,
                            Jali::Entity_kind entityKind,
-                           double *L1_error, double *L2_error);
+                           double *L1_error, double *L2_error,
+                           std::shared_ptr<Profiler> profiler = nullptr);
 
 // Forward declaration of function to run interface reconstruction and
 // write the material polygons and their associated fields to a GMV file
@@ -274,9 +273,6 @@ int main(int argc, char** argv) {
   __itt_pause();
 #endif
 
-
-
-  struct timeval begin, end, diff;
 
   // Initialize MPI
   int mpi_init_flag;
@@ -307,8 +303,12 @@ int main(int argc, char** argv) {
   Portage::Limiter_type limiter = Portage::Limiter_type::NOLIMITER;
   double srclo = 0.0, srchi = 1.0;  // bounds of generated mesh in each dir
 
-  // Parse the input
+#if ENABLE_TIMINGS
+  bool only_threads = false;
+  std::string scaling_type = "strong";
+#endif
 
+  // Parse the input
   for (int i = 1; i < argc; i++) {
     std::string arg(argv[i]);
     std::size_t len = arg.length();
@@ -366,7 +366,19 @@ int main(int argc, char** argv) {
         std::cerr << "Number of meshes for convergence study should be greater than 0" << std::endl;
         throw std::exception();
       }
-    } else if (keyword == "help") {
+#if ENABLE_TIMINGS
+      assert(n_converge == 1);
+#endif
+    }
+#if ENABLE_TIMINGS
+    else if (keyword == "only_threads"){
+      only_threads = (numpe == 1 and valueword == "y");
+    } else if (keyword == "scaling") {
+      assert(valueword == "strong" or valueword == "weak");
+      scaling_type = valueword;
+    }
+#endif
+    else if (keyword == "help") {
       print_usage();
       MPI_Abort(MPI_COMM_WORLD, -1);
     } else
@@ -419,8 +431,25 @@ int main(int argc, char** argv) {
       MPI_Abort(MPI_COMM_WORLD, -1);
     }
 
-  gettimeofday(&begin, 0);
-
+#if ENABLE_TIMINGS
+  auto profiler = std::make_shared<Profiler>();
+  // save params for after
+  profiler->params.ranks   = numpe;
+  profiler->params.nsource = std::pow(nsourcecells, dim);
+  profiler->params.ntarget = std::pow(ntargetcells, dim);
+  profiler->params.order   = interp_order;
+  profiler->params.nmats   = material_field_expressions.size();
+  profiler->params.output  = "t-junction_" + scaling_type + "_scaling_"
+                           + std::string(only_threads ? "omp.dat": "mpi.dat");
+  #if defined(_OPENMP)
+    profiler->params.threads = omp_get_max_threads();
+  #endif
+  // start timers here
+  auto start = timer::now();
+  auto tic = start;
+#else
+  std::shared_ptr<Profiler> profiler = nullptr;
+#endif
 
   // The mesh factory and mesh setup
   std::shared_ptr<Jali::Mesh> source_mesh, target_mesh;
@@ -467,18 +496,20 @@ int main(int argc, char** argv) {
                          ntargetcells, ntargetcells, ntargetcells);
     }
 
-    gettimeofday(&end, 0);
-    timersub(&end, &begin, &diff);
-    float seconds = diff.tv_sec + 1.0E-6*diff.tv_usec;
+#if ENABLE_TIMINGS
+    profiler->time.mesh_init = timer::elapsed(tic);
+
     if (rank == 0) {
+      float const seconds = profiler->time.mesh_init * 1.E3;
       if (n_converge == 1)
         std::cout << "Mesh Initialization Time: " << seconds << std::endl;
       else
         std::cout << "Mesh Initialization Time (Iteration i): " <<
             seconds << std::endl;
     }
-    gettimeofday(&begin, 0);
 
+    tic = timer::now();
+#endif
     // Make sure we have the right dimension and that source and
     // target mesh dimensions match (important when one or both of the
     // meshes are read in)
@@ -493,13 +524,13 @@ int main(int argc, char** argv) {
         run<2>(source_mesh, target_mesh, limiter, interp_order,
                material_field_expressions,
                field_output_filename, mesh_output,
-               rank, numpe, entityKind, &(l1_err[i]), &(l2_err[i]));
+               rank, numpe, entityKind, &(l1_err[i]), &(l2_err[i]), profiler);
         break;
       case 3:
         run<3>(source_mesh, target_mesh, limiter, interp_order,
                material_field_expressions,
                field_output_filename, mesh_output,
-               rank, numpe, entityKind, &(l1_err[i]), &(l2_err[i]));
+               rank, numpe, entityKind, &(l1_err[i]), &(l2_err[i]), profiler);
         break;
       default:
         std::cerr << "Dimension not 2 or 3" << std::endl;
@@ -510,17 +541,17 @@ int main(int argc, char** argv) {
     std::cout << "L2 norm of error for iteration " << i << " is " <<
         l2_err[i] << std::endl;
 
-    gettimeofday(&end, 0);
-    timersub(&end, &begin, &diff);
-    seconds = diff.tv_sec + 1.0E-6*diff.tv_usec;
+#if ENABLE_TIMINGS
+    profiler->time.remap = timer::elapsed(tic);
+
     if (rank == 0) {
+      float const seconds = profiler->time.remap * 1.E3;
       if (n_converge == 1)
         std::cout << "Remap Time: " << seconds << std::endl;
       else
         std::cout << "Remap Time (Iteration i): " << seconds << std::endl;
     }
-    gettimeofday(&begin, 0);
-
+#endif
 
     // if convergence study, double the mesh resolution
     nsourcecells *= 2;
@@ -535,13 +566,21 @@ int main(int argc, char** argv) {
   }
 
   MPI_Finalize();
+
+#if ENABLE_TIMINGS
+  profiler->time.total = timer::elapsed(start);
+
+  // dump timing data
+  if (rank == 0) {
+    profiler->dump();
+  }
+#endif
 }
 
 
 // Run a remap between two meshes and return the L1 and L2 error norms
 // with respect to the specified field. If a field was not specified and
 // remap only volume fractions (and if specified, centroids)
-
 template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
                            std::shared_ptr<Jali::Mesh> targetMesh,
                            Portage::Limiter_type limiter,
@@ -549,7 +588,8 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
                            std::vector<std::string> material_field_expressions,
                            std::string field_filename, bool mesh_output,
                            int rank, int numpe, Jali::Entity_kind entityKind,
-                           double *L1_error, double *L2_error) {
+                           double *L1_error, double *L2_error,
+                           std::shared_ptr<Profiler> profiler) {
 
   if (rank == 0)
     std::cout << "starting portageapp_t-junction_jali...\n";
@@ -557,15 +597,6 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
   // Wrappers for interfacing with the underlying mesh data structures.
   Wonton::Jali_Mesh_Wrapper sourceMeshWrapper(*sourceMesh);
   Wonton::Jali_Mesh_Wrapper targetMeshWrapper(*targetMesh);
-
-  const int nsrccells = sourceMeshWrapper.num_owned_cells() +
-      sourceMeshWrapper.num_ghost_cells();
-  const int ntarcells = targetMeshWrapper.num_owned_cells();
-
-  const int nsrcnodes = sourceMeshWrapper.num_owned_nodes() +
-      sourceMeshWrapper.num_ghost_nodes();
-  const int ntarnodes = targetMeshWrapper.num_owned_nodes();
-
 
   // Native jali state managers for source and target
   std::shared_ptr<Jali::State> sourceState(Jali::State::create(sourceMesh));
@@ -576,14 +607,20 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
   Wonton::Jali_State_Wrapper targetStateWrapper(*targetState);
 
 
-  // Read volume fraction and centroid data from file
-
   int nmats;
   std::vector<int> cell_num_mats;
   std::vector<int> cell_mat_ids;  // flattened 2D array
   std::vector<double> cell_mat_volfracs;  // flattened 2D array
   std::vector<Wonton::Point<dim>> cell_mat_centroids;  // flattened 2D array
 
+  const int nsrccells = sourceMeshWrapper.num_owned_cells()
+                      + sourceMeshWrapper.num_ghost_cells();
+  const int nsrcnodes = sourceMeshWrapper.num_owned_nodes()
+                      + sourceMeshWrapper.num_ghost_nodes();
+  const int ntarcells = targetMeshWrapper.num_owned_cells();
+  const int ntarnodes = targetMeshWrapper.num_owned_nodes();
+
+  // Read volume fraction and centroid data from file
   tjunction_material_data<Wonton::Jali_Mesh_Wrapper>(sourceMeshWrapper,
                                                      cell_num_mats,
                                                      cell_mat_ids,
@@ -727,6 +764,9 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
   Wonton::Executor_type *executor = (numpe > 1) ? &mpiexecutor : nullptr;
   
   // Perform interface reconstruction
+#if ENABLE_TIMINGS 
+  auto tic = timer::now();
+#endif
 
   std::vector<Tangram::IterativeMethodTolerances_t> tols(2,{1000, 1e-15, 1e-15});
   interface_reconstructor_factory<dim, Wonton::Jali_Mesh_Wrapper> source_IRFactory(sourceMeshWrapper, tols);
@@ -737,7 +777,6 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
                                                 cell_mat_volfracs,
                                                 cell_mat_centroids);
   source_interface_reconstructor->reconstruct();
-
 
   // Material fields are evaluated at material polygon centroids.
   // This allows us to test for near zero error in cases where an
@@ -816,6 +855,10 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
  }
 
   if (numpe > 1) MPI_Barrier(MPI_COMM_WORLD);
+
+#if ENABLE_TIMINGS 
+  profiler->time.interface = timer::elapsed(tic);
+#endif
 
   if (dim == 2) {
     if (interp_order == 1) {
@@ -896,16 +939,55 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
   // Dump some timing information
   if (numpe > 1) MPI_Barrier(MPI_COMM_WORLD);
 
+#if !ENABLE_TIMINGS
+
+  // Cheesy printout results
+  for (int m = 0; m < n_total_mats; m++) {
+    std::vector<int> matcells;
+    targetStateWrapper.mat_get_cells(m, &matcells);
+
+    double const *matvf;
+    targetStateWrapper.mat_get_celldata("mat_volfracs", m, &matvf);
+
+    Wonton::Point<dim> const *matcen;
+    targetStateWrapper.mat_get_celldata("mat_centroids", m, &matcen);
+
+    double const *cellmatdata;
+    targetStateWrapper.mat_get_celldata("cellmatdata", m, &cellmatdata);
+
+    int nmatcells = matcells.size();
+
+
+    std::cout << "\n----target cell global indices on rank "<< rank<<" for material "<< m << ": ";
+    for (int ic = 0; ic < nmatcells; ic++) std::cout <<
+      targetMeshWrapper.get_global_id(matcells[ic], Wonton::Entity_kind::CELL) << " ";
+    std::cout << std::endl; 
+    
+    std::cout << "----mat_volfracs on rank "<< rank<<" for material "<< m <<": ";
+    for (int ic = 0; ic < nmatcells; ic++) std::cout <<matvf[ic]<< " ";
+    std::cout << std::endl; 
+    
+    std::cout << "----mat_centroids on rank "<< rank<<" for material "<< m <<": ";
+    for (int ic = 0; ic < nmatcells; ic++) std::cout << "(" << matcen[ic][0]<<", "<< matcen[ic][1]<< ") ";
+    std::cout << std::endl; 
+    
+    std::cout << "----cellmatdata on rank "<< rank<<" for material "<< m <<": ";
+    for (int ic = 0; ic < nmatcells; ic++) std::cout <<cellmatdata[ic]<< " ";
+    std::cout << std::endl << std::endl; 
+
+  }
+#endif
+
+  return;
 
   // Perform interface reconstruction on target mesh for pretty pictures
   // and error computation of material fields
-
   offsets.resize(ntarcells);
   offsets[0] = 0;
   for (int i = 1; i < ntarcells; i++)
     offsets[i] = offsets[i-1] + targetStateWrapper.cell_get_num_mats(i-1);
   int ntotal = offsets[ntarcells-1] +
-      targetStateWrapper.cell_get_num_mats(ntarcells-1);
+               targetStateWrapper.cell_get_num_mats(ntarcells-1);
 
   std::vector<int> target_cell_num_mats(ntarcells, 0);
   std::vector<int> target_cell_mat_ids(ntotal);
@@ -934,44 +1016,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
       ncmats++;
     }
   }
-  
-  // Cheesy printout results
-  for (int m = 0; m < n_total_mats; m++) {
-    std::vector<int> matcells;
-    targetStateWrapper.mat_get_cells(m, &matcells);
 
-    double const *matvf;
-    targetStateWrapper.mat_get_celldata("mat_volfracs", m, &matvf);
-
-    Wonton::Point<dim> const *matcen;
-    targetStateWrapper.mat_get_celldata("mat_centroids", m, &matcen);
-
-    double const *cellmatdata;
-    targetStateWrapper.mat_get_celldata("cellmatdata", m, &cellmatdata);
-
-    int nmatcells = matcells.size();
-    
-    std::cout << "\n----target cell global indices on rank "<< rank<<" for material "<< m << ": ";
-    for (int ic = 0; ic < nmatcells; ic++) std::cout <<
-      targetMeshWrapper.get_global_id(matcells[ic], Wonton::Entity_kind::CELL) << " ";
-    std::cout << std::endl; 
-    
-    std::cout << "----mat_volfracs on rank "<< rank<<" for material "<< m <<": ";
-    for (int ic = 0; ic < nmatcells; ic++) std::cout <<matvf[ic]<< " ";
-    std::cout << std::endl; 
-    
-    std::cout << "----mat_centroids on rank "<< rank<<" for material "<< m <<": ";
-    for (int ic = 0; ic < nmatcells; ic++) std::cout << "(" << matcen[ic][0]<<", "<< matcen[ic][1]<< ") ";
-    std::cout << std::endl; 
-    
-    std::cout << "----cellmatdata on rank "<< rank<<" for material "<< m <<": ";
-    for (int ic = 0; ic < nmatcells; ic++) std::cout <<cellmatdata[ic]<< " ";
-    std::cout << std::endl << std::endl; 
-    
-  }
-  
-  
-  return;
   // INTERFACE RECONSTRUCTION ON THE TARGET IS PROBLEMATIC AT THE MOMENT
   // DUE TO THE HANDLING OF GHOSTS
 
@@ -1132,5 +1177,5 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
     if (rank == 0)
       std::cout << "...done." << std::endl;
   }
-
 }
+ 
