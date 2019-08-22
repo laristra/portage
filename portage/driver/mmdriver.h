@@ -1026,108 +1026,99 @@ int MMDriver<Search, Intersect, Interpolate, D,
       }
     }
 
-    // If any processor is adding this material to the target state,
-    // add it on all the processors
+
+    // add material to target state (even if this material does not
+    // overlap this processor)
+
+    int nmatstrg = target_state_.num_materials();
+    bool found = false;
+    int m2 = -1;
+    for (int i = 0; i < nmatstrg; i++)
+      if (target_state_.material_name(i) == source_state2.material_name(m)) {
+        found = true;
+        m2 = i;
+        break;
+      }
+    if (found) {  // material already present - just update its cell list
+      target_state_.mat_add_cells(m2, matcellstgt);
+    } else {
+      // add material along with the cell list
+      
+      // NOTE: NOT ONLY DOES THIS ROUTINE ADD A MATERIAL AND ITS
+      // CELLS TO THE STATEMANAGER, IT ALSO MAKES SPACE FOR FIELD
+      // VALUES FOR THIS MATERIAL IN EVERY MULTI-MATERIAL VECTOR IN
+      // THE STATE MANAGER. THIS ENSURES THAT WHEN WE CALL
+      // mat_get_celldata FOR A MATERIAL IN MULTI-MATERIAL STATE
+      // VECTOR IT WILL ALREADY HAVE SPACE ALLOCATED FOR FIELD
+      // VALUES OF THAT MATERIAL. SOME STATE WRAPPERS COULD CHOOSE
+      // TO MAKE THIS A SIMPLER ROUTINE THAT ONLY STORES THE NAME
+      // AND THE CELLS IN THE MATERIAL AND ACTUALLY ALLOCATE SPACE
+      // FOR FIELD VALUES OF A MATERIAL IN A MULTI-MATERIAL FIELD
+      // WHEN mat_get_celldata IS INVOKED.
+      
+      target_state_.add_material(source_state2.material_name(m), matcellstgt);
+    }
 
     int nmatcells = matcellstgt.size();
-    int nmatcells_global = nmatcells;
-#ifdef PORTAGE_ENABLE_MPI
-    if (mycomm != MPI_COMM_NULL)
-      MPI_Allreduce(&nmatcells, &nmatcells_global, 1, MPI_INT, MPI_SUM,
-                    mycomm);
-#endif
+    if (nmatcells) {
 
-    if (nmatcells_global) {
-      int nmatstrg = target_state_.num_materials();
-      bool found = false;
-      int m2 = -1;
-      for (int i = 0; i < nmatstrg; i++)
-        if (target_state_.material_name(i) == source_state2.material_name(m)) {
-          found = true;
-          m2 = i;
-          break;
-        }
-      if (found) {  // material already present - just update its cell list
-        target_state_.mat_add_cells(m2, matcellstgt);
-      } else {
-        // add material along with the cell list
-
-        // NOTE: NOT ONLY DOES THIS ROUTINE ADD A MATERIAL AND ITS
-        // CELLS TO THE STATEMANAGER, IT ALSO MAKES SPACE FOR FIELD
-        // VALUES FOR THIS MATERIAL IN EVERY MULTI-MATERIAL VECTOR IN
-        // THE STATE MANAGER. THIS ENSURES THAT WHEN WE CALL
-        // mat_get_celldata FOR A MATERIAL IN MULTI-MATERIAL STATE
-        // VECTOR IT WILL ALREADY HAVE SPACE ALLOCATED FOR FIELD
-        // VALUES OF THAT MATERIAL. SOME STATE WRAPPERS COULD CHOOSE
-        // TO MAKE THIS A SIMPLER ROUTINE THAT ONLY STORES THE NAME
-        // AND THE CELLS IN THE MATERIAL AND ACTUALLY ALLOCATE SPACE
-        // FOR FIELD VALUES OF A MATERIAL IN A MULTI-MATERIAL FIELD
-        // WHEN mat_get_celldata IS INVOKED.
-
-        target_state_.add_material(source_state2.material_name(m), matcellstgt);
-      }
-    }
-    else
-      continue;  // maybe the target mesh does not overlap this material
-
-    // Add volume fractions and centroids of materials to target mesh
-    //
-    // Also make list of sources/weights only for target cells that are
-    // getting this material - Can we avoid the copy?
-
-    std::vector<double> mat_volfracs(nmatcells);
-    std::vector<Point<D>> mat_centroids(nmatcells);
-    std::vector<std::vector<Weights_t>> mat_sources_and_weights(nmatcells);
-
-    for (int ic = 0; ic < nmatcells; ic++) {
-      int c = matcellstgt[ic];
-      double matvol = 0.0;
-      Point<D> matcen;
-      std::vector<Weights_t> const& cell_sources_and_weights =
-          source_ents_and_weights[c];
-      for (int s = 0; s < cell_sources_and_weights.size(); s++) {
-        std::vector<double> const& wts = cell_sources_and_weights[s].weights;
-        matvol += wts[0];
+      // Add volume fractions and centroids of materials to target mesh
+      //
+      // Also make list of sources/weights only for target cells that are
+      // getting this material - Can we avoid the copy?
+      
+      std::vector<double> mat_volfracs(nmatcells);
+      std::vector<Point<D>> mat_centroids(nmatcells);
+      std::vector<std::vector<Weights_t>> mat_sources_and_weights(nmatcells);
+      
+      for (int ic = 0; ic < nmatcells; ic++) {
+        int c = matcellstgt[ic];
+        double matvol = 0.0;
+        Point<D> matcen;
+        std::vector<Weights_t> const& cell_sources_and_weights =
+            source_ents_and_weights[c];
+        for (int s = 0; s < cell_sources_and_weights.size(); s++) {
+          std::vector<double> const& wts = cell_sources_and_weights[s].weights;
+          matvol += wts[0];
         for (int d = 0; d < D; d++)
           matcen[d] += wts[d+1];
+        }
+        matcen /= matvol;
+        mat_volfracs[ic] = matvol/target_mesh_.cell_volume(c);
+        mat_centroids[ic] = matcen;
+        
+        mat_sources_and_weights[ic] = cell_sources_and_weights;
       }
-      matcen /= matvol;
-      mat_volfracs[ic] = matvol/target_mesh_.cell_volume(c);
-      mat_centroids[ic] = matcen;
+      
+      target_state_.mat_add_celldata("mat_volfracs", m, &(mat_volfracs[0]));
+      target_state_.mat_add_celldata("mat_centroids", m, &(mat_centroids[0]));
+      
 
-      mat_sources_and_weights[ic] = cell_sources_and_weights;
-    }
+      // INTERPOLATE (one variable at a time)
+      
+      // HERE WE COULD MAKE A NEW LIST BASED ON WHICH TARGET CELLS HAVE ANY
+      // INTERSECTIONS WITH SOURCE CELLS FOR THIS MATERIAL TO AVOID A NULL-OP
+      // AND A WARNING MESSAGE ABOUT NO SOURCE CELLS CONTRIBUTING TO A TARGET -
+      // IS IT WORTH IT?
+      
+      gettimeofday(&begin_timeval, 0);
+      
+      int nmatvars = src_matvar_names.size();
+      if (comm_rank == 0)
+        std::cout << "Number of multi-material variables on entity kind " <<
+            onwhat << " to remap is " << nmatvars << std::endl;
+      
+      interpolate.set_material(m);    // We have to do this so we know
+      //                              // which material values we have
+      //                              // to grab from the source state
+      
 
-    target_state_.mat_add_celldata("mat_volfracs", m, &(mat_volfracs[0]));
-    target_state_.mat_add_celldata("mat_centroids", m, &(mat_centroids[0]));
-
-
-    // INTERPOLATE (one variable at a time)
-
-    // HERE WE COULD MAKE A NEW LIST BASED ON WHICH TARGET CELLS HAVE ANY
-    // INTERSECTIONS WITH SOURCE CELLS FOR THIS MATERIAL TO AVOID A NULL-OP
-    // AND A WARNING MESSAGE ABOUT NO SOURCE CELLS CONTRIBUTING TO A TARGET -
-    // IS IT WORTH IT?
-
-    gettimeofday(&begin_timeval, 0);
-
-    int nmatvars = src_matvar_names.size();
-    if (comm_rank == 0)
-      std::cout << "Number of multi-material variables on entity kind " <<
-          onwhat << " to remap is " << nmatvars << std::endl;
-
-    interpolate.set_material(m);    // We have to do this so we know
-                                    // which material values we have
-                                    // to grab from the source state
-
-
-    // if the material has no cells on this partition, then don't bother
-    // interpolating MM variables
-    if (target_state_.mat_get_num_cells(m)) {
-
+      // if the material has no cells on this partition, then don't bother
+      // interpolating MM variables
+        
       for (int i = 0; i < nmatvars; ++i) {
         interpolate.set_interpolation_variable(src_matvar_names[i],
-                                             limiters_.at(src_matvar_names[i]));
+                                               limiters_.at(src_matvar_names[i]));
 
         // Get a handle to a memory location where the target state
         // would like us to write this material variable into. If it is
@@ -1152,8 +1143,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
         target_state_.mat_add_celldata(trg_matvar_names[i], m, target_field_raw);
 
       }  // nmatvars
-
-    }
+    }  // if matcellstgt.size()
 
     gettimeofday(&end_timeval, 0);
     timersub(&end_timeval, &begin_timeval, &diff_timeval);
