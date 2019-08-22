@@ -37,13 +37,37 @@
 // parse input
 #include "json.h"
 
-// get rid of long namespaces when no possible confusion.
-constexpr auto CELL = Wonton::Entity_kind::CELL;
-constexpr auto NODE = Wonton::Entity_kind::NODE;
-constexpr auto ALL  = Wonton::Entity_type::ALL;
-constexpr auto NO_LIMITER = Portage::Limiter_type::NOLIMITER;
-constexpr auto BARTH_JESPERSEN = Portage::Limiter_type::BARTH_JESPERSEN;
-constexpr unsigned const default_heap_size = 512;
+namespace app {
+
+  // get rid of long namespaces within the app when no possible confusion.
+  constexpr auto CELL = Wonton::Entity_kind::CELL;
+  constexpr auto NODE = Wonton::Entity_kind::NODE;
+  constexpr auto ALL  = Wonton::Entity_type::ALL;
+  constexpr auto NO_LIMITER = Portage::Limiter_type::NOLIMITER;
+  constexpr auto BARTH_JESPERSEN = Portage::Limiter_type::BARTH_JESPERSEN;
+  constexpr unsigned const default_heap_size = 512;
+
+  // a compact object to store app parameters.
+  struct Params {
+    int dimension;                                      // meshes dimension
+    bool is_conform;                                    // conformal meshes?
+    bool do_export;                                     // dump results?
+    std::string source_file;                            // source mesh file
+    std::string target_file;                            // target mesh file
+
+    int order;                                          // remap accuracy order
+    Portage::Limiter_type limiter;                      // gradient limiter
+    Wonton::Entity_kind entity_kind;                    // node|cell-based remap
+
+    struct Entities {                                   // parts pair data
+      unsigned id;                                      // index of part pair
+      std::vector<int> source;                          // related source entities
+      std::vector<int> target;                          // related target entities
+    };
+    std::map<std::string, std::string> fields;          // scalar fields
+    std::map<std::string, std::vector<Entities>> parts; // meshes parts to remap
+  };
+} // namespace 'app'
 
 /**
  * @brief Display run instructions and input file format.
@@ -51,77 +75,39 @@ constexpr unsigned const default_heap_size = 512;
  */
 void print_usage() {
 
-  std::printf("Usage: ./part-by-part [params.json]                        \n\n");
-  std::printf(" ---------------------------------------------------------- \n");
-  std::printf("  Demonstration app for multi-part field interpolation.     \n");
-  std::printf("  It handles pure cells remap of multi-material meshes and  \n");
-  std::printf("  non-smoothed remap of fields with sharp discontinuities.  \n");
-  std::printf(" ---------------------------------------------------------- \n");
-  std::printf("[params.json]:                                               \n");
-  std::printf("{                                                           \n");
-  std::printf("  'input': {                                                \n");
-  std::printf("    'mesh': {                                               \n");
-  std::printf("      'dimension': <2|3>,                                   \n");
-  std::printf("      'source': '/path/to/source/mesh.exo',                 \n");
-  std::printf("      'target': '/path/to/target/mesh.exo',                 \n");
-  std::printf("      'conformal': <boolean>                                \n");
-  std::printf("      'export': <boolean>                                   \n");
-  std::printf("    },                                                      \n");
-  std::printf("    'remap': {                                              \n");
-  std::printf("      'kind': 'cell',                                       \n");
-  std::printf("      'order': <1|2>,                                       \n");
-  std::printf("      'limiter': <0-2>,                                     \n");
-  std::printf("      'fields': [                                           \n");
-  std::printf("        { 'name': 'density', 'expr': '<math>' }             \n");
-  std::printf("        { 'name': 'temperature', 'expr': '<math>' }         \n");
-  std::printf("      ]                                                     \n");
-  std::printf("    }                                                       \n");
+  std::printf(" Usage: ./part-remap [params.json]                          \n");
+  std::printf(" [params.json]:                                             \n");
+  std::printf(" {                                                          \n");
+  std::printf("  'mesh': {                                                 \n");
+  std::printf("    'dimension': <2|3>,                                     \n");
+  std::printf("    'source': '/path/to/source/mesh.exo',                   \n");
+  std::printf("    'target': '/path/to/target/mesh.exo',                   \n");
+  std::printf("    'conformal': <boolean>                                  \n");
+  std::printf("    'export': <boolean>                                     \n");
+  std::printf("  },                                                        \n");
+  std::printf("  'remap': {                                                \n");
+  std::printf("    'kind': 'cell',                                         \n");
+  std::printf("    'order': <1|2>,                                         \n");
+  std::printf("    'limiter': <0-2>,                                       \n");
+  std::printf("    'fields': [                                             \n");
+  std::printf("      { 'name': 'density', 'expr': '<math>' }               \n");
+  std::printf("      { 'name': 'temperature', 'expr': '<math>' }           \n");
+  std::printf("    ]                                                       \n");
   std::printf("  },                                                        \n");
   std::printf("  'parts': [                                                \n");
   std::printf("    {                                                       \n");
-  std::printf("      'field': 'density'                                    \n");
+  std::printf("      'field': 'density',                                   \n");
   std::printf("      'entities': [                                         \n");
   std::printf("        { 'uid': 1, 'source': [0,2,5], 'target': [0,3]   }, \n");
   std::printf("        { 'uid': 2, 'source': [1,3,4], 'target': [1,2,4] }  \n");
   std::printf("      ]                                                     \n");
-  std::printf("    },                                                      \n");
-  std::printf("    {                                                       \n");
-  std::printf("      'field': 'temperature'                                \n");
-  std::printf("      'entities': [                                         \n");
-  std::printf("        { 'uid': 4, 'source': [1,2,4], 'target': [0,1,4] }, \n");
-  std::printf("        { 'uid': 5, 'source': [0,3,5], 'target': [2,3]   }, \n");
-  std::printf("        { 'uid': 3, 'source': [0,3],   'target': [1,3,4] }  \n");
-  std::printf("      ]                                                     \n");
-  std::printf("    },                                                      \n");
+  std::printf("    }                                                       \n");
   std::printf("  ]                                                         \n");
-  std::printf("}                                                           \n");
+  std::printf(" }                                                          \n");
   std::printf(" ---------------------------------------------------------- \n");
 }
 
-struct Params {
-  // mesh
-  int dimension;
-  bool is_conform;
-  bool do_export;
-  std::string source_file;
-  std::string target_file;
-
-  // remap
-  int order;
-  Portage::Limiter_type limiter;
-  Wonton::Entity_kind entity_kind;
-
-  // parts pair dataset
-  struct Entities {
-    unsigned id;
-    std::vector<int> source;
-    std::vector<int> target;
-  };
-
-  // fields and source-target parts
-  std::map<std::string, std::string> fields;
-  std::map<std::string, std::vector<Entities>> parts;
-} params;
+static app::Params params;
 
 /**
  * @brief Handle errors during argument parsing.
@@ -131,10 +117,10 @@ struct Params {
  * @return false
  */
 bool abort(std::string message, bool show_usage = true) {
-
-  std::fprintf(stderr, "Error: %s.\n", message.data());
   if (show_usage)
     print_usage();
+
+  std::fprintf(stderr, "** Error: %s. **\n", message.data());
   return false;
 }
 
@@ -158,25 +144,28 @@ bool parse_params(std::string path) {
     file.close();
 
     // check if every parameter is specified
-    if (not json.count("input"))
-      return abort("no input field in parameter file");
-
+    if (not json.count("mesh"))
+      return abort("missing mesh attributes");
     else {
-      if(not json["input"].count("dimension"))
+      if (not json["mesh"].count("dimension"))
         return abort("unspecified mesh dimension");
 
-      if (not json["input"].count("source"))
+      if (not json["mesh"].count("source"))
         return abort("unspecified source mesh");
 
-      if (not json["input"].count("target"))
+      if (not json["mesh"].count("target"))
         return abort("unspecified target mesh");
 
-      if (not json["input"].count("conformal"))
+      if (not json["mesh"].count("conformal"))
         return abort("must precise if conformal mesh");
 
-      if (not json["input"].count("export"))
+      if (not json["mesh"].count("export"))
         return abort("must precise if export results or not");
+    }
 
+    if(not json.count("remap"))
+      return abort("missing remap attributes");
+    else {
       if (not json["remap"].count("kind"))
         return abort("unspecified entity kind for remap");
 
@@ -198,7 +187,6 @@ bool parse_params(std::string path) {
 
     if (not json.count("parts"))
       return abort("no parts field in parameter file");
-
     else {
       // lookup table to check uid
       std::set<int> helper;
@@ -206,10 +194,10 @@ bool parse_params(std::string path) {
       for (auto&& entry : json["parts"]) {
         if (not entry.count("field"))
           return abort("no field name for part");
-        if (not entry.count("entities"))
+        if (not entry.count("pairs"))
           return abort("no given entities for part");
         else {
-          for (auto&& pair : entry) {
+          for (auto&& pair : entry["pairs"]) {
             // check uid
             if (not pair.count("uid"))
               return abort("no given unique id for part pair");
@@ -237,27 +225,25 @@ bool parse_params(std::string path) {
     }
 
     // then store them
-    params.dimension      = json["input"]["dimension"];
-    params.is_conform     = json["input"]["conformal"];
-    params.do_export      = json["input"]["export"];
-    params.source_file    = json["input"]["source"];
-    params.target_file    = json["input"]["target"];
+    params.dimension   = json["mesh"]["dimension"];
+    params.is_conform  = json["mesh"]["conformal"];
+    params.do_export   = json["mesh"]["export"];
+    params.source_file = json["mesh"]["source"];
+    params.target_file = json["mesh"]["target"];
+    params.order       = json["remap"]["order"];
+    params.entity_kind = json["remap"]["kind"] == "cell" ? app::CELL : app::NODE;
+    params.limiter     = json["remap"]["limiter"] ? app::NO_LIMITER
+                                                  : app::BARTH_JESPERSEN;
 
-    params.order          = json["remap"]["order"];
-    params.entity_kind    = json["remap"]["kind"] == "cell" ? CELL : NODE;
-    params.limiter        = json["remap"]["limiter"] ? NO_LIMITER : BARTH_JESPERSEN;
-
-    for (auto&& scalar : json["remap"]["fields"]) {
-      auto const name = scalar["name"];
-      params.fields[name] = scalar["expr"];
-    }
+    for (auto&& scalar : json["remap"]["fields"])
+      params.fields[scalar["name"]] = scalar["expr"];
 
     for (auto&& entry : json["parts"]) {
       auto const field = entry["field"];
-      params.parts[field].reserve(default_heap_size);
+      params.parts[field].reserve(app::default_heap_size);
 
       for (auto&& pair : entry["entities"]) {
-        Params::Entities parts;
+        app::Params::Entities parts;
         parts.id = pair["uid"];
         for (auto&& s : pair["source"]) { parts.source.push_back(s); }
         for (auto&& t : pair["target"]) { parts.target.push_back(t); }
@@ -293,5 +279,14 @@ bool parse_params(std::string path) {
 
 int main(int argc, char* argv[]) {
 
+  std::printf(" ---------------------------------------------------------- \n");
+  std::printf("  Demonstration app for multi-part field interpolation.     \n");
+  std::printf("  It handles pure cells remap of multi-material meshes and  \n");
+  std::printf("  non-smoothed remap of fields with sharp discontinuities.  \n");
+  std::printf(" ---------------------------------------------------------- \n");
+
+  if (parse_params(argv[1])) {
+    std::printf("Everything was fine\n");
+  }
   return EXIT_SUCCESS;
 }

@@ -1,35 +1,33 @@
 {
-  "input": {
-    "mesh": {
-      "dimension": 3,
-      "source": "/Users/hoby/dev/ristra/portage/data/mesh/semi3-coarse.exo",
-      "target": "/Users/hoby/dev/ristra/portage/data/mesh/semi3-fine.exo",
-      "conformal": true,
-      "export": false
-    },
-    "remap": {
-      "kind": "cell",
-      "order": 1,
-      "limiter": false,
-      "fields": [
-        { "name": "density", "expr": "" },
-        { "name": "temperature", "expr": "" }
-      ]
-    }
+  "mesh": {
+    "dimension": 3,
+    "source": "/home/hoby/dev/remap/portage/data/exodus/semi3-coarse.exo",
+    "target": "/home/hoby/dev/remap/portage/data/exodus/semi3-fine.exo",
+    "conformal": true,
+    "export": false
+  },
+  "remap": {
+    "kind": "cell",
+    "order": 1,
+    "limiter": false,
+    "fields": [
+      { "name": "density", "expr": "" },
+      { "name": "temperature", "expr": "" }
+    ]
   },
   "parts": [
     {
       "field": "density",
-      "entities": [
-        { "uid": 1, "source": [], "target": [] },
-        { "uid": 2, "source": [], "target": [] }
+      "pairs": [
+        { "uid": 1, "source": [0.2,5], "target": [0,3] },
+        { "uid": 2, "source": [1,3,4], "target": [1,2,4] }
       ]
     },
     {
       "field": "temperature",
-      "entities": [
-        { "uid": 3, "source": [], "target": [] },
-        { "uid": 4, "source": [], "target": [] }
+      "pairs": [
+        { "uid": 3, "source": [1,2,4], "target": [0,1,4] },
+        { "uid": 4, "source": [0,3,5], "target": [2,3] }
       ]
     }
   ]
