@@ -24,6 +24,7 @@ using Portage::Meshfree::Weight::EPANECHNIKOV;
 using Portage::Meshfree::Weight::POLYRAMP;
 using Portage::Meshfree::Weight::INVSQRT;
 using Portage::Meshfree::Weight::COULOMB;
+using Portage::Meshfree::Weight::STEP;
 
 using Portage::Meshfree::Weight::eval;
 
@@ -78,7 +79,7 @@ class WeightTest : public TestWithParam<tuple<Geometry, Kernel>> {
 
     double weight_at_x;
     if (geo == FACETED) {
-      weight_at_x = faceted<Dim>(x, x, &facets[0], nsides);
+      weight_at_x = faceted<Dim>(kernel, x, x, facets, nsides);
     } else {
       weight_at_x = eval<Dim>(geo, kernel, x, x, h);
     }
@@ -97,7 +98,7 @@ class WeightTest : public TestWithParam<tuple<Geometry, Kernel>> {
 
       if (geo == FACETED) {
         // use explicit faceted weight function
-        weight[i] = faceted<Dim>(x, y, &facets[0], nsides);
+        weight[i] = faceted<Dim>(kernel, x, y, facets, nsides);
 
         // check equivalence to generic interface
         vector<vector<double>> hvec(nsides,vector<double>(Dim+1));
@@ -120,6 +121,9 @@ class WeightTest : public TestWithParam<tuple<Geometry, Kernel>> {
 
       // Check that the weight at no other point is greater than that at x
       ASSERT_GE(weight_at_x, weight[i]);
+      if (geo==FACETED) {
+        ASSERT_NEAR(weight_at_x, 1.0, 1.e-12);
+      }
 
       // Check that the weight is positive inside the support and
       // near zero or zero outside it
@@ -179,5 +183,5 @@ INSTANTIATE_TEST_CASE_P(
             Values(B4, SQUARE, EPANECHNIKOV, INVSQRT, COULOMB)));
 
 INSTANTIATE_TEST_CASE_P(FacetedSupport, WeightTest,
-                        Combine(Values(FACETED), Values(POLYRAMP)));
+                        Combine(Values(FACETED), Values(POLYRAMP, STEP)));
 

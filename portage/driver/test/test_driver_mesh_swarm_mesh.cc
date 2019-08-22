@@ -11,6 +11,8 @@ Please see the license file at the root of this repository, or at:
 #include <cmath>
 #include <stdexcept>
 #include <cassert>
+#include <string>
+#include <limits>
 
 #include "gtest/gtest.h"
 #ifdef PORTAGE_ENABLE_MPI
@@ -32,8 +34,9 @@ Please see the license file at the root of this repository, or at:
 // wonton includes
 #include "wonton/mesh/simple/simple_mesh.h"
 #include "wonton/mesh/simple/simple_mesh_wrapper.h"
-#include "wonton/state/state_vector_uni.h"
+#include "wonton/state/simple/simple_state.h"
 #include "wonton/state/simple/simple_state_mm_wrapper.h"
+#include "wonton/state/state_vector_uni.h"
 #include "wonton/mesh/flat/flat_mesh_wrapper.h"
 
 namespace {
@@ -77,7 +80,8 @@ class MSMDriverTest : public ::testing::Test {
   void unitTest(double compute_initial_field(Portage::Point<Dimension> centroid),
                 double smoothing_factor, Portage::Meshfree::Basis::Type basis, 
 		Portage::Meshfree::WeightCenter center=Portage::Meshfree::Gather, 
-		Portage::Meshfree::Operator::Type oper8or=Portage::Meshfree::Operator::LastOperator)
+		Portage::Meshfree::Operator::Type oper8or=Portage::Meshfree::Operator::LastOperator,
+		bool faceted=false)
   {
     // check dimension - no 1D
     assert(Dimension > 1);
@@ -117,24 +121,20 @@ class MSMDriverTest : public ::testing::Test {
     std::vector<double> targetDataNode(ntarnodes), targetData2Node(ntarnodes);
     
     targetStateWrapper.add(std::make_shared<Wonton::StateVectorUni<>>(
-    	"celldata", Portage::Entity_kind::CELL, targetData)
-    );
+    	"celldata", Portage::Entity_kind::CELL, targetData));
+    targetStateWrapper2.add(std::make_shared<Wonton::StateVectorUni<>>(
+    	"celldata", Portage::Entity_kind::CELL, targetData2));
     targetStateWrapper.add(std::make_shared<Wonton::StateVectorUni<>>(
-    	"nodedata", Portage::Entity_kind::NODE, targetDataNode)
-    );
-
+    	"nodedata", Portage::Entity_kind::NODE, targetDataNode));
     targetStateWrapper2.add(std::make_shared<Wonton::StateVectorUni<>>(
-    	"celldata", Portage::Entity_kind::CELL, targetData2)
-    );
-    targetStateWrapper2.add(std::make_shared<Wonton::StateVectorUni<>>(
-    	"nodedata", Portage::Entity_kind::NODE, targetData2Node)
-    );
+    	"nodedata", Portage::Entity_kind::NODE, targetData2Node));
 
-
-    //  Register the variable name and interpolation order with the driver
+    // Make list of field names
     std::vector<std::string> remap_fields;
     remap_fields.push_back("celldata");
-    remap_fields.push_back("nodedata");
+    if (not faceted) {
+      remap_fields.push_back("nodedata");
+    }
 
     //  Build the mesh-mesh driver data for this mesh type
     Portage::MMDriver<Portage::SearchKDTree,
@@ -170,9 +170,9 @@ class MSMDriverTest : public ::testing::Test {
 
 	// get exact value of integral
 	std::vector<std::vector<double>> result;
-	Portage::Meshfree::Operator::apply<Dimension>(
-						      Portage::Meshfree::Operator::VolumeIntegral, 
-						      basis, domain_types[Dimension-1], data[c], result);
+	Portage::Meshfree::Operator::apply<Dimension>
+          ( Portage::Meshfree::Operator::VolumeIntegral, 
+            basis, domain_types[Dimension-1], data[c], result);
 	if (Dimension==2) {
 	  if (basis==Portage::Meshfree::Basis::Linear) 
 	    exact[c] = result[1][0]+result[2][0];
@@ -190,6 +190,7 @@ class MSMDriverTest : public ::testing::Test {
     }
 
     //  Build the mesh-swarm-mesh driver data for this mesh type
+    using MSM_Driver_Type =
     Portage::MSM_Driver<
       SwarmSearch,
       Portage::Meshfree::Accumulate,
@@ -197,23 +198,45 @@ class MSMDriverTest : public ::testing::Test {
       Dimension,
       Wonton::Simple_Mesh_Wrapper, Wonton::Simple_State_Wrapper<Wonton::Simple_Mesh_Wrapper>,
       Wonton::Simple_Mesh_Wrapper, Wonton::Simple_State_Wrapper<Wonton::Simple_Mesh_Wrapper>
-    >
-    msmdriver(sourceMeshWrapper, sourceStateWrapper,
-              targetMeshWrapper, targetStateWrapper2,
-              smoothing_factor, 
-	      Portage::Meshfree::Weight::TENSOR, 
-	      Portage::Meshfree::Weight::B4, 
-	      center);
+      >;
+
+    MSM_Driver_Type *msmdriver_ptr;
+
+    if (faceted) {
+      msmdriver_ptr = new MSM_Driver_Type
+        (sourceMeshWrapper, sourceStateWrapper,
+         targetMeshWrapper, targetStateWrapper2,
+         smoothing_factor, 
+         smoothing_factor, 
+         Portage::Meshfree::Weight::FACETED, 
+         Portage::Meshfree::Weight::POLYRAMP, 
+         center, 
+         std::string("NONE"), 
+         std::numeric_limits<double>::infinity());
+    } else {
+      msmdriver_ptr = new MSM_Driver_Type
+        (sourceMeshWrapper, sourceStateWrapper,
+         targetMeshWrapper, targetStateWrapper2,
+         smoothing_factor, 
+         smoothing_factor, 
+         Portage::Meshfree::Weight::TENSOR, 
+         Portage::Meshfree::Weight::B4, 
+         center);
+    }
+    MSM_Driver_Type &msmdriver(*msmdriver_ptr);
+    
     Portage::Meshfree::EstimateType estimator=
       Portage::Meshfree::LocalRegression;
     if (oper8or == Portage::Meshfree::Operator::VolumeIntegral) 
       estimator = Portage::Meshfree::OperatorRegression;
+
     msmdriver.set_remap_var_names(remap_fields, remap_fields, 
                                   estimator, 
                                   basis,
                                   oper8or,
                                   domains_,
                                   data);
+
     msmdriver.run();  // run in serial (executor argument defaults to nullptr)
 
     // Check the answer
@@ -253,29 +276,31 @@ class MSMDriverTest : public ::testing::Test {
       std::printf("\n\nLinf NORM OF MSM CELL ERROR = %lf\n\n", toterr);
       ASSERT_LT(toterr, TOL);
 
-      toterr = 0.;
-      for (int n = 0; n < ntarnodes; ++n) {
-	Portage::Point<Dimension> node;
-	targetFlatMesh.node_get_coordinates(n, &node);
-	double value = compute_initial_field(node);
-	double merror, serror;
-	merror = nodevecout[n] - value;
-	serror = nodevecout2[n] - value;
-	//  dump diagnostics for each node
-	if (Dimension == 2) {
-	  std::printf("Node=% 4d Coords=(% 5.3lf,% 5.3lf)", n,
-		      node[0], node[1]);
-	} else if (Dimension == 3) {
-	  std::printf("Node=% 4d Coords=(% 5.3lf,% 5.3lf,% 5.3lf)", n,
-		      node[0], node[1], node[2]);
-	}
-	std::printf(" Val=% 10.6lf MM=% 10.6lf Err=% 10.6lf MSM=% 10.6lf Err=% lf\n",
-		    value, nodevecout[n], merror, nodevecout2[n], serror);
-	toterr = std::max(toterr, std::fabs(serror));
-      }
+      if (not faceted) {
+        toterr = 0.;
+        for (int n = 0; n < ntarnodes; ++n) {
+          Portage::Point<Dimension> node;
+          targetFlatMesh.node_get_coordinates(n, &node);
+          double value = compute_initial_field(node);
+          double merror, serror;
+          merror = nodevecout[n] - value;
+          serror = nodevecout2[n] - value;
+          //  dump diagnostics for each node
+          if (Dimension == 2) {
+            std::printf("Node=% 4d Coords=(% 5.3lf,% 5.3lf)", n,
+                        node[0], node[1]);
+          } else if (Dimension == 3) {
+            std::printf("Node=% 4d Coords=(% 5.3lf,% 5.3lf,% 5.3lf)", n,
+                        node[0], node[1], node[2]);
+          }
+          std::printf(" Val=% 10.6lf MM=% 10.6lf Err=% 10.6lf MSM=% 10.6lf Err=% lf\n",
+                      value, nodevecout[n], merror, nodevecout2[n], serror);
+          toterr = std::max(toterr, std::fabs(serror));
+        }
 
-      std::printf("\n\nLinf NORM OF MSM NODE ERROR = %lf\n\n", toterr);
-      ASSERT_LT(toterr, TOL);
+        std::printf("\n\nLinf NORM OF MSM NODE ERROR = %lf\n\n", toterr);
+        ASSERT_LT(toterr, TOL);
+      }
 
     } else {
 
@@ -300,7 +325,9 @@ class MSMDriverTest : public ::testing::Test {
       ASSERT_LT(toterr, TOL);
 
     }
-}
+
+    delete msmdriver_ptr;
+  }
 
   // Constructor for Driver test
   MSMDriverTest(std::shared_ptr<Wonton::Simple_Mesh> s,
@@ -387,6 +414,21 @@ TEST_F(MSMDriverTest2D, 2D2ndOrderQuadraticScatter) {
      Portage::Meshfree::Scatter);
 }
 
+TEST_F(MSMDriverTest2D, 2D2ndOrderQuadraticGatherFaceted) {
+  unitTest<Portage::IntersectR2D,
+           Portage::Interpolate_2ndOrder,
+           Portage::SearchPointsByCells, 2>
+    (&compute_quadratic_field_2d, .75, Portage::Meshfree::Basis::Quadratic, 
+     Portage::Meshfree::Gather, Portage::Meshfree::Operator::LastOperator, true);
+}
+
+TEST_F(MSMDriverTest2D, 2D2ndOrderQuadraticScatterFaceted) {
+  unitTest<Portage::IntersectR2D,
+           Portage::Interpolate_2ndOrder,
+           Portage::SearchPointsByCells, 2>
+    (&compute_quadratic_field_2d, .75, Portage::Meshfree::Basis::Quadratic, 
+     Portage::Meshfree::Scatter, Portage::Meshfree::Operator::LastOperator, true);
+}
 
 TEST_F(MSMDriverTest2D, 2D1stOrderLinearIntegrate) {
   unitTest<Portage::IntersectR2D,
@@ -434,6 +476,22 @@ TEST_F(MSMDriverTest3D, 3D2ndOrderQuadraticScatter) {
            Portage::SearchPointsByCells, 3>
     (&compute_quadratic_field_3d, 1.5, Portage::Meshfree::Basis::Quadratic, 
      Portage::Meshfree::Scatter);
+}
+
+TEST_F(MSMDriverTest3D, 3D2ndOrderQuadraticGatherFaceted) {
+  unitTest<Portage::IntersectR3D,
+           Portage::Interpolate_2ndOrder,
+           Portage::SearchPointsByCells, 3>
+    (&compute_quadratic_field_3d, 1.5, Portage::Meshfree::Basis::Quadratic, 
+     Portage::Meshfree::Gather, Portage::Meshfree::Operator::LastOperator, true);
+}
+
+TEST_F(MSMDriverTest3D, 3D2ndOrderQuadraticScatterFaceted) {
+  unitTest<Portage::IntersectR3D,
+           Portage::Interpolate_2ndOrder,
+           Portage::SearchPointsByCells, 3>
+    (&compute_quadratic_field_3d, 1.5, Portage::Meshfree::Basis::Quadratic, 
+     Portage::Meshfree::Scatter, Portage::Meshfree::Operator::LastOperator, true);
 }
 
 TEST_F(MSMDriverTest3D, 3D1stOrderLinearIntegrate) {

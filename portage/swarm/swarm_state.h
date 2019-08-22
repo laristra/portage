@@ -237,12 +237,11 @@ void SwarmState<dim>::extend_field(const string name, DblVec new_value)
   val->insert(val->end(), new_value.begin(), new_value.end());
 }
 
-/*! @brief SwarmState factory, given a mesh state wrapper.
- * Copies fields from mesh state wrapper to a swarm state wrapper of the 
- * same size.
- * @param mesh the mesh with which the field data are associated.
- * @param entity entity on which to get data (e.g. CELL, NODE, etc.)
+/*! @brief SwarmState factory, given a mesh state wrapper. Only does double fields.
+ * Copies fields from mesh state wrapper to a swarm state wrapper of the same size.
  * @param state the field data on the mesh
+ * @param entity entity on which to get data (e.g. CELL, NODE, etc.)
+ * @return shared pointer to the resultant swarm state
  */
 template<size_t dim, class StateWrapper>
 shared_ptr<SwarmState<dim>> SwarmStateFactory(
@@ -274,6 +273,78 @@ shared_ptr<SwarmState<dim>> SwarmStateFactory(
     typename SwarmState<dim>::DblVecPtr data = make_shared<vector<double>>(ndata);
     
     for (size_t i=0; i<ndata; i++) (*data)[i] = datap[i];
+    result->add_field(name, data);
+  }
+
+  return result;
+}
+
+/*! @brief SwarmState factory, given a set of mesh state wrappers. Only does double fields.
+ * Copies fields from mesh state wrappers to a swarm state wrapper of the total size.
+ * This factory is useful for mapping from several meshes at once, 
+ * e.g. for analysis of multiple times, or multiple simulations at the same set of spatial points, 
+ * to obtain statistical properties like average, confidence bounds, and uncertaintities, for example.
+ * @param states the field data on the meshes
+ * @param entity entity on which to get data (e.g. CELL, NODE, etc.)
+ *
+ * All fields must exist in all states. In each state, all fields must have same size.
+ */
+template<size_t dim, class StateWrapper>
+shared_ptr<SwarmState<dim>> SwarmStateFactory
+  (const std::vector<StateWrapper*> states,
+   const Portage::Entity_kind entity)
+{
+  // check all fields in all states
+  std::vector<std::string> names = states[0]->names();
+  for (size_t wrap=1; wrap<states.size(); wrap++) {
+    std::vector<std::string> these = states[wrap]->names();
+    if (names != these) {
+      throw std::runtime_error("field names don't match across state wrappers");
+    }
+  }
+
+  // get sizes of data fields that match entity on each wrapper
+  std::vector<std::vector<int>> sizes(names.size(), std::vector<int>(states.size(),0));
+  for (size_t n=0; n<names.size(); n++) {
+    for (size_t wrap=0; wrap<states.size(); wrap++) {
+      StateWrapper &state=*states[wrap];
+      const std::string name=state.names()[n];
+      if (state.get_entity(name) == entity) {
+        sizes[n][wrap] = state.get_data_size(entity, name);
+      }
+    }
+  }
+  // ensure sizes are same across names for each wrapper
+  for (size_t wrap=0; wrap<states.size(); wrap++) {
+    assert(sizes[0][wrap]>0);
+    for (size_t n=1; n<names.size(); n++) {
+      if (sizes[n][wrap] != sizes[0][wrap]) {
+	throw std::runtime_error("field sizes don't match across state names");
+      }
+    }
+  }
+  // get size of output swarm state
+  size_t ndata=0;
+  std::vector<int> offset(states.size(),0);
+  for (size_t wrap=0; wrap<states.size(); wrap++) {
+    offset[wrap] = ndata;
+    ndata += sizes[0][wrap];
+  }
+
+  // create output swarm state
+  shared_ptr<SwarmState<dim>> result=make_shared<SwarmState<dim>>(ndata);
+
+  // copy data
+  for (const std::string name : states[0]->names()) {
+    typename SwarmState<dim>::DblVecPtr data = make_shared<vector<double>>(ndata);
+    for (size_t wrap=0; wrap<states.size(); wrap++) {
+      StateWrapper &state=*states[wrap];
+
+      const double *datap;
+      state.mesh_get_data(entity, name, &datap);
+    
+      for (size_t i=0; i<sizes[0][wrap]; i++) (*data)[i+offset[wrap]] = datap[i];
+    }
     result->add_field(name, data);
   }
 

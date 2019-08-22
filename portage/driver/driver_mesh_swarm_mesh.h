@@ -16,12 +16,15 @@ Please see the license file at the root of this repository, or at:
 #include <utility>
 #include <iostream>
 #include <type_traits>
+#include <string>
+#include <limits>
 
 #include "portage/support/portage.h"
 
 #include "portage/support/basis.h"
 #include "portage/support/weight.h"
 #include "portage/support/operator.h"
+#include "portage/support/faceted_setup.h"
 #include "portage/swarm/swarm.h"
 #include "portage/swarm/swarm_state.h"
 //#include "portage/search/search_simple_points.h"
@@ -47,7 +50,10 @@ namespace Portage {
 
 /*!
   @class MSM_Driver "driver_mesh_swarm_mesh.h"
-  @brief MSM_Driver provides the API to mapping from one mesh to another.
+  @brief MSM_Driver provides the API to mapping from one mesh to another using particles.
+  @tparam Search compatible particle search class
+  @tparam Accumulate Meshfree accumulate class (performs particle sums)
+  @tparam Estimate Meshfree estimator class (performs calculus operations
   @tparam dim Spatial dimension of the source and target meshes
   @tparam SourceMesh_Wrapper A lightweight wrapper to a specific input mesh
   implementation that provides certain functionality.
@@ -77,25 +83,42 @@ class MSM_Driver {
     @param[in] targetMesh A @c TargetMesh_Wrapper to the target mesh.
     @param[in,out] targetState A @c TargetState_Wrapper for the data that will
     be mapped to the target mesh.
+    @param[in] smoothing_factor multiplies cell sizes to get smoothing lengths
+    @param[in] boundary_factor with faceted weights only, multiplies center-to-face distance on boundary to get smoothing length
+    @param[in] geometry weight function geometric configuration
+    @param[in] kernel weight function kernel
+    @param[in] center weight function centering (scatter for sources, gather for targets)
+    @param[in] part_field name of field to use for part assignments, with faceted weights only
+    @param[in] part_tolerance tolerance for determining if part assignment matches a neighbor's assignment
   */
-  MSM_Driver(SourceMesh_Wrapper const& sourceMesh,
+  MSM_Driver
+        (SourceMesh_Wrapper const& sourceMesh,
          SourceState_Wrapper const& sourceState,
          TargetMesh_Wrapper const& targetMesh,
 	 TargetState_Wrapper& targetState, 
-	 double smoothing_factor             = 1.5,
+	 double smoothing_factor             = 1.25,
+	 double boundary_factor              = 0.5,
 	 Meshfree::Weight::Geometry geometry = Meshfree::Weight::TENSOR,
          Meshfree::Weight::Kernel   kernel   = Meshfree::Weight::B4,
-         Meshfree::WeightCenter     center   = Meshfree::Gather)
+         Meshfree::WeightCenter     center   = Meshfree::Gather, 
+         std::string part_field = "NONE", 
+         double part_tolerance = std::numeric_limits<double>::infinity())
       : source_mesh_(sourceMesh), source_state_(sourceState),
         target_mesh_(targetMesh), target_state_(targetState),
         smoothing_factor_(smoothing_factor),
+        boundary_factor_(boundary_factor),
         geometry_(geometry),
         kernel_(kernel),
         center_(center),
-        dim_(sourceMesh.space_dimension()) 
+        dim_(sourceMesh.space_dimension()),
+        part_field_(part_field), 
+        part_tolerance_(part_tolerance)
   {
     assert(sourceMesh.space_dimension() == targetMesh.space_dimension());
     assert(sourceMesh.space_dimension() == Dim);
+    if (geometry == Meshfree::Weight::FACETED) {
+      assert(kernel == Meshfree::Weight::POLYRAMP);
+    }
   }
 
   /// Copy constructor (disabled)
@@ -259,25 +282,57 @@ class MSM_Driver {
       Meshfree::SwarmState<Dim> &source_swarm_state(*source_swarm_state_ptr);
       Meshfree::SwarmState<Dim> &target_swarm_state(*target_swarm_state_ptr);
 
-      // create spherically symmetric smoothing lengths for now
-      int ncells;
-      if      (center_ == Meshfree::Scatter) ncells = source_mesh_.num_owned_cells();
-      else if (center_ == Meshfree::Gather)  ncells = target_mesh_.num_owned_cells();
-      vector<std::vector<std::vector<double>>> smoothing_lengths
-        (ncells, std::vector<std::vector<double>>(1, std::vector<double>(Dim)));
-      for (int i=0; i<ncells; i++) {
-        double radius;
-        if      (center_ == Meshfree::Scatter) 
-	  Wonton::cell_radius<Dim>(source_mesh_, i, &radius);
-	else if (center_ == Meshfree::Gather)  
-	  Wonton::cell_radius<Dim>(target_mesh_, i, &radius);
-	std::vector<std::vector<double>> h=smoothing_lengths[i];
-	h[0] = std::vector<double>(Dim, radius*smoothing_factor_);
-	smoothing_lengths[i]=h;
+      // set up smoothing lengths and extents
+      Portage::vector<std::vector<std::vector<double>>> smoothing_lengths;
+      Portage::vector<Wonton::Point<Dim>> weight_extents, other_extents;
+      Portage::vector<std::vector<std::vector<double>>> part_smoothing; // only for faceted,scatter,parts
+      if (geometry_ == Meshfree::Weight::FACETED) {
+        if (part_field_ == "NONE") {
+          if (center_ == Meshfree::Scatter) {
+            Meshfree::Weight::faceted_setup_cell<Dim,SourceMesh_Wrapper>
+              (source_mesh_, smoothing_lengths, weight_extents, smoothing_factor_, boundary_factor_);
+          } else if (center_ == Meshfree::Gather) {
+            Meshfree::Weight::faceted_setup_cell<Dim,TargetMesh_Wrapper>
+              (target_mesh_, smoothing_lengths, weight_extents, smoothing_factor_, boundary_factor_);
+          }
+        } else {
+          if (center_ == Meshfree::Scatter) {
+            // Set smoothing_factor to 1/4 to make weight support exactly equal to cell volume.
+            // Store these smoothing lengths off on the side for later use in the swarm driver.
+            Portage::vector<Wonton::Point<Dim>> dummy_extents;
+            Meshfree::Weight::faceted_setup_cell<Dim,SourceMesh_Wrapper>
+              (source_mesh_, part_smoothing, dummy_extents, 0.25, 1.0);
+
+            // Get usual smoothing lengths and extents 
+            Meshfree::Weight::faceted_setup_cell<Dim,SourceMesh_Wrapper>
+              (source_mesh_, smoothing_lengths, weight_extents, smoothing_factor_, boundary_factor_);
+          } else if (center_ == Meshfree::Gather) {
+            Meshfree::Weight::faceted_setup_cell<Dim,TargetMesh_Wrapper,TargetState_Wrapper>
+              (target_mesh_, target_state_, part_field_, part_tolerance_,
+               smoothing_lengths, weight_extents, smoothing_factor_, boundary_factor_);
+          }
+        }
+      } else {
+        int ncells;
+        if      (center_ == Meshfree::Scatter) ncells = source_mesh_.num_owned_cells();
+        else if (center_ == Meshfree::Gather)  ncells = target_mesh_.num_owned_cells();
+        smoothing_lengths = vector<std::vector<std::vector<double>>> 
+          (ncells, std::vector<std::vector<double>>(1, std::vector<double>(Dim)));
+        for (int i=0; i<ncells; i++) {
+          double radius;
+          if      (center_ == Meshfree::Scatter) 
+            Wonton::cell_radius<Dim>(source_mesh_, i, &radius);
+          else if (center_ == Meshfree::Gather)  
+            Wonton::cell_radius<Dim>(target_mesh_, i, &radius);
+          std::vector<std::vector<double>> h=smoothing_lengths[i];
+          h[0] = std::vector<double>(Dim, 2.*radius*smoothing_factor_);
+          smoothing_lengths[i]=h;
+        }
       }
 
       // create swarm remap driver
-      Meshfree::SwarmDriver<
+      using SwarmDriverType=
+        Meshfree::SwarmDriver<
         Search,
 	Accumulate,
 	Estimate,
@@ -286,12 +341,36 @@ class MSM_Driver {
         Meshfree::SwarmState<Dim>,
         Meshfree::Swarm<Dim>,
         Meshfree::SwarmState<Dim>
-      > swarm_driver(source_swarm, source_swarm_state,
-                     target_swarm, target_swarm_state,
-                     smoothing_lengths,
-                     kernel_,
-                     geometry_,
-                     center_);
+        >;
+
+      SwarmDriverType *swarm_driver_ptr;
+
+      if (geometry_ == Meshfree::Weight::FACETED) {
+        if (center_ == Meshfree::Scatter) {
+          swarm_driver_ptr = new SwarmDriverType
+            ( source_swarm, source_swarm_state,
+              target_swarm, target_swarm_state,
+              smoothing_lengths, 
+              weight_extents, other_extents, 
+              center_);
+        } else if  (center_ == Meshfree::Gather) {
+          swarm_driver_ptr = new SwarmDriverType
+            ( source_swarm, source_swarm_state,
+              target_swarm, target_swarm_state,
+              smoothing_lengths, 
+              other_extents, weight_extents,  
+              center_);
+        }
+      } else {
+        swarm_driver_ptr = new SwarmDriverType
+          ( source_swarm, source_swarm_state,
+            target_swarm, target_swarm_state,
+            smoothing_lengths,
+            kernel_,
+            geometry_,
+            center_);
+      }
+      SwarmDriverType &swarm_driver(*swarm_driver_ptr);
 
       swarm_driver.set_remap_var_names(source_cellvar_names,
                                        target_cellvar_names,
@@ -299,7 +378,10 @@ class MSM_Driver {
                                        basis_,
 				       operator_spec_,
 				       operator_domains_,
-                                       operator_data_);
+                                       operator_data_,
+                                       part_field_,
+                                       part_tolerance_, 
+                                       part_smoothing);
 
       // do the remap
       swarm_driver.run(executor, true);
@@ -316,6 +398,8 @@ class MSM_Driver {
           mfield[i] = (*sfield)[i];
         }
       }
+
+      delete swarm_driver_ptr;
     }
 
     // NODE VARIABLE SECTION ---------------------------------------------------
@@ -351,6 +435,10 @@ class MSM_Driver {
       Meshfree::SwarmState<Dim> &target_swarm_state(*target_swarm_state_ptr);
 
       // create smoothing lengths
+      if (geometry_ == Meshfree::Weight::FACETED) {
+        std::cerr << "Cannot do FACETED weights for nodal variables yet.\n";
+        return;
+      }
       int nnodes;
       if      (center_ == Meshfree::Scatter) nnodes = source_mesh_.num_owned_nodes();
       else if (center_ == Meshfree::Gather)  nnodes = target_mesh_.num_owned_nodes();
@@ -421,9 +509,12 @@ class MSM_Driver {
   std::vector<std::string> source_remap_var_names_;
   std::vector<std::string> target_remap_var_names_;
   double smoothing_factor_;
+  double boundary_factor_;
   Meshfree::Weight::Kernel kernel_;
   Meshfree::Weight::Geometry geometry_;
   Meshfree::WeightCenter center_;
+  std::string part_field_;
+  double part_tolerance_;
   Meshfree::EstimateType estimate_;
   Meshfree::Basis::Type basis_;
   Meshfree::Operator::Type operator_spec_;

@@ -140,7 +140,7 @@ void test_estimate(Portage::Meshfree::EstimateType etype,
 
     // count actual neighbors
     size_t nnbr=0;
-    for (size_t k=0; k<nsrc; k++) if (accum.weight(k,i)!=0.) nnbr++;
+    for (size_t k=0; k<nsrc; k++) if (accum.weight(i,k)!=0.) nnbr++;
     if (nnbr < nbasis) {
       std::cout << "number of neighbors "<< nnbr << " is too small at " << i << "\n";
     }
