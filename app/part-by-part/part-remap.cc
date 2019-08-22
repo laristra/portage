@@ -6,68 +6,79 @@
 
 #include <fstream>
 #include <memory>
-#ifdef PORTAGE_ENABLE_MPI
-  #include "mpi.h"
-#endif
+#include <chrono>
+#include <map>
+#include "mpi.h" // cannot work without MPI
 
-// jali includes
-#include "Mesh.hh"
+// meshes and states
+#include "wonton/mesh/jali/jali_mesh_wrapper.h"
+#include "wonton/state/jali/jali_state_wrapper.h"
 #include "MeshFactory.hh"
-#include "JaliStateVector.h"
-#include "JaliState.h"
 
-// wonton includes
-#include "wonton/mesh/simple/simple_mesh.h"
-#include "wonton/mesh/simple/simple_mesh_wrapper.h"
-#include "wonton/state/simple/simple_state.h"
-#include "wonton/state/simple/simple_state_mm_wrapper.h"
-#include "wonton/mesh/jali/jali_mesh_wrapper.h"
-#include "wonton/state/jali/jali_state_wrapper.h"
-
-// portage includes
-#include "wonton/mesh/jali/jali_mesh_wrapper.h"
-#include "wonton/state/jali/jali_state_wrapper.h"
-#include "portage/driver/coredriver.h"
+// remap kernels and driver
 #include "portage/search/search_kdtree.h"
 #include "portage/intersect/intersect_r2d.h"
 #include "portage/intersect/intersect_r3d.h"
 #include "portage/intersect/simple_intersect_for_tests.h"
 #include "portage/interpolate/interpolate_1st_order.h"
+#include "portage/driver/coredriver.h"
 
-// parse input
+// parsers
 #include "json.h"
+#include "user_field.h"
 
 namespace app {
-
-  // get rid of long namespaces within the app when no possible confusion.
-  constexpr auto CELL = Wonton::Entity_kind::CELL;
-  constexpr auto NODE = Wonton::Entity_kind::NODE;
-  constexpr auto ALL  = Wonton::Entity_type::ALL;
-  constexpr auto NO_LIMITER = Portage::Limiter_type::NOLIMITER;
-  constexpr auto BARTH_JESPERSEN = Portage::Limiter_type::BARTH_JESPERSEN;
-  constexpr unsigned const default_heap_size = 512;
+  namespace entity {
+    auto const cell = Wonton::Entity_kind::CELL;
+    auto const node = Wonton::Entity_kind::NODE;
+    // entities parts pair data
+    struct part {
+      int id;
+      std::string source;
+      std::string target;
+    };
+  }
+  namespace limiter {
+    auto const none  = Portage::Limiter_type::NOLIMITER;
+    auto const barth = Portage::Limiter_type::BARTH_JESPERSEN;
+  }
 
   // a compact object to store app parameters.
   struct Params {
-    int dimension;                                      // meshes dimension
-    bool is_conform;                                    // conformal meshes?
-    bool do_export;                                     // dump results?
-    std::string source_file;                            // source mesh file
-    std::string target_file;                            // target mesh file
+    // mesh
+    int dimension;                                          // meshes dimension
+    bool conformal;                                         // conformal meshes?
+    bool dump;                                              // export results?
+    std::string source;                                     // source mesh file
+    std::string target;                                     // target mesh file
 
-    int order;                                          // remap accuracy order
-    Portage::Limiter_type limiter;                      // gradient limiter
-    Wonton::Entity_kind entity_kind;                    // node|cell-based remap
-
-    struct Entities {                                   // parts pair data
-      unsigned id;                                      // index of part pair
-      std::vector<int> source;                          // related source entities
-      std::vector<int> target;                          // related target entities
-    };
-    std::map<std::string, std::string> fields;          // scalar fields
-    std::map<std::string, std::vector<Entities>> parts; // meshes parts to remap
+    // remap
+    int order;                                              // accuracy order
+    Portage::Limiter_type limiter;                          // gradient limiter
+    Wonton::Entity_kind   kind;                             // node|cell-based
+    std::map<std::string, std::string> fields;              // fields expression
+    std::map<std::string, std::vector<entity::part>> parts; // per-field parts
   };
-} // namespace 'app'
+}
+
+namespace timer {
+  // get rid of long namespaces
+  using time_t = std::chrono::high_resolution_clock::time_point;
+
+  // get current time point
+  inline time_t now() { return std::chrono::high_resolution_clock::now(); }
+
+  // retrieve elapsed time in seconds.
+  inline float elapsed(time_t& tic, bool reset = false) {
+    auto const secs = static_cast<float>(
+      std::chrono::duration_cast<std::chrono::seconds>(now() - tic).count()
+    );
+
+    if (reset) tic = now();
+    return secs;
+  }
+}
+
 
 /**
  * @brief Display run instructions and input file format.
@@ -75,60 +86,75 @@ namespace app {
  */
 void print_usage() {
 
-  std::printf(" Usage: ./part-remap [params.json]                          \n");
-  std::printf(" [params.json]:                                             \n");
-  std::printf(" {                                                          \n");
-  std::printf("  'mesh': {                                                 \n");
-  std::printf("    'dimension': <2|3>,                                     \n");
-  std::printf("    'source': '/path/to/source/mesh.exo',                   \n");
-  std::printf("    'target': '/path/to/target/mesh.exo',                   \n");
-  std::printf("    'conformal': <boolean>                                  \n");
-  std::printf("    'export': <boolean>                                     \n");
-  std::printf("  },                                                        \n");
-  std::printf("  'remap': {                                                \n");
-  std::printf("    'kind': 'cell',                                         \n");
-  std::printf("    'order': <1|2>,                                         \n");
-  std::printf("    'limiter': <0-2>,                                       \n");
-  std::printf("    'fields': [                                             \n");
-  std::printf("      { 'name': 'density', 'expr': '<math>' }               \n");
-  std::printf("      { 'name': 'temperature', 'expr': '<math>' }           \n");
-  std::printf("    ]                                                       \n");
-  std::printf("  },                                                        \n");
-  std::printf("  'parts': [                                                \n");
-  std::printf("    {                                                       \n");
-  std::printf("      'field': 'density',                                   \n");
-  std::printf("      'entities': [                                         \n");
-  std::printf("        { 'uid': 1, 'source': [0,2,5], 'target': [0,3]   }, \n");
-  std::printf("        { 'uid': 2, 'source': [1,3,4], 'target': [1,2,4] }  \n");
-  std::printf("      ]                                                     \n");
-  std::printf("    }                                                       \n");
-  std::printf("  ]                                                         \n");
-  std::printf(" }                                                          \n");
-  std::printf(" ---------------------------------------------------------- \n");
+  std::printf(
+    " Usage: mpirun -np [nranks] ./part-remap [file.json]                \n\n"
+    " [file.json]:                                                         \n"
+    " {                                                                    \n"
+    "  \e[32m'mesh'\e[0m: {                                                \n"
+    "    \e[32m'dimension'\e[0m: <2|3>,                                    \n"
+    "    \e[32m'source'\e[0m: '/path/to/source/mesh.exo',                  \n"
+    "    \e[32m'target'\e[0m: '/path/to/target/mesh.exo',                  \n"
+    "    \e[32m'conformal'\e[0m: <boolean>                                 \n"
+    "    \e[32m'export'\e[0m: <boolean>                                    \n"
+    "  },                                                                  \n"
+    "  \e[32m'remap'\e[0m: {                                               \n"
+    "    \e[32m'kind'\e[0m: 'cell',                                        \n"
+    "    \e[32m'order'\e[0m: <1|2>,                                        \n"
+    "    \e[32m'limiter'\e[0m: <boolean>                                   \n"
+    "    \e[32m'fields'\e[0m: [                                            \n"
+    "      { \e[32m'name'\e[0m:'density',\e[32m'expr'\e[0m: '<math>' }     \n"
+    "      { \e[32m'name'\e[0m:'temperature', \e[32m'expr'\e[0m: '<math>' }\n"
+    "    ]                                                                 \n"
+    "  },                                                                  \n"
+    "  \e[32m'parts'\e[0m: [                                               \n"
+    "    {                                                                 \n"
+    "      \e[32m'field'\e[0m: 'density',                                  \n"
+    "      \e[32m'pairs'\e[0m: [                                           \n"
+    "        {                                                             \n"
+    "          \e[32m'uid'\e[0m: 1,                                        \n"
+    "          \e[32m'source'\e[0m: <math>,                                \n"
+    "          \e[32m'target'\e[0m: <math>                                 \n"
+    "        },                                                            \n"
+    "        {                                                             \n"
+    "          \e[32m'uid'\e[0m: 2,                                        \n"
+    "          \e[32m'source'\e[0m: <math>,                                \n"
+    "          \e[32m'target'\e[0m: <math>                                 \n"
+    "        }                                                             \n"
+    "      ]                                                               \n"
+    "    }                                                                 \n"
+    "  ]                                                                   \n"
+    " }                                                                    \n"
+  );
+}
+
+/**
+ * @brief Handle errors during argument parsing.
+ *
+ * @param message: a message to be displayed if any.
+ * @param show_usage: hint for usage instructions print.
+ * @return status
+ */
+bool abort(std::string message, bool show_usage = true) {
+
+  if (show_usage)
+    print_usage();
+
+  std::fprintf(stderr,
+    " ---------------------------------------------------------- \n"
+    " \e[31m Error: %s. \e[0m                                    \n"
+    " ---------------------------------------------------------- \n",
+    message.data()
+  );
+  return false;
 }
 
 static app::Params params;
 
 /**
- * @brief Handle errors during argument parsing.
+ * @brief Parse and store app parameters.
  *
- * @param 'message'    a message to be displayed if any.
- * @param 'show_usage' hint for usage instructions print.
- * @return false
- */
-bool abort(std::string message, bool show_usage = true) {
-  if (show_usage)
-    print_usage();
-
-  std::fprintf(stderr, "** Error: %s. **\n", message.data());
-  return false;
-}
-
-/**
- * @brief Retrieve and store parameters.
- *
- * @param 'path' the JSON parameter file path.
- * @return true if no parsing errors, false otherwise.
+ * @param path: the JSON parameter file path.
+ * @return parsing status flag.
  */
 bool parse_params(std::string path) {
 
@@ -210,64 +236,55 @@ bool parse_params(std::string path) {
             }
             // check source list
             if (not pair.count("source"))
-              return abort("no source data for part pair");
-            else if (pair["source"].empty())
-              return abort("empty source entities list for part pair");
+              return abort("no source entities expression for part");
             // check target list
             if (not pair.count("target"))
-              return abort("no target entities for part pair");
-            else if (pair["target"].empty())
-              return abort("empty target entities list for part pair");
+              return abort("no target entities expression for part");
           }
         }
+        helper.clear();
       }
-      helper.clear();
     }
 
+    using namespace app;
+
     // then store them
-    params.dimension   = json["mesh"]["dimension"];
-    params.is_conform  = json["mesh"]["conformal"];
-    params.do_export   = json["mesh"]["export"];
-    params.source_file = json["mesh"]["source"];
-    params.target_file = json["mesh"]["target"];
-    params.order       = json["remap"]["order"];
-    params.entity_kind = json["remap"]["kind"] == "cell" ? app::CELL : app::NODE;
-    params.limiter     = json["remap"]["limiter"] ? app::NO_LIMITER
-                                                  : app::BARTH_JESPERSEN;
+    params.dimension = json["mesh"]["dimension"];
+    params.conformal = json["mesh"]["conformal"];
+    params.dump      = json["mesh"]["export"];
+    params.source    = json["mesh"]["source"];
+    params.target    = json["mesh"]["target"];
+    params.order     = json["remap"]["order"];
+    params.kind      = json["remap"]["kind"] == "cell" ? entity::cell : entity::node;
+    params.limiter   = json["remap"]["limiter"] ? limiter::none : limiter::barth;
 
     for (auto&& scalar : json["remap"]["fields"])
       params.fields[scalar["name"]] = scalar["expr"];
 
     for (auto&& entry : json["parts"]) {
       auto const field = entry["field"];
-      params.parts[field].reserve(app::default_heap_size);
-
       for (auto&& pair : entry["entities"]) {
-        app::Params::Entities parts;
-        parts.id = pair["uid"];
-        for (auto&& s : pair["source"]) { parts.source.push_back(s); }
-        for (auto&& t : pair["target"]) { parts.target.push_back(t); }
-        params.parts[field].emplace_back(parts);
+        params.parts[field].push_back(
+          { pair["uid"], pair["source"], pair["target"] }
+        );
       }
-      params.parts[field].shrink_to_fit();
     }
 
     // check their validity eventually
-    file.open(params.source_file);
+    file.open(params.source);
     if (not file.good())
       return abort("unable to read source mesh file", false);
-    else
-      file.close();
+    file.close();
 
-    file.open(params.target_file);
+    file.open(params.target);
     if (not file.good())
       return abort("unable to read target mesh file", false);
 
     if (params.dimension < 2 or params.dimension > 3)
       return abort("invalid mesh dimension [2|3]", false);
 
-    if (params.order != 1 and params.order != 2)
-      return abort("invalid order of accuracy for remap [0-1]", false);
+    if (params.order < 1 or params.order > 2)
+      return abort("invalid order of accuracy for remap [1|2]", false);
 
   } catch(nlohmann::json::parse_error& e) {
     return abort(e.what());
@@ -276,8 +293,62 @@ bool parse_params(std::string path) {
   return true;
 }
 
+/**
+ * @brief Check application parameters.
+ *
+ * @param argc arguments count
+ * @param argv arguments values
+ * @param my_rank current rank
+ * @return status
+ */
+bool valid(int argc, char* argv[], int my_rank) {
 
+  if (argc != 2) {
+    if (my_rank == 0)
+      print_usage();
+    return false;
+  }
+
+  return parse_params(argv[1]);
+}
+
+
+template <int dim>
+void remap(Wonton::Jali_Mesh_Wrapper  source_mesh_wrapper,
+           Wonton::Jali_Mesh_Wrapper  target_mesh_wrapper,
+           Wonton::Jali_State_Wrapper source_state_wrapper,
+           Wonton::Jali_State_Wrapper target_state_wrapper) {
+
+  // useful shortcuts
+  using Remapper = Portage::CoreDriver<dim, Wonton::Entity_kind::CELL,
+                                            Wonton::Jali_Mesh_Wrapper,
+                                            Wonton::Jali_State_Wrapper>;
+
+  using Parts = Portage::Parts<dim, Wonton::Entity_kind::CELL,
+                                    Wonton::Jali_Mesh_Wrapper,
+                                    Wonton::Jali_State_Wrapper>;
+
+  // perform kernels
+  Remapper remapper(source_mesh_wrapper, source_state_wrapper,
+                    target_mesh_wrapper, target_state_wrapper);
+
+  auto candidates = remapper.search<Portage::SearchKDTree>();
+  auto source_weights = remapper.intersect_meshes<Portage::IntersectR2D>(candidates);
+
+
+}
+
+
+/**
+ * @brief Run the application.
+ *
+ * @param argc: arguments count
+ * @param argv: arguments values
+ * @return status code
+ */
 int main(int argc, char* argv[]) {
+
+  using namespace app;
 
   std::printf(" ---------------------------------------------------------- \n");
   std::printf("  Demonstration app for multi-part field interpolation.     \n");
@@ -285,8 +356,111 @@ int main(int argc, char* argv[]) {
   std::printf("  non-smoothed remap of fields with sharp discontinuities.  \n");
   std::printf(" ---------------------------------------------------------- \n");
 
-  if (parse_params(argv[1])) {
-    std::printf("Everything was fine\n");
+  auto tic = timer::now();
+
+  int threading = 0;
+  int my_rank = 0;
+  int nb_ranks = 0;
+  MPI_Comm comm = MPI_COMM_WORLD;
+
+  // init MPI
+  MPI_Init_thread(NULL, NULL, MPI_THREAD_MULTIPLE, &threading);
+  MPI_Comm_size(comm, &nb_ranks);
+  MPI_Comm_rank(comm, &my_rank);
+
+  // check and parse parameters
+  if (not valid(argc, argv, my_rank)) {
+    MPI_Finalize();
+    return EXIT_FAILURE;
   }
+
+  /* ------------------------------------------------------------------------ */
+  if (my_rank == 0)
+    std::printf("Initializing distributed meshes ... ");
+
+  // source and target meshes and states
+  std::shared_ptr<Jali::Mesh>  source_mesh;
+  std::shared_ptr<Jali::Mesh>  target_mesh;
+  std::shared_ptr<Jali::State> source_state;
+  std::shared_ptr<Jali::State> target_state;
+
+  // load both distributed meshes
+  Jali::MeshFactory mesh_factory(comm);
+  mesh_factory.included_entities({Jali::Entity_kind::ALL_KIND});
+  mesh_factory.partitioner(Jali::Partitioner_type::METIS);
+
+  source_mesh  = mesh_factory(params.source);
+  target_mesh  = mesh_factory(params.target);
+  source_state = Jali::State::create(source_mesh);
+  target_state = Jali::State::create(target_mesh);
+
+  // interfaces with the underlying mesh data structures
+  Wonton::Jali_Mesh_Wrapper  source_mesh_wrapper(*source_mesh);
+  Wonton::Jali_Mesh_Wrapper  target_mesh_wrapper(*target_mesh);
+  Wonton::Jali_State_Wrapper source_state_wrapper(*source_state);
+  Wonton::Jali_State_Wrapper target_state_wrapper(*target_state);
+
+  // ensure that source and target mesh have the same dimension,
+  // and that it corresponds to the one specified by the user.
+  assert(source_mesh->space_dimension() == target_mesh->space_dimension());
+  assert(params.dimension == source_mesh->space_dimension());
+
+  // retrieve mesh resolutions
+  int const nb_source_cells = source_mesh_wrapper.num_owned_cells()
+                            + source_mesh_wrapper.num_ghost_cells();
+
+  int const nb_target_cells = source_mesh_wrapper.num_owned_cells()
+                            + source_mesh_wrapper.num_ghost_cells();
+
+  auto init_time = timer::elapsed(tic, true);
+  if (my_rank == 0)
+    std::printf(" done. \e[32m(%.3f s)\e[0m\n", init_time);
+
+  MPI_Barrier(comm);
+
+  /* ------------------------------------------------------------------------ */
+  if (my_rank == 0)
+    std::printf("Running part-by-part remap ... \n");
+
+  assert(not params.fields.empty());
+  assert(not params.parts.empty());
+
+  // print some infos for the user
+  if (my_rank == 0) {
+    std::printf(" = source mesh has %d cells.\n", nb_source_cells);
+    std::printf(" = target mesh has %d cells.\n", nb_target_cells);
+    std::printf(" = specified numerical fields: \n");
+    for (auto&& field : params.fields)
+      std::printf("   - %s: %s\n", field.first.data(), field.second.data());
+
+    std::printf("\n");
+  }
+
+  // assign scalar fields
+  for (auto&& field : params.fields) {
+    double* field_data = nullptr;
+    // add scalar field to both meshes
+    source_state_wrapper.mesh_add_data<double>(entity::cell, field.first, 0.);
+    target_state_wrapper.mesh_add_data<double>(entity::cell, field.first, 0.);
+    source_state_wrapper.mesh_get_data(entity::cell, field.first, &field_data);
+
+    // evaluate field expression and assign it
+    user_field_t source_field;
+    assert(source_field.initialize(params.dimension, field.second));
+    for (int c = 0; c < nb_source_cells; c++) {
+      field_data[c] = source_field(source_mesh->cell_centroid(c));
+    }
+  }
+
+  // process remap
+
+
+
+
+
+
+
+
+  MPI_Finalize();
   return EXIT_SUCCESS;
 }

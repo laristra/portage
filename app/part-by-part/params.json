@@ -19,15 +19,16 @@
     {
       "field": "density",
       "pairs": [
-        { "uid": 1, "source": [0.2,5], "target": [0,3] },
-        { "uid": 2, "source": [1,3,4], "target": [1,2,4] }
-      ]
-    },
-    {
-      "field": "temperature",
-      "pairs": [
-        { "uid": 3, "source": [1,2,4], "target": [0,1,4] },
-        { "uid": 4, "source": [0,3,5], "target": [2,3] }
+        {
+          "uid": 1,
+          "source": "",
+          "target": ""
+        },
+        {
+          "uid": 2,
+          "source": "",
+          "target": ""
+        }
       ]
     }
   ]
