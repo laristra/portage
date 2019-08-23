@@ -140,9 +140,6 @@ int parse(int argc, char* argv[]);
  * @param target_cells
  * @param nb_source_cells
  * @param nb_target_cells
- * @param upper_bound
- * @param lower_bound
- * @param epsilon
  * @return status
  */
 template <int dim>
@@ -156,8 +153,7 @@ bool remap(std::string field, int nb_parts,
            Wonton::Executor_type* executor,
            std::vector<std::vector<int>> const& source_cells,
            std::vector<std::vector<int>> const& target_cells,
-           int nb_source_cells, int nb_target_cells,
-           double upper_bound, double lower_bound, double epsilon);
+           int nb_source_cells, int nb_target_cells);
 
 /**
  * @brief Parse and store app parameters.
@@ -201,13 +197,13 @@ void print_usage() {
     "      \e[32m'pairs'\e[0m: [                                           \n"
     "        {                                                             \n"
     "          \e[32m'uid'\e[0m: 1,                                        \n"
-    "          \e[32m'source'\e[0m: <math>,                                \n"
-    "          \e[32m'target'\e[0m: <math>                                 \n"
+    "          \e[32m'source'\e[0m: <math. predicate>,                     \n"
+    "          \e[32m'target'\e[0m: <math. predicate>                      \n"
     "        },                                                            \n"
     "        {                                                             \n"
     "          \e[32m'uid'\e[0m: 2,                                        \n"
-    "          \e[32m'source'\e[0m: <math>,                                \n"
-    "          \e[32m'target'\e[0m: <math>                                 \n"
+    "          \e[32m'source'\e[0m: <math. predicate>,                     \n"
+    "          \e[32m'target'\e[0m: <math. predicate>                      \n"
     "        }                                                             \n"
     "      ]                                                               \n"
     "    }                                                                 \n"
@@ -401,9 +397,6 @@ int parse(int argc, char* argv[]) {
  * @param target_cells
  * @param nb_source_cells
  * @param nb_target_cells
- * @param upper_bound
- * @param lower_bound
- * @param epsilon
  * @return
  */
 template<>
@@ -417,8 +410,7 @@ bool remap<2>(std::string field, int nb_parts,
               Wonton::Executor_type* executor,
               std::vector<std::vector<int>> const& source_cells,
               std::vector<std::vector<int>> const& target_cells,
-              int nb_source_cells, int nb_target_cells,
-              double upper_bound, double lower_bound, double epsilon) {
+              int nb_source_cells, int nb_target_cells) {
 
   using Remapper = Portage::CoreDriver<2, Wonton::Entity_kind::CELL,
                                           Wonton::Jali_Mesh_Wrapper,
@@ -474,9 +466,6 @@ bool remap<2>(std::string field, int nb_parts,
  * @param target_cells
  * @param nb_source_cells
  * @param nb_target_cells
- * @param upper_bound
- * @param lower_bound
- * @param epsilon
  * @return
  */
 template<>
@@ -490,8 +479,7 @@ bool remap<3>(std::string field, int nb_parts,
               Wonton::Executor_type* executor,
               std::vector<std::vector<int>> const& source_cells,
               std::vector<std::vector<int>> const& target_cells,
-              int nb_source_cells, int nb_target_cells,
-              double upper_bound, double lower_bound, double epsilon) {
+              int nb_source_cells, int nb_target_cells) {
 
   using Remapper = Portage::CoreDriver<3, Wonton::Entity_kind::CELL,
                                           Wonton::Jali_Mesh_Wrapper,
@@ -693,15 +681,13 @@ int main(int argc, char* argv[]) {
                        source_mesh_wrapper, target_mesh_wrapper,
                        source_state_wrapper, target_state_wrapper,
                        executor, source_cells, target_cells,
-                       nb_source_cells, nb_target_cells,
-                       upper_bound, lower_bound, epsilon); break;
+                       nb_source_cells, nb_target_cells); break;
 
       case 3: remap<3>(field, nb_parts, source_mesh, target_mesh,
                        source_mesh_wrapper, target_mesh_wrapper,
                        source_state_wrapper, target_state_wrapper,
                        executor, source_cells, target_cells,
-                       nb_source_cells, nb_target_cells,
-                       upper_bound, lower_bound, epsilon); break;
+                       nb_source_cells, nb_target_cells); break;
 
       default: return abort("invalid dimension", false);
     }
@@ -716,7 +702,27 @@ int main(int argc, char* argv[]) {
     std::printf("Remap done. \e[32m(%.3f s)\e[0m\n", remap_time);
 
   /* ------------------------------------------------------------------------ */
+  if (params.dump) {
+    if (my_rank == 0)
+      std::printf("Dump data to exodus files ... ");
+
+    // all field data are already attached to meshes states
+    source_state->export_to_mesh();
+    target_state->export_to_mesh();
+    source_mesh->write_to_exodus_file("source.exo");
+    target_mesh->write_to_exodus_file("target.exo");
+
+    // TODO: dump field to a distinct result file
+
+    MPI_Barrier(comm);
+
+    auto dump_time = timer::elapsed(tic, true);
+    if (my_rank == 0)
+      std::printf(" done. \e[32m(%.3f s)\e[0m\n", dump_time);
+  }
 
   MPI_Finalize();
   return EXIT_SUCCESS;
 }
+
+/* -------------------------------------------------------------------------- */
