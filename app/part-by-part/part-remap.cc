@@ -4,11 +4,12 @@
   https://github.com/laristra/portage/blob/master/LICENSE
 */
 
+/* -------------------------------------------------------------------------- */
 #include <fstream>
 #include <memory>
 #include <chrono>
 #include <map>
-#include "mpi.h" // cannot work without MPI
+#include "mpi.h" // mandatory
 
 // meshes and states
 #include "wonton/mesh/jali/jali_mesh_wrapper.h"
@@ -26,41 +27,26 @@
 // parsers
 #include "json.h"
 #include "user_field.h"
+#include "filter.h"
+/* -------------------------------------------------------------------------- */
+namespace entity {
+  auto const cell = Wonton::Entity_kind::CELL;
+  auto const node = Wonton::Entity_kind::NODE;
 
-namespace app {
-  namespace entity {
-    auto const cell = Wonton::Entity_kind::CELL;
-    auto const node = Wonton::Entity_kind::NODE;
-    // entities parts pair data
-    struct part {
-      int id;
-      std::string source;
-      std::string target;
-    };
-  }
-  namespace limiter {
-    auto const none  = Portage::Limiter_type::NOLIMITER;
-    auto const barth = Portage::Limiter_type::BARTH_JESPERSEN;
-  }
-
-  // a compact object to store app parameters.
-  struct Params {
-    // mesh
-    int dimension;                                          // meshes dimension
-    bool conformal;                                         // conformal meshes?
-    bool dump;                                              // export results?
-    std::string source;                                     // source mesh file
-    std::string target;                                     // target mesh file
-
-    // remap
-    int order;                                              // accuracy order
-    Portage::Limiter_type limiter;                          // gradient limiter
-    Wonton::Entity_kind   kind;                             // node|cell-based
-    std::map<std::string, std::string> fields;              // fields expression
-    std::map<std::string, std::vector<entity::part>> parts; // per-field parts
+  // entities parts pair data
+  struct part {
+    int id;
+    std::string source;
+    std::string target;
   };
 }
+/* -------------------------------------------------------------------------- */
+namespace limiter {
+  auto const none  = Portage::Limiter_type::NOLIMITER;
+  auto const barth = Portage::Limiter_type::BARTH_JESPERSEN;
+}
 
+/* -------------------------------------------------------------------------- */
 namespace timer {
   // get rid of long namespaces
   using time_t = std::chrono::high_resolution_clock::time_point;
@@ -70,15 +56,118 @@ namespace timer {
 
   // retrieve elapsed time in seconds.
   inline float elapsed(time_t& tic, bool reset = false) {
-    auto const secs = static_cast<float>(
+    auto secs = static_cast<float>(
       std::chrono::duration_cast<std::chrono::seconds>(now() - tic).count()
     );
 
-    if (reset) tic = now();
+    if (reset)
+      tic = now();
+
     return secs;
   }
 }
 
+/* -------------------------------------------------------------------------- */
+struct Params {
+  /* mesh */
+  int dimension = 2;         // meshes dimension
+  bool conformal = true;     // conformal meshes?
+  bool dump = false;         // export results?
+  std::string source {};     // source mesh file
+  std::string target {};     // target mesh file
+
+  /* remap */
+  int order = 1;                                   // accuracy order
+  Portage::Limiter_type limiter = limiter::none;   // gradient limiter
+  Wonton::Entity_kind kind = entity::cell;         // node|cell-based
+  std::map<std::string, std::string> fields {};    // fields expression
+  std::map<std::string, std::vector<entity::part>> parts {}; // per-field
+};
+
+/* -------------------------------------------------------------------------- */
+// app parameters
+static Params params;
+
+// MPI variables
+static int threading = 0;
+static int my_rank   = 0;
+static int nb_ranks  = 0;
+static MPI_Comm comm = MPI_COMM_WORLD;
+
+// constants for interpolation
+static double const upper_bound = std::numeric_limits<double>::max();
+static double const lower_bound = -upper_bound;
+static double const epsilon = 1.E-10;
+
+/* -------------------------------------------------------------------------- */
+/**
+ * @brief Display run instructions and input file format.
+ *
+ */
+void print_usage();
+
+/**
+ * @brief Handle runtime errors.
+ *
+ * @param message: a message to be displayed if any.
+ * @param show_usage: hint for usage instructions print.
+ * @return status code
+ */
+int abort(std::string message, bool show_usage = true);
+
+/**
+ * @brief Parse and store app parameters.
+ *
+ * @param path: the JSON parameter file path.
+ * @return parsing status flag.
+ */
+int parse(int argc, char* argv[]);
+
+/**
+ * @brief Process part-by-part remapping for given field.
+ *
+ * @tparam dim:
+ * @param field
+ * @param nb_parts
+ * @param source_mesh
+ * @param target_mesh
+ * @param source_mesh_wrapper
+ * @param target_mesh_wrapper
+ * @param source_state_wrapper
+ * @param target_state_wrapper
+ * @param executor
+ * @param source_cells
+ * @param target_cells
+ * @param nb_source_cells
+ * @param nb_target_cells
+ * @param upper_bound
+ * @param lower_bound
+ * @param epsilon
+ * @return status
+ */
+template <int dim>
+bool remap(std::string field, int nb_parts,
+           std::shared_ptr<Jali::Mesh> source_mesh,
+           std::shared_ptr<Jali::Mesh> target_mesh,
+           Wonton::Jali_Mesh_Wrapper&  source_mesh_wrapper,
+           Wonton::Jali_Mesh_Wrapper&  target_mesh_wrapper,
+           Wonton::Jali_State_Wrapper& source_state_wrapper,
+           Wonton::Jali_State_Wrapper& target_state_wrapper,
+           Wonton::Executor_type* executor,
+           std::vector<std::vector<int>> const& source_cells,
+           std::vector<std::vector<int>> const& target_cells,
+           int nb_source_cells, int nb_target_cells,
+           double upper_bound, double lower_bound, double epsilon);
+
+/**
+ * @brief Parse and store app parameters.
+ *
+ * @param path: the JSON parameter file path.
+ * @return parsing status flag.
+ */
+int parse(int argc, char* argv[]);
+
+/* -------------------------------------------------------------------------- */
 
 /**
  * @brief Display run instructions and input file format.
@@ -128,27 +217,30 @@ void print_usage() {
 }
 
 /**
- * @brief Handle errors during argument parsing.
+ * @brief Handle runtime errors.
  *
  * @param message: a message to be displayed if any.
  * @param show_usage: hint for usage instructions print.
  * @return status
  */
-bool abort(std::string message, bool show_usage = true) {
+int abort(std::string message, bool show_usage) {
 
-  if (show_usage)
-    print_usage();
+  if (my_rank == 0) {
+    if (show_usage)
+      print_usage();
 
-  std::fprintf(stderr,
-    " ---------------------------------------------------------- \n"
-    " \e[31m Error: %s. \e[0m                                    \n"
-    " ---------------------------------------------------------- \n",
-    message.data()
-  );
-  return false;
+    std::fprintf(stderr,
+      " ---------------------------------------------------------- \n"
+      " \e[31m Error: %s. \e[0m                                    \n"
+      " ---------------------------------------------------------- \n",
+      message.data()
+    );
+  }
+
+  MPI_Finalize();
+  return EXIT_FAILURE;
 }
 
-static app::Params params;
 
 /**
  * @brief Parse and store app parameters.
@@ -156,9 +248,12 @@ static app::Params params;
  * @param path: the JSON parameter file path.
  * @return parsing status flag.
  */
-bool parse_params(std::string path) {
+int parse(int argc, char* argv[]) {
 
-  std::ifstream file(path);
+  if (argc != 2 or argv == nullptr)
+    return abort("wrong arguments");
+
+  std::ifstream file(argv[1]);
   if (not file.good())
     return abort("unable to open input file", false);
 
@@ -246,8 +341,6 @@ bool parse_params(std::string path) {
       }
     }
 
-    using namespace app;
-
     // then store them
     params.dimension = json["mesh"]["dimension"];
     params.conformal = json["mesh"]["conformal"];
@@ -290,54 +383,154 @@ bool parse_params(std::string path) {
     return abort(e.what());
   }
   // everything was ok
-  return true;
+  return EXIT_SUCCESS;
 }
 
 /**
- * @brief Check application parameters.
  *
- * @param argc arguments count
- * @param argv arguments values
- * @param my_rank current rank
- * @return status
+ * @param field
+ * @param nb_parts
+ * @param source_mesh
+ * @param target_mesh
+ * @param source_mesh_wrapper
+ * @param target_mesh_wrapper
+ * @param source_state_wrapper
+ * @param target_state_wrapper
+ * @param executor
+ * @param source_cells
+ * @param target_cells
+ * @param nb_source_cells
+ * @param nb_target_cells
+ * @param upper_bound
+ * @param lower_bound
+ * @param epsilon
+ * @return
  */
-bool valid(int argc, char* argv[], int my_rank) {
+template<>
+bool remap<2>(std::string field, int nb_parts,
+              std::shared_ptr<Jali::Mesh> source_mesh,
+              std::shared_ptr<Jali::Mesh> target_mesh,
+              Wonton::Jali_Mesh_Wrapper&  source_mesh_wrapper,
+              Wonton::Jali_Mesh_Wrapper&  target_mesh_wrapper,
+              Wonton::Jali_State_Wrapper& source_state_wrapper,
+              Wonton::Jali_State_Wrapper& target_state_wrapper,
+              Wonton::Executor_type* executor,
+              std::vector<std::vector<int>> const& source_cells,
+              std::vector<std::vector<int>> const& target_cells,
+              int nb_source_cells, int nb_target_cells,
+              double upper_bound, double lower_bound, double epsilon) {
 
-  if (argc != 2) {
-    if (my_rank == 0)
-      print_usage();
-    return false;
+  using Remapper = Portage::CoreDriver<2, Wonton::Entity_kind::CELL,
+                                          Wonton::Jali_Mesh_Wrapper,
+                                          Wonton::Jali_State_Wrapper>;
+
+  using Parts = Portage::Parts<2, Wonton::Entity_kind::CELL,
+                                  Wonton::Jali_Mesh_Wrapper,
+                                  Wonton::Jali_State_Wrapper>;
+
+  std::vector<Parts> parts_manager;
+  parts_manager.reserve(nb_parts);
+
+  // filter cells and populate lists
+  for (int i = 0; i < nb_parts; ++i) {
+    parts_manager.emplace_back(source_mesh_wrapper, target_mesh_wrapper,
+                               source_state_wrapper,target_state_wrapper,
+                               source_cells[i], target_cells[i], executor);
   }
 
-  return parse_params(argv[1]);
-}
-
-
-template <int dim>
-void remap(Wonton::Jali_Mesh_Wrapper  source_mesh_wrapper,
-           Wonton::Jali_Mesh_Wrapper  target_mesh_wrapper,
-           Wonton::Jali_State_Wrapper source_state_wrapper,
-           Wonton::Jali_State_Wrapper target_state_wrapper) {
-
-  // useful shortcuts
-  using Remapper = Portage::CoreDriver<dim, Wonton::Entity_kind::CELL,
-                                            Wonton::Jali_Mesh_Wrapper,
-                                            Wonton::Jali_State_Wrapper>;
-
-  using Parts = Portage::Parts<dim, Wonton::Entity_kind::CELL,
-                                    Wonton::Jali_Mesh_Wrapper,
-                                    Wonton::Jali_State_Wrapper>;
-
-  // perform kernels
+  // perform remap kernels.
   Remapper remapper(source_mesh_wrapper, source_state_wrapper,
                     target_mesh_wrapper, target_state_wrapper);
 
   auto candidates = remapper.search<Portage::SearchKDTree>();
-  auto source_weights = remapper.intersect_meshes<Portage::IntersectR2D>(candidates);
+  auto weights = remapper.intersect_meshes<Portage::IntersectR2D>(candidates);
 
+  for (int i = 0; i < nb_parts; ++i) {
+    // test for mismatch and compute volumes
+    parts_manager[i].test_mismatch(weights);
 
+    // interpolate field for current part
+    remapper.interpolate_mesh_var<double, Portage::Interpolate_1stOrder>(
+      field, field, weights, lower_bound, upper_bound,
+      Portage::DEFAULT_LIMITER, Portage::DEFAULT_PARTIAL_FIXUP_TYPE,
+      Portage::DEFAULT_EMPTY_FIXUP_TYPE, Portage::DEFAULT_CONSERVATION_TOL,
+      Portage::DEFAULT_MAX_FIXUP_ITER, &(parts_manager[i])
+    );
+  }
 }
 
+/**
+ *
+ * @param field
+ * @param nb_parts
+ * @param source_mesh
+ * @param target_mesh
+ * @param source_mesh_wrapper
+ * @param target_mesh_wrapper
+ * @param source_state_wrapper
+ * @param target_state_wrapper
+ * @param executor
+ * @param source_cells
+ * @param target_cells
+ * @param nb_source_cells
+ * @param nb_target_cells
+ * @param upper_bound
+ * @param lower_bound
+ * @param epsilon
+ * @return
+ */
+template<>
+bool remap<3>(std::string field, int nb_parts,
+              std::shared_ptr<Jali::Mesh> source_mesh,
+              std::shared_ptr<Jali::Mesh> target_mesh,
+              Wonton::Jali_Mesh_Wrapper&  source_mesh_wrapper,
+              Wonton::Jali_Mesh_Wrapper&  target_mesh_wrapper,
+              Wonton::Jali_State_Wrapper& source_state_wrapper,
+              Wonton::Jali_State_Wrapper& target_state_wrapper,
+              Wonton::Executor_type* executor,
+              std::vector<std::vector<int>> const& source_cells,
+              std::vector<std::vector<int>> const& target_cells,
+              int nb_source_cells, int nb_target_cells,
+              double upper_bound, double lower_bound, double epsilon) {
+
+  using Remapper = Portage::CoreDriver<3, Wonton::Entity_kind::CELL,
+                                          Wonton::Jali_Mesh_Wrapper,
+                                          Wonton::Jali_State_Wrapper>;
+
+  using Parts = Portage::Parts<3, Wonton::Entity_kind::CELL,
+                                  Wonton::Jali_Mesh_Wrapper,
+                                  Wonton::Jali_State_Wrapper>;
+
+  std::vector<Parts> parts_manager;
+  parts_manager.reserve(nb_parts);
+
+  // filter cells and populate lists
+  for (int i = 0; i < nb_parts; ++i) {
+    parts_manager.emplace_back(source_mesh_wrapper, target_mesh_wrapper,
+                               source_state_wrapper,target_state_wrapper,
+                               source_cells[i], target_cells[i], executor);
+  }
+
+  // perform remap kernels.
+  Remapper remapper(source_mesh_wrapper, source_state_wrapper,
+                    target_mesh_wrapper, target_state_wrapper);
+
+  auto candidates = remapper.search<Portage::SearchKDTree>();
+  auto weights = remapper.intersect_meshes<Portage::IntersectR2D>(candidates);
+
+  for (int i = 0; i < nb_parts; ++i) {
+    // test for mismatch and compute volumes
+    parts_manager[i].test_mismatch(weights);
+
+    // interpolate field for current part
+    remapper.interpolate_mesh_var<double, Portage::Interpolate_1stOrder>(
+      field, field, weights, lower_bound, upper_bound,
+      Portage::DEFAULT_LIMITER, Portage::DEFAULT_PARTIAL_FIXUP_TYPE,
+      Portage::DEFAULT_EMPTY_FIXUP_TYPE, Portage::DEFAULT_CONSERVATION_TOL,
+      Portage::DEFAULT_MAX_FIXUP_ITER, &(parts_manager[i])
+    );
+  }
+}
 
 /**
  * @brief Run the application.
@@ -348,8 +541,6 @@ void remap(Wonton::Jali_Mesh_Wrapper  source_mesh_wrapper,
  */
 int main(int argc, char* argv[]) {
 
-  using namespace app;
-
   std::printf(" ---------------------------------------------------------- \n");
   std::printf("  Demonstration app for multi-part field interpolation.     \n");
   std::printf("  It handles pure cells remap of multi-material meshes and  \n");
@@ -358,21 +549,14 @@ int main(int argc, char* argv[]) {
 
   auto tic = timer::now();
 
-  int threading = 0;
-  int my_rank = 0;
-  int nb_ranks = 0;
-  MPI_Comm comm = MPI_COMM_WORLD;
-
   // init MPI
   MPI_Init_thread(NULL, NULL, MPI_THREAD_MULTIPLE, &threading);
   MPI_Comm_size(comm, &nb_ranks);
   MPI_Comm_rank(comm, &my_rank);
 
   // check and parse parameters
-  if (not valid(argc, argv, my_rank)) {
-    MPI_Finalize();
+  if (parse(argc, argv) == EXIT_FAILURE)
     return EXIT_FAILURE;
-  }
 
   /* ------------------------------------------------------------------------ */
   if (my_rank == 0)
@@ -400,6 +584,9 @@ int main(int argc, char* argv[]) {
   Wonton::Jali_State_Wrapper source_state_wrapper(*source_state);
   Wonton::Jali_State_Wrapper target_state_wrapper(*target_state);
 
+  Wonton::MPIExecutor_type mpi_executor(comm);
+  Wonton::Executor_type *executor = (nb_ranks > 1 ? &mpi_executor : nullptr);
+
   // ensure that source and target mesh have the same dimension,
   // and that it corresponds to the one specified by the user.
   assert(source_mesh->space_dimension() == target_mesh->space_dimension());
@@ -412,24 +599,23 @@ int main(int argc, char* argv[]) {
   int const nb_target_cells = source_mesh_wrapper.num_owned_cells()
                             + source_mesh_wrapper.num_ghost_cells();
 
+  int const nb_fields = params.fields.size();
+
+  MPI_Barrier(comm);
+
   auto init_time = timer::elapsed(tic, true);
   if (my_rank == 0)
     std::printf(" done. \e[32m(%.3f s)\e[0m\n", init_time);
-
-  MPI_Barrier(comm);
 
   /* ------------------------------------------------------------------------ */
   if (my_rank == 0)
     std::printf("Running part-by-part remap ... \n");
 
-  assert(not params.fields.empty());
-  assert(not params.parts.empty());
-
   // print some infos for the user
   if (my_rank == 0) {
-    std::printf(" = source mesh has %d cells.\n", nb_source_cells);
-    std::printf(" = target mesh has %d cells.\n", nb_target_cells);
-    std::printf(" = specified numerical fields: \n");
+    std::printf(" - source mesh has %d cells.\n", nb_source_cells);
+    std::printf(" - target mesh has %d cells.\n", nb_target_cells);
+    std::printf(" - specified numerical fields: \n");
     for (auto&& field : params.fields)
       std::printf("   - %s: %s\n", field.first.data(), field.second.data());
 
@@ -446,20 +632,90 @@ int main(int argc, char* argv[]) {
 
     // evaluate field expression and assign it
     user_field_t source_field;
-    assert(source_field.initialize(params.dimension, field.second));
-    for (int c = 0; c < nb_source_cells; c++) {
-      field_data[c] = source_field(source_mesh->cell_centroid(c));
-    }
+    if(source_field.initialize(params.dimension, field.second)) {
+      for (int c = 0; c < nb_source_cells; c++)
+        field_data[c] = source_field(source_mesh->cell_centroid(c));
+    } else
+      return abort("cannot parse numerical field "+ field.second, false);
   }
 
-  // process remap
+  MPI_Barrier(comm);
 
+  std::vector<std::vector<int>> source_cells;
+  std::vector<std::vector<int>> target_cells;
 
+  // remap each field
+  for (auto&& entry : params.fields) {
+    std::string field = entry.first;
+    int const nb_parts = params.parts[field].size();
 
+    // first determine source and target parts for this field.
+    filter_t filter;
+    source_cells.resize(nb_parts);
+    target_cells.resize(nb_parts);
 
+    for (int i = 0; i < nb_parts; ++i) {
+      auto const& part = params.parts[field][i];
+      source_cells[i].reserve(nb_source_cells);
+      target_cells[i].reserve(nb_target_cells);
 
+      // populate source part entities
+      if (filter.initialize(params.dimension, part.source)) {
+        for (int s = 0; s < nb_source_cells; ++s) {
+          if (filter(source_mesh->cell_centroid(s)))
+            source_cells[i].push_back(s);
+        }
+        source_cells[i].shrink_to_fit();
+      }
+      else
+        return abort("cannot filter source part cells for field "+field, false);
 
+      // populate target part entities
+      if (filter.initialize(params.dimension, part.target)) {
+        for (int t = 0; t < nb_target_cells; ++t) {
+          if (filter(target_mesh->cell_centroid(t)))
+            target_cells[i].push_back(t);
+        }
+        target_cells[i].shrink_to_fit();
+      }
+      else
+        return abort("cannot filter target part cells for field "+field, false);
+    }
 
+    MPI_Barrier(comm);
+
+    // then process part-by-part remapping.
+    // need to explicitly instantiate the driver due to template arguments
+    // forwarding failure when instantiating search and intersection kernels.
+    // part-by-part remap each field
+    switch (params.dimension) {
+      case 2: remap<2>(field, nb_parts, source_mesh, target_mesh,
+                       source_mesh_wrapper, target_mesh_wrapper,
+                       source_state_wrapper, target_state_wrapper,
+                       executor, source_cells, target_cells,
+                       nb_source_cells, nb_target_cells,
+                       upper_bound, lower_bound, epsilon); break;
+
+      case 3: remap<3>(field, nb_parts, source_mesh, target_mesh,
+                       source_mesh_wrapper, target_mesh_wrapper,
+                       source_state_wrapper, target_state_wrapper,
+                       executor, source_cells, target_cells,
+                       nb_source_cells, nb_target_cells,
+                       upper_bound, lower_bound, epsilon); break;
+
+      default: return abort("invalid dimension", false);
+    }
+
+    source_cells.clear();
+    target_cells.clear();
+    MPI_Barrier(comm);
+  }
+
+  auto remap_time = timer::elapsed(tic, true);
+  if (my_rank == 0)
+    std::printf("Remap done. \e[32m(%.3f s)\e[0m\n", remap_time);
+
+  /* ------------------------------------------------------------------------ */
 
   MPI_Finalize();
   return EXIT_SUCCESS;
