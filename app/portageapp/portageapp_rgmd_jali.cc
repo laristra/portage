@@ -68,7 +68,7 @@ using Wonton::Jali_Mesh_Wrapper;
 
 namespace RGMDApp {
   enum Problem_type {
-    SINGLEMAT, TJUNCTION, BALL, ROTOR
+    SRCPURECELLS, TJUNCTION, BALL, ROTOR
   };
 }
 
@@ -87,7 +87,7 @@ namespace RGMDApp {
   defines the material distribution in the computational domain.
 
   Currently, the following problems are implemented:
-  - singlemat: domain contains three materials, interfaces between materials
+  - srcpurecells: domain contains three materials, interfaces between materials
   are linear (two lines in 2D and two planes in 3D) and ARE parallel to
   coordinate lines/planes. Interfaces forms a T-junction in the center of
   the domain. Cells that end up containing more than one material will be reset
@@ -110,7 +110,7 @@ namespace RGMDApp {
 int print_usage() {
   std::cout << std::endl;
   std::cout << "Usage: portageapp_rgmd_jali " <<
-      "--problem=singlemat|tjunction|ball|rotor \n" <<  
+      "--problem=srcpurecells|tjunction|ball|rotor \n" <<  
       "--dim=2|3 --nsourcecells=N --ntargetcells=M \n" << 
       "--source_convex_cells=y|n --target_convex_cells=y|n \n" <<
       "--remap_order=1|2 \n" <<
@@ -185,15 +185,15 @@ int print_usage() {
 //////////////////////////////////////////////////////////////////////
 
 template<class Mesh_Wrapper>
-void singlemat_material_data(const Mesh_Wrapper& mesh,
-                             std::vector<int>& mesh_material_IDs,
-                             std::vector<int>& cell_num_mats,
-                             std::vector<int>& cell_mat_ids,
-                             std::vector<double>& cell_mat_volfracs,
-                             std::vector< Wonton::Point<2> >& cell_mat_centroids,
-                             const double vol_tol,
-                             const double dst_tol,
-                             bool decompose_cells) {
+void srcpurecells_material_data(const Mesh_Wrapper& mesh,
+                                std::vector<int>& mesh_material_IDs,
+                                std::vector<int>& cell_num_mats,
+                                std::vector<int>& cell_mat_ids,
+                                std::vector<double>& cell_mat_volfracs,
+                                std::vector< Wonton::Point<2> >& cell_mat_centroids,
+                                const double vol_tol,
+                                const double dst_tol,
+                                bool decompose_cells) {
   mesh_material_IDs = {2, 0, 1};
   const std::vector< Wonton::Vector<2> > material_interface_normals = {
     Wonton::Vector<2>(1.0, 0.0), Wonton::Vector<2>(0.0, -1.0)
@@ -312,15 +312,15 @@ void rotor_material_data(const Mesh_Wrapper& mesh,
 }
 
 template<class Mesh_Wrapper>
-void singlemat_material_data(const Mesh_Wrapper& mesh,
-                             std::vector<int>& mesh_material_IDs,
-                             std::vector<int>& cell_num_mats,
-                             std::vector<int>& cell_mat_ids,
-                             std::vector<double>& cell_mat_volfracs,
-                             std::vector< Wonton::Point<3> >& cell_mat_centroids,
-                             const double vol_tol,
-                             const double dst_tol,
-                             bool decompose_cells) {
+void srcpurecells_material_data(const Mesh_Wrapper& mesh,
+                                std::vector<int>& mesh_material_IDs,
+                                std::vector<int>& cell_num_mats,
+                                std::vector<int>& cell_mat_ids,
+                                std::vector<double>& cell_mat_volfracs,
+                                std::vector< Wonton::Point<3> >& cell_mat_centroids,
+                                const double vol_tol,
+                                const double dst_tol,
+                                bool decompose_cells) {
   mesh_material_IDs = {2, 0, 1};
   const std::vector< Wonton::Vector<3> > material_interface_normals = {
     Wonton::Vector<3>(1.0, 0.0, 0.0), Wonton::Vector<3>(0.0, 0.0, -1.0)
@@ -559,8 +559,8 @@ int main(int argc, char** argv) {
     std::string valueword = arg.substr(keyword_end+1, len-(keyword_end+1));
 
     if (keyword == "problem") {
-      if(valueword == "singlemat")
-        problem = RGMDApp::Problem_type::SINGLEMAT;
+      if(valueword == "srcpurecells")
+        problem = RGMDApp::Problem_type::SRCPURECELLS;
       else if(valueword == "tjunction")
         problem = RGMDApp::Problem_type::TJUNCTION;
       else if (valueword == "ball")
@@ -692,7 +692,7 @@ int main(int argc, char** argv) {
   profiler->params.order   = interp_order;
   profiler->params.nmats   = material_field_expressions.size();
   switch(problem) {
-    case RGMDApp::Problem_type::SINGLEMAT: profiler->params.output  = "singlemat_"; break;
+    case RGMDApp::Problem_type::SRCPURECELLS: profiler->params.output  = "srcpurecells_"; break;
     case RGMDApp::Problem_type::TJUNCTION: profiler->params.output  = "t-junction_"; break;
     case RGMDApp::Problem_type::BALL: profiler->params.output  = "ball_"; break;
     case RGMDApp::Problem_type::ROTOR: profiler->params.output  = "rotor_"; break;
@@ -870,16 +870,16 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
   std::vector<Wonton::Point<dim>> cell_mat_centroids;  // flattened 2D array
 
   switch(problem) {
-    case RGMDApp::Problem_type::SINGLEMAT:
-      singlemat_material_data<Wonton::Jali_Mesh_Wrapper>(sourceMeshWrapper,
-                                                         global_material_IDs,
-                                                         cell_num_mats,
-                                                         cell_mat_ids,
-                                                         cell_mat_volfracs,
-                                                         cell_mat_centroids,
-                                                         vol_tol,
-                                                         dst_tol,
-                                                         !source_convex_cells);
+    case RGMDApp::Problem_type::SRCPURECELLS:
+      srcpurecells_material_data<Wonton::Jali_Mesh_Wrapper>(sourceMeshWrapper,
+                                                            global_material_IDs,
+                                                            cell_num_mats,
+                                                            cell_mat_ids,
+                                                            cell_mat_volfracs,
+                                                            cell_mat_centroids,
+                                                            vol_tol,
+                                                            dst_tol,
+                                                            !source_convex_cells);
       break;
     case RGMDApp::Problem_type::TJUNCTION:
       tjunction_material_data<Wonton::Jali_Mesh_Wrapper>(sourceMeshWrapper,
