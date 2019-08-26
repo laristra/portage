@@ -45,7 +45,7 @@ using Wonton::Weights_t;
 #ifdef PORTAGE_ENABLE_MPI
 
 template<Entity_kind onwhat, class Mesh_Wrapper>
-bool get_unique_entity_masks(Mesh_Wrapper const &mesh,
+void get_unique_entity_masks(Mesh_Wrapper const &mesh,
                              std::vector<int> *unique_mask,
                              MPI_Comm mycomm) {
 
@@ -447,6 +447,7 @@ class MismatchFixer {
                                   global_lower_bound, global_upper_bound,
                                   conservation_tol, maxiter,
                                   partial_fixup_type, empty_fixup_type);
+    return false;
   }
 
 
