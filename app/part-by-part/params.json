@@ -1,18 +1,22 @@
 {
   "mesh": {
-    "dimension": 3,
-    "source": "/home/hoby/dev/remap/portage/data/exodus/semi3-coarse.exo",
-    "target": "/home/hoby/dev/remap/portage/data/exodus/semi3-fine.exo",
+    "dimension": 2,
+    "source": "/home/hoby/dev/remap/portage/data/exodus/semi2-coarse.exo",
+    "target": "/home/hoby/dev/remap/portage/data/exodus/semi2-fine.exo",
     "conformal": true,
-    "export": false
+    "export": true
   },
   "remap": {
     "kind": "cell",
     "order": 1,
     "limiter": false,
+    "fixup": {
+      "partial": "shifted_conservative",
+      "empty": "extrapolate",
+      "max-iter": 5
+    },
     "fields": [
-      { "name": "density", "expr": "if (sqrt(x*x + y*y) < 3) 100; else 1;" },
-      { "name": "temperature", "expr": "if (sqrt(x*x + y*y) < 3) 70; else 40;" }
+      { "name": "density", "expr": "if (sqrt(x*x + y*y) < 3) 100; else 1;" }
     ]
   },
   "parts": [

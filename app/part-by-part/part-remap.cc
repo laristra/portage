@@ -73,6 +73,7 @@ namespace timer {
 
 /* -------------------------------------------------------------------------- */
 struct Params {
+
   /* mesh */
   int dimension = 2;         // meshes dimension
   bool conformal = true;     // conformal meshes?
@@ -81,11 +82,17 @@ struct Params {
   std::string target {};     // target mesh file
 
   /* remap */
-  int order = 1;                                   // accuracy order
-  Portage::Limiter_type limiter = limiter::none;   // gradient limiter
-  Wonton::Entity_kind kind = entity::cell;         // node|cell-based
+  int order = 1;
+  double tolerance = Portage::DEFAULT_CONSERVATION_TOL;
+  Wonton::Entity_kind kind = entity::cell;
+  Portage::Limiter_type limiter = limiter::none;
   std::map<std::string, std::string> fields {};    // fields expression
   std::map<std::string, std::vector<entity::part>> parts {}; // per-field
+
+  /* fixups */
+  int max_fix_iter = 5;
+  Portage::Partial_fixup_type partial_fixup = Portage::Partial_fixup_type::SHIFTED_CONSERVATIVE;
+  Portage::Empty_fixup_type empty_fixup = Portage::Empty_fixup_type::EXTRAPOLATE;
 };
 
 /* -------------------------------------------------------------------------- */
@@ -296,6 +303,17 @@ int parse(int argc, char* argv[]) {
       if (not json["remap"].count("limiter"))
         return abort("unspecified default gradient limiter");
 
+      if (not json["remap"].count("fixup"))
+        return abort("unspecified mismatch fixup parameters");
+      else {
+        if (not json["remap"]["fixup"].count("partial"))
+          return abort("unspecified partially filled cells fixup scheme");
+        if (not json["remap"]["fixup"].count("empty"))
+          return abort("unspecified empty cells fixup scheme");
+        if (not json["remap"]["fixup"].count("max-iter"))
+          return abort("unspecified maximum number of fixup iterations");
+      }
+
       if (not json["remap"].count("fields"))
         return abort("unspecified material fields");
       else {
@@ -351,6 +369,28 @@ int parse(int argc, char* argv[]) {
     params.kind      = json["remap"]["kind"] == "cell" ? entity::cell : entity::node;
     params.limiter   = json["remap"]["limiter"] ? limiter::none : limiter::barth;
 
+    /* fixup */
+    params.max_fix_iter     = json["remap"]["fixup"]["max-iter"];
+    std::string parts_fixup = json["remap"]["fixup"]["partial"];
+    std::string empty_fixup = json["remap"]["fixup"]["empty"];
+
+    if (parts_fixup == "locally_conservative")
+      params.partial_fixup = Portage::Partial_fixup_type::LOCALLY_CONSERVATIVE;
+    else if (parts_fixup == "constant")
+      params.partial_fixup = Portage::Partial_fixup_type::CONSTANT;
+    else if (parts_fixup == "shifted_conservative")
+      params.partial_fixup = Portage::Partial_fixup_type::SHIFTED_CONSERVATIVE;
+    else
+      return abort("unsupported partially filled cells fixup scheme");
+
+    if (empty_fixup == "leave_empty")
+      params.empty_fixup = Portage::Empty_fixup_type::LEAVE_EMPTY;
+    else if (empty_fixup == "extrapolate")
+      params.empty_fixup = Portage::Empty_fixup_type::EXTRAPOLATE;
+    else
+      return abort("unsupported empty cells fixup scheme");
+
+    /* parts field */
     for (auto&& scalar : json["remap"]["fields"])
       params.fields[scalar["name"]] = scalar["expr"];
 
@@ -450,9 +490,9 @@ bool remap<2>(std::string field, int nb_parts,
     // interpolate field for current part
     remapper.interpolate_mesh_var<double, Portage::Interpolate_1stOrder>(
       field, field, weights, lower_bound, upper_bound,
-      Portage::DEFAULT_LIMITER, Portage::DEFAULT_PARTIAL_FIXUP_TYPE,
-      Portage::DEFAULT_EMPTY_FIXUP_TYPE, Portage::DEFAULT_CONSERVATION_TOL,
-      Portage::DEFAULT_MAX_FIXUP_ITER, &(parts_manager[i])
+      params.limiter, params.partial_fixup,
+      params.empty_fixup, params.tolerance,
+      params.max_fix_iter, &(parts_manager[i])
     );
   }
 }
@@ -519,9 +559,9 @@ bool remap<3>(std::string field, int nb_parts,
     // interpolate field for current part
     remapper.interpolate_mesh_var<double, Portage::Interpolate_1stOrder>(
       field, field, weights, lower_bound, upper_bound,
-      Portage::DEFAULT_LIMITER, Portage::DEFAULT_PARTIAL_FIXUP_TYPE,
-      Portage::DEFAULT_EMPTY_FIXUP_TYPE, Portage::DEFAULT_CONSERVATION_TOL,
-      Portage::DEFAULT_MAX_FIXUP_ITER, &(parts_manager[i])
+      params.limiter, params.partial_fixup,
+      params.empty_fixup, params.tolerance,
+      params.max_fix_iter, &(parts_manager[i])
     );
   }
 }
@@ -538,7 +578,7 @@ int main(int argc, char* argv[]) {
   auto tic = timer::now();
 
   // init MPI
-  MPI_Init_thread(NULL, NULL, MPI_THREAD_MULTIPLE, &threading);
+  MPI_Init_thread(&argc, &argv, MPI_THREAD_FUNNELED, &threading);
   MPI_Comm_size(comm, &nb_ranks);
   MPI_Comm_rank(comm, &my_rank);
 
