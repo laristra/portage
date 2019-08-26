@@ -149,8 +149,6 @@ int parse(int argc, char* argv[]);
  * @param executor
  * @param source_cells
  * @param target_cells
- * @param nb_source_cells
- * @param nb_target_cells
  * @return status
  */
 template <int dim>
@@ -163,8 +161,7 @@ bool remap(std::string field, int nb_parts,
            Wonton::Jali_State_Wrapper& target_state_wrapper,
            Wonton::Executor_type* executor,
            std::vector<std::vector<int>> const& source_cells,
-           std::vector<std::vector<int>> const& target_cells,
-           int nb_source_cells, int nb_target_cells);
+           std::vector<std::vector<int>> const& target_cells);
 
 /**
  * @brief Parse and store app parameters.
@@ -196,7 +193,7 @@ void print_usage() {
     "  \e[32m'remap'\e[0m: {                                               \n"
     "    \e[32m'kind'\e[0m: 'cell',                                        \n"
     "    \e[32m'order'\e[0m: <1|2>,                                        \n"
-    "    \e[32m'limiter'\e[0m: <boolean>                                   \n"
+    "    \e[32m'limiter'\e[0m: <boolean>,                                  \n"
     "    \e[32m'fields'\e[0m: [                                            \n"
     "      { \e[32m'name'\e[0m:'density',\e[32m'expr'\e[0m: '<math>' }     \n"
     "      { \e[32m'name'\e[0m:'temperature', \e[32m'expr'\e[0m: '<math>' }\n"
@@ -441,8 +438,6 @@ int parse(int argc, char* argv[]) {
  * @param executor
  * @param source_cells
  * @param target_cells
- * @param nb_source_cells
- * @param nb_target_cells
  * @return
  */
 template<>
@@ -455,8 +450,7 @@ bool remap<2>(std::string field, int nb_parts,
               Wonton::Jali_State_Wrapper& target_state_wrapper,
               Wonton::Executor_type* executor,
               std::vector<std::vector<int>> const& source_cells,
-              std::vector<std::vector<int>> const& target_cells,
-              int nb_source_cells, int nb_target_cells) {
+              std::vector<std::vector<int>> const& target_cells) {
 
   using Remapper = Portage::CoreDriver<2, Wonton::Entity_kind::CELL,
                                           Wonton::Jali_Mesh_Wrapper,
@@ -510,8 +504,6 @@ bool remap<2>(std::string field, int nb_parts,
  * @param executor
  * @param source_cells
  * @param target_cells
- * @param nb_source_cells
- * @param nb_target_cells
  * @return
  */
 template<>
@@ -524,8 +516,7 @@ bool remap<3>(std::string field, int nb_parts,
               Wonton::Jali_State_Wrapper& target_state_wrapper,
               Wonton::Executor_type* executor,
               std::vector<std::vector<int>> const& source_cells,
-              std::vector<std::vector<int>> const& target_cells,
-              int nb_source_cells, int nb_target_cells) {
+              std::vector<std::vector<int>> const& target_cells) {
 
   using Remapper = Portage::CoreDriver<3, Wonton::Entity_kind::CELL,
                                           Wonton::Jali_Mesh_Wrapper,
@@ -629,10 +620,8 @@ int main(int argc, char* argv[]) {
   assert(params.dimension == source_mesh->space_dimension());
 
   // retrieve mesh resolutions
-  int const nb_source_cells = source_mesh_wrapper.num_owned_cells()
-                            + source_mesh_wrapper.num_ghost_cells();
-  int const nb_target_cells = target_mesh_wrapper.num_owned_cells();
-
+  long const nb_source_cells = source_mesh_wrapper.num_owned_cells();
+  long const nb_target_cells = target_mesh_wrapper.num_owned_cells();
   int const nb_fields = params.fields.size();
 
   MPI_Barrier(comm);
@@ -645,10 +634,15 @@ int main(int argc, char* argv[]) {
   if (my_rank == 0)
     std::printf("Running part-by-part remap ... \n");
 
+  long total_source_cells = 0;
+  long total_target_cells = 0;
+  MPI_Allreduce(&nb_source_cells, &total_source_cells, 1, MPI_LONG, MPI_SUM, comm);
+  MPI_Allreduce(&nb_target_cells, &total_target_cells, 1, MPI_LONG, MPI_SUM, comm);
+
   // print some infos for the user
   if (my_rank == 0) {
-    std::printf(" - source mesh has %d cells.\n", nb_source_cells);
-    std::printf(" - target mesh has %d cells.\n", nb_target_cells);
+    std::printf(" - source mesh has %ld cells.\n", total_source_cells);
+    std::printf(" - target mesh has %ld cells.\n", total_target_cells);
     std::printf(" - specified numerical fields: \n");
     for (auto&& field : params.fields)
       std::printf("   \u2022 %s: %s\n", field.first.data(), field.second.data());
@@ -667,7 +661,7 @@ int main(int argc, char* argv[]) {
     // evaluate field expression and assign it
     user_field_t source_field;
     if(source_field.initialize(params.dimension, field.second)) {
-      for (int c = 0; c < nb_source_cells; c++) {
+      for (long c = 0; c < nb_source_cells; c++) {
         field_data[c] = source_field(source_mesh->cell_centroid(c));
         #if DEBUG_PART_BY_PART
           std::printf("field_data[%d]: %.3f\n", c, field_data[c]);
@@ -703,7 +697,7 @@ int main(int argc, char* argv[]) {
 
       // populate source part entities
       if (filter.initialize(params.dimension, part.source)) {
-        for (int s = 0; s < nb_source_cells; ++s) {
+        for (long s = 0; s < nb_source_cells; ++s) {
           if (filter(source_mesh->cell_centroid(s)))
             source_cells[i].push_back(s);
         }
@@ -723,10 +717,17 @@ int main(int argc, char* argv[]) {
       else
         return abort("cannot filter target part cells for field "+field, false);
 
+      long local_source_part = source_cells[i].size();
+      long local_target_part = target_cells[i].size();
+      long total_source_part = 0;
+      long total_target_part = 0;
+      MPI_Allreduce(&local_source_part, &total_source_part, 1, MPI_LONG, MPI_SUM, comm);
+      MPI_Allreduce(&local_target_part, &total_target_part, 1, MPI_LONG, MPI_SUM, comm);
+
       if (my_rank == 0) {
         std::printf(
-          "   \u2022 part[%d]: source: %lu cells, target: %lu cells\n",
-          i, source_cells[i].size(), target_cells[i].size()
+          "   \u2022 part[%d]: source: %ld cells, target: %ld cells\n",
+          i, total_source_part, total_target_part
         );
       }
     }
@@ -742,14 +743,12 @@ int main(int argc, char* argv[]) {
       case 2: remap<2>(field, nb_parts, source_mesh, target_mesh,
                        source_mesh_wrapper, target_mesh_wrapper,
                        source_state_wrapper, target_state_wrapper,
-                       executor, source_cells, target_cells,
-                       nb_source_cells, nb_target_cells); break;
+                       executor, source_cells, target_cells); break;
 
       case 3: remap<3>(field, nb_parts, source_mesh, target_mesh,
                        source_mesh_wrapper, target_mesh_wrapper,
                        source_state_wrapper, target_state_wrapper,
-                       executor, source_cells, target_cells,
-                       nb_source_cells, nb_target_cells); break;
+                       executor, source_cells, target_cells); break;
 
       default: return abort("invalid dimension", false);
     }
