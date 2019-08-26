@@ -1136,17 +1136,6 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
 
   }  // end target interface reconstruction block (only needed for output)
 
-    double globalerr;
-    MPI_Reduce(L1_error, &globalerr, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-    *L1_error = globalerr;
-
-    MPI_Reduce(L2_error, &globalerr, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-    *L2_error = globalerr;
-  }
-  if (rank == 0) {
-    std::printf("\n\nL1 NORM OF ERROR = %lf\n", *L1_error);
-    std::printf("L2 NORM OF ERROR = %lf\n\n", *L2_error);
-  }
 
   // Write out the meshes if requested
   if (mesh_output) {
