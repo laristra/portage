@@ -376,6 +376,59 @@ std::shared_ptr<Swarm<dim>> SwarmFactory(MeshWrapper &wrapper, Portage::Entity_k
   return result;
 }
 
+
+/*!
+ * @brief Create a Swarm from an set of arbitary mesh wrappers.
+ * This factory is useful for mapping from several meshes at once, 
+ * e.g. for analysis of multiple times, or multiple simulations at the same set of spatial points, 
+ * to obtain statistical properties like average, confidence bounds, and uncertaintities, for example.
+ * @tparm dim Spatial dimension
+ * @tparm MeshWrapper class representing a mesh wrapper
+ * @param wrappers Input mesh wrappers
+ * @param entity  Where the data is located in the cell
+ */
+template<size_t dim, class MeshWrapper>
+  std::shared_ptr<Swarm<dim>> SwarmFactory(std::vector<MeshWrapper*> wrappers, Portage::Entity_kind entity)
+{
+  size_t npoints_owned;
+  typename Swarm<dim>::PointVecPtr points = make_shared<typename Swarm<dim>::PointVec>();
+  if (entity != Entity_kind::NODE and entity != Entity_kind::CELL) {
+    throw(std::runtime_error("only nodes and cells allowed"));
+  }
+
+  size_t total_npoints_owned=0;
+  if (entity == Entity_kind::NODE) {
+    for (auto wrap=wrappers.begin(); wrap!=wrappers.end(); wrap++) {
+      MeshWrapper &wrapper = **wrap;
+      size_t npoints_owned = wrapper.num_owned_nodes();
+      total_npoints_owned += npoints_owned;
+      Point<dim> node;
+      for (size_t i=0; i<npoints_owned; i++) {
+        wrapper.node_get_coordinates(i, &node);
+        (*points).push_back(node);
+      }
+    }
+  } else if (entity == Entity_kind::CELL) {
+    for (auto wrap=wrappers.begin(); wrap!=wrappers.end(); wrap++) {
+      MeshWrapper &wrapper = **wrap;
+      size_t npoints_owned = wrapper.num_owned_cells();
+      total_npoints_owned += npoints_owned;
+      Point<dim> centroid;
+      for (size_t i=0; i<npoints_owned; i++) {
+        wrapper.cell_centroid(i, &centroid);
+        (*points).push_back(centroid);
+      }
+    }
+  }
+
+  if (points->size() != total_npoints_owned) {
+    throw(std::runtime_error("size discrepancy"));
+  }
+
+  std::shared_ptr<Swarm<dim>> result = make_shared<Swarm<dim>>(points);
+  return result;
+}
+
 }  // namespace Meshfree
 }  // namespace Portage
 

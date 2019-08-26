@@ -4,10 +4,7 @@ Please see the license file at the root of this repository, or at:
     https://github.com/laristra/portage/blob/master/LICENSE
 */
 
-
-
 #include <sys/time.h>
-
 #include <cstdio>
 #include <cstdlib>
 #include <fstream>
@@ -16,30 +13,28 @@ Please see the license file at the root of this repository, or at:
 #include <memory>
 #include <utility>
 #include <cmath>
-
 #include <mpi.h>
 #ifdef _OPENMP
-#include <omp.h>
+  #include <omp.h>
 #endif
 
 #ifdef ENABLE_PROFILE
 #include "ittnotify.h"
 #endif
 
-// portage includes
-#include "portage/support/portage.h"
-#include "portage/support/mpi_collate.h"
-#include "portage/driver/mmdriver.h"
-
-// wonton includes
-#include "wonton/mesh/jali/jali_mesh_wrapper.h"
-#include "wonton/state/jali/jali_state_wrapper.h"
-
-// Jali includes
 #include "Mesh.hh"
 #include "MeshFactory.hh"
 #include "JaliStateVector.h"
 #include "JaliState.h"
+
+#include "portage/support/portage.h"
+#include "portage/support/mpi_collate.h"
+#include "portage/support/timer.h"
+#include "portage/driver/mmdriver.h"
+#include "wonton/mesh/jali/jali_mesh_wrapper.h"
+#include "wonton/state/jali/jali_state_wrapper.h"
+
+#define ENABLE_TIMINGS 1
 
 using Wonton::Jali_Mesh_Wrapper;
 using Portage::argsort;
@@ -64,7 +59,8 @@ int print_usage() {
   std::cout << "Usage: timingapp " <<
       "--dim=2|3 --nsourcecells=N --ntargetcells=M --conformal=y|n \n" <<
       "--reverse_ranks=y|n --weak_scale=y|n --entity_kind=cell|node \n" <<
-      "--field_order=0|1|2 --remap_order=1|2 --output_results=y|n \n\n";
+      "--field_order=0|1|2 --remap_order=1|2 --output_results=y|n "
+      "--only_threads=y|n\n\n";
 
   std::cout << "--dim (default = 2): spatial dimension of mesh\n\n";
   std::cout << "--nsourcecells (NO DEFAULT): Num cells in each " <<
@@ -103,6 +99,14 @@ int print_usage() {
   std::cout << "  Also, the target field values are output to a text file called\n";
   std::cout << "  'field_cell_rA_fB.txt' or 'field_node_rA_rB.txt' where 'A' is\n";
   std::cout << "  the field polynomial order and B is the remap/interpolation order\n\n";
+
+#if ENABLE_TIMINGS
+  std::cout << "--only_threads (default = n)\n";
+  std::cout << " enable if you want to profile only threads scaling\n\n";
+
+  std::cout << "--scaling (default = strong)\n";
+  std::cout << " specify the scaling study type [strong|weak]\n\n";
+#endif
   return 0;
 }
 //////////////////////////////////////////////////////////////////////
@@ -215,7 +219,6 @@ int main(int argc, char** argv) {
   __itt_pause();
 #endif
 
-
   // Initialize MPI
   int mpi_init_flag;
   MPI_Initialized(&mpi_init_flag);
@@ -237,6 +240,11 @@ int main(int argc, char** argv) {
   bool reverse_source_ranks = false;
   bool weak_scale = false;
   Jali::Entity_kind entityKind = Jali::Entity_kind::CELL;
+
+#if ENABLE_TIMINGS
+  bool only_threads = false;
+  std::string scaling_type = "strong";
+#endif
 
   if (argc < 3) return print_usage();
   for (int i = 1; i < argc; i++) {
@@ -279,6 +287,14 @@ int main(int argc, char** argv) {
       assert(poly_order >=0 && poly_order < 3);
     } else if (keyword == "output_results")
       dump_output = (valueword == "y");
+#if ENABLE_TIMINGS
+    else if (keyword == "only_threads"){
+      only_threads = (numpe == 1 and valueword == "y");
+    } else if (keyword == "scaling") {
+      assert(valueword == "strong" or valueword == "weak");
+      scaling_type = valueword;
+    }
+#endif
     else
       std::cerr << "Unrecognized option " << keyword << std::endl;
   }
@@ -298,8 +314,24 @@ int main(int argc, char** argv) {
     std::cout << "   Interpolation order is " << interp_order << "\n";
   }
 
-  struct timeval begin, end, diff;
-  gettimeofday(&begin, 0);
+#if ENABLE_TIMINGS
+  Profiler profiler;
+  // save params for after
+  profiler.params.ranks   = numpe;
+  profiler.params.nsource = std::pow(n_source, dim);
+  profiler.params.ntarget = std::pow(n_target, dim);
+  profiler.params.order   = interp_order;
+  profiler.params.nmats   = 1;
+  profiler.params.output  = "timing_" + scaling_type + "_scaling_"
+                            + std::string(only_threads ? "omp.dat": "mpi.dat");
+
+#if defined(_OPENMP)
+  profiler.params.threads = omp_get_max_threads();
+#endif
+  // start timers here
+  auto start = timer::now();
+  auto tic = start;
+#endif
 
   std::shared_ptr<Jali::Mesh> sourceMesh;
   std::shared_ptr<Jali::Mesh> targetMesh;
@@ -408,18 +440,22 @@ int main(int argc, char** argv) {
 
   }
 
-  if (numpe > 1) MPI_Barrier(MPI_COMM_WORLD);
-  gettimeofday(&end, 0);
-  timersub(&end, &begin, &diff);
-  const float seconds_init = diff.tv_sec + 1.0E-6*diff.tv_usec;
-  if (rank == 0) std::cout << "Mesh Initialization Time: " << seconds_init <<
-                     std::endl;
+  if (numpe > 1) {
+    MPI_Barrier(MPI_COMM_WORLD);
+  }
 
-  gettimeofday(&begin, 0);
+#if ENABLE_TIMINGS
+  profiler.time.mesh_init = timer::elapsed(tic);
 
+  if (rank == 0) {
+    float const seconds = profiler.time.mesh_init * 1.E3;
+    std::cout << "Mesh Initialization Time: " << seconds << std::endl;
+  }
+
+  tic = timer::now();
+#endif
 
   // Portage wrappers for source and target fields
-
   Wonton::Jali_State_Wrapper sourceStateWrapper(*sourceState);
   Wonton::Jali_State_Wrapper targetStateWrapper(*targetState);
 
@@ -480,17 +516,19 @@ int main(int argc, char** argv) {
     }
   }
 
-
-
   // Dump some timing information
-  if (numpe > 1) MPI_Barrier(MPI_COMM_WORLD);
-  gettimeofday(&end, 0);
-  timersub(&end, &begin, &diff);
-  const float seconds = diff.tv_sec + 1.0E-6*diff.tv_usec;
-  if (rank == 0) std::cout << "Time: " << seconds << std::endl;
+  if (numpe > 1) {
+    MPI_Barrier(MPI_COMM_WORLD);
+  }
 
+#if ENABLE_TIMINGS
+  profiler.time.remap = timer::elapsed(tic);
 
-
+  if (rank == 0) {
+    float const seconds = profiler.time.remap * 1.E3;
+    std::cout << "Remap Time: " << seconds << std::endl;
+  }
+#else
   // Output results for small test cases
   double error, toterr = 0.0;
   double const * cellvecout;
@@ -613,7 +651,6 @@ int main(int argc, char** argv) {
       std::printf("\n\nL2 NORM OF ERROR = %lf\n\n", sqrt(globalerr));
   }
 
-
   // Dump output, if requested
   if (dump_output) {
 
@@ -685,8 +722,18 @@ int main(int argc, char** argv) {
     for (int i=0; i < lgid.size(); i++)
       fout << lgid[i] << " " << lvalues[i] << std::endl;
   }  // if (dump_output)
+#endif
 
   std::printf("finishing timingapp...\n");
 
   MPI_Finalize();
+
+#if ENABLE_TIMINGS
+  profiler.time.total = timer::elapsed(start);
+
+  // dump timing data
+  if (rank == 0) {
+    profiler.dump();
+  }
+#endif
 }
