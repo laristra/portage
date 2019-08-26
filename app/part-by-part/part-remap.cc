@@ -38,6 +38,10 @@ namespace entity {
     int id;
     std::string source;
     std::string target;
+
+    part(int in_id, std::string in_source, std::string in_target)
+      : id(in_id), source(in_source), target(in_target)
+    {}
   };
 }
 /* -------------------------------------------------------------------------- */
@@ -351,12 +355,14 @@ int parse(int argc, char* argv[]) {
       params.fields[scalar["name"]] = scalar["expr"];
 
     for (auto&& entry : json["parts"]) {
-      auto const field = entry["field"];
-      for (auto&& pair : entry["entities"]) {
-        params.parts[field].push_back(
-          { pair["uid"], pair["source"], pair["target"] }
-        );
+      std::string field = entry["field"];
+      for (auto&& pair : entry["pairs"]) {
+        int id = pair["uid"];
+        std::string source = pair["source"];
+        std::string target = pair["target"];
+        params.parts[field].emplace_back(id, source, target);
       }
+      assert(not params.parts[field].empty());
     }
 
     // check their validity eventually
@@ -529,18 +535,20 @@ bool remap<3>(std::string field, int nb_parts,
  */
 int main(int argc, char* argv[]) {
 
-  std::printf(" ---------------------------------------------------------- \n");
-  std::printf("  Demonstration app for multi-part field interpolation.     \n");
-  std::printf("  It handles pure cells remap of multi-material meshes and  \n");
-  std::printf("  non-smoothed remap of fields with sharp discontinuities.  \n");
-  std::printf(" ---------------------------------------------------------- \n");
-
   auto tic = timer::now();
 
   // init MPI
   MPI_Init_thread(NULL, NULL, MPI_THREAD_MULTIPLE, &threading);
   MPI_Comm_size(comm, &nb_ranks);
   MPI_Comm_rank(comm, &my_rank);
+
+  if (my_rank == 0) {
+    std::printf(" ---------------------------------------------------------- \n");
+    std::printf("  Demonstration app for multi-part field interpolation.     \n");
+    std::printf("  It handles pure cells remap of multi-material meshes and  \n");
+    std::printf("  non-smoothed remap of fields with sharp discontinuities.  \n");
+    std::printf(" ---------------------------------------------------------- \n");
+  }
 
   // check and parse parameters
   if (parse(argc, argv) == EXIT_FAILURE)
@@ -583,9 +591,7 @@ int main(int argc, char* argv[]) {
   // retrieve mesh resolutions
   int const nb_source_cells = source_mesh_wrapper.num_owned_cells()
                             + source_mesh_wrapper.num_ghost_cells();
-
-  int const nb_target_cells = source_mesh_wrapper.num_owned_cells()
-                            + source_mesh_wrapper.num_ghost_cells();
+  int const nb_target_cells = target_mesh_wrapper.num_owned_cells();
 
   int const nb_fields = params.fields.size();
 
@@ -605,7 +611,7 @@ int main(int argc, char* argv[]) {
     std::printf(" - target mesh has %d cells.\n", nb_target_cells);
     std::printf(" - specified numerical fields: \n");
     for (auto&& field : params.fields)
-      std::printf("   - %s: %s\n", field.first.data(), field.second.data());
+      std::printf("   \u2022 %s: %s\n", field.first.data(), field.second.data());
 
     std::printf("\n");
   }
@@ -621,8 +627,12 @@ int main(int argc, char* argv[]) {
     // evaluate field expression and assign it
     user_field_t source_field;
     if(source_field.initialize(params.dimension, field.second)) {
-      for (int c = 0; c < nb_source_cells; c++)
+      for (int c = 0; c < nb_source_cells; c++) {
         field_data[c] = source_field(source_mesh->cell_centroid(c));
+        #if DEBUG_PART_BY_PART
+          std::printf("field_data[%d]: %.3f\n", c, field_data[c]);
+        #endif
+      }
     } else
       return abort("cannot parse numerical field "+ field.second, false);
   }
@@ -636,11 +646,15 @@ int main(int argc, char* argv[]) {
   for (auto&& entry : params.fields) {
     std::string field = entry.first;
     int const nb_parts = params.parts[field].size();
+    assert(nb_parts > 1);
 
     // first determine source and target parts for this field.
     filter_t filter;
     source_cells.resize(nb_parts);
     target_cells.resize(nb_parts);
+
+    if (my_rank == 0)
+      std::printf(" - Field '%s' (%d parts):\n", field.data(), nb_parts);
 
     for (int i = 0; i < nb_parts; ++i) {
       auto const& part = params.parts[field][i];
@@ -668,6 +682,13 @@ int main(int argc, char* argv[]) {
       }
       else
         return abort("cannot filter target part cells for field "+field, false);
+
+      if (my_rank == 0) {
+        std::printf(
+          "   \u2022 part[%d]: source: %lu cells, target: %lu cells\n",
+          i, source_cells[i].size(), target_cells[i].size()
+        );
+      }
     }
 
     MPI_Barrier(comm);
@@ -676,6 +697,7 @@ int main(int argc, char* argv[]) {
     // need to explicitly instantiate the driver due to template arguments
     // forwarding failure when instantiating search and intersection kernels.
     // part-by-part remap each field
+
     switch (params.dimension) {
       case 2: remap<2>(field, nb_parts, source_mesh, target_mesh,
                        source_mesh_wrapper, target_mesh_wrapper,
@@ -711,8 +733,6 @@ int main(int argc, char* argv[]) {
     target_state->export_to_mesh();
     source_mesh->write_to_exodus_file("source.exo");
     target_mesh->write_to_exodus_file("target.exo");
-
-    // TODO: dump field to a distinct result file
 
     MPI_Barrier(comm);
 

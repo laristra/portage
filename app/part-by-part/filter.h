@@ -24,6 +24,8 @@ public:
   bool initialize(int dim, std::string const& expression_str) {
     assert(dim >= 1 and dim <= 3);
 
+    user_expression = expression_str;
+
     // register variables and symbol table
     if (dim > 0) symbol_table.add_variable("x", x);
     if (dim > 1) symbol_table.add_variable("y", y);
@@ -48,11 +50,18 @@ public:
   }
 
   template<class Point>
-  bool operator()(Point const& c) {
-    if (dim_ > 0) x = c[0];
-    if (dim_ > 1) y = c[1];
-    if (dim_ > 2) z = c[2];
-    return (bool) expression.value();
+  bool operator()(Point const& p) {
+    if (dim_ > 0) x = p[0];
+    if (dim_ > 1) y = p[1];
+    if (dim_ > 2) z = p[2];
+
+    #if DEBUG_PART_APP
+      std::printf(
+        "centroid: [%.3f,%.3f,%.3f], expression: %s, computed value: %.f\n",
+        x, y, z, user_expression.data(), expression.value()
+      );
+    #endif
+    return expression.value() != 0;
   }
 
 private:
@@ -61,6 +70,7 @@ private:
   double z = 0;
   int dim_ = 0;
 
+  std::string user_expression;
   exprtk::symbol_table<double> symbol_table;
   exprtk::expression<double> expression;
   exprtk::parser<double> parser;
