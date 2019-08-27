@@ -636,8 +636,8 @@ int main(int argc, char* argv[]) {
 
   long total_source_cells = 0;
   long total_target_cells = 0;
-  MPI_Allreduce(&nb_source_cells, &total_source_cells, 1, MPI_LONG, MPI_SUM, comm);
-  MPI_Allreduce(&nb_target_cells, &total_target_cells, 1, MPI_LONG, MPI_SUM, comm);
+  MPI_Reduce(&nb_source_cells, &total_source_cells, 1, MPI_LONG, MPI_SUM, 0, comm);
+  MPI_Reduce(&nb_target_cells, &total_target_cells, 1, MPI_LONG, MPI_SUM, 0, comm);
 
   // print some infos for the user
   if (my_rank == 0) {
@@ -708,7 +708,7 @@ int main(int argc, char* argv[]) {
 
       // populate target part entities
       if (filter.initialize(params.dimension, part.target)) {
-        for (int t = 0; t < nb_target_cells; ++t) {
+        for (long t = 0; t < nb_target_cells; ++t) {
           if (filter(target_mesh->cell_centroid(t)))
             target_cells[i].push_back(t);
         }
@@ -721,8 +721,8 @@ int main(int argc, char* argv[]) {
       long local_target_part = target_cells[i].size();
       long total_source_part = 0;
       long total_target_part = 0;
-      MPI_Allreduce(&local_source_part, &total_source_part, 1, MPI_LONG, MPI_SUM, comm);
-      MPI_Allreduce(&local_target_part, &total_target_part, 1, MPI_LONG, MPI_SUM, comm);
+      MPI_Reduce(&local_source_part, &total_source_part, 1, MPI_LONG, MPI_SUM, 0, comm);
+      MPI_Reduce(&local_target_part, &total_target_part, 1, MPI_LONG, MPI_SUM, 0, comm);
 
       if (my_rank == 0) {
         std::printf(
