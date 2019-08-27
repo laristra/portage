@@ -54,10 +54,11 @@ namespace timer {
   inline time_t now() { return std::chrono::high_resolution_clock::now(); }
 
   // retrieve elapsed time in seconds.
-  inline float elapsed(time_t& tic, bool reset = false) {
+  inline float elapsed(time_t& tic, bool reset = true) {
+    auto const toc = now();
     auto secs = static_cast<float>(
-      std::chrono::duration_cast<std::chrono::seconds>(now() - tic).count()
-    );
+      std::chrono::duration_cast<std::chrono::milliseconds>(toc - tic).count()
+    ) * 1.E-3;
 
     if (reset)
       tic = now();
@@ -120,6 +121,16 @@ void print_usage();
 void print_params(nlohmann::json const& json);
 
 /**
+ * @brief Get number of digits of the given scalar.
+ *
+ * @tparam type_t: scalar type
+ * @param number: scalar value
+ * @return its number of digits for print.
+ */
+template<typename type_t>
+int get_number_digit(type_t number);
+
+/**
  * @brief Handle runtime errors.
  *
  * @param message: a message to be displayed if any.
@@ -163,14 +174,6 @@ void remap(std::string field, int nb_parts,
            Wonton::Executor_type* executor,
            std::vector<std::vector<int>> const& source_cells,
            std::vector<std::vector<int>> const& target_cells);
-
-/**
- * @brief Parse and store app parameters.
- *
- * @param path: the JSON parameter file path.
- * @return parsing status flag.
- */
-int parse(int argc, char* argv[]);
 
 /* -------------------------------------------------------------------------- */
 
@@ -256,6 +259,7 @@ void print_params(nlohmann::json const& json) {
   std::string empty_fix   = json["remap"]["fixup"]["empty"];
 
   std::printf("Parameters: \n");
+  std::printf(" \u2022 MPI ranks: \e[32m%d\e[0m\n", nb_ranks);
   std::printf(" \u2022 dimension: \e[32m%d\e[0m\n", params.dimension);
   std::printf(" \u2022 source mesh: '\e[32m%s\e[0m'\n", base(params.source).data());
   std::printf(" \u2022 target mesh: '\e[32m%s\e[0m'\n", base(params.target).data());
@@ -487,6 +491,17 @@ int parse(int argc, char* argv[]) {
     if (params.order < 1 or params.order > 2)
       return abort("invalid order of accuracy for remap [1|2]", false);
 
+    // check that params.fields and params.parts have same keys
+    auto same_keys = [](auto const& a, auto const& b) { return a.first == b.first; };
+
+    bool have_same_size = params.fields.size() == params.parts.size();
+    bool have_same_keys = std::equal(params.fields.begin(), params.fields.end(),
+                                     params.parts.begin(), same_keys);
+
+    if (not have_same_size or not have_same_keys)
+      return abort("numerical fields and per-part fields mismatch");
+
+
   } catch(nlohmann::json::parse_error& e) {
     return abort(e.what());
   }
@@ -632,6 +647,18 @@ void remap<3>(std::string field, int nb_parts,
 }
 
 /**
+ * @brief Get number of digits of the given scalar.
+ *
+ * @tparam type_t: scalar type
+ * @param number: scalar value
+ * @return its number of digits for print.
+ */
+template<typename type_t>
+int get_number_digit(type_t number) {
+  return (number > 0 ? static_cast<int>(std::floor(std::log10(number))) + 1 : 0);
+}
+
+/**
  * @brief Run the application.
  *
  * @param argc: arguments count
@@ -701,9 +728,8 @@ int main(int argc, char* argv[]) {
 
   MPI_Barrier(comm);
 
-  auto init_time = timer::elapsed(tic, true);
   if (my_rank == 0)
-    std::printf(" done. \e[32m(%.3f s)\e[0m\n", init_time);
+    std::printf(" done. \e[32m(%.3f s)\e[0m\n", timer::elapsed(tic));
 
   /* ------------------------------------------------------------------------ */
   if (my_rank == 0)
@@ -715,8 +741,7 @@ int main(int argc, char* argv[]) {
   MPI_Reduce(&nb_target_cells, &total_target_cells, 1, MPI_LONG, MPI_SUM, 0, comm);
 
   // for formatting
-  auto const number = std::max(total_source_cells, total_target_cells);
-  auto const format = static_cast<int>(std::floor(std::log10(number))) + 1;
+  int format = get_number_digit(std::max(total_source_cells, total_target_cells));
 
   // print some infos for the user
   if (my_rank == 0) {
@@ -767,7 +792,14 @@ int main(int argc, char* argv[]) {
     target_cells.resize(nb_parts);
 
     if (my_rank == 0)
-      std::printf(" - Field '%s' (%d parts):\n", field.data(), nb_parts);
+      std::printf(" - Remapping \e[32m%s\e[0m field on %d parts:\n", field.data(), nb_parts);
+
+    long max_source_parts = 0;
+    long max_target_parts = 0;
+    long total_source_part[nb_parts];
+    long total_target_part[nb_parts];
+    std::fill(total_source_part, total_source_part + nb_parts, 0);
+    std::fill(total_target_part, total_target_part + nb_parts, 0);
 
     // Filter source and target cells for each part
     // with respect to user-defined predicates.
@@ -800,20 +832,32 @@ int main(int argc, char* argv[]) {
 
       long local_source_part = source_cells[i].size();
       long local_target_part = target_cells[i].size();
-      long total_source_part = 0;
-      long total_target_part = 0;
-      MPI_Reduce(&local_source_part, &total_source_part, 1, MPI_LONG, MPI_SUM, 0, comm);
-      MPI_Reduce(&local_target_part, &total_target_part, 1, MPI_LONG, MPI_SUM, 0, comm);
+      MPI_Reduce(&local_source_part, total_source_part + i, 1, MPI_LONG, MPI_SUM, 0, comm);
+      MPI_Reduce(&local_target_part, total_target_part + i, 1, MPI_LONG, MPI_SUM, 0, comm);
 
-      if (my_rank == 0) {
-        std::printf(
-          "   \u2022 part[%d]: source: %*ld cells, target: %*ld cells\n",
-          i, format, total_source_part, format, total_target_part
-        );
-      }
+      max_source_parts = std::max(total_source_part[i], max_source_parts);
+      max_target_parts = std::max(total_target_part[i], max_target_parts);
     }
 
     MPI_Barrier(comm);
+
+    if (my_rank == 0) {
+      int const source_digits = get_number_digit(max_source_parts);
+      int const target_digits = get_number_digit(max_target_parts);
+
+      for (int i = 0; i < nb_parts; ++i) {
+        std::printf(
+          "   \u2022 ["
+          " source: %*ld cells \e[32m(%5.2f %%)\e[0m,"
+          " target: %*ld cells \e[32m(%5.2f %%)\e[0m ]\n",
+          source_digits, total_source_part[i],
+          100. * static_cast<double>(total_source_part[i]) / total_source_cells,
+          target_digits, total_target_part[i],
+          100. * static_cast<double>(total_target_part[i]) / total_target_cells
+        );
+      }
+      std::printf("\n");
+    }
 
     // then process part-by-part remapping.
     // need to explicitly instantiate the driver due to template arguments
@@ -836,18 +880,20 @@ int main(int argc, char* argv[]) {
     source_cells.clear();
     target_cells.clear();
     MPI_Barrier(comm);
+
+    if (my_rank == 0) {
+      std::fflush(stdout);
+      std::printf(" %s \n", std::string(58,'-').data());
+    }
   }
 
-  auto remap_time = timer::elapsed(tic);
   if (my_rank == 0)
-    std::printf("Remap done. \e[32m(%.3f s)\e[0m\n", remap_time);
+    std::printf("Remap done. \e[32m(%.3f s)\e[0m\n", timer::elapsed(tic));
 
   /* ------------------------------------------------------------------------ */
   if (params.kind == Wonton::Entity_kind::CELL) {
     // compute error for each field
     for (auto&& field : params.fields) {
-
-      tic = timer::now();
 
       double error_l1 = 0;
       double error_l2 = 0;
@@ -855,7 +901,7 @@ int main(int argc, char* argv[]) {
       user_field_t exact_value;
 
       if (my_rank == 0)
-        std::printf("\nComputing error for field '%s' ... ", field.first.data());
+        std::printf("\nComputing error for \e[32m%s\e[0m field ... ", field.first.data());
 
       if (exact_value.initialize(params.dimension, field.second)) {
         // keep track of min and max field values on both meshes
@@ -917,20 +963,20 @@ int main(int argc, char* argv[]) {
         target_mass = total_mass[1];
 
         MPI_Barrier(comm);
-        auto error_time = timer::elapsed(tic);
 
         if (my_rank == 0) {
-          std::printf( " done. \e[32m(%.3f s)\e[0m\n", error_time);
-          std::printf(" \u2022 L1 norm error (excluding boundary) = %lf\n", error_l1);
-          std::printf(" \u2022 L2 norm error (excluding boundary) = %lf\n", error_l2);
+          std::printf( " done. \e[32m(%.3f s)\e[0m\n", timer::elapsed(tic));
+          std::printf(" \u2022 L1-norm error     = %lf\n", error_l1);
+          std::printf(" \u2022 L2-norm error     = %lf\n", error_l2);
           std::printf(" \u2022 relative L1 error = %.15f\n", relative_error);
-          std::printf(" \u2022 source extents    = [%.15f, %.15f]\n",
+          std::printf(" \u2022 source values     = [%.15f, %.15f]\n",
             source_extents[0], source_extents[1]);
-          std::printf(" \u2022 target extents    = [%.15f, %.15f]\n",
+          std::printf(" \u2022 target values     = [%.15f, %.15f]\n",
             target_extents[0], target_extents[1]);
           std::printf(" \u2022 source total mass = %.15f\n", source_mass);
           std::printf(" \u2022 target total mass = %.15f\n", target_mass);
-          std::printf(" \u2022 mass discrepancy  = %.15f\n", std::abs(source_mass - target_mass));
+          std::printf(" \u2022 mass discrepancy  = %.15f\n",
+            std::abs(source_mass - target_mass));
         }
       } else
         return abort("cannot parse numerical field "+ field.second, false);
@@ -954,9 +1000,8 @@ int main(int argc, char* argv[]) {
 
     MPI_Barrier(comm);
 
-    auto dump_time = timer::elapsed(tic, true);
     if (my_rank == 0)
-      std::printf(" done. \e[32m(%.3f s)\e[0m\n", dump_time);
+      std::printf(" done. \e[32m(%.3f s)\e[0m\n", timer::elapsed(tic));
   }
 
   MPI_Finalize();
