@@ -16,7 +16,8 @@
       "max-iter": 5
     },
     "fields": [
-      { "name": "density", "expr": "if (sqrt(x*x + y*y) < 3) 100; else 1;" }
+      { "name": "density", "expr": "if (sqrt(x*x + y*y) < 3) 100; else 1;" },
+      { "name": "temperature", "expr": "if (sqrt(x*x + y*y) < 4) 60; else 40;" }
     ]
   },
   "parts": [
@@ -32,6 +33,21 @@
           "uid": 2,
           "source": "sqrt(x*x + y*y) > 3",
           "target": "sqrt(x*x + y*y) > 3"
+        }
+      ]
+    },
+    {
+      "field": "temperature",
+      "pairs": [
+        {
+          "uid": 1,
+          "source": "sqrt(x*x + y*y) < 4",
+          "target": "sqrt(x*x + y*y) < 4"
+        },
+        {
+          "uid": 2,
+          "source": "sqrt(x*x + y*y) > 4",
+          "target": "sqrt(x*x + y*y) > 4"
         }
       ]
     }
