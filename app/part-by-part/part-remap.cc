@@ -44,11 +44,6 @@ namespace entity {
     {}
   };
 }
-/* -------------------------------------------------------------------------- */
-namespace limiter {
-  auto const none  = Portage::Limiter_type::NOLIMITER;
-  auto const barth = Portage::Limiter_type::BARTH_JESPERSEN;
-}
 
 /* -------------------------------------------------------------------------- */
 namespace timer {
@@ -75,24 +70,25 @@ namespace timer {
 struct Params {
 
   /* mesh */
-  int dimension = 2;         // meshes dimension
-  bool conformal = true;     // conformal meshes?
-  bool dump = false;         // export results?
-  std::string source {};     // source mesh file
-  std::string target {};     // target mesh file
+  int dimension = 2;       
+  bool conformal = true;   
+  bool dump = false;       
+  std::string source {};   
+  std::string target {};   
 
   /* remap */
   int order = 1;
   double tolerance = Portage::DEFAULT_CONSERVATION_TOL;
-  Wonton::Entity_kind kind = entity::cell;
-  Portage::Limiter_type limiter = limiter::none;
-  std::map<std::string, std::string> fields {};    // fields expression
-  std::map<std::string, std::vector<entity::part>> parts {}; // per-field
+  Wonton::Entity_kind kind = Wonton::Entity_kind::CELL;
+  std::map<std::string, std::string> fields {};
+  std::map<std::string, std::vector<entity::part>> parts {};
 
   /* fixups */
-  int max_fix_iter = 5;
-  Portage::Partial_fixup_type partial_fixup = Portage::Partial_fixup_type::SHIFTED_CONSERVATIVE;
+  int fix_iter = 5;
+  Portage::Limiter_type limiter = Portage::Limiter_type::NOLIMITER;
   Portage::Empty_fixup_type empty_fixup = Portage::Empty_fixup_type::EXTRAPOLATE;
+  Portage::Partial_fixup_type partial_fixup =
+    Portage::Partial_fixup_type::SHIFTED_CONSERVATIVE;
 };
 
 /* -------------------------------------------------------------------------- */
@@ -135,24 +131,23 @@ int abort(std::string message, bool show_usage = true);
 int parse(int argc, char* argv[]);
 
 /**
- * @brief Process part-by-part remapping for given field.
+ * @brief Process part-by-part remapping for the given field.
  *
- * @tparam dim:
- * @param field
- * @param nb_parts
- * @param source_mesh
- * @param target_mesh
- * @param source_mesh_wrapper
- * @param target_mesh_wrapper
- * @param source_state_wrapper
- * @param target_state_wrapper
- * @param executor
- * @param source_cells
- * @param target_cells
- * @return status
+ * @tparam dim: source/target meshes dimension.
+ * @param field: a string expression of the numerical field.
+ * @param nb_parts: the number of source-target parts couples.
+ * @param source_mesh: a pointer to the source mesh.
+ * @param target_mesh: a pointer to the target mesh.
+ * @param source_mesh_wrapper: a wrapper to access source mesh data.
+ * @param target_mesh_wrapper: a wrapper to access target mesh data.
+ * @param source_state_wrapper: a wrapper to access source state data.
+ * @param target_state_wrapper: a wrapper to access source state data.
+ * @param executor: a pointer to the MPI executor.
+ * @param source_cells: list of source cells for each part.
+ * @param target_cells: list of target cells for each part.
  */
 template <int dim>
-bool remap(std::string field, int nb_parts,
+void remap(std::string field, int nb_parts,
            std::shared_ptr<Jali::Mesh> source_mesh,
            std::shared_ptr<Jali::Mesh> target_mesh,
            Wonton::Jali_Mesh_Wrapper&  source_mesh_wrapper,
@@ -194,6 +189,11 @@ void print_usage() {
     "    \e[32m'kind'\e[0m: 'cell',                                        \n"
     "    \e[32m'order'\e[0m: <1|2>,                                        \n"
     "    \e[32m'limiter'\e[0m: <boolean>,                                  \n"
+    "    \e[32m'fixup'\e[0m: {                                             \n"
+    "      \e[32m'partial'\e[0m: 'constant|<locally|shifted>_conservative',\n"
+    "      \e[32m'empty'\e[0m: '<leave_empty|extrapolate>',                \n"
+    "      \e[32m'max-iter'\e[0m: <unsigned integer>,                      \n"
+    "    },                                                                 \n"
     "    \e[32m'fields'\e[0m: [                                            \n"
     "      { \e[32m'name'\e[0m:'density',\e[32m'expr'\e[0m: '<math>' }     \n"
     "      { \e[32m'name'\e[0m:'temperature', \e[32m'expr'\e[0m: '<math>' }\n"
@@ -363,29 +363,34 @@ int parse(int argc, char* argv[]) {
     params.source    = json["mesh"]["source"];
     params.target    = json["mesh"]["target"];
     params.order     = json["remap"]["order"];
-    params.kind      = json["remap"]["kind"] == "cell" ? entity::cell : entity::node;
-    params.limiter   = json["remap"]["limiter"] ? limiter::none : limiter::barth;
+    params.fix_iter  = json["remap"]["fixup"]["max-iter"];
 
-    /* fixup */
-    params.max_fix_iter     = json["remap"]["fixup"]["max-iter"];
+    bool const use_limiter  = json["remap"]["limiter"];
+    std::string remap_kind  = json["remap"]["kind"];
     std::string parts_fixup = json["remap"]["fixup"]["partial"];
     std::string empty_fixup = json["remap"]["fixup"]["empty"];
+
+    if (remap_kind == "cell")
+      params.kind = Wonton::Entity_kind::CELL;
+    else
+      params.kind = Wonton::Entity_kind::NODE;
+
+    if (use_limiter)
+      params.limiter = Portage::Limiter_type::BARTH_JESPERSEN;
+    else
+      params.limiter = Portage::Limiter_type::NOLIMITER;
 
     if (parts_fixup == "locally_conservative")
       params.partial_fixup = Portage::Partial_fixup_type::LOCALLY_CONSERVATIVE;
     else if (parts_fixup == "constant")
       params.partial_fixup = Portage::Partial_fixup_type::CONSTANT;
-    else if (parts_fixup == "shifted_conservative")
-      params.partial_fixup = Portage::Partial_fixup_type::SHIFTED_CONSERVATIVE;
     else
-      return abort("unsupported partially filled cells fixup scheme");
+      params.partial_fixup = Portage::Partial_fixup_type::SHIFTED_CONSERVATIVE;
 
     if (empty_fixup == "leave_empty")
       params.empty_fixup = Portage::Empty_fixup_type::LEAVE_EMPTY;
-    else if (empty_fixup == "extrapolate")
-      params.empty_fixup = Portage::Empty_fixup_type::EXTRAPOLATE;
     else
-      return abort("unsupported empty cells fixup scheme");
+      params.empty_fixup = Portage::Empty_fixup_type::EXTRAPOLATE;
 
     /* parts field */
     for (auto&& scalar : json["remap"]["fields"])
@@ -415,6 +420,9 @@ int parse(int argc, char* argv[]) {
     if (params.dimension < 2 or params.dimension > 3)
       return abort("invalid mesh dimension [2|3]", false);
 
+    if (params.kind == Wonton::Entity_kind::NODE)
+      return abort("multi-part node remap is not supported", false);
+
     if (params.order < 1 or params.order > 2)
       return abort("invalid order of accuracy for remap [1|2]", false);
 
@@ -426,22 +434,22 @@ int parse(int argc, char* argv[]) {
 }
 
 /**
+ * @brief Process part-by-part remapping for the given 2D field.
  *
- * @param field
- * @param nb_parts
- * @param source_mesh
- * @param target_mesh
- * @param source_mesh_wrapper
- * @param target_mesh_wrapper
- * @param source_state_wrapper
- * @param target_state_wrapper
- * @param executor
- * @param source_cells
- * @param target_cells
- * @return
+ * @param field: a string expression of the numerical field.
+ * @param nb_parts: the number of source-target parts couples.
+ * @param source_mesh: a pointer to the source mesh.
+ * @param target_mesh: a pointer to the target mesh.
+ * @param source_mesh_wrapper: a wrapper to access source mesh data.
+ * @param target_mesh_wrapper: a wrapper to access target mesh data.
+ * @param source_state_wrapper: a wrapper to access source state data.
+ * @param target_state_wrapper: a wrapper to access source state data.
+ * @param executor: a pointer to the MPI executor.
+ * @param source_cells: list of source cells for each part.
+ * @param target_cells: list of target cells for each part.
  */
 template<>
-bool remap<2>(std::string field, int nb_parts,
+void remap<2>(std::string field, int nb_parts,
               std::shared_ptr<Jali::Mesh> source_mesh,
               std::shared_ptr<Jali::Mesh> target_mesh,
               Wonton::Jali_Mesh_Wrapper&  source_mesh_wrapper,
@@ -463,8 +471,9 @@ bool remap<2>(std::string field, int nb_parts,
   std::vector<Parts> parts_manager;
   parts_manager.reserve(nb_parts);
 
-  // filter cells and populate lists
   for (int i = 0; i < nb_parts; ++i) {
+    // create source-target mesh parts manager and
+    // populate cell lists for the current part.
     parts_manager.emplace_back(source_mesh_wrapper, target_mesh_wrapper,
                                source_state_wrapper,target_state_wrapper,
                                source_cells[i], target_cells[i], executor);
@@ -478,36 +487,36 @@ bool remap<2>(std::string field, int nb_parts,
   auto weights = remapper.intersect_meshes<Portage::IntersectR2D>(candidates);
 
   for (int i = 0; i < nb_parts; ++i) {
-    // test for mismatch and compute volumes
+    // compute volumes of intersection and test for parts boundaries mismatch.
     parts_manager[i].test_mismatch(weights);
 
-    // interpolate field for current part
+    // interpolate field for each part and fix partially filled or empty cells.
     remapper.interpolate_mesh_var<double, Portage::Interpolate_1stOrder>(
       field, field, weights, lower_bound, upper_bound,
       params.limiter, params.partial_fixup,
       params.empty_fixup, params.tolerance,
-      params.max_fix_iter, &(parts_manager[i])
+      params.fix_iter, &(parts_manager[i])
     );
   }
 }
 
 /**
+ * Process part-by-part remapping for the given 3D field.
  *
- * @param field
- * @param nb_parts
- * @param source_mesh
- * @param target_mesh
- * @param source_mesh_wrapper
- * @param target_mesh_wrapper
- * @param source_state_wrapper
- * @param target_state_wrapper
- * @param executor
- * @param source_cells
- * @param target_cells
- * @return
+ * @param field: a string expression of the numerical field.
+ * @param nb_parts: the number of source-target parts couples.
+ * @param source_mesh: a pointer to the source mesh.
+ * @param target_mesh: a pointer to the target mesh.
+ * @param source_mesh_wrapper: a wrapper to access source mesh data.
+ * @param target_mesh_wrapper: a wrapper to access target mesh data.
+ * @param source_state_wrapper: a wrapper to access source state data.
+ * @param target_state_wrapper: a wrapper to access source state data.
+ * @param executor: a pointer to the MPI executor.
+ * @param source_cells: list of source cells for each part.
+ * @param target_cells: list of target cells for each part.
  */
 template<>
-bool remap<3>(std::string field, int nb_parts,
+void remap<3>(std::string field, int nb_parts,
               std::shared_ptr<Jali::Mesh> source_mesh,
               std::shared_ptr<Jali::Mesh> target_mesh,
               Wonton::Jali_Mesh_Wrapper&  source_mesh_wrapper,
@@ -544,15 +553,15 @@ bool remap<3>(std::string field, int nb_parts,
   auto weights = remapper.intersect_meshes<Portage::IntersectR2D>(candidates);
 
   for (int i = 0; i < nb_parts; ++i) {
-    // test for mismatch and compute volumes
+    // compute volumes of intersection and test for parts boundaries mismatch.
     parts_manager[i].test_mismatch(weights);
 
-    // interpolate field for current part
+    // interpolate field for each part and fix partially filled or empty cells.
     remapper.interpolate_mesh_var<double, Portage::Interpolate_1stOrder>(
       field, field, weights, lower_bound, upper_bound,
       params.limiter, params.partial_fixup,
       params.empty_fixup, params.tolerance,
-      params.max_fix_iter, &(parts_manager[i])
+      params.fix_iter, &(parts_manager[i])
     );
   }
 }
@@ -620,6 +629,7 @@ int main(int argc, char* argv[]) {
   assert(params.dimension == source_mesh->space_dimension());
 
   // retrieve mesh resolutions
+  // nb: only consider owned cells for source mesh to avoid errors.
   long const nb_source_cells = source_mesh_wrapper.num_owned_cells();
   long const nb_target_cells = target_mesh_wrapper.num_owned_cells();
   int const nb_fields = params.fields.size();
@@ -690,6 +700,8 @@ int main(int argc, char* argv[]) {
     if (my_rank == 0)
       std::printf(" - Field '%s' (%d parts):\n", field.data(), nb_parts);
 
+    // Filter source and target cells for each part
+    // with respect to user-defined predicates.
     for (int i = 0; i < nb_parts; ++i) {
       auto const& part = params.parts[field][i];
       source_cells[i].reserve(nb_source_cells);
@@ -738,7 +750,6 @@ int main(int argc, char* argv[]) {
     // need to explicitly instantiate the driver due to template arguments
     // forwarding failure when instantiating search and intersection kernels.
     // part-by-part remap each field
-
     switch (params.dimension) {
       case 2: remap<2>(field, nb_parts, source_mesh, target_mesh,
                        source_mesh_wrapper, target_mesh_wrapper,
