@@ -193,7 +193,7 @@ void print_usage() {
     "      \e[32m'partial'\e[0m: 'constant|<locally|shifted>_conservative',\n"
     "      \e[32m'empty'\e[0m: '<leave_empty|extrapolate>',                \n"
     "      \e[32m'max-iter'\e[0m: <unsigned integer>,                      \n"
-    "    },                                                                 \n"
+    "    },                                                                \n"
     "    \e[32m'fields'\e[0m: [                                            \n"
     "      { \e[32m'name'\e[0m:'density',\e[32m'expr'\e[0m: '<math>' }     \n"
     "      { \e[32m'name'\e[0m:'temperature', \e[32m'expr'\e[0m: '<math>' }\n"
@@ -642,20 +642,24 @@ int main(int argc, char* argv[]) {
 
   /* ------------------------------------------------------------------------ */
   if (my_rank == 0)
-    std::printf("Running part-by-part remap ... \n");
+    std::printf("\nRunning part-by-part remap ... \n");
 
   long total_source_cells = 0;
   long total_target_cells = 0;
   MPI_Reduce(&nb_source_cells, &total_source_cells, 1, MPI_LONG, MPI_SUM, 0, comm);
   MPI_Reduce(&nb_target_cells, &total_target_cells, 1, MPI_LONG, MPI_SUM, 0, comm);
 
+  // for formatting
+  auto const number = std::max(total_source_cells, total_target_cells);
+  auto const format = static_cast<int>(std::floor(std::log10(number))) + 1;
+
   // print some infos for the user
   if (my_rank == 0) {
-    std::printf(" - source mesh has %ld cells.\n", total_source_cells);
-    std::printf(" - target mesh has %ld cells.\n", total_target_cells);
+    std::printf(" - source mesh has %*ld cells.\n", format, total_source_cells);
+    std::printf(" - target mesh has %*ld cells.\n", format, total_target_cells);
     std::printf(" - specified numerical fields: \n");
     for (auto&& field : params.fields)
-      std::printf("   \u2022 %s: %s\n", field.first.data(), field.second.data());
+      std::printf("   \u2022 %s: \e[32m%s\e[0m\n", field.first.data(), field.second.data());
 
     std::printf("\n");
   }
@@ -738,8 +742,8 @@ int main(int argc, char* argv[]) {
 
       if (my_rank == 0) {
         std::printf(
-          "   \u2022 part[%d]: source: %ld cells, target: %ld cells\n",
-          i, total_source_part, total_target_part
+          "   \u2022 part[%d]: source: %*ld cells, target: %*ld cells\n",
+          i, format, total_source_part, format, total_target_part
         );
       }
     }
@@ -769,14 +773,113 @@ int main(int argc, char* argv[]) {
     MPI_Barrier(comm);
   }
 
-  auto remap_time = timer::elapsed(tic, true);
+  auto remap_time = timer::elapsed(tic);
   if (my_rank == 0)
     std::printf("Remap done. \e[32m(%.3f s)\e[0m\n", remap_time);
 
   /* ------------------------------------------------------------------------ */
+  if (params.kind == Wonton::Entity_kind::CELL) {
+    // compute error for each field
+    for (auto&& field : params.fields) {
+
+      tic = timer::now();
+
+      double error_l1 = 0;
+      double error_l2 = 0;
+      double relative_error = 0;
+      user_field_t exact_value;
+
+      if (my_rank == 0)
+        std::printf("\nComputing error for field '%s' ... ", field.first.data());
+
+      if (exact_value.initialize(params.dimension, field.second)) {
+        // keep track of min and max field values on both meshes
+        double min_source_val = std::numeric_limits<double>::max();
+        double max_source_val = std::numeric_limits<double>::min();
+        double min_target_val = min_source_val;
+        double max_target_val = max_source_val;
+        double source_extents[] = { min_source_val, max_source_val };
+        double target_extents[] = { min_target_val, max_target_val };
+        double source_mass = 0;
+        double target_mass = 0;
+        double total_mass[] = { 0, 0 };
+        double global_error[] = { 0, 0, 0 };
+
+        // retrieve field data on both meshes
+        double* source_field_data = nullptr;
+        double* target_field_data = nullptr;
+        source_state_wrapper.mesh_get_data(entity::cell, field.first, &source_field_data);
+        target_state_wrapper.mesh_get_data(entity::cell, field.first, &target_field_data);
+
+        // compute total mass on the source mesh to check conservation
+        for (int s = 0; s < nb_source_cells; ++s) {
+          min_source_val = std::min(source_field_data[s], min_source_val);
+          max_source_val = std::max(source_field_data[s], max_source_val);
+          source_mass += source_field_data[s] * source_mesh_wrapper.cell_volume(s);
+        }
+
+        // compute cell error
+        for (int t = 0; t < nb_target_cells; ++t) {
+          min_target_val = std::min(target_field_data[t], min_target_val);
+          max_target_val = std::max(target_field_data[t], max_target_val);
+          // compute difference between exact and remapped value
+          auto const& centroid = target_mesh->cell_centroid(t);
+          auto const error = exact_value(centroid) - target_field_data[t];
+          auto const cell_volume = target_mesh_wrapper.cell_volume(t);
+          // update L^p norm error and target mass
+          error_l1 += std::abs(error) * cell_volume;
+          error_l2 += error * error * cell_volume;
+          relative_error += std::abs(target_field_data[t]) * cell_volume;
+          target_mass += target_field_data[t] * cell_volume;
+        }
+
+        // accumulate all local values on rank 0
+        MPI_Reduce(&error_l1, global_error, 1, MPI_DOUBLE, MPI_SUM, 0, comm);
+        MPI_Reduce(&error_l2, global_error+1, 1, MPI_DOUBLE, MPI_SUM, 0, comm);
+        MPI_Reduce(&relative_error, global_error+2, 1, MPI_DOUBLE, MPI_SUM, 0, comm);
+        MPI_Reduce(&min_source_val, source_extents, 1, MPI_DOUBLE, MPI_MIN, 0, comm);
+        MPI_Reduce(&max_source_val, source_extents+1, 1, MPI_DOUBLE, MPI_MAX, 0, comm);
+        MPI_Reduce(&min_target_val, target_extents, 1, MPI_DOUBLE, MPI_MIN, 0, comm);
+        MPI_Reduce(&max_target_val, target_extents+1, 1, MPI_DOUBLE, MPI_MAX, 0, comm);
+        MPI_Reduce(&source_mass, total_mass, 1, MPI_DOUBLE, MPI_SUM, 0, comm);
+        MPI_Reduce(&target_mass, total_mass+1, 1, MPI_DOUBLE, MPI_SUM, 0, comm);
+
+        // update local values then
+        error_l1 = global_error[0];
+        error_l2 = sqrt(global_error[1]);
+        relative_error = error_l1 / global_error[2];
+        source_mass = total_mass[0];
+        target_mass = total_mass[1];
+
+        MPI_Barrier(comm);
+        auto error_time = timer::elapsed(tic);
+
+        if (my_rank == 0) {
+          std::printf( " done. \e[32m(%.3f s)\e[0m\n", error_time);
+          std::printf(" \u2022 L1 norm error (excluding boundary) = %lf\n", error_l1);
+          std::printf(" \u2022 L2 norm error (excluding boundary) = %lf\n", error_l2);
+          std::printf(" \u2022 relative L1 error = %.15f\n", relative_error);
+          std::printf(" \u2022 source extents    = [%.15f, %.15f]\n",
+            source_extents[0], source_extents[1]);
+          std::printf(" \u2022 target extents    = [%.15f, %.15f]\n",
+            target_extents[0], target_extents[1]);
+          std::printf(" \u2022 source total mass = %.15f\n", source_mass);
+          std::printf(" \u2022 target total mass = %.15f\n", target_mass);
+          std::printf(" \u2022 mass discrepancy  = %.15f\n", std::abs(source_mass - target_mass));
+        }
+      } else
+        return abort("cannot parse numerical field "+ field.second, false);
+    }
+  } else
+    return abort("part-by-part node remap is not supported", false);
+
+  /* ------------------------------------------------------------------------ */
   if (params.dump) {
+
+    MPI_Barrier(comm);
+
     if (my_rank == 0)
-      std::printf("Dump data to exodus files ... ");
+      std::printf("\nDump data to exodus files ... ");
 
     // all field data are already attached to meshes states
     source_state->export_to_mesh();
