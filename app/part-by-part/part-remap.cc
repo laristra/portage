@@ -114,6 +114,12 @@ static double const epsilon = 1.E-10;
 void print_usage();
 
 /**
+ * @brief Display input parameters.
+ *
+ */
+void print_params(nlohmann::json const& json);
+
+/**
  * @brief Handle runtime errors.
  *
  * @param message: a message to be displayed if any.
@@ -219,6 +225,61 @@ void print_usage() {
     " }                                                                    \n"
   );
 }
+
+
+/**
+ * @brief Display input parameters.
+ *
+ */
+void print_params(nlohmann::json const& json) {
+
+  // extract file path base name
+  auto base = [](const std::string& path) {
+    std::string b = path;
+    size_t i = b.find_last_not_of('/');
+    if (i == std::string::npos) {
+      if (b[0] == '/') b.erase(1);
+      return b;
+    }
+
+    b.erase(i + 1, b.length() - i - 1);
+    i = b.find_last_of('/');
+    if (i != std::string::npos)
+      b.erase(0, i + 1);
+    return b;
+  };
+
+  std::string remap_kind  = json["remap"]["kind"];
+  std::string dump_result = json["mesh"]["export"] ? "yes": "no";
+  std::string use_limiter = json["remap"]["limiter"] ? "yes": "no";
+  std::string partial_fix = json["remap"]["fixup"]["partial"];
+  std::string empty_fix   = json["remap"]["fixup"]["empty"];
+
+  std::printf("Parameters: \n");
+  std::printf(" \u2022 dimension: \e[32m%d\e[0m\n", params.dimension);
+  std::printf(" \u2022 source mesh: '\e[32m%s\e[0m'\n", base(params.source).data());
+  std::printf(" \u2022 target mesh: '\e[32m%s\e[0m'\n", base(params.target).data());
+  std::printf(" \u2022 dump results: \e[32m%s\e[0m\n", dump_result.data());
+  std::printf(" \u2022 remap order: \e[32m%d\e[0m\n", params.order);
+  std::printf(" \u2022 remap kind: \e[32m%s\e[0m\n", remap_kind.data());
+  std::printf(" \u2022 use limiter: \e[32m%s\e[0m\n", use_limiter.data());
+  std::printf(" \u2022 partial filled fixup: \e[32m%s\e[0m\n", partial_fix.data());
+  std::printf(" \u2022 empty cells fixup: \e[32m%s\e[0m\n", empty_fix.data());
+  std::printf(" \u2022 fixup iterations: \e[32m%d\e[0m\n", params.fix_iter);
+  std::printf(" \u2022 numerical fields: \n");
+
+  for (auto&& field: params.fields) {
+    std::printf("   - %s: '\e[32m%s\e[0m'\n", field.first.data(), field.second.data());
+
+    for (auto&& part : params.parts[field.first]) {
+      std::printf("   - [part: \e[32m%d\e[0m,", part.id);
+      std::printf(" source: '\e[32m%s\e[0m',", part.source.data());
+      std::printf(" target: '\e[32m%s\e[0m']\n", part.target.data());
+    }
+    std::printf("\n");
+  }
+}
+
 
 /**
  * @brief Handle runtime errors.
@@ -429,7 +490,11 @@ int parse(int argc, char* argv[]) {
   } catch(nlohmann::json::parse_error& e) {
     return abort(e.what());
   }
+
   // everything was ok
+  if (my_rank == 0)
+    print_params(json);
+
   return EXIT_SUCCESS;
 }
 
