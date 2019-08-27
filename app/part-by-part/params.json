@@ -1,8 +1,8 @@
 {
   "mesh": {
     "dimension": 2,
-    "source": "/home/hoby/dev/remap/portage/data/exodus/semi2-coarse.exo",
-    "target": "/home/hoby/dev/remap/portage/data/exodus/semi2-fine.exo",
+    "source": "../../../test_data/semi2-coarse.exo",
+    "target": "../../../test_data/semi2-fine.exo",
     "conformal": true,
     "export": true
   },
