@@ -19,6 +19,7 @@
 // remap kernels and driver
 #include "portage/search/search_kdtree.h"
 #include "portage/intersect/intersect_r2d.h"
+#include "portage/intersect/intersect_r3d.h"
 #include "portage/interpolate/interpolate_1st_order.h"
 #include "portage/driver/coredriver.h"
 #include "portage/support/mpi_collate.h"
@@ -553,8 +554,8 @@ void remap<2>(std::string field, int nb_parts,
   for (int i = 0; i < nb_parts; ++i) {
     // create source-target mesh parts manager and
     // populate cell lists for the current part.
-    parts_manager.emplace_back(source_mesh_wrapper, target_mesh_wrapper,
-                               source_state_wrapper,target_state_wrapper,
+    parts_manager.emplace_back(source_mesh_wrapper, source_state_wrapper,
+                               target_mesh_wrapper, target_state_wrapper,
                                source_cells[i], target_cells[i], executor);
   }
 
@@ -619,8 +620,8 @@ void remap<3>(std::string field, int nb_parts,
 
   // filter cells and populate lists
   for (int i = 0; i < nb_parts; ++i) {
-    parts_manager.emplace_back(source_mesh_wrapper, target_mesh_wrapper,
-                               source_state_wrapper,target_state_wrapper,
+    parts_manager.emplace_back(source_mesh_wrapper, source_state_wrapper,
+                               target_mesh_wrapper, target_state_wrapper,
                                source_cells[i], target_cells[i], executor);
   }
 
@@ -629,7 +630,7 @@ void remap<3>(std::string field, int nb_parts,
                     target_mesh_wrapper, target_state_wrapper);
 
   auto candidates = remapper.search<Portage::SearchKDTree>();
-  auto weights = remapper.intersect_meshes<Portage::IntersectR2D>(candidates);
+  auto weights = remapper.intersect_meshes<Portage::IntersectR3D>(candidates);
 
   for (int i = 0; i < nb_parts; ++i) {
     // compute volumes of intersection and test for parts boundaries mismatch.
