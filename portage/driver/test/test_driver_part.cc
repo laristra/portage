@@ -60,49 +60,40 @@ protected:
   using PartsPair = Portage::Parts<2, Wonton::Entity_kind::CELL,
                                       Wonton::Jali_Mesh_Wrapper,
                                       Wonton::Jali_State_Wrapper>;
-  /**
-   * @brief compute cell centroid.
-   *
-   * @param cell the given cell.
-   * @param the mesh
-   * @return centroid its centroid.
-   */
-  Wonton::Point<2> get_centroid(int cell, Wonton::Jali_Mesh_Wrapper const& mesh) {
-    Wonton::Point<2> centroid;
-    mesh.cell_centroid(cell, &centroid);
-    return std::move(centroid);
-  };
 
   /**
    * @brief Create a partition based on a threshold value.
    *
+   * @tparam Mesh    the mesh type.
    * @param mesh     the current mesh to split
    * @param nb_cells its number of cells
    * @param thresh   x-axis threshold value
    * @param part     source or target mesh parts
    */
-  void create_partition(Wonton::Jali_Mesh_Wrapper const& mesh, std::vector<int>* part) {
-    assert(part != nullptr);
+  template<bool is_source>
+  void create_partition(double x_min, double x_max, double y_min, double y_max) {
 
-    int const nb_cells = mesh.num_entities(CELL, ALL);
-    int const min_heap_size = static_cast<int>(nb_cells / 2);
+    auto size = is_source ? source_mesh_wrapper.num_owned_cells()
+                          : target_mesh_wrapper.num_owned_cells();
+    auto mesh = is_source ? source_mesh : target_mesh;
+    auto part = is_source ? source_cells : target_cells;
 
     for (int i = 0; i < 2; ++i) {
       part[i].clear();
-      part[i].reserve(min_heap_size);
+      part[i].reserve(size);
     }
 
-    for (int i = 0; i < nb_cells; ++i) {
-      auto centroid = get_centroid(i, mesh);
+    for (int i = 0; i < size; ++i) {
+      auto centroid = mesh->cell_centroid(i);
       auto const& x = centroid[0];
       auto const& y = centroid[1];
-      // inside block
-      if (x > 0.2 and x < 0.6 and y > 0.2 and y < 0.6) {
-        part[0].emplace_back(i);
-      } else {
-        part[1].emplace_back(i);
-      }
+      // check if inside block
+      auto k = x > x_min and x < x_max and y > y_min and y < y_max ? 0 : 1;
+      part[k].emplace_back(i);
     }
+
+    for (int i = 0; i < 2; ++i)
+      part[i].shrink_to_fit();
   }
 
 public:
@@ -124,16 +115,16 @@ public:
       target_state_wrapper(*target_state)
   {
     // save meshes sizes
-    nb_source_cells = source_mesh_wrapper.num_entities(CELL, ALL);
-    nb_target_cells = target_mesh_wrapper.num_entities(CELL, ALL);
+    nb_source_cells = source_mesh_wrapper.num_owned_cells();
+    nb_target_cells = target_mesh_wrapper.num_owned_cells();
 
     // add density field to both meshes
     source_state_wrapper.mesh_add_data<double>(CELL, "density", 0.);
     target_state_wrapper.mesh_add_data<double>(CELL, "density", 0.);
 
     // create parts by picking entities within (0.2,0.2) and (0.6,0.6)
-    create_partition(source_mesh_wrapper, source_cells);
-    create_partition(target_mesh_wrapper, target_cells);
+    create_partition<true>(0.2, 0.6, 0.2, 0.6);
+    create_partition<false>(0.2, 0.6, 0.2, 0.6);
 
     // set parts
     for (int i = 0; i < 2; ++i) {
@@ -143,12 +134,12 @@ public:
     }
   }
 
+protected:
   // useful constants and aliases
   static constexpr double upper_bound = std::numeric_limits<double>::max();
-  static constexpr double lower_bound = -upper_bound;
+  static constexpr double lower_bound = std::numeric_limits<double>::min();
   static constexpr double epsilon = 1.E-10;
   static constexpr auto CELL = Wonton::Entity_kind::CELL;
-  static constexpr auto ALL  = Wonton::Entity_type::ALL;
 
   int nb_source_cells = 0;
   int nb_target_cells = 0;
@@ -185,22 +176,22 @@ TEST_F(PartDriverTest, PiecewiseConstantField) {
   // assign a piecewise constant field on source mesh
   source_state_wrapper.mesh_get_data(CELL, "density", &original);
   for (int c = 0; c < nb_source_cells; c++) {
-    auto centroid = get_centroid(c, source_mesh_wrapper);
+    auto centroid = source_mesh->cell_centroid(c);
     original[c] = (centroid[0] < 0.40 ? 30. : 100.);
   }
 
   // process remap
   auto candidates = remapper.search<Portage::SearchKDTree>();
-  auto source_weights = remapper.intersect_meshes<Portage::IntersectR2D>(candidates);
+  auto weights = remapper.intersect_meshes<Portage::IntersectR2D>(candidates);
 
   for (int i = 0; i < 2; ++i) {
     // test for mismatch and compute volumes
-    parts[i].test_mismatch(source_weights);
+    parts[i].test_mismatch(weights);
     assert(not parts[i].has_mismatch());
 
     // interpolate density for current part
     remapper.interpolate_mesh_var<double, Portage::Interpolate_1stOrder>(
-      "density", "density", source_weights, lower_bound, upper_bound,
+      "density", "density", weights, lower_bound, upper_bound,
       Portage::DEFAULT_LIMITER, Portage::DEFAULT_PARTIAL_FIXUP_TYPE,
       Portage::DEFAULT_EMPTY_FIXUP_TYPE, Portage::DEFAULT_CONSERVATION_TOL,
       Portage::DEFAULT_MAX_FIXUP_ITER, &(parts[i])
@@ -213,7 +204,7 @@ TEST_F(PartDriverTest, PiecewiseConstantField) {
   for (int i = 0; i < 2; ++i) {
     for (auto&& c : target_cells[i]) {
       auto obtained = remapped[c];
-      auto centroid = get_centroid(c, target_mesh_wrapper);
+      auto centroid = target_mesh->cell_centroid(c);
       auto expected = (centroid[0] < 0.40 ? 30. : 100.);
       #if DEBUG_PART_BY_PART
         std::printf("target[%02d]: remapped: %7.3f, expected: %7.3f\n",
@@ -239,7 +230,7 @@ TEST_F(PartDriverTest, MeshMeshRemapComparison) {
   // assign a gaussian density field on source mesh
   source_state_wrapper.mesh_get_data(CELL, "density", &original);
   for (int c = 0; c < nb_source_cells; c++) {
-    auto centroid = get_centroid(c, source_mesh_wrapper);
+    auto centroid = source_mesh->cell_centroid(c);
     auto const& x = centroid[0];
     auto const& y = centroid[1];
     original[c] = std::exp(-10.*(x*x + y*y));
@@ -247,16 +238,16 @@ TEST_F(PartDriverTest, MeshMeshRemapComparison) {
 
   // process remap
   auto candidates = remapper.search<Portage::SearchKDTree>();
-  auto source_weights = remapper.intersect_meshes<Portage::IntersectR2D>(candidates);
+  auto weights = remapper.intersect_meshes<Portage::IntersectR2D>(candidates);
 
   for (int i = 0; i < 2; ++i) {
     // test for mismatch and compute volumes
-    parts[i].test_mismatch(source_weights);
+    parts[i].test_mismatch(weights);
     assert(not parts[i].has_mismatch());
 
     // interpolate density for current part
     remapper.interpolate_mesh_var<double, Portage::Interpolate_1stOrder>(
-      "density", "density", source_weights, lower_bound, upper_bound,
+      "density", "density", weights, lower_bound, upper_bound,
       Portage::DEFAULT_LIMITER, Portage::DEFAULT_PARTIAL_FIXUP_TYPE,
       Portage::DEFAULT_EMPTY_FIXUP_TYPE, Portage::DEFAULT_CONSERVATION_TOL,
       Portage::DEFAULT_MAX_FIXUP_ITER, &(parts[i])
@@ -270,7 +261,7 @@ TEST_F(PartDriverTest, MeshMeshRemapComparison) {
 
   // interpolate density on whole source mesh
   remapper.interpolate_mesh_var<double, Portage::Interpolate_1stOrder>(
-    "density", "density", source_weights, lower_bound, upper_bound
+    "density", "density", weights, lower_bound, upper_bound
   );
 
   // now compare remapped value for each cell

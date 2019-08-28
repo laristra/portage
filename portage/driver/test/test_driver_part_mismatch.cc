@@ -82,19 +82,6 @@ protected:
   using Empty   = Portage::Empty_fixup_type;
 
   /**
-   * @brief compute cell centroid.
-   *
-   * @param cell the given cell.
-   * @param the mesh
-   * @return centroid its centroid.
-   */
-  Wonton::Point<2> get_centroid(int cell, Wonton::Jali_Mesh_Wrapper const& mesh) {
-    Wonton::Point<2> centroid;
-    mesh.cell_centroid(cell, &centroid);
-    return std::move(centroid);
-  };
-
-  /**
    * @brief compute cell density analytically.
    *
    * @param c    the given cell.
@@ -104,42 +91,39 @@ protected:
   double compute_source_density(int c) {
     double const rho_min = 1.;
     double const rho_max = 100.;
-    auto centroid = get_centroid(c, source_mesh_wrapper);
+    auto centroid = source_mesh->cell_centroid(c);
     return (centroid[0] < 0.5 ? rho_max : rho_min);
   };
 
   /**
    * @brief Create a partition based on a threshold value.
    *
-   * @param mesh     the current mesh to split
-   * @param nb_cells its number of cells
-   * @param thresh   x-axis threshold value
-   * @param part     source or target mesh parts
+   * @tparam is_source source or target mesh?
+   * @param thresh     x-axis threshold value
    */
-  void create_partition(Wonton::Jali_Mesh_Wrapper const& mesh,
-                        double thresh, std::vector<int>* part) {
+  template<bool is_source>
+  void create_partition(double thresh) {
 
-    assert(part != nullptr);
-    assert(nb_parts == 2);
-
-    int const nb_cells =
-      mesh.num_entities(Wonton::Entity_kind::CELL, Wonton::Entity_type::ALL);
-    int const min_heap_size = static_cast<int>(nb_cells / 2);
+    auto size = is_source ? source_mesh_wrapper.num_owned_cells()
+                          : target_mesh_wrapper.num_owned_cells();
+    auto mesh = is_source ? source_mesh : target_mesh;
+    auto part = is_source ? source_cells : target_cells;
 
     for (int i = 0; i < nb_parts; ++i) {
       part[i].clear();
-      part[i].reserve(min_heap_size);
+      part[i].reserve(size);
     }
 
-    for (int i = 0; i < nb_cells; ++i) {
-      auto centroid = get_centroid(i, mesh);
-      if (centroid[0] < thresh) {
-        part[0].emplace_back(i);
-      } else {
-        part[1].emplace_back(i);
-      }
+    for (int i = 0; i < size; ++i) {
+      auto centroid = mesh->cell_centroid(i);
+      auto k = centroid[0] < thresh ? 0 : 1;
+      part[k].emplace_back(i);
     }
+
+    for (int i = 0; i < nb_parts; ++i)
+      part[i].shrink_to_fit();
   }
+
 
   /**
    * @brief Compute the expected remapped density on target mesh.
@@ -160,26 +144,26 @@ protected:
   double get_expected_remapped_density(int const cell,
                                        Partial partial_fixup,
                                        Empty   empty_fixup) {
-
     // get cell position
-    auto centroid = get_centroid(cell, target_mesh_wrapper);
+    auto centroid = target_mesh->cell_centroid(cell);
+    auto const& x = centroid[0];
 
     switch (partial_fixup) {
       case Partial::LOCALLY_CONSERVATIVE: {
         if (empty_fixup == Empty::LEAVE_EMPTY) {
-          if (centroid[0] < 0.4) {
+          if (x < 0.4) {
             return 100.;
-          } else if (centroid[0] < 0.6) {
+          } else if (x < 0.6) {
             return 50.;
-          } else if (centroid[0] < 0.8) {
+          } else if (x < 0.8) {
             return 0.;
           } else {
             return 1.;
           }
         } else /* EXTRAPOLATE */ {
-          if (centroid[0] < 0.4) {
+          if (x < 0.4) {
             return 100.;
-          } else if (centroid[0] < 0.8) {
+          } else if (x < 0.8) {
             return 50.;
           } else {
             return 1.;
@@ -187,15 +171,15 @@ protected:
         }
       } case Partial::CONSTANT: {
         if (empty_fixup == Empty::LEAVE_EMPTY) {
-          if (centroid[0] < 0.6) {
+          if (x < 0.6) {
             return 100.;
-          } else if (centroid[0] < 0.8) {
+          } else if (x < 0.8) {
             return 0.;
           } else {
             return 1.;
           }
         } else /* EXTRAPOLATE */ {
-          if (centroid[0] < 0.8) {
+          if (x < 0.8) {
             return 100.;
           } else {
             return 1.;
@@ -214,15 +198,15 @@ protected:
         };
 
         if (empty_fixup == Empty::LEAVE_EMPTY) {
-          if (centroid[0] < 0.6) {
+          if (x < 0.6) {
             return compute_shifted_density(50, 20, 0.2, 3);  // 83.35
-          } else if(centroid[0] < 0.8) {
+          } else if(x < 0.8) {
             return 0.;
           } else {
             return compute_shifted_density(0.5, 0.2, 0.2, 1);  // 2.5
           }
         } else /* EXTRAPOLATE */ {
-          if (centroid[0] < 0.8) {
+          if (x < 0.8) {
             return compute_shifted_density(50, 20, 0.2, 4);  // 62.5
           } else {
             return compute_shifted_density(0.5, 0.2, 0.2, 1);  // 2.5
@@ -254,10 +238,9 @@ public:
   {
     // get rid of long namespaces
     auto const CELL = Wonton::Entity_kind::CELL;
-    auto const ALL  = Wonton::Entity_type::ALL;
 
     // compute and add density field to the source mesh
-    int const nb_cells = source_mesh_wrapper.num_entities(CELL, ALL);
+    int const nb_cells = source_mesh_wrapper.num_owned_cells();
     double source_density[nb_cells];
     for (int c = 0; c < nb_cells; c++) {
       source_density[c] = compute_source_density(c);
@@ -267,8 +250,8 @@ public:
     target_state_wrapper.mesh_add_data<double>(CELL, "density", 0.);
 
     // create source and target mesh parts
-    create_partition(source_mesh_wrapper, 0.5, source_cells);
-    create_partition(target_mesh_wrapper, 0.8, target_cells);
+    create_partition<true>(0.5);
+    create_partition<false>(0.8);
 
     // set parts
     for (int i = 0; i < nb_parts; ++i) {
@@ -294,18 +277,18 @@ public:
                       target_mesh_wrapper, target_state_wrapper);
 
     auto candidates = remapper.search<Portage::SearchKDTree>();
-    auto source_weights = remapper.intersect_meshes<Portage::IntersectR2D>(candidates);
+    auto weights = remapper.intersect_meshes<Portage::IntersectR2D>(candidates);
 
     for (int i = 0; i < nb_parts; ++i) {
       // test for mismatch and compute volumes
-      parts[i].test_mismatch(source_weights);
+      parts[i].test_mismatch(weights);
 
       // interpolate density part-by-part while fixing mismatched values
       remapper.interpolate_mesh_var<double, Portage::Interpolate_1stOrder>(
-        "density", "density", source_weights,
-        lower_bound, higher_bound, Portage::DEFAULT_LIMITER,
-        partial_fixup, empty_fixup, Portage::DEFAULT_CONSERVATION_TOL,
-        Portage::DEFAULT_MAX_FIXUP_ITER, &(parts[i])
+        "density", "density", weights, lower_bound, upper_bound,
+        Portage::DEFAULT_LIMITER, partial_fixup, empty_fixup,
+        Portage::DEFAULT_CONSERVATION_TOL, Portage::DEFAULT_MAX_FIXUP_ITER,
+        &(parts[i])
       );
     }
 
@@ -318,7 +301,7 @@ public:
         auto obtained = remapped[c];
         auto expected = get_expected_remapped_density(c, partial_fixup, empty_fixup);
 #if DEBUG_PART_BY_PART
-        auto centroid = get_centroid(c, target_mesh_wrapper);
+        auto centroid = target_mesh->cell_centroid(c);
         std::printf("target[%02d]: (x=%.1f, y=%.1f), "
                     "remapped: %7.3f, expected: %7.3f\n",
                     c, centroid[0], centroid[1], obtained, expected);
@@ -330,9 +313,9 @@ public:
 
 protected:
   // useful constants
-  static constexpr int nb_parts = 2;
-  static constexpr double higher_bound = std::numeric_limits<double>::max();
-  static constexpr double lower_bound  = -higher_bound;
+  static constexpr int const nb_parts = 2;
+  static constexpr double upper_bound = std::numeric_limits<double>::max();
+  static constexpr double lower_bound = std::numeric_limits<double>::min();
   static constexpr double epsilon = 1.E-10;
 
   // source and target meshes and states
@@ -349,8 +332,8 @@ protected:
 
   // source and target parts couples
   std::vector<PartsPair> parts;
-  std::vector<int> source_cells[2];
-  std::vector<int> target_cells[2];
+  std::vector<int> source_cells[nb_parts];
+  std::vector<int> target_cells[nb_parts];
 };
 
 
