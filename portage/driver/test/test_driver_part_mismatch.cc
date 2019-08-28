@@ -270,10 +270,10 @@ public:
     create_partition(source_mesh_wrapper, 0.5, source_cells);
     create_partition(target_mesh_wrapper, 0.8, target_cells);
 
-        // set parts
+    // set parts
     for (int i = 0; i < nb_parts; ++i) {
-      parts.emplace_back(source_mesh_wrapper, target_mesh_wrapper,
-                         source_state_wrapper,target_state_wrapper,
+      parts.emplace_back(source_mesh_wrapper, source_state_wrapper,
+                         target_mesh_wrapper, target_state_wrapper,
                          source_cells[i], target_cells[i], nullptr);
     }
   }

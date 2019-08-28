@@ -73,8 +73,8 @@ public:
    */
   Parts(
     SourceMesh_Wrapper    const& source_mesh,
-    TargetMesh_Wrapper    const& target_mesh,
     SourceState_Wrapper   const& source_state,
+    TargetMesh_Wrapper    const& target_mesh,
     TargetState_Wrapper&         target_state,
     std::vector<int>      const& source_entities,
     std::vector<int>      const& target_entities,

@@ -137,8 +137,8 @@ public:
 
     // set parts
     for (int i = 0; i < 2; ++i) {
-      parts.emplace_back(source_mesh_wrapper, target_mesh_wrapper,
-                         source_state_wrapper,target_state_wrapper,
+      parts.emplace_back(source_mesh_wrapper, source_state_wrapper,
+                         target_mesh_wrapper, target_state_wrapper,
                          source_cells[i], target_cells[i], nullptr);
     }
   }
