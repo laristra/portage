@@ -774,11 +774,11 @@ class CoreDriver : public CoreDriverBase<D,
     @returns   Whether the meshes are mismatched
   */
 
-  bool 
+  bool
   check_mesh_mismatch(Portage::vector<std::vector<Weights_t>> const& source_weights) {
 
     // Instantiate mismatch fixer for later use
-    if (!mismatch_fixer_) {
+    if (not mismatch_fixer_) {
       // Intel 18.0.1 does not recognize std::make_unique even with -std=c++14 flag *ugh*
       // mismatch_fixer_ = std::make_unique<MismatchFixer<D, ONWHAT,
       //                                                  SourceMesh, SourceState,
@@ -951,7 +951,7 @@ class CoreDriver : public CoreDriverBase<D,
                          sources_and_weights.begin(),
                          target_field, interpolator);
 
-      if (has_mismatch_) {
+      if (check_mesh_mismatch(sources_and_weights)) {
         mismatch_fixer_->fix_mismatch(srcvarname, trgvarname,
                                       lower_bound, upper_bound,
                                       conservation_tol, max_fixup_iter,
@@ -1070,10 +1070,6 @@ class CoreDriver : public CoreDriverBase<D,
   std::unique_ptr<MismatchFixer<D, ONWHAT,
                                 SourceMesh, SourceState,
                                 TargetMesh, TargetState>> mismatch_fixer_;
-
-  // Flag to indicate if meshes have mismatch
-  bool has_mismatch_ = false;
-
 
 #ifdef HAVE_TANGRAM
 
