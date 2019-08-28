@@ -20,7 +20,7 @@
 
 #include "portage/support/portage.h"
 
-#define DEBUG_PART_BY_PART 1
+#define DEBUG_PART_BY_PART 0
 
 /**
  * @file  parts.h
