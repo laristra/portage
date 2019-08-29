@@ -282,28 +282,26 @@ public:
     double intersect_volume = std::accumulate(intersection_volumes_.begin(),
                                               intersection_volumes_.end(), 0.);
 
-    std::printf("source_volume: %.3f\n", source_volume);
-    std::printf("target_volume: %.3f\n", target_volume);
-    std::printf("intersect_volume: %.3f\n", intersect_volume);
-
     global_source_volume_    = source_volume;
     global_target_volume_    = target_volume;
     global_intersect_volume_ = intersect_volume;
 
 #ifdef PORTAGE_ENABLE_MPI
     if (distributed_) {
-      MPI_Allreduce(
-        &source_volume, &global_source_volume_, 1, MPI_DOUBLE, MPI_SUM, mycomm_
-      );
+      MPI_Allreduce(&source_volume, &global_source_volume_, 1, MPI_DOUBLE, MPI_SUM, mycomm_);
+      MPI_Allreduce(&target_volume, &global_target_volume_, 1, MPI_DOUBLE, MPI_SUM, mycomm_);
+      MPI_Allreduce(&intersect_volume, &global_intersect_volume_, 1, MPI_DOUBLE, MPI_SUM, mycomm_);
 
-      MPI_Allreduce(
-        &target_volume, &global_target_volume_, 1, MPI_DOUBLE, MPI_SUM, mycomm_
-      );
-
-      MPI_Allreduce(
-        &intersect_volume, &global_intersect_volume_, 1, MPI_DOUBLE, MPI_SUM, mycomm_
-      );
+      if (rank_ == 0) {
+        std::printf("source volume: %.3f\n", global_source_volume_);
+        std::printf("target volume: %.3f\n", global_target_volume_);
+        std::printf("intersect volume: %.3f\n", global_intersect_volume_);
+      }
     }
+#else
+    std::printf("source volume: %.3f\n", source_volume);
+    std::printf("target volume: %.3f\n", target_volume);
+    std::printf("intersect volume: %.3f\n", intersect_volume);
 #endif
 
     // In our initial redistribution phase, we will move as many
