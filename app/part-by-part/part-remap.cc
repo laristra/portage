@@ -544,11 +544,11 @@ void remap<2>(std::string field, int nb_parts,
                                           Wonton::Jali_Mesh_Wrapper,
                                           Wonton::Jali_State_Wrapper>;
 
-  using Parts = Portage::Parts<2, Wonton::Entity_kind::CELL,
-                                  Wonton::Jali_Mesh_Wrapper,
-                                  Wonton::Jali_State_Wrapper>;
+  using PartsPair = Portage::PartsPair<2, Wonton::Entity_kind::CELL,
+                                          Wonton::Jali_Mesh_Wrapper,
+                                          Wonton::Jali_State_Wrapper>;
 
-  std::vector<Parts> parts_manager;
+  std::vector<PartsPair> parts_manager;
   parts_manager.reserve(nb_parts);
 
   for (int i = 0; i < nb_parts; ++i) {
@@ -568,7 +568,7 @@ void remap<2>(std::string field, int nb_parts,
 
   for (int i = 0; i < nb_parts; ++i) {
     // compute volumes of intersection and test for parts boundaries mismatch.
-    parts_manager[i].test_mismatch(weights);
+    parts_manager[i].check_mismatch(weights);
 
     // interpolate field for each part and fix partially filled or empty cells.
     remapper.interpolate_mesh_var<double, Portage::Interpolate_1stOrder>(
@@ -611,11 +611,11 @@ void remap<3>(std::string field, int nb_parts,
                                           Wonton::Jali_Mesh_Wrapper,
                                           Wonton::Jali_State_Wrapper>;
 
-  using Parts = Portage::Parts<3, Wonton::Entity_kind::CELL,
-                                  Wonton::Jali_Mesh_Wrapper,
-                                  Wonton::Jali_State_Wrapper>;
+  using PartsPair = Portage::PartsPair<3, Wonton::Entity_kind::CELL,
+                                          Wonton::Jali_Mesh_Wrapper,
+                                          Wonton::Jali_State_Wrapper>;
 
-  std::vector<Parts> parts_manager;
+  std::vector<PartsPair> parts_manager;
   parts_manager.reserve(nb_parts);
 
   // filter cells and populate lists
@@ -634,7 +634,7 @@ void remap<3>(std::string field, int nb_parts,
 
   for (int i = 0; i < nb_parts; ++i) {
     // compute volumes of intersection and test for parts boundaries mismatch.
-    parts_manager[i].test_mismatch(weights);
+    parts_manager[i].check_mismatch(weights);
 
     // interpolate field for each part and fix partially filled or empty cells.
     remapper.interpolate_mesh_var<double, Portage::Interpolate_1stOrder>(
