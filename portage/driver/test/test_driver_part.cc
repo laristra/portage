@@ -64,11 +64,11 @@ protected:
   /**
    * @brief Create a partition based on a threshold value.
    *
-   * @tparam Mesh    the mesh type.
-   * @param mesh     the current mesh to split
-   * @param nb_cells its number of cells
-   * @param thresh   x-axis threshold value
-   * @param part     source or target mesh parts
+   * @tparam is_source: for the source mesh?
+   * @param x_min: min centroid x-value threshold for first part.
+   * @param x_max: max centroid x-value threshold for first part.
+   * @param y_min: min centroid y-value threshold for first part.
+   * @param y_max: max centroid y-value threshold for first part.
    */
   template<bool is_source>
   void create_partition(double x_min, double x_max, double y_min, double y_max) {

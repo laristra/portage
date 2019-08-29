@@ -29,9 +29,9 @@
 /**
  * @brief Parts mismatch fixup tests for part-by-part interpolation.
  *
- * Here, the purpose is to test that parts mismatch are correctly
+ * Here, the purpose is to check that parts mismatch are correctly
  * handled when interpolating each pair of source-target part independently.
- * More precisely, we aim ot ensure that values within partially filled and
+ * More precisely, we aim to ensure that values within partially filled and
  * empty cells are correctly fixed according to the user-specified fixup
  * scheme which may be:
  * - constant and leave empty,
@@ -82,11 +82,10 @@ protected:
   using Empty   = Portage::Empty_fixup_type;
 
   /**
-   * @brief compute cell density analytically.
+   * @brief Compute source cell density.
    *
-   * @param c    the given cell.
-   * @param mesh a wrapper to the supporting mesh[source|target].
-   * @return the computed cell density.
+   * @param c: the source cell local index
+   * @return the exact density of the given cell.
    */
   double compute_source_density(int c) {
     double const rho_min = 1.;
@@ -136,9 +135,9 @@ protected:
    * - shifted-conservative/leave-empty: [ 83.3| 83.3| 83.3|  0.0|2.5]
    * - shifted-conservative/extrapolate: [ 62.5| 62.5| 62.5| 62.5|2.5]
    *
-   * @tparam partial_fixup_type the Partial mismatch fixup scheme to use
-   * @tparam empty_fixup_type   the empty cell fixup scheme to use
-   * @param cell                the given cell
+   * @param cell          the target cell local index
+   * @param partial_fixup the Partial mismatch fixup scheme to use
+   * @param empty_fixup   the empty cell fixup scheme to use
    * @return the expected remapped density value
    */
   double get_expected_remapped_density(int const cell,
