@@ -183,6 +183,7 @@ TEST_F(PartDriverTest, PiecewiseConstantField) {
   // process remap
   auto candidates = remapper.search<Portage::SearchKDTree>();
   auto weights = remapper.intersect_meshes<Portage::IntersectR2D>(candidates);
+  bool has_mismatch = remapper.check_mesh_mismatch(weights);
 
   for (int i = 0; i < 2; ++i) {
     // test for mismatch and compute volumes
@@ -239,6 +240,7 @@ TEST_F(PartDriverTest, MeshMeshRemapComparison) {
   // process remap
   auto candidates = remapper.search<Portage::SearchKDTree>();
   auto weights = remapper.intersect_meshes<Portage::IntersectR2D>(candidates);
+  bool has_mismatch = remapper.check_mesh_mismatch(weights);
 
   for (int i = 0; i < 2; ++i) {
     // test for mismatch and compute volumes

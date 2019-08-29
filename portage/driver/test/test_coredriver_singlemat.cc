@@ -78,7 +78,7 @@ TEST(CellDriver, 2D_2ndOrder) {
                                            "temperature", 0.0);
 
   // Do the basic remap algorithm (search, intersect, interpolate) -
-  // no redistribution, no mismatch fixup
+  // no redistribution, default mismatch fixup options
 
   Portage::CoreDriver<2, Wonton::Entity_kind::CELL,
                       Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper>
@@ -91,6 +91,7 @@ TEST(CellDriver, 2D_2ndOrder) {
 
   auto candidates = d.search<Portage::SearchKDTree>();
   auto srcwts = d.intersect_meshes<Portage::IntersectR2D>(candidates);
+  bool has_mismatch = d.check_mesh_mismatch(srcwts);
 
   double dblmin = -std::numeric_limits<double>::max();
   double dblmax =  std::numeric_limits<double>::max();
@@ -173,7 +174,7 @@ TEST(CellDriver, 3D_2ndOrder) {
                                            "TEMP", 0.0);
 
   // Do the basic remap algorithm (search, intersect, interpolate) -
-  // no redistribution, no mismatch fixup
+  // no redistribution, default mismatch fixup options
   
   Wonton::SerialExecutor_type executor;
 
@@ -187,8 +188,8 @@ TEST(CellDriver, 3D_2ndOrder) {
   d.set_num_tols(default_num_tols);
 
   auto candidates = d.search<Portage::SearchKDTree>();
-
   auto srcwts = d.intersect_meshes<Portage::IntersectR3D>(candidates);
+  bool has_mismatch = d.check_mesh_mismatch(srcwts);
 
   double dblmin = -std::numeric_limits<double>::max();
   double dblmax =  std::numeric_limits<double>::max();

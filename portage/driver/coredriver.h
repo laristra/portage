@@ -951,7 +951,8 @@ class CoreDriver : public CoreDriverBase<D,
                          sources_and_weights.begin(),
                          target_field, interpolator);
 
-      if (check_mesh_mismatch(sources_and_weights)) {
+      assert(mismatch_fixer_ && "check_mesh_mismatch must be called first");
+      if (mismatch_fixer_->has_mismatch()) {
         mismatch_fixer_->fix_mismatch(srcvarname, trgvarname,
                                       lower_bound, upper_bound,
                                       conservation_tol, max_fixup_iter,
