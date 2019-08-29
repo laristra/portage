@@ -371,9 +371,8 @@ public:
 
 #ifdef PORTAGE_ENABLE_MPI
     if (distributed_) {
-      int nb_empty_all[nprocs_];
-      MPI_Gather(&nb_empty, 1, MPI_INT, nb_empty_all, 1, MPI_INT, 0, mycomm_);
-      global_nb_empty = std::accumulate(nb_empty_all, nb_empty_all + nprocs_, 0.);
+      global_nb_empty = 0;
+      MPI_Reduce(&nb_empty, &global_nb_empty, 1, MPI_INT, MPI_SUM, 0, mycomm_);
     }
 #endif
 
