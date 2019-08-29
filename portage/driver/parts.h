@@ -221,7 +221,7 @@ public:
    * @param source... source entities ID and weights for each target entity.
    * @return true if a mismatch has been identified, false otherwise.
    */
-  bool test_mismatch(Portage::vector<entity_weights_t> const& source_ents_and_weights) {
+  bool check_mismatch(Portage::vector<entity_weights_t> const& source_ents_and_weights) {
 
     assert(do_part_by_part_);
 

@@ -187,7 +187,7 @@ TEST_F(PartDriverTest, PiecewiseConstantField) {
 
   for (int i = 0; i < 2; ++i) {
     // test for mismatch and compute volumes
-    parts[i].test_mismatch(weights);
+    parts[i].check_mismatch(weights);
     assert(not parts[i].has_mismatch());
 
     // interpolate density for current part
@@ -244,7 +244,7 @@ TEST_F(PartDriverTest, MeshMeshRemapComparison) {
 
   for (int i = 0; i < 2; ++i) {
     // test for mismatch and compute volumes
-    parts[i].test_mismatch(weights);
+    parts[i].check_mismatch(weights);
     assert(not parts[i].has_mismatch());
 
     // interpolate density for current part

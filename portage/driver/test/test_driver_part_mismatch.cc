@@ -281,7 +281,7 @@ public:
 
     for (int i = 0; i < nb_parts; ++i) {
       // test for mismatch and compute volumes
-      parts[i].test_mismatch(weights);
+      parts[i].check_mismatch(weights);
 
       // interpolate density part-by-part while fixing mismatched values
       remapper.interpolate_mesh_var<double, Portage::Interpolate_1stOrder>(
