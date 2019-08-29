@@ -141,8 +141,8 @@ Execute the following from the portage root directory:
 INTEL_VERSION=18.0.3
 MPI_VERSION=2.1.5
 JALI_VERSION=1.0.4
-TANGRAM_VERSION=0.9.4
-XMOF2D_VERSION=0.9.4
+TANGRAM_VERSION=0.9.6
+XMOF2D_VERSION=0.9.5
 BOOST_VERSION=1.68.0
 
 BUILD_PREFIX=/usr/projects/ngc/private
