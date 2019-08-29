@@ -239,7 +239,7 @@ class CoreDriverBase {
                             Empty_fixup_type empty_fixup_type,
                             double conservation_tol,
                             int max_fixup_iter,
-                            Parts<D, ONWHAT,
+                            PartsPair<D, ONWHAT,
                               SourceMesh, SourceState,
                               TargetMesh, TargetState>* parts_pair = nullptr) {
     assert(ONWHAT == onwhat());
@@ -828,9 +828,9 @@ class CoreDriver : public CoreDriverBase<D,
                             Empty_fixup_type empty_fixup_type = DEFAULT_EMPTY_FIXUP_TYPE,
                             double conservation_tol = DEFAULT_CONSERVATION_TOL,
                             int max_fixup_iter = DEFAULT_MAX_FIXUP_ITER,
-                            Parts<D, ONWHAT,
-                                  SourceMesh, SourceState,
-                                  TargetMesh, TargetState>* partition = nullptr) {
+                            PartsPair<D, ONWHAT,
+                                      SourceMesh, SourceState,
+                                      TargetMesh, TargetState>* partition = nullptr) {
 
     if (source_state_.get_entity(srcvarname) != ONWHAT) {
       std::cerr << "Variable " << srcvarname << " not defined on Entity_kind "

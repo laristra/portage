@@ -75,9 +75,9 @@ protected:
   using Remapper = Portage::CoreDriver<2, Wonton::Entity_kind::CELL,
                                           Wonton::Jali_Mesh_Wrapper,
                                           Wonton::Jali_State_Wrapper>;
-  using PartsPair = Portage::Parts<2, Wonton::Entity_kind::CELL,
-                                      Wonton::Jali_Mesh_Wrapper,
-                                      Wonton::Jali_State_Wrapper>;
+  using PartsPair = Portage::PartsPair<2, Wonton::Entity_kind::CELL,
+                                          Wonton::Jali_Mesh_Wrapper,
+                                          Wonton::Jali_State_Wrapper>;
   using Partial = Portage::Partial_fixup_type;
   using Empty   = Portage::Empty_fixup_type;
 

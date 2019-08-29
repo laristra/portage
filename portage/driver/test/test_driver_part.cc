@@ -57,9 +57,9 @@ protected:
   using Remapper = Portage::CoreDriver<2, Wonton::Entity_kind::CELL,
                                           Wonton::Jali_Mesh_Wrapper,
                                           Wonton::Jali_State_Wrapper>;
-  using PartsPair = Portage::Parts<2, Wonton::Entity_kind::CELL,
-                                      Wonton::Jali_Mesh_Wrapper,
-                                      Wonton::Jali_State_Wrapper>;
+  using PartsPair = Portage::PartsPair<2, Wonton::Entity_kind::CELL,
+                                          Wonton::Jali_Mesh_Wrapper,
+                                          Wonton::Jali_State_Wrapper>;
 
   /**
    * @brief Create a partition based on a threshold value.

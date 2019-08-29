@@ -50,7 +50,7 @@ namespace Portage {
     class TargetMesh_Wrapper = SourceMesh_Wrapper,
     class TargetState_Wrapper = SourceState_Wrapper
   >
-class Parts {
+class PartsPair {
   // shortcut
   using entity_weights_t = std::vector<Weights_t>;
 
@@ -58,7 +58,7 @@ public:
   /**
    * @brief Construct a default source-target mesh parts pair.
    */
-  Parts() = default;
+  PartsPair() = default;
 
   /**
    * @brief Construct a source-target mesh parts pair.
@@ -71,7 +71,7 @@ public:
    * @param target_entities the list of target entities to remap
    * @param executor        the MPI executor to use
    */
-  Parts(
+  PartsPair(
     SourceMesh_Wrapper    const& source_mesh,
     SourceState_Wrapper   const& source_state,
     TargetMesh_Wrapper    const& target_mesh,
@@ -144,7 +144,7 @@ public:
   /**
    * @brief Delete a source-target mesh parts pair.
    */
-  ~Parts() = default;
+  ~PartsPair() = default;
 
   /**
    * @brief Do source and target meshes have a boundary mismatch?
