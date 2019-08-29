@@ -927,4 +927,3 @@ class UberDriver {
 }  // namespace Portage
 
 #endif  // PORTAGE_GENREMAP_DRIVER_H_
-
