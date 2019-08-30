@@ -544,11 +544,11 @@ void remap<2>(std::string field, int nb_parts,
                                           Wonton::Jali_Mesh_Wrapper,
                                           Wonton::Jali_State_Wrapper>;
 
-  using PartsPair = Portage::PartsPair<2, Wonton::Entity_kind::CELL,
-                                          Wonton::Jali_Mesh_Wrapper,
-                                          Wonton::Jali_State_Wrapper>;
+  using PartPair = Portage::PartPair<2, Wonton::Entity_kind::CELL,
+                                        Wonton::Jali_Mesh_Wrapper,
+                                        Wonton::Jali_State_Wrapper>;
 
-  std::vector<PartsPair> parts_manager;
+  std::vector<PartPair> parts_manager;
   parts_manager.reserve(nb_parts);
 
   for (int i = 0; i < nb_parts; ++i) {
@@ -611,11 +611,11 @@ void remap<3>(std::string field, int nb_parts,
                                           Wonton::Jali_Mesh_Wrapper,
                                           Wonton::Jali_State_Wrapper>;
 
-  using PartsPair = Portage::PartsPair<3, Wonton::Entity_kind::CELL,
-                                          Wonton::Jali_Mesh_Wrapper,
-                                          Wonton::Jali_State_Wrapper>;
+  using PartPair = Portage::PartPair<3, Wonton::Entity_kind::CELL,
+                                        Wonton::Jali_Mesh_Wrapper,
+                                        Wonton::Jali_State_Wrapper>;
 
-  std::vector<PartsPair> parts_manager;
+  std::vector<PartPair> parts_manager;
   parts_manager.reserve(nb_parts);
 
   // filter cells and populate lists
