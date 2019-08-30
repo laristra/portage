@@ -75,7 +75,7 @@ protected:
   using Remapper = Portage::CoreDriver<2, Wonton::Entity_kind::CELL,
                                           Wonton::Jali_Mesh_Wrapper,
                                           Wonton::Jali_State_Wrapper>;
-  using PartsPair = Portage::PartsPair<2, Wonton::Entity_kind::CELL,
+  using PartPair = Portage::PartPair<2, Wonton::Entity_kind::CELL,
                                           Wonton::Jali_Mesh_Wrapper,
                                           Wonton::Jali_State_Wrapper>;
   using Partial = Portage::Partial_fixup_type;
@@ -330,7 +330,7 @@ protected:
   Wonton::Jali_State_Wrapper target_state_wrapper;
 
   // source and target parts couples
-  std::vector<PartsPair> parts;
+  std::vector<PartPair> parts;
   std::vector<int> source_cells[nb_parts];
   std::vector<int> target_cells[nb_parts];
 };
