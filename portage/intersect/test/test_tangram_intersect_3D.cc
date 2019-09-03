@@ -30,6 +30,7 @@ TEST(TANGRAM_3D, test_matpoly_create) {
   // test that we can construct a real matpoly (lifted from
   // tangram/src/support/test/test_MatPoly_3D.cc)
   int mat_id = 1;
+  double dst_tol = sqrt(333)*std::numeric_limits<double>::epsilon();
 
   // Test for a right triangular prism
   std::vector<Wonton::Point<3>> prism_points = {
@@ -49,7 +50,7 @@ TEST(TANGRAM_3D, test_matpoly_create) {
   ASSERT_EQ(mat_id, prism_matpoly.mat_id());
 
   // Initialization
-  prism_matpoly.initialize(prism_points, prism_faces);
+  prism_matpoly.initialize(prism_points, prism_faces, dst_tol);
 
   // Verify coordinates
   const std::vector<Wonton::Point<3>>& matpoly_points = prism_matpoly.points();
@@ -138,7 +139,7 @@ TEST(TANGRAM_3D, test_matpoly_create) {
 
   Tangram::MatPoly<3> ncv_prism_matpoly(mat_id);
   // Initialization
-  ncv_prism_matpoly.initialize(ncv_prism_points, ncv_prism_faces);
+  ncv_prism_matpoly.initialize(ncv_prism_points, ncv_prism_faces, dst_tol);
 
   // Verify centroids
   for (int iface = 0; iface < ncv_prism_faces.size(); iface++)
@@ -149,6 +150,7 @@ TEST(TANGRAM_3D, test_matpoly_create) {
 TEST(TANGRAM_3D, test_matpoly_cube) {
   // test that we can construct a cube matpoly
   int mat_id = 1;
+  double dst_tol = sqrt(3)*std::numeric_limits<double>::epsilon();
 
   // Test for a cube
   std::vector<Wonton::Point<3>> cube_points = {
@@ -169,7 +171,7 @@ TEST(TANGRAM_3D, test_matpoly_cube) {
   ASSERT_EQ(mat_id, matpoly.mat_id());
 
   // Initialization
-  matpoly.initialize(cube_points, cube_faces);
+  matpoly.initialize(cube_points, cube_faces, dst_tol);
 
   // Verify coordinates
   const std::vector<Wonton::Point<3>>& matpoly_points = matpoly.points();
@@ -196,6 +198,7 @@ TEST(TANGRAM_3D, test_matpoly_cube) {
 TEST(TANGRAM_3D, test_matpoly_faceted_cube_by_hand) {
   // test that we can construct a faceted cube matpoly by hand
   int mat_id = 1;
+  double dst_tol = sqrt(3)*std::numeric_limits<double>::epsilon();
 
   // Test for a cube
   std::vector<Wonton::Point<3>> faceted_cube_points = {
@@ -217,7 +220,7 @@ TEST(TANGRAM_3D, test_matpoly_faceted_cube_by_hand) {
   ASSERT_EQ(mat_id, matpoly.mat_id());
 
   // Initialization
-  matpoly.initialize(faceted_cube_points, faceted_cube_faces);
+  matpoly.initialize(faceted_cube_points, faceted_cube_faces, dst_tol);
 
   // Verify coordinates
   const std::vector<Wonton::Point<3>>& matpoly_points = matpoly.points();
@@ -241,6 +244,7 @@ TEST(TANGRAM_3D, test_matpoly_intersect) {
   // test that we can construct a cube matpoly using .faceted_matpoly
   // and intersect with a portag
   int mat_id = 1;
+  double dst_tol = sqrt(3)*std::numeric_limits<double>::epsilon();
 
   // Test for a cube
   std::vector<Wonton::Point<3>> cube_points = {
@@ -261,7 +265,7 @@ TEST(TANGRAM_3D, test_matpoly_intersect) {
   ASSERT_EQ(mat_id, matpoly.mat_id());
 
   // Initialization
-  matpoly.initialize(cube_points, cube_faces);
+  matpoly.initialize(cube_points, cube_faces, dst_tol);
 
   // Verify coordinates
   const std::vector<Wonton::Point<3>>& matpoly_points = matpoly.points();
@@ -334,6 +338,7 @@ TEST(TANGRAM_3D, test_intersect_matpoly_gold) {
   // test that we can construct a cube matpoly and intersect with a constructed
   // tet
   int mat_id = 1;
+  double dst_tol = sqrt(3)*std::numeric_limits<double>::epsilon();
 
   // Test for a cube
   std::vector<Wonton::Point<3>> cube_points = {
@@ -349,7 +354,7 @@ TEST(TANGRAM_3D, test_intersect_matpoly_gold) {
   Tangram::MatPoly<3> matpoly(mat_id);
 
   // Initialization
-  matpoly.initialize(cube_points, cube_faces);
+  matpoly.initialize(cube_points, cube_faces, dst_tol);
 
   // Create a length 1 vector of tets by hand
   std::vector<std::array<Wonton::Point<3>, 4>> target_tet_coords{
@@ -374,6 +379,7 @@ TEST(TANGRAM_3D, test_intersect_matpoly_gold) {
 TEST(TANGRAM_3D, test_intersect_matpoly_gold2) {
   // test that we can construct a cube matpoly and intersect with a cell
   int mat_id = 1;
+  double dst_tol = sqrt(3)*std::numeric_limits<double>::epsilon();
 
   // Test for a cube
   std::vector<Wonton::Point<3>> cube_points = {
@@ -389,7 +395,7 @@ TEST(TANGRAM_3D, test_intersect_matpoly_gold2) {
   Tangram::MatPoly<3> matpoly(mat_id);
 
   // Initialization
-  matpoly.initialize(cube_points, cube_faces);
+  matpoly.initialize(cube_points, cube_faces, dst_tol);
 
   // create a simple mesh with a single cell
   Wonton::Simple_Mesh target_mesh(0., 0., 0., 1., 1., 1., 1, 1, 1);
@@ -421,6 +427,7 @@ TEST(TANGRAM_3D, test_intersect_matpoly_gold3) {
   // test that we can construct a cube matpoly and intersect with a cell using
   // the non-planar flag
   int mat_id = 1;
+  double dst_tol = sqrt(3)*std::numeric_limits<double>::epsilon();
 
   // Test for a cube
   std::vector<Wonton::Point<3>> cube_points = {
@@ -436,7 +443,7 @@ TEST(TANGRAM_3D, test_intersect_matpoly_gold3) {
   Tangram::MatPoly<3> matpoly(mat_id);
 
   // Initialization
-  matpoly.initialize(cube_points, cube_faces);
+  matpoly.initialize(cube_points, cube_faces, dst_tol);
 
   // create a simple mesh with a single cell
   Wonton::Simple_Mesh target_mesh(0., 0., 0., 1., 1., 1., 1, 1, 1);
@@ -468,6 +475,7 @@ TEST(TANGRAM_3D, test_intersect_matpoly_gold4) {
   // test that we can intersect a cube matpoly and intersect with a
   // non-coincident cell
   int mat_id = 1;
+  double dst_tol = sqrt(3)*std::numeric_limits<double>::epsilon();
 
   // Test for a cube
   std::vector<Wonton::Point<3>> cube_points = {
@@ -483,7 +491,7 @@ TEST(TANGRAM_3D, test_intersect_matpoly_gold4) {
   Tangram::MatPoly<3> matpoly(mat_id);
 
   // Initialization
-  matpoly.initialize(cube_points, cube_faces);
+  matpoly.initialize(cube_points, cube_faces, dst_tol);
 
   // create a simple mesh with a single cell
   Wonton::Simple_Mesh target_mesh(0.5, 0.5, 0.5, 1.5, 1.5, 1.5, 1, 1, 1);
