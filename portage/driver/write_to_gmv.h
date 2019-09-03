@@ -50,14 +50,19 @@ void write_to_gmv(Mesh_Wrapper const& mesh,
 
   int nmats = state.num_materials();
   int nc = mesh.num_entities(Entity_kind::CELL, Entity_type::PARALLEL_OWNED);
+  int nallc = mesh.num_entities(Entity_kind::CELL, Entity_type::ALL);
 
-  std::vector<int> cell_num_mats(nc);
+  std::vector<int> cell_num_mats(nc, 0);
   std::vector<std::vector<int>> cell_mat_ids(nc);
 
-  for (int c = 0; c < nc; c++) {
-    state.cell_get_mats(c, &(cell_mat_ids[c]));
-    cell_num_mats[c] = cell_mat_ids[c].size();
-  }
+  std::vector<int> icell_owned2all(nc, -1);
+  for (int ic = 0, iowned = 0; ic < nallc; ic++)
+    if (mesh.cell_get_type(ic) == Wonton::PARALLEL_OWNED) {
+      state.cell_get_mats(iowned, &(cell_mat_ids[iowned]));
+      cell_num_mats[iowned] = cell_mat_ids[iowned].size();
+      icell_owned2all[iowned] = ic;
+      iowned++;
+    }
 
   std::ofstream fout(filename);
   fout << std::scientific;
@@ -71,11 +76,22 @@ void write_to_gmv(Mesh_Wrapper const& mesh,
   // structures combined
 
   int np = mesh.num_entities(Entity_kind::NODE, Entity_type::PARALLEL_OWNED);
+  int nallp = mesh.num_entities(Entity_kind::NODE, Entity_type::ALL);
   int nmatpnts = np;
+
+  std::vector<int> inode_owned2all(np, -1);
+  std::vector<int> inode_all2owned(nallp, -1);
+  for (int ip = 0, iowned = 0; ip < nallp; ip++)
+    if (mesh.node_get_type(ip) == Wonton::PARALLEL_OWNED) {
+      inode_owned2all[iowned] = ip;
+      inode_all2owned[ip] = iowned;
+      iowned++;
+    }
 
   for (int c = 0; c < nc; c++) {
     if (cell_num_mats[c] > 1) {  // Mixed cell
-      Tangram::CellMatPoly<D> const& cellmatpoly = ir->cell_matpoly_data(c);
+      Tangram::CellMatPoly<D> const& cellmatpoly = 
+        ir->cell_matpoly_data(icell_owned2all[c]);
 
       int ncp = cellmatpoly.num_matvertices();
       for (int i = 0; i < ncp; i++)
@@ -87,12 +103,13 @@ void write_to_gmv(Mesh_Wrapper const& mesh,
   std::vector<Point<D>> points(nmatpnts);
 
   for (int i = 0; i < np; i++)
-    mesh.node_get_coordinates(i, &(points[i]));
+    mesh.node_get_coordinates(inode_owned2all[i], &(points[i]));
 
   nmatpnts = np;  // reset nmatpnts so it can be used as a counter
   for (int c = 0; c < nc; c++) {
     if (cell_num_mats[c] > 1) {  // Mixed cell
-      Tangram::CellMatPoly<D> const& cellmatpoly = ir->cell_matpoly_data(c);
+      Tangram::CellMatPoly<D> const& cellmatpoly = 
+        ir->cell_matpoly_data(icell_owned2all[c]);
 
       int ncp = cellmatpoly.num_matvertices();
       for (int i = 0; i < ncp; i++) {
@@ -130,7 +147,8 @@ void write_to_gmv(Mesh_Wrapper const& mesh,
     for (int c : matcells) {
       if (cell_num_mats[c] > 1) {  // multi-material cell
 
-        Tangram::CellMatPoly<D> const& cellmatpoly = ir->cell_matpoly_data(c);
+        Tangram::CellMatPoly<D> const& cellmatpoly = 
+          ir->cell_matpoly_data(icell_owned2all[c]);
 
         // Write out the polyhedra corresponding to this material
         int nmp = cellmatpoly.num_matpolys();
@@ -143,12 +161,11 @@ void write_to_gmv(Mesh_Wrapper const& mesh,
             fout << "general 1 " << mverts.size() << " ";
             for (auto n : mverts) {
               if (cellmatpoly.matvertex_parent_kind(n) == Tangram::Entity_kind::NODE)
-                fout << cellmatpoly.matvertex_parent_id(n)+1 << " ";
+                fout << inode_all2owned[cellmatpoly.matvertex_parent_id(n)] + 1 << " ";
               else {
                 Point<D> pnt = cellmatpoly.matvertex_point(n);
-                int np = mesh.num_entities(Portage::Entity_kind::NODE);
                 for (int j = np; j < nmatpnts; j++) {
-                  if (approxEq(points[j], pnt, 1e-16)) {
+                  if (points[j] == pnt) {
                     fout << j+1 << " ";
                     break;
                   }
@@ -175,12 +192,11 @@ void write_to_gmv(Mesh_Wrapper const& mesh,
                 for (int j = 0; j < nfv; j++) {
                   int n = mfverts[j];
                   if (cellmatpoly.matvertex_parent_kind(n) == Tangram::Entity_kind::NODE)
-                    fout << cellmatpoly.matvertex_parent_id(n)+1 << " ";
+                    fout << inode_all2owned[cellmatpoly.matvertex_parent_id(n)] + 1 << " ";
                   else {
                     Point<D> pnt = cellmatpoly.matvertex_point(n);
-                    int np = mesh.num_entities(Portage::Entity_kind::NODE);
                     for (int j = np; j < nmatpnts; j++) {
-                      if (approxEq(points[j], pnt, 1e-16)) {
+                      if (points[j] == pnt) {
                         fout << j+1 << " ";
                         break;
                       }
@@ -192,12 +208,11 @@ void write_to_gmv(Mesh_Wrapper const& mesh,
                 for (int j = 0; j < nfv; j++) {
                   int n = mfverts[nfv-j-1];
                   if (cellmatpoly.matvertex_parent_kind(n) == Tangram::Entity_kind::NODE)
-                    fout << cellmatpoly.matvertex_parent_id(n)+1 << " ";
+                    fout << inode_all2owned[cellmatpoly.matvertex_parent_id(n)] + 1 << " ";
                   else {
                     Point<D> pnt = cellmatpoly.matvertex_point(n);
-                    int np = mesh.num_entities(Portage::Entity_kind::NODE);
                     for (int j = np; j < nmatpnts; j++) {
-                      if (approxEq(points[j], pnt, 1e-16)) {
+                      if (points[j] == pnt) {
                         fout << j+1 << " ";
                         break;
                       }
@@ -216,7 +231,7 @@ void write_to_gmv(Mesh_Wrapper const& mesh,
           if (D == 1 || D == 2) {
             // Write out the cell
             std::vector<int> cverts;
-            mesh.cell_get_nodes(c, &cverts);
+            mesh.cell_get_nodes(icell_owned2all[c], &cverts);
 
             // write cell out as polygons (even if its a quad or tri)
             fout << "general 1 " << cverts.size() << " ";
@@ -227,7 +242,7 @@ void write_to_gmv(Mesh_Wrapper const& mesh,
             int nf;
             std::vector<int> cfaces;
             std::vector<int> cfdirs;
-            mesh.cell_get_faces_and_dirs(c, &cfaces, &cfdirs);
+            mesh.cell_get_faces_and_dirs(icell_owned2all[c], &cfaces, &cfdirs);
             fout << "general " << cfaces.size() << std::endl;
             for (auto f : cfaces) {
               std::vector<int> fverts;

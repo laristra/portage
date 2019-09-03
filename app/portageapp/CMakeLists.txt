@@ -34,8 +34,20 @@ if (ENABLE_MPI)
       target_link_libraries(portageapp_t-junction_jali ${Jali_LIBRARIES}
                                       ${Jali_TPL_LIBRARIES})
 
+      add_executable(portageapp_rgmd_jali portageapp_rgmd_jali.cc)
+      target_link_libraries(portageapp_rgmd_jali portage ${EXTRA_LIBS}
+                                      ${LAPACKX_LIBRARIES} ${TANGRAM_LIBRARIES})
+
+      target_link_libraries(portageapp_rgmd_jali ${MPI_CXX_LIBRARIES})
+      set_target_properties(portageapp_rgmd_jali PROPERTIES
+                                         LINK_FLAGS "${MPI_CXX_LINK_FLAGS}")
+
+      target_link_libraries(portageapp_rgmd_jali ${Jali_LIBRARIES}
+                                      ${Jali_TPL_LIBRARIES})
+
       if (XMOF2D_FOUND)
         target_link_libraries(portageapp_t-junction_jali ${XMOF2D_LIBRARIES})
+        target_link_libraries(portageapp_rgmd_jali ${XMOF2D_LIBRARIES})
 
         add_executable(portageapp_multimat_jali portageapp_multimat_jali.cc)
         target_link_libraries(portageapp_multimat_jali portage ${EXTRA_LIBS}
@@ -90,10 +102,16 @@ if (ENABLE_MPI)
 
     if (Jali_DIR)
       target_link_libraries(portageapp_jali ${TCMALLOC_LIB})
-      if (TANGRAM_FOUND AND XMOF2D_FOUND)
-        target_link_libraries(portageapp_multimat_jali ${TCMALLOC_LIB})
-      endif (TANGRAM_FOUND AND XMOF2D_FOUND)
+      if (TANGRAM_FOUND)
+        target_link_libraries(portageapp_t-junction_jali ${TCMALLOC_LIB})
+        target_link_libraries(portageapp_rgmd_jali ${TCMALLOC_LIB})
+
+        if (XMOF2D_FOUND)
+          target_link_libraries(portageapp_multimat_jali ${TCMALLOC_LIB})
+        endif (XMOF2D_FOUND)
+      endif (TANGRAM_FOUND)
     endif (Jali_DIR)
+    
     if (ENABLE_FleCSI)
       target_link_libraries(portageapp_flecsi ${TCMALLOC_LIB})
     endif (ENABLE_FleCSI)
@@ -114,6 +132,7 @@ if (ENABLE_MPI)
       target_link_libraries(portageapp_jali ${VTUNE_LIB})
       if (TANGRAM_FOUND)
         target_link_libraries(portageapp_t-junction_jali ${VTUNE_LIB})
+        target_link_libraries(portageapp_rgmd_jali ${VTUNE_LIB})
         if (XMOF2D_FOUND)
           target_link_libraries(portageapp_multimat_jali ${VTUNE_LIB})
         endif (XMOF2D_FOUND)
