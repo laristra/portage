@@ -594,18 +594,8 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
   if (rank == 0)
     std::cout << "starting portageapp_t-junction_jali...\n";
 
-  // Wrappers for interfacing with the underlying mesh data structures.
+  // Wrappers for accessing source mesh data
   Wonton::Jali_Mesh_Wrapper sourceMeshWrapper(*sourceMesh);
-  Wonton::Jali_Mesh_Wrapper targetMeshWrapper(*targetMesh);
-
-  // Native jali state managers for source and target
-  std::shared_ptr<Jali::State> sourceState(Jali::State::create(sourceMesh));
-  std::shared_ptr<Jali::State> targetState(Jali::State::create(targetMesh));
-
-  // Portage wrappers for source and target fields
-  Wonton::Jali_State_Wrapper sourceStateWrapper(*sourceState);
-  Wonton::Jali_State_Wrapper targetStateWrapper(*targetState);
-
 
   // Generate volume fraction and centroid data
   double dst_tol = 1.0e-15;
@@ -621,8 +611,6 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
                       + sourceMeshWrapper.num_ghost_cells();
   const int nsrcnodes = sourceMeshWrapper.num_owned_nodes()
                       + sourceMeshWrapper.num_ghost_nodes();
-  const int ntarcells = targetMeshWrapper.num_owned_cells();
-  const int ntarnodes = targetMeshWrapper.num_owned_nodes();
 
   // Read volume fraction and centroid data from file
   tjunction_material_data<Wonton::Jali_Mesh_Wrapper>(sourceMeshWrapper,
@@ -665,7 +653,6 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
 
   if (rank == 0) {
     std::cout << "Source mesh has " << nsrccells << " cells\n";
-    std::cout << "Target mesh has " << ntarcells << " cells\n";
     if (material_field_expressions.size()) {
       std::cout << " Specified fields for materials are ";
       for (auto const& expr : material_field_expressions)
@@ -741,6 +728,13 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
   // may not match the material id if the materials are sparse
   ////////////////////////////////////////////////////////////////////////////
 
+  // Native jali state managers for source
+  std::shared_ptr<Jali::State> sourceState(Jali::State::create(sourceMesh));
+
+  // Portage wrappers for source state manager
+  Wonton::Jali_State_Wrapper sourceStateWrapper(*sourceState);
+
+
   // Add materials, volume fractions and centroids to source state
   // if the material isn't found, add empty data to the source state
   // note names are dimensioned on all materials whether in the partition or not
@@ -770,60 +764,76 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
   Wonton::Executor_type *executor = (numpe > 1) ? &mpiexecutor : nullptr;
   
   // Perform interface reconstruction
+
+  // In lieu of reaching into the MMDriver and timing the interface
+  // reconstruction there, it is being timed here. Also, enclose it a block
+  // so that it gets deleted before the main remapper is called. Otherwise we
+  // will be storing material polygons twice
+
+
 #if ENABLE_TIMINGS 
   auto tic = timer::now();
 #endif
 
-  std::vector<Tangram::IterativeMethodTolerances_t> tols(2);
-  tols[0] = {1000, dst_tol, vol_tol};
-  tols[1] = {100, 1.0e-15, 1.0e-15};
-  interface_reconstructor_factory<dim, Wonton::Jali_Mesh_Wrapper> source_IRFactory(sourceMeshWrapper, tols);
-  auto source_interface_reconstructor = source_IRFactory();
+  {
 
-  source_interface_reconstructor->set_volume_fractions(cell_num_mats,
-                                                cell_mat_ids,
-                                                cell_mat_volfracs,
-                                                cell_mat_centroids);
-  source_interface_reconstructor->reconstruct();
+    std::vector<Tangram::IterativeMethodTolerances_t> tols(2,{1000, 1e-15, 1e-15});
+    interface_reconstructor_factory<dim, Wonton::Jali_Mesh_Wrapper> source_IRFactory(sourceMeshWrapper, tols);
+    auto source_interface_reconstructor = source_IRFactory();
+    
+    source_interface_reconstructor->set_volume_fractions(cell_num_mats,
+                                                         cell_mat_ids,
+                                                         cell_mat_volfracs,
+                                                         cell_mat_centroids);
+    source_interface_reconstructor->reconstruct();
+    
+    // Material fields are evaluated at material polygon centroids.
+    // This allows us to test for near zero error in cases where an
+    // interface reconstruction method can reconstruct the interface
+    // exactly (e.g. MOF with linear interfaces) and the remapping
+    // method can reproduce a field exactly (linear fields with a 2nd
+    // order accurate method)
 
-  // Material fields are evaluated at material polygon centroids.
-  // This allows us to test for near zero error in cases where an
-  // interface reconstruction method can reconstruct the interface
-  // exactly (e.g. MOF with linear interfaces) and the remapping
-  // method can reproduce a field exactly (linear fields with a 2nd
-  // order accurate method)
-
-  if (material_field_expressions.size()) {
-    for (int m = 0; m < n_total_mats; m++) {
-      if (!mat_fields[m].initialize(dim, material_field_expressions[m]))
-        MPI_Abort(MPI_COMM_WORLD, -1);
-
-      int nmatcells = matcells[m].size();
-      std::vector<double> matData(nmatcells);
-      for (int ic = 0; ic < nmatcells; ic++) {
-        int c = matcells[m][ic];
-        if (cell_num_mats[c] == 1) {
-          if (cell_mat_ids[offsets[c]] == m) {
-            Wonton::Point<dim> ccen;
-            sourceMeshWrapper.cell_centroid(c, &ccen);
-            matData[ic] = mat_fields[m](ccen);
-          }
-        } else {
-          Tangram::CellMatPoly<dim> const& cellmatpoly =
-              source_interface_reconstructor->cell_matpoly_data(c);
-          int nmp = cellmatpoly.num_matpolys();
-          for (int i = 0; i < nmp; i++) {
-            if (cellmatpoly.matpoly_matid(i) == m) {
-              Wonton::Point<dim> mcen = cellmatpoly.matpoly_centroid(i);
-              matData[ic] = mat_fields[m](mcen);
+    if (material_field_expressions.size()) {
+      for (int m = 0; m < n_total_mats; m++) {
+        if (!mat_fields[m].initialize(dim, material_field_expressions[m]))
+          MPI_Abort(MPI_COMM_WORLD, -1);
+        
+        int nmatcells = matcells[m].size();
+        std::vector<double> matData(nmatcells);
+        for (int ic = 0; ic < nmatcells; ic++) {
+          int c = matcells[m][ic];
+          if (cell_num_mats[c] == 1) {
+            if (cell_mat_ids[offsets[c]] == m) {
+              Wonton::Point<dim> ccen;
+              sourceMeshWrapper.cell_centroid(c, &ccen);
+              matData[ic] = mat_fields[m](ccen);
+            }
+          } else {
+            Tangram::CellMatPoly<dim> const& cellmatpoly =
+                source_interface_reconstructor->cell_matpoly_data(c);
+            int nmp = cellmatpoly.num_matpolys();
+            for (int i = 0; i < nmp; i++) {
+              if (cellmatpoly.matpoly_matid(i) == m) {
+                Wonton::Point<dim> mcen = cellmatpoly.matpoly_centroid(i);
+                matData[ic] = mat_fields[m](mcen);
+              }
             }
           }
         }
+        
+        sourceStateWrapper.mat_add_celldata("cellmatdata", m, &(matData[0]));
       }
-
-      sourceStateWrapper.mat_add_celldata("cellmatdata", m, &(matData[0]));
     }
-  }
+
+  }  // end source interface reconstruction (only needed for field initialization)
+
+  if (numpe > 1) MPI_Barrier(MPI_COMM_WORLD);
+
+#if ENABLE_TIMINGS 
+  profiler->time.interface = timer::elapsed(tic);
+#endif
+
 
   std::cout << "***Registered fieldnames:"<<std::endl;
   for (auto & field_name: sourceStateWrapper.names()) 
@@ -840,6 +850,27 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
   //Portage::write_to_gmv<dim>(sourceMeshWrapper, sourceStateWrapper,
   //                          source_interface_reconstructor, fieldnames,
   //                           filename.str());
+
+
+
+
+
+  // Wrappers for accessing target mesh data (done separately to keep
+  // down the overall memory usage during source initialization)
+  Wonton::Jali_Mesh_Wrapper targetMeshWrapper(*targetMesh);
+
+  // Native jali state managers for target
+  std::shared_ptr<Jali::State> targetState(Jali::State::create(targetMesh));
+
+  // Portage wrappers for target state manager
+  Wonton::Jali_State_Wrapper targetStateWrapper(*targetState);
+
+  const int ntarcells = targetMeshWrapper.num_owned_cells();
+  const int ntarnodes = targetMeshWrapper.num_owned_nodes();
+  if (rank == 0) {
+    std::cout << "Target mesh has " << ntarcells << " cells\n";
+  }
+
 
   // Add the materials into the target mesh but with empty cell lists
   // The remap algorithm will figure out which cells contain which materials
@@ -862,11 +893,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
     remap_fields.push_back("cellmatdata");
  }
 
-  if (numpe > 1) MPI_Barrier(MPI_COMM_WORLD);
 
-#if ENABLE_TIMINGS 
-  profiler->time.interface = timer::elapsed(tic);
-#endif
 
   if (dim == 2) {
     if (interp_order == 1) {
@@ -988,128 +1015,133 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
 
   return;
 
-  // Perform interface reconstruction on target mesh for pretty pictures
-  // and error computation of material fields
-  offsets.resize(ntarcells);
-  offsets[0] = 0;
-  for (int i = 1; i < ntarcells; i++)
-    offsets[i] = offsets[i-1] + targetStateWrapper.cell_get_num_mats(i-1);
-  int ntotal = offsets[ntarcells-1] +
-               targetStateWrapper.cell_get_num_mats(ntarcells-1);
+  {
+    // Perform interface reconstruction on target mesh for pretty pictures
+    // and error computation of material fields
 
-  std::vector<int> target_cell_num_mats(ntarcells, 0);
-  std::vector<int> target_cell_mat_ids(ntotal);
-  std::vector<double> target_cell_mat_volfracs(ntotal);
-  std::vector<Tangram::Point<dim>> target_cell_mat_centroids(ntotal);
+    offsets.resize(ntarcells);
+    offsets[0] = 0;
+    for (int i = 1; i < ntarcells; i++)
+      offsets[i] = offsets[i-1] + targetStateWrapper.cell_get_num_mats(i-1);
+    int ntotal = offsets[ntarcells-1] +
+        targetStateWrapper.cell_get_num_mats(ntarcells-1);
 
-  for (int m = 0; m < n_total_mats; m++) {
-    std::vector<int> matcells;
-    targetStateWrapper.mat_get_cells(m, &matcells);
+    std::vector<int> target_cell_num_mats(ntarcells, 0);
+    std::vector<int> target_cell_mat_ids(ntotal);
+    std::vector<double> target_cell_mat_volfracs(ntotal);
+    std::vector<Tangram::Point<dim>> target_cell_mat_centroids(ntotal);
 
-    double const *matvf;
-    targetStateWrapper.mat_get_celldata("mat_volfracs", m, &matvf);
-
-    Wonton::Point<dim> const *matcen;
-    targetStateWrapper.mat_get_celldata("mat_centroids", m, &matcen);
-
-    int nmatcells = matcells.size();
-    for (int ic = 0; ic < nmatcells; ic++) {
-      int c = matcells[ic];
-      int offset = offsets[c];
-      int& ncmats = target_cell_num_mats[c];
-      target_cell_mat_ids[offsets[c]+ncmats] = m;
-      target_cell_mat_volfracs[offsets[c]+ncmats] = matvf[ic];
-      for (int i = 0; i < dim; i++)
-        target_cell_mat_centroids[offsets[c]+ncmats][i] = matcen[ic][i];
-      ncmats++;
-    }
-  }
-
-  // INTERFACE RECONSTRUCTION ON THE TARGET IS PROBLEMATIC AT THE MOMENT
-  // DUE TO THE HANDLING OF GHOSTS
-
-  interface_reconstructor_factory<dim, Wonton::Jali_Mesh_Wrapper>
-      target_IRFactory(targetMeshWrapper, tols);
-  auto target_interface_reconstructor = target_IRFactory();
-
-  target_interface_reconstructor->set_volume_fractions(target_cell_num_mats,
-                                                target_cell_mat_ids,
-                                                target_cell_mat_volfracs,
-                                                target_cell_mat_centroids);
-  target_interface_reconstructor->reconstruct(executor);
-
-  Portage::write_to_gmv<dim>(targetMeshWrapper, targetStateWrapper,
-                             target_interface_reconstructor, fieldnames,
-                             "target_mm.gmv");
-
-
-
-  // Compute error
-
-  if (material_field_expressions.size()) {
-    double error, toterr = 0.0;
-    double const * cellmatvals;
-    double totvolume = 0.;
-    for (int m = 0; m < nmats; m++) {
-      targetStateWrapper.mat_get_celldata<double>("cellmatdata", m, &cellmatvals);
-
+    for (int m = 0; m < n_total_mats; m++) {
       std::vector<int> matcells;
       targetStateWrapper.mat_get_cells(m, &matcells);
 
-      // Cell error computation
+      double const *matvf;
+      targetStateWrapper.mat_get_celldata("mat_volfracs", m, &matvf);
+
+      Wonton::Point<dim> const *matcen;
+      targetStateWrapper.mat_get_celldata("mat_centroids", m, &matcen);
+
       int nmatcells = matcells.size();
-      for (int ic = 0; ic < nmatcells; ++ic) {
+      for (int ic = 0; ic < nmatcells; ic++) {
         int c = matcells[ic];
-        if (target_cell_num_mats[c] == 1) {
-          if (target_cell_mat_ids[offsets[c]] == m) {
-            Wonton::Point<dim> ccen;
-            targetMeshWrapper.cell_centroid(c, &ccen);
-            error = mat_fields[m](ccen) - cellmatvals[ic];
-            if (fabs(error) > 1.0e-08)
-              std::cout << "Pure cell " << c << " Material " << m << " Error " << error << "\n";
+        int offset = offsets[c];
+        int& ncmats = target_cell_num_mats[c];
+        target_cell_mat_ids[offsets[c]+ncmats] = m;
+        target_cell_mat_volfracs[offsets[c]+ncmats] = matvf[ic];
+        for (int i = 0; i < dim; i++)
+          target_cell_mat_centroids[offsets[c]+ncmats][i] = matcen[ic][i];
+        ncmats++;
+      }
+    }
 
-            double cellvol = targetMeshWrapper.cell_volume(c);
-            totvolume += cellvol;
-            *L1_error += fabs(error)*cellvol;
-            *L2_error += error*error*cellvol;
-          }
-        } else {
-          Tangram::CellMatPoly<dim> const& cellmatpoly =
-              target_interface_reconstructor->cell_matpoly_data(c);
-          int nmp = cellmatpoly.num_matpolys();
-          for (int i = 0; i < nmp; i++) {
-            if (cellmatpoly.matpoly_matid(i) == m) {
-              Wonton::Point<dim> mcen = cellmatpoly.matpoly_centroid(i);
-              error = mat_fields[m](mcen) - cellmatvals[ic];
+    std::vector<Tangram::IterativeMethodTolerances_t> tols(2,{1000, 1e-15, 1e-15});
+    // INTERFACE RECONSTRUCTION ON THE TARGET IS PROBLEMATIC AT THE MOMENT
+    // DUE TO THE HANDLING OF GHOSTS
 
-              double matpolyvol = cellmatpoly.matpoly_volume(i);
-              totvolume += matpolyvol;
-              *L1_error += fabs(error)*matpolyvol;
-              *L2_error += error*error*matpolyvol;
-              break;
+    interface_reconstructor_factory<dim, Wonton::Jali_Mesh_Wrapper>
+        target_IRFactory(targetMeshWrapper, tols);
+    auto target_interface_reconstructor = target_IRFactory();
+
+    target_interface_reconstructor->set_volume_fractions(target_cell_num_mats,
+                                                         target_cell_mat_ids,
+                                                         target_cell_mat_volfracs,
+                                                         target_cell_mat_centroids);
+    target_interface_reconstructor->reconstruct(executor);
+
+    Portage::write_to_gmv<dim>(targetMeshWrapper, targetStateWrapper,
+                               target_interface_reconstructor, fieldnames,
+                               "target_mm.gmv");
+
+
+    // Compute error
+
+    if (material_field_expressions.size()) {
+      double error, toterr = 0.0;
+      double const * cellmatvals;
+      double totvolume = 0.;
+      for (int m = 0; m < nmats; m++) {
+        targetStateWrapper.mat_get_celldata<double>("cellmatdata", m, &cellmatvals);
+
+        std::vector<int> matcells;
+        targetStateWrapper.mat_get_cells(m, &matcells);
+
+        // Cell error computation
+        int nmatcells = matcells.size();
+        for (int ic = 0; ic < nmatcells; ++ic) {
+          int c = matcells[ic];
+          if (target_cell_num_mats[c] == 1) {
+            if (target_cell_mat_ids[offsets[c]] == m) {
+              Wonton::Point<dim> ccen;
+              targetMeshWrapper.cell_centroid(c, &ccen);
+              error = mat_fields[m](ccen) - cellmatvals[ic];
+              if (fabs(error) > 1.0e-08)
+                std::cout << "Pure cell " << c << " Material " << m << " Error " << error << "\n";
+
+              double cellvol = targetMeshWrapper.cell_volume(c);
+              totvolume += cellvol;
+              *L1_error += fabs(error)*cellvol;
+              *L2_error += error*error*cellvol;
+            }
+          } else {
+            Tangram::CellMatPoly<dim> const& cellmatpoly =
+                target_interface_reconstructor->cell_matpoly_data(c);
+            int nmp = cellmatpoly.num_matpolys();
+            for (int i = 0; i < nmp; i++) {
+              if (cellmatpoly.matpoly_matid(i) == m) {
+                Wonton::Point<dim> mcen = cellmatpoly.matpoly_centroid(i);
+                error = mat_fields[m](mcen) - cellmatvals[ic];
+
+                double matpolyvol = cellmatpoly.matpoly_volume(i);
+                totvolume += matpolyvol;
+                *L1_error += fabs(error)*matpolyvol;
+                *L2_error += error*error*matpolyvol;
+                break;
+              }
             }
           }
         }
       }
     }
-  }
 
-  *L2_error = sqrt(*L2_error);
-  if (numpe > 1) {
-    std::cout << std::flush << std::endl;
-    MPI_Barrier(MPI_COMM_WORLD);
+    *L2_error = sqrt(*L2_error);
+    if (numpe > 1) {
+      std::cout << std::flush << std::endl;
+      MPI_Barrier(MPI_COMM_WORLD);
 
-    double globalerr;
-    MPI_Reduce(L1_error, &globalerr, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-    *L1_error = globalerr;
+      double globalerr;
+      MPI_Reduce(L1_error, &globalerr, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+      *L1_error = globalerr;
 
-    MPI_Reduce(L2_error, &globalerr, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-    *L2_error = globalerr;
-  }
-  if (rank == 0) {
-    std::printf("\n\nL1 NORM OF ERROR = %lf\n", *L1_error);
-    std::printf("L2 NORM OF ERROR = %lf\n\n", *L2_error);
-  }
+      MPI_Reduce(L2_error, &globalerr, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+      *L2_error = globalerr;
+    }
+    if (rank == 0) {
+      std::printf("\n\nL1 NORM OF ERROR = %lf\n", *L1_error);
+      std::printf("L2 NORM OF ERROR = %lf\n\n", *L2_error);
+    }
+
+  }  // end target interface reconstruction block (only needed for output)
+
 
   // Write out the meshes if requested
   if (mesh_output) {
