@@ -161,6 +161,36 @@ public:
   bool is_mismatch_tested() const { return is_mismatch_tested_; }
 
   /**
+   * @brief Get a reference to source entities list.
+   *
+   * @return a reference to source entities list.
+   */
+  std::vector<int> const& get_source_entities() { return source_entities_; }
+
+  /**
+   * @brief Get a reference to target entities list.
+   *
+   * @return a reference to source entities list.
+   */
+  std::vector<int> const& get_target_entities() { return target_entities_; }
+
+  /**
+   * @brief Check if a given entity is in source part list.
+   *
+   * @param id entity ID
+   * @return true if so, false otherwise.
+   */
+  bool is_source_entity(int id) { return source_lookup_.count(id) == 1; }
+
+  /**
+   * @brief Check if a given entity is in target part list.
+   *
+   * @param id entity ID
+   * @return true if so, false otherwise.
+   */
+  bool is_target_entity(int id) { return target_lookup_.count(id) == 1; }
+
+  /**
    * @brief Get source part size.
    *
    * @return source entities list size
@@ -822,16 +852,18 @@ public:
     }
   }
 
-public:
+
+private:
+
   // references to user-provided entities lists
   std::vector<int> const& source_entities_;
   std::vector<int> const& target_entities_;
+
   // hashtables to have constant-time parts lookup queries in average case.
   // remark: for lookup purposes only, not meant to be iterated.
   std::unordered_set<int> source_lookup_;
   std::unordered_set<int> target_lookup_;
 
-private:
 
   bool do_part_by_part_    = false;
   bool is_mismatch_tested_ = false;

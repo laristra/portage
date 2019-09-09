@@ -868,12 +868,15 @@ class CoreDriver : public CoreDriverBase<D,
       int const& max_source_id = source_mesh_.num_entities(ONWHAT, ALL);
       int const& max_target_id = target_mesh_.num_entities(ONWHAT, ALL);
 
-      Portage::for_each(partition->source_entities_.begin(),
-                        partition->source_entities_.end(),
+      auto const& part_source_entities = partition->get_source_entities();
+      auto const& part_target_entities = partition->get_target_entities();
+
+      Portage::for_each(part_source_entities.begin(),
+                        part_source_entities.end(),
                         [&](int current){ assert(current <= max_source_id); });
 
-      Portage::for_each(partition->target_entities_.begin(),
-                        partition->target_entities_.end(),
+      Portage::for_each(part_target_entities.begin(),
+                        part_target_entities.end(),
                         [&](int current){ assert(current <= max_target_id); });
 
       int const target_mesh_size = sources_and_weights.size();
@@ -898,7 +901,7 @@ class CoreDriver : public CoreDriverBase<D,
         heap.reserve(10); // size of a local vicinity
         for (auto&& weight : entity_weights) {
           // constant-time lookup in average case.
-          if(partition->source_lookup_.count(weight.entityID)) {
+          if(partition->is_source_entity(weight.entityID)) {
             heap.emplace_back(weight);
           }
         }
@@ -907,8 +910,7 @@ class CoreDriver : public CoreDriverBase<D,
       };
 
       Portage::vector<entity_weights_t> parts_weights(target_part_size);
-      Portage::transform(partition->target_entities_.begin(),
-                         partition->target_entities_.end(),
+      Portage::transform(part_target_entities.begin(), part_target_entities.end(),
                          parts_weights.begin(), filter_weights);
 
       // 3. Process interpolation.
@@ -920,13 +922,11 @@ class CoreDriver : public CoreDriverBase<D,
       T temporary_storage[target_part_size];
       Portage::pointer<T> target_part_field(temporary_storage);
 
-      Portage::transform(partition->target_entities_.begin(),
-                         partition->target_entities_.end(),
-                         parts_weights.begin(),
-                         target_part_field, interpolator);
+      Portage::transform(part_target_entities.begin(), part_target_entities.end(),
+                         parts_weights.begin(), target_part_field, interpolator);
 
       for (int i=0; i < target_part_size; ++i) {
-        auto const& j = partition->target_entities_[i];
+        auto const& j = part_target_entities[i];
         target_mesh_field[j] = target_part_field[i];
       }
 
