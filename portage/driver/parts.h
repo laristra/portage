@@ -165,14 +165,14 @@ public:
    *
    * @return a reference to source entities list.
    */
-  std::vector<int> const& get_source_entities() { return source_entities_; }
+  std::vector<int> const& get_source_entities() const { return source_entities_; }
 
   /**
    * @brief Get a reference to target entities list.
    *
    * @return a reference to source entities list.
    */
-  std::vector<int> const& get_target_entities() { return target_entities_; }
+  std::vector<int> const& get_target_entities() const { return target_entities_; }
 
   /**
    * @brief Check if a given entity is in source part list.
@@ -180,7 +180,7 @@ public:
    * @param id entity ID
    * @return true if so, false otherwise.
    */
-  bool is_source_entity(int id) { return source_lookup_.count(id) == 1; }
+  bool is_source_entity(int id) const { return source_lookup_.count(id) == 1; }
 
   /**
    * @brief Check if a given entity is in target part list.
@@ -188,21 +188,21 @@ public:
    * @param id entity ID
    * @return true if so, false otherwise.
    */
-  bool is_target_entity(int id) { return target_lookup_.count(id) == 1; }
+  bool is_target_entity(int id) const { return target_lookup_.count(id) == 1; }
 
   /**
    * @brief Get source part size.
    *
    * @return source entities list size
    */
-  const int& source_part_size() { return source_part_size_; }
+  const int& source_part_size() const { return source_part_size_; }
 
   /**
    * @brief Get target part size.
    *
    * @return target entities list size
    */
-  const int& target_part_size() { return target_part_size_; }
+  const int& target_part_size() const { return target_part_size_; }
 
   /**
    * @brief Retrieve the neighbors of the given entity on target mesh.
@@ -212,7 +212,7 @@ public:
    * @return filtered    the filtered neighboring entities list.
    */
   template<Entity_type entity_type = Entity_type::ALL>
-  std::vector<int> get_target_filtered_neighbors(int entity) {
+  std::vector<int> get_target_filtered_neighbors(int entity) const {
     std::vector<int> neighbors, filtered;
     // retrieve neighbors
     if (onwhat == Entity_kind::CELL) {
@@ -514,7 +514,7 @@ public:
                     double conservation_tol = tolerance_,
                     int maxiter = 5,
                     Partial_fixup_type partial_fixup_type = SHIFTED_CONSERVATIVE,
-                    Empty_fixup_type empty_fixup_type = EXTRAPOLATE) {
+                    Empty_fixup_type empty_fixup_type = EXTRAPOLATE) const {
 
     if (source_state_.field_type(onwhat, src_var_name) == Field_type::MESH_FIELD) {
       return fix_mismatch_meshvar(src_var_name, trg_var_name,
@@ -544,7 +544,7 @@ public:
                             double conservation_tol,
                             int maxiter,
                             Partial_fixup_type partial_fixup_type,
-                            Empty_fixup_type empty_fixup_type) {
+                            Empty_fixup_type empty_fixup_type) const {
 
     // valid only for part-by-part scenario
     assert(do_part_by_part_);
@@ -573,7 +573,7 @@ public:
       // in fully filled cells
 
       for (auto&& entity : target_entities_) {
-        auto const& t = target_relative_index_[entity];
+        auto const& t = target_relative_index_.at(entity);
         if (not is_cell_empty_[t]) {
 
           #if DEBUG_PART_BY_PART
@@ -616,7 +616,7 @@ public:
             get_target_filtered_neighbors<Entity_type::PARALLEL_OWNED>(entity);
 
           for (auto&& neigh : neighbors) {
-            auto const& i = target_relative_index_[neigh];
+            auto const& i = target_relative_index_.at(neigh);
             if (layer_num_[i] < current_layer_number) {
               averaged_value += target_data[neigh];
               nb_extrapol++;
@@ -653,12 +653,12 @@ public:
       double target_sum = 0.;
 
       for (auto&& s : source_entities_) {
-        auto const& i = source_relative_index_[s];
+        auto const& i = source_relative_index_.at(s);
         source_sum += source_data[s] * source_entities_volumes_[i];
       }
 
       for (auto&& t : target_entities_) {
-        auto const& i = target_relative_index_[t];
+        auto const& i = target_relative_index_.at(t);
         target_sum += target_data[t] * target_entities_volumes_[i];
       }
 
@@ -700,7 +700,7 @@ public:
       if (empty_fixup_type == Empty_fixup_type::LEAVE_EMPTY) {
         double covered_target_volume = 0.;
         for (auto&& entity : target_entities_) {
-          auto const& t = target_relative_index_[entity];
+          auto const& t = target_relative_index_.at(entity);
           if (not is_cell_empty_[t]) {
             covered_target_volume += target_entities_volumes_[t];
           }
@@ -737,7 +737,7 @@ public:
       while (std::abs(relative_diff) > conservation_tol and iter < maxiter) {
 
         for (auto&& entity : target_entities_) {
-          auto const& t = target_relative_index_[entity];
+          auto const& t = target_relative_index_.at(entity);
           bool is_owned = target_entity_type(entity) == Entity_type::PARALLEL_OWNED;
           bool should_fix = (empty_fixup_type != LEAVE_EMPTY or not is_cell_empty_[t]);
 
@@ -789,7 +789,7 @@ public:
         // Compute the new integral over all processors
         target_sum = 0.;
         for (auto&& entity : target_entities_) {
-          auto const& t = target_relative_index_[entity];
+          auto const& t = target_relative_index_.at(entity);
           target_sum += target_entities_volumes_[t] * target_data[entity];
         }
 

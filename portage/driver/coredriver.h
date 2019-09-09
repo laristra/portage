@@ -828,9 +828,9 @@ class CoreDriver : public CoreDriverBase<D,
                             Empty_fixup_type empty_fixup_type = DEFAULT_EMPTY_FIXUP_TYPE,
                             double conservation_tol = DEFAULT_CONSERVATION_TOL,
                             int max_fixup_iter = DEFAULT_MAX_FIXUP_ITER,
-                            PartPair<D, ONWHAT,
-                                     SourceMesh, SourceState,
-                                     TargetMesh, TargetState>* partition = nullptr) {
+                            const PartPair<D, ONWHAT,
+                                           SourceMesh, SourceState,
+                                           TargetMesh, TargetState> *const partition = nullptr) {
 
     if (source_state_.get_entity(srcvarname) != ONWHAT) {
       std::cerr << "Variable " << srcvarname << " not defined on Entity_kind "
