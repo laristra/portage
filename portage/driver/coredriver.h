@@ -30,7 +30,7 @@
 #include "wonton/support/Point.h"
 #include "wonton/state/state_vector_multi.h"
 #include "portage/driver/fix_mismatch.h"
-
+#include "portage/driver/parts.h"
 
 /*!
   @file coredriver.h
@@ -49,7 +49,6 @@ using Wonton::UNKNOWN_KIND;
 using Wonton::Entity_type;
 using Wonton::PARALLEL_OWNED;
 using Wonton::ALL;
-
 
 // Forward declaration of remap driver on particular entity kind
 
@@ -239,7 +238,10 @@ class CoreDriverBase {
                             Partial_fixup_type partial_fixup_type,
                             Empty_fixup_type empty_fixup_type,
                             double conservation_tol,
-                            int max_fixup_iter) {
+                            int max_fixup_iter,
+                            PartPair<D, ONWHAT,
+                              SourceMesh, SourceState,
+                              TargetMesh, TargetState>* parts_pair = nullptr) {
     assert(ONWHAT == onwhat());
     auto derived_class_ptr = static_cast<CoreDriverType<ONWHAT> *>(this);
     derived_class_ptr->
@@ -250,7 +252,7 @@ class CoreDriverBase {
                                                       partial_fixup_type,
                                                       empty_fixup_type,
                                                       conservation_tol,
-                                                      max_fixup_iter);
+                                                      max_fixup_iter, parts_pair);
   }
 
 
@@ -772,11 +774,11 @@ class CoreDriver : public CoreDriverBase<D,
     @returns   Whether the meshes are mismatched
   */
 
-  bool 
+  bool
   check_mesh_mismatch(Portage::vector<std::vector<Weights_t>> const& source_weights) {
 
     // Instantiate mismatch fixer for later use
-    if (!mismatch_fixer_) {
+    if (not mismatch_fixer_) {
       // Intel 18.0.1 does not recognize std::make_unique even with -std=c++14 flag *ugh*
       // mismatch_fixer_ = std::make_unique<MismatchFixer<D, ONWHAT,
       //                                                  SourceMesh, SourceState,
@@ -797,37 +799,27 @@ class CoreDriver : public CoreDriverBase<D,
 
     return mismatch_fixer_->has_mismatch();
   }
-  
 
-  /*! CoreDriver::interpolate_mesh_var
-
-    @brief interpolate a mmesh variable
-
-    @param[in] srcvarname  Mesh variable name on the source mesh
-
-    @param[in] trgvarname  Mesh variable name on the target mesh
-
-    @param[in] sources_and_weights  weights for mesh-mesh interpolation
-
-    @param[in] limiter     Limiter to use for variable
-
-    @param[in] partial...  How to fixup partly filled target cells
-    (for this var)
-
-    @param[in] emtpy...    How to fixup empty target cells with this var
-
-    @param[in] lower_bound Lower bound of variable value when doing fixup
-
-    @param[in] upper_bound Upper bound of variable value when doing fixup
-
-    @param[in] cons..tol   Tolerance for conservation when doing fixup
-  */
-
+  /**
+   * @brief Interpolate mesh variable.
+   *
+   * @param[in] srcvarname          source mesh variable to remap
+   * @param[in] trgvarname          target mesh variable to remap
+   * @param[in] sources_and_weights weights for mesh-mesh interpolation
+   * @param[in] lower_bound         lower bound of variable value when doing fixup
+   * @param[in] upper_bound         upper bound of variable value when doing fixup
+   * @param[in] limiter             limiter to use
+   * @param[in] partial...          how to fixup partly filled target cells
+   * @param[in] emtpy...            how to fixup empty target cells with this var
+   * @param[in] cons..tol           tolerance for conservation when doing fixup
+   * @param[in] max_fixup_iter      maximum number of iterations for mismatch fixup
+   * @param[in] partition           source and target entities list for part-by-part
+   */
   template<typename T = double,
-           template<int, Entity_kind, class, class, class,
-                    template<class, int, class, class> class,
-                    class, class, class> class Interpolate
-           >
+    template<int, Entity_kind, class, class, class,
+    template<class, int, class, class> class,
+    class, class, class> class Interpolate
+  >
   void interpolate_mesh_var(std::string srcvarname, std::string trgvarname,
                             Portage::vector<std::vector<Weights_t>> const& sources_and_weights,
                             T lower_bound, T upper_bound,
@@ -835,44 +827,138 @@ class CoreDriver : public CoreDriverBase<D,
                             Partial_fixup_type partial_fixup_type = DEFAULT_PARTIAL_FIXUP_TYPE,
                             Empty_fixup_type empty_fixup_type = DEFAULT_EMPTY_FIXUP_TYPE,
                             double conservation_tol = DEFAULT_CONSERVATION_TOL,
-                            int max_fixup_iter = DEFAULT_MAX_FIXUP_ITER) {
+                            int max_fixup_iter = DEFAULT_MAX_FIXUP_ITER,
+                            const PartPair<D, ONWHAT,
+                                           SourceMesh, SourceState,
+                                           TargetMesh, TargetState> *const partition = nullptr) {
 
     if (source_state_.get_entity(srcvarname) != ONWHAT) {
       std::cerr << "Variable " << srcvarname << " not defined on Entity_kind "
-                << ONWHAT << ". Skipping!\n";
+                << ONWHAT << ". Skipping!" << std::endl;
       return;
     }
 
-    // Instantiate particular interpolator
-    Interpolate<D, ONWHAT, SourceMesh, TargetMesh, SourceState,
-                InterfaceReconstructorType, Matpoly_Splitter, Matpoly_Clipper, CoordSys>
-        interpolator(source_mesh_, target_mesh_, source_state_, num_tols_);
-      
+    // useful shortcuts
+    using entity_weights_t = std::vector<Weights_t>;
+    using interpolator_t =
+      Interpolate<D, ONWHAT, SourceMesh, TargetMesh, SourceState,
+        InterfaceReconstructorType, Matpoly_Splitter, Matpoly_Clipper, CoordSys>;
 
-    // Get a handle to a memory location where the target state
-    // would like us to write this material variable into. If it is
-    // NULL, we allocate it ourself
-
-    T *target_field_raw;
-    target_state_.mesh_get_data(ONWHAT, trgvarname, &target_field_raw);
-    assert(target_field_raw != nullptr);
-    Portage::pointer<T> target_field(target_field_raw);
-
-
+    interpolator_t interpolator(source_mesh_, target_mesh_, source_state_, num_tols_);
     interpolator.set_interpolation_variable(srcvarname, limiter);
 
-    Portage::transform(target_mesh_.begin(ONWHAT, PARALLEL_OWNED),
-                       target_mesh_.end(ONWHAT, PARALLEL_OWNED),
-                       sources_and_weights.begin(),
-                       target_field, interpolator);
-    
-    if (has_mismatch_)
-      mismatch_fixer_->fix_mismatch(srcvarname, trgvarname,
-                                    lower_bound, upper_bound,
-                                    conservation_tol,
-                                    max_fixup_iter,
-                                    partial_fixup_type,
-                                    empty_fixup_type);
+    // get a handle to a memory location where the target state
+    // would like us to write this material variable into.
+    T* target_mesh_field = nullptr;
+    target_state_.mesh_get_data(ONWHAT, trgvarname, &target_mesh_field);
+
+    // perform part-by-part interpolation
+    if (partition != nullptr) {
+
+      // 1. Do some basic checks on supplied source and target parts
+      // to prevent bugs when interpolating values:
+      // - first check that source and target parts are not empty,
+      // - then check that parts mismatch has already been tested.
+      // - afterwards, check that each entity id is within the
+      //   mesh entity index space.
+      assert(partition->source_part_size() > 0);
+      assert(partition->target_part_size() > 0);
+      assert(partition->is_mismatch_tested());
+
+      int const& max_source_id = source_mesh_.num_entities(ONWHAT, ALL);
+      int const& max_target_id = target_mesh_.num_entities(ONWHAT, ALL);
+
+      auto const& part_source_entities = partition->get_source_entities();
+      auto const& part_target_entities = partition->get_target_entities();
+
+      Portage::for_each(part_source_entities.begin(),
+                        part_source_entities.end(),
+                        [&](int current){ assert(current <= max_source_id); });
+
+      Portage::for_each(part_target_entities.begin(),
+                        part_target_entities.end(),
+                        [&](int current){ assert(current <= max_target_id); });
+
+      int const target_mesh_size = sources_and_weights.size();
+      int const target_part_size = partition->target_part_size();
+
+      // 2. Filter intersection weights list.
+      // To restrict interpolation only to source-target parts, we need
+      // to filter the intersection weights list to keep only that of the
+      // entities of the source part. Notice that this step can be avoided
+      // when the part-by-part intersection is implemented.
+
+      auto filter_weights = [&](int entity) {
+        // For a given target entity, we aim to filter its source weights
+        // list to keep only those which are in the source part list.
+        // that way, we ensure that only the contribution of source part entities
+        // weights are taken into account when doing the interpolation.
+        // For that, we just iterate on the related weight list, and add the
+        // current couple of entity/weights if it belongs to the source part.
+        // nb: 'auto' may imply unexpected behavior with thrust enabled.
+        entity_weights_t const& entity_weights = sources_and_weights[entity];
+        entity_weights_t heap;
+        heap.reserve(10); // size of a local vicinity
+        for (auto&& weight : entity_weights) {
+          // constant-time lookup in average case.
+          if(partition->is_source_entity(weight.entityID)) {
+            heap.emplace_back(weight);
+          }
+        }
+        heap.shrink_to_fit();
+        return heap;
+      };
+
+      Portage::vector<entity_weights_t> parts_weights(target_part_size);
+      Portage::transform(part_target_entities.begin(), part_target_entities.end(),
+                         parts_weights.begin(), filter_weights);
+
+      // 3. Process interpolation.
+      // Now that intersection weights is filtered, perform the interpolation.
+      // Notice that we need to store the interpolated values in a temporary
+      // array since they are indexed with respect to the target part
+      // and not to the target mesh. Hence we need to copy them back in the
+      // target state at their correct (absolute index) memory locations.
+      T temporary_storage[target_part_size];
+      Portage::pointer<T> target_part_field(temporary_storage);
+
+      Portage::transform(part_target_entities.begin(), part_target_entities.end(),
+                         parts_weights.begin(), target_part_field, interpolator);
+
+      for (int i=0; i < target_part_size; ++i) {
+        auto const& j = part_target_entities[i];
+        target_mesh_field[j] = target_part_field[i];
+      }
+
+      // 4. Fix partially filled and empty cells values if necessary.
+      // Notice that mismatch detection should have been already performed.
+      if (partition->has_mismatch()) {
+        #ifdef DEBUG
+          std::fprintf(stderr,
+            "There is a mismatch between source and target sub-meshes\n"
+            "Will start fixing interpolated values\n"
+          );
+        #endif
+        partition->fix_mismatch(srcvarname, trgvarname,
+                                lower_bound, upper_bound,
+                                conservation_tol, max_fixup_iter,
+                                partial_fixup_type, empty_fixup_type);
+      }
+    } else /* mesh-mesh interpolation */ {
+      Portage::pointer<T> target_field(target_mesh_field);
+      Portage::transform(target_mesh_.begin(ONWHAT, PARALLEL_OWNED),
+                         target_mesh_.end(ONWHAT, PARALLEL_OWNED),
+                         sources_and_weights.begin(),
+                         target_field, interpolator);
+
+      assert(mismatch_fixer_ && "check_mesh_mismatch must be called first");
+      if (mismatch_fixer_->has_mismatch()) {
+        mismatch_fixer_->fix_mismatch(srcvarname, trgvarname,
+                                      lower_bound, upper_bound,
+                                      conservation_tol, max_fixup_iter,
+                                      partial_fixup_type, empty_fixup_type);
+      }
+    }
   }
 
 
@@ -982,17 +1068,9 @@ class CoreDriver : public CoreDriverBase<D,
 #ifdef PORTAGE_ENABLE_MPI
   MPI_Comm mycomm_ = MPI_COMM_NULL;
 #endif
-
-
-  // Pointers to mismatch fixers
   std::unique_ptr<MismatchFixer<D, ONWHAT,
                                 SourceMesh, SourceState,
-                                TargetMesh, TargetState>
-                  > mismatch_fixer_;
-
-  // Flag to indicate if meshes have mismatch
-  bool has_mismatch_ = false;
-
+                                TargetMesh, TargetState>> mismatch_fixer_;
 
 #ifdef HAVE_TANGRAM
 

@@ -9,7 +9,7 @@ Please see the license file at the root of this repository, or at:
 #-----------------------------------------------------------------------------~#
 
 set(headers  mmdriver.h driver_swarm.h driver_mesh_swarm_mesh.h fix_mismatch.h
-    coredriver.h uberdriver.h)
+    coredriver.h uberdriver.h parts.h)
 if (TANGRAM_FOUND)
   list(APPEND headers write_to_gmv.h)
 endif (TANGRAM_FOUND)
@@ -103,6 +103,18 @@ if (ENABLE_UNIT_TESTS)
        LIBRARIES portage ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
        POLICY MPI
        THREADS 1)
+
+       cinch_add_unit(test_driver_part
+               SOURCES test/test_driver_part.cc
+               LIBRARIES portage ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
+               POLICY MPI
+               THREADS 1)
+
+       cinch_add_unit(test_driver_part_mismatch
+               SOURCES test/test_driver_part_mismatch.cc
+               LIBRARIES portage ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
+               POLICY MPI
+               THREADS 1)
      
    endif (Jali_DIR)
 
