@@ -649,13 +649,11 @@ void run(std::shared_ptr<Jali::Mesh> &sourceMesh,
   targetStateWrapper.mat_add_celldata<Portage::Point<dim>>("mat_centroids");
   targetStateWrapper.mat_add_celldata<double>("density", 0.0);
 
-
-
-
   //-------------------------------------------------------------------
-  // pull out the distribute step
+  // The driver is no longer responsible for distributing the mesh.
+  // The calling program is responsible, so we create the flat mesh/state
+  // prior to instantiating the driver distribute here.
   //-------------------------------------------------------------------
-
 
   // create the flat mesh
   Wonton::Flat_Mesh_Wrapper<> source_mesh_flat;
@@ -664,7 +662,7 @@ void run(std::shared_ptr<Jali::Mesh> &sourceMesh,
   // create the flat state
   Wonton::Flat_State_Wrapper<Wonton::Flat_Mesh_Wrapper<>> source_state_flat(source_mesh_flat);
 
-  // mat_volfracs and mat_centroids are automatically added
+  // mat_volfracs and mat_centroids are always imported from the state wrapper
   source_state_flat.initialize(sourceStateWrapper, {"density"});
 
   int numpe; 

@@ -751,19 +751,11 @@ class UberDriver {
   bool mat_intersection_completed_ = false;
 
   // Pointers to core drivers designed to work on a particular
-  // entity kind on native mesh/state. These are suitable for serial
-  // runs or parallel runs with no redistribution (which are
-  // equivalent to a serial run on each processor with no
-  // communication)
+  // entity kind on native mesh/state. These work for serial runs, or
+  // parallel runs where the distribution via flat mesh/state has already
+  // occurred.
 
   std::map<Entity_kind, std::unique_ptr<SerialDriverType>> core_driver_serial_;
-
-  // Pointers to core drivers designed to work on a particular
-  // entity kind on flattened mesh/state (suitable for parallel runs
-  // involving redistribution)
-
-
-  std::map<Entity_kind, std::unique_ptr<ParallelDriverType>> core_driver_parallel_;
 
   // Weights of intersection b/w target entities and source entities
   // Each intersection is between the control volume (cell, dual cell)
