@@ -183,8 +183,9 @@ operator() (const size_t pointId) const {
   return candidates;
 }  // Search_KDTree_Nanoflann::operator()
 
+}  // namespace Portage
+
 #endif  // HAVE_NANOFLANN
 
-}  // namespace Portage
 
 #endif  // SEARCH_KDTREE_NANOFLANN_H

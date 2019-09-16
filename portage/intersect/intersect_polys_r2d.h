@@ -24,6 +24,7 @@ namespace Portage {
 // intersect one source polygon (possibly non-convex) with a
 // triangular decomposition of a target polygon
 
+inline
 std::vector<double>
 intersect_polys_r2d(std::vector<Wonton::Point<2>> const & source_poly,
                     std::vector<Wonton::Point<2>> const & target_poly,

@@ -136,6 +136,7 @@ class Swarm {
 };
 
 // Get a reasonable random number seed if needed.
+inline
 unsigned long get_seed() {
   unsigned long seed;
   auto clock = std::chrono::high_resolution_clock::now();
@@ -151,6 +152,7 @@ unsigned long get_seed() {
 // shared_ptr to the Swarm is because of how its used in the
 // DriverTest
 
+inline
 std::shared_ptr<Swarm<1>> SwarmFactory(double xmin, double xmax,
                                        unsigned int nparticles,
                                        unsigned int distribution, 
@@ -199,7 +201,7 @@ std::shared_ptr<Swarm<1>> SwarmFactory(double xmin, double xmax,
   return swarm;
 }
 
-
+inline
 std::shared_ptr<Swarm<2>> SwarmFactory(double xmin, double ymin,
                                        double xmax, double ymax,
                                        unsigned int nparticles,
@@ -262,7 +264,7 @@ std::shared_ptr<Swarm<2>> SwarmFactory(double xmin, double ymin,
   return swarm;
 }
 
-
+inline
 std::shared_ptr<Swarm<3>> SwarmFactory(double xmin, double ymin, double zmin,
                                        double xmax, double ymax, double zmax,
                                        unsigned int nparticles,
