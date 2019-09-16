@@ -336,16 +336,15 @@ class UberDriver {
     for (Entity_kind onwhat : entity_kinds_) {
       switch (onwhat) {
         case CELL:
-          core_driver_serial_[CELL]->set_num_tols<CELL>(num_tols); break;
+          core_driver_serial_[CELL]->template set_num_tols<CELL>(num_tols); break;
         case NODE:
-          core_driver_serial_[NODE]->set_num_tols<NODE>(num_tols); break;
+          core_driver_serial_[NODE]->templae set_num_tols<NODE>(num_tols); break;
         default:
           std::cerr << "Cannot remap on " << to_string(onwhat) << "\n";
+
       }
     }
   }
-
-
 
 
   /*!
