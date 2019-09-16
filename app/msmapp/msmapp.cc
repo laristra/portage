@@ -819,8 +819,8 @@ void usage() {
     example, int, choice of -1...3:         3\n\
     double, smoothing factor:             1.5\n\
     double, boundary factor:              0.5\n\
-    string, internal boundary field:   a_name\n\
-    double, boundary tolerance:         0.125\n\
+    string, part id field:             a_name\n\
+    double, part id tolerance:          0.125\n\
     print detail, choice of 0 or 1:         1\n\
     geometry:                        tensor  \n\
     kernel:                          b4      \n\
