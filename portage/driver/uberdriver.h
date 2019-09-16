@@ -870,7 +870,8 @@ class UberDriver {
     // Default is serial run (if MPI is not enabled or the
     // communicator is not defined or the number of processors is 1)
 #ifdef PORTAGE_ENABLE_MPI
-    if (source_needs_redistribution(executor)) {
+    if (false) {
+    //if (source_needs_redistribution(executor)) {
 
       // Create a new mesh wrapper that we can use for redistribution
       // of the source mesh as necessary (so that every target cell

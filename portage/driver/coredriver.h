@@ -654,7 +654,7 @@ class CoreDriver : public CoreDriverBase<D,
       // LOOK AT INTERSECTION WEIGHTS TO DETERMINE WHICH TARGET CELLS
       // WILL GET NEW MATERIALS
 
-      int ntargetcells = target_mesh_.num_entities(CELL, ALL);
+      int ntargetcells = target_mesh_.num_entities(CELL, PARALLEL_OWNED);
 
       for (int c = 0; c < ntargetcells; c++) {
         std::vector<Weights_t> const& cell_mat_sources_and_weights =
