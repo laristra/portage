@@ -153,26 +153,26 @@ unsigned long get_seed() {
 
 std::shared_ptr<Swarm<1>> SwarmFactory(double xmin, double xmax,
                                        unsigned int nparticles,
-                                       unsigned int distribution, 
+                                       unsigned int distribution,
                                        unsigned int rand_seed=0) {
 
   shared_ptr<typename Swarm<1>::PointVec> pts_sp = std::make_shared<typename Swarm<1>::PointVec>(nparticles);
   typename Swarm<1>::PointVec &pts(*pts_sp);
-  drand48_data rand_state;
+
   if (distribution == 0 or distribution == 2) {  // random distribution of particles
     long int seed;
-    if (rand_seed == 0) { 
+    if (rand_seed == 0) {
       seed = get_seed();
     } else {
       seed = rand_seed;
     }
-    srand48_r(seed,&rand_state);
+    srand48(seed);
   }
   if (distribution == 0) {  // random distribution of particles
     for (size_t i=0; i<nparticles; i++) {
       // for some reason intel does not like these two lines combined when using thrust, i.e. pts[i][0]
       Point<1> pt=pts[i];
-      double rnum; drand48_r(&rand_state, &rnum);
+      double rnum = drand48();
       pt[0] = xmin + (xmax-xmin)*rnum;
       pts[i] = pt;
     }
@@ -187,7 +187,7 @@ std::shared_ptr<Swarm<1>> SwarmFactory(double xmin, double xmax,
     if (distribution == 2) { // perturbed regular
       for (size_t i=0; i < nparticles; i++) {
         Point<1> pt=pts[i];
-        double rnum; drand48_r(&rand_state, &rnum);
+        double rnum = drand48();
         pt[0] += 0.25*h*(2*rnum-1.0);
 	pt[0] = fmax(xmin,fmin(xmax,pt[0]));
 	pts[i] = pt;
@@ -203,29 +203,28 @@ std::shared_ptr<Swarm<1>> SwarmFactory(double xmin, double xmax,
 std::shared_ptr<Swarm<2>> SwarmFactory(double xmin, double ymin,
                                        double xmax, double ymax,
                                        unsigned int nparticles,
-                                       unsigned int distribution, 
+                                       unsigned int distribution,
                                        unsigned int rand_seed=0) {
 
   auto pts_sp = std::make_shared<typename Swarm<2>::PointVec>(nparticles);
   typename Swarm<2>::PointVec &pts(*pts_sp);
-  drand48_data rand_state;
+
   if (distribution == 0 or distribution == 2) {  // random distribution of particles
     long int seed;
-    if (rand_seed == 0) { 
-      seed = get_seed();      
+    if (rand_seed == 0) {
+      seed = get_seed();
       std::cout << "seed is " << seed << std::endl;
     } else {
       seed = rand_seed;
     }
-    srand48_r(seed,&rand_state);
+    srand48(seed);
   }
   if (distribution == 0) {
     for (size_t i = 0; i < nparticles; i++) {
       Point<2> pt=pts[i];
-      double rnum; 
-      drand48_r(&rand_state, &rnum);
+      double rnum = drand48();
       pt[0] = xmin + (xmax-xmin)*rnum;
-      drand48_r(&rand_state, &rnum);
+      rnum = drand48();
       pt[1] = ymin + (ymax-ymin)*rnum;
       pts[i] = pt;
     }
@@ -246,14 +245,13 @@ std::shared_ptr<Swarm<2>> SwarmFactory(double xmin, double ymin,
     if (distribution == 2) {
       for (size_t i = 0; i < nparticles; i++) {
 	Point<2> pt=pts[i];
-        double rnum; 
-        drand48_r(&rand_state, &rnum);
+        double rnum = drand48();
         pt[0] += 0.25*hx*(2*rnum-1.0);
-        drand48_r(&rand_state, &rnum);
+        rnum = drand48();
         pt[1] += 0.25*hy*(2*rnum-1.0);
-	pt[0] = fmax(xmin,fmin(xmax,pt[0]));
-	pt[1] = fmax(ymin,fmin(ymax,pt[1]));
-	pts[i] = pt;
+        pt[0] = fmax(xmin,fmin(xmax,pt[0]));
+        pt[1] = fmax(ymin,fmin(ymax,pt[1]));
+        pts[i] = pt;
       }
     }
   }
@@ -266,30 +264,29 @@ std::shared_ptr<Swarm<2>> SwarmFactory(double xmin, double ymin,
 std::shared_ptr<Swarm<3>> SwarmFactory(double xmin, double ymin, double zmin,
                                        double xmax, double ymax, double zmax,
                                        unsigned int nparticles,
-                                       unsigned int distribution, 
+                                       unsigned int distribution,
                                        unsigned int rand_seed=0) {
 
   auto pts_sp = std::make_shared<typename Swarm<3>::PointVec>(nparticles);
   typename Swarm<3>::PointVec &pts(*pts_sp);
-  drand48_data rand_state;
+
   if (distribution == 0 or distribution == 2) {  // random distribution of particles
     long int seed;
-    if (rand_seed == 0) { 
+    if (rand_seed == 0) {
       seed = get_seed();
     } else {
       seed = rand_seed;
     }
-    srand48_r(seed,&rand_state);
+    srand48(seed);
   }
   if (distribution == 0) {
     for (size_t i = 0; i < nparticles; i++) {
       Point<3> pt=pts[i];
-      double rnum; 
-      drand48_r(&rand_state, &rnum);
+      double rnum = drand48();
       pt[0] = xmin + (xmax-xmin)*rnum;
-      drand48_r(&rand_state, &rnum);
+      rnum = drand48();
       pt[1] = ymin + (ymax-ymin)*rnum;
-      drand48_r(&rand_state, &rnum);
+      rnum = drand48();
       pt[2] = zmin + (zmax-zmin)*rnum;
       pts[i] = pt;
     }
@@ -306,29 +303,28 @@ std::shared_ptr<Swarm<3>> SwarmFactory(double xmin, double ymin, double zmin,
     for (size_t i = 0; i < npdim; i++) {
       for (size_t j = 0; j < npdim; j++) {
         for (size_t k = 0; k < npdim; k++) {
-	  Point<3> pt=pts[n];
+	        Point<3> pt=pts[n];
           pt[0] = xmin + i*hx;
           pt[1] = ymin + j*hy;
           pt[2] = zmin + k*hz;
-	  pts[n] = pt;
+	        pts[n] = pt;
           n++;
         }
       }
     }
     if (distribution == 2) {
       for (size_t i = 0; i < nparticles; i++) {
-	Point<3> pt=pts[i];
-        double rnum; 
-        drand48_r(&rand_state, &rnum);
+	      Point<3> pt=pts[i];
+        double rnum = drand48();
         pt[0] += 0.25*hx*(2*rnum-1.0);
-        drand48_r(&rand_state, &rnum);
+        rnum = drand48();
         pt[1] += 0.25*hy*(2*rnum-1.0);
-        drand48_r(&rand_state, &rnum);
+        rnum = drand48();
         pt[2] += 0.25*hz*(2*rnum-1.0);
-	pt[0] = fmax(xmin,fmin(xmax,pt[0]));
-	pt[1] = fmax(ymin,fmin(ymax,pt[1]));
-	pt[2] = fmax(zmin,fmin(zmax,pt[2]));
-	pts[i] = pt;
+        pt[0] = fmax(xmin,fmin(xmax,pt[0]));
+        pt[1] = fmax(ymin,fmin(ymax,pt[1]));
+        pt[2] = fmax(zmin,fmin(zmax,pt[2]));
+        pts[i] = pt;
       }
     }
   }
@@ -379,8 +375,8 @@ std::shared_ptr<Swarm<dim>> SwarmFactory(MeshWrapper &wrapper, Portage::Entity_k
 
 /*!
  * @brief Create a Swarm from an set of arbitary mesh wrappers.
- * This factory is useful for mapping from several meshes at once, 
- * e.g. for analysis of multiple times, or multiple simulations at the same set of spatial points, 
+ * This factory is useful for mapping from several meshes at once,
+ * e.g. for analysis of multiple times, or multiple simulations at the same set of spatial points,
  * to obtain statistical properties like average, confidence bounds, and uncertaintities, for example.
  * @tparm dim Spatial dimension
  * @tparm MeshWrapper class representing a mesh wrapper
