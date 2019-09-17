@@ -332,33 +332,19 @@ class UberDriver {
   */
   template<Entity_kind ONWHAT>
     void set_num_tols(NumericTolerances_t num_tols) {
-    if (source_redistributed_) {
-      for (Entity_kind onwhat : entity_kinds_) {
-        switch (onwhat) {
-          case CELL:
-            core_driver_parallel_[CELL]->template set_num_tols<CELL>(num_tols); break;
-          case NODE:
-            core_driver_parallel_[NODE]->template set_num_tols<NODE>(num_tols); break;
-          default:
-            std::cerr << "Cannot remap on " << to_string(onwhat) << "\n";
-        }
-      }
-    }
-    else {
-      for (Entity_kind onwhat : entity_kinds_) {
-        switch (onwhat) {
-          case CELL:
-            core_driver_serial_[CELL]->template set_num_tols<CELL>(num_tols); break;
-          case NODE:
-            core_driver_serial_[NODE]->template set_num_tols<NODE>(num_tols); break;
-          default:
-            std::cerr << "Cannot remap on " << to_string(onwhat) << "\n";
-        }
+
+    for (Entity_kind onwhat : entity_kinds_) {
+      switch (onwhat) {
+        case CELL:
+          core_driver_serial_[CELL]->template set_num_tols<CELL>(num_tols); break;
+        case NODE:
+          core_driver_serial_[NODE]->template set_num_tols<NODE>(num_tols); break;
+        default:
+          std::cerr << "Cannot remap on " << to_string(onwhat) << "\n";
+
       }
     }
   }
-
-
 
 
   /*!
@@ -381,10 +367,7 @@ class UberDriver {
 
     search_completed_[ONWHAT] = true;
 
-    if (source_redistributed_)
-      return core_driver_parallel_[ONWHAT]->template search<ONWHAT, Search>();
-    else
-      return core_driver_serial_[ONWHAT]->template search<ONWHAT, Search>();
+    return core_driver_serial_[ONWHAT]->template search<ONWHAT, Search>();
 
   }
 
@@ -412,10 +395,7 @@ class UberDriver {
 
     mesh_intersection_completed_[ONWHAT] = true;
 
-    if (source_redistributed_)
-      return core_driver_parallel_[ONWHAT]->template intersect_meshes<ONWHAT, Intersect>(candidates);
-    else
-      return core_driver_serial_[ONWHAT]->template intersect_meshes<ONWHAT, Intersect>(candidates);
+    return core_driver_serial_[ONWHAT]->template intersect_meshes<ONWHAT, Intersect>(candidates);
 
   }
 
@@ -442,10 +422,7 @@ class UberDriver {
 
     mat_intersection_completed_ = true;
 
-    if (source_redistributed_)
-      return core_driver_parallel_[CELL]->template intersect_materials<Intersect>(candidates);
-    else
-      return core_driver_serial_[CELL]->template intersect_materials<Intersect>(candidates);
+    return core_driver_serial_[CELL]->template intersect_materials<Intersect>(candidates);
 
   }
 
@@ -462,10 +439,7 @@ class UberDriver {
   template<Entity_kind ONWHAT>
   bool check_mesh_mismatch(Portage::vector<std::vector<Weights_t>> const& source_weights) {
 
-    if (source_redistributed_)
-      return core_driver_parallel_[ONWHAT]->template check_mesh_mismatch<ONWHAT>(source_weights);
-    else
-      return core_driver_serial_[ONWHAT]->template check_mesh_mismatch<ONWHAT>(source_weights);
+    return core_driver_serial_[ONWHAT]->template check_mesh_mismatch<ONWHAT>(source_weights);
 
   }
   
@@ -665,26 +639,13 @@ class UberDriver {
       return;
     }
 
-    if (source_redistributed_) {
 
-      auto & driver = core_driver_parallel_[ONWHAT];
-      
-      driver->template interpolate_mesh_var<T, ONWHAT, Interpolate>
-          (srcvarname, trgvarname, sources_and_weights_in,
-           lower_bound, upper_bound, limiter, partial_fixup_type,
-           empty_fixup_type, conservation_tol, max_fixup_iter);
-
-    } else {
-
-      auto & driver = core_driver_serial_[ONWHAT];
-      
-      driver->template interpolate_mesh_var<T, ONWHAT, Interpolate>
-          (srcvarname, trgvarname, sources_and_weights_in,
-           lower_bound, upper_bound, limiter, partial_fixup_type,
-           empty_fixup_type, conservation_tol, max_fixup_iter);
-      
-    }
-
+    auto & driver = core_driver_serial_[ONWHAT];
+    
+    driver->template interpolate_mesh_var<T, ONWHAT, Interpolate>
+        (srcvarname, trgvarname, sources_and_weights_in,
+         lower_bound, upper_bound, limiter, partial_fixup_type,
+         empty_fixup_type, conservation_tol, max_fixup_iter);
   }
 
 
@@ -743,30 +704,15 @@ class UberDriver {
       return;
     }
 
-    if (source_redistributed_) {
 
-      auto & driver = core_driver_parallel_[CELL];
+    auto & driver = core_driver_serial_[CELL];
       
 #ifdef HAVE_TANGRAM
-      driver->template interpolate_mat_var<T, Interpolate>
-          (srcvarname, trgvarname, sources_and_weights_by_mat_in,
-           lower_bound, upper_bound, limiter, partial_fixup_type,
-           empty_fixup_type, conservation_tol, max_fixup_iter);
+    driver->template interpolate_mat_var<T, Interpolate>
+        (srcvarname, trgvarname, sources_and_weights_by_mat_in,
+         lower_bound, upper_bound, limiter, partial_fixup_type,
+         empty_fixup_type, conservation_tol, max_fixup_iter);
 #endif
-        
-    } else {
-
-      auto & driver = core_driver_serial_[CELL];
-      
-#ifdef HAVE_TANGRAM
-      driver->template interpolate_mat_var<T, Interpolate>
-          (srcvarname, trgvarname, sources_and_weights_by_mat_in,
-           lower_bound, upper_bound, limiter, partial_fixup_type,
-           empty_fixup_type, conservation_tol, max_fixup_iter);
-#endif
-
-    }
-
   }
   
  private:
@@ -782,7 +728,6 @@ class UberDriver {
 
   // Component variables
   bool distributed_ = false;  // default is serial
-  bool source_redistributed_ = false;  // Did we redistribute the source mesh?
   int comm_rank_ = 0;
   int nprocs_ = 1;
 
@@ -806,19 +751,11 @@ class UberDriver {
   bool mat_intersection_completed_ = false;
 
   // Pointers to core drivers designed to work on a particular
-  // entity kind on native mesh/state. These are suitable for serial
-  // runs or parallel runs with no redistribution (which are
-  // equivalent to a serial run on each processor with no
-  // communication)
+  // entity kind on native mesh/state. These work for serial runs, or
+  // parallel runs where the distribution via flat mesh/state has already
+  // occurred.
 
   std::map<Entity_kind, std::unique_ptr<SerialDriverType>> core_driver_serial_;
-
-  // Pointers to core drivers designed to work on a particular
-  // entity kind on flattened mesh/state (suitable for parallel runs
-  // involving redistribution)
-
-
-  std::map<Entity_kind, std::unique_ptr<ParallelDriverType>> core_driver_parallel_;
 
   // Weights of intersection b/w target entities and source entities
   // Each intersection is between the control volume (cell, dual cell)
@@ -868,56 +805,17 @@ class UberDriver {
     
     // Default is serial run (if MPI is not enabled or the
     // communicator is not defined or the number of processors is 1)
-#ifdef PORTAGE_ENABLE_MPI
-    if (source_needs_redistribution(executor)) {
 
-      // Create a new mesh wrapper that we can use for redistribution
-      // of the source mesh as necessary (so that every target cell
-      // sees any source cell that it overlaps with)
-
-      // IN FACT, WE SHOULD DO THE BOUNDING BOX OVERLAP CHECK FIRST
-      // AND ONLY IF WE DETERMINE THAT THE SOURCE MESH NEEDS TO BE
-      // DISTRIBUTED WE SHOULD CREATE THE FLAT MESH WRAPPER AND INVOKE
-      // REDISTRIBUTION; OTHERWISE, WE JUST INVOKE REMAP WITH THE
-      // ORIGINAL WRAPPER
-
-      Flat_Mesh_Wrapper<> source_mesh_flat_;
-      source_mesh_flat_.initialize(source_mesh_);
-
-      Flat_State_Wrapper<Flat_Mesh_Wrapper<>> source_state_flat_(source_mesh_flat_);
-      source_state_flat_.initialize(source_state_, source_vars_to_remap_);
-
-      auto mpiexecutor = dynamic_cast<Wonton::MPIExecutor_type const *>(executor);
-      MPI_Bounding_Boxes distributor(mpiexecutor);
-      distributor.distribute(source_mesh_flat_, source_state_flat_,
-                             target_mesh_, target_state_);
-
-      source_redistributed_ = true;
-
-      for (Entity_kind onwhat : entity_kinds_)
-        core_driver_parallel_[onwhat] =
-            make_core_driver<D, Flat_Mesh_Wrapper<>,
-                             Flat_State_Wrapper<Flat_Mesh_Wrapper<>>,
-                             TargetMesh, TargetState,
-                             InterfaceReconstructorType,
-                             Matpoly_Splitter, Matpoly_Clipper, CoordSys
-                             >(onwhat,
-                               source_mesh_flat_, source_state_flat_,
-                               target_mesh_, target_state_, executor_);
-    }
-    else
-#endif
-    {
-      for (Entity_kind onwhat : entity_kinds_)
-        core_driver_serial_[onwhat] =
-            make_core_driver<D, SourceMesh, SourceState,
-                             TargetMesh, TargetState,
-                             InterfaceReconstructorType,
-                             Matpoly_Splitter, Matpoly_Clipper, CoordSys
-                             >(onwhat,
-                               source_mesh_, source_state_,
-                               target_mesh_, target_state_, executor_);
-    }
+    for (Entity_kind onwhat : entity_kinds_)
+      core_driver_serial_[onwhat] =
+          make_core_driver<D, SourceMesh, SourceState,
+                           TargetMesh, TargetState,
+                           InterfaceReconstructorType,
+                           Matpoly_Splitter, Matpoly_Clipper, CoordSys
+                           >(onwhat,
+                             source_mesh_, source_state_,
+                             target_mesh_, target_state_, executor_);
+    
   }  // UberDriver::instantiate_core_drivers
 
 };  // UberDriver
