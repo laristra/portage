@@ -21,9 +21,9 @@
 
 #ifdef HAVE_TANGRAM
 #include "tangram/driver/driver.h"
+#endif
 
 #include "portage/intersect/dummy_interface_reconstructor.h"
-#endif
 
 #include "portage/support/portage.h"
 #include "wonton/support/Point.h"
