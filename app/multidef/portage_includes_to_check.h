@@ -31,7 +31,9 @@ Please see the license file at the root of this repository, or at:
 #include "portage/driver/mmdriver.h"
 #include "portage/driver/parts.h"
 #include "portage/driver/uberdriver.h"
+#ifdef HAVE_TANGRAM
 #include "portage/driver/write_to_gmv.h"
+#endif
 
 #include "portage/estimate/estimate.h"
 #include "portage/interpolate/gradient.h"
