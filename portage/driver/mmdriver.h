@@ -186,6 +186,7 @@ class MMDriver {
 
       // Set options so that defaults will produce something reasonable
       limiters_[source_remap_var_names[i]] = Limiter_type::BARTH_JESPERSEN;
+      bnd_limiters_[source_remap_var_names[i]] = Bnd_limiter_type::BND_NOLIMITER;
       partial_fixup_types_[target_remap_var_names[i]] =
           Partial_fixup_type::SHIFTED_CONSERVATIVE;
       empty_fixup_types_[target_remap_var_names[i]] =
@@ -205,13 +206,36 @@ class MMDriver {
   }
 
   /*!
-    @brief set limiter for all variables
+    @brief set boundary limiter for all variables
+    @param bnd_limiter  Boundary limiter to use for second order reconstruction (BND_NOLIMITER
+                        or BND_ZERO_GRADIENT)
+  */
+  void set_bnd_limiter(Bnd_limiter_type bnd_limiter) {
+    for (auto const& stpair : source_target_varname_map_) {
+      std::string const& source_var_name = stpair.first;
+      bnd_limiters_[source_var_name] = bnd_limiter;
+    }
+  }  
+
+  /*!
+    @brief set limiter for a variable
     @param target_var_name Source mesh variable whose gradient is to be limited
     @param limiter  Limiter to use for second order reconstruction (NOLIMITER
                      or BARTH_JESPERSEN)
   */
   void set_limiter(std::string const& source_var_name, Limiter_type limiter) {
     limiters_[source_var_name] = limiter;
+  }
+
+  /*!
+    @brief set boundary limiter for a variable
+    @param target_var_name Source mesh variable whose gradient is to be limited
+    on the boundary
+    @param bnd_limiter  Boundary limiter to use for second order reconstruction (BND_NOLIMITER
+                        or BND_ZERO_GRADIENT)
+  */
+  void set_bnd_limiter(std::string const& source_var_name, Bnd_limiter_type bnd_limiter) {
+    bnd_limiters_[source_var_name] = bnd_limiter;
   }
 
   /*!
@@ -558,6 +582,7 @@ class MMDriver {
   TargetState_Wrapper& target_state_;
   std::unordered_map<std::string, std::string> source_target_varname_map_;
   std::unordered_map<std::string, Limiter_type> limiters_;
+  std::unordered_map<std::string, Bnd_limiter_type> bnd_limiters_;
   std::unordered_map<std::string, Partial_fixup_type> partial_fixup_types_;
   std::unordered_map<std::string, Empty_fixup_type> empty_fixup_types_;
   std::unordered_map<std::string, double> double_lower_bounds_;
@@ -864,7 +889,8 @@ int MMDriver<Search, Intersect, Interpolate, D,
 
   for (int i = 0; i < nvars; ++i) {
     interpolate.set_interpolation_variable(src_meshvar_names[i],
-                                           limiters_.at(src_meshvar_names[i]));
+                                           limiters_.at(src_meshvar_names[i]),
+                                           bnd_limiters_.at(src_meshvar_names[i]));
 
     // Get a handle to a memory location where the target state
     // would like us to write this material variable into. If it is
@@ -1118,7 +1144,8 @@ int MMDriver<Search, Intersect, Interpolate, D,
         
       for (int i = 0; i < nmatvars; ++i) {
         interpolate.set_interpolation_variable(src_matvar_names[i],
-                                               limiters_.at(src_matvar_names[i]));
+                                               limiters_.at(src_matvar_names[i]),
+                                               bnd_limiters_.at(src_matvar_names[i]));
 
         // Get a handle to a memory location where the target state
         // would like us to write this material variable into. If it is

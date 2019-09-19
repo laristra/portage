@@ -62,6 +62,7 @@ class Interpolate_3rdOrder {
       source_state_(source_state),
       interp_var_name_("VariableNameNotSet"),
       limiter_type_(NOLIMITER),
+      bnd_limiter_type_(BND_NOLIMITER),
       source_vals_(nullptr),
       num_tols_(num_tols) {}
 
@@ -78,9 +79,11 @@ class Interpolate_3rdOrder {
   /// Set the name of the interpolation variable and the limiter type
 
   void set_interpolation_variable(std::string const & interp_var_name,
-                                  Limiter_type limiter_type = NOLIMITER) {
+                                  Limiter_type limiter_type = NOLIMITER,
+                                  Bnd_limiter_type bnd_limiter_type = BND_NOLIMITER) {
     interp_var_name_ = interp_var_name;
     limiter_type_ = limiter_type;
+    bnd_limiter_type_ = bnd_limiter_type;
 
     // Extract the field data from the statemanager
 
@@ -89,7 +92,8 @@ class Interpolate_3rdOrder {
     // Compute the limited quadfits for the field
 
     Limited_Quadfit<D, on_what, SourceMeshType, StateType>
-        limqfit(source_mesh_, source_state_, interp_var_name, limiter_type_);
+        limqfit(source_mesh_, source_state_, interp_var_name, 
+                limiter_type_, bnd_limiter_type_);
 
 
     int nentities = source_mesh_.end(on_what)-source_mesh_.begin(on_what);
@@ -141,6 +145,7 @@ class Interpolate_3rdOrder {
   StateType const & source_state_;
   std::string interp_var_name_;
   Limiter_type limiter_type_;
+  Bnd_limiter_type bnd_limiter_type_;
   double const * source_vals_;
   NumericTolerances_t num_tols_;
 
@@ -172,6 +177,7 @@ class Interpolate_3rdOrder<D, Entity_kind::CELL, SourceMeshType, TargetMeshType,
       source_state_(source_state),
       interp_var_name_("VariableNameNotSet"),
       limiter_type_(NOLIMITER),
+      bnd_limiter_type_(BND_NOLIMITER),
       source_vals_(nullptr),
       num_tols_(num_tols) {}
 
@@ -179,10 +185,12 @@ class Interpolate_3rdOrder<D, Entity_kind::CELL, SourceMeshType, TargetMeshType,
   /// Set the name of the interpolation variable and the limiter type
 
   void set_interpolation_variable(std::string const & interp_var_name,
-                                  Limiter_type limiter_type = NOLIMITER) {
+                                  Limiter_type limiter_type = NOLIMITER,
+                                  Bnd_limiter_type bnd_limiter_type = BND_NOLIMITER) {
 
     interp_var_name_ = interp_var_name;
     limiter_type_ = limiter_type;
+    bnd_limiter_type_ = bnd_limiter_type;
 
     // Extract the field data from the statemanager
 
@@ -191,7 +199,7 @@ class Interpolate_3rdOrder<D, Entity_kind::CELL, SourceMeshType, TargetMeshType,
     // Compute the limited quadfits for the field
 
     Limited_Quadfit<D, Entity_kind::CELL, SourceMeshType, StateType>
-        limqfit(source_mesh_, source_state_, interp_var_name_, limiter_type_);
+        limqfit(source_mesh_, source_state_, interp_var_name_, limiter_type_, bnd_limiter_type_);
 
     int nentities = source_mesh_.end(Entity_kind::CELL)-source_mesh_.begin(Entity_kind::CELL);
     quadfits_.resize(nentities);
@@ -246,6 +254,7 @@ class Interpolate_3rdOrder<D, Entity_kind::CELL, SourceMeshType, TargetMeshType,
   StateType const & source_state_;
   std::string interp_var_name_;
   Limiter_type limiter_type_;
+  Bnd_limiter_type bnd_limiter_type_;
   double const * source_vals_;
   NumericTolerances_t num_tols_;
 
@@ -351,6 +360,7 @@ class Interpolate_3rdOrder<D, Entity_kind::NODE, SourceMeshType, TargetMeshType,
       source_state_(source_state),
       interp_var_name_("VariableNameNotSet"),
       limiter_type_(NOLIMITER),
+      bnd_limiter_type_(BND_NOLIMITER),
       source_vals_(NULL),
       num_tols_(num_tols) {}
 
@@ -367,10 +377,12 @@ class Interpolate_3rdOrder<D, Entity_kind::NODE, SourceMeshType, TargetMeshType,
   /// Set the name of the interpolation variable and the limiter type
 
   void set_interpolation_variable(std::string const & interp_var_name,
-                                  Limiter_type limiter_type = NOLIMITER) {
+                                  Limiter_type limiter_type = NOLIMITER,
+                                  Bnd_limiter_type bnd_limiter_type = BND_NOLIMITER) {
 
     interp_var_name_ = interp_var_name;
     limiter_type_ = limiter_type;
+    bnd_limiter_type_ = bnd_limiter_type;
 
     // Extract the field data from the statemanager
 
@@ -379,7 +391,7 @@ class Interpolate_3rdOrder<D, Entity_kind::NODE, SourceMeshType, TargetMeshType,
     // Compute the limited quadfits for the field
 
     Limited_Quadfit<D, Entity_kind::NODE, SourceMeshType, StateType>
-        limqfit(source_mesh_, source_state_, interp_var_name, limiter_type);
+        limqfit(source_mesh_, source_state_, interp_var_name, limiter_type, bnd_limiter_type);
 
     int nentities = source_mesh_.end(Entity_kind::NODE)-source_mesh_.begin(Entity_kind::NODE);
     quadfits_.resize(nentities);
@@ -429,6 +441,7 @@ class Interpolate_3rdOrder<D, Entity_kind::NODE, SourceMeshType, TargetMeshType,
   StateType const & source_state_;
   std::string interp_var_name_;
   Limiter_type limiter_type_;
+  Bnd_limiter_type bnd_limiter_type_;
   double const * source_vals_;
   NumericTolerances_t num_tols_;
 

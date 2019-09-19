@@ -100,6 +100,9 @@ int print_usage() {
   std::cout << "--limiter (default = 0): " <<
       "slope limiter for a piecewise linear reconstrution\n\n";
 
+  std::cout << "--bnd_limiter (default = 0): " <<
+      "slope limiter on the boundary for a piecewise linear reconstrution\n\n";
+
   std::cout << "--output_meshes (default = y)\n";
   std::cout << "  If 'y', the source and target meshes are output with the " <<
       "remapped field attached as input.exo and output.exo. \n\n";
@@ -120,6 +123,7 @@ void run(
   const std::string material_filename,
   const std::vector<std::string> material_field_expressions,
   Portage::Limiter_type limiter,
+  Portage::Bnd_limiter_type bnd_limiter,
   int interp_order,
   std::string field_filename,
   bool mesh_output,
@@ -196,8 +200,10 @@ void run(
       std::cout << "Not all material fields are specified. Missing ones will be set to 0\n";
   }
   std::cout << "   Interpolation order is " << interp_order << "\n";
-  if (interp_order == 2)
+  if (interp_order == 2) {
     std::cout << "   Limiter type is " << limiter << "\n";
+    std::cout << "   Boundary limiter type is " << bnd_limiter << "\n";
+  }
   std::vector<Tangram::IterativeMethodTolerances_t> tols;
   tols.push_back({100, 1e-12, 1e-12});
   Tangram::Driver<Tangram::XMOF2D_Wrapper, 2, Simple_Mesh_Wrapper>
@@ -357,6 +363,7 @@ void run(
           target_mesh_wrapper, target_state);
     d.set_remap_var_names(remap_fields);
     d.set_limiter(limiter);
+    d.set_bnd_limiter(bnd_limiter);
     d.run();  // executor arg defaults to nullptr -> serial run
   }
 
@@ -566,6 +573,7 @@ int main(int argc, char** argv) {
   bool mesh_output = true;
   int n_converge = 1;
   Portage::Limiter_type limiter = Portage::Limiter_type::NOLIMITER;
+  Portage::Bnd_limiter_type bnd_limiter = Portage::Bnd_limiter_type::BND_NOLIMITER;
   Portage::Entity_kind entityKind = Portage::Entity_kind::CELL;
   double L1_error=0., L2_error=0.;
 
@@ -617,6 +625,9 @@ int main(int argc, char** argv) {
     } else if (keyword == "limiter") {
       if (valueword == "barth_jespersen" || valueword == "BARTH_JESPERSEN")
         limiter = Portage::Limiter_type::BARTH_JESPERSEN;
+    } else if (keyword == "bnd_limiter") {
+      if (valueword == "zero_gradient" || valueword == "ZERO_GRADIENT")
+        bnd_limiter = Portage::Bnd_limiter_type::BND_ZERO_GRADIENT;
     } else if (keyword == "output_meshes") {
       mesh_output = (valueword == "y");
     } else if (keyword == "results_file") {
@@ -651,7 +662,7 @@ int main(int argc, char** argv) {
         target_mesh,
         material_filename,
         material_field_expressions,
-        limiter,
+        limiter, bnd_limiter,
         interp_order,
     field_output_filename,
     mesh_output,

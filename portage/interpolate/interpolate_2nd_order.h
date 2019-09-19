@@ -99,6 +99,7 @@ class Interpolate_2ndOrder {
       interface_reconstructor_(ir),
       interp_var_name_("VariableNameNotSet"),
       limiter_type_(NOLIMITER),
+      bnd_limiter_type_(BND_NOLIMITER),
       source_vals_(nullptr),
       num_tols_(num_tols) {
     CoordSys::template verify_coordinate_system<D>();
@@ -121,6 +122,7 @@ class Interpolate_2ndOrder {
       source_state_(source_state),
       interp_var_name_("VariableNameNotSet"),
       limiter_type_(NOLIMITER),
+      bnd_limiter_type_(BND_NOLIMITER),
       source_vals_(nullptr),
       num_tols_(num_tols) {
     CoordSys::template verify_coordinate_system<D>();
@@ -144,7 +146,8 @@ class Interpolate_2ndOrder {
   /// Set the name of the interpolation variable and the limiter type
 
   void set_interpolation_variable(std::string const & interp_var_name,
-                                  Limiter_type limiter_type = NOLIMITER) {
+                                  Limiter_type limiter_type = NOLIMITER,
+                                  Bnd_limiter_type bnd_limiter_type = BND_NOLIMITER) {
     std::cerr << "Interpolation is available for only  entity types: CELL, NODE"
               << std::endl;
   }  // set_interpolation_variable
@@ -182,6 +185,7 @@ class Interpolate_2ndOrder {
   StateType const & source_state_;
   std::string interp_var_name_;
   Limiter_type limiter_type_;
+  Bnd_limiter_type bnd_limiter_type_;
   double const * source_vals_;
   NumericTolerances_t num_tols_;
 
@@ -246,6 +250,7 @@ class Interpolate_2ndOrder<D,
       interface_reconstructor_(ir),
       interp_var_name_("VariableNameNotSet"),
       limiter_type_(NOLIMITER),
+      bnd_limiter_type_(BND_NOLIMITER),
       source_vals_(nullptr),
       num_tols_(num_tols) {
     CoordSys::template verify_coordinate_system<D>();
@@ -262,6 +267,7 @@ class Interpolate_2ndOrder<D,
       source_state_(source_state),
       interp_var_name_("VariableNameNotSet"),
       limiter_type_(NOLIMITER),
+      bnd_limiter_type_(BND_NOLIMITER),
       source_vals_(nullptr),
       num_tols_(num_tols) {
     CoordSys::template verify_coordinate_system<D>();
@@ -271,10 +277,12 @@ class Interpolate_2ndOrder<D,
   /// Set the name of the interpolation variable and the limiter type
 
   void set_interpolation_variable(std::string const & interp_var_name,
-                                  Limiter_type limiter_type = NOLIMITER) {
+                                  Limiter_type limiter_type = NOLIMITER,
+                                  Bnd_limiter_type bnd_limiter_type = BND_NOLIMITER) {
 
     interp_var_name_ = interp_var_name;
     limiter_type_ = limiter_type;
+    bnd_limiter_type_ = bnd_limiter_type;
 
     // Extract the field data from the statemanager and the source cells for
     // which the gradient has to be computed.
@@ -296,14 +304,14 @@ class Interpolate_2ndOrder<D,
 #ifdef HAVE_TANGRAM
     Limited_Gradient<D, Entity_kind::CELL, SourceMeshType, StateType, InterfaceReconstructorType,
                      Matpoly_Splitter, Matpoly_Clipper, CoordSys>
-        limgrad(source_mesh_, source_state_, interp_var_name_, limiter_type_,
+        limgrad(source_mesh_, source_state_, interp_var_name_, limiter_type_, bnd_limiter_type_,
                 interface_reconstructor_);
     if (field_type_ == Field_type::MULTIMATERIAL_FIELD)
       limgrad.set_material(matid_);
 #else
     Limited_Gradient<D, Entity_kind::CELL, SourceMeshType, StateType,
       InterfaceReconstructorType, Matpoly_Splitter, Matpoly_Clipper, CoordSys>
-        limgrad(source_mesh_, source_state_, interp_var_name_, limiter_type_);
+        limgrad(source_mesh_, source_state_, interp_var_name_, limiter_type_, bnd_limiter_type_);
 #endif
 
     gradients_.resize(nentities);
@@ -481,6 +489,7 @@ class Interpolate_2ndOrder<D,
   StateType const & source_state_;
   std::string interp_var_name_;
   Limiter_type limiter_type_;
+  Bnd_limiter_type bnd_limiter_type_;
   double const * source_vals_;
   NumericTolerances_t num_tols_;
 
@@ -540,6 +549,7 @@ class Interpolate_2ndOrder<D,
       interface_reconstructor_(ir),
       interp_var_name_("VariableNameNotSet"),
       limiter_type_(NOLIMITER),
+      bnd_limiter_type_(BND_NOLIMITER),
       source_vals_(nullptr),
       num_tols_(num_tols) {}
 #endif
@@ -554,6 +564,7 @@ class Interpolate_2ndOrder<D,
       source_state_(source_state),
       interp_var_name_("VariableNameNotSet"),
       limiter_type_(NOLIMITER),
+      bnd_limiter_type_(BND_NOLIMITER),
       source_vals_(nullptr),
       num_tols_(num_tols) {}
 
@@ -570,10 +581,12 @@ class Interpolate_2ndOrder<D,
   /// Set the name of the interpolation variable and the limiter type
 
   void set_interpolation_variable(std::string const & interp_var_name,
-                                  Limiter_type limiter_type = NOLIMITER) {
+                                  Limiter_type limiter_type = NOLIMITER,
+                                  Bnd_limiter_type bnd_limiter_type = BND_NOLIMITER) {
 
     interp_var_name_ = interp_var_name;
     limiter_type_ = limiter_type;
+    bnd_limiter_type_ = bnd_limiter_type;
 
     // Extract the field data from the statemanager
     field_type_ = source_state_.field_type(Entity_kind::NODE, interp_var_name);
@@ -588,7 +601,7 @@ class Interpolate_2ndOrder<D,
     // Compute the limited gradients for the field
     Limited_Gradient<D, Entity_kind::NODE, SourceMeshType, StateType,
       InterfaceReconstructorType, Matpoly_Splitter, Matpoly_Clipper, CoordSys>
-        limgrad(source_mesh_, source_state_, interp_var_name_, limiter_type_);
+        limgrad(source_mesh_, source_state_, interp_var_name_, limiter_type_, bnd_limiter_type_);
 
     int nentities = source_mesh_.end(Entity_kind::NODE)-source_mesh_.begin(Entity_kind::NODE);
     gradients_.resize(nentities);
@@ -703,6 +716,7 @@ class Interpolate_2ndOrder<D,
   StateType const & source_state_;
   std::string interp_var_name_;
   Limiter_type limiter_type_;
+  Bnd_limiter_type bnd_limiter_type_;
   double const * source_vals_;
   NumericTolerances_t num_tols_;
 

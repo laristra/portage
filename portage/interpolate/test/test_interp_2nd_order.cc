@@ -26,7 +26,7 @@ double TOL = 1e-12;
 /// Second order interpolation of constant cell-centered field with no
 /// limiter in 2D
 
-TEST(Interpolate_2nd_Order, Cell_Ctr_Const_No_Limiter_2D) {
+TEST(Interpolate_2nd_Order, Cell_Ctr_Const_BND_NOLIMITER_2D) {
 
   // Create simple meshes
 
@@ -145,7 +145,7 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Const_No_Limiter_2D) {
 /// Second order interpolation of linear cell-centered field with no
 /// limiting in 2D
 
-TEST(Interpolate_2nd_Order, Cell_Ctr_Lin_No_Limiter_2D) {
+TEST(Interpolate_2nd_Order, Cell_Ctr_Lin_BND_NOLIMITER_2D) {
   // Create simple meshes
 
   std::shared_ptr<Wonton::Simple_Mesh> source_mesh =
@@ -448,7 +448,7 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Lin_BJ_Limiter_2D) {
 /// Second order interpolation of constant node-centered field with no
 /// limiting in 2D
 
-TEST(Interpolate_2nd_Order, Node_Ctr_Const_No_Limiter) {
+TEST(Interpolate_2nd_Order, Node_Ctr_Const_BND_NOLIMITER) {
 
   // Create simple meshes
 
@@ -586,7 +586,7 @@ TEST(Interpolate_2nd_Order, Node_Ctr_Const_No_Limiter) {
 // Second order interpolation of linear node-centered field with no
 // limiting in 2D
 
-TEST(Interpolate_2nd_Order, Node_Ctr_Lin_No_Limiter) {
+TEST(Interpolate_2nd_Order, Node_Ctr_Lin_BND_NOLIMITER) {
 
   // Create simple meshes
 
@@ -724,7 +724,7 @@ TEST(Interpolate_2nd_Order, Node_Ctr_Lin_No_Limiter) {
 /// Second order interpolation of constant cell-centered field with no
 /// limiting in 3D
 
-TEST(Interpolate_2nd_Order, Cell_Ctr_Const_No_Limiter_3D) {
+TEST(Interpolate_2nd_Order, Cell_Ctr_Const_BND_NOLIMITER_3D) {
 
   // Create simple meshes
 
@@ -842,7 +842,7 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Const_No_Limiter_3D) {
 /// Second order interpolation of linear cell-centered field with no
 /// limiting in 3D
 
-TEST(Interpolate_2nd_Order, Cell_Ctr_Lin_No_Limiter_3D) {
+TEST(Interpolate_2nd_Order, Cell_Ctr_Lin_BND_NOLIMITER_3D) {
   // Create simple meshes
 
   std::shared_ptr<Wonton::Simple_Mesh> source_mesh =
@@ -1136,7 +1136,7 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_BJ_Limiter_3D) {
 /// Second order interpolation of constant node-centered field with no
 /// limiting in 3D
 
-TEST(Interpolate_2nd_Order, Node_Ctr_Const_No_Limiter_3D) {
+TEST(Interpolate_2nd_Order, Node_Ctr_Const_BND_NOLIMITER_3D) {
 
   // Create simple meshes
 
@@ -1266,7 +1266,7 @@ TEST(Interpolate_2nd_Order, Node_Ctr_Const_No_Limiter_3D) {
 }
 
 
-TEST(Interpolate_2nd_Order, Node_Ctr_Lin_No_Limiter_3D) {
+TEST(Interpolate_2nd_Order, Node_Ctr_Lin_BND_NOLIMITER_3D) {
 
 
   // Create simple meshes
