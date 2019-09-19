@@ -87,7 +87,7 @@ struct Params {
   /* fixups */
   int fix_iter = 5;
   Portage::Limiter_type limiter = Portage::Limiter_type::NOLIMITER;
-  Portage::Bnd_limiter_type bnd_limiter = Portage::Bnd_limiter_type::BND_NOLIMITER;
+  Portage::Boundary_Limiter_type bnd_limiter = Portage::Boundary_Limiter_type::BND_NOLIMITER;
   Portage::Empty_fixup_type empty_fixup = Portage::Empty_fixup_type::EXTRAPOLATE;
   Portage::Partial_fixup_type partial_fixup =
     Portage::Partial_fixup_type::SHIFTED_CONSERVATIVE;
@@ -454,9 +454,9 @@ int parse(int argc, char* argv[]) {
       params.limiter = Portage::Limiter_type::NOLIMITER;
 
     if (use_bnd_limiter)
-      params.bnd_limiter = Portage::Bnd_limiter_type::BND_ZERO_GRADIENT;
+      params.bnd_limiter = Portage::Boundary_Limiter_type::BND_ZERO_GRADIENT;
     else
-      params.bnd_limiter = Portage::Bnd_limiter_type::BND_NOLIMITER;
+      params.bnd_limiter = Portage::Boundary_Limiter_type::BND_NOLIMITER;
 
     if (parts_fixup == "locally_conservative")
       params.partial_fixup = Portage::Partial_fixup_type::LOCALLY_CONSERVATIVE;

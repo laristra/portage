@@ -501,7 +501,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
                            bool source_convex_cells,
                            bool target_convex_cells,
                            Portage::Limiter_type limiter,
-                           Portage::Bnd_limiter_type bnd_limiter,
+                           Portage::Boundary_Limiter_type bnd_limiter,
                            int interp_order,
                            RGMDApp::Problem_type problem,
                            std::vector<std::string> material_field_expressions,
@@ -547,7 +547,7 @@ int main(int argc, char** argv) {
   int n_converge = 1;
   Jali::Entity_kind entityKind = Jali::Entity_kind::CELL;
   Portage::Limiter_type limiter = Portage::Limiter_type::NOLIMITER;
-  Portage::Bnd_limiter_type bnd_limiter = Portage::Bnd_limiter_type::BND_NOLIMITER;
+  Portage::Boundary_Limiter_type bnd_limiter = Portage::Boundary_Limiter_type::BND_NOLIMITER;
   double srclo = 0.0, srchi = 1.0;  // bounds of generated mesh in each dir
 
 #if ENABLE_TIMINGS
@@ -618,7 +618,7 @@ int main(int argc, char** argv) {
         limiter = Portage::Limiter_type::BARTH_JESPERSEN;
     } else if (keyword == "bnd_limiter") {
       if (valueword == "zero_gradient" || valueword == "ZERO_GRADIENT")
-        bnd_limiter = Portage::Bnd_limiter_type::BND_ZERO_GRADIENT;
+        bnd_limiter = Portage::Boundary_Limiter_type::BND_ZERO_GRADIENT;
     } else if (keyword == "mesh_min") {
       srclo = stof(valueword);
     } else if (keyword == "mesh_max") {
@@ -839,7 +839,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
                            bool source_convex_cells,
                            bool target_convex_cells,
                            Portage::Limiter_type limiter,
-                           Portage::Bnd_limiter_type bnd_limiter,
+                           Portage::Boundary_Limiter_type bnd_limiter,
                            int interp_order,
                            RGMDApp::Problem_type problem,
                            std::vector<std::string> material_field_expressions,

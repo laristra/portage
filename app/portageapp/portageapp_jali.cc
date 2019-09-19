@@ -140,7 +140,7 @@ int print_usage() {
 template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
                            std::shared_ptr<Jali::Mesh> targetMesh,
                            Portage::Limiter_type limiter,
-                           Portage::Bnd_limiter_type bnd_limiter,
+                           Portage::Boundary_Limiter_type bnd_limiter,
                            int interp_order,
                            std::string field_expression,
                            std::string field_filename,
@@ -185,7 +185,7 @@ int main(int argc, char** argv) {
   int n_converge = 1;
   Jali::Entity_kind entityKind = Jali::Entity_kind::CELL;
   Portage::Limiter_type limiter = Portage::Limiter_type::NOLIMITER;
-  Portage::Bnd_limiter_type bnd_limiter = Portage::Bnd_limiter_type::BND_NOLIMITER;
+  Portage::Boundary_Limiter_type bnd_limiter = Portage::Boundary_Limiter_type::BND_NOLIMITER;
   double srclo = 0.0, srchi = 1.0;  // bounds of generated mesh in each dir
   bool remap_back = false;           // enable for cyclic  remap, i.e. remap
                                     // back to the original mesh
@@ -239,7 +239,7 @@ int main(int argc, char** argv) {
         limiter = Portage::Limiter_type::BARTH_JESPERSEN;
     } else if (keyword == "bnd_limiter") {
       if (valueword == "zero_gradient" || valueword == "ZERO_GRADIENT")
-        bnd_limiter = Portage::Bnd_limiter_type::BND_ZERO_GRADIENT;
+        bnd_limiter = Portage::Boundary_Limiter_type::BND_ZERO_GRADIENT;
     } else if (keyword == "mesh_min") {
       srclo = stof(valueword);
     } else if (keyword == "mesh_max") {
@@ -477,7 +477,7 @@ int main(int argc, char** argv) {
 template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
                            std::shared_ptr<Jali::Mesh> targetMesh,
                            Portage::Limiter_type limiter,
-                           Portage::Bnd_limiter_type bnd_limiter,
+                           Portage::Boundary_Limiter_type bnd_limiter,
                            int interp_order, std::string field_expression,
                            std::string field_filename, bool mesh_output,
                            int rank, int numpe, Jali::Entity_kind entityKind,

@@ -48,7 +48,7 @@ class Limited_Quadfit {
       @param[in] on_what An enum that indicates what type of entity the field is on
       @param[in] var_name Name of field for which the quadfit is to be computed
       @param[in] limiter_type An enum indicating if the limiter type (none, Barth-Jespersen, Superbee etc)
-      @param[in] bnd_limiter_type An enum indicating the limiter type on the boundary
+      @param[in] Boundary_Limiter_type An enum indicating the limiter type on the boundary
 
       @todo must remove assumption that field is scalar
    */
@@ -56,9 +56,9 @@ class Limited_Quadfit {
   Limited_Quadfit(MeshType const & mesh, StateType const & state,
                    std::string const var_name,
                    Limiter_type limiter_type,
-                   Bnd_limiter_type bnd_limiter_type) :
+                   Boundary_Limiter_type Boundary_Limiter_type) :
       mesh_(mesh), state_(state),
-      var_name_(var_name), limtype_(limiter_type), bnd_limtype_(bnd_limiter_type) {
+      var_name_(var_name), limtype_(limiter_type), bnd_limtype_(Boundary_Limiter_type) {
 
     // Extract the field data from the statemanager
 
@@ -88,7 +88,7 @@ class Limited_Quadfit {
 
  private:
   Limiter_type limtype_;
-  Bnd_limiter_type bnd_limtype_;
+  Boundary_Limiter_type bnd_limtype_;
   MeshType const & mesh_;
   StateType const & state_;
   std::string var_name_;
@@ -112,7 +112,7 @@ class Limited_Quadfit<D, Entity_kind::CELL, MeshType, StateType> {
       @param[in] state A state manager class that one can query for field info
       @param[in] var_name Name of field for which the quadfit is to be computed
       @param[in] limiter_type An enum indicating if the limiter type (none, Barth-Jespersen, Superbee etc)
-      @param[in] bnd_limiter_type An enum indicating the limiter type on the boundary
+      @param[in] Boundary_Limiter_type An enum indicating the limiter type on the boundary
 
       @todo must remove assumption that field is scalar
    */
@@ -120,9 +120,9 @@ class Limited_Quadfit<D, Entity_kind::CELL, MeshType, StateType> {
   Limited_Quadfit(MeshType const & mesh, StateType const & state,
                    std::string const var_name,
                    Limiter_type limiter_type,
-                   Bnd_limiter_type bnd_limiter_type) :
+                   Boundary_Limiter_type Boundary_Limiter_type) :
       mesh_(mesh), state_(state), var_name_(var_name),
-      limtype_(limiter_type), bnd_limtype_(bnd_limiter_type) {
+      limtype_(limiter_type), bnd_limtype_(Boundary_Limiter_type) {
 
     // Extract the field data from the statemanager
     state.mesh_get_data(Entity_kind::CELL, var_name, &vals_);
@@ -159,7 +159,7 @@ class Limited_Quadfit<D, Entity_kind::CELL, MeshType, StateType> {
 
  private:
   Limiter_type limtype_;
-  Bnd_limiter_type bnd_limtype_;
+  Boundary_Limiter_type bnd_limtype_;
   MeshType const & mesh_;
   StateType const & state_;
   std::string var_name_;
@@ -278,7 +278,7 @@ class Limited_Quadfit<D, Entity_kind::NODE, MeshType, StateType> {
       @param[in] state A state manager class that one can query for field info
       @param[in] var_name Name of field for which the quadfit is to be computed
       @param[in] limiter_type An enum indicating if the limiter type (none, Barth-Jespersen, Superbee etc)
-      @param[in] bnd_limiter_type An enum indicating the limiter type on the boundary
+      @param[in] Boundary_Limiter_type An enum indicating the limiter type on the boundary
 
       @todo must remove assumption that field is scalar
    */
@@ -286,9 +286,9 @@ class Limited_Quadfit<D, Entity_kind::NODE, MeshType, StateType> {
   Limited_Quadfit(MeshType const & mesh, StateType const & state,
                    std::string const var_name,
                    Limiter_type limiter_type, 
-                   Bnd_limiter_type bnd_limiter_type) :
+                   Boundary_Limiter_type Boundary_Limiter_type) :
       mesh_(mesh), state_(state), var_name_(var_name),
-      limtype_(limiter_type), bnd_limtype_(bnd_limiter_type) {
+      limtype_(limiter_type), bnd_limtype_(Boundary_Limiter_type) {
 
     // Extract the field data from the statemanager
     state.mesh_get_data(Entity_kind::NODE, var_name, &vals_);
@@ -326,7 +326,7 @@ class Limited_Quadfit<D, Entity_kind::NODE, MeshType, StateType> {
  private:
 
   Limiter_type limtype_;
-  Bnd_limiter_type bnd_limtype_;
+  Boundary_Limiter_type bnd_limtype_;
   MeshType const & mesh_;
   StateType const & state_;
   std::string var_name_;

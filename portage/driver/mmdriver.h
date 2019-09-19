@@ -186,7 +186,7 @@ class MMDriver {
 
       // Set options so that defaults will produce something reasonable
       limiters_[source_remap_var_names[i]] = Limiter_type::BARTH_JESPERSEN;
-      bnd_limiters_[source_remap_var_names[i]] = Bnd_limiter_type::BND_NOLIMITER;
+      bnd_limiters_[source_remap_var_names[i]] = Boundary_Limiter_type::BND_NOLIMITER;
       partial_fixup_types_[target_remap_var_names[i]] =
           Partial_fixup_type::SHIFTED_CONSERVATIVE;
       empty_fixup_types_[target_remap_var_names[i]] =
@@ -210,7 +210,7 @@ class MMDriver {
     @param bnd_limiter  Boundary limiter to use for second order reconstruction (BND_NOLIMITER
                         or BND_ZERO_GRADIENT)
   */
-  void set_bnd_limiter(Bnd_limiter_type bnd_limiter) {
+  void set_bnd_limiter(Boundary_Limiter_type bnd_limiter) {
     for (auto const& stpair : source_target_varname_map_) {
       std::string const& source_var_name = stpair.first;
       bnd_limiters_[source_var_name] = bnd_limiter;
@@ -234,7 +234,7 @@ class MMDriver {
     @param bnd_limiter  Boundary limiter to use for second order reconstruction (BND_NOLIMITER
                         or BND_ZERO_GRADIENT)
   */
-  void set_bnd_limiter(std::string const& source_var_name, Bnd_limiter_type bnd_limiter) {
+  void set_bnd_limiter(std::string const& source_var_name, Boundary_Limiter_type bnd_limiter) {
     bnd_limiters_[source_var_name] = bnd_limiter;
   }
 
@@ -582,7 +582,7 @@ class MMDriver {
   TargetState_Wrapper& target_state_;
   std::unordered_map<std::string, std::string> source_target_varname_map_;
   std::unordered_map<std::string, Limiter_type> limiters_;
-  std::unordered_map<std::string, Bnd_limiter_type> bnd_limiters_;
+  std::unordered_map<std::string, Boundary_Limiter_type> bnd_limiters_;
   std::unordered_map<std::string, Partial_fixup_type> partial_fixup_types_;
   std::unordered_map<std::string, Empty_fixup_type> empty_fixup_types_;
   std::unordered_map<std::string, double> double_lower_bounds_;

@@ -249,7 +249,7 @@ TEST(MMDriver, ThreeMat2D) {
         targetMeshWrapper, targetStateWrapper);
   d.set_remap_var_names(remap_fields);
   d.set_limiter(Portage::Limiter_type::NOLIMITER);
-  d.set_bnd_limiter(Portage::Bnd_limiter_type::BND_NOLIMITER);
+  d.set_bnd_limiter(Portage::Boundary_Limiter_type::BND_NOLIMITER);
   d.run();  // run in serial
 
 
@@ -632,7 +632,7 @@ TEST(MMDriver, ThreeMat3D) {
         targetMeshWrapper, targetStateWrapper);
   d.set_remap_var_names(remap_fields);
   d.set_limiter(Portage::Limiter_type::NOLIMITER);
-  d.set_bnd_limiter(Portage::Bnd_limiter_type::BND_NOLIMITER);
+  d.set_bnd_limiter(Portage::Boundary_Limiter_type::BND_NOLIMITER);
   d.run();  // run in serial (executor defaults to nullptr)
 
 

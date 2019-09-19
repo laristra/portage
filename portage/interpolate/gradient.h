@@ -58,7 +58,7 @@ class Limited_Gradient {
       @param[in] var_name Name of field for which the gradient is to be computed
       @param[in] limiter_type An enum indicating if the limiter type (none,
       Barth-Jespersen, Superbee etc)
-      @param[in] bnd_limiter_type An enum indicating the limiter type on the boundary
+      @param[in] Boundary_Limiter_type An enum indicating the limiter type on the boundary
 
       @todo must remove assumption that field is scalar
    */
@@ -71,18 +71,18 @@ class Limited_Gradient {
   Limited_Gradient(MeshType const & mesh, StateType const & state,
                    std::string const var_name,
                    Limiter_type limiter_type,
-                   Bnd_limiter_type bnd_limiter_type,
+                   Boundary_Limiter_type Boundary_Limiter_type,
                    std::shared_ptr<InterfaceReconstructor> ir)
  : mesh_(mesh), state_(state), var_name_(var_name), 
-   limtype_(limiter_type), bnd_limtype_(bnd_limiter_type) {}
+   limtype_(limiter_type), bnd_limtype_(Boundary_Limiter_type) {}
 #endif
 
   Limited_Gradient(MeshType const & mesh, StateType const & state,
                    std::string const var_name,
                    Limiter_type limiter_type,
-                   Bnd_limiter_type bnd_limiter_type)
+                   Boundary_Limiter_type Boundary_Limiter_type)
  : mesh_(mesh), state_(state), var_name_(var_name), 
-   limtype_(limiter_type), bnd_limtype_(bnd_limiter_type) {}
+   limtype_(limiter_type), bnd_limtype_(Boundary_Limiter_type) {}
 
   /// @todo Seems to be needed when using this in a Thrust transform call?
   //
@@ -107,7 +107,7 @@ class Limited_Gradient {
 
  private:
   Limiter_type limtype_;
-  Bnd_limiter_type bnd_limtype_;
+  Boundary_Limiter_type bnd_limtype_;
   std::string var_name_;
   int matid_;
   MeshType const & mesh_;
@@ -144,10 +144,10 @@ class Limited_Gradient<D, Entity_kind::CELL, MeshType, StateType,
                    StateType const & state,
                    std::string const var_name,
                    Limiter_type limiter_type,
-                   Bnd_limiter_type bnd_limiter_type,
+                   Boundary_Limiter_type Boundary_Limiter_type,
                    std::shared_ptr<InterfaceReconstructor> ir)
     : mesh_(mesh), state_(state), vals_(nullptr), var_name_(var_name),
-      limtype_(limiter_type), bnd_limtype_(bnd_limiter_type) {
+      limtype_(limiter_type), bnd_limtype_(Boundary_Limiter_type) {
       interface_reconstructor_ = ir;
 
       // Collect and keep the list of neighbors for each CELL as it may
@@ -165,7 +165,7 @@ class Limited_Gradient<D, Entity_kind::CELL, MeshType, StateType,
       //be stored. If the field_type is a MULTIMATERIAL_FIELD, then the constructor
       //only stores the variable name. The user code must make a call to the method
       //set_material to store the material-wise data.
-      set_interpolation_variable(var_name, limiter_type, bnd_limiter_type);
+      set_interpolation_variable(var_name, limiter_type, Boundary_Limiter_type);
     }
 #endif
 
@@ -175,7 +175,7 @@ class Limited_Gradient<D, Entity_kind::CELL, MeshType, StateType,
                    StateType const & state,
                    std::string const var_name,
                    Limiter_type limiter_type,
-                   Bnd_limiter_type bnd_limiter_type)
+                   Boundary_Limiter_type Boundary_Limiter_type)
     : mesh_(mesh),state_(state),vals_(nullptr) {
 
       // Collect and keep the list of neighbors for each CELL as it may
@@ -189,7 +189,7 @@ class Limited_Gradient<D, Entity_kind::CELL, MeshType, StateType,
                         [this](int c) { this->mesh_.cell_get_node_adj_cells(
                                          c, Entity_type::ALL, &(cell_neighbors_[c])); } );
 
-      set_interpolation_variable(var_name, limiter_type, bnd_limiter_type);
+      set_interpolation_variable(var_name, limiter_type, Boundary_Limiter_type);
     }
 
     //This method should be called by the user if the field type is MULTIMATERIAL_FIELD.
@@ -206,7 +206,7 @@ class Limited_Gradient<D, Entity_kind::CELL, MeshType, StateType,
 
     void set_interpolation_variable(std::string const var_name,
                                     Limiter_type limtype,
-                                    Bnd_limiter_type bnd_limtype) {
+                                    Boundary_Limiter_type bnd_limtype) {
       this->var_name_=var_name;
       this->limtype_=limtype;
       this->bnd_limtype_=bnd_limtype;
@@ -222,7 +222,7 @@ class Limited_Gradient<D, Entity_kind::CELL, MeshType, StateType,
   private:
     std::vector<std::vector<int>> cell_neighbors_;
     Limiter_type limtype_;
-    Bnd_limiter_type bnd_limtype_;
+    Boundary_Limiter_type bnd_limtype_;
     std::string var_name_;
     int matid_;
     MeshType const & mesh_;
@@ -420,7 +420,7 @@ class Limited_Gradient<D, Entity_kind::NODE, MeshType, StateType,
     @param[in] state A state manager class that one can query for field info
     @param[in] var_name Name of field for which the gradient is to be computed
     @param[in] limiter_type An enum indicating if the limiter type (none, Barth-Jespersen, Superbee etc)
-    @param[in] bnd_limiter_type An enum indicating the limiter type on the boundary
+    @param[in] Boundary_Limiter_type An enum indicating the limiter type on the boundary
 
     @todo must remove assumption that field is scalar
   */
@@ -428,14 +428,14 @@ class Limited_Gradient<D, Entity_kind::NODE, MeshType, StateType,
   Limited_Gradient(MeshType const & mesh, StateType const & state,
                    std::string const var_name,
                    Limiter_type limiter_type,
-                   Bnd_limiter_type bnd_limiter_type)
+                   Boundary_Limiter_type Boundary_Limiter_type)
     : mesh_(mesh),state_(state),vals_(nullptr) {
       int nnodes = this->mesh_.num_entities(Entity_kind::NODE);
       node_neighbors_.resize(nnodes);
       Portage::for_each(this->mesh_.begin(Entity_kind::NODE), this->mesh_.end(Entity_kind::NODE),
                         [this](int n) { this->mesh_.dual_cell_get_node_adj_cells(
                                         n, Entity_type::ALL, &(node_neighbors_[n])); } );
-      this->set_interpolation_variable(var_name, limiter_type, bnd_limiter_type);
+      this->set_interpolation_variable(var_name, limiter_type, Boundary_Limiter_type);
     }
 
     void set_material(int matid) {
@@ -444,7 +444,7 @@ class Limited_Gradient<D, Entity_kind::NODE, MeshType, StateType,
 
     void set_interpolation_variable(std::string const var_name,
                                     Limiter_type limtype,
-                                    Bnd_limiter_type bnd_limtype) {
+                                    Boundary_Limiter_type bnd_limtype) {
       this->var_name_=var_name;
       this->limtype_=limtype;
       this->bnd_limtype_=bnd_limtype;
@@ -455,7 +455,7 @@ class Limited_Gradient<D, Entity_kind::NODE, MeshType, StateType,
 
   private:
     Limiter_type limtype_;
-    Bnd_limiter_type bnd_limtype_;
+    Boundary_Limiter_type bnd_limtype_;
     std::string var_name_;
     int matid_;
     MeshType const & mesh_;

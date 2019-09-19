@@ -87,10 +87,10 @@ constexpr int NUM_LIMITER_TYPE = 2;
 constexpr Limiter_type DEFAULT_LIMITER = Limiter_type::BARTH_JESPERSEN;
 
 /// Boundary limiter type
-typedef enum {BND_NOLIMITER, BND_ZERO_GRADIENT} Bnd_limiter_type;
-constexpr int NUM_BND_LIMITER_TYPE = 2;
+typedef enum {BND_NOLIMITER, BND_ZERO_GRADIENT} Boundary_Limiter_type;
+constexpr int NUM_Boundary_Limiter_type = 2;
 
-constexpr Bnd_limiter_type DEFAULT_BND_LIMITER = Bnd_limiter_type::BND_NOLIMITER;
+constexpr Boundary_Limiter_type DEFAULT_BND_LIMITER = Boundary_Limiter_type::BND_NOLIMITER;
 
 inline std::string to_string(Limiter_type limiter_type) {
   static const std::string type2string[NUM_LIMITER_TYPE] =
@@ -102,13 +102,13 @@ inline std::string to_string(Limiter_type limiter_type) {
       type2string[itype] : "INVALID LIMITER TYPE";
 }
 
-inline std::string to_string(Bnd_limiter_type bnd_limiter_type) {
-  static const std::string type2string[NUM_BND_LIMITER_TYPE] =
-      {"Bnd_limiter_type::BND_NOLIMITER",
-       "Bnd_limiter_type::BND_ZERO_GRADIENT"};
+inline std::string to_string(Boundary_Limiter_type Boundary_Limiter_type) {
+  static const std::string type2string[NUM_Boundary_Limiter_type] =
+      {"Boundary_Limiter_type::BND_NOLIMITER",
+       "Boundary_Limiter_type::BND_ZERO_GRADIENT"};
 
-  int itype = static_cast<int>(bnd_limiter_type);
-  return (itype >= 0 && itype < NUM_BND_LIMITER_TYPE) ?
+  int itype = static_cast<int>(Boundary_Limiter_type);
+  return (itype >= 0 && itype < NUM_Boundary_Limiter_type) ?
       type2string[itype] : "INVALID BOUNDARY LIMITER TYPE";
 }
 

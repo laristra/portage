@@ -123,7 +123,7 @@ void run(
   const std::string material_filename,
   const std::vector<std::string> material_field_expressions,
   Portage::Limiter_type limiter,
-  Portage::Bnd_limiter_type bnd_limiter,
+  Portage::Boundary_Limiter_type bnd_limiter,
   int interp_order,
   std::string field_filename,
   bool mesh_output,
@@ -573,7 +573,7 @@ int main(int argc, char** argv) {
   bool mesh_output = true;
   int n_converge = 1;
   Portage::Limiter_type limiter = Portage::Limiter_type::NOLIMITER;
-  Portage::Bnd_limiter_type bnd_limiter = Portage::Bnd_limiter_type::BND_NOLIMITER;
+  Portage::Boundary_Limiter_type bnd_limiter = Portage::Boundary_Limiter_type::BND_NOLIMITER;
   Portage::Entity_kind entityKind = Portage::Entity_kind::CELL;
   double L1_error=0., L2_error=0.;
 
@@ -627,7 +627,7 @@ int main(int argc, char** argv) {
         limiter = Portage::Limiter_type::BARTH_JESPERSEN;
     } else if (keyword == "bnd_limiter") {
       if (valueword == "zero_gradient" || valueword == "ZERO_GRADIENT")
-        bnd_limiter = Portage::Bnd_limiter_type::BND_ZERO_GRADIENT;
+        bnd_limiter = Portage::Boundary_Limiter_type::BND_ZERO_GRADIENT;
     } else if (keyword == "output_meshes") {
       mesh_output = (valueword == "y");
     } else if (keyword == "results_file") {

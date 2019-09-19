@@ -722,7 +722,7 @@ void run(std::shared_ptr<Jali::Mesh> &sourceMesh,
     d.interpolate<double, Portage::Entity_kind::CELL,
                   Portage::Interpolate_2ndOrder>("density", "density",
     					       dblmin, dblmax, Portage::Limiter_type::NOLIMITER,
-                     Portage::Bnd_limiter_type::BND_NOLIMITER);
+                     Portage::Boundary_Limiter_type::BND_NOLIMITER);
 
   }
   else if ((dim == 3) && (dtype == CONSTANT)){
@@ -757,7 +757,7 @@ void run(std::shared_ptr<Jali::Mesh> &sourceMesh,
     d.interpolate<double, Portage::Entity_kind::CELL,
                   Portage::Interpolate_2ndOrder>("density", "density",
     					       dblmin, dblmax, Portage::Limiter_type::NOLIMITER,
-                     Portage::Bnd_limiter_type::BND_NOLIMITER);
+                     Portage::Boundary_Limiter_type::BND_NOLIMITER);
   }
  else
    std::cerr<<"Remapping requested for dim != 2 or 3"<<std::endl;
