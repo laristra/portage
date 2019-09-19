@@ -261,6 +261,7 @@ inline double ddstep(double x){
 enum Kernel {B4, SQUARE, EPANECHNIKOV, POLYRAMP, INVSQRT, COULOMB, STEP};
 
 /// general kernel function
+inline
 double kernel(const Kernel kern, double x) {
   double result;
   switch (kern) {

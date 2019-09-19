@@ -10,6 +10,7 @@
 #include <sys/time.h>
 #include <algorithm>
 #include <vector>
+#include <map>
 #include <iterator>
 #include <unordered_set>
 #include <string>

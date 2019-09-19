@@ -47,6 +47,7 @@ struct facetedpoly {
  @param matpoly  3D material polyhedron object to be converted
  @return  Corresponding facetedpoly_t structure
 */
+inline
 facetedpoly_t get_faceted_matpoly(const Tangram::MatPoly<3>& matpoly) {
   // facet the matpoly
   Tangram::MatPoly<3> faceted_matpoly;
@@ -67,6 +68,7 @@ facetedpoly_t get_faceted_matpoly(const Tangram::MatPoly<3>& matpoly) {
 // polyhedron
 
 std::vector<double>
+inline
 intersect_polys_r3d(const facetedpoly_t &srcpoly,
                     const std::vector<std::array<Point<3>, 4>> &target_tet_coords,
                     NumericTolerances_t num_tols) {

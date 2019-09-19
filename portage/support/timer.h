@@ -7,6 +7,8 @@
 #pragma once
 
 #include <chrono>
+#include <cstdio>
+#include <fstream>
 
 /* Wrapper for high precision time point */ 
 namespace timer {

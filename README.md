@@ -176,7 +176,7 @@ Execute the following from the portage root directory:
 . /usr/share/lmod/lmod/init/sh
 module load intel/18.0.5 openmpi/2.1.2 cmake
 JALI_INSTALL_PREFIX=/usr/projects/ngc/private/jali/1.0.4-intel-18.0.5-openmpi-2.1.2
-TANGRAM_INSTALL_PREFIX=/usr/projects/ngc/private/tangram/0.9.6-boost-intel-18.0.5-openmpi-2.1.2
+TANGRAM_INSTALL_PREFIX=/usr/projects/ngc/private/tangram/0.9.6-intel-18.0.5-openmpi-2.1.2
 XMOF2D_INSTALL_PREFIX=/usr/projects/ngc/private/xmof2d/0.9.5-intel-18.0.5
 LAPACKE_DIR=/usr/projects/ngc/private/lapack/3.8.0-patched-intel-18.0.5
 mkdir build
