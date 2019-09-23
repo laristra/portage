@@ -56,7 +56,6 @@
 
 #include "portage/driver/write_to_gmv.h"
 
-#define ENABLE_TIMINGS 1
 #if ENABLE_TIMINGS
   #include "portage/support/timer.h"
 #endif

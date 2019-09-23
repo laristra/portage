@@ -51,8 +51,6 @@
   #endif
 #endif
 
-#define ENABLE_TIMINGS 1
-
 using Wonton::Jali_Mesh_Wrapper;
 using Portage::argsort;
 using Portage::reorder;
