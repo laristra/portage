@@ -93,23 +93,20 @@ constexpr int NUM_Boundary_Limiter_type = 2;
 constexpr Boundary_Limiter_type DEFAULT_BND_LIMITER = Boundary_Limiter_type::BND_NOLIMITER;
 
 inline std::string to_string(Limiter_type limiter_type) {
-  static const std::string type2string[NUM_LIMITER_TYPE] =
-      {"Limiter_type::NOLIMITER",
-       "Limiter_type::BARTH_JESPERSEN"};
-
-  int itype = static_cast<int>(limiter_type);
-  return (itype >= 0 && itype < NUM_LIMITER_TYPE) ?
-      type2string[itype] : "INVALID LIMITER TYPE";
+  switch(limiter_type) {
+    case BND_NOLIMITER: return std::string("Limiter_type::NOLIMITER");
+    case BND_BARTH_JESPERSEN: return std::string("Limiter_type::BARTH_JESPERSEN");
+    default: return std::string("INVALID LIMITER TYPE");
+  }
 }
 
-inline std::string to_string(Boundary_Limiter_type Boundary_Limiter_type) {
-  static const std::string type2string[NUM_Boundary_Limiter_type] =
-      {"Boundary_Limiter_type::BND_NOLIMITER",
-       "Boundary_Limiter_type::BND_ZERO_GRADIENT"};
-
-  int itype = static_cast<int>(Boundary_Limiter_type);
-  return (itype >= 0 && itype < NUM_Boundary_Limiter_type) ?
-      type2string[itype] : "INVALID BOUNDARY LIMITER TYPE";
+inline std::string to_string(Boundary_Limiter_type boundary_limiter_type) {
+  switch(boundary_limiter_type) {
+    case BND_NOLIMITER: return std::string("Boundary_Limiter_type::BND_NOLIMITER");
+    case BND_ZERO_GRADIENT: return std::string("Boundary_Limiter_type::BND_ZERO_GRADIENT");
+    case BND_BARTH_JESPERSEN: return std::string("Boundary_Limiter_type::BND_BARTH_JESPERSEN");
+    default: return std::string("INVALID BOUNDARY LIMITER TYPE");
+  }
 }
 
 /// Fixup options for partially filled cells
