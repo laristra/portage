@@ -87,7 +87,7 @@ constexpr int NUM_LIMITER_TYPE = 2;
 constexpr Limiter_type DEFAULT_LIMITER = Limiter_type::BARTH_JESPERSEN;
 
 /// Boundary limiter type
-typedef enum {BND_NOLIMITER, BND_ZERO_GRADIENT} Boundary_Limiter_type;
+typedef enum {BND_NOLIMITER, BND_ZERO_GRADIENT, BND_BARTH_JESPERSEN} Boundary_Limiter_type;
 constexpr int NUM_Boundary_Limiter_type = 2;
 
 constexpr Boundary_Limiter_type DEFAULT_BND_LIMITER = Boundary_Limiter_type::BND_NOLIMITER;

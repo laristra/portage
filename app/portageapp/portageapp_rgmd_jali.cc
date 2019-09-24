@@ -619,6 +619,8 @@ int main(int argc, char** argv) {
     } else if (keyword == "bnd_limiter") {
       if (valueword == "zero_gradient" || valueword == "ZERO_GRADIENT")
         bnd_limiter = Portage::Boundary_Limiter_type::BND_ZERO_GRADIENT;
+      else if (valueword == "barth_jespersen" || valueword == "BARTH_JESPERSEN")
+        bnd_limiter = Portage::Boundary_Limiter_type::BND_BARTH_JESPERSEN;
     } else if (keyword == "mesh_min") {
       srclo = stof(valueword);
     } else if (keyword == "mesh_max") {

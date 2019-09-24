@@ -208,7 +208,7 @@ class MMDriver {
   /*!
     @brief set boundary limiter for all variables
     @param bnd_limiter  Boundary limiter to use for second order reconstruction (BND_NOLIMITER
-                        or BND_ZERO_GRADIENT)
+                        BND_ZERO_GRADIENT, or BND_BARTH_JESPERSEN))
   */
   void set_bnd_limiter(Boundary_Limiter_type bnd_limiter) {
     for (auto const& stpair : source_target_varname_map_) {
@@ -231,8 +231,8 @@ class MMDriver {
     @brief set boundary limiter for a variable
     @param target_var_name Source mesh variable whose gradient is to be limited
     on the boundary
-    @param bnd_limiter  Boundary limiter to use for second order reconstruction (BND_NOLIMITER
-                        or BND_ZERO_GRADIENT)
+    @param bnd_limiter  Boundary limiter to use for second order reconstruction (BND_NOLIMITER,
+                        BND_ZERO_GRADIENT, or BND_BARTH_JESPERSEN))
   */
   void set_bnd_limiter(std::string const& source_var_name, Boundary_Limiter_type bnd_limiter) {
     bnd_limiters_[source_var_name] = bnd_limiter;

@@ -340,7 +340,8 @@ Vector<D> Limited_Gradient <D, Entity_kind::CELL, MeshType, StateType,
 
     // Limit the gradient to enforce monotonicity preservation
     if (this->limtype_ == BARTH_JESPERSEN &&
-        !this->mesh_.on_exterior_boundary(Entity_kind::CELL, cellid)) {  // No limiting on boundary
+        (!this->mesh_.on_exterior_boundary(Entity_kind::CELL, cellid) ||
+         this->bnd_limtype_ == BND_BARTH_JESPERSEN)) {
 
       phi = 1.0;
 
@@ -502,7 +503,8 @@ Vector<D> Limited_Gradient <D, Entity_kind::NODE, MeshType, StateType,
     grad = Wonton::ls_gradient<D,CoordSys>(nodecoords, nodevalues);
 
     if (this->limtype_ == BARTH_JESPERSEN &&
-        !this->mesh_.on_exterior_boundary(Entity_kind::NODE, nodeid)) {  // No limiting on boundary
+        (!this->mesh_.on_exterior_boundary(Entity_kind::NODE, nodeid) ||
+         this->bnd_limtype_ == BND_BARTH_JESPERSEN)) { 
 
       // Min and max vals of function (cell centered vals) among neighbors
       double minval = this->vals_[nodeid];

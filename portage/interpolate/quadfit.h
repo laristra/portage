@@ -212,7 +212,8 @@ Limited_Quadfit<D, Entity_kind::CELL, MeshType, StateType>::operator() (int cons
   qfit = Wonton::ls_quadfit(cellcenters, cellvalues, boundary_cell);
   // Limit the gradient to enforce monotonicity preservation
 
-  if (limtype_ == BARTH_JESPERSEN && !boundary_cell) {  // No limiting on boundary
+  if (limtype_ == BARTH_JESPERSEN && 
+      (!boundary_cell || bnd_limtype_ == BND_BARTH_JESPERSEN)) {
 
     // Min and max vals of function (cell centered vals) among neighbors
     /// @todo: must remove assumption the field is scalar
@@ -379,7 +380,8 @@ Limited_Quadfit<D, Entity_kind::NODE, MeshType, StateType>::operator() (int cons
 
   qfit = Wonton::ls_quadfit(nodecoords, nodevalues, boundary_node);
 
-  if (limtype_ == BARTH_JESPERSEN && !boundary_node) {  // No limiting on boundary
+  if (limtype_ == BARTH_JESPERSEN && 
+      (!boundary_node || bnd_limtype_ == BND_BARTH_JESPERSEN)) {
 
     // Min and max vals of function (cell centered vals) among neighbors
 
