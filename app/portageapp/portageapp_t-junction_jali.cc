@@ -119,11 +119,11 @@ int print_usage() {
   std::cout << "--remap order (default = 1): " <<
       "order of accuracy of interpolation\n\n";
 
-  std::cout << "--limiter (default = 0): " <<
+  std::cout << "--limiter (default = NOLIMITER): " <<
       "slope limiter for a piecewise linear reconstrution\n\n";
 
-  std::cout << "--bnd_limiter (default = 0): " <<
-      "slope limiter on the boundary for a piecewise linear reconstrution\n\n";
+  std::cout << "--bnd_limiter (default = NOLIMITER): " <<
+      "slope limiter on the boundary for a piecewise linear reconstruction\n\n";
 
   std::cout << "--convergence_study (default = 1): provide the number of times "
             << "you want to double source and target mesh sizes \n";

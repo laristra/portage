@@ -104,11 +104,11 @@ int print_usage() {
   std::cout << "--remap order (default = 1): " <<
       "order of accuracy of interpolation\n\n";
 
-  std::cout << "--limiter (default = 0): " <<
+  std::cout << "--limiter (default = NOLIMITER): " <<
       "slope limiter for a piecewise linear reconstrution\n\n";
 
-  std::cout << "--limiter (default = 0): " <<
-      "slope limiter on the boundary for a piecewise linear reconstrution\n\n";      
+  std::cout << "--bnd_limiter (default = NOLIMITER): " <<
+      "slope limiter on the boundary for a piecewise linear reconstruction\n\n";      
 
   std::cout << "--mesh_min (default = 0.): " <<
       "coordinates (same in x, y, and z) of the lower corner of a mesh\n\n";
@@ -240,6 +240,8 @@ int main(int argc, char** argv) {
     } else if (keyword == "bnd_limiter") {
       if (valueword == "zero_gradient" || valueword == "ZERO_GRADIENT")
         bnd_limiter = Portage::Boundary_Limiter_type::BND_ZERO_GRADIENT;
+      else if (valueword == "barth_jespersen" || valueword == "BARTH_JESPERSEN")
+        bnd_limiter = Portage::Boundary_Limiter_type::BND_BARTH_JESPERSEN;
     } else if (keyword == "mesh_min") {
       srclo = stof(valueword);
     } else if (keyword == "mesh_max") {
