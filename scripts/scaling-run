@@ -86,6 +86,7 @@ print_usage() {
   echo -e "  -h, --help                    show this help message and exit"
   echo -e "  -a, --app $_CHOICE            current app [t-junction|core|multimat]"
   echo -e "  -j, --problem $_CHOICE        multimat problem [tjunction|srcpurecells|ball|rotor]"
+  echo -e "  -v, --limiter $_STRING        gradient limiter for multimat"
   echo -e "  -g, --cluster $_CHOICE        current cluster [darwin|snow|grizzly]"
   echo -e "  -b, --build                   rebuild the app"
   echo -e "  -n, --nodes $_INT             number of nodes"     
@@ -239,12 +240,8 @@ check_params() {
       echo -e "\e[31mError: unsupported multimat problem type '${PROBLEM_TYPE}'\e[0m"
       exit 1
     # invalid option for convex-source
-    elif [ "${CONVEX_SOURCE}" != "y" ] && [ "${CONVEX_SOURCE}" != "n" ]; then
-      echo -e "\e[31mError: specify if source mesh is convex or not [y|n]\e[0m"
-      exit 1
-    # invalid option for convex-target
-    elif [ "${CONVEX_TARGET}" != "y" ] && [ "${CONVEX_TARGET}" != "n" ]; then
-      echo -e "\e[31mError: specify if target mesh is convex or not [y|n]\e[0m"
+    elif [ -z "${MATER_FIELD}" ]; then
+      echo -e "\e[31mError: no material fields specified\e[0m"
       exit 1
     # invalid gradient limiter
     elif [ "${LIMITER}" != "" ] && [ "${LIMITER}" != "barth_jespersen" ]; then
@@ -306,6 +303,7 @@ set_default_params() {
       [ "${ENTITY_KIND}" != "" ] || ENTITY_KIND="cell"
       [ "${CONVEX_SOURCE}" != "" ] || CONVEX_SOURCE="y"
       [ "${CONVEX_TARGET}" != "" ] || CONVEX_TARGET="y"
+      [ "${MATER_FIELD}" != "" ] || MATER_FIELD="'x','y','z'"
       [ "${LIMITER}" != "" ] || LIMITER="barth_jespersen"
       [ "${REMAP_ORDER}" -eq 0 ] && REMAP_ORDER=1;;
     (*)
@@ -422,6 +420,7 @@ update_app_options() {
         "--dim=${DIMENSION}"
         "--nsourcecells=\${n_source}"
         "--ntargetcells=\${n_target}"
+        "--material_fields=${MATER_FIELD}"
         "--source_convex_cells=${CONVEX_SOURCE}"
         "--target_convex_cells=${CONVEX_TARGET}"
         "--remap_order=${REMAP_ORDER}"
@@ -446,8 +445,8 @@ update_app_options() {
 setup() {
 
   # parse options (requires GNU getopt).
-  SHORT_OPT="ha:j:g:n:r:p:u:c:w:d:f:q:s:t:m:z:k:o:ixye:l:"
-  LONG_OPT="help,app:,problem:,cluster:,nodes:,ranks:,partition:,user:,compiler:,hwthreads:,"
+  SHORT_OPT="ha:j:v:g:n:r:p:u:c:w:d:f:q:s:t:m:z:k:o:ixye:l:"
+  LONG_OPT="help,app:,problem:,limiter:,cluster:,nodes:,ranks:,partition:,user:,compiler:,hwthreads:,"
   LONG_OPT+="dim:,field:,field-order:,source:,target:,material-field:,material-file:,"
   LONG_OPT+="entity:,order:,conform,convex,thread-only,results:scaling:"
   options=""
@@ -476,6 +475,7 @@ setup() {
           "multimat") APP="rgmd";;
         esac; shift;;
       -j|--problem) PROBLEM_TYPE="$2"; shift;;
+      -v|--limiter) LIMITER="$2"; shift;;
       -g|--cluster) CLUSTER="$2"; shift;;
       -n|--nodes) MAX_NODES="$2"; shift;;
       -r|--ranks) RANKS_PER_NODE="$2"; shift;;
