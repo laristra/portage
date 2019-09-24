@@ -84,17 +84,17 @@ print_usage() {
   echo -e "Usage: \e[32m./scaling-run [options]\e[0m"
   echo -e "Options:"
   echo -e "  -h, --help                    show this help message and exit"
-  echo -e "  -a, --app $_CHOICE            current app [t-junction|single-mat|multimat]"
-  echo -e "  -j, --problem $_CHOICE        multimat problem [purecells|t-junction|ball|rotor]"
+  echo -e "  -a, --app $_CHOICE            current app [t-junction|core|multimat]"
+  echo -e "  -j, --problem $_CHOICE        multimat problem [tjunction|srcpurecells|ball|rotor]"
   echo -e "  -g, --cluster $_CHOICE        current cluster [darwin|snow|grizzly]"
   echo -e "  -b, --build                   rebuild the app"
   echo -e "  -n, --nodes $_INT             number of nodes"     
   echo -e "  -r, --ranks $_INT             ranks per node"    
   echo -e "  -p, --partition $_STRING      slurm partition"    
   echo -e "  -u, --user $_STRING           slurm user"    
-  echo -e "  -c, --compiler $_CHOICE       compiler [intel|gcc]"    
+  echo -e "  -c, --compiler $_CHOICE       compiler [intel|gcc]"
   echo -e "  -w, --hwthreads               enable hyperthreading"    
-  echo -e "  -d, --dim $_INT               mesh dimension [2|3]"    
+  echo -e "  -d, --dim $_INT               mesh dimension [2|3]"
   echo -e "  -f, --field $_STRING          mesh field to remap"    
   echo -e "  -q, --field-order $_INT       field order"    
   echo -e "  -s, --source $_INT_PATH       source mesh size or file"    
@@ -232,10 +232,25 @@ check_params() {
   elif [ "${SCALING_TYPE}" != "strong" ] && [ "${SCALING_TYPE}" != "weak" ]; then
     echo -e "\e[31mError: invalid scaling type '${SCALING_TYPE}'\e[0m"
     exit 1
-  # disable weak scaling for multimat since require distinct input files
-  elif [ "${APP}" = "multimat" ] && [ "${SCALING_TYPE}" = "weak" ]; then
-     echo "Sorry, automated weak scaling is not supported for multimat"
-     exit 1
+  elif [ "${APP}" = "rgmd" ]; then
+    SUPPORTED_PROBLEMS=( "srcpurecells" "tjunction" "ball" "rotor" )
+    # unsupported multimat problem
+    if [ $(echo "${SUPPORTED_PROBLEMS[*]}" | grep -c -w "${PROBLEM_TYPE}") -ne 1 ]; then
+      echo -e "\e[31mError: unsupported multimat problem type '${PROBLEM_TYPE}'\e[0m"
+      exit 1
+    # invalid option for convex-source
+    elif [ "${CONVEX_SOURCE}" != "y" ] && [ "${CONVEX_SOURCE}" != "n" ]; then
+      echo -e "\e[31mError: specify if source mesh is convex or not [y|n]\e[0m"
+      exit 1
+    # invalid option for convex-target
+    elif [ "${CONVEX_TARGET}" != "y" ] && [ "${CONVEX_TARGET}" != "n" ]; then
+      echo -e "\e[31mError: specify if target mesh is convex or not [y|n]\e[0m"
+      exit 1
+    # invalid gradient limiter
+    elif [ "${LIMITER}" != "" ] && [ "${LIMITER}" != "barth_jespersen" ]; then
+      echo -e "\e[31mError: invalid specified limiter ${LIMITER}\e[0m"
+      exit 1
+    fi
   fi
 
   # print params eventually
