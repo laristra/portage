@@ -86,16 +86,28 @@ constexpr int NUM_LIMITER_TYPE = 2;
 
 constexpr Limiter_type DEFAULT_LIMITER = Limiter_type::BARTH_JESPERSEN;
 
-inline std::string to_string(Limiter_type limiter_type) {
-  static const std::string type2string[NUM_LIMITER_TYPE] =
-      {"Limiter_type::NOLIMITER",
-       "Limiter_type::BARTH_JESPERSEN"};
+/// Boundary limiter type
+typedef enum {BND_NOLIMITER, BND_ZERO_GRADIENT, BND_BARTH_JESPERSEN} Boundary_Limiter_type;
+constexpr int NUM_Boundary_Limiter_type = 2;
 
-  int itype = static_cast<int>(limiter_type);
-  return (itype >= 0 && itype < NUM_LIMITER_TYPE) ?
-      type2string[itype] : "INVALID LIMITER TYPE";
+constexpr Boundary_Limiter_type DEFAULT_BND_LIMITER = Boundary_Limiter_type::BND_NOLIMITER;
+
+inline std::string to_string(Limiter_type limiter_type) {
+  switch(limiter_type) {
+    case BND_NOLIMITER: return std::string("Limiter_type::NOLIMITER");
+    case BND_BARTH_JESPERSEN: return std::string("Limiter_type::BARTH_JESPERSEN");
+    default: return std::string("INVALID LIMITER TYPE");
+  }
 }
 
+inline std::string to_string(Boundary_Limiter_type boundary_limiter_type) {
+  switch(boundary_limiter_type) {
+    case BND_NOLIMITER: return std::string("Boundary_Limiter_type::BND_NOLIMITER");
+    case BND_ZERO_GRADIENT: return std::string("Boundary_Limiter_type::BND_ZERO_GRADIENT");
+    case BND_BARTH_JESPERSEN: return std::string("Boundary_Limiter_type::BND_BARTH_JESPERSEN");
+    default: return std::string("INVALID BOUNDARY LIMITER TYPE");
+  }
+}
 
 /// Fixup options for partially filled cells
 typedef enum {CONSTANT, LOCALLY_CONSERVATIVE, SHIFTED_CONSERVATIVE}

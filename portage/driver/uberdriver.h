@@ -465,6 +465,8 @@ class UberDriver {
 
     @param[in] limiter      Limiter to use for second order reconstruction
 
+    @param[in] bnd_limiter  Boundary limiter to use for second order reconstruction
+
     @param[in] partial_fixup_type  Method to populate fields on partially filled target entities (cells or dual cells)
 
     @param[in] empty_fixup_type    Method to populate fields on empty target entities (cells or dual cells)
@@ -486,6 +488,7 @@ class UberDriver {
   void interpolate(std::string srcvarname,
                    T lower_bound, T upper_bound,
                    Limiter_type limiter = DEFAULT_LIMITER,
+                   Boundary_Limiter_type bnd_limiter = DEFAULT_BND_LIMITER,
                    Partial_fixup_type partial_fixup_type = DEFAULT_PARTIAL_FIXUP_TYPE,
                    Empty_fixup_type empty_fixup_type = DEFAULT_EMPTY_FIXUP_TYPE,
                    double conservation_tol = DEFAULT_CONSERVATION_TOL,
@@ -493,7 +496,7 @@ class UberDriver {
 
     interpolate<T, ONWHAT, Interpolate>(srcvarname, srcvarname,
                                         lower_bound, upper_bound,
-                                        limiter,
+                                        limiter, bnd_limiter,
                                         partial_fixup_type, empty_fixup_type,
                                         conservation_tol, max_fixup_iter);
   }
@@ -516,6 +519,8 @@ class UberDriver {
 
     @param[in] limiter      Limiter to use for second order reconstruction
 
+    @param[in] bnd_limiter  Boundary limiter to use for second order reconstruction
+
     @param[in] partial_fixup_type  Method to populate fields on partially filled target entities (cells or dual cells)
 
     @param[in] empty_fixup_type    Method to populate fields on empty target entities (cells or dual cells)
@@ -537,6 +542,7 @@ class UberDriver {
   void interpolate(std::string srcvarname, std::string trgvarname,
                    T lower_bound, T upper_bound,
                    Limiter_type limiter = DEFAULT_LIMITER,
+                   Boundary_Limiter_type bnd_limiter = DEFAULT_BND_LIMITER,
                    Partial_fixup_type partial_fixup_type = DEFAULT_PARTIAL_FIXUP_TYPE,
                    Empty_fixup_type empty_fixup_type = DEFAULT_EMPTY_FIXUP_TYPE,
                    double conservation_tol = DEFAULT_CONSERVATION_TOL,
@@ -561,7 +567,7 @@ class UberDriver {
       
       interpolate_mat_var<T, Interpolate>
           (srcvarname, trgvarname, source_weights_by_mat_,
-           lower_bound, upper_bound, limiter, partial_fixup_type,
+           lower_bound, upper_bound, limiter, bnd_limiter, partial_fixup_type,
            empty_fixup_type, conservation_tol, max_fixup_iter);
 #endif
 
@@ -571,7 +577,7 @@ class UberDriver {
       
       interpolate_mesh_var<T, ONWHAT, Interpolate>
           (srcvarname, trgvarname, source_weights_[ONWHAT],
-           lower_bound, upper_bound, limiter, partial_fixup_type,
+           lower_bound, upper_bound, limiter, bnd_limiter, partial_fixup_type,
            empty_fixup_type, conservation_tol, max_fixup_iter);
     }
 
@@ -596,6 +602,8 @@ class UberDriver {
     @param[in] upper_bound  Upper bound for variable
 
     @param[in] limiter      Limiter to use for second order reconstruction
+
+    @param[in] bnd_limiter  Boundary limiter to use for second order reconstruction
 
     @param[in] partial_fixup_type Method to populate fields on
     partially filled target entities (cells or dual cells)
@@ -625,6 +633,7 @@ class UberDriver {
                             Portage::vector<std::vector<Weights_t>> const& sources_and_weights_in,
                             T lower_bound, T upper_bound,
                             Limiter_type limiter,
+                            Boundary_Limiter_type bnd_limiter,
                             Partial_fixup_type partial_fixup_type,
                             Empty_fixup_type empty_fixup_type,
                             double conservation_tol,
@@ -644,7 +653,7 @@ class UberDriver {
     
     driver->template interpolate_mesh_var<T, ONWHAT, Interpolate>
         (srcvarname, trgvarname, sources_and_weights_in,
-         lower_bound, upper_bound, limiter, partial_fixup_type,
+         lower_bound, upper_bound, limiter, bnd_limiter, partial_fixup_type,
          empty_fixup_type, conservation_tol, max_fixup_iter);
   }
 
@@ -662,6 +671,8 @@ class UberDriver {
     @param[in] upper_bound  Upper bound for variable
 
     @param[in] limiter      Limiter to use for second order reconstruction
+
+    @param[in] bnd_limiter  Boundary limiter to use for second order reconstruction
 
     @param[in] partial_fixup_type Method to populate fields on
     partially filled target entities (cells or dual cells)
@@ -690,6 +701,7 @@ class UberDriver {
                            std::vector<Portage::vector<std::vector<Weights_t>>> const& sources_and_weights_by_mat_in,
                            T lower_bound, T upper_bound,
                            Limiter_type limiter,
+                           Boundary_Limiter_type bnd_limiter,
                            Partial_fixup_type partial_fixup_type,
                            Empty_fixup_type empty_fixup_type,
                            double conservation_tol,
@@ -710,7 +722,7 @@ class UberDriver {
 #ifdef HAVE_TANGRAM
     driver->template interpolate_mat_var<T, Interpolate>
         (srcvarname, trgvarname, sources_and_weights_by_mat_in,
-         lower_bound, upper_bound, limiter, partial_fixup_type,
+         lower_bound, upper_bound, limiter, bnd_limiter, partial_fixup_type,
          empty_fixup_type, conservation_tol, max_fixup_iter);
 #endif
   }

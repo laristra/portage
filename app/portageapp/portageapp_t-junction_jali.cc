@@ -80,7 +80,8 @@ int print_usage() {
   std::cout << "Usage: portageapp_t-junction_jali " <<
       "--dim=2|3 --nsourcecells=N --ntargetcells=M --conformal=y|n \n" << 
       "--remap_order=1|2 \n" <<
-      "--limiter=barth_jespersen --mesh_min=0. --mesh_max=1. \n" <<
+      "--limiter=barth_jespersen --bnd_limiter=zero_gradient \n" << 
+      "--mesh_min=0. --mesh_max=1. \n" <<
       "--output_meshes=y|n --convergence_study=NREF --only_threads=y|n\n\n";
 
   std::cout << "--dim (default = 2): spatial dimension of mesh\n\n";
@@ -118,8 +119,11 @@ int print_usage() {
   std::cout << "--remap order (default = 1): " <<
       "order of accuracy of interpolation\n\n";
 
-  std::cout << "--limiter (default = 0): " <<
+  std::cout << "--limiter (default = NOLIMITER): " <<
       "slope limiter for a piecewise linear reconstrution\n\n";
+
+  std::cout << "--bnd_limiter (default = NOLIMITER): " <<
+      "slope limiter on the boundary for a piecewise linear reconstruction\n\n";
 
   std::cout << "--convergence_study (default = 1): provide the number of times "
             << "you want to double source and target mesh sizes \n";
@@ -256,6 +260,7 @@ class interface_reconstructor_factory<3, MeshWrapper>{
 template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
                            std::shared_ptr<Jali::Mesh> targetMesh,
                            Portage::Limiter_type limiter,
+                           Portage::Boundary_Limiter_type bnd_limiter,
                            int interp_order,
                            std::vector<std::string> material_field_expressions,
                            std::string field_filename,
@@ -301,6 +306,7 @@ int main(int argc, char** argv) {
   int n_converge = 1;
   Jali::Entity_kind entityKind = Jali::Entity_kind::CELL;
   Portage::Limiter_type limiter = Portage::Limiter_type::NOLIMITER;
+  Portage::Boundary_Limiter_type bnd_limiter = Portage::Boundary_Limiter_type::BND_NOLIMITER;
   double srclo = 0.0, srchi = 1.0;  // bounds of generated mesh in each dir
 
 #if ENABLE_TIMINGS
@@ -354,6 +360,11 @@ int main(int argc, char** argv) {
     } else if (keyword == "limiter") {
       if (valueword == "barth_jespersen" || valueword == "BARTH_JESPERSEN")
         limiter = Portage::Limiter_type::BARTH_JESPERSEN;
+    } else if (keyword == "bnd_limiter") {
+      if (valueword == "zero_gradient" || valueword == "ZERO_GRADIENT")
+        bnd_limiter = Portage::Boundary_Limiter_type::BND_ZERO_GRADIENT;
+      else if (valueword == "barth_jespersen" || valueword == "BARTH_JESPERSEN")
+        bnd_limiter = Portage::Boundary_Limiter_type::BND_BARTH_JESPERSEN;
     } else if (keyword == "mesh_min") {
       srclo = stof(valueword);
     } else if (keyword == "mesh_max") {
@@ -521,13 +532,13 @@ int main(int argc, char** argv) {
     // Now run the remap on the meshes and get back the L2 error
     switch (dim) {
       case 2:
-        run<2>(source_mesh, target_mesh, limiter, interp_order,
+        run<2>(source_mesh, target_mesh, limiter, bnd_limiter,interp_order,
                material_field_expressions,
                field_output_filename, mesh_output,
                rank, numpe, entityKind, &(l1_err[i]), &(l2_err[i]), profiler);
         break;
       case 3:
-        run<3>(source_mesh, target_mesh, limiter, interp_order,
+        run<3>(source_mesh, target_mesh, limiter, bnd_limiter, interp_order,
                material_field_expressions,
                field_output_filename, mesh_output,
                rank, numpe, entityKind, &(l1_err[i]), &(l2_err[i]), profiler);
@@ -584,6 +595,7 @@ int main(int argc, char** argv) {
 template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
                            std::shared_ptr<Jali::Mesh> targetMesh,
                            Portage::Limiter_type limiter,
+                           Portage::Boundary_Limiter_type bnd_limiter,
                            int interp_order,
                            std::vector<std::string> material_field_expressions,
                            std::string field_filename, bool mesh_output,
@@ -660,8 +672,10 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
       std::cout << "\n";
     }
     std::cout << "   Interpolation order is " << interp_order << "\n";
-    if (interp_order == 2)
+    if (interp_order == 2) {
       std::cout << "   Limiter type is " << limiter << "\n";
+      std::cout << "   Boundary limiter type is " << bnd_limiter << "\n";
+    }
   }
 
 
@@ -930,6 +944,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
                  targetMeshWrapper, targetStateWrapper);
       driver.set_remap_var_names(remap_fields);
       driver.set_limiter(limiter);
+      driver.set_bnd_limiter(bnd_limiter);
       driver.run(executor);
     }
   } else {  // 3D
@@ -967,6 +982,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
                  targetMeshWrapper, targetStateWrapper);
       driver.set_remap_var_names(remap_fields);
       driver.set_limiter(limiter);
+      driver.set_bnd_limiter(bnd_limiter);
       driver.run(executor);
     }
   }
