@@ -603,7 +603,7 @@ run_scaling() {
 
   # Run it
   echo "Running ${APP} ${SCALING_TYPE} scaling"
-  #sbatch -v ${SCRIPT}
+  sbatch -v ${SCRIPT}
 }
 
 generate_gnuplot() {
