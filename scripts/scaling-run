@@ -83,32 +83,32 @@ print_usage() {
 
   echo -e "Usage: \e[32m./scaling-run [options]\e[0m"
   echo -e "Options:"
-  echo -e "  -h, --help                    show this help message and exit"
-  echo -e "  -a, --app $_CHOICE            current app [t-junction|core|multimat]"
-  echo -e "  -j, --problem $_CHOICE        multimat problem [tjunction|srcpurecells|ball|rotor]"
-  echo -e "  -v, --limiter $_STRING        gradient limiter for multimat"
-  echo -e "  -g, --cluster $_CHOICE        current cluster [darwin|snow|grizzly]"
-  echo -e "  -b, --build                   rebuild the app"
-  echo -e "  -n, --nodes $_INT             number of nodes"     
-  echo -e "  -r, --ranks $_INT             ranks per node"    
-  echo -e "  -p, --partition $_STRING      slurm partition"    
-  echo -e "  -u, --user $_STRING           slurm user"    
-  echo -e "  -c, --compiler $_CHOICE       compiler [intel|gcc]"
-  echo -e "  -w, --hwthreads               enable hyperthreading"    
-  echo -e "  -d, --dim $_INT               mesh dimension [2|3]"
-  echo -e "  -f, --field $_STRING          mesh field to remap"    
-  echo -e "  -q, --field-order $_INT       field order"    
-  echo -e "  -s, --source $_INT_PATH       source mesh size or file"    
-  echo -e "  -t, --target $_INT_PATH       target mesh size or file"    
-  echo -e "  -m, --material-field $_STRING material field function"    
-  echo -e "  -z, --material-file $_PATH    material field file"    
-  echo -e "  -k, --entity $_CHOICE         remap entity kind [cell|node]"    
-  echo -e "  -o, --order $_INT             interpolation order"    
-  echo -e "  -i, --conform                 conformal meshes"   
-  echo -e "  -x, --convex                  convex polygons"
-  echo -e "  -l, --scaling                 scaling type [strong|weak]"
-  echo -e "  -y, --thread-only             thread scaling only"
-  echo -e "  -e, --results $_PATH          results output file"
+  echo -e "  --help, -h                show this help message and exit"
+  echo -e "  --app $_CHOICE            current app [t-junction|core|multimat]"
+  echo -e "  --problem $_CHOICE        multimat problem [tjunction|srcpurecells|ball|rotor]"
+  echo -e "  --limiter $_STRING        gradient limiter for multimat"
+  echo -e "  --cluster $_CHOICE        current cluster [darwin|snow|grizzly]"
+  echo -e "  --build                   rebuild the app"
+  echo -e "  --nodes $_INT             number of nodes"
+  echo -e "  --ranks $_INT             ranks per node"
+  echo -e "  --partition $_STRING      slurm partition"
+  echo -e "  --user $_STRING           slurm user"
+  echo -e "  --compiler $_CHOICE       compiler [intel|gcc]"
+  echo -e "  --hyper                   enable hyperthreading"
+  echo -e "  --dim $_INT               mesh dimension [2|3]"
+  echo -e "  --field $_STRING          mesh field to remap"
+  echo -e "  --field-order $_INT       field order"
+  echo -e "  --source $_INT_PATH       source mesh size or file"
+  echo -e "  --target $_INT_PATH       target mesh size or file"
+  echo -e "  --material-field $_STRING material field function"
+  echo -e "  --material-file $_PATH    material field file"
+  echo -e "  --entity $_CHOICE         remap entity kind [cell|node]"
+  echo -e "  --order $_INT             interpolation order"
+  echo -e "  --conform                 conformal meshes"
+  echo -e "  --convex                  convex polygons"
+  echo -e "  --scaling                 scaling type [strong|weak]"
+  echo -e "  --thread-scale            thread scaling only"
+  echo -e "  --results $_PATH          results output file"
   exit 1
 }
 
@@ -445,10 +445,11 @@ update_app_options() {
 setup() {
 
   # parse options (requires GNU getopt).
-  SHORT_OPT="ha:j:v:g:n:r:p:u:c:w:d:f:q:s:t:m:z:k:o:ixye:l:"
-  LONG_OPT="help,app:,problem:,limiter:,cluster:,nodes:,ranks:,partition:,user:,compiler:,hwthreads:,"
-  LONG_OPT+="dim:,field:,field-order:,source:,target:,material-field:,material-file:,"
-  LONG_OPT+="entity:,order:,conform,convex,thread-only,results:scaling:"
+  SHORT_OPT="h"
+  LONG_OPT="help,app:,problem:,limiter:,cluster:,nodes:,ranks:,partition:,user:,"
+  LONG_OPT+="compiler:,hwthreads:,dim:,field:,field-order:,source:,target:,"
+  LONG_OPT+="material-field:,material-file:,entity:,order:,conform,convex,"
+  LONG_OPT+="thread-only,results:,scaling:"
   options=""
 
   # handle no option case
@@ -468,35 +469,35 @@ setup() {
   while [ "$#" -gt 0 ]; do
     case "$1" in
       -h|--help) print_usage;;
-      -a|--app)
+      --app)
         case "$2" in
           "t-junction") APP="t-junction";;
           "core") APP="timing";;
           "multimat") APP="rgmd";;
         esac; shift;;
-      -j|--problem) PROBLEM_TYPE="$2"; shift;;
-      -v|--limiter) LIMITER="$2"; shift;;
-      -g|--cluster) CLUSTER="$2"; shift;;
-      -n|--nodes) MAX_NODES="$2"; shift;;
-      -r|--ranks) RANKS_PER_NODE="$2"; shift;;
-      -p|--partition) PARTITION="$2"; shift;;
-      -u|--user) USER="$2"; shift;; 
-      -c|--compiler) COMPILER="$2"; shift;;
-      -w|--hwthreads) HYPERTHREADING=true;;
-      -d|--dim) DIMENSION="$2"; shift;;
-      -f|--field) FIELD="$2"; shift;; 
-      -q|--field-order) FIELD_ORDER="$2"; shift;; 
-      -s|--source) [[ "$2" =~ ^[0-9]+$ ]] && SOURCE_MAX="$2" || SOURCE_FILE="${DATA_DIR}/$2"; shift;;
-      -t|--target) [[ "$2" =~ ^[0-9]+$ ]] && TARGET_MAX="$2" || TARGET_FILE="${DATA_DIR}/$2"; shift;;
-      -m|--material-field) MATER_FIELD="$2"; shift;; 
-      -z|--material-file) MATER_FILE="${DATA_DIR}/$2"; shift;; 
-      -k|--entity) ENTITY_KIND="$2"; shift;; 
-      -o|--order) REMAP_ORDER="$2"; shift;; 
-      -i|--conform) IS_CONFORMAL="y";; 
-      -x|--convex) IS_CONVEX="y";; 
-      -y|--thread-only) OPENMP_ONLY=true; MAX_NODES=1;; 
-      -e|--results) RESULT_FILE="$2"; shift;;
-      -l|--scaling) SCALING_TYPE="$2"; shift;;
+      --problem) PROBLEM_TYPE="$2"; shift;;
+      --limiter) LIMITER="$2"; shift;;
+      --cluster) CLUSTER="$2"; shift;;
+      --nodes) MAX_NODES="$2"; shift;;
+      --ranks) RANKS_PER_NODE="$2"; shift;;
+      --partition) PARTITION="$2"; shift;;
+      --user) USER="$2"; shift;;
+      --compiler) COMPILER="$2"; shift;;
+      --hyper) HYPERTHREADING=true;;
+      --dim) DIMENSION="$2"; shift;;
+      --field) FIELD="$2"; shift;;
+      --field-order) FIELD_ORDER="$2"; shift;;
+      --source) [[ "$2" =~ ^[0-9]+$ ]] && SOURCE_MAX="$2" || SOURCE_FILE="${DATA_DIR}/$2"; shift;;
+      --target) [[ "$2" =~ ^[0-9]+$ ]] && TARGET_MAX="$2" || TARGET_FILE="${DATA_DIR}/$2"; shift;;
+      --material-field) MATER_FIELD="$2"; shift;;
+      --material-file) MATER_FILE="${DATA_DIR}/$2"; shift;;
+      --entity) ENTITY_KIND="$2"; shift;;
+      --order) REMAP_ORDER="$2"; shift;;
+      --conform) IS_CONFORMAL="y";;
+      --convex) IS_CONVEX="y";;
+      --thread-scale) OPENMP_ONLY=true; MAX_NODES=1;;
+      --results) RESULT_FILE="$2"; shift;;
+      --scaling) SCALING_TYPE="$2"; shift;;
       --) break;;
       -*) print_usage;;
       *) break;;
