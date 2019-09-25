@@ -58,6 +58,18 @@ REMAP_ORDER=0
 FIELD_ORDER=0
 RESULT_FILE=""
 
+# available limiters
+INTER_LIMIT=( "no_limiter" "barth_jespersen" )
+BOUND_LIMIT=( "no_limiter" "zero_gradient" "barth_jespersen" )
+
+# RGMD options
+RGMD_PROBLEMS=( "tjunction" "srcpurecells" "ball" "rotor" )
+PROBLEM_TYPE=""
+CONVEX_SOURCE="y"
+CONVEX_TARGET="y"
+LIMITER="no_limiter"
+BOUNDARY_LIMITER="no_limiter"
+
 # Note:
 # -e: fail if some command exits with non zero status
 # -u: treat undefined variables as error
@@ -77,30 +89,33 @@ print_usage() {
 
   echo -e "Usage: \e[32m./scaling-run [options]\e[0m"
   echo -e "Options:"
-  echo -e "  -h, --help                    show this help message and exit"
-  echo -e "  -a, --app $_CHOICE            current app [core|t-junction|multimat]"
-  echo -e "  -g, --cluster $_CHOICE        current cluster [darwin|snow|grizzly]"
-  echo -e "  -b, --build                   rebuild the app"
-  echo -e "  -n, --nodes $_INT             number of nodes"     
-  echo -e "  -r, --ranks $_INT             ranks per node"    
-  echo -e "  -p, --partition $_STRING      slurm partition"    
-  echo -e "  -u, --user $_STRING           slurm user"    
-  echo -e "  -c, --compiler $_CHOICE       compiler [intel|gcc]"    
-  echo -e "  -w, --hwthreads               enable hyperthreading"    
-  echo -e "  -d, --dim $_INT               mesh dimension [2|3]"    
-  echo -e "  -f, --field $_STRING          mesh field to remap"    
-  echo -e "  -q, --field-order $_INT       field order"    
-  echo -e "  -s, --source $_INT_PATH       source mesh size or file"    
-  echo -e "  -t, --target $_INT_PATH       target mesh size or file"    
-  echo -e "  -m, --material-field $_STRING material field function"    
-  echo -e "  -z, --material-file $_PATH    material field file"    
-  echo -e "  -k, --entity $_CHOICE         remap entity kind [cell|node]"    
-  echo -e "  -o, --order $_INT             interpolation order"    
-  echo -e "  -i, --conform                 conformal meshes"   
-  echo -e "  -x, --convex                  convex polygons"
-  echo -e "  -l, --scaling                 scaling type [strong|weak]"
-  echo -e "  -y, --thread-only             thread scaling only"
-  echo -e "  -e, --results $_PATH          results output file"
+  echo -e "  --help, -h                show this help message and exit"
+  echo -e "  --app $_CHOICE            current app [t-junction|core|multimat]"
+  echo -e "  --problem $_CHOICE        multimat problem [tjunction|srcpurecells|ball|rotor]"
+  echo -e "  --limiter $_STRING        gradient limiter for multimat"
+  echo -e "  --bound-limit $_STRING    boundary gradient limiter for multimat"
+  echo -e "  --cluster $_CHOICE        current cluster [darwin|snow|grizzly]"
+  echo -e "  --build                   rebuild the app"
+  echo -e "  --nodes $_INT             number of nodes"
+  echo -e "  --ranks $_INT             ranks per node"
+  echo -e "  --partition $_STRING      slurm partition"
+  echo -e "  --user $_STRING           slurm user"
+  echo -e "  --compiler $_CHOICE       compiler [intel|gcc]"
+  echo -e "  --hyper                   enable hyperthreading"
+  echo -e "  --dim $_INT               mesh dimension [2|3]"
+  echo -e "  --field $_STRING          mesh field to remap"
+  echo -e "  --field-order $_INT       field order"
+  echo -e "  --source $_INT_PATH       source mesh size or file"
+  echo -e "  --target $_INT_PATH       target mesh size or file"
+  echo -e "  --material-field $_STRING material field function"
+  echo -e "  --material-file $_PATH    material field file"
+  echo -e "  --entity $_CHOICE         remap entity kind [cell|node]"
+  echo -e "  --order $_INT             interpolation order"
+  echo -e "  --conform                 conformal meshes"
+  echo -e "  --convex                  convex polygons"
+  echo -e "  --scaling                 scaling type [strong|weak]"
+  echo -e "  --thread-scale            thread scaling only"
+  echo -e "  --results $_PATH          results output file"
   exit 1
 }
 
@@ -118,7 +133,7 @@ print_params() {
   echo -e "- compiler: \e[32m${COMPILER}\e[0m"
 
   case "${APP}" in
-    t-junction)
+    "t-junction")
       echo -e "- dimension: \e[32m${DIMENSION}\e[0m"
       echo -e "- source_cells: \e[32m${SOURCE_MAX}\e[0m"
       echo -e "- target_cells: \e[32m${TARGET_MAX}\e[0m"
@@ -126,17 +141,7 @@ print_params() {
       echo -e "- material_field: \e[32m${MATER_FIELD}\e[0m"
       echo -e "- entity_kind: \e[32m${ENTITY_KIND}\e[0m"
       echo -e "- interpolation order: \e[32m${REMAP_ORDER}\e[0m";;
-    multimat)
-      echo -e "- dimension: \e[32m${DIMENSION}\e[0m"
-      echo -e "- source_file: \e[32m${SOURCE_FILE}\e[0m"
-      echo -e "- target_file: \e[32m${TARGET_FILE}\e[0m"
-      echo -e "- material_field: \e[32m${MATER_FIELD}\e[0m"
-      echo -e "- material_file: \e[32m${MATER_FILE}\e[0m"
-      echo -e "- convex: \e[32m${IS_CONVEX}\e[0m"
-      echo -e "- entity_kind: \e[32m${ENTITY_KIND}\e[0m"
-      echo -e "- interpolation order: \e[32m${REMAP_ORDER}\e[0m"
-      echo -e "- results_file: \e[32m${RESULT_FILE}\e[0m";;
-    timing)
+    "timing")
       echo -e "- dimension: \e[32m${DIMENSION}\e[0m"
       echo -e "- source_cells: \e[32m${SOURCE_MAX}\e[0m"
       echo -e "- target_cells: \e[32m${TARGET_MAX}\e[0m"
@@ -146,6 +151,18 @@ print_params() {
       echo -e "- entity_kind: \e[32m${ENTITY_KIND}\e[0m"
       echo -e "- interpolation order: \e[32m${REMAP_ORDER}\e[0m"
       echo -e "- field order: \e[32m${FIELD_ORDER}\e[0m";;
+    "rgmd")
+      echo -e "- dimension: \e[32m${DIMENSION}\e[0m"
+      echo -e "- problem type: \e[32m${PROBLEM_TYPE}\e[0m"
+      echo -e "- source_cells: \e[32m${SOURCE_MAX}\e[0m"
+      echo -e "- target_cells: \e[32m${TARGET_MAX}\e[0m"
+      echo -e "- conformal: \e[32m${IS_CONFORMAL}\e[0m"
+      echo -e "- material_field: \e[32m${MATER_FIELD}\e[0m"
+      echo -e "- entity_kind: \e[32m${ENTITY_KIND}\e[0m"
+      echo -e "- convex_source: \e[32m${CONVEX_SOURCE}\e[0m"
+      echo -e "- convex_target: \e[32m${CONVEX_TARGET}\e[0m"
+      echo -e "- limiter: \e[32m${LIMITER}\e[0m"
+      echo -e "- interpolation order: \e[32m${REMAP_ORDER}\e[0m";;
     (*)
       echo -e "- dimension: \e[32m${DIMENSION}\e[0m"
       [ "${SOURCE_FILE}" != "" ] && \
@@ -192,19 +209,23 @@ check_params() {
     echo -e "\e[31mError: invalid mesh dimension [2|3]\e[0m"
     exit 1
   # neither a source exodus file nor a source cells extent supplied
-  elif [ ! -f ${SOURCE_FILE} ] && { [[ ! "${SOURCE_MAX}" =~ ^[0-9]+$ ]] || (( ${SOURCE_MAX} < 1)); }; then
+  elif [ ! -f ${SOURCE_FILE} ] \
+    && { [[ ! "${SOURCE_MAX}" =~ ^[0-9]+$ ]] || (( ${SOURCE_MAX} < 1)); }; then
     echo -e "\e[31mError: invalid source file or cells count\e[0m"
     exit 1 
   # neither a target exodus file nor a target cells extent supplied
-  elif [ ! -f ${TARGET_FILE} ] && { [[ ! "${TARGET_MAX}" =~ ^[0-9]+$ ]] || (( ${TARGET_MAX} < 1)); }; then
+  elif [ ! -f ${TARGET_FILE} ] \
+    && { [[ ! "${TARGET_MAX}" =~ ^[0-9]+$ ]] || (( ${TARGET_MAX} < 1)); }; then
     echo -e "\e[31mError: invalid target file or cells count\e[0m"
     exit 1
   # mandatory source file
-  elif { [ ${SOURCE_MAX} -eq 0 ] || [ "${APP}" = "multimat" ]; } && [ ! -f ${SOURCE_FILE} ]; then
+  elif { [ ${SOURCE_MAX} -eq 0 ] || [ "${APP}" = "multimat" ]; } \
+    && [ ! -f ${SOURCE_FILE} ]; then
     echo -e "\e[31mError: invalid source file '${SOURCE_FILE}'\e[0m"
     exit 1
   # mandatory target file
-  elif { [ ${TARGET_MAX} -eq 0 ] || [ "${APP}" = "multimat" ]; } && [ ! -f ${TARGET_FILE} ]; then
+  elif { [ ${TARGET_MAX} -eq 0 ] || [ "${APP}" = "multimat" ]; } \
+    && [ ! -f ${TARGET_FILE} ]; then
     echo -e "\e[31mError: invalid target file '${TARGET_FILE}'\e[0m"
     exit 1
   # unknown entity kind
@@ -223,10 +244,27 @@ check_params() {
   elif [ "${SCALING_TYPE}" != "strong" ] && [ "${SCALING_TYPE}" != "weak" ]; then
     echo -e "\e[31mError: invalid scaling type '${SCALING_TYPE}'\e[0m"
     exit 1
-  # disable weak scaling for multimat since require distinct input files
-  elif [ "${APP}" = "multimat" ] && [ "${SCALING_TYPE}" = "weak" ]; then
-     echo "Sorry, automated weak scaling is not supported for multimat"
-     exit 1
+  # invalid gradient limiter
+  elif [ $(echo "${INTER_LIMIT[*]}" | grep -c -w "${LIMITER}") -ne 1 ]; then
+    echo -e "\e[31mError: invalid gradient limiter ${LIMITER}\e[0m"
+    exit 1
+  # invalid boundary gradient limiter
+  elif [ $(echo "${BOUND_LIMIT[*]}" | grep -c -w "${BOUNDARY_LIMITER}") -ne 1 ]; then
+    echo -e "\e[31mError: invalid boundary limiter ${BOUNDARY_LIMITER}\e[0m"
+    exit 1
+  elif [ "${APP}" = "rgmd" ]; then
+    # unsupported multimat problem
+    if [ $(echo "${RGMD_PROBLEMS[*]}" | grep -c -w "${PROBLEM_TYPE}") -ne 1 ]; then
+      echo -e "\e[31mError: unsupported multimat problem '${PROBLEM_TYPE}'\e[0m"
+      exit 1
+    # invalid option for convex-source
+    elif [ -z "${MATER_FIELD}" ]; then
+      echo -e "\e[31mError: no material fields specified\e[0m"
+      exit 1
+    fi
+  elif [ "${PROBLEM_TYPE}" != "" ]; then
+    echo -e "\e[31mError: problem is only required for multimat\e[0m"
+    exit 1
   fi
 
   # print params eventually
@@ -254,16 +292,7 @@ set_default_params() {
 
   # set app default parameters
   case "${APP}" in
-    core)
-      [ "${DIMENSION}" -eq 0 ] && DIMENSION=3
-      [ "${SOURCE_MAX}" -eq 0 ] && SOURCE_MAX=40
-      [ "${TARGET_MAX}" -eq 0 ] && TARGET_MAX=120
-      [ "${IS_CONFORMAL}" != "" ] || IS_CONFORMAL="y"
-      [ "${FIELD}" != "" ] || FIELD="73.98"
-      [ "${ENTITY_KIND}" != "" ] || ENTITY_KIND="cell"
-      [ "${REMAP_ORDER}" -eq 0 ] && REMAP_ORDER=1
-      [ "${RESULT_FILE}" != "" ] || RESULT_FILE="jali_rect_3d_cell_f0_r1.txt";;
-    t-junction)
+    "t-junction")
       [ "${DIMENSION}" -eq 0 ] && DIMENSION=3
       [ "${SOURCE_MAX}" -eq 0 ] && SOURCE_MAX=40
       [ "${TARGET_MAX}" -eq 0 ] && TARGET_MAX=120
@@ -272,18 +301,7 @@ set_default_params() {
       [ "${IS_CONVEX}" != "" ] || IS_CONVEX="y"
       [ "${MATER_FIELD}" != "" ] || MATER_FIELD="'x','y','z'"
       [ "${REMAP_ORDER}" -eq 0 ] && REMAP_ORDER="2";;
-    multimat)
-      [ "${DIMENSION}" -eq 0 ] && DIMENSION=2
-      [ "${SOURCE_FILE}" != "" ] || SOURCE_FILE="${DATA_DIR}/reg10x10.exo"
-      [ "${TARGET_FILE}" != "" ] || TARGET_FILE="${DATA_DIR}/polymesh_10x10.exo"
-      [ "${ENTITY_KIND}" != "" ] || ENTITY_KIND="cell"
-      [ "${MATER_FIELD}" != "" ] || MATER_FIELD="5*x-y,2*x+4+3*y,-2*x-y"
-      [ "${MATER_FILE}" != "" ] || MATER_FILE="${DATA_DIR}/reg10x10.bvf"
-      [ "${IS_CONFORMAL}" != "" ] || IS_CONFORMAL="y"
-      [ "${IS_CONVEX}" != "" ] || IS_CONVEX="y"
-      [ "${REMAP_ORDER}" -eq 0 ] && REMAP_ORDER="2"
-      [ "${RESULT_FILE}" != "" ] || RESULT_FILE="multimat_jali_unstruc_2d_cell_f1_r2.gmv";;
-    timing)
+    "timing")
       [ "${DIMENSION}" -eq 0 ] && DIMENSION=2
       [ "${SOURCE_MAX}" -eq 0 ] && SOURCE_MAX=40
       [ "${TARGET_MAX}" -eq 0 ] && TARGET_MAX=120
@@ -294,8 +312,20 @@ set_default_params() {
       [ "${WEAK_SCALE_ONLY}" != "" ] || WEAK_SCALE_ONLY="n"
       [ "${REMAP_ORDER}" -eq 0 ] && REMAP_ORDER=1
       [ "${FIELD_ORDER}" -eq 0 ] && FIELD_ORDER=0;;
+    "rgmd")
+      [ "${DIMENSION}" -eq 0 ] && DIMENSION=3
+      [ "${PROBLEM_TYPE}" != "" ] || PROBLEM_TYPE="${RGMD_PROBLEMS[0]}"
+      [ "${SOURCE_MAX}" -eq 0 ] && SOURCE_MAX=50
+      [ "${TARGET_MAX}" -eq 0 ] && TARGET_MAX=70
+      [ "${ENTITY_KIND}" != "" ] || ENTITY_KIND="cell"
+      [ "${CONVEX_SOURCE}" != "" ] || CONVEX_SOURCE="y"
+      [ "${CONVEX_TARGET}" != "" ] || CONVEX_TARGET="y"
+      [ "${MATER_FIELD}" != "" ] || MATER_FIELD="'x','y','z'"
+      [ "${LIMITER}" != "" ] || LIMITER="${INTER_LIMIT[0]}"
+      [ "${BOUNDARY_LIMITER}" != "" ] || BOUNDARY_LIMITER="${BOUND_LIMIT[0]}"
+      [ "${REMAP_ORDER}" -eq 0 ] && REMAP_ORDER=1;;
     (*)
-      echo -e "\e[31mError: unsupported ${APP} app\e[0m"
+      echo -e "\e[31mError: unsupported app '${APP}'\e[0m"
       exit 1;;
   esac
 }
@@ -374,20 +404,7 @@ update_app_options() {
 
   # set app-specific argument list
   case "${APP}" in
-    core)
-      APP_ARGS=(
-        "./app/portageapp/portageapp_jali"
-        "--dim=${DIMENSION}"
-        "--source_file=${SOURCE_FILE}"
-        "--target_file=${TARGET_SIZE}"
-        "--entity_kind=${ENTITY_KIND}"
-        "--field=${FIELD}"
-        "--remap_order=${REMAP_ORDER}"
-        "--results_file=${RESULT_FILE}"
-        "--only_threads=${THREAD_FLAG}"
-        "--scaling=${SCALING_TYPE}"
-      );;
-    t-junction)
+    "t-junction")
       APP_ARGS=(
         "./app/portageapp/portageapp_${APP}_jali"
         "--dim=${DIMENSION}"
@@ -396,23 +413,12 @@ update_app_options() {
         "--conformal=${IS_CONFORMAL}"
         "--material_fields=${MATER_FIELD}"
         "--remap_order=${REMAP_ORDER}"
+        "--limiter=${LIMITER}"
+        "--bnd_limiter=${BOUNDARY_LIMITER}"
         "--only_threads=${THREAD_FLAG}"
         "--scaling=${SCALING_TYPE}"
       );;
-    multimat)
-      APP_ARGS=(
-        "./app/portageapp/portageapp_${APP}_jali"
-        "--dim=${DIMENSION}"
-        "--source_file=${SOURCE_FILE}"
-        "--target_file=${TARGET_FILE}"
-        "--material_fields=${MATER_FIELD}"
-        "--material_file=${MATER_FILE}"
-        "--remap_order=${REMAP_ORDER}"
-        "--results_file=${RESULT_FILE}"
-        "--only_threads=${THREAD_FLAG}"
-        "--scaling=${SCALING_TYPE}"
-      );;
-    timing)
+    "timing")
       APP_ARGS=(
         "./app/${APP}app/${APP}app"
         "--dim=${DIMENSION}"
@@ -424,6 +430,24 @@ update_app_options() {
         "--entity_kind=${ENTITY_KIND}"
         "--field_order=${FIELD_ORDER}"
         "--remap_order=${REMAP_ORDER}"
+        "--only_threads=${THREAD_FLAG}"
+        "--scaling=${SCALING_TYPE}"
+      );;
+    "rgmd")
+      APP_ARGS=(
+        "./app/portageapp/portageapp_${APP}_jali"
+        "--problem=${PROBLEM_TYPE}"
+        "--dim=${DIMENSION}"
+        "--nsourcecells=\${n_source}"
+        "--ntargetcells=\${n_target}"
+        "--material_fields=${MATER_FIELD}"
+        "--source_convex_cells=${CONVEX_SOURCE}"
+        "--target_convex_cells=${CONVEX_TARGET}"
+        "--remap_order=${REMAP_ORDER}"
+        "--limiter=${LIMITER}"
+        "--bnd_limiter=${BOUNDARY_LIMITER}"
+        "--output_meshes=n"
+        "--convergence_study=1"
         "--only_threads=${THREAD_FLAG}"
         "--scaling=${SCALING_TYPE}"
       );;
@@ -442,10 +466,11 @@ update_app_options() {
 setup() {
 
   # parse options (requires GNU getopt).
-  SHORT_OPT="ha:g:n:r:p:u:c:w:d:f:q:s:t:m:z:k:o:ixye:l:"
-  LONG_OPT="help,app:,cluster:,nodes:,ranks:,partition:,user:,compiler:,hwthreads:,"
-  LONG_OPT+="dim:,field:,field-order:,source:,target:,material-field:,material-file:,"
-  LONG_OPT+="entity:,order:,conform,convex,thread-only,results:scaling:"
+  SHORT_OPT="h"
+  LONG_OPT="help,app:,problem:,limiter:,bound-limit:,cluster:,nodes:,ranks:,"
+  LONG_OPT+="partition:,user:,compiler:,hwthreads:,dim:,field:,field-order:,"
+  LONG_OPT+="source:,target:,material-field:,material-file:,entity:,order:,"
+  LONG_OPT+="conform,convex,thread-only,results:,scaling:"
   options=""
 
   # handle no option case
@@ -465,28 +490,37 @@ setup() {
   while [ "$#" -gt 0 ]; do
     case "$1" in
       -h|--help) print_usage;;
-      -a|--app) APP="$2"; shift;;
-      -g|--cluster) CLUSTER="$2"; shift;;
-      -n|--nodes) MAX_NODES="$2"; shift;;
-      -r|--ranks) RANKS_PER_NODE="$2"; shift;;
-      -p|--partition) PARTITION="$2"; shift;;
-      -u|--user) USER="$2"; shift;; 
-      -c|--compiler) COMPILER="$2"; shift;;
-      -w|--hwthreads) HYPERTHREADING=true;;
-      -d|--dim) DIMENSION="$2"; shift;;
-      -f|--field) FIELD="$2"; shift;; 
-      -q|--field-order) FIELD_ORDER="$2"; shift;; 
-      -s|--source) [[ "$2" =~ ^[0-9]+$ ]] && SOURCE_MAX="$2" || SOURCE_FILE="${DATA_DIR}/$2"; shift;;
-      -t|--target) [[ "$2" =~ ^[0-9]+$ ]] && TARGET_MAX="$2" || TARGET_FILE="${DATA_DIR}/$2"; shift;;
-      -m|--material-field) MATER_FIELD="$2"; shift;; 
-      -z|--material-file) MATER_FILE="${DATA_DIR}/$2"; shift;; 
-      -k|--entity) ENTITY_KIND="$2"; shift;; 
-      -o|--order) REMAP_ORDER="$2"; shift;; 
-      -i|--conform) IS_CONFORMAL="y";; 
-      -x|--convex) IS_CONVEX="y";; 
-      -y|--thread-only) OPENMP_ONLY=true; MAX_NODES=1;; 
-      -e|--results) RESULT_FILE="$2"; shift;;
-      -l|--scaling) SCALING_TYPE="$2"; shift;;
+      --app)
+        case "$2" in
+          "t-junction") APP="t-junction";;
+          "core") APP="timing";;
+          "multimat") APP="rgmd";;
+          (*) APP="$2";;
+        esac; shift;;
+      --problem) PROBLEM_TYPE="$2"; shift;;
+      --limiter) LIMITER="$2"; shift;;
+      --bound-limit) BOUNDARY_LIMITER="$2"; shift;;
+      --cluster) CLUSTER="$2"; shift;;
+      --nodes) MAX_NODES="$2"; shift;;
+      --ranks) RANKS_PER_NODE="$2"; shift;;
+      --partition) PARTITION="$2"; shift;;
+      --user) USER="$2"; shift;;
+      --compiler) COMPILER="$2"; shift;;
+      --hyper) HYPERTHREADING=true;;
+      --dim) DIMENSION="$2"; shift;;
+      --field) FIELD="$2"; shift;;
+      --field-order) FIELD_ORDER="$2"; shift;;
+      --source) [[ "$2" =~ ^[0-9]+$ ]] && SOURCE_MAX="$2" || SOURCE_FILE="${DATA_DIR}/$2"; shift;;
+      --target) [[ "$2" =~ ^[0-9]+$ ]] && TARGET_MAX="$2" || TARGET_FILE="${DATA_DIR}/$2"; shift;;
+      --material-field) MATER_FIELD="$2"; shift;;
+      --material-file) MATER_FILE="${DATA_DIR}/$2"; shift;;
+      --entity) ENTITY_KIND="$2"; shift;;
+      --order) REMAP_ORDER="$2"; shift;;
+      --conform) IS_CONFORMAL="y";;
+      --convex) IS_CONVEX="y";;
+      --thread-scale) OPENMP_ONLY=true; MAX_NODES=1;;
+      --results) RESULT_FILE="$2"; shift;;
+      --scaling) SCALING_TYPE="$2"; shift;;
       --) break;;
       -*) print_usage;;
       *) break;;

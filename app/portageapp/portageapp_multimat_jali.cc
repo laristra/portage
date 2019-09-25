@@ -49,8 +49,6 @@
 #include "tangram/intersect/split_r2d.h"
 #endif
 
-#define ENABLE_TIMINGS 0
-
 using Wonton::Jali_Mesh_Wrapper;
 using Portage::argsort;
 using Portage::reorder;

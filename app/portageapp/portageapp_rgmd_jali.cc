@@ -56,7 +56,6 @@
 
 #include "portage/driver/write_to_gmv.h"
 
-#define ENABLE_TIMINGS 0
 #if ENABLE_TIMINGS
   #include "portage/support/timer.h"
 #endif
@@ -716,6 +715,7 @@ int main(int argc, char** argv) {
   #endif
   // start timers here
   auto start = timer::now();
+  auto tic = start;
 #else
   std::shared_ptr<Profiler> profiler = nullptr;
 #endif
@@ -765,12 +765,11 @@ int main(int argc, char** argv) {
     profiler->time.mesh_init = timer::elapsed(tic);
 
     if (rank == 0) {
-      float const seconds = profiler->time.mesh_init * 1.E3;
       if (n_converge == 1)
-        std::cout << "Mesh Initialization Time: " << seconds << std::endl;
+        std::cout << "Mesh Initialization Time: " << profiler->time.mesh_init << std::endl;
       else
         std::cout << "Mesh Initialization Time (Iteration i): " <<
-            seconds << std::endl;
+            profiler->time.mesh_init << std::endl;
     }
 #endif
 
@@ -1023,7 +1022,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
   }
 
 #if ENABLE_TIMINGS
-  profiler.time.remap = timer::elapsed(tic, true);
+  profiler->time.remap = timer::elapsed(tic, true);
 #endif
 
   // Executor
@@ -1047,7 +1046,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
   source_interface_reconstructor->reconstruct();
 
 #if ENABLE_TIMINGS
-  profiler.time.interface = timer::elapsed(tic, true);
+  profiler->time.interface = timer::elapsed(tic, true);
 #endif
 
   // Material fields are evaluated at material polygon centroids.
@@ -1299,11 +1298,10 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
     std::cout << std::endl << std::endl; 
   }
 #else
-  profiler.time.remap += timer::elapsed(tic);
+  profiler->time.remap += timer::elapsed(tic);
 
   if (rank == 0) {
-    float const seconds = profiler->time.remap * 1.E3;
-    std::cout << "Remap Time: " << seconds << std::endl;
+    std::cout << "Remap Time: " << profiler->time.remap << std::endl;
   }
 #endif  
 

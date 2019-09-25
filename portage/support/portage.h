@@ -94,8 +94,8 @@ constexpr Boundary_Limiter_type DEFAULT_BND_LIMITER = Boundary_Limiter_type::BND
 
 inline std::string to_string(Limiter_type limiter_type) {
   switch(limiter_type) {
-    case BND_NOLIMITER: return std::string("Limiter_type::NOLIMITER");
-    case BND_BARTH_JESPERSEN: return std::string("Limiter_type::BARTH_JESPERSEN");
+    case NOLIMITER: return std::string("Limiter_type::NOLIMITER");
+    case BARTH_JESPERSEN: return std::string("Limiter_type::BARTH_JESPERSEN");
     default: return std::string("INVALID LIMITER TYPE");
   }
 }
