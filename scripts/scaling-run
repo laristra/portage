@@ -58,7 +58,12 @@ REMAP_ORDER=0
 FIELD_ORDER=0
 RESULT_FILE=""
 
-# RGMD specific options
+# available limiters
+INTER_LIMIT=( "no_limiter" "barth_jespersen" )
+BOUND_LIMIT=( "no_limiter" "zero_gradient" "barth_jespersen" )
+
+# RGMD options
+RGMD_PROBLEMS=( "tjunction" "srcpurecells" "ball" "rotor" )
 PROBLEM_TYPE=""
 CONVEX_SOURCE="y"
 CONVEX_TARGET="y"
@@ -204,19 +209,23 @@ check_params() {
     echo -e "\e[31mError: invalid mesh dimension [2|3]\e[0m"
     exit 1
   # neither a source exodus file nor a source cells extent supplied
-  elif [ ! -f ${SOURCE_FILE} ] && { [[ ! "${SOURCE_MAX}" =~ ^[0-9]+$ ]] || (( ${SOURCE_MAX} < 1)); }; then
+  elif [ ! -f ${SOURCE_FILE} ] \
+    && { [[ ! "${SOURCE_MAX}" =~ ^[0-9]+$ ]] || (( ${SOURCE_MAX} < 1)); }; then
     echo -e "\e[31mError: invalid source file or cells count\e[0m"
     exit 1 
   # neither a target exodus file nor a target cells extent supplied
-  elif [ ! -f ${TARGET_FILE} ] && { [[ ! "${TARGET_MAX}" =~ ^[0-9]+$ ]] || (( ${TARGET_MAX} < 1)); }; then
+  elif [ ! -f ${TARGET_FILE} ] \
+    && { [[ ! "${TARGET_MAX}" =~ ^[0-9]+$ ]] || (( ${TARGET_MAX} < 1)); }; then
     echo -e "\e[31mError: invalid target file or cells count\e[0m"
     exit 1
   # mandatory source file
-  elif { [ ${SOURCE_MAX} -eq 0 ] || [ "${APP}" = "multimat" ]; } && [ ! -f ${SOURCE_FILE} ]; then
+  elif { [ ${SOURCE_MAX} -eq 0 ] || [ "${APP}" = "multimat" ]; } \
+    && [ ! -f ${SOURCE_FILE} ]; then
     echo -e "\e[31mError: invalid source file '${SOURCE_FILE}'\e[0m"
     exit 1
   # mandatory target file
-  elif { [ ${TARGET_MAX} -eq 0 ] || [ "${APP}" = "multimat" ]; } && [ ! -f ${TARGET_FILE} ]; then
+  elif { [ ${TARGET_MAX} -eq 0 ] || [ "${APP}" = "multimat" ]; } \
+    && [ ! -f ${TARGET_FILE} ]; then
     echo -e "\e[31mError: invalid target file '${TARGET_FILE}'\e[0m"
     exit 1
   # unknown entity kind
@@ -235,28 +244,27 @@ check_params() {
   elif [ "${SCALING_TYPE}" != "strong" ] && [ "${SCALING_TYPE}" != "weak" ]; then
     echo -e "\e[31mError: invalid scaling type '${SCALING_TYPE}'\e[0m"
     exit 1
+  # invalid gradient limiter
+  elif [ $(echo "${INTER_LIMIT[*]}" | grep -c -w "${LIMITER}") -ne 1 ]; then
+    echo -e "\e[31mError: invalid gradient limiter ${LIMITER}\e[0m"
+    exit 1
+  # invalid boundary gradient limiter
+  elif [ $(echo "${BOUND_LIMIT[*]}" | grep -c -w "${BOUNDARY_LIMITER}") -ne 1 ]; then
+    echo -e "\e[31mError: invalid boundary limiter ${BOUNDARY_LIMITER}\e[0m"
+    exit 1
   elif [ "${APP}" = "rgmd" ]; then
-    SUPPORTED_PROBLEMS=( "srcpurecells" "tjunction" "ball" "rotor" )
     # unsupported multimat problem
-    if [ $(echo "${SUPPORTED_PROBLEMS[*]}" | grep -c -w "${PROBLEM_TYPE}") -ne 1 ]; then
-      echo -e "\e[31mError: unsupported multimat problem type '${PROBLEM_TYPE}'\e[0m"
+    if [ $(echo "${RGMD_PROBLEMS[*]}" | grep -c -w "${PROBLEM_TYPE}") -ne 1 ]; then
+      echo -e "\e[31mError: unsupported multimat problem '${PROBLEM_TYPE}'\e[0m"
       exit 1
     # invalid option for convex-source
     elif [ -z "${MATER_FIELD}" ]; then
       echo -e "\e[31mError: no material fields specified\e[0m"
       exit 1
-    # invalid gradient limiter
-    elif [ "${LIMITER}" != "no_limiter" ] && [ "${LIMITER}" != "barth_jespersen" ]; then
-      echo -e "\e[31mError: invalid gradient limiter ${LIMITER}\e[0m"
-      exit 1
     fi
-    # invalid boundary gradient limiter
-    elif [ "${BOUNDARY_LIMITER}" != "no_limiter" ] \
-      && [ "${BOUNDARY_LIMITER}" != "zero_gradient" ] \
-      && [ "${BOUNDARY_LIMITER}" != "barth_jespersen" ]; then
-      echo -e "\e[31mError: invalid boundary limiter ${BOUNDARY_LIMITER}\e[0m"
-      exit 1
-    fi
+  elif [ "${PROBLEM_TYPE}" != "" ]; then
+    echo -e "\e[31mError: problem is only required for multimat\e[0m"
+    exit 1
   fi
 
   # print params eventually
@@ -306,18 +314,18 @@ set_default_params() {
       [ "${FIELD_ORDER}" -eq 0 ] && FIELD_ORDER=0;;
     "rgmd")
       [ "${DIMENSION}" -eq 0 ] && DIMENSION=3
-      [ "${PROBLEM_TYPE}" != "" ] || PROBLEM_TYPE="tjunction"
+      [ "${PROBLEM_TYPE}" != "" ] || PROBLEM_TYPE="${RGMD_PROBLEMS[0]}"
       [ "${SOURCE_MAX}" -eq 0 ] && SOURCE_MAX=50
       [ "${TARGET_MAX}" -eq 0 ] && TARGET_MAX=70
       [ "${ENTITY_KIND}" != "" ] || ENTITY_KIND="cell"
       [ "${CONVEX_SOURCE}" != "" ] || CONVEX_SOURCE="y"
       [ "${CONVEX_TARGET}" != "" ] || CONVEX_TARGET="y"
       [ "${MATER_FIELD}" != "" ] || MATER_FIELD="'x','y','z'"
-      [ "${LIMITER}" != "" ] || LIMITER="no_limiter"
-      [ "${BOUNDARY_LIMITER}" != "" ] || BOUNDARY_LIMITER="no_limiter"
+      [ "${LIMITER}" != "" ] || LIMITER="${INTER_LIMIT[0]}"
+      [ "${BOUNDARY_LIMITER}" != "" ] || BOUNDARY_LIMITER="${BOUND_LIMIT[0]}"
       [ "${REMAP_ORDER}" -eq 0 ] && REMAP_ORDER=1;;
     (*)
-      echo -e "\e[31mError: unsupported ${APP} app\e[0m"
+      echo -e "\e[31mError: unsupported app '${APP}'\e[0m"
       exit 1;;
   esac
 }
@@ -487,6 +495,7 @@ setup() {
           "t-junction") APP="t-junction";;
           "core") APP="timing";;
           "multimat") APP="rgmd";;
+          (*) APP="$2";;
         esac; shift;;
       --problem) PROBLEM_TYPE="$2"; shift;;
       --limiter) LIMITER="$2"; shift;;
@@ -594,7 +603,7 @@ run_scaling() {
 
   # Run it
   echo "Running ${APP} ${SCALING_TYPE} scaling"
-  sbatch -v ${SCRIPT}
+  #sbatch -v ${SCRIPT}
 }
 
 generate_gnuplot() {
