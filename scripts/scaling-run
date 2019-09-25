@@ -244,7 +244,7 @@ check_params() {
       echo -e "\e[31mError: no material fields specified\e[0m"
       exit 1
     # invalid gradient limiter
-    elif [ "${LIMITER}" != "" ] && [ "${LIMITER}" != "barth_jespersen" ]; then
+    elif [ "${LIMITER}" != "no_limiter" ] && [ "${LIMITER}" != "barth_jespersen" ]; then
       echo -e "\e[31mError: invalid specified limiter ${LIMITER}\e[0m"
       exit 1
     fi
@@ -304,7 +304,7 @@ set_default_params() {
       [ "${CONVEX_SOURCE}" != "" ] || CONVEX_SOURCE="y"
       [ "${CONVEX_TARGET}" != "" ] || CONVEX_TARGET="y"
       [ "${MATER_FIELD}" != "" ] || MATER_FIELD="'x','y','z'"
-      [ "${LIMITER}" != "" ] || LIMITER="barth_jespersen"
+      [ "${LIMITER}" != "" ] || LIMITER="no_limiter"
       [ "${REMAP_ORDER}" -eq 0 ] && REMAP_ORDER=1;;
     (*)
       echo -e "\e[31mError: unsupported ${APP} app\e[0m"
