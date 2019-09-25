@@ -62,7 +62,8 @@ RESULT_FILE=""
 PROBLEM_TYPE=""
 CONVEX_SOURCE="y"
 CONVEX_TARGET="y"
-LIMITER="barth_jespersen"
+LIMITER="no_limiter"
+BOUNDARY_LIMITER="no_limiter"
 
 # Note:
 # -e: fail if some command exits with non zero status
@@ -87,6 +88,7 @@ print_usage() {
   echo -e "  --app $_CHOICE            current app [t-junction|core|multimat]"
   echo -e "  --problem $_CHOICE        multimat problem [tjunction|srcpurecells|ball|rotor]"
   echo -e "  --limiter $_STRING        gradient limiter for multimat"
+  echo -e "  --bound-limit $_STRING    boundary gradient limiter for multimat"
   echo -e "  --cluster $_CHOICE        current cluster [darwin|snow|grizzly]"
   echo -e "  --build                   rebuild the app"
   echo -e "  --nodes $_INT             number of nodes"
@@ -245,7 +247,14 @@ check_params() {
       exit 1
     # invalid gradient limiter
     elif [ "${LIMITER}" != "no_limiter" ] && [ "${LIMITER}" != "barth_jespersen" ]; then
-      echo -e "\e[31mError: invalid specified limiter ${LIMITER}\e[0m"
+      echo -e "\e[31mError: invalid gradient limiter ${LIMITER}\e[0m"
+      exit 1
+    fi
+    # invalid boundary gradient limiter
+    elif [ "${BOUNDARY_LIMITER}" != "no_limiter" ] \
+      && [ "${BOUNDARY_LIMITER}" != "zero_gradient" ] \
+      && [ "${BOUNDARY_LIMITER}" != "barth_jespersen" ]; then
+      echo -e "\e[31mError: invalid boundary limiter ${BOUNDARY_LIMITER}\e[0m"
       exit 1
     fi
   fi
@@ -305,6 +314,7 @@ set_default_params() {
       [ "${CONVEX_TARGET}" != "" ] || CONVEX_TARGET="y"
       [ "${MATER_FIELD}" != "" ] || MATER_FIELD="'x','y','z'"
       [ "${LIMITER}" != "" ] || LIMITER="no_limiter"
+      [ "${BOUNDARY_LIMITER}" != "" ] || BOUNDARY_LIMITER="no_limiter"
       [ "${REMAP_ORDER}" -eq 0 ] && REMAP_ORDER=1;;
     (*)
       echo -e "\e[31mError: unsupported ${APP} app\e[0m"
@@ -395,6 +405,8 @@ update_app_options() {
         "--conformal=${IS_CONFORMAL}"
         "--material_fields=${MATER_FIELD}"
         "--remap_order=${REMAP_ORDER}"
+        "--limiter=${LIMITER}"
+        "--bnd_limiter=${BOUNDARY_LIMITER}"
         "--only_threads=${THREAD_FLAG}"
         "--scaling=${SCALING_TYPE}"
       );;
@@ -425,6 +437,7 @@ update_app_options() {
         "--target_convex_cells=${CONVEX_TARGET}"
         "--remap_order=${REMAP_ORDER}"
         "--limiter=${LIMITER}"
+        "--bnd_limiter=${BOUNDARY_LIMITER}"
         "--output_meshes=n"
         "--convergence_study=1"
         "--only_threads=${THREAD_FLAG}"
@@ -446,10 +459,10 @@ setup() {
 
   # parse options (requires GNU getopt).
   SHORT_OPT="h"
-  LONG_OPT="help,app:,problem:,limiter:,cluster:,nodes:,ranks:,partition:,user:,"
-  LONG_OPT+="compiler:,hwthreads:,dim:,field:,field-order:,source:,target:,"
-  LONG_OPT+="material-field:,material-file:,entity:,order:,conform,convex,"
-  LONG_OPT+="thread-only,results:,scaling:"
+  LONG_OPT="help,app:,problem:,limiter:,bound-limit:,cluster:,nodes:,ranks:,"
+  LONG_OPT+="partition:,user:,compiler:,hwthreads:,dim:,field:,field-order:,"
+  LONG_OPT+="source:,target:,material-field:,material-file:,entity:,order:,"
+  LONG_OPT+="conform,convex,thread-only,results:,scaling:"
   options=""
 
   # handle no option case
@@ -477,6 +490,7 @@ setup() {
         esac; shift;;
       --problem) PROBLEM_TYPE="$2"; shift;;
       --limiter) LIMITER="$2"; shift;;
+      --bound-limit) BOUNDARY_LIMITER="$2"; shift;;
       --cluster) CLUSTER="$2"; shift;;
       --nodes) MAX_NODES="$2"; shift;;
       --ranks) RANKS_PER_NODE="$2"; shift;;
