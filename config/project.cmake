@@ -285,7 +285,7 @@ endif (NANOFLANN_DIR)
 #------------------------------------------------------------------------------#
 
 if (TANGRAM_DIR)
-  message(STATUS "TANGRAM_DIR ${TANGRAM_DIR}")
+  message(STATUS "Looking for TANGRAM in ${TANGRAM_DIR}")
   find_package(TANGRAM NAMES tangram
   	    REQUIRED
 	    HINTS ${TANGRAM_DIR}/share)
