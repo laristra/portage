@@ -285,17 +285,14 @@ endif (NANOFLANN_DIR)
 #------------------------------------------------------------------------------#
 
 if (TANGRAM_DIR)
-  find_path(TANGRAM
+  message(STATUS "TANGRAM_DIR ${TANGRAM_DIR}")
+  find_package(TANGRAM NAMES tangram
   	    REQUIRED
-            tangram/support/tangram.h
-            HINTS ${TANGRAM_DIR}/include)
-  message(STATUS "TANGRAM FOUND? ${TANGRAM}")
-  if (TANGRAM)
-    set(TANGRAM_FOUND True)
-    set(TANGRAM_INCLUDE_DIRS ${TANGRAM_DIR}/include)
-    include_directories(${TANGRAM_INCLUDE_DIRS})
-    add_definitions("-DHAVE_TANGRAM")
-  endif (TANGRAM)
+	    HINTS ${TANGRAM_DIR}/share)
+
+  message(STATUS "TANGRAM FOUND? ${TANGRAM_FOUND}")
+  add_definitions("-DHAVE_TANGRAM")
+  include_directories(${TANGRAM_INCLUDE_DIR})
 else (TANGRAM_DIR)
   message(STATUS "TANGRAM_DIR not specified. Restricted to single material remap")
 endif (TANGRAM_DIR)
@@ -305,8 +302,7 @@ endif (TANGRAM_DIR)
 #------------------------------------------------------------------------------#
 
 if (TANGRAM_FOUND)
-  find_package(XMOF2D
-    HINTS ${XMOF2D_DIR})
+  find_package(XMOF2D  HINTS ${XMOF2D_DIR})
   if (XMOF2D_FOUND)
     include_directories(${XMOF2D_INCLUDE_DIRS})
 
