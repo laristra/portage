@@ -29,7 +29,7 @@ TEST(SwarmState, basic) {
   using Portage::Meshfree::SwarmState;
 
   const size_t npoints = 10;
-  std::vector<Wonton::Point<3>> points(npoints), extents(npoints);
+  std::vector<Wonton::Point<3>> points(npoints);
 
   // set up swarm
   double h = 0.01;
@@ -213,3 +213,4 @@ TEST(SwarmState, Simple_State_Wrapper) {
     }
   }
 }
+

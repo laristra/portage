@@ -52,7 +52,8 @@ class DriverTest : public ::testing::Test {
             int Dimension>
   void unitTest(double compute_initial_field(JaliGeometry::Point centroid),
                 double expected_answer,
-                Portage::LimiterType limiter = Portage::NOLIMITER) {
+                Portage::LimiterType limiter = Portage::NOLIMITER,
+                Portage::Bnd_limiterType bnd_limiter = Portage::BND_NOLIMITER) {
 
     //  Fill the source state data with the specified profile
     const int nsrccells = sourceMeshWrapper.num_owned_cells() +
@@ -85,7 +86,7 @@ class DriverTest : public ::testing::Test {
                     Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper>
         d(sourceMeshWrapper, sourceStateWrapper, targetMeshWrapper,
           targetStateWrapper);
-    d.set_remap_var_names(remap_fields, limiter);
+    d.set_remap_var_names(remap_fields, limiter, bnd_limiter);
 
     Wonton::SerialExecutor_type exec;
     d.run(&exec);

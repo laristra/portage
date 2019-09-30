@@ -668,6 +668,7 @@ void run(std::shared_ptr<Jali::Mesh> &sourceMesh,
     d(sourceMeshWrapper, sourceStateWrapper, targetMeshWrapper, targetStateWrapper);
     d.set_remap_var_names(remap_fields);
     d.set_limiter(Portage::Limiter_type::NOLIMITER);
+    d.set_bnd_limiter(Portage::Boundary_Limiter_type::BND_NOLIMITER);
     d.run(executor);  // run in parallel
   }
   else if ((dim == 2) && (dtype == LINEAR)){
@@ -679,6 +680,7 @@ void run(std::shared_ptr<Jali::Mesh> &sourceMesh,
     d(sourceMeshWrapper, sourceStateWrapper, targetMeshWrapper, targetStateWrapper);
     d.set_remap_var_names(remap_fields);
     d.set_limiter(Portage::Limiter_type::NOLIMITER);
+    d.set_bnd_limiter(Portage::Boundary_Limiter_type::BND_NOLIMITER);
     d.run(executor);  // run in parallel
   }
   else if ((dim == 3) && (dtype == CONSTANT)){
@@ -690,6 +692,7 @@ void run(std::shared_ptr<Jali::Mesh> &sourceMesh,
     d(sourceMeshWrapper, sourceStateWrapper, targetMeshWrapper, targetStateWrapper);
     d.set_remap_var_names(remap_fields);
     d.set_limiter(Portage::Limiter_type::NOLIMITER);
+    d.set_bnd_limiter(Portage::Boundary_Limiter_type::BND_NOLIMITER);
     d.run(executor);  // run in parallel
   }
   else if ((dim == 3) && (dtype == LINEAR)){
@@ -701,6 +704,7 @@ void run(std::shared_ptr<Jali::Mesh> &sourceMesh,
     d(sourceMeshWrapper, sourceStateWrapper, targetMeshWrapper, targetStateWrapper);
     d.set_remap_var_names(remap_fields);
     d.set_limiter(Portage::Limiter_type::NOLIMITER);
+    d.set_bnd_limiter(Portage::Boundary_Limiter_type::BND_NOLIMITER);
     d.run(executor);  // run in parallel
   }
  else

@@ -80,30 +80,33 @@ TEST(Quadfit, Fields_Cell_Ctr) {
   Portage::Limited_Quadfit<2, Portage::Entity_kind::CELL,
                            Wonton::Simple_Mesh_Wrapper,
                            Wonton::Simple_State_Wrapper>
-      qfitcalc1(meshWrapper, stateWrapper, "cellvars1", Portage::NOLIMITER);
+      qfitcalc1(meshWrapper, stateWrapper, "cellvars1", 
+                Portage::NOLIMITER, Portage::BND_NOLIMITER);
   Portage::Limited_Quadfit<2, Portage::Entity_kind::CELL,
                            Wonton::Simple_Mesh_Wrapper,
                            Wonton::Simple_State_Wrapper>
-      qfitcalc2(meshWrapper, stateWrapper, "cellvars2", Portage::NOLIMITER);
+      qfitcalc2(meshWrapper, stateWrapper, "cellvars2", 
+                Portage::NOLIMITER, Portage::BND_NOLIMITER);
   Portage::Limited_Quadfit<2, Portage::Entity_kind::CELL,
                            Wonton::Simple_Mesh_Wrapper,
                            Wonton::Simple_State_Wrapper>
-      qfitcalc3(meshWrapper, stateWrapper, "cellvars3", Portage::NOLIMITER);
+      qfitcalc3(meshWrapper, stateWrapper, "cellvars3", 
+                Portage::NOLIMITER, Portage::BND_NOLIMITER);
   Portage::Limited_Quadfit<2, Portage::Entity_kind::CELL,
                            Wonton::Simple_Mesh_Wrapper,
                            Wonton::Simple_State_Wrapper>
       qfitcalc4(meshWrapper, stateWrapper, "cellvars1",
-                Portage::BARTH_JESPERSEN);
+                Portage::BARTH_JESPERSEN, Portage::BND_NOLIMITER);
   Portage::Limited_Quadfit<2, Portage::Entity_kind::CELL,
                            Wonton::Simple_Mesh_Wrapper,
                            Wonton::Simple_State_Wrapper>
       qfitcalc5(meshWrapper, stateWrapper, "cellvars2",
-                Portage::BARTH_JESPERSEN);
+                Portage::BARTH_JESPERSEN, Portage::BND_NOLIMITER);
   Portage::Limited_Quadfit<2, Portage::Entity_kind::CELL,
                            Wonton::Simple_Mesh_Wrapper,
                            Wonton::Simple_State_Wrapper>
       qfitcalc6(meshWrapper, stateWrapper, "cellvars3",
-                Portage::BARTH_JESPERSEN);
+                Portage::BARTH_JESPERSEN, Portage::BND_NOLIMITER);
 
   // Compute the quadfit for each of these fields
 
@@ -261,30 +264,33 @@ TEST(Quadfit, Fields_Node_Ctr) {
   Portage::Limited_Quadfit<2, Portage::Entity_kind::NODE,
                            Wonton::Simple_Mesh_Wrapper,
                            Wonton::Simple_State_Wrapper>
-      qfitcalc1(meshWrapper, stateWrapper, "nodevars1", Portage::NOLIMITER);
+      qfitcalc1(meshWrapper, stateWrapper, "nodevars1", 
+                Portage::NOLIMITER, Portage::BND_NOLIMITER);
   Portage::Limited_Quadfit<2, Portage::Entity_kind::NODE,
                            Wonton::Simple_Mesh_Wrapper,
                            Wonton::Simple_State_Wrapper>
-      qfitcalc2(meshWrapper, stateWrapper, "nodevars2", Portage::NOLIMITER);
+      qfitcalc2(meshWrapper, stateWrapper, "nodevars2", 
+                Portage::NOLIMITER, Portage::BND_NOLIMITER);
   Portage::Limited_Quadfit<2, Portage::Entity_kind::NODE,
                            Wonton::Simple_Mesh_Wrapper,
                            Wonton::Simple_State_Wrapper>
-      qfitcalc3(meshWrapper, stateWrapper, "nodevars3", Portage::NOLIMITER);
+      qfitcalc3(meshWrapper, stateWrapper, "nodevars3", 
+                Portage::NOLIMITER, Portage::BND_NOLIMITER);
   Portage::Limited_Quadfit<2, Portage::Entity_kind::NODE,
                            Wonton::Simple_Mesh_Wrapper,
                            Wonton::Simple_State_Wrapper>
       qfitcalc4(meshWrapper, stateWrapper, "nodevars1",
-                Portage::BARTH_JESPERSEN);
+                Portage::BARTH_JESPERSEN, Portage::BND_NOLIMITER);
   Portage::Limited_Quadfit<2, Portage::Entity_kind::NODE,
                            Wonton::Simple_Mesh_Wrapper,
                            Wonton::Simple_State_Wrapper>
       qfitcalc5(meshWrapper, stateWrapper, "nodevars2",
-                Portage::BARTH_JESPERSEN);
+                Portage::BARTH_JESPERSEN, Portage::BND_NOLIMITER);
   Portage::Limited_Quadfit<2, Portage::Entity_kind::NODE,
                            Wonton::Simple_Mesh_Wrapper,
                            Wonton::Simple_State_Wrapper>
       qfitcalc6(meshWrapper, stateWrapper, "nodevars3",
-                Portage::BARTH_JESPERSEN);
+                Portage::BARTH_JESPERSEN, Portage::BND_NOLIMITER);
 
   // Make sure we retrieved the correct quadfit value for each node
   // For field 1, it is a constant

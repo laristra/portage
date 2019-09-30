@@ -34,11 +34,18 @@ namespace Portage {
 /*!
   @class Interpolate_2ndOrder interpolate_2nd_order.h
   @brief Interpolate_2ndOrder does a 2nd order interpolation of scalars
-  @tparam MeshType The type of the mesh wrapper used to access mesh info
-  @tparam StateType The type of the state manager used to access data.
-  @tparam OnWhatType The type of entity-based data we wish to interpolate;
-  e.g. does it live on nodes, cells, edges, etc.
 
+  @tparam D  spatial dimension of problem
+  @tparam on_what The type of entity-based data we wish to interpolate;
+  e.g. does it live on nodes, cells, edges, etc.
+  @tparam SourceMeshType Mesh wrapper class used to access source mesh info
+  @tparam TargetMeshType Mesh wrapper class used to access target mesh info
+  @tparam SourceStateType State manager used to access source data.
+  @tparam InterfaceReconstructorType Class for reconstructing material interfaces
+  @tparam MatPoly_Splitter Class used for splitting material polygons
+  @tparam MatPoly_Clipper Class used for clipping material polygons
+  @tparam CoordSys  What coordinate system are we operating in?
+  
   [1] Margolin, L.G. and Shashkov, M.J. "Second-order sign-preserving
   conservative interpolation (remapping) on general grids." Journal of
   Computational Physics, v 184, n 1, pp. 266-298, 2003.
@@ -84,14 +91,15 @@ class Interpolate_2ndOrder {
   Interpolate_2ndOrder(SourceMeshType const & source_mesh,
                        TargetMeshType const & target_mesh,
                        StateType const & source_state,
+                       NumericTolerances_t num_tols,
                        std::shared_ptr<InterfaceReconstructor> ir) :
       source_mesh_(source_mesh),
       target_mesh_(target_mesh),
       source_state_(source_state),
       interface_reconstructor_(ir),
       interp_var_name_("VariableNameNotSet"),
-      limiter_type_(NOLIMITER),
-      source_vals_(nullptr) {
+      source_vals_(nullptr),
+      num_tols_(num_tols) {
     CoordSys::template verify_coordinate_system<D>();
   }
 #endif
@@ -105,13 +113,14 @@ class Interpolate_2ndOrder {
 
   Interpolate_2ndOrder(SourceMeshType const & source_mesh,
                        TargetMeshType const & target_mesh,
-                       StateType const & source_state) :
+                       StateType const & source_state,
+                       NumericTolerances_t num_tols) :
       source_mesh_(source_mesh),
       target_mesh_(target_mesh),
       source_state_(source_state),
       interp_var_name_("VariableNameNotSet"),
-      limiter_type_(NOLIMITER),
-      source_vals_(nullptr) {
+      source_vals_(nullptr),
+      num_tols_(num_tols) {
     CoordSys::template verify_coordinate_system<D>();
   }
 
@@ -133,7 +142,8 @@ class Interpolate_2ndOrder {
   /// Set the name of the interpolation variable and the limiter type
 
   void set_interpolation_variable(std::string const & interp_var_name,
-                                  Limiter_type limiter_type = NOLIMITER) {
+                                  Limiter_type limiter_type = NOLIMITER,
+                                  Boundary_Limiter_type Boundary_Limiter_type = BND_NOLIMITER) {
     std::cerr << "Interpolation is available for only  entity types: CELL, NODE"
               << std::endl;
   }  // set_interpolation_variable
@@ -170,8 +180,8 @@ class Interpolate_2ndOrder {
   TargetMeshType const & target_mesh_;
   StateType const & source_state_;
   std::string interp_var_name_;
-  Limiter_type limiter_type_;
   double const * source_vals_;
+  NumericTolerances_t num_tols_;
 
   // Portage::vector is generalization of std::vector and
   // Wonton::Vector<D> is a geometric vector
@@ -226,14 +236,15 @@ class Interpolate_2ndOrder<D,
   Interpolate_2ndOrder(SourceMeshType const & source_mesh,
                        TargetMeshType const & target_mesh,
                        StateType const & source_state,
+                       NumericTolerances_t num_tols,
                        std::shared_ptr<InterfaceReconstructor> ir) :
       source_mesh_(source_mesh),
       target_mesh_(target_mesh),
       source_state_(source_state),
       interface_reconstructor_(ir),
       interp_var_name_("VariableNameNotSet"),
-      limiter_type_(NOLIMITER),
-      source_vals_(nullptr) {
+      source_vals_(nullptr),
+      num_tols_(num_tols) {
     CoordSys::template verify_coordinate_system<D>();
   }
 #endif
@@ -241,13 +252,14 @@ class Interpolate_2ndOrder<D,
   // Constructor without interface reconstructor
   Interpolate_2ndOrder(SourceMeshType const & source_mesh,
                        TargetMeshType const & target_mesh,
-                       StateType const & source_state) :
+                       StateType const & source_state,
+                       NumericTolerances_t num_tols) :
       source_mesh_(source_mesh),
       target_mesh_(target_mesh),
       source_state_(source_state),
       interp_var_name_("VariableNameNotSet"),
-      limiter_type_(NOLIMITER),
-      source_vals_(nullptr) {
+      source_vals_(nullptr),
+      num_tols_(num_tols) {
     CoordSys::template verify_coordinate_system<D>();
   }
 
@@ -255,10 +267,10 @@ class Interpolate_2ndOrder<D,
   /// Set the name of the interpolation variable and the limiter type
 
   void set_interpolation_variable(std::string const & interp_var_name,
-                                  Limiter_type limiter_type = NOLIMITER) {
+                                  Limiter_type limiter_type = NOLIMITER,
+                                  Boundary_Limiter_type boundary_limiter_type = BND_NOLIMITER) {
 
     interp_var_name_ = interp_var_name;
-    limiter_type_ = limiter_type;
 
     // Extract the field data from the statemanager and the source cells for
     // which the gradient has to be computed.
@@ -280,14 +292,14 @@ class Interpolate_2ndOrder<D,
 #ifdef HAVE_TANGRAM
     Limited_Gradient<D, Entity_kind::CELL, SourceMeshType, StateType, InterfaceReconstructorType,
                      Matpoly_Splitter, Matpoly_Clipper, CoordSys>
-        limgrad(source_mesh_, source_state_, interp_var_name_, limiter_type_,
+        limgrad(source_mesh_, source_state_, interp_var_name_, limiter_type, boundary_limiter_type,
                 interface_reconstructor_);
     if (field_type_ == Field_type::MULTIMATERIAL_FIELD)
       limgrad.set_material(matid_);
 #else
     Limited_Gradient<D, Entity_kind::CELL, SourceMeshType, StateType,
       InterfaceReconstructorType, Matpoly_Splitter, Matpoly_Clipper, CoordSys>
-        limgrad(source_mesh_, source_state_, interp_var_name_, limiter_type_);
+        limgrad(source_mesh_, source_state_, interp_var_name_, limiter_type, boundary_limiter_type);
 #endif
 
     gradients_.resize(nentities);
@@ -368,8 +380,8 @@ class Interpolate_2ndOrder<D,
       std::vector<double> xsect_weights = sources_and_weights[j].weights;
       double xsect_volume = xsect_weights[0];
 
-      double eps = 1e-12;
-      if (xsect_volume/vol <= eps) continue;  // no intersection
+      if (xsect_volume/vol <= num_tols_.min_relative_volume)
+        continue;  // no intersection
 
       // Obtain source cell centroid
       Point<D> src_centroid;
@@ -464,8 +476,8 @@ class Interpolate_2ndOrder<D,
   TargetMeshType const & target_mesh_;
   StateType const & source_state_;
   std::string interp_var_name_;
-  Limiter_type limiter_type_;
   double const * source_vals_;
+  NumericTolerances_t num_tols_;
 
   // Portage::vector is generalization of std::vector and
   // Wonton::Vector<D> is a geometric vector
@@ -515,26 +527,28 @@ class Interpolate_2ndOrder<D,
   Interpolate_2ndOrder(SourceMeshType const & source_mesh,
                        TargetMeshType const & target_mesh,
                        StateType const & source_state,
+                       NumericTolerances_t num_tols,
                        std::shared_ptr<InterfaceReconstructor> ir) :
       source_mesh_(source_mesh),
       target_mesh_(target_mesh),
       source_state_(source_state),
       interface_reconstructor_(ir),
       interp_var_name_("VariableNameNotSet"),
-      limiter_type_(NOLIMITER),
-      source_vals_(nullptr) {}
+      source_vals_(nullptr),
+      num_tols_(num_tols) {}
 #endif
 
   // Constructor without interface reconstructor
   Interpolate_2ndOrder(SourceMeshType const & source_mesh,
                        TargetMeshType const & target_mesh,
-                       StateType const & source_state) :
+                       StateType const & source_state,
+                       NumericTolerances_t num_tols) :
       source_mesh_(source_mesh),
       target_mesh_(target_mesh),
       source_state_(source_state),
       interp_var_name_("VariableNameNotSet"),
-      limiter_type_(NOLIMITER),
-      source_vals_(nullptr) {}
+      source_vals_(nullptr),
+      num_tols_(num_tols) {}
 
   /// Copy constructor (disabled)
   //  Interpolate_2ndOrder(const Interpolate_2ndOrder &) = delete;
@@ -549,10 +563,10 @@ class Interpolate_2ndOrder<D,
   /// Set the name of the interpolation variable and the limiter type
 
   void set_interpolation_variable(std::string const & interp_var_name,
-                                  Limiter_type limiter_type = NOLIMITER) {
+                                  Limiter_type limiter_type = NOLIMITER,
+                                  Boundary_Limiter_type boundary_limiter_type = BND_NOLIMITER) {
 
     interp_var_name_ = interp_var_name;
-    limiter_type_ = limiter_type;
 
     // Extract the field data from the statemanager
     field_type_ = source_state_.field_type(Entity_kind::NODE, interp_var_name);
@@ -567,7 +581,7 @@ class Interpolate_2ndOrder<D,
     // Compute the limited gradients for the field
     Limited_Gradient<D, Entity_kind::NODE, SourceMeshType, StateType,
       InterfaceReconstructorType, Matpoly_Splitter, Matpoly_Clipper, CoordSys>
-        limgrad(source_mesh_, source_state_, interp_var_name_, limiter_type_);
+        limgrad(source_mesh_, source_state_, interp_var_name_, limiter_type, boundary_limiter_type);
 
     int nentities = source_mesh_.end(Entity_kind::NODE)-source_mesh_.begin(Entity_kind::NODE);
     gradients_.resize(nentities);
@@ -635,8 +649,8 @@ class Interpolate_2ndOrder<D,
       std::vector<double> xsect_weights = sources_and_weights[j].weights;
       double xsect_volume = xsect_weights[0];
 
-      double eps = 1e-12;
-      if (xsect_volume/vol <= eps) continue;  // no intersection
+      if (xsect_volume/vol <= num_tols_.min_relative_volume)
+        continue;  // no intersection
 
       // note: here we are getting the node coord, not the centroid of
       // the dual cell
@@ -681,8 +695,8 @@ class Interpolate_2ndOrder<D,
   TargetMeshType const & target_mesh_;
   StateType const & source_state_;
   std::string interp_var_name_;
-  Limiter_type limiter_type_;
   double const * source_vals_;
+  NumericTolerances_t num_tols_;
 
   // Portage::vector is generalization of std::vector and
   // Wonton::Vector<D> is a geometric vector

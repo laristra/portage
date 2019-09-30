@@ -28,6 +28,7 @@ namespace search_simple {
     @param[in,out] ylow Minimum @a y of bounding box.
     @param[in,out] yhigh Maximum @a y of bounding box.
    */
+inline
 void getBoundingBox(
     const std::vector<Point<2>> &cell_coord,
     double* xlow, double* xhigh,

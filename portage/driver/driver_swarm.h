@@ -81,9 +81,11 @@ class SwarmDriver {
     a vector of smoothing lengths for each facet of the
     polygonal/polyhedral support
     @param[in] kernel_type The type of weight function kernel (B4, SQUARE, etc)
-    for any target particle
+    to use
     @param[in] geom_type The geometry of the support (ELLIPTIC, TENSOR,
-    FACETED) for any target particle
+    FACETED) to use
+    @param[in] center Specification of whether gather-form or scatter-form 
+    weights are used. 
 
     @c smoothing_lengths must have the size of @c SourceSwarm if center is @c Scatter and
     of @c TargetSwarm if center is @c Gather.
@@ -93,35 +95,29 @@ class SwarmDriver {
               TargetSwarm const& targetSwarm,
               TargetState& targetState,
               vector<std::vector<std::vector<double>>> const& smoothing_lengths,
-              Weight::Kernel const& kernel_type=Weight::B4,
-              Weight::Geometry const& support_geom_type=Weight::ELLIPTIC,
-              WeightCenter center=Gather)
+              Weight::Kernel const kernel_type=Weight::B4,
+              Weight::Geometry const support_geom_type=Weight::ELLIPTIC,
+              WeightCenter const center=Gather)
       : source_swarm_(sourceSwarm), source_state_(sourceState),
         target_swarm_(targetSwarm), target_state_(targetState),
-    smoothing_lengths_(smoothing_lengths) {
+        smoothing_lengths_(smoothing_lengths) 
+  {
 
     assert(Dim == sourceSwarm.space_dimension());
     assert(Dim == targetSwarm.space_dimension());
 
     weight_center_ = center;
 
-    if (weight_center_ == Gather) {
-      assert(smoothing_lengths_.size() == target_swarm_.num_particles(Entity_type::PARALLEL_OWNED));
-      kernel_types_ = vector<Weight::Kernel>(target_swarm_.num_particles(Entity_type::PARALLEL_OWNED),
-                                                  kernel_type);
-      geom_types_ = vector<Weight::Geometry>(target_swarm_.num_particles(Entity_type::PARALLEL_OWNED),
-                                                  support_geom_type);
-    } else if (weight_center_ == Scatter) {
-      assert(smoothing_lengths_.size() == source_swarm_.num_particles(Entity_type::PARALLEL_OWNED));
-      kernel_types_ = vector<Weight::Kernel>(source_swarm_.num_particles(Entity_type::PARALLEL_OWNED),
-                                                  kernel_type);
-      geom_types_ = vector<Weight::Geometry>(source_swarm_.num_particles(Entity_type::PARALLEL_OWNED),
-                                                  support_geom_type);
-    }
+    check_sizes_and_set_types(center, kernel_type, support_geom_type);
+
+    set_extents_from_smoothing_lengths();
   }
 
   /*!
-    @brief Constructor for running the Swarm driver.
+    @brief Constructor for running the Swarm driver with search extents computed inline.
+    *
+    * This is used for any weights except faceted. 
+    *
     @param[in] sourceSwarm A @c SourceSwarm to the source swarm.
     @param[in] sourceState A @c SourceState for the data that lives on
     the source swarm.
@@ -133,38 +129,98 @@ class SwarmDriver {
     polygonal/polyhedral shaped support around each target particle and
     a vector of smoothing lengths for each facet of the
     polygonal/polyhedral support
-    @param[in] kernel_types The type of weight function kernel (B4, SQUARE,
-    etc) for each target particle
-    @param[in] geom_types The geometry of the support (ELLIPTIC, TENSOR,
-    FACETED) for each target particle
+    @param[in] kernel_types The types of weight function kernels (B4, SQUARE,
+    etc) to use
+    @param[in] geom_types The geometry of the supports (ELLIPTIC, TENSOR,
+    FACETED) of the weight functions to use
+    @param[in] center Specification of whether gather-form or scatter-form 
+    weights are used. 
+
+    @c smoothing_lengths, @code kernel_types, and @geom_types  
+    must have the size of @c SourceSwarm if @ center is @c Scatter and
+    of @c TargetSwarm if @ center is @c Gather.
   */
   SwarmDriver(SourceSwarm& sourceSwarm,
               SourceState& sourceState,
               TargetSwarm const& targetSwarm,
               TargetState& targetState,
               vector<std::vector<std::vector<double>>> const& smoothing_lengths,
-              vector<Weight::Kernel> const& kernel_types,
-              vector<Weight::Geometry> const& geom_types,
-              WeightCenter center=Gather)
+              vector<Weight::Kernel> const &kernel_types,
+              vector<Weight::Geometry> const &geom_types,
+              WeightCenter const center=Gather)
       : source_swarm_(sourceSwarm), source_state_(sourceState),
         target_swarm_(targetSwarm), target_state_(targetState),
     kernel_types_(kernel_types),
     geom_types_(geom_types),
-    smoothing_lengths_(smoothing_lengths) {
-
-    assert(sourceSwarm.space_dimension() == targetSwarm.space_dimension());
+    smoothing_lengths_(smoothing_lengths) 
+  {
+    assert(Dim == sourceSwarm.space_dimension());
+    assert(Dim == targetSwarm.space_dimension());
 
     weight_center_ = center;
 
-    if (weight_center_ == Gather) {
-      assert(smoothing_lengths_.size() == target_swarm_.num_particles());
-      assert(kernel_types_.size() == target_swarm_.num_particles());
-      assert(geom_types_.size() == target_swarm_.num_particles());
-    } else if (weight_center_ == Scatter) {
-      assert(smoothing_lengths_.size() == source_swarm_.num_particles());
-      assert(kernel_types_.size() == source_swarm_.num_particles());
-      assert(geom_types_.size() == source_swarm_.num_particles());
-    }
+    check_sizes(center);
+
+    set_extents_from_smoothing_lengths();
+  }
+
+  /*!
+    @brief Constructor for running the Swarm driver with search extents specified.
+    *
+    * This is used for faceted weights, which will be uniformly used throughout 
+    * the swarm specified by @c center. Kernel and geometry type are set internally.
+    *
+    @param[in] sourceSwarm A @c SourceSwarm to the source swarm.
+    @param[in] sourceState A @c SourceState for the data that lives on
+    the source swarm.
+    @param[in] targetSwarm A @c TargetSwarm to the target swarm.
+    @param[in,out] targetState A @c TargetState for the data that will
+    be mapped to the target swarm.
+    @param[in] smoothing_lengths Vector of smoothing lengths for each
+    target particle - the three levels of vectors allow for a
+    polygonal/polyhedral shaped support around each target particle and
+    a vector of smoothing lengths for each facet of the
+    polygonal/polyhedral support
+    @param[in] sourceExtents extents for source swarm
+    @param[in] targetExtents extents for target swarm
+    by the value of @c center
+    @param[in] center Specification of whether gather-form or scatter-form 
+    weights are used. 
+  */
+  SwarmDriver(SourceSwarm& sourceSwarm,
+              SourceState& sourceState,
+              TargetSwarm const& targetSwarm,
+              TargetState& targetState,
+              vector<std::vector<std::vector<double>>> const& smoothing_lengths,
+              vector<Point<Dim>> const &sourceExtents,
+              vector<Point<Dim>> const &targetExtents,
+              WeightCenter const center=Gather)
+      : source_swarm_(sourceSwarm), source_state_(sourceState),
+        target_swarm_(targetSwarm), target_state_(targetState),
+        smoothing_lengths_(smoothing_lengths)
+ {
+   assert(Dim == sourceSwarm.space_dimension());
+   assert(Dim == targetSwarm.space_dimension());
+
+   weight_center_ = center;
+
+   size_t tsize, ssize, swarm_size;
+   tsize = target_swarm_.num_particles(Entity_type::PARALLEL_OWNED);
+   ssize = source_swarm_.num_particles(Entity_type::PARALLEL_OWNED);
+   if (weight_center_ == Gather) {
+     swarm_size = tsize;
+     assert(targetExtents.size() == tsize);
+   } else if (weight_center_ == Scatter) {
+     swarm_size = ssize;
+     assert(sourceExtents.size() == ssize);
+   }
+
+   assert(smoothing_lengths.size() == swarm_size);
+   kernel_types_ = vector<Weight::Kernel>(swarm_size, Weight::POLYRAMP);
+   geom_types_ = vector<Weight::Geometry>(swarm_size, Weight::FACETED);
+
+   sourceExtents_ = std::make_shared<vector<Point<Dim>>>(sourceExtents);
+   targetExtents_ = std::make_shared<vector<Point<Dim>>>(targetExtents);
   }
 
   /// Copy constructor (disabled)
@@ -197,6 +253,7 @@ class SwarmDriver {
     (KernelDensity, LocalRegression)
     @param[in] basis   Order of the basis used to remap variables
     (UNITARY, LINEAR, QUADRATIC)
+    @param[in] operator_spec Operator specification
   */
   void set_remap_var_names(
       std::vector<std::string> const &source_remap_var_names,
@@ -206,7 +263,10 @@ class SwarmDriver {
       Operator::Type const operator_spec = Operator::LastOperator,
       Portage::vector<Operator::Domain> const &operator_domains = vector<Operator::Domain>(0),
       Portage::vector<std::vector<Point<Dim>>> const &operator_data=
-        vector<std::vector<Point<Dim>>>(0,std::vector<Point<Dim>>(0)))
+      vector<std::vector<Point<Dim>>>(0,std::vector<Point<Dim>>(0)), 
+      std::string part_field="NONE", double part_tolerance=0., 
+      Portage::vector<std::vector<std::vector<double>>> part_smoothing=
+      Portage::vector<std::vector<std::vector<double>>>(0) )
   {
     assert(source_remap_var_names.size() == target_remap_var_names.size());
 
@@ -222,6 +282,9 @@ class SwarmDriver {
       assert(operator_domains_.size() == target_swarm_.num_owned_particles());
       assert(operator_data_.size() == target_swarm_.num_owned_particles());
     }
+    part_field_ = part_field;
+    part_tolerance_ = part_tolerance;
+    part_smoothing_ = part_smoothing;
   }
 
 
@@ -295,7 +358,7 @@ class SwarmDriver {
 
   }  // run
 
- private:
+  private:
   SourceSwarm& source_swarm_;
   TargetSwarm const& target_swarm_;
   SourceState& source_state_;
@@ -306,12 +369,74 @@ class SwarmDriver {
   vector<std::vector<std::vector<double>>> smoothing_lengths_;
   vector<Weight::Kernel> kernel_types_;
   vector<Weight::Geometry> geom_types_;
+  std::shared_ptr<vector<Point<Dim>>> sourceExtents_;
+  std::shared_ptr<vector<Point<Dim>>> targetExtents_;
   EstimateType estimator_type_;
   Basis::Type basis_type_;
   Operator::Type operator_spec_;
   Portage::vector<Operator::Domain> operator_domains_;
   Portage::vector<std::vector<Point<Dim>>> operator_data_;
-};  // class Driver_Swarm
+  std::string part_field_;
+  double part_tolerance_;
+  Portage::vector<std::vector<std::vector<double>>> part_smoothing_;
+
+ void check_sizes_and_set_types(WeightCenter const weight_center, 
+                                Weight::Kernel const kernel_type, 
+                                Weight::Geometry const support_geom_type) 
+ {
+   size_t swarm_size;
+   if (weight_center_ == Gather) {
+     swarm_size = target_swarm_.num_particles(Entity_type::PARALLEL_OWNED);
+   } else if (weight_center_ == Scatter) {
+     swarm_size = source_swarm_.num_particles(Entity_type::PARALLEL_OWNED);
+   }
+   assert(smoothing_lengths_.size() == swarm_size);
+   kernel_types_ = vector<Weight::Kernel>(swarm_size, kernel_type);
+   geom_types_ = vector<Weight::Geometry>(swarm_size, support_geom_type);
+ }
+
+ void check_sizes(WeightCenter const weight_center) 
+ {
+   size_t swarm_size;
+   if (weight_center_ == Gather) {
+     swarm_size = target_swarm_.num_particles(Entity_type::PARALLEL_OWNED);
+   } else if (weight_center_ == Scatter) {
+     swarm_size = source_swarm_.num_particles(Entity_type::PARALLEL_OWNED);
+   }
+   assert(smoothing_lengths_.size() == swarm_size);
+   assert(kernel_types_.size() == swarm_size);
+   assert(geom_types_.size() == swarm_size);
+ }
+
+ // setup search boxes around source and target points for non-faceted weights
+ void set_extents_from_smoothing_lengths(){
+   if (weight_center_ == Gather) {
+     int numTargetPts = target_swarm_.num_particles(Entity_type::PARALLEL_OWNED);
+     assert(smoothing_lengths_.size() == numTargetPts);
+     targetExtents_ = std::make_shared<vector<Point<Dim>>>(numTargetPts);
+     for (int i = 0; i < numTargetPts; i++) {
+       if (geom_types_[i] == Weight::FACETED) {
+         throw std::runtime_error("FACETED geometry is not available here");
+       }
+       std::vector<std::vector<double>> vv=smoothing_lengths_[i];
+       Point<Dim> pt(vv[0]); 
+       (*targetExtents_)[i]=pt;
+     }
+   } else if (weight_center_ == Scatter) {
+     int numSourcePts = source_swarm_.num_particles(Entity_type::PARALLEL_OWNED);
+     assert(smoothing_lengths_.size() == numSourcePts);
+     sourceExtents_ = std::make_shared<vector<Point<Dim>>>(numSourcePts);
+     for (int i = 0; i < numSourcePts; i++) {
+       if (geom_types_[i] == Weight::FACETED) {
+         throw std::runtime_error("FACETED geometry is not available here");
+       }
+       std::vector<std::vector<double>> vv=smoothing_lengths_[i];
+       Point<Dim> pt(vv[0]); 
+       (*sourceExtents_)[i]=pt;
+     }
+   }
+ }
+};  // class SwarmDriver
 
 template <template <int, class, class> class Search,
           template <size_t, class, class> class Accumulate,
@@ -376,8 +501,8 @@ remap(std::vector<std::string> const &src_varnames,
     //source swarm.
     distributor.distribute(source_swarm_, source_state_,
                            target_swarm_, target_state_,
-                           smoothing_lengths_, kernel_types_,
-                           geom_types_, weight_center_);
+                           smoothing_lengths_, *sourceExtents_, *targetExtents_,
+                           kernel_types_, geom_types_, weight_center_);
     gettimeofday(&end_timeval, 0);
     timersub(&end_timeval, &begin_timeval, &diff_timeval);
     tot_seconds_dist = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
@@ -392,41 +517,9 @@ remap(std::vector<std::string> const &src_varnames,
 
   gettimeofday(&begin_timeval, 0);
 
-  // search boxes around source points are of zero dimension but
-  // those around target points are determined by particle
-  // smoothing lengths
-
-  // code below does not work with facted weights
-  std::shared_ptr<vector<Point<Dim>>> sourceExtents;
-  std::shared_ptr<vector<Point<Dim>>> targetExtents;
-  targetExtents = std::make_shared<vector<Point<Dim>>>(numTargetPts);
-  if (weight_center_ == Portage::Meshfree::Gather) {
-    for (int i = 0; i < numTargetPts; i++) {
-      if (geom_types_[i] == Weight::FACETED) {
-        throw std::runtime_error("FACETED geometry is not available here");
-      }
-      {Point<Dim> pt=(*targetExtents)[i];
-       std::vector<std::vector<double>> vv=smoothing_lengths_[i];
-       pt=Point<Dim>(vv[0]); (*targetExtents)[i]=pt;}
-    }
-  }
-
-  int numSourcePts = source_swarm_.num_particles();
-  sourceExtents = std::make_shared<vector<Point<Dim>>>(numSourcePts);
-  if (weight_center_ == Portage::Meshfree::Scatter) {
-    for (int i = 0; i < numSourcePts; i++) {
-      if (geom_types_[i] == Weight::FACETED) {
-        throw std::runtime_error("FACETED geometry is not available here");
-      }
-      {Point<Dim> pt=(*sourceExtents)[i];
-       std::vector<std::vector<double>> vv=smoothing_lengths_[i];
-       pt=Point<Dim>(vv[0]); (*sourceExtents)[i]=pt;}
-    }
-  }
-
   const Search<Dim, SourceSwarm, TargetSwarm>
       searchfunctor(source_swarm_, target_swarm_,
-                    sourceExtents, targetExtents,
+                    sourceExtents_, targetExtents_,
                     weight_center_);
 
   Portage::transform(target_swarm_.begin(Entity_kind::PARTICLE, Entity_type::PARALLEL_OWNED),
@@ -437,6 +530,70 @@ remap(std::vector<std::string> const &src_varnames,
   timersub(&end_timeval, &begin_timeval, &diff_timeval);
   tot_seconds_srch = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
 
+  // In case of faceted, scatter, and parts, obtain part assignments on target particles.
+  // Eliminate neighbors that aren't in the same part.
+  // It is assumed that the faceted weight function will be non-zero only on the 
+  // source cell it came from, which is achieved by using a smoothing factor of 1/2.
+  // It is also assumed no target point will appear in more than one source cell.
+  if (geom_types_[0]==Weight::FACETED and weight_center_==Scatter and part_field_!="NONE") {
+    // get source part assignments
+    shared_ptr<vector<double>> sfpart_ptr;
+    source_state_.get_field(part_field_, sfpart_ptr);
+    Portage::vector<double> &sfpart(*sfpart_ptr);
+
+    // make storage for target part assignments
+    size_t ns=source_swarm_.num_particles(Entity_type::PARALLEL_OWNED);
+    size_t nt=target_swarm_.num_particles(Entity_type::PARALLEL_OWNED);
+
+    // create accumulator to evaluate weight function on source cells
+    vector<Weight::Kernel> step_kern(ns, Weight::STEP);
+    Accumulate<Dim, SourceSwarm, TargetSwarm>
+      accumulator(source_swarm_, target_swarm_,
+                  estimator_type_, weight_center_,
+                  step_kern, geom_types_, part_smoothing_,
+                  basis_type_,
+                  operator_spec_, operator_domains_, operator_data_);
+
+    // loop over target points and set part assignments
+    std::vector<double> tfpart(nt);
+    for (size_t i=0; i<nt; i++) {
+      std::vector<unsigned int> possibles = candidates[i];
+      for (size_t j=0; j<possibles.size(); j++) {
+        double weight = accumulator.weight(i, possibles[j]);
+        if (weight > 0.) {
+	  double part_val = sfpart[possibles[j]];
+	  tfpart[i] = part_val;
+#undef DEBUG_HERE
+#ifdef DEBUG_HERE
+          if (Dim==2) {
+            Wonton::Point<Dim> p1,p2;
+            size_t nbr=possibles[j];
+            p1=source_swarm_.get_particle_coordinates(nbr);
+            p2=target_swarm_.get_particle_coordinates(i);
+            double h=part_smoothing_[nbr][0][2];
+            std::cout << "i=" << i<<" "<<" nbr="<<nbr<<
+              " "<< fabs(p2[0]-p1[0])/h<<","<<fabs(p2[1]-p1[1])/h<<
+              " w="<<weight<<" part="<<part_val<<std::endl;
+          }
+#endif
+#undef DEBUG_HERE
+        }
+      }
+    }
+
+    // loop over target points and dismiss neighbors that aren't in the same part
+    for (size_t i=0; i<nt; i++) {
+      std::vector<unsigned int> new_candidates;
+      std::vector<unsigned int> possibles = candidates[i];
+      for (size_t j=0; j<possibles.size(); j++) {
+        if (fabs(tfpart[i]-sfpart[possibles[j]]) < part_tolerance_) {
+	  new_candidates.push_back(possibles[j]);
+        }
+      }
+      candidates[i] = new_candidates;
+    }
+  }
+
   // ACCUMULATE (build moment matrix, calculate shape functions)
   // EQUIVALENT TO INTERSECT IN MESH-MESH REMAP
 
@@ -445,12 +602,12 @@ remap(std::vector<std::string> const &src_varnames,
   // Get an instance of the desired accumulate algorithm type which is
   // expected to be a functor with an operator() of the right form
 
-  const Accumulate<Dim, SourceSwarm, TargetSwarm>
-      accumulateFunctor(source_swarm_, target_swarm_,
-                        estimator_type_, weight_center_,
-                        kernel_types_, geom_types_, smoothing_lengths_,
-                        basis_type_,
-                        operator_spec_, operator_domains_, operator_data_);
+  Accumulate<Dim, SourceSwarm, TargetSwarm>
+    accumulateFunctor(source_swarm_, target_swarm_,
+                      estimator_type_, weight_center_,
+                      kernel_types_, geom_types_, smoothing_lengths_,
+                      basis_type_,
+                      operator_spec_, operator_domains_, operator_data_);
 
   Portage::vector<std::vector<Weights_t>> source_pts_and_mults(numTargetPts);
 
@@ -509,7 +666,6 @@ remap(std::vector<std::string> const &src_varnames,
                        target_swarm_.end(Entity_kind::PARTICLE, Entity_type::PARALLEL_OWNED),
                        source_pts_and_mults.begin(),
                        target_field, estimateFunctor);
-
 
     gettimeofday(&end_timeval, 0);
     timersub(&end_timeval, &begin_timeval, &diff_timeval);

@@ -12,6 +12,7 @@ Please see the license file at the root of this repository, or at:
 #include "tangram/support/MatPoly.h"
 
 #include "portage/intersect/intersect_r2d.h"
+#include "portage/support/portage.h"
 
 #include "wonton/mesh/simple/simple_mesh.h"
 #include "wonton/mesh/simple/simple_mesh_wrapper.h"
@@ -29,6 +30,7 @@ TEST(TANGRAM_2D, test_matpoly_create) {
   // test that we can construct a real matpoly (lifted from
   // tangram/src/support/test/test_MatPoly_2D.cc)
   int mat_id = 1;
+  double dst_tol = sqrt(2)*std::numeric_limits<double>::epsilon();
 
   // create data  for a unit square
   std::vector<Wonton::Point2> square_points = {
@@ -48,7 +50,7 @@ TEST(TANGRAM_2D, test_matpoly_create) {
   ASSERT_EQ(-1, square_matpoly.mat_id());
 
   // Initialization from ccw ordered vertices
-  square_matpoly.initialize(square_points);
+  square_matpoly.initialize(square_points, dst_tol);
 
   // Verify coordinates
   const std::vector<Wonton::Point2>& matpoly_points = square_matpoly.points();
@@ -75,6 +77,7 @@ TEST(TANGRAM_2D, test_matpoly_intersect_unit_cells) {
   // test that we can construct a matpoly and intersect with a cell
   // the source and target geometries are both unit cells
   int mat_id = 1;
+  double dst_tol = sqrt(2)*std::numeric_limits<double>::epsilon();
 
   double xl = 0., xh = 1., yl = 0., yh = 1.;
 
@@ -87,7 +90,7 @@ TEST(TANGRAM_2D, test_matpoly_intersect_unit_cells) {
   // create the matpoly
   Tangram::MatPoly<2> square_matpoly;
   square_matpoly.set_mat_id(mat_id);
-  square_matpoly.initialize(square_points);
+  square_matpoly.initialize(square_points, dst_tol);
 
   // extract the matpoly points
   std::vector<Wonton::Point<2>> _source_points = square_matpoly.points();
@@ -107,9 +110,13 @@ TEST(TANGRAM_2D, test_matpoly_intersect_unit_cells) {
   std::vector<Wonton::Point<2>> target_points;
   meshWrapper.cell_get_coordinates(0, &target_points);
 
+  // use default tolerances
+  Portage::NumericTolerances_t num_tols;
+  num_tols.use_default();
+
   // actually intersect
   std::vector<double> moments =
-      Portage::intersect_polys_r2d(source_points, target_points);
+      Portage::intersect_polys_r2d(source_points, target_points, num_tols);
 
   // test that the moments are correct
   ASSERT_NEAR(moments[0], (xh - xl) * (yh - yl), eps);
@@ -122,6 +129,7 @@ TEST(TANGRAM_2D, test_matpoly_intersect_non_coincident) {
   // the source and target geometries are side 4 squares that intersect
   // at a corner
   int mat_id = 1;
+  double dst_tol = sqrt(2)*std::numeric_limits<double>::epsilon();
 
   double xl = 0., xh = 4., yl = 0., yh = 4., xoffset = 2, yoffset = 2;
 
@@ -134,7 +142,7 @@ TEST(TANGRAM_2D, test_matpoly_intersect_non_coincident) {
   // create the matpoly
   Tangram::MatPoly<2> square_matpoly;
   square_matpoly.set_mat_id(mat_id);
-  square_matpoly.initialize(square_points);
+  square_matpoly.initialize(square_points, dst_tol);
 
   // extract the matpoly points
   std::vector<Wonton::Point<2>> _source_points = square_matpoly.points();
@@ -155,9 +163,13 @@ TEST(TANGRAM_2D, test_matpoly_intersect_non_coincident) {
   std::vector<Wonton::Point<2>> target_points;
   meshWrapper.cell_get_coordinates(0, &target_points);
 
+  // use default tolerances
+  Portage::NumericTolerances_t num_tols;
+  num_tols.use_default();
+
   // actually intersect
   std::vector<double> moments =
-      Portage::intersect_polys_r2d(source_points, target_points);
+      Portage::intersect_polys_r2d(source_points, target_points, num_tols);
 
   // test that the moments are correct
   ASSERT_NEAR(moments[0], 4., eps);

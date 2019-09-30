@@ -32,13 +32,6 @@ using Wonton::Vector;
     a = c_; \
 }
 
-const int XDIM = 0;
-const int YDIM = 1;
-const int ZDIM = 2;
-
-const double KDEPS = 1.0e-8;
-const double KD_SAFETY_EPS = 1.0e-4;
-
 /*!
   @struct KDTree "kdtree.h"
   @brief An N-dimensional k-d tree for manipulating polygon data.

@@ -70,7 +70,8 @@ int print_usage() {
   std::cout << "Usage: portageapp " <<
       "--dim=2|3 --nsourcecells=N --ntargetcells=M --conformal=y|n \n" <<
       "--entity_kind=cell|node --field=\"your_math_expression\" --remap_order=1|2 \n" <<
-      "--limiter=barth_jespersen --mesh_min=0. --mesh_max=1. \n" <<
+      "--limiter=barth_jespersen --bnd_limiter=zero_gradient"
+      "--mesh_min=0. --mesh_max=1. \n" <<
       "--output_meshes=y|n --results_file=filename --convergence_study=NREF \n\n";
 
   std::cout << "--dim (default = 2): spatial dimension of mesh\n\n";
@@ -103,8 +104,11 @@ int print_usage() {
   std::cout << "--remap order (default = 1): " <<
       "order of accuracy of interpolation\n\n";
 
-  std::cout << "--limiter (default = 0): " <<
+  std::cout << "--limiter (default = NOLIMITER): " <<
       "slope limiter for a piecewise linear reconstrution\n\n";
+
+  std::cout << "--bnd_limiter (default = NOLIMITER): " <<
+      "slope limiter on the boundary for a piecewise linear reconstruction\n\n";      
 
   std::cout << "--mesh_min (default = 0.): " <<
       "coordinates (same in x, y, and z) of the lower corner of a mesh\n\n";
@@ -116,7 +120,7 @@ int print_usage() {
             << "you want to double source and target mesh sizes \n";
   std::cout << "  ONLY APPLICABLE IF BOTH MESHES ARE INTERNALLY GENERATED\n\n";
 
-  std::cout << "--output_meshes (default = y)\n";
+  std::cout << "--output_meshes (default = n)\n";
   std::cout << "  If 'y', the source and target meshes are output with the " <<
       "remapped field attached as input.exo and output.exo. \n\n";
 
@@ -136,6 +140,7 @@ int print_usage() {
 template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
                            std::shared_ptr<Jali::Mesh> targetMesh,
                            Portage::Limiter_type limiter,
+                           Portage::Boundary_Limiter_type bnd_limiter,
                            int interp_order,
                            std::string field_expression,
                            std::string field_filename,
@@ -176,10 +181,11 @@ int main(int argc, char** argv) {
   std::string srcfile, trgfile;  // No default
 
   int interp_order = 1;
-  bool mesh_output = true;
+  bool mesh_output = false;
   int n_converge = 1;
   Jali::Entity_kind entityKind = Jali::Entity_kind::CELL;
   Portage::Limiter_type limiter = Portage::Limiter_type::NOLIMITER;
+  Portage::Boundary_Limiter_type bnd_limiter = Portage::Boundary_Limiter_type::BND_NOLIMITER;
   double srclo = 0.0, srchi = 1.0;  // bounds of generated mesh in each dir
   bool remap_back = false;           // enable for cyclic  remap, i.e. remap
                                     // back to the original mesh
@@ -231,6 +237,11 @@ int main(int argc, char** argv) {
     } else if (keyword == "limiter") {
       if (valueword == "barth_jespersen" || valueword == "BARTH_JESPERSEN")
         limiter = Portage::Limiter_type::BARTH_JESPERSEN;
+    } else if (keyword == "bnd_limiter") {
+      if (valueword == "zero_gradient" || valueword == "ZERO_GRADIENT")
+        bnd_limiter = Portage::Boundary_Limiter_type::BND_ZERO_GRADIENT;
+      else if (valueword == "barth_jespersen" || valueword == "BARTH_JESPERSEN")
+        bnd_limiter = Portage::Boundary_Limiter_type::BND_BARTH_JESPERSEN;
     } else if (keyword == "mesh_min") {
       srclo = stof(valueword);
     } else if (keyword == "mesh_max") {
@@ -371,26 +382,26 @@ int main(int argc, char** argv) {
     // Now run the remap on the meshes and get back the L2 error
     switch (dim) {
       case 2:
-        run<2>(source_mesh, target_mesh, limiter, interp_order,
+        run<2>(source_mesh, target_mesh, limiter, bnd_limiter, interp_order,
                field_expression, field_filename, mesh_output,
                rank, numpe, entityKind, &(l1_err[i]), &(l2_err[i]),
                false,sourceData,targetData);
         if(remap_back) {
           initialData = sourceData;
-          run<2>(target_mesh, source_mesh, limiter, interp_order,
+          run<2>(target_mesh, source_mesh, limiter, bnd_limiter, interp_order,
                  field_expression, field_filename, mesh_output,
                  rank, numpe, entityKind, &(l1_err[i]), &(l2_err[i]),
                  remap_back,targetData,sourceData);
         }
         break;
       case 3:
-        run<3>(source_mesh, target_mesh, limiter, interp_order,
+        run<3>(source_mesh, target_mesh, limiter, bnd_limiter, interp_order,
                field_expression, field_filename, mesh_output,
                rank, numpe, entityKind, &(l1_err[i]), &(l2_err[i]),
                false,sourceData,targetData);
         if(remap_back) {
           initialData = sourceData;
-          run<3>(target_mesh, source_mesh, limiter, interp_order,
+          run<3>(target_mesh, source_mesh, limiter, bnd_limiter, interp_order,
                  field_expression, field_filename, mesh_output,
                  rank, numpe, entityKind, &(l1_err[i]), &(l2_err[i]),
                  remap_back,targetData,sourceData);
@@ -468,6 +479,7 @@ int main(int argc, char** argv) {
 template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
                            std::shared_ptr<Jali::Mesh> targetMesh,
                            Portage::Limiter_type limiter,
+                           Portage::Boundary_Limiter_type bnd_limiter,
                            int interp_order, std::string field_expression,
                            std::string field_filename, bool mesh_output,
                            int rank, int numpe, Jali::Entity_kind entityKind,
@@ -494,8 +506,10 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
     if (field_expression.length())
       std::cout << " Specified field is " << field_expression << "\n";
     std::cout << "   Interpolation order is " << interp_order << "\n";
-    if (interp_order == 2)
+    if (interp_order == 2) {
       std::cout << "   Limiter type is " << limiter << "\n";
+      std::cout << "   Boundary limiter type is " << bnd_limiter << "\n";
+    }
   }
 
   std::cout << "\nSource mesh on rank "<< rank <<" has " << nsrccells << " cells\n";
@@ -619,6 +633,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
             targetMeshWrapper, targetStateWrapper);
       d.set_remap_var_names(remap_fields);
       d.set_limiter(limiter);
+      d.set_bnd_limiter(bnd_limiter);
      for (auto &remap_var : remap_fields)
        d.set_remap_var_bounds(remap_var, -std::numeric_limits<double>::max(),
                               std::numeric_limits<double>::max());
@@ -652,6 +667,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
             targetMeshWrapper, targetStateWrapper);
       d.set_remap_var_names(remap_fields);
       d.set_limiter(limiter);
+      d.set_bnd_limiter(bnd_limiter);
      for (auto &remap_var : remap_fields)
        d.set_remap_var_bounds(remap_var, -std::numeric_limits<double>::max(),
                               std::numeric_limits<double>::max());
