@@ -86,9 +86,9 @@ $(function() {
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a7f6df899524a883b95f87eed6d6d3a78"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1IntersectR3D.html#a7f6df899524a883b95f87eed6d6d3a78">IntersectR3D</a> (SourceMeshType const &amp;source_mesh, SourceStateType const &amp;source_state, TargetMeshType const &amp;target_mesh, bool rectangular_mesh=false)</td></tr>
-<tr class="memdesc:a7f6df899524a883b95f87eed6d6d3a78"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructor WITHOUT interface reconstructor.  <a href="#a7f6df899524a883b95f87eed6d6d3a78">More...</a><br /></td></tr>
-<tr class="separator:a7f6df899524a883b95f87eed6d6d3a78"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3be1b055bb18a5af6709579939d0da46"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1IntersectR3D.html#a3be1b055bb18a5af6709579939d0da46">IntersectR3D</a> (SourceMeshType const &amp;source_mesh, SourceStateType const &amp;source_state, TargetMeshType const &amp;target_mesh, <a class="el" href="structPortage_1_1NumericTolerances__t.html">NumericTolerances_t</a> num_tols, bool rectangular_mesh=false)</td></tr>
+<tr class="memdesc:a3be1b055bb18a5af6709579939d0da46"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructor WITHOUT interface reconstructor.  <a href="#a3be1b055bb18a5af6709579939d0da46">More...</a><br /></td></tr>
+<tr class="separator:a3be1b055bb18a5af6709579939d0da46"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a7025e18156879e3397f6eeb9726affbe"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1IntersectR3D.html#a7025e18156879e3397f6eeb9726affbe">set_material</a> (int m)</td></tr>
 <tr class="memdesc:a7025e18156879e3397f6eeb9726affbe"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set the source mesh material that we have to intersect against.  <a href="#a7025e18156879e3397f6eeb9726affbe">More...</a><br /></td></tr>
 <tr class="separator:a7025e18156879e3397f6eeb9726affbe"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -109,8 +109,8 @@ class Portage::IntersectR3D&lt; on_what, SourceMeshType, SourceStateType, Target
 <p>In this routine, we will utilize the fact that R3d can intersect a non-convex polyhedron with planar faces with a convex polyhedron (more precisely, R3D can clip a non-convex polyhedron with a set of planes). We are given a target polyhedron with possibly non-planar faces to be intersected with a list of source polyhedra again with possibly non-planar faces. We will convert the target polyhedron into a set of convex polyhedra using a symmetric tetrahedral decomposition (24 tets for a hex). We will convert each source polyhedron into a faceted non-convex polyhedron where each facet is a triangle and therefore planar.</p>
 <p>If this class is being adapted for use with a different intersector and it can only intersect convex polyhedra, both target and source polyhedra may have to be decomposed into tets </p>
 </div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a id="a7f6df899524a883b95f87eed6d6d3a78"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a7f6df899524a883b95f87eed6d6d3a78">&#9670;&nbsp;</a></span>IntersectR3D() <span class="overload">[1/2]</span></h2>
+<a id="a3be1b055bb18a5af6709579939d0da46"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a3be1b055bb18a5af6709579939d0da46">&#9670;&nbsp;</a></span>IntersectR3D() <span class="overload">[1/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -137,6 +137,12 @@ template&lt;Entity_kind on_what, class SourceMeshType , class SourceStateType , 
           <td></td>
           <td class="paramtype">TargetMeshType const &amp;&#160;</td>
           <td class="paramname"><em>target_mesh</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="structPortage_1_1NumericTolerances__t.html">NumericTolerances_t</a>&#160;</td>
+          <td class="paramname"><em>num_tols</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>

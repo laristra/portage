@@ -24,7 +24,7 @@ Please see the license file at the root of this repository, or at:
 			  crossorigin="anonymous"></script>
       <!-- <script src="//code.jquery.com/jquery-3.3.1.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script> -->
     <script type="text/javascript" src="smartmenu.js"></script>
-    <title>portage: Namespace Members</title>
+    <title>portage: /home/portage/portage/portage/support/timer.h File Reference</title>
     <link href="tabs.css" rel="stylesheet" type="text/css">
       <!-- this version is too old for bootstrap, but it includes modifications
 	   from standard jquery
@@ -68,15 +68,48 @@ $(function() {
 });
 </script>
 <div id="main-nav"></div>
+<div id="nav-path" class="navpath">
+  <ul>
+<li class="navelem"><a class="el" href="dir_e934dc6d4cafb0acef559243c2267482.html">portage</a></li><li class="navelem"><a class="el" href="dir_c48d929e1818b7f22f71f0d6a1f89a33.html">support</a></li>  </ul>
+</div>
 </div><!-- top -->
+<div class="header">
+  <div class="summary">
+<a href="#nested-classes">Classes</a> &#124;
+<a href="#namespaces">Namespaces</a> &#124;
+<a href="#func-members">Functions</a>  </div>
+  <div class="headertitle">
+<div class="title">timer.h File Reference</div>  </div>
+</div><!--header-->
 <div class="contents">
-<div class="textblock">Here is a list of all namespace members with links to the namespace documentation for each member:</div>
-
-<h3><a id="index_x"></a>- x -</h3><ul>
-<li>XDIM
-: <a class="el" href="namespacePortage.html#a2d31aba986a56db6e85d98df37ec42c7">Portage</a>
-</li>
-</ul>
+<div class="textblock"><code>#include &lt;chrono&gt;</code><br />
+<code>#include &lt;cstdio&gt;</code><br />
+<code>#include &lt;fstream&gt;</code><br />
+</div>
+<p><a href="timer_8h_source.html">Go to the source code of this file.</a></p>
+<table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
+Classes</h2></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classProfiler.html">Profiler</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="namespaces"></a>
+Namespaces</h2></td></tr>
+<tr class="memitem:namespacetimer"><td class="memItemLeft" align="right" valign="top"> &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacetimer.html">timer</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
+Functions</h2></td></tr>
+<tr class="memitem:a7028b3f637b4f3028c2e1341982612b7"><td class="memItemLeft" align="right" valign="top">std::chrono::high_resolution_clock::time_point&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacetimer.html#a7028b3f637b4f3028c2e1341982612b7">timer::now</a> ()</td></tr>
+<tr class="memdesc:a7028b3f637b4f3028c2e1341982612b7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get current time.  <a href="namespacetimer.html#a7028b3f637b4f3028c2e1341982612b7">More...</a><br /></td></tr>
+<tr class="separator:a7028b3f637b4f3028c2e1341982612b7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae1efdcee72b0761fef8277e0b1b89132"><td class="memItemLeft" align="right" valign="top">float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacetimer.html#ae1efdcee72b0761fef8277e0b1b89132">timer::elapsed</a> (std::chrono::high_resolution_clock::time_point &amp;tic, bool reset=false)</td></tr>
+<tr class="memdesc:ae1efdcee72b0761fef8277e0b1b89132"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get elapsed time in seconds.  <a href="namespacetimer.html#ae1efdcee72b0761fef8277e0b1b89132">More...</a><br /></td></tr>
+<tr class="separator:ae1efdcee72b0761fef8277e0b1b89132"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab1eaa19daaea32738478533e9dda1d13"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacetimer.html#ab1eaa19daaea32738478533e9dda1d13">timer::reset</a> (std::chrono::high_resolution_clock::time_point &amp;tic, float *cumul=nullptr)</td></tr>
+<tr class="memdesc:ab1eaa19daaea32738478533e9dda1d13"><td class="mdescLeft">&#160;</td><td class="mdescRight">Dump current time and reset it afterwards.  <a href="namespacetimer.html#ab1eaa19daaea32738478533e9dda1d13">More...</a><br /></td></tr>
+<tr class="separator:ab1eaa19daaea32738478533e9dda1d13"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table>
 </div><!-- contents -->
 <!--
 This file is part of the Ristra portage project.

@@ -89,9 +89,9 @@ $(function() {
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a116dd8e3e529a0b562e72b3acd5b7aa4"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1IntersectR2D.html#a116dd8e3e529a0b562e72b3acd5b7aa4">IntersectR2D</a> (SourceMeshType const &amp;source_mesh, SourceStateType const &amp;source_state, TargetMeshType const &amp;target_mesh)</td></tr>
-<tr class="memdesc:a116dd8e3e529a0b562e72b3acd5b7aa4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructor WITHOUT interface reconstructor.  <a href="#a116dd8e3e529a0b562e72b3acd5b7aa4">More...</a><br /></td></tr>
-<tr class="separator:a116dd8e3e529a0b562e72b3acd5b7aa4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aea615417550830a3de0aed224ecf05dc"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1IntersectR2D.html#aea615417550830a3de0aed224ecf05dc">IntersectR2D</a> (SourceMeshType const &amp;source_mesh, SourceStateType const &amp;source_state, TargetMeshType const &amp;target_mesh, <a class="el" href="structPortage_1_1NumericTolerances__t.html">NumericTolerances_t</a> num_tols)</td></tr>
+<tr class="memdesc:aea615417550830a3de0aed224ecf05dc"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructor WITHOUT interface reconstructor.  <a href="#aea615417550830a3de0aed224ecf05dc">More...</a><br /></td></tr>
+<tr class="separator:aea615417550830a3de0aed224ecf05dc"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a5f2aaf19045aaf892878820602f0415b"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1IntersectR2D.html#a5f2aaf19045aaf892878820602f0415b">set_material</a> (int m)</td></tr>
 <tr class="memdesc:a5f2aaf19045aaf892878820602f0415b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set the source mesh material that we have to intersect against.  <a href="#a5f2aaf19045aaf892878820602f0415b">More...</a><br /></td></tr>
 <tr class="separator:a5f2aaf19045aaf892878820602f0415b"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -110,8 +110,8 @@ class Portage::IntersectR2D&lt; on_what, SourceMeshType, SourceStateType, Target
 
 <p>algorithm </p>
 </div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a id="a116dd8e3e529a0b562e72b3acd5b7aa4"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a116dd8e3e529a0b562e72b3acd5b7aa4">&#9670;&nbsp;</a></span>IntersectR2D() <span class="overload">[1/2]</span></h2>
+<a id="aea615417550830a3de0aed224ecf05dc"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aea615417550830a3de0aed224ecf05dc">&#9670;&nbsp;</a></span>IntersectR2D() <span class="overload">[1/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -137,7 +137,13 @@ template&lt;Entity_kind on_what, class SourceMeshType , class SourceStateType , 
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">TargetMeshType const &amp;&#160;</td>
-          <td class="paramname"><em>target_mesh</em>&#160;</td>
+          <td class="paramname"><em>target_mesh</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="structPortage_1_1NumericTolerances__t.html">NumericTolerances_t</a>&#160;</td>
+          <td class="paramname"><em>num_tols</em>&#160;</td>
         </tr>
         <tr>
           <td></td>

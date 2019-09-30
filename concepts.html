@@ -87,8 +87,8 @@ $(function() {
 <p><a class="el" href="namespacePortage.html">Portage</a> does come with some full-featured <em>drivers</em> that can be directly used to deploy a powerful remapping capability into an application. In particular, the following drivers are provided:</p>
 <ul>
 <li><a class="el" href="classPortage_1_1MMDriver.html" title="MMDriver provides the API to mapping multi-material data from one mesh to another. ">Portage::MMDriver</a> - for single- and multi-material mesh-mesh remap.</li>
-<li><a class="el" href="classPortage_1_1Meshfree_1_1SwarmDriver.html">Portage::Meshfree::SwarmDriver</a> - for particle-particle remap.</li>
-<li><a class="el" href="classPortage_1_1MSM__Driver.html" title="MSM_Driver provides the API to mapping from one mesh to another. ">Portage::MSM_Driver</a> - for mesh-mesh remap with particles as an intermediary.</li>
+<li>Portage::Meshfree::SwarmDriver - for particle-particle remap.</li>
+<li><a class="el" href="classPortage_1_1MSM__Driver.html" title="MSM_Driver provides the API to mapping from one mesh to another using particles. ">Portage::MSM_Driver</a> - for mesh-mesh remap with particles as an intermediary.</li>
 </ul>
 <p>These drivers are all used within some example applications within the <code>apps</code> directory to illustrate how the drivers can be used with a mix of components. The applications choose a particular mesh or particle swarm type, select component classes for the remapping steps along with associated settings for the remap process. The drivers, apps and the regression tests included with the apps are all fairly comprehensive and exercise all functionality of the <a class="el" href="namespacePortage.html">Portage</a> framework. Therefore, the included drivers and some of the apps can be used as-is if they meet all the needs of a particular application.</p>
 <h2>Mesh/Particle and State data</h2>

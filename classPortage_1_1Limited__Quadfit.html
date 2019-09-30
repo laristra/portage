@@ -89,9 +89,9 @@ $(function() {
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:ada8c5341e908afdfa20d01d9e5d0ff1d"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1Limited__Quadfit.html#ada8c5341e908afdfa20d01d9e5d0ff1d">Limited_Quadfit</a> (MeshType const &amp;mesh, StateType const &amp;state, std::string const var_name, <a class="el" href="namespacePortage.html#a4cb59edee64edb5a23427c8cb2fb5be6">Limiter_type</a> limiter_type)</td></tr>
-<tr class="memdesc:ada8c5341e908afdfa20d01d9e5d0ff1d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructor.  <a href="#ada8c5341e908afdfa20d01d9e5d0ff1d">More...</a><br /></td></tr>
-<tr class="separator:ada8c5341e908afdfa20d01d9e5d0ff1d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab4d41816987bd4fc46663e665dd7ae21"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1Limited__Quadfit.html#ab4d41816987bd4fc46663e665dd7ae21">Limited_Quadfit</a> (MeshType const &amp;mesh, StateType const &amp;state, std::string const var_name, <a class="el" href="namespacePortage.html#a4cb59edee64edb5a23427c8cb2fb5be6">Limiter_type</a> limiter_type, <a class="el" href="namespacePortage.html#a749d03d65d45c5468ee09f871868118f">Boundary_Limiter_type</a> <a class="el" href="namespacePortage.html#a749d03d65d45c5468ee09f871868118f">Boundary_Limiter_type</a>)</td></tr>
+<tr class="memdesc:ab4d41816987bd4fc46663e665dd7ae21"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructor.  <a href="#ab4d41816987bd4fc46663e665dd7ae21">More...</a><br /></td></tr>
+<tr class="separator:ab4d41816987bd4fc46663e665dd7ae21"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a5cc05e28537e1f8aac7aa3e5dfd6654a"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classPortage_1_1Limited__Quadfit.html">Limited_Quadfit</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1Limited__Quadfit.html#a5cc05e28537e1f8aac7aa3e5dfd6654a">operator=</a> (const <a class="el" href="classPortage_1_1Limited__Quadfit.html">Limited_Quadfit</a> &amp;)=delete</td></tr>
 <tr class="memdesc:a5cc05e28537e1f8aac7aa3e5dfd6654a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Assignment operator (disabled)  <a href="#a5cc05e28537e1f8aac7aa3e5dfd6654a">More...</a><br /></td></tr>
 <tr class="separator:a5cc05e28537e1f8aac7aa3e5dfd6654a"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -115,8 +115,8 @@ class Portage::Limited_Quadfit&lt; D, on_what, MeshType, StateType &gt;</h3>
   </dd>
 </dl>
 </div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a id="ada8c5341e908afdfa20d01d9e5d0ff1d"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ada8c5341e908afdfa20d01d9e5d0ff1d">&#9670;&nbsp;</a></span>Limited_Quadfit()</h2>
+<a id="ab4d41816987bd4fc46663e665dd7ae21"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab4d41816987bd4fc46663e665dd7ae21">&#9670;&nbsp;</a></span>Limited_Quadfit()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -148,7 +148,13 @@ template&lt;int D, Entity_kind on_what, typename MeshType, typename StateType&gt
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype"><a class="el" href="namespacePortage.html#a4cb59edee64edb5a23427c8cb2fb5be6">Limiter_type</a>&#160;</td>
-          <td class="paramname"><em>limiter_type</em>&#160;</td>
+          <td class="paramname"><em>limiter_type</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="namespacePortage.html#a749d03d65d45c5468ee09f871868118f">Boundary_Limiter_type</a>&#160;</td>
+          <td class="paramname"><em>Boundary_Limiter_type</em>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -170,7 +176,8 @@ template&lt;int D, Entity_kind on_what, typename MeshType, typename StateType&gt
     <tr><td class="paramdir">[in]</td><td class="paramname">state</td><td>A state manager class that one can query for field info </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">on_what</td><td>An enum that indicates what type of entity the field is on </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">var_name</td><td>Name of field for which the quadfit is to be computed </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">limiter_type</td><td>An enum indicating if the limiter type (none, Barth-Jespersen, Superbee etc)</td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">limiter_type</td><td>An enum indicating if the limiter type (none, Barth-Jespersen, Superbee etc) </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">Boundary_Limiter_type</td><td>An enum indicating the limiter type on the boundary</td></tr>
   </table>
   </dd>
 </dl>

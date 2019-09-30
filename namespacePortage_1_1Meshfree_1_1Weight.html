@@ -99,7 +99,8 @@ Enumerations</h2></td></tr>
 <a class="el" href="namespacePortage_1_1Meshfree_1_1Weight.html#a49c91436c868f91f1bb82ca674b497bfaf4d5a5eb5d983aa0a255b9327f9b320a">POLYRAMP</a>, 
 <br />
 &#160;&#160;<a class="el" href="namespacePortage_1_1Meshfree_1_1Weight.html#a49c91436c868f91f1bb82ca674b497bfaf7d0a0ebf6ea8a41a1c332ab31eabcdf">INVSQRT</a>, 
-<a class="el" href="namespacePortage_1_1Meshfree_1_1Weight.html#a49c91436c868f91f1bb82ca674b497bfac6729fe0071ee532e896b9d1f6be6bf3">COULOMB</a>
+<a class="el" href="namespacePortage_1_1Meshfree_1_1Weight.html#a49c91436c868f91f1bb82ca674b497bfac6729fe0071ee532e896b9d1f6be6bf3">COULOMB</a>, 
+<a class="el" href="namespacePortage_1_1Meshfree_1_1Weight.html#a49c91436c868f91f1bb82ca674b497bfab408597aa1540a393268ee8263fdb2ee">STEP</a>
 <br />
  }</td></tr>
 <tr class="separator:a49c91436c868f91f1bb82ca674b497bf"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -187,6 +188,15 @@ Functions</h2></td></tr>
 <tr class="memitem:ae21315772024ea4b1609c4907f0362a3"><td class="memItemLeft" align="right" valign="top">double&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacePortage_1_1Meshfree_1_1Weight.html#ae21315772024ea4b1609c4907f0362a3">ddcoulomb</a> (double x)</td></tr>
 <tr class="memdesc:ae21315772024ea4b1609c4907f0362a3"><td class="mdescLeft">&#160;</td><td class="mdescRight">coulomb weight second derivative  <a href="#ae21315772024ea4b1609c4907f0362a3">More...</a><br /></td></tr>
 <tr class="separator:ae21315772024ea4b1609c4907f0362a3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4bb314b52be0b0fe0191af3baf49b9ff"><td class="memItemLeft" align="right" valign="top">double&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacePortage_1_1Meshfree_1_1Weight.html#a4bb314b52be0b0fe0191af3baf49b9ff">step</a> (double x)</td></tr>
+<tr class="memdesc:a4bb314b52be0b0fe0191af3baf49b9ff"><td class="mdescLeft">&#160;</td><td class="mdescRight">step weight  <a href="#a4bb314b52be0b0fe0191af3baf49b9ff">More...</a><br /></td></tr>
+<tr class="separator:a4bb314b52be0b0fe0191af3baf49b9ff"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a85aa2ea804bdabd341c2cbca0b2e2d4c"><td class="memItemLeft" align="right" valign="top">double&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacePortage_1_1Meshfree_1_1Weight.html#a85aa2ea804bdabd341c2cbca0b2e2d4c">dstep</a> (double x)</td></tr>
+<tr class="memdesc:a85aa2ea804bdabd341c2cbca0b2e2d4c"><td class="mdescLeft">&#160;</td><td class="mdescRight">step weight derivative  <a href="#a85aa2ea804bdabd341c2cbca0b2e2d4c">More...</a><br /></td></tr>
+<tr class="separator:a85aa2ea804bdabd341c2cbca0b2e2d4c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a36caa8a08a62db164b1b67212aa8241d"><td class="memItemLeft" align="right" valign="top">double&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacePortage_1_1Meshfree_1_1Weight.html#a36caa8a08a62db164b1b67212aa8241d">ddstep</a> (double x)</td></tr>
+<tr class="memdesc:a36caa8a08a62db164b1b67212aa8241d"><td class="mdescLeft">&#160;</td><td class="mdescRight">step weight second derivative  <a href="#a36caa8a08a62db164b1b67212aa8241d">More...</a><br /></td></tr>
+<tr class="separator:a36caa8a08a62db164b1b67212aa8241d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a707e9118b8cad1072b3cf53b7cebc552"><td class="memItemLeft" align="right" valign="top">double&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacePortage_1_1Meshfree_1_1Weight.html#a707e9118b8cad1072b3cf53b7cebc552">kernel</a> (const <a class="el" href="namespacePortage_1_1Meshfree_1_1Weight.html#a49c91436c868f91f1bb82ca674b497bf">Kernel</a> kern, double x)</td></tr>
 <tr class="memdesc:a707e9118b8cad1072b3cf53b7cebc552"><td class="mdescLeft">&#160;</td><td class="mdescRight">general kernel function  <a href="#a707e9118b8cad1072b3cf53b7cebc552">More...</a><br /></td></tr>
 <tr class="separator:a707e9118b8cad1072b3cf53b7cebc552"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -202,10 +212,10 @@ Functions</h2></td></tr>
 <tr class="memitem:a0ba3e6c615751ff672d6025e834c1fad"><td class="memTemplItemLeft" align="right" valign="top">double&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespacePortage_1_1Meshfree_1_1Weight.html#a0ba3e6c615751ff672d6025e834c1fad">eval</a> (const <a class="el" href="namespacePortage_1_1Meshfree_1_1Weight.html#ab1a6f49c8ccca52acf6ec2d1a3310698">Geometry</a> geo, const <a class="el" href="namespacePortage_1_1Meshfree_1_1Weight.html#a49c91436c868f91f1bb82ca674b497bf">Kernel</a> kern, const Wonton::Point&lt; dim &gt; x, const Wonton::Point&lt; dim &gt; y, array&lt; double, dim &gt; h)</td></tr>
 <tr class="memdesc:a0ba3e6c615751ff672d6025e834c1fad"><td class="mdescLeft">&#160;</td><td class="mdescRight">evaluation function for elliptic or tensor product weights  <a href="#a0ba3e6c615751ff672d6025e834c1fad">More...</a><br /></td></tr>
 <tr class="separator:a0ba3e6c615751ff672d6025e834c1fad"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a485f4bb9dee47a56fc75811e2e2faa56"><td class="memTemplParams" colspan="2">template&lt;size_t dim&gt; </td></tr>
-<tr class="memitem:a485f4bb9dee47a56fc75811e2e2faa56"><td class="memTemplItemLeft" align="right" valign="top">double&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespacePortage_1_1Meshfree_1_1Weight.html#a485f4bb9dee47a56fc75811e2e2faa56">faceted</a> (const Wonton::Point&lt; dim &gt; x, const Wonton::Point&lt; dim &gt; y, <a class="el" href="structPortage_1_1Meshfree_1_1Weight_1_1FacetData.html">FacetData</a>&lt; dim &gt; *facets, size_t nsides)</td></tr>
-<tr class="memdesc:a485f4bb9dee47a56fc75811e2e2faa56"><td class="mdescLeft">&#160;</td><td class="mdescRight">faceted weight function  <a href="#a485f4bb9dee47a56fc75811e2e2faa56">More...</a><br /></td></tr>
-<tr class="separator:a485f4bb9dee47a56fc75811e2e2faa56"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2ebbb3446198d9d4fc04d952165fff80"><td class="memTemplParams" colspan="2">template&lt;size_t dim&gt; </td></tr>
+<tr class="memitem:a2ebbb3446198d9d4fc04d952165fff80"><td class="memTemplItemLeft" align="right" valign="top">double&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespacePortage_1_1Meshfree_1_1Weight.html#a2ebbb3446198d9d4fc04d952165fff80">faceted</a> (const <a class="el" href="namespacePortage_1_1Meshfree_1_1Weight.html#a49c91436c868f91f1bb82ca674b497bf">Kernel</a> kern, const Wonton::Point&lt; dim &gt; x, const Wonton::Point&lt; dim &gt; y, <a class="el" href="namespacePortage.html#ad86a06a9372f05948709ca73e058981d">vector</a>&lt; <a class="el" href="structPortage_1_1Meshfree_1_1Weight_1_1FacetData.html">FacetData</a>&lt; dim &gt;&gt; facets, size_t nsides)</td></tr>
+<tr class="memdesc:a2ebbb3446198d9d4fc04d952165fff80"><td class="mdescLeft">&#160;</td><td class="mdescRight">faceted weight function  <a href="#a2ebbb3446198d9d4fc04d952165fff80">More...</a><br /></td></tr>
+<tr class="separator:a2ebbb3446198d9d4fc04d952165fff80"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af1f1136876522c17f4e77c320455caa1"><td class="memTemplParams" colspan="2">template&lt;size_t dim&gt; </td></tr>
 <tr class="memitem:af1f1136876522c17f4e77c320455caa1"><td class="memTemplItemLeft" align="right" valign="top">double&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespacePortage_1_1Meshfree_1_1Weight.html#af1f1136876522c17f4e77c320455caa1">eval</a> (const <a class="el" href="namespacePortage_1_1Meshfree_1_1Weight.html#ab1a6f49c8ccca52acf6ec2d1a3310698">Geometry</a> geo, const <a class="el" href="namespacePortage_1_1Meshfree_1_1Weight.html#a49c91436c868f91f1bb82ca674b497bf">Kernel</a> kern, const Wonton::Point&lt; dim &gt; x, const Wonton::Point&lt; dim &gt; y, <a class="el" href="namespacePortage.html#ad86a06a9372f05948709ca73e058981d">vector</a>&lt; <a class="el" href="namespacePortage.html#ad86a06a9372f05948709ca73e058981d">vector</a>&lt; double &gt;&gt; vh)</td></tr>
 <tr class="memdesc:af1f1136876522c17f4e77c320455caa1"><td class="mdescLeft">&#160;</td><td class="mdescRight">evaluation function for any weight  <a href="#af1f1136876522c17f4e77c320455caa1">More...</a><br /></td></tr>
@@ -258,6 +268,7 @@ Variables</h2></td></tr>
 <tr><td class="fieldname"><a id="a49c91436c868f91f1bb82ca674b497bfaf4d5a5eb5d983aa0a255b9327f9b320a"></a>POLYRAMP&#160;</td><td class="fielddoc"></td></tr>
 <tr><td class="fieldname"><a id="a49c91436c868f91f1bb82ca674b497bfaf7d0a0ebf6ea8a41a1c332ab31eabcdf"></a>INVSQRT&#160;</td><td class="fielddoc"></td></tr>
 <tr><td class="fieldname"><a id="a49c91436c868f91f1bb82ca674b497bfac6729fe0071ee532e896b9d1f6be6bf3"></a>COULOMB&#160;</td><td class="fielddoc"></td></tr>
+<tr><td class="fieldname"><a id="a49c91436c868f91f1bb82ca674b497bfab408597aa1540a393268ee8263fdb2ee"></a>STEP&#160;</td><td class="fielddoc"></td></tr>
 </table>
 
 </div>
@@ -625,6 +636,34 @@ Variables</h2></td></tr>
 
 </div>
 </div>
+<a id="a36caa8a08a62db164b1b67212aa8241d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a36caa8a08a62db164b1b67212aa8241d">&#9670;&nbsp;</a></span>ddstep()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">double Portage::Meshfree::Weight::ddstep </td>
+          <td>(</td>
+          <td class="paramtype">double&#160;</td>
+          <td class="paramname"><em>x</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>step weight second derivative </p>
+
+</div>
+</div>
 <a id="a8e1c5ff38c1a91c39ff501b2aea9dc05"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a8e1c5ff38c1a91c39ff501b2aea9dc05">&#9670;&nbsp;</a></span>depanechnikov()</h2>
 
@@ -732,6 +771,34 @@ Variables</h2></td></tr>
 </div><div class="memdoc">
 
 <p>scalar square kernel derivative </p>
+
+</div>
+</div>
+<a id="a85aa2ea804bdabd341c2cbca0b2e2d4c"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a85aa2ea804bdabd341c2cbca0b2e2d4c">&#9670;&nbsp;</a></span>dstep()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">double Portage::Meshfree::Weight::dstep </td>
+          <td>(</td>
+          <td class="paramtype">double&#160;</td>
+          <td class="paramname"><em>x</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>step weight derivative </p>
 
 </div>
 </div>
@@ -901,8 +968,8 @@ template&lt;size_t dim&gt; </div>
 
 </div>
 </div>
-<a id="a485f4bb9dee47a56fc75811e2e2faa56"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a485f4bb9dee47a56fc75811e2e2faa56">&#9670;&nbsp;</a></span>faceted()</h2>
+<a id="a2ebbb3446198d9d4fc04d952165fff80"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a2ebbb3446198d9d4fc04d952165fff80">&#9670;&nbsp;</a></span>faceted()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -912,6 +979,12 @@ template&lt;size_t dim&gt; </div>
         <tr>
           <td class="memname">double Portage::Meshfree::Weight::faceted </td>
           <td>(</td>
+          <td class="paramtype">const <a class="el" href="namespacePortage_1_1Meshfree_1_1Weight.html#a49c91436c868f91f1bb82ca674b497bf">Kernel</a>&#160;</td>
+          <td class="paramname"><em>kern</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
           <td class="paramtype">const Wonton::Point&lt; dim &gt;&#160;</td>
           <td class="paramname"><em>x</em>, </td>
         </tr>
@@ -924,7 +997,7 @@ template&lt;size_t dim&gt; </div>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype"><a class="el" href="structPortage_1_1Meshfree_1_1Weight_1_1FacetData.html">FacetData</a>&lt; dim &gt; *&#160;</td>
+          <td class="paramtype"><a class="el" href="namespacePortage.html#ad86a06a9372f05948709ca73e058981d">vector</a>&lt; <a class="el" href="structPortage_1_1Meshfree_1_1Weight_1_1FacetData.html">FacetData</a>&lt; dim &gt;&gt;&#160;</td>
           <td class="paramname"><em>facets</em>, </td>
         </tr>
         <tr>
@@ -1006,6 +1079,9 @@ template&lt;size_t dim&gt; </div>
 
 <div class="memitem">
 <div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
       <table class="memname">
         <tr>
           <td class="memname">double Portage::Meshfree::Weight::kernel </td>
@@ -1025,6 +1101,11 @@ template&lt;size_t dim&gt; </div>
           <td></td><td></td>
         </tr>
       </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
 </div><div class="memdoc">
 
 <p>general kernel function </p>
@@ -1188,6 +1269,34 @@ template&lt;size_t dim&gt; </div>
 </div><div class="memdoc">
 
 <p>scalar square kernel </p>
+
+</div>
+</div>
+<a id="a4bb314b52be0b0fe0191af3baf49b9ff"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a4bb314b52be0b0fe0191af3baf49b9ff">&#9670;&nbsp;</a></span>step()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">double Portage::Meshfree::Weight::step </td>
+          <td>(</td>
+          <td class="paramtype">double&#160;</td>
+          <td class="paramname"><em>x</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>step weight </p>
 
 </div>
 </div>

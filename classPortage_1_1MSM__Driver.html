@@ -82,16 +82,16 @@ $(function() {
 </div><!--header-->
 <div class="contents">
 
-<p><a class="el" href="classPortage_1_1MSM__Driver.html" title="MSM_Driver provides the API to mapping from one mesh to another. ">MSM_Driver</a> provides the API to mapping from one mesh to another.  
+<p><a class="el" href="classPortage_1_1MSM__Driver.html" title="MSM_Driver provides the API to mapping from one mesh to another using particles. ">MSM_Driver</a> provides the API to mapping from one mesh to another using particles.  
  <a href="classPortage_1_1MSM__Driver.html#details">More...</a></p>
 
 <p><code>#include &lt;<a class="el" href="driver__mesh__swarm__mesh_8h_source.html">driver_mesh_swarm_mesh.h</a>&gt;</code></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a2424f82a99236a1e0b4f2cc61c716662"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1MSM__Driver.html#a2424f82a99236a1e0b4f2cc61c716662">MSM_Driver</a> (SourceMesh_Wrapper const &amp;sourceMesh, SourceState_Wrapper const &amp;sourceState, TargetMesh_Wrapper const &amp;targetMesh, TargetState_Wrapper &amp;targetState, double smoothing_factor=1.5, <a class="el" href="namespacePortage_1_1Meshfree_1_1Weight.html#ab1a6f49c8ccca52acf6ec2d1a3310698">Meshfree::Weight::Geometry</a> geometry=<a class="el" href="namespacePortage_1_1Meshfree_1_1Weight.html#ab1a6f49c8ccca52acf6ec2d1a3310698a940579ff3befc5bc6d833fb613142547">Meshfree::Weight::TENSOR</a>, <a class="el" href="namespacePortage_1_1Meshfree_1_1Weight.html#a49c91436c868f91f1bb82ca674b497bf">Meshfree::Weight::Kernel</a> kernel=<a class="el" href="namespacePortage_1_1Meshfree_1_1Weight.html#a49c91436c868f91f1bb82ca674b497bfa3b330d055256c39f3061e2056b462c43">Meshfree::Weight::B4</a>, Meshfree::WeightCenter center=Meshfree::Gather)</td></tr>
-<tr class="memdesc:a2424f82a99236a1e0b4f2cc61c716662"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructor for running the interpolation driver.  <a href="#a2424f82a99236a1e0b4f2cc61c716662">More...</a><br /></td></tr>
-<tr class="separator:a2424f82a99236a1e0b4f2cc61c716662"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a415af87e3ce5eb26a63902d853bc2fa0"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1MSM__Driver.html#a415af87e3ce5eb26a63902d853bc2fa0">MSM_Driver</a> (SourceMesh_Wrapper const &amp;sourceMesh, SourceState_Wrapper const &amp;sourceState, TargetMesh_Wrapper const &amp;targetMesh, TargetState_Wrapper &amp;targetState, double smoothing_factor=1.25, double boundary_factor=0.5, <a class="el" href="namespacePortage_1_1Meshfree_1_1Weight.html#ab1a6f49c8ccca52acf6ec2d1a3310698">Meshfree::Weight::Geometry</a> geometry=<a class="el" href="namespacePortage_1_1Meshfree_1_1Weight.html#ab1a6f49c8ccca52acf6ec2d1a3310698a940579ff3befc5bc6d833fb613142547">Meshfree::Weight::TENSOR</a>, <a class="el" href="namespacePortage_1_1Meshfree_1_1Weight.html#a49c91436c868f91f1bb82ca674b497bf">Meshfree::Weight::Kernel</a> kernel=<a class="el" href="namespacePortage_1_1Meshfree_1_1Weight.html#a49c91436c868f91f1bb82ca674b497bfa3b330d055256c39f3061e2056b462c43">Meshfree::Weight::B4</a>, Meshfree::WeightCenter center=Meshfree::Gather, std::string part_field=&quot;NONE&quot;, double part_tolerance=std::numeric_limits&lt; double &gt;::infinity())</td></tr>
+<tr class="memdesc:a415af87e3ce5eb26a63902d853bc2fa0"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructor for running the interpolation driver.  <a href="#a415af87e3ce5eb26a63902d853bc2fa0">More...</a><br /></td></tr>
+<tr class="separator:a415af87e3ce5eb26a63902d853bc2fa0"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a918473ad1a257db73ccc81a919bd2000"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1MSM__Driver.html#a918473ad1a257db73ccc81a919bd2000">MSM_Driver</a> (const <a class="el" href="classPortage_1_1MSM__Driver.html">MSM_Driver</a> &amp;)=delete</td></tr>
 <tr class="memdesc:a918473ad1a257db73ccc81a919bd2000"><td class="mdescLeft">&#160;</td><td class="mdescRight">Copy constructor (disabled)  <a href="#a918473ad1a257db73ccc81a919bd2000">More...</a><br /></td></tr>
 <tr class="separator:a918473ad1a257db73ccc81a919bd2000"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -124,9 +124,12 @@ Public Member Functions</h2></td></tr>
 <div class="textblock"><h3>template&lt;template&lt; int, class, class &gt; class Search, template&lt; size_t, class, class &gt; class Accumulate, template&lt; size_t, class &gt; class Estimate, int Dim, class SourceMesh_Wrapper, class SourceState_Wrapper, class TargetMesh_Wrapper = SourceMesh_Wrapper, class TargetState_Wrapper = SourceState_Wrapper&gt;<br />
 class Portage::MSM_Driver&lt; Search, Accumulate, Estimate, Dim, SourceMesh_Wrapper, SourceState_Wrapper, TargetMesh_Wrapper, TargetState_Wrapper &gt;</h3>
 
-<p><a class="el" href="classPortage_1_1MSM__Driver.html" title="MSM_Driver provides the API to mapping from one mesh to another. ">MSM_Driver</a> provides the API to mapping from one mesh to another. </p>
+<p><a class="el" href="classPortage_1_1MSM__Driver.html" title="MSM_Driver provides the API to mapping from one mesh to another using particles. ">MSM_Driver</a> provides the API to mapping from one mesh to another using particles. </p>
 <dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
+    <tr><td class="paramname">Search</td><td>compatible particle search class </td></tr>
+    <tr><td class="paramname">Accumulate</td><td><a class="el" href="namespacePortage_1_1Meshfree.html">Meshfree</a> accumulate class (performs particle sums) </td></tr>
+    <tr><td class="paramname">Estimate</td><td><a class="el" href="namespacePortage_1_1Meshfree.html">Meshfree</a> estimator class (performs calculus operations </td></tr>
     <tr><td class="paramname">dim</td><td>Spatial dimension of the source and target meshes </td></tr>
     <tr><td class="paramname">SourceMesh_Wrapper</td><td>A lightweight wrapper to a specific input mesh implementation that provides certain functionality. </td></tr>
     <tr><td class="paramname">SourceState_Wrapper</td><td>A lightweight wrapper to a specific input state manager implementation that provides certain functionality. </td></tr>
@@ -136,8 +139,8 @@ class Portage::MSM_Driver&lt; Search, Accumulate, Estimate, Dim, SourceMesh_Wrap
   </dd>
 </dl>
 </div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a id="a2424f82a99236a1e0b4f2cc61c716662"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a2424f82a99236a1e0b4f2cc61c716662">&#9670;&nbsp;</a></span>MSM_Driver() <span class="overload">[1/2]</span></h2>
+<a id="a415af87e3ce5eb26a63902d853bc2fa0"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a415af87e3ce5eb26a63902d853bc2fa0">&#9670;&nbsp;</a></span>MSM_Driver() <span class="overload">[1/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -175,7 +178,13 @@ template&lt;template&lt; int, class, class &gt; class Search, template&lt; size_
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">double&#160;</td>
-          <td class="paramname"><em>smoothing_factor</em> = <code>1.5</code>, </td>
+          <td class="paramname"><em>smoothing_factor</em> = <code>1.25</code>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">double&#160;</td>
+          <td class="paramname"><em>boundary_factor</em> = <code>0.5</code>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
@@ -193,7 +202,19 @@ template&lt;template&lt; int, class, class &gt; class Search, template&lt; size_
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">Meshfree::WeightCenter&#160;</td>
-          <td class="paramname"><em>center</em> = <code>Meshfree::Gather</code>&#160;</td>
+          <td class="paramname"><em>center</em> = <code>Meshfree::Gather</code>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::string&#160;</td>
+          <td class="paramname"><em>part_field</em> = <code>&quot;NONE&quot;</code>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">double&#160;</td>
+          <td class="paramname"><em>part_tolerance</em> = <code>std::numeric_limits&lt;double&gt;::infinity()</code>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -215,6 +236,13 @@ template&lt;template&lt; int, class, class &gt; class Search, template&lt; size_
     <tr><td class="paramdir">[in]</td><td class="paramname">sourceState</td><td>A <code>SourceState_Wrapperfor</code> the data that lives on the source mesh. </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">targetMesh</td><td>A <code>TargetMesh_Wrapper</code> to the target mesh. </td></tr>
     <tr><td class="paramdir">[in,out]</td><td class="paramname">targetState</td><td>A <code>TargetState_Wrapper</code> for the data that will be mapped to the target mesh. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">smoothing_factor</td><td>multiplies cell sizes to get smoothing lengths </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">boundary_factor</td><td>with faceted weights only, multiplies center-to-face distance on boundary to get smoothing length </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">geometry</td><td>weight function geometric configuration </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">kernel</td><td>weight function kernel </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">center</td><td>weight function centering (scatter for sources, gather for targets) </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">part_field</td><td>name of field to use for part assignments, with faceted weights only </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">part_tolerance</td><td>tolerance for determining if part assignment matches a neighbor's assignment </td></tr>
   </table>
   </dd>
 </dl>

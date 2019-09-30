@@ -86,6 +86,7 @@ $(function() {
 <code>#include &quot;<a class="el" href="portage_8h_source.html">portage/support/portage.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="swarm_8h_source.html">portage/swarm/swarm.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="swarm__state_8h_source.html">portage/swarm/swarm_state.h</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="faceted__setup_8h_source.html">portage/support/faceted_setup.h</a>&quot;</code><br />
 <code>#include &quot;wonton/mesh/jali/jali_mesh_wrapper.h&quot;</code><br />
 <code>#include &quot;wonton/support/Point.h&quot;</code><br />
 <code>#include &quot;gtest/gtest.h&quot;</code><br />
@@ -103,10 +104,14 @@ Functions</h2></td></tr>
 <tr class="separator:afdd3ea8e705bf32533355f1d36597256"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab4a90c88932cfbd80e8baae5de9cdc78"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="test__mpi__particle__distribute_8cc.html#ab4a90c88932cfbd80e8baae5de9cdc78">TEST</a> (MPI_Particle_Distribute, SimpleTest3DScatter)</td></tr>
 <tr class="separator:ab4a90c88932cfbd80e8baae5de9cdc78"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7964e3a1bb017fef4fe9bb3dfa991f8f"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="test__mpi__particle__distribute_8cc.html#a7964e3a1bb017fef4fe9bb3dfa991f8f">TEST</a> (MPI_Particle_Distribute, SimpleTest2DFaceted)</td></tr>
+<tr class="separator:a7964e3a1bb017fef4fe9bb3dfa991f8f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a511b574170178d0bd2f79564490082ad"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="test__mpi__particle__distribute_8cc.html#a511b574170178d0bd2f79564490082ad">TEST</a> (MPI_Particle_Distribute, SimpleTest3DFaceted)</td></tr>
+<tr class="separator:a511b574170178d0bd2f79564490082ad"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Function Documentation</h2>
 <a id="a1f3a96f82d9d2895732a0d6e9037c458"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a1f3a96f82d9d2895732a0d6e9037c458">&#9670;&nbsp;</a></span>TEST() <span class="overload">[1/4]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#a1f3a96f82d9d2895732a0d6e9037c458">&#9670;&nbsp;</a></span>TEST() <span class="overload">[1/6]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -134,7 +139,7 @@ Functions</h2></td></tr>
 </div>
 </div>
 <a id="af9b796650de1017ab14b4589d9a4055f"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#af9b796650de1017ab14b4589d9a4055f">&#9670;&nbsp;</a></span>TEST() <span class="overload">[2/4]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#af9b796650de1017ab14b4589d9a4055f">&#9670;&nbsp;</a></span>TEST() <span class="overload">[2/6]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -162,7 +167,7 @@ Functions</h2></td></tr>
 </div>
 </div>
 <a id="afdd3ea8e705bf32533355f1d36597256"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#afdd3ea8e705bf32533355f1d36597256">&#9670;&nbsp;</a></span>TEST() <span class="overload">[3/4]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#afdd3ea8e705bf32533355f1d36597256">&#9670;&nbsp;</a></span>TEST() <span class="overload">[3/6]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -190,7 +195,7 @@ Functions</h2></td></tr>
 </div>
 </div>
 <a id="ab4a90c88932cfbd80e8baae5de9cdc78"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ab4a90c88932cfbd80e8baae5de9cdc78">&#9670;&nbsp;</a></span>TEST() <span class="overload">[4/4]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#ab4a90c88932cfbd80e8baae5de9cdc78">&#9670;&nbsp;</a></span>TEST() <span class="overload">[4/6]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -205,6 +210,62 @@ Functions</h2></td></tr>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">SimpleTest3DScatter&#160;</td>
+          <td class="paramname">&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a7964e3a1bb017fef4fe9bb3dfa991f8f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a7964e3a1bb017fef4fe9bb3dfa991f8f">&#9670;&nbsp;</a></span>TEST() <span class="overload">[5/6]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">TEST </td>
+          <td>(</td>
+          <td class="paramtype">MPI_Particle_Distribute&#160;</td>
+          <td class="paramname">, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">SimpleTest2DFaceted&#160;</td>
+          <td class="paramname">&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a511b574170178d0bd2f79564490082ad"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a511b574170178d0bd2f79564490082ad">&#9670;&nbsp;</a></span>TEST() <span class="overload">[6/6]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">TEST </td>
+          <td>(</td>
+          <td class="paramtype">MPI_Particle_Distribute&#160;</td>
+          <td class="paramname">, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">SimpleTest3DFaceted&#160;</td>
           <td class="paramname">&#160;</td>
         </tr>
         <tr>
