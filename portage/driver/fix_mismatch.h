@@ -12,11 +12,13 @@ Please see the license file at the root of this repository, or at:
 #include <algorithm>
 #include <vector>
 #include <iterator>
+#include <unordered_set>
 #include <string>
 #include <utility>
 #include <iostream>
 #include <type_traits>
 #include <limits>
+#include <numeric>
 
 #include "portage/support/portage.h"
 
@@ -44,7 +46,7 @@ using Wonton::Weights_t;
 #ifdef PORTAGE_ENABLE_MPI
 
 template<Entity_kind onwhat, class Mesh_Wrapper>
-bool get_unique_entity_masks(Mesh_Wrapper const &mesh,
+void get_unique_entity_masks(Mesh_Wrapper const &mesh,
                              std::vector<int> *unique_mask,
                              MPI_Comm mycomm) {
 
@@ -351,8 +353,10 @@ class MismatchFixer {
       layernum_.resize(ntargetents_, 0);
 
       int nlayers = 0;
-      int ntagged = 0;
-      while (ntagged < nempty) {
+      int ntagged = 0, old_ntagged = -1;
+      while (ntagged < nempty && ntagged > old_ntagged) {
+        old_ntagged = ntagged;
+
         std::vector<int> curlayerents;
 
         for (int ent : emptyents) {
@@ -444,6 +448,7 @@ class MismatchFixer {
                                   global_lower_bound, global_upper_bound,
                                   conservation_tol, maxiter,
                                   partial_fixup_type, empty_fixup_type);
+    return false;
   }
 
 

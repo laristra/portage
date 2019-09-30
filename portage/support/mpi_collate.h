@@ -50,11 +50,13 @@ namespace Portage {
         &displs[0], mpi_type, 0, comm);
   }
 
+  inline
   void collate(MPI_Comm comm, const int rank, const int numpe,
                std::vector<int> &lvec, std::vector<int> &gvec) {
     collate_type(comm, rank, numpe, MPI_INT, lvec, gvec);
   }
 
+  inline
   void collate(MPI_Comm comm, const int rank, const int numpe,
                std::vector<double> &lvec, std::vector<double> &gvec) {
     collate_type(comm, rank, numpe, MPI_DOUBLE, lvec, gvec);

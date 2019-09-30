@@ -84,28 +84,40 @@ using Wonton::Weights_t;
 typedef enum {NOLIMITER, BARTH_JESPERSEN} Limiter_type;
 constexpr int NUM_LIMITER_TYPE = 2;
 
-Limiter_type DEFAULT_LIMITER = Limiter_type::BARTH_JESPERSEN;
+constexpr Limiter_type DEFAULT_LIMITER = Limiter_type::BARTH_JESPERSEN;
 
-std::string to_string(Limiter_type limiter_type) {
-  static const std::string type2string[NUM_LIMITER_TYPE] =
-      {"Limiter_type::NOLIMITER",
-       "Limiter_type::BARTH_JESPERSEN"};
+/// Boundary limiter type
+typedef enum {BND_NOLIMITER, BND_ZERO_GRADIENT, BND_BARTH_JESPERSEN} Boundary_Limiter_type;
+constexpr int NUM_Boundary_Limiter_type = 2;
 
-  int itype = static_cast<int>(limiter_type);
-  return (itype >= 0 && itype < NUM_LIMITER_TYPE) ?
-      type2string[itype] : "INVALID LIMITER TYPE";
+constexpr Boundary_Limiter_type DEFAULT_BND_LIMITER = Boundary_Limiter_type::BND_NOLIMITER;
+
+inline std::string to_string(Limiter_type limiter_type) {
+  switch(limiter_type) {
+    case NOLIMITER: return std::string("Limiter_type::NOLIMITER");
+    case BARTH_JESPERSEN: return std::string("Limiter_type::BARTH_JESPERSEN");
+    default: return std::string("INVALID LIMITER TYPE");
+  }
 }
 
+inline std::string to_string(Boundary_Limiter_type boundary_limiter_type) {
+  switch(boundary_limiter_type) {
+    case BND_NOLIMITER: return std::string("Boundary_Limiter_type::BND_NOLIMITER");
+    case BND_ZERO_GRADIENT: return std::string("Boundary_Limiter_type::BND_ZERO_GRADIENT");
+    case BND_BARTH_JESPERSEN: return std::string("Boundary_Limiter_type::BND_BARTH_JESPERSEN");
+    default: return std::string("INVALID BOUNDARY LIMITER TYPE");
+  }
+}
 
 /// Fixup options for partially filled cells
 typedef enum {CONSTANT, LOCALLY_CONSERVATIVE, SHIFTED_CONSERVATIVE}
   Partial_fixup_type;
 constexpr int NUM_PARTIAL_FIXUP_TYPE = 3;
 
-Partial_fixup_type DEFAULT_PARTIAL_FIXUP_TYPE =
+constexpr Partial_fixup_type DEFAULT_PARTIAL_FIXUP_TYPE =
     Partial_fixup_type::LOCALLY_CONSERVATIVE;
 
-std::string to_string(Partial_fixup_type partial_fixup_type) {
+inline std::string to_string(Partial_fixup_type partial_fixup_type) {
   static const std::string type2string[NUM_PARTIAL_FIXUP_TYPE] =
       {"Partial_fixup_type::CONSTANT",
        "Partial_fixup_type::LOCALLY_CONSERVATIVE",
@@ -122,9 +134,9 @@ typedef enum {LEAVE_EMPTY, EXTRAPOLATE, FILL}
   Empty_fixup_type;
 constexpr int NUM_EMPTY_FIXUP_TYPE = 3;
 
-Empty_fixup_type DEFAULT_EMPTY_FIXUP_TYPE = Empty_fixup_type::LEAVE_EMPTY;
+constexpr Empty_fixup_type DEFAULT_EMPTY_FIXUP_TYPE = Empty_fixup_type::LEAVE_EMPTY;
 
-std::string to_string(Empty_fixup_type empty_fixup_type) {
+inline std::string to_string(Empty_fixup_type empty_fixup_type) {
   static const std::string type2string[NUM_EMPTY_FIXUP_TYPE] =
       {"Empty_fixup_type::LEAVE_EMPTY",
        "Empty_fixup_type::EXTRAPOLATE",
@@ -135,13 +147,54 @@ std::string to_string(Empty_fixup_type empty_fixup_type) {
       "INVALID EMPTY FIXUP TYPE";
 }
 
-
-/// default tolerance for conservation
+/// default relative tolerance on aggregated field values to detect mesh mismatch
 constexpr double DEFAULT_CONSERVATION_TOL = 100*std::numeric_limits<double>::epsilon();
 
 /// default number of iterations for mismatch repair
 constexpr int DEFAULT_MAX_FIXUP_ITER = 5;
 
+/// Intersection and other tolerances to handle tiny values
+struct NumericTolerances_t {
+    // Flag if the tolerances were set. If user is setting his own
+    // tolerances, he needs to set this flaq to true, otherwise the
+    // tolerances will be owerwriten in a driver to defaults.
+    bool   tolerances_set                   = false;
+
+    // r2d_orient polygon convexity check - if a cross product of
+    // any two successive vertex positions is smaller that this value
+    // the polygon is marked as not convex.
+    double polygon_convexity_eps            = error_value_;
+
+    // Check wheather the volume returned by r2d reduce is positive
+    // (or slightly negative). If the volume is smaller, we throw an
+    // error.
+    double minimal_intersection_volume      = error_value_;
+
+    // Relative distance tolerance for a bounding box check.
+    double intersect_bb_relative_distance   = error_value_;
+
+    // Intersection elements with a relative volume smaller than
+    // this value are skipped in interpolate.
+    double min_relative_volume              = error_value_;
+
+    // Check that the relative volume of a material we are adding to
+    // a cell is not miniscule. If the relative volume is smaller
+    // that this value, the material is not added to the cell.
+    double driver_relative_min_mat_vol      = error_value_;
+
+    void use_default()
+    {
+        tolerances_set                  =   true;
+        polygon_convexity_eps           =  1e-14;
+        minimal_intersection_volume     = -1e-14;
+        intersect_bb_relative_distance  =  1e-12;
+        min_relative_volume             =  1e-12;
+        driver_relative_min_mat_vol     =  1e-10;
+    }
+
+    private:
+        double error_value_ = 1e5;
+};
 
 // Iterators and transforms that depend on Thrust vs. std
 #ifdef PORTAGE_ENABLE_THRUST

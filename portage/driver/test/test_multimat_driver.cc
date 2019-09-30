@@ -427,7 +427,7 @@ TEST(MMDriver, ThreeMat3D_1stOrder) {
   std::shared_ptr<Jali::State> targetState;
 
   sourceMesh = Jali::MeshFactory(MPI_COMM_WORLD)(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 3, 3, 3);
-  targetMesh = Jali::MeshFactory(MPI_COMM_WORLD)(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 3, 3, 3);
+  targetMesh = Jali::MeshFactory(MPI_COMM_WORLD)(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 5, 5, 5);
 
   sourceState = Jali::State::create(sourceMesh);
   targetState = Jali::State::create(targetMesh);
@@ -710,7 +710,7 @@ TEST(MMDriver, ThreeMat3D_1stOrder) {
     targetStateWrapper.mat_get_celldata("mat_volfracs", m, &matvf_remap);
 
     for (int ic = 0; ic < nmatcells; ic++)
-      ASSERT_NEAR(matvf_trg[m][ic], matvf_remap[ic], 1.0e-12);
+      ASSERT_NEAR(matvf_trg[m][ic], matvf_remap[ic], 1.0e-9);
 
     Portage::Point<3> const *matcen_remap;
     targetStateWrapper.mat_get_celldata("mat_centroids", m, &matcen_remap);

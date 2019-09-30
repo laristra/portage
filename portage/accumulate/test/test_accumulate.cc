@@ -96,7 +96,7 @@ void test_accumulate(Portage::Meshfree::EstimateType etype,
 
       if (etype == KernelDensity) {
         for (size_t j=0; j<npoints; j++) {
-          double weight = accum.weight(j,i);
+          double weight = accum.weight(i,j);
           ASSERT_EQ ((shape_vecs[j]).weights[0], weight);
         }
       } else {      
