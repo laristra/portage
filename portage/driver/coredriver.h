@@ -49,6 +49,7 @@ using Wonton::UNKNOWN_KIND;
 using Wonton::Entity_type;
 using Wonton::PARALLEL_OWNED;
 using Wonton::ALL;
+using Wonton::Point;
 
 // Forward declaration of remap driver on particular entity kind
 
