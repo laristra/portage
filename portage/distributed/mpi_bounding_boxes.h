@@ -76,6 +76,49 @@ class MPI_Bounding_Boxes {
 
 
   /*!
+    @brief Compute whether the source mesh needs to be distributed
+    @param[in] source_mesh  Input mesh 
+    @param[in] target_mesh  Target mesh
+
+   */
+  template <class Source_Mesh, class Target_Mesh>
+  bool source_needs_redistribution(const Source_Mesh &source_mesh,
+                  const Target_Mesh &target_mesh)
+  {
+    // Get the MPI communicator size and rank information
+    int commSize, commRank;
+    MPI_Comm_size(comm_, &commSize);
+    MPI_Comm_rank(comm_, &commRank);
+
+    int dim = dim_ = source_mesh.space_dimension();
+    assert(dim == target_mesh.space_dimension());
+
+    // sendFlags, which partitions to send data
+    // this is computed via intersection of whole partition bounding boxes
+    std::vector<bool> sendFlags(commSize);
+    compute_sendflags(source_mesh, target_mesh, sendFlags);
+    
+    std::vector<int> sendFlagsInt(commSize);
+    for (int i=0; i<commSize; ++i) sendFlagsInt[i]=sendFlags[i]?1:0;
+    
+    // Each rank will tell each other rank if it is going to send it
+    std::vector<int> recvFlags(commSize);
+    MPI_Alltoall(&(sendFlagsInt[0]), 1, MPI_INT,
+                 &(recvFlags[0]), 1, MPI_INT, comm_);
+                 
+    // loop over the partitions
+    for (int i=0; i<commSize; ++i) 
+      // if any other other partition sends me data, we need to redistribute
+      if (i!=commRank && recvFlags[i])
+        return true;  
+  
+    // the fall through case means no redistribution
+    return false;
+  }
+
+
+
+  /*!
     @brief Compute bounding boxes for all partitions, and send source mesh and state
            information to all target partitions with an overlapping bounding box using MPI
     @param[in] source_mesh_flat  Input mesh (must be flat representation)
@@ -759,7 +802,7 @@ class MPI_Bounding_Boxes {
 
 
   template <class Source_Mesh, class Target_Mesh>
-  void compute_sendflags(Source_Mesh & source_mesh_flat, Target_Mesh &target_mesh,
+  void compute_sendflags(Source_Mesh & source_mesh, Target_Mesh &target_mesh,
               std::vector<bool> &sendFlags){
 
     // Get the MPI communicator size and rank information
@@ -767,7 +810,7 @@ class MPI_Bounding_Boxes {
     MPI_Comm_size(comm_, &commSize);
     MPI_Comm_rank(comm_, &commRank);
 
-    int dim = source_mesh_flat.space_dimension();
+    int dim = source_mesh.space_dimension();
 
     // Compute the bounding box for the target mesh on this rank, and put it in an
     // array that will later store the target bounding box for each rank
@@ -815,8 +858,7 @@ class MPI_Bounding_Boxes {
     } // for c
 
     // Get the source mesh properties and cordinates
-    int sourceNumOwnedCells = source_mesh_flat.num_owned_cells();
-    std::vector<double>& sourceCoords = source_mesh_flat.get_coords();
+    int sourceNumOwnedCells = source_mesh.num_owned_cells();
 
     // Compute the bounding box for the source mesh on this rank
     std::vector<double> sourceBoundingBox(2*dim);
@@ -828,17 +870,34 @@ class MPI_Bounding_Boxes {
     for (unsigned int c=0; c<sourceNumOwnedCells; ++c)
     {
       std::vector<int> nodes;
-      source_mesh_flat.cell_get_nodes(c, &nodes);
+      source_mesh.cell_get_nodes(c, &nodes);
       int cellNumNodes = nodes.size();
       for (unsigned int j=0; j<cellNumNodes; ++j)
       {
         int n = nodes[j];
-        for (unsigned int k=0; k<dim; ++k)
+        if (dim ==3 )
         {
-          if (sourceCoords[n*dim+k] < sourceBoundingBox[2*k])
-            sourceBoundingBox[2*k] = sourceCoords[n*dim+k];
-          if (sourceCoords[n*dim+k] > sourceBoundingBox[2*k+1])
-            sourceBoundingBox[2*k+1] = sourceCoords[n*dim+k];
+          Point<3> nodeCoord;
+          source_mesh.node_get_coordinates(n, &nodeCoord);
+          for (unsigned int k=0; k<dim; ++k)
+          {
+            if (nodeCoord[k] < sourceBoundingBox[2*k])
+              sourceBoundingBox[2*k] = nodeCoord[k];
+            if (nodeCoord[k] > sourceBoundingBox[2*k+1])
+              sourceBoundingBox[2*k+1] = nodeCoord[k];
+          }
+        }
+        else if (dim ==2)
+        {
+          Point<2> nodeCoord;
+          source_mesh.node_get_coordinates(n, &nodeCoord);
+          for (unsigned int k=0; k<dim; ++k)
+          {
+            if (nodeCoord[k] < sourceBoundingBox[2*k])
+              sourceBoundingBox[2*k] = nodeCoord[k];
+            if (nodeCoord[k] > sourceBoundingBox[2*k+1])
+              sourceBoundingBox[2*k+1] = nodeCoord[k];
+          }
         }
       } // for j
     } // for c
