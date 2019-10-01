@@ -87,6 +87,7 @@ struct Params {
   /* fixups */
   int fix_iter = 5;
   Portage::Limiter_type limiter = Portage::Limiter_type::NOLIMITER;
+  Portage::Boundary_Limiter_type bnd_limiter = Portage::Boundary_Limiter_type::BND_NOLIMITER;
   Portage::Empty_fixup_type empty_fixup = Portage::Empty_fixup_type::EXTRAPOLATE;
   Portage::Partial_fixup_type partial_fixup =
     Portage::Partial_fixup_type::SHIFTED_CONSERVATIVE;
@@ -198,6 +199,7 @@ void print_usage() {
     "    \e[32m'kind'\e[0m: 'cell',                                        \n"
     "    \e[32m'order'\e[0m: <1|2>,                                        \n"
     "    \e[32m'limiter'\e[0m: <boolean>,                                  \n"
+    "    \e[32m'bnd_limiter'\e[0m: <boolean>,                              \n"    
     "    \e[32m'fixup'\e[0m: {                                             \n"
     "      \e[32m'partial'\e[0m: 'constant|<locally|shifted>_conservative',\n"
     "      \e[32m'empty'\e[0m: '<leave_empty|extrapolate>',                \n"
@@ -255,6 +257,7 @@ void print_params(nlohmann::json const& json) {
   std::string remap_kind  = json["remap"]["kind"];
   std::string dump_result = json["mesh"]["export"] ? "yes": "no";
   std::string use_limiter = json["remap"]["limiter"] ? "yes": "no";
+  std::string use_bnd_limiter = json["remap"]["bnd_limiter"] ? "yes": "no";
   std::string partial_fix = json["remap"]["fixup"]["partial"];
   std::string empty_fix   = json["remap"]["fixup"]["empty"];
 
@@ -267,6 +270,7 @@ void print_params(nlohmann::json const& json) {
   std::printf(" \u2022 remap order: \e[32m%d\e[0m\n", params.order);
   std::printf(" \u2022 remap kind: \e[32m%s\e[0m\n", remap_kind.data());
   std::printf(" \u2022 use limiter: \e[32m%s\e[0m\n", use_limiter.data());
+  std::printf(" \u2022 use boundary limiter: \e[32m%s\e[0m\n", use_bnd_limiter.data());
   std::printf(" \u2022 partial filled fixup: \e[32m%s\e[0m\n", partial_fix.data());
   std::printf(" \u2022 empty cells fixup: \e[32m%s\e[0m\n", empty_fix.data());
   std::printf(" \u2022 fixup iterations: \e[32m%d\e[0m\n", params.fix_iter);
@@ -365,6 +369,9 @@ int parse(int argc, char* argv[]) {
       if (not json["remap"].count("limiter"))
         return abort("unspecified default gradient limiter");
 
+      if (not json["remap"].count("bnd_limiter"))
+        return abort("unspecified default gradient boundary limiter");        
+
       if (not json["remap"].count("fixup"))
         return abort("unspecified mismatch fixup parameters");
       else {
@@ -431,6 +438,7 @@ int parse(int argc, char* argv[]) {
     params.fix_iter  = json["remap"]["fixup"]["max-iter"];
 
     bool const use_limiter  = json["remap"]["limiter"];
+    bool const use_bnd_limiter  = json["remap"]["bnd_limiter"];
     std::string remap_kind  = json["remap"]["kind"];
     std::string parts_fixup = json["remap"]["fixup"]["partial"];
     std::string empty_fixup = json["remap"]["fixup"]["empty"];
@@ -444,6 +452,11 @@ int parse(int argc, char* argv[]) {
       params.limiter = Portage::Limiter_type::BARTH_JESPERSEN;
     else
       params.limiter = Portage::Limiter_type::NOLIMITER;
+
+    if (use_bnd_limiter)
+      params.bnd_limiter = Portage::Boundary_Limiter_type::BND_ZERO_GRADIENT;
+    else
+      params.bnd_limiter = Portage::Boundary_Limiter_type::BND_NOLIMITER;
 
     if (parts_fixup == "locally_conservative")
       params.partial_fixup = Portage::Partial_fixup_type::LOCALLY_CONSERVATIVE;
@@ -573,7 +586,7 @@ void remap<2>(std::string field, int nb_parts,
     // interpolate field for each part and fix partially filled or empty cells.
     remapper.interpolate_mesh_var<double, Portage::Interpolate_1stOrder>(
       field, field, weights, lower_bound, upper_bound,
-      params.limiter, params.partial_fixup,
+      params.limiter, params.bnd_limiter, params.partial_fixup,
       params.empty_fixup, params.tolerance,
       params.fix_iter, &(parts_manager[i])
     );
@@ -639,7 +652,7 @@ void remap<3>(std::string field, int nb_parts,
     // interpolate field for each part and fix partially filled or empty cells.
     remapper.interpolate_mesh_var<double, Portage::Interpolate_1stOrder>(
       field, field, weights, lower_bound, upper_bound,
-      params.limiter, params.partial_fixup,
+      params.limiter, params.bnd_limiter, params.partial_fixup,
       params.empty_fixup, params.tolerance,
       params.fix_iter, &(parts_manager[i])
     );

@@ -448,8 +448,7 @@ int main(int argc, char** argv) {
   profiler.time.mesh_init = timer::elapsed(tic);
 
   if (rank == 0) {
-    float const seconds = profiler.time.mesh_init * 1.E3;
-    std::cout << "Mesh Initialization Time: " << seconds << std::endl;
+    std::cout << "Mesh Initialization Time: " << profiler.time.mesh_init << std::endl;
   }
 
   tic = timer::now();
@@ -524,10 +523,9 @@ int main(int argc, char** argv) {
 #if ENABLE_TIMINGS
   profiler.time.remap = timer::elapsed(tic);
 
-  if (rank == 0) {
-    float const seconds = profiler.time.remap * 1.E3;
-    std::cout << "Remap Time: " << seconds << std::endl;
-  }
+  if (rank == 0)
+    std::cout << "Remap Time: " << profiler.time.remap << std::endl;
+
 #else
   // Output results for small test cases
   double error, toterr = 0.0;

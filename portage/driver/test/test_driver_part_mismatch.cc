@@ -285,7 +285,7 @@ public:
       // interpolate density part-by-part while fixing mismatched values
       remapper.interpolate_mesh_var<double, Portage::Interpolate_1stOrder>(
         "density", "density", weights, lower_bound, upper_bound,
-        Portage::DEFAULT_LIMITER, partial_fixup, empty_fixup,
+        Portage::DEFAULT_LIMITER, Portage::DEFAULT_BND_LIMITER, partial_fixup, empty_fixup,
         Portage::DEFAULT_CONSERVATION_TOL, Portage::DEFAULT_MAX_FIXUP_ITER,
         &(parts[i])
       );

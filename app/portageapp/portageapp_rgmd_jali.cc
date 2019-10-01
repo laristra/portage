@@ -56,7 +56,6 @@
 
 #include "portage/driver/write_to_gmv.h"
 
-#define ENABLE_TIMINGS 0
 #if ENABLE_TIMINGS
   #include "portage/support/timer.h"
 #endif
@@ -114,7 +113,8 @@ int print_usage() {
       "--dim=2|3 --nsourcecells=N --ntargetcells=M \n" << 
       "--source_convex_cells=y|n --target_convex_cells=y|n \n" <<
       "--remap_order=1|2 \n" <<
-      "--limiter=barth_jespersen --mesh_min=0. --mesh_max=1. \n" <<
+      "--limiter=barth_jespersen --bnd_limiter=zero_gradient \n"
+      "--mesh_min=0. --mesh_max=1. \n" <<
       "--output_meshes=y|n --convergence_study=NREF --only_threads=y|n \n\n";
 
   std::cout << "--problem (default = tjunction): defines material distribution in the domain\n\n";
@@ -160,8 +160,11 @@ int print_usage() {
   std::cout << "--remap order (default = 1): " <<
       "order of accuracy of interpolation\n\n";
 
-  std::cout << "--limiter (default = 0): " <<
+  std::cout << "--limiter (default = NOLIMITER): " <<
       "slope limiter for a piecewise linear reconstrution\n\n";
+
+  std::cout << "--bnd_limiter (default = NOLIMITER): " <<
+      "slope limiter on the boundary for a piecewise linear reconstruction\n\n";
 
   std::cout << "--convergence_study (default = 1): provide the number of times "
             << "you want to double source and target mesh sizes \n";
@@ -497,6 +500,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
                            bool source_convex_cells,
                            bool target_convex_cells,
                            Portage::Limiter_type limiter,
+                           Portage::Boundary_Limiter_type bnd_limiter,
                            int interp_order,
                            RGMDApp::Problem_type problem,
                            std::vector<std::string> material_field_expressions,
@@ -542,6 +546,7 @@ int main(int argc, char** argv) {
   int n_converge = 1;
   Jali::Entity_kind entityKind = Jali::Entity_kind::CELL;
   Portage::Limiter_type limiter = Portage::Limiter_type::NOLIMITER;
+  Portage::Boundary_Limiter_type bnd_limiter = Portage::Boundary_Limiter_type::BND_NOLIMITER;
   double srclo = 0.0, srchi = 1.0;  // bounds of generated mesh in each dir
 
 #if ENABLE_TIMINGS
@@ -610,6 +615,11 @@ int main(int argc, char** argv) {
     } else if (keyword == "limiter") {
       if (valueword == "barth_jespersen" || valueword == "BARTH_JESPERSEN")
         limiter = Portage::Limiter_type::BARTH_JESPERSEN;
+    } else if (keyword == "bnd_limiter") {
+      if (valueword == "zero_gradient" || valueword == "ZERO_GRADIENT")
+        bnd_limiter = Portage::Boundary_Limiter_type::BND_ZERO_GRADIENT;
+      else if (valueword == "barth_jespersen" || valueword == "BARTH_JESPERSEN")
+        bnd_limiter = Portage::Boundary_Limiter_type::BND_BARTH_JESPERSEN;
     } else if (keyword == "mesh_min") {
       srclo = stof(valueword);
     } else if (keyword == "mesh_max") {
@@ -705,6 +715,7 @@ int main(int argc, char** argv) {
   #endif
   // start timers here
   auto start = timer::now();
+  auto tic = start;
 #else
   std::shared_ptr<Profiler> profiler = nullptr;
 #endif
@@ -754,12 +765,11 @@ int main(int argc, char** argv) {
     profiler->time.mesh_init = timer::elapsed(tic);
 
     if (rank == 0) {
-      float const seconds = profiler->time.mesh_init * 1.E3;
       if (n_converge == 1)
-        std::cout << "Mesh Initialization Time: " << seconds << std::endl;
+        std::cout << "Mesh Initialization Time: " << profiler->time.mesh_init << std::endl;
       else
         std::cout << "Mesh Initialization Time (Iteration i): " <<
-            seconds << std::endl;
+            profiler->time.mesh_init << std::endl;
     }
 #endif
 
@@ -775,14 +785,14 @@ int main(int argc, char** argv) {
     switch (dim) {
       case 2:
         run<2>(source_mesh, target_mesh, source_convex_cells, target_convex_cells,
-               limiter, interp_order,
+               limiter, bnd_limiter, interp_order,
                problem, material_field_expressions,
                field_output_filename, mesh_output,
                rank, numpe, entityKind, l1_err[i], l2_err[i], profiler);
         break;
       case 3:
         run<3>(source_mesh, target_mesh, source_convex_cells, target_convex_cells,
-               limiter, interp_order,
+               limiter, bnd_limiter, interp_order,
                problem, material_field_expressions,
                field_output_filename, mesh_output,
                rank, numpe, entityKind, l1_err[i], l2_err[i], profiler);
@@ -830,6 +840,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
                            bool source_convex_cells,
                            bool target_convex_cells,
                            Portage::Limiter_type limiter,
+                           Portage::Boundary_Limiter_type bnd_limiter,
                            int interp_order,
                            RGMDApp::Problem_type problem,
                            std::vector<std::string> material_field_expressions,
@@ -965,8 +976,10 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
       std::cout << "\n";
     }
     std::cout << "   Interpolation order is " << interp_order << "\n";
-    if (interp_order == 2)
+    if (interp_order == 2) {
       std::cout << "   Limiter type is " << limiter << "\n";
+      std::cout << "   Boundary limiter type is " << bnd_limiter << "\n";
+    }
   }
 
 #if ENABLE_TIMINGS
@@ -1009,7 +1022,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
   }
 
 #if ENABLE_TIMINGS
-  profiler.time.remap = timer::elapsed(tic, true);
+  profiler->time.remap = timer::elapsed(tic, true);
 #endif
 
   // Executor
@@ -1033,7 +1046,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
   source_interface_reconstructor->reconstruct();
 
 #if ENABLE_TIMINGS
-  profiler.time.interface = timer::elapsed(tic, true);
+  profiler->time.interface = timer::elapsed(tic, true);
 #endif
 
   // Material fields are evaluated at material polygon centroids.
@@ -1151,6 +1164,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
                  targetMeshWrapper, targetStateWrapper);
       driver.set_remap_var_names(remap_fields);
       driver.set_limiter(limiter);
+      driver.set_bnd_limiter(bnd_limiter);
       driver.set_reconstructor_options(ims_tols, source_convex_cells);
       driver.run(executor);
     }
@@ -1190,6 +1204,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
                  targetMeshWrapper, targetStateWrapper);
       driver.set_remap_var_names(remap_fields);
       driver.set_limiter(limiter);
+      driver.set_bnd_limiter(bnd_limiter);
       driver.set_reconstructor_options(ims_tols, source_convex_cells);
       driver.run(executor);
     }
@@ -1283,11 +1298,10 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
     std::cout << std::endl << std::endl; 
   }
 #else
-  profiler.time.remap += timer::elapsed(tic);
+  profiler->time.remap += timer::elapsed(tic);
 
   if (rank == 0) {
-    float const seconds = profiler->time.remap * 1.E3;
-    std::cout << "Remap Time: " << seconds << std::endl;
+    std::cout << "Remap Time: " << profiler->time.remap << std::endl;
   }
 #endif  
 

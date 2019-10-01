@@ -13,6 +13,8 @@ add_subdirectory(simple_mesh_app)
 add_subdirectory(swarmapp)
 add_subdirectory(msmapp)
 
+option(ENABLE_APP_TIMINGS "Enable timing in apps" OFF)
+
 if (Jali_DIR OR ENABLE_FleCSI)
   add_subdirectory(portageapp)
 endif (Jali_DIR OR ENABLE_FleCSI)
