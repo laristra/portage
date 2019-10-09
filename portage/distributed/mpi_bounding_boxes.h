@@ -76,13 +76,14 @@ class MPI_Bounding_Boxes {
 
 
   /*!
-    @brief Compute whether the source mesh needs to be distributed
+    @brief Compute whether this partition needs data from other partitions or
+           whether all the data is already on the partition
     @param[in] source_mesh  Input mesh 
     @param[in] target_mesh  Target mesh
 
    */
   template <class Source_Mesh, class Target_Mesh>
-  bool source_needs_redistribution(const Source_Mesh &source_mesh,
+  bool does_this_partition_require_redistribution(const Source_Mesh &source_mesh,
                   const Target_Mesh &target_mesh)
   {
     // Get the MPI communicator size and rank information
@@ -114,6 +115,32 @@ class MPI_Bounding_Boxes {
   
     // the fall through case means no redistribution
     return false;
+  }
+
+
+  /*!
+    @brief Compute whether any partition needs data from other partitions
+    @param[in] source_mesh  Input mesh 
+    @param[in] target_mesh  Target mesh
+
+   */
+  template <class Source_Mesh, class Target_Mesh>
+  bool does_any_partition_require_redistribution(const Source_Mesh &source_mesh,
+                  const Target_Mesh &target_mesh)
+  {
+    // does this partition need data from an other partition
+    bool r = does_this_partition_require_redistribution(source_mesh, target_mesh);
+    
+    // convert to an int 
+    int ir = r ? 1 : 0;
+    
+    // allocate the result
+    int result;
+    
+    // do the MPI_ALLReduce to aggregate the results
+    MPI_Allreduce(&ir, &result, 1, MPI_INT, MPI_LOR, comm_);
+                    
+    return result;
   }
 
 
@@ -294,7 +321,7 @@ class MPI_Bounding_Boxes {
 
       // For this array only, pack up face IDs + dirs and send together
       std::vector<bool>& sourceCellToFaceDirs = source_mesh_flat.get_cell_to_face_dirs();
-      for (unsigned int j=0; j<sourceCellToFaceList.size(); ++j)
+      for (int j=0; j<sourceCellToFaceList.size(); ++j)
       {
         int f = sourceCellToFaceList_[j];
         int dir = static_cast<int>(sourceCellToFaceDirs[j]);
@@ -307,7 +334,7 @@ class MPI_Bounding_Boxes {
 
       // Unpack face IDs and dirs
       std::vector<bool> distributedCellToFaceDirs(cellToFaceInfo.newNum);
-      for (unsigned int j=0; j<distributedCellToFaceList.size(); ++j)
+      for (int j=0; j<distributedCellToFaceList.size(); ++j)
       {
         int fd = distributedCellToFaceList[j];
         distributedCellToFaceList[j] = fd >> 1;
@@ -659,7 +686,7 @@ class MPI_Bounding_Boxes {
     // Each rank will tell each other rank how many indexes it is going to send it
     info->sendCounts.resize(commSize);
     info->recvCounts.resize(commSize);
-    for (unsigned int i=0; i<commSize; i++)
+    for (int i=0; i<commSize; i++)
       info->sendCounts[i] = sendFlags[i] ? info->sourceNum : 0;
     MPI_Alltoall(&(info->sendCounts[0]), 1, MPI_INT,
                  &(info->recvCounts[0]), 1, MPI_INT, comm_);
@@ -667,15 +694,15 @@ class MPI_Bounding_Boxes {
     // Each rank will tell each other rank how many owned indexes it is going to send it
     info->sendOwnedCounts.resize(commSize);
     info->recvOwnedCounts.resize(commSize);
-    for (unsigned int i=0; i<commSize; i++)
+    for (int i=0; i<commSize; i++)
       info->sendOwnedCounts[i] = sendFlags[i] ? info->sourceNumOwned : 0;
     MPI_Alltoall(&(info->sendOwnedCounts[0]), 1, MPI_INT,
                  &(info->recvOwnedCounts[0]), 1, MPI_INT, comm_);
 
     // Compute the total number of indexes this rank will receive from all ranks
-    for (unsigned int i=0; i<commSize; i++)
+    for (int i=0; i<commSize; i++)
       info->newNum += info->recvCounts[i];
-    for (unsigned int i=0; i<commSize; i++)
+    for (int i=0; i<commSize; i++)
       info->newNumOwned += info->recvOwnedCounts[i];
   } // setSendRecvCounts
 
@@ -702,7 +729,7 @@ class MPI_Bounding_Boxes {
     std::vector<int> recvGhostCounts(commSize);
     std::vector<int> sendGhostCounts(commSize);
 
-    for (unsigned int i=0; i<commSize; i++)
+    for (int i=0; i<commSize; i++)
     {
       recvGhostCounts[i] = info.recvCounts[i] - info.recvOwnedCounts[i];
       sendGhostCounts[i] = info.sendCounts[i] - info.sendOwnedCounts[i];
@@ -721,7 +748,7 @@ class MPI_Bounding_Boxes {
 
 #ifdef DEBUG_MPI
     std::cout << "Number of values on rank " << commRank << ": " << (*newData).size() << std::endl;
-    for (unsigned int f=0; f<(*newData).size(); f++)
+    for (int f=0; f<(*newData).size(); f++)
       std::cout << (*newData)[f] << " ";
     std::cout << std::endl << std::endl;
 #endif
@@ -758,7 +785,7 @@ class MPI_Bounding_Boxes {
     int writeOffset = newStart;
     int myOffset;
     std::vector<MPI_Request> requests;
-    for (unsigned int i=0; i<commSize; i++)
+    for (int i=0; i<commSize; i++)
     {
       if ((i != commRank) && (curRecvCounts[i] > 0))
       {
@@ -783,7 +810,7 @@ class MPI_Bounding_Boxes {
                 newData->begin() + stride*myOffset);
 
     // Each rank will send its data values to appropriate ranks
-    for (unsigned int i=0; i<commSize; i++)
+    for (int i=0; i<commSize; i++)
     {
       if ((i != commRank) && (curSendCounts[i] > 0))
       {
@@ -816,17 +843,17 @@ class MPI_Bounding_Boxes {
     // array that will later store the target bounding box for each rank
     int targetNumOwnedCells = target_mesh.num_owned_cells();
     std::vector<double> targetBoundingBoxes(2*dim*commSize);
-    for (unsigned int i=0; i<2*dim; i+=2)
+    for (int i=0; i<2*dim; i+=2)
     {
       targetBoundingBoxes[2*dim*commRank+i+0] = std::numeric_limits<double>::max();
       targetBoundingBoxes[2*dim*commRank+i+1] = -std::numeric_limits<double>::max();
     }
-    for (unsigned int c=0; c<targetNumOwnedCells; ++c)
+    for (int c=0; c<targetNumOwnedCells; ++c)
     {
       std::vector<int> nodes;
       target_mesh.cell_get_nodes(c, &nodes);
       int cellNumNodes = nodes.size();
-      for (unsigned int j=0; j<cellNumNodes; ++j)
+      for (int j=0; j<cellNumNodes; ++j)
       {
         int n = nodes[j];
         // ugly hack, since dim is not known at compile time
@@ -834,7 +861,7 @@ class MPI_Bounding_Boxes {
         {
           Point<3> nodeCoord;
           target_mesh.node_get_coordinates(n, &nodeCoord);
-          for (unsigned int k=0; k<dim; ++k)
+          for (int k=0; k<dim; ++k)
           {
             if (nodeCoord[k] < targetBoundingBoxes[2*dim*commRank+2*k])
               targetBoundingBoxes[2*dim*commRank+2*k] = nodeCoord[k];
@@ -846,7 +873,7 @@ class MPI_Bounding_Boxes {
         {
           Point<2> nodeCoord;
           target_mesh.node_get_coordinates(n, &nodeCoord);
-          for (unsigned int k=0; k<dim; ++k)
+          for (int k=0; k<dim; ++k)
           {
             if (nodeCoord[k] < targetBoundingBoxes[2*dim*commRank+2*k])
               targetBoundingBoxes[2*dim*commRank+2*k] = nodeCoord[k];
@@ -862,24 +889,24 @@ class MPI_Bounding_Boxes {
 
     // Compute the bounding box for the source mesh on this rank
     std::vector<double> sourceBoundingBox(2*dim);
-    for (unsigned int i=0; i<2*dim; i+=2)
+    for (int i=0; i<2*dim; i+=2)
     {
       sourceBoundingBox[i+0] = std::numeric_limits<double>::max();
       sourceBoundingBox[i+1] = -std::numeric_limits<double>::max();
     }
-    for (unsigned int c=0; c<sourceNumOwnedCells; ++c)
+    for (int c=0; c<sourceNumOwnedCells; ++c)
     {
       std::vector<int> nodes;
       source_mesh.cell_get_nodes(c, &nodes);
       int cellNumNodes = nodes.size();
-      for (unsigned int j=0; j<cellNumNodes; ++j)
+      for (int j=0; j<cellNumNodes; ++j)
       {
         int n = nodes[j];
         if (dim ==3 )
         {
           Point<3> nodeCoord;
           source_mesh.node_get_coordinates(n, &nodeCoord);
-          for (unsigned int k=0; k<dim; ++k)
+          for (int k=0; k<dim; ++k)
           {
             if (nodeCoord[k] < sourceBoundingBox[2*k])
               sourceBoundingBox[2*k] = nodeCoord[k];
@@ -891,7 +918,7 @@ class MPI_Bounding_Boxes {
         {
           Point<2> nodeCoord;
           source_mesh.node_get_coordinates(n, &nodeCoord);
-          for (unsigned int k=0; k<dim; ++k)
+          for (int k=0; k<dim; ++k)
           {
             if (nodeCoord[k] < sourceBoundingBox[2*k])
               sourceBoundingBox[2*k] = nodeCoord[k];
@@ -903,7 +930,7 @@ class MPI_Bounding_Boxes {
     } // for c
 
     // Broadcast the target bounding boxes so that each rank knows the bounding boxes for all ranks
-    for (unsigned int i=0; i<commSize; i++)
+    for (int i=0; i<commSize; i++)
       MPI_Bcast(&(targetBoundingBoxes[0])+i*2*dim, 2*dim, MPI_DOUBLE, i, comm_);
 
 
@@ -911,7 +938,7 @@ class MPI_Bounding_Boxes {
     // with a target bounding box that is incident to but not overlapping the source bounding box
     const double boxOffset = 2.0*std::numeric_limits<double>::epsilon();
     double min2[dim], max2[dim];
-    for (unsigned int k=0; k<dim; ++k)
+    for (int k=0; k<dim; ++k)
     {
       min2[k] = sourceBoundingBox[2*k]+boxOffset;
       max2[k] = sourceBoundingBox[2*k+1]-boxOffset;
@@ -919,11 +946,11 @@ class MPI_Bounding_Boxes {
 
     // For each target rank with a bounding box that overlaps the bounding box for this rank's partition
     // of the source mesh, we will send it all our source cells; otherwise, we will send it nothing
-    for (unsigned int i=0; i<commSize; ++i)
+    for (int i=0; i<commSize; ++i)
     {
       double min1[dim], max1[dim];
       bool sendThis = true;
-      for (unsigned int k=0; k<dim; ++k)
+      for (int k=0; k<dim; ++k)
       {
         min1[k] = targetBoundingBoxes[2*dim*i+2*k]+boxOffset;
         max1[k] = targetBoundingBoxes[2*dim*i+2*k+1]-boxOffset;

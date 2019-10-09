@@ -471,8 +471,13 @@ TEST(MPI_Bounding_Boxes, NeedsRedistribution2D_1) {
   
   Wonton::MPIExecutor_type executor(MPI_COMM_WORLD);
   Portage::MPI_Bounding_Boxes distributor(&executor);
+  
   ASSERT_FALSE(
-    distributor.source_needs_redistribution(inputMeshWrapper, inputMeshWrapper)
+    distributor.does_this_partition_require_redistribution(inputMeshWrapper, inputMeshWrapper)
+  );
+  
+  ASSERT_FALSE(
+    distributor.does_any_partition_require_redistribution(inputMeshWrapper, inputMeshWrapper)
   );
 }
 
@@ -491,8 +496,13 @@ TEST(MPI_Bounding_Boxes, NeedsRedistribution2D_2) {
   
   Wonton::MPIExecutor_type executor(MPI_COMM_WORLD);
   Portage::MPI_Bounding_Boxes distributor(&executor);
+  
   ASSERT_FALSE(
-    distributor.source_needs_redistribution(inputMeshWrapper, outputMeshWrapper)
+    distributor.does_this_partition_require_redistribution(inputMeshWrapper, outputMeshWrapper)
+  );
+  
+  ASSERT_FALSE(
+    distributor.does_any_partition_require_redistribution(inputMeshWrapper, outputMeshWrapper)
   );
 }
 
@@ -519,12 +529,17 @@ TEST(MPI_Bounding_Boxes, NeedsRedistribution2D_3) {
 
   if (commRank==3)
     ASSERT_FALSE(
-      distributor.source_needs_redistribution(inputMeshWrapper, outputMeshWrapper)
+      distributor.does_this_partition_require_redistribution(inputMeshWrapper, outputMeshWrapper)
     );
   else
     ASSERT_TRUE(
-      distributor.source_needs_redistribution(inputMeshWrapper, outputMeshWrapper)
+      distributor.does_this_partition_require_redistribution(inputMeshWrapper, outputMeshWrapper)
     );
+    
+  ASSERT_TRUE(
+    distributor.does_any_partition_require_redistribution(inputMeshWrapper, outputMeshWrapper)
+  );
+
 }
 
 
@@ -538,8 +553,13 @@ TEST(MPI_Bounding_Boxes, NeedsRedistribution3D_1) {
   
   Wonton::MPIExecutor_type executor(MPI_COMM_WORLD);
   Portage::MPI_Bounding_Boxes distributor(&executor);
+  
   ASSERT_FALSE(
-    distributor.source_needs_redistribution(inputMeshWrapper, inputMeshWrapper)
+    distributor.does_this_partition_require_redistribution(inputMeshWrapper, inputMeshWrapper)
+  );
+  
+  ASSERT_FALSE(
+    distributor.does_any_partition_require_redistribution(inputMeshWrapper, inputMeshWrapper)
   );
 }
 
@@ -558,8 +578,13 @@ TEST(MPI_Bounding_Boxes, NeedsRedistribution3D_2) {
   
   Wonton::MPIExecutor_type executor(MPI_COMM_WORLD);
   Portage::MPI_Bounding_Boxes distributor(&executor);
+  
   ASSERT_FALSE(
-    distributor.source_needs_redistribution(inputMeshWrapper, outputMeshWrapper)
+    distributor.does_this_partition_require_redistribution(inputMeshWrapper, outputMeshWrapper)
+  );
+  
+  ASSERT_FALSE(
+    distributor.does_any_partition_require_redistribution(inputMeshWrapper, outputMeshWrapper)
   );
 }
 
@@ -586,12 +611,17 @@ TEST(MPI_Bounding_Boxes, NeedsRedistribution3D_3) {
 
   if (commRank==3)
     ASSERT_FALSE(
-      distributor.source_needs_redistribution(inputMeshWrapper, outputMeshWrapper)
+      distributor.does_this_partition_require_redistribution(inputMeshWrapper, outputMeshWrapper)
     );
   else
     ASSERT_TRUE(
-      distributor.source_needs_redistribution(inputMeshWrapper, outputMeshWrapper)
+      distributor.does_this_partition_require_redistribution(inputMeshWrapper, outputMeshWrapper)
     );
+    
+  ASSERT_TRUE(
+    distributor.does_any_partition_require_redistribution(inputMeshWrapper, outputMeshWrapper)
+  );
+    
 }
 
 
