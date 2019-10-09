@@ -76,14 +76,14 @@ class MPI_Bounding_Boxes {
 
 
   /*!
-    @brief Compute whether this partition needs data from other partitions or
-           whether all the data is already on the partition
+    @brief Compute whether this partition (Bob) needs data from other partitions 
+          (hungry) or whether all the data is already on the partition
     @param[in] source_mesh  Input mesh 
     @param[in] target_mesh  Target mesh
 
    */
   template <class Source_Mesh, class Target_Mesh>
-  bool does_this_partition_require_redistribution(const Source_Mesh &source_mesh,
+  bool is_bob_hungry(const Source_Mesh &source_mesh,
                   const Target_Mesh &target_mesh)
   {
     // Get the MPI communicator size and rank information
@@ -125,11 +125,11 @@ class MPI_Bounding_Boxes {
 
    */
   template <class Source_Mesh, class Target_Mesh>
-  bool does_any_partition_require_redistribution(const Source_Mesh &source_mesh,
+  bool is_redistribution_needed(const Source_Mesh &source_mesh,
                   const Target_Mesh &target_mesh)
   {
     // does this partition need data from an other partition
-    bool r = does_this_partition_require_redistribution(source_mesh, target_mesh);
+    bool r = is_bob_hungry(source_mesh, target_mesh);
     
     // convert to an int 
     int ir = r ? 1 : 0;

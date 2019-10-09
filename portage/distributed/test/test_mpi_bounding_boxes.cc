@@ -473,11 +473,11 @@ TEST(MPI_Bounding_Boxes, NeedsRedistribution2D_1) {
   Portage::MPI_Bounding_Boxes distributor(&executor);
   
   ASSERT_FALSE(
-    distributor.does_this_partition_require_redistribution(inputMeshWrapper, inputMeshWrapper)
+    distributor.is_bob_hungry(inputMeshWrapper, inputMeshWrapper)
   );
   
   ASSERT_FALSE(
-    distributor.does_any_partition_require_redistribution(inputMeshWrapper, inputMeshWrapper)
+    distributor.is_redistribution_needed(inputMeshWrapper, inputMeshWrapper)
   );
 }
 
@@ -498,11 +498,11 @@ TEST(MPI_Bounding_Boxes, NeedsRedistribution2D_2) {
   Portage::MPI_Bounding_Boxes distributor(&executor);
   
   ASSERT_FALSE(
-    distributor.does_this_partition_require_redistribution(inputMeshWrapper, outputMeshWrapper)
+    distributor.is_bob_hungry(inputMeshWrapper, outputMeshWrapper)
   );
   
   ASSERT_FALSE(
-    distributor.does_any_partition_require_redistribution(inputMeshWrapper, outputMeshWrapper)
+    distributor.is_redistribution_needed(inputMeshWrapper, outputMeshWrapper)
   );
 }
 
@@ -529,15 +529,15 @@ TEST(MPI_Bounding_Boxes, NeedsRedistribution2D_3) {
 
   if (commRank==3)
     ASSERT_FALSE(
-      distributor.does_this_partition_require_redistribution(inputMeshWrapper, outputMeshWrapper)
+      distributor.is_bob_hungry(inputMeshWrapper, outputMeshWrapper)
     );
   else
     ASSERT_TRUE(
-      distributor.does_this_partition_require_redistribution(inputMeshWrapper, outputMeshWrapper)
+      distributor.is_bob_hungry(inputMeshWrapper, outputMeshWrapper)
     );
     
   ASSERT_TRUE(
-    distributor.does_any_partition_require_redistribution(inputMeshWrapper, outputMeshWrapper)
+    distributor.is_redistribution_needed(inputMeshWrapper, outputMeshWrapper)
   );
 
 }
@@ -555,11 +555,11 @@ TEST(MPI_Bounding_Boxes, NeedsRedistribution3D_1) {
   Portage::MPI_Bounding_Boxes distributor(&executor);
   
   ASSERT_FALSE(
-    distributor.does_this_partition_require_redistribution(inputMeshWrapper, inputMeshWrapper)
+    distributor.is_bob_hungry(inputMeshWrapper, inputMeshWrapper)
   );
   
   ASSERT_FALSE(
-    distributor.does_any_partition_require_redistribution(inputMeshWrapper, inputMeshWrapper)
+    distributor.is_redistribution_needed(inputMeshWrapper, inputMeshWrapper)
   );
 }
 
@@ -580,11 +580,11 @@ TEST(MPI_Bounding_Boxes, NeedsRedistribution3D_2) {
   Portage::MPI_Bounding_Boxes distributor(&executor);
   
   ASSERT_FALSE(
-    distributor.does_this_partition_require_redistribution(inputMeshWrapper, outputMeshWrapper)
+    distributor.is_bob_hungry(inputMeshWrapper, outputMeshWrapper)
   );
   
   ASSERT_FALSE(
-    distributor.does_any_partition_require_redistribution(inputMeshWrapper, outputMeshWrapper)
+    distributor.is_redistribution_needed(inputMeshWrapper, outputMeshWrapper)
   );
 }
 
@@ -611,15 +611,15 @@ TEST(MPI_Bounding_Boxes, NeedsRedistribution3D_3) {
 
   if (commRank==3)
     ASSERT_FALSE(
-      distributor.does_this_partition_require_redistribution(inputMeshWrapper, outputMeshWrapper)
+      distributor.is_bob_hungry(inputMeshWrapper, outputMeshWrapper)
     );
   else
     ASSERT_TRUE(
-      distributor.does_this_partition_require_redistribution(inputMeshWrapper, outputMeshWrapper)
+      distributor.is_bob_hungry(inputMeshWrapper, outputMeshWrapper)
     );
     
   ASSERT_TRUE(
-    distributor.does_any_partition_require_redistribution(inputMeshWrapper, outputMeshWrapper)
+    distributor.is_redistribution_needed(inputMeshWrapper, outputMeshWrapper)
   );
     
 }
