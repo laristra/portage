@@ -106,7 +106,6 @@ public:
 
     source_part_size_ = source_entities.size();
     target_part_size_ = target_entities.size();
-    do_part_by_part_  = (source_part_size_ > 0 and target_part_size_ > 0);
 
     // Get info about which entities on this processor should be
     // masked out and not accounted for in calculations because they
@@ -254,7 +253,6 @@ public:
    */
   bool check_mismatch(Portage::vector<entity_weights_t> const& source_ents_and_weights) {
 
-    assert(do_part_by_part_);
 
     // ------------------------------------------
     // COMPUTE VOLUMES ON SOURCE AND TARGET PARTS
@@ -548,7 +546,7 @@ public:
                             Empty_fixup_type empty_fixup_type) const {
 
     // valid only for part-by-part scenario
-    assert(do_part_by_part_);
+
     static bool hit_lower_bound  = false;
     static bool hit_higher_bound = false;
 
@@ -866,7 +864,6 @@ private:
   std::unordered_set<int> target_lookup_;
 
 
-  bool do_part_by_part_    = false;
   bool is_mismatch_tested_ = false;
   bool has_mismatch_       = false;
 
