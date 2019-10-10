@@ -866,12 +866,10 @@ class CoreDriver : public CoreDriverBase<D,
 
       // 1. Do some basic checks on supplied source and target parts
       // to prevent bugs when interpolating values:
-      // - first check that source and target parts are not empty,
-      // - then check that parts mismatch has already been tested.
+      // - check that parts mismatch has already been tested.
       // - afterwards, check that each entity id is within the
       //   mesh entity index space.
-      assert(partition->source_part_size() > 0);
-      assert(partition->target_part_size() > 0);
+
       assert(partition->is_mismatch_tested());
 
       int const& max_source_id = source_mesh_.num_entities(ONWHAT, ALL);
