@@ -13,11 +13,11 @@
 #include <vector>
 #include <iostream>
 
-// portage includes
 #include "portage/support/portage.h"
 #include "portage/intersect/dummy_interface_reconstructor.h"
+#include "portage/driver/fix_mismatch.h"
+#include "portage/driver/parts.h"
 
-// wonton includes
 #include "wonton/support/lsfits.h"
 #include "wonton/support/Point.h"
 #include "wonton/support/Vector.h"
@@ -49,8 +49,19 @@ namespace Portage {
     class CoordSys = Wonton::DefaultCoordSys
   >
   class Limited_Gradient {
-  public:
 
+    // useful aliases
+    using Parts = PartPair<D, on_what, MeshType, StateType>;
+
+#ifdef HAVE_TANGRAM
+    using InterfaceReconstructor =
+      Tangram::Driver<
+        InterfaceReconstructorType, D, MeshType,
+        Matpoly_Splitter, Matpoly_Clipper
+      >;
+#endif
+
+  public:
     /*! @brief Constructor
         @param[in] mesh  Mesh class than one can query for mesh info
         @param[in] state A state manager class that one can query for field info
@@ -63,36 +74,34 @@ namespace Portage {
 
         @todo must remove assumption that field is scalar
      */
-#ifdef HAVE_TANGRAM
-    using InterfaceReconstructor =
-      Tangram::Driver<
-        InterfaceReconstructorType, D, MeshType,
-        Matpoly_Splitter, Matpoly_Clipper
-      >;
+    Limited_Gradient(MeshType const& mesh, StateType const& state,
+                     std::string const var_name,
+                     Limiter_type limiter_type,
+                     Boundary_Limiter_type boundary_limiter_type,
+                     const Parts* const parts = nullptr)
+      : mesh_(mesh),
+        state_(state),
+        values_(nullptr),
+        variable_name_(var_name),
+        limiter_type_(limiter_type),
+        boundary_limiter_type_(boundary_limiter_type),
+        parts_(parts) {}
 
+#ifdef HAVE_TANGRAM
     Limited_Gradient(MeshType const &mesh, StateType const &state,
                      std::string const var_name,
                      Limiter_type limiter_type,
                      Boundary_Limiter_type boundary_limiter_type,
-                     std::shared_ptr<InterfaceReconstructor> ir)
+                     std::shared_ptr<InterfaceReconstructor> ir,
+                     const Parts* const parts = nullptr)
       : mesh_(mesh),
         state_(state),
         values_(nullptr),
         variable_name_(var_name),
         limiter_type_(limiter_type),
-        boundary_limiter_type_(boundary_limiter_type) {}
+        boundary_limiter_type_(boundary_limiter_type),
+        parts_(parts) {}
 #endif
-
-    Limited_Gradient(MeshType const &mesh, StateType const &state,
-                     std::string const var_name,
-                     Limiter_type limiter_type,
-                     Boundary_Limiter_type boundary_limiter_type)
-      : mesh_(mesh),
-        state_(state),
-        values_(nullptr),
-        variable_name_(var_name),
-        limiter_type_(limiter_type),
-        boundary_limiter_type_(boundary_limiter_type) {}
 
     // Assignment operator (disabled)
     Limited_Gradient& operator = (const Limited_Gradient&) = delete;
@@ -116,6 +125,7 @@ namespace Portage {
     Boundary_Limiter_type boundary_limiter_type_ = DEFAULT_BND_LIMITER;
     Field_type field_type_ = Field_type::UNKNOWN_TYPE_FIELD;
     int material_id_ = 0;
+    Parts const* parts_;
   };
 
   //////////////////////////////////////////////////////////////////////////////
@@ -138,29 +148,69 @@ namespace Portage {
     InterfaceReconstructorType,
     Matpoly_Splitter, Matpoly_Clipper, CoordSys
   > {
-  public:
+
+    // useful aliases
+    using Parts = PartPair<D, Entity_kind::CELL, MeshType, StateType>;
+
 #ifdef HAVE_TANGRAM
     using InterfaceReconstructor =
       Tangram::Driver<
         InterfaceReconstructorType, D, MeshType,
         Matpoly_Splitter, Matpoly_Clipper
       >;
+#endif
 
-    // Constructor with interface reconstructor and to be used for multimaterial
-    // remaps.
+  public:
+    //Constructor for single material remap
     Limited_Gradient(MeshType const& mesh,
                      StateType const& state,
-                     std::string const& var_name,
+                     std::string const var_name,
                      Limiter_type limiter_type,
                      Boundary_Limiter_type boundary_limiter_type,
-                     std::shared_ptr<InterfaceReconstructor> ir)
+                     const Parts* const parts = nullptr)
       : mesh_(mesh),
         state_(state),
         values_(nullptr),
         variable_name_(var_name),
         limiter_type_(limiter_type),
         boundary_limiter_type_(boundary_limiter_type),
-        interface_reconstructor_(ir) {
+        parts_(parts) {
+
+      // Collect and keep the list of neighbors for each CELL as it may
+      // be expensive to go to the mesh layer and collect this data for
+      // each cell during the actual gradient calculation
+      auto collect_cell_neighbors = [this](int c) {
+        this->mesh_.cell_get_node_adj_cells(
+          c, Entity_type::ALL, &(cell_neighbors_[c])
+        );
+      };
+
+      int const ncells = mesh_.num_entities(Entity_kind::CELL);
+      cell_neighbors_.resize(ncells);
+      Portage::for_each(mesh_.begin(Entity_kind::CELL),
+                        mesh_.end(Entity_kind::CELL),
+                        collect_cell_neighbors);
+
+      set_interpolation_variable(var_name, limiter_type, boundary_limiter_type);
+    }
+
+#ifdef HAVE_TANGRAM
+    // Constructor with interface reconstructor for multimaterial remaps.
+    Limited_Gradient(MeshType const& mesh,
+                     StateType const& state,
+                     std::string const& var_name,
+                     Limiter_type limiter_type,
+                     Boundary_Limiter_type boundary_limiter_type,
+                     std::shared_ptr<InterfaceReconstructor> ir,
+                     const Parts* const parts = nullptr)
+      : mesh_(mesh),
+        state_(state),
+        values_(nullptr),
+        variable_name_(var_name),
+        limiter_type_(limiter_type),
+        boundary_limiter_type_(boundary_limiter_type),
+        interface_reconstructor_(ir),
+        parts_(parts) {
 
       // Collect and keep the list of neighbors for each CELL as it may
       // be expensive to go to the mesh layer and collect this data for
@@ -185,34 +235,6 @@ namespace Portage {
       set_interpolation_variable(var_name, limiter_type, boundary_limiter_type);
     }
 #endif
-
-    //Constructor for single material remap
-    Limited_Gradient(MeshType const& mesh,
-                     StateType const& state,
-                     std::string const var_name,
-                     Limiter_type limiter_type,
-                     Boundary_Limiter_type boundary_limiter_type)
-      : mesh_(mesh),
-        state_(state),
-        values_(nullptr) {
-
-      // Collect and keep the list of neighbors for each CELL as it may
-      // be expensive to go to the mesh layer and collect this data for
-      // each cell during the actual gradient calculation
-      auto collect_cell_neighbors = [this](int c) {
-        this->mesh_.cell_get_node_adj_cells(
-          c, Entity_type::ALL, &(cell_neighbors_[c])
-        );
-      };
-
-      int const ncells = mesh_.num_entities(Entity_kind::CELL);
-      cell_neighbors_.resize(ncells);
-      Portage::for_each(mesh_.begin(Entity_kind::CELL),
-                        mesh_.end(Entity_kind::CELL),
-                        collect_cell_neighbors);
-
-      set_interpolation_variable(var_name, limiter_type, boundary_limiter_type);
-    }
 
     //This method should be called by the user if the field type is MULTIMATERIAL_FIELD.
     //As the constructor with interface reconstructor only sets the variable name
@@ -425,6 +447,7 @@ namespace Portage {
 #ifdef HAVE_TANGRAM
     std::shared_ptr<InterfaceReconstructor> interface_reconstructor_;
 #endif
+    Parts const* parts_;
   };
 
   ///////////////////////////////////////////////////////////////////////////////
@@ -447,8 +470,9 @@ namespace Portage {
     Matpoly_Splitter, Matpoly_Clipper, CoordSys
   > {
 
-  public:
+    using Parts = PartPair<D, Entity_kind::CELL, MeshType, StateType>;
 
+  public:
     /*! @brief Constructor
       @param[in] mesh  Mesh class than one can query for mesh info
       @param[in] state A state manager class that one can query for field info
@@ -462,10 +486,15 @@ namespace Portage {
                      StateType const& state,
                      std::string const var_name,
                      Limiter_type limiter_type,
-                     Boundary_Limiter_type boundary_limiter_type)
+                     Boundary_Limiter_type boundary_limiter_type,
+                     const Parts* const parts = nullptr)
       : mesh_(mesh),
         state_(state),
-        values_(nullptr) {
+        values_(nullptr),
+        variable_name_(var_name),
+        limiter_type_(limiter_type),
+        boundary_limiter_type_(boundary_limiter_type),
+        parts_(parts) {
 
       auto collect_node_neighbors = [this](int n) {
         this->mesh_.dual_cell_get_node_adj_cells(
@@ -480,6 +509,11 @@ namespace Portage {
                         collect_node_neighbors);
 
       set_interpolation_variable(var_name, limiter_type, boundary_limiter_type);
+
+      if (parts_ != nullptr) {
+        std::cout << "Warning: part-by-part remap is only defined for cells. ";
+        std::cout << "Source and target part pair will be ignored" << std::endl;
+      }
     }
 
     void set_material(int material_id) { material_id_ = material_id; }
@@ -571,6 +605,7 @@ namespace Portage {
     int material_id_ = 0;
     std::vector<int> cell_ids_;
     std::vector<std::vector<int>> node_neighbors_;
+    Parts const* parts_;
   };
 }  // namespace Portage
 
