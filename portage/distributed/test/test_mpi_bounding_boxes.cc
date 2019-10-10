@@ -29,6 +29,7 @@ Please see the license file at the root of this repository, or at:
 #include "wonton/support/wonton.h"
 #include "wonton/support/Point.h"
 
+
 TEST(MPI_Bounding_Boxes, SimpleTest3D) {
 
   int commRank;
@@ -458,3 +459,169 @@ TEST(MPI_Bounding_Boxes, SimpleTest2D) {
   }
 
 }
+
+
+TEST(MPI_Bounding_Boxes, NeedsRedistribution2D_1) {
+
+ Jali::MeshFactory mf(MPI_COMM_WORLD);
+
+  // Source mesh
+  std::shared_ptr<Jali::Mesh> source_mesh = mf(0.0, 0.0, 1.0, 1.0, 5, 5);
+  Wonton::Jali_Mesh_Wrapper inputMeshWrapper(*source_mesh);
+  
+  Wonton::MPIExecutor_type executor(MPI_COMM_WORLD);
+  Portage::MPI_Bounding_Boxes distributor(&executor);
+  
+  ASSERT_FALSE(
+    distributor.is_bob_hungry(inputMeshWrapper, inputMeshWrapper)
+  );
+  
+  ASSERT_FALSE(
+    distributor.is_redistribution_needed(inputMeshWrapper, inputMeshWrapper)
+  );
+}
+
+
+TEST(MPI_Bounding_Boxes, NeedsRedistribution2D_2) {
+
+ Jali::MeshFactory mf(MPI_COMM_WORLD);
+
+  // Source mesh
+  std::shared_ptr<Jali::Mesh> source_mesh = mf(0.0, 0.0, 1.0, 1.0, 5, 5);
+  Wonton::Jali_Mesh_Wrapper inputMeshWrapper(*source_mesh);
+  
+  // target mesh
+  std::shared_ptr<Jali::Mesh> target_mesh = mf(0.0, 0.0, 1.0, 1.0, 5, 5);
+  Wonton::Jali_Mesh_Wrapper outputMeshWrapper(*target_mesh);
+  
+  Wonton::MPIExecutor_type executor(MPI_COMM_WORLD);
+  Portage::MPI_Bounding_Boxes distributor(&executor);
+  
+  ASSERT_FALSE(
+    distributor.is_bob_hungry(inputMeshWrapper, outputMeshWrapper)
+  );
+  
+  ASSERT_FALSE(
+    distributor.is_redistribution_needed(inputMeshWrapper, outputMeshWrapper)
+  );
+}
+
+
+TEST(MPI_Bounding_Boxes, NeedsRedistribution2D_3) {
+
+  Jali::MeshFactory mf(MPI_COMM_WORLD);
+
+  // Source mesh
+  std::shared_ptr<Jali::Mesh> source_mesh = mf(0.0, 0.0, 1.0, 1.0, 5, 5);
+  Wonton::Jali_Mesh_Wrapper inputMeshWrapper(*source_mesh);
+  
+  // target mesh
+  std::shared_ptr<Jali::Mesh> target_mesh = mf(0.0, 0.0, 1.0, 1.0, 7, 7);
+  Wonton::Jali_Mesh_Wrapper outputMeshWrapper(*target_mesh);
+  
+  Wonton::MPIExecutor_type executor(MPI_COMM_WORLD);
+  Portage::MPI_Bounding_Boxes distributor(&executor);
+  
+  // these results absolutely depend on the partitioning
+  // only target partition 3 requires no other data
+  int commRank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &commRank);
+
+  if (commRank==3)
+    ASSERT_FALSE(
+      distributor.is_bob_hungry(inputMeshWrapper, outputMeshWrapper)
+    );
+  else
+    ASSERT_TRUE(
+      distributor.is_bob_hungry(inputMeshWrapper, outputMeshWrapper)
+    );
+    
+  ASSERT_TRUE(
+    distributor.is_redistribution_needed(inputMeshWrapper, outputMeshWrapper)
+  );
+
+}
+
+
+TEST(MPI_Bounding_Boxes, NeedsRedistribution3D_1) {
+
+ Jali::MeshFactory mf(MPI_COMM_WORLD);
+
+  // Source mesh
+  std::shared_ptr<Jali::Mesh> source_mesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 5, 5, 5);
+  Wonton::Jali_Mesh_Wrapper inputMeshWrapper(*source_mesh);
+  
+  Wonton::MPIExecutor_type executor(MPI_COMM_WORLD);
+  Portage::MPI_Bounding_Boxes distributor(&executor);
+  
+  ASSERT_FALSE(
+    distributor.is_bob_hungry(inputMeshWrapper, inputMeshWrapper)
+  );
+  
+  ASSERT_FALSE(
+    distributor.is_redistribution_needed(inputMeshWrapper, inputMeshWrapper)
+  );
+}
+
+
+TEST(MPI_Bounding_Boxes, NeedsRedistribution3D_2) {
+
+ Jali::MeshFactory mf(MPI_COMM_WORLD);
+
+  // Source mesh
+  std::shared_ptr<Jali::Mesh> source_mesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 5, 5, 5);
+  Wonton::Jali_Mesh_Wrapper inputMeshWrapper(*source_mesh);
+  
+  // target mesh
+  std::shared_ptr<Jali::Mesh> target_mesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 5, 5, 5);
+  Wonton::Jali_Mesh_Wrapper outputMeshWrapper(*target_mesh);
+  
+  Wonton::MPIExecutor_type executor(MPI_COMM_WORLD);
+  Portage::MPI_Bounding_Boxes distributor(&executor);
+  
+  ASSERT_FALSE(
+    distributor.is_bob_hungry(inputMeshWrapper, outputMeshWrapper)
+  );
+  
+  ASSERT_FALSE(
+    distributor.is_redistribution_needed(inputMeshWrapper, outputMeshWrapper)
+  );
+}
+
+
+TEST(MPI_Bounding_Boxes, NeedsRedistribution3D_3) {
+
+  Jali::MeshFactory mf(MPI_COMM_WORLD);
+
+  // Source mesh
+  std::shared_ptr<Jali::Mesh> source_mesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 5, 5, 5);
+  Wonton::Jali_Mesh_Wrapper inputMeshWrapper(*source_mesh);
+  
+  // target mesh
+  std::shared_ptr<Jali::Mesh> target_mesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 7, 7, 7);
+  Wonton::Jali_Mesh_Wrapper outputMeshWrapper(*target_mesh);
+  
+  Wonton::MPIExecutor_type executor(MPI_COMM_WORLD);
+  Portage::MPI_Bounding_Boxes distributor(&executor);
+  
+  // these results absolutely depend on the partitioning
+  // only target partition 3 requires no other data
+  int commRank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &commRank);
+
+  if (commRank==3)
+    ASSERT_FALSE(
+      distributor.is_bob_hungry(inputMeshWrapper, outputMeshWrapper)
+    );
+  else
+    ASSERT_TRUE(
+      distributor.is_bob_hungry(inputMeshWrapper, outputMeshWrapper)
+    );
+    
+  ASSERT_TRUE(
+    distributor.is_redistribution_needed(inputMeshWrapper, outputMeshWrapper)
+  );
+    
+}
+
+
