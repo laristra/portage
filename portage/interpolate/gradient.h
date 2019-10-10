@@ -179,17 +179,24 @@ namespace Portage {
       // Collect and keep the list of neighbors for each CELL as it may
       // be expensive to go to the mesh layer and collect this data for
       // each cell during the actual gradient calculation
-      auto collect_cell_neighbors = [this](int c) {
-        this->mesh_.cell_get_node_adj_cells(
-          c, Entity_type::ALL, &(cell_neighbors_[c])
-        );
-      };
+      int const nb_cells = mesh_.num_entities(Entity_kind::CELL);
+      cell_neighbors_.resize(nb_cells);
 
-      int const ncells = mesh_.num_entities(Entity_kind::CELL);
-      cell_neighbors_.resize(ncells);
-      Portage::for_each(mesh_.begin(Entity_kind::CELL),
-                        mesh_.end(Entity_kind::CELL),
-                        collect_cell_neighbors);
+      if (parts_ == nullptr) /* entire mesh */ {
+        auto collect_neighbors = [this](int c) {
+          mesh_.cell_get_node_adj_cells(c, Entity_type::ALL, &(cell_neighbors_[c]));
+        };
+
+        Portage::for_each(mesh_.begin(Entity_kind::CELL),
+                          mesh_.end(Entity_kind::CELL), collect_neighbors);
+      } else /* only on source part */ {
+        auto filter_neighbors = [this](int c) {
+          cell_neighbors_[c] = parts_->get_source_filtered_neighbors(c);
+        };
+
+        auto const& part_cells = parts_->get_source_entities();
+        Portage::for_each(part_cells.begin(), part_cells.end(), filter_neighbors);
+      }
 
       set_interpolation_variable(var_name, limiter_type, boundary_limiter_type);
     }
@@ -215,18 +222,25 @@ namespace Portage {
       // Collect and keep the list of neighbors for each CELL as it may
       // be expensive to go to the mesh layer and collect this data for
       // each cell during the actual gradient calculation
-      auto collect_cell_neighbors = [this](int c) {
-        this->mesh_.cell_get_node_adj_cells(
-          c, Entity_type::ALL, &(cell_neighbors_[c])
-        );
-      };
+      int const nb_cells = mesh_.num_entities(Entity_kind::CELL);
+      cell_neighbors_.resize(nb_cells);
 
-      int const ncells = this->mesh_.num_entities(Entity_kind::CELL);
-      cell_neighbors_.resize(ncells);
+      if (parts_ == nullptr) /* entire mesh */ {
+        auto collect_neighbors = [this](int c) {
+          mesh_.cell_get_node_adj_cells(c, Entity_type::ALL, &(cell_neighbors_[c]));
+        };
 
-      Portage::for_each(this->mesh_.begin(Entity_kind::CELL),
-                        this->mesh_.end(Entity_kind::CELL),
-                        collect_cell_neighbors);
+        Portage::for_each(mesh_.begin(Entity_kind::CELL),
+                          mesh_.end(Entity_kind::CELL), collect_neighbors);
+
+      } else /* only on source part */ {
+        auto filter_neighbors = [this](int c) {
+          cell_neighbors_[c] = parts_->get_source_filtered_neighbors(c);
+        };
+
+        auto const& part_cells = parts_->get_source_entities();
+        Portage::for_each(part_cells.begin(), part_cells.end(), filter_neighbors);
+      }
 
       //If the field type is a MESH_FIELD, then the corresponding data will
       //be stored. If the field_type is a MULTIMATERIAL_FIELD, then the constructor
@@ -244,9 +258,7 @@ namespace Portage {
       material_id_ = matid;
       // Extract the field data from the state manager
       if (field_type_ != Field_type::MESH_FIELD) {
-        state_.mat_get_celldata(
-          variable_name_, material_id_, &values_
-        );
+        state_.mat_get_celldata(variable_name_, material_id_, &values_);
       }
     }
 
@@ -261,9 +273,7 @@ namespace Portage {
       // Extract the field data from the state manager
       field_type_ = state_.field_type(Entity_kind::CELL, variable_name_);
       if (field_type_ == Field_type::MESH_FIELD) {
-        state_.mesh_get_data(
-          Entity_kind::CELL, variable_name_, &values_
-        );
+        state_.mesh_get_data(Entity_kind::CELL, variable_name_, &values_);
       }
     }
 
