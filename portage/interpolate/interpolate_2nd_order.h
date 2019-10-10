@@ -357,10 +357,12 @@ class Interpolate_2ndOrder<D,
   */
 
   double operator() (int const targetCellID,
-                     std::vector<Weights_t> const & sources_and_weights) const
-  {
-    int nsrccells = sources_and_weights.size();
-    if (!nsrccells) return 0.0;
+                     std::vector<Weights_t> const& sources_and_weights) const {
+
+    if (sources_and_weights.empty())
+      return 0.0;
+
+    int const nsrccells = sources_and_weights.size();
 
     double totalval = 0.0;
     double wtsum0 = 0.0;
@@ -377,7 +379,7 @@ class Interpolate_2ndOrder<D,
 
       // Get source cell and the intersection weights
       int srccell = sources_and_weights[j].entityID;
-      std::vector<double> xsect_weights = sources_and_weights[j].weights;
+      auto xsect_weights = sources_and_weights[j].weights;
       double xsect_volume = xsect_weights[0];
 
       if (xsect_volume/vol <= num_tols_.min_relative_volume)
@@ -385,53 +387,50 @@ class Interpolate_2ndOrder<D,
 
       // Obtain source cell centroid
       Point<D> src_centroid;
-      if (field_type_ == Field_type::MESH_FIELD){
+      if (field_type_ == Field_type::MESH_FIELD) {
         source_mesh_.cell_centroid(srccell, &src_centroid);
       }
-      else if (field_type_ == Field_type::MULTIMATERIAL_FIELD){
 #ifdef HAVE_TANGRAM
-    	int nmats = source_state_.cell_get_num_mats(srccell);
-      	std::vector<int> cellmats;
-      	source_state_.cell_get_mats(srccell, &cellmats);
+      else if (field_type_ == Field_type::MULTIMATERIAL_FIELD) {
+        int nmats = source_state_.cell_get_num_mats(srccell);
+        std::vector<int> cellmats;
+        source_state_.cell_get_mats(srccell, &cellmats);
 
-      	if (!nmats || (nmats == 1 && cellmats[0] == matid_))
-      	{ // pure cell
+        if (!nmats || (nmats == 1 && cellmats[0] == matid_)) { // pure cell
           source_mesh_.cell_centroid(srccell, &src_centroid);
-      	}
-     	else
-      	{ // multi-material cell
+        } else /* multi-material cell */ {
           assert(interface_reconstructor_ != nullptr);  // cannot be nullptr
 
-          if (std::find(cellmats.begin(), cellmats.end(), matid_) !=
-              cellmats.end())
-          { // mixed cell containing this material
+          bool const cell_contains_material =
+            std::find(cellmats.begin(), cellmats.end(), matid_) != cellmats.end();
+
+          if (cell_contains_material) { // mixed cell containing this material
 
             // Obtain matpoly's for this material
-            Tangram::CellMatPoly<D> const& cellmatpoly =
-                interface_reconstructor_->cell_matpoly_data(srccell);
-            std::vector<Tangram::MatPoly<D>> matpolys =
-                cellmatpoly.get_matpolys(matid_);
+            auto const& cellmatpoly = interface_reconstructor_->cell_matpoly_data(srccell);
+            auto matpolys = cellmatpoly.get_matpolys(matid_);
 
             int cnt = 0;
-            for (int k = 0; k < D; k++) src_centroid[k]=0;
+            for (int k = 0; k < D; k++)
+              src_centroid[k] = 0;
 
-            // Compute centroid of all matpoly's by summing all the 
-            // first order moments first, and then dividing by the 
+            // Compute centroid of all matpoly's by summing all the
+            // first order moments first, and then dividing by the
             // total volume of all matpolys.
-            double mvol = 0.0;  
-            for (int j = 0; j < matpolys.size(); j++)
-            {
-              std::vector<double> moments = matpolys[j].moments();
+            double mvol = 0.0;
+            for (auto&& poly : matpolys) {
+              auto moments = poly.moments();
               mvol += moments[0];
               for (int k = 0; k < D; k++)
                 src_centroid[k] += moments[k+1];
             }
-            for (int k = 0; k < D; k++) src_centroid[k] /=mvol;
 
+            for (int k = 0; k < D; k++)
+              src_centroid[k] /= mvol;
           }
         }
-#endif
       }
+#endif
 
       // Compute intersection centroid
       Point<D> xsect_centroid;
@@ -439,15 +438,18 @@ class Interpolate_2ndOrder<D,
         xsect_centroid[i] = xsect_weights[1+i]/xsect_volume;  // (1st moment)/vol
 
       // Get correct source cell index
-      int srcindex;
-      if (field_type_ == Field_type::MESH_FIELD)
-        srcindex = srccell;
-      else if (field_type_ == Field_type::MULTIMATERIAL_FIELD)
-        srcindex = source_state_.cell_index_in_material(srccell, matid_);
+      int srcindex = -1;
+      switch (field_type_) {
+        case Field_type::MESH_FIELD: srcindex = srccell; break;
+        case Field_type::MULTIMATERIAL_FIELD:
+          srcindex = source_state_.cell_index_in_material(srccell, matid_); break;
+        default: break;
+      }
 
       Vector<D> gradient = gradients_[srcindex];
       Vector<D> dr = xsect_centroid - src_centroid;
       dr = CoordSys::modify_line_element(dr, src_centroid);
+
       double val = source_vals_[srcindex] + dot(gradient, dr);
       val *= xsect_volume;
       totalval += val;
