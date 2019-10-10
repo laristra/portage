@@ -565,7 +565,7 @@ namespace Portage {
     >;
 
     using Gradient = Limited_Gradient<
-      D, Entity_kind::CELL, SourceMeshType,
+      D, Entity_kind::NODE, SourceMeshType,
       StateType, InterfaceReconstructorType,
       Matpoly_Splitter, Matpoly_Clipper, CoordSys
     >;
@@ -671,7 +671,7 @@ namespace Portage {
      * @param[in] limiter_type: kind of gradient limiter to use.
      * @param[in] boundary_limiter_type: gradient limiter to use on boundary.
      */
-    void set_interpolation_variable(std::string const& variable_name,
+    void set_interpolation_variable(std::string const variable_name,
                                     Limiter_type limiter_type = NOLIMITER,
                                     Boundary_Limiter_type boundary_limiter_type = BND_NOLIMITER) {
 
