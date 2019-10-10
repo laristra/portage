@@ -205,6 +205,32 @@ public:
   const int& target_part_size() const { return target_part_size_; }
 
   /**
+   * @brief Retrieve the neighbors of the given entity on source mesh.
+   *
+   * @tparam entity_type the entity type [ALL|PARALLEL_OWNED]
+   * @param  entity      the given entity
+   * @return filtered    the filtered neighboring entities list.
+   */
+  template<Entity_type entity_type = Entity_type::ALL>
+  std::vector<int> get_source_filtered_neighbors(int entity) const {
+    std::vector<int> neighbors, filtered;
+    // retrieve neighbors
+    if (onwhat == Entity_kind::CELL) {
+      source_mesh_.cell_get_node_adj_cells(entity, entity_type, &neighbors);
+    } else {
+      source_mesh_.node_get_cell_adj_nodes(entity, entity_type, &neighbors);
+    }
+    // filter then
+    filtered.reserve(neighbors.size());
+    for (auto&& neigh : neighbors) {
+      if (source_lookup_.count(neigh)) {
+        filtered.emplace_back(neigh);
+      }
+    }
+    return std::move(filtered);
+  }
+
+  /**
    * @brief Retrieve the neighbors of the given entity on target mesh.
    *
    * @tparam entity_type the entity type [ALL|PARALLEL_OWNED]
