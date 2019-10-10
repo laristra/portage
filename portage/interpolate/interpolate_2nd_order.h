@@ -15,12 +15,12 @@ Please see the license file at the root of this repository, or at:
 #include <utility>
 #include <vector>
 
-// portage includes
+#include "portage/support/portage.h"
 #include "portage/interpolate/gradient.h"
 #include "portage/intersect/dummy_interface_reconstructor.h"
-#include "portage/support/portage.h"
+#include "portage/driver/fix_mismatch.h"
+#include "portage/driver/parts.h"
 
-// wonton includes
 #include "wonton/support/CoordinateSystem.h"
 
 #ifdef HAVE_TANGRAM
@@ -66,6 +66,11 @@ namespace Portage {
   >
   class Interpolate_2ndOrder {
 
+    // useful aliases
+    using Parts = PartPair<
+      D, on_what, SourceMeshType, StateType, TargetMeshType, StateType
+    >;
+
 #ifdef HAVE_TANGRAM
     using InterfaceReconstructor =
       Tangram::Driver<
@@ -86,15 +91,15 @@ namespace Portage {
     Interpolate_2ndOrder(SourceMeshType const& source_mesh,
                          TargetMeshType const& target_mesh,
                          StateType const& source_state,
-                         NumericTolerances_t num_tols) :
-      source_mesh_(source_mesh),
+                         NumericTolerances_t num_tols,
+                         const Parts* const parts = nullptr)
+    : source_mesh_(source_mesh),
       target_mesh_(target_mesh),
       source_state_(source_state),
       variable_name_("VariableNameNotSet"),
       source_values_(nullptr),
-      num_tols_(num_tols) {
-      CoordSys::template verify_coordinate_system<D>();
-    }
+      num_tols_(num_tols),
+      parts_(parts) { CoordSys::template verify_coordinate_system<D>(); }
 
 #ifdef HAVE_TANGRAM
     /**
@@ -110,16 +115,16 @@ namespace Portage {
                          TargetMeshType const& target_mesh,
                          StateType const& source_state,
                          NumericTolerances_t num_tols,
-                         std::shared_ptr<InterfaceReconstructor> ir) :
-      source_mesh_(source_mesh),
-      target_mesh_(target_mesh),
-      source_state_(source_state),
-      interface_reconstructor_(ir),
-      variable_name_("VariableNameNotSet"),
-      source_values_(nullptr),
-      num_tols_(num_tols) {
-      CoordSys::template verify_coordinate_system<D>();
-    }
+                         std::shared_ptr<InterfaceReconstructor> ir,
+                         const Parts* const parts = nullptr)
+      : source_mesh_(source_mesh),
+        target_mesh_(target_mesh),
+        source_state_(source_state),
+        interface_reconstructor_(ir),
+        variable_name_("VariableNameNotSet"),
+        source_values_(nullptr),
+        num_tols_(num_tols),
+        parts_(parts) { CoordSys::template verify_coordinate_system<D>(); }
 #endif
 
     /**
@@ -180,8 +185,9 @@ namespace Portage {
                       std::vector<Weights_t> const& sources_and_weights) const {
 
       // not implemented for all types - see specialization for cells and nodes
-      std::cerr << "Interpolation operator not implemented for this entity type";
+      std::cerr << "Error: interpolation operator not implemented for this entity type";
       std::cerr << std::endl;
+      return 0.;
     }
 
   private:
@@ -197,6 +203,7 @@ namespace Portage {
 #ifdef HAVE_TANGRAM
     std::shared_ptr<InterfaceReconstructor> interface_reconstructor_;
 #endif
+    Parts const* parts_;
   };
 
   /* ------------------------------------------------------------------------ */
@@ -227,18 +234,23 @@ namespace Portage {
     Matpoly_Splitter, Matpoly_Clipper, CoordSys
   > {
 
-#ifdef HAVE_TANGRAM
-    using InterfaceReconstructor = Tangram::Driver<
-      InterfaceReconstructorType, D, SourceMeshType,
-      Matpoly_Splitter, Matpoly_Clipper
+    // useful aliases
+    using Parts = PartPair<
+      D, Entity_kind::CELL, SourceMeshType, StateType, TargetMeshType, StateType
     >;
-#endif
 
     using Gradient = Limited_Gradient<
       D, Entity_kind::CELL, SourceMeshType,
       StateType, InterfaceReconstructorType,
       Matpoly_Splitter, Matpoly_Clipper, CoordSys
     >;
+
+#ifdef HAVE_TANGRAM
+    using InterfaceReconstructor = Tangram::Driver<
+      InterfaceReconstructorType, D, SourceMeshType,
+      Matpoly_Splitter, Matpoly_Clipper
+    >;
+#endif
 
     // get rid of long namespaces
     static auto const Cell = Entity_kind::CELL;
@@ -255,15 +267,15 @@ namespace Portage {
     Interpolate_2ndOrder(SourceMeshType const& source_mesh,
                          TargetMeshType const& target_mesh,
                          StateType const& source_state,
-                         NumericTolerances_t num_tols) :
-      source_mesh_(source_mesh),
-      target_mesh_(target_mesh),
-      source_state_(source_state),
-      variable_name_("VariableNameNotSet"),
-      source_values_(nullptr),
-      num_tols_(num_tols) {
-      CoordSys::template verify_coordinate_system<D>();
-    }
+                         NumericTolerances_t num_tols,
+                         const Parts* const parts = nullptr)
+      : source_mesh_(source_mesh),
+        target_mesh_(target_mesh),
+        source_state_(source_state),
+        variable_name_("VariableNameNotSet"),
+        source_values_(nullptr),
+        num_tols_(num_tols),
+        parts_(parts) { CoordSys::template verify_coordinate_system<D>(); }
 
 #ifdef HAVE_TANGRAM
     /**
@@ -279,16 +291,16 @@ namespace Portage {
                          TargetMeshType const& target_mesh,
                          StateType const& source_state,
                          NumericTolerances_t num_tols,
-                         std::shared_ptr<InterfaceReconstructor> ir) :
-      source_mesh_(source_mesh),
-      target_mesh_(target_mesh),
-      source_state_(source_state),
-      interface_reconstructor_(ir),
-      variable_name_("VariableNameNotSet"),
-      source_values_(nullptr),
-      num_tols_(num_tols) {
-      CoordSys::template verify_coordinate_system<D>();
-    }
+                         std::shared_ptr<InterfaceReconstructor> ir,
+                         const Parts* const parts = nullptr)
+      : source_mesh_(source_mesh),
+        target_mesh_(target_mesh),
+        source_state_(source_state),
+        interface_reconstructor_(ir),
+        variable_name_("VariableNameNotSet"),
+        source_values_(nullptr),
+        num_tols_(num_tols),
+        parts_(parts) { CoordSys::template verify_coordinate_system<D>(); }
 #endif
 
     /**
@@ -516,6 +528,7 @@ namespace Portage {
 #ifdef HAVE_TANGRAM
     std::shared_ptr<InterfaceReconstructor> interface_reconstructor_;
 #endif
+    Parts const* parts_;
   };
 
   /* ------------------------------------------------------------------------ */
@@ -545,18 +558,24 @@ namespace Portage {
     StateType, InterfaceReconstructorType,
     Matpoly_Splitter, Matpoly_Clipper, CoordSys
   > {
-#ifdef HAVE_TANGRAM
-    using InterfaceReconstructor = Tangram::Driver<
-      InterfaceReconstructorType, D, SourceMeshType,
-      Matpoly_Splitter, Matpoly_Clipper
+
+    // useful aliases
+    using Parts = PartPair<
+      D, Entity_kind::CELL, SourceMeshType, StateType, TargetMeshType, StateType
     >;
-#endif
 
     using Gradient = Limited_Gradient<
       D, Entity_kind::CELL, SourceMeshType,
       StateType, InterfaceReconstructorType,
       Matpoly_Splitter, Matpoly_Clipper, CoordSys
     >;
+
+#ifdef HAVE_TANGRAM
+    using InterfaceReconstructor = Tangram::Driver<
+      InterfaceReconstructorType, D, SourceMeshType,
+      Matpoly_Splitter, Matpoly_Clipper
+    >;
+#endif
 
     // get rid of long namespaces
     static auto const Node = Entity_kind::NODE;
@@ -574,13 +593,21 @@ namespace Portage {
     Interpolate_2ndOrder(SourceMeshType const& source_mesh,
                          TargetMeshType const& target_mesh,
                          StateType const& source_state,
-                         NumericTolerances_t num_tols) :
+                         NumericTolerances_t num_tols,
+                         const Parts* const parts = nullptr) :
       source_mesh_(source_mesh),
       target_mesh_(target_mesh),
       source_state_(source_state),
       variable_name_("VariableNameNotSet"),
       source_values_(nullptr),
-      num_tols_(num_tols) {}
+      num_tols_(num_tols),
+      parts_(parts)
+    {
+      if (parts_ != nullptr) {
+        std::cerr << "Warning: part-by-part remap is only defined for cells. ";
+        std::cerr << "Source and target parts will be ignored" << std::endl;
+      }
+    }
 
 #ifdef HAVE_TANGRAM
     /**
@@ -596,14 +623,22 @@ namespace Portage {
                          TargetMeshType const& target_mesh,
                          StateType const& source_state,
                          NumericTolerances_t num_tols,
-                         std::shared_ptr<InterfaceReconstructor> ir) :
+                         std::shared_ptr<InterfaceReconstructor> ir,
+                         const Parts* const parts = nullptr) :
       source_mesh_(source_mesh),
       target_mesh_(target_mesh),
       source_state_(source_state),
       interface_reconstructor_(ir),
       variable_name_("VariableNameNotSet"),
       source_values_(nullptr),
-      num_tols_(num_tols) {}
+      num_tols_(num_tols),
+      parts_(parts)
+    {
+      if (parts_ != nullptr) {
+        std::cerr << "Warning: part-by-part remap is only defined for cells. ";
+        std::cerr << "Source and target parts will be ignored" << std::endl;
+      }
+    }
 #endif
 
     /**
@@ -762,6 +797,7 @@ namespace Portage {
 #ifdef HAVE_TANGRAM
     std::shared_ptr<InterfaceReconstructor> interface_reconstructor_;
 #endif
+    Parts const* parts_;
   };
   /* ------------------------------------------------------------------------ */
 }  // namespace Portage
