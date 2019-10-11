@@ -20,6 +20,7 @@
 #include <limits>
 
 #include "portage/support/portage.h"
+#include "portage/driver/fix_mismatch.h"
 
 #define DEBUG_PART_BY_PART 0
 

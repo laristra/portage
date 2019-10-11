@@ -25,7 +25,7 @@ namespace Portage {
   @class Interpolate_3rdOrder interpolate_3rd_order.h
   @brief Interpolate_3rdOrder does a 3rd order interpolation of scalars
   @tparam MeshType The type of the mesh wrapper used to access mesh info
-  @tparam StateType The type of the state manager used to access data.
+  @tparam SourceStateType The type of the state manager used to access data.
   @tparam OnWhatType The type of entity-based data we wish to interpolate;
   e.g. does it live on nodes, cells, edges, etc.
 
@@ -43,12 +43,17 @@ namespace Portage {
 
 
 template<int D, Entity_kind on_what,
-         typename SourceMeshType, typename TargetMeshType, typename StateType>
+         typename SourceMeshType,
+         typename TargetMeshType,
+         typename SourceStateType,
+         typename TargetStateType = SourceStateType>
 class Interpolate_3rdOrder {
 
   // useful aliases
   using Parts = PartPair<
-    D, on_what, SourceMeshType, StateType, TargetMeshType
+    D, on_what,
+    SourceMeshType, SourceStateType,
+    TargetMeshType, TargetStateType
   >;
 
  public:
@@ -62,7 +67,7 @@ class Interpolate_3rdOrder {
 
   Interpolate_3rdOrder(SourceMeshType const & source_mesh,
                        TargetMeshType const & target_mesh,
-                       StateType const & source_state,
+                       SourceStateType const & source_state,
                        NumericTolerances_t num_tols,
                        const Parts* const parts = nullptr) :
       source_mesh_(source_mesh),
@@ -96,7 +101,7 @@ class Interpolate_3rdOrder {
 
     // Compute the limited quadfits for the field
 
-    Limited_Quadfit<D, on_what, SourceMeshType, StateType>
+    Limited_Quadfit<D, on_what, SourceMeshType, SourceStateType>
         limqfit(source_mesh_, source_state_, interp_var_name, 
                 limiter_type, boundary_limiter_type);
 
@@ -147,7 +152,7 @@ class Interpolate_3rdOrder {
  private:
   SourceMeshType const & source_mesh_;
   TargetMeshType const & target_mesh_;
-  StateType const & source_state_;
+  SourceStateType const & source_state_;
   std::string interp_var_name_;
   double const * source_vals_;
   NumericTolerances_t num_tols_;
@@ -169,18 +174,26 @@ class Interpolate_3rdOrder {
 */
 
 template<int D,
-         typename SourceMeshType, typename TargetMeshType, typename StateType>
-class Interpolate_3rdOrder<D, Entity_kind::CELL, SourceMeshType, TargetMeshType, StateType> {
+         typename SourceMeshType,
+         typename TargetMeshType,
+         typename SourceStateType,
+         typename TargetStateType>
+class Interpolate_3rdOrder<
+  D, Entity_kind::CELL,
+  SourceMeshType, TargetMeshType,
+  SourceStateType, TargetStateType> {
 
   // useful aliases
   using Parts = PartPair<
-    D, Entity_kind::CELL, SourceMeshType, StateType, TargetMeshType
+    D, Entity_kind::CELL,
+    SourceMeshType, SourceStateType,
+    TargetMeshType, TargetStateType
   >;
 
  public:
   Interpolate_3rdOrder(SourceMeshType const & source_mesh,
                        TargetMeshType const & target_mesh,
-                       StateType const & source_state,
+                       SourceStateType const & source_state,
                        NumericTolerances_t num_tols,
                        const Parts* const parts = nullptr) :
       source_mesh_(source_mesh),
@@ -206,7 +219,7 @@ class Interpolate_3rdOrder<D, Entity_kind::CELL, SourceMeshType, TargetMeshType,
 
     // Compute the limited quadfits for the field
 
-    Limited_Quadfit<D, Entity_kind::CELL, SourceMeshType, StateType>
+    Limited_Quadfit<D, Entity_kind::CELL, SourceMeshType, SourceStateType>
         limqfit(source_mesh_, source_state_, interp_var_name_, limiter_type, boundary_limiter_type);
 
     int nentities = source_mesh_.end(Entity_kind::CELL)-source_mesh_.begin(Entity_kind::CELL);
@@ -253,13 +266,78 @@ class Interpolate_3rdOrder<D, Entity_kind::CELL, SourceMeshType, TargetMeshType,
     @todo must remove assumption that field is scalar
   */
 
+  /*! Implementation of the () operator for 3rd order interpolation on cells
+   *  Method: Uses an SVD decomposition to compute a quadratic
+   *  multinomial fit to a given field, and approximates the
+   *  field using the quadratic multinomial at points around
+   *  the CELL center.
+   */
   double operator() (int const targetCellID,
-                     std::vector<Weights_t> const & sources_and_weights) const;
+                     std::vector<Weights_t> const & sources_and_weights) const {
+
+    int nsrccells = sources_and_weights.size();
+    if (!nsrccells) {
+#ifdef DEBUG
+      std::cerr << "WARNING: No source cells contribute to target cell." <<
+        std::endl;
+#endif
+      return 0.0;
+    }
+
+    double totalval = 0.0;
+
+    // contribution of the source cell is its field value weighted by
+    // its "weight" (in this case, its 0th moment/area/volume)
+
+    /// @todo Should use zip_iterator here but I am not sure I know how to
+
+    double vol = target_mesh_.cell_volume(targetCellID);
+    for (int j = 0; j < nsrccells; ++j) {
+      int srccell = sources_and_weights[j].entityID;
+      // int N = D*(D+3)/2;
+      std::vector<double> xsect_weights = sources_and_weights[j].weights;
+      double xsect_volume = xsect_weights[0];
+
+      if (xsect_volume/vol <= num_tols_.min_relative_volume)
+        continue;  // no intersection
+
+      Point<D> srccell_centroid;
+      source_mesh_.cell_centroid(srccell, &srccell_centroid);
+
+      Point<D> xsect_centroid;
+      for (int i = 0; i < D; ++i)
+        xsect_centroid[i] = xsect_weights[1+i]/xsect_volume;  // (1st moment)/vol
+
+      Vector<D*(D+3)/2> quadfit = quadfits_[srccell];
+      Vector<D> vec = xsect_centroid - srccell_centroid;
+      Vector<D*(D+3)/2> dvec;
+      for (int j = 0; j < D; ++j) {
+        int j1 = D;
+        dvec[j] = vec[j];
+        // Add the quadratic terms
+        for (int k = 0; k <= j; ++k) {
+          dvec[j1] = dvec[k]*dvec[j];
+          j1 += 1;
+          //dvec[D+j+k] = dvec[k]*dvec[j];
+        }
+      }
+      double val = source_vals_[srccell] + dot(quadfit,dvec);
+      val *= xsect_volume;
+      totalval += val;
+    }
+
+    // Normalize the value by sum of all the 0th weights (which is the
+    // same as the total volume of the source cell)
+
+    totalval /= target_mesh_.cell_volume(targetCellID);
+
+    return totalval;
+  }
 
  private:
   SourceMeshType const & source_mesh_;
   TargetMeshType const & target_mesh_;
-  StateType const & source_state_;
+  SourceStateType const & source_state_;
   std::string interp_var_name_;
   double const * source_vals_;
   NumericTolerances_t num_tols_;
@@ -270,78 +348,6 @@ class Interpolate_3rdOrder<D, Entity_kind::CELL, SourceMeshType, TargetMeshType,
   Portage::vector<Vector<D*(D+3)/2>> quadfits_;
 };
 
-/*! Implementation of the () operator for 3rd order interpolation on cells
- *  Method: Uses an SVD decomposition to compute a quadratic
- *  multinomial fit to a given field, and approximates the
- *  field using the quadratic multinomial at points around
- *  the CELL center.
- */
-
-template<int D,
-         typename SourceMeshType, typename TargetMeshType, typename StateType>
-double Interpolate_3rdOrder<D, Entity_kind::CELL, SourceMeshType, TargetMeshType,
-                            StateType>::operator()
-    (int const targetCellID, std::vector<Weights_t> const & sources_and_weights)
-    const {
-
-  int nsrccells = sources_and_weights.size();
-  if (!nsrccells) {
-#ifdef DEBUG
-    std::cerr << "WARNING: No source cells contribute to target cell." <<
-        std::endl;
-#endif
-    return 0.0;
-  }
-
-  double totalval = 0.0;
-
-  // contribution of the source cell is its field value weighted by
-  // its "weight" (in this case, its 0th moment/area/volume)
-
-  /// @todo Should use zip_iterator here but I am not sure I know how to
-
-  double vol = target_mesh_.cell_volume(targetCellID);
-  for (int j = 0; j < nsrccells; ++j) {
-    int srccell = sources_and_weights[j].entityID;
-    // int N = D*(D+3)/2;
-    std::vector<double> xsect_weights = sources_and_weights[j].weights;
-    double xsect_volume = xsect_weights[0];
-
-    if (xsect_volume/vol <= num_tols_.min_relative_volume)
-      continue;  // no intersection
-
-    Point<D> srccell_centroid;
-    source_mesh_.cell_centroid(srccell, &srccell_centroid);
-
-    Point<D> xsect_centroid;
-    for (int i = 0; i < D; ++i)
-      xsect_centroid[i] = xsect_weights[1+i]/xsect_volume;  // (1st moment)/vol
-
-    Vector<D*(D+3)/2> quadfit = quadfits_[srccell];
-    Vector<D> vec = xsect_centroid - srccell_centroid;
-    Vector<D*(D+3)/2> dvec;
-    for (int j = 0; j < D; ++j) {
-      int j1 = D;
-      dvec[j] = vec[j];
-      // Add the quadratic terms
-      for (int k = 0; k <= j; ++k) {
-        dvec[j1] = dvec[k]*dvec[j];
-        j1 += 1;
-        //dvec[D+j+k] = dvec[k]*dvec[j];
-      }
-    }
-    double val = source_vals_[srccell] + dot(quadfit,dvec);
-    val *= xsect_volume;
-    totalval += val;
-  }
-
-  // Normalize the value by sum of all the 0th weights (which is the
-  // same as the total volume of the source cell)
-
-  totalval /= target_mesh_.cell_volume(targetCellID);
-
-  return totalval;
-}
 //////////////////////////////////////////////////////////////////////////////
 
 
@@ -355,18 +361,26 @@ double Interpolate_3rdOrder<D, Entity_kind::CELL, SourceMeshType, TargetMeshType
 */
 
 template<int D,
-         typename SourceMeshType, typename TargetMeshType, typename StateType>
-class Interpolate_3rdOrder<D, Entity_kind::NODE, SourceMeshType, TargetMeshType, StateType> {
+         typename SourceMeshType,
+         typename TargetMeshType,
+         typename SourceStateType,
+         typename TargetStateType>
+class Interpolate_3rdOrder<
+  D, Entity_kind::NODE,
+  SourceMeshType, TargetMeshType,
+  SourceStateType, TargetStateType> {
 
   // useful aliases
   using Parts = PartPair<
-    D, Entity_kind::NODE, SourceMeshType, StateType, TargetMeshType
+    D, Entity_kind::NODE,
+    SourceMeshType, SourceStateType,
+    TargetMeshType, TargetStateType
   >;
 
  public:
   Interpolate_3rdOrder(SourceMeshType const & source_mesh,
                        TargetMeshType const & target_mesh,
-                       StateType const & source_state,
+                       SourceStateType const & source_state,
                        NumericTolerances_t num_tols,
                        const Parts* const parts = nullptr) :
       source_mesh_(source_mesh),
@@ -407,7 +421,7 @@ class Interpolate_3rdOrder<D, Entity_kind::NODE, SourceMeshType, TargetMeshType,
 
     // Compute the limited quadfits for the field
 
-    Limited_Quadfit<D, Entity_kind::NODE, SourceMeshType, StateType>
+    Limited_Quadfit<D, Entity_kind::NODE, SourceMeshType, SourceStateType>
         limqfit(source_mesh_, source_state_, interp_var_name, limiter_type, boundary_limiter_type);
 
     int nentities = source_mesh_.end(Entity_kind::NODE)-source_mesh_.begin(Entity_kind::NODE);
@@ -449,13 +463,79 @@ class Interpolate_3rdOrder<D, Entity_kind::NODE, SourceMeshType, TargetMeshType,
     @todo must remove assumption that field is scalar
   */
 
-  double operator() (const int targetCellID,
-                     std::vector<Weights_t> const & sources_and_weights) const;
+  /*! implementation of the () operator for 3rd order interpolate on nodes
+   *  Method: Uses an SVD decomposition to compute a quadratic
+   *  multinomial fit to a given field, and approximates the
+   *  field using the quadratic multinomial at points around
+   *  the central NODE.
+   */
+  double operator() (const int targetNodeID,
+                     std::vector<Weights_t> const & sources_and_weights) const {
+
+    int nsrcnodes = sources_and_weights.size();
+    if (!nsrcnodes) {
+#ifdef DEBUG
+      std::cerr << "WARNING: No source nodes contribute to target node." <<
+        std::endl;
+#endif
+      return 0.0;
+    }
+
+    double totalval = 0.0;
+
+    // contribution of the source cell is its field value weighted by
+    // its "weight" (in this case, its 0th moment/area/volume)
+
+    /// @todo Should use zip_iterator here but I am not sure I know how to
+
+    double vol = target_mesh_.dual_cell_volume(targetNodeID);
+    for (int j = 0; j < nsrcnodes; ++j) {
+      int srcnode = sources_and_weights[j].entityID;
+      std::vector<double> xsect_weights = sources_and_weights[j].weights;
+      double xsect_volume = xsect_weights[0];
+
+      if (xsect_volume/vol <= num_tols_.min_relative_volume)
+        continue;  // no intersection
+
+      // note: here we are getting the node coord, not the centroid of
+      // the dual cell
+      Point<D> srcnode_coord;
+      source_mesh_.node_get_coordinates(srcnode, &srcnode_coord);
+
+      Point<D> xsect_centroid;
+      for (int i = 0; i < D; ++i)
+        // (1st moment)/(vol)
+        xsect_centroid[i] = xsect_weights[1+i]/xsect_volume;
+
+      Vector<D*(D+3)/2> quadfit = quadfits_[srcnode];
+      Vector<D> vec = xsect_centroid - srcnode_coord;
+      Vector<D*(D+3)/2> dvec;
+      for (int j = 0; j < D; ++j) {
+        int j1 = D;
+        dvec[j] = vec[j];
+        // Add the quadratic terms
+        for (int k = 0; k <= j; ++k) {
+          dvec[j1] = dvec[k]*dvec[j];
+          j1 += 1;
+          // dvec[D+j+k] = dvec[k]*dvec[j];
+        }
+      }
+      double val = source_vals_[srcnode] + dot(quadfit,dvec);
+      val *= xsect_volume;
+      totalval += val;
+    }
+
+    // Normalize the value by volume of the target dual cell
+
+    totalval /= target_mesh_.dual_cell_volume(targetNodeID);
+
+    return totalval;
+  }
 
  private:
   SourceMeshType const & source_mesh_;
   TargetMeshType const & target_mesh_;
-  StateType const & source_state_;
+  SourceStateType const & source_state_;
   std::string interp_var_name_;
   double const * source_vals_;
   NumericTolerances_t num_tols_;
@@ -465,82 +545,6 @@ class Interpolate_3rdOrder<D, Entity_kind::NODE, SourceMeshType, TargetMeshType,
   // Wonton::Vector<D> is a geometric vector
   Portage::vector<Vector<D*(D+3)/2>> quadfits_;
 };
-
-/*! implementation of the () operator for 3rd order interpolate on nodes
- *  Method: Uses an SVD decomposition to compute a quadratic
- *  multinomial fit to a given field, and approximates the
- *  field using the quadratic multinomial at points around
- *  the central NODE.
- */
-
-template<int D,
-         typename SourceMeshType, typename TargetMeshType, typename StateType>
-double Interpolate_3rdOrder<D, Entity_kind::NODE, SourceMeshType, TargetMeshType,
-                            StateType> :: operator()
-    (int const targetNodeID, std::vector<Weights_t> const & sources_and_weights)
-    const {
-
-  int nsrcnodes = sources_and_weights.size();
-  if (!nsrcnodes) {
-#ifdef DEBUG
-    std::cerr << "WARNING: No source nodes contribute to target node." <<
-        std::endl;
-#endif
-    return 0.0;
-  }
-
-  double totalval = 0.0;
-
-  // contribution of the source cell is its field value weighted by
-  // its "weight" (in this case, its 0th moment/area/volume)
-
-  /// @todo Should use zip_iterator here but I am not sure I know how to
-
-  double vol = target_mesh_.dual_cell_volume(targetNodeID);
-  for (int j = 0; j < nsrcnodes; ++j) {
-    int srcnode = sources_and_weights[j].entityID;
-    std::vector<double> xsect_weights = sources_and_weights[j].weights;
-    double xsect_volume = xsect_weights[0];
-
-    if (xsect_volume/vol <= num_tols_.min_relative_volume)
-      continue;  // no intersection
-
-    // note: here we are getting the node coord, not the centroid of
-    // the dual cell
-    Point<D> srcnode_coord;
-    source_mesh_.node_get_coordinates(srcnode, &srcnode_coord);
-
-    Point<D> xsect_centroid;
-    for (int i = 0; i < D; ++i)
-      // (1st moment)/(vol)
-      xsect_centroid[i] = xsect_weights[1+i]/xsect_volume;
-
-    Vector<D*(D+3)/2> quadfit = quadfits_[srcnode];
-    Vector<D> vec = xsect_centroid - srcnode_coord;
-    Vector<D*(D+3)/2> dvec;
-    for (int j = 0; j < D; ++j) {
-      int j1 = D;
-      dvec[j] = vec[j];
-      // Add the quadratic terms
-      for (int k = 0; k <= j; ++k) {
-        dvec[j1] = dvec[k]*dvec[j];
-        j1 += 1;
-        // dvec[D+j+k] = dvec[k]*dvec[j];
-      }
-    }
-    double val = source_vals_[srcnode] + dot(quadfit,dvec);
-    val *= xsect_volume;
-    totalval += val;
-  }
-
-  // Normalize the value by volume of the target dual cell
-
-  totalval /= target_mesh_.dual_cell_volume(targetNodeID);
-
-  return totalval;
-}
-
-
 }  // namespace Portage
 
 #endif  // SRC_INTERPOLATE_INTERPOLATE_3RD_ORDER_H_

@@ -57,8 +57,10 @@ namespace Portage {
    */
   template<
     int D, Entity_kind on_what,
-    typename SourceMeshType, typename TargetMeshType,
-    typename StateType,
+    typename SourceMeshType,
+    typename TargetMeshType,
+    typename SourceStateType,
+    typename TargetStateType = SourceStateType,
     template<class, int, class, class>
       class InterfaceReconstructorType = DummyInterfaceReconstructor,
     class Matpoly_Splitter = void, class Matpoly_Clipper = void,
@@ -68,7 +70,9 @@ namespace Portage {
 
     // useful aliases
     using Parts = PartPair<
-      D, on_what, SourceMeshType, StateType, TargetMeshType, StateType
+      D, on_what,
+      SourceMeshType, SourceStateType,
+      TargetMeshType, TargetStateType
     >;
 
 #ifdef HAVE_TANGRAM
@@ -90,7 +94,7 @@ namespace Portage {
      */
     Interpolate_2ndOrder(SourceMeshType const& source_mesh,
                          TargetMeshType const& target_mesh,
-                         StateType const& source_state,
+                         SourceStateType const& source_state,
                          NumericTolerances_t num_tols,
                          const Parts* const parts = nullptr)
     : source_mesh_(source_mesh),
@@ -113,7 +117,7 @@ namespace Portage {
      */
     Interpolate_2ndOrder(SourceMeshType const& source_mesh,
                          TargetMeshType const& target_mesh,
-                         StateType const& source_state,
+                         SourceStateType const& source_state,
                          NumericTolerances_t num_tols,
                          std::shared_ptr<InterfaceReconstructor> ir,
                          const Parts* const parts = nullptr)
@@ -193,7 +197,7 @@ namespace Portage {
   private:
     SourceMeshType const& source_mesh_;
     TargetMeshType const& target_mesh_;
-    StateType const& source_state_;
+    SourceStateType const& source_state_;
     std::string variable_name_ = "";
     double const* source_values_;
     NumericTolerances_t num_tols_;
@@ -221,8 +225,11 @@ namespace Portage {
    * @tparam CoordSys: what coordinate system are we operating in?
    */
   template<
-    int D, typename SourceMeshType, typename TargetMeshType,
-    typename StateType,
+    int D,
+    typename SourceMeshType,
+    typename TargetMeshType,
+    typename SourceStateType,
+    typename TargetStateType,
     template<class, int, class, class>
       class InterfaceReconstructorType,
     class Matpoly_Splitter, class Matpoly_Clipper, class CoordSys
@@ -230,18 +237,20 @@ namespace Portage {
   class Interpolate_2ndOrder<
     D, Entity_kind::CELL,
     SourceMeshType, TargetMeshType,
-    StateType, InterfaceReconstructorType,
-    Matpoly_Splitter, Matpoly_Clipper, CoordSys
-  > {
+    SourceStateType, TargetStateType,
+    InterfaceReconstructorType,
+    Matpoly_Splitter, Matpoly_Clipper, CoordSys> {
 
     // useful aliases
     using Parts = PartPair<
-      D, Entity_kind::CELL, SourceMeshType, StateType, TargetMeshType, StateType
+      D, Entity_kind::CELL,
+      SourceMeshType, SourceStateType,
+      TargetMeshType, TargetStateType
     >;
 
     using Gradient = Limited_Gradient<
       D, Entity_kind::CELL, SourceMeshType,
-      StateType, InterfaceReconstructorType,
+      SourceStateType, InterfaceReconstructorType,
       Matpoly_Splitter, Matpoly_Clipper, CoordSys
     >;
 
@@ -266,7 +275,7 @@ namespace Portage {
      */
     Interpolate_2ndOrder(SourceMeshType const& source_mesh,
                          TargetMeshType const& target_mesh,
-                         StateType const& source_state,
+                         SourceStateType const& source_state,
                          NumericTolerances_t num_tols,
                          const Parts* const parts = nullptr)
       : source_mesh_(source_mesh),
@@ -289,7 +298,7 @@ namespace Portage {
      */
     Interpolate_2ndOrder(SourceMeshType const& source_mesh,
                          TargetMeshType const& target_mesh,
-                         StateType const& source_state,
+                         SourceStateType const& source_state,
                          NumericTolerances_t num_tols,
                          std::shared_ptr<InterfaceReconstructor> ir,
                          const Parts* const parts = nullptr)
@@ -518,7 +527,7 @@ namespace Portage {
   private:
     SourceMeshType const& source_mesh_;
     TargetMeshType const& target_mesh_;
-    StateType const& source_state_;
+    SourceStateType const& source_state_;
     std::string variable_name_;
     double const* source_values_;
     NumericTolerances_t num_tols_;
@@ -539,15 +548,18 @@ namespace Portage {
    * @tparam D: spatial dimension of problem
    * @tparam SourceMeshType: mesh wrapper class used to access source mesh info
    * @tparam TargetMeshType: mesh wrapper class used to access target mesh info
-   * @tparam StateType: state manager used to access source data.
+   * @tparam SourceStateType: state manager used to access source data.
    * @tparam InterfaceReconstructorType: class for material interfaces reconstruction
    * @tparam MatPoly_Splitter: class used for splitting material polygons
    * @tparam MatPoly_Clipper: class used for clipping material polygons
    * @tparam CoordSys: what coordinate system are we operating in?
    */
   template<
-    int D, typename SourceMeshType, typename TargetMeshType,
-    typename StateType,
+    int D,
+    typename SourceMeshType,
+    typename TargetMeshType,
+    typename SourceStateType,
+    typename TargetStateType,
     template<class, int, class, class>
       class InterfaceReconstructorType,
     class Matpoly_Splitter, class Matpoly_Clipper, class CoordSys
@@ -555,18 +567,20 @@ namespace Portage {
   class Interpolate_2ndOrder<
     D, Entity_kind::NODE,
     SourceMeshType, TargetMeshType,
-    StateType, InterfaceReconstructorType,
-    Matpoly_Splitter, Matpoly_Clipper, CoordSys
-  > {
+    SourceStateType, TargetStateType,
+    InterfaceReconstructorType,
+    Matpoly_Splitter, Matpoly_Clipper, CoordSys> {
 
     // useful aliases
     using Parts = PartPair<
-      D, Entity_kind::NODE, SourceMeshType, StateType, TargetMeshType, StateType
+      D, Entity_kind::NODE,
+      SourceMeshType, SourceStateType,
+      TargetMeshType, TargetStateType
     >;
 
     using Gradient = Limited_Gradient<
       D, Entity_kind::NODE, SourceMeshType,
-      StateType, InterfaceReconstructorType,
+      SourceStateType, InterfaceReconstructorType,
       Matpoly_Splitter, Matpoly_Clipper, CoordSys
     >;
 
@@ -592,7 +606,7 @@ namespace Portage {
      */
     Interpolate_2ndOrder(SourceMeshType const& source_mesh,
                          TargetMeshType const& target_mesh,
-                         StateType const& source_state,
+                         SourceStateType const& source_state,
                          NumericTolerances_t num_tols,
                          const Parts* const parts = nullptr) :
       source_mesh_(source_mesh),
@@ -621,7 +635,7 @@ namespace Portage {
      */
     Interpolate_2ndOrder(SourceMeshType const& source_mesh,
                          TargetMeshType const& target_mesh,
-                         StateType const& source_state,
+                         SourceStateType const& source_state,
                          NumericTolerances_t num_tols,
                          std::shared_ptr<InterfaceReconstructor> ir,
                          const Parts* const parts = nullptr) :
@@ -787,7 +801,7 @@ namespace Portage {
   private:
     SourceMeshType const& source_mesh_;
     TargetMeshType const& target_mesh_;
-    StateType const& source_state_;
+    SourceStateType const& source_state_;
     std::string variable_name_;
     double const* source_values_;
     NumericTolerances_t num_tols_;

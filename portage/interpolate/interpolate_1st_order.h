@@ -85,8 +85,9 @@ template<int D,
          typename SourceMeshType,
          typename TargetMeshType,
          typename SourceStateType,
-         template<class, int, class, class> class InterfaceReconstructorType =
-         DummyInterfaceReconstructor,
+         typename TargetStateType = SourceStateType,
+         template<class, int, class, class>
+           class InterfaceReconstructorType = DummyInterfaceReconstructor,
          class Matpoly_Splitter = void,
          class Matpoly_Clipper = void,
          class CoordSys = Wonton::DefaultCoordSys>
@@ -94,7 +95,9 @@ class Interpolate_1stOrder {
 
   // useful aliases
   using Parts = PartPair<
-    D, on_what, SourceMeshType, SourceStateType, TargetMeshType
+    D, on_what,
+    SourceMeshType, SourceStateType,
+    TargetMeshType, TargetStateType
   >;
 
 #ifdef HAVE_TANGRAM
@@ -232,23 +235,23 @@ template<int D,
          typename SourceMeshType,
          typename TargetMeshType,
          typename SourceStateType,
+         typename TargetStateType,
          template<class, int, class, class> class InterfaceReconstructorType,
          class Matpoly_Splitter,
          class Matpoly_Clipper,
          class CoordSys>
-class Interpolate_1stOrder<D,
-                           Entity_kind::CELL,
-                           SourceMeshType,
-                           TargetMeshType,
-                           SourceStateType,
-                           InterfaceReconstructorType,
-                           Matpoly_Splitter,
-                           Matpoly_Clipper,
-                           CoordSys> {
+class Interpolate_1stOrder<
+  D, Entity_kind::CELL,
+  SourceMeshType, TargetMeshType,
+  SourceStateType, TargetStateType,
+  InterfaceReconstructorType,
+  Matpoly_Splitter, Matpoly_Clipper, CoordSys> {
 
   // useful aliases
   using Parts = PartPair<
-    D, Entity_kind::CELL, SourceMeshType, SourceStateType, TargetMeshType
+    D, Entity_kind::CELL,
+    SourceMeshType, SourceStateType,
+    TargetMeshType, TargetStateType
   >;
 
 #ifdef HAVE_TANGRAM
@@ -431,23 +434,23 @@ template<int D,
          typename SourceMeshType,
          typename TargetMeshType,
          typename SourceStateType,
+         typename TargetStateType,
          template<class, int, class, class> class InterfaceReconstructorType,
          class Matpoly_Splitter,
          class Matpoly_Clipper,
          class CoordSys>
-class Interpolate_1stOrder<D,
-                           Entity_kind::NODE,
-                           SourceMeshType,
-                           TargetMeshType,
-                           SourceStateType,
-                           InterfaceReconstructorType,
-                           Matpoly_Splitter,
-                           Matpoly_Clipper,
-                           CoordSys> {
+class Interpolate_1stOrder<
+  D, Entity_kind::NODE,
+  SourceMeshType, TargetMeshType,
+  SourceStateType, TargetStateType,
+  InterfaceReconstructorType,
+  Matpoly_Splitter, Matpoly_Clipper, CoordSys> {
 
   // useful aliases
   using Parts = PartPair<
-    D, Entity_kind::NODE, SourceMeshType, SourceStateType, TargetMeshType
+    D, Entity_kind::NODE,
+    SourceMeshType, SourceStateType,
+    TargetMeshType, TargetStateType
   >;
 
 #ifdef HAVE_TANGRAM
