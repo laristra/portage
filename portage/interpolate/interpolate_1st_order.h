@@ -18,6 +18,7 @@ Please see the license file at the root of this repository, or at:
 // portage includes
 #include "portage/intersect/dummy_interface_reconstructor.h"
 #include "portage/support/portage.h"
+#include "portage/driver/parts.h"
 
 // wonton includes
 #include "wonton/support/CoordinateSystem.h"
@@ -91,6 +92,11 @@ template<int D,
          class CoordSys = Wonton::DefaultCoordSys>
 class Interpolate_1stOrder {
 
+  // useful aliases
+  using Parts = PartPair<
+    D, on_what, SourceMeshType, SourceStateType, TargetMeshType
+  >;
+
 #ifdef HAVE_TANGRAM
   using InterfaceReconstructor =
       Tangram::Driver<InterfaceReconstructorType, D, SourceMeshType,
@@ -105,14 +111,16 @@ class Interpolate_1stOrder {
                        TargetMeshType const & target_mesh,
                        SourceStateType const & source_state,
                        NumericTolerances_t num_tols,
-                       std::shared_ptr<InterfaceReconstructor> ir) :
+                       std::shared_ptr<InterfaceReconstructor> ir,
+                       const Parts* const parts = nullptr) :
       source_mesh_(source_mesh),
       target_mesh_(target_mesh),
       source_state_(source_state),
       interface_reconstructor_(ir),
       interp_var_name_("VariableNameNotSet"),
       source_vals_(nullptr),
-      num_tols_(num_tols) {}
+      num_tols_(num_tols),
+      parts_(parts) {}
 #endif
 
   /*!
@@ -128,13 +136,15 @@ class Interpolate_1stOrder {
   Interpolate_1stOrder(SourceMeshType const & source_mesh,
                        TargetMeshType const & target_mesh,
                        SourceStateType const & source_state,
-                       NumericTolerances_t num_tols) :
+                       NumericTolerances_t num_tols,
+                       const Parts* const parts = nullptr) :
       source_mesh_(source_mesh),
       target_mesh_(target_mesh),
       source_state_(source_state),
       interp_var_name_("VariableNameNotSet"),
       source_vals_(nullptr),
-      num_tols_(num_tols) {}
+      num_tols_(num_tols),
+      parts_(parts) {}
 
 
   /// Copy constructor (disabled)
@@ -144,7 +154,7 @@ class Interpolate_1stOrder {
   //  Interpolate_1stOrder & operator = (const Interpolate_1stOrder &) = delete;
 
   /// Destructor
-  ~Interpolate_1stOrder() {}
+  ~Interpolate_1stOrder() = default;
 
   /// Set the material we are operating on
 
@@ -202,14 +212,13 @@ class Interpolate_1stOrder {
   SourceStateType const & source_state_;
   std::string interp_var_name_;
   double const * source_vals_;
-  int matid_;
-  Field_type field_type_;
+  int matid_ = 0;
+  Field_type field_type_ = Field_type::UNKNOWN_TYPE_FIELD;
   NumericTolerances_t num_tols_;
-
-
 #ifdef HAVE_TANGRAM
   std::shared_ptr<InterfaceReconstructor> interface_reconstructor_;
 #endif
+  Parts const* parts_;
 };  // interpolate_1st_order base
 
 
@@ -237,6 +246,11 @@ class Interpolate_1stOrder<D,
                            Matpoly_Clipper,
                            CoordSys> {
 
+  // useful aliases
+  using Parts = PartPair<
+    D, Entity_kind::CELL, SourceMeshType, SourceStateType, TargetMeshType
+  >;
+
 #ifdef HAVE_TANGRAM
   using InterfaceReconstructor =
       Tangram::Driver<InterfaceReconstructorType, D, SourceMeshType,
@@ -250,14 +264,16 @@ class Interpolate_1stOrder<D,
                        TargetMeshType const & target_mesh,
                        SourceStateType const & source_state,
                        NumericTolerances_t num_tols,
-                       std::shared_ptr<InterfaceReconstructor> ir) :
+                       std::shared_ptr<InterfaceReconstructor> ir,
+                       const Parts* const parts = nullptr) :
       source_mesh_(source_mesh),
       target_mesh_(target_mesh),
       source_state_(source_state),
       interface_reconstructor_(ir),
       interp_var_name_("VariableNameNotSet"),
       source_vals_(nullptr),
-      num_tols_(num_tols) {}
+      num_tols_(num_tols),
+      parts_(parts) {}
 #endif
   /*!
     @brief Constructor.
@@ -270,13 +286,15 @@ class Interpolate_1stOrder<D,
   Interpolate_1stOrder(SourceMeshType const & source_mesh,
                        TargetMeshType const & target_mesh,
                        SourceStateType const & source_state,
-                       NumericTolerances_t num_tols) :
+                       NumericTolerances_t num_tols,
+                       const Parts* const parts = nullptr) :
       source_mesh_(source_mesh),
       target_mesh_(target_mesh),
       source_state_(source_state),
       interp_var_name_("VariableNameNotSet"),
       source_vals_(nullptr),
-      num_tols_(num_tols) {}
+      num_tols_(num_tols),
+      parts_(parts) {}
 
 
   /// Copy constructor (disabled)
@@ -286,7 +304,7 @@ class Interpolate_1stOrder<D,
   //  Interpolate_1stOrder & operator = (const Interpolate_1stOrder &) = delete;
 
   /// Destructor
-  ~Interpolate_1stOrder() {}
+  ~Interpolate_1stOrder() = default;
 
 
   /// Set the material we are operating on
@@ -391,13 +409,13 @@ class Interpolate_1stOrder<D,
   SourceStateType const & source_state_;
   std::string interp_var_name_;
   double const * source_vals_;
-  int matid_;
-  Field_type field_type_;
+  int matid_ = 0;
+  Field_type field_type_ = Field_type::UNKNOWN_TYPE_FIELD;
   NumericTolerances_t num_tols_;
-
 #ifdef HAVE_TANGRAM
   std::shared_ptr<InterfaceReconstructor> interface_reconstructor_;
 #endif
+  Parts const* parts_;
 };  // interpolate_1st_order specialization for cell
 
 //////////////////////////////////////////////////////////////////////////////
@@ -427,6 +445,11 @@ class Interpolate_1stOrder<D,
                            Matpoly_Clipper,
                            CoordSys> {
 
+  // useful aliases
+  using Parts = PartPair<
+    D, Entity_kind::NODE, SourceMeshType, SourceStateType, TargetMeshType
+  >;
+
 #ifdef HAVE_TANGRAM
   using InterfaceReconstructor =
       Tangram::Driver<InterfaceReconstructorType, D, SourceMeshType,
@@ -441,14 +464,22 @@ class Interpolate_1stOrder<D,
                        TargetMeshType const & target_mesh,
                        SourceStateType const & source_state,
                        NumericTolerances_t num_tols,
-                       std::shared_ptr<InterfaceReconstructor> ir) :
+                       std::shared_ptr<InterfaceReconstructor> ir,
+                       const Parts* const parts = nullptr) :
       source_mesh_(source_mesh),
       target_mesh_(target_mesh),
       source_state_(source_state),
       interface_reconstructor_(ir),
       interp_var_name_("VariableNameNotSet"),
       source_vals_(nullptr),
-      num_tols_(num_tols) {}
+      num_tols_(num_tols),
+      parts_(parts)
+  {
+    if (parts_ != nullptr) {
+      std::cerr << "Warning: part-by-part remap is only defined for cells. ";
+      std::cerr << "Source and target parts will be ignored" << std::endl;
+    }
+  }
 #endif
 
   /*!
@@ -462,13 +493,21 @@ class Interpolate_1stOrder<D,
   Interpolate_1stOrder(SourceMeshType const & source_mesh,
                        TargetMeshType const & target_mesh,
                        SourceStateType const & source_state,
-                       NumericTolerances_t num_tols) :
+                       NumericTolerances_t num_tols,
+                       const Parts* const parts = nullptr) :
       source_mesh_(source_mesh),
       target_mesh_(target_mesh),
       source_state_(source_state),
       interp_var_name_("VariableNameNotSet"),
       source_vals_(nullptr),
-      num_tols_(num_tols) {}
+      num_tols_(num_tols),
+      parts_(parts)
+  {
+    if (parts_ != nullptr) {
+      std::cerr << "Warning: part-by-part remap is only defined for cells. ";
+      std::cerr << "Source and target parts will be ignored" << std::endl;
+    }
+  }
 
 
   /// Copy constructor (disabled)
@@ -478,7 +517,7 @@ class Interpolate_1stOrder<D,
   //  Interpolate_1stOrder & operator = (const Interpolate_1stOrder &) = delete;
 
   /// Destructor
-  ~Interpolate_1stOrder() {}
+  ~Interpolate_1stOrder() = default;
 
   /// Set the material we are operating on
 
@@ -573,13 +612,13 @@ class Interpolate_1stOrder<D,
   SourceStateType const & source_state_;
   std::string interp_var_name_;
   double const * source_vals_;
-  int matid_;
-  Field_type field_type_;
+  int matid_ = 0;
+  Field_type field_type_ = Field_type::UNKNOWN_TYPE_FIELD;
   NumericTolerances_t num_tols_;
-
 #ifdef HAVE_TANGRAM
   std::shared_ptr<InterfaceReconstructor> interface_reconstructor_;
 #endif
+  Parts const* parts_;
 };  // interpolate_1st_order specialization for nodes
 
 //////////////////////////////////////////////////////////////////////////////
