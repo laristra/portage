@@ -847,12 +847,13 @@ class CoreDriver : public CoreDriverBase<D,
       return;
     }
 
-    // useful shortcuts
+    // useful shortcut
     using interpolator_t =
       Interpolate<D, ONWHAT, SourceMesh, TargetMesh, SourceState,
         InterfaceReconstructorType, Matpoly_Splitter, Matpoly_Clipper, CoordSys>;
 
-    interpolator_t interpolator(source_mesh_, target_mesh_, source_state_, num_tols_);
+    interpolator_t interpolator(source_mesh_, target_mesh_,
+                                source_state_, num_tols_, partition);
     interpolator.set_interpolation_variable(srcvarname, limiter, bnd_limiter);
 
     // get a handle to a memory location where the target state
