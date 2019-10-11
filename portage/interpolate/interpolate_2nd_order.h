@@ -561,7 +561,7 @@ namespace Portage {
 
     // useful aliases
     using Parts = PartPair<
-      D, Entity_kind::CELL, SourceMeshType, StateType, TargetMeshType, StateType
+      D, Entity_kind::NODE, SourceMeshType, StateType, TargetMeshType, StateType
     >;
 
     using Gradient = Limited_Gradient<
