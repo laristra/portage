@@ -848,7 +848,6 @@ class CoreDriver : public CoreDriverBase<D,
     }
 
     // useful shortcuts
-    using entity_weights_t = std::vector<Weights_t>;
     using interpolator_t =
       Interpolate<D, ONWHAT, SourceMesh, TargetMesh, SourceState,
         InterfaceReconstructorType, Matpoly_Splitter, Matpoly_Clipper, CoordSys>;
