@@ -81,7 +81,7 @@ setup(){
     INTEL_VERSION=18.0.3
     MPI_VERSION=2.1.5
     JALI_VERSION=1.0.4
-    TANGRAM_VERSION=0.9.3
+    TANGRAM_VERSION=0.9.5
     [ "${BUILD_DIR}" != "" ] || BUILD_DIR="${SOURCE_DIR}/build-intel"
   else
     GNU_VERSION=6.4.0
@@ -157,12 +157,13 @@ build(){
 
   if [ "$PERF_MODE" = true ]; then 
     # use head version
-    TANGRAM_HEAD="/home/hoby/dev/remap/tangram-legacy/install"
+    TANGRAM_HEAD="/home/hoby/dev/remap/tangram/install"
     # set device backend
     [ "$USE_CUDA" = true ] && BACKEND=THRUST_DEVICE_SYSTEM_CUDA || BACKEND=THRUST_DEVICE_SYSTEM_OMP
    
     # run cmake 
     cmake \
+      -Wno-dev \
       -DCMAKE_BUILD_TYPE=Release \
       -DENABLE_UNIT_TESTS=True \
       -DENABLE_APP_TESTS=True \
@@ -179,6 +180,7 @@ build(){
       ${SOURCE_DIR}    
   else
     cmake \
+      -Wno-dev \
       -DCMAKE_BUILD_TYPE=Release \
       -DENABLE_UNIT_TESTS=True \
       -DENABLE_APP_TESTS=True \
