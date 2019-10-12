@@ -90,9 +90,11 @@ template <template <int, Entity_kind, class, class> class Search,
           template <Entity_kind, class, class, class,
           template <class, int, class, class> class,
           class, class> class Intersect,
-          template<int, Entity_kind, class, class, class,
-          template<class, int, class, class> class,
-          class, class, class=Wonton::DefaultCoordSys> class Interpolate,
+          template<
+            int, Entity_kind, class, class, class, class,
+            template<class, int, class, class> class,
+            class, class, class=Wonton::DefaultCoordSys
+          > class Interpolate,
           int D,
           class SourceMesh_Wrapper,
           class SourceState_Wrapper,
@@ -685,7 +687,7 @@ template <template <int, Entity_kind, class, class> class Search,
           template <Entity_kind, class, class, class,
           template <class, int, class, class> class,
           class, class> class Intersect,
-          template<int, Entity_kind, class, class, class,
+          template<int, Entity_kind, class, class, class, class,
           template<class, int, class, class> class,
           class, class, class=Wonton::DefaultCoordSys> class Interpolate,
           int D,
@@ -829,7 +831,8 @@ int MMDriver<Search, Intersect, Interpolate, D,
 
   // Get an instance of the desired interpolate algorithm type
   Interpolate<D, onwhat, SourceMesh_Wrapper2, TargetMesh_Wrapper,
-              SourceState_Wrapper2, InterfaceReconstructorType,
+              SourceState_Wrapper2, TargetState_Wrapper,
+              InterfaceReconstructorType,
               Matpoly_Splitter, Matpoly_Clipper>
       interpolate(source_mesh2, target_mesh_, source_state2,
                   num_tols_, interface_reconstructor);
