@@ -12,7 +12,9 @@ END
 set -x
 
 FILENAME=field.txt
-TOLERANCE=5.e-9
+
+TOLERANCE_2D=5.e-11
+TOLERANCE_3D=5.e-9
 
 rm -f ${FILENAME}*
 
@@ -37,5 +39,12 @@ mpirun -np $1 $TESTAPPDIR/portageapp_rgmd_jali \
   --field_filename=${FILENAME}
 
 # COMPARE  
+if [[$3 -eq 2]]
+then
+  TOLERANCE=${TOLERANCE_2D}
+else 
+  TOLERANCE=${TOLERANCE_3D}
+fi
+
 $CMPAPPDIR/distributed_cmp ${FILENAME} ${TOLERANCE}
 
