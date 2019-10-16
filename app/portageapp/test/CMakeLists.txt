@@ -174,7 +174,7 @@ endmacro(ADD_DISTRIBUTED_APPTEST)
 # add the tests
 if (ENABLE_MPI AND Jali_DIR AND TANGRAM_FOUND)
 
-  # 2D, constant fields, vary number of processors
+  # 2D, t-junction, constant fields, vary number of processors
   ADD_DISTRIBUTED_APPTEST(2 tjunction 2 4 5 1,2,3 1)
   ADD_DISTRIBUTED_APPTEST(4 tjunction 2 4 5 1,2,3 1)
   ADD_DISTRIBUTED_APPTEST(8 tjunction 2 4 5 1,2,3 1)
@@ -182,7 +182,7 @@ if (ENABLE_MPI AND Jali_DIR AND TANGRAM_FOUND)
   ADD_DISTRIBUTED_APPTEST(4 tjunction 2 4 5 1,2,3 2)
   ADD_DISTRIBUTED_APPTEST(8 tjunction 2 4 5 1,2,3 2)
   
-  # 2D, constant fields, vary number of processors
+  # 2D, t-junction, constant fields, vary number of processors
   ADD_DISTRIBUTED_APPTEST(2 tjunction 2 5 7 1,2,3 1)
   ADD_DISTRIBUTED_APPTEST(4 tjunction 2 5 7 1,2,3 1)
   ADD_DISTRIBUTED_APPTEST(8 tjunction 2 5 7 1,2,3 1)
@@ -190,7 +190,7 @@ if (ENABLE_MPI AND Jali_DIR AND TANGRAM_FOUND)
   ADD_DISTRIBUTED_APPTEST(4 tjunction 2 5 7 1,2,3 2)
   ADD_DISTRIBUTED_APPTEST(8 tjunction 2 5 7 1,2,3 2)
   
-  # 2D, linear fields, vary number of processors  
+  # 2D, t-junction, linear fields, vary number of processors  
   ADD_DISTRIBUTED_APPTEST(2 tjunction 2 4 5 x,y,x+.3*y 1)
   ADD_DISTRIBUTED_APPTEST(4 tjunction 2 4 5 x,y,x+.3*y 1)
   ADD_DISTRIBUTED_APPTEST(8 tjunction 2 4 5 x,y,x+.3*y 1)
@@ -198,40 +198,61 @@ if (ENABLE_MPI AND Jali_DIR AND TANGRAM_FOUND)
   ADD_DISTRIBUTED_APPTEST(4 tjunction 2 4 5 x,y,x+.3*y 2)
   ADD_DISTRIBUTED_APPTEST(8 tjunction 2 4 5 x,y,x+.3*y 2)
   
-  # 2D, linear fields, larger meshes 
+  # 2D, t-junction, linear fields, larger meshes 
   ADD_DISTRIBUTED_APPTEST(2 tjunction 2 50 70 x,y,x+.3*y 1)
   ADD_DISTRIBUTED_APPTEST(4 tjunction 2 50 70 x,y,x+.3*y 1)
   ADD_DISTRIBUTED_APPTEST(8 tjunction 2 50 70 x,y,x+.3*y 1)
   ADD_DISTRIBUTED_APPTEST(2 tjunction 2 50 70 x,y,x+.3*y 2)
   ADD_DISTRIBUTED_APPTEST(4 tjunction 2 50 70 x,y,x+.3*y 2)
   ADD_DISTRIBUTED_APPTEST(8 tjunction 2 50 70 x,y,x+.3*y 2)
+
+  # 2D, pure source cells, constant fields, vary number of processors
+  ADD_DISTRIBUTED_APPTEST(2 srcpurecells 2 4 8 1,2,3 1)
+  ADD_DISTRIBUTED_APPTEST(4 srcpurecells 2 4 8 1,2,3 1)
+  ADD_DISTRIBUTED_APPTEST(8 srcpurecells 2 4 8 1,2,3 1)
+  ADD_DISTRIBUTED_APPTEST(2 srcpurecells 2 4 8 1,2,3 2)
+  ADD_DISTRIBUTED_APPTEST(4 srcpurecells 2 4 8 1,2,3 2)
+  ADD_DISTRIBUTED_APPTEST(8 srcpurecells 2 4 8 1,2,3 2)
+
+  # 3D, t-junction, constant fields, vary number of processors
+  ADD_DISTRIBUTED_APPTEST(2 tjunction 3 4 5 1,2,3 1)
+  ADD_DISTRIBUTED_APPTEST(4 tjunction 3 4 5 1,2,3 1)
+  ADD_DISTRIBUTED_APPTEST(8 tjunction 3 4 5 1,2,3 1)
+  ADD_DISTRIBUTED_APPTEST(2 tjunction 3 4 5 1,2,3 2)
+  ADD_DISTRIBUTED_APPTEST(4 tjunction 3 4 5 1,2,3 2)
+  ADD_DISTRIBUTED_APPTEST(8 tjunction 3 4 5 1,2,3 2)
   
-#[[
-  # 2D, linear fields, remap order=1
-  ADD_DISTRIBUTED_APPTEST(2 4 5 x,y,x+1.1*y 1 2)
-  ADD_DISTRIBUTED_APPTEST(2 4 5 x,y,x+1.1*y 1 4)
-  ADD_DISTRIBUTED_APPTEST(2 4 5 x,y,x+1.1*y 1 8)
+  # 3D, t-junction, constant fields, vary number of processors
+  ADD_DISTRIBUTED_APPTEST(2 tjunction 3 5 7 1,2,3 1)
+  ADD_DISTRIBUTED_APPTEST(4 tjunction 3 5 7 1,2,3 1)
+  ADD_DISTRIBUTED_APPTEST(8 tjunction 3 5 7 1,2,3 1)
+  ADD_DISTRIBUTED_APPTEST(2 tjunction 3 5 7 1,2,3 2)
+  ADD_DISTRIBUTED_APPTEST(4 tjunction 3 5 7 1,2,3 2)
+  ADD_DISTRIBUTED_APPTEST(8 tjunction 3 5 7 1,2,3 2)
+  
+  # 3D, t-junction, linear fields, vary number of processors  
+  ADD_DISTRIBUTED_APPTEST(2 tjunction 3 4 5 x,y,x+.3*y 1)
+  ADD_DISTRIBUTED_APPTEST(4 tjunction 3 4 5 x,y,x+.3*y 1)
+  ADD_DISTRIBUTED_APPTEST(8 tjunction 3 4 5 x,y,x+.3*y 1)
+  ADD_DISTRIBUTED_APPTEST(2 tjunction 3 4 5 x,y,x+.3*y 2)
+  ADD_DISTRIBUTED_APPTEST(4 tjunction 3 4 5 x,y,x+.3*y 2)
+  ADD_DISTRIBUTED_APPTEST(8 tjunction 3 4 5 x,y,x+.3*y 2)
+  
+  # 3D, t-junction, linear fields, larger meshes 
+  #ADD_DISTRIBUTED_APPTEST(2 tjunction 3 50 70 x,y,x+.3*y 1)
+  #ADD_DISTRIBUTED_APPTEST(4 tjunction 3 50 70 x,y,x+.3*y 1)
+  #ADD_DISTRIBUTED_APPTEST(8 tjunction 3 50 70 x,y,x+.3*y 1)
+  #ADD_DISTRIBUTED_APPTEST(2 tjunction 3 50 70 x,y,x+.3*y 2)
+  #ADD_DISTRIBUTED_APPTEST(4 tjunction 3 50 70 x,y,x+.3*y 2)
+  #ADD_DISTRIBUTED_APPTEST(8 tjunction 3 50 70 x,y,x+.3*y 2)
 
-  # 2D, linear fields, remap order=2
-  ADD_DISTRIBUTED_APPTEST(2 4 5 x,y,x+1.1*y 2 2)
-  ADD_DISTRIBUTED_APPTEST(2 4 5 x,y,x+1.1*y 2 4)
-  ADD_DISTRIBUTED_APPTEST(2 4 5 x,y,x+1.1*y 2 8)
-
-  # 3D, constant fields, vary number of processors
-  ADD_DISTRIBUTED_APPTEST(3 4 5 1,2,3 1 2)
-  ADD_DISTRIBUTED_APPTEST(3 4 5 1,2,3 1 4)
-  ADD_DISTRIBUTED_APPTEST(3 4 5 1,2,3 1 8)
-
-  # 3D, linear fields, remap order=1
-  ADD_DISTRIBUTED_APPTEST(3 4 5 x,y+1.1*z,x+1.1*y+2.2*z 1 2)
-  ADD_DISTRIBUTED_APPTEST(3 4 5 x,y+1.1*z,x+1.1*y+2.2*z 1 4)
-  ADD_DISTRIBUTED_APPTEST(3 4 5 x,y+1.1*z,x+1.1*y+2.2*z 1 8)
-
-  # 3D, linear fields, remap order=2
-  ADD_DISTRIBUTED_APPTEST(3 4 5 x,y+1.1*z,x+1.1*y+2.2*z 2 2)
-  ADD_DISTRIBUTED_APPTEST(3 4 5 x,y+1.1*z,x+1.1*y+2.2*z 2 4)
-  ADD_DISTRIBUTED_APPTEST(3 4 5 x,y+1.1*z,x+1.1*y+2.2*z 2 8)
-]]
+  # 3D, pure source cells, constant fields, vary number of processors
+  ADD_DISTRIBUTED_APPTEST(2 srcpurecells 3 4 8 1,2,3 1)
+  ADD_DISTRIBUTED_APPTEST(4 srcpurecells 3 4 8 1,2,3 1)
+  ADD_DISTRIBUTED_APPTEST(8 srcpurecells 3 4 8 1,2,3 1)
+  ADD_DISTRIBUTED_APPTEST(2 srcpurecells 3 4 8 1,2,3 2)
+  ADD_DISTRIBUTED_APPTEST(4 srcpurecells 3 4 8 1,2,3 2)
+  ADD_DISTRIBUTED_APPTEST(8 srcpurecells 3 4 8 1,2,3 2)
 
 endif (ENABLE_MPI AND Jali_DIR AND TANGRAM_FOUND)
 

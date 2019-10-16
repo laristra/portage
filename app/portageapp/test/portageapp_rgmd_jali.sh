@@ -12,7 +12,7 @@ END
 set -x
 
 FILENAME=field.txt
-TOLERANCE=3.e-13
+TOLERANCE=5.e-9
 
 rm -f ${FILENAME}*
 
