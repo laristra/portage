@@ -305,6 +305,11 @@ Vector<D> Limited_Gradient <D, Entity_kind::CELL, MeshType, StateType,
                centroid[k] += moments[k+1];
           }
 
+          // There are cases where r3d returns a single zero volume poly which 
+          // ultimately produces a nan, so here we are explicitly filtering this
+          // case. 
+          if (mvol==0.) continue;         
+          
           for (int k = 0; k < D; k++)
              centroid[k] /= mvol;
     

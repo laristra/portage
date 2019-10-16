@@ -142,3 +142,97 @@ if (Jali_DIR AND TANGRAM_FOUND)
 
 endif (Jali_DIR AND TANGRAM_FOUND)
 
+####################################################################
+
+message(STATUS "Adding portageapp_rgmd_jali tests")
+
+# create a macro to run a distributed compare test
+macro(ADD_DISTRIBUTED_APPTEST NP PROBLEM DIM NSOURCECELLS NTARGETCELLS FIELDS REMAP_ORDER )
+
+  # copy the shell script
+  file(
+    COPY portageapp_rgmd_jali.sh 
+    DESTINATION ${CMAKE_CURRENT_BINARY_DIR}
+  )
+  
+  # add the test
+  add_test(
+    NAME portageapp_rgmd_jali_${NP}_${PROBLEM}_${DIM}_${NSOURCECELLS}_${NTARGETCELLS}_${FIELDS}_${REMAP_ORDER}
+    COMMAND ./portageapp_rgmd_jali.sh ${NP} ${PROBLEM} ${DIM} ${NSOURCECELLS} ${NTARGETCELLS} ${FIELDS} ${REMAP_ORDER} 
+  )
+    
+  # set environment variables for the script
+  set_property(
+    TEST portageapp_rgmd_jali_${NP}_${PROBLEM}_${DIM}_${NSOURCECELLS}_${NTARGETCELLS}_${FIELDS}_${REMAP_ORDER}
+    PROPERTY ENVIRONMENT
+    TESTAPPDIR=${CMAKE_CURRENT_BINARY_DIR}/..
+    CMPAPPDIR=${CMAKE_BINARY_DIR}/app/distributed_cmp
+  )
+
+endmacro(ADD_DISTRIBUTED_APPTEST)
+
+# add the tests
+if (ENABLE_MPI AND Jali_DIR AND TANGRAM_FOUND)
+
+  # 2D, constant fields, vary number of processors
+  ADD_DISTRIBUTED_APPTEST(2 tjunction 2 4 5 1,2,3 1)
+  ADD_DISTRIBUTED_APPTEST(4 tjunction 2 4 5 1,2,3 1)
+  ADD_DISTRIBUTED_APPTEST(8 tjunction 2 4 5 1,2,3 1)
+  ADD_DISTRIBUTED_APPTEST(2 tjunction 2 4 5 1,2,3 2)
+  ADD_DISTRIBUTED_APPTEST(4 tjunction 2 4 5 1,2,3 2)
+  ADD_DISTRIBUTED_APPTEST(8 tjunction 2 4 5 1,2,3 2)
+  
+  # 2D, constant fields, vary number of processors
+  ADD_DISTRIBUTED_APPTEST(2 tjunction 2 5 7 1,2,3 1)
+  ADD_DISTRIBUTED_APPTEST(4 tjunction 2 5 7 1,2,3 1)
+  ADD_DISTRIBUTED_APPTEST(8 tjunction 2 5 7 1,2,3 1)
+  ADD_DISTRIBUTED_APPTEST(2 tjunction 2 5 7 1,2,3 2)
+  ADD_DISTRIBUTED_APPTEST(4 tjunction 2 5 7 1,2,3 2)
+  ADD_DISTRIBUTED_APPTEST(8 tjunction 2 5 7 1,2,3 2)
+  
+  # 2D, linear fields, vary number of processors  
+  ADD_DISTRIBUTED_APPTEST(2 tjunction 2 4 5 x,y,x+.3*y 1)
+  ADD_DISTRIBUTED_APPTEST(4 tjunction 2 4 5 x,y,x+.3*y 1)
+  ADD_DISTRIBUTED_APPTEST(8 tjunction 2 4 5 x,y,x+.3*y 1)
+  ADD_DISTRIBUTED_APPTEST(2 tjunction 2 4 5 x,y,x+.3*y 2)
+  ADD_DISTRIBUTED_APPTEST(4 tjunction 2 4 5 x,y,x+.3*y 2)
+  ADD_DISTRIBUTED_APPTEST(8 tjunction 2 4 5 x,y,x+.3*y 2)
+  
+  # 2D, linear fields, larger meshes 
+  ADD_DISTRIBUTED_APPTEST(2 tjunction 2 50 70 x,y,x+.3*y 1)
+  ADD_DISTRIBUTED_APPTEST(4 tjunction 2 50 70 x,y,x+.3*y 1)
+  ADD_DISTRIBUTED_APPTEST(8 tjunction 2 50 70 x,y,x+.3*y 1)
+  ADD_DISTRIBUTED_APPTEST(2 tjunction 2 50 70 x,y,x+.3*y 2)
+  ADD_DISTRIBUTED_APPTEST(4 tjunction 2 50 70 x,y,x+.3*y 2)
+  ADD_DISTRIBUTED_APPTEST(8 tjunction 2 50 70 x,y,x+.3*y 2)
+  
+#[[
+  # 2D, linear fields, remap order=1
+  ADD_DISTRIBUTED_APPTEST(2 4 5 x,y,x+1.1*y 1 2)
+  ADD_DISTRIBUTED_APPTEST(2 4 5 x,y,x+1.1*y 1 4)
+  ADD_DISTRIBUTED_APPTEST(2 4 5 x,y,x+1.1*y 1 8)
+
+  # 2D, linear fields, remap order=2
+  ADD_DISTRIBUTED_APPTEST(2 4 5 x,y,x+1.1*y 2 2)
+  ADD_DISTRIBUTED_APPTEST(2 4 5 x,y,x+1.1*y 2 4)
+  ADD_DISTRIBUTED_APPTEST(2 4 5 x,y,x+1.1*y 2 8)
+
+  # 3D, constant fields, vary number of processors
+  ADD_DISTRIBUTED_APPTEST(3 4 5 1,2,3 1 2)
+  ADD_DISTRIBUTED_APPTEST(3 4 5 1,2,3 1 4)
+  ADD_DISTRIBUTED_APPTEST(3 4 5 1,2,3 1 8)
+
+  # 3D, linear fields, remap order=1
+  ADD_DISTRIBUTED_APPTEST(3 4 5 x,y+1.1*z,x+1.1*y+2.2*z 1 2)
+  ADD_DISTRIBUTED_APPTEST(3 4 5 x,y+1.1*z,x+1.1*y+2.2*z 1 4)
+  ADD_DISTRIBUTED_APPTEST(3 4 5 x,y+1.1*z,x+1.1*y+2.2*z 1 8)
+
+  # 3D, linear fields, remap order=2
+  ADD_DISTRIBUTED_APPTEST(3 4 5 x,y+1.1*z,x+1.1*y+2.2*z 2 2)
+  ADD_DISTRIBUTED_APPTEST(3 4 5 x,y+1.1*z,x+1.1*y+2.2*z 2 4)
+  ADD_DISTRIBUTED_APPTEST(3 4 5 x,y+1.1*z,x+1.1*y+2.2*z 2 8)
+]]
+
+endif (ENABLE_MPI AND Jali_DIR AND TANGRAM_FOUND)
+
+

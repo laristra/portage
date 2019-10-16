@@ -1531,14 +1531,22 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
     write_field(field_filename_, targetMeshWrapper, targetStateWrapper);
   } 
 
+  // debug diagnostics  
+/*  
+  std::cout << "\n----source owned cell global id's on rank " << rank << ":\n";
+  for (int ic = 0; ic < sourceMeshWrapper.num_owned_cells(); ic++) {
+    Wonton::Point<dim> centroid;
+    sourceMeshWrapper.cell_centroid(ic,&centroid);
+    std::cout << "source cell: " << sourceMeshWrapper.get_global_id(ic, Wonton::Entity_kind::CELL) << 
+      "  centroid:(" <<centroid[0]<< ", " << centroid[1] << ")\n";
+  }
+  
   std::cout << "\n----target owned cell global id's on rank " << rank << ":\n";
   for (int ic = 0; ic < targetMeshWrapper.num_owned_cells(); ic++) {
     Wonton::Point<dim> centroid;
     targetMeshWrapper.cell_centroid(ic,&centroid);
-    std::cout << targetMeshWrapper.get_global_id(ic, Wonton::Entity_kind::CELL) << 
-      " centroid:(" <<centroid[0]<< ", " << centroid[1] << ")\n";
-  } 
-    
-    
-
+    std::cout << "target cell: "  << targetMeshWrapper.get_global_id(ic, Wonton::Entity_kind::CELL) << 
+      "  centroid:(" <<centroid[0]<< ", " << centroid[1] << ")\n";
+  }
+*/
 }
