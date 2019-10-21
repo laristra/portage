@@ -285,6 +285,12 @@ namespace Portage {
       double phi = 1.0;
       Vector<D> grad;
 
+      // check that cell is within the part if part-by-part requested
+      if (parts_ != nullptr and not parts_->is_source_entity(cellid)) {
+        grad.zero();
+        return grad;
+      }
+
       // useful predicates
       bool is_boundary_cell = mesh_.on_exterior_boundary(Entity_kind::CELL, cellid);
       bool apply_limiter = limiter_type_ == BARTH_JESPERSEN and
