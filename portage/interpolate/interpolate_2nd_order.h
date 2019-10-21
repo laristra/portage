@@ -367,13 +367,13 @@ namespace Portage {
 #ifdef HAVE_TANGRAM
       Gradient gradient_kernel(source_mesh_, source_state_, variable_name_,
                                limiter_type, boundary_limiter_type,
-                               interface_reconstructor_);
+                               interface_reconstructor_, parts_);
 
       if (field_type_ == Field_type::MULTIMATERIAL_FIELD)
         gradient_kernel.set_material(material_id_);
 #else
       Gradient gradient_kernel(source_mesh_, source_state_, variable_name_,
-                                    limiter_type, boundary_limiter_type);
+                                    limiter_type, boundary_limiter_type, parts_);
 #endif
 
       gradients_.resize(nb_cells);
