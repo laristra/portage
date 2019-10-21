@@ -249,8 +249,10 @@ namespace Portage {
     >;
 
     using Gradient = Limited_Gradient<
-      D, Entity_kind::CELL, SourceMeshType,
-      SourceStateType, InterfaceReconstructorType,
+      D, Entity_kind::CELL,
+      SourceMeshType, SourceStateType,
+      TargetMeshType, TargetStateType,
+      InterfaceReconstructorType,
       Matpoly_Splitter, Matpoly_Clipper, CoordSys
     >;
 
@@ -579,8 +581,10 @@ namespace Portage {
     >;
 
     using Gradient = Limited_Gradient<
-      D, Entity_kind::NODE, SourceMeshType,
-      SourceStateType, InterfaceReconstructorType,
+      D, Entity_kind::NODE,
+      SourceMeshType, SourceStateType,
+      TargetMeshType, TargetStateType,
+      InterfaceReconstructorType,
       Matpoly_Splitter, Matpoly_Clipper, CoordSys
     >;
 

@@ -35,13 +35,17 @@ namespace Portage {
 
 /*! @class Limited_Gradient gradient.h
     @brief Compute limited gradient of a field or components of a field
-    @tparam MeshType A mesh class that one can query for mesh info
-    @tparam StateType A state manager class that one can query for field info
+    @tparam SourceMeshType A mesh class that one can query for mesh info
+    @tparam SourceStateType A state manager class that one can query for field info
     @tparam on_what An enum type which indicates different entity types
 */
 
   template<
-    int D, Entity_kind on_what, typename MeshType, typename StateType,
+    int D, Entity_kind on_what,
+    typename SourceMeshType,
+    typename SourceStateType,
+    typename TargetMeshType = SourceMeshType,
+    typename TargetStateType = SourceStateType,
     template<class, int, class, class>
       class InterfaceReconstructorType = DummyInterfaceReconstructor,
     class Matpoly_Splitter = void,
@@ -51,12 +55,16 @@ namespace Portage {
   class Limited_Gradient {
 
     // useful aliases
-    using Parts = PartPair<D, on_what, MeshType, StateType>;
+    using Parts = PartPair<
+      D, on_what,
+      SourceMeshType, SourceStateType,
+      TargetMeshType, TargetStateType
+    >;
 
 #ifdef HAVE_TANGRAM
     using InterfaceReconstructor =
       Tangram::Driver<
-        InterfaceReconstructorType, D, MeshType,
+        InterfaceReconstructorType, D, SourceMeshType,
         Matpoly_Splitter, Matpoly_Clipper
       >;
 #endif
@@ -74,7 +82,7 @@ namespace Portage {
 
         @todo must remove assumption that field is scalar
      */
-    Limited_Gradient(MeshType const& mesh, StateType const& state,
+    Limited_Gradient(SourceMeshType const& mesh, SourceStateType const& state,
                      std::string const var_name,
                      Limiter_type limiter_type,
                      Boundary_Limiter_type boundary_limiter_type,
@@ -88,7 +96,7 @@ namespace Portage {
         parts_(parts) {}
 
 #ifdef HAVE_TANGRAM
-    Limited_Gradient(MeshType const &mesh, StateType const &state,
+    Limited_Gradient(SourceMeshType const &mesh, SourceStateType const &state,
                      std::string const var_name,
                      Limiter_type limiter_type,
                      Boundary_Limiter_type boundary_limiter_type,
@@ -117,8 +125,8 @@ namespace Portage {
     }
 
   private:
-    MeshType const& mesh_;
-    StateType const& state_;
+    SourceMeshType const& mesh_;
+    SourceStateType const& state_;
     double const* values_;
     std::string variable_name_ = "";
     Limiter_type limiter_type_ = DEFAULT_LIMITER;
@@ -132,38 +140,48 @@ namespace Portage {
 
   /*! @class Limited_Gradient<MeshType,StateType,CELL> gradient.h
     @brief Specialization of limited gradient class for @c cell-centered field
-    @tparam MeshType A mesh class that one can query for mesh info
-    @tparam StateType A state manager class that one can query for field info
+    @tparam SourceMeshType A mesh class that one can query for mesh info
+    @tparam SourceStateType A state manager class that one can query for field info
   */
 
 
   template<
-    int D, typename MeshType, typename StateType,
+    int D,
+    typename SourceMeshType,
+    typename SourceStateType,
+    typename TargetMeshType,
+    typename TargetStateType,
     template<class, int, class, class>
       class InterfaceReconstructorType,
     class Matpoly_Splitter, class Matpoly_Clipper, class CoordSys
   >
   class Limited_Gradient<
-    D, Entity_kind::CELL, MeshType, StateType,
+    D, Entity_kind::CELL,
+    SourceMeshType, SourceStateType,
+    TargetMeshType, TargetStateType,
     InterfaceReconstructorType,
     Matpoly_Splitter, Matpoly_Clipper, CoordSys
   > {
 
     // useful aliases
-    using Parts = PartPair<D, Entity_kind::CELL, MeshType, StateType>;
+    using Parts = PartPair<
+      D, Entity_kind::CELL,
+      SourceMeshType, SourceStateType,
+      TargetMeshType, TargetStateType
+    >;
 
 #ifdef HAVE_TANGRAM
     using InterfaceReconstructor =
       Tangram::Driver<
-        InterfaceReconstructorType, D, MeshType,
+        InterfaceReconstructorType, D, SourceMeshType,
         Matpoly_Splitter, Matpoly_Clipper
       >;
 #endif
 
   public:
     //Constructor for single material remap
-    Limited_Gradient(MeshType const& mesh,
-                     StateType const& state,
+    Limited_Gradient(SourceMeshType const& mesh,
+                     SourceStateType const& state,
                      std::string const var_name,
                      Limiter_type limiter_type,
                      Boundary_Limiter_type boundary_limiter_type,
@@ -203,8 +221,8 @@ namespace Portage {
 
 #ifdef HAVE_TANGRAM
     // Constructor with interface reconstructor for multimaterial remaps.
-    Limited_Gradient(MeshType const& mesh,
-                     StateType const& state,
+    Limited_Gradient(SourceMeshType const& mesh,
+                     SourceStateType const& state,
                      std::string const& var_name,
                      Limiter_type limiter_type,
                      Boundary_Limiter_type boundary_limiter_type,
@@ -449,8 +467,8 @@ namespace Portage {
     }
 
   private:
-    MeshType const& mesh_;
-    StateType const& state_;
+    SourceMeshType const& mesh_;
+    SourceStateType const& state_;
     double const* values_;
     std::string variable_name_ = "";
     Limiter_type limiter_type_ = DEFAULT_LIMITER;
@@ -470,23 +488,34 @@ namespace Portage {
 
   /*! @class Limited_Gradient<MeshType,StateType,NODE> gradient.h
     @brief Specialization of limited gradient class for @c node-centered field
-    @tparam MeshType A mesh class that one can query for mesh info
-    @tparam StateType A state manager class that one can query for field info
+    @tparam SourceMeshType A mesh class that one can query for mesh info
+    @tparam SourceStateType A state manager class that one can query for field info
   */
 
   template<
-    int D, typename MeshType, typename StateType,
+    int D,
+    typename SourceMeshType,
+    typename SourceStateType,
+    typename TargetMeshType,
+    typename TargetStateType,
     template<class, int, class, class>
       class InterfaceReconstructorType,
     class Matpoly_Splitter, class Matpoly_Clipper, class CoordSys
   >
   class Limited_Gradient<
-    D, Entity_kind::NODE, MeshType, StateType,
+    D, Entity_kind::NODE,
+    SourceMeshType, SourceStateType,
+    TargetMeshType, TargetStateType,
     InterfaceReconstructorType,
     Matpoly_Splitter, Matpoly_Clipper, CoordSys
   > {
 
-    using Parts = PartPair<D, Entity_kind::CELL, MeshType, StateType>;
+    // useful aliases
+    using Parts = PartPair<
+      D, Entity_kind::NODE,
+      SourceMeshType, SourceStateType,
+      TargetMeshType, TargetStateType
+    >;
 
   public:
     /*! @brief Constructor
@@ -498,8 +527,8 @@ namespace Portage {
 
       @todo must remove assumption that field is scalar
     */
-    Limited_Gradient(MeshType const& mesh,
-                     StateType const& state,
+    Limited_Gradient(SourceMeshType const& mesh,
+                     SourceStateType const& state,
                      std::string const var_name,
                      Limiter_type limiter_type,
                      Boundary_Limiter_type boundary_limiter_type,
@@ -610,8 +639,8 @@ namespace Portage {
     }
 
   private:
-    MeshType const& mesh_;
-    StateType const& state_;
+    SourceMeshType const& mesh_;
+    SourceStateType const& state_;
     double const* values_;
     std::string variable_name_ = "";
     Limiter_type limiter_type_ = DEFAULT_LIMITER;
