@@ -68,7 +68,8 @@ elif [[ $compiler == "gcc7" ]]; then
 fi
 
 jali_install_dir=$NGC/private/jali/${jali_version}-${compiler_type}-${compiler_version}-openmpi-${openmpi_version}
-tangram_install_dir=$NGC/private/tangram/${tangram_version}-${compiler_type}-${compiler_version}-openmpi-${openmpi_version}
+tangram_install_dir=$NGC/private/tangram/${tangram_version}-${compiler_type}-${compiler_version}-openmpi-${openmpi_version}-jali-1.05rc3
+#tangram_install_dir=$NGC/private/tangram/${tangram_version}-${compiler_type}-${compiler_version}-openmpi-${openmpi_version}
 tangram_install_dir_nompi=$NGC/private/tangram/${tangram_version}-${compiler_type}-${compiler_version}-nompi
 xmof2d_install_dir=$NGC/private/xmof2d/${xmof2d_version}-${compiler_type}-${compiler_version}
 lapacke_dir=$NGC/private/lapack/${lapack_version}-patched-${compiler_type}-${compiler_version}

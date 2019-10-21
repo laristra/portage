@@ -61,6 +61,8 @@
   #include "portage/support/timer.h"
 #endif
 
+#define DEBUG
+
 // For parsing and evaluating user defined expressions in apps
 #include "user_field.h"
 
@@ -1531,8 +1533,8 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
     write_field(field_filename_, targetMeshWrapper, targetStateWrapper);
   } 
 
-  // debug diagnostics  
-/*  
+#ifdef DEBUG
+  // debug diagnostics   
   std::cout << "\n----source owned cell global id's on rank " << rank << ":\n";
   for (int ic = 0; ic < sourceMeshWrapper.num_owned_cells(); ic++) {
     Wonton::Point<dim> centroid;
@@ -1548,5 +1550,6 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
     std::cout << "target cell: "  << targetMeshWrapper.get_global_id(ic, Wonton::Entity_kind::CELL) << 
       "  centroid:(" <<centroid[0]<< ", " << centroid[1] << ")\n";
   }
-*/
+#endif
+
 }
