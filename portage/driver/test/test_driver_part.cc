@@ -218,7 +218,7 @@ TEST_F(PartDriverTest, PiecewiseConstantField) {
 }
 
 // sanity check 2: verify that both part-by-part and mesh-mesh
-// interpolation schemes are equivalent for general fields
+// remap are equivalent for first-order interpolation of general fields.
 // in absence of mismatch between source and target parts.
 TEST_F(PartDriverTest, MeshMeshRemapComparison) {
 

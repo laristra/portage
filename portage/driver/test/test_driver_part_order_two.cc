@@ -31,21 +31,21 @@
  * and each part is remapped independently. Remapped values are then
  * compared to the exact values given by an analytical function.
  * Here source and target parts are perfectly aligned (no mismatch),
- * but target mesh resolution is twice that of source mesh.
+ * but the target mesh is twice finer than the source mesh.
  * The generated parts looks like below:
  *
  *  0,1                  1,1
- *    ---------:---------
- *   |   s1    :         |
- *   |    _____:__       |
- *   |   |     :  |      |
- *   |   |     :  |      |
- *   |   | s0  :  |      |
- *   |   |     :  |      |
- *   |   |     :  |      |
- *   |    -----:--       |
- *   | r=f(x,y): r=g(x,y)|
- *    ---------:---------
+ *    ------------:------
+ *   |            :      |
+ *   |            :      |
+ *   |            :      |
+ *   |            :      |
+ *   |    s0      :  s1  |
+ *   |            :      |
+ *   |            :      |
+ *   |            :      |
+ *   |   f(x,y)   :g(x,y)|
+ *    ------------:------
  *  0,0                 1,0
  */
 class PartOrderTwoTest : public testing::Test {
@@ -166,6 +166,7 @@ protected:
 // sanity check 1: verify that part-by-part interpolation
 // is strictly conservative for a piecewise constant field
 // in absence of mismatch between source and target parts.
+// nb: no gradient limiters.
 TEST_F(PartOrderTwoTest, PiecewiseLinearField) {
 
   Remapper remapper(source_mesh_wrapper, source_state_wrapper,
@@ -215,76 +216,11 @@ TEST_F(PartOrderTwoTest, PiecewiseLinearField) {
       auto const& x = centroid[0];
       auto const& y = centroid[1];
       auto expected = (x < x_max ? coef * x : coef * (x - x_max));
-      //#if DEBUG_PART_BY_PART
+      #if DEBUG_PART_BY_PART
         std::printf("target[%02d]: x: %7.3f, y: %7.3f, remapped: %7.3f, expected: %7.3f\n",
                     c, x, y, obtained, expected);
-      //#endif
+      #endif
       ASSERT_NEAR(obtained, expected, epsilon);
     }
   }
 }
-
-/*
-// sanity check 2: verify that both part-by-part and mesh-mesh
-// interpolation schemes are equivalent for general fields
-// in absence of mismatch between source and target parts.
-TEST_F(PartOrderTwoTest, MeshMeshRemapComparison) {
-
-  Remapper remapper(source_mesh_wrapper, source_state_wrapper,
-                    target_mesh_wrapper, target_state_wrapper);
-
-  double* original = nullptr;
-  double* remapped = nullptr;
-  double remapped_parts[nb_target_cells];
-
-  // assign a gaussian density field on source mesh
-  source_state_wrapper.mesh_get_data(CELL, "density", &original);
-  for (int c = 0; c < nb_source_cells; c++) {
-    auto centroid = source_mesh->cell_centroid(c);
-    auto const& x = centroid[0];
-    auto const& y = centroid[1];
-    original[c] = std::exp(-10.*(x*x + y*y));
-  }
-
-  // process remap
-  auto candidates = remapper.search<Portage::SearchKDTree>();
-  auto weights = remapper.intersect_meshes<Portage::IntersectR2D>(candidates);
-  bool has_mismatch = remapper.check_mesh_mismatch(weights);
-
-  for (int i = 0; i < 2; ++i) {
-    // test for mismatch and compute volumes
-    parts[i].check_mismatch(weights);
-    assert(not parts[i].has_mismatch());
-
-    // interpolate density for current part
-    remapper.interpolate_mesh_var<double, Portage::Interpolate_1stOrder>(
-      "density", "density", weights, lower_bound, upper_bound,
-      Portage::DEFAULT_LIMITER, Portage::DEFAULT_BND_LIMITER, 
-      Portage::DEFAULT_PARTIAL_FIXUP_TYPE, Portage::DEFAULT_EMPTY_FIXUP_TYPE, 
-      Portage::DEFAULT_CONSERVATION_TOL,
-      Portage::DEFAULT_MAX_FIXUP_ITER, &(parts[i])
-    );
-  }
-
-  // store the part-by-part remapped values
-  target_state_wrapper.mesh_get_data(CELL, "density", &remapped);
-  std::copy(remapped, remapped + nb_target_cells, remapped_parts);
-  std::fill(remapped, remapped + nb_target_cells, 0.);
-
-  // interpolate density on whole source mesh
-  remapper.interpolate_mesh_var<double, Portage::Interpolate_1stOrder>(
-    "density", "density", weights, lower_bound, upper_bound
-  );
-
-  // now compare remapped value for each cell
-  for (int c=0; c < nb_target_cells; ++c) {
-    auto const& value_mesh_remap = remapped[c];
-    auto const& value_part_remap = remapped_parts[c];
-    #if DEBUG_PART_BY_PART
-      std::printf("target[%02d]: value_mesh_remap: %7.3f, value_part_remap: %7.3f\n",
-                  c, value_mesh_remap, value_part_remap);
-    #endif
-    ASSERT_NEAR(value_mesh_remap, value_part_remap, epsilon);
-  }
-}
- */
