@@ -61,7 +61,7 @@
   #include "portage/support/timer.h"
 #endif
 
-#define DEBUG
+//#define DEBUG_PRINT
 
 // For parsing and evaluating user defined expressions in apps
 #include "user_field.h"
@@ -1533,7 +1533,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
     write_field(field_filename_, targetMeshWrapper, targetStateWrapper);
   } 
 
-#ifdef DEBUG
+#ifdef DEBUG_PRINT
   // debug diagnostics   
   std::cout << "\n----source owned cell global id's on rank " << rank << ":\n";
   for (int ic = 0; ic < sourceMeshWrapper.num_owned_cells(); ic++) {
