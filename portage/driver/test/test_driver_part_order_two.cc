@@ -174,9 +174,9 @@ TEST_F(PartOrderTwoTest, PiecewiseLinearField) {
   double* original = nullptr;
   double* remapped = nullptr;
 
-  double const coef = 5.;
+  double const coef = 2.;
   double const x_max = 0.6;
-  return;
+
   // assign a linear field on source mesh
   source_state_wrapper.mesh_get_data(CELL, "density", &original);
   for (int c = 0; c < nb_source_cells; c++) {
@@ -205,7 +205,6 @@ TEST_F(PartOrderTwoTest, PiecewiseLinearField) {
     );
   }
 
-
   // compare remapped values with analytically computed ones
   target_state_wrapper.mesh_get_data(CELL, "density", &remapped);
 
@@ -214,11 +213,12 @@ TEST_F(PartOrderTwoTest, PiecewiseLinearField) {
       auto obtained = remapped[c];
       auto centroid = target_mesh->cell_centroid(c);
       auto const& x = centroid[0];
+      auto const& y = centroid[1];
       auto expected = (x < x_max ? coef * x : coef * (x - x_max));
-      #if DEBUG_PART_BY_PART
-        std::printf("target[%02d]: remapped: %7.3f, expected: %7.3f\n",
-                    c, obtained, expected);
-      #endif
+      //#if DEBUG_PART_BY_PART
+        std::printf("target[%02d]: x: %7.3f, y: %7.3f, remapped: %7.3f, expected: %7.3f\n",
+                    c, x, y, obtained, expected);
+      //#endif
       ASSERT_NEAR(obtained, expected, epsilon);
     }
   }
