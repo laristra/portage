@@ -31,7 +31,7 @@ fi
 
 # set modules and install paths
 
-jali_version=1.0.4
+jali_version=1.0.5rc3
 tangram_version=0.9.7
 xmof2d_version=0.9.5
 lapack_version=3.8.0
