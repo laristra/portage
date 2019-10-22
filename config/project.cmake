@@ -302,8 +302,8 @@ endif (TANGRAM_DIR)
 #------------------------------------------------------------------------------#
 
 if (TANGRAM_FOUND)
-  find_package(xmof2D  HINTS ${XMOF2D_DIR})
-  if (xmof2D_FOUND)
+  find_package(XMOF2D  HINTS ${XMOF2D_DIR})
+  if (XMOF2D_FOUND)
     include_directories(${XMOF2D_INCLUDE_DIRS})
 
 # What XMOF2D puts as XMOF2D_LIBRARIES is not a complete path but just a name
