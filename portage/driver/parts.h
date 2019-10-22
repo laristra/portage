@@ -547,7 +547,8 @@ public:
                                   global_lower_bound, global_upper_bound,
                                   conservation_tol, maxiter,
                                   partial_fixup_type, empty_fixup_type);
-    }
+    } else
+      return false;
   }
 
   /**

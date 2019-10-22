@@ -161,7 +161,7 @@ class Interpolate_1stOrder {
 
   /// Set the material we are operating on
 
-  int set_material(int m) {
+  void set_material(int m) {
     matid_ = m;
   }  // set_material
 
@@ -312,7 +312,7 @@ class Interpolate_1stOrder<
 
   /// Set the material we are operating on
 
-  int set_material(int m) {
+  void set_material(int m) {
     matid_ = m;
   }  // set_material
 
@@ -524,7 +524,7 @@ class Interpolate_1stOrder<
 
   /// Set the material we are operating on
 
-  int set_material(int m) {
+  void set_material(int m) {
     matid_ = m;
   }  // set_material
 
