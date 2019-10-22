@@ -11,7 +11,7 @@ END
 # Echo each command
 set -x
 
-FILENAME=field.txt
+FILENAME=field_$1_$2_$3_$4_$5_$6_$7.txt
 
 TOLERANCE_2D=5.e-11
 TOLERANCE_3D=5.e-9
