@@ -39,7 +39,7 @@ mpirun -np $1 $TESTAPPDIR/portageapp_rgmd_jali \
   --field_filename=${FILENAME}
 
 # COMPARE  
-if [[$3 -eq 2]]
+if [[ $3 -eq "2" ]]
 then
   TOLERANCE=${TOLERANCE_2D}
 else 
