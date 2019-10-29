@@ -17,6 +17,7 @@
 #include <cmath>
 #include <set>
 #include <numeric>
+#include <iomanip>
 #include <limits>
 
 #include <mpi.h>
@@ -59,6 +60,8 @@
 #if ENABLE_TIMINGS
   #include "portage/support/timer.h"
 #endif
+
+//#define DEBUG_PRINT
 
 // For parsing and evaluating user defined expressions in apps
 #include "user_field.h"
@@ -115,7 +118,8 @@ int print_usage() {
       "--remap_order=1|2 \n" <<
       "--limiter=barth_jespersen --bnd_limiter=zero_gradient \n"
       "--mesh_min=0. --mesh_max=1. \n" <<
-      "--output_meshes=y|n --convergence_study=NREF --only_threads=y|n \n\n";
+      "--output_meshes=y|n --convergence_study=NREF --only_threads=y|n " <<
+      "--field_filename=string\n\n";
 
   std::cout << "--problem (default = tjunction): defines material distribution in the domain\n\n";
 
@@ -182,6 +186,9 @@ int print_usage() {
   std::cout << "--scaling (default = strong)\n";
   std::cout << " specify the scaling study type [strong|weak]\n\n";
 #endif
+
+  std::cout << "--field_filename\n\n";
+  std::cout << "  If defined, the field output filename. Rank is appended if parallel\n\n";
 
   return 0;
 }
@@ -539,10 +546,12 @@ int main(int argc, char** argv) {
   bool source_convex_cells = true, target_convex_cells = true;
   std::vector<std::string> material_field_expressions;
   std::string srcfile, trgfile;  // No default
-  std::string field_output_filename;  // No default;
+  std::string field_filename="";  // No default;
 
   int interp_order = 1;
-  bool mesh_output = true;
+  // since write_to_gmv segfaults in parallel, default to false and force the
+  // user to output in serial
+  bool mesh_output = false;
   int n_converge = 1;
   Jali::Entity_kind entityKind = Jali::Entity_kind::CELL;
   Portage::Limiter_type limiter = Portage::Limiter_type::NOLIMITER;
@@ -647,6 +656,8 @@ int main(int argc, char** argv) {
     else if (keyword == "help") {
       print_usage();
       MPI_Abort(MPI_COMM_WORLD, -1);
+    } else if (keyword == "field_filename") {
+      field_filename=valueword;
     } else {
       std::cerr << "Unrecognized option " << keyword << " !\n";
       MPI_Abort(MPI_COMM_WORLD, -1);
@@ -787,14 +798,14 @@ int main(int argc, char** argv) {
         run<2>(source_mesh, target_mesh, source_convex_cells, target_convex_cells,
                limiter, bnd_limiter, interp_order,
                problem, material_field_expressions,
-               field_output_filename, mesh_output,
+               field_filename, mesh_output,
                rank, numpe, entityKind, l1_err[i], l2_err[i], profiler);
         break;
       case 3:
         run<3>(source_mesh, target_mesh, source_convex_cells, target_convex_cells,
                limiter, bnd_limiter, interp_order,
                problem, material_field_expressions,
-               field_output_filename, mesh_output,
+               field_filename, mesh_output,
                rank, numpe, entityKind, l1_err[i], l2_err[i], profiler);
         break;
       default:
@@ -829,6 +840,45 @@ int main(int argc, char** argv) {
     profiler->dump();
   }
 #endif
+}
+
+
+// write a field a file in the format needed by distributed_cmp
+// only works for scalar fields at the moment
+void write_field(std::string filename, 
+    const Wonton::Jali_Mesh_Wrapper& meshWrapper, 
+    const Wonton::Jali_State_Wrapper& stateWrapper,
+    std::string field_name="cellmatdata"){
+  
+  // open the stream
+  std::ofstream f(filename);
+  
+  // get the number of materials in the problem frm the state manager
+  int nmats=stateWrapper.num_materials();
+  
+  // loop over materials since we are material dominant
+  for (int m = 0; m < nmats;  ++m) {
+  
+    // get the material cells
+    std::vector<int> matcells;
+    stateWrapper.mat_get_cells(m, &matcells);
+
+    // get the field values
+    double const *data;
+    stateWrapper.mat_get_celldata(field_name, m, &data);
+    
+    // write a line for each cell (using global id) for each material
+    for (int ic = 0; ic < matcells.size(); ic++) {
+      f << meshWrapper.get_global_id(matcells[ic], Wonton::Entity_kind::CELL)
+      << " " << m << " " 
+      << std::fixed
+      << std::setprecision(16) 
+      << data[ic]<< "\n";
+    }    
+  }
+  
+  // close the stream
+  f.close();
 }
 
 // Run a remap between two meshes and return the L1 and L2 error norms
@@ -1280,7 +1330,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
 
     int nmatcells = matcells.size();
     
-    std::cout << "\n----target owned cell global indices on rank " << rank << " for material " << m << ": ";
+    std::cout << "\n----target owned cell global id's on rank " << rank << " for material " << m << ": ";
     for (int ic = 0; ic < nmatcells; ic++) std::cout <<
       targetMeshWrapper.get_global_id(owned2all[matcells[ic]], Wonton::Entity_kind::CELL) << " ";
     std::cout << std::endl; 
@@ -1470,4 +1520,36 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
     std::cout << "L1 NORM OF ERROR IS " << L1_error << std::endl;
     std::cout << "L2 NORM OF ERROR IS " << L2_error << std::endl;    
   }
+  
+  // print data for distributed compare
+  if (!field_filename.empty()) {   
+  
+    // name mangle the filename if more than one partition
+    std::string field_filename_ = field_filename + (numpe==1 ? "" : "." + std::to_string(rank));
+    
+    std::cout << "*************writing to: " << field_filename_ <<"\n";
+    
+    // write the date file
+    write_field(field_filename_, targetMeshWrapper, targetStateWrapper);
+  } 
+
+#ifdef DEBUG_PRINT
+  // debug diagnostics   
+  std::cout << "\n----source owned cell global id's on rank " << rank << ":\n";
+  for (int ic = 0; ic < sourceMeshWrapper.num_owned_cells(); ic++) {
+    Wonton::Point<dim> centroid;
+    sourceMeshWrapper.cell_centroid(ic,&centroid);
+    std::cout << "source cell: " << sourceMeshWrapper.get_global_id(ic, Wonton::Entity_kind::CELL) << 
+      "  centroid:(" <<centroid[0]<< ", " << centroid[1] << ")\n";
+  }
+  
+  std::cout << "\n----target owned cell global id's on rank " << rank << ":\n";
+  for (int ic = 0; ic < targetMeshWrapper.num_owned_cells(); ic++) {
+    Wonton::Point<dim> centroid;
+    targetMeshWrapper.cell_centroid(ic,&centroid);
+    std::cout << "target cell: "  << targetMeshWrapper.get_global_id(ic, Wonton::Entity_kind::CELL) << 
+      "  centroid:(" <<centroid[0]<< ", " << centroid[1] << ")\n";
+  }
+#endif
+
 }

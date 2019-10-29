@@ -238,8 +238,8 @@ Execute the following from the portage root directory:
 export MODULEPATH=""
 . /opt/local/packages/Modules/default/init/sh
 module load intel/18.0.1 openmpi/2.1.2 cmake
-JALI_INSTALL_PREFIX=/usr/local/codes/ngc/private/jali/1.0.4-intel-18.0.1-openmpi-2.1.2
-TANGRAM_INSTALL_PREFIX=/usr/local/codes/ngc/private/tangram/0.9.7-intel-18.0.1-openmpi-2.1.2
+JALI_INSTALL_PREFIX=/usr/local/codes/ngc/private/jali/1.0.5rc3-intel-18.0.1-openmpi-2.1.2
+TANGRAM_INSTALL_PREFIX=/usr/local/codes/ngc/private/tangram/0.9.7-intel-18.0.1-openmpi-2.1.2-jali-1.0.5rc3
 XMOF2D_INSTALL_PREFIX=/usr/local/codes/ngc/private/xmof2d/0.9.5-intel-18.0.1
 LAPACKE_DIR=/usr/local/codes/ngc/private/lapack/3.8.0-patched-intel-18.0.1/
 LAPACKE_INCLUDE_DIR=$LAPACKE_DIR/include
@@ -273,7 +273,7 @@ export MODULEPATH=""
 module load gcc/6.4.0 openmpi/2.1.2 cmake
 FLECSI_INSTALL_PREFIX=/usr/local/codes/ngc/private/flecsi/374b56b-gcc-6.4.0
 FLECSISP_INSTALL_PREFIX=/usr/local/codes/ngc/private/flecsi-sp/e78c594-gcc-6.4.0
-TANGRAM_INSTALL_PREFIX=/usr/local/codes/ngc/private/tangram/0.9.7-gcc-6.4.0-openmpi-2.1.2
+TANGRAM_INSTALL_PREFIX=/usr/local/codes/ngc/private/tangram/0.9.7-gcc-6.4.0-openmpi-2.1.2-jali-1.0.5rc3
 XMOF2D_INSTALL_PREFIX=/usr/local/codes/ngc/private/xmof2d/0.9.5-gcc-6.4.0
 LAPACKE_DIR=/usr/local/codes/ngc/private/lapack/3.8.0-patched-gcc-6.4.0
 LAPACKE_INCLUDE_DIR=$LAPACKE_DIR/include
