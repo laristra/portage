@@ -11,6 +11,10 @@ END
 # Echo each command
 set -x
 
+# This should probably be changed at some time
+# In particular $6 is a field expression and can contain non alphanumeric
+# characters that can be a problem for filenames, but at the moment it works
+# and avoids file clobbers in a human readable way as opposed to hashes.
 FILENAME=field_$1_$2_$3_$4_$5_$6_$7.txt
 
 TOLERANCE_2D=5.e-11
