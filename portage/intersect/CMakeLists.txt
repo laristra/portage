@@ -17,6 +17,7 @@ set(intersect_HEADERS
     intersect_polys_r3d.h
     intersect_r3d.h
     intersect_rNd.h
+        intersect_swept_2d.h
     dummy_interface_reconstructor.h
     PARENT_SCOPE
 )
@@ -49,6 +50,11 @@ if(ENABLE_UNIT_TESTS)
     LIBRARIES portage wonton 
     POLICY SERIAL
     )
+
+  cinch_add_unit(intersect_swept_faces
+    SOURCES test/test_intersect_swept_faces.cc
+    LIBRARIES portage wonton
+    POLICY SERIAL)
 
   #[[  
   if (TANGRAM_FOUND AND XMOF2D_FOUND)
