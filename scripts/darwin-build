@@ -80,14 +80,14 @@ setup(){
   if [ "${USE_INTEL}" = true ]; then 
     INTEL_VERSION=18.0.3
     MPI_VERSION=2.1.5
-    JALI_VERSION=1.0.4
-    TANGRAM_VERSION=0.9.5
+    JALI_VERSION=1.0.5rc3
+    TANGRAM_VERSION=0.9.7
     [ "${BUILD_DIR}" != "" ] || BUILD_DIR="${SOURCE_DIR}/build-intel"
   else
-    GNU_VERSION=6.4.0
-    MPI_VERSION=2.1.2
-    JALI_VERSION=1.0.3
-    TANGRAM_VERSION=0.9.5
+    GNU_VERSION=8.2.0
+    MPI_VERSION=3.1.3
+    JALI_VERSION=1.0.5rc3
+    TANGRAM_VERSION=0.9.7
     [ "${BUILD_DIR}" != "" ] || BUILD_DIR="${SOURCE_DIR}/build-gnu"
   fi
   
@@ -142,13 +142,13 @@ build(){
   if [ "${USE_INTEL}" = true ]; then
     LAPACKE_DIR="${RISTRA_DIR}/lapack/${LAPACKE_VERSION}-patched-intel-${INTEL_VERSION}"
     JALI_DIR="${RISTRA_DIR}/jali/${JALI_VERSION}-intel-${INTEL_VERSION}-openmpi-${MPI_VERSION}/lib"
-    TANGRAM_DIR="${RISTRA_DIR}/tangram/${TANGRAM_VERSION}-intel-${INTEL_VERSION}-openmpi-${MPI_VERSION}"
+    TANGRAM_DIR="${RISTRA_DIR}/tangram/${TANGRAM_VERSION}-boost-intel-${INTEL_VERSION}-openmpi-${MPI_VERSION}"
     XMOF2D_DIR="${RISTRA_DIR}/xmof2d/${XMOF2D_VERSION}-intel-${INTEL_VERSION}/share/cmake"
     TCMALLOC_LIB="${RISTRA_DIR}/tcmalloc/intel-${INTEL_VERSION}/lib/libtcmalloc.so"
   else
     LAPACKE_DIR="${RISTRA_DIR}/lapack/${LAPACKE_VERSION}-gcc-${GNU_VERSION}"
     JALI_DIR="${RISTRA_DIR}/jali/${JALI_VERSION}-gcc-${GNU_VERSION}-openmpi-${MPI_VERSION}/lib"
-    TANGRAM_DIR="${RISTRA_DIR}/tangram/${TANGRAM_VERSION}-gcc-${GNU_VERSION}-openmpi-${MPI_VERSION}"
+    TANGRAM_DIR="${RISTRA_DIR}/tangram/${TANGRAM_VERSION}-boost-gcc-${GNU_VERSION}-openmpi-${MPI_VERSION}"
     XMOF2D_DIR="${RISTRA_DIR}/xmof2d/${XMOF2D_VERSION}-gcc-${GNU_VERSION}/share/cmake"
     TCMALLOC_LIB="${RISTRA_DIR}/tcmalloc/gcc-${GNU_VERSION}/lib/libtcmalloc.so"
   fi
@@ -174,7 +174,7 @@ build(){
       -DTHRUST_DEVICE_SYSTEM=${BACKEND} \
       -DTHRUST_DIR=${THRUST_DIR} \
       -DJali_DIR=${JALI_DIR} \
-      -DTANGRAM_DIR=${TANGRAM_HEAD} \
+      -DTANGRAM_DIR=${TANGRAM_DIR} \
       -DXMOF2D_DIR=${XMOF2D_DIR} \
       -DLAPACKE_DIR=${LAPACKE_DIR} \
       ${SOURCE_DIR}    
