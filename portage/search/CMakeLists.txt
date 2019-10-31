@@ -20,6 +20,7 @@ set(search_HEADERS
     lretypes.hh
     pairs.hh
     BoundBox.h
+    search_swept_face.h
     PARENT_SCOPE
 )
 
@@ -54,11 +55,18 @@ if(ENABLE_UNIT_TESTS)
     SOURCES search_kdtree3_test.cc
     LIBRARIES portage 
     POLICY SERIAL)
+
+  cinch_add_unit(search_swept_face_test
+    SOURCES search_swept_face_test.cc
+    LIBRARIES portage 
+    POLICY SERIAL)
+
   cinch_add_unit(search_simple_points_test
     SOURCES search_simple_points_test.cc
     LIBRARIES portage  
     POLICY MPI
     THREADS 1)
+
   cinch_add_unit(search_points_by_cells_test
     SOURCES pairs.cc search_points_by_cells_test.cc 
     LIBRARIES portage 
