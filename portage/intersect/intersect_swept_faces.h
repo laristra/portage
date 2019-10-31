@@ -131,7 +131,6 @@ namespace Portage {
      * @return: a list of swept faces volume and related source cell pair.
      */
     std::vector<Weights_t> operator()(int target_id,
-                                      int source_id,
                                       std::vector<int> const& stencil) const {
       // see specialization for cells
       std::cerr << "Sorry: current entity type not supported." << std::endl;
@@ -364,26 +363,41 @@ namespace Portage {
           }
 
           /* step 2: compute its area then:
-           * - split face into two triangles.
-           * - compute and sum their areas using Heron's formula.
-           *   split into two triangles and sum up their signed areas.
+           * - triangulate polygon
+           * - compute each simplex orientation using determinant.
            *
-           *     3___ c ___2      k:(a,e,d)=(0,1,3)
-           *     /         |      k':(b,c,e)=(1,2,3)
-           *    d    e     b
-           *   /           |      area(k)=sqrt(s(s-a)(s-b)(s-c))
-           *  /_____ a ____|      with s=(a+e+d)/2
-           * 0             1
+           *     d_____c    k1:(a,b,d)
+           *     /\   /     k2:(b,c,d)
+           *    / \  /
+           *   /  \ /                1 |ax  ay  1|
+           *  /___\/       area(k1)= - |bx  by  1| > 0 if counterclockwise
+           * a     b                 2 |dx  dy  1|
            */
-          double const a = (swept_polygon[1] - swept_polygon[0]).norm();
-          double const b = (swept_polygon[2] - swept_polygon[1]).norm();
-          double const c = (swept_polygon[3] - swept_polygon[2]).norm();
-          double const d = (swept_polygon[0] - swept_polygon[3]).norm();
-          double const e = (swept_polygon[3] - swept_polygon[1]).norm();
+          double const& ax = swept_polygon[0][0];
+          double const& ay = swept_polygon[0][1];
+          double const& bx = swept_polygon[1][0];
+          double const& by = swept_polygon[1][1];
+          double const& cx = swept_polygon[2][0];
+          double const& cy = swept_polygon[2][1];
+          double const& dx = swept_polygon[3][0];
+          double const& dy = swept_polygon[3][1];
 
-          double const s[2] = { 0.5 * (a + e + d), 0.5 * (e + b + c) };
-          double const area = std::sqrt(s[0] * (s[0] - a) * (s[0] - e) * (s[0] - d))
-                            + std::sqrt(s[1] * (s[1] - e) * (s[1] - b) * (s[1] - c));
+          double const det[] = {
+            ax * by - ax * dy - bx * ay + bx * dy + dx * ay - dx * by,
+            bx * cy - bx * dy - cx * by + cx * dy + dx * by - dx * cy
+          };
+
+          // check that both triangles have the same orientation
+          bool const both_positive = (det[0] >= 0 and det[1] >= 0);
+          bool const both_negative = (det[0] < 0 and det[1] < 0);
+
+          if (not both_positive and not both_negative) {
+            std::cerr << "Error: twisted swept face polygon." << std::endl;
+            source_weights.clear();
+            return source_weights;
+          }
+
+          double const area = 0.5 * (det[0] + det[1]);
 
           // step 3: check sign and add to corresponding list.
           if (area < 0.) {
