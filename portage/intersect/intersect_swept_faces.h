@@ -453,9 +453,10 @@ namespace Portage {
 
         // append computed volumes to 'source_weights'
         for (auto&& entry : swept_volumes) {
-          int const& id = entry.first;
-          std::vector<double> weight { entry.second };
-          source_weights.emplace_back(id, weight);
+          if (std::abs(entry.second) > 0.) {
+            std::vector<double> weight { entry.second };
+            source_weights.emplace_back(entry.first, weight);
+          }
         }
         return source_weights;
 #ifdef HAVE_TANGRAM
