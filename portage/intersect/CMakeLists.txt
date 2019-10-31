@@ -17,7 +17,7 @@ set(intersect_HEADERS
     intersect_polys_r3d.h
     intersect_r3d.h
     intersect_rNd.h
-        intersect_swept_2d.h
+    intersect_swept_faces.h
     dummy_interface_reconstructor.h
     PARENT_SCOPE
 )

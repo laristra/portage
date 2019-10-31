@@ -5,6 +5,6 @@
  */
 
 #include "gtest/gtest.h"
-#include "portage/intersect/intersect_swept_2d.h"
+#include "portage/intersect/intersect_swept_faces.h"
 
 
