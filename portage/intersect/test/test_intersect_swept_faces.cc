@@ -62,10 +62,6 @@ protected:
       target_state_wrapper(*target_state)
   {
     num_tols.use_default();
-    // save meshes sizes
-    nb_source_cells = source_mesh_wrapper.num_owned_cells();
-    nb_target_cells = target_mesh_wrapper.num_owned_cells();
-
   }
 
   /**
@@ -98,9 +94,6 @@ protected:
   static constexpr double epsilon = 1.E-10;
   static constexpr auto CELL = Wonton::Entity_kind::CELL;
 
-  int nb_source_cells = 0;
-  int nb_target_cells = 0;
-
   Portage::NumericTolerances_t num_tols;
 
   // source and target meshes and states
@@ -129,45 +122,65 @@ TEST_F(IntersectSweptTest, SweptAreaCheck) {
                           target_mesh_wrapper,
                           num_tols);
 
-  // pick source cell and retrieve its stencil
+  // pick internal, boundary and corner source cells
   int const internal_cell = 4;
   int const boundary_cell = 5;
   int const corner_cell   = 8;
 
-  // check interior case
-  auto weights = intersector(internal_cell, search(internal_cell));
+  // search for candidate cells and compute moments of intersection
+  auto weights_internal = intersector(internal_cell, search(internal_cell));
+  auto weights_boundary = intersector(boundary_cell, search(boundary_cell));
+  auto weights_corner   = intersector(corner_cell, search(corner_cell));
 
-  for (auto&& entry : weights) {
-    std::cout << "weight.entity_id: " << entry.entityID << " [";
-    for (auto&& area : entry.weights)
-      std::cout << area << ", ";
-    std::cout << "]" << std::endl;
+  /* since target grid is advected using a unique displacement vector
+   * we expect to have a constant area for each swept face.
+   */
+  double const default_swept_face_area = 2.;
+
+  /* check interior cell case:
+   * - we have two contributing cells with non-zero weights.
+   * - the target cell area is perfectly preserved after advection.
+   * - the source cell self-contribution is zero.
+   */
+  ASSERT_EQ(weights_internal.size(), unsigned(2));
+
+  // check area preservation
+  double source_area = source_mesh_wrapper.cell_volume(internal_cell);
+  double target_area = 0.;
+
+  for (auto&& entry : weights_internal) {
+    double const& moment = entry.weights[0];
+    ASSERT_NEAR(moment, default_swept_face_area, epsilon);
+    target_area += moment;
   }
 
-  std::cout << "=========="<< std::endl;
+  ASSERT_NEAR(source_area, target_area, epsilon);
 
-  // check boundary case
-  weights = intersector(boundary_cell, search(boundary_cell));
+  /* check boundary cell case:
+   * - we are not conservative anymore since swept faces lying outside
+   *   the source mesh are not taken into account.
+   * - we have a unique contributing neighbor.
+   * - the source cell self-contribution is still zero.
+   */
+  ASSERT_EQ(weights_boundary.size(), unsigned(1));
 
-  for (auto&& entry : weights) {
-    std::cout << "weight.entity_id: " << entry.entityID << " [";
-    for (auto&& area : entry.weights)
-      std::cout << area << ", ";
-    std::cout << "]" << std::endl;
+  source_area = source_mesh_wrapper.cell_volume(boundary_cell);
+  target_area = 0.;
+
+  for (auto&& entry : weights_boundary) {
+    double const& moment = entry.weights[0];
+    ASSERT_NEAR(moment, default_swept_face_area, epsilon);
+    target_area += moment;
   }
-  std::cout << "=========="<< std::endl;
 
-  // check corner case
-  weights = intersector(corner_cell, search(corner_cell));
+  ASSERT_NEAR(source_area, 2 * target_area, epsilon);
 
-  for (auto&& entry : weights) {
-    std::cout << "weight.entity_id: " << entry.entityID << " [";
-    for (auto&& area : entry.weights)
-      std::cout << area << ", ";
-    std::cout << "]" << std::endl;
-  }
-  std::cout << "=========="<< std::endl;
-
+  /* check corner cell case:
+   * - the source cell self-contribution is still zero.
+   * - we have no more contributing neighbor since all swept faces are
+   *   lying outside the source mesh and their volume are not extrapolated.
+   */
+  ASSERT_TRUE(weights_corner.empty());
 }
 
 
