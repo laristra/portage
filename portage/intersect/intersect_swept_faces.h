@@ -270,6 +270,33 @@ namespace Portage {
     }
 
     /**
+     * @brief Retrieve the edges of current cell but skip the boundary ones.
+     *
+     * @param cell: the current cell.
+     * @param filter_edges: list of its edges without the boundary ones.
+     * @param filter_dirs: related filtered edge directions.
+     */
+    void get_filtered_edges(int cell,
+                            std::vector<int>* filter_edges,
+                            std::vector<int>* filter_dirs) const {
+      filter_edges->clear();
+      filter_dirs->clear();
+
+      std::vector<int> edges, dirs, adj;
+      source_mesh_.cell_get_faces_and_dirs(cell, &edges, &dirs);
+      int const nb_edges = edges.size();
+
+      for (int i = 0; i < nb_edges; ++i) {
+        adj.clear();
+        source_mesh_.face_get_cells(edges[i], Wonton::Entity_type::ALL, &adj);
+        if (adj.size() == 2) {
+          filter_edges->emplace_back(edges[i]);
+          filter_dirs->emplace_back(dirs[i]);
+        }
+      }
+    }
+
+    /**
      * @brief Perform the actual swept faces volumes computation.
      *
      * @param target_id: the current target cell index.
@@ -295,9 +322,9 @@ namespace Portage {
         std::vector<int> edges, dirs, nodes;
 
         // retrieve current source cell faces and related directions
-        source_mesh_.cell_get_faces_and_dirs(source_id, &edges, &dirs);
-        int const nb_dirs = dirs.size();
+        get_filtered_edges(source_id, &edges, &dirs);
         int const nb_edges = edges.size();
+        int const nb_dirs = dirs.size();
 
         if (nb_edges != nb_dirs or nb_edges != size - 1) {
           std::cerr << "Error: invalid retrieved edges for cell "<< target_id;
