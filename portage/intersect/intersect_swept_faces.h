@@ -135,6 +135,7 @@ namespace Portage {
                                       std::vector<int> const& stencil) const {
       // see specialization for cells
       std::cerr << "Sorry: current entity type not supported." << std::endl;
+      return std::vector<Weights_t>();
     }
 
   private:
@@ -151,7 +152,7 @@ namespace Portage {
 
 
   /**
-   * @brief Specialization for cell-based remap.
+   * @brief Specialization for planar cell-based remap.
    *
    * @tparam SourceMesh: the source mesh wrapper type.
    * @tparam SourceState: the source state wrapper to query field infos.
@@ -172,7 +173,7 @@ namespace Portage {
 
     // useful aliases
 #ifdef HAVE_TANGRAM
-    using InterfaceReconstructorDriver = Tangram::Driver<
+    using InterfaceReconstructor2D = Tangram::Driver<
       InterfaceReconstructor, 2, SourceMesh,
       Matpoly_Splitter, Matpoly_Clipper
     >;
@@ -201,7 +202,7 @@ namespace Portage {
                    SourceState const &source_state,
                    TargetMesh const &target_mesh,
                    NumericTolerances_t num_tols,
-                   std::shared_ptr<InterfaceReconstructorDriver> ir)
+                   std::shared_ptr<InterfaceReconstructor2D> ir)
       : source_mesh_(source_mesh),
         source_state_(source_state),
         target_mesh_(target_mesh),
@@ -300,7 +301,7 @@ namespace Portage {
         int const nb_edges = edges.size();
 
         if (nb_edges != nb_dirs or nb_edges != size - 1) {
-          std::cerr << "Error: invalid retrieve edges for cell "<< target_id;
+          std::cerr << "Error: invalid retrieved edges for cell "<< target_id;
           std::cerr << std::endl;
           source_weights.clear();
           return source_weights;
@@ -434,7 +435,7 @@ namespace Portage {
     NumericTolerances_t num_tols_;
 
 #ifdef HAVE_TANGRAM
-    std::shared_ptr<InterfaceReconstructorDriver> interface_reconstructor;
+    std::shared_ptr<InterfaceReconstructor2D> interface_reconstructor;
 #endif
   }; // class IntersectSwept::CELL
 /* -------------------------------------------------------------------------- */
