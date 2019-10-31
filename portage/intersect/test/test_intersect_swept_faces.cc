@@ -74,7 +74,7 @@ protected:
    * @param cell: the current cell.
    * @return a list of cell neighbors incident to the faces of that cell.
    */
-  std::vector<int> get_stencil(int current) {
+  std::vector<int> search(int current) {
 
     std::vector<int> list, faces, dirs, cells;
     source_mesh_wrapper.cell_get_faces_and_dirs(current, &faces, &dirs);
@@ -118,42 +118,56 @@ protected:
 
 
 TEST_F(IntersectSweptTest, SweptAreaCheck) {
-  // todo
-//  // retrieve the central cell index
-//  std::for_each(source_mesh_wrapper.begin(CELL),
-//                   source_mesh_wrapper.end(CELL),
-//                   [&](int current) {
-//    auto centroid = source_mesh->cell_centroid(current);
-//    std::cout << "cell["<< current <<"]: "<< centroid << std::endl;
-//  });
 
   using Intersector = Portage::IntersectSwept<2, Wonton::Entity_kind::CELL,
                                                  Wonton::Jali_Mesh_Wrapper,
                                                  Wonton::Jali_State_Wrapper,
                                                  Wonton::Jali_Mesh_Wrapper>;
 
+  Intersector intersector(source_mesh_wrapper,
+                          source_state_wrapper,
+                          target_mesh_wrapper,
+                          num_tols);
+
   // pick source cell and retrieve its stencil
-  int const source_id = 4;
-  auto const stencil = get_stencil(source_id);
+  int const internal_cell = 4;
+  int const boundary_cell = 5;
+  int const corner_cell   = 8;
 
-  ASSERT_EQ(stencil.size(), unsigned(5));
-  ASSERT_EQ(stencil[1], 3);
-  ASSERT_EQ(stencil[2], 7);
-  ASSERT_EQ(stencil[3], 5);
-  ASSERT_EQ(stencil[4], 1);
+  // check interior case
+  auto weights = intersector(internal_cell, search(internal_cell));
 
-  Intersector swept_intersector(source_mesh_wrapper,
-                                source_state_wrapper,
-                                target_mesh_wrapper,
-                                num_tols);
-
-  auto const source_weights = swept_intersector(source_id, stencil);
-  for (auto&& entry : source_weights) {
+  for (auto&& entry : weights) {
     std::cout << "weight.entity_id: " << entry.entityID << " [";
-    for (auto&& weight : entry.weights)
-      std::cout << weight << ", ";
+    for (auto&& area : entry.weights)
+      std::cout << area << ", ";
     std::cout << "]" << std::endl;
   }
+
+  std::cout << "=========="<< std::endl;
+
+  // check boundary case
+  weights = intersector(boundary_cell, search(boundary_cell));
+
+  for (auto&& entry : weights) {
+    std::cout << "weight.entity_id: " << entry.entityID << " [";
+    for (auto&& area : entry.weights)
+      std::cout << area << ", ";
+    std::cout << "]" << std::endl;
+  }
+  std::cout << "=========="<< std::endl;
+
+  // check corner case
+  weights = intersector(corner_cell, search(corner_cell));
+
+  for (auto&& entry : weights) {
+    std::cout << "weight.entity_id: " << entry.entityID << " [";
+    for (auto&& area : entry.weights)
+      std::cout << area << ", ";
+    std::cout << "]" << std::endl;
+  }
+  std::cout << "=========="<< std::endl;
+
 }
 
 
