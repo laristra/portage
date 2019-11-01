@@ -22,7 +22,7 @@
  * @brief Fixture class for swept face intersection tests.
  *
  * Here, we consider a planar cartesian grid which is advected
- * by a displacement vector v=(1,1) and we aim to check the volume
+ * by a unique displacement vector and we aim to check the volume
  * of each swept face for a given source cell.
  * Notice that mesh topology is unchanged, hence source and target
  * cells and faces indices are kept.
@@ -122,7 +122,16 @@ TEST_F(IntersectSweptTest, SweptAreaCheck) {
                           target_mesh_wrapper,
                           num_tols);
 
-  // pick internal, boundary and corner source cells
+  /* pick internal, boundary and corner source cells.
+   *    .............     displacement vector: (1,1)
+   *   _:___:___:_  :     source mesh: plain
+   *  | :.|.:.|.:.|.:     target mesh: dotted
+   *  |_:_|_:_|_:_| :
+   *  | :.|.:.|.:.|.:     cell indices ordering:
+   *  |_:_|_:_|_:_| :     6 7 8       6 7 8
+   *  | :.|.:.|.:.|.:     3 4 5   ->  3 4 5
+   *  |___|___|___|       0 1 2       0 1 2
+   */
   int const internal_cell = 4;
   int const boundary_cell = 5;
   int const corner_cell   = 8;
