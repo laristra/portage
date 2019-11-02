@@ -346,11 +346,16 @@ namespace Portage {
         #endif
 
         std::map<int, double> swept_volumes;
+        std::map<int, std::pair<double,double>> swept_centroids;
+
         for (auto const& i : stencil) {
           swept_volumes[i] = 0.;
+          swept_centroids[i] = std::make_pair(0.,0.);
         }
+
         // update source cell area
         swept_volumes[source_id] = source_mesh_.cell_volume(source_id);
+        int nb_source_polys = 0;
 
         for (int i = 0; i < nb_edges; ++i) {
 
@@ -396,9 +401,9 @@ namespace Portage {
            *     d_____c    k1:(a,b,d)
            *     /\   /     k2:(b,c,d)
            *    / \  /
-           *   /  \ /                1 |ax  ay  1|
-           *  /___\/       area(k1)= - |bx  by  1| > 0 if counterclockwise
-           * a     b                 2 |dx  dy  1|
+           *   /  \ /                1    |ax  ay  1|
+           *  /___\/       area(k1)= - det|bx  by  1| > 0 if counterclockwise
+           * a     b                 2    |dx  dy  1|
            */
           double const& ax = swept_polygon[0][0];
           double const& ay = swept_polygon[0][1];
@@ -424,13 +429,70 @@ namespace Portage {
             return source_weights;
           }
 
-          double const area = 0.5 * (det[0] + det[1]);
+          double const signed_area = 0.5 * (det[0] + det[1]);
 
-          // step 3: check sign and add to corresponding list.
-          if (area < 0.) {
+
+          /* step 3: compute its centroid.
+           * - compute the intersection point of its couple of diagonals.
+           *
+           *     d_____c    find (s,t) such that:
+           *     /\   /     a + s(c - a) = b + t(d - b)
+           *    / \  /
+           *   /  \ /     resolve the equation: A.X = B
+           *  /___\/      |dx-bx  ax-cx| |t| |ax-bx|
+           * a     b      |dy-by  ay-cy| |s|=|ay-by|
+           */
+          Wonton::Point<2> centroid;
+
+          // retrieve the determinant of A to compute its inverse A^-1.
+          double const denom = (dx - bx) * (ay - cy) - (dy - by) * (ax - cx);
+
+          // check if diagonals are not colinear
+          if (std::abs(denom) > 0) {
+            // check if given value is in [0,1]
+            auto in_range = [](double x) -> bool { return 0. <= x and x <= 1.; };
+            // compute the intersection point parameter:
+            // compute the inverse of the matrix A and multiply it by the vector B
+            double const param[] = {
+              std::abs(((by - dy) * (ax - bx) + (dx - bx) * (ay - by)) / denom),
+              std::abs(((ay - cy) * (ax - bx) + (ax - cx) * (ay - by)) / denom)
+            };
+            // check if diagonals intersection lies on their respective segments
+            if (in_range(param[0]) and in_range(param[1])) {
+              #if DEBUG
+                double x[] = { ax + param[0] * (cx - ax), bx + param[1] * (dx - bx) };
+                double y[] = { ay + param[0] * (cy - ay), by + param[1] * (dy - by) };
+                assert(std::abs(x[0] - x[1]) < num_tols.polygon_convexity_eps);
+                assert(std::abs(y[0] - y[1]) < num_tols.polygon_convexity_eps);
+                centroid = Wonton::createP2(x[0], y[0]);
+
+                std::cout << "a: ("<< ax <<" "<< ay <<"), ";
+                std::cout << "c: ("<< cx <<" "<< cy <<"), ";
+                std::cout << "param: " << param[0] << std::endl;
+                std::cout << "bx: "<< bx << ", (dx - bx): "<< dx - bx << std::endl;
+                std::cout << "by: "<< by << ", (dy - by): "<< dy - by << std::endl;
+              #else
+                centroid[0] = ax + param[0] * (cx - ax);
+                centroid[1] = ay + param[0] * (cy - ay);
+              #endif
+            }
+          }
+
+          /* step 3: check aree sign, choose the right source cell,
+           * and add computed area and centroid to related lists.
+           */
+          if (signed_area < 0.) {
             // if negative volume then accumulate to that of the source cell
             // it means that it would be substracted from that source cell.
-            swept_volumes[source_id] += area;
+            swept_volumes[source_id] += signed_area;
+            swept_centroids[source_id].first  += centroid[0];
+            swept_centroids[source_id].second += centroid[1];
+            nb_source_polys++;
+
+            #if DEBUG
+              std::cout << "source_centroid["<< source_id <<"]: " << centroid;
+              std::cout << ", nb_source_polys: "<< nb_source_polys << std::endl;
+            #endif
           } else {
             // retrieve the cell incident to the current edge.
             int const neigh = get_face_incident_neigh(source_id, edges[i]);
@@ -446,16 +508,37 @@ namespace Portage {
               return source_weights;
             } else {
               // update related area if ok
-              swept_volumes[neigh] += area;
+              swept_volumes[neigh] += signed_area;
+              swept_centroids[neigh] = std::make_pair(centroid[0], centroid[1]);
+
+              #if DEBUG
+                std::cout << "neigh_centroid["<< neigh <<"]: " << centroid;
+                std::cout << " of edge: [("<< ax <<" "<< ay<<"), ("<< bx <<" "<< by<<")]";
+                std::cout << std::endl;
+              #endif
             }
           }
+        } // end for each edge of current cell
+
+        #if DEBUG
+          std::cout << " =========== " << std::endl;
+        #endif
+
+        // average swept face centroids on source cell.
+        // this not accurate if the swept face polygon is not convex.
+        if (swept_volumes[source_id] > 0. and nb_source_polys > 1) {
+          swept_centroids[source_id].first  /= nb_source_polys;
+          swept_centroids[source_id].second /= nb_source_polys;
         }
 
         // append computed volumes to 'source_weights'
         for (auto&& entry : swept_volumes) {
-          if (std::abs(entry.second) > 0.) {
-            std::vector<double> weight { entry.second };
-            source_weights.emplace_back(entry.first, weight);
+          auto const& id = entry.first;
+          auto const& area = entry.second;
+          if (std::abs(area) > 0.) {
+            auto const& centroid = swept_centroids[id];
+            std::vector<double> weight { area, centroid.first, centroid.second };
+            source_weights.emplace_back(id, weight);
           }
         }
         return source_weights;
