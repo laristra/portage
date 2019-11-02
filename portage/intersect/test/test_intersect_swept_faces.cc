@@ -32,9 +32,9 @@
  *  | :.|.:.|.:.|.:     target mesh: dotted
  *  |_:_|_:_|_:_| :
  *  | :.|.:.|.:.|.:     cell indices ordering:
- *  |_:_|_:_|_:_| :     6 7 8
- *  | :.|.:.|.:.|.:     3 4 5
- *  |___|___|___|       0 1 2
+ *  |_:_|_:_|_:_| :     2 5 8
+ *  | :.|.:.|.:.|.:     1 4 7
+ *  |___|___|___|       0 3 6
  *  0   2   4   6
  */
 class IntersectSweptTest : public testing::Test {
@@ -128,12 +128,12 @@ TEST_F(IntersectSweptTest, SweptAreaCheck) {
    *  | :.|.:.|.:.|.:     target mesh: dotted
    *  |_:_|_:_|_:_| :
    *  | :.|.:.|.:.|.:     cell indices ordering:
-   *  |_:_|_:_|_:_| :     6 7 8       6 7 8
-   *  | :.|.:.|.:.|.:     3 4 5   ->  3 4 5
-   *  |___|___|___|       0 1 2       0 1 2
+   *  |_:_|_:_|_:_| :     2 5 8       2 5 8
+   *  | :.|.:.|.:.|.:     1 4 7   ->  1 4 7
+   *  |___|___|___|       0 3 6       0 3 6
    */
   int const internal_cell = 4;
-  int const boundary_cell = 5;
+  int const boundary_cell = 7;
   int const corner_cell   = 8;
 
   // search for candidate cells and compute moments of intersection
@@ -158,9 +158,15 @@ TEST_F(IntersectSweptTest, SweptAreaCheck) {
   double target_area = 0.;
 
   for (auto&& entry : weights_internal) {
-    double const& moment = entry.weights[0];
-    ASSERT_NEAR(moment, default_swept_face_area, epsilon);
-    target_area += moment;
+    double const& area = entry.weights[0];
+    ASSERT_NEAR(area, default_swept_face_area, epsilon);
+    target_area += area;
+
+    #if DEBUG
+      Wonton::Point<2> centroid(entry.weights[1], entry.weights[2]);
+      std::cout << "internal_swept_centroid["<< entry.entityID <<"]: "<< centroid;
+      std::cout << std::endl;
+    #endif
   }
 
   ASSERT_NEAR(source_area, target_area, epsilon);
@@ -177,9 +183,15 @@ TEST_F(IntersectSweptTest, SweptAreaCheck) {
   target_area = 0.;
 
   for (auto&& entry : weights_boundary) {
-    double const& moment = entry.weights[0];
-    ASSERT_NEAR(moment, default_swept_face_area, epsilon);
-    target_area += moment;
+    double const& area = entry.weights[0];
+    ASSERT_NEAR(area, default_swept_face_area, epsilon);
+    target_area += area;
+
+    #if DEBUG
+      Wonton::Point<2> centroid(entry.weights[1], entry.weights[2]);
+      std::cout << "boundary_swept_centroid["<< entry.entityID <<"]: "<< centroid;
+      std::cout << std::endl;
+    #endif
   }
 
   ASSERT_NEAR(source_area, 2 * target_area, epsilon);
