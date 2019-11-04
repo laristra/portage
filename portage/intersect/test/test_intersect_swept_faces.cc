@@ -163,9 +163,9 @@ TEST_F(IntersectSweptTest, SweptAreaCheck) {
     target_area += area;
 
     #if DEBUG
-      Wonton::Point<2> centroid(entry.weights[1], entry.weights[2]);
-      std::cout << "internal_swept_centroid["<< entry.entityID <<"]: "<< centroid;
-      std::cout << std::endl;
+      auto centroid = Wonton::createPoint2(entry.weights[1], entry.weights[2]);
+      std::cout << "internal_swept_centroid["<< entry.entityID <<"]: ";
+      std::cout << centroid << std::endl;
     #endif
   }
 
@@ -188,9 +188,9 @@ TEST_F(IntersectSweptTest, SweptAreaCheck) {
     target_area += area;
 
     #if DEBUG
-      Wonton::Point<2> centroid(entry.weights[1], entry.weights[2]);
-      std::cout << "boundary_swept_centroid["<< entry.entityID <<"]: "<< centroid;
-      std::cout << std::endl;
+      auto centroid = Wonton::createPoint2(entry.weights[1], entry.weights[2]);
+      std::cout << "boundary_swept_centroid["<< entry.entityID <<"]: ";
+      std::cout << centroid << std::endl;
     #endif
   }
 

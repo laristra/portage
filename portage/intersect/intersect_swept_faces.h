@@ -513,7 +513,7 @@ namespace Portage {
 
               #if DEBUG
                 std::cout << "neigh_centroid["<< neigh <<"]: " << centroid;
-                std::cout << " of edge: [("<< ax <<" "<< ay<<"), ("<< bx <<" "<< by<<")]";
+                std::cout << " of edge: ["<< swept_polygon[0] <<", ("<< bx <<" "<< by<<")]";
                 std::cout << std::endl;
               #endif
             }
