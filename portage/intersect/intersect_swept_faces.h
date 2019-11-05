@@ -421,8 +421,8 @@ namespace Portage {
               #if DEBUG
                 double x[] = { ax + param[0] * (cx - ax), bx + param[1] * (dx - bx) };
                 double y[] = { ay + param[0] * (cy - ay), by + param[1] * (dy - by) };
-                assert(std::abs(x[0] - x[1]) < num_tols.polygon_convexity_eps);
-                assert(std::abs(y[0] - y[1]) < num_tols.polygon_convexity_eps);
+                assert(std::abs(x[0] - x[1]) < num_tols_.polygon_convexity_eps);
+                assert(std::abs(y[0] - y[1]) < num_tols_.polygon_convexity_eps);
                 centroid = std::make_pair(x[0], y[0]);
 
                 std::cout << "a: ("<< ax <<" "<< ay <<"), ";
