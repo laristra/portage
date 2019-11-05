@@ -203,7 +203,7 @@ TEST_F(IntersectSweptForward, MomentsCheck) {
         ASSERT_DOUBLE_EQ(moments.weights[1], 4.5);
         ASSERT_DOUBLE_EQ(moments.weights[2], 3.5);
         break;
-      default: FAIL() << "Unexpected moment entity index";
+      default: FAIL() << "forward::internal: unexpected moment entity index";
     }
     #if DEBUG
       std::cout << "forward::internal_swept_centroid["<< moments.entityID <<"]: ";
@@ -230,7 +230,7 @@ TEST_F(IntersectSweptForward, MomentsCheck) {
         ASSERT_DOUBLE_EQ(moments.weights[1], 5.5);
         ASSERT_DOUBLE_EQ(moments.weights[2], 4.5);
         break;
-      default: FAIL() << "Unexpected moment entity index";
+      default: FAIL() << "forward::boundary: unexpected moment entity index";
     }
     #if DEBUG
       std::cout << "forward::boundary_swept_centroid["<< moments.entityID <<"]: ";
@@ -298,7 +298,7 @@ TEST_F(IntersectSweptBackward, MomentsCheck) {
         ASSERT_DOUBLE_EQ(moments.weights[1], 2.5);
         ASSERT_DOUBLE_EQ(moments.weights[2], 1.5);
         break;
-      default: FAIL() << "Unexpected moment entity index";
+      default: FAIL() << "backward::internal: unexpected moment entity index";
     }
     #if DEBUG
       std::cout << "backward::internal_swept_centroid["<< moments.entityID <<"]: ";
@@ -329,7 +329,7 @@ TEST_F(IntersectSweptBackward, MomentsCheck) {
         ASSERT_DOUBLE_EQ(moments.weights[1], 4.5);
         ASSERT_DOUBLE_EQ(moments.weights[2], 1.5);
         break;
-      default: FAIL() << "Unexpected moment entity index";
+      default: FAIL() << "backward::boundary: unexpected moment entity index";
     }
     #if DEBUG
       std::cout << "backward::boundary_swept_centroid["<< moments.entityID <<"]: ";
@@ -361,7 +361,7 @@ TEST_F(IntersectSweptBackward, MomentsCheck) {
         ASSERT_DOUBLE_EQ(moments.weights[1], 4.5);
         ASSERT_DOUBLE_EQ(moments.weights[2], 3.5);
         break;
-      default: FAIL() << "Unexpected moment entity index";
+      default: FAIL() << "backward::corner: unexpected moment entity index";
     }
     #if DEBUG
       std::cout << "backward::corner_swept_centroid["<< moments.entityID <<"]: ";
