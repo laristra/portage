@@ -159,7 +159,7 @@ protected:
   IntersectSweptBackward() : IntersectSweptBase(-1, -1, 5, 5) {}
 };
 
-TEST_F(IntersectSweptForward, AreaCheck) {
+TEST_F(IntersectSweptForward, MomentsCheck) {
 
   Intersector intersector(source_mesh_wrapper,
                           source_state_wrapper,
@@ -185,36 +185,62 @@ TEST_F(IntersectSweptForward, AreaCheck) {
   auto weights_boundary = intersector(boundary_cell, search(boundary_cell));
   auto weights_corner   = intersector(corner_cell, search(corner_cell));
 
-  /* check interior cell case:
-   * - we have two contributing cells with non-zero weights.
-   * - the target cell area is perfectly preserved after advection.
-   * - the source cell self-contribution is zero.
+  /* for interior cell case, we have:
+   * - two contributing neighbor cells with non-zero weights (5:top, 7:right)
+   * - a reconstructed cell area perfectly preserved after advection.
+   * - no cell self-contribution.
    */
   ASSERT_EQ(weights_internal.size(), unsigned(2));
 
   // check area preservation
   double source_area = source_mesh_wrapper.cell_volume(internal_cell);
   double target_area = compute_swept_area(weights_internal);
-  ASSERT_NEAR(source_area, target_area, epsilon);
+  ASSERT_DOUBLE_EQ(source_area, target_area);
 
   for (auto const& moments : weights_internal) {
-    ASSERT_NEAR(moments.weights[0], unit_face_area, epsilon);
+    ASSERT_DOUBLE_EQ(moments.weights[0], unit_face_area);
+    switch(moments.entityID) {
+      case 5:
+        ASSERT_DOUBLE_EQ(moments.weights[1], 3.5);
+        ASSERT_DOUBLE_EQ(moments.weights[2], 4.5);
+        break;
+      case 7:
+        ASSERT_DOUBLE_EQ(moments.weights[1], 4.5);
+        ASSERT_DOUBLE_EQ(moments.weights[2], 3.5);
+        break;
+      default: FAIL() << "Unexpected moment entity index";
+    }
+    #if DEBUG
+      std::cout << "forward::internal_swept_centroid["<< moments.entityID <<"]: ";
+      std::cout << moments.weights[1] <<", "<< moments.weights[2] << std::endl;
+    #endif
   }
 
   /* check boundary cell case:
    * - we are not conservative anymore since swept faces lying outside
    *   the source mesh are not taken into account.
-   * - we have a unique contributing neighbor.
+   * - we have a unique contributing neighbor (8:top).
    * - the source cell self-contribution is still zero.
    */
   ASSERT_EQ(weights_boundary.size(), unsigned(1));
 
   source_area = source_mesh_wrapper.cell_volume(boundary_cell);
   target_area = compute_swept_area(weights_boundary);
-  ASSERT_NEAR(source_area, 2 * target_area, epsilon);
+  ASSERT_DOUBLE_EQ(source_area, 2 * target_area);
 
   for (auto const& moments : weights_boundary) {
-    ASSERT_NEAR(moments.weights[0], unit_face_area, epsilon);
+    ASSERT_DOUBLE_EQ(moments.weights[0], unit_face_area);
+    switch(moments.entityID) {
+      case 8:
+        ASSERT_DOUBLE_EQ(moments.weights[1], 5.5);
+        ASSERT_DOUBLE_EQ(moments.weights[2], 4.5);
+        break;
+      default: FAIL() << "Unexpected moment entity index";
+    }
+    #if DEBUG
+      std::cout << "forward::boundary_swept_centroid["<< moments.entityID <<"]: ";
+      std::cout << moments.weights[1] <<", "<< moments.weights[2] << std::endl;
+    #endif
   }
 
   /* check corner cell case:
@@ -226,7 +252,7 @@ TEST_F(IntersectSweptForward, AreaCheck) {
 }
 
 
-TEST_F(IntersectSweptBackward, AreaCheck) {
+TEST_F(IntersectSweptBackward, MomentsCheck) {
 
   Intersector intersector(source_mesh_wrapper,
                           source_state_wrapper,
@@ -254,49 +280,66 @@ TEST_F(IntersectSweptBackward, AreaCheck) {
   auto weights_corner   = intersector(corner_cell, search(corner_cell));
 
   /* we should have the same results as the previous test for interior
-   * cell case, that is:
-   * - two contributing cells with non-zero weights.
-   * - a target cell area is perfectly preserved after advection.
-   * - a source cell self-contribution reduced to zero.
+   * cell case:
+   * - two contributing neighbors cells with non-zero weights.
+   * - reconstructed cell area is perfectly preserved after advection.
+   * - no cell self-contribution.
    */
   ASSERT_EQ(weights_internal.size(), unsigned(2));
 
   // check area preservation
   double source_area = source_mesh_wrapper.cell_volume(internal_cell);
   double target_area = compute_swept_area(weights_internal);
-  ASSERT_NEAR(source_area, target_area, epsilon);
+  ASSERT_DOUBLE_EQ(source_area, target_area);
 
   for (auto const& moments : weights_internal) {
-    ASSERT_NEAR(moments.weights[0], unit_face_area, epsilon);
+    ASSERT_DOUBLE_EQ(moments.weights[0], unit_face_area);
+    switch(moments.entityID) {
+      case 1:
+        ASSERT_DOUBLE_EQ(moments.weights[1], 1.5);
+        ASSERT_DOUBLE_EQ(moments.weights[2], 2.5);
+        break;
+      case 3:
+        ASSERT_DOUBLE_EQ(moments.weights[1], 2.5);
+        ASSERT_DOUBLE_EQ(moments.weights[2], 1.5);
+        break;
+      default: FAIL() << "Unexpected moment entity index";
+    }
+    #if DEBUG
+      std::cout << "backward::internal_swept_centroid["<< moments.entityID <<"]: ";
+      std::cout << moments.weights[1] <<", "<< moments.weights[2] << std::endl;
+    #endif
   }
 
   /* for the boundary cell case:
    * - all swept faces are covered by the source mesh this time,
    *   so we are in the very same situation as for internal cell.
-   * - we have two contributing neighbors.
-   * - we have one source cell self-contribution this time.
+   * - we have two contributing neighbors (4:left, 6:bottom).
+   * - no cell self-contribution.
    */
   ASSERT_EQ(weights_boundary.size(), weights_internal.size());
 
   source_area = source_mesh_wrapper.cell_volume(boundary_cell);
   target_area = compute_swept_area(weights_boundary);
-  ASSERT_NEAR(source_area, target_area, epsilon);
+  ASSERT_DOUBLE_EQ(source_area, target_area);
 
   for (auto const& moments : weights_boundary) {
-    ASSERT_NEAR(moments.weights[0], unit_face_area, epsilon);
+    ASSERT_DOUBLE_EQ(moments.weights[0], unit_face_area);
     switch(moments.entityID) {
       case 4:
-        ASSERT_NEAR(moments.weights[1], 3.5, epsilon);
-        ASSERT_NEAR(moments.weights[2], 2.5, epsilon);
+        ASSERT_DOUBLE_EQ(moments.weights[1], 3.5);
+        ASSERT_DOUBLE_EQ(moments.weights[2], 2.5);
         break;
       case 6:
-        ASSERT_NEAR(moments.weights[1], 4.5, epsilon);
-        ASSERT_NEAR(moments.weights[2], 1.5, epsilon);
+        ASSERT_DOUBLE_EQ(moments.weights[1], 4.5);
+        ASSERT_DOUBLE_EQ(moments.weights[2], 1.5);
         break;
       default: FAIL() << "Unexpected moment entity index";
     }
-//    std::cout << "boundary_swept_centroid["<< moments.entityID <<"]: ";
-//    std::cout << moments.weights[1] <<", "<< moments.weights[2] << std::endl;
+    #if DEBUG
+      std::cout << "backward::boundary_swept_centroid["<< moments.entityID <<"]: ";
+      std::cout << moments.weights[1] <<", "<< moments.weights[2] << std::endl;
+    #endif
   }
 
   /* check corner cell case:
