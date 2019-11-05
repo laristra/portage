@@ -7,7 +7,7 @@
 #include "gtest/gtest.h"
 
 #ifdef PORTAGE_ENABLE_MPI
-#include "mpi.h"
+  #include "mpi.h"
 #endif
 
 #include "wonton/mesh/jali/jali_mesh_wrapper.h"
@@ -81,11 +81,11 @@ public:
     return list;
   }
 
-
   /**
+   * @brief Compute the total swept faces areas.
    *
-   * @param moments
-   * @return
+   * @param moments: list of previously computed moments.
+   * @return: the total area of all swept faces.
    */
   double compute_swept_area(std::vector<Wonton::Weights_t> const& moments) const {
     return std::accumulate(moments.begin(), moments.end(), 0.0,
@@ -95,10 +95,11 @@ public:
   }
 
   /**
+   * @brief Compute the given cell area contribution.
    *
-   * @param id
-   * @param moments
-   * @return
+   * @param id: cell index.
+   * @param moments: list of previously computed moments.
+   * @return the area contribution of the given cell.
    */
   double compute_contribution(int id, std::vector<Wonton::Weights_t> const& moments) const {
     double contrib = source_mesh_wrapper.cell_volume(id);
@@ -129,7 +130,7 @@ protected:
   /* since target grid is advected using a unique displacement vector
    * we expect to have a constant area for each swept face.
    */
-  double const unit_face_area = 2.;
+  double const unit_face_area = 2.0;
 };
 
 /**
