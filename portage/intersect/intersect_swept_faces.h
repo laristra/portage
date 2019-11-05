@@ -289,7 +289,7 @@ namespace Portage {
       for (int i = 0; i < nb_edges; ++i) {
         adj.clear();
         source_mesh_.face_get_cells(edges[i], Wonton::Entity_type::ALL, &adj);
-        if (adj.size() == 2) {
+        if (adj.size() == 2 or (adj.size() == 1 and adj[0] == cell)) {
           filter_edges->emplace_back(edges[i]);
           filter_dirs->emplace_back(dirs[i]);
         }
@@ -324,14 +324,6 @@ namespace Portage {
         // retrieve current source cell faces and related directions
         get_filtered_edges(source_id, &edges, &dirs);
         int const nb_edges = edges.size();
-        int const nb_dirs = dirs.size();
-
-        if (nb_edges != nb_dirs or nb_edges != size - 1) {
-          std::cerr << "Error: invalid retrieved edges for cell "<< target_id;
-          std::cerr << std::endl;
-          source_weights.clear();
-          return source_weights;
-        }
 
         #ifdef DEBUG
           // ensure that we have the same face/edge index for source and target.
@@ -491,6 +483,7 @@ namespace Portage {
 
             #if DEBUG
               std::cout << "source_centroid["<< source_id <<"]: " << centroid;
+              std::cout << ", area: "<< swept_volumes[source_id];
               std::cout << ", nb_source_polys: "<< nb_source_polys << std::endl;
             #endif
           } else {
