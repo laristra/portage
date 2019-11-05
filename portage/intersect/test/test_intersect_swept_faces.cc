@@ -13,13 +13,12 @@
 #include "wonton/mesh/jali/jali_mesh_wrapper.h"
 #include "wonton/state/jali/jali_state_wrapper.h"
 #include "portage/intersect/intersect_swept_faces.h"
-#include "portage/driver/coredriver.h"
 #include "Mesh.hh"
 #include "MeshFactory.hh"
 #include "JaliState.h"
 
 /**
- * @brief Fixture class for swept face intersection tests.
+ * @brief Fixture class for swept face moments computation tests.
  *
  * Here, we consider a planar cartesian grid which is advected
  * by a unique displacement vector and we aim to check the volume
@@ -90,9 +89,25 @@ public:
    */
   double compute_swept_area(std::vector<Wonton::Weights_t> const& moments) const {
     return std::accumulate(moments.begin(), moments.end(), 0.0,
-      [](double prec, auto const& moment) {
-        return prec + moment.weights[0];
-      });
+                           [](double previous, auto const& moment) {
+                             return previous + moment.weights[0];
+                           });
+  }
+
+  /**
+   *
+   * @param id
+   * @param moments
+   * @return
+   */
+  double compute_contribution(int id, std::vector<Wonton::Weights_t> const& moments) const {
+    double contrib = source_mesh_wrapper.cell_volume(id);
+    for (auto const& moment : moments) {
+      if (moment.entityID == id) {
+        contrib += moment.weights[0];
+      }
+    }
+    return contrib;
   }
 
 protected:
@@ -140,10 +155,10 @@ protected:
  * @brief Fixture class for intersection moment computation tests
  *        when target cells are swept backward like below.
  *
- *     ___________
- *  ..|...|...|.. |       displacement vector: (-1,-1)
- *  : |_:_|_:_|_:_|       source mesh: plain
- *  :.|...|...|.. |       target mesh: dotted
+ *     ___________       displacement vector: (-1,-1) 
+ *  ..|...|...|.. |      source mesh: plain            
+ *  : |_:_|_:_|_:_|      target mesh: dotted           
+ *  :.|...|...|.. |
  *  : |_:_|_:_|_:_|
  *  :.|...|...|.. |
  *  : |_:_|_:_|_:_|
@@ -183,18 +198,34 @@ TEST_F(IntersectSweptForward, MomentsCheck) {
   /* for interior cell case, we have:
    * - two contributing neighbor cells with non-zero weights (5:top, 7:right)
    * - a reconstructed cell area perfectly preserved after advection.
-   * - no cell self-contribution.
+   * - self-contribution is reduced to zero.
    */
-  ASSERT_EQ(weights_internal.size(), unsigned(2));
-
-  // check area preservation
   double source_area = source_mesh_wrapper.cell_volume(internal_cell);
-  double target_area = compute_swept_area(weights_internal);
-  ASSERT_DOUBLE_EQ(source_area, target_area);
+  double target_area = source_area + compute_swept_area(weights_internal);
+  double self_contrib = compute_contribution(internal_cell, weights_internal);
+  bool first_source_weight = true;
+
+  ASSERT_EQ(weights_internal.size(), unsigned(4));
+  ASSERT_DOUBLE_EQ(target_area, source_area);
+  ASSERT_DOUBLE_EQ(self_contrib, 0.0);
 
   for (auto const& moments : weights_internal) {
-    ASSERT_DOUBLE_EQ(moments.weights[0], unit_face_area);
+    #if DEBUG
+      std::cout << "forward::internal_swept_centroid["<< moments.entityID <<"]: ";
+      std::cout << moments.weights[1] <<", "<< moments.weights[2] << std::endl;
+    #endif
+    ASSERT_DOUBLE_EQ(std::abs(moments.weights[0]), unit_face_area);
     switch(moments.entityID) {
+      case internal_cell:
+        if (first_source_weight) {
+          ASSERT_DOUBLE_EQ(moments.weights[1], 3.5);
+          ASSERT_DOUBLE_EQ(moments.weights[2], 2.5);
+        } else {
+          ASSERT_DOUBLE_EQ(moments.weights[1], 2.5);
+          ASSERT_DOUBLE_EQ(moments.weights[2], 3.5);
+        }
+        first_source_weight = false;
+        break;
       case 5:
         ASSERT_DOUBLE_EQ(moments.weights[1], 3.5);
         ASSERT_DOUBLE_EQ(moments.weights[2], 4.5);
@@ -205,10 +236,6 @@ TEST_F(IntersectSweptForward, MomentsCheck) {
         break;
       default: FAIL() << "forward::internal: unexpected moment entity index";
     }
-    #if DEBUG
-      std::cout << "forward::internal_swept_centroid["<< moments.entityID <<"]: ";
-      std::cout << moments.weights[1] <<", "<< moments.weights[2] << std::endl;
-    #endif
   }
 
   /* check boundary cell case:
@@ -217,25 +244,38 @@ TEST_F(IntersectSweptForward, MomentsCheck) {
    * - we have a unique contributing neighbor (8:top).
    * - the source cell self-contribution is still zero.
    */
-  ASSERT_EQ(weights_boundary.size(), unsigned(1));
-
   source_area = source_mesh_wrapper.cell_volume(boundary_cell);
-  target_area = compute_swept_area(weights_boundary);
-  ASSERT_DOUBLE_EQ(source_area, 2 * target_area);
+  target_area = source_area + compute_swept_area(weights_boundary);
+  self_contrib = compute_contribution(boundary_cell, weights_boundary);
+  first_source_weight = true;
+
+  ASSERT_EQ(weights_boundary.size(), unsigned(3));
+  ASSERT_DOUBLE_EQ(target_area, 0.5 * source_area);
+  ASSERT_DOUBLE_EQ(self_contrib, 0.0);
 
   for (auto const& moments : weights_boundary) {
-    ASSERT_DOUBLE_EQ(moments.weights[0], unit_face_area);
+    #if DEBUG
+      std::cout << "forward::boundary_swept_centroid["<< moments.entityID <<"]: ";
+      std::cout << moments.weights[1] <<", "<< moments.weights[2] << std::endl;
+    #endif
+    ASSERT_DOUBLE_EQ(std::abs(moments.weights[0]), unit_face_area);
     switch(moments.entityID) {
+      case boundary_cell:
+        if (first_source_weight) {
+          ASSERT_DOUBLE_EQ(moments.weights[1], 5.5);
+          ASSERT_DOUBLE_EQ(moments.weights[2], 2.5);
+        } else {
+          ASSERT_DOUBLE_EQ(moments.weights[1], 4.5);
+          ASSERT_DOUBLE_EQ(moments.weights[2], 3.5);
+        }
+        first_source_weight = false;
+        break;
       case 8:
         ASSERT_DOUBLE_EQ(moments.weights[1], 5.5);
         ASSERT_DOUBLE_EQ(moments.weights[2], 4.5);
         break;
       default: FAIL() << "forward::boundary: unexpected moment entity index";
     }
-    #if DEBUG
-      std::cout << "forward::boundary_swept_centroid["<< moments.entityID <<"]: ";
-      std::cout << moments.weights[1] <<", "<< moments.weights[2] << std::endl;
-    #endif
   }
 
   /* check corner cell case:
@@ -243,7 +283,35 @@ TEST_F(IntersectSweptForward, MomentsCheck) {
    * - we have no more contributing neighbor since all swept faces are
    *   lying outside the source mesh and their volume are not extrapolated.
    */
-  ASSERT_TRUE(weights_corner.empty());
+  source_area = source_mesh_wrapper.cell_volume(corner_cell);
+  target_area = source_area + compute_swept_area(weights_corner);
+  self_contrib = compute_contribution(corner_cell, weights_corner);
+  first_source_weight = true;
+
+  ASSERT_EQ(weights_corner.size(), unsigned(2));
+  ASSERT_DOUBLE_EQ(target_area, 0.0);
+  ASSERT_DOUBLE_EQ(self_contrib, 0.0);
+
+  for (auto const& moments : weights_corner) {
+    #if DEBUG
+      std::cout << "forward::corner_swept_centroid["<< moments.entityID <<"]: ";
+      std::cout << moments.weights[1] <<", "<< moments.weights[2] << std::endl;
+    #endif
+    ASSERT_DOUBLE_EQ(std::abs(moments.weights[0]), unit_face_area);
+    switch(moments.entityID) {
+      case corner_cell:
+        if (first_source_weight) {
+          ASSERT_DOUBLE_EQ(moments.weights[1], 5.5);
+          ASSERT_DOUBLE_EQ(moments.weights[2], 4.5);
+        } else {
+          ASSERT_DOUBLE_EQ(moments.weights[1], 4.5);
+          ASSERT_DOUBLE_EQ(moments.weights[2], 5.5);
+        }
+        first_source_weight = false;
+        break;
+      default: FAIL() << "forward::boundary: unexpected moment entity index";
+    }
+  }
 }
 
 
@@ -257,9 +325,9 @@ TEST_F(IntersectSweptBackward, MomentsCheck) {
   /* pick internal, boundary and corner source cells.
    *
    *     ___________      cell indices ordering:
-   *  ..|...|...|.. |     2 5 8       
-   *  : |_:_|_:_|_:_|     1 4 7                                 
-   *  :.|...|...|.. |     0 3 6          
+   *  ..|...|...|.. |     2 5 8
+   *  : |_:_|_:_|_:_|     1 4 7
+   *  :.|...|...|.. |     0 3 6
    *  : |_:_|_:_|_:_|
    *  :.|...|...|.. |
    *  : |_:_|_:_|_:_|
@@ -274,22 +342,37 @@ TEST_F(IntersectSweptBackward, MomentsCheck) {
   auto weights_boundary = intersector(boundary_cell, search(boundary_cell));
   auto weights_corner   = intersector(corner_cell, search(corner_cell));
 
-  /* we should have the same results as the previous test for interior
-   * cell case:
+  /* we should have the same results as the previous test for interior case:
    * - two contributing neighbors cells with non-zero weights.
    * - reconstructed cell area is perfectly preserved after advection.
    * - no cell self-contribution.
    */
-  ASSERT_EQ(weights_internal.size(), unsigned(2));
-
-  // check area preservation
   double source_area = source_mesh_wrapper.cell_volume(internal_cell);
-  double target_area = compute_swept_area(weights_internal);
+  double target_area = source_area + compute_swept_area(weights_internal);
+  double self_contrib = compute_contribution(internal_cell, weights_internal);
+  bool first_source_weight = true;
+
+  ASSERT_EQ(weights_internal.size(), unsigned(4));
   ASSERT_DOUBLE_EQ(source_area, target_area);
+  ASSERT_DOUBLE_EQ(self_contrib, 0.0);
 
   for (auto const& moments : weights_internal) {
-    ASSERT_DOUBLE_EQ(moments.weights[0], unit_face_area);
+    #if DEBUG
+      std::cout << "backward::internal_swept_centroid["<< moments.entityID <<"]: ";
+      std::cout << moments.weights[1] <<", "<< moments.weights[2] << std::endl;
+    #endif
+    ASSERT_DOUBLE_EQ(std::abs(moments.weights[0]), unit_face_area);
     switch(moments.entityID) {
+      case internal_cell:
+        if (first_source_weight) {
+          ASSERT_DOUBLE_EQ(moments.weights[1], 3.5);
+          ASSERT_DOUBLE_EQ(moments.weights[2], 2.5);
+        } else {
+          ASSERT_DOUBLE_EQ(moments.weights[1], 2.5);
+          ASSERT_DOUBLE_EQ(moments.weights[2], 3.5);
+        }
+        first_source_weight = false;
+        break;
       case 1:
         ASSERT_DOUBLE_EQ(moments.weights[1], 1.5);
         ASSERT_DOUBLE_EQ(moments.weights[2], 2.5);
@@ -300,10 +383,6 @@ TEST_F(IntersectSweptBackward, MomentsCheck) {
         break;
       default: FAIL() << "backward::internal: unexpected moment entity index";
     }
-    #if DEBUG
-      std::cout << "backward::internal_swept_centroid["<< moments.entityID <<"]: ";
-      std::cout << moments.weights[1] <<", "<< moments.weights[2] << std::endl;
-    #endif
   }
 
   /* for the boundary cell case:
@@ -312,15 +391,32 @@ TEST_F(IntersectSweptBackward, MomentsCheck) {
    * - we have two contributing neighbors (4:left, 6:bottom).
    * - no cell self-contribution.
    */
-  ASSERT_EQ(weights_boundary.size(), weights_internal.size());
-
   source_area = source_mesh_wrapper.cell_volume(boundary_cell);
-  target_area = compute_swept_area(weights_boundary);
+  target_area = source_area + compute_swept_area(weights_boundary);
+  self_contrib = compute_contribution(boundary_cell, weights_boundary);
+  first_source_weight = true;
+
+  ASSERT_EQ(weights_boundary.size(), weights_internal.size());
   ASSERT_DOUBLE_EQ(source_area, target_area);
+  ASSERT_DOUBLE_EQ(self_contrib, 0.0);
 
   for (auto const& moments : weights_boundary) {
-    ASSERT_DOUBLE_EQ(moments.weights[0], unit_face_area);
+    #if DEBUG
+      std::cout << "backward::boundary_swept_centroid["<< moments.entityID <<"]: ";
+      std::cout << moments.weights[1] <<", "<< moments.weights[2] << std::endl;
+    #endif
+    ASSERT_DOUBLE_EQ(std::abs(moments.weights[0]), unit_face_area);
     switch(moments.entityID) {
+      case boundary_cell:
+        if (first_source_weight) {
+          ASSERT_DOUBLE_EQ(moments.weights[1], 5.5);
+          ASSERT_DOUBLE_EQ(moments.weights[2], 2.5);
+        } else {
+          ASSERT_DOUBLE_EQ(moments.weights[1], 4.5);
+          ASSERT_DOUBLE_EQ(moments.weights[2], 3.5);
+        }
+        first_source_weight = false;
+        break;
       case 4:
         ASSERT_DOUBLE_EQ(moments.weights[1], 3.5);
         ASSERT_DOUBLE_EQ(moments.weights[2], 2.5);
@@ -331,10 +427,6 @@ TEST_F(IntersectSweptBackward, MomentsCheck) {
         break;
       default: FAIL() << "backward::boundary: unexpected moment entity index";
     }
-    #if DEBUG
-      std::cout << "backward::boundary_swept_centroid["<< moments.entityID <<"]: ";
-      std::cout << moments.weights[1] <<", "<< moments.weights[2] << std::endl;
-    #endif
   }
 
   /* for the corner cell case (as opposed to the forward case):
@@ -344,15 +436,32 @@ TEST_F(IntersectSweptBackward, MomentsCheck) {
    * - we have two contributing neighbors (5:left, 7:bottom).
    * - the source cell self-contribution is still zero.
    */
-  ASSERT_EQ(weights_corner.size(), weights_internal.size());
-
   source_area = source_mesh_wrapper.cell_volume(corner_cell);
-  target_area = compute_swept_area(weights_corner);
+  target_area = source_area + compute_swept_area(weights_corner);
+  self_contrib = compute_contribution(corner_cell, weights_corner);
+  first_source_weight = true;
+
+  ASSERT_EQ(weights_corner.size(), weights_internal.size());
   ASSERT_DOUBLE_EQ(source_area, target_area);
+  ASSERT_DOUBLE_EQ(self_contrib, 0.0);
 
   for (auto const& moments : weights_corner) {
-    ASSERT_DOUBLE_EQ(moments.weights[0], unit_face_area);
+    #if DEBUG
+      std::cout << "backward::corner_swept_centroid["<< moments.entityID <<"]: ";
+      std::cout << moments.weights[1] <<", "<< moments.weights[2] << std::endl;
+    #endif
+    ASSERT_DOUBLE_EQ(std::abs(moments.weights[0]), unit_face_area);
     switch(moments.entityID) {
+      case corner_cell:
+        if (first_source_weight) {
+          ASSERT_DOUBLE_EQ(moments.weights[1], 5.5);
+          ASSERT_DOUBLE_EQ(moments.weights[2], 4.5);
+        } else {
+          ASSERT_DOUBLE_EQ(moments.weights[1], 4.5);
+          ASSERT_DOUBLE_EQ(moments.weights[2], 5.5);
+        }
+        first_source_weight = false;
+        break;
       case 5:
         ASSERT_DOUBLE_EQ(moments.weights[1], 3.5);
         ASSERT_DOUBLE_EQ(moments.weights[2], 4.5);
@@ -363,9 +472,5 @@ TEST_F(IntersectSweptBackward, MomentsCheck) {
         break;
       default: FAIL() << "backward::corner: unexpected moment entity index";
     }
-    #if DEBUG
-      std::cout << "backward::corner_swept_centroid["<< moments.entityID <<"]: ";
-      std::cout << moments.weights[1] <<", "<< moments.weights[2] << std::endl;
-    #endif
   }
 }

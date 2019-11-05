@@ -19,8 +19,7 @@
 namespace Portage {
 
   /**
-   * @class IntersectSweptFace2D intersect_swept_face_2d.h
-   * @brief Kernel to compute swept faces volumes for planar advection-based remap.
+   * @brief Kernel to compute interpolation weights for advection-based remap.
    *
    * @tparam dim: dimension of the problem.
    * @tparam on_what: the entity kind we want to remap.
@@ -280,12 +279,17 @@ namespace Portage {
      */
     std::vector<Weights_t> operator()(int target_id,
                                       std::vector<int> const& stencil) const {
+      // convenience function to check if a given cell is within the stencil.
+      auto in_stencil = [&](int cell) -> bool {
+        return std::find(stencil.begin(), stencil.end(), cell) != stencil.end();
+      };
+
       // here the source and target cell have the exact ID.
       int const source_id = target_id;
       int const size = stencil.size();
-      assert(std::find(stencil.begin(), stencil.end(), source_id) != stencil.end());
+      assert(in_stencil(source_id));
 
-      std::vector<Weights_t> source_weights;
+      std::vector<Weights_t> swept_moments;
 
 #ifdef HAVE_TANGRAM
       int const nb_mats = source_state_.cell_get_num_mats(source_id);
@@ -310,18 +314,6 @@ namespace Portage {
             assert(edges[i] == target_edges[i]);
           }
         #endif
-
-        std::map<int, double> swept_volumes;
-        std::map<int, std::pair<double,double>> swept_centroids;
-
-        for (auto const& i : stencil) {
-          swept_volumes[i] = 0.;
-          swept_centroids[i] = std::make_pair(0.,0.);
-        }
-
-        // update source cell area
-        swept_volumes[source_id] = source_mesh_.cell_volume(source_id);
-        int nb_source_polys = 0;
 
         for (int i = 0; i < nb_edges; ++i) {
 
@@ -391,8 +383,8 @@ namespace Portage {
 
           if (not both_positive and not both_negative) {
             std::cerr << "Error: twisted swept face polygon." << std::endl;
-            source_weights.clear();
-            return source_weights;
+            swept_moments.clear();
+            return swept_moments;
           }
 
           double const signed_area = 0.5 * (det[0] + det[1]);
@@ -408,7 +400,8 @@ namespace Portage {
            *  /___\/      |dx-bx  ax-cx| |t| |ax-bx|
            * a     b      |dy-by  ay-cy| |s|=|ay-by|
            */
-          Wonton::Point<2> centroid;
+          //Wonton::Point<2> centroid;
+          std::pair<double,double> centroid;
 
           // retrieve the determinant of A to compute its inverse A^-1.
           double const denom = (dx - bx) * (ay - cy) - (dy - by) * (ax - cx);
@@ -430,7 +423,7 @@ namespace Portage {
                 double y[] = { ay + param[0] * (cy - ay), by + param[1] * (dy - by) };
                 assert(std::abs(x[0] - x[1]) < num_tols.polygon_convexity_eps);
                 assert(std::abs(y[0] - y[1]) < num_tols.polygon_convexity_eps);
-                centroid = Wonton::createP2(x[0], y[0]);
+                centroid = std::make_pair(x[0], y[0]);
 
                 std::cout << "a: ("<< ax <<" "<< ay <<"), ";
                 std::cout << "c: ("<< cx <<" "<< cy <<"), ";
@@ -438,11 +431,13 @@ namespace Portage {
                 std::cout << "bx: "<< bx << ", (dx - bx): "<< dx - bx << std::endl;
                 std::cout << "by: "<< by << ", (dy - by): "<< dy - by << std::endl;
               #else
-                centroid[0] = ax + param[0] * (cx - ax);
-                centroid[1] = ay + param[0] * (cy - ay);
+                centroid = std::make_pair(ax + param[0] * (cx - ax),
+                                          ay + param[0] * (cy - ay));
               #endif
             }
           }
+
+          std::vector<double> moment { signed_area, centroid.first, centroid.second };
 
           /* step 3: check aree sign, choose the right source cell,
            * and add computed area and centroid to related lists.
@@ -450,10 +445,7 @@ namespace Portage {
           if (signed_area < 0.) {
             // if negative volume then accumulate to that of the source cell
             // it means that it would be substracted from that source cell.
-            swept_volumes[source_id] += signed_area;
-            swept_centroids[source_id].first  += centroid[0];
-            swept_centroids[source_id].second += centroid[1];
-            nb_source_polys++;
+            swept_moments.emplace_back(source_id, moment);
 
             #if DEBUG
               std::cout << "source_centroid["<< source_id <<"]: " << centroid;
@@ -468,15 +460,14 @@ namespace Portage {
             if (neigh < 0)
               continue;
             // check if incident cell belongs to the current stencil
-            else if (not swept_volumes.count(neigh)) {
+            else if (not in_stencil(neigh)) {
               std::cerr << "Error: invalid stencil for source cell "<< source_id;
               std::cerr << std::endl;
-              source_weights.clear();
-              return source_weights;
+              swept_moments.clear();
+              return swept_moments;
             } else {
-              // update related area if ok
-              swept_volumes[neigh] += signed_area;
-              swept_centroids[neigh] = std::make_pair(centroid[0], centroid[1]);
+              // append to moments list if ok
+              swept_moments.emplace_back(neigh, moment);
 
               #if DEBUG
                 std::cout << "neigh_centroid["<< neigh <<"]: " << centroid;
@@ -490,31 +481,13 @@ namespace Portage {
         #if DEBUG
           std::cout << " =========== " << std::endl;
         #endif
-
-        // average swept face centroids on source cell.
-        // this not accurate if the swept face polygon is not convex.
-        if (swept_volumes[source_id] > 0. and nb_source_polys > 1) {
-          swept_centroids[source_id].first  /= nb_source_polys;
-          swept_centroids[source_id].second /= nb_source_polys;
-        }
-
-        // append computed volumes to 'source_weights'
-        for (auto&& entry : swept_volumes) {
-          auto const& id = entry.first;
-          auto const& area = entry.second;
-          if (std::abs(area) > 0.) {
-            auto const& centroid = swept_centroids[id];
-            std::vector<double> weight { area, centroid.first, centroid.second };
-            source_weights.emplace_back(id, weight);
-          }
-        }
-        return source_weights;
+        return swept_moments;
 #ifdef HAVE_TANGRAM
       } else /* multi-material case */ {
         std::cerr << "Error: multi-material swept face remap not yet supported";
         std::cerr << std::endl;
-        source_weights.clear();
-        return source_weights;
+        swept_moments.clear();
+        return swept_moments;
       }
 #endif
     }
@@ -529,6 +502,6 @@ namespace Portage {
 #ifdef HAVE_TANGRAM
     std::shared_ptr<InterfaceReconstructor2D> interface_reconstructor;
 #endif
-  }; // class IntersectSweptFace::CELL
+  }; // class IntersectSweptFace::2D::CELL
 /* -------------------------------------------------------------------------- */
 } // namespace Portage
