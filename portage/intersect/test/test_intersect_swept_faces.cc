@@ -97,11 +97,6 @@ public:
 
 protected:
   // useful constants and aliases
-  static constexpr double upper_bound = std::numeric_limits<double>::max();
-  static constexpr double lower_bound = std::numeric_limits<double>::min();
-  static constexpr double epsilon = 1.E-10;
-  static constexpr auto CELL = Wonton::Entity_kind::CELL;
-
   Portage::NumericTolerances_t num_tols;
 
   // source and target meshes and states
@@ -342,10 +337,35 @@ TEST_F(IntersectSweptBackward, MomentsCheck) {
     #endif
   }
 
-  /* check corner cell case:
+  /* for the corner cell case (as opposed to the forward case):
+   * - all swept faces are covered by the source mesh so we get
+   *   the same moments as for an internal cell.
+   * - the reconstructed cell area is preserved after advection.
+   * - we have two contributing neighbors (5:left, 7:bottom).
    * - the source cell self-contribution is still zero.
-   * - we have no more contributing neighbor since all swept faces are
-   *   lying outside the source mesh and their volume are not extrapolated.
    */
-  //ASSERT_TRUE(weights_corner.empty());
+  ASSERT_EQ(weights_corner.size(), weights_internal.size());
+
+  source_area = source_mesh_wrapper.cell_volume(corner_cell);
+  target_area = compute_swept_area(weights_corner);
+  ASSERT_DOUBLE_EQ(source_area, target_area);
+
+  for (auto const& moments : weights_corner) {
+    ASSERT_DOUBLE_EQ(moments.weights[0], unit_face_area);
+    switch(moments.entityID) {
+      case 5:
+        ASSERT_DOUBLE_EQ(moments.weights[1], 3.5);
+        ASSERT_DOUBLE_EQ(moments.weights[2], 4.5);
+        break;
+      case 7:
+        ASSERT_DOUBLE_EQ(moments.weights[1], 4.5);
+        ASSERT_DOUBLE_EQ(moments.weights[2], 3.5);
+        break;
+      default: FAIL() << "Unexpected moment entity index";
+    }
+    #if DEBUG
+      std::cout << "backward::corner_swept_centroid["<< moments.entityID <<"]: ";
+      std::cout << moments.weights[1] <<", "<< moments.weights[2] << std::endl;
+    #endif
+  }
 }
