@@ -76,9 +76,9 @@ class MPI_Bounding_Boxes {
 
 
   /*!
-    @brief Compute whether this partition (Bob) needs data from other partitions
+    @brief Compute whether this partition (Bob) needs data from other partitions 
           (hungry) or whether all the data is already on the partition
-    @param[in] source_mesh  Input mesh
+    @param[in] source_mesh  Input mesh 
     @param[in] target_mesh  Target mesh
 
    */
@@ -98,21 +98,21 @@ class MPI_Bounding_Boxes {
     // this is computed via intersection of whole partition bounding boxes
     std::vector<bool> sendFlags(commSize);
     compute_sendflags(source_mesh, target_mesh, sendFlags);
-
+    
     std::vector<int> sendFlagsInt(commSize);
     for (int i=0; i<commSize; ++i) sendFlagsInt[i]=sendFlags[i]?1:0;
-
+    
     // Each rank will tell each other rank if it is going to send it
     std::vector<int> recvFlags(commSize);
     MPI_Alltoall(&(sendFlagsInt[0]), 1, MPI_INT,
                  &(recvFlags[0]), 1, MPI_INT, comm_);
-
+                 
     // loop over the partitions
-    for (int i=0; i<commSize; ++i)
+    for (int i=0; i<commSize; ++i) 
       // if any other other partition sends me data, we need to redistribute
       if (i!=commRank && recvFlags[i])
-        return true;
-
+        return true;  
+  
     // the fall through case means no redistribution
     return false;
   }
@@ -120,7 +120,7 @@ class MPI_Bounding_Boxes {
 
   /*!
     @brief Compute whether any partition needs data from other partitions
-    @param[in] source_mesh  Input mesh
+    @param[in] source_mesh  Input mesh 
     @param[in] target_mesh  Target mesh
 
    */
@@ -130,16 +130,16 @@ class MPI_Bounding_Boxes {
   {
     // does this partition need data from an other partition
     bool r = is_bob_hungry(source_mesh, target_mesh);
-
-    // convert to an int
+    
+    // convert to an int 
     int ir = r ? 1 : 0;
-
+    
     // allocate the result
     int result;
-
+    
     // do the MPI_ALLReduce to aggregate the results
     MPI_Allreduce(&ir, &result, 1, MPI_INT, MPI_LOR, comm_);
-
+                    
     return result;
   }
 
