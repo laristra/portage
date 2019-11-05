@@ -448,9 +448,9 @@ namespace Portage {
             swept_moments.emplace_back(source_id, moment);
 
             #if DEBUG
-              std::cout << "source_centroid["<< source_id <<"]: " << centroid;
-              std::cout << ", area: "<< swept_volumes[source_id];
-              std::cout << ", nb_source_polys: "<< nb_source_polys << std::endl;
+              std::cout << "source_centroid["<< source_id <<"]: ";
+              std::cout << "(" << centroid.first <<" "<< centroid.second << ")";
+              std::cout << ", area: "<< signed_area << std::endl;
             #endif
           } else {
             // retrieve the cell incident to the current edge.
@@ -470,9 +470,10 @@ namespace Portage {
               swept_moments.emplace_back(neigh, moment);
 
               #if DEBUG
-                std::cout << "neigh_centroid["<< neigh <<"]: " << centroid;
-                std::cout << " of edge: ["<< swept_polygon[0] <<", ("<< bx <<" "<< by<<")]";
-                std::cout << std::endl;
+                std::cout << "neigh_centroid["<< neigh <<"]: ";
+                std::cout << "(" << centroid.first <<" "<< centroid.second << ")";
+                std::cout << " of edge: ["<< swept_polygon[0];
+                std::cout <<", ("<< bx <<" "<< by<<")]" << std::endl;
               #endif
             }
           }
