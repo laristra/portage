@@ -30,15 +30,10 @@
 class IntersectSweptBase : public testing::Test {
 
 protected:
-  // useful shortcuts
-  using Remapper = Portage::CoreDriver<2, Wonton::Entity_kind::CELL,
-    Wonton::Jali_Mesh_Wrapper,
-    Wonton::Jali_State_Wrapper>;
-
-  using Intersector = Portage::IntersectSwept<2, Wonton::Entity_kind::CELL,
-                                                 Wonton::Jali_Mesh_Wrapper,
-                                                 Wonton::Jali_State_Wrapper,
-                                                 Wonton::Jali_Mesh_Wrapper>;
+  using Intersector = Portage::IntersectSweptFace<2, Wonton::Entity_kind::CELL,
+                                                  Wonton::Jali_Mesh_Wrapper,
+                                                  Wonton::Jali_State_Wrapper,
+                                                  Wonton::Jali_Mesh_Wrapper>;
 public:
   /**
    * @brief Disabled default constructor

@@ -42,7 +42,7 @@ namespace Portage {
     class Matpoly_Splitter = void,
     class Matpoly_Clipper = void
   >
-  class IntersectSwept {
+  class IntersectSweptFace {
 
     // useful aliases
 #ifdef HAVE_TANGRAM
@@ -58,7 +58,7 @@ namespace Portage {
      * @brief Default constructor (disabled).
      *
      */
-    IntersectSwept() = delete;
+    IntersectSweptFace() = delete;
 
 #ifdef HAVE_TANGRAM
 
@@ -71,11 +71,11 @@ namespace Portage {
      * @param[in] num_tols: numerical tolerances.
      * @param[in] ir: interface reconstructor for querying matpolys on source mesh.
      */
-    IntersectSwept(SourceMesh const &source_mesh,
-                   SourceState const &source_state,
-                   TargetMesh const &target_mesh,
-                   NumericTolerances_t num_tols,
-                   std::shared_ptr<InterfaceReconstructorDriver> ir)
+    IntersectSweptFace(SourceMesh const &source_mesh,
+                       SourceState const &source_state,
+                       TargetMesh const &target_mesh,
+                       NumericTolerances_t num_tols,
+                       std::shared_ptr<InterfaceReconstructorDriver> ir)
       : source_mesh_(source_mesh),
         source_state_(source_state),
         target_mesh_(target_mesh),
@@ -92,10 +92,10 @@ namespace Portage {
      * @param[in] target_mesh: mesh wrapper used to query target mesh info.
      * @param[in] num_tols: numerical tolerances.
      */
-    IntersectSwept(SourceMesh const &source_mesh,
-                   SourceState const &source_state,
-                   TargetMesh const &target_mesh,
-                   NumericTolerances_t num_tols)
+    IntersectSweptFace(SourceMesh const &source_mesh,
+                       SourceState const &source_state,
+                       TargetMesh const &target_mesh,
+                       NumericTolerances_t num_tols)
       : source_mesh_(source_mesh),
         source_state_(source_state),
         target_mesh_(target_mesh),
@@ -107,13 +107,13 @@ namespace Portage {
      * @param[in] other: the intersector to copy.
      * @return current intersector reference.
      */
-    IntersectSwept& operator=(IntersectSwept const& other) = delete;
+    IntersectSweptFace& operator=(IntersectSweptFace const& other) = delete;
 
     /**
      * @brief Destructor.
      *
      */
-    ~IntersectSwept() = default;
+    ~IntersectSweptFace() = default;
 
     /**
      * @brief Set the material we are operating on.
@@ -147,7 +147,7 @@ namespace Portage {
 #ifdef HAVE_TANGRAM
     std::shared_ptr<InterfaceReconstructorDriver> interface_reconstructor;
 #endif
-  }; // class IntersectSwept
+  }; // class IntersectSweptFace
 
 
   /**
@@ -166,7 +166,7 @@ namespace Portage {
       class InterfaceReconstructor,
     class Matpoly_Splitter, class Matpoly_Clipper
   >
-  class IntersectSwept<
+  class IntersectSweptFace<
     2, Entity_kind::CELL, SourceMesh, SourceState, TargetMesh,
     InterfaceReconstructor, Matpoly_Splitter, Matpoly_Clipper> {
 
@@ -184,7 +184,7 @@ namespace Portage {
      * @brief Default constructor (disabled).
      *
      */
-    IntersectSwept() = delete;
+    IntersectSweptFace() = delete;
 
 #ifdef HAVE_TANGRAM
 
@@ -197,11 +197,11 @@ namespace Portage {
      * @param[in] num_tols: numerical tolerances.
      * @param[in] ir: interface reconstructor for querying matpolys on source mesh.
      */
-    IntersectSwept(SourceMesh const &source_mesh,
-                   SourceState const &source_state,
-                   TargetMesh const &target_mesh,
-                   NumericTolerances_t num_tols,
-                   std::shared_ptr<InterfaceReconstructor2D> ir)
+    IntersectSweptFace(SourceMesh const &source_mesh,
+                       SourceState const &source_state,
+                       TargetMesh const &target_mesh,
+                       NumericTolerances_t num_tols,
+                       std::shared_ptr<InterfaceReconstructor2D> ir)
       : source_mesh_(source_mesh),
         source_state_(source_state),
         target_mesh_(target_mesh),
@@ -218,10 +218,10 @@ namespace Portage {
      * @param[in] target_mesh: mesh wrapper used to query target mesh info.
      * @param[in] num_tols: numerical tolerances.
      */
-    IntersectSwept(SourceMesh const &source_mesh,
-                   SourceState const &source_state,
-                   TargetMesh const &target_mesh,
-                   NumericTolerances_t num_tols)
+    IntersectSweptFace(SourceMesh const &source_mesh,
+                       SourceState const &source_state,
+                       TargetMesh const &target_mesh,
+                       NumericTolerances_t num_tols)
       : source_mesh_(source_mesh),
         source_state_(source_state),
         target_mesh_(target_mesh),
@@ -233,13 +233,13 @@ namespace Portage {
      * @param[in] other: the intersector to copy.
      * @return current intersector reference.
      */
-    IntersectSwept& operator=(IntersectSwept const& other) = delete;
+    IntersectSweptFace& operator=(IntersectSweptFace const& other) = delete;
 
     /**
      * @brief Destructor.
      *
      */
-    ~IntersectSwept() = default;
+    ~IntersectSweptFace() = default;
 
     /**
      * @brief Set the material we are operating on.
@@ -555,6 +555,6 @@ namespace Portage {
 #ifdef HAVE_TANGRAM
     std::shared_ptr<InterfaceReconstructor2D> interface_reconstructor;
 #endif
-  }; // class IntersectSwept::CELL
+  }; // class IntersectSweptFace::CELL
 /* -------------------------------------------------------------------------- */
 } // namespace Portage
