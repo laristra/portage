@@ -24,7 +24,7 @@ Please see the license file at the root of this repository, or at:
 #include "wonton/support/Point.h"
 #include "wonton/state/state_vector_uni.h"
 #include "mpi.h"
-using Wonton::Point;
+
 /*!
   @file mpi_bounding_boxes.h
   @brief Distributes source data using MPI based on bounding boxes
@@ -32,6 +32,9 @@ using Wonton::Point;
 
 namespace Portage {
 
+using Wonton::Point;
+using Wonton::GID_t;
+using Wonton::to_MPI_Datatype;
 
 /*!
   @class MPI_Bounding_Boxes
@@ -73,12 +76,83 @@ class MPI_Bounding_Boxes {
 
 
   /*!
+    @brief Compute whether this partition (Bob) needs data from other partitions 
+          (hungry) or whether all the data is already on the partition
+    @param[in] source_mesh  Input mesh 
+    @param[in] target_mesh  Target mesh
+
+   */
+  template <class Source_Mesh, class Target_Mesh>
+  bool is_bob_hungry(const Source_Mesh &source_mesh,
+                  const Target_Mesh &target_mesh)
+  {
+    // Get the MPI communicator size and rank information
+    int commSize, commRank;
+    MPI_Comm_size(comm_, &commSize);
+    MPI_Comm_rank(comm_, &commRank);
+
+    int dim = dim_ = source_mesh.space_dimension();
+    assert(dim == target_mesh.space_dimension());
+
+    // sendFlags, which partitions to send data
+    // this is computed via intersection of whole partition bounding boxes
+    std::vector<bool> sendFlags(commSize);
+    compute_sendflags(source_mesh, target_mesh, sendFlags);
+    
+    std::vector<int> sendFlagsInt(commSize);
+    for (int i=0; i<commSize; ++i) sendFlagsInt[i]=sendFlags[i]?1:0;
+    
+    // Each rank will tell each other rank if it is going to send it
+    std::vector<int> recvFlags(commSize);
+    MPI_Alltoall(&(sendFlagsInt[0]), 1, MPI_INT,
+                 &(recvFlags[0]), 1, MPI_INT, comm_);
+                 
+    // loop over the partitions
+    for (int i=0; i<commSize; ++i) 
+      // if any other other partition sends me data, we need to redistribute
+      if (i!=commRank && recvFlags[i])
+        return true;  
+  
+    // the fall through case means no redistribution
+    return false;
+  }
+
+
+  /*!
+    @brief Compute whether any partition needs data from other partitions
+    @param[in] source_mesh  Input mesh 
+    @param[in] target_mesh  Target mesh
+
+   */
+  template <class Source_Mesh, class Target_Mesh>
+  bool is_redistribution_needed(const Source_Mesh &source_mesh,
+                  const Target_Mesh &target_mesh)
+  {
+    // does this partition need data from an other partition
+    bool r = is_bob_hungry(source_mesh, target_mesh);
+    
+    // convert to an int 
+    int ir = r ? 1 : 0;
+    
+    // allocate the result
+    int result;
+    
+    // do the MPI_ALLReduce to aggregate the results
+    MPI_Allreduce(&ir, &result, 1, MPI_INT, MPI_LOR, comm_);
+                    
+    return result;
+  }
+
+
+
+  /*!
     @brief Compute bounding boxes for all partitions, and send source mesh and state
            information to all target partitions with an overlapping bounding box using MPI
     @param[in] source_mesh_flat  Input mesh (must be flat representation)
     @param[in] source_state_flat Input state (must be flat representation)
     @param[in] target_mesh       Target mesh
     @param[in] target_state      Target state (not actually used for now)
+
    */
   template <class Source_Mesh, class Source_State, class Target_Mesh, class Target_State>
   void distribute(Source_Mesh &source_mesh_flat, Source_State &source_state_flat,
@@ -114,15 +188,16 @@ class MPI_Bounding_Boxes {
     ///////////////////////////////////////////////////////
 
     // SEND GLOBAL CELL IDS
-    std::vector<Wonton::GID_t>& sourceCellGlobalIds = source_mesh_flat.get_global_cell_ids();
-    std::vector<int> distributedCellGlobalIds(cellInfo.newNum);
-    sendField(cellInfo, commRank, commSize, MPI_INT, 1,
+
+    std::vector<GID_t>& sourceCellGlobalIds = source_mesh_flat.get_global_cell_ids();
+    std::vector<GID_t> distributedCellGlobalIds(cellInfo.newNum);
+    sendField(cellInfo, commRank, commSize, to_MPI_Datatype<GID_t>(), 1,
               sourceCellGlobalIds, &distributedCellGlobalIds);
               
     // SEND GLOBAL NODE IDS
-    std::vector<int>& sourceNodeGlobalIds = source_mesh_flat.get_global_node_ids();
-    std::vector<int> distributedNodeGlobalIds(nodeInfo.newNum);
-    sendField(nodeInfo, commRank, commSize, MPI_INT, 1,
+    std::vector<GID_t>& sourceNodeGlobalIds = source_mesh_flat.get_global_node_ids();
+    std::vector<GID_t> distributedNodeGlobalIds(nodeInfo.newNum);
+    sendField(nodeInfo, commRank, commSize, to_MPI_Datatype<GID_t>(), 1,
               sourceNodeGlobalIds, &distributedNodeGlobalIds);
 
     // Using the post distribution global id's, compress the data so that each
@@ -180,8 +255,8 @@ class MPI_Bounding_Boxes {
               sizeCellToNodeList, sizeOwnedCellToNodeList);
               
       // send cell to node lists
-      std::vector<int> distributedCellToNodeList(cellToNodeInfo.newNum);
-      sendField(cellToNodeInfo, commRank, commSize, MPI_INT, 1,
+      std::vector<GID_t> distributedCellToNodeList(cellToNodeInfo.newNum);
+      sendField(cellToNodeInfo, commRank, commSize, to_MPI_Datatype<GID_t>(), 1,
                 to_gid(sourceCellToNodeList, sourceNodeGlobalIds), &distributedCellToNodeList);
 
 
@@ -206,9 +281,9 @@ class MPI_Bounding_Boxes {
       setSendRecvCounts(&faceInfo, commSize, sendFlags,sourceNumFaces, sourceNumOwnedFaces);
 
       // SEND GLOBAL FACE IDS
-      std::vector<int>& sourceFaceGlobalIds = source_mesh_flat.get_global_face_ids();
-      std::vector<int> distributedFaceGlobalIds(faceInfo.newNum);
-      sendField(faceInfo, commRank, commSize, MPI_INT, 1,
+      std::vector<GID_t>& sourceFaceGlobalIds = source_mesh_flat.get_global_face_ids();
+      std::vector<GID_t> distributedFaceGlobalIds(faceInfo.newNum);
+      sendField(faceInfo, commRank, commSize, MPI_LONG_LONG, 1,
                 sourceFaceGlobalIds, &distributedFaceGlobalIds);                  
 
       // Create map from distributed gid's to distributed index and flat indices
@@ -242,24 +317,24 @@ class MPI_Bounding_Boxes {
       
       // SEND CELL-TO-FACE MAP
       // map the cell face list vector to gid's
-      std::vector<int> sourceCellToFaceList__= to_gid(sourceCellToFaceList, sourceFaceGlobalIds);
+      std::vector<GID_t> sourceCellToFaceList_ = to_gid(sourceCellToFaceList, sourceFaceGlobalIds);
       
       // For this array only, pack up face IDs + dirs and send together
       std::vector<bool>& sourceCellToFaceDirs = source_mesh_flat.get_cell_to_face_dirs();
-      for (unsigned int j=0; j<sourceCellToFaceList.size(); ++j)
+      for (int j=0; j<sourceCellToFaceList.size(); ++j)
       {
-        int f = sourceCellToFaceList__[j];
+        int f = sourceCellToFaceList_[j];
         int dir = static_cast<int>(sourceCellToFaceDirs[j]);
-        sourceCellToFaceList[j] = (f << 1) | dir;
+        sourceCellToFaceList_[j] = (f << 1) | dir;
       }
 
-      std::vector<int> distributedCellToFaceList(cellToFaceInfo.newNum);
-      sendField(cellToFaceInfo, commRank, commSize, MPI_INT, 1,
-                sourceCellToFaceList, &distributedCellToFaceList);
+      std::vector<GID_t> distributedCellToFaceList(cellToFaceInfo.newNum);
+      sendField(cellToFaceInfo, commRank, commSize, MPI_LONG_LONG, 1,
+                sourceCellToFaceList_, &distributedCellToFaceList);
 
       // Unpack face IDs and dirs
       std::vector<bool> distributedCellToFaceDirs(cellToFaceInfo.newNum);
-      for (unsigned int j=0; j<distributedCellToFaceList.size(); ++j)
+      for (int j=0; j<distributedCellToFaceList.size(); ++j)
       {
         int fd = distributedCellToFaceList[j];
         distributedCellToFaceList[j] = fd >> 1;
@@ -295,8 +370,8 @@ class MPI_Bounding_Boxes {
                 sourceFaceNodeCounts, &distributedFaceNodeCounts);
 
       // SEND FACE-TO-NODE MAP
-      std::vector<int> distributedFaceToNodeList(faceToNodeInfo.newNum);
-      sendField(faceToNodeInfo, commRank, commSize, MPI_INT, 1,
+      std::vector<GID_t> distributedFaceToNodeList(faceToNodeInfo.newNum);
+      sendField(faceToNodeInfo, commRank, commSize, MPI_LONG_LONG, 1,
                 to_gid(sourceFaceToNodeList, sourceNodeGlobalIds), &distributedFaceToNodeList);      
                 
       // merge and set face node counts
@@ -379,9 +454,10 @@ class MPI_Bounding_Boxes {
       distributedMaterialCells_.resize(num_mat_cells_info.newNum);
 
       // send material cells to all nodes, but first translate to gid
-      sendData(commRank, commSize, MPI_INT, 1, 0, num_mat_cells_info.sourceNum, 0,
-        num_mat_cells_info.sendCounts, num_mat_cells_info.recvCounts,
-        to_gid(material_cells, sourceCellGlobalIds), &distributedMaterialCells_
+      sendData(commRank, commSize, to_MPI_Datatype<GID_t>(), 1, 0,
+        num_mat_cells_info.sourceNum, 0, num_mat_cells_info.sendCounts,
+        num_mat_cells_info.recvCounts, to_gid(material_cells, sourceCellGlobalIds),
+        &distributedMaterialCells_
       );
       
       /////////////////////////////////////////////////////////
@@ -402,7 +478,7 @@ class MPI_Bounding_Boxes {
       */
       
       // allocate the material indices
-      std::unordered_map<int,std::vector<int>> material_indices;
+      std::unordered_map<int,std::vector<GID_t>> material_indices;
       
       // reset the running counter
       int running_counter=0;
@@ -417,7 +493,7 @@ class MPI_Bounding_Boxes {
         int nmat_cells = distributedMaterialShapes_[i];
         
         // get or create a reference to the correct material cell vector
-        std::vector<int>& these_material_cells = material_indices[mat_id];
+        std::vector<GID_t>& these_material_cells = material_indices[mat_id];
         
         // loop over the correct number of material cells
         for (int j=0; j<nmat_cells; ++j){
@@ -548,10 +624,11 @@ class MPI_Bounding_Boxes {
   
   // the global id's of the kept nodes in the flat mesh and their indices in the
   // distributed node global id's
-  std::vector<int> flatNodeGlobalIds_, distributedNodeIds_;
+  std::vector<GID_t> flatNodeGlobalIds_;
+  std::vector<int> distributedNodeIds_;
   
   // maps from gid to distributed node index and flat node index  
-  std::map<int,int> gidToFlatNodeId_;
+  std::map<GID_t,int> gidToFlatNodeId_;
 
   // the number of faces "owned" by the flat mesh. "Owned" is in quotes because
   // a face may be "owned" by multiple partitions in the flat mesh. A face is
@@ -560,10 +637,11 @@ class MPI_Bounding_Boxes {
   
   // the global id's of the kept faces in the flat mesh and their indices in the
   // distributed face global id's
-  std::vector<int> flatFaceGlobalIds_, distributedFaceIds_;
+  std::vector<GID_t> flatFaceGlobalIds_;
+  std::vector<int> distributedFaceIds_;
   
   // maps from gid to distributed face index and flat face index  
-  std::map<int,int> gidToFlatFaceId_;  
+  std::map<GID_t,int> gidToFlatFaceId_;
   
   // the number of cells "owned" by the flat mesh. "Owned" is in quotes because
   // a cell may be "owned" by multiple partitions in the flat mesh. A cell is
@@ -572,15 +650,16 @@ class MPI_Bounding_Boxes {
   
   // the global id's of the kept cells in the flat mesh and their indices in the
   // distributed cell global id's
-  std::vector<int> flatCellGlobalIds_, distributedCellIds_;
+  std::vector<GID_t> flatCellGlobalIds_;
+  std::vector<int> distributedCellIds_;
   
   // maps from gid to distributed cell index and flat cell index  
-  std::map<int,int> gidToFlatCellId_;
+  std::map<GID_t,int> gidToFlatCellId_;
   
   // vectors for distributed multimaterial data
   std::vector<int> distributedMaterialIds_;
   std::vector<int> distributedMaterialShapes_;
-  std::vector<int> distributedMaterialCells_;
+  std::vector<GID_t> distributedMaterialCells_;
   
   // map for the distributed material cell indices
   // for each material there is a vector of unique distributed indices
@@ -607,7 +686,7 @@ class MPI_Bounding_Boxes {
     // Each rank will tell each other rank how many indexes it is going to send it
     info->sendCounts.resize(commSize);
     info->recvCounts.resize(commSize);
-    for (unsigned int i=0; i<commSize; i++)
+    for (int i=0; i<commSize; i++)
       info->sendCounts[i] = sendFlags[i] ? info->sourceNum : 0;
     MPI_Alltoall(&(info->sendCounts[0]), 1, MPI_INT,
                  &(info->recvCounts[0]), 1, MPI_INT, comm_);
@@ -615,15 +694,15 @@ class MPI_Bounding_Boxes {
     // Each rank will tell each other rank how many owned indexes it is going to send it
     info->sendOwnedCounts.resize(commSize);
     info->recvOwnedCounts.resize(commSize);
-    for (unsigned int i=0; i<commSize; i++)
+    for (int i=0; i<commSize; i++)
       info->sendOwnedCounts[i] = sendFlags[i] ? info->sourceNumOwned : 0;
     MPI_Alltoall(&(info->sendOwnedCounts[0]), 1, MPI_INT,
                  &(info->recvOwnedCounts[0]), 1, MPI_INT, comm_);
 
     // Compute the total number of indexes this rank will receive from all ranks
-    for (unsigned int i=0; i<commSize; i++)
+    for (int i=0; i<commSize; i++)
       info->newNum += info->recvCounts[i];
-    for (unsigned int i=0; i<commSize; i++)
+    for (int i=0; i<commSize; i++)
       info->newNumOwned += info->recvOwnedCounts[i];
   } // setSendRecvCounts
 
@@ -650,7 +729,7 @@ class MPI_Bounding_Boxes {
     std::vector<int> recvGhostCounts(commSize);
     std::vector<int> sendGhostCounts(commSize);
 
-    for (unsigned int i=0; i<commSize; i++)
+    for (int i=0; i<commSize; i++)
     {
       recvGhostCounts[i] = info.recvCounts[i] - info.recvOwnedCounts[i];
       sendGhostCounts[i] = info.sendCounts[i] - info.sendOwnedCounts[i];
@@ -669,7 +748,7 @@ class MPI_Bounding_Boxes {
 
 #ifdef DEBUG_MPI
     std::cout << "Number of values on rank " << commRank << ": " << (*newData).size() << std::endl;
-    for (unsigned int f=0; f<(*newData).size(); f++)
+    for (int f=0; f<(*newData).size(); f++)
       std::cout << (*newData)[f] << " ";
     std::cout << std::endl << std::endl;
 #endif
@@ -706,7 +785,7 @@ class MPI_Bounding_Boxes {
     int writeOffset = newStart;
     int myOffset;
     std::vector<MPI_Request> requests;
-    for (unsigned int i=0; i<commSize; i++)
+    for (int i=0; i<commSize; i++)
     {
       if ((i != commRank) && (curRecvCounts[i] > 0))
       {
@@ -731,7 +810,7 @@ class MPI_Bounding_Boxes {
                 newData->begin() + stride*myOffset);
 
     // Each rank will send its data values to appropriate ranks
-    for (unsigned int i=0; i<commSize; i++)
+    for (int i=0; i<commSize; i++)
     {
       if ((i != commRank) && (curSendCounts[i] > 0))
       {
@@ -750,7 +829,7 @@ class MPI_Bounding_Boxes {
 
 
   template <class Source_Mesh, class Target_Mesh>        
-  void compute_sendflags(Source_Mesh & source_mesh_flat, Target_Mesh &target_mesh, 
+  void compute_sendflags(Source_Mesh & source_mesh, Target_Mesh &target_mesh,
               std::vector<bool> &sendFlags){
                 
     // Get the MPI communicator size and rank information
@@ -758,23 +837,23 @@ class MPI_Bounding_Boxes {
     MPI_Comm_size(comm_, &commSize);
     MPI_Comm_rank(comm_, &commRank);
 
-    int dim = source_mesh_flat.space_dimension();
+    int dim = source_mesh.space_dimension();
 
     // Compute the bounding box for the target mesh on this rank, and put it in an
     // array that will later store the target bounding box for each rank
     int targetNumOwnedCells = target_mesh.num_owned_cells();
     std::vector<double> targetBoundingBoxes(2*dim*commSize);
-    for (unsigned int i=0; i<2*dim; i+=2)
+    for (int i=0; i<2*dim; i+=2)
     {
       targetBoundingBoxes[2*dim*commRank+i+0] = std::numeric_limits<double>::max();
       targetBoundingBoxes[2*dim*commRank+i+1] = -std::numeric_limits<double>::max();
     }
-    for (unsigned int c=0; c<targetNumOwnedCells; ++c)
+    for (int c=0; c<targetNumOwnedCells; ++c)
     {
       std::vector<int> nodes;
       target_mesh.cell_get_nodes(c, &nodes);
       int cellNumNodes = nodes.size();
-      for (unsigned int j=0; j<cellNumNodes; ++j)
+      for (int j=0; j<cellNumNodes; ++j)
       {
         int n = nodes[j];
         // ugly hack, since dim is not known at compile time
@@ -782,7 +861,7 @@ class MPI_Bounding_Boxes {
         {
           Point<3> nodeCoord;
           target_mesh.node_get_coordinates(n, &nodeCoord);
-          for (unsigned int k=0; k<dim; ++k)
+          for (int k=0; k<dim; ++k)
           {
             if (nodeCoord[k] < targetBoundingBoxes[2*dim*commRank+2*k])
               targetBoundingBoxes[2*dim*commRank+2*k] = nodeCoord[k];
@@ -794,7 +873,7 @@ class MPI_Bounding_Boxes {
         {
           Point<2> nodeCoord;
           target_mesh.node_get_coordinates(n, &nodeCoord);
-          for (unsigned int k=0; k<dim; ++k)
+          for (int k=0; k<dim; ++k)
           {
             if (nodeCoord[k] < targetBoundingBoxes[2*dim*commRank+2*k])
               targetBoundingBoxes[2*dim*commRank+2*k] = nodeCoord[k];
@@ -806,36 +885,52 @@ class MPI_Bounding_Boxes {
     } // for c
 
     // Get the source mesh properties and cordinates
-    int sourceNumOwnedCells = source_mesh_flat.num_owned_cells();
-    std::vector<double>& sourceCoords = source_mesh_flat.get_coords();
+    int sourceNumOwnedCells = source_mesh.num_owned_cells();
 
     // Compute the bounding box for the source mesh on this rank
     std::vector<double> sourceBoundingBox(2*dim);
-    for (unsigned int i=0; i<2*dim; i+=2)
+    for (int i=0; i<2*dim; i+=2)
     {
       sourceBoundingBox[i+0] = std::numeric_limits<double>::max();
       sourceBoundingBox[i+1] = -std::numeric_limits<double>::max();
     }
-    for (unsigned int c=0; c<sourceNumOwnedCells; ++c)
+    for (int c=0; c<sourceNumOwnedCells; ++c)
     {
       std::vector<int> nodes;
-      source_mesh_flat.cell_get_nodes(c, &nodes);
+      source_mesh.cell_get_nodes(c, &nodes);
       int cellNumNodes = nodes.size();
-      for (unsigned int j=0; j<cellNumNodes; ++j)
+      for (int j=0; j<cellNumNodes; ++j)
       {
         int n = nodes[j];
-        for (unsigned int k=0; k<dim; ++k)
+        if (dim ==3 )
         {
-          if (sourceCoords[n*dim+k] < sourceBoundingBox[2*k])
-            sourceBoundingBox[2*k] = sourceCoords[n*dim+k];
-          if (sourceCoords[n*dim+k] > sourceBoundingBox[2*k+1])
-            sourceBoundingBox[2*k+1] = sourceCoords[n*dim+k];
+          Point<3> nodeCoord;
+          source_mesh.node_get_coordinates(n, &nodeCoord);
+          for (int k=0; k<dim; ++k)
+          {
+            if (nodeCoord[k] < sourceBoundingBox[2*k])
+              sourceBoundingBox[2*k] = nodeCoord[k];
+            if (nodeCoord[k] > sourceBoundingBox[2*k+1])
+              sourceBoundingBox[2*k+1] = nodeCoord[k];
+          }
+        }
+        else if (dim ==2)
+        {
+          Point<2> nodeCoord;
+          source_mesh.node_get_coordinates(n, &nodeCoord);
+          for (int k=0; k<dim; ++k)
+          {
+            if (nodeCoord[k] < sourceBoundingBox[2*k])
+              sourceBoundingBox[2*k] = nodeCoord[k];
+            if (nodeCoord[k] > sourceBoundingBox[2*k+1])
+              sourceBoundingBox[2*k+1] = nodeCoord[k];
+          }
         }
       } // for j
     } // for c
 
     // Broadcast the target bounding boxes so that each rank knows the bounding boxes for all ranks
-    for (unsigned int i=0; i<commSize; i++)
+    for (int i=0; i<commSize; i++)
       MPI_Bcast(&(targetBoundingBoxes[0])+i*2*dim, 2*dim, MPI_DOUBLE, i, comm_);
 
 
@@ -843,7 +938,7 @@ class MPI_Bounding_Boxes {
     // with a target bounding box that is incident to but not overlapping the source bounding box
     const double boxOffset = 2.0*std::numeric_limits<double>::epsilon();
     double min2[dim], max2[dim];
-    for (unsigned int k=0; k<dim; ++k)
+    for (int k=0; k<dim; ++k)
     {
       min2[k] = sourceBoundingBox[2*k]+boxOffset;
       max2[k] = sourceBoundingBox[2*k+1]-boxOffset;
@@ -851,11 +946,11 @@ class MPI_Bounding_Boxes {
 
     // For each target rank with a bounding box that overlaps the bounding box for this rank's partition
     // of the source mesh, we will send it all our source cells; otherwise, we will send it nothing
-    for (unsigned int i=0; i<commSize; ++i)
+    for (int i=0; i<commSize; ++i)
     {
       double min1[dim], max1[dim];
       bool sendThis = true;
-      for (unsigned int k=0; k<dim; ++k)
+      for (int k=0; k<dim; ++k)
       {
         min1[k] = targetBoundingBoxes[2*dim*i+2*k]+boxOffset;
         max1[k] = targetBoundingBoxes[2*dim*i+2*k+1]-boxOffset;
@@ -881,8 +976,8 @@ class MPI_Bounding_Boxes {
     case, needs to get converted to gid. We always convert local ids to gids
     before distributing.
    */
-  std::vector<int> to_gid(std::vector<int> const& in, vector<int>const& gids){
-    std::vector<int> result;
+  std::vector<GID_t> to_gid(std::vector<int> const& in, vector<GID_t>const& gids){
+    std::vector<GID_t> result;
     result.reserve(in.size());
     for (auto x:in) result.push_back(gids[x]);
     return result;
@@ -917,17 +1012,17 @@ class MPI_Bounding_Boxes {
     material cell data. The vector `distributedIds` is used to merge all 
     subsequent distributed material celldata.
   */
-  void compress(std::vector<int> const& distributedGlobalIds, 
+  void compress(std::vector<GID_t> const& distributedGlobalIds,
     std::vector<int>& distributedIds){
     
     // a map for keeping track of what we have already seen
-    std::map<int,int> uniqueGid;
+    std::map<GID_t,int> uniqueGid;
     
     // loop over owned cells in the distributed global id's
     for (int i=0 ; i<distributedGlobalIds.size() ; ++i){
     
       // get the current gid
-      int gid = distributedGlobalIds[i];
+      GID_t gid = distributedGlobalIds[i];
       
       // is this gid new
       if (uniqueGid.find(gid)==uniqueGid.end()){
@@ -1004,18 +1099,18 @@ class MPI_Bounding_Boxes {
     of two ascending sequences `2, 3, 7, 9, 10` followed by `4, 5`. The first
     sequence is owned entities. The second is ghosts.
   */
-  void compress_with_ghosts(std::vector<int> const& distributedGlobalIds, 
+  void compress_with_ghosts(std::vector<GID_t> const& distributedGlobalIds,
     int const distributedNumOwned, std::vector<int>& distributedIds, 
-    std::vector<int>& flatGlobalIds, int &flatNumOwned){
+    std::vector<GID_t>& flatGlobalIds, int &flatNumOwned){
     
     // a map for keeping track of what we have already seen
-    std::map<int,int> uniqueGid, uniqueGhostGid;
+    std::map<GID_t,int> uniqueGid, uniqueGhostGid;
     
     // loop over owned entitites in the distributed global id's
     for (int i=0 ; i<distributedNumOwned ; ++i){
     
       // get the current gid
-      int gid = distributedGlobalIds[i];
+      GID_t gid = distributedGlobalIds[i];
       
       // is this gid new
       if (uniqueGid.find(gid)==uniqueGid.end()){
@@ -1046,7 +1141,7 @@ class MPI_Bounding_Boxes {
     for (int i=distributedNumOwned ; i<distributedGlobalIds.size() ; ++i){
     
       // get the current gid
-      int gid = distributedGlobalIds[i];
+      GID_t gid = distributedGlobalIds[i];
       
       // is this gid new
       if (uniqueGid.find(gid)==uniqueGid.end() &&
@@ -1087,8 +1182,8 @@ class MPI_Bounding_Boxes {
     `flatGlobalIds=[2, 3, 7, 9, 10, 4, 5]` and return the map 
     `gidToFlat={(2:0),(3:1),(7:2),(9:3),(10:4),(4:5),(5:6)}`.
   */
-  void create_gid_to_flat_map(std::vector<int> const& flatGlobalIds, 
-    std::map<int,int>& gidToFlat){
+  void create_gid_to_flat_map(std::vector<GID_t> const& flatGlobalIds,
+    std::map<GID_t,int>& gidToFlat){
     
     for (int i = 0; i < flatGlobalIds.size(); ++i) 
       gidToFlat[flatGlobalIds[i]]=i;
@@ -1141,8 +1236,8 @@ class MPI_Bounding_Boxes {
     duplicate offset lists that need to be merged. The second thing is that the 
     topological references need to get converted from gid to their new flat index id.   
   */
-  void merge_duplicate_lists(std::vector<int>const& in, std::vector<int> const& counts,
-    std::vector<int>const& distributedIds, std::map<int,int>const& gidToFlatId,
+  void merge_duplicate_lists(std::vector<GID_t>const& in, std::vector<int> const& counts,
+    std::vector<int>const& distributedIds, std::map<GID_t,int>const& gidToFlatId,
     std::vector<int>& result){
     
     // allocate offsets

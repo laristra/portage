@@ -285,17 +285,14 @@ endif (NANOFLANN_DIR)
 #------------------------------------------------------------------------------#
 
 if (TANGRAM_DIR)
-  find_path(TANGRAM
+  message(STATUS "Looking for TANGRAM in ${TANGRAM_DIR}")
+  find_package(TANGRAM NAMES tangram
   	    REQUIRED
-            tangram/support/tangram.h
-            HINTS ${TANGRAM_DIR}/include)
-  message(STATUS "TANGRAM FOUND? ${TANGRAM}")
-  if (TANGRAM)
-    set(TANGRAM_FOUND True)
-    set(TANGRAM_INCLUDE_DIRS ${TANGRAM_DIR}/include)
-    include_directories(${TANGRAM_INCLUDE_DIRS})
-    add_definitions("-DHAVE_TANGRAM")
-  endif (TANGRAM)
+	    HINTS ${TANGRAM_DIR}/share)
+
+  message(STATUS "TANGRAM FOUND? ${TANGRAM_FOUND}")
+  add_definitions("-DHAVE_TANGRAM")
+  include_directories(${TANGRAM_INCLUDE_DIR})
 else (TANGRAM_DIR)
   message(STATUS "TANGRAM_DIR not specified. Restricted to single material remap")
 endif (TANGRAM_DIR)
@@ -305,8 +302,7 @@ endif (TANGRAM_DIR)
 #------------------------------------------------------------------------------#
 
 if (TANGRAM_FOUND)
-  find_package(XMOF2D
-    HINTS ${XMOF2D_DIR})
+  find_package(XMOF2D  HINTS ${XMOF2D_DIR})
   if (XMOF2D_FOUND)
     include_directories(${XMOF2D_INCLUDE_DIRS})
 
@@ -340,7 +336,7 @@ set(ENABLE_THRUST FALSE CACHE BOOL "Use Thrust")
 if(ENABLE_THRUST)
   message(STATUS "Enabling compilation with Thrust")
 
-  set(PORTAGE_ENABLE_THRUST True CACHE BOOL "Is Portage is compiled with Thrust?")
+  set(PORTAGE_ENABLE_THRUST True CACHE BOOL "Is Portage compiled with Thrust?")
 
   # allow the user to specify a THRUST_DIR, otherwise use ${NGC_INCLUDE_DIR}
   # NOTE: thrust internally uses include paths from the 'root' directory, e.g.
@@ -429,9 +425,9 @@ set(PORTAGE_LIBRARIES ${PORTAGE_LIBRARY} ${PORTAGE_EXTRA_LIBRARIES} CACHE STRING
 # PORTAGE was built and which TPLs it used
 #############################################################################
 
-configure_file(${PROJECT_SOURCE_DIR}/cmake/portage_config.cmake.in 
-               ${PROJECT_BINARY_DIR}/portage_config.cmake @ONLY)
-install(FILES ${PROJECT_BINARY_DIR}/portage_config.cmake 
+configure_file(${PROJECT_SOURCE_DIR}/cmake/portage-config.cmake.in 
+               ${PROJECT_BINARY_DIR}/portage-config.cmake @ONLY)
+install(FILES ${PROJECT_BINARY_DIR}/portage-config.cmake 
         DESTINATION ${CMAKE_INSTALL_PREFIX}/share/cmake/)
 
 configure_file(${PROJECT_SOURCE_DIR}/config/portage-config.h.in

@@ -21,9 +21,9 @@ Please see the license file at the root of this repository, or at:
 
 #ifdef HAVE_TANGRAM
 #include "tangram/driver/driver.h"
+#endif
 
 #include "portage/intersect/dummy_interface_reconstructor.h"
-#endif
 
 #include "portage/support/portage.h"
 
@@ -139,6 +139,9 @@ class MMDriver {
   /// Destructor
   ~MMDriver() {}
 
+  /// Enable move semantics
+  MMDriver(MMDriver &&) = default;
+
   /*!
     @brief Specify the names of the variables to be interpolated
     @param[in] remap_var_names A list of variable names of the variables to
@@ -183,6 +186,7 @@ class MMDriver {
 
       // Set options so that defaults will produce something reasonable
       limiters_[source_remap_var_names[i]] = Limiter_type::BARTH_JESPERSEN;
+      bnd_limiters_[source_remap_var_names[i]] = Boundary_Limiter_type::BND_NOLIMITER;
       partial_fixup_types_[target_remap_var_names[i]] =
           Partial_fixup_type::SHIFTED_CONSERVATIVE;
       empty_fixup_types_[target_remap_var_names[i]] =
@@ -202,13 +206,36 @@ class MMDriver {
   }
 
   /*!
-    @brief set limiter for all variables
+    @brief set boundary limiter for all variables
+    @param bnd_limiter  Boundary limiter to use for second order reconstruction (BND_NOLIMITER
+                        BND_ZERO_GRADIENT, or BND_BARTH_JESPERSEN))
+  */
+  void set_bnd_limiter(Boundary_Limiter_type bnd_limiter) {
+    for (auto const& stpair : source_target_varname_map_) {
+      std::string const& source_var_name = stpair.first;
+      bnd_limiters_[source_var_name] = bnd_limiter;
+    }
+  }  
+
+  /*!
+    @brief set limiter for a variable
     @param target_var_name Source mesh variable whose gradient is to be limited
     @param limiter  Limiter to use for second order reconstruction (NOLIMITER
                      or BARTH_JESPERSEN)
   */
   void set_limiter(std::string const& source_var_name, Limiter_type limiter) {
     limiters_[source_var_name] = limiter;
+  }
+
+  /*!
+    @brief set boundary limiter for a variable
+    @param target_var_name Source mesh variable whose gradient is to be limited
+    on the boundary
+    @param bnd_limiter  Boundary limiter to use for second order reconstruction (BND_NOLIMITER,
+                        BND_ZERO_GRADIENT, or BND_BARTH_JESPERSEN))
+  */
+  void set_bnd_limiter(std::string const& source_var_name, Boundary_Limiter_type bnd_limiter) {
+    bnd_limiters_[source_var_name] = bnd_limiter;
   }
 
   /*!
@@ -264,6 +291,10 @@ class MMDriver {
     max_fixup_iter_ = maxiter;
   }
 
+  void set_num_tols(NumericTolerances_t num_tols) {
+    num_tols_ = num_tols;
+  }
+
   /*!
     @brief set the bounds of variable to be remapped on target
     @param target_var_name Name of variable in target mesh to limit
@@ -291,7 +322,20 @@ class MMDriver {
       std::cerr << "Type not supported \n";
   }
 
+#ifdef HAVE_TANGRAM
+  /*!
+    @brief set options for interface reconstructor driver  
+    @param tols The vector of tolerances for each moment during reconstruction
+    @param all_convex Should be set to false if the source mesh contains 
+    non-convex cells.  
+  */
+  void set_reconstructor_options(std::vector<Tangram::IterativeMethodTolerances_t> &tols, 
+                                 bool all_convex){
+    reconstructor_tols_ = tols; 
+    reconstructor_all_convex_ = all_convex; 
+  }
 
+#endif
 
   /*!
     @brief Get the names of the variables to be remapped from the
@@ -538,18 +582,34 @@ class MMDriver {
   TargetState_Wrapper& target_state_;
   std::unordered_map<std::string, std::string> source_target_varname_map_;
   std::unordered_map<std::string, Limiter_type> limiters_;
+  std::unordered_map<std::string, Boundary_Limiter_type> bnd_limiters_;
   std::unordered_map<std::string, Partial_fixup_type> partial_fixup_types_;
   std::unordered_map<std::string, Empty_fixup_type> empty_fixup_types_;
   std::unordered_map<std::string, double> double_lower_bounds_;
   std::unordered_map<std::string, double> double_upper_bounds_;
   std::unordered_map<std::string, double> conservation_tol_;
   unsigned int dim_;
-  double voldifftol_ = 100*std::numeric_limits<double>::epsilon();
   double consttol_ =  100*std::numeric_limits<double>::epsilon();
   int max_fixup_iter_ = 5;
+  NumericTolerances_t num_tols_;
 
 
 #ifdef HAVE_TANGRAM
+  // The following tolerances as well as the all-convex flag are required for 
+  // the interface reconstructor driver. The size of the tols vector is currently 
+  // set to two since MOF requires two different set of tolerances to match the 
+  // 0th-order and 1st-order moments. VOF on the other does not require the second 
+  // tolerance. 
+  // If a new IR method which requires tolerances for higher moment is added to 
+  // Tangram, then this vector size should be generalized. The boolean all_convex 
+  // flag is to specify if a mesh contains only convex cells and set to true in that case. 
+  //
+  // There is an associated method called set_reconstructor_options that should
+  // be invoked to set user-specific values. Otherwise, the remapper will use 
+  // the default values. 
+  std::vector<Tangram::IterativeMethodTolerances_t> reconstructor_tols_ = 
+  {{1000, 1e-12, 1e-12}, {1000, 1e-12, 1e-12}};
+  bool reconstructor_all_convex_ = true;  
 
   // Convert volume fraction and centroid data from compact
   // material-centric to compact cell-centric (ccc) form as needed by
@@ -711,17 +771,24 @@ int MMDriver<Search, Intersect, Interpolate, D,
 
   int nmats = source_state2.num_materials();
 
+  // Use default numerical tolerances in case they were not set earlier
+  if (num_tols_.tolerances_set == false) {
+      NumericTolerances_t default_num_tols;
+      default_num_tols.use_default();
+    set_num_tols(default_num_tols);
+  }
+
 #ifdef HAVE_TANGRAM
   // Call interface reconstruction only if we got a method from the
   // calling app
-  std::vector<Tangram::IterativeMethodTolerances_t> tols(2, {1000, 1e-12, 1e-12});
+  //std::vector<Tangram::IterativeMethodTolerances_t> tols(2, {1000, 1e-12, 1e-12});
 
   auto interface_reconstructor =
       std::make_shared<Tangram::Driver<InterfaceReconstructorType, D,
                                        SourceMesh_Wrapper2,
                                        Matpoly_Splitter,
                                        Matpoly_Clipper>
-                       >(source_mesh2, tols, true);
+                       >(source_mesh2, reconstructor_tols_, reconstructor_all_convex_);
 
   if (typeid(InterfaceReconstructorType<SourceMesh_Wrapper2, D,
              Matpoly_Splitter, Matpoly_Clipper >) !=
@@ -757,7 +824,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
   Intersect<onwhat, SourceMesh_Wrapper2, SourceState_Wrapper2,
             TargetMesh_Wrapper, InterfaceReconstructorType,
             Matpoly_Splitter, Matpoly_Clipper>
-      intersect(source_mesh2, source_state2, target_mesh_,
+      intersect(source_mesh2, source_state2, target_mesh_, num_tols_,
                 interface_reconstructor);
 
   // Get an instance of the desired interpolate algorithm type
@@ -765,19 +832,20 @@ int MMDriver<Search, Intersect, Interpolate, D,
               SourceState_Wrapper2, InterfaceReconstructorType,
               Matpoly_Splitter, Matpoly_Clipper>
       interpolate(source_mesh2, target_mesh_, source_state2,
-                  interface_reconstructor);
+                  num_tols_, interface_reconstructor);
 #else
 
   Intersect<onwhat, SourceMesh_Wrapper2, SourceState_Wrapper2,
             TargetMesh_Wrapper, DummyInterfaceReconstructor,
             void, void>
-      intersect(source_mesh2, source_state2, target_mesh_);
+      intersect(source_mesh2, source_state2, target_mesh_, num_tols_);
 
   // Get an instance of the desired interpolate algorithm type
   Interpolate<D, onwhat, SourceMesh_Wrapper2, TargetMesh_Wrapper,
               SourceState_Wrapper2, DummyInterfaceReconstructor,
               void, void>
-      interpolate(source_mesh2, target_mesh_, source_state2);
+      interpolate(source_mesh2, target_mesh_, source_state2,
+                  num_tols_);
 #endif  // HAVE_TANGRAM
 
 
@@ -821,7 +889,8 @@ int MMDriver<Search, Intersect, Interpolate, D,
 
   for (int i = 0; i < nvars; ++i) {
     interpolate.set_interpolation_variable(src_meshvar_names[i],
-                                           limiters_.at(src_meshvar_names[i]));
+                                           limiters_.at(src_meshvar_names[i]),
+                                           bnd_limiters_.at(src_meshvar_names[i]));
 
     // Get a handle to a memory location where the target state
     // would like us to write this material variable into. If it is
@@ -905,7 +974,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
         }
       }
 
-      double conservation_tol = 100*std::numeric_limits<double>::epsilon();
+      double conservation_tol = DEFAULT_CONSERVATION_TOL;
       try {  // see if caller has specified a tolerance for conservation
         conservation_tol = conservation_tol_.at(trg_var);
       } catch ( const std::out_of_range& oor) {}
@@ -974,8 +1043,8 @@ int MMDriver<Search, Intersect, Interpolate, D,
         std::vector<double> const& wts = cell_sources_and_weights[s].weights;
         if (wts[0] > 0.0) {
           double vol = target_mesh_.cell_volume(c);
-          if (wts[0]/vol > 1.0e-10) {  // Check that the volume of material
-                                       // we are adding to c is not miniscule
+          // Check that the volume of material we are adding to c is not miniscule
+          if (wts[0]/vol > num_tols_.driver_relative_min_mat_vol) {
             matcellstgt.push_back(c);
             break;
           }
@@ -983,108 +1052,100 @@ int MMDriver<Search, Intersect, Interpolate, D,
       }
     }
 
-    // If any processor is adding this material to the target state,
-    // add it on all the processors
+
+    // add material to target state (even if this material does not
+    // overlap this processor)
+
+    int nmatstrg = target_state_.num_materials();
+    bool found = false;
+    int m2 = -1;
+    for (int i = 0; i < nmatstrg; i++)
+      if (target_state_.material_name(i) == source_state2.material_name(m)) {
+        found = true;
+        m2 = i;
+        break;
+      }
+    if (found) {  // material already present - just update its cell list
+      target_state_.mat_add_cells(m2, matcellstgt);
+    } else {
+      // add material along with the cell list
+      
+      // NOTE: NOT ONLY DOES THIS ROUTINE ADD A MATERIAL AND ITS
+      // CELLS TO THE STATEMANAGER, IT ALSO MAKES SPACE FOR FIELD
+      // VALUES FOR THIS MATERIAL IN EVERY MULTI-MATERIAL VECTOR IN
+      // THE STATE MANAGER. THIS ENSURES THAT WHEN WE CALL
+      // mat_get_celldata FOR A MATERIAL IN MULTI-MATERIAL STATE
+      // VECTOR IT WILL ALREADY HAVE SPACE ALLOCATED FOR FIELD
+      // VALUES OF THAT MATERIAL. SOME STATE WRAPPERS COULD CHOOSE
+      // TO MAKE THIS A SIMPLER ROUTINE THAT ONLY STORES THE NAME
+      // AND THE CELLS IN THE MATERIAL AND ACTUALLY ALLOCATE SPACE
+      // FOR FIELD VALUES OF A MATERIAL IN A MULTI-MATERIAL FIELD
+      // WHEN mat_get_celldata IS INVOKED.
+      
+      target_state_.add_material(source_state2.material_name(m), matcellstgt);
+    }
 
     int nmatcells = matcellstgt.size();
-    int nmatcells_global = nmatcells;
-#ifdef PORTAGE_ENABLE_MPI
-    if (mycomm != MPI_COMM_NULL)
-      MPI_Allreduce(&nmatcells, &nmatcells_global, 1, MPI_INT, MPI_SUM,
-                    mycomm);
-#endif
+    if (nmatcells) {
 
-    if (nmatcells_global) {
-      int nmatstrg = target_state_.num_materials();
-      bool found = false;
-      int m2 = -1;
-      for (int i = 0; i < nmatstrg; i++)
-        if (target_state_.material_name(i) == source_state2.material_name(m)) {
-          found = true;
-          m2 = i;
-          break;
-        }
-      if (found) {  // material already present - just update its cell list
-        target_state_.mat_add_cells(m2, matcellstgt);
-      } else {
-        // add material along with the cell list
-
-        // NOTE: NOT ONLY DOES THIS ROUTINE ADD A MATERIAL AND ITS
-        // CELLS TO THE STATEMANAGER, IT ALSO MAKES SPACE FOR FIELD
-        // VALUES FOR THIS MATERIAL IN EVERY MULTI-MATERIAL VECTOR IN
-        // THE STATE MANAGER. THIS ENSURES THAT WHEN WE CALL
-        // mat_get_celldata FOR A MATERIAL IN MULTI-MATERIAL STATE
-        // VECTOR IT WILL ALREADY HAVE SPACE ALLOCATED FOR FIELD
-        // VALUES OF THAT MATERIAL. SOME STATE WRAPPERS COULD CHOOSE
-        // TO MAKE THIS A SIMPLER ROUTINE THAT ONLY STORES THE NAME
-        // AND THE CELLS IN THE MATERIAL AND ACTUALLY ALLOCATE SPACE
-        // FOR FIELD VALUES OF A MATERIAL IN A MULTI-MATERIAL FIELD
-        // WHEN mat_get_celldata IS INVOKED.
-
-        target_state_.add_material(source_state2.material_name(m), matcellstgt);
-      }
-    }
-    else
-      continue;  // maybe the target mesh does not overlap this material
-
-    // Add volume fractions and centroids of materials to target mesh
-    //
-    // Also make list of sources/weights only for target cells that are
-    // getting this material - Can we avoid the copy?
-
-    std::vector<double> mat_volfracs(nmatcells);
-    std::vector<Point<D>> mat_centroids(nmatcells);
-    std::vector<std::vector<Weights_t>> mat_sources_and_weights(nmatcells);
-
-    for (int ic = 0; ic < nmatcells; ic++) {
-      int c = matcellstgt[ic];
-      double matvol = 0.0;
-      Point<D> matcen;
-      std::vector<Weights_t> const& cell_sources_and_weights =
-          source_ents_and_weights[c];
-      for (int s = 0; s < cell_sources_and_weights.size(); s++) {
-        std::vector<double> const& wts = cell_sources_and_weights[s].weights;
-        matvol += wts[0];
+      // Add volume fractions and centroids of materials to target mesh
+      //
+      // Also make list of sources/weights only for target cells that are
+      // getting this material - Can we avoid the copy?
+      
+      std::vector<double> mat_volfracs(nmatcells);
+      std::vector<Point<D>> mat_centroids(nmatcells);
+      std::vector<std::vector<Weights_t>> mat_sources_and_weights(nmatcells);
+      
+      for (int ic = 0; ic < nmatcells; ic++) {
+        int c = matcellstgt[ic];
+        double matvol = 0.0;
+        Point<D> matcen;
+        std::vector<Weights_t> const& cell_sources_and_weights =
+            source_ents_and_weights[c];
+        for (int s = 0; s < cell_sources_and_weights.size(); s++) {
+          std::vector<double> const& wts = cell_sources_and_weights[s].weights;
+          matvol += wts[0];
         for (int d = 0; d < D; d++)
           matcen[d] += wts[d+1];
+        }
+        matcen /= matvol;
+        mat_volfracs[ic] = matvol/target_mesh_.cell_volume(c);
+        mat_centroids[ic] = matcen;
+        
+        mat_sources_and_weights[ic] = cell_sources_and_weights;
       }
-      matcen /= matvol;
-      mat_volfracs[ic] = matvol/target_mesh_.cell_volume(c);
-      mat_centroids[ic] = matcen;
+      
+      target_state_.mat_add_celldata("mat_volfracs", m, &(mat_volfracs[0]));
+      target_state_.mat_add_celldata("mat_centroids", m, &(mat_centroids[0]));
+      
 
-      mat_sources_and_weights[ic] = cell_sources_and_weights;
-    }
+      // INTERPOLATE (one variable at a time)
+      
+      // HERE WE COULD MAKE A NEW LIST BASED ON WHICH TARGET CELLS HAVE ANY
+      // INTERSECTIONS WITH SOURCE CELLS FOR THIS MATERIAL TO AVOID A NULL-OP
+      // AND A WARNING MESSAGE ABOUT NO SOURCE CELLS CONTRIBUTING TO A TARGET -
+      // IS IT WORTH IT?
+      
+      gettimeofday(&begin_timeval, 0);
+      
+      int nmatvars = src_matvar_names.size();
+      if (comm_rank == 0)
+        std::cout << "Number of multi-material variables on entity kind " <<
+            onwhat << " to remap is " << nmatvars << std::endl;
+      
+      interpolate.set_material(m);    // We have to do this so we know
+      //                              // which material values we have
+      //                              // to grab from the source state
+      
 
-    target_state_.mat_add_celldata("mat_volfracs", m, &(mat_volfracs[0]));
-    target_state_.mat_add_celldata("mat_centroids", m, &(mat_centroids[0]));
-
-
-    // INTERPOLATE (one variable at a time)
-
-    // HERE WE COULD MAKE A NEW LIST BASED ON WHICH TARGET CELLS HAVE ANY
-    // INTERSECTIONS WITH SOURCE CELLS FOR THIS MATERIAL TO AVOID A NULL-OP
-    // AND A WARNING MESSAGE ABOUT NO SOURCE CELLS CONTRIBUTING TO A TARGET -
-    // IS IT WORTH IT?
-
-    gettimeofday(&begin_timeval, 0);
-
-    int nmatvars = src_matvar_names.size();
-    if (comm_rank == 0)
-      std::cout << "Number of multi-material variables on entity kind " <<
-          onwhat << " to remap is " << nmatvars << std::endl;
-
-    interpolate.set_material(m);    // We have to do this so we know
-                                    // which material values we have
-                                    // to grab from the source state
-
-
-    // if the material has no cells on this partition, then don't bother
-    // interpolating MM variables
-    if (target_state_.mat_get_num_cells(m)) {
-
+      // if the material has no cells on this partition, then don't bother
+      // interpolating MM variables
+        
       for (int i = 0; i < nmatvars; ++i) {
         interpolate.set_interpolation_variable(src_matvar_names[i],
-                                             limiters_.at(src_matvar_names[i]));
+                                               limiters_.at(src_matvar_names[i]),
+                                               bnd_limiters_.at(src_matvar_names[i]));
 
         // Get a handle to a memory location where the target state
         // would like us to write this material variable into. If it is
@@ -1109,8 +1170,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
         target_state_.mat_add_celldata(trg_matvar_names[i], m, target_field_raw);
 
       }  // nmatvars
-
-    }
+    }  // if matcellstgt.size()
 
     gettimeofday(&end_timeval, 0);
     timersub(&end_timeval, &begin_timeval, &diff_timeval);

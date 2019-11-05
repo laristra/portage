@@ -57,18 +57,21 @@ class IntersectR2D {
   IntersectR2D(SourceMeshType const & source_mesh,
                SourceStateType const & source_state,
                TargetMeshType const & target_mesh,
+               NumericTolerances_t num_tols,
                std::shared_ptr<InterfaceReconstructor2D> ir)
       : sourceMeshWrapper(source_mesh), sourceStateWrapper(source_state),
-        targetMeshWrapper(target_mesh), interface_reconstructor(ir) {}
+        targetMeshWrapper(target_mesh), interface_reconstructor(ir),
+        num_tols_(num_tols) {}
 #endif
 
   /// Constructor WITHOUT interface reconstructor
 
   IntersectR2D(SourceMeshType const & source_mesh,
                SourceStateType const & source_state,
-               TargetMeshType const & target_mesh)
+               TargetMeshType const & target_mesh,
+               NumericTolerances_t num_tols)
       : sourceMeshWrapper(source_mesh), sourceStateWrapper(source_state),
-        targetMeshWrapper(target_mesh) {}
+        targetMeshWrapper(target_mesh), num_tols_(num_tols) {}
 
   /// \brief Set the source mesh material that we have to intersect against
 
@@ -97,6 +100,7 @@ class IntersectR2D {
   SourceStateType const & sourceStateWrapper;
   TargetMeshType const & targetMeshWrapper;
   int matid_ = -1;
+  NumericTolerances_t num_tols_;
 
 #ifdef HAVE_TANGRAM
   std::shared_ptr<InterfaceReconstructor2D> interface_reconstructor;
@@ -129,18 +133,21 @@ class IntersectR2D<Entity_kind::CELL, SourceMeshType, SourceStateType, TargetMes
   IntersectR2D(SourceMeshType const & source_mesh,
                SourceStateType const & source_state,
                TargetMeshType const & target_mesh,
+               NumericTolerances_t num_tols,
                std::shared_ptr<InterfaceReconstructor2D> ir)
       : sourceMeshWrapper(source_mesh), sourceStateWrapper(source_state),
-        targetMeshWrapper(target_mesh), interface_reconstructor(ir) {}
+        targetMeshWrapper(target_mesh), interface_reconstructor(ir),
+        num_tols_(num_tols) {}
 #endif
 
   /// Constructor WITHOUT interface reconstructor
 
   IntersectR2D(SourceMeshType const & source_mesh,
                SourceStateType const & source_state,
-               TargetMeshType const & target_mesh)
+               TargetMeshType const & target_mesh,
+               NumericTolerances_t num_tols)
       : sourceMeshWrapper(source_mesh), sourceStateWrapper(source_state),
-        targetMeshWrapper(target_mesh) {}
+        targetMeshWrapper(target_mesh), num_tols_(num_tols) {}
 
   /// \brief Set the source mesh material that we have to intersect against
 
@@ -182,7 +189,8 @@ class IntersectR2D<Entity_kind::CELL, SourceMeshType, SourceStateType, TargetMes
         std::vector<Wonton::Point<2>> source_poly;
         sourceMeshWrapper.cell_get_coordinates(s, &source_poly);
 
-        this_wt.weights = intersect_polys_r2d(source_poly, target_poly);
+        this_wt.weights = intersect_polys_r2d(source_poly, target_poly,
+                                              num_tols_);
 
       } else {  // multi-material case
         // How can I check that I didn't get DummyInterfaceReconstructor
@@ -211,7 +219,7 @@ class IntersectR2D<Entity_kind::CELL, SourceMeshType, SourceStateType, TargetMes
             for (auto const & p : tpnts) source_poly.push_back(p);
 
             std::vector<double> momvec = intersect_polys_r2d(source_poly,
-                                                             target_poly);
+                                                  target_poly, num_tols_);
             for (int k = 0; k < 3; k++)
               this_wt.weights[k] += momvec[k];
           }
@@ -221,7 +229,8 @@ class IntersectR2D<Entity_kind::CELL, SourceMeshType, SourceStateType, TargetMes
       std::vector<Wonton::Point<2>> source_poly;
       sourceMeshWrapper.cell_get_coordinates(s, &source_poly);
 
-      this_wt.weights = intersect_polys_r2d(source_poly, target_poly);
+      this_wt.weights = intersect_polys_r2d(source_poly, target_poly,
+                                            num_tols_);
 #endif
 
       // Increment if vol of intersection > 0; otherwise, allow overwrite
@@ -243,6 +252,7 @@ class IntersectR2D<Entity_kind::CELL, SourceMeshType, SourceStateType, TargetMes
   SourceStateType const & sourceStateWrapper;
   TargetMeshType const & targetMeshWrapper;
   int matid_ = -1;
+  NumericTolerances_t num_tols_;
 
 #ifdef HAVE_TANGRAM
   std::shared_ptr<InterfaceReconstructor2D> interface_reconstructor;
@@ -276,9 +286,11 @@ class IntersectR2D<Entity_kind::NODE, SourceMeshType, SourceStateType, TargetMes
   IntersectR2D(SourceMeshType const & source_mesh,
                SourceStateType const & source_state,
                TargetMeshType const & target_mesh,
+               NumericTolerances_t num_tols,
                std::shared_ptr<InterfaceReconstructor2D> ir)
       : sourceMeshWrapper(source_mesh), sourceStateWrapper(source_state),
-        targetMeshWrapper(target_mesh), interface_reconstructor(ir) {}
+        targetMeshWrapper(target_mesh), interface_reconstructor(ir),
+        num_tols_(num_tols) {}
 #endif
 
 
@@ -286,9 +298,10 @@ class IntersectR2D<Entity_kind::NODE, SourceMeshType, SourceStateType, TargetMes
 
   IntersectR2D(SourceMeshType const & source_mesh,
                SourceStateType const & source_state,
-               TargetMeshType const & target_mesh)
+               TargetMeshType const & target_mesh,
+               NumericTolerances_t num_tols)
       : sourceMeshWrapper(source_mesh), sourceStateWrapper(source_state),
-        targetMeshWrapper(target_mesh) {}
+        targetMeshWrapper(target_mesh), num_tols_(num_tols) {}
 
   /// \brief Set the source mesh material that we have to intersect against
 
@@ -317,7 +330,8 @@ class IntersectR2D<Entity_kind::NODE, SourceMeshType, SourceStateType, TargetMes
 
       Weights_t & this_wt = sources_and_weights[ninserted];
       this_wt.entityID = s;
-      this_wt.weights = intersect_polys_r2d(source_poly, target_poly);
+      this_wt.weights = intersect_polys_r2d(source_poly, target_poly,
+                                            num_tols_);
 
       // Increment if vol of intersection > 0; otherwise, allow overwrite
       if (this_wt.weights.size() && this_wt.weights[0] > 0.0)
@@ -339,6 +353,7 @@ class IntersectR2D<Entity_kind::NODE, SourceMeshType, SourceStateType, TargetMes
   SourceStateType const & sourceStateWrapper;
   TargetMeshType const & targetMeshWrapper;
   int matid_ = -1;
+  NumericTolerances_t num_tols_;
 
 #ifdef HAVE_TANGRAM
   std::shared_ptr<InterfaceReconstructor2D> interface_reconstructor;

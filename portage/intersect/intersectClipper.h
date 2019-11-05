@@ -24,6 +24,7 @@ namespace Portage {
   @param[in] poly A vector of a pair of (x,y) coordinates of the nodes making up the polygon.
   @returns std::vector<double>--area, mx, my
 */
+inline
 std::vector<double> areaAndMomentPolygon(const std::vector<Wonton::Point<2>> poly){
   double area = 0;
   double cx = 0;

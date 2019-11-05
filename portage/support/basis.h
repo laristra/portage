@@ -290,6 +290,7 @@ template<size_t dim>
 ////////////////////////////////////////////////////////////////////////////////
 
 template<>
+inline
 array<double, Traits<Unitary, 1>::function_size>
 function<Unitary, 1>(Wonton::Point<1> x) {
   array<double, Traits<Unitary, 1>::function_size> r{0.0};
@@ -298,6 +299,7 @@ function<Unitary, 1>(Wonton::Point<1> x) {
 }
 
 template<>
+inline
 array<double, Traits<Unitary, 2>::function_size>
 function<Unitary, 2>(Wonton::Point<2> x) {
   array<double, Traits<Unitary, 2>::function_size> r{0.0};
@@ -306,6 +308,7 @@ function<Unitary, 2>(Wonton::Point<2> x) {
 }
 
 template<>
+inline
 array<double, Traits<Unitary, 3>::function_size>
 function<Unitary, 3>(Wonton::Point<3> x) {
   array<double, Traits<Unitary, 3>::function_size> r{0.0};
@@ -316,6 +319,7 @@ function<Unitary, 3>(Wonton::Point<3> x) {
 //---------------------------------------------------------------
 
 template<>
+inline
 array<
 array<double, Traits<Unitary, 1>::function_size>,
 Traits<Unitary, 1>::function_size
@@ -330,6 +334,7 @@ jet<Unitary,1>(Wonton::Point<1> x){
 }
 
 template<>
+inline
 array<
 array<double, Traits<Unitary, 2>::function_size>,
 Traits<Unitary, 2>::function_size
@@ -344,6 +349,7 @@ jet<Unitary,2>(Wonton::Point<2> x){
 }
 
 template<>
+inline
 array<
 array<double, Traits<Unitary, 3>::function_size>,
 Traits<Unitary, 3>::function_size
@@ -360,6 +366,7 @@ jet<Unitary,3>(Wonton::Point<3> x){
 //---------------------------------------------------------------
 
 template<>
+inline
 array<
 array<double, Traits<Unitary, 1>::function_size>,
 Traits<Unitary, 1>::function_size
@@ -374,6 +381,7 @@ inverse_jet<Unitary,1>(Wonton::Point<1> x){
 }
 
 template<>
+inline
 array<
 array<double, Traits<Unitary, 2>::function_size>,
 Traits<Unitary, 2>::function_size
@@ -388,6 +396,7 @@ inverse_jet<Unitary,2>(Wonton::Point<2> x){
 }
 
 template<>
+inline
 array<
 array<double, Traits<Unitary, 3>::function_size>,
 Traits<Unitary, 3>::function_size
@@ -404,6 +413,7 @@ inverse_jet<Unitary,3>(Wonton::Point<3> x){
 //---------------------------------------------------------------
 
 template<>
+inline
 array<double, Traits<Unitary, 1>::function_size>
 shift<Unitary, 1>(Wonton::Point<1> x, Wonton::Point<1> y) {
   array<double, Traits<Unitary, 1>::function_size> r{0.0};
@@ -412,6 +422,7 @@ shift<Unitary, 1>(Wonton::Point<1> x, Wonton::Point<1> y) {
 }
 
 template<>
+inline
 array<double, Traits<Unitary, 2>::function_size>
 shift<Unitary, 2>(Wonton::Point<2> x, Wonton::Point<2> y) {
   array<double, Traits<Unitary, 2>::function_size> r{0.0};
@@ -420,6 +431,7 @@ shift<Unitary, 2>(Wonton::Point<2> x, Wonton::Point<2> y) {
 }
 
 template<>
+inline
 array<double, Traits<Unitary, 3>::function_size>
 shift<Unitary, 3>(Wonton::Point<3> x, Wonton::Point<3> y) {
   array<double, Traits<Unitary, 3>::function_size> r{0.0};
@@ -430,6 +442,7 @@ shift<Unitary, 3>(Wonton::Point<3> x, Wonton::Point<3> y) {
 //---------------------------------------------------------------
 
 template<>
+inline
 typename Traits<Unitary,1>::matrix_t transfactor<Unitary,1>(const Wonton::Point<1> &c) {
   typename Traits<Unitary,1>::matrix_t tf;
   tf[0][0] = 1.;
@@ -437,6 +450,7 @@ typename Traits<Unitary,1>::matrix_t transfactor<Unitary,1>(const Wonton::Point<
 }
 
 template<>
+inline
 typename Traits<Unitary,2>::matrix_t transfactor<Unitary,2>(const Wonton::Point<2> &c) {
   typename Traits<Unitary,2>::matrix_t tf;
   tf[0][0] = 1.;
@@ -444,6 +458,7 @@ typename Traits<Unitary,2>::matrix_t transfactor<Unitary,2>(const Wonton::Point<
 }
 
 template<>
+inline
 typename Traits<Unitary,3>::matrix_t transfactor<Unitary,3>(const Wonton::Point<3> &c) {
   typename Traits<Unitary,3>::matrix_t tf;
   tf[0][0] = 1.;
@@ -455,6 +470,7 @@ typename Traits<Unitary,3>::matrix_t transfactor<Unitary,3>(const Wonton::Point<
 ////////////////////////////////////////////////////////////////////////////////
 
 template<>
+inline
 array<double, Traits<Linear, 1>::function_size>
 function<Linear, 1>(Wonton::Point<1> x) {
   array<double, Traits<Linear, 1>::function_size> r{0.0};
@@ -464,6 +480,7 @@ function<Linear, 1>(Wonton::Point<1> x) {
 }
 
 template<>
+inline
 array<double, Traits<Linear, 2>::function_size>
 function<Linear, 2>(Wonton::Point<2> x) {
   array<double, Traits<Linear, 2>::function_size> r{0.0};
@@ -474,6 +491,7 @@ function<Linear, 2>(Wonton::Point<2> x) {
 }
 
 template<>
+inline
 array<double, Traits<Linear, 3>::function_size>
 function<Linear, 3>(Wonton::Point<3> x) {
   array<double, Traits<Linear, 3>::function_size> r{0.0};
@@ -487,6 +505,7 @@ function<Linear, 3>(Wonton::Point<3> x) {
 //---------------------------------------------------------------
 
 template<>
+inline
 array<
 array<double, Traits<Linear, 1>::function_size>,
 Traits<Linear, 1>::function_size
@@ -504,6 +523,7 @@ jet<Linear,1>(Wonton::Point<1> x){
 }
 
 template<>
+inline
 array<
 array<double, Traits<Linear, 2>::function_size>,
 Traits<Linear, 2>::function_size
@@ -526,6 +546,7 @@ jet<Linear,2>(Wonton::Point<2> x){
 }
 
 template<>
+inline
 array<
 array<double, Traits<Linear, 3>::function_size>,
 Traits<Linear, 3>::function_size
@@ -557,6 +578,7 @@ jet<Linear,3>(Wonton::Point<3> x){
 //---------------------------------------------------------------
 
 template<>
+inline
 array<
 array<double, Traits<Linear, 1>::function_size>,
 Traits<Linear, 1>::function_size
@@ -574,6 +596,7 @@ inverse_jet<Linear,1>(Wonton::Point<1> x){
 }
 
 template<>
+inline
 array<
 array<double, Traits<Linear, 2>::function_size>,
 Traits<Linear, 2>::function_size
@@ -596,6 +619,7 @@ inverse_jet<Linear,2>(Wonton::Point<2> x){
 }
 
 template<>
+inline
 array<
 array<double, Traits<Linear, 3>::function_size>,
 Traits<Linear, 3>::function_size
@@ -627,6 +651,7 @@ inverse_jet<Linear,3>(Wonton::Point<3> x){
 //---------------------------------------------------------------
 
 template<>
+inline
 array<double, Traits<Linear, 1>::function_size>
 shift<Linear, 1>(Wonton::Point<1> x, Wonton::Point<1> y) {
   array<double, Traits<Linear, 1>::function_size> r{0.0};
@@ -636,6 +661,7 @@ shift<Linear, 1>(Wonton::Point<1> x, Wonton::Point<1> y) {
 }
 
 template<>
+inline
 array<double, Traits<Linear, 2>::function_size>
 shift<Linear, 2>(Wonton::Point<2> x, Wonton::Point<2> y) {
   array<double, Traits<Linear, 2>::function_size> r{0.0};
@@ -646,6 +672,7 @@ shift<Linear, 2>(Wonton::Point<2> x, Wonton::Point<2> y) {
 }
 
 template<>
+inline
 array<double, Traits<Linear, 3>::function_size>
 shift<Linear, 3>(Wonton::Point<3> x, Wonton::Point<3> y) {
   array<double, Traits<Linear, 3>::function_size> r{0.0};
@@ -659,6 +686,7 @@ shift<Linear, 3>(Wonton::Point<3> x, Wonton::Point<3> y) {
 //---------------------------------------------------------------
 
 template<>
+inline
 typename Traits<Linear,1>::matrix_t transfactor<Linear,1>(const Wonton::Point<1> &c) {
   typename Traits<Linear,1>::matrix_t tf;
   tf[0][0]=1;
@@ -669,6 +697,7 @@ typename Traits<Linear,1>::matrix_t transfactor<Linear,1>(const Wonton::Point<1>
 }
 
 template<>
+inline
 typename Traits<Linear,2>::matrix_t transfactor<Linear,2>(const Wonton::Point<2> &c) {
   typename Traits<Linear,2>::matrix_t tf;
   tf[0][0]=1;
@@ -684,6 +713,7 @@ typename Traits<Linear,2>::matrix_t transfactor<Linear,2>(const Wonton::Point<2>
 }
 
 template<>
+inline
 typename Traits<Linear,3>::matrix_t transfactor<Linear,3>(const Wonton::Point<3> &c) {
   typename Traits<Linear,3>::matrix_t tf;
   tf[0][0]=1;
@@ -710,6 +740,7 @@ typename Traits<Linear,3>::matrix_t transfactor<Linear,3>(const Wonton::Point<3>
 ////////////////////////////////////////////////////////////////////////////////
 
 template<>
+inline
 array<double, Traits<Quadratic, 1>::function_size>
 function<Quadratic, 1>(Wonton::Point<1> x) {
   array<double, Traits<Quadratic, 1>::function_size> r{0.0};
@@ -720,6 +751,7 @@ function<Quadratic, 1>(Wonton::Point<1> x) {
 }
 
 template<>
+inline
 array<double, Traits<Quadratic, 2>::function_size>
 function<Quadratic, 2>(Wonton::Point<2> x) {
   array<double, Traits<Quadratic, 2>::function_size> r{0.0};
@@ -733,6 +765,7 @@ function<Quadratic, 2>(Wonton::Point<2> x) {
 }
 
 template<>
+inline
 array<double, Traits<Quadratic, 3>::function_size>
 function<Quadratic, 3>(Wonton::Point<3> x) {
   array<double, Traits<Quadratic, 3>::function_size> r{0.0};
@@ -752,6 +785,7 @@ function<Quadratic, 3>(Wonton::Point<3> x) {
 //---------------------------------------------------------------
 
 template<>
+inline
 array<
 array<double, Traits<Quadratic, 1>::function_size>,
 Traits<Quadratic, 1>::function_size
@@ -773,6 +807,7 @@ jet<Quadratic,1>(Wonton::Point<1> x){
 }
 
 template<>
+inline
 array<
 array<double, Traits<Quadratic, 2>::function_size>,
 Traits<Quadratic, 2>::function_size
@@ -803,6 +838,7 @@ jet<Quadratic,2>(Wonton::Point<2> x){
 }
 
 template<>
+inline
 array<
 array<double, Traits<Quadratic, 3>::function_size>,
 Traits<Quadratic, 3>::function_size
@@ -846,6 +882,7 @@ jet<Quadratic,3>(Wonton::Point<3> x){
 //---------------------------------------------------------------
 
 template<>
+inline
 array<
 array<double, Traits<Quadratic, 1>::function_size>,
 Traits<Quadratic, 1>::function_size
@@ -857,6 +894,7 @@ inverse_jet<Quadratic,1>(Wonton::Point<1> x){
 }
 
 template<>
+inline
 array<
 array<double, Traits<Quadratic, 2>::function_size>,
 Traits<Quadratic, 2>::function_size
@@ -868,6 +906,7 @@ inverse_jet<Quadratic,2>(Wonton::Point<2> x){
 }
 
 template<>
+inline
 array<
 array<double, Traits<Quadratic, 3>::function_size>,
 Traits<Quadratic, 3>::function_size
@@ -881,6 +920,7 @@ inverse_jet<Quadratic,3>(Wonton::Point<3> x){
 //---------------------------------------------------------------
 
 template<>
+inline
 array<double, Traits<Quadratic, 1>::function_size>
 shift<Quadratic, 1>(Wonton::Point<1> x, Wonton::Point<1> y) {
   Wonton::Point<1> d;
@@ -889,6 +929,7 @@ shift<Quadratic, 1>(Wonton::Point<1> x, Wonton::Point<1> y) {
 }
 
 template<>
+inline
 array<double, Traits<Quadratic, 2>::function_size>
 shift<Quadratic, 2>(Wonton::Point<2> x, Wonton::Point<2> y) {
   Wonton::Point<2> d;
@@ -897,6 +938,7 @@ shift<Quadratic, 2>(Wonton::Point<2> x, Wonton::Point<2> y) {
 }
 
 template<>
+inline
 array<double, Traits<Quadratic, 3>::function_size>
 shift<Quadratic, 3>(Wonton::Point<3> x, Wonton::Point<3> y) {
   Wonton::Point<3> d;
@@ -907,6 +949,7 @@ shift<Quadratic, 3>(Wonton::Point<3> x, Wonton::Point<3> y) {
 //---------------------------------------------------------------
 
 template<>
+inline
 typename Traits<Quadratic,1>::matrix_t transfactor<Quadratic,1>(const Wonton::Point<1> &c) {
   typename Traits<Quadratic,1>::matrix_t tf;
   tf[0][0]=1;
@@ -922,6 +965,7 @@ typename Traits<Quadratic,1>::matrix_t transfactor<Quadratic,1>(const Wonton::Po
 }
 
 template<>
+inline
 typename Traits<Quadratic,2>::matrix_t transfactor<Quadratic,2>(const Wonton::Point<2> &c) {
   typename Traits<Quadratic,2>::matrix_t tf;
   tf[0][0]=1;
@@ -964,6 +1008,7 @@ typename Traits<Quadratic,2>::matrix_t transfactor<Quadratic,2>(const Wonton::Po
 }
 
 template<>
+inline
 typename Traits<Quadratic,3>::matrix_t transfactor<Quadratic,3>(const Wonton::Point<3> &c) {
   typename Traits<Quadratic,3>::matrix_t tf;
   tf[0][0]=1;

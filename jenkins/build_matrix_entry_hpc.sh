@@ -33,27 +33,33 @@ fi
 
 jali_version=1.0.4
 openmpi_version=2.1.2
-tangram_version=0.9.3
-xmof2d_version=0.9.4
+tangram_version=0.9.7
+xmof2d_version=0.9.5
 lapack_version=3.8.0
 
 export NGC=/usr/projects/ngc
 ngc_include_dir=$NGC/private/include
 
 # compiler-specific settings
-if [[ $compiler == "intel" ]]; then
+if [[ $compiler == "intel18" ]]; then
+  compiler_type=intel
   compiler_version=18.0.5
   cxxmodule=intel/${compiler_version}
-elif [[ $compiler == "gcc" ]]; then
+elif [[ $compiler == "gcc6" ]]; then
+  compiler_type=gcc
+  compiler_version=6.4.0
+  cxxmodule=gcc/${compiler_version}
+elif [[ $compiler == "gcc7" ]]; then
+  compiler_type=gcc
   compiler_version=7.4.0
   cxxmodule=gcc/${compiler_version}
 fi
 
-jali_install_dir=$NGC/private/jali/${jali_version}-${compiler}-${compiler_version}-openmpi-${openmpi_version}
-  tangram_install_dir=$NGC/private/tangram/${tangram_version}-${compiler}-${compiler_version}-openmpi-${openmpi_version}
-  tangram_install_dir_nompi=$NGC/private/tangram/${tangram_version}-${compiler}-${compiler_version}-nompi
-  xmof2d_install_dir=$NGC/private/xmof2d/${xmof2d_version}-${compiler}-${compiler_version}-openmpi-${openmpi_version}
-  lapacke_dir=$NGC/private/lapack/${lapack_version}-patched-${compiler}-${compiler_version}
+jali_install_dir=$NGC/private/jali/${jali_version}-${compiler_type}-${compiler_version}-openmpi-${openmpi_version}
+tangram_install_dir=$NGC/private/tangram/${tangram_version}-${compiler_type}-${compiler_version}-openmpi-${openmpi_version}
+tangram_install_dir_nompi=$NGC/private/tangram/${tangram_version}-${compiler_type}-${compiler_version}-nompi
+xmof2d_install_dir=$NGC/private/xmof2d/${xmof2d_version}-${compiler_type}-${compiler_version}
+lapacke_dir=$NGC/private/lapack/${lapack_version}-patched-${compiler_type}-${compiler_version}
 
 cmake_build_type=Release
 extra_flags=

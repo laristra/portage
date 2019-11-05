@@ -22,10 +22,10 @@ Please see the license file at the root of this repository, or at:
 #include "wonton/support/Point.h"
 #include "wonton/support/Vector.h"
 
+namespace Portage {
+
 using Wonton::Point;
 using Wonton::Vector;
-
-namespace Portage {
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -48,15 +48,17 @@ class Limited_Quadfit {
       @param[in] on_what An enum that indicates what type of entity the field is on
       @param[in] var_name Name of field for which the quadfit is to be computed
       @param[in] limiter_type An enum indicating if the limiter type (none, Barth-Jespersen, Superbee etc)
+      @param[in] Boundary_Limiter_type An enum indicating the limiter type on the boundary
 
       @todo must remove assumption that field is scalar
    */
 
   Limited_Quadfit(MeshType const & mesh, StateType const & state,
                    std::string const var_name,
-                   Limiter_type limiter_type) :
+                   Limiter_type limiter_type,
+                   Boundary_Limiter_type Boundary_Limiter_type) :
       mesh_(mesh), state_(state),
-      var_name_(var_name), limtype_(limiter_type) {
+      var_name_(var_name), limtype_(limiter_type), bnd_limtype_(Boundary_Limiter_type) {
 
     // Extract the field data from the statemanager
 
@@ -86,6 +88,7 @@ class Limited_Quadfit {
 
  private:
   Limiter_type limtype_;
+  Boundary_Limiter_type bnd_limtype_;
   MeshType const & mesh_;
   StateType const & state_;
   std::string var_name_;
@@ -109,15 +112,17 @@ class Limited_Quadfit<D, Entity_kind::CELL, MeshType, StateType> {
       @param[in] state A state manager class that one can query for field info
       @param[in] var_name Name of field for which the quadfit is to be computed
       @param[in] limiter_type An enum indicating if the limiter type (none, Barth-Jespersen, Superbee etc)
+      @param[in] Boundary_Limiter_type An enum indicating the limiter type on the boundary
 
       @todo must remove assumption that field is scalar
    */
 
   Limited_Quadfit(MeshType const & mesh, StateType const & state,
                    std::string const var_name,
-                   Limiter_type limiter_type) :
+                   Limiter_type limiter_type,
+                   Boundary_Limiter_type Boundary_Limiter_type) :
       mesh_(mesh), state_(state), var_name_(var_name),
-      limtype_(limiter_type) {
+      limtype_(limiter_type), bnd_limtype_(Boundary_Limiter_type) {
 
     // Extract the field data from the statemanager
     state.mesh_get_data(Entity_kind::CELL, var_name, &vals_);
@@ -154,6 +159,7 @@ class Limited_Quadfit<D, Entity_kind::CELL, MeshType, StateType> {
 
  private:
   Limiter_type limtype_;
+  Boundary_Limiter_type bnd_limtype_;
   MeshType const & mesh_;
   StateType const & state_;
   std::string var_name_;
@@ -179,6 +185,13 @@ Limited_Quadfit<D, Entity_kind::CELL, MeshType, StateType>::operator() (int cons
   Vector<D*(D+3)/2> qfit;
   Vector<D*(D+3)/2> dvec;
 
+  bool boundary_cell =  mesh_.on_exterior_boundary(Entity_kind::CELL, cellid);
+  // Limit the boundary gradient to enforce monotonicity preservation
+  if (bnd_limtype_ == BND_ZERO_GRADIENT && boundary_cell) {
+    qfit.zero();
+    return qfit;
+  }
+
   std::vector<int> const & nbrids = cell_neighbors_[cellid];
 
   std::vector<Point<D>> cellcenters(nbrids.size()+1);
@@ -196,11 +209,11 @@ Limited_Quadfit<D, Entity_kind::CELL, MeshType, StateType>::operator() (int cons
     i++;
   }
 
-  bool boundary_cell =  mesh_.on_exterior_boundary(Entity_kind::CELL, cellid);
   qfit = Wonton::ls_quadfit(cellcenters, cellvalues, boundary_cell);
   // Limit the gradient to enforce monotonicity preservation
 
-  if (limtype_ == BARTH_JESPERSEN && !boundary_cell) {  // No limiting on boundary
+  if (limtype_ == BARTH_JESPERSEN && 
+      (!boundary_cell || bnd_limtype_ == BND_BARTH_JESPERSEN)) {
 
     // Min and max vals of function (cell centered vals) among neighbors
     /// @todo: must remove assumption the field is scalar
@@ -266,15 +279,17 @@ class Limited_Quadfit<D, Entity_kind::NODE, MeshType, StateType> {
       @param[in] state A state manager class that one can query for field info
       @param[in] var_name Name of field for which the quadfit is to be computed
       @param[in] limiter_type An enum indicating if the limiter type (none, Barth-Jespersen, Superbee etc)
+      @param[in] Boundary_Limiter_type An enum indicating the limiter type on the boundary
 
       @todo must remove assumption that field is scalar
    */
 
   Limited_Quadfit(MeshType const & mesh, StateType const & state,
                    std::string const var_name,
-                   Limiter_type limiter_type) :
+                   Limiter_type limiter_type, 
+                   Boundary_Limiter_type Boundary_Limiter_type) :
       mesh_(mesh), state_(state), var_name_(var_name),
-      limtype_(limiter_type) {
+      limtype_(limiter_type), bnd_limtype_(Boundary_Limiter_type) {
 
     // Extract the field data from the statemanager
     state.mesh_get_data(Entity_kind::NODE, var_name, &vals_);
@@ -312,6 +327,7 @@ class Limited_Quadfit<D, Entity_kind::NODE, MeshType, StateType> {
  private:
 
   Limiter_type limtype_;
+  Boundary_Limiter_type bnd_limtype_;
   MeshType const & mesh_;
   StateType const & state_;
   std::string var_name_;
@@ -338,6 +354,12 @@ Limited_Quadfit<D, Entity_kind::NODE, MeshType, StateType>::operator() (int cons
   Vector<D*(D+3)/2> qfit;
   Vector<D*(D+3)/2> dvec;
 
+  bool boundary_node =  mesh_.on_exterior_boundary(Entity_kind::NODE, nodeid);
+  if (bnd_limtype_ == BND_ZERO_GRADIENT && boundary_node) {
+    qfit.zero();
+    return qfit;
+  }
+
   std::vector<int> const & nbrids = node_neighbors_[nodeid];
   int j = 1;
 
@@ -356,10 +378,10 @@ Limited_Quadfit<D, Entity_kind::NODE, MeshType, StateType>::operator() (int cons
     i++;
   }
 
-  bool boundary_node =  mesh_.on_exterior_boundary(Entity_kind::NODE, nodeid);
   qfit = Wonton::ls_quadfit(nodecoords, nodevalues, boundary_node);
 
-  if (limtype_ == BARTH_JESPERSEN && !boundary_node) {  // No limiting on boundary
+  if (limtype_ == BARTH_JESPERSEN && 
+      (!boundary_node || bnd_limtype_ == BND_BARTH_JESPERSEN)) {
 
     // Min and max vals of function (cell centered vals) among neighbors
 

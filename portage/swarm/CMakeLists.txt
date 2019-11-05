@@ -33,4 +33,11 @@ if (ENABLE_UNIT_TESTS)
     POLICY MPI
     THREADS 1
     )
+
+  cinch_add_unit(test_swarm_state_multi
+    SOURCES test/test_swarm_state_multi.cc
+    LIBRARIES portage 
+    POLICY MPI
+    THREADS 1
+    )
 endif (ENABLE_UNIT_TESTS)

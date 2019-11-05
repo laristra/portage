@@ -15,6 +15,7 @@ Please see the license file at the root of this repository, or at:
 #include "mpi.h"
 #endif
 
+#include "tangram/intersect/split_r2d.h"
 #include "tangram/intersect/split_r3d.h"
 #include "tangram/reconstruct/xmof2D_wrapper.h"
 #include "tangram/reconstruct/SLIC.h"
@@ -38,7 +39,7 @@ Please see the license file at the root of this repository, or at:
 double TOL = 1e-6;
 
 
-// Tests for multi-material remap with 1st Order Accurate Remap
+// Tests for multi-material remap with 2nd Order Accurate Remap
 
 // The conceptual material layout that includes a T-junction and
 // interfaces that are aligned with the coordinate axes/planes. The
@@ -243,11 +244,12 @@ TEST(MMDriver, ThreeMat2D) {
                     2,
                     Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
                     Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
-                    Tangram::XMOF2D_Wrapper>
+                    Tangram::MOF, Tangram::SplitR2D, Tangram::ClipR2D>
       d(sourceMeshWrapper, sourceStateWrapper,
         targetMeshWrapper, targetStateWrapper);
   d.set_remap_var_names(remap_fields);
   d.set_limiter(Portage::Limiter_type::NOLIMITER);
+  d.set_bnd_limiter(Portage::Boundary_Limiter_type::BND_NOLIMITER);
   d.run();  // run in serial
 
 
@@ -337,7 +339,7 @@ TEST(MMDriver, ThreeMat2D) {
     targetStateWrapper.mat_get_celldata("mat_volfracs", m, &matvf_remap);
 
     for (int ic = 0; ic < nmatcells; ic++)
-      ASSERT_NEAR(matvf_trg[m][ic], matvf_remap[ic], 1.0e-12);
+      ASSERT_NEAR(matvf_trg[m][ic], matvf_remap[ic], 1.0e-10);
 
     Portage::Point<2> const *matcen_remap;
     targetStateWrapper.mat_get_celldata("mat_centroids", m, &matcen_remap);
@@ -355,7 +357,7 @@ TEST(MMDriver, ThreeMat2D) {
     for (int ic = 0; ic < nmatcells; ic++){
       std::cerr <<"target cell "<<matcells_remap[m][ic]<< "::rho_computed = "<<density_remap[ic]
                 <<", rho_exact = "<<matrho_trg[m][ic]<<std::endl;
-      ASSERT_NEAR(matrho_trg[m][ic], density_remap[ic], 1.0e-12);
+      ASSERT_NEAR(matrho_trg[m][ic], density_remap[ic], 1.0e-10);
     }
     std::cerr << "Number of cells in material " << m << " is " << nmatcells << "\n";
     std::cerr << "Material " << m << " cell ids, volume fractions, centroids:"
@@ -630,6 +632,7 @@ TEST(MMDriver, ThreeMat3D) {
         targetMeshWrapper, targetStateWrapper);
   d.set_remap_var_names(remap_fields);
   d.set_limiter(Portage::Limiter_type::NOLIMITER);
+  d.set_bnd_limiter(Portage::Boundary_Limiter_type::BND_NOLIMITER);
   d.run();  // run in serial (executor defaults to nullptr)
 
 

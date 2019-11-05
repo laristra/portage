@@ -1,8 +1,9 @@
 # axis_varan.yml
 # matrix of builds tested nightly on varan
 COMPILER:
-  - intel
-  - gcc
+  - intel18
+  - gcc6
+  - gcc7
 
 BUILD_TYPE:
   - base
@@ -14,10 +15,14 @@ BUILD_TYPE:
   - readme
 
 exclude:
-  - COMPILER: intel
+  - COMPILER: intel18
     BUILD_TYPE: flecsi
-  - COMPILER: intel
+  - COMPILER: intel18
     BUILD_TYPE: coverage
-  - COMPILER: gcc
+  - COMPILER: gcc6
     BUILD_TYPE: readme
+  - COMPILER: gcc7
+    BUILD_TYPE: readme
+  - COMPILER: gcc7
+    BUILD_TYPE: flecsi    
 

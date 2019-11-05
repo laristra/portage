@@ -33,11 +33,18 @@ namespace Portage {
 /*!
   @class Interpolate_1stOrder interpolate_1st_order.h
   @brief Interpolate_1stOrder does a 1st order interpolation of scalars
-  @tparam MeshType The type of the mesh wrapper used to access mesh info
-  @tparam StateType The type of the state manager used to access data.
-  @tparam OnWhatType The type of entity-based data we wish to interpolate;
-  e.g. does it live on nodes, cells, edges, etc.
 
+  @tparam D  spatial dimension of problem
+  @tparam on_what The type of entity-based data we wish to interpolate;
+  e.g. does it live on nodes, cells, edges, etc.
+  @tparam SourceMeshType Mesh wrapper class used to access source mesh info
+  @tparam TargetMeshType Mesh wrapper class used to access target mesh info
+  @tparam SourceStateType State manager used to access source data.
+  @tparam InterfaceReconstructorType Class for reconstructing material interfaces
+  @tparam MatPoly_Splitter Class used for splitting material polygons
+  @tparam MatPoly_Clipper Class used for clipping material polygons
+  @tparam CoordSys  What coordinate system are we operating in?
+  
   Viewed simply, the value at target cell is the weighted average of
   values on from source entities and therefore, this can work for
   cell-cell, particle-cell, cell-particle and particle-particle remap.
@@ -76,7 +83,7 @@ template<int D,
          Entity_kind on_what,
          typename SourceMeshType,
          typename TargetMeshType,
-         typename StateType,
+         typename SourceStateType,
          template<class, int, class, class> class InterfaceReconstructorType =
          DummyInterfaceReconstructor,
          class Matpoly_Splitter = void,
@@ -96,14 +103,16 @@ class Interpolate_1stOrder {
 #ifdef HAVE_TANGRAM
   Interpolate_1stOrder(SourceMeshType const & source_mesh,
                        TargetMeshType const & target_mesh,
-                       StateType const & source_state,
+                       SourceStateType const & source_state,
+                       NumericTolerances_t num_tols,
                        std::shared_ptr<InterfaceReconstructor> ir) :
       source_mesh_(source_mesh),
       target_mesh_(target_mesh),
       source_state_(source_state),
       interface_reconstructor_(ir),
       interp_var_name_("VariableNameNotSet"),
-      source_vals_(nullptr) {}
+      source_vals_(nullptr),
+      num_tols_(num_tols) {}
 #endif
 
   /*!
@@ -118,12 +127,14 @@ class Interpolate_1stOrder {
   */
   Interpolate_1stOrder(SourceMeshType const & source_mesh,
                        TargetMeshType const & target_mesh,
-                       StateType const & source_state) :
+                       SourceStateType const & source_state,
+                       NumericTolerances_t num_tols) :
       source_mesh_(source_mesh),
       target_mesh_(target_mesh),
       source_state_(source_state),
       interp_var_name_("VariableNameNotSet"),
-      source_vals_(nullptr) {}
+      source_vals_(nullptr),
+      num_tols_(num_tols) {}
 
 
   /// Copy constructor (disabled)
@@ -151,7 +162,8 @@ class Interpolate_1stOrder {
   // uniform interface
 
   void set_interpolation_variable(std::string const & interp_var_name,
-                                  Limiter_type limtype=NOLIMITER) {
+                                  Limiter_type limtype=NOLIMITER,
+                                  Boundary_Limiter_type bnd_limtype=BND_NOLIMITER) {
     interp_var_name_ = interp_var_name;
     field_type_ = source_state_.field_type(Entity_kind::CELL, interp_var_name);
     if (field_type_ == Field_type::MESH_FIELD)
@@ -187,11 +199,12 @@ class Interpolate_1stOrder {
  private:
   SourceMeshType const & source_mesh_;
   TargetMeshType const & target_mesh_;
-  StateType const & source_state_;
+  SourceStateType const & source_state_;
   std::string interp_var_name_;
   double const * source_vals_;
   int matid_;
   Field_type field_type_;
+  NumericTolerances_t num_tols_;
 
 
 #ifdef HAVE_TANGRAM
@@ -209,7 +222,7 @@ class Interpolate_1stOrder {
 template<int D,
          typename SourceMeshType,
          typename TargetMeshType,
-         typename StateType,
+         typename SourceStateType,
          template<class, int, class, class> class InterfaceReconstructorType,
          class Matpoly_Splitter,
          class Matpoly_Clipper,
@@ -218,7 +231,7 @@ class Interpolate_1stOrder<D,
                            Entity_kind::CELL,
                            SourceMeshType,
                            TargetMeshType,
-                           StateType,
+                           SourceStateType,
                            InterfaceReconstructorType,
                            Matpoly_Splitter,
                            Matpoly_Clipper,
@@ -235,14 +248,16 @@ class Interpolate_1stOrder<D,
 #ifdef HAVE_TANGRAM
   Interpolate_1stOrder(SourceMeshType const & source_mesh,
                        TargetMeshType const & target_mesh,
-                       StateType const & source_state,
+                       SourceStateType const & source_state,
+                       NumericTolerances_t num_tols,
                        std::shared_ptr<InterfaceReconstructor> ir) :
       source_mesh_(source_mesh),
       target_mesh_(target_mesh),
       source_state_(source_state),
       interface_reconstructor_(ir),
       interp_var_name_("VariableNameNotSet"),
-      source_vals_(nullptr) {}
+      source_vals_(nullptr),
+      num_tols_(num_tols) {}
 #endif
   /*!
     @brief Constructor.
@@ -254,12 +269,14 @@ class Interpolate_1stOrder<D,
   */
   Interpolate_1stOrder(SourceMeshType const & source_mesh,
                        TargetMeshType const & target_mesh,
-                       StateType const & source_state) :
+                       SourceStateType const & source_state,
+                       NumericTolerances_t num_tols) :
       source_mesh_(source_mesh),
       target_mesh_(target_mesh),
       source_state_(source_state),
       interp_var_name_("VariableNameNotSet"),
-      source_vals_(nullptr) {}
+      source_vals_(nullptr),
+      num_tols_(num_tols) {}
 
 
   /// Copy constructor (disabled)
@@ -289,7 +306,8 @@ class Interpolate_1stOrder<D,
   // uniform interface
 
   void set_interpolation_variable(std::string const & interp_var_name,
-                                  Limiter_type limtype = NOLIMITER) {
+                                  Limiter_type limtype = NOLIMITER,
+                                  Boundary_Limiter_type bnd_limtype=BND_NOLIMITER) {
     interp_var_name_ = interp_var_name;
     field_type_ = source_state_.field_type(Entity_kind::CELL, interp_var_name);
     if (field_type_ == Field_type::MESH_FIELD)
@@ -333,7 +351,8 @@ class Interpolate_1stOrder<D,
       for (auto const& wt : sources_and_weights) {
         int srccell = wt.entityID;
         std::vector<double> pair_weights = wt.weights;
-        if (pair_weights[0]/vol < 1.0e-12) continue;  // skip small intersections
+        if (pair_weights[0]/vol < num_tols_.min_relative_volume)
+          continue;  // skip small intersections
         val += source_vals_[srccell] * pair_weights[0];
         wtsum0 += pair_weights[0];
         nsummed++;
@@ -342,7 +361,8 @@ class Interpolate_1stOrder<D,
       for (auto const& wt : sources_and_weights) {
         int srccell = wt.entityID;
         std::vector<double> pair_weights = wt.weights;
-        if (pair_weights[0]/vol < 1.0e-12) continue;  // skip small intersections
+        if (pair_weights[0]/vol < num_tols_.min_relative_volume)
+          continue;  // skip small intersections
         int matcell = source_state_.cell_index_in_material(srccell, matid_);
         val += source_vals_[matcell] * pair_weights[0];  // 1st order
         wtsum0 += pair_weights[0];
@@ -368,11 +388,12 @@ class Interpolate_1stOrder<D,
  private:
   SourceMeshType const & source_mesh_;
   TargetMeshType const & target_mesh_;
-  StateType const & source_state_;
+  SourceStateType const & source_state_;
   std::string interp_var_name_;
   double const * source_vals_;
   int matid_;
   Field_type field_type_;
+  NumericTolerances_t num_tols_;
 
 #ifdef HAVE_TANGRAM
   std::shared_ptr<InterfaceReconstructor> interface_reconstructor_;
@@ -391,7 +412,7 @@ class Interpolate_1stOrder<D,
 template<int D,
          typename SourceMeshType,
          typename TargetMeshType,
-         typename StateType,
+         typename SourceStateType,
          template<class, int, class, class> class InterfaceReconstructorType,
          class Matpoly_Splitter,
          class Matpoly_Clipper,
@@ -400,7 +421,7 @@ class Interpolate_1stOrder<D,
                            Entity_kind::NODE,
                            SourceMeshType,
                            TargetMeshType,
-                           StateType,
+                           SourceStateType,
                            InterfaceReconstructorType,
                            Matpoly_Splitter,
                            Matpoly_Clipper,
@@ -418,14 +439,16 @@ class Interpolate_1stOrder<D,
 #ifdef HAVE_TANGRAM
   Interpolate_1stOrder(SourceMeshType const & source_mesh,
                        TargetMeshType const & target_mesh,
-                       StateType const & source_state,
+                       SourceStateType const & source_state,
+                       NumericTolerances_t num_tols,
                        std::shared_ptr<InterfaceReconstructor> ir) :
       source_mesh_(source_mesh),
       target_mesh_(target_mesh),
       source_state_(source_state),
       interface_reconstructor_(ir),
       interp_var_name_("VariableNameNotSet"),
-      source_vals_(nullptr) {}
+      source_vals_(nullptr),
+      num_tols_(num_tols) {}
 #endif
 
   /*!
@@ -438,12 +461,14 @@ class Interpolate_1stOrder<D,
   */
   Interpolate_1stOrder(SourceMeshType const & source_mesh,
                        TargetMeshType const & target_mesh,
-                       StateType const & source_state) :
+                       SourceStateType const & source_state,
+                       NumericTolerances_t num_tols) :
       source_mesh_(source_mesh),
       target_mesh_(target_mesh),
       source_state_(source_state),
       interp_var_name_("VariableNameNotSet"),
-      source_vals_(nullptr) {}
+      source_vals_(nullptr),
+      num_tols_(num_tols) {}
 
 
   /// Copy constructor (disabled)
@@ -471,7 +496,8 @@ class Interpolate_1stOrder<D,
   // uniform interface
 
   void set_interpolation_variable(std::string const & interp_var_name,
-                                  Limiter_type limtype = NOLIMITER) {
+                                  Limiter_type limtype = NOLIMITER,
+                                  Boundary_Limiter_type bnd_limtype=BND_NOLIMITER) {
     interp_var_name_ = interp_var_name;
     field_type_ = source_state_.field_type(Entity_kind::NODE, interp_var_name);
     if (field_type_ == Field_type::MESH_FIELD)
@@ -518,7 +544,8 @@ class Interpolate_1stOrder<D,
     for (auto const& wt : sources_and_weights) {
       int srcnode = wt.entityID;
       std::vector<double> pair_weights = wt.weights;
-      if (pair_weights[0]/vol < 1.0e-16) continue;  // skip small intersections
+      if (pair_weights[0]/vol < num_tols_.min_relative_volume)
+        continue;  // skip small intersections
       val += source_vals_[srcnode] * pair_weights[0];  // 1st order
       wtsum0 += pair_weights[0];
       nsummed++;
@@ -543,11 +570,12 @@ class Interpolate_1stOrder<D,
  private:
   SourceMeshType const & source_mesh_;
   TargetMeshType const & target_mesh_;
-  StateType const & source_state_;
+  SourceStateType const & source_state_;
   std::string interp_var_name_;
   double const * source_vals_;
   int matid_;
   Field_type field_type_;
+  NumericTolerances_t num_tols_;
 
 #ifdef HAVE_TANGRAM
   std::shared_ptr<InterfaceReconstructor> interface_reconstructor_;

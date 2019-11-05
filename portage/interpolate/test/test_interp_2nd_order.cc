@@ -26,7 +26,7 @@ double TOL = 1e-12;
 /// Second order interpolation of constant cell-centered field with no
 /// limiter in 2D
 
-TEST(Interpolate_2nd_Order, Cell_Ctr_Const_No_Limiter_2D) {
+TEST(Interpolate_2nd_Order, Cell_Ctr_Const_BND_NOLIMITER_2D) {
 
   // Create simple meshes
 
@@ -113,13 +113,18 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Const_No_Limiter_2D) {
 
   // Now do it the Portage way
 
+  // use default tolerances
+  Portage::NumericTolerances_t num_tols;
+  num_tols.use_default();
+
   // Create Interpolation object
 
   Portage::Interpolate_2ndOrder<2, Wonton::Entity_kind::CELL,
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_State_Wrapper>
-      interpolator(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper);
+      interpolator(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper,
+                   num_tols);
 
   interpolator.set_interpolation_variable("cellvars");
 
@@ -140,7 +145,7 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Const_No_Limiter_2D) {
 /// Second order interpolation of linear cell-centered field with no
 /// limiting in 2D
 
-TEST(Interpolate_2nd_Order, Cell_Ctr_Lin_No_Limiter_2D) {
+TEST(Interpolate_2nd_Order, Cell_Ctr_Lin_BND_NOLIMITER_2D) {
   // Create simple meshes
 
   std::shared_ptr<Wonton::Simple_Mesh> source_mesh =
@@ -231,13 +236,18 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Lin_No_Limiter_2D) {
 
   // Now do it the Portage way
 
+  // use default tolerances
+  Portage::NumericTolerances_t num_tols;
+  num_tols.use_default();
+
   // Create Interpolation object
 
   Portage::Interpolate_2ndOrder<2, Wonton::Entity_kind::CELL,
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_State_Wrapper>
-      interpolator(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper);
+      interpolator(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper,
+                   num_tols);
 
   interpolator.set_interpolation_variable("cellvars");
 
@@ -367,13 +377,18 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Lin_BJ_Limiter_2D) {
 
   // Now do it the Portage way
 
+  // use default tolerances
+  Portage::NumericTolerances_t num_tols;
+  num_tols.use_default();
+
   // Create Interpolation object
 
   Portage::Interpolate_2ndOrder<2, Wonton::Entity_kind::CELL,
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_State_Wrapper>
-      interpolator(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper);
+      interpolator(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper,
+                   num_tols);
 
   interpolator.set_interpolation_variable("cellvars", Portage::NOLIMITER);
 
@@ -428,12 +443,171 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Lin_BJ_Limiter_2D) {
 }
 
 
+/*!
+  @brief Second order interpolate of nonlinear cell-centered field with
+  Barth-Jespersen inside and no/zero gradient limiting on the boundary of 
+  a 2D domain
+ */
 
+TEST(Interpolate_2nd_Order, Cell_Ctr_Non_Lin_BJ_Limiter_ZG_Bnd_Limiter_2D) {
+
+  // Create simple meshes
+
+  std::shared_ptr<Wonton::Simple_Mesh> source_mesh =
+    std::make_shared<Wonton::Simple_Mesh>(0.0, 0.0, 1.0, 1.0, 5, 5);
+  std::shared_ptr<Wonton::Simple_Mesh> target_mesh =
+    std::make_shared<Wonton::Simple_Mesh>(0.0, 0.0, 1.0, 1.0, 7, 7);
+
+  // Create mesh wrappers
+
+  Wonton::Simple_Mesh_Wrapper sourceMeshWrapper(*source_mesh);
+  Wonton::Simple_Mesh_Wrapper targetMeshWrapper(*target_mesh);
+
+  // count cells
+
+  const int ncells_source =
+      sourceMeshWrapper.num_owned_cells();
+  const int ncells_target =
+      targetMeshWrapper.num_owned_cells();
+
+  // Create a state object
+
+  Wonton::Simple_State source_state(source_mesh);
+
+  // Define a state vector with nonlinear (exponential) values 
+  // and add it to the source state
+
+  double minval = 1e+10, maxval = -1e+10;
+
+  std::vector<double> data(ncells_source);
+  for (int c = 0; c < ncells_source; ++c) {
+    Wonton::Point<2> ccen;
+    sourceMeshWrapper.cell_centroid(c, &ccen);
+    data[c] = exp(10*ccen[0]);
+
+    if (data[c] < minval) minval = data[c];
+    if (data[c] > maxval) maxval = data[c];
+  }
+  source_state.add("cellvars", Wonton::Entity_kind::CELL, &(data[0]));
+
+  // Create state wrapper
+
+  Wonton::Simple_State_Wrapper sourceStateWrapper(source_state);
+
+  // Gather the cell coordinates as Portage Points for source and target meshes
+  // for intersection. The outer vector is the cells, the inner vector is the
+  // points of the vertices of that cell.
+
+  std::vector<std::vector<Wonton::Point<2>>>
+      source_cell_coords(ncells_source);
+  std::vector<std::vector<Wonton::Point<2>>>
+      target_cell_coords(ncells_target);
+
+  // Actually get the Wonton::Points
+
+  for (int c = 0; c < ncells_source; ++c)
+    sourceMeshWrapper.cell_get_coordinates(c, &(source_cell_coords[c]));
+  for (int c = 0; c < ncells_target; ++c)
+    targetMeshWrapper.cell_get_coordinates(c, &(target_cell_coords[c]));
+
+  // Interpolate from source to target mesh using the independent calculation
+  // in simple_intersect_for_tests.h
+
+  std::vector<double> outvals1(ncells_target);
+  std::vector<double> outvals2(ncells_target);
+  std::vector<std::vector<Portage::Weights_t>>
+      sources_and_weights(ncells_target);
+
+  // Loop over target cells
+
+  for (int c = 0; c < ncells_target; ++c) {
+
+    std::vector<int> xcells;
+    std::vector<std::vector<double>> xwts;
+
+		// Compute the moments
+		// xcells is the source cell indices that intersect
+		// xwts is the moments vector for each cell that intersects
+
+    BOX_INTERSECT::intersection_moments<2>(target_cell_coords[c],
+                                           source_cell_coords,
+                                           &xcells, &xwts);
+
+    // Pack the results into a vector of true Portage::Weights_t
+
+    std::vector<Portage::Weights_t> wtsvec(xcells.size());
+    for (int i = 0; i < xcells.size(); ++i) {
+      wtsvec[i].entityID = xcells[i];
+      wtsvec[i].weights = xwts[i];
+    }
+
+    // Put the weights in final form
+
+    sources_and_weights[c] = wtsvec;
+  }
+
+  // Now do it the Portage way
+
+  // use default tolerances
+  Portage::NumericTolerances_t num_tols;
+  num_tols.use_default();
+
+  // Create Interpolation object
+
+  Portage::Interpolate_2ndOrder<2, Wonton::Entity_kind::CELL,
+                                Wonton::Simple_Mesh_Wrapper,
+                                Wonton::Simple_Mesh_Wrapper,
+                                Wonton::Simple_State_Wrapper>
+      interpolator(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper,
+                   num_tols);
+
+  interpolator.set_interpolation_variable("cellvars", Portage::BARTH_JESPERSEN,
+                                          Portage::BND_NOLIMITER);
+
+
+  Portage::transform(targetMeshWrapper.begin(Wonton::Entity_kind::CELL),
+                     targetMeshWrapper.end(Wonton::Entity_kind::CELL),
+                     sources_and_weights.begin(),
+                     outvals1.begin(), interpolator);
+
+  interpolator.set_interpolation_variable("cellvars", Portage::BARTH_JESPERSEN,
+                                          Portage::BND_ZERO_GRADIENT);
+
+
+  Portage::transform(targetMeshWrapper.begin(Wonton::Entity_kind::CELL),
+                     targetMeshWrapper.end(Wonton::Entity_kind::CELL),
+                     sources_and_weights.begin(),
+                     outvals2.begin(), interpolator);
+
+  // Check if we violated the bounds on at least one cell in the
+  // unlimited interpolation and if we respected the bounds in all
+  // cells in the limited case
+
+  bool outofbounds_unlimited_bnd = false;
+  for (int c = 0; c < ncells_target; ++c) {
+    if (outvals1[c] < minval  || outvals1[c] > maxval) {
+      outofbounds_unlimited_bnd = true;
+      break;
+    }
+  }
+
+  // Check if we preserved bounds on boundary cells as well when using 
+  // BND_ZERO_GRADIENT
+  bool inbounds_limited_bnd = true;
+  for (int c = 0; c < ncells_target; ++c) {
+    if (outvals2[c] < minval - TOL  || outvals2[c] > maxval + TOL) {
+      inbounds_limited_bnd = false;
+      break;
+    }
+  }
+  EXPECT_TRUE(outofbounds_unlimited_bnd && inbounds_limited_bnd);
+
+}
 
 /// Second order interpolation of constant node-centered field with no
 /// limiting in 2D
 
-TEST(Interpolate_2nd_Order, Node_Ctr_Const_No_Limiter) {
+TEST(Interpolate_2nd_Order, Node_Ctr_Const_BND_NOLIMITER) {
 
   // Create simple meshes
 
@@ -518,7 +692,11 @@ TEST(Interpolate_2nd_Order, Node_Ctr_Const_No_Limiter) {
     sources_and_weights[c] = wtsvec;
   }
 
-   // Now do it the Portage way
+  // Now do it the Portage way
+
+  // use default tolerances
+  Portage::NumericTolerances_t num_tols;
+  num_tols.use_default();
 
   // Create Interpolation object
 
@@ -526,7 +704,8 @@ TEST(Interpolate_2nd_Order, Node_Ctr_Const_No_Limiter) {
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_State_Wrapper>
-      interpolator(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper);
+      interpolator(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper,
+                   num_tols);
 
   interpolator.set_interpolation_variable("nodevars");
 
@@ -566,7 +745,7 @@ TEST(Interpolate_2nd_Order, Node_Ctr_Const_No_Limiter) {
 // Second order interpolation of linear node-centered field with no
 // limiting in 2D
 
-TEST(Interpolate_2nd_Order, Node_Ctr_Lin_No_Limiter) {
+TEST(Interpolate_2nd_Order, Node_Ctr_Lin_BND_NOLIMITER) {
 
   // Create simple meshes
 
@@ -656,7 +835,11 @@ TEST(Interpolate_2nd_Order, Node_Ctr_Lin_No_Limiter) {
     sources_and_weights[c] = wtsvec;
   }
 
-   // Now do it the Portage way
+  // Now do it the Portage way
+
+  // use default tolerances
+  Portage::NumericTolerances_t num_tols;
+  num_tols.use_default();
 
   // Create Interpolation object
 
@@ -664,7 +847,8 @@ TEST(Interpolate_2nd_Order, Node_Ctr_Lin_No_Limiter) {
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_State_Wrapper>
-      interpolator(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper);
+      interpolator(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper,
+                   num_tols);
 
   interpolator.set_interpolation_variable("nodevars");
 
@@ -699,7 +883,7 @@ TEST(Interpolate_2nd_Order, Node_Ctr_Lin_No_Limiter) {
 /// Second order interpolation of constant cell-centered field with no
 /// limiting in 3D
 
-TEST(Interpolate_2nd_Order, Cell_Ctr_Const_No_Limiter_3D) {
+TEST(Interpolate_2nd_Order, Cell_Ctr_Const_BND_NOLIMITER_3D) {
 
   // Create simple meshes
 
@@ -786,13 +970,18 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Const_No_Limiter_3D) {
 
   // Now do it the Portage way
 
+  // use default tolerances
+  Portage::NumericTolerances_t num_tols;
+  num_tols.use_default();
+
   // Create Interpolation object
 
   Portage::Interpolate_2ndOrder<3, Wonton::Entity_kind::CELL,
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_State_Wrapper>
-      interpolator(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper);
+      interpolator(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper,
+                   num_tols);
 
   interpolator.set_interpolation_variable("cellvars");
 
@@ -812,7 +1001,7 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Const_No_Limiter_3D) {
 /// Second order interpolation of linear cell-centered field with no
 /// limiting in 3D
 
-TEST(Interpolate_2nd_Order, Cell_Ctr_Lin_No_Limiter_3D) {
+TEST(Interpolate_2nd_Order, Cell_Ctr_Lin_BND_NOLIMITER_3D) {
   // Create simple meshes
 
   std::shared_ptr<Wonton::Simple_Mesh> source_mesh =
@@ -903,13 +1092,18 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Lin_No_Limiter_3D) {
 
   // Now do it the Portage way
 
+  // use default tolerances
+  Portage::NumericTolerances_t num_tols;
+  num_tols.use_default();
+
   // Create Interpolation object
 
   Portage::Interpolate_2ndOrder<3, Wonton::Entity_kind::CELL,
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_State_Wrapper>
-      interpolator(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper);
+      interpolator(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper,
+                   num_tols);
 
   interpolator.set_interpolation_variable("cellvars");
 
@@ -1038,13 +1232,18 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_BJ_Limiter_3D) {
 
   // Now do it the Portage way
 
+  // use default tolerances
+  Portage::NumericTolerances_t num_tols;
+  num_tols.use_default();
+
   // Create Interpolation object
 
   Portage::Interpolate_2ndOrder<3, Wonton::Entity_kind::CELL,
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_State_Wrapper>
-      interpolator(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper);
+      interpolator(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper,
+                   num_tols);
 
   interpolator.set_interpolation_variable("cellvars", Portage::NOLIMITER);
 
@@ -1096,7 +1295,7 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_BJ_Limiter_3D) {
 /// Second order interpolation of constant node-centered field with no
 /// limiting in 3D
 
-TEST(Interpolate_2nd_Order, Node_Ctr_Const_No_Limiter_3D) {
+TEST(Interpolate_2nd_Order, Node_Ctr_Const_BND_NOLIMITER_3D) {
 
   // Create simple meshes
 
@@ -1184,13 +1383,18 @@ TEST(Interpolate_2nd_Order, Node_Ctr_Const_No_Limiter_3D) {
 
    // Now do it the Portage way
 
+  // use default tolerances
+  Portage::NumericTolerances_t num_tols;
+  num_tols.use_default();
+
   // Create Interpolation object
 
   Portage::Interpolate_2ndOrder<3, Wonton::Entity_kind::NODE,
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_State_Wrapper>
-      interpolator(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper);
+      interpolator(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper,
+                   num_tols);
 
   interpolator.set_interpolation_variable("nodevars");
 
@@ -1221,7 +1425,7 @@ TEST(Interpolate_2nd_Order, Node_Ctr_Const_No_Limiter_3D) {
 }
 
 
-TEST(Interpolate_2nd_Order, Node_Ctr_Lin_No_Limiter_3D) {
+TEST(Interpolate_2nd_Order, Node_Ctr_Lin_BND_NOLIMITER_3D) {
 
 
   // Create simple meshes
@@ -1313,7 +1517,11 @@ TEST(Interpolate_2nd_Order, Node_Ctr_Lin_No_Limiter_3D) {
     sources_and_weights[c] = wtsvec;
   }
 
-   // Now do it the Portage way
+  // Now do it the Portage way
+
+  // use default tolerances
+  Portage::NumericTolerances_t num_tols;
+  num_tols.use_default();
 
   // Create Interpolation object
 
@@ -1321,7 +1529,8 @@ TEST(Interpolate_2nd_Order, Node_Ctr_Lin_No_Limiter_3D) {
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_State_Wrapper>
-      interpolator(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper);
+      interpolator(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper,
+                   num_tols);
 
   interpolator.set_interpolation_variable("nodevars");
 
@@ -1444,6 +1653,10 @@ TEST(Interpolate_2nd_Order, Node_Ctr_BJ_Limiter_3D) {
     sources_and_weights[n] = wtsvec;
   }
 
+  // use default tolerances
+  Portage::NumericTolerances_t num_tols;
+  num_tols.use_default();
+
   // Create Interpolation objects - one with no limiter and one with limiter
 
   Portage::Interpolate_2ndOrder<3, Wonton::Entity_kind::NODE,
@@ -1451,14 +1664,14 @@ TEST(Interpolate_2nd_Order, Node_Ctr_BJ_Limiter_3D) {
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_State_Wrapper>
                          interpolator1(sourceMeshWrapper, targetMeshWrapper,
-                                       sourceStateWrapper);
+                                       sourceStateWrapper, num_tols);
 
   Portage::Interpolate_2ndOrder<3, Wonton::Entity_kind::NODE,
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_State_Wrapper>
                          interpolator2(sourceMeshWrapper, targetMeshWrapper,
-                                       sourceStateWrapper);
+                                       sourceStateWrapper, num_tols);
 
   // Compute the target mesh vals
 

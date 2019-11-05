@@ -5,7 +5,6 @@
 */
 
 #include <sys/time.h>
-
 #include <cstdio>
 #include <cstdlib>
 #include <fstream>
@@ -15,7 +14,6 @@
 #include <memory>
 #include <utility>
 #include <cmath>
-
 #include <mpi.h>
 
 #ifdef ENABLE_PROFILE
@@ -30,13 +28,17 @@
 #include "JaliStateVector.h"
 #include "JaliState.h"
 
-
 #include "portage/support/portage.h"
 #include "portage/support/mpi_collate.h"
+#include "portage/support/timer.h"
 #include "portage/driver/mmdriver.h"
+#include "portage/driver/write_to_gmv.h"
 #include "wonton/mesh/jali/jali_mesh_wrapper.h"
 #include "wonton/state/jali/jali_state_wrapper.h"
+#include "wonton/support/Point.h"
 #include "read_material_data.h"
+#include "user_field.h"
+
 
 #ifdef HAVE_TANGRAM
 #include "tangram/driver/driver.h"
@@ -44,14 +46,8 @@
 #include "tangram/reconstruct/MOF.h"
 #include "tangram/reconstruct/VOF.h"
 #include "tangram/intersect/split_r3d.h"
+#include "tangram/intersect/split_r2d.h"
 #endif
-
-#include "portage/driver/write_to_gmv.h"
-#include "wonton/support/Point.h"
-
-// For parsing and evaluating user defined expressions in apps
-
-#include "user_field.h"
 
 using Wonton::Jali_Mesh_Wrapper;
 using Portage::argsort;
@@ -75,14 +71,14 @@ using Portage::reorder;
 
 //////////////////////////////////////////////////////////////////////
 
-
 int print_usage() {
   std::cout << std::endl;
   std::cout << "Usage: portageapp " <<
       "--dim=2|3 --nsourcecells=N --ntargetcells=M --conformal=y|n \n" << 
       "--remap_order=1|2 \n" <<
-      "--limiter=barth_jespersen --mesh_min=0. --mesh_max=1. \n" <<
-      "--output_meshes=y|n --results_file=filename --convergence_study=NREF \n\n";
+      "--limiter=barth_jespersen --bnd_limiter=zero_gradient"
+      "--mesh_min=0. --mesh_max=1. \n" <<
+      "--output_meshes=y|n --results_file=filename --convergence_study=NREF --only_threads=y|n\n\n";
 
   std::cout << "--dim (default = 2): spatial dimension of mesh\n\n";
 
@@ -127,20 +123,35 @@ int print_usage() {
   std::cout << "--remap order (default = 1): " <<
       "order of accuracy of interpolation\n\n";
 
-  std::cout << "--limiter (default = 0): " <<
+  std::cout << "--limiter (default = NOLIMITER): " <<
       "slope limiter for a piecewise linear reconstrution\n\n";
+
+  std::cout << "--bnd_limiter (default = NOLIMITER): " <<
+      "slope limiter on the boundary for a piecewise linear reconstruction\n\n";
 
   std::cout << "--convergence_study (default = 1): provide the number of times "
             << "you want to double source and target mesh sizes \n";
   std::cout << "  ONLY APPLICABLE IF BOTH MESHES ARE INTERNALLY GENERATED\n\n";
 
-  std::cout << "--output_meshes (default = y)\n";
+  std::cout << "--output_meshes (default = n)\n";
   std::cout << "  If 'y', the source and target meshes are output with the " <<
       "remapped field attached as input.exo and output.exo. \n\n";
+
+  std::cout << "--all_convex (default = y)\n";
+  std::cout << "  If 'n', the source cells in the interface reconstructor are divided " <<
+      "into simplices to account for non-convex cells. \n\n";
 
   std::cout << "--results_file=results_filename (default = output.txt)\n";
   std::cout << "  If a filename is specified, the target field values are " <<
       "output to the file given by 'results_filename' in ascii format\n\n";
+
+#if ENABLE_TIMINGS
+  std::cout << "--only_threads (default = n)\n";
+  std::cout << " enable if you want to profile only threads scaling\n\n";
+
+  std::cout << "--scaling (default = strong)\n";
+  std::cout << " specify the scaling study type [strong|weak]\n\n";
+#endif
   return 0;
 }
 //////////////////////////////////////////////////////////////////////
@@ -148,12 +159,30 @@ int print_usage() {
 
 // Generic interface reconstructor factory
 
-template<int dim, class MeshWrapper>
+template<int dim, class MeshWrapper, bool all_convex>
 class interface_reconstructor_factory {};
   
 // Specializations
 template<class MeshWrapper>
-class interface_reconstructor_factory<2, MeshWrapper>{
+class interface_reconstructor_factory<2, MeshWrapper, false>{
+ public:
+  interface_reconstructor_factory(MeshWrapper const& mesh,
+                                  std::vector<Tangram::IterativeMethodTolerances_t> tols) :
+      mesh_(mesh), tols_(tols) {};
+
+  auto operator()() -> decltype(auto) {
+    return std::make_shared<Tangram::Driver<Tangram::MOF, 2, MeshWrapper,
+                                            Tangram::SplitR2D,
+                                            Tangram::ClipR2D>>(mesh_, tols_, false);
+  }
+
+ private:
+  MeshWrapper const& mesh_;
+  std::vector<Tangram::IterativeMethodTolerances_t> tols_;
+};
+
+template<class MeshWrapper>
+class interface_reconstructor_factory<2, MeshWrapper, true>{
  public:
   interface_reconstructor_factory(MeshWrapper const& mesh,
                                   std::vector<Tangram::IterativeMethodTolerances_t> tols) :
@@ -170,7 +199,25 @@ class interface_reconstructor_factory<2, MeshWrapper>{
 };
 
 template<class MeshWrapper>
-class interface_reconstructor_factory<3, MeshWrapper>{
+class interface_reconstructor_factory<3, MeshWrapper, false>{
+ public:
+  interface_reconstructor_factory(MeshWrapper const& mesh,
+                                  std::vector<Tangram::IterativeMethodTolerances_t> tols) :
+      mesh_(mesh), tols_(tols) {};
+
+  auto operator()() -> decltype(auto) {
+    return std::make_shared<Tangram::Driver<Tangram::MOF, 3, MeshWrapper,
+                                            Tangram::SplitR3D,
+                                            Tangram::ClipR3D>>(mesh_, tols_, false);
+  }
+
+ private:
+  MeshWrapper const& mesh_;
+  std::vector<Tangram::IterativeMethodTolerances_t> tols_;
+};
+
+template<class MeshWrapper>
+class interface_reconstructor_factory<3, MeshWrapper, true>{
  public:
   interface_reconstructor_factory(MeshWrapper const& mesh,
                                   std::vector<Tangram::IterativeMethodTolerances_t> tols) :
@@ -191,17 +238,18 @@ class interface_reconstructor_factory<3, MeshWrapper>{
 // return the L1 and L2 error norm in the remapped field w.r.t. to an
 // analytically imposed field. If no field was imposed, the errors are
 // returned as 0
-
-template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
-                           std::shared_ptr<Jali::Mesh> targetMesh,
-                           Portage::Limiter_type limiter,
-                           int interp_order,
-                           std::string material_filename,
-                           std::vector<std::string> material_field_expressions,
-                           std::string field_filename,
-                           bool mesh_output, int rank, int numpe,
-                           Jali::Entity_kind entityKind,
-                           double *L1_error, double *L2_error);
+template<int dim, bool all_convex>
+void run(std::shared_ptr<Jali::Mesh> sourceMesh,
+         std::shared_ptr<Jali::Mesh> targetMesh,
+         Portage::Limiter_type limiter,
+         Portage::Boundary_Limiter_type bnd_limiter,
+         int interp_order,
+         std::string material_filename,
+         std::vector<std::string> material_field_expressions,
+         std::string field_filename, bool mesh_output,
+         int rank, int numpe, Jali::Entity_kind entityKind,
+         double *L1_error, double *L2_error,
+         std::shared_ptr<Profiler> profiler = nullptr);
 
 // Forward declaration of function to run interface reconstruction and
 // write the material polygons and their associated fields to a GMV file
@@ -211,10 +259,6 @@ int main(int argc, char** argv) {
 #ifdef ENABLE_PROFILE
   __itt_pause();
 #endif
-
-
-
-  struct timeval begin, end, diff;
 
   // Initialize MPI
   int mpi_init_flag;
@@ -247,15 +291,21 @@ int main(int argc, char** argv) {
   std::string srcfile, trgfile;  // No default
 
   int interp_order = 1;
-  bool mesh_output = true;
+  bool all_convex = true;
+  bool mesh_output = false;
   int n_converge = 1;
   Jali::Entity_kind entityKind = Jali::Entity_kind::CELL;
   Portage::Limiter_type limiter = Portage::Limiter_type::NOLIMITER;
+  Portage::Boundary_Limiter_type bnd_limiter = Portage::Boundary_Limiter_type::BND_NOLIMITER;
   double srclo = 0.0, srchi = 1.0;  // bounds of generated mesh in each dir
   std::string field_filename = "target_mm.gmv";
 
-  // Parse the input
+#if ENABLE_TIMINGS
+  bool only_threads = false;
+  std::string scaling_type = "strong";
+#endif
 
+  // Parse the input
   for (int i = 1; i < argc; i++) {
     std::string arg(argv[i]);
     std::size_t len = arg.length();
@@ -303,12 +353,19 @@ int main(int argc, char** argv) {
     } else if (keyword == "limiter") {
       if (valueword == "barth_jespersen" || valueword == "BARTH_JESPERSEN")
         limiter = Portage::Limiter_type::BARTH_JESPERSEN;
+    } else if (keyword == "bnd_limiter") {
+      if (valueword == "zero_gradient" || valueword == "ZERO_GRADIENT")
+        bnd_limiter = Portage::Boundary_Limiter_type::BND_ZERO_GRADIENT;
+      else if (valueword == "barth_jespersen" || valueword == "BARTH_JESPERSEN")
+        bnd_limiter = Portage::Boundary_Limiter_type::BND_BARTH_JESPERSEN;
     } else if (keyword == "mesh_min") {
-      srclo = stof(valueword);
+      srclo = stod(valueword);
     } else if (keyword == "mesh_max") {
-      srchi = stof(valueword);
+      srchi = stod(valueword);
     } else if (keyword == "output_meshes") {
       mesh_output = (valueword == "y");
+    } else if (keyword == "all_convex") {
+      all_convex = (valueword == "y");
     } else if (keyword == "results_file") {
       field_filename = valueword;
     } else if (keyword == "convergence_study") {
@@ -317,7 +374,16 @@ int main(int argc, char** argv) {
         std::cerr << "Number of meshes for convergence study should be greater than 0" << std::endl;
         throw std::exception();
       }
-    } else if (keyword == "help") {
+    }
+#if ENABLE_TIMINGS
+    else if (keyword == "only_threads"){
+      only_threads = (numpe == 1 and valueword == "y");
+    } else if (keyword == "scaling") {
+      assert(valueword == "strong" or valueword == "weak");
+      scaling_type = valueword;
+    }
+#endif
+    else if (keyword == "help") {
       print_usage();
       MPI_Abort(MPI_COMM_WORLD, -1);
     } else
@@ -364,9 +430,26 @@ int main(int argc, char** argv) {
     MPI_Abort(MPI_COMM_WORLD, -1);
   }
 
+#if ENABLE_TIMINGS
+  auto profiler = std::make_shared<Profiler>();
+  // save params for after
+  profiler->params.ranks   = numpe;
+  profiler->params.nsource = std::pow(nsourcecells, dim);
+  profiler->params.ntarget = std::pow(ntargetcells, dim);
+  profiler->params.order   = interp_order;
+  profiler->params.nmats   = material_field_expressions.size();
+  profiler->params.output  = "multimat_" + scaling_type + "_scaling_"
+                             + std::string(only_threads ? "omp.dat": "mpi.dat");
 
-  gettimeofday(&begin, 0);
-
+#if defined(_OPENMP)
+  profiler->params.threads = omp_get_max_threads();
+#endif
+  // start timers here
+  auto start = timer::now();
+  auto tic = timer::now();
+#else
+  std::shared_ptr<Profiler> profiler = nullptr;
+#endif
 
   // The mesh factory and mesh setup
   std::shared_ptr<Jali::Mesh> source_mesh, target_mesh;
@@ -413,17 +496,20 @@ int main(int argc, char** argv) {
                          ntargetcells, ntargetcells, ntargetcells);
     }
 
-    gettimeofday(&end, 0);
-    timersub(&end, &begin, &diff);
-    float seconds = diff.tv_sec + 1.0E-6*diff.tv_usec;
+#if ENABLE_TIMINGS
+    profiler->time.mesh_init = timer::elapsed(tic);
+
     if (rank == 0) {
+      float const seconds = profiler->time.mesh_init * 1.E3;
       if (n_converge == 1)
         std::cout << "Mesh Initialization Time: " << seconds << std::endl;
       else
         std::cout << "Mesh Initialization Time (Iteration i): " <<
-            seconds << std::endl;
+                  seconds << std::endl;
     }
-    gettimeofday(&begin, 0);
+
+    tic = timer::now();
+#endif
 
     // Make sure we have the right dimension and that source and
     // target mesh dimensions match (important when one or both of the
@@ -436,16 +522,28 @@ int main(int argc, char** argv) {
     // Now run the remap on the meshes and get back the L2 error
     switch (dim) {
       case 2:
-        run<2>(source_mesh, target_mesh, limiter, interp_order,
+        if (all_convex)
+          run<2, true>(source_mesh, target_mesh, limiter, bnd_limiter, interp_order,
                material_filename, material_field_expressions,
                field_filename, mesh_output,
-               rank, numpe, entityKind, &(l1_err[i]), &(l2_err[i]));
+               rank, numpe, entityKind, &(l1_err[i]), &(l2_err[i]), profiler);
+        else
+          run<2, false>(source_mesh, target_mesh, limiter, bnd_limiter, interp_order,
+               material_filename, material_field_expressions,
+               field_filename, mesh_output,
+               rank, numpe, entityKind, &(l1_err[i]), &(l2_err[i]), profiler);
         break;
       case 3:
-        run<3>(source_mesh, target_mesh, limiter, interp_order,
+        if (all_convex)
+          run<3, true>(source_mesh, target_mesh, limiter, bnd_limiter, interp_order,
                material_filename, material_field_expressions,
                field_filename, mesh_output,
-               rank, numpe, entityKind, &(l1_err[i]), &(l2_err[i]));
+               rank, numpe, entityKind, &(l1_err[i]), &(l2_err[i]), profiler);
+        else
+          run<3, false>(source_mesh, target_mesh, limiter, bnd_limiter, interp_order,
+               material_filename, material_field_expressions,
+               field_filename, mesh_output,
+               rank, numpe, entityKind, &(l1_err[i]), &(l2_err[i]), profiler);
         break;
       default:
         std::cerr << "Dimension not 2 or 3" << std::endl;
@@ -456,17 +554,17 @@ int main(int argc, char** argv) {
     std::cout << "L2 norm of error for iteration " << i << " is " <<
         l2_err[i] << std::endl;
 
-    gettimeofday(&end, 0);
-    timersub(&end, &begin, &diff);
-    seconds = diff.tv_sec + 1.0E-6*diff.tv_usec;
+#if ENABLE_TIMINGS
+    profiler->time.remap = timer::elapsed(tic);
+
     if (rank == 0) {
+      float const seconds = profiler->time.remap * 1.E3;
       if (n_converge == 1)
         std::cout << "Remap Time: " << seconds << std::endl;
       else
         std::cout << "Remap Time (Iteration i): " << seconds << std::endl;
     }
-    gettimeofday(&begin, 0);
-
+#endif
 
     // if convergence study, double the mesh resolution
     nsourcecells *= 2;
@@ -481,22 +579,30 @@ int main(int argc, char** argv) {
   }
 
   MPI_Finalize();
+
+#if ENABLE_TIMINGS
+  profiler->time.total = timer::elapsed(start);
+
+  if (rank == 0)
+    profiler->dump();
+#endif
 }
 
 
 // Run a remap between two meshes and return the L1 and L2 error norms
 // with respect to the specified field. If a field was not specified and
 // remap only volume fractions (and if specified, centroids)
-
-template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
+template<int dim, bool all_convex> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
                            std::shared_ptr<Jali::Mesh> targetMesh,
                            Portage::Limiter_type limiter,
+                           Portage::Boundary_Limiter_type bnd_limiter,
                            int interp_order,
                            std::string material_filename,
                            std::vector<std::string> material_field_expressions,
                            std::string field_filename, bool mesh_output,
                            int rank, int numpe, Jali::Entity_kind entityKind,
-                           double *L1_error, double *L2_error) {
+                           double *L1_error, double *L2_error,
+                           std::shared_ptr<Profiler> profiler) {
 
   if (rank == 0)
     std::cout << "starting portageapp_jali_multimat...\n";
@@ -580,8 +686,11 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
         std::cout << "Not all material fields are specified. Missing ones will be set to 0\n";
     }
     std::cout << "   Interpolation order is " << interp_order << "\n";
-    if (interp_order == 2)
+    if (interp_order == 2) {
       std::cout << "   Limiter type is " << limiter << "\n";
+      std::cout << "   Boundary limiter type is " << bnd_limiter << "\n";
+    }
+    std::cout << "   All_convex is " << all_convex << "\n";
   }
 
 
@@ -628,9 +737,11 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
 
 
   // Perform interface reconstruction
-
+#if ENABLE_TIMINGS
+  auto tic = timer::now();
+#endif
   std::vector<Tangram::IterativeMethodTolerances_t> tols(2,{1000, 1e-15, 1e-15});
-  interface_reconstructor_factory<dim, Wonton::Jali_Mesh_Wrapper> source_IRFactory(sourceMeshWrapper, tols);
+  interface_reconstructor_factory<dim, Wonton::Jali_Mesh_Wrapper, all_convex> source_IRFactory(sourceMeshWrapper, tols);
   auto source_interface_reconstructor = source_IRFactory();
 
   // convert from Portage point to Tangram point (will go away when we
@@ -728,42 +839,90 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
   }
 
   if (numpe > 1) MPI_Barrier(MPI_COMM_WORLD);
+#if ENABLE_TIMINGS
+  profiler->time.interface = timer::elapsed(tic);
+#endif
 
   Wonton::MPIExecutor_type mpiexecutor(MPI_COMM_WORLD);
   Wonton::Executor_type *executor = (numpe > 1) ? &mpiexecutor : nullptr;
-  
+
   if (dim == 2) {
-    if (interp_order == 1) {
-      Portage::MMDriver<
-        Portage::SearchKDTree,
-        Portage::IntersectR2D,
-        Portage::Interpolate_1stOrder,
-        2,
-        Wonton::Jali_Mesh_Wrapper,
-        Wonton::Jali_State_Wrapper,
-        Wonton::Jali_Mesh_Wrapper,
-        Wonton::Jali_State_Wrapper,
-        Tangram::XMOF2D_Wrapper>
-          driver(sourceMeshWrapper, sourceStateWrapper,
-                 targetMeshWrapper, targetStateWrapper);
-      driver.set_remap_var_names(remap_fields);
-      driver.run(executor);
-    } else if (interp_order == 2) {
-      Portage::MMDriver<
-        Portage::SearchKDTree,
-        Portage::IntersectR2D,
-        Portage::Interpolate_2ndOrder,
-        2,
-        Wonton::Jali_Mesh_Wrapper,
-        Wonton::Jali_State_Wrapper,
-        Wonton::Jali_Mesh_Wrapper,
-        Wonton::Jali_State_Wrapper,
-        Tangram::XMOF2D_Wrapper>
-          driver(sourceMeshWrapper, sourceStateWrapper,
-                 targetMeshWrapper, targetStateWrapper);
-      driver.set_remap_var_names(remap_fields);
-      driver.set_limiter(limiter);
-      driver.run(executor);
+    if (all_convex) {
+      if (interp_order == 1) {
+        Portage::MMDriver<
+          Portage::SearchKDTree,
+          Portage::IntersectR2D,
+          Portage::Interpolate_1stOrder,
+          2,
+          Wonton::Jali_Mesh_Wrapper,
+          Wonton::Jali_State_Wrapper,
+          Wonton::Jali_Mesh_Wrapper,
+          Wonton::Jali_State_Wrapper,
+          Tangram::XMOF2D_Wrapper>
+            driver(sourceMeshWrapper, sourceStateWrapper,
+                   targetMeshWrapper, targetStateWrapper);
+        driver.set_remap_var_names(remap_fields);
+        driver.set_reconstructor_options(tols,all_convex);
+        driver.run(executor);
+      } else if (interp_order == 2) {
+        Portage::MMDriver<
+          Portage::SearchKDTree,
+          Portage::IntersectR2D,
+          Portage::Interpolate_2ndOrder,
+          2,
+          Wonton::Jali_Mesh_Wrapper,
+          Wonton::Jali_State_Wrapper,
+          Wonton::Jali_Mesh_Wrapper,
+          Wonton::Jali_State_Wrapper,
+          Tangram::XMOF2D_Wrapper>
+            driver(sourceMeshWrapper, sourceStateWrapper,
+                   targetMeshWrapper, targetStateWrapper);
+        driver.set_remap_var_names(remap_fields);
+        driver.set_limiter(limiter);
+        driver.set_bnd_limiter(bnd_limiter);
+        driver.set_reconstructor_options(tols,all_convex);
+        driver.run(executor);
+      }
+    } else { // all_convex
+      if (interp_order == 1) {
+        Portage::MMDriver<
+          Portage::SearchKDTree,
+          Portage::IntersectR2D,
+          Portage::Interpolate_1stOrder,
+          2,
+          Wonton::Jali_Mesh_Wrapper,
+          Wonton::Jali_State_Wrapper,
+          Wonton::Jali_Mesh_Wrapper,
+          Wonton::Jali_State_Wrapper,
+          Tangram::MOF,
+          Tangram::SplitR2D,
+          Tangram::ClipR2D>
+            driver(sourceMeshWrapper, sourceStateWrapper,
+                   targetMeshWrapper, targetStateWrapper);
+        driver.set_remap_var_names(remap_fields);
+        driver.set_reconstructor_options(tols,all_convex);
+        driver.run(executor);
+      } else if (interp_order == 2) {
+        Portage::MMDriver<
+          Portage::SearchKDTree,
+          Portage::IntersectR2D,
+          Portage::Interpolate_2ndOrder,
+          2,
+          Wonton::Jali_Mesh_Wrapper,
+          Wonton::Jali_State_Wrapper,
+          Wonton::Jali_Mesh_Wrapper,
+          Wonton::Jali_State_Wrapper,
+          Tangram::MOF,
+          Tangram::SplitR2D,
+          Tangram::ClipR2D>
+            driver(sourceMeshWrapper, sourceStateWrapper,
+                   targetMeshWrapper, targetStateWrapper);
+        driver.set_remap_var_names(remap_fields);
+        driver.set_limiter(limiter);
+        driver.set_bnd_limiter(bnd_limiter);
+        driver.set_reconstructor_options(tols,all_convex);
+        driver.run(executor);
+      }
     }
   } else {  // 3D
     if (interp_order == 1) {
@@ -782,6 +941,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
           driver(sourceMeshWrapper, sourceStateWrapper,
                  targetMeshWrapper, targetStateWrapper);
       driver.set_remap_var_names(remap_fields);
+      driver.set_reconstructor_options(tols,all_convex);
       driver.run(executor);
     } else {  // 2nd order & 3D
       Portage::MMDriver<
@@ -800,6 +960,8 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
                  targetMeshWrapper, targetStateWrapper);
       driver.set_remap_var_names(remap_fields);
       driver.set_limiter(limiter);
+      driver.set_bnd_limiter(bnd_limiter);
+      driver.set_reconstructor_options(tols,all_convex);
       driver.run(executor);
     }
   }
@@ -807,7 +969,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
   // Dump some timing information
   if (numpe > 1) MPI_Barrier(MPI_COMM_WORLD);
 
-
+#if !ENABLE_TIMINGS
   // Perform interface reconstruction on target mesh for pretty pictures
   // and error computation of material fields
 
@@ -847,7 +1009,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
   }
 
 
-  interface_reconstructor_factory<dim, Wonton::Jali_Mesh_Wrapper>
+  interface_reconstructor_factory<dim, Wonton::Jali_Mesh_Wrapper, all_convex>
       target_IRFactory(targetMeshWrapper, tols);
   auto target_interface_reconstructor = target_IRFactory();
 
@@ -1012,5 +1174,5 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
     if (rank == 0)
       std::cout << "...done." << std::endl;
   }
-
+#endif
 }

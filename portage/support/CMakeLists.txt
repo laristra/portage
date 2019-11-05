@@ -15,6 +15,7 @@ set(support_HEADERS
     basis.h
     operator.h
     test_operator_data.h
+    faceted_setup.h
     PARENT_SCOPE
 )
 
@@ -39,6 +40,11 @@ if (ENABLE_UNIT_TESTS)
     SOURCES test/test_operator.cc
     POLICY MPI
     THREADS 1
+    )
+
+  cinch_add_unit(test_faceted_setup
+    SOURCES test/test_faceted_setup.cc
+    POLICY SERIAL
     )
 
 endif(ENABLE_UNIT_TESTS)

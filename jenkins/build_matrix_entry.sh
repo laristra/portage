@@ -31,9 +31,9 @@ fi
 
 # set modules and install paths
 
-jali_version=1.0.4
-tangram_version=0.9.3
-xmof2d_version=0.9.4
+jali_version=1.0.5rc3
+tangram_version=0.9.7
+xmof2d_version=0.9.5
 lapack_version=3.8.0
  
 
@@ -41,15 +41,25 @@ export NGC=/usr/local/codes/ngc
 ngc_include_dir=$NGC/private/include
 
 # compiler-specific settings
-if [[ $compiler == "intel" ]]; then
+if [[ $compiler == "intel18" ]]; then
+  compiler_type=intel
   compiler_version=18.0.1
   cxxmodule=intel/${compiler_version}
   # openmpi version that libs were built against
   openmpi_version=2.1.2
   # openmpi module for compiling and linking
   mpi_module=openmpi/2.1.2
-elif [[ $compiler == "gcc" ]]; then
+elif [[ $compiler == "gcc6" ]]; then
+  compiler_type=gcc
   compiler_version=6.4.0
+  cxxmodule=gcc/${compiler_version}
+  # openmpi version that libs were built against
+  openmpi_version=2.1.2
+  # openmpi module for compiling and linking
+  mpi_module=openmpi/2.1.2
+elif [[ $compiler == "gcc7" ]]; then
+  compiler_type=gcc
+  compiler_version=7.3.0
   cxxmodule=gcc/${compiler_version}
   # openmpi version that libs were built against
   openmpi_version=2.1.2
@@ -57,13 +67,14 @@ elif [[ $compiler == "gcc" ]]; then
   mpi_module=openmpi/2.1.2
 fi
 
-jali_install_dir=$NGC/private/jali/${jali_version}-${compiler}-${compiler_version}-openmpi-${openmpi_version}
-tangram_install_dir=$NGC/private/tangram/${tangram_version}-${compiler}-${compiler_version}-openmpi-${openmpi_version}
-tangram_install_dir_nompi=$NGC/private/tangram/${tangram_version}-${compiler}-${gcc_version}-nompi
-xmof2d_install_dir=$NGC/private/xmof2d/${xmof2d_version}-${compiler}-${compiler_version}
-lapacke_dir=$NGC/private/lapack/${lapack_version}-patched-${compiler}-${compiler_version}
+jali_install_dir=$NGC/private/jali/${jali_version}-${compiler_type}-${compiler_version}-openmpi-${openmpi_version}
+tangram_install_dir=$NGC/private/tangram/${tangram_version}-${compiler_type}-${compiler_version}-openmpi-${openmpi_version}-jali-${jali_version}
+#tangram_install_dir=$NGC/private/tangram/${tangram_version}-${compiler_type}-${compiler_version}-openmpi-${openmpi_version}
+tangram_install_dir_nompi=$NGC/private/tangram/${tangram_version}-${compiler_type}-${compiler_version}-nompi
+xmof2d_install_dir=$NGC/private/xmof2d/${xmof2d_version}-${compiler_type}-${compiler_version}
+lapacke_dir=$NGC/private/lapack/${lapack_version}-patched-${compiler_type}-${compiler_version}
 
-if [[ $compiler == "gcc" ]]; then
+if [[ $compiler == "gcc6" ]]; then
   flecsi_install_prefix=$NGC/private/flecsi/374b56b-gcc-6.4.0
   flecsisp_install_prefix=$NGC/private/flecsi-sp/e78c594-gcc-6.4.0
 fi

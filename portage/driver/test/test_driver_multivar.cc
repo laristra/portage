@@ -301,6 +301,7 @@ TEST(Test_MultiVar_Remap, Nested_Meshes) {
 
   remapper2.set_remap_var_names(source_var_names, target_var_names);
   remapper2.set_limiter(Portage::NOLIMITER);
+  remapper2.set_bnd_limiter(Portage::BND_NOLIMITER);
 
   // Execute remapper in serial
 

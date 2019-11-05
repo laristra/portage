@@ -55,13 +55,14 @@ class Interpolate_3rdOrder {
 
   Interpolate_3rdOrder(SourceMeshType const & source_mesh,
                        TargetMeshType const & target_mesh,
-                       StateType const & source_state) :
+                       StateType const & source_state,
+                       NumericTolerances_t num_tols) :
       source_mesh_(source_mesh),
       target_mesh_(target_mesh),
       source_state_(source_state),
       interp_var_name_("VariableNameNotSet"),
-      limiter_type_(NOLIMITER),
-      source_vals_(nullptr) {}
+      source_vals_(nullptr),
+      num_tols_(num_tols) {}
 
   /// Copy constructor (disabled)
   //  Interpolate_3rdOrder(const Interpolate_3rdOrder &) = delete;
@@ -76,9 +77,9 @@ class Interpolate_3rdOrder {
   /// Set the name of the interpolation variable and the limiter type
 
   void set_interpolation_variable(std::string const & interp_var_name,
-                                  Limiter_type limiter_type = NOLIMITER) {
+                                  Limiter_type limiter_type = NOLIMITER,
+                                  Boundary_Limiter_type boundary_limiter_type = BND_NOLIMITER) {
     interp_var_name_ = interp_var_name;
-    limiter_type_ = limiter_type;
 
     // Extract the field data from the statemanager
 
@@ -87,7 +88,8 @@ class Interpolate_3rdOrder {
     // Compute the limited quadfits for the field
 
     Limited_Quadfit<D, on_what, SourceMeshType, StateType>
-        limqfit(source_mesh_, source_state_, interp_var_name, limiter_type_);
+        limqfit(source_mesh_, source_state_, interp_var_name, 
+                limiter_type, boundary_limiter_type);
 
 
     int nentities = source_mesh_.end(on_what)-source_mesh_.begin(on_what);
@@ -138,8 +140,8 @@ class Interpolate_3rdOrder {
   TargetMeshType const & target_mesh_;
   StateType const & source_state_;
   std::string interp_var_name_;
-  Limiter_type limiter_type_;
   double const * source_vals_;
+  NumericTolerances_t num_tols_;
 
   // Portage::vector is generalization of std::vector and
   // Wonton::Vector<D*(D+3)/2> is a geometric vector
@@ -162,22 +164,23 @@ class Interpolate_3rdOrder<D, Entity_kind::CELL, SourceMeshType, TargetMeshType,
  public:
   Interpolate_3rdOrder(SourceMeshType const & source_mesh,
                        TargetMeshType const & target_mesh,
-                       StateType const & source_state) :
+                       StateType const & source_state,
+                       NumericTolerances_t num_tols) :
       source_mesh_(source_mesh),
       target_mesh_(target_mesh),
       source_state_(source_state),
       interp_var_name_("VariableNameNotSet"),
-      limiter_type_(NOLIMITER),
-      source_vals_(nullptr) {}
+      source_vals_(nullptr),
+      num_tols_(num_tols) {}
 
 
   /// Set the name of the interpolation variable and the limiter type
 
   void set_interpolation_variable(std::string const & interp_var_name,
-                                  Limiter_type limiter_type = NOLIMITER) {
+                                  Limiter_type limiter_type = NOLIMITER,
+                                  Boundary_Limiter_type boundary_limiter_type = BND_NOLIMITER) {
 
     interp_var_name_ = interp_var_name;
-    limiter_type_ = limiter_type;
 
     // Extract the field data from the statemanager
 
@@ -186,7 +189,7 @@ class Interpolate_3rdOrder<D, Entity_kind::CELL, SourceMeshType, TargetMeshType,
     // Compute the limited quadfits for the field
 
     Limited_Quadfit<D, Entity_kind::CELL, SourceMeshType, StateType>
-        limqfit(source_mesh_, source_state_, interp_var_name_, limiter_type_);
+        limqfit(source_mesh_, source_state_, interp_var_name_, limiter_type, boundary_limiter_type);
 
     int nentities = source_mesh_.end(Entity_kind::CELL)-source_mesh_.begin(Entity_kind::CELL);
     quadfits_.resize(nentities);
@@ -240,8 +243,8 @@ class Interpolate_3rdOrder<D, Entity_kind::CELL, SourceMeshType, TargetMeshType,
   TargetMeshType const & target_mesh_;
   StateType const & source_state_;
   std::string interp_var_name_;
-  Limiter_type limiter_type_;
   double const * source_vals_;
+  NumericTolerances_t num_tols_;
 
   // Portage::vector is generalization of std::vector and
   // Wonton::Vector<D> is a geometric vector
@@ -278,14 +281,15 @@ double Interpolate_3rdOrder<D, Entity_kind::CELL, SourceMeshType, TargetMeshType
 
   /// @todo Should use zip_iterator here but I am not sure I know how to
 
+  double vol = target_mesh_.cell_volume(targetCellID);
   for (int j = 0; j < nsrccells; ++j) {
     int srccell = sources_and_weights[j].entityID;
     // int N = D*(D+3)/2;
     std::vector<double> xsect_weights = sources_and_weights[j].weights;
     double xsect_volume = xsect_weights[0];
 
-    double eps = 1e-30;
-    if (xsect_volume <= eps) continue;  // no intersection
+    if (xsect_volume/vol <= num_tols_.min_relative_volume)
+      continue;  // no intersection
 
     Point<D> srccell_centroid;
     source_mesh_.cell_centroid(srccell, &srccell_centroid);
@@ -337,13 +341,14 @@ class Interpolate_3rdOrder<D, Entity_kind::NODE, SourceMeshType, TargetMeshType,
  public:
   Interpolate_3rdOrder(SourceMeshType const & source_mesh,
                        TargetMeshType const & target_mesh,
-                       StateType const & source_state) :
+                       StateType const & source_state,
+                       NumericTolerances_t num_tols) :
       source_mesh_(source_mesh),
       target_mesh_(target_mesh),
       source_state_(source_state),
       interp_var_name_("VariableNameNotSet"),
-      limiter_type_(NOLIMITER),
-      source_vals_(NULL) {}
+      source_vals_(NULL),
+      num_tols_(num_tols) {}
 
   /// Copy constructor (disabled)
   //  Interpolate_3rdOrder(const Interpolate_3rdOrder &) = delete;
@@ -358,10 +363,10 @@ class Interpolate_3rdOrder<D, Entity_kind::NODE, SourceMeshType, TargetMeshType,
   /// Set the name of the interpolation variable and the limiter type
 
   void set_interpolation_variable(std::string const & interp_var_name,
-                                  Limiter_type limiter_type = NOLIMITER) {
+                                  Limiter_type limiter_type = NOLIMITER,
+                                  Boundary_Limiter_type boundary_limiter_type = BND_NOLIMITER) {
 
     interp_var_name_ = interp_var_name;
-    limiter_type_ = limiter_type;
 
     // Extract the field data from the statemanager
 
@@ -370,7 +375,7 @@ class Interpolate_3rdOrder<D, Entity_kind::NODE, SourceMeshType, TargetMeshType,
     // Compute the limited quadfits for the field
 
     Limited_Quadfit<D, Entity_kind::NODE, SourceMeshType, StateType>
-        limqfit(source_mesh_, source_state_, interp_var_name, limiter_type);
+        limqfit(source_mesh_, source_state_, interp_var_name, limiter_type, boundary_limiter_type);
 
     int nentities = source_mesh_.end(Entity_kind::NODE)-source_mesh_.begin(Entity_kind::NODE);
     quadfits_.resize(nentities);
@@ -419,8 +424,8 @@ class Interpolate_3rdOrder<D, Entity_kind::NODE, SourceMeshType, TargetMeshType,
   TargetMeshType const & target_mesh_;
   StateType const & source_state_;
   std::string interp_var_name_;
-  Limiter_type limiter_type_;
   double const * source_vals_;
+  NumericTolerances_t num_tols_;
 
   // Portage::vector is generalization of std::vector and
   // Wonton::Vector<D> is a geometric vector
@@ -457,13 +462,14 @@ double Interpolate_3rdOrder<D, Entity_kind::NODE, SourceMeshType, TargetMeshType
 
   /// @todo Should use zip_iterator here but I am not sure I know how to
 
+  double vol = target_mesh_.dual_cell_volume(targetNodeID);
   for (int j = 0; j < nsrcnodes; ++j) {
     int srcnode = sources_and_weights[j].entityID;
     std::vector<double> xsect_weights = sources_and_weights[j].weights;
     double xsect_volume = xsect_weights[0];
 
-    double eps = 1e-30;
-    if (xsect_volume <= eps) continue;  // no intersection
+    if (xsect_volume/vol <= num_tols_.min_relative_volume)
+      continue;  // no intersection
 
     // note: here we are getting the node coord, not the centroid of
     // the dual cell

@@ -38,6 +38,17 @@ TEST(SwarmFactory, Check_1D_random) {
   }
 }
 
+TEST(SwarmFactory, Check_1D_random_seed) {
+  std::shared_ptr<Portage::Meshfree::Swarm<1>> swarm=Portage::Meshfree::SwarmFactory(-4.,4.,17,0,1234);
+  std::shared_ptr<Portage::Meshfree::Swarm<1>> swarm2=Portage::Meshfree::SwarmFactory(-4.,4.,17,0,1234);
+  ASSERT_EQ(swarm->num_owned_particles(), 17);
+  for (int i=0; i<17; i++) {
+    Wonton::Point<1> pt = swarm->get_particle_coordinates(i);
+    Wonton::Point<1> pt2 = swarm2->get_particle_coordinates(i);
+    ASSERT_EQ(pt[0], pt2[0]);
+  }
+}
+
 TEST(SwarmFactory, Check_2D_random) {
   std::shared_ptr<Portage::Meshfree::Swarm<2>> swarm=Portage::Meshfree::SwarmFactory(-4.,-4.,4.,4.,17*17,0);
   ASSERT_EQ(swarm->num_owned_particles(), 17*17);
@@ -47,6 +58,18 @@ TEST(SwarmFactory, Check_2D_random) {
     ASSERT_GE(pt[0], -4.);
     ASSERT_LE(pt[1],  4.);
     ASSERT_GE(pt[1], -4.);
+  }
+}
+
+TEST(SwarmFactory, Check_2D_random_seed) {
+  std::shared_ptr<Portage::Meshfree::Swarm<2>> swarm=Portage::Meshfree::SwarmFactory(-4.,-4.,4.,4.,17*17,0,1234);
+  std::shared_ptr<Portage::Meshfree::Swarm<2>> swarm2=Portage::Meshfree::SwarmFactory(-4.,-4.,4.,4.,17*17,0,1234);
+  ASSERT_EQ(swarm->num_owned_particles(), 17*17);
+  for (int i=0; i<17*17; i++) {
+    Wonton::Point<2> pt = swarm->get_particle_coordinates(i);
+    Wonton::Point<2> pt2 = swarm2->get_particle_coordinates(i);
+    ASSERT_EQ(pt[0],  pt2[0]);
+    ASSERT_EQ(pt[1],  pt2[1]);
   }
 }
 
@@ -61,6 +84,23 @@ TEST(SwarmFactory, Check_3D_random) {
     ASSERT_GE(pt[1], -4.);
     ASSERT_LE(pt[2],  4.);
     ASSERT_GE(pt[2], -4.);
+  }
+}
+
+TEST(SwarmFactory, Check_3D_random_seed) {
+  std::shared_ptr<Portage::Meshfree::Swarm<3>> swarm=Portage::Meshfree::SwarmFactory(-4.,-4.,-4.,4.,4.,4.,17*17*17,0,1234);
+  std::shared_ptr<Portage::Meshfree::Swarm<3>> swarm2=Portage::Meshfree::SwarmFactory(-4.,-4.,-4.,4.,4.,4.,17*17*17,0,1234);
+  ASSERT_EQ(swarm->num_owned_particles(), 17*17*17);
+  for (int i=0; i<17; i++) {
+    for (int j=0; j<17; j++) {
+      for (int k=0; k<17; k++) {
+	Wonton::Point<3> pt = swarm->get_particle_coordinates((i*17+j)*17+k);
+	Wonton::Point<3> pt2 = swarm2->get_particle_coordinates((i*17+j)*17+k);
+	ASSERT_EQ(pt[0],  pt2[0]);
+	ASSERT_EQ(pt[1],  pt2[1]);
+	ASSERT_EQ(pt[2],  pt2[2]);
+      }
+    }
   }
 }
 
@@ -142,6 +182,23 @@ TEST(SwarmFactory, Check_3D_perturbed) {
   }
 }
 
+TEST(SwarmFactory, Check_3D_perturbed_seed) {
+  std::shared_ptr<Portage::Meshfree::Swarm<3>> swarm=Portage::Meshfree::SwarmFactory(-4.,-4.,-4.,4.,4.,4.,17*17*17,2,1234);
+  std::shared_ptr<Portage::Meshfree::Swarm<3>> swarm2=Portage::Meshfree::SwarmFactory(-4.,-4.,-4.,4.,4.,4.,17*17*17,2,1234);
+  ASSERT_EQ(swarm->num_owned_particles(), 17*17*17);
+  for (int i=0; i<17; i++) {
+    for (int j=0; j<17; j++) {
+      for (int k=0; k<17; k++) {
+	Wonton::Point<3> pt = swarm->get_particle_coordinates((i*17+j)*17+k);
+	Wonton::Point<3> pt2 = swarm2->get_particle_coordinates((i*17+j)*17+k);
+        ASSERT_EQ(pt[0], pt2[0]);
+        ASSERT_EQ(pt[1], pt2[1]);
+        ASSERT_EQ(pt[2], pt2[2]);
+      }
+    }
+  }
+}
+
 TEST(Swarm, Sanity_Check_3D) {
   Portage::vector<Wonton::Point<3>> points(10);
 
@@ -218,5 +275,117 @@ TEST(Swarm, Build_Simple_Mesh_Wrapper_Node) {
     Wonton::Point<3> node;
     mesh_wrapper.node_get_coordinates(ijk, &node);
     for (int i = 0; i < 3; i++) ASSERT_TRUE(pt[i] == node[i]);
+  }
+}
+
+
+/*!
+  @brief Unit test for factory with multiple 2D meshes
+*/
+TEST(Swarm, Multiple_2D) {
+  Wonton::Simple_Mesh mesh0(0.0, 0.0, 1.0, 1.0, 4, 4);
+  Wonton::Simple_Mesh_Wrapper wrapper0(mesh0);
+
+  Wonton::Simple_Mesh mesh1(1.0, 0.0, 2.0, 1.0, 4, 4);
+  Wonton::Simple_Mesh_Wrapper wrapper1(mesh1);
+
+  Wonton::Simple_Mesh mesh2(1.0, 1.0, 2.0, 2.0, 4, 4);
+  Wonton::Simple_Mesh_Wrapper wrapper2(mesh2);
+
+  Wonton::Simple_Mesh mesh3(0.0, 1.0, 1.0, 2.0, 4, 4);
+  Wonton::Simple_Mesh_Wrapper wrapper3(mesh3);
+
+  std::vector<Wonton::Simple_Mesh_Wrapper*> wrappers={&wrapper0, &wrapper1, &wrapper2, &wrapper3};
+
+  // create swarm from mesh wrapper cells
+  std::shared_ptr<Portage::Meshfree::Swarm<2>> swarm_ptr =
+    Portage::Meshfree::SwarmFactory<2,Wonton::Simple_Mesh_Wrapper>(wrappers, Portage::Entity_kind::NODE);
+  Portage::Meshfree::Swarm<2> &swarm(*swarm_ptr);
+
+  // test size
+  ASSERT_EQ(100, swarm.num_particles());
+
+  // test points
+  for (size_t ijk = 0; ijk < 100; ijk++) {
+    auto pt = swarm.get_particle_coordinates(ijk);
+    Wonton::Point<2> node;
+    if (ijk < 25) {
+      wrappers[0]->node_get_coordinates(ijk   , &node);
+      for (int i = 0; i < 2; i++) ASSERT_TRUE(pt[i] == node[i]);
+    } else if (ijk < 50) {
+      wrappers[1]->node_get_coordinates(ijk-25, &node);
+      for (int i = 0; i < 2; i++) ASSERT_TRUE(pt[i] == node[i]);
+    } else if (ijk < 75) {
+      wrappers[2]->node_get_coordinates(ijk-50, &node);
+      for (int i = 0; i < 2; i++) ASSERT_TRUE(pt[i] == node[i]);
+    } else {
+      wrappers[3]->node_get_coordinates(ijk-75, &node);
+      for (int i = 0; i < 2; i++) ASSERT_TRUE(pt[i] == node[i]);
+    }
+  }
+}
+
+
+/*!
+  @brief Unit test for factory with multiple 3D meshes
+*/
+TEST(Swarm, Multiple_3D) {
+  Wonton::Simple_Mesh mesh0(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 4, 4, 4);
+  Wonton::Simple_Mesh mesh1(1.0, 0.0, 0.0, 2.0, 1.0, 1.0, 4, 4, 4);
+  Wonton::Simple_Mesh mesh2(1.0, 1.0, 0.0, 2.0, 2.0, 1.0, 4, 4, 4);
+  Wonton::Simple_Mesh mesh3(0.0, 1.0, 0.0, 1.0, 2.0, 1.0, 4, 4, 4);
+  Wonton::Simple_Mesh mesh4(0.0, 0.0, 1.0, 1.0, 1.0, 2.0, 4, 4, 4);
+  Wonton::Simple_Mesh mesh5(1.0, 0.0, 1.0, 2.0, 1.0, 2.0, 4, 4, 4);
+  Wonton::Simple_Mesh mesh6(1.0, 1.0, 1.0, 2.0, 2.0, 2.0, 4, 4, 4);
+  Wonton::Simple_Mesh mesh7(0.0, 1.0, 1.0, 1.0, 2.0, 2.0, 4, 4, 4);
+  Wonton::Simple_Mesh_Wrapper wrapper0(mesh0);
+  Wonton::Simple_Mesh_Wrapper wrapper1(mesh0);
+  Wonton::Simple_Mesh_Wrapper wrapper2(mesh0);
+  Wonton::Simple_Mesh_Wrapper wrapper3(mesh0);
+  Wonton::Simple_Mesh_Wrapper wrapper4(mesh0);
+  Wonton::Simple_Mesh_Wrapper wrapper5(mesh0);
+  Wonton::Simple_Mesh_Wrapper wrapper6(mesh0);
+  Wonton::Simple_Mesh_Wrapper wrapper7(mesh0);
+
+  std::vector<Wonton::Simple_Mesh_Wrapper*> wrappers={&wrapper0, &wrapper1, &wrapper2, &wrapper3, 
+                                                      &wrapper4, &wrapper5, &wrapper6, &wrapper7};
+
+  // create swarm from mesh wrapper cells
+  std::shared_ptr<Portage::Meshfree::Swarm<3>> swarm_ptr =
+    Portage::Meshfree::SwarmFactory<3,Wonton::Simple_Mesh_Wrapper>(wrappers, Portage::Entity_kind::NODE);
+  Portage::Meshfree::Swarm<3> &swarm(*swarm_ptr);
+
+  // test size
+  ASSERT_EQ(1000, swarm.num_particles());
+
+  // test points
+  for (size_t ijk = 0; ijk < 1000; ijk++) {
+    auto pt = swarm.get_particle_coordinates(ijk);
+    Wonton::Point<3> node;
+    if (ijk < 125) {
+      wrappers[0]->node_get_coordinates(ijk    , &node);
+      for (int i = 0; i < 3; i++) ASSERT_TRUE(pt[i] == node[i]);
+    } else if (ijk < 250) {
+      wrappers[1]->node_get_coordinates(ijk-125, &node);
+      for (int i = 0; i < 3; i++) ASSERT_TRUE(pt[i] == node[i]);
+    } else if (ijk < 375) {
+      wrappers[2]->node_get_coordinates(ijk-250, &node);
+      for (int i = 0; i < 3; i++) ASSERT_TRUE(pt[i] == node[i]);
+    } else if (ijk < 500) {
+      wrappers[2]->node_get_coordinates(ijk-375, &node);
+      for (int i = 0; i < 3; i++) ASSERT_TRUE(pt[i] == node[i]);
+    } else if (ijk < 625) {
+      wrappers[2]->node_get_coordinates(ijk-500, &node);
+      for (int i = 0; i < 3; i++) ASSERT_TRUE(pt[i] == node[i]);
+    } else if (ijk < 750) {
+      wrappers[2]->node_get_coordinates(ijk-625, &node);
+      for (int i = 0; i < 3; i++) ASSERT_TRUE(pt[i] == node[i]);
+    } else if (ijk < 875) {
+      wrappers[2]->node_get_coordinates(ijk-750, &node);
+      for (int i = 0; i < 3; i++) ASSERT_TRUE(pt[i] == node[i]);
+    } else {
+      wrappers[3]->node_get_coordinates(ijk-875, &node);
+      for (int i = 0; i < 3; i++) ASSERT_TRUE(pt[i] == node[i]);
+    }
   }
 }

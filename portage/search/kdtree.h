@@ -17,14 +17,14 @@ Please see the license file at the root of this repository, or at:
 #include <set>
 #include <cstdlib>
 
-#include "portage/search/BoundBox.h"
 #include "portage/support/portage.h"
+#include "portage/search/BoundBox.h"
 #include "wonton/support/Point.h"
+
+namespace Portage {
+
 using Wonton::Point;
 using Wonton::Vector;
-
-namespace gk {
-
 
 #define SWAP(a, b, type) {  \
     type c_ = b; \
@@ -32,19 +32,12 @@ namespace gk {
     a = c_; \
 }
 
-const long XDIM = 0;
-const long YDIM = 1;
-const long ZDIM = 2;
-
-const double KDEPS = 1.0e-8;
-const double KD_SAFETY_EPS = 1.0e-4;
-
 /*!
   @struct KDTree "kdtree.h"
   @brief An N-dimensional k-d tree for manipulating polygon data.
   @tparam D Dimension of the k-d tree.
   */
-template<long D> struct KDTree {
+template<int D> struct KDTree {
 
         /// Default constructor.
         KDTree() {
@@ -62,7 +55,7 @@ template<long D> struct KDTree {
             }
         }
         size_t num_entities;
-        long *linkp;
+        int *linkp;
         IsotheticBBox<D> *sbox;
 };
 
@@ -70,24 +63,24 @@ template<long D> struct KDTree {
 /////////////////////////////////////////
 /* The create function for the KD-Tree */
 /////////////////////////////////////////
-template<long D>
+template<int D>
 KDTree<D> *KDTreeCreate(const std::vector<IsotheticBBox<D> >& bbox);
 
 /////////////////////////////////////////
 /* The median function for the KD-Tree */
 /////////////////////////////////////////
-template<long D>
-void MedianSelect(long , long , double *, long *, int);
+template<int D>
+void MedianSelect(int , int , double *, int *, int);
 
-template<long D>
+template<int D>
 void LocatePoint(const Point<D>& qp, 
         const KDTree<D>* kdtree,
-        std::vector<long>& pfound);
+        std::vector<int>& pfound);
 
-template<long D>
+template<int D>
 void Intersect(const IsotheticBBox<D>& box, 
         const KDTree<D>* kdtree,
-        std::vector<long>& pfound);
+        std::vector<int>& pfound);
 
 
 /****************************************************************************/
@@ -95,8 +88,8 @@ void Intersect(const IsotheticBBox<D>& box,
 /*                                                                          */
 /* Creation Date  :April 20, 1996                                           */
 /*                                                                          */
-/* Purpose        :MedianSelect takes an long `k', a double array 'arr',    */
-/*                 and an long array `prm' of length `n'                    */
+/* Purpose        :MedianSelect takes an int `k', a double array 'arr',    */
+/*                 and an int array `prm' of length `n'                    */
 /*                 and reorders `prm' so that `arr[prm[k]]' is the k'th     */
 /*                 largest element in the set `{arr[prm[i]], i=1,..,n}',    */
 /*                 and we have in addition the partitioning properties:     */
@@ -111,13 +104,13 @@ void Intersect(const IsotheticBBox<D>& box,
 /*                                                                          */
 /****************************************************************************/
 
-template<long D> void MedianSelect (long k, 
-                                    long n, 
+template<int D> void MedianSelect (int k, 
+                                    int n, 
                                     std::vector<Point<D> >& arr, 
-                                    long *prm, 
-                                    long icut)
+                                    int *prm, 
+                                    int icut)
 {
-    long i, j, r, l, mid, ia;
+    int i, j, r, l, mid, ia;
 
     l = 0;
     r = n-1;
@@ -125,18 +118,18 @@ template<long D> void MedianSelect (long k,
     while ( r-l > 1 ) {
 
         mid = (l+r)/2;
-        SWAP(prm[mid], prm[l+1], long);
+        SWAP(prm[mid], prm[l+1], int);
 
         if (arr[prm[l+1]][icut] > arr[prm[r]][icut]) { 
-            SWAP(prm[l+1], prm[r], long);
+            SWAP(prm[l+1], prm[r], int);
         }
 
         if (arr[prm[l]][icut] > arr[prm[r]][icut]) {
-            SWAP(prm[l], prm[r], long);
+            SWAP(prm[l], prm[r], int);
         }
 
         if (arr[prm[l+1]][icut] > arr[prm[l]][icut]) {
-            SWAP(prm[l+1], prm[l], long);
+            SWAP(prm[l+1], prm[l], int);
         }
 
         i = l + 1;
@@ -150,7 +143,7 @@ template<long D> void MedianSelect (long k,
         while ( arr[prm[j]][icut] > arr[ia][icut] ) j--;
 
         while ( j >= i ) {
-            SWAP(prm[i], prm[j], long);
+            SWAP(prm[i], prm[j], int);
 
             i++;
             while ( arr[prm[i]][icut] < arr[ia][icut] ) i++;
@@ -167,7 +160,7 @@ template<long D> void MedianSelect (long k,
     }
 
     if ( (r-l == 1) && (arr[prm[r]][icut] < arr[prm[l]][icut]) ) {
-        SWAP(prm[l], prm[r], long);
+        SWAP(prm[l], prm[r], int);
     }
 
 }
@@ -192,17 +185,17 @@ template<long D> void MedianSelect (long k,
 /*                                                                          */
 /****************************************************************************/
 
-template <long D>
+template <int D>
 KDTree<D> *KDTreeCreate(const std::vector<IsotheticBBox<D> >& sboxp)
 {
     KDTree<D> *kdtree;
     std::vector<Point<D> > bbc;
-    long *ipoly = NULL;
-    long i;
-    long node, nextp, itop;
-    long imn, imx, icut, imd;
-    long icrstack[100], imin[100], imax[100]; 
-    long ict[100];
+    int *ipoly = NULL;
+    int i;
+    int node, nextp, itop;
+    int imn, imx, icut, imd;
+    int icrstack[100], imin[100], imax[100]; 
+    int ict[100];
     Vector<D> dim;
 
 
@@ -213,9 +206,9 @@ KDTree<D> *KDTreeCreate(const std::vector<IsotheticBBox<D> >& sboxp)
 
         /* Obtain allocations for arrays */
         kdtree->num_entities = sboxp.size();
-        ipoly = new long[sboxp.size()];
+        ipoly = new int[sboxp.size()];
         kdtree->sbox = new IsotheticBBox<D>[2*sboxp.size()];
-        kdtree->linkp = new long[2*sboxp.size()];
+        kdtree->linkp = new int[2*sboxp.size()];
         bbc.resize(sboxp.size());
 
         for (i = 0; i < sboxp.size(); i++) {
@@ -393,14 +386,14 @@ KDTree<D> *KDTreeCreate(const std::vector<IsotheticBBox<D> >& sboxp)
 
 
 // Return a list of BBox id's containing the query point
-template<long D>
+template<int D>
 void LocatePoint(const Point<D>& qp, 
                  const KDTree<D>* kdtree, 
-                 std::vector<long>& pfound)    
+                 std::vector<int>& pfound)    
 {
     pfound.clear();
-    long itop, node, ind, j;
-    long istack[100];
+    int itop, node, ind, j;
+    int istack[100];
 
     /* If root node is a leaf, return leaf. */
 
@@ -441,14 +434,14 @@ void LocatePoint(const Point<D>& qp,
 
 // Return a list (pfound) of BBox ids in the tree (kdtree) that overlap the 
 // given BBox (box)
-template<long D>
+template<int D>
 void Intersect(const IsotheticBBox<D>& box, 
                const KDTree<D>* kdtree, 
-               std::vector<long>& pfound)    
+               std::vector<int>& pfound)    
 {
     pfound.clear();
-    long itop, node, ind, j;
-    long istack[100];
+    int itop, node, ind, j;
+    int istack[100];
 
     /* If root node is a leaf, return leaf. */
     if (kdtree->linkp[0] <= 0) {
@@ -487,7 +480,7 @@ void Intersect(const IsotheticBBox<D>& box,
 }
 
 #undef SWAP
-}  // namespace gk
+}  // namespace Portage
 
 #endif  // PORTAGE_SEARCH_KDTREE_H_
 
