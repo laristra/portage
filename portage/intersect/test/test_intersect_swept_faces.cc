@@ -111,6 +111,17 @@ public:
     return contrib;
   }
 
+  /**
+   * @brief Deduce the centroid coordinates from current cell moments.
+   *
+   * @param moment: current cell moments
+   * @return its centroid coordinates
+   */
+  Wonton::Point<2> deduce_centroid(Wonton::Weights_t const& moment) const {
+    return Wonton::createP2(moment.weights[1] / moment.weights[0],
+                            moment.weights[2] / moment.weights[0]);
+  }
+
 protected:
   // useful constants and aliases
   Portage::NumericTolerances_t num_tols;
@@ -211,29 +222,31 @@ TEST_F(IntersectSweptForward, MomentsCheck) {
   ASSERT_DOUBLE_EQ(self_contrib, 0.0);
 
   for (auto const& moments : weights_internal) {
+    auto const& area = moments.weights[0];
+    auto const centroid = deduce_centroid(moments);
     #if DEBUG
       std::cout << "forward::internal_swept_centroid["<< moments.entityID <<"]: ";
-      std::cout << moments.weights[1] <<", "<< moments.weights[2] << std::endl;
+      std::cout << centroid[0] <<", "<< centroid[1] << std::endl;
     #endif
-    ASSERT_DOUBLE_EQ(std::abs(moments.weights[0]), unit_face_area);
+    ASSERT_DOUBLE_EQ(std::abs(area), unit_face_area);
     switch(moments.entityID) {
       case internal_cell:
         if (first_source_weight) {
-          ASSERT_DOUBLE_EQ(moments.weights[1], 3.5);
-          ASSERT_DOUBLE_EQ(moments.weights[2], 2.5);
+          ASSERT_DOUBLE_EQ(centroid[0], 3.5);
+          ASSERT_DOUBLE_EQ(centroid[1], 2.5);
         } else {
-          ASSERT_DOUBLE_EQ(moments.weights[1], 2.5);
-          ASSERT_DOUBLE_EQ(moments.weights[2], 3.5);
+          ASSERT_DOUBLE_EQ(centroid[0], 2.5);
+          ASSERT_DOUBLE_EQ(centroid[1], 3.5);
         }
         first_source_weight = false;
         break;
       case 5:
-        ASSERT_DOUBLE_EQ(moments.weights[1], 3.5);
-        ASSERT_DOUBLE_EQ(moments.weights[2], 4.5);
+        ASSERT_DOUBLE_EQ(centroid[0], 3.5);
+        ASSERT_DOUBLE_EQ(centroid[1], 4.5);
         break;
       case 7:
-        ASSERT_DOUBLE_EQ(moments.weights[1], 4.5);
-        ASSERT_DOUBLE_EQ(moments.weights[2], 3.5);
+        ASSERT_DOUBLE_EQ(centroid[0], 4.5);
+        ASSERT_DOUBLE_EQ(centroid[1], 3.5);
         break;
       default: FAIL() << "forward::internal: unexpected moment entity index";
     }
@@ -255,25 +268,27 @@ TEST_F(IntersectSweptForward, MomentsCheck) {
   ASSERT_DOUBLE_EQ(self_contrib, 0.0);
 
   for (auto const& moments : weights_boundary) {
+    auto const& area = moments.weights[0];
+    auto const centroid = deduce_centroid(moments);
     #if DEBUG
       std::cout << "forward::boundary_swept_centroid["<< moments.entityID <<"]: ";
-      std::cout << moments.weights[1] <<", "<< moments.weights[2] << std::endl;
+      std::cout << centroid[0] <<", "<< centroid[1] << std::endl;
     #endif
-    ASSERT_DOUBLE_EQ(std::abs(moments.weights[0]), unit_face_area);
+    ASSERT_DOUBLE_EQ(std::abs(area), unit_face_area);
     switch(moments.entityID) {
       case boundary_cell:
         if (first_source_weight) {
-          ASSERT_DOUBLE_EQ(moments.weights[1], 5.5);
-          ASSERT_DOUBLE_EQ(moments.weights[2], 2.5);
+          ASSERT_DOUBLE_EQ(centroid[0], 5.5);
+          ASSERT_DOUBLE_EQ(centroid[1], 2.5);
         } else {
-          ASSERT_DOUBLE_EQ(moments.weights[1], 4.5);
-          ASSERT_DOUBLE_EQ(moments.weights[2], 3.5);
+          ASSERT_DOUBLE_EQ(centroid[0], 4.5);
+          ASSERT_DOUBLE_EQ(centroid[1], 3.5);
         }
         first_source_weight = false;
         break;
       case 8:
-        ASSERT_DOUBLE_EQ(moments.weights[1], 5.5);
-        ASSERT_DOUBLE_EQ(moments.weights[2], 4.5);
+        ASSERT_DOUBLE_EQ(centroid[0], 5.5);
+        ASSERT_DOUBLE_EQ(centroid[1], 4.5);
         break;
       default: FAIL() << "forward::boundary: unexpected moment entity index";
     }
@@ -294,19 +309,21 @@ TEST_F(IntersectSweptForward, MomentsCheck) {
   ASSERT_DOUBLE_EQ(self_contrib, 0.0);
 
   for (auto const& moments : weights_corner) {
+    auto const& area = moments.weights[0];
+    auto const centroid = deduce_centroid(moments);
     #if DEBUG
       std::cout << "forward::corner_swept_centroid["<< moments.entityID <<"]: ";
-      std::cout << moments.weights[1] <<", "<< moments.weights[2] << std::endl;
+      std::cout << centroid[0] <<", "<< centroid[1] << std::endl;
     #endif
-    ASSERT_DOUBLE_EQ(std::abs(moments.weights[0]), unit_face_area);
+    ASSERT_DOUBLE_EQ(std::abs(area), unit_face_area);
     switch(moments.entityID) {
       case corner_cell:
         if (first_source_weight) {
-          ASSERT_DOUBLE_EQ(moments.weights[1], 5.5);
-          ASSERT_DOUBLE_EQ(moments.weights[2], 4.5);
+          ASSERT_DOUBLE_EQ(centroid[0], 5.5);
+          ASSERT_DOUBLE_EQ(centroid[1], 4.5);
         } else {
-          ASSERT_DOUBLE_EQ(moments.weights[1], 4.5);
-          ASSERT_DOUBLE_EQ(moments.weights[2], 5.5);
+          ASSERT_DOUBLE_EQ(centroid[0], 4.5);
+          ASSERT_DOUBLE_EQ(centroid[1], 5.5);
         }
         first_source_weight = false;
         break;
@@ -358,29 +375,31 @@ TEST_F(IntersectSweptBackward, MomentsCheck) {
   ASSERT_DOUBLE_EQ(self_contrib, 0.0);
 
   for (auto const& moments : weights_internal) {
+    auto const& area = moments.weights[0];
+    auto const centroid = deduce_centroid(moments);
     #if DEBUG
       std::cout << "backward::internal_swept_centroid["<< moments.entityID <<"]: ";
-      std::cout << moments.weights[1] <<", "<< moments.weights[2] << std::endl;
+      std::cout << centroid[0] <<", "<< centroid[1] << std::endl;
     #endif
-    ASSERT_DOUBLE_EQ(std::abs(moments.weights[0]), unit_face_area);
+    ASSERT_DOUBLE_EQ(std::abs(area), unit_face_area);
     switch(moments.entityID) {
       case internal_cell:
         if (first_source_weight) {
-          ASSERT_DOUBLE_EQ(moments.weights[1], 3.5);
-          ASSERT_DOUBLE_EQ(moments.weights[2], 2.5);
+          ASSERT_DOUBLE_EQ(centroid[0], 3.5);
+          ASSERT_DOUBLE_EQ(centroid[1], 2.5);
         } else {
-          ASSERT_DOUBLE_EQ(moments.weights[1], 2.5);
-          ASSERT_DOUBLE_EQ(moments.weights[2], 3.5);
+          ASSERT_DOUBLE_EQ(centroid[0], 2.5);
+          ASSERT_DOUBLE_EQ(centroid[1], 3.5);
         }
         first_source_weight = false;
         break;
       case 1:
-        ASSERT_DOUBLE_EQ(moments.weights[1], 1.5);
-        ASSERT_DOUBLE_EQ(moments.weights[2], 2.5);
+        ASSERT_DOUBLE_EQ(centroid[0], 1.5);
+        ASSERT_DOUBLE_EQ(centroid[1], 2.5);
         break;
       case 3:
-        ASSERT_DOUBLE_EQ(moments.weights[1], 2.5);
-        ASSERT_DOUBLE_EQ(moments.weights[2], 1.5);
+        ASSERT_DOUBLE_EQ(centroid[0], 2.5);
+        ASSERT_DOUBLE_EQ(centroid[1], 1.5);
         break;
       default: FAIL() << "backward::internal: unexpected moment entity index";
     }
@@ -402,29 +421,31 @@ TEST_F(IntersectSweptBackward, MomentsCheck) {
   ASSERT_DOUBLE_EQ(self_contrib, 0.0);
 
   for (auto const& moments : weights_boundary) {
+    auto const& area = moments.weights[0];
+    auto const centroid = deduce_centroid(moments);
     #if DEBUG
       std::cout << "backward::boundary_swept_centroid["<< moments.entityID <<"]: ";
-      std::cout << moments.weights[1] <<", "<< moments.weights[2] << std::endl;
+      std::cout << centroid[0] <<", "<< centroid[1] << std::endl;
     #endif
-    ASSERT_DOUBLE_EQ(std::abs(moments.weights[0]), unit_face_area);
+    ASSERT_DOUBLE_EQ(std::abs(area), unit_face_area);
     switch(moments.entityID) {
       case boundary_cell:
         if (first_source_weight) {
-          ASSERT_DOUBLE_EQ(moments.weights[1], 5.5);
-          ASSERT_DOUBLE_EQ(moments.weights[2], 2.5);
+          ASSERT_DOUBLE_EQ(centroid[0], 5.5);
+          ASSERT_DOUBLE_EQ(centroid[1], 2.5);
         } else {
-          ASSERT_DOUBLE_EQ(moments.weights[1], 4.5);
-          ASSERT_DOUBLE_EQ(moments.weights[2], 3.5);
+          ASSERT_DOUBLE_EQ(centroid[0], 4.5);
+          ASSERT_DOUBLE_EQ(centroid[1], 3.5);
         }
         first_source_weight = false;
         break;
       case 4:
-        ASSERT_DOUBLE_EQ(moments.weights[1], 3.5);
-        ASSERT_DOUBLE_EQ(moments.weights[2], 2.5);
+        ASSERT_DOUBLE_EQ(centroid[0], 3.5);
+        ASSERT_DOUBLE_EQ(centroid[1], 2.5);
         break;
       case 6:
-        ASSERT_DOUBLE_EQ(moments.weights[1], 4.5);
-        ASSERT_DOUBLE_EQ(moments.weights[2], 1.5);
+        ASSERT_DOUBLE_EQ(centroid[0], 4.5);
+        ASSERT_DOUBLE_EQ(centroid[1], 1.5);
         break;
       default: FAIL() << "backward::boundary: unexpected moment entity index";
     }
@@ -447,29 +468,31 @@ TEST_F(IntersectSweptBackward, MomentsCheck) {
   ASSERT_DOUBLE_EQ(self_contrib, 0.0);
 
   for (auto const& moments : weights_corner) {
+    auto const& area = moments.weights[0];
+    auto const centroid = deduce_centroid(moments);
     #if DEBUG
       std::cout << "backward::corner_swept_centroid["<< moments.entityID <<"]: ";
-      std::cout << moments.weights[1] <<", "<< moments.weights[2] << std::endl;
+      std::cout << centroid[0] <<", "<< centroid[1] << std::endl;
     #endif
-    ASSERT_DOUBLE_EQ(std::abs(moments.weights[0]), unit_face_area);
+    ASSERT_DOUBLE_EQ(std::abs(area), unit_face_area);
     switch(moments.entityID) {
       case corner_cell:
         if (first_source_weight) {
-          ASSERT_DOUBLE_EQ(moments.weights[1], 5.5);
-          ASSERT_DOUBLE_EQ(moments.weights[2], 4.5);
+          ASSERT_DOUBLE_EQ(centroid[0], 5.5);
+          ASSERT_DOUBLE_EQ(centroid[1], 4.5);
         } else {
-          ASSERT_DOUBLE_EQ(moments.weights[1], 4.5);
-          ASSERT_DOUBLE_EQ(moments.weights[2], 5.5);
+          ASSERT_DOUBLE_EQ(centroid[0], 4.5);
+          ASSERT_DOUBLE_EQ(centroid[1], 5.5);
         }
         first_source_weight = false;
         break;
       case 5:
-        ASSERT_DOUBLE_EQ(moments.weights[1], 3.5);
-        ASSERT_DOUBLE_EQ(moments.weights[2], 4.5);
+        ASSERT_DOUBLE_EQ(centroid[0], 3.5);
+        ASSERT_DOUBLE_EQ(centroid[1], 4.5);
         break;
       case 7:
-        ASSERT_DOUBLE_EQ(moments.weights[1], 4.5);
-        ASSERT_DOUBLE_EQ(moments.weights[2], 3.5);
+        ASSERT_DOUBLE_EQ(centroid[0], 4.5);
+        ASSERT_DOUBLE_EQ(centroid[1], 3.5);
         break;
       default: FAIL() << "backward::corner: unexpected moment entity index";
     }

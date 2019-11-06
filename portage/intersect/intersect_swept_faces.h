@@ -437,7 +437,9 @@ namespace Portage {
             }
           }
 
-          std::vector<double> moment { signed_area, centroid.first, centroid.second };
+          std::vector<double> moment { signed_area,
+                                       signed_area * centroid.first,
+                                       signed_area * centroid.second };
 
           /* step 3: check aree sign, choose the right source cell,
            * and add computed area and centroid to related lists.
