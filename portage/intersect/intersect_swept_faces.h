@@ -15,6 +15,7 @@
   #include "tangram/driver/driver.h"
   #include "tangram/support/MatPoly.h"
 #endif
+
 /* -------------------------------------------------------------------------- */
 namespace Portage {
 
@@ -268,6 +269,136 @@ namespace Portage {
       return -1;
     }
 
+    /**
+     * @brief Compute moments using divergence theorem.
+     *
+     *                       1
+     *     p3_____ p2    a = - * sum_i=0^{n-1} det(pi pj)
+     *      /    /           2
+     *     /    /
+     *    /    /             1 [sum_i=0^{n-1} (xi + xj) * det(pi pj)]
+     *   /___ /          c = - [sum_i=0^{n-1} (yi + yj) * det(pi pj)]
+     * p0    p1             6*a
+     *
+     * @param swept_polygon: swept polygon points coordinates.
+     * @return swept polygon moments.
+     */
+    std::vector<double> compute_moments_divergence_theorem
+      (std::vector<Wonton::Point<2>> const& swept_polygon) const {
+
+      double area = 0.;
+      double centroid[] = { 0, 0 };
+      constexpr double const factor = 1./6.;
+
+      for (int k=0; k < 4; ++k) {
+        auto const& cur = swept_polygon[k];
+        auto const& nxt = swept_polygon[(k + 1) % 4];
+        auto const det = (cur[0] * nxt[1] - cur[1] * nxt[0]);
+        area += det;
+        centroid[0] += (cur[0] + nxt[0]) * det; // manually unrolled for perfs
+        centroid[1] += (cur[1] + nxt[1]) * det;
+      }
+
+      return std::vector<double>{ 0.5 * area, centroid[0] * factor, centroid[1] * factor };
+    }
+
+    /**
+     * @brief Compute moments using facetized method:
+     * - triangulate and compute each simplex orientation using determinant.
+     * - compute the intersection point of its couple of diagonals.
+     *
+     *     d_____c    facets: (a,b,d) and (b,c,d)
+     *     /\   /                   1    |ax  ay  1|
+     *    / \  /      area(a,b,d) = - det|bx  by  1| > 0 if counterclockwise
+     *   /  \ /                     2    |dx  dy  1|
+     *  /___\/
+     * a     b        centroid(a,b,d):  find (s,t) such that:
+     *                                  a + s(c - a) = b + t(d - b)
+     *
+     *                                resolve the equation: A.X = B
+     *                                |dx-bx  ax-cx| |t| |ax-bx|
+     *                                |dy-by  ay-cy| |s|=|ay-by|
+     *
+     * @param swept_polygon: swept polygon points coordinates.
+     * @return swept polygon moments.
+     */
+    std::vector<double> compute_moments_facetized_method
+      (std::vector<Wonton::Point<2>> const& swept_polygon) const {
+
+      std::vector<double> moment;
+
+      double const& ax = swept_polygon[0][0];
+      double const& ay = swept_polygon[0][1];
+      double const& bx = swept_polygon[1][0];
+      double const& by = swept_polygon[1][1];
+      double const& cx = swept_polygon[2][0];
+      double const& cy = swept_polygon[2][1];
+      double const& dx = swept_polygon[3][0];
+      double const& dy = swept_polygon[3][1];
+
+      double const det[] = {
+        ax * by - ax * dy - bx * ay + bx * dy + dx * ay - dx * by,
+        bx * cy - bx * dy - cx * by + cx * dy + dx * by - dx * cy
+      };
+
+      // check that both triangles have the same orientation
+      bool const both_positive = (det[0] >= 0 and det[1] >= 0);
+      bool const both_negative = (det[0] < 0 and det[1] < 0);
+
+      if (not both_positive and not both_negative) {
+        std::cerr << "Error: twisted swept face polygon." << std::endl;
+        return moment;
+      }
+
+      double const area = 0.5 * (det[0] + det[1]);
+
+      /* step 3: compute its centroid.
+       * - compute the intersection point of its couple of diagonals.
+       *
+       *     d_____c    find (s,t) such that:
+       *     /\   /     a + s(c - a) = b + t(d - b)
+       *    / \  /
+       *   /  \ /     resolve the equation: A.X = B
+       *  /___\/      |dx-bx  ax-cx| |t| |ax-bx|
+       * a     b      |dy-by  ay-cy| |s|=|ay-by|
+       */
+      std::vector<double> centroid = { 0, 0 };
+
+      // retrieve the determinant of A to compute its inverse A^-1.
+      double const denom = (dx - bx) * (ay - cy) - (dy - by) * (ax - cx);
+
+      // check if diagonals are not colinear
+      if (std::abs(denom) > 0) {
+        // check if given value is in [0,1]
+        auto in_range = [](double x) -> bool { return 0. <= x and x <= 1.; };
+        // compute the intersection point parameter:
+        // compute the inverse of the matrix A and multiply it by the vector B
+        double const param[] = {
+          std::abs(((by - dy) * (ax - bx) + (dx - bx) * (ay - by)) / denom),
+          std::abs(((ay - cy) * (ax - bx) + (ax - cx) * (ay - by)) / denom)
+        };
+        // check if diagonals intersection lies on their respective segments
+        if (in_range(param[0]) and in_range(param[1])) {
+          #if DEBUG
+            double x[] = { ax + param[0] * (cx - ax), bx + param[1] * (dx - bx) };
+            double y[] = { ay + param[0] * (cy - ay), by + param[1] * (dy - by) };
+            assert(std::abs(x[0] - x[1]) < num_tols_.polygon_convexity_eps);
+            assert(std::abs(y[0] - y[1]) < num_tols_.polygon_convexity_eps);
+            centroid = { x[0], y[0] };
+
+            std::cout << "a: ("<< ax <<" "<< ay <<"), ";
+            std::cout << "c: ("<< cx <<" "<< cy <<"), ";
+            std::cout << "param: " << param[0] << std::endl;
+            std::cout << "bx: "<< bx << ", (dx - bx): "<< dx - bx << std::endl;
+            std::cout << "by: "<< by << ", (dy - by): "<< dy - by << std::endl;
+          #else
+            centroid = { ax + param[0] * (cx - ax), ay + param[0] * (cy - ay) };
+          #endif
+          moment = { area, area * centroid[0], area * centroid[1] };
+        }
+      }
+      return moment;
+    }
 
     /**
      * @brief Perform the actual swept faces volumes computation.
@@ -327,6 +458,7 @@ namespace Portage {
             target_mesh_.face_get_nodes(target_edges[i], &target_nodes);
             int const nb_target_nodes = target_nodes.size();
 
+            assert(nb_target_nodes == 2);
             assert(nb_nodes == nb_target_nodes);
             for (int j = 0; j < nb_nodes; ++j) {
               assert(nodes[j] == target_nodes[j]);
@@ -352,107 +484,25 @@ namespace Portage {
             target_mesh_.node_get_coordinates(nodes[0], swept_polygon.data()+3);
           }
 
-          /* step 2: compute its area then:
-           * - triangulate polygon
-           * - compute each simplex orientation using determinant.
-           *
-           *     d_____c    k1:(a,b,d)
-           *     /\   /     k2:(b,c,d)
-           *    / \  /
-           *   /  \ /                1    |ax  ay  1|
-           *  /___\/       area(k1)= - det|bx  by  1| > 0 if counterclockwise
-           * a     b                 2    |dx  dy  1|
-           */
-          double const& ax = swept_polygon[0][0];
-          double const& ay = swept_polygon[0][1];
-          double const& bx = swept_polygon[1][0];
-          double const& by = swept_polygon[1][1];
-          double const& cx = swept_polygon[2][0];
-          double const& cy = swept_polygon[2][1];
-          double const& dx = swept_polygon[3][0];
-          double const& dy = swept_polygon[3][1];
-
-          double const det[] = {
-            ax * by - ax * dy - bx * ay + bx * dy + dx * ay - dx * by,
-            bx * cy - bx * dy - cx * by + cx * dy + dx * by - dx * cy
-          };
-
-          // check that both triangles have the same orientation
-          bool const both_positive = (det[0] >= 0 and det[1] >= 0);
-          bool const both_negative = (det[0] < 0 and det[1] < 0);
-
-          if (not both_positive and not both_negative) {
-            std::cerr << "Error: twisted swept face polygon." << std::endl;
-            swept_moments.clear();
-            return swept_moments;
-          }
-
-          double const signed_area = 0.5 * (det[0] + det[1]);
-
-
-          /* step 3: compute its centroid.
-           * - compute the intersection point of its couple of diagonals.
-           *
-           *     d_____c    find (s,t) such that:
-           *     /\   /     a + s(c - a) = b + t(d - b)
-           *    / \  /
-           *   /  \ /     resolve the equation: A.X = B
-           *  /___\/      |dx-bx  ax-cx| |t| |ax-bx|
-           * a     b      |dy-by  ay-cy| |s|=|ay-by|
-           */
-          //Wonton::Point<2> centroid;
-          std::pair<double,double> centroid;
-
-          // retrieve the determinant of A to compute its inverse A^-1.
-          double const denom = (dx - bx) * (ay - cy) - (dy - by) * (ax - cx);
-
-          // check if diagonals are not colinear
-          if (std::abs(denom) > 0) {
-            // check if given value is in [0,1]
-            auto in_range = [](double x) -> bool { return 0. <= x and x <= 1.; };
-            // compute the intersection point parameter:
-            // compute the inverse of the matrix A and multiply it by the vector B
-            double const param[] = {
-              std::abs(((by - dy) * (ax - bx) + (dx - bx) * (ay - by)) / denom),
-              std::abs(((ay - cy) * (ax - bx) + (ax - cx) * (ay - by)) / denom)
-            };
-            // check if diagonals intersection lies on their respective segments
-            if (in_range(param[0]) and in_range(param[1])) {
-              #if DEBUG
-                double x[] = { ax + param[0] * (cx - ax), bx + param[1] * (dx - bx) };
-                double y[] = { ay + param[0] * (cy - ay), by + param[1] * (dy - by) };
-                assert(std::abs(x[0] - x[1]) < num_tols_.polygon_convexity_eps);
-                assert(std::abs(y[0] - y[1]) < num_tols_.polygon_convexity_eps);
-                centroid = std::make_pair(x[0], y[0]);
-
-                std::cout << "a: ("<< ax <<" "<< ay <<"), ";
-                std::cout << "c: ("<< cx <<" "<< cy <<"), ";
-                std::cout << "param: " << param[0] << std::endl;
-                std::cout << "bx: "<< bx << ", (dx - bx): "<< dx - bx << std::endl;
-                std::cout << "by: "<< by << ", (dy - by): "<< dy - by << std::endl;
-              #else
-                centroid = std::make_pair(ax + param[0] * (cx - ax),
-                                          ay + param[0] * (cy - ay));
-              #endif
-            }
-          }
-
-          std::vector<double> moment { signed_area,
-                                       signed_area * centroid.first,
-                                       signed_area * centroid.second };
+          // compute swept polygon moment using divergence theorem
+          auto moments = compute_moments_divergence_theorem(swept_polygon);
+          #if DEBUG
+            double const& area = moments[0];
+            double const centroid[] = { moments[1]/area, moments[2]/area };
+          #endif
 
           /* step 3: check aree sign, choose the right source cell,
            * and add computed area and centroid to related lists.
            */
-          if (signed_area < 0.) {
+          if (moments[0] < 0.) {
             // if negative volume then accumulate to that of the source cell
             // it means that it would be substracted from that source cell.
-            swept_moments.emplace_back(source_id, moment);
+            swept_moments.emplace_back(source_id, moments);
 
             #if DEBUG
               std::cout << "source_centroid["<< source_id <<"]: ";
-              std::cout << "(" << centroid.first <<" "<< centroid.second << ")";
-              std::cout << ", area: "<< signed_area << std::endl;
+              std::cout << "(" << centroid[0] <<" "<< centroid[1] << ")";
+              std::cout << ", area: "<< area << std::endl;
             #endif
           } else {
             // retrieve the cell incident to the current edge.
@@ -469,13 +519,13 @@ namespace Portage {
               return swept_moments;
             } else {
               // append to moments list if ok
-              swept_moments.emplace_back(neigh, moment);
+              swept_moments.emplace_back(neigh, moments);
 
               #if DEBUG
                 std::cout << "neigh_centroid["<< neigh <<"]: ";
-                std::cout << "(" << centroid.first <<" "<< centroid.second << ")";
+                std::cout << "(" << centroid[0] <<" "<< centroid[1] << ")";
                 std::cout << " of edge: ["<< swept_polygon[0];
-                std::cout <<", ("<< bx <<" "<< by<<")]" << std::endl;
+                std::cout <<", "<< swept_polygon[1] <<"]"<< std::endl;
               #endif
             }
           }
