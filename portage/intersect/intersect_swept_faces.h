@@ -303,15 +303,15 @@ namespace Portage {
         source_mesh_.cell_get_faces_and_dirs(source_id, &edges, &dirs);
         int const nb_edges = edges.size();
 
-        #ifdef DEBUG
+        #if DEBUG
           // ensure that we have the same face/edge index for source and target.
           std::vector<int> target_edges, target_dirs, target_nodes;
           target_mesh_.cell_get_faces_and_dirs(target_id, &target_edges, &target_dirs);
           int const nb_target_edges = target_edges.size();
 
           assert(nb_edges == nb_target_edges);
-          for (int i = 0; i < nb_edges; ++i) {
-            assert(edges[i] == target_edges[i]);
+          for (int j = 0; j < nb_edges; ++j) {
+            assert(edges[j] == target_edges[j]);
           }
         #endif
 
@@ -322,14 +322,14 @@ namespace Portage {
           source_mesh_.face_get_nodes(edges[i], &nodes);
           int const nb_nodes = nodes.size();
 
-          #ifdef DEBUG
+          #if DEBUG
             // ensure that we have the same nodal indices for source and target.
             target_mesh_.face_get_nodes(target_edges[i], &target_nodes);
             int const nb_target_nodes = target_nodes.size();
 
             assert(nb_nodes == nb_target_nodes);
             for (int j = 0; j < nb_nodes; ++j) {
-              assert(nodes[i] == target_nodes[i]);
+              assert(nodes[j] == target_nodes[j]);
             }
           #endif
 
