@@ -273,7 +273,7 @@ namespace Portage {
      * @brief Compute moments using divergence theorem.
      *
      *                       1
-     *     p3_____ p2    a = - * sum_i=0^{n-1} det(pi pj)
+     *     p3_____ p2    a = - * sum_i=0^{n-1} det(pi pj) with j=(i+1) % n
      *      /    /           2
      *     /    /
      *    /    /             1 [sum_i=0^{n-1} (xi + xj) * det(pi pj)]
@@ -286,20 +286,23 @@ namespace Portage {
     std::vector<double> compute_moments_divergence_theorem
       (std::vector<Wonton::Point<2>> const& swept_polygon) const {
 
-      double area = 0.;
-      double centroid[] = { 0, 0 };
-      constexpr double const factor = 1./6.;
+      int const n = swept_polygon.size();
+      constexpr double const factor[] = { 0.5, 1./6., 1./6. }; // evaluated at compile-time
 
-      for (int k=0; k < 4; ++k) {
-        auto const& cur = swept_polygon[k];
-        auto const& nxt = swept_polygon[(k + 1) % 4];
-        auto const det = (cur[0] * nxt[1] - cur[1] * nxt[0]);
-        area += det;
-        centroid[0] += (cur[0] + nxt[0]) * det; // manually unrolled for perfs
-        centroid[1] += (cur[1] + nxt[1]) * det;
+      std::vector<double> moments(3);
+
+      for (int i=0; i < n; ++i) {
+        auto const& pi = swept_polygon[i];
+        auto const& pj = swept_polygon[(i + 1) % n];
+        auto const det = (pi[0] * pj[1] - pi[1] * pj[0]);
+        moments[0] += det;
+        moments[1] += (pi[0] + pj[0]) * det; // manually unrolled for perfs
+        moments[2] += (pi[1] + pj[1]) * det;
       }
 
-      return std::vector<double>{ 0.5 * area, centroid[0] * factor, centroid[1] * factor };
+      for (int i=0; i < 3; ++i) { moments[i] *= factor[i]; }
+
+      return moments;
     }
 
     /**
@@ -327,6 +330,7 @@ namespace Portage {
 
       std::vector<double> moment;
 
+      // retrieve quadrilateral vertices coordinates.
       double const& ax = swept_polygon[0][0];
       double const& ay = swept_polygon[0][1];
       double const& bx = swept_polygon[1][0];
@@ -336,6 +340,7 @@ namespace Portage {
       double const& dx = swept_polygon[3][0];
       double const& dy = swept_polygon[3][1];
 
+      /* step 1: compute signed area */
       double const det[] = {
         ax * by - ax * dy - bx * ay + bx * dy + dx * ay - dx * by,
         bx * cy - bx * dy - cx * by + cx * dy + dx * by - dx * cy
@@ -352,16 +357,7 @@ namespace Portage {
 
       double const area = 0.5 * (det[0] + det[1]);
 
-      /* step 3: compute its centroid.
-       * - compute the intersection point of its couple of diagonals.
-       *
-       *     d_____c    find (s,t) such that:
-       *     /\   /     a + s(c - a) = b + t(d - b)
-       *    / \  /
-       *   /  \ /     resolve the equation: A.X = B
-       *  /___\/      |dx-bx  ax-cx| |t| |ax-bx|
-       * a     b      |dy-by  ay-cy| |s|=|ay-by|
-       */
+      /* step 2: compute centroid */
       std::vector<double> centroid = { 0, 0 };
 
       // retrieve the determinant of A to compute its inverse A^-1.
@@ -451,22 +447,21 @@ namespace Portage {
           // step 0: retrieve nodes and reorder them according to edge direction
           nodes.clear();
           source_mesh_.face_get_nodes(edges[i], &nodes);
-          int const nb_nodes = nodes.size();
 
           #if DEBUG
             // ensure that we have the same nodal indices for source and target.
             target_mesh_.face_get_nodes(target_edges[i], &target_nodes);
+            int const nb_source_nodes = nodes.size();
             int const nb_target_nodes = target_nodes.size();
 
-            assert(nb_target_nodes == 2);
-            assert(nb_nodes == nb_target_nodes);
-            for (int j = 0; j < nb_nodes; ++j) {
+            assert(nb_source_nodes == nb_target_nodes);
+            for (int j = 0; j < nb_target_nodes; ++j) {
               assert(nodes[j] == target_nodes[j]);
             }
           #endif
 
           // step 1: construct the swept face polygon
-          std::vector<Wonton::Point<2>> swept_polygon(nb_nodes * 2);
+          std::vector<Wonton::Point<2>> swept_polygon(4);
 
           if (dirs[i] > 0) {
             // if the edge has the same orientation as the cell, then reverse
@@ -495,8 +490,9 @@ namespace Portage {
            * and add computed area and centroid to related lists.
            */
           if (moments[0] < 0.) {
-            // if negative volume then accumulate to that of the source cell
-            // it means that it would be substracted from that source cell.
+            // if negative volume then add moments to that the source cell
+            // it means that the area would be substracted from that source cell.
+            // when performing the interpolation.
             swept_moments.emplace_back(source_id, moments);
 
             #if DEBUG
