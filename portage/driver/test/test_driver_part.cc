@@ -163,6 +163,13 @@ protected:
 /**
  * @brief Fixture class for first-order remap tests.
  *
+ * Here we consider a piecewise constant field on a 2D
+ * cartesian grid with:
+ *
+ *  f(x,y) = |r_min if (x < r)
+ *           |r_max otherwise
+ *           given [r_min,r_max]=[30,100]
+ *
  *  0,1                  1,1
  *    ---------:---------
  *   |   s1    :         |
@@ -175,7 +182,10 @@ protected:
  *   |    -----:--       |
  *   | r=30    : r=100   |
  *    ---------:---------
- *  0,0                 1,0
+ *  0,0       r         1,0
+ *  Notice that we do not have any part mismatch in this case.
+ *  Hence we expect a strictly conservative remap using a first-order
+ *  part-by-part scheme.
  */
 class PartOrderOneTest : public PartBaseTest {
 
@@ -195,19 +205,26 @@ public:
 /**
  * @brief Fixture class for second-order remap tests.
  *
- *  0,1                  1,1
+ * Here we consider a piecewise linear field on a 2D
+ * cartesian grid with:
+ *
+ *  f(x,y) = |c * x, if (x < r).
+ *           |c * (x - r) otherwise.
+ *           given c > 0 and 0 < r < 1.
+ *
+ *            f(x,y)
+ *            /   :     /
+ *          /     :    /
+ *        /       :   /
+ *      /    [0]  :  / [1]
+ *    /           : /
  *    ------------:------
- *   |            :      |
- *   |            :      |
- *   |            :      |
- *   |            :      |
- *   |    s0      :  s1  |
- *   |            :      |
- *   |            :      |
- *   |            :      |
- *   |   f(x,y)   :g(x,y)|
- *    ------------:------
- *  0,0                 1,0
+ *   0            r     1
+ * Notice that we would obtain smoothed field values near 'r'
+ * with a global remap since the field gradient would be smoothed
+ * in that region. However, we should obtain a perfect remap with
+ * a clear field discontinuity using a second-order part-by-part remap,
+ * since the computed gradient near 'r' is distinct for each part.
  */
 class PartOrderTwoTest : public PartBaseTest {
 
@@ -404,10 +421,11 @@ TEST_F(PartOrderTwoTest, PiecewiseLinearField) {
       auto const& x = centroid[0];
       auto const& y = centroid[1];
       auto expected = (x < x_max ? coef * x : coef * (x - x_max));
-#if DEBUG_PART_BY_PART
-      std::printf("target[%02d]: x: %7.3f, y: %7.3f, remapped: %7.3f, expected: %7.3f\n",
+      #if DEBUG_PART_BY_PART
+        std::printf("target[%02d]: x: %7.3f, y: %7.3f"
+                    ", remapped: %7.3f, expected: %7.3f\n",
                     c, x, y, obtained, expected);
-#endif
+      #endif
       ASSERT_NEAR(obtained, expected, epsilon);
     }
   }
