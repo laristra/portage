@@ -248,7 +248,7 @@ namespace Portage {
      */
     void set_material(int m) { material_id_ = m; }
 
-
+  private:
     /**
      * @brief Retrieve the cell incident to a given face of a given cell.
      *
@@ -397,6 +397,20 @@ namespace Portage {
     }
 
     /**
+     * @brief Retrieve the source cell moments.
+     *
+     * @param source_id: index of the source cells.
+     * @return a list of cell moments.
+     */
+    std::vector<double> compute_source_moments(int source_id) const {
+      double const area = source_mesh_.cell_volume(source_id);
+      Wonton::Point<2> centroid;
+      source_mesh_.cell_centroid(source_id, &centroid);
+      return std::vector<double>{ area, area * centroid[0], area * centroid[1] };
+    }
+
+  public:
+    /**
      * @brief Perform the actual swept faces volumes computation.
      *
      * @param target_id: the current target cell index.
@@ -425,6 +439,9 @@ namespace Portage {
       if (single_mat) {
 #endif
         std::vector<int> edges, dirs, nodes;
+
+        // add source cell moments in the first place
+        swept_moments.emplace_back(source_id, compute_source_moments(source_id));
 
         // retrieve current source cell faces/edges and related directions
         source_mesh_.cell_get_faces_and_dirs(source_id, &edges, &dirs);
