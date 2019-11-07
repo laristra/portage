@@ -263,9 +263,6 @@ namespace Portage {
     >;
 #endif
 
-    // get rid of long namespaces
-    static auto const Cell = Entity_kind::CELL;
-
   public:
     /**
      * @brief Constructor without interface reconstructor.
@@ -354,11 +351,11 @@ namespace Portage {
       // which the gradient has to be computed.
       int nb_cells;
       std::vector<int> cellids;
-      field_type_ = source_state_.field_type(Cell, variable_name);
+      field_type_ = source_state_.field_type(Wonton::Entity_kind::CELL, variable_name);
 
       if (field_type_ == Field_type::MESH_FIELD) {
-        source_state_.mesh_get_data(Cell, variable_name, &source_values_);
-        nb_cells = source_mesh_.num_entities(Cell);
+        source_state_.mesh_get_data(Wonton::Entity_kind::CELL, variable_name, &source_values_);
+        nb_cells = source_mesh_.num_entities(Wonton::Entity_kind::CELL);
       } else {
         source_state_.mat_get_celldata(variable_name, material_id_, &source_values_);
         source_state_.mat_get_cells(material_id_, &cellids);
@@ -391,7 +388,8 @@ namespace Portage {
        * So we will explicitly state that this is Portage::transform.
        */
       if (field_type_ == Field_type::MESH_FIELD) {
-        Portage::transform(source_mesh_.begin(Cell), source_mesh_.end(Cell),
+        Portage::transform(source_mesh_.begin(Wonton::Entity_kind::CELL),
+                           source_mesh_.end(Wonton::Entity_kind::CELL),
                            gradients_.begin(), gradient_kernel);
       } else {
         Portage::transform(cellids.begin(), cellids.end(),
