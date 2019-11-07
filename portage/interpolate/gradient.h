@@ -304,19 +304,18 @@ namespace Portage {
       Vector<D> grad;
 
       // check that cell is within the part if part-by-part requested
-      if (parts_ != nullptr and not parts_->is_source_entity(cellid)) {
+      if (parts_ != nullptr && !parts_->is_source_entity(cellid)) {
         grad.zero();
         return grad;
       }
 
       // useful predicates
       bool is_boundary_cell = mesh_.on_exterior_boundary(Entity_kind::CELL, cellid);
-      bool apply_limiter = limiter_type_ == BARTH_JESPERSEN and
-                           (not is_boundary_cell
-                            or boundary_limiter_type_ == BND_BARTH_JESPERSEN);
+      bool apply_limiter = limiter_type_ == BARTH_JESPERSEN &&
+                           (!is_boundary_cell || boundary_limiter_type_ == BND_BARTH_JESPERSEN);
 
       // Limit the boundary gradient to enforce monotonicity preservation
-      if (is_boundary_cell and boundary_limiter_type_ == BND_ZERO_GRADIENT) {
+      if (is_boundary_cell && boundary_limiter_type_ == BND_ZERO_GRADIENT) {
         grad.zero();
         return grad;
       }
@@ -324,7 +323,7 @@ namespace Portage {
       // Include cell where grad is needed as first element
       std::vector<int> neighbors{cellid};
 
-      if (not cell_neighbors_.empty()) {
+      if (!cell_neighbors_.empty()) {
         neighbors.insert(std::end(neighbors),
                          std::begin(cell_neighbors_[cellid]),
                          std::end(cell_neighbors_[cellid]));
@@ -353,7 +352,7 @@ namespace Portage {
           state_.cell_get_mats(neigh_global, &cell_mats);
           int const nb_mats = cell_mats.size();
 
-          if (nb_mats > 1 and interface_reconstructor_) /* multi-material cell */ {
+          if (nb_mats > 1 && interface_reconstructor_) /* multi-material cell */ {
             // Get cell's cellmatpoly
             auto cell_matpoly = interface_reconstructor_->cell_matpoly_data(neigh_global);
 
@@ -582,11 +581,11 @@ namespace Portage {
       Vector<D> grad;
 
       bool is_boundary_node = mesh_.on_exterior_boundary(Entity_kind::NODE, nodeid);
-      bool apply_limiter = limiter_type_ == BARTH_JESPERSEN and
-                           (not is_boundary_node
-                            or boundary_limiter_type_ == BND_BARTH_JESPERSEN);
+      bool apply_limiter = limiter_type_ == BARTH_JESPERSEN &&
+                           (!is_boundary_node
+                            || boundary_limiter_type_ == BND_BARTH_JESPERSEN);
 
-      if (is_boundary_node and boundary_limiter_type_ == BND_ZERO_GRADIENT) {
+      if (is_boundary_node && boundary_limiter_type_ == BND_ZERO_GRADIENT) {
         grad.zero();
         return grad;
       }
