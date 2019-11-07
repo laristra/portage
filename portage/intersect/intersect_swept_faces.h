@@ -409,6 +409,53 @@ namespace Portage {
       return std::vector<double>{ area, area * centroid[0], area * centroid[1] };
     }
 
+    /**
+     * @brief Check that given swept face centroid lies within the given cell.
+     *
+     * @param cell: given cell index
+     * @param moment: swept face moments from which to extract centroid.
+     * @return true if centroid is within the cell, false otherwise.
+     */
+    bool centroid_inside_cell(int cell, std::vector<double> const& moment) const {
+
+      double const cell_area = std::abs(moment[0]);
+      if (cell_area < num_tols_.min_relative_volume)
+        return false;
+
+      std::vector<int> edges, dirs, nodes;
+      source_mesh_.cell_get_faces_and_dirs(cell, &edges, &dirs);
+      int const nb_edges = edges.size();
+
+      Wonton::Point<2> triangle[3];
+      triangle[0] = { moment[1] / cell_area, moment[2] / cell_area };
+
+      for (int i = 0; i < nb_edges; ++i) {
+        source_mesh_.face_get_nodes(edges[i], &nodes);
+        // set triangle according to edge orientation.
+        if (dirs[i] > 0) {
+          source_mesh_.node_get_coordinates(nodes[0], triangle + 1);
+          source_mesh_.node_get_coordinates(nodes[1], triangle + 2);
+        } else {
+          source_mesh_.node_get_coordinates(nodes[1], triangle + 1);
+          source_mesh_.node_get_coordinates(nodes[0], triangle + 2);
+        }
+
+        // check determinant sign
+        double const& ax = triangle[0][0];
+        double const& ay = triangle[0][1];
+        double const& bx = triangle[1][0];
+        double const& by = triangle[1][1];
+        double const& cx = triangle[2][0];
+        double const& cy = triangle[2][1];
+        double const det = ax * by - ax * cy
+                         - bx * ay + bx * cy
+                         + cx * ay - cx * by;
+        if (det < 0.)
+          return false;
+      }
+      return true;
+    }
+
   public:
     /**
      * @brief Perform the actual swept faces volumes computation.
@@ -522,16 +569,25 @@ namespace Portage {
             int const neigh = get_face_incident_neigh(source_id, edges[i]);
 
             // just skip in case of a boundary edge
-            if (neigh < 0)
+            if (neigh < 0) {
               continue;
-            // check if incident cell belongs to the current stencil
+            }
+            // sanity check: ensure that incident cell belongs to the stencil.
             else if (not in_stencil(neigh)) {
               std::cerr << "Error: invalid stencil for source cell "<< source_id;
-              std::cerr << std::endl;
+              std::cerr << "." << std::endl;
               swept_moments.clear();
               return swept_moments;
-            } else {
-              // append to moments list if ok
+            }
+            // sanity check: ensure that swept face centroid remains
+            // inside the neighbor cell.
+            else if (not centroid_inside_cell(neigh, moments)) {
+              std::cerr << "Error: invalid target mesh for swept face." << std::endl;
+              swept_moments.clear();
+              return swept_moments;
+            }
+            // append to list as current neighbor moment.
+            else {
               swept_moments.emplace_back(neigh, moments);
 
               #if DEBUG
