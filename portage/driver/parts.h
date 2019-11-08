@@ -7,7 +7,6 @@
 #ifndef PORTAGE_DRIVER_PARTS_H
 #define PORTAGE_DRIVER_PARTS_H
 
-#include <sys/time.h>
 #include <algorithm>
 #include <vector>
 #include <map>
@@ -53,8 +52,6 @@ namespace Portage {
     class TargetState_Wrapper = SourceState_Wrapper
   >
 class PartPair {
-  // shortcut
-  using entity_weights_t = std::vector<Weights_t>;
 
 public:
   /**
