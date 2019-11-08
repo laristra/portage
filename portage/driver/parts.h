@@ -883,8 +883,8 @@ public:
 private:
 
   // references to user-provided entities lists
-  std::vector<int> const& source_entities_;
-  std::vector<int> const& target_entities_;
+  std::vector<int> const source_entities_;
+  std::vector<int> const target_entities_;
 
   // hashtables to have constant-time parts lookup queries in average case.
   // remark: for lookup purposes only, not meant to be iterated.
