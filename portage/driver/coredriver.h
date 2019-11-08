@@ -230,7 +230,7 @@ class CoreDriverBase {
   
   template<typename T = double,
            Entity_kind ONWHAT,
-           template<int, Entity_kind, class, class, class,
+           template<int, Entity_kind, class, class, class, class,
                     template <class, int, class, class> class,
                     class, class, class> class Interpolate
            >
@@ -292,7 +292,7 @@ class CoreDriverBase {
   */
   
   template <typename T = double,
-            template<int, Entity_kind, class, class, class,
+            template<int, Entity_kind, class, class, class, class,
                      template <class, int, class, class> class,
                      class, class, class> class Interpolate
             >
@@ -824,7 +824,7 @@ class CoreDriver : public CoreDriverBase<D,
    * @param[in] partition           source and target entities list for part-by-part
    */
   template<typename T = double,
-    template<int, Entity_kind, class, class, class,
+    template<int, Entity_kind, class, class, class, class,
     template<class, int, class, class> class,
     class, class, class> class Interpolate
   >
@@ -848,12 +848,11 @@ class CoreDriver : public CoreDriverBase<D,
     }
 
     // useful shortcuts
-    using entity_weights_t = std::vector<Weights_t>;
     using interpolator_t =
-      Interpolate<D, ONWHAT, SourceMesh, TargetMesh, SourceState,
+      Interpolate<D, ONWHAT, SourceMesh, TargetMesh, SourceState, TargetState,
         InterfaceReconstructorType, Matpoly_Splitter, Matpoly_Clipper, CoordSys>;
 
-    interpolator_t interpolator(source_mesh_, target_mesh_, source_state_, num_tols_);
+    interpolator_t interpolator(source_mesh_, target_mesh_, source_state_, num_tols_, partition);
     interpolator.set_interpolation_variable(srcvarname, limiter, bnd_limiter);
 
     // get a handle to a memory location where the target state
@@ -995,7 +994,7 @@ class CoreDriver : public CoreDriverBase<D,
   */
 
   template<typename T = double,
-           template<int, Entity_kind, class, class, class,
+           template<int, Entity_kind, class, class, class, class,
                     template<class, int, class, class> class,
                     class, class, class> class Interpolate
            >
@@ -1009,7 +1008,7 @@ class CoreDriver : public CoreDriverBase<D,
                            double conservation_tol = DEFAULT_CONSERVATION_TOL,
                            int max_fixup_iter = DEFAULT_MAX_FIXUP_ITER) {
     
-    Interpolate<D, ONWHAT, SourceMesh, TargetMesh, SourceState,
+    Interpolate<D, ONWHAT, SourceMesh, TargetMesh, SourceState, TargetState,
                 InterfaceReconstructorType, Matpoly_Splitter, Matpoly_Clipper, CoordSys>
         interpolator(source_mesh_, target_mesh_, source_state_, num_tols_, interface_reconstructor_);
       

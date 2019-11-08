@@ -15,702 +15,807 @@ Please see the license file at the root of this repository, or at:
 #include <utility>
 #include <vector>
 
-// portage includes
+#include "portage/support/portage.h"
 #include "portage/interpolate/gradient.h"
 #include "portage/intersect/dummy_interface_reconstructor.h"
-#include "portage/support/portage.h"
+#include "portage/driver/fix_mismatch.h"
+#include "portage/driver/parts.h"
 
-// wonton includes
 #include "wonton/support/CoordinateSystem.h"
 
 #ifdef HAVE_TANGRAM
-#include "tangram/driver/driver.h"
-#include "tangram/driver/CellMatPoly.h"
-#include "tangram/support/MatPoly.h"
+  #include "tangram/driver/driver.h"
+  #include "tangram/driver/CellMatPoly.h"
+  #include "tangram/support/MatPoly.h"
 #endif
 
 namespace Portage {
 
-/*!
-  @class Interpolate_2ndOrder interpolate_2nd_order.h
-  @brief Interpolate_2ndOrder does a 2nd order interpolation of scalars
+  /**
+   * @class Interpolate_2ndOrder interpolate_2nd_order.h
+   * @brief Interpolate_2ndOrder does a 2nd order interpolation of scalars.
+   *
+   * @tparam D  spatial dimension of problem
+   * @tparam on_what: The type of entity-based data we wish to interpolate;
+   *                 e.g. does it live on nodes, cells, edges, etc.
+   * @tparam SourceMeshType: Mesh wrapper class used to access source mesh info
+   * @tparam TargetMeshType: Mesh wrapper class used to access target mesh info
+   * @tparam SourceStateType: State manager used to access source data.
+   * @tparam InterfaceReconstructorType: Class for reconstructing material interfaces
+   * @tparam MatPoly_Splitter: Class used for splitting material polygons
+   * @tparam MatPoly_Clipper: Class used for clipping material polygons
+   * @tparam CoordSys:  What coordinate system are we operating in?
+   *
+   * [1] Margolin, L.G. and Shashkov, M.J. "Second-order sign-preserving
+   * conservative interpolation (remapping) on general grids." Journal of
+   * Computational Physics, v 184, n 1, pp. 266-298, 2003.
+   *
+   * [2] Dukowicz, J.K. and Kodis, J.W. "Accurate Conservative Remapping
+   * (Rezoning) for Arbitrary Lagrangian-Eulerian Computations," SIAM
+   * Journal on Scientific and Statistical Computing, Vol. 8, No. 3,
+   * pp. 305-321, 1987.
+   */
+  template<
+    int D, Entity_kind on_what,
+    typename SourceMeshType,
+    typename TargetMeshType,
+    typename SourceStateType,
+    typename TargetStateType = SourceStateType,
+    template<class, int, class, class>
+      class InterfaceReconstructorType = DummyInterfaceReconstructor,
+    class Matpoly_Splitter = void, class Matpoly_Clipper = void,
+    class CoordSys = Wonton::DefaultCoordSys
+  >
+  class Interpolate_2ndOrder {
 
-  @tparam D  spatial dimension of problem
-  @tparam on_what The type of entity-based data we wish to interpolate;
-  e.g. does it live on nodes, cells, edges, etc.
-  @tparam SourceMeshType Mesh wrapper class used to access source mesh info
-  @tparam TargetMeshType Mesh wrapper class used to access target mesh info
-  @tparam SourceStateType State manager used to access source data.
-  @tparam InterfaceReconstructorType Class for reconstructing material interfaces
-  @tparam MatPoly_Splitter Class used for splitting material polygons
-  @tparam MatPoly_Clipper Class used for clipping material polygons
-  @tparam CoordSys  What coordinate system are we operating in?
-  
-  [1] Margolin, L.G. and Shashkov, M.J. "Second-order sign-preserving
-  conservative interpolation (remapping) on general grids." Journal of
-  Computational Physics, v 184, n 1, pp. 266-298, 2003.
-
-  [2] Dukowicz, J.K. and Kodis, J.W. "Accurate Conservative Remapping
-  (Rezoning) for Arbitrary Lagrangian-Eulerian Computations," SIAM
-  Journal on Scientific and Statistical Computing, Vol. 8, No. 3,
-  pp. 305-321, 1987.
-
-  @todo Template on variable type (YES)
-*/
-
-
-template<int D,
-         Entity_kind on_what,
-         typename SourceMeshType,
-         typename TargetMeshType,
-         typename StateType,
-         template<class, int, class, class> class InterfaceReconstructorType =
-         DummyInterfaceReconstructor,
-         class Matpoly_Splitter = void,
-         class Matpoly_Clipper = void,
-         class CoordSys = Wonton::DefaultCoordSys>
-class Interpolate_2ndOrder {
+    // useful aliases
+    using Parts = PartPair<
+      D, on_what,
+      SourceMeshType, SourceStateType,
+      TargetMeshType, TargetStateType
+    >;
 
 #ifdef HAVE_TANGRAM
-  using InterfaceReconstructor =
-      Tangram::Driver<InterfaceReconstructorType, D, SourceMeshType,
-                      Matpoly_Splitter, Matpoly_Clipper>;
+    using InterfaceReconstructor =
+      Tangram::Driver<
+        InterfaceReconstructorType, D, SourceMeshType,
+        Matpoly_Splitter, Matpoly_Clipper
+      >;
 #endif
 
+  public:
 
- public:
-
-  /*!
-    @brief Constructor with interface reconstructor
-    @param[in] source_mesh The mesh wrapper used to query source mesh info
-    @param[in] target_mesh The mesh wrapper used to query target mesh info
-    @param[in] source_state The state-manager wrapper used to query field info
-    @param[in] ir The interface_reconstructor used to query matpoly's on source mesh
-  */
-#ifdef HAVE_TANGRAM
-  Interpolate_2ndOrder(SourceMeshType const & source_mesh,
-                       TargetMeshType const & target_mesh,
-                       StateType const & source_state,
-                       NumericTolerances_t num_tols,
-                       std::shared_ptr<InterfaceReconstructor> ir) :
-      source_mesh_(source_mesh),
+    /**
+     * @brief Constructor without interface reconstructor.
+     *
+     * @param[in] source_mesh: mesh wrapper used to query source mesh info.
+     * @param[in] target_mesh: mesh wrapper used to query target mesh info.
+     * @param[in] source_state: state-manager wrapper used to query field info.
+     */
+    Interpolate_2ndOrder(SourceMeshType const& source_mesh,
+                         TargetMeshType const& target_mesh,
+                         SourceStateType const& source_state,
+                         NumericTolerances_t num_tols,
+                         const Parts* const parts = nullptr)
+    : source_mesh_(source_mesh),
       target_mesh_(target_mesh),
       source_state_(source_state),
-      interface_reconstructor_(ir),
-      interp_var_name_("VariableNameNotSet"),
-      source_vals_(nullptr),
-      num_tols_(num_tols) {
-    CoordSys::template verify_coordinate_system<D>();
-  }
-#endif
-
-  /*!
-    @brief Constructor without interface reconstructor
-    @param[in] source_mesh The mesh wrapper used to query source mesh info
-    @param[in] target_mesh The mesh wrapper used to query target mesh info
-    @param[in] source_state The state-manager wrapper used to query field info
-  */
-
-  Interpolate_2ndOrder(SourceMeshType const & source_mesh,
-                       TargetMeshType const & target_mesh,
-                       StateType const & source_state,
-                       NumericTolerances_t num_tols) :
-      source_mesh_(source_mesh),
-      target_mesh_(target_mesh),
-      source_state_(source_state),
-      interp_var_name_("VariableNameNotSet"),
-      source_vals_(nullptr),
-      num_tols_(num_tols) {
-    CoordSys::template verify_coordinate_system<D>();
-  }
-
-  /// Copy constructor (disabled)
-  //  Interpolate_2ndOrder(const Interpolate_2ndOrder &) = delete;
-
-  /// Assignment operator (disabled)
-  Interpolate_2ndOrder & operator = (const Interpolate_2ndOrder &) = delete;
-
-  /// Destructor
-  ~Interpolate_2ndOrder() {}
-
-  /// Set the material we are operating on.
-
-  int set_material(int m) {
-    matid_ = m;
-  }  // set_material
-
-  /// Set the name of the interpolation variable and the limiter type
-
-  void set_interpolation_variable(std::string const & interp_var_name,
-                                  Limiter_type limiter_type = NOLIMITER,
-                                  Boundary_Limiter_type Boundary_Limiter_type = BND_NOLIMITER) {
-    std::cerr << "Interpolation is available for only  entity types: CELL, NODE"
-              << std::endl;
-  }  // set_interpolation_variable
-
-
-  /*!
-    @brief Functor to do the actual interpolate calculation
-    @param[in] cells_and_weights A pair of two vectors
-    @c sources_and_weights.first() is the vector of source entity indices
-    in the source mesh that will contribute to the current target mesh entity.
-    @c sources_and_weights.second() is the vector of vector weights for each
-    of the source mesh entities in @c sources_and_weights.first().  Each element
-    of the weights vector is a moment of the source data over the target
-    entity; for first order interpolate, only the first element (or zero'th moment)
-    of the weights vector (i.e. the volume of intersection) is used. Source
-    entities may be repeated in the list if the intersection of a target entity
-    and a source entity consists of two or more disjoint pieces
-    @param[in] targetCellID The index of the target cell.
-
-    @todo Cleanup the datatype for sources_and_weights - it is somewhat confusing.
-    @todo must remove assumption that field is scalar
-  */
-
-  double operator() (int const targetCellID,
-                     std::vector<Weights_t> const & sources_and_weights) const {
-    // not implemented for all types - see specialization for cells and nodes
-
-    std::cerr << "Interpolation operator not implemented for this entity type"
-              << std::endl;
-  }
-
- private:
-  SourceMeshType const & source_mesh_;
-  TargetMeshType const & target_mesh_;
-  StateType const & source_state_;
-  std::string interp_var_name_;
-  double const * source_vals_;
-  NumericTolerances_t num_tols_;
-
-  // Portage::vector is generalization of std::vector and
-  // Wonton::Vector<D> is a geometric vector
-  Portage::vector<Vector<D>> gradients_;
-
-  int matid_;
-  Field_type field_type_;
+      variable_name_("VariableNameNotSet"),
+      source_values_(nullptr),
+      num_tols_(num_tols),
+      parts_(parts) { CoordSys::template verify_coordinate_system<D>(); }
 
 #ifdef HAVE_TANGRAM
-  std::shared_ptr<InterfaceReconstructor> interface_reconstructor_;
+    /**
+     * @brief Constructor with interface reconstructor.
+     *
+     * @param[in] source_mesh: mesh wrapper used to query source mesh info.
+     * @param[in] target_mesh: mesh wrapper used to query target mesh info.
+     * @param[in] source_state: state-manager wrapper used to query field info.
+     * @param[in] num_tols: numerical tolerances.
+     * @param[in] ir: interface reconstructor for querying matpolys on source mesh.
+     */
+    Interpolate_2ndOrder(SourceMeshType const& source_mesh,
+                         TargetMeshType const& target_mesh,
+                         SourceStateType const& source_state,
+                         NumericTolerances_t num_tols,
+                         std::shared_ptr<InterfaceReconstructor> ir,
+                         const Parts* const parts = nullptr)
+      : source_mesh_(source_mesh),
+        target_mesh_(target_mesh),
+        source_state_(source_state),
+        interface_reconstructor_(ir),
+        variable_name_("VariableNameNotSet"),
+        source_values_(nullptr),
+        num_tols_(num_tols),
+        parts_(parts) { CoordSys::template verify_coordinate_system<D>(); }
 #endif
-};  // class Interpolate_2ndOrder
+
+    /**
+     * @brief Assignment operator (disabled).
+     *
+     * @param[in] other the interpolator to copy
+     * @return current interpolator reference
+     */
+    Interpolate_2ndOrder& operator = (const Interpolate_2ndOrder& other) = delete;
 
 
+    /**
+     * @brief Destructor.
+     *
+     */
+    ~Interpolate_2ndOrder() = default;
+
+    /**
+     * @brief Set the material we are operating on.
+     *
+     * @param[in] m: the material ID.
+     */
+    void set_material(int m) { material_id_ = m; }
 
 
-//////////////////////////////////////////////////////////////////////////////
-/*!
-  @brief 2nd order interpolate class specialization for cells
-  @param[in] cells_and_weights Pair containing vector of contributing source
-  cells and vector of contribution weights
-*/
+    /**
+     * @brief Set the name of the interpolation variable and the limiter type,
+     *        and compute the gradient field.
+     *
+     * @param[in] variable_name: the variable name
+     * @param[in] limiter_type: kind of gradient limiter to use.
+     * @param[in] boundary_limiter_type: gradient limiter to use on boundary.
+     */
+    void set_interpolation_variable(std::string const& variable_name,
+                                    Limiter_type limiter_type = NOLIMITER,
+                                    Boundary_Limiter_type boundary_limiter_type = BND_NOLIMITER) {
+      std::cerr << "Interpolation is available for only cells and nodes";
+      std::cerr << std::endl;
+    }
 
-template<int D,
-         typename SourceMeshType,
-         typename TargetMeshType,
-         typename StateType,
-         template<class, int, class, class> class InterfaceReconstructorType,
-         class Matpoly_Splitter,
-         class Matpoly_Clipper,
-         class CoordSys>
-class Interpolate_2ndOrder<D,
-                           Entity_kind::CELL,
-                           SourceMeshType,
-                           TargetMeshType,
-                           StateType,
-                           InterfaceReconstructorType,
-                           Matpoly_Splitter,
-                           Matpoly_Clipper,
-                           CoordSys> {
+
+    /**
+     * @brief Functor to do the actual interpolate calculation.
+     *
+     * @param targetCellID: the target cell index.
+     * @param sources_and_weights: a list of source cells and intersection weights.
+     * Each element of the weights vector is a moment of the source data over
+     * the target entity. For first-order interpolation, only the first element
+     * (or zero'th moment) of the weights vector (the volume of intersection)
+     * is used. Source entities may be repeated in the list if the intersection
+     * of a target cell and a source cell consists of two or more disjoint pieces.
+     *
+     * @return the interpolated value.
+     * @todo cleanup the datatype for sources_and_weights - it is somewhat confusing.
+     * @todo must remove assumption that field is scalar.
+     */
+    double operator()(int const targetCellID,
+                      std::vector<Weights_t> const& sources_and_weights) const {
+
+      // not implemented for all types - see specialization for cells and nodes
+      std::cerr << "Error: interpolation operator not implemented for this entity type";
+      std::cerr << std::endl;
+      return 0.;
+    }
+
+  private:
+    SourceMeshType const& source_mesh_;
+    TargetMeshType const& target_mesh_;
+    SourceStateType const& source_state_;
+    std::string variable_name_ = "";
+    double const* source_values_;
+    NumericTolerances_t num_tols_;
+    int material_id_ = 0;
+    Portage::vector<Wonton::Vector<D>> gradients_;
+    Field_type field_type_ = Field_type::UNKNOWN_TYPE_FIELD;
+#ifdef HAVE_TANGRAM
+    std::shared_ptr<InterfaceReconstructor> interface_reconstructor_;
+#endif
+    Parts const* parts_;
+  };
+
+  /* ------------------------------------------------------------------------ */
+
+  /**
+   * @brief second-order interpolate class specialization for cells.
+   *
+   * @tparam D: spatial dimension of problem
+   * @tparam SourceMeshType: mesh wrapper class used to access source mesh info
+   * @tparam TargetMeshType: mesh wrapper class used to access target mesh info
+   * @tparam SourceStateType: state manager used to access source data.
+   * @tparam InterfaceReconstructorType: class for material interfaces reconstruction
+   * @tparam MatPoly_Splitter: class used for splitting material polygons
+   * @tparam MatPoly_Clipper: class used for clipping material polygons
+   * @tparam CoordSys: what coordinate system are we operating in?
+   */
+  template<
+    int D,
+    typename SourceMeshType,
+    typename TargetMeshType,
+    typename SourceStateType,
+    typename TargetStateType,
+    template<class, int, class, class>
+      class InterfaceReconstructorType,
+    class Matpoly_Splitter, class Matpoly_Clipper, class CoordSys
+  >
+  class Interpolate_2ndOrder<
+    D, Entity_kind::CELL,
+    SourceMeshType, TargetMeshType,
+    SourceStateType, TargetStateType,
+    InterfaceReconstructorType,
+    Matpoly_Splitter, Matpoly_Clipper, CoordSys> {
+
+    // useful aliases
+    using Parts = PartPair<
+      D, Entity_kind::CELL,
+      SourceMeshType, SourceStateType,
+      TargetMeshType, TargetStateType
+    >;
+
+    using Gradient = Limited_Gradient<
+      D, Entity_kind::CELL,
+      SourceMeshType, SourceStateType,
+      TargetMeshType, TargetStateType,
+      InterfaceReconstructorType,
+      Matpoly_Splitter, Matpoly_Clipper, CoordSys
+    >;
 
 #ifdef HAVE_TANGRAM
-  using InterfaceReconstructor =
-      Tangram::Driver<InterfaceReconstructorType, D, SourceMeshType,
-                      Matpoly_Splitter, Matpoly_Clipper>;
+    using InterfaceReconstructor = Tangram::Driver<
+      InterfaceReconstructorType, D, SourceMeshType,
+      Matpoly_Splitter, Matpoly_Clipper
+    >;
 #endif
 
- public:
+  public:
+    /**
+     * @brief Constructor without interface reconstructor.
+     *
+     * @param[in] source_mesh: mesh wrapper used to query source mesh info.
+     * @param[in] target_mesh: mesh wrapper used to query target mesh info.
+     * @param[in] source_state: state-manager wrapper used to query field info.
+     * @param[in] num_tols: numerical tolerances.
+     */
+    Interpolate_2ndOrder(SourceMeshType const& source_mesh,
+                         TargetMeshType const& target_mesh,
+                         SourceStateType const& source_state,
+                         NumericTolerances_t num_tols,
+                         const Parts* const parts = nullptr)
+      : source_mesh_(source_mesh),
+        target_mesh_(target_mesh),
+        source_state_(source_state),
+        variable_name_("VariableNameNotSet"),
+        source_values_(nullptr),
+        num_tols_(num_tols),
+        parts_(parts) { CoordSys::template verify_coordinate_system<D>(); }
 
-  // Constructor with interface reconstructor
 #ifdef HAVE_TANGRAM
-  Interpolate_2ndOrder(SourceMeshType const & source_mesh,
-                       TargetMeshType const & target_mesh,
-                       StateType const & source_state,
-                       NumericTolerances_t num_tols,
-                       std::shared_ptr<InterfaceReconstructor> ir) :
-      source_mesh_(source_mesh),
-      target_mesh_(target_mesh),
-      source_state_(source_state),
-      interface_reconstructor_(ir),
-      interp_var_name_("VariableNameNotSet"),
-      source_vals_(nullptr),
-      num_tols_(num_tols) {
-    CoordSys::template verify_coordinate_system<D>();
-  }
+    /**
+     * @brief Constructor with interface reconstructor.
+     *
+     * @param[in] source_mesh: mesh wrapper used to query source mesh info.
+     * @param[in] target_mesh: mesh wrapper used to query target mesh info.
+     * @param[in] source_state: state-manager wrapper used to query field info.
+     * @param[in] num_tols: numerical tolerances.
+     * @param[in] ir: interface reconstructor for querying matpolys on source mesh.
+     */
+    Interpolate_2ndOrder(SourceMeshType const& source_mesh,
+                         TargetMeshType const& target_mesh,
+                         SourceStateType const& source_state,
+                         NumericTolerances_t num_tols,
+                         std::shared_ptr<InterfaceReconstructor> ir,
+                         const Parts* const parts = nullptr)
+      : source_mesh_(source_mesh),
+        target_mesh_(target_mesh),
+        source_state_(source_state),
+        interface_reconstructor_(ir),
+        variable_name_("VariableNameNotSet"),
+        source_values_(nullptr),
+        num_tols_(num_tols),
+        parts_(parts) { CoordSys::template verify_coordinate_system<D>(); }
 #endif
 
-  // Constructor without interface reconstructor
-  Interpolate_2ndOrder(SourceMeshType const & source_mesh,
-                       TargetMeshType const & target_mesh,
-                       StateType const & source_state,
-                       NumericTolerances_t num_tols) :
-      source_mesh_(source_mesh),
-      target_mesh_(target_mesh),
-      source_state_(source_state),
-      interp_var_name_("VariableNameNotSet"),
-      source_vals_(nullptr),
-      num_tols_(num_tols) {
-    CoordSys::template verify_coordinate_system<D>();
-  }
+    /**
+     * @brief Assignment operator (disabled).
+     *
+     * @param[in] other the interpolator to copy
+     * @return current interpolator reference
+     */
+    Interpolate_2ndOrder &operator=(const Interpolate_2ndOrder &) = delete;
+
+    /**
+     * @brief Destructor.
+     *
+     */
+    ~Interpolate_2ndOrder() = default;
+
+    /**
+     * @brief Set the material we are operating on.
+     *
+     * @param[in] m: the material ID.
+     */
+    void set_material(int m) { material_id_ = m; }
 
 
-  /// Set the name of the interpolation variable and the limiter type
+    /**
+     * @brief Set the name of the interpolation variable and the limiter type,
+     *        and compute the gradient field.
+     *
+     * @param[in] variable_name: the variable name
+     * @param[in] limiter_type: kind of gradient limiter to use.
+     * @param[in] boundary_limiter_type: gradient limiter to use on boundary.
+     */
+    void set_interpolation_variable(std::string const& variable_name,
+                                    Limiter_type limiter_type = NOLIMITER,
+                                    Boundary_Limiter_type boundary_limiter_type = BND_NOLIMITER) {
 
-  void set_interpolation_variable(std::string const & interp_var_name,
-                                  Limiter_type limiter_type = NOLIMITER,
-                                  Boundary_Limiter_type boundary_limiter_type = BND_NOLIMITER) {
+      variable_name_ = variable_name;
 
-    interp_var_name_ = interp_var_name;
+      // Extract the field data from the state-manager and the source cells for
+      // which the gradient has to be computed.
+      int nb_cells;
+      std::vector<int> cellids;
+      field_type_ = source_state_.field_type(Entity_kind::CELL, variable_name);
 
-    // Extract the field data from the statemanager and the source cells for
-    // which the gradient has to be computed.
-    int nentities;
-    std::vector<int> cellids;
-    field_type_ = source_state_.field_type(Entity_kind::CELL, interp_var_name);
-    if (field_type_ == Field_type::MESH_FIELD)
-    {
-      source_state_.mesh_get_data(Entity_kind::CELL, interp_var_name, &source_vals_);
-      nentities = source_mesh_.num_entities(Entity_kind::CELL);
-    }
-    else
-    {
-      source_state_.mat_get_celldata(interp_var_name, matid_, &source_vals_);
-      source_state_.mat_get_cells(matid_, &cellids);
-      nentities =  cellids.size();
-    }
-    // Compute the limited gradients for the field
-#ifdef HAVE_TANGRAM
-    Limited_Gradient<D, Entity_kind::CELL, SourceMeshType, StateType, InterfaceReconstructorType,
-                     Matpoly_Splitter, Matpoly_Clipper, CoordSys>
-        limgrad(source_mesh_, source_state_, interp_var_name_, limiter_type, boundary_limiter_type,
-                interface_reconstructor_);
-    if (field_type_ == Field_type::MULTIMATERIAL_FIELD)
-      limgrad.set_material(matid_);
-#else
-    Limited_Gradient<D, Entity_kind::CELL, SourceMeshType, StateType,
-      InterfaceReconstructorType, Matpoly_Splitter, Matpoly_Clipper, CoordSys>
-        limgrad(source_mesh_, source_state_, interp_var_name_, limiter_type, boundary_limiter_type);
-#endif
-
-    gradients_.resize(nentities);
-
-    // call transform functor to take the values of the variable on
-    // the cells and compute a "limited" gradient of the field on the
-    // cells (for transform definition, see portage.h)
-
-    // Even though we defined Portage::transform (to be
-    // thrust::transform or boost::transform) in portage.h, the
-    // compiler is not able to disambiguate this call and is getting
-    // confused. So we will explicitly state that this is Portage::transform
-    if (field_type_ == Field_type::MESH_FIELD){
-      Portage::transform(source_mesh_.begin(Entity_kind::CELL), source_mesh_.end(Entity_kind::CELL),
-                         gradients_.begin(), limgrad);
-    }
-    else{
-      Portage::transform(cellids.begin(), cellids.end(),
-                         gradients_.begin(), limgrad);
-    }
-  }  // set_interpolation_variable
-
-
-  /// Copy constructor (disabled)
-  //  Interpolate_2ndOrder(const Interpolate_2ndOrder &) = delete;
-
-  /// Assignment operator (disabled)
-  Interpolate_2ndOrder & operator = (const Interpolate_2ndOrder &) = delete;
-
-  /// Destructor
-  ~Interpolate_2ndOrder() {}
-
-
-  /// Set the material we are operating on (MM interpolate not implemented yet)
-
-  int set_material(int m) {
-    matid_ = m ;
-  }  // set_material
-
-  /*!
-    @brief   Functor to do the 2nd order interpolation of cell values
-
-    @param[in] targetCellID The index of the target cell.
-
-    @param[in] sources_and_weights Vector of source mesh entities and
-    corresponding weight vectors.  Each element of the weights vector
-    is a moment of the source data over the target entity; for first
-    order interpolation, only the first element (or zero'th moment) of
-    the weights vector (i.e. the volume of intersection) is
-    used. Source entities may be repeated in the list if the
-    intersection of a target entity and a source entity consists of
-    two or more disjoint pieces
-
-    @todo must remove assumption that field is scalar
-  */
-
-  double operator() (int const targetCellID,
-                     std::vector<Weights_t> const & sources_and_weights) const
-  {
-    int nsrccells = sources_and_weights.size();
-    if (!nsrccells) return 0.0;
-
-    double totalval = 0.0;
-    double wtsum0 = 0.0;
-
-    // contribution of the source cell is its field value weighted by
-    // its "weight" (in this case, its 0th moment/area/volume)
-
-    /// @todo Should use zip_iterator here but I am not sure I know how to
-    double vol = target_mesh_.cell_volume(targetCellID);
-    int nsummed = 0;
-
-    // Loop over source cells
-    for (int j = 0; j < nsrccells; ++j) {
-
-      // Get source cell and the intersection weights
-      int srccell = sources_and_weights[j].entityID;
-      std::vector<double> xsect_weights = sources_and_weights[j].weights;
-      double xsect_volume = xsect_weights[0];
-
-      if (xsect_volume/vol <= num_tols_.min_relative_volume)
-        continue;  // no intersection
-
-      // Obtain source cell centroid
-      Point<D> src_centroid;
-      if (field_type_ == Field_type::MESH_FIELD){
-        source_mesh_.cell_centroid(srccell, &src_centroid);
+      if (field_type_ == Field_type::MESH_FIELD) {
+        source_state_.mesh_get_data(Entity_kind::CELL, variable_name, &source_values_);
+        nb_cells = source_mesh_.num_entities(Entity_kind::CELL);
+      } else {
+        source_state_.mat_get_celldata(variable_name, material_id_, &source_values_);
+        source_state_.mat_get_cells(material_id_, &cellids);
+        nb_cells = cellids.size();
       }
-      else if (field_type_ == Field_type::MULTIMATERIAL_FIELD){
+
+      // Compute the limited gradients for the field
 #ifdef HAVE_TANGRAM
-    	int nmats = source_state_.cell_get_num_mats(srccell);
-      	std::vector<int> cellmats;
-      	source_state_.cell_get_mats(srccell, &cellmats);
+      Gradient gradient_kernel(source_mesh_, source_state_, variable_name_,
+                               limiter_type, boundary_limiter_type,
+                               interface_reconstructor_, parts_);
 
-      	if (!nmats || (nmats == 1 && cellmats[0] == matid_))
-      	{ // pure cell
-          source_mesh_.cell_centroid(srccell, &src_centroid);
-      	}
-     	else
-      	{ // multi-material cell
-          assert(interface_reconstructor_ != nullptr);  // cannot be nullptr
+      if (field_type_ == Field_type::MULTIMATERIAL_FIELD)
+        gradient_kernel.set_material(material_id_);
+#else
+      Gradient gradient_kernel(source_mesh_, source_state_, variable_name_,
+                                    limiter_type, boundary_limiter_type, parts_);
+#endif
 
-          if (std::find(cellmats.begin(), cellmats.end(), matid_) !=
-              cellmats.end())
-          { // mixed cell containing this material
+      gradients_.resize(nb_cells);
 
-            // Obtain matpoly's for this material
-            Tangram::CellMatPoly<D> const& cellmatpoly =
-                interface_reconstructor_->cell_matpoly_data(srccell);
-            std::vector<Tangram::MatPoly<D>> matpolys =
-                cellmatpoly.get_matpolys(matid_);
+      /*
+       * Call transform functor to take the values of the variable on
+       * the cells and compute a "limited" gradient of the field on the
+       * cells (for transform definition, see portage.h).
+       *
+       * Even though we defined Portage::transform (to be
+       * thrust::transform or boost::transform) in portage.h, the compiler
+       * is not able to disambiguate this call and is getting confused.
+       * So we will explicitly state that this is Portage::transform.
+       */
+      if (field_type_ == Field_type::MESH_FIELD) {
+        Portage::transform(source_mesh_.begin(Entity_kind::CELL),
+                           source_mesh_.end(Entity_kind::CELL),
+                           gradients_.begin(), gradient_kernel);
+      } else {
+        Portage::transform(cellids.begin(), cellids.end(),
+                           gradients_.begin(), gradient_kernel);
+      }
+    }
 
-            int cnt = 0;
-            for (int k = 0; k < D; k++) src_centroid[k]=0;
 
-            // Compute centroid of all matpoly's by summing all the 
-            // first order moments first, and then dividing by the 
-            // total volume of all matpolys.
-            double mvol = 0.0;  
-            for (int j = 0; j < matpolys.size(); j++)
-            {
-              std::vector<double> moments = matpolys[j].moments();
-              mvol += moments[0];
+    /**
+     * @brief Functor to compute the interpolation of cell values.
+     *
+     * @param[in] cell_id: target cell index
+     * @param[in] sources_and_weights: list of source mesh entities and
+     * corresponding weight vectors. Each element of the weights vector
+     * is a moment of the source data over the target entity; for first
+     * order interpolation, only the first element (or zero'th moment)
+     * of the weights vector (volume of intersection) is used.
+     * Source entities may be repeated in the list if the intersection of a
+     * target cell and a source cell consists of two or more disjoint pieces.
+     *
+     * @return the interpolated value.
+     * @todo must remove assumption that field is scalar.
+     */
+    double operator()(int cell_id,
+                      std::vector<Weights_t> const& sources_and_weights) const {
+
+      if (sources_and_weights.empty())
+        return 0.;
+
+      double total_value = 0.;
+      double normalization = 0.;
+
+      /*
+       * contribution of the source cell is its field value weighted by
+       * its "weight" (in this case, its 0th moment/area/volume).
+       */
+      double volume = target_mesh_.cell_volume(cell_id);
+      int nb_summed = 0;
+
+      // Loop over source cells
+      for (auto&& current : sources_and_weights) {
+        // Get source cell and the intersection weights
+        int src_cell = current.entityID;
+        auto intersect_weights = current.weights;
+        double intersect_volume = intersect_weights[0];
+
+        if (intersect_volume / volume <= num_tols_.min_relative_volume)
+          continue;  // no intersection
+
+        // Obtain source cell centroid
+        Point<D> source_centroid;
+        if (field_type_ == Field_type::MESH_FIELD) {
+          source_mesh_.cell_centroid(src_cell, &source_centroid);
+        }
+#ifdef HAVE_TANGRAM
+        else if (field_type_ == Field_type::MULTIMATERIAL_FIELD) {
+          int const nb_mats = source_state_.cell_get_num_mats(src_cell);
+          std::vector<int> cellmats;
+          source_state_.cell_get_mats(src_cell, &cellmats);
+
+          bool is_pure_cell =
+            (nb_mats == 0 or (nb_mats == 1 and cellmats[0] == material_id_));
+
+          if (is_pure_cell) {
+            source_mesh_.cell_centroid(src_cell, &source_centroid);
+          } else /* multi-material cell */ {
+            assert(interface_reconstructor_ != nullptr);  // must be defined
+
+            auto pos = std::find(cellmats.begin(), cellmats.end(), material_id_);
+            bool found_material = (pos != cellmats.end());
+
+            if (found_material) /* mixed cell contains this material */ {
+
+              // obtain matpoly's for this material
+              auto const& cellmatpoly = interface_reconstructor_->cell_matpoly_data(src_cell);
+              auto matpolys = cellmatpoly.get_matpolys(material_id_);
+
+              int cnt = 0;
               for (int k = 0; k < D; k++)
-                src_centroid[k] += moments[k+1];
-            }
-            for (int k = 0; k < D; k++) src_centroid[k] /=mvol;
+                source_centroid[k] = 0;
 
+              /*
+               * compute centroid of all matpoly's by summing all the
+               * first order moments first, and then dividing by the
+               * total volume of all matpolys.
+               */
+              double mvol = 0.;
+              for (auto&& poly : matpolys) {
+                auto moments = poly.moments();
+                mvol += moments[0];
+                for (int k = 0; k < D; k++)
+                  source_centroid[k] += moments[k + 1];
+              }
+
+              for (int k = 0; k < D; k++)
+                source_centroid[k] /= mvol;
+            }
           }
         }
 #endif
+
+        // compute intersection centroid
+        Point<D> intersect_centroid;
+        // first-moment / volume
+        for (int k = 0; k < D; ++k)
+          intersect_centroid[k] = intersect_weights[1 + k] / intersect_volume;
+
+        // retrieve the correct source cell index
+        int const source_index = (field_type_ == Field_type::MULTIMATERIAL_FIELD
+          ? source_state_.cell_index_in_material(src_cell, material_id_)
+          : src_cell);
+
+        Vector<D> gradient = gradients_[source_index];
+        Vector<D> dr = intersect_centroid - source_centroid;
+        dr = CoordSys::modify_line_element(dr, source_centroid);
+
+        double value = source_values_[source_index] + dot(gradient, dr);
+        value *= intersect_volume;
+        total_value += value;
+        normalization += intersect_volume;
+        nb_summed++;
       }
 
-      // Compute intersection centroid
-      Point<D> xsect_centroid;
-      for (int i = 0; i < D; ++i)
-        xsect_centroid[i] = xsect_weights[1+i]/xsect_volume;  // (1st moment)/vol
-
-      // Get correct source cell index
-      int srcindex;
-      if (field_type_ == Field_type::MESH_FIELD)
-        srcindex = srccell;
-      else if (field_type_ == Field_type::MULTIMATERIAL_FIELD)
-        srcindex = source_state_.cell_index_in_material(srccell, matid_);
-
-      Vector<D> gradient = gradients_[srcindex];
-      Vector<D> dr = xsect_centroid - src_centroid;
-      dr = CoordSys::modify_line_element(dr, src_centroid);
-      double val = source_vals_[srcindex] + dot(gradient, dr);
-      val *= xsect_volume;
-      totalval += val;
-      wtsum0 += xsect_volume;
-      nsummed++;
+      /*
+       * Normalize the value by the volume of the intersection of the target cells
+       * with the source mesh. This will do the right thing for single-material
+       * and multi-material remap (conservative and constant preserving) if there
+       * is NO mismatch between source and target mesh boundaries. IF THERE IS A
+       * MISMATCH, THIS WILL PRESERVE CONSTANT VALUES BUT NOT BE CONSERVATIVE.
+       * THEN WE HAVE TO DO A SEMI-LOCAL OR GLOBAL REPAIR.
+       */
+      return nb_summed ? total_value / normalization : 0.;
     }
 
-    // Normalize the value by the volume of the intersection of the target cells
-    // with the source mesh. This will do the right thing for single-material
-    // and multi-material remap (conservative and constant preserving) if there
-    // is NO mismatch between source and target mesh boundaries. IF THERE IS A
-    // MISMATCH, THIS WILL PRESERVE CONSTANT VALUES BUT NOT BE CONSERVATIVE. THEN
-    // WE HAVE TO DO A SEMI-LOCAL OR GLOBAL REPAIR.
-
-    if (nsummed)
-      totalval /= wtsum0;
-    else
-      totalval = 0.0;
-
-    return totalval;
-
-  }  // operator()
-
- private:
-  SourceMeshType const & source_mesh_;
-  TargetMeshType const & target_mesh_;
-  StateType const & source_state_;
-  std::string interp_var_name_;
-  double const * source_vals_;
-  NumericTolerances_t num_tols_;
-
-  // Portage::vector is generalization of std::vector and
-  // Wonton::Vector<D> is a geometric vector
-  Portage::vector<Vector<D>> gradients_;
-
-  int matid_;
-  Field_type field_type_;
-
+  private:
+    SourceMeshType const& source_mesh_;
+    TargetMeshType const& target_mesh_;
+    SourceStateType const& source_state_;
+    std::string variable_name_;
+    double const* source_values_;
+    NumericTolerances_t num_tols_;
+    int material_id_ = 0;
+    Portage::vector<Wonton::Vector<D>> gradients_;
+    Field_type field_type_ = Field_type::UNKNOWN_TYPE_FIELD;
 #ifdef HAVE_TANGRAM
-  std::shared_ptr<InterfaceReconstructor> interface_reconstructor_;
+    std::shared_ptr<InterfaceReconstructor> interface_reconstructor_;
 #endif
-};  // 2nd order interpolate class specialization for cells
+    Parts const* parts_;
+  };
 
+  /* ------------------------------------------------------------------------ */
 
-//////////////////////////////////////////////////////////////////////////////
-/*!
-  @brief 2nd order interpolate class specialization for nodes
-*/
-template<int D,
-         typename SourceMeshType,
-         typename TargetMeshType,
-         typename StateType,
-         template<class, int, class, class> class InterfaceReconstructorType,
-         class Matpoly_Splitter,
-         class Matpoly_Clipper,
-         class CoordSys>
-class Interpolate_2ndOrder<D,
-                           Entity_kind::NODE,
-                           SourceMeshType,
-                           TargetMeshType,
-                           StateType,
-                           InterfaceReconstructorType,
-                           Matpoly_Splitter,
-                           Matpoly_Clipper,
-                           CoordSys> {
+  /**
+   * @brief second-order interpolate class specialization for nodes.
+   *
+   * @tparam D: spatial dimension of problem
+   * @tparam SourceMeshType: mesh wrapper class used to access source mesh info
+   * @tparam TargetMeshType: mesh wrapper class used to access target mesh info
+   * @tparam SourceStateType: state manager used to access source data.
+   * @tparam InterfaceReconstructorType: class for material interfaces reconstruction
+   * @tparam MatPoly_Splitter: class used for splitting material polygons
+   * @tparam MatPoly_Clipper: class used for clipping material polygons
+   * @tparam CoordSys: what coordinate system are we operating in?
+   */
+  template<
+    int D,
+    typename SourceMeshType,
+    typename TargetMeshType,
+    typename SourceStateType,
+    typename TargetStateType,
+    template<class, int, class, class>
+      class InterfaceReconstructorType,
+    class Matpoly_Splitter, class Matpoly_Clipper, class CoordSys
+  >
+  class Interpolate_2ndOrder<
+    D, Entity_kind::NODE,
+    SourceMeshType, TargetMeshType,
+    SourceStateType, TargetStateType,
+    InterfaceReconstructorType,
+    Matpoly_Splitter, Matpoly_Clipper, CoordSys> {
+
+    // useful aliases
+    using Parts = PartPair<
+      D, Entity_kind::NODE,
+      SourceMeshType, SourceStateType,
+      TargetMeshType, TargetStateType
+    >;
+
+    using Gradient = Limited_Gradient<
+      D, Entity_kind::NODE,
+      SourceMeshType, SourceStateType,
+      TargetMeshType, TargetStateType,
+      InterfaceReconstructorType,
+      Matpoly_Splitter, Matpoly_Clipper, CoordSys
+    >;
 
 #ifdef HAVE_TANGRAM
-  using InterfaceReconstructor =
-      Tangram::Driver<InterfaceReconstructorType, D, SourceMeshType,
-                      Matpoly_Splitter, Matpoly_Clipper>;
+    using InterfaceReconstructor = Tangram::Driver<
+      InterfaceReconstructorType, D, SourceMeshType,
+      Matpoly_Splitter, Matpoly_Clipper
+    >;
 #endif
 
- public:
+    // get rid of long namespaces
+    static auto const Node = Entity_kind::NODE;
 
-  // Constructor with interface reconstructor
+  public:
+
+    /**
+     * @brief Constructor without interface reconstructor.
+     *
+     * @param[in] source_mesh: mesh wrapper used to query source mesh info.
+     * @param[in] target_mesh: mesh wrapper used to query target mesh info.
+     * @param[in] source_state: state-manager wrapper used to query field info.
+     * @param[in] num_tols: numerical tolerances.
+     */
+    Interpolate_2ndOrder(SourceMeshType const& source_mesh,
+                         TargetMeshType const& target_mesh,
+                         SourceStateType const& source_state,
+                         NumericTolerances_t num_tols,
+                         const Parts* const parts = nullptr) :
+      source_mesh_(source_mesh),
+      target_mesh_(target_mesh),
+      source_state_(source_state),
+      variable_name_("VariableNameNotSet"),
+      source_values_(nullptr),
+      num_tols_(num_tols),
+      parts_(parts)
+    {
+      if (parts_ != nullptr) {
+        std::cerr << "Warning: part-by-part remap is only defined for cells. ";
+        std::cerr << "Source and target parts will be ignored" << std::endl;
+      }
+    }
+
 #ifdef HAVE_TANGRAM
-  Interpolate_2ndOrder(SourceMeshType const & source_mesh,
-                       TargetMeshType const & target_mesh,
-                       StateType const & source_state,
-                       NumericTolerances_t num_tols,
-                       std::shared_ptr<InterfaceReconstructor> ir) :
+    /**
+     * @brief Constructor with interface reconstructor.
+     *
+     * @param[in] source_mesh: mesh wrapper used to query source mesh info.
+     * @param[in] target_mesh: mesh wrapper used to query target mesh info.
+     * @param[in] source_state: state-manager wrapper used to query field info.
+     * @param[in] num_tols: numerical tolerances.
+     * @param[in] ir: interface reconstructor for querying matpolys on source mesh.
+     */
+    Interpolate_2ndOrder(SourceMeshType const& source_mesh,
+                         TargetMeshType const& target_mesh,
+                         SourceStateType const& source_state,
+                         NumericTolerances_t num_tols,
+                         std::shared_ptr<InterfaceReconstructor> ir,
+                         const Parts* const parts = nullptr) :
       source_mesh_(source_mesh),
       target_mesh_(target_mesh),
       source_state_(source_state),
       interface_reconstructor_(ir),
-      interp_var_name_("VariableNameNotSet"),
-      source_vals_(nullptr),
-      num_tols_(num_tols) {}
+      variable_name_("VariableNameNotSet"),
+      source_values_(nullptr),
+      num_tols_(num_tols),
+      parts_(parts)
+    {
+      if (parts_ != nullptr) {
+        std::cerr << "Warning: part-by-part remap is only defined for cells. ";
+        std::cerr << "Source and target parts will be ignored" << std::endl;
+      }
+    }
 #endif
 
-  // Constructor without interface reconstructor
-  Interpolate_2ndOrder(SourceMeshType const & source_mesh,
-                       TargetMeshType const & target_mesh,
-                       StateType const & source_state,
-                       NumericTolerances_t num_tols) :
-      source_mesh_(source_mesh),
-      target_mesh_(target_mesh),
-      source_state_(source_state),
-      interp_var_name_("VariableNameNotSet"),
-      source_vals_(nullptr),
-      num_tols_(num_tols) {}
+    /**
+     * @brief Assignment operator (disabled).
+     *
+     * @param[in] other the interpolator to copy
+     * @return current interpolator reference
+     */
+    Interpolate_2ndOrder& operator = (const Interpolate_2ndOrder&) = delete;
 
-  /// Copy constructor (disabled)
-  //  Interpolate_2ndOrder(const Interpolate_2ndOrder &) = delete;
+    /**
+     * @brief Destructor.
+     *
+     */
+    ~Interpolate_2ndOrder() = default;
 
-  /// Assignment operator (disabled)
-  Interpolate_2ndOrder & operator = (const Interpolate_2ndOrder &) = delete;
+    /**
+     * @brief Set the material we are operating on.
+     *
+     * @param[in] m: the material ID.
+     */
+    void set_material(int m) { material_id_ = m; }
 
-  /// Destructor
-  ~Interpolate_2ndOrder() {}
 
+    /**
+     * @brief Set the name of the interpolation variable and the limiter type,
+     *        and compute the gradient field.
+     *
+     * @param[in] variable_name: the variable name
+     * @param[in] limiter_type: kind of gradient limiter to use.
+     * @param[in] boundary_limiter_type: gradient limiter to use on boundary.
+     */
+    void set_interpolation_variable(std::string const variable_name,
+                                    Limiter_type limiter_type = NOLIMITER,
+                                    Boundary_Limiter_type boundary_limiter_type = BND_NOLIMITER) {
 
-  /// Set the name of the interpolation variable and the limiter type
+      variable_name_ = variable_name;
 
-  void set_interpolation_variable(std::string const & interp_var_name,
-                                  Limiter_type limiter_type = NOLIMITER,
-                                  Boundary_Limiter_type boundary_limiter_type = BND_NOLIMITER) {
+      // Extract the field data from the statemanager
+      field_type_ = source_state_.field_type(Entity_kind::NODE, variable_name);
 
-    interp_var_name_ = interp_var_name;
+      if (field_type_ == Field_type::MESH_FIELD) {
+        source_state_.mesh_get_data(Entity_kind::NODE, variable_name, &source_values_);
+      } else {
+        std::cerr << "Sorry: cannot remap node-centered multi-material data.";
+        std::cerr << std::endl;
+        return;
+      }
 
-    // Extract the field data from the statemanager
-    field_type_ = source_state_.field_type(Entity_kind::NODE, interp_var_name);
-    if (field_type_ == Field_type::MESH_FIELD)
-      source_state_.mesh_get_data(Entity_kind::NODE, interp_var_name,
-                                  &source_vals_);
-    else {
-      std::cerr << "Cannot remap NODE-centered multi-material data" << "\n";
+      // Compute the limited gradients for the field
+      Gradient gradient_kernel(source_mesh_, source_state_,
+                               variable_name_, limiter_type,
+                               boundary_limiter_type);
+
+      int size = source_mesh_.end(Node) - source_mesh_.begin(Node);
+      gradients_.resize(size);
+
+      /*
+       * Call transform functor to take the values of the variable on
+       * the cells and compute a "limited" gradient of the field on the
+       * cells (for transform definition, see portage.h).
+       *
+       * Even though we defined Portage::transform (to be
+       * thrust::transform or boost::transform) in portage.h, the compiler
+       * is not able to disambiguate this call and is getting confused.
+       * So we will explicitly state that this is Portage::transform.
+       */
+      Portage::transform(source_mesh_.begin(Node),
+                         source_mesh_.end(Node),
+                         gradients_.begin(), gradient_kernel);
     }
 
 
-    // Compute the limited gradients for the field
-    Limited_Gradient<D, Entity_kind::NODE, SourceMeshType, StateType,
-      InterfaceReconstructorType, Matpoly_Splitter, Matpoly_Clipper, CoordSys>
-        limgrad(source_mesh_, source_state_, interp_var_name_, limiter_type, boundary_limiter_type);
+    /**
+     * @brief Functor to compute the interpolation of node values.
+     *
+     * @param[in] node_id: target node index
+     * @param[in] sources_and_weights: list of source mesh entities and
+     * corresponding weight vectors. Each element of the weights vector
+     * is a moment of the source data over the target entity; for first
+     * order interpolation, only the first element (or zero'th moment)
+     * of the weights vector (volume of intersection) is used.
+     * Source entities may be repeated in the list if the intersection of a
+     * target cell and a source cell consists of two or more disjoint pieces.
+     *
+     * @return the interpolated value.
+     * @todo: must remove assumption that field is scalar.
+     */
+    double operator()(int node_id,
+                      std::vector<Weights_t> const& sources_and_weights) const {
 
-    int nentities = source_mesh_.end(Entity_kind::NODE)-source_mesh_.begin(Entity_kind::NODE);
-    gradients_.resize(nentities);
+      if (sources_and_weights.empty())
+        return 0.;
 
-    // call transform functor to take the values of the variable on
-    // the cells and compute a "limited" gradient of the field on the
-    // cells (for transform definition, see portage.h)
+      int const nb_source_nodes = sources_and_weights.size();
+      double total_value = 0.;
+      double normalization = 0.;
 
-    // Even though we defined Portage::transform (to be
-    // thrust::transform or boost::transform) in portage.h, the
-    // compiler is not able to disambiguate this call and is getting
-    // confused. So we will explicitly state that this is Portage::transform
+      // contribution of the source cell is its field value weighted by
+      // its "weight" (in this case, its 0th moment/area/volume)
+      double volume = target_mesh_.dual_cell_volume(node_id);
+      int nb_summed = 0;
 
-    Portage::transform(source_mesh_.begin(Entity_kind::NODE), source_mesh_.end(Entity_kind::NODE),
-                       gradients_.begin(), limgrad);
-  }
+      for (auto&& current : sources_and_weights) {
+        int src_node = current.entityID;
+        auto intersect_weights = current.weights;
+        double intersect_volume = intersect_weights[0];
 
+        if (intersect_volume / volume <= num_tols_.min_relative_volume)
+          continue;  // no intersection
 
-  /// Set the material we are operating on.
+        // note: here we are getting the node coord, not the centroid of
+        // the dual cell
+        Point<D> source_coord;
+        source_mesh_.node_get_coordinates(src_node, &source_coord);
 
-  int set_material(int m) {
-    matid_ = m;
-  }  // set_material
+        Point<D> intersect_centroid;
+        // first-moment / volume
+        for (int k = 0; k < D; ++k)
+          intersect_centroid[k] = intersect_weights[1 + k] / intersect_volume;
 
-  /*!
-    @brief Functor to do the 2nd order interpolation of node values
-    @param[in] sources_and_weights      A pair of two vectors
+        Vector<D> gradient = gradients_[src_node];
+        Vector<D> dr = intersect_centroid - source_coord;
+        dr = CoordSys::modify_line_element(dr, source_coord);
 
-    @c sources_and_weights.first() is the vector of source entity indices
-    in the source mesh that will contribute to the current target mesh entity.
+        double value = source_values_[src_node] + dot(gradient, dr);
+        value *= intersect_volume;
+        total_value += value;
+        normalization += intersect_volume;
+        nb_summed++;
+      }
 
-    @c sources_and_weights.second() is the
-    @param[in] targetCellID The index of the target cell.
-
-    @param[in] sources_and_weights Vector of source mesh entities and
-    corresponding weight vectors.  Each element of the weights vector
-    is a moment of the source data over the target entity; for first
-    order interpolation, only the first element (or zero'th moment) of
-    the weights vector (i.e. the volume of intersection) is
-    used. Source entities may be repeated in the list if the
-    intersection of a target entity and a source entity consists of
-    two or more disjoint pieces
-
-    @todo must remove assumption that field is scalar
-  */
-
-  double operator() (const int targetNodeID,
-                     std::vector<Weights_t> const & sources_and_weights) const
-  {
-    int nsrcnodes = sources_and_weights.size();
-    if (!nsrcnodes) return 0.0;
-
-    double totalval = 0.0;
-    double wtsum0 = 0.0;
-
-    // contribution of the source cell is its field value weighted by
-    // its "weight" (in this case, its 0th moment/area/volume)
-
-    /// @todo Should use zip_iterator here but I am not sure I know how to
-
-    double vol = target_mesh_.dual_cell_volume(targetNodeID);
-    int nsummed = 0;
-    for (int j = 0; j < nsrcnodes; ++j) {
-      int srcnode = sources_and_weights[j].entityID;
-      std::vector<double> xsect_weights = sources_and_weights[j].weights;
-      double xsect_volume = xsect_weights[0];
-
-      if (xsect_volume/vol <= num_tols_.min_relative_volume)
-        continue;  // no intersection
-
-      // note: here we are getting the node coord, not the centroid of
-      // the dual cell
-      Point<D> srcnode_coord;
-      source_mesh_.node_get_coordinates(srcnode, &srcnode_coord);
-
-      Point<D> xsect_centroid;
-      for (int i = 0; i < D; ++i)
-        // (1st moment)/(vol)
-        xsect_centroid[i] = xsect_weights[1+i]/xsect_volume;
-
-      Vector<D> gradient = gradients_[srcnode];
-      Vector<D> dr = xsect_centroid - srcnode_coord;
-      dr = CoordSys::modify_line_element(dr, srcnode_coord);
-      double val = source_vals_[srcnode] + dot(gradient, dr);
-      val *= xsect_volume;
-      totalval += val;
-      wtsum0 += xsect_volume;
-      nsummed++;
+      /*
+       * Normalize the value by volume of the target dual cell.
+       *
+       * Normalize the value by the volume of the intersection of the target cells
+       * with the source mesh. This will do the right thing for single-material
+       * and multi-material remap (conservative and constant preserving) if there
+       * is NO mismatch between source and target mesh boundaries. IF THERE IS A
+       * MISMATCH, THIS WILL PRESERVE CONSTANT VALUES BUT NOT BE CONSERVATIVE.
+       * THEN WE HAVE TO DO A SEMI-LOCAL OR GLOBAL REPAIR.
+       */
+      return nb_summed ? total_value / normalization : 0.;
     }
 
-    // Normalize the value by volume of the target dual cell
-
-    // Normalize the value by the volume of the intersection of the
-    // target cells with the source mesh. This will do the right thing
-    // for single-material and multi-material remap (conservative and
-    // constant preserving) if there is NO mismatch between source and
-    // target mesh boundaries. IF THERE IS A MISMATCH, THIS WILL
-    // PRESERVE CONSTANT VALUES BUT NOT BE CONSERVATIVE. THEN WE HAVE
-    // TO DO A SEMI-LOCAL OR GLOBAL REPAIR.
-
-    if (nsummed)
-      totalval /= wtsum0;
-    else
-      totalval = 0.0;
-
-    return totalval;
-  }  // operator()
-
- private:
-  SourceMeshType const & source_mesh_;
-  TargetMeshType const & target_mesh_;
-  StateType const & source_state_;
-  std::string interp_var_name_;
-  double const * source_vals_;
-  NumericTolerances_t num_tols_;
-
-  // Portage::vector is generalization of std::vector and
-  // Wonton::Vector<D> is a geometric vector
-  Portage::vector<Vector<D>> gradients_;
-
-  int matid_;
-  Field_type field_type_;
-
+  private:
+    SourceMeshType const& source_mesh_;
+    TargetMeshType const& target_mesh_;
+    SourceStateType const& source_state_;
+    std::string variable_name_;
+    double const* source_values_;
+    NumericTolerances_t num_tols_;
+    int material_id_ = 0;
+    Portage::vector<Vector<D>> gradients_;
+    Field_type field_type_ = Field_type::UNKNOWN_TYPE_FIELD;
 #ifdef HAVE_TANGRAM
-  std::shared_ptr<InterfaceReconstructor> interface_reconstructor_;
+    std::shared_ptr<InterfaceReconstructor> interface_reconstructor_;
 #endif
-};
-
-
+    Parts const* parts_;
+  };
+  /* ------------------------------------------------------------------------ */
 }  // namespace Portage
 
 #endif  // PORTAGE_INTERPOLATE_INTERPOLATE_2ND_ORDER_H_
