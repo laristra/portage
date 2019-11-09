@@ -332,6 +332,20 @@ public:
   bool is_mismatch_tested() const { return is_mismatch_tested_; }
 
   /**
+   * @brief Retrieve a constant pointer to source mesh part.
+   *
+   * @return a constant pointer to source mesh part
+   */
+  Part<onwhat, SourceMesh, SourceState> const* get_source() const { return &source_; }
+
+  /**
+   * @brief Retrieve a constant pointer to target mesh part.
+   *
+   * @return a constant pointer to target mesh part
+   */
+  Part<onwhat, TargetMesh, TargetState> const* get_target() const { return &target_; }
+
+  /**
    * @brief Get a reference to source entities list.
    *
    * @return a reference to source entities list.
