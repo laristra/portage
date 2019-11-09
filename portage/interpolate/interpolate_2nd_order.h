@@ -251,7 +251,6 @@ namespace Portage {
     using Gradient = Limited_Gradient<
       D, Entity_kind::CELL,
       SourceMeshType, SourceStateType,
-      TargetMeshType, TargetStateType,
       InterfaceReconstructorType,
       Matpoly_Splitter, Matpoly_Clipper, CoordSys
     >;
@@ -363,16 +362,18 @@ namespace Portage {
       }
 
       // Compute the limited gradients for the field
+      auto source_part = (parts_ != nullptr ? parts_->get_source() : nullptr);
+
 #ifdef HAVE_TANGRAM
       Gradient gradient_kernel(source_mesh_, source_state_, variable_name_,
                                limiter_type, boundary_limiter_type,
-                               interface_reconstructor_, parts_);
+                               interface_reconstructor_, source_part);
 
       if (field_type_ == Field_type::MULTIMATERIAL_FIELD)
         gradient_kernel.set_material(material_id_);
 #else
       Gradient gradient_kernel(source_mesh_, source_state_, variable_name_,
-                                    limiter_type, boundary_limiter_type, parts_);
+                               limiter_type, boundary_limiter_type, source_part);
 #endif
 
       gradients_.resize(nb_cells);
@@ -581,7 +582,6 @@ namespace Portage {
     using Gradient = Limited_Gradient<
       D, Entity_kind::NODE,
       SourceMeshType, SourceStateType,
-      TargetMeshType, TargetStateType,
       InterfaceReconstructorType,
       Matpoly_Splitter, Matpoly_Clipper, CoordSys
     >;
@@ -705,9 +705,11 @@ namespace Portage {
       }
 
       // Compute the limited gradients for the field
+      auto source_part = (parts_ != nullptr ? parts_->get_source() : nullptr);
+
       Gradient gradient_kernel(source_mesh_, source_state_,
                                variable_name_, limiter_type,
-                               boundary_limiter_type);
+                               boundary_limiter_type, source_part);
 
       int size = source_mesh_.end(Node) - source_mesh_.begin(Node);
       gradients_.resize(size);
