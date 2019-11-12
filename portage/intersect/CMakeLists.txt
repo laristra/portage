@@ -14,7 +14,7 @@ set(intersect_HEADERS
         intersect_polys_r3d.h
         intersect_r3d.h
         intersect_rNd.h
-        intersect_swept_faces.h
+        intersect_swept_face.h
         dummy_interface_reconstructor.h
         PARENT_SCOPE
         )
@@ -30,8 +30,8 @@ if (ENABLE_UNIT_TESTS)
                 LIBRARIES ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
                 POLICY MPI)
 
-        cinch_add_unit(test_intersect_swept_faces
-                SOURCES test/test_intersect_swept_faces.cc
+        cinch_add_unit(test_intersect_swept_face
+                SOURCES test/test_intersect_swept_face.cc
                 LIBRARIES portage ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
                 POLICY MPI)
     endif (Jali_DIR)
