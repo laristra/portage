@@ -255,7 +255,8 @@ namespace Portage {
     class TargetState_Wrapper = SourceState_Wrapper
   >
 class PartPair {
-
+  // shortcuts
+  using entity_weights_t = std::vector<Wonton::Weights_t>;
   using SourcePart = Part<onwhat, SourceMesh_Wrapper, SourceState_Wrapper>;
   using TargetPart = Part<onwhat, TargetMesh_Wrapper, TargetState_Wrapper>;
 
