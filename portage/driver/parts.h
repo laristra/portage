@@ -256,6 +256,9 @@ namespace Portage {
   >
 class PartPair {
 
+  using SourcePart = Part<onwhat, SourceMesh_Wrapper, SourceState_Wrapper>;
+  using TargetPart = Part<onwhat, TargetMesh_Wrapper, TargetState_Wrapper>;
+
 public:
   /**
    * @brief Construct a default source-target mesh parts pair.
@@ -334,22 +337,18 @@ public:
   bool is_mismatch_tested() const { return is_mismatch_tested_; }
 
   /**
-   * @brief Retrieve a constant pointer to source mesh part.
+   * @brief Retrieve a pointer to source mesh part.
    *
-   * @return a constant pointer to source mesh part
+   * @return a pointer to source mesh part
    */
-  Part<onwhat, SourceMesh_Wrapper, SourceState_Wrapper> const* get_source() const {
-    return &source_;
-  }
+  const SourcePart* get_source() const { return &source_; }
 
   /**
-   * @brief Retrieve a constant pointer to target mesh part.
+   * @brief Retrieve a pointer to target mesh part.
    *
-   * @return a constant pointer to target mesh part
+   * @return a pointer to target mesh part
    */
-  Part<onwhat, TargetMesh_Wrapper, TargetState_Wrapper> const* get_target() const {
-    return &target_;
-  }
+  const TargetPart* get_target() const { return &target_; }
 
   /**
    * @brief Get a reference to source entities list.
@@ -1027,8 +1026,8 @@ public:
 
 private:
   // source and target mesh parts
-  Part<onwhat, SourceMesh_Wrapper, SourceState_Wrapper> source_;
-  Part<onwhat, TargetMesh_Wrapper, TargetState_Wrapper> target_;
+  SourcePart source_;
+  TargetPart target_;
 
   bool is_mismatch_tested_ = false;
   bool has_mismatch_       = false;
@@ -1044,8 +1043,8 @@ private:
   double global_intersect_volume_ = 0.;
   double relative_voldiff_        = 0.;
 
-  std::vector<int>    source_entities_masks_   = {};
-  std::vector<double> intersection_volumes_    = {};
+  std::vector<int>    source_entities_masks_  = {};
+  std::vector<double> intersection_volumes_   = {};
   // empty target cells management
   std::vector<int>  layer_num_                = {};
   std::vector<bool> is_cell_empty_            = {};
