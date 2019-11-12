@@ -274,10 +274,12 @@ public:
    * @param executor        the MPI executor to use
    */
   PartPair(
-    SourceMesh_Wrapper const& source_mesh, SourceState_Wrapper& source_state,
-    TargetMesh_Wrapper const& target_mesh, TargetState_Wrapper& target_state,
-    std::vector<int> const& source_entities,
-    std::vector<int> const& target_entities,
+    SourceMesh_Wrapper    const& source_mesh,
+    SourceState_Wrapper&         source_state,
+    TargetMesh_Wrapper    const& target_mesh,
+    TargetState_Wrapper&         target_state,
+    std::vector<int>      const& source_entities,
+    std::vector<int>      const& target_entities,
     Wonton::Executor_type const* executor
   ) : source_(source_mesh, source_state, source_entities),
       target_(target_mesh, target_state, target_entities)
@@ -300,11 +302,11 @@ public:
     int nb_masks = (onwhat == Entity_kind::CELL ? source_.mesh().num_owned_cells()
                                                 : source_.mesh().num_owned_nodes());
 
-    source_masks_.resize(nb_masks, 1);
+    source_entities_masks_.resize(nb_masks, 1);
 #ifdef PORTAGE_ENABLE_MPI
     if (distributed_) {
       get_unique_entity_masks<onwhat, SourceMesh_Wrapper>(
-        source_.mesh(), &source_masks_, mycomm_
+        source_.mesh(), &source_entities_masks_, mycomm_
       );
     }
 #endif
@@ -478,7 +480,7 @@ public:
     // COMPUTE VOLUMES ON SOURCE AND TARGET PARTS
     // ------------------------------------------
     // collect volumes of entities that are not masked out and sum them up
-    double source_volume = source_.compute_entities_volumes(source_masks_.data());
+    double source_volume = source_.compute_entities_volumes(source_entities_masks_.data());
     double target_volume = target_.compute_entities_volumes();
     double intersect_volume = compute_intersect_volumes(source_weights);
 
@@ -554,9 +556,9 @@ public:
     // number of 0 and empty cell layers will have positive layer
     // numbers starting from 1
     std::vector<int> empty_entities;
-    empty_entities.reserve(target_.size());
+    empty_entities.reserve(target_part_size());
 
-    is_cell_empty_.resize(target_.size(), false);
+    is_cell_empty_.resize(target_part_size(), false);
 
     for (auto&& entity : target_.entities()) {
       auto const& i = target_.index(entity);
@@ -1042,7 +1044,7 @@ private:
   double global_intersect_volume_ = 0.;
   double relative_voldiff_        = 0.;
 
-  std::vector<int>    source_masks_   = {};
+  std::vector<int>    source_entities_masks_ = {};
   std::vector<double> intersection_volumes_ = {};
   // empty target cells management
   std::vector<int>  layer_num_                = {};
