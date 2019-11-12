@@ -1044,8 +1044,8 @@ private:
   double global_intersect_volume_ = 0.;
   double relative_voldiff_        = 0.;
 
-  std::vector<int>    source_entities_masks_ = {};
-  std::vector<double> intersection_volumes_ = {};
+  std::vector<int>    source_entities_masks_   = {};
+  std::vector<double> intersection_volumes_    = {};
   // empty target cells management
   std::vector<int>  layer_num_                = {};
   std::vector<bool> is_cell_empty_            = {};
