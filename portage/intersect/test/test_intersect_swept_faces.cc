@@ -208,9 +208,10 @@ TEST_F(IntersectSweptForward, MomentsCheck) {
   auto weights_corner   = intersector(corner_cell, search(corner_cell));
 
   /* for interior cell case, we have:
-   * - two contributing neighbor cells with non-zero weights (5:top, 7:right)
-   * - a reconstructed cell area perfectly preserved after advection.
-   * - self-contribution is reduced to zero.
+   * - two positive swept face areas associated with cells 5 and 7 (top and right).
+   * - two negative swept face areas associated with the source cell itself.
+   * - the unsigned area of the source cell itself.
+   * hence the source cell self-contribution is reduced to zero.
    */
   double source_area = source_mesh_wrapper.cell_volume(internal_cell);
   double target_area = compute_swept_area(weights_internal);
@@ -376,7 +377,7 @@ TEST_F(IntersectSweptBackward, MomentsCheck) {
   auto weights_corner   = intersector(corner_cell, search(corner_cell));
 
   /* we should have the same results as the previous test for interior case:
-   * - two contributing neighbors cells with non-zero weights.
+   * - two contributing neighbors cells with negative swept face areas.
    * - reconstructed cell area is perfectly preserved after advection.
    * - no cell self-contribution.
    */

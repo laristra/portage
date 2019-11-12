@@ -20,7 +20,7 @@
 namespace Portage {
 
   /**
-   * @brief Kernel to compute interpolation weights for advection-based remap.
+   * @brief Kernel to compute interpolation weights for swept-face remap.
    *
    * @tparam dim: dimension of the problem.
    * @tparam on_what: the entity kind we want to remap.
@@ -550,13 +550,13 @@ namespace Portage {
             double const centroid[] = { moments[1]/area, moments[2]/area };
           #endif
 
-          /* step 3: check aree sign, choose the right source cell,
-           * and add computed area and centroid to related lists.
+          /* step 3: assign the computed moments to the source cell or one
+           * of its neighbors according to the sign of the swept face area.
            */
           if (moments[0] < 0.) {
-            // if negative volume then add moments to that the source cell
-            // it means that the area would be substracted from that source cell.
-            // when performing the interpolation.
+            // if the computed swept face area is negative then assign its
+            // moments to the source cell: it will be substracted
+            // from the source cell area when performing the interpolation.
             swept_moments.emplace_back(source_id, moments);
 
             #if DEBUG
