@@ -527,21 +527,17 @@ namespace Portage {
           // step 1: construct the swept face polygon
           std::vector<Wonton::Point<2>> swept_polygon(4);
 
-          if (dirs[i] > 0) {
-            // if the edge has the same orientation as the cell, then reverse
-            // its nodes order such that we have a positive swept volume on
-            // outside and negative swept volume on inside.
-            source_mesh_.node_get_coordinates(nodes[1], swept_polygon.data());
-            source_mesh_.node_get_coordinates(nodes[0], swept_polygon.data()+1);
-            target_mesh_.node_get_coordinates(nodes[0], swept_polygon.data()+2);
-            target_mesh_.node_get_coordinates(nodes[1], swept_polygon.data()+3);
-          } else {
-            // otherwise keep the same nodal order.
-            source_mesh_.node_get_coordinates(nodes[0], swept_polygon.data());
-            source_mesh_.node_get_coordinates(nodes[1], swept_polygon.data()+1);
-            target_mesh_.node_get_coordinates(nodes[1], swept_polygon.data()+2);
-            target_mesh_.node_get_coordinates(nodes[0], swept_polygon.data()+3);
-          }
+          // if the edge has the same orientation as the cell, then reverse
+          // its nodes order such that we have a positive swept volume on
+          // outside and negative swept volume on inside.
+          // otherwise keep the same nodal order.
+          unsigned const j = (dirs[i] > 0 ? 1 : 0);
+          unsigned const k = j ^ 1;
+
+          source_mesh_.node_get_coordinates(nodes[j], swept_polygon.data());
+          source_mesh_.node_get_coordinates(nodes[k], swept_polygon.data()+1);
+          target_mesh_.node_get_coordinates(nodes[k], swept_polygon.data()+2);
+          target_mesh_.node_get_coordinates(nodes[j], swept_polygon.data()+3);
 
           // compute swept polygon moment using divergence theorem
           auto moments = compute_moments_divergence_theorem(swept_polygon);
