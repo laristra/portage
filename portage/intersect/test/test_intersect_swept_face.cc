@@ -20,7 +20,7 @@
 /**
  * @brief Fixture class for swept face moments computation tests.
  *
- * Here, we consider a planar cartesian grid which is advected
+ * Here, we consider a 2D cartesian grid which is advected
  * by a unique displacement vector and we aim to check the volume
  * of each swept face for a given source cell. Notice that mesh
  * topology remains unchanged, hence source and target cells

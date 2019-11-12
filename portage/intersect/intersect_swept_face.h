@@ -151,7 +151,7 @@ namespace Portage {
 
 
   /**
-   * @brief Specialization for planar cell-based remap.
+   * @brief Specialization for 2D cell-based remap.
    *
    * @tparam SourceMesh: the source mesh wrapper type.
    * @tparam SourceState: the source state wrapper to query field infos.
