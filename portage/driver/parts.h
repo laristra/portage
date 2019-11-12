@@ -309,7 +309,7 @@ public:
     }
 #endif
 
-    intersect_volumes_.resize(target_.size());
+    intersection_volumes_.resize(target_.size());
   }
 
   /**
@@ -429,11 +429,11 @@ public:
       auto const& i = target_.index(t);
       // accumulate moments
       entity_weights_t const& moments = source_weights[t];
-      intersect_volumes_[i] = 0.;
+      intersection_volumes_[i] = 0.;
       for (auto const& current : moments) {
         // matched source cell should be in the source part
         if (source_.contains(current.entityID))
-          intersect_volumes_[i] += current.weights[0];
+          intersection_volumes_[i] += current.weights[0];
         #if DEBUG_PART_BY_PART
           std::printf("\tmoments[target:%d][source:%d]: %f\n"
                       , t, current.entityID, current.weights[0]);
@@ -445,7 +445,7 @@ public:
     });
 
     // accumulate values to retrieve total intersected volume
-    return std::accumulate(intersect_volumes_.begin(), intersect_volumes_.end(), 0.);
+    return std::accumulate(intersection_volumes_.begin(), intersection_volumes_.end(), 0.);
   }
 
   /**
@@ -556,7 +556,7 @@ public:
 
     for (auto&& entity : target_.entities()) {
       auto const& i = target_.index(entity);
-      if (std::abs(intersect_volumes_[i]) < epsilon_) {
+      if (std::abs(intersection_volumes_[i]) < epsilon_) {
         empty_entities.emplace_back(entity);
         is_cell_empty_[i] = true;
       }
@@ -751,10 +751,10 @@ public:
           #endif
 
           auto const relative_voldiff =
-            std::abs(intersect_volumes_[t] - target_.volume(t)) / target_.volume(t);
+            std::abs(intersection_volumes_[t] - target_.volume(t)) / target_.volume(t);
 
           if (relative_voldiff > tolerance_) {
-            target_data[entity] *= intersect_volumes_[t] / target_.volume(t);
+            target_data[entity] *= intersection_volumes_[t] / target_.volume(t);
           }
           #if DEBUG_PART_BY_PART
             std::printf(", after: %.3f\n", target_data[entity]);
@@ -1039,7 +1039,7 @@ private:
   double relative_voldiff_        = 0.;
 
   std::vector<int>    source_masks_   = {};
-  std::vector<double> intersect_volumes_ = {};
+  std::vector<double> intersection_volumes_ = {};
   // empty target cells management
   std::vector<int>  layer_num_                = {};
   std::vector<bool> is_cell_empty_            = {};
