@@ -1038,14 +1038,15 @@ private:
   static constexpr double epsilon_   = std::numeric_limits<double>::epsilon();
   static constexpr double tolerance_ = 1.E2 * epsilon_;
 
+  std::vector<int>    source_entities_masks_ = {};
+  std::vector<double> intersection_volumes_  = {};
+
   // data needed for mismatch checks
   double global_source_volume_    = 0.;
   double global_target_volume_    = 0.;
   double global_intersect_volume_ = 0.;
   double relative_voldiff_        = 0.;
 
-  std::vector<int>    source_entities_masks_  = {};
-  std::vector<double> intersection_volumes_   = {};
   // empty target cells management
   std::vector<int>  layer_num_                = {};
   std::vector<bool> is_cell_empty_            = {};
