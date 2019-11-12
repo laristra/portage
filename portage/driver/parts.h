@@ -242,17 +242,17 @@ namespace Portage {
  *        It detects boundaries mismatch and provides the necessary fixup
  *        for partially filled and empty cells values.
  *
- * @tparam D           meshes dimension
- * @tparam onwhat      the entity kind for remap [cell|node]
- * @tparam SourceMesh  the source mesh wrapper to use
- * @tparam SourceState the source state wrapper to use
- * @tparam TargetMesh  the target mesh wrapper to use
- * @tparam TargetState the target state wrapper to use
+ * @tparam D                   meshes dimension
+ * @tparam onwhat              the entity kind for remap [cell|node]
+ * @tparam SourceMesh_Wrapper  the source mesh wrapper to use
+ * @tparam SourceState_Wrapper the source state wrapper to use
+ * @tparam TargetMesh_Wrapper  the target mesh wrapper to use
+ * @tparam TargetState_Wrapper the target state wrapper to use
  */
   template<int D, Entity_kind onwhat,
-    class SourceMesh, class SourceState,
-    class TargetMesh = SourceMesh,
-    class TargetState = SourceState
+    class SourceMesh_Wrapper, class SourceState_Wrapper,
+    class TargetMesh_Wrapper = SourceMesh_Wrapper,
+    class TargetState_Wrapper = SourceState_Wrapper
   >
 class PartPair {
 
@@ -274,8 +274,8 @@ public:
    * @param executor        the MPI executor to use
    */
   PartPair(
-    SourceMesh const& source_mesh, SourceState& source_state,
-    TargetMesh const& target_mesh, TargetState& target_state,
+    SourceMesh_Wrapper const& source_mesh, SourceState_Wrapper& source_state,
+    TargetMesh_Wrapper const& target_mesh, TargetState_Wrapper& target_state,
     std::vector<int> const& source_entities,
     std::vector<int> const& target_entities,
     Wonton::Executor_type const* executor
@@ -303,7 +303,7 @@ public:
     source_masks_.resize(nb_masks, 1);
 #ifdef PORTAGE_ENABLE_MPI
     if (distributed_) {
-      get_unique_entity_masks<onwhat, SourceMesh>(
+      get_unique_entity_masks<onwhat, SourceMesh_Wrapper>(
         source_.mesh(), &source_masks_, mycomm_
       );
     }
@@ -336,14 +336,18 @@ public:
    *
    * @return a constant pointer to source mesh part
    */
-  Part<onwhat, SourceMesh, SourceState> const* get_source() const { return &source_; }
+  Part<onwhat, SourceMesh_Wrapper, SourceState_Wrapper> const* get_source() const {
+    return &source_;
+  }
 
   /**
    * @brief Retrieve a constant pointer to target mesh part.
    *
    * @return a constant pointer to target mesh part
    */
-  Part<onwhat, TargetMesh, TargetState> const* get_target() const { return &target_; }
+  Part<onwhat, TargetMesh_Wrapper, TargetState_Wrapper> const* get_target() const {
+    return &target_;
+  }
 
   /**
    * @brief Get a reference to source entities list.
@@ -440,7 +444,7 @@ public:
         #endif
       }
       #if DEBUG_PART_BY_PART
-        std::printf("intersect_volume[%02d]: %.3f\n", t, intersect_volumes_[i]);
+        std::printf("intersect_volume[%02d]: %.3f\n", t, intersection_volumes_[i]);
       #endif
     });
 
@@ -1021,8 +1025,8 @@ public:
 
 private:
   // source and target mesh parts
-  Part<onwhat, SourceMesh, SourceState> source_;
-  Part<onwhat, TargetMesh, TargetState> target_;
+  Part<onwhat, SourceMesh_Wrapper, SourceState_Wrapper> source_;
+  Part<onwhat, TargetMesh_Wrapper, TargetState_Wrapper> target_;
 
   bool is_mismatch_tested_ = false;
   bool has_mismatch_       = false;
