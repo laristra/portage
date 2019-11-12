@@ -414,38 +414,36 @@ public:
   }
 
   /**
+   * @brief Compute source and target parts intersection volume.
    *
-   * @param source_weights
-   * @return
+   * @param source_weights: candidate source cells and their intersection moments.
+   * @return the total intersection volume.
    */
   double compute_intersect_volumes
     (Portage::vector<entity_weights_t> const& source_weights) {
     // retrieve target entities list
     auto const& target_entities = target_.entities();
 
-    // compute the intersected volume of given target entity
-    auto kernel = [&](int t) {
+    // compute the intersected volume of each target part entity
+    Portage::for_each(target_entities.begin(), target_entities.end(), [&](int t) {
       auto const& i = target_.index(t);
       // accumulate moments
       entity_weights_t const& moments = source_weights[t];
       intersect_volumes_[i] = 0.;
-      for (auto&& current : moments) {
-        auto const& id = current.entityID;
-        auto const& volume = current.weights[0];
+      for (auto const& current : moments) {
         // matched source cell should be in the source part
-        if (source_.contains(id))
-          intersect_volumes_[i] += volume;
+        if (source_.contains(current.entityID))
+          intersect_volumes_[i] += current.weights[0];
         #if DEBUG_PART_BY_PART
-          std::printf("\tmoments[target:%d][source:%d]: %f\n", t, id, volume);
+          std::printf("\tmoments[target:%d][source:%d]: %f\n"
+                      , t, current.entityID, current.weights[0]);
         #endif
       }
       #if DEBUG_PART_BY_PART
         std::printf("intersect_volume[%02d]: %.3f\n", t, intersect_volumes_[i]);
       #endif
-    };
+    });
 
-    // apply kernel on all target part entities
-    Portage::for_each(target_entities.begin(), target_entities.end(), kernel);
     // accumulate values to retrieve total intersected volume
     return std::accumulate(intersect_volumes_.begin(), intersect_volumes_.end(), 0.);
   }
