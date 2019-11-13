@@ -74,7 +74,9 @@ class Traits<Quadratic, dim>
   using matrix_t = array<array<double, function_size>, function_size>;
 };
 
-// this definition completes declaration of the static member
+// this definition completes declaration of the static member, see e.g.
+// stackoverflow.com/questions/8016780/undefined-reference-to-static-constexpr-char
+// this should be revisited after switching to C++17
 template<size_t dim>
 constexpr array<size_t,2> Traits<Quadratic, dim>::jet_size;
 
