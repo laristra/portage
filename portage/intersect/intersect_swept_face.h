@@ -474,8 +474,6 @@ namespace Portage {
 
       // here the source and target cell have the exact ID.
       int const source_id = target_id;
-      int const size = stencil.size();
-      assert(in_stencil(source_id));
 
       std::vector<Weights_t> swept_moments;
 
