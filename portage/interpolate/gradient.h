@@ -191,10 +191,10 @@ namespace Portage {
                           mesh_.end(Entity_kind::CELL), collect_neighbors);
       } else /* only on source part */ {
         auto filter_neighbors = [this](int c) {
-          cell_neighbors_[c] = part_->get_source_filtered_neighbors(c);
+          cell_neighbors_[c] = part_->get_neighbors(c);
         };
 
-        auto const& part_cells = part_->get_source_entities();
+        auto const& part_cells = part_->entities();
         Portage::for_each(part_cells.begin(), part_cells.end(), filter_neighbors);
       }
 

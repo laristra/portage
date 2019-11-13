@@ -128,8 +128,9 @@ namespace Portage {
      * @param variable: name of the field.
      * @param data: the field data.
      */
-    void get_field(std::string variable, double** data) const {
-      return state_.mesh_get_data(onwhat, variable, data);
+    template<typename T>
+    void get_field(std::string variable, T** data) const {
+      state_.mesh_get_data(onwhat, variable, data);
     }
 
     /**
@@ -138,8 +139,9 @@ namespace Portage {
      * @param variable: name of the field.
      * @param data: the field data.
      */
-    void get_field(std::string variable, const double** data) const {
-      return state_.mesh_get_data(onwhat, variable, data);
+    template<typename T>
+    void get_field(std::string variable, const T** data) const {
+      state_.mesh_get_data(onwhat, variable, data);
     }
 
     /**
@@ -428,7 +430,7 @@ public:
     Portage::for_each(target_entities.begin(), target_entities.end(), [&](int t) {
       auto const& i = target_.index(t);
       // accumulate moments
-      entity_weights_t const& moments = source_weights[t];
+      entity_weights_t const moments = source_weights[t];
       intersection_volumes_[i] = 0.;
       for (auto const& current : moments) {
         // matched source cell should be in the source part
@@ -723,8 +725,8 @@ public:
 
     // Now process remap variables
     // WARNING: absolute indexing
-    double const* source_data;
-    double*       target_data;
+    double* source_data = nullptr;
+    double* target_data = nullptr;
     source_.get_field(src_var_name, &source_data);
     target_.get_field(trg_var_name, &target_data);
 
