@@ -156,23 +156,23 @@ namespace Portage {
     /**
      * @brief Retrieve the neighbors of the given entity on mesh part.
      *
-     * @tparam entity_type the entity type [ALL|PARALLEL_OWNED]
-     * @param  entity      the given entity
-     * @return filtered    the filtered neighboring entities list.
+     * @tparam type     the entity type [ALL|PARALLEL_OWNED]
+     * @param  entity   the given entity
+     * @return filtered the filtered neighboring entities list.
      */
-    template<Entity_type entity_type = Entity_type::ALL>
+    template<Entity_type type = Entity_type::ALL>
     std::vector<int> get_neighbors(int entity) const {
-      std::vector<int> neighbors, filtered;
+      std::vector<int> neigh, filtered;
       // first retrieve neighbors
       switch (onwhat) {
-        case CELL: mesh_.cell_get_node_adj_cells(entity, entity_type, &neighbors); break;
-        case NODE: mesh_.node_get_cell_adj_nodes(entity, entity_type, &neighbors); break;
+        case Entity_kind::CELL: mesh_.cell_get_node_adj_cells(entity, type, &neigh); break;
+        case Entity_kind::NODE: mesh_.node_get_cell_adj_nodes(entity, type, &neigh); break;
         default: std::cerr << "Error: unsupported entity kind" << std::endl; break;
       }
 
       // filter then
-      filtered.reserve(neighbors.size());
-      for (auto const& current : neighbors) {
+      filtered.reserve(neigh.size());
+      for (auto const& current : neigh) {
         if (lookup_.count(current)) {
           filtered.emplace_back(current);
         }
@@ -192,21 +192,20 @@ namespace Portage {
     /**
      * @brief Compute entities volumes within the part.
      *
-     * @param masks: entities masks to disable some of them.
+     * @param masks: entity mask to disable some of them.
      * @return the total volume of the part.
      */
-    double compute_entities_volumes(int const* masks = nullptr) {
+    double compute_entities_volumes(const int* const masks = nullptr) {
       if (not cached_volumes) {
         // check if entities mask should be used
         bool const use_masks = masks != nullptr;
-        bool const on_cell = onwhat == CELL;
-        // kernel to compute the volume of an entity
-        auto compute_volume = [&](int s) {
+        bool const on_cell = (onwhat == Entity_kind::CELL);
+
+        // compute the volume of each entity of the part
+        Portage::for_each(entities_.begin(), entities_.end(), [&](int s){
           double volume = (on_cell ? mesh_.cell_volume(s) : mesh_.dual_cell_volume(s));
           volumes_[index_[s]] = (use_masks ? masks[s] * volume : volume);
-        };
-        // apply kernel on all entities of the part
-        Portage::for_each(entities_.begin(), entities_.end(), compute_volume);
+        });
         // toggle flag
         cached_volumes = true;
       }
@@ -222,18 +221,13 @@ namespace Portage {
     int size_ = 0;
     bool cached_volumes = false;
 
-    /* Part meta-data:
-     * - entities list, related volumes and relative indices.
-     * - a hashtable to have constant-time parts lookup queries in average case.
-     *   remark: for lookup purposes only, not meant to be iterated. */
-    std::vector<int>        entities_ {};
-    std::vector<double>     volumes_  {};
-    std::map<int, int>      index_    {};
-    std::unordered_set<int> lookup_   {};
-
-    // get rid of long namespaces
-    constexpr static auto const CELL = Wonton::Entity_kind::CELL;
-    constexpr static auto const NODE = Wonton::Entity_kind::NODE;
+    // part data consist of a list of entities, their volumes and relative indices.
+    // we rely on a hashtable to have constant-time parts lookup queries in average case.
+    // it is intended for lookup purposes only, and is not meant to be iterated.
+    std::vector<int>        entities_ = {};
+    std::vector<double>     volumes_  = {};
+    std::map<int, int>      index_    = {};
+    std::unordered_set<int> lookup_   = {};
   };
 
 
