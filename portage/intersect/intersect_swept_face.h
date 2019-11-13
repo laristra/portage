@@ -16,6 +16,7 @@
   #include "tangram/support/MatPoly.h"
 #endif
 
+#define DEBUG 1
 /* -------------------------------------------------------------------------- */
 namespace Portage {
 
@@ -137,12 +138,19 @@ namespace Portage {
       return std::vector<Weights_t>();
     }
 
+    #if DEBUG
+      void enable_debug_prints() { verbose = true; }
+    #endif
+
   private:
     SourceMesh const &source_mesh_;
     TargetMesh const &target_mesh_;
     SourceState const &source_state_;
     int material_id_ = -1;
     NumericTolerances_t num_tols_;
+#if DEBUG
+    bool verbose = false;
+#endif
 
 #ifdef HAVE_TANGRAM
     std::shared_ptr<InterfaceReconstructorDriver> interface_reconstructor;
@@ -382,11 +390,13 @@ namespace Portage {
             assert(std::abs(y[0] - y[1]) < num_tols_.polygon_convexity_eps);
             centroid = { x[0], y[0] };
 
-            std::cout << "a: ("<< ax <<" "<< ay <<"), ";
-            std::cout << "c: ("<< cx <<" "<< cy <<"), ";
-            std::cout << "param: " << param[0] << std::endl;
-            std::cout << "bx: "<< bx << ", (dx - bx): "<< dx - bx << std::endl;
-            std::cout << "by: "<< by << ", (dy - by): "<< dy - by << std::endl;
+            if (verbose) {
+              std::cout << "a: ("<< ax <<" "<< ay <<"), ";
+              std::cout << "c: ("<< cx <<" "<< cy <<"), ";
+              std::cout << "param: " << param[0] << std::endl;
+              std::cout << "bx: "<< bx << ", (dx - bx): "<< dx - bx << std::endl;
+              std::cout << "by: "<< by << ", (dy - by): "<< dy - by << std::endl;
+            }
           #else
             centroid = { ax + param[0] * (cx - ax), ay + param[0] * (cy - ay) };
           #endif
@@ -554,9 +564,11 @@ namespace Portage {
             swept_moments.emplace_back(source_id, moments);
 
             #if DEBUG
-              std::cout << "source_centroid["<< source_id <<"]: ";
-              std::cout << "(" << centroid[0] <<" "<< centroid[1] << ")";
-              std::cout << ", area: "<< area << std::endl;
+              if (verbose) {
+                std::cout << "assign polygon swept out from edge ";
+                std::cout << "[("<< swept_polygon[0] <<"),("<< swept_polygon[1] <<")]";
+                std::cout << " to source cell " << source_id << "." << std::endl;
+              }
             #endif
           } else {
             // retrieve the cell incident to the current edge.
@@ -585,17 +597,18 @@ namespace Portage {
               swept_moments.emplace_back(neigh, moments);
 
               #if DEBUG
-                std::cout << "neigh_centroid["<< neigh <<"]: ";
-                std::cout << "(" << centroid[0] <<" "<< centroid[1] << ")";
-                std::cout << " of edge: ["<< swept_polygon[0];
-                std::cout <<", "<< swept_polygon[1] <<"]"<< std::endl;
+                if (verbose) {
+                  std::cout << "assign polygon swept out from edge ";
+                  std::cout << "[("<< swept_polygon[0] <<"),("<< swept_polygon[1] <<")]";
+                  std::cout << " to neighbor cell " << neigh << "." << std::endl;
+                }
               #endif
             }
           }
         } // end for each edge of current cell
 
         #if DEBUG
-          std::cout << " =========== " << std::endl;
+          if (verbose) { std::cout << " =========== " << std::endl; }
         #endif
         return swept_moments;
 #ifdef HAVE_TANGRAM
@@ -614,6 +627,9 @@ namespace Portage {
     SourceState const &source_state_;
     int material_id_ = -1;
     NumericTolerances_t num_tols_;
+#if DEBUG
+    bool verbose = false;
+#endif
 
 #ifdef HAVE_TANGRAM
     std::shared_ptr<InterfaceReconstructor2D> interface_reconstructor;
