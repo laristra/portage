@@ -557,7 +557,11 @@ namespace Portage {
           /* step 3: assign the computed moments to the source cell or one
            * of its neighbors according to the sign of the swept face area.
            */
-          if (moments[0] <= 0.) {
+          if (std::abs(moments[0]) < num_tols_.min_relative_volume) {
+            // just skip if the swept polygon is almost flat.
+            // it may occur when the cell is shifted only in one direction.
+            continue;
+          } else if (moments[0] < 0.) {
             // if the computed swept face area is negative then assign its
             // moments to the source cell: it will be substracted
             // from the source cell area when performing the interpolation.
