@@ -175,10 +175,29 @@ protected:
  *  :.|...|...|.. |
  *  : |_:_|_:_|_:_|
  *  :...:...:...:
+ *    0   2   4   6
  */
 class IntersectSweptBackward : public IntersectSweptBase {
 protected:
   IntersectSweptBackward() : IntersectSweptBase(-1, -1, 5, 5) {}
+};
+
+/**
+ * @brief Fixture class for intersection moment computation tests
+ *        when target cells are swept only along one-axis like below.
+ *
+ *   _.___.___._ ..      displacement vector: (1,0)
+ *  | : | : | : | :      source mesh: plain
+ *  |_:_|_:_|_:_| :      target mesh: dotted
+ *  | : | : | : | :
+ *  |_:_|_:_|_:_| :
+ *  | : | : | : | :
+ *  |_:_|_:_|_:_|.:
+ *  0   2   4   6
+ */
+class IntersectSweptOneAxis : public IntersectSweptBase {
+protected:
+  IntersectSweptOneAxis() : IntersectSweptBase(1, 0, 7, 6) {}
 };
 
 TEST_F(IntersectSweptForward, MomentsCheck) {
@@ -525,6 +544,156 @@ TEST_F(IntersectSweptBackward, MomentsCheck) {
         ASSERT_DOUBLE_EQ(centroid[0], 4.5);
         ASSERT_DOUBLE_EQ(centroid[1], 3.5); break;
       default: FAIL() << "backward::corner: unexpected moment entity index";
+    }
+  }
+}
+
+TEST_F(IntersectSweptOneAxis, MomentsCheck) {
+
+  Intersector intersector(source_mesh_wrapper,
+                          source_state_wrapper,
+                          target_mesh_wrapper,
+                          num_tols);
+
+  /* pick internal, boundary and corner source cells.
+   *
+   *   _.___.___._ ..
+   *  | : | : | : | :     cell index ordering:
+   *  |_:_|_:_|_:_| :     2 5 8
+   *  | : | : | : | :     1 4 7
+   *  |_:_|_:_|_:_| :     0 3 6
+   *  | : | : | : | :
+   *  |_:_|_:_|_:_|.:
+   */
+  int const internal_cell = 4;
+  int const boundary_cell = 7;
+  int const corner_cell = 8;
+
+  // search for candidate cells and compute moments of intersection
+  auto weights_internal = intersector(internal_cell, search(internal_cell));
+  auto weights_boundary = intersector(boundary_cell, search(boundary_cell));
+  auto weights_corner   = intersector(corner_cell, search(corner_cell));
+
+  /* since the target cell was swept along the x-axis only then we should have:
+   * - two flat swept faces with zero areas which will be excluded.
+   * - one positive swept face area associated with cell 7 (right).
+   * - one negative swept face area associated with the source cell itself.
+   * - the unsigned area of the source cell itself.
+   * hence the source cell self-contribution is half of its area.
+   */
+  double source_area  = source_mesh_wrapper.cell_volume(internal_cell);
+  double target_area  = compute_swept_area(weights_internal);
+  double self_contrib = compute_contribution(internal_cell, weights_internal);
+  int nb_self_weights = 0;
+
+  ASSERT_EQ(weights_internal.size(), unsigned(3));
+  ASSERT_DOUBLE_EQ(source_area, target_area);
+  ASSERT_DOUBLE_EQ(self_contrib, unit_face_area);
+
+  for (auto const& moments : weights_internal) {
+    auto const area = std::abs(moments.weights[0]);
+    auto const centroid = deduce_centroid(moments);
+#if DEBUG
+    std::cout << "one-axis::internal_swept_centroid["<< moments.entityID <<"]: ";
+    std::cout << centroid[0] <<", "<< centroid[1] << std::endl;
+#endif
+    switch(moments.entityID) {
+      case internal_cell:
+        switch (++nb_self_weights) {
+          case 1:
+            ASSERT_DOUBLE_EQ(area, 2 * unit_face_area);
+            ASSERT_DOUBLE_EQ(centroid[0], 3.0);
+            ASSERT_DOUBLE_EQ(centroid[1], 3.0); break;
+          case 2:
+            ASSERT_DOUBLE_EQ(area, unit_face_area);
+            ASSERT_DOUBLE_EQ(centroid[0], 2.5);
+            ASSERT_DOUBLE_EQ(centroid[1], 3.0); break;
+          default: FAIL() << "one-axis::internal: invalid self weights count";
+        } break;
+      case 7:
+        ASSERT_DOUBLE_EQ(area, unit_face_area);
+        ASSERT_DOUBLE_EQ(centroid[0], 4.5);
+        ASSERT_DOUBLE_EQ(centroid[1], 3.0); break;
+      default: FAIL() << "one-axis::internal: unexpected moment entity index";
+    }
+  }
+
+  /* for the boundary cell case:
+   * - one positive swept face lying outside the source mesh and then excluded.
+   * - one negative swept face associated with the source cell itself.
+   * - the unsigned area of the source cell itself.
+   * hence the source cell self-contribution is again half of its area.
+   */
+  source_area = source_mesh_wrapper.cell_volume(boundary_cell);
+  target_area = compute_swept_area(weights_boundary);
+  self_contrib = compute_contribution(boundary_cell, weights_boundary);
+  nb_self_weights = 0;
+
+  ASSERT_EQ(weights_boundary.size(), unsigned(2));
+  ASSERT_DOUBLE_EQ(target_area, 0.5 * source_area);
+  ASSERT_DOUBLE_EQ(self_contrib, unit_face_area);
+
+  for (auto const& moments : weights_boundary) {
+    auto const area = std::abs(moments.weights[0]);
+    auto const centroid = deduce_centroid(moments);
+#if DEBUG
+    std::cout << "one-axis::boundary_swept_centroid["<< moments.entityID <<"]: ";
+    std::cout << centroid[0] <<", "<< centroid[1] << std::endl;
+#endif
+    switch(moments.entityID) {
+      case boundary_cell:
+        switch (++nb_self_weights) {
+          case 1:
+            ASSERT_DOUBLE_EQ(area, 2 * unit_face_area);
+            ASSERT_DOUBLE_EQ(centroid[0], 5.0);
+            ASSERT_DOUBLE_EQ(centroid[1], 3.0); break;
+          case 2:
+            ASSERT_DOUBLE_EQ(area, unit_face_area);
+            ASSERT_DOUBLE_EQ(centroid[0], 4.5);
+            ASSERT_DOUBLE_EQ(centroid[1], 3.0); break;
+          default: FAIL() << "one-axis::boundary: invalid self weights count";
+        } break;
+      default: FAIL() << "one-axis::boundary: unexpected moment entity index";
+    }
+  }
+
+  /* the corner cell case is no different from the boundary one, since the
+   * target cell is swept along the x-axis only. Hence we have:
+   * - one positive swept face lying outside the source mesh and then excluded.
+   * - one negative swept face associated with the source cell itself.
+   * - the unsigned area of the source cell itself.
+   * hence the source cell self-contribution is exactly the same as above.
+   */
+  source_area = source_mesh_wrapper.cell_volume(corner_cell);
+  target_area = compute_swept_area(weights_corner);
+  self_contrib = compute_contribution(corner_cell, weights_corner);
+  nb_self_weights = 0;
+
+  ASSERT_EQ(weights_corner.size(), weights_boundary.size());
+  ASSERT_DOUBLE_EQ(target_area, 0.5 * source_area);
+  ASSERT_DOUBLE_EQ(self_contrib, unit_face_area);
+
+  for (auto const& moments : weights_corner) {
+    auto const area = std::abs(moments.weights[0]);
+    auto const centroid = deduce_centroid(moments);
+#if DEBUG
+    std::cout << "one-axis::corner_swept_centroid["<< moments.entityID <<"]: ";
+    std::cout << centroid[0] <<", "<< centroid[1] << std::endl;
+#endif
+    switch(moments.entityID) {
+      case corner_cell:
+        switch (++nb_self_weights) {
+          case 1:
+            ASSERT_DOUBLE_EQ(area, 2 * unit_face_area);
+            ASSERT_DOUBLE_EQ(centroid[0], 5.0);
+            ASSERT_DOUBLE_EQ(centroid[1], 5.0); break;
+          case 2:
+            ASSERT_DOUBLE_EQ(area, unit_face_area);
+            ASSERT_DOUBLE_EQ(centroid[0], 4.5);
+            ASSERT_DOUBLE_EQ(centroid[1], 5.0); break;
+          default: FAIL() << "one-axis::corner: invalid self weights count";
+        } break;
+      default: FAIL() << "one-axis::corner: unexpected moment entity index";
     }
   }
 }
