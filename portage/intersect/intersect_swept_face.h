@@ -257,25 +257,6 @@ namespace Portage {
     void set_material(int m) { material_id_ = m; }
 
   private:
-    /**
-     * @brief Retrieve the cell incident to a given face of a given cell.
-     *
-     * @param cell: the current cell.
-     * @param face: the current face of the given cell.
-     * @return the index of the incident cell to the given face or -1.
-     */
-    int get_face_incident_neigh(int cell, int face) const {
-      std::vector<int> facecells;
-      source_mesh_.face_get_cells(face, Entity_type::ALL, &facecells);
-      int const nb_adj_cells = facecells.size();
-
-      // Interfaces we need are always connected to two cells
-      if (nb_adj_cells == 2) {
-        int index = (facecells[0] == cell ? 1 : 0);
-        return facecells[index];
-      }
-      return -1;
-    }
 
     /**
      * @brief Compute moments using divergence theorem.
@@ -577,7 +558,7 @@ namespace Portage {
             #endif
           } else {
             // retrieve the cell incident to the current edge.
-            int const neigh = get_face_incident_neigh(source_id, edges[i]);
+            int const neigh = target_mesh_.cell_get_face_adj_cell(source_id, edges[i]);
 
             // just skip in case of a boundary edge
             if (neigh < 0) {
