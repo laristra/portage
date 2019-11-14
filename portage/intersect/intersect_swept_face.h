@@ -16,7 +16,6 @@
   #include "tangram/support/MatPoly.h"
 #endif
 
-#define DEBUG 1
 /* -------------------------------------------------------------------------- */
 namespace Portage {
 
@@ -174,9 +173,10 @@ namespace Portage {
       class InterfaceReconstructor,
     class Matpoly_Splitter, class Matpoly_Clipper
   >
-  class IntersectSweptFace<
-    2, Entity_kind::CELL, SourceMesh, SourceState, TargetMesh,
-    InterfaceReconstructor, Matpoly_Splitter, Matpoly_Clipper> {
+  class IntersectSweptFace<2, Entity_kind::CELL,
+                           SourceMesh, SourceState,
+                           TargetMesh, InterfaceReconstructor,
+                           Matpoly_Splitter, Matpoly_Clipper> {
 
     // useful aliases
 #ifdef HAVE_TANGRAM
@@ -635,5 +635,35 @@ namespace Portage {
     std::shared_ptr<InterfaceReconstructor2D> interface_reconstructor;
 #endif
   }; // class IntersectSweptFace::2D::CELL
-/* -------------------------------------------------------------------------- */
+
+  /* ------------------------------------------------------------------------ */
+  template<
+    Entity_kind entity_kind,
+    class SourceMesh, class SourceState, class TargetMesh,
+    template<class, int, class, class>
+      class InterfaceReconstructor = DummyInterfaceReconstructor,
+    class Matpoly_Splitter = void, class Matpoly_Clipper = void
+  >
+  using IntersectSweptFace2D = IntersectSweptFace<2, entity_kind,
+                                                  SourceMesh, SourceState,
+                                                  TargetMesh,
+                                                  InterfaceReconstructor,
+                                                  Matpoly_Splitter,
+                                                  Matpoly_Clipper>;
+
+  template<
+    Entity_kind entity_kind,
+    class SourceMesh, class SourceState, class TargetMesh,
+    template<class, int, class, class>
+      class InterfaceReconstructor = DummyInterfaceReconstructor,
+    class Matpoly_Splitter = void, class Matpoly_Clipper = void
+  >
+  using IntersectSweptFace3D = IntersectSweptFace<3, entity_kind,
+                                                  SourceMesh, SourceState,
+                                                  TargetMesh,
+                                                  InterfaceReconstructor,
+                                                  Matpoly_Splitter,
+                                                  Matpoly_Clipper>;
+
+  /* ------------------------------------------------------------------------ */
 } // namespace Portage
