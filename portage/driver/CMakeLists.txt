@@ -110,18 +110,24 @@ if (ENABLE_UNIT_TESTS)
        POLICY MPI
        THREADS 1)
 
-       cinch_add_unit(test_driver_part
-               SOURCES test/test_driver_part.cc
-               LIBRARIES portage ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
-               POLICY MPI
-               THREADS 1)
+     cinch_add_unit(test_driver_part
+       SOURCES test/test_driver_part.cc
+       LIBRARIES portage ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
+       POLICY MPI
+       THREADS 1)
 
-       cinch_add_unit(test_driver_part_mismatch
-               SOURCES test/test_driver_part_mismatch.cc
-               LIBRARIES portage ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
-               POLICY MPI
-               THREADS 1)
+     cinch_add_unit(test_driver_part_mismatch
+       SOURCES test/test_driver_part_mismatch.cc
+       LIBRARIES portage ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
+       POLICY MPI
+       THREADS 1)
      
+     cinch_add_unit(test_singlemat_swept
+       SOURCES test/test_singlemat_swept.cc
+       LIBRARIES portage ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
+       POLICY MPI
+       THREADS 1)
+
    endif (Jali_DIR)
 
    cinch_add_unit(test_driver_swarm
