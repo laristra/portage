@@ -187,17 +187,17 @@ namespace Portage {
      *
      * @return the total volume of the part.
      */
-    double compute_total_volume() const {
+    double total_volume() const {
       return std::accumulate(volumes_.begin(), volumes_.end(), 0.0);
     }
 
     /**
-     * @brief Compute entities volumes within the part.
+     * @brief Compute and store volumes of each cell of the part.
      *
      * @param masks: entity mask to disable some of them.
      * @return the total volume of the part.
      */
-    double compute_entities_volumes(const int* const masks = nullptr) {
+    double compute_entity_volumes(const int* const masks = nullptr) {
       if (not cached_volumes) {
         // check if entities mask should be used
         bool const use_masks = masks != nullptr;
@@ -212,7 +212,7 @@ namespace Portage {
         cached_volumes = true;
       }
       // finally accumulate them to retrieve the global volume
-      return compute_total_volume();
+      return total_volume();
     }
 
   private:
@@ -476,8 +476,8 @@ public:
     // COMPUTE VOLUMES ON SOURCE AND TARGET PARTS
     // ------------------------------------------
     // collect volumes of entities that are not masked out and sum them up
-    double source_volume = source_.compute_entities_volumes(source_entities_masks_.data());
-    double target_volume = target_.compute_entities_volumes();
+    double source_volume = source_.compute_entity_volumes(source_entities_masks_.data());
+    double target_volume = target_.compute_entity_volumes();
     double intersect_volume = compute_intersect_volumes(source_weights);
 
     global_source_volume_    = source_volume;
@@ -888,7 +888,7 @@ public:
         global_adj_target_volume = global_covered_target_volume;
       }
       else {
-        adj_target_volume = target_.compute_total_volume();
+        adj_target_volume = target_.total_volume();
         global_adj_target_volume = global_target_volume_;
       }
 
