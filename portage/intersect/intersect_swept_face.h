@@ -558,7 +558,7 @@ namespace Portage {
             #endif
           } else {
             // retrieve the cell incident to the current edge.
-            int const neigh = target_mesh_.cell_get_face_adj_cell(source_id, edges[i]);
+            int const neigh = source_mesh_.cell_get_face_adj_cell(source_id, edges[i]);
 
             // just skip in case of a boundary edge
             if (neigh < 0) {
