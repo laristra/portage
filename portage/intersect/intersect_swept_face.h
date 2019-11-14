@@ -646,7 +646,11 @@ namespace Portage {
 #endif
   }; // class IntersectSweptFace::2D::CELL
 
-  /* ------------------------------------------------------------------------ */
+
+  /* Define aliases to have the same interface as the other intersectors such
+   * as R2D and R3D. This simple workaround allow us to discard the dimension
+   * template parameter when instantiating the kernel.
+   */
   template<
     Entity_kind entity_kind,
     class SourceMesh, class SourceState, class TargetMesh,
