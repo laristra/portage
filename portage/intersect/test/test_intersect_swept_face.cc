@@ -142,6 +142,9 @@ protected:
    * we expect to have a constant area for each swept face.
    */
   double const unit_face_area = 2.0;
+
+  // enable or disable debug prints
+  bool verbose = false;
 };
 
 /**
@@ -245,8 +248,10 @@ TEST_F(IntersectSweptForward, MomentsCheck) {
     auto const area = std::abs(moments.weights[0]);
     auto const centroid = deduce_centroid(moments);
     #if DEBUG
+    if (verbose) {
       std::cout << "forward::internal_swept_centroid["<< moments.entityID <<"]: ";
       std::cout << centroid[0] <<", "<< centroid[1] << std::endl;
+    }
     #endif
     switch(moments.entityID) {
       case internal_cell:
@@ -296,8 +301,10 @@ TEST_F(IntersectSweptForward, MomentsCheck) {
     auto const area = std::abs(moments.weights[0]);
     auto const centroid = deduce_centroid(moments);
     #if DEBUG
-      std::cout << "forward::boundary_swept_centroid["<< moments.entityID <<"]: ";
-      std::cout << centroid[0] <<", "<< centroid[1] << std::endl;
+    if (verbose) {
+      std::cout << "forward::boundary_swept_centroid[" << moments.entityID << "]: ";
+      std::cout << centroid[0] << ", " << centroid[1] << std::endl;
+    }
     #endif
     switch(moments.entityID) {
       case boundary_cell:
@@ -342,8 +349,10 @@ TEST_F(IntersectSweptForward, MomentsCheck) {
     auto const area = std::abs(moments.weights[0]);
     auto const centroid = deduce_centroid(moments);
     #if DEBUG
-      std::cout << "forward::corner_swept_centroid["<< moments.entityID <<"]: ";
-      std::cout << centroid[0] <<", "<< centroid[1] << std::endl;
+    if (verbose) {
+      std::cout << "forward::corner_swept_centroid[" << moments.entityID << "]: ";
+      std::cout << centroid[0] << ", " << centroid[1] << std::endl;
+    }
     #endif
     switch(moments.entityID) {
       case corner_cell:
@@ -414,8 +423,10 @@ TEST_F(IntersectSweptBackward, MomentsCheck) {
     auto const area = std::abs(moments.weights[0]);
     auto const centroid = deduce_centroid(moments);
     #if DEBUG
-      std::cout << "backward::internal_swept_centroid["<< moments.entityID <<"]: ";
-      std::cout << centroid[0] <<", "<< centroid[1] << std::endl;
+    if (verbose) {
+      std::cout << "backward::internal_swept_centroid[" << moments.entityID << "]: ";
+      std::cout << centroid[0] << ", " << centroid[1] << std::endl;
+    }
     #endif
     switch(moments.entityID) {
       case internal_cell:
@@ -465,8 +476,10 @@ TEST_F(IntersectSweptBackward, MomentsCheck) {
     auto const area = std::abs(moments.weights[0]);
     auto const centroid = deduce_centroid(moments);
     #if DEBUG
-      std::cout << "backward::boundary_swept_centroid["<< moments.entityID <<"]: ";
-      std::cout << centroid[0] <<", "<< centroid[1] << std::endl;
+    if (verbose) {
+      std::cout << "backward::boundary_swept_centroid[" << moments.entityID << "]: ";
+      std::cout << centroid[0] << ", " << centroid[1] << std::endl;
+    }
     #endif
     switch(moments.entityID) {
       case boundary_cell:
@@ -515,8 +528,10 @@ TEST_F(IntersectSweptBackward, MomentsCheck) {
     auto const area = std::abs(moments.weights[0]);
     auto const centroid = deduce_centroid(moments);
     #if DEBUG
-      std::cout << "backward::corner_swept_centroid["<< moments.entityID <<"]: ";
-      std::cout << centroid[0] <<", "<< centroid[1] << std::endl;
+    if (verbose) {
+      std::cout << "backward::corner_swept_centroid[" << moments.entityID << "]: ";
+      std::cout << centroid[0] << ", " << centroid[1] << std::endl;
+    }
     #endif
     switch(moments.entityID) {
       case corner_cell:
@@ -593,10 +608,12 @@ TEST_F(IntersectSweptOneAxis, MomentsCheck) {
   for (auto const& moments : weights_internal) {
     auto const area = std::abs(moments.weights[0]);
     auto const centroid = deduce_centroid(moments);
-#if DEBUG
-    std::cout << "one-axis::internal_swept_centroid["<< moments.entityID <<"]: ";
-    std::cout << centroid[0] <<", "<< centroid[1] << std::endl;
-#endif
+    #if DEBUG
+    if (verbose) {
+      std::cout << "one-axis::internal_swept_centroid[" << moments.entityID << "]: ";
+      std::cout << centroid[0] << ", " << centroid[1] << std::endl;
+    }
+    #endif
     switch(moments.entityID) {
       case internal_cell:
         switch (++nb_self_weights) {
@@ -636,10 +653,12 @@ TEST_F(IntersectSweptOneAxis, MomentsCheck) {
   for (auto const& moments : weights_boundary) {
     auto const area = std::abs(moments.weights[0]);
     auto const centroid = deduce_centroid(moments);
-#if DEBUG
-    std::cout << "one-axis::boundary_swept_centroid["<< moments.entityID <<"]: ";
-    std::cout << centroid[0] <<", "<< centroid[1] << std::endl;
-#endif
+    #if DEBUG
+    if (verbose) {
+      std::cout << "one-axis::boundary_swept_centroid[" << moments.entityID << "]: ";
+      std::cout << centroid[0] << ", " << centroid[1] << std::endl;
+    }
+    #endif
     switch(moments.entityID) {
       case boundary_cell:
         switch (++nb_self_weights) {
@@ -676,10 +695,12 @@ TEST_F(IntersectSweptOneAxis, MomentsCheck) {
   for (auto const& moments : weights_corner) {
     auto const area = std::abs(moments.weights[0]);
     auto const centroid = deduce_centroid(moments);
-#if DEBUG
-    std::cout << "one-axis::corner_swept_centroid["<< moments.entityID <<"]: ";
-    std::cout << centroid[0] <<", "<< centroid[1] << std::endl;
-#endif
+    #if DEBUG
+    if (verbose) {
+      std::cout << "one-axis::corner_swept_centroid[" << moments.entityID << "]: ";
+      std::cout << centroid[0] << ", " << centroid[1] << std::endl;
+    }
+    #endif
     switch(moments.entityID) {
       case corner_cell:
         switch (++nb_self_weights) {

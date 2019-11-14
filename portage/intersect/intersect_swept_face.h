@@ -16,7 +16,6 @@
   #include "tangram/support/MatPoly.h"
 #endif
 
-#define DEBUG 1
 /* -------------------------------------------------------------------------- */
 namespace Portage {
 
@@ -149,7 +148,7 @@ namespace Portage {
     int material_id_ = -1;
     NumericTolerances_t num_tols_;
 #if DEBUG
-    bool verbose = true;
+    bool verbose = false;
 #endif
 
 #ifdef HAVE_TANGRAM
@@ -639,7 +638,7 @@ namespace Portage {
     int material_id_ = -1;
     NumericTolerances_t num_tols_;
 #if DEBUG
-    bool verbose = true;
+    bool verbose = false;
 #endif
 
 #ifdef HAVE_TANGRAM
