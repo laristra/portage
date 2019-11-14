@@ -16,6 +16,7 @@
   #include "tangram/support/MatPoly.h"
 #endif
 
+#define DEBUG 1
 /* -------------------------------------------------------------------------- */
 namespace Portage {
 
@@ -148,7 +149,7 @@ namespace Portage {
     int material_id_ = -1;
     NumericTolerances_t num_tols_;
 #if DEBUG
-    bool verbose = false;
+    bool verbose = true;
 #endif
 
 #ifdef HAVE_TANGRAM
@@ -549,10 +550,6 @@ namespace Portage {
 
           // compute swept polygon moment using divergence theorem
           auto moments = compute_moments_divergence_theorem(swept_polygon);
-          #if DEBUG
-            double const& area = moments[0];
-            double const centroid[] = { moments[1]/area, moments[2]/area };
-          #endif
 
           /* step 3: assign the computed moments to the source cell or one
            * of its neighbors according to the sign of the swept face area.
@@ -569,9 +566,14 @@ namespace Portage {
 
             #if DEBUG
               if (verbose) {
+                auto const& area = moments[0];
+                auto const centroid = Wonton::createP2(moments[1]/area,
+                                                       moments[2]/area);
                 std::cout << "assign polygon swept out from edge ";
                 std::cout << "[("<< swept_polygon[0] <<"),("<< swept_polygon[1] <<")]";
-                std::cout << " to source cell " << source_id << "." << std::endl;
+                std::cout << " to source cell " << source_id << ". ";
+                std::cout << "area: "<< area <<", centroid: ("<< centroid <<")";
+                std::cout << std::endl;
               }
             #endif
           } else {
@@ -602,9 +604,14 @@ namespace Portage {
 
               #if DEBUG
                 if (verbose) {
+                  auto const& area = moments[0];
+                  auto const centroid = Wonton::createP2(moments[1]/area,
+                                                         moments[2]/area);
                   std::cout << "assign polygon swept out from edge ";
                   std::cout << "[("<< swept_polygon[0] <<"),("<< swept_polygon[1] <<")]";
-                  std::cout << " to neighbor cell " << neigh << "." << std::endl;
+                  std::cout << " to neighbor cell " << neigh << ". ";
+                  std::cout << "area: "<< area <<", centroid: ("<< centroid <<")";
+                  std::cout << std::endl;
                 }
               #endif
             }
@@ -632,7 +639,7 @@ namespace Portage {
     int material_id_ = -1;
     NumericTolerances_t num_tols_;
 #if DEBUG
-    bool verbose = false;
+    bool verbose = true;
 #endif
 
 #ifdef HAVE_TANGRAM
