@@ -338,82 +338,14 @@ public:
    *
    * @return a pointer to source mesh part
    */
-  const SourcePart* get_source() const { return &source_; }
+  const SourcePart& source() const { return source_; }
 
   /**
    * @brief Retrieve a pointer to target mesh part.
    *
    * @return a pointer to target mesh part
    */
-  const TargetPart* get_target() const { return &target_; }
-
-  /**
-   * @brief Get a reference to source entities list.
-   *
-   * @return a reference to source entities list.
-   */
-  std::vector<int> const& get_source_entities() const { return source_.entities(); }
-
-  /**
-   * @brief Get a reference to target entities list.
-   *
-   * @return a reference to source entities list.
-   */
-  std::vector<int> const& get_target_entities() const { return target_.entities(); }
-
-  /**
-   * @brief Check if a given entity is in source part list.
-   *
-   * @param id entity ID
-   * @return true if so, false otherwise.
-   */
-  bool is_source_entity(int id) const { return source_.contains(id); }
-
-  /**
-   * @brief Check if a given entity is in target part list.
-   *
-   * @param id entity ID
-   * @return true if so, false otherwise.
-   */
-  bool is_target_entity(int id) const { return target_.contains(id); }
-
-  /**
-   * @brief Get source part size.
-   *
-   * @return source entities list size
-   */
-  const int& source_part_size() const { return source_.size(); }
-
-  /**
-   * @brief Get target part size.
-   *
-   * @return target entities list size
-   */
-  const int& target_part_size() const { return target_.size(); }
-
-  /**
-   * @brief Retrieve the neighbors of the given entity on source mesh.
-   *
-   * @tparam entity_type the entity type [ALL|PARALLEL_OWNED]
-   * @param  entity      the given entity
-   * @return filtered    the filtered neighboring entities list.
-   */
-  template<Entity_type entity_type = Entity_type::ALL>
-  std::vector<int> get_source_filtered_neighbors(int entity) const {
-    return source_.get_neighbors(entity);
-  }
-
-  /**
-   * @brief Retrieve the neighbors of the given entity on target mesh.
-   *
-   * @tparam entity_type the entity type [ALL|PARALLEL_OWNED]
-   * @param  entity      the given entity
-   * @return filtered    the filtered neighboring entities list.
-   */
-  template<Entity_type entity_type = Entity_type::ALL>
-  std::vector<int> get_target_filtered_neighbors(int entity) const {
-    return target_.get_neighbors(entity);
-  }
+  const TargetPart& target() const { return target_; }
 
   /**
    * @brief Compute source and target parts intersection volume.
@@ -552,9 +484,10 @@ public:
     // number of 0 and empty cell layers will have positive layer
     // numbers starting from 1
     std::vector<int> empty_entities;
-    empty_entities.reserve(target_part_size());
+    int const target_part_size = target_.size();
 
-    is_cell_empty_.resize(target_part_size(), false);
+    empty_entities.reserve(target_part_size);
+    is_cell_empty_.resize(target_part_size, false);
 
     for (auto&& entity : target_.entities()) {
       auto const& i = target_.index(entity);
@@ -606,7 +539,7 @@ public:
           // skip already set entities
           if (layer_num_[i] == 0) {
 
-            auto neighbors = get_target_filtered_neighbors<Entity_type::ALL>(entity);
+            auto neighbors = target_.get_neighbors(entity);
 
             for (auto&& neigh : neighbors) {
               auto const& j = target_.index(neigh);
@@ -783,7 +716,7 @@ public:
           double averaged_value = 0.;
           int nb_extrapol = 0;
           auto neighbors =
-            get_target_filtered_neighbors<Entity_type::PARALLEL_OWNED>(entity);
+            target_.template get_neighbors<Entity_type::PARALLEL_OWNED>(entity);
 
           for (auto&& neigh : neighbors) {
             auto const& i = target_.index(neigh);

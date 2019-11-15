@@ -362,7 +362,7 @@ namespace Portage {
       }
 
       // Compute the limited gradients for the field
-      auto source_part = (parts_ != nullptr ? parts_->get_source() : nullptr);
+      auto source_part = (parts_ != nullptr ? &(parts_->source()) : nullptr);
 
 #ifdef HAVE_TANGRAM
       Gradient gradient_kernel(source_mesh_, source_state_, variable_name_,
