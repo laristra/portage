@@ -16,7 +16,7 @@ Please see the license file at the root of this repository, or at:
 #include "wonton/mesh/jali/jali_mesh_wrapper.h"
 #include "wonton/state/jali/jali_state_wrapper.h"
 #include "portage/search/search_swept_face.h"
-#include "portage/intersect/intersect_swept_faces.h"
+#include "portage/intersect/intersect_swept_face.h"
 #include "portage/interpolate/interpolate_2nd_order.h"
 #include "Mesh.hh"
 #include "MeshFactory.hh"
@@ -117,7 +117,7 @@ TEST(SweptFaceRemap, 2D_2ndOrder) {
   d.set_num_tols(default_num_tols);
 
   auto candidates = d.search<Portage::SearchSweptFace>();
-  auto srcwts = d.intersect_meshes<Portage::IntersectSweptFace>(candidates);
+  auto srcwts = d.intersect_meshes<Portage::IntersectSweptFace2D>(candidates);
 
   bool has_mismatch = d.check_mesh_mismatch(srcwts);
 
@@ -151,9 +151,7 @@ TEST(SweptFaceRemap, 2D_2ndOrder) {
     Wonton::Point<2> cen;
     targetMeshWrapper.cell_centroid(c, &cen);
     double trgtemp = cen[0] + 2*cen[1];
-    //    ASSERT_NEAR(targettemp[c], trgtemp, 1.0e-10);
-    std::cerr << "Cell " << c << "   Centroid: " << cen[0] << "," << cen[1] << "\n";
-    std::cerr << "Expected val " << trgtemp << "   Actual val " << targettemp[c] << "\n";
+    ASSERT_NEAR(targettemp[c], trgtemp, 1.0e-12);
   }
 
 }  // CellDriver_2D_2ndOrder
