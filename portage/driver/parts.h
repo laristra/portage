@@ -123,28 +123,6 @@ namespace Portage {
     const int& size() const { return size_; }
 
     /**
-     * @brief Retrieve the field data of the part.
-     *
-     * @param variable: name of the field.
-     * @param data: the field data.
-     */
-    template<typename T>
-    void get_field(std::string variable, T** data) const {
-      state_.mesh_get_data(onwhat, variable, data);
-    }
-
-    /**
-     * @brief Retrieve the field data of the part.
-     *
-     * @param variable: name of the field.
-     * @param data: the field data.
-     */
-    template<typename T>
-    void get_field(std::string variable, const T** data) const {
-      state_.mesh_get_data(onwhat, variable, data);
-    }
-
-    /**
      * @brief Get the volume of the given entity.
      *
      * @param id: the relative index of the entity.
@@ -240,21 +218,21 @@ namespace Portage {
  *
  * @tparam D                   meshes dimension
  * @tparam onwhat              the entity kind for remap [cell|node]
- * @tparam SourceMesh_Wrapper  the source mesh wrapper to use
- * @tparam SourceState_Wrapper the source state wrapper to use
- * @tparam TargetMesh_Wrapper  the target mesh wrapper to use
- * @tparam TargetState_Wrapper the target state wrapper to use
+ * @tparam SourceMesh  the source mesh wrapper to use
+ * @tparam SourceState the source state wrapper to use
+ * @tparam TargetMesh  the target mesh wrapper to use
+ * @tparam TargetState the target state wrapper to use
  */
   template<int D, Entity_kind onwhat,
-    class SourceMesh_Wrapper, class SourceState_Wrapper,
-    class TargetMesh_Wrapper = SourceMesh_Wrapper,
-    class TargetState_Wrapper = SourceState_Wrapper
+    class SourceMesh, class SourceState,
+    class TargetMesh = SourceMesh,
+    class TargetState = SourceState
   >
 class PartPair {
   // shortcuts
   using entity_weights_t = std::vector<Wonton::Weights_t>;
-  using SourcePart = Part<onwhat, SourceMesh_Wrapper, SourceState_Wrapper>;
-  using TargetPart = Part<onwhat, TargetMesh_Wrapper, TargetState_Wrapper>;
+  using SourcePart = Part<onwhat, SourceMesh, SourceState>;
+  using TargetPart = Part<onwhat, TargetMesh, TargetState>;
 
 public:
   /**
@@ -274,12 +252,10 @@ public:
    * @param executor        the MPI executor to use
    */
   PartPair(
-    SourceMesh_Wrapper    const& source_mesh,
-    SourceState_Wrapper&         source_state,
-    TargetMesh_Wrapper    const& target_mesh,
-    TargetState_Wrapper&         target_state,
-    std::vector<int>      const& source_entities,
-    std::vector<int>      const& target_entities,
+    SourceMesh const& source_mesh, SourceState& source_state,
+    TargetMesh const& target_mesh, TargetState& target_state,
+    std::vector<int> const& source_entities,
+    std::vector<int> const& target_entities,
     Wonton::Executor_type const* executor
   ) : source_(source_mesh, source_state, source_entities),
       target_(target_mesh, target_state, target_entities)
@@ -305,7 +281,7 @@ public:
     source_entities_masks_.resize(nb_masks, 1);
 #ifdef PORTAGE_ENABLE_MPI
     if (distributed_) {
-      get_unique_entity_masks<onwhat, SourceMesh_Wrapper>(
+      get_unique_entity_masks<onwhat, SourceMesh>(
         source_.mesh(), &source_entities_masks_, mycomm_
       );
     }
@@ -331,7 +307,7 @@ public:
    *
    * @return true if so, false otherwise.
    */
-  bool is_mismatch_tested() const { return is_mismatch_tested_; }
+  bool mismatch_tested() const { return is_mismatch_tested_; }
 
   /**
    * @brief Retrieve a pointer to source mesh part.
@@ -655,13 +631,15 @@ public:
     // use aliases
     auto const& source_entities = source_.entities();
     auto const& target_entities = target_.entities();
+    auto const& source_state = source_.state();
+    auto& target_state = const_cast<TargetState&>(target_.state());
 
     // Now process remap variables
     // WARNING: absolute indexing
-    double* source_data = nullptr;
+    double const* source_data;
     double* target_data = nullptr;
-    source_.get_field(src_var_name, &source_data);
-    target_.get_field(trg_var_name, &target_data);
+    source_state.mesh_get_data(onwhat, src_var_name, &source_data);
+    target_state.mesh_get_data(onwhat, trg_var_name, &target_data);
 
     if (partial_fixup_type == LOCALLY_CONSERVATIVE) {
       // In interpolate step, we divided the accumulated integral (U)

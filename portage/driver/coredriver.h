@@ -869,7 +869,7 @@ class CoreDriver : public CoreDriverBase<D,
       // - afterwards, check that each entity id is within the
       //   mesh entity index space.
 
-      assert(partition->is_mismatch_tested());
+      assert(partition->mismatch_tested());
 
       int const& max_source_id = source_mesh_.num_entities(ONWHAT, ALL);
       int const& max_target_id = target_mesh_.num_entities(ONWHAT, ALL);
