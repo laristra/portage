@@ -50,19 +50,19 @@ namespace Portage {
      * @param state: the state wrapper to use
      * @param entities: the list of entities to remap
      */
-    Part(Mesh const& mesh, State& state, std::vector<int> const& entities)
+    Part(Mesh const& mesh, State& state, std::vector<int> const& cells)
       : mesh_(mesh),
         state_(state),
-        entities_(entities)  // deep-copy
+        cells_(cells)  // deep-copy
     {
-      size_ = entities.size();
+      size_ = cells.size();
       if (size_ > 0) {
         volumes_.resize(size_);
         lookup_.reserve(size_);
 
         // set relative indexing and populate lookup hashtables
         for (int i = 0; i < size_; ++i) {
-          auto const& s = entities[i];
+          auto const& s = cells[i];
           index_[s] = i;
           lookup_.insert(s);
         }
@@ -93,11 +93,11 @@ namespace Portage {
     State& state() { return const_cast<State&>(state_); }
 
     /**
-     * @brief Get a reference to the entities list.
+     * @brief Get a reference to the cell list.
      *
-     * @return a reference to entities list.
+     * @return a reference to cell list.
      */
-    std::vector<int> const& entities() const { return entities_; }
+    std::vector<int> const& cells() const { return cells_; }
 
     /**
      * @brief Check if a given entity is in the part.
@@ -176,7 +176,7 @@ namespace Portage {
         bool const use_masks = masks != nullptr;
 
         // compute the volume of each entity of the part
-        Portage::for_each(entities_.begin(), entities_.end(), [&](int s) {
+        Portage::for_each(cells_.begin(), cells_.end(), [&](int s) {
           auto const& i = index_[s];
           auto const& volume = mesh_.cell_volume(s);
           volumes_[i] = (use_masks ? masks[s] * volume : volume);
@@ -196,13 +196,13 @@ namespace Portage {
     int size_ = 0;
     bool cached_volumes = false;
 
-    // part data consist of a list of entities, their volumes and relative indices.
+    // part data consist of a list of cells, their volumes and relative indices.
     // we rely on a hashtable to have constant-time parts lookup queries in average case.
     // it is intended for lookup purposes only, and is not meant to be iterated.
-    std::vector<int>        entities_ = {};
-    std::vector<double>     volumes_  = {};
-    std::map<int, int>      index_    = {};
-    std::unordered_set<int> lookup_   = {};
+    std::vector<int>        cells_   = {};
+    std::vector<double>     volumes_ = {};
+    std::map<int, int>      index_   = {};
+    std::unordered_set<int> lookup_  = {};
   };
 
 
@@ -325,7 +325,7 @@ public:
   double compute_intersect_volumes
     (Portage::vector<entity_weights_t> const& source_weights) {
     // retrieve target entities list
-    auto const& target_entities = target_.entities();
+    auto const& target_entities = target_.cells();
 
     // compute the intersected volume of each target part entity
     Portage::for_each(target_entities.begin(), target_entities.end(), [&](int t) {
@@ -458,7 +458,7 @@ public:
     empty_entities.reserve(target_part_size);
     is_cell_empty_.resize(target_part_size, false);
 
-    for (auto&& entity : target_.entities()) {
+    for (auto&& entity : target_.cells()) {
       auto const& i = target_.index(entity);
       if (std::abs(intersection_volumes_[i]) < epsilon_) {
         empty_entities.emplace_back(entity);
@@ -614,8 +614,8 @@ public:
     static bool hit_higher_bound = false;
 
     // use aliases
-    auto const& source_entities = source_.entities();
-    auto const& target_entities = target_.entities();
+    auto const& source_entities = source_.cells();
+    auto const& target_entities = target_.cells();
     auto const& source_state = source_.state();
     auto& target_state = const_cast<TargetState&>(target_.state());
 

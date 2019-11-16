@@ -874,12 +874,12 @@ class CoreDriver : public CoreDriverBase<D,
       auto const& source_part = partition->source();
       auto const& target_part = partition->target();
 
-      Portage::for_each(source_part.entities().begin(),
-                        source_part.entities().end(),
+      Portage::for_each(source_part.cells().begin(),
+                        source_part.cells().end(),
                         [&](int current){ assert(current <= max_source_id); });
 
-      Portage::for_each(target_part.entities().begin(),
-                        target_part.entities().end(),
+      Portage::for_each(target_part.cells().begin(),
+                        target_part.cells().end(),
                         [&](int current){ assert(current <= max_target_id); });
 
       int const target_mesh_size = sources_and_weights.size();
@@ -913,8 +913,8 @@ class CoreDriver : public CoreDriverBase<D,
       };
 
       Portage::vector<entity_weights_t> parts_weights(target_part_size);
-      Portage::transform(target_part.entities().begin(),
-                         target_part.entities().end(),
+      Portage::transform(target_part.cells().begin(),
+                         target_part.cells().end(),
                          parts_weights.begin(), filter_weights);
 
       // 3. Process interpolation.
@@ -926,12 +926,12 @@ class CoreDriver : public CoreDriverBase<D,
       T temporary_storage[target_part_size];
       Portage::pointer<T> target_part_field(temporary_storage);
 
-      Portage::transform(target_part.entities().begin(),
-                         target_part.entities().end(),
+      Portage::transform(target_part.cells().begin(),
+                         target_part.cells().end(),
                          parts_weights.begin(), target_part_field, interpolator);
 
       for (int i=0; i < target_part_size; ++i) {
-        auto const& j = target_part.entities()[i];
+        auto const& j = target_part.cells()[i];
         target_mesh_field[j] = target_part_field[i];
       }
 

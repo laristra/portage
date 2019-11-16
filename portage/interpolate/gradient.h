@@ -190,7 +190,7 @@ namespace Portage {
           cell_neighbors_[c] = part_->get_neighbors(c);
         };
 
-        auto const& part_cells = part_->entities();
+        auto const& part_cells = part_->cells();
         Portage::for_each(part_cells.begin(), part_cells.end(), filter_neighbors);
       }
 
@@ -234,7 +234,7 @@ namespace Portage {
           cell_neighbors_[c] = part_->get_neighbors(c);
         };
 
-        auto const& part_cells = part_->entities();
+        auto const& part_cells = part_->cells();
         Portage::for_each(part_cells.begin(), part_cells.end(), filter_neighbors);
       }
 
