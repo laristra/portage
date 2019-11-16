@@ -35,7 +35,7 @@ namespace Portage {
   using Wonton::Entity_type;
   using entity_weights_t = std::vector<Wonton::Weights_t>;
 
-  template<Entity_kind onwhat, class Mesh, class State>
+  template<class Mesh, class State>
   class Part {
   public:
     /**
@@ -143,13 +143,8 @@ namespace Portage {
     template<Entity_type type = Entity_type::ALL>
     std::vector<int> get_neighbors(int entity) const {
       std::vector<int> neigh, filtered;
-      // first retrieve neighbors
-      switch (onwhat) {
-        case Entity_kind::CELL: mesh_.cell_get_node_adj_cells(entity, type, &neigh); break;
-        case Entity_kind::NODE: mesh_.node_get_cell_adj_nodes(entity, type, &neigh); break;
-        default: std::cerr << "Error: unsupported entity kind" << std::endl; break;
-      }
-
+      // first retrieve neighbors then filter them
+      mesh_.cell_get_node_adj_cells(entity, type, &neigh);
       // filter then
       filtered.reserve(neigh.size());
       for (auto const& current : neigh) {
@@ -175,16 +170,16 @@ namespace Portage {
      * @param masks: entity mask to disable some of them.
      * @return the total volume of the part.
      */
-    double compute_entity_volumes(const int* const masks = nullptr) {
+    double compute_entity_volumes(const int* masks = nullptr) {
       if (not cached_volumes) {
         // check if entities mask should be used
         bool const use_masks = masks != nullptr;
-        bool const on_cell = (onwhat == Entity_kind::CELL);
 
         // compute the volume of each entity of the part
-        Portage::for_each(entities_.begin(), entities_.end(), [&](int s){
-          double volume = (on_cell ? mesh_.cell_volume(s) : mesh_.dual_cell_volume(s));
-          volumes_[index_[s]] = (use_masks ? masks[s] * volume : volume);
+        Portage::for_each(entities_.begin(), entities_.end(), [&](int s) {
+          auto const& i = index_[s];
+          auto const& volume = mesh_.cell_volume(s);
+          volumes_[i] = (use_masks ? masks[s] * volume : volume);
         });
         // toggle flag
         cached_volumes = true;
@@ -216,14 +211,13 @@ namespace Portage {
  *        It detects boundaries mismatch and provides the necessary fixup
  *        for partially filled and empty cells values.
  *
- * @tparam D                   meshes dimension
- * @tparam onwhat              the entity kind for remap [cell|node]
+ * @tparam D           the problem dimension.
  * @tparam SourceMesh  the source mesh wrapper to use
  * @tparam SourceState the source state wrapper to use
  * @tparam TargetMesh  the target mesh wrapper to use
  * @tparam TargetState the target state wrapper to use
  */
-  template<int D, Entity_kind onwhat,
+  template<int D,
     class SourceMesh, class SourceState,
     class TargetMesh = SourceMesh,
     class TargetState = SourceState
@@ -231,8 +225,8 @@ namespace Portage {
 class PartPair {
   // shortcuts
   using entity_weights_t = std::vector<Wonton::Weights_t>;
-  using SourcePart = Part<onwhat, SourceMesh, SourceState>;
-  using TargetPart = Part<onwhat, TargetMesh, TargetState>;
+  using SourcePart = Part<SourceMesh, SourceState>;
+  using TargetPart = Part<TargetMesh, TargetState>;
 
 public:
   /**
@@ -275,13 +269,12 @@ public:
     // were already encountered on a lower rank processor. We have to
     // do this because in our distributed runs, our source partitions
     // don't form a strict tiling (no overlaps) after redistribution
-    int nb_masks = (onwhat == Entity_kind::CELL ? source_.mesh().num_owned_cells()
-                                                : source_.mesh().num_owned_nodes());
+    int nb_masks = source_.mesh().num_owned_cells();
 
     source_entities_masks_.resize(nb_masks, 1);
 #ifdef PORTAGE_ENABLE_MPI
     if (distributed_) {
-      get_unique_entity_masks<onwhat, SourceMesh>(
+      get_unique_entity_masks<Entity_kind::CELL, SourceMesh>(
         source_.mesh(), &source_entities_masks_, mycomm_
       );
     }
@@ -484,18 +477,10 @@ public:
 #endif
 
     if (global_nb_empty > 0 and rank_ == 0) {
-      if (onwhat == Entity_kind::CELL) {
-        std::fprintf(stderr,
-          "One or more target cells are not covered by ANY source cells.\n"
-          "Will assign values based on their neighborhood\n"
-        );
-      }
-      else {
-        std::fprintf(stderr,
-          "One/more target dual cells are not covered by ANY source dual cells.\n"
-          "Will assign values based on their neighborhood\n"
-        );
-      }
+      std::fprintf(stderr,
+                   "One or more target cells are not covered by ANY source cells.\n"
+                   "Will assign values based on their neighborhood\n"
+      );
     }
 
     if (nb_empty > 0) {
@@ -593,7 +578,7 @@ public:
                     Partial_fixup_type partial_fixup_type = SHIFTED_CONSERVATIVE,
                     Empty_fixup_type empty_fixup_type = EXTRAPOLATE) const {
 
-    if (source_.state().field_type(onwhat, src_var_name) == Field_type::MESH_FIELD) {
+    if (source_.state().field_type(Entity_kind::CELL, src_var_name) == Field_type::MESH_FIELD) {
       return fix_mismatch_meshvar(src_var_name, trg_var_name,
                                   global_lower_bound, global_upper_bound,
                                   conservation_tol, maxiter,
@@ -638,8 +623,8 @@ public:
     // WARNING: absolute indexing
     double const* source_data;
     double* target_data = nullptr;
-    source_state.mesh_get_data(onwhat, src_var_name, &source_data);
-    target_state.mesh_get_data(onwhat, trg_var_name, &target_data);
+    source_state.mesh_get_data(Entity_kind::CELL, src_var_name, &source_data);
+    target_state.mesh_get_data(Entity_kind::CELL, trg_var_name, &target_data);
 
     if (partial_fixup_type == LOCALLY_CONSERVATIVE) {
       // In interpolate step, we divided the accumulated integral (U)
@@ -803,12 +788,6 @@ public:
         global_adj_target_volume = global_target_volume_;
       }
 
-      // get the right entity type
-      auto target_entity_type = [&](int entity) -> Entity_type {
-        return (onwhat == Entity_kind::CELL ? target_.mesh().cell_get_type(entity)
-                                            : target_.mesh().node_get_type(entity));
-      };
-
       // sort of a "unit" discrepancy or difference per unit volume
       double udiff = absolute_diff / global_adj_target_volume;
 
@@ -817,7 +796,7 @@ public:
 
         for (auto&& entity : target_entities) {
           auto const& t = target_.index(entity);
-          bool is_owned = target_entity_type(entity) == Entity_type::PARALLEL_OWNED;
+          bool is_owned = target_.mesh().cell_get_type(entity) == Entity_type::PARALLEL_OWNED;
           bool should_fix = (empty_fixup_type != LEAVE_EMPTY or not is_cell_empty_[t]);
 
           if (is_owned and should_fix) {

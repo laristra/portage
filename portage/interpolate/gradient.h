@@ -76,15 +76,13 @@ namespace Portage {
     Limited_Gradient(Mesh const& mesh, State const& state,
                      std::string const var_name,
                      Limiter_type limiter_type,
-                     Boundary_Limiter_type boundary_limiter_type,
-                     const Part<on_what, Mesh, State>* const part = nullptr)
+                     Boundary_Limiter_type boundary_limiter_type)
       : mesh_(mesh),
         state_(state),
         values_(nullptr),
         variable_name_(var_name),
         limiter_type_(limiter_type),
-        boundary_limiter_type_(boundary_limiter_type),
-        part_(part) {}
+        boundary_limiter_type_(boundary_limiter_type) {}
 
 #ifdef HAVE_TANGRAM
     Limited_Gradient(Mesh const &mesh, State const &state,
@@ -92,14 +90,13 @@ namespace Portage {
                      Limiter_type limiter_type,
                      Boundary_Limiter_type boundary_limiter_type,
                      std::shared_ptr<InterfaceReconstructor> ir,
-                     const Part<on_what, Mesh, State>* const part = nullptr)
+                     const Part<Mesh, State>* part = nullptr)
       : mesh_(mesh),
         state_(state),
         values_(nullptr),
         variable_name_(var_name),
         limiter_type_(limiter_type),
-        boundary_limiter_type_(boundary_limiter_type),
-        part_(part) {}
+        boundary_limiter_type_(boundary_limiter_type) {}
 #endif
 
     // Assignment operator (disabled)
@@ -124,7 +121,6 @@ namespace Portage {
     Boundary_Limiter_type boundary_limiter_type_ = DEFAULT_BND_LIMITER;
     Field_type field_type_ = Field_type::UNKNOWN_TYPE_FIELD;
     int material_id_ = 0;
-    Part<on_what, Mesh, State> const* part_;
   };
 
   //////////////////////////////////////////////////////////////////////////////
@@ -167,7 +163,7 @@ namespace Portage {
                      std::string const var_name,
                      Limiter_type limiter_type,
                      Boundary_Limiter_type boundary_limiter_type,
-                     const Part<Entity_kind::CELL, Mesh, State>* const part = nullptr)
+                     const Part<Mesh, State>* part = nullptr)
       : mesh_(mesh),
         state_(state),
         values_(nullptr),
@@ -209,7 +205,7 @@ namespace Portage {
                      Limiter_type limiter_type,
                      Boundary_Limiter_type boundary_limiter_type,
                      std::shared_ptr<InterfaceReconstructor> ir,
-                     const Part<Entity_kind::CELL, Mesh, State>* const part = nullptr)
+                     const Part<Mesh, State>* part = nullptr)
       : mesh_(mesh),
         state_(state),
         values_(nullptr),
@@ -462,7 +458,7 @@ namespace Portage {
 #ifdef HAVE_TANGRAM
     std::shared_ptr<InterfaceReconstructor> interface_reconstructor_;
 #endif
-    Part<Entity_kind::CELL, Mesh, State> const* part_;
+    Part<Mesh, State> const* part_;
   };
 
   ///////////////////////////////////////////////////////////////////////////////
@@ -503,15 +499,13 @@ namespace Portage {
                      State const& state,
                      std::string const var_name,
                      Limiter_type limiter_type,
-                     Boundary_Limiter_type boundary_limiter_type,
-                     const Part<Entity_kind::NODE, Mesh, State>* const part = nullptr)
+                     Boundary_Limiter_type boundary_limiter_type)
       : mesh_(mesh),
         state_(state),
         values_(nullptr),
         variable_name_(var_name),
         limiter_type_(limiter_type),
-        boundary_limiter_type_(boundary_limiter_type),
-        part_(part) {
+        boundary_limiter_type_(boundary_limiter_type) {
 
       auto collect_node_neighbors = [this](int n) {
         this->mesh_.dual_cell_get_node_adj_cells(
@@ -526,11 +520,6 @@ namespace Portage {
                         collect_node_neighbors);
 
       set_interpolation_variable(var_name, limiter_type, boundary_limiter_type);
-
-      if (part_ != nullptr) {
-        std::cout << "Warning: part-by-part remap is only defined for cells. ";
-        std::cout << "Source and target part pair will be ignored" << std::endl;
-      }
     }
 
     void set_material(int material_id) { material_id_ = material_id; }
@@ -622,7 +611,6 @@ namespace Portage {
     int material_id_ = 0;
     std::vector<int> cell_ids_;
     std::vector<std::vector<int>> node_neighbors_;
-    Part<Entity_kind::NODE, Mesh, State> const* part_;
   };
 }  // namespace Portage
 
