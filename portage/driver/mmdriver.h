@@ -845,8 +845,8 @@ int MMDriver<Search, Intersect, Interpolate, D,
 
   // Get an instance of the desired interpolate algorithm type
   Interpolate<D, onwhat, SourceMesh_Wrapper2, TargetMesh_Wrapper,
-              SourceState_Wrapper2, DummyInterfaceReconstructor,
-              void, void>
+              SourceState_Wrapper2, TargetState_Wrapper, DummyInterfaceReconstructor,
+              void, void, Wonton::DefaultCoordSys>
       interpolate(source_mesh2, target_mesh_, source_state2,
                   num_tols_);
 #endif  // HAVE_TANGRAM
