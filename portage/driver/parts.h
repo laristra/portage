@@ -130,7 +130,10 @@ namespace Portage {
      */
     const double& volume(int id) const {
       assert(id < size_);
-      return volumes_[id];
+      if (cached_volumes) {
+        return volumes_[id];
+      } else
+        throw std::runtime_error("Error: cells volumes not yet computed");
     }
 
     /**
@@ -161,7 +164,10 @@ namespace Portage {
      * @return the total volume of the part.
      */
     double total_volume() const {
-      return std::accumulate(volumes_.begin(), volumes_.end(), 0.0);
+      if (cached_volumes) {
+        return std::accumulate(volumes_.begin(), volumes_.end(), 0.0);
+      } else
+        throw std::runtime_error("Error: cells volumes not yet computed");
     }
 
     /**
