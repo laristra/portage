@@ -93,13 +93,6 @@ template<int D,
          class CoordSys = Wonton::DefaultCoordSys>
 class Interpolate_1stOrder {
 
-  // useful aliases
-  using Parts = PartPair<
-    D, on_what,
-    SourceMeshType, SourceStateType,
-    TargetMeshType, TargetStateType
-  >;
-
 #ifdef HAVE_TANGRAM
   using InterfaceReconstructor =
       Tangram::Driver<InterfaceReconstructorType, D, SourceMeshType,
@@ -114,16 +107,14 @@ class Interpolate_1stOrder {
                        TargetMeshType const & target_mesh,
                        SourceStateType const & source_state,
                        NumericTolerances_t num_tols,
-                       std::shared_ptr<InterfaceReconstructor> ir,
-                       const Parts* const parts = nullptr) :
+                       std::shared_ptr<InterfaceReconstructor> ir) :
       source_mesh_(source_mesh),
       target_mesh_(target_mesh),
       source_state_(source_state),
       interface_reconstructor_(ir),
       interp_var_name_("VariableNameNotSet"),
       source_vals_(nullptr),
-      num_tols_(num_tols),
-      parts_(parts) {}
+      num_tols_(num_tols) {}
 #endif
 
   /*!
@@ -139,15 +130,13 @@ class Interpolate_1stOrder {
   Interpolate_1stOrder(SourceMeshType const & source_mesh,
                        TargetMeshType const & target_mesh,
                        SourceStateType const & source_state,
-                       NumericTolerances_t num_tols,
-                       const Parts* const parts = nullptr) :
+                       NumericTolerances_t num_tols) :
       source_mesh_(source_mesh),
       target_mesh_(target_mesh),
       source_state_(source_state),
       interp_var_name_("VariableNameNotSet"),
       source_vals_(nullptr),
-      num_tols_(num_tols),
-      parts_(parts) {}
+      num_tols_(num_tols) {}
 
 
   /// Copy constructor (disabled)
@@ -221,7 +210,6 @@ class Interpolate_1stOrder {
 #ifdef HAVE_TANGRAM
   std::shared_ptr<InterfaceReconstructor> interface_reconstructor_;
 #endif
-  Parts const* parts_;
 };  // interpolate_1st_order base
 
 
@@ -248,8 +236,7 @@ class Interpolate_1stOrder<
   Matpoly_Splitter, Matpoly_Clipper, CoordSys> {
 
   // useful aliases
-  using Parts = PartPair<
-    D, Entity_kind::CELL,
+  using Parts = PartPair<D,
     SourceMeshType, SourceStateType,
     TargetMeshType, TargetStateType
   >;
@@ -447,12 +434,6 @@ class Interpolate_1stOrder<
   Matpoly_Splitter, Matpoly_Clipper, CoordSys> {
 
   // useful aliases
-  using Parts = PartPair<
-    D, Entity_kind::NODE,
-    SourceMeshType, SourceStateType,
-    TargetMeshType, TargetStateType
-  >;
-
 #ifdef HAVE_TANGRAM
   using InterfaceReconstructor =
       Tangram::Driver<InterfaceReconstructorType, D, SourceMeshType,
@@ -467,22 +448,14 @@ class Interpolate_1stOrder<
                        TargetMeshType const & target_mesh,
                        SourceStateType const & source_state,
                        NumericTolerances_t num_tols,
-                       std::shared_ptr<InterfaceReconstructor> ir,
-                       const Parts* const parts = nullptr) :
+                       std::shared_ptr<InterfaceReconstructor> ir) :
       source_mesh_(source_mesh),
       target_mesh_(target_mesh),
       source_state_(source_state),
       interface_reconstructor_(ir),
       interp_var_name_("VariableNameNotSet"),
       source_vals_(nullptr),
-      num_tols_(num_tols),
-      parts_(parts)
-  {
-    if (parts_ != nullptr) {
-      std::cerr << "Warning: part-by-part remap is only defined for cells. ";
-      std::cerr << "Source and target parts will be ignored" << std::endl;
-    }
-  }
+      num_tols_(num_tols) {}
 #endif
 
   /*!
@@ -496,21 +469,13 @@ class Interpolate_1stOrder<
   Interpolate_1stOrder(SourceMeshType const & source_mesh,
                        TargetMeshType const & target_mesh,
                        SourceStateType const & source_state,
-                       NumericTolerances_t num_tols,
-                       const Parts* const parts = nullptr) :
+                       NumericTolerances_t num_tols) :
       source_mesh_(source_mesh),
       target_mesh_(target_mesh),
       source_state_(source_state),
       interp_var_name_("VariableNameNotSet"),
       source_vals_(nullptr),
-      num_tols_(num_tols),
-      parts_(parts)
-  {
-    if (parts_ != nullptr) {
-      std::cerr << "Warning: part-by-part remap is only defined for cells. ";
-      std::cerr << "Source and target parts will be ignored" << std::endl;
-    }
-  }
+      num_tols_(num_tols) {}
 
 
   /// Copy constructor (disabled)
@@ -621,7 +586,6 @@ class Interpolate_1stOrder<
 #ifdef HAVE_TANGRAM
   std::shared_ptr<InterfaceReconstructor> interface_reconstructor_;
 #endif
-  Parts const* parts_;
 };  // interpolate_1st_order specialization for nodes
 
 //////////////////////////////////////////////////////////////////////////////
