@@ -153,7 +153,8 @@ namespace Portage {
      */
     void set_interpolation_variable(std::string const& variable_name,
                                     Limiter_type limiter_type = NOLIMITER,
-                                    Boundary_Limiter_type boundary_limiter_type = BND_NOLIMITER) {
+                                    Boundary_Limiter_type boundary_limiter_type = BND_NOLIMITER,
+                                    const Portage::vector<Vector<D>>* gradient_field = nullptr) {
       std::cerr << "Interpolation is available for only cells and nodes";
       std::cerr << std::endl;
     }
@@ -191,7 +192,7 @@ namespace Portage {
     double const* source_values_;
     NumericTolerances_t num_tols_;
     int material_id_ = 0;
-    Portage::vector<Wonton::Vector<D>> gradients_;
+    Portage::vector<Wonton::Vector<D>> const* gradients_;
     Field_type field_type_ = Field_type::UNKNOWN_TYPE_FIELD;
 #ifdef HAVE_TANGRAM
     std::shared_ptr<InterfaceReconstructor> interface_reconstructor_;
@@ -329,62 +330,19 @@ namespace Portage {
      */
     void set_interpolation_variable(std::string const& variable_name,
                                     Limiter_type limiter_type = NOLIMITER,
-                                    Boundary_Limiter_type boundary_limiter_type = BND_NOLIMITER) {
+                                    Boundary_Limiter_type boundary_limiter_type = BND_NOLIMITER,
+                                    const Portage::vector<Vector<D>>* gradient_field = nullptr) {
 
       variable_name_ = variable_name;
-
-      // Extract the field data from the state-manager and the source cells for
-      // which the gradient has to be computed.
-      int nb_cells;
-      std::vector<int> cellids;
+      gradients_ = gradient_field;
       field_type_ = source_state_.field_type(Entity_kind::CELL, variable_name);
 
       if (field_type_ == Field_type::MESH_FIELD) {
         source_state_.mesh_get_data(Entity_kind::CELL, variable_name, &source_values_);
-        nb_cells = source_mesh_.num_entities(Entity_kind::CELL);
       } else {
         source_state_.mat_get_celldata(variable_name, material_id_, &source_values_);
-        source_state_.mat_get_cells(material_id_, &cellids);
-        nb_cells = cellids.size();
-      }
-
-      // Compute the limited gradients for the field
-      auto source_part = (parts_ != nullptr ? &(parts_->source()) : nullptr);
-
-#ifdef HAVE_TANGRAM
-      Gradient gradient_kernel(source_mesh_, source_state_, variable_name_,
-                               limiter_type, boundary_limiter_type,
-                               interface_reconstructor_, source_part);
-
-      if (field_type_ == Field_type::MULTIMATERIAL_FIELD)
-        gradient_kernel.set_material(material_id_);
-#else
-      Gradient gradient_kernel(source_mesh_, source_state_, variable_name_,
-                               limiter_type, boundary_limiter_type, source_part);
-#endif
-
-      gradients_.resize(nb_cells);
-
-      /*
-       * Call transform functor to take the values of the variable on
-       * the cells and compute a "limited" gradient of the field on the
-       * cells (for transform definition, see portage.h).
-       *
-       * Even though we defined Portage::transform (to be
-       * thrust::transform or boost::transform) in portage.h, the compiler
-       * is not able to disambiguate this call and is getting confused.
-       * So we will explicitly state that this is Portage::transform.
-       */
-      if (field_type_ == Field_type::MESH_FIELD) {
-        Portage::transform(source_mesh_.begin(Entity_kind::CELL),
-                           source_mesh_.end(Entity_kind::CELL),
-                           gradients_.begin(), gradient_kernel);
-      } else {
-        Portage::transform(cellids.begin(), cellids.end(),
-                           gradients_.begin(), gradient_kernel);
       }
     }
-
 
     /**
      * @brief Functor to compute the interpolation of cell values.
@@ -490,7 +448,7 @@ namespace Portage {
           ? source_state_.cell_index_in_material(src_cell, material_id_)
           : src_cell);
 
-        Vector<D> gradient = gradients_[source_index];
+        Vector<D> gradient = *(gradients_)[source_index];
         Vector<D> dr = intersect_centroid - source_centroid;
         dr = CoordSys::modify_line_element(dr, source_centroid);
 
@@ -520,7 +478,7 @@ namespace Portage {
     double const* source_values_;
     NumericTolerances_t num_tols_;
     int material_id_ = 0;
-    Portage::vector<Wonton::Vector<D>> gradients_;
+    Portage::vector<Wonton::Vector<D>> const* gradients_;
     Field_type field_type_ = Field_type::UNKNOWN_TYPE_FIELD;
 #ifdef HAVE_TANGRAM
     std::shared_ptr<InterfaceReconstructor> interface_reconstructor_;
@@ -654,9 +612,11 @@ namespace Portage {
      */
     void set_interpolation_variable(std::string const variable_name,
                                     Limiter_type limiter_type = NOLIMITER,
-                                    Boundary_Limiter_type boundary_limiter_type = BND_NOLIMITER) {
+                                    Boundary_Limiter_type boundary_limiter_type = BND_NOLIMITER,
+                                    const Portage::vector<Vector<D>>* gradient_field = nullptr) {
 
       variable_name_ = variable_name;
+      gradients_ = gradient_field;
 
       // Extract the field data from the statemanager
       field_type_ = source_state_.field_type(Entity_kind::NODE, variable_name);
@@ -668,30 +628,7 @@ namespace Portage {
         std::cerr << std::endl;
         return;
       }
-
-      // Compute the limited gradients for the field
-      Gradient gradient_kernel(source_mesh_, source_state_,
-                               variable_name_, limiter_type,
-                               boundary_limiter_type);
-
-      int size = source_mesh_.end(Node) - source_mesh_.begin(Node);
-      gradients_.resize(size);
-
-      /*
-       * Call transform functor to take the values of the variable on
-       * the cells and compute a "limited" gradient of the field on the
-       * cells (for transform definition, see portage.h).
-       *
-       * Even though we defined Portage::transform (to be
-       * thrust::transform or boost::transform) in portage.h, the compiler
-       * is not able to disambiguate this call and is getting confused.
-       * So we will explicitly state that this is Portage::transform.
-       */
-      Portage::transform(source_mesh_.begin(Node),
-                         source_mesh_.end(Node),
-                         gradients_.begin(), gradient_kernel);
     }
-
 
     /**
      * @brief Functor to compute the interpolation of node values.
@@ -741,7 +678,7 @@ namespace Portage {
         for (int k = 0; k < D; ++k)
           intersect_centroid[k] = intersect_weights[1 + k] / intersect_volume;
 
-        Vector<D> gradient = gradients_[src_node];
+        Vector<D> gradient = *(gradients_)[src_node];
         Vector<D> dr = intersect_centroid - source_coord;
         dr = CoordSys::modify_line_element(dr, source_coord);
 
@@ -773,7 +710,7 @@ namespace Portage {
     double const* source_values_;
     NumericTolerances_t num_tols_;
     int material_id_ = 0;
-    Portage::vector<Vector<D>> gradients_;
+    Portage::vector<Vector<D>> const* gradients_;
     Field_type field_type_ = Field_type::UNKNOWN_TYPE_FIELD;
 #ifdef HAVE_TANGRAM
     std::shared_ptr<InterfaceReconstructor> interface_reconstructor_;
