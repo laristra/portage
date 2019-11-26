@@ -365,6 +365,7 @@ namespace Portage {
       if (sources_and_weights.empty())
         return 0.;
 
+      auto const& gradient_field = *gradients_;
       double total_value = 0.;
       double normalization = 0.;
 
@@ -448,7 +449,7 @@ namespace Portage {
           ? source_state_.cell_index_in_material(src_cell, material_id_)
           : src_cell);
 
-        Vector<D> gradient = *(gradients_)[source_index];
+        Vector<D> gradient = gradient_field[source_index];
         Vector<D> dr = intersect_centroid - source_centroid;
         dr = CoordSys::modify_line_element(dr, source_centroid);
 
@@ -651,6 +652,7 @@ namespace Portage {
       if (sources_and_weights.empty())
         return 0.;
 
+      auto const& gradient_field = *gradients_;
       int const nb_source_nodes = sources_and_weights.size();
       double total_value = 0.;
       double normalization = 0.;
@@ -678,7 +680,7 @@ namespace Portage {
         for (int k = 0; k < D; ++k)
           intersect_centroid[k] = intersect_weights[1 + k] / intersect_volume;
 
-        Vector<D> gradient = *(gradients_)[src_node];
+        Vector<D> gradient = gradient_field[src_node];
         Vector<D> dr = intersect_centroid - source_coord;
         dr = CoordSys::modify_line_element(dr, source_coord);
 
