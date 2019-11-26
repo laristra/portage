@@ -7,8 +7,7 @@
 #ifndef PORTAGE_CORE_DRIVER_H_
 #define PORTAGE_CORE_DRIVER_H_
 
-#include <sys/time.h>
-
+#include <ctime>
 #include <algorithm>
 #include <vector>
 #include <iterator>
@@ -19,12 +18,13 @@
 #include <memory>
 #include <limits>
 
+
 #ifdef HAVE_TANGRAM
 #include "tangram/driver/driver.h"
 #endif
 
 #include "portage/intersect/dummy_interface_reconstructor.h"
-
+#include <portage/interpolate/gradient.h>
 #include "portage/support/portage.h"
 #include "wonton/support/Point.h"
 #include "wonton/support/CoordinateSystem.h"
@@ -244,7 +244,8 @@ class CoreDriverBase {
                             double conservation_tol,
                             int max_fixup_iter,
                             const PartPair<D, SourceMesh, SourceState,
-                                              TargetMesh, TargetState>* parts_pair = nullptr) {
+                                              TargetMesh, TargetState>* parts_pair = nullptr,
+                            const Portage::vector<Vector<D>>* gradients = nullptr) {
     assert(ONWHAT == onwhat());
     auto derived_class_ptr = static_cast<CoreDriverType<ONWHAT> *>(this);
     derived_class_ptr->
@@ -255,7 +256,8 @@ class CoreDriverBase {
                                                       partial_fixup_type,
                                                       empty_fixup_type,
                                                       conservation_tol,
-                                                      max_fixup_iter, parts_pair);
+                                                      max_fixup_iter, parts_pair,
+                                                      gradients);
   }
 
 
@@ -408,6 +410,12 @@ class CoreDriver : public CoreDriverBase<D,
                                          Matpoly_Splitter,
                                          Matpoly_Clipper,
                                          CoordSys> {
+
+  // useful alias
+  using Gradient = Limited_Gradient<D, ONWHAT, SourceMesh, SourceState,
+                                    InterfaceReconstructorType,
+                                    Matpoly_Splitter, Matpoly_Clipper, CoordSys>;
+
  public:
   /*!
     @brief Constructor for the CORE remap driver.
@@ -770,6 +778,67 @@ class CoreDriver : public CoreDriverBase<D,
   }
 
 
+  /**
+   * @brief Compute the gradient field of the given variable on source mesh.
+   *
+   * @param field_name: the variable name.
+   * @param limiter_type: gradient limiter to use on internal regions.
+   * @param boundary_limiter_type: gradient limiter to use on boundary.
+   * @param source_part: the source mesh part to consider if any.
+   */
+  Portage::vector<Vector<D>> compute_gradient_field(
+    std::string const field_name,
+    Limiter_type limiter_type = NOLIMITER,
+    Boundary_Limiter_type boundary_limiter_type = BND_NOLIMITER,
+#if HAVE_TANGRAM
+    int material_id = 0,
+#endif
+    const Part<SourceMesh, SourceState>* source_part = nullptr) const {
+
+    // enable part-by-part only for cell-based remap
+    auto const part = (ONWHAT == Entity_kind::CELL ? source_part : nullptr);
+    auto const field_type = source_state_.field_type(ONWHAT, field_name);
+
+    // multi-material remap makes only sense on cell-centered fields.
+    bool const multimat =
+      ONWHAT == Entity_kind::CELL and field_type == Field_type::MULTIMATERIAL_FIELD;
+
+    int size = 0;
+    std::vector<int> mat_cells;
+
+    if (multimat) {
+      source_state_.mat_get_cells(material_id, &mat_cells);
+      size = mat_cells.size();
+    } else {
+      size = source_mesh_.num_entities(ONWHAT);
+    }
+
+    // instantiate the right kernel according to entity kind (cell/node),
+    // as well as source and target meshes and states types.
+#if HAVE_TANGRAM
+    Gradient gradient_kernel(source_mesh_, source_state_, field_name,
+                             limiter_type, boundary_limiter_type,
+                             interface_reconstructor_, part);
+#else
+    Gradient gradient_kernel(source_mesh_, source_state_, variable_name,
+                             limiter_type, boundary_limiter_type, part);
+#endif
+
+    // create the field
+    Portage::vector<Vector<D>> gradient_field(size);
+
+    // populate it by invoking the kernel on each source entity.
+    if (multimat) {
+      Portage::transform(mat_cells.begin(), mat_cells.end(),
+                         gradient_field.begin(), gradient_kernel);
+    } else {
+      Portage::transform(source_mesh_.begin(ONWHAT), source_mesh_.end(ONWHAT),
+                         gradient_field.begin(), gradient_kernel);
+    }
+
+    return gradient_field;
+  }
+
 
   /*! 
     Check mismatch between meshes
@@ -837,7 +906,8 @@ class CoreDriver : public CoreDriverBase<D,
                             double conservation_tol = DEFAULT_CONSERVATION_TOL,
                             int max_fixup_iter = DEFAULT_MAX_FIXUP_ITER,
                             const PartPair<D, SourceMesh, SourceState,
-                                              TargetMesh, TargetState>* partition = nullptr) {
+                                              TargetMesh, TargetState>* partition = nullptr,
+                            const Portage::vector<Vector<D>>* gradients = nullptr) {
 
     if (source_state_.get_entity(srcvarname) != ONWHAT) {
       std::cerr << "Variable " << srcvarname << " not defined on Entity_kind "
@@ -851,7 +921,7 @@ class CoreDriver : public CoreDriverBase<D,
         InterfaceReconstructorType, Matpoly_Splitter, Matpoly_Clipper, CoordSys>;
 
     interpolator_t interpolator(source_mesh_, target_mesh_, source_state_, num_tols_, partition);
-    interpolator.set_interpolation_variable(srcvarname, limiter, bnd_limiter);
+    interpolator.set_interpolation_variable(srcvarname, limiter, bnd_limiter, gradients);
 
     // get a handle to a memory location where the target state
     // would like us to write this material variable into.
@@ -1005,7 +1075,8 @@ class CoreDriver : public CoreDriverBase<D,
                            Partial_fixup_type partial_fixup_type = DEFAULT_PARTIAL_FIXUP_TYPE,
                            Empty_fixup_type empty_fixup_type = DEFAULT_EMPTY_FIXUP_TYPE,
                            double conservation_tol = DEFAULT_CONSERVATION_TOL,
-                           int max_fixup_iter = DEFAULT_MAX_FIXUP_ITER) {
+                           int max_fixup_iter = DEFAULT_MAX_FIXUP_ITER,
+                           const Portage::vector<Vector<D>>* gradients = nullptr) {
     
     Interpolate<D, ONWHAT, SourceMesh, TargetMesh, SourceState, TargetState,
                 InterfaceReconstructorType, Matpoly_Splitter, Matpoly_Clipper, CoordSys>
@@ -1022,8 +1093,7 @@ class CoreDriver : public CoreDriverBase<D,
 
       // FEATURE ;-)  Have to set interpolation variable AFTER setting 
       // the material for multimaterial variables
-
-      interpolator.set_interpolation_variable(srcvarname, limiter, bnd_limiter);
+      interpolator.set_interpolation_variable(srcvarname, limiter, bnd_limiter, gradients);
 
       // if the material has no cells on this partition, then don't bother
       // interpolating MM variables
