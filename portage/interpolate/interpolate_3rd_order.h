@@ -114,6 +114,7 @@ class Interpolate_3rdOrder {
                        quadfits_.begin(), limqfit);
   }
 
+
   /*!
     @brief Functor to do the actual interpolate calculation
     @param[in] cells_and_weights A pair of two vectors
@@ -228,6 +229,7 @@ class Interpolate_3rdOrder<
     Portage::transform(source_mesh_.begin(Entity_kind::CELL), source_mesh_.end(Entity_kind::CELL),
                        quadfits_.begin(), limqfit);
   }
+
 
   /// Copy constructor (disabled)
   //  Interpolate_3rdOrder(const Interpolate_3rdOrder &) = delete;
@@ -415,6 +417,7 @@ class Interpolate_3rdOrder<
     Portage::transform(source_mesh_.begin(Entity_kind::NODE), source_mesh_.end(Entity_kind::NODE),
                        quadfits_.begin(), limqfit);
   }
+
 
   /*!
     @brief Functor to do the 3rd order interpolation of node values
