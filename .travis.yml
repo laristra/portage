@@ -41,7 +41,9 @@ after_success:
     
 deploy:
   provider: pages
-  skip_cleanup: true
+  edge: true # opt into version 2 of the dpl
   github_token: $DOCTR_DEPLOY_ENCRYPTION_KEY_LARISTRA_PORTAGE
-  keep_history: true
   local_dir: doc/doxygen/html
+  verbose: true
+  on:
+    condition: ${DOCS} && -d doc/doxygen/html
