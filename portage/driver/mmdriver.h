@@ -37,7 +37,7 @@ Please see the license file at the root of this repository, or at:
 #include "wonton/support/Point.h"
 #include "wonton/state/state_vector_multi.h"
 #include "portage/driver/fix_mismatch.h"
-
+#include "portage/driver/coredriver.h"
 
 #ifdef PORTAGE_ENABLE_MPI
 #include "portage/distributed/mpi_bounding_boxes.h"
@@ -395,6 +395,50 @@ class MMDriver {
             std::vector<std::string> const &target_matvar_names,
             Wonton::Executor_type const *executor = nullptr);
 
+
+  /**
+   * @brief Compute the gradient field for the current remap variable.
+   *
+   * @tparam onwhat: the entity kind (cell or node)
+   * @tparam NewSourceMesh: the new source mesh wrapper type (native/flat).
+   * @tparam NewSourceState: the new source state wrapper type (native/flat).
+   * @param field_name: the field variable to remap.
+   * @param new_source_mesh: the new source mesh instance.
+   * @param new_source_state: the new source state instance.
+   * @param limiter_type: the gradient limiter to use for internal regions.
+   * @param boundary_limiter_type: the gradient limiter to use for boundary.
+   * @param material_id: the material id in multi-material context
+   * @return the computed gradient field.
+   */
+  template<Entity_kind onwhat,
+           typename NewSourceMesh,
+           typename NewSourceState>
+  Portage::vector<Vector<D>> compute_gradient_field(
+    std::string const field_name,
+    NewSourceMesh const& new_source_mesh,
+    NewSourceState const& new_source_state,
+    Limiter_type limiter_type = NOLIMITER,
+    Boundary_Limiter_type boundary_limiter_type = BND_NOLIMITER,
+    int material_id = 0
+  ) const {
+
+    // just use the gradient computation method implemented in coredriver
+    // to avoid code duplication (recall that the driver itself is
+    // deprecated and will be removed.
+    using Remapper = Portage::CoreDriver<
+      D, onwhat, NewSourceMesh, NewSourceState,
+      TargetMesh_Wrapper, TargetState_Wrapper,
+      InterfaceReconstructorType,
+      Matpoly_Splitter, Matpoly_Clipper
+    >;
+
+    Remapper remapper(new_source_mesh, new_source_state,
+                      target_mesh_, target_state_);
+
+    return remapper.compute_gradient_field(field_name, limiter_type,
+                                           boundary_limiter_type,
+                                           material_id);
+  }
 
   /*!
     @brief Execute the remapping process
@@ -882,6 +926,8 @@ int MMDriver<Search, Intersect, Interpolate, D,
 
 
   // INTERPOLATE (one variable at a time)
+  // retrieve remap order for later
+  constexpr int const order = interpolate.get_order();
 
   gettimeofday(&begin_timeval, 0);
 
@@ -891,9 +937,18 @@ int MMDriver<Search, Intersect, Interpolate, D,
         " to remap is " << nvars << std::endl;
 
   for (int i = 0; i < nvars; ++i) {
+    // compute the gradient field for this variable.
+    // nb: here we don't bother to check the interpolation order
+    // since the driver itself is deprecated and will be removed.
+    auto gradients = compute_gradient_field<onwhat>(src_meshvar_names[i],
+                                            source_mesh2, source_state2,
+                                            limiters_.at(src_meshvar_names[i]),
+                                            bnd_limiters_.at(src_meshvar_names[i]));
+
     interpolate.set_interpolation_variable(src_meshvar_names[i],
                                            limiters_.at(src_meshvar_names[i]),
-                                           bnd_limiters_.at(src_meshvar_names[i]));
+                                           bnd_limiters_.at(src_meshvar_names[i]),
+                                           &gradients);
 
     // Get a handle to a memory location where the target state
     // would like us to write this material variable into. If it is
@@ -1144,11 +1199,19 @@ int MMDriver<Search, Intersect, Interpolate, D,
 
       // if the material has no cells on this partition, then don't bother
       // interpolating MM variables
-        
       for (int i = 0; i < nmatvars; ++i) {
+        // compute the gradient field for this material
+        // nb: here we don't bother to check the interpolation order
+        // since the driver itself is deprecated and will be removed.
+        auto gradients = compute_gradient_field<onwhat>(src_meshvar_names[i],
+                                                source_mesh2, source_state2,
+                                                limiters_.at(src_meshvar_names[i]),
+                                                bnd_limiters_.at(src_meshvar_names[i]), m);
+
         interpolate.set_interpolation_variable(src_matvar_names[i],
                                                limiters_.at(src_matvar_names[i]),
-                                               bnd_limiters_.at(src_matvar_names[i]));
+                                               bnd_limiters_.at(src_matvar_names[i]),
+                                               &gradients);
 
         // Get a handle to a memory location where the target state
         // would like us to write this material variable into. If it is
