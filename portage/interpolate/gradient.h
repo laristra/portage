@@ -545,8 +545,15 @@ namespace Portage {
                      std::string const& var_name,
                      Limiter_type limiter_type,
                      Boundary_Limiter_type boundary_limiter_type,
-                     std::shared_ptr<InterfaceReconstructor> ir)
-      : Limited_Gradient(mesh, state, var_name, limiter_type, boundary_limiter_type) {}
+                     std::shared_ptr<InterfaceReconstructor> ir,
+                     const Part<Mesh, State>* part = nullptr)
+      : Limited_Gradient(mesh, state, var_name, limiter_type, boundary_limiter_type) {
+
+      if (part != nullptr) {
+        std::cerr << "Sorry, part-by-part remap is only defined ";
+        std::cerr << "for cell-centered field, will be ignored." << std::endl;
+      }
+    }
 #endif
 
     void set_material(int material_id) { material_id_ = material_id; }
