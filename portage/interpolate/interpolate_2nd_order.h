@@ -143,13 +143,6 @@ namespace Portage {
     void set_material(int m) { material_id_ = m; }
 
     /**
-     * @brief Get the interpolation order.
-     *
-     * @return the interpolation order.
-     */
-    constexpr int get_order() const { return 2; }
-
-    /**
      * @brief Set the name of the interpolation variable and the limiter type,
      *        and compute the gradient field.
      *
@@ -324,13 +317,6 @@ namespace Portage {
      * @param[in] m: the material ID.
      */
     void set_material(int m) { material_id_ = m; }
-
-    /**
-     * @brief Get the interpolation order.
-     *
-     * @return the interpolation order.
-     */
-    constexpr int get_order() const { return 2; }
 
     /**
      * @brief Set the name of the interpolation variable and the limiter type,
@@ -613,13 +599,6 @@ namespace Portage {
      * @param[in] m: the material ID.
      */
     void set_material(int m) { material_id_ = m; }
-
-    /**
-     * @brief Get the interpolation order.
-     *
-     * @return the interpolation order.
-     */
-    constexpr int get_order() const { return 2; }
 
     /**
      * @brief Set the name of the interpolation variable and the limiter type,

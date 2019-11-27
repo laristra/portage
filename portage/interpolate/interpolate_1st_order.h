@@ -154,13 +154,6 @@ class Interpolate_1stOrder {
     matid_ = m;
   }  // set_material
 
-  /**
-   * @brief Get the interpolation order.
-   *
-   * @return the interpolation order.
-   */
-  constexpr int get_order() const { return 1; }
-
   /// Set the variable name to be interpolated.
 
   // Even though 1st order accurate interpolation does not require
@@ -310,13 +303,6 @@ class Interpolate_1stOrder<
   void set_material(int m) {
     matid_ = m;
   }  // set_material
-
-  /**
-   * @brief Get the interpolation order.
-   *
-   * @return the interpolation order.
-   */
-  constexpr int get_order() const { return 1; }
 
   /// Set the variable name to be interpolated
 
@@ -508,13 +494,6 @@ class Interpolate_1stOrder<
   void set_material(int m) {
     matid_ = m;
   }  // set_material
-
-  /**
-   * @brief Get the interpolation order.
-   *
-   * @return the interpolation order.
-   */
-  constexpr int get_order() const { return 1; }
 
   /// Set the variable name to be interpolated
 

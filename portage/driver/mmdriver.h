@@ -926,9 +926,6 @@ int MMDriver<Search, Intersect, Interpolate, D,
 
 
   // INTERPOLATE (one variable at a time)
-  // retrieve remap order for later
-  constexpr int const order = interpolate.get_order();
-
   gettimeofday(&begin_timeval, 0);
 
   int nvars = src_meshvar_names.size();
