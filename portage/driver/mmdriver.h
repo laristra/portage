@@ -419,7 +419,8 @@ class MMDriver {
     NewSourceState const& new_source_state,
     Limiter_type limiter_type = NOLIMITER,
     Boundary_Limiter_type boundary_limiter_type = BND_NOLIMITER,
-    int material_id = 0
+    int material_id = 0,
+    Wonton::Executor_type const *executor = nullptr
   ) const {
 
     // just use the gradient computation method implemented in coredriver
@@ -433,7 +434,7 @@ class MMDriver {
     >;
 
     Remapper remapper(new_source_mesh, new_source_state,
-                      target_mesh_, target_state_);
+                      target_mesh_, target_state_, executor);
 
     return remapper.compute_gradient_field(field_name, limiter_type,
                                            boundary_limiter_type,
@@ -940,7 +941,8 @@ int MMDriver<Search, Intersect, Interpolate, D,
     auto gradients = compute_gradient_field<onwhat>(src_meshvar_names[i],
                                             source_mesh2, source_state2,
                                             limiters_.at(src_meshvar_names[i]),
-                                            bnd_limiters_.at(src_meshvar_names[i]));
+                                            bnd_limiters_.at(src_meshvar_names[i]),
+                                            0, executor);
 
     interpolate.set_interpolation_variable(src_meshvar_names[i],
                                            limiters_.at(src_meshvar_names[i]),
@@ -1203,7 +1205,8 @@ int MMDriver<Search, Intersect, Interpolate, D,
         auto gradients = compute_gradient_field<onwhat>(src_meshvar_names[i],
                                                 source_mesh2, source_state2,
                                                 limiters_.at(src_meshvar_names[i]),
-                                                bnd_limiters_.at(src_meshvar_names[i]), m);
+                                                bnd_limiters_.at(src_meshvar_names[i]),
+                                                m, executor);
 
         interpolate.set_interpolation_variable(src_matvar_names[i],
                                                limiters_.at(src_matvar_names[i]),
