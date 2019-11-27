@@ -133,8 +133,6 @@ class Search_KDTree_Nanoflann {
     kdtree_ = std::make_shared<kdtree_t>(D, sourceSwarm_,
                 nanoflann::KDTreeSingleIndexAdaptorParams(10 /* maxleaf */));
     kdtree_->buildIndex();
-
-    std::cout << "Using Nanoflann KD-Tree code\n";
   }
 
   /*!

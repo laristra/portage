@@ -26,6 +26,7 @@
   #include "ittnotify.h"
 #endif
 
+
 // Jali mesh infrastructure library
 // See https://github.com/lanl/jali
 #include "Mesh.hh"
@@ -667,39 +668,39 @@ int main(int argc, char** argv) {
   // Some input error checking
 
   if (nsourcecells > 0 && srcfile.length() > 0) {
-    std::cout << "Cannot request internally generated source mesh "
+    std::cerr << "Cannot request internally generated source mesh "
               << "(--nsourcecells) and external file read (--source_file)\n\n";
     print_usage();
     MPI_Abort(MPI_COMM_WORLD, -1);
   }
   if (!nsourcecells && srcfile.length() == 0) {
-    std::cout << "Must specify one of the two options --nsourcecells "
+    std::cerr << "Must specify one of the two options --nsourcecells "
               << "or --source_file\n";
     print_usage();
     MPI_Abort(MPI_COMM_WORLD, -1);
   }
 
   if (ntargetcells > 0 && trgfile.length() > 0) {
-    std::cout << "Cannot request internally generated target mesh "
+    std::cerr << "Cannot request internally generated target mesh "
               << "(--ntargetcells) and external file read (--target_file)\n\n";
     print_usage();
     MPI_Abort(MPI_COMM_WORLD, -1);
   }
   if (!ntargetcells && trgfile.length() == 0) {
-    std::cout << "Must specify one of the two options --ntargetcells "
+    std::cerr << "Must specify one of the two options --ntargetcells "
               << "or --target_file\n";
     MPI_Abort(MPI_COMM_WORLD, -1);
   }
   if ((srcfile.length() || trgfile.length()) && n_converge > 1) {
-    std::cout <<
+    std::cerr <<
         "Convergence study possible only for internally generated meshes\n";
-    std::cout << "Will do single remap and exit\n";
+    std::cerr << "Will do single remap and exit\n";
     n_converge = 1;
   }
   if (nsourcecells > 0)
     if (material_field_expressions.size() == 0) {
-      std::cout << "No field imposed on internally generated source mesh\n";
-      std::cout << "Nothing to remap. Exiting...";
+      std::cerr << "No field imposed on internally generated source mesh\n";
+      std::cerr << "Nothing to remap. Exiting...";
       print_usage();
       MPI_Abort(MPI_COMM_WORLD, -1);
     }
@@ -812,24 +813,24 @@ int main(int argc, char** argv) {
         std::cerr << "Dimension not 2 or 3" << std::endl;
         MPI_Abort(MPI_COMM_WORLD, -1);
     }
-
+#ifdef ENABLE_DEBUG
     std::cout << "L1 norm of error for iteration " << i << " is " <<
         l1_err[i] << std::endl;
     std::cout << "L2 norm of error for iteration " << i << " is " <<
         l2_err[i] << std::endl;
-
+#endif
     // if convergence study, double the mesh resolution
     nsourcecells *= 2;
     ntargetcells *= 2;
   }
-
+#ifdef ENABLE_DEBUG 
   for (int i = 1; i < n_converge; i++) {
     std::cout << "Error ratio L1(" << i - 1 << ")/L1(" << i << ") is " <<
         l1_err[i - 1]/l1_err[i] << std::endl;
     std::cout << "Error ratio L2(" << i - 1 << ")/L2(" << i << ") is " <<
         l2_err[i - 1]/l2_err[i] << std::endl;
   }
-
+#endif
   MPI_Finalize();
 
 #if ENABLE_TIMINGS
@@ -1016,6 +1017,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
     offsets[i + 1] = offsets[i] + cell_num_mats[i];
 
   // Output some information for the user
+#ifdef ENABLE_DEBUG
   if (rank == 0) {
     std::cout << "Source mesh has " << nsrccells << " cells\n";
     std::cout << "Target mesh has " << ntarcells << " cells\n";
@@ -1031,6 +1033,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
       std::cout << "   Boundary limiter type is " << bnd_limiter << "\n";
     }
   }
+#endif
 
 #if ENABLE_TIMINGS
   auto tic = timer::now();
@@ -1139,12 +1142,13 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
     }
   }
 
+#ifdef ENABLE_DEBUG
   if (rank == 0) {
     std::cout << "***Registered fieldnames:\n";
     for (auto & field_name: sourceStateWrapper.names()) 
       std::cout << " registered fieldname: " << field_name << std::endl;
   }
-
+#endif
   std::vector<std::string> fieldnames;
   fieldnames.push_back("cellmatdata");
   
@@ -1313,7 +1317,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
     }
   }
 
-#if !ENABLE_TIMINGS
+#if ENABLE_DEBUG
   // Output some information for the user
   for (int m = 0; m < nglobal_mats; m++) {
     std::vector<int> matcells;
@@ -1329,7 +1333,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
     targetStateWrapper.mat_get_celldata("cellmatdata", m, &cellmatdata);
 
     int nmatcells = matcells.size();
-    
+
     std::cout << "\n----target owned cell global id's on rank " << rank << " for material " << m << ": ";
     for (int ic = 0; ic < nmatcells; ic++) std::cout <<
       targetMeshWrapper.get_global_id(owned2all[matcells[ic]], Wonton::Entity_kind::CELL) << " ";
@@ -1346,8 +1350,10 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
     std::cout << "----cellmatdata on rank " << rank << " for material " << m << ": ";
     for (int ic = 0; ic < nmatcells; ic++) std::cout << cellmatdata[ic] << " ";
     std::cout << std::endl << std::endl; 
+
   }
-#else
+#endif
+#if ENABLE_TIMINGS
   profiler->time.remap += timer::elapsed(tic);
 
   if (rank == 0) {
@@ -1533,7 +1539,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
     write_field(field_filename_, targetMeshWrapper, targetStateWrapper);
   } 
 
-#ifdef DEBUG_PRINT
+#ifdef ENABLE_DEBUG
   // debug diagnostics   
   std::cout << "\n----source owned cell global id's on rank " << rank << ":\n";
   for (int ic = 0; ic < sourceMeshWrapper.num_owned_cells(); ic++) {
