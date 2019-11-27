@@ -159,7 +159,7 @@ class Interpolate_1stOrder {
    *
    * @return the interpolation order.
    */
-  int get_order() const { return 1; }
+  constexpr int get_order() const { return 1; }
 
   /// Set the variable name to be interpolated.
 
@@ -316,7 +316,7 @@ class Interpolate_1stOrder<
    *
    * @return the interpolation order.
    */
-  int get_order() const { return 1; }
+  constexpr int get_order() const { return 1; }
 
   /// Set the variable name to be interpolated
 
@@ -514,7 +514,7 @@ class Interpolate_1stOrder<
    *
    * @return the interpolation order.
    */
-  int get_order() const { return 1; }
+  constexpr int get_order() const { return 1; }
 
   /// Set the variable name to be interpolated
 

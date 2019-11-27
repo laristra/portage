@@ -119,7 +119,7 @@ class Interpolate_3rdOrder {
    *
    * @return the interpolation order.
    */
-  int get_order() const { return 3; }
+  constexpr int get_order() const { return 3; }
 
   /*!
     @brief Functor to do the actual interpolate calculation
@@ -241,7 +241,7 @@ class Interpolate_3rdOrder<
    *
    * @return the interpolation order.
    */
-  int get_order() const { return 3; }
+  constexpr int get_order() const { return 3; }
 
   /// Copy constructor (disabled)
   //  Interpolate_3rdOrder(const Interpolate_3rdOrder &) = delete;
@@ -435,7 +435,7 @@ class Interpolate_3rdOrder<
    *
    * @return the interpolation order.
    */
-  int get_order() const { return 3; }
+  constexpr int get_order() const { return 3; }
 
   /*!
     @brief Functor to do the 3rd order interpolation of node values
