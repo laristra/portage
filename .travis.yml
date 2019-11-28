@@ -5,8 +5,7 @@ sudo: required
 services:
 - docker
 
-python:
-  - "3.6"
+dist: xenial
 
 env:
   global:
@@ -38,7 +37,13 @@ after_success:
   - if [[ ${DOCS} || -n ${TRAVIS_TAG} ]]; then
       cd ${HOME}/docker/portage;
       CON=$(docker run -d ${TRAVIS_REPO_SLUG}:latest) && docker cp ${CON}:/home/portage/portage/build/doc . ;
-      pyenv local 3.6;
-      pip install doctr;
-      doctr deploy . --built-docs doc/doxygen/html;
     fi
+    
+deploy:
+  provider: pages
+  edge: true # opt into version 2 of the dpl
+  github_token: $DOCTR_DEPLOY_ENCRYPTION_KEY_LARISTRA_PORTAGE
+  local_dir: doc/doxygen/html
+  verbose: true
+  on:
+    condition: ${DOCS} && -d doc/doxygen/html
