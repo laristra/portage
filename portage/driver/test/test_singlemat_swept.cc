@@ -129,12 +129,6 @@ TEST(SweptFaceRemap, 2D_2ndOrder) {
                                                                 srcwts,
                                                                 dblmin, dblmax);
 
-  sourceState->export_to_mesh();
-  sourceMesh->write_to_exodus_file("source.exo");
-  targetState->export_to_mesh();
-  targetMesh->write_to_exodus_file("target.exo");
-
-
   //-------------------------------------------------------------------
   // CHECK REMAPPING RESULTS ON TARGET MESH SIDE
   //-------------------------------------------------------------------
