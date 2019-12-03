@@ -159,6 +159,12 @@ namespace Portage {
       std::cerr << std::endl;
     }
 
+    /**
+     * @brief Get the interpolation order.
+     *
+     * @return the interpolation order.
+     */
+    int get_order() const { return 2; }
 
     /**
      * @brief Functor to do the actual interpolate calculation.
@@ -343,6 +349,13 @@ namespace Portage {
         source_state_.mat_get_celldata(variable_name, material_id_, &source_values_);
       }
     }
+
+    /**
+     * @brief Get the interpolation order.
+     *
+     * @return the interpolation order.
+     */
+    int get_order() const { return 2; }
 
     /**
      * @brief Functor to compute the interpolation of cell values.
@@ -629,6 +642,13 @@ namespace Portage {
         return;
       }
     }
+
+    /**
+     * @brief Get the interpolation order.
+     *
+     * @return the interpolation order.
+     */
+    int get_order() const { return 2; }
 
     /**
      * @brief Functor to compute the interpolation of node values.
