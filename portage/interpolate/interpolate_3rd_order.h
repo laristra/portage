@@ -84,7 +84,7 @@ class Interpolate_3rdOrder {
   void set_interpolation_variable(std::string const & interp_var_name,
                                   Limiter_type limiter_type = NOLIMITER,
                                   Boundary_Limiter_type boundary_limiter_type = BND_NOLIMITER,
-                                  const Portage::vector<Vector<D>>* gradients = nullptr) {
+                                  Portage::vector<Vector<D>>* gradients = nullptr) {
     interp_var_name_ = interp_var_name;
 
     // Extract the field data from the statemanager
@@ -207,7 +207,7 @@ class Interpolate_3rdOrder<
   void set_interpolation_variable(std::string const & interp_var_name,
                                   Limiter_type limiter_type = NOLIMITER,
                                   Boundary_Limiter_type boundary_limiter_type = BND_NOLIMITER,
-                                  const Portage::vector<Vector<D>>* gradients = nullptr) {
+                                  Portage::vector<Vector<D>>* gradients = nullptr) {
 
     interp_var_name_ = interp_var_name;
 
@@ -401,7 +401,7 @@ class Interpolate_3rdOrder<
   void set_interpolation_variable(std::string const & interp_var_name,
                                   Limiter_type limiter_type = NOLIMITER,
                                   Boundary_Limiter_type boundary_limiter_type = BND_NOLIMITER,
-                                  const Portage::vector<Vector<D>>* gradients = nullptr) {
+                                  Portage::vector<Vector<D>>* gradients = nullptr) {
 
     interp_var_name_ = interp_var_name;
 

@@ -626,7 +626,7 @@ namespace Portage {
     void set_interpolation_variable(std::string const variable_name,
                                     Limiter_type limiter_type = NOLIMITER,
                                     Boundary_Limiter_type boundary_limiter_type = BND_NOLIMITER,
-                                    const Portage::vector<Vector<D>>* gradient_field = nullptr) {
+                                    Portage::vector<Vector<D>>* gradient_field = nullptr) {
 
       variable_name_ = variable_name;
       gradients_ = gradient_field;
@@ -731,7 +731,7 @@ namespace Portage {
     double const* source_values_;
     NumericTolerances_t num_tols_;
     int material_id_ = 0;
-    Portage::vector<Vector<D>> const* gradients_;
+    Portage::vector<Vector<D>>* gradients_ = nullptr;
     Field_type field_type_ = Field_type::UNKNOWN_TYPE_FIELD;
 #ifdef HAVE_TANGRAM
     std::shared_ptr<InterfaceReconstructor> interface_reconstructor_;

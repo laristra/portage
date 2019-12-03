@@ -245,7 +245,7 @@ class CoreDriverBase {
                             int max_fixup_iter,
                             const PartPair<D, SourceMesh, SourceState,
                                               TargetMesh, TargetState>* parts_pair = nullptr,
-                            const Portage::vector<Vector<D>>* gradients = nullptr) {
+                            Portage::vector<Vector<D>>* gradients = nullptr) {
     assert(ONWHAT == onwhat());
     auto derived_class_ptr = static_cast<CoreDriverType<ONWHAT> *>(this);
     derived_class_ptr->
@@ -914,7 +914,7 @@ class CoreDriver : public CoreDriverBase<D,
                             int max_fixup_iter = DEFAULT_MAX_FIXUP_ITER,
                             const PartPair<D, SourceMesh, SourceState,
                                               TargetMesh, TargetState>* partition = nullptr,
-                            const Portage::vector<Vector<D>>* gradients = nullptr) {
+                            Portage::vector<Vector<D>>* gradients = nullptr) {
 
     if (source_state_.get_entity(srcvarname) != ONWHAT) {
       std::cerr << "Variable " << srcvarname << " not defined on Entity_kind "
@@ -1083,7 +1083,7 @@ class CoreDriver : public CoreDriverBase<D,
                            Empty_fixup_type empty_fixup_type = DEFAULT_EMPTY_FIXUP_TYPE,
                            double conservation_tol = DEFAULT_CONSERVATION_TOL,
                            int max_fixup_iter = DEFAULT_MAX_FIXUP_ITER,
-                           const Portage::vector<Vector<D>>* gradients = nullptr) {
+                           Portage::vector<Vector<D>>* gradients = nullptr) {
     
     Interpolate<D, ONWHAT, SourceMesh, TargetMesh, SourceState, TargetState,
                 InterfaceReconstructorType, Matpoly_Splitter, Matpoly_Clipper, CoordSys>
