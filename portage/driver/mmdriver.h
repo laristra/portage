@@ -1199,14 +1199,21 @@ int MMDriver<Search, Intersect, Interpolate, D,
       // if the material has no cells on this partition, then don't bother
       // interpolating MM variables
       for (int i = 0; i < nmatvars; ++i) {
-        // compute the gradient field for this material
+        std::cout << "\tcomputing gradient field for material "<< m << std::endl;
+        std::cout << "\t- variable name: " << src_matvar_names[i] << std::endl;
+        std::cout << "\t- limiter: " << Portage::to_string(limiters_.at(src_matvar_names[i])) << std::endl;
+        std::cout << "\t- boundary limiter: " << Portage::to_string(bnd_limiters_.at(src_matvar_names[i])) << std::endl;
+        // compute the gradient field for this material.
         // nb: here we don't bother to check the interpolation order
         // since the driver itself is deprecated and will be removed.
-        auto gradients = compute_gradient_field<onwhat>(src_meshvar_names[i],
+        // hence the gradient field is always computed regardless of the order.
+        auto gradients = compute_gradient_field<onwhat>(src_matvar_names[i],
                                                 source_mesh2, source_state2,
-                                                limiters_.at(src_meshvar_names[i]),
-                                                bnd_limiters_.at(src_meshvar_names[i]),
-                                                m, executor);
+                                                limiters_.at(src_matvar_names[i]),
+                                                bnd_limiters_.at(src_matvar_names[i]),
+                                                m, interface_reconstructor, executor);
+
+        std::cout << "\tgradient field computed" << std::endl;
 
         interpolate.set_interpolation_variable(src_matvar_names[i],
                                                limiters_.at(src_matvar_names[i]),
