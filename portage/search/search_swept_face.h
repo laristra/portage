@@ -122,7 +122,7 @@ public:
   }  // SearchSweptFace::SearchSweptFace
 
   //! Copy constructor (disabled)
-  SearchSweptFace(const SearchSweptFace&) = delete;
+  //SearchSweptFace(const SearchSweptFace&) = delete;
 
   //! Assignment operator (disabled)
   SearchSweptFace & operator = (const SearchSweptFace &) = delete;
@@ -189,7 +189,7 @@ public:
   }  // SearchSweptFace::SearchSweptFace
 
   //! Copy constructor (disabled)
-  SearchSweptFace(const SearchSweptFace&) = delete;
+  //SearchSweptFace(const SearchSweptFace&) = delete;
 
   //! Assignment operator (disabled)
   SearchSweptFace & operator = (const SearchSweptFace &) = delete;

@@ -28,7 +28,9 @@
 #include "portage/support/portage.h"
 
 #include "portage/search/search_kdtree.h"
+#include "portage/search/search_swept_face.h"
 #include "portage/intersect/intersect_rNd.h"
+#include "portage/intersect/intersect_swept_face.h"
 #include "portage/interpolate/interpolate_nth_order.h"
 #include "wonton/mesh/flat/flat_mesh_wrapper.h"
 #include "wonton/state/flat/flat_state_mm_wrapper.h"

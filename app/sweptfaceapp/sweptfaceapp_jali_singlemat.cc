@@ -33,14 +33,22 @@
 #include "JaliStateVector.h"
 #include "JaliState.h"
 
-#include "portage/support/portage.h"
-#include "portage/support/mpi_collate.h"
-#include "portage/driver/uberdriver.h"
-#include "portage/support/timer.h"
+// Wonton 
 #include "wonton/mesh/jali/jali_mesh_wrapper.h"
 #include "wonton/state/jali/jali_state_wrapper.h"
 
+// Portage 
+#include "portage/driver/uberdriver.h"
 #include "portage/driver/write_to_gmv.h"
+#include "portage/interpolate/interpolate_1st_order.h"
+#include "portage/interpolate/interpolate_2nd_order.h"
+//#include "portage/intersect/intersect_swept_face.h"
+//#include "portage/intersect/intersect_r2d.h"
+//#include "portage/search/search_swept_face.h"
+//#include "portage/search/search_kdtree.h"
+#include "portage/support/portage.h"
+#include "portage/support/timer.h"
+#include "portage/support/mpi_collate.h"
 
 #if ENABLE_TIMINGS
   #include "portage/support/timer.h"
@@ -57,17 +65,10 @@ using Wonton::Jali_Mesh_Wrapper;
 /*! 
   @file sweptfaceapp_jali.cc 
 
-  @brief A simple application that remaps single material fields
-  between two meshes - the meshes can be internally generated
-  rectangular meshes or externally read unstructured meshes
-
-  This program is used to showcase our capabilities with various types
-  of remap operations (e.g. interpolation order) on various types of
-  meshes (2d or 3d; node-centered or zone-centered) with multiple
-  materials. The material data is runtime generated (RGMD stands for
-  runtime generated material data) based on the chosen problem, which
-  defines the material distribution in the computational domain.
-
+  @brief A simple application that remaps using a swept face algorithm
+  for single material field between two meshes - the meshes can be 
+  internally generated rectangular meshes or externally read unstructured 
+  meshes.
 */
 
 //////////////////////////////////////////////////////////////////////
@@ -115,7 +116,7 @@ int print_usage() {
       "coordinates (same in x, y, and z) of the upper corner of a mesh\n" <<
       "ONLY APPLICABLE FOR INTERNALLY GENERATED MESHES\n\n";
 
-  std::cout << "--field (NO DEFAULT): A quoted math expressions \n" <<
+  std::cout << "--field-expression (NO DEFAULT): A quoted math expressions \n" <<
       " expressed in terms of \n" << "x, y and z following the syntax of " <<
       " the expression parser package ExprTk \n" <<
       "(http://www.partow.net/programming/exprtk/)\n";
@@ -169,7 +170,8 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
                            int interp_order,
                            std::string field_expression,
                            std::string field_filename,
-                           bool mesh_output, int rank, int numpe,
+                           bool mesh_output, int rank, int numpe, 
+			   Jali::Entity_kind entityKind,
                            double& L1_error, double& L2_error,
                            std::shared_ptr<Profiler> profiler = nullptr);
 
@@ -197,7 +199,7 @@ int main(int argc, char** argv) {
   }
 
   int nsourcecells = 0, ntargetcells = 0;  // No default
-  int dim = 2;
+  int dim = 2; //dim 3 is not currently supported 
   bool source_convex_cells = true, target_convex_cells = true;
   std::string field_expression;
   std::string srcfile, trgfile;  // No default
@@ -208,6 +210,8 @@ int main(int argc, char** argv) {
   // user to output in serial
   bool mesh_output = false;
   int n_converge = 1;
+  //Node-based remap not supported for swept-face algorithm
+  Jali::Entity_kind entityKind = Jali::Entity_kind::CELL; 
   Portage::Limiter_type limiter = Portage::Limiter_type::NOLIMITER;
   Portage::Boundary_Limiter_type bnd_limiter = Portage::Boundary_Limiter_type::BND_NOLIMITER;
   double srclo = 0.0, srchi = 1.0;  // bounds of generated mesh in each dir
@@ -322,7 +326,7 @@ int main(int argc, char** argv) {
     n_converge = 1;
   }
   if (nsourcecells > 0)
-    if (material_field_expressions.size() == 0) {
+    if (field_expression.size() == 0) {
       std::cout << "No field imposed on internally generated source mesh\n";
       std::cout << "Nothing to remap. Exiting...";
       print_usage();
@@ -336,14 +340,7 @@ int main(int argc, char** argv) {
   profiler->params.nsource = std::pow(nsourcecells, dim);
   profiler->params.ntarget = std::pow(ntargetcells, dim);
   profiler->params.order   = interp_order;
-  profiler->params.nmats   = material_field_expressions.size();
-  switch(problem) {
-    case RGMDApp::Problem_type::SRCPURECELLS: profiler->params.output  = "srcpurecells_"; break;
-    case RGMDApp::Problem_type::TJUNCTION: profiler->params.output  = "t-junction_"; break;
-    case RGMDApp::Problem_type::BALL: profiler->params.output  = "ball_"; break;
-    case RGMDApp::Problem_type::ROTOR: profiler->params.output  = "rotor_"; break;
-    default: std::cerr << "Unknown problem type!\n"; MPI_Abort(MPI_COMM_WORLD, -1);
-  }
+  profiler->params.nmats   = 1;
   profiler->params.output += scaling_type + "_scaling_" +
                              std::string(only_threads ? "omp.dat": "mpi.dat");
   #if defined(_OPENMP)
@@ -421,17 +418,17 @@ int main(int argc, char** argv) {
     switch (dim) {
       case 2:
         run<2>(source_mesh, target_mesh, source_convex_cells, target_convex_cells,
-               limiter, bnd_limiter, interp_order,
+               limiter, bnd_limiter, interp_order, 
                field_expression,
                field_filename, mesh_output,
-               rank, numpe, l1_err[i], l2_err[i], profiler);
+               rank, numpe, entityKind, l1_err[i], l2_err[i], profiler);
         break;
       case 3:
-        run<3>(source_mesh, target_mesh, source_convex_cells, target_convex_cells,
-               limiter, bnd_limiter, interp_order,
-               field_expression,
-               field_filename, mesh_output,
-               rank, numpe, l1_err[i], l2_err[i], profiler);
+   //     run<3>(source_mesh, target_mesh, source_convex_cells, target_convex_cells,
+   //            limiter, bnd_limiter, interp_order,
+   //            field_expression,
+   //            field_filename, mesh_output,
+   //            rank, numpe, entityKind, l1_err[i], l2_err[i], profiler);
         break;
       default:
         std::cerr << "Dimension not 2 or 3" << std::endl;
@@ -519,11 +516,16 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
                            int interp_order,
                            std::string field_expression,
                            std::string field_filename, bool mesh_output,
-                           int rank, int numpe, 
+                           int rank, int numpe, Jali::Entity_kind entityKind, 
                            double& L1_error, double& L2_error,
                            std::shared_ptr<Profiler> profiler) {
   if (rank == 0)
     std::cout << "starting sweptfaceapp_jali...\n";
+
+  if (entityKind != Jali::Entity_kind::CELL) {
+     std::cerr << "Sweptfaceapp not supported for node based fields!\n";
+     MPI_Abort(MPI_COMM_WORLD, -1);   
+  }
 
   // Wrappers for interfacing with the underlying mesh data structures.
   Wonton::Jali_Mesh_Wrapper sourceMeshWrapper(*sourceMesh);
@@ -533,7 +535,6 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
     sourceMeshWrapper.num_ghost_cells();
   const int ntarcells = targetMeshWrapper.num_owned_cells() +
     targetMeshWrapper.num_ghost_cells();
-  const int ntar_owned_cells = targetMeshWrapper.num_owned_cells();
 
   // Native jali state managers for source and target
   std::shared_ptr<Jali::State> sourceState(Jali::State::create(sourceMesh));
@@ -547,7 +548,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
   if (rank == 0) {
     std::cout << "Source mesh has " << nsrccells << " cells\n";
     std::cout << "Target mesh has " << ntarcells << " cells\n";
-    std::cout << " Specified single material fields is ";
+    std::cout << " Specified single material field is ";
     std::cout << "    " << field_expression << ", ";
     std::cout << "\n";
     std::cout << "   Interpolation order is " << interp_order << "\n";
@@ -578,11 +579,6 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
                                                             targetMesh,
                                                 Jali::Entity_kind::CELL,
                                                 Jali::Entity_type::ALL, 0.0);
- else {
-    std::cerr << "Swept-face based remap not supported for node-based fields!" << std::endl;
-    MPI_Abort(MPI_COMM_WORLD, -1);
- }
-
 
 #if ENABLE_TIMINGS
   profiler->time.remap = timer::elapsed(tic, true);
@@ -592,34 +588,26 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
   Wonton::MPIExecutor_type mpiexecutor(MPI_COMM_WORLD);
   Wonton::Executor_type *executor = (numpe > 1) ? &mpiexecutor : nullptr;
 
-#if ENABLE_TIMINGS
-  profiler->time.interface = timer::elapsed(tic, true);
-#endif
-
   if (rank == 0) {
     std::cout << "***Registered fieldnames:\n";
     for (auto & field_name: sourceStateWrapper.names()) 
       std::cout << " registered fieldname: " << field_name << std::endl;
   }
 
+  std::vector<std::string> fieldnames;
+  fieldnames.push_back("density");
+ 
   if (numpe > 1) MPI_Barrier(MPI_COMM_WORLD);
 
-
-  if (mesh_output) {  
-    std::string filename = "source_" + std::to_string(rank) + ".gmv";
-    Portage::write_to_gmv<dim>(sourceMeshWrapper, sourceStateWrapper,
-                               fieldnames,
-                               filename);
-  }
-
-  Portage::UberDriver<dim, 
+  Portage::UberDriver<2, 
 	              Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
 	              Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper> 
    udriver(sourceMeshWrapper, sourceStateWrapper, 
-           targetMeshWrapper, targetStateWrapper); 
+           targetMeshWrapper, targetStateWrapper, executor); 
 
 
   udriver.compute_interpolation_weights<Portage::SearchSweptFace, Portage::IntersectSweptFace2D>();
+  //udriver.compute_interpolation_weights<Portage::SearchKDTree, Portage::IntersectR2D>();
 
   double dblmin = -std::numeric_limits<double>::max();
   double dblmax =  std::numeric_limits<double>::max();
@@ -663,17 +651,20 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
   }
 
 
-  if (mesh_output) {  
-    std::string filename = "target_" + std::to_string(rank) + ".gmv";
+  /*if (mesh_output) {  
+    std::string filename = "source_" + std::to_string(rank) + ".gmv";
+    Portage::write_to_gmv<dim>(sourceMeshWrapper, sourceStateWrapper,
+                               fieldnames,
+                               filename);
+
+    filename = "target_" + std::to_string(rank) + ".gmv";
     Portage::write_to_gmv<dim>(targetMeshWrapper, targetStateWrapper,
                                fieldnames,
                                filename);
-  }
+  }*/
 
   // Compute error
   L1_error = 0.0; L2_error = 0.0;
- 
- if (material_field_expressions.size()) {
 
   double error, toterr = 0.0;
   double const * cellvecout;
@@ -684,6 +675,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
   double err_norm = 0.;
   double target_mass = 0.;
   double source_mass = 0.;
+  double totvolume = 0. ;
 
   targetStateWrapper.mesh_get_data<double>(Portage::CELL, "density",
                                         &cellvecout);
@@ -719,8 +711,8 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
       if (!targetMeshWrapper.on_exterior_boundary(Portage::Entity_kind::CELL, c)) {
         double cellvol = targetMeshWrapper.cell_volume(c);
         totvolume += cellvol;
-        *L1_error += fabs(error)*cellvol;
-        *L2_error += error*error*cellvol;
+        L1_error += fabs(error)*cellvol;
+        L2_error += error*error*cellvol;
       }
       if (ntarcells < 10) {
         std::printf("Rank %d\n", rank);
@@ -736,17 +728,17 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
     MPI_Barrier(MPI_COMM_WORLD);
 
     double globalerr;
-    MPI_Reduce(L1_error, &globalerr, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-    *L1_error = globalerr;
+    MPI_Reduce(&L1_error, &globalerr, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+    L1_error = globalerr;
 
-    MPI_Reduce(L2_error, &globalerr, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-    *L2_error = globalerr;
+    MPI_Reduce(&L2_error, &globalerr, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+    L2_error = globalerr;
   }
   err_norm = err_l1 / err_norm;
-  *L2_error = sqrt(*L2_error);
+  L2_error = sqrt(L2_error);
   
-  std::printf("\n\nL1 NORM OF ERROR (excluding boundary) = %lf\n", *L1_error);
-  std::printf("L2 NORM OF ERROR (excluding boundary) = %lf\n\n", *L2_error);
+  std::printf("\n\nL1 NORM OF ERROR (excluding boundary) = %lf\n", L1_error);
+  std::printf("L2 NORM OF ERROR (excluding boundary) = %lf\n\n", L2_error);
   std::printf("===================================================\n");
   std::printf("ON RANK %d\n", rank);
   std::printf("Relative L1 error = %.5e \n", err_norm);

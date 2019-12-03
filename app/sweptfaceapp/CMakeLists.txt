@@ -12,20 +12,20 @@ if (ENABLE_MPI)
   option(FIXED_JALI2FLECSI "Is jali to flecsi fixed" OFF)
 
   if (Jali_DIR)
-    add_executable(sweptfaceapp_jali sweptfaceapp_jali.cc)
+    add_executable(sweptfaceapp_jali_singlemat sweptfaceapp_jali_singlemat.cc)
     include_directories(${Jali_INCLUDE_DIRS} ${Jali_TPL_INCLUDE_DIRS})
-    set_target_properties(sweptfaceapp_jali
+    set_target_properties(sweptfaceapp_jali_singlemat
             PROPERTIES
             LINK_FLAGS "${MPI_CXX_LINK_FLAGS}")
 
-    target_link_libraries(sweptfaceapp_jali portage ${EXTRA_LIBS})
-    target_link_libraries(sweptfaceapp_jali ${LAPACKX_LIBRARIES})
-    target_link_libraries(sweptfaceapp_jali ${MPI_CXX_LIBRARIES})
-    target_link_libraries(sweptfaceapp_jali ${Jali_LIBRARIES})
-    target_link_libraries(sweptfaceapp_jali ${Jali_TPL_LIBRARIES})
+    target_link_libraries(sweptfaceapp_jali_singlemat portage ${EXTRA_LIBS})
+    target_link_libraries(sweptfaceapp_jali_singlemat ${LAPACKX_LIBRARIES})
+    target_link_libraries(sweptfaceapp_jali_singlemat ${MPI_CXX_LIBRARIES})
+    target_link_libraries(sweptfaceapp_jali_singlemat ${Jali_LIBRARIES})
+    target_link_libraries(sweptfaceapp_jali_singlemat ${Jali_TPL_LIBRARIES})
 
     if (ENABLE_APP_TIMINGS)
-      target_compile_definitions(sweptfaceapp_jali PRIVATE ENABLE_TIMINGS=1)
+      target_compile_definitions(sweptfaceapp_jali_singlemat PRIVATE ENABLE_TIMINGS=1)
     endif()
 
   endif (Jali_DIR)
@@ -35,7 +35,7 @@ if (ENABLE_MPI)
     set(TCMALLOC_LIB "${HOME}" CACHE STRING "Set the TCMalloc library")
 
     if (Jali_DIR)
-      target_link_libraries(sweptfaceapp_jali ${TCMALLOC_LIB})
+      target_link_libraries(sweptfaceapp_jali_singlemat ${TCMALLOC_LIB})
     endif (Jali_DIR)
     
   endif(ENABLE_TCMALLOC)
@@ -48,12 +48,12 @@ if (ENABLE_MPI)
     include_directories(${VTUNE_INCLUDE_DIR})
 
     if (Jali_DIR)
-      target_link_libraries(sweptfaceapp_jali ${VTUNE_LIB})
+      target_link_libraries(sweptfaceapp_jali_singlemat ${VTUNE_LIB})
     endif (Jali_DIR)
   endif(ENABLE_PROFILE)
 
-  if (ENABLE_APP_TESTS)
-    add_subdirectory(test)
-  endif (ENABLE_APP_TESTS)
+#  if (ENABLE_APP_TESTS)
+#    add_subdirectory(test)
+#  endif (ENABLE_APP_TESTS)
 
 endif (ENABLE_MPI)
