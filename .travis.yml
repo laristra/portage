@@ -47,5 +47,5 @@ deploy:
   local_dir: doc/doxygen/html
   verbose: true
   on:
-    branch: master
-    condition:  -n ${TRAVIS_TAG} && ${DOCS} && -d doc/doxygen/html
+    tags: true  # only build on tagged versions
+    condition:  ${DOCS} && -d doc/doxygen/html
