@@ -105,12 +105,14 @@ template <template <int, Entity_kind, class, class> class Search,
           class Matpoly_Clipper = void>
 class MMDriver {
 
-  // Something like this would be very helpful to users
-  // static_assert(
-  //   D == Interpolate::D,
-  //   "The dimension of Driver and Interpolate do not match!"
-  // );
-
+#if HAVE_TANGRAM
+  // alias for interface reconstructor parameterized on the mesh type.
+  // it will be used for gradient field computation.
+  template<typename SourceMesh>
+  using InterfaceReconstructor = Tangram::Driver<InterfaceReconstructorType, D,
+                                                 SourceMesh, Matpoly_Splitter,
+                                                 Matpoly_Clipper>;
+#endif
 
  public:
   /*!
@@ -420,25 +422,68 @@ class MMDriver {
     Limiter_type limiter_type = NOLIMITER,
     Boundary_Limiter_type boundary_limiter_type = BND_NOLIMITER,
     int material_id = 0,
+#if HAVE_TANGRAM
+    std::shared_ptr<InterfaceReconstructor<NewSourceMesh>> interface_reconstructor = nullptr,
+#endif
     Wonton::Executor_type const *executor = nullptr
   ) const {
 
-    // just use the gradient computation method implemented in coredriver
-    // to avoid code duplication (recall that the driver itself is
-    // deprecated and will be removed.
-    using Remapper = Portage::CoreDriver<
-      D, onwhat, NewSourceMesh, NewSourceState,
-      TargetMesh_Wrapper, TargetState_Wrapper,
-      InterfaceReconstructorType,
-      Matpoly_Splitter, Matpoly_Clipper
-    >;
+    auto const field_type = new_source_state.field_type(onwhat, field_name);
 
-    Remapper remapper(new_source_mesh, new_source_state,
-                      target_mesh_, target_state_, executor);
+    // multi-material remap makes only sense on cell-centered fields.
+    bool const multimat =
+      onwhat == Entity_kind::CELL and
+      field_type == Field_type::MULTIMATERIAL_FIELD;
 
-    return remapper.compute_gradient_field(field_name, limiter_type,
-                                           boundary_limiter_type,
-                                           material_id);
+    int size = 0;
+    std::vector<int> mat_cells;
+    int nb_mats = new_source_state.num_materials();
+
+    std::cout << "material_id: " << material_id << ", num_materials: " << nb_mats << std::endl;
+
+    if (multimat) {
+      new_source_state.mat_get_cells(material_id, &mat_cells);
+      size = mat_cells.size();
+      std::cout << "\tyes: MULTIMAT, size: " << size << std::endl;
+    } else {
+      size = new_source_mesh.num_entities(onwhat);
+      std::cout << "\toh no: SINGLE-MAT, size: " << size << std::endl;
+    }
+
+    using Gradient = Limited_Gradient<D, onwhat,
+                                      NewSourceMesh, NewSourceState,
+                                      InterfaceReconstructorType,
+                                      Matpoly_Splitter, Matpoly_Clipper>;
+
+    // instantiate the right kernel according to entity kind (cell/node),
+    // as well as source and target meshes and states types.
+#if HAVE_TANGRAM
+    Gradient kernel(new_source_mesh, new_source_state, field_name,
+                    limiter_type, boundary_limiter_type,
+                    interface_reconstructor);
+#else
+    Gradient kernel(source_mesh_, source_state_, variable_name,
+                    limiter_type, boundary_limiter_type);
+#endif
+
+    // create the field
+    Portage::vector<Vector<D>> gradient_field(size);
+    std::cout << "\tgradient field size: " << gradient_field.size() << std::endl;
+
+
+    // populate it by invoking the kernel on each source entity.
+    if (multimat) {
+      kernel.set_material(material_id);
+      Portage::transform(mat_cells.begin(),
+                         mat_cells.end(),
+                         gradient_field.begin(), kernel);
+    } else {
+      Portage::transform(new_source_mesh.begin(onwhat),
+                         new_source_mesh.end(onwhat),
+                         gradient_field.begin(), kernel);
+    }
+
+    return gradient_field;
   }
 
   /*!
@@ -938,11 +983,12 @@ int MMDriver<Search, Intersect, Interpolate, D,
     // compute the gradient field for this variable.
     // nb: here we don't bother to check the interpolation order
     // since the driver itself is deprecated and will be removed.
+    // hence the gradient field is always computed regardless of the order.
     auto gradients = compute_gradient_field<onwhat>(src_meshvar_names[i],
                                             source_mesh2, source_state2,
                                             limiters_.at(src_meshvar_names[i]),
                                             bnd_limiters_.at(src_meshvar_names[i]),
-                                            0, executor);
+                                            0, interface_reconstructor, executor);
 
     interpolate.set_interpolation_variable(src_meshvar_names[i],
                                            limiters_.at(src_meshvar_names[i]),
