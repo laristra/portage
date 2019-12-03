@@ -189,6 +189,29 @@ class CoreDriverBase {
     return derived_class_ptr->template intersect_materials<Intersect>(intersection_candidates);
   }
 
+  /**
+   * @brief Compute the gradient field of the given variable on source mesh.
+   *
+   * @tparam ONWHAT: entity kind (cell or node).
+   * @param field_name: the variable name.
+   * @param limiter_type: gradient limiter to use on internal regions.
+   * @param boundary_limiter_type: gradient limiter to use on boundary.
+   * @param source_part: the source mesh part to consider if any.
+   */
+  template<Entity_kind ONWHAT>
+  Portage::vector<Vector<D>> compute_gradient_field(
+    std::string const field_name,
+    Limiter_type limiter_type = NOLIMITER,
+    Boundary_Limiter_type boundary_limiter_type = BND_NOLIMITER,
+    int material_id = 0,
+    const Part<SourceMesh, SourceState>* source_part = nullptr) {
+
+    assert(ONWHAT == onwhat());
+    auto derived_class_ptr = static_cast<CoreDriverType<ONWHAT> *>(this);
+    return derived_class_ptr->compute_gradient_field(field_name, limiter_type,
+                                                     boundary_limiter_type,
+                                                     material_id, source_part);
+  }
 
   /*!
     Interpolate a mesh variable of type T residing on entity kind ONWHAT using
@@ -305,7 +328,8 @@ class CoreDriverBase {
                            Partial_fixup_type partial_fixup_type,
                            Empty_fixup_type empty_fixup_type,
                            double conservation_tol,
-                           int max_fixup_iter) {
+                           int max_fixup_iter,
+                           Portage::vector<Vector<D>>* gradients = nullptr) {
 
     assert(onwhat() == CELL);
     auto derived_class_ptr = static_cast<CoreDriverType<CELL> *>(this);
@@ -318,7 +342,7 @@ class CoreDriverBase {
                                                       partial_fixup_type,
                                                       empty_fixup_type,
                                                       conservation_tol,
-                                                      max_fixup_iter);
+                                                      max_fixup_iter, gradients);
   }
 
   /*!
@@ -790,9 +814,7 @@ class CoreDriver : public CoreDriverBase<D,
     std::string const field_name,
     Limiter_type limiter_type = NOLIMITER,
     Boundary_Limiter_type boundary_limiter_type = BND_NOLIMITER,
-#if HAVE_TANGRAM
     int material_id = 0,
-#endif
     const Part<SourceMesh, SourceState>* source_part = nullptr) const {
 
     // enable part-by-part only for cell-based remap
@@ -1100,7 +1122,7 @@ class CoreDriver : public CoreDriverBase<D,
 
       // FEATURE ;-)  Have to set interpolation variable AFTER setting 
       // the material for multimaterial variables
-      interpolator.set_interpolation_variable(srcvarname, limiter, bnd_limiter, gradients);
+      interpolator.set_interpolation_variable(srcvarname, limiter, bnd_limiter, &gradients[m]);
 
       // if the material has no cells on this partition, then don't bother
       // interpolating MM variables
@@ -1310,8 +1332,7 @@ make_core_driver(Entity_kind onwhat,
                                              executor)
                                                    );
     default:
-      std::cerr << "Remapping on " << Wonton::to_string(onwhat) <<
-          " not implemented\n";
+      throw std::runtime_error("Remapping on "+Wonton::to_string(onwhat)+" not implemented");
   }
 }  // make_core_driver
 
