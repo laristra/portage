@@ -422,11 +422,18 @@ class MMDriver {
     Limiter_type limiter_type = NOLIMITER,
     Boundary_Limiter_type boundary_limiter_type = BND_NOLIMITER,
     int material_id = 0,
+    int order = 1,
 #if HAVE_TANGRAM
     std::shared_ptr<InterfaceReconstructor<NewSourceMesh>> interface_reconstructor = nullptr,
 #endif
     Wonton::Executor_type const *executor = nullptr
   ) const {
+
+    // create an empty vector field
+    Portage::vector<Vector<D>> gradient_field;
+
+    if (order != 2)
+      return gradient_field;
 
     auto const field_type = new_source_state.field_type(onwhat, field_name);
 
@@ -437,17 +444,15 @@ class MMDriver {
 
     int size = 0;
     std::vector<int> mat_cells;
-    int nb_mats = new_source_state.num_materials();
-
-    std::cout << "material_id: " << material_id << ", num_materials: " << nb_mats << std::endl;
 
     if (multimat) {
-      new_source_state.mat_get_cells(material_id, &mat_cells);
-      size = mat_cells.size();
-      std::cout << "\tyes: MULTIMAT, size: " << size << std::endl;
+      if (interface_reconstructor) {
+        new_source_state.mat_get_cells(material_id, &mat_cells);
+        size = mat_cells.size();
+      } else
+        throw std::runtime_error("interface reconstructor not set");
     } else {
       size = new_source_mesh.num_entities(onwhat);
-      std::cout << "\toh no: SINGLE-MAT, size: " << size << std::endl;
     }
 
     using Gradient = Limited_Gradient<D, onwhat,
@@ -466,10 +471,8 @@ class MMDriver {
                     limiter_type, boundary_limiter_type);
 #endif
 
-    // create the field
-    Portage::vector<Vector<D>> gradient_field(size);
-    std::cout << "\tgradient field size: " << gradient_field.size() << std::endl;
-
+    // resize the field
+    gradient_field.resize(size);
 
     // populate it by invoking the kernel on each source entity.
     if (multimat) {
@@ -979,16 +982,17 @@ int MMDriver<Search, Intersect, Interpolate, D,
     std::cout << "Number of mesh variables on entity kind " << onwhat <<
         " to remap is " << nvars << std::endl;
 
+  int const order = interpolate.get_order();
+
   for (int i = 0; i < nvars; ++i) {
     // compute the gradient field for this variable.
-    // nb: here we don't bother to check the interpolation order
-    // since the driver itself is deprecated and will be removed.
-    // hence the gradient field is always computed regardless of the order.
+// note: it only be computed for second-order remap.
     auto gradients = compute_gradient_field<onwhat>(src_meshvar_names[i],
-                                            source_mesh2, source_state2,
-                                            limiters_.at(src_meshvar_names[i]),
-                                            bnd_limiters_.at(src_meshvar_names[i]),
-                                            0, interface_reconstructor, executor);
+                                                    source_mesh2, source_state2,
+                                                    limiters_.at(src_meshvar_names[i]),
+                                                    bnd_limiters_.at(src_meshvar_names[i]),
+                                                    0, order, interface_reconstructor,
+                                                    executor);
 
     interpolate.set_interpolation_variable(src_meshvar_names[i],
                                            limiters_.at(src_meshvar_names[i]),
@@ -1245,21 +1249,14 @@ int MMDriver<Search, Intersect, Interpolate, D,
       // if the material has no cells on this partition, then don't bother
       // interpolating MM variables
       for (int i = 0; i < nmatvars; ++i) {
-        std::cout << "\tcomputing gradient field for material "<< m << std::endl;
-        std::cout << "\t- variable name: " << src_matvar_names[i] << std::endl;
-        std::cout << "\t- limiter: " << Portage::to_string(limiters_.at(src_matvar_names[i])) << std::endl;
-        std::cout << "\t- boundary limiter: " << Portage::to_string(bnd_limiters_.at(src_matvar_names[i])) << std::endl;
         // compute the gradient field for this material.
-        // nb: here we don't bother to check the interpolation order
-        // since the driver itself is deprecated and will be removed.
-        // hence the gradient field is always computed regardless of the order.
+        // note: it only be computed for second-order remap.
         auto gradients = compute_gradient_field<onwhat>(src_matvar_names[i],
-                                                source_mesh2, source_state2,
-                                                limiters_.at(src_matvar_names[i]),
-                                                bnd_limiters_.at(src_matvar_names[i]),
-                                                m, interface_reconstructor, executor);
-
-        std::cout << "\tgradient field computed" << std::endl;
+                                                        source_mesh2, source_state2,
+                                                        limiters_.at(src_matvar_names[i]),
+                                                        bnd_limiters_.at(src_matvar_names[i]),
+                                                        m, order, interface_reconstructor,
+                                                        executor);
 
         interpolate.set_interpolation_variable(src_matvar_names[i],
                                                limiters_.at(src_matvar_names[i]),
