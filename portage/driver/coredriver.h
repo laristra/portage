@@ -796,32 +796,36 @@ class CoreDriver : public CoreDriverBase<D,
     const Part<SourceMesh, SourceState>* source_part = nullptr) const {
 
     // enable part-by-part only for cell-based remap
-    auto const part = (ONWHAT == Entity_kind::CELL ? source_part : nullptr);
     auto const field_type = source_state_.field_type(ONWHAT, field_name);
 
     // multi-material remap makes only sense on cell-centered fields.
     bool const multimat =
-      ONWHAT == Entity_kind::CELL and field_type == Field_type::MULTIMATERIAL_FIELD;
+      ONWHAT == Entity_kind::CELL and
+      field_type == Field_type::MULTIMATERIAL_FIELD;
 
     int size = 0;
     std::vector<int> mat_cells;
 
     if (multimat) {
-      source_state_.mat_get_cells(material_id, &mat_cells);
-      size = mat_cells.size();
-    } else {
+      if (interface_reconstructor_) {
+        source_state_.mat_get_cells(material_id, &mat_cells);
+        size = mat_cells.size();
+      }
+      else
+        throw std::runtime_error("interface reconstructor not set");
+    } else /* single material */ {
       size = source_mesh_.num_entities(ONWHAT);
     }
 
     // instantiate the right kernel according to entity kind (cell/node),
     // as well as source and target meshes and states types.
 #if HAVE_TANGRAM
-    Gradient gradient_kernel(source_mesh_, source_state_, field_name,
-                             limiter_type, boundary_limiter_type,
-                             interface_reconstructor_, part);
+    Gradient kernel(source_mesh_, source_state_, field_name,
+                    limiter_type, boundary_limiter_type,
+                    interface_reconstructor_, source_part);
 #else
-    Gradient gradient_kernel(source_mesh_, source_state_, variable_name,
-                             limiter_type, boundary_limiter_type, part);
+    Gradient kernel(source_mesh_, source_state_, variable_name,
+                    limiter_type, boundary_limiter_type, source_part);
 #endif
 
     // create the field
@@ -829,11 +833,14 @@ class CoreDriver : public CoreDriverBase<D,
 
     // populate it by invoking the kernel on each source entity.
     if (multimat) {
-      Portage::transform(mat_cells.begin(), mat_cells.end(),
-                         gradient_field.begin(), gradient_kernel);
+      kernel.set_material(material_id);
+      Portage::transform(mat_cells.begin(),
+                         mat_cells.end(),
+                         gradient_field.begin(), kernel);
     } else {
-      Portage::transform(source_mesh_.begin(ONWHAT), source_mesh_.end(ONWHAT),
-                         gradient_field.begin(), gradient_kernel);
+      Portage::transform(source_mesh_.begin(ONWHAT),
+                         source_mesh_.end(ONWHAT),
+                         gradient_field.begin(), kernel);
     }
 
     return gradient_field;
