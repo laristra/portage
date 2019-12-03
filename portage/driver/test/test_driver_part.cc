@@ -42,11 +42,8 @@ protected:
     Wonton::Jali_State_Wrapper
   >;
 
-  using PartPair = Portage::PartPair<
-    2, Wonton::Entity_kind::CELL,
-    Wonton::Jali_Mesh_Wrapper,
-    Wonton::Jali_State_Wrapper
-  >;
+  using PartPair = Portage::PartPair<2, Wonton::Jali_Mesh_Wrapper,
+                                        Wonton::Jali_State_Wrapper>;
 
   /**
    * @brief Create a partition based on a threshold value.
