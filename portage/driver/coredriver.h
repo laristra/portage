@@ -1111,18 +1111,20 @@ class CoreDriver : public CoreDriverBase<D,
                 InterfaceReconstructorType, Matpoly_Splitter, Matpoly_Clipper, CoordSys>
         interpolator(source_mesh_, target_mesh_, source_state_, num_tols_, interface_reconstructor_);
       
-    int nmats = source_state_.num_materials();
-
+    int const nmats = source_state_.num_materials();
+    int const order = interpolator.get_order();
+    bool const use_gradients = (gradients != nullptr and order == 2);
 
     for (int m = 0; m < nmats; m++) {
 
       interpolator.set_material(m);    // We have to do this so we know
-      //                                 // which material values we have
-      //                                 // to grab from the source state
+      //                               // which material values we have
+      //                               // to grab from the source state
 
+      auto mat_grad = (use_gradients ? &(gradients[m]) : nullptr);
       // FEATURE ;-)  Have to set interpolation variable AFTER setting 
       // the material for multimaterial variables
-      interpolator.set_interpolation_variable(srcvarname, limiter, bnd_limiter, &gradients[m]);
+      interpolator.set_interpolation_variable(srcvarname, limiter, bnd_limiter, mat_grad);
 
       // if the material has no cells on this partition, then don't bother
       // interpolating MM variables
