@@ -29,7 +29,7 @@ Please see the license file at the root of this repository, or at:
 double TOL = 1e-6;
 
 
-// Integrated tests for single material swept-face remap
+// Integrated test for single material swept-face remap
 
 TEST(SweptFaceRemap, 2D_2ndOrder) {
   // Source and target meshes
@@ -58,13 +58,16 @@ TEST(SweptFaceRemap, 2D_2ndOrder) {
   for (int i = 0; i < ntrgnodes; i++) {
     std::array<double, 2> pnt;
     targetMesh->node_get_coordinates(i, &pnt);
+
+    // Move only the internal nodes because we don't want to mess with
+    // boundary conditions
+    
     if (fabs(pnt[0]-minxyz) < 1.0e-16 || fabs(pnt[0]-maxxyz) < 1.0e-16 ||
         fabs(pnt[1]-minxyz) < 1.0e-16 || fabs(pnt[1]-maxxyz) < 1.0e-16)
       continue;  // boundary point - don't move
 
-    //    pnt[0] += 0.1*sin(2*M_PI*pnt[0]);
-    //    pnt[1] += 0.1*sin(2*M_PI*pnt[1]);
-    pnt[0] += 0.1;
+    pnt[0] += 0.1*sin(2*M_PI*pnt[0]);
+    pnt[1] += 0.1*sin(2*M_PI*pnt[1]);
     targetMesh->node_set_coordinates(i, pnt.data());
   }
 
@@ -75,7 +78,7 @@ TEST(SweptFaceRemap, 2D_2ndOrder) {
 
   // Create the Portage mesh/state wrappers - MUST BE AFTER WE SHIFT
   // THE NODES OTHERWISE THE CENTROIDS GIVEN BY THE WRAPPER FOR THE
-  // TARGET MESH WILL BE WRONG
+  // TARGET MESH WILL BE WRONG (BECAUSE THEY ARE CACHED AND NOT UPDATED)
 
   Wonton::Jali_Mesh_Wrapper sourceMeshWrapper(*sourceMesh);
   Wonton::Jali_Mesh_Wrapper targetMeshWrapper(*targetMesh);
@@ -91,11 +94,13 @@ TEST(SweptFaceRemap, 2D_2ndOrder) {
   int nsrccells = sourceMeshWrapper.num_entities(Wonton::Entity_kind::CELL,
                                                  Wonton::Entity_type::ALL);
 
+  double source_integral = 0.0;
   std::vector<double> srctemp(nsrccells);
   for (int c = 0; c < nsrccells; c++) {
     Wonton::Point<2> cen;
     sourceMeshWrapper.cell_centroid(c, &cen);
     srctemp[c] = cen[0] + 2*cen[1];
+    source_integral += srctemp[c]*sourceMeshWrapper.cell_volume(c);
   }
   
   sourceStateWrapper.mesh_add_data(Wonton::Entity_kind::CELL,
@@ -141,12 +146,16 @@ TEST(SweptFaceRemap, 2D_2ndOrder) {
 
   int ntrgcells = targetMeshWrapper.num_entities(Wonton::Entity_kind::CELL,
                                                  Wonton::Entity_type::ALL);
+  double target_integral = 0.0;
   for (int c = 0; c < ntrgcells; c++) {
     Wonton::Point<2> cen;
     targetMeshWrapper.cell_centroid(c, &cen);
     double trgtemp = cen[0] + 2*cen[1];
     ASSERT_NEAR(targettemp[c], trgtemp, 1.0e-12);
+    target_integral += targettemp[c]*targetMeshWrapper.cell_volume(c);
   }
+
+  ASSERT_NEAR(source_integral, target_integral, 1.0e-12);
 
 }  // CellDriver_2D_2ndOrder
 
