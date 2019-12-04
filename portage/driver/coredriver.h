@@ -224,7 +224,7 @@ class CoreDriverBase {
                             T lower_bound, T upper_bound,
                             Limiter_type limiter,
                             Boundary_Limiter_type bnd_limiter,
-                            PartPair<D, ONWHAT,
+                            PartPair<D, 
                               SourceMesh, SourceState,
                               TargetMesh, TargetState>* parts_pair = nullptr) {
     assert(ONWHAT == onwhat());
@@ -730,7 +730,7 @@ class CoreDriver : public CoreDriverBase<D,
                             T lower_bound, T upper_bound,
                             Limiter_type limiter = DEFAULT_LIMITER,
                             Boundary_Limiter_type bnd_limiter = DEFAULT_BND_LIMITER,
-                            const PartPair<D, ONWHAT,
+                            const PartPair<D, 
                                            SourceMesh, SourceState,
                                            TargetMesh, TargetState> *const partition = nullptr) {
 
