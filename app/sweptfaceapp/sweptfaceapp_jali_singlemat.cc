@@ -530,7 +530,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
                            double& L1_error, double& L2_error,
                            std::shared_ptr<Profiler> profiler) {
   if (rank == 0)
-    std::cout << "starting sweptfaceapp_jali...\n";
+    std::cout << "starting sweptfaceapp_jali_singlemat...\n";
 
   if (entityKind != Jali::Entity_kind::CELL) {
      std::cerr << "Sweptfaceapp not supported for node based fields!\n";
