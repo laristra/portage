@@ -35,17 +35,14 @@ namespace Portage {
 
 /*! @class Limited_Gradient gradient.h
     @brief Compute limited gradient of a field or components of a field
-    @tparam SourceMeshType A mesh class that one can query for mesh info
-    @tparam SourceStateType A state manager class that one can query for field info
+    @tparam Mesh A mesh class that one can query for mesh info
+    @tparam State A state manager class that one can query for field info
     @tparam on_what An enum type which indicates different entity types
 */
 
   template<
     int D, Entity_kind on_what,
-    typename SourceMeshType,
-    typename SourceStateType,
-    typename TargetMeshType = SourceMeshType,
-    typename TargetStateType = SourceStateType,
+    typename Mesh, typename State,
     template<class, int, class, class>
       class InterfaceReconstructorType = DummyInterfaceReconstructor,
     class Matpoly_Splitter = void,
@@ -55,16 +52,10 @@ namespace Portage {
   class Limited_Gradient {
 
     // useful aliases
-    using Parts = PartPair<
-      D, on_what,
-      SourceMeshType, SourceStateType,
-      TargetMeshType, TargetStateType
-    >;
-
 #ifdef HAVE_TANGRAM
     using InterfaceReconstructor =
       Tangram::Driver<
-        InterfaceReconstructorType, D, SourceMeshType,
+        InterfaceReconstructorType, D, Mesh,
         Matpoly_Splitter, Matpoly_Clipper
       >;
 #endif
@@ -82,33 +73,30 @@ namespace Portage {
 
         @todo must remove assumption that field is scalar
      */
-    Limited_Gradient(SourceMeshType const& mesh, SourceStateType const& state,
+    Limited_Gradient(Mesh const& mesh, State const& state,
                      std::string const var_name,
                      Limiter_type limiter_type,
-                     Boundary_Limiter_type boundary_limiter_type,
-                     const Parts* const parts = nullptr)
+                     Boundary_Limiter_type boundary_limiter_type)
       : mesh_(mesh),
         state_(state),
         values_(nullptr),
         variable_name_(var_name),
         limiter_type_(limiter_type),
-        boundary_limiter_type_(boundary_limiter_type),
-        parts_(parts) {}
+        boundary_limiter_type_(boundary_limiter_type) {}
 
 #ifdef HAVE_TANGRAM
-    Limited_Gradient(SourceMeshType const &mesh, SourceStateType const &state,
+    Limited_Gradient(Mesh const &mesh, State const &state,
                      std::string const var_name,
                      Limiter_type limiter_type,
                      Boundary_Limiter_type boundary_limiter_type,
                      std::shared_ptr<InterfaceReconstructor> ir,
-                     const Parts* const parts = nullptr)
+                     const Part<Mesh, State>* part = nullptr)
       : mesh_(mesh),
         state_(state),
         values_(nullptr),
         variable_name_(var_name),
         limiter_type_(limiter_type),
-        boundary_limiter_type_(boundary_limiter_type),
-        parts_(parts) {}
+        boundary_limiter_type_(boundary_limiter_type) {}
 #endif
 
     // Assignment operator (disabled)
@@ -125,74 +113,64 @@ namespace Portage {
     }
 
   private:
-    SourceMeshType const& mesh_;
-    SourceStateType const& state_;
+    Mesh const& mesh_;
+    State const& state_;
     double const* values_;
     std::string variable_name_ = "";
     Limiter_type limiter_type_ = DEFAULT_LIMITER;
     Boundary_Limiter_type boundary_limiter_type_ = DEFAULT_BND_LIMITER;
     Field_type field_type_ = Field_type::UNKNOWN_TYPE_FIELD;
     int material_id_ = 0;
-    Parts const* parts_;
   };
 
   //////////////////////////////////////////////////////////////////////////////
 
   /*! @class Limited_Gradient<MeshType,StateType,CELL> gradient.h
     @brief Specialization of limited gradient class for @c cell-centered field
-    @tparam SourceMeshType A mesh class that one can query for mesh info
-    @tparam SourceStateType A state manager class that one can query for field info
+    @tparam Mesh A mesh class that one can query for mesh info
+    @tparam State A state manager class that one can query for field info
   */
 
 
   template<
     int D,
-    typename SourceMeshType,
-    typename SourceStateType,
-    typename TargetMeshType,
-    typename TargetStateType,
+    typename Mesh,
+    typename State,
     template<class, int, class, class>
       class InterfaceReconstructorType,
     class Matpoly_Splitter, class Matpoly_Clipper, class CoordSys
   >
   class Limited_Gradient<
     D, Entity_kind::CELL,
-    SourceMeshType, SourceStateType,
-    TargetMeshType, TargetStateType,
+    Mesh, State,
     InterfaceReconstructorType,
     Matpoly_Splitter, Matpoly_Clipper, CoordSys
   > {
 
     // useful aliases
-    using Parts = PartPair<
-      D, Entity_kind::CELL,
-      SourceMeshType, SourceStateType,
-      TargetMeshType, TargetStateType
-    >;
-
 #ifdef HAVE_TANGRAM
     using InterfaceReconstructor =
       Tangram::Driver<
-        InterfaceReconstructorType, D, SourceMeshType,
+        InterfaceReconstructorType, D, Mesh,
         Matpoly_Splitter, Matpoly_Clipper
       >;
 #endif
 
   public:
     //Constructor for single material remap
-    Limited_Gradient(SourceMeshType const& mesh,
-                     SourceStateType const& state,
+    Limited_Gradient(Mesh const& mesh,
+                     State const& state,
                      std::string const var_name,
                      Limiter_type limiter_type,
                      Boundary_Limiter_type boundary_limiter_type,
-                     const Parts* const parts = nullptr)
+                     const Part<Mesh, State>* part = nullptr)
       : mesh_(mesh),
         state_(state),
         values_(nullptr),
         variable_name_(var_name),
         limiter_type_(limiter_type),
         boundary_limiter_type_(boundary_limiter_type),
-        parts_(parts) {
+        part_(part) {
 
       // Collect and keep the list of neighbors for each CELL as it may
       // be expensive to go to the mesh layer and collect this data for
@@ -200,7 +178,7 @@ namespace Portage {
       int const nb_cells = mesh_.num_entities(Entity_kind::CELL);
       cell_neighbors_.resize(nb_cells);
 
-      if (parts_ == nullptr) /* entire mesh */ {
+      if (part_ == nullptr) /* entire mesh */ {
         auto collect_neighbors = [this](int c) {
           mesh_.cell_get_node_adj_cells(c, Entity_type::ALL, &(cell_neighbors_[c]));
         };
@@ -209,10 +187,10 @@ namespace Portage {
                           mesh_.end(Entity_kind::CELL), collect_neighbors);
       } else /* only on source part */ {
         auto filter_neighbors = [this](int c) {
-          cell_neighbors_[c] = parts_->get_source_filtered_neighbors(c);
+          cell_neighbors_[c] = part_->get_neighbors(c);
         };
 
-        auto const& part_cells = parts_->get_source_entities();
+        auto const& part_cells = part_->cells();
         Portage::for_each(part_cells.begin(), part_cells.end(), filter_neighbors);
       }
 
@@ -221,13 +199,13 @@ namespace Portage {
 
 #ifdef HAVE_TANGRAM
     // Constructor with interface reconstructor for multimaterial remaps.
-    Limited_Gradient(SourceMeshType const& mesh,
-                     SourceStateType const& state,
+    Limited_Gradient(Mesh const& mesh,
+                     State const& state,
                      std::string const& var_name,
                      Limiter_type limiter_type,
                      Boundary_Limiter_type boundary_limiter_type,
                      std::shared_ptr<InterfaceReconstructor> ir,
-                     const Parts* const parts = nullptr)
+                     const Part<Mesh, State>* part = nullptr)
       : mesh_(mesh),
         state_(state),
         values_(nullptr),
@@ -235,7 +213,7 @@ namespace Portage {
         limiter_type_(limiter_type),
         boundary_limiter_type_(boundary_limiter_type),
         interface_reconstructor_(ir),
-        parts_(parts) {
+        part_(part) {
 
       // Collect and keep the list of neighbors for each CELL as it may
       // be expensive to go to the mesh layer and collect this data for
@@ -243,7 +221,7 @@ namespace Portage {
       int const nb_cells = mesh_.num_entities(Entity_kind::CELL);
       cell_neighbors_.resize(nb_cells);
 
-      if (parts_ == nullptr) /* entire mesh */ {
+      if (part_ == nullptr) /* entire mesh */ {
         auto collect_neighbors = [this](int c) {
           mesh_.cell_get_node_adj_cells(c, Entity_type::ALL, &(cell_neighbors_[c]));
         };
@@ -253,10 +231,10 @@ namespace Portage {
 
       } else /* only on source part */ {
         auto filter_neighbors = [this](int c) {
-          cell_neighbors_[c] = parts_->get_source_filtered_neighbors(c);
+          cell_neighbors_[c] = part_->get_neighbors(c);
         };
 
-        auto const& part_cells = parts_->get_source_entities();
+        auto const& part_cells = part_->cells();
         Portage::for_each(part_cells.begin(), part_cells.end(), filter_neighbors);
       }
 
@@ -304,7 +282,7 @@ namespace Portage {
       Vector<D> grad;
 
       // check that cell is within the part if part-by-part requested
-      if (parts_ != nullptr && !parts_->is_source_entity(cellid)) {
+      if (part_ != nullptr && !part_->contains(cellid)) {
         grad.zero();
         return grad;
       }
@@ -466,8 +444,8 @@ namespace Portage {
     }
 
   private:
-    SourceMeshType const& mesh_;
-    SourceStateType const& state_;
+    Mesh const& mesh_;
+    State const& state_;
     double const* values_;
     std::string variable_name_ = "";
     Limiter_type limiter_type_ = DEFAULT_LIMITER;
@@ -480,42 +458,33 @@ namespace Portage {
 #ifdef HAVE_TANGRAM
     std::shared_ptr<InterfaceReconstructor> interface_reconstructor_;
 #endif
-    Parts const* parts_;
+    Part<Mesh, State> const* part_;
   };
 
   ///////////////////////////////////////////////////////////////////////////////
 
   /*! @class Limited_Gradient<MeshType,StateType,NODE> gradient.h
     @brief Specialization of limited gradient class for @c node-centered field
-    @tparam SourceMeshType A mesh class that one can query for mesh info
-    @tparam SourceStateType A state manager class that one can query for field info
+    @tparam Mesh A mesh class that one can query for mesh info
+    @tparam State A state manager class that one can query for field info
   */
 
   template<
     int D,
-    typename SourceMeshType,
-    typename SourceStateType,
-    typename TargetMeshType,
-    typename TargetStateType,
+    typename Mesh,
+    typename State,
     template<class, int, class, class>
       class InterfaceReconstructorType,
     class Matpoly_Splitter, class Matpoly_Clipper, class CoordSys
   >
   class Limited_Gradient<
     D, Entity_kind::NODE,
-    SourceMeshType, SourceStateType,
-    TargetMeshType, TargetStateType,
+    Mesh, State,
     InterfaceReconstructorType,
     Matpoly_Splitter, Matpoly_Clipper, CoordSys
   > {
 
     // useful aliases
-    using Parts = PartPair<
-      D, Entity_kind::NODE,
-      SourceMeshType, SourceStateType,
-      TargetMeshType, TargetStateType
-    >;
-
   public:
     /*! @brief Constructor
       @param[in] mesh  Mesh class than one can query for mesh info
@@ -526,19 +495,17 @@ namespace Portage {
 
       @todo must remove assumption that field is scalar
     */
-    Limited_Gradient(SourceMeshType const& mesh,
-                     SourceStateType const& state,
+    Limited_Gradient(Mesh const& mesh,
+                     State const& state,
                      std::string const var_name,
                      Limiter_type limiter_type,
-                     Boundary_Limiter_type boundary_limiter_type,
-                     const Parts* const parts = nullptr)
+                     Boundary_Limiter_type boundary_limiter_type)
       : mesh_(mesh),
         state_(state),
         values_(nullptr),
         variable_name_(var_name),
         limiter_type_(limiter_type),
-        boundary_limiter_type_(boundary_limiter_type),
-        parts_(parts) {
+        boundary_limiter_type_(boundary_limiter_type) {
 
       auto collect_node_neighbors = [this](int n) {
         this->mesh_.dual_cell_get_node_adj_cells(
@@ -553,11 +520,6 @@ namespace Portage {
                         collect_node_neighbors);
 
       set_interpolation_variable(var_name, limiter_type, boundary_limiter_type);
-
-      if (parts_ != nullptr) {
-        std::cout << "Warning: part-by-part remap is only defined for cells. ";
-        std::cout << "Source and target part pair will be ignored" << std::endl;
-      }
     }
 
     void set_material(int material_id) { material_id_ = material_id; }
@@ -638,8 +600,8 @@ namespace Portage {
     }
 
   private:
-    SourceMeshType const& mesh_;
-    SourceStateType const& state_;
+    Mesh const& mesh_;
+    State const& state_;
     double const* values_;
     std::string variable_name_ = "";
     Limiter_type limiter_type_ = DEFAULT_LIMITER;
@@ -649,7 +611,6 @@ namespace Portage {
     int material_id_ = 0;
     std::vector<int> cell_ids_;
     std::vector<std::vector<int>> node_neighbors_;
-    Parts const* parts_;
   };
 }  // namespace Portage
 

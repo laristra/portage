@@ -560,10 +560,8 @@ void remap<2>(std::string field, int nb_parts,
                                           Wonton::Jali_Mesh_Wrapper,
                                           Wonton::Jali_State_Wrapper>;
 
-  using PartPair = Portage::PartPair<2, Wonton::Entity_kind::CELL,
-                                        Wonton::Jali_Mesh_Wrapper,
+  using PartPair = Portage::PartPair<2, Wonton::Jali_Mesh_Wrapper,
                                         Wonton::Jali_State_Wrapper>;
-
 
 
   std::vector<PartPair> parts_manager;
@@ -670,8 +668,7 @@ void remap<3>(std::string field, int nb_parts,
                                           Wonton::Jali_Mesh_Wrapper,
                                           Wonton::Jali_State_Wrapper>;
 
-  using PartPair = Portage::PartPair<3, Wonton::Entity_kind::CELL,
-                                        Wonton::Jali_Mesh_Wrapper,
+  using PartPair = Portage::PartPair<3, Wonton::Jali_Mesh_Wrapper,
                                         Wonton::Jali_State_Wrapper>;
 
   std::vector<PartPair> parts_manager;

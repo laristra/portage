@@ -224,7 +224,6 @@ class CoreDriverBase {
                             T lower_bound, T upper_bound,
                             Limiter_type limiter,
                             Boundary_Limiter_type bnd_limiter,
-
                             PartPair<D, ONWHAT,
                               SourceMesh, SourceState,
                               TargetMesh, TargetState>* parts_pair = nullptr) {
@@ -755,7 +754,7 @@ class CoreDriver : public CoreDriverBase<D,
     target_state_.mesh_get_data(ONWHAT, trgvarname, &target_mesh_field);
 
     // perform part-by-part interpolation
-    if (partition != nullptr) {
+    if (ONWHAT == Entity_kind::CELL and partition != nullptr) {
 
       // 1. Do some basic checks on supplied source and target parts
       // to prevent bugs when interpolating values:
@@ -764,20 +763,19 @@ class CoreDriver : public CoreDriverBase<D,
 
       int const& max_source_id = source_mesh_.num_entities(ONWHAT, ALL);
       int const& max_target_id = target_mesh_.num_entities(ONWHAT, ALL);
+      auto const& source_part = partition->source();
+      auto const& target_part = partition->target();
 
-      auto const& part_source_entities = partition->get_source_entities();
-      auto const& part_target_entities = partition->get_target_entities();
-
-      Portage::for_each(part_source_entities.begin(),
-                        part_source_entities.end(),
+      Portage::for_each(source_part.cells().begin(),
+                        source_part.cells().end(),
                         [&](int current){ assert(current <= max_source_id); });
 
-      Portage::for_each(part_target_entities.begin(),
-                        part_target_entities.end(),
+      Portage::for_each(target_part.cells().begin(),
+                        target_part.cells().end(),
                         [&](int current){ assert(current <= max_target_id); });
 
       int const target_mesh_size = sources_and_weights.size();
-      int const target_part_size = partition->target_part_size();
+      int const target_part_size = target_part.size();
 
       // 2. Filter intersection weights list.
       // To restrict interpolation only to source-target parts, we need
@@ -798,7 +796,7 @@ class CoreDriver : public CoreDriverBase<D,
         heap.reserve(10); // size of a local vicinity
         for (auto&& weight : entity_weights) {
           // constant-time lookup in average case.
-          if(partition->is_source_entity(weight.entityID)) {
+          if(source_part.contains(weight.entityID)) {
             heap.emplace_back(weight);
           }
         }
@@ -807,7 +805,8 @@ class CoreDriver : public CoreDriverBase<D,
       };
 
       Portage::vector<entity_weights_t> parts_weights(target_part_size);
-      Portage::transform(part_target_entities.begin(), part_target_entities.end(),
+      Portage::transform(target_part.cells().begin(),
+                         target_part.cells().end(),
                          parts_weights.begin(), filter_weights);
 
       // 3. Process interpolation.
@@ -819,11 +818,12 @@ class CoreDriver : public CoreDriverBase<D,
       T temporary_storage[target_part_size];
       Portage::pointer<T> target_part_field(temporary_storage);
 
-      Portage::transform(part_target_entities.begin(), part_target_entities.end(),
+      Portage::transform(target_part.cells().begin(),
+                         target_part.cells().end(),
                          parts_weights.begin(), target_part_field, interpolator);
 
       for (int i=0; i < target_part_size; ++i) {
-        auto const& j = part_target_entities[i];
+        auto const& j = target_part.cells()[i];
         target_mesh_field[j] = target_part_field[i];
       }
     } else /* mesh-mesh interpolation */ {

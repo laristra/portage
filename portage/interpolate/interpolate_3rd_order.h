@@ -49,13 +49,6 @@ template<int D, Entity_kind on_what,
          typename TargetStateType = SourceStateType>
 class Interpolate_3rdOrder {
 
-  // useful aliases
-  using Parts = PartPair<
-    D, on_what,
-    SourceMeshType, SourceStateType,
-    TargetMeshType, TargetStateType
-  >;
-
  public:
   /*!
     @brief Constructor
@@ -68,15 +61,13 @@ class Interpolate_3rdOrder {
   Interpolate_3rdOrder(SourceMeshType const & source_mesh,
                        TargetMeshType const & target_mesh,
                        SourceStateType const & source_state,
-                       NumericTolerances_t num_tols,
-                       const Parts* const parts = nullptr) :
+                       NumericTolerances_t num_tols) :
       source_mesh_(source_mesh),
       target_mesh_(target_mesh),
       source_state_(source_state),
       interp_var_name_("VariableNameNotSet"),
       source_vals_(nullptr),
-      num_tols_(num_tols),
-      parts_(parts) {}
+      num_tols_(num_tols) {}
 
   /// Copy constructor (disabled)
   //  Interpolate_3rdOrder(const Interpolate_3rdOrder &) = delete;
@@ -147,6 +138,7 @@ class Interpolate_3rdOrder {
 
     std::cerr << "Interpolation operator not implemented for this entity type"
               << std::endl;
+    return 0.;
   }
 
  private:
@@ -156,7 +148,6 @@ class Interpolate_3rdOrder {
   std::string interp_var_name_;
   double const * source_vals_;
   NumericTolerances_t num_tols_;
-  Parts const* parts_;
 
   // Portage::vector is generalization of std::vector and
   // Wonton::Vector<D*(D+3)/2> is a geometric vector
@@ -185,8 +176,7 @@ class Interpolate_3rdOrder<
 
   // useful aliases
   using Parts = PartPair<
-    D, Entity_kind::CELL,
-    SourceMeshType, SourceStateType,
+    D, SourceMeshType, SourceStateType,
     TargetMeshType, TargetStateType
   >;
 
@@ -370,32 +360,17 @@ class Interpolate_3rdOrder<
   SourceMeshType, TargetMeshType,
   SourceStateType, TargetStateType> {
 
-  // useful aliases
-  using Parts = PartPair<
-    D, Entity_kind::NODE,
-    SourceMeshType, SourceStateType,
-    TargetMeshType, TargetStateType
-  >;
-
  public:
   Interpolate_3rdOrder(SourceMeshType const & source_mesh,
                        TargetMeshType const & target_mesh,
                        SourceStateType const & source_state,
-                       NumericTolerances_t num_tols,
-                       const Parts* const parts = nullptr) :
+                       NumericTolerances_t num_tols) :
       source_mesh_(source_mesh),
       target_mesh_(target_mesh),
       source_state_(source_state),
       interp_var_name_("VariableNameNotSet"),
       source_vals_(nullptr),
-      num_tols_(num_tols),
-      parts_(parts)
-  {
-    if (parts_ != nullptr) {
-      std::cerr << "Warning: part-by-part remap is only defined for cells. ";
-      std::cerr << "Source and target parts will be ignored" << std::endl;
-    }
-  }
+      num_tols_(num_tols) {}
 
   /// Copy constructor (disabled)
   //  Interpolate_3rdOrder(const Interpolate_3rdOrder &) = delete;
@@ -539,7 +514,6 @@ class Interpolate_3rdOrder<
   std::string interp_var_name_;
   double const * source_vals_;
   NumericTolerances_t num_tols_;
-  Parts const* parts_;
 
   // Portage::vector is generalization of std::vector and
   // Wonton::Vector<D> is a geometric vector

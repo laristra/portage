@@ -68,13 +68,6 @@ namespace Portage {
   >
   class Interpolate_2ndOrder {
 
-    // useful aliases
-    using Parts = PartPair<
-      D, on_what,
-      SourceMeshType, SourceStateType,
-      TargetMeshType, TargetStateType
-    >;
-
 #ifdef HAVE_TANGRAM
     using InterfaceReconstructor =
       Tangram::Driver<
@@ -95,15 +88,13 @@ namespace Portage {
     Interpolate_2ndOrder(SourceMeshType const& source_mesh,
                          TargetMeshType const& target_mesh,
                          SourceStateType const& source_state,
-                         NumericTolerances_t num_tols,
-                         const Parts* const parts = nullptr)
+                         NumericTolerances_t num_tols)
     : source_mesh_(source_mesh),
       target_mesh_(target_mesh),
       source_state_(source_state),
       variable_name_("VariableNameNotSet"),
       source_values_(nullptr),
-      num_tols_(num_tols),
-      parts_(parts) { CoordSys::template verify_coordinate_system<D>(); }
+      num_tols_(num_tols) { CoordSys::template verify_coordinate_system<D>(); }
 
 #ifdef HAVE_TANGRAM
     /**
@@ -119,16 +110,14 @@ namespace Portage {
                          TargetMeshType const& target_mesh,
                          SourceStateType const& source_state,
                          NumericTolerances_t num_tols,
-                         std::shared_ptr<InterfaceReconstructor> ir,
-                         const Parts* const parts = nullptr)
+                         std::shared_ptr<InterfaceReconstructor> ir)
       : source_mesh_(source_mesh),
         target_mesh_(target_mesh),
         source_state_(source_state),
         interface_reconstructor_(ir),
         variable_name_("VariableNameNotSet"),
         source_values_(nullptr),
-        num_tols_(num_tols),
-        parts_(parts) { CoordSys::template verify_coordinate_system<D>(); }
+        num_tols_(num_tols) { CoordSys::template verify_coordinate_system<D>(); }
 #endif
 
     /**
@@ -207,7 +196,6 @@ namespace Portage {
 #ifdef HAVE_TANGRAM
     std::shared_ptr<InterfaceReconstructor> interface_reconstructor_;
 #endif
-    Parts const* parts_;
   };
 
   /* ------------------------------------------------------------------------ */
@@ -243,15 +231,13 @@ namespace Portage {
 
     // useful aliases
     using Parts = PartPair<
-      D, Entity_kind::CELL,
-      SourceMeshType, SourceStateType,
+      D, SourceMeshType, SourceStateType,
       TargetMeshType, TargetStateType
     >;
 
     using Gradient = Limited_Gradient<
       D, Entity_kind::CELL,
       SourceMeshType, SourceStateType,
-      TargetMeshType, TargetStateType,
       InterfaceReconstructorType,
       Matpoly_Splitter, Matpoly_Clipper, CoordSys
     >;
@@ -363,16 +349,18 @@ namespace Portage {
       }
 
       // Compute the limited gradients for the field
+      auto source_part = (parts_ != nullptr ? &(parts_->source()) : nullptr);
+
 #ifdef HAVE_TANGRAM
       Gradient gradient_kernel(source_mesh_, source_state_, variable_name_,
                                limiter_type, boundary_limiter_type,
-                               interface_reconstructor_, parts_);
+                               interface_reconstructor_, source_part);
 
       if (field_type_ == Field_type::MULTIMATERIAL_FIELD)
         gradient_kernel.set_material(material_id_);
 #else
       Gradient gradient_kernel(source_mesh_, source_state_, variable_name_,
-                                    limiter_type, boundary_limiter_type, parts_);
+                               limiter_type, boundary_limiter_type, source_part);
 #endif
 
       gradients_.resize(nb_cells);
@@ -572,16 +560,9 @@ namespace Portage {
     Matpoly_Splitter, Matpoly_Clipper, CoordSys> {
 
     // useful aliases
-    using Parts = PartPair<
-      D, Entity_kind::NODE,
-      SourceMeshType, SourceStateType,
-      TargetMeshType, TargetStateType
-    >;
-
     using Gradient = Limited_Gradient<
       D, Entity_kind::NODE,
       SourceMeshType, SourceStateType,
-      TargetMeshType, TargetStateType,
       InterfaceReconstructorType,
       Matpoly_Splitter, Matpoly_Clipper, CoordSys
     >;
@@ -609,21 +590,13 @@ namespace Portage {
     Interpolate_2ndOrder(SourceMeshType const& source_mesh,
                          TargetMeshType const& target_mesh,
                          SourceStateType const& source_state,
-                         NumericTolerances_t num_tols,
-                         const Parts* const parts = nullptr) :
+                         NumericTolerances_t num_tols) :
       source_mesh_(source_mesh),
       target_mesh_(target_mesh),
       source_state_(source_state),
       variable_name_("VariableNameNotSet"),
       source_values_(nullptr),
-      num_tols_(num_tols),
-      parts_(parts)
-    {
-      if (parts_ != nullptr) {
-        std::cerr << "Warning: part-by-part remap is only defined for cells. ";
-        std::cerr << "Source and target parts will be ignored" << std::endl;
-      }
-    }
+      num_tols_(num_tols) {}
 
 #ifdef HAVE_TANGRAM
     /**
@@ -639,22 +612,14 @@ namespace Portage {
                          TargetMeshType const& target_mesh,
                          SourceStateType const& source_state,
                          NumericTolerances_t num_tols,
-                         std::shared_ptr<InterfaceReconstructor> ir,
-                         const Parts* const parts = nullptr) :
+                         std::shared_ptr<InterfaceReconstructor> ir) :
       source_mesh_(source_mesh),
       target_mesh_(target_mesh),
       source_state_(source_state),
       interface_reconstructor_(ir),
       variable_name_("VariableNameNotSet"),
       source_values_(nullptr),
-      num_tols_(num_tols),
-      parts_(parts)
-    {
-      if (parts_ != nullptr) {
-        std::cerr << "Warning: part-by-part remap is only defined for cells. ";
-        std::cerr << "Source and target parts will be ignored" << std::endl;
-      }
-    }
+      num_tols_(num_tols) {}
 #endif
 
     /**
@@ -813,7 +778,6 @@ namespace Portage {
 #ifdef HAVE_TANGRAM
     std::shared_ptr<InterfaceReconstructor> interface_reconstructor_;
 #endif
-    Parts const* parts_;
   };
   /* ------------------------------------------------------------------------ */
 }  // namespace Portage
