@@ -76,7 +76,12 @@ namespace Portage {
   Journal on Scientific and Statistical Computing, Vol. 8, No. 3,
   pp. 305-321, 1987.
 
-  @todo Template on variable type??
+
+  Type T must support +, += operators. It must also support *
+  operators with a scalar operand. Finally, it must support
+  initialization to null values using the syntax T(0.0)
+
+  We could enforce these requirements using SFINAE
 
 */
 
@@ -85,8 +90,8 @@ template<int D,
          typename SourceMeshType,
          typename TargetMeshType,
          typename SourceStateType,
-         typename TargetStateType = SourceStateType,
-         typename T = double,
+         typename TargetStateType,
+         typename T,
          template<class, int, class, class>
            class InterfaceReconstructorType = DummyInterfaceReconstructor,
          class Matpoly_Splitter = void,
@@ -196,7 +201,7 @@ class Interpolate_1stOrder {
                      std::vector<Weights_t> const & sources_and_weights) const {
     std::cerr << "Interpolation operator not implemented for this entity type"
               << std::endl;
-    return 0.0;
+    return T(0.0);
   }
   
   constexpr static int order = 1;
@@ -344,17 +349,13 @@ class Interpolate_1stOrder<
     entity and a source entity consists of two or more disjoint pieces
     @param[in] targetCellId The index of the target cell.
 
-    Type T must support +, += operators. It must also support *, /
-    operators with a scalar value. Finally, it must support
-    initialization to null values
-
   */
 
   T operator() (int const targetCellID,
                      std::vector<Weights_t> const & sources_and_weights) const
   {
     int nsrccells = sources_and_weights.size();
-    if (!nsrccells) return 0.0;
+    if (!nsrccells) return T(0.0);
 
     // contribution of the source cell is its field value weighted by
     // its "weight" (in this case, its 0th moment/area/volume)
@@ -394,8 +395,12 @@ class Interpolate_1stOrder<
     // target mesh boundaries. IF THERE IS A MISMATCH, THIS WILL
     // PRESERVE CONSTANT VALUES BUT NOT BE CONSERVATIVE. THEN WE HAVE
     // TO DO A SEMI-LOCAL OR GLOBAL REPAIR.
+
+    // We use the * operator instead of / so as to reduce the number
+    // of requirements on generic variable type
+    
     if (nsummed)
-      val /= wtsum0;
+      val *= (1.0/wtsum0);
 
     return val;
   }  // operator()
@@ -546,17 +551,17 @@ class Interpolate_1stOrder<
   T operator() (int const targetNodeID,
                 std::vector<Weights_t> const & sources_and_weights) const
   {
-    if (field_type_ != Field_type::MESH_FIELD) return 0.0;
+    if (field_type_ != Field_type::MESH_FIELD) return T(0.0);
 
     int nsrcdualcells = sources_and_weights.size();
-    if (!nsrcdualcells) return 0.0;
+    if (!nsrcdualcells) return T(0.0);
 
     // contribution of the source node (dual cell) is its field value
     // weighted by its "weight" (in this case, the 0th
     // moment/area/volume of its intersection with the target dual cell)
     double vol = target_mesh_.dual_cell_volume(targetNodeID);
 
-    T val = 0.0;
+    T val(0.0);
     double wtsum0 = 0.0;
     int nsummed = 0;
     for (auto const& wt : sources_and_weights) {
@@ -577,8 +582,11 @@ class Interpolate_1stOrder<
     // PRESERVE CONSTANT VALUES BUT NOT BE CONSERVATIVE. THEN WE HAVE
     // TO DO A SEMI-LOCAL OR GLOBAL REPAIR.
 
+    // We use the * operator instead of / so as to reduce the number
+    // of requirements on generic variable type
+    
     if (nsummed)
-      val /= wtsum0;
+      val *= (1.0/wtsum0);
 
     return val;
   }  // operator()
