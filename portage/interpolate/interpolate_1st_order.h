@@ -86,11 +86,13 @@ template<int D,
          typename TargetMeshType,
          typename SourceStateType,
          typename TargetStateType = SourceStateType,
+         typename T = double,
          template<class, int, class, class>
            class InterfaceReconstructorType = DummyInterfaceReconstructor,
          class Matpoly_Splitter = void,
          class Matpoly_Clipper = void,
-         class CoordSys = Wonton::DefaultCoordSys>
+         class CoordSys = Wonton::DefaultCoordSys
+         >
 class Interpolate_1stOrder {
 
 #ifdef HAVE_TANGRAM
@@ -190,7 +192,7 @@ class Interpolate_1stOrder {
 
   */
 
-  double operator() (int const targetEntityId,
+  T operator() (int const targetEntityId,
                      std::vector<Weights_t> const & sources_and_weights) const {
     std::cerr << "Interpolation operator not implemented for this entity type"
               << std::endl;
@@ -204,7 +206,7 @@ class Interpolate_1stOrder {
   TargetMeshType const & target_mesh_;
   SourceStateType const & source_state_;
   std::string interp_var_name_;
-  double const * source_vals_;
+  T const * source_vals_;
   int matid_ = 0;
   Field_type field_type_ = Field_type::UNKNOWN_TYPE_FIELD;
   NumericTolerances_t num_tols_;
@@ -225,6 +227,7 @@ template<int D,
          typename TargetMeshType,
          typename SourceStateType,
          typename TargetStateType,
+         typename T,
          template<class, int, class, class> class InterfaceReconstructorType,
          class Matpoly_Splitter,
          class Matpoly_Clipper,
@@ -233,6 +236,7 @@ class Interpolate_1stOrder<
   D, Entity_kind::CELL,
   SourceMeshType, TargetMeshType,
   SourceStateType, TargetStateType,
+  T,
   InterfaceReconstructorType,
   Matpoly_Splitter, Matpoly_Clipper, CoordSys> {
 
@@ -340,9 +344,13 @@ class Interpolate_1stOrder<
     entity and a source entity consists of two or more disjoint pieces
     @param[in] targetCellId The index of the target cell.
 
+    Type T must support +, += operators. It must also support *, /
+    operators with a scalar value. Finally, it must support
+    initialization to null values
+
   */
 
-  double operator() (int const targetCellID,
+  T operator() (int const targetCellID,
                      std::vector<Weights_t> const & sources_and_weights) const
   {
     int nsrccells = sources_and_weights.size();
@@ -351,7 +359,7 @@ class Interpolate_1stOrder<
     // contribution of the source cell is its field value weighted by
     // its "weight" (in this case, its 0th moment/area/volume)
 
-    double val = 0.0;
+    T val(0.0);
     double wtsum0 = 0.0;
     double vol = target_mesh_.cell_volume(targetCellID);
 
@@ -388,8 +396,6 @@ class Interpolate_1stOrder<
     // TO DO A SEMI-LOCAL OR GLOBAL REPAIR.
     if (nsummed)
       val /= wtsum0;
-    else
-      val = 0.0;
 
     return val;
   }  // operator()
@@ -401,7 +407,7 @@ class Interpolate_1stOrder<
   TargetMeshType const & target_mesh_;
   SourceStateType const & source_state_;
   std::string interp_var_name_;
-  double const * source_vals_;
+  T const * source_vals_;
   int matid_ = 0;
   Field_type field_type_ = Field_type::UNKNOWN_TYPE_FIELD;
   NumericTolerances_t num_tols_;
@@ -425,6 +431,7 @@ template<int D,
          typename TargetMeshType,
          typename SourceStateType,
          typename TargetStateType,
+         typename T,
          template<class, int, class, class> class InterfaceReconstructorType,
          class Matpoly_Splitter,
          class Matpoly_Clipper,
@@ -433,6 +440,7 @@ class Interpolate_1stOrder<
   D, Entity_kind::NODE,
   SourceMeshType, TargetMeshType,
   SourceStateType, TargetStateType,
+  T,
   InterfaceReconstructorType,
   Matpoly_Splitter, Matpoly_Clipper, CoordSys> {
 
@@ -535,8 +543,8 @@ class Interpolate_1stOrder<
 
   */
 
-  double operator() (int const targetNodeID,
-                     std::vector<Weights_t> const & sources_and_weights) const
+  T operator() (int const targetNodeID,
+                std::vector<Weights_t> const & sources_and_weights) const
   {
     if (field_type_ != Field_type::MESH_FIELD) return 0.0;
 
@@ -548,7 +556,7 @@ class Interpolate_1stOrder<
     // moment/area/volume of its intersection with the target dual cell)
     double vol = target_mesh_.dual_cell_volume(targetNodeID);
 
-    double val = 0.0;
+    T val = 0.0;
     double wtsum0 = 0.0;
     int nsummed = 0;
     for (auto const& wt : sources_and_weights) {
@@ -571,8 +579,6 @@ class Interpolate_1stOrder<
 
     if (nsummed)
       val /= wtsum0;
-    else
-      val = 0.0;
 
     return val;
   }  // operator()
@@ -584,7 +590,7 @@ class Interpolate_1stOrder<
   TargetMeshType const & target_mesh_;
   SourceStateType const & source_state_;
   std::string interp_var_name_;
-  double const * source_vals_;
+  T const * source_vals_;
   int matid_ = 0;
   Field_type field_type_ = Field_type::UNKNOWN_TYPE_FIELD;
   NumericTolerances_t num_tols_;
