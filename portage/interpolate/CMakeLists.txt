@@ -48,6 +48,13 @@ if (ENABLE_UNIT_TESTS)
       LIBRARIES portage  
       POLICY SERIAL)
 
+    if (JALI_DIR)
+      cinch_add_unit(test_interpolate_1st_order_gentype
+        SOURCES test/test_interp_1st_order_gentype.cc
+        LIBRARIES portage  
+        POLICY MPI
+	THREADS 1)
+    endif ()
 
 endif(ENABLE_UNIT_TESTS)
 
