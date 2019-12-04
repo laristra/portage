@@ -172,6 +172,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
                            std::string field_filename,
                            bool mesh_output, int rank, int numpe, 
 			   Jali::Entity_kind entityKind,
+ 			   double& delta,
                            double& L1_error, double& L2_error,
                            std::shared_ptr<Profiler> profiler = nullptr);
 
@@ -294,6 +295,11 @@ int main(int argc, char** argv) {
   }
 
   // Some input error checking
+  if (nsourcecells > 0 && (nsourcecells != ntargetcells)) {
+    std::cout << "Internally generated source and target mesh needs to be of the same size \n\n";
+    print_usage();
+    MPI_Abort(MPI_COMM_WORLD, -1);
+  }
 
   if (nsourcecells > 0 && srcfile.length() > 0) {
     std::cout << "Cannot request internally generated source mesh "
@@ -394,6 +400,9 @@ int main(int argc, char** argv) {
                          ntargetcells, ntargetcells, ntargetcells);
     }
 
+   // compute the delta 
+   double delta = (srchi-srclo)/nsourcecells;
+
 #if ENABLE_TIMINGS
     profiler->time.mesh_init = timer::elapsed(tic);
 
@@ -417,11 +426,11 @@ int main(int argc, char** argv) {
     // Now run the remap on the meshes and get back the L2 error
     switch (dim) {
       case 2:
-        run<2>(source_mesh, target_mesh, source_convex_cells, target_convex_cells,
+        run<2> (source_mesh, target_mesh, source_convex_cells, target_convex_cells,
                limiter, bnd_limiter, interp_order, 
                field_expression,
                field_filename, mesh_output,
-               rank, numpe, entityKind, l1_err[i], l2_err[i], profiler);
+               rank, numpe, entityKind, delta, l1_err[i], l2_err[i], profiler);
         break;
       case 3:
    //     run<3>(source_mesh, target_mesh, source_convex_cells, target_convex_cells,
@@ -517,6 +526,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
                            std::string field_expression,
                            std::string field_filename, bool mesh_output,
                            int rank, int numpe, Jali::Entity_kind entityKind, 
+ 			   double& delta,
                            double& L1_error, double& L2_error,
                            std::shared_ptr<Profiler> profiler) {
   if (rank == 0)
@@ -535,6 +545,34 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
     sourceMeshWrapper.num_ghost_cells();
   const int ntarcells = targetMeshWrapper.num_owned_cells() +
     targetMeshWrapper.num_ghost_cells();
+
+  // Move the target nodes to obtain a target mesh with same connectivity
+  // but different point positions. 
+  //Loop over all the boundary vertices 
+  const int ntarnodes = targetMeshWrapper.num_entities(Wonton::Entity_kind::NODE);
+  for (int i = 0; i <ntarnodes; i++)
+  {
+    bool onbnd = targetMeshWrapper.on_exterior_boundary(Wonton::Entity_kind::NODE, i); 
+   
+   // move the internal nodes
+   if (!onbnd) {
+      Wonton::Point<2> coords;
+      targetMeshWrapper.node_get_coordinates(i, &coords);  
+      if (nsrccells <= 10)  
+       std::cout<<"Target Node = "<<i<<" Original Coords = {"<<coords[0]<<", "<<coords[1]<<"}"<<std::endl;
+
+      //double det = (std::rand()*delta)/RAND_MAX; 
+      double det = delta/10; 
+      coords[0] = coords[0] + det; 
+      coords[1] = coords[1] + det; 
+
+      const double ncoords[2] = {coords[0], coords[1]};
+      targetMesh->node_set_coordinates(i, &ncoords[0]);      
+
+      if (nsrccells <= 10)  
+       std::cout<<"Target Node = "<<i<<" Modified Coords = {"<<ncoords[0]<<", "<<ncoords[1]<<"}"<<std::endl;
+   }
+  }
 
   // Native jali state managers for source and target
   std::shared_ptr<Jali::State> sourceState(Jali::State::create(sourceMesh));
