@@ -60,8 +60,8 @@ namespace Portage {
     typename SourceMeshType,
     typename TargetMeshType,
     typename SourceStateType,
-    typename TargetStateType = SourceStateType,
-    typename T = double,
+    typename TargetStateType,
+    typename T,
     template<class, int, class, class>
       class InterfaceReconstructorType = DummyInterfaceReconstructor,
     class Matpoly_Splitter = void, class Matpoly_Clipper = void,
