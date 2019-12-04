@@ -61,6 +61,7 @@ namespace Portage {
     typename TargetMeshType,
     typename SourceStateType,
     typename TargetStateType = SourceStateType,
+    typename T = double,
     template<class, int, class, class>
       class InterfaceReconstructorType = DummyInterfaceReconstructor,
     class Matpoly_Splitter = void, class Matpoly_Clipper = void,
@@ -186,7 +187,7 @@ namespace Portage {
     TargetMeshType const& target_mesh_;
     SourceStateType const& source_state_;
     std::string variable_name_ = "";
-    double const* source_values_;
+    T const* source_values_;
     NumericTolerances_t num_tols_;
     int material_id_ = 0;
     Portage::vector<Wonton::Vector<D>> const* gradients_;
@@ -199,7 +200,8 @@ namespace Portage {
   /* ------------------------------------------------------------------------ */
 
   /**
-   * @brief second-order interpolate class specialization for cells.
+   * @brief second-order interpolate class specialization for scalar
+   * fields on cells
    *
    * @tparam D: spatial dimension of problem
    * @tparam SourceMeshType: mesh wrapper class used to access source mesh info
@@ -224,6 +226,7 @@ namespace Portage {
     D, Entity_kind::CELL,
     SourceMeshType, TargetMeshType,
     SourceStateType, TargetStateType,
+    double,
     InterfaceReconstructorType,
     Matpoly_Splitter, Matpoly_Clipper, CoordSys> {
 
@@ -486,7 +489,7 @@ namespace Portage {
   /* ------------------------------------------------------------------------ */
 
   /**
-   * @brief second-order interpolate class specialization for nodes.
+   * @brief second-order interpolate class specialization for scalar fields on nodes.
    *
    * @tparam D: spatial dimension of problem
    * @tparam SourceMeshType: mesh wrapper class used to access source mesh info
@@ -511,6 +514,7 @@ namespace Portage {
     D, Entity_kind::NODE,
     SourceMeshType, TargetMeshType,
     SourceStateType, TargetStateType,
+    double,
     InterfaceReconstructorType,
     Matpoly_Splitter, Matpoly_Clipper, CoordSys> {
 
