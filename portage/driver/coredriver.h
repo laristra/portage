@@ -211,20 +211,6 @@ class CoreDriverBase {
 
     @param[in] bnd_limiter  Boundary limiter to use for second order reconstruction
 
-    @param[in] partial_fixup_type Method to populate fields on
-    partially filled target entities (cells or dual cells)
-
-    @param[in] empty_fixup_type Method to populate fields on empty
-    target entities (cells or dual cells)
-
-    @param[in] conservation_tol Tolerance to which source and target
-    integral quantities are to be matched
-
-    @param[in] max_fixup_iter     Max number of iterations for global repair
-
-    See support/portage.h for options on limiter, partial_fixup_type and
-    empty_fixup_type
-    
   */
   
   template<typename T = double,
@@ -268,20 +254,6 @@ class CoreDriverBase {
 
     @param[in] bnd_limiter  Boundary limiter to use for second order reconstruction
 
-    @param[in] partial_fixup_type Method to populate fields on
-    partially filled target entities (cells or dual cells)
-
-    @param[in] empty_fixup_type Method to populate fields on empty
-    target entities (cells or dual cells)
-
-    @param[in] conservation_tol Tolerance to which source and target
-    integral quantities are to be matched
-
-    @param[in] max_fixup_iter     Max number of iterations for global repair
-
-    See support/portage.h for options on limiter, partial_fixup_type and
-    empty_fixup_type
-      
   */
   
   template <typename T = double,
@@ -743,8 +715,8 @@ class CoreDriver : public CoreDriverBase<D,
    * @param[in] srcvarname          source mesh variable to remap
    * @param[in] trgvarname          target mesh variable to remap
    * @param[in] sources_and_weights weights for mesh-mesh interpolation
-   * @param[in] lower_bound         lower bound of variable value when doing fixup
-   * @param[in] upper_bound         upper bound of variable value when doing fixup
+   * @param[in] lower_bound         lower bound of variable value 
+   * @param[in] upper_bound         upper bound of variable value 
    * @param[in] limiter             limiter to use
    * @param[in] bnd_limiter         boundary limiter to use
    * @param[in] partition           source and target entities list for part-by-part
@@ -878,15 +850,10 @@ class CoreDriver : public CoreDriverBase<D,
 
     @param[in] bnd_limiter Boundary limiter to use for variable
 
-    @param[in] partial...  How to fixup partly filled target cells (for this var)
+    @param[in] lower_bound Lower bound of variable value
 
-    @param[in] emtpy...    How to fixup empty target cells with this var
+    @param[in] upper_bound Upper bound of variable value
 
-    @param[in] lower_bound Lower bound of variable value when doing fixup
-
-    @param[in] upper_bound Upper bound of variable value when doing fixup
-
-    @param[in] cons..tol   Tolerance for conservation when doing fixup
   */
 
   template<typename T = double,
@@ -898,11 +865,8 @@ class CoreDriver : public CoreDriverBase<D,
                            std::vector<Portage::vector<std::vector<Weights_t>>> const& sources_and_weights_by_mat,
                            T lower_bound, T upper_bound,
                            Limiter_type limiter = DEFAULT_LIMITER,
-                           Boundary_Limiter_type bnd_limiter = DEFAULT_BND_LIMITER,
-                           Partial_fixup_type partial_fixup_type = DEFAULT_PARTIAL_FIXUP_TYPE,
-                           Empty_fixup_type empty_fixup_type = DEFAULT_EMPTY_FIXUP_TYPE,
-                           double conservation_tol = DEFAULT_CONSERVATION_TOL,
-                           int max_fixup_iter = DEFAULT_MAX_FIXUP_ITER) {
+                           Boundary_Limiter_type bnd_limiter = DEFAULT_BND_LIMITER
+                           ) {
     
     Interpolate<D, ONWHAT, SourceMesh, TargetMesh, SourceState, TargetState,
                 InterfaceReconstructorType, Matpoly_Splitter, Matpoly_Clipper, CoordSys>
