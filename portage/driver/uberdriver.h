@@ -34,7 +34,7 @@
 #include "wonton/state/flat/flat_state_mm_wrapper.h"
 #include "wonton/support/Point.h"
 #include "wonton/state/state_vector_multi.h"
-#include "portage/driver/fix_mismatch.h"
+// DWS unnecessary #include "portage/driver/fix_mismatch.h"
 #include "portage/driver/coredriver.h"
 
 
@@ -294,8 +294,6 @@ class UberDriver {
           source_weights_[onwhat] =
               intersect_meshes<CELL, Intersect>(intersection_candidates);
 
-          has_mismatch_ |= check_mesh_mismatch<CELL>(source_weights_[onwhat]);
-
           if (have_multi_material_fields_) {
             mat_intersection_completed_ = true;
             
@@ -312,7 +310,6 @@ class UberDriver {
           source_weights_[onwhat] =
               intersect_meshes<NODE, Intersect>(intersection_candidates);
 
-          has_mismatch_ |= check_mesh_mismatch<NODE>(source_weights_[onwhat]);
           break;
         }
         default:
@@ -653,8 +650,17 @@ class UberDriver {
     
     driver->template interpolate_mesh_var<T, ONWHAT, Interpolate>
         (srcvarname, trgvarname, sources_and_weights_in,
-         lower_bound, upper_bound, limiter, bnd_limiter, partial_fixup_type,
-         empty_fixup_type, conservation_tol, max_fixup_iter);
+         lower_bound, upper_bound, limiter, bnd_limiter);
+         
+    // Create the mismatch fixer
+    Portage::MismatchFixer<D, ONWHAT, SourceMesh, SourceState, TargetMesh, TargetState> 
+      fixer(source_mesh_, source_state_, target_mesh_, target_state_, sources_and_weights_in, nullptr);
+
+    // do the fixup
+    if (fixer.has_mismatch())
+      fixer.fix_mismatch(srcvarname,trgvarname, lower_bound, upper_bound, conservation_tol, 
+        max_fixup_iter, partial_fixup_type, empty_fixup_type);
+    
   }
 
 
@@ -722,8 +728,7 @@ class UberDriver {
 #ifdef HAVE_TANGRAM
     driver->template interpolate_mat_var<T, Interpolate>
         (srcvarname, trgvarname, sources_and_weights_by_mat_in,
-         lower_bound, upper_bound, limiter, bnd_limiter, partial_fixup_type,
-         empty_fixup_type, conservation_tol, max_fixup_iter);
+         lower_bound, upper_bound, limiter, bnd_limiter);
 #endif
   }
   
@@ -750,9 +755,6 @@ class UberDriver {
   std::vector<std::string> source_vars_to_remap_;
   std::vector<Entity_kind> entity_kinds_;
   std::vector<Field_type> field_types_;
-
-  // Whether meshes are mismatched
-  bool has_mismatch_ = false;
 
   // Whether we are remapping multimaterial fields
   bool have_multi_material_fields_ = false;

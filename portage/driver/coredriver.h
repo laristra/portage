@@ -29,7 +29,6 @@
 #include "wonton/support/Point.h"
 #include "wonton/support/CoordinateSystem.h"
 #include "wonton/state/state_vector_multi.h"
-#include "portage/driver/fix_mismatch.h"
 #include "portage/driver/parts.h"
 
 /*!
@@ -239,10 +238,7 @@ class CoreDriverBase {
                             T lower_bound, T upper_bound,
                             Limiter_type limiter,
                             Boundary_Limiter_type bnd_limiter,
-                            Partial_fixup_type partial_fixup_type,
-                            Empty_fixup_type empty_fixup_type,
-                            double conservation_tol,
-                            int max_fixup_iter,
+
                             PartPair<D, ONWHAT,
                               SourceMesh, SourceState,
                               TargetMesh, TargetState>* parts_pair = nullptr) {
@@ -253,10 +249,7 @@ class CoreDriverBase {
                                                       sources_and_weights,
                                                       lower_bound, upper_bound,
                                                       limiter, bnd_limiter,
-                                                      partial_fixup_type,
-                                                      empty_fixup_type,
-                                                      conservation_tol,
-                                                      max_fixup_iter, parts_pair);
+                                                      parts_pair);
   }
 
 
@@ -300,11 +293,7 @@ class CoreDriverBase {
                            std::vector<Portage::vector<std::vector<Weights_t>>> const& sources_and_weights_by_mat,
                            T lower_bound, T upper_bound,
                            Limiter_type limiter,
-                           Boundary_Limiter_type bnd_limiter,
-                           Partial_fixup_type partial_fixup_type,
-                           Empty_fixup_type empty_fixup_type,
-                           double conservation_tol,
-                           int max_fixup_iter) {
+                           Boundary_Limiter_type bnd_limiter) {
 
     assert(onwhat() == CELL);
     auto derived_class_ptr = static_cast<CoreDriverType<CELL> *>(this);
@@ -313,31 +302,8 @@ class CoreDriverBase {
                                                       trgvarname,
                                                       sources_and_weights_by_mat,
                                                       lower_bound, upper_bound,
-                                                      limiter, bnd_limiter,
-                                                      partial_fixup_type,
-                                                      empty_fixup_type,
-                                                      conservation_tol,
-                                                      max_fixup_iter);
+                                                      limiter, bnd_limiter);
   }
-
-  /*!
-    @brief Check if meshes are mismatched (don't cover identical
-    portions of space)
-
-    @tparam Entity_kind  What kind of entity are we performing intersection of
-
-    @param[in] sources_weights  Intersection sources and moments (vols, centroids) 
-    @returns   Whether the meshes are mismatched
-  */
-
-  template<Entity_kind ONWHAT>
-  bool 
-  check_mesh_mismatch(Portage::vector<std::vector<Weights_t>> const& source_weights) {
-    assert(ONWHAT == onwhat());
-    auto derived_class_ptr = static_cast<CoreDriverType<ONWHAT> *>(this);
-    return derived_class_ptr->check_mesh_mismatch(source_weights);
-  }
-
 
   /*!
     @brief Set numerical tolerances for small volumes, distances, etc.
@@ -771,42 +737,6 @@ class CoreDriver : public CoreDriverBase<D,
   }
 
 
-
-  /*! 
-    Check mismatch between meshes
-
-    @param[in] sources_and_weights Intersection sources and moments
-    (vols, centroids)
-
-    @returns   Whether the meshes are mismatched
-  */
-
-  bool
-  check_mesh_mismatch(Portage::vector<std::vector<Weights_t>> const& source_weights) {
-
-    // Instantiate mismatch fixer for later use
-    if (not mismatch_fixer_) {
-      // Intel 18.0.1 does not recognize std::make_unique even with -std=c++14 flag *ugh*
-      // mismatch_fixer_ = std::make_unique<MismatchFixer<D, ONWHAT,
-      //                                                  SourceMesh, SourceState,
-      //                                                  TargetMesh,  TargetState>
-      //                                    >
-      //     (source_mesh_, source_state_, target_mesh_, target_state_,
-      //      source_weights, executor_);
-
-      mismatch_fixer_ = std::unique_ptr<MismatchFixer<D, ONWHAT,
-                                                      SourceMesh, SourceState,
-                                                      TargetMesh,  TargetState>
-                                        >(new MismatchFixer<D, ONWHAT,
-                                          SourceMesh, SourceState,
-                                          TargetMesh,  TargetState>
-                                          (source_mesh_, source_state_, target_mesh_, target_state_,
-                                           source_weights, executor_));
-    }
-
-    return mismatch_fixer_->has_mismatch();
-  }
-
   /**
    * @brief Interpolate mesh variable.
    *
@@ -817,10 +747,6 @@ class CoreDriver : public CoreDriverBase<D,
    * @param[in] upper_bound         upper bound of variable value when doing fixup
    * @param[in] limiter             limiter to use
    * @param[in] bnd_limiter         boundary limiter to use
-   * @param[in] partial...          how to fixup partly filled target cells
-   * @param[in] emtpy...            how to fixup empty target cells with this var
-   * @param[in] cons..tol           tolerance for conservation when doing fixup
-   * @param[in] max_fixup_iter      maximum number of iterations for mismatch fixup
    * @param[in] partition           source and target entities list for part-by-part
    */
   template<typename T = double,
@@ -833,10 +759,6 @@ class CoreDriver : public CoreDriverBase<D,
                             T lower_bound, T upper_bound,
                             Limiter_type limiter = DEFAULT_LIMITER,
                             Boundary_Limiter_type bnd_limiter = DEFAULT_BND_LIMITER,
-                            Partial_fixup_type partial_fixup_type = DEFAULT_PARTIAL_FIXUP_TYPE,
-                            Empty_fixup_type empty_fixup_type = DEFAULT_EMPTY_FIXUP_TYPE,
-                            double conservation_tol = DEFAULT_CONSERVATION_TOL,
-                            int max_fixup_iter = DEFAULT_MAX_FIXUP_ITER,
                             const PartPair<D, ONWHAT,
                                            SourceMesh, SourceState,
                                            TargetMesh, TargetState> *const partition = nullptr) {
@@ -865,11 +787,8 @@ class CoreDriver : public CoreDriverBase<D,
 
       // 1. Do some basic checks on supplied source and target parts
       // to prevent bugs when interpolating values:
-      // - check that parts mismatch has already been tested.
-      // - afterwards, check that each entity id is within the
-      //   mesh entity index space.
-
-      assert(partition->is_mismatch_tested());
+      // check that each entity id is within the
+      // mesh entity index space.
 
       int const& max_source_id = source_mesh_.num_entities(ONWHAT, ALL);
       int const& max_target_id = target_mesh_.num_entities(ONWHAT, ALL);
@@ -935,35 +854,12 @@ class CoreDriver : public CoreDriverBase<D,
         auto const& j = part_target_entities[i];
         target_mesh_field[j] = target_part_field[i];
       }
-
-      // 4. Fix partially filled and empty cells values if necessary.
-      // Notice that mismatch detection should have been already performed.
-      if (partition->has_mismatch()) {
-        #ifdef DEBUG
-          std::fprintf(stderr,
-            "There is a mismatch between source and target sub-meshes\n"
-            "Will start fixing interpolated values\n"
-          );
-        #endif
-        partition->fix_mismatch(srcvarname, trgvarname,
-                                lower_bound, upper_bound,
-                                conservation_tol, max_fixup_iter,
-                                partial_fixup_type, empty_fixup_type);
-      }
     } else /* mesh-mesh interpolation */ {
       Portage::pointer<T> target_field(target_mesh_field);
       Portage::transform(target_mesh_.begin(ONWHAT, PARALLEL_OWNED),
                          target_mesh_.end(ONWHAT, PARALLEL_OWNED),
                          sources_and_weights.begin(),
                          target_field, interpolator);
-
-      assert(mismatch_fixer_ && "check_mesh_mismatch must be called first");
-      if (mismatch_fixer_->has_mismatch()) {
-        mismatch_fixer_->fix_mismatch(srcvarname, trgvarname,
-                                      lower_bound, upper_bound,
-                                      conservation_tol, max_fixup_iter,
-                                      partial_fixup_type, empty_fixup_type);
-      }
     }
   }
 
@@ -1077,9 +973,6 @@ class CoreDriver : public CoreDriverBase<D,
 #ifdef PORTAGE_ENABLE_MPI
   MPI_Comm mycomm_ = MPI_COMM_NULL;
 #endif
-  std::unique_ptr<MismatchFixer<D, ONWHAT,
-                                SourceMesh, SourceState,
-                                TargetMesh, TargetState>> mismatch_fixer_;
 
 #ifdef HAVE_TANGRAM
 

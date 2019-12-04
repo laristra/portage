@@ -91,7 +91,6 @@ TEST(CellDriver, 2D_2ndOrder) {
 
   auto candidates = d.search<Portage::SearchKDTree>();
   auto srcwts = d.intersect_meshes<Portage::IntersectR2D>(candidates);
-  bool has_mismatch = d.check_mesh_mismatch(srcwts);
 
   double dblmin = -std::numeric_limits<double>::max();
   double dblmax =  std::numeric_limits<double>::max();
@@ -189,7 +188,6 @@ TEST(CellDriver, 3D_2ndOrder) {
 
   auto candidates = d.search<Portage::SearchKDTree>();
   auto srcwts = d.intersect_meshes<Portage::IntersectR3D>(candidates);
-  bool has_mismatch = d.check_mesh_mismatch(srcwts);
 
   double dblmin = -std::numeric_limits<double>::max();
   double dblmax =  std::numeric_limits<double>::max();
