@@ -249,7 +249,7 @@ class CoreDriverBase {
   
   template<typename T = double,
            Entity_kind ONWHAT,
-           template<int, Entity_kind, class, class, class, class,
+           template<int, Entity_kind, class, class, class, class, class,
                     template <class, int, class, class> class,
                     class, class, class> class Interpolate
            >
@@ -305,7 +305,7 @@ class CoreDriverBase {
   */
   
   template <typename T = double,
-            template<int, Entity_kind, class, class, class, class,
+            template<int, Entity_kind, class, class, class, class, class,
                      template <class, int, class, class> class,
                      class, class, class> class Interpolate
             >
@@ -905,7 +905,7 @@ class CoreDriver : public CoreDriverBase<D,
    * @param[in] partition           source and target entities list for part-by-part
    */
   template<typename T = double,
-    template<int, Entity_kind, class, class, class, class,
+           template<int, Entity_kind, class, class, class, class, class,
     template<class, int, class, class> class,
     class, class, class> class Interpolate
   >
@@ -926,7 +926,9 @@ class CoreDriver : public CoreDriverBase<D,
       return;
     }
 
+
     using Interpolator = Interpolate<D, ONWHAT,
+                                     T,
                                      SourceMesh, TargetMesh,
                                      SourceState, TargetState,
                                      InterfaceReconstructorType,
@@ -1071,7 +1073,7 @@ class CoreDriver : public CoreDriverBase<D,
   */
 
   template<typename T = double,
-           template<int, Entity_kind, class, class, class, class,
+           template<int, Entity_kind, class, class, class, class, class,
                     template<class, int, class, class> class,
                     class, class, class> class Interpolate
            >
@@ -1085,6 +1087,7 @@ class CoreDriver : public CoreDriverBase<D,
                            Portage::vector<Vector<D>>* gradients = nullptr) {
 
     using Interpolator = Interpolate<D, ONWHAT,
+                                     T,
                                      SourceMesh, TargetMesh,
                                      SourceState, TargetState,
                                      InterfaceReconstructorType,
