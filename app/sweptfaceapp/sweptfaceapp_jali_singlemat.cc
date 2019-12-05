@@ -38,14 +38,11 @@
 #include "wonton/state/jali/jali_state_wrapper.h"
 
 // Portage 
-#include "portage/driver/uberdriver.h"
-#include "portage/driver/write_to_gmv.h"
+#include "portage/driver/coredriver.h"
 #include "portage/interpolate/interpolate_1st_order.h"
 #include "portage/interpolate/interpolate_2nd_order.h"
-//#include "portage/intersect/intersect_swept_face.h"
-//#include "portage/intersect/intersect_r2d.h"
-//#include "portage/search/search_swept_face.h"
-//#include "portage/search/search_kdtree.h"
+#include "portage/intersect/intersect_swept_face.h"
+#include "portage/search/search_swept_face.h"
 #include "portage/support/portage.h"
 #include "portage/support/timer.h"
 #include "portage/support/mpi_collate.h"
@@ -163,6 +160,7 @@ int print_usage() {
 
 template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
                            std::shared_ptr<Jali::Mesh> targetMesh,
+ 			   double& delta,
                            bool source_convex_cells,
                            bool target_convex_cells,
                            Portage::Limiter_type limiter,
@@ -172,12 +170,12 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
                            std::string field_filename,
                            bool mesh_output, int rank, int numpe, 
 			   Jali::Entity_kind entityKind,
- 			   double& delta,
                            double& L1_error, double& L2_error,
                            std::shared_ptr<Profiler> profiler = nullptr);
 
-// Forward declaration of function to run interface reconstruction and
-// write the material polygons and their associated fields to a GMV file
+// Forward declaration of function to find nodes on exterior boundary
+void find_nodes_on_exterior_boundary(std::shared_ptr<Jali::Mesh> mesh,
+				std::vector<bool>& node_on_bnd) ;
 
 int main(int argc, char** argv) {
   // Pause profiling until main loop
@@ -379,6 +377,9 @@ int main(int argc, char** argv) {
   // partitioner for internally generated meshes is a BLOCK partitioner
   mf.partitioner(Jali::Partitioner_type::BLOCK);
 
+  // compute the delta, currently only computed for internally generated  
+  double delta = 0.0;
+
   std::vector<double> l1_err(n_converge, 0.0), l2_err(n_converge, 0.0);
   for (int i = 0; i < n_converge; i++) {
 
@@ -400,8 +401,12 @@ int main(int argc, char** argv) {
                          ntargetcells, ntargetcells, ntargetcells);
     }
 
-   // compute the delta 
-   double delta = (srchi-srclo)/nsourcecells;
+   // Compute the delta i.e. cell size of the internally generated meshes
+   // in order to move nodes of the target mesh by a distance proportional 
+   // to the cell size. Delta is not needed for input meshes. 
+   // The number of sourcecells change if this app is run for a convergence
+   // test, and hence the delta value changes as well.  
+   delta = (srchi-srclo)/nsourcecells;
 
 #if ENABLE_TIMINGS
     profiler->time.mesh_init = timer::elapsed(tic);
@@ -426,11 +431,11 @@ int main(int argc, char** argv) {
     // Now run the remap on the meshes and get back the L2 error
     switch (dim) {
       case 2:
-        run<2> (source_mesh, target_mesh, source_convex_cells, target_convex_cells,
+        run<2> (source_mesh, target_mesh, delta, source_convex_cells, target_convex_cells,
                limiter, bnd_limiter, interp_order, 
                field_expression,
                field_filename, mesh_output,
-               rank, numpe, entityKind, delta, l1_err[i], l2_err[i], profiler);
+               rank, numpe, entityKind, l1_err[i], l2_err[i], profiler);
         break;
       case 3:
    //     run<3>(source_mesh, target_mesh, source_convex_cells, target_convex_cells,
@@ -518,6 +523,7 @@ void write_field(std::string filename,
 
 template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
                            std::shared_ptr<Jali::Mesh> targetMesh,
+ 			   double& delta,
                            bool source_convex_cells,
                            bool target_convex_cells,
                            Portage::Limiter_type limiter,
@@ -526,7 +532,6 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
                            std::string field_expression,
                            std::string field_filename, bool mesh_output,
                            int rank, int numpe, Jali::Entity_kind entityKind, 
- 			   double& delta,
                            double& L1_error, double& L2_error,
                            std::shared_ptr<Profiler> profiler) {
   if (rank == 0)
@@ -537,6 +542,46 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
      MPI_Abort(MPI_COMM_WORLD, -1);   
   }
 
+  // Move the target nodes to obtain a target mesh with same
+  // connectivity but different point positions.  Loop over all the
+  // boundary vertices Assume that we are only doing internally
+  // generated meshes. Then we know the extents of the domain and
+  // can use geometric queries to find the boundary nodes. Anyway,
+  // the wrappers don't do well when we modify the coordinates after
+  // their creation because they end up not updating the centroids
+  // in response to the node movement.
+  
+  const int ntarnodes = targetMesh->num_entities(Jali::Entity_kind::NODE,
+                                                  Jali::Entity_type::ALL);
+
+  std::vector<bool> node_on_bnd; 
+  find_nodes_on_exterior_boundary(targetMesh, node_on_bnd);
+
+  double det = delta/10; 
+  for (int i = 0; i <ntarnodes; i++)
+  {
+    std::array<double, 2> coords;
+    targetMesh->node_get_coordinates(i, &coords);
+ 
+    if (ntarnodes <= 20)  
+     std::cout<<"Target Node = "<<i<<" Original Coords = {"<<coords[0]
+	      <<", "<<coords[1]<<"}"<<std::endl;
+    
+    if (!node_on_bnd[i]) {
+      
+      coords[0] = coords[0] + det; 
+      //      coords[1] = coords[1] + det;
+      //coords[1] = coords[1];
+     
+      targetMesh->node_set_coordinates(i, &coords[0]);      
+   
+      if (ntarnodes <= 20)  
+        targetMesh->node_get_coordinates(i, &coords);
+        std::cout<<"Target Node = "<<i<<" Modified Coords = {"<< coords[0]
+	         <<", "<< coords[1]<<"}"<<std::endl;
+    } 
+  }
+
   // Wrappers for interfacing with the underlying mesh data structures.
   Wonton::Jali_Mesh_Wrapper sourceMeshWrapper(*sourceMesh);
   Wonton::Jali_Mesh_Wrapper targetMeshWrapper(*targetMesh);
@@ -545,34 +590,6 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
     sourceMeshWrapper.num_ghost_cells();
   const int ntarcells = targetMeshWrapper.num_owned_cells() +
     targetMeshWrapper.num_ghost_cells();
-
-  // Move the target nodes to obtain a target mesh with same connectivity
-  // but different point positions. 
-  //Loop over all the boundary vertices 
-  const int ntarnodes = targetMeshWrapper.num_entities(Wonton::Entity_kind::NODE);
-  for (int i = 0; i <ntarnodes; i++)
-  {
-    bool onbnd = targetMeshWrapper.on_exterior_boundary(Wonton::Entity_kind::NODE, i); 
-   
-   // move the internal nodes
-   if (!onbnd) {
-      Wonton::Point<2> coords;
-      targetMeshWrapper.node_get_coordinates(i, &coords);  
-      if (nsrccells <= 10)  
-       std::cout<<"Target Node = "<<i<<" Original Coords = {"<<coords[0]<<", "<<coords[1]<<"}"<<std::endl;
-
-      //double det = (std::rand()*delta)/RAND_MAX; 
-      double det = delta/10; 
-      coords[0] = coords[0] + det; 
-      coords[1] = coords[1] + det; 
-
-      const double ncoords[2] = {coords[0], coords[1]};
-      targetMesh->node_set_coordinates(i, &ncoords[0]);      
-
-      if (nsrccells <= 10)  
-       std::cout<<"Target Node = "<<i<<" Modified Coords = {"<<ncoords[0]<<", "<<ncoords[1]<<"}"<<std::endl;
-   }
-  }
 
   // Native jali state managers for source and target
   std::shared_ptr<Jali::State> sourceState(Jali::State::create(sourceMesh));
@@ -608,18 +625,18 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
   std::vector<double> sourceData, targetData; 
   sourceData.resize(nsrccells);
   for (unsigned int c = 0; c < nsrccells; ++c)
-        sourceData[c] = source_field(sourceMesh->cell_centroid(c));
+	sourceData[c] = source_field(sourceMesh->cell_centroid(c));
 
   sourceState->add("density", sourceMesh, Jali::Entity_kind::CELL,
-                    Jali::Entity_type::ALL, &(sourceData[0]));
+		    Jali::Entity_type::ALL, &(sourceData[0]));
 
   targetState->add<double, Jali::Mesh, Jali::UniStateVector>("density",
-                                                            targetMesh,
-                                                Jali::Entity_kind::CELL,
-                                                Jali::Entity_type::ALL, 0.0);
+                                                          targetMesh,
+                                              Jali::Entity_kind::CELL,
+                                              Jali::Entity_type::ALL, 0.0);
 
 #if ENABLE_TIMINGS
-  profiler->time.remap = timer::elapsed(tic, true);
+    profiler->time.remap = timer::elapsed(tic, true);
 #endif
 
   // Executor
@@ -637,31 +654,36 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
  
   if (numpe > 1) MPI_Barrier(MPI_COMM_WORLD);
 
-  Portage::UberDriver<2, 
-	              Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
-	              Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper> 
-   udriver(sourceMeshWrapper, sourceStateWrapper, 
-           targetMeshWrapper, targetStateWrapper, executor); 
+  Portage::CoreDriver<2, Wonton::Entity_kind::CELL,
+		      Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
+		      Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper> 
+   cdriver(sourceMeshWrapper, sourceStateWrapper, 
+	   targetMeshWrapper, targetStateWrapper, executor); 
 
 
-  udriver.compute_interpolation_weights<Portage::SearchSweptFace, Portage::IntersectSweptFace2D>();
-  //udriver.compute_interpolation_weights<Portage::SearchKDTree, Portage::IntersectR2D>();
+  auto candidates = cdriver.search<Portage::SearchSweptFace>();
 
+  auto weights = cdriver.intersect_meshes<Portage::IntersectSweptFace2D>(candidates);
+
+  bool has_mismatch = cdriver.check_mesh_mismatch(weights);
+  
   double dblmin = -std::numeric_limits<double>::max();
   double dblmax =  std::numeric_limits<double>::max();
 
   if (interp_order == 1) {
-      udriver.interpolate<double, Portage::Entity_kind::CELL,
-                  Portage::Interpolate_1stOrder>("density", "density",
-                                               0.0, dblmax);
+      cdriver.interpolate_mesh_var<double,
+				   Portage::Interpolate_1stOrder>("density",
+								  "density",
+								  weights,
+								  0.0, dblmax);
   }
   else if (interp_order == 2) {
-      udriver.interpolate<double, Portage::Entity_kind::CELL,
-                  Portage::Interpolate_2ndOrder>("density", "density",
-                                               0.0, dblmax);
+      cdriver.interpolate_mesh_var<double,
+				   Portage::Interpolate_2ndOrder>("density",
+								  "density",
+								  weights,
+								  0.0, dblmax);
   }
-
-
 
 #if !ENABLE_TIMINGS
   // Output some information for the user
@@ -679,26 +701,26 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
       std::cout << "Dumping data to Exodus files..." << std::endl;
 
      if (field_expression.length() > 0) {
-        sourceState->export_to_mesh();
-        sourceMesh->write_to_exodus_file("input.exo");
+	sourceState->export_to_mesh();
+	sourceMesh->write_to_exodus_file("input.exo");
       }
       targetState->export_to_mesh();
       targetMesh->write_to_exodus_file("output.exo");
       if (rank == 0)
-        std::cout << "...done." << std::endl;
+	std::cout << "...done." << std::endl;
   }
 
 
   /*if (mesh_output) {  
     std::string filename = "source_" + std::to_string(rank) + ".gmv";
     Portage::write_to_gmv<dim>(sourceMeshWrapper, sourceStateWrapper,
-                               fieldnames,
-                               filename);
+			       fieldnames,
+			       filename);
 
     filename = "target_" + std::to_string(rank) + ".gmv";
     Portage::write_to_gmv<dim>(targetMeshWrapper, targetStateWrapper,
-                               fieldnames,
-                               filename);
+			       fieldnames,
+			       filename);
   }*/
 
   // Compute error
@@ -716,12 +738,12 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
   double totvolume = 0. ;
 
   targetStateWrapper.mesh_get_data<double>(Portage::CELL, "density",
-                                        &cellvecout);
+					&cellvecout);
   sourceStateWrapper.mesh_get_data<double>(Portage::CELL, "density",
-                                        &cellvecin);
+					&cellvecin);
   if (numpe == 1 && ntarcells < 10)
    std::cout << "celldata vector on target mesh after remapping is:"
-             << std::endl;
+	     << std::endl;
 
    targetData.resize(ntarcells);
 
@@ -747,17 +769,17 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
       target_mass += cellvecout[c] * cellvol;
 
       if (!targetMeshWrapper.on_exterior_boundary(Portage::Entity_kind::CELL, c)) {
-        double cellvol = targetMeshWrapper.cell_volume(c);
-        totvolume += cellvol;
-        L1_error += fabs(error)*cellvol;
-        L2_error += error*error*cellvol;
+	double cellvol = targetMeshWrapper.cell_volume(c);
+	totvolume += cellvol;
+	L1_error += fabs(error)*cellvol;
+	L2_error += error*error*cellvol;
       }
       if (ntarcells < 10) {
-        std::printf("Rank %d\n", rank);
-        std::printf("Cell=% 4d Centroid = (% 5.3lf,% 5.3lf)", c,
-                    ccen[0], ccen[1]);
-        std::printf("  Value = % 10.6lf  L2 Err = % lf\n",
-                    cellvecout[c], error);
+	std::printf("Rank %d\n", rank);
+	std::printf("Cell=% 4d Centroid = (% 8.5lf,% 8.5lf)", c,
+		    ccen[0], ccen[1]);
+	std::printf("  Value = % 10.6lf  L2 Err = % lf\n",
+		    cellvecout[c], error);
       }
     }
 
@@ -818,4 +840,28 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
   }
 #endif
 
+}
+
+void find_nodes_on_exterior_boundary(std::shared_ptr<Jali::Mesh> mesh,
+				std::vector<bool>& node_on_bnd) {
+
+  int nfaces = mesh->num_entities(Jali::Entity_kind::FACE,
+                                  Jali::Entity_type::ALL);
+  int nnodes = mesh->num_entities(Jali::Entity_kind::NODE,
+                                  Jali::Entity_type::ALL);
+
+  node_on_bnd.assign(nnodes, false);
+
+  for (int f = 0; f < nfaces; f++) {
+    std::vector<int> fcells;
+    mesh->face_get_cells(f, Jali::Entity_type::ALL, &fcells);
+
+    if (fcells.size() == 1) {
+      // if the face is on an exterior boundary, all its nodes are too
+      std::vector<int> fnodes;
+      mesh->face_get_nodes(f, &fnodes);
+      for (auto const &n : fnodes)
+        node_on_bnd[n] = true;
+    }
+  }
 }
