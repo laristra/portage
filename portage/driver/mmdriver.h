@@ -415,7 +415,7 @@ class MMDriver {
   template<Entity_kind onwhat,
            typename NewSourceMesh,
            typename NewSourceState>
-  Portage::vector<Vector<D>> compute_gradient_field(
+  Portage::vector<Vector<D>> compute_gradient(
     std::string const field_name,
     NewSourceMesh const& new_source_mesh,
     NewSourceState const& new_source_state,
@@ -986,13 +986,13 @@ int MMDriver<Search, Intersect, Interpolate, D,
 
   for (int i = 0; i < nvars; ++i) {
     // compute the gradient field for this variable.
-// note: it only be computed for second-order remap.
-    auto gradients = compute_gradient_field<onwhat>(src_meshvar_names[i],
-                                                    source_mesh2, source_state2,
-                                                    limiters_.at(src_meshvar_names[i]),
-                                                    bnd_limiters_.at(src_meshvar_names[i]),
-                                                    0, order, interface_reconstructor,
-                                                    executor);
+    // note: it will be performed only for second-order remap.
+    auto gradients = compute_gradient<onwhat>(src_meshvar_names[i],
+                                              source_mesh2, source_state2,
+                                              limiters_.at(src_meshvar_names[i]),
+                                              bnd_limiters_.at(src_meshvar_names[i]),
+                                              0, order, interface_reconstructor,
+                                              executor);
 
     interpolate.set_interpolation_variable(src_meshvar_names[i],
                                            limiters_.at(src_meshvar_names[i]),
@@ -1251,12 +1251,12 @@ int MMDriver<Search, Intersect, Interpolate, D,
       for (int i = 0; i < nmatvars; ++i) {
         // compute the gradient field for this material.
         // note: it only be computed for second-order remap.
-        auto gradients = compute_gradient_field<onwhat>(src_matvar_names[i],
-                                                        source_mesh2, source_state2,
-                                                        limiters_.at(src_matvar_names[i]),
-                                                        bnd_limiters_.at(src_matvar_names[i]),
-                                                        m, order, interface_reconstructor,
-                                                        executor);
+        auto gradients = compute_gradient<onwhat>(src_matvar_names[i],
+                                                  source_mesh2, source_state2,
+                                                  limiters_.at(src_matvar_names[i]),
+                                                  bnd_limiters_.at(src_matvar_names[i]),
+                                                  m, order, interface_reconstructor,
+                                                  executor);
 
         interpolate.set_interpolation_variable(src_matvar_names[i],
                                                limiters_.at(src_matvar_names[i]),

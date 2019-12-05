@@ -653,7 +653,7 @@ class UberDriver {
     int const order = get_interpolation_order<T, ONWHAT, Interpolate>();
 
     if (order == 2) {
-      auto gradients = driver->template compute_gradient_field<ONWHAT>(srcvarname,
+      auto gradients = driver->template compute_gradient<ONWHAT>(srcvarname,
                                                                        limiter,
                                                                        bnd_limiter);
 
@@ -765,9 +765,9 @@ class UberDriver {
     if (order == 2) {
       Portage::vector<Vector<D>> gradients[nb_mats];
       for (int i = 0; i < nb_mats; ++i) {
-        gradients[i] = driver->template compute_gradient_field<CELL>(srcvarname,
-                                                                     limiter,
-                                                                     bnd_limiter, i);
+        gradients[i] = driver->template compute_gradient<CELL>(srcvarname,
+                                                               limiter,
+                                                               bnd_limiter, i);
       }
       driver->template interpolate_mat_var<T, Interpolate>(
         srcvarname, trgvarname, sources_and_weights_by_mat_in,

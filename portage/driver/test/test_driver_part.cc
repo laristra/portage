@@ -399,10 +399,10 @@ TEST_F(PartOrderTwoTest, PiecewiseLinearField) {
     assert(not parts[i].has_mismatch());
 
     auto const& source_part = parts[i].source();
-    auto gradients = remapper.compute_gradient_field("density",
-                                                     Portage::NOLIMITER,
-                                                     Portage::BND_NOLIMITER,
-                                                     0, &source_part);
+    auto gradients = remapper.compute_gradient("density",
+                                               Portage::NOLIMITER,
+                                               Portage::BND_NOLIMITER,
+                                               0, &source_part);
 
     // interpolate density for current part
     remapper.interpolate_mesh_var<double, Portage::Interpolate_2ndOrder>(
