@@ -1119,7 +1119,6 @@ class CoreDriver : public CoreDriverBase<D,
                               interface_reconstructor_);
       
     int const nmats = source_state_.num_materials();
-    bool const use_gradients = (gradients != nullptr && Interpolator::order == 2);
 
     for (int m = 0; m < nmats; m++) {
 
@@ -1127,7 +1126,7 @@ class CoreDriver : public CoreDriverBase<D,
       //                               // which material values we have
       //                               // to grab from the source state
 
-      auto mat_grad = (use_gradients ? &(gradients[m]) : nullptr);
+      auto mat_grad = (gradients != nullptr ? &(gradients[m]) : nullptr);
       // FEATURE ;-)  Have to set interpolation variable AFTER setting 
       // the material for multimaterial variables
       interpolator.set_interpolation_variable(srcvarname, limiter, bnd_limiter, mat_grad);
