@@ -398,96 +398,148 @@ class MMDriver {
             Wonton::Executor_type const *executor = nullptr);
 
 
-  /**
-   * @brief Compute the gradient field for the current remap variable.
-   *
-   * @tparam onwhat: the entity kind (cell or node)
-   * @tparam NewSourceMesh: the new source mesh wrapper type (native/flat).
-   * @tparam NewSourceState: the new source state wrapper type (native/flat).
-   * @param field_name: the field variable to remap.
-   * @param new_source_mesh: the new source mesh instance.
-   * @param new_source_state: the new source state instance.
-   * @param limiter_type: the gradient limiter to use for internal regions.
-   * @param boundary_limiter_type: the gradient limiter to use for boundary.
-   * @param material_id: the material id in multi-material context
-   * @return the computed gradient field.
-   */
-  template<Entity_kind onwhat,
-           typename NewSourceMesh,
-           typename NewSourceState>
-  Portage::vector<Vector<D>> compute_gradient(
-    std::string const field_name,
-    NewSourceMesh const& new_source_mesh,
-    NewSourceState const& new_source_state,
-    Limiter_type limiter_type = NOLIMITER,
-    Boundary_Limiter_type boundary_limiter_type = BND_NOLIMITER,
-    int material_id = 0,
-    int order = 1,
+    /**
+     * @brief Compute the gradient field for the current remap variable.
+     *
+     * @tparam onwhat: the entity kind (cell or node)
+     * @tparam NewSourceMesh: the new source mesh wrapper type (native/flat).
+     * @tparam NewSourceState: the new source state wrapper type (native/flat).
+     * @param field_name: the field variable to remap.
+     * @param new_source_mesh: the new source mesh instance.
+     * @param new_source_state: the new source state instance.
+     * @param limiter_type: the gradient limiter to use for internal regions.
+     * @param boundary_limiter_type: the gradient limiter to use for boundary.
+     * @param material_id: the material id in multi-material context
+     * @return the computed gradient field.
+     */
+    template<Entity_kind onwhat,
+      typename NewSourceMesh,
+      typename NewSourceState>
+    Portage::vector<Vector<D>> compute_gradient(
+      std::string const field_name,
+      NewSourceMesh const& new_source_mesh,
+      NewSourceState const& new_source_state,
+      Limiter_type limiter_type = NOLIMITER,
+      Boundary_Limiter_type boundary_limiter_type = BND_NOLIMITER,
+      int material_id = 0,
 #if HAVE_TANGRAM
-    std::shared_ptr<InterfaceReconstructor<NewSourceMesh>> interface_reconstructor = nullptr,
+      std::shared_ptr<InterfaceReconstructor<NewSourceMesh>> interface_reconstructor = nullptr,
 #endif
-    Wonton::Executor_type const *executor = nullptr
-  ) const {
+      Wonton::Executor_type const *executor = nullptr
+    ) const {
 
-    // create an empty vector field
-    Portage::vector<Vector<D>> gradient_field;
+      auto const field_type = new_source_state.field_type(onwhat, field_name);
 
-    if (order != 2)
-      return gradient_field;
+      // multi-material remap makes only sense on cell-centered fields.
+      bool const multimat =
+        onwhat == Entity_kind::CELL and
+        field_type == Field_type::MULTIMATERIAL_FIELD;
 
-    auto const field_type = new_source_state.field_type(onwhat, field_name);
+      int size = 0;
+      std::vector<int> mat_cells;
 
-    // multi-material remap makes only sense on cell-centered fields.
-    bool const multimat =
-      onwhat == Entity_kind::CELL and
-      field_type == Field_type::MULTIMATERIAL_FIELD;
+      if (multimat) {
+        if (interface_reconstructor) {
+          new_source_state.mat_get_cells(material_id, &mat_cells);
+          size = mat_cells.size();
+        } else
+          throw std::runtime_error("interface reconstructor not set");
+      } else {
+        size = new_source_mesh.num_entities(onwhat);
+      }
 
-    int size = 0;
-    std::vector<int> mat_cells;
+      using Gradient = Limited_Gradient<D, onwhat,
+        NewSourceMesh, NewSourceState,
+        InterfaceReconstructorType,
+        Matpoly_Splitter, Matpoly_Clipper>;
 
-    if (multimat) {
-      if (interface_reconstructor) {
-        new_source_state.mat_get_cells(material_id, &mat_cells);
-        size = mat_cells.size();
-      } else
-        throw std::runtime_error("interface reconstructor not set");
-    } else {
-      size = new_source_mesh.num_entities(onwhat);
-    }
-
-    using Gradient = Limited_Gradient<D, onwhat,
-                                      NewSourceMesh, NewSourceState,
-                                      InterfaceReconstructorType,
-                                      Matpoly_Splitter, Matpoly_Clipper>;
-
-    // instantiate the right kernel according to entity kind (cell/node),
-    // as well as source and target meshes and states types.
+      // instantiate the right kernel according to entity kind (cell/node),
+      // as well as source and target meshes and states types.
 #if HAVE_TANGRAM
-    Gradient kernel(new_source_mesh, new_source_state, field_name,
-                    limiter_type, boundary_limiter_type,
-                    interface_reconstructor);
+      Gradient kernel(new_source_mesh, new_source_state, field_name,
+                      limiter_type, boundary_limiter_type,
+                      interface_reconstructor);
 #else
-    Gradient kernel(source_mesh_, source_state_, variable_name,
+      Gradient kernel(source_mesh_, source_state_, variable_name,
                     limiter_type, boundary_limiter_type);
 #endif
 
-    // resize the field
-    gradient_field.resize(size);
+      // create and resize the field
+      Portage::vector<Vector<D>> gradient_field(size);
 
-    // populate it by invoking the kernel on each source entity.
-    if (multimat) {
-      kernel.set_material(material_id);
-      Portage::transform(mat_cells.begin(),
-                         mat_cells.end(),
-                         gradient_field.begin(), kernel);
-    } else {
-      Portage::transform(new_source_mesh.begin(onwhat),
-                         new_source_mesh.end(onwhat),
-                         gradient_field.begin(), kernel);
+      // populate it by invoking the kernel on each source entity.
+      if (multimat) {
+        kernel.set_material(material_id);
+        Portage::transform(mat_cells.begin(),
+                           mat_cells.end(),
+                           gradient_field.begin(), kernel);
+      } else {
+        Portage::transform(new_source_mesh.begin(onwhat),
+                           new_source_mesh.end(onwhat),
+                           gradient_field.begin(), kernel);
+      }
+
+      return gradient_field;
     }
 
-    return gradient_field;
+  /**
+   *
+   * @tparam onwhat
+   * @tparam NewSourceMesh
+   * @tparam NewSourceState
+   * @param field_name
+   * @param interpolate
+   * @param gradients
+   */
+  template<Entity_kind onwhat,
+           typename NewSourceMesh, typename NewSourceState>
+  void set_interpolation_variable(
+    std::string const& field_name,
+    NewSourceMesh const& new_source_mesh,
+    NewSourceState const& new_source_state,
+    Interpolate<D, onwhat,
+                NewSourceMesh, TargetMesh_Wrapper,
+                NewSourceState, TargetState_Wrapper,
+                InterfaceReconstructorType,
+                Matpoly_Splitter, Matpoly_Clipper>& interpolate,
+#if HAVE_TANGRAM
+    std::shared_ptr<InterfaceReconstructor<NewSourceMesh>> interface_reconstructor = nullptr,
+#endif
+    int material_id = 0,
+    Portage::vector<Vector<D>>* gradients = nullptr,
+    Wonton::Executor_type const* executor = nullptr) {
+
+    int const order = Interpolate<D, onwhat,
+                                  NewSourceMesh, TargetMesh_Wrapper,
+                                  NewSourceState, TargetState_Wrapper,
+                                  InterfaceReconstructorType,
+                                  Matpoly_Splitter, Matpoly_Clipper>::order;
+
+    switch (order) {
+      case 1:
+        interpolate.set_interpolation_variable(field_name,
+                                               limiters_.at(field_name),
+                                               bnd_limiters_.at(field_name));
+        break;
+      case 2:
+        // compute the gradient field for this variable.
+        *gradients = compute_gradient<onwhat>(field_name,
+                                              new_source_mesh, new_source_state,
+                                              limiters_.at(field_name),
+                                              bnd_limiters_.at(field_name),
+                                              material_id, interface_reconstructor,
+                                              executor);
+
+        interpolate.set_interpolation_variable(field_name,
+                                               limiters_.at(field_name),
+                                               bnd_limiters_.at(field_name),
+                                               gradients);
+        break;
+      default:
+        throw std::runtime_error("unsupported interpolation order");
+    }
   }
+
 
   /*!
     @brief Execute the remapping process
@@ -985,22 +1037,16 @@ int MMDriver<Search, Intersect, Interpolate, D,
     std::cout << "Number of mesh variables on entity kind " << onwhat <<
         " to remap is " << nvars << std::endl;
 
-  int const order = Interpolator::order;
+  Portage::vector<Vector<D>> gradients;
 
   for (int i = 0; i < nvars; ++i) {
-    // compute the gradient field for this variable.
-    // note: it will be performed only for second-order remap.
-    auto gradients = compute_gradient<onwhat>(src_meshvar_names[i],
-                                              source_mesh2, source_state2,
-                                              limiters_.at(src_meshvar_names[i]),
-                                              bnd_limiters_.at(src_meshvar_names[i]),
-                                              0, order, interface_reconstructor,
-                                              executor);
-
-    interpolate.set_interpolation_variable(src_meshvar_names[i],
-                                           limiters_.at(src_meshvar_names[i]),
-                                           bnd_limiters_.at(src_meshvar_names[i]),
-                                           &gradients);
+    // compute gradient field if necessary and set interpolation parameters
+    set_interpolation_variable(src_meshvar_names[i],
+                               source_mesh2, source_state2, interpolate,
+                               #if HAVE_TANGRAM
+                                 interface_reconstructor,
+                               #endif
+                               0, &gradients, executor);
 
     // Get a handle to a memory location where the target state
     // would like us to write this material variable into. If it is
@@ -1252,19 +1298,13 @@ int MMDriver<Search, Intersect, Interpolate, D,
       // if the material has no cells on this partition, then don't bother
       // interpolating MM variables
       for (int i = 0; i < nmatvars; ++i) {
-        // compute the gradient field for this material.
-        // note: it only be computed for second-order remap.
-        auto gradients = compute_gradient<onwhat>(src_matvar_names[i],
-                                                  source_mesh2, source_state2,
-                                                  limiters_.at(src_matvar_names[i]),
-                                                  bnd_limiters_.at(src_matvar_names[i]),
-                                                  m, order, interface_reconstructor,
-                                                  executor);
-
-        interpolate.set_interpolation_variable(src_matvar_names[i],
-                                               limiters_.at(src_matvar_names[i]),
-                                               bnd_limiters_.at(src_matvar_names[i]),
-                                               &gradients);
+        // compute gradient field if necessary and set interpolation parameters
+        set_interpolation_variable(src_matvar_names[i],
+                                   source_mesh2, source_state2, interpolate,
+                                   #if HAVE_TANGRAM
+                                     interface_reconstructor,
+                                   #endif
+                                   m, &gradients, executor);
 
         // Get a handle to a memory location where the target state
         // would like us to write this material variable into. If it is
