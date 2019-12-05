@@ -121,9 +121,6 @@ public:
 #endif    
   }  // SearchSweptFace::SearchSweptFace
 
-  //! Copy constructor (disabled)
-  SearchSweptFace(const SearchSweptFace&) = delete;
-
   //! Assignment operator (disabled)
   SearchSweptFace & operator = (const SearchSweptFace &) = delete;
 
@@ -187,9 +184,6 @@ public:
     assert(numSourceCells == numTargetCells);
 #endif    
   }  // SearchSweptFace::SearchSweptFace
-
-  //! Copy constructor (disabled)
-  SearchSweptFace(const SearchSweptFace&) = delete;
 
   //! Assignment operator (disabled)
   SearchSweptFace & operator = (const SearchSweptFace &) = delete;

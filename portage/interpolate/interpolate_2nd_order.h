@@ -424,7 +424,7 @@ namespace Portage {
         auto intersect_weights = current.weights;
         double intersect_volume = intersect_weights[0];
 
-        if (intersect_volume / volume <= num_tols_.min_relative_volume)
+        if (fabs(intersect_volume / volume) <= num_tols_.min_relative_volume)
           continue;  // no intersection
 
         // Obtain source cell centroid
@@ -728,7 +728,7 @@ namespace Portage {
         auto intersect_weights = current.weights;
         double intersect_volume = intersect_weights[0];
 
-        if (intersect_volume / volume <= num_tols_.min_relative_volume)
+        if (fabs(intersect_volume / volume) <= num_tols_.min_relative_volume)
           continue;  // no intersection
 
         // note: here we are getting the node coord, not the centroid of

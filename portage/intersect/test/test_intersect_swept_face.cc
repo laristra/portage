@@ -10,6 +10,8 @@
   #include "mpi.h"
 #endif
 
+#include <numeric>
+
 #include "wonton/mesh/jali/jali_mesh_wrapper.h"
 #include "wonton/state/jali/jali_state_wrapper.h"
 #include "portage/intersect/intersect_swept_face.h"
