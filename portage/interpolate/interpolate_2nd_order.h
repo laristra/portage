@@ -160,13 +160,6 @@ namespace Portage {
     }
 
     /**
-     * @brief Get the interpolation order.
-     *
-     * @return the interpolation order.
-     */
-    int get_order() const { return 2; }
-
-    /**
      * @brief Functor to do the actual interpolate calculation.
      *
      * @param targetCellID: the target cell index.
@@ -189,6 +182,8 @@ namespace Portage {
       std::cerr << std::endl;
       return 0.;
     }
+
+    constexpr static int order = 2;
 
   private:
     SourceMeshType const& source_mesh_;
@@ -350,12 +345,6 @@ namespace Portage {
       }
     }
 
-    /**
-     * @brief Get the interpolation order.
-     *
-     * @return the interpolation order.
-     */
-    int get_order() const { return 2; }
 
     /**
      * @brief Functor to compute the interpolation of cell values.
@@ -483,6 +472,8 @@ namespace Portage {
        */
       return nb_summed ? total_value / normalization : 0.;
     }
+    
+    constexpr static int order = 2;
 
   private:
     SourceMeshType const& source_mesh_;
@@ -643,12 +634,6 @@ namespace Portage {
       }
     }
 
-    /**
-     * @brief Get the interpolation order.
-     *
-     * @return the interpolation order.
-     */
-    int get_order() const { return 2; }
 
     /**
      * @brief Functor to compute the interpolation of node values.
@@ -722,6 +707,8 @@ namespace Portage {
        */
       return nb_summed ? total_value / normalization : 0.;
     }
+
+    constexpr static int order = 2;
 
   private:
     SourceMeshType const& source_mesh_;

@@ -650,12 +650,17 @@ class UberDriver {
 
     auto & driver = core_driver_serial_[ONWHAT];
 
-    int const order = get_interpolation_order<T, ONWHAT, Interpolate>();
+    using Interpolator = Interpolate<D, ONWHAT,
+                                     SourceMesh, TargetMesh,
+                                     SourceState, TargetState,
+                                     InterfaceReconstructorType,
+                                     Matpoly_Splitter, Matpoly_Clipper,
+                                     CoordSys>;
 
-    if (order == 2) {
+    if (Interpolator::order == 2) {
       auto gradients = driver->template compute_gradient<ONWHAT>(srcvarname,
-                                                                       limiter,
-                                                                       bnd_limiter);
+                                                                 limiter,
+                                                                 bnd_limiter);
 
       driver->template interpolate_mesh_var<T, ONWHAT, Interpolate>(
         srcvarname, trgvarname, sources_and_weights_in,
@@ -669,33 +674,6 @@ class UberDriver {
         empty_fixup_type, conservation_tol, max_fixup_iter
       );
     }
-  }
-
-  /**
-   * @brief Retrieve the interpolation order.
-   *
-   * @tparam T: type of remap variable.
-   * @tparam ONWHAT: entity kind that field resides on.
-   * @tparam Interpolate: interpolation functor type being used for remap.
-   * @return the interpolation order
-   */
-  template<typename T = double, Entity_kind ONWHAT,
-           template<int, Entity_kind, class, class, class, class,
-                    template <class, int, class, class> class,
-                    class, class, class> class Interpolate>
-  int get_interpolation_order() const {
-
-    // instantiate the interpolator and retrieve its order then.
-    using Interpolator = Interpolate<D, ONWHAT, SourceMesh, TargetMesh,
-                                     SourceState, TargetState,
-                                     InterfaceReconstructorType,
-                                     Matpoly_Splitter, Matpoly_Clipper,
-                                     CoordSys>;
-
-    NumericTolerances_t tolerances;
-    tolerances.use_default();
-    Interpolator interpolator(source_mesh_, target_mesh_, source_state_, tolerances);
-    return interpolator.get_order();
   }
 
   /*!
@@ -758,11 +736,17 @@ class UberDriver {
 #if HAVE_TANGRAM
     auto & driver = core_driver_serial_[CELL];
 
-    int const order = get_interpolation_order<T, CELL, Interpolate>();
+    using Interpolator = Interpolate<D, CELL,
+                                     SourceMesh, TargetMesh,
+                                     SourceState, TargetState,
+                                     InterfaceReconstructorType,
+                                     Matpoly_Splitter, Matpoly_Clipper,
+                                     CoordSys>;
+
     int const nb_mats = source_state_.num_materials();
     assert(nb_mats > 0);
 
-    if (order == 2) {
+    if (Interpolator::order == 2) {
       Portage::vector<Vector<D>> gradients[nb_mats];
       for (int i = 0; i < nb_mats; ++i) {
         gradients[i] = driver->template compute_gradient<CELL>(srcvarname,

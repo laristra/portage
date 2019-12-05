@@ -944,12 +944,13 @@ class CoreDriver : public CoreDriverBase<D,
       return;
     }
 
-    // useful shortcuts
-    using interpolator_t =
-      Interpolate<D, ONWHAT, SourceMesh, TargetMesh, SourceState, TargetState,
-        InterfaceReconstructorType, Matpoly_Splitter, Matpoly_Clipper, CoordSys>;
+    using Interpolator = Interpolate<D, ONWHAT,
+                                     SourceMesh, TargetMesh,
+                                     SourceState, TargetState,
+                                     InterfaceReconstructorType,
+                                     Matpoly_Splitter, Matpoly_Clipper, CoordSys>;
 
-    interpolator_t interpolator(source_mesh_, target_mesh_, source_state_, num_tols_, partition);
+    Interpolator interpolator(source_mesh_, target_mesh_, source_state_, num_tols_, partition);
     interpolator.set_interpolation_variable(srcvarname, limiter, bnd_limiter, gradients);
 
     // get a handle to a memory location where the target state
@@ -1106,14 +1107,19 @@ class CoreDriver : public CoreDriverBase<D,
                            double conservation_tol = DEFAULT_CONSERVATION_TOL,
                            int max_fixup_iter = DEFAULT_MAX_FIXUP_ITER,
                            Portage::vector<Vector<D>>* gradients = nullptr) {
-    
-    Interpolate<D, ONWHAT, SourceMesh, TargetMesh, SourceState, TargetState,
-                InterfaceReconstructorType, Matpoly_Splitter, Matpoly_Clipper, CoordSys>
-        interpolator(source_mesh_, target_mesh_, source_state_, num_tols_, interface_reconstructor_);
+
+    using Interpolator = Interpolate<D, ONWHAT,
+                                     SourceMesh, TargetMesh,
+                                     SourceState, TargetState,
+                                     InterfaceReconstructorType,
+                                     Matpoly_Splitter, Matpoly_Clipper, CoordSys>;
+
+    Interpolator interpolator(source_mesh_, target_mesh_,
+                              source_state_, num_tols_,
+                              interface_reconstructor_);
       
     int const nmats = source_state_.num_materials();
-    int const order = interpolator.get_order();
-    bool const use_gradients = (gradients != nullptr and order == 2);
+    bool const use_gradients = (gradients != nullptr && Interpolator::order == 2);
 
     for (int m = 0; m < nmats; m++) {
 

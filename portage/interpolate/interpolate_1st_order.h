@@ -176,13 +176,6 @@ class Interpolate_1stOrder {
       source_state_.mat_get_celldata(interp_var_name, matid_, &source_vals_);
   }  // set_interpolation_variable
 
-  /**
-   * @brief Get the interpolation order.
-   *
-   * @return the interpolation order.
-   */
-  int get_order() const { return 1; }
-
   /*!
     @brief Functor to do the actual interpolation.
     @param[in] sources_and_weights A pair of two vectors.
@@ -205,6 +198,8 @@ class Interpolate_1stOrder {
               << std::endl;
     return 0.0;
   }
+  
+  constexpr static int order = 1;
 
  private:
   SourceMeshType const & source_mesh_;
@@ -334,12 +329,6 @@ class Interpolate_1stOrder<
       source_state_.mat_get_celldata(interp_var_name, matid_, &source_vals_);
   }  // set_interpolation_variable
 
-  /**
-   * @brief Get the interpolation order.
-   *
-   * @return the interpolation order.
-   */
-  int get_order() const { return 1; }
 
   /*!
     @brief Functor to do the actual interpolation.
@@ -408,6 +397,8 @@ class Interpolate_1stOrder<
 
     return val;
   }  // operator()
+  
+  constexpr static int order = 1;
 
  private:
   SourceMeshType const & source_mesh_;
@@ -533,12 +524,6 @@ class Interpolate_1stOrder<
     }
   }  // set_interpolation_variable
 
-  /**
-   * @brief Get the interpolation order.
-   *
-   * @return the interpolation order.
-   */
-  int get_order() const { return 1; }
 
   /*!
     @brief Functor to do the actual interpolation.
@@ -597,6 +582,8 @@ class Interpolate_1stOrder<
 
     return val;
   }  // operator()
+
+  constexpr static int order = 1;
 
  private:
   SourceMeshType const & source_mesh_;

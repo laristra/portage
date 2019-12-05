@@ -914,34 +914,37 @@ int MMDriver<Search, Intersect, Interpolate, D,
   // Make an intersector which knows about the source state (to be able
   // to query the number of materials, etc) and also knows about the
   // interface reconstructor so that it can retrieve pure material polygons
+  using Intersector = Intersect<onwhat,
+                                SourceMesh_Wrapper2, SourceState_Wrapper2,
+                                TargetMesh_Wrapper, InterfaceReconstructorType,
+                                Matpoly_Splitter, Matpoly_Clipper>;
 
+  using Interpolator = Interpolate<D, onwhat,
+                                   SourceMesh_Wrapper2, TargetMesh_Wrapper,
+                                   SourceState_Wrapper2, TargetState_Wrapper,
+                                   InterfaceReconstructorType,
+                                   Matpoly_Splitter, Matpoly_Clipper>;
 
-  Intersect<onwhat, SourceMesh_Wrapper2, SourceState_Wrapper2,
-            TargetMesh_Wrapper, InterfaceReconstructorType,
-            Matpoly_Splitter, Matpoly_Clipper>
-      intersect(source_mesh2, source_state2, target_mesh_, num_tols_,
-                interface_reconstructor);
+  Intersector intersect(source_mesh2, source_state2,
+                        target_mesh_, num_tols_,
+                        interface_reconstructor);
 
   // Get an instance of the desired interpolate algorithm type
-  Interpolate<D, onwhat, SourceMesh_Wrapper2, TargetMesh_Wrapper,
-              SourceState_Wrapper2, TargetState_Wrapper,
-              InterfaceReconstructorType,
-              Matpoly_Splitter, Matpoly_Clipper>
-      interpolate(source_mesh2, target_mesh_, source_state2,
-                  num_tols_, interface_reconstructor);
+  Interpolator interpolate(source_mesh2, target_mesh_,
+                           source_state2,
+                           num_tols_, interface_reconstructor);
 #else
+  using Intersector = Intersect<onwhat, SourceMesh_Wrapper2,
+                                SourceState_Wrapper2, TargetMesh_Wrapper>;
 
-  Intersect<onwhat, SourceMesh_Wrapper2, SourceState_Wrapper2,
-            TargetMesh_Wrapper, DummyInterfaceReconstructor,
-            void, void>
-      intersect(source_mesh2, source_state2, target_mesh_, num_tols_);
+  using Interpolator = Interpolate<D, onwhat,
+                                   SourceMesh_Wrapper2, TargetMesh_Wrapper,
+                                   SourceState_Wrapper2, TargetState_Wrapper>;
+
+  Intersector intersect(source_mesh2, source_state2, target_mesh_, num_tols_);
 
   // Get an instance of the desired interpolate algorithm type
-  Interpolate<D, onwhat, SourceMesh_Wrapper2, TargetMesh_Wrapper,
-              SourceState_Wrapper2, TargetState_Wrapper, DummyInterfaceReconstructor,
-              void, void, Wonton::DefaultCoordSys>
-      interpolate(source_mesh2, target_mesh_, source_state2,
-                  num_tols_);
+  Interpolator interpolate(source_mesh2, target_mesh_, source_state2, num_tols_);
 #endif  // HAVE_TANGRAM
 
 
@@ -982,7 +985,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
     std::cout << "Number of mesh variables on entity kind " << onwhat <<
         " to remap is " << nvars << std::endl;
 
-  int const order = interpolate.get_order();
+  int const order = Interpolator::order;
 
   for (int i = 0; i < nvars; ++i) {
     // compute the gradient field for this variable.
