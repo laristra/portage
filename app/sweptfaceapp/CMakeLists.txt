@@ -13,8 +13,13 @@ if (ENABLE_MPI)
 
   if (Jali_DIR)
     add_executable(sweptfaceapp_jali_singlemat sweptfaceapp_jali_singlemat.cc)
+    add_executable(sweptfacedemo_jali_singlemat sweptfacedemo_jali_singlemat.cc)
     include_directories(${Jali_INCLUDE_DIRS} ${Jali_TPL_INCLUDE_DIRS})
     set_target_properties(sweptfaceapp_jali_singlemat
+            PROPERTIES
+            LINK_FLAGS "${MPI_CXX_LINK_FLAGS}")
+
+    set_target_properties(sweptfacedemo_jali_singlemat
             PROPERTIES
             LINK_FLAGS "${MPI_CXX_LINK_FLAGS}")
 
@@ -23,9 +28,17 @@ if (ENABLE_MPI)
     target_link_libraries(sweptfaceapp_jali_singlemat ${MPI_CXX_LIBRARIES})
     target_link_libraries(sweptfaceapp_jali_singlemat ${Jali_LIBRARIES})
     target_link_libraries(sweptfaceapp_jali_singlemat ${Jali_TPL_LIBRARIES})
+    
+    target_link_libraries(sweptfacedemo_jali_singlemat portage ${EXTRA_LIBS})
+    target_link_libraries(sweptfacedemo_jali_singlemat ${LAPACKX_LIBRARIES})
+    target_link_libraries(sweptfacedemo_jali_singlemat ${MPI_CXX_LIBRARIES})
+    target_link_libraries(sweptfacedemo_jali_singlemat ${Jali_LIBRARIES})
+    target_link_libraries(sweptfacedemo_jali_singlemat ${Jali_TPL_LIBRARIES})
+
 
     if (ENABLE_APP_TIMINGS)
       target_compile_definitions(sweptfaceapp_jali_singlemat PRIVATE ENABLE_TIMINGS=1)
+      target_compile_definitions(sweptfacedemo_jali_singlemat PRIVATE ENABLE_TIMINGS=1)
     endif()
 
   endif (Jali_DIR)
@@ -36,6 +49,7 @@ if (ENABLE_MPI)
 
     if (Jali_DIR)
       target_link_libraries(sweptfaceapp_jali_singlemat ${TCMALLOC_LIB})
+      target_link_libraries(sweptfacedemo_jali_singlemat ${TCMALLOC_LIB})
     endif (Jali_DIR)
     
   endif(ENABLE_TCMALLOC)
@@ -49,6 +63,7 @@ if (ENABLE_MPI)
 
     if (Jali_DIR)
       target_link_libraries(sweptfaceapp_jali_singlemat ${VTUNE_LIB})
+      target_link_libraries(sweptfacedemo_jali_singlemat ${VTUNE_LIB})
     endif (Jali_DIR)
   endif(ENABLE_PROFILE)
 
