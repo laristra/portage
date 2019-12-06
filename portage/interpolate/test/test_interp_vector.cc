@@ -10,6 +10,7 @@ Please see the license file at the root of this repository, or at:
 #include "gtest/gtest.h"
 
 // portage includes
+#include "portage/interpolate/interpolate_1st_order.h"
 #include "portage/interpolate/interpolate_2nd_order.h"
 #include "portage/intersect/simple_intersect_for_tests.h"
 #include "portage/support/portage.h"
@@ -102,6 +103,7 @@ TEST(Interpolate_Vector_2nd, Cell_Ctr_Const_NOLIMITER_2D) {
   num_tols.use_default();
 
   // Create Interpolation object
+  // Portage::Interpolate_1stOrder<2, Wonton::Entity_kind::CELL,
   Portage::Interpolate_2ndOrder<2, Wonton::Entity_kind::CELL,
                                 Wonton::Jali_Mesh_Wrapper,
                                 Wonton::Jali_Mesh_Wrapper,
@@ -110,8 +112,6 @@ TEST(Interpolate_Vector_2nd, Cell_Ctr_Const_NOLIMITER_2D) {
                    num_tols);
 
   interpolator.set_interpolation_variable("cellvec");
-exit(0);
-
 
   Portage::transform(target_mesh_wrapper.begin(Wonton::Entity_kind::CELL),
                      target_mesh_wrapper.end(Wonton::Entity_kind::CELL),
