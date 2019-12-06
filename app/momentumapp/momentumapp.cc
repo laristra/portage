@@ -79,7 +79,7 @@ int main(int argc, char** argv) {
   double leny = 1.0;  // [m]
   
   // physical quantities
-  double density = 1.0;  // [kg / m^2]
+  double density_ini = 1.0;  // [kg / m^2]
 
 
   // Preliminaries
@@ -97,6 +97,7 @@ int main(int argc, char** argv) {
   int ncorners_src = srcmesh_wrapper.num_owned_corners();
 
   int ncells_trg = trgmesh_wrapper.num_owned_cells();
+  int nnodes_trg = trgmesh_wrapper.num_owned_nodes();
   int ncorners_trg = trgmesh_wrapper.num_owned_corners();
 
   // -- states
@@ -107,7 +108,7 @@ int main(int argc, char** argv) {
   Wonton::Jali_State_Wrapper srcstate_wrapper(*srcstate);
   Wonton::Jali_State_Wrapper trgstate_wrapper(*trgstate);
 
-  // -- define two constant velocity components in states
+  // -- input and output velocity components in two states
   std::vector<double> ux_src(nnodes_src, 1.0);
   std::vector<double> uy_src(nnodes_src, 1.0);
 
@@ -130,7 +131,7 @@ int main(int argc, char** argv) {
 
   double total_mass(0.0);
   for (int cn = 0; cn < ncorners_src; ++cn) {
-    mass_cn_src[cn] = density * srcmesh_wrapper.corner_volume(cn);
+    mass_cn_src[cn] = density_ini * srcmesh_wrapper.corner_volume(cn);
     total_mass += mass_cn_src[cn];
   }
 
@@ -143,7 +144,7 @@ int main(int argc, char** argv) {
 
   // -- summary
   std::cout << "mesh:           " << nx << " x " << ny << std::endl;
-  std::cout << "density:        " << density << " kg/m^2" << std::endl;
+  std::cout << "density:        " << density_ini << " kg/m^2" << std::endl;
   std::cout << "total mass:     " << total_mass << " kg" << std::endl;
 
   //
@@ -161,36 +162,36 @@ int main(int argc, char** argv) {
   }
 
   // -- compute density in each mesh cell
-  std::vector<double> density_c(ncells_src);
+  std::vector<double> density(ncells_src);
   for (int c = 0; c < ncells_src; ++c) {
-    density_c[c] = mass_c[c] / srcmesh_wrapper.cell_volume(c);
+    density[c] = mass_c[c] / srcmesh_wrapper.cell_volume(c);
   }
   
   // -- Step 2: collect cell-centered momentum from corner contributions
   //    and compute specific momentum
-  std::vector<double> momentum_x(ncells_src, 0.0);
-  std::vector<double> momentum_y(ncells_src, 0.0);
+  std::vector<double> momentum_x_src(ncells_src, 0.0);
+  std::vector<double> momentum_y_src(ncells_src, 0.0);
 
-  Wonton::Point<2> total_momentum = {0.0, 0.0};
+  Wonton::Point<2> total_momentum_src = {0.0, 0.0};
   for (int c = 0; c < ncells_src; ++c) {
     srcmesh_wrapper.cell_get_corners(c, &corners);
 
-    double& mx = momentum_x[c];
-    double& my = momentum_y[c];
+    double& mx = momentum_x_src[c];
+    double& my = momentum_y_src[c];
     for (auto cn : corners) { 
       int v = srcmesh_wrapper.corner_get_node(cn);
       mx += mass_cn_src[cn] * ux_src[v];
       my += mass_cn_src[cn] * uy_src[v];
     }
-    total_momentum[0] += mx;
-    total_momentum[1] += my;
+    total_momentum_src[0] += mx;
+    total_momentum_src[1] += my;
 
     double volume = srcmesh_wrapper.cell_volume(c);
     mx /= volume;
     my /= volume;
   }
 
-  std::cout << "total momentum: " << total_momentum << " kg m/s" << std::endl;
+  std::cout << "total momentum: " << total_momentum_src << " kg m/s" << std::endl;
 
   // -- Step 3: remap density and specific momentum followin three basic
   //    step: search, intersect, interpolate.
@@ -215,13 +216,13 @@ int main(int argc, char** argv) {
   std::vector<const double*> field_pointers;
 
   field_names.push_back("density");
-  field_pointers.push_back(&(density_c[0]));
+  field_pointers.push_back(&(density[0]));
 
   field_names.push_back("momentum_x");
-  field_pointers.push_back(&(momentum_x[0]));
+  field_pointers.push_back(&(momentum_x_src[0]));
 
   field_names.push_back("momentum_y");
-  field_pointers.push_back(&(momentum_y[0]));
+  field_pointers.push_back(&(momentum_y_src[0]));
 
   for (int i = 0; i < field_names.size(); ++i) {
     srcstate->add(field_names[i], srcmesh, Jali::Entity_kind::CELL,
@@ -255,7 +256,7 @@ int main(int argc, char** argv) {
   }
 
   // -- Step 5: integrate density and specific momentum at corners
-  //    extract primary data
+  //    extract primary data 
   Jali::UniStateVector<double, Jali::Mesh> mass_cn_trg;
   Jali::UniStateVector<double, Jali::Mesh> ux_trg, uy_trg;
 
@@ -282,7 +283,7 @@ int main(int argc, char** argv) {
                 Jali::Entity_type::ALL, &momentum_y_trg);
 
   // -- integrate
-  std::vector<double> momentum_cn_x(ncorners_trg);
+  std::vector<double> momentum_cn_x(ncorners_trg);  // work memory
   std::vector<double> momentum_cn_y(ncorners_trg);
 
   Wonton::Point<2> xc;
@@ -307,17 +308,40 @@ int main(int argc, char** argv) {
       }
 
       // integral is the value at centroid
-      mass_cn_trg[cn] = density_trg[c] + dot_product(gradients[0][c], xcn - xc);
-      // momentum_cn_x[cn] = momentum_x_trg[c] + dot(gradients[1][c], xcn - xc);
-      // momentum_cn_y[cn] = momentum_y_trg[c] + dot(gradients[2][c], xcn - xc);
+      // mass_cn_trg[cn] = density_trg[c] + dot(gradients[0][c], xcn - xc);
+      momentum_cn_x[cn] = momentum_x_trg[c] + dot(gradients[1][c], xcn - xc);
+      momentum_cn_y[cn] = momentum_y_trg[c] + dot(gradients[2][c], xcn - xc);
     }
   }
 
   // -- Step 6: gather data to mesh nodes and compute velocity
+  std::vector<double> mass_v(nnodes_trg, 0.0);  // work memory
+  std::vector<double> momentum_v_x(nnodes_trg, 0.0);
+  std::vector<double> momentum_v_y(nnodes_trg, 0.0);
+
+  for (int cn = 0; cn < ncorners_trg; ++cn) {
+    int v = trgmesh_wrapper.corner_get_node(cn);
+    // mass_v[v] += mass_cn_trg[cn];
+    momentum_v_x[v] += momentum_v_x[cn];
+    momentum_v_y[v] += momentum_v_y[cn];
+  }
+
+  for (int v = 0; v < nnodes_trg; ++v) {
+    ux_trg[v] += momentum_v_x[v] / mass_v[v];
+    uy_trg[v] += momentum_v_y[v] / mass_v[v];
+  }
 
   //
   // Verification
   //
+
+  Wonton::Point<2> total_momentum_trg = { 0.0, 0.0 };
+  for (int v = 0; v < nnodes_trg; ++v) {
+    total_momentum_trg[0] += ux_trg[v] * mass_v[v];
+    total_momentum_trg[1] += uy_trg[v] * mass_v[v];
+  }
+
+  std::cout << "total momentum: " << total_momentum_trg << " kg m/s" << std::endl;
 
   MPI_Finalize();
 }
