@@ -9,6 +9,7 @@
 #include <memory>
 #include <chrono>
 #include <map>
+#include <portage/interpolate/interpolate_2nd_order.h>
 #include "mpi.h" // mandatory
 
 // meshes and states
@@ -21,6 +22,7 @@
 #include "portage/intersect/intersect_r2d.h"
 #include "portage/intersect/intersect_r3d.h"
 #include "portage/interpolate/interpolate_1st_order.h"
+#include "portage/interpolate/interpolate_2nd_order.h"
 #include "portage/driver/coredriver.h"
 #include "portage/support/mpi_collate.h"
 
@@ -526,6 +528,7 @@ int parse(int argc, char* argv[]) {
   return EXIT_SUCCESS;
 }
 
+
 /**
  * @brief Process part-by-part remapping for the given 2D field.
  *
@@ -557,9 +560,9 @@ void remap<2>(std::string field, int nb_parts,
                                           Wonton::Jali_Mesh_Wrapper,
                                           Wonton::Jali_State_Wrapper>;
 
-  using PartPair = Portage::PartPair<2, Wonton::Entity_kind::CELL,
-                                        Wonton::Jali_Mesh_Wrapper,
+  using PartPair = Portage::PartPair<2, Wonton::Jali_Mesh_Wrapper,
                                         Wonton::Jali_State_Wrapper>;
+
 
   std::vector<PartPair> parts_manager;
   parts_manager.reserve(nb_parts);
@@ -579,17 +582,35 @@ void remap<2>(std::string field, int nb_parts,
   auto candidates = remapper.search<Portage::SearchKDTree>();
   auto weights = remapper.intersect_meshes<Portage::IntersectR2D>(candidates);
 
+  // use the right interpolator according to the requested order of remap.
+  auto interpolate = [&](auto* current_part) {
+    switch (params.order) {
+      case 1: remapper.interpolate_mesh_var<double, Portage::Interpolate_1stOrder>(
+          field, field, weights, lower_bound, upper_bound,
+          params.limiter, params.bnd_limiter, params.partial_fixup,
+          params.empty_fixup, params.tolerance,
+          params.fix_iter, current_part
+        );
+      break;
+
+      case 2: remapper.interpolate_mesh_var<double, Portage::Interpolate_2ndOrder>(
+          field, field, weights, lower_bound, upper_bound,
+          params.limiter, params.bnd_limiter, params.partial_fixup,
+          params.empty_fixup, params.tolerance,
+          params.fix_iter, current_part
+        );
+      break;
+
+      default: throw std::runtime_error("wrong remap order");
+    }
+  };
+
   for (int i = 0; i < nb_parts; ++i) {
     // compute volumes of intersection and test for parts boundaries mismatch.
     parts_manager[i].check_mismatch(weights);
 
     // interpolate field for each part and fix partially filled or empty cells.
-    remapper.interpolate_mesh_var<double, Portage::Interpolate_1stOrder>(
-      field, field, weights, lower_bound, upper_bound,
-      params.limiter, params.bnd_limiter, params.partial_fixup,
-      params.empty_fixup, params.tolerance,
-      params.fix_iter, &(parts_manager[i])
-    );
+    interpolate(parts_manager.data() + i);
   }
 }
 
@@ -624,8 +645,7 @@ void remap<3>(std::string field, int nb_parts,
                                           Wonton::Jali_Mesh_Wrapper,
                                           Wonton::Jali_State_Wrapper>;
 
-  using PartPair = Portage::PartPair<3, Wonton::Entity_kind::CELL,
-                                        Wonton::Jali_Mesh_Wrapper,
+  using PartPair = Portage::PartPair<3, Wonton::Jali_Mesh_Wrapper,
                                         Wonton::Jali_State_Wrapper>;
 
   std::vector<PartPair> parts_manager;
@@ -645,17 +665,35 @@ void remap<3>(std::string field, int nb_parts,
   auto candidates = remapper.search<Portage::SearchKDTree>();
   auto weights = remapper.intersect_meshes<Portage::IntersectR3D>(candidates);
 
+  // use the right interpolator according to the requested order of remap.
+  auto interpolate = [&](auto* current_part) {
+    switch (params.order) {
+      case 1: remapper.interpolate_mesh_var<double, Portage::Interpolate_1stOrder>(
+          field, field, weights, lower_bound, upper_bound,
+          params.limiter, params.bnd_limiter, params.partial_fixup,
+          params.empty_fixup, params.tolerance,
+          params.fix_iter, current_part
+        );
+        break;
+
+      case 2: remapper.interpolate_mesh_var<double, Portage::Interpolate_2ndOrder>(
+          field, field, weights, lower_bound, upper_bound,
+          params.limiter, params.bnd_limiter, params.partial_fixup,
+          params.empty_fixup, params.tolerance,
+          params.fix_iter, current_part
+        );
+        break;
+
+      default: throw std::runtime_error("wrong remap order");
+    }
+  };
+
   for (int i = 0; i < nb_parts; ++i) {
     // compute volumes of intersection and test for parts boundaries mismatch.
     parts_manager[i].check_mismatch(weights);
 
     // interpolate field for each part and fix partially filled or empty cells.
-    remapper.interpolate_mesh_var<double, Portage::Interpolate_1stOrder>(
-      field, field, weights, lower_bound, upper_bound,
-      params.limiter, params.bnd_limiter, params.partial_fixup,
-      params.empty_fixup, params.tolerance,
-      params.fix_iter, &(parts_manager[i])
-    );
+    interpolate(parts_manager.data() + i);
   }
 }
 

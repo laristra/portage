@@ -481,7 +481,7 @@ class UberDriver {
 
   template<typename T = double,
            Entity_kind ONWHAT,
-           template<int, Entity_kind, class, class, class,
+           template<int, Entity_kind, class, class, class, class,
                     template<class, int, class, class> class,
                     class, class, class> class Interpolate
            >
@@ -535,7 +535,7 @@ class UberDriver {
 
   template<typename T = double,
            Entity_kind ONWHAT,
-           template<int, Entity_kind, class, class, class,
+           template<int, Entity_kind, class, class, class, class,
                     template<class, int, class, class> class,
                     class, class, class> class Interpolate
            >
@@ -625,7 +625,7 @@ class UberDriver {
   
   template<typename T = double,
            Entity_kind ONWHAT,
-           template<int, Entity_kind, class, class, class,
+           template<int, Entity_kind, class, class, class, class,
                     template <class, int, class, class> class,
                     class, class, class> class Interpolate
            >
@@ -693,7 +693,7 @@ class UberDriver {
   */
   
   template <typename T = double,
-            template<int, Entity_kind, class, class, class,
+            template<int, Entity_kind, class, class, class, class,
                      template <class, int, class, class> class,
                      class, class, class> class Interpolate
             >

@@ -6,7 +6,6 @@
 
 #include <iostream>
 #include <memory>
-
 #include "gtest/gtest.h"
 #ifdef PORTAGE_ENABLE_MPI
   #include "mpi.h"
@@ -16,49 +15,34 @@
 #include "wonton/state/jali/jali_state_wrapper.h"
 #include "portage/search/search_kdtree.h"
 #include "portage/intersect/intersect_r2d.h"
-#include "portage/intersect/intersect_r3d.h"
-#include "portage/intersect/simple_intersect_for_tests.h"
 #include "portage/interpolate/interpolate_1st_order.h"
+#include "portage/interpolate/interpolate_2nd_order.h"
+#include "portage/driver/coredriver.h"
 #include "Mesh.hh"
 #include "MeshFactory.hh"
 #include "JaliStateVector.h"
 #include "JaliState.h"
 
-#include "portage/driver/coredriver.h"
-
 /**
- * @brief Basic sanity tests for part-by-part interpolation.
+ * @brief Base fixture class for any order part-by-part remap tests.
  *
  * Here, source and target meshes are partitioned into two parts,
  * and each part is remapped independently. Remapped values are then
  * compared to the exact values given by an analytical function.
  * Here source and target parts are perfectly aligned (no mismatch),
- * but target mesh resolution is twice that of source mesh.
- * The generated parts looks like below:
- *
- *  0,1                  1,1
- *    ---------:---------
- *   |   s1    :         |
- *   |    _____:__       |
- *   |   |     :  |      |
- *   |   |     :  |      |
- *   |   | s0  :  |      |
- *   |   |     :  |      |
- *   |   |     :  |      |
- *   |    -----:--       |
- *   | r=30    : r=100   |
- *    ---------:---------
- *  0,0                 1,0
+ * but the target mesh is twice finer than the source mesh.
  */
-class PartDriverTest : public testing::Test {
+class PartBaseTest : public testing::Test {
 
 protected:
   // useful shortcuts
-  using Remapper = Portage::CoreDriver<2, Wonton::Entity_kind::CELL,
-                                          Wonton::Jali_Mesh_Wrapper,
-                                          Wonton::Jali_State_Wrapper>;
-  using PartPair = Portage::PartPair<2, Wonton::Entity_kind::CELL,
-                                        Wonton::Jali_Mesh_Wrapper,
+  using Remapper = Portage::CoreDriver<
+    2, Wonton::Entity_kind::CELL,
+    Wonton::Jali_Mesh_Wrapper,
+    Wonton::Jali_State_Wrapper
+  >;
+
+  using PartPair = Portage::PartPair<2, Wonton::Jali_Mesh_Wrapper,
                                         Wonton::Jali_State_Wrapper>;
 
   /**
@@ -72,13 +56,14 @@ protected:
    */
   template<bool is_source>
   void create_partition(double x_min, double x_max, double y_min, double y_max) {
+    assert(nb_parts == 2);
 
     auto size = is_source ? source_mesh_wrapper.num_owned_cells()
                           : target_mesh_wrapper.num_owned_cells();
     auto mesh = is_source ? source_mesh : target_mesh;
     auto part = is_source ? source_cells : target_cells;
 
-    for (int i = 0; i < 2; ++i) {
+    for (int i = 0; i < nb_parts; ++i) {
       part[i].clear();
       part[i].reserve(size);
     }
@@ -92,11 +77,30 @@ protected:
       part[k].emplace_back(i);
     }
 
-    for (int i = 0; i < 2; ++i)
+    for (int i = 0; i < nb_parts; ++i)
       part[i].shrink_to_fit();
   }
 
-public:
+  /**
+   * @brief Populate the part pairs partition.
+   *
+   */
+  void populate_parts(double x_min, double x_max, double y_min, double y_max) {
+    assert(std::abs(x_max - x_min) > epsilon);
+    assert(std::abs(y_max - y_min) > epsilon);
+
+    // create parts by picking entities within a certain range
+    create_partition<true>(x_min, x_max, y_min, y_max);
+    create_partition<false>(x_min, x_max, y_min, y_max);
+
+    // set parts
+    for (int i = 0; i < nb_parts; ++i) {
+      parts.emplace_back(source_mesh_wrapper, source_state_wrapper,
+                         target_mesh_wrapper, target_state_wrapper,
+                         source_cells[i], target_cells[i], nullptr);
+    }
+  }
+
   /**
    * @brief Setup each test-case.
    *
@@ -104,7 +108,7 @@ public:
    * then computes and assigns a density field on source mesh,
    * then creates parts couples for both source and target meshes.
    */
-  PartDriverTest()
+  PartBaseTest()
     : source_mesh(Jali::MeshFactory(MPI_COMM_WORLD)(0.0, 0.0, 1.0, 1.0, 5, 5)),
       target_mesh(Jali::MeshFactory(MPI_COMM_WORLD)(0.0, 0.0, 1.0, 1.0, 10, 10)),
       source_state(Jali::State::create(source_mesh)),
@@ -121,25 +125,15 @@ public:
     // add density field to both meshes
     source_state_wrapper.mesh_add_data<double>(CELL, "density", 0.);
     target_state_wrapper.mesh_add_data<double>(CELL, "density", 0.);
-
-    // create parts by picking entities within (0.2,0.2) and (0.6,0.6)
-    create_partition<true>(0.2, 0.6, 0.2, 0.6);
-    create_partition<false>(0.2, 0.6, 0.2, 0.6);
-
-    // set parts
-    for (int i = 0; i < 2; ++i) {
-      parts.emplace_back(source_mesh_wrapper, source_state_wrapper,
-                         target_mesh_wrapper, target_state_wrapper,
-                         source_cells[i], target_cells[i], nullptr);
-    }
   }
 
 protected:
   // useful constants and aliases
-  static constexpr double upper_bound = std::numeric_limits<double>::max();
-  static constexpr double lower_bound = std::numeric_limits<double>::min();
-  static constexpr double epsilon = 1.E-10;
-  static constexpr auto CELL = Wonton::Entity_kind::CELL;
+  static constexpr double const upper_bound = std::numeric_limits<double>::max();
+  static constexpr double const lower_bound = std::numeric_limits<double>::min();
+  static constexpr double const epsilon = 1.E-10;
+  static constexpr int const nb_parts = 2;
+  static constexpr auto const CELL = Wonton::Entity_kind::CELL;
 
   int nb_source_cells = 0;
   int nb_target_cells = 0;
@@ -158,14 +152,99 @@ protected:
 
   // source and target parts couples
   std::vector<PartPair> parts;
-  std::vector<int> source_cells[2];
-  std::vector<int> target_cells[2];
+  std::vector<int> source_cells[nb_parts];
+  std::vector<int> target_cells[nb_parts];
 };
 
-// sanity check 1: verify that part-by-part interpolation
-// is strictly conservative for a piecewise constant field
-// in absence of mismatch between source and target parts.
-TEST_F(PartDriverTest, PiecewiseConstantField) {
+
+/**
+ * @brief Fixture class for first-order remap tests.
+ *
+ * Here we consider a piecewise constant field on a 2D
+ * cartesian grid with:
+ *
+ *  f(x,y) = |r_min if (x < r)
+ *           |r_max otherwise
+ *           given [r_min,r_max]=[30,100]
+ *
+ *  0,1                  1,1
+ *    ---------:---------
+ *   |   s1    :         |
+ *   |    _____:__       |
+ *   |   |     :  |      |
+ *   |   |     :  |      |
+ *   |   | s0  :  |      |
+ *   |   |     :  |      |
+ *   |   |     :  |      |
+ *   |    -----:--       |
+ *   | r=30    : r=100   |
+ *    ---------:---------
+ *  0,0       r         1,0
+ *  Notice that we do not have any part mismatch in this case.
+ *  Hence we expect a strictly conservative remap using a first-order
+ *  part-by-part scheme.
+ */
+class PartOrderOneTest : public PartBaseTest {
+
+public:
+  /**
+   * @brief Setup each test-case.
+   *
+   * It creates both source and target meshes, then computes
+   * and assigns a density field on source mesh, then creates
+   * parts by picking entities within (0.2,0.2) and (0.6,0.6).
+   */
+  PartOrderOneTest() : PartBaseTest() {
+    populate_parts(0.2, 0.6, 0.2, 0.6);
+  }
+};
+
+/**
+ * @brief Fixture class for second-order remap tests.
+ *
+ * Here we consider a piecewise linear field on a 2D
+ * cartesian grid with:
+ *
+ *  f(x,y) = |c * x, if (x < r).
+ *           |c * (x - r) otherwise.
+ *           given c > 0 and 0 < r < 1.
+ *
+ *            f(x,y)
+ *            /   :     /
+ *          /     :    /
+ *        /       :   /
+ *      /    [0]  :  / [1]
+ *    /           : /
+ *    ------------:------
+ *   0            r     1
+ * Notice that we would obtain smoothed field values near 'r'
+ * with a global remap since the field gradient would be smoothed
+ * in that region. However, we should obtain a perfect remap with
+ * a clear field discontinuity using a second-order part-by-part remap,
+ * since the computed gradient near 'r' is distinct for each part.
+ */
+class PartOrderTwoTest : public PartBaseTest {
+
+public:
+  /**
+   * @brief Setup each test-case.
+   *
+   * It creates both source and target meshes, then computes
+   * and assigns a density field on source mesh, then creates
+   * parts by picking entities within (0.0,0.0) and (0.6,1.0).
+   */
+  PartOrderTwoTest() : PartBaseTest() {
+    populate_parts(0.0, 0.6, 0.0, 1.0);
+  }
+};
+
+
+/**
+ * verify that first-order part-by-part remap
+ * is strictly conservative for a piecewise constant field
+ * in absence of mismatch between source and target parts.
+ */
+TEST_F(PartOrderOneTest, PiecewiseConstantField) {
 
   Remapper remapper(source_mesh_wrapper, source_state_wrapper,
                     target_mesh_wrapper, target_state_wrapper);
@@ -203,8 +282,8 @@ TEST_F(PartDriverTest, PiecewiseConstantField) {
   // compare remapped values with analytically computed ones
   target_state_wrapper.mesh_get_data(CELL, "density", &remapped);
 
-  for (int i = 0; i < 2; ++i) {
-    for (auto&& c : target_cells[i]) {
+  for (auto&& current_part : target_cells) {
+    for (auto&& c : current_part) {
       auto obtained = remapped[c];
       auto centroid = target_mesh->cell_centroid(c);
       auto expected = (centroid[0] < 0.40 ? 30. : 100.);
@@ -217,10 +296,13 @@ TEST_F(PartDriverTest, PiecewiseConstantField) {
   }
 }
 
-// sanity check 2: verify that both part-by-part and mesh-mesh
-// interpolation schemes are equivalent for general fields
-// in absence of mismatch between source and target parts.
-TEST_F(PartDriverTest, MeshMeshRemapComparison) {
+
+/**
+ * verify that both first-order part-by-part and global remap
+ * are equivalent for first-order interpolation of general fields.
+ * in absence of mismatch between source and target parts.
+ */
+TEST_F(PartOrderOneTest, GlobalRemapComparison) {
 
   Remapper remapper(source_mesh_wrapper, source_state_wrapper,
                     target_mesh_wrapper, target_state_wrapper);
@@ -277,5 +359,71 @@ TEST_F(PartDriverTest, MeshMeshRemapComparison) {
                   c, value_mesh_remap, value_part_remap);
     #endif
     ASSERT_NEAR(value_mesh_remap, value_part_remap, epsilon);
+  }
+}
+
+
+/**
+ * verify that second-order part-by-part remap
+ * is strictly conservative for a piecewise linear field
+ * in absence of mismatch between source and target parts.
+ * Notice that no gradient limiter is used here.
+ */
+TEST_F(PartOrderTwoTest, PiecewiseLinearField) {
+
+  Remapper remapper(source_mesh_wrapper, source_state_wrapper,
+                    target_mesh_wrapper, target_state_wrapper);
+
+  double* original = nullptr;
+  double* remapped = nullptr;
+
+  double const coef = 2.;
+  double const x_max = 0.6;
+
+  // assign a linear field on source mesh
+  source_state_wrapper.mesh_get_data(CELL, "density", &original);
+  for (int c = 0; c < nb_source_cells; c++) {
+    auto centroid = source_mesh->cell_centroid(c);
+    auto const& x = centroid[0];
+    original[c] = (x < x_max ? coef * x : coef * (x - x_max));
+  }
+
+  // process remap
+  auto candidates = remapper.search<Portage::SearchKDTree>();
+  auto weights = remapper.intersect_meshes<Portage::IntersectR2D>(candidates);
+  bool has_mismatch = remapper.check_mesh_mismatch(weights);
+
+  for (int i = 0; i < 2; ++i) {
+    // test for mismatch and compute volumes
+    parts[i].check_mismatch(weights);
+    assert(not parts[i].has_mismatch());
+
+    // interpolate density for current part
+    remapper.interpolate_mesh_var<double, Portage::Interpolate_2ndOrder>(
+      "density", "density", weights, lower_bound, upper_bound,
+      Portage::NOLIMITER, Portage::BND_NOLIMITER,
+      Portage::DEFAULT_PARTIAL_FIXUP_TYPE, Portage::DEFAULT_EMPTY_FIXUP_TYPE,
+      Portage::DEFAULT_CONSERVATION_TOL,
+      Portage::DEFAULT_MAX_FIXUP_ITER, &(parts[i])
+    );
+  }
+
+  // compare remapped values with analytically computed ones
+  target_state_wrapper.mesh_get_data(CELL, "density", &remapped);
+
+  for (auto&& current_part : target_cells) {
+    for (auto&& c : current_part) {
+      auto obtained = remapped[c];
+      auto centroid = target_mesh->cell_centroid(c);
+      auto const& x = centroid[0];
+      auto const& y = centroid[1];
+      auto expected = (x < x_max ? coef * x : coef * (x - x_max));
+      #if DEBUG_PART_BY_PART
+        std::printf("target[%02d]: x: %7.3f, y: %7.3f"
+                    ", remapped: %7.3f, expected: %7.3f\n",
+                    c, x, y, obtained, expected);
+      #endif
+      ASSERT_NEAR(obtained, expected, epsilon);
+    }
   }
 }

@@ -7,8 +7,8 @@
 #ifndef PORTAGE_DRIVER_PARTS_H
 #define PORTAGE_DRIVER_PARTS_H
 
-#include <sys/time.h>
 #include <algorithm>
+#include <utility>
 #include <vector>
 #include <map>
 #include <iterator>
@@ -20,6 +20,7 @@
 #include <limits>
 
 #include "portage/support/portage.h"
+#include "portage/driver/fix_mismatch.h"
 
 #define DEBUG_PART_BY_PART 0
 
@@ -34,26 +35,204 @@ namespace Portage {
   using Wonton::Entity_type;
   using entity_weights_t = std::vector<Wonton::Weights_t>;
 
+  template<class Mesh, class State>
+  class Part {
+  public:
+    /**
+     * @brief Default constructor
+     */
+    Part() = default;
+
+    /**
+     * @brief Construct a mesh part object.
+     *
+     * @param mesh: the mesh wrapper to use
+     * @param state: the state wrapper to use
+     * @param entities: the list of entities to remap
+     */
+    Part(Mesh const& mesh, State& state, std::vector<int> const& cells)
+      : mesh_(mesh),
+        state_(state),
+        cells_(cells)  // deep-copy
+    {
+      size_ = cells.size();
+      if (size_ > 0) {
+        volumes_.resize(size_);
+        lookup_.reserve(size_);
+
+        // set relative indexing and populate lookup hashtables
+        for (int i = 0; i < size_; ++i) {
+          auto const& s = cells[i];
+          index_[s] = i;
+          lookup_.insert(s);
+        }
+      } else { throw std::runtime_error("Error: empty part"); }
+    }
+
+    ~Part() = default;
+
+    /**
+     * @brief Get a constant reference to the underlying mesh.
+     *
+     * @return a constant reference to the underlying mesh.
+     */
+    const Mesh& mesh() const { return mesh_; }
+
+    /**
+     * @brief Get a constant reference to the underlying state.
+     *
+     * @return a constant reference to the underlying state.
+     */
+    const State& state() const { return state_; }
+
+    /**
+     * @brief Get a normal reference to the underlying state.
+     *
+     * @return a reference to the underlying state.
+     */
+    State& state() { return const_cast<State&>(state_); }
+
+    /**
+     * @brief Get a reference to the cell list.
+     *
+     * @return a reference to cell list.
+     */
+    std::vector<int> const& cells() const { return cells_; }
+
+    /**
+     * @brief Check if a given entity is in the part.
+     *
+     * @param id entity ID
+     * @return true if so, false otherwise.
+     */
+    bool contains(int id) const { return lookup_.count(id) == 1; }
+
+    /**
+     * @brief Retrieve relative index of given entity.
+     *
+     * @param id: entity absolute index in mesh.
+     * @return entity relative index in part.
+     */
+    const int& index(int id) const { return index_.at(id); }
+
+    /**
+     * @brief Get part size.
+     *
+     * @return entities list size
+     */
+    const int& size() const { return size_; }
+
+    /**
+     * @brief Get the volume of the given entity.
+     *
+     * @param id: the relative index of the entity.
+     * @return its volume.
+     */
+    const double& volume(int id) const {
+      assert(id < size_);
+      if (cached_volumes) {
+        return volumes_[id];
+      } else
+        throw std::runtime_error("Error: cells volumes not yet computed");
+    }
+
+    /**
+     * @brief Retrieve the neighbors of the given entity on mesh part.
+     *
+     * @tparam type     the entity type [ALL|PARALLEL_OWNED]
+     * @param  entity   the given entity
+     * @return filtered the filtered neighboring entities list.
+     */
+    template<Entity_type type = Entity_type::ALL>
+    std::vector<int> get_neighbors(int entity) const {
+      std::vector<int> neigh, filtered;
+      // first retrieve neighbors then filter them
+      mesh_.cell_get_node_adj_cells(entity, type, &neigh);
+      // filter then
+      filtered.reserve(neigh.size());
+      for (auto const& current : neigh) {
+        if (lookup_.count(current)) {
+          filtered.emplace_back(current);
+        }
+      }
+      return filtered;
+    }
+
+    /**
+     * @brief Compute the total volume of the part.
+     *
+     * @return the total volume of the part.
+     */
+    double total_volume() const {
+      if (cached_volumes) {
+        return std::accumulate(volumes_.begin(), volumes_.end(), 0.0);
+      } else
+        throw std::runtime_error("Error: cells volumes not yet computed");
+    }
+
+    /**
+     * @brief Compute and store volumes of each cell of the part.
+     *
+     * @param masks: entity mask to disable some of them.
+     * @return the total volume of the part.
+     */
+    double compute_entity_volumes(const int* masks = nullptr) {
+      if (not cached_volumes) {
+        // check if entities mask should be used
+        bool const use_masks = masks != nullptr;
+
+        // compute the volume of each entity of the part
+        Portage::for_each(cells_.begin(), cells_.end(), [&](int s) {
+          auto const& i = index_[s];
+          auto const& volume = mesh_.cell_volume(s);
+          volumes_[i] = (use_masks ? masks[s] * volume : volume);
+        });
+        // toggle flag
+        cached_volumes = true;
+      }
+      // finally accumulate them to retrieve the global volume
+      return total_volume();
+    }
+
+  private:
+    // mesh and state
+    Mesh const& mesh_;
+    State& state_;
+
+    int size_ = 0;
+    bool cached_volumes = false;
+
+    // part data consist of a list of cells, their volumes and relative indices.
+    // we rely on a hashtable to have constant-time parts lookup queries in average case.
+    // it is intended for lookup purposes only, and is not meant to be iterated.
+    std::vector<int>        cells_   = {};
+    std::vector<double>     volumes_ = {};
+    std::map<int, int>      index_   = {};
+    std::unordered_set<int> lookup_  = {};
+  };
+
+
 /**
  * @brief Manages source and target sub-meshes for part-by-part remap.
  *        It detects boundaries mismatch and provides the necessary fixup
  *        for partially filled and empty cells values.
  *
- * @tparam D                   meshes dimension
- * @tparam onwhat              the entity kind for remap [cell|node]
- * @tparam SourceMesh_Wrapper  the source mesh wrapper to use
- * @tparam SourceState_Wrapper the source state wrapper to use
- * @tparam TargetMesh_Wrapper  the target mesh wrapper to use
- * @tparam TargetState_Wrapper the target state wrapper to use
+ * @tparam D           the problem dimension.
+ * @tparam SourceMesh  the source mesh wrapper to use
+ * @tparam SourceState the source state wrapper to use
+ * @tparam TargetMesh  the target mesh wrapper to use
+ * @tparam TargetState the target state wrapper to use
  */
-  template<int D, Entity_kind onwhat,
-    class SourceMesh_Wrapper, class SourceState_Wrapper,
-    class TargetMesh_Wrapper = SourceMesh_Wrapper,
-    class TargetState_Wrapper = SourceState_Wrapper
+  template<int D,
+    class SourceMesh, class SourceState,
+    class TargetMesh = SourceMesh,
+    class TargetState = SourceState
   >
 class PartPair {
-  // shortcut
-  using entity_weights_t = std::vector<Weights_t>;
+  // shortcuts
+  using entity_weights_t = std::vector<Wonton::Weights_t>;
+  using SourcePart = Part<SourceMesh, SourceState>;
+  using TargetPart = Part<TargetMesh, TargetState>;
 
 public:
   /**
@@ -73,19 +252,13 @@ public:
    * @param executor        the MPI executor to use
    */
   PartPair(
-    SourceMesh_Wrapper    const& source_mesh,
-    SourceState_Wrapper   const& source_state,
-    TargetMesh_Wrapper    const& target_mesh,
-    TargetState_Wrapper&         target_state,
-    std::vector<int>      const& source_entities,
-    std::vector<int>      const& target_entities,
+    SourceMesh const& source_mesh, SourceState& source_state,
+    TargetMesh const& target_mesh, TargetState& target_state,
+    std::vector<int> const& source_entities,
+    std::vector<int> const& target_entities,
     Wonton::Executor_type const* executor
-  ) : source_mesh_(source_mesh),
-      target_mesh_(target_mesh),
-      source_state_(source_state),
-      target_state_(target_state),
-      source_entities_(source_entities),
-      target_entities_(target_entities)
+  ) : source_(source_mesh, source_state, source_entities),
+      target_(target_mesh, target_state, target_entities)
   {
 #ifdef PORTAGE_ENABLE_MPI
     auto mpiexecutor = dynamic_cast<Wonton::MPIExecutor_type const *>(executor);
@@ -96,49 +269,24 @@ public:
       MPI_Comm_size(mycomm_, &nprocs_);
     }
 #endif
-    // update source/target entities metadata
-    source_mesh_size_ =
-      (onwhat == Entity_kind::CELL ? source_mesh_.num_owned_cells()
-                                   : source_mesh_.num_owned_nodes());
-    target_mesh_size_ =
-      (onwhat == Entity_kind::CELL ? target_mesh_.num_owned_cells()
-                                   : target_mesh_.num_owned_nodes());
-
-    source_part_size_ = source_entities.size();
-    target_part_size_ = target_entities.size();
 
     // Get info about which entities on this processor should be
     // masked out and not accounted for in calculations because they
     // were already encountered on a lower rank processor. We have to
     // do this because in our distributed runs, our source partitions
     // don't form a strict tiling (no overlaps) after redistribution
-    source_entities_masks_.resize(source_mesh_size_, 1);
+    int nb_masks = source_.mesh().num_owned_cells();
+
+    source_entities_masks_.resize(nb_masks, 1);
 #ifdef PORTAGE_ENABLE_MPI
     if (distributed_) {
-      get_unique_entity_masks<onwhat, SourceMesh_Wrapper>(
-        source_mesh_, &source_entities_masks_, mycomm_
+      get_unique_entity_masks<Entity_kind::CELL, SourceMesh>(
+        source_.mesh(), &source_entities_masks_, mycomm_
       );
     }
 #endif
 
-    source_entities_volumes_.resize(source_part_size_);
-    target_entities_volumes_.resize(target_part_size_);
-    intersection_volumes_.resize(target_part_size_);
-    source_lookup_.reserve(source_part_size_);
-    target_lookup_.reserve(target_part_size_);
-
-    // set relative indexing and populate lookup hashtables
-    for (int i = 0; i < source_part_size_; ++i) {
-      auto const& s = source_entities[i];
-      source_relative_index_[s] = i;
-      source_lookup_.insert(s);
-    }
-
-    for (int i = 0; i < target_part_size_; ++i) {
-      auto const& t = target_entities[i];
-      target_relative_index_[t] = i;
-      target_lookup_.insert(t);
-    }
+    intersection_volumes_.resize(target_.size());
   }
 
   /**
@@ -158,78 +306,56 @@ public:
    *
    * @return true if so, false otherwise.
    */
-  bool is_mismatch_tested() const { return is_mismatch_tested_; }
+  bool mismatch_tested() const { return is_mismatch_tested_; }
 
   /**
-   * @brief Get a reference to source entities list.
+   * @brief Retrieve a pointer to source mesh part.
    *
-   * @return a reference to source entities list.
+   * @return a pointer to source mesh part
    */
-  std::vector<int> const& get_source_entities() const { return source_entities_; }
+  const SourcePart& source() const { return source_; }
 
   /**
-   * @brief Get a reference to target entities list.
+   * @brief Retrieve a pointer to target mesh part.
    *
-   * @return a reference to source entities list.
+   * @return a pointer to target mesh part
    */
-  std::vector<int> const& get_target_entities() const { return target_entities_; }
+  const TargetPart& target() const { return target_; }
 
   /**
-   * @brief Check if a given entity is in source part list.
+   * @brief Compute source and target parts intersection volume.
    *
-   * @param id entity ID
-   * @return true if so, false otherwise.
+   * @param source_weights: candidate source cells and their intersection moments.
+   * @return the total intersection volume.
    */
-  bool is_source_entity(int id) const { return source_lookup_.count(id) == 1; }
+  double compute_intersect_volumes
+    (Portage::vector<entity_weights_t> const& source_weights) {
+    // retrieve target entities list
+    auto const& target_entities = target_.cells();
 
-  /**
-   * @brief Check if a given entity is in target part list.
-   *
-   * @param id entity ID
-   * @return true if so, false otherwise.
-   */
-  bool is_target_entity(int id) const { return target_lookup_.count(id) == 1; }
-
-  /**
-   * @brief Get source part size.
-   *
-   * @return source entities list size
-   */
-  const int& source_part_size() const { return source_part_size_; }
-
-  /**
-   * @brief Get target part size.
-   *
-   * @return target entities list size
-   */
-  const int& target_part_size() const { return target_part_size_; }
-
-  /**
-   * @brief Retrieve the neighbors of the given entity on target mesh.
-   *
-   * @tparam entity_type the entity type [ALL|PARALLEL_OWNED]
-   * @param  entity      the given entity
-   * @return filtered    the filtered neighboring entities list.
-   */
-  template<Entity_type entity_type = Entity_type::ALL>
-  std::vector<int> get_target_filtered_neighbors(int entity) const {
-    std::vector<int> neighbors, filtered;
-    // retrieve neighbors
-    if (onwhat == Entity_kind::CELL) {
-      target_mesh_.cell_get_node_adj_cells(entity, entity_type, &neighbors);
-    } else {
-      target_mesh_.node_get_cell_adj_nodes(entity, entity_type, &neighbors);
-    }
-    // filter then
-    filtered.reserve(neighbors.size());
-    for (auto&& neigh : neighbors) {
-      if (target_lookup_.count(neigh)) {
-        filtered.emplace_back(neigh);
+    // compute the intersected volume of each target part entity
+    Portage::for_each(target_entities.begin(), target_entities.end(), [&](int t) {
+      auto const& i = target_.index(t);
+      // accumulate moments
+      entity_weights_t const moments = source_weights[t];
+      intersection_volumes_[i] = 0.;
+      for (auto const& current : moments) {
+        // matched source cell should be in the source part
+        if (source_.contains(current.entityID))
+          intersection_volumes_[i] += current.weights[0];
+        #if DEBUG_PART_BY_PART
+          std::printf("\tmoments[target:%d][source:%d]: %f\n"
+                      , t, current.entityID, current.weights[0]);
+        #endif
       }
-    }
-    return std::move(filtered);
-  }
+      #if DEBUG_PART_BY_PART
+        std::printf("intersect_volume[%02d]: %.3f\n", t, intersection_volumes_[i]);
+      #endif
+    });
 
+    // accumulate values to retrieve total intersected volume
+    return std::accumulate(intersection_volumes_.begin(), intersection_volumes_.end(), 0.);
+  }
 
   /**
    * @brief Check and fix source/target boundaries mismatch.
@@ -251,65 +377,15 @@ public:
    * @param source... source entities ID and weights for each target entity.
    * @return true if a mismatch has been identified, false otherwise.
    */
-  bool check_mismatch(Portage::vector<entity_weights_t> const& source_ents_and_weights) {
-
+  bool check_mismatch(Portage::vector<entity_weights_t> const& source_weights) {
 
     // ------------------------------------------
     // COMPUTE VOLUMES ON SOURCE AND TARGET PARTS
     // ------------------------------------------
     // collect volumes of entities that are not masked out and sum them up
-    for (auto&& s : source_entities_) {
-      auto const& i = source_relative_index_[s];
-      source_entities_volumes_[i] = (
-        onwhat == Entity_kind::CELL
-          ? source_entities_masks_[s] * source_mesh_.cell_volume(s)
-          : source_entities_masks_[s] * source_mesh_.dual_cell_volume(s)
-      );
-      #if DEBUG_PART_BY_PART
-        std::printf("- source_volume[%02d]: %.3f\n", s, source_entities_volumes_[i]);
-        if (i == source_part_size_ - 1)
-          std::printf("=======\n");
-      #endif
-    }
-
-    for (auto&& t : target_entities_) {
-      auto const& i = target_relative_index_[t];
-      target_entities_volumes_[i] = (
-        onwhat == Entity_kind::CELL ? target_mesh_.cell_volume(t)
-                                    : target_mesh_.dual_cell_volume(t)
-      );
-      #if DEBUG_PART_BY_PART
-        std::printf("- target_volume[%02d]: %.3f\n", t, target_entities_volumes_[i]);
-        if (i == target_part_size_ - 1)
-          std::printf("=======\n");
-      #endif
-    }
-
-    for (auto&& t : target_entities_) {
-      auto const& i = target_relative_index_[t];
-      // accumulate weights
-      entity_weights_t const& weights = source_ents_and_weights[t];
-      intersection_volumes_[i] = 0.;
-      for (auto&& sw : weights) {
-        // matched source cell should be in the source part
-        if (source_lookup_.count(sw.entityID))
-          intersection_volumes_[i] += sw.weights[0];
-        #if DEBUG_PART_BY_PART
-          std::printf("\tweights[target:%d][source:%d]: %f\n",
-                      t, sw.entityID, sw.weights[0]);
-        #endif
-      }
-      #if DEBUG_PART_BY_PART
-        std::printf("intersect_volume[%02d]: %.3f\n", t, intersection_volumes_[i]);
-      #endif
-    }
-
-    double source_volume = std::accumulate(source_entities_volumes_.begin(),
-                                           source_entities_volumes_.end(), 0.);
-    double target_volume = std::accumulate(target_entities_volumes_.begin(),
-                                           target_entities_volumes_.end(), 0.);
-    double intersect_volume = std::accumulate(intersection_volumes_.begin(),
-                                              intersection_volumes_.end(), 0.);
+    double source_volume = source_.compute_entity_volumes(source_entities_masks_.data());
+    double target_volume = target_.compute_entity_volumes();
+    double intersect_volume = compute_intersect_volumes(source_weights);
 
     global_source_volume_    = source_volume;
     global_target_volume_    = target_volume;
@@ -383,12 +459,13 @@ public:
     // number of 0 and empty cell layers will have positive layer
     // numbers starting from 1
     std::vector<int> empty_entities;
-    empty_entities.reserve(target_part_size_);
+    int const target_part_size = target_.size();
 
-    is_cell_empty_.resize(target_part_size_, false);
+    empty_entities.reserve(target_part_size);
+    is_cell_empty_.resize(target_part_size, false);
 
-    for (auto&& entity : target_entities_) {
-      auto const& i = target_relative_index_[entity];
+    for (auto&& entity : target_.cells()) {
+      auto const& i = target_.index(entity);
       if (std::abs(intersection_volumes_[i]) < epsilon_) {
         empty_entities.emplace_back(entity);
         is_cell_empty_[i] = true;
@@ -406,22 +483,14 @@ public:
 #endif
 
     if (global_nb_empty > 0 and rank_ == 0) {
-      if (onwhat == Entity_kind::CELL) {
-        std::fprintf(stderr,
-          "One or more target cells are not covered by ANY source cells.\n"
-          "Will assign values based on their neighborhood\n"
-        );
-      }
-      else {
-        std::fprintf(stderr,
-          "One/more target dual cells are not covered by ANY source dual cells.\n"
-          "Will assign values based on their neighborhood\n"
-        );
-      }
+      std::fprintf(stderr,
+                   "One or more target cells are not covered by ANY source cells.\n"
+                   "Will assign values based on their neighborhood\n"
+      );
     }
 
     if (nb_empty > 0) {
-      layer_num_.resize(target_part_size_, 0);
+      layer_num_.resize(target_.size(), 0);
 
       int nb_layers = 0;
       int nb_tagged = 0;
@@ -433,14 +502,14 @@ public:
         std::vector<int> current_layer_entities;
 
         for (auto&& entity : empty_entities) {
-          auto const& i = target_relative_index_[entity];
+          auto const& i = target_.index(entity);
           // skip already set entities
           if (layer_num_[i] == 0) {
 
-            auto neighbors = get_target_filtered_neighbors<Entity_type::ALL>(entity);
+            auto neighbors = target_.get_neighbors(entity);
 
             for (auto&& neigh : neighbors) {
-              auto const& j = target_relative_index_[neigh];
+              auto const& j = target_.index(neigh);
               // At least one neighbor has some material or will
               // receive some material (indicated by having a +ve
               // layer number)
@@ -454,7 +523,7 @@ public:
 
         // Tag the current layer cells with the next layer number
         for (auto&& entity : current_layer_entities) {
-          auto const& t = target_relative_index_[entity];
+          auto const& t = target_.index(entity);
           layer_num_[t] = nb_layers + 1;
         }
         nb_tagged += current_layer_entities.size();
@@ -515,12 +584,13 @@ public:
                     Partial_fixup_type partial_fixup_type = SHIFTED_CONSERVATIVE,
                     Empty_fixup_type empty_fixup_type = EXTRAPOLATE) const {
 
-    if (source_state_.field_type(onwhat, src_var_name) == Field_type::MESH_FIELD) {
+    if (source_.state().field_type(Entity_kind::CELL, src_var_name) == Field_type::MESH_FIELD) {
       return fix_mismatch_meshvar(src_var_name, trg_var_name,
                                   global_lower_bound, global_upper_bound,
                                   conservation_tol, maxiter,
                                   partial_fixup_type, empty_fixup_type);
-    }
+    } else
+      return false;
   }
 
   /**
@@ -546,17 +616,21 @@ public:
                             Empty_fixup_type empty_fixup_type) const {
 
     // valid only for part-by-part scenario
-
     static bool hit_lower_bound  = false;
     static bool hit_higher_bound = false;
+
+    // use aliases
+    auto const& source_entities = source_.cells();
+    auto const& target_entities = target_.cells();
+    auto const& source_state = source_.state();
+    auto& target_state = const_cast<TargetState&>(target_.state());
 
     // Now process remap variables
     // WARNING: absolute indexing
     double const* source_data;
-    double*       target_data;
-
-    source_state_.mesh_get_data(onwhat, src_var_name, &source_data);
-    target_state_.mesh_get_data(onwhat, trg_var_name, &target_data);
+    double* target_data = nullptr;
+    source_state.mesh_get_data(Entity_kind::CELL, src_var_name, &source_data);
+    target_state.mesh_get_data(Entity_kind::CELL, trg_var_name, &target_data);
 
     if (partial_fixup_type == LOCALLY_CONSERVATIVE) {
       // In interpolate step, we divided the accumulated integral (U)
@@ -571,8 +645,8 @@ public:
       // (u'_t = U/v_c = u_t*v_i/v_c). This does not affect the values
       // in fully filled cells
 
-      for (auto&& entity : target_entities_) {
-        auto const& t = target_relative_index_.at(entity);
+      for (auto&& entity : target_entities) {
+        auto const& t = target_.index(entity);
         if (not is_cell_empty_[t]) {
 
           #if DEBUG_PART_BY_PART
@@ -581,11 +655,10 @@ public:
           #endif
 
           auto const relative_voldiff =
-            std::abs(intersection_volumes_[t] - target_entities_volumes_[t])
-            / target_entities_volumes_[t];
+            std::abs(intersection_volumes_[t] - target_.volume(t)) / target_.volume(t);
 
           if (relative_voldiff > tolerance_) {
-            target_data[entity] *= intersection_volumes_[t] / target_entities_volumes_[t];
+            target_data[entity] *= intersection_volumes_[t] / target_.volume(t);
           }
           #if DEBUG_PART_BY_PART
             std::printf(", after: %.3f\n", target_data[entity]);
@@ -612,10 +685,10 @@ public:
           double averaged_value = 0.;
           int nb_extrapol = 0;
           auto neighbors =
-            get_target_filtered_neighbors<Entity_type::PARALLEL_OWNED>(entity);
+            target_.template get_neighbors<Entity_type::PARALLEL_OWNED>(entity);
 
           for (auto&& neigh : neighbors) {
-            auto const& i = target_relative_index_.at(neigh);
+            auto const& i = target_.index(neigh);
             if (layer_num_[i] < current_layer_number) {
               averaged_value += target_data[neigh];
               nb_extrapol++;
@@ -651,14 +724,14 @@ public:
       double source_sum = 0.;
       double target_sum = 0.;
 
-      for (auto&& s : source_entities_) {
-        auto const& i = source_relative_index_.at(s);
-        source_sum += source_data[s] * source_entities_volumes_[i];
+      for (auto&& s : source_entities) {
+        auto const& i = source_.index(s);
+        source_sum += source_data[s] * source_.volume(i);
       }
 
-      for (auto&& t : target_entities_) {
-        auto const& i = target_relative_index_.at(t);
-        target_sum += target_data[t] * target_entities_volumes_[i];
+      for (auto&& t : target_entities) {
+        auto const& i = target_.index(t);
+        target_sum += target_data[t] * target_.volume(i);
       }
 
       double global_source_sum = source_sum;
@@ -698,10 +771,10 @@ public:
 
       if (empty_fixup_type == Empty_fixup_type::LEAVE_EMPTY) {
         double covered_target_volume = 0.;
-        for (auto&& entity : target_entities_) {
-          auto const& t = target_relative_index_.at(entity);
+        for (auto&& entity : target_entities) {
+          auto const& t = target_.index(entity);
           if (not is_cell_empty_[t]) {
-            covered_target_volume += target_entities_volumes_[t];
+            covered_target_volume += target_.volume(t);
           }
         }
         global_covered_target_volume = covered_target_volume;
@@ -717,17 +790,9 @@ public:
         global_adj_target_volume = global_covered_target_volume;
       }
       else {
-        adj_target_volume = std::accumulate(
-          target_entities_volumes_.begin(), target_entities_volumes_.end(), 0
-        );
+        adj_target_volume = target_.total_volume();
         global_adj_target_volume = global_target_volume_;
       }
-
-      // get the right entity type
-      auto target_entity_type = [&](int entity) -> Entity_type {
-        return (onwhat == Entity_kind::CELL ? target_mesh_.cell_get_type(entity)
-                                            : target_mesh_.node_get_type(entity));
-      };
 
       // sort of a "unit" discrepancy or difference per unit volume
       double udiff = absolute_diff / global_adj_target_volume;
@@ -735,9 +800,9 @@ public:
       int iter = 0;
       while (std::abs(relative_diff) > conservation_tol and iter < maxiter) {
 
-        for (auto&& entity : target_entities_) {
-          auto const& t = target_relative_index_.at(entity);
-          bool is_owned = target_entity_type(entity) == Entity_type::PARALLEL_OWNED;
+        for (auto&& entity : target_entities) {
+          auto const& t = target_.index(entity);
+          bool is_owned = target_.mesh().cell_get_type(entity) == Entity_type::PARALLEL_OWNED;
           bool should_fix = (empty_fixup_type != LEAVE_EMPTY or not is_cell_empty_[t]);
 
           if (is_owned and should_fix) {
@@ -756,7 +821,7 @@ public:
               }
               // this cell is no longer in play for adjustment - so remove its
               // volume from the adjusted target_volume
-              adj_target_volume -= target_entities_volumes_[t];
+              adj_target_volume -= target_.volume(t);
 
             } else if ((target_data[entity] - udiff) > global_upper_bound) {  // udiff < 0
               // Adding the full deficit will make this cell violate the
@@ -774,7 +839,7 @@ public:
 
               // this cell is no longer in play for adjustment - so remove its
               // volume from the adjusted target_volume
-              adj_target_volume -= target_entities_volumes_[t];
+              adj_target_volume -= target_.volume(t);
             } else {
               // This is the equivalent of
               //           [curval*cellvol - diff*cellvol/meshvol]
@@ -787,9 +852,9 @@ public:
 
         // Compute the new integral over all processors
         target_sum = 0.;
-        for (auto&& entity : target_entities_) {
-          auto const& t = target_relative_index_.at(entity);
-          target_sum += target_entities_volumes_[t] * target_data[entity];
+        for (auto&& entity : target_entities) {
+          auto const& t = target_.index(entity);
+          target_sum += target_.volume(t) * target_data[entity];
         }
 
         global_target_sum = target_sum;
@@ -853,16 +918,9 @@ public:
 
 
 private:
-
-  // references to user-provided entities lists
-  std::vector<int> const& source_entities_;
-  std::vector<int> const& target_entities_;
-
-  // hashtables to have constant-time parts lookup queries in average case.
-  // remark: for lookup purposes only, not meant to be iterated.
-  std::unordered_set<int> source_lookup_;
-  std::unordered_set<int> target_lookup_;
-
+  // source and target mesh parts
+  SourcePart source_;
+  TargetPart target_;
 
   bool is_mismatch_tested_ = false;
   bool has_mismatch_       = false;
@@ -872,23 +930,8 @@ private:
   static constexpr double epsilon_   = std::numeric_limits<double>::epsilon();
   static constexpr double tolerance_ = 1.E2 * epsilon_;
 
-  // source/target meshes and related states
-  SourceMesh_Wrapper  const& source_mesh_;
-  SourceState_Wrapper const& source_state_;
-  TargetMesh_Wrapper  const& target_mesh_;
-  TargetState_Wrapper&       target_state_;
-
-  // entities list and data for part-by-part
-  // WARNING: use relative indexing
-  int source_mesh_size_ = 0;
-  int target_mesh_size_ = 0;
-  int source_part_size_ = 0;
-  int target_part_size_ = 0;
-
-  std::vector<int>    source_entities_masks_   = {};
-  std::vector<double> source_entities_volumes_ = {};
-  std::vector<double> target_entities_volumes_ = {};
-  std::vector<double> intersection_volumes_    = {};
+  std::vector<int>    source_entities_masks_ = {};
+  std::vector<double> intersection_volumes_  = {};
 
   // data needed for mismatch checks
   double global_source_volume_    = 0.;
@@ -897,8 +940,6 @@ private:
   double relative_voldiff_        = 0.;
 
   // empty target cells management
-  std::map<int,int> source_relative_index_    = {};
-  std::map<int,int> target_relative_index_    = {};
   std::vector<int>  layer_num_                = {};
   std::vector<bool> is_cell_empty_            = {};
   std::vector<std::vector<int>> empty_layers_ = {};

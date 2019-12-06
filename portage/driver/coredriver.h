@@ -230,7 +230,7 @@ class CoreDriverBase {
   
   template<typename T = double,
            Entity_kind ONWHAT,
-           template<int, Entity_kind, class, class, class,
+           template<int, Entity_kind, class, class, class, class,
                     template <class, int, class, class> class,
                     class, class, class> class Interpolate
            >
@@ -243,9 +243,8 @@ class CoreDriverBase {
                             Empty_fixup_type empty_fixup_type,
                             double conservation_tol,
                             int max_fixup_iter,
-                            PartPair<D, ONWHAT,
-                              SourceMesh, SourceState,
-                              TargetMesh, TargetState>* parts_pair = nullptr) {
+                            const PartPair<D, SourceMesh, SourceState,
+                                              TargetMesh, TargetState>* parts_pair = nullptr) {
     assert(ONWHAT == onwhat());
     auto derived_class_ptr = static_cast<CoreDriverType<ONWHAT> *>(this);
     derived_class_ptr->
@@ -292,7 +291,7 @@ class CoreDriverBase {
   */
   
   template <typename T = double,
-            template<int, Entity_kind, class, class, class,
+            template<int, Entity_kind, class, class, class, class,
                      template <class, int, class, class> class,
                      class, class, class> class Interpolate
             >
@@ -824,7 +823,7 @@ class CoreDriver : public CoreDriverBase<D,
    * @param[in] partition           source and target entities list for part-by-part
    */
   template<typename T = double,
-    template<int, Entity_kind, class, class, class,
+    template<int, Entity_kind, class, class, class, class,
     template<class, int, class, class> class,
     class, class, class> class Interpolate
   >
@@ -837,9 +836,8 @@ class CoreDriver : public CoreDriverBase<D,
                             Empty_fixup_type empty_fixup_type = DEFAULT_EMPTY_FIXUP_TYPE,
                             double conservation_tol = DEFAULT_CONSERVATION_TOL,
                             int max_fixup_iter = DEFAULT_MAX_FIXUP_ITER,
-                            const PartPair<D, ONWHAT,
-                                           SourceMesh, SourceState,
-                                           TargetMesh, TargetState> *const partition = nullptr) {
+                            const PartPair<D, SourceMesh, SourceState,
+                                              TargetMesh, TargetState>* partition = nullptr) {
 
     if (source_state_.get_entity(srcvarname) != ONWHAT) {
       std::cerr << "Variable " << srcvarname << " not defined on Entity_kind "
@@ -848,12 +846,11 @@ class CoreDriver : public CoreDriverBase<D,
     }
 
     // useful shortcuts
-    using entity_weights_t = std::vector<Weights_t>;
     using interpolator_t =
-      Interpolate<D, ONWHAT, SourceMesh, TargetMesh, SourceState,
+      Interpolate<D, ONWHAT, SourceMesh, TargetMesh, SourceState, TargetState,
         InterfaceReconstructorType, Matpoly_Splitter, Matpoly_Clipper, CoordSys>;
 
-    interpolator_t interpolator(source_mesh_, target_mesh_, source_state_, num_tols_);
+    interpolator_t interpolator(source_mesh_, target_mesh_, source_state_, num_tols_, partition);
     interpolator.set_interpolation_variable(srcvarname, limiter, bnd_limiter);
 
     // get a handle to a memory location where the target state
@@ -862,7 +859,7 @@ class CoreDriver : public CoreDriverBase<D,
     target_state_.mesh_get_data(ONWHAT, trgvarname, &target_mesh_field);
 
     // perform part-by-part interpolation
-    if (partition != nullptr) {
+    if (ONWHAT == Entity_kind::CELL and partition != nullptr) {
 
       // 1. Do some basic checks on supplied source and target parts
       // to prevent bugs when interpolating values:
@@ -870,24 +867,23 @@ class CoreDriver : public CoreDriverBase<D,
       // - afterwards, check that each entity id is within the
       //   mesh entity index space.
 
-      assert(partition->is_mismatch_tested());
+      assert(partition->mismatch_tested());
 
       int const& max_source_id = source_mesh_.num_entities(ONWHAT, ALL);
       int const& max_target_id = target_mesh_.num_entities(ONWHAT, ALL);
+      auto const& source_part = partition->source();
+      auto const& target_part = partition->target();
 
-      auto const& part_source_entities = partition->get_source_entities();
-      auto const& part_target_entities = partition->get_target_entities();
-
-      Portage::for_each(part_source_entities.begin(),
-                        part_source_entities.end(),
+      Portage::for_each(source_part.cells().begin(),
+                        source_part.cells().end(),
                         [&](int current){ assert(current <= max_source_id); });
 
-      Portage::for_each(part_target_entities.begin(),
-                        part_target_entities.end(),
+      Portage::for_each(target_part.cells().begin(),
+                        target_part.cells().end(),
                         [&](int current){ assert(current <= max_target_id); });
 
       int const target_mesh_size = sources_and_weights.size();
-      int const target_part_size = partition->target_part_size();
+      int const target_part_size = target_part.size();
 
       // 2. Filter intersection weights list.
       // To restrict interpolation only to source-target parts, we need
@@ -908,7 +904,7 @@ class CoreDriver : public CoreDriverBase<D,
         heap.reserve(10); // size of a local vicinity
         for (auto&& weight : entity_weights) {
           // constant-time lookup in average case.
-          if(partition->is_source_entity(weight.entityID)) {
+          if(source_part.contains(weight.entityID)) {
             heap.emplace_back(weight);
           }
         }
@@ -917,7 +913,8 @@ class CoreDriver : public CoreDriverBase<D,
       };
 
       Portage::vector<entity_weights_t> parts_weights(target_part_size);
-      Portage::transform(part_target_entities.begin(), part_target_entities.end(),
+      Portage::transform(target_part.cells().begin(),
+                         target_part.cells().end(),
                          parts_weights.begin(), filter_weights);
 
       // 3. Process interpolation.
@@ -929,11 +926,12 @@ class CoreDriver : public CoreDriverBase<D,
       T temporary_storage[target_part_size];
       Portage::pointer<T> target_part_field(temporary_storage);
 
-      Portage::transform(part_target_entities.begin(), part_target_entities.end(),
+      Portage::transform(target_part.cells().begin(),
+                         target_part.cells().end(),
                          parts_weights.begin(), target_part_field, interpolator);
 
       for (int i=0; i < target_part_size; ++i) {
-        auto const& j = part_target_entities[i];
+        auto const& j = target_part.cells()[i];
         target_mesh_field[j] = target_part_field[i];
       }
 
@@ -995,7 +993,7 @@ class CoreDriver : public CoreDriverBase<D,
   */
 
   template<typename T = double,
-           template<int, Entity_kind, class, class, class,
+           template<int, Entity_kind, class, class, class, class,
                     template<class, int, class, class> class,
                     class, class, class> class Interpolate
            >
@@ -1009,7 +1007,7 @@ class CoreDriver : public CoreDriverBase<D,
                            double conservation_tol = DEFAULT_CONSERVATION_TOL,
                            int max_fixup_iter = DEFAULT_MAX_FIXUP_ITER) {
     
-    Interpolate<D, ONWHAT, SourceMesh, TargetMesh, SourceState,
+    Interpolate<D, ONWHAT, SourceMesh, TargetMesh, SourceState, TargetState,
                 InterfaceReconstructorType, Matpoly_Splitter, Matpoly_Clipper, CoordSys>
         interpolator(source_mesh_, target_mesh_, source_state_, num_tols_, interface_reconstructor_);
       
