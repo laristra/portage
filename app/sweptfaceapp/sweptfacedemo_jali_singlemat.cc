@@ -101,7 +101,7 @@ void find_nodes_on_exterior_boundary(std::shared_ptr<Jali::Mesh> mesh,
         std::vector<bool>& node_on_bnd);
 
 void move_target_mesh_nodes(std::shared_ptr<Jali::Mesh> mesh, 
-     double& tcur, double& deltaT, double& periodT);
+     double& tcur, double& deltaT, double& periodT, int& scale);
 
 void single_vortex_velocity_function(double* coords, double& tcur, 
   double& periodT, double* disp);
@@ -136,7 +136,7 @@ int main(int argc, char** argv) {
   int interp_order = 1;
   bool sweptface = true; 
   int ntimesteps = 4;  
-
+  int scale = 20; 
   // since write_to_gmv segfaults in parallel, default to false and force the
   // user to output in serial
   bool mesh_output = false;
@@ -165,6 +165,8 @@ int main(int argc, char** argv) {
       assert(dim == 2 || dim == 3);
     } else if (keyword == "ncells") {
       ncells = stoi(valueword);
+    } else if (keyword == "scale_by") {
+      scale = stoi(valueword);
     } else if (keyword == "remap_order") {
       interp_order = stoi(valueword);
       assert(interp_order > 0 && interp_order < 3);
@@ -269,12 +271,13 @@ int main(int argc, char** argv) {
   std::vector<double> l1_err(ntimesteps, 0.0), l2_err(ntimesteps, 0.0);
 
   for (int i = 1; i < ntimesteps; i++) {
-     std::cout<<"Start moving mesh for iteration "<<i<<std::endl;
     // Move nodes of the target mesh 
+    std::cout<<"Start moving mesh for timestep "<<i<<" scaled by "<<scale<<std::endl;
+    
     double tcur = i*deltaT; 
-    move_target_mesh_nodes(target_mesh, tcur, deltaT, periodT);
+    move_target_mesh_nodes(target_mesh, tcur, deltaT, periodT, scale);
 
-     std::cout<<"Completed moving mesh for iteration "<<i<<std::endl;
+     std::cout<<"Completed moving mesh for timestep "<<i<<std::endl;
     // Now run the remap on the meshes and get back the L1-L2 errors
     switch (dim) {
       case 2:
@@ -548,7 +551,8 @@ template<int dim> void remap(std::shared_ptr<Jali::Mesh> sourceMesh,
         L1_error += fabs(error)*cellvol;
         L2_error += error*error*cellvol;
         totvolume += cellvol;
-    
+        target_mass += cellvecout[c]*cellvol;    
+
       if (ntarcells < 10) {
         std::printf("Rank %d\n", rank);
         std::printf("Cell=% 4d Centroid = (% 8.5lf,% 8.5lf)", c,
@@ -605,7 +609,7 @@ template<int dim> void remap(std::shared_ptr<Jali::Mesh> sourceMesh,
 } //remap
 
 void move_target_mesh_nodes(std::shared_ptr<Jali::Mesh> mesh, 
-     double& tcur, double& deltaT, double& periodT)
+     double& tcur, double& deltaT, double& periodT, int& scale)
 {
   // Move the target nodes to obtain a target mesh with same
   // connectivity but different point positions.  Loop over all the
@@ -625,7 +629,7 @@ void move_target_mesh_nodes(std::shared_ptr<Jali::Mesh> mesh,
     std::array<double, 2> coords;
     mesh->node_get_coordinates(i, &coords);
 
-    if (ntarnodes <= 40)  
+    if (ntarnodes <= 20)  
      std::cout<<"Target Node = "<<i<<" Original Coords = {"<<coords[0]
         <<", "<<coords[1]<<"}"<<std::endl;
     
@@ -633,16 +637,17 @@ void move_target_mesh_nodes(std::shared_ptr<Jali::Mesh> mesh,
 
       std::array<double, 2> disp; 
       single_vortex_velocity_function(&coords[0], tcur, periodT, &disp[0]); 
-      coords[0] = coords[0] + disp[0]*deltaT; 
-      coords[1] = coords[1] + disp[1]*deltaT; 
+      coords[0] = coords[0] + disp[0]*deltaT/scale; 
+      coords[1] = coords[1] + disp[1]*deltaT/scale; 
      
       mesh->node_set_coordinates(i, &coords[0]);      
    
-      if (ntarnodes <= 40)  
+      if (ntarnodes <= 20) { 
        mesh->node_get_coordinates(i, &coords);
         std::cout<<"Target Node = "<<i<<" Modified Coords = {"<< coords[0]
            <<", "<< coords[1]<<"}"<<std::endl;
-    } 
+     } 
+    }
   }
 } //move_target_mesh_nodes
 
