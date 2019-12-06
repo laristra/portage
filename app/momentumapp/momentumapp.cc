@@ -46,14 +46,6 @@ void print_usage() {
   std::printf("usage: momentumapp ncellsx ncellsy [order=1]\n");
 }
 
-template<int D>
-double dot_product(const Wonton::Point<D>& a, const Wonton::Point<D>& b) {
-  double r = 0.0;
-  for (int i = 0; i < D; i++) r += a[i] * b[i];
-  return r;
-}
-
-
 int main(int argc, char** argv) {
   if (argc <= 2) {
     print_usage();
@@ -76,17 +68,23 @@ int main(int argc, char** argv) {
 
   // size of computational domain
   double lenx = 1.0;  // [m]
-  double leny = 1.0;  // [m]
+  double leny = 1.0;
   
   // physical quantities
   double density_ini = 1.0;  // [kg / m^2]
+  double velx_ini = 1.0;  // [m / s]
+  double vely_ini = 2.0;  
 
-
+  //
   // Preliminaries
+  //
 
   // -- setup Jali meshes
-  auto srcmesh = Jali::MeshFactory(MPI_COMM_WORLD)(0.0, 0.0, lenx, leny, nx, ny);
-  auto trgmesh = Jali::MeshFactory(MPI_COMM_WORLD)(0.0, 0.0, lenx, leny, nx + 1, ny + 1);
+  Jali::MeshFactory mesh_factory(MPI_COMM_WORLD);
+  mesh_factory.included_entities(Jali::Entity_kind::ALL_KIND);
+
+  auto srcmesh = mesh_factory(0.0, 0.0, lenx, leny, nx, ny);
+  auto trgmesh = mesh_factory(0.0, 0.0, lenx, leny, nx + 1, ny + 1);
 
   // -- setup mesh wrappers
   Wonton::Jali_Mesh_Wrapper srcmesh_wrapper(*srcmesh);
@@ -109,8 +107,8 @@ int main(int argc, char** argv) {
   Wonton::Jali_State_Wrapper trgstate_wrapper(*trgstate);
 
   // -- input and output velocity components in two states
-  std::vector<double> ux_src(nnodes_src, 1.0);
-  std::vector<double> uy_src(nnodes_src, 1.0);
+  std::vector<double> ux_src(nnodes_src, velx_ini);
+  std::vector<double> uy_src(nnodes_src, vely_ini);
 
   srcstate->add("velocity_x", srcmesh, Jali::Entity_kind::NODE,
                 Jali::Entity_type::ALL, &(ux_src[0]));
@@ -233,7 +231,7 @@ int main(int argc, char** argv) {
                   Jali::Entity_type::ALL);
 
     cd.interpolate_mesh_var<double, Portage::Interpolate_2ndOrder>(
-        "density", "density", srcwts, dblmin, dblmax);
+        field_names[i], field_names[i], srcwts, dblmin, dblmax);
   }
 
   // -- Step 4: create linear reconstruction (limited or unlimited) 
@@ -308,9 +306,11 @@ int main(int argc, char** argv) {
       }
 
       // integral is the value at centroid
-      // mass_cn_trg[cn] = density_trg[c] + dot(gradients[0][c], xcn - xc);
-      momentum_cn_x[cn] = momentum_x_trg[c] + dot(gradients[1][c], xcn - xc);
-      momentum_cn_y[cn] = momentum_y_trg[c] + dot(gradients[2][c], xcn - xc);
+      double vol = trgmesh_wrapper.corner_volume(cn);
+
+      mass_cn_trg[cn] = vol * (density_trg[c] + dot(gradients[0][c], xcn - xc));
+      momentum_cn_x[cn] = vol * (momentum_x_trg[c] + dot(gradients[1][c], xcn - xc));
+      momentum_cn_y[cn] = vol * (momentum_y_trg[c] + dot(gradients[2][c], xcn - xc));
     }
   }
 
@@ -321,9 +321,9 @@ int main(int argc, char** argv) {
 
   for (int cn = 0; cn < ncorners_trg; ++cn) {
     int v = trgmesh_wrapper.corner_get_node(cn);
-    // mass_v[v] += mass_cn_trg[cn];
-    momentum_v_x[v] += momentum_v_x[cn];
-    momentum_v_y[v] += momentum_v_y[cn];
+    mass_v[v] += mass_cn_trg[cn];
+    momentum_v_x[v] += momentum_cn_x[cn];
+    momentum_v_y[v] += momentum_cn_y[cn];
   }
 
   for (int v = 0; v < nnodes_trg; ++v) {
