@@ -492,7 +492,7 @@ namespace Portage {
 
         Vector<D> gradient = gradients_[source_index];
         Vector<D> dr = intersect_centroid - source_centroid;
-        dr = CoordSys::modify_line_element(dr, source_centroid);
+        CoordSys::modify_line_element(dr, source_centroid);
 
         double value = source_values_[source_index] + dot(gradient, dr);
         value *= intersect_volume;
@@ -743,7 +743,7 @@ namespace Portage {
 
         Vector<D> gradient = gradients_[src_node];
         Vector<D> dr = intersect_centroid - source_coord;
-        dr = CoordSys::modify_line_element(dr, source_coord);
+        CoordSys::modify_line_element(dr, source_coord);
 
         double value = source_values_[src_node] + dot(gradient, dr);
         value *= intersect_volume;
