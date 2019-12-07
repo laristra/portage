@@ -11,10 +11,10 @@ Please see the license file at the root of this repository, or at:
 
 #include "portage/intersect/intersect_boxes.h"
 
-#include "wonton/mesh/simple/direct_product_mesh.h"
-#include "wonton/mesh/simple/direct_product_mesh_wrapper.h"
-#include "wonton/mesh/simple/adaptive_refinement_mesh.h"
-#include "wonton/mesh/simple/adaptive_refinement_mesh_wrapper.h"
+#include "wonton/mesh/direct_product/direct_product_mesh.h"
+#include "wonton/mesh/direct_product/direct_product_mesh_wrapper.h"
+#include "wonton/mesh/adaptive_refinement/adaptive_refinement_mesh.h"
+#include "wonton/mesh/adaptive_refinement/adaptive_refinement_mesh_wrapper.h"
 
 // ============================================================================
 

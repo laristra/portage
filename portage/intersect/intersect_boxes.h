@@ -4,12 +4,13 @@
 // ============================================================================
 
 #include <cmath>
+#include <type_traits>
 #include <vector>
 
-#include "wonton/support/CoordinateSystems.h"
+#include "wonton/support/CoordinateSystem.h"
+#include "wonton/support/Point.h"
 
 #include "portage/support/portage.h"
-#include "portage/support/Point.h"
 
 // ============================================================================
 
@@ -35,10 +36,17 @@ class IntersectBoxes {
   IntersectBoxes(const SourceMeshType& source_mesh,
                  const TargetMeshType& target_mesh)
       : sourceMeshWrapper(source_mesh),
-        targetMeshWrapper(target_mesh) {}
+        targetMeshWrapper(target_mesh) {
+    // TODO: The mesh wrappers need to expose the coordinate systems in some
+    //       way.  Then we can assert that the coordinate systems are the same.
+    //       The problem is that some mesh wrappers won't have a coordinate
+    //       system, so there would then have to be some way to check that and
+    //       then declare that Cartesian is the default.
+    //static_assert(std::is_same<>::value);
+  }
 
   //! Assignment operator (disabled)
-  IntersectBoxes & operator = (const IntersectBoxes&) = delete;
+  IntersectBoxes& operator= (const IntersectBoxes&) = delete;
 
   //! \brief Intersect control volume of a target box with control volumes
   //!        of a set of source boxes.
@@ -68,7 +76,7 @@ std::vector<Portage::Weights_t>
   const int tgt_cell, const std::vector<int>& src_cells) const {
 
   // Get bounding box for target box
-  Portage::Point<D> tlo, thi;
+  Wonton::Point<D> tlo, thi;
   targetMeshWrapper.cell_get_bounds(tgt_cell, &tlo, &thi);
 
   // Allocate storage for moments
@@ -81,11 +89,11 @@ std::vector<Portage::Weights_t>
     int s = src_cells[i];
 
     // Get source cell bounding box
-    Portage::Point<D> slo, shi;
+    Wonton::Point<D> slo, shi;
     sourceMeshWrapper.cell_get_bounds(s, &slo, &shi);
 
     // Compute intersection and volume
-    Portage::Point<D> ilo, ihi;   // bounding box of intersection
+    Wonton::Point<D> ilo, ihi;   // bounding box of intersection
     double vol0 = 1.;
     for (int d = 0; d < D; ++d) {
       ilo[d] = std::max(slo[d], tlo[d]);
@@ -116,15 +124,18 @@ std::vector<Portage::Weights_t>
     //       for now, assuming second-order interpolation for lack of a better
     //       choice.
     weights.resize(1+D);
-    weights[0] = vol;
+    weights[0] = vol0;
     for (int d = 0; d < D; ++d) {
-      const ibar = 0.5 * (ilo[d] + ihi[d]);
+      const auto ibar = 0.5 * (ilo[d] + ihi[d]);
       mom0[1+d] = ibar * vol0;
     }
     // Instead of calculating extra moments, use the bounding box to explicitly
     // update the moments.  But this only works if your cells are axis-aligned
     // boxes.  In other words: this is an optimization for intersect_boxes,
     // rather than a general-purpose tool for all intersectors.
+    // TODO: No longer modify_moments.  Now modify_volume and
+    //       modify_first_moments.  Maybe add a second moments?  I don't really
+    //       know how far to extend that.
     CoordSys::modify_moments(weights, ilo, ihi);
 
     // Increment the count, because we've now inserted a new entry
