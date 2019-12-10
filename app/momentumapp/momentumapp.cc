@@ -46,6 +46,28 @@ void print_usage() {
   std::printf("usage: momentumapp ncellsx ncellsy [order=1]\n");
 }
 
+
+// corner centroid
+void corner_get_centroid(
+    int cn, const Wonton::Jali_Mesh_Wrapper& mesh,
+    Wonton::Point<2>& xcn)
+{
+  std::vector<int> wedges;
+  std::array<Wonton::Point<2>, 3> wcoords;
+
+  double volume = mesh.corner_volume(cn); 
+  mesh.corner_get_wedges(cn, &wedges);
+
+  xcn = {0.0, 0.0};
+  for (auto w : wedges) {
+    double frac = mesh.wedge_volume(w) / (3 * volume); 
+    mesh.wedge_get_coordinates(w, &wcoords);
+    for (int i = 0; i < 3; ++i) {
+      xcn += frac * wcoords[i];
+    }
+  }
+}
+
 int main(int argc, char** argv) {
   if (argc <= 2) {
     print_usage();
@@ -107,8 +129,15 @@ int main(int argc, char** argv) {
   Wonton::Jali_State_Wrapper trgstate_wrapper(*trgstate);
 
   // -- input and output velocity components in two states
-  std::vector<double> ux_src(nnodes_src, velx_ini);
-  std::vector<double> uy_src(nnodes_src, vely_ini);
+  std::vector<double> ux_src(nnodes_src);
+  std::vector<double> uy_src(nnodes_src);
+
+  Wonton::Point<2> xyz;
+  for (int v = 0; v < nnodes_src; ++v) {
+    srcmesh_wrapper.node_get_coordinates(v, &xyz);
+    ux_src[v] = velx_ini * xyz[0] * xyz[0];
+    uy_src[v] = vely_ini * xyz[1] * xyz[1];
+  }
 
   srcstate->add("velocity_x", srcmesh, Jali::Entity_kind::NODE,
                 Jali::Entity_type::ALL, &(ux_src[0]));
@@ -294,7 +323,7 @@ int main(int argc, char** argv) {
 
     for (auto cn : corners) {
       double volume = trgmesh_wrapper.corner_volume(cn); 
-      trgmesh_wrapper.corner_get_wedges(c, &wedges);
+      trgmesh_wrapper.corner_get_wedges(cn, &wedges);
 
       Wonton::Point<2> xcn = {0.0, 0.0};  // corner centroid
       for (auto w : wedges) {
@@ -341,6 +370,12 @@ int main(int argc, char** argv) {
     total_momentum_trg[1] += uy_trg[v] * mass_v[v];
   }
 
+  total_mass = 0.0;
+  for (int cn = 0; cn < ncorners_trg; ++cn) {
+    total_mass += mass_cn_trg[cn];
+  }
+
+  std::cout << "total mass:     " << total_mass << " kg" << std::endl;
   std::cout << "total momentum: " << total_momentum_trg << " kg m/s" << std::endl;
 
   MPI_Finalize();
