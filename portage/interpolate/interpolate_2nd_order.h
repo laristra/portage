@@ -144,16 +144,12 @@ namespace Portage {
 
 
     /**
-     * @brief Set the name of the interpolation variable and the limiter type,
-     *        and compute the gradient field.
+     * @brief Set the name of the interpolation variable and the gradient field.
      *
      * @param[in] variable_name: the variable name
-     * @param[in] limiter_type: kind of gradient limiter to use.
-     * @param[in] boundary_limiter_type: gradient limiter to use on boundary.
+     * @param[in] gradient_field: the gradient field
      */
     void set_interpolation_variable(std::string const& variable_name,
-                                    Limiter_type limiter_type = NOLIMITER,
-                                    Boundary_Limiter_type boundary_limiter_type = BND_NOLIMITER,
                                     const Portage::vector<Vector<D>>* gradient_field = nullptr) {
       std::cerr << "Interpolation is available for only cells and nodes";
       std::cerr << std::endl;
@@ -322,16 +318,12 @@ namespace Portage {
 
 
     /**
-     * @brief Set the name of the interpolation variable and the limiter type,
-     *        and compute the gradient field.
+     * @brief Set the name of the interpolation variable and the gradient field.
      *
      * @param[in] variable_name: the variable name
-     * @param[in] limiter_type: kind of gradient limiter to use.
-     * @param[in] boundary_limiter_type: gradient limiter to use on boundary.
+     * @param[in] gradient_field: the gradient field
      */
     void set_interpolation_variable(std::string const& variable_name,
-                                    Limiter_type limiter_type = NOLIMITER,
-                                    Boundary_Limiter_type boundary_limiter_type = BND_NOLIMITER,
                                     const Portage::vector<Vector<D>>* gradient_field = nullptr) {
 
       variable_name_ = variable_name;
@@ -607,16 +599,12 @@ namespace Portage {
     void set_material(int m) { material_id_ = m; }
 
     /**
-     * @brief Set the name of the interpolation variable and the limiter type,
-     *        and compute the gradient field.
+     * @brief Set the name of the interpolation variable and the gradient field.
      *
      * @param[in] variable_name: the variable name
-     * @param[in] limiter_type: kind of gradient limiter to use.
-     * @param[in] boundary_limiter_type: gradient limiter to use on boundary.
+     * @param[in] gradient_field: the gradient field to use
      */
     void set_interpolation_variable(std::string const variable_name,
-                                    Limiter_type limiter_type = NOLIMITER,
-                                    Boundary_Limiter_type boundary_limiter_type = BND_NOLIMITER,
                                     Portage::vector<Vector<D>>* gradient_field = nullptr) {
 
       variable_name_ = variable_name;

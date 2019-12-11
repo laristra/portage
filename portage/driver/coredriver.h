@@ -231,10 +231,6 @@ class CoreDriverBase {
 
     @param[in] upper_bound  Upper bound for variable
 
-    @param[in] limiter      Limiter to use for second order reconstruction
-
-    @param[in] bnd_limiter  Boundary limiter to use for second order reconstruction
-
     @param[in] partial_fixup_type Method to populate fields on
     partially filled target entities (cells or dual cells)
 
@@ -260,8 +256,6 @@ class CoreDriverBase {
   void interpolate_mesh_var(std::string srcvarname, std::string trgvarname,
                             Portage::vector<std::vector<Weights_t>> const& sources_and_weights,
                             T lower_bound, T upper_bound,
-                            Limiter_type limiter,
-                            Boundary_Limiter_type bnd_limiter,
                             Partial_fixup_type partial_fixup_type,
                             Empty_fixup_type empty_fixup_type,
                             double conservation_tol,
@@ -275,7 +269,6 @@ class CoreDriverBase {
         template interpolate_mesh_var<T, Interpolate>(srcvarname, trgvarname,
                                                       sources_and_weights,
                                                       lower_bound, upper_bound,
-                                                      limiter, bnd_limiter,
                                                       partial_fixup_type,
                                                       empty_fixup_type,
                                                       conservation_tol,
@@ -294,10 +287,6 @@ class CoreDriverBase {
     @param[in] lower_bound  Lower bound for variable
 
     @param[in] upper_bound  Upper bound for variable
-
-    @param[in] limiter      Limiter to use for second order reconstruction
-
-    @param[in] bnd_limiter  Boundary limiter to use for second order reconstruction
 
     @param[in] partial_fixup_type Method to populate fields on
     partially filled target entities (cells or dual cells)
@@ -323,8 +312,6 @@ class CoreDriverBase {
   void interpolate_mat_var(std::string srcvarname, std::string trgvarname,
                            std::vector<Portage::vector<std::vector<Weights_t>>> const& sources_and_weights_by_mat,
                            T lower_bound, T upper_bound,
-                           Limiter_type limiter,
-                           Boundary_Limiter_type bnd_limiter,
                            Partial_fixup_type partial_fixup_type,
                            Empty_fixup_type empty_fixup_type,
                            double conservation_tol,
@@ -338,7 +325,6 @@ class CoreDriverBase {
                                                       trgvarname,
                                                       sources_and_weights_by_mat,
                                                       lower_bound, upper_bound,
-                                                      limiter, bnd_limiter,
                                                       partial_fixup_type,
                                                       empty_fixup_type,
                                                       conservation_tol,
@@ -912,8 +898,6 @@ class CoreDriver : public CoreDriverBase<D,
    * @param[in] sources_and_weights weights for mesh-mesh interpolation
    * @param[in] lower_bound         lower bound of variable value when doing fixup
    * @param[in] upper_bound         upper bound of variable value when doing fixup
-   * @param[in] limiter             limiter to use
-   * @param[in] bnd_limiter         boundary limiter to use
    * @param[in] partial...          how to fixup partly filled target cells
    * @param[in] emtpy...            how to fixup empty target cells with this var
    * @param[in] cons..tol           tolerance for conservation when doing fixup
@@ -928,8 +912,6 @@ class CoreDriver : public CoreDriverBase<D,
   void interpolate_mesh_var(std::string srcvarname, std::string trgvarname,
                             Portage::vector<std::vector<Weights_t>> const& sources_and_weights,
                             T lower_bound, T upper_bound,
-                            Limiter_type limiter = DEFAULT_LIMITER,
-                            Boundary_Limiter_type bnd_limiter = DEFAULT_BND_LIMITER,
                             Partial_fixup_type partial_fixup_type = DEFAULT_PARTIAL_FIXUP_TYPE,
                             Empty_fixup_type empty_fixup_type = DEFAULT_EMPTY_FIXUP_TYPE,
                             double conservation_tol = DEFAULT_CONSERVATION_TOL,
@@ -951,7 +933,7 @@ class CoreDriver : public CoreDriverBase<D,
                                      Matpoly_Splitter, Matpoly_Clipper, CoordSys>;
 
     Interpolator interpolator(source_mesh_, target_mesh_, source_state_, num_tols_, partition);
-    interpolator.set_interpolation_variable(srcvarname, limiter, bnd_limiter, gradients);
+    interpolator.set_interpolation_variable(srcvarname, gradients);
 
     // get a handle to a memory location where the target state
     // would like us to write this material variable into.
@@ -1077,10 +1059,6 @@ class CoreDriver : public CoreDriverBase<D,
 
     @param[in] trgvarname  Material variable name on the target mesh
 
-    @param[in] limiter     Limiter to use for variable
-
-    @param[in] bnd_limiter Boundary limiter to use for variable
-
     @param[in] partial...  How to fixup partly filled target cells (for this var)
 
     @param[in] emtpy...    How to fixup empty target cells with this var
@@ -1100,8 +1078,6 @@ class CoreDriver : public CoreDriverBase<D,
   void interpolate_mat_var(std::string srcvarname, std::string trgvarname,
                            std::vector<Portage::vector<std::vector<Weights_t>>> const& sources_and_weights_by_mat,
                            T lower_bound, T upper_bound,
-                           Limiter_type limiter = DEFAULT_LIMITER,
-                           Boundary_Limiter_type bnd_limiter = DEFAULT_BND_LIMITER,
                            Partial_fixup_type partial_fixup_type = DEFAULT_PARTIAL_FIXUP_TYPE,
                            Empty_fixup_type empty_fixup_type = DEFAULT_EMPTY_FIXUP_TYPE,
                            double conservation_tol = DEFAULT_CONSERVATION_TOL,
@@ -1129,7 +1105,7 @@ class CoreDriver : public CoreDriverBase<D,
       auto mat_grad = (gradients != nullptr ? &(gradients[m]) : nullptr);
       // FEATURE ;-)  Have to set interpolation variable AFTER setting 
       // the material for multimaterial variables
-      interpolator.set_interpolation_variable(srcvarname, limiter, bnd_limiter, mat_grad);
+      interpolator.set_interpolation_variable(srcvarname, mat_grad);
 
       // if the material has no cells on this partition, then don't bother
       // interpolating MM variables

@@ -99,7 +99,6 @@ TEST(CellDriver, 2D_2ndOrder) {
   auto gradients = d.compute_gradient("temperature");
   d.interpolate_mesh_var<double, Portage::Interpolate_2ndOrder>(
     "temperature", "temperature", srcwts, dblmin, dblmax,
-    Portage::NOLIMITER, Portage::BND_NOLIMITER,
     Portage::DEFAULT_PARTIAL_FIXUP_TYPE, Portage::DEFAULT_EMPTY_FIXUP_TYPE,
     Portage::DEFAULT_CONSERVATION_TOL, Portage::DEFAULT_MAX_FIXUP_ITER,
     nullptr, &gradients
@@ -201,7 +200,6 @@ TEST(CellDriver, 3D_2ndOrder) {
   auto gradients = d.compute_gradient("temperature");
   d.interpolate_mesh_var<double, Portage::Interpolate_2ndOrder>(
     "temperature", "TEMP", srcwts, dblmin, dblmax,
-    Portage::NOLIMITER, Portage::BND_NOLIMITER,
     Portage::DEFAULT_PARTIAL_FIXUP_TYPE, Portage::DEFAULT_EMPTY_FIXUP_TYPE,
     Portage::DEFAULT_CONSERVATION_TOL, Portage::DEFAULT_MAX_FIXUP_ITER,
     nullptr, &gradients

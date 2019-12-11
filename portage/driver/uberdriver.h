@@ -664,14 +664,14 @@ class UberDriver {
 
       driver->template interpolate_mesh_var<T, ONWHAT, Interpolate>(
         srcvarname, trgvarname, sources_and_weights_in,
-        lower_bound, upper_bound, limiter, bnd_limiter, partial_fixup_type,
-        empty_fixup_type, conservation_tol, max_fixup_iter, nullptr, &gradients
+        lower_bound, upper_bound, partial_fixup_type, empty_fixup_type,
+        conservation_tol, max_fixup_iter, nullptr, &gradients
       );
     } else {
       driver->template interpolate_mesh_var<T, ONWHAT, Interpolate>(
         srcvarname, trgvarname, sources_and_weights_in,
-        lower_bound, upper_bound, limiter, bnd_limiter, partial_fixup_type,
-        empty_fixup_type, conservation_tol, max_fixup_iter
+        lower_bound, upper_bound, partial_fixup_type, empty_fixup_type,
+        conservation_tol, max_fixup_iter
       );
     }
   }
@@ -755,14 +755,14 @@ class UberDriver {
       }
       driver->template interpolate_mat_var<T, Interpolate>(
         srcvarname, trgvarname, sources_and_weights_by_mat_in,
-        lower_bound, upper_bound, limiter, bnd_limiter, partial_fixup_type,
-        empty_fixup_type, conservation_tol, max_fixup_iter, gradients
+        lower_bound, upper_bound, partial_fixup_type, empty_fixup_type,
+        conservation_tol, max_fixup_iter, gradients
       );
     } else {
       driver->template interpolate_mat_var<T, Interpolate>(
         srcvarname, trgvarname, sources_and_weights_by_mat_in,
-        lower_bound, upper_bound, limiter, bnd_limiter, partial_fixup_type,
-        empty_fixup_type, conservation_tol, max_fixup_iter
+        lower_bound, upper_bound, partial_fixup_type, empty_fixup_type,
+        conservation_tol, max_fixup_iter
       );
     }
 #endif

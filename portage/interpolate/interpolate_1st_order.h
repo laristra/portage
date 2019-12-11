@@ -164,8 +164,6 @@ class Interpolate_1stOrder {
   // uniform interface
 
   void set_interpolation_variable(std::string const & interp_var_name,
-                                  Limiter_type limtype=NOLIMITER,
-                                  Boundary_Limiter_type bnd_limtype=BND_NOLIMITER,
                                   Portage::vector<Wonton::Vector<D>>* gradients = nullptr) {
     interp_var_name_ = interp_var_name;
     field_type_ = source_state_.field_type(Entity_kind::CELL, interp_var_name);
@@ -317,8 +315,6 @@ class Interpolate_1stOrder<
   // uniform interface
 
   void set_interpolation_variable(std::string const & interp_var_name,
-                                  Limiter_type limtype = NOLIMITER,
-                                  Boundary_Limiter_type bnd_limtype=BND_NOLIMITER,
                                   Portage::vector<Wonton::Vector<D>>* gradients = nullptr) {
     interp_var_name_ = interp_var_name;
     field_type_ = source_state_.field_type(Entity_kind::CELL, interp_var_name);
@@ -510,8 +506,6 @@ class Interpolate_1stOrder<
   // uniform interface
 
   void set_interpolation_variable(std::string const & interp_var_name,
-                                  Limiter_type limtype = NOLIMITER,
-                                  Boundary_Limiter_type bnd_limtype=BND_NOLIMITER,
                                   Portage::vector<Wonton::Vector<D>>* gradients = nullptr) {
     interp_var_name_ = interp_var_name;
     field_type_ = source_state_.field_type(Entity_kind::NODE, interp_var_name);

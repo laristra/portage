@@ -516,11 +516,7 @@ class MMDriver {
                                   Matpoly_Splitter, Matpoly_Clipper>::order;
 
     switch (order) {
-      case 1:
-        interpolate.set_interpolation_variable(field_name,
-                                               limiters_.at(field_name),
-                                               bnd_limiters_.at(field_name));
-        break;
+      case 1: interpolate.set_interpolation_variable(field_name); break;
       case 2:
         // compute the gradient field for this variable.
         *gradients = compute_gradient<onwhat>(field_name,
@@ -530,13 +526,9 @@ class MMDriver {
                                               material_id, interface_reconstructor,
                                               executor);
 
-        interpolate.set_interpolation_variable(field_name,
-                                               limiters_.at(field_name),
-                                               bnd_limiters_.at(field_name),
-                                               gradients);
-        break;
-      default:
-        throw std::runtime_error("unsupported interpolation order");
+        interpolate.set_interpolation_variable(field_name, gradients); break;
+
+      default: throw std::runtime_error("unsupported interpolation order");
     }
   }
 

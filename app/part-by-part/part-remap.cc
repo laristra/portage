@@ -584,20 +584,25 @@ void remap<2>(std::string field, int nb_parts,
 
   // use the right interpolator according to the requested order of remap.
   auto interpolate = [&](auto* current_part) {
+    Portage::vector<Wonton::Vector<2>> *gradients = nullptr;
+    auto const source_part = current_part->source();
+
     switch (params.order) {
       case 1: remapper.interpolate_mesh_var<double, Portage::Interpolate_1stOrder>(
           field, field, weights, lower_bound, upper_bound,
-          params.limiter, params.bnd_limiter, params.partial_fixup,
-          params.empty_fixup, params.tolerance,
-          params.fix_iter, current_part
+          params.partial_fixup, params.empty_fixup,
+          params.tolerance, params.fix_iter, current_part
         );
       break;
 
-      case 2: remapper.interpolate_mesh_var<double, Portage::Interpolate_2ndOrder>(
+      case 2: *gradients = remapper.compute_gradient(field, params.limiter,
+                                                     params.bnd_limiter,0,
+                                                     &source_part);
+
+        remapper.interpolate_mesh_var<double, Portage::Interpolate_2ndOrder>(
           field, field, weights, lower_bound, upper_bound,
-          params.limiter, params.bnd_limiter, params.partial_fixup,
-          params.empty_fixup, params.tolerance,
-          params.fix_iter, current_part
+          params.partial_fixup, params.empty_fixup,
+          params.tolerance, params.fix_iter, current_part, gradients
         );
       break;
 
@@ -667,20 +672,24 @@ void remap<3>(std::string field, int nb_parts,
 
   // use the right interpolator according to the requested order of remap.
   auto interpolate = [&](auto* current_part) {
+    Portage::vector<Wonton::Vector<3>> gradients;
+
     switch (params.order) {
       case 1: remapper.interpolate_mesh_var<double, Portage::Interpolate_1stOrder>(
           field, field, weights, lower_bound, upper_bound,
-          params.limiter, params.bnd_limiter, params.partial_fixup,
-          params.empty_fixup, params.tolerance,
-          params.fix_iter, current_part
+          params.partial_fixup, params.empty_fixup,
+          params.tolerance, params.fix_iter, current_part
         );
         break;
 
-      case 2: remapper.interpolate_mesh_var<double, Portage::Interpolate_2ndOrder>(
+      case 2: gradients = remapper.compute_gradient(field, params.limiter,
+                                                    params.bnd_limiter,0,
+                                                    &(current_part->source()));
+
+        remapper.interpolate_mesh_var<double, Portage::Interpolate_2ndOrder>(
           field, field, weights, lower_bound, upper_bound,
-          params.limiter, params.bnd_limiter, params.partial_fixup,
-          params.empty_fixup, params.tolerance,
-          params.fix_iter, current_part
+          params.partial_fixup, params.empty_fixup,
+          params.tolerance, params.fix_iter, current_part, &gradients
         );
         break;
 
