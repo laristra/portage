@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <wonton/wonton/support/Polytope.h>
 #include "portage/support/portage.h"
 #include "portage/intersect/dummy_interface_reconstructor.h"
 #include "wonton/support/Point.h"
@@ -627,6 +628,435 @@ namespace Portage {
 #endif
   }; // class IntersectSweptFace::2D::CELL
 
+  /**
+   * @brief Specialization for 2D cell-based remap.
+   *
+   * @tparam SourceMesh: the source mesh wrapper type.
+   * @tparam SourceState: the source state wrapper to query field infos.
+   * @tparam TargetMesh: the target mesh wrapper type.
+   * @tparam InterfaceReconstructor: materials interface reconstructor type.
+   * @tparam Matpoly_Splitter: material polygons splitter type.
+   * @tparam Matpoly_Clipper: material polygons clipper type.
+   */
+  template<
+    class SourceMesh, class SourceState, class TargetMesh,
+    template<class, int, class, class>
+    class InterfaceReconstructor,
+    class Matpoly_Splitter, class Matpoly_Clipper
+  >
+  class IntersectSweptFace<3, Entity_kind::CELL,
+    SourceMesh, SourceState,
+    TargetMesh, InterfaceReconstructor,
+    Matpoly_Splitter, Matpoly_Clipper> {
+
+    // useful aliases
+#ifdef HAVE_TANGRAM
+    using InterfaceReconstructor3D = Tangram::Driver<
+      InterfaceReconstructor, 3, SourceMesh,
+      Matpoly_Splitter, Matpoly_Clipper
+    >;
+#endif
+
+    using Polyhedron = Wonton::Polytope<3>;
+
+  public:
+
+    /**
+     * @brief Default constructor (disabled).
+     *
+     */
+    IntersectSweptFace() = delete;
+
+#ifdef HAVE_TANGRAM
+
+    /**
+     * @brief Constructor for multi-material case.
+     *
+     * @param[in] source_mesh: mesh wrapper used to query source mesh info.
+     * @param[in] source_state: state-manager wrapper used to query field info.
+     * @param[in] target_mesh: mesh wrapper used to query target mesh info.
+     * @param[in] num_tols: numerical tolerances.
+     * @param[in] ir: interface reconstructor for querying matpolys on source mesh.
+     */
+    IntersectSweptFace(SourceMesh const& source_mesh,
+                       SourceState const& source_state,
+                       TargetMesh const& target_mesh,
+                       NumericTolerances_t num_tols,
+                       std::shared_ptr<InterfaceReconstructor3D> ir)
+      : source_mesh_(source_mesh),
+        source_state_(source_state),
+        target_mesh_(target_mesh),
+        num_tols_(num_tols),
+        interface_reconstructor(ir) {}
+
+#endif
+
+    /**
+     * @brief Constructor for single material case.
+     *
+     * @param[in] source_mesh: mesh wrapper used to query source mesh info.
+     * @param[in] source_state: state-manager wrapper used to query field info.
+     * @param[in] target_mesh: mesh wrapper used to query target mesh info.
+     * @param[in] num_tols: numerical tolerances.
+     */
+    IntersectSweptFace(SourceMesh const& source_mesh,
+                       SourceState const& source_state,
+                       TargetMesh const& target_mesh,
+                       NumericTolerances_t num_tols)
+      : source_mesh_(source_mesh),
+        source_state_(source_state),
+        target_mesh_(target_mesh),
+        num_tols_(num_tols) {}
+
+    /**
+     * @brief Assignment operator (disabled).
+     *
+     * @param[in] other: the intersector to copy.
+     * @return current intersector reference.
+     */
+    IntersectSweptFace& operator=(IntersectSweptFace const& other) = delete;
+
+    /**
+     * @brief Destructor.
+     *
+     */
+    ~IntersectSweptFace() = default;
+
+    /**
+     * @brief Set the material we are operating on.
+     *
+     * @param m: the material ID
+     */
+    void set_material(int m) { material_id_ = m; }
+
+  private:
+
+    /**
+     * @brief Compute moments using divergence theorem.
+     *
+     * @param swept_polygon: swept polygon points coordinates.
+     * @return swept polygon moments.
+     */
+    std::vector<double> compute_moments
+      (std::vector<Wonton::Point<3>> const& poly_coords,
+       std::vector<std::vector<int>> const& faces) const {
+
+      // implementation may change in the future
+      Polyhedron polyhedron(poly_coords, faces);
+      return polyhedron.moments();
+    }
+
+    /**
+     * @brief Retrieve the source cell moments.
+     *
+     * @param source_id: index of the source cell.
+     * @return a list of cell moments.
+     */
+    std::vector<double> compute_source_moments(int source_id,
+                                               std::vector<int> const& cell_faces,
+                                               std::vector<int> const& face_dirs) const {
+      // To be able to use the polytope class in wonton, we have to deal
+      // with relative indexing since face vertices are indexed
+      // relatively to the list of cell coordinates.
+      // Hence we cannot just rely on cell_get_coordinates from the
+      // source mesh which may lead to an inconsistent vertex ordering.
+      std::vector<int> poly_nodes;
+      std::vector<int> face_nodes;
+      std::vector<Wonton::Point<3>> poly_coords;
+      std::vector<std::vector<int>> poly_faces;
+      std::map<int, int> index_lookup;
+
+      source_mesh_.cell_get_nodes(source_id, &poly_nodes);
+      int const nb_nodes = poly_nodes.size();
+      int const nb_faces = cell_faces.size();
+
+      poly_coords.resize(nb_nodes);
+
+      for (int i = 0; i < nb_nodes; ++i) {
+        // populate lookup table for vertex indexing
+        // and retrieve their coordinates at the same time.
+        index_lookup[poly_nodes[i]] = i;
+        source_mesh_.node_get_coordinates(poly_nodes[i], poly_coords.data() + i);
+      }
+
+      poly_faces.resize(nb_faces);
+
+      for (int i = 0; i < nb_faces; ++i) {
+        source_mesh_.face_get_nodes(cell_faces[i], &face_nodes);
+        int const nb_face_nodes = face_nodes.size();
+        poly_faces[i].reserve(nb_face_nodes);
+
+        // for each face, retrieve the relative index of its vertices
+        // using the previous lookup table, and fix vertex ordering if
+        // not counterclockwise oriented.
+        for (int current = 0; current < nb_face_nodes; ++current) {
+          int const normal  = face_nodes[current];
+          int const reverse = face_nodes[nb_face_nodes - current - 1];
+          int const actual  = (face_dirs[i] > 0 ? normal : reverse);
+          poly_faces[i].push_back(index_lookup[actual]);
+        }
+      }
+
+      // compute moments eventually
+      return compute_moments(poly_coords, poly_faces);
+    }
+
+    /**
+     * @brief Check that given swept face centroid lies within the cell.
+     *
+     * @param cell: given cell index
+     * @param moment: swept face moments from which to extract centroid.
+     * @return true if centroid is within the cell, false otherwise.
+     */
+    bool centroid_inside_cell(int cell, std::vector<double> const& moment) const {
+
+      double const volume = std::abs(moment[0]);
+      if (volume < num_tols_.min_relative_volume)
+        return false;
+
+      std::vector<int> faces, dirs, nodes;
+      source_mesh_.cell_get_faces_and_dirs(cell, &faces, &dirs);
+      int const nb_faces = faces.size();
+
+      Wonton::Point<3> tetrahedron[4];
+      tetrahedron[0] = { moment[1] / volume,
+                         moment[2] / volume,
+                         moment[3] / volume };
+
+      for (int i = 0; i < nb_faces; ++i) {
+        source_mesh_.face_get_nodes(faces[i], &nodes);
+        // set tetrahedron according to edge orientation
+        if (dirs[i] > 0) {
+          source_mesh_.node_get_coordinates(nodes[0], tetrahedron + 1);
+          source_mesh_.node_get_coordinates(nodes[1], tetrahedron + 2);
+          source_mesh_.node_get_coordinates(nodes[2], tetrahedron + 3);
+        } else {
+          source_mesh_.node_get_coordinates(nodes[2], tetrahedron + 1);
+          source_mesh_.node_get_coordinates(nodes[1], tetrahedron + 2);
+          source_mesh_.node_get_coordinates(nodes[0], tetrahedron + 3);
+        }
+
+        // check determinant sign
+        double det = 0.; // TODO
+
+        if (det < 0.)
+          return false;
+      }
+      return true;
+    }
+
+  public:
+    /**
+     * @brief Perform the actual swept faces volumes computation.
+     *
+     * @param target_id: the current target cell index.
+     * @param source_id: the related source cell index.
+     * @param stencil: current source cell and its immediate neighbors.
+     * @return: a list of swept faces volume and related source cell pair.
+     */
+    std::vector<Weights_t> operator()(int target_id,
+                                      std::vector<int> const& stencil) const {
+
+      // convenience lambda to check if a some cell is within the stencil.
+      auto in_stencil = [&](int cell) -> bool {
+        return std::find(stencil.begin(), stencil.end(), cell) != stencil.end();
+      };
+
+      // here the source and target cell have the exact ID.
+      int const source_id = target_id;
+
+      std::vector<Weights_t> swept_moments;
+
+#ifdef HAVE_TANGRAM
+      int const nb_mats = source_state_.cell_get_num_mats(source_id);
+      bool const single_mat = not nb_mats or nb_mats == 1 or material_id_ == -1;
+
+      if (single_mat) {
+#endif
+        std::vector<int> faces, dirs, nodes;
+
+        // add source cell moments in the first place
+        swept_moments.emplace_back(source_id, compute_moments(source_id));
+
+        // retrieve current source cell faces/edges and related directions
+        source_mesh_.cell_get_faces_and_dirs(source_id, &faces, &dirs);
+        int const nb_faces = faces.size();
+
+        #if DEBUG
+          // ensure that we have the same face index for source and target.
+          std::vector<int> target_faces, target_dirs, target_nodes;
+          target_mesh_.cell_get_faces_and_dirs(target_id, &target_faces, &target_dirs);
+          int const nb_target_faces = target_faces.size();
+
+          assert(nb_faces == nb_target_faces);
+          for (int j = 0; j < nb_faces; ++j) {
+            assert(faces[j] == target_faces[j]);
+          }
+        #endif
+
+        for (int i = 0; i < nb_faces; ++i) {
+          // step 0: retrieve nodes and reorder them according to edge direction
+          nodes.clear();
+          source_mesh_.face_get_nodes(faces[i], &nodes);
+
+          int const nb_face_nodes = nodes.size();
+          int const nb_poly_nodes = 2 * nb_face_nodes;
+          int const nb_poly_faces = nb_poly_nodes + 2;
+
+          #if DEBUG
+            // ensure that we have the same nodal indices for source and target.
+            target_mesh_.face_get_nodes(target_faces[i], &target_nodes);
+            int const nb_source_nodes = nodes.size();
+            int const nb_target_nodes = target_nodes.size();
+
+            assert(nb_source_nodes == nb_target_nodes);
+            for (int j = 0; j < nb_target_nodes; ++j) {
+              assert(nodes[j] == target_nodes[j]);
+            }
+          #endif
+
+          // step 1: construct the swept volume polyhedron which can be a prism,
+          // a hexahedron or a general polyhedron depending on the face polygon.
+          std::vector<Wonton::Point<3>> swept_poly_coords(nb_poly_nodes);
+          std::vector<std::vector<int>> swept_poly_faces(nb_poly_faces);
+
+          // TODO: draw a picture to explain polyhedron construction principles.
+
+          // if the face normal is pointing outside then reverse its vertices
+          // order such that we have a positive swept volume on outside the cell
+          // and negative swept volume on inside.
+          // otherwise keep the same nodal order which is counterclockwise.
+          bool const outward_normal = dirs[i] > 0;
+
+          for (int current = 0; current < nb_face_nodes; ++current) {
+            auto const reverse = nb_face_nodes - current - 1;
+            auto const offset  = current + nb_face_nodes;
+            auto const indices = (outward_normal ? std::make_pair(current, reverse)
+                                                 : std::make_pair(reverse, current));
+            source_mesh_.node_get_coordinates(nodes[indices.first] , swept_poly_coords.data() + current);
+            target_mesh_.node_get_coordinates(nodes[indices.second], swept_poly_coords.data() + offset);
+          }
+
+          // now build the swept polyhedron faces:
+          // - allocate memory for vertices list of each face.
+          // - add the original face and its twin induced by sweeping.
+          // - construct the other faces induced by edge sweeping.
+          for (int current = 0; current < nb_poly_faces; ++current) {
+            int const size = (current < 2 ? nb_face_nodes : 4);
+            swept_poly_faces[current].resize(size);
+          }
+
+          std::iota(swept_poly_faces[0].begin(), swept_poly_faces[0].end(), 0);
+          std::iota(swept_poly_faces[1].begin(), swept_poly_faces[1].end(), nb_face_nodes);
+
+          for (int current = 0; current < nb_face_nodes; ++current) {
+            int const index = current + 2;
+            // keep face vertices counterclockwise.
+            swept_poly_faces[index][0] = current;
+            swept_poly_faces[index][1] = (current + 1) % nb_face_nodes;
+            swept_poly_faces[index][2] = nb_face_nodes - current - 2;
+            swept_poly_faces[index][3] = swept_poly_faces[index][2] + 1;
+          }
+
+          // step 2: compute swept polygon moments using divergence theorem
+          auto moments = compute_moments(swept_poly_coords, swept_poly_faces);
+
+          // step 3: assign the computed moments to the source cell or one
+          // of its neighbors according to the sign of the swept region volume.
+          if (std::abs(moments[0]) < num_tols_.min_relative_volume) {
+            // just skip if the swept region is almost flat.
+            // it may occur when the cell is shifted only in one direction.
+            continue;
+          } else if (moments[0] < 0.) {
+            // if the computed swept region volume is negative then assign its
+            // moments to the source cell: it will be substracted
+            // from the source cell area when performing the interpolation.
+            swept_moments.emplace_back(source_id, moments);
+
+            #if DEBUG
+              if (verbose) {
+                auto const& area = moments[0];
+                auto const centroid = Wonton::createP3(moments[1] / area,
+                                                       moments[2] / area,
+                                                       moments[3] / area);
+
+                std::cout << "assign polyhedron swept out from face "<< faces[i];
+                std::cout << " to source cell " << source_id << ". ";
+                std::cout << "area: "<< area <<", centroid: ("<< centroid <<")";
+                std::cout << std::endl;
+              }
+            #endif
+          } else {
+            // retrieve the cell incident to the current edge.
+            int const neigh = source_mesh_.cell_get_face_adj_cell(source_id, faces[i]);
+
+            // just skip in case of a boundary edge
+            if (neigh < 0) {
+              continue;
+            }
+              // sanity check: ensure that incident cell belongs to the stencil.
+            else if (not in_stencil(neigh)) {
+              std::cerr << "Error: invalid stencil for source cell "<< source_id;
+              std::cerr << "." << std::endl;
+              swept_moments.clear();
+              return swept_moments;
+            }
+              // sanity check: ensure that swept face centroid remains
+              // inside the neighbor cell.
+            else if (not centroid_inside_cell(neigh, moments)) {
+              std::cerr << "Error: invalid target mesh for swept face." << std::endl;
+              swept_moments.clear();
+              return swept_moments;
+            }
+              // append to list as current neighbor moment.
+            else {
+              swept_moments.emplace_back(neigh, moments);
+
+              #if DEBUG
+                if (verbose) {
+                  auto const& area = moments[0];
+                  auto const centroid = Wonton::createP3(moments[1] / area,
+                                                         moments[2] / area,
+                                                         moments[3] / area);
+
+                  std::cout << "assign polyhedron swept out from face "<< faces[i];
+                  std::cout << " to neighbor cell " << neigh << ". ";
+                  std::cout << "area: "<< area <<", centroid: ("<< centroid <<")";
+                  std::cout << std::endl;
+                }
+              #endif
+            }
+          }
+        } // end of for each face of current cell
+
+        #if DEBUG
+          if (verbose) { std::cout << " =========== " << std::endl; }
+        #endif
+        return swept_moments;
+#ifdef HAVE_TANGRAM
+      } else /* multi-material case */ {
+        std::cerr << "Error: multi-material swept face remap not yet supported";
+        std::cerr << std::endl;
+        swept_moments.clear();
+        return swept_moments;
+      }
+#endif
+    }
+
+  private:
+    SourceMesh const& source_mesh_;
+    TargetMesh const& target_mesh_;
+    SourceState const& source_state_;
+    int material_id_ = -1;
+    NumericTolerances_t num_tols_;
+#if DEBUG
+    bool verbose = false;
+#endif
+
+#ifdef HAVE_TANGRAM
+    std::shared_ptr<InterfaceReconstructor3D> interface_reconstructor;
+#endif
+  }; // class IntersectSweptFace::3D::CELL
 
   /* Define aliases to have the same interface as the other intersectors such
    * as R2D and R3D. This simple workaround allow us to discard the dimension
