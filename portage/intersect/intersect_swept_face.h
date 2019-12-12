@@ -138,20 +138,12 @@ namespace Portage {
       return std::vector<Weights_t>();
     }
 
-    #if DEBUG
-      void enable_debug_prints() { verbose = true; }
-    #endif
-
   private:
     SourceMesh const &source_mesh_;
     TargetMesh const &target_mesh_;
     SourceState const &source_state_;
     int material_id_ = -1;
     NumericTolerances_t num_tols_;
-#if DEBUG
-    bool verbose = false;
-#endif
-
 #ifdef HAVE_TANGRAM
     std::shared_ptr<InterfaceReconstructorDriver> interface_reconstructor;
 #endif
@@ -371,14 +363,6 @@ namespace Portage {
             assert(std::abs(x[0] - x[1]) < num_tols_.polygon_convexity_eps);
             assert(std::abs(y[0] - y[1]) < num_tols_.polygon_convexity_eps);
             centroid = { x[0], y[0] };
-
-            if (verbose) {
-              std::cout << "a: ("<< ax <<" "<< ay <<"), ";
-              std::cout << "c: ("<< cx <<" "<< cy <<"), ";
-              std::cout << "param: " << param[0] << std::endl;
-              std::cout << "bx: "<< bx << ", (dx - bx): "<< dx - bx << std::endl;
-              std::cout << "by: "<< by << ", (dy - by): "<< dy - by << std::endl;
-            }
           #else
             centroid = { ax + param[0] * (cx - ax), ay + param[0] * (cy - ay) };
           #endif
@@ -543,19 +527,6 @@ namespace Portage {
             // moments to the source cell: it will be substracted
             // from the source cell area when performing the interpolation.
             swept_moments.emplace_back(source_id, moments);
-
-            #if DEBUG
-              if (verbose) {
-                auto const& area = moments[0];
-                auto const centroid = Wonton::createP2(moments[1]/area,
-                                                       moments[2]/area);
-                std::cout << "assign polygon swept out from edge ";
-                std::cout << "[("<< swept_polygon[0] <<"),("<< swept_polygon[1] <<")]";
-                std::cout << " to source cell " << source_id << ". ";
-                std::cout << "area: "<< area <<", centroid: ("<< centroid <<")";
-                std::cout << std::endl;
-              }
-            #endif
           } else {
             // retrieve the cell incident to the current edge.
             int const neigh = source_mesh_.cell_get_face_adj_cell(source_id, edges[i]);
@@ -577,26 +548,10 @@ namespace Portage {
             // append to list as current neighbor moment.
             else {
               swept_moments.emplace_back(neigh, moments);
-
-              #if DEBUG
-                if (verbose) {
-                  auto const& area = moments[0];
-                  auto const centroid = Wonton::createP2(moments[1]/area,
-                                                         moments[2]/area);
-                  std::cout << "assign polygon swept out from edge ";
-                  std::cout << "[("<< swept_polygon[0] <<"),("<< swept_polygon[1] <<")]";
-                  std::cout << " to neighbor cell " << neigh << ". ";
-                  std::cout << "area: "<< area <<", centroid: ("<< centroid <<")";
-                  std::cout << std::endl;
-                }
-              #endif
             }
           }
         } // end for each edge of current cell
 
-        #if DEBUG
-          if (verbose) { std::cout << " =========== " << std::endl; }
-        #endif
         return swept_moments;
 #ifdef HAVE_TANGRAM
       } else /* multi-material case */ {
@@ -611,10 +566,6 @@ namespace Portage {
     SourceState const &source_state_;
     int material_id_ = -1;
     NumericTolerances_t num_tols_;
-#if DEBUG
-    bool verbose = false;
-#endif
-
 #ifdef HAVE_TANGRAM
     std::shared_ptr<InterfaceReconstructor2D> interface_reconstructor;
 #endif
@@ -963,7 +914,7 @@ namespace Portage {
            * inside it ; otherwise keep the same nodal order
            * which is counterclockwise by default.
            *
-           *   source hex        target hex       frontal face swept polyhedron:
+           *   source hex        target hex       face swept polyhedron:
            *                     7'......6'
            *                      .:    .:             4'......5'
            *    7______6         . :   . :             /:    /:
@@ -975,7 +926,8 @@ namespace Portage {
            * | /    | /        0'     1'           | /    |/
            * |/_____|/                             |/_____/
            * 0      1                              0      1
-           *                                     vertices: [0,1,5,4,4',5',1',0']
+           *                                 ∙dirs[f] > 0: [0,1,5,4,4,5,1,0]
+           *                                 ∙dirs[f] < 0: [4,5,1,0,0,1,5,4]
            */
           bool const outward_normal = dirs[i] > 0;
 
@@ -1049,20 +1001,6 @@ namespace Portage {
             // moments to the source cell: it will be substracted
             // from the source cell area when performing the interpolation.
             swept_moments.emplace_back(source_id, moments);
-
-            #if DEBUG
-              if (verbose) {
-                auto const& area = moments[0];
-                auto const centroid = Wonton::createP3(moments[1] / area,
-                                                       moments[2] / area,
-                                                       moments[3] / area);
-
-                std::cout << "assign polyhedron swept out from face "<< faces[i];
-                std::cout << " to source cell " << source_id << ". ";
-                std::cout << "area: "<< area <<", centroid: ("<< centroid <<")";
-                std::cout << std::endl;
-              }
-            #endif
           } else {
             // retrieve the cell incident to the current edge.
             int const neigh = source_mesh_.cell_get_face_adj_cell(source_id, faces[i]);
@@ -1079,27 +1017,9 @@ namespace Portage {
               // append to list as current neighbor moment.
             else {
               swept_moments.emplace_back(neigh, moments);
-
-              #if DEBUG
-                if (verbose) {
-                  auto const& area = moments[0];
-                  auto const centroid = Wonton::createP3(moments[1] / area,
-                                                         moments[2] / area,
-                                                         moments[3] / area);
-
-                  std::cout << "assign polyhedron swept out from face "<< faces[i];
-                  std::cout << " to neighbor cell " << neigh << ". ";
-                  std::cout << "area: "<< area <<", centroid: ("<< centroid <<")";
-                  std::cout << std::endl;
-                }
-              #endif
             }
           }
         } // end of for each face of current cell
-
-        #if DEBUG
-          if (verbose) { std::cout << " =========== " << std::endl; }
-        #endif
 
         if (valid_displacement(source_id, swept_moments)) {
           return swept_moments;
@@ -1119,10 +1039,6 @@ namespace Portage {
     SourceState const& source_state_;
     int material_id_ = -1;
     NumericTolerances_t num_tols_;
-#if DEBUG
-    bool verbose = false;
-#endif
-
 #ifdef HAVE_TANGRAM
     std::shared_ptr<InterfaceReconstructor3D> interface_reconstructor;
 #endif
