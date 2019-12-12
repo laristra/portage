@@ -802,48 +802,44 @@ namespace Portage {
     }
 
     /**
-     * @brief Check that given swept face centroid lies within the cell.
+     * @brief Check whether the displacement is valid or not.
      *
-     * @param cell: given cell index
-     * @param moment: swept face moments from which to extract centroid.
-     * @return true if centroid is within the cell, false otherwise.
+     *  In the ideal case, we should check if the swept volume centroid
+     *  related to each face of the source cell would lie in the first layer
+     *  of its neighbors. However it would be really expensive since we have to
+     *  first split that face into triangles, form a tetrahedron from each
+     *  triangle and the given centroid, and check the signed volume of the
+     *  resulting tetrahedron. And we would have to do it for each cell face.
+     *
+     * @param source_id: the index of the source cell.
+     * @param moments: the list of swept region moments.
+     * @return true if the displacement is valid, false otherwise.
      */
-    bool centroid_inside_cell(int cell, std::vector<double> const& moment) const {
+    bool valid_displacement(int source_id,
+                            std::vector<Weights_t> const& moments) const {
 
-      double const volume = std::abs(moment[0]);
-      if (volume < num_tols_.min_relative_volume)
-        return false;
+      int const nb_moments = moments.size();
+      assert(nb_moments > 0);
 
-      std::vector<int> faces, dirs, nodes;
-      source_mesh_.cell_get_faces_and_dirs(cell, &faces, &dirs);
-      int const nb_faces = faces.size();
+      double const& source_cell_volume = moments[0].weights[0];
+      double source_swept_volume = 0.;
 
-      Wonton::Point<3> tetrahedron[4];
-      tetrahedron[0] = { moment[1] / volume,
-                         moment[2] / volume,
-                         moment[3] / volume };
+      for (int i = 1; i < nb_moments; ++i) {
+        auto const& swept_volume = std::abs(moments[i].weights[0]);
 
-      for (int i = 0; i < nb_faces; ++i) {
-        source_mesh_.face_get_nodes(faces[i], &nodes);
-        // set tetrahedron according to edge orientation
-        if (dirs[i] > 0) {
-          source_mesh_.node_get_coordinates(nodes[0], tetrahedron + 1);
-          source_mesh_.node_get_coordinates(nodes[1], tetrahedron + 2);
-          source_mesh_.node_get_coordinates(nodes[2], tetrahedron + 3);
-        } else {
-          source_mesh_.node_get_coordinates(nodes[2], tetrahedron + 1);
-          source_mesh_.node_get_coordinates(nodes[1], tetrahedron + 2);
-          source_mesh_.node_get_coordinates(nodes[0], tetrahedron + 3);
+        if (moments[i].entityID == source_id)
+          source_swept_volume += swept_volume;
+        else /* one of the source cell neighbor */ {
+          if (swept_volume > source_cell_volume)
+            return false;
         }
-
-        // check determinant sign
-        double det = 0.; // TODO
-
-        if (det < 0.)
-          return false;
       }
-      return true;
+
+      // the total contribution of source cell should be less than
+      // its volume itself otherwise the displacement would be too large.
+      return (source_swept_volume < source_cell_volume);
     }
+
 
   public:
     /**
@@ -937,7 +933,8 @@ namespace Portage {
             target_mesh_.node_get_coordinates(nodes[indices.second], swept_poly_coords.data() + offset);
           }
 
-          // now build the swept polyhedron faces:
+          // now build the swept polyhedron faces, which vertices are indexed
+          // RELATIVELY to the array of coordinates 'swept_poly_coords':
           // - allocate memory for vertices list of each face.
           // - add the original face and its twin induced by sweeping.
           // - construct the other faces induced by edge sweeping.
@@ -946,16 +943,18 @@ namespace Portage {
             swept_poly_faces[current].resize(size);
           }
 
+          // reminder: relative indices
           std::iota(swept_poly_faces[0].begin(), swept_poly_faces[0].end(), 0);
           std::iota(swept_poly_faces[1].begin(), swept_poly_faces[1].end(), nb_face_nodes);
 
+          // TODO: add descriptive comment here
           for (int current = 0; current < nb_face_nodes; ++current) {
             int const index = current + 2;
             // keep face vertices counterclockwise.
             swept_poly_faces[index][0] = current;
-            swept_poly_faces[index][1] = (current + 1) % nb_face_nodes;
-            swept_poly_faces[index][2] = nb_face_nodes - current - 2;
-            swept_poly_faces[index][3] = swept_poly_faces[index][2] + 1;
+            swept_poly_faces[index][1] = nb_face_nodes - current - 1;
+            swept_poly_faces[index][2] = nb_face_nodes - ((current + 2) % nb_face_nodes);
+            swept_poly_faces[index][3] = (current + 1) % nb_face_nodes;
           }
 
           // step 2: compute swept polygon moments using divergence theorem
@@ -996,17 +995,8 @@ namespace Portage {
             }
               // sanity check: ensure that incident cell belongs to the stencil.
             else if (not in_stencil(neigh)) {
-              std::cerr << "Error: invalid stencil for source cell "<< source_id;
-              std::cerr << "." << std::endl;
-              swept_moments.clear();
-              return swept_moments;
-            }
-              // sanity check: ensure that swept face centroid remains
-              // inside the neighbor cell.
-            else if (not centroid_inside_cell(neigh, moments)) {
-              std::cerr << "Error: invalid target mesh for swept face." << std::endl;
-              swept_moments.clear();
-              return swept_moments;
+              auto id = std::to_string(source_id);
+              throw std::runtime_error("invalid stencil for source cell" + id);
             }
               // append to list as current neighbor moment.
             else {
@@ -1032,13 +1022,15 @@ namespace Portage {
         #if DEBUG
           if (verbose) { std::cout << " =========== " << std::endl; }
         #endif
-        return swept_moments;
+
+        if (valid_displacement(source_id, swept_moments)) {
+          return swept_moments;
+        } else
+          throw std::runtime_error("invalid displacement");
+
 #ifdef HAVE_TANGRAM
       } else /* multi-material case */ {
-        std::cerr << "Error: multi-material swept face remap not yet supported";
-        std::cerr << std::endl;
-        swept_moments.clear();
-        return swept_moments;
+        throw std::runtime_error("multi-material swept remap not yet supported");
       }
 #endif
     }
