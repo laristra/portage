@@ -814,11 +814,13 @@ namespace Portage {
       int const nb_moments = moments.size();
       assert(nb_moments > 0);
 
-      double const& source_cell_volume = moments[0].weights[0];
+      double const source_cell_volume = moments[0].weights[0];
       double source_swept_volume = 0.;
+      assert(source_cell_volume > num_tols_.min_relative_volume);
 
       for (int i = 1; i < nb_moments; ++i) {
-        auto const& swept_volume = std::abs(moments[i].weights[0]);
+        double const swept_volume = std::abs(moments[i].weights[0]);
+        assert(swept_volume > num_tols_.min_relative_volume);
 
         if (moments[i].entityID == source_id)
           source_swept_volume += swept_volume;
