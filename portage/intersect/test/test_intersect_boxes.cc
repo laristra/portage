@@ -45,6 +45,7 @@ int binomial(int n, int k) {
 
 // ----------------------------------------------------------------------------
 
+// Computes the integral of x^order dx from xbar - dx/2 to xbar + dx/2
 double cartesian_moment_1d(
     int const order, double const xbar, const double dx) {
   double dr_2 = 0.5 * dx;
@@ -60,6 +61,8 @@ double cartesian_moment_1d(
 
 // ----------------------------------------------------------------------------
 
+// Computes the moment specified by the exponents array, assuming that this
+// cell is in Cartesian space (ignoring corrections from the coordinate system)
 template<int D>
 double cartesian_moment(std::array<int,D> const & exponents,
     Wonton::Point<D> const xbar, Wonton::Point<D> const dx) {
@@ -74,7 +77,7 @@ double cartesian_moment(std::array<int,D> const & exponents,
 
 TEST(Intersect_Boxes_Test, IntersectBoxesTest1D) {
   int constexpr D = 1;
-  // TODO: Template on this then run in all coordinate systems?
+  // TODO: Template on this then run in all coordinate systems
   using CoordSys = Wonton::CartesianCoordinates;
 
   using SrcMesh_t = Wonton::Direct_Product_Mesh<D,CoordSys>;
@@ -184,6 +187,11 @@ TEST(Intersect_Boxes_Test, IntersectBoxesTest1D) {
       // -- intersect (weights)
       // -- analytic result with moment-shift method (shifted_moments)
       // -- analytic result with axis-aligned boxes (box_moments)
+      // TODO: Add one more method: directly compute the moments in the correct
+      //       coordinate system.  That will require a function template that
+      //       is templates on the coordinate system and takes the exponents
+      //       list and the xbar & dx.  That will then be specialized on all of
+      //       the different coordinate systems available.
       for (int idx = 0; idx < Wonton::count_moments<D>(1); ++idx) {
         ASSERT_DOUBLE_EQ(weights[idx], shifted_moments[idx]);
         ASSERT_DOUBLE_EQ(weights[idx], box_moments[idx]);
