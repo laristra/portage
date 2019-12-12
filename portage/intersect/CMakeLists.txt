@@ -35,6 +35,11 @@ if (ENABLE_UNIT_TESTS)
                 SOURCES test/test_intersect_swept_face_2D.cc
                 LIBRARIES portage ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
                 POLICY MPI)
+
+        cinch_add_unit(test_intersect_swept_face_3D
+                SOURCES test/test_intersect_swept_face_3D.cc
+                LIBRARIES portage ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
+                POLICY MPI)
     endif (Jali_DIR)
 
     cinch_add_unit(intersect_boxes
