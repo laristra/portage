@@ -567,17 +567,13 @@ namespace Portage {
             }
             // sanity check: ensure that incident cell belongs to the stencil.
             else if (not in_stencil(neigh)) {
-              std::cerr << "Error: invalid stencil for source cell "<< source_id;
-              std::cerr << "." << std::endl;
-              swept_moments.clear();
-              return swept_moments;
+              auto id = std::to_string(source_id);
+              throw std::runtime_error("invalid stencil for source cell "+ id);
             }
             // sanity check: ensure that swept face centroid remains
             // inside the neighbor cell.
             else if (not centroid_inside_cell(neigh, moments)) {
-              std::cerr << "Error: invalid target mesh for swept face." << std::endl;
-              swept_moments.clear();
-              return swept_moments;
+              throw std::runtime_error("invalid target mesh for swept face");
             }
             // append to list as current neighbor moment.
             else {
@@ -605,10 +601,7 @@ namespace Portage {
         return swept_moments;
 #ifdef HAVE_TANGRAM
       } else /* multi-material case */ {
-        std::cerr << "Error: multi-material swept face remap not yet supported";
-        std::cerr << std::endl;
-        swept_moments.clear();
-        return swept_moments;
+        throw std::runtime_error("multi-material case not yet supported");
       }
 #endif
     }
