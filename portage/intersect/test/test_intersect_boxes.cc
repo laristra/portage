@@ -10,6 +10,7 @@ Please see the license file at the root of this repository, or at:
 #include "gtest/gtest.h"
 
 #include "portage/intersect/intersect_boxes.h"
+#include "portage/search/search_direct_product.h"
 
 #include "wonton/mesh/direct_product/direct_product_mesh.h"
 #include "wonton/mesh/direct_product/direct_product_mesh_wrapper.h"
@@ -19,9 +20,6 @@ Please see the license file at the root of this repository, or at:
 // ============================================================================
 
 int binomial(int n, int k) {
-  ASSERT_GE(n,0);
-  ASSERT_GE(k,0);
-  ASSERT_LE(k,n);
   int l = std::min(k, n-k); 
   int binomial; 
   switch(l) { 
@@ -42,7 +40,7 @@ int binomial(int n, int k) {
     binomial = coefs[l] + coefs[l-1];
     break; 
   } 
-  return(binomial); 
+  return binomial; 
 }
 
 // ----------------------------------------------------------------------------
@@ -53,30 +51,31 @@ double cartesian_moment_1d(
   double moment = 0.0;
   for (int j = 0; j <= order/2; ++j) {
     int jj = 2*j;
-    moment += (binomial(n,jj) / (jj+1)) *
-      std::pow(xbar,n-jj) * std::pow(dr_2,jj);
+    moment += (binomial(order,jj) / (jj+1)) *
+      std::pow(xbar,order-jj) * std::pow(dr_2,jj);
   }
   moment *= dx;
-  return(moment);
+  return moment;
 }
 
 // ----------------------------------------------------------------------------
 
 template<int D>
 double cartesian_moment(std::array<int,D> const & exponents,
-    std::array<double,D> const xbar, std::array<double,D> const dx) {
+    Wonton::Point<D> const xbar, Wonton::Point<D> const dx) {
   double moment = 1.0;
   for (int d = 0; d < D; ++d) {
     moment *= cartesian_moment_1d(exponents[d], xbar[d], dx[d]);
   }
-  return(moment);
+  return moment;
 }
 
 // ============================================================================
 
 TEST(Intersect_Boxes_Test, IntersectBoxesTest1D) {
   int constexpr D = 1;
-  using CoordSys = Wonton::DefaultCoordSys
+  // TODO: Template on this then run in all coordinate systems?
+  using CoordSys = Wonton::CartesianCoordinates;
 
   using SrcMesh_t = Wonton::Direct_Product_Mesh<D,CoordSys>;
   using TgtMesh_t = Wonton::Direct_Product_Mesh<D,CoordSys>;
@@ -101,11 +100,11 @@ TEST(Intersect_Boxes_Test, IntersectBoxesTest1D) {
   TgtMesh_t tgt_mesh(tgt_axis_points);
 
   // Build mesh wrappers
-  SrcWrapper_t src_wrapper(DPMesh1);
-  TgtWrapper_t tgt_wrapper(DPMesh2);
+  SrcWrapper_t src_wrapper(src_mesh);
+  TgtWrapper_t tgt_wrapper(tgt_mesh);
 
   // Build the search object
-  SearchDirectProduct<D,SrcWrapper_t,TgtWrapper_t>
+  Portage::SearchDirectProduct<D,SrcWrapper_t,TgtWrapper_t>
     search(src_wrapper, tgt_wrapper);
   auto ekind = Wonton::Entity_kind::CELL;
   auto etype = Wonton::Entity_type::PARALLEL_OWNED;
@@ -113,7 +112,7 @@ TEST(Intersect_Boxes_Test, IntersectBoxesTest1D) {
   auto end   = tgt_wrapper.end(ekind, etype);
 
   // Perform search
-  const std::vector<std::vector<int>> candidates;
+  std::vector<std::vector<int>> candidates;
   candidates.resize(tgt_wrapper.num_owned_cells());
   for (auto iter = begin; iter != end; ++iter) {
     auto id = *iter;
@@ -121,11 +120,11 @@ TEST(Intersect_Boxes_Test, IntersectBoxesTest1D) {
   }
 
   // Build the intersector object
-  IntersectBoxes<D,SrcWrapper_t,TgtWrapper_t,CoordSys>
+  Portage::IntersectBoxes<D,SrcWrapper_t,TgtWrapper_t,CoordSys>
     intersect(src_wrapper, tgt_wrapper);
 
   // Perform intersect
-  const std::vector<std::vector<Portage::Weights_t>> weights;
+  std::vector<std::vector<Portage::Weights_t>> weights;
   for (auto iter = begin; iter != end; ++iter) {
     auto id = *iter;
     weights[id] = intersect(id, candidates[id]);
@@ -133,34 +132,61 @@ TEST(Intersect_Boxes_Test, IntersectBoxesTest1D) {
 
   // Verify weights
   for (auto t_iter = begin; t_iter != end; ++t_iter) {
-    auto t_id = *iter;
+    auto t_id = *t_iter;
     auto & tgt_cell_weights = weights[t_id];
     for (auto s_iter = tgt_cell_weights.begin();
         s_iter != tgt_cell_weights.end(); ++s_iter) {
       auto s_id = (*s_iter).entityID;
       auto & weights = (*s_iter).weights;
+      // Verify that the search method provided enough moments (0th and 1st)
+      ASSERT_GE(weights.size(), Wonton::count_moments<D>(1));
       // Intersection for target cell t_id and source cell s_id.
       // Weights is list of weights in moment order (volume, M_x, ...).
       Wonton::Point<D> t_lo, t_hi;
-      tgt_wrapper.cell_get_bounds(t_id, t_lo, t_hi);
+      tgt_wrapper.cell_get_bounds(t_id, &t_lo, &t_hi);
       Wonton::Point<D> s_lo, s_hi;
-      src_wrapper.cell_get_bounds(s_id, s_lo, s_hi);
+      src_wrapper.cell_get_bounds(s_id, &s_lo, &s_hi);
       Wonton::Point<D> i_lo, i_hi;
       Wonton::Point<D> xbar, dx;
       for (int d = 0; d < D; ++d) {
-        i_lo[d] = std::max(t_lo, s_lo);
-        i_hi[d] = std::min(t_hi, s_hi);
-        xbar[d] = 0.5 * (ilo[d] + i_hi[d]);
-        dx[d] = ihi[d] - i_lo[d];
+        i_lo[d] = std::max(t_lo[d], s_lo[d]);
+        i_hi[d] = std::min(t_hi[d], s_hi[d]);
+        xbar[d] = 0.5 * (i_lo[d] + i_hi[d]);
+        dx[d] = i_hi[d] - i_lo[d];
       }
-      std::vector<double> cartesian_moments(weights.size());
-      for (int idx = 0; idx < weights.size(); ++idx) {
-        auto exponents = Wonton::index_to_moment<D>(idx);
-        cartesian_moments[idx] = cartesian_moment(exponents, xbar, dr);
+      // Compute Cartesian moments
+      std::vector<double> cartesian_moments(
+          Wonton::count_moments<D>(1 + CoordSys::moment_shift));
+      for (int idx = 0; idx < cartesian_moments.size(); ++idx) {
+        int order;
+        std::array<int,D> exponents;
+        std::tie(order,exponents) = Wonton::index_to_moment<D>(idx);
+        cartesian_moments[idx] = cartesian_moment<D>(exponents, xbar, dx);
       }
-      CoordSys::modify_moments(cart_mom, ilo, ihi);
-      for (int idx = 0; idx < weights.size(); ++id) {
-        ASSERT_DOUBLE_EQ(weights[idx], cartesian_moments[idx]);
+      // Shift moments to appropriate coordinate system
+      std::vector<double> shifted_moments(cartesian_moments);
+      CoordSys::shift_moments_list<D>(shifted_moments);
+      // Use axis-aligned-box optimizations to convert moments to appropriate
+      // coordinate system
+      auto volume = cartesian_moments[0];
+      CoordSys::modify_volume<D>(volume, i_lo, i_hi);
+      Wonton::Point<D> first_moments;
+      for (int d = 0; d < D; ++d) {
+        first_moments[d] = cartesian_moments[1+d];
+      }
+      CoordSys::modify_first_moments<D>(first_moments, i_lo, i_hi);
+      std::vector<double> box_moments(1+D);
+      box_moments[0] = volume;
+      for (int d = 0; d < D; ++d) {
+        box_moments[1+d] = first_moments[d];
+      }
+      // Check that results are equal from all three methods
+      // -- intersect (weights)
+      // -- analytic result with moment-shift method (shifted_moments)
+      // -- analytic result with axis-aligned boxes (box_moments)
+      for (int idx = 0; idx < Wonton::count_moments<D>(1); ++idx) {
+        ASSERT_DOUBLE_EQ(weights[idx], shifted_moments[idx]);
+        ASSERT_DOUBLE_EQ(weights[idx], box_moments[idx]);
       }
     }
   }

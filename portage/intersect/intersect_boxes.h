@@ -94,18 +94,18 @@ std::vector<Portage::Weights_t>
 
     // Compute intersection and volume
     Wonton::Point<D> ilo, ihi;   // bounding box of intersection
-    double vol0 = 1.;
+    double volume = 1.;
     for (int d = 0; d < D; ++d) {
       ilo[d] = std::max(slo[d], tlo[d]);
       ihi[d] = std::min(shi[d], thi[d]);
       double delta = std::max(ihi[d] - ilo[d], 0.);
-      vol0 *= delta;
+      volume *= delta;
     }
 
     // If the intersection volume is zero, don't bother computing the moments
     // because they will also be zero, and don't bother inserting into the list
     // of actually intersecting boxes.
-    if (vol0 <= 0.) continue;
+    if (volume <= 0.) continue;
 
     // At this point the two boxes actually intersect and we need to compute
     // moments and insert into the list.
@@ -114,8 +114,7 @@ std::vector<Portage::Weights_t>
     auto & this_wt = sources_and_weights[ninserted];
     this_wt.entityID = s;
 
-    // Compute and save weights (volume + 1 moment for each dimension)
-    auto & weights = this_wt.weights;
+    // Compute moments
     // TODO: How many orders of moments do we need to provide?  For first-order
     //       interpolation, we only need zeroth moments; for second-order
     //       interpolation, we need up through first moments; and so on.
@@ -123,20 +122,30 @@ std::vector<Portage::Weights_t>
     //       of interpolation is needed.  So we'll just have to hard-code this
     //       for now, assuming second-order interpolation for lack of a better
     //       choice.
-    weights.resize(1+D);
-    weights[0] = vol0;
+    Wonton::Point<D> first_moments;
     for (int d = 0; d < D; ++d) {
       const auto ibar = 0.5 * (ilo[d] + ihi[d]);
-      mom0[1+d] = ibar * vol0;
+      first_moments[1+d] = ibar * volume;
     }
-    // Instead of calculating extra moments, use the bounding box to explicitly
-    // update the moments.  But this only works if your cells are axis-aligned
-    // boxes.  In other words: this is an optimization for intersect_boxes,
-    // rather than a general-purpose tool for all intersectors.
-    // TODO: No longer modify_moments.  Now modify_volume and
-    //       modify_first_moments.  Maybe add a second moments?  I don't really
-    //       know how far to extend that.
-    CoordSys::modify_moments(weights, ilo, ihi);
+
+    // Correct for coordinate system
+    // -- Instead of calculating extra moments, use the bounding box to
+    //    explicitly update the moments.  But this only works if your cells are
+    //    axis-aligned boxes.  In other words: this is an optimization for
+    //    intersect_boxes, rather than a general-purpose tool for all
+    //    intersectors.  Currently only zeroth and first moments have this
+    //    optimization, but they could be computed and implemented for
+    //    higher-order moments.
+    CoordSys::modify_volume(volume, ilo, ihi);
+    CoordSys::modify_first_moments(first_moments, ilo, ihi);
+
+    // Save weights (moments)
+    auto & weights = this_wt.weights;
+    weights.resize(1+D);
+    weights[0] = volume;
+    for (int d = 0; d < D; ++d) {
+        weights[1+d] = first_moments[d];
+    }
 
     // Increment the count, because we've now inserted a new entry
     ++ninserted;
