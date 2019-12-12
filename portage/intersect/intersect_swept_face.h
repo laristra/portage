@@ -450,12 +450,11 @@ namespace Portage {
 
   public:
     /**
-     * @brief Perform the actual swept faces volumes computation.
+     * @brief Perform the actual swept faces computation.
      *
      * @param target_id: the current target cell index.
-     * @param source_id: the related source cell index.
      * @param stencil: current source cell and its immediate neighbors.
-     * @return: a list of swept faces volume and related source cell pair.
+     * @return: a list of swept faces moments and related source cell pair.
      */
     std::vector<Weights_t> operator()(int target_id,
                                       std::vector<int> const& stencil) const {
@@ -622,14 +621,14 @@ namespace Portage {
   }; // class IntersectSweptFace::2D::CELL
 
   /**
-   * @brief Specialization for 2D cell-based remap.
+   * @brief Specialization for 3D cell-based remap.
    *
    * @tparam SourceMesh: the source mesh wrapper type.
    * @tparam SourceState: the source state wrapper to query field infos.
    * @tparam TargetMesh: the target mesh wrapper type.
    * @tparam InterfaceReconstructor: materials interface reconstructor type.
-   * @tparam Matpoly_Splitter: material polygons splitter type.
-   * @tparam Matpoly_Clipper: material polygons clipper type.
+   * @tparam Matpoly_Splitter: material polyhedra splitter type.
+   * @tparam Matpoly_Clipper: material polyhedra clipper type.
    */
   template<
     class SourceMesh, class SourceState, class TargetMesh,
@@ -725,39 +724,73 @@ namespace Portage {
   private:
 
     /**
-     * @brief Compute moments using divergence theorem.
+     * @brief Compute polyhedron moments using divergence theorem.
      *
-     * @param swept_polygon: swept polygon points coordinates.
-     * @return swept polygon moments.
+     *       ______      - polyhedron faces are split into n triangles.
+     *      /|    /|     - their vertices 'pi' are ordered counterclockwise.
+     *     / |___/_|     - 'ni' denotes the normal vector of the triangle 'ti'.
+     *    /  /  /  /     - {e1,e2,e3} denotes the canonical basis of R^3.
+     * ci___/_ /  /
+     *  |  /  |  /             1
+     *  | /   | /          v = - sum_i=1^n ai.ni
+     *  |/____|/               6
+     *  ai    bi    e3           1                 ([(ai+bi).ed]^2
+     *            |        c = - sum_i=1^n ni.ed +[(bi+ci).ed]^2 , d=1,2,3
+     *            |__ e2       2v                +[(ci+ai).ed]^2)
+     *           /
+     *          e1
+     * @param coords: the polyhedron vertex coordinates.
+     * @param faces: vertices index list of each face of the polyhedron.
+     * @return polyhedron moments: [volume, volume * centroid.x,
+     *                                      volume * centroid.y,
+     *                                      volume * centroid.z].
      */
     std::vector<double> compute_moments
-      (std::vector<Wonton::Point<3>> const& poly_coords,
+      (std::vector<Wonton::Point<3>> const& coords,
        std::vector<std::vector<int>> const& faces) const {
 
       // implementation may change in the future
-      Polyhedron polyhedron(poly_coords, faces);
+      Polyhedron polyhedron(coords, faces);
       return polyhedron.moments();
     }
 
     /**
-     * @brief Retrieve the source cell moments.
+     * @brief Compute the source cell moments.
+     *
+     * Recall that we have to deal with relative indexing to be able
+     * to use the polytope object, since face vertices are indexed
+     * relatively to the list of cell coordinates. Besides each face must
+     * be correctly oriented such that its normal vector induced by its
+     * vertices ordering always point outwards.
+     * Hence we cannot just rely on 'cell_get_coordinates' combined with
+     * 'cell_get_faces_and_dirs' on the source mesh which may lead to
+     * an inconsistent vertex ordering.
+     *                        
+     *     4______5           point coordinates indices: [0,1,2,3,4,5,6,7]
+     *     /|    /|           consistent face vertex relative ordering:
+     *    / |   / |           ∙f[0]:[0,1,2,3]
+     *  3 __|__2  |           ∙f[1]:[0,7,6,1]
+     *  |   7__|__6           ∙f[2]:[1,6,5,2]
+     *  |  /   |  /           ∙f[3]:[2,5,4,3]
+     *  | /    | /            ∙f[4]:[3,4,7,0]
+     *  |/_____|/             ∙f[5]:[6,7,4,5]
+     *  0      1              => use a lookup table to convert absolute index
+     *                           to a relative one.
      *
      * @param source_id: index of the source cell.
+     * @param cell_faces: the list of faces of the given cell.
+     * @param face_dirs: the orientation of each face of the given cell.
      * @return a list of cell moments.
      */
     std::vector<double> compute_source_moments(int source_id,
                                                std::vector<int> const& cell_faces,
                                                std::vector<int> const& face_dirs) const {
-      // To be able to use the polytope class in wonton, we have to deal
-      // with relative indexing since face vertices are indexed
-      // relatively to the list of cell coordinates.
-      // Hence we cannot just rely on cell_get_coordinates from the
-      // source mesh which may lead to an inconsistent vertex ordering.
+
       std::vector<int> poly_nodes;
       std::vector<int> face_nodes;
       std::vector<Wonton::Point<3>> poly_coords;
       std::vector<std::vector<int>> poly_faces;
-      std::map<int, int> index_lookup;
+      std::map<int, int> relative_index_lookup;
 
       source_mesh_.cell_get_nodes(source_id, &poly_nodes);
       int const nb_nodes = poly_nodes.size();
@@ -766,9 +799,9 @@ namespace Portage {
       poly_coords.resize(nb_nodes);
 
       for (int i = 0; i < nb_nodes; ++i) {
-        // populate lookup table for vertex indexing
+        // populate the lookup table for vertex indexing
         // and retrieve their coordinates at the same time.
-        index_lookup[poly_nodes[i]] = i;
+        relative_index_lookup[poly_nodes[i]] = i;
         source_mesh_.node_get_coordinates(poly_nodes[i], poly_coords.data() + i);
       }
 
@@ -786,7 +819,7 @@ namespace Portage {
           int const normal  = face_nodes[current];
           int const reverse = face_nodes[nb_face_nodes - current - 1];
           int const actual  = (face_dirs[i] > 0 ? normal : reverse);
-          poly_faces[i].push_back(index_lookup[actual]);
+          poly_faces[i].push_back(relative_index_lookup[actual]);
         }
       }
 
@@ -795,14 +828,20 @@ namespace Portage {
     }
 
     /**
-     * @brief Check whether the displacement is valid or not.
+     * @brief Verify if the displacement is valid or not.
      *
-     *  In the ideal case, we should check if the swept volume centroid
-     *  related to each face of the source cell would lie in the first layer
-     *  of its neighbors. However it would be really expensive since we have to
-     *  first split that face into triangles, form a tetrahedron from each
-     *  triangle and the given centroid, and check the signed volume of the
-     *  resulting tetrahedron. And we would have to do it for each cell face.
+     * Indeed the computed interpolation weights for the swept volume based
+     * remap would be completely inaccurate, in case of large displacement due
+     * to a large advection timestep for instance.
+     * In fact, we should ideally check if the swept volume centroid               
+     * related to each face of the source cell would lie in the first layer        
+     * of the cell neighbors. However it would be really expensive since           
+     * we have to split that face into triangles (even if the cell is convex),     
+     * form a tetrahedron from each triangle and the given centroid,               
+     * and check the signed volume of the resulting tetrahedron. And we have       
+     * to do it for each cell face. Hence the suggested workaround is just to      
+     * check that the volume of each swept region associated to one of             
+     * the contributing cell does not exceed that of the source cell.
      *
      * @param source_id: the index of the source cell.
      * @param moments: the list of swept region moments.
@@ -814,6 +853,9 @@ namespace Portage {
       int const nb_moments = moments.size();
       assert(nb_moments > 0);
 
+      // the first entry of the swept region moment list is the source cell
+      // moment, that is its own volume and weighted centroid.
+      assert(moments[0].entityID == source_id);
       double const source_cell_volume = moments[0].weights[0];
       double source_swept_volume = 0.;
       assert(source_cell_volume > num_tols_.min_relative_volume);
@@ -821,7 +863,7 @@ namespace Portage {
       for (int i = 1; i < nb_moments; ++i) {
         double const swept_volume = std::abs(moments[i].weights[0]);
         assert(swept_volume > num_tols_.min_relative_volume);
-
+        // accumulate the self-contribution to compare it later
         if (moments[i].entityID == source_id)
           source_swept_volume += swept_volume;
         else /* one of the source cell neighbor */ {
@@ -830,25 +872,24 @@ namespace Portage {
         }
       }
 
-      // the total contribution of source cell should be less than
-      // its volume itself otherwise the displacement would be too large.
+      // the total self-contribution should be less than the source cell
+      // volume itself, otherwise the displacement would be too large.
       return (source_swept_volume < source_cell_volume);
     }
 
 
   public:
     /**
-     * @brief Perform the actual swept faces volumes computation.
+     * @brief Perform the actual swept volume computation.
      *
      * @param target_id: the current target cell index.
-     * @param source_id: the related source cell index.
      * @param stencil: current source cell and its immediate neighbors.
-     * @return: a list of swept faces volume and related source cell pair.
+     * @return a list of swept region moments and related source cell pair.
      */
     std::vector<Weights_t> operator()(int target_id,
                                       std::vector<int> const& stencil) const {
 
-      // convenience lambda to check if a some cell is within the stencil.
+      // convenience lambda to check if some cell is within the stencil.
       auto in_stencil = [&](int cell) -> bool {
         return std::find(stencil.begin(), stencil.end(), cell) != stencil.end();
       };
@@ -886,7 +927,7 @@ namespace Portage {
         #endif
 
         for (int i = 0; i < nb_faces; ++i) {
-          // step 0: retrieve nodes and reorder them according to edge direction
+          // step 0: retrieve nodes and reorder them according to face orientation
           nodes.clear();
           source_mesh_.face_get_nodes(faces[i], &nodes);
 
@@ -906,16 +947,18 @@ namespace Portage {
             }
           #endif
 
-          // step 1: construct the swept volume polyhedron which can be a prism,
-          // a hexahedron or a general polyhedron depending on the face polygon.
+          // step 1: construct the swept volume polyhedron which can be:
+          // - a prism for a triangular face,
+          // - a hexahedron for a quadrilateral face,
+          // - a (n+2)-face polyhedron for an arbitrary n-polygon.
           std::vector<Wonton::Point<3>> swept_poly_coords(nb_poly_nodes);
           std::vector<std::vector<int>> swept_poly_faces(nb_poly_faces);
 
           // TODO: draw a picture to explain polyhedron construction principles.
 
-          // if the face normal is pointing outside then reverse its vertices
-          // order such that we have a positive swept volume on outside the cell
-          // and negative swept volume on inside.
+          // if the face normal is pointing outward then consider the reverse
+          // vertex ordering such that we have a positive swept volume
+          // outside the cell and negative swept volume inside it.
           // otherwise keep the same nodal order which is counterclockwise.
           bool const outward_normal = dirs[i] > 0;
 
@@ -929,11 +972,14 @@ namespace Portage {
           }
 
           // now build the swept polyhedron faces, which vertices are indexed
-          // RELATIVELY to the array of coordinates 'swept_poly_coords':
-          // - allocate memory for vertices list of each face.
-          // - add the original face and its twin induced by sweeping.
-          // - construct the other faces induced by edge sweeping.
+          // RELATIVELY to the polyhedron vertices list.
+          // - first allocate memory for vertices list of each face.
+          // - then add the original face and its twin induced by sweeping.
+          // - eventually construct the other faces induced by edge sweeping.
           for (int current = 0; current < nb_poly_faces; ++current) {
+            // for each twin face induced by sweeping, its number of vertices is
+            // exactly that of the current cell face, whereas the number of
+            // vertices of the other faces is exactly 4.
             int const size = (current < 2 ? nb_face_nodes : 4);
             swept_poly_faces[current].resize(size);
           }
