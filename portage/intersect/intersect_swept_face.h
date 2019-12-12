@@ -734,7 +734,7 @@ namespace Portage {
      *  |  /  |  /             1
      *  | /   | /          v = - sum_i=1^n ai.ni
      *  |/____|/               6
-     *  ai    bi    e3           1                 ([(ai+bi).ed]^2
+     *  ai    bi  e3           1                 ([(ai+bi).ed]^2
      *            |        c = - sum_i=1^n ni.ed +[(bi+ci).ed]^2 , d=1,2,3
      *            |__ e2       2v                +[(ci+ai).ed]^2)
      *           /
@@ -947,19 +947,36 @@ namespace Portage {
             }
           #endif
 
-          // step 1: construct the swept volume polyhedron which can be:
-          // - a prism for a triangular face,
-          // - a hexahedron for a quadrilateral face,
-          // - a (n+2)-face polyhedron for an arbitrary n-polygon.
+          /* step 1: construct the swept volume polyhedron which can be:
+           * - a prism for a triangular face,
+           * - a hexahedron for a quadrilateral face,
+           * - a (n+2)-face polyhedron for an arbitrary n-polygon.
+           */
           std::vector<Wonton::Point<3>> swept_poly_coords(nb_poly_nodes);
           std::vector<std::vector<int>> swept_poly_faces(nb_poly_faces);
 
-          // TODO: draw a picture to explain polyhedron construction principles.
-
-          // if the face normal is pointing outward then consider the reverse
-          // vertex ordering such that we have a positive swept volume
-          // outside the cell and negative swept volume inside it.
-          // otherwise keep the same nodal order which is counterclockwise.
+          /* if the face normal is pointing inward then consider the reverse
+           * vertex ordering such that the vertices of each face of the
+           * polyhedron are ordered counterclockwise.
+           * hence when computing the polyhedron moments, we will have a
+           * positive swept volume outside the source cell and a negative one
+           * inside it ; otherwise keep the same nodal order
+           * which is counterclockwise by default.
+           *
+           *   source hex        target hex       frontal face swept polyhedron:
+           *                     7'......6'
+           *                      .:    .:             4'......5'
+           *    7______6         . :   . :             /:    /:
+           *    /|    /|      4'...:..5' :            / :   / :
+           *   / |   / |       :   :..:..2'          /  :  /  :  
+           * 4 __|__5  |       :  .   :  .         4____:_5...:
+           * |   3__|__2       : .    : .          |   /0'|  /1'
+           * |  /   |  /       :......:            |  /   | /
+           * | /    | /        0'     1'           | /    |/
+           * |/_____|/                             |/_____/
+           * 0      1                              0      1
+           *                                     vertices: [0,1,5,4,4',5',1',0']
+           */
           bool const outward_normal = dirs[i] > 0;
 
           for (int current = 0; current < nb_face_nodes; ++current) {
@@ -967,15 +984,18 @@ namespace Portage {
             auto const offset  = current + nb_face_nodes;
             auto const indices = (outward_normal ? std::make_pair(current, reverse)
                                                  : std::make_pair(reverse, current));
-            source_mesh_.node_get_coordinates(nodes[indices.first] , swept_poly_coords.data() + current);
-            target_mesh_.node_get_coordinates(nodes[indices.second], swept_poly_coords.data() + offset);
+            source_mesh_.node_get_coordinates(nodes[indices.first],
+                                              swept_poly_coords.data() + current);
+            target_mesh_.node_get_coordinates(nodes[indices.second],
+                                              swept_poly_coords.data() + offset);
           }
 
-          // now build the swept polyhedron faces, which vertices are indexed
-          // RELATIVELY to the polyhedron vertices list.
-          // - first allocate memory for vertices list of each face.
-          // - then add the original face and its twin induced by sweeping.
-          // - eventually construct the other faces induced by edge sweeping.
+          /* now build the swept polyhedron faces, which vertices are indexed
+           * RELATIVELY to the polyhedron vertices list.
+           * - first allocate memory for vertices list of each face.
+           * - then add the original face and its twin induced by sweeping.
+           * - eventually construct the other faces induced by edge sweeping.
+           */
           for (int current = 0; current < nb_poly_faces; ++current) {
             // for each twin face induced by sweeping, its number of vertices is
             // exactly that of the current cell face, whereas the number of
@@ -984,11 +1004,27 @@ namespace Portage {
             swept_poly_faces[current].resize(size);
           }
 
-          // reminder: relative indices
+
+          /* swept polyhedron face construction rules:
+           *
+           *       3'_____2'     n_poly_faces: 2 + n_face_edges = 2 + 4 = 6.
+           *       /|    /|      n_poly_nodes: 2 * n_face_edges = 2 * 4 = 8 = n.
+           *      / |   / |      ordered vertex list: [0,1,2,3,3',2',1',0']
+           *     /  |__/__|
+           *    /  /  /  / 1'            absolute         relative
+           *  3*__/_2*  /        ∙f[0]: (0 ,1 ,2 ,3)      (0,1,2,3)
+           *  |  /  |  /         ∙f[1]: (3',2',1',0')     (4,5,6,7)
+           *  | /   | /          ∙f[2]: (0 ,0',1',1)  =>  (0,7,6,1)
+           *  |/____|/           ∙f[3]: (1 ,1',2',2)      (1,6,5,2)
+           *  0*    1*           ∙f[4]: (2,2',3',3)       (2,5,4,3)
+           *                     ∙f[5]: (3,3',0',0)       (3,4,7,0)
+           *
+           *    twin faces: [0, n/2-1] and [n/2-1, n].
+           * lateral faces: [i, n-i+1, n-((i+2)%(n/2)), (i+1)%(n/2)], i in [0,n/2[
+           */
           std::iota(swept_poly_faces[0].begin(), swept_poly_faces[0].end(), 0);
           std::iota(swept_poly_faces[1].begin(), swept_poly_faces[1].end(), nb_face_nodes);
 
-          // TODO: add descriptive comment here
           for (int current = 0; current < nb_face_nodes; ++current) {
             int const index = current + 2;
             // keep face vertices counterclockwise.
@@ -998,11 +1034,12 @@ namespace Portage {
             swept_poly_faces[index][3] = (current + 1) % nb_face_nodes;
           }
 
-          // step 2: compute swept polygon moments using divergence theorem
+          /* step 2: compute swept polygon moments using divergence theorem */
           auto moments = compute_moments(swept_poly_coords, swept_poly_faces);
 
-          // step 3: assign the computed moments to the source cell or one
-          // of its neighbors according to the sign of the swept region volume.
+          /* step 3: assign the computed moments to the source cell or one
+           * of its neighbors according to the sign of the swept region volume.
+           */
           if (std::abs(moments[0]) < num_tols_.min_relative_volume) {
             // just skip if the swept region is almost flat.
             // it may occur when the cell is shifted only in one direction.
