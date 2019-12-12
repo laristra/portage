@@ -125,7 +125,7 @@ std::vector<Portage::Weights_t>
     Wonton::Point<D> first_moments;
     for (int d = 0; d < D; ++d) {
       const auto ibar = 0.5 * (ilo[d] + ihi[d]);
-      first_moments[1+d] = ibar * volume;
+      first_moments[d] = ibar * volume;
     }
 
     // Correct for coordinate system
