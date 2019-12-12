@@ -675,7 +675,7 @@ namespace Portage {
   private:
 
     /**
-     * @brief Compute polyhedron moments using divergence theorem.
+     * @brief Compute (swept) polyhedron moments using divergence theorem.
      *
      *       ______      - polyhedron faces are split into n triangles.
      *      /|    /|     - their vertices 'pi' are ordered counterclockwise.
@@ -971,8 +971,8 @@ namespace Portage {
            *  0*    1*           ∙f[4]: (2,2',3',3)       (2,5,4,3)
            *                     ∙f[5]: (3,3',0',0)       (3,4,7,0)
            *
-           *    twin faces: [0, n/2-1] and [n/2-1, n].
-           * lateral faces: [i, n-i+1, n-((i+2)%(n/2)), (i+1)%(n/2)], i in [0,n/2[
+           *  twin faces: [0, (n/2)-1] and [(n/2)-1, n].
+           * other faces: [i, n-i+1, n-((i+2)%(n/2)), (i+1)%(n/2)], i in [0,n/2[
            */
           std::iota(swept_poly_faces[0].begin(), swept_poly_faces[0].end(), 0);
           std::iota(swept_poly_faces[1].begin(), swept_poly_faces[1].end(), nb_face_nodes);
