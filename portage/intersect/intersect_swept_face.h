@@ -952,8 +952,8 @@ namespace Portage {
             int const index = current + 2;
             // keep face vertices counterclockwise.
             swept_poly_faces[index][0] = current;
-            swept_poly_faces[index][1] = nb_face_nodes - current - 1;
-            swept_poly_faces[index][2] = nb_face_nodes - ((current + 2) % nb_face_nodes);
+            swept_poly_faces[index][1] = nb_poly_nodes - current - 1;
+            swept_poly_faces[index][2] = nb_poly_nodes - ((current + 2) % nb_face_nodes);
             swept_poly_faces[index][3] = (current + 1) % nb_face_nodes;
           }
 
@@ -1030,7 +1030,7 @@ namespace Portage {
 
 #ifdef HAVE_TANGRAM
       } else /* multi-material case */ {
-        throw std::runtime_error("multi-material swept remap not yet supported");
+        throw std::runtime_error("multi-material case not yet supported");
       }
 #endif
     }
