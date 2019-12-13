@@ -29,7 +29,7 @@
  * topology remains unchanged, hence source and target cells
  * and faces indices are kept.
  */
-class IntersectSweptBase : public testing::Test {
+class IntersectSweptBase3D : public testing::Test {
 
 protected:
   using Intersector = Portage::IntersectSweptFace3D<Wonton::Entity_kind::CELL,
@@ -40,7 +40,7 @@ public:
   /**
    * @brief Disabled default constructor
    */
-  IntersectSweptBase() = delete;
+  IntersectSweptBase3D() = delete;
 
   /**
    * @brief Setup each test-case.
@@ -48,7 +48,7 @@ public:
    * It initializes both source and target meshes and states,
    * then computes and assigns a density field on source mesh.
    */
-  IntersectSweptBase(double x0, double y0, double z0, double x1, double y1, double z1)
+  IntersectSweptBase3D(double x0, double y0, double z0, double x1, double y1, double z1)
     : source_mesh(Jali::MeshFactory(MPI_COMM_WORLD)(0.0, 0.0, 0.0, 6.0, 6.0, 6.0, 3, 3, 3)),
       target_mesh(Jali::MeshFactory(MPI_COMM_WORLD)(x0, y0, z0, x1, y1, z1, 3, 3, 3)),
       source_state(Jali::State::create(source_mesh)),
@@ -166,9 +166,9 @@ protected:
  *  |___|___|___|
  *  0   2   4   6
  */
-class IntersectSweptForward : public IntersectSweptBase {
+class IntersectSweptForward3D : public IntersectSweptBase3D {
 protected:
-  IntersectSweptForward() : IntersectSweptBase(1, 1, 1, 7, 7, 7) {}
+  IntersectSweptForward3D() : IntersectSweptBase3D(1, 1, 1, 7, 7, 7) {}
 };
 
 /**
@@ -185,9 +185,9 @@ protected:
  *  :...:...:...:
  *    0   2   4   6
  */
-class IntersectSweptBackward : public IntersectSweptBase {
+class IntersectSweptBackward3D : public IntersectSweptBase3D {
 protected:
-  IntersectSweptBackward() : IntersectSweptBase(-1, -1, -1, 5, 5, 5) {}
+  IntersectSweptBackward3D() : IntersectSweptBase3D(-1, -1, -1, 5, 5, 5) {}
 };
 
 /**
@@ -203,7 +203,7 @@ protected:
  *  |_:_|_:_|_:_|.:
  *  0   2   4   6
  */
-class IntersectSweptOneAxis : public IntersectSweptBase {
+class IntersectSweptOneAxis3D : public IntersectSweptBase3D {
 protected:
-  IntersectSweptOneAxis() : IntersectSweptBase(1, 0, 0, 7, 6, 6) {}
+  IntersectSweptOneAxis3D() : IntersectSweptBase3D(1, 0, 0, 7, 6, 6) {}
 };
