@@ -90,7 +90,7 @@ public:
    * @param moments: list of previously computed moments.
    * @return: the total area of all swept faces.
    */
-  double compute_swept_volume(std::vector<Wonton::Weights_t> const& moments) const {
+  static double compute_swept_volume(std::vector<Wonton::Weights_t> const& moments) {
     return std::accumulate(moments.begin(), moments.end(), 0.0,
                            [](double previous, auto const& moment) {
                              return previous + moment.weights[0];
@@ -104,7 +104,7 @@ public:
    * @param moments: list of previously computed moments.
    * @return the area contribution of the given cell.
    */
-  double compute_contribution(int id, std::vector<Wonton::Weights_t> const& moments) const {
+  static double compute_contribution(int id, std::vector<Wonton::Weights_t> const& moments) {
     double contrib = 0.;
     for (auto const& moment : moments) {
       if (moment.entityID == id) {
@@ -120,7 +120,7 @@ public:
    * @param moment: current cell moments
    * @return its centroid coordinates
    */
-  Wonton::Point<3> deduce_centroid(Wonton::Weights_t const& moment) const {
+  static Wonton::Point<3> deduce_centroid(Wonton::Weights_t const& moment) {
     return Wonton::createP3(moment.weights[1] / moment.weights[0],
                             moment.weights[2] / moment.weights[0],
                             moment.weights[3] / moment.weights[0]);
@@ -149,4 +149,61 @@ protected:
 
   // enable or disable debug prints
   bool verbose = false;
+};
+
+
+/**
+ * @brief Fixture class for intersection moment computation tests
+ *        when target cells are swept forward like below.
+ *
+ *    .............      displacement vector: (1,1)
+ *   _:___:___:_  :      source mesh: plain
+ *  | :.|.:.|.:.|.:      target mesh: dotted
+ *  |_:_|_:_|_:_| :
+ *  | :.|.:.|.:.|.:
+ *  |_:_|_:_|_:_| :
+ *  | :.|.:.|.:.|.:
+ *  |___|___|___|
+ *  0   2   4   6
+ */
+class IntersectSweptForward : public IntersectSweptBase {
+protected:
+  IntersectSweptForward() : IntersectSweptBase(1, 1, 1, 7, 7, 7) {}
+};
+
+/**
+ * @brief Fixture class for intersection moment computation tests
+ *        when target cells are swept backward like below.
+ *
+ *     ___________       displacement vector: (-1,-1,-1)
+ *  ..|...|...|.. |      source mesh: plain
+ *  : |_:_|_:_|_:_|      target mesh: dotted
+ *  :.|...|...|.. |
+ *  : |_:_|_:_|_:_|
+ *  :.|...|...|.. |
+ *  : |_:_|_:_|_:_|
+ *  :...:...:...:
+ *    0   2   4   6
+ */
+class IntersectSweptBackward : public IntersectSweptBase {
+protected:
+  IntersectSweptBackward() : IntersectSweptBase(-1, -1, -1, 5, 5, 5) {}
+};
+
+/**
+ * @brief Fixture class for intersection moment computation tests
+ *        when target cells are swept only along one-axis like below.
+ *
+ *   _.___.___._ ..      displacement vector: (1,0,0)
+ *  | : | : | : | :      source mesh: plain
+ *  |_:_|_:_|_:_| :      target mesh: dotted
+ *  | : | : | : | :
+ *  |_:_|_:_|_:_| :
+ *  | : | : | : | :
+ *  |_:_|_:_|_:_|.:
+ *  0   2   4   6
+ */
+class IntersectSweptOneAxis : public IntersectSweptBase {
+protected:
+  IntersectSweptOneAxis() : IntersectSweptBase(1, 0, 0, 7, 6, 6) {}
 };

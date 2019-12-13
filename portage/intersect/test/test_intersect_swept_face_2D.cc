@@ -89,7 +89,7 @@ public:
    * @param moments: list of previously computed moments.
    * @return: the total area of all swept faces.
    */
-  double compute_swept_area(std::vector<Wonton::Weights_t> const& moments) const {
+  static double compute_swept_area(std::vector<Wonton::Weights_t> const& moments) {
     return std::accumulate(moments.begin(), moments.end(), 0.0,
                            [](double previous, auto const& moment) {
                              return previous + moment.weights[0];
@@ -103,7 +103,7 @@ public:
    * @param moments: list of previously computed moments.
    * @return the area contribution of the given cell.
    */
-  double compute_contribution(int id, std::vector<Wonton::Weights_t> const& moments) const {
+  static double compute_contribution(int id, std::vector<Wonton::Weights_t> const& moments) {
     double contrib = 0.;
     for (auto const& moment : moments) {
       if (moment.entityID == id) {
@@ -119,7 +119,7 @@ public:
    * @param moment: current cell moments
    * @return its centroid coordinates
    */
-  Wonton::Point<2> deduce_centroid(Wonton::Weights_t const& moment) const {
+  static Wonton::Point<2> deduce_centroid(Wonton::Weights_t const& moment) {
     return Wonton::createP2(moment.weights[1] / moment.weights[0],
                             moment.weights[2] / moment.weights[0]);
   }
