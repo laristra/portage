@@ -67,12 +67,12 @@ elif [[ $compiler == "gcc7" ]]; then
   mpi_module=openmpi/2.1.2
 fi
 
+
 jali_install_dir=$NGC/private/jali/${jali_version}-${compiler_type}-${compiler_version}-openmpi-${openmpi_version}
-tangram_install_dir=$NGC/private/tangram/${tangram_version}-${compiler_type}-${compiler_version}-openmpi-${openmpi_version}
-#tangram_install_dir=$NGC/private/tangram/${tangram_version}-${compiler_type}-${compiler_version}-openmpi-${openmpi_version}
-tangram_install_dir_nompi=$NGC/private/tangram/${tangram_version}-${compiler_type}-${compiler_version}-nompi
+tangram_install_dir_base=$NGC/private/tangram/${tangram_version}-${compiler_type}-${compiler_version}
 xmof2d_install_dir=$NGC/private/xmof2d/${xmof2d_version}-${compiler_type}-${compiler_version}
 lapacke_dir=$NGC/private/lapack/${lapack_version}-patched-${compiler_type}-${compiler_version}
+tangram_install_suffix="-openmpi-${openmpi_version}"
 
 if [[ $compiler == "gcc6" ]]; then
   flecsi_install_prefix=$NGC/private/flecsi/374b56b-gcc-6.4.0
@@ -82,7 +82,6 @@ fi
 cmake_build_type=Release
 extra_flags=
 jali_flags="-D Jali_DIR:FILEPATH=$jali_install_dir/lib"
-tangram_flags="-D TANGRAM_DIR:FILEPATH=$tangram_install_dir"
 xmof2d_flags="-D XMOF2D_DIR:FILEPATH=$xmof2d_install_dir/share/cmake"
 mpi_flags="-D ENABLE_MPI=True"
 lapacke_flags="-D LAPACKE_DIR:FILEPATH=$lapacke_dir"
@@ -94,18 +93,22 @@ elif [[ $build_type == "serial" ]]; then
   # jali is not available in serial
   jali_flags=
   # use serial version of tangram
-  tangram_flags="-D TANGRAM_DIR:FILEPATH=$tangram_install_dir_nompi"
+  tangram_install_suffix="-nompi"
 elif [[ $build_type == "thrust" ]]; then
   extra_flags="-D ENABLE_THRUST=True"
+  tangram_install_suffix="${tangram_install_suffix}-thrust"
 elif [[ $build_type == "flecsi" ]]; then
   extra_flags="-D CMAKE_PREFIX_PATH='$flecsi_install_prefix;$flecsisp_install_prefix' \
                -D ENABLE_FleCSI=True"
+  tangram_install_dir=
 elif [[ $build_type == "coverage" ]]; then
   extra_flags="-D CMAKE_C_FLAGS='-coverage' \
                -D CMAKE_CXX_FLAGS='-coverage'"
   cmake_build_type=Debug
   export PATH=$NGC/private/bin:${PATH}
 fi
+
+tangram_flags="-D TANGRAM_DIR:FILEPATH=${tangram_install_dir_base}${tangram_install_suffix}"
 
 export SHELL=/bin/sh
 
