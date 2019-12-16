@@ -154,17 +154,20 @@ protected:
 
 /**
  * @brief Fixture class for intersection moment computation tests
- *        when target cells are swept forward like below.
+ *        when target cells are swept forward.
+ *           .......
+ *          . :   .:
+ *         . :   . :          displacement vector: (1,1,1)
+ *       ....:...  :          source cell: plain
+ *     __:___:..:..:          target cell: dotted
+ *    /| :  /|  : .
+ *   / | : / |  :.
+ *  /__|_:/..|..:       z
+ * |   |__|__|          |  y
+ * |  /   |  /          | /
+ * | /    | /           |/___ x
+ * |/_____|/
  *
- *    .............      displacement vector: (1,1)
- *   _:___:___:_  :      source mesh: plain
- *  | :.|.:.|.:.|.:      target mesh: dotted
- *  |_:_|_:_|_:_| :
- *  | :.|.:.|.:.|.:
- *  |_:_|_:_|_:_| :
- *  | :.|.:.|.:.|.:
- *  |___|___|___|
- *  0   2   4   6
  */
 class IntersectSweptForward3D : public IntersectSweptBase3D {
 protected:
@@ -173,17 +176,20 @@ protected:
 
 /**
  * @brief Fixture class for intersection moment computation tests
- *        when target cells are swept backward like below.
+ *        when target cells are swept backward.
+ *           ______
+ *          /|    /|
+ *         / |   / |          displacement vector: (-1,-1,-1)
+ *        /__|__/  |          source cell: plain
+ *     ..|...:__|__|          target cell: dotted
+ *    .: |  .:  |  /
+ *   . : | . :  | /
+ *  ...:.|.__:__|/       z
+ * :   :..:..:          |  y
+ * :  .   :  .          | /
+ * : .    : .           |/___ x
+ * :......:.
  *
- *     ___________       displacement vector: (-1,-1,-1)
- *  ..|...|...|.. |      source mesh: plain
- *  : |_:_|_:_|_:_|      target mesh: dotted
- *  :.|...|...|.. |
- *  : |_:_|_:_|_:_|
- *  :.|...|...|.. |
- *  : |_:_|_:_|_:_|
- *  :...:...:...:
- *    0   2   4   6
  */
 class IntersectSweptBackward3D : public IntersectSweptBase3D {
 protected:
@@ -192,18 +198,75 @@ protected:
 
 /**
  * @brief Fixture class for intersection moment computation tests
- *        when target cells are swept only along one-axis like below.
+ *        when target cells are swept only along x-axis.
+ *                    
+ *                             displacement vector: (1,0,0)
+ *     ____......              source cell: plain
+ *    /|  .:/| .:              target cell: dotted
+ *   / | . / |. :
+ *  /__|../:.|  :
+ * |   :__|:_:..:       z
+ * |  /:  |  :  .      |  y
+ * | / : .| /: .       | /
+ * |/__:..|..:.        |/___ x
  *
- *   _.___.___._ ..      displacement vector: (1,0,0)
- *  | : | : | : | :      source mesh: plain
- *  |_:_|_:_|_:_| :      target mesh: dotted
- *  | : | : | : | :
- *  |_:_|_:_|_:_| :
- *  | : | : | : | :
- *  |_:_|_:_|_:_|.:
- *  0   2   4   6
  */
 class IntersectSweptOneAxis3D : public IntersectSweptBase3D {
 protected:
   IntersectSweptOneAxis3D() : IntersectSweptBase3D(1, 0, 0, 7, 6, 6) {}
 };
+
+TEST_F(IntersectSweptForward3D, MomentsCheck) {
+
+  Intersector intersector(source_mesh_wrapper,
+                          source_state_wrapper,
+                          target_mesh_wrapper,
+                          num_tols);
+
+  /* pick internal, boundary and corner source cells.
+   * swept region configuration for forward displacement:
+   *
+   *   source hex        target hex           frontal face
+   *                     7'......6'          swept polyhedron:
+   *                      .:    .:             4'......5'
+   *    7______6         . :   . :             /:    /:
+   *    /|    /|      4'...:..5' :            / :   / :
+   *   / |   / |       :   :..:..2'          /  :  /  :
+   * 4 __|__5  |       :  .   :  .         4____:_5...:
+   * |   3__|__2       : .    : .          |   /0'|  /1'
+   * |  /   |  /       :......:            |  /   | /
+   * | /    | /        0'     1'           | /    |/
+   * |/_____|/                             |/_____/
+   * 0      1                              0      1
+   */
+//  int const nb_cells = source_mesh_wrapper.num_entities(Wonton::Entity_kind::CELL,
+//                                                        Wonton::Entity_type::ALL);
+//  for (int i = 0; i < nb_cells; ++i) {
+//    auto centroid = source_mesh->cell_centroid(i);
+//    std::cout << "cell["<< i <<"]: "<< centroid << std::endl;
+//  }
+////
+////  source_mesh->write_to_exodus_file("source_mesh.exo");
+
+  int const internal_cell = 13;
+  int const boundary_cell = 25;
+  int const corner_cell   = 26;
+
+  auto centroid_internal = source_mesh->cell_centroid(internal_cell);
+  auto centroid_boundary = source_mesh->cell_centroid(boundary_cell);
+  auto centroid_corner   = source_mesh->cell_centroid(corner_cell);
+
+  // search for candidate cells and compute moments of intersection
+  std::cout << "= internal =" << std::endl;
+  auto weights_internal = intersector(internal_cell, search(internal_cell));
+
+  std::cout << "= boundary =" << std::endl;
+  auto weights_boundary = intersector(boundary_cell, search(boundary_cell));
+
+  std::cout << "= corner =" << std::endl;
+  auto weights_corner = intersector(corner_cell, search(corner_cell));
+
+  std::cout << "internal list size: "<< weights_internal.size() - 1 << std::endl;
+  std::cout << "boundary list size: "<< weights_boundary.size() -1 << std::endl;
+  std::cout << "corner list size: "<< weights_corner.size() -1 << std::endl;
+}
