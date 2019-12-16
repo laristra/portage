@@ -139,7 +139,7 @@ Execute the following from the portage root directory:
 
 # VERSION NUMBERS
 INTEL_VERSION=18.0.3
-MPI_VERSION=2.1.5
+MPI_VERSION=3.1.3
 JALI_VERSION=1.0.5
 TANGRAM_VERSION=0.9.7
 XMOF2D_VERSION=0.9.5
@@ -157,7 +157,7 @@ cmake \
     -D ENABLE_APP_TESTS=True \
     -D ENABLE_MPI=True \
     -D Jali_DIR:FILEPATH=${BUILD_PREFIX}/jali/${JALI_VERSION}-intel-${INTEL_VERSION}-openmpi-${MPI_VERSION}/lib \
-    -D TANGRAM_DIR:FILEPATH=${BUILD_PREFIX}/tangram/${TANGRAM_VERSION}-boost-intel-${INTEL_VERSION}-openmpi-${MPI_VERSION} \
+    -D TANGRAM_DIR:FILEPATH=${BUILD_PREFIX}/tangram/${TANGRAM_VERSION}-intel-${INTEL_VERSION}-openmpi-${MPI_VERSION} \
     -D XMOF2D_DIR:FILEPATH=${BUILD_PREFIX}/xmof2d/${XMOF2D_VERSION}-intel-${INTEL_VERSION}/share/cmake \
     -D LAPACKE_DIR=${BUILD_PREFIX}/lapack/3.8.0-patched-intel-${INTEL_VERSION} \
     ..
@@ -205,7 +205,7 @@ Thrust and TCMalloc in your build.  The cmake command for this is:
 . /usr/share/lmod/lmod/init/sh
 module load intel/18.0.5 openmpi/2.1.2 cmake
 JALI_INSTALL_PREFIX=/usr/projects/ngc/private/jali/1.0.5-intel-18.0.5-openmpi-2.1.2
-TANGRAM_INSTALL_PREFIX=/usr/projects/ngc/private/tangram/0.9.7-thrust-intel-18.0.5-openmpi-2.1.2
+TANGRAM_INSTALL_PREFIX=/usr/projects/ngc/private/tangram/0.9.7-thrust-intel-18.0.5-openmpi-2.1.2-thrust
 XMOF2D_INSTALL_PREFIX=/usr/projects/ngc/private/xmof2d/0.9.5-intel-18.0.5
 LAPACKE_DIR=/usr/projects/ngc/private/lapack/3.8.0-patched-intel-18.0.5
 mkdir build-thrust
