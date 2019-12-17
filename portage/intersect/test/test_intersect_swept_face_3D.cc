@@ -90,11 +90,12 @@ public:
    * @param moments: list of previously computed moments.
    * @return: the total area of all swept faces.
    */
-  static double compute_swept_volume(std::vector<Wonton::Weights_t> const& moments) {
-    return std::accumulate(moments.begin(), moments.end(), 0.0,
-                           [](double previous, auto const& moment) {
-                             return previous + moment.weights[0];
-                           });
+  double compute_swept_volume(std::vector<Wonton::Weights_t> const& moments) const {
+    double value = 0.;
+    for (auto const& moment : moments) {
+      value += moment.weights[0];
+    }
+    return (std::abs(value) < num_tols.min_relative_volume ? 0.0 : value);
   }
 
   /**
@@ -145,7 +146,7 @@ protected:
   /* since target grid is advected using a unique displacement vector
    * we expect to have a constant volume for each swept region.
    */
-  double const unit_region_volume = 2.0;
+  double const unit_region_volume = 4.0;
 
   // enable or disable debug prints
   bool verbose = false;
@@ -251,22 +252,96 @@ TEST_F(IntersectSweptForward3D, MomentsCheck) {
   int const internal_cell = 13;
   int const boundary_cell = 25;
   int const corner_cell   = 26;
+  int const nb_hex_faces  = 6;
 
   auto centroid_internal = source_mesh->cell_centroid(internal_cell);
   auto centroid_boundary = source_mesh->cell_centroid(boundary_cell);
   auto centroid_corner   = source_mesh->cell_centroid(corner_cell);
 
   // search for candidate cells and compute moments of intersection
-  std::cout << "= internal =" << std::endl;
   auto weights_internal = intersector(internal_cell, search(internal_cell));
-
-  std::cout << "= boundary =" << std::endl;
   auto weights_boundary = intersector(boundary_cell, search(boundary_cell));
+  auto weights_corner   = intersector(corner_cell, search(corner_cell));
 
-  std::cout << "= corner =" << std::endl;
-  auto weights_corner = intersector(corner_cell, search(corner_cell));
+  /* for interior hexahedral cell, we have:
+   * - three positive swept volumes attached to cells 14:top|16:right|22:forward (V=-12).
+   * - three negative swept volume attached to the source cell itself (V=12).
+   * - the unsigned volume of the source cell itself (V=8).
+   * hence the cell self-contribution is -4.
+   */
+  double source_volume = source_mesh_wrapper.cell_volume(internal_cell);
+  double target_volume = compute_swept_volume(weights_internal);
+  double self_contrib  = compute_contribution(internal_cell, weights_internal);
+  int nb_self_weights = 0;
 
-  std::cout << "internal list size: "<< weights_internal.size() - 1 << std::endl;
-  std::cout << "boundary list size: "<< weights_boundary.size() -1 << std::endl;
-  std::cout << "corner list size: "<< weights_corner.size() -1 << std::endl;
+  ASSERT_EQ(weights_internal.size(), unsigned(nb_hex_faces + 1));
+  ASSERT_DOUBLE_EQ(source_volume, target_volume);
+  ASSERT_DOUBLE_EQ(self_contrib, -unit_region_volume);
+
+  for (auto const& moments : weights_internal) {
+    auto const volume = std::abs(moments.weights[0]);
+    auto const centroid = deduce_centroid(moments);
+    #if DEBUG
+    if (verbose) {
+      std::cout << "forward::internal_swept_centroid["<< moments.entityID <<"]: ";
+      std::cout << centroid[0] <<", "<< centroid[1] << ", " << centroid[2];
+      std::cout << std::endl;
+    }
+    #endif
+    switch (moments.entityID) {
+      case internal_cell:
+        switch (++nb_self_weights) {
+          case 1:
+            ASSERT_DOUBLE_EQ(volume, 2 * unit_region_volume);
+            ASSERT_DOUBLE_EQ(centroid[0], 3.0);
+            ASSERT_DOUBLE_EQ(centroid[1], 3.0);
+            ASSERT_DOUBLE_EQ(centroid[2], 3.0); break;
+          case 2:
+            ASSERT_DOUBLE_EQ(volume, unit_region_volume);
+            ASSERT_DOUBLE_EQ(centroid[0], 3.5);
+            ASSERT_DOUBLE_EQ(centroid[1], 3.5);
+            ASSERT_DOUBLE_EQ(centroid[2], 2.5); break;
+          case 3:
+            ASSERT_DOUBLE_EQ(volume, unit_region_volume);
+            ASSERT_DOUBLE_EQ(centroid[0], 3.5);
+            ASSERT_DOUBLE_EQ(centroid[1], 2.5);
+            ASSERT_DOUBLE_EQ(centroid[2], 3.5); break;
+          case 4:
+            ASSERT_DOUBLE_EQ(volume, unit_region_volume);
+            ASSERT_DOUBLE_EQ(centroid[0], 2.5);
+            ASSERT_DOUBLE_EQ(centroid[1], 3.5);
+            ASSERT_DOUBLE_EQ(centroid[2], 3.5); break;
+          default: FAIL() << "forward::internal: invalid self weights count";
+        } break;
+      case 14:
+        ASSERT_DOUBLE_EQ(volume, unit_region_volume);
+        ASSERT_DOUBLE_EQ(centroid[0], 3.5);
+        ASSERT_DOUBLE_EQ(centroid[1], 3.5);
+        ASSERT_DOUBLE_EQ(centroid[2], 4.5); break;
+      case 16:
+        ASSERT_DOUBLE_EQ(volume, unit_region_volume);
+        ASSERT_DOUBLE_EQ(centroid[0], 3.5);
+        ASSERT_DOUBLE_EQ(centroid[1], 4.5);
+        ASSERT_DOUBLE_EQ(centroid[2], 3.5); break;
+      case 22:
+        ASSERT_DOUBLE_EQ(volume, unit_region_volume);
+        ASSERT_DOUBLE_EQ(centroid[0], 4.5);
+        ASSERT_DOUBLE_EQ(centroid[1], 3.5);
+        ASSERT_DOUBLE_EQ(centroid[2], 3.5); break;
+      default: FAIL() << "forward::internal: unexpected moment entity index";
+    }
+  }
+
+  /* check boundary hex cell case:
+   *
+   */
+  source_volume = source_mesh_wrapper.cell_volume(boundary_cell);
+  target_volume = compute_swept_volume(weights_boundary);
+  self_contrib  = compute_contribution(boundary_cell, weights_boundary);
+  nb_self_weights = 0;
+
+  ASSERT_EQ(weights_boundary.size(), unsigned(5));
+  std::cout << "target_volume: " << target_volume << std::endl;
+  std::cout << "self_contrib: " << self_contrib << std::endl;
+
 }
