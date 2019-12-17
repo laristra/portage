@@ -658,9 +658,9 @@ class UberDriver {
                                      CoordSys>;
 
     if (Interpolator::order == 2) {
-      auto gradients = driver->template compute_gradient<ONWHAT>(srcvarname,
-                                                                 limiter,
-                                                                 bnd_limiter);
+      auto gradients = driver->template compute_source_gradient<ONWHAT>(srcvarname,
+                                                                        limiter,
+                                                                        bnd_limiter);
 
       driver->template interpolate_mesh_var<T, ONWHAT, Interpolate>(
         srcvarname, trgvarname, sources_and_weights_in,
@@ -749,9 +749,9 @@ class UberDriver {
     if (Interpolator::order == 2) {
       Portage::vector<Vector<D>> gradients[nb_mats];
       for (int i = 0; i < nb_mats; ++i) {
-        gradients[i] = driver->template compute_gradient<CELL>(srcvarname,
-                                                               limiter,
-                                                               bnd_limiter, i);
+        gradients[i] = driver->template compute_source_gradient<CELL>(srcvarname,
+                                                                      limiter,
+                                                                      bnd_limiter, i);
       }
       driver->template interpolate_mat_var<T, Interpolate>(
         srcvarname, trgvarname, sources_and_weights_by_mat_in,
