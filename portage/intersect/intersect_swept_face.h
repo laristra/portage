@@ -702,12 +702,7 @@ namespace Portage {
 
       // implementation may change in the future
       Polyhedron polyhedron(coords, faces);
-      auto moments = polyhedron.moments();
-      auto centroid = Wonton::Point3(moments[1] / moments[0],
-                                     moments[2] / moments[0],
-                                     moments[3] / moments[0]);
-      std::cout << "volume:" << moments[0] << ", centroid: "<< centroid << std::endl;
-      return moments;
+      return polyhedron.moments();
     }
 
     /**
@@ -918,9 +913,9 @@ namespace Portage {
           std::vector<Wonton::Point<3>> swept_poly_coords(nb_poly_nodes);
           std::vector<std::vector<int>> swept_poly_faces(nb_poly_faces);
 
-          /* if the face normal is pointing inward then consider the reverse
-           * vertex ordering such that the vertices of each face of the
-           * polyhedron are ordered counterclockwise.
+          /* if the face normal is pointing outward then consider the reverse
+           * vertex ordering for the original face such that the vertices
+           * of each face of the swept polyhedron are ordered counterclockwise.
            * hence when computing the polyhedron moments, we will have a
            * positive swept volume outside the source cell and a negative one
            * inside it ; otherwise keep the same nodal order
@@ -938,8 +933,8 @@ namespace Portage {
            * | /    | /        0'     1'           | /    |/
            * |/_____|/                             |/_____/
            * 0      1                              0      1
-           *                                 ∙dirs[f] > 0: [0,1,5,4,4,5,1,0]
-           *                                 ∙dirs[f] < 0: [4,5,1,0,0,1,5,4]
+           *                                 ∙dirs[f] > 0: [4,5,1,0,4',5',1',0']
+           *                                 ∙dirs[f] < 0: [0,1,5,4,0',1',5',4']
            */
           bool const outward_normal = dirs[i] > 0;
 
@@ -970,27 +965,27 @@ namespace Portage {
            *
            *       3'_____2'     n_poly_faces: 2 + n_face_edges = 2 + 4 = 6.
            *       /|    /|      n_poly_nodes: 2 * n_face_edges = 2 * 4 = 8 = n.
-           *      / |   / |      ordered vertex list: [0,1,2,3,3',2',1',0']
+           *      / |   / |      ordered vertex list: [3,2,1,0,3',2',1',0']
            *     /  |__/__|
-           *    /  /  /  / 1'            absolute         relative
-           *  3___/_2/  /        ∙f[0]: (0 ,1 ,2 ,3)      (0,1,2,3)
-           *  |  /  |  /         ∙f[1]: (3',2',1',0')     (4,5,6,7)
-           *  | /   | /          ∙f[2]: (0 ,0',1',1)  =>  (0,7,6,1)
-           *  |/____|/           ∙f[3]: (1 ,1',2',2)      (1,6,5,2)
-           *  0     1            ∙f[4]: (2,2',3',3)       (2,5,4,3)
-           *                     ∙f[5]: (3,3',0',0)       (3,4,7,0)
+           *    /  /  /  / 1'             absolute         relative
+           *  3___/_2/  /        ∙f[0]: (3 |2 |1 |0 )      (0,1,2,3)
+           *  |  /  |  /         ∙f[1]: (3'|2'|1'|0')      (4,5,6,7)
+           *  | /   | /          ∙f[2]: (3 |3'|2'|2 )  =>  (0,4,5,1)
+           *  |/____|/           ∙f[3]: (2 |2'|1'|1 )      (1,5,6,2)
+           *  0     1            ∙f[4]: (1 |1'|0'|0 )      (2,6,7,3)
+           *                     ∙f[5]: (0 |0'|3'|3 )      (3,7,4,0)
            *
-           *  twin faces: [0, (n/2)-1] and [(n/2)-1, n].
-           * other faces: [i, n-i+1, n-((i+2)%(n/2)), (i+1)%(n/2)], i in [0,n/2[
+           *  let m = n/2.
+           *  - twin faces: [0, m-1] and [m-1, n].
+           *  - side faces: [i, i+m, ((i+1) % m)+m, (i+1) % m]
            */
-          for (int j = 0; j < nb_face_nodes; ++j) {
-            swept_poly_faces[0][j] = j;
-            swept_poly_faces[1][j] = nb_poly_nodes - j - 1;
-          }
-
           for (int current = 0; current < nb_face_nodes; ++current) {
+            // a) set twin faces vertices
+            swept_poly_faces[0][current] = current;
+            swept_poly_faces[1][current] = nb_poly_nodes - current - 1;
+
+            // b) set side faces vertices while keeping them counterclockwise.
             int const index = current + 2;
-            // keep face vertices counterclockwise.
             swept_poly_faces[index][0] = current;
             swept_poly_faces[index][3] = (current + 1) % nb_face_nodes;
             swept_poly_faces[index][1] = swept_poly_faces[index][0] + nb_face_nodes;
@@ -1018,7 +1013,6 @@ namespace Portage {
 
             // just skip in case of a boundary edge
             if (neigh < 0) {
-              std::cout << "==  skipped ==" << std::endl;
               continue;
             }
               // sanity check: ensure that incident cell belongs to the stencil.
