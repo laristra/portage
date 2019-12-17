@@ -1003,12 +1003,13 @@ namespace Portage {
            *  twin faces: [0, (n/2)-1] and [(n/2)-1, n].
            * other faces: [i, n-i+1, n-((i+2)%(n/2)), (i+1)%(n/2)], i in [0,n/2[
            */
-          std::iota(swept_poly_faces[0].begin(), swept_poly_faces[0].end(), 0);
+          //std::iota(swept_poly_faces[0].begin(), swept_poly_faces[0].end(), 0);
           for (int j = 0; j < nb_face_nodes; ++j) {
+            swept_poly_faces[0][j] = j;
             swept_poly_faces[1][j] = nb_poly_nodes - j - 1;
           }
 
-#if DEBUG_SWEPT_VOLUME
+#ifndef DEBUG_SWEPT_VOLUME
           std::cout << std::endl;
           Wonton::Point<3> swept_poly_orig[] = {
             swept_poly_coords[swept_poly_faces[0][0]],
@@ -1089,6 +1090,7 @@ namespace Portage {
 
             // just skip in case of a boundary edge
             if (neigh < 0) {
+              std::cout << "==  skipped ==" << std::endl;
               continue;
             }
               // sanity check: ensure that incident cell belongs to the stencil.
