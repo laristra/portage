@@ -711,8 +711,8 @@ namespace Portage {
      * Recall that we have to deal with relative indexing to be able
      * to use the polytope object, since face vertices are indexed
      * relatively to the list of cell coordinates. Besides each face must
-     * be correctly oriented such that its normal vector induced by its
-     * vertices ordering always point outwards.
+     * be correctly oriented such that if its normal vector induced by its
+     * vertices ordering point outwards, then we will have a positive volume.
      * Hence we cannot just rely on 'cell_get_coordinates' combined with
      * 'cell_get_faces_and_dirs' on the source mesh which may lead to
      * an inconsistent vertex ordering.
@@ -792,7 +792,9 @@ namespace Portage {
      * and check the signed volume of the resulting tetrahedron. And we have       
      * to do it for each cell face. Hence the suggested workaround is just to      
      * check that the volume of each swept region associated to one of             
-     * the contributing cell does not exceed that of the source cell.
+     * the contributing cell does not exceed that of the source cell, and that
+     * the absolute swept volume associated to the source cell does not exceed
+     * twice of the volume of the source cell itself.
      *
      * @param source_id: the index of the source cell.
      * @param moments: the list of swept region moments.
@@ -837,7 +839,18 @@ namespace Portage {
 
   public:
     /**
-     * @brief Perform the actual swept volume computation.
+     * @brief Perform the actual swept moments computation for the given cell.
+     *
+     * After decomposing the cell into faces, it constructs a swept polyhedron
+     * for each face such that we have a positive volume if its centroid
+     * lies outside the cell (and hence attached to an incident neighbor) and
+     * a negative volume otherwise (and hence attached to the source cell).
+     * The sign of the computed moments are actually related to that of the
+     * fluxes associated to each face of the cell, and are computed using the
+     * divergence theorem. To avoid degenerated cases and to limit the loss
+     * of accuracy in case of large displacements, we perform a quick check
+     * on the volume of each swept polyhedron such that they don't exceed a
+     * certain threshold.
      *
      * @param target_id: the current target cell index.
      * @param stencil: current source cell and its immediate neighbors.
@@ -975,7 +988,7 @@ namespace Portage {
            *  0     1            ∙f[4]: (1 |1'|0'|0 )      (2,6,7,3)
            *                     ∙f[5]: (0 |0'|3'|3 )      (3,7,4,0)
            *
-           *  let m = n/2.
+           *  let m = n/2 with n the number of polyhedron vertices.
            *  - twin faces: [0, m-1] and [m-1, n].
            *  - side faces: [i, i+m, ((i+1) % m)+m, (i+1) % m]
            */
