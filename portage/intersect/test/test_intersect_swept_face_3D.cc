@@ -470,7 +470,7 @@ TEST_F(IntersectSweptBackward3D, MomentsCheck) {
    * - 3 positive swept volumes attached to cells 4:backward|10:left|12:bottom (V=-12).
    * - 3 negative swept volume attached to the source cell itself (V=12).
    * - the absolute volume of the source cell (V=8).
-   * - a self-contribution which is -4.
+   * - the self-contribution is still -4.
    */
   double source_volume = source_mesh_wrapper.cell_volume(internal_cell);
   double target_volume = compute_swept_volume(weights_internal);
@@ -532,6 +532,75 @@ TEST_F(IntersectSweptBackward3D, MomentsCheck) {
         ASSERT_DOUBLE_EQ(centroid[1], 2.5);
         ASSERT_DOUBLE_EQ(centroid[2], 1.5); break;
       default: FAIL() << "backward::internal: unexpected moment entity index";
+    }
+  }
+
+  /* for the boundary hex cell case:
+   * - all swept volumes are covered by the source mesh this time,
+   *   so we are in the very same situation as for internal cell.
+   * - we have three contributing neighbors (16:backward|22:left|24:bottom).
+   * - the self-contribution is still -4.
+   */
+  source_volume = source_mesh_wrapper.cell_volume(boundary_cell);
+  target_volume = compute_swept_volume(weights_boundary);
+  self_contrib  = compute_contribution(boundary_cell, weights_boundary);
+  nb_self_weights = 0;
+
+  ASSERT_EQ(weights_boundary.size(), unsigned(nb_hex_faces + 1));
+  ASSERT_NEAR(source_volume, target_volume, 1.E-12);
+  ASSERT_NEAR(self_contrib, -unit_region_volume, 1.E-12);
+
+  for (auto const& moments : weights_boundary) {
+    auto const volume = std::abs(moments.weights[0]);
+    auto const centroid = deduce_centroid(moments);
+#if DEBUG
+    if (verbose) {
+      std::cout << "backward::boundary_swept_centroid["<< moments.entityID <<"]: ";
+      std::cout << centroid[0] <<", "<< centroid[1] << ", " << centroid[2];
+      std::cout << std::endl;
+    }
+#endif
+    switch (moments.entityID) {
+      case boundary_cell:
+        switch (++nb_self_weights) {
+          case 1:
+            ASSERT_DOUBLE_EQ(volume, 2 * unit_region_volume);
+            ASSERT_DOUBLE_EQ(centroid[0], 5.0);
+            ASSERT_DOUBLE_EQ(centroid[1], 5.0);
+            ASSERT_DOUBLE_EQ(centroid[2], 3.0); break;
+          case 2:
+            ASSERT_DOUBLE_EQ(volume, unit_region_volume);
+            ASSERT_DOUBLE_EQ(centroid[0], 4.5);
+            ASSERT_DOUBLE_EQ(centroid[1], 4.5);
+            ASSERT_DOUBLE_EQ(centroid[2], 3.5); break;
+          case 3:
+            ASSERT_DOUBLE_EQ(volume, unit_region_volume);
+            ASSERT_DOUBLE_EQ(centroid[0], 5.5);
+            ASSERT_DOUBLE_EQ(centroid[1], 4.5);
+            ASSERT_DOUBLE_EQ(centroid[2], 2.5); break;
+          case 4:
+            ASSERT_DOUBLE_EQ(volume, unit_region_volume);
+            ASSERT_DOUBLE_EQ(centroid[0], 4.5);
+            ASSERT_DOUBLE_EQ(centroid[1], 5.5);
+            ASSERT_DOUBLE_EQ(centroid[2], 2.5); break;
+          default: FAIL() << "backward::boundary: invalid self weights count";
+        } break;
+      case 16:
+        ASSERT_DOUBLE_EQ(volume, unit_region_volume);
+        ASSERT_DOUBLE_EQ(centroid[0], 3.5);
+        ASSERT_DOUBLE_EQ(centroid[1], 4.5);
+        ASSERT_DOUBLE_EQ(centroid[2], 2.5); break;
+      case 22:
+        ASSERT_DOUBLE_EQ(volume, unit_region_volume);
+        ASSERT_DOUBLE_EQ(centroid[0], 4.5);
+        ASSERT_DOUBLE_EQ(centroid[1], 3.5);
+        ASSERT_DOUBLE_EQ(centroid[2], 2.5); break;
+      case 24:
+        ASSERT_DOUBLE_EQ(volume, unit_region_volume);
+        ASSERT_DOUBLE_EQ(centroid[0], 4.5);
+        ASSERT_DOUBLE_EQ(centroid[1], 4.5);
+        ASSERT_DOUBLE_EQ(centroid[2], 1.5); break;
+      default: FAIL() << "backward::boundary: unexpected moment entity index";
     }
   }
 }
