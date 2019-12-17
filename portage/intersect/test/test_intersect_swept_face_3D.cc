@@ -130,7 +130,7 @@ public:
 protected:
   // numerical tolerances, and threshold for floating-point comparison
   Portage::NumericTolerances_t num_tols;
-  double const epsilon = 1.E-12;
+  double const epsilon = 1.E-14;
 
   // source and target meshes and states
   std::shared_ptr<Jali::Mesh> source_mesh;
