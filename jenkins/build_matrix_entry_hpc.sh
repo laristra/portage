@@ -76,7 +76,6 @@ elif [[ $build_type == "serial" ]]; then
   jali_flags=
   # use serial version of tangram
   tangram_install_suffix="-nompi"
-  tangram_install_suffix="${tangram_install_suffix}-thrust"
 elif [[ $build_type == "thrust" ]]; then
   extra_flags="-D ENABLE_THRUST=True"
   tangram_install_suffix="${tangram_install_suffix}-thrust"
