@@ -395,7 +395,7 @@ namespace Portage {
     bool centroid_inside_cell(int cell, std::vector<double> const& moment) const {
 
       double const cell_area = std::abs(moment[0]);
-      if (cell_area < num_tols_.min_relative_volume)
+      if (cell_area < num_tols_.min_absolute_volume)
         return false;
 
       std::vector<int> edges, dirs, nodes;
@@ -518,7 +518,7 @@ namespace Portage {
           /* step 3: assign the computed moments to the source cell or one
            * of its neighbors according to the sign of the swept face area.
            */
-          if (std::abs(moments[0]) < num_tols_.min_relative_volume) {
+          if (std::abs(moments[0]) < num_tols_.min_absolute_volume) {
             // just skip if the swept polygon is almost flat.
             // it may occur when the cell is shifted only in one direction.
             continue;
@@ -998,7 +998,7 @@ namespace Portage {
           /* step 3: assign the computed moments to the source cell or one
            * of its neighbors according to the sign of the swept region volume.
            */
-          if (std::abs(moments[0]) < num_tols_.min_relative_volume) {
+          if (std::abs(moments[0]) < num_tols_.min_absolute_volume) {
             // just skip if the swept region is almost flat.
             // it may occur when the cell is shifted only in one direction.
             continue;
