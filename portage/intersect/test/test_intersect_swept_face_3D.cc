@@ -95,7 +95,7 @@ public:
     for (auto const& moment : moments) {
       value += moment.weights[0];
     }
-    return (std::abs(value) < num_tols.min_relative_volume ? 0.0 : value);
+    return (std::abs(value) < num_tols.min_absolute_volume ? 0.0 : value);
   }
 
   /**
@@ -128,8 +128,9 @@ public:
   }
 
 protected:
-  // useful constants and aliases
+  // numerical tolerances, and threshold for floating-point comparison
   Portage::NumericTolerances_t num_tols;
+  double const epsilon = 1.E-12;
 
   // source and target meshes and states
   std::shared_ptr<Jali::Mesh> source_mesh;
@@ -478,7 +479,7 @@ TEST_F(IntersectSweptBackward3D, MomentsCheck) {
   int nb_self_weights = 0;
 
   ASSERT_EQ(weights_internal.size(), unsigned(nb_hex_faces + 1));
-  ASSERT_NEAR(source_volume, target_volume, 1.E-12);
+  ASSERT_NEAR(source_volume, target_volume, epsilon);
   ASSERT_DOUBLE_EQ(self_contrib, -unit_region_volume);
 
   for (auto const& moments : weights_internal) {
@@ -547,8 +548,8 @@ TEST_F(IntersectSweptBackward3D, MomentsCheck) {
   nb_self_weights = 0;
 
   ASSERT_EQ(weights_boundary.size(), unsigned(nb_hex_faces + 1));
-  ASSERT_NEAR(source_volume, target_volume, 1.E-12);
-  ASSERT_NEAR(self_contrib, -unit_region_volume, 1.E-12);
+  ASSERT_NEAR(source_volume, target_volume, epsilon);
+  ASSERT_NEAR(self_contrib, -unit_region_volume, epsilon);
 
   for (auto const& moments : weights_boundary) {
     auto const volume = std::abs(moments.weights[0]);
@@ -601,6 +602,76 @@ TEST_F(IntersectSweptBackward3D, MomentsCheck) {
         ASSERT_DOUBLE_EQ(centroid[1], 4.5);
         ASSERT_DOUBLE_EQ(centroid[2], 1.5); break;
       default: FAIL() << "backward::boundary: unexpected moment entity index";
+    }
+  }
+
+  /* for the corner cell case (as opposed to the forward case):
+   * - all swept regions are covered by the source mesh so we get
+   *   the same moments as for an internal cell.
+   * - the reconstructed cell volume is preserved after displacement.
+   * - we have three contributing neighbors (17:backward|23:left|25:bottom).
+   * - the source cell self-contribution is still -4.
+   */
+  source_volume = source_mesh_wrapper.cell_volume(corner_cell);
+  target_volume = compute_swept_volume(weights_corner);
+  self_contrib  = compute_contribution(corner_cell, weights_corner);
+  nb_self_weights = 0;
+
+  ASSERT_EQ(weights_corner.size(), weights_internal.size());
+  ASSERT_DOUBLE_EQ(source_volume, target_volume);
+  ASSERT_NEAR(self_contrib, -unit_region_volume, epsilon);
+
+  for (auto const& moments : weights_corner) {
+    auto const area = std::abs(moments.weights[0]);
+    auto const centroid = deduce_centroid(moments);
+#if DEBUG
+    if (verbose) {
+      std::cout << "backward::corner_swept_centroid["<< moments.entityID <<"]: ";
+      std::cout << centroid[0] <<", "<< centroid[1] << ", " << centroid[2];
+      std::cout << std::endl;
+    }
+#endif
+    switch(moments.entityID) {
+      case corner_cell:
+        switch (++nb_self_weights) {
+          case 1:
+            ASSERT_NEAR(area, 2 * unit_region_volume, epsilon);
+            ASSERT_NEAR(centroid[0], 5.0, epsilon);
+            ASSERT_NEAR(centroid[1], 5.0, epsilon);
+            ASSERT_NEAR(centroid[2], 5.0, epsilon); break;
+          case 2:
+            ASSERT_NEAR(area, unit_region_volume, epsilon);
+            ASSERT_NEAR(centroid[0], 4.5, epsilon);
+            ASSERT_NEAR(centroid[1], 4.5, epsilon);
+            ASSERT_NEAR(centroid[2], 5.5, epsilon); break;
+          case 3:
+            ASSERT_NEAR(area, unit_region_volume, epsilon);
+            ASSERT_NEAR(centroid[0], 5.5, epsilon);
+            ASSERT_NEAR(centroid[1], 4.5, epsilon);
+            ASSERT_NEAR(centroid[2], 4.5, epsilon); break;
+          case 4:
+            ASSERT_NEAR(area, unit_region_volume, epsilon);
+            ASSERT_NEAR(centroid[0], 4.5, epsilon);
+            ASSERT_NEAR(centroid[1], 5.5, epsilon);
+            ASSERT_NEAR(centroid[2], 4.5, epsilon); break;
+          default: FAIL() << "backward::corner: invalid self weights count";
+        } break;
+      case 17:
+        ASSERT_NEAR(area, unit_region_volume, epsilon);
+        ASSERT_NEAR(centroid[0], 3.5, epsilon);
+        ASSERT_NEAR(centroid[1], 4.5, epsilon);
+        ASSERT_NEAR(centroid[2], 4.5, epsilon); break;
+      case 23:
+        ASSERT_NEAR(area, unit_region_volume, epsilon);
+        ASSERT_NEAR(centroid[0], 4.5, epsilon);
+        ASSERT_NEAR(centroid[1], 3.5, epsilon);
+        ASSERT_NEAR(centroid[2], 4.5, epsilon); break;
+      case 25:
+        ASSERT_NEAR(area, unit_region_volume, epsilon);
+        ASSERT_NEAR(centroid[0], 4.5, epsilon);
+        ASSERT_NEAR(centroid[1], 4.5, epsilon);
+        ASSERT_NEAR(centroid[2], 3.5, epsilon); break;
+      default: FAIL() << "backward::corner: unexpected moment entity index";
     }
   }
 }
