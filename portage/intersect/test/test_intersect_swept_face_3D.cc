@@ -377,4 +377,58 @@ TEST_F(IntersectSweptForward3D, MomentsCheck) {
       default: FAIL() << "forward::boundary: unexpected moment entity index";
     }
   }
+
+  /* check corner hex cell case:
+   * - the source cell self-contribution is still -4.
+   * - we have no more contributing neighbor since all swept faces are
+   *   lying outside the source mesh and their volume are not extrapolated.
+   * - the total swept volume became negative since it corresponds to the self-
+   *   contribution in this case.
+   */
+  target_volume = compute_swept_volume(weights_corner);
+  self_contrib  = compute_contribution(corner_cell, weights_corner);
+  nb_self_weights = 0;
+
+  ASSERT_EQ(weights_corner.size(), unsigned(4));
+  ASSERT_DOUBLE_EQ(self_contrib, -unit_region_volume);
+  ASSERT_DOUBLE_EQ(target_volume, self_contrib);
+
+  for (auto const& moments : weights_corner) {
+    auto const area = std::abs(moments.weights[0]);
+    auto const centroid = deduce_centroid(moments);
+#if DEBUG
+    if (verbose) {
+      std::cout << "forward::corner_swept_centroid[" << moments.entityID << "]: ";
+      std::cout << centroid[0] << ", " << centroid[1] << ", " << centroid[2];
+      std::cout << std::endl;
+    }
+#endif
+    switch(moments.entityID) {
+      case corner_cell:
+        switch (++nb_self_weights) {
+          case 1:
+            ASSERT_DOUBLE_EQ(area, 2 * unit_region_volume);
+            ASSERT_DOUBLE_EQ(centroid[0], 5.0);
+            ASSERT_DOUBLE_EQ(centroid[1], 5.0);
+            ASSERT_DOUBLE_EQ(centroid[2], 5.0); break;
+          case 2:
+            ASSERT_DOUBLE_EQ(area, unit_region_volume);
+            ASSERT_DOUBLE_EQ(centroid[0], 5.5);
+            ASSERT_DOUBLE_EQ(centroid[1], 5.5);
+            ASSERT_DOUBLE_EQ(centroid[2], 4.5); break;
+          case 3:
+            ASSERT_DOUBLE_EQ(area, unit_region_volume);
+            ASSERT_DOUBLE_EQ(centroid[0], 5.5);
+            ASSERT_DOUBLE_EQ(centroid[1], 4.5);
+            ASSERT_DOUBLE_EQ(centroid[2], 5.5); break;
+          case 4:
+            ASSERT_DOUBLE_EQ(area, unit_region_volume);
+            ASSERT_DOUBLE_EQ(centroid[0], 4.5);
+            ASSERT_DOUBLE_EQ(centroid[1], 5.5);
+            ASSERT_DOUBLE_EQ(centroid[2], 5.5); break;
+          default: FAIL() << "forward::corner: invalid self weights count";
+        } break;
+      default: FAIL() << "forward::corner: unexpected moment entity index";
+    }
+  }
 }
