@@ -415,7 +415,7 @@ class MMDriver {
     template<Entity_kind onwhat,
       typename NewSourceMesh,
       typename NewSourceState>
-    Portage::vector<Vector<D>> compute_gradient(
+    Portage::vector<Vector<D>> compute_source_gradient(
       std::string const field_name,
       NewSourceMesh const& new_source_mesh,
       NewSourceState const& new_source_state,
@@ -519,7 +519,7 @@ class MMDriver {
       case 1: interpolate.set_interpolation_variable(field_name); break;
       case 2:
         // compute the gradient field for this variable.
-        *gradients = compute_gradient<onwhat>(field_name,
+        *gradients = compute_source_gradient<onwhat>(field_name,
                                               new_source_mesh, new_source_state,
                                               limiters_.at(field_name),
                                               bnd_limiters_.at(field_name),

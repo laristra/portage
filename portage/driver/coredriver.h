@@ -199,7 +199,7 @@ class CoreDriverBase {
    * @param source_part: the source mesh part to consider if any.
    */
   template<Entity_kind ONWHAT>
-  Portage::vector<Vector<D>> compute_gradient(
+  Portage::vector<Vector<D>> compute_source_gradient(
     std::string const field_name,
     Limiter_type limiter_type = NOLIMITER,
     Boundary_Limiter_type boundary_limiter_type = BND_NOLIMITER,
@@ -208,7 +208,7 @@ class CoreDriverBase {
 
     assert(ONWHAT == onwhat());
     auto derived_class_ptr = static_cast<CoreDriverType<ONWHAT> *>(this);
-    return derived_class_ptr->compute_gradient(field_name, limiter_type,
+    return derived_class_ptr->compute_source_gradient(field_name, limiter_type,
                                                boundary_limiter_type,
                                                material_id, source_part);
   }
@@ -796,7 +796,7 @@ class CoreDriver : public CoreDriverBase<D,
    * @param boundary_limiter_type: gradient limiter to use on boundary.
    * @param source_part: the source mesh part to consider if any.
    */
-  Portage::vector<Vector<D>> compute_gradient(
+  Portage::vector<Vector<D>> compute_source_gradient(
     std::string const field_name,
     Limiter_type limiter_type = NOLIMITER,
     Boundary_Limiter_type boundary_limiter_type = BND_NOLIMITER,

@@ -595,9 +595,9 @@ void remap<2>(std::string field, int nb_parts,
         );
       break;
 
-      case 2: *gradients = remapper.compute_gradient(field, params.limiter,
-                                                     params.bnd_limiter,0,
-                                                     &source_part);
+      case 2: *gradients = remapper.compute_source_gradient(field, params.limiter,
+                                                            params.bnd_limiter,0,
+                                                            &source_part);
 
         remapper.interpolate_mesh_var<double, Portage::Interpolate_2ndOrder>(
           field, field, weights, lower_bound, upper_bound,
@@ -682,9 +682,9 @@ void remap<3>(std::string field, int nb_parts,
         );
         break;
 
-      case 2: gradients = remapper.compute_gradient(field, params.limiter,
-                                                    params.bnd_limiter,0,
-                                                    &(current_part->source()));
+      case 2: gradients = remapper.compute_source_gradient(field, params.limiter,
+                                                           params.bnd_limiter,0,
+                                                           &(current_part->source()));
 
         remapper.interpolate_mesh_var<double, Portage::Interpolate_2ndOrder>(
           field, field, weights, lower_bound, upper_bound,

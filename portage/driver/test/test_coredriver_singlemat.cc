@@ -96,7 +96,7 @@ TEST(CellDriver, 2D_2ndOrder) {
   double dblmin = -std::numeric_limits<double>::max();
   double dblmax =  std::numeric_limits<double>::max();
 
-  auto gradients = d.compute_gradient("temperature");
+  auto gradients = d.compute_source_gradient("temperature");
   d.interpolate_mesh_var<double, Portage::Interpolate_2ndOrder>(
     "temperature", "temperature", srcwts, dblmin, dblmax,
     Portage::DEFAULT_PARTIAL_FIXUP_TYPE, Portage::DEFAULT_EMPTY_FIXUP_TYPE,
@@ -197,7 +197,7 @@ TEST(CellDriver, 3D_2ndOrder) {
   double dblmin = -std::numeric_limits<double>::max();
   double dblmax =  std::numeric_limits<double>::max();
 
-  auto gradients = d.compute_gradient("temperature");
+  auto gradients = d.compute_source_gradient("temperature");
   d.interpolate_mesh_var<double, Portage::Interpolate_2ndOrder>(
     "temperature", "TEMP", srcwts, dblmin, dblmax,
     Portage::DEFAULT_PARTIAL_FIXUP_TYPE, Portage::DEFAULT_EMPTY_FIXUP_TYPE,

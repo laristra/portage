@@ -131,7 +131,7 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Const_BND_NOLIMITER_2D) {
   Driver driver(sourceMeshWrapper, sourceStateWrapper,
                 targetMeshWrapper, targetStateWrapper);
 
-  auto gradients = driver.compute_gradient("cellvars");
+  auto gradients = driver.compute_source_gradient("cellvars");
 
   // Create Interpolation object
 
@@ -267,7 +267,7 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Lin_BND_NOLIMITER_2D) {
   Driver driver(sourceMeshWrapper, sourceStateWrapper,
                 targetMeshWrapper, targetStateWrapper);
 
-  auto gradients = driver.compute_gradient("cellvars");
+  auto gradients = driver.compute_source_gradient("cellvars");
 
   // Create Interpolation object
 
@@ -428,7 +428,7 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Lin_BJ_Limiter_2D) {
   Driver driver(sourceMeshWrapper, sourceStateWrapper,
                 targetMeshWrapper, targetStateWrapper);
 
-  auto gradients = driver.compute_gradient("cellvars", Portage::NOLIMITER);
+  auto gradients = driver.compute_source_gradient("cellvars", Portage::NOLIMITER);
   interpolator.set_interpolation_variable("cellvars", &gradients);
 
   Portage::transform(targetMeshWrapper.begin(Wonton::Entity_kind::CELL),
@@ -436,7 +436,7 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Lin_BJ_Limiter_2D) {
                      sources_and_weights.begin(),
                      outvals1.begin(), interpolator);
 
-  gradients = driver.compute_gradient("cellvars", Portage::BARTH_JESPERSEN);
+  gradients = driver.compute_source_gradient("cellvars", Portage::BARTH_JESPERSEN);
   interpolator.set_interpolation_variable("cellvars", &gradients);
 
   Portage::transform(targetMeshWrapper.begin(Wonton::Entity_kind::CELL),
@@ -609,9 +609,9 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Non_Lin_BJ_Limiter_ZG_Bnd_Limiter_2D) {
   Driver driver(sourceMeshWrapper, sourceStateWrapper,
                 targetMeshWrapper, targetStateWrapper);
 
-  auto gradients = driver.compute_gradient("cellvars",
-                                                 Portage::BARTH_JESPERSEN,
-                                                 Portage::BND_NOLIMITER);
+  auto gradients = driver.compute_source_gradient("cellvars",
+                                                  Portage::BARTH_JESPERSEN,
+                                                  Portage::BND_NOLIMITER);
   interpolator.set_interpolation_variable("cellvars", &gradients);
 
 
@@ -621,9 +621,9 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Non_Lin_BJ_Limiter_ZG_Bnd_Limiter_2D) {
                      outvals1.begin(), interpolator);
 
   // recompute gradient field using correct limiters
-  gradients = driver.compute_gradient("cellvars",
-                                            Portage::BARTH_JESPERSEN,
-                                            Portage::BND_ZERO_GRADIENT);
+  gradients = driver.compute_source_gradient("cellvars",
+                                             Portage::BARTH_JESPERSEN,
+                                             Portage::BND_ZERO_GRADIENT);
   interpolator.set_interpolation_variable("cellvars", &gradients);
 
 
@@ -770,7 +770,7 @@ TEST(Interpolate_2nd_Order, Node_Ctr_Const_BND_NOLIMITER) {
   Driver driver(sourceMeshWrapper, sourceStateWrapper,
                 targetMeshWrapper, targetStateWrapper);
 
-  auto gradients = driver.compute_gradient("nodevars");
+  auto gradients = driver.compute_source_gradient("nodevars");
 
   interpolator.set_interpolation_variable("nodevars", &gradients);
 
@@ -924,7 +924,7 @@ TEST(Interpolate_2nd_Order, Node_Ctr_Lin_BND_NOLIMITER) {
   Driver driver(sourceMeshWrapper, sourceStateWrapper,
                 targetMeshWrapper, targetStateWrapper);
 
-  auto gradients = driver.compute_gradient("nodevars");
+  auto gradients = driver.compute_source_gradient("nodevars");
 
   interpolator.set_interpolation_variable("nodevars", &gradients);
 
@@ -1068,7 +1068,7 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Const_BND_NOLIMITER_3D) {
   Driver driver(sourceMeshWrapper, sourceStateWrapper,
                 targetMeshWrapper, targetStateWrapper);
 
-  auto gradients = driver.compute_gradient("cellvars");
+  auto gradients = driver.compute_source_gradient("cellvars");
 
   interpolator.set_interpolation_variable("cellvars", &gradients);
 
@@ -1201,7 +1201,7 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Lin_BND_NOLIMITER_3D) {
   Driver driver(sourceMeshWrapper, sourceStateWrapper,
                 targetMeshWrapper, targetStateWrapper);
 
-  auto gradients = driver.compute_gradient("cellvars");
+  auto gradients = driver.compute_source_gradient("cellvars");
 
   interpolator.set_interpolation_variable("cellvars", &gradients);
 
@@ -1352,9 +1352,9 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_BJ_Limiter_3D) {
   Driver driver(sourceMeshWrapper, sourceStateWrapper,
                 targetMeshWrapper, targetStateWrapper);
 
-  auto gradients = driver.compute_gradient("cellvars",
-                                                 Portage::NOLIMITER,
-                                                 Portage::DEFAULT_BND_LIMITER);
+  auto gradients = driver.compute_source_gradient("cellvars",
+                                                  Portage::NOLIMITER,
+                                                  Portage::DEFAULT_BND_LIMITER);
 
   interpolator.set_interpolation_variable("cellvars", &gradients);
 
@@ -1364,9 +1364,9 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_BJ_Limiter_3D) {
                      outvals1.begin(), interpolator);
 
   // recompute gradient field using correct limiters
-  gradients = driver.compute_gradient("cellvars",
-                                            Portage::BARTH_JESPERSEN,
-                                            Portage::DEFAULT_BND_LIMITER);
+  gradients = driver.compute_source_gradient("cellvars",
+                                             Portage::BARTH_JESPERSEN,
+                                             Portage::DEFAULT_BND_LIMITER);
 
   interpolator.set_interpolation_variable("cellvars", &gradients);
 
@@ -1520,9 +1520,9 @@ TEST(Interpolate_2nd_Order, Node_Ctr_Const_BND_NOLIMITER_3D) {
   Driver driver(sourceMeshWrapper, sourceStateWrapper,
                 targetMeshWrapper, targetStateWrapper);
 
-  auto gradients = driver.compute_gradient("nodevars",
-                                                 Portage::NOLIMITER,
-                                                 Portage::DEFAULT_BND_LIMITER);
+  auto gradients = driver.compute_source_gradient("nodevars",
+                                                  Portage::NOLIMITER,
+                                                  Portage::DEFAULT_BND_LIMITER);
 
   interpolator.set_interpolation_variable("nodevars", &gradients);
 
@@ -1671,9 +1671,9 @@ TEST(Interpolate_2nd_Order, Node_Ctr_Lin_BND_NOLIMITER_3D) {
   Driver driver(sourceMeshWrapper, sourceStateWrapper,
                 targetMeshWrapper, targetStateWrapper);
 
-  auto gradients = driver.compute_gradient("nodevars",
-                                                 Portage::DEFAULT_LIMITER,
-                                                 Portage::BND_NOLIMITER);
+  auto gradients = driver.compute_source_gradient("nodevars",
+                                                  Portage::DEFAULT_LIMITER,
+                                                  Portage::BND_NOLIMITER);
 
   interpolator.set_interpolation_variable("nodevars", &gradients);
 
@@ -1826,9 +1826,9 @@ TEST(Interpolate_2nd_Order, Node_Ctr_BJ_Limiter_3D) {
                 targetMeshWrapper, targetStateWrapper);
 
   // Compute the target mesh vals
-  auto gradients = driver.compute_gradient("nodevars",
-                                                 Portage::NOLIMITER,
-                                                 Portage::DEFAULT_BND_LIMITER);
+  auto gradients = driver.compute_source_gradient("nodevars",
+                                                  Portage::NOLIMITER,
+                                                  Portage::DEFAULT_BND_LIMITER);
 
   interpolator1.set_interpolation_variable("nodevars", &gradients);
 
@@ -1838,9 +1838,9 @@ TEST(Interpolate_2nd_Order, Node_Ctr_BJ_Limiter_3D) {
                      outvals1.begin(), interpolator1);
 
   // Compute the target mesh vals
-  gradients = driver.compute_gradient("nodevars",
-                                            Portage::BARTH_JESPERSEN,
-                                            Portage::DEFAULT_BND_LIMITER);
+  gradients = driver.compute_source_gradient("nodevars",
+                                             Portage::BARTH_JESPERSEN,
+                                             Portage::DEFAULT_BND_LIMITER);
 
   interpolator2.set_interpolation_variable("nodevars", &gradients);
 
