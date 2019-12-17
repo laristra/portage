@@ -648,16 +648,33 @@ class UberDriver {
       return;
     }
 
-
     auto & driver = core_driver_serial_[ONWHAT];
-    
-    driver->template interpolate_mesh_var<T, ONWHAT, Interpolate>
-        (srcvarname, trgvarname, sources_and_weights_in,
-         lower_bound, upper_bound, limiter, bnd_limiter, partial_fixup_type,
-         empty_fixup_type, conservation_tol, max_fixup_iter);
+
+    using Interpolator = Interpolate<D, ONWHAT,
+                                     SourceMesh, TargetMesh,
+                                     SourceState, TargetState,
+                                     InterfaceReconstructorType,
+                                     Matpoly_Splitter, Matpoly_Clipper,
+                                     CoordSys>;
+
+    if (Interpolator::order == 2) {
+      auto gradients = driver->template compute_source_gradient<ONWHAT>(srcvarname,
+                                                                        limiter,
+                                                                        bnd_limiter);
+
+      driver->template interpolate_mesh_var<T, ONWHAT, Interpolate>(
+        srcvarname, trgvarname, sources_and_weights_in,
+        lower_bound, upper_bound, partial_fixup_type, empty_fixup_type,
+        conservation_tol, max_fixup_iter, nullptr, &gradients
+      );
+    } else {
+      driver->template interpolate_mesh_var<T, ONWHAT, Interpolate>(
+        srcvarname, trgvarname, sources_and_weights_in,
+        lower_bound, upper_bound, partial_fixup_type, empty_fixup_type,
+        conservation_tol, max_fixup_iter
+      );
+    }
   }
-
-
 
   /*!
     Interpolate a (multi-)material variable of type T residing on CELLs
@@ -716,14 +733,38 @@ class UberDriver {
       return;
     }
 
-
+#if HAVE_TANGRAM
     auto & driver = core_driver_serial_[CELL];
-      
-#ifdef HAVE_TANGRAM
-    driver->template interpolate_mat_var<T, Interpolate>
-        (srcvarname, trgvarname, sources_and_weights_by_mat_in,
-         lower_bound, upper_bound, limiter, bnd_limiter, partial_fixup_type,
-         empty_fixup_type, conservation_tol, max_fixup_iter);
+
+    using Interpolator = Interpolate<D, CELL,
+                                     SourceMesh, TargetMesh,
+                                     SourceState, TargetState,
+                                     InterfaceReconstructorType,
+                                     Matpoly_Splitter, Matpoly_Clipper,
+                                     CoordSys>;
+
+    int const nb_mats = source_state_.num_materials();
+    assert(nb_mats > 0);
+
+    if (Interpolator::order == 2) {
+      Portage::vector<Vector<D>> gradients[nb_mats];
+      for (int i = 0; i < nb_mats; ++i) {
+        gradients[i] = driver->template compute_source_gradient<CELL>(srcvarname,
+                                                                      limiter,
+                                                                      bnd_limiter, i);
+      }
+      driver->template interpolate_mat_var<T, Interpolate>(
+        srcvarname, trgvarname, sources_and_weights_by_mat_in,
+        lower_bound, upper_bound, partial_fixup_type, empty_fixup_type,
+        conservation_tol, max_fixup_iter, gradients
+      );
+    } else {
+      driver->template interpolate_mat_var<T, Interpolate>(
+        srcvarname, trgvarname, sources_and_weights_by_mat_in,
+        lower_bound, upper_bound, partial_fixup_type, empty_fixup_type,
+        conservation_tol, max_fixup_iter
+      );
+    }
 #endif
   }
   
@@ -806,7 +847,7 @@ class UberDriver {
     executor  An executor encoding parallel run parameters (if its parallel executor)
   */
 
-  int instantiate_core_drivers(Wonton::Executor_type const *executor =
+  void instantiate_core_drivers(Wonton::Executor_type const *executor =
                                nullptr) {
     std::string message;
 

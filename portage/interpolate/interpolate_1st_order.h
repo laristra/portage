@@ -164,8 +164,7 @@ class Interpolate_1stOrder {
   // uniform interface
 
   void set_interpolation_variable(std::string const & interp_var_name,
-                                  Limiter_type limtype=NOLIMITER,
-                                  Boundary_Limiter_type bnd_limtype=BND_NOLIMITER) {
+                                  Portage::vector<Wonton::Vector<D>>* gradients = nullptr) {
     interp_var_name_ = interp_var_name;
     field_type_ = source_state_.field_type(Entity_kind::CELL, interp_var_name);
     if (field_type_ == Field_type::MESH_FIELD)
@@ -197,6 +196,8 @@ class Interpolate_1stOrder {
               << std::endl;
     return 0.0;
   }
+  
+  constexpr static int order = 1;
 
  private:
   SourceMeshType const & source_mesh_;
@@ -314,8 +315,7 @@ class Interpolate_1stOrder<
   // uniform interface
 
   void set_interpolation_variable(std::string const & interp_var_name,
-                                  Limiter_type limtype = NOLIMITER,
-                                  Boundary_Limiter_type bnd_limtype=BND_NOLIMITER) {
+                                  Portage::vector<Wonton::Vector<D>>* gradients = nullptr) {
     interp_var_name_ = interp_var_name;
     field_type_ = source_state_.field_type(Entity_kind::CELL, interp_var_name);
     if (field_type_ == Field_type::MESH_FIELD)
@@ -324,6 +324,7 @@ class Interpolate_1stOrder<
     else
       source_state_.mat_get_celldata(interp_var_name, matid_, &source_vals_);
   }  // set_interpolation_variable
+
 
   /*!
     @brief Functor to do the actual interpolation.
@@ -392,6 +393,8 @@ class Interpolate_1stOrder<
 
     return val;
   }  // operator()
+  
+  constexpr static int order = 1;
 
  private:
   SourceMeshType const & source_mesh_;
@@ -503,8 +506,7 @@ class Interpolate_1stOrder<
   // uniform interface
 
   void set_interpolation_variable(std::string const & interp_var_name,
-                                  Limiter_type limtype = NOLIMITER,
-                                  Boundary_Limiter_type bnd_limtype=BND_NOLIMITER) {
+                                  Portage::vector<Wonton::Vector<D>>* gradients = nullptr) {
     interp_var_name_ = interp_var_name;
     field_type_ = source_state_.field_type(Entity_kind::NODE, interp_var_name);
     if (field_type_ == Field_type::MESH_FIELD)
@@ -515,6 +517,7 @@ class Interpolate_1stOrder<
       std::cerr << "Cannot remap NODE-centered multi-material data" << "\n";
     }
   }  // set_interpolation_variable
+
 
   /*!
     @brief Functor to do the actual interpolation.
@@ -573,6 +576,8 @@ class Interpolate_1stOrder<
 
     return val;
   }  // operator()
+
+  constexpr static int order = 1;
 
  private:
   SourceMeshType const & source_mesh_;

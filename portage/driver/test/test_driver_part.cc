@@ -272,7 +272,6 @@ TEST_F(PartOrderOneTest, PiecewiseConstantField) {
     // interpolate density for current part
     remapper.interpolate_mesh_var<double, Portage::Interpolate_1stOrder>(
       "density", "density", weights, lower_bound, upper_bound,
-      Portage::DEFAULT_LIMITER, Portage::DEFAULT_BND_LIMITER, 
       Portage::DEFAULT_PARTIAL_FIXUP_TYPE, Portage::DEFAULT_EMPTY_FIXUP_TYPE, 
       Portage::DEFAULT_CONSERVATION_TOL,
       Portage::DEFAULT_MAX_FIXUP_ITER, &(parts[i])
@@ -333,7 +332,6 @@ TEST_F(PartOrderOneTest, GlobalRemapComparison) {
     // interpolate density for current part
     remapper.interpolate_mesh_var<double, Portage::Interpolate_1stOrder>(
       "density", "density", weights, lower_bound, upper_bound,
-      Portage::DEFAULT_LIMITER, Portage::DEFAULT_BND_LIMITER, 
       Portage::DEFAULT_PARTIAL_FIXUP_TYPE, Portage::DEFAULT_EMPTY_FIXUP_TYPE, 
       Portage::DEFAULT_CONSERVATION_TOL,
       Portage::DEFAULT_MAX_FIXUP_ITER, &(parts[i])
@@ -398,13 +396,18 @@ TEST_F(PartOrderTwoTest, PiecewiseLinearField) {
     parts[i].check_mismatch(weights);
     assert(not parts[i].has_mismatch());
 
+    auto const& source_part = parts[i].source();
+    auto gradients = remapper.compute_source_gradient("density",
+                                                      Portage::NOLIMITER,
+                                                      Portage::BND_NOLIMITER,
+                                                      0, &source_part);
+
     // interpolate density for current part
     remapper.interpolate_mesh_var<double, Portage::Interpolate_2ndOrder>(
       "density", "density", weights, lower_bound, upper_bound,
-      Portage::NOLIMITER, Portage::BND_NOLIMITER,
       Portage::DEFAULT_PARTIAL_FIXUP_TYPE, Portage::DEFAULT_EMPTY_FIXUP_TYPE,
       Portage::DEFAULT_CONSERVATION_TOL,
-      Portage::DEFAULT_MAX_FIXUP_ITER, &(parts[i])
+      Portage::DEFAULT_MAX_FIXUP_ITER, &(parts[i]), &gradients
     );
   }
 
