@@ -395,7 +395,7 @@ TEST_F(IntersectSweptForward3D, MomentsCheck) {
   ASSERT_DOUBLE_EQ(target_volume, self_contrib);
 
   for (auto const& moments : weights_corner) {
-    auto const area = std::abs(moments.weights[0]);
+    auto const volume = std::abs(moments.weights[0]);
     auto const centroid = deduce_centroid(moments);
 #if DEBUG
     if (verbose) {
@@ -408,22 +408,22 @@ TEST_F(IntersectSweptForward3D, MomentsCheck) {
       case corner_cell:
         switch (++nb_self_weights) {
           case 1:
-            ASSERT_DOUBLE_EQ(area, 2 * unit_region_volume);
+            ASSERT_DOUBLE_EQ(volume, 2 * unit_region_volume);
             ASSERT_DOUBLE_EQ(centroid[0], 5.0);
             ASSERT_DOUBLE_EQ(centroid[1], 5.0);
             ASSERT_DOUBLE_EQ(centroid[2], 5.0); break;
           case 2:
-            ASSERT_DOUBLE_EQ(area, unit_region_volume);
+            ASSERT_DOUBLE_EQ(volume, unit_region_volume);
             ASSERT_DOUBLE_EQ(centroid[0], 5.5);
             ASSERT_DOUBLE_EQ(centroid[1], 5.5);
             ASSERT_DOUBLE_EQ(centroid[2], 4.5); break;
           case 3:
-            ASSERT_DOUBLE_EQ(area, unit_region_volume);
+            ASSERT_DOUBLE_EQ(volume, unit_region_volume);
             ASSERT_DOUBLE_EQ(centroid[0], 5.5);
             ASSERT_DOUBLE_EQ(centroid[1], 4.5);
             ASSERT_DOUBLE_EQ(centroid[2], 5.5); break;
           case 4:
-            ASSERT_DOUBLE_EQ(area, unit_region_volume);
+            ASSERT_DOUBLE_EQ(volume, unit_region_volume);
             ASSERT_DOUBLE_EQ(centroid[0], 4.5);
             ASSERT_DOUBLE_EQ(centroid[1], 5.5);
             ASSERT_DOUBLE_EQ(centroid[2], 5.5); break;
@@ -618,11 +618,11 @@ TEST_F(IntersectSweptBackward3D, MomentsCheck) {
   nb_self_weights = 0;
 
   ASSERT_EQ(weights_corner.size(), weights_internal.size());
-  ASSERT_DOUBLE_EQ(source_volume, target_volume);
+  ASSERT_NEAR(source_volume, target_volume, epsilon);
   ASSERT_NEAR(self_contrib, -unit_region_volume, epsilon);
 
   for (auto const& moments : weights_corner) {
-    auto const area = std::abs(moments.weights[0]);
+    auto const volume = std::abs(moments.weights[0]);
     auto const centroid = deduce_centroid(moments);
 #if DEBUG
     if (verbose) {
@@ -635,43 +635,212 @@ TEST_F(IntersectSweptBackward3D, MomentsCheck) {
       case corner_cell:
         switch (++nb_self_weights) {
           case 1:
-            ASSERT_NEAR(area, 2 * unit_region_volume, epsilon);
+            ASSERT_NEAR(volume, 2 * unit_region_volume, epsilon);
             ASSERT_NEAR(centroid[0], 5.0, epsilon);
             ASSERT_NEAR(centroid[1], 5.0, epsilon);
             ASSERT_NEAR(centroid[2], 5.0, epsilon); break;
           case 2:
-            ASSERT_NEAR(area, unit_region_volume, epsilon);
+            ASSERT_NEAR(volume, unit_region_volume, epsilon);
             ASSERT_NEAR(centroid[0], 4.5, epsilon);
             ASSERT_NEAR(centroid[1], 4.5, epsilon);
             ASSERT_NEAR(centroid[2], 5.5, epsilon); break;
           case 3:
-            ASSERT_NEAR(area, unit_region_volume, epsilon);
+            ASSERT_NEAR(volume, unit_region_volume, epsilon);
             ASSERT_NEAR(centroid[0], 5.5, epsilon);
             ASSERT_NEAR(centroid[1], 4.5, epsilon);
             ASSERT_NEAR(centroid[2], 4.5, epsilon); break;
           case 4:
-            ASSERT_NEAR(area, unit_region_volume, epsilon);
+            ASSERT_NEAR(volume, unit_region_volume, epsilon);
             ASSERT_NEAR(centroid[0], 4.5, epsilon);
             ASSERT_NEAR(centroid[1], 5.5, epsilon);
             ASSERT_NEAR(centroid[2], 4.5, epsilon); break;
           default: FAIL() << "backward::corner: invalid self weights count";
         } break;
       case 17:
-        ASSERT_NEAR(area, unit_region_volume, epsilon);
+        ASSERT_NEAR(volume, unit_region_volume, epsilon);
         ASSERT_NEAR(centroid[0], 3.5, epsilon);
         ASSERT_NEAR(centroid[1], 4.5, epsilon);
         ASSERT_NEAR(centroid[2], 4.5, epsilon); break;
       case 23:
-        ASSERT_NEAR(area, unit_region_volume, epsilon);
+        ASSERT_NEAR(volume, unit_region_volume, epsilon);
         ASSERT_NEAR(centroid[0], 4.5, epsilon);
         ASSERT_NEAR(centroid[1], 3.5, epsilon);
         ASSERT_NEAR(centroid[2], 4.5, epsilon); break;
       case 25:
-        ASSERT_NEAR(area, unit_region_volume, epsilon);
+        ASSERT_NEAR(volume, unit_region_volume, epsilon);
         ASSERT_NEAR(centroid[0], 4.5, epsilon);
         ASSERT_NEAR(centroid[1], 4.5, epsilon);
         ASSERT_NEAR(centroid[2], 3.5, epsilon); break;
       default: FAIL() << "backward::corner: unexpected moment entity index";
+    }
+  }
+}
+
+TEST_F(IntersectSweptOneAxis3D, MomentsCheck) {
+
+  Intersector intersector(source_mesh_wrapper,
+                          source_state_wrapper,
+                          target_mesh_wrapper,
+                          num_tols);
+
+  /* pick internal, boundary and corner source cells.
+   * swept region configuration for forward displacement:
+   *
+   *   source hex        target hex        frontal face
+   *                                       swept polyhedron:
+   *
+   *    7______6         7'......6'
+   *    /|    /|          .:    .:
+   *   / |   / |         . :   . :
+   * 4 __|__5  |      4'...:..5' :         4___4'..5..5'
+   * |   3__|__2       :   :..:..2'        |   :  |   :
+   * |  /   |  /       :  .   :  .         |   :  |   :
+   * | /    | /        : .    : .          |   :  |   :
+   * |/_____|/         :......:            |___:..|...:
+   * 0      1          0'     1'           0   0' 1   1'
+   */
+  int const internal_cell = 13;
+  int const boundary_cell = 25;
+  int const corner_cell   = 26;
+
+  // search for candidate cells and compute moments of intersection
+  auto weights_internal = intersector(internal_cell, search(internal_cell));
+  auto weights_boundary = intersector(boundary_cell, search(boundary_cell));
+  auto weights_corner   = intersector(corner_cell, search(corner_cell));
+
+  /* since the target cell was swept along the x-axis only then we should have:
+   * - two flat swept regions with zero volume which will be excluded.
+   * - one positive swept volume associated with cell 22 (right).
+   * - one negative swept volume associated with the source cell itself.
+   * - the unsigned volume of the source cell itself.
+   * hence the source cell self-contribution is half of its volume.
+   */
+  double source_volume = source_mesh_wrapper.cell_volume(internal_cell);
+  double target_volume = compute_swept_volume(weights_internal);
+  double self_contrib  = compute_contribution(internal_cell, weights_internal);
+  int nb_self_weights = 0;
+
+  ASSERT_EQ(weights_internal.size(), unsigned(3));
+  ASSERT_DOUBLE_EQ(source_volume, target_volume);
+  ASSERT_DOUBLE_EQ(self_contrib, unit_region_volume);
+
+  for (auto const& moments : weights_internal) {
+    auto const volume = std::abs(moments.weights[0]);
+    auto const centroid = deduce_centroid(moments);
+#if DEBUG
+    if (verbose) {
+      std::cout << "one-axis::internal_swept_centroid[" << moments.entityID << "]: ";
+      std::cout << centroid[0] << ", " << centroid[1] << ", " << centroid[2] << std::endl;
+    }
+#endif
+    switch(moments.entityID) {
+      case internal_cell:
+        switch (++nb_self_weights) {
+          case 1:
+            ASSERT_DOUBLE_EQ(volume, 2 * unit_region_volume);
+            ASSERT_DOUBLE_EQ(centroid[0], 3.0);
+            ASSERT_DOUBLE_EQ(centroid[1], 3.0);
+            ASSERT_DOUBLE_EQ(centroid[2], 3.0); break;
+          case 2:
+            ASSERT_DOUBLE_EQ(volume, unit_region_volume);
+            ASSERT_DOUBLE_EQ(centroid[0], 2.5);
+            ASSERT_DOUBLE_EQ(centroid[1], 3.0);
+            ASSERT_DOUBLE_EQ(centroid[2], 3.0); break;
+          default: FAIL() << "one-axis::internal: invalid self weights count";
+        } break;
+      case 22:
+        ASSERT_DOUBLE_EQ(volume, unit_region_volume);
+        ASSERT_DOUBLE_EQ(centroid[0], 4.5);
+        ASSERT_DOUBLE_EQ(centroid[1], 3.0);
+        ASSERT_DOUBLE_EQ(centroid[2], 3.0); break;
+      default: FAIL() << "one-axis::internal: unexpected moment entity index";
+    }
+  }
+
+  /* for the boundary cell case:
+   * - one positive swept volume lying outside the source domain and hence excluded.
+   * - one negative swept volume associated with the source cell itself.
+   * - the unsigned volume of the source cell itself.
+   * hence the source cell self-contribution is again half of its volume.
+   */
+  source_volume = source_mesh_wrapper.cell_volume(boundary_cell);
+  target_volume = compute_swept_volume(weights_boundary);
+  self_contrib  = compute_contribution(boundary_cell, weights_boundary);
+  nb_self_weights = 0;
+
+  ASSERT_EQ(weights_boundary.size(), unsigned(2));
+  ASSERT_DOUBLE_EQ(target_volume, 0.5 * source_volume);
+  ASSERT_DOUBLE_EQ(self_contrib, unit_region_volume);
+
+  for (auto const& moments : weights_boundary) {
+    auto const volume = std::abs(moments.weights[0]);
+    auto const centroid = deduce_centroid(moments);
+#if DEBUG
+    if (verbose) {
+      std::cout << "one-axis::boundary_swept_centroid[" << moments.entityID << "]: ";
+      std::cout << centroid[0] << ", " << centroid[1] << ", " << centroid[2] << std::endl;
+    }
+#endif
+    switch(moments.entityID) {
+      case boundary_cell:
+        switch (++nb_self_weights) {
+          case 1:
+            ASSERT_DOUBLE_EQ(volume, 2 * unit_region_volume);
+            ASSERT_DOUBLE_EQ(centroid[0], 5.0);
+            ASSERT_DOUBLE_EQ(centroid[1], 5.0);
+            ASSERT_DOUBLE_EQ(centroid[2], 3.0); break;
+          case 2:
+            ASSERT_DOUBLE_EQ(volume, unit_region_volume);
+            ASSERT_DOUBLE_EQ(centroid[0], 4.5);
+            ASSERT_DOUBLE_EQ(centroid[1], 5.0);
+            ASSERT_DOUBLE_EQ(centroid[2], 3.0); break;
+          default: FAIL() << "one-axis::boundary: invalid self weights count";
+        } break;
+      default: FAIL() << "one-axis::boundary: unexpected moment entity index";
+    }
+  }
+
+  /* the corner cell case is no different from the boundary one, since the
+   * target cell is swept along the x-axis only. Hence we have:
+   * - one positive swept volume lying outside the source domain and hence excluded.
+   * - one negative swept volume associated with the source cell itself.
+   * - the unsigned volume of the source cell itself.
+   * hence the source cell self-contribution is exactly the same as above.
+   */
+  source_volume = source_mesh_wrapper.cell_volume(corner_cell);
+  target_volume = compute_swept_volume(weights_corner);
+  self_contrib  = compute_contribution(corner_cell, weights_corner);
+  nb_self_weights = 0;
+
+  ASSERT_EQ(weights_corner.size(), weights_boundary.size());
+  ASSERT_DOUBLE_EQ(target_volume, 0.5 * source_volume);
+  ASSERT_DOUBLE_EQ(self_contrib, unit_region_volume);
+
+  for (auto const& moments : weights_corner) {
+    auto const volume = std::abs(moments.weights[0]);
+    auto const centroid = deduce_centroid(moments);
+#if DEBUG
+    if (verbose) {
+      std::cout << "one-axis::corner_swept_centroid[" << moments.entityID << "]: ";
+      std::cout << centroid[0] << ", " << centroid[1] << ", " << centroid[2] << std::endl;
+    }
+#endif
+    switch(moments.entityID) {
+      case corner_cell:
+        switch (++nb_self_weights) {
+          case 1:
+            ASSERT_DOUBLE_EQ(volume, 2 * unit_region_volume);
+            ASSERT_DOUBLE_EQ(centroid[0], 5.0);
+            ASSERT_DOUBLE_EQ(centroid[1], 5.0);
+            ASSERT_DOUBLE_EQ(centroid[2], 5.0); break;
+          case 2:
+            ASSERT_DOUBLE_EQ(volume, unit_region_volume);
+            ASSERT_DOUBLE_EQ(centroid[0], 4.5);
+            ASSERT_DOUBLE_EQ(centroid[1], 5.0);
+            ASSERT_DOUBLE_EQ(centroid[2], 5.0); break;
+          default: FAIL() << "one-axis::corner: invalid self weights count";
+        } break;
+      default: FAIL() << "one-axis::corner: unexpected moment entity index";
     }
   }
 }
