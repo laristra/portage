@@ -809,47 +809,34 @@ namespace Portage {
       int const nb_moments = moments.size();
       assert(nb_moments > 0);
 
-      // the first entry of the swept region moment list is the source cell
-      // moment, that is its own volume and weighted centroid.
+      // the first entry of the swept region moment list should be
+      // the source cell moment, that is its own volume and weighted centroid.
       assert(moments[0].entityID == source_id);
       double const source_cell_volume = moments[0].weights[0];
       double source_swept_volume = 0.;
-      assert(source_cell_volume > num_tols_.min_relative_volume);
+      assert(source_cell_volume > num_tols_.min_absolute_volume);
 
       for (int i = 1; i < nb_moments; ++i) {
         double const swept_volume = std::abs(moments[i].weights[0]);
-        assert(swept_volume > num_tols_.min_relative_volume);
-
-        auto centroid = Wonton::Point3(moments[i].weights[1] / moments[i].weights[0],
-                                       moments[i].weights[2] / moments[i].weights[0],
-                                       moments[i].weights[3] / moments[i].weights[0]);
-
-
-
-        // accumulate the self-contribution to compare it later
-//        if (moments[i].entityID == source_id)
-//          source_swept_volume += swept_volume;
-//        else /* one of the source cell neighbor */ {
+        assert(swept_volume > num_tols_.min_absolute_volume);
+          // the volume of each swept region should not exceed that of the
+          // source cell itself, regardless of the cell where it is attached.
           if (swept_volume > source_cell_volume) {
-            std::cout << "swept_volume inside neighbor["<< moments[i].entityID;
-            std::cout << " is " << swept_volume <<", whereas source cell["<< source_id;
-            std::cout <<"] volume is: "<< source_cell_volume << std::endl;
             return false;
+          } else if (moments[i].entityID == source_id) {
+            // accumulate the self-contribution for further comparisons.
+            source_swept_volume += swept_volume;
           }
-
-        //}
       }
 
-      // the total self-contribution should be less than the source cell
-      // volume itself, otherwise the displacement would be too large.
-      /*std::cout << "total self volume contribution for source cell "<< source_id;
-      std::cout << " is "<< source_swept_volume <<", whereas its volume is ";
-      std::cout << source_cell_volume << "."<< std::endl;
-
-
-
-      return (source_swept_volume < source_cell_volume);*/
-      return true;
+      // Normally, we should have p <= 3 swept regions associated with the source
+      // cell, with p the number of dimensions involved by the displacement.
+      // The volume of each swept region should not normally exceed half the
+      // volume of the source cell itself. Hence to ensure that the displacement
+      // is not too large, we just check that the total self-contribution
+      // is less than twice the source cell volume.
+      // Notice that this criterion could be refined later.
+      return source_swept_volume < 2 * source_cell_volume;
     }
 
 
@@ -964,13 +951,6 @@ namespace Portage {
             target_mesh_.node_get_coordinates(nodes[index], swept_poly_coords.data() + offset);
           }
 
-//          std::cout << "i: " << i << ", swept_poly_coords: " << std::endl;
-//          for (auto&& point : swept_poly_coords) {
-//            std::cout << point << std::endl;
-//          }
-//          std::cout << "=============" << std::endl;
-          std::cout << "i: " << i << " ";
-
           /* now build the swept polyhedron faces, which vertices are indexed
            * RELATIVELY to the polyhedron vertices list.
            * - first allocate memory for vertices list of each face.
@@ -1003,70 +983,18 @@ namespace Portage {
            *  twin faces: [0, (n/2)-1] and [(n/2)-1, n].
            * other faces: [i, n-i+1, n-((i+2)%(n/2)), (i+1)%(n/2)], i in [0,n/2[
            */
-          //std::iota(swept_poly_faces[0].begin(), swept_poly_faces[0].end(), 0);
           for (int j = 0; j < nb_face_nodes; ++j) {
             swept_poly_faces[0][j] = j;
             swept_poly_faces[1][j] = nb_poly_nodes - j - 1;
           }
 
-#ifndef DEBUG_SWEPT_VOLUME
-          std::cout << std::endl;
-          Wonton::Point<3> swept_poly_orig[] = {
-            swept_poly_coords[swept_poly_faces[0][0]],
-            swept_poly_coords[swept_poly_faces[0][1]],
-            swept_poly_coords[swept_poly_faces[0][2]],
-            swept_poly_coords[swept_poly_faces[0][3]]
-          };
-
-          std::cout << "swept_poly_orig: dirs=" << dirs[i];
-          std::cout << ", ("<< swept_poly_orig[0] << "), ("
-                    << swept_poly_orig[1] << "), (";
-          std::cout << swept_poly_orig[2] << "), ("
-                    << swept_poly_orig[3] << ")" << std::endl;
-
-          Wonton::Point<3> swept_poly_twin[] = {
-            swept_poly_coords[swept_poly_faces[1][0]],
-            swept_poly_coords[swept_poly_faces[1][1]],
-            swept_poly_coords[swept_poly_faces[1][2]],
-            swept_poly_coords[swept_poly_faces[1][3]]
-          };
-
-          std::cout << "swept_poly_twin: dirs=" << dirs[i];
-          std::cout << ", ("<< swept_poly_twin[0] << "), ("
-                            << swept_poly_twin[1] << "), (";
-          std::cout << swept_poly_twin[2] << "), ("
-                     << swept_poly_twin[3] << ")" << std::endl;
-          std::cout << "======" << std::endl;
-#endif
-
           for (int current = 0; current < nb_face_nodes; ++current) {
             int const index = current + 2;
             // keep face vertices counterclockwise.
-            //if ()
             swept_poly_faces[index][0] = current;
             swept_poly_faces[index][3] = (current + 1) % nb_face_nodes;
             swept_poly_faces[index][1] = swept_poly_faces[index][0] + nb_face_nodes;
             swept_poly_faces[index][2] = swept_poly_faces[index][3] + nb_face_nodes;
-
-            #if DEBUG_SWEPT_VOLUME
-            Wonton::Point<3> swept_poly[] = {
-              swept_poly_coords[swept_poly_faces[index][0]],
-              swept_poly_coords[swept_poly_faces[index][1]],
-              swept_poly_coords[swept_poly_faces[index][2]],
-              swept_poly_coords[swept_poly_faces[index][3]]
-            };
-
-            std::cout << "computed relative indices: ";
-            std::cout << swept_poly_faces[index][0] << ", ";
-            std::cout << swept_poly_faces[index][1] << ", ";
-            std::cout << swept_poly_faces[index][2] << ", ";
-            std::cout << swept_poly_faces[index][3] << std::endl;
-
-            std::cout << "current swept face: dirs=" << dirs[i];
-            std::cout << ", ("<< swept_poly[0] << "), ("<< swept_poly[1] << "), (";
-            std::cout << swept_poly[2] << "), ("<< swept_poly[3] << ")" << std::endl;
-            std::cout << "======" << std::endl;
-            #endif
           }
 
           /* step 2: compute swept polygon moments using divergence theorem */
