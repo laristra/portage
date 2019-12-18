@@ -85,12 +85,13 @@ TEST(Test_Mismatch_Fixup, Test_Methods) {
 
   auto candidates = driver.search<Portage::SearchKDTree>();
   auto source_weights = driver.intersect_meshes<Portage::IntersectR2D>(candidates);
+  auto gradients = driver.compute_source_gradient("cellvars");
 
   // Create the mismatch fixer
   Portage::MismatchFixer<2, Portage::Entity_kind::CELL, Wonton::Jali_Mesh_Wrapper, 
     Wonton::Jali_State_Wrapper, Wonton::Jali_Mesh_Wrapper,  Wonton::Jali_State_Wrapper> 
     fixer(sourceMeshWrapper, sourceStateWrapper, targetMeshWrapper, targetStateWrapper, source_weights, nullptr);
-
+      
 
   //-------------------------------------------------------------------
   // Expected Results
@@ -123,8 +124,7 @@ TEST(Test_Mismatch_Fixup, Test_Methods) {
   double dblmax =  std::numeric_limits<double>::max();
 
   driver.interpolate_mesh_var<double,Portage::Interpolate_1stOrder>(
-    "cellvars","cellvars", source_weights, 0.0, dblmax, Portage::DEFAULT_LIMITER,
-    Portage::DEFAULT_BND_LIMITER);
+    "cellvars","cellvars", source_weights, 0.0, dblmax, nullptr, &gradients);
 
   // test (C,E)
   if (fixer.has_mismatch())
@@ -137,8 +137,7 @@ TEST(Test_Mismatch_Fixup, Test_Methods) {
 
 
   driver.interpolate_mesh_var<double,Portage::Interpolate_1stOrder>(
-    "cellvars","cellvars", source_weights, 0.0, dblmax, Portage::DEFAULT_LIMITER,
-    Portage::DEFAULT_BND_LIMITER);
+    "cellvars","cellvars", source_weights, 0.0, dblmax, nullptr, &gradients);
 
   // test (L,E)
   if (fixer.has_mismatch())
@@ -151,8 +150,7 @@ TEST(Test_Mismatch_Fixup, Test_Methods) {
 
  
   driver.interpolate_mesh_var<double,Portage::Interpolate_1stOrder>(
-    "cellvars","cellvars", source_weights, 0.0, dblmax, Portage::DEFAULT_LIMITER,
-    Portage::DEFAULT_BND_LIMITER);
+    "cellvars","cellvars", source_weights, 0.0, dblmax, nullptr, &gradients);
 
   // test (S,E)
   if (fixer.has_mismatch())
@@ -165,8 +163,7 @@ TEST(Test_Mismatch_Fixup, Test_Methods) {
 
 
   driver.interpolate_mesh_var<double,Portage::Interpolate_1stOrder>(
-    "cellvars","cellvars", source_weights, 0.0, dblmax, Portage::DEFAULT_LIMITER,
-    Portage::DEFAULT_BND_LIMITER);
+    "cellvars","cellvars", source_weights, 0.0, dblmax, nullptr, &gradients);
 
   // test (C,L)
   if (fixer.has_mismatch())
@@ -179,8 +176,7 @@ TEST(Test_Mismatch_Fixup, Test_Methods) {
 
  
   driver.interpolate_mesh_var<double,Portage::Interpolate_1stOrder>(
-    "cellvars","cellvars", source_weights, 0.0, dblmax, Portage::DEFAULT_LIMITER,
-    Portage::DEFAULT_BND_LIMITER);
+    "cellvars","cellvars", source_weights, 0.0, dblmax, nullptr, &gradients);
 
   // test (L,L)
   if (fixer.has_mismatch())
@@ -193,8 +189,7 @@ TEST(Test_Mismatch_Fixup, Test_Methods) {
 
  
   driver.interpolate_mesh_var<double,Portage::Interpolate_1stOrder>(
-    "cellvars","cellvars", source_weights, 0.0, dblmax, Portage::DEFAULT_LIMITER,
-    Portage::DEFAULT_BND_LIMITER);
+    "cellvars","cellvars", source_weights, 0.0, dblmax, nullptr, &gradients);
 
   // test (S,L)
   if (fixer.has_mismatch())

@@ -267,8 +267,7 @@ TEST_F(PartOrderOneTest, PiecewiseConstantField) {
 
     // interpolate density for current part
     remapper.interpolate_mesh_var<double, Portage::Interpolate_1stOrder>(
-      "density", "density", weights, lower_bound, upper_bound,
-      Portage::DEFAULT_LIMITER, Portage::DEFAULT_BND_LIMITER, &(parts[i])
+      "density", "density", weights, lower_bound, upper_bound, &(parts[i])
     );
       
     // test for mismatch and compute volumes
@@ -330,8 +329,7 @@ TEST_F(PartOrderOneTest, GlobalRemapComparison) {
   for (int i = 0; i < 2; ++i) {
     // interpolate density for current part
     remapper.interpolate_mesh_var<double, Portage::Interpolate_1stOrder>(
-      "density", "density", weights, lower_bound, upper_bound,
-      Portage::DEFAULT_LIMITER, Portage::DEFAULT_BND_LIMITER, &(parts[i])
+      "density", "density", weights, lower_bound, upper_bound, &(parts[i])
     );
     
     // test for mismatch and compute volumes
@@ -340,9 +338,7 @@ TEST_F(PartOrderOneTest, GlobalRemapComparison) {
 
     // this block won't run since no mismatch, but make sure syntactically correct
     if (parts[i].has_mismatch())
-      parts[i].fix_mismatch("density", "density", lower_bound, upper_bound, 
-      Portage::DEFAULT_CONSERVATION_TOL, Portage::DEFAULT_MAX_FIXUP_ITER,
-      Portage::DEFAULT_PARTIAL_FIXUP_TYPE, Portage::DEFAULT_EMPTY_FIXUP_TYPE);
+      parts[i].fix_mismatch("density", "density", lower_bound, upper_bound);
   }
 
   // store the part-by-part remapped values

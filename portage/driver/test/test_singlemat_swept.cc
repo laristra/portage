@@ -130,10 +130,7 @@ TEST(SweptFaceRemap, 2D_2ndOrder) {
   auto gradients = d.compute_source_gradient("temperature");
 
   d.interpolate_mesh_var<double, Portage::Interpolate_2ndOrder>(
-    "temperature", "temperature", srcwts, dblmin, dblmax,
-    Portage::DEFAULT_PARTIAL_FIXUP_TYPE, Portage::DEFAULT_EMPTY_FIXUP_TYPE,
-    Portage::DEFAULT_CONSERVATION_TOL,
-    Portage::DEFAULT_MAX_FIXUP_ITER, nullptr, &gradients
+    "temperature", "temperature", srcwts, dblmin, dblmax, nullptr, &gradients
   );
 
   //-------------------------------------------------------------------
