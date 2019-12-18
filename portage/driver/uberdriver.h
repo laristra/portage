@@ -481,7 +481,7 @@ class UberDriver {
 
   template<typename T = double,
            Entity_kind ONWHAT,
-           template<int, Entity_kind, class, class, class, class,
+           template<int, Entity_kind, class, class, class, class, class,
                     template<class, int, class, class> class,
                     class, class, class> class Interpolate
            >
@@ -535,7 +535,7 @@ class UberDriver {
 
   template<typename T = double,
            Entity_kind ONWHAT,
-           template<int, Entity_kind, class, class, class, class,
+           template<int, Entity_kind, class, class, class, class, class,
                     template<class, int, class, class> class,
                     class, class, class> class Interpolate
            >
@@ -625,7 +625,7 @@ class UberDriver {
   
   template<typename T = double,
            Entity_kind ONWHAT,
-           template<int, Entity_kind, class, class, class, class,
+           template<int, Entity_kind, class, class, class, class, class,
                     template <class, int, class, class> class,
                     class, class, class> class Interpolate
            >
@@ -653,6 +653,7 @@ class UberDriver {
     using Interpolator = Interpolate<D, ONWHAT,
                                      SourceMesh, TargetMesh,
                                      SourceState, TargetState,
+                                     T,
                                      InterfaceReconstructorType,
                                      Matpoly_Splitter, Matpoly_Clipper,
                                      CoordSys>;
@@ -710,7 +711,7 @@ class UberDriver {
   */
   
   template <typename T = double,
-            template<int, Entity_kind, class, class, class, class,
+            template<int, Entity_kind, class, class, class, class, class,
                      template <class, int, class, class> class,
                      class, class, class> class Interpolate
             >
@@ -739,6 +740,7 @@ class UberDriver {
     using Interpolator = Interpolate<D, CELL,
                                      SourceMesh, TargetMesh,
                                      SourceState, TargetState,
+                                     T,
                                      InterfaceReconstructorType,
                                      Matpoly_Splitter, Matpoly_Clipper,
                                      CoordSys>;

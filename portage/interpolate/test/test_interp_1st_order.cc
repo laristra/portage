@@ -125,7 +125,9 @@ TEST(Interpolate_1st_Order, Cell_Ctr_Const_2D) {
   Portage::Interpolate_1stOrder<2, Wonton::Entity_kind::CELL,
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_Mesh_Wrapper,
-                                Wonton::Simple_State_Wrapper>
+                                Wonton::Simple_State_Wrapper,
+                                Wonton::Simple_State_Wrapper,
+                                double>
       interpolator(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper,
                    num_tols);
 
@@ -246,7 +248,9 @@ TEST(Interpolate_1st_Order, Cell_Ctr_Lin_2D) {
   Portage::Interpolate_1stOrder<2, Wonton::Entity_kind::CELL,
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_Mesh_Wrapper,
-                                Wonton::Simple_State_Wrapper>
+                                Wonton::Simple_State_Wrapper,
+                                Wonton::Simple_State_Wrapper,
+                                double>
       interpolator(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper,
                    num_tols);
 
@@ -374,7 +378,9 @@ TEST(Interpolate_1st_Order, Node_Ctr_Const_2D) {
   Portage::Interpolate_1stOrder<2, Wonton::Entity_kind::NODE,
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_Mesh_Wrapper,
-                                Wonton::Simple_State_Wrapper>
+                                Wonton::Simple_State_Wrapper,
+                                Wonton::Simple_State_Wrapper,
+                                double>
       interpolator(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper,
                    num_tols);
 
@@ -492,7 +498,9 @@ TEST(Interpolate_1st_Order, Cell_Ctr_Const_3D) {
   Portage::Interpolate_1stOrder<3, Wonton::Entity_kind::CELL,
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_Mesh_Wrapper,
-                                Wonton::Simple_State_Wrapper>
+                                Wonton::Simple_State_Wrapper,
+                                Wonton::Simple_State_Wrapper,
+                                double>
       interpolator(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper,
                    num_tols);
 
@@ -612,7 +620,9 @@ TEST(Interpolate_1st_Order, Cell_Ctr_Lin_3D) {
   Portage::Interpolate_1stOrder<3, Wonton::Entity_kind::CELL,
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_Mesh_Wrapper,
-                                Wonton::Simple_State_Wrapper>
+                                Wonton::Simple_State_Wrapper,
+                                Wonton::Simple_State_Wrapper,
+                                double>
       interpolator(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper,
                    num_tols);
 
@@ -740,7 +750,9 @@ TEST(Interpolate_1st_Order, Node_Ctr_Const_3D) {
   Portage::Interpolate_1stOrder<3, Wonton::Entity_kind::NODE,
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_Mesh_Wrapper,
-                                Wonton::Simple_State_Wrapper>
+                                Wonton::Simple_State_Wrapper,
+                                Wonton::Simple_State_Wrapper,
+                                double>
       interpolator(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper,
                    num_tols);
 
