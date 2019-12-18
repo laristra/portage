@@ -83,7 +83,8 @@ class Interpolate_3rdOrder {
 
   void set_interpolation_variable(std::string const & interp_var_name,
                                   Limiter_type limiter_type = NOLIMITER,
-                                  Boundary_Limiter_type boundary_limiter_type = BND_NOLIMITER) {
+                                  Boundary_Limiter_type boundary_limiter_type = BND_NOLIMITER,
+                                  Portage::vector<Vector<D>>* gradients = nullptr) {
     interp_var_name_ = interp_var_name;
 
     // Extract the field data from the statemanager
@@ -113,7 +114,6 @@ class Interpolate_3rdOrder {
                        quadfits_.begin(), limqfit);
   }
 
-
   /*!
     @brief Functor to do the actual interpolate calculation
     @param[in] cells_and_weights A pair of two vectors
@@ -140,6 +140,8 @@ class Interpolate_3rdOrder {
               << std::endl;
     return 0.;
   }
+
+  constexpr static int order = 3;
 
  private:
   SourceMeshType const & source_mesh_;
@@ -199,7 +201,8 @@ class Interpolate_3rdOrder<
 
   void set_interpolation_variable(std::string const & interp_var_name,
                                   Limiter_type limiter_type = NOLIMITER,
-                                  Boundary_Limiter_type boundary_limiter_type = BND_NOLIMITER) {
+                                  Boundary_Limiter_type boundary_limiter_type = BND_NOLIMITER,
+                                  Portage::vector<Vector<D>>* gradients = nullptr) {
 
     interp_var_name_ = interp_var_name;
 
@@ -227,7 +230,6 @@ class Interpolate_3rdOrder<
     Portage::transform(source_mesh_.begin(Entity_kind::CELL), source_mesh_.end(Entity_kind::CELL),
                        quadfits_.begin(), limqfit);
   }
-
 
   /// Copy constructor (disabled)
   //  Interpolate_3rdOrder(const Interpolate_3rdOrder &) = delete;
@@ -324,6 +326,8 @@ class Interpolate_3rdOrder<
     return totalval;
   }
 
+  constexpr static int order = 3;
+
  private:
   SourceMeshType const & source_mesh_;
   TargetMeshType const & target_mesh_;
@@ -386,7 +390,8 @@ class Interpolate_3rdOrder<
 
   void set_interpolation_variable(std::string const & interp_var_name,
                                   Limiter_type limiter_type = NOLIMITER,
-                                  Boundary_Limiter_type boundary_limiter_type = BND_NOLIMITER) {
+                                  Boundary_Limiter_type boundary_limiter_type = BND_NOLIMITER,
+                                  Portage::vector<Vector<D>>* gradients = nullptr) {
 
     interp_var_name_ = interp_var_name;
 
@@ -506,6 +511,8 @@ class Interpolate_3rdOrder<
 
     return totalval;
   }
+
+  constexpr static int order = 3;
 
  private:
   SourceMeshType const & source_mesh_;

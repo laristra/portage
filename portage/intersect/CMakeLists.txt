@@ -9,6 +9,7 @@ Please see the license file at the root of this repository, or at:
 set(intersect_HEADERS
         clipper.hpp
         intersectClipper.h
+        intersect_boxes.h
         intersect_polys_r2d.h
         intersect_r2d.h
         intersect_polys_r3d.h
@@ -35,6 +36,11 @@ if (ENABLE_UNIT_TESTS)
                 LIBRARIES portage ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
                 POLICY MPI)
     endif (Jali_DIR)
+
+    cinch_add_unit(intersect_boxes
+            SOURCES test/test_intersect_boxes.cc
+            LIBRARIES wonton
+            POLICY SERIAL)
 
     cinch_add_unit(intersect_r2d
             SOURCES intersect_r2d_test.cc

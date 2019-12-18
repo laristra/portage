@@ -76,7 +76,12 @@ namespace Portage {
   Journal on Scientific and Statistical Computing, Vol. 8, No. 3,
   pp. 305-321, 1987.
 
-  @todo Template on variable type??
+
+  Type T must support +, += operators. It must also support *
+  operators with a scalar operand. Finally, it must support
+  initialization to null values using the syntax T(0.0)
+
+  We could enforce these requirements using SFINAE
 
 */
 
@@ -85,12 +90,14 @@ template<int D,
          typename SourceMeshType,
          typename TargetMeshType,
          typename SourceStateType,
-         typename TargetStateType = SourceStateType,
+         typename TargetStateType,
+         typename T,
          template<class, int, class, class>
            class InterfaceReconstructorType = DummyInterfaceReconstructor,
          class Matpoly_Splitter = void,
          class Matpoly_Clipper = void,
-         class CoordSys = Wonton::DefaultCoordSys>
+         class CoordSys = Wonton::DefaultCoordSys
+         >
 class Interpolate_1stOrder {
 
 #ifdef HAVE_TANGRAM
@@ -164,8 +171,7 @@ class Interpolate_1stOrder {
   // uniform interface
 
   void set_interpolation_variable(std::string const & interp_var_name,
-                                  Limiter_type limtype=NOLIMITER,
-                                  Boundary_Limiter_type bnd_limtype=BND_NOLIMITER) {
+                                  Portage::vector<Wonton::Vector<D>>* gradients = nullptr) {
     interp_var_name_ = interp_var_name;
     field_type_ = source_state_.field_type(Entity_kind::CELL, interp_var_name);
     if (field_type_ == Field_type::MESH_FIELD)
@@ -191,19 +197,21 @@ class Interpolate_1stOrder {
 
   */
 
-  double operator() (int const targetEntityId,
+  T operator() (int const targetEntityId,
                      std::vector<Weights_t> const & sources_and_weights) const {
     std::cerr << "Interpolation operator not implemented for this entity type"
               << std::endl;
-    return 0.0;
+    return T(0.0);
   }
+  
+  constexpr static int order = 1;
 
  private:
   SourceMeshType const & source_mesh_;
   TargetMeshType const & target_mesh_;
   SourceStateType const & source_state_;
   std::string interp_var_name_;
-  double const * source_vals_;
+  T const * source_vals_;
   int matid_ = 0;
   Field_type field_type_ = Field_type::UNKNOWN_TYPE_FIELD;
   NumericTolerances_t num_tols_;
@@ -224,6 +232,7 @@ template<int D,
          typename TargetMeshType,
          typename SourceStateType,
          typename TargetStateType,
+         typename T,
          template<class, int, class, class> class InterfaceReconstructorType,
          class Matpoly_Splitter,
          class Matpoly_Clipper,
@@ -232,6 +241,7 @@ class Interpolate_1stOrder<
   D, Entity_kind::CELL,
   SourceMeshType, TargetMeshType,
   SourceStateType, TargetStateType,
+  T,
   InterfaceReconstructorType,
   Matpoly_Splitter, Matpoly_Clipper, CoordSys> {
 
@@ -314,8 +324,7 @@ class Interpolate_1stOrder<
   // uniform interface
 
   void set_interpolation_variable(std::string const & interp_var_name,
-                                  Limiter_type limtype = NOLIMITER,
-                                  Boundary_Limiter_type bnd_limtype=BND_NOLIMITER) {
+                                  Portage::vector<Wonton::Vector<D>>* gradients = nullptr) {
     interp_var_name_ = interp_var_name;
     field_type_ = source_state_.field_type(Entity_kind::CELL, interp_var_name);
     if (field_type_ == Field_type::MESH_FIELD)
@@ -324,6 +333,7 @@ class Interpolate_1stOrder<
     else
       source_state_.mat_get_celldata(interp_var_name, matid_, &source_vals_);
   }  // set_interpolation_variable
+
 
   /*!
     @brief Functor to do the actual interpolation.
@@ -341,16 +351,16 @@ class Interpolate_1stOrder<
 
   */
 
-  double operator() (int const targetCellID,
+  T operator() (int const targetCellID,
                      std::vector<Weights_t> const & sources_and_weights) const
   {
     int nsrccells = sources_and_weights.size();
-    if (!nsrccells) return 0.0;
+    if (!nsrccells) return T(0.0);
 
     // contribution of the source cell is its field value weighted by
     // its "weight" (in this case, its 0th moment/area/volume)
 
-    double val = 0.0;
+    T val(0.0);
     double wtsum0 = 0.0;
     double vol = target_mesh_.cell_volume(targetCellID);
 
@@ -385,20 +395,24 @@ class Interpolate_1stOrder<
     // target mesh boundaries. IF THERE IS A MISMATCH, THIS WILL
     // PRESERVE CONSTANT VALUES BUT NOT BE CONSERVATIVE. THEN WE HAVE
     // TO DO A SEMI-LOCAL OR GLOBAL REPAIR.
+
+    // We use the * operator instead of / so as to reduce the number
+    // of requirements on generic variable type
+    
     if (nsummed)
-      val /= wtsum0;
-    else
-      val = 0.0;
+      val *= (1.0/wtsum0);
 
     return val;
   }  // operator()
+  
+  constexpr static int order = 1;
 
  private:
   SourceMeshType const & source_mesh_;
   TargetMeshType const & target_mesh_;
   SourceStateType const & source_state_;
   std::string interp_var_name_;
-  double const * source_vals_;
+  T const * source_vals_;
   int matid_ = 0;
   Field_type field_type_ = Field_type::UNKNOWN_TYPE_FIELD;
   NumericTolerances_t num_tols_;
@@ -422,6 +436,7 @@ template<int D,
          typename TargetMeshType,
          typename SourceStateType,
          typename TargetStateType,
+         typename T,
          template<class, int, class, class> class InterfaceReconstructorType,
          class Matpoly_Splitter,
          class Matpoly_Clipper,
@@ -430,6 +445,7 @@ class Interpolate_1stOrder<
   D, Entity_kind::NODE,
   SourceMeshType, TargetMeshType,
   SourceStateType, TargetStateType,
+  T,
   InterfaceReconstructorType,
   Matpoly_Splitter, Matpoly_Clipper, CoordSys> {
 
@@ -503,8 +519,7 @@ class Interpolate_1stOrder<
   // uniform interface
 
   void set_interpolation_variable(std::string const & interp_var_name,
-                                  Limiter_type limtype = NOLIMITER,
-                                  Boundary_Limiter_type bnd_limtype=BND_NOLIMITER) {
+                                  Portage::vector<Wonton::Vector<D>>* gradients = nullptr) {
     interp_var_name_ = interp_var_name;
     field_type_ = source_state_.field_type(Entity_kind::NODE, interp_var_name);
     if (field_type_ == Field_type::MESH_FIELD)
@@ -515,6 +530,7 @@ class Interpolate_1stOrder<
       std::cerr << "Cannot remap NODE-centered multi-material data" << "\n";
     }
   }  // set_interpolation_variable
+
 
   /*!
     @brief Functor to do the actual interpolation.
@@ -532,20 +548,20 @@ class Interpolate_1stOrder<
 
   */
 
-  double operator() (int const targetNodeID,
-                     std::vector<Weights_t> const & sources_and_weights) const
+  T operator() (int const targetNodeID,
+                std::vector<Weights_t> const & sources_and_weights) const
   {
-    if (field_type_ != Field_type::MESH_FIELD) return 0.0;
+    if (field_type_ != Field_type::MESH_FIELD) return T(0.0);
 
     int nsrcdualcells = sources_and_weights.size();
-    if (!nsrcdualcells) return 0.0;
+    if (!nsrcdualcells) return T(0.0);
 
     // contribution of the source node (dual cell) is its field value
     // weighted by its "weight" (in this case, the 0th
     // moment/area/volume of its intersection with the target dual cell)
     double vol = target_mesh_.dual_cell_volume(targetNodeID);
 
-    double val = 0.0;
+    T val(0.0);
     double wtsum0 = 0.0;
     int nsummed = 0;
     for (auto const& wt : sources_and_weights) {
@@ -566,20 +582,23 @@ class Interpolate_1stOrder<
     // PRESERVE CONSTANT VALUES BUT NOT BE CONSERVATIVE. THEN WE HAVE
     // TO DO A SEMI-LOCAL OR GLOBAL REPAIR.
 
+    // We use the * operator instead of / so as to reduce the number
+    // of requirements on generic variable type
+    
     if (nsummed)
-      val /= wtsum0;
-    else
-      val = 0.0;
+      val *= (1.0/wtsum0);
 
     return val;
   }  // operator()
+
+  constexpr static int order = 1;
 
  private:
   SourceMeshType const & source_mesh_;
   TargetMeshType const & target_mesh_;
   SourceStateType const & source_state_;
   std::string interp_var_name_;
-  double const * source_vals_;
+  T const * source_vals_;
   int matid_ = 0;
   Field_type field_type_ = Field_type::UNKNOWN_TYPE_FIELD;
   NumericTolerances_t num_tols_;

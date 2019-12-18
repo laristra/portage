@@ -584,12 +584,14 @@ void remap<2>(std::string field, int nb_parts,
 
   // use the right interpolator according to the requested order of remap.
   auto interpolate = [&](auto* current_part) {
+    Portage::vector<Wonton::Vector<2>> *gradients = nullptr;
+    auto const source_part = current_part->source();
+
     switch (params.order) {
       case 1: 
       
         remapper.interpolate_mesh_var<double, Portage::Interpolate_1stOrder>(
-          field, field, weights, lower_bound, upper_bound,
-          params.limiter, params.bnd_limiter, current_part
+          field, field, weights, lower_bound, upper_bound, current_part
         );
               
         // test for mismatch and compute volumes
@@ -602,11 +604,12 @@ void remap<2>(std::string field, int nb_parts,
 
       break;
 
-      case 2: 
-      
+      case 2: *gradients = remapper.compute_source_gradient(field, params.limiter,
+                                                            params.bnd_limiter,0,
+                                                            &source_part);
+
         remapper.interpolate_mesh_var<double, Portage::Interpolate_2ndOrder>(
-          field, field, weights, lower_bound, upper_bound,
-          params.limiter, params.bnd_limiter, current_part
+          field, field, weights, lower_bound, upper_bound, current_part, gradients
         );
         
         // test for mismatch and compute volumes
@@ -690,12 +693,14 @@ void remap<3>(std::string field, int nb_parts,
 
   // use the right interpolator according to the requested order of remap.
   auto interpolate = [&](auto* current_part) {
+    Portage::vector<Wonton::Vector<3>> gradients;
+
     switch (params.order) {
       case 1: 
       
         remapper.interpolate_mesh_var<double, Portage::Interpolate_1stOrder>(
           field, field, weights, lower_bound, upper_bound,
-          params.limiter, params.bnd_limiter, current_part
+          current_part
         );
               
         // test for mismatch and compute volumes
@@ -706,13 +711,13 @@ void remap<3>(std::string field, int nb_parts,
           params.tolerance, params.fix_iter,
           params.partial_fixup, params.empty_fixup);
 
-      break;
+      case 2: gradients = remapper.compute_source_gradient(field, params.limiter,
+                                                           params.bnd_limiter,0,
+                                                           &(current_part->source()));
 
-      case 2: 
-      
         remapper.interpolate_mesh_var<double, Portage::Interpolate_2ndOrder>(
           field, field, weights, lower_bound, upper_bound,
-          params.limiter, params.bnd_limiter, current_part
+          current_part, &gradients
         );
         
         // test for mismatch and compute volumes

@@ -7,8 +7,7 @@
 #ifndef PORTAGE_CORE_DRIVER_H_
 #define PORTAGE_CORE_DRIVER_H_
 
-#include <sys/time.h>
-
+#include <ctime>
 #include <algorithm>
 #include <vector>
 #include <iterator>
@@ -19,12 +18,13 @@
 #include <memory>
 #include <limits>
 
+
 #ifdef HAVE_TANGRAM
 #include "tangram/driver/driver.h"
 #endif
 
 #include "portage/intersect/dummy_interface_reconstructor.h"
-
+#include <portage/interpolate/gradient.h>
 #include "portage/support/portage.h"
 #include "wonton/support/Point.h"
 #include "wonton/support/CoordinateSystem.h"
@@ -188,6 +188,29 @@ class CoreDriverBase {
     return derived_class_ptr->template intersect_materials<Intersect>(intersection_candidates);
   }
 
+  /**
+   * @brief Compute the gradient field of the given variable on source mesh.
+   *
+   * @tparam ONWHAT: entity kind (cell or node).
+   * @param field_name: the variable name.
+   * @param limiter_type: gradient limiter to use on internal regions.
+   * @param boundary_limiter_type: gradient limiter to use on boundary.
+   * @param source_part: the source mesh part to consider if any.
+   */
+  template<Entity_kind ONWHAT>
+  Portage::vector<Vector<D>> compute_source_gradient(
+    std::string const field_name,
+    Limiter_type limiter_type = NOLIMITER,
+    Boundary_Limiter_type boundary_limiter_type = BND_NOLIMITER,
+    int material_id = 0,
+    const Part<SourceMesh, SourceState>* source_part = nullptr) {
+
+    assert(ONWHAT == onwhat());
+    auto derived_class_ptr = static_cast<CoreDriverType<ONWHAT> *>(this);
+    return derived_class_ptr->compute_source_gradient(field_name, limiter_type,
+                                               boundary_limiter_type,
+                                               material_id, source_part);
+  }
 
   /*!
     Interpolate a mesh variable of type T residing on entity kind ONWHAT using
@@ -207,34 +230,28 @@ class CoreDriverBase {
 
     @param[in] upper_bound  Upper bound for variable
 
-    @param[in] limiter      Limiter to use for second order reconstruction
-
-    @param[in] bnd_limiter  Boundary limiter to use for second order reconstruction
-
   */
   
   template<typename T = double,
            Entity_kind ONWHAT,
-           template<int, Entity_kind, class, class, class, class,
+           template<int, Entity_kind, class, class, class, class, class,
                     template <class, int, class, class> class,
                     class, class, class> class Interpolate
            >
   void interpolate_mesh_var(std::string srcvarname, std::string trgvarname,
                             Portage::vector<std::vector<Weights_t>> const& sources_and_weights,
                             T lower_bound, T upper_bound,
-                            Limiter_type limiter,
-                            Boundary_Limiter_type bnd_limiter,
-                            PartPair<D, 
-                              SourceMesh, SourceState,
-                              TargetMesh, TargetState>* parts_pair = nullptr) {
+                            const PartPair<D, SourceMesh, SourceState,
+                                              TargetMesh, TargetState>* parts_pair = nullptr,
+                            Portage::vector<Vector<D>>* gradients = nullptr) {
     assert(ONWHAT == onwhat());
     auto derived_class_ptr = static_cast<CoreDriverType<ONWHAT> *>(this);
     derived_class_ptr->
         template interpolate_mesh_var<T, Interpolate>(srcvarname, trgvarname,
                                                       sources_and_weights,
                                                       lower_bound, upper_bound,
-                                                      limiter, bnd_limiter,
-                                                      parts_pair);
+                                                      parts_pair,
+                                                      gradients);
   }
 
 
@@ -248,23 +265,17 @@ class CoreDriverBase {
     @param[in] lower_bound  Lower bound for variable
 
     @param[in] upper_bound  Upper bound for variable
-
-    @param[in] limiter      Limiter to use for second order reconstruction
-
-    @param[in] bnd_limiter  Boundary limiter to use for second order reconstruction
-
   */
   
   template <typename T = double,
-            template<int, Entity_kind, class, class, class, class,
+            template<int, Entity_kind, class, class, class, class, class,
                      template <class, int, class, class> class,
                      class, class, class> class Interpolate
             >
   void interpolate_mat_var(std::string srcvarname, std::string trgvarname,
                            std::vector<Portage::vector<std::vector<Weights_t>>> const& sources_and_weights_by_mat,
                            T lower_bound, T upper_bound,
-                           Limiter_type limiter,
-                           Boundary_Limiter_type bnd_limiter) {
+                           Portage::vector<Vector<D>>* gradients = nullptr) {
 
     assert(onwhat() == CELL);
     auto derived_class_ptr = static_cast<CoreDriverType<CELL> *>(this);
@@ -273,7 +284,7 @@ class CoreDriverBase {
                                                       trgvarname,
                                                       sources_and_weights_by_mat,
                                                       lower_bound, upper_bound,
-                                                      limiter, bnd_limiter);
+                                                      gradients);
   }
 
   /*!
@@ -346,6 +357,12 @@ class CoreDriver : public CoreDriverBase<D,
                                          Matpoly_Splitter,
                                          Matpoly_Clipper,
                                          CoordSys> {
+
+  // useful alias
+  using Gradient = Limited_Gradient<D, ONWHAT, SourceMesh, SourceState,
+                                    InterfaceReconstructorType,
+                                    Matpoly_Splitter, Matpoly_Clipper, CoordSys>;
+
  public:
   /*!
     @brief Constructor for the CORE remap driver.
@@ -709,6 +726,108 @@ class CoreDriver : public CoreDriverBase<D,
 
 
   /**
+   * @brief Compute the gradient field of the given variable on source mesh.
+   *
+   * @param field_name: the variable name.
+   * @param limiter_type: gradient limiter to use on internal regions.
+   * @param boundary_limiter_type: gradient limiter to use on boundary.
+   * @param source_part: the source mesh part to consider if any.
+   */
+  Portage::vector<Vector<D>> compute_source_gradient(
+    std::string const field_name,
+    Limiter_type limiter_type = NOLIMITER,
+    Boundary_Limiter_type boundary_limiter_type = BND_NOLIMITER,
+    int material_id = 0,
+    const Part<SourceMesh, SourceState>* source_part = nullptr) const {
+
+    // enable part-by-part only for cell-based remap
+    auto const field_type = source_state_.field_type(ONWHAT, field_name);
+
+    // multi-material remap makes only sense on cell-centered fields.
+    bool const multimat =
+      ONWHAT == Entity_kind::CELL and
+      field_type == Field_type::MULTIMATERIAL_FIELD;
+
+    int size = 0;
+    std::vector<int> mat_cells;
+
+    if (multimat) {
+      if (interface_reconstructor_) {
+        source_state_.mat_get_cells(material_id, &mat_cells);
+        size = mat_cells.size();
+      }
+      else
+        throw std::runtime_error("interface reconstructor not set");
+    } else /* single material */ {
+      size = source_mesh_.num_entities(ONWHAT);
+    }
+
+    // instantiate the right kernel according to entity kind (cell/node),
+    // as well as source and target meshes and states types.
+#if HAVE_TANGRAM
+    Gradient kernel(source_mesh_, source_state_, field_name,
+                    limiter_type, boundary_limiter_type,
+                    interface_reconstructor_, source_part);
+#else
+    Gradient kernel(source_mesh_, source_state_, variable_name,
+                    limiter_type, boundary_limiter_type, source_part);
+#endif
+
+    // create the field
+    Portage::vector<Vector<D>> gradient_field(size);
+
+    // populate it by invoking the kernel on each source entity.
+    if (multimat) {
+      kernel.set_material(material_id);
+      Portage::transform(mat_cells.begin(),
+                         mat_cells.end(),
+                         gradient_field.begin(), kernel);
+    } else {
+      Portage::transform(source_mesh_.begin(ONWHAT),
+                         source_mesh_.end(ONWHAT),
+                         gradient_field.begin(), kernel);
+    }
+
+    return gradient_field;
+  }
+
+
+  /*! 
+    Check mismatch between meshes
+
+    @param[in] sources_and_weights Intersection sources and moments
+    (vols, centroids)
+
+    @returns   Whether the meshes are mismatched
+  */
+
+  bool
+  check_mesh_mismatch(Portage::vector<std::vector<Weights_t>> const& source_weights) {
+
+    // Instantiate mismatch fixer for later use
+    if (not mismatch_fixer_) {
+      // Intel 18.0.1 does not recognize std::make_unique even with -std=c++14 flag *ugh*
+      // mismatch_fixer_ = std::make_unique<MismatchFixer<D, ONWHAT,
+      //                                                  SourceMesh, SourceState,
+      //                                                  TargetMesh,  TargetState>
+      //                                    >
+      //     (source_mesh_, source_state_, target_mesh_, target_state_,
+      //      source_weights, executor_);
+
+      mismatch_fixer_ = std::unique_ptr<MismatchFixer<D, ONWHAT,
+                                                      SourceMesh, SourceState,
+                                                      TargetMesh,  TargetState>
+                                        >(new MismatchFixer<D, ONWHAT,
+                                          SourceMesh, SourceState,
+                                          TargetMesh,  TargetState>
+                                          (source_mesh_, source_state_, target_mesh_, target_state_,
+                                           source_weights, executor_));
+    }
+
+    return mismatch_fixer_->has_mismatch();
+  }
+
+  /**
    * @brief Interpolate mesh variable.
    *
    * @param[in] srcvarname          source mesh variable to remap
@@ -716,23 +835,19 @@ class CoreDriver : public CoreDriverBase<D,
    * @param[in] sources_and_weights weights for mesh-mesh interpolation
    * @param[in] lower_bound         lower bound of variable value 
    * @param[in] upper_bound         upper bound of variable value 
-   * @param[in] limiter             limiter to use
-   * @param[in] bnd_limiter         boundary limiter to use
    * @param[in] partition           source and target entities list for part-by-part
    */
   template<typename T = double,
-    template<int, Entity_kind, class, class, class, class,
+           template<int, Entity_kind, class, class, class, class, class,
     template<class, int, class, class> class,
     class, class, class> class Interpolate
   >
   void interpolate_mesh_var(std::string srcvarname, std::string trgvarname,
                             Portage::vector<std::vector<Weights_t>> const& sources_and_weights,
                             T lower_bound, T upper_bound,
-                            Limiter_type limiter = DEFAULT_LIMITER,
-                            Boundary_Limiter_type bnd_limiter = DEFAULT_BND_LIMITER,
-                            const PartPair<D, 
-                                           SourceMesh, SourceState,
-                                           TargetMesh, TargetState> *const partition = nullptr) {
+                            const PartPair<D, SourceMesh, SourceState,
+                                              TargetMesh, TargetState>* partition = nullptr,
+                            Portage::vector<Vector<D>>* gradients = nullptr) {
 
     if (source_state_.get_entity(srcvarname) != ONWHAT) {
       std::cerr << "Variable " << srcvarname << " not defined on Entity_kind "
@@ -740,13 +855,16 @@ class CoreDriver : public CoreDriverBase<D,
       return;
     }
 
-    // useful shortcuts
-    using interpolator_t =
-      Interpolate<D, ONWHAT, SourceMesh, TargetMesh, SourceState, TargetState,
-        InterfaceReconstructorType, Matpoly_Splitter, Matpoly_Clipper, CoordSys>;
 
-    interpolator_t interpolator(source_mesh_, target_mesh_, source_state_, num_tols_, partition);
-    interpolator.set_interpolation_variable(srcvarname, limiter, bnd_limiter);
+    using Interpolator = Interpolate<D, ONWHAT,
+                                     SourceMesh, TargetMesh,
+                                     SourceState, TargetState,
+                                     T,
+                                     InterfaceReconstructorType,
+                                     Matpoly_Splitter, Matpoly_Clipper, CoordSys>;
+
+    Interpolator interpolator(source_mesh_, target_mesh_, source_state_, num_tols_, partition);
+    interpolator.set_interpolation_variable(srcvarname, gradients);
 
     // get a handle to a memory location where the target state
     // would like us to write this material variable into.
@@ -846,45 +964,46 @@ class CoreDriver : public CoreDriverBase<D,
 
     @param[in] trgvarname  Material variable name on the target mesh
 
-    @param[in] limiter     Limiter to use for variable
-
     @param[in] bnd_limiter Boundary limiter to use for variable
 
     @param[in] lower_bound Lower bound of variable value
 
     @param[in] upper_bound Upper bound of variable value
-
   */
 
   template<typename T = double,
-           template<int, Entity_kind, class, class, class, class,
+           template<int, Entity_kind, class, class, class, class, class,
                     template<class, int, class, class> class,
                     class, class, class> class Interpolate
            >
   void interpolate_mat_var(std::string srcvarname, std::string trgvarname,
                            std::vector<Portage::vector<std::vector<Weights_t>>> const& sources_and_weights_by_mat,
                            T lower_bound, T upper_bound,
-                           Limiter_type limiter = DEFAULT_LIMITER,
-                           Boundary_Limiter_type bnd_limiter = DEFAULT_BND_LIMITER
-                           ) {
-    
-    Interpolate<D, ONWHAT, SourceMesh, TargetMesh, SourceState, TargetState,
-                InterfaceReconstructorType, Matpoly_Splitter, Matpoly_Clipper, CoordSys>
-        interpolator(source_mesh_, target_mesh_, source_state_, num_tols_, interface_reconstructor_);
-      
-    int nmats = source_state_.num_materials();
+                           Portage::vector<Vector<D>>* gradients = nullptr) {
 
+    using Interpolator = Interpolate<D, ONWHAT,
+                                     SourceMesh, TargetMesh,
+                                     SourceState, TargetState,
+                                     T,
+                                     InterfaceReconstructorType,
+                                     Matpoly_Splitter, Matpoly_Clipper, CoordSys>;
+
+    Interpolator interpolator(source_mesh_, target_mesh_,
+                              source_state_, num_tols_,
+                              interface_reconstructor_);
+      
+    int const nmats = source_state_.num_materials();
 
     for (int m = 0; m < nmats; m++) {
 
       interpolator.set_material(m);    // We have to do this so we know
-      //                                 // which material values we have
-      //                                 // to grab from the source state
+      //                               // which material values we have
+      //                               // to grab from the source state
 
+      auto mat_grad = (gradients != nullptr ? &(gradients[m]) : nullptr);
       // FEATURE ;-)  Have to set interpolation variable AFTER setting 
       // the material for multimaterial variables
-
-      interpolator.set_interpolation_variable(srcvarname, limiter, bnd_limiter);
+      interpolator.set_interpolation_variable(srcvarname, mat_grad);
 
       // if the material has no cells on this partition, then don't bother
       // interpolating MM variables
@@ -1091,8 +1210,7 @@ make_core_driver(Entity_kind onwhat,
                                              executor)
                                                    );
     default:
-      std::cerr << "Remapping on " << Wonton::to_string(onwhat) <<
-          " not implemented\n";
+      throw std::runtime_error("Remapping on "+Wonton::to_string(onwhat)+" not implemented");
   }
 }  // make_core_driver
 

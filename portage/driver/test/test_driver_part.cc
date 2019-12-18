@@ -398,11 +398,19 @@ TEST_F(PartOrderTwoTest, PiecewiseLinearField) {
   auto weights = remapper.intersect_meshes<Portage::IntersectR2D>(candidates);
 
   for (int i = 0; i < 2; ++i) {
-  
+    // test for mismatch and compute volumes
+    parts[i].check_mismatch(weights);
+    assert(not parts[i].has_mismatch());
+
+    auto const& source_part = parts[i].source();
+    auto gradients = remapper.compute_source_gradient("density",
+                                                      Portage::NOLIMITER,
+                                                      Portage::BND_NOLIMITER,
+                                                      0, &source_part);
+
     // interpolate density for current part
     remapper.interpolate_mesh_var<double, Portage::Interpolate_2ndOrder>(
-      "density", "density", weights, lower_bound, upper_bound,
-      Portage::NOLIMITER, Portage::BND_NOLIMITER, &(parts[i])
+      "density", "density", weights, lower_bound, upper_bound, &(parts[i]), &gradients
     );
 
     // test for mismatch and compute volumes
