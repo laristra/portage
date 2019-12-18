@@ -928,9 +928,9 @@ class CoreDriver : public CoreDriverBase<D,
 
 
     using Interpolator = Interpolate<D, ONWHAT,
-                                     T,
                                      SourceMesh, TargetMesh,
                                      SourceState, TargetState,
+                                     T,
                                      InterfaceReconstructorType,
                                      Matpoly_Splitter, Matpoly_Clipper, CoordSys>;
 
@@ -1087,9 +1087,9 @@ class CoreDriver : public CoreDriverBase<D,
                            Portage::vector<Vector<D>>* gradients = nullptr) {
 
     using Interpolator = Interpolate<D, ONWHAT,
-                                     T,
                                      SourceMesh, TargetMesh,
                                      SourceState, TargetState,
+                                     T,
                                      InterfaceReconstructorType,
                                      Matpoly_Splitter, Matpoly_Clipper, CoordSys>;
 

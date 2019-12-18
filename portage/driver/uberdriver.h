@@ -653,6 +653,7 @@ class UberDriver {
     using Interpolator = Interpolate<D, ONWHAT,
                                      SourceMesh, TargetMesh,
                                      SourceState, TargetState,
+                                     T,
                                      InterfaceReconstructorType,
                                      Matpoly_Splitter, Matpoly_Clipper,
                                      CoordSys>;
@@ -739,6 +740,7 @@ class UberDriver {
     using Interpolator = Interpolate<D, CELL,
                                      SourceMesh, TargetMesh,
                                      SourceState, TargetState,
+                                     T,
                                      InterfaceReconstructorType,
                                      Matpoly_Splitter, Matpoly_Clipper,
                                      CoordSys>;

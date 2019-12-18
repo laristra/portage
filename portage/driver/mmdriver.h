@@ -500,6 +500,7 @@ class MMDriver {
     Interpolate<D, onwhat,
                 NewSourceMesh, TargetMesh_Wrapper,
                 NewSourceState, TargetState_Wrapper,
+                double,
                 InterfaceReconstructorType,
                 Matpoly_Splitter, Matpoly_Clipper>& interpolate,
 #if HAVE_TANGRAM
@@ -512,6 +513,7 @@ class MMDriver {
     int const order = Interpolate<D, onwhat,
                                   NewSourceMesh, TargetMesh_Wrapper,
                                   NewSourceState, TargetState_Wrapper,
+                                  double,
                                   InterfaceReconstructorType,
                                   Matpoly_Splitter, Matpoly_Clipper>::order;
 
@@ -967,6 +969,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
   using Interpolator = Interpolate<D, onwhat,
                                    SourceMesh_Wrapper2, TargetMesh_Wrapper,
                                    SourceState_Wrapper2, TargetState_Wrapper,
+                                   double,
                                    InterfaceReconstructorType,
                                    Matpoly_Splitter, Matpoly_Clipper>;
 
@@ -984,7 +987,8 @@ int MMDriver<Search, Intersect, Interpolate, D,
 
   using Interpolator = Interpolate<D, onwhat,
                                    SourceMesh_Wrapper2, TargetMesh_Wrapper,
-                                   SourceState_Wrapper2, TargetState_Wrapper>;
+                                   SourceState_Wrapper2, TargetState_Wrapper,
+                                   double>;
 
   Intersector intersect(source_mesh2, source_state2, target_mesh_, num_tols_);
 
