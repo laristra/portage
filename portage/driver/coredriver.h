@@ -740,6 +740,8 @@ class CoreDriver : public CoreDriverBase<D,
     int material_id = 0,
     const Part<SourceMesh, SourceState>* source_part = nullptr) const {
 
+    int size = 0;
+#if HAVE_TANGRAM
     // enable part-by-part only for cell-based remap
     auto const field_type = source_state_.field_type(ONWHAT, field_name);
 
@@ -748,7 +750,6 @@ class CoreDriver : public CoreDriverBase<D,
       ONWHAT == Entity_kind::CELL and
       field_type == Field_type::MULTIMATERIAL_FIELD;
 
-    int size = 0;
     std::vector<int> mat_cells;
 
     if (multimat) {
@@ -759,8 +760,11 @@ class CoreDriver : public CoreDriverBase<D,
       else
         throw std::runtime_error("interface reconstructor not set");
     } else /* single material */ {
+#endif
       size = source_mesh_.num_entities(ONWHAT);
+#if HAVE_TANGRAM
     }
+#endif
 
     // instantiate the right kernel according to entity kind (cell/node),
     // as well as source and target meshes and states types.
@@ -769,7 +773,7 @@ class CoreDriver : public CoreDriverBase<D,
                     limiter_type, boundary_limiter_type,
                     interface_reconstructor_, source_part);
 #else
-    Gradient kernel(source_mesh_, source_state_, variable_name,
+    Gradient kernel(source_mesh_, source_state_, field_name,
                     limiter_type, boundary_limiter_type, source_part);
 #endif
 
@@ -777,17 +781,20 @@ class CoreDriver : public CoreDriverBase<D,
     Portage::vector<Vector<D>> gradient_field(size);
 
     // populate it by invoking the kernel on each source entity.
+#if HAVE_TANGRAM
     if (multimat) {
       kernel.set_material(material_id);
       Portage::transform(mat_cells.begin(),
                          mat_cells.end(),
                          gradient_field.begin(), kernel);
     } else {
+#endif
       Portage::transform(source_mesh_.begin(ONWHAT),
                          source_mesh_.end(ONWHAT),
                          gradient_field.begin(), kernel);
+#if HAVE_TANGRAM
     }
-
+#endif
     return gradient_field;
   }
 
