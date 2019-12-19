@@ -4,8 +4,6 @@
  * https://github.com/laristra/portage/blob/master/LICENSE
  */
 
-#include <numeric>
-
 #include "gtest/gtest.h"
 
 #ifdef PORTAGE_ENABLE_MPI
