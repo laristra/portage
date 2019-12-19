@@ -422,24 +422,6 @@ class UberDriver {
     return core_driver_serial_[CELL]->template intersect_materials<Intersect>(candidates);
 
   }
-
-
-  /*!
-    @brief Check if meshes are mismatched 
-
-    @tparam ONWHAT on what kind of entity are we checking mismatch
-
-    @param[in] source_weights Intersection moments/weights 
-
-    @returns whether the mesh has mismatch
-  */
-  template<Entity_kind ONWHAT>
-  bool check_mesh_mismatch(Portage::vector<std::vector<Weights_t>> const& source_weights) {
-
-    return core_driver_serial_[ONWHAT]->template check_mesh_mismatch<ONWHAT>(source_weights);
-
-  }
-  
   
  
   /*!

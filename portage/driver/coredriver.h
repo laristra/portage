@@ -791,42 +791,6 @@ class CoreDriver : public CoreDriverBase<D,
     return gradient_field;
   }
 
-
-  /*! 
-    Check mismatch between meshes
-
-    @param[in] sources_and_weights Intersection sources and moments
-    (vols, centroids)
-
-    @returns   Whether the meshes are mismatched
-  */
-
-  bool
-  check_mesh_mismatch(Portage::vector<std::vector<Weights_t>> const& source_weights) {
-
-    // Instantiate mismatch fixer for later use
-    if (not mismatch_fixer_) {
-      // Intel 18.0.1 does not recognize std::make_unique even with -std=c++14 flag *ugh*
-      // mismatch_fixer_ = std::make_unique<MismatchFixer<D, ONWHAT,
-      //                                                  SourceMesh, SourceState,
-      //                                                  TargetMesh,  TargetState>
-      //                                    >
-      //     (source_mesh_, source_state_, target_mesh_, target_state_,
-      //      source_weights, executor_);
-
-      mismatch_fixer_ = std::unique_ptr<MismatchFixer<D, ONWHAT,
-                                                      SourceMesh, SourceState,
-                                                      TargetMesh,  TargetState>
-                                        >(new MismatchFixer<D, ONWHAT,
-                                          SourceMesh, SourceState,
-                                          TargetMesh,  TargetState>
-                                          (source_mesh_, source_state_, target_mesh_, target_state_,
-                                           source_weights, executor_));
-    }
-
-    return mismatch_fixer_->has_mismatch();
-  }
-
   /**
    * @brief Interpolate mesh variable.
    *
