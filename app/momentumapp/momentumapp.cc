@@ -57,7 +57,7 @@ const int CCH = 2;
 void print_usage() {
   std::cout << "Usage: ./momentumapp nx ny method limiter ini_density ini_velocity\n\n"
             << "   source mesh:  nx x ny rectangular cells and covers the unit square\n" 
-            << "   target mesh:  (nx + 1) x (ny + 1) rectangular cells\n\n"
+            << "   target mesh:  (nx + 2) x (ny + 4) rectangular cells\n\n"
             << "   method:       SGH=1, CCH=2\n"
             << "   limiter:      0 - limiter is off, otherwise Barth-Jespersen is used\n\n"
             << "   ini_density:  0 - constant density (1)\n"
@@ -382,7 +382,7 @@ int main(int argc, char** argv) {
   mesh_factory.included_entities(Jali::Entity_kind::ALL_KIND);
 
   auto srcmesh = mesh_factory(0.0, 0.0, lenx, leny, nx, ny);
-  auto trgmesh = mesh_factory(0.0, 0.0, lenx, leny, nx + 1, ny + 1);
+  auto trgmesh = mesh_factory(0.0, 0.0, lenx, leny, nx + 2, ny + 4);
 
   // -- setup mesh wrappers
   Wonton::Jali_Mesh_Wrapper srcmesh_wrapper(*srcmesh);
@@ -646,7 +646,7 @@ int main(int argc, char** argv) {
   auto total_momentum_trg = mr.TotalMomentum(trgmesh_wrapper, mass_trg, ux_trg, uy_trg);
 
   std::cout << "\n=== TARGET data ===" << std::endl;
-  std::cout << "mesh:           " << nx + 1 << " x " << ny + 1 << std::endl;
+  std::cout << "mesh:           " << nx + 2 << " x " << ny + 4 << std::endl;
   std::cout << "total mass:     " << total_mass_trg << " kg" << std::endl;
   std::cout << "total momentum: " << total_momentum_trg << " kg m/s" << std::endl;
   std::cout << "velocity bounds," << " min: " << mr.VelocityMin(ux_trg, uy_trg) 
