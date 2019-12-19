@@ -428,6 +428,7 @@ class MMDriver {
       Wonton::Executor_type const *executor = nullptr
     ) const {
 
+#if HAVE_TANGRAM
       auto const field_type = new_source_state.field_type(onwhat, field_name);
 
       // multi-material remap makes only sense on cell-centered fields.
@@ -445,13 +446,16 @@ class MMDriver {
         } else
           throw std::runtime_error("interface reconstructor not set");
       } else {
-        size = new_source_mesh.num_entities(onwhat);
+#endif
+        int const size = new_source_mesh.num_entities(onwhat);
+#if HAVE_TANGRAM
       }
+#endif
 
       using Gradient = Limited_Gradient<D, onwhat,
-        NewSourceMesh, NewSourceState,
-        InterfaceReconstructorType,
-        Matpoly_Splitter, Matpoly_Clipper>;
+                                        NewSourceMesh, NewSourceState,
+                                        InterfaceReconstructorType,
+                                        Matpoly_Splitter, Matpoly_Clipper>;
 
       // instantiate the right kernel according to entity kind (cell/node),
       // as well as source and target meshes and states types.
@@ -460,7 +464,7 @@ class MMDriver {
                       limiter_type, boundary_limiter_type,
                       interface_reconstructor);
 #else
-      Gradient kernel(source_mesh_, source_state_, variable_name,
+      Gradient kernel(new_source_mesh, new_source_state, field_name,
                     limiter_type, boundary_limiter_type);
 #endif
 
@@ -468,17 +472,20 @@ class MMDriver {
       Portage::vector<Vector<D>> gradient_field(size);
 
       // populate it by invoking the kernel on each source entity.
+#if HAVE_TANGRAM
       if (multimat) {
         kernel.set_material(material_id);
         Portage::transform(mat_cells.begin(),
                            mat_cells.end(),
                            gradient_field.begin(), kernel);
       } else {
+#endif
         Portage::transform(new_source_mesh.begin(onwhat),
                            new_source_mesh.end(onwhat),
                            gradient_field.begin(), kernel);
+#if HAVE_TANGRAM
       }
-
+#endif
       return gradient_field;
     }
 
@@ -525,7 +532,10 @@ class MMDriver {
                                               new_source_mesh, new_source_state,
                                               limiters_.at(field_name),
                                               bnd_limiters_.at(field_name),
-                                              material_id, interface_reconstructor,
+                                              material_id,
+                                              #if HAVE_TANGRAM
+                                                interface_reconstructor,
+                                              #endif
                                               executor);
 
         interpolate.set_interpolation_variable(field_name, gradients); break;
@@ -959,7 +969,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
     interface_reconstructor->reconstruct(executor);
   }
 
-
+#endif
   // Make an intersector which knows about the source state (to be able
   // to query the number of materials, etc) and also knows about the
   // interface reconstructor so that it can retrieve pure material polygons
@@ -975,6 +985,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
                                    InterfaceReconstructorType,
                                    Matpoly_Splitter, Matpoly_Clipper>;
 
+#if HAVE_TANGRAM
   Intersector intersect(source_mesh2, source_state2,
                         target_mesh_, num_tols_,
                         interface_reconstructor);
@@ -984,14 +995,6 @@ int MMDriver<Search, Intersect, Interpolate, D,
                            source_state2,
                            num_tols_, interface_reconstructor);
 #else
-  using Intersector = Intersect<onwhat, SourceMesh_Wrapper2,
-                                SourceState_Wrapper2, TargetMesh_Wrapper>;
-
-  using Interpolator = Interpolate<D, onwhat,
-                                   SourceMesh_Wrapper2, TargetMesh_Wrapper,
-                                   SourceState_Wrapper2, TargetState_Wrapper,
-                                   double>;
-
   Intersector intersect(source_mesh2, source_state2, target_mesh_, num_tols_);
 
   // Get an instance of the desired interpolate algorithm type
