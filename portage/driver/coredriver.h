@@ -803,11 +803,10 @@ class CoreDriver : public CoreDriverBase<D,
     int material_id = 0,
     const Part<SourceMesh, SourceState>* source_part = nullptr) const {
 
+    int size = 0;
 #if HAVE_TANGRAM
     // enable part-by-part only for cell-based remap
     auto const field_type = source_state_.field_type(ONWHAT, field_name);
-
-    int size = 0;
 
     // multi-material remap makes only sense on cell-centered fields.
     bool const multimat =
@@ -825,7 +824,7 @@ class CoreDriver : public CoreDriverBase<D,
         throw std::runtime_error("interface reconstructor not set");
     } else /* single material */ {
 #endif
-      int const size = source_mesh_.num_entities(ONWHAT);
+      size = source_mesh_.num_entities(ONWHAT);
 #if HAVE_TANGRAM
     }
 #endif

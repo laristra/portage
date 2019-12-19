@@ -428,6 +428,7 @@ class MMDriver {
       Wonton::Executor_type const *executor = nullptr
     ) const {
 
+      int size = 0;
 #if HAVE_TANGRAM
       auto const field_type = new_source_state.field_type(onwhat, field_name);
 
@@ -436,7 +437,6 @@ class MMDriver {
         onwhat == Entity_kind::CELL and
         field_type == Field_type::MULTIMATERIAL_FIELD;
 
-      int size = 0;
       std::vector<int> mat_cells;
 
       if (multimat) {
@@ -447,7 +447,7 @@ class MMDriver {
           throw std::runtime_error("interface reconstructor not set");
       } else {
 #endif
-        int const size = new_source_mesh.num_entities(onwhat);
+        size = new_source_mesh.num_entities(onwhat);
 #if HAVE_TANGRAM
       }
 #endif
