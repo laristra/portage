@@ -138,6 +138,12 @@ class MomentumRemap {
   template<class T>
   Wonton::Point<2> VelocityMax(const T& ux, const T& uy);
 
+  template<class T>
+  void ErrorVelocity(const Wonton::Jali_Mesh_Wrapper& mesh,
+                     int ini_method,
+                     const T& ux, const T& uy,
+                     double* l2err, double* l2norm);
+
  private:
   int method_;
 };
@@ -277,6 +283,54 @@ Wonton::Point<2> MomentumRemap::VelocityMax(const T& ux, const T& uy)
     umax[1] = std::max(umax[1], uy[n]);
   }
   return umax;
+}
+
+
+/* ******************************************************************
+* Error in velocity
+****************************************************************** */
+template<class T>
+void MomentumRemap::ErrorVelocity(
+    const Wonton::Jali_Mesh_Wrapper& mesh,
+    int ini_method,
+    const T& ux, const T& uy,
+    double* l2err, double* l2norm)
+{
+  int nrows = (method_ == SGH) ? mesh.num_owned_nodes() : mesh.num_owned_cells();
+  double ux_exact, uy_exact;
+  Wonton::Point<2> xyz;
+
+  *l2err = 0.0;
+  *l2norm = 0.0;
+
+  for (int n = 0; n < nrows; ++n) {
+    if (method_ == SGH)
+      mesh.node_get_coordinates(n, &xyz);
+    else
+      mesh.cell_centroid(n, &xyz);
+
+    if (ini_method == 0) {
+      ux_exact = 1.0;
+      uy_exact = 2.0;
+    } else if (ini_method == 1) {
+      ux_exact = xyz[0];
+      uy_exact = 2.0 * xyz[1];
+    } else if (ini_method == 2) {
+      ux_exact = xyz[0] * xyz[0];
+      uy_exact = 2.0 * xyz[1] * xyz[1];
+    } else if (ini_method == 3) {
+      ux_exact = (xyz[0] < 0.5) ? 1.0 : 2.0;
+      uy_exact = 2.0 * xyz[1] * xyz[1];
+    }
+
+    *l2err += (ux_exact - ux[n]) * (ux_exact - ux[n])
+            + (uy_exact - uy[n]) * (uy_exact - uy[n]);
+
+    *l2norm += ux_exact * ux_exact + uy_exact * uy_exact;
+  }
+
+  *l2err = std::sqrt(*l2err / nrows);
+  *l2norm = std::sqrt(*l2norm / nrows);
 }
 
 
@@ -592,6 +646,7 @@ int main(int argc, char** argv) {
   auto total_momentum_trg = mr.TotalMomentum(trgmesh_wrapper, mass_trg, ux_trg, uy_trg);
 
   std::cout << "\n=== TARGET data ===" << std::endl;
+  std::cout << "mesh:           " << nx + 1 << " x " << ny + 1 << std::endl;
   std::cout << "total mass:     " << total_mass_trg << " kg" << std::endl;
   std::cout << "total momentum: " << total_momentum_trg << " kg m/s" << std::endl;
   std::cout << "velocity bounds," << " min: " << mr.VelocityMin(ux_trg, uy_trg) 
@@ -600,7 +655,12 @@ int main(int argc, char** argv) {
   auto err = total_momentum_trg - total_momentum_src;
   std::cout << "\n=== Conservation error ===" << std::endl;
   std::cout << "in total mass:     " << std::fabs(total_mass_trg - total_mass_src) << std::endl;
-  std::cout << "in total momentum: " << std::sqrt(err[0] * err[0] - err[1] * err[1]) << std::endl;
+  std::cout << "in total momentum: " << std::sqrt(err[0] * err[0] + err[1] * err[1]) << std::endl;
+
+  double l2err, l2norm;
+  mr.ErrorVelocity(trgmesh_wrapper, ini_velocity, ux_trg, uy_trg, &l2err, &l2norm);
+  std::cout << "\n=== Remap error ===" << std::endl;
+  std::cout << "in velocity: l2-err=" << l2err << " l2-norm=" << l2norm << std::endl;
 
   MPI_Finalize();
 }
