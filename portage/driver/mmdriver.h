@@ -564,7 +564,7 @@ class MMDriver {
         distributed = true;
     }
 #endif
-
+#ifdef ENABLE_DEBUG
     if (comm_rank == 0)
       std::cout << "in MMDriver::run()...\n";
 
@@ -572,7 +572,7 @@ class MMDriver {
     std::cout << "Number of target cells in target mesh on rank "
               << comm_rank << ": "
               << numTargetCells << std::endl;
-
+#endif
 
     int nvars = source_target_varname_map_.size();
 
@@ -643,10 +643,11 @@ class MMDriver {
 
       gettimeofday(&end_timeval, 0);
       timersub(&end_timeval, &begin_timeval, &diff_timeval);
+#ifdef ENABLE_DEBUG
       float tot_seconds_dist = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
       std::cout << "Redistribution Time Rank " << comm_rank << " (s): " <<
           tot_seconds_dist << std::endl;
-
+#endif
       // Why is it not able to deduce the template arguments, if I don't specify
       // Flat_Mesh_Wrapper and Flat_State_Wrapper?
 
@@ -874,12 +875,13 @@ int MMDriver<Search, Intersect, Interpolate, D,
                 "Remap implemented only for CELL and NODE variables");
 
 
+#ifdef ENABLE_DEBUG
   int ntarget_ents_owned = target_mesh_.num_entities(onwhat,
                                                      Entity_type::PARALLEL_OWNED);
   std::cout << "Number of target entities of kind " << onwhat <<
       " in target mesh on rank " << comm_rank << ": " <<
       ntarget_ents_owned << std::endl;
-
+#endif
   int ntarget_ents = target_mesh_.num_entities(onwhat, Entity_type::ALL);
 
   float tot_seconds = 0.0, tot_seconds_srch = 0.0,
@@ -1028,13 +1030,15 @@ int MMDriver<Search, Intersect, Interpolate, D,
 
   // INTERPOLATE (one variable at a time)
   gettimeofday(&begin_timeval, 0);
-
   int nvars = src_meshvar_names.size();
-  if (comm_rank == 0)
-    std::cout << "Number of mesh variables on entity kind " << onwhat <<
-        " to remap is " << nvars << std::endl;
+#ifdef ENABLE_DEBUG
+    if (comm_rank == 0){
+      std::cout << "Number of mesh variables on entity kind " << onwhat <<
+          " to remap is " << nvars << std::endl;
+    }
+#endif
 
-  Portage::vector<Vector<D>> gradients;
+Portage::vector<Vector<D>> gradients;
 
   for (int i = 0; i < nvars; ++i) {
     // compute gradient field if necessary and set interpolation parameters
@@ -1283,10 +1287,11 @@ int MMDriver<Search, Intersect, Interpolate, D,
       gettimeofday(&begin_timeval, 0);
       
       int nmatvars = src_matvar_names.size();
+#ifdef ENABLE_DEBUG
       if (comm_rank == 0)
         std::cout << "Number of multi-material variables on entity kind " <<
             onwhat << " to remap is " << nmatvars << std::endl;
-      
+#endif      
       interpolate.set_material(m);    // We have to do this so we know
       //                              // which material values we have
       //                              // to grab from the source state
@@ -1335,7 +1340,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
   }  // for nmats
 
   tot_seconds = tot_seconds_srch + tot_seconds_xsect + tot_seconds_interp;
-
+#ifdef ENABLE_DEBUG
   std::cout << "Transform Time for Entity Kind " << onwhat << " on Rank " <<
       comm_rank << " (s): " << tot_seconds << std::endl;
   std::cout << "   Search Time Rank " << comm_rank << " (s): " <<
@@ -1344,7 +1349,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
       tot_seconds_xsect << std::endl;
   std::cout << "   Interpolate Time Rank " << comm_rank << " (s): " <<
       tot_seconds_interp << std::endl;
-
+#endif
   return 1;
 }
 
