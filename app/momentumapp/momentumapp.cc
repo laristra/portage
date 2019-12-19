@@ -530,8 +530,13 @@ int main(int argc, char** argv) {
                   field_names[i], trgmesh, Jali::Entity_kind::CELL,
                   Jali::Entity_type::ALL);
 
+    auto gradients = cd.compute_source_gradient(field_names[i], limiter);
+
     cd.interpolate_mesh_var<double, Portage::Interpolate_2ndOrder>(
-        field_names[i], field_names[i], srcwts, dblmin, dblmax, limiter);
+        field_names[i], field_names[i], srcwts, dblmin, dblmax,
+        Portage::DEFAULT_PARTIAL_FIXUP_TYPE, Portage::DEFAULT_EMPTY_FIXUP_TYPE,
+        Portage::DEFAULT_CONSERVATION_TOL, Portage::DEFAULT_MAX_FIXUP_ITER,
+        nullptr, &gradients);
   }
 
   // Step 5 (SGH only)
