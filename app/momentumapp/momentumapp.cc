@@ -504,7 +504,6 @@ int main(int argc, char** argv) {
 
   auto candidates = cd.search<Portage::SearchKDTree>();
   auto srcwts = cd.intersect_meshes<Portage::IntersectR2D>(candidates);
-  bool has_mismatch = cd.check_mesh_mismatch(srcwts);
 
   double dblmin = -std::numeric_limits<double>::max();
   double dblmax =  std::numeric_limits<double>::max();
@@ -534,8 +533,6 @@ int main(int argc, char** argv) {
 
     cd.interpolate_mesh_var<double, Portage::Interpolate_2ndOrder>(
         field_names[i], field_names[i], srcwts, dblmin, dblmax,
-        Portage::DEFAULT_PARTIAL_FIXUP_TYPE, Portage::DEFAULT_EMPTY_FIXUP_TYPE,
-        Portage::DEFAULT_CONSERVATION_TOL, Portage::DEFAULT_MAX_FIXUP_ITER,
         nullptr, &gradients);
   }
 
