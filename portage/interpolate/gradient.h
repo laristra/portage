@@ -76,7 +76,8 @@ namespace Portage {
     Limited_Gradient(Mesh const& mesh, State const& state,
                      std::string const var_name,
                      Limiter_type limiter_type,
-                     Boundary_Limiter_type boundary_limiter_type)
+                     Boundary_Limiter_type boundary_limiter_type,
+                     const Part<Mesh, State>* part = nullptr)
       : mesh_(mesh),
         state_(state),
         values_(nullptr),
@@ -506,7 +507,8 @@ namespace Portage {
                      State const& state,
                      std::string const var_name,
                      Limiter_type limiter_type,
-                     Boundary_Limiter_type boundary_limiter_type)
+                     Boundary_Limiter_type boundary_limiter_type,
+                     const Part<Mesh, State>* part = nullptr)
       : mesh_(mesh),
         state_(state),
         values_(nullptr),
