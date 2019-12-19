@@ -230,7 +230,7 @@ Wonton::Point<2> MomentumRemap::TotalMomentum(
     const Wonton::Jali_Mesh_Wrapper& mesh,
     const T& mass, const T& ux, const T& uy) const
 {
-  Wonton::Point<2> momentum = {0.0, 0.0};
+  double mx(0.0), my(0.0), mx_glb, my_glb;
 
   if (method_ == SGH) {
     std::vector<int> corners;
@@ -240,19 +240,23 @@ Wonton::Point<2> MomentumRemap::TotalMomentum(
 
       for (auto cn : corners) { 
         int v = mesh.corner_get_node(cn);
-        momentum[0] += mass[cn] * ux[v];
-        momentum[1] += mass[cn] * uy[v];
+        mx += mass[cn] * ux[v];
+        my += mass[cn] * uy[v];
       }
     }
   }
 
   else if (method_ == CCH) {
     for (int c = 0; c < mesh.num_owned_cells(); ++c) {
-      momentum[0] += mass[c] * ux[c];
-      momentum[1] += mass[c] * uy[c];
+      mx += mass[c] * ux[c];
+      my += mass[c] * uy[c];
     }
   }
 
+  MPI_Reduce(&mx, &mx_glb, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+  MPI_Reduce(&my, &my_glb, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+
+  Wonton::Point<2> momentum = {mx_glb, my_glb};
   return momentum;
 }
 
@@ -263,12 +267,17 @@ Wonton::Point<2> MomentumRemap::TotalMomentum(
 template<class T>
 Wonton::Point<2> MomentumRemap::VelocityMin(const T& ux, const T& uy)
 {
-  Wonton::Point<2> umin = { ux[0], uy[0] };
+  double uxmin(ux[0]), uymin(uy[0]), uxmin_glb, uymin_glb;
  
   for (int n = 1; n < ux.size(); ++ n) {
-    umin[0] = std::min(umin[0], ux[n]);
-    umin[1] = std::min(umin[1], uy[n]);
+    uxmin = std::min(uxmin, ux[n]);
+    uymin = std::min(uymin, uy[n]);
   }
+
+  MPI_Reduce(&uxmin, &uxmin_glb, 1, MPI_DOUBLE, MPI_MIN, 0, MPI_COMM_WORLD);
+  MPI_Reduce(&uymin, &uymin_glb, 1, MPI_DOUBLE, MPI_MIN, 0, MPI_COMM_WORLD);
+
+  Wonton::Point<2> umin = { uxmin_glb, uymin_glb };
   return umin;
 }
 
@@ -276,12 +285,17 @@ Wonton::Point<2> MomentumRemap::VelocityMin(const T& ux, const T& uy)
 template<class T>
 Wonton::Point<2> MomentumRemap::VelocityMax(const T& ux, const T& uy)
 {
-  Wonton::Point<2> umax = { ux[0], uy[0] };
+  double uxmax(ux[0]), uymax(uy[0]), uxmax_glb, uymax_glb;
  
   for (int n = 1; n < ux.size(); ++ n) {
-    umax[0] = std::max(umax[0], ux[n]);
-    umax[1] = std::max(umax[1], uy[n]);
+    uxmax = std::max(uxmax, ux[n]);
+    uymax = std::max(uymax, uy[n]);
   }
+
+  MPI_Reduce(&uxmax, &uxmax_glb, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+  MPI_Reduce(&uymax, &uymax_glb, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+
+  Wonton::Point<2> umax = { uxmax_glb, uymax_glb };
   return umax;
 }
 
@@ -329,8 +343,15 @@ void MomentumRemap::ErrorVelocity(
     *l2norm += ux_exact * ux_exact + uy_exact * uy_exact;
   }
 
-  *l2err = std::sqrt(*l2err / nrows);
-  *l2norm = std::sqrt(*l2norm / nrows);
+  int nrows_glb;
+  double l2err_glb, l2norm_glb;
+
+  MPI_Reduce(&nrows, &nrows_glb, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
+  MPI_Reduce(l2err, &l2err_glb, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+  MPI_Reduce(l2norm, &l2norm_glb, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+
+  *l2err = std::sqrt(l2err_glb / nrows_glb);
+  *l2norm = std::sqrt(l2norm_glb / nrows_glb);
 }
 
 
