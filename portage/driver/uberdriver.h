@@ -34,7 +34,7 @@
 #include "wonton/state/flat/flat_state_mm_wrapper.h"
 #include "wonton/support/Point.h"
 #include "wonton/state/state_vector_multi.h"
-#include "portage/driver/fix_mismatch.h"
+// DWS unnecessary #include "portage/driver/fix_mismatch.h"
 #include "portage/driver/coredriver.h"
 
 
@@ -294,8 +294,6 @@ class UberDriver {
           source_weights_[onwhat] =
               intersect_meshes<CELL, Intersect>(intersection_candidates);
 
-          has_mismatch_ |= check_mesh_mismatch<CELL>(source_weights_[onwhat]);
-
           if (have_multi_material_fields_) {
             mat_intersection_completed_ = true;
             
@@ -312,7 +310,6 @@ class UberDriver {
           source_weights_[onwhat] =
               intersect_meshes<NODE, Intersect>(intersection_candidates);
 
-          has_mismatch_ |= check_mesh_mismatch<NODE>(source_weights_[onwhat]);
           break;
         }
         default:
@@ -425,24 +422,6 @@ class UberDriver {
     return core_driver_serial_[CELL]->template intersect_materials<Intersect>(candidates);
 
   }
-
-
-  /*!
-    @brief Check if meshes are mismatched 
-
-    @tparam ONWHAT on what kind of entity are we checking mismatch
-
-    @param[in] source_weights Intersection moments/weights 
-
-    @returns whether the mesh has mismatch
-  */
-  template<Entity_kind ONWHAT>
-  bool check_mesh_mismatch(Portage::vector<std::vector<Weights_t>> const& source_weights) {
-
-    return core_driver_serial_[ONWHAT]->template check_mesh_mismatch<ONWHAT>(source_weights);
-
-  }
-  
   
  
   /*!
@@ -665,14 +644,12 @@ class UberDriver {
 
       driver->template interpolate_mesh_var<T, ONWHAT, Interpolate>(
         srcvarname, trgvarname, sources_and_weights_in,
-        lower_bound, upper_bound, partial_fixup_type, empty_fixup_type,
-        conservation_tol, max_fixup_iter, nullptr, &gradients
+        lower_bound, upper_bound, nullptr, &gradients
       );
     } else {
       driver->template interpolate_mesh_var<T, ONWHAT, Interpolate>(
         srcvarname, trgvarname, sources_and_weights_in,
-        lower_bound, upper_bound, partial_fixup_type, empty_fixup_type,
-        conservation_tol, max_fixup_iter
+        lower_bound, upper_bound
       );
     }
   }
@@ -757,14 +734,12 @@ class UberDriver {
       }
       driver->template interpolate_mat_var<T, Interpolate>(
         srcvarname, trgvarname, sources_and_weights_by_mat_in,
-        lower_bound, upper_bound, partial_fixup_type, empty_fixup_type,
-        conservation_tol, max_fixup_iter, gradients
+        lower_bound, upper_bound, gradients
       );
     } else {
       driver->template interpolate_mat_var<T, Interpolate>(
         srcvarname, trgvarname, sources_and_weights_by_mat_in,
-        lower_bound, upper_bound, partial_fixup_type, empty_fixup_type,
-        conservation_tol, max_fixup_iter
+        lower_bound, upper_bound
       );
     }
 #endif
@@ -793,9 +768,6 @@ class UberDriver {
   std::vector<std::string> source_vars_to_remap_;
   std::vector<Entity_kind> entity_kinds_;
   std::vector<Field_type> field_types_;
-
-  // Whether meshes are mismatched
-  bool has_mismatch_ = false;
 
   // Whether we are remapping multimaterial fields
   bool have_multi_material_fields_ = false;

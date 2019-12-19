@@ -278,17 +278,20 @@ public:
     auto weights = remapper.intersect_meshes<Portage::IntersectR2D>(candidates);
 
     for (int i = 0; i < nb_parts; ++i) {
+      // interpolate density part-by-part while fixing mismatched values
+      remapper.interpolate_mesh_var<double, Portage::Interpolate_1stOrder>(
+        "density", "density", weights, lower_bound, upper_bound,&(parts[i])
+      );
+      
       // test for mismatch and compute volumes
       parts[i].check_mismatch(weights);
 
-      // interpolate density part-by-part while fixing mismatched values
-      remapper.interpolate_mesh_var<double, Portage::Interpolate_1stOrder>(
-        "density", "density", weights,
-        lower_bound, upper_bound, partial_fixup, empty_fixup,
+      if (parts[i].has_mismatch())
+        parts[i].fix_mismatch("density", "density", lower_bound, upper_bound, 
         Portage::DEFAULT_CONSERVATION_TOL, Portage::DEFAULT_MAX_FIXUP_ITER,
-        &(parts[i])
-      );
-    }
+        partial_fixup, empty_fixup);
+        
+      }
 
     // Finally check that we got the right target density values
     double* remapped;
