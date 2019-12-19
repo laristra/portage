@@ -159,4 +159,108 @@ TEST(SweptFaceRemap, 2D_2ndOrder) {
 }  // CellDriver_2D_2ndOrder
 
 
+TEST(SweptFaceRemap, 3D_2ndOrder) {
 
+  // useful constants
+  static constexpr double const min = 0.0;
+  static constexpr double const max = 1.0;
+  static constexpr auto const CELL = Wonton::Entity_kind::CELL;
+
+  // useful shortcuts
+  using Remapper = Portage::CoreDriver<3, Wonton::Entity_kind::CELL,
+                                       Wonton::Jali_Mesh_Wrapper,
+                                       Wonton::Jali_State_Wrapper>;
+
+  // create meshes and related states
+  auto source_mesh = Jali::MeshFactory(MPI_COMM_WORLD)(0.0,0.0,0.0,1.0,1.0,1.0,5,5,5);
+  auto target_mesh = Jali::MeshFactory(MPI_COMM_WORLD)(0.0,0.0,0.0,1.0,1.0,1.0,5,5,5);
+
+  int const nb_target_nodes = target_mesh->num_nodes<Jali::Entity_type::ALL>();
+  int const nb_source_cells = source_mesh->num_cells<Jali::Entity_type::ALL>();
+  int const nb_target_cells = target_mesh->num_cells<Jali::Entity_type::ALL>();
+
+  // check if a point is on boundary
+  auto is_boundary = [&](auto const& point) -> bool {
+    for (int d = 0; d < 3; ++d) {
+      if (std::abs(point[d] - min) < 1.E-16
+       or std::abs(max - point[d]) < 1.E-16)
+        return false;
+    }
+    return true;
+  };
+
+  // move target points
+  for (int i = 0; i < nb_target_nodes; i++) {
+    std::array<double, 3> point = {0.,0.,0.};
+    target_mesh->node_get_coordinates(i, &point);
+
+    // move only internal nodes to avoid dealing with boundary conditions.
+    if (not is_boundary(point)) {
+      point[0] += 0.1 * sin(2 * M_PI * point[0]);
+      point[1] += 0.1 * sin(2 * M_PI * point[1]);
+      point[2] += 0.1 * sin(2 * M_PI * point[2]);
+      target_mesh->node_set_coordinates(i, point.data());
+    }
+  }
+
+  // create states then
+  auto source_state = Jali::State::create(source_mesh);
+  auto target_state = Jali::State::create(target_mesh);
+
+  // create related wrappers
+  Wonton::Jali_Mesh_Wrapper  source_mesh_wrapper(*source_mesh);
+  Wonton::Jali_Mesh_Wrapper  target_mesh_wrapper(*target_mesh);
+  Wonton::Jali_State_Wrapper source_state_wrapper(*source_state);
+  Wonton::Jali_State_Wrapper target_state_wrapper(*target_state);
+
+  // now add a linear temperature field on the source mesh
+  double field[nb_source_cells];
+  double *remapped = nullptr;
+
+  double source_integral = 0.0;
+  for (int c = 0; c < nb_source_cells; c++) {
+    auto const centroid = source_mesh->cell_centroid(c);
+    auto const volume = source_mesh_wrapper.cell_volume(c);
+    field[c] = centroid[0] + 2 * centroid[1] + 3 * centroid[2];
+    source_integral += field[c] * volume;
+  }
+
+  source_state_wrapper.mesh_add_data<double>(CELL, "temperature", field);
+  target_state_wrapper.mesh_add_data<double>(CELL, "temperature", 0.0);
+
+  // now instantiate the driver
+  Remapper remapper(source_mesh_wrapper, source_state_wrapper,
+                    target_mesh_wrapper, target_state_wrapper);
+
+  Portage::NumericTolerances_t tolerances;
+  tolerances.use_default();
+  remapper.set_num_tols(tolerances);
+
+  auto candidates = remapper.search<Portage::SearchSweptFace>();
+  auto gradients  = remapper.compute_source_gradient("temperature");
+  auto weights    = remapper.intersect_meshes<Portage::IntersectSweptFace3D>(candidates);
+  auto has_mismatch = remapper.check_mesh_mismatch(weights);
+
+  remapper.interpolate_mesh_var<double, Portage::Interpolate_2ndOrder>(
+    "temperature", "temperature", weights, 0.0, 1.0,
+    Portage::DEFAULT_PARTIAL_FIXUP_TYPE, Portage::DEFAULT_EMPTY_FIXUP_TYPE,
+    Portage::DEFAULT_CONSERVATION_TOL,
+    Portage::DEFAULT_MAX_FIXUP_ITER, nullptr, &gradients
+  );
+
+  // check remapped values on target mesh
+  target_state_wrapper.mesh_get_data<double>(CELL, "temperature", &remapped);
+
+  double target_integral = 0.0;
+  // compare remapped values for each cell.
+  for (int c = 0; c < nb_target_cells; c++) {
+    Wonton::Point<3> centroid;
+    target_mesh_wrapper.cell_centroid(c, &centroid);
+    auto const volume = target_mesh_wrapper.cell_volume(c);
+    auto const expected = centroid[0] + 2 * centroid[1] + 3 * centroid[2];
+    ASSERT_NEAR(remapped[c], expected, 1.E-12);
+    target_integral += remapped[c] * volume;
+  }
+  // check for integral quantities conservation.
+  ASSERT_DOUBLE_EQ(source_integral, target_integral);
+}
