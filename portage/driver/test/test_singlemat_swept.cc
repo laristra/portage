@@ -239,13 +239,9 @@ TEST(SweptFaceRemap, 3D_2ndOrder) {
   auto candidates = remapper.search<Portage::SearchSweptFace>();
   auto gradients  = remapper.compute_source_gradient("temperature");
   auto weights    = remapper.intersect_meshes<Portage::IntersectSweptFace3D>(candidates);
-  auto has_mismatch = remapper.check_mesh_mismatch(weights);
 
   remapper.interpolate_mesh_var<double, Portage::Interpolate_2ndOrder>(
-    "temperature", "temperature", weights, 0.0, 1.0,
-    Portage::DEFAULT_PARTIAL_FIXUP_TYPE, Portage::DEFAULT_EMPTY_FIXUP_TYPE,
-    Portage::DEFAULT_CONSERVATION_TOL,
-    Portage::DEFAULT_MAX_FIXUP_ITER, nullptr, &gradients
+    "temperature", "temperature", weights, 0.0, 1.0, nullptr, &gradients
   );
 
   // check remapped values on target mesh
