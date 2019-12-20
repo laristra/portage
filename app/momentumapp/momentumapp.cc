@@ -35,7 +35,7 @@ Please see the license file at the root of this repository, or at:
   The program is used to showcase the capability of remapping velocity 
   and mass for staggered and cell-centered hydro codes. Velocity remap
   conserves the total momentum. The app is controlled by a few input 
-  commands. Unnessesary longer code is used for the algorithm clarity.
+  commands. Unnessesary longer code is used for the implementation clarity.
 
   SGH:
     A. Populate input data: corner masses and nodal velocities
@@ -47,6 +47,8 @@ Please see the license file at the root of this repository, or at:
     A. Populate input data: cell-centered masses and velocities
     B. Conservative remap of momentum
     C. Verifivation of output data: cell-centered massed and velocities
+
+  Assumptions: meshes are matching.
  */
 
 
@@ -123,20 +125,18 @@ class MomentumRemap {
 
   // V&V
   template<class T>
-  double TotalMass(const T& mass) const {
-    double sum(0.0);
-    for (int n = 0; n < mass.size(); ++n) sum += mass[n];
-    return sum;
-  }
+  double TotalMass(const Wonton::Jali_Mesh_Wrapper& mesh, const T& mass) const;
 
   template<class T> 
   Wonton::Point<2> TotalMomentum(const Wonton::Jali_Mesh_Wrapper& mesh,
                                  const T& mass, const T& ux, const T& uy) const;
 
   template<class T>
-  Wonton::Point<2> VelocityMin(const T& ux, const T& uy);
+  Wonton::Point<2> VelocityMin(const Wonton::Jali_Mesh_Wrapper& mesh,
+                               const T& ux, const T& uy);
   template<class T>
-  Wonton::Point<2> VelocityMax(const T& ux, const T& uy);
+  Wonton::Point<2> VelocityMax(const Wonton::Jali_Mesh_Wrapper& mesh,
+                               const T& ux, const T& uy);
 
   template<class T>
   void ErrorVelocity(const Wonton::Jali_Mesh_Wrapper& mesh,
@@ -157,7 +157,8 @@ void MomentumRemap::InitMass(
     int ini_method,
     std::vector<double>& mass)
 {
-  int nrows = (method_ == SGH) ? mesh.num_owned_corners() : mesh.num_owned_cells();
+  int nrows = (method_ == SGH) ? mesh.num_owned_corners() + mesh.num_ghost_corners()
+                               : mesh.num_owned_cells() + mesh.num_ghost_cells();
   mass.resize(nrows);
 
   double vol, den;
@@ -193,7 +194,8 @@ void MomentumRemap::InitVelocity(
     std::vector<double>& ux,
     std::vector<double>& uy)
 {
-  int nrows = (method_ == SGH) ? mesh.num_owned_nodes() : mesh.num_owned_cells();
+  int nrows = (method_ == SGH) ? mesh.num_owned_nodes() + mesh.num_ghost_nodes()
+                               : mesh.num_owned_cells() + mesh.num_ghost_cells();
   ux.resize(nrows);
   uy.resize(nrows);
 
@@ -219,6 +221,22 @@ void MomentumRemap::InitVelocity(
       uy[n] = 2.0 * xyz[1] * xyz[1];
     }
   }
+}
+
+
+/* ******************************************************************
+* Calculate total momentum 
+****************************************************************** */
+template<class T>
+double MomentumRemap::TotalMass(
+    const Wonton::Jali_Mesh_Wrapper& mesh, const T& mass) const
+{
+  int nrows = (method_ == SGH) ? mesh.num_owned_corners() : mesh.num_owned_cells();
+  double sum(0.0), sum_glb;
+  for (int n = 0; n < nrows; ++n) sum += mass[n];
+
+  MPI_Reduce(&sum, &sum_glb, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+  return sum_glb;
 }
 
 
@@ -265,11 +283,13 @@ Wonton::Point<2> MomentumRemap::TotalMomentum(
 * Velocity bounds
 ****************************************************************** */
 template<class T>
-Wonton::Point<2> MomentumRemap::VelocityMin(const T& ux, const T& uy)
+Wonton::Point<2> MomentumRemap::VelocityMin(
+    const Wonton::Jali_Mesh_Wrapper& mesh, const T& ux, const T& uy)
 {
+  int nrows = (method_ == SGH) ? mesh.num_owned_nodes() : mesh.num_owned_cells();
   double uxmin(ux[0]), uymin(uy[0]), uxmin_glb, uymin_glb;
  
-  for (int n = 1; n < ux.size(); ++ n) {
+  for (int n = 1; n < nrows; ++n) {
     uxmin = std::min(uxmin, ux[n]);
     uymin = std::min(uymin, uy[n]);
   }
@@ -283,11 +303,13 @@ Wonton::Point<2> MomentumRemap::VelocityMin(const T& ux, const T& uy)
 
 
 template<class T>
-Wonton::Point<2> MomentumRemap::VelocityMax(const T& ux, const T& uy)
+Wonton::Point<2> MomentumRemap::VelocityMax(
+    const Wonton::Jali_Mesh_Wrapper& mesh, const T& ux, const T& uy)
 {
+  int nrows = (method_ == SGH) ? mesh.num_owned_nodes() : mesh.num_owned_cells();
   double uxmax(ux[0]), uymax(uy[0]), uxmax_glb, uymax_glb;
  
-  for (int n = 1; n < ux.size(); ++ n) {
+  for (int n = 1; n < nrows; ++n) {
     uxmax = std::max(uxmax, ux[n]);
     uymax = std::max(uymax, uy[n]);
   }
@@ -359,11 +381,6 @@ void MomentumRemap::ErrorVelocity(
 * Main driver for the momentum remap
 ****************************************************************** */
 int main(int argc, char** argv) {
-  if (argc < 7) {
-    print_usage();
-    return 1;
-  }
-
   // initialize MPI
   int mpi_init_flag;
   MPI_Initialized(&mpi_init_flag);
@@ -373,6 +390,12 @@ int main(int argc, char** argv) {
   int numpe, rank;
   MPI_Comm_size(MPI_COMM_WORLD, &numpe);
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+  if (argc < 7) {
+    if (rank == 0) print_usage();
+    MPI_Finalize();
+    return 0;
+  }
 
   // number of cells in x and y directions for the source mesh
   auto nx = atoi(argv[1]);
@@ -385,9 +408,22 @@ int main(int argc, char** argv) {
   if ((method != SGH && method != CCH) || 
       (ini_density < 0 || ini_density > 2) ||
       (ini_velocity < 0 || ini_velocity > 3)) {
-    std::cout << "=== Input ERROR ===\n";
-    print_usage();    
-    return 1;
+    if (rank == 0) {
+      std::cout << "=== Input ERROR ===\n";
+      print_usage();    
+    }
+    MPI_Finalize();
+    return 0;
+  }
+
+  if (numpe > 0 && method == SGH) {
+    if (rank == 0) {
+      std::cout << "=== Input ERROR ===\n";
+      std::cout << "method=SGH runs only in the serial mode, since ghost data\n";
+      std::cout << "           on a target mesh cannot be populated easily\n";
+    }
+    MPI_Finalize();
+    return 0;
   }
 
   // size of computational domain
@@ -409,9 +445,8 @@ int main(int argc, char** argv) {
   Wonton::Jali_Mesh_Wrapper srcmesh_wrapper(*srcmesh);
   Wonton::Jali_Mesh_Wrapper trgmesh_wrapper(*trgmesh);
 
-  int ncells_src = srcmesh_wrapper.num_owned_cells();
-  int nnodes_src = srcmesh_wrapper.num_owned_nodes();
-  int ncorners_src = srcmesh_wrapper.num_owned_corners();
+  int ncells_src = srcmesh_wrapper.num_owned_cells() + srcmesh_wrapper.num_ghost_cells();
+  int nnodes_src = srcmesh_wrapper.num_owned_nodes() + srcmesh_wrapper.num_ghost_nodes();
 
   int ncells_trg = trgmesh_wrapper.num_owned_cells();
   int nnodes_trg = trgmesh_wrapper.num_owned_nodes();
@@ -453,15 +488,18 @@ int main(int argc, char** argv) {
                 "mass", trgmesh, kind, type);
 
   // -- summary
-  auto total_mass_src = mr.TotalMass(mass_src);
+  auto total_mass_src = mr.TotalMass(srcmesh_wrapper, mass_src);
   auto total_momentum_src = mr.TotalMomentum(srcmesh_wrapper, mass_src, ux_src, uy_src);
-  std::cout << "=== SOURCE data ===" << std::endl;
-  std::cout << "mesh:           " << nx << " x " << ny << std::endl;
-  std::cout << "total mass:     " << total_mass_src << " kg" << std::endl;
-  std::cout << "total momentum: " << total_momentum_src << " kg m/s" << std::endl;
-  std::cout << "limiter:        " << ((limiter == Portage::NOLIMITER) ? "none\n" : "BJ\n");
-  std::cout << "velocity bounds," << " min: " << mr.VelocityMin(ux_src, uy_src) 
-                                  << " max: " << mr.VelocityMax(ux_src, uy_src) << std::endl;
+  auto umin = mr.VelocityMin(srcmesh_wrapper, ux_src, uy_src);
+  auto umax = mr.VelocityMax(srcmesh_wrapper, ux_src, uy_src);
+  if (rank == 0) {
+    std::cout << "=== SOURCE data ===" << std::endl;
+    std::cout << "mesh:           " << nx << " x " << ny << std::endl;
+    std::cout << "total mass:     " << total_mass_src << " kg" << std::endl;
+    std::cout << "total momentum: " << total_momentum_src << " kg m/s" << std::endl;
+    std::cout << "limiter:        " << ((limiter == Portage::NOLIMITER) ? "none\n" : "BJ\n");
+    std::cout << "velocity bounds," << " min: " << umin << " max: " << umax << std::endl;
+  }
 
   //
   // SEVEN-step REMAP algorithm 
@@ -569,7 +607,8 @@ int main(int argc, char** argv) {
           gradient_kernel(trgmesh_wrapper, trgstate_wrapper,
                           field_names[i], limiter, Portage::BND_NOLIMITER);
 
-      Portage::vector<Wonton::Vector<2>> gradient(ncells_trg);
+      int ncells_all = ncells_trg + trgmesh_wrapper.num_ghost_cells();
+      Portage::vector<Wonton::Vector<2>> gradient(ncells_all);
 
       Portage::transform(trgmesh_wrapper.begin(Wonton::Entity_kind::CELL),
                          trgmesh_wrapper.end(Wonton::Entity_kind::CELL),
@@ -645,9 +684,10 @@ int main(int argc, char** argv) {
   // Step 7 (SGH only)
   // -- gather data to mesh nodes and compute velocity
   if (method == SGH) {
-    std::vector<double> mass_v(nnodes_trg, 0.0);  // work memory
-    std::vector<double> momentum_v_x(nnodes_trg, 0.0);
-    std::vector<double> momentum_v_y(nnodes_trg, 0.0);
+    int nnodes_all = nnodes_trg + trgmesh_wrapper.num_ghost_nodes();
+    std::vector<double> mass_v(nnodes_all, 0.0);  // work memory
+    std::vector<double> momentum_v_x(nnodes_all, 0.0);
+    std::vector<double> momentum_v_y(nnodes_all, 0.0);
 
     for (int cn = 0; cn < ncorners_trg; ++cn) {
       int v = trgmesh_wrapper.corner_get_node(cn);
@@ -665,25 +705,35 @@ int main(int argc, char** argv) {
   //
   // Verification
   //
-  auto total_mass_trg = mr.TotalMass(mass_trg);
+  auto total_mass_trg = mr.TotalMass(trgmesh_wrapper, mass_trg);
   auto total_momentum_trg = mr.TotalMomentum(trgmesh_wrapper, mass_trg, ux_trg, uy_trg);
+  umin = mr.VelocityMin(trgmesh_wrapper, ux_trg, uy_trg);
+  umax = mr.VelocityMax(trgmesh_wrapper, ux_trg, uy_trg);
 
-  std::cout << "\n=== TARGET data ===" << std::endl;
-  std::cout << "mesh:           " << nx + 2 << " x " << ny + 4 << std::endl;
-  std::cout << "total mass:     " << total_mass_trg << " kg" << std::endl;
-  std::cout << "total momentum: " << total_momentum_trg << " kg m/s" << std::endl;
-  std::cout << "velocity bounds," << " min: " << mr.VelocityMin(ux_trg, uy_trg) 
-                                  << " max: " << mr.VelocityMax(ux_trg, uy_trg) << std::endl;
+  if (rank == 0) {
+    std::cout << "\n=== TARGET data ===" << std::endl;
+    std::cout << "mesh:           " << nx + 2 << " x " << ny + 4 << std::endl;
+    std::cout << "total mass:     " << total_mass_trg << " kg" << std::endl;
+    std::cout << "total momentum: " << total_momentum_trg << " kg m/s" << std::endl;
+    std::cout << "velocity bounds," << " min: " << umin << " max: " << umax << std::endl;
+  }
 
   auto err = total_momentum_trg - total_momentum_src;
-  std::cout << "\n=== Conservation error ===" << std::endl;
-  std::cout << "in total mass:     " << std::fabs(total_mass_trg - total_mass_src) << std::endl;
-  std::cout << "in total momentum: " << std::sqrt(err[0] * err[0] + err[1] * err[1]) << std::endl;
+
+  if (rank == 0) {
+    std::cout << "\n=== Conservation error ===" << std::endl;
+    std::cout << "in total mass:     " << std::fabs(total_mass_trg - total_mass_src) << std::endl;
+    std::cout << "in total momentum: " << std::sqrt(err[0] * err[0] + err[1] * err[1]) << std::endl;
+  }
 
   double l2err, l2norm;
   mr.ErrorVelocity(trgmesh_wrapper, ini_velocity, ux_trg, uy_trg, &l2err, &l2norm);
-  std::cout << "\n=== Remap error ===" << std::endl;
-  std::cout << "in velocity: l2-err=" << l2err << " l2-norm=" << l2norm << std::endl;
+
+  if (rank == 0) {
+    std::cout << "\n=== Remap error ===" << std::endl;
+    std::cout << "in velocity: l2-err=" << l2err << " l2-norm=" << l2norm << std::endl;
+  }
 
   MPI_Finalize();
+  return 0;
 }
