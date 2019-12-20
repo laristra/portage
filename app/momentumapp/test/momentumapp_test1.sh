@@ -15,4 +15,4 @@ set -x
 ${RUN_COMMAND} $TESTAPPDIR/momentumapp 8 6 2 1 2 2
 
 # Compare the values for the field
-$CMPAPPDIR/apptest_cmp errors_gold1.txt errors.txt 1e-10 1e-4
+$CMPAPPDIR/apptest_cmp errors_gold1.txt errors1.txt 1e-10 1e-4

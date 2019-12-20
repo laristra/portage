@@ -6,6 +6,7 @@ Please see the license file at the root of this repository, or at:
 
 
 #include <fstream>
+#include <sstream>
 #include <vector>
 
 // portage includes
@@ -744,13 +745,17 @@ int main(int argc, char** argv) {
   }
 
   // save data
-  std::ofstream datafile;
-  datafile.open("errors.txt");
-  datafile << "0 " << cons_law0 << std::endl;
-  datafile << "1 " << cons_law1 << std::endl;
-  datafile << "2 " << l2err << std::endl;
-  datafile << "3 " << l2norm << std::endl;
-  datafile.close();
+  if (rank == 0) {
+    std::ofstream datafile;
+    std::stringstream ss;
+    ss << "errors" << method - 1 << ".txt"; 
+    datafile.open(ss.str());
+    datafile << "0 " << cons_law0 << std::endl;
+    datafile << "1 " << cons_law1 << std::endl;
+    datafile << "2 " << l2err << std::endl;
+    datafile << "3 " << l2norm << std::endl;
+    datafile.close();
+  }
 
   MPI_Finalize();
   return 0;
