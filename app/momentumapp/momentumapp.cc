@@ -5,6 +5,7 @@ Please see the license file at the root of this repository, or at:
 */
 
 
+#include <fstream>
 #include <vector>
 
 // portage includes
@@ -416,7 +417,7 @@ int main(int argc, char** argv) {
     return 0;
   }
 
-  if (numpe > 0 && method == SGH) {
+  if (numpe > 1 && method == SGH) {
     if (rank == 0) {
       std::cout << "=== Input ERROR ===\n";
       std::cout << "method=SGH runs only in the serial mode, since ghost data\n";
@@ -665,9 +666,14 @@ int main(int argc, char** argv) {
         // integral is the value at centroid
         double vol = trgmesh_wrapper.corner_volume(cn);
 
-        mass_trg[cn] = vol * (density_trg[c] + dot(gradients[0][c], xcn - xc));
-        momentum_cn_x[cn] = vol * (momentum_x_trg[c] + dot(gradients[1][c], xcn - xc));
-        momentum_cn_y[cn] = vol * (momentum_y_trg[c] + dot(gradients[2][c], xcn - xc));
+        auto& grad0 = gradients[0][c];
+        mass_trg[cn] = vol * (density_trg[c] + dot(grad0, xcn - xc));
+
+        auto& grad1 = gradients[1][c];
+        momentum_cn_x[cn] = vol * (momentum_x_trg[c] + dot(grad1, xcn - xc));
+
+        auto& grad2 = gradients[2][c];
+        momentum_cn_y[cn] = vol * (momentum_y_trg[c] + dot(grad2, xcn - xc));
       }
     }
   } 
@@ -719,11 +725,13 @@ int main(int argc, char** argv) {
   }
 
   auto err = total_momentum_trg - total_momentum_src;
+  double cons_law0 = std::fabs(total_mass_trg - total_mass_src);
+  double cons_law1 = std::sqrt(err[0] * err[0] + err[1] * err[1]);
 
   if (rank == 0) {
     std::cout << "\n=== Conservation error ===" << std::endl;
-    std::cout << "in total mass:     " << std::fabs(total_mass_trg - total_mass_src) << std::endl;
-    std::cout << "in total momentum: " << std::sqrt(err[0] * err[0] + err[1] * err[1]) << std::endl;
+    std::cout << "in total mass:     " << cons_law0 << std::endl;
+    std::cout << "in total momentum: " << cons_law1 << std::endl;
   }
 
   double l2err, l2norm;
@@ -733,6 +741,15 @@ int main(int argc, char** argv) {
     std::cout << "\n=== Remap error ===" << std::endl;
     std::cout << "in velocity: l2-err=" << l2err << " l2-norm=" << l2norm << std::endl;
   }
+
+  // save data
+  std::ofstream datafile;
+  datafile.open("errors.txt");
+  datafile << "0 " << cons_law0 << std::endl;
+  datafile << "1 " << cons_law1 << std::endl;
+  datafile << "2 " << l2err << std::endl;
+  datafile << "3 " << l2norm << std::endl;
+  datafile.close();
 
   MPI_Finalize();
   return 0;
