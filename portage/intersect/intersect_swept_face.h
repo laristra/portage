@@ -14,6 +14,7 @@
   #include "tangram/driver/CellMatPoly.h"
   #include "tangram/driver/driver.h"
   #include "tangram/support/MatPoly.h"
+  #include "tangram/reconstruct/cutting_distance_solver.h"
 #endif
 
 /* -------------------------------------------------------------------------- */
@@ -182,8 +183,7 @@ namespace Portage {
 #ifdef HAVE_TANGRAM
     using InterfaceReconstructor2D = Tangram::Driver<
       InterfaceReconstructor, 2, SourceMesh,
-      Matpoly_Splitter, Matpoly_Clipper
-    >;
+      Matpoly_Splitter, Matpoly_Clipper>;
 #endif
 
   public:
@@ -295,99 +295,6 @@ namespace Portage {
     }
 
     /**
-     * @brief Compute moments using facetized method:
-     * - triangulate and compute each simplex orientation using determinant.
-     * - compute the intersection point of its couple of diagonals.
-     *
-     *     d_____c    facets: (a,b,d) and (b,c,d)
-     *     /\   /                   1    |ax  ay  1|
-     *    / \  /      area(a,b,d) = - det|bx  by  1| > 0 if counterclockwise
-     *   /  \ /                     2    |dx  dy  1|
-     *  /___\/
-     * a     b        centroid(a,b,d):  find (s,t) such that:
-     *                                  a + s(c - a) = b + t(d - b)
-     *
-     *                                resolve the equation: A.X = B
-     *                                |dx-bx  ax-cx| |t| |ax-bx|
-     *                                |dy-by  ay-cy| |s|=|ay-by|
-     *
-     * @param swept_polygon: swept polygon points coordinates.
-     * @return swept polygon moments.
-     */
-    std::vector<double> compute_moments_facetized_method
-      (std::vector<Wonton::Point<2>> const& swept_polygon) const {
-
-      std::vector<double> moment;
-
-      // retrieve quadrilateral vertices coordinates.
-      double const& ax = swept_polygon[0][0];
-      double const& ay = swept_polygon[0][1];
-      double const& bx = swept_polygon[1][0];
-      double const& by = swept_polygon[1][1];
-      double const& cx = swept_polygon[2][0];
-      double const& cy = swept_polygon[2][1];
-      double const& dx = swept_polygon[3][0];
-      double const& dy = swept_polygon[3][1];
-
-      /* step 1: compute signed area */
-      double const det[] = {
-        ax * by - ax * dy - bx * ay + bx * dy + dx * ay - dx * by,
-        bx * cy - bx * dy - cx * by + cx * dy + dx * by - dx * cy
-      };
-
-      // check that both triangles have the same orientation
-      bool const both_positive = (det[0] >= 0 and det[1] >= 0);
-      bool const both_negative = (det[0] < 0 and det[1] < 0);
-
-      if (not both_positive and not both_negative) {
-        std::cerr << "Error: twisted swept face polygon." << std::endl;
-        return moment;
-      }
-
-      double const area = 0.5 * (det[0] + det[1]);
-
-      /* step 2: compute centroid */
-      std::vector<double> centroid = { 0, 0 };
-
-      // retrieve the determinant of A to compute its inverse A^-1.
-      double const denom = (dx - bx) * (ay - cy) - (dy - by) * (ax - cx);
-
-      // check if diagonals are not colinear
-      if (std::abs(denom) > 0) {
-        // check if given value is in [0,1]
-        auto in_range = [](double x) -> bool { return 0. <= x and x <= 1.; };
-        // compute the intersection point parameter:
-        // compute the inverse of the matrix A and multiply it by the vector B
-        double const param[] = {
-          std::abs(((by - dy) * (ax - bx) + (dx - bx) * (ay - by)) / denom),
-          std::abs(((ay - cy) * (ax - bx) + (ax - cx) * (ay - by)) / denom)
-        };
-        // check if diagonals intersection lies on their respective segments
-        if (in_range(param[0]) and in_range(param[1])) {
-          #if DEBUG
-            double x[] = { ax + param[0] * (cx - ax), bx + param[1] * (dx - bx) };
-            double y[] = { ay + param[0] * (cy - ay), by + param[1] * (dy - by) };
-            assert(std::abs(x[0] - x[1]) < num_tols_.polygon_convexity_eps);
-            assert(std::abs(y[0] - y[1]) < num_tols_.polygon_convexity_eps);
-            centroid = { x[0], y[0] };
-
-            if (verbose) {
-              std::cout << "a: ("<< ax <<" "<< ay <<"), ";
-              std::cout << "c: ("<< cx <<" "<< cy <<"), ";
-              std::cout << "param: " << param[0] << std::endl;
-              std::cout << "bx: "<< bx << ", (dx - bx): "<< dx - bx << std::endl;
-              std::cout << "by: "<< by << ", (dy - by): "<< dy - by << std::endl;
-            }
-          #else
-            centroid = { ax + param[0] * (cx - ax), ay + param[0] * (cy - ay) };
-          #endif
-          moment = { area, area * centroid[0], area * centroid[1] };
-        }
-      }
-      return moment;
-    }
-
-    /**
      * @brief Retrieve the source cell moments.
      *
      * @param source_id: index of the source cells.
@@ -410,7 +317,7 @@ namespace Portage {
     bool centroid_inside_cell(int cell, std::vector<double> const& moment) const {
 
       double const cell_area = std::abs(moment[0]);
-      if (cell_area < num_tols_.min_relative_volume)
+      if (cell_area < num_tols_.min_absolute_volume)
         return false;
 
       std::vector<int> edges, dirs, nodes;
@@ -447,6 +354,76 @@ namespace Portage {
       return true;
     }
 
+#ifdef HAVE_TANGRAM
+    /**
+     * @brief For a given cell and its face finds the moments associated with the
+     * intersection of the swept region and MatPoly's with material_id_ that belong
+     * to the corresponding face group
+     *
+     * @param cell_id: index of the cell.
+     * @param face_group_id: index of the cell's face group.
+     * @param swept_volume: volume to clip off the associated triangle 
+     * in the cell's decomposition.
+     * @return Intersection moments for the material_id_ 
+     */
+    std::vector<double> compute_face_group_moments(
+      int const cell_id,
+      int const face_group_id,
+      double const swept_volume) const {
+      
+      std::vector<int> cfaces, cfdirs;
+      source_mesh_.cell_get_faces_and_dirs(cell_id, &cfaces, &cfdirs);
+      int const nfaces = std::static_cast<int>(cfaces.size());
+      int const cface_id = std::distance(
+        cfaces.begin(), std::find(cfaces.begin(), cfaces.end(), face_group_id));
+      //Face group should be associated with one of the cell's faces
+      assert(cface_id != nfaces);
+
+      //Retrieve tolerance used by the interface reconstructor
+      const std::vector<Tangram::IterativeMethodTolerances_t>& ims_tols = 
+        interface_reconstructor->iterative_methods_tolerances();
+      double dst_tol = ims_tols[0].arg_eps;
+      double vol_tol = ims_tols[0].fun_eps;
+
+      //Create a MatPoly for the cell
+      Tangram::MatPoly<2> cell_mp;
+      Tangram::cell_get_matpoly(source_mesh_, cell_id, &cell_mp, dst_tol);
+      //Get the face normal and MatPoly's in the face's group
+      std::vector<Tangram::MatPoly<2>> face_group_polys;
+      Tangram::Plane<2> cutting_plane;
+      cutting_plane.normal = 
+        cell_mp.face_normal_and_group(cface_id, face_group_id, &face_group_polys);
+
+      //Find the cutting distance for the given swept volume
+      Tangram::CuttingDistanceSolver<2, Matpoly_Clipper> cds(face_group_polys,
+        cutting_plane.normal, im_tols[0], true);
+
+      cds.set_target_volume(swept_volume);
+      std::vector<double> cds_res = cds();
+
+      //Check if we had enough volume in the face group
+      if (cds_res[1] < swept_volume - vol_tol) {
+        throw std::runtime_error("Mesh displacement is too big for the implemented swept-face method");
+      }
+
+      cutting_plane.dist2origin = cds_res[0];
+
+      //Get the face group MatPoly's with material_id_ from the reconstructor
+      Tangram::CellMatPoly<2> const& cellmatpoly =
+        interface_reconstructor->cell_matpoly_data(cell_id);
+      std::vector<Tangram::MatPoly<2>> group_mat_polys = 
+        cellmatpoly.get_face_group_matpolys(face_group_id, material_id_);
+
+      //Clip the MatPoly's with the plane to get moments
+      MatPoly_Clipper clip_matpolys(vol_tol);
+      clip_matpolys.set_matpolys(group_mat_polys, true);
+      clip_matpolys.set_plane(cutting_plane);
+      std::vector<double> moments = clip_matpolys();
+
+      return moments;
+    }
+#endif
+
   public:
     /**
      * @brief Perform the actual swept faces volumes computation.
@@ -463,153 +440,170 @@ namespace Portage {
         return std::find(stencil.begin(), stencil.end(), cell) != stencil.end();
       };
 
-      // here the source and target cell have the exact ID.
+      // here the source and target cell have the same ID.
       int const source_id = target_id;
 
       std::vector<Weights_t> swept_moments;
 
+      // Step 1: Add the source cell moments in the first place. 
+      // For the single material case, add the moments of the source cell id.
+      // For the multimaterial case, add only the moments for the material
+      // the intersector is working on. 
 #ifdef HAVE_TANGRAM
       int const nb_mats = source_state_.cell_get_num_mats(source_id);
-      bool const single_mat = not nb_mats or nb_mats == 1 or material_id_ == -1;
+      std::vector<int> cellmats;
+      sourceStateWrapper.cell_get_mats(source_id, &cellmats);
+      // nb_mats == 0 -- no materials ==> single material
+      // material_id_ == -1 -- intersect with mesh not a particular material
+      // nb_mats == 1 && cellmats[0] == material_id_ -- intersection with pure cell
+      //                                                containing material_id_      
+      bool const source_cell_mat = 
+        (std::find(cellmats.begin(), cellmats.end(), material_id_) != cellmats.end());
+      bool const single_mat = !nb_mats || (material_id_ == -1) || 
+                              (nb_mats == 1 && source_cell_mat);
 
       if (single_mat) {
 #endif
-        std::vector<int> edges, dirs, nodes;
-
         // add source cell moments in the first place
         swept_moments.emplace_back(source_id, compute_source_moments(source_id));
 
-        // retrieve current source cell faces/edges and related directions
-        source_mesh_.cell_get_faces_and_dirs(source_id, &edges, &dirs);
-        int const nb_edges = edges.size();
-
-        #if DEBUG
-          // ensure that we have the same face/edge index for source and target.
-          std::vector<int> target_edges, target_dirs, target_nodes;
-          target_mesh_.cell_get_faces_and_dirs(target_id, &target_edges, &target_dirs);
-          int const nb_target_edges = target_edges.size();
-
-          assert(nb_edges == nb_target_edges);
-          for (int j = 0; j < nb_edges; ++j) {
-            assert(edges[j] == target_edges[j]);
-          }
-        #endif
-
-        for (int i = 0; i < nb_edges; ++i) {
-
-          // step 0: retrieve nodes and reorder them according to edge direction
-          nodes.clear();
-          source_mesh_.face_get_nodes(edges[i], &nodes);
-
-          #if DEBUG
-            // ensure that we have the same nodal indices for source and target.
-            target_mesh_.face_get_nodes(target_edges[i], &target_nodes);
-            int const nb_source_nodes = nodes.size();
-            int const nb_target_nodes = target_nodes.size();
-
-            assert(nb_source_nodes == nb_target_nodes);
-            for (int j = 0; j < nb_target_nodes; ++j) {
-              assert(nodes[j] == target_nodes[j]);
-            }
-          #endif
-
-          // step 1: construct the swept face polygon
-          std::vector<Wonton::Point<2>> swept_polygon(4);
-
-          // if the edge has the same orientation as the cell, then reverse
-          // its nodes order such that we have a positive swept volume on
-          // outside and negative swept volume on inside.
-          // otherwise keep the same nodal order.
-          unsigned const j = (dirs[i] > 0 ? 1 : 0);
-          unsigned const k = j ^ 1;
-
-          source_mesh_.node_get_coordinates(nodes[j], swept_polygon.data());
-          source_mesh_.node_get_coordinates(nodes[k], swept_polygon.data()+1);
-          target_mesh_.node_get_coordinates(nodes[k], swept_polygon.data()+2);
-          target_mesh_.node_get_coordinates(nodes[j], swept_polygon.data()+3);
-
-          // compute swept polygon moment using divergence theorem
-          auto moments = compute_moments_divergence_theorem(swept_polygon);
-
-          /* step 3: assign the computed moments to the source cell or one
-           * of its neighbors according to the sign of the swept face area.
-           */
-          if (std::abs(moments[0]) < num_tols_.min_relative_volume) {
-            // just skip if the swept polygon is almost flat.
-            // it may occur when the cell is shifted only in one direction.
-            continue;
-          } else if (moments[0] < 0.) {
-            // if the computed swept face area is negative then assign its
-            // moments to the source cell: it will be substracted
-            // from the source cell area when performing the interpolation.
-            swept_moments.emplace_back(source_id, moments);
-
-            #if DEBUG
-              if (verbose) {
-                auto const& area = moments[0];
-                auto const centroid = Wonton::createP2(moments[1]/area,
-                                                       moments[2]/area);
-                std::cout << "assign polygon swept out from edge ";
-                std::cout << "[("<< swept_polygon[0] <<"),("<< swept_polygon[1] <<")]";
-                std::cout << " to source cell " << source_id << ". ";
-                std::cout << "area: "<< area <<", centroid: ("<< centroid <<")";
-                std::cout << std::endl;
-              }
-            #endif
-          } else {
-            // retrieve the cell incident to the current edge.
-            int const neigh = source_mesh_.cell_get_face_adj_cell(source_id, edges[i]);
-
-            // just skip in case of a boundary edge
-            if (neigh < 0) {
-              continue;
-            }
-            // sanity check: ensure that incident cell belongs to the stencil.
-            else if (not in_stencil(neigh)) {
-              std::cerr << "Error: invalid stencil for source cell "<< source_id;
-              std::cerr << "." << std::endl;
-              swept_moments.clear();
-              return swept_moments;
-            }
-            // sanity check: ensure that swept face centroid remains
-            // inside the neighbor cell.
-            else if (not centroid_inside_cell(neigh, moments)) {
-              std::cerr << "Error: invalid target mesh for swept face." << std::endl;
-              swept_moments.clear();
-              return swept_moments;
-            }
-            // append to list as current neighbor moment.
-            else {
-              swept_moments.emplace_back(neigh, moments);
-
-              #if DEBUG
-                if (verbose) {
-                  auto const& area = moments[0];
-                  auto const centroid = Wonton::createP2(moments[1]/area,
-                                                         moments[2]/area);
-                  std::cout << "assign polygon swept out from edge ";
-                  std::cout << "[("<< swept_polygon[0] <<"),("<< swept_polygon[1] <<")]";
-                  std::cout << " to neighbor cell " << neigh << ". ";
-                  std::cout << "area: "<< area <<", centroid: ("<< centroid <<")";
-                  std::cout << std::endl;
-                }
-              #endif
-            }
-          }
-        } // end for each edge of current cell
-
-        #if DEBUG
-          if (verbose) { std::cout << " =========== " << std::endl; }
-        #endif
-        return swept_moments;
 #ifdef HAVE_TANGRAM
-      } else /* multi-material case */ {
-        std::cerr << "Error: multi-material swept face remap not yet supported";
-        std::cerr << std::endl;
-        swept_moments.clear();
-        return swept_moments;
+      } else if (source_cell_mat) {
+        // mixed cell should contain this material
+        assert(interface_reconstructor != nullptr);
+
+        // add source cell moments in the first place: 
+        // obtain the aggregated moments of all MatPoly's with material_id_
+        Tangram::CellMatPoly<2> const& cellmatpoly =
+          interface_reconstructor->cell_matpoly_data(source_id);
+
+        swept_moments.push_back(source_id, cellmatpoly.material_moments(material_id_));
       }
 #endif
+
+      // Step 2: Obtain all facets and normals of the source cell
+      std::vector<int> edges, dirs, nodes;
+
+      // retrieve current source cell faces/edges and related directions
+      source_mesh_.cell_get_faces_and_dirs(source_id, &edges, &dirs);
+      int const nb_edges = edges.size();
+
+#if DEBUG
+      // ensure that we have the same face/edge index for source and target.
+      std::vector<int> target_edges, target_dirs, target_nodes;
+      target_mesh_.cell_get_faces_and_dirs(target_id, &target_edges, &target_dirs);
+      int const nb_target_edges = target_edges.size();
+
+      assert(nb_edges == nb_target_edges);
+      for (int j = 0; j < nb_edges; ++j) {
+        assert(edges[j] == target_edges[j]);
+      }
+#endif
+
+      // Step 3: Main loop over all facets of the source cell
+      for (int i = 0; i < nb_edges; ++i) {
+
+        // step 3a: retrieve nodes and reorder them according to edge direction
+        nodes.clear();
+        source_mesh_.face_get_nodes(edges[i], &nodes);
+
+#if DEBUG
+        // ensure that we have the same nodal indices for source and target.
+        target_mesh_.face_get_nodes(target_edges[i], &target_nodes);
+        int const nb_source_nodes = nodes.size();
+        int const nb_target_nodes = target_nodes.size();
+
+        assert(nb_source_nodes == nb_target_nodes);
+        for (int j = 0; j < nb_target_nodes; ++j) {
+          assert(nodes[j] == target_nodes[j]);
+        }
+#endif
+
+        // step 3b: construct the swept face polygon
+        std::vector<Wonton::Point<2>> swept_polygon(4);
+
+        // if the edge has the same orientation as the cell, then reverse
+        // its nodes order such that we have a positive swept volume on
+        // outside and negative swept volume on inside.
+        // otherwise keep the same nodal order.
+        unsigned const j = (dirs[i] > 0 ? 1 : 0);
+        unsigned const k = j ^ 1;
+
+        source_mesh_.node_get_coordinates(nodes[j], swept_polygon.data());
+        source_mesh_.node_get_coordinates(nodes[k], swept_polygon.data()+1);
+        target_mesh_.node_get_coordinates(nodes[k], swept_polygon.data()+2);
+        target_mesh_.node_get_coordinates(nodes[j], swept_polygon.data()+3);
+
+        // step 3c: compute swept polygon moment using divergence theorem
+        auto moments = compute_moments_divergence_theorem(swept_polygon);
+
+        // step 3d: add the source cells and their correct swept-moments to 
+        // the weights vector.  Approaches to compute the amount
+        // of swept-moment to be added are different for single and multimaterial cases.
+
+        if (std::fabs(moments[0]) < num_tols_.min_absolute_volume) {
+          // skip if the swept polygon is almost empty.
+          // it may occur when the cell is shifted only in one direction.
+          continue;
+        } else if (moments[0] < 0.0) {
+          // if the computed swept face area is negative then assign its
+          // moments to the source cell: it will be substracted
+          // from the source cell area when performing the interpolation.
+#ifdef HAVE_TANGRAM
+          if (single_mat) {
+#endif          
+            swept_moments.emplace_back(source_id, moments);
+#ifdef HAVE_TANGRAM
+          } else if (source_cell_mat) {
+            swept_moments.emplace_back(source_id, 
+              compute_face_group_moments(source_id, edges[i], std::fabs(moments[0])));
+          }
+#endif            
+        } else {
+          // retrieve the cell incident to the current edge.
+          int const neigh = source_mesh_.cell_get_face_adj_cell(source_id, edges[i]);
+
+          // just skip in case of a boundary edge
+          if (neigh < 0) {
+            continue;
+          }
+          // sanity check: ensure that incident cell belongs to the stencil.
+          else if (not in_stencil(neigh)) {
+            auto id = std::to_string(source_id);
+            throw std::runtime_error("invalid stencil for source cell "+ id);
+          }
+#if DEBUG            
+          // sanity check: ensure that swept face centroid remains
+          // inside the neighbor cell.
+          else if (not centroid_inside_cell(neigh, moments)) {
+            throw std::runtime_error("invalid target mesh for swept face");          
+          }
+#endif            
+          // append to list as current neighbor moment.
+          else {
+#ifdef HAVE_TANGRAM
+            if (single_mat) {
+#endif
+              swept_moments.emplace_back(neigh, moments);
+#ifdef HAVE_TANGRAM
+            } else {
+              //Skip if the neighboring cell doesn't contain material_id_
+              std::vector<int> neighmats;
+              sourceStateWrapper.cell_get_mats(neigh, &neighmats);
+              if (std::find(neighmats.begin(), neighmats.end(), material_id_) ==
+                  neighmats.end())
+                continue;
+              
+              //Compute and append moments for the neighbor
+              swept_moments.emplace_back(neigh, 
+                compute_face_group_moments(neigh, edges[i], std::fabs(moments[0])));
+            }
+#endif  
+          }
+        }
+      } // end for each edge of current cell
+     
+      return swept_moments;
     }
 
   private:

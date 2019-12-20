@@ -177,6 +177,9 @@ struct NumericTolerances_t {
     // this value are skipped in interpolate.
     double min_relative_volume              = error_value_;
 
+    // Minimal polytope volume for swept regions
+    double min_absolute_volume              = error_value_;
+
     // Check that the relative volume of a material we are adding to
     // a cell is not miniscule. If the relative volume is smaller
     // that this value, the material is not added to the cell.
@@ -189,6 +192,7 @@ struct NumericTolerances_t {
         minimal_intersection_volume     = -1e-14;
         intersect_bb_relative_distance  =  1e-12;
         min_relative_volume             =  1e-12;
+        min_absolute_volume             =  1e-14;        
         driver_relative_min_mat_vol     =  1e-10;
     }
 
