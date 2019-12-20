@@ -650,6 +650,7 @@ int main(int argc, char** argv) {
     momentum_cn_y.resize(ncorners_trg);
 
     Wonton::Point<2> xc, xcn;
+    Wonton::Vector<2> grad;
     std::vector<int> wedges;
     std::array<Wonton::Point<2>, 3> wcoords;
 
@@ -666,14 +667,14 @@ int main(int argc, char** argv) {
         // integral is the value at centroid
         double vol = trgmesh_wrapper.corner_volume(cn);
 
-        auto& grad0 = gradients[0][c];
-        mass_trg[cn] = vol * (density_trg[c] + dot(grad0, xcn - xc));
+        grad = gradients[0][c];
+        mass_trg[cn] = vol * (density_trg[c] + dot(grad, xcn - xc));
 
-        auto& grad1 = gradients[1][c];
-        momentum_cn_x[cn] = vol * (momentum_x_trg[c] + dot(grad1, xcn - xc));
+        grad = gradients[1][c];
+        momentum_cn_x[cn] = vol * (momentum_x_trg[c] + dot(grad, xcn - xc));
 
-        auto& grad2 = gradients[2][c];
-        momentum_cn_y[cn] = vol * (momentum_y_trg[c] + dot(grad2, xcn - xc));
+        grad = gradients[2][c];
+        momentum_cn_y[cn] = vol * (momentum_y_trg[c] + dot(grad, xcn - xc));
       }
     }
   } 
