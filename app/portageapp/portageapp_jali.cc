@@ -22,6 +22,7 @@
 #include "ittnotify.h"
 #endif
 
+
 // Jali mesh infrastructure library
 // See https://github.com/lanl/jali
 
@@ -63,6 +64,7 @@ using Portage::reorder;
 */
 
 //////////////////////////////////////////////////////////////////////
+
 
 
 int print_usage() {
@@ -268,38 +270,38 @@ int main(int argc, char** argv) {
   // Some input error checking
 
   if (nsourcecells > 0 && srcfile.length() > 0) {
-    std::cout << "Cannot request internally generated source mesh "
+    std::cerr << "Cannot request internally generated source mesh "
               << "(--nsourcecells) and external file read (--source_file)\n\n";
     print_usage();
     MPI_Abort(MPI_COMM_WORLD, -1);
   }
   if (!nsourcecells && srcfile.length() == 0) {
-    std::cout << "Must specify one of the two options --nsourcecells "
+    std::cerr << "Must specify one of the two options --nsourcecells "
               << "or --source_file\n";
     print_usage();
     MPI_Abort(MPI_COMM_WORLD, -1);
   }
 
   if (ntargetcells > 0 && trgfile.length() > 0) {
-    std::cout << "Cannot request internally generated target mesh "
+    std::cerr << "Cannot request internally generated target mesh "
               << "(--ntargetcells) and external file read (--target_file)\n\n";
     print_usage();
     MPI_Abort(MPI_COMM_WORLD, -1);
   }
   if (!ntargetcells && trgfile.length() == 0) {
-    std::cout << "Must specify one of the two options --ntargetcells "
+    std::cerr << "Must specify one of the two options --ntargetcells "
               << "or --target_file\n";
     MPI_Abort(MPI_COMM_WORLD, -1);
   }
   if ((srcfile.length() || trgfile.length()) && n_converge > 1) {
-    std::cout <<
+    std::cerr <<
         "Convergence study possible only for internally generated meshes\n";
     std::cout << "Will do single remap and exit\n";
     n_converge = 1;
   }
   if (nsourcecells > 0 && field_expression.length() == 0) {
-    std::cout << "No field imposed on internally generated source mesh\n";
-    std::cout << "Nothing to remap. Exiting...";
+    std::cerr << "No field imposed on internally generated source mesh\n";
+    std::cerr << "Nothing to remap. Exiting...";
     print_usage();
     MPI_Abort(MPI_COMM_WORLD, -1);
   }
@@ -361,6 +363,7 @@ int main(int argc, char** argv) {
     gettimeofday(&end, 0);
     timersub(&end, &begin, &diff);
     float seconds = diff.tv_sec + 1.0E-6*diff.tv_usec;
+#ifdef ENABLE_DEBUG
     if (rank == 0) {
       if (n_converge == 1)
         std::cout << "Mesh Initialization Time: " << seconds << std::endl;
@@ -368,6 +371,7 @@ int main(int argc, char** argv) {
         std::cout << "Mesh Initialization Time (Iteration i): " <<
             seconds << std::endl;
     }
+#endif
     gettimeofday(&begin, 0);
 
     // Make sure we have the right dimension and that source and
@@ -428,6 +432,7 @@ int main(int argc, char** argv) {
         min_vol = fmin( min_vol, fabs( sourceMeshWrapper.cell_volume(j) - 1./double(nsourcecells*nsourcecells) ) );
         max_vol = fmax( max_vol, fabs( sourceMeshWrapper.cell_volume(j) - 1./double(nsourcecells*nsourcecells) ) );
       }
+#if ENABLE_DEBUG
       std::cout << std::endl << std::endl << "CYCLIC REMAP RELATIVE ERROR = "
                 << cyclic_error/cyclic_error_norm << " , NORM =  " <<
                 cyclic_error_norm << " , MAX BOUND VIOLATION (RELATIVE) = " <<
@@ -435,24 +440,29 @@ int main(int argc, char** argv) {
       min_vol = min_vol * double(nsourcecells*nsourcecells);
       max_vol = max_vol * double(nsourcecells*nsourcecells);
       std::cout << "min_vol, max_vol = " << min_vol << " " << max_vol << std::endl;
+#endif
     }
     else {
+#ifdef ENABLE_DEBUG
       std::cout << "L1 norm of error for iteration " << i << " is " <<
         l1_err[i] << std::endl;
 
       std::cout << "L2 norm of error for iteration " << i << " is " <<
         l2_err[i] << std::endl;
+#endif
     }
 
     gettimeofday(&end, 0);
     timersub(&end, &begin, &diff);
     seconds = diff.tv_sec + 1.0E-6*diff.tv_usec;
+#ifdef ENABLE_DEBUG
     if (rank == 0) {
       if (n_converge == 1)
         std::cout << "Remap Time: " << seconds << std::endl;
       else
         std::cout << "Remap Time (Iteration i): " << seconds << std::endl;
     }
+#endif
     gettimeofday(&begin, 0);
 
 
@@ -460,14 +470,14 @@ int main(int argc, char** argv) {
     nsourcecells *= 2;
     ntargetcells *= 2;
   }
-
+#ifdef ENABLE_DEBUG
   for (int i = 1; i < n_converge; i++) {
     std::cout << "Error ratio L1(" << i-1 << ")/L1(" << i << ") is " <<
         l1_err[i-1]/l1_err[i] << std::endl;
     std::cout << "Error ratio L2(" << i-1 << ")/L2(" << i << ") is " <<
         l2_err[i-1]/l2_err[i] << std::endl;
   }
-
+#endif
   MPI_Finalize();
 }
 
@@ -498,7 +508,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
   const int nsrcnodes = sourceMeshWrapper.num_owned_nodes() +
       sourceMeshWrapper.num_ghost_nodes();
   const int ntarnodes = targetMeshWrapper.num_owned_nodes();
-
+#ifdef ENABLE_DEBUG 
   if (rank == 0) {
     std::cout << "starting portageapp_jali...\n";
     std::cout << "All fields on" << entityKind << "including "
@@ -515,30 +525,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
   std::cout << "\nSource mesh on rank "<< rank <<" has " << nsrccells << " cells\n";
   std::cout << "Source mesh on rank "<< rank <<" has " << sourceMeshWrapper.num_owned_cells() << " owned cells\n";
   std::cout << "Target mesh on rank "<< rank <<" has " << ntarcells << " cells\n";
-/*  
-  for (int i = 0; i<nsrccells; i++){
-    std::vector<Wonton::Point<2>> coords;
-  	sourceMeshWrapper.cell_get_coordinates(i,&coords);
-  	std::cout << "Src rank " << rank << " cell " << i ;
-  	std::cout << " has gid " << sourceMeshWrapper.get_global_id(i, Wonton::Entity_kind::CELL);
-  	std::cout << " : ";
-  	std::cout << "(" << coords[0][0] << ", " << coords[0][1] << ") ";
-  	std::cout << "(" << coords[1][0] << ", " << coords[1][1] << ") ";
-  	std::cout << "(" << coords[2][0] << ", " << coords[2][1] << ") ";
-  	std::cout << "(" << coords[3][0] << ", " << coords[3][1] << ")"<<std::endl;
-  }
-  
-  for (int i = 0; i<ntarcells; i++){
-    std::vector<Wonton::Point<2>> coords;
-  	targetMeshWrapper.cell_get_coordinates(i,&coords);
-  	std::cout << "tgt rank " << rank << " cell " << i ;
-  	std::cout << " : ";
-  	std::cout << "(" << coords[0][0] << ", " << coords[0][1] << ") ";
-  	std::cout << "(" << coords[1][0] << ", " << coords[1][1] << ") ";
-  	std::cout << "(" << coords[2][0] << ", " << coords[2][1] << ") ";
-  	std::cout << "(" << coords[3][0] << ", " << coords[3][1] << ")"<<std::endl;
-  }
-*/  
+#endif
   // Native jali state managers for source and target
   std::shared_ptr<Jali::State> sourceState(Jali::State::create(sourceMesh));
   std::shared_ptr<Jali::State> targetState(Jali::State::create(targetMesh));
@@ -696,10 +683,11 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
                                         &cellvecout);
     sourceStateWrapper.mesh_get_data<double>(Portage::CELL, "celldata",
                                         &cellvecin);
+#ifdef ENABLE_DEBUG
     if (numpe == 1 && ntarcells < 10)
       std::cout << "celldata vector on target mesh after remapping is:"
                 << std::endl;
-
+#endif
     targetData.resize(ntarcells);
 
     // Compute total mass on the source mesh to check conservation
@@ -742,10 +730,11 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
                                         &nodevecout);
     sourceStateWrapper.mesh_get_data<double>(Portage::NODE, "nodedata",
                                         &nodevecin);
+#ifdef ENABLE_DEBUG
     if (numpe == 1 && ntarnodes < 10)
       std::cout << "nodedata vector on target mesh after remapping is:"
                 << std::endl;
-
+#endif
     for (int c = 0; c < nsrcnodes; ++c) {
       minin = fmin( minin, nodevecin[c] );
       maxin = fmax( maxin, nodevecin[c] );
@@ -793,6 +782,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
   }
   err_norm = err_l1 / err_norm;
   *L2_error = sqrt(*L2_error);
+#ifdef ENABLE_DEBUG 
   if (!remap_back) {
     std::printf("\n\nL1 NORM OF ERROR (excluding boundary) = %lf\n", *L1_error);
     std::printf("L2 NORM OF ERROR (excluding boundary) = %lf\n\n", *L2_error);
@@ -805,7 +795,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
     std::printf("Target total mass = %.15e \n", target_mass);
     std::printf("===================================================\n");
   }
-
+#endif
   // Write out the meshes if requested
   if (mesh_output) {
       if (rank == 0)

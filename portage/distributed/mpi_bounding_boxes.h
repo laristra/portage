@@ -7,7 +7,6 @@ Please see the license file at the root of this repository, or at:
 #ifndef MPI_BOUNDING_BOXES_H_
 #define MPI_BOUNDING_BOXES_H_
 
-//#define DEBUG_MPI
 
 #ifdef PORTAGE_ENABLE_MPI
 
@@ -398,9 +397,9 @@ class MPI_Bounding_Boxes {
     // Is the a multimaterial problem? If so we need to pass the cell indices
     // in addition to the field values
     if (nmats>0){
-
+      #ifdef ENABLE_DEBUG
       std::cout << "in distribute, this a multimaterial problem with " << nmats << " materials\n";
-
+      #endif
       /////////////////////////////////////////////////////////
       // get the material ids across all nodes
       /////////////////////////////////////////////////////////

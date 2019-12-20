@@ -29,7 +29,6 @@
 #include "wonton/support/Point.h"
 #include "wonton/support/CoordinateSystem.h"
 #include "wonton/state/state_vector_multi.h"
-#include "portage/driver/fix_mismatch.h"
 #include "portage/driver/parts.h"
 
 /*!
@@ -231,35 +230,17 @@ class CoreDriverBase {
 
     @param[in] upper_bound  Upper bound for variable
 
-    @param[in] partial_fixup_type Method to populate fields on
-    partially filled target entities (cells or dual cells)
-
-    @param[in] empty_fixup_type Method to populate fields on empty
-    target entities (cells or dual cells)
-
-    @param[in] conservation_tol Tolerance to which source and target
-    integral quantities are to be matched
-
-    @param[in] max_fixup_iter     Max number of iterations for global repair
-
-    See support/portage.h for options on limiter, partial_fixup_type and
-    empty_fixup_type
-    
   */
   
   template<typename T = double,
            Entity_kind ONWHAT,
-           template<int, Entity_kind, class, class, class, class,
+           template<int, Entity_kind, class, class, class, class, class,
                     template <class, int, class, class> class,
                     class, class, class> class Interpolate
            >
   void interpolate_mesh_var(std::string srcvarname, std::string trgvarname,
                             Portage::vector<std::vector<Weights_t>> const& sources_and_weights,
                             T lower_bound, T upper_bound,
-                            Partial_fixup_type partial_fixup_type,
-                            Empty_fixup_type empty_fixup_type,
-                            double conservation_tol,
-                            int max_fixup_iter,
                             const PartPair<D, SourceMesh, SourceState,
                                               TargetMesh, TargetState>* parts_pair = nullptr,
                             Portage::vector<Vector<D>>* gradients = nullptr) {
@@ -269,10 +250,7 @@ class CoreDriverBase {
         template interpolate_mesh_var<T, Interpolate>(srcvarname, trgvarname,
                                                       sources_and_weights,
                                                       lower_bound, upper_bound,
-                                                      partial_fixup_type,
-                                                      empty_fixup_type,
-                                                      conservation_tol,
-                                                      max_fixup_iter, parts_pair,
+                                                      parts_pair,
                                                       gradients);
   }
 
@@ -287,35 +265,16 @@ class CoreDriverBase {
     @param[in] lower_bound  Lower bound for variable
 
     @param[in] upper_bound  Upper bound for variable
-
-    @param[in] partial_fixup_type Method to populate fields on
-    partially filled target entities (cells or dual cells)
-
-    @param[in] empty_fixup_type Method to populate fields on empty
-    target entities (cells or dual cells)
-
-    @param[in] conservation_tol Tolerance to which source and target
-    integral quantities are to be matched
-
-    @param[in] max_fixup_iter     Max number of iterations for global repair
-
-    See support/portage.h for options on limiter, partial_fixup_type and
-    empty_fixup_type
-      
   */
   
   template <typename T = double,
-            template<int, Entity_kind, class, class, class, class,
+            template<int, Entity_kind, class, class, class, class, class,
                      template <class, int, class, class> class,
                      class, class, class> class Interpolate
             >
   void interpolate_mat_var(std::string srcvarname, std::string trgvarname,
                            std::vector<Portage::vector<std::vector<Weights_t>>> const& sources_and_weights_by_mat,
                            T lower_bound, T upper_bound,
-                           Partial_fixup_type partial_fixup_type,
-                           Empty_fixup_type empty_fixup_type,
-                           double conservation_tol,
-                           int max_fixup_iter,
                            Portage::vector<Vector<D>>* gradients = nullptr) {
 
     assert(onwhat() == CELL);
@@ -325,30 +284,8 @@ class CoreDriverBase {
                                                       trgvarname,
                                                       sources_and_weights_by_mat,
                                                       lower_bound, upper_bound,
-                                                      partial_fixup_type,
-                                                      empty_fixup_type,
-                                                      conservation_tol,
-                                                      max_fixup_iter, gradients);
+                                                      gradients);
   }
-
-  /*!
-    @brief Check if meshes are mismatched (don't cover identical
-    portions of space)
-
-    @tparam Entity_kind  What kind of entity are we performing intersection of
-
-    @param[in] sources_weights  Intersection sources and moments (vols, centroids) 
-    @returns   Whether the meshes are mismatched
-  */
-
-  template<Entity_kind ONWHAT>
-  bool 
-  check_mesh_mismatch(Portage::vector<std::vector<Weights_t>> const& source_weights) {
-    assert(ONWHAT == onwhat());
-    auto derived_class_ptr = static_cast<CoreDriverType<ONWHAT> *>(this);
-    return derived_class_ptr->check_mesh_mismatch(source_weights);
-  }
-
 
   /*!
     @brief Set numerical tolerances for small volumes, distances, etc.
@@ -803,6 +740,8 @@ class CoreDriver : public CoreDriverBase<D,
     int material_id = 0,
     const Part<SourceMesh, SourceState>* source_part = nullptr) const {
 
+    int size = 0;
+#if HAVE_TANGRAM
     // enable part-by-part only for cell-based remap
     auto const field_type = source_state_.field_type(ONWHAT, field_name);
 
@@ -811,7 +750,6 @@ class CoreDriver : public CoreDriverBase<D,
       ONWHAT == Entity_kind::CELL and
       field_type == Field_type::MULTIMATERIAL_FIELD;
 
-    int size = 0;
     std::vector<int> mat_cells;
 
     if (multimat) {
@@ -822,8 +760,11 @@ class CoreDriver : public CoreDriverBase<D,
       else
         throw std::runtime_error("interface reconstructor not set");
     } else /* single material */ {
+#endif
       size = source_mesh_.num_entities(ONWHAT);
+#if HAVE_TANGRAM
     }
+#endif
 
     // instantiate the right kernel according to entity kind (cell/node),
     // as well as source and target meshes and states types.
@@ -832,7 +773,7 @@ class CoreDriver : public CoreDriverBase<D,
                     limiter_type, boundary_limiter_type,
                     interface_reconstructor_, source_part);
 #else
-    Gradient kernel(source_mesh_, source_state_, variable_name,
+    Gradient kernel(source_mesh_, source_state_, field_name,
                     limiter_type, boundary_limiter_type, source_part);
 #endif
 
@@ -840,54 +781,21 @@ class CoreDriver : public CoreDriverBase<D,
     Portage::vector<Vector<D>> gradient_field(size);
 
     // populate it by invoking the kernel on each source entity.
+#if HAVE_TANGRAM
     if (multimat) {
       kernel.set_material(material_id);
       Portage::transform(mat_cells.begin(),
                          mat_cells.end(),
                          gradient_field.begin(), kernel);
     } else {
+#endif
       Portage::transform(source_mesh_.begin(ONWHAT),
                          source_mesh_.end(ONWHAT),
                          gradient_field.begin(), kernel);
+#if HAVE_TANGRAM
     }
-
+#endif
     return gradient_field;
-  }
-
-
-  /*! 
-    Check mismatch between meshes
-
-    @param[in] sources_and_weights Intersection sources and moments
-    (vols, centroids)
-
-    @returns   Whether the meshes are mismatched
-  */
-
-  bool
-  check_mesh_mismatch(Portage::vector<std::vector<Weights_t>> const& source_weights) {
-
-    // Instantiate mismatch fixer for later use
-    if (not mismatch_fixer_) {
-      // Intel 18.0.1 does not recognize std::make_unique even with -std=c++14 flag *ugh*
-      // mismatch_fixer_ = std::make_unique<MismatchFixer<D, ONWHAT,
-      //                                                  SourceMesh, SourceState,
-      //                                                  TargetMesh,  TargetState>
-      //                                    >
-      //     (source_mesh_, source_state_, target_mesh_, target_state_,
-      //      source_weights, executor_);
-
-      mismatch_fixer_ = std::unique_ptr<MismatchFixer<D, ONWHAT,
-                                                      SourceMesh, SourceState,
-                                                      TargetMesh,  TargetState>
-                                        >(new MismatchFixer<D, ONWHAT,
-                                          SourceMesh, SourceState,
-                                          TargetMesh,  TargetState>
-                                          (source_mesh_, source_state_, target_mesh_, target_state_,
-                                           source_weights, executor_));
-    }
-
-    return mismatch_fixer_->has_mismatch();
   }
 
   /**
@@ -896,26 +804,18 @@ class CoreDriver : public CoreDriverBase<D,
    * @param[in] srcvarname          source mesh variable to remap
    * @param[in] trgvarname          target mesh variable to remap
    * @param[in] sources_and_weights weights for mesh-mesh interpolation
-   * @param[in] lower_bound         lower bound of variable value when doing fixup
-   * @param[in] upper_bound         upper bound of variable value when doing fixup
-   * @param[in] partial...          how to fixup partly filled target cells
-   * @param[in] emtpy...            how to fixup empty target cells with this var
-   * @param[in] cons..tol           tolerance for conservation when doing fixup
-   * @param[in] max_fixup_iter      maximum number of iterations for mismatch fixup
+   * @param[in] lower_bound         lower bound of variable value 
+   * @param[in] upper_bound         upper bound of variable value 
    * @param[in] partition           source and target entities list for part-by-part
    */
   template<typename T = double,
-    template<int, Entity_kind, class, class, class, class,
+           template<int, Entity_kind, class, class, class, class, class,
     template<class, int, class, class> class,
     class, class, class> class Interpolate
   >
   void interpolate_mesh_var(std::string srcvarname, std::string trgvarname,
                             Portage::vector<std::vector<Weights_t>> const& sources_and_weights,
                             T lower_bound, T upper_bound,
-                            Partial_fixup_type partial_fixup_type = DEFAULT_PARTIAL_FIXUP_TYPE,
-                            Empty_fixup_type empty_fixup_type = DEFAULT_EMPTY_FIXUP_TYPE,
-                            double conservation_tol = DEFAULT_CONSERVATION_TOL,
-                            int max_fixup_iter = DEFAULT_MAX_FIXUP_ITER,
                             const PartPair<D, SourceMesh, SourceState,
                                               TargetMesh, TargetState>* partition = nullptr,
                             Portage::vector<Vector<D>>* gradients = nullptr) {
@@ -926,9 +826,11 @@ class CoreDriver : public CoreDriverBase<D,
       return;
     }
 
+
     using Interpolator = Interpolate<D, ONWHAT,
                                      SourceMesh, TargetMesh,
                                      SourceState, TargetState,
+                                     T,
                                      InterfaceReconstructorType,
                                      Matpoly_Splitter, Matpoly_Clipper, CoordSys>;
 
@@ -945,11 +847,8 @@ class CoreDriver : public CoreDriverBase<D,
 
       // 1. Do some basic checks on supplied source and target parts
       // to prevent bugs when interpolating values:
-      // - check that parts mismatch has already been tested.
-      // - afterwards, check that each entity id is within the
-      //   mesh entity index space.
-
-      assert(partition->mismatch_tested());
+      // check that each entity id is within the
+      // mesh entity index space.
 
       int const& max_source_id = source_mesh_.num_entities(ONWHAT, ALL);
       int const& max_target_id = target_mesh_.num_entities(ONWHAT, ALL);
@@ -1016,35 +915,12 @@ class CoreDriver : public CoreDriverBase<D,
         auto const& j = target_part.cells()[i];
         target_mesh_field[j] = target_part_field[i];
       }
-
-      // 4. Fix partially filled and empty cells values if necessary.
-      // Notice that mismatch detection should have been already performed.
-      if (partition->has_mismatch()) {
-        #ifdef DEBUG
-          std::fprintf(stderr,
-            "There is a mismatch between source and target sub-meshes\n"
-            "Will start fixing interpolated values\n"
-          );
-        #endif
-        partition->fix_mismatch(srcvarname, trgvarname,
-                                lower_bound, upper_bound,
-                                conservation_tol, max_fixup_iter,
-                                partial_fixup_type, empty_fixup_type);
-      }
     } else /* mesh-mesh interpolation */ {
       Portage::pointer<T> target_field(target_mesh_field);
       Portage::transform(target_mesh_.begin(ONWHAT, PARALLEL_OWNED),
                          target_mesh_.end(ONWHAT, PARALLEL_OWNED),
                          sources_and_weights.begin(),
                          target_field, interpolator);
-
-      assert(mismatch_fixer_ && "check_mesh_mismatch must be called first");
-      if (mismatch_fixer_->has_mismatch()) {
-        mismatch_fixer_->fix_mismatch(srcvarname, trgvarname,
-                                      lower_bound, upper_bound,
-                                      conservation_tol, max_fixup_iter,
-                                      partial_fixup_type, empty_fixup_type);
-      }
     }
   }
 
@@ -1059,34 +935,27 @@ class CoreDriver : public CoreDriverBase<D,
 
     @param[in] trgvarname  Material variable name on the target mesh
 
-    @param[in] partial...  How to fixup partly filled target cells (for this var)
+    @param[in] bnd_limiter Boundary limiter to use for variable
 
-    @param[in] emtpy...    How to fixup empty target cells with this var
+    @param[in] lower_bound Lower bound of variable value
 
-    @param[in] lower_bound Lower bound of variable value when doing fixup
-
-    @param[in] upper_bound Upper bound of variable value when doing fixup
-
-    @param[in] cons..tol   Tolerance for conservation when doing fixup
+    @param[in] upper_bound Upper bound of variable value
   */
 
   template<typename T = double,
-           template<int, Entity_kind, class, class, class, class,
+           template<int, Entity_kind, class, class, class, class, class,
                     template<class, int, class, class> class,
                     class, class, class> class Interpolate
            >
   void interpolate_mat_var(std::string srcvarname, std::string trgvarname,
                            std::vector<Portage::vector<std::vector<Weights_t>>> const& sources_and_weights_by_mat,
                            T lower_bound, T upper_bound,
-                           Partial_fixup_type partial_fixup_type = DEFAULT_PARTIAL_FIXUP_TYPE,
-                           Empty_fixup_type empty_fixup_type = DEFAULT_EMPTY_FIXUP_TYPE,
-                           double conservation_tol = DEFAULT_CONSERVATION_TOL,
-                           int max_fixup_iter = DEFAULT_MAX_FIXUP_ITER,
                            Portage::vector<Vector<D>>* gradients = nullptr) {
 
     using Interpolator = Interpolate<D, ONWHAT,
                                      SourceMesh, TargetMesh,
                                      SourceState, TargetState,
+                                     T,
                                      InterfaceReconstructorType,
                                      Matpoly_Splitter, Matpoly_Clipper, CoordSys>;
 
@@ -1158,9 +1027,6 @@ class CoreDriver : public CoreDriverBase<D,
 #ifdef PORTAGE_ENABLE_MPI
   MPI_Comm mycomm_ = MPI_COMM_NULL;
 #endif
-  std::unique_ptr<MismatchFixer<D, ONWHAT,
-                                SourceMesh, SourceState,
-                                TargetMesh, TargetState>> mismatch_fixer_;
 
 #ifdef HAVE_TANGRAM
 

@@ -262,20 +262,23 @@ TEST_F(PartOrderOneTest, PiecewiseConstantField) {
   // process remap
   auto candidates = remapper.search<Portage::SearchKDTree>();
   auto weights = remapper.intersect_meshes<Portage::IntersectR2D>(candidates);
-  bool has_mismatch = remapper.check_mesh_mismatch(weights);
 
   for (int i = 0; i < 2; ++i) {
-    // test for mismatch and compute volumes
-    parts[i].check_mismatch(weights);
-    assert(not parts[i].has_mismatch());
 
     // interpolate density for current part
     remapper.interpolate_mesh_var<double, Portage::Interpolate_1stOrder>(
-      "density", "density", weights, lower_bound, upper_bound,
-      Portage::DEFAULT_PARTIAL_FIXUP_TYPE, Portage::DEFAULT_EMPTY_FIXUP_TYPE, 
-      Portage::DEFAULT_CONSERVATION_TOL,
-      Portage::DEFAULT_MAX_FIXUP_ITER, &(parts[i])
+      "density", "density", weights, lower_bound, upper_bound, &(parts[i])
     );
+      
+    // test for mismatch and compute volumes
+    parts[i].check_mismatch(weights);
+    assert(not parts[i].has_mismatch());
+    
+    // this block won't run since no mismatch, but make sure syntactically correct
+    if (parts[i].has_mismatch())
+      parts[i].fix_mismatch("density", "density", lower_bound, upper_bound, 
+      Portage::DEFAULT_CONSERVATION_TOL, Portage::DEFAULT_MAX_FIXUP_ITER,
+      Portage::DEFAULT_PARTIAL_FIXUP_TYPE, Portage::DEFAULT_EMPTY_FIXUP_TYPE);
   }
 
   // compare remapped values with analytically computed ones
@@ -322,20 +325,20 @@ TEST_F(PartOrderOneTest, GlobalRemapComparison) {
   // process remap
   auto candidates = remapper.search<Portage::SearchKDTree>();
   auto weights = remapper.intersect_meshes<Portage::IntersectR2D>(candidates);
-  bool has_mismatch = remapper.check_mesh_mismatch(weights);
 
   for (int i = 0; i < 2; ++i) {
+    // interpolate density for current part
+    remapper.interpolate_mesh_var<double, Portage::Interpolate_1stOrder>(
+      "density", "density", weights, lower_bound, upper_bound, &(parts[i])
+    );
+    
     // test for mismatch and compute volumes
     parts[i].check_mismatch(weights);
     assert(not parts[i].has_mismatch());
 
-    // interpolate density for current part
-    remapper.interpolate_mesh_var<double, Portage::Interpolate_1stOrder>(
-      "density", "density", weights, lower_bound, upper_bound,
-      Portage::DEFAULT_PARTIAL_FIXUP_TYPE, Portage::DEFAULT_EMPTY_FIXUP_TYPE, 
-      Portage::DEFAULT_CONSERVATION_TOL,
-      Portage::DEFAULT_MAX_FIXUP_ITER, &(parts[i])
-    );
+    // this block won't run since no mismatch, but make sure syntactically correct
+    if (parts[i].has_mismatch())
+      parts[i].fix_mismatch("density", "density", lower_bound, upper_bound);
   }
 
   // store the part-by-part remapped values
@@ -389,7 +392,6 @@ TEST_F(PartOrderTwoTest, PiecewiseLinearField) {
   // process remap
   auto candidates = remapper.search<Portage::SearchKDTree>();
   auto weights = remapper.intersect_meshes<Portage::IntersectR2D>(candidates);
-  bool has_mismatch = remapper.check_mesh_mismatch(weights);
 
   for (int i = 0; i < 2; ++i) {
     // test for mismatch and compute volumes
@@ -404,11 +406,18 @@ TEST_F(PartOrderTwoTest, PiecewiseLinearField) {
 
     // interpolate density for current part
     remapper.interpolate_mesh_var<double, Portage::Interpolate_2ndOrder>(
-      "density", "density", weights, lower_bound, upper_bound,
-      Portage::DEFAULT_PARTIAL_FIXUP_TYPE, Portage::DEFAULT_EMPTY_FIXUP_TYPE,
-      Portage::DEFAULT_CONSERVATION_TOL,
-      Portage::DEFAULT_MAX_FIXUP_ITER, &(parts[i]), &gradients
+      "density", "density", weights, lower_bound, upper_bound, &(parts[i]), &gradients
     );
+
+    // test for mismatch and compute volumes
+    parts[i].check_mismatch(weights);
+    assert(not parts[i].has_mismatch());
+
+    // this block won't run since no mismatch, but make sure syntactically correct
+    if (parts[i].has_mismatch())
+      parts[i].fix_mismatch("density", "density", lower_bound, upper_bound, 
+      Portage::DEFAULT_CONSERVATION_TOL, Portage::DEFAULT_MAX_FIXUP_ITER,
+      Portage::DEFAULT_PARTIAL_FIXUP_TYPE, Portage::DEFAULT_EMPTY_FIXUP_TYPE);
   }
 
   // compare remapped values with analytically computed ones

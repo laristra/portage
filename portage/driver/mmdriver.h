@@ -91,7 +91,7 @@ template <template <int, Entity_kind, class, class> class Search,
           template <class, int, class, class> class,
           class, class> class Intersect,
           template<
-            int, Entity_kind, class, class, class, class,
+            int, Entity_kind, class, class, class, class, class,
             template<class, int, class, class> class,
             class, class, class=Wonton::DefaultCoordSys
           > class Interpolate,
@@ -428,6 +428,8 @@ class MMDriver {
       Wonton::Executor_type const *executor = nullptr
     ) const {
 
+      int size = 0;
+#if HAVE_TANGRAM
       auto const field_type = new_source_state.field_type(onwhat, field_name);
 
       // multi-material remap makes only sense on cell-centered fields.
@@ -435,7 +437,6 @@ class MMDriver {
         onwhat == Entity_kind::CELL and
         field_type == Field_type::MULTIMATERIAL_FIELD;
 
-      int size = 0;
       std::vector<int> mat_cells;
 
       if (multimat) {
@@ -445,13 +446,16 @@ class MMDriver {
         } else
           throw std::runtime_error("interface reconstructor not set");
       } else {
+#endif
         size = new_source_mesh.num_entities(onwhat);
+#if HAVE_TANGRAM
       }
+#endif
 
       using Gradient = Limited_Gradient<D, onwhat,
-        NewSourceMesh, NewSourceState,
-        InterfaceReconstructorType,
-        Matpoly_Splitter, Matpoly_Clipper>;
+                                        NewSourceMesh, NewSourceState,
+                                        InterfaceReconstructorType,
+                                        Matpoly_Splitter, Matpoly_Clipper>;
 
       // instantiate the right kernel according to entity kind (cell/node),
       // as well as source and target meshes and states types.
@@ -460,7 +464,7 @@ class MMDriver {
                       limiter_type, boundary_limiter_type,
                       interface_reconstructor);
 #else
-      Gradient kernel(source_mesh_, source_state_, variable_name,
+      Gradient kernel(new_source_mesh, new_source_state, field_name,
                     limiter_type, boundary_limiter_type);
 #endif
 
@@ -468,17 +472,20 @@ class MMDriver {
       Portage::vector<Vector<D>> gradient_field(size);
 
       // populate it by invoking the kernel on each source entity.
+#if HAVE_TANGRAM
       if (multimat) {
         kernel.set_material(material_id);
         Portage::transform(mat_cells.begin(),
                            mat_cells.end(),
                            gradient_field.begin(), kernel);
       } else {
+#endif
         Portage::transform(new_source_mesh.begin(onwhat),
                            new_source_mesh.end(onwhat),
                            gradient_field.begin(), kernel);
+#if HAVE_TANGRAM
       }
-
+#endif
       return gradient_field;
     }
 
@@ -500,6 +507,7 @@ class MMDriver {
     Interpolate<D, onwhat,
                 NewSourceMesh, TargetMesh_Wrapper,
                 NewSourceState, TargetState_Wrapper,
+                double,
                 InterfaceReconstructorType,
                 Matpoly_Splitter, Matpoly_Clipper>& interpolate,
 #if HAVE_TANGRAM
@@ -512,6 +520,7 @@ class MMDriver {
     int const order = Interpolate<D, onwhat,
                                   NewSourceMesh, TargetMesh_Wrapper,
                                   NewSourceState, TargetState_Wrapper,
+                                  double,
                                   InterfaceReconstructorType,
                                   Matpoly_Splitter, Matpoly_Clipper>::order;
 
@@ -523,7 +532,10 @@ class MMDriver {
                                               new_source_mesh, new_source_state,
                                               limiters_.at(field_name),
                                               bnd_limiters_.at(field_name),
-                                              material_id, interface_reconstructor,
+                                              material_id,
+                                              #if HAVE_TANGRAM
+                                                interface_reconstructor,
+                                              #endif
                                               executor);
 
         interpolate.set_interpolation_variable(field_name, gradients); break;
@@ -562,7 +574,7 @@ class MMDriver {
         distributed = true;
     }
 #endif
-
+#ifdef ENABLE_DEBUG
     if (comm_rank == 0)
       std::cout << "in MMDriver::run()...\n";
 
@@ -570,7 +582,7 @@ class MMDriver {
     std::cout << "Number of target cells in target mesh on rank "
               << comm_rank << ": "
               << numTargetCells << std::endl;
-
+#endif
 
     int nvars = source_target_varname_map_.size();
 
@@ -641,10 +653,11 @@ class MMDriver {
 
       gettimeofday(&end_timeval, 0);
       timersub(&end_timeval, &begin_timeval, &diff_timeval);
+#ifdef ENABLE_DEBUG
       float tot_seconds_dist = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
       std::cout << "Redistribution Time Rank " << comm_rank << " (s): " <<
           tot_seconds_dist << std::endl;
-
+#endif
       // Why is it not able to deduce the template arguments, if I don't specify
       // Flat_Mesh_Wrapper and Flat_State_Wrapper?
 
@@ -824,9 +837,10 @@ template <template <int, Entity_kind, class, class> class Search,
           template <Entity_kind, class, class, class,
           template <class, int, class, class> class,
           class, class> class Intersect,
-          template<int, Entity_kind, class, class, class, class,
+          template<int, Entity_kind, class, class, class, class, class,
           template<class, int, class, class> class,
-          class, class, class=Wonton::DefaultCoordSys> class Interpolate,
+                   class, class, class=Wonton::DefaultCoordSys>
+          class Interpolate,
           int D,
           class SourceMesh_Wrapper,
           class SourceState_Wrapper,
@@ -871,12 +885,13 @@ int MMDriver<Search, Intersect, Interpolate, D,
                 "Remap implemented only for CELL and NODE variables");
 
 
+#ifdef ENABLE_DEBUG
   int ntarget_ents_owned = target_mesh_.num_entities(onwhat,
                                                      Entity_type::PARALLEL_OWNED);
   std::cout << "Number of target entities of kind " << onwhat <<
       " in target mesh on rank " << comm_rank << ": " <<
       ntarget_ents_owned << std::endl;
-
+#endif
   int ntarget_ents = target_mesh_.num_entities(onwhat, Entity_type::ALL);
 
   float tot_seconds = 0.0, tot_seconds_srch = 0.0,
@@ -954,7 +969,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
     interface_reconstructor->reconstruct(executor);
   }
 
-
+#endif
   // Make an intersector which knows about the source state (to be able
   // to query the number of materials, etc) and also knows about the
   // interface reconstructor so that it can retrieve pure material polygons
@@ -966,9 +981,11 @@ int MMDriver<Search, Intersect, Interpolate, D,
   using Interpolator = Interpolate<D, onwhat,
                                    SourceMesh_Wrapper2, TargetMesh_Wrapper,
                                    SourceState_Wrapper2, TargetState_Wrapper,
+                                   double,
                                    InterfaceReconstructorType,
                                    Matpoly_Splitter, Matpoly_Clipper>;
 
+#if HAVE_TANGRAM
   Intersector intersect(source_mesh2, source_state2,
                         target_mesh_, num_tols_,
                         interface_reconstructor);
@@ -978,13 +995,6 @@ int MMDriver<Search, Intersect, Interpolate, D,
                            source_state2,
                            num_tols_, interface_reconstructor);
 #else
-  using Intersector = Intersect<onwhat, SourceMesh_Wrapper2,
-                                SourceState_Wrapper2, TargetMesh_Wrapper>;
-
-  using Interpolator = Interpolate<D, onwhat,
-                                   SourceMesh_Wrapper2, TargetMesh_Wrapper,
-                                   SourceState_Wrapper2, TargetState_Wrapper>;
-
   Intersector intersect(source_mesh2, source_state2, target_mesh_, num_tols_);
 
   // Get an instance of the desired interpolate algorithm type
@@ -1023,13 +1033,15 @@ int MMDriver<Search, Intersect, Interpolate, D,
 
   // INTERPOLATE (one variable at a time)
   gettimeofday(&begin_timeval, 0);
-
   int nvars = src_meshvar_names.size();
-  if (comm_rank == 0)
-    std::cout << "Number of mesh variables on entity kind " << onwhat <<
-        " to remap is " << nvars << std::endl;
+#ifdef ENABLE_DEBUG
+    if (comm_rank == 0){
+      std::cout << "Number of mesh variables on entity kind " << onwhat <<
+          " to remap is " << nvars << std::endl;
+    }
+#endif
 
-  Portage::vector<Vector<D>> gradients;
+Portage::vector<Vector<D>> gradients;
 
   for (int i = 0; i < nvars; ++i) {
     // compute gradient field if necessary and set interpolation parameters
@@ -1278,10 +1290,11 @@ int MMDriver<Search, Intersect, Interpolate, D,
       gettimeofday(&begin_timeval, 0);
       
       int nmatvars = src_matvar_names.size();
+#ifdef ENABLE_DEBUG
       if (comm_rank == 0)
         std::cout << "Number of multi-material variables on entity kind " <<
             onwhat << " to remap is " << nmatvars << std::endl;
-      
+#endif      
       interpolate.set_material(m);    // We have to do this so we know
       //                              // which material values we have
       //                              // to grab from the source state
@@ -1330,7 +1343,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
   }  // for nmats
 
   tot_seconds = tot_seconds_srch + tot_seconds_xsect + tot_seconds_interp;
-
+#ifdef ENABLE_DEBUG
   std::cout << "Transform Time for Entity Kind " << onwhat << " on Rank " <<
       comm_rank << " (s): " << tot_seconds << std::endl;
   std::cout << "   Search Time Rank " << comm_rank << " (s): " <<
@@ -1339,7 +1352,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
       tot_seconds_xsect << std::endl;
   std::cout << "   Interpolate Time Rank " << comm_rank << " (s): " <<
       tot_seconds_interp << std::endl;
-
+#endif
   return 1;
 }
 
