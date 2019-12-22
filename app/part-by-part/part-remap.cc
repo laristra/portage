@@ -591,7 +591,7 @@ void remap<2>(std::string field, int nb_parts,
       case 1: 
       
         remapper.interpolate_mesh_var<double, Portage::Interpolate_1stOrder>(
-          field, field, weights, lower_bound, upper_bound, current_part
+          field, field, weights, current_part
         );
               
         // test for mismatch and compute volumes
@@ -609,7 +609,7 @@ void remap<2>(std::string field, int nb_parts,
                                                             &source_part);
 
         remapper.interpolate_mesh_var<double, Portage::Interpolate_2ndOrder>(
-          field, field, weights, lower_bound, upper_bound, current_part, gradients
+          field, field, weights, current_part, gradients
         );
         
         // test for mismatch and compute volumes
@@ -699,8 +699,7 @@ void remap<3>(std::string field, int nb_parts,
       case 1: 
       
         remapper.interpolate_mesh_var<double, Portage::Interpolate_1stOrder>(
-          field, field, weights, lower_bound, upper_bound,
-          current_part
+          field, field, weights, current_part
         );
               
         // test for mismatch and compute volumes
@@ -716,8 +715,7 @@ void remap<3>(std::string field, int nb_parts,
                                                            &(current_part->source()));
 
         remapper.interpolate_mesh_var<double, Portage::Interpolate_2ndOrder>(
-          field, field, weights, lower_bound, upper_bound,
-          current_part, &gradients
+          field, field, weights, current_part, &gradients
         );
         
         // test for mismatch and compute volumes
