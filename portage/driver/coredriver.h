@@ -248,12 +248,12 @@ class CoreDriverBase {
 
   /*!
 
-    (Part-by-part) Interpolate a mesh variable of type T residing on
+    (Part-by-part) Interpolate a cell variable of type T residing on
     entity kind ONWHAT using previously computed intersection weights
 
     @tparam T   type of variable
 
-    @tparam ONWHAT  Entity_kind that field resides on (WE SHOULD RESTRICT THIS TO CELLS USING std::enable_if)
+    @tparam ONWHAT  Entity_kind that field resides on (enabled only for CELLs)
 
     @tparam Interpolate  Functor for doing the interpolate from mesh to mesh
 
@@ -263,15 +263,16 @@ class CoreDriverBase {
 
     @param[in] parts_pair   Pair of parts between which we have to remap
 
+    Enabled only for cells using SFINAE
   */
   
   template<typename T = double,
            Entity_kind ONWHAT,
            template<int, Entity_kind, class, class, class, class, class,
                     template <class, int, class, class> class,
-                    class, class, class> class Interpolate
-           >
-  void interpolate_mesh_var(std::string srcvarname, std::string trgvarname,
+                    class, class, class> class Interpolate>
+  typename std::enable_if<ONWHAT == CELL, void>
+  interpolate_mesh_var(std::string srcvarname, std::string trgvarname,
                             Portage::vector<std::vector<Weights_t>> const& sources_and_weights,
                             const PartPair<D, SourceMesh, SourceState,
                             TargetMesh, TargetState>* parts_pair,
@@ -301,13 +302,11 @@ class CoreDriverBase {
   template <typename T = double,
             template<int, Entity_kind, class, class, class, class, class,
                      template <class, int, class, class> class,
-                     class, class, class> class Interpolate
-            >
+                     class, class, class> class Interpolate>
   void interpolate_mat_var(std::string srcvarname, std::string trgvarname,
                            std::vector<Portage::vector<std::vector<Weights_t>>> const& sources_and_weights_by_mat,
                            Portage::vector<Vector<D>>* gradients = nullptr) {
 
-    assert(onwhat() == CELL);
     auto derived_class_ptr = static_cast<CoreDriverType<CELL> *>(this);
      derived_class_ptr->
          template interpolate_mat_var<T, Interpolate>(srcvarname,
@@ -875,25 +874,33 @@ class CoreDriver : public CoreDriverBase<D,
 
 
   /**
-   * @brief Interpolate mesh variable.
+   * @brief Interpolate mesh variable from source part to target part
    *
    * @param[in] srcvarname          source mesh variable to remap
    * @param[in] trgvarname          target mesh variable to remap
    * @param[in] sources_and_weights weights for mesh-mesh interpolation
    * @param[in] lower_bound         lower bound of variable value 
    * @param[in] upper_bound         upper bound of variable value 
-   * @param[in] partition           source and target entities list for part-by-part  [SHOULD BE ACTIVE ONLY FOR CELLS]
+   * @param[in] partition           structure containing source and target part info
+
+   Enable only for cells using SFINAE. Here the class, rather than the
+   function is templated on ONWHAT (as opposed to the equivalent
+   method in the base class); so we have to create a dummy template
+   parameter ONWHAT1 and rely on that to use SFINAE with a _second_
+   dummy template parameter
    */
   template<typename T = double,
            template<int, Entity_kind, class, class, class, class, class,
-    template<class, int, class, class> class,
-    class, class, class> class Interpolate
-  >
-  void interpolate_mesh_var(std::string srcvarname, std::string trgvarname,
-                            Portage::vector<std::vector<Weights_t>> const& sources_and_weights,
-                            const PartPair<D, SourceMesh, SourceState,
-                                              TargetMesh, TargetState>* partition,
-                            Portage::vector<Vector<D>>* gradients = nullptr) {
+                    template<class, int, class, class> class,
+                    class, class, class> class Interpolate,
+           Entity_kind ONWHAT1 = ONWHAT,
+           typename = typename std::enable_if<ONWHAT1 == CELL>::type>
+  void
+  interpolate_mesh_var(std::string srcvarname, std::string trgvarname,
+                       Portage::vector<std::vector<Weights_t>> const& sources_and_weights,
+                       const PartPair<D, SourceMesh, SourceState,
+                       TargetMesh, TargetState>* partition,
+                       Portage::vector<Vector<D>>* gradients = nullptr) {
 
     if (source_state_.get_entity(srcvarname) != ONWHAT) {
       std::cerr << "Variable " << srcvarname << " not defined on Entity_kind "
@@ -1008,17 +1015,24 @@ class CoreDriver : public CoreDriverBase<D,
     @param[in] lower_bound Lower bound of variable value
 
     @param[in] upper_bound Upper bound of variable value
+
+    Enable only for cells using SFINAE. Here the class, rather than
+    the function is templated on ONWHAT; so we have to create a dummy
+    template parameter ONWHAT1 and rely on that for SFINAE using a
+    _second_ template parameter
   */
 
   template<typename T = double,
            template<int, Entity_kind, class, class, class, class, class,
                     template<class, int, class, class> class,
-                    class, class, class> class Interpolate
-           >
-  void interpolate_mat_var(std::string srcvarname, std::string trgvarname,
-                           std::vector<Portage::vector<std::vector<Weights_t>>> const& sources_and_weights_by_mat,
-                           Portage::vector<Vector<D>>* gradients = nullptr) {
-
+                    class, class, class> class Interpolate,
+           Entity_kind ONWHAT1 = ONWHAT,
+           typename = typename std::enable_if<ONWHAT1 == CELL>::type>
+  void
+  interpolate_mat_var(std::string srcvarname, std::string trgvarname,
+                      std::vector<Portage::vector<std::vector<Weights_t>>> const& sources_and_weights_by_mat,
+                      Portage::vector<Vector<D>>* gradients = nullptr) {
+    
     using Interpolator = Interpolate<D, ONWHAT,
                                      SourceMesh, TargetMesh,
                                      SourceState, TargetState,
