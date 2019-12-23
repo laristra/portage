@@ -24,11 +24,10 @@
 #endif
 
 #include "portage/intersect/dummy_interface_reconstructor.h"
-#include <portage/interpolate/gradient.h>
+#include "portage/interpolate/gradient.h"
 #include "portage/support/portage.h"
 #include "wonton/support/Point.h"
 #include "wonton/support/CoordinateSystem.h"
-#include "wonton/state/state_vector_multi.h"
 #include "portage/driver/parts.h"
 
 /*!
