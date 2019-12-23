@@ -226,6 +226,7 @@ class CoreDriverBase {
 
     @param[in] trgvarname   Variable name on target mesh
 
+    @param[in] gradients    Gradients of variable on source mesh (can be nullptr for 1st order remap)
   */
   
   template<typename T = double,
@@ -262,6 +263,8 @@ class CoreDriverBase {
 
     @param[in] parts_pair   Pair of parts between which we have to remap
 
+    @param[in] gradients    Gradients of variable on source mesh (can be nullptr for 1st order remap)
+
     Enabled only for cells using SFINAE
   */
   
@@ -293,9 +296,7 @@ class CoreDriverBase {
 
     @param[in] trgvarname   Variable name on target mesh
 
-    @param[in] lower_bound  Lower bound for variable
-
-    @param[in] upper_bound  Upper bound for variable
+    @param[in] gradients    Gradients of variable on source mesh (can be nullptr for 1st order remap)
   */
   
   template <typename T = double,
@@ -831,6 +832,7 @@ class CoreDriver : public CoreDriverBase<D,
    * @param[in] srcvarname          source mesh variable to remap
    * @param[in] trgvarname          target mesh variable to remap
    * @param[in] sources_and_weights weights for mesh-mesh interpolation
+   * @param[in] gradients           gradients of variable on source mesh (can be nullptr for 1st order remap)
    */
   template<typename T = double,
            template<int, Entity_kind, class, class, class, class, class,
@@ -880,7 +882,8 @@ class CoreDriver : public CoreDriverBase<D,
    * @param[in] sources_and_weights weights for mesh-mesh interpolation
    * @param[in] lower_bound         lower bound of variable value 
    * @param[in] upper_bound         upper bound of variable value 
-   * @param[in] partition           structure containing source and target part info
+   * @param[in] partition           structure containing source and target part    * @param[in] gradients           gradients of variable on source mesh (can be nullptr for 1st order remap)
+info
 
    Enable only for cells using SFINAE. Here the class, rather than the
    function is templated on ONWHAT (as opposed to the equivalent
