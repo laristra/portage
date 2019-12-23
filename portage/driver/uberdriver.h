@@ -736,7 +736,7 @@ class UberDriver {
       );
     } else {
       driver->template interpolate_mat_var<T, Interpolate>(
-        srcvarname, trgvarname, sources_and_weights_by_mat_in,
+        srcvarname, trgvarname, sources_and_weights_by_mat_in
       );
     }
 #endif
