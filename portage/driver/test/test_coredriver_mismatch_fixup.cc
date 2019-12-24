@@ -20,7 +20,6 @@ Please see the license file at the root of this repository, or at:
 #include "portage/search/search_kdtree.h"
 #include "portage/intersect/intersect_rNd.h"
 #include "portage/interpolate/interpolate_nth_order.h"
-
 #include "Mesh.hh"
 #include "MeshFactory.hh"
 #include "JaliState.h"
@@ -124,7 +123,7 @@ TEST(Test_Mismatch_Fixup, Test_Methods) {
   double dblmax =  std::numeric_limits<double>::max();
 
   driver.interpolate_mesh_var<double,Portage::Interpolate_1stOrder>(
-    "cellvars","cellvars", source_weights, 0.0, dblmax, nullptr, &gradients);
+    "cellvars","cellvars", source_weights, &gradients);
 
   // test (C,E)
   if (fixer.has_mismatch())
@@ -137,7 +136,7 @@ TEST(Test_Mismatch_Fixup, Test_Methods) {
 
 
   driver.interpolate_mesh_var<double,Portage::Interpolate_1stOrder>(
-    "cellvars","cellvars", source_weights, 0.0, dblmax, nullptr, &gradients);
+    "cellvars","cellvars", source_weights, &gradients);
 
   // test (L,E)
   if (fixer.has_mismatch())
@@ -150,7 +149,7 @@ TEST(Test_Mismatch_Fixup, Test_Methods) {
 
  
   driver.interpolate_mesh_var<double,Portage::Interpolate_1stOrder>(
-    "cellvars","cellvars", source_weights, 0.0, dblmax, nullptr, &gradients);
+    "cellvars","cellvars", source_weights, &gradients);
 
   // test (S,E)
   if (fixer.has_mismatch())
@@ -163,7 +162,7 @@ TEST(Test_Mismatch_Fixup, Test_Methods) {
 
 
   driver.interpolate_mesh_var<double,Portage::Interpolate_1stOrder>(
-    "cellvars","cellvars", source_weights, 0.0, dblmax, nullptr, &gradients);
+    "cellvars","cellvars", source_weights, &gradients);
 
   // test (C,L)
   if (fixer.has_mismatch())
@@ -176,7 +175,7 @@ TEST(Test_Mismatch_Fixup, Test_Methods) {
 
  
   driver.interpolate_mesh_var<double,Portage::Interpolate_1stOrder>(
-    "cellvars","cellvars", source_weights, 0.0, dblmax, nullptr, &gradients);
+    "cellvars","cellvars", source_weights, &gradients);
 
   // test (L,L)
   if (fixer.has_mismatch())
@@ -189,7 +188,7 @@ TEST(Test_Mismatch_Fixup, Test_Methods) {
 
  
   driver.interpolate_mesh_var<double,Portage::Interpolate_1stOrder>(
-    "cellvars","cellvars", source_weights, 0.0, dblmax, nullptr, &gradients);
+    "cellvars","cellvars", source_weights, &gradients);
 
   // test (S,L)
   if (fixer.has_mismatch())
