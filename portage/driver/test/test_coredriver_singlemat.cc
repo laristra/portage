@@ -97,7 +97,7 @@ TEST(CellDriver, 2D_2ndOrder) {
 
   auto gradients = d.compute_source_gradient("temperature");
   d.interpolate_mesh_var<double, Portage::Interpolate_2ndOrder>(
-    "temperature", "temperature", srcwts, dblmin, dblmax, nullptr, &gradients
+    "temperature", "temperature", srcwts, &gradients
   );
 
 
@@ -194,7 +194,7 @@ TEST(CellDriver, 3D_2ndOrder) {
 
   auto gradients = d.compute_source_gradient("temperature");
   d.interpolate_mesh_var<double, Portage::Interpolate_2ndOrder>(
-    "temperature", "TEMP", srcwts, dblmin, dblmax,nullptr, &gradients
+    "temperature", "TEMP", srcwts, &gradients
   );
   
   // Finally check that we got the right target temperature values

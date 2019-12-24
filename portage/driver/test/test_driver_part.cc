@@ -267,7 +267,7 @@ TEST_F(PartOrderOneTest, PiecewiseConstantField) {
 
     // interpolate density for current part
     remapper.interpolate_mesh_var<double, Portage::Interpolate_1stOrder>(
-      "density", "density", weights, lower_bound, upper_bound, &(parts[i])
+      "density", "density", weights, &(parts[i])
     );
       
     // test for mismatch and compute volumes
@@ -329,7 +329,7 @@ TEST_F(PartOrderOneTest, GlobalRemapComparison) {
   for (int i = 0; i < 2; ++i) {
     // interpolate density for current part
     remapper.interpolate_mesh_var<double, Portage::Interpolate_1stOrder>(
-      "density", "density", weights, lower_bound, upper_bound, &(parts[i])
+      "density", "density", weights, &(parts[i])
     );
     
     // test for mismatch and compute volumes
@@ -348,7 +348,7 @@ TEST_F(PartOrderOneTest, GlobalRemapComparison) {
 
   // interpolate density on whole source mesh
   remapper.interpolate_mesh_var<double, Portage::Interpolate_1stOrder>(
-    "density", "density", weights, lower_bound, upper_bound
+    "density", "density", weights
   );
 
   // now compare remapped value for each cell
@@ -406,7 +406,7 @@ TEST_F(PartOrderTwoTest, PiecewiseLinearField) {
 
     // interpolate density for current part
     remapper.interpolate_mesh_var<double, Portage::Interpolate_2ndOrder>(
-      "density", "density", weights, lower_bound, upper_bound, &(parts[i]), &gradients
+      "density", "density", weights, &(parts[i]), &gradients
     );
 
     // test for mismatch and compute volumes

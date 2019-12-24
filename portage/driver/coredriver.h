@@ -24,11 +24,10 @@
 #endif
 
 #include "portage/intersect/dummy_interface_reconstructor.h"
-#include <portage/interpolate/gradient.h>
+#include "portage/interpolate/gradient.h"
 #include "portage/support/portage.h"
 #include "wonton/support/Point.h"
 #include "wonton/support/CoordinateSystem.h"
-#include "wonton/state/state_vector_multi.h"
 #include "portage/driver/parts.h"
 
 /*!
@@ -213,8 +212,9 @@ class CoreDriverBase {
   }
 
   /*!
-    Interpolate a mesh variable of type T residing on entity kind ONWHAT using
-    previously computed intersection weights
+
+    Interpolate a mesh variable of type T residing on entity kind
+    ONWHAT using previously computed intersection weights
 
     @tparam T   type of variable
 
@@ -226,10 +226,6 @@ class CoreDriverBase {
 
     @param[in] trgvarname   Variable name on target mesh
 
-    @param[in] lower_bound  Lower bound for variable
-
-    @param[in] upper_bound  Upper bound for variable
-
   */
   
   template<typename T = double,
@@ -240,16 +236,51 @@ class CoreDriverBase {
            >
   void interpolate_mesh_var(std::string srcvarname, std::string trgvarname,
                             Portage::vector<std::vector<Weights_t>> const& sources_and_weights,
-                            T lower_bound, T upper_bound,
-                            const PartPair<D, SourceMesh, SourceState,
-                                              TargetMesh, TargetState>* parts_pair = nullptr,
                             Portage::vector<Vector<D>>* gradients = nullptr) {
     assert(ONWHAT == onwhat());
     auto derived_class_ptr = static_cast<CoreDriverType<ONWHAT> *>(this);
     derived_class_ptr->
         template interpolate_mesh_var<T, Interpolate>(srcvarname, trgvarname,
                                                       sources_and_weights,
-                                                      lower_bound, upper_bound,
+                                                      gradients);
+  }
+
+  /*!
+
+    (Part-by-part) Interpolate a cell variable of type T residing on
+    entity kind ONWHAT using previously computed intersection weights
+
+    @tparam T   type of variable
+
+    @tparam ONWHAT  Entity_kind that field resides on (enabled only for CELLs)
+
+    @tparam Interpolate  Functor for doing the interpolate from mesh to mesh
+
+    @param[in] srcvarname   Variable name on source mesh
+
+    @param[in] trgvarname   Variable name on target mesh
+
+    @param[in] parts_pair   Pair of parts between which we have to remap
+
+    Enabled only for cells using SFINAE
+  */
+  
+  template<typename T = double,
+           Entity_kind ONWHAT,
+           template<int, Entity_kind, class, class, class, class, class,
+                    template <class, int, class, class> class,
+                    class, class, class> class Interpolate>
+  typename std::enable_if<ONWHAT == CELL, void>
+  interpolate_mesh_var(std::string srcvarname, std::string trgvarname,
+                            Portage::vector<std::vector<Weights_t>> const& sources_and_weights,
+                            const PartPair<D, SourceMesh, SourceState,
+                            TargetMesh, TargetState>* parts_pair,
+                            Portage::vector<Vector<D>>* gradients = nullptr) {
+    assert(ONWHAT == onwhat());
+    auto derived_class_ptr = static_cast<CoreDriverType<ONWHAT> *>(this);
+    derived_class_ptr->
+        template interpolate_mesh_var<T, Interpolate>(srcvarname, trgvarname,
+                                                      sources_and_weights,
                                                       parts_pair,
                                                       gradients);
   }
@@ -270,20 +301,16 @@ class CoreDriverBase {
   template <typename T = double,
             template<int, Entity_kind, class, class, class, class, class,
                      template <class, int, class, class> class,
-                     class, class, class> class Interpolate
-            >
+                     class, class, class> class Interpolate>
   void interpolate_mat_var(std::string srcvarname, std::string trgvarname,
                            std::vector<Portage::vector<std::vector<Weights_t>>> const& sources_and_weights_by_mat,
-                           T lower_bound, T upper_bound,
                            Portage::vector<Vector<D>>* gradients = nullptr) {
 
-    assert(onwhat() == CELL);
     auto derived_class_ptr = static_cast<CoreDriverType<CELL> *>(this);
      derived_class_ptr->
          template interpolate_mat_var<T, Interpolate>(srcvarname,
                                                       trgvarname,
                                                       sources_and_weights_by_mat,
-                                                      lower_bound, upper_bound,
                                                       gradients);
   }
 
@@ -804,9 +831,6 @@ class CoreDriver : public CoreDriverBase<D,
    * @param[in] srcvarname          source mesh variable to remap
    * @param[in] trgvarname          target mesh variable to remap
    * @param[in] sources_and_weights weights for mesh-mesh interpolation
-   * @param[in] lower_bound         lower bound of variable value 
-   * @param[in] upper_bound         upper bound of variable value 
-   * @param[in] partition           source and target entities list for part-by-part
    */
   template<typename T = double,
            template<int, Entity_kind, class, class, class, class, class,
@@ -815,10 +839,67 @@ class CoreDriver : public CoreDriverBase<D,
   >
   void interpolate_mesh_var(std::string srcvarname, std::string trgvarname,
                             Portage::vector<std::vector<Weights_t>> const& sources_and_weights,
-                            T lower_bound, T upper_bound,
-                            const PartPair<D, SourceMesh, SourceState,
-                                              TargetMesh, TargetState>* partition = nullptr,
                             Portage::vector<Vector<D>>* gradients = nullptr) {
+
+    if (source_state_.get_entity(srcvarname) != ONWHAT) {
+      std::cerr << "Variable " << srcvarname << " not defined on Entity_kind "
+                << ONWHAT << ". Skipping!" << std::endl;
+      return;
+    }
+
+
+    using Interpolator = Interpolate<D, ONWHAT,
+                                     SourceMesh, TargetMesh,
+                                     SourceState, TargetState,
+                                     T,
+                                     InterfaceReconstructorType,
+                                     Matpoly_Splitter, Matpoly_Clipper, CoordSys>;
+
+    Interpolator interpolator(source_mesh_, target_mesh_, source_state_,
+                              num_tols_);
+    interpolator.set_interpolation_variable(srcvarname, gradients);
+
+    // get a handle to a memory location where the target state
+    // would like us to write this material variable into.
+    T* target_mesh_field = nullptr;
+    target_state_.mesh_get_data(ONWHAT, trgvarname, &target_mesh_field);
+
+    Portage::pointer<T> target_field(target_mesh_field);
+    Portage::transform(target_mesh_.begin(ONWHAT, PARALLEL_OWNED),
+                       target_mesh_.end(ONWHAT, PARALLEL_OWNED),
+                       sources_and_weights.begin(),
+                       target_field, interpolator);
+  }
+
+
+  /**
+   * @brief Interpolate mesh variable from source part to target part
+   *
+   * @param[in] srcvarname          source mesh variable to remap
+   * @param[in] trgvarname          target mesh variable to remap
+   * @param[in] sources_and_weights weights for mesh-mesh interpolation
+   * @param[in] lower_bound         lower bound of variable value 
+   * @param[in] upper_bound         upper bound of variable value 
+   * @param[in] partition           structure containing source and target part info
+
+   Enable only for cells using SFINAE. Here the class, rather than the
+   function is templated on ONWHAT (as opposed to the equivalent
+   method in the base class); so we have to create a dummy template
+   parameter ONWHAT1 and rely on that to use SFINAE with a _second_
+   dummy template parameter
+   */
+  template<typename T = double,
+           template<int, Entity_kind, class, class, class, class, class,
+                    template<class, int, class, class> class,
+                    class, class, class> class Interpolate,
+           Entity_kind ONWHAT1 = ONWHAT,
+           typename = typename std::enable_if<ONWHAT1 == CELL>::type>
+  void
+  interpolate_mesh_var(std::string srcvarname, std::string trgvarname,
+                       Portage::vector<std::vector<Weights_t>> const& sources_and_weights,
+                       const PartPair<D, SourceMesh, SourceState,
+                       TargetMesh, TargetState>* partition,
+                       Portage::vector<Vector<D>>* gradients = nullptr) {
 
     if (source_state_.get_entity(srcvarname) != ONWHAT) {
       std::cerr << "Variable " << srcvarname << " not defined on Entity_kind "
@@ -843,87 +924,80 @@ class CoreDriver : public CoreDriverBase<D,
     target_state_.mesh_get_data(ONWHAT, trgvarname, &target_mesh_field);
 
     // perform part-by-part interpolation
-    if (ONWHAT == Entity_kind::CELL and partition != nullptr) {
+    assert(ONWHAT == Entity_kind::CELL && partition != nullptr);
 
-      // 1. Do some basic checks on supplied source and target parts
-      // to prevent bugs when interpolating values:
-      // check that each entity id is within the
-      // mesh entity index space.
+    // 1. Do some basic checks on supplied source and target parts
+    // to prevent bugs when interpolating values:
+    // check that each entity id is within the
+    // mesh entity index space.
+    
+    int const& max_source_id = source_mesh_.num_entities(ONWHAT, ALL);
+    int const& max_target_id = target_mesh_.num_entities(ONWHAT, ALL);
+    auto const& source_part = partition->source();
+    auto const& target_part = partition->target();
 
-      int const& max_source_id = source_mesh_.num_entities(ONWHAT, ALL);
-      int const& max_target_id = target_mesh_.num_entities(ONWHAT, ALL);
-      auto const& source_part = partition->source();
-      auto const& target_part = partition->target();
+    Portage::for_each(source_part.cells().begin(),
+                      source_part.cells().end(),
+                      [&](int current){ assert(current <= max_source_id); });
 
-      Portage::for_each(source_part.cells().begin(),
-                        source_part.cells().end(),
-                        [&](int current){ assert(current <= max_source_id); });
+    Portage::for_each(target_part.cells().begin(),
+                      target_part.cells().end(),
+                      [&](int current){ assert(current <= max_target_id); });
 
-      Portage::for_each(target_part.cells().begin(),
-                        target_part.cells().end(),
-                        [&](int current){ assert(current <= max_target_id); });
+    int const target_mesh_size = sources_and_weights.size();
+    int const target_part_size = target_part.size();
 
-      int const target_mesh_size = sources_and_weights.size();
-      int const target_part_size = target_part.size();
+    // 2. Filter intersection weights list.
+    // To restrict interpolation only to source-target parts, we need
+    // to filter the intersection weights list to keep only that of the
+    // entities of the source part. Notice that this step can be avoided
+    // when the part-by-part intersection is implemented.
 
-      // 2. Filter intersection weights list.
-      // To restrict interpolation only to source-target parts, we need
-      // to filter the intersection weights list to keep only that of the
-      // entities of the source part. Notice that this step can be avoided
-      // when the part-by-part intersection is implemented.
-
-      auto filter_weights = [&](int entity) {
-        // For a given target entity, we aim to filter its source weights
-        // list to keep only those which are in the source part list.
-        // that way, we ensure that only the contribution of source part entities
-        // weights are taken into account when doing the interpolation.
-        // For that, we just iterate on the related weight list, and add the
-        // current couple of entity/weights if it belongs to the source part.
-        // nb: 'auto' may imply unexpected behavior with thrust enabled.
-        entity_weights_t const& entity_weights = sources_and_weights[entity];
-        entity_weights_t heap;
-        heap.reserve(10); // size of a local vicinity
-        for (auto&& weight : entity_weights) {
-          // constant-time lookup in average case.
-          if(source_part.contains(weight.entityID)) {
-            heap.emplace_back(weight);
-          }
+    auto filter_weights = [&](int entity) {
+      // For a given target entity, we aim to filter its source weights
+      // list to keep only those which are in the source part list.
+      // that way, we ensure that only the contribution of source part entities
+      // weights are taken into account when doing the interpolation.
+      // For that, we just iterate on the related weight list, and add the
+      // current couple of entity/weights if it belongs to the source part.
+      // nb: 'auto' may imply unexpected behavior with thrust enabled.
+      entity_weights_t const& entity_weights = sources_and_weights[entity];
+      entity_weights_t heap;
+      heap.reserve(10); // size of a local vicinity
+      for (auto&& weight : entity_weights) {
+        // constant-time lookup in average case.
+        if(source_part.contains(weight.entityID)) {
+          heap.emplace_back(weight);
         }
-        heap.shrink_to_fit();
-        return heap;
-      };
-
-      Portage::vector<entity_weights_t> parts_weights(target_part_size);
-      Portage::transform(target_part.cells().begin(),
-                         target_part.cells().end(),
-                         parts_weights.begin(), filter_weights);
-
-      // 3. Process interpolation.
-      // Now that intersection weights is filtered, perform the interpolation.
-      // Notice that we need to store the interpolated values in a temporary
-      // array since they are indexed with respect to the target part
-      // and not to the target mesh. Hence we need to copy them back in the
-      // target state at their correct (absolute index) memory locations.
-      T temporary_storage[target_part_size];
-      Portage::pointer<T> target_part_field(temporary_storage);
-
-      Portage::transform(target_part.cells().begin(),
-                         target_part.cells().end(),
-                         parts_weights.begin(), target_part_field, interpolator);
-
-      for (int i=0; i < target_part_size; ++i) {
-        auto const& j = target_part.cells()[i];
-        target_mesh_field[j] = target_part_field[i];
       }
-    } else /* mesh-mesh interpolation */ {
-      Portage::pointer<T> target_field(target_mesh_field);
-      Portage::transform(target_mesh_.begin(ONWHAT, PARALLEL_OWNED),
-                         target_mesh_.end(ONWHAT, PARALLEL_OWNED),
-                         sources_and_weights.begin(),
-                         target_field, interpolator);
+      heap.shrink_to_fit();
+      return heap;
+    };
+
+    Portage::vector<entity_weights_t> parts_weights(target_part_size);
+    Portage::transform(target_part.cells().begin(),
+                       target_part.cells().end(),
+                       parts_weights.begin(), filter_weights);
+
+    // 3. Process interpolation.
+    // Now that intersection weights is filtered, perform the interpolation.
+    // Notice that we need to store the interpolated values in a temporary
+    // array since they are indexed with respect to the target part
+    // and not to the target mesh. Hence we need to copy them back in the
+    // target state at their correct (absolute index) memory locations.
+    T temporary_storage[target_part_size];
+    Portage::pointer<T> target_part_field(temporary_storage);
+
+    Portage::transform(target_part.cells().begin(),
+                       target_part.cells().end(),
+                       parts_weights.begin(), target_part_field, interpolator);
+
+    for (int i=0; i < target_part_size; ++i) {
+      auto const& j = target_part.cells()[i];
+      target_mesh_field[j] = target_part_field[i];
     }
   }
-
+  
 
 #ifdef HAVE_TANGRAM
   
@@ -940,18 +1014,24 @@ class CoreDriver : public CoreDriverBase<D,
     @param[in] lower_bound Lower bound of variable value
 
     @param[in] upper_bound Upper bound of variable value
+
+    Enable only for cells using SFINAE. Here the class, rather than
+    the function is templated on ONWHAT; so we have to create a dummy
+    template parameter ONWHAT1 and rely on that for SFINAE using a
+    _second_ template parameter
   */
 
   template<typename T = double,
            template<int, Entity_kind, class, class, class, class, class,
                     template<class, int, class, class> class,
-                    class, class, class> class Interpolate
-           >
-  void interpolate_mat_var(std::string srcvarname, std::string trgvarname,
-                           std::vector<Portage::vector<std::vector<Weights_t>>> const& sources_and_weights_by_mat,
-                           T lower_bound, T upper_bound,
-                           Portage::vector<Vector<D>>* gradients = nullptr) {
-
+                    class, class, class> class Interpolate,
+           Entity_kind ONWHAT1 = ONWHAT,
+           typename = typename std::enable_if<ONWHAT1 == CELL>::type>
+  void
+  interpolate_mat_var(std::string srcvarname, std::string trgvarname,
+                      std::vector<Portage::vector<std::vector<Weights_t>>> const& sources_and_weights_by_mat,
+                      Portage::vector<Vector<D>>* gradients = nullptr) {
+    
     using Interpolator = Interpolate<D, ONWHAT,
                                      SourceMesh, TargetMesh,
                                      SourceState, TargetState,

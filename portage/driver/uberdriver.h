@@ -643,13 +643,11 @@ class UberDriver {
                                                                         bnd_limiter);
 
       driver->template interpolate_mesh_var<T, ONWHAT, Interpolate>(
-        srcvarname, trgvarname, sources_and_weights_in,
-        lower_bound, upper_bound, nullptr, &gradients
+        srcvarname, trgvarname, sources_and_weights_in, &gradients
       );
     } else {
       driver->template interpolate_mesh_var<T, ONWHAT, Interpolate>(
-        srcvarname, trgvarname, sources_and_weights_in,
-        lower_bound, upper_bound
+        srcvarname, trgvarname, sources_and_weights_in
       );
     }
   }
@@ -734,12 +732,11 @@ class UberDriver {
       }
       driver->template interpolate_mat_var<T, Interpolate>(
         srcvarname, trgvarname, sources_and_weights_by_mat_in,
-        lower_bound, upper_bound, gradients
+        gradients
       );
     } else {
       driver->template interpolate_mat_var<T, Interpolate>(
-        srcvarname, trgvarname, sources_and_weights_by_mat_in,
-        lower_bound, upper_bound
+        srcvarname, trgvarname, sources_and_weights_by_mat_in
       );
     }
 #endif
