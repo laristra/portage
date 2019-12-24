@@ -9,6 +9,7 @@ Please see the license file at the root of this repository, or at:
 #include <sstream>
 #include <vector>
 
+
 // portage includes
 #include "portage/driver/coredriver.h"
 #include "portage/interpolate/interpolate_2nd_order.h"
@@ -18,9 +19,10 @@ Please see the license file at the root of this repository, or at:
 #include "portage/search/search_kdtree.h"
 #include "portage/support/portage.h"
 
+// app includes
+#include "user_field.h"
+
 // wonton includes
-#include "wonton/mesh/simple/simple_mesh.h"
-#include "wonton/mesh/simple/simple_mesh_wrapper.h"
 #include "wonton/mesh/jali/jali_mesh_wrapper.h"
 #include "wonton/state/jali/jali_state_wrapper.h"
 #include "wonton/support/Point.h"
@@ -37,18 +39,18 @@ Please see the license file at the root of this repository, or at:
   The program is used to showcase the capability of remapping velocity 
   and mass for staggered and cell-centered hydro codes. Velocity remap
   conserves the total momentum. The app is controlled by a few input 
-  commands. Unnessesary longer code is used for the implementation clarity.
+  commands. Unnecessary longer code is used for the implementation clarity.
 
   SGH:
     A. Populate input data: corner masses and nodal velocities
     B. Conservative remap of momentum
-    C. Verifivation of output data: coner masses and nodal 
+    C. Verification of output data: corner masses and nodal 
        velocities on the target mesh
 
   CCH: 
     A. Populate input data: cell-centered masses and velocities
     B. Conservative remap of momentum
-    C. Verifivation of output data: cell-centered massed and velocities
+    C. Verification of output data: cell-centered massed and velocities
 
   Assumptions: meshes are matching.
  */
@@ -59,18 +61,15 @@ const int CCH = 2;
 
 
 void print_usage() {
-  std::cout << "Usage: ./momentumapp nx ny method limiter ini_density ini_velocity\n\n"
-            << "   source mesh:  nx x ny rectangular cells and covers the unit square\n" 
-            << "   target mesh:  (nx + 2) x (ny + 4) rectangular cells\n\n"
-            << "   method:       SGH=1, CCH=2\n"
-            << "   limiter:      0 - limiter is off, otherwise Barth-Jespersen is used\n\n"
-            << "   ini_density:  0 - constant density (1)\n"
-            << "                 1 - linear density (1 + x * 2y)\n"
-            << "                 2 - quadratic density (1 + x + xy)\n\n"
-            << "   ini_velocity: 0 - constant velocity (1, 2)\n"
-            << "                 1 - linear velocity (x, 2 y)\n"
-            << "                 2 - quadratic velocity (x^2, 2 y^2)\n"
-            << "                 3 - discontinuous velocity along central vertical line\n";
+  std::cout << "Usage: ./momentumapp nx ny method limiter \"density formula\" \"velx formula\" \"vely formula\"\n\n"
+            << "   source mesh:     nx x ny rectangular cells and covers the unit square\n" 
+            << "   target mesh:     (nx + 2) x (ny + 4) rectangular cells\n\n"
+            << "   method:          SGH=1, CCH=2\n"
+            << "   limiter:         0 - limiter is off, otherwise Barth-Jespersen is used\n\n"
+            << "   density formula: mathematical expression for density\n"
+            << "   velx formula:    mathematical expression for x-component of velocity\n"
+            << "   vely formula:    mathematical expression for y-component of velocity\n\n"
+            << "Example: ./momentumapp 10 10  2 1  \"1+x+x*y\" \"x\" \"if((x < 0.5),1 + x, 2 + y)\"\n";
 }
 
 
@@ -89,10 +88,10 @@ void corner_get_centroid(
 
   xcn = {0.0, 0.0};
   for (auto w : wedges) {
-    double frac = mesh.wedge_volume(w) / (3 * volume); 
+    double frac = mesh.wedge_volume(w) / volume; 
     mesh.wedge_get_coordinates(w, &wcoords);
     for (int i = 0; i < 3; ++i) {
-      xcn += frac * wcoords[i];
+      xcn += frac * wcoords[i] / 3;
     }
   }
 }
@@ -109,11 +108,12 @@ class MomentumRemap {
 
   // initialization
   void InitMass(const Wonton::Jali_Mesh_Wrapper& mesh,
-                int ini_method,
+                user_field_t& formula,
                 std::vector<double>& mass);
 
   void InitVelocity(const Wonton::Jali_Mesh_Wrapper& mesh,
-                    int ini_method,
+                    user_field_t& formula_x,
+                    user_field_t& formula_y,
                     std::vector<double>& ux,
                     std::vector<double>& uy);
 
@@ -142,7 +142,7 @@ class MomentumRemap {
 
   template<class T>
   void ErrorVelocity(const Wonton::Jali_Mesh_Wrapper& mesh,
-                     int ini_method,
+                     user_field_t& formula_x, user_field_t& formula_y,
                      const T& ux, const T& uy,
                      double* l2err, double* l2norm);
 
@@ -156,9 +156,9 @@ class MomentumRemap {
 ****************************************************************** */
 void MomentumRemap::InitMass(
     const Wonton::Jali_Mesh_Wrapper& mesh,
-    int ini_method,
+    user_field_t& formula,
     std::vector<double>& mass)
-{
+  {
   int nrows = (method_ == SGH) ? mesh.num_owned_corners() + mesh.num_ghost_corners()
                                : mesh.num_owned_cells() + mesh.num_ghost_cells();
   mass.resize(nrows);
@@ -175,13 +175,7 @@ void MomentumRemap::InitMass(
       vol = mesh.cell_volume(n);
     }
 
-    if (ini_method == 0) {
-      den = 1.0;
-    } else if (ini_method == 1) {
-      den = 1.0 + xyz[0] + 2 * xyz[1];
-    } else if (ini_method == 2) {
-      den = 1.0 + xyz[0] + xyz[0] * xyz[1];
-    }
+    den = formula(xyz);
     mass[n] = den * vol;
   }
 }
@@ -192,7 +186,7 @@ void MomentumRemap::InitMass(
 ****************************************************************** */
 void MomentumRemap::InitVelocity(
     const Wonton::Jali_Mesh_Wrapper& mesh,
-    int ini_method,
+    user_field_t& formula_x, user_field_t& formula_y,
     std::vector<double>& ux,
     std::vector<double>& uy)
 {
@@ -209,19 +203,8 @@ void MomentumRemap::InitVelocity(
     else
       mesh.cell_centroid(n, &xyz);
 
-    if (ini_method == 0) {
-      ux[n] = 1.0;
-      uy[n] = 2.0;
-    } else if (ini_method == 1) {
-      ux[n] = xyz[0];
-      uy[n] = 2.0 * xyz[1];
-    } else if (ini_method == 2) {
-      ux[n] = xyz[0] * xyz[0];
-      uy[n] = 2.0 * xyz[1] * xyz[1];
-    } else if (ini_method == 3) {
-      ux[n] = (xyz[0] < 0.5) ? 1.0 : 2.0;
-      uy[n] = 2.0 * xyz[1] * xyz[1];
-    }
+    ux[n] = formula_x(xyz);
+    uy[n] = formula_y(xyz);
   }
 }
 
@@ -330,7 +313,7 @@ Wonton::Point<2> MomentumRemap::VelocityMax(
 template<class T>
 void MomentumRemap::ErrorVelocity(
     const Wonton::Jali_Mesh_Wrapper& mesh,
-    int ini_method,
+    user_field_t& formula_x, user_field_t& formula_y,
     const T& ux, const T& uy,
     double* l2err, double* l2norm)
 {
@@ -347,19 +330,8 @@ void MomentumRemap::ErrorVelocity(
     else
       mesh.cell_centroid(n, &xyz);
 
-    if (ini_method == 0) {
-      ux_exact = 1.0;
-      uy_exact = 2.0;
-    } else if (ini_method == 1) {
-      ux_exact = xyz[0];
-      uy_exact = 2.0 * xyz[1];
-    } else if (ini_method == 2) {
-      ux_exact = xyz[0] * xyz[0];
-      uy_exact = 2.0 * xyz[1] * xyz[1];
-    } else if (ini_method == 3) {
-      ux_exact = (xyz[0] < 0.5) ? 1.0 : 2.0;
-      uy_exact = 2.0 * xyz[1] * xyz[1];
-    }
+    ux_exact = formula_x(xyz);
+    uy_exact = formula_y(xyz);
 
     *l2err += (ux_exact - ux[n]) * (ux_exact - ux[n])
             + (uy_exact - uy[n]) * (uy_exact - uy[n]);
@@ -393,7 +365,7 @@ int main(int argc, char** argv) {
   MPI_Comm_size(MPI_COMM_WORLD, &numpe);
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-  if (argc < 7) {
+  if (argc < 8) {
     if (rank == 0) print_usage();
     MPI_Finalize();
     return 0;
@@ -404,12 +376,16 @@ int main(int argc, char** argv) {
   auto ny = atoi(argv[2]);
   auto method = atoi(argv[3]);
   auto limiter = (atoi(argv[4]) == 0) ? Portage::NOLIMITER: Portage::BARTH_JESPERSEN;
-  auto ini_density = atoi(argv[5]);
-  auto ini_velocity = atoi(argv[6]);
+  auto formula_rho = std::string(argv[5]);
+  auto formula_velx = std::string(argv[6]);
+  auto formula_vely = std::string(argv[7]);
 
-  if ((method != SGH && method != CCH) || 
-      (ini_density < 0 || ini_density > 2) ||
-      (ini_velocity < 0 || ini_velocity > 3)) {
+  user_field_t ini_rho, ini_velx, ini_vely;
+
+  if ((method != SGH && method != CCH) ||
+      (!ini_rho.initialize(2, formula_rho)) ||
+      (!ini_velx.initialize(2, formula_velx)) ||
+      (!ini_vely.initialize(2, formula_vely))) {
     if (rank == 0) {
       std::cout << "=== Input ERROR ===\n";
       print_usage();    
@@ -471,7 +447,7 @@ int main(int argc, char** argv) {
   std::vector<double> uy_src(nnodes_src);
 
   kind = mr.VelocityKind();
-  mr.InitVelocity(srcmesh_wrapper, ini_velocity, ux_src, uy_src);
+  mr.InitVelocity(srcmesh_wrapper, ini_velx, ini_vely, ux_src, uy_src);
 
   srcstate->add("velocity_x", srcmesh, kind, type, &(ux_src[0]));
   srcstate->add("velocity_y", srcmesh, kind, type, &(uy_src[0]));
@@ -483,7 +459,7 @@ int main(int argc, char** argv) {
   std::vector<double> mass_src;
 
   kind = mr.MassKind();
-  mr.InitMass(srcmesh_wrapper, ini_density, mass_src);
+  mr.InitMass(srcmesh_wrapper, ini_rho, mass_src);
 
   srcstate->add("mass", srcmesh, kind, type, &(mass_src[0]));
   trgstate->add<double, Jali::Mesh, Jali::UniStateVector>(
@@ -600,7 +576,9 @@ int main(int argc, char** argv) {
   // Step 5 (SGH only)
   // -- create linear reconstruction (limited or unlimited) 
   //    of density and specific momentum on the target mesh
-  std::vector<Portage::vector<Wonton::Vector<2>>> gradients;
+  int ncells_all = ncells_trg + trgmesh_wrapper.num_ghost_cells();
+  std::vector<Portage::vector<Wonton::Vector<2>>> gradients(
+      field_names.size(), Portage::vector<Wonton::Vector<2>>(ncells_all));
 
   if (method == SGH) {
     for (int i = 0; i < field_names.size(); ++i) {
@@ -609,14 +587,11 @@ int main(int argc, char** argv) {
           gradient_kernel(trgmesh_wrapper, trgstate_wrapper,
                           field_names[i], limiter, Portage::BND_NOLIMITER);
 
-      int ncells_all = ncells_trg + trgmesh_wrapper.num_ghost_cells();
       Portage::vector<Wonton::Vector<2>> gradient(ncells_all);
 
       Portage::transform(trgmesh_wrapper.begin(Wonton::Entity_kind::CELL),
                          trgmesh_wrapper.end(Wonton::Entity_kind::CELL),
-                         gradient.begin(), gradient_kernel);
-
-      gradients.push_back(gradient);  // could be optimized
+                         gradients[i].begin(), gradient_kernel);
     }
   }
 
@@ -666,16 +641,16 @@ int main(int argc, char** argv) {
         corner_get_centroid(cn, trgmesh_wrapper, xcn);
 
         // integral is the value at centroid
-        double vol = trgmesh_wrapper.corner_volume(cn);
+        double cnvol = trgmesh_wrapper.corner_volume(cn);
 
         grad = gradients[0][c];
-        mass_trg[cn] = vol * (density_trg[c] + dot(grad, xcn - xc));
+        mass_trg[cn] = cnvol * (density_trg[c] + dot(grad, xcn - xc));
 
         grad = gradients[1][c];
-        momentum_cn_x[cn] = vol * (momentum_x_trg[c] + dot(grad, xcn - xc));
+        momentum_cn_x[cn] = cnvol * (momentum_x_trg[c] + dot(grad, xcn - xc));
 
         grad = gradients[2][c];
-        momentum_cn_y[cn] = vol * (momentum_y_trg[c] + dot(grad, xcn - xc));
+        momentum_cn_y[cn] = cnvol * (momentum_y_trg[c] + dot(grad, xcn - xc));
       }
     }
   } 
@@ -737,7 +712,7 @@ int main(int argc, char** argv) {
   }
 
   double l2err, l2norm;
-  mr.ErrorVelocity(trgmesh_wrapper, ini_velocity, ux_trg, uy_trg, &l2err, &l2norm);
+  mr.ErrorVelocity(trgmesh_wrapper, ini_velx, ini_vely, ux_trg, uy_trg, &l2err, &l2norm);
 
   if (rank == 0) {
     std::cout << "\n=== Remap error ===" << std::endl;
