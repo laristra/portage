@@ -12,6 +12,7 @@ add_subdirectory(distributed_cmp)
 add_subdirectory(simple_mesh_app)
 add_subdirectory(swarmapp)
 add_subdirectory(msmapp)
+add_subdirectory(momentumapp)
 
 option(ENABLE_APP_TIMINGS "Enable timing in apps" OFF)
 
