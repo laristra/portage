@@ -542,9 +542,6 @@ int main(int argc, char** argv) {
   auto candidates = cd.search<Portage::SearchKDTree>();
   auto srcwts = cd.intersect_meshes<Portage::IntersectR2D>(candidates);
 
-  double dblmin = -std::numeric_limits<double>::max();
-  double dblmax =  std::numeric_limits<double>::max();
-
   // -- we need to register fields that we want to remap
   std::vector<std::string> field_names;
   std::vector<const double*> field_pointers;
@@ -569,8 +566,7 @@ int main(int argc, char** argv) {
     auto gradients = cd.compute_source_gradient(field_names[i], limiter);
 
     cd.interpolate_mesh_var<double, Portage::Interpolate_2ndOrder>(
-        field_names[i], field_names[i], srcwts, dblmin, dblmax,
-        nullptr, &gradients);
+        field_names[i], field_names[i], srcwts, &gradients);
   }
 
   // Step 5 (SGH only)
