@@ -1138,6 +1138,7 @@ class CoreDriver : public CoreDriverBase<D,
     std::vector<double> cell_mat_volfracs_full(nsourcecells*nmats, 0.0);
     std::vector<Wonton::Point<D>> cell_mat_centroids_full(nsourcecells*nmats);
 
+    bool have_centroids = true;
     int nvals = 0;
     for (int m = 0; m < nmats; m++) {
       std::vector<int> cellids;
@@ -1157,8 +1158,11 @@ class CoreDriver : public CoreDriverBase<D,
 
       Wonton::Point<D> const *matcenvec;
       source_state_.mat_get_celldata("mat_centroids", m, &matcenvec);
-      for (int ic = 0; ic < cellids.size(); ic++)
-        cell_mat_centroids_full[cellids[ic]*nmats+m] = matcenvec[ic];
+      if (cellids.size() && !matcenvec)
+        have_centroids = false;  // VOF
+      else
+        for (int ic = 0; ic < cellids.size(); ic++)
+          cell_mat_centroids_full[cellids[ic]*nmats+m] = matcenvec[ic];
     }
 
     // At this point nvals contains the number of non-zero volume
@@ -1168,7 +1172,7 @@ class CoreDriver : public CoreDriverBase<D,
 
     cell_mat_ids.resize(nvals);
     cell_mat_volfracs.resize(nvals);
-    cell_mat_centroids.resize(nvals);
+    cell_mat_centroids.resize(nvals);  // dummy vals for VOF
 
     int idx = 0;
     for (int c = 0; c < nsourcecells; c++) {
@@ -1176,7 +1180,8 @@ class CoreDriver : public CoreDriverBase<D,
         int matid = cell_mat_ids_full[c*nmats+m];
         cell_mat_ids[idx] = matid;
         cell_mat_volfracs[idx] = cell_mat_volfracs_full[c*nmats+matid];
-        cell_mat_centroids[idx] = cell_mat_centroids_full[c*nmats+matid];
+        if (have_centroids)
+          cell_mat_centroids[idx] = cell_mat_centroids_full[c*nmats+matid];
         idx++;
       }
     }
