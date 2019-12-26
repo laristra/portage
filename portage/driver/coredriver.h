@@ -305,7 +305,7 @@ class CoreDriverBase {
                      class, class, class> class Interpolate>
   void interpolate_mat_var(std::string srcvarname, std::string trgvarname,
                            std::vector<Portage::vector<std::vector<Weights_t>>> const& sources_and_weights_by_mat,
-                           Portage::vector<Vector<D>>* gradients = nullptr) {
+                           std::vector<Portage::vector<Vector<D>>>* gradients = nullptr) {
 
     auto derived_class_ptr = static_cast<CoreDriverType<CELL> *>(this);
      derived_class_ptr->
@@ -1024,16 +1024,20 @@ info
     _second_ template parameter
   */
 
+  // template<typename T = double,
+  //          template<int, Entity_kind, class, class, class, class, class,
+  //                   template<class, int, class, class> class,
+  //                   class, class, class> class Interpolate,
+  //          Entity_kind ONWHAT1 = ONWHAT,
+  //          typename = typename std::enable_if<ONWHAT1 == CELL>::type>
   template<typename T = double,
            template<int, Entity_kind, class, class, class, class, class,
                     template<class, int, class, class> class,
-                    class, class, class> class Interpolate,
-           Entity_kind ONWHAT1 = ONWHAT,
-           typename = typename std::enable_if<ONWHAT1 == CELL>::type>
+                    class, class, class> class Interpolate>
   void
   interpolate_mat_var(std::string srcvarname, std::string trgvarname,
                       std::vector<Portage::vector<std::vector<Weights_t>>> const& sources_and_weights_by_mat,
-                      Portage::vector<Vector<D>>* gradients = nullptr) {
+                      std::vector<Portage::vector<Vector<D>>>* gradients = nullptr) {
     
     using Interpolator = Interpolate<D, ONWHAT,
                                      SourceMesh, TargetMesh,
@@ -1054,7 +1058,7 @@ info
       //                               // which material values we have
       //                               // to grab from the source state
 
-      auto mat_grad = (gradients != nullptr ? &(gradients[m]) : nullptr);
+      auto mat_grad = (gradients != nullptr ? &((*gradients)[m]) : nullptr);
       // FEATURE ;-)  Have to set interpolation variable AFTER setting 
       // the material for multimaterial variables
       interpolator.set_interpolation_variable(srcvarname, mat_grad);

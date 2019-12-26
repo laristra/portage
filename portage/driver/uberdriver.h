@@ -21,6 +21,8 @@
 
 #ifdef HAVE_TANGRAM
 #include "tangram/driver/driver.h"
+#include "tangram/intersect/split_r2d.h"
+#include "tangram/intersect/split_r3d.h"
 
 #include "portage/intersect/dummy_interface_reconstructor.h"
 #endif
@@ -724,7 +726,7 @@ class UberDriver {
     assert(nb_mats > 0);
 
     if (Interpolator::order == 2) {
-      Portage::vector<Vector<D>> gradients[nb_mats];
+      std::vector<Portage::vector<Vector<D>>> gradients(nb_mats);
       for (int i = 0; i < nb_mats; ++i) {
         gradients[i] = driver->template compute_source_gradient<CELL>(srcvarname,
                                                                       limiter,
@@ -732,7 +734,7 @@ class UberDriver {
       }
       driver->template interpolate_mat_var<T, Interpolate>(
         srcvarname, trgvarname, sources_and_weights_by_mat_in,
-        gradients
+        &gradients
       );
     } else {
       driver->template interpolate_mat_var<T, Interpolate>(
