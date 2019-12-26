@@ -18,6 +18,7 @@ Please see the license file at the root of this repository, or at:
 #include <type_traits>
 #include <memory>
 #include <limits>
+#include <cmath>
 
 #ifdef HAVE_TANGRAM
 #include "tangram/driver/driver.h"
