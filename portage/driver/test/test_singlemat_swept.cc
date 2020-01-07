@@ -124,15 +124,14 @@ TEST(SweptFaceRemap, 2D_2ndOrder) {
   auto candidates = d.search<Portage::SearchSweptFace>();
   auto srcwts = d.intersect_meshes<Portage::IntersectSweptFace2D>(candidates);
 
-  bool has_mismatch = d.check_mesh_mismatch(srcwts);
-
   double dblmin = -std::numeric_limits<double>::max();
   double dblmax =  std::numeric_limits<double>::max();
 
-  d.interpolate_mesh_var<double, Portage::Interpolate_2ndOrder>("temperature",
-                                                                "temperature",
-                                                                srcwts,
-                                                                dblmin, dblmax);
+  auto gradients = d.compute_source_gradient("temperature");
+
+  d.interpolate_mesh_var<double, Portage::Interpolate_2ndOrder>(
+    "temperature", "temperature", srcwts, &gradients
+  );
 
   //-------------------------------------------------------------------
   // CHECK REMAPPING RESULTS ON TARGET MESH SIDE

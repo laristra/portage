@@ -37,7 +37,7 @@ Please see the license file at the root of this repository, or at:
 #include "wonton/support/Point.h"
 #include "wonton/state/state_vector_multi.h"
 #include "portage/driver/fix_mismatch.h"
-
+#include "portage/driver/coredriver.h"
 
 #ifdef PORTAGE_ENABLE_MPI
 #include "portage/distributed/mpi_bounding_boxes.h"
@@ -91,7 +91,7 @@ template <template <int, Entity_kind, class, class> class Search,
           template <class, int, class, class> class,
           class, class> class Intersect,
           template<
-            int, Entity_kind, class, class, class, class,
+            int, Entity_kind, class, class, class, class, class,
             template<class, int, class, class> class,
             class, class, class=Wonton::DefaultCoordSys
           > class Interpolate,
@@ -105,12 +105,14 @@ template <template <int, Entity_kind, class, class> class Search,
           class Matpoly_Clipper = void>
 class MMDriver {
 
-  // Something like this would be very helpful to users
-  // static_assert(
-  //   D == Interpolate::D,
-  //   "The dimension of Driver and Interpolate do not match!"
-  // );
-
+#if HAVE_TANGRAM
+  // alias for interface reconstructor parameterized on the mesh type.
+  // it will be used for gradient field computation.
+  template<typename SourceMesh>
+  using InterfaceReconstructor = Tangram::Driver<InterfaceReconstructorType, D,
+                                                 SourceMesh, Matpoly_Splitter,
+                                                 Matpoly_Clipper>;
+#endif
 
  public:
   /*!
@@ -396,6 +398,153 @@ class MMDriver {
             Wonton::Executor_type const *executor = nullptr);
 
 
+    /**
+     * @brief Compute the gradient field for the current remap variable.
+     *
+     * @tparam onwhat: the entity kind (cell or node)
+     * @tparam NewSourceMesh: the new source mesh wrapper type (native/flat).
+     * @tparam NewSourceState: the new source state wrapper type (native/flat).
+     * @param field_name: the field variable to remap.
+     * @param new_source_mesh: the new source mesh instance.
+     * @param new_source_state: the new source state instance.
+     * @param limiter_type: the gradient limiter to use for internal regions.
+     * @param boundary_limiter_type: the gradient limiter to use for boundary.
+     * @param material_id: the material id in multi-material context
+     * @return the computed gradient field.
+     */
+    template<Entity_kind onwhat,
+      typename NewSourceMesh,
+      typename NewSourceState>
+    Portage::vector<Vector<D>> compute_source_gradient(
+      std::string const field_name,
+      NewSourceMesh const& new_source_mesh,
+      NewSourceState const& new_source_state,
+      Limiter_type limiter_type = NOLIMITER,
+      Boundary_Limiter_type boundary_limiter_type = BND_NOLIMITER,
+      int material_id = 0,
+#if HAVE_TANGRAM
+      std::shared_ptr<InterfaceReconstructor<NewSourceMesh>> interface_reconstructor = nullptr,
+#endif
+      Wonton::Executor_type const *executor = nullptr
+    ) const {
+
+      int size = 0;
+#if HAVE_TANGRAM
+      auto const field_type = new_source_state.field_type(onwhat, field_name);
+
+      // multi-material remap makes only sense on cell-centered fields.
+      bool const multimat =
+        onwhat == Entity_kind::CELL and
+        field_type == Field_type::MULTIMATERIAL_FIELD;
+
+      std::vector<int> mat_cells;
+
+      if (multimat) {
+        if (interface_reconstructor) {
+          new_source_state.mat_get_cells(material_id, &mat_cells);
+          size = mat_cells.size();
+        } else
+          throw std::runtime_error("interface reconstructor not set");
+      } else {
+#endif
+        size = new_source_mesh.num_entities(onwhat);
+#if HAVE_TANGRAM
+      }
+#endif
+
+      using Gradient = Limited_Gradient<D, onwhat,
+                                        NewSourceMesh, NewSourceState,
+                                        InterfaceReconstructorType,
+                                        Matpoly_Splitter, Matpoly_Clipper>;
+
+      // instantiate the right kernel according to entity kind (cell/node),
+      // as well as source and target meshes and states types.
+#if HAVE_TANGRAM
+      Gradient kernel(new_source_mesh, new_source_state, field_name,
+                      limiter_type, boundary_limiter_type,
+                      interface_reconstructor);
+#else
+      Gradient kernel(new_source_mesh, new_source_state, field_name,
+                    limiter_type, boundary_limiter_type);
+#endif
+
+      // create and resize the field
+      Portage::vector<Vector<D>> gradient_field(size);
+
+      // populate it by invoking the kernel on each source entity.
+#if HAVE_TANGRAM
+      if (multimat) {
+        kernel.set_material(material_id);
+        Portage::transform(mat_cells.begin(),
+                           mat_cells.end(),
+                           gradient_field.begin(), kernel);
+      } else {
+#endif
+        Portage::transform(new_source_mesh.begin(onwhat),
+                           new_source_mesh.end(onwhat),
+                           gradient_field.begin(), kernel);
+#if HAVE_TANGRAM
+      }
+#endif
+      return gradient_field;
+    }
+
+  /**
+   *
+   * @tparam onwhat
+   * @tparam NewSourceMesh
+   * @tparam NewSourceState
+   * @param field_name
+   * @param interpolate
+   * @param gradients
+   */
+  template<Entity_kind onwhat,
+           typename NewSourceMesh, typename NewSourceState>
+  void set_interpolation_variable(
+    std::string const& field_name,
+    NewSourceMesh const& new_source_mesh,
+    NewSourceState const& new_source_state,
+    Interpolate<D, onwhat,
+                NewSourceMesh, TargetMesh_Wrapper,
+                NewSourceState, TargetState_Wrapper,
+                double,
+                InterfaceReconstructorType,
+                Matpoly_Splitter, Matpoly_Clipper>& interpolate,
+#if HAVE_TANGRAM
+    std::shared_ptr<InterfaceReconstructor<NewSourceMesh>> interface_reconstructor = nullptr,
+#endif
+    int material_id = 0,
+    Portage::vector<Vector<D>>* gradients = nullptr,
+    Wonton::Executor_type const* executor = nullptr) {
+
+    int const order = Interpolate<D, onwhat,
+                                  NewSourceMesh, TargetMesh_Wrapper,
+                                  NewSourceState, TargetState_Wrapper,
+                                  double,
+                                  InterfaceReconstructorType,
+                                  Matpoly_Splitter, Matpoly_Clipper>::order;
+
+    switch (order) {
+      case 1: interpolate.set_interpolation_variable(field_name); break;
+      case 2:
+        // compute the gradient field for this variable.
+        *gradients = compute_source_gradient<onwhat>(field_name,
+                                              new_source_mesh, new_source_state,
+                                              limiters_.at(field_name),
+                                              bnd_limiters_.at(field_name),
+                                              material_id,
+                                              #if HAVE_TANGRAM
+                                                interface_reconstructor,
+                                              #endif
+                                              executor);
+
+        interpolate.set_interpolation_variable(field_name, gradients); break;
+
+      default: throw std::runtime_error("unsupported interpolation order");
+    }
+  }
+
+
   /*!
     @brief Execute the remapping process
     @return status of remap (1 if successful, 0 if not)
@@ -425,7 +574,7 @@ class MMDriver {
         distributed = true;
     }
 #endif
-
+#ifdef ENABLE_DEBUG
     if (comm_rank == 0)
       std::cout << "in MMDriver::run()...\n";
 
@@ -433,7 +582,7 @@ class MMDriver {
     std::cout << "Number of target cells in target mesh on rank "
               << comm_rank << ": "
               << numTargetCells << std::endl;
-
+#endif
 
     int nvars = source_target_varname_map_.size();
 
@@ -504,10 +653,11 @@ class MMDriver {
 
       gettimeofday(&end_timeval, 0);
       timersub(&end_timeval, &begin_timeval, &diff_timeval);
+#ifdef ENABLE_DEBUG
       float tot_seconds_dist = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
       std::cout << "Redistribution Time Rank " << comm_rank << " (s): " <<
           tot_seconds_dist << std::endl;
-
+#endif
       // Why is it not able to deduce the template arguments, if I don't specify
       // Flat_Mesh_Wrapper and Flat_State_Wrapper?
 
@@ -633,6 +783,7 @@ class MMDriver {
     std::vector<double> cell_mat_volfracs_full(nsourcecells*nmats, 0.0);
     std::vector<Tangram::Point<D>> cell_mat_centroids_full(nsourcecells*nmats);
 
+    int have_centroids = true;
     int nvals = 0;
     for (int m = 0; m < nmats; m++) {
       std::vector<int> cellids;
@@ -652,8 +803,11 @@ class MMDriver {
 
       Portage::Point<D> const *matcenvec;
       source_state.mat_get_celldata("mat_centroids", m, &matcenvec);
-      for (int ic = 0; ic < cellids.size(); ic++)
-        cell_mat_centroids_full[cellids[ic]*nmats+m] = matcenvec[ic];
+      if (cellids.size() && !matcenvec)
+        have_centroids = false;
+      else
+        for (int ic = 0; ic < cellids.size(); ic++)
+          cell_mat_centroids_full[cellids[ic]*nmats+m] = matcenvec[ic];
     }
 
     // At this point nvals contains the number of non-zero volume
@@ -663,7 +817,7 @@ class MMDriver {
 
     cell_mat_ids.resize(nvals);
     cell_mat_volfracs.resize(nvals);
-    cell_mat_centroids.resize(nvals);
+    cell_mat_centroids.resize(nvals);  // dummy vals for VOF
 
     int idx = 0;
     for (int c = 0; c < nsourcecells; c++) {
@@ -671,7 +825,8 @@ class MMDriver {
         int matid = cell_mat_ids_full[c*nmats+m];
         cell_mat_ids[idx] = matid;
         cell_mat_volfracs[idx] = cell_mat_volfracs_full[c*nmats+matid];
-        cell_mat_centroids[idx] = cell_mat_centroids_full[c*nmats+matid];
+        if (have_centroids)
+          cell_mat_centroids[idx] = cell_mat_centroids_full[c*nmats+matid];
         idx++;
       }
     }
@@ -687,9 +842,10 @@ template <template <int, Entity_kind, class, class> class Search,
           template <Entity_kind, class, class, class,
           template <class, int, class, class> class,
           class, class> class Intersect,
-          template<int, Entity_kind, class, class, class, class,
+          template<int, Entity_kind, class, class, class, class, class,
           template<class, int, class, class> class,
-          class, class, class=Wonton::DefaultCoordSys> class Interpolate,
+                   class, class, class=Wonton::DefaultCoordSys>
+          class Interpolate,
           int D,
           class SourceMesh_Wrapper,
           class SourceState_Wrapper,
@@ -734,12 +890,13 @@ int MMDriver<Search, Intersect, Interpolate, D,
                 "Remap implemented only for CELL and NODE variables");
 
 
+#ifdef ENABLE_DEBUG
   int ntarget_ents_owned = target_mesh_.num_entities(onwhat,
                                                      Entity_type::PARALLEL_OWNED);
   std::cout << "Number of target entities of kind " << onwhat <<
       " in target mesh on rank " << comm_rank << ": " <<
       ntarget_ents_owned << std::endl;
-
+#endif
   int ntarget_ents = target_mesh_.num_entities(onwhat, Entity_type::ALL);
 
   float tot_seconds = 0.0, tot_seconds_srch = 0.0,
@@ -817,38 +974,36 @@ int MMDriver<Search, Intersect, Interpolate, D,
     interface_reconstructor->reconstruct(executor);
   }
 
-
+#endif
   // Make an intersector which knows about the source state (to be able
   // to query the number of materials, etc) and also knows about the
   // interface reconstructor so that it can retrieve pure material polygons
+  using Intersector = Intersect<onwhat,
+                                SourceMesh_Wrapper2, SourceState_Wrapper2,
+                                TargetMesh_Wrapper, InterfaceReconstructorType,
+                                Matpoly_Splitter, Matpoly_Clipper>;
 
+  using Interpolator = Interpolate<D, onwhat,
+                                   SourceMesh_Wrapper2, TargetMesh_Wrapper,
+                                   SourceState_Wrapper2, TargetState_Wrapper,
+                                   double,
+                                   InterfaceReconstructorType,
+                                   Matpoly_Splitter, Matpoly_Clipper>;
 
-  Intersect<onwhat, SourceMesh_Wrapper2, SourceState_Wrapper2,
-            TargetMesh_Wrapper, InterfaceReconstructorType,
-            Matpoly_Splitter, Matpoly_Clipper>
-      intersect(source_mesh2, source_state2, target_mesh_, num_tols_,
-                interface_reconstructor);
+#if HAVE_TANGRAM
+  Intersector intersect(source_mesh2, source_state2,
+                        target_mesh_, num_tols_,
+                        interface_reconstructor);
 
   // Get an instance of the desired interpolate algorithm type
-  Interpolate<D, onwhat, SourceMesh_Wrapper2, TargetMesh_Wrapper,
-              SourceState_Wrapper2, TargetState_Wrapper,
-              InterfaceReconstructorType,
-              Matpoly_Splitter, Matpoly_Clipper>
-      interpolate(source_mesh2, target_mesh_, source_state2,
-                  num_tols_, interface_reconstructor);
+  Interpolator interpolate(source_mesh2, target_mesh_,
+                           source_state2,
+                           num_tols_, interface_reconstructor);
 #else
-
-  Intersect<onwhat, SourceMesh_Wrapper2, SourceState_Wrapper2,
-            TargetMesh_Wrapper, DummyInterfaceReconstructor,
-            void, void>
-      intersect(source_mesh2, source_state2, target_mesh_, num_tols_);
+  Intersector intersect(source_mesh2, source_state2, target_mesh_, num_tols_);
 
   // Get an instance of the desired interpolate algorithm type
-  Interpolate<D, onwhat, SourceMesh_Wrapper2, TargetMesh_Wrapper,
-              SourceState_Wrapper2, TargetState_Wrapper, DummyInterfaceReconstructor,
-              void, void, Wonton::DefaultCoordSys>
-      interpolate(source_mesh2, target_mesh_, source_state2,
-                  num_tols_);
+  Interpolator interpolate(source_mesh2, target_mesh_, source_state2, num_tols_);
 #endif  // HAVE_TANGRAM
 
 
@@ -882,18 +1037,25 @@ int MMDriver<Search, Intersect, Interpolate, D,
 
 
   // INTERPOLATE (one variable at a time)
-
   gettimeofday(&begin_timeval, 0);
-
   int nvars = src_meshvar_names.size();
-  if (comm_rank == 0)
-    std::cout << "Number of mesh variables on entity kind " << onwhat <<
-        " to remap is " << nvars << std::endl;
+#ifdef ENABLE_DEBUG
+    if (comm_rank == 0){
+      std::cout << "Number of mesh variables on entity kind " << onwhat <<
+          " to remap is " << nvars << std::endl;
+    }
+#endif
+
+Portage::vector<Vector<D>> gradients;
 
   for (int i = 0; i < nvars; ++i) {
-    interpolate.set_interpolation_variable(src_meshvar_names[i],
-                                           limiters_.at(src_meshvar_names[i]),
-                                           bnd_limiters_.at(src_meshvar_names[i]));
+    // compute gradient field if necessary and set interpolation parameters
+    set_interpolation_variable(src_meshvar_names[i],
+                               source_mesh2, source_state2, interpolate,
+                               #if HAVE_TANGRAM
+                                 interface_reconstructor,
+                               #endif
+                               0, &gradients, executor);
 
     // Get a handle to a memory location where the target state
     // would like us to write this material variable into. If it is
@@ -1133,10 +1295,11 @@ int MMDriver<Search, Intersect, Interpolate, D,
       gettimeofday(&begin_timeval, 0);
       
       int nmatvars = src_matvar_names.size();
+#ifdef ENABLE_DEBUG
       if (comm_rank == 0)
         std::cout << "Number of multi-material variables on entity kind " <<
             onwhat << " to remap is " << nmatvars << std::endl;
-      
+#endif      
       interpolate.set_material(m);    // We have to do this so we know
       //                              // which material values we have
       //                              // to grab from the source state
@@ -1144,11 +1307,14 @@ int MMDriver<Search, Intersect, Interpolate, D,
 
       // if the material has no cells on this partition, then don't bother
       // interpolating MM variables
-        
       for (int i = 0; i < nmatvars; ++i) {
-        interpolate.set_interpolation_variable(src_matvar_names[i],
-                                               limiters_.at(src_matvar_names[i]),
-                                               bnd_limiters_.at(src_matvar_names[i]));
+        // compute gradient field if necessary and set interpolation parameters
+        set_interpolation_variable(src_matvar_names[i],
+                                   source_mesh2, source_state2, interpolate,
+                                   #if HAVE_TANGRAM
+                                     interface_reconstructor,
+                                   #endif
+                                   m, &gradients, executor);
 
         // Get a handle to a memory location where the target state
         // would like us to write this material variable into. If it is
@@ -1182,7 +1348,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
   }  // for nmats
 
   tot_seconds = tot_seconds_srch + tot_seconds_xsect + tot_seconds_interp;
-
+#ifdef ENABLE_DEBUG
   std::cout << "Transform Time for Entity Kind " << onwhat << " on Rank " <<
       comm_rank << " (s): " << tot_seconds << std::endl;
   std::cout << "   Search Time Rank " << comm_rank << " (s): " <<
@@ -1191,7 +1357,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
       tot_seconds_xsect << std::endl;
   std::cout << "   Interpolate Time Rank " << comm_rank << " (s): " <<
       tot_seconds_interp << std::endl;
-
+#endif
   return 1;
 }
 

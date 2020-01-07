@@ -91,15 +91,14 @@ TEST(CellDriver, 2D_2ndOrder) {
 
   auto candidates = d.search<Portage::SearchKDTree>();
   auto srcwts = d.intersect_meshes<Portage::IntersectR2D>(candidates);
-  bool has_mismatch = d.check_mesh_mismatch(srcwts);
 
   double dblmin = -std::numeric_limits<double>::max();
   double dblmax =  std::numeric_limits<double>::max();
 
-  d.interpolate_mesh_var<double, Portage::Interpolate_2ndOrder>("temperature",
-                                                                "temperature",
-                                                                srcwts,
-                                                                dblmin, dblmax);
+  auto gradients = d.compute_source_gradient("temperature");
+  d.interpolate_mesh_var<double, Portage::Interpolate_2ndOrder>(
+    "temperature", "temperature", srcwts, &gradients
+  );
 
 
   //-------------------------------------------------------------------
@@ -189,14 +188,14 @@ TEST(CellDriver, 3D_2ndOrder) {
 
   auto candidates = d.search<Portage::SearchKDTree>();
   auto srcwts = d.intersect_meshes<Portage::IntersectR3D>(candidates);
-  bool has_mismatch = d.check_mesh_mismatch(srcwts);
 
   double dblmin = -std::numeric_limits<double>::max();
   double dblmax =  std::numeric_limits<double>::max();
 
-  d.interpolate_mesh_var<double,
-                         Portage::Interpolate_2ndOrder>("temperature", "TEMP",
-                                                        srcwts, dblmin, dblmax);
+  auto gradients = d.compute_source_gradient("temperature");
+  d.interpolate_mesh_var<double, Portage::Interpolate_2ndOrder>(
+    "temperature", "TEMP", srcwts, &gradients
+  );
   
   // Finally check that we got the right target temperature values
   double *targettemp;

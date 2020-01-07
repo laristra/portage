@@ -76,7 +76,8 @@ namespace Portage {
     Limited_Gradient(Mesh const& mesh, State const& state,
                      std::string const var_name,
                      Limiter_type limiter_type,
-                     Boundary_Limiter_type boundary_limiter_type)
+                     Boundary_Limiter_type boundary_limiter_type,
+                     const Part<Mesh, State>* part = nullptr)
       : mesh_(mesh),
         state_(state),
         values_(nullptr),
@@ -484,7 +485,14 @@ namespace Portage {
     Matpoly_Splitter, Matpoly_Clipper, CoordSys
   > {
 
-    // useful aliases
+#ifdef HAVE_TANGRAM
+    using InterfaceReconstructor =
+    Tangram::Driver<
+      InterfaceReconstructorType, D, Mesh,
+      Matpoly_Splitter, Matpoly_Clipper
+    >;
+#endif
+
   public:
     /*! @brief Constructor
       @param[in] mesh  Mesh class than one can query for mesh info
@@ -499,7 +507,8 @@ namespace Portage {
                      State const& state,
                      std::string const var_name,
                      Limiter_type limiter_type,
-                     Boundary_Limiter_type boundary_limiter_type)
+                     Boundary_Limiter_type boundary_limiter_type,
+                     const Part<Mesh, State>* part = nullptr)
       : mesh_(mesh),
         state_(state),
         values_(nullptr),
@@ -521,6 +530,33 @@ namespace Portage {
 
       set_interpolation_variable(var_name, limiter_type, boundary_limiter_type);
     }
+
+#ifdef HAVE_TANGRAM
+    /**
+     * @brief Additional constructor to be consistent with cell-centered version.
+     *
+     * @param mesh: the current mesh.
+     * @param state: the current mesh state for querying field info.
+     * @param var_name: the variable to be remapped.
+     * @param limiter_type: the gradient limiter for internal regions.
+     * @param boundary_limiter_type: the gradient limiter for boundary regions.
+     * @param ir: the interface reconstructor in multi-material context.
+     */
+    Limited_Gradient(Mesh const& mesh,
+                     State const& state,
+                     std::string const& var_name,
+                     Limiter_type limiter_type,
+                     Boundary_Limiter_type boundary_limiter_type,
+                     std::shared_ptr<InterfaceReconstructor> ir,
+                     const Part<Mesh, State>* part = nullptr)
+      : Limited_Gradient(mesh, state, var_name, limiter_type, boundary_limiter_type) {
+
+      if (part != nullptr) {
+        std::cerr << "Sorry, part-by-part remap is only defined ";
+        std::cerr << "for cell-centered field, will be ignored." << std::endl;
+      }
+    }
+#endif
 
     void set_material(int material_id) { material_id_ = material_id; }
 

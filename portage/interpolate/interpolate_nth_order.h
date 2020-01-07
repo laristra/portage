@@ -35,6 +35,7 @@ template <> struct Interpolate_NthOrder<1> {
            class TargetMeshType,
            class SourceStateType,
            class TargetStateType = SourceStateType,
+           typename T = double,
            template<class, int, class, class>
              class InterfaceReconstructorType = DummyInterfaceReconstructor,
            class MatPoly_Splitter = void,
@@ -45,6 +46,7 @@ template <> struct Interpolate_NthOrder<1> {
                                                     TargetMeshType,
                                                     SourceStateType,
                                                     TargetStateType,
+                                                    T,
                                                     InterfaceReconstructorType,
                                                     MatPoly_Splitter,
                                                     MatPoly_Clipper,
@@ -58,6 +60,7 @@ template <> struct Interpolate_NthOrder<2> {
            class TargetMeshType,
            class SourceStateType,
            class TargetStateType = SourceStateType,
+           typename T = double,
            template<class, int, class, class>
              class InterfaceReconstructorType = DummyInterfaceReconstructor,
            class MatPoly_Splitter = void,
@@ -68,6 +71,7 @@ template <> struct Interpolate_NthOrder<2> {
                                                     TargetMeshType,
                                                     SourceStateType,
                                                     TargetStateType,
+                                                    T,
                                                     InterfaceReconstructorType,
                                                     MatPoly_Splitter,
                                                     MatPoly_Clipper,
