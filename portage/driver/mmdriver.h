@@ -748,22 +748,24 @@ class MMDriver {
 
 
 #ifdef HAVE_TANGRAM
-  // The following tolerances as well as the all-convex flag are required for 
-  // the interface reconstructor driver. The size of the tols vector is currently 
-  // set to two since MOF requires two different set of tolerances to match the 
-  // 0th-order and 1st-order moments. VOF on the other does not require the second 
-  // tolerance. 
-  // If a new IR method which requires tolerances for higher moment is added to 
-  // Tangram, then this vector size should be generalized. The boolean all_convex 
-  // flag is to specify if a mesh contains only convex cells and set to true in that case. 
+  // The following tolerances as well as the all-convex flag are
+  // required for the interface reconstructor driver. The size of the
+  // tols vector is currently set to two since MOF requires two
+  // different set of tolerances to match the 0th-order and 1st-order
+  // moments. VOF on the other does not require the second tolerance.
+  // If a new IR method which requires tolerances for higher moment is
+  // added to Tangram, then this vector size should be
+  // generalized. The boolean all_convex flag is to specify if a mesh
+  // contains only convex cells and set to true in that case.
   //
-  // There is an associated method called set_reconstructor_options that should
-  // be invoked to set user-specific values. Otherwise, the remapper will use 
-  // the default values. 
+  // There is an associated method called set_reconstructor_options
+  // that should be invoked to set user-specific values. Otherwise,
+  // the remapper will use the default values.
   std::vector<Tangram::IterativeMethodTolerances_t> reconstructor_tols_ = 
   {{1000, 1e-12, 1e-12}, {1000, 1e-12, 1e-12}};
   bool reconstructor_all_convex_ = true;  
-
+#endif
+  
 };  // class MMDriver
 
 
@@ -851,9 +853,16 @@ int MMDriver<Search, Intersect, Interpolate, D,
   // Instantiate core driver
 
   Portage::CoreDriver<D, onwhat, SourceMesh_Wrapper2, SourceState_Wrapper2,
-                      TargetMesh_Wrapper, TargetState_Wrapper>
+                      TargetMesh_Wrapper, TargetState_Wrapper,
+                      InterfaceReconstructorType,
+                      Matpoly_Splitter, Matpoly_Clipper>
       coredriver(source_mesh2, source_state2, target_mesh_, target_state_);
-                      
+
+  coredriver.set_num_tols(num_tols_);
+  coredriver.set_interface_reconstructor_options(reconstructor_tols_,
+                                                 reconstructor_all_convex_);
+  
+  
   // SEARCH
 
   auto candidates = coredriver.template search<Portage::SearchKDTree>();
@@ -992,37 +1001,40 @@ int MMDriver<Search, Intersect, Interpolate, D,
   if (onwhat != Entity_kind::CELL)
     return 1;                       // Multimaterial vars only on cells
 
-  //--------------------------------------------------------------------
-  // REMAP MULTIMATERIAL FIELDS NEXT, ONE MATERIAL AT A TIME
-  //--------------------------------------------------------------------
-
-  auto source_ents_and_weights_mat = coredriver.template intersect_materials<Intersect>(candidates);
-
-  int nmatvars = src_matvar_names.size();
-  for (int i = 0; i < nmatvars; ++i) {
-    std::string const& srcvar = src_matvar_names[i];
-    std::string const& trgvar = trg_matvar_names[i];
-
-    std::vector<Portage::vector<Vector<D>>> matgradients(nmats);
-
-    Limiter_type limiter = DEFAULT_LIMITER;
-    auto const& it1 = limiters_.find(srcvar);
-    if (it1 != limiters_.end()) limiter = it1->second;
-
-    Boundary_Limiter_type bndlimiter = DEFAULT_BND_LIMITER;
-    auto const& it2 = bnd_limiters_.find(srcvar);
-    if (it2 != bnd_limiters_.end()) bndlimiter = it2->second;
-
-    for (int m = 0; m < nmats; m++)
-      matgradients[m] = coredriver.compute_source_gradient(src_matvar_names[i],
-                                                           limiter, bndlimiter,
-                                                           m);
-
-    coredriver.template interpolate_mat_var<double, Interpolate>(srcvar, trgvar,
-                                                                 source_ents_and_weights_mat,
-                                                                 &matgradients);
-  }  // nmatvars
-
+  if (nmats > 1) {
+    //--------------------------------------------------------------------
+    // REMAP MULTIMATERIAL FIELDS NEXT, ONE MATERIAL AT A TIME
+    //--------------------------------------------------------------------
+    
+    auto source_ents_and_weights_mat = coredriver.template intersect_materials<Intersect>(candidates);
+    
+    int nmatvars = src_matvar_names.size();
+    for (int i = 0; i < nmatvars; ++i) {
+      std::string const& srcvar = src_matvar_names[i];
+      std::string const& trgvar = trg_matvar_names[i];
+      
+      std::vector<Portage::vector<Vector<D>>> matgradients(nmats);
+      
+      Limiter_type limiter = DEFAULT_LIMITER;
+      auto const& it1 = limiters_.find(srcvar);
+      if (it1 != limiters_.end()) limiter = it1->second;
+      
+      Boundary_Limiter_type bndlimiter = DEFAULT_BND_LIMITER;
+      auto const& it2 = bnd_limiters_.find(srcvar);
+      if (it2 != bnd_limiters_.end()) bndlimiter = it2->second;
+      
+      for (int m = 0; m < nmats; m++)
+        matgradients[m] =
+            coredriver.compute_source_gradient(src_matvar_names[i],
+                                               limiter, bndlimiter,
+                                               m);
+      
+      coredriver.template interpolate_mat_var<double,
+                                              Interpolate>(srcvar, trgvar,
+                                                           source_ents_and_weights_mat,
+                                                           &matgradients);
+    }  // nmatvars
+  }
   gettimeofday(&end_timeval, 0);
   timersub(&end_timeval, &begin_timeval, &diff_timeval);
   tot_seconds_interp += diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
