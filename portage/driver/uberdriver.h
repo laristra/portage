@@ -329,9 +329,7 @@ class UberDriver {
 
      @tparam num_tols     struct of selected numerical tolerances
   */
-  template<Entity_kind ONWHAT>
-    void set_num_tols(NumericTolerances_t num_tols) {
-
+  void set_num_tols(NumericTolerances_t num_tols) {   
     for (Entity_kind onwhat : entity_kinds_) {
       switch (onwhat) {
         case CELL:
@@ -340,11 +338,11 @@ class UberDriver {
           core_driver_serial_[NODE]->template set_num_tols<NODE>(num_tols); break;
         default:
           std::cerr << "Cannot remap on " << to_string(onwhat) << "\n";
-
+          
       }
     }
   }
-
+  
 
   /*!
     @brief search for candidate source entities whose control volumes
