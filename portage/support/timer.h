@@ -59,6 +59,9 @@ public:
     float mesh_init   = 0;
     float redistrib   = 0;
     float interface   = 0;
+    float search      = 0;
+    float intersect   = 0;
+    float interpolate = 0;
     float remap       = 0;
     float total       = 0;
   } time;
@@ -83,31 +86,37 @@ public:
 
   // reset all counters
   inline void reset() {
-    time.mesh_init = 0;
-    time.redistrib = 0;
-    time.interface = 0;
-    time.remap     = 0;
-    time.total     = 0;
-    params.ranks   = 1;
-    params.threads = 1;
-    params.dim     = 2;
-    params.nsource = 0;
-    params.ntarget = 0;
-    params.nmats   = 0;
-    params.order   = 1;
-    params.output  = "";
+    time.mesh_init   = 0;
+    time.redistrib   = 0;
+    time.interface   = 0;
+    time.search      = 0;
+    time.intersect   = 0;
+    time.interpolate = 0;
+    time.remap       = 0;
+    time.total       = 0;
+    params.ranks     = 1;
+    params.threads   = 1;
+    params.dim       = 2;
+    params.nsource   = 0;
+    params.ntarget   = 0;
+    params.nmats     = 0;
+    params.order     = 1;
+    params.output    = "";
   }
 
   // dump all data to file
   inline bool dump() {
 
     // save timing for each step
-    constexpr int const nsteps = 3;
+    constexpr int const nsteps = 6;
     constexpr float const time_eps = 1.E-4;
 
     float const elap[nsteps] = {
       std::max(time_eps, time.mesh_init),
       std::max(time_eps, time.interface),
+      std::max(time_eps, time.search),
+      std::max(time_eps, time.intersect),
+      std::max(time_eps, time.interpolate),
       std::max(time_eps, time.remap)
     };
 
@@ -120,9 +129,12 @@ public:
     std::string const& path = params.output;
 
     std::printf("\nRecap: total elapsed time %.3f s\n", time.total);
-    std::printf("= %2d %% mesh initialization     (%6.1f s).\n", time_ratio[0], elap[0]);
-    std::printf("= %2d %% interface recontruction (%6.1f s).\n", time_ratio[1], elap[1]);
-    std::printf("= %2d %% remapping               (%6.1f s).\n", time_ratio[2], elap[2]);
+    std::printf("= %2d %% mesh initialization     (%6.3f s).\n", time_ratio[0], elap[0]);
+    std::printf("= %2d %% interface recontruction (%6.3f s).\n", time_ratio[1], elap[1]);
+    std::printf("= %2d %% search                  (%6.3f s).\n", time_ratio[2], elap[2]);
+    std::printf("= %2d %% intersect               (%6.3f s).\n", time_ratio[3], elap[3]);
+    std::printf("= %2d %% interpolate             (%6.3f s).\n", time_ratio[4], elap[4]);
+    std::printf("= %2d %% remapping               (%6.3f s).\n", time_ratio[5], elap[5]);
     std::fflush(stdout);
 
     std::printf("Exporting stats to '%s' ... ", path.data());
@@ -153,27 +165,33 @@ public:
       file << "#  3. initialization time"           << std::endl;
       file << "#  4. redistribution time"           << std::endl;
       file << "#  5. interface reconstruction time" << std::endl;
-      file << "#  6. remapping time"                << std::endl;
-      file << "#  7. total elapsed time"            << std::endl;
-      file << "#  8. mesh dimension"                << std::endl;
-      file << "#  9. source cells count"            << std::endl;
-      file << "# 10. target cells count"            << std::endl;
-      file << "# 11. materials count"               << std::endl;
-      file << "# 12. remap order"      << std::endl << std::endl;
+      file << "#  6. search time"                   << std::endl;
+      file << "#  7. intersection time"             << std::endl;
+      file << "#  8. interpolation time"            << std::endl;
+      file << "#  9. remapping time"                << std::endl;
+      file << "# 10. total elapsed time"            << std::endl;
+      file << "# 11. mesh dimension"                << std::endl;
+      file << "# 12. source cells count"            << std::endl;
+      file << "# 13. target cells count"            << std::endl;
+      file << "# 14. materials count"               << std::endl;
+      file << "# 15. remap order"      << std::endl << std::endl;
     }
 
-    file << params.ranks   << "\t"
-         << params.threads << "\t"
-         << time.mesh_init << "\t"
-         << time.redistrib << "\t"
-         << time.interface << "\t"
-         << time.remap     << "\t"
-         << time.total     << "\t"
-         << params.dim     << "\t"
-         << params.nsource << "\t"
-         << params.ntarget << "\t"
-         << params.nmats   << "\t"
-         << params.order   << std::endl;
+    file << params.ranks     << "\t"
+         << params.threads   << "\t"
+         << time.mesh_init   << "\t"
+         << time.redistrib   << "\t"
+         << time.interface   << "\t"
+         << time.search      << "\t"
+         << time.intersect   << "\t"
+         << time.interpolate << "\t"
+         << time.remap       << "\t"
+         << time.total       << "\t"
+         << params.dim       << "\t"
+         << params.nsource   << "\t"
+         << params.ntarget   << "\t"
+         << params.nmats     << "\t"
+         << params.order     << std::endl;
 
     file.close();
     std::printf("done. \e[32m(%.3f s)\e[0m\n", timer::elapsed(tic));

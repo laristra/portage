@@ -53,7 +53,8 @@
   #include "portage/support/timer.h"
 #endif
 
-//#define DEBUG_PRINT
+///#define DEBUG_PRINT
+//#define ENABLE_TIMINGS
 
 // For parsing and evaluating user defined expressions in apps
 #include "user_field.h"
@@ -106,6 +107,9 @@ void move_target_mesh_nodes(std::shared_ptr<Jali::Mesh> mesh,
 void single_vortex_velocity_function(double* coords, double& tcur, 
   double& periodT, double* disp);
 
+void copy_nodes(const std::shared_ptr<Jali::Mesh> targetmesh, 
+     std::shared_ptr<Jali::Mesh> srcmesh);
+
 //////////////////////////////////////////////////////////////////////
 int main(int argc, char** argv) {
   // Pause profiling until main loop
@@ -135,7 +139,7 @@ int main(int argc, char** argv) {
 
   int interp_order = 1;
   bool sweptface = true; 
-  int ntimesteps = 4;  
+  int ntimesteps = 5;  
   int scale = 20; 
   // since write_to_gmv segfaults in parallel, default to false and force the
   // user to output in serial
@@ -210,8 +214,8 @@ int main(int argc, char** argv) {
   auto profiler = std::make_shared<Profiler>();
   // save params for after
   profiler->params.ranks   = numpe;
-  profiler->params.nsource = std::pow(nsourcecells, dim);
-  profiler->params.ntarget = std::pow(ntargetcells, dim);
+  profiler->params.nsource = std::pow(ncells, dim);
+  profiler->params.ntarget = std::pow(ncells, dim);
   profiler->params.order   = interp_order;
   profiler->params.nmats   = 1;
   profiler->params.output += scaling_type + "_scaling_" +
@@ -228,7 +232,8 @@ int main(int argc, char** argv) {
 
   // The mesh factory and mesh setup
   int nsourcecells = ncells, ntargetcells = ncells; 
-  double srclo = 0.0, srchi = 1.0;  // bounds of generated mesh in each dir
+  // 4 for n= 200, 20 for n=1000
+  double srclo = 0.0, srchi = 4.0;  // bounds of generated mesh in each dir
   double trglo = srclo, trghi = srchi;  // bounds of generated mesh in each dir
 
   std::shared_ptr<Jali::Mesh> source_mesh, target_mesh;
@@ -264,13 +269,28 @@ int main(int argc, char** argv) {
         std::cout << "Mesh Initialization Time: " << profiler->time.mesh_init << std::endl;
     }
 #endif
-
-  double periodT = 2.0; 
+  //ntimesteps = 10; 
+  //double periodT = 3; 
+  //double periodT = 4; 
+  double periodT = 2; 
   double deltaT = periodT/ntimesteps; 
+
+  if (rank == 0)
+  {
+    std::cout<<"Mesh Bounds : ["<<srclo<<", "<<srchi<<"] "<<std::endl;
+    std::cout<<"Period T : "<<periodT<<std::endl;
+    std::cout<<"Ntimesteps : "<<ntimesteps<<"\n"<<std::endl;
+  }
+
 
   std::vector<double> l1_err(ntimesteps, 0.0), l2_err(ntimesteps, 0.0);
 
   for (int i = 1; i < ntimesteps; i++) {
+
+#if ENABLE_TIMINGS
+   start = timer::now();
+#endif
+
     // Move nodes of the target mesh 
     std::cout<<"Start moving mesh for timestep "<<i<<" scaled by "<<scale<<std::endl;
     
@@ -298,23 +318,28 @@ int main(int argc, char** argv) {
         MPI_Abort(MPI_COMM_WORLD, -1);
     }
 
+    //copy_nodes(target_mesh, source_mesh);
+    //source_mesh = target_mesh;
+
     std::cout << "L1 norm of error for timestep " << i << " is " <<
         l1_err[i] << std::endl;
     std::cout << "L2 norm of error for timestep " << i << " is " <<
         l2_err[i] << std::endl;
-
-  }
-
-  MPI_Finalize();
+    std::cout<<std::endl;
 
 #if ENABLE_TIMINGS
-  profiler->time.total = timer::elapsed(start);
+   profiler->time.total = timer::elapsed(start);
 
   // dump timing data
   if (rank == 0) {
     profiler->dump();
   }
+  // profiler.reset(); 
 #endif
+  }
+
+  MPI_Finalize();
+
 }
 //////////////////////////////////////////////////////////////////////////////
 // Run a remap between two meshes and return the L1 and L2 error norms
@@ -334,7 +359,7 @@ template<int dim> void remap(std::shared_ptr<Jali::Mesh> sourceMesh,
                              bool sweptface, 
                              std::shared_ptr<Profiler> profiler) {
   if (rank == 0)
-    std::cout << "starting sweptfacedemo_jali_singlemat...\n";
+    std::cout << "\nStarting sweptfacedemo_jali_singlemat...\n";
 
   if (entityKind != Jali::Entity_kind::CELL) {
      std::cerr << "Sweptfacedemo not supported for node based fields!\n";
@@ -360,6 +385,7 @@ template<int dim> void remap(std::shared_ptr<Jali::Mesh> sourceMesh,
 
   // Output some information for the user
   if (rank == 0) {
+    std::cout << "Swept face remapping is used " << sweptface << "\n";
     std::cout << "Source mesh has " << nsrccells << " cells\n";
     std::cout << "Target mesh has " << ntarcells << " cells\n";
     std::cout << " Specified single material field is ";
@@ -371,10 +397,6 @@ template<int dim> void remap(std::shared_ptr<Jali::Mesh> sourceMesh,
       std::cout << "   Boundary limiter type is " << bnd_limiter << "\n";
     }
   }
-
-#if ENABLE_TIMINGS
-  auto tic = timer::now();
-#endif
 
   // Compute field data on source and add to state manager. 
   user_field_t source_field; 
@@ -394,10 +416,6 @@ template<int dim> void remap(std::shared_ptr<Jali::Mesh> sourceMesh,
                                               Jali::Entity_kind::CELL,
                                               Jali::Entity_type::ALL, 0.0);
 
-#if ENABLE_TIMINGS
-    profiler->time.remap = timer::elapsed(tic, true);
-#endif
-
   // Executor
   Wonton::MPIExecutor_type mpiexecutor(MPI_COMM_WORLD);
   Wonton::Executor_type *executor = (numpe > 1) ? &mpiexecutor : nullptr;
@@ -413,6 +431,10 @@ template<int dim> void remap(std::shared_ptr<Jali::Mesh> sourceMesh,
  
   if (numpe > 1) MPI_Barrier(MPI_COMM_WORLD);
 
+#if ENABLE_TIMINGS
+  auto ticrp = timer::now();
+#endif
+
   Portage::CoreDriver<2, Wonton::Entity_kind::CELL,
           Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
           Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper> 
@@ -420,13 +442,32 @@ template<int dim> void remap(std::shared_ptr<Jali::Mesh> sourceMesh,
      targetMeshWrapper, targetStateWrapper, executor); 
 
   if (sweptface) {
+
+#if ENABLE_TIMINGS
+  auto tic = timer::now();
+#endif
+
     auto candidates = cdriver.search<Portage::SearchSweptFace>();
+
+#if ENABLE_TIMINGS
+    profiler->time.search = timer::elapsed(tic);
+    tic = timer::now();
+#endif
+
     auto weights = cdriver.intersect_meshes<Portage::IntersectSweptFace2D>(candidates);
+
+#if ENABLE_TIMINGS
+    profiler->time.intersect = timer::elapsed(tic);
+#endif
+
     bool has_mismatch = cdriver.check_mesh_mismatch(weights);
   
     double dblmin = -std::numeric_limits<double>::max();
     double dblmax =  std::numeric_limits<double>::max();
 
+#if ENABLE_TIMINGS
+    tic = timer::now();
+#endif
     if (interp_order == 1) {
       cdriver.interpolate_mesh_var<double,
            Portage::Interpolate_1stOrder>("density",
@@ -440,15 +481,36 @@ template<int dim> void remap(std::shared_ptr<Jali::Mesh> sourceMesh,
                   weights,
                   0.0, dblmax);
     }
+#if ENABLE_TIMINGS
+    profiler->time.interpolate = timer::elapsed(tic);
+#endif
   }
   else {
+
+#if ENABLE_TIMINGS
+    auto tic = timer::now();
+#endif
+
     auto candidates = cdriver.search<Portage::SearchKDTree>();
+
+#if ENABLE_TIMINGS
+    profiler->time.search = timer::elapsed(tic);
+    tic = timer::now();
+#endif
+ 
     auto weights = cdriver.intersect_meshes<Portage::IntersectR2D>(candidates);
+
+#if ENABLE_TIMINGS
+    profiler->time.intersect = timer::elapsed(tic);
+#endif
     bool has_mismatch = cdriver.check_mesh_mismatch(weights);
   
     double dblmin = -std::numeric_limits<double>::max();
     double dblmax =  std::numeric_limits<double>::max();
 
+#if ENABLE_TIMINGS
+    tic = timer::now();
+#endif
     if (interp_order == 1) {
       cdriver.interpolate_mesh_var<double,
            Portage::Interpolate_1stOrder>("density",
@@ -462,15 +524,19 @@ template<int dim> void remap(std::shared_ptr<Jali::Mesh> sourceMesh,
                   weights,
                   0.0, dblmax);
     }
+#if ENABLE_TIMINGS
+    profiler->time.interpolate = timer::elapsed(tic);
+#endif
 }
 
-#if !ENABLE_TIMINGS
-  // Output some information for the user
-#else
-  profiler->time.remap += timer::elapsed(tic);
+#if ENABLE_TIMINGS
+    profiler->time.remap = timer::elapsed(ticrp);
 
   if (rank == 0) {
-    std::cout << "Remap Time: " << profiler->time.remap << std::endl;
+    std::cout << "Search Time:      " << profiler->time.search << std::endl;
+    std::cout << "Intersect Time:   " << profiler->time.intersect << std::endl;
+    std::cout << "Interpolate Time: " << profiler->time.interpolate << std::endl;
+    std::cout << "Remap Time:       " << profiler->time.remap << std::endl;
   }
 #endif  
 
@@ -479,11 +545,12 @@ template<int dim> void remap(std::shared_ptr<Jali::Mesh> sourceMesh,
     if (rank == 0)
       std::cout << "Dumping data to Exodus files..." << std::endl;
 
-    std::string filename = "source_" + std::to_string(rank) + std::to_string(iteration)+ ".exo";
+    std::string filename = "source_sweptface_" + std::to_string(sweptface) + "_ncells_"+std::to_string(nsrccells)+ "_field_" + field_expression + "_ro_" + std::to_string(interp_order) + "_rank_" + std::to_string(rank) + "_iter_" + std::to_string(iteration)+ ".exo";
     sourceState->export_to_mesh();
     sourceMesh->write_to_exodus_file(filename);
 
-    filename = "target_" + std::to_string(rank) + std::to_string(iteration)+ ".exo";
+
+    filename = "target_sweptface_" + std::to_string(sweptface) + "_ncells_"+std::to_string(nsrccells)+ "_field_" + field_expression + "_ro_" + std::to_string(interp_order) + "_rank_" + std::to_string(rank) + "_iter_" + std::to_string(iteration)+ ".exo";
     targetState->export_to_mesh();
     targetMesh->write_to_exodus_file(filename);
 
@@ -513,7 +580,6 @@ template<int dim> void remap(std::shared_ptr<Jali::Mesh> sourceMesh,
   double minin =  1.0e50, minout =  1.0e50;
   double maxin = -1.0e50, maxout = -1.0e50;
   double err_l1 = 0.;
-  double err_norm = 0.;
   double target_mass = 0.;
   double source_mass = 0.;
   double totvolume = 0. ;
@@ -547,7 +613,7 @@ template<int dim> void remap(std::shared_ptr<Jali::Mesh> sourceMesh,
         targetData[c] = cellvecout[c];
         minout = fmin( minout, cellvecout[c] );
         maxout = fmax( maxout, cellvecout[c] );
-        error = cellvecin[c] - cellvecout[c];
+        error = source_field(ccen) - cellvecout[c];
         L1_error += fabs(error)*cellvol;
         L2_error += error*error*cellvol;
         totvolume += cellvol;
@@ -580,7 +646,6 @@ template<int dim> void remap(std::shared_ptr<Jali::Mesh> sourceMesh,
   std::printf("L2 NORM OF ERROR (excluding boundary) = %lf\n\n", L2_error);
   std::printf("===================================================\n");
   std::printf("ON RANK %d\n", rank);
-  std::printf("Relative L1 error = %.5e \n", err_norm);
   std::printf("Source min/max    = %.15e %.15e \n", minin, maxin);
   std::printf("Target min/max    = %.15e %.15e \n", minout, maxout);
   std::printf("Source total mass = %.15e \n", source_mass);
@@ -658,7 +723,11 @@ void single_vortex_velocity_function(double* coords, double& tcur,
   double y = coords[1];
   disp[0] = -2*sin(PI*tcur/periodT)*sin(PI*x)*sin(PI*x)*sin(PI*y)*cos(PI*y);
   disp[1] = 2*sin(PI*tcur/periodT)*sin(PI*x)*cos(PI*x)*sin(PI*y)*sin(PI*y);
-  
+  //normalize 
+  //disp[0] = disp[0]/sqrt(disp[0]*disp[0] + disp[1]*disp[1]);  
+  //disp[1] = disp[1]/sqrt(disp[0]*disp[0] + disp[1]*disp[1]);  
+  //disp[0] = -2*sin(PI*tcur/periodT)*sin(PI*x)*sin(PI*y);
+  //disp[1] = 2*sin(PI*tcur/periodT)*cos(PI*x)*sin(PI*y);
   
 } //velocity_function
 
@@ -685,6 +754,20 @@ void find_nodes_on_exterior_boundary(std::shared_ptr<Jali::Mesh> mesh,
     }
   }
 } //find_nodes_on_exterior_boundary
+
+void copy_nodes(const std::shared_ptr<Jali::Mesh> targetmesh, 
+     std::shared_ptr<Jali::Mesh> srcmesh)
+{
+  int nnodes = srcmesh->num_entities(Jali::Entity_kind::NODE,
+				     Jali::Entity_type::ALL);
+  
+  for (int i = 0; i< nnodes; i++){
+
+    std::array<double, 2> coords;
+    targetmesh->node_get_coordinates(i, &coords);
+    srcmesh->node_set_coordinates(i, &coords[0]);      
+  }
+}
 
 int print_usage() {
   std::cout << std::endl;

@@ -35,6 +35,7 @@ if (ENABLE_MPI)
     target_link_libraries(sweptfacedemo_jali_singlemat ${Jali_LIBRARIES})
     target_link_libraries(sweptfacedemo_jali_singlemat ${Jali_TPL_LIBRARIES})
 
+   # target_compile_definitions(sweptfaceapp_jali_singlemat PRIVATE PORTAGE_ENABLE_MPI=1)
 
     if (ENABLE_APP_TIMINGS)
       target_compile_definitions(sweptfaceapp_jali_singlemat PRIVATE ENABLE_TIMINGS=1)
