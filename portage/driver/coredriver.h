@@ -915,14 +915,23 @@ class CoreDriver : public CoreDriverBase<D,
    * @param[in] sources_and_weights weights for mesh-mesh interpolation
    * @param[in] lower_bound         lower bound of variable value 
    * @param[in] upper_bound         upper bound of variable value 
-   * @param[in] partition           structure containing source and target part    * @param[in] gradients           gradients of variable on source mesh (can be nullptr for 1st order remap)
-info
+   * @param[in] partition           structure containing source and target part
+   * @param[in] gradients           gradients of variable on source mesh (can be nullptr for 1st order remap)
 
    Enable only for cells using SFINAE. Here the class, rather than the
    function is templated on ONWHAT (as opposed to the equivalent
    method in the base class); so we have to create a dummy template
    parameter ONWHAT1 and rely on that to use SFINAE with a _second_
    dummy template parameter
+
+   **** Note ****
+   If you encounter errors about not being able to find an appropriate
+   overload for interpolate_mesh_var in your application code
+   (particularly something like "no type named 'type' in struct
+   std::enable_if<false, void>"), make sure the compiler does see the
+   possiblity of calling this function with Entity_kinds that are not
+   type CELL (restricting the code flow using 'if' statements will not
+   be enough)
    */
   template<typename T = double,
            template<int, Entity_kind, class, class, class, class, class,
@@ -1055,18 +1064,23 @@ info
     the function is templated on ONWHAT; so we have to create a dummy
     template parameter ONWHAT1 and rely on that for SFINAE using a
     _second_ template parameter
+
+   **** Note ****
+   If you encounter errors about not being able to find an appropriate
+   overload for interpolate_mesh_var in your application code
+   (particularly something like "no type named 'type' in struct
+   std::enable_if<false, void>"), make sure the compiler does see the
+   possiblity of calling this function with Entity_kinds that are not
+   type CELL (restricting the code flow using 'if' statements will not
+   be enough)
   */
 
-  // template<typename T = double,
-  //          template<int, Entity_kind, class, class, class, class, class,
-  //                   template<class, int, class, class> class,
-  //                   class, class, class> class Interpolate,
-  //          Entity_kind ONWHAT1 = ONWHAT,
-  //          typename = typename std::enable_if<ONWHAT1 == CELL>::type>
   template<typename T = double,
            template<int, Entity_kind, class, class, class, class, class,
                     template<class, int, class, class> class,
-                    class, class, class> class Interpolate>
+                    class, class, class> class Interpolate,
+           Entity_kind ONWHAT1 = ONWHAT,
+           typename = typename std::enable_if<ONWHAT1 == CELL>::type>
   void
   interpolate_mat_var(std::string srcvarname, std::string trgvarname,
                       std::vector<Portage::vector<std::vector<Weights_t>>> const& sources_and_weights_by_mat,
