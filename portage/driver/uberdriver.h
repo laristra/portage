@@ -398,6 +398,23 @@ class UberDriver {
 
   }
 
+#ifdef HAVE_TANGRAM
+  /*!
+    @brief set tolerances and options for interface reconstructor driver  
+    @param tols The vector of tolerances for each moment during reconstruction
+    @param all_convex Should be set to false if the source mesh contains 
+    non-convex cells.  
+  */
+  void set_interface_reconstructor_options(std::vector<Tangram::IterativeMethodTolerances_t> &tols, 
+                                 bool all_convex) {
+    core_driver_serial_[CELL]->set_interface_reconstructor_options(tols,
+                                                                   all_convex);
+  }
+
+#endif
+
+  
+
   /* @brief intersect target cells with source material polygons
 
      @tparam Entity_kind  what kind of entities are we intersecting
