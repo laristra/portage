@@ -125,9 +125,8 @@ TEST(UberDriver, ThreeMat2D_MOF_MixedOrderRemap) {
   std::vector<int> matcells_src[nmats];
   std::vector<double> matvf_src[nmats];
   std::vector<Wonton::Point<2>> matcen_src[nmats];
-
-  //density rho(x,y) = (m+1)^2*(x+y)
   std::vector<double> matrho_src[nmats];
+
 
   //-------------------------------------------------------------------
   // COMPUTE MATERIAL DATA ON SOURCE SIDE - VOLUME FRACTIONS, CENTROID
@@ -245,7 +244,7 @@ TEST(UberDriver, ThreeMat2D_MOF_MixedOrderRemap) {
   Portage::UberDriver<2,
                        Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
                        Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
-                      Tangram::XMOF2D_Wrapper>
+                       Tangram::XMOF2D_Wrapper>
       d(sourceMeshWrapper, sourceStateWrapper,
         targetMeshWrapper, targetStateWrapper);
 
@@ -494,8 +493,6 @@ TEST(UberDriver, ThreeMat3D_MOF_MixedOrderRemap) {
   std::vector<int> matcells_src[nmats];
   std::vector<double> matvf_src[nmats];
   std::vector<Wonton::Point<3>> matcen_src[nmats];
-
-  //density rho(x,y,z) = (m+1)^2*(x+y+z)
   std::vector<double> matrho_src[nmats];
 
   //-------------------------------------------------------------------
