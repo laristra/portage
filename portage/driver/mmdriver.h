@@ -859,9 +859,10 @@ int MMDriver<Search, Intersect, Interpolate, D,
       coredriver(source_mesh2, source_state2, target_mesh_, target_state_);
 
   coredriver.set_num_tols(num_tols_);
+#ifdef HAVE_TANGRAM
   coredriver.set_interface_reconstructor_options(reconstructor_tols_,
                                                  reconstructor_all_convex_);
-  
+#endif  
   
   // SEARCH
 
