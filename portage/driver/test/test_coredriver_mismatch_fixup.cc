@@ -93,7 +93,10 @@ TEST(Test_Mismatch_Fixup, Test_Methods) {
   
   // Cache the mismatch
   fixer.check_mesh_mismatch(source_weights);
-      
+  
+  driver.check_mesh_mismatch(source_weights);
+  
+  ASSERT_EQ(driver.has_mismatch(), driver.has_mismatch());  
 
   //-------------------------------------------------------------------
   // Expected Results
@@ -129,7 +132,7 @@ TEST(Test_Mismatch_Fixup, Test_Methods) {
     "cellvars","cellvars", source_weights, &gradients);
 
   // test (CONSTANT,EXTRAPOLATE)
-  if (fixer.has_mismatch())
+  if (driver.has_mismatch())
     fixer.fix_mismatch("cellvars","cellvars", 0.0, dblmax, Portage::DEFAULT_CONSERVATION_TOL, 
       Portage::DEFAULT_MAX_FIXUP_ITER, Portage::CONSTANT, Portage::EXTRAPOLATE);
 
@@ -142,7 +145,7 @@ TEST(Test_Mismatch_Fixup, Test_Methods) {
     "cellvars","cellvars", source_weights, &gradients);
 
   // test (LOCALLY_CONSERVATIVE,EXTRAPOLATE)
-  if (fixer.has_mismatch())
+  if (driver.has_mismatch())
     fixer.fix_mismatch("cellvars","cellvars", 0.0, dblmax, Portage::DEFAULT_CONSERVATION_TOL, 
       Portage::DEFAULT_MAX_FIXUP_ITER, Portage::LOCALLY_CONSERVATIVE, Portage::EXTRAPOLATE);
 
@@ -155,7 +158,7 @@ TEST(Test_Mismatch_Fixup, Test_Methods) {
     "cellvars","cellvars", source_weights, &gradients);
 
   // test (SHIFTED_CONSERVATIVE,EXTRAPOLATE)
-  if (fixer.has_mismatch())
+  if (driver.has_mismatch())
     fixer.fix_mismatch("cellvars","cellvars", 0.0, dblmax, Portage::DEFAULT_CONSERVATION_TOL, 
       Portage::DEFAULT_MAX_FIXUP_ITER, Portage::SHIFTED_CONSERVATIVE, Portage::EXTRAPOLATE);
 
@@ -168,7 +171,7 @@ TEST(Test_Mismatch_Fixup, Test_Methods) {
     "cellvars","cellvars", source_weights, &gradients);
 
   // test (CONSTANT,LEAVE_EMPTY)
-  if (fixer.has_mismatch())
+  if (driver.has_mismatch())
     fixer.fix_mismatch("cellvars","cellvars", 0.0, dblmax, Portage::DEFAULT_CONSERVATION_TOL, 
       Portage::DEFAULT_MAX_FIXUP_ITER, Portage::CONSTANT, Portage::LEAVE_EMPTY);
 
@@ -181,7 +184,7 @@ TEST(Test_Mismatch_Fixup, Test_Methods) {
     "cellvars","cellvars", source_weights, &gradients);
 
   // test (LOCALLY_CONSERVATIVE,LEAVE_EMPTY)
-  if (fixer.has_mismatch())
+  if (driver.has_mismatch())
     fixer.fix_mismatch("cellvars","cellvars", 0.0, dblmax, Portage::DEFAULT_CONSERVATION_TOL, 
       Portage::DEFAULT_MAX_FIXUP_ITER, Portage::LOCALLY_CONSERVATIVE, Portage::LEAVE_EMPTY);
 
@@ -194,7 +197,7 @@ TEST(Test_Mismatch_Fixup, Test_Methods) {
     "cellvars","cellvars", source_weights, &gradients);
 
   // test (SHIFTED_CONSERVATIVE,LEAVE_EMPTY)
-  if (fixer.has_mismatch())
+  if (driver.has_mismatch())
     fixer.fix_mismatch("cellvars","cellvars", 0.0, dblmax, Portage::DEFAULT_CONSERVATION_TOL, 
       Portage::DEFAULT_MAX_FIXUP_ITER, Portage::SHIFTED_CONSERVATIVE, Portage::LEAVE_EMPTY);
 

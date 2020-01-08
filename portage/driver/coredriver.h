@@ -314,6 +314,42 @@ class CoreDriverBase {
                                                       gradients);
   }
 
+
+  /*!
+    @brief Check if meshes are mismatched (don't cover identical
+    portions of space)
+
+    @tparam Entity_kind  What kind of entity are we performing intersection of
+
+    @param[in] sources_weights  Intersection sources and moments (vols, centroids) 
+    @returns   Whether the meshes are mismatched
+  */
+
+  template<Entity_kind ONWHAT>
+  bool 
+  check_mesh_mismatch(Portage::vector<std::vector<Weights_t>> const& source_weights) {
+    assert(ONWHAT == onwhat());
+    auto derived_class_ptr = static_cast<CoreDriverType<ONWHAT> *>(this);
+    return derived_class_ptr->check_mesh_mismatch(source_weights);
+  }
+
+
+  /*!
+    @brief Return if meshes are mismatched (check_mesh_mismatch must already have been
+    called)
+
+    @returns   Whether the meshes are mismatched
+  */
+
+  template<Entity_kind ONWHAT>
+  bool 
+  has_mismatch() {
+    assert(ONWHAT == onwhat());
+    auto derived_class_ptr = static_cast<CoreDriverType<ONWHAT> *>(this);
+    return derived_class_ptr->has_mismatch();
+  }
+
+
   /*!
     @brief Set numerical tolerances for small volumes, distances, etc.
 
@@ -1090,6 +1126,50 @@ class CoreDriver : public CoreDriverBase<D,
 
 #endif  // HAVE_TANGRAM
 
+
+  /*! 
+    Check mismatch between meshes
+
+    @param[in] sources_and_weights Intersection sources and moments
+    (vols, centroids)
+
+    @returns   Whether the meshes are mismatched
+  */
+  bool
+  check_mesh_mismatch(Portage::vector<std::vector<Weights_t>> const& source_weights) {
+
+    // Instantiate mismatch fixer for later use
+    if (not mismatch_fixer_) {
+      // Intel 18.0.1 does not recognize std::make_unique even with -std=c++14 flag *ugh*
+      // mismatch_fixer_ = std::make_unique<MismatchFixer<D, ONWHAT,
+      //                                                  SourceMesh, SourceState,
+      //                                                  TargetMesh,  TargetState>
+      //                                    >
+      //     (source_mesh_, source_state_, target_mesh_, target_state_,
+      //      source_weights, executor_);
+
+      mismatch_fixer_ = std::unique_ptr<MismatchFixer<D, ONWHAT,
+                                                      SourceMesh, SourceState,
+                                                      TargetMesh,  TargetState>
+                                        >(new MismatchFixer<D, ONWHAT,
+                                          SourceMesh, SourceState,
+                                          TargetMesh,  TargetState>
+                                          (source_mesh_, source_state_, target_mesh_, target_state_,
+                                           executor_));
+    }
+
+    return mismatch_fixer_->check_mesh_mismatch(source_weights);
+  }
+
+  
+  /*! 
+    Return mismatch between meshes
+
+    @returns   Whether the meshes are mismatched
+  */
+  bool
+  has_mismatch() {return mismatch_fixer_->has_mismatch();}
+
   
  private:
   SourceMesh const & source_mesh_;
@@ -1189,7 +1269,11 @@ class CoreDriver : public CoreDriverBase<D,
 
 #endif
 
-};  // CoreDriverBase
+  std::unique_ptr<MismatchFixer<D, ONWHAT,
+                                SourceMesh, SourceState,
+                                TargetMesh, TargetState>> mismatch_fixer_;
+
+};  // CoreDriver
 
 
 // Core Driver Factory
