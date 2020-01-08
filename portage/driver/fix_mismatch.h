@@ -125,7 +125,6 @@ class MismatchFixer {
                 SourceState_Wrapper const& source_state,
                 TargetMesh_Wrapper const& target_mesh,
                 TargetState_Wrapper & target_state,
-                Portage::vector<std::vector<Weights_t>> const & source_ents_and_weights,
                 Wonton::Executor_type const *executor) :
       source_mesh_(source_mesh), source_state_(source_state),
       target_mesh_(target_mesh), target_state_(target_state) {
@@ -140,6 +139,16 @@ class MismatchFixer {
     }
 #endif
 
+  }  // MismatchFixer
+
+
+
+
+  /// @brief Compute (and cache) whether the mesh domains are mismatched
+  /// @param[in] sources_and_weights Intersection sources and moments (vols, centroids)
+  /// @returns whether the mesh domains are mismatched
+  bool check_mesh_mismatch(
+    Portage::vector<std::vector<Weights_t>> const & source_ents_and_weights) {
     nsourceents_ = (onwhat == Entity_kind::CELL) ?
         source_mesh_.num_owned_cells() : source_mesh_.num_owned_nodes();
 
@@ -304,7 +313,7 @@ class MismatchFixer {
 
     }
 
-    if (!mismatch_) return;
+    if (!mismatch_) return false;
 
 
     // Discrepancy between intersection volume and source mesh volume PLUS
@@ -387,14 +396,12 @@ class MismatchFixer {
         nlayers++;
       }
     }  // if nempty
-
-  }  // MismatchFixer
-
-
-
-
-  // has this problem been found to have mismatched mesh boundaries?
-
+  }
+  
+  
+  /// @brief Return whether the mesh domains are mismatched
+  ///    (must be called after check_mesh_mismatch)
+  /// @returns whether the mesh domains are mismatched
   bool has_mismatch() const {return mismatch_;}
 
 

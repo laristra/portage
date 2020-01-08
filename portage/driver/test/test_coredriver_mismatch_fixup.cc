@@ -89,7 +89,10 @@ TEST(Test_Mismatch_Fixup, Test_Methods) {
   // Create the mismatch fixer
   Portage::MismatchFixer<2, Portage::Entity_kind::CELL, Wonton::Jali_Mesh_Wrapper, 
     Wonton::Jali_State_Wrapper, Wonton::Jali_Mesh_Wrapper,  Wonton::Jali_State_Wrapper> 
-    fixer(sourceMeshWrapper, sourceStateWrapper, targetMeshWrapper, targetStateWrapper, source_weights, nullptr);
+    fixer(sourceMeshWrapper, sourceStateWrapper, targetMeshWrapper, targetStateWrapper, nullptr);
+  
+  // Cache the mismatch
+  fixer.check_mesh_mismatch(source_weights);
       
 
   //-------------------------------------------------------------------

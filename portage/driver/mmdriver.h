@@ -1090,8 +1090,11 @@ Portage::vector<Vector<D>> gradients;
                 TargetMesh_Wrapper, TargetState_Wrapper>
       mismatch_fixer(source_mesh2, source_state2,
                      target_mesh_, target_state_,
-                     source_ents_and_weights, executor);
-
+                     executor);
+                     
+  // compute and cache mismatch
+  mismatch_fixer.check_mesh_mismatch(source_ents_and_weights);
+  
   if (mismatch_fixer.has_mismatch()) {
     for (int i = 0; i < nvars; i++) {
       std::string const& src_var = src_meshvar_names[i];
