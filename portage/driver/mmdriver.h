@@ -55,9 +55,9 @@
 namespace Portage {
 
 using namespace Wonton;
-using Entity_kind::CELL;
-using Entity_kind::NODE;
-using Entity_kind::UNKNOWN_KIND;
+using Wonton::Entity_kind::CELL;
+using Wonton::Entity_kind::NODE;
+using Wonton::Entity_kind::UNKNOWN_KIND;
 
 /*!
   @class MMDriver "mmdriver.h"
