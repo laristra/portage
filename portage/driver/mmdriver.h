@@ -91,11 +91,10 @@ template <template <int, Entity_kind, class, class> class Search,
           template <Entity_kind, class, class, class,
                     template <class, int, class, class> class,
                     class, class> class Intersect,
-          template<
-            int, Entity_kind, class, class, class, class, class,
-            template<class, int, class, class> class,
-            class, class, class=Wonton::DefaultCoordSys
-            > class Interpolate,
+          template<int, Entity_kind, class, class, class, class, class,
+                   template<class, int, class, class> class,
+                   class, class, class=Wonton::DefaultCoordSys
+                   > class Interpolate,
           int D,
           class SourceMesh_Wrapper,
           class SourceState_Wrapper,
@@ -183,7 +182,7 @@ class MMDriver {
         continue;  // Presumably field does not exist on target - will get added
 
       assert(srckind == trgkind);  // if target field exists, entity kinds
-      // must match
+                                   // must match
     }
 
     for (int i = 0; i < nvars; i++) {
@@ -213,7 +212,7 @@ class MMDriver {
   /*!
     @brief set boundary limiter for all variables
     @param bnd_limiter  Boundary limiter to use for second order reconstruction (BND_NOLIMITER
-    BND_ZERO_GRADIENT, or BND_BARTH_JESPERSEN))
+                        BND_ZERO_GRADIENT, or BND_BARTH_JESPERSEN))
   */
   void set_bnd_limiter(Boundary_Limiter_type bnd_limiter) {
     for (auto const& stpair : source_target_varname_map_) {
@@ -237,7 +236,7 @@ class MMDriver {
     @param target_var_name Source mesh variable whose gradient is to be limited
     on the boundary
     @param bnd_limiter  Boundary limiter to use for second order reconstruction (BND_NOLIMITER,
-    BND_ZERO_GRADIENT, or BND_BARTH_JESPERSEN))
+                        BND_ZERO_GRADIENT, or BND_BARTH_JESPERSEN))
   */
   void set_bnd_limiter(std::string const& source_var_name, Boundary_Limiter_type bnd_limiter) {
     bnd_limiters_[source_var_name] = bnd_limiter;
@@ -246,8 +245,8 @@ class MMDriver {
   /*!
     @brief set repair method in partially filled cells for all variables
     @param fixup_type Can be Partial_fixup_type::CONSTANT,
-    Partial_fixup_type::LOCALLY_CONSERVATIVE,
-    Partial_fixup_type::SHIFTED_CONSERVATIVE
+                      Partial_fixup_type::LOCALLY_CONSERVATIVE,
+                      Partial_fixup_type::SHIFTED_CONSERVATIVE
   */
   void set_partial_fixup_type(Partial_fixup_type fixup_type) {
     for (auto const& stpair : source_target_varname_map_) {
@@ -260,8 +259,8 @@ class MMDriver {
     @brief set repair method in partially filled cells for all variables
     @param target_var_name Target mesh variable to set fixup option for
     @param fixup_type  Can be Partial_fixup_type::CONSTANT,
-    Partial_fixup_type::LOCALLY_CONSERVATIVE,
-    Partial_fixup_type::SHIFTED_CONSERVATIVE
+                       Partial_fixup_type::LOCALLY_CONSERVATIVE,
+                       Partial_fixup_type::SHIFTED_CONSERVATIVE
   */
   void set_partial_fixup_type(std::string const& target_var_name,
                               Partial_fixup_type fixup_type) {
@@ -271,7 +270,7 @@ class MMDriver {
   /*!
     @brief set repair method in empty cells for all variables
     @param fixup_type Can be Empty_fixup_type::LEAVE_EMPTY,
-    Empty_fixup_type::EXTRAPOLATE
+                      Empty_fixup_type::EXTRAPOLATE
   */
   void set_empty_fixup_type(Empty_fixup_type fixup_type) {
     for (auto const& stpair : source_target_varname_map_) {
