@@ -29,6 +29,7 @@
 #include "wonton/support/Point.h"
 #include "wonton/support/CoordinateSystem.h"
 #include "portage/driver/parts.h"
+#include "portage/driver/fix_mismatch.h"
 
 /*!
   @file coredriver.h
@@ -348,6 +349,39 @@ class CoreDriverBase {
     auto derived_class_ptr = static_cast<CoreDriverType<ONWHAT> *>(this);
     return derived_class_ptr->has_mismatch();
   }
+
+
+  /*!
+    ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ
+    @brief Return if meshes are mismatched (check_mesh_mismatch must already have been
+    called)
+
+    @returns   Whether the meshes are mismatched
+  */
+
+  template<Entity_kind ONWHAT>
+  bool 
+  fix_mismatch(std::string const & src_var_name,
+               std::string const & trg_var_name,
+               double global_lower_bound = -std::numeric_limits<double>::max(),
+               double global_upper_bound = std::numeric_limits<double>::max(),
+               double conservation_tol = 1e2*std::numeric_limits<double>::epsilon(),
+               int maxiter = 5,
+               Partial_fixup_type partial_fixup_type =
+               Partial_fixup_type::SHIFTED_CONSERVATIVE,
+               Empty_fixup_type empty_fixup_type =
+               Empty_fixup_type::EXTRAPOLATE) {
+    assert(ONWHAT == onwhat());
+    auto derived_class_ptr = static_cast<CoreDriverType<ONWHAT> *>(this);
+    return derived_class_ptr->fix_mismatch(std::string const & src_var_name,
+               std::string const & trg_var_name,
+               double global_lower_bound,
+               double global_upper_bound,
+               double conservation_tol,
+               int maxiter,
+               Partial_fixup_type partial_fixup_type,
+               Empty_fixup_type empty_fixup_type);
+}
 
 
   /*!
@@ -1170,6 +1204,55 @@ class CoreDriver : public CoreDriverBase<D,
   bool
   has_mismatch() {return mismatch_fixer_->has_mismatch();}
 
+  /// @brief Repair the remapped field to account for boundary mismatch
+  /// @param src_var_name        field variable on source mesh
+  /// @param trg_var_name        field variable on target mesh
+  /// @param global_lower_bound  lower limit on variable
+  /// @param global_upper_bound  upper limit on variable
+  /// @param partial_fixup_type  type of fixup in case of partial mismatch
+  /// @param empty_fixup_type    type of fixup in empty target entities
+  ///
+  /// partial_fixup_type can be one of three types:
+  ///
+  /// CONSTANT - Fields will see no perturbations BUT REMAP WILL BE
+  ///            NON-CONSERVATIVE (constant preserving, not linearity
+  ///            preserving)
+  /// LOCALLY_CONSERVATIVE - REMAP WILL BE LOCALLY CONSERVATIVE (target cells
+  ///                        will preserve the integral quantities received from
+  ///                        source mesh overlap) but perturbations will
+  ///                        occur in the field (constant fields may not stay
+  ///                        constant if there is mismatch)
+  /// SHIFTED_CONSERVATIVE - REMAP WILL BE CONSERVATIVE and field
+  ///                        perturbations will be minimum but field
+  ///                        values may be shifted (Constant fields
+  ///                        will be shifted to different constant; no
+  ///                        guarantees on linearity preservation)
+  ///
+  /// empty_fixup_type can be one of two types:
+  ///
+  /// LEAVE_EMPTY - Leave empty cells as is
+  /// EXTRAPOLATE - Fill empty cells with extrapolated values
+  /// FILL        - Fill empty cells with specified values (not yet implemented)
+  bool fix_mismatch(std::string const & src_var_name,
+                    std::string const & trg_var_name,
+                    double global_lower_bound = -std::numeric_limits<double>::max(),
+                    double global_upper_bound = std::numeric_limits<double>::max(),
+                    double conservation_tol = 1e2*std::numeric_limits<double>::epsilon(),
+                    int maxiter = 5,
+                    Partial_fixup_type partial_fixup_type =
+                    Partial_fixup_type::SHIFTED_CONSERVATIVE,
+                    Empty_fixup_type empty_fixup_type =
+                    Empty_fixup_type::EXTRAPOLATE) {
+
+
+    if (source_state_.field_type(ONWHAT, src_var_name) ==
+        Field_type::MESH_FIELD)
+      return mismatch_fixer_->fix_mismatch(src_var_name, trg_var_name,
+                                  global_lower_bound, global_upper_bound,
+                                  conservation_tol, maxiter,
+                                  partial_fixup_type, empty_fixup_type);
+    return false;
+  }
   
  private:
   SourceMesh const & source_mesh_;
