@@ -374,7 +374,7 @@ class MismatchFixer {
             if ((onwhat == Entity_kind::CELL &&
                  target_mesh_.cell_get_type(nbr) != Entity_type::PARALLEL_OWNED) ||
                 (onwhat == Entity_kind::NODE &&
-                 target_mesh_.cell_get_type(nbr) != Entity_type::PARALLEL_OWNED))
+                 target_mesh_.node_get_type(nbr) != Entity_type::PARALLEL_OWNED))
               continue;
             if (!is_cell_empty_[nbr] || layernum_[nbr] != 0) {
               // At least one neighbor has some material or will
