@@ -21,6 +21,8 @@
 
 #ifdef HAVE_TANGRAM
 #include "tangram/driver/driver.h"
+#include "tangram/intersect/split_r2d.h"
+#include "tangram/intersect/split_r3d.h"
 
 #include "portage/intersect/dummy_interface_reconstructor.h"
 #endif
@@ -327,9 +329,7 @@ class UberDriver {
 
      @tparam num_tols     struct of selected numerical tolerances
   */
-  template<Entity_kind ONWHAT>
-    void set_num_tols(NumericTolerances_t num_tols) {
-
+  void set_num_tols(NumericTolerances_t num_tols) {   
     for (Entity_kind onwhat : entity_kinds_) {
       switch (onwhat) {
         case CELL:
@@ -338,11 +338,11 @@ class UberDriver {
           core_driver_serial_[NODE]->template set_num_tols<NODE>(num_tols); break;
         default:
           std::cerr << "Cannot remap on " << to_string(onwhat) << "\n";
-
+          
       }
     }
   }
-
+  
 
   /*!
     @brief search for candidate source entities whose control volumes
@@ -395,6 +395,23 @@ class UberDriver {
     return core_driver_serial_[ONWHAT]->template intersect_meshes<ONWHAT, Intersect>(candidates);
 
   }
+
+#ifdef HAVE_TANGRAM
+  /*!
+    @brief set tolerances and options for interface reconstructor driver  
+    @param tols The vector of tolerances for each moment during reconstruction
+    @param all_convex Should be set to false if the source mesh contains 
+    non-convex cells.  
+  */
+  void set_interface_reconstructor_options(std::vector<Tangram::IterativeMethodTolerances_t> &tols, 
+                                 bool all_convex) {
+    core_driver_serial_[CELL]->set_interface_reconstructor_options(tols,
+                                                                   all_convex);
+  }
+
+#endif
+
+  
 
   /* @brief intersect target cells with source material polygons
 
@@ -724,7 +741,7 @@ class UberDriver {
     assert(nb_mats > 0);
 
     if (Interpolator::order == 2) {
-      Portage::vector<Vector<D>> gradients[nb_mats];
+      std::vector<Portage::vector<Vector<D>>> gradients(nb_mats);
       for (int i = 0; i < nb_mats; ++i) {
         gradients[i] = driver->template compute_source_gradient<CELL>(srcvarname,
                                                                       limiter,
@@ -732,7 +749,7 @@ class UberDriver {
       }
       driver->template interpolate_mat_var<T, Interpolate>(
         srcvarname, trgvarname, sources_and_weights_by_mat_in,
-        gradients
+        &gradients
       );
     } else {
       driver->template interpolate_mat_var<T, Interpolate>(
