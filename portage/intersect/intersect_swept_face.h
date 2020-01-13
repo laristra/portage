@@ -852,6 +852,8 @@ namespace Portage {
      * of accuracy in case of large displacements, we perform a quick check
      * on the volume of each swept polyhedron such that they don't exceed a
      * certain threshold.
+     * Notice that the stencil is not really required but still kept to be
+     * consistent with the other intersection functors.
      *
      * @param target_id: the current target cell index.
      * @param stencil: current source cell and its immediate neighbors.
