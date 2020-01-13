@@ -337,6 +337,8 @@ class MismatchFixer {
     }
     int nempty = emptyents.size();
 
+#ifdef ENABLE_DEBUG
+
     int global_nempty = nempty;
 #ifdef PORTAGE_ENABLE_MPI
     if (distributed_) {
@@ -347,7 +349,7 @@ class MismatchFixer {
     }
 #endif
     
-    if (global_nempty && rank_ == 0) {
+    if (rank_ == 0 && global_nempty) {
       if (onwhat == Entity_kind::CELL)
         std::cerr << "One or more target cells are not covered by " <<
             "ANY source cells.\n" <<
@@ -357,6 +359,7 @@ class MismatchFixer {
             "ANY source dual cells.\n" <<
             " Will assign values based on their neighborhood\n";
     }
+#endif
     
     if (nempty) {
       layernum_.resize(ntargetents_, 0);
@@ -376,7 +379,12 @@ class MismatchFixer {
             target_mesh_.cell_get_node_adj_cells(ent, Entity_type::ALL, &nbrs);
           else
             target_mesh_.node_get_cell_adj_nodes(ent, Entity_type::ALL, &nbrs);
-          for (int nbr : nbrs)
+          for (int nbr : nbrs) {
+            if ((onwhat == Entity_kind::CELL &&
+                 target_mesh_.cell_get_type(nbr) != Entity_type::PARALLEL_OWNED) ||
+                (onwhat == Entity_kind::NODE &&
+                 target_mesh_.node_get_type(nbr) != Entity_type::PARALLEL_OWNED))
+              continue;
             if (!is_cell_empty_[nbr] || layernum_[nbr] != 0) {
               // At least one neighbor has some material or will
               // receive some material (indicated by having a +ve
@@ -385,6 +393,7 @@ class MismatchFixer {
               curlayerents.push_back(ent);
               break;
             }
+          }
         }  // for (ent in emptyents)
 
         // Tag the current layer cells with the next layer number

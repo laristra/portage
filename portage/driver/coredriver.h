@@ -227,6 +227,7 @@ class CoreDriverBase {
 
     @param[in] trgvarname   Variable name on target mesh
 
+    @param[in] gradients    Gradients of variable on source mesh (can be nullptr for 1st order remap)
   */
   
   template<typename T = double,
@@ -263,6 +264,8 @@ class CoreDriverBase {
 
     @param[in] parts_pair   Pair of parts between which we have to remap
 
+    @param[in] gradients    Gradients of variable on source mesh (can be nullptr for 1st order remap)
+
     Enabled only for cells using SFINAE
   */
   
@@ -294,9 +297,7 @@ class CoreDriverBase {
 
     @param[in] trgvarname   Variable name on target mesh
 
-    @param[in] lower_bound  Lower bound for variable
-
-    @param[in] upper_bound  Upper bound for variable
+    @param[in] gradients    Gradients of variable on source mesh (can be nullptr for 1st order remap)
   */
   
   template <typename T = double,
@@ -305,7 +306,7 @@ class CoreDriverBase {
                      class, class, class> class Interpolate>
   void interpolate_mat_var(std::string srcvarname, std::string trgvarname,
                            std::vector<Portage::vector<std::vector<Weights_t>>> const& sources_and_weights_by_mat,
-                           Portage::vector<Vector<D>>* gradients = nullptr) {
+                           std::vector<Portage::vector<Vector<D>>>* gradients = nullptr) {
 
     auto derived_class_ptr = static_cast<CoreDriverType<CELL> *>(this);
      derived_class_ptr->
@@ -399,6 +400,23 @@ class CoreDriverBase {
     auto derived_class_ptr = static_cast<CoreDriverType<ONWHAT> *>(this);
     derived_class_ptr->set_num_tols(num_tols);
   }
+
+
+#ifdef HAVE_TANGRAM
+  /*!
+    @brief set tolerances and options for interface reconstructor driver  
+    @param tols The vector of tolerances for each moment during reconstruction
+    @param all_convex Should be set to false if the source mesh contains 
+    non-convex cells.  
+  */
+  void set_interface_reconstructor_options(std::vector<Tangram::IterativeMethodTolerances_t> &tols, 
+                                 bool all_convex) {
+    assert(onwhat() == CELL);
+    auto derived_class_ptr = static_cast<CoreDriverType<CELL> *>(this);
+    derived_class_ptr->set_interface_reconstructor_options(tols, all_convex);
+  }
+
+#endif
 
 };
 
@@ -582,6 +600,21 @@ class CoreDriver : public CoreDriverBase<D,
     num_tols_ = num_tols;
   }
 
+#ifdef HAVE_TANGRAM
+  /*!
+    @brief set tolerances and options for interface reconstructor driver  
+    @param tols The vector of tolerances for each moment during reconstruction
+    @param all_convex Should be set to false if the source mesh contains 
+    non-convex cells.  
+  */
+  void set_interface_reconstructor_options(std::vector<Tangram::IterativeMethodTolerances_t> &tols, 
+                                 bool all_convex) {
+    reconstructor_tols_ = tols; 
+    reconstructor_all_convex_ = all_convex; 
+  }
+
+#endif
+
 
   /*! 
 
@@ -636,7 +669,8 @@ class CoreDriver : public CoreDriverBase<D,
                         >(new Tangram::Driver<InterfaceReconstructorType, D,
                           SourceMesh,
                           Matpoly_Splitter,
-                          Matpoly_Clipper>(source_mesh_, tols, true));
+                          Matpoly_Clipper>(source_mesh_, reconstructor_tols_,
+                                           reconstructor_all_convex_));
     
     int nsourcecells = source_mesh_.num_entities(CELL, ALL);
     int ntargetcells = target_mesh_.num_entities(CELL, PARALLEL_OWNED);
@@ -901,6 +935,7 @@ class CoreDriver : public CoreDriverBase<D,
    * @param[in] srcvarname          source mesh variable to remap
    * @param[in] trgvarname          target mesh variable to remap
    * @param[in] sources_and_weights weights for mesh-mesh interpolation
+   * @param[in] gradients           gradients of variable on source mesh (can be nullptr for 1st order remap)
    */
   template<typename T = double,
            template<int, Entity_kind, class, class, class, class, class,
@@ -950,13 +985,23 @@ class CoreDriver : public CoreDriverBase<D,
    * @param[in] sources_and_weights weights for mesh-mesh interpolation
    * @param[in] lower_bound         lower bound of variable value 
    * @param[in] upper_bound         upper bound of variable value 
-   * @param[in] partition           structure containing source and target part info
+   * @param[in] partition           structure containing source and target part
+   * @param[in] gradients           gradients of variable on source mesh (can be nullptr for 1st order remap)
 
    Enable only for cells using SFINAE. Here the class, rather than the
    function is templated on ONWHAT (as opposed to the equivalent
    method in the base class); so we have to create a dummy template
    parameter ONWHAT1 and rely on that to use SFINAE with a _second_
    dummy template parameter
+
+   **** Note ****
+   If you encounter errors about not being able to find an appropriate
+   overload for interpolate_mesh_var in your application code
+   (particularly something like "no type named 'type' in struct
+   std::enable_if<false, void>"), make sure the compiler does see the
+   possiblity of calling this function with Entity_kinds that are not
+   type CELL (restricting the code flow using 'if' statements will not
+   be enough)
    */
   template<typename T = double,
            template<int, Entity_kind, class, class, class, class, class,
@@ -1089,6 +1134,15 @@ class CoreDriver : public CoreDriverBase<D,
     the function is templated on ONWHAT; so we have to create a dummy
     template parameter ONWHAT1 and rely on that for SFINAE using a
     _second_ template parameter
+
+   **** Note ****
+   If you encounter errors about not being able to find an appropriate
+   overload for interpolate_mesh_var in your application code
+   (particularly something like "no type named 'type' in struct
+   std::enable_if<false, void>"), make sure the compiler does see the
+   possiblity of calling this function with Entity_kinds that are not
+   type CELL (restricting the code flow using 'if' statements will not
+   be enough)
   */
 
   template<typename T = double,
@@ -1100,7 +1154,7 @@ class CoreDriver : public CoreDriverBase<D,
   void
   interpolate_mat_var(std::string srcvarname, std::string trgvarname,
                       std::vector<Portage::vector<std::vector<Weights_t>>> const& sources_and_weights_by_mat,
-                      Portage::vector<Vector<D>>* gradients = nullptr) {
+                      std::vector<Portage::vector<Vector<D>>>* gradients = nullptr) {
     
     using Interpolator = Interpolate<D, ONWHAT,
                                      SourceMesh, TargetMesh,
@@ -1121,7 +1175,7 @@ class CoreDriver : public CoreDriverBase<D,
       //                               // which material values we have
       //                               // to grab from the source state
 
-      auto mat_grad = (gradients != nullptr ? &(gradients[m]) : nullptr);
+      auto mat_grad = (gradients != nullptr ? &((*gradients)[m]) : nullptr);
       // FEATURE ;-)  Have to set interpolation variable AFTER setting 
       // the material for multimaterial variables
       interpolator.set_interpolation_variable(srcvarname, mat_grad);
@@ -1272,6 +1326,25 @@ class CoreDriver : public CoreDriverBase<D,
 #endif
 
 #ifdef HAVE_TANGRAM
+
+  // The following tolerances as well as the all-convex flag are
+  // required for the interface reconstructor driver. The size of the
+  // tols vector is currently set to two since MOF requires two
+  // different set of tolerances to match the 0th-order and 1st-order
+  // moments. VOF on the other does not require the second tolerance.
+  // If a new IR method which requires tolerances for higher moment is
+  // added to Tangram, then this vector size should be
+  // generalized. The boolean all_convex flag is to specify if a mesh
+  // contains only convex cells and set to true in that case.
+  //
+  // There is an associated method called
+  // set_interface_reconstructor_options that should be invoked to set
+  // user-specific values. Otherwise, the remapper will use the
+  // default values.
+
+  std::vector<Tangram::IterativeMethodTolerances_t> reconstructor_tols_ = 
+  {{1000, 1e-12, 1e-12}, {1000, 1e-12, 1e-12}};
+  bool reconstructor_all_convex_ = true;  
 
   // Pointer to the interface reconstructor object (required by the
   // interface to be shared)
