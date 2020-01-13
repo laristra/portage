@@ -241,7 +241,7 @@ TEST(SweptFaceRemap, 3D_2ndOrder) {
   auto weights    = remapper.intersect_meshes<Portage::IntersectSweptFace3D>(candidates);
 
   remapper.interpolate_mesh_var<double, Portage::Interpolate_2ndOrder>(
-    "temperature", "temperature", weights, 0.0, 1.0, nullptr, &gradients
+    "temperature", "temperature", weights, &gradients
   );
 
   // check remapped values on target mesh
