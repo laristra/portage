@@ -817,15 +817,15 @@ namespace Portage {
 
       for (int i = 1; i < nb_moments; ++i) {
         double const swept_volume = std::abs(moments[i].weights[0]);
+        double const entity_volume = source_mesh_.cell_volume(moments[i].entityID);
         assert(swept_volume > num_tols_.min_absolute_volume);
-          // the volume of each swept region should not exceed that of the
-          // source cell itself, regardless of the cell where it is attached.
-          if (swept_volume > source_cell_volume) {
-            return false;
-          } else if (moments[i].entityID == source_id) {
-            // accumulate the self-contribution for further comparisons.
-            source_swept_volume += swept_volume;
-          }
+        // each swept region volume should not exceed that of the attached cell.
+        if (swept_volume > entity_volume) {
+          return false;
+        } else if (moments[i].entityID == source_id) {
+          // accumulate the self-contribution for further comparisons.
+          source_swept_volume += swept_volume;
+        }
       }
 
       // Normally, we should have p <= 3 swept regions associated with the source
