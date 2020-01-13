@@ -795,7 +795,8 @@ namespace Portage {
      * check that the volume of each swept region associated to one of             
      * the contributing cell does not exceed that of the source cell, and that
      * the absolute swept volume associated to the source cell does not exceed
-     * twice of the volume of the source cell itself.
+     * one and a half of the volume of the source cell itself.
+     * IMPORTANT: this slightly relaxed check is only for single material case.
      *
      * @param source_id: the index of the source cell.
      * @param moments: the list of swept region moments.
@@ -834,7 +835,7 @@ namespace Portage {
       // is not too large, we just check that the total self-contribution
       // is less than twice the source cell volume.
       // Notice that this criterion could be refined later.
-      return source_swept_volume < 2 * source_cell_volume;
+      return source_swept_volume <= (1.5 * source_cell_volume) + num_tols_.min_absolute_volume;
     }
 
 
