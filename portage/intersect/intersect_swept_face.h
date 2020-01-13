@@ -680,18 +680,19 @@ namespace Portage {
      *       ______      - polyhedron faces are split into n triangles.
      *      /|    /|     - their vertices 'pi' are ordered counterclockwise.
      *     / |___/_|     - 'ni' denotes the normal vector of the triangle 'ti'.
-     *    /  /  /  /     - {e1,e2,e3} denotes the canonical basis of R^3.
-     * ci___/_ /  /
-     *  |  /  |  /             1
-     *  | /   | /          v = - sum_i=1^n ai.ni
-     *  |/____|/               6
-     *  ai    bi  e3           1                 ([(ai+bi).ed]^2
-     *            |        c = - sum_i=1^n ni.ed +[(bi+ci).ed]^2 , d=1,2,3
-     *            |__ e2       2v                +[(ci+ai).ed]^2)
-     *           /
+     *    /  /  /  /     - 'vi' denotes the area of the triangle 'ti'.
+     * ci___/_ /  /      - {e1,e2,e3} denotes the canonical basis of R^3.
+     *  |  /  |  /
+     *  | /   | /              1
+     *  |/____|/           v = - sum_i=1^n vi.ni
+     *  ai    bi  e3           6
+     *            |             1            [ni.e1([(ai+bi).e1]^2 +[(bi+ci).e1]^2 +[(ci+ai).e1]^2)]
+     *            |__ e2   c = --- sum_i=1^n [ni.e2([(ai+bi).e2]^2 +[(bi+ci).e2]^2 +[(ci+ai).e2]^2)]
+     *           /             48v           [ni.e3([(ai+bi).e3]^2 +[(bi+ci).e3]^2 +[(ci+ai).e3]^2)]
      *          e1
      * @param coords: the polyhedron vertex coordinates.
-     * @param faces: vertices index list of each face of the polyhedron.
+     * @param faces: vertices index list of each face of the polyhedron ordered
+     *               such that the normal vector of that face points outwards.
      * @return polyhedron moments: [volume, volume * centroid.x,
      *                                      volume * centroid.y,
      *                                      volume * centroid.z].
