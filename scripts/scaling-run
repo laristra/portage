@@ -93,7 +93,6 @@ print_usage() {
   echo -e "  --limiter $_STRING        gradient limiter for multimat"
   echo -e "  --bound-limit $_STRING    boundary gradient limiter for multimat"
   echo -e "  --cluster $_CHOICE        current cluster [darwin|snow|grizzly]"
-  echo -e "  --build                   rebuild the app"
   echo -e "  --nodes $_INT             number of nodes"
   echo -e "  --ranks $_INT             ranks per node"
   echo -e "  --partition $_STRING      slurm partition"
@@ -181,10 +180,6 @@ check_params() {
   elif [[ ! "${MAX_NODES}" =~ ^[0-9]+$ ]] || (( ${MAX_NODES} < 1 )); then
     echo -e "\e[31mError: invalid number of nodes\e[0m"
     exit 1
-  # no support for distributed multimat
-  elif [ "${APP}" = "multimat" ] && (( ${MAX_NODES} > 1 )); then
-    echo -e "\e[31mSorry, distributed multimat is not yet supported\e[0m"
-    exit 1
   # invalid rank per node
   elif [[ ! "${RANKS_PER_NODE}" =~ ^[0-9]+$ ]] \
        || (( ${RANKS_PER_NODE} < 1 )) || (( ${RANKS_PER_NODE} > ${CORES})); then
@@ -207,16 +202,6 @@ check_params() {
   elif [ ! -f ${TARGET_FILE} ] \
     && { [[ ! "${TARGET_MAX}" =~ ^[0-9]+$ ]] || (( ${TARGET_MAX} < 1)); }; then
     echo -e "\e[31mError: invalid target file or cells count\e[0m"
-    exit 1
-  # mandatory source file
-  elif { [ ${SOURCE_MAX} -eq 0 ] || [ "${APP}" = "multimat" ]; } \
-    && [ ! -f ${SOURCE_FILE} ]; then
-    echo -e "\e[31mError: invalid source file '${SOURCE_FILE}'\e[0m"
-    exit 1
-  # mandatory target file
-  elif { [ ${TARGET_MAX} -eq 0 ] || [ "${APP}" = "multimat" ]; } \
-    && [ ! -f ${TARGET_FILE} ]; then
-    echo -e "\e[31mError: invalid target file '${TARGET_FILE}'\e[0m"
     exit 1
   # unknown entity kind
   elif [ "${ENTITY_KIND}" != "cell" ] && [ "${ENTITY_KIND}" != "node" ]; then
