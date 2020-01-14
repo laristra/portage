@@ -709,74 +709,18 @@ namespace Portage {
     /**
      * @brief Compute the source cell moments.
      *
-     * Recall that we have to deal with relative indexing to be able
-     * to use the polytope object, since face vertices are indexed
-     * relatively to the list of cell coordinates. Besides each face must
-     * be correctly oriented such that if its normal vector induced by its
-     * vertices ordering point outwards, then we will have a positive volume.
-     * Hence we cannot just rely on 'cell_get_coordinates' combined with
-     * 'cell_get_faces_and_dirs' on the source mesh which may lead to
-     * an inconsistent vertex ordering.
-     *                        
-     *     4______5           point coordinates indices: [0,1,2,3,4,5,6,7]
-     *     /|    /|           consistent face vertex relative ordering:
-     *    / |   / |           ∙f[0]:[0,1,2,3]
-     *  3 __|__2  |           ∙f[1]:[0,7,6,1]
-     *  |   7__|__6           ∙f[2]:[1,6,5,2]
-     *  |  /   |  /           ∙f[3]:[2,5,4,3]
-     *  | /    | /            ∙f[4]:[3,4,7,0]
-     *  |/_____|/             ∙f[5]:[6,7,4,5]
-     *  0      1              => use a lookup table to convert absolute index
-     *                           to a relative one.
-     *
      * @param source_id: index of the source cell.
-     * @param cell_faces: the list of faces of the given cell.
-     * @param face_dirs: the orientation of each face of the given cell.
-     * @return a list of cell moments.
+     * @return a list of the source cell moments.
      */
-    std::vector<double> compute_source_moments(int source_id,
-                                               std::vector<int> const& cell_faces,
-                                               std::vector<int> const& face_dirs) const {
+    std::vector<double> compute_source_moments(int source_id) const {
 
-      std::vector<int> poly_nodes;
-      std::vector<int> face_nodes;
-      std::vector<Wonton::Point<3>> poly_coords;
-      std::vector<std::vector<int>> poly_faces;
-      std::map<int, int> relative_index_lookup;
-
-      source_mesh_.cell_get_nodes(source_id, &poly_nodes);
-      int const nb_nodes = poly_nodes.size();
-      int const nb_faces = cell_faces.size();
-
-      poly_coords.resize(nb_nodes);
-
-      for (int i = 0; i < nb_nodes; ++i) {
-        // populate the lookup table for vertex indexing
-        // and retrieve their coordinates at the same time.
-        relative_index_lookup[poly_nodes[i]] = i;
-        source_mesh_.node_get_coordinates(poly_nodes[i], poly_coords.data() + i);
-      }
-
-      poly_faces.resize(nb_faces);
-
-      for (int i = 0; i < nb_faces; ++i) {
-        source_mesh_.face_get_nodes(cell_faces[i], &face_nodes);
-        int const nb_face_nodes = face_nodes.size();
-        poly_faces[i].reserve(nb_face_nodes);
-
-        // for each face, retrieve the relative index of its vertices
-        // using the previous lookup table, and fix vertex ordering if
-        // not counterclockwise oriented.
-        for (int current = 0; current < nb_face_nodes; ++current) {
-          int const normal  = face_nodes[current];
-          int const reverse = face_nodes[nb_face_nodes - current - 1];
-          int const actual  = (face_dirs[i] > 0 ? normal : reverse);
-          poly_faces[i].push_back(relative_index_lookup[actual]);
-        }
-      }
-
-      // compute moments eventually
-      return compute_moments(poly_coords, poly_faces);
+      Wonton::Point<3> centroid;
+      double const volume = source_mesh_.cell_volume(source_id);
+      source_mesh_.cell_centroid(source_id, &centroid);
+      return std::vector<double>{volume,
+                                 centroid[0] * volume,
+                                 centroid[1] * volume,
+                                 centroid[2] * volume};
     }
 
     /**
@@ -886,8 +830,7 @@ namespace Portage {
         int const nb_faces = faces.size();
 
         // add source cell moments in the first place
-        auto const& source_moments = compute_source_moments(source_id, faces, dirs);
-        swept_moments.emplace_back(source_id, source_moments);
+        swept_moments.emplace_back(source_id, compute_source_moments(source_id));
 
         #if DEBUG
           // ensure that we have the same face index for source and target.
