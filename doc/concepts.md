@@ -350,7 +350,7 @@ both meshes have the same topology.
 
 ### Single material remap
 
-![Example of two single-material swept regions](doxygen/images/swept_single.png)
+![Example of two single-material swept regions](doxygen/images/swept_single_small.png)
 
 Following four phases described earlier, namely: **search**, **intersect**,
 **interpolate** and **repair**, the main difference lies inside the **intersect** phase.
@@ -375,7 +375,7 @@ phase is trivial. It just create a list of face-neighboring cells.
 
 ### Multi material remap
 
-![Example of two multi-material swept regions](doxygen/images/swept_multi.png)
+![Example of two multi-material swept regions](doxygen/images/swept_multi_small.png)
 
 Preservation of material volumes require more sofisticated method for the
 multi-material swept-face remap. To make use of interface reconstruction is
