@@ -338,6 +338,65 @@ inefficient way.**
 
 <br>
 
+## Swept-face approximate remapping
+  
+In addition to the remap using mesh-mesh intersections, Portage
+offers an approximate method [1] to calculate contribution weights
+from the candidate source cells. This method is called swept-face
+method, because the mesh-mesh intersections are replaced by
+simple regions defined by the dispacement of faces between a source
+mesh and a target mesh. Therefore, this method requires that
+both meshes have the same topology.
+
+### Single material remap
+
+![Example of two single-material swept regions](doxygen/images/sweptfacesingle.png)
+
+Following four phases described earlier, namely: **search**, **intersect**,
+**interpolate** and **repair**, the main difference lies inside the **intersect** phase.
+The swept-face **intersect** algorithm can be summaried as:
+
+* For each face f of a computational cell c, create a swept-face polygon/polyhedron
+  and calculate its signed volume.
+  Note that the polygon can be self-intersecting.
+
+* Based on the sign of the volume,
+  assign this volume (and higher moments) either to the cell c or to a neighboring
+  cell which is shering the face f with the cell c.
+
+* In addition to contributions from the face displacement, the volume of the cell c itseft
+  is assigned with the cell c, so that the target data can be expresesed as
+  a weighted sum over all these contributions in the same way as for the
+  default exact intersections. Therefore, the **interpolate** step is the same as for
+  intersection based remap.
+
+Thanks to the same conectivity of a source mesh and a target mesh, the **search**
+phase is trivial. It just create a list of face-neighboring cells.
+
+### Multi material remap
+
+![Example of two multi-material swept regions](doxygen/images/sweptfacemulti.png)
+
+Preservation of material volumes require more sofisticated method for the
+multi-material swept-face remap. To make use of interface reconstruction is
+source cells, swept regions are projected into corresponding cells based
+on its signed volumes. This is done in following steps dusring the **intersect**
+phase:
+
+* Create a polygon/polyhedron p by adding a cell centroid of a cell c
+  to a face f. This polygon defines a face-cell group fc.
+
+* Find a cutting plane in the direction of an effective normal of the face f
+  in such a way that the volume of the poly p under the plane is equal
+  to the absolute value of the swept volume.
+
+* Cut material polygons associated with a face-cell group fc with the
+  cutting plane to get material volumes (and higher moments) which
+  are assigned to the cell c. Material volumes from the cell itself has to be added
+  to the contribution similarly to the single material case.
+
+<br>
+
 <a name="meshfree remap"></a>
 ## Particle or Meshfree Remapping
 
