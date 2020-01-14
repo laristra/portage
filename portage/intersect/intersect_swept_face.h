@@ -796,7 +796,7 @@ namespace Portage {
      * the contributing cell does not exceed that of the source cell, and that
      * the absolute swept volume associated to the source cell does not exceed
      * one and a half of the volume of the source cell itself.
-     * IMPORTANT: this slightly relaxed check is only for single material case.
+     * IMPORTANT: this slightly relaxed check is only valid for single material.
      *
      * @param source_id: the index of the source cell.
      * @param moments: the list of swept region moments.
@@ -930,13 +930,13 @@ namespace Portage {
           std::vector<Wonton::Point<3>> swept_poly_coords(nb_poly_nodes);
           std::vector<std::vector<int>> swept_poly_faces(nb_poly_faces);
 
-          /* if the face normal is pointing outward then consider the reverse
-           * vertex ordering for the original face such that the vertices
-           * of each face of the swept polyhedron are ordered counterclockwise.
-           * hence when computing the polyhedron moments, we will have a
-           * positive swept volume outside the source cell and a negative one
-           * inside it ; otherwise keep the same nodal order
-           * which is counterclockwise by default.
+          /* the swept polyhedron must be formed in a way that the vertices of
+           * each of its faces are ordered such that their normals outside that
+           * swept volume - this is necessarily true except for the original face
+           * inherited from the cell itself.
+           * for this face, if the ordering of its vertices is such that the normal
+           * points out of the cell, then the normal points into the swept volume.
+           * in such a case, the vertex ordering must be reversed.
            *
            *   source hex        target hex       face swept polyhedron:
            *                     7'......6'
