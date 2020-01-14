@@ -42,9 +42,7 @@ BUILD_DIR=""
 APP=""
 MPI_ARGS=""
 DIMENSION=0
-SOURCE_SIZE=0
 SOURCE_MAX=0
-TARGET_SIZE=0
 TARGET_MAX=0
 ENTITY_KIND=""
 FIELD=""
@@ -452,8 +450,6 @@ setup() {
  
   # evaluate the option list 
   eval set -- "${options}"
-
-  REBUILD=false
 
   # process args
   while [ "$#" -gt 0 ]; do
