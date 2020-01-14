@@ -343,10 +343,10 @@ setup_run_options() {
 
   # set CPU affinity options
   if [ "${HYPERTHREADING}" = true ]; then
-    [ "COMPILER" = "intel" ] && GRAIN="fine" || GRAIN="threads"
+    [ "${COMPILER}" = "intel" ] && GRAIN="fine" || GRAIN="threads"
   else
     THREADS_PER_CORE=1
-    [ "COMPILER" = "intel" ] && GRAIN="core" || GRAIN="cores"
+    [ "${COMPILER}" = "intel" ] && GRAIN="core" || GRAIN="cores"
   fi
 
   # check compiler, set appropriate version and CPU affinity policy
