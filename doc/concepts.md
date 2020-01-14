@@ -339,7 +339,7 @@ inefficient way.**
 <br>
 
 ## Swept-face approximate remapping
-  
+ 
 In addition to the remap using mesh-mesh intersections, Portage
 offers an approximate method [1] to calculate contribution weights
 from the candidate source cells. This method is called swept-face
@@ -350,7 +350,7 @@ both meshes have the same topology.
 
 ### Single material remap
 
-![Example of two single-material swept regions](doxygen/images/sweptfacesingle.png)
+![Example of two single-material swept regions](doxygen/images/swept_single.png)
 
 Following four phases described earlier, namely: **search**, **intersect**,
 **interpolate** and **repair**, the main difference lies inside the **intersect** phase.
@@ -375,7 +375,7 @@ phase is trivial. It just create a list of face-neighboring cells.
 
 ### Multi material remap
 
-![Example of two multi-material swept regions](doxygen/images/sweptfacemulti.png)
+![Example of two multi-material swept regions](doxygen/images/swept_multi.png)
 
 Preservation of material volumes require more sofisticated method for the
 multi-material swept-face remap. To make use of interface reconstruction is
