@@ -90,7 +90,7 @@ print_usage() {
   echo -e "Usage: \e[32m./scaling-run [options]\e[0m"
   echo -e "Options:"
   echo -e "  --help, -h                show this help message and exit"
-  echo -e "  --app $_CHOICE            current app [t-junction|core|multimat]"
+  echo -e "  --app $_CHOICE            current app [timing|multimat]"
   echo -e "  --problem $_CHOICE        multimat problem [tjunction|srcpurecells|ball|rotor]"
   echo -e "  --limiter $_STRING        gradient limiter for multimat"
   echo -e "  --bound-limit $_STRING    boundary gradient limiter for multimat"
@@ -133,14 +133,6 @@ print_params() {
   echo -e "- compiler: \e[32m${COMPILER}\e[0m"
 
   case "${APP}" in
-    "t-junction")
-      echo -e "- dimension: \e[32m${DIMENSION}\e[0m"
-      echo -e "- source_cells: \e[32m${SOURCE_MAX}\e[0m"
-      echo -e "- target_cells: \e[32m${TARGET_MAX}\e[0m"
-      echo -e "- conformal: \e[32m${IS_CONFORMAL}\e[0m"
-      echo -e "- material_field: \e[32m${MATER_FIELD}\e[0m"
-      echo -e "- entity_kind: \e[32m${ENTITY_KIND}\e[0m"
-      echo -e "- interpolation order: \e[32m${REMAP_ORDER}\e[0m";;
     "timing")
       echo -e "- dimension: \e[32m${DIMENSION}\e[0m"
       echo -e "- source_cells: \e[32m${SOURCE_MAX}\e[0m"
@@ -292,15 +284,6 @@ set_default_params() {
 
   # set app default parameters
   case "${APP}" in
-    "t-junction")
-      [ "${DIMENSION}" -eq 0 ] && DIMENSION=3
-      [ "${SOURCE_MAX}" -eq 0 ] && SOURCE_MAX=40
-      [ "${TARGET_MAX}" -eq 0 ] && TARGET_MAX=120
-      [ "${ENTITY_KIND}" != "" ] || ENTITY_KIND="cell"
-      [ "${IS_CONFORMAL}" != "" ] || IS_CONFORMAL="y"
-      [ "${IS_CONVEX}" != "" ] || IS_CONVEX="y"
-      [ "${MATER_FIELD}" != "" ] || MATER_FIELD="'x','y','z'"
-      [ "${REMAP_ORDER}" -eq 0 ] && REMAP_ORDER="2";;
     "timing")
       [ "${DIMENSION}" -eq 0 ] && DIMENSION=2
       [ "${SOURCE_MAX}" -eq 0 ] && SOURCE_MAX=40
@@ -404,20 +387,6 @@ update_app_options() {
 
   # set app-specific argument list
   case "${APP}" in
-    "t-junction")
-      APP_ARGS=(
-        "./app/portageapp/portageapp_${APP}_jali"
-        "--dim=${DIMENSION}"
-        "--nsourcecells=\${n_source}"
-        "--ntargetcells=\${n_target}"
-        "--conformal=${IS_CONFORMAL}"
-        "--material_fields=${MATER_FIELD}"
-        "--remap_order=${REMAP_ORDER}"
-        "--limiter=${LIMITER}"
-        "--bnd_limiter=${BOUNDARY_LIMITER}"
-        "--only_threads=${THREAD_FLAG}"
-        "--scaling=${SCALING_TYPE}"
-      );;
     "timing")
       APP_ARGS=(
         "./app/${APP}app/${APP}app"
@@ -492,8 +461,7 @@ setup() {
       -h|--help) print_usage;;
       --app)
         case "$2" in
-          "t-junction") APP="t-junction";;
-          "core") APP="timing";;
+          "timing") APP="timing";;
           "multimat") APP="rgmd";;
           (*) APP="$2";;
         esac; shift;;
