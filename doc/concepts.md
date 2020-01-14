@@ -344,9 +344,9 @@ In addition to the remap using mesh-mesh intersections, Portage
 offers an approximate method [1] to calculate contribution weights
 from the candidate source cells. This method is called swept-face
 method, because the mesh-mesh intersections are replaced by
-simple regions defined by the dispacement of faces between a source
+simple regions defined by the displacement of faces between a source
 mesh and a target mesh. Therefore, this method requires that
-both meshes have the same topology.
+both meshes have the same topology and only small nodal displacement.
 
 ### Single material remap
 
@@ -354,7 +354,7 @@ both meshes have the same topology.
 
 Following four phases described earlier, namely: **search**, **intersect**,
 **interpolate** and **repair**, the main difference lies inside the **intersect** phase.
-The swept-face **intersect** algorithm can be summaried as:
+The swept-face **intersect** algorithm can be summarized as:
 
 * For each face f of a computational cell c, create a swept-face polygon/polyhedron
   and calculate its signed volume.
@@ -362,25 +362,26 @@ The swept-face **intersect** algorithm can be summaried as:
 
 * Based on the sign of the volume,
   assign this volume (and higher moments) either to the cell c or to a neighboring
-  cell which is shering the face f with the cell c.
+  cell which is sharing the face f with the cell c.
 
-* In addition to contributions from the face displacement, the volume of the cell c itseft
-  is assigned with the cell c, so that the target data can be expresesed as
+* In addition to contributions from the face displacement, the volume of the cell c itself
+  is assigned to the cell c, so that the target data can be expressed as
   a weighted sum over all these contributions in the same way as for the
-  default exact intersections. Therefore, the **interpolate** step is the same as for
+  default exact intersections. Therefore, the **interpolate** phase is the same as for
   intersection based remap.
 
-Thanks to the same conectivity of a source mesh and a target mesh, the **search**
-phase is trivial. It just create a list of face-neighboring cells.
+Thanks to the same connectivity of a source mesh and a target mesh, the **search**
+phase is trivial. A list of face-neighboring cells is created in this phase. 
+**Repair** phase is the same as for the default intersection-based remap.
 
 ### Multi material remap
 
 ![Example of two multi-material swept regions](doxygen/images/swept_multi_small.png)
 
-Preservation of material volumes require more sofisticated method for the
+Preservation of material volumes require more sopfisticated method for the
 multi-material swept-face remap. To make use of interface reconstruction is
 source cells, swept regions are projected into corresponding cells based
-on its signed volumes. This is done in following steps dusring the **intersect**
+on their signed volumes. This is done in following steps during the **intersect**
 phase:
 
 * Create a polygon/polyhedron p by adding a cell centroid of a cell c
@@ -388,12 +389,12 @@ phase:
 
 * Find a cutting plane in the direction of an effective normal of the face f
   in such a way that the volume of the poly p under the plane is equal
-  to the absolute value of the swept volume.
+  to the the swept volume.
 
 * Cut material polygons associated with a face-cell group fc with the
   cutting plane to get material volumes (and higher moments) which
-  are assigned to the cell c. Material volumes from the cell itself has to be added
-  to the contribution similarly to the single material case.
+  are assigned to the cell c. Material volumes from the cell itself have to be added
+  to the contribution as described in the single-material case.
 
 <br>
 
