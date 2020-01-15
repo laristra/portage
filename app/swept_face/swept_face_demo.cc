@@ -39,14 +39,88 @@
  * @file swept_face_demo.cc
  *
  * @brief A simple application that remaps using a swept face algorithm
- * for single material field between two meshes - the meshes can be
- * internally generated rectangular meshes or externally read unstructured
- * meshes.
+ *        for single material field between two meshes which can be internally
+ *        generated cartesian grids or externally read unstructured meshes.
  */
 
-//////////////////////////////////////////////////////////////////////
-// Forward declarations
+#define DEBUG_PRINT 0
 
+/**
+ * @brief Remap the analytically imposed field and output related errors.
+ *
+ * @tparam dim             dimension of the problem.
+ * @param source_mesh      source mesh pointer.
+ * @param target_mesh      target mesh pointer.
+ * @param field_expression analytical expression of the field to remap.
+ * @param interp_order     order of accuracy for interpolation.
+ * @param limiter          gradient limiter to use for internal cells.
+ * @param bnd_limiter      gradient limiter to use for boundary cells.
+ * @param mesh_output      dump meshes or not?
+ * @param field_filename   field file name for imported meshes.
+ * @param rank             current rank
+ * @param numpe            number of MPI ranks.
+ * @param iteration        current iteration.
+ * @param L1_error         L1-norm error.
+ * @param L2_error         L2-norm error.
+ * @param comm             the MPI communicator to use.
+ * @param profiler         profiler object pointer.
+ */
+template<int dim>
+void remap(std::shared_ptr<Jali::Mesh> source_mesh,                     
+           std::shared_ptr<Jali::Mesh> target_mesh,                     
+           std::string field_expression,                                
+           int interp_order,                                            
+           Portage::Limiter_type limiter,                               
+           Portage::Boundary_Limiter_type bnd_limiter,
+           bool mesh_output,                                            
+           std::string field_filename,                                  
+           int rank, int numpe, int iteration,                          
+           double& L1_error, double& L2_error,
+           MPI_Comm comm,
+           std::shared_ptr<Profiler> profiler);
+
+/**
+ * @brief Identify boundary nodes of the given mesh.
+ *
+ * @param mesh the current mesh pointer.
+ * @return a flag array to check if a given mesh node is a boundary one.
+ */
+std::vector<bool> identify_exterior_boundary_nodes(std::shared_ptr<Jali::Mesh> mesh);
+
+/**
+ * @brief Move the given target mesh points.
+ *
+ * It moves the target points to obtain a target mesh with same
+ * connectivity but different point positions: loop over all the
+ * boundary vertices assuming that we are only dealing with internally
+ * generated meshes.
+ * x_new = x_old + x_velocity(tcur) * deltaT
+ * y_new = y_old + y_velocity(tcur) * deltaT
+ *
+ * @param mesh    current mesh pointer
+ * @param iter    current timestep
+ * @param deltaT  displacement step
+ * @param periodT displacement period
+ * @param scale   scaling factor
+ */
+void move_target_mesh_nodes(std::shared_ptr<Jali::Mesh> mesh,
+                            int iter, double& deltaT, double& periodT, int& scale);
+
+/**
+ * @brief Compute a single vortex velocity value at the given point.
+ *
+ * @param[in]  coords  coordinates of the current point.
+ * @param[in]  tcur    scaled displacement step
+ * @param[in]  periodT displacement period.
+ * @param[out] veloc   computed velocity for current point.
+ */
+void compute_single_2d_vortex_velocity(double* coords, double& tcur,
+                                       double& periodT, double* veloc);
+
+/**
+ * @brief Print command-line usage.
+ *
+ */
 void print_usage() {
 
   std::cout << "Usage: swept_face_demo [options]" << std::endl;
@@ -68,39 +142,16 @@ void print_usage() {
 #endif
 }
 
-// Forward declaration of function to run remap on two meshes and
-// return the L1 and L2 error norm in the remapped field w.r.t. to an
-// analytically imposed field. If no field was imposed, the errors are
-// returned as 0
-
-template<int dim>
-void remap(std::shared_ptr<Jali::Mesh> source_mesh,                     
-           std::shared_ptr<Jali::Mesh> target_mesh,                     
-           std::string field_expression,                                
-           int interp_order,                                            
-           Portage::Limiter_type limiter,                               
-           Portage::Boundary_Limiter_type bnd_limiter,
-           bool mesh_output,                                            
-           std::string field_filename,                                  
-           int rank, int numpe, int iteration,                          
-           double& L1_error, double& L2_error,
-           MPI_Comm comm,
-           std::shared_ptr<Profiler> profiler);
-
-// Forward declaration of function to find nodes on exterior boundary
-void find_nodes_on_exterior_boundary(std::shared_ptr<Jali::Mesh> mesh,
-                                     std::vector<bool>& node_on_bnd);
-
-void move_target_mesh_nodes(std::shared_ptr<Jali::Mesh> mesh,
-                            int i, double& deltaT, double& periodT, int& scale);
-
-void single_vortex_velocity_function(double* coords, double& tcur,
-                                     double& periodT, double* disp);
-
-//////////////////////////////////////////////////////////////////////
+/**
+ * @brief Main method.
+ *
+ * @param argc number of arguments
+ * @param argv arguments values
+ * @return status code
+ */
 int main(int argc, char** argv) {
   // Pause profiling until main loop
-#ifdef ENABLE_PROFILE
+#if ENABLE_PROFILE
   __itt_pause();
 #endif
 
@@ -293,10 +344,27 @@ int main(int argc, char** argv) {
   MPI_Finalize();
   return EXIT_SUCCESS;
 }
-//////////////////////////////////////////////////////////////////////////////
-// Run a remap between two meshes and return the L1 and L2 error norms
-// with respect to the specified field.
 
+/**
+ * @brief Remap the analytically imposed field and output related errors.
+ *
+ * @tparam dim             dimension of the problem.
+ * @param source_mesh      source mesh pointer.
+ * @param target_mesh      target mesh pointer.
+ * @param field_expression analytical expression of the field to remap.
+ * @param interp_order     order of accuracy for interpolation.
+ * @param limiter          gradient limiter to use for internal cells.
+ * @param bnd_limiter      gradient limiter to use for boundary cells.
+ * @param mesh_output      dump meshes or not?
+ * @param field_filename   field file name for imported meshes.
+ * @param rank             current rank
+ * @param numpe            number of MPI ranks.
+ * @param iteration        current iteration.
+ * @param L1_error         L1-norm error.
+ * @param L2_error         L2-norm error.
+ * @param comm             the MPI communicator to use.
+ * @param profiler         profiler object pointer.
+ */
 template<int dim>
 void remap(std::shared_ptr<Jali::Mesh> source_mesh,
            std::shared_ptr<Jali::Mesh> target_mesh,
@@ -342,11 +410,11 @@ void remap(std::shared_ptr<Jali::Mesh> source_mesh,
   if (rank == 0) {
     std::cout << " \u2022 source mesh has " << nsrccells << " cells" << std::endl;
     std::cout << " \u2022 target mesh has " << ntarcells << " cells" << std::endl;
-    std::cout << " \u2022 single material field: "<< field_expression << std::endl;
+    std::cout << " \u2022 material field: \""<< field_expression << "\""<< std::endl;
     std::cout << " \u2022 interpolation order: " << interp_order << std::endl;
     if (interp_order == 2) {
-      std::cout << " \u2022 internal slope limiter is: " << limiter << std::endl;
-      std::cout << " \u2022 boundary slope limiter is: " << bnd_limiter << std::endl;
+      std::cout << " \u2022 internal gradient limiter: " << to_string(limiter) << std::endl;
+      std::cout << " \u2022 boundary gradient limiter: " << to_string(bnd_limiter) << std::endl;
     }
   }
 
@@ -380,12 +448,10 @@ void remap(std::shared_ptr<Jali::Mesh> source_mesh,
   profiler->time.remap = timer::elapsed(tic, true);
 #endif
 
-  std::vector<std::string> fieldnames { "density" };
-
   if (rank == 0) {
     std::cout << " \u2022 registered fields: ";
     for (auto&& name: source_state_wrapper.names())
-      std::cout << name << " ";
+      std::cout << "\""<< name << "\" ";
     std::cout << std::endl;
   }
 
@@ -395,30 +461,31 @@ void remap(std::shared_ptr<Jali::Mesh> source_mesh,
                     target_mesh_wrapper, target_state_wrapper, executor);
 
   auto candidates = remapper.template search<Portage::SearchSweptFace>();
-  auto weights = remapper.template intersect_meshes<Portage::IntersectSweptFace2D>(candidates);
+  auto weights = (dim == 2 ? remapper.template intersect_meshes<Portage::IntersectSweptFace2D>(candidates)
+                           : remapper.template intersect_meshes<Portage::IntersectSweptFace3D>(candidates));
 
-  if (interp_order == 1) {
-    remapper.template interpolate_mesh_var<double, Portage::Interpolate_1stOrder>(
-      "density", "density", weights
-    );
-  } else if (interp_order == 2) {
-    auto gradients = remapper.compute_source_gradient("density", limiter, bnd_limiter);
-    remapper.template interpolate_mesh_var<double, Portage::Interpolate_2ndOrder>(
-      "density", "density", weights, &gradients
-    );
+  switch (interp_order) {
+    case 1:
+      remapper.template interpolate_mesh_var<double, Portage::Interpolate_1stOrder>
+        ("density", "density", weights);
+      break;
+    case 2: {
+      auto gradients = remapper.compute_source_gradient("density", limiter, bnd_limiter);
+      remapper.template interpolate_mesh_var<double, Portage::Interpolate_2ndOrder>
+        ("density", "density", weights, &gradients);
+      break;
+    }
+    default: break;
   }
 
-#if !ENABLE_TIMINGS
-  // Output some information for the user
-#else
+#if ENABLE_TIMINGS
   profiler->time.remap += timer::elapsed(tic);
 
-  if (rank == 0) {
+  if (rank == 0)
     std::cout << "Remap Time: " << profiler->time.remap << std::endl;
-  }
 #endif
 
-  // Write out the meshes if requested
+  // dump meshes if requested
   if (mesh_output) {
     if (rank == 0)
       std::cout << "Dumping data to Exodus files ... ";
@@ -455,9 +522,6 @@ void remap(std::shared_ptr<Jali::Mesh> source_mesh,
   source_state_wrapper.mesh_get_data<double>(Portage::CELL, "density", &source_data_field);
   target_state_wrapper.mesh_get_data<double>(Portage::CELL, "density", &target_data_field);
 
-  if (numpe == 1 && ntarcells < 10)
-    std::cout << "celldata vector on target mesh after remapping is:" << std::endl;
-
   target_data.resize(ntarcells);
 
   // Compute total mass on the source mesh to check conservation
@@ -472,7 +536,6 @@ void remap(std::shared_ptr<Jali::Mesh> source_mesh,
   Portage::Point<dim> ccen;
   for (int c = 0; c < ntarcells; ++c) {
     if (target_mesh_wrapper.cell_get_type(c) == Portage::Entity_type::PARALLEL_OWNED) {
-
       target_mesh_wrapper.cell_centroid(c, &ccen);
       double cellvol = target_mesh_wrapper.cell_volume(c);
       target_data[c] = target_data_field[c];
@@ -483,12 +546,6 @@ void remap(std::shared_ptr<Jali::Mesh> source_mesh,
       L2_error += error * error * cellvol;
       total_volume += cellvol;
       target_mass += target_data_field[c] * cellvol;
-
-      if (ntarcells < 10) {
-        std::printf("rank %d\n", rank);
-        std::printf("cell=%4d centroid = (%8.5lf,%8.5lf)", c, ccen[0], ccen[1]);
-        std::printf("  value = %10.6lf  L2 error = %lf\n", target_data_field[c], error);
-      }
     }
   }
 
@@ -511,110 +568,111 @@ void remap(std::shared_ptr<Jali::Mesh> source_mesh,
   min_target_val = target_extents[0];
   max_target_val = target_extents[1];
 
-  std::printf(" \u2022 L1-norm error     = %lf\n", L1_error);
-  std::printf(" \u2022 L2-norm error     = %lf\n", L2_error);
-  std::printf(" \u2022 source values     = [%.15f, %.15f]\n", min_source_val, max_source_val);
-  std::printf(" \u2022 target values     = [%.15f, %.15f]\n", min_target_val, max_target_val);
-  std::printf(" \u2022 source total mass = %.15f\n", source_mass);
-  std::printf(" \u2022 target total mass = %.15f\n", target_mass);
-  std::printf(" \u2022 mass discrepancy  = %.15f\n", std::abs(source_mass - target_mass));
-
-#ifdef DEBUG_PRINT
-  // debug diagnostics
-  std::cout << "\n----source owned cell global id's on rank " << rank << ":\n";
-  for (int ic = 0; ic < sourceMeshWrapper.num_owned_cells(); ic++) {
-    Wonton::Point<dim> centroid;
-    sourceMeshWrapper.cell_centroid(ic,&centroid);
-    std::cout << "source cell: " << sourceMeshWrapper.get_global_id(ic, Wonton::Entity_kind::CELL) <<
-      "  centroid:(" <<centroid[0]<< ", " << centroid[1] << ")\n";
+  if (rank == 0) {
+    std::printf(" \u2022 L1-norm error     = %lf\n", L1_error);
+    std::printf(" \u2022 L2-norm error     = %lf\n", L2_error);
+    std::printf(" \u2022 source values     = [%.15f, %.15f]\n", min_source_val, max_source_val);
+    std::printf(" \u2022 target values     = [%.15f, %.15f]\n", min_target_val, max_target_val);
+    std::printf(" \u2022 source total mass = %.15f\n", source_mass);
+    std::printf(" \u2022 target total mass = %.15f\n", target_mass);
+    std::printf(" \u2022 mass discrepancy  = %.15f\n", std::abs(source_mass - target_mass));
   }
 
-  std::cout << "\n----target owned cell global id's on rank " << rank << ":\n";
-  for (int ic = 0; ic < targetMeshWrapper.num_owned_cells(); ic++) {
-    Wonton::Point<dim> centroid;
-    targetMeshWrapper.cell_centroid(ic,&centroid);
-    std::cout << "target cell: "  << targetMeshWrapper.get_global_id(ic, Wonton::Entity_kind::CELL) <<
-      "  centroid:(" <<centroid[0]<< ", " << centroid[1] << ")\n";
+#if DEBUG_PRINT
+  Wonton::Point<dim> centroid;
+
+  std::cout << std::endl;
+  std::cout << "\tsource owned cell global id's on rank " << rank << ":" << std::endl;
+
+  for (int ic = 0; ic < source_mesh_wrapper.num_owned_cells(); ic++) {
+    source_mesh_wrapper.cell_centroid(ic, &centroid);
+    int const id = source_mesh_wrapper.get_global_id(ic, Wonton::Entity_kind::CELL);
+    std::cout << "source cell: " << id << ", centroid: " << centroid << std::endl;
+  }
+
+  std::cout << std::endl;
+  std::cout << "\ttarget owned cell global id's on rank " << rank << ":" << std::endl;
+
+  for (int ic = 0; ic < target_mesh_wrapper.num_owned_cells(); ic++) {
+    target_mesh_wrapper.cell_centroid(ic, &centroid);
+    int const id = target_mesh_wrapper.get_global_id(ic, Wonton::Entity_kind::CELL);
+    std::cout << "target cell: " << id << ", centroid: " << centroid << std::endl;
   }
 #endif
 
 } //remap
 
+/**
+ * @brief Move the given target mesh points.
+ *
+ * It moves the target points to obtain a target mesh with same
+ * connectivity but different point positions: loop over all the
+ * boundary vertices assuming that we are only dealing with internally
+ * generated meshes.
+ * x_new = x_old + x_velocity(tcur) * deltaT
+ * y_new = y_old + y_velocity(tcur) * deltaT
+ *
+ * @param mesh    current mesh pointer
+ * @param iter    current timestep
+ * @param deltaT  displacement step
+ * @param periodT displacement period
+ * @param scale   scaling factor
+ */
 void move_target_mesh_nodes(std::shared_ptr<Jali::Mesh> mesh,
-                            int iter, double& deltaT, double& periodT, int& scale)
-{
+                            int iter, double& deltaT, double& periodT, int& scale) {
+
   std::cout << "Moving target mesh points ... ";
+
+  const int nb_nodes = mesh->num_entities(Jali::Entity_kind::NODE,
+                                          Jali::Entity_type::ALL);
   double tcur = iter * deltaT;
 
-  // Move the target nodes to obtain a target mesh with same
-  // connectivity but different point positions.  Loop over all the
-  // boundary vertices Assume that we are only doing internally
-  // generated meshes.
-  // xnew = xold + Xvelocity(tcur)*deltaT
-  // ynew = yold + Yvelocity(tcur)*deltaT
+  auto node_on_bnd = identify_exterior_boundary_nodes(mesh);
 
-  const int ntarnodes = mesh->num_entities(Jali::Entity_kind::NODE,
-                                           Jali::Entity_type::ALL);
+  for (int i = 0; i < nb_nodes; i++) {
+    std::array<double, 2> coord { 0.0, 0.0 };
+    std::array<double, 2> veloc { 0.0, 0.0 };
+    mesh->node_get_coordinates(i, &coord);
 
-  std::vector<bool> node_on_bnd;
-  find_nodes_on_exterior_boundary(mesh, node_on_bnd);
-
-  if (ntarnodes <= 20)
-    std::cout << std::endl;
-
-  for (int i = 0; i < ntarnodes; i++)
-  {
-    std::array<double, 2> coords {0.0, 0.0};
-    mesh->node_get_coordinates(i, &coords);
-
-    if (ntarnodes <= 20)
-      std::cout<<"Target Node = "<<i<<" Original Coords = {"<<coords[0]
-               <<", "<<coords[1]<<"}"<<std::endl;
-
-    if (!node_on_bnd[i]) {
-
-      std::array<double, 2> disp {0.0, 0.0};
-      single_vortex_velocity_function(&coords[0], tcur, periodT, &disp[0]);
-      coords[0] = coords[0] + disp[0]*deltaT/scale;
-      coords[1] = coords[1] + disp[1]*deltaT/scale;
-
-      mesh->node_set_coordinates(i, &coords[0]);
-
-      if (ntarnodes <= 20) {
-        mesh->node_get_coordinates(i, &coords);
-        std::cout<<"Target Node = "<<i<<" Modified Coords = {"<< coords[0]
-                 <<", "<< coords[1]<<"}"<<std::endl;
-      }
+    if (not node_on_bnd[i]) {
+      compute_single_2d_vortex_velocity(coord.data(), tcur, periodT, veloc.data());
+      coord[0] = coord[0] + veloc[0] * deltaT / scale;
+      coord[1] = coord[1] + veloc[1] * deltaT / scale;
+      mesh->node_set_coordinates(i, coord.data());
     }
   }
 
-  if (ntarnodes <= 20)
-    std::cout << std::endl;
-
   std::cout << "done" << std::endl;
+}
 
-} //move_target_mesh_nodes
+/**
+ * @brief Compute a single vortex velocity value at the given point.
+ *
+ * @param[in]  coords  coordinates of the current point.
+ * @param[in]  tcur    scaled displacement step
+ * @param[in]  periodT displacement period.
+ * @param[out] veloc   computed velocity for current point.
+ */
+void compute_single_2d_vortex_velocity(double* coords, double& tcur,
+                                       double& periodT, double* veloc) {
+  double const& x = coords[0];
+  double const& y = coords[1];
+  veloc[0] = -2*sin(M_PI*tcur/periodT)*sin(M_PI*x)*sin(M_PI*x)*sin(M_PI*y)*cos(M_PI*y);
+  veloc[1] =  2*sin(M_PI*tcur/periodT)*sin(M_PI*x)*cos(M_PI*x)*sin(M_PI*y)*sin(M_PI*y);
+}
 
-void single_vortex_velocity_function(double* coords, double& tcur,
-                                     double& periodT, double* disp)
-{
-  double x = coords[0];
-  double y = coords[1];
-  disp[0] = -2*sin(M_PI*tcur/periodT)*sin(M_PI*x)*sin(M_PI*x)*sin(M_PI*y)*cos(M_PI*y);
-  disp[1] = 2*sin(M_PI*tcur/periodT)*sin(M_PI*x)*cos(M_PI*x)*sin(M_PI*y)*sin(M_PI*y);
+/**
+ * @brief Identify boundary nodes of the given mesh.
+ *
+ * @param mesh the current mesh pointer.
+ * @return a flag array to check if a given mesh node is a boundary one.
+ */
+std::vector<bool> identify_exterior_boundary_nodes(std::shared_ptr<Jali::Mesh> mesh) {
 
+  int nfaces = mesh->num_entities(Jali::Entity_kind::FACE, Jali::Entity_type::ALL);
+  int nnodes = mesh->num_entities(Jali::Entity_kind::NODE, Jali::Entity_type::ALL);
 
-} //velocity_function
-
-void find_nodes_on_exterior_boundary(std::shared_ptr<Jali::Mesh> mesh,
-                                     std::vector<bool>& node_on_bnd) {
-
-  int nfaces = mesh->num_entities(Jali::Entity_kind::FACE,
-                                  Jali::Entity_type::ALL);
-  int nnodes = mesh->num_entities(Jali::Entity_kind::NODE,
-                                  Jali::Entity_type::ALL);
-
-  node_on_bnd.assign(nnodes, false);
+  std::vector<bool> boundary_node(nnodes, false);
 
   for (int f = 0; f < nfaces; f++) {
     std::vector<int> fcells;
@@ -625,7 +683,9 @@ void find_nodes_on_exterior_boundary(std::shared_ptr<Jali::Mesh> mesh,
       std::vector<int> fnodes;
       mesh->face_get_nodes(f, &fnodes);
       for (auto const &n : fnodes)
-        node_on_bnd[n] = true;
+        boundary_node[n] = true;
     }
   }
-} //find_nodes_on_exterior_boundary
+  return boundary_node;
+}
+
