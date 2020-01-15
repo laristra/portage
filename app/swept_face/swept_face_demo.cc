@@ -102,7 +102,7 @@ void print_usage() {
 template<int dim> void remap(std::shared_ptr<Jali::Mesh> sourceMesh,
                              std::shared_ptr<Jali::Mesh> targetMesh,
                              std::string field_expression,
-                             Jali::Entity_kind entityKind,
+                             Wonton::Entity_kind entityKind,
                              int interp_order,
                              Portage::Limiter_type limiter,
                              Portage::Boundary_Limiter_type bnd_limiter,
@@ -131,13 +131,11 @@ int main(int argc, char** argv) {
 #endif
 
   // Initialize MPI
-  int mpi_init_flag;
-  MPI_Initialized(&mpi_init_flag);
-  if (!mpi_init_flag)
-    MPI_Init(&argc, &argv);
   int numpe, rank;
-  MPI_Comm_size(MPI_COMM_WORLD, &numpe);
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  MPI_Comm comm = MPI_COMM_WORLD;
+  MPI_Init(&argc, &argv);
+  MPI_Comm_size(comm, &numpe);
+  MPI_Comm_rank(comm, &rank);
 
   if (argc == 1) {
     print_usage();
@@ -145,24 +143,20 @@ int main(int argc, char** argv) {
     return EXIT_FAILURE;
   }
 
-  int dim = 2; //dim 3 is not currently supported
+  int dim = 2;
   int ncells = 10;
-
-  std::string field_expression;
-  std::string field_filename;  // No default;
-
   int interp_order = 1;
   bool sweptface = true;
   int ntimesteps = 4;
   int scale = 20;
-  // since write_to_gmv segfaults in parallel, default to false and force the
-  // user to output in serial
-  bool mesh_output = false;
+  bool mesh_output = false; // (!) 'write_to_gmv' segfaults in parallel
 
-  //Node-based remap not supported for swept-face algorithm
-  Jali::Entity_kind entityKind = Jali::Entity_kind::CELL;
-  Portage::Limiter_type limiter = Portage::Limiter_type::NOLIMITER;
-  Portage::Boundary_Limiter_type bnd_limiter = Portage::Boundary_Limiter_type::BND_NOLIMITER;
+  std::string field_expression;
+  std::string field_filename;  // No default;
+
+  auto entityKind  = Wonton::Entity_kind::CELL;
+  auto limiter     = Portage::Limiter_type::NOLIMITER;
+  auto bnd_limiter = Portage::Boundary_Limiter_type::BND_NOLIMITER;
 
 #if ENABLE_TIMINGS
   bool only_threads = false;
@@ -191,12 +185,12 @@ int main(int argc, char** argv) {
     } else if (keyword == "field") {
       field_expression = valueword;
     } else if (keyword == "limiter") {
-      if (valueword == "barth_jespersen" || valueword == "BARTH_JESPERSEN")
+      if (valueword == "barth_jespersen" or valueword == "BARTH_JESPERSEN")
         limiter = Portage::Limiter_type::BARTH_JESPERSEN;
     } else if (keyword == "bnd_limiter") {
-      if (valueword == "zero_gradient" || valueword == "ZERO_GRADIENT")
+      if (valueword == "zero_gradient" or valueword == "ZERO_GRADIENT")
         bnd_limiter = Portage::Boundary_Limiter_type::BND_ZERO_GRADIENT;
-      else if (valueword == "barth_jespersen" || valueword == "BARTH_JESPERSEN")
+      else if (valueword == "barth_jespersen" or valueword == "BARTH_JESPERSEN")
         bnd_limiter = Portage::Boundary_Limiter_type::BND_BARTH_JESPERSEN;
     } else if (keyword == "ntimesteps") {
       ntimesteps = stoi(valueword);
@@ -339,7 +333,7 @@ int main(int argc, char** argv) {
 template<int dim> void remap(std::shared_ptr<Jali::Mesh> sourceMesh,
                              std::shared_ptr<Jali::Mesh> targetMesh,
                              std::string field_expression,
-                             Jali::Entity_kind entityKind,
+                             Wonton::Entity_kind entityKind,
                              int interp_order,
                              Portage::Limiter_type limiter,
                              Portage::Boundary_Limiter_type bnd_limiter,
@@ -352,7 +346,7 @@ template<int dim> void remap(std::shared_ptr<Jali::Mesh> sourceMesh,
   if (rank == 0)
     std::cout << "starting sweptfacedemo_jali_singlemat...\n";
 
-  if (entityKind != Jali::Entity_kind::CELL) {
+  if (entityKind != Wonton::Entity_kind::CELL) {
     std::cerr << "Sweptfacedemo not supported for node based fields!\n";
     MPI_Abort(MPI_COMM_WORLD, -1);
   }
