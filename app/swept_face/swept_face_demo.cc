@@ -60,8 +60,6 @@
 
 using Wonton::Jali_Mesh_Wrapper;
 
-# define PI 3.14159265358979323846  /* pi */
-
 
 /*!
   @file sweptfaceapp_jali.cc
@@ -656,8 +654,8 @@ void single_vortex_velocity_function(double* coords, double& tcur,
 {
   double x = coords[0];
   double y = coords[1];
-  disp[0] = -2*sin(PI*tcur/periodT)*sin(PI*x)*sin(PI*x)*sin(PI*y)*cos(PI*y);
-  disp[1] = 2*sin(PI*tcur/periodT)*sin(PI*x)*cos(PI*x)*sin(PI*y)*sin(PI*y);
+  disp[0] = -2*sin(M_PI*tcur/periodT)*sin(M_PI*x)*sin(M_PI*x)*sin(M_PI*y)*cos(M_PI*y);
+  disp[1] = 2*sin(M_PI*tcur/periodT)*sin(M_PI*x)*cos(M_PI*x)*sin(M_PI*y)*sin(M_PI*y);
 
 
 } //velocity_function
