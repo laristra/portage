@@ -103,6 +103,7 @@ std::vector<bool> identify_exterior_boundary_nodes(std::shared_ptr<Jali::Mesh> m
  * @param periodT displacement period
  * @param scale   scaling factor
  */
+template<int dim>
 void move_target_mesh_nodes(std::shared_ptr<Jali::Mesh> mesh,
                             int iter, double& deltaT, double& periodT, int& scale);
 
@@ -114,8 +115,8 @@ void move_target_mesh_nodes(std::shared_ptr<Jali::Mesh> mesh,
  * @param[in]  periodT displacement period.
  * @param[out] veloc   computed velocity for current point.
  */
-void compute_single_2d_vortex_velocity(double* coords, double& tcur,
-                                       double& periodT, double* veloc);
+void compute_single_vortex_velocity(double* coords, double& tcur,
+                                    double& periodT, double* veloc);
 
 /**
  * @brief Print command-line usage.
@@ -157,8 +158,8 @@ int main(int argc, char** argv) {
 
   // Initialize MPI
   int numpe, rank;
-  MPI_Comm comm = MPI_COMM_WORLD;
   MPI_Init(&argc, &argv);
+  MPI_Comm comm = MPI_COMM_WORLD;
   MPI_Comm_size(comm, &numpe);
   MPI_Comm_rank(comm, &rank);
 
@@ -310,19 +311,20 @@ int main(int argc, char** argv) {
   std::vector<double> l2_err(ntimesteps, 0.0);
 
   for (int i = 1; i < ntimesteps; i++) {
-
     std::cout << "------------- timestep "<< i << " -------------" << std::endl;
-    // move nodes of the target mesh
-    move_target_mesh_nodes(target_mesh, i, deltaT, periodT, scale);
 
-    // Now run the remap on the meshes and get back the L1-L2 errors
+    // move nodes of the target mesh then run the remap and output related errors
     switch (dim) {
-      case 2: remap<2>(source_mesh, target_mesh, field_expression, interp_order,
-                       limiter, bnd_limiter, mesh_output, field_filename,
-                       rank, numpe, i, l1_err[i], l2_err[i], comm, profiler); break;
-      case 3: remap<3>(source_mesh, target_mesh, field_expression, interp_order,
-                       limiter, bnd_limiter, mesh_output, field_filename,
-                       rank, numpe, i, l1_err[i], l2_err[i], comm, profiler); break;
+      case 2:
+        move_target_mesh_nodes<2>(target_mesh, i, deltaT, periodT, scale);
+        remap<2>(source_mesh, target_mesh, field_expression, interp_order,
+                 limiter, bnd_limiter, mesh_output, field_filename,
+                 rank, numpe, i, l1_err[i], l2_err[i], comm, profiler); break;
+      case 3:
+        move_target_mesh_nodes<3>(target_mesh, i, deltaT, periodT, scale);
+        remap<3>(source_mesh, target_mesh, field_expression, interp_order,
+                 limiter, bnd_limiter, mesh_output, field_filename,
+                 rank, numpe, i, l1_err[i], l2_err[i], comm, profiler); break;
       default:
         std::cerr << "Invalid dimension" << std::endl;
         MPI_Finalize();
@@ -618,6 +620,7 @@ void remap(std::shared_ptr<Jali::Mesh> source_mesh,
  * @param periodT displacement period
  * @param scale   scaling factor
  */
+template<int dim>
 void move_target_mesh_nodes(std::shared_ptr<Jali::Mesh> mesh,
                             int iter, double& deltaT, double& periodT, int& scale) {
 
@@ -627,15 +630,15 @@ void move_target_mesh_nodes(std::shared_ptr<Jali::Mesh> mesh,
                                           Jali::Entity_type::ALL);
   double tcur = iter * deltaT;
 
-  auto node_on_bnd = identify_exterior_boundary_nodes(mesh);
+  auto boundary_node = identify_exterior_boundary_nodes(mesh);
 
   for (int i = 0; i < nb_nodes; i++) {
-    std::array<double, 2> coord { 0.0, 0.0 };
-    std::array<double, 2> veloc { 0.0, 0.0 };
+    std::array<double, dim> coord{};
+    std::array<double, dim> veloc{};
     mesh->node_get_coordinates(i, &coord);
 
-    if (not node_on_bnd[i]) {
-      compute_single_2d_vortex_velocity(coord.data(), tcur, periodT, veloc.data());
+    if (not boundary_node[i]) {
+      compute_single_vortex_velocity(coord.data(), tcur, periodT, veloc.data());
       coord[0] = coord[0] + veloc[0] * deltaT / scale;
       coord[1] = coord[1] + veloc[1] * deltaT / scale;
       mesh->node_set_coordinates(i, coord.data());
@@ -653,8 +656,8 @@ void move_target_mesh_nodes(std::shared_ptr<Jali::Mesh> mesh,
  * @param[in]  periodT displacement period.
  * @param[out] veloc   computed velocity for current point.
  */
-void compute_single_2d_vortex_velocity(double* coords, double& tcur,
-                                       double& periodT, double* veloc) {
+void compute_single_vortex_velocity(double* coords, double& tcur,
+                                    double& periodT, double* veloc) {
   double const& x = coords[0];
   double const& y = coords[1];
   veloc[0] = -2*sin(M_PI*tcur/periodT)*sin(M_PI*x)*sin(M_PI*x)*sin(M_PI*y)*cos(M_PI*y);
