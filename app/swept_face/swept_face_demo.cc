@@ -209,7 +209,7 @@ int main(int argc, char** argv) {
 #endif
 
   if (rank == 0)
-    std::cout << "Starting swept_face_demo ... " << std::endl;
+    std::cout << "Starting swept_face_demo ... " << std::endl << std::endl;
 
   // bounds of generated mesh in each dir
   // no mismatch between source and target meshes.
@@ -259,6 +259,8 @@ int main(int argc, char** argv) {
   std::vector<double> l2_err(ntimesteps, 0.0);
 
   for (int i = 1; i < ntimesteps; i++) {
+
+    std::cout << "------------- timestep "<< i << " -------------" << std::endl;
     // move nodes of the target mesh
     move_target_mesh_nodes(target_mesh, i, deltaT, periodT, scale);
 
@@ -276,12 +278,9 @@ int main(int argc, char** argv) {
         return EXIT_FAILURE;
     }
 
-    std::cout << "L1 norm of error for timestep " << i << " is " <<
-              l1_err[i] << std::endl;
-    std::cout << "L2 norm of error for timestep " << i << " is " <<
-              l2_err[i] << std::endl;
-
+    std::cout << std::endl;
   }
+
 #if ENABLE_TIMINGS
   profiler->time.total = timer::elapsed(start);
 
@@ -312,6 +311,8 @@ void remap(std::shared_ptr<Jali::Mesh> source_mesh,
            MPI_Comm comm,
            std::shared_ptr<Profiler> profiler) {
 
+  std::cout << "Remap field using swept-face algorithm ... "<< std::endl;
+
   // the remapper to use
   using Remapper = Portage::CoreDriver<dim,
                                        Wonton::Entity_kind::CELL,
@@ -339,13 +340,13 @@ void remap(std::shared_ptr<Jali::Mesh> source_mesh,
 
   // Output some information for the user
   if (rank == 0) {
-    std::cout << "\tsource mesh has " << nsrccells << " cells" << std::endl;
-    std::cout << "\ttarget mesh has " << ntarcells << " cells" << std::endl;
-    std::cout << "\tsingle material field: "<< field_expression << std::endl;
-    std::cout << "\tinterpolation order: " << interp_order << std::endl;
+    std::cout << " \u2022 source mesh has " << nsrccells << " cells" << std::endl;
+    std::cout << " \u2022 target mesh has " << ntarcells << " cells" << std::endl;
+    std::cout << " \u2022 single material field: "<< field_expression << std::endl;
+    std::cout << " \u2022 interpolation order: " << interp_order << std::endl;
     if (interp_order == 2) {
-      std::cout << "\tinternal slope limiter is: " << limiter << std::endl;
-      std::cout << "\tboundary slope limiter is: " << bnd_limiter << std::endl;
+      std::cout << " \u2022 internal slope limiter is: " << limiter << std::endl;
+      std::cout << " \u2022 boundary slope limiter is: " << bnd_limiter << std::endl;
     }
   }
 
@@ -382,9 +383,10 @@ void remap(std::shared_ptr<Jali::Mesh> source_mesh,
   std::vector<std::string> fieldnames { "density" };
 
   if (rank == 0) {
-    std::cout << "*** Registered fieldnames: " << std::endl;
+    std::cout << " \u2022 registered fields: ";
     for (auto&& name: source_state_wrapper.names())
-      std::cout << " registered fieldname: " << name << std::endl;
+      std::cout << name << " ";
+    std::cout << std::endl;
   }
 
   MPI_Barrier(comm);
@@ -502,17 +504,26 @@ void remap(std::shared_ptr<Jali::Mesh> source_mesh,
     L2_error = globalerr;
   }
   L2_error = sqrt(L2_error);
+//
+//  std::printf("\n\nL1 NORM OF ERROR (excluding boundary) = %lf\n", L1_error);
+//  std::printf("L2 NORM OF ERROR (excluding boundary) = %lf\n\n", L2_error);
+//  std::printf("===================================================\n");
+//  std::printf("ON RANK %d\n", rank);
+//  std::printf("Relative L1 error = %.5e \n", err_norm);
+//  std::printf("Source min/max    = %.15e %.15e \n", minin, maxin);
+//  std::printf("Target min/max    = %.15e %.15e \n", minout, maxout);
+//  std::printf("Source total mass = %.15e \n", source_mass);
+//  std::printf("Target total mass = %.15e \n", target_mass);
+//  std::printf("===================================================\n");
 
-  std::printf("\n\nL1 NORM OF ERROR (excluding boundary) = %lf\n", L1_error);
-  std::printf("L2 NORM OF ERROR (excluding boundary) = %lf\n\n", L2_error);
-  std::printf("===================================================\n");
-  std::printf("ON RANK %d\n", rank);
-  std::printf("Relative L1 error = %.5e \n", err_norm);
-  std::printf("Source min/max    = %.15e %.15e \n", minin, maxin);
-  std::printf("Target min/max    = %.15e %.15e \n", minout, maxout);
-  std::printf("Source total mass = %.15e \n", source_mass);
-  std::printf("Target total mass = %.15e \n", target_mass);
-  std::printf("===================================================\n");
+  std::printf(" \u2022 L1-norm error     = %lf\n", L1_error);
+  std::printf(" \u2022 L2-norm error     = %lf\n", L2_error);
+  std::printf(" \u2022 relative L1 error = %.15f\n", err_norm);
+  std::printf(" \u2022 source values     = [%.15f, %.15f]\n", minin, maxin);
+  std::printf(" \u2022 target values     = [%.15f, %.15f]\n", minout, maxout);
+  std::printf(" \u2022 source total mass = %.15f\n", source_mass);
+  std::printf(" \u2022 target total mass = %.15f\n", target_mass);
+  std::printf(" \u2022 mass discrepancy  = %.15f\n", std::abs(source_mass - target_mass));
 
 #ifdef DEBUG_PRINT
   // debug diagnostics
@@ -538,7 +549,7 @@ void remap(std::shared_ptr<Jali::Mesh> source_mesh,
 void move_target_mesh_nodes(std::shared_ptr<Jali::Mesh> mesh,
                             int iter, double& deltaT, double& periodT, int& scale)
 {
-  std::cout << "Start displacement for timestep "<< iter <<" ... ";
+  std::cout << "Moving target mesh points ... ";
   double tcur = iter * deltaT;
 
   // Move the target nodes to obtain a target mesh with same
