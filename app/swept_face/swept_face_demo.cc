@@ -434,93 +434,87 @@ void remap(std::shared_ptr<Jali::Mesh> source_mesh,
   }
 
   // Compute error
-  L1_error = 0.0; L2_error = 0.0;
+  L1_error = 0.0;
+  L2_error = 0.0;
 
-  double error, toterr = 0.0;
-  double const * cellvecout;
-  double const * cellvecin;
-  double minin =  1.0e50, minout =  1.0e50;
-  double maxin = -1.0e50, maxout = -1.0e50;
-  double err_l1 = 0.;
-  double err_norm = 0.;
+  double error;
+  double const* target_data_field;
+  double const* source_data_field;
+  double min_source_val = std::numeric_limits<double>::max();
+  double max_source_val = std::numeric_limits<double>::min();
+  double min_target_val = min_source_val;
+  double max_target_val = max_source_val;
+  double source_extents[] = { min_source_val, max_source_val };
+  double target_extents[] = { min_target_val, max_target_val };
   double target_mass = 0.;
   double source_mass = 0.;
-  double totvolume = 0. ;
+  double total_mass[] = { 0., 0. };
+  double global_error[] = { 0., 0. };
+  double total_volume = 0. ;
 
-  source_state_wrapper.mesh_get_data<double>(Portage::CELL, "density",
-                                             &cellvecin);
-  target_state_wrapper.mesh_get_data<double>(Portage::CELL, "density",
-                                             &cellvecout);
+  source_state_wrapper.mesh_get_data<double>(Portage::CELL, "density", &source_data_field);
+  target_state_wrapper.mesh_get_data<double>(Portage::CELL, "density", &target_data_field);
 
   if (numpe == 1 && ntarcells < 10)
-    std::cout << "celldata vector on target mesh after remapping is:"
-              << std::endl;
+    std::cout << "celldata vector on target mesh after remapping is:" << std::endl;
 
   target_data.resize(ntarcells);
 
   // Compute total mass on the source mesh to check conservation
   for (int c = 0; c < nsrccells; ++c) {
-    minin = fmin( minin, cellvecin[c] );
-    maxin = fmax( maxin, cellvecin[c] );
+    min_source_val = std::min(min_source_val, source_data_field[c]);
+    max_source_val = std::max(max_source_val, source_data_field[c]);
     double cellvol2 = source_mesh_wrapper.cell_volume(c);
-    source_mass += cellvecin[c] * cellvol2;
+    source_mass += source_data_field[c] * cellvol2;
   }
 
-  // Cell error computation
+  // cell error computation
   Portage::Point<dim> ccen;
   for (int c = 0; c < ntarcells; ++c) {
     if (target_mesh_wrapper.cell_get_type(c) == Portage::Entity_type::PARALLEL_OWNED) {
 
       target_mesh_wrapper.cell_centroid(c, &ccen);
       double cellvol = target_mesh_wrapper.cell_volume(c);
-      target_data[c] = cellvecout[c];
-      minout = fmin( minout, cellvecout[c] );
-      maxout = fmax( maxout, cellvecout[c] );
-      error = cellvecin[c] - cellvecout[c];
-      L1_error += fabs(error)*cellvol;
-      L2_error += error*error*cellvol;
-      totvolume += cellvol;
-      target_mass += cellvecout[c]*cellvol;
+      target_data[c] = target_data_field[c];
+      min_target_val = std::min(min_target_val, target_data_field[c]);
+      max_target_val = std::max(max_target_val, target_data_field[c]);
+      error = source_data_field[c] - target_data_field[c];
+      L1_error += std::abs(error) * cellvol;
+      L2_error += error * error * cellvol;
+      total_volume += cellvol;
+      target_mass += target_data_field[c] * cellvol;
 
       if (ntarcells < 10) {
-        std::printf("Rank %d\n", rank);
-        std::printf("Cell=% 4d Centroid = (% 8.5lf,% 8.5lf)", c,
-                    ccen[0], ccen[1]);
-        std::printf("  Value = % 10.6lf  L2 Err = % lf\n",
-                    cellvecout[c], error);
+        std::printf("rank %d\n", rank);
+        std::printf("cell=%4d centroid = (%8.5lf,%8.5lf)", c, ccen[0], ccen[1]);
+        std::printf("  value = %10.6lf  L2 error = %lf\n", target_data_field[c], error);
       }
     }
   }
 
-  if (numpe > 1) {
-    std::cout << std::flush << std::endl;
-    MPI_Barrier(MPI_COMM_WORLD);
+  // accumulate all local value on master rank
+  MPI_Barrier(comm);
+  MPI_Reduce(&L1_error, global_error+0, 1, MPI_DOUBLE, MPI_SUM, 0, comm);
+  MPI_Reduce(&L2_error, global_error+1, 1, MPI_DOUBLE, MPI_SUM, 0, comm);
+  MPI_Reduce(&min_source_val, source_extents, 1, MPI_DOUBLE, MPI_MIN, 0, comm);
+  MPI_Reduce(&max_source_val, source_extents+1, 1, MPI_DOUBLE, MPI_MAX, 0, comm);
+  MPI_Reduce(&min_target_val, target_extents, 1, MPI_DOUBLE, MPI_MIN, 0, comm);
+  MPI_Reduce(&max_target_val, target_extents+1, 1, MPI_DOUBLE, MPI_MAX, 0, comm);
+  MPI_Reduce(&source_mass, total_mass, 1, MPI_DOUBLE, MPI_SUM, 0, comm);
+  MPI_Reduce(&target_mass, total_mass+1, 1, MPI_DOUBLE, MPI_SUM, 0, comm);
 
-    double globalerr;
-    MPI_Reduce(&L1_error, &globalerr, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-    L1_error = globalerr;
-
-    MPI_Reduce(&L2_error, &globalerr, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-    L2_error = globalerr;
-  }
-  L2_error = sqrt(L2_error);
-//
-//  std::printf("\n\nL1 NORM OF ERROR (excluding boundary) = %lf\n", L1_error);
-//  std::printf("L2 NORM OF ERROR (excluding boundary) = %lf\n\n", L2_error);
-//  std::printf("===================================================\n");
-//  std::printf("ON RANK %d\n", rank);
-//  std::printf("Relative L1 error = %.5e \n", err_norm);
-//  std::printf("Source min/max    = %.15e %.15e \n", minin, maxin);
-//  std::printf("Target min/max    = %.15e %.15e \n", minout, maxout);
-//  std::printf("Source total mass = %.15e \n", source_mass);
-//  std::printf("Target total mass = %.15e \n", target_mass);
-//  std::printf("===================================================\n");
+  // update local value then
+  L1_error = global_error[0];
+  L2_error = sqrt(global_error[1]);
+  min_source_val = source_extents[0];
+  max_source_val = source_extents[1];
+  min_target_val = target_extents[0];
+  max_target_val = target_extents[1];
 
   std::printf(" \u2022 L1-norm error     = %lf\n", L1_error);
   std::printf(" \u2022 L2-norm error     = %lf\n", L2_error);
-  std::printf(" \u2022 relative L1 error = %.15f\n", err_norm);
-  std::printf(" \u2022 source values     = [%.15f, %.15f]\n", minin, maxin);
-  std::printf(" \u2022 target values     = [%.15f, %.15f]\n", minout, maxout);
+  std::printf(" \u2022 source values     = [%.15f, %.15f]\n", min_source_val, max_source_val);
+  std::printf(" \u2022 target values     = [%.15f, %.15f]\n", min_target_val, max_target_val);
   std::printf(" \u2022 source total mass = %.15f\n", source_mass);
   std::printf(" \u2022 target total mass = %.15f\n", target_mass);
   std::printf(" \u2022 mass discrepancy  = %.15f\n", std::abs(source_mass - target_mass));
