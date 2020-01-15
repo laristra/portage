@@ -420,46 +420,24 @@ template<int dim> void remap(std::shared_ptr<Jali::Mesh> sourceMesh,
   if (sweptface) {
     auto candidates = cdriver.search<Portage::SearchSweptFace>();
     auto weights = cdriver.intersect_meshes<Portage::IntersectSweptFace2D>(candidates);
-    bool has_mismatch = cdriver.check_mesh_mismatch(weights);
+    //bool has_mismatch = cdriver.check_mesh_mismatch(weights);
 
     double dblmin = -std::numeric_limits<double>::max();
     double dblmax =  std::numeric_limits<double>::max();
 
     if (interp_order == 1) {
-      cdriver.interpolate_mesh_var<double,
-        Portage::Interpolate_1stOrder>("density",
-                                       "density",
-                                       weights,
-                                       0.0, dblmax);
+      cdriver.interpolate_mesh_var<double, Portage::Interpolate_1stOrder>(
+        "density", "density", weights
+      );
     } else if (interp_order == 2) {
-      cdriver.interpolate_mesh_var<double,
-        Portage::Interpolate_2ndOrder>("density",
-                                       "density",
-                                       weights,
-                                       0.0, dblmax);
+      auto gradients = cdriver.compute_source_gradient("density", limiter, bnd_limiter);
+      cdriver.interpolate_mesh_var<double, Portage::Interpolate_2ndOrder>(
+        "density", "density", weights, &gradients
+      );
     }
   }
   else {
-    auto candidates = cdriver.search<Portage::SearchKDTree>();
-    auto weights = cdriver.intersect_meshes<Portage::IntersectR2D>(candidates);
-    bool has_mismatch = cdriver.check_mesh_mismatch(weights);
-
-    double dblmin = -std::numeric_limits<double>::max();
-    double dblmax =  std::numeric_limits<double>::max();
-
-    if (interp_order == 1) {
-      cdriver.interpolate_mesh_var<double,
-        Portage::Interpolate_1stOrder>("density",
-                                       "density",
-                                       weights,
-                                       0.0, dblmax);
-    } else if (interp_order == 2) {
-      cdriver.interpolate_mesh_var<double,
-        Portage::Interpolate_2ndOrder>("density",
-                                       "density",
-                                       weights,
-                                       0.0, dblmax);
-    }
+    assert(sweptface);
   }
 
 #if !ENABLE_TIMINGS
