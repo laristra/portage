@@ -28,6 +28,8 @@
 #include "portage/support/timer.h"
 #include "user_field.h" // parsing and evaluating user defined expressions
 
+#define ENABLE_TIMINGS 1
+
 #ifdef ENABLE_PROFILE
   #include "ittnotify.h"
 #endif
@@ -244,8 +246,8 @@ int main(int argc, char** argv) {
   auto profiler = std::make_shared<Profiler>();
   // save params for after
   profiler->params.ranks   = numpe;
-  profiler->params.nsource = std::pow(nsourcecells, dim);
-  profiler->params.ntarget = std::pow(ntargetcells, dim);
+  profiler->params.nsource = std::pow(ncells, dim);
+  profiler->params.ntarget = std::pow(ncells, dim);
   profiler->params.order   = interp_order;
   profiler->params.nmats   = 1;
   profiler->params.output += scaling_type + "_scaling_" +
@@ -261,7 +263,7 @@ int main(int argc, char** argv) {
 #endif
 
   if (rank == 0)
-    std::cout << "Starting swept_face_demo ... " << std::endl << std::endl;
+    std::printf("Generating distributed meshes ... ");
 
   // bounds of generated mesh in each dir
   // no mismatch between source and target meshes.
@@ -298,10 +300,11 @@ int main(int argc, char** argv) {
 
 #if ENABLE_TIMINGS
   profiler->time.mesh_init = timer::elapsed(tic);
-
-  if (rank == 0) {
-        std::cout << "Mesh Initialization Time: " << profiler->time.mesh_init << std::endl;
-    }
+  if (rank == 0)
+    std::printf("done. \e[32m(%.3f s)\e[0m\n", profiler->time.mesh_init);
+#else
+  if (rank == 0)
+    std::cout << "done" << std::endl;
 #endif
 
   double periodT = 2.0;
@@ -445,11 +448,6 @@ void remap(std::shared_ptr<Jali::Mesh> source_mesh,
                                                               Jali::Entity_kind::CELL,
                                                               Jali::Entity_type::ALL,
                                                               0.0);
-
-#if ENABLE_TIMINGS
-  profiler->time.remap = timer::elapsed(tic, true);
-#endif
-
   if (rank == 0) {
     std::cout << " \u2022 registered fields: ";
     for (auto&& name: source_state_wrapper.names())
@@ -484,7 +482,7 @@ void remap(std::shared_ptr<Jali::Mesh> source_mesh,
   profiler->time.remap += timer::elapsed(tic);
 
   if (rank == 0)
-    std::cout << "Remap Time: " << profiler->time.remap << std::endl;
+    std::printf("done. \e[32m(%.3f s)\e[0m\n", profiler->time.remap);
 #endif
 
   // dump meshes if requested
