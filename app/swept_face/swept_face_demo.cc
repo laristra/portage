@@ -73,7 +73,26 @@ using Wonton::Jali_Mesh_Wrapper;
 //////////////////////////////////////////////////////////////////////
 // Forward declarations
 
-int print_usage();
+void print_usage() {
+
+  std::cout << "Usage: swept_face_demo [options]" << std::endl;
+  std::cout << std::endl;
+  std::cout << "Options:" << std::endl;
+  std::cout << "\t--help                  show this help message and exit" << std::endl;
+  std::cout << "\t--dim           INT     dimension of the problem"        << std::endl;
+  std::cout << "\t--ncells        INT     number of cells per axis"        << std::endl;
+  std::cout << "\t--remap_order   INT     order of interpolation"          << std::endl;
+  std::cout << "\t--field         STRING  numerical field to remap"        << std::endl;
+  std::cout << "\t--ntimesteps    INT     number of timesteps"             << std::endl;
+  std::cout << "\t--scale_by      FLOAT   displacement scaling factor"     << std::endl;
+  std::cout << "\t--limiter       STRING  gradient limiter to use"         << std::endl;
+  std::cout << "\t--bnd_limiter   STRING  gradient limiter for boundary"   << std::endl;
+  std::cout << "\t--output_meshes CHAR    dump meshes [y|n]"               << std::endl;
+#if ENABLE_TIMINGS
+  std::cout << "\t--scaling       STRING  scaling study [strong|weak]"     << std::endl;
+  std::cout << "\t--only_threads  CHAR    thread scaling profiling [y|n]"  << std::endl;
+#endif
+}
 
 // Forward declaration of function to run remap on two meshes and
 // return the L1 and L2 error norm in the remapped field w.r.t. to an
@@ -122,14 +141,15 @@ int main(int argc, char** argv) {
 
   if (argc == 1) {
     print_usage();
-    MPI_Abort(MPI_COMM_WORLD, -1);
+    MPI_Finalize();
+    return EXIT_FAILURE;
   }
 
   int dim = 2; //dim 3 is not currently supported
   int ncells = 10;
 
   std::string field_expression;
-  std::string field_filename="";  // No default;
+  std::string field_filename;  // No default;
 
   int interp_order = 1;
   bool sweptface = true;
@@ -168,9 +188,7 @@ int main(int argc, char** argv) {
     } else if (keyword == "remap_order") {
       interp_order = stoi(valueword);
       assert(interp_order > 0 && interp_order < 3);
-    } else if (keyword == "sweptface") {
-      sweptface = (valueword == "y");
-    } else if (keyword == "field_expression") {
+    } else if (keyword == "field") {
       field_expression = valueword;
     } else if (keyword == "limiter") {
       if (valueword == "barth_jespersen" || valueword == "BARTH_JESPERSEN")
@@ -195,12 +213,12 @@ int main(int argc, char** argv) {
 #endif
     else if (keyword == "help") {
       print_usage();
-      MPI_Abort(MPI_COMM_WORLD, -1);
-    } else if (keyword == "field_filename") {
-      field_filename=valueword;
+      MPI_Finalize();
+      return EXIT_SUCCESS;
     } else {
       std::cerr << "Unrecognized option " << keyword << " !\n";
-      MPI_Abort(MPI_COMM_WORLD, -1);
+      MPI_Finalize();
+      return EXIT_FAILURE;
     }
   }
 
@@ -661,55 +679,3 @@ void find_nodes_on_exterior_boundary(std::shared_ptr<Jali::Mesh> mesh,
     }
   }
 } //find_nodes_on_exterior_boundary
-
-int print_usage() {
-  std::cout << std::endl;
-  std::cout << "Usage: sweptfacedemo_jali_singlemat " <<
-            "--dim=2|3 --ncells=N --remap_order=1|2\n"<<
-            "--sweptface=y|n --field=expression\n" <<
-            "--limiter=barth_jespersen --bnd_limiter=zero_gradient \n"
-            "--output_meshes=y|n --field_filename=string \n" <<
-            "--only_threads=y|n --scaling=strong|weak \n\n";
-
-  std::cout << "--dim (default = 2): spatial dimension of mesh\n\n";
-
-  std::cout << "--ncells (DEFAULT 10): Internally generated rectangular "
-            << "SOURCE and TARGET mesh with num cells in each coord dir\n\n";
-
-  std::cout << "--remap_order (default = 1): " <<
-            "order of accuracy of interpolation\n\n";
-
-  std::cout << "--sweptface (default = y): " <<
-            "use sweptface based remap, if no use intersection based remap\n\n";
-
-  std::cout << "--field-expression (NO DEFAULT): A quoted math expressions \n" <<
-            " expressed in terms of \n" << "x, y and z following the syntax of " <<
-            " the expression parser package ExprTk \n" <<
-            "(http://www.partow.net/programming/exprtk/)\n";
-  std::cout << "The syntax is generally predictable, e.g. " <<
-            " \"24*x + y*y\" or \"x + log(abs(y)+1)\"\n";
-
-  std::cout << "--limiter (default = NOLIMITER): " <<
-            "slope limiter for a piecewise linear reconstrution\n\n";
-
-  std::cout << "--bnd_limiter (default = NOLIMITER): " <<
-            "slope limiter on the boundary for a piecewise linear reconstruction\n\n";
-
-  std::cout << "--output_meshes (default = y)\n";
-  std::cout << "  If 'y', the source and target meshes are output with the " <<
-            "remapped field attached as input.exo and output.exo, \n" <<
-            "and interface reconstruction results are output as source_mm.gmv and target_mm.gmv \n\n";
-
-  std::cout << "--field_filename\n\n";
-  std::cout << "  If defined, the field output filename. Rank is appended if parallel\n\n";
-
-#if ENABLE_TIMINGS
-  std::cout << "--only_threads (default = n)\n";
-  std::cout << " enable if you want to profile only threads scaling\n\n";
-
-  std::cout << "--scaling (default = strong)\n";
-  std::cout << " specify the scaling study type [strong|weak]\n\n";
-#endif
-
-  return 0;
-} //print_usage
