@@ -40,7 +40,7 @@ inline float elapsed(
  @brief Dump current time and reset it afterwards.
  @param[in] tic start time  
  */ 
-inline int reset(
+inline void reset(
   std::chrono::high_resolution_clock::time_point& tic, float* cumul = nullptr
 ) {
   if (cumul != nullptr) {
