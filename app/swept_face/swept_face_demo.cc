@@ -335,8 +335,9 @@ int main(int argc, char** argv) {
   } else {
     // generate distributed source and target meshes
     // using a block partitioner to partition them.
+    // (!) no boundary mismatch
     factory.partitioner(Jali::Partitioner_type::BLOCK);
-    // no boundary mismatch
+
     double x_min = 0.0, x_max = 1.0;
     double y_min = 0.0, y_max = 1.0;
     // Create the source and target meshes
@@ -378,8 +379,12 @@ int main(int argc, char** argv) {
   std::vector<double> l2_err(ntimesteps, 0.0);
 
   for (int i = 1; i < ntimesteps; i++) {
-    if (rank == 0)
-      std::cout << "------------- timestep "<< i << " -------------" << std::endl;
+    if (rank == 0) {
+      std::cout << " ------------- ";
+      std::cout << "timestep "<< i;
+      std::cout << " ------------- ";
+      std::cout << std::endl;
+    }
 
     // move nodes of the target mesh then run the remap and output related errors
     try {
@@ -400,9 +405,6 @@ int main(int argc, char** argv) {
     } catch (std::exception const& exception) {
       return abort(exception.what());
     }
-
-    if (rank == 0)
-      std::cout << std::endl;
   }
 
 #if ENABLE_TIMINGS
@@ -603,14 +605,14 @@ void remap(std::shared_ptr<Jali::Mesh> source_mesh,
   }
 
   // accumulate all local value on master rank
-  //MPI_Barrier(comm);
+  MPI_Barrier(comm);
   MPI_Reduce(&L1_error, global_error+0, 1, MPI_DOUBLE, MPI_SUM, 0, comm);
   MPI_Reduce(&L2_error, global_error+1, 1, MPI_DOUBLE, MPI_SUM, 0, comm);
-  MPI_Reduce(&min_source_val, source_extents, 1, MPI_DOUBLE, MPI_MIN, 0, comm);
+  MPI_Reduce(&min_source_val, source_extents+0, 1, MPI_DOUBLE, MPI_MIN, 0, comm);
   MPI_Reduce(&max_source_val, source_extents+1, 1, MPI_DOUBLE, MPI_MAX, 0, comm);
-  MPI_Reduce(&min_target_val, target_extents, 1, MPI_DOUBLE, MPI_MIN, 0, comm);
+  MPI_Reduce(&min_target_val, target_extents+0, 1, MPI_DOUBLE, MPI_MIN, 0, comm);
   MPI_Reduce(&max_target_val, target_extents+1, 1, MPI_DOUBLE, MPI_MAX, 0, comm);
-  MPI_Reduce(&source_mass, total_mass, 1, MPI_DOUBLE, MPI_SUM, 0, comm);
+  MPI_Reduce(&source_mass, total_mass+0, 1, MPI_DOUBLE, MPI_SUM, 0, comm);
   MPI_Reduce(&target_mass, total_mass+1, 1, MPI_DOUBLE, MPI_SUM, 0, comm);
 
   // update local value then
@@ -625,13 +627,14 @@ void remap(std::shared_ptr<Jali::Mesh> source_mesh,
 
   if (rank == 0) {
     std::printf("done\n");
-    std::printf(" \u2022 L1-norm error     = %lf\n", L1_error);
-    std::printf(" \u2022 L2-norm error     = %lf\n", L2_error);
+    std::printf(" \u2022 L1-norm error     = %.15f\n", L1_error);
+    std::printf(" \u2022 L2-norm error     = %.15f\n", L2_error);
     std::printf(" \u2022 source values     = [%.15f, %.15f]\n", min_source_val, max_source_val);
     std::printf(" \u2022 target values     = [%.15f, %.15f]\n", min_target_val, max_target_val);
     std::printf(" \u2022 source total mass = %.15f\n", source_mass);
     std::printf(" \u2022 target total mass = %.15f\n", target_mass);
     std::printf(" \u2022 mass discrepancy  = %.15f\n", std::abs(source_mass - target_mass));
+    std::printf("\n");
   }
 
 #if DEBUG_PRINT
