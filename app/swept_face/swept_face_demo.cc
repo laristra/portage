@@ -294,7 +294,7 @@ int main(int argc, char** argv) {
     std::cout << "  a swept-face algorithm. Meshes can be internally generated  " << std::endl;
     std::cout << "  cartesian grids or externally imported unstructured meshes. " << std::endl;
     std::cout << " ------------------------------------------------------------ " << std::endl;
-    std::cout << "Generate meshes ... ";
+    std::cout << (ncells > 0 ? "Generate" : "Import") << " meshes ... ";
   }
 
   std::shared_ptr<Jali::Mesh> source_mesh;
@@ -534,7 +534,7 @@ void remap(std::shared_ptr<Jali::Mesh> source_mesh,
   // dump meshes if requested
   if (mesh_output) {
     if (rank == 0)
-      std::cout << "Dumping data ... ";
+      std::cout << "Dump data ... ";
 
     std::string suffix = std::to_string(rank) + std::to_string(iteration)+ ".exo";
     source_state->export_to_mesh();
@@ -675,7 +675,7 @@ void move_target_mesh_nodes(std::shared_ptr<Jali::Mesh> mesh,
                             int iter, double& deltaT, double& periodT, int& scale) {
 
   if (rank == 0)
-    std::cout << "Moving target mesh ... ";
+    std::cout << "Move target mesh ... ";
 
   const int nb_nodes = mesh->num_entities(Jali::Entity_kind::NODE,
                                           Jali::Entity_type::ALL);
